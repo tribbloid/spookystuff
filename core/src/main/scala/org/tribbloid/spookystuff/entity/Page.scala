@@ -17,11 +17,11 @@ import scala.collection.mutable.ArrayBuffer
 //immutable! we don't want to lose old pages
 //keep small, will be passed around by Spark
 case class Page(
-            val resolvedUrl: String,
-            val content: String,
-            val datetime: Date = new Date
-            //          like this: {submitTime: 10s, visitTime: 20s}
-            )
+                 val resolvedUrl: String,
+                 val content: String,
+                 val datetime: Date = new Date
+                 //          like this: {submitTime: 10s, visitTime: 20s}
+                 )
   extends Serializable {// don't modify content!
 
   //share context. TODO: too many shallow copy making it dangerous
@@ -34,15 +34,19 @@ case class Page(
 
   def isExpired = (new Date().getTime - datetime.getTime > Conf.pageExpireAfter*1000)
 
-//  def first(selector: String): Element = {
-//    doc.select(selector).first()
-//  }
-//
-//  def all(selector: String): Elements = {
-//    doc.select(selector)
-//  }
+  //  def first(selector: String): Element = {
+  //    doc.select(selector).first()
+  //  }
+  //
+  //  def all(selector: String): Elements = {
+  //    doc.select(selector)
+  //  }
 
-  def firstLink(selector: String): String = doc.select(selector).first().attr("href")
+  def firstLink(selector: String): String = {
+    val element = doc.select(selector).first()
+    if (element == null) null
+    else element.attr("href")
+  }
 
   def allLinks(selector: String): Seq[String] = {
     val result = ArrayBuffer[String]()
@@ -54,7 +58,11 @@ case class Page(
     return result.toSeq
   }
 
-  def firstText(selector: String): String = doc.select(selector).first().text
+  def firstText(selector: String): String = {
+    val element = doc.select(selector).first()
+    if (element == null) null
+    else element.text
+  }
 
   def allTexts(selector: String): Seq[String] = {
     val result = ArrayBuffer[String]()
@@ -66,9 +74,9 @@ case class Page(
     return result.toSeq
   }
 
-//  def slice(selector: String): Seq[Page] = {
-//    val slices = doc.select(selector).
-//  }
+  //  def slice(selector: String): Seq[Page] = {
+  //    val slices = doc.select(selector).
+  //  }
 }
 
 //TODO: need refactoring to accept more openqa drivers
@@ -123,6 +131,7 @@ private class PageBuilder {
 object PageBuilder {
 
   def resolve(actions: Action*): Seq[(Seq[Interaction], Page, PageValues)] = {
+
     val results = ArrayBuffer[(Seq[Interaction],Page, PageValues)]()
 
     val builder = new PageBuilder
