@@ -1,3 +1,5 @@
+package org.tribbloid.scrappy.spike
+
 
 import org.apache.spark.{SparkContext, SparkConf}
 

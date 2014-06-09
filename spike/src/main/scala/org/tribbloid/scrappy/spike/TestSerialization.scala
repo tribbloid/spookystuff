@@ -1,3 +1,5 @@
+package org.tribbloid.scrappy.spike
+
 /**
  * Created by peng on 08/06/14.
  */

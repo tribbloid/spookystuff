@@ -10,10 +10,10 @@ object MoreLinkedIn {
 
   def main(args: Array[String]) {
     val conf = new SparkConf().setAppName("MoreLinkedIn")
-    conf.setMaster("local[*]")
+    conf.setMaster("local[8,3]")
     conf.setSparkHome(System.getenv("SPARK_HOME"))
     conf.setJars(SparkContext.jarOfClass(this.getClass).toList)
-    conf.set("spark.task.maxFailures","4")
+    conf.set("spark.task.maxFailures","3")
     val sc = new SparkContext(conf)
 
     val actions = Seq[Action](
@@ -41,7 +41,7 @@ object MoreLinkedIn {
     }
 
     //very important! otherwise will only use 1 thread
-    val linkRDD_repart = linkRDD.repartition(8)
+    val linkRDD_repart = linkRDD.repartition(20)
 
     //this is optional and slow, use it to release memory
 //    linkRDD.unpersist()
