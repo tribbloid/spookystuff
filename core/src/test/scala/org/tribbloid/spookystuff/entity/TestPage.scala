@@ -10,6 +10,7 @@ import org.tribbloid.spookystuff.entity.Visit
 class TestPage extends FunSuite {
 
   object pageBuilderTag extends Tag("PageBuilder")
+  object pageTag extends Tag("Page")
 
   test("visit and snapshot", pageBuilderTag) {
     val builder = new PageBuilder()
@@ -41,6 +42,7 @@ class TestPage extends FunSuite {
   test("resolve", pageBuilderTag) {
     val results = PageBuilder.resolve(
       Visit("https://www.linkedin.com/"),
+      DelayFor("input[name=\"search\"]",40),
       Snapshot(),
       Input("input#first","Adam"),
       Input("input#last","Muise"),
@@ -53,15 +55,29 @@ class TestPage extends FunSuite {
     val res1 = resultsList(0)
     val res2 = resultsList(1)
 
-    val id1 = Seq[Interaction](Visit("https://www.linkedin.com/"))
+    val id1 = Seq[Interaction](Visit("https://www.linkedin.com/"), DelayFor("input[name=\"search\"]",40))
     assert(res1._1 === id1)
     assert(res1._2.content.contains("<title>World's Largest Professional Network | LinkedIn</title>"))
     assert(res1._2.resolvedUrl === "https://www.linkedin.com/")
-    assert(res1._3.size === 2)
+    assert(res1._3.size === 3)
 
-    val id2 = Seq[Interaction](Visit("https://www.linkedin.com/"),Input("input#first","Adam"),Input("input#last","Muise"),Submit("input[name=\"search\"]"))
+    val id2 = Seq[Interaction](Visit("https://www.linkedin.com/"), DelayFor("input[name=\"search\"]",40), Input("input#first","Adam"),Input("input#last","Muise"),Submit("input[name=\"search\"]"))
     assert(res2._2.content.contains("<title>Adam Muise profiles | LinkedIn</title>"))
     assert(res2._2.resolvedUrl === "https://www.linkedin.com/pub/dir/?first=Adam&last=Muise")
-    assert(res1._3.size === 7)
+    assert(res2._3.size === 8)
+  }
+
+  test("save", pageTag) {
+    val results = PageBuilder.resolve(
+      Visit("https://www.linkedin.com/"),
+      Snapshot()
+    )
+
+    val resultsList = results.toArray
+    assert(resultsList.size === 1)
+    val res1 = resultsList(0)
+    val page1 = res1._2
+
+    page1.save("LinkedIn.html")
   }
 }

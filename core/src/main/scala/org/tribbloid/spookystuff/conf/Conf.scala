@@ -18,7 +18,7 @@ final object Conf {
 
   val phantomJSCaps = new DesiredCapabilities();
   phantomJSCaps.setJavascriptEnabled(true);                //< not really needed: JS enabled by default
-  phantomJSCaps.setCapability("takesScreenshot", true);    //< yeah, GhostDriver haz screenshotz!
+//  phantomJSCaps.setCapability("takesScreenshot", true);    //< yeah, GhostDriver haz screenshotz!
   phantomJSCaps.setCapability(
     PhantomJSDriverService.PHANTOMJS_EXECUTABLE_PATH_PROPERTY,
     "/usr/lib/phantomjs/bin/phantomjs"

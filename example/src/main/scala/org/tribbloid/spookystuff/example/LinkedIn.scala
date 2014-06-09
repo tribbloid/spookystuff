@@ -36,5 +36,7 @@ object LinkedIn {
       println(_)
     }
 
+    sc.stop()
+
   }
 }

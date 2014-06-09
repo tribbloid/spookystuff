@@ -13,6 +13,7 @@ object MoreLinkedIn {
     conf.setMaster("local[*]")
     conf.setSparkHome(System.getenv("SPARK_HOME"))
     conf.setJars(SparkContext.jarOfClass(this.getClass).toList)
+    conf.set("spark.task.maxFailures","4")
     val sc = new SparkContext(conf)
 
     val actions = Seq[Action](
@@ -33,7 +34,6 @@ object MoreLinkedIn {
     val linkRDD = pageRDD.flatMap(_.allLinks("ol#result-set h2 a"))
 
     //this is just for demoing multi-stage job
-    //TODO: whats the difference between persist() and cache()?
     linkRDD.persist()
     val results1 = linkRDD.collect()
     results1.foreach {
@@ -43,10 +43,14 @@ object MoreLinkedIn {
     //very important! otherwise will only use 1 thread
     val linkRDD_repart = linkRDD.repartition(8)
 
+    //this is optional and slow, use it to release memory
+//    linkRDD.unpersist()
+
     val actions2RDD = linkRDD_repart.map(
       link => {
         Seq[Action](
           Visit(link),
+          DelayFor("div#profile-contact",50),
           Snapshot("search_result")
         )
       })
@@ -57,13 +61,25 @@ object MoreLinkedIn {
       }
     }
 
+//    secondTripletRDD.persist()
+
     val infoRDD = secondTripletRDD.map {
       triplet => {
+        val action1 = triplet._1(0)
+        var url: String = null
+
+        action1 match {
+          case Visit(u) => url = u
+
+          case _ => url = "error:"+action1.toString
+        }
         val page = triplet._2
         val name = page.firstText("span.full-name")
         val occupation = page.firstText("p.title")
         val skills = page.allTexts("div#profile-skills li")
-        (name, occupation, skills)
+        page.save(url)
+
+        (url, name, occupation, skills)
       }
     }
 
@@ -71,5 +87,7 @@ object MoreLinkedIn {
     results2.foreach {
       result => println(result.toString())
     }
+
+    sc.stop()
   }
 }

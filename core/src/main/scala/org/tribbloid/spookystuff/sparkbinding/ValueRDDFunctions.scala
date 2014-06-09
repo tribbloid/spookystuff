@@ -1,4 +1,4 @@
-package org.tribbloid.spookystuff.rdd
+package org.tribbloid.spookystuff.sparkbinding
 
 import org.apache.spark.rdd.RDD
 

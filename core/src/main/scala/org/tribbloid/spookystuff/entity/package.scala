@@ -8,4 +8,6 @@ package object entity {
   type PageValues = Seq[(String,String)]
 
   type PageValue = (String,String)
+
+  type Actions = Seq[Action]
 }
