@@ -30,7 +30,7 @@ object LinkedIn {
     }
 
     val pageRDD = firstTripletRDD.map(_._2)
-    val linkRDD = pageRDD.flatMap(_.allLinks("ol#result-set h2 a"))
+    val linkRDD = pageRDD.flatMap(_.page.allLinks("ol#result-set h2 a"))
     val results = linkRDD.collect()
     results.foreach {
       println(_)

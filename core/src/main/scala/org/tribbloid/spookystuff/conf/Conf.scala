@@ -10,7 +10,8 @@ import org.openqa.selenium.phantomjs.{PhantomJSDriverService, PhantomJSDriver}
 final object Conf {
 
   val pageDelay = 5
-//  val usePageCache = false
+  val pageTimeout = 50
+//  val usePageCache = false //deprecated to findOldPagesByKey
   val pageExpireAfter = 1800
 
   val savePagePath = "/home/peng/spookystuff/"

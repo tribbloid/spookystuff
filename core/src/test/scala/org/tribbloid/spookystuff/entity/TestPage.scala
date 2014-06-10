@@ -15,7 +15,8 @@ class TestPage extends FunSuite {
   test("visit and snapshot", pageBuilderTag) {
     val builder = new PageBuilder()
     builder.interact(Visit("http://www.google.com"))
-    val page = builder.getSnapshot
+    val pageWithValues = builder.snapshot(Snapshot())
+    val page = pageWithValues.page
     //    val url = builder.getUrl
 
     assert(page.content.startsWith("<!DOCTYPE html>"))
@@ -31,7 +32,8 @@ class TestPage extends FunSuite {
     builder.interact(Input("input#first","Adam"))
     builder.interact(Input("input#last","Muise"))
     builder.interact(Submit("input[name=\"search\"]"))
-    val page = builder.getSnapshot
+    val pageWithValues = builder.snapshot(Snapshot())
+    val page = pageWithValues.page
     //    val url = builder.getUrl
 
     assert(page.content.contains("<title>Adam Muise profiles | LinkedIn</title>"))
@@ -57,14 +59,14 @@ class TestPage extends FunSuite {
 
     val id1 = Seq[Interaction](Visit("https://www.linkedin.com/"), DelayFor("input[name=\"search\"]",40))
     assert(res1._1 === id1)
-    assert(res1._2.content.contains("<title>World's Largest Professional Network | LinkedIn</title>"))
-    assert(res1._2.resolvedUrl === "https://www.linkedin.com/")
-    assert(res1._3.size === 3)
+    assert(res1._2.page.content.contains("<title>World's Largest Professional Network | LinkedIn</title>"))
+    assert(res1._2.page.resolvedUrl === "https://www.linkedin.com/")
+    assert(res1._2.values.size() === 2)
 
     val id2 = Seq[Interaction](Visit("https://www.linkedin.com/"), DelayFor("input[name=\"search\"]",40), Input("input#first","Adam"),Input("input#last","Muise"),Submit("input[name=\"search\"]"))
-    assert(res2._2.content.contains("<title>Adam Muise profiles | LinkedIn</title>"))
-    assert(res2._2.resolvedUrl === "https://www.linkedin.com/pub/dir/?first=Adam&last=Muise")
-    assert(res2._3.size === 8)
+    assert(res2._2.page.content.contains("<title>Adam Muise profiles | LinkedIn</title>"))
+    assert(res2._2.page.resolvedUrl === "https://www.linkedin.com/pub/dir/?first=Adam&last=Muise")
+    assert(res2._2.values.size() === 7)
   }
 
   test("save", pageTag) {
@@ -78,6 +80,6 @@ class TestPage extends FunSuite {
     val res1 = resultsList(0)
     val page1 = res1._2
 
-    page1.save("LinkedIn.html")
+    page1.page.save("LinkedIn.html")
   }
 }

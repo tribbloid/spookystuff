@@ -31,7 +31,7 @@ object MoreLinkedIn {
     }
 
     val pageRDD = firstTripletRDD.map(_._2)
-    val linkRDD = pageRDD.flatMap(_.allLinks("ol#result-set h2 a"))
+    val linkRDD = pageRDD.flatMap(_.page.allLinks("ol#result-set h2 a"))
 
     //this is just for demoing multi-stage job
     linkRDD.persist()
@@ -50,7 +50,7 @@ object MoreLinkedIn {
       link => {
         Seq[Action](
           Visit(link),
-          DelayFor("div#profile-contact",50),
+          DelayFor("div#main",50),
           Snapshot("search_result")
         )
       })
@@ -73,7 +73,7 @@ object MoreLinkedIn {
 
           case _ => url = "error:"+action1.toString
         }
-        val page = triplet._2
+        val page = triplet._2.page
         val name = page.firstText("span.full-name")
         val occupation = page.firstText("p.title")
         val skills = page.allTexts("div#profile-skills li")
