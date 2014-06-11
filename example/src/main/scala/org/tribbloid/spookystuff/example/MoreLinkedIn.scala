@@ -2,6 +2,7 @@ package org.tribbloid.spookystuff.example
 
 import org.apache.spark.{SparkContext, SparkConf}
 import org.tribbloid.spookystuff.entity._
+import org.json4s.Extraction
 
 /**
  * A more complex linkedIn job that finds name and printout skills of all Sanjay Gupta in your local area
@@ -11,8 +12,10 @@ object MoreLinkedIn {
   def main(args: Array[String]) {
     val conf = new SparkConf().setAppName("MoreLinkedIn")
     conf.setMaster("local[8,3]")
+//    conf.setMaster("local-cluster[2,4,1000]")
     conf.setSparkHome(System.getenv("SPARK_HOME"))
-    conf.setJars(SparkContext.jarOfClass(this.getClass).toList)
+    val jars = SparkContext.jarOfClass(this.getClass).toList
+    conf.setJars(jars)
     conf.set("spark.task.maxFailures","3")
     val sc = new SparkContext(conf)
 
@@ -21,7 +24,8 @@ object MoreLinkedIn {
       Input("input#first","Sanjay"),
       Input("input#last","Gupta"),
       Submit("input[name=\"search\"]"),
-      Snapshot("search_result")
+      Insert("name","search_result"),
+      Snapshot()
     )
     val actionsRDD = sc.parallelize(Seq(actions))
     val firstTripletRDD = actionsRDD.flatMap {
@@ -51,7 +55,8 @@ object MoreLinkedIn {
         Seq[Action](
           Visit(link),
           DelayFor("div#main",50),
-          Snapshot("search_result")
+          Insert("name","personal_page"),
+          Snapshot()
         )
       })
 

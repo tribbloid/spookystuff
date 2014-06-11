@@ -15,7 +15,7 @@ class TestPage extends FunSuite {
   test("visit and snapshot", pageBuilderTag) {
     val builder = new PageBuilder()
     builder.interact(Visit("http://www.google.com"))
-    val pageWithValues = builder.snapshot(Snapshot())
+    val pageWithValues = builder.extract(Snapshot())
     val page = pageWithValues.page
     //    val url = builder.getUrl
 
@@ -32,7 +32,7 @@ class TestPage extends FunSuite {
     builder.interact(Input("input#first","Adam"))
     builder.interact(Input("input#last","Muise"))
     builder.interact(Submit("input[name=\"search\"]"))
-    val pageWithValues = builder.snapshot(Snapshot())
+    val pageWithValues = builder.extract(Snapshot())
     val page = pageWithValues.page
     //    val url = builder.getUrl
 
@@ -49,7 +49,7 @@ class TestPage extends FunSuite {
       Input("input#first","Adam"),
       Input("input#last","Muise"),
       Submit("input[name=\"search\"]"),
-      Snapshot("after_search")
+      Snapshot()
     )
 
     val resultsList = results.toArray
@@ -61,7 +61,7 @@ class TestPage extends FunSuite {
     assert(res1._1 === id1)
     assert(res1._2.page.content.contains("<title>World's Largest Professional Network | LinkedIn</title>"))
     assert(res1._2.page.resolvedUrl === "https://www.linkedin.com/")
-    assert(res1._2.values.size() === 2)
+    assert(res1._2.values.size() === 3)
 
     val id2 = Seq[Interaction](Visit("https://www.linkedin.com/"), DelayFor("input[name=\"search\"]",40), Input("input#first","Adam"),Input("input#last","Muise"),Submit("input[name=\"search\"]"))
     assert(res2._2.page.content.contains("<title>Adam Muise profiles | LinkedIn</title>"))

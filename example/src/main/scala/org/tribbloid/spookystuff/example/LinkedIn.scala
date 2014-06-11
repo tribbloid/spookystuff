@@ -20,7 +20,7 @@ object LinkedIn {
       Input("input#first","Sanjay"),
       Input("input#last","Gupta"),
       Submit("input[name=\"search\"]"),
-      Snapshot("after_search")
+      Snapshot()
     )
     val actionsRDD = sc.parallelize(Seq(actions))
     val firstTripletRDD = actionsRDD.flatMap {

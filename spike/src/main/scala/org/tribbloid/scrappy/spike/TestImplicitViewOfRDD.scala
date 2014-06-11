@@ -11,9 +11,11 @@ object TestImplicitViewOfRDD {
 
   def main(args: Array[String]) {
     val conf = new SparkConf().setAppName("Spark Pi")
-    conf.setMaster("local[*]")
+//    conf.setMaster("local-cluster[2,4,1000]") //no can do! spark cannot find jars
+    conf.setMaster("local[8,3]")
     conf.setSparkHome(System.getenv("SPARK_HOME"))
-    conf.setJars(SparkContext.jarOfClass(this.getClass).toList)
+    val jars = SparkContext.jarOfClass(this.getClass).toList
+    conf.setJars(jars)
     val sc = new SparkContext(conf)
     val slices = if (args.length > 0) args(0).toInt else 2
     val n = 100000 * slices

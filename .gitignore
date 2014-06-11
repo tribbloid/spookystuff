@@ -28,6 +28,7 @@ project/plugins/project/
 
 # Compiler
 output
+*/target/
 
 #Misc
 temp

@@ -36,21 +36,25 @@ class Page(
 
   def isExpired = (new Date().getTime - datetime.getTime > Conf.pageExpireAfter*1000)
 
-  def firstLink(selector: String): String = {
+  def firstAttr(selector: String, attr: String): String = {
     val element = doc.select(selector).first()
     if (element == null) null
-    else element.attr("href")
+    else element.attr(attr)
   }
 
-  def allLinks(selector: String): Seq[String] = {
+  def allAttrs(selector: String, attr: String): Seq[String] = {
     val result = ArrayBuffer[String]()
 
     doc.select(selector).foreach{
-      element => result += element.attr("href")
+      element => result += element.attr(attr)
     }
 
     return result.toSeq
   }
+
+  def firstLink(selector: String): String = firstAttr(selector,"href")
+
+  def allLinks(selector: String): Seq[String] = allAttrs(selector,"href")
 
   def firstText(selector: String): String = {
     val element = doc.select(selector).first()
@@ -87,7 +91,6 @@ class Page(
     val fw = new FileWriter(file.getAbsoluteFile());
     val bw = new BufferedWriter(fw);
     bw.write(content);
-
     bw.close();
   }
   //  def slice(selector: String): Seq[Page] = {
