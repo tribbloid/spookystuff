@@ -24,4 +24,6 @@ final object Conf {
     PhantomJSDriverService.PHANTOMJS_EXECUTABLE_PATH_PROPERTY,
     "/usr/lib/phantomjs/bin/phantomjs"
   );
+
+//  type Logging = com.typesafe.scalalogging.slf4j.Logging
 }

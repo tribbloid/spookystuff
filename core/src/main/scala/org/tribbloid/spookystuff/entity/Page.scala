@@ -8,6 +8,7 @@ import scala.collection.JavaConversions._
 import scala.collection.mutable.ArrayBuffer
 import java.text.DateFormat
 import java.io.{FileWriter, BufferedWriter, File}
+import java.util
 ;
 
 /**
@@ -18,13 +19,18 @@ import java.io.{FileWriter, BufferedWriter, File}
 //keep small, will be passed around by Spark
 
 
+//I'm always using the more familiar Java collection, also for backward compatibility
 class Page(
             val resolvedUrl: String,
             val content: String,
+
+            val alias: String = null,
+
+            val backtrace: util.List[Interaction] = new util.ArrayList[Interaction], //also the uid
+            var context: util.Map[String,String] = null, //will NOT be carried over to the linked page to avoid diamond
             val datetime: Date = new Date
-            //          like this: {submitTime: 10s, visitTime: 20s}
             )
-  extends Serializable {// don't modify content!
+  extends Serializable {
 
   //share context. TODO: too many shallow copy making it dangerous
   //  def this(another: Page) = this (
@@ -32,9 +38,33 @@ class Page(
   //      another.datetime,
   //      another.context)
 
-  @transient val doc = Jsoup.parse(content) //not serialize, parsing is faster
+  @transient lazy val doc = Jsoup.parse(content) //not serialize, parsing is faster
+
+  override def clone(): Page = new Page(
+    this.resolvedUrl,
+    this.content,
+    this.alias,
+    this.backtrace,
+    this.context,
+    this.datetime
+  )
+
+  def as(as: String): Page = new Page(
+    this.resolvedUrl,
+    this.content,
+    as,
+    this.backtrace,
+    this.context,
+    this.datetime
+  )
 
   def isExpired = (new Date().getTime - datetime.getTime > Conf.pageExpireAfter*1000)
+
+  def refresh(): Page =  PageBuilder.resolveFinal(this.backtrace: _*)(this.context).as(this.alias)
+
+  def exist(selector: String): Boolean = {
+    !doc.select(selector).isEmpty
+  }
 
   def firstAttr(selector: String, attr: String): String = {
     val element = doc.select(selector).first()
@@ -42,7 +72,7 @@ class Page(
     else element.attr(attr)
   }
 
-  def allAttrs(selector: String, attr: String): Seq[String] = {
+  def attr(selector: String, attr: String): Seq[String] = {
     val result = ArrayBuffer[String]()
 
     doc.select(selector).foreach{
@@ -54,7 +84,7 @@ class Page(
 
   def firstLink(selector: String): String = firstAttr(selector,"href")
 
-  def allLinks(selector: String): Seq[String] = allAttrs(selector,"href")
+  def allLinks(selector: String): Seq[String] = attr(selector,"href")
 
   def firstText(selector: String): String = {
     val element = doc.select(selector).first()
@@ -72,11 +102,11 @@ class Page(
     return result.toSeq
   }
 
-  def save(namePattern: String, path: String = Conf.savePagePath, usePattern: Boolean = false) {
+  def save(namePattern: String = this.hashCode().toString, path: String = Conf.savePagePath, usePattern: Boolean = false) {
     var name = namePattern
     if (usePattern == true) {
-      name = name.replaceAll("#{time}", DateFormat.getInstance.format(this.datetime))
-      name = name.replaceAll("#{resolved-url}", this.resolvedUrl)
+      name = name.replace("#{time}", DateFormat.getInstance.format(this.datetime))
+      name = name.replace("#{resolved-url}", this.resolvedUrl)
     }
 
     //sanitizing filename can save me a lot of trouble

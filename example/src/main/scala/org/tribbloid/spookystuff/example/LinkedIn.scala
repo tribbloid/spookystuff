@@ -2,6 +2,7 @@ package org.tribbloid.spookystuff.example
 
 import org.apache.spark.{SparkContext, SparkConf}
 import org.tribbloid.spookystuff.entity._
+import org.tribbloid.spookystuff.SpookyContext._
 
 /**
  * This job will find and printout urls of all Sanjay Gupta in your local area
@@ -15,22 +16,20 @@ object LinkedIn {
     conf.setJars(SparkContext.jarOfClass(this.getClass).toList)
     val sc = new SparkContext(conf)
 
-    val actions = Seq[Action](
+    val actions = Seq[Interaction](
       Visit("https://www.linkedin.com/"),
-      Input("input#first","Sanjay"),
-      Input("input#last","Gupta"),
-      Submit("input[name=\"search\"]"),
-      Snapshot()
+      TextInput("input#first","Sanjay"),
+      TextInput("input#last","Gupta"),
+      Submit("input[name=\"search\"]")
     )
     val actionsRDD = sc.parallelize(Seq(actions))
-    val firstTripletRDD = actionsRDD.flatMap {
+    val pageRDD = actionsRDD.map {
       actions => {
-        PageBuilder.resolve(actions: _*)
+        PageBuilder.resolveFinal(actions: _*)
       }
     }
 
-    val pageRDD = firstTripletRDD.map(_._2)
-    val linkRDD = pageRDD.flatMap(_.page.allLinks("ol#result-set h2 a"))
+    val linkRDD = pageRDD.flatMap(_.allLinks("ol#result-set h2 a"))
     val results = linkRDD.collect()
     results.foreach {
       println(_)

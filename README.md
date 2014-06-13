@@ -1,7 +1,7 @@
 spookystuff
 ===========
 
-a scalable web scrapping/data collection/acceptance test framework based on Apache Spark
+is a scalable web scrapping/data collection/acceptance QA environment based on Apache Spark
 
 dependencies:
 
@@ -9,3 +9,5 @@ dependencies:
 - GhostDriver/PhantomJS/Selenium/OpenQA
 - JSoup
 - Apache Tika
+
+The goal is to allow the Internet being queried like a database.
