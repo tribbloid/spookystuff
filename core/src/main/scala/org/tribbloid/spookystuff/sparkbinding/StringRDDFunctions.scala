@@ -8,9 +8,9 @@ import java.util
  */
 class StringRDDFunctions(val self: RDD[String]) {
 
-  //CAUTION! this is an action that will trigger a stage
-  def asCSV(headerline: String, splitter: String = ","): RDD[util.Map[String,String]] = {
-    val headers = headerline.split(splitter)
+  //csv has to be headerless, there is no better solution as header will be shuffled to nowhere
+  def csvToMap(headerRow: String, splitter: String = ","): RDD[util.Map[String,String]] = {
+    val headers = headerRow.split(splitter)
     val width = headers.length
 
     //cannot handle when a row is identical to headerline, but whatever
@@ -28,5 +28,5 @@ class StringRDDFunctions(val self: RDD[String]) {
     }
   }
 
-  def asTSV(headerline: String) = asCSV(headerline,"\t")
+  def tsvToMap(headerRow: String) = csvToMap(headerRow,"\t")
 }

@@ -6,6 +6,7 @@ import org.tribbloid.spookystuff.conf.Conf
 import org.openqa.selenium.{By, WebDriver}
 import org.openqa.selenium.support.ui
 import java.io.File
+import java.io.Serializable
 import java.net.URL
 import scala.collection.JavaConversions._
 
@@ -13,14 +14,15 @@ import scala.collection.JavaConversions._
  * Created by peng on 04/06/14.
  */
 
-object Action {
-  def replaceWithContext(str: String, context: util.Map[String,String]): String = {
+private object Action {
+  def formatWithContext[T](str: String, context: util.Map[String,T]): String = {
     if ((context == null)||(context.isEmpty)) return str
     var strVar = str
     context.foreach {
       pair => {
-        if (pair._2.matches("[^#{}]+") == false) throw new UnsupportedOperationException("context value cannot contain #{} etc.")
-        strVar = strVar.replace("#{".concat(pair._1).concat("}"), pair._2)
+        val value = pair._2.toString
+        if (value.matches("[^#{}]+") == false) throw new UnsupportedOperationException("context value cannot contain #{} etc.")
+        strVar = strVar.replace("#{".concat(pair._1).concat("}"), value)
       }
     }
     strVar
@@ -30,7 +32,7 @@ object Action {
 abstract class Action extends Serializable {
   var timeline: Long = -1
 
-  def format(context: util.Map[String,String]): this.type = this
+  def format[T](context: util.Map[String,T]): this.type = this
   //  def setTimer(on: Boolean = true) = { this.timer = on}
 }
 
@@ -69,8 +71,8 @@ case class Visit(val url: String) extends Interaction{
     driver.get(url)
   }
 
-  override def format(context: util.Map[String,String]): this.type = {
-    Visit(Action.replaceWithContext(this.url,context)).asInstanceOf[this.type]
+  override def format[T](context: util.Map[String,T]): this.type = {
+    Visit(Action.formatWithContext(this.url,context)).asInstanceOf[this.type]
   }
 }
 
@@ -105,8 +107,8 @@ case class TextInput(val selector: String, val text: String) extends Interaction
     driver.findElement(By.cssSelector(selector)).sendKeys(text)
   }
 
-  override def format(context: util.Map[String,String]): this.type = {
-    TextInput(this.selector, Action.replaceWithContext(this.text,context)).asInstanceOf[this.type]
+  override def format[T](context: util.Map[String,T]): this.type = {
+    TextInput(this.selector, Action.formatWithContext(this.text,context)).asInstanceOf[this.type]
   }
 }
 
@@ -117,8 +119,8 @@ case class Select(val selector: String, val text: String) extends Interaction{
     select.selectByValue(text)
   }
 
-  override def format(context: util.Map[String,String]): this.type = {
-    Select(this.selector, Action.replaceWithContext(this.text,context)).asInstanceOf[this.type]
+  override def format[T](context: util.Map[String,T]): this.type = {
+    Select(this.selector, Action.formatWithContext(this.text,context)).asInstanceOf[this.type]
   }
 }
 

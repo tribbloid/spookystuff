@@ -3,6 +3,7 @@ package org.tribbloid.spookystuff.example
 import org.apache.spark.{SparkContext, SparkConf}
 import org.tribbloid.spookystuff.entity._
 import org.tribbloid.spookystuff.SpookyContext._
+import scala.collection.JavaConversions._
 
 /**
  * This job will find and printout urls of Sanjay Gupta, Arun Gupta and Hardik Gupta in your area
@@ -26,14 +27,18 @@ object LinkedInSuger {
 
     val pageRDD = actionsRDD !
 
-    pageRDD.select(
+    val valueRDD = pageRDD.selectAsMap(
       "link" -> {
-        page => {
-          page.allLinks("ol#result-set h2 a").asInstanceOf[Serializable]
-        }
-
+        page: Page => page.allLinks("ol#result-set h2 a")
       }
-    ).collect().foreach{ println(_) }
+    )
+
+    valueRDD.collect().foreach{
+      map => {
+        println("-------------------------------")
+        map.get("link").asInstanceOf[Seq[String]].foreach( println(_) )
+      }
+    }
 
     sc.stop()
 

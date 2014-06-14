@@ -7,7 +7,7 @@ import org.jsoup.Jsoup
 import scala.collection.JavaConversions._
 import scala.collection.mutable.ArrayBuffer
 import java.text.DateFormat
-import java.io.{FileWriter, BufferedWriter, File}
+import java.io.{FileWriter, BufferedWriter, File, Serializable}
 import java.util
 ;
 
@@ -27,7 +27,7 @@ class Page(
             val alias: String = null,
 
             val backtrace: util.List[Interaction] = new util.ArrayList[Interaction], //also the uid
-            var context: util.Map[String,String] = null, //will NOT be carried over to the linked page to avoid diamond
+            val context: util.Map[String, Serializable] = null, //I know it should be a var, but better save than sorry
             val datetime: Date = new Date
             )
   extends Serializable {
@@ -49,18 +49,22 @@ class Page(
     this.datetime
   )
 
-  def as(as: String): Page = new Page(
+  def modify(alias: String = this.alias, context: util.Map[String, Serializable] = this.context): Page = new Page(
     this.resolvedUrl,
     this.content,
-    as,
+    alias,
     this.backtrace,
-    this.context,
+    context,
     this.datetime
   )
 
+
   def isExpired = (new Date().getTime - datetime.getTime > Conf.pageExpireAfter*1000)
 
-  def refresh(): Page =  PageBuilder.resolveFinal(this.backtrace: _*)(this.context).as(this.alias)
+  def refresh(): Page = {
+    val page = PageBuilder.resolveFinal(this.backtrace: _*).modify(this.alias,this.context)
+    return page
+  }
 
   def exist(selector: String): Boolean = {
     !doc.select(selector).isEmpty
