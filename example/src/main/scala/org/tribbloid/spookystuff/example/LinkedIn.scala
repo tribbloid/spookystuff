@@ -3,9 +3,10 @@ package org.tribbloid.spookystuff.example
 import org.apache.spark.{SparkContext, SparkConf}
 import org.tribbloid.spookystuff.entity._
 import org.tribbloid.spookystuff.SpookyContext._
+import java.io.Serializable
 
 /**
- * This job will find and printout urls of all Sanjay Gupta in your local area
+ * This job will find and printout urls of Sanjay Gupta, Arun Gupta and Hardik Gupta in your area
  */
 object LinkedIn {
 
@@ -16,23 +17,27 @@ object LinkedIn {
     conf.setJars(SparkContext.jarOfClass(this.getClass).toList)
     val sc = new SparkContext(conf)
 
-    val actions = Seq[Interaction](
-      Visit("https://www.linkedin.com/"),
-      TextInput("input#first","Sanjay"),
-      TextInput("input#last","Gupta"),
+    val actionsRDD = sc.parallelize(Seq("Sanjay", "Arun", "Hardik")) +>
+      Visit("https://www.linkedin.com/") +>
+      TextInput("input#first","#{_}") +>
+      TextInput("input#last","Gupta") +>
       Submit("input[name=\"search\"]")
-    )
-    val actionsRDD = sc.parallelize(Seq(actions))
-    val pageRDD = actionsRDD.map {
-      actions => {
-        PageBuilder.resolveFinal(actions: _*)
-      }
-    }
 
-    val linkRDD = pageRDD.flatMap(_.allLinks("ol#result-set h2 a"))
-    val results = linkRDD.collect()
-    results.foreach {
-      println(_)
+//    val action1 = actionsRDD.first()
+
+    val pageRDD = actionsRDD !
+
+    val valueRDD = pageRDD.select(
+      "link" -> {
+        page: HtmlPage => page.linkAll("ol#result-set h2 a").asInstanceOf[Serializable] //TODO: How to avoid this tail?
+      }
+    )
+
+    valueRDD.collect().foreach{
+      map => {
+        println("-------------------------------")
+        map.get("link").asInstanceOf[Seq[String]].foreach( println(_) )
+      }
     }
 
     sc.stop()

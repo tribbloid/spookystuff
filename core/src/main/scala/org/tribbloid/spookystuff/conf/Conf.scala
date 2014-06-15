@@ -11,7 +11,7 @@ final object Conf {
 
   val pageDelay = 5
   val pageTimeout = 50
-//  val usePageCache = false //deprecated to findOldPagesByKey
+//  val usePageCache = false //delegated to smart execution
   val pageExpireAfter = 1800
 
   val savePagePath = "/home/peng/spookystuff/"

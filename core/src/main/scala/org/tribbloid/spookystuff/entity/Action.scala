@@ -53,7 +53,7 @@ abstract class Interaction extends Action {
 abstract class Extraction() extends Action {
   var alias: String = null
 
-  def exe(driver: WebDriver): Page
+  def exe(driver: WebDriver): HtmlPage
 
   def as(alias: String): this.type = { //TODO: better way to return type?
     this.alias = alias
@@ -126,8 +126,8 @@ case class Select(val selector: String, val text: String) extends Interaction{
 
 case class Snapshot() extends Extraction{
   // all other fields are empty
-  override def exe(driver: WebDriver): Page = {
-    new Page(driver.getCurrentUrl, driver.getPageSource, alias = this.alias)
+  override def exe(driver: WebDriver): HtmlPage = {
+    new HtmlPage(driver.getCurrentUrl, driver.getPageSource, alias = this.alias)
   }
 }
 

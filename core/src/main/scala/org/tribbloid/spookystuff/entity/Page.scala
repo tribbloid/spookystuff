@@ -9,6 +9,7 @@ import scala.collection.mutable.ArrayBuffer
 import java.text.DateFormat
 import java.io.{FileWriter, BufferedWriter, File, Serializable}
 import java.util
+import org.jsoup.nodes.Element
 ;
 
 /**
@@ -18,9 +19,25 @@ import java.util
 //immutable! we don't want to lose old pages
 //keep small, will be passed around by Spark
 
+//TODO: right now everything delegated to HtmlPage, more will come (e.g. PdfPage, SliceView, ImagePage, JsonPage)
+abstract class Page extends Serializable {
+  def exist(selector: String): Boolean
+
+  def attrFirst(selector: String, attr: String): String
+
+  def attrAll(selector: String, attr: String): Seq[String]
+
+  def linkFirst(selector: String): String = attrFirst(selector,"href")
+
+  def linkAll(selector: String): Seq[String] = attrAll(selector,"href")
+
+  def textFirst(selector: String): String
+
+  def textAll(selector: String): Seq[String]
+}
 
 //I'm always using the more familiar Java collection, also for backward compatibility
-class Page(
+class HtmlPage(
             val resolvedUrl: String,
             val content: String,
 
@@ -28,9 +45,9 @@ class Page(
 
             val backtrace: util.List[Interaction] = new util.ArrayList[Interaction], //also the uid
             val context: util.Map[String, Serializable] = null, //I know it should be a var, but better save than sorry
-            val datetime: Date = new Date
+            val timestamp: Date = new Date
             )
-  extends Serializable {
+  extends Page {
 
   //share context. TODO: too many shallow copy making it dangerous
   //  def this(another: Page) = this (
@@ -38,45 +55,62 @@ class Page(
   //      another.datetime,
   //      another.context)
 
-  @transient lazy val doc = Jsoup.parse(content) //not serialize, parsing is faster
+  @transient lazy val doc: Element = Jsoup.parse(content) //not serialize, parsing is faster
 
-  override def clone(): Page = new Page(
+  override def clone(): HtmlPage = new HtmlPage(
     this.resolvedUrl,
     this.content,
     this.alias,
     this.backtrace,
     this.context,
-    this.datetime
+    this.timestamp
   )
 
-  def modify(alias: String = this.alias, context: util.Map[String, Serializable] = this.context): Page = new Page(
+  def modify(alias: String = this.alias, context: util.Map[String, Serializable] = this.context): HtmlPage = new HtmlPage(
     this.resolvedUrl,
     this.content,
     alias,
     this.backtrace,
     context,
-    this.datetime
+    this.timestamp
   )
 
+  //only slice contents inside the container, other parts are discarded
+  //this will generate doc from scratch but otherwise induces heavy load on serialization
+  def slice(selector: String): Seq[HtmlPage] = {
+    val elements = doc.select(selector)
+    return elements.zipWithIndex.map {
+      elementWithIndex =>{
+        new HtmlPage (
+          this.resolvedUrl + "#" + elementWithIndex._2,
+          elementWithIndex._1.html(),
+          null,
+          this.backtrace,
+          this.context.clone().asInstanceOf,
+          this.timestamp
+        )
+      }
+    }
+  }
 
-  def isExpired = (new Date().getTime - datetime.getTime > Conf.pageExpireAfter*1000)
+  def isExpired = (new Date().getTime - timestamp.getTime > Conf.pageExpireAfter*1000)
 
-  def refresh(): Page = {
+  def refresh(): HtmlPage = {
     val page = PageBuilder.resolveFinal(this.backtrace: _*).modify(this.alias,this.context)
     return page
   }
 
-  def exist(selector: String): Boolean = {
+  override def exist(selector: String): Boolean = {
     !doc.select(selector).isEmpty
   }
 
-  def firstAttr(selector: String, attr: String): String = {
+  override def attrFirst(selector: String, attr: String): String = {
     val element = doc.select(selector).first()
     if (element == null) null
     else element.attr(attr)
   }
 
-  def attr(selector: String, attr: String): Seq[String] = {
+  override def attrAll(selector: String, attr: String): Seq[String] = {
     val result = ArrayBuffer[String]()
 
     doc.select(selector).foreach{
@@ -86,17 +120,13 @@ class Page(
     return result.toSeq
   }
 
-  def firstLink(selector: String): String = firstAttr(selector,"href")
-
-  def allLinks(selector: String): Seq[String] = attr(selector,"href")
-
-  def firstText(selector: String): String = {
+  override def textFirst(selector: String): String = {
     val element = doc.select(selector).first()
     if (element == null) null
     else element.text
   }
 
-  def allTexts(selector: String): Seq[String] = {
+  override def textAll(selector: String): Seq[String] = {
     val result = ArrayBuffer[String]()
 
     doc.select(selector).foreach{
@@ -106,10 +136,22 @@ class Page(
     return result.toSeq
   }
 
+  def asMap(keyAndF: (String, HtmlPage => Serializable)*): util.Map[String, Serializable] = {
+    val result: util.Map[String, Serializable] = new util.HashMap()
+
+    keyAndF.foreach {
+      fEntity => {
+        val value = fEntity._2(this)
+        result.put(fEntity._1, value)
+      }
+    }
+    result
+  }
+
   def save(namePattern: String = this.hashCode().toString, path: String = Conf.savePagePath, usePattern: Boolean = false) {
     var name = namePattern
     if (usePattern == true) {
-      name = name.replace("#{time}", DateFormat.getInstance.format(this.datetime))
+      name = name.replace("#{time}", DateFormat.getInstance.format(this.timestamp))
       name = name.replace("#{resolved-url}", this.resolvedUrl)
     }
 
@@ -127,10 +169,4 @@ class Page(
     bw.write(content);
     bw.close();
   }
-  //  def slice(selector: String): Seq[Page] = {
-  //    val slices = doc.select(selector).
-  //  }
 }
-
-
-

@@ -1,7 +1,7 @@
 package org.tribbloid.spookystuff.sparkbinding
 
 import org.apache.spark.rdd.RDD
-import org.tribbloid.spookystuff.entity.{PageBuilder, Page, ActionPlan, Action}
+import org.tribbloid.spookystuff.entity.{PageBuilder, HtmlPage, ActionPlan, Action}
 import scala.collection.mutable.ArrayBuffer
 import org.apache.spark.SparkContext._
 import scala.collection.JavaConversions._
@@ -53,19 +53,21 @@ class ActionPlanRDDFunctions(val self: RDD[ActionPlan]) {
   }
 
   //  //execute
-  def !!!(): RDD[Page] = self.flatMap {
+  def !!!(): RDD[HtmlPage] = self.flatMap {
     _ !!!
   }
 
   //  //only execute interactions and extract the final stage
-  def !(): RDD[Page] = self.map {
+  def !(): RDD[HtmlPage] = self.map {
     _ !
   }
 
   //smart execution: will merge identical plan, execute, and split to match the original context
+  //this is useful to handle diamond links (A->B,A->C,B->D,C->D)
   //be careful this step is complex and may take longer than plain execution if unoptimized
-  //TODO: this definitely need some logging to let us know how many actual resolves are executed.
-  def >!!!<(): RDD[Page] = {
+  //there is no repartitioning in the process, may cause unbalanced execution, but apparently groupByKey will do it automatically
+  //TODO: this definitely need some logging to let us know how many actual resolves.
+  def >!!!<(): RDD[HtmlPage] = {
     val squashedPlanRDD = self.map{ ap => (ap.actions, ap.context) }.groupByKey()
 
     val squashedPageRDD = squashedPlanRDD.flatMap { tuple => PageBuilder.resolve(tuple._1: _*).map{ (_, tuple._2) } }
@@ -77,7 +79,7 @@ class ActionPlanRDDFunctions(val self: RDD[ActionPlan]) {
     }
   }
 
-  def >!<(): RDD[Page] = {
+  def >!<(): RDD[HtmlPage] = {
     val squashedPlanRDD = self.map{ ap => (ap.interactions, ap.context) }.groupByKey()
 
     val squashedPageRDD = squashedPlanRDD.map { tuple => ( PageBuilder.resolveFinal(tuple._1: _*), tuple._2) }
@@ -90,6 +92,7 @@ class ActionPlanRDDFunctions(val self: RDD[ActionPlan]) {
   }
 
 //  //find non-expired page from old results, if not found, execute
+  // this will be really handy if all pages are dumped into a history RDD/Spark stream
 //  def !+(old: RDD[Page])
 //
 //  //this is really hard, if only one snapshot is not found, the entire plan has to be executed again

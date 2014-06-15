@@ -2,7 +2,7 @@ package org.tribbloid.spookystuff
 
 import org.tribbloid.spookystuff.sparkbinding.{StringRDDFunctions, ActionPlanRDDFunctions, PageRDDFunctions}
 import org.apache.spark.rdd.RDD
-import org.tribbloid.spookystuff.entity.{ActionPlan, Page}
+import org.tribbloid.spookystuff.entity.{ActionPlan, HtmlPage}
 import java.io.Serializable
 import java.util
 import scala.collection.JavaConversions._
@@ -15,13 +15,11 @@ import scala.collection.JavaConversions._
 //}
 
 object SpookyContext {
-  implicit def pageRDDToItsFunctions(rdd: RDD[Page]) = new PageRDDFunctions(rdd)
+  implicit def pageRDDToItsFunctions(rdd: RDD[HtmlPage]) = new PageRDDFunctions(rdd)
 
   implicit def actionChainRDDToItsFunctions(rdd: RDD[ActionPlan]) = new ActionPlanRDDFunctions(rdd)
 
   implicit def stringRDDToItsFunctions(rdd: RDD[String]) = new StringRDDFunctions(rdd)
-
-
 
   //these are the entry points of SpookyStuff starting from a common RDD of strings or maps
   implicit def stringRDDToActionChainRDD(rdd: RDD[String]): RDD[ActionPlan] = rdd.map{
@@ -43,6 +41,5 @@ object SpookyContext {
   }
 
   implicit def mapRDDToActionChainRDDFunctions(rdd: RDD[Map[String,Serializable]]) = new ActionPlanRDDFunctions(mapRDDToActionChainRDD(rdd))
-
 
 }

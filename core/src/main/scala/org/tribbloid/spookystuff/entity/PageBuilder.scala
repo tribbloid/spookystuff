@@ -12,8 +12,8 @@ import org.openqa.selenium.remote.RemoteWebDriver
 object PageBuilder {
 
   //shorthand for resolving the final stage after some interactions
-  def resolveFinal(interactions: Interaction*): Page = {
-    var result: Page = null
+  def resolveFinal(interactions: Interaction*): HtmlPage = {
+    var result: HtmlPage = null
     val allActions = interactions.seq.:+(Snapshot())
     PageBuilder.resolve(allActions: _*).foreach{
       page => {
@@ -24,9 +24,9 @@ object PageBuilder {
     result
   }
 
-  def resolve(actions: Action*): Seq[Page] = {
+  def resolve(actions: Action*): Seq[HtmlPage] = {
 
-    val results = ArrayBuffer[Page]()
+    val results = ArrayBuffer[HtmlPage]()
 
     val builder = new PageBuilder()
 
@@ -80,7 +80,7 @@ private class PageBuilder(val driver: RemoteWebDriver = new PhantomJSDriver(Conf
     }
   }
 
-  def exe(action: Extraction): Page = {
+  def exe(action: Extraction): HtmlPage = {
     val page = action.exe(this.driver)
     page.backtrace.addAll(this.backtrace)
     return page
