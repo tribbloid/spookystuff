@@ -1,8 +1,9 @@
 package org.tribbloid.spookystuff.entity
 
+import org.tribbloid.spookystuff.Conf
+
 import sys.process._
 import java.util
-import org.tribbloid.spookystuff.conf.Conf
 import org.openqa.selenium.{By, WebDriver}
 import org.openqa.selenium.support.ui
 import java.io.File

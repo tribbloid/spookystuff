@@ -35,13 +35,13 @@ object AppliancePartsPros {
 //    searchPageRDD.persist()
 //    val search1 = searchPageRDD.first()
 
-    val diagramPageRDD = searchPageRDD.crawlAll("div.inner li a:has(img)")
+    val diagramPageRDD = searchPageRDD.fork("div.inner li a:has(img)")
       .addToContext("schematic" -> {_.textFirst("div#ctl00_cphMain_up1 h1 span")})
 
 //    diagramPageRDD.persist()
 //    val diagram1 = diagramPageRDD.first()
 
-    val partPageRDD = diagramPageRDD.crawlAll("tbody.m-bsc td.pdct-descr h2 a")
+    val partPageRDD = diagramPageRDD.fork("tbody.m-bsc td.pdct-descr h2 a")
 
 //    partPageRDD.persist()
 //    val part1 = partPageRDD.first()
@@ -49,8 +49,8 @@ object AppliancePartsPros {
     val tuplesRDD = partPageRDD.select(
       page => (
         page.context.get("_"),
-        page.context.get("model"),
         page.context.get("time1"),
+        page.context.get("model"),
         page.context.get("schematic"),
         page.textFirst("div.m-bsc div.mod ul li:contains(Manufacturer) strong"),
         page.textFirst("div.m-pdct div.m-chm p")
@@ -60,3 +60,5 @@ object AppliancePartsPros {
     tuplesRDD.collect().foreach(println(_))
   }
 }
+//TODO: some tasks went dead
+//TODO: some phantomjs instance doesn't close

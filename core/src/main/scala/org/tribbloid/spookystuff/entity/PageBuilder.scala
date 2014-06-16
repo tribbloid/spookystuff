@@ -1,9 +1,9 @@
 package org.tribbloid.spookystuff.entity
 
 import java.util.Date
-import org.tribbloid.spookystuff.conf.Conf
 
 import org.openqa.selenium.phantomjs.PhantomJSDriver
+import org.tribbloid.spookystuff.Conf
 import scala.collection.mutable.ArrayBuffer
 
 import java.util

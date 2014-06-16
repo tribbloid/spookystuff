@@ -15,9 +15,9 @@ object MoreLinkedIn {
     val conf = new SparkConf().setAppName("MoreLinkedIn")
     conf.setMaster("local[8,3]")
     //    conf.setMaster("local-cluster[2,4,1000]")
-    conf.setSparkHome(System.getenv("SPARK_HOME"))
-    val jars = SparkContext.jarOfClass(this.getClass).toList
-    conf.setJars(jars)
+//    conf.setSparkHome(System.getenv("SPARK_HOME"))
+//    val jars = SparkContext.jarOfClass(this.getClass).toList
+//    conf.setJars(jars)
     conf.set("spark.task.maxFailures", "3")
     val sc = new SparkContext(conf)
 
@@ -36,7 +36,7 @@ object MoreLinkedIn {
 //    }
 //    linkRDD.collect().foreach{ println(_) }
 
-    val personalPageRDD = pageRDD.crawlAll("ol#result-set h2 a")
+    val personalPageRDD = pageRDD.fork("ol#result-set h2 a")
 
     val resultRDD = personalPageRDD.select{ page => (
       page.textFirst("span.full-name"),

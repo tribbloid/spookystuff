@@ -1,8 +1,7 @@
-package org.tribbloid.spookystuff.conf
+package org.tribbloid.spookystuff
 
+import org.openqa.selenium.phantomjs.PhantomJSDriverService
 import org.openqa.selenium.remote.DesiredCapabilities
-import org.openqa.selenium.WebDriver
-import org.openqa.selenium.phantomjs.{PhantomJSDriverService, PhantomJSDriver}
 
 /**
  * Created by peng on 04/06/14.
@@ -17,13 +16,13 @@ final object Conf {
   val savePagePath = "/home/peng/spookystuff/"
   val saveScreenshotPath = "/home/peng/spookystuffScreenShots/"
 
-  val phantomJSCaps = new DesiredCapabilities();
+  val phantomJSCaps = new DesiredCapabilities;
   phantomJSCaps.setJavascriptEnabled(true);                //< not really needed: JS enabled by default
 //  phantomJSCaps.setCapability("takesScreenshot", true);    //< yeah, GhostDriver haz screenshotz!
-  phantomJSCaps.setCapability(
-    PhantomJSDriverService.PHANTOMJS_EXECUTABLE_PATH_PROPERTY,
-    "/usr/lib/phantomjs/bin/phantomjs"
-  );
+//  val cliArgs = "--logLevel=ERROR"
+//  phantomJSCaps.setCapability(PhantomJSDriverService.PHANTOMJS_GHOSTDRIVER_CLI_ARGS, cliArgs);//TODO: logLevel parameter doesn't work, why?
+  val phantomJSRootPath = "/usr/lib/phantomjs/"
+  phantomJSCaps.setCapability(PhantomJSDriverService.PHANTOMJS_EXECUTABLE_PATH_PROPERTY, phantomJSRootPath + "bin/phantomjs");
 
 //  type Logging = com.typesafe.scalalogging.slf4j.Logging
 }

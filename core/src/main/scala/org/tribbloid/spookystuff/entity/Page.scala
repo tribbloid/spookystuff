@@ -1,9 +1,9 @@
 package org.tribbloid.spookystuff.entity
 
 import java.util.Date
-import org.tribbloid.spookystuff.conf.Conf
 
 import org.jsoup.Jsoup
+import org.tribbloid.spookystuff.Conf
 import scala.collection.JavaConversions._
 import scala.collection.mutable.ArrayBuffer
 import java.text.DateFormat

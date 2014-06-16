@@ -76,7 +76,7 @@ class PageRDDFunctions(val self: RDD[HtmlPage]) {
 
   def crawlFirst(selector: String): RDD[HtmlPage] = new ActionPlanRDDFunctions(this.linkFirst(selector)) >!<
 
-  def crawlAll(selector: String): RDD[HtmlPage] = new ActionPlanRDDFunctions(this.linkAll(selector)) >!<
+  def fork(selector: String): RDD[HtmlPage] = new ActionPlanRDDFunctions(this.linkAll(selector)) >!<
 
 //  def crawlFirstIf(selector: String)(condition: HtmlPage => Boolean): RDD[HtmlPage] = self.map{
 //    page => {
@@ -111,11 +111,11 @@ class PageRDDFunctions(val self: RDD[HtmlPage]) {
   }
 
   //really complex but what option do I have
-  def crawlAllIf(selector: String)(f: HtmlPage => Boolean): RDD[HtmlPage] = {
+  def forkIf(selector: String)(f: HtmlPage => Boolean): RDD[HtmlPage] = {
     val groupedPageRDD = self.map{ page => (f(page), page) }
     val falsePageRDD = groupedPageRDD.filter(_._1 == false).map(_._2)
     val truePageRDD = groupedPageRDD.filter(_._1 == true).map(_._2)
-    val newPageRDD = new PageRDDFunctions(truePageRDD).crawlAll(selector)
+    val newPageRDD = new PageRDDFunctions(truePageRDD).fork(selector)
     newPageRDD.union(falsePageRDD)
   }
   //----------------------------------------------
