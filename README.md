@@ -17,7 +17,7 @@ Dependencies
 A one minute showcase
 -----------
 #### 1. Headhunting on LinkedIn
-- Goal: Find highest-ranking professionals in you area on LinkedIn. whose full name is either 'Sanjay Gupta', 'Arun Gupta' or 'Hardik Gupta', print their personal page urls, full names, titles and list of skills
+- Goal: Find highest-ranking professionals in you area on LinkedIn. whose full name is either 'Sanjay Gupta', 'Arun Gupta' or 'Hardik Gupta', print their respective full name, title and list of skill
 - Query:
 ```
 (sc.parallelize(Seq("Sanjay Gupta", "Arun", "Hardik"))
@@ -40,7 +40,7 @@ A one minute showcase
 (Arun Gupta,Sales at adjust by adeven,ArrayBuffer(Mobile, Business Strategy, Digital Media, Advertising Sales, Direct Sales, New Business Development, Mobile Marketing, Mobile Advertising, Publishing, Mobile Devices, Strategic Partnerships, Start-ups, Online Marketing, Mobile Applications, SEO, SEM, Business Development, Social Networking, Digital Marketing, Management, Digital Strategy))
 (Dr. Sanjay Gupta,Co-Founder & Director at IMPACT PSD Private Limited,ArrayBuffer(Computer proficiency, Secondary Research, Operations Management, Qualitative Research, Research and M&E, Data Management, Data Interpretation, M&E, Research, Report Writing, Data Analysis, Proposal Writing, Program Management, Capacity Building, NGOs, Leadership, Market Research, Policy, Civil Society, International Development, Nonprofits, Public Policy, Corporate Social Responsibility, Training, Program Evaluation, Analysis, Business Development, Sustainable Development, Data Collection, Technical Assistance, Organizational Development, Fundraising, Community Development, Quantitative Research, Government, Program Development, Policy Analysis, Reproductive Health))
 (Dr. Arun Kumar Gupta,Chief Executive Officer,ArrayBuffer())
-...
+... (75 lines)
 ```
 
 #### 2. Find interchangeable parts of a washing machine on appliancepartspros.com
@@ -75,7 +75,7 @@ A one minute showcase
 (A210S,A210S Washer-Top Loading ,14789,01-Base\pump\motor Parts for Maytag A210S,Y015627,Part Number Y015627 (AP4277222) replaces 014526, 015627, 1239310, 15627, 24001310, 3400300, 3400502, 488266, 488293, 488398, 488577, 488594, 866821, 9415810, AH2191209, EA2191209, PS2191209, Y014526.)
 (A210S,A210S Washer-Top Loading ,14789,01-Base\pump\motor Parts for Maytag A210S,202718,Part Number 202718 (AP4023504) replaces 2-11946, 2-2718, 211946, 22001442, 434716, AH2016844, EA2016844, PS2016844.)
 (A210S,A210S Washer-Top Loading ,14789,04-Control Panel, Timer & Switches Parts for Maytag A210S,205611,Part Number 205611 (AP4023851) replaces 2-5611, 435339, AH2017212, EA2017212, PS2017212.)
-...
+... (311 lines)
 ```
 
 ### Showcase environment
