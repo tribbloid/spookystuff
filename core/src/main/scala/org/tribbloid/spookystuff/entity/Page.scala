@@ -27,9 +27,9 @@ abstract class Page extends Serializable {
 
   def attrAll(selector: String, attr: String): Seq[String]
 
-  def linkFirst(selector: String): String = attrFirst(selector,"href")
+  def linkFirst(selector: String, absolute: Boolean = true): String
 
-  def linkAll(selector: String): Seq[String] = attrAll(selector,"href")
+  def linkAll(selector: String, absolute: Boolean = true): Seq[String]
 
   def textFirst(selector: String): String
 
@@ -55,7 +55,7 @@ class HtmlPage(
   //      another.datetime,
   //      another.context)
 
-  @transient lazy val doc: Element = Jsoup.parse(content) //not serialize, parsing is faster
+  @transient lazy val doc: Element = Jsoup.parse(content, resolvedUrl) //not serialize, parsing is faster
 
   override def clone(): HtmlPage = new HtmlPage(
     this.resolvedUrl,
@@ -118,6 +118,16 @@ class HtmlPage(
     }
 
     return result.toSeq
+  }
+
+  override def linkFirst(selector: String, absolute: Boolean = true): String = {
+    if (absolute == true) attrFirst(selector,"abs:href")
+    else attrFirst(selector,"href")
+  }
+
+  override def linkAll(selector: String, absolute: Boolean = true): Seq[String] = {
+    if (absolute == true) attrAll(selector,"abs:href")
+    else attrAll(selector,"href")
   }
 
   override def textFirst(selector: String): String = {

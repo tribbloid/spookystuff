@@ -20,9 +20,13 @@ private object Action {
     var strVar = str
     context.foreach {
       pair => {
-        val value = pair._2.toString
-        if (value.matches("[^#{}]+") == false) throw new UnsupportedOperationException("context value cannot contain #{} etc.")
-        strVar = strVar.replace("#{".concat(pair._1).concat("}"), value)
+        val sub = "#{".concat(pair._1).concat("}")
+        if (strVar.contains(sub))
+        {
+          val value = pair._2.toString
+          if (value.matches("[^#{}]+") == false) throw new UnsupportedOperationException("context value cannot contain #{} etc.")
+          strVar = strVar.replace(sub, value)
+        }
       }
     }
     strVar

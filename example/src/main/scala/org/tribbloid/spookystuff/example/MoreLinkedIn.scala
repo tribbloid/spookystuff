@@ -28,13 +28,13 @@ object MoreLinkedIn {
       Submit("input[name=\"search\"]")
 
     val pageRDD = actionsRDD !()
-    //this is just for demoing multi-stage job
-    pageRDD.persist()
-    val linkRDD = pageRDD.selectAll[String] {
-      _.linkAll("ol#result-set h2 a")
-    }
 
-    linkRDD.collect().foreach{ println(_) }
+    //this is just for demoing multi-stage job
+//    pageRDD.persist()
+//    val linkRDD = pageRDD.selectAll[String] {
+//      _.linkAll("ol#result-set h2 a")
+//    }
+//    linkRDD.collect().foreach{ println(_) }
 
     val personalPageRDD = pageRDD.crawlAll("ol#result-set h2 a")
 
