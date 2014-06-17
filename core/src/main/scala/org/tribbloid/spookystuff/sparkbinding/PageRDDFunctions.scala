@@ -52,7 +52,6 @@ class PageRDDFunctions(val self: RDD[HtmlPage]) {
 
   def slice(selector: String): RDD[HtmlPage] = self.flatMap(_.slice(selector))
 
-
   //if the page doesn't contain the selector it will throw an exception
   //pass all context to ActionPlans
   def linkFirst(selector: String): RDD[ActionPlan] = self.map{

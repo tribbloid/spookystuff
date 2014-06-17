@@ -82,7 +82,7 @@ A one minute showcase
 - The easiest way is to test locally on you scala IDE or REPL.
 - You need to install [PhantomJS](http://phantomjs.org/) on you computer. The default installation directory is '/usr/lib/phantomjs'.
     - (If your PhantomJS is installed to a different directory, please change *phantomJSRootPath* in *org.tribbloid.spookystuff.Conf.scala* to point to your PhantomJS directory.)
-- You DON"T need to install Apache Spark to test it locally, the spark jar in you local Maven repository has everything you need to run locally.
+- You DON"T need to install Apache Spark to test it in local simulation mode (where masterURL = "local[...]"), the spark jar in you local Maven repository has everything you need.
     - You DO need to do this to deploy your query or application to a cluster.
 1. Git clone me: git clone https://github.com/tribbloid/spookystuff.git
 2. Create your scala project. Add spookystuff-core to its dependency list
@@ -93,7 +93,7 @@ A one minute showcase
             <artifactId>spookystuff-core</artifactId>
         </dependency>
     ```
-    - Alternatively you can just run Spark-shell or Scala REPL.
+    - Alternatively you can just run Spark-shell or Scala REPL withi zthe project environment.
 3. Import scala packages and context, including:
     - org.apache.spark.{SparkContext, SparkConf} (entry point for all Spark applications)
     - org.tribbloid.spookystuff.SpookyContext._ (enable implicit operators for web scrapping)
@@ -114,7 +114,7 @@ Deployment
 -----------
 [This is a stub] Theoretically all Spark application that runs locally can be submitted to cluster by only changing its masterURL parameter in SparkConf. However I haven't test it myself. Some part of the code may not be optimized for cluster deployment.
 
-- If you want to write extension for this project, MAKE SURE you don't get *NotSerializable* exception in a local run, and keep all RDD entity small to avoid slow partitioning over the network.
+- If you want to write extension for this project, MAKE SURE you don't get *NotSerializableException* in a local run (these are thrown when ), and keep all RDD entity's serialization footprint small to avoid slow partitioning over the network.
 
 Maintainer
 -----------

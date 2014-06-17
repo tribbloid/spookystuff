@@ -52,6 +52,8 @@ object AppliancePartsPros {
         page.context.get("time1"),
         page.context.get("model"),
         page.context.get("schematic"),
+        page.textFirst("div.m-pdct h1"),
+        page.textFirst("div.m-pdct td[itemprop=\"brand\"] span"),
         page.textFirst("div.m-bsc div.mod ul li:contains(Manufacturer) strong"),
         page.textFirst("div.m-pdct div.m-chm p")
         )
