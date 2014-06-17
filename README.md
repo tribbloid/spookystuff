@@ -93,7 +93,7 @@ A one minute showcase
             <artifactId>spookystuff-core</artifactId>
         </dependency>
     ```
-    - Alternatively you can just run Spark-shell or Scala REPL withi zthe project environment.
+    - Alternatively you can just run Spark-shell or Scala REPL within the project environment.
 3. Import scala packages and context, including:
     - org.apache.spark.{SparkContext, SparkConf} (entry point for all Spark applications)
     - org.tribbloid.spookystuff.SpookyContext._ (enable implicit operators for web scrapping)
@@ -114,7 +114,9 @@ Deployment
 -----------
 [This is a stub] Theoretically all Spark application that runs locally can be submitted to cluster by only changing its masterURL parameter in SparkConf. However I haven't test it myself. Some part of the code may not be optimized for cluster deployment.
 
-- If you want to write extension for this project, MAKE SURE you don't get *NotSerializableException* in a local run (these are thrown when ), and keep all RDD entity's serialization footprint small to avoid slow partitioning over the network.
+- Make sure PhantomJS is installed on all cluster nodes.
+
+- If you want to write extension for this project, MAKE SURE you don't get *NotSerializableException* in a local run (it happens when Spark cannot serialize data when sending to another node), and keep all RDD entity's serialization footprint small to avoid slow partitioning over the network.
 
 Maintainer
 -----------
