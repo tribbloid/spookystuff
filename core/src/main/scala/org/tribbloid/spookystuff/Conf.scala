@@ -6,6 +6,7 @@ import org.openqa.selenium.remote.DesiredCapabilities
 /**
  * Created by peng on 04/06/14.
  */
+//TODO: propose to merge with SpookyContext
 final object Conf {
 
   val pageDelay = 5
@@ -13,8 +14,10 @@ final object Conf {
 //  val usePageCache = false //delegated to smart execution
   val pageExpireAfter = 1800
 
-  val savePagePath = "/home/peng/spookystuff/"
-  val saveScreenshotPath = "/home/peng/spookystuffScreenShots/"
+  val savePagePath = "file:///home/peng/spookystuff/"
+  val saveScreenshotPath = "file:///home/peng/spookystuffScreenShots/"
+
+  val errorPageDumpDir = "file:///home/peng/spookystuff/error"
 
   val phantomJSCaps = new DesiredCapabilities;
   phantomJSCaps.setJavascriptEnabled(true);                //< not really needed: JS enabled by default

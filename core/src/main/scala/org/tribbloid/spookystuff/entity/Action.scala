@@ -16,6 +16,7 @@ import scala.collection.JavaConversions._
  */
 
 private object Action {
+  //TODO: reverse the direction of look-up, if a '#{...}' has no corresponding key in the context, throws an exception
   def formatWithContext[T](str: String, context: util.Map[String,T]): String = {
     if ((context == null)||(context.isEmpty)) return str
     var strVar = str
@@ -71,6 +72,18 @@ abstract class Dump extends Action {
   def exe(driver: WebDriver): Unit
 }
 
+//these are performed independent of session and will return a Page without backtrace
+abstract class Sessionless() extends Action {
+  var alias: String = null
+
+  def exe(driver: WebDriver): HtmlPage
+
+  def as(alias: String): this.type = { //TODO: better way to return type?
+    this.alias = alias
+    return this
+  }
+}
+
 case class Visit(val url: String) extends Interaction{
   override def exe(driver: WebDriver) {
     driver.get(url)
@@ -80,6 +93,7 @@ case class Visit(val url: String) extends Interaction{
     Visit(Action.formatWithContext(this.url,context)).asInstanceOf[this.type]
   }
 }
+
 
 case class Delay(val delay: Int = Conf.pageDelay) extends Interaction{
   override def exe(driver: WebDriver) {
@@ -136,22 +150,9 @@ case class Snapshot() extends Extraction{
   }
 }
 
-case class Wget(val url: String, val name: String, val path: String = Conf.savePagePath) extends Dump{
+case class Wget(val url: String) extends Sessionless{
 
-  //TODO: buggy may cause fileNotFoundExcepiton
-  override def exe(driver: WebDriver) {
-    val dir: File = new File(path)
-    if (!dir.isDirectory) dir.mkdirs()
-
-    val file: File = new File(path, name)
-    if (!file.exists) file.createNewFile();
-
-    new URL(url) #> file !!
+  def exe(driver: WebDriver): HtmlPage = {
+    new HtmlPage(new URL(url).getContent.toString, url, alias = this.alias)
   }
 }
-
-//case class Screenshot(val name: String = null) extends Extraction //screenshot feature is disabled
-//case class GetText(val selector: String) extends Dump
-//case class GetLink(val selector: String) extends Dump
-//case class GetSrc(val selector: String) extends Dump
-//case class GetAttr(val selector: String, val attr: String) extends Dump

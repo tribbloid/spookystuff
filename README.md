@@ -1,7 +1,7 @@
 spookystuff
 ===========
 
-(OR: how to turn 21st century into an open spreadsheet) is a scalable web scrapping/data collection/acceptance QA environment based on Apache Spark. The goal is to allow the Web being queried as if it is a database.
+(OR: how to turn 21st century into an open spreadsheet) is a scalable and distributed web scrapping/data collection/acceptance QA environment based on Apache Spark. The goal is to allow the Web being queried and ETL'ed as if it is a database.
 
 Dependencies
 -----------
@@ -12,7 +12,7 @@ Dependencies
 - Apache Tika (only for non-html parsing)
 - (build tool) Apache Maven
     - Scala/ScalaTest plugins
-- Current implementation is inspired by Spark SQL and Mahout Sparkbinding.
+- Current implementation is influenced by Spark SQL and Mahout Sparkbinding.
 
 A one minute showcase
 -----------
@@ -20,7 +20,7 @@ A one minute showcase
 - Goal: Find highest-ranking professionals in you area on LinkedIn. whose full name is either 'Sanjay Gupta', 'Arun Gupta' or 'Hardik Gupta', print their respective full name, title and list of skill
 - Query:
 ```
-(sc.parallelize(Seq("Sanjay Gupta", "Arun", "Hardik"))
+(sc.parallelize(Seq("Sanjay", "Arun", "Hardik"))
     +> Visit("https://www.linkedin.com/")
     +> TextInput("input#first", "#{_}")
     +> TextInput("input#last", "Gupta")
@@ -33,7 +33,7 @@ A one minute showcase
         )
     ).collect().foreach(println(_))
 ```
-- Result(truncated, query finished in 1 minutes, test on wifi with ~400k/s download speed):
+- Result (truncated, query finished in 1 minutes, test on wifi with ~400k/s download speed):
 ```
 (Abhishek Arun Gupta,President & Senior IT Expert / Joint Chairman - IT Cell at Agra User Group / National Chamber of Industries & Commerce,ArrayBuffer(Requirements Analysis, SQL, Business Intelligence, Unix, Testing, President & Senior IT Expert, Joint Chairman - IT Cell, Quality Assurance (QA) & Automation Systems, Senior Automation Testing Expert, Senior Executive, Industry Interface))
 (hardik gupta,--,ArrayBuffer())
@@ -70,7 +70,7 @@ A one minute showcase
         )
     ).collect().foreach(println(_))
 ```
-- Result(truncated, query finished in 10 minutes, test on wifi with ~400k/s download speed):
+- Result (truncated, query finished in 10 minutes, test on wifi with ~400k/s download speed):
 ```
 (A210S,A210S Washer-Top Loading ,14789,01-Base\pump\motor Parts for Maytag A210S,Y015627,Part Number Y015627 (AP4277222) replaces 014526, 015627, 1239310, 15627, 24001310, 3400300, 3400502, 488266, 488293, 488398, 488577, 488594, 866821, 9415810, AH2191209, EA2191209, PS2191209, Y014526.)
 (A210S,A210S Washer-Top Loading ,14789,01-Base\pump\motor Parts for Maytag A210S,202718,Part Number 202718 (AP4023504) replaces 2-11946, 2-2718, 211946, 22001442, 434716, AH2016844, EA2016844, PS2016844.)
@@ -110,7 +110,7 @@ So far spookystuff only supports LINQ style query language, APIs are not finaliz
 
 I'm trying to make the query language similar to the language-integrated query of Spark SQL. However, as organizations of websites are fundamentally different from relational databases, it may gradually evolve to attain maximum succinctness.
 
-Deployment
+Cluster Deployment
 -----------
 [This is a stub] Theoretically all Spark application that runs locally can be submitted to cluster by only changing its masterURL parameter in SparkConf. However I haven't test it myself. Some part of the code may not be optimized for cluster deployment.
 

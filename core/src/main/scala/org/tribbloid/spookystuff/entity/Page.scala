@@ -2,12 +2,15 @@ package org.tribbloid.spookystuff.entity
 
 import java.util.Date
 
+import org.apache.hadoop.conf.Configuration
+import org.apache.hadoop.fs.Path
+import org.apache.spark.deploy.SparkHadoopUtil
+import org.apache.spark.SparkException
 import org.jsoup.Jsoup
 import org.tribbloid.spookystuff.Conf
 import scala.collection.JavaConversions._
 import scala.collection.mutable.ArrayBuffer
-import java.text.DateFormat
-import java.io.{FileWriter, BufferedWriter, File, Serializable}
+import java.io.Serializable
 import java.util
 import org.jsoup.nodes.Element
 ;
@@ -20,34 +23,35 @@ import org.jsoup.nodes.Element
 //keep small, will be passed around by Spark
 
 //TODO: right now everything delegated to HtmlPage, more will come (e.g. PdfPage, SliceView, ImagePage, JsonPage)
-abstract class Page extends Serializable {
-  def exist(selector: String): Boolean
+abstract class Page(
+                     val resolvedUrl: String,
 
-  def attrFirst(selector: String, attr: String): String
+                     val alias: String = null,
 
-  def attrAll(selector: String, attr: String): Seq[String]
+                     val backtrace: util.List[Interaction] = new util.ArrayList[Interaction], //also the uid
+                     val context: util.Map[String, Serializable] = null, //I know it should be a var, but better save than sorry
+                     val timestamp: Date = new Date,
 
-  def linkFirst(selector: String, absolute: Boolean = true): String
+                     val filePath: String = null //can save anything to disk
+                     ) extends Serializable with Cloneable {
 
-  def linkAll(selector: String, absolute: Boolean = true): Seq[String]
-
-  def textFirst(selector: String): String
-
-  def textAll(selector: String): Seq[String]
+  def isExpired = (new Date().getTime - timestamp.getTime > Conf.pageExpireAfter*1000)
 }
 
 //I'm always using the more familiar Java collection, also for backward compatibility
 class HtmlPage(
-            val resolvedUrl: String,
-            val content: String,
+                resolvedUrl: String,
+                val content: String,
 
-            val alias: String = null,
+                alias: String = null,
 
-            val backtrace: util.List[Interaction] = new util.ArrayList[Interaction], //also the uid
-            val context: util.Map[String, Serializable] = null, //I know it should be a var, but better save than sorry
-            val timestamp: Date = new Date
-            )
-  extends Page {
+                backtrace: util.List[Interaction] = new util.ArrayList[Interaction], //also the uid
+                context: util.Map[String, Serializable] = null, //I know it should be a var, but better save than sorry
+                timestamp: Date = new Date,
+
+                filePath: String = null
+                )
+  extends Page (resolvedUrl, alias, backtrace, context, timestamp, filePath) {
 
   //share context. TODO: too many shallow copy making it dangerous
   //  def this(another: Page) = this (
@@ -93,24 +97,22 @@ class HtmlPage(
     }
   }
 
-  def isExpired = (new Date().getTime - timestamp.getTime > Conf.pageExpireAfter*1000)
-
   def refresh(): HtmlPage = {
     val page = PageBuilder.resolveFinal(this.backtrace: _*).modify(this.alias,this.context)
     return page
   }
 
-  override def exist(selector: String): Boolean = {
+  def elementExist(selector: String): Boolean = {
     !doc.select(selector).isEmpty
   }
 
-  override def attrFirst(selector: String, attr: String): String = {
+  def attrFirst(selector: String, attr: String): String = {
     val element = doc.select(selector).first()
     if (element == null) null
     else element.attr(attr)
   }
 
-  override def attrAll(selector: String, attr: String): Seq[String] = {
+  def attrAll(selector: String, attr: String): Seq[String] = {
     val result = ArrayBuffer[String]()
 
     doc.select(selector).foreach{
@@ -120,23 +122,23 @@ class HtmlPage(
     return result.toSeq
   }
 
-  override def linkFirst(selector: String, absolute: Boolean = true): String = {
+  def linkFirst(selector: String, absolute: Boolean = true): String = {
     if (absolute == true) attrFirst(selector,"abs:href")
     else attrFirst(selector,"href")
   }
 
-  override def linkAll(selector: String, absolute: Boolean = true): Seq[String] = {
+  def linkAll(selector: String, absolute: Boolean = true): Seq[String] = {
     if (absolute == true) attrAll(selector,"abs:href")
     else attrAll(selector,"href")
   }
 
-  override def textFirst(selector: String): String = {
+  def textFirst(selector: String): String = {
     val element = doc.select(selector).first()
     if (element == null) null
     else element.text
   }
 
-  override def textAll(selector: String): Seq[String] = {
+  def textAll(selector: String): Seq[String] = {
     val result = ArrayBuffer[String]()
 
     doc.select(selector).foreach{
@@ -158,25 +160,30 @@ class HtmlPage(
     result
   }
 
-  def save(namePattern: String = this.hashCode().toString, path: String = Conf.savePagePath, usePattern: Boolean = false) {
-    var name = namePattern
-    if (usePattern == true) {
-      name = name.replace("#{time}", DateFormat.getInstance.format(this.timestamp))
-      name = name.replace("#{resolved-url}", this.resolvedUrl)
-    }
+  //this is only for sporadic file saving, will cause congestion if used in a transformation.
+  //If you want to save everything in an RDD, use RDD.save...()!
+  def save(fileName: String = "#{resolved-url}_"+this.hashCode(), dir: String = Conf.savePagePath, hConf: Configuration = SparkHadoopUtil.get.newConfiguration()) {
+    var formattedFileName = Action.formatWithContext(fileName,this.context)
 
     //sanitizing filename can save me a lot of trouble
-    name = name.replaceAll("[:\\\\/*?|<>]+", "_")
+    formattedFileName = formattedFileName.replaceAll("[:\\\\/*?|<>]+", "_")
 
-    val dir: File = new File(path)
-    if (!dir.isDirectory) dir.mkdirs()
+    val path = new Path(dir)
 
-    val file: File = new File(path, name)
-    if (!file.exists) file.createNewFile();
+    //TODO: slow to check if the dir exist
+    val fs = path.getFileSystem(hConf)
+    if (!fs.isDirectory(path)) {
+      if (!fs.mkdirs(path)) {
+        throw new SparkException("Failed to create save path " + path) //TODO: Still SparkException?
+      }
+    }
 
-    val fw = new FileWriter(file.getAbsoluteFile());
-    val bw = new BufferedWriter(fw);
-    bw.write(content);
-    bw.close();
+    val fullPath = new Path(path, formattedFileName)
+
+//    val bufferSize = sc.getConf.getInt("spark.buffer.size", 65536)
+
+    val fileOutputStream = fs.create(fullPath, true)
+
+    fileOutputStream.writeUTF(this.content)
   }
 }

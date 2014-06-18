@@ -93,6 +93,6 @@ class TestPageBuilder extends FunSuite {
     assert(resultsList.size === 1)
     val page1 = resultsList(0)
 
-    page1.save("LinkedIn.html")
+    page1.save()
   }
 }

@@ -72,8 +72,7 @@ private class PageBuilder(val driver: RemoteWebDriver = new PhantomJSDriver(Conf
     catch {
       case e: Throwable => {
         val page = Snapshot().exe(this.driver)
-        val filename = page.hashCode().toString+".error"
-        page.save(filename)
+        page.save(dir = Conf.errorPageDumpDir)
         //        TODO: logError("Error Page saved as "+filename)
         throw e //try to delegate all failover to Spark, but this may change in the future
       }
@@ -88,6 +87,12 @@ private class PageBuilder(val driver: RemoteWebDriver = new PhantomJSDriver(Conf
 
   def exe(action: Dump) {
     action.exe(this.driver)
+  }
+
+  //TODO: unfortunately no timer for it.
+  def exe(action: Sessionless): HtmlPage = {
+    val page = action.exe(this.driver)
+    return page
   }
 
   //remember to call this! don't want thousands of phantomJS browsers opened

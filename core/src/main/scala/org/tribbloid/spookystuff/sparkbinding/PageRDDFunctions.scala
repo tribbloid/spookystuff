@@ -20,17 +20,8 @@ class PageRDDFunctions(val self: RDD[HtmlPage]) {
 
   def where(f: HtmlPage => Boolean) = self.filter(f)
 
-  //TODO: just a map, this is the most abominable interface so far, will gradually evolve to resemble Spark SQL's select
-  def select[T: ClassTag](f: HtmlPage => T): RDD[T] = self.map[T] { f(_) }
-
-  def selectAll[T: ClassTag](f: HtmlPage => Seq[T]): RDD[T] = self.flatMap[T]( f(_) )
-
-  def select(keyAndF: (String, HtmlPage => Serializable)*): RDD[util.Map[String, Serializable]] = self.map {
-
-    page =>  page.asMap(keyAndF: _*)
-  }
-
-  def addToContext(keyAndF: (String, HtmlPage => Serializable)*): RDD[HtmlPage] = self.map {
+  //TODO: this is the most abominable interface so far, will gradually evolve to resemble Spark SQL's select
+  def selectInto(keyAndF: (String, HtmlPage => Serializable)*): RDD[HtmlPage] = self.map {
 
     page => {
       val map = page.asMap(keyAndF: _*)
@@ -42,7 +33,7 @@ class PageRDDFunctions(val self: RDD[HtmlPage]) {
     }
   }
 
-  def replaceIntoContext(keyAndF: (String, HtmlPage => Serializable)*): RDD[HtmlPage] = self.map {
+  def select(keyAndF: (String, HtmlPage => Serializable)*): RDD[HtmlPage] = self.map {
 
     page => {
       val map = page.asMap(keyAndF: _*)
@@ -54,7 +45,8 @@ class PageRDDFunctions(val self: RDD[HtmlPage]) {
 
   //if the page doesn't contain the selector it will throw an exception
   //pass all context to ActionPlans
-  def linkFirst(selector: String): RDD[ActionPlan] = self.map{
+  //from now on all transformations that generates an RDD[ActionPlan] will use operator
+  def linkFirst (selector: String): RDD[ActionPlan] = self.map{
     page => {
 
       val context = page.context

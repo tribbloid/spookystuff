@@ -27,7 +27,7 @@ object AppliancePartsPros {
         TextInput("input.ac-input","#{_}") +>
         Click("input[value=\"Search\"]") +> //TODO: can't use Submit, why?
         Delay(10) ! //TODO: change to DelayFor to save time
-      ).addToContext(
+      ).selectInto(
         "model" -> { _.textFirst("div.dgrm-lst div.header h2") },
         "time1" -> { _.backtrace.last.timeline.asInstanceOf[Serializable] } //ugly tail
       )
@@ -36,7 +36,7 @@ object AppliancePartsPros {
 //    val search1 = searchPageRDD.first()
 
     val diagramPageRDD = searchPageRDD.fork("div.inner li a:has(img)")
-      .addToContext("schematic" -> {_.textFirst("div#ctl00_cphMain_up1 h1 span")})
+      .selectInto("schematic" -> {_.textFirst("div#ctl00_cphMain_up1 h1 span")})
 
 //    diagramPageRDD.persist()
 //    val diagram1 = diagramPageRDD.first()
@@ -46,7 +46,7 @@ object AppliancePartsPros {
 //    partPageRDD.persist()
 //    val part1 = partPageRDD.first()
 
-    val tuplesRDD = partPageRDD.select(
+    val tuplesRDD = partPageRDD.selectInto(
       page => (
         page.context.get("_"),
         page.context.get("time1"),

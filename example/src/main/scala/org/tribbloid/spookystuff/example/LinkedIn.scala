@@ -27,7 +27,7 @@ object LinkedIn {
 
     val pageRDD = actionsRDD !
 
-    val valueRDD = pageRDD.select(
+    val valueRDD = pageRDD.selectInto(
       "link" -> {
         page: HtmlPage => page.linkAll("ol#result-set h2 a").asInstanceOf[Serializable] //TODO: How to avoid this tail?
       }
