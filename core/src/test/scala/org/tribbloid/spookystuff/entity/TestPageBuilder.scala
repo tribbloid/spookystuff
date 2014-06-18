@@ -18,8 +18,8 @@ class TestPageBuilder extends FunSuite {
     val page = builder.exe(Snapshot())
     //    val url = builder.getUrl
 
-    assert(page.content.startsWith("<!DOCTYPE html>"))
-    assert(page.content.contains("<title>Google</title>"))
+    assert(page.contentStr.startsWith("<!DOCTYPE html>"))
+    assert(page.contentStr.contains("<title>Google</title>"))
 
     assert(page.resolvedUrl.startsWith("http://www.google.ca/?gfe_rd=cr&ei="))
     //    assert(url === "http://www.google.com")
@@ -34,7 +34,7 @@ class TestPageBuilder extends FunSuite {
     val page = builder.exe(Snapshot())
     //    val url = builder.getUrl
 
-    assert(page.content.contains("<title>Adam Muise profiles | LinkedIn</title>"))
+    assert(page.contentStr.contains("<title>Adam Muise profiles | LinkedIn</title>"))
     assert(page.resolvedUrl === "https://www.linkedin.com/pub/dir/?first=Adam&last=Muise")
     //    assert(url === "https://www.linkedin.com/ Input(input#first,Adam) Input(input#last,Muise) Submit(input[name=\"search\"])")
   }
@@ -57,13 +57,13 @@ class TestPageBuilder extends FunSuite {
 
     val id1 = Seq[Interaction](Visit("https://www.linkedin.com/"), DelayFor("input[name=\"search\"]",40))
     assert(res1.backtrace.toIndexedSeq.toSeq === id1)
-    assert(res1.content.contains("<title>World's Largest Professional Network | LinkedIn</title>"))
+    assert(res1.contentStr.contains("<title>World's Largest Professional Network | LinkedIn</title>"))
     assert(res1.resolvedUrl === "https://www.linkedin.com/")
     assert(res1.alias === "A")
 
     val id2 = Seq[Interaction](Visit("https://www.linkedin.com/"), DelayFor("input[name=\"search\"]",40), TextInput("input#first","Adam"),TextInput("input#last","Muise"),Submit("input[name=\"search\"]"))
     assert(res2.backtrace.toIndexedSeq.toSeq === id2)
-    assert(res2.content.contains("<title>Adam Muise profiles | LinkedIn</title>"))
+    assert(res2.contentStr.contains("<title>Adam Muise profiles | LinkedIn</title>"))
     assert(res2.resolvedUrl === "https://www.linkedin.com/pub/dir/?first=Adam&last=Muise")
     assert(res2.alias === "B")
   }
@@ -79,7 +79,7 @@ class TestPageBuilder extends FunSuite {
 
     val id = Seq[Interaction](Visit("https://www.linkedin.com/"), DelayFor("input[name=\"search\"]",40), TextInput("input#first","Adam"),TextInput("input#last","Muise"),Submit("input[name=\"search\"]"))
     assert(result.backtrace.toIndexedSeq.toSeq === id)
-    assert(result.content.contains("<title>Adam Muise profiles | LinkedIn</title>"))
+    assert(result.contentStr.contains("<title>Adam Muise profiles | LinkedIn</title>"))
     assert(result.resolvedUrl === "https://www.linkedin.com/pub/dir/?first=Adam&last=Muise")
   }
 
@@ -93,6 +93,44 @@ class TestPageBuilder extends FunSuite {
     assert(resultsList.size === 1)
     val page1 = resultsList(0)
 
-    page1.save()
+    page1.save()()
   }
+
+  test("wget html and save", pageTag) {
+    val results = PageBuilder.resolve(
+      Wget("https://www.google.hk")
+    )
+
+    val resultsList = results.toArray
+    assert(resultsList.size === 1)
+    val page1 = resultsList(0)
+
+    page1.save()()
+    assert(page1.textFirst("title") === "Google")
+  }
+
+  test("wget image and save", pageTag) {
+    val results = PageBuilder.resolve(
+      Wget("http://col.stb01.s-msn.com/i/74/A177116AA6132728F299DCF588F794.gif")
+    )
+
+    val resultsList = results.toArray
+    assert(resultsList.size === 1)
+    val page1 = resultsList(0)
+
+    page1.save()()
+  }
+
+  test("wget pdf and save", pageTag) {
+    val results = PageBuilder.resolve(
+      Wget("http://www.cs.toronto.edu/~ranzato/publications/DistBeliefNIPS2012_withAppendix.pdf")
+    )
+
+    val resultsList = results.toArray
+    assert(resultsList.size === 1)
+    val page1 = resultsList(0)
+
+    page1.save()()
+  }
+
 }

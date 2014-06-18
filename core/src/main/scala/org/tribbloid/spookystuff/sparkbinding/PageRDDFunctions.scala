@@ -1,7 +1,7 @@
 package org.tribbloid.spookystuff.sparkbinding
 
 import org.apache.spark.rdd.RDD
-import org.tribbloid.spookystuff.entity.{Visit, Snapshot, ActionPlan, HtmlPage}
+import org.tribbloid.spookystuff.entity.{Visit, Snapshot, ActionPlan, Page}
 import java.io.Serializable
 import scala.reflect.ClassTag
 
@@ -10,18 +10,18 @@ import java.util
 //this is an implicit RDD view of Page
 //all intermediate results after a transformation can be persisted to memory or disk, thus reusable.
 //mimic sql keywords
-class PageRDDFunctions(val self: RDD[HtmlPage]) {
+class PageRDDFunctions(val self: RDD[Page]) {
 
-  def as(alias: String): RDD[HtmlPage] = self.map{ _.modify(alias = alias) }
+  def as(alias: String): RDD[Page] = self.map{ _.modify(alias = alias) }
 
-  def from(alias: String): RDD[HtmlPage] = self.filter{ _.alias == alias }
+  def from(alias: String): RDD[Page] = self.filter{ _.alias == alias }
 
-  def clearContext(): RDD[HtmlPage] = self.map{ _.modify(context = null) }
+  def clearContext(): RDD[Page] = self.map{ _.modify(context = null) }
 
-  def where(f: HtmlPage => Boolean) = self.filter(f)
+  def where(f: Page => Boolean) = self.filter(f)
 
   //TODO: this is the most abominable interface so far, will gradually evolve to resemble Spark SQL's select
-  def selectInto(keyAndF: (String, HtmlPage => Serializable)*): RDD[HtmlPage] = self.map {
+  def selectInto(keyAndF: (String, Page => Serializable)*): RDD[Page] = self.map {
 
     page => {
       val map = page.asMap(keyAndF: _*)
@@ -33,7 +33,7 @@ class PageRDDFunctions(val self: RDD[HtmlPage]) {
     }
   }
 
-  def select(keyAndF: (String, HtmlPage => Serializable)*): RDD[HtmlPage] = self.map {
+  def select(keyAndF: (String, Page => Serializable)*): RDD[Page] = self.map {
 
     page => {
       val map = page.asMap(keyAndF: _*)
@@ -41,7 +41,7 @@ class PageRDDFunctions(val self: RDD[HtmlPage]) {
     }
   }
 
-  def slice(selector: String): RDD[HtmlPage] = self.flatMap(_.slice(selector))
+  def slice(selector: String): RDD[Page] = self.flatMap(_.slice(selector))
 
   //if the page doesn't contain the selector it will throw an exception
   //pass all context to ActionPlans
@@ -65,9 +65,9 @@ class PageRDDFunctions(val self: RDD[HtmlPage]) {
     }
   }
 
-  def crawlFirst(selector: String): RDD[HtmlPage] = new ActionPlanRDDFunctions(this.linkFirst(selector)) >!<
+  def crawlFirst(selector: String): RDD[Page] = new ActionPlanRDDFunctions(this.linkFirst(selector)) >!<
 
-  def fork(selector: String): RDD[HtmlPage] = new ActionPlanRDDFunctions(this.linkAll(selector)) >!<
+  def fork(selector: String): RDD[Page] = new ActionPlanRDDFunctions(this.linkAll(selector)) >!<
 
 //  def crawlFirstIf(selector: String)(condition: HtmlPage => Boolean): RDD[HtmlPage] = self.map{
 //    page => {
@@ -93,7 +93,7 @@ class PageRDDFunctions(val self: RDD[HtmlPage]) {
   //or we crawl the disambiguation part, merge with old ActionPlans and >!<+ (lookup all plans from old pages) to get the new pages?
   //I prefer the first one, potentially produce smaller footage.
   //TODO: there is no repartitioning in the process, may cause unbalanced execution
-  def crawlFirstIf(selector: String)(f: HtmlPage => Boolean): RDD[HtmlPage] = {
+  def crawlFirstIf(selector: String)(f: Page => Boolean): RDD[Page] = {
     val groupedPageRDD = self.map{ page => (f(page), page) }
     val falsePageRDD = groupedPageRDD.filter(_._1 == false).map(_._2)
     val truePageRDD = groupedPageRDD.filter(_._1 == true).map(_._2)
@@ -102,7 +102,7 @@ class PageRDDFunctions(val self: RDD[HtmlPage]) {
   }
 
   //really complex but what option do I have
-  def forkIf(selector: String)(f: HtmlPage => Boolean): RDD[HtmlPage] = {
+  def forkIf(selector: String)(f: Page => Boolean): RDD[Page] = {
     val groupedPageRDD = self.map{ page => (f(page), page) }
     val falsePageRDD = groupedPageRDD.filter(_._1 == false).map(_._2)
     val truePageRDD = groupedPageRDD.filter(_._1 == true).map(_._2)

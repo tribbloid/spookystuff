@@ -12,21 +12,20 @@ import org.openqa.selenium.remote.RemoteWebDriver
 object PageBuilder {
 
   //shorthand for resolving the final stage after some interactions
-  def resolveFinal(interactions: Interaction*): HtmlPage = {
-    var result: HtmlPage = null
+  def resolveFinal(interactions: Interaction*): Page = {
+    var result: Page = null
     val allActions = interactions.seq.:+(Snapshot())
     PageBuilder.resolve(allActions: _*).foreach{
       page => {
         result = page
-        //TODO: break;
       }
     }
     result
   }
 
-  def resolve(actions: Action*): Seq[HtmlPage] = {
+  def resolve(actions: Action*): Seq[Page] = {
 
-    val results = ArrayBuffer[HtmlPage]()
+    val results = ArrayBuffer[Page]()
 
     val builder = new PageBuilder()
 
@@ -41,6 +40,9 @@ object PageBuilder {
           }
           case a: Dump => {
             builder.exe(a)
+          }
+          case a: Sessionless => {
+            results += builder.exe(a)
           }
           case _ => throw new UnsupportedOperationException
         }
@@ -72,14 +74,14 @@ private class PageBuilder(val driver: RemoteWebDriver = new PhantomJSDriver(Conf
     catch {
       case e: Throwable => {
         val page = Snapshot().exe(this.driver)
-        page.save(dir = Conf.errorPageDumpDir)
+        val errorFileName = page.save(dir = Conf.errorPageDumpDir)()
         //        TODO: logError("Error Page saved as "+filename)
         throw e //try to delegate all failover to Spark, but this may change in the future
       }
     }
   }
 
-  def exe(action: Extraction): HtmlPage = {
+  def exe(action: Extraction): Page = {
     val page = action.exe(this.driver)
     page.backtrace.addAll(this.backtrace)
     return page
@@ -90,7 +92,7 @@ private class PageBuilder(val driver: RemoteWebDriver = new PhantomJSDriver(Conf
   }
 
   //TODO: unfortunately no timer for it.
-  def exe(action: Sessionless): HtmlPage = {
+  def exe(action: Sessionless): Page = {
     val page = action.exe(this.driver)
     return page
   }

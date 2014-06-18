@@ -1,17 +1,20 @@
 package org.tribbloid.spookystuff.entity
 
+import java.nio.charset.Charset
 import java.text.DateFormat
 import java.util.Date
 
+import org.apache.commons.io.IOUtils
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.Path
+import org.apache.http.entity.ContentType
 import org.apache.spark.deploy.SparkHadoopUtil
 import org.apache.spark.SparkException
 import org.jsoup.Jsoup
 import org.tribbloid.spookystuff.Conf
 import scala.collection.JavaConversions._
 import scala.collection.mutable.ArrayBuffer
-import java.io.{OutputStreamWriter, BufferedWriter, Serializable}
+import java.io.{OutputStreamWriter, Serializable}
 import java.util
 import org.jsoup.nodes.Element
 ;
@@ -22,37 +25,21 @@ import org.jsoup.nodes.Element
 
 //immutable! we don't want to lose old pages
 //keep small, will be passed around by Spark
-
-//TODO: right now everything delegated to HtmlPage, more will come (e.g. PdfPage, SliceView, ImagePage, JsonPage)
-abstract class Page(
-                     val resolvedUrl: String,
-
-                     val alias: String = null,
-
-                     val backtrace: util.List[Interaction] = new util.ArrayList[Interaction], //also the uid
-                     val context: util.Map[String, Serializable] = null, //I know it should be a var, but better save than sorry
-                     val timestamp: Date = new Date,
-
-                     val filePath: String = null //can save anything to disk
-                     ) extends Serializable with Cloneable {
-
-  def isExpired = (new Date().getTime - timestamp.getTime > Conf.pageExpireAfter*1000)
-}
-
 //I'm always using the more familiar Java collection, also for backward compatibility
-class HtmlPage(
-                resolvedUrl: String,
-                val content: String,
+class Page(
+                val resolvedUrl: String,
+                val content: Array[Byte],
+                val contentType: String,
 
-                alias: String = null,
+                val alias: String = null,
 
-                backtrace: util.List[Interaction] = new util.ArrayList[Interaction], //also the uid
-                context: util.Map[String, Serializable] = null, //I know it should be a var, but better save than sorry
-                timestamp: Date = new Date,
+                val backtrace: util.List[Interaction] = new util.ArrayList[Interaction], //also the uid
+                val context: util.Map[String, Serializable] = null, //I know it should be a var, but better save than sorry
+                val timestamp: Date = new Date,
 
-                filePath: String = null
+                val filePath: String = null
                 )
-  extends Page (resolvedUrl, alias, backtrace, context, timestamp, filePath) {
+  extends Serializable with Cloneable{
 
   //share context. TODO: too many shallow copy making it dangerous
   //  def this(another: Page) = this (
@@ -60,20 +47,31 @@ class HtmlPage(
   //      another.datetime,
   //      another.context)
 
-  @transient lazy val doc: Element = Jsoup.parse(content, resolvedUrl) //not serialize, parsing is faster
+  @transient lazy val parsedContentType: ContentType = ContentType.parse(this.contentType)
+  @transient lazy val contentStr: String = new String(this.content,this.parsedContentType.getCharset)
+  @transient lazy val doc: Element = if (parsedContentType.getMimeType.contains("html")){
+    Jsoup.parse(this.contentStr, resolvedUrl) //not serialize, parsing is faster
+  }
+  else{
+    null
+  }
 
-  override def clone(): HtmlPage = new HtmlPage(
+  def isExpired = (new Date().getTime - timestamp.getTime > Conf.pageExpireAfter*1000)
+
+  override def clone(): Page = new Page(
     this.resolvedUrl,
     this.content,
+    this.contentType,
     this.alias,
     this.backtrace,
     this.context,
     this.timestamp
   )
 
-  def modify(alias: String = this.alias, context: util.Map[String, Serializable] = this.context): HtmlPage = new HtmlPage(
+  def modify(alias: String = this.alias, context: util.Map[String, Serializable] = this.context): Page = new Page(
     this.resolvedUrl,
     this.content,
+    this.contentType,
     alias,
     this.backtrace,
     context,
@@ -82,13 +80,14 @@ class HtmlPage(
 
   //only slice contents inside the container, other parts are discarded
   //this will generate doc from scratch but otherwise induces heavy load on serialization
-  def slice(selector: String): Seq[HtmlPage] = {
+  def slice(selector: String): Seq[Page] = {
     val elements = doc.select(selector)
     return elements.zipWithIndex.map {
       elementWithIndex =>{
-        new HtmlPage (
+        new Page (
           this.resolvedUrl + "#" + elementWithIndex._2,
-          elementWithIndex._1.html(),
+          elementWithIndex._1.html().getBytes("UTF8"),
+          this.contentType,
           null,
           this.backtrace,
           this.context.clone().asInstanceOf,
@@ -98,7 +97,7 @@ class HtmlPage(
     }
   }
 
-  def refresh(): HtmlPage = {
+  def refresh(): Page = {
     val page = PageBuilder.resolveFinal(this.backtrace: _*).modify(this.alias,this.context)
     return page
   }
@@ -149,7 +148,7 @@ class HtmlPage(
     return result.toSeq
   }
 
-  def asMap(keyAndF: (String, HtmlPage => Serializable)*): util.Map[String, Serializable] = {
+  def asMap(keyAndF: (String, Page => Serializable)*): util.Map[String, Serializable] = {
     val result: util.Map[String, Serializable] = new util.HashMap()
 
     keyAndF.foreach {
@@ -161,9 +160,10 @@ class HtmlPage(
     result
   }
 
-  //this is only for sporadic file saving, will cause congestion if used in a transformation.
-  //If you want to save everything in an RDD, use RDD.save...()!
-  def save(fileName: String = "#{resolved-url}_"+this.hashCode(), dir: String = Conf.savePagePath, hConf: Configuration = SparkHadoopUtil.get.newConfiguration()) {
+  //this is only for sporadic file saving, will cause congestion if used in a full-scale transformation.
+  //If you want to save everything in an RDD, use actions like RDD.save...()
+  //also remember this will lose information as charset encoding will be different
+  def save(fileName: String = "#{resolved-url}_"+this.hashCode(), dir: String = Conf.savePagePath, charset: String = null)(hConf: Configuration = SparkHadoopUtil.get.newConfiguration()): String = {
     var formattedFileName = Action.formatWithContext(fileName,this.context)
 
     formattedFileName = formattedFileName.replace("#{resolved-url}", this.resolvedUrl)
@@ -189,7 +189,10 @@ class HtmlPage(
     val fileOutputStream = fs.create(fullPath, false) //don't overwrite important file
 
 //    val writer = new BufferedWriter(new OutputStreamWriter(fileOutputStream,"UTF-8")) //why using two buffers
-    val writer = new OutputStreamWriter(fileOutputStream,"UTF8")
-    writer.write(this.content)
+
+    IOUtils.write(content,fileOutputStream)
+    fileOutputStream.close()
+
+    return fullPath.getName
   }
 }

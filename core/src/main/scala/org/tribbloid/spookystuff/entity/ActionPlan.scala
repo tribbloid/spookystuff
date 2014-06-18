@@ -38,13 +38,13 @@ class ActionPlan(val context: util.Map[String, Serializable] = null) extends Ser
   }.toSeq
 
   //only execute interactions and extract the final stage
-  def !(): HtmlPage = {
+  def !(): Page = {
     val page = PageBuilder.resolveFinal(this.interactions: _*).modify(context = this.context)
     return page
   }
 
   //execute
-  def !!!(): Seq[HtmlPage] = {
+  def !!!(): Seq[Page] = {
     val pages = PageBuilder.resolve(this.actions: _*)
     if (this.context !=null) {
       //has to use deep copy, one to many mapping and context may be modified later

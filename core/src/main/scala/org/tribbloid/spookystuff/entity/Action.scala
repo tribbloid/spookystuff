@@ -1,14 +1,13 @@
 package org.tribbloid.spookystuff.entity
 
+import org.apache.commons.io.IOUtils
 import org.tribbloid.spookystuff.Conf
 
-import sys.process._
 import java.util
 import org.openqa.selenium.{By, WebDriver}
 import org.openqa.selenium.support.ui
-import java.io.File
 import java.io.Serializable
-import java.net.URL
+import java.net.{URLConnection, URL}
 import scala.collection.JavaConversions._
 
 /**
@@ -59,7 +58,7 @@ abstract class Interaction extends Action {
 abstract class Extraction() extends Action {
   var alias: String = null
 
-  def exe(driver: WebDriver): HtmlPage
+  def exe(driver: WebDriver): Page
 
   def as(alias: String): this.type = { //TODO: better way to return type?
     this.alias = alias
@@ -76,7 +75,7 @@ abstract class Dump extends Action {
 abstract class Sessionless() extends Action {
   var alias: String = null
 
-  def exe(driver: WebDriver): HtmlPage
+  def exe(driver: WebDriver): Page
 
   def as(alias: String): this.type = { //TODO: better way to return type?
     this.alias = alias
@@ -145,14 +144,23 @@ case class Select(val selector: String, val text: String) extends Interaction{
 
 case class Snapshot() extends Extraction{
   // all other fields are empty
-  override def exe(driver: WebDriver): HtmlPage = {
-    new HtmlPage(driver.getCurrentUrl, driver.getPageSource, alias = this.alias)
+  override def exe(driver: WebDriver): Page = {
+    new Page(driver.getCurrentUrl, driver.getPageSource.getBytes("UTF8"), contentType = "text/html; charset=UTF-8", alias = this.alias)
   }
 }
 
 case class Wget(val url: String) extends Sessionless{
 
-  def exe(driver: WebDriver): HtmlPage = {
-    new HtmlPage(new URL(url).getContent.toString, url, alias = this.alias)
+  def exe(driver: WebDriver): Page = {
+    val uc: URLConnection =  new URL(url).openConnection()
+
+    uc.connect()
+    val is = uc.getInputStream()
+
+    val content = IOUtils.toByteArray(is)
+
+    is.close()
+
+    new Page(url, content, contentType = uc.getContentType, alias = this.alias)
   }
 }

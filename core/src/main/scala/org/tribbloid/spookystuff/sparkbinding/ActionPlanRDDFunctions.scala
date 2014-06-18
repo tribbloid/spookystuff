@@ -1,7 +1,7 @@
 package org.tribbloid.spookystuff.sparkbinding
 
 import org.apache.spark.rdd.RDD
-import org.tribbloid.spookystuff.entity.{PageBuilder, HtmlPage, ActionPlan, Action}
+import org.tribbloid.spookystuff.entity.{PageBuilder, Page, ActionPlan, Action}
 import scala.collection.mutable.ArrayBuffer
 import org.apache.spark.SparkContext._
 import scala.collection.JavaConversions._
@@ -53,12 +53,12 @@ class ActionPlanRDDFunctions(val self: RDD[ActionPlan]) {
   }
 
   //  //execute
-  def !!!(): RDD[HtmlPage] = self.flatMap {
+  def !!!(): RDD[Page] = self.flatMap {
     _ !!!
   }
 
   //  //only execute interactions and extract the final stage
-  def !(): RDD[HtmlPage] = self.map {
+  def !(): RDD[Page] = self.map {
     _ !
   }
 
@@ -67,7 +67,7 @@ class ActionPlanRDDFunctions(val self: RDD[ActionPlan]) {
   //be careful this step is complex and may take longer than plain execution if unoptimized
   //there is no repartitioning in the process, may cause unbalanced execution, but apparently groupByKey will do it automatically
   //TODO: this definitely need some logging to let us know how many actual resolves.
-  def >!!!<(): RDD[HtmlPage] = {
+  def >!!!<(): RDD[Page] = {
     val squashedPlanRDD = self.map{ ap => (ap.actions, ap.context) }.groupByKey()
 
     val squashedPageRDD = squashedPlanRDD.flatMap { tuple => PageBuilder.resolve(tuple._1: _*).map{ (_, tuple._2) } }
@@ -79,7 +79,7 @@ class ActionPlanRDDFunctions(val self: RDD[ActionPlan]) {
     }
   }
 
-  def >!<(): RDD[HtmlPage] = {
+  def >!<(): RDD[Page] = {
     val squashedPlanRDD = self.map{ ap => (ap.interactions, ap.context) }.groupByKey()
 
     val squashedPageRDD = squashedPlanRDD.map { tuple => ( PageBuilder.resolveFinal(tuple._1: _*), tuple._2) }
