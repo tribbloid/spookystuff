@@ -1,5 +1,6 @@
 package org.tribbloid.spookystuff.entity
 
+import java.text.DateFormat
 import java.util.Date
 
 import org.apache.hadoop.conf.Configuration
@@ -10,7 +11,7 @@ import org.jsoup.Jsoup
 import org.tribbloid.spookystuff.Conf
 import scala.collection.JavaConversions._
 import scala.collection.mutable.ArrayBuffer
-import java.io.Serializable
+import java.io.{OutputStreamWriter, BufferedWriter, Serializable}
 import java.util
 import org.jsoup.nodes.Element
 ;
@@ -165,6 +166,9 @@ class HtmlPage(
   def save(fileName: String = "#{resolved-url}_"+this.hashCode(), dir: String = Conf.savePagePath, hConf: Configuration = SparkHadoopUtil.get.newConfiguration()) {
     var formattedFileName = Action.formatWithContext(fileName,this.context)
 
+    formattedFileName = formattedFileName.replace("#{resolved-url}", this.resolvedUrl)
+    formattedFileName = formattedFileName.replace("#{timestamp}", DateFormat.getInstance.format(this.timestamp))
+
     //sanitizing filename can save me a lot of trouble
     formattedFileName = formattedFileName.replaceAll("[:\\\\/*?|<>]+", "_")
 
@@ -182,8 +186,10 @@ class HtmlPage(
 
 //    val bufferSize = sc.getConf.getInt("spark.buffer.size", 65536)
 
-    val fileOutputStream = fs.create(fullPath, true)
+    val fileOutputStream = fs.create(fullPath, false) //don't overwrite important file
 
-    fileOutputStream.writeUTF(this.content)
+//    val writer = new BufferedWriter(new OutputStreamWriter(fileOutputStream,"UTF-8")) //why using two buffers
+    val writer = new OutputStreamWriter(fileOutputStream,"UTF8")
+    writer.write(this.content)
   }
 }

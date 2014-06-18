@@ -1,5 +1,10 @@
 package org.tribbloid.scrappy.spike
 
+import java.io.OutputStreamWriter
+
+import org.apache.hadoop.conf.Configuration
+import org.apache.hadoop.fs.Path
+import org.apache.spark.deploy.SparkHadoopUtil
 import org.openqa.selenium.phantomjs.PhantomJSDriver
 import org.tribbloid.spookystuff.Conf
 
@@ -17,5 +22,18 @@ object TestStoreAllContentAsString {
     val content = driver.getPageSource
 
     println(content)
+
+    val fullPath = new Path("file:///home/peng/spookystuff/test")
+
+    //    val bufferSize = sc.getConf.getInt("spark.buffer.size", 65536)
+
+    val hConf: Configuration = SparkHadoopUtil.get.newConfiguration()
+    val fs = fullPath.getFileSystem(hConf)
+
+    val fileOutputStream = fs.create(fullPath, true)
+
+    //    val writer = new BufferedWriter(new OutputStreamWriter(fileOutputStream,"UTF-8")) //why using two buffers
+    val writer = new OutputStreamWriter(fileOutputStream,"UTF8")
+    writer.write(content)
   }
 }
