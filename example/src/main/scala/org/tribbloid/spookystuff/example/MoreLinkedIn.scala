@@ -38,7 +38,7 @@ object MoreLinkedIn {
 
     val personalPageRDD = pageRDD.fork("ol#result-set h2 a")
 
-    val resultRDD = personalPageRDD.selectInto{ page => (
+    val resultRDD = personalPageRDD.map{ page => (
       page.textFirst("span.full-name"),
       page.textFirst("p.title"),
       page.textAll("div#profile-skills li")

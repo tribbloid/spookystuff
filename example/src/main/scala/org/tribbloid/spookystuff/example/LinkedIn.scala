@@ -23,20 +23,19 @@ object LinkedIn {
       TextInput("input#last","Gupta") +>
       Submit("input[name=\"search\"]")
 
-//    val action1 = actionsRDD.first()
+    //    val action1 = actionsRDD.first()
 
     val pageRDD = actionsRDD !
 
-    val valueRDD = pageRDD.selectInto(
-      "link" -> {
-        page: Page => page.linkAll("ol#result-set h2 a").asInstanceOf[Serializable] //TODO: How to avoid this tail?
-      }
+    val valueRDD = pageRDD.map(
+      page => page.linkAll("ol#result-set h2 a").asInstanceOf[Serializable] //TODO: How to avoid this tail?
+
     )
 
     valueRDD.collect().foreach{
-      map => {
+      value => {
         println("-------------------------------")
-        map.get("link").asInstanceOf[Seq[String]].foreach( println(_) )
+        value.asInstanceOf[Seq[String]].foreach( println(_) )
       }
     }
 

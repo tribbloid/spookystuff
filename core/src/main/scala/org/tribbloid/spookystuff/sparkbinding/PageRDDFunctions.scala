@@ -25,7 +25,7 @@ class PageRDDFunctions(val self: RDD[Page]) {
 
     page => {
       val map = page.asMap(keyAndF: _*)
-      val newPage = page.clone
+      val newPage = page.copy()
 
       newPage.context.putAll(map)
 

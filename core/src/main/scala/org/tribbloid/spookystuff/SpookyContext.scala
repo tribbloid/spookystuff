@@ -5,7 +5,6 @@ import org.apache.spark.rdd.RDD
 import org.tribbloid.spookystuff.entity.{ActionPlan, Page}
 import java.io.Serializable
 import java.util
-import scala.collection.JavaConversions._
 
 /**
  * Created by peng on 12/06/14.
@@ -17,12 +16,12 @@ import scala.collection.JavaConversions._
 object SpookyContext {
   implicit def pageRDDToItsFunctions(rdd: RDD[Page]) = new PageRDDFunctions(rdd)
 
-  implicit def actionChainRDDToItsFunctions(rdd: RDD[ActionPlan]) = new ActionPlanRDDFunctions(rdd)
+  implicit def ActionPlanRDDToItsFunctions(rdd: RDD[ActionPlan]) = new ActionPlanRDDFunctions(rdd)
 
   implicit def stringRDDToItsFunctions(rdd: RDD[String]) = new StringRDDFunctions(rdd)
 
   //these are the entry points of SpookyStuff starting from a common RDD of strings or maps
-  implicit def stringRDDToActionChainRDD(rdd: RDD[String]): RDD[ActionPlan] = rdd.map{
+  implicit def stringRDDToActionPlanRDD(rdd: RDD[String]): RDD[ActionPlan] = rdd.map{
     str => {
       val context = new util.HashMap[String,Serializable]
       context.put("_", str.asInstanceOf[Serializable])
@@ -30,16 +29,23 @@ object SpookyContext {
     }
   }
 
-  implicit def stringRDDToActionChainRDDFunctions(rdd: RDD[String]) = new ActionPlanRDDFunctions(stringRDDToActionChainRDD(rdd))
+  implicit def stringRDDToActionPlanRDDFunctions(rdd: RDD[String]) = new ActionPlanRDDFunctions(stringRDDToActionPlanRDD(rdd))
 
 
 
-  implicit def mapRDDToActionChainRDD(rdd: RDD[Map[String,Serializable]]) = rdd.map{
+  implicit def mapRDDToActionPlanRDD(rdd: RDD[util.Map[String,Serializable]]) = rdd.map{
     map => {
       new ActionPlan(map)
     }
   }
 
-  implicit def mapRDDToActionChainRDDFunctions(rdd: RDD[Map[String,Serializable]]) = new ActionPlanRDDFunctions(mapRDDToActionChainRDD(rdd))
+  implicit def mapRDDToActionPlanRDDFunctions(rdd: RDD[util.Map[String,Serializable]]) = new ActionPlanRDDFunctions(mapRDDToActionPlanRDD(rdd))
 
+  implicit def pageRDDToActionPlanRDD(rdd: RDD[Page]) = rdd.map{
+    page => {
+      new ActionPlan(page.context)
+    }
+  }
+
+  implicit def pageRDDToActionPlanRDDFunctions(rdd: RDD[Page]) = new ActionPlanRDDFunctions(pageRDDToActionPlanRDD(rdd))
 }

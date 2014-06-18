@@ -45,10 +45,10 @@ class ActionPlan(val context: util.Map[String, Serializable] = null) extends Ser
 
   //execute
   def !!!(): Seq[Page] = {
-    val pages = PageBuilder.resolve(this.actions: _*)
+    var pages = PageBuilder.resolve(this.actions: _*)
     if (this.context !=null) {
       //has to use deep copy, one to many mapping and context may be modified later
-      pages.map { _.modify(context = this.context.clone().asInstanceOf) }
+      pages = pages.map { _.modify(context = new util.HashMap(this.context)) }
     }
     return pages
   }

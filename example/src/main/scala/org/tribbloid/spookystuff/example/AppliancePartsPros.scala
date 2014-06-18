@@ -46,7 +46,7 @@ object AppliancePartsPros {
 //    partPageRDD.persist()
 //    val part1 = partPageRDD.first()
 
-    val tuplesRDD = partPageRDD.selectInto(
+    val tuplesRDD = partPageRDD.map(
       page => (
         page.context.get("_"),
         page.context.get("time1"),

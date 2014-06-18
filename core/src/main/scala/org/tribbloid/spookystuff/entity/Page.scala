@@ -6,7 +6,7 @@ import java.util.Date
 
 import org.apache.commons.io.IOUtils
 import org.apache.hadoop.conf.Configuration
-import org.apache.hadoop.fs.Path
+import org.apache.hadoop.fs.{FSDataOutputStream, Path}
 import org.apache.http.entity.ContentType
 import org.apache.spark.deploy.SparkHadoopUtil
 import org.apache.spark.SparkException
@@ -27,19 +27,19 @@ import org.jsoup.nodes.Element
 //keep small, will be passed around by Spark
 //I'm always using the more familiar Java collection, also for backward compatibility
 class Page(
-                val resolvedUrl: String,
-                val content: Array[Byte],
-                val contentType: String,
+            val resolvedUrl: String,
+            val content: Array[Byte],
+            val contentType: String,
 
-                val alias: String = null,
+            val alias: String = null,
 
-                val backtrace: util.List[Interaction] = new util.ArrayList[Interaction], //also the uid
-                val context: util.Map[String, Serializable] = null, //I know it should be a var, but better save than sorry
-                val timestamp: Date = new Date,
+            val backtrace: util.List[Interaction] = new util.ArrayList[Interaction], //also the uid
+            val context: util.Map[String, Serializable] = null, //I know it should be a var, but better save than sorry
+            val timestamp: Date = new Date,
 
-                val filePath: String = null
-                )
-  extends Serializable with Cloneable{
+            val filePath: String = null
+            )
+  extends Serializable{
 
   //share context. TODO: too many shallow copy making it dangerous
   //  def this(another: Page) = this (
@@ -58,7 +58,7 @@ class Page(
 
   def isExpired = (new Date().getTime - timestamp.getTime > Conf.pageExpireAfter*1000)
 
-  override def clone(): Page = new Page(
+  def copy(): Page = new Page(
     this.resolvedUrl,
     this.content,
     this.contentType,
@@ -90,7 +90,7 @@ class Page(
           this.contentType,
           null,
           this.backtrace,
-          this.context.clone().asInstanceOf,
+          this.context,
           this.timestamp
         )
       }
@@ -163,8 +163,8 @@ class Page(
   //this is only for sporadic file saving, will cause congestion if used in a full-scale transformation.
   //If you want to save everything in an RDD, use actions like RDD.save...()
   //also remember this will lose information as charset encoding will be different
-  def save(fileName: String = "#{resolved-url}_"+this.hashCode(), dir: String = Conf.savePagePath, charset: String = null)(hConf: Configuration = SparkHadoopUtil.get.newConfiguration()): String = {
-    var formattedFileName = Action.formatWithContext(fileName,this.context)
+  def save(fileName: String = "#{resolved-url}_"+this.hashCode(), dir: String = Conf.savePagePath, overwrite: Boolean = false)(hConf: Configuration = SparkHadoopUtil.get.newConfiguration()): String = {
+    var formattedFileName = Action.formatWithContext(fileName, this.context)
 
     formattedFileName = formattedFileName.replace("#{resolved-url}", this.resolvedUrl)
     formattedFileName = formattedFileName.replace("#{timestamp}", DateFormat.getInstance.format(this.timestamp))
@@ -184,14 +184,27 @@ class Page(
 
     val fullPath = new Path(path, formattedFileName)
 
-//    val bufferSize = sc.getConf.getInt("spark.buffer.size", 65536)
+    //    val bufferSize = sc.getConf.getInt("spark.buffer.size", 65536)
 
-    val fileOutputStream = fs.create(fullPath, false) //don't overwrite important file
+    var fos: FSDataOutputStream = null
+    if (overwrite == true) {
+      fos = fs.create(fullPath, true) //don't overwrite important file
+    }
+    else
+    {
+      if (fs.exists(fullPath)) {
+        val altPath = new Path(path, formattedFileName + this.hashCode())
+        fos = fs.create(altPath, false)
+      }
+      else {
+        fos = fs.create(fullPath, false) //don't overwrite important file
+      }
+    }
 
-//    val writer = new BufferedWriter(new OutputStreamWriter(fileOutputStream,"UTF-8")) //why using two buffers
+    //    val writer = new BufferedWriter(new OutputStreamWriter(fileOutputStream,"UTF-8")) //why using two buffers
 
-    IOUtils.write(content,fileOutputStream)
-    fileOutputStream.close()
+    IOUtils.write(content,fos)
+    fos.close()
 
     return fullPath.getName
   }

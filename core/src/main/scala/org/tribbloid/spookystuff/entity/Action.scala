@@ -1,5 +1,7 @@
 package org.tribbloid.spookystuff.entity
 
+import java.util.Map.Entry
+
 import org.apache.commons.io.IOUtils
 import org.tribbloid.spookystuff.Conf
 
@@ -19,15 +21,13 @@ private object Action {
   def formatWithContext[T](str: String, context: util.Map[String,T]): String = {
     if ((context == null)||(context.isEmpty)) return str
     var strVar = str
-    context.foreach {
-      pair => {
-        val sub = "#{".concat(pair._1).concat("}")
-        if (strVar.contains(sub))
-        {
-          val value = pair._2.toString
-          if (value.matches("[^#{}]+") == false) throw new UnsupportedOperationException("context value cannot contain #{} etc.")
-          strVar = strVar.replace(sub, value)
-        }
+    for (entry <- context) {
+      val sub = "#{".concat(entry._1).concat("}")
+      if (strVar.contains(sub))
+      {
+        val value = entry._2.toString
+        if (value.matches("[^#{}]+") == false) throw new UnsupportedOperationException("context value cannot contain #{} etc.")
+        strVar = strVar.replace(sub, value)
       }
     }
     strVar
@@ -162,5 +162,9 @@ case class Wget(val url: String) extends Sessionless{
     is.close()
 
     new Page(url, content, contentType = uc.getContentType, alias = this.alias)
+  }
+
+  override def format[T](context: util.Map[String,T]): this.type = {
+    Wget(Action.formatWithContext(this.url,context)).asInstanceOf[this.type] //TODO: ugly tail
   }
 }
