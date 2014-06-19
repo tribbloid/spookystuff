@@ -214,7 +214,7 @@ case class WhileLoop(val selector: String, val max: Int = 100)(val actions: Acti
       case i: Interaction => i
       case c: Container => c.trim()
     }
-    return new While(this.selector, this.max)(trimmed)
+    return new WhileLoop(this.selector, this.max)(trimmed)
   }
 }
 
