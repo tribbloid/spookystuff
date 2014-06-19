@@ -1,5 +1,8 @@
 package org.tribbloid.spookystuff
 
+import org.apache.hadoop.conf.Configuration
+import org.apache.spark.SparkContext
+import org.apache.spark.broadcast.Broadcast
 import org.tribbloid.spookystuff.sparkbinding.{StringRDDFunctions, ActionPlanRDDFunctions, PageRDDFunctions}
 import org.apache.spark.rdd.RDD
 import org.tribbloid.spookystuff.entity.{ActionPlan, Page}
@@ -14,6 +17,7 @@ import java.util
 //}
 
 object SpookyContext {
+
   implicit def pageRDDToItsFunctions(rdd: RDD[Page]) = new PageRDDFunctions(rdd)
 
   implicit def ActionPlanRDDToItsFunctions(rdd: RDD[ActionPlan]) = new ActionPlanRDDFunctions(rdd)

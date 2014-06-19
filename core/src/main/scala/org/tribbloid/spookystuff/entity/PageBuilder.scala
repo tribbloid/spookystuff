@@ -59,7 +59,9 @@ object PageBuilder {
 }
 
 //TODO: avoid passing a singleton driver!
-private class PageBuilder(val driver: RemoteWebDriver = new PhantomJSDriver(Conf.phantomJSCaps)) {
+private class PageBuilder(
+                           val driver: RemoteWebDriver = new PhantomJSDriver(Conf.phantomJSCaps)
+                           ) {
 
   val start_time: Long = new Date().getTime
   val backtrace: util.List[Interaction] = new util.ArrayList[Interaction]()
@@ -74,7 +76,7 @@ private class PageBuilder(val driver: RemoteWebDriver = new PhantomJSDriver(Conf
     catch {
       case e: Throwable => {
         val page = Snapshot().exe(this.driver)
-        val errorFileName = page.save(dir = Conf.errorPageDumpDir)()
+        val errorFileName = page.save(dir = Conf.errorPageDumpDir)
         //        TODO: logError("Error Page saved as "+filename)
         throw e //try to delegate all failover to Spark, but this may change in the future
       }

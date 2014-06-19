@@ -3,6 +3,7 @@ package org.tribbloid.spookystuff.example
 import java.io.Serializable
 
 import org.apache.spark.{SparkContext, SparkConf}
+import org.tribbloid.spookystuff.Conf
 import org.tribbloid.spookystuff.entity._
 import org.tribbloid.spookystuff.SpookyContext._
 
@@ -20,6 +21,8 @@ object MoreLinkedIn {
 //    conf.setJars(jars)
     conf.set("spark.task.maxFailures", "3")
     val sc = new SparkContext(conf)
+
+    Conf.init(sc)
 
     val actionsRDD = sc.parallelize(Seq("Sanjay", "Arun", "Hardik")) +>
       Visit("https://www.linkedin.com/") +>

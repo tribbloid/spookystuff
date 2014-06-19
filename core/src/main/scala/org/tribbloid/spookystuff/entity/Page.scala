@@ -97,10 +97,10 @@ class Page(
     }
   }
 
-  def refresh(): Page = {
-    val page = PageBuilder.resolveFinal(this.backtrace: _*).modify(this.alias,this.context)
-    return page
-  }
+//  def refresh(): Page = {
+//    val page = PageBuilder.resolveFinal(this.backtrace: _*).modify(this.alias,this.context)
+//    return page
+//  }
 
   def elementExist(selector: String): Boolean = {
     !doc.select(selector).isEmpty
@@ -163,7 +163,7 @@ class Page(
   //this is only for sporadic file saving, will cause congestion if used in a full-scale transformation.
   //If you want to save everything in an RDD, use actions like RDD.save...()
   //also remember this will lose information as charset encoding will be different
-  def save(fileName: String = "#{resolved-url}_"+this.hashCode(), dir: String = Conf.savePagePath, overwrite: Boolean = false)(hConf: Configuration = SparkHadoopUtil.get.newConfiguration()): String = {
+  def save(fileName: String = "#{resolved-url}_"+this.hashCode(), dir: String = Conf.savePagePath, overwrite: Boolean = false): String = {
     var formattedFileName = Action.formatWithContext(fileName, this.context)
 
     formattedFileName = formattedFileName.replace("#{resolved-url}", this.resolvedUrl)
@@ -175,31 +175,19 @@ class Page(
     val path = new Path(dir)
 
     //TODO: slow to check if the dir exist
-    val fs = path.getFileSystem(hConf)
+    val fs = path.getFileSystem(Conf.hConf.value)
     if (!fs.isDirectory(path)) {
       if (!fs.mkdirs(path)) {
         throw new SparkException("Failed to create save path " + path) //TODO: Still SparkException?
       }
     }
 
-    val fullPath = new Path(path, formattedFileName)
+    var fullPath = new Path(path, formattedFileName)
 
-    //    val bufferSize = sc.getConf.getInt("spark.buffer.size", 65536)
-
-    var fos: FSDataOutputStream = null
-    if (overwrite == true) {
-      fos = fs.create(fullPath, true) //don't overwrite important file
+    if (overwrite==false && fs.exists(fullPath)) {
+      fullPath = new Path(path, formattedFileName + this.hashCode())
     }
-    else
-    {
-      if (fs.exists(fullPath)) {
-        val altPath = new Path(path, formattedFileName + this.hashCode())
-        fos = fs.create(altPath, false)
-      }
-      else {
-        fos = fs.create(fullPath, false) //don't overwrite important file
-      }
-    }
+    val fos = fs.create(fullPath, overwrite) //don't overwrite important file
 
     //    val writer = new BufferedWriter(new OutputStreamWriter(fileOutputStream,"UTF-8")) //why using two buffers
 

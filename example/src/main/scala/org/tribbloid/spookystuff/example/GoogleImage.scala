@@ -1,6 +1,7 @@
 package org.tribbloid.spookystuff.example
 
 import org.apache.spark.{SparkContext, SparkConf}
+import org.tribbloid.spookystuff.Conf
 import org.tribbloid.spookystuff.entity._
 import org.tribbloid.spookystuff.SpookyContext._
 
@@ -11,16 +12,18 @@ object GoogleImage {
 
   def main(args: Array[String]) {
     val conf = new SparkConf().setAppName("MoreLinkedIn")
-    conf.setMaster("local[8,5]")
+    conf.setMaster("local[8,3]")
     //    conf.setMaster("local-cluster[2,4,1000]")
     conf.setSparkHome(System.getenv("SPARK_HOME"))
     val jars = SparkContext.jarOfClass(this.getClass).toList
     conf.setJars(jars)
-    conf.set("spark.task.maxFailures", "5")
+    conf.set("spark.task.maxFailures", "3")
     val sc = new SparkContext(conf)
 
-    val nameRDD = sc.textFile("/home/peng/Documents/affiliation.txt").distinct(16)
-//    val nameRDD = sc.textFile("/home/peng/Documents/affiliation_short5.txt",16)
+    Conf.init(sc)
+
+//    val nameRDD = sc.textFile("/home/peng/Documents/affiliation.txt").distinct(16)
+    val nameRDD = sc.textFile("/home/peng/Documents/affiliation_short5.txt",16)
 
     val actionsRDD = nameRDD +>
       Visit("http://images.google.com/") +>
@@ -41,7 +44,7 @@ object GoogleImage {
 
 //    imgRDD.map(page => page.context).collect().foreach(println(_))
 
-    val saveRDD = imgRDD.map(page => page.save("#{_}", "file:///home/peng/spookystuff/image")())
+    val saveRDD = imgRDD.map(page => page.save("#{_}", "file:///home/peng/spookystuff/image"))
 ////
     saveRDD.collect().foreach(println(_))
 

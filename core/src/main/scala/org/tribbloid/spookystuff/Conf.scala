@@ -1,5 +1,8 @@
 package org.tribbloid.spookystuff
 
+import org.apache.hadoop.conf.Configuration
+import org.apache.spark.SparkContext
+import org.apache.spark.broadcast.Broadcast
 import org.openqa.selenium.phantomjs.PhantomJSDriverService
 import org.openqa.selenium.remote.DesiredCapabilities
 
@@ -7,7 +10,14 @@ import org.openqa.selenium.remote.DesiredCapabilities
  * Created by peng on 04/06/14.
  */
 //TODO: propose to merge with SpookyContext
+//TODO: can use singleton pattern? those values never changes after SparkContext is defined
 final object Conf {
+
+  var hConf: Broadcast[Configuration] = null
+
+  def init(sc: SparkContext) {
+    this.hConf = sc.broadcast(sc.hadoopConfiguration)
+  }
 
   val pageDelay = 5
   val pageTimeout = 50

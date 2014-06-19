@@ -1,6 +1,7 @@
 package org.tribbloid.spookystuff.example
 
 import org.apache.spark.{SparkContext, SparkConf}
+import org.tribbloid.spookystuff.Conf
 import org.tribbloid.spookystuff.entity._
 
 /**
@@ -14,6 +15,8 @@ object LinkedInNoContext {
     conf.setSparkHome(System.getenv("SPARK_HOME"))
     conf.setJars(SparkContext.jarOfClass(this.getClass).toList)
     val sc = new SparkContext(conf)
+
+    Conf.init(sc)
 
     val actions = Seq[Interaction](
       Visit("https://www.linkedin.com/"),

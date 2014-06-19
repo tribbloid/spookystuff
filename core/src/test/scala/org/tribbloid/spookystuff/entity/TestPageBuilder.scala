@@ -1,6 +1,10 @@
 package org.tribbloid.spookystuff.entity
 
+import org.apache.hadoop.conf.Configuration
+import org.apache.spark.{SparkContext, SparkConf}
+import org.apache.spark.broadcast.Broadcast
 import org.scalatest.{Tag, FunSuite}
+import org.tribbloid.spookystuff.Conf
 import scala.collection.JavaConversions._
 
 /**
@@ -11,6 +15,17 @@ class TestPageBuilder extends FunSuite {
 
   object pageBuilderTag extends Tag("PageBuilder")
   object pageTag extends Tag("Page")
+
+  val conf = new SparkConf().setAppName("MoreLinkedIn")
+  conf.setMaster("local[8,5]")
+  //    conf.setMaster("local-cluster[2,4,1000]")
+  conf.setSparkHome(System.getenv("SPARK_HOME"))
+  val jars = SparkContext.jarOfClass(this.getClass).toList
+  conf.setJars(jars)
+  conf.set("spark.task.maxFailures", "5")
+  val sc = new SparkContext(conf)
+
+  Conf.init(sc)
 
   test("visit and snapshot", pageBuilderTag) {
     val builder = new PageBuilder()
@@ -93,7 +108,7 @@ class TestPageBuilder extends FunSuite {
     assert(resultsList.size === 1)
     val page1 = resultsList(0)
 
-    page1.save()()
+    page1.save()
   }
 
   test("wget html and save", pageTag) {
@@ -105,7 +120,7 @@ class TestPageBuilder extends FunSuite {
     assert(resultsList.size === 1)
     val page1 = resultsList(0)
 
-    page1.save()()
+    page1.save()
     assert(page1.textFirst("title") === "Google")
   }
 
@@ -118,7 +133,7 @@ class TestPageBuilder extends FunSuite {
     assert(resultsList.size === 1)
     val page1 = resultsList(0)
 
-    page1.save()()
+    page1.save()
   }
 
   test("wget pdf and save", pageTag) {
@@ -130,7 +145,7 @@ class TestPageBuilder extends FunSuite {
     assert(resultsList.size === 1)
     val page1 = resultsList(0)
 
-    page1.save()()
+    page1.save()
   }
 
 }
