@@ -168,3 +168,56 @@ case class Wget(val url: String) extends Sessionless{
     Wget(Action.formatWithContext(this.url,context)).asInstanceOf[this.type] //TODO: ugly tail
   }
 }
+
+abstract class Container() extends Action {
+  def exe(driver: WebDriver): util.List[(Array[Interaction],Page)]
+
+  //only preserve interaction
+  def trim(): Container
+}
+
+case class WhileLoop(val selector: String, val max: Int = 100)(val actions: Action*) extends Container {
+
+  override def exe(driver: WebDriver): util.List[(Array[Interaction], Page)] = {
+    val backtrace = new util.ArrayList[Interaction]
+    val results = new util.ArrayList[(Array[Interaction], Page)]
+
+    var i=0
+    while ((driver.findElements(By.cssSelector(selector)).size()>0)&&(i<max)) {
+      i = i+1
+      for (action <- actions) action match {
+        case a: Interaction => {
+          a.exe(driver)
+          backtrace.add(a)
+        }
+        case a: Extraction => {
+          val copyBacktrace = new Array[Interaction](backtrace.size())
+          results.add((backtrace.toArray(copyBacktrace), a.exe(driver)))
+        }
+        case a: Dump => {
+          a.exe(driver)
+        }
+        case a: Sessionless => {
+          results.add((null, a.exe(driver)))
+        }
+        case a: Container => {
+          results.addAll(a.exe(driver))
+        }
+        case _ => throw new UnsupportedOperationException //TODO: no double nest?
+      }
+    }
+    return results
+  }
+
+  override def trim(): Container = {
+    val trimmed = actions.collect{
+      case i: Interaction => i
+      case c: Container => c.trim()
+    }
+    return new While(this.selector, this.max)(trimmed)
+  }
+}
+
+//case class If(selector: String)(exist: Action*)(notExist: Action*) extends Container {
+//
+//}
