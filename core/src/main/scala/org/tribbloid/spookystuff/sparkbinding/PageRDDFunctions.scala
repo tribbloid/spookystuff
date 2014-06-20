@@ -125,7 +125,7 @@ class PageRDDFunctions(val self: RDD[Page]) {
 
   //slower than nested action and wgetJoinByPagination
   //attr is always "href"
-  def joinByPagination(selector: String, limit: Int = Conf.fetchLimit): RDD[Page] = self.flatMap {
+  def insertPagination(selector: String, limit: Int = Conf.fetchLimit): RDD[Page] = self.flatMap {
     page => {
       val results = ArrayBuffer[Page](page)
 
@@ -142,7 +142,7 @@ class PageRDDFunctions(val self: RDD[Page]) {
   }
 
   //TODO: to save time it should merge urls, find all pages and split by context.
-  def wgetJoinByPagination(selector: String, limit: Int = Conf.fetchLimit): RDD[Page] = self.flatMap {
+  def wgetInsertPagination(selector: String, limit: Int = Conf.fetchLimit): RDD[Page] = self.flatMap {
     page => {
       val results = ArrayBuffer[Page](page)
 
@@ -181,27 +181,20 @@ class PageRDDFunctions(val self: RDD[Page]) {
 
   //really complex but what option do I have
   //these are slow because backward lookup hasn't been implemented yet.
-  //its an optimization problem:
   //whether we split the old pages, crawl the disambiguation part, >!<+ (lookup only the new plan from old pages) to new pages, and merge with the old pages
   //or we crawl the disambiguation part, merge with old ActionPlans and >!<+ (lookup all plans from old pages) to get the new pages?
   //I prefer the first one, potentially produce smaller footage.
   //TODO: there is no repartitioning in the process, may cause unbalanced execution
-  def joinIf(selector: String, existSelector: String = null, limit: Int = Conf.fetchLimit, attr: String = "href"): RDD[Page] = {
-    var es = existSelector
-    if (es==null) es = selector
-
-    val groupedPageRDD = self.map{ page => (page.elementExist(es), page) }
+  def replaceIf(selector: String, limit: Int = Conf.fetchLimit, attr: String = "href")(condition: String = selector): RDD[Page] = {
+    val groupedPageRDD = self.map{ page => (page.elementExist(condition), page) }
     val falsePageRDD = groupedPageRDD.filter(_._1 == false).map(_._2)
     val truePageRDD = groupedPageRDD.filter(_._1 == true).map(_._2)
     val newPageRDD = truePageRDD.join(selector, limit, attr)
     newPageRDD.union(falsePageRDD)
   }
 
-  def wgetJoinIf(selector: String, existSelector: String = null, limit: Int = Conf.fetchLimit, attr: String = "href"): RDD[Page] = {
-    var es = existSelector
-    if (es==null) es = selector
-
-    val groupedPageRDD = self.map{ page => (page.elementExist(es), page) }
+  def wgetReplaceIf(selector: String, limit: Int = Conf.fetchLimit, attr: String = "href")(condition: String = selector): RDD[Page] = {
+    val groupedPageRDD = self.map{ page => (page.elementExist(condition), page) }
     val falsePageRDD = groupedPageRDD.filter(_._1 == false).map(_._2)
     val truePageRDD = groupedPageRDD.filter(_._1 == true).map(_._2)
     val newPageRDD = truePageRDD.wgetJoin(selector, limit, attr)

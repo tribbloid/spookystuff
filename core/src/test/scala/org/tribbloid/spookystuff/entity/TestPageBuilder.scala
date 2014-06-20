@@ -29,8 +29,8 @@ class TestPageBuilder extends FunSuite {
 
   test("visit and snapshot", pageBuilderTag) {
     val builder = new PageBuilder()
-    builder.exe(Visit("http://www.google.com"))
-    val page = builder.exe(Snapshot())
+    Visit("http://www.google.com").exe(builder)
+    val page = Snapshot().exe(builder).toList(0)
     //    val url = builder.getUrl
 
     assert(page.contentStr.startsWith("<!DOCTYPE html>"))
@@ -42,11 +42,11 @@ class TestPageBuilder extends FunSuite {
 
   test("visit, input submit and snapshot", pageBuilderTag) {
     val builder = new PageBuilder()
-    builder.exe(Visit("https://www.linkedin.com/"))
-    builder.exe(TextInput("input#first","Adam"))
-    builder.exe(TextInput("input#last","Muise"))
-    builder.exe(Submit("input[name=\"search\"]"))
-    val page = builder.exe(Snapshot())
+    Visit("https://www.linkedin.com/").exe(builder)
+    TextInput("input#first","Adam").exe(builder)
+    TextInput("input#last","Muise").exe(builder)
+    Submit("input[name=\"search\"]").exe(builder)
+    val page = Snapshot().exe(builder).toList(0)
     //    val url = builder.getUrl
 
     assert(page.contentStr.contains("<title>Adam Muise profiles | LinkedIn</title>"))
@@ -70,13 +70,13 @@ class TestPageBuilder extends FunSuite {
     val res1 = resultsList(0)
     val res2 = resultsList(1)
 
-    val id1 = Seq[Interaction](Visit("https://www.linkedin.com/"), DelayFor("input[name=\"search\"]",40))
+    val id1 = Seq[Interactive](Visit("https://www.linkedin.com/"), DelayFor("input[name=\"search\"]",40))
     assert(res1.backtrace.toIndexedSeq.toSeq === id1)
     assert(res1.contentStr.contains("<title>World's Largest Professional Network | LinkedIn</title>"))
     assert(res1.resolvedUrl === "https://www.linkedin.com/")
     assert(res1.alias === "A")
 
-    val id2 = Seq[Interaction](Visit("https://www.linkedin.com/"), DelayFor("input[name=\"search\"]",40), TextInput("input#first","Adam"),TextInput("input#last","Muise"),Submit("input[name=\"search\"]"))
+    val id2 = Seq[Interactive](Visit("https://www.linkedin.com/"), DelayFor("input[name=\"search\"]",40), TextInput("input#first","Adam"),TextInput("input#last","Muise"),Submit("input[name=\"search\"]"))
     assert(res2.backtrace.toIndexedSeq.toSeq === id2)
     assert(res2.contentStr.contains("<title>Adam Muise profiles | LinkedIn</title>"))
     assert(res2.resolvedUrl === "https://www.linkedin.com/pub/dir/?first=Adam&last=Muise")
@@ -92,7 +92,7 @@ class TestPageBuilder extends FunSuite {
       Submit("input[name=\"search\"]")
     )
 
-    val id = Seq[Interaction](Visit("https://www.linkedin.com/"), DelayFor("input[name=\"search\"]",40), TextInput("input#first","Adam"),TextInput("input#last","Muise"),Submit("input[name=\"search\"]"))
+    val id = Seq[Interactive](Visit("https://www.linkedin.com/"), DelayFor("input[name=\"search\"]",40), TextInput("input#first","Adam"),TextInput("input#last","Muise"),Submit("input[name=\"search\"]"))
     assert(result.backtrace.toIndexedSeq.toSeq === id)
     assert(result.contentStr.contains("<title>Adam Muise profiles | LinkedIn</title>"))
     assert(result.resolvedUrl === "https://www.linkedin.com/pub/dir/?first=Adam&last=Muise")

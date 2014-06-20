@@ -18,7 +18,7 @@ object LinkedInNoContext {
 
     Conf.init(sc)
 
-    val actions = Seq[Interaction](
+    val actions = Seq[Interactive](
       Visit("https://www.linkedin.com/"),
       TextInput("input#first","Sanjay"),
       TextInput("input#last","Gupta"),

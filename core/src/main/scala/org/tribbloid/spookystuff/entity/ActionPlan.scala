@@ -12,7 +12,6 @@ class ActionPlan(val context: util.Map[String, Serializable] = null) extends Ser
   def this(context: util.Map[String, Serializable], as: Action*) = {
     this(context)
     this.+=(as: _*)
-    this
   }
 
   // everything in this list is formatted
@@ -58,7 +57,7 @@ class ActionPlan(val context: util.Map[String, Serializable] = null) extends Ser
   //  }
 
   def interactions = actions.collect{
-    case i: Interaction => i
+    case i: Interactive => i
   }.toSeq
 
   //only execute interactions and extract the final stage, if has no action will return an empty page

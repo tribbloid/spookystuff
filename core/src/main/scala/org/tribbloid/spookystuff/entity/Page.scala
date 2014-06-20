@@ -31,7 +31,7 @@ class Page(
 
             val alias: String = null,
 
-            val backtrace: util.List[Interaction] = new util.ArrayList[Interaction], //also the uid
+            val backtrace: util.List[Interactive] = new util.ArrayList[Interactive], //also the uid
             val context: util.Map[String, Serializable] = null, //I know it should be a var, but better save than sorry
             val timestamp: Date = new Date
             )
@@ -172,7 +172,7 @@ class Page(
   //If you want to save everything in an RDD, use actions like RDD.save...()
   //also remember this will lose information as charset encoding will be different
   def save(fileName: String = "#{resolved-url}", dir: String = Conf.savePagePath, overwrite: Boolean = false): String = {
-    var formattedFileName = Action.formatWithContext(fileName, this.context)
+    var formattedFileName = ActionUtils.formatWithContext(fileName, this.context)
 
     formattedFileName = formattedFileName.replace("#{resolved-url}", this.resolvedUrl)
     formattedFileName = formattedFileName.replace("#{timestamp}", DateFormat.getInstance.format(this.timestamp))

@@ -1,7 +1,7 @@
 package org.tribbloid.spookystuff.example
 
 import org.apache.spark.{SparkContext, SparkConf}
-import org.tribbloid.spookystuff.Conf
+import org.tribbloid.spookystuff.{entity, Conf}
 import org.tribbloid.spookystuff.entity._
 import org.tribbloid.spookystuff.SpookyContext._
 
@@ -24,10 +24,14 @@ object ResellerRatingsUseContainer {
     Conf.init(sc)
 
     (sc.parallelize(Seq("Hewlett_Packard"))
-      +> Wget("http://www.resellerratings.com/store/#{_}") !!!)
-          //remember jsoup doesn't support double quotes in attribute selector!
-    .save()
-    .collect().foreach(println(_))
+      +> Visit("http://www.resellerratings.com/store/#{_}")
+      +> Loop()(
+      Submit("div#survey-header ul.pagination a:contains(next)"),
+      Snapshot()
+    ) !!!)
+      //remember jsoup doesn't support double quotes in attribute selector!
+      .save()
+      .collect().foreach(println(_))
 
     sc.stop()
   }

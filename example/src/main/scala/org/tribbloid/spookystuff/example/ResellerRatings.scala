@@ -26,7 +26,7 @@ object ResellerRatings {
     (sc.parallelize(Seq("Hewlett_Packard")) +>
       Wget("http://www.resellerratings.com/store/#{_}") !!!)
           //remember jsoup doesn't support double quotes in attribute selector!
-    .wgetJoinByPagination("div#survey-header ul.pagination a:contains(next)")
+    .wgetInsertPagination("div#survey-header ul.pagination a:contains(next)")
     .save()
     .collect().foreach(println(_))
 
