@@ -1,7 +1,7 @@
 package org.tribbloid.spookystuff
 
 import org.apache.hadoop.conf.Configuration
-import org.apache.spark.SparkContext
+import org.apache.spark.{SerializableWritable, SparkContext}
 import org.apache.spark.broadcast.Broadcast
 import org.openqa.selenium.phantomjs.PhantomJSDriverService
 import org.openqa.selenium.remote.{CapabilityType, DesiredCapabilities}
@@ -13,10 +13,10 @@ import org.openqa.selenium.remote.{CapabilityType, DesiredCapabilities}
 //TODO: can use singleton pattern? those values never changes after SparkContext is defined
 final object Conf {
 
-  var hConf: Broadcast[Configuration] = null
+  var hConf: Broadcast[SerializableWritable[Configuration]] = null
 
   def init(sc: SparkContext) {
-    this.hConf = sc.broadcast(sc.hadoopConfiguration)
+    this.hConf = sc.broadcast(new SerializableWritable(sc.hadoopConfiguration))
   }
 
   val pageDelay = 5

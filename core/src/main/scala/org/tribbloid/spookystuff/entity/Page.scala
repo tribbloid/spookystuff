@@ -183,7 +183,7 @@ class Page(
     val path = new Path(dir)
 
     //TODO: slow to check if the dir exist
-    val fs = path.getFileSystem(Conf.hConf.value)
+    val fs = path.getFileSystem(Conf.hConf.value.value)
     if (!fs.isDirectory(path)) {
       if (!fs.mkdirs(path)) {
         throw new SparkException("Failed to create save path " + path) //TODO: Still SparkException?

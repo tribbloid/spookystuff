@@ -1,16 +1,14 @@
 package org.tribbloid.spookystuff.entity
 
+import java.io.Serializable
+import java.net.{URL, URLConnection}
+import java.util
 import java.util.Date
 
 import org.apache.commons.io.IOUtils
-import org.tribbloid.spookystuff.Conf
-
-import java.util
-import org.openqa.selenium.{By, WebDriver}
+import org.openqa.selenium.By
 import org.openqa.selenium.support.ui
-import java.io.Serializable
-import java.net.{URLConnection, URL}
-import org.tribbloid.spookystuff.entity.Page
+import org.tribbloid.spookystuff.Conf
 
 import scala.collection.JavaConversions._
 import scala.collection.mutable.ArrayBuffer
