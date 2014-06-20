@@ -12,6 +12,17 @@ import org.openqa.selenium.remote.RemoteWebDriver
 object PageBuilder {
 
   //shorthand for resolving the final stage after some interactions
+  def emptyPage(): Page ={
+    val builder = new PageBuilder()
+
+    try {
+      builder.exe(Snapshot())
+    }
+    finally {
+      builder.finalize
+    }
+  }
+
   def resolveFinal(interactions: Interaction*): Page = {
     var result: Page = null
     val allActions = interactions.seq.:+(Snapshot())
@@ -26,34 +37,39 @@ object PageBuilder {
   def resolve(actions: Action*): Seq[Page] = {
 
     val results = ArrayBuffer[Page]()
+    if (actions.forall( _.isInstanceOf[Sessionless] )) {
+      actions.foreach { action => results.+=(action.asInstanceOf[Sessionless].exe()) }
 
-    val builder = new PageBuilder()
+      return results
+    }
+    else {
 
-    try {
-      actions.foreach {
-        action => action match {
-          case a: Interaction => {
-            builder.exe(a)
+      val builder = new PageBuilder()
+      try {
+        actions.foreach {
+          action => action match {
+            case a: Interaction => {
+              builder.exe(a)
+            }
+            case a: Extraction => {
+              results += builder.exe(a)
+            }
+            case a: Dump => {
+              builder.exe(a)
+            }
+            case a: Sessionless => {
+              results += builder.exe(a)
+            }
+            case _ => throw new UnsupportedOperationException
           }
-          case a: Extraction => {
-            results += builder.exe(a)
-          }
-          case a: Dump => {
-            builder.exe(a)
-          }
-          case a: Sessionless => {
-            results += builder.exe(a)
-          }
-          case _ => throw new UnsupportedOperationException
         }
       }
-    }
-    finally
-    {
-      builder.finalize
-    }
+      finally {
+        builder.finalize
+      }
 
-    return results.toSeq
+      return results
+    }
   }
 
 }
@@ -95,7 +111,7 @@ private class PageBuilder(
 
   //TODO: unfortunately no timer for it.
   def exe(action: Sessionless): Page = {
-    val page = action.exe(this.driver)
+    val page = action.exe()
     return page
   }
 

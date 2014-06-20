@@ -121,7 +121,7 @@ class TestPageBuilder extends FunSuite {
     val page1 = resultsList(0)
 
     page1.save()
-    assert(page1.textFirst("title") === "Google")
+    assert(page1.text1("title") === "Google")
   }
 
   test("wget image and save", pageTag) {

@@ -20,22 +20,13 @@ object LinkedIn {
 
     Conf.init(sc)
 
-    val actionsRDD = sc.parallelize(Seq("Sanjay", "Arun", "Hardik")) +>
+    (sc.parallelize(Seq("Sanjay", "Arun", "Hardik")) +>
       Visit("https://www.linkedin.com/") +>
       TextInput("input#first","#{_}") +>
       TextInput("input#last","Gupta") +>
-      Submit("input[name=\"search\"]")
-
-    //    val action1 = actionsRDD.first()
-
-    val pageRDD = actionsRDD !
-
-    val valueRDD = pageRDD.map(
-      page => page.linkAll("ol#result-set h2 a").asInstanceOf[Serializable] //TODO: How to avoid this tail?
-
-    )
-
-    valueRDD.collect().foreach{
+      Submit("input[name=\"search\"]") !)
+      .map {page => page.href("ol#result-set h2 a").asInstanceOf[Serializable]} //TODO: How to avoid this tail?
+      .collect().foreach{
       value => {
         println("-------------------------------")
         value.asInstanceOf[Seq[String]].foreach( println(_) )

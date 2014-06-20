@@ -21,45 +21,29 @@ object AppliancePartsPros {
     conf.set("spark.task.maxFailures", "3")
     val sc = new SparkContext(conf)
 
-    val searchPageRDD = (
-      sc.parallelize(Seq("A210S")) +>
-        Visit("http://www.appliancepartspros.com/") +>
-        TextInput("input.ac-input","#{_}") +>
-        Click("input[value=\"Search\"]") +> //TODO: can't use Submit, why?
-        Delay(10) ! //TODO: change to DelayFor to save time
+    (sc.parallelize(Seq("A210S")) +>
+      Visit("http://www.appliancepartspros.com/") +>
+      TextInput("input.ac-input","#{_}") +>
+      Click("input[value=\"Search\"]") +> //TODO: can't use Submit, why?
+      Delay(10) ! //TODO: change to DelayFor to save time
       ).selectInto(
-        "model" -> { _.textFirst("div.dgrm-lst div.header h2") },
+        "model" -> { _.text1("div.dgrm-lst div.header h2") },
         "time1" -> { _.backtrace.last.timeline.asInstanceOf[Serializable] } //ugly tail
-      )
-
-//    searchPageRDD.persist()
-//    val search1 = searchPageRDD.first()
-
-    val diagramPageRDD = searchPageRDD.fork("div.inner li a:has(img)")
-      .selectInto("schematic" -> {_.textFirst("div#ctl00_cphMain_up1 h1 span")})
-
-//    diagramPageRDD.persist()
-//    val diagram1 = diagramPageRDD.first()
-
-    val partPageRDD = diagramPageRDD.fork("tbody.m-bsc td.pdct-descr h2 a")
-
-//    partPageRDD.persist()
-//    val part1 = partPageRDD.first()
-
-    val tuplesRDD = partPageRDD.map(
-      page => (
-        page.context.get("_"),
-        page.context.get("time1"),
-        page.context.get("model"),
-        page.context.get("schematic"),
-        page.textFirst("div.m-pdct h1"),
-        page.textFirst("div.m-pdct td[itemprop=\"brand\"] span"),
-        page.textFirst("div.m-bsc div.mod ul li:contains(Manufacturer) strong"),
-        page.textFirst("div.m-pdct div.m-chm p")
-        )
-    )
-
-    tuplesRDD.collect().foreach(println(_))
+      ).wgetJoin("div.inner li a:has(img)")
+      .selectInto("schematic" -> {_.text1("div#ctl00_cphMain_up1 h1 span")})
+      .wgetJoin("tbody.m-bsc td.pdct-descr h2 a")
+      .map(
+        page => (
+          page.context.get("_"),
+          page.context.get("time1"),
+          page.context.get("model"),
+          page.context.get("schematic"),
+          page.text1("div.m-pdct h1"),
+          page.text1("div.m-pdct td[itemprop=\"brand\"] span"),
+          page.text1("div.m-bsc div.mod ul li:contains(Manufacturer) strong"),
+          page.text1("div.m-pdct div.m-chm p")
+          )
+      ).collect().foreach(println(_))
   }
 }
 //TODO: some tasks went dead

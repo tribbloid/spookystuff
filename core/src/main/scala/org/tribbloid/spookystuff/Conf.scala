@@ -24,6 +24,9 @@ final object Conf {
 //  val usePageCache = false //delegated to smart execution
   val pageExpireAfter = 1800
 
+  //default max number of elements scraped from a page, set to Int.max to allow unlimited fetch
+  val fetchLimit = 100
+
   val savePagePath = "file:///home/peng/spookystuff/"
   val saveScreenshotPath = "file:///home/peng/spookystuffScreenShots/"
 

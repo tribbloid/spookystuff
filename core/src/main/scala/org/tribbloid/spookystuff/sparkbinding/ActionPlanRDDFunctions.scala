@@ -52,15 +52,25 @@ class ActionPlanRDDFunctions(val self: RDD[ActionPlan]) {
     }
   }
 
-  //  //execute
+  //  execute
   def !!!(): RDD[Page] = self.flatMap {
-    _ !!!
+    _ !!!()
   }
 
-  //  //only execute interactions and extract the final stage
+  //  only execute interactions and extract the final stage
   def !(): RDD[Page] = self.map {
-    _ !
+    _ !()
   }
+
+//  //  execute, always remove duplicate first
+//  def >!!!(): RDD[Page] = self.distinct().flatMap {
+//    _ !!!()
+//  }
+//
+//  //  only execute interactions and extract the final stage, always remove duplicate first
+//  def >!(): RDD[Page] = self.distinct().map {
+//    _ !()
+//  }
 
   //smart execution: will merge identical plan, execute, and split to match the original context
   //this is useful to handle diamond links (A->B,A->C,B->D,C->D)

@@ -75,7 +75,7 @@ abstract class Dump extends Action {
 abstract class Sessionless() extends Action {
   var alias: String = null
 
-  def exe(driver: WebDriver): Page
+  def exe(): Page
 
   def as(alias: String): this.type = { //TODO: better way to return type?
     this.alias = alias
@@ -151,7 +151,7 @@ case class Snapshot() extends Extraction{
 
 case class Wget(val url: String) extends Sessionless{
 
-  def exe(driver: WebDriver): Page = {
+  override def exe(): Page = {
     val uc: URLConnection =  new URL(url).openConnection()
 
     uc.connect()
@@ -198,12 +198,12 @@ case class WhileLoop(val selector: String, val max: Int = 100)(val actions: Acti
           a.exe(driver)
         }
         case a: Sessionless => {
-          results.add((null, a.exe(driver)))
+          results.add((null, a.exe()))
         }
         case a: Container => {
           results.addAll(a.exe(driver))
         }
-        case _ => throw new UnsupportedOperationException //TODO: no double nest?
+        case _ => throw new UnsupportedOperationException
       }
     }
     return results
@@ -214,7 +214,7 @@ case class WhileLoop(val selector: String, val max: Int = 100)(val actions: Acti
       case i: Interaction => i
       case c: Container => c.trim()
     }
-    return new WhileLoop(this.selector, this.max)(trimmed)
+    return new WhileLoop(this.selector, this.max)(trimmed: _*)
   }
 }
 

@@ -1,22 +1,20 @@
 package org.tribbloid.spookystuff.entity
 
-import java.nio.charset.Charset
+import java.io.Serializable
 import java.text.DateFormat
-import java.util.Date
+import java.util
+import java.util.{UUID, Date}
 
 import org.apache.commons.io.IOUtils
-import org.apache.hadoop.conf.Configuration
-import org.apache.hadoop.fs.{FSDataOutputStream, Path}
+import org.apache.hadoop.fs.Path
 import org.apache.http.entity.ContentType
-import org.apache.spark.deploy.SparkHadoopUtil
 import org.apache.spark.SparkException
 import org.jsoup.Jsoup
+import org.jsoup.nodes.Element
 import org.tribbloid.spookystuff.Conf
+
 import scala.collection.JavaConversions._
 import scala.collection.mutable.ArrayBuffer
-import java.io.{OutputStreamWriter, Serializable}
-import java.util
-import org.jsoup.nodes.Element
 ;
 
 /**
@@ -35,9 +33,7 @@ class Page(
 
             val backtrace: util.List[Interaction] = new util.ArrayList[Interaction], //also the uid
             val context: util.Map[String, Serializable] = null, //I know it should be a var, but better save than sorry
-            val timestamp: Date = new Date,
-
-            val filePath: String = null
+            val timestamp: Date = new Date
             )
   extends Serializable{
 
@@ -106,46 +102,58 @@ class Page(
     !doc.select(selector).isEmpty
   }
 
-  def attrFirst(selector: String, attr: String): String = {
+  def attrExist(selector: String, attr: String): Boolean = {
+    elementExist(selector) && doc.select(selector).hasAttr(attr)
+  }
+
+  def attr1(selector: String, attr: String): String = {
     val element = doc.select(selector).first()
     if (element == null) null
     else element.attr(attr)
   }
 
-  def attrAll(selector: String, attr: String): Seq[String] = {
-    val result = ArrayBuffer[String]()
+  def attr(selector: String, attr: String, limit: Int = Conf.fetchLimit): Seq[String] = {
+    val elements = doc.select(selector)
+    val length = Math.min(elements.size,limit)
 
-    doc.select(selector).foreach{
-      element => result += element.attr(attr)
+    return elements.subList(0,length).map {
+      _.attr(attr)
     }
-
-    return result.toSeq
   }
 
-  def linkFirst(selector: String, absolute: Boolean = true): String = {
-    if (absolute == true) attrFirst(selector,"abs:href")
-    else attrFirst(selector,"href")
+  def href1(selector: String, absolute: Boolean = true): String = {
+    if (absolute == true) attr1(selector,"abs:href")
+    else attr1(selector,"href")
   }
 
-  def linkAll(selector: String, absolute: Boolean = true): Seq[String] = {
-    if (absolute == true) attrAll(selector,"abs:href")
-    else attrAll(selector,"href")
+  def href(selector: String, limit: Int = Conf.fetchLimit, absolute: Boolean = true): Seq[String] = {
+    if (absolute == true) attr(selector,"abs:href",limit)
+    else attr(selector,"href",limit)
   }
 
-  def textFirst(selector: String): String = {
+  def src1(selector: String, absolute: Boolean = true): String = {
+    if (absolute == true) attr1(selector,"abs:src")
+    else attr1(selector,"src")
+  }
+
+  def src(selector: String, limit: Int = Conf.fetchLimit, absolute: Boolean = true): Seq[String] = {
+    if (absolute == true) attr(selector,"abs:src",limit)
+    else attr(selector,"src",limit)
+  }
+
+  def text1(selector: String): String = {
     val element = doc.select(selector).first()
     if (element == null) null
     else element.text
   }
 
-  def textAll(selector: String): Seq[String] = {
-    val result = ArrayBuffer[String]()
+  def text(selector: String, limit: Int = Conf.fetchLimit): Seq[String] = {
+    val elements = doc.select(selector)
+    val length = Math.min(elements.size,limit)
 
-    doc.select(selector).foreach{
-      element => result += element.text
+    return elements.subList(0,length).map {
+      _.text
     }
-
-    return result.toSeq
   }
 
   def asMap(keyAndF: (String, Page => Serializable)*): util.Map[String, Serializable] = {
@@ -163,7 +171,7 @@ class Page(
   //this is only for sporadic file saving, will cause congestion if used in a full-scale transformation.
   //If you want to save everything in an RDD, use actions like RDD.save...()
   //also remember this will lose information as charset encoding will be different
-  def save(fileName: String = "#{resolved-url}_"+this.hashCode(), dir: String = Conf.savePagePath, overwrite: Boolean = false): String = {
+  def save(fileName: String = "#{resolved-url}", dir: String = Conf.savePagePath, overwrite: Boolean = false): String = {
     var formattedFileName = Action.formatWithContext(fileName, this.context)
 
     formattedFileName = formattedFileName.replace("#{resolved-url}", this.resolvedUrl)
@@ -185,7 +193,7 @@ class Page(
     var fullPath = new Path(path, formattedFileName)
 
     if (overwrite==false && fs.exists(fullPath)) {
-      fullPath = new Path(path, formattedFileName + this.hashCode())
+      fullPath = new Path(path, formattedFileName +"_"+ UUID.randomUUID())
     }
     val fos = fs.create(fullPath, overwrite) //don't overwrite important file
 

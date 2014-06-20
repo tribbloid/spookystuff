@@ -31,7 +31,7 @@ object LinkedInNoContext {
       }
     }
 
-    val linkRDD = pageRDD.flatMap(_.linkAll("ol#result-set h2 a"))
+    val linkRDD = pageRDD.flatMap(_.href("ol#result-set h2 a"))
     val results = linkRDD.collect()
     results.foreach {
       println(_)
