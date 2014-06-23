@@ -27,7 +27,7 @@ final object Conf {
 //  val saveScreenshotPath = "file:///home/peng/spookystuffScreenShots/"
 
   val errorPageDumpDir = "file:///home/peng/spookystuff/error"
-  val localErrorPageDumpDir = "file:///home/peng/spookystuff/error"
+  val localErrorPageDumpDir = "/home/peng/spookystuff/error"
 
   val phantomJSCaps = new DesiredCapabilities;
   phantomJSCaps.setJavascriptEnabled(true);                //< not really needed: JS enabled by default
