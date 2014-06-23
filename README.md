@@ -20,12 +20,11 @@ A one minute showcase
 - Goal: Find highest-ranking professionals in you area on LinkedIn. whose full name is either 'Sanjay Gupta', 'Arun Gupta' or 'Hardik Gupta', print their respective full name, title and list of skill
 - Query:
 ```
-    sc.parallelize(Seq("Sanjay", "Arun", "Hardik"))
-      .+>( Visit("https://www.linkedin.com/"))
-      .+>( TextInput("input#first", "#{_}"))
-      .*>( TextInput("input#last", "Gupta"), TextInput("input#last", "Krishnamurthy"))
-      .+>( Submit("input[name=\"search\"]"))
-      .!()
+    (sc.parallelize(Seq("Sanjay", "Arun", "Hardik")) +>
+      Visit("https://www.linkedin.com/") +>
+      TextInput("input#first", "#{_}") +*>
+      Seq( TextInput("input#last", "Gupta"), TextInput("input#last", "Krishnamurthy")) +>
+      Submit("input[name=\"search\"]") !)
       .wgetJoin("ol#result-set h2 a") //faster
       .map{ page => (
       page.text1("span.full-name"),
