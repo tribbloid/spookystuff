@@ -12,7 +12,7 @@ import java.io.Serializable
 object AppliancePartsPros {
 
   def main(args: Array[String]) {
-    val conf = new SparkConf().setAppName("MoreLinkedIn")
+    val conf = new SparkConf().setAppName("AppliancePartsPros")
     val sc = new SparkContext(conf)
 
     (sc.parallelize(Seq("A210S")) +>

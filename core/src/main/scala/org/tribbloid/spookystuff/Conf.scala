@@ -21,13 +21,13 @@ final object Conf {
   //default max number of elements scraped from a page, set to Int.max to allow unlimited fetch
   val fetchLimit = 100
 
-  val savePagePath = "file:///home/peng/spookystuff/"
+  val savePagePath = "s3n://spooky_page"
 
-  val localSavePagePath = "/home/peng/spookystuff/"
+  val localSavePagePath = "temp/spooky_page/"
 //  val saveScreenshotPath = "file:///home/peng/spookystuffScreenShots/"
 
-  val errorPageDumpDir = "file:///home/peng/spookystuff/error"
-  val localErrorPageDumpDir = "/home/peng/spookystuff/error"
+  val errorPageDumpDir = "s3n://spooky_errorpage"
+  val localErrorPageDumpDir = "temp/spooky_errorpage"
 
   val phantomJSCaps = new DesiredCapabilities;
   phantomJSCaps.setJavascriptEnabled(true);                //< not really needed: JS enabled by default
