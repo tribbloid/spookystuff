@@ -5,13 +5,28 @@ import java.io.Serializable
 import scala.collection.JavaConversions._
 
 /**
-* Created by peng on 12/06/14.
-*/
+ * Created by peng on 12/06/14.
+ */
+//TODO: verify this! document is really scarce
+//The precedence of an inﬁx operator is determined by the operator’s ﬁrst character.
+//Characters are listed below in increasing order of precedence, with characters on
+//the same line having the same precedence.
+//(all letters)
+//|
+//^
+//&
+//= !.................................................(new doc)
+//< >
+//= !.................................................(old doc)
+//:
+//+ -
+//* / %
+//(all other special characters)
 class ActionPlan(val context: util.HashMap[String, Serializable] = null) extends Serializable {
 
   def this(context: util.HashMap[String, Serializable], as: Action*) = {
     this(context)
-    this.+=(as: _*)
+    this.+=(as)
   }
 
   // everything in this list is formatted
@@ -29,7 +44,11 @@ class ActionPlan(val context: util.HashMap[String, Serializable] = null) extends
     "ActionPlan("+this.context.toString+","+this.actions.toString+")"
   }
 
-  def +=(as: Action*) {
+  def +=(a: Action) {
+    this.actions.add(a.format(context))
+  }
+
+  def +=(as: Seq[Action]) {
     as.foreach{
       a => this.actions.add(a.format(context))
     }
@@ -37,18 +56,24 @@ class ActionPlan(val context: util.HashMap[String, Serializable] = null) extends
 
   //will remove context of the parameter! cannot merge two context as they may have conflict keys
   def +=(ac: ActionPlan) {
-    this.+=(ac.actions: _*)
+    this.+=(ac.actions)
   }
 
-  def + (as: Action*): ActionPlan = {
+  def + (a: Action): ActionPlan = {
     val result = new ActionPlan(this.context, this.actions: _*)
-    result.+=(as: _*)
+    result.+=(a)
+    result
+  }
+
+  def + (as: Seq[Action]): ActionPlan = {
+    val result = new ActionPlan(this.context, this.actions: _*)
+    result.+=(as)
     result
   }
 
   def + (ac: ActionPlan): ActionPlan = {
     val result = new ActionPlan(this.context, this.actions: _*)
-    result.+=(ac.actions: _*)
+    result.+=(ac.actions)
     result
   }
 

@@ -12,7 +12,7 @@ import java.io.Serializable
 object AppliancePartsPros extends Runnable {
 
   override def doMain() {
-    val third = (sc.parallelize(Seq("A210S")) +>
+    (sc.parallelize(Seq("A210S")) +>
       Visit("http://www.appliancepartspros.com/") +>
       TextInput("input.ac-input","#{_}") +>
       Click("input[value=\"Search\"]") +> //TODO: can't use Submit, why?
@@ -22,12 +22,6 @@ object AppliancePartsPros extends Runnable {
       ).wgetJoin("div.inner li a:has(img)")
       .selectInto("schematic" -> {_.text1("div#ctl00_cphMain_up1 h1")})
       .wgetJoin("tbody.m-bsc td.pdct-descr h2 a")
-//
-//    third.persist()
-//
-//    third.save(dir = "file:/home/peng/spookystuff/appliancedebug").foreach(println(_))
-//
-//    third
       .map(
         page => (
           page.context.get("_"),
@@ -39,6 +33,13 @@ object AppliancePartsPros extends Runnable {
           page.text1("div.m-pdct div.m-chm p")
           )
       ).collect().foreach(println(_))
+
+    //
+    //    third.persist()
+    //
+    //    third.save(dir = "file:/home/peng/spookystuff/appliancedebug").foreach(println(_))
+    //
+    //    third
   }
 }
 //TODO: some tasks went dead

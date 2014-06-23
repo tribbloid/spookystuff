@@ -110,16 +110,16 @@ class PageRDDFunctions(val self: RDD[Page]) {
 
   //inner join
   def join(selector: String, limit: Int = Conf.fetchLimit, attr :String = "abs:href"): RDD[Page] =
-    this.visit(selector, limit, attr) >!<
+    this.visit(selector, limit, attr) !><
 
   def wgetJoin(selector: String, limit: Int = Conf.fetchLimit, attr :String = "abs:href"): RDD[Page] =
-    this.wget(selector, limit, attr) >!!!<
+    this.wget(selector, limit, attr) !!!><
 
   def leftJoin(selector: String, limit: Int = Conf.fetchLimit, attr :String = "abs:href"): RDD[Page] =
-    this.visit(selector, limit, attr) >!<
+    this.visit(selector, limit, attr) !><
 
   def wgetLeftJoin(selector: String, limit: Int = Conf.fetchLimit, attr :String = "abs:href"): RDD[Page] =
-    this.wget(selector, limit, attr) >!!!<
+    this.wget(selector, limit, attr) !!!><
 
   //slower than nested action and wgetJoinByPagination
   //attr is always "abs:href"

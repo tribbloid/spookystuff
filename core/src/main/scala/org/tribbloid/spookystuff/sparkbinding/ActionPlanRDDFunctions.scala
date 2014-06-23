@@ -9,10 +9,31 @@ import scala.collection.JavaConversions._
 /**
  * Created by peng on 06/06/14.
  */
+
+//TODO: verify this! document is really scarce
+//The precedence of an inﬁx operator is determined by the operator’s ﬁrst character.
+//Characters are listed below in increasing order of precedence, with characters on
+//the same line having the same precedence.
+//(all letters)
+//|
+//^
+//&
+//= !.................................................(new doc)
+//< >
+//= !.................................................(old doc)
+//:
+//+ -
+//* / %
+//(all other special characters)
+
 class ActionPlanRDDFunctions(val self: RDD[ActionPlan]) {
 
-  def +>(actions: Action*): RDD[ActionPlan] = self.map {
-    _ + (actions: _*)
+  def +>(actions: Action): RDD[ActionPlan] = self.map {
+    _ + (actions)
+  }
+
+  def +>(actions: Seq[Action]): RDD[ActionPlan] = self.map {
+    _ + (actions)
   }
 
   //will remove context of the parameter! cannot merge two context as they may have conflict keys
@@ -22,7 +43,7 @@ class ActionPlanRDDFunctions(val self: RDD[ActionPlan]) {
 
 
   //one to many: cartesian product-ish
-  def *>(actions: Action*): RDD[ActionPlan] = self.flatMap {
+  def +*>(actions: Seq[Action]): RDD[ActionPlan] = self.flatMap {
     old => {
       val results: ArrayBuffer[ActionPlan] = ArrayBuffer()
 
@@ -36,9 +57,9 @@ class ActionPlanRDDFunctions(val self: RDD[ActionPlan]) {
     }
   }
 
-  //TODO: unfortunately the name of this operator has to be different to avoid TYPE ERASURE
+  //TODO: merge with *> with match cases in foreach iterator
   //will remove context of the parameter! cannot merge two context as they may have conflict keys
-  def **>(aps: ActionPlan*): RDD[ActionPlan] = self.flatMap {
+  def +**>(aps: Seq[ActionPlan]): RDD[ActionPlan] = self.flatMap {
     old => {
       val results: ArrayBuffer[ActionPlan] = ArrayBuffer()
 
@@ -77,7 +98,7 @@ class ActionPlanRDDFunctions(val self: RDD[ActionPlan]) {
   //be careful this step is complex and may take longer than plain execution if unoptimized
   //there is no repartitioning in the process, may cause unbalanced execution, but apparently groupByKey will do it automatically
   //TODO: this definitely need some logging to let us know how many actual resolves.
-  def >!!!<(): RDD[Page] = {
+  def !!!><(): RDD[Page] = {
     val squashedPlanRDD = self.map{ ap => (ap.actions, ap.context) }.groupByKey()
 
     val squashedPageRDD = squashedPlanRDD.flatMap { tuple => PageBuilder.resolve(tuple._1: _*).map{ (_, tuple._2) } }
@@ -89,7 +110,7 @@ class ActionPlanRDDFunctions(val self: RDD[ActionPlan]) {
     }
   }
 
-  def >!<(): RDD[Page] = {
+  def !><(): RDD[Page] = {
     val squashedPlanRDD = self.map{ ap => (ap.interactions, ap.context) }.groupByKey()
 
     val squashedPageRDD = squashedPlanRDD.map { tuple => ( PageBuilder.resolveFinal(tuple._1: _*), tuple._2) }
