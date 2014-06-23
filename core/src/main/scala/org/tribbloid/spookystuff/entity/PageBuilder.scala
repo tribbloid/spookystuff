@@ -32,8 +32,11 @@ object PageBuilder {
       for (action <- actions) {
         action.exe(pb)
       }
+      Snapshot().exe(pb).toList(0)
     }
-    Snapshot().exe(pb).toList(0)
+    finally {
+      pb.finalize
+    }
   }
 
   def resolve(actions: Action*): Array[Page] = {
@@ -76,10 +79,11 @@ private class PageBuilder(
   val backtrace: util.List[Interactive] = new util.ArrayList[Interactive]()
   //by default drivers should be reset and reused in this case, but whatever
 
-//  def exe(action: Action): Array[Page] = action.exe(this)
+  //  def exe(action: Action): Array[Page] = action.exe(this)
 
   //remember to call this! don't want thousands of phantomJS browsers opened
   override def finalize = {
+    driver.close()
     driver.quit()
   }
 }
