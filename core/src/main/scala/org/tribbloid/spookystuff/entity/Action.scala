@@ -36,24 +36,28 @@ private object ActionUtils {
 
 }
 
-trait Action extends Serializable {
+trait Action extends Serializable with Cloneable {
 
   var timeline: Long = -1
 
   def format[T](context: util.Map[String,T]): this.type = this
 
+  override def clone(): AnyRef = super.clone()
+
   final def exe(pb: PageBuilder): Array[Page] = {
 
     try {
       var pages = doExe(pb: PageBuilder)
-      this.timeline = new Date().getTime - pb.start_time
+      var newTimeline = new Date().getTime - pb.start_time
 
       if (this.isInstanceOf[Interactive]) {
-        pb.backtrace.add(this.asInstanceOf[Interactive])
+        val cloned = this.clone().asInstanceOf[Interactive] //TODO: EVIL!
+        cloned.timeline = newTimeline
+        pb.backtrace.add(cloned)
       }
 
       if (this.isInstanceOf[Aliased]) {
-        pages = pages.map(page => page.modify(alias = this.asInstanceOf[Aliased].alias))
+        pages = pages.map(page => page.copy(alias = this.asInstanceOf[Aliased].alias))
       }
 
       return pages
@@ -173,9 +177,10 @@ case class Snapshot() extends Aliased {
       pb.driver.getPageSource.getBytes("UTF8"),
       contentType = "text/html; charset=UTF-8"
     )
-    page.backtrace.addAll(pb.backtrace)
 
-    return Array[Page](page)
+    val backtrace = pb.backtrace.toArray(new Array[Interactive](pb.backtrace.size()))
+
+    return Array[Page](page.copy(backtrace = backtrace))
   }
 }
 

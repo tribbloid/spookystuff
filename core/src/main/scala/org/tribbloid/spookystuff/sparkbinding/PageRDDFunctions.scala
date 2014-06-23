@@ -6,6 +6,7 @@ import org.apache.spark.SerializableWritable
 import org.apache.spark.rdd.RDD
 import org.tribbloid.spookystuff.Conf
 import org.tribbloid.spookystuff.entity._
+import java.util
 
 import org.tribbloid.spookystuff.SpookyContext._
 
@@ -16,25 +17,26 @@ import scala.collection.mutable.ArrayBuffer
 //mimic sql keywords
 class PageRDDFunctions(val self: RDD[Page]) {
 
-  def as(alias: String): RDD[Page] = self.map{ _.modify(alias = alias) }
+  def as(alias: String): RDD[Page] = self.map{ _.copy(alias = alias) }
 
   def from(alias: String): RDD[Page] = self.filter{ _.alias == alias }
 
-  def clearContext(): RDD[Page] = self.map{ _.modify(context = null) }
+  def clearContext(): RDD[Page] = self.map{ _.copy(context = null) }
 
-  //TODO: change to spark SQL-style
+  //TODO: what's the point of renaming it? change to spark SQL-style
   def where(f: Page => Boolean) = self.filter(f)
 
   //TODO: this is the most abominable interface so far, will gradually evolve to resemble Spark SQL's select
   def selectInto(keyAndF: (String, Page => Serializable)*): RDD[Page] = self.map {
 
     page => {
-      val map = page.asMap(keyAndF: _*)
-      val newPage = page.copy()
+      val map = page.extractPropertiesAsMap(keyAndF: _*)
 
-      newPage.context.putAll(map)
+      //always replace old key-value pairs with new ones, old ones are flushed out
+      val newContext = new util.HashMap[String,Serializable](page.context)
+      newContext.putAll(map)
 
-      newPage
+      page.copy(context = newContext)
     }
   }
 
@@ -42,30 +44,22 @@ class PageRDDFunctions(val self: RDD[Page]) {
   def select(keyAndF: (String, Page => Serializable)*): RDD[Page] = self.map {
 
     page => {
-      val map = page.asMap(keyAndF: _*)
-      page.modify(context = map)
+      val map = page.extractPropertiesAsMap(keyAndF: _*)
+      page.copy(context = map)
     }
   }
 
   def slice(selector: String): RDD[Page] = self.flatMap(_.slice(selector))
 
-  //if the page doesn't contain the selector it will throw an exception
-  //pass all context to ActionPlans
-  //from now on all transformations that generates an RDD[ActionPlan] will use operator
-//  def linkFirst (selector: String): RDD[ActionPlan] = self.map{
-//    page => {
-//
-//      val context = page.context
-//      new ActionPlan(context) + Visit(page.linkFirst(selector))
-//    }
-//  }
-
-  //save to whatever (HDFS,S3,local disk) and return file paths
-  def save(fileName: String = "#{resolved-url}", dir: String = Conf.savePagePath, overwrite: Boolean = false): RDD[String] = {
+  //save to whatever (HDFS,S3,local disk) and return a list file paths, this is an action
+  def save(fileName: String = "#{resolved-url}", dir: String = Conf.savePagePath, overwrite: Boolean = false): Array[String] = {
     val hConfWrapper = self.context.broadcast(new SerializableWritable(self.context.hadoopConfiguration))
 
-    self.map(page => page.save(fileName, dir, overwrite)(hConfWrapper.value.value))
+    self.map(page => page.save(fileName, dir, overwrite)(hConfWrapper.value.value)).collect()
   }
+
+  //pass all context to ActionPlans
+  //SUGGESTION: all transformations that generates an RDD[ActionPlan] should use operator
 
   //ignore pages that doesn't contain the selector
   def visit(selector: String, limit: Int = Conf.fetchLimit, attr :String = "abs:href"): RDD[ActionPlan] = self.flatMap{

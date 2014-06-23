@@ -20,6 +20,6 @@ object ResellerRatingsUseContainer extends Runnable {
     ) !!!)
       //remember jsoup doesn't support double quotes in attribute selector!
       .save()
-      .collect().foreach(println(_))
+      .foreach(println(_))
   }
 }

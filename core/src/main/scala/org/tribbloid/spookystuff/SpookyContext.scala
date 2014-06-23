@@ -39,7 +39,7 @@ object SpookyContext {
 
   implicit def mapRDDToActionPlanRDD(rdd: RDD[util.Map[String,Serializable]]) = rdd.map{
     map => {
-      new ActionPlan(map)
+      new ActionPlan(new util.HashMap[String,Serializable](map))
     }
   }
 

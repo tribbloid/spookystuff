@@ -7,9 +7,9 @@ import scala.collection.JavaConversions._
 /**
 * Created by peng on 12/06/14.
 */
-class ActionPlan(val context: util.Map[String, Serializable] = null) extends Serializable {
+class ActionPlan(val context: util.HashMap[String, Serializable] = null) extends Serializable {
 
-  def this(context: util.Map[String, Serializable], as: Action*) = {
+  def this(context: util.HashMap[String, Serializable], as: Action*) = {
     this(context)
     this.+=(as: _*)
   }
@@ -62,7 +62,7 @@ class ActionPlan(val context: util.Map[String, Serializable] = null) extends Ser
 
   //only execute interactions and extract the final stage, if has no action will return an empty page
   def !(): Page = {
-    val page = PageBuilder.resolveFinal(this.interactions: _*).modify(context = this.context)
+    val page = PageBuilder.resolveFinal(this.interactions: _*).copy(context = this.context)
     return page
   }
 
@@ -72,7 +72,7 @@ class ActionPlan(val context: util.Map[String, Serializable] = null) extends Ser
     if (pages.size==0 && left ==true) pages = pages.:+(PageBuilder.emptyPage())
     if (this.context !=null) {
       //has to use deep copy, one to many mapping and context may be modified later
-      pages = pages.map { _.modify(context = new util.HashMap(this.context)) }
+      pages = pages.map { _.copy(context = new util.HashMap(this.context)) }
     }
     return pages
   }

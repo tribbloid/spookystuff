@@ -21,6 +21,6 @@ object GoogleImage extends Runnable {
       DelayFor("div#search img",50) !)
       .wgetJoin("div#search img",1,"src")
       .save("#{_}", "s3n://college-logo")
-      .collect().foreach(println(_))
+      .foreach(println(_))
   }
 }

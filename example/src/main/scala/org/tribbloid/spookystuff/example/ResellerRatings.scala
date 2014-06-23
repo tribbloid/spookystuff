@@ -17,6 +17,6 @@ object ResellerRatings extends Runnable {
           //remember jsoup doesn't support double quotes in attribute selector!
     .wgetInsertPagination("div#survey-header ul.pagination a:contains(next)")
     .save()
-    .collect().foreach(println(_))
+    .foreach(println(_))
   }
 }

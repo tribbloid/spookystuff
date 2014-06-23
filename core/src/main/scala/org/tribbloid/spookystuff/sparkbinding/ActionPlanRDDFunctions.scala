@@ -84,7 +84,7 @@ class ActionPlanRDDFunctions(val self: RDD[ActionPlan]) {
 
     return squashedPageRDD.flatMap {
       tuple => tuple._2.map {
-        cc => tuple._1.modify(context = cc)
+        cc => tuple._1.copy(context = cc)
       }
     }
   }
@@ -96,7 +96,7 @@ class ActionPlanRDDFunctions(val self: RDD[ActionPlan]) {
 
     return squashedPageRDD.flatMap {
       tuple => tuple._2.map {
-        cc => tuple._1.modify(context = cc)
+        cc => tuple._1.copy(context = cc)
       }
     }
   }
