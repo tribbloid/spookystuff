@@ -12,7 +12,7 @@ object ResellerRatingsUseContainer {
 
   def main(args: Array[String]) {
 
-    val conf = new SparkConf().setAppName("MoreLinkedIn")
+    val conf = new SparkConf().setAppName("ResellerRatings2")
     val sc = new SparkContext(conf)
 
     (sc.parallelize(Seq("Hewlett_Packard"))

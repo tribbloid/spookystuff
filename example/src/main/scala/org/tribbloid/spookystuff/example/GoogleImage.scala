@@ -11,7 +11,7 @@ import org.tribbloid.spookystuff.SpookyContext._
 object GoogleImage {
 
   def main(args: Array[String]) {
-    val conf = new SparkConf().setAppName("MoreLinkedIn")
+    val conf = new SparkConf().setAppName("GoogleImage")
     val sc = new SparkContext(conf)
 
     //    val nameRDD = sc.textFile("/home/peng/Documents/affiliation.txt").distinct(16)
