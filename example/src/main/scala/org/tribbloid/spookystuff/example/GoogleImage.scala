@@ -12,15 +12,7 @@ object GoogleImage {
 
   def main(args: Array[String]) {
     val conf = new SparkConf().setAppName("MoreLinkedIn")
-    conf.setMaster("local[8,3]")
-    //    conf.setMaster("local-cluster[2,4,1000]")
-    conf.setSparkHome(System.getenv("SPARK_HOME"))
-    val jars = SparkContext.jarOfClass(this.getClass).toList
-    conf.setJars(jars)
-    conf.set("spark.task.maxFailures", "3")
     val sc = new SparkContext(conf)
-
-    Conf.init(sc)
 
     //    val nameRDD = sc.textFile("/home/peng/Documents/affiliation.txt").distinct(16)
     (sc.textFile("/home/peng/Documents/affiliation_short5.txt",16) +>
@@ -30,7 +22,7 @@ object GoogleImage {
       Submit("input[name=\"btnG\"]") +>
       DelayFor("div#search img",50) !)
       .wgetJoin("div#search img",1,"src")
-      .save("#{_}", "file:///home/peng/spookystuff/image",true)
+      .save("#{_}", "file:///home/peng/spookystuff/image")
       .collect().foreach(println(_))
 
     sc.stop()

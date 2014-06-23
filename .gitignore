@@ -33,3 +33,6 @@ output
 #Misc
 temp
 foo
+
+#aws key
+**/rootkey.csv

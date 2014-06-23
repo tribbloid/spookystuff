@@ -1,4 +1,4 @@
-package org.tribbloid.scrappy.spike
+package org.tribbloid.spookystuff.spike
 
 /**
  * Created by peng on 12/06/14.

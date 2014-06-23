@@ -1,12 +1,13 @@
 package org.tribbloid.spookystuff.entity
 
-import java.io.Serializable
+import java.io._
 import java.text.DateFormat
 import java.util
-import java.util.{UUID, Date}
+import java.util.{Date, UUID}
 
 import org.apache.commons.io.IOUtils
-import org.apache.hadoop.fs.Path
+import org.apache.hadoop.conf.Configuration
+import org.apache.hadoop.fs.{FileSystem, Path}
 import org.apache.http.entity.ContentType
 import org.apache.spark.SparkException
 import org.jsoup.Jsoup
@@ -14,7 +15,6 @@ import org.jsoup.nodes.Element
 import org.tribbloid.spookystuff.Conf
 
 import scala.collection.JavaConversions._
-import scala.collection.mutable.ArrayBuffer
 ;
 
 /**
@@ -93,10 +93,10 @@ class Page(
     }
   }
 
-//  def refresh(): Page = {
-//    val page = PageBuilder.resolveFinal(this.backtrace: _*).modify(this.alias,this.context)
-//    return page
-//  }
+  //  def refresh(): Page = {
+  //    val page = PageBuilder.resolveFinal(this.backtrace: _*).modify(this.alias,this.context)
+  //    return page
+  //  }
 
   def elementExist(selector: String): Boolean = {
     !doc.select(selector).isEmpty
@@ -168,10 +168,7 @@ class Page(
     result
   }
 
-  //this is only for sporadic file saving, will cause congestion if used in a full-scale transformation.
-  //If you want to save everything in an RDD, use actions like RDD.save...()
-  //also remember this will lose information as charset encoding will be different
-  def save(fileName: String = "#{resolved-url}", dir: String = Conf.savePagePath, overwrite: Boolean = false): String = {
+  def getFilePath(fileName: String = "#{resolved-url}", dir: String = Conf.savePagePath): String ={
     var formattedFileName = ActionUtils.formatWithContext(fileName, this.context)
 
     formattedFileName = formattedFileName.replace("#{resolved-url}", this.resolvedUrl)
@@ -180,20 +177,29 @@ class Page(
     //sanitizing filename can save me a lot of trouble
     formattedFileName = formattedFileName.replaceAll("[:\\\\/*?|<>]+", "_")
 
+    return new Path(dir, formattedFileName).toString
+  }
+
+  //this is only for sporadic file saving, will cause congestion if used in a full-scale transformation.
+  //If you want to save everything in an RDD, use actions like RDD.save...()
+  //also remember this will lose information as charset encoding will be different
+  def save(fileName: String = "#{resolved-url}", dir: String = Conf.savePagePath, overwrite: Boolean = false)(hConf: Configuration): String = {
+
     val path = new Path(dir)
 
     //TODO: slow to check if the dir exist
-    val fs = path.getFileSystem(Conf.hConf.value.value)
+    val fs = path.getFileSystem(hConf)
     if (!fs.isDirectory(path)) {
       if (!fs.mkdirs(path)) {
         throw new SparkException("Failed to create save path " + path) //TODO: Still SparkException?
       }
     }
 
-    var fullPath = new Path(path, formattedFileName)
+    val fullPathString = getFilePath(fileName, dir)
+    var fullPath = new Path(fullPathString)
 
     if (overwrite==false && fs.exists(fullPath)) {
-      fullPath = new Path(path, formattedFileName +"_"+ UUID.randomUUID())
+      fullPath = new Path(fullPathString +"_"+ UUID.randomUUID())
     }
     val fos = fs.create(fullPath, overwrite) //don't overwrite important file
 
@@ -203,5 +209,28 @@ class Page(
     fos.close()
 
     return fullPath.getName
+  }
+
+  def saveLocal(fileName: String = "#{resolved-url}", dir: String = Conf.localSavePagePath, overwrite: Boolean = false): String = {
+
+    val path: File = new File(dir)
+    if (!path.isDirectory) path.mkdirs()
+
+    val fullPathString = getFilePath(fileName, dir)
+
+    var file: File = new File(fullPathString)
+
+    if (overwrite==false && file.exists()) {
+      file = new File(fullPathString +"_"+ UUID.randomUUID())
+    }
+
+    file.createNewFile();
+
+    val fos = new FileOutputStream(file)
+
+    IOUtils.write(content,fos)
+    fos.close()
+
+    return file.getAbsolutePath
   }
 }

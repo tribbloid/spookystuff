@@ -13,12 +13,6 @@ import org.openqa.selenium.remote.{CapabilityType, DesiredCapabilities}
 //TODO: can use singleton pattern? those values never changes after SparkContext is defined
 final object Conf {
 
-  var hConf: Broadcast[SerializableWritable[Configuration]] = null
-
-  def init(sc: SparkContext) {
-    this.hConf = sc.broadcast(new SerializableWritable(sc.hadoopConfiguration))
-  }
-
   val pageDelay = 5
   val pageTimeout = 50
 //  val usePageCache = false //delegated to smart execution
@@ -28,9 +22,12 @@ final object Conf {
   val fetchLimit = 100
 
   val savePagePath = "file:///home/peng/spookystuff/"
-  val saveScreenshotPath = "file:///home/peng/spookystuffScreenShots/"
+
+  val localSavePagePath = "/home/peng/spookystuff/"
+//  val saveScreenshotPath = "file:///home/peng/spookystuffScreenShots/"
 
   val errorPageDumpDir = "file:///home/peng/spookystuff/error"
+  val localErrorPageDumpDir = "file:///home/peng/spookystuff/error"
 
   val phantomJSCaps = new DesiredCapabilities;
   phantomJSCaps.setJavascriptEnabled(true);                //< not really needed: JS enabled by default

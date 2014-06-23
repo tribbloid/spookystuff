@@ -1,4 +1,4 @@
-package org.tribbloid.scrappy.spike
+package org.tribbloid.spookystuff.spike
 
 import org.apache.spark.{SparkContext, SparkConf, sql}
 

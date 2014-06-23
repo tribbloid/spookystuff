@@ -1,3 +1,5 @@
+package org.tribbloid.spookystuff.spike;
+
 import org.openqa.selenium.By;
 import org.openqa.selenium.Capabilities;
 import org.openqa.selenium.WebDriver;

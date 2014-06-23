@@ -2,6 +2,7 @@ package org.tribbloid.spookystuff.sparkbinding
 
 import java.io.Serializable
 
+import org.apache.spark.SerializableWritable
 import org.apache.spark.rdd.RDD
 import org.tribbloid.spookystuff.Conf
 import org.tribbloid.spookystuff.entity._
@@ -60,8 +61,11 @@ class PageRDDFunctions(val self: RDD[Page]) {
 //  }
 
   //save to whatever (HDFS,S3,local disk) and return file paths
-  def save(fileName: String = "#{resolved-url}", dir: String = Conf.savePagePath, overwrite: Boolean = false): RDD[String] =
-    self.map(page => page.save(fileName, dir, overwrite))
+  def save(fileName: String = "#{resolved-url}", dir: String = Conf.savePagePath, overwrite: Boolean = false): RDD[String] = {
+    val hConfWrapper = self.context.broadcast(new SerializableWritable(self.context.hadoopConfiguration))
+
+    self.map(page => page.save(fileName, dir, overwrite)(hConfWrapper.value.value))
+  }
 
   //ignore pages that doesn't contain the selector
   def visit(selector: String, limit: Int = Conf.fetchLimit, attr :String = "href"): RDD[ActionPlan] = self.flatMap{

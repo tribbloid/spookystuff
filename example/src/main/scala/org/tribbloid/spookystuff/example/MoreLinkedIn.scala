@@ -14,15 +14,7 @@ object MoreLinkedIn {
 
   def main(args: Array[String]) {
     val conf = new SparkConf().setAppName("MoreLinkedIn")
-    //    conf.setMaster("local[8,3]")
-    conf.setMaster("local-cluster[2,4,1000]")
-    conf.setSparkHome(System.getenv("SPARK_HOME"))
-    val jars = SparkContext.jarOfClass(this.getClass).toList
-    conf.setJars(jars)
-    conf.set("spark.task.maxFailures", "3")
     val sc = new SparkContext(conf)
-
-    Conf.init(sc)
 
     val actionsRDD = sc.parallelize(Seq("Sanjay", "Arun", "Hardik"))
       .+>( Visit("https://www.linkedin.com/"))

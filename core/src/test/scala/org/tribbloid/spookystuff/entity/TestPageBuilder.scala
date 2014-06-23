@@ -16,16 +16,9 @@ class TestPageBuilder extends FunSuite {
   object pageBuilderTag extends Tag("PageBuilder")
   object pageTag extends Tag("Page")
 
-  val conf = new SparkConf().setAppName("MoreLinkedIn")
-  conf.setMaster("local[8,5]")
-  //    conf.setMaster("local-cluster[2,4,1000]")
-  conf.setSparkHome(System.getenv("SPARK_HOME"))
-  val jars = SparkContext.jarOfClass(this.getClass).toList
-  conf.setJars(jars)
-  conf.set("spark.task.maxFailures", "5")
+  val conf = new SparkConf().setAppName("None")
+  conf.setMaster("local[*]")
   val sc = new SparkContext(conf)
-
-  Conf.init(sc)
 
   test("visit and snapshot", pageBuilderTag) {
     val builder = new PageBuilder()
@@ -108,7 +101,7 @@ class TestPageBuilder extends FunSuite {
     assert(resultsList.size === 1)
     val page1 = resultsList(0)
 
-    page1.save()
+    page1.saveLocal()
   }
 
   test("wget html and save", pageTag) {
@@ -120,7 +113,7 @@ class TestPageBuilder extends FunSuite {
     assert(resultsList.size === 1)
     val page1 = resultsList(0)
 
-    page1.save()
+    page1.saveLocal()
     assert(page1.text1("title") === "Google")
   }
 
@@ -133,7 +126,7 @@ class TestPageBuilder extends FunSuite {
     assert(resultsList.size === 1)
     val page1 = resultsList(0)
 
-    page1.save()
+    page1.saveLocal()
   }
 
   test("wget pdf and save", pageTag) {
@@ -145,7 +138,7 @@ class TestPageBuilder extends FunSuite {
     assert(resultsList.size === 1)
     val page1 = resultsList(0)
 
-    page1.save()
+    page1.saveLocal()
   }
 
 }

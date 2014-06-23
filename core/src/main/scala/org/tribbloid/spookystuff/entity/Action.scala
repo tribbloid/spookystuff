@@ -62,11 +62,17 @@ trait Action extends Serializable {
       case e: Throwable => {
 
         if (this.isInstanceOf[ErrorDump]) {
-          val pages = Snapshot().exe(pb)
-          pages.foreach {
-            page => page.save(dir = Conf.errorPageDumpDir)
-          }
-          //        TODO: logError("Error Page saved as "+errorFileName)
+
+          val page = Snapshot().exe(pb).toList(0)
+//          try {
+//            page.save(dir = Conf.errorPageDumpDir)
+//          }
+//          catch {
+//            case e: Throwable => {
+              page.saveLocal(dir = Conf.errorPageDumpDir)
+//            }
+//          }
+          //                  TODO: logError("Error Page saved as "+errorFileName)
         }
 
         throw e //try to delegate all failover to Spark, but this may change in the future
@@ -204,19 +210,19 @@ case class Loop(val times: Int = Conf.fetchLimit)(val actions: Action*) extends 
 
     val results = new ArrayBuffer[Page]()
 
-//    try {
-      for (i <- 0 until times) {
-        for (action <- actions) {
-          val pages = action.exe(pb)
-          if (pages != null) results.++=(pages)
-        }
+    //    try {
+    for (i <- 0 until times) {
+      for (action <- actions) {
+        val pages = action.exe(pb)
+        if (pages != null) results.++=(pages)
       }
-//    }
-//    catch {
-//      case e: Throwable => {
-//        //Do nothing
-//      }
-//    }
+    }
+    //    }
+    //    catch {
+    //      case e: Throwable => {
+    //        //Do nothing
+    //      }
+    //    }
 
     return results.toArray
   }

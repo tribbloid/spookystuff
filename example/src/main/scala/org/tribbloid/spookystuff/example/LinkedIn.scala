@@ -13,12 +13,7 @@ object LinkedIn {
 
   def main(args: Array[String]) {
     val conf = new SparkConf().setAppName("LinkedIn")
-    conf.setMaster("local[*]")
-    conf.setSparkHome(System.getenv("SPARK_HOME"))
-    conf.setJars(SparkContext.jarOfClass(this.getClass).toList)
     val sc = new SparkContext(conf)
-
-    Conf.init(sc)
 
     (sc.parallelize(Seq("Sanjay", "Arun", "Hardik")) +>
       Visit("https://www.linkedin.com/") +>
