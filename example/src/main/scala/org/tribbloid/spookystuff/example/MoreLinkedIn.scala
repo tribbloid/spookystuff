@@ -14,7 +14,7 @@ object MoreLinkedIn extends Runnable {
 
   def doMain() {
 
-    val actionsRDD = sc.parallelize(Seq("Sanjay", "Arun", "Hardik"))
+    sc.parallelize(Seq("Sanjay", "Arun", "Hardik"))
       .+>( Visit("https://www.linkedin.com/"))
       .+>( TextInput("input#first", "#{_}"))
       .*>( TextInput("input#last", "Gupta"), TextInput("input#last", "Krishnamurthy"))

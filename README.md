@@ -20,18 +20,19 @@ A one minute showcase
 - Goal: Find highest-ranking professionals in you area on LinkedIn. whose full name is either 'Sanjay Gupta', 'Arun Gupta' or 'Hardik Gupta', print their respective full name, title and list of skill
 - Query:
 ```
-(sc.parallelize(Seq("Sanjay", "Arun", "Hardik"))
-    +> Visit("https://www.linkedin.com/")
-    +> TextInput("input#first", "#{_}")
-    +> TextInput("input#last", "Gupta")
-    +> Submit("input[name=\"search\"]") ! )
-    .fork("ol#result-set h2 a")
-    .select( page => (
-        page.textFirst("span.full-name"),
-        page.textFirst("p.title"),
-        page.textAll("div#profile-skills li")
-        )
-    ).collect().foreach(println(_))
+    sc.parallelize(Seq("Sanjay", "Arun", "Hardik"))
+      .+>( Visit("https://www.linkedin.com/"))
+      .+>( TextInput("input#first", "#{_}"))
+      .*>( TextInput("input#last", "Gupta"), TextInput("input#last", "Krishnamurthy"))
+      .+>( Submit("input[name=\"search\"]"))
+      .!()
+      .wgetJoin("ol#result-set h2 a") //faster
+      .map{ page => (
+      page.text1("span.full-name"),
+      page.text1("p.title"),
+      page.text("div#profile-skills li")
+      )
+    }.collect().foreach(println(_))
 ```
 - Result (truncated, query finished in 1 minutes, test on wifi with ~400k/s download speed):
 ```
@@ -47,28 +48,29 @@ A one minute showcase
 - Goal: Find all parts on model 'A210S', print the full name of the model, time to find the model on website (in ms), schematic description, manufacturer's part number, and all substitutes
 - Query:
 ```
-(sc.parallelize(Seq("A210S"))
-    +> Visit("http://www.appliancepartspros.com/")
-    +> TextInput("input.ac-input","#{_}")
-    +> Click("input[value=\"Search\"]")
-    +> Delay(10) !)
-    .addToContext(
-        "model" -> { _.textFirst("div.dgrm-lst div.header h2") },
-        "time1" -> { _.backtrace.last.timeline.asInstanceOf[Serializable] }
-    ).fork("div.inner li a:has(img)")
-    .addToContext(
-        "schematic" -> {_.textFirst("div#ctl00_cphMain_up1 h1 span")}
-    ).fork("tbody.m-bsc td.pdct-descr h2 a")
-    select(
+    (sc.parallelize(Seq("A210S")) +>
+      Visit("http://www.appliancepartspros.com/") +>
+      TextInput("input.ac-input","#{_}") +>
+      Click("input[value=\"Search\"]") +> //TODO: can't use Submit, why?
+      Delay(10) ! //TODO: change to DelayFor to save time
+      ).selectInto(
+        "model" -> { _.text1("div.dgrm-lst div.header h2") },
+        "time1" -> { _.backtrace.last.timeline.asInstanceOf[Serializable] } //ugly tail
+      ).wgetJoin("div.inner li a:has(img)")
+      .selectInto("schematic" -> {_.text1("div#ctl00_cphMain_up1 h1 span")})
+      .wgetJoin("tbody.m-bsc td.pdct-descr h2 a")
+      .map(
         page => (
-        page.context.get("_"),
-        page.context.get("time1"),
-        page.context.get("model"),
-        page.context.get("schematic"),
-        page.textFirst("div.m-bsc div.mod ul li:contains(Manufacturer) strong"),
-        page.textFirst("div.m-pdct div.m-chm p")
-        )
-    ).collect().foreach(println(_))
+          page.context.get("_"),
+          page.context.get("time1"),
+          page.context.get("model"),
+          page.context.get("schematic"),
+          page.text1("div.m-pdct h1"),
+          page.text1("div.m-pdct td[itemprop=\"brand\"] span"),
+          page.text1("div.m-bsc div.mod ul li:contains(Manufacturer) strong"),
+          page.text1("div.m-pdct div.m-chm p")
+          )
+      ).collect().foreach(println(_))
 ```
 - Result (truncated, query finished in 10 minutes, test on wifi with ~400k/s download speed):
 ```
