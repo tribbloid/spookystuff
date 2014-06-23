@@ -9,11 +9,9 @@ import java.io.Serializable
 /**
  * This job will find and printout urls of Sanjay Gupta, Arun Gupta and Hardik Gupta in your area
  */
-object LinkedIn {
+object LinkedIn extends Runnable {
 
-  def main(args: Array[String]) {
-    val conf = new SparkConf().setAppName("LinkedIn")
-    val sc = new SparkContext(conf)
+  def doMain() {
 
     (sc.parallelize(Seq("Sanjay", "Arun", "Hardik")) +>
       Visit("https://www.linkedin.com/") +>
@@ -27,8 +25,5 @@ object LinkedIn {
         value.asInstanceOf[Seq[String]].foreach( println(_) )
       }
     }
-
-    sc.stop()
-
   }
 }

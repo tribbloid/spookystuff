@@ -8,23 +8,19 @@ import org.tribbloid.spookystuff.SpookyContext._
 /**
 * Created by peng on 10/06/14.
 */
-object GoogleImage {
+object GoogleImage extends Runnable {
 
-  def main(args: Array[String]) {
-    val conf = new SparkConf().setAppName("GoogleImage")
-    val sc = new SparkContext(conf)
+  override def doMain() {
 
     //    val nameRDD = sc.textFile("/home/peng/Documents/affiliation.txt").distinct(16)
-    (sc.textFile("/home/peng/Documents/affiliation_short5.txt",16) +>
+    (sc.textFile("s3n://spooky-source/affiliation-short5.txt",16) +>
       Visit("http://images.google.com/") +>
       DelayFor("form[action=\"/search\"]",50) +>
       TextInput("input[name=\"q\"]","#{_} Logo") +>
       Submit("input[name=\"btnG\"]") +>
       DelayFor("div#search img",50) !)
       .wgetJoin("div#search img",1,"src")
-      .save("#{_}", "file:///home/peng/spookystuff/image")
+      .save("#{_}", "s3n://college-logo")
       .collect().foreach(println(_))
-
-    sc.stop()
   }
 }

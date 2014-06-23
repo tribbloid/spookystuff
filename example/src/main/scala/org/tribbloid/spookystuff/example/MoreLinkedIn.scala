@@ -10,11 +10,9 @@ import org.tribbloid.spookystuff.SpookyContext._
 /**
 * A more complex linkedIn job that finds name and printout skills of all Sanjay Gupta in your local area
 */
-object MoreLinkedIn {
+object MoreLinkedIn extends Runnable {
 
-  def main(args: Array[String]) {
-    val conf = new SparkConf().setAppName("MoreLinkedIn")
-    val sc = new SparkContext(conf)
+  def doMain() {
 
     val actionsRDD = sc.parallelize(Seq("Sanjay", "Arun", "Hardik"))
       .+>( Visit("https://www.linkedin.com/"))
@@ -29,7 +27,5 @@ object MoreLinkedIn {
       page.text("div#profile-skills li")
       )
     }.collect().foreach(println(_))
-
-    sc.stop()
   }
 }

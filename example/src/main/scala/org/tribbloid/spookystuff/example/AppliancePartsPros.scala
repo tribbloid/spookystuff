@@ -9,12 +9,9 @@ import java.io.Serializable
 /**
  * Created by peng on 07/06/14.
  */
-object AppliancePartsPros {
+object AppliancePartsPros extends Runnable {
 
-  def main(args: Array[String]) {
-    val conf = new SparkConf().setAppName("AppliancePartsPros")
-    val sc = new SparkContext(conf)
-
+  override def doMain() {
     (sc.parallelize(Seq("A210S")) +>
       Visit("http://www.appliancepartspros.com/") +>
       TextInput("input.ac-input","#{_}") +>

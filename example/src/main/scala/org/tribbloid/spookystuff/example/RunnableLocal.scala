@@ -7,15 +7,18 @@ import org.apache.spark.{SparkContext, SparkConf}
   */
 trait RunnableLocal {
 
-   def main(args: Array[String]) {
-     val conf = new SparkConf().setAppName("MoreLinkedIn")
-     conf.setMaster("local[*]")
-     val sc = new SparkContext(conf)
+  var conf: SparkConf = null
+  var sc: SparkContext = null
 
-     doMain()
+  final def main(args: Array[String]) {
+    conf = new SparkConf().setAppName(this.getClass.getName)
+    conf.setMaster("local[*]")
+    sc = new SparkContext(conf)
 
-     sc.stop()
-   }
+    doMain()
 
-   def doMain()
+    sc.stop()
+  }
+
+  def doMain()
  }

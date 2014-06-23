@@ -175,9 +175,12 @@ class Page(
     formattedFileName = formattedFileName.replace("#{timestamp}", DateFormat.getInstance.format(this.timestamp))
 
     //sanitizing filename can save me a lot of trouble
-    formattedFileName = formattedFileName.replaceAll("[:\\\\/*?|<>]+", "_")
+    formattedFileName = formattedFileName.replaceAll("[:\\\\/*?|<>_]+", ".")
 
-    return new Path(dir, formattedFileName).toString
+    var formattedDir = dir
+    if (!formattedDir.endsWith("/")) formattedDir = dir+"/"
+    val dirPath = new Path(formattedDir)
+    return new Path(dirPath, formattedFileName).toString
   }
 
   //this is only for sporadic file saving, will cause congestion if used in a full-scale transformation.
@@ -185,18 +188,20 @@ class Page(
   //also remember this will lose information as charset encoding will be different
   def save(fileName: String = "#{resolved-url}", dir: String = Conf.savePagePath, overwrite: Boolean = false)(hConf: Configuration): String = {
 
-    val path = new Path(dir)
+//    val path = new Path(dir)
 
     //TODO: slow to check if the dir exist
-    val fs = path.getFileSystem(hConf)
-    if (!fs.isDirectory(path)) {
-      if (!fs.mkdirs(path)) {
-        throw new SparkException("Failed to create save path " + path) //TODO: Still SparkException?
-      }
-    }
+//    val fs = path.getFileSystem(hConf)
+//    if (!fs.isDirectory(path)) {
+//      if (!fs.mkdirs(path)) {
+//        throw new SparkException("Failed to create save path " + path) //TODO: Still SparkException?
+//      }
+//    }
 
     val fullPathString = getFilePath(fileName, dir)
     var fullPath = new Path(fullPathString)
+
+    val fs = fullPath.getFileSystem(hConf)
 
     if (overwrite==false && fs.exists(fullPath)) {
       fullPath = new Path(fullPathString +"_"+ UUID.randomUUID())

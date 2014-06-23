@@ -68,7 +68,7 @@ class PageRDDFunctions(val self: RDD[Page]) {
   }
 
   //ignore pages that doesn't contain the selector
-  def visit(selector: String, limit: Int = Conf.fetchLimit, attr :String = "href"): RDD[ActionPlan] = self.flatMap{
+  def visit(selector: String, limit: Int = Conf.fetchLimit, attr :String = "abs:href"): RDD[ActionPlan] = self.flatMap{
     page => {
 
       val context = page.context
@@ -79,7 +79,7 @@ class PageRDDFunctions(val self: RDD[Page]) {
   }
 
   //yield null for pages that doesn't contain the selector
-  def leftVisit(selector: String, limit: Int = Conf.fetchLimit, attr :String = "href"): RDD[ActionPlan] = self.flatMap{
+  def leftVisit(selector: String, limit: Int = Conf.fetchLimit, attr :String = "abs:href"): RDD[ActionPlan] = self.flatMap{
     page => {
 
       val context = page.context
@@ -92,7 +92,7 @@ class PageRDDFunctions(val self: RDD[Page]) {
   }
 
   //why anybody want this as ActionPlan? private
-  private def wget(selector: String, limit: Int = Conf.fetchLimit, attr :String = "href"): RDD[ActionPlan] = self.flatMap{
+  private def wget(selector: String, limit: Int = Conf.fetchLimit, attr :String = "abs:href"): RDD[ActionPlan] = self.flatMap{
     page => {
 
       val context = page.context
@@ -102,7 +102,7 @@ class PageRDDFunctions(val self: RDD[Page]) {
     }
   }
 
-  private def leftWget(selector: String, limit: Int = Conf.fetchLimit, attr :String = "href"): RDD[ActionPlan] = self.flatMap{
+  private def leftWget(selector: String, limit: Int = Conf.fetchLimit, attr :String = "abs:href"): RDD[ActionPlan] = self.flatMap{
     page => {
 
       val context = page.context
@@ -115,27 +115,27 @@ class PageRDDFunctions(val self: RDD[Page]) {
   }
 
   //inner join
-  def join(selector: String, limit: Int = Conf.fetchLimit, attr :String = "href"): RDD[Page] =
+  def join(selector: String, limit: Int = Conf.fetchLimit, attr :String = "abs:href"): RDD[Page] =
     this.visit(selector, limit, attr) >!<
 
-  def wgetJoin(selector: String, limit: Int = Conf.fetchLimit, attr :String = "href"): RDD[Page] =
+  def wgetJoin(selector: String, limit: Int = Conf.fetchLimit, attr :String = "abs:href"): RDD[Page] =
     this.wget(selector, limit, attr) >!!!<
 
-  def leftJoin(selector: String, limit: Int = Conf.fetchLimit, attr :String = "href"): RDD[Page] =
+  def leftJoin(selector: String, limit: Int = Conf.fetchLimit, attr :String = "abs:href"): RDD[Page] =
     this.visit(selector, limit, attr) >!<
 
-  def wgetLeftJoin(selector: String, limit: Int = Conf.fetchLimit, attr :String = "href"): RDD[Page] =
+  def wgetLeftJoin(selector: String, limit: Int = Conf.fetchLimit, attr :String = "abs:href"): RDD[Page] =
     this.wget(selector, limit, attr) >!!!<
 
   //slower than nested action and wgetJoinByPagination
-  //attr is always "href"
+  //attr is always "abs:href"
   def insertPagination(selector: String, limit: Int = Conf.fetchLimit): RDD[Page] = self.flatMap {
     page => {
       val results = ArrayBuffer[Page](page)
 
       var currentPage = page
       var i = 0
-      while (currentPage.attrExist(selector,"href") && i< limit) {
+      while (currentPage.attrExist(selector,"abs:href") && i< limit) {
         i = i+1
         currentPage = PageBuilder.resolveFinal(Visit(page.href1(selector)))
         results.+=(currentPage)
@@ -152,7 +152,7 @@ class PageRDDFunctions(val self: RDD[Page]) {
 
       var currentPage = page
       var i = 0
-      while (currentPage.attrExist(selector,"href") && i< limit) {
+      while (currentPage.attrExist(selector,"abs:href") && i< limit) {
         i = i+1
         val nextUrl = currentPage.href1(selector)
         currentPage = PageBuilder.resolve(Wget(nextUrl)).toList(0)
@@ -164,7 +164,7 @@ class PageRDDFunctions(val self: RDD[Page]) {
   }
 
   //TODO: this will automatically detect patterns from urls of pages and advance in larger batch
-//  def smartJoinByPagination(selector: String, limit: Int = Conf.fetchLimit, attr :String = "href")
+//  def smartJoinByPagination(selector: String, limit: Int = Conf.fetchLimit, attr :String = "abs:href")
 
 //  def crawlFirstIf(selector: String)(condition: HtmlPage => Boolean): RDD[HtmlPage] = self.map{
 //    page => {
@@ -189,7 +189,7 @@ class PageRDDFunctions(val self: RDD[Page]) {
   //or we crawl the disambiguation part, merge with old ActionPlans and >!<+ (lookup all plans from old pages) to get the new pages?
   //I prefer the first one, potentially produce smaller footage.
   //TODO: there is no repartitioning in the process, may cause unbalanced execution
-  def replaceIf(selector: String, limit: Int = Conf.fetchLimit, attr: String = "href")(condition: String = selector): RDD[Page] = {
+  def replaceIf(selector: String, limit: Int = Conf.fetchLimit, attr: String = "abs:href")(condition: String = selector): RDD[Page] = {
     val groupedPageRDD = self.map{ page => (page.elementExist(condition), page) }
     val falsePageRDD = groupedPageRDD.filter(_._1 == false).map(_._2)
     val truePageRDD = groupedPageRDD.filter(_._1 == true).map(_._2)
@@ -197,7 +197,7 @@ class PageRDDFunctions(val self: RDD[Page]) {
     newPageRDD.union(falsePageRDD)
   }
 
-  def wgetReplaceIf(selector: String, limit: Int = Conf.fetchLimit, attr: String = "href")(condition: String = selector): RDD[Page] = {
+  def wgetReplaceIf(selector: String, limit: Int = Conf.fetchLimit, attr: String = "abs:href")(condition: String = selector): RDD[Page] = {
     val groupedPageRDD = self.map{ page => (page.elementExist(condition), page) }
     val falsePageRDD = groupedPageRDD.filter(_._1 == false).map(_._2)
     val truePageRDD = groupedPageRDD.filter(_._1 == true).map(_._2)

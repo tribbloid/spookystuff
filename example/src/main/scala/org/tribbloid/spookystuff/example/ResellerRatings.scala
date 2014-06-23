@@ -8,12 +8,9 @@ import org.tribbloid.spookystuff.SpookyContext._
 /**
  * Created by peng on 18/06/14.
  */
-object ResellerRatings {
+object ResellerRatings extends Runnable {
 
-  def main(args: Array[String]) {
-
-    val conf = new SparkConf().setAppName("ResellerRatings")
-    val sc = new SparkContext(conf)
+  def doMain() {
 
     (sc.parallelize(Seq("Hewlett_Packard")) +>
       Wget("http://www.resellerratings.com/store/#{_}") !!!)
@@ -21,7 +18,5 @@ object ResellerRatings {
     .wgetInsertPagination("div#survey-header ul.pagination a:contains(next)")
     .save()
     .collect().foreach(println(_))
-
-    sc.stop()
   }
 }

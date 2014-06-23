@@ -7,9 +7,12 @@ import org.apache.spark.{SparkContext, SparkConf}
  */
 trait Runnable {
 
-  def main(args: Array[String]) {
-    val conf = new SparkConf().setAppName("MoreLinkedIn")
-    val sc = new SparkContext(conf)
+  var conf: SparkConf = null
+  var sc: SparkContext = null
+
+  final def main(args: Array[String]) {
+    conf = new SparkConf().setAppName(this.getClass.getName)
+    sc = new SparkContext(conf)
 
     doMain()
 
