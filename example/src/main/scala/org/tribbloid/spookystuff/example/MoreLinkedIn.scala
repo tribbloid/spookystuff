@@ -20,7 +20,7 @@ object MoreLinkedIn extends Runnable {
       Visit("https://www.linkedin.com/") +>
       TextInput("input#first", "#{_}") +*>
       Seq( TextInput("input#last", "Gupta"), TextInput("input#last", "Krishnamurthy")) +>
-      Submit("input[name=\"search\"]") !)
+      Submit("input[name=\"search\"]") !><)
       .wgetJoin("ol#result-set h2 a") //faster
       .map{ page => (
       page.text1("span.full-name"),

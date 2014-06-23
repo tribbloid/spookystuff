@@ -77,13 +77,21 @@ private class PageBuilder(
 
   val start_time: Long = new Date().getTime
   val backtrace: util.List[Interactive] = new util.ArrayList[Interactive]()
+
+//  TODO: Runtime.getRuntime.addShutdownHook()
   //by default drivers should be reset and reused in this case, but whatever
 
   //  def exe(action: Action): Array[Page] = action.exe(this)
 
   //remember to call this! don't want thousands of phantomJS browsers opened
   override def finalize = {
-    driver.close()
-    driver.quit()
+    try{
+      driver.close()
+      driver.quit()
+    }catch{
+      case t: Throwable => throw t;
+    }finally{
+      super.finalize();
+    }
   }
 }
