@@ -44,7 +44,7 @@ A one minute showcase
 ```
 
 #### 2. Find interchangeable parts of a washing machine on appliancepartspros.com
-- Goal: Find all parts on model 'A210S', print the full name of the model, time to find the model on website (in ms), schematic description, manufacturer's part number, and all substitutes
+- Goal: Find all parts on model 'A210S', print the full name of the model, schematic description, description/brand/and number of each part, and all their substitutes
 - Query:
 ```
     (sc.parallelize(Seq("A210S")) +>
@@ -73,9 +73,9 @@ A one minute showcase
 ```
 - Result (truncated, query finished in 10 minutes, test on wifi with ~400k/s download speed):
 ```
-(A210S,A210S Washer-Top Loading ,14789,01-Base\pump\motor Parts for Maytag A210S,Y015627,Part Number Y015627 (AP4277222) replaces 014526, 015627, 1239310, 15627, 24001310, 3400300, 3400502, 488266, 488293, 488398, 488577, 488594, 866821, 9415810, AH2191209, EA2191209, PS2191209, Y014526.)
-(A210S,A210S Washer-Top Loading ,14789,01-Base\pump\motor Parts for Maytag A210S,202718,Part Number 202718 (AP4023504) replaces 2-11946, 2-2718, 211946, 22001442, 434716, AH2016844, EA2016844, PS2016844.)
-(A210S,A210S Washer-Top Loading ,14789,04-Control Panel, Timer & Switches Parts for Maytag A210S,205611,Part Number 205611 (AP4023851) replaces 2-5611, 435339, AH2017212, EA2017212, PS2017212.)
+(A210S,A210S Washer-Top Loading ,07-Transmissions Parts for Maytag A210S,Collar-Dri,Whirlpool,Y014839,Part Number Y014839 (AP4277202) replaces 014839, 14839.)
+(A210S,A210S Washer-Top Loading ,08-Transmissions Parts for Maytag A210S,Collar-Dri,Whirlpool,Y014839,Part Number Y014839 (AP4277202) replaces 014839, 14839.)
+(A210S,A210S Washer-Top Loading ,05-Suds Saver Parts for Maytag A210S,Screw, Strainer to Pump,Maytag,911266,null)
 ... (311 lines)
 ```
 
