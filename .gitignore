@@ -36,3 +36,7 @@ foo
 
 #aws key
 **/rootkey.csv
+
+#spark deployment and autoscaling scripts
+#(these are not project-specific and will be committed into an independent repo)
+ops/
