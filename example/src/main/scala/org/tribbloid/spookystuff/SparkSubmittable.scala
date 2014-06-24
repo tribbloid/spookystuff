@@ -1,11 +1,11 @@
-package org.tribbloid.spookystuff.example
+package org.tribbloid.spookystuff
 
-import org.apache.spark.{SparkContext, SparkConf}
+import org.apache.spark.{SparkConf, SparkContext}
 
 /**
  * Created by peng on 22/06/14.
  */
-trait Runnable {
+trait SparkSubmittable {
 
   var conf: SparkConf = null
   var sc: SparkContext = null

@@ -1,14 +1,14 @@
 package org.tribbloid.spookystuff.example
 
 import org.apache.spark.{SparkContext, SparkConf}
-import org.tribbloid.spookystuff.Conf
+import org.tribbloid.spookystuff.{SparkSubmittable, Conf}
 import org.tribbloid.spookystuff.entity._
 import org.tribbloid.spookystuff.SpookyContext._
 
 /**
  * Created by peng on 18/06/14.
  */
-object ResellerRatings extends Runnable {
+object ResellerRatings extends SparkSubmittable {
 
   def doMain() {
 

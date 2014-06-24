@@ -1,7 +1,7 @@
 package org.tribbloid.spookystuff.example
 
 import org.apache.spark.{SparkContext, SparkConf}
-import org.tribbloid.spookystuff.Conf
+import org.tribbloid.spookystuff.{SparkSubmittable, Conf}
 import org.tribbloid.spookystuff.entity._
 import org.tribbloid.spookystuff.SpookyContext._
 import java.io.Serializable
@@ -9,7 +9,7 @@ import java.io.Serializable
 /**
  * This job will find and printout urls of Sanjay Gupta, Arun Gupta and Hardik Gupta in your area
  */
-object LinkedIn extends Runnable {
+object LinkedIn extends SparkSubmittable {
 
   def doMain() {
 

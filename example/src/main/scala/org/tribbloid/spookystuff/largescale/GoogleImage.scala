@@ -1,4 +1,4 @@
-package org.tribbloid.spookystuff.example
+package org.tribbloid.spookystuff.largescale
 
 import org.apache.spark.{SparkContext, SparkConf}
 import org.tribbloid.spookystuff.{SparkSubmittable, Conf}
@@ -13,7 +13,7 @@ object GoogleImage extends SparkSubmittable {
   override def doMain() {
 
     //    val nameRDD = sc.textFile("/home/peng/Documents/affiliation.txt").distinct(16)
-    (sc.textFile("s3n://spooky-source/affiliation-short5.txt",16) +>
+    (sc.textFile("s3n://spooky-source/affiliation.txt",200) +>
       Visit("http://images.google.com/") +>
       DelayFor("form[action=\"/search\"]",50) +>
       TextInput("input[name=\"q\"]","#{_} Logo") +>

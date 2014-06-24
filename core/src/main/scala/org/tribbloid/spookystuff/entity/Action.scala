@@ -73,7 +73,7 @@ trait Action extends Serializable with Cloneable {
 //          }
 //          catch {
 //            case e: Throwable => {
-              page.saveLocal(dir = Conf.errorPageDumpDir)
+              page.saveLocal(dir = Conf.localErrorPageDumpDir)
 //            }
 //          }
           //                  TODO: logError("Error Page saved as "+errorFileName)

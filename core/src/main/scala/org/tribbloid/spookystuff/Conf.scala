@@ -26,7 +26,7 @@ final object Conf {
   val localSavePagePath = "temp/spooky_page/"
 //  val saveScreenshotPath = "file:///home/peng/spookystuffScreenShots/"
 
-  val errorPageDumpDir = "s3n://spooky_errorpage"
+//  val errorPageDumpDir = "s3n://spooky_errorpage"
   val localErrorPageDumpDir = "temp/spooky_errorpage"
 
   val phantomJSCaps = new DesiredCapabilities;
