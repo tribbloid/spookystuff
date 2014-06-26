@@ -1,0 +1,45 @@
+---
+# Commmon tasks
+- name: Ensure required packages are installed
+  apt: pkg={{item}} state=present update_cache=yes
+  with_items:
+    - curl
+#    - sysstat
+#    - iptraf
+  tags: java
+
+- name: Ensure ubuntu user exists
+  user: name=ubuntu state=present groups=adm,admin append=yes
+  tags: java
+
+- name: Add java repository to sources
+  action: apt_repository repo='ppa:webupd8team/java'
+  tags: java
+
+- name: Autoaccept license for java
+  action: shell echo oracle-java7-installer shared/accepted-oracle-license-v1-1 select true | sudo /usr/bin/debconf-set-selections
+  tags: java
+
+- name: Update APT package cache
+  action: apt update_cache=yes
+  tags: java
+
+- name: Install java 7
+  action: apt pkg=oracle-java7-installer state=latest install_recommends=yes
+  tags: java
+
+- name: Set java 7 Env
+  action: apt pkg=oracle-java7-set-default state=latest install_recommends=yes
+  tags: java
+
+- name: Install security policy
+  unarchive: src=UnlimitedJCEPolicyJDK7.tar.gz dest=/usr/lib/jvm/java-7-oracle/jre/lib/security
+  tags: java
+
+- name: Set ownership of security policy
+  file: path=usr/lib/jvm/java-7-oracle/jre/lib/security state=directory recurse=yes owner=root group=root
+  tags: java
+
+- name: Copy .profile
+  template: src=.profile dest=/home/ubuntu owner=ubuntu group=ubuntu
+  tags: java

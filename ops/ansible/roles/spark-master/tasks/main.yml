@@ -1,0 +1,5 @@
+---
+
+- name: Setup spark-master startup conf
+  template: src=sparkmaster.conf dest=/etc/init/ owner=root group=root mode=0644
+  tags: spark-master

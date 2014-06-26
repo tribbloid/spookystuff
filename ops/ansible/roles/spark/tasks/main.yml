@@ -1,0 +1,11 @@
+---
+
+#- name: Download Spark
+#  shell: http://d3kbcqa49mib13.cloudfront.net/spark-1.0.0.tgz
+#  tags: common
+
+#wget http://apache.parentingamerica.com/spark/spark-1.0.0/spark-1.0.0-bin-hadoop1.tgz
+#tar -xf spark-1.0.0-bin-hadoop1.tgz -C /opt/spark/
+
+#wget https://bitbucket.org/ariya/phantomjs/downloads/phantomjs-1.9.7-linux-x86_64.tar.bz2
+#tar -xf spark-1.0.0-bin-hadoop1.tgz -C /opt/spark/
