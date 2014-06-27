@@ -4,7 +4,7 @@
   sudo: yes
 
   roles:
-#    - common
-#    - browsers
-#    - spark
+    - common
+    - browsers
+    - spark
     - spark-worker

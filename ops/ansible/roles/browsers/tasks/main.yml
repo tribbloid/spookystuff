@@ -1,7 +1,20 @@
 ---
 #phantomjs
+
+- name: Install libfontconfig
+  action: apt pkg=libfontconfig state=latest install_recommends=yes
+  tags: java
+
+- name: Install unzip
+  action: apt pkg=unzip state=latest install_recommends=yes
+  tags: java
+
 - name: Extract phantomjs archive
   unarchive: src=phantomjs-1.9.7-linux-x86_64.tar.bz2 dest=/home/ubuntu
+  tags: browsers
+
+- name: Make dir /usr/lib/phantomjs/bin
+  command: mkdir -p /usr/lib/phantomjs/bin
   tags: browsers
 
 - name: Copy phantomjs binary to /usr/lib/phantomjs/bin
