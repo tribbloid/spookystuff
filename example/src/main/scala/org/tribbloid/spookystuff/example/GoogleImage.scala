@@ -21,7 +21,7 @@ object GoogleImage extends SparkSubmittable {
     names.persist()
     names.saveAsTextFile("s3n://college-logo/list")
 
-    val searchPages = names +>
+    val searchPages = names.repartition(5) +>
       Visit("http://images.google.com/") +>
       DelayFor("form[action=\"/search\"]",50) +>
       TextInput("input[name=\"q\"]","#{_} Logo") +>
