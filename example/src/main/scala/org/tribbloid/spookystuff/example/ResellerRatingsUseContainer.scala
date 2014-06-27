@@ -1,7 +1,7 @@
 package org.tribbloid.spookystuff.example
 
 import org.apache.spark.{SparkContext, SparkConf}
-import org.tribbloid.spookystuff.{SparkSubmittable, entity, Conf}
+import org.tribbloid.spookystuff.{entity, Conf}
 import org.tribbloid.spookystuff.entity._
 import org.tribbloid.spookystuff.SpookyContext._
 

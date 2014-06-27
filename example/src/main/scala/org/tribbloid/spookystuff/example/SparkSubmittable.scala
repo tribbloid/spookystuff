@@ -1,4 +1,4 @@
-package org.tribbloid.spookystuff
+package org.tribbloid.spookystuff.example
 
 import org.apache.spark.{SparkConf, SparkContext}
 

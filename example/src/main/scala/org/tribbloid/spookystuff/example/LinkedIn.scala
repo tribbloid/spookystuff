@@ -1,10 +1,7 @@
 package org.tribbloid.spookystuff.example
 
-import org.apache.spark.{SparkContext, SparkConf}
-import org.tribbloid.spookystuff.{SparkSubmittable, Conf}
-import org.tribbloid.spookystuff.entity._
 import org.tribbloid.spookystuff.SpookyContext._
-import java.io.Serializable
+import org.tribbloid.spookystuff.entity._
 
 /**
  * This job will find and printout urls of Sanjay Gupta, Arun Gupta and Hardik Gupta in your area
@@ -18,11 +15,11 @@ object LinkedIn extends SparkSubmittable {
       TextInput("input#first","#{_}") +>
       TextInput("input#last","Gupta") +>
       Submit("input[name=\"search\"]") !)
-      .map {page => page.href("ol#result-set h2 a").asInstanceOf[Serializable]} //TODO: How to avoid this tail?
+      .map {page => page.href("ol#result-set h2 a")} //TODO: How to avoid this tail?
       .collect().foreach{
       value => {
         println("-------------------------------")
-        value.asInstanceOf[Seq[String]].foreach( println(_) )
+        value.foreach( println(_) )
       }
     }
   }

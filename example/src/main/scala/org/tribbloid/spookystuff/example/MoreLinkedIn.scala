@@ -1,12 +1,7 @@
 package org.tribbloid.spookystuff.example
 
-import java.io.Serializable
-
-import org.apache.spark.{SparkContext, SparkConf}
-import org.tribbloid.spookystuff.{SparkSubmittable, Conf}
-import org.tribbloid.spookystuff.entity._
 import org.tribbloid.spookystuff.SpookyContext._
-import org.tribbloid.spookystuff.sparkbinding.ActionPlanRDDFunctions
+import org.tribbloid.spookystuff.entity._
 
 /**
 * A more complex linkedIn job that finds name and printout skills of all Sanjay Gupta in your local area

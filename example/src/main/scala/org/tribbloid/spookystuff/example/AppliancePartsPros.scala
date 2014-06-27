@@ -1,11 +1,7 @@
 package org.tribbloid.spookystuff.example
 
-import org.apache.spark.{SparkContext, SparkConf}
-import org.tribbloid.spookystuff.SparkSubmittable
 import org.tribbloid.spookystuff.SpookyContext._
 import org.tribbloid.spookystuff.entity._
-import scala.collection.JavaConversions._
-import java.io.Serializable
 
 /**
  * Created by peng on 07/06/14.
