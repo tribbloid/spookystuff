@@ -1,7 +1,7 @@
 spookystuff
 ===========
 
-(OR: how to turn 21st century into an open spreadsheet) is a scalable and distributed web scrapping/data collection/acceptance QA environment based on Apache Spark. The goal is to allow the Web being queried and ETL'ed as if it is a database.
+(OR: how to turn 21st century into an open spreadsheet) is a scalable query engine for web scrapping/data mashup/acceptance QA, powered on Apache Spark. The goal is to allow the Web being queried and ETL'ed as if it is a database.
 
 Dependencies
 -----------
@@ -14,10 +14,10 @@ Dependencies
     - Scala/ScalaTest plugins
 - Current implementation is influenced by Spark SQL and Mahout Sparkbinding.
 
-A one minute showcase
+Query Examples
 -----------
-#### 1. Headhunting on LinkedIn
-- Goal: Find highest-ranking professionals in you area on LinkedIn. whose full name is either 'Sanjay Gupta', 'Arun Gupta' or 'Hardik Gupta', print their respective full name, title and list of skill
+#### 1. LinkedIn Search
+- Goal: Find high-ranking professionals in you area on LinkedIn. whose first name is either 'Sanjay', 'Arun' or 'Hardik', and last name is either 'Gupta' or 'Krishnamurthy', print out their full names, titles and lists of skills
 - Query:
 ```
     (sc.parallelize(Seq("Sanjay", "Arun", "Hardik")) +>
@@ -33,7 +33,7 @@ A one minute showcase
       )
     }.collect().foreach(println(_))
 ```
-- Result (truncated, query finished in 1 minutes, test on wifi with ~400k/s download speed):
+- Result (truncated, finished in 1 minutes on a laptop with ~400k/s wifi):
 ```
 (Abhishek Arun Gupta,President & Senior IT Expert / Joint Chairman - IT Cell at Agra User Group / National Chamber of Industries & Commerce,ArrayBuffer(Requirements Analysis, SQL, Business Intelligence, Unix, Testing, President & Senior IT Expert, Joint Chairman - IT Cell, Quality Assurance (QA) & Automation Systems, Senior Automation Testing Expert, Senior Executive, Industry Interface))
 (hardik gupta,--,ArrayBuffer())
@@ -43,8 +43,8 @@ A one minute showcase
 ... (75 lines)
 ```
 
-#### 2. Find interchangeable parts of a washing machine on appliancepartspros.com
-- Goal: Find all parts on model 'A210S', print the full name of the model, schematic description, description/brand/and number of each part, and all their substitutes
+#### 2. Machine parts Search
+- Goal: Given a washing machine model 'A210S', search on AppliancePartsPros.com for the model's full name,  a list of schematic descriptions (with each one describing a subsystem), for each schematic, search for data of all enumerated machine parts: their description/manufacturer/OEM number, and a list of each one's substitutes. Join them all together and print them out.
 - Query:
 ```
     (sc.parallelize(Seq("A210S")) +>
@@ -71,7 +71,7 @@ A one minute showcase
           )
       ).collect().foreach(println(_))
 ```
-- Result (truncated, query finished in 10 minutes, test on wifi with ~400k/s download speed):
+- Result (truncated, process finished in 2 minutes on one r3.large instance):
 ```
 (A210S,A210S Washer-Top Loading ,07-Transmissions Parts for Maytag A210S,Collar-Dri,Whirlpool,Y014839,Part Number Y014839 (AP4277202) replaces 014839, 14839.)
 (A210S,A210S Washer-Top Loading ,08-Transmissions Parts for Maytag A210S,Collar-Dri,Whirlpool,Y014839,Part Number Y014839 (AP4277202) replaces 014839, 14839.)
@@ -79,7 +79,33 @@ A one minute showcase
 ... (311 lines)
 ```
 
-### Showcase environment
+#### 3. University Logo Download
+- Goal: Search for Logos of all US Universities on Google Image (a list of US Universities can be found @http://www.utexas.edu/world/univ/alpha/), download them into one of your s3 directory. (You need to set up your S3 credential by environment variables)
+- Query:
+```
+    val names = ((sc.parallelize(Seq("dummy")) +>
+      Visit("http://www.utexas.edu/world/univ/alpha/") !)
+      .flatMap(_.text("div.box2 a", limit = Int.MaxValue, distinct = true))
+      .repartition(400) +> //importantissimo! otherwise will only have 2 partitions
+      Visit("http://images.google.com/") +>
+      DelayFor("form[action=\"/search\"]",50) +>
+      TextInput("input[name=\"q\"]","#{_} Logo") +>
+      Submit("input[name=\"btnG\"]") +>
+      DelayFor("div#search",50) !)
+      .wgetJoin("div#search img",1,"src")
+      .save("#{_}", "s3n://college-logo")
+      .foreach(println(_))
+```
+- Result (process finished in 13 mintues on 4 r3.large instance, you need to download them from S3 with a file transfer client supporting S3 (e.g. S3 web UI or crossFTP) to see the result: 
+```
+    
+```
+
+
+Deployment
+-----------------------------------------
+
+### Deploy to Local Computer/Single Node
 - The easiest way is to test locally on you scala IDE or REPL.
 - You need to install [PhantomJS](http://phantomjs.org/) on you computer. The default installation directory is '/usr/lib/phantomjs'.
     - (If your PhantomJS is installed to a different directory, please change *phantomJSRootPath* in *org.tribbloid.spookystuff.Conf.scala* to point to your PhantomJS directory.)
@@ -103,6 +129,12 @@ A one minute showcase
     ```val sc = new SparkContext(new SparkConf().setMaster("local[${MaxConcurrency},${MaxRetry}]"))```
 5. That's it, you can start writing queries, run them and see the results immediately. 
 
+### Deploy to Cluster
+- Make sure PhantomJS is installed on all cluster nodes.
+
+### Deploy to Amazon EC2
+
+
 Query/Programming Guide
 -----------
 [This is a stub]
@@ -111,13 +143,15 @@ So far spookystuff only supports LINQ style query language, APIs are not finaliz
 
 I'm trying to make the query language similar to the language-integrated query of Spark SQL. However, as organizations of websites are fundamentally different from relational databases, it may gradually evolve to attain maximum succinctness.
 
+If you want to write extension for this project, MAKE SURE you don't get *NotSerializableException* in a local run (it happens when Spark cannot serialize data when sending to another node), and keep all RDD entity's serialization footprint small to avoid slow partitioning over the network.
+
 Cluster Deployment
 -----------
 [This is a stub] Theoretically all Spark application that runs locally can be submitted to cluster by only changing its masterURL parameter in SparkConf. However I haven't test it myself. Some part of the code may not be optimized for cluster deployment.
 
-- Make sure PhantomJS is installed on all cluster nodes.
 
-- If you want to write extension for this project, MAKE SURE you don't get *NotSerializableException* in a local run (it happens when Spark cannot serialize data when sending to another node), and keep all RDD entity's serialization footprint small to avoid slow partitioning over the network.
+
+
 
 Maintainer
 -----------

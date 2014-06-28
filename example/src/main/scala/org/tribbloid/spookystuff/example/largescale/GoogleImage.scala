@@ -13,25 +13,16 @@ object GoogleImage extends SparkSubmittable {
 
   override def doMain() {
 
-    val names = (sc.parallelize(Seq("dummy")) +>
+    val names = ((sc.parallelize(Seq("dummy")) +>
       Visit("http://www.utexas.edu/world/univ/alpha/") !)
-      .flatMap(page => page.text("div.box2 a", limit = Int.MaxValue, distinct = true))
-    //      .flatMap(_.text("div.box2 a", limit = 100, distinct = true))
-
-    names.persist()
-    names.saveAsTextFile("s3n://college-logo/list")
-
-    val searchPages = names.repartition(400) +>
+      .flatMap(_.text("div.box2 a", limit = Int.MaxValue, distinct = true))
+      .repartition(400) +> //importantissimo! otherwise will only have 2 partitions
       Visit("http://images.google.com/") +>
       DelayFor("form[action=\"/search\"]",50) +>
       TextInput("input[name=\"q\"]","#{_} Logo") +>
       Submit("input[name=\"btnG\"]") +>
-      DelayFor("div#search",50) !
-
-    searchPages.persist()
-    searchPages.save("#{_}.html", "s3n://college-logo-search-page")
-
-    searchPages
+      DelayFor("div#search",50) !)
+      .saveAs("#{_}.html", "s3n://college-logo-search-page")
       .wgetJoin("div#search img",1,"src")
       .save("#{_}", "s3n://college-logo")
       .foreach(println(_))

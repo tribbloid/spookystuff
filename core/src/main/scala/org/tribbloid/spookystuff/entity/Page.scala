@@ -33,7 +33,8 @@ case class Page(
 
             val backtrace: Array[Interactive] = null, //immutable, also the uid
             val context: util.HashMap[String, Serializable] = null, //Mutable! caused a lot of headache
-            val timestamp: Date = new Date //immutable
+            val timestamp: Date = new Date, //immutable
+            val savePath: String = null
             )
   extends Serializable{
 

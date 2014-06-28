@@ -51,7 +51,18 @@ class PageRDDFunctions(val self: RDD[Page]) {
 
   def slice(selector: String): RDD[Page] = self.flatMap(_.slice(selector))
 
-  //save to whatever (HDFS,S3,local disk) and return a list file paths, this is an action
+  //this is a lazy transformation, use it to save overhead for rescheduling.
+  def saveAs(fileName: String = "#{resolved-url}", dir: String = Conf.savePagePath, overwrite: Boolean = false): RDD[Page] = self.map {
+    val hConfWrapper = self.context.broadcast(new SerializableWritable(self.context.hadoopConfiguration))
+
+    page => {
+      val name = page.save(fileName, dir, overwrite)(hConfWrapper.value.value)
+
+      page.copy(savePath = name)
+    }
+  }
+
+  //this is an action enforced to be executed, save to whatever (HDFS,S3,local disk) and return a list file paths
   def save(fileName: String = "#{resolved-url}", dir: String = Conf.savePagePath, overwrite: Boolean = false): Array[String] = {
     val hConfWrapper = self.context.broadcast(new SerializableWritable(self.context.hadoopConfiguration))
 
@@ -158,24 +169,24 @@ class PageRDDFunctions(val self: RDD[Page]) {
   }
 
   //TODO: this will automatically detect patterns from urls of pages and advance in larger batch
-//  def smartJoinByPagination(selector: String, limit: Int = Conf.fetchLimit, attr :String = "abs:href")
+  //  def smartJoinByPagination(selector: String, limit: Int = Conf.fetchLimit, attr :String = "abs:href")
 
-//  def crawlFirstIf(selector: String)(condition: HtmlPage => Boolean): RDD[HtmlPage] = self.map{
-//    page => {
-//
-//      if (condition(page) == true)
-//      {
-//        val context = page.context
-//        page.links(selector).map {
-//          new ActionPlan(context) + Visit(_)
-//        }
-//      }
-//      else
-//      {
-//
-//      }
-//    }
-//  }
+  //  def crawlFirstIf(selector: String)(condition: HtmlPage => Boolean): RDD[HtmlPage] = self.map{
+  //    page => {
+  //
+  //      if (condition(page) == true)
+  //      {
+  //        val context = page.context
+  //        page.links(selector).map {
+  //          new ActionPlan(context) + Visit(_)
+  //        }
+  //      }
+  //      else
+  //      {
+  //
+  //      }
+  //    }
+  //  }
 
   //really complex but what option do I have
   //these are slow because backward lookup hasn't been implemented yet.
