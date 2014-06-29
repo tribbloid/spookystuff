@@ -110,7 +110,7 @@ Performance
 - In the above University Logo example test run, each single r3.large instance (2 threads, 15g memory) achieved 410k/s download speed in average with 45% CPU usage. Thus, the entire 4-node, 8-thread cluster is able to finish the job in 13 minutes by downloading 1279M of data, including 1271M by browsers (no surprise, GoogleImage shows a hell lot of images on page 1!) and 7.7M by direct HTTP GET.
     - Query speed can be further improved by enabling over-provisioning of executors per thread (since web agents are idle while waiting for responses). For example, allowing 4 executors to be run on each r3.large node can increase CPU usage to ~90%, thus doubling your query speed. However, if network bandwidth has been reached, this tuning will be ineffective.
     
-- We haven't tested but many others' Spark test run that involves HTTP client (e.g. query a distributed Solr/ElasticSearch service) and heterogeneous data processing has achieved near-linear scalability under 150 nodes (theoretically, a speedup of x900 comparing to conventional single-browser scrapping! assuming you are just using r3.large instance). Massive Spark clusters (the largest in history being 1000 nodes) has also been experimented in some facilities but their performance are yet to be known.
+- We haven't tested but many others' Spark test run that involves HTTP client (e.g. querying a distributed Solr/ElasticSearch service) and heterogeneous data processing has achieved near-linear scalability under 150 nodes (theoretically, a speedup of x900 comparing to conventional single-browser scrapping! assuming you are just using r3.large instance). Massive Spark clusters (the largest in history being 1000 nodes) has also been experimented in some facilities but their performances are still unknown.
 
 - Using Wget (equivalent to simple HTTP GET) instead of Visit for static/non-interactive pages in your Action Plan can save you a lot of time and network throughput in query as it won't start the browser and download any resources for the page.
 
@@ -156,7 +156,7 @@ Query/Programming Guide
 
 So far spookystuff only supports LINQ style query language, APIs are not finalized (in fact, still far from that) and may change in the future.
 
-I'm trying to make the query language similar to the language-integrated query of Spark SQL. However, as organizations of websites are fundamentally different from relational databases, it may gradually evolve to attain maximum succinctness.
+I'm trying to make the query language similar to SQL. However, as organizations of websites are very different from relational databases, it may gradually evolve to attain maximum succinctness (until 1.0.0, at which point it will have an API freeze).
 
 If you want to write extension for this project, MAKE SURE you don't get *NotSerializableException* in a local run (it happens when Spark cannot serialize data when sending to another node), and keep all RDD entity's serialization footprint small to avoid slow partitioning over the network.
 
