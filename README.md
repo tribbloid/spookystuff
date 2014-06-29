@@ -44,8 +44,8 @@ Examples
 ... (75 lines)
 ```
 
-#### 2. Query Machine Parts Database
-- Goal: Given a washing machine model 'A210S', search on [http://www.appliancepartspros.com/] for the model's full name,  a list of schematic descriptions (with each one describing a subsystem), for each schematic, search for data of all enumerated machine parts: their description/manufacturer/OEM number, and a list of each one's substitutes. Join them all together and print them out.
+#### 2. Query the Machine Parts Database of AppliancePartsPros
+- Goal: Given a washing machine model 'A210S', search on [http://www.appliancepartspros.com/] for the model's full name,  a list of schematic descriptions (with each one describing a subsystem), for each schematic, search for data of all enumerated machine parts: description, manufacturer, OEM number, and a list of each one's substitutes. Join them all together and print them out.
 - Query:
 ```
     (sc.parallelize(Seq("A210S")) +>
@@ -82,8 +82,8 @@ Examples
 
 #### 3. Download University Logos
 - Goal: Search for Logos of all US Universities on Google Image (a list of US Universities can be found at [http://www.utexas.edu/world/univ/alpha/]), download them to one of your s3 bucket.
-    - You need to set up your S3 credential by environment variables
-    - The following query will crawl 4000+ page and web resources so its better to test it on a cluster
+    - You need to set up your S3 credential through environment variables
+    - The following query will crawl 4000+ pages and web resources so its better to test it on a cluster
 - Query:
 ```
     val names = ((sc.parallelize(Seq("dummy")) +>
@@ -103,11 +103,21 @@ Examples
 ```
     
 ```
+Performance
+---------------
+- Spookystuff is designed from the ground to be lightweight: it has no dependency on any file system (HDFS is optional - you can use S3 as your file sink), backend database, or message queue, or any SOA. Your query speed is only bounded by your bandwidth and CPU power. In addition, the headless browser it uses to interact with webpages does not render the page, giving it a ~x3 boost over real browser per thread.
+
+- In the above University Logo example test run, each single r3.large instance (2 threads, 15g memory) achieved 410k/s download speed in average with 45% CPU usage. Thus, the entire 4-node, 8-thread cluster is able to finish the job in 13 minutes by downloading 1279M of data, including 1271M by browsers (no surprise, GoogleImage shows a hell lot of images on page 1!) and 7.7M by direct HTTP GET.
+    - Query speed can be further improved by enabling over-provisioning of executors per thread (since web agents are idle while waiting for responses). For example, allowing 4 executors to be run on each r3.large node can increase CPU usage to ~90%, thus doubling your query speed. However, if network bandwidth has been reached, this tuning will be ineffective.
+    
+- We haven't tested but many others' Spark test run that involves HTTP client (e.g. query a distributed Solr/ElasticSearch service) and heterogeneous data processing has achieved near-linear scalability under 150 nodes (theoretically, a speedup of x900 comparing to conventional single-browser scrapping! assuming you are just using r3.large instance). Massive Spark clusters (the largest in history being 1000 nodes) has also been experimented in some facilities but their performance are yet to be known.
+
+- Using Wget (equivalent to simple HTTP GET) instead of Visit for static/non-interactive pages in your Action Plan can save you a lot of time and network throughput in query as it won't start the browser and download any resources for the page.
 
 Deployment
------------------------------------------
+---------------
 ### ... to Local Computer/Single Node
-1. Install Apache Spark 1.0.0 from [http://spark.apache.org/downloads.html](http://spark.apache.org/downloads.html)
+1. Install Apache Spark 1.0.0 from [http://spark.apache.org/downloads.html]
 2. (Optional, highly recommended otherwise you have to set it everytime before running the shell or application) Edit your startup script to point the environment variable of Spark to your Spark installation directory:
     - export SPARK_HOME=*your Spark installation directory*
 3. Install PhantomJS 1.9.7 from [http://phantomjs.org/download.html]
@@ -121,7 +131,7 @@ Deployment
     - give any example a test run: bin/submit-example.sh *name of the example*
     - write your own application by importing spooky-core into your dependencies.
 
-### ... to Cluster and Amazon EC2
+### ... to Cluster/Amazon EC2
 1. Setup a cluster and assure mutual connectivity
 2. Install Ubuntu 12+ on all nodes.
     - scripts to autodeploy on other Spark-compatible OS is currently NOT under active development. Please vote on the issue tracker if you demand it.
