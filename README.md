@@ -1,7 +1,7 @@
 spookystuff
 ===========
 
-(OR: how to turn 21st century into an open spreadsheet) is a scalable query engine for web scrapping/data mashup/acceptance QA, powered on Apache Spark. The goal is to allow the Web being queried and ETL'ed as if it is a database.
+(OR: how to turn 21st century into an open spreadsheet) is a scalable query engine for web scrapping/data mashup/acceptance QA powered on Apache Spark. The goal is to allow the Web being queried and ETL'ed as if it is a database.
 
 Dependencies
 -----------
@@ -12,12 +12,13 @@ Dependencies
 - Apache Tika (only for non-html parsing)
 - (build tool) Apache Maven
     - Scala/ScalaTest plugins
+- (deployment tool) Ansible
 - Current implementation is influenced by Spark SQL and Mahout Sparkbinding.
 
-Query Examples
+Examples
 -----------
-#### 1. LinkedIn Search
-- Goal: Find high-ranking professionals in you area on LinkedIn. whose first name is either 'Sanjay', 'Arun' or 'Hardik', and last name is either 'Gupta' or 'Krishnamurthy', print out their full names, titles and lists of skills
+#### 1. Search on LinkedIn
+- Goal: Find high-ranking professionals in you area on [http://www.linkedin.com/], whose first name is either 'Sanjay', 'Arun' or 'Hardik', and last name is either 'Gupta' or 'Krishnamurthy', print out their full names, titles and lists of skills
 - Query:
 ```
     (sc.parallelize(Seq("Sanjay", "Arun", "Hardik")) +>
@@ -43,8 +44,8 @@ Query Examples
 ... (75 lines)
 ```
 
-#### 2. Machine parts Search
-- Goal: Given a washing machine model 'A210S', search on AppliancePartsPros.com for the model's full name,  a list of schematic descriptions (with each one describing a subsystem), for each schematic, search for data of all enumerated machine parts: their description/manufacturer/OEM number, and a list of each one's substitutes. Join them all together and print them out.
+#### 2. Query Machine Parts Database
+- Goal: Given a washing machine model 'A210S', search on [http://www.appliancepartspros.com/] for the model's full name,  a list of schematic descriptions (with each one describing a subsystem), for each schematic, search for data of all enumerated machine parts: their description/manufacturer/OEM number, and a list of each one's substitutes. Join them all together and print them out.
 - Query:
 ```
     (sc.parallelize(Seq("A210S")) +>
@@ -79,8 +80,10 @@ Query Examples
 ... (311 lines)
 ```
 
-#### 3. University Logo Download
-- Goal: Search for Logos of all US Universities on Google Image (a list of US Universities can be found @http://www.utexas.edu/world/univ/alpha/), download them into one of your s3 directory. (You need to set up your S3 credential by environment variables)
+#### 3. Download University Logos
+- Goal: Search for Logos of all US Universities on Google Image (a list of US Universities can be found at [http://www.utexas.edu/world/univ/alpha/]), download them to one of your s3 bucket.
+    - You need to set up your S3 credential by environment variables
+    - The following query will crawl 4000+ page and web resources so its better to test it on a cluster
 - Query:
 ```
     val names = ((sc.parallelize(Seq("dummy")) +>
@@ -93,47 +96,49 @@ Query Examples
       Submit("input[name=\"btnG\"]") +>
       DelayFor("div#search",50) !)
       .wgetJoin("div#search img",1,"src")
-      .save("#{_}", "s3n://college-logo")
+      .save("#{_}", "s3n://$[insert your bucket here],default to 'college-logo'$")
       .foreach(println(_))
 ```
-- Result (process finished in 13 mintues on 4 r3.large instance, you need to download them from S3 with a file transfer client supporting S3 (e.g. S3 web UI or crossFTP) to see the result: 
+- Result (process finished in 13 mintues on 4 r3.large instance, image files can be downloaded from S3 with a file transfer client supporting S3 (e.g. S3 web UI, crossFTP): 
 ```
     
 ```
 
-
 Deployment
 -----------------------------------------
+### ... to Local Computer/Single Node
+1. Install Apache Spark 1.0.0 from [http://spark.apache.org/downloads.html](http://spark.apache.org/downloads.html)
+2. (Optional, highly recommended otherwise you have to set it everytime before running the shell or application) Edit your startup script to point the environment variable of Spark to your Spark installation directory:
+    - export SPARK_HOME=*your Spark installation directory*
+3. Install PhantomJS 1.9.7 from [http://phantomjs.org/download.html]
+    - recommended to install to '/usr/lib/phantomjs', otherwise please change *phantomJSRootPath* in *org.tribbloid.spookystuff.Conf.scala* to point to your PhantomJS directory and recompile.
+    - also provided by Ubuntu official repository (so you can apt-get it) but current binary is severely obsolete (1.9.0), use of this binary is NOT recommended and may cause unpredictable error.
+4. git clone this repository.
+5. MAVEN_OPTS="-Xmx2g -XX:MaxPermSize=512M -XX:ReservedCodeCacheSize=512m" mvn package -DskipTest=true
+    - increasing jvm heapspace size for Apache Maven is mandatory as 2 modules (example and shell) will generate uber jars.
+6. That's it! Now you have 3 options to use it:
+    - (easiest) launch spooky-shell and improvise your query: bin/spooky-shell.sh
+    - give any example a test run: bin/submit-example.sh *name of the example*
+    - write your own application by importing spooky-core into your dependencies.
 
-### Deploy to Local Computer/Single Node
-- The easiest way is to test locally on you scala IDE or REPL.
-- You need to install [PhantomJS](http://phantomjs.org/) on you computer. The default installation directory is '/usr/lib/phantomjs'.
-    - (If your PhantomJS is installed to a different directory, please change *phantomJSRootPath* in *org.tribbloid.spookystuff.Conf.scala* to point to your PhantomJS directory.)
-- You DON"T need to install Apache Spark to test it in local simulation mode (where masterURL = "local[...]"), the spark jar in you local Maven repository has everything you need.
-    - You DO need to do this to deploy your query or application to a cluster.
-1. Git clone me: git clone https://github.com/tribbloid/spookystuff.git
-2. Create your scala project. Add spookystuff-core to its dependency list
-    - If you project is managed by Maven, add this to your .pom dependency list:
-    ```
-        <dependency>
-            <groupId>org.tribbloid.spookystuff</groupId>
-            <artifactId>spookystuff-core</artifactId>
-        </dependency>
-    ```
-    - Alternatively you can just run Spark-shell or Scala REPL within the project environment.
-3. Import scala packages and context, including:
-    - org.apache.spark.{SparkContext, SparkConf} (entry point for all Spark applications)
-    - org.tribbloid.spookystuff.SpookyContext._ (enable implicit operators for web scrapping)
-4. Initialize your SparkContext ```val sc = new SparkContext(new SparkConf().setMaster("local[*]"))```
-    - if some of your target websites are unstable and may need some reloading, use this:
-    ```val sc = new SparkContext(new SparkConf().setMaster("local[${MaxConcurrency},${MaxRetry}]"))```
-5. That's it, you can start writing queries, run them and see the results immediately. 
+### ... to Cluster and Amazon EC2
+1. Setup a cluster and assure mutual connectivity
+2. Install Ubuntu 12+ on all nodes.
+    - scripts to autodeploy on other Spark-compatible OS is currently NOT under active development. Please vote on the issue tracker if you demand it.
+    - the easiest way to set it up is on Amazon EC2, AMI with pre-installed environment and autoscaling ability will be made public shortly
+3. Install Ansible on your client and make sure you can ssh into all your nodes with a valid private key (id_rsa).
+4. Edit files in ops/ansible/inventories.template to include ip/dns of your master node and all worker nodes. Change the directory name to /ops/ansible/inventories
+5. cd into ops/ansible and:
+    - deploy master: ./ansible-playbook deploy-master.yml -i ./inventories --private-key=*yor private key (id_rsa)*
+    - deploy workers: .ansible-ploybook deploy-worker.yml -i ./inventories --private-key=*yor private key (id_rsa)*
+    - this will install oracle-java7 and do step 1,2,3, automatically on all nodes. You can do it manually but that's a lot of work!
+6. Do step 4,5 on master node and run any of the 3 options
+    - you can download and run it on any node in the same subnet of the cluster, but expect heavy traffic between your client node and master node.
 
-### Deploy to Cluster
-- Make sure PhantomJS is installed on all cluster nodes.
-
-### Deploy to Amazon EC2
-
+### alternatively ...
+you can use scripts in $SPARK_HOME/ec2 to setup a Spark cluster with transient HDFS support. But this has 2 problems:
+    - Autoscaling is currently not supported.
+    - Spark installation directory is hardcoded to '/root/spark', if your client has a different directory it may cause some compatibility issue.
 
 Query/Programming Guide
 -----------
@@ -144,14 +149,6 @@ So far spookystuff only supports LINQ style query language, APIs are not finaliz
 I'm trying to make the query language similar to the language-integrated query of Spark SQL. However, as organizations of websites are fundamentally different from relational databases, it may gradually evolve to attain maximum succinctness.
 
 If you want to write extension for this project, MAKE SURE you don't get *NotSerializableException* in a local run (it happens when Spark cannot serialize data when sending to another node), and keep all RDD entity's serialization footprint small to avoid slow partitioning over the network.
-
-Cluster Deployment
------------
-[This is a stub] Theoretically all Spark application that runs locally can be submitted to cluster by only changing its masterURL parameter in SparkConf. However I haven't test it myself. Some part of the code may not be optimized for cluster deployment.
-
-
-
-
 
 Maintainer
 -----------

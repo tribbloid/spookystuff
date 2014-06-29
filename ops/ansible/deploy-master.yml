@@ -5,6 +5,6 @@
 
   roles:
     - common
-    - browsers
+    - browsers #shouldn't even be here, but just for integration test
     - spark
     - spark-master

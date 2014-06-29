@@ -22,7 +22,6 @@ object GoogleImage extends SparkSubmittable {
       TextInput("input[name=\"q\"]","#{_} Logo") +>
       Submit("input[name=\"btnG\"]") +>
       DelayFor("div#search",50) !)
-      .saveAs("#{_}.html", "s3n://college-logo-search-page")
       .wgetJoin("div#search img",1,"src")
       .save("#{_}", "s3n://college-logo")
       .foreach(println(_))
