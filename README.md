@@ -104,9 +104,9 @@ Examples
       .foreach(println(_))
 ```
 - Result (process finished in 13 mintues on 4 r3.large instance, image files can be downloaded from S3 with a file transfer client supporting S3 (e.g. S3 web UI, crossFTP): 
-```
-    
-```
+
+![Imgur](http://i.imgur.com/ou6pCjO.png)
+
 Performance
 ---------------
 - Spookystuff is designed from scratch to be lightweight: it has no dependency on any file system (HDFS is optional - you can use S3 as your file sink), backend database, or message queue, or any SOA. Your query speed is only bounded by your bandwidth and CPU power. In addition, the headless browser it uses to interact with webpages does not render the page, giving it a ~x3 boost over real browser per thread.
