@@ -7,13 +7,17 @@ Dependencies
 -----------
 - Apache Spark
 - Selenium
-    - GhostDriver/PhantomJS (for Google Chrome client simulation)
+    - GhostDriver/PhantomJS
 - JSoup
-- Apache Tika (only for non-html parsing)
-- (build tool) Apache Maven
+- Apache Tika
+- (build by) Apache Maven
     - Scala/ScalaTest plugins
-- (deployment tool) Ansible
+- (deployed by) Ansible
 - Current implementation is influenced by Spark SQL and Mahout Sparkbinding.
+
+![Apache Spark](http://spark.apache.org/images/spark-logo.png) ![Selenium](http://docs.seleniumhq.org/images/big-logo.png) ![PhantomJS](http://phantomjs.org/img/phantomjs-logo.png)
+
+![Apache Tika](http://tika.apache.org/tika.png) ![Build by Apache Maven](http://maven.apache.org/images/logos/maven-feather.png) ![Ansible](https://support.ansible.com/system/logos/2070/1448/ansible_logo.png)
 
 Examples
 -----------
@@ -96,7 +100,7 @@ Examples
       Submit("input[name=\"btnG\"]") +>
       DelayFor("div#search",50) !)
       .wgetJoin("div#search img",1,"src")
-      .save("#{_}", "s3n://$[insert your bucket here],default to 'college-logo'$")
+      .save("#{_}", "s3n://$[insert your bucket here]$")
       .foreach(println(_))
 ```
 - Result (process finished in 13 mintues on 4 r3.large instance, image files can be downloaded from S3 with a file transfer client supporting S3 (e.g. S3 web UI, crossFTP): 
@@ -105,14 +109,16 @@ Examples
 ```
 Performance
 ---------------
-- Spookystuff is designed from the ground to be lightweight: it has no dependency on any file system (HDFS is optional - you can use S3 as your file sink), backend database, or message queue, or any SOA. Your query speed is only bounded by your bandwidth and CPU power. In addition, the headless browser it uses to interact with webpages does not render the page, giving it a ~x3 boost over real browser per thread.
+- Spookystuff is designed from scratch to be lightweight: it has no dependency on any file system (HDFS is optional - you can use S3 as your file sink), backend database, or message queue, or any SOA. Your query speed is only bounded by your bandwidth and CPU power. In addition, the headless browser it uses to interact with webpages does not render the page, giving it a ~x3 boost over real browser per thread.
 
 - In the above University Logo example test run, each single r3.large instance (2 threads, 15g memory) achieved 410k/s download speed in average with 45% CPU usage. Thus, the entire 4-node, 8-thread cluster is able to finish the job in 13 minutes by downloading 1279M of data, including 1271M by browsers (no surprise, GoogleImage shows a hell lot of images on page 1!) and 7.7M by direct HTTP GET.
-    - Query speed can be further improved by enabling over-provisioning of executors per thread (since web agents are idle while waiting for responses). For example, allowing 4 executors to be run on each r3.large node can increase CPU usage to ~90%, thus doubling your query speed. However, if network bandwidth has been reached, this tuning will be ineffective.
-    
+    - Query speed can be further improved by enabling over-provisioning of executors per thread (since web agents are idle while waiting for responses). For example, allowing 4 executors to be run on each r3.large node can double CPU usage to ~90%, thus potentially doubling your query speed to 820k/s. However, this tuning will be ineffective if network bandwidth has been reached.
+
 - We haven't tested but many others' Spark test run that involves HTTP client (e.g. querying a distributed Solr/ElasticSearch service) and heterogeneous data processing has achieved near-linear scalability under 150 nodes (theoretically, a speedup of x900 comparing to conventional single-browser scrapping! assuming you are just using r3.large instance). Massive Spark clusters (the largest in history being 1000 nodes) has also been experimented in some facilities but their performances are still unknown.
 
 - Using Wget (equivalent to simple HTTP GET) instead of Visit for static/non-interactive pages in your Action Plan can save you a lot of time and network throughput in query as it won't start the browser and download any resources for the page.
+
+- Further optimization options may include switching to [Kryo serializer](https://code.google.com/p/kryo/) (to replace Java serializer) and [YARN (Hadoop 2 component)](http://hadoop.apache.org/docs/current/hadoop-yarn/hadoop-yarn-site/YARN.html) (to replace Spark Standalone Master), however these options are not tested or benchmarked yet. So we encourage you to test these options and post any performance issue/bug you encountered, but not using them in production. 
 
 Deployment
 ---------------
@@ -154,11 +160,11 @@ Query/Programming Guide
 -----------
 [This is a stub]
 
-So far spookystuff only supports LINQ style query language, APIs are not finalized (in fact, still far from that) and may change in the future.
+- So far spookystuff only supports LINQ style query language, APIs are not finalized (in fact, still far from that) and may change in the future.
 
-I'm trying to make the query language similar to SQL. However, as organizations of websites are very different from relational databases, it may gradually evolve to attain maximum succinctness (until 1.0.0, at which point it will have an API freeze).
+- I'm trying to make the query language similar to SQL. However, as organizations of websites are very different from relational databases, it may gradually evolve to attain maximum succinctness (until 1.0.0, at which point it will have an API freeze).
 
-If you want to write extension for this project, MAKE SURE you don't get *NotSerializableException* in a local run (it happens when Spark cannot serialize data when sending to another node), and keep all RDD entity's serialization footprint small to avoid slow partitioning over the network.
+- If you want to write extension for this project, MAKE SURE you don't get *NotSerializableException* in a local run (it happens when Spark cannot serialize data when sending to another node), and keep all RDD entity's serialization footprint small to avoid slow partitioning over the network.
 
 Maintainer
 -----------
