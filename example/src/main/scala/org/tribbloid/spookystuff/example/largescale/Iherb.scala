@@ -13,7 +13,7 @@ object Iherb extends SparkSubmittable {
       Wget("http://ca.iherb.com/")!!!).wgetJoin(
         "div.category a"
       ).wgetInsertPagination(
-        "p.pagination a:contains(Next)", Int.MaxValue
+        "p.pagination a:contains(Next)", 1000
       ).saveAs(
         dir = "s3n://iherb", overwrite = true
       ).map{
