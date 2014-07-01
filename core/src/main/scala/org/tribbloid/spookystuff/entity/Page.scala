@@ -45,7 +45,15 @@ case class Page(
   //      another.context)
 
   @transient lazy val parsedContentType: ContentType = ContentType.parse(this.contentType)
-  @transient lazy val contentStr: String = new String(this.content,this.parsedContentType.getCharset)
+  @transient lazy val contentStr: String = {
+    if (this.parsedContentType.getCharset == null) {
+      new String(this.content, Conf.defaultCharset)
+    }
+    else
+    {
+      new String(this.content,this.parsedContentType.getCharset)
+    }
+  }
   @transient lazy val doc: Element = if (parsedContentType.getMimeType.contains("html")){
     Jsoup.parse(this.contentStr, resolvedUrl) //not serialize, parsing is faster
   }

@@ -21,6 +21,8 @@ final object Conf {
   //default max number of elements scraped from a page, set to Int.max to allow unlimited fetch
   val fetchLimit = 100
 
+  val defaultCharset = "ISO-8859-1"
+
   val savePagePath = "s3n://spooky_page"
 
   val localSavePagePath = "temp/spooky_page/"
