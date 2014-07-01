@@ -20,7 +20,7 @@
 # Enter posix mode for bash
 #set -o posix
 
-source rootkey.csv
+source bin/rootkey.csv
 
 if [[ "$@" = *--help ]] || [[ "$@" = *-h ]]; then
   echo "Usage: ./bin/spooky-shell [options]"

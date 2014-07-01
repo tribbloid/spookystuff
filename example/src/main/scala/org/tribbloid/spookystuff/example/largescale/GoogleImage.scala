@@ -13,7 +13,7 @@ object GoogleImage extends SparkSubmittable {
 
   override def doMain() {
 
-    val names = ((sc.parallelize(Seq("dummy")) +>
+    ((sc.parallelize(Seq("dummy")) +>
       Visit("http://www.utexas.edu/world/univ/alpha/") !)
       .flatMap(_.text("div.box2 a", limit = Int.MaxValue, distinct = true))
       .repartition(400) +> //importantissimo! otherwise will only have 2 partitions
@@ -21,9 +21,8 @@ object GoogleImage extends SparkSubmittable {
       DelayFor("form[action=\"/search\"]",50) +>
       TextInput("input[name=\"q\"]","#{_} Logo") +>
       Submit("input[name=\"btnG\"]") +>
-      DelayFor("div#search",50) !)
-      .wgetJoin("div#search img",1,"src")
-      .save("#{_}", "s3n://college-logo")
-      .foreach(println(_))
+      DelayFor("div#search",50) !).wgetJoin(
+        "div#search img",1,"src"
+      ).save("#{_}", "s3n://college-logo").foreach(println(_))
   }
 }

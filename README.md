@@ -90,7 +90,7 @@ Examples
     - The following query will crawl 4000+ pages and web resources so its better to test it on a cluster
 - Query:
 ```
-    val names = ((sc.parallelize(Seq("dummy")) +>
+    ((sc.parallelize(Seq("dummy")) +>
       Visit("http://www.utexas.edu/world/univ/alpha/") !)
       .flatMap(_.text("div.box2 a", limit = Int.MaxValue, distinct = true))
       .repartition(400) +> //importantissimo! otherwise will only have 2 partitions
