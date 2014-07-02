@@ -44,16 +44,13 @@ case class Page(
   //      another.datetime,
   //      another.context)
 
-  @transient lazy val parsedContentType: ContentType = ContentType.parse(this.contentType)
-  @transient lazy val contentStr: String = {
-    if (this.parsedContentType.getCharset == null) {
-      new String(this.content, Conf.defaultCharset)
-    }
-    else
-    {
-      new String(this.content,this.parsedContentType.getCharset)
-    }
+  @transient lazy val parsedContentType: ContentType = {
+    var result = ContentType.parse(this.contentType)
+    if (result.getCharset == null) result = result.withCharset(Conf.defaultCharset)
+    result
   }
+  @transient lazy val contentStr: String = new String(this.content,this.parsedContentType.getCharset)
+
   @transient lazy val doc: Element = if (parsedContentType.getMimeType.contains("html")){
     Jsoup.parse(this.contentStr, resolvedUrl) //not serialize, parsing is faster
   }
@@ -65,13 +62,14 @@ case class Page(
 
   //only slice contents inside the container, other parts are discarded
   //this will generate doc from scratch but otherwise induces heavy load on serialization
-  def slice(selector: String, alias: String = null): Seq[Page] = {
+  def slice(selector: String, alias: String = null, limit: Int = Conf.fetchLimit): Seq[Page] = {
     val elements = doc.select(selector)
+    val length = Math.min(elements.size,limit)
 
     var newAlias = this.alias
     if (alias != null) newAlias = alias
 
-    return elements.zipWithIndex.map {
+    return elements.subList(0,length).zipWithIndex.map {
       elementWithIndex =>{
         this.copy(
           resolvedUrl = this.resolvedUrl + "#" + elementWithIndex._2,

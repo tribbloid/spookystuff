@@ -1,13 +1,12 @@
 package org.tribbloid.spookystuff
 
-import org.apache.hadoop.conf.Configuration
-import org.apache.spark.SparkContext
-import org.apache.spark.broadcast.Broadcast
-import org.tribbloid.spookystuff.sparkbinding.{StringRDDFunctions, ActionPlanRDDFunctions, PageRDDFunctions}
-import org.apache.spark.rdd.RDD
-import org.tribbloid.spookystuff.entity.{ActionPlan, Page}
 import java.io.Serializable
 import java.util
+
+import org.apache.poi.ss.formula.functions.T
+import org.apache.spark.rdd.RDD
+import org.tribbloid.spookystuff.entity.{ActionPlan, Page}
+import org.tribbloid.spookystuff.sparkbinding.{ActionPlanRDDFunctions, PageRDDFunctions, StringRDDFunctions}
 
 /**
  * Created by peng on 12/06/14.
@@ -16,6 +15,7 @@ import java.util
 //
 //}
 
+//TODO: use implicit view bound to simplify things: <%
 object SpookyContext {
 
   implicit def pageRDDToItsFunctions(rdd: RDD[Page]) = new PageRDDFunctions(rdd)
@@ -37,13 +37,13 @@ object SpookyContext {
 
 
 
-  implicit def mapRDDToActionPlanRDD(rdd: RDD[util.Map[String,Serializable]]) = rdd.map{
+  implicit def mapRDDToActionPlanRDD[T <: util.Map[String,String]](rdd: RDD[T]) = rdd.map{
     map => {
       new ActionPlan(new util.HashMap[String,Serializable](map))
     }
   }
 
-  implicit def mapRDDToActionPlanRDDFunctions(rdd: RDD[util.Map[String,Serializable]]) = new ActionPlanRDDFunctions(mapRDDToActionPlanRDD(rdd))
+  implicit def mapRDDToActionPlanRDDFunctions[T <: util.Map[String,String]](rdd: RDD[T]) = new ActionPlanRDDFunctions(mapRDDToActionPlanRDD(rdd))
 
   implicit def pageRDDToActionPlanRDD(rdd: RDD[Page]) = rdd.map{
     page => {

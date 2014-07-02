@@ -49,7 +49,7 @@ class PageRDDFunctions(val self: RDD[Page]) {
     }
   }
 
-  def slice(selector: String): RDD[Page] = self.flatMap(_.slice(selector))
+  def slice(selector: String, as: String = null, limit: Int = Conf.fetchLimit): RDD[Page] = self.flatMap(_.slice(selector, as, limit))
 
   //this is a lazy transformation, use it to save overhead for rescheduling.
   def saveAs(fileName: String = "#{resolved-url}", dir: String = Conf.savePagePath, overwrite: Boolean = false): RDD[Page] = self.map {
