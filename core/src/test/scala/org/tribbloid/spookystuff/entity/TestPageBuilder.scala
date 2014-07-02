@@ -1,11 +1,6 @@
 package org.tribbloid.spookystuff.entity
 
-import org.apache.hadoop.conf.Configuration
-import org.apache.spark.{SparkContext, SparkConf}
-import org.apache.spark.broadcast.Broadcast
-import org.scalatest.{Tag, FunSuite}
-import org.tribbloid.spookystuff.Conf
-import scala.collection.JavaConversions._
+import org.scalatest.{FunSuite, Tag}
 
 /**
  * Created by peng on 05/06/14.
@@ -15,10 +10,6 @@ class TestPageBuilder extends FunSuite {
 
   object pageBuilderTag extends Tag("PageBuilder")
   object pageTag extends Tag("Page")
-
-  val conf = new SparkConf().setAppName("None")
-  conf.setMaster("local[*]")
-  val sc = new SparkContext(conf)
 
   test("visit and snapshot", pageBuilderTag) {
     val builder = new PageBuilder()
@@ -89,6 +80,18 @@ class TestPageBuilder extends FunSuite {
     assert(result.backtrace === id)
     assert(result.contentStr.contains("<title>Adam Muise profiles | LinkedIn</title>"))
     assert(result.resolvedUrl === "https://www.linkedin.com/pub/dir/?first=Adam&last=Muise")
+  }
+
+  test("attributes", pageBuilderTag) {
+    val result = PageBuilder.resolveFinal(
+      Visit("http://www.amazon.com/"),
+      TextInput("input#twotabsearchtextbox", "Lord of the Rings"),
+      Submit("input.nav-submit-input"),
+      DelayFor("div#resultsCol",50)
+    )
+
+    assert(result.attrExist("div#result_0 h3 span.bold","title") === false)
+    assert(result.attr1("div#result_0 h3 span.bold","title") === null) //TODO: empty string but not null
   }
 
   test("save", pageTag) {

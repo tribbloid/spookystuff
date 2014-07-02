@@ -27,7 +27,7 @@ private object ActionUtils {
       if (strVar.contains(sub))
       {
         val value = entry._2.toString
-        if (value.matches("[^#{}]+") == false) throw new UnsupportedOperationException("context value cannot contain #{} etc.")
+//      TODO:  if (value.matches("[^#{}]+") == false) throw new UnsupportedOperationException("context value cannot contain #{} etc.")
         strVar = strVar.replace(sub, value)
       }
     }
