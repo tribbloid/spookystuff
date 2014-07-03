@@ -1,8 +1,6 @@
 package org.tribbloid.spookystuff.shell
 
 import org.apache.spark.repl.SparkILoop
-import org.apache.spark.{SparkConf, SparkContext}
-import scala.tools.nsc.Properties
 
 class SpookyILoop extends SparkILoop {
 
@@ -31,7 +29,7 @@ class SpookyILoop extends SparkILoop {
         |     / /                      /__/
 
       """)
-    import Properties._
+    import scala.tools.nsc.Properties._
     val welcomeMsg = "Using Scala %s (%s, Java %s)".format(
       versionString, javaVmName, javaVersion)
     echo(welcomeMsg)

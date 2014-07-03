@@ -87,7 +87,7 @@ Examples
 #### 3. Download University Logos
 - Goal: Search for Logos of all US Universities on Google Image (a list of US Universities can be found at [http://www.utexas.edu/world/univ/alpha/]), download them to one of your s3 bucket.
     - You need to set up your S3 credential through environment variables
-    - The following query will crawl 4000+ pages and web resources so its better to test it on a cluster
+    - The following query will visit 4000+ pages and web resources so its better to test it on a cluster
 - Query:
 ```
     ((sc.parallelize(Seq("dummy")) +>
@@ -98,14 +98,98 @@ Examples
       DelayFor("form[action=\"/search\"]",50) +>
       TextInput("input[name=\"q\"]","#{_} Logo") +>
       Submit("input[name=\"btnG\"]") +>
-      DelayFor("div#search",50) !)
-      .wgetJoin("div#search img",1,"src")
-      .save("#{_}", "s3n://$[insert your bucket here]$")
-      .foreach(println(_))
+      DelayFor("div#search",50) !).wgetJoin(
+        "div#search img",1,"src"
+      ).save("#{_}", "s3n://college-logo").foreach(println(_))
 ```
-- Result (process finished in 13 mintues on 4 r3.large instance, image files can be downloaded from S3 with a file transfer client supporting S3 (e.g. S3 web UI, crossFTP): 
+- Result (process finished in 13 mintues on 4 r3.large instances, image files can be downloaded from S3 with a file transfer client supporting S3 (e.g. S3 web UI, crossFTP): 
 
 ![Imgur](http://i.imgur.com/ou6pCjO.png)
+
+#### 4.a. ETL the product database of [http://www.iherb.com/].
+
+- Goal: Generate a complete list of all products and their prices offered on [http://www.iherb.com/] and load into designated S3 bucket as a tsv file, also save every product page being visited as a reference.
+    - The following query will download 4000+ pages and extract 43000+ items from them so its better to test it on a cluster.
+- Query:
+```
+    (sc.parallelize(Seq("Dummy")) +>
+      Wget("http://ca.iherb.com/")!!!).wgetJoin(
+        "div.category a"
+      ).wgetInsertPagination(
+        "p.pagination a:contains(Next)", 1000
+      ).saveAs(
+        dir = "s3n://[$your reference page bucket$]", overwrite = true
+      ).slice(
+        "div.prodSlotWide"
+      ).map {
+      page => (
+        page.savePath,
+        page.text1("p.description"),
+        page.text1("div.price")
+        ).productIterator.toList.mkString("\t")
+    }.saveAsTextFile("s3n://[$your list bucket$]")
+```
+- Result (process finished in 6.1 mintues on 4 r3.large instances)
+```
+http.ca.iherb.com.Food-Grocery-Items    St. Dalfour, Wild Blueberry, Deluxe Wild Blueberry Spread, 10 oz (284 g)	$4.49
+http.ca.iherb.com.Food-Grocery-Items    Eden Foods, Organic, Wild Berry Mix, Nuts, Seeds & Berries, 4 oz (113 g)	$3.76
+http.ca.iherb.com.Food-Grocery-Items    St. Dalfour, Organic, Golden Mango Green Tea, 25 Tea Bags, 1.75 oz (50 g))	$3.32
+... (42821 lines)
+```
+
+#### 4.b. Cross-website price comparison.
+
+- Goal: Use the product-price list generated in 4.a. as a reference and query on [http://www.amazon.com] for possible alternative offers, generate a table containing data of the first 10 matches for each product, the format of the table is defined by:
+```
+ (From left to right) original product name on iherb.com|product name on amazon.com|original price on iherb.com|price on amazon.com|shipping condition|user's ranking by stars|number of users with ranking|"Do you mean..." hint|"no exact match" hin|
+```
+Save the table as a tsv file and keep all visited pages as a reference.
+
+- Query:
+```
+    (sc.textFile("[$file source$]").distinct(400).tsvToMap("url\titem\tiherb-price") +>
+      Visit("http://www.amazon.com/") +>
+      TextInput("input#twotabsearchtextbox", "#{item}") +>
+      Submit("input.nav-submit-input") +>
+      DelayFor("div#resultsCol",50) !).saveAs(
+        dir = "[$reference page sink$]", overwrite = true
+      ).selectInto(
+        "DidYouMean" -> {_.text1("div#didYouMean a") },
+        "noResultsTitle" -> {_.text1("h1#noResultsTitle")},
+        "savePath" -> {_.savePath}
+      ).slice(
+        "div.prod[id^=result_]:not([id$=empty])", limit = 10
+      ).map{ page =>
+    {
+      var itemName: String = null
+      if (page.attrExist("h3 span.bold", "title")) {
+        itemName = page.attr1("h3 span.bold", "title")
+      }
+      else {
+        itemName = page.text1("h3 span.bold")
+      }
+      (page.context.get("item"),
+        itemName,
+        page.context.get("iherb-price"),
+        page.text1("span.bld"),
+        page.text1("li.sss2"),
+        page.attr1("a[alt$=stars]", "alt"),
+        page.text1("span.rvwCnt a"),
+        page.context.get("DidYouMean"),
+        page.context.get("noResultsTitle"),
+        page.context.get("savePath")
+        ).productIterator.toList.mkString("\t")
+    }
+    }.saveAsTextFile("[$tsv file sink$]")
+```
+- Result (process finished in 2.1 hours on 11 r3.large instances)
+```
+MusclePharm Assault Fruit Punch	Muscle Pharm Assault Pre-Workout System Fruit Punch, 0.96 Pound	$33.11	FREE Shipping on orders over $35	3.8 out of 5 stars	484	muscle pharm assault fruit punch	null	http.www.amazon.com.s.ie=UTF8&page=1&rh=i%3Aaps%2Ck%3AMusclePharm%20Assault%20Fruit%20Punch
+Paradise Herbs, L-Carnosine, 60 Veggie Caps	Paradise Herbs L-Carnosine Cellular Rejuvenation, Veggie Caps 60 ea	$50.00	null	null	null	null	null	http.www.amazon.com.s.ie=UTF8&page=1&rh=i%3Aaps%2Ck%3AParadise%20Herbs%5Cc%20L-Carnosine%5Cc%2060%20Veggie%20Caps
+Nature's Bounty, Acetyl L-Carnitine HCI, 400 mg, 30 Capsules	Nature's Bounty Acetyl L-Carnitine 400mg, with Alpha Lipoic Acid 200mg, 30 capsules	$15.99	FREE Shipping on orders over $35	3.6 out of 5 stars	7	null	null	http.www.amazon.com.s.ie=UTF8&page=1&rh=i%3Aaps%2Ck%3ANature%27s%20Bounty%5Cc%20Acetyl%20L-Carnitine%20HCI%5Cc%20400%20mg%5Cc%2030%20Capsules
+Lansinoh, Breastmilk Storage Bags, 25 Pre-Sterilized Bags	Lansinoh Breastmilk Storage Bags, 25-Count Boxes (Pack of 3)	$13.49	FREE Shipping on orders over $35	4 out of 5 stars	727	null	null	http.www.amazon.com.s.ie=UTF8&page=1&rh=i%3Aaps%2Ck%3ALansinoh%5Cc%20Breastmilk%20Storage%20Bags%5Cc%2025%20Pre-Sterilized%20Bags
+... (35737 lines)
+```
 
 Performance
 ---------------

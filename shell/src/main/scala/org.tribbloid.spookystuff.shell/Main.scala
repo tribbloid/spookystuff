@@ -24,8 +24,7 @@ object Main {
   def main(args:Array[String]) {
     System.setProperty("scala.usejavacp", "true")
     _interp = new SpookyILoop()
-    // It looks like we need to initialize this too, since some Spark shell initilaization code
-    // expects it
+
     org.apache.spark.repl.Main.interp = _interp
     _interp.process(args)
   }

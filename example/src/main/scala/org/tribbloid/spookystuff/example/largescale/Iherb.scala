@@ -1,6 +1,5 @@
 package org.tribbloid.spookystuff.example.largescale
 
-import org.apache.spark.SparkContext._
 import org.tribbloid.spookystuff.SpookyContext._
 import org.tribbloid.spookystuff.entity._
 import org.tribbloid.spookystuff.example.SparkSubmittable
@@ -15,13 +14,15 @@ object Iherb extends SparkSubmittable {
       ).wgetInsertPagination(
         "p.pagination a:contains(Next)", 1000
       ).saveAs(
-        dir = "s3n://iherb", overwrite = true
-      ).map{
-      page =>
-        (page.savePath,
-          page.text("p.description"))
-    }.flatMapValues(texts => texts).map(
-        tuple => tuple._1+"\t"+tuple._2
-      ).saveAsTextFile("s3n://iherb/result")
+        dir = "s3n://spookystuff/iherb", overwrite = true
+      ).slice(
+        "div.prodSlotWide"
+      ).map {
+      page => (
+        page.savePath,
+        page.text1("p.description"),
+        page.text1("div.price")
+        ).productIterator.toList.mkString("\t")
+    }.saveAsTextFile("s3n://spookystuff/iherb/result")
   }
 }
