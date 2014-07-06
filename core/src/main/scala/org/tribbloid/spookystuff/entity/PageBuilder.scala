@@ -12,7 +12,7 @@ import org.openqa.selenium.remote.RemoteWebDriver
 object PageBuilder {
 
   //shorthand for resolving the final stage after some interactions
-  def emptyPage(): Page ={
+  lazy val emptyPage: Page = {
     val pb = new PageBuilder()
 
     try {
@@ -23,16 +23,21 @@ object PageBuilder {
     }
   }
 
-  def resolveFinal(actions: Interactive*): Page = {
-    var result: Page = null
+  def resolveFinal(actions: Action*): Page = {
+
+    val Interactions = actions.collect{
+      case i: Interactive => i
+      case i: Container => i
+    }
+
+    if (Interactions.length == 0) return emptyPage
 
     val pb = new PageBuilder()
-
     try {
-      for (action <- actions) {
+      for (action <- Interactions) {
         action.exe(pb)
       }
-      Snapshot().exe(pb).toList(0)
+      return Snapshot().exe(pb).toList(0)
     }
     finally {
       pb.finalize
@@ -78,7 +83,7 @@ private class PageBuilder(
   val start_time: Long = new Date().getTime
   val backtrace: util.List[Interactive] = new util.ArrayList[Interactive]()
 
-//  TODO: Runtime.getRuntime.addShutdownHook()
+  //  TODO: Runtime.getRuntime.addShutdownHook()
   //by default drivers should be reset and reused in this case, but whatever
 
   //  def exe(action: Action): Array[Page] = action.exe(this)

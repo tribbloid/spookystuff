@@ -25,17 +25,17 @@ import scala.collection.JavaConversions._
 //I'm always using the more familiar Java collection, also for backward compatibility
 //TODO: Java convention or Scala conventions?
 case class Page(
-            val resolvedUrl: String,
-            val content: Array[Byte],
-            val contentType: String,
+                 val resolvedUrl: String,
+                 val content: Array[Byte],
+                 val contentType: String,
 
-            val alias: String = null,
+                 val alias: String = null,
 
-            val backtrace: Array[Interactive] = null, //immutable, also the uid
-            val context: util.HashMap[String, Serializable] = null, //Mutable! caused a lot of headache
-            val timestamp: Date = new Date, //immutable
-            val savePath: String = null
-            )
+                 val backtrace: Array[Interactive] = new Array(0), //immutable, also the uid
+                 val context: util.HashMap[String, Serializable] = new util.HashMap, //Mutable! caused a lot of headache
+                 val timestamp: Date = new Date,
+                 val savePath: String = null
+                 )
   extends Serializable{
 
   //share context. TODO: too many shallow copy making it dangerous
@@ -51,34 +51,40 @@ case class Page(
   }
   @transient lazy val contentStr: String = new String(this.content,this.parsedContentType.getCharset)
 
-  @transient lazy val doc: Element = if (parsedContentType.getMimeType.contains("html")){
-    Jsoup.parse(this.contentStr, resolvedUrl) //not serialize, parsing is faster
+  @transient lazy val doc: Option[Any] = if (parsedContentType.getMimeType.contains("html")){
+    Option(Jsoup.parse(this.contentStr, resolvedUrl)) //not serialize, parsing is faster
   }
   else{
-    null
+    None
   }
 
   def isExpired = (new Date().getTime - timestamp.getTime > Conf.pageExpireAfter*1000)
 
   //only slice contents inside the container, other parts are discarded
   //this will generate doc from scratch but otherwise induces heavy load on serialization
-  def slice(selector: String, alias: String = null, limit: Int = Conf.fetchLimit): Seq[Page] = {
-    val elements = doc.select(selector)
-    val length = Math.min(elements.size,limit)
+  def slice(selector: String, alias: String = null, limit: Int = Conf.fetchLimit): Seq[Page] = doc match {
 
-    var newAlias = this.alias
-    if (alias != null) newAlias = alias
+    case Some(doc: Element) => {
+      val elements = doc.select(selector)
+      val length = Math.min(elements.size, limit)
 
-    return elements.subList(0,length).zipWithIndex.map {
-      elementWithIndex =>{
-        this.copy(
-          resolvedUrl = this.resolvedUrl + "#" + elementWithIndex._2,
-          content = elementWithIndex._1.html().getBytes(parsedContentType.getCharset),
-          alias = newAlias,
-          context = new util.HashMap(this.context)
-        )
+      var newAlias = this.alias
+      if (alias != null) newAlias = alias
+
+      return elements.subList(0, length).zipWithIndex.map {
+        elementWithIndex => {
+          this.copy(
+            resolvedUrl = this.resolvedUrl + "#" + elementWithIndex._2,
+            content = elementWithIndex._1.html().getBytes(parsedContentType.getCharset),
+            alias = newAlias,
+            context = new util.HashMap(this.context)
+          )
+        }
       }
     }
+
+    case _ => return Seq[Page]()
+
   }
 
   //  def refresh(): Page = {
@@ -86,30 +92,48 @@ case class Page(
   //    return page
   //  }
 
-  def elementExist(selector: String): Boolean = {
-    !doc.select(selector).isEmpty
+  def elementExist(selector: String): Boolean = doc match {
+
+    case Some(doc: Element) => !doc.select(selector).isEmpty
+
+    case _ => return false
   }
 
-  def attrExist(selector: String, attr: String): Boolean = {
-    elementExist(selector) && doc.select(selector).hasAttr(attr)
+  def attrExist(selector: String, attr: String): Boolean = doc match {
+
+    case Some(doc: Element) => elementExist(selector) && doc.select(selector).hasAttr(attr)
+
+    case _ => return false
   }
 
-  def attr1(selector: String, attr: String): String = {
-    val element = doc.select(selector).first()
-    if (element == null) null
-    else element.attr(attr)
-  }
+  //return None if selector found nothing, return "" if found something but attribute doesn't exist
+  def attr1(selector: String, attr: String): String = doc match {
+    case Some(doc: Element) => {
 
-  def attr(selector: String, attr: String, limit: Int = Conf.fetchLimit, distinct: Boolean = false): Seq[String] = {
-    val elements = doc.select(selector)
-    val length = Math.min(elements.size,limit)
-
-    val result = elements.subList(0,length).map {
-      _.attr(attr)
+      val element = doc.select(selector).first()
+      if (element == null) null
+      else element.attr(attr)
     }
 
-    if (distinct == true) return result.distinct
-    else return result
+    case _ => null
+  }
+
+  //returned Sequence may contains "" for elements that match the selector but without required attribute, use filter if you don't want them
+  def attr(selector: String, attr: String, limit: Int = Conf.fetchLimit, distinct: Boolean = false): Seq[String] = doc match {
+    case Some(doc: Element) => {
+
+      val elements = doc.select(selector)
+      val length = Math.min(elements.size, limit)
+
+      val result = elements.subList(0, length).map {
+        _.attr(attr)
+      }
+
+      if (distinct == true) return result.distinct
+      else return result
+    }
+
+    case _ => Seq[String]()
   }
 
   def href1(selector: String, absolute: Boolean = true): String = {
@@ -132,22 +156,31 @@ case class Page(
     else attr(selector,"src",limit,distinct)
   }
 
-  def text1(selector: String): String = {
-    val element = doc.select(selector).first()
-    if (element == null) null
-    else element.text
-  }
-
-  def text(selector: String, limit: Int = Conf.fetchLimit, distinct: Boolean = false): Seq[String] = {
-    val elements = doc.select(selector)
-    val length = Math.min(elements.size,limit)
-
-    val result = elements.subList(0,length).map {
-      _.text
+  //return null if selector found nothing, return "" if found something without text
+  def text1(selector: String): String = doc match {
+    case Some(doc: Element) => {
+      val element = doc.select(selector).first()
+      if (element == null) null
+      else element.text
     }
 
-    if (distinct == true) return result.distinct
-    else return result
+    case _ => null
+  }
+
+  def text(selector: String, limit: Int = Conf.fetchLimit, distinct: Boolean = false): Seq[String] = doc match {
+    case Some(doc: Element) => {
+      val elements = doc.select(selector)
+      val length = Math.min(elements.size, limit)
+
+      val result = elements.subList(0, length).map {
+        _.text
+      }
+
+      if (distinct == true) return result.distinct
+      else return result
+    }
+
+    case _ => Seq[String]()
   }
 
   def extractPropertiesAsMap(keyAndF: (String, Page => Serializable)*): util.HashMap[String, Serializable] = {
@@ -182,15 +215,15 @@ case class Page(
   //also remember this will lose information as charset encoding will be different
   def save(fileName: String = "#{resolved-url}", dir: String = Conf.savePagePath, overwrite: Boolean = false)(hConf: Configuration): String = {
 
-//    val path = new Path(dir)
+    //    val path = new Path(dir)
 
     //TODO: slow to check if the dir exist
-//    val fs = path.getFileSystem(hConf)
-//    if (!fs.isDirectory(path)) {
-//      if (!fs.mkdirs(path)) {
-//        throw new SparkException("Failed to create save path " + path) //TODO: Still SparkException?
-//      }
-//    }
+    //    val fs = path.getFileSystem(hConf)
+    //    if (!fs.isDirectory(path)) {
+    //      if (!fs.mkdirs(path)) {
+    //        throw new SparkException("Failed to create save path " + path) //TODO: Still SparkException?
+    //      }
+    //    }
 
     val fullPathString = getFilePath(fileName, dir)
     var fullPath = new Path(fullPathString)

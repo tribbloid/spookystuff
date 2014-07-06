@@ -91,7 +91,8 @@ class TestPageBuilder extends FunSuite {
     )
 
     assert(result.attrExist("div#result_0 h3 span.bold","title") === false)
-    assert(result.attr1("div#result_0 h3 span.bold","title") === null) //TODO: empty string but not null
+    assert(result.attr1("div#result_0 h3 span.dummy","title") === null)
+    assert(result.attr1("div#result_0 h3 span.bold","title") === "")
   }
 
   test("save", pageTag) {

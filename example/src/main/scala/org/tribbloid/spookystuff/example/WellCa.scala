@@ -14,7 +14,7 @@ object WellCa extends SparkSubmittable {
     (sc.parallelize(Seq("Dummy")) +>
       Wget("http://well.ca/whatsnew/") !!!).saveAs(
         dir = "file:///home/peng/wellca", overwrite = true
-      ).slice(
+      ).joinBySlice(
         "div.product_grid_full_categories"
       ).map{
       page =>

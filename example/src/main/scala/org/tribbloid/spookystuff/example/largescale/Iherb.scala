@@ -15,7 +15,7 @@ object Iherb extends SparkSubmittable {
         "p.pagination a:contains(Next)", 1000
       ).saveAs(
         dir = "s3n://spookystuff/iherb", overwrite = true
-      ).slice(
+      ).joinBySlice(
         "div.prodSlotWide"
       ).map {
       page => (

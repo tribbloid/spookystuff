@@ -11,10 +11,15 @@ object ResellerRatings extends SparkSubmittable {
   def doMain() {
 
     (sc.parallelize(Seq("Hewlett_Packard")) +>
-      Wget("http://www.resellerratings.com/store/#{_}") !!!)
-          //remember jsoup doesn't support double quotes in attribute selector!
-    .wgetInsertPagination("div#survey-header ul.pagination a:contains(next)")
-    .save()
-    .foreach(println(_))
+      Wget(
+        "http://www.resellerratings.com/store/#{_}") !!!
+      ).wgetInsertPagination(
+        "div#survey-header ul.pagination a:contains(next)"
+      ).joinBySlice("div.review").map{ page =>
+      (page.text1("div.rating strong"),
+        page.text1("div.date span"),
+        page.text1("p.review-body")
+        ).productIterator.toList.mkString("\t")
+    }.saveAsTextFile("s3n://spookystuff/reseller-ratings/result")
   }
 }

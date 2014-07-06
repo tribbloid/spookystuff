@@ -27,7 +27,7 @@ private object ActionUtils {
       if (strVar.contains(sub))
       {
         val value = entry._2.toString
-//      TODO:  if (value.matches("[^#{}]+") == false) throw new UnsupportedOperationException("context value cannot contain #{} etc.")
+        //      TODO:  if (value.matches("[^#{}]+") == false) throw new UnsupportedOperationException("context value cannot contain #{} etc.")
         strVar = strVar.replace(sub, value)
       }
     }
@@ -68,14 +68,14 @@ trait Action extends Serializable with Cloneable {
         if (this.isInstanceOf[ErrorDump]) {
 
           val page = Snapshot().exe(pb).toList(0)
-//          try {
-//            page.save(dir = Conf.errorPageDumpDir)
-//          }
-//          catch {
-//            case e: Throwable => {
-              page.saveLocal(dir = Conf.localErrorPageDumpDir)
-//            }
-//          }
+          //          try {
+          //            page.save(dir = Conf.errorPageDumpDir)
+          //          }
+          //          catch {
+          //            case e: Throwable => {
+          page.saveLocal(dir = Conf.localErrorPageDumpDir)
+          //            }
+          //          }
           //                  TODO: logError("Error Page saved as "+errorFileName)
         }
 
@@ -93,6 +93,8 @@ trait Interactive extends Action
 trait ErrorDump extends Action
 
 trait Sessionless extends Action
+
+trait Container extends Action
 
 trait Aliased extends Action {
   var alias: String = null
@@ -209,25 +211,25 @@ case class Wget(val url: String) extends Aliased with Sessionless{
   }
 }
 
-case class Loop(val times: Int = Conf.fetchLimit)(val actions: Action*) extends Action {
+case class Loop(val times: Int = Conf.fetchLimit)(val actions: Action*) extends Container {
 
   override def doExe(pb: PageBuilder): Array[Page] = {
 
     val results = new ArrayBuffer[Page]()
 
-    //    try {
-    for (i <- 0 until times) {
-      for (action <- actions) {
-        val pages = action.exe(pb)
-        if (pages != null) results.++=(pages)
+    try {
+      for (i <- 0 until times) {
+        for (action <- actions) {
+          val pages = action.exe(pb)
+          if (pages != null) results.++=(pages)
+        }
       }
     }
-    //    }
-    //    catch {
-    //      case e: Throwable => {
-    //        //Do nothing
-    //      }
-    //    }
+    catch {
+      case e: Throwable => {
+        //Do nothing, loop until conditions are not met
+      }
+    }
 
     return results.toArray
   }

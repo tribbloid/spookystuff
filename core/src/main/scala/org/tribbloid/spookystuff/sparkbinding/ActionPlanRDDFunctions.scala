@@ -111,7 +111,7 @@ class ActionPlanRDDFunctions(val self: RDD[ActionPlan]) {
   }
 
   def !><(): RDD[Page] = {
-    val squashedPlanRDD = self.map{ ap => (ap.interactions, ap.context) }.groupByKey()
+    val squashedPlanRDD = self.map{ ap => (ap.actions, ap.context) }.groupByKey()
 
     val squashedPageRDD = squashedPlanRDD.map { tuple => ( PageBuilder.resolveFinal(tuple._1: _*), tuple._2) }
 

@@ -23,7 +23,7 @@ class PageRDDFunctions(val self: RDD[Page]) {
 
   def clearContext(): RDD[Page] = self.map{ _.copy(context = null) }
 
-  //TODO: what's the point of renaming it? change to spark SQL-style
+  //TODO: change to spark SQL-style
   def where(f: Page => Boolean) = self.filter(f)
 
   //TODO: this is the most abominable interface so far, will gradually evolve to resemble Spark SQL's select
@@ -49,8 +49,6 @@ class PageRDDFunctions(val self: RDD[Page]) {
     }
   }
 
-  def slice(selector: String, as: String = null, limit: Int = Conf.fetchLimit): RDD[Page] = self.flatMap(_.slice(selector, as, limit))
-
   //this is a lazy transformation, use it to save overhead for rescheduling.
   def saveAs(fileName: String = "#{resolved-url}", dir: String = Conf.savePagePath, overwrite: Boolean = false): RDD[Page] = self.map {
     val hConfWrapper = self.context.broadcast(new SerializableWritable(self.context.hadoopConfiguration))
@@ -63,7 +61,7 @@ class PageRDDFunctions(val self: RDD[Page]) {
   }
 
   //this is an action enforced to be executed, save to whatever (HDFS,S3,local disk) and return a list file paths
-  def save(fileName: String = "#{resolved-url}", dir: String = Conf.savePagePath, overwrite: Boolean = false): Array[String] = {
+  def dump(fileName: String = "#{resolved-url}", dir: String = Conf.savePagePath, overwrite: Boolean = false): Array[String] = {
     val hConfWrapper = self.context.broadcast(new SerializableWritable(self.context.hadoopConfiguration))
 
     self.map(page => page.save(fileName, dir, overwrite)(hConfWrapper.value.value)).collect()
@@ -132,6 +130,19 @@ class PageRDDFunctions(val self: RDD[Page]) {
   def wgetLeftJoin(selector: String, limit: Int = Conf.fetchLimit, attr :String = "abs:href"): RDD[Page] =
     this.leftWget(selector, limit, attr) !!!><
 
+  def joinBySlice(selector: String, as: String = null, limit: Int = Conf.fetchLimit): RDD[Page] =
+    self.flatMap(_.slice(selector, as, limit))
+
+  def leftJoinBySlice(selector: String, as: String = null, limit: Int = Conf.fetchLimit): RDD[Page] =
+    self.flatMap {
+      page => {
+
+        val results = page.slice(selector, as, limit)
+        if (results.size==0) Seq(PageBuilder.emptyPage.copy(context = page.context))
+        else results
+      }
+    }
+
   //slower than nested action and wgetJoinByPagination
   //attr is always "abs:href"
   def insertPagination(selector: String, limit: Int = Conf.fetchLimit): RDD[Page] = self.flatMap {
@@ -142,7 +153,8 @@ class PageRDDFunctions(val self: RDD[Page]) {
       var i = 0
       while (currentPage.attrExist(selector,"abs:href") && i< limit) {
         i = i+1
-        currentPage = PageBuilder.resolveFinal(Visit(page.href1(selector)))
+        val nextUrl = currentPage.href1(selector)
+        currentPage = PageBuilder.resolveFinal(Visit(nextUrl))
         results.+=(currentPage.copy(context = page.context))
       }
 

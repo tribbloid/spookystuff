@@ -19,7 +19,7 @@ object ResellerRatingsUseContainer extends SparkSubmittable {
       Snapshot()
     ) !!!)
       //remember jsoup doesn't support double quotes in attribute selector!
-      .save()
+      .dump()
       .foreach(println(_))
   }
 }

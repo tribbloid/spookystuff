@@ -100,7 +100,7 @@ Examples
       Submit("input[name=\"btnG\"]") +>
       DelayFor("div#search",50) !).wgetJoin(
         "div#search img",1,"src"
-      ).save("#{_}", "s3n://college-logo").foreach(println(_))
+      ).dump("#{_}", "s3n://college-logo").foreach(println(_))
 ```
 - Result (process finished in 13 mintues on 4 r3.large instances, image files can be downloaded from S3 with a file transfer client supporting S3 (e.g. S3 web UI, crossFTP): 
 
@@ -141,9 +141,11 @@ http.ca.iherb.com.Food-Grocery-Items    St. Dalfour, Organic, Golden Mango Green
 
 - Goal: Use the product-price list generated in 4.a. as a reference and query on [http://www.amazon.com] for possible alternative offers, generate a table containing data of the first 10 matches for each product, the format of the table is defined by:
 ```
- (From left to right) original product name on iherb.com|product name on amazon.com|original price on iherb.com|price on amazon.com|shipping condition|user's ranking by stars|number of users with ranking|"Do you mean..." hint|"no exact match" hin|
+ (From left to right)
+ product name on iherb|product name on amazon|original price on iherb|price on amazon|shipping condition|user's rating|number of users that rated|"Do you mean" heuristic|exact match info|reference page
 ```
 Save the table as a tsv file and keep all visited pages as a reference.
+    - this query will open 43000+ browser sessions so it's recommended to deploy on a cluster with 10+ nodes, alternatively you can truncate the result in 4.a. for a dry-run.
 
 - Query:
 ```
@@ -190,6 +192,37 @@ Nature's Bounty, Acetyl L-Carnitine HCI, 400 mg, 30 Capsules	Nature's Bounty Ace
 Lansinoh, Breastmilk Storage Bags, 25 Pre-Sterilized Bags	Lansinoh Breastmilk Storage Bags, 25-Count Boxes (Pack of 3)	$13.49	FREE Shipping on orders over $35	4 out of 5 stars	727	null	null	http.www.amazon.com.s.ie=UTF8&page=1&rh=i%3Aaps%2Ck%3ALansinoh%5Cc%20Breastmilk%20Storage%20Bags%5Cc%2025%20Pre-Sterilized%20Bags
 ... (35737 lines)
 ```
+
+#### 5 Download comments and ratings from [http://www.resellerratings.com/]
+
+- Goal: Given a list of vendors, download their ratings and comments with timestamp from customers.
+
+- Query:
+```
+    (sc.parallelize(Seq("Hewlett_Packard")) +>
+      Wget(
+        "http://www.resellerratings.com/store/#{_}") !!!
+      ).wgetInsertPagination(
+        "div#survey-header ul.pagination a:contains(next)"
+      ).slice("div.review").map{ page =>
+      (page.text1("div.rating strong"),
+        page.text1("div.date span"),
+        page.text1("p.review-body")
+        ).productIterator.toList.mkString("\t")
+    }.saveAsTextFile("s3n://spookystuff/reseller-ratings/result")
+```
+
+- Result:
+```
+1/5	2013-09-08	"Extremely pained by the service and behaviour of HP. My Envy touch screen Ultrabook crashed 3 weeks back, which I bought in January this year. It came with preloaded Windows 8 OS and they refuse to load the OS without charging me for it. The laptop is under warranty. Best was that the reason given for the crash by the service engineer is 'Monsoons'. Never buy an HP machine. "
+1/5	2013-09-04	"I can not believe how bad the service was. I wanted our company to resell HP products. I have been calling HP for weeks. Every time I call I feel like they push me to tears. When I first called the women didn't know English, she had no one else to speak to me. I called another number, an American answered, but he had no understanding of how to make a new contract but suggested he could transfer me. He did and I got a live person, until he put me on hold and the call was disconnected. I called the number on the HP partners website and they said that they are a whole other company that works for HP and don't have any idea of what to do or who to call. This continued on. It was so stressful. I mean I am so sad and stressed. I may be better off finding another company to work with. I have wasted many valuable days of work and so has my assistant. It is time consuming and costly dealing with them."
+1/5	2013-09-03	"I bought a HP CM-1015 multi-function printer/scanner/copier several years ago. It worked fine when connected to a WindowsXP print server. When I upgraded the XP to Windows 7 (about three years ago), I could not find a driver for it, so I waited, waited, and waited more. Today is September 3, 2013, I installed the newest posted driver that I downloaded from the HP’s website, and it still does not work: It only prints black-and-white, not color. I am not even asking to have all the functions of the machine to work, just the printer part, is this too much for HP? I am very disappointed at the HP product and its service. I bought the HP brand because I thought I would get a great product with great service. What I got is the opposite. Now, I am looking at this almost new machine (it has not been used much in the past years) and wondering: Should I get rid of it ($500+ when purchased) and get another brand? It is really a waste of money and time."
+... (189 lines)
+```
+
+#### 6 Download comments and ratings from [http://www.youtube.com/]
+
+- Goal: 
 
 Performance
 ---------------

@@ -1,9 +1,7 @@
 package org.tribbloid.spookystuff.example.largescale
 
-import org.apache.spark.{SparkContext, SparkConf}
-import org.tribbloid.spookystuff.Conf
-import org.tribbloid.spookystuff.entity._
 import org.tribbloid.spookystuff.SpookyContext._
+import org.tribbloid.spookystuff.entity._
 import org.tribbloid.spookystuff.example.SparkSubmittable
 
 /**
@@ -23,6 +21,6 @@ object GoogleImage extends SparkSubmittable {
       Submit("input[name=\"btnG\"]") +>
       DelayFor("div#search",50) !).wgetJoin(
         "div#search img",1,"src"
-      ).save("#{_}", "s3n://college-logo").foreach(println(_))
+      ).dump("#{_}", "s3n://college-logo").foreach(println(_))
   }
 }
