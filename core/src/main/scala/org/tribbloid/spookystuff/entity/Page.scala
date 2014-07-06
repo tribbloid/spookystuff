@@ -203,6 +203,7 @@ case class Page(
 
     //sanitizing filename can save me a lot of trouble
     formattedFileName = formattedFileName.replaceAll("[:\\\\/*?|<>_]+", ".")
+    if (formattedFileName.length>200) formattedFileName = formattedFileName.substring(0,200) //max fileName length is 256
 
     var formattedDir = dir
     if (!formattedDir.endsWith("/")) formattedDir = dir+"/"
@@ -266,3 +267,9 @@ case class Page(
     return file.getAbsolutePath
   }
 }
+
+//object EmptyPage extends Page(
+//  "about:empty",
+//  new Array[Byte](0),
+//  "text/html; charset=UTF-8"
+//)

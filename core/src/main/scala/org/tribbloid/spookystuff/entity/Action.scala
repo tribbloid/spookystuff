@@ -171,6 +171,23 @@ case class Select(val selector: String, val text: String) extends Interactive wi
   }
 }
 
+case class SwitchToFrame(val selector: String) extends Interactive with ErrorDump{
+  override def doExe(pb: PageBuilder): Array[Page] = {
+    val element = pb.driver.findElement(By.cssSelector(selector))
+    pb.driver.switchTo().frame(element)
+
+    return null
+  }
+}
+
+case class ExeScript(val script: String) extends Interactive with ErrorDump{
+  override def doExe(pb: PageBuilder): Array[Page] = {
+    pb.driver.executeScript(script)
+
+    return null
+  }
+}
+
 case class Snapshot() extends Aliased {
   // all other fields are empty
   override def doExe(pb: PageBuilder): Array[Page] = {

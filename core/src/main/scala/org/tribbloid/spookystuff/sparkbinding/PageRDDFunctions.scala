@@ -89,7 +89,7 @@ class PageRDDFunctions(val self: RDD[Page]) {
       var results = page.attr(selector,attr,limit).map {
         str => new ActionPlan(context, Visit(str))
       }
-      if (results.size==0) results = results.:+(new ActionPlan(context))
+      if (results.size==0) results = results.:+(new EmptyActionPlan(context))
       results
     }
   }
@@ -112,7 +112,7 @@ class PageRDDFunctions(val self: RDD[Page]) {
       var results = page.attr(selector,attr,limit).map {
         str => new ActionPlan(context, Wget(str))
       }
-      if (results.size==0) results = results.:+(new ActionPlan(context))
+      if (results.size==0) results = results.:+(new EmptyActionPlan(context))
       results
     }
   }

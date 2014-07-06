@@ -33,6 +33,7 @@ class ActionPlan(val context: util.HashMap[String, Serializable] = null) extends
   val actions: util.List[Action] = new util.ArrayList()
 
   override def equals(a: Any): Boolean = a match {
+    case e: EmptyActionPlan => return false
     case a: ActionPlan => {
       if ((this.context == a.context) && (this.actions == a.actions)) return true
       else return false
@@ -44,18 +45,18 @@ class ActionPlan(val context: util.HashMap[String, Serializable] = null) extends
     "ActionPlan("+this.context.toString+","+this.actions.toString+")"
   }
 
-  def +=(a: Action) {
+  private def +=(a: Action) {
     this.actions.add(a.format(context))
   }
 
-  def +=(as: Seq[Action]) {
+  private def +=(as: Seq[Action]) {
     as.foreach{
       a => this.actions.add(a.format(context))
     }
   }
 
   //will remove context of the parameter! cannot merge two context as they may have conflict keys
-  def +=(ac: ActionPlan) {
+  private def +=(ac: ActionPlan) {
     this.+=(ac.actions)
   }
 
@@ -99,4 +100,29 @@ class ActionPlan(val context: util.HashMap[String, Serializable] = null) extends
     }
     return pages
   }
+}
+
+class EmptyActionPlan(context: util.HashMap[String, Serializable] = null) extends ActionPlan(context) {
+
+  override def equals(a: Any): Boolean = a match {
+    case a: EmptyActionPlan => {
+      if (this.context == a.context) return true
+      else return false
+    }
+    case _ => return false
+  }
+
+  override def toString(): String = {
+    "EmptyActionPlan("+this.context.toString+")"
+  }
+
+  override def + (a: Action): EmptyActionPlan = this
+
+  override def + (as: Seq[Action]): EmptyActionPlan = this
+
+  override def + (ac: ActionPlan): EmptyActionPlan = this
+
+  override def !(): Page = PageBuilder.emptyPage.copy(context = this.context)
+
+  override def !!!(): Seq[Page] = Seq[Page]()
 }

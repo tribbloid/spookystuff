@@ -25,16 +25,16 @@ object PageBuilder {
 
   def resolveFinal(actions: Action*): Page = {
 
-    val Interactions = actions.collect{
+    val interactions = actions.collect{
       case i: Interactive => i
       case i: Container => i
     }
 
-    if (Interactions.length == 0) return emptyPage
+    if (interactions.length == 0) return emptyPage
 
     val pb = new PageBuilder()
     try {
-      for (action <- Interactions) {
+      for (action <- interactions) {
         action.exe(pb)
       }
       return Snapshot().exe(pb).toList(0)
