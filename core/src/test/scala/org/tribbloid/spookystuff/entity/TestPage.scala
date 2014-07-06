@@ -5,7 +5,7 @@ import org.scalatest.{BeforeAndAfter, FunSuite}
 /**
  * Created by peng on 22/06/14.
  */
-class TestPage  extends FunSuite with BeforeAndAfter {
+class TestPage extends FunSuite with BeforeAndAfter {
 
   var page: Page = null
 
@@ -32,4 +32,27 @@ class TestPage  extends FunSuite with BeforeAndAfter {
   test("s3nFilePath") {assert(page.getFilePath("dummy.txt","s3n://home") === "s3n://home/dummy.txt")}
 
   test("s3nBadNamedFilePath") {assert(page.getFilePath("Africa_Rice_Center","s3n://home") === "s3n://home/Africa.Rice.Center")}
+}
+
+class TestEmptyPage extends FunSuite with BeforeAndAfter {
+
+  var page: Page = null
+
+  before {
+    page = PageBuilder.emptyPage
+  }
+
+  test("attr1") {assert (page.attr1("div.dummy","href") === null)}
+
+  test("attr") {assert (page.attr("div.dummy","href") === Seq[String]())}
+
+  test("text1") {assert (page.text1("div.dummy") === null)}
+
+  test("text") {assert (page.text("div.dummy") === Seq[String]())}
+
+  test("slice") {assert (page.slice("div.dummy") === Seq[Page]())}
+
+  test("elementExist") {assert (page.elementExist("div.dummy") === false)}
+
+  test("attrExist") {assert (page.attrExist("div.dummy","href") === false)}
 }

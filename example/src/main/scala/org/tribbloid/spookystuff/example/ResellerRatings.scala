@@ -16,7 +16,8 @@ object ResellerRatings extends SparkSubmittable {
       ).wgetInsertPagination(
         "div#survey-header ul.pagination a:contains(next)"
       ).joinBySlice("div.review").map{ page =>
-      (page.text1("div.rating strong"),
+      (page.context.get("_"), //just check if it is preserved
+        page.text1("div.rating strong"),
         page.text1("div.date span"),
         page.text1("p.review-body")
         ).productIterator.toList.mkString("\t")

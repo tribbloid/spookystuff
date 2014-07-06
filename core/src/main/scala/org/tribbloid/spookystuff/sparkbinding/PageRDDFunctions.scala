@@ -153,7 +153,7 @@ class PageRDDFunctions(val self: RDD[Page]) {
       var i = 0
       while (currentPage.attrExist(selector,"abs:href") && i< limit) {
         i = i+1
-        val nextUrl = currentPage.href1(selector)
+        val nextUrl = currentPage.href1(selector) //not null because already validated
         currentPage = PageBuilder.resolveFinal(Visit(nextUrl))
         results.+=(currentPage.copy(context = page.context))
       }
@@ -171,7 +171,7 @@ class PageRDDFunctions(val self: RDD[Page]) {
       var i = 0
       while (currentPage.attrExist(selector,"abs:href") && i< limit) {
         i = i+1
-        val nextUrl = currentPage.href1(selector)
+        val nextUrl = currentPage.href1(selector) //not null because already validated
         currentPage = PageBuilder.resolve(Wget(nextUrl)).toList(0)
         results.+=(currentPage.copy(context = page.context))
       }
