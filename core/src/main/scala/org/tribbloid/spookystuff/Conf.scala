@@ -1,5 +1,6 @@
 package org.tribbloid.spookystuff
 
+import com.gargoylesoftware.htmlunit.WebClientOptions
 import org.apache.hadoop.conf.Configuration
 import org.apache.spark.{SerializableWritable, SparkContext}
 import org.apache.spark.broadcast.Broadcast
@@ -41,4 +42,7 @@ final object Conf {
   phantomJSCaps.setCapability(PhantomJSDriverService.PHANTOMJS_EXECUTABLE_PATH_PROPERTY, phantomJSRootPath + "bin/phantomjs");
 
 //  type Logging = com.typesafe.scalalogging.slf4j.Logging
+
+//  val webClientOptions = new WebClientOptions
+//  webClientOptions.setUseInsecureSSL(true)
 }

@@ -122,7 +122,7 @@ class EmptyActionPlan(context: util.HashMap[String, Serializable] = null) extend
 
   override def + (ac: ActionPlan): EmptyActionPlan = this
 
-  override def !(): Page = PageBuilder.emptyPage.copy(context = this.context)
-
-  override def !!!(): Seq[Page] = Seq[Page]()
+//  override def !(): Page = PageBuilder.emptyPage.copy(context = this.context)
+//
+//  override def !!!(): Seq[Page] = Seq[Page]()
 }

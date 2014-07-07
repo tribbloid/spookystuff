@@ -4,11 +4,14 @@ import java.io.Serializable
 import java.net.{URL, URLConnection}
 import java.util
 import java.util.Date
+import javax.net.ssl.{HttpsURLConnection, SSLContext, TrustManager}
 
 import org.apache.commons.io.IOUtils
+import org.apache.http.conn.ssl.AllowAllHostnameVerifier
 import org.openqa.selenium.By
 import org.openqa.selenium.support.ui
 import org.tribbloid.spookystuff.Conf
+import org.tribbloid.spookystuff.utils.InsecureTrustManager
 
 import scala.collection.JavaConversions._
 import scala.collection.mutable.ArrayBuffer
@@ -20,13 +23,15 @@ import scala.collection.mutable.ArrayBuffer
 private object ActionUtils {
   //TODO: reverse the direction of look-up, if a '#{...}' has no corresponding key in the context, throws an exception
   def formatWithContext[T](str: String, context: util.Map[String,T]): String = {
-    if ((context == null)||(context.isEmpty)) return str
+    if ((str == null)||(str.isEmpty)) return str
+    else if ((context == null)||(context.isEmpty)) return str
     var strVar = str
     for (entry <- context) {
       val sub = "#{".concat(entry._1).concat("}")
       if (strVar.contains(sub))
       {
-        val value = entry._2.toString
+        var value: String = "null"
+        if (entry._2 != null) {value = entry._2.toString}
         //      TODO:  if (value.matches("[^#{}]+") == false) throw new UnsupportedOperationException("context value cannot contain #{} etc.")
         strVar = strVar.replace(sub, value)
       }
@@ -206,7 +211,24 @@ case class Snapshot() extends Aliased {
 case class Wget(val url: String) extends Aliased with Sessionless{
 
   override def doExe(pb: PageBuilder): Array[Page] = {
+    if ((url == null)||(url.isEmpty)) return Array[Page](PageBuilder.emptyPage)
+
     val uc: URLConnection =  new URL(url).openConnection()
+
+    uc match {
+      case huc: HttpsURLConnection => {
+        // Install the all-trusting trust manager
+        val sslContext = SSLContext.getInstance( "SSL" )
+        sslContext.init(null, Array[TrustManager](new InsecureTrustManager()), null)
+        // Create an ssl socket factory with our all-trusting manager
+        val sslSocketFactory  = sslContext.getSocketFactory();
+
+        huc.setSSLSocketFactory(sslSocketFactory)
+        huc.setHostnameVerifier(new AllowAllHostnameVerifier)
+      }
+
+      case _ => {}
+    }
 
     uc.connect()
     val is = uc.getInputStream()

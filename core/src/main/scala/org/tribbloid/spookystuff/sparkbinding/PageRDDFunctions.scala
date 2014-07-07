@@ -112,7 +112,7 @@ class PageRDDFunctions(val self: RDD[Page]) {
       var results = page.attr(selector,attr,limit).map {
         str => new ActionPlan(context, Wget(str))
       }
-      if (results.size==0) results = results.:+(new EmptyActionPlan(context))
+      if (results.size==0) results = results.:+(new ActionPlan(context) + Wget(null))
       results
     }
   }
@@ -129,6 +129,7 @@ class PageRDDFunctions(val self: RDD[Page]) {
 
   def wgetLeftJoin(selector: String, limit: Int = Conf.fetchLimit, attr :String = "abs:href"): RDD[Page] =
     this.leftWget(selector, limit, attr) !!!><
+
 
   def joinBySlice(selector: String, as: String = null, limit: Int = Conf.fetchLimit): RDD[Page] =
     self.flatMap(_.slice(selector, as, limit))
