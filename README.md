@@ -222,7 +222,102 @@ Lansinoh, Breastmilk Storage Bags, 25 Pre-Sterilized Bags	Lansinoh Breastmilk St
 
 #### 6 Download comments and ratings from [http://www.youtube.com/]
 
-- Goal: 
+- Goal: Visit Metallica's youtube channel, click 'show more' button repeatedly until all videos are displayed. Collect their respective titles, descriptions, date of publishing, number of watched users, number of positive votes, number of negative votes, number of comments. Finally, click 'show more comments' button repeatedly and collect all top-level comments (not replies), also, save each fully expanded comment iframe for validation.
+
+-Query:
+```
+    (((sc.parallelize(Seq("MetallicaTV")) +>
+      Visit("http://www.youtube.com/user/#{_}/videos") +>
+      Loop() (
+        Click("button.load-more-button span.load-more-text"),
+        DelayFor("button.load-more-button span.hid.load-more-loading", 10)
+      ) !).leftJoinBySlice("li.channels-content-item").selectInto(
+        "title" -> (_.text1("h3.yt-lockup-title"))
+      ).leftVisit(
+        "h3.yt-lockup-title a.yt-uix-tile-link", limit = 1
+      ) +>
+      ExeScript("window.scrollBy(0,500)") +>
+      DelayFor("iframe[title^=Comment]", 50) !><).selectInto(
+        "description" -> (_.text1("div#watch-description-text")),
+        "publish" -> (_.text1("p#watch-uploader-info")),
+        "total_view" -> (_.text1("div#watch7-views-info span.watch-view-count")),
+        "like_count" -> (_.text1("div#watch7-views-info span.likes-count")),
+        "dislike_count" -> (_.text1("div#watch7-views-info span.dislikes-count"))
+      ).leftVisit("iframe[title^=Comment]",limit=10,attr = "abs:src") +>
+      Loop() (
+        Click("span[title^=Load]"),
+        DelayFor("span.PA[style^=display]",10)
+      ) !).saveAs(dir="file:///home/peng/youtube").selectInto(
+        "num_comments" -> (_.text1("div.DJa"))
+      ).leftJoinBySlice(
+        "div[id^=update]"
+      ).map(
+        page => (
+          page.context.get("_"),
+          page.context.get("title"),
+          page.context.get("description"),
+          page.context.get("publish"),
+          page.context.get("total_view"),
+          page.context.get("like_count"),
+          page.context.get("dislike_count"),
+          page.context.get("num_comments"),
+          page.text1("h3.Mpa"),
+          page.text1("div.Al")
+          ).productIterator.toList.mkString("\t")
+      ).saveAsTextFile("file:///home/peng/youtube/result")
+```
+-Result (finished in 9 minutes on 19 r3.large instances):
+```
+MetallicaTV	Metallica: Ride The Lightning and Wherever I May Roam (MetOnTour - Landgraaf, Netherlands - 2014)	Fly on the wall footage shot by the MetOnTour reporter on June 9, 2014 in Landgraaf, Netherlands. Footage includes some Tuning Room shenanigans and both "Ride The Lightning" and "Wherever I May Roam" from the show. Download the full audio from the show at LiveMetallica.com: http://www.livemetallica.com/live-mus... Follow Metallica: http://www.metallica.com http://www.livemetallica.com http://www.facebook.com/metallica http://www.twitter.com/metallica http://www.instagram.com/metallica http://www.youtube.com/metallicatv	Published on Jul 3, 2014	172,017	1,839	10	All comments (220)	DavincstyleGames	  I was there and it was well worth the wait!﻿ Read more Show less
+MetallicaTV	Metallica: Ride The Lightning and Wherever I May Roam (MetOnTour - Landgraaf, Netherlands - 2014)	Fly on the wall footage shot by the MetOnTour reporter on June 9, 2014 in Landgraaf, Netherlands. Footage includes some Tuning Room shenanigans and both "Ride The Lightning" and "Wherever I May Roam" from the show. Download the full audio from the show at LiveMetallica.com: http://www.livemetallica.com/live-mus... Follow Metallica: http://www.metallica.com http://www.livemetallica.com http://www.facebook.com/metallica http://www.twitter.com/metallica http://www.instagram.com/metallica http://www.youtube.com/metallicatv	Published on Jul 3, 2014	172,017	1,839	10	All comments (220)	thebossman222	  They're amazingly busy all the time, surprised his voice hasn't completely given out by now﻿ Read more Show less
+MetallicaTV	Metallica: Ride The Lightning and Wherever I May Roam (MetOnTour - Landgraaf, Netherlands - 2014)	Fly on the wall footage shot by the MetOnTour reporter on June 9, 2014 in Landgraaf, Netherlands. Footage includes some Tuning Room shenanigans and both "Ride The Lightning" and "Wherever I May Roam" from the show. Download the full audio from the show at LiveMetallica.com: http://www.livemetallica.com/live-mus... Follow Metallica: http://www.metallica.com http://www.livemetallica.com http://www.facebook.com/metallica http://www.twitter.com/metallica http://www.instagram.com/metallica http://www.youtube.com/metallicatv	Published on Jul 3, 2014	172,017	1,839	10	All comments (220)	spikesfunshow	  I forgot the name of the song he is playing at the beginning? Can someone help me out? Thanks﻿ Read more Show less
+... (47236 lines)
+```
+
+#### 7 Download forward citations from [Google Scholar](http://scholar.google.com)
+
+- Goal: Given a list of titles of papers, search them on Google Scholar, collect the first result of each and information (namely titles and abstracts) of its forward citations (all publications that cites them) download all of them.
+
+- Query:
+```
+    (sc.parallelize(Seq("Large scale distributed deep networks")) +>
+      Visit("http://scholar.google.com/") +>
+      DelayFor("form[role=search]",50) +>
+      TextInput("input[name=\"q\"]","#{_}") +>
+      Submit("button#gs_hp_tsb") +>
+      DelayFor("div[role=main]",50) !).selectInto(
+        "title" -> (_.text1("div.gs_r h3.gs_rt a")),
+        "citation" -> (_.text1("div.gs_r div.gs_ri div.gs_fl a:contains(Cited)"))
+      ).leftJoin(
+        "div.gs_r div.gs_ri div.gs_fl a:contains(Cited)",1
+      ).insertPagination(
+        "div#gs_n td[align=left] a"
+      ).leftJoinBySlice("div.gs_r").selectInto(
+        "citation_title" -> (_.text1("h3.gs_rt a")),
+        "citation_abstract" -> (_.text1("div.gs_rs"))
+      ).wgetLeftJoin(
+        "div.gs_md_wp a"
+      ).saveAs(
+        fileName = "#{citation_title}",
+        dir = "file:///home/peng/scholar/"
+      ).map(
+        page => (
+          page.context.get("_"),
+          page.context.get("title"),
+          page.context.get("citation"),
+          page.context.get("citation_title"),
+          page.context.get("citation_abstract")
+          ).productIterator.toList.mkString("\t")
+      ).saveAsTextFile("file:///home/peng/scholar/result")
+```
+
+- Result (finished in 1.5 minute on my laptop with ~450k download speed):
+```
+Large scale distributed deep networks	Large scale distributed deep networks	Cited by 119	Good practice in large-scale learning for image classification	Abstract—We benchmark several SVM objective functions for large-scale image classification. We consider one-versus-rest, multiclass, ranking, and weighted approximate ranking SVMs. A comparison of online and batch methods for optimizing the objectives ...
+Large scale distributed deep networks	Large scale distributed deep networks	Cited by 119	Deep learning with cots hpc systems	Abstract Scaling up deep learning algorithms has been shown to lead to increased performance in benchmark tasks and to enable discovery of complex high-level features. Recent efforts to train extremely large networks (with over 1 billion parameters) have ...
+Large scale distributed deep networks	Large scale distributed deep networks	Cited by 119	A reliable effective terascale linear learning system	Abstract: We present a system and a set of techniques for learning linear predictors with convex losses on terascale datasets, with trillions of features,{The number of features here refers to the number of non-zero entries in the data matrix.} billions of training examples ...
+... (119 lines)
+```
 
 Performance
 ---------------
@@ -235,7 +330,7 @@ Performance
 
 - Using Wget (equivalent to simple HTTP GET) instead of Visit for static/non-interactive pages in your Action Plan can save you a lot of time and network throughput in query as it won't start the browser and download any resources for the page.
 
-- Further optimization options may include switching to [Kryo serializer](https://code.google.com/p/kryo/) (to replace Java serializer) and [YARN (Hadoop 2 component)](http://hadoop.apache.org/docs/current/hadoop-yarn/hadoop-yarn-site/YARN.html) (to replace Spark Standalone Master), however these options are not tested or benchmarked yet. So we encourage you to test these options and post any performance issue/bug you encountered, but not using them in production. 
+- Further optimization options may include switching to [Kryo serializer](https://code.google.com/p/kryo/) (to replace Java serializer) and [YARN (Hadoop 2 component)](http://hadoop.apache.org/docs/current/hadoop-yarn/hadoop-yarn-site/YARN.html) (to replace Spark Standalone Master), however these options are not tested or benchmarked yet. So we encourage you to test these options and post any performance issue/bug you encountered, but not using them in production.  
 
 Deployment
 ---------------
