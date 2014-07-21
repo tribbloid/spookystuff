@@ -3,7 +3,6 @@ package org.tribbloid.spookystuff
 import java.io.Serializable
 import java.util
 
-import org.apache.poi.ss.formula.functions.T
 import org.apache.spark.rdd.RDD
 import org.tribbloid.spookystuff.entity.{ActionPlan, Page}
 import org.tribbloid.spookystuff.sparkbinding.{ActionPlanRDDFunctions, PageRDDFunctions, StringRDDFunctions}

@@ -18,7 +18,7 @@ object Amazon extends SparkSubmittable {
         "DidYouMean" -> {_.text1("div#didYouMean a") },
         "noResultsTitle" -> {_.text1("h1#noResultsTitle")},
         "savePath" -> {_.savePath}
-      ).joinBySlice(
+      ).leftJoinBySlice(
         "div.prod[id^=result_]:not([id$=empty])", limit = 10
       ).map{ page =>
     {

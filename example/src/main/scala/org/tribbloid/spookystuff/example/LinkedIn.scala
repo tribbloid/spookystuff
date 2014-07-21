@@ -15,9 +15,10 @@ object LinkedIn extends SparkSubmittable {
       Visit("https://www.linkedin.com/") +>
       TextInput("input#first", "#{_}") +*>
       Seq( TextInput("input#last", "Gupta"), TextInput("input#last", "Krishnamurthy")) +>
-      Submit("input[name=\"search\"]") !><)
-      .wgetJoin("ol#result-set h2 a")
-      .map{ page => (
+      Submit("input[name=\"search\"]")
+      !><).wgetJoin(
+        "ol#result-set h2 a"
+      ).map{ page => (
       page.text1("span.full-name"),
       page.text1("p.title"),
       page.text("div#profile-skills li")

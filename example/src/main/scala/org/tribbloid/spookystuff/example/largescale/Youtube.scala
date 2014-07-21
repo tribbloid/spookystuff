@@ -15,13 +15,15 @@ class Youtube extends SparkSubmittable{
       Loop() (
         Click("button.load-more-button span.load-more-text"),
         DelayFor("button.load-more-button span.hid.load-more-loading", 10)
-      ) !).leftJoinBySlice("li.channels-content-item").selectInto(
+      ) !).leftJoinBySlice("li.channels-content-item",limit=1000).selectInto(
         "title" -> (_.text1("h3.yt-lockup-title"))
       ).leftVisit(
         "h3.yt-lockup-title a.yt-uix-tile-link", limit = 1
-      ) +>
+      ).repartition(400) +>
       ExeScript("window.scrollBy(0,500)") +>
-      DelayFor("iframe[title^=Comment]", 50) !><).selectInto(
+      Loop(1)( //TODO: some page doesn't have an iframe, in which case it should allow incomplete execution
+        DelayFor("iframe[title^=Comment]", 50)
+      )!><).selectInto(
         "description" -> (_.text1("div#watch-description-text")),
         "publish" -> (_.text1("p#watch-uploader-info")),
         "total_view" -> (_.text1("div#watch7-views-info span.watch-view-count")),
@@ -31,7 +33,7 @@ class Youtube extends SparkSubmittable{
       Loop() (
         Click("span[title^=Load]"),
         DelayFor("span.PA[style^=display]",10)
-      ) !).saveAs(dir="file:///home/peng/youtube").selectInto(
+      ) !).selectInto(
         "num_comments" -> (_.text1("div.DJa"))
       ).leftJoinBySlice(
         "div[id^=update]"
@@ -48,11 +50,11 @@ class Youtube extends SparkSubmittable{
           page.text1("h3.Mpa"),
           page.text1("div.Al")
           ).productIterator.toList.mkString("\t")
-      ).saveAsTextFile("file:///home/peng/youtube/result")
+      ).saveAsTextFile("s3n://spookystuff/youtube/result")
 
-//      .leftJoinBySlice()
+    //      .leftJoinBySlice()
 
-//      .dump(dir="file:///home/peng/youtube"))
+    //      .dump(dir="file:///home/peng/youtube"))
 
 
 

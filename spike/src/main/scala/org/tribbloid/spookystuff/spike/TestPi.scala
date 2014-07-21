@@ -6,7 +6,7 @@ import org.apache.spark.{SparkContext, SparkConf}
 /**
  * Created by peng on 05/06/14.
  */
-object TestImplicitViewOfRDD {
+object TestPi {
   def random: Double = java.lang.Math.random()
 
   def main(args: Array[String]) {

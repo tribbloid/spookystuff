@@ -1,9 +1,5 @@
 package org.tribbloid.spookystuff
 
-import com.gargoylesoftware.htmlunit.WebClientOptions
-import org.apache.hadoop.conf.Configuration
-import org.apache.spark.{SerializableWritable, SparkContext}
-import org.apache.spark.broadcast.Broadcast
 import org.openqa.selenium.phantomjs.PhantomJSDriverService
 import org.openqa.selenium.remote.{CapabilityType, DesiredCapabilities}
 
