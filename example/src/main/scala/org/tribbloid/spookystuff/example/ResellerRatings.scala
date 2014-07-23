@@ -10,7 +10,7 @@ object ResellerRatings extends SparkSubmittable {
 
   def doMain() {
 
-    (sc.parallelize(Seq("Hewlett Packard")) +>
+    (sc.parallelize(Seq("Hewlett_Packard")) +>
       Wget(
         "http://www.resellerratings.com/store/#{_}") !!!
       ).wgetInsertPagination(
