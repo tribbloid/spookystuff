@@ -11,7 +11,7 @@ object TestSparkSubmit {
     SparkSubmit.main(
       Array(
         "--master", "local[*]",
-      "--class", "org.tribbloid.spookystuff.example.LinkedInSimple",
+        "--class", "org.tribbloid.spookystuff.example.LinkedInSimple",
         "example/target/spookystuff-example-assembly-0.1.0-SNAPSHOT.jar"
       )
     )
