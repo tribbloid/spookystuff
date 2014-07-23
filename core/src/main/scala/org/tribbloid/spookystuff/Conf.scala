@@ -20,13 +20,13 @@ final object Conf {
 
   val defaultCharset = "ISO-8859-1"
 
-  val savePagePath = "s3n://spooky_page"
+  val savePagePath = "s3n://spooky-page"
 
-  val localSavePagePath = "temp/spooky_page/"
+  val localSavePagePath = "temp/spooky-page/"
 //  val saveScreenshotPath = "file:///home/peng/spookystuffScreenShots/"
 
 //  val errorPageDumpDir = "s3n://spooky_errorpage"
-  val localErrorPageDumpDir = "temp/spooky_errorpage"
+  val localErrorPageDumpDir = "temp/spooky-errorpage"
 
   val phantomJSCaps = new DesiredCapabilities;
   phantomJSCaps.setJavascriptEnabled(true);                //< not really needed: JS enabled by default
