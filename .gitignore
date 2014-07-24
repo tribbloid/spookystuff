@@ -25,6 +25,7 @@ project/plugins/project/
 # IntelliJ-IDEA specific
 *.iml
 .idea/
+.idea_modules/
 
 # Compiler
 output
