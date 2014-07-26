@@ -14,7 +14,6 @@ import org.jsoup.nodes.Element
 import org.tribbloid.spookystuff.Conf
 
 import scala.collection.JavaConversions._
-;
 
 /**
  * Created by peng on 04/06/14.

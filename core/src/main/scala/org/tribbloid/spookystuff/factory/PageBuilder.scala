@@ -1,13 +1,16 @@
-package org.tribbloid.spookystuff.entity
-
-import java.util.Date
-
-import org.openqa.selenium.phantomjs.PhantomJSDriver
-import org.tribbloid.spookystuff.Conf
-import scala.collection.mutable.ArrayBuffer
+package org.tribbloid.spookystuff.factory
 
 import java.util
+import java.util.Date
+
+import org.openqa.selenium.Capabilities
+import org.openqa.selenium.phantomjs.PhantomJSDriver
 import org.openqa.selenium.remote.RemoteWebDriver
+import org.openqa.selenium.remote.server.DriverFactory
+import org.tribbloid.spookystuff.Conf
+import org.tribbloid.spookystuff.entity._
+
+import scala.collection.mutable.ArrayBuffer
 
 object PageBuilder {
 
@@ -75,10 +78,16 @@ object PageBuilder {
 
 }
 
-//TODO: avoid passing a singleton driver!
-private class PageBuilder(
-                           val driver: RemoteWebDriver = new PhantomJSDriver(Conf.phantomJSCaps)
-                           ) {
+class PageBuilder(
+                   val driverFactory: DriverFactory = Conf.defaultDriverFactory,
+                   val caps: Capabilities = null
+                   ) {
+  val driver = if (driverFactory != null) {
+    this.driverFactory.newInstance(caps)
+  }
+  else {
+    null
+  }
 
   val start_time: Long = new Date().getTime
   val backtrace: util.List[Interactive] = new util.ArrayList[Interactive]()

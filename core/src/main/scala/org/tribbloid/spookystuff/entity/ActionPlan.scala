@@ -2,6 +2,8 @@ package org.tribbloid.spookystuff.entity
 
 import java.util
 import java.io.Serializable
+import org.tribbloid.spookystuff.factory.PageBuilder
+
 import scala.collection.JavaConversions._
 
 /**

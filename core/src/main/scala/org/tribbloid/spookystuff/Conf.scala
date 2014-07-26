@@ -2,6 +2,7 @@ package org.tribbloid.spookystuff
 
 import org.openqa.selenium.phantomjs.PhantomJSDriverService
 import org.openqa.selenium.remote.{CapabilityType, DesiredCapabilities}
+import org.tribbloid.spookystuff.factory.NaiveDriverFactory
 
 /**
  * Created by peng on 04/06/14.
@@ -10,8 +11,8 @@ import org.openqa.selenium.remote.{CapabilityType, DesiredCapabilities}
 //TODO: can use singleton pattern? those values never changes after SparkContext is defined
 final object Conf {
 
-  val pageDelay = 5
-  val pageTimeout = 50
+  val pageDelay = 10
+  val pageLoadTimeout = 30
 //  val usePageCache = false //delegated to smart execution
   val pageExpireAfter = 1800
 
@@ -28,15 +29,7 @@ final object Conf {
 //  val errorPageDumpDir = "s3n://spooky_errorpage"
   val localErrorPageDumpDir = "temp/spooky-errorpage"
 
-  val phantomJSCaps = new DesiredCapabilities;
-  phantomJSCaps.setJavascriptEnabled(true);                //< not really needed: JS enabled by default
-  phantomJSCaps.setCapability(CapabilityType.SUPPORTS_FINDING_BY_CSS,true)
-//  phantomJSCaps.setCapability("takesScreenshot", true);    //< yeah, GhostDriver haz screenshotz!
-//  val cliArgs = "--logLevel=ERROR"
-//  phantomJSCaps.setCapability(PhantomJSDriverService.PHANTOMJS_GHOSTDRIVER_CLI_ARGS, cliArgs);//TODO: logLevel parameter doesn't work, why?
-  val phantomJSRootPath = "/usr/lib/phantomjs/"
-  phantomJSCaps.setCapability(PhantomJSDriverService.PHANTOMJS_EXECUTABLE_PATH_PROPERTY, phantomJSRootPath + "bin/phantomjs");
-
+  val defaultDriverFactory = NaiveDriverFactory
 //  type Logging = com.typesafe.scalalogging.slf4j.Logging
 
 //  val webClientOptions = new WebClientOptions

@@ -1,6 +1,7 @@
 package org.tribbloid.spookystuff.entity
 
 import org.scalatest.{FunSuite, Tag}
+import org.tribbloid.spookystuff.factory.PageBuilder
 
 /**
  * Created by peng on 05/06/14.

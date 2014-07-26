@@ -9,8 +9,12 @@ import javax.net.ssl.{HttpsURLConnection, SSLContext, TrustManager}
 import org.apache.commons.io.IOUtils
 import org.apache.http.conn.ssl.AllowAllHostnameVerifier
 import org.openqa.selenium.By
+import org.openqa.selenium.htmlunit.HtmlUnitDriver
+import org.openqa.selenium.remote.RemoteWebDriver
+import org.openqa.selenium.support.events.EventFiringWebDriver
 import org.openqa.selenium.support.ui
 import org.tribbloid.spookystuff.Conf
+import org.tribbloid.spookystuff.factory.PageBuilder
 import org.tribbloid.spookystuff.utils.InsecureTrustManager
 
 import scala.collection.JavaConversions._
@@ -53,7 +57,7 @@ trait Action extends Serializable with Cloneable {
 
     try {
       var pages = doExe(pb: PageBuilder)
-      var newTimeline = new Date().getTime - pb.start_time
+      val newTimeline = new Date().getTime - pb.start_time
 
       if (this.isInstanceOf[Interactive]) {
         val cloned = this.clone().asInstanceOf[Interactive] //TODO: EVIL!
@@ -130,7 +134,7 @@ case class Delay(val delay: Int = Conf.pageDelay) extends Interactive with Error
 }
 
 //CAUTION: will throw an exception if the element doesn't appear in time!
-case class DelayFor(val selector: String,val delay: Int) extends Interactive with ErrorDump{
+case class DelayFor(val selector: String,val delay: Int = Conf.pageDelay) extends Interactive with ErrorDump{
   override def doExe(pb: PageBuilder): Array[Page] = {
     val wait = new ui.WebDriverWait(pb.driver, delay)
     wait.until(ui.ExpectedConditions.presenceOfAllElementsLocatedBy(By.cssSelector(selector)))
@@ -187,7 +191,13 @@ case class SwitchToFrame(val selector: String) extends Interactive with ErrorDum
 
 case class ExeScript(val script: String) extends Interactive with ErrorDump{
   override def doExe(pb: PageBuilder): Array[Page] = {
-    pb.driver.executeScript(script)
+    pb.driver match {
+      case d: HtmlUnitDriver => d.executeScript(script)
+//      case d: AndroidWebDriver => d.executeScript(script)
+      case d: EventFiringWebDriver => d.executeScript(script)
+      case d: RemoteWebDriver => d.executeScript(script)
+      case _ => throw new UnsupportedOperationException("this web browser driver is not supported")
+    }
 
     return null
   }

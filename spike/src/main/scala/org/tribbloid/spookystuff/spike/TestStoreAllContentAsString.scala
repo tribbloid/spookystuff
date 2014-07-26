@@ -18,7 +18,7 @@ object TestStoreAllContentAsString {
 //    val uri = "http://col.stb01.s-msn.com/i/74/A177116AA6132728F299DCF588F794.gif"
 //    val uri = "http://www.cs.toronto.edu/~ranzato/publications/DistBeliefNIPS2012_withAppendix.pdf"
 
-//    val driver = new PhantomJSDriver(Conf.phantomJSCaps)
+//    val driver = new PhantomJSDriver(Conf.baseCaps)
 //    driver.get(uri)
 //    val content = driver.getPageSource.getBytes("UTF8")
 

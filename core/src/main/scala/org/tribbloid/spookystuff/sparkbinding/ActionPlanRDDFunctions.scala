@@ -1,7 +1,8 @@
 package org.tribbloid.spookystuff.sparkbinding
 
 import org.apache.spark.rdd.RDD
-import org.tribbloid.spookystuff.entity.{PageBuilder, Page, ActionPlan, Action}
+import org.tribbloid.spookystuff.entity.{Page, ActionPlan, Action}
+import org.tribbloid.spookystuff.factory.PageBuilder
 import scala.collection.mutable.ArrayBuffer
 import org.apache.spark.SparkContext._
 import scala.collection.JavaConversions._

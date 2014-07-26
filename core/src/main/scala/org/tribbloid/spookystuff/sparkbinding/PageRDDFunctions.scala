@@ -9,6 +9,7 @@ import org.tribbloid.spookystuff.entity._
 import java.util
 
 import org.tribbloid.spookystuff.SpookyContext._
+import org.tribbloid.spookystuff.factory.PageBuilder
 
 import scala.collection.mutable.ArrayBuffer
 
