@@ -12,7 +12,7 @@ object AppliancePartsPros extends SparkSubmittable {
     (sc.parallelize(Seq("A210S")) +>
       Visit("http://www.appliancepartspros.com/") +>
       TextInput("input.ac-input","#{_}") +>
-      Click("input[value=\"Search\"]") +> //TODO: can't use Submit, why?
+      Click("input[value=\"Search\"]") +>
       Delay(10) ! //TODO: change to DelayFor to save time
       ).selectInto(
         "model" -> { _.text1("div.dgrm-lst div.header h2") }
@@ -39,5 +39,4 @@ object AppliancePartsPros extends SparkSubmittable {
     //    third
   }
 }
-//TODO: some tasks went dead
-//TODO: some phantomjs instance doesn't close
+//TODO: need testing in a Tim Horton to make sure timeout loading won't stall

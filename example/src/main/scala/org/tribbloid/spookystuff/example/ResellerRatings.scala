@@ -21,6 +21,6 @@ object ResellerRatings extends SparkSubmittable {
         page.text1("div.date span"),
         page.text1("p.review-body")
         ).productIterator.toList.mkString("\t")
-    }.saveAsTextFile("s3n://spookystuff/reseller-ratings/result")
+    }.collect.foreach(println(_))
   }
 }
