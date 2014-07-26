@@ -12,7 +12,7 @@ object WellCa extends SparkSubmittable {
   def doMain() {
 
     (sc.parallelize(Seq("Dummy")) +>
-      Wget("http://well.ca/whatsnew/") !!!).saveAs(
+      Wget("http://well.ca/whatsnew/") !).saveAs(
         dir = "file:///home/peng/wellca", overwrite = true
       ).joinBySlice(
         "div.product_grid_full_categories"

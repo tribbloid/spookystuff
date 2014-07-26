@@ -9,7 +9,7 @@ object Iherb extends SparkSubmittable {
   def doMain() {
 
     (sc.parallelize(Seq("Dummy")) +>
-      Wget("http://ca.iherb.com/")!!!).wgetJoin(
+      Wget("http://ca.iherb.com/")!).wgetJoin(
         "div.category a"
       ).wgetInsertPagination(
         "p.pagination a:contains(Next)", 1000

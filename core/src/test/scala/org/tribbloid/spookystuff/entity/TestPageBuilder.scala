@@ -69,7 +69,7 @@ class TestPageBuilder extends FunSuite {
   }
 
   test("extract", pageBuilderTag) {
-    val result = PageBuilder.resolveFinal(
+    val result = PageBuilder.resolve(
       Visit("https://www.linkedin.com/"),
       DelayFor("input[name=\"search\"]", 40),
       TextInput("input#first", "Adam"),
@@ -78,22 +78,22 @@ class TestPageBuilder extends FunSuite {
     )
 
     val id = Seq[Interactive](Visit("https://www.linkedin.com/"), DelayFor("input[name=\"search\"]",40), TextInput("input#first","Adam"),TextInput("input#last","Muise"),Submit("input[name=\"search\"]"))
-    assert(result.backtrace === id)
-    assert(result.contentStr.contains("<title>Adam Muise profiles | LinkedIn</title>"))
-    assert(result.resolvedUrl === "https://www.linkedin.com/pub/dir/?first=Adam&last=Muise")
+    assert(result(0).backtrace === id)
+    assert(result(0).contentStr.contains("<title>Adam Muise profiles | LinkedIn</title>"))
+    assert(result(0).resolvedUrl === "https://www.linkedin.com/pub/dir/?first=Adam&last=Muise")
   }
 
   test("attributes", pageBuilderTag) {
-    val result = PageBuilder.resolveFinal(
+    val result = PageBuilder.resolve(
       Visit("http://www.amazon.com/"),
       TextInput("input#twotabsearchtextbox", "Lord of the Rings"),
       Submit("input.nav-submit-input"),
       DelayFor("div#resultsCol",50)
     )
 
-    assert(result.attrExist("div#result_0 h3 span.bold","title") === false)
-    assert(result.attr1("div#result_0 h3 span.dummy","title") === null)
-    assert(result.attr1("div#result_0 h3 span.bold","title") === "")
+    assert(result(0).attrExist("div#result_0 h3 span.bold","title") === false)
+    assert(result(0).attr1("div#result_0 h3 span.dummy","title") === null)
+    assert(result(0).attr1("div#result_0 h3 span.bold","title") === "")
   }
 
   test("save", pageTag) {

@@ -24,7 +24,7 @@ import scala.collection.mutable.ArrayBuffer
  * Created by peng on 04/06/14.
  */
 
-private object ActionUtils {
+object ActionUtils {
   //TODO: reverse the direction of look-up, if a '#{...}' has no corresponding key in the context, throws an exception
   def formatWithContext[T](str: String, context: util.Map[String,T]): String = {
     if ((str == null)||(str.isEmpty)) return str
@@ -43,6 +43,19 @@ private object ActionUtils {
     strVar
   }
 
+  def mayHaveResult(actions: Action*): Boolean = {
+    for (action <- actions) {
+      action match {
+        case a: Aliased => return true
+        case a: Container => {
+          if (a.mayHaveResult == true) return true
+        }
+        case a: Interactive =>
+        case _ =>
+      }
+    }
+    return false
+  }
 }
 
 trait Action extends Serializable with Cloneable {
@@ -74,7 +87,7 @@ trait Action extends Serializable with Cloneable {
     catch {
       case e: Throwable => {
 
-        if (this.isInstanceOf[ErrorDump]) {
+        if (this.isInstanceOf[Interactive]) {
 
           val page = Snapshot().exe(pb).toList(0)
           //          try {
@@ -97,13 +110,27 @@ trait Action extends Serializable with Cloneable {
 }
 //represents an action that potentially changes a page in a browser
 //these will be logged into page's backtrace
-trait Interactive extends Action
+//failed interaction will trigger an error dump by snapshot
+trait Interactive extends Action {
 
-trait ErrorDump extends Action
+  override final def doExe(pb: PageBuilder): Array[Page] = {
+    exeWithoutResult(pb)
+    null
+  }
 
-trait Sessionless extends Action
+  def exeWithoutResult(pb: PageBuilder): Unit
+}
 
-trait Container extends Action
+trait Sessionless extends Action {
+
+  override final def doExe(pb: PageBuilder): Array[Page] = this.exeWithoutSession
+
+  def exeWithoutSession: Array[Page]
+}
+
+trait Container extends Action {
+  def mayHaveResult: Boolean
+}
 
 trait Aliased extends Action {
   var alias: String = null
@@ -114,10 +141,9 @@ trait Aliased extends Action {
   }
 }
 
-case class Visit(val url: String) extends Interactive with ErrorDump{
-  override def doExe(pb: PageBuilder): Array[Page] = {
+case class Visit(val url: String) extends Interactive {
+  override def exeWithoutResult(pb: PageBuilder) {
     pb.driver.get(url)
-    return null
   }
 
   override def format[T](context: util.Map[String,T]): this.type = {
@@ -126,40 +152,35 @@ case class Visit(val url: String) extends Interactive with ErrorDump{
 }
 
 
-case class Delay(val delay: Int = Conf.pageDelay) extends Interactive with ErrorDump{
-  override def doExe(pb: PageBuilder): Array[Page] = {
+case class Delay(val delay: Int = Conf.pageDelay) extends Interactive {
+  override def exeWithoutResult(pb: PageBuilder) {
     Thread.sleep(delay * 1000)
-    return null
   }
 }
 
 //CAUTION: will throw an exception if the element doesn't appear in time!
-case class DelayFor(val selector: String,val delay: Int = Conf.pageDelay) extends Interactive with ErrorDump{
-  override def doExe(pb: PageBuilder): Array[Page] = {
+case class DelayFor(val selector: String,val delay: Int = Conf.pageDelay) extends Interactive {
+  override def exeWithoutResult(pb: PageBuilder) {
     val wait = new ui.WebDriverWait(pb.driver, delay)
     wait.until(ui.ExpectedConditions.presenceOfAllElementsLocatedBy(By.cssSelector(selector)))
-    return null
   }
 }
 
-case class Click(val selector: String) extends Interactive with ErrorDump{
-  override def doExe(pb: PageBuilder): Array[Page] = {
+case class Click(val selector: String) extends Interactive {
+  override def exeWithoutResult(pb: PageBuilder) {
     pb.driver.findElement(By.cssSelector(selector)).click()
-    return null
   }
 }
 
-case class Submit(val selector: String) extends Interactive with ErrorDump{
-  override def doExe(pb: PageBuilder): Array[Page] = {
+case class Submit(val selector: String) extends Interactive {
+  override def exeWithoutResult(pb: PageBuilder) {
     pb.driver.findElement(By.cssSelector(selector)).submit()
-    return null
   }
 }
 
-case class TextInput(val selector: String, val text: String) extends Interactive with ErrorDump{
-  override def doExe(pb: PageBuilder): Array[Page] = {
+case class TextInput(val selector: String, val text: String) extends Interactive {
+  override def exeWithoutResult(pb: PageBuilder) {
     pb.driver.findElement(By.cssSelector(selector)).sendKeys(text)
-    return null
   }
 
   override def format[T](context: util.Map[String,T]): this.type = {
@@ -167,30 +188,27 @@ case class TextInput(val selector: String, val text: String) extends Interactive
   }
 }
 
-case class Select(val selector: String, val text: String) extends Interactive with ErrorDump{
-  override def doExe(pb: PageBuilder): Array[Page] = {
+case class DropDownSelect(val selector: String, val text: String) extends Interactive {
+  override def exeWithoutResult(pb: PageBuilder) {
     val element = pb.driver.findElement(By.cssSelector(selector))
     val select = new ui.Select(element)
     select.selectByValue(text)
-    return null
   }
 
   override def format[T](context: util.Map[String,T]): this.type = {
-    Select(this.selector, ActionUtils.formatWithContext(this.text,context)).asInstanceOf[this.type]
+    DropDownSelect(this.selector, ActionUtils.formatWithContext(this.text,context)).asInstanceOf[this.type]
   }
 }
 
-case class SwitchToFrame(val selector: String) extends Interactive with ErrorDump{
-  override def doExe(pb: PageBuilder): Array[Page] = {
+case class SwitchToFrame(val selector: String) extends Interactive {
+  override def exeWithoutResult(pb: PageBuilder) {
     val element = pb.driver.findElement(By.cssSelector(selector))
     pb.driver.switchTo().frame(element)
-
-    return null
   }
 }
 
-case class ExeScript(val script: String) extends Interactive with ErrorDump{
-  override def doExe(pb: PageBuilder): Array[Page] = {
+case class ExeScript(val script: String) extends Interactive {
+  override def exeWithoutResult(pb: PageBuilder) {
     pb.driver match {
       case d: HtmlUnitDriver => d.executeScript(script)
 //      case d: AndroidWebDriver => d.executeScript(script)
@@ -198,8 +216,10 @@ case class ExeScript(val script: String) extends Interactive with ErrorDump{
       case d: RemoteWebDriver => d.executeScript(script)
       case _ => throw new UnsupportedOperationException("this web browser driver is not supported")
     }
+  }
 
-    return null
+  override def format[T](context: util.Map[String,T]): this.type = {
+    ExeScript(ActionUtils.formatWithContext(this.script,context)).asInstanceOf[this.type]
   }
 }
 
@@ -220,7 +240,7 @@ case class Snapshot() extends Aliased {
 
 case class Wget(val url: String) extends Aliased with Sessionless{
 
-  override def doExe(pb: PageBuilder): Array[Page] = {
+  override def exeWithoutSession(): Array[Page] = {
     if ((url == null)||(url.isEmpty)) return Array[Page](PageBuilder.emptyPage)
 
     val uc: URLConnection =  new URL(url).openConnection()
@@ -282,6 +302,8 @@ case class Loop(val times: Int = Conf.fetchLimit)(val actions: Action*) extends 
 
     return results.toArray
   }
+
+  override def mayHaveResult: Boolean = ActionUtils.mayHaveResult(actions: _*)
 }
 
 //case class If(selector: String)(exist: Action*)(notExist: Action*) extends Container {

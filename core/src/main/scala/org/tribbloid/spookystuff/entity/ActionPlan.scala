@@ -88,13 +88,7 @@ class ActionPlan(val context: util.HashMap[String, Serializable] = null) extends
 //    case i: Interactive => i
 //  }.toSeq
 
-  //only execute interactions and extract the final stage, if has no action will return an empty page
-  def !(): Page = {
-    val page = PageBuilder.resolveFinal(this.actions: _*).copy(context = this.context)
-    return page
-  }
-
-  def !!!(): Seq[Page] = {
+  def !(): Seq[Page] = {
     var pages = PageBuilder.resolve(this.actions: _*)
     if (this.context !=null) {
       //has to use deep copy, one to many mapping and context may be modified later
@@ -123,8 +117,4 @@ class EmptyActionPlan(context: util.HashMap[String, Serializable] = null) extend
   override def + (as: Seq[Action]): EmptyActionPlan = this
 
   override def + (ac: ActionPlan): EmptyActionPlan = this
-
-//  override def !(): Page = PageBuilder.emptyPage.copy(context = this.context)
-//
-//  override def !!!(): Seq[Page] = Seq[Page]()
 }

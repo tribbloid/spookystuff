@@ -12,7 +12,7 @@ object ResellerRatings extends SparkSubmittable {
 
     (sc.parallelize(Seq("Hewlett_Packard")) +>
       Wget(
-        "http://www.resellerratings.com/store/#{_}") !!!
+        "http://www.resellerratings.com/store/#{_}") !
       ).wgetInsertPagination(
         "div#survey-header ul.pagination a:contains(next)"
       ).joinBySlice("div.review").map{ page =>

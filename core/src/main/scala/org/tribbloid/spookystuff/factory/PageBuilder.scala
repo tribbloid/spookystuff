@@ -26,53 +26,62 @@ object PageBuilder {
     }
   }
 
-  def resolveFinal(actions: Action*): Page = {
+//  def resolveFinal(actions: Action*): Page = {
+//
+//    val interactions = actions.collect{
+//      case i: Interactive => i
+//      case i: Container => i
+//    }
+//
+//    if (interactions.length == 0) return emptyPage
+//
+//    val pb = new PageBuilder()
+//    try {
+//      for (action <- interactions) {
+//        action.exe(pb)
+//      }
+//      return Snapshot().exe(pb).toList(0)
+//    }
+//    finally {
+//      pb.finalize
+//    }
+//  }
 
-    val interactions = actions.collect{
-      case i: Interactive => i
-      case i: Container => i
+  def resolve(actions: Action*): Array[Page] = {
+    if (ActionUtils.mayHaveResult(actions: _*) == true) {
+      resolvePlain(actions: _*)
     }
-
-    if (interactions.length == 0) return emptyPage
-
-    val pb = new PageBuilder()
-    try {
-      for (action <- interactions) {
-        action.exe(pb)
-      }
-      return Snapshot().exe(pb).toList(0)
-    }
-    finally {
-      pb.finalize
+    else
+    {
+      resolvePlain(actions.:+(Snapshot()): _*)
     }
   }
 
-  def resolve(actions: Action*): Array[Page] = {
+  // Major API shrink! resolveFinal will be merged here
+  // if a resolve has no potential to output page then a snapshot will be appended at the end
+  private def resolvePlain(actions: Action*): Array[Page] = {
 
     val results = ArrayBuffer[Page]()
-    if (actions.forall( _.isInstanceOf[Sessionless] )) {
+
+    val pb = if (actions.forall( _.isInstanceOf[Sessionless] )) {
+      new PageBuilder(null)
+    }
+    else {
+      new PageBuilder()
+    }
+
+    try {
       actions.foreach {
-        action => results.++=(action.exe(new PageBuilder(null)))
+        action => {
+          val pages = action.exe(pb)
+          if (pages != null) results.++=(pages)
+        }
       }
 
       return results.toArray
     }
-    else {
-      val pb = new PageBuilder()
-
-      try {
-        actions.foreach {
-          action => {
-            val pages = action.exe(pb)
-            if (pages != null) results.++=(pages)
-          }
-        }
-
-        return results.toArray
-      }
-      finally {
-        pb.finalize
-      }
+    finally {
+      pb.finalize
     }
   }
 
@@ -100,8 +109,10 @@ class PageBuilder(
   //remember to call this! don't want thousands of phantomJS browsers opened
   override def finalize = {
     try{
-      driver.close()
-      driver.quit()
+      if (driver != null) {
+        driver.close()
+        driver.quit()
+      }
     }catch{
       case t: Throwable => throw t;
     }finally{

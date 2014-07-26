@@ -75,22 +75,12 @@ class ActionPlanRDDFunctions(val self: RDD[ActionPlan]) {
   }
 
   //  execute
-  def !!!(): RDD[Page] = self.flatMap {
-    _ !!!()
-  }
-
-  //  only execute interactions and extract the final stage
-  def !(): RDD[Page] = self.map {
+  def !(): RDD[Page] = self.flatMap {
     _ !()
   }
 
 //  //  execute, always remove duplicate first
-//  def >!!!(): RDD[Page] = self.distinct().flatMap {
-//    _ !!!()
-//  }
-//
-//  //  only execute interactions and extract the final stage, always remove duplicate first
-//  def >!(): RDD[Page] = self.distinct().map {
+//  def >!(): RDD[Page] = self.distinct().flatMap {
 //    _ !()
 //  }
 
@@ -99,7 +89,7 @@ class ActionPlanRDDFunctions(val self: RDD[ActionPlan]) {
   //be careful this step is complex and may take longer than plain execution if unoptimized
   //there is no repartitioning in the process, may cause unbalanced execution, but apparently groupByKey will do it automatically
   //TODO: this definitely need some logging to let us know how many actual resolves.
-  def !!!><(): RDD[Page] = {
+  def !><(): RDD[Page] = {
     val squashedPlanRDD = self.map{ ap => (ap.actions, ap.context) }.groupByKey()
 
     val squashedPageRDD = squashedPlanRDD.flatMap { tuple => PageBuilder.resolve(tuple._1: _*).map{ (_, tuple._2) } }
@@ -111,22 +101,8 @@ class ActionPlanRDDFunctions(val self: RDD[ActionPlan]) {
     }
   }
 
-  def !><(): RDD[Page] = {
-    val squashedPlanRDD = self.map{ ap => (ap.actions, ap.context) }.groupByKey()
-
-    val squashedPageRDD = squashedPlanRDD.map { tuple => ( PageBuilder.resolveFinal(tuple._1: _*), tuple._2) }
-
-    return squashedPageRDD.flatMap {
-      tuple => tuple._2.map {
-        cc => tuple._1.copy(context = cc)
-      }
-    }
-  }
-
-//  //find non-expired page from old results, if not found, execute
-  // this will be really handy if all pages are dumped into a history RDD/Spark stream
+  //find non-expired page from old results, if not found, execute
+  // this will be handy if all pages are dumped into a history RDD/Spark stream
+  //this is really hard, if only one snapshot is not found, the entire plan has to be executed again
 //  def !+(old: RDD[Page])
-//
-//  //this is really hard, if only one snapshot is not found, the entire plan has to be executed again
-//  def !!!+(old: RDD[Page])
 }

@@ -123,14 +123,13 @@ class PageRDDFunctions(val self: RDD[Page]) {
     this.visit(selector, limit, attr) !><
 
   def wgetJoin(selector: String, limit: Int = Conf.fetchLimit, attr :String = "abs:href"): RDD[Page] =
-    this.wget(selector, limit, attr) !!!><
+    this.wget(selector, limit, attr) !><
 
   def leftJoin(selector: String, limit: Int = Conf.fetchLimit, attr :String = "abs:href"): RDD[Page] =
     this.leftVisit(selector, limit, attr) !><
 
   def wgetLeftJoin(selector: String, limit: Int = Conf.fetchLimit, attr :String = "abs:href"): RDD[Page] =
-    this.leftWget(selector, limit, attr) !!!><
-
+    this.leftWget(selector, limit, attr) !><
 
   def joinBySlice(selector: String, as: String = null, limit: Int = Conf.fetchLimit): RDD[Page] =
     self.flatMap(_.slice(selector, as, limit))
@@ -156,7 +155,7 @@ class PageRDDFunctions(val self: RDD[Page]) {
       while (currentPage.attrExist(selector,"abs:href") && i< limit) {
         i = i+1
         val nextUrl = currentPage.href1(selector) //not null because already validated
-        currentPage = PageBuilder.resolveFinal(Visit(nextUrl))
+        currentPage = PageBuilder.resolve(Visit(nextUrl))(0)
         results.+=(currentPage.copy(context = page.context))
       }
 
