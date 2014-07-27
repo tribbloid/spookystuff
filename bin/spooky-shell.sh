@@ -37,7 +37,8 @@ function main(){
   AWS_SECRET_ACCESS_KEY=$AWSSecretKey \
   $SPARK_HOME/bin/spark-submit \
   ./shell/target/spookystuff-shell-assembly-0.1.0-SNAPSHOT.jar \
-  "$@" --class org.tribbloid.spookystuff.shell.Main
+  "$@" --class org.tribbloid.spookystuff.shell.Main \
+  --executor-memory 2G \
 }
 
 # Copy restore-TTY-on-exit functions from Scala script so spark-shell exits properly even in

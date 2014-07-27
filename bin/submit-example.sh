@@ -50,6 +50,7 @@ AWS_SECRET_ACCESS_KEY=$AWSSecretKey \
 $SPARK_HOME/bin/spark-submit \
   --master $EXAMPLE_MASTER \
   --class $EXAMPLE_CLASS \
+  --executor-memory 2G \
   "$SPOOKY_EXAMPLES_JAR" \
   "$@"
 
