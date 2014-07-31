@@ -7,26 +7,62 @@ import scala.collection.mutable.ArrayBuffer
 import org.apache.spark.SparkContext._
 import scala.collection.JavaConversions._
 
-/** A distributed Collection
- * Created by peng on 06/06/14.
+/**
+ * An implicit wrapper class for RDD[ActionPlan], representing a set of similar instruction sequences for a
+ * web browser to reach all pages being scraped.
+ *
+ * Can be constructed from either RDD[String] or RDD[Map] as context/metadata:
+ * @example {{{
+ *  val context = sc.parallelize( seq("Metallica", "Megadeth") )
+ *  val plans = context +> Visit("http://www.youtube.com/user/#{_}TV")
+ *  }}}
+ * @example {{{
+ *  val context = sc.parallelize( seq(Map("language"->"en","topic"->"Bat"), Map("language"->"de","topic"->"Fledertiere")) )
+ *  val plans = context +> Visit("http://#{language}.wikipedia.org/wiki/#{topic}")
+ *  }}}
+ * Created by peng on 06/06/14, D-day!
  */
 class ActionPlanRDDFunctions(val self: RDD[ActionPlan]) {
 
-  def +>(actions: Action): RDD[ActionPlan] = self.map {
-    _ + (actions)
+  /**
+   * append an action
+   * @param action any object that inherits org.tribbloid.spookystuff.entity.Action
+   * @return new RDD[ActionPlan]
+   */
+  def +>(action: Action): RDD[ActionPlan] = self.map {
+    _ + (action)
   }
 
+  /**
+   * append a series of actions
+   * equivalent to ... +> action1 +> action2 +>...actionN, where action{1...N} are elements of actions
+   * @param actions = Seq(action1, action2,...)
+   * @return new RDD[ActionPlan]
+   */
   def +>(actions: Seq[Action]): RDD[ActionPlan] = self.map {
     _ + (actions)
   }
 
-  //will remove context of the parameter! cannot merge two context as they may have conflict keys
+  /**
+   * append all actions in another ActionPlan
+   * will NOT merge context
+   * this may become an option in the next release
+   * @param ap another ActionPlan
+   * @return new RDD[ActionPlan]
+   */
   def +>(ap: ActionPlan): RDD[ActionPlan] = self.map {
     _ + ap
   }
 
-
-  //one to many: cartesian product-ish
+  /**
+   * append a set of actions or ActionPlans to be executed in parallel
+   * each old ActionPlan yields N new ActionPlans, where N is the size of the new set
+   * results in a cartesian product of old and new set.
+   * @param actions a set of Actions/Sequences to be appended and executed in parallel
+   *                 can be Seq[Action], Seq[ Seq[Action] ] or Seq[ActionPlan], or any of their combinations.
+   *                 CANNOT be RDD[ActionPlan], but this may become an option in the next release
+   * @return new RDD[ActionPlan], of which size = [size of old RDD] * [size of actions]
+   */
   def +*>(actions: Seq[_]): RDD[ActionPlan] = self.flatMap {
     old => {
       val results: ArrayBuffer[ActionPlan] = ArrayBuffer()
@@ -34,8 +70,9 @@ class ActionPlanRDDFunctions(val self: RDD[ActionPlan]) {
       actions.foreach {
         action => action match {
           case a: Action => results += (old + a)
+          case sa: Seq[Action] => results += (old + sa)
           case ap: ActionPlan => results += (old + ap)
-          case _ => throw new UnsupportedOperationException("Can only append Action or ActionPlan")
+          case _ => throw new UnsupportedOperationException("Can only append Action, Seq[Action] or ActionPlan")
         }
       }
 
@@ -43,21 +80,28 @@ class ActionPlanRDDFunctions(val self: RDD[ActionPlan]) {
     }
   }
 
-  //  execute
+  /**
+   * parallel execution in browser(s) to yield a set of web pages
+   * each ActionPlan may yield several pages in a row, depending on the number of Export(s) in it
+   * @return RDD[Page] as results of execution
+   */
   def !(): RDD[Page] = self.flatMap {
     _ !()
   }
 
-//  //  execute, always remove duplicate first
-//  def >!(): RDD[Page] = self.distinct().flatMap {
-//    _ !()
-//  }
+  //  //  execute, always remove duplicate first
+  //  def >!(): RDD[Page] = self.distinct().flatMap {
+  //    _ !()
+  //  }
 
-  //smart execution: will merge identical plan, execute, and split to match the original context
-  //this is useful to handle diamond links (A->B,A->C,B->D,C->D)
-  //be careful this step is complex and may take longer than plain execution if unoptimized
   //there is no repartitioning in the process, may cause unbalanced execution, but apparently groupByKey will do it automatically
   //TODO: this definitely need some logging to let us know how many actual resolves.
+  /**
+   * smart execution: group identical ActionPlans, execute in parallel, and duplicate result pages to match their original contexts
+   * reduce workload by avoiding repeated access to the same url caused by duplicated context or diamond links (A->B,A->C,B->D,C->D)
+   * recommended for most cases, mandatory for RDD[ActionPlan] with high duplicate factor, only use !() if you are sure that duplicate doesn't exist.
+   * @return RDD[Page] as results of execution
+   */
   def !><(): RDD[Page] = {
     val squashedPlanRDD = self.map{ ap => (ap.actions, ap.context) }.groupByKey()
 
@@ -73,5 +117,5 @@ class ActionPlanRDDFunctions(val self: RDD[ActionPlan]) {
   //find non-expired page from old results, if not found, execute
   // this will be handy if all pages are dumped into a history RDD/Spark stream
   //this is really hard, if only one snapshot is not found, the entire plan has to be executed again
-//  def !+(old: RDD[Page])
+  //  def !+(old: RDD[Page])
 }

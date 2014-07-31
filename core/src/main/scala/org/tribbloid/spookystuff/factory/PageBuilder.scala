@@ -26,27 +26,6 @@ object PageBuilder {
     }
   }
 
-//  def resolveFinal(actions: Action*): Page = {
-//
-//    val interactions = actions.collect{
-//      case i: Interactive => i
-//      case i: Container => i
-//    }
-//
-//    if (interactions.length == 0) return emptyPage
-//
-//    val pb = new PageBuilder()
-//    try {
-//      for (action <- interactions) {
-//        action.exe(pb)
-//      }
-//      return Snapshot().exe(pb).toList(0)
-//    }
-//    finally {
-//      pb.finalize
-//    }
-//  }
-
   def resolve(actions: Action*): Array[Page] = {
     if (ActionUtils.mayHaveResult(actions: _*) == true) {
       resolvePlain(actions: _*)

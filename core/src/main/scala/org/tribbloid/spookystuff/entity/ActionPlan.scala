@@ -80,14 +80,6 @@ class ActionPlan(val context: util.HashMap[String, Serializable] = null) extends
     result
   }
 
-  //  def +[T <: Serializable](key: String, value: T){
-  //    this.context.put(key,value)
-  //  }
-//
-//  def interactions = actions.collect{
-//    case i: Interactive => i
-//  }.toSeq
-
   def !(): Seq[Page] = {
     var pages = PageBuilder.resolve(this.actions: _*)
     if (this.context !=null) {

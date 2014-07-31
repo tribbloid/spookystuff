@@ -46,7 +46,7 @@ object ActionUtils {
   def mayHaveResult(actions: Action*): Boolean = {
     for (action <- actions) {
       action match {
-        case a: Aliased => return true
+        case a: Export => return true
         case a: Container => {
           if (a.mayHaveResult == true) return true
         }
@@ -78,8 +78,8 @@ trait Action extends Serializable with Cloneable {
         pb.backtrace.add(cloned)
       }
 
-      if (this.isInstanceOf[Aliased]) {
-        pages = pages.map(page => page.copy(alias = this.asInstanceOf[Aliased].alias))
+      if (this.isInstanceOf[Export]) {
+        pages = pages.map(page => page.copy(alias = this.asInstanceOf[Export].alias))
       }
 
       return pages
@@ -132,7 +132,7 @@ trait Container extends Action {
   def mayHaveResult: Boolean
 }
 
-trait Aliased extends Action {
+trait Export extends Action {
   var alias: String = null
 
   def as(alias: String): this.type = { //TODO: better way to return type?
@@ -223,7 +223,7 @@ case class ExeScript(val script: String) extends Interactive {
   }
 }
 
-case class Snapshot() extends Aliased {
+case class Snapshot() extends Export {
   // all other fields are empty
   override def doExe(pb: PageBuilder): Array[Page] = {
     val page =       new Page(
@@ -238,7 +238,7 @@ case class Snapshot() extends Aliased {
   }
 }
 
-case class Wget(val url: String) extends Aliased with Sessionless{
+case class Wget(val url: String) extends Export with Sessionless{
 
   override def exeWithoutSession(): Array[Page] = {
     if ((url == null)||(url.isEmpty)) return Array[Page](PageBuilder.emptyPage)

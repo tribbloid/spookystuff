@@ -210,9 +210,7 @@ case class Page(
     return new Path(dirPath, formattedFileName).toString
   }
 
-  //this is only for sporadic file saving, will cause congestion if used in a full-scale transformation.
-  //If you want to save everything in an RDD, use actions like RDD.save...()
-  //also remember this will lose information as charset encoding will be different
+  //this will lose information as charset encoding will be different
   def save(fileName: String = "#{resolved-url}", dir: String = Conf.savePagePath, overwrite: Boolean = false)(hConf: Configuration): String = {
 
     //    val path = new Path(dir)

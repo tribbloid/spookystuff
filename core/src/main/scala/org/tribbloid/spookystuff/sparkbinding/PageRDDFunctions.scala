@@ -13,18 +13,39 @@ import org.tribbloid.spookystuff.factory.PageBuilder
 
 import scala.collection.mutable.ArrayBuffer
 
-//this is an implicit RDD view of Page
-//all intermediate results after a transformation can be persisted to memory or disk, thus reusable.
-//mimic sql keywords
+/**
+ * An implicit wrapper class for RDD[Page], representing a set of pages each containing a datum being scraped.
+ * Constructed by executing an RDD[ActionPlan]
+ */
 class PageRDDFunctions(val self: RDD[Page]) {
 
+  /**
+   * rename all Pages
+   * @param alias new alias
+   * @return new RDD[Page]
+   */
   def as(alias: String): RDD[Page] = self.map{ _.copy(alias = alias) }
 
+  /**
+   * remove all pages from the set except those with a specified alias
+   * @param alias
+   * @return new RDD[Page]
+   */
   def from(alias: String): RDD[Page] = self.filter{ _.alias == alias }
 
+  /**
+   * remove all context from each Page
+   * @return new RDD[Page]
+   */
   def clearContext(): RDD[Page] = self.map{ _.copy(context = null) }
 
   //TODO: this is the most abominable interface so far, will gradually evolve to resemble Spark SQL's select
+  /**
+   * extract parts of each Page and insert into their respective context
+   * if a key already exist in old context it will be replaced with the new one.
+   * @param keyAndF a key-function map, each element is used to generate a key-value map using the Page itself
+   * @return new RDD[Page]
+   */
   def selectInto(keyAndF: (String, Page => Serializable)*): RDD[Page] = self.map {
 
     page => {
@@ -38,7 +59,12 @@ class PageRDDFunctions(val self: RDD[Page]) {
     }
   }
 
-  //reshape the organization of context.
+  /**
+   * same as select, but will remove old context
+   * used to reshape context structure
+   * @param keyAndF
+   * @return new RDD[Page]
+   */
   def select(keyAndF: (String, Page => Serializable)*): RDD[Page] = self.map {
 
     page => {
@@ -47,7 +73,17 @@ class PageRDDFunctions(val self: RDD[Page]) {
     }
   }
 
-  //this is a lazy transformation, use it to save overhead for rescheduling.
+  /**
+   * save each page to a designated directory
+   * this is a narrow transformation, use it to save overhead for scheduling
+   * support many file systems including but not limited to HDFS, S3 and local HDD
+   * @param fileName string pattern used to generate different names for different pages
+   * @param dir (file/s3/s3n/hdfs)://path
+   * @param overwrite if a file with the same name already exist:
+   *                  true: overwrite it
+   *                  false: append an unique suffix to the new file name
+   * @return the same RDD[Page] with file paths carried as metadata
+   */
   def saveAs(fileName: String = "#{resolved-url}", dir: String = Conf.savePagePath, overwrite: Boolean = false): RDD[Page] = self.map {
     val hConfWrapper = self.context.broadcast(new SerializableWritable(self.context.hadoopConfiguration))
 
@@ -58,17 +94,31 @@ class PageRDDFunctions(val self: RDD[Page]) {
     }
   }
 
-  //this is an action enforced to be executed, save to whatever (HDFS,S3,local disk) and return a list file paths
+  /**
+   * same as saveAs
+   * but this is an action that will be executed immediately
+   * @param fileName string pattern used to generate different names for different pages
+   * @param dir (file/s3/s3n/hdfs)://path
+   * @param overwrite if a file with the same name already exist:
+   *                  true: overwrite it
+   *                  false: append an unique suffix to the new file name
+   * @return an array of file paths
+   */
   def dump(fileName: String = "#{resolved-url}", dir: String = Conf.savePagePath, overwrite: Boolean = false): Array[String] = {
     val hConfWrapper = self.context.broadcast(new SerializableWritable(self.context.hadoopConfiguration))
 
     self.map(page => page.save(fileName, dir, overwrite)(hConfWrapper.value.value)).collect()
   }
 
-  //pass all context to ActionPlans
-  //SUGGESTION: all transformations that generates an RDD[ActionPlan] should use operator
-
-  //ignore pages that doesn't contain the selector
+  /**
+   * generate a set of ActionPlans that crawls from current Pages by visiting their links
+   * all context of Pages will be persisted to the resulted ActionPlans
+   * pages that doesn't contain the link will be ignored
+   * @param selector css selector of page elements with a crawlable link
+   * @param limit only the first n links will be used, default to Conf.fetchLimit
+   * @param attr attribute of the element that denotes the link target, default to absolute href
+   * @return RDD[ActionPlan]
+   */
   def visit(selector: String, limit: Int = Conf.fetchLimit, attr :String = "abs:href"): RDD[ActionPlan] = self.flatMap{
     page => {
 
@@ -79,7 +129,13 @@ class PageRDDFunctions(val self: RDD[Page]) {
     }
   }
 
-  //yield null for pages that doesn't contain the selector
+  /**
+   * same as visit, but pages that doesn't contain the link will yield an EmptyActionPlan
+   * @param selector css selector of page elements with a crawlable link
+   * @param limit only the first n links will be used, default to Conf.fetchLimit
+   * @param attr attribute of the element that denotes the link target, default to absolute href
+   * @return RDD[ActionPlan]
+   */
   def leftVisit(selector: String, limit: Int = Conf.fetchLimit, attr :String = "abs:href"): RDD[ActionPlan] = self.flatMap{
     page => {
 
@@ -92,7 +148,6 @@ class PageRDDFunctions(val self: RDD[Page]) {
     }
   }
 
-  //why anybody want this as ActionPlan? private
   private def wget(selector: String, limit: Int = Conf.fetchLimit, attr :String = "abs:href"): RDD[ActionPlan] = self.flatMap{
     page => {
 
@@ -115,22 +170,65 @@ class PageRDDFunctions(val self: RDD[Page]) {
     }
   }
 
-  //inner join
+  /**
+   * results in a new set of Pages by crawling links on old pages
+   * old pages that doesn't contain the link will be ignored
+   * @param selector css selector of page elements with a crawlable link
+   * @param limit only the first n links will be used, default to Conf.fetchLimit
+   * @param attr attribute of the element that denotes the link target, default to absolute href
+   * @return RDD[Page]
+   */
   def join(selector: String, limit: Int = Conf.fetchLimit, attr :String = "abs:href"): RDD[Page] =
     this.visit(selector, limit, attr) !><
 
+  /**
+   * same as join, but avoid launching a browser by using direct http GET (wget) to download new pages
+   * much faster and less stressful to both crawling and target server(s)
+   * @param selector css selector of page elements with a crawlable link
+   * @param limit only the first n links will be used, default to Conf.fetchLimit
+   * @param attr attribute of the element that denotes the link target, default to absolute href
+   * @return RDD[Page]
+   */
   def wgetJoin(selector: String, limit: Int = Conf.fetchLimit, attr :String = "abs:href"): RDD[Page] =
     this.wget(selector, limit, attr) !><
 
+  /**
+   * same as join, but old pages that doesn't contain the link will yield an EmptyPage
+   * @param selector css selector of page elements with a crawlable link
+   * @param limit only the first n links will be used, default to Conf.fetchLimit
+   * @param attr attribute of the element that denotes the link target, default to absolute href
+   * @return RDD[Page]
+   */
   def leftJoin(selector: String, limit: Int = Conf.fetchLimit, attr :String = "abs:href"): RDD[Page] =
     this.leftVisit(selector, limit, attr) !><
 
+  /**
+   * same as wgetJoin, but old pages that doesn't contain the link will yield an EmptyPage
+   * @param selector css selector of page elements with a crawlable link
+   * @param limit only the first n links will be used, default to Conf.fetchLimit
+   * @param attr attribute of the element that denotes the link target, default to absolute href
+   * @return RDD[Page]
+   */
   def wgetLeftJoin(selector: String, limit: Int = Conf.fetchLimit, attr :String = "abs:href"): RDD[Page] =
     this.leftWget(selector, limit, attr) !><
 
+  /**
+   * break each page into 'shards', used to extract structured data from tables
+   * @param selector denotes enclosing elements of each shards
+   * @param as alias of resulted shards
+   * @param limit only the first n elements will be used, default to Conf.fetchLimit
+   * @return RDD[Page], each page will generate several shards
+   */
   def joinBySlice(selector: String, as: String = null, limit: Int = Conf.fetchLimit): RDD[Page] =
     self.flatMap(_.slice(selector, as, limit))
 
+  /**
+   * same as joinBySlice, but old pages that doesn't contain the element will yield an EmptyPage
+   * @param selector denotes enclosing elements of each shards
+   * @param as alias of resulted shards
+   * @param limit only the first n elements will be used, default to Conf.fetchLimit
+   * @return RDD[Page], each page will generate several shards
+   */
   def leftJoinBySlice(selector: String, as: String = null, limit: Int = Conf.fetchLimit): RDD[Page] =
     self.flatMap {
       page => {
@@ -141,8 +239,13 @@ class PageRDDFunctions(val self: RDD[Page]) {
       }
     }
 
-  //slower than nested action and wgetJoinByPagination
-  //attr is always "abs:href"
+  /**
+   * insert many pages for each old page by recursively visiting "next page" link
+   * link attribute is always "abs:href"
+   * @param selector selector of the "next page" element
+   * @param limit depth of recursion
+   * @return RDD[Page], contains both old and new pages
+   */
   def insertPagination(selector: String, limit: Int = Conf.fetchLimit): RDD[Page] = self.flatMap {
     page => {
       val results = ArrayBuffer[Page](page)
@@ -160,7 +263,13 @@ class PageRDDFunctions(val self: RDD[Page]) {
     }
   }
 
-  //TODO: to save time it should merge urls, find all pages and split by context.
+  /**
+   * same as insertPagination, but avoid launching a browser by using direct http GET (wget) to download new pages
+   * much faster and less stressful to both crawling and target server(s)
+   * @param selector selector of the "next page" element
+   * @param limit depth of recursion
+   * @return RDD[Page], contains both old and new pages
+   */
   def wgetInsertPagination(selector: String, limit: Int = Conf.fetchLimit): RDD[Page] = self.flatMap {
     page => {
       val results = ArrayBuffer[Page](page)
@@ -204,6 +313,14 @@ class PageRDDFunctions(val self: RDD[Page]) {
   //or we crawl the disambiguation part, merge with old ActionPlans and >!<+ (lookup all plans from old pages) to get the new pages?
   //I prefer the first one, potentially produce smaller footage.
   //TODO: there is no repartitioning in the process, may cause unbalanced execution
+  /**
+   * same as join, but only crawls pages that meet the condition, other old pages are retained in the result
+   * @param selector css selector of page elements with a crawlable link
+   * @param limit only the first n links will be used, default to Conf.fetchLimit
+   * @param attr attribute of the element that denotes the link target, default to absolute href
+   * @param condition css selector, if elements denoted by this selector doesn't exist on the page, the page will not be crawled, instead it will be retained in the result
+   * @return
+   */
   def replaceIf(selector: String, limit: Int = Conf.fetchLimit, attr: String = "abs:href")(condition: String = selector): RDD[Page] = {
     val groupedPageRDD = self.map{ page => (page.elementExist(condition), page) }
     val falsePageRDD = groupedPageRDD.filter(_._1 == false).map(_._2)
@@ -212,6 +329,14 @@ class PageRDDFunctions(val self: RDD[Page]) {
     newPageRDD.union(falsePageRDD)
   }
 
+  /**
+   * same as wgetJoin, but only crawls pages that meet the condition, other old pages are retained in the result
+   * @param selector css selector of page elements with a crawlable link
+   * @param limit only the first n links will be used, default to Conf.fetchLimit
+   * @param attr attribute of the element that denotes the link target, default to absolute href
+   * @param condition css selector, if elements denoted by this selector doesn't exist on the page, the page will not be crawled, instead it will be retained in the result
+   * @return
+   */
   def wgetReplaceIf(selector: String, limit: Int = Conf.fetchLimit, attr: String = "abs:href")(condition: String = selector): RDD[Page] = {
     val groupedPageRDD = self.map{ page => (page.elementExist(condition), page) }
     val falsePageRDD = groupedPageRDD.filter(_._1 == false).map(_._2)
@@ -219,6 +344,4 @@ class PageRDDFunctions(val self: RDD[Page]) {
     val newPageRDD = truePageRDD.wgetJoin(selector, limit, attr)
     newPageRDD.union(falsePageRDD)
   }
-  //----------------------------------------------
-  //save should move to Actions
 }
