@@ -7,26 +7,9 @@ import scala.collection.mutable.ArrayBuffer
 import org.apache.spark.SparkContext._
 import scala.collection.JavaConversions._
 
-/**
+/** A distributed Collection
  * Created by peng on 06/06/14.
  */
-
-//TODO: verify this! document is really scarce
-//The precedence of an inﬁx operator is determined by the operator’s ﬁrst character.
-//Characters are listed below in increasing order of precedence, with characters on
-//the same line having the same precedence.
-//(all letters)
-//|
-//^
-//&
-//= !.................................................(new doc)
-//< >
-//= !.................................................(old doc)
-//:
-//+ -
-//* / %
-//(all other special characters)
-
 class ActionPlanRDDFunctions(val self: RDD[ActionPlan]) {
 
   def +>(actions: Action): RDD[ActionPlan] = self.map {
@@ -44,29 +27,15 @@ class ActionPlanRDDFunctions(val self: RDD[ActionPlan]) {
 
 
   //one to many: cartesian product-ish
-  def +*>(actions: Seq[Action]): RDD[ActionPlan] = self.flatMap {
+  def +*>(actions: Seq[_]): RDD[ActionPlan] = self.flatMap {
     old => {
       val results: ArrayBuffer[ActionPlan] = ArrayBuffer()
 
       actions.foreach {
-        action => {
-          results += (old + action)
-        }
-      }
-
-      results
-    }
-  }
-
-  //TODO: merge with *> with match cases in foreach iterator
-  //will remove context of the parameter! cannot merge two context as they may have conflict keys
-  def +**>(aps: Seq[ActionPlan]): RDD[ActionPlan] = self.flatMap {
-    old => {
-      val results: ArrayBuffer[ActionPlan] = ArrayBuffer()
-
-      aps.foreach {
-        ac => {
-          results += (old + ac)
+        action => action match {
+          case a: Action => results += (old + a)
+          case ap: ActionPlan => results += (old + ap)
+          case _ => throw new UnsupportedOperationException("Can only append Action or ActionPlan")
         }
       }
 

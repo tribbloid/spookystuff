@@ -24,9 +24,6 @@ class PageRDDFunctions(val self: RDD[Page]) {
 
   def clearContext(): RDD[Page] = self.map{ _.copy(context = null) }
 
-  //TODO: change to spark SQL-style
-  def where(f: Page => Boolean) = self.filter(f)
-
   //TODO: this is the most abominable interface so far, will gradually evolve to resemble Spark SQL's select
   def selectInto(keyAndF: (String, Page => Serializable)*): RDD[Page] = self.map {
 
