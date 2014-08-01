@@ -314,14 +314,14 @@ class PageRDDFunctions(val self: RDD[Page]) {
   //I prefer the first one, potentially produce smaller footage.
   //TODO: there is no repartitioning in the process, may cause unbalanced execution
   /**
-   * same as join, but only crawls pages that meet the condition, other old pages are retained in the result
+   * same as join, but only crawls pages that meet the condition, keep other pages in the result
    * @param selector css selector of page elements with a crawlable link
    * @param limit only the first n links will be used, default to Conf.fetchLimit
    * @param attr attribute of the element that denotes the link target, default to absolute href
    * @param condition css selector, if elements denoted by this selector doesn't exist on the page, the page will not be crawled, instead it will be retained in the result
    * @return
    */
-  def replaceIf(selector: String, limit: Int = Conf.fetchLimit, attr: String = "abs:href")(condition: String = selector): RDD[Page] = {
+  def joinOrKeep(selector: String, limit: Int = Conf.fetchLimit, attr: String = "abs:href")(condition: String = selector): RDD[Page] = {
     val groupedPageRDD = self.map{ page => (page.elementExist(condition), page) }
     val falsePageRDD = groupedPageRDD.filter(_._1 == false).map(_._2)
     val truePageRDD = groupedPageRDD.filter(_._1 == true).map(_._2)
@@ -330,14 +330,14 @@ class PageRDDFunctions(val self: RDD[Page]) {
   }
 
   /**
-   * same as wgetJoin, but only crawls pages that meet the condition, other old pages are retained in the result
+   * same as wgetJoin, but only crawls pages that meet the condition, keep other pages in the result
    * @param selector css selector of page elements with a crawlable link
    * @param limit only the first n links will be used, default to Conf.fetchLimit
    * @param attr attribute of the element that denotes the link target, default to absolute href
    * @param condition css selector, if elements denoted by this selector doesn't exist on the page, the page will not be crawled, instead it will be retained in the result
    * @return
    */
-  def wgetReplaceIf(selector: String, limit: Int = Conf.fetchLimit, attr: String = "abs:href")(condition: String = selector): RDD[Page] = {
+  def wgetJoinOrKeep(selector: String, limit: Int = Conf.fetchLimit, attr: String = "abs:href")(condition: String = selector): RDD[Page] = {
     val groupedPageRDD = self.map{ page => (page.elementExist(condition), page) }
     val falsePageRDD = groupedPageRDD.filter(_._1 == false).map(_._2)
     val truePageRDD = groupedPageRDD.filter(_._1 == true).map(_._2)

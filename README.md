@@ -1,7 +1,9 @@
-spookystuff
+SpookyStuff (Powered by Apache Spark)
 ===========
 
-(OR: how to turn 21st century into an open spreadsheet) is a scalable query engine for web scrapping/data mashup/acceptance QA powered on Apache Spark. The goal is to allow the Web being queried and ETL'ed as if it is a database.
+**SpookyStuff** is a scalable query engine for web scrapping/data mashup/acceptance QA. The goal is to allow the Web being queried and ETL'ed like a database.
+
+**SpookyStuff** is by far the fastest web data collection solution in history, with a peak speed of 60000 pages per hour.
 
 Dependencies
 -----------
@@ -18,6 +20,12 @@ Dependencies
 ![Apache Spark](http://spark.apache.org/images/spark-logo.png) ![Selenium](http://docs.seleniumhq.org/images/big-logo.png) ![PhantomJS](http://phantomjs.org/img/phantomjs-logo.png)
 
 ![Apache Tika](http://tika.apache.org/tika.png) ![Build by Apache Maven](http://maven.apache.org/images/logos/maven-feather.png) ![Ansible](https://support.ansible.com/system/logos/2070/1448/ansible_logo.png)
+
+## Demo
+
+[Click me](http://ec2-54-88-40-125.compute-1.amazonaws.com:8888) for a quick impression.
+
+This environment is deployed on a Spark cluster with 8+ cores. It comes with no uptime guarantee and may not be accessible during maintenance.
 
 Examples
 -----------
@@ -330,7 +338,62 @@ Performance
 
 - Using Wget (equivalent to simple HTTP GET) instead of Visit for static/non-interactive pages in your Action Plan can save you a lot of time and network throughput in query as it won't start the browser and download any resources for the page.
 
-- Further optimization options may include switching to [Kryo serializer](https://code.google.com/p/kryo/) (to replace Java serializer) and [YARN (Hadoop 2 component)](http://hadoop.apache.org/docs/current/hadoop-yarn/hadoop-yarn-site/YARN.html) (to replace Spark Standalone Master), however these options are not tested or benchmarked yet. So we encourage you to test these options and post any performance issue/bug you encountered, but not using them in production.  
+- Further optimization options may include switching to [Kryo serializer](https://code.google.com/p/kryo/) (to replace Java serializer) and [YARN (Hadoop 2 component)](http://hadoop.apache.org/docs/current/hadoop-yarn/hadoop-yarn-site/YARN.html) (to replace Spark Standalone Master), however these options are not tested yet. So we encourage you to test these options and post any performance issue/bug you encountered, but not using them in production.
+
+Usage
+-----------
+
+Current implementation only supports SQL/LINQ style query, APIs are not finalized (in fact, still far from that) and may change in the future.
+
+Support for SQL-like query is on the roadmap but may be abandoned in favour of simplicity.
+
+Each query is a combination of 3 parts: Context, Action Plan and Extraction.
+
+**Context** represents input and output data of a data collection job in key-value format. They are usually created independently as strings or key-value pairs, but are carried around by Action Plans and Pages as metadata through query's lifespan.
+
+**Context** can be created from any Spark parallelization or transformation (though this is rarely used), e.g.:
+```
+- sc.parallelize("Metallica","Megadeth","Slayer","Anthrax")
+
+  - sc.parallelize(Map("first name"->"Taylor","last name"=>"Swift"), Map("first name"->"Avril","last name"->"Lavigne"))
+
+- sc.parallelize("Taylor\tSwift", "Avril\tLavigne").csvToMap("first name\tlast name", "\t")
+
+- sc.fromTextFile("products.txt")
+```
+
+**Action Plan** always has the following format:
+```
+(**Context** +> Action1 +> Action2 +> ... +> ActionN !)
+```
+
+These actions are executed sequentially on SpookyStuff's headless browser to get the desired pages, their order of execution is identical to that they are defined in the query.
+
+**Actions** have 3 types:
+
+- *Export*: Export a page from the headless browser or http client, the page an be anything including HTML/XML file, image, PDF file or JSON string.
+
+- *Interactive*: Interact with the browser (e.g. click a button or type into a search box) to reach the page, all interactive executed before a page export will be added into that page's backtrace.
+
+- *Container*: Only for complex workflow control, each defines a nested/non-linear subroutine that may or may not be executed once or multiple times depending on situations.
+
+Most string parameters of Actions supports **Context Interpolation**: you can embed context reference in these parameters by inserting context's keys enclosed in `#{}`, in execution they will be replaced with values they map to. This is used almost exclusively in typing into textbox. But has enough flexibility to be used anywhere.
+
+For more information on Actions and Action Plan usage, please refer to the scaladoc of Action.scala and ActionPlanRDDFunction.scala respectively
+
+**Extraction** defines the transformation from Pages (including immediate pages from Action Plans and their connections -- see *join/left-join*) to relational data output. This is usually the goal and last step of data collection, but not always -- there is no constraint on their relative order, you can reuse extraction results as context to get more data on a different website, or as source of a data flow defined by using other components of Apache Spark (Of course, only if you know them).
+
+Four types of functions can be used in Extraction:
+
+- *map*: Extract data from Pages by using data's enclosing HTML/XML/JSON selector(s) and attribute(s) as anchor points.
+
+- *save/dump*: Save the entire pages into a file system (HDD/S3/HDFS)
+
+- *select*: Extract data from Pages and insert them into the pages' respective context as metadata
+
+- *join/left-join*: This is similar to the notion of join in relational databases, except that links between pages are used as foreign keys between tables. (Technical not just links, but anything that infers a connection between web resources, including frames, iframes, sources and redirections).
+
+For more information on Extraction syntax, please refer to the scaladoc of Page.scala and PageRDDFunction.scala respectively
 
 Deployment
 ---------------
@@ -368,18 +431,9 @@ you can use scripts in $SPARK_HOME/ec2 to setup a Spark cluster with transient H
     - Autoscaling is currently not supported.
     - Spark installation directory is hardcoded to '/root/spark', if your client has a different directory it may cause some compatibility issue.
 
-Query/Programming Guide
+License
 -----------
-[This is a stub]
 
-- So far spookystuff only supports LINQ style query language, APIs are not finalized (in fact, still far from that) and may change in the future.
+Copyright &copy; 2014 by Peng Cheng and contributors.
 
-- I'm trying to make the query language similar to SQL. However, as organizations of websites are very different from relational databases, it may gradually evolve to attain maximum succinctness (until 1.0.0, at which point it will have an API freeze).
-
-- If you want to write extension for this project, MAKE SURE you don't get *NotSerializableException* in a local run (it happens when Spark cannot serialize data when sending to another node), and keep all RDD entity's serialization footprint small to avoid slow partitioning over the network.
-
-Maintainer
------------
-(if you see a bug these are the guys/girls to blame for)
-
-- @tribbloid (pc175@uow.edu.au)
+Published under ASF License, see LICENSE.
