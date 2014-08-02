@@ -37,12 +37,6 @@ case class Page(
                  )
   extends Serializable{
 
-  //share context. TODO: too many shallow copy making it dangerous
-  //  def this(another: Page) = this (
-  //      another.content,
-  //      another.datetime,
-  //      another.context)
-
   @transient lazy val parsedContentType: ContentType = {
     var result = ContentType.parse(this.contentType)
     if (result.getCharset == null) result = result.withCharset(Conf.defaultCharset)
@@ -105,7 +99,13 @@ case class Page(
     case _ => return false
   }
 
-  //return None if selector found nothing, return "" if found something but attribute doesn't exist
+  /**
+   * Return attribute of an element.
+   * return null if selector has no match, return "" if it has a match but attribute doesn't exist
+   * @param selector css selector of the element, only the first match will be return
+   * @param attr attribute
+   * @return value of the attribute as string
+   */
   def attr1(selector: String, attr: String): String = doc match {
     case Some(doc: Element) => {
 
@@ -117,7 +117,16 @@ case class Page(
     case _ => null
   }
 
-  //returned Sequence may contains "" for elements that match the selector but without required attribute, use filter if you don't want them
+  /**
+   * Return a sequence of attributes of all elements that match the selector.
+   * return [] if selector has no match,
+   * returned Sequence may contains "" for elements that match the selector but without required attribute, use filter if you don't want them
+   * @param selector css selector of all elements
+   * @param attr attribute
+   * @param limit only the first n elements will be used
+   * @param distinct whether to remove duplicate values
+   * @return values of the attributes as a sequence of strings
+   */
   def attr(selector: String, attr: String, limit: Int = Conf.fetchLimit, distinct: Boolean = false): Seq[String] = doc match {
     case Some(doc: Element) => {
 
@@ -135,27 +144,61 @@ case class Page(
     case _ => Seq[String]()
   }
 
+  /**
+   * Shorthand for attr1("href")
+   * @param selector css selector of the element
+   * @param absolute whether to use absolute path (site url + relative path) or relative path, default to true
+   * @return value of the attribute as string
+   */
   def href1(selector: String, absolute: Boolean = true): String = {
     if (absolute == true) attr1(selector,"abs:href")
     else attr1(selector,"href")
   }
 
+  /**
+   * Shorthand for attr("href")
+   * @param selector css selector of all elements
+   * @param limit only the first n elements will be used
+   * @param absolute whether to use absolute path (site url + relative path) or relative path, default to true
+   * @param distinct whether to remove duplicate values
+   * @return values of the attributes as a sequence of strings
+   */
   def href(selector: String, limit: Int = Conf.fetchLimit, absolute: Boolean = true, distinct: Boolean = false): Seq[String] = {
     if (absolute == true) attr(selector,"abs:href",limit,distinct)
     else attr(selector,"href",limit,distinct)
   }
 
+  /**
+   * Shorthand for attr1("src")
+   * @param selector css selector of the element
+   * @param absolute whether to use absolute path (site url + relative path) or relative path, default to true
+   * @return value of the attribute as string
+   */
   def src1(selector: String, absolute: Boolean = true): String = {
     if (absolute == true) attr1(selector,"abs:src")
     else attr1(selector,"src")
   }
 
+  /**
+   * Shorthand for attr("src")
+   * @param selector css selector of all elements
+   * @param limit only the first n elements will be used
+   * @param absolute whether to use absolute path (site url + relative path) or relative path, default to true
+   * @param distinct whether to remove duplicate values
+   * @return values of the attributes as a sequence of strings
+   */
   def src(selector: String, limit: Int = Conf.fetchLimit, absolute: Boolean = true, distinct: Boolean = false): Seq[String] = {
     if (absolute == true) attr(selector,"abs:src",limit,distinct)
     else attr(selector,"src",limit,distinct)
   }
 
   //return null if selector found nothing, return "" if found something without text
+  /**
+   * Return all text enclosed by an element.
+   * return null if selector has no match
+   * @param selector css selector of the element, only the first match will be return
+   * @return enclosed text as string
+   */
   def text1(selector: String): String = doc match {
     case Some(doc: Element) => {
       val element = doc.select(selector).first()
@@ -166,6 +209,13 @@ case class Page(
     case _ => null
   }
 
+  /** Return an array of texts enclosed by their respective elements
+   * return [] if selector has no match
+   * @param selector css selector of all elements,
+   * @param limit only the first n elements will be used
+   * @param distinct whether to remove duplicate values
+   * @return enclosed text as a sequence of strings
+   */
   def text(selector: String, limit: Int = Conf.fetchLimit, distinct: Boolean = false): Seq[String] = doc match {
     case Some(doc: Element) => {
       val elements = doc.select(selector)

@@ -1,5 +1,6 @@
-SpookyStuff (Powered by Apache Spark)
+SpookyStuff
 ===========
+(Powered by Apache Spark)
 
 **SpookyStuff** is a scalable query engine for web scrapping/data mashup/acceptance QA. The goal is to allow the Web being queried and ETL'ed like a database.
 
@@ -349,13 +350,13 @@ Support for SQL-like query is on the roadmap but may be abandoned in favour of s
 
 Each query is a combination of 3 parts: Context, Action Plan and Extraction.
 
-**Context** represents input and output data of a data collection job in key-value format. They are usually created independently as strings or key-value pairs, but are carried around by Action Plans and Pages as metadata through query's lifespan.
+**Context** represents input and output data of a scraping job in key-value format. They are generally created as strings or key-value pairs, then be carried around by Action Plans and Pages as metadata through a query's lifespan.
 
-**Context** can be created from any Spark parallelization or transformation (though this is rarely used), e.g.:
+**Context** can be defined from any Spark parallelization or transformation (though this is rarely used), e.g.:
 ```
 - sc.parallelize("Metallica","Megadeth","Slayer","Anthrax")
 
-  - sc.parallelize(Map("first name"->"Taylor","last name"=>"Swift"), Map("first name"->"Avril","last name"->"Lavigne"))
+- sc.parallelize(Map("first name"->"Taylor","last name"=>"Swift"), Map("first name"->"Avril","last name"->"Lavigne"))
 
 - sc.parallelize("Taylor\tSwift", "Avril\tLavigne").csvToMap("first name\tlast name", "\t")
 
@@ -367,33 +368,33 @@ Each query is a combination of 3 parts: Context, Action Plan and Extraction.
 (**Context** +> Action1 +> Action2 +> ... +> ActionN !)
 ```
 
-These actions are executed sequentially on SpookyStuff's headless browser to get the desired pages, their order of execution is identical to that they are defined in the query.
+These are the same actions a human would do to get to the data page, their order of execution is identical to that they are defined here.
 
 **Actions** have 3 types:
 
-- *Export*: Export a page from the headless browser or http client, the page an be anything including HTML/XML file, image, PDF file or JSON string.
+- *Export*: Export a page from the browser or http client, the page an be anything including HTML/XML file, image, PDF file or JSON string.
 
-- *Interactive*: Interact with the browser (e.g. click a button or type into a search box) to reach the page, all interactive executed before a page export will be added into that page's backtrace.
+- *Interactive*: Interact with the browser (e.g. click a button or type into a search box) to reach the data page, all interactive executed before a page will be logged into that page's backtrace.
 
 - *Container*: Only for complex workflow control, each defines a nested/non-linear subroutine that may or may not be executed once or multiple times depending on situations.
 
-Most string parameters of Actions supports **Context Interpolation**: you can embed context reference in these parameters by inserting context's keys enclosed in `#{}`, in execution they will be replaced with values they map to. This is used almost exclusively in typing into textbox. But has enough flexibility to be used anywhere.
+Many Actions supports **Context Interpolation**: you can embed context reference in their constructor by inserting context's keys enclosed by `#{}`, in execution they will be replaced with values they map to. This is used almost exclusively in typing into a textbox, but it's flexible enough to be used anywhere.
 
-For more information on Actions and Action Plan usage, please refer to the scaladoc of Action.scala and ActionPlanRDDFunction.scala respectively
+For more information on Actions and Action Plan usage, please refer to the scaladoc of Action.scala and ActionPlanRDDFunction.scala respectively.
 
-**Extraction** defines the transformation from Pages (including immediate pages from Action Plans and their connections -- see *join/left-join*) to relational data output. This is usually the goal and last step of data collection, but not always -- there is no constraint on their relative order, you can reuse extraction results as context to get more data on a different website, or as source of a data flow defined by using other components of Apache Spark (Of course, only if you know them).
+**Extraction** defines the transformation from Pages (including immediate pages from Action Plans and their connections -- see *join/left-join*) to relational data output. This is usually the goal and last step of data collection, but not always -- there is no constraint on their relative order, you can reuse extraction results as context to get more data on a different site, or feed into another data flow implemented by other components of Apache Spark (Of course, only if you know them).
 
-Four types of functions can be used in Extraction:
+Functions in **Extraction** have four types:
 
-- *map*: Extract data from Pages by using data's enclosing HTML/XML/JSON selector(s) and attribute(s) as anchor points.
+- *map*: Extract data from Pages by using data's enclosing elements' HTML/XML/JSON selector(s) and attribute(s) as anchor points.
 
-- *save/dump*: Save the entire pages into a file system (HDD/S3/HDFS)
+- *save/dump*: Save all pages into a file system (HDD/S3/HDFS).
 
-- *select*: Extract data from Pages and insert them into the pages' respective context as metadata
+- *select*: Extract data from Pages and insert them into the pages' respective context as metadata.
 
-- *join/left-join*: This is similar to the notion of join in relational databases, except that links between pages are used as foreign keys between tables. (Technical not just links, but anything that infers a connection between web resources, including frames, iframes, sources and redirections).
+- *join/left-join*: This is similar to the notion of join in relational databases, except that links between pages are used as foreign keys between tables. (Technical not just links, but anything that infers a connection between web resources, including frames, iframes, sources and redirection).
 
-For more information on Extraction syntax, please refer to the scaladoc of Page.scala and PageRDDFunction.scala respectively
+For more information on Extraction syntax, please refer to the scaladoc of Page.scala and PageRDDFunction.scala.
 
 Deployment
 ---------------

@@ -58,6 +58,13 @@ object ActionUtils {
   }
 }
 
+/**
+ * These are the same actions a human would do to get to the data page,
+ * their order of execution is identical to that they are defined here.
+ * Many supports **Context Interpolation**: you can embed context reference in their constructor
+ * by inserting context's keys enclosed by `#{}`, in execution they will be replaced with values they map to.
+ * This is used almost exclusively in typing into a textbox, but it's flexible enough to be used anywhere.
+ */
 trait Action extends Serializable with Cloneable {
 
   var timeline: Long = -1
@@ -108,9 +115,12 @@ trait Action extends Serializable with Cloneable {
 
   def doExe(pb: PageBuilder): Array[Page]
 }
-//represents an action that potentially changes a page in a browser
-//these will be logged into page's backtrace
-//failed interaction will trigger an error dump by snapshot
+
+/**
+ * Interact with the browser (e.g. click a button or type into a search box) to reach the data page.
+ * these will be logged into target page's backtrace.
+ * failed interactive will trigger an error dump by snapshot.
+ */
 trait Interactive extends Action {
 
   override final def doExe(pb: PageBuilder): Array[Page] = {
@@ -121,6 +131,10 @@ trait Interactive extends Action {
   def exeWithoutResult(pb: PageBuilder): Unit
 }
 
+/**
+ * Http client operations that doesn't require a browser
+ * e.g. wget, restful API invocation
+ */
 trait Sessionless extends Action {
 
   override final def doExe(pb: PageBuilder): Array[Page] = this.exeWithoutSession
@@ -128,10 +142,19 @@ trait Sessionless extends Action {
   def exeWithoutSession: Array[Page]
 }
 
+/**
+ * Only for complex workflow control,
+ * each defines a nested/non-linear subroutine that may or may not be executed
+ * once or multiple times depending on situations.
+ */
 trait Container extends Action {
   def mayHaveResult: Boolean
 }
 
+/**
+ * Export a page from the browser or http client
+ * the page an be anything including HTML/XML file, image, PDF file or JSON string.
+ */
 trait Export extends Action {
   var alias: String = null
 
@@ -141,6 +164,10 @@ trait Export extends Action {
   }
 }
 
+/**
+ * Type into browser's url bar and click "goto"
+ * @param url support context interpolation
+ */
 case class Visit(val url: String) extends Interactive {
   override def exeWithoutResult(pb: PageBuilder) {
     pb.driver.get(url)
@@ -151,14 +178,22 @@ case class Visit(val url: String) extends Interactive {
   }
 }
 
-
+/**
+ * Wait for some time
+ * @param delay seconds to be wait for
+ */
 case class Delay(val delay: Int = Conf.pageDelay) extends Interactive {
   override def exeWithoutResult(pb: PageBuilder) {
     Thread.sleep(delay * 1000)
   }
 }
 
-//CAUTION: will throw an exception if the element doesn't appear in time!
+/**
+ * Wait until at least one particular element appears, otherwise throws an exception
+ * @param selector css selector of the element
+ * @param delay maximum waiting time in seconds,
+ *              after which it will throw an exception!
+ */
 case class DelayFor(val selector: String,val delay: Int = Conf.pageDelay) extends Interactive {
   override def exeWithoutResult(pb: PageBuilder) {
     val wait = new ui.WebDriverWait(pb.driver, delay)
@@ -166,18 +201,31 @@ case class DelayFor(val selector: String,val delay: Int = Conf.pageDelay) extend
   }
 }
 
+/**
+ * Click an element with your mouse pointer.
+ * @param selector css selector of the element, only the first element will be affected
+ */
 case class Click(val selector: String) extends Interactive {
   override def exeWithoutResult(pb: PageBuilder) {
     pb.driver.findElement(By.cssSelector(selector)).click()
   }
 }
 
+/**
+ * Submit a form, wait until new content returned by the submission has finished loading
+ * @param selector css selector of the element, only the first element will be affected
+ */
 case class Submit(val selector: String) extends Interactive {
   override def exeWithoutResult(pb: PageBuilder) {
     pb.driver.findElement(By.cssSelector(selector)).submit()
   }
 }
 
+/**
+ * Type into a textbox
+ * @param selector css selector of the textbox, only the first element will be affected
+ * @param text support context interpolation
+ */
 case class TextInput(val selector: String, val text: String) extends Interactive {
   override def exeWithoutResult(pb: PageBuilder) {
     pb.driver.findElement(By.cssSelector(selector)).sendKeys(text)
@@ -188,6 +236,11 @@ case class TextInput(val selector: String, val text: String) extends Interactive
   }
 }
 
+/**
+ * Select an item from a drop down list
+ * @param selector css selector of the drop down list, only the first element will be affected
+ * @param text support context interpolation
+ */
 case class DropDownSelect(val selector: String, val text: String) extends Interactive {
   override def exeWithoutResult(pb: PageBuilder) {
     val element = pb.driver.findElement(By.cssSelector(selector))
@@ -200,6 +253,12 @@ case class DropDownSelect(val selector: String, val text: String) extends Intera
   }
 }
 
+/**
+ * Request browser to change focus to a frame/iframe embedded in the global page,
+ * after which only elements inside the focused frame/iframe can be selected.
+ * Can be used multiple times to switch focus back and forth
+ * @param selector css selector of the frame/iframe, only the first element will be affected
+ */
 case class SwitchToFrame(val selector: String) extends Interactive {
   override def exeWithoutResult(pb: PageBuilder) {
     val element = pb.driver.findElement(By.cssSelector(selector))
@@ -207,6 +266,10 @@ case class SwitchToFrame(val selector: String) extends Interactive {
   }
 }
 
+/**
+ * Execute a javascript snippet
+ * @param script support context interpolation
+ */
 case class ExeScript(val script: String) extends Interactive {
   override def exeWithoutResult(pb: PageBuilder) {
     pb.driver match {
@@ -223,6 +286,12 @@ case class ExeScript(val script: String) extends Interactive {
   }
 }
 
+/**
+ * Export the current page from the browser
+ * interact with the browser to load the target page first
+ * only for html page, please use wget for images and pdf files
+ * always export as UTF8 charset
+ */
 case class Snapshot() extends Export {
   // all other fields are empty
   override def doExe(pb: PageBuilder): Array[Page] = {
@@ -238,6 +307,13 @@ case class Snapshot() extends Export {
   }
 }
 
+/**
+ * use an http GET to fetch a remote resource deonted by url
+ * http client is much faster than browser, also load much less resources
+ * recommended for most static pages.
+ * actions for more complex http/restful API call will be added per request.
+ * @param url support context interpolation
+ */
 case class Wget(val url: String) extends Export with Sessionless{
 
   override def exeWithoutSession(): Array[Page] = {
@@ -276,10 +352,16 @@ case class Wget(val url: String) extends Export with Sessionless{
   }
 
   override def format[T](context: util.Map[String,T]): this.type = {
-    Wget(ActionUtils.formatWithContext(this.url,context)).asInstanceOf[this.type] //TODO: ugly tail
+    Wget(ActionUtils.formatWithContext(this.url,context)).asInstanceOf[this.type]
   }
 }
 
+/**
+ * Contains several sub-actions that are iterated for multiple times
+ * Will iterate until max iteration is reached or execution is impossible (sub-action throws an exception)
+ * @param times max iteration, default to Conf.fetchLimit
+ * @param actions a list of actions being iterated through
+ */
 case class Loop(val times: Int = Conf.fetchLimit)(val actions: Action*) extends Container {
 
   override def doExe(pb: PageBuilder): Array[Page] = {
