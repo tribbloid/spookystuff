@@ -1,12 +1,11 @@
 SpookyStuff
 ===========
-(Powered by Apache Spark)
 
-**SpookyStuff** is a scalable query engine for web scrapping/data mashup/acceptance QA. The goal is to allow the Web being queried and ETL'ed like a database.
+**SpookyStuff** is a scalable query engine for web scraping/data mashup/acceptance QA. The goal is to allow the Web being queried and ETL'ed like a relational database.
 
-**SpookyStuff** is by far the fastest web data collection solution in history, with a peak speed of 60000 pages per hour.
+**SpookyStuff** is the fastest big data collection engine in history, with a speed record of querying 60000 dynamic pages per hour on 40 cores.
 
-Dependencies
+Powered by
 -----------
 - Apache Spark
 - Selenium
@@ -22,11 +21,19 @@ Dependencies
 
 ![Apache Tika](http://tika.apache.org/tika.png) ![Build by Apache Maven](http://maven.apache.org/images/logos/maven-feather.png) ![Ansible](https://support.ansible.com/system/logos/2070/1448/ansible_logo.png)
 
-## Demo
-
+Demo
+-----------
 [Click me](http://ec2-54-88-40-125.compute-1.amazonaws.com:8888) for a quick impression.
 
-This environment is deployed on a Spark cluster with 8+ cores. It comes with no uptime guarantee and may not be accessible during maintenance.
+This environment is deployed on a Spark cluster with 8+ cores. It may not be accessible during system upgrade or maintenance. Please contact a committer for a customized demo.
+
+How it works
+-----------
+- In a nutshell, **SpookyStuff** scale up data collection job by distributing web clients to many machines. Each of them receives a portion of heterogeneous tasks and run them independently. After that, their results will either be reused to go deeper into the site, or be aggregated as one of the various output (can be local file system, HDFS, Amazon S3, or simply Memory block in JVM).
+
+- **SpookyStuff** is extremely lightweight by offloading most of the task scheduling & data aggregation work to Apache Spark. It has no dependency on any file system (even HDFS is optional), backend database, or message queue, or any SOA. Your query speed is only bounded by your bandwidth and CPU power.
+
+- **SpookyStuff** use phantomjs/GhostDriver to access dynamic pages and mimic human interaction with them, but it doesn't render those pages - nor does it download any image on them by default (unless you take a screenshot), which makes it still considerably faster even on a single machine.
 
 Examples
 -----------
@@ -330,7 +337,6 @@ Large scale distributed deep networks	Large scale distributed deep networks	Cite
 
 Performance
 ---------------
-- Spookystuff is designed from scratch to be lightweight: it has no dependency on any file system (HDFS is optional - you can use S3 as your file sink), backend database, or message queue, or any SOA. Your query speed is only bounded by your bandwidth and CPU power. In addition, the headless browser it uses to interact with webpages does not render the page, giving it a ~x3 boost over real browser per thread.
 
 - In the above University Logo example test run, each single r3.large instance (2 threads, 15g memory) achieved 410k/s download speed in average with 45% CPU usage. Thus, the entire 4-node, 8-thread cluster is able to finish the job in 13 minutes by downloading 1279M of data, including 1271M by browsers (no surprise, GoogleImage shows a hell lot of images on page 1!) and 7.7M by direct HTTP GET.
     - Query speed can be further improved by enabling over-provisioning of executors per thread (since web agents are idle while waiting for responses). For example, allowing 4 executors to be run on each r3.large node can double CPU usage to ~90%, thus potentially doubling your query speed to 820k/s. However, this tuning will be ineffective if network bandwidth has been reached.
