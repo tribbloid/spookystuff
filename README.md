@@ -25,15 +25,17 @@ Demo
 -----------
 [Click me](http://ec2-54-88-40-125.compute-1.amazonaws.com:8888) for a quick impression.
 
-This environment is deployed on a Spark cluster with 8+ cores. It may not be accessible during system upgrade or maintenance. Please contact a committer for a customized demo.
+This environment is deployed on a Spark cluster with 8+ cores. It may not be accessible during system upgrade or maintenance. Please contact a committer/project manager for a customized demo.
 
 How it works
 -----------
-- In a nutshell, **SpookyStuff** scale up data collection job by distributing web clients to many machines. Each of them receives a portion of heterogeneous tasks and run them independently. After that, their results will either be reused to go deeper into the site, or be aggregated as one of the various output (can be local file system, HDFS, Amazon S3, or simply Memory block in JVM).
+- In a nutshell, **SpookyStuff** scales up data collection by distributing web clients to many machines. Each of them receives a portion of heterogeneous tasks and run them independently. After that, their results can either be transformed and reused to dig deeper into the web by visiting more dynamic pages, or be exported into one of many data storage: including local HDD, HDFS, Amazon S3, or simply Memory block in JVM.
 
-- **SpookyStuff** is extremely lightweight by offloading most of the task scheduling & data aggregation work to Apache Spark. It has no dependency on any file system (even HDFS is optional), backend database, or message queue, or any SOA. Your query speed is only bounded by your bandwidth and CPU power.
+- **SpookyStuff** is extremely lightweight by offloading most of the task scheduling & data transformation work to Apache Spark. It doesn't depend on any file system (even HDFS is optional), backend database, or message queue, or any SOA. Your query speed is only bounded by your bandwidth and CPU power.
 
-- **SpookyStuff** use phantomjs/GhostDriver to access dynamic pages and mimic human interaction with them, but it doesn't render those pages - nor does it download any image on them by default (unless you take a screenshot), which makes it still considerably faster even on a single machine.
+- **SpookyStuff** use phantomjs/GhostDriver to access dynamic pages and mimic human interactions with them, but it doesn't render them - nor does it download any image embedded in them by default (unless you take a screenshot), which makes it still considerably faster even on a single machine.
+
+- **SpookyStuff**'s query syntax is an extension of Spark interface, there is no problem in mixing it with any of Spark's submodules, notably Spark-core, SparkSQL and MLlib.
 
 Examples
 -----------
@@ -350,15 +352,13 @@ Performance
 Usage
 -----------
 
-Current implementation only supports SQL/LINQ style query, APIs are not finalized (in fact, still far from that) and may change in the future.
-
-Support for SQL-like query is on the roadmap but may be abandoned in favour of simplicity.
+Current implementation only supports SQL/LINQ style query, APIs are not finalized (in fact, still far from that) and may change anytime in the future. Support for SQL is on the roadmap but may be abandoned in favour of simplicity.
 
 Each query is a combination of 3 parts: Context, Action Plan and Extraction.
 
-**Context** represents input and output data of a scraping job in key-value format. They are generally created as strings or key-value pairs, then be carried around by Action Plans and Pages as metadata through a query's lifespan.
+**Context** represents input and output data of a scraping job in key-value format. They are always created as strings or key-value pairs, then be carried around by Action Plans and Pages as metadata through a query's lifespan.
 
-**Context** can be defined from any Spark parallelization or transformation (though this is rarely used), e.g.:
+Creating of **Context** can use any Spark parallelization or transformation (though this is rarely used), e.g.:
 ```
 - sc.parallelize("Metallica","Megadeth","Slayer","Anthrax")
 
@@ -374,21 +374,21 @@ Each query is a combination of 3 parts: Context, Action Plan and Extraction.
 (**Context** +> Action1 +> Action2 +> ... +> ActionN !)
 ```
 
-These are the same actions a human would do to get to the data page, their order of execution is identical to that they are defined here.
+These are the same actions a human would do to access the data page, their order of execution is identical to that they are defined.
 
 **Actions** have 3 types:
 
-- *Export*: Export a page from the browser or http client, the page an be anything including HTML/XML file, image, PDF file or JSON string.
+- *Export*: Export a page from a browser or client, the page an be any web resource including HTML/XML file, image, PDF file or JSON string.
 
 - *Interactive*: Interact with the browser (e.g. click a button or type into a search box) to reach the data page, all interactive executed before a page will be logged into that page's backtrace.
 
 - *Container*: Only for complex workflow control, each defines a nested/non-linear subroutine that may or may not be executed once or multiple times depending on situations.
 
-Many Actions supports **Context Interpolation**: you can embed context reference in their constructor by inserting context's keys enclosed by `#{}`, in execution they will be replaced with values they map to. This is used almost exclusively in typing into a textbox, but it's flexible enough to be used anywhere.
+Many Actions supports **Context Interpolation**: you can embed context reference in their constructor by inserting context's keys enclosed by `#{}`, which will be automatically replaced with values they map to in runtime. This is used almost exclusively in typing into a textbox.
 
 For more information on Actions and Action Plan usage, please refer to the scaladoc of Action.scala and ActionPlanRDDFunction.scala respectively.
 
-**Extraction** defines the transformation from Pages (including immediate pages from Action Plans and their connections -- see *join/left-join*) to relational data output. This is usually the goal and last step of data collection, but not always -- there is no constraint on their relative order, you can reuse extraction results as context to get more data on a different site, or feed into another data flow implemented by other components of Apache Spark (Of course, only if you know them).
+**Extraction** defines a transformation from Pages (including immediate pages from Action Plans and their link connections -- see *join/left-join*) to relational data output. This is often the goal and last step of data collection, but not always -- there is no constraint on their relative order, you can reuse extraction results as context to get more data on a different site, or feed into another data flow implemented by other components of Apache Spark (Of course, only if you know them).
 
 Functions in **Extraction** have four types:
 
