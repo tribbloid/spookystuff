@@ -1,7 +1,5 @@
 package org.tribbloid.spookystuff
 
-import org.openqa.selenium.phantomjs.PhantomJSDriverService
-import org.openqa.selenium.remote.{CapabilityType, DesiredCapabilities}
 import org.tribbloid.spookystuff.factory.NaiveDriverFactory
 
 /**

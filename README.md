@@ -3,7 +3,7 @@ SpookyStuff
 
 **SpookyStuff** is a scalable query engine for web scraping/data mashup/acceptance QA. The goal is to allow the Web being queried and ETL'ed like a relational database.
 
-**SpookyStuff** is the fastest big data collection engine in history, with a speed record of querying 98768 dynamic pages per hour on 76 cores.
+**SpookyStuff** is the fastest big data collection engine in history, with a speed record of querying 98768 dynamic pages per hour on 76 cores (this record will be synchronized with our latest scalability test).
 
 Powered by
 -----------
@@ -35,7 +35,7 @@ How it works
 
 - **SpookyStuff** use phantomjs/GhostDriver to access dynamic pages and mimic human interactions with them, but it doesn't render them - nor does it download any image embedded in them by default (unless you take a screenshot), which makes it still considerably faster even on a single machine.
 
-- **SpookyStuff**'s query language is an extension of Spark interface, there is no problem in mixing it with other modules of Spark, notably SparkSQL and MLlib.
+- **SpookyStuff**'s query language is an extension of Spark API, there is no problem in mixing it with other Spark-based environments, notably SparkSQL and MLlib.
 
 Examples
 -----------
