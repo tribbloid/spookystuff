@@ -16,6 +16,7 @@ import org.openqa.selenium.support.ui
 import org.tribbloid.spookystuff.Conf
 import org.tribbloid.spookystuff.factory.PageBuilder
 import org.tribbloid.spookystuff.utils.InsecureTrustManager
+import org.tribbloid.spookystuff.utils.withDeadline
 
 import scala.collection.JavaConversions._
 import scala.collection.mutable.ArrayBuffer
@@ -60,7 +61,7 @@ object ActionUtils {
 
 /**
  * These are the same actions a human would do to get to the data page,
- * their order of execution is identical to that they are defined here.
+ * their order of execution is identical to that they are defined.
  * Many supports **Context Interpolation**: you can embed context reference in their constructor
  * by inserting context's keys enclosed by `#{}`, in execution they will be replaced with values they map to.
  * This is used almost exclusively in typing into a textbox, but it's flexible enough to be used anywhere.
@@ -76,7 +77,10 @@ trait Action extends Serializable with Cloneable {
   final def exe(pb: PageBuilder): Array[Page] = {
 
     try {
-      var pages = doExe(pb: PageBuilder)
+      var pages = withDeadline(Conf.driverCallTimeout) {
+        doExe(pb: PageBuilder)
+      }
+
       val newTimeline = new Date().getTime - pb.start_time
 
       if (this.isInstanceOf[Interactive]) {
@@ -108,7 +112,7 @@ trait Action extends Serializable with Cloneable {
           //                  TODO: logError("Error Page saved as "+errorFileName)
         }
 
-        throw e //try to delegate all failover to Spark, but this may change in the future
+        throw e
       }
     }
   }

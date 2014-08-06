@@ -5,6 +5,7 @@ import org.openqa.selenium.remote.server.DriverFactory
 import org.openqa.selenium.remote.{CapabilityType, DesiredCapabilities}
 import org.openqa.selenium.{Capabilities, WebDriver}
 import org.tribbloid.spookystuff.Conf
+import org.tribbloid.spookystuff.utils._
 
 /**
  * Created by peng on 25/07/14.
@@ -18,7 +19,9 @@ object NaiveDriverFactory extends DriverFactory {
   val phantomJSRootPath = "/usr/lib/phantomjs/"
   baseCaps.setCapability(PhantomJSDriverService.PHANTOMJS_EXECUTABLE_PATH_PROPERTY, phantomJSRootPath + "bin/phantomjs");
   baseCaps.setCapability(PhantomJSDriverService.PHANTOMJS_PAGE_SETTINGS_PREFIX+"loadImages", false);
-  baseCaps.setCapability(PhantomJSDriverService.PHANTOMJS_PAGE_SETTINGS_PREFIX+"resourceTimeout", Conf.pageLoadTimeout*1000)
+  baseCaps.setCapability(PhantomJSDriverService.PHANTOMJS_PAGE_SETTINGS_PREFIX+"resourceTimeout", Conf.resourceTimeout*1000)
+
+  val newInstanceRetry = 3;
 
   override def registerDriver(capabilities: Capabilities, implementation: Class[_ <: WebDriver]) {
     throw new UnsupportedOperationException("cannot add new driver type")
@@ -27,7 +30,11 @@ object NaiveDriverFactory extends DriverFactory {
   override def newInstance(capabilities: Capabilities): WebDriver = {
     val newCap = baseCaps.merge(capabilities)
 
-    return new PhantomJSDriver(newCap)
+    return retry () {
+      withDeadline(Conf.driverCallTimeout) {
+        new PhantomJSDriver(newCap)
+      }
+    }
   }
 
   override def hasMappingFor(capabilities: Capabilities): Boolean = {
