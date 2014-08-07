@@ -79,15 +79,6 @@ class ActionPlan(val context: util.HashMap[String, Serializable] = null) extends
     result.+=(ac.actions)
     result
   }
-
-  def !(): Seq[Page] = {
-    var pages = PageBuilder.resolve(this.actions: _*)
-    if (this.context !=null) {
-      //has to use deep copy, one to many mapping and context may be modified later
-      pages = pages.map { _.copy(context = new util.HashMap(this.context)) }
-    }
-    return pages
-  }
 }
 
 class EmptyActionPlan(context: util.HashMap[String, Serializable] = null) extends ActionPlan(context) {

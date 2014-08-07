@@ -246,20 +246,24 @@ class PageRDDFunctions(val self: RDD[Page]) {
    * @param limit depth of recursion
    * @return RDD[Page], contains both old and new pages
    */
-  def insertPagination(selector: String, limit: Int = Conf.fetchLimit): RDD[Page] = self.flatMap {
-    page => {
-      val results = ArrayBuffer[Page](page)
+  def insertPagination(selector: String, limit: Int = Conf.fetchLimit): RDD[Page] = {
+    val hConfWrapper = self.context.broadcast(new SerializableWritable(self.context.hadoopConfiguration))
 
-      var currentPage = page
-      var i = 0
-      while (currentPage.attrExist(selector,"abs:href") && i< limit) {
-        i = i+1
-        val nextUrl = currentPage.href1(selector) //not null because already validated
-        currentPage = PageBuilder.resolve(Visit(nextUrl))(0)
-        results.+=(currentPage.copy(context = page.context))
+    self.flatMap {
+      page => {
+        val results = ArrayBuffer[Page](page)
+
+        var currentPage = page
+        var i = 0
+        while (currentPage.attrExist(selector,"abs:href") && i< limit) {
+          i = i+1
+          val nextUrl = currentPage.href1(selector) //not null because already validated
+          currentPage = PageBuilder.resolve(Visit(nextUrl))(hConfWrapper.value.value)(0)
+          results.+=(currentPage.copy(context = page.context))
+        }
+
+        results
       }
-
-      results
     }
   }
 
@@ -270,20 +274,24 @@ class PageRDDFunctions(val self: RDD[Page]) {
    * @param limit depth of recursion
    * @return RDD[Page], contains both old and new pages
    */
-  def wgetInsertPagination(selector: String, limit: Int = Conf.fetchLimit): RDD[Page] = self.flatMap {
-    page => {
-      val results = ArrayBuffer[Page](page)
+  def wgetInsertPagination(selector: String, limit: Int = Conf.fetchLimit): RDD[Page] = {
+    val hConfWrapper = self.context.broadcast(new SerializableWritable(self.context.hadoopConfiguration))
 
-      var currentPage = page
-      var i = 0
-      while (currentPage.attrExist(selector,"abs:href") && i< limit) {
-        i = i+1
-        val nextUrl = currentPage.href1(selector) //not null because already validated
-        currentPage = PageBuilder.resolve(Wget(nextUrl)).toList(0)
-        results.+=(currentPage.copy(context = page.context))
+    self.flatMap {
+      page => {
+        val results = ArrayBuffer[Page](page)
+
+        var currentPage = page
+        var i = 0
+        while (currentPage.attrExist(selector,"abs:href") && i< limit) {
+          i = i+1
+          val nextUrl = currentPage.href1(selector) //not null because already validated
+          currentPage = PageBuilder.resolve(Wget(nextUrl))(hConfWrapper.value.value)(0)
+          results.+=(currentPage.copy(context = page.context))
+        }
+
+        results
       }
-
-      results
     }
   }
 

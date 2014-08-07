@@ -21,8 +21,6 @@ class NaiveDriverFactory extends DriverFactory {
   baseCaps.setCapability(PhantomJSDriverService.PHANTOMJS_PAGE_SETTINGS_PREFIX+"loadImages", false);
   baseCaps.setCapability(PhantomJSDriverService.PHANTOMJS_PAGE_SETTINGS_PREFIX+"resourceTimeout", Conf.resourceTimeout*1000)
 
-  val newInstanceRetry = 3;
-
   override def registerDriver(capabilities: Capabilities, implementation: Class[_ <: WebDriver]) {
     throw new UnsupportedOperationException("cannot add new driver type")
   }

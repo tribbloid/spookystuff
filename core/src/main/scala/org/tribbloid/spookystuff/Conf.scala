@@ -24,8 +24,8 @@ final object Conf {
   val localSavePagePath = "temp/spooky-page/"
 //  val saveScreenshotPath = "file:///home/peng/spookystuffScreenShots/"
 
-//  val errorPageDumpDir = "s3n://spooky_errorpage"
-  val localErrorPageDumpDir = "temp/spooky-errorpage"
+  val errorPageDumpDir = "s3n://spooky-errordump"
+  val localErrorPageDumpDir = "temp/spooky-errordump"
 
   val defaultDriverFactory = new NaiveDriverFactory()
 //  type Logging = com.typesafe.scalalogging.slf4j.Logging

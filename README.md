@@ -242,7 +242,7 @@ Lansinoh, Breastmilk Storage Bags, 25 Pre-Sterilized Bags	Lansinoh Breastmilk St
 
 - Goal: Visit Metallica's youtube channel, click 'show more' button repeatedly until all videos are displayed. Collect their respective titles, descriptions, date of publishing, number of watched users, number of positive votes, number of negative votes, number of comments. Finally, click 'show more comments' button repeatedly and collect all top-level comments (not replies), also, save each fully expanded comment iframe for validation.
 
--Query:
+- Query:
 ```
     (((sc.parallelize(Seq("MetallicaTV")) +>
       Visit("http://www.youtube.com/user/#{_}/videos") +>
@@ -284,7 +284,7 @@ Lansinoh, Breastmilk Storage Bags, 25 Pre-Sterilized Bags	Lansinoh Breastmilk St
           ).productIterator.toList.mkString("\t")
       ).saveAsTextFile("file:///home/peng/youtube/result")
 ```
--Result (finished in 9 minutes on 19 r3.large instances):
+- Result (finished in 9 minutes on 19 r3.large instances):
 ```
 MetallicaTV	Metallica: Ride The Lightning and Wherever I May Roam (MetOnTour - Landgraaf, Netherlands - 2014)	Fly on the wall footage shot by the MetOnTour reporter on June 9, 2014 in Landgraaf, Netherlands. Footage includes some Tuning Room shenanigans and both "Ride The Lightning" and "Wherever I May Roam" from the show. Download the full audio from the show at LiveMetallica.com: http://www.livemetallica.com/live-mus... Follow Metallica: http://www.metallica.com http://www.livemetallica.com http://www.facebook.com/metallica http://www.twitter.com/metallica http://www.instagram.com/metallica http://www.youtube.com/metallicatv	Published on Jul 3, 2014	172,017	1,839	10	All comments (220)	DavincstyleGames	  I was there and it was well worth the wait!﻿ Read more Show less
 MetallicaTV	Metallica: Ride The Lightning and Wherever I May Roam (MetOnTour - Landgraaf, Netherlands - 2014)	Fly on the wall footage shot by the MetOnTour reporter on June 9, 2014 in Landgraaf, Netherlands. Footage includes some Tuning Room shenanigans and both "Ride The Lightning" and "Wherever I May Roam" from the show. Download the full audio from the show at LiveMetallica.com: http://www.livemetallica.com/live-mus... Follow Metallica: http://www.metallica.com http://www.livemetallica.com http://www.facebook.com/metallica http://www.twitter.com/metallica http://www.instagram.com/metallica http://www.youtube.com/metallicatv	Published on Jul 3, 2014	172,017	1,839	10	All comments (220)	thebossman222	  They're amazingly busy all the time, surprised his voice hasn't completely given out by now﻿ Read more Show less

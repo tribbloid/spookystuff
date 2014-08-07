@@ -103,14 +103,14 @@ trait Action extends Serializable with Cloneable {
         if (this.isInstanceOf[Interactive]) {
 
           val page = Snapshot().exe(pb).toList(0)
-          //          try {
-          //            page.save(dir = Conf.errorPageDumpDir)
-          //          }
-          //          catch {
-          //            case e: Throwable => {
-          page.saveLocal(dir = Conf.localErrorPageDumpDir)
-          //            }
-          //          }
+          try {
+            page.save(dir = Conf.errorPageDumpDir)(pb.hConf)
+          }
+          catch {
+            case e: Throwable => {
+              page.saveLocal(dir = Conf.localErrorPageDumpDir)
+            }
+          }
           //                  TODO: logError("Error Page saved as "+errorFileName)
         }
 
@@ -286,7 +286,7 @@ case class ExeScript(val script: String, override val timeout: Int = Conf.driver
   override def exeWithoutResult(pb: PageBuilder) {
     pb.driver match {
       case d: HtmlUnitDriver => d.executeScript(script)
-//      case d: AndroidWebDriver => d.executeScript(script)
+      //      case d: AndroidWebDriver => d.executeScript(script)
       case d: EventFiringWebDriver => d.executeScript(script)
       case d: RemoteWebDriver => d.executeScript(script)
       case _ => throw new UnsupportedOperationException("this web browser driver is not supported")

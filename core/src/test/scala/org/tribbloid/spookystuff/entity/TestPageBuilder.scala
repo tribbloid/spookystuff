@@ -13,7 +13,7 @@ class TestPageBuilder extends FunSuite {
   object pageTag extends Tag("Page")
 
   test("visit and snapshot", pageBuilderTag) {
-    val builder = new PageBuilder()
+    val builder = new PageBuilder(null)
     Visit("http://www.google.com").exe(builder)
     val page = Snapshot().exe(builder).toList(0)
     //    val url = builder.getUrl
@@ -26,7 +26,7 @@ class TestPageBuilder extends FunSuite {
   }
 
   test("visit, input submit and snapshot", pageBuilderTag) {
-    val builder = new PageBuilder()
+    val builder = new PageBuilder(null)
     Visit("https://www.linkedin.com/").exe(builder)
     TextInput("input#first","Adam").exe(builder)
     TextInput("input#last","Muise").exe(builder)
@@ -48,7 +48,7 @@ class TestPageBuilder extends FunSuite {
       TextInput("input#last","Muise"),
       Submit("input[name=\"search\"]"),
       Snapshot().as("B")
-    )
+    )(null)
 
     val resultsList = results
     assert(resultsList.length === 2)
@@ -75,7 +75,7 @@ class TestPageBuilder extends FunSuite {
       TextInput("input#first", "Adam"),
       TextInput("input#last", "Muise"),
       Submit("input[name=\"search\"]")
-    )
+    )(null)
 
     val id = Seq[Interactive](Visit("https://www.linkedin.com/"), DelayFor("input[name=\"search\"]",40), TextInput("input#first","Adam"),TextInput("input#last","Muise"),Submit("input[name=\"search\"]"))
     assert(result(0).backtrace === id)
@@ -89,7 +89,7 @@ class TestPageBuilder extends FunSuite {
       TextInput("input#twotabsearchtextbox", "Lord of the Rings"),
       Submit("input.nav-submit-input"),
       DelayFor("div#resultsCol",50)
-    )
+    )(null)
 
     assert(result(0).attrExist("div#result_0 h3 span.bold","title") === false)
     assert(result(0).attr1("div#result_0 h3 span.dummy","title") === null)
@@ -100,7 +100,7 @@ class TestPageBuilder extends FunSuite {
     val results = PageBuilder.resolve(
       Visit("https://www.linkedin.com/"),
       Snapshot().as("T")
-    )
+    )(null)
 
     val resultsList = results.toArray
     assert(resultsList.size === 1)
@@ -112,7 +112,7 @@ class TestPageBuilder extends FunSuite {
   test("wget html and save", pageTag) {
     val results = PageBuilder.resolve(
       Wget("https://www.google.hk")
-    )
+    )(null)
 
     val resultsList = results.toArray
     assert(resultsList.size === 1)
@@ -125,7 +125,7 @@ class TestPageBuilder extends FunSuite {
   test("wget image and save", pageTag) {
     val results = PageBuilder.resolve(
       Wget("http://col.stb01.s-msn.com/i/74/A177116AA6132728F299DCF588F794.gif")
-    )
+    )(null)
 
     val resultsList = results.toArray
     assert(resultsList.size === 1)
@@ -137,7 +137,7 @@ class TestPageBuilder extends FunSuite {
   test("wget pdf and save", pageTag) {
     val results = PageBuilder.resolve(
       Wget("http://www.cs.toronto.edu/~ranzato/publications/DistBeliefNIPS2012_withAppendix.pdf")
-    )
+    )(null)
 
     val resultsList = results.toArray
     assert(resultsList.size === 1)

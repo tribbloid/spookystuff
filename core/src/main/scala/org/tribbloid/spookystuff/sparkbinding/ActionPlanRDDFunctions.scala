@@ -1,9 +1,11 @@
 package org.tribbloid.spookystuff.sparkbinding
 
+import org.apache.spark.SerializableWritable
 import org.apache.spark.rdd.RDD
 import org.tribbloid.spookystuff.entity.{Page, ActionPlan, Action}
 import org.tribbloid.spookystuff.factory.PageBuilder
 import scala.collection.mutable.ArrayBuffer
+import java.util
 import org.apache.spark.SparkContext._
 import scala.collection.JavaConversions._
 
@@ -85,14 +87,18 @@ class ActionPlanRDDFunctions(val self: RDD[ActionPlan]) {
    * each ActionPlan may yield several pages in a row, depending on the number of Export(s) in it
    * @return RDD[Page] as results of execution
    */
-  def !(): RDD[Page] = self.flatMap {
-    _ !()
-  }
+  def !(): RDD[Page] = {
+    val hConfWrapper = self.context.broadcast(new SerializableWritable(self.context.hadoopConfiguration))
 
-  //  //  execute, always remove duplicate first
-  //  def >!(): RDD[Page] = self.distinct().flatMap {
-  //    _ !()
-  //  }
+    self.flatMap {
+      ap =>{
+        var pages = PageBuilder.resolve(ap.actions: _*)(hConfWrapper.value.value)
+        //has to use deep copy, one to many mapping and context may be modified later
+        pages = pages.map { _.copy(context = new util.HashMap(ap.context)) }
+        pages
+      }
+    }
+  }
 
   //there is no repartitioning in the process, may cause unbalanced execution, but apparently groupByKey will do it automatically
   //TODO: this definitely need some logging to let us know how many actual resolves.
@@ -103,13 +109,15 @@ class ActionPlanRDDFunctions(val self: RDD[ActionPlan]) {
    * @return RDD[Page] as results of execution
    */
   def !><(): RDD[Page] = {
+    val hConfWrapper = self.context.broadcast(new SerializableWritable(self.context.hadoopConfiguration))
+
     val squashedPlanRDD = self.map{ ap => (ap.actions, ap.context) }.groupByKey()
 
-    val squashedPageRDD = squashedPlanRDD.flatMap { tuple => PageBuilder.resolve(tuple._1: _*).map{ (_, tuple._2) } }
+    val squashedPageRDD = squashedPlanRDD.flatMap { tuple => PageBuilder.resolve(tuple._1: _*)(hConfWrapper.value.value).map{ (_, tuple._2) } }
 
     return squashedPageRDD.flatMap {
       tuple => tuple._2.map {
-        cc => tuple._1.copy(context = cc)
+        cc => tuple._1.copy(context = new util.HashMap(cc))
       }
     }
   }

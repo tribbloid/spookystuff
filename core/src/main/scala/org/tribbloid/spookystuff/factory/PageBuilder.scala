@@ -3,9 +3,8 @@ package org.tribbloid.spookystuff.factory
 import java.util
 import java.util.Date
 
+import org.apache.hadoop.conf.Configuration
 import org.openqa.selenium.Capabilities
-import org.openqa.selenium.phantomjs.PhantomJSDriver
-import org.openqa.selenium.remote.RemoteWebDriver
 import org.openqa.selenium.remote.server.DriverFactory
 import org.tribbloid.spookystuff.Conf
 import org.tribbloid.spookystuff.entity._
@@ -16,7 +15,7 @@ object PageBuilder {
 
   //shorthand for resolving the final stage after some interactions
   lazy val emptyPage: Page = {
-    val pb = new PageBuilder()
+    val pb = new PageBuilder(null)
 
     try {
       Snapshot().exe(pb).toList(0)
@@ -26,27 +25,27 @@ object PageBuilder {
     }
   }
 
-  def resolve(actions: Action*): Array[Page] = {
+  def resolve(actions: Action*)(hConf: Configuration): Array[Page] = {
     if (ActionUtils.mayHaveResult(actions: _*) == true) {
-      resolvePlain(actions: _*)
+      resolvePlain(actions: _*)(hConf)
     }
     else
     {
-      resolvePlain(actions.:+(Snapshot()): _*)
+      resolvePlain(actions.:+(Snapshot()): _*)(hConf)
     }
   }
 
   // Major API shrink! resolveFinal will be merged here
   // if a resolve has no potential to output page then a snapshot will be appended at the end
-  private def resolvePlain(actions: Action*): Array[Page] = {
+  private def resolvePlain(actions: Action*)(hConf: Configuration): Array[Page] = {
 
     val results = ArrayBuffer[Page]()
 
     val pb = if (actions.forall( _.isInstanceOf[Sessionless] )) {
-      new PageBuilder(null)
+      new PageBuilder(hConf, null)
     }
     else {
-      new PageBuilder()
+      new PageBuilder(hConf)
     }
 
     try {
@@ -67,9 +66,11 @@ object PageBuilder {
 }
 
 class PageBuilder(
+                   val hConf: Configuration,
                    val driverFactory: DriverFactory = Conf.defaultDriverFactory,
                    val caps: Capabilities = null
                    ) {
+
   val driver = if (driverFactory != null) {
     this.driverFactory.newInstance(caps)
   }
