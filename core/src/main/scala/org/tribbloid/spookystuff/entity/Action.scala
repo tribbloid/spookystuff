@@ -70,6 +70,8 @@ trait Action extends Serializable with Cloneable {
 
   var timeline: Long = -1
 
+  val timeout: Int = Conf.driverCallTimeout
+
   def format[T](context: util.Map[String,T]): this.type = this
 
   override def clone(): AnyRef = super.clone()
@@ -77,7 +79,7 @@ trait Action extends Serializable with Cloneable {
   final def exe(pb: PageBuilder): Array[Page] = {
 
     try {
-      var pages = withDeadline(Conf.driverCallTimeout) {
+      var pages = withDeadline(this.timeout) {
         doExe(pb: PageBuilder)
       }
 
@@ -152,6 +154,8 @@ trait Sessionless extends Action {
  * once or multiple times depending on situations.
  */
 trait Container extends Action {
+  override val timeout: Int = Int.MaxValue
+
   def mayHaveResult: Boolean
 }
 
@@ -187,6 +191,8 @@ case class Visit(val url: String) extends Interactive {
  * @param delay seconds to be wait for
  */
 case class Delay(val delay: Int = Conf.pageDelay) extends Interactive {
+  override val timeout = Math.max(Conf.driverCallTimeout, delay + 10)
+
   override def exeWithoutResult(pb: PageBuilder) {
     Thread.sleep(delay * 1000)
   }
@@ -199,6 +205,8 @@ case class Delay(val delay: Int = Conf.pageDelay) extends Interactive {
  *              after which it will throw an exception!
  */
 case class DelayFor(val selector: String,val delay: Int = Conf.pageDelay) extends Interactive {
+  override val timeout = Math.max(Conf.driverCallTimeout, delay + 10)
+
   override def exeWithoutResult(pb: PageBuilder) {
     val wait = new ui.WebDriverWait(pb.driver, delay)
     wait.until(ui.ExpectedConditions.presenceOfAllElementsLocatedBy(By.cssSelector(selector)))
@@ -274,7 +282,7 @@ case class SwitchToFrame(val selector: String) extends Interactive {
  * Execute a javascript snippet
  * @param script support context interpolation
  */
-case class ExeScript(val script: String) extends Interactive {
+case class ExeScript(val script: String, override val timeout: Int = Conf.driverCallTimeout) extends Interactive {
   override def exeWithoutResult(pb: PageBuilder) {
     pb.driver match {
       case d: HtmlUnitDriver => d.executeScript(script)

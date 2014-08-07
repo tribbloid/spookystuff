@@ -27,7 +27,7 @@ final object Conf {
 //  val errorPageDumpDir = "s3n://spooky_errorpage"
   val localErrorPageDumpDir = "temp/spooky-errorpage"
 
-  val defaultDriverFactory = NaiveDriverFactory
+  val defaultDriverFactory = new NaiveDriverFactory()
 //  type Logging = com.typesafe.scalalogging.slf4j.Logging
 
 //  val webClientOptions = new WebClientOptions

@@ -10,7 +10,7 @@ import org.tribbloid.spookystuff.utils._
 /**
  * Created by peng on 25/07/14.
  */
-object NaiveDriverFactory extends DriverFactory {
+class NaiveDriverFactory extends DriverFactory {
 
   val baseCaps = new DesiredCapabilities;
   baseCaps.setJavascriptEnabled(true);                //< not really needed: JS enabled by default
