@@ -37,7 +37,7 @@
   tags: java
 
 - name: Set ownership of security policy
-  file: pathStr=usr/lib/jvm/java-7-oracle/jre/lib/security state=directory recurse=yes owner=root group=root
+  file: path=usr/lib/jvm/java-7-oracle/jre/lib/security state=directory recurse=yes owner=root group=root
   tags: java
 
 - name: Copy .profile
