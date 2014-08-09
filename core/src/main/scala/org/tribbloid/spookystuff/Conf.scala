@@ -33,7 +33,7 @@ final object Conf {
 //  val webClientOptions = new WebClientOptions
 //  webClientOptions.setUseInsecureSSL(true)
 
-  val driverCallTimeout = 30
+  val driverCallTimeout = 60
 
   val localRetry = 3
 }
