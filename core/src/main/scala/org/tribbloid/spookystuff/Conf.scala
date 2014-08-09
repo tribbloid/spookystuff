@@ -10,7 +10,7 @@ import org.tribbloid.spookystuff.factory.NaiveDriverFactory
 final object Conf {
 
   val pageDelay = 10
-  val resourceTimeout = 30
+  val resourceTimeout = 60
 //  val usePageCache = false //delegated to smart execution
   val pageExpireAfter = 1800
 
