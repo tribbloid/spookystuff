@@ -7,7 +7,7 @@ import org.tribbloid.spookystuff.example.SparkSubmittable
 /**
  * Created by peng on 06/07/14.
  */
-class GoogleScholar extends SparkSubmittable {
+object GoogleScholar extends SparkSubmittable {
 
   override def doMain() {
 

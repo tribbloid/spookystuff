@@ -1,7 +1,7 @@
 package org.tribbloid.spookystuff.entity
 
 import java.io.Serializable
-import java.net.{URL, URLConnection}
+import java.net._
 import java.util
 import java.util.Date
 import javax.net.ssl.{HttpsURLConnection, SSLContext, TrustManager}
@@ -330,6 +330,8 @@ case class Wget(val url: String) extends Export with Sessionless{
 
   override def exeWithoutSession(): Array[Page] = {
     if ((url == null)||(url.isEmpty)) return Array[Page](PageBuilder.emptyPage)
+
+    CookieHandler.setDefault(new CookieManager(null, CookiePolicy.ACCEPT_ALL));
 
     val uc: URLConnection =  new URL(url).openConnection()
 

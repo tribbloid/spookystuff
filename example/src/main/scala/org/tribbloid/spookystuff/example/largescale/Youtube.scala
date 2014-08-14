@@ -7,7 +7,7 @@ import org.tribbloid.spookystuff.example.SparkSubmittable
 /**
  * Created by peng on 04/07/14.
  */
-class Youtube extends SparkSubmittable{
+object Youtube extends SparkSubmittable{
 
   override def doMain() {
     (((sc.parallelize(Seq("MetallicaTV")) +>
