@@ -49,11 +49,9 @@ object PageBuilder {
     }
 
     try {
-      actions.foreach {
-        action => {
-          val pages = action.exe(pb)
-          if (pages != null) results.++=(pages)
-        }
+      for (action <- actions) {
+        val pages = action.exe(pb)
+        if (pages != null) results.++=(pages)
       }
 
       return results.toArray

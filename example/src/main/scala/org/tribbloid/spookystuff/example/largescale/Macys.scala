@@ -14,14 +14,38 @@ object Macys extends SparkRunnable {
       Wget("http://www.macys.com/")!
       ).wgetJoin(
         "div#globalMastheadCategoryMenu li a"
-      ).select(
+      ).selectInto(
         "category" -> (_.text1("div#nav_title"))
       ).visit("div#localNavigationContainer li.nav_cat_item_bold a") +>
+      Loop(1) (DelayFor("ul#thumbnails li.productThumbnail",20)) +>
       Snapshot() +>
-      Loop(500) {
-        Click("a.arrowRight")
+      Loop(2) (
+        Click("a.arrowRight"),
+        Delay(5),
+        DelayFor("ul#thumbnails li.productThumbnail",20),
         Snapshot()
-      }!).map(_.text("div.shortDescription")).collect().foreach(println(_))
+      )!><).selectInto(
+        "subcategory" -> (_.text1("h1#currentCatNavHeading"))
+      ).joinBySlice(
+        "ul#thumbnails li.productThumbnail"
+      ).map(page => (
+      page.backtrace.size,
+      page.context.get("category"),
+      page.context.get("subcategory"),
+      page.text1("div.shortDescription"),
+      page.text1("div.prices"),
+      page.attr1("div.pdpreviews span.rating span", "style"),
+      page.text1("div.pdpreviews")
+      ).productIterator.toList.mkString("\t")
+      ).collect().foreach(println(_))
+
+//      map(page => (
+//      page.backtrace.size,
+//      page.context.get("category"),
+//      page.context.get("subcategory"),
+//      page.text("ul#thumbnails div.shortDescription")
+//      ).productIterator.toList.mkString("\t")
+//      ).collect().foreach(println(_))
 
 //      .join(
 //

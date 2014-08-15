@@ -79,9 +79,10 @@ trait Action extends Serializable with Cloneable {
   final def exe(pb: PageBuilder): Array[Page] = {
 
     try {
-      var pages = withDeadline(this.timeout) {
+      var pages =
+// withDeadline(this.timeout) { //TODO: useless in most cases
         doExe(pb: PageBuilder)
-      }
+//      }
 
       val newTimeline = new Date().getTime - pb.start_time
 

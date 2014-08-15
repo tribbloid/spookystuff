@@ -119,11 +119,16 @@ class PageRDDFunctions(val self: RDD[Page]) {
    * @param attr attribute of the element that denotes the link target, default to absolute href
    * @return RDD[ActionPlan]
    */
-  def visit(selector: String, limit: Int = Conf.fetchLimit, attr :String = "abs:href"): RDD[ActionPlan] = self.flatMap{
+  def visit(selector: String, limit: Int = Conf.fetchLimit, attr :String = "abs:href", distinct: Boolean = true): RDD[ActionPlan] = self.flatMap{
     page => {
 
       val context = page.context
-      page.attr(selector,attr,limit).map {
+      var links = page.attr(selector,attr,limit).filter(!_.isEmpty)
+      if (distinct == true) {
+        links = links.distinct
+      }
+
+      links.map {
         str => new ActionPlan(context, Visit(str))
       }
     }
@@ -136,11 +141,16 @@ class PageRDDFunctions(val self: RDD[Page]) {
    * @param attr attribute of the element that denotes the link target, default to absolute href
    * @return RDD[ActionPlan]
    */
-  def leftVisit(selector: String, limit: Int = Conf.fetchLimit, attr :String = "abs:href"): RDD[ActionPlan] = self.flatMap{
+  def leftVisit(selector: String, limit: Int = Conf.fetchLimit, attr :String = "abs:href", distinct: Boolean = true): RDD[ActionPlan] = self.flatMap{
     page => {
 
       val context = page.context
-      var results = page.attr(selector,attr,limit).map {
+      var links = page.attr(selector,attr,limit).filter(!_.isEmpty)
+      if (distinct == true) {
+        links = links.distinct
+      }
+
+      var results = links.map {
         str => new ActionPlan(context, Visit(str))
       }
       if (results.size==0) results = results.:+(new EmptyActionPlan(context))
@@ -148,21 +158,31 @@ class PageRDDFunctions(val self: RDD[Page]) {
     }
   }
 
-  private def wget(selector: String, limit: Int = Conf.fetchLimit, attr :String = "abs:href"): RDD[ActionPlan] = self.flatMap{
+  private def wget(selector: String, limit: Int = Conf.fetchLimit, attr :String = "abs:href", distinct: Boolean = true): RDD[ActionPlan] = self.flatMap{
     page => {
 
       val context = page.context
-      page.attr(selector,attr,limit).map {
+      var links = page.attr(selector,attr,limit).filter(!_.isEmpty)
+      if (distinct == true) {
+        links = links.distinct
+      }
+
+      links.map {
         str => new ActionPlan(context, Wget(str))
       }
     }
   }
 
-  private def leftWget(selector: String, limit: Int = Conf.fetchLimit, attr :String = "abs:href"): RDD[ActionPlan] = self.flatMap{
+  private def leftWget(selector: String, limit: Int = Conf.fetchLimit, attr :String = "abs:href", distinct: Boolean = true): RDD[ActionPlan] = self.flatMap{
     page => {
 
       val context = page.context
-      var results = page.attr(selector,attr,limit).map {
+      var links = page.attr(selector,attr,limit).filter(!_.isEmpty)
+      if (distinct == true) {
+        links = links.distinct
+      }
+
+      var results = links.map {
         str => new ActionPlan(context, Wget(str))
       }
       if (results.size==0) results = results.:+(new ActionPlan(context) + Wget(null))
