@@ -1,7 +1,8 @@
-package org.tribbloid.spookystuff.example
+package org.tribbloid.spookystuff.example.forum
 
 import org.tribbloid.spookystuff.SpookyContext._
 import org.tribbloid.spookystuff.entity._
+import org.tribbloid.spookystuff.example.SparkSubmittable
 
 /**
  * Created by peng on 18/06/14.

@@ -2,12 +2,12 @@ package org.tribbloid.spookystuff.example.largescale
 
 import org.tribbloid.spookystuff.SpookyContext._
 import org.tribbloid.spookystuff.entity._
-import org.tribbloid.spookystuff.example.{SparkRunnable, SparkSubmittable}
+import org.tribbloid.spookystuff.example.SparkSubmittable
 
 /**
  * Created by peng on 14/08/14.
  */
-object Macys extends SparkRunnable {
+object Macys extends SparkSubmittable {
 
   override def doMain(): Unit = {
     ((sc.parallelize(Seq("Dummy")) +>

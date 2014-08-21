@@ -24,9 +24,9 @@ import scala.collection.JavaConversions._
 //+ -
 //* / %
 //(all other special characters)
-class ActionPlan(val context: util.HashMap[String, Serializable] = null) extends Serializable {
+class ActionPlan(val context: util.LinkedHashMap[String, Serializable] = null) extends Serializable {
 
-  def this(context: util.HashMap[String, Serializable], as: Action*) = {
+  def this(context: util.LinkedHashMap[String, Serializable], as: Action*) = {
     this(context)
     this.+=(as)
   }
@@ -81,7 +81,7 @@ class ActionPlan(val context: util.HashMap[String, Serializable] = null) extends
   }
 }
 
-class EmptyActionPlan(context: util.HashMap[String, Serializable] = null) extends ActionPlan(context) {
+class EmptyActionPlan(context: util.LinkedHashMap[String, Serializable] = null) extends ActionPlan(context) {
 
   override def equals(a: Any): Boolean = a match {
     case a: EmptyActionPlan => {

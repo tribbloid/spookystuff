@@ -26,7 +26,7 @@ object SpookyContext {
   //these are the entry points of SpookyStuff starting from a common RDD of strings or maps
   implicit def stringRDDToActionPlanRDD(rdd: RDD[String]): RDD[ActionPlan] = rdd.map{
     str => {
-      val context = new util.HashMap[String,Serializable]
+      val context = new util.LinkedHashMap[String,Serializable]
       context.put("_", str.asInstanceOf[Serializable])
       new ActionPlan(context)
     }
@@ -38,7 +38,7 @@ object SpookyContext {
 
   implicit def mapRDDToActionPlanRDD[T <: util.Map[String,String]](rdd: RDD[T]) = rdd.map{
     map => {
-      new ActionPlan(new util.HashMap[String,Serializable](map))
+      new ActionPlan(new util.LinkedHashMap[String,Serializable](map))
     }
   }
 

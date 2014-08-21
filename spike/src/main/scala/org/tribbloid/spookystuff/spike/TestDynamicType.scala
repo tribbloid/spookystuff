@@ -1,7 +1,6 @@
 package org.tribbloid.spookystuff.spike
 
 import scala.language.dynamics
-import org.tribbloid.spookystuff.entity.Snapshot
 
 /**
 * Created by peng on 13/06/14.

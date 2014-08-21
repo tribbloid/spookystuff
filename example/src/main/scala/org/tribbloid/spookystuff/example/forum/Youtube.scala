@@ -1,4 +1,4 @@
-package org.tribbloid.spookystuff.example.largescale
+package org.tribbloid.spookystuff.example.forum
 
 import org.tribbloid.spookystuff.SpookyContext._
 import org.tribbloid.spookystuff.entity._

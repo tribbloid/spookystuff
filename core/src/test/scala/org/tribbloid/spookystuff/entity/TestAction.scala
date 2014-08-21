@@ -8,7 +8,7 @@ import java.util
  */
 class TestAction extends FunSuite {
 
-  test("formatNullString") {assert (ActionUtils.formatWithContext(null, new util.HashMap[String,String]()) === null)}
+  test("formatNullString") {assert (ActionUtils.formatWithContext(null, new util.LinkedHashMap[String,String]()) === null)}
 
-  test("formatEmptyString") {assert (ActionUtils.formatWithContext("", new util.HashMap[String,String]()) === "")}
+  test("formatEmptyString") {assert (ActionUtils.formatWithContext("", new util.LinkedHashMap[String,String]()) === "")}
 }

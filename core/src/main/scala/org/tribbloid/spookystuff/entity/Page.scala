@@ -31,7 +31,7 @@ case class Page(
                  val alias: String = null,
 
                  val backtrace: Array[Interactive] = new Array(0), //immutable, also the uid
-                 val context: util.HashMap[String, Serializable] = new util.HashMap, //Mutable! caused a lot of headache
+                 val context: util.LinkedHashMap[String, Serializable] = new util.LinkedHashMap, //Mutable! caused a lot of headache
                  val timestamp: Date = new Date,
                  val savePath: String = null
                  )
@@ -68,9 +68,9 @@ case class Page(
         elementWithIndex => {
           this.copy(
             resolvedUrl = this.resolvedUrl + "#" + elementWithIndex._2,
-            content = elementWithIndex._1.html().getBytes(parsedContentType.getCharset),
+            content = ("<table>"+elementWithIndex._1.html()+"</table>").getBytes(parsedContentType.getCharset),//otherwise tr and td won't be parsed
             alias = newAlias,
-            context = new util.HashMap(this.context)
+            context = new util.LinkedHashMap(this.context)
           )
         }
       }
@@ -232,8 +232,34 @@ case class Page(
     case _ => Seq[String]()
   }
 
-  def extractPropertiesAsMap(keyAndF: (String, Page => Serializable)*): util.HashMap[String, Serializable] = {
-    val result: util.HashMap[String, Serializable] = new util.HashMap()
+  def ownText1(selector: String): String = doc match {
+    case Some(doc: Element) => {
+      val element = doc.select(selector).first()
+      if (element == null) null
+      else element.ownText()
+    }
+
+    case _ => null
+  }
+
+  def ownText(selector: String, limit: Int = Conf.fetchLimit, distinct: Boolean = false): Seq[String] = doc match {
+    case Some(doc: Element) => {
+      val elements = doc.select(selector)
+      val length = Math.min(elements.size, limit)
+
+      val result = elements.subList(0, length).map {
+        _.ownText()
+      }
+
+      if (distinct == true) return result.distinct
+      else return result
+    }
+
+    case _ => Seq[String]()
+  }
+
+  def extractPropertiesAsMap(keyAndF: (String, Page => Serializable)*): util.LinkedHashMap[String, Serializable] = {
+    val result: util.LinkedHashMap[String, Serializable] = new util.LinkedHashMap()
 
     keyAndF.foreach {
       fEntity => {

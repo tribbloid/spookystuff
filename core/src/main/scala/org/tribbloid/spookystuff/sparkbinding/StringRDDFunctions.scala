@@ -9,7 +9,7 @@ import java.util
 class StringRDDFunctions(val self: RDD[String]) {
 
   //csv has to be headerless, there is no better solution as header will be shuffled to nowhere
-  def csvToMap(headerRow: String, splitter: String = ","): RDD[util.HashMap[String,String]] = {
+  def csvToMap(headerRow: String, splitter: String = ","): RDD[util.LinkedHashMap[String,String]] = {
     val headers = headerRow.split(splitter)
     val width = headers.length
 
@@ -17,7 +17,7 @@ class StringRDDFunctions(val self: RDD[String]) {
     self.map {
       str => {
         val values = str.split(splitter)
-        val row: util.HashMap[String,String] = new util.HashMap()
+        val row: util.LinkedHashMap[String,String] = new util.LinkedHashMap()
 
         for (i <- 0 to width-1)
         {

@@ -94,7 +94,7 @@ class ActionPlanRDDFunctions(val self: RDD[ActionPlan]) {
       ap =>{
         var pages = PageBuilder.resolve(ap.actions: _*)(hConfWrapper.value.value)
         //has to use deep copy, one to many mapping and context may be modified later
-        pages = pages.map { _.copy(context = new util.HashMap(ap.context)) }
+        pages = pages.map { _.copy(context = new util.LinkedHashMap(ap.context)) }
         pages
       }
     }
@@ -117,7 +117,7 @@ class ActionPlanRDDFunctions(val self: RDD[ActionPlan]) {
 
     return squashedPageRDD.flatMap {
       tuple => tuple._2.map {
-        cc => tuple._1.copy(context = new util.HashMap(cc))
+        cc => tuple._1.copy(context = new util.LinkedHashMap(cc))
       }
     }
   }

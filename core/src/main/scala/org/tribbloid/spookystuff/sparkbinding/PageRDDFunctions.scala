@@ -52,7 +52,7 @@ class PageRDDFunctions(val self: RDD[Page]) {
       val map = page.extractPropertiesAsMap(keyAndF: _*)
 
       //always replace old key-value pairs with new ones, old ones are flushed out
-      val newContext = new util.HashMap[String,Serializable](page.context)
+      val newContext = new util.LinkedHashMap[String,Serializable](page.context)
       newContext.putAll(map)
 
       page.copy(context = newContext)

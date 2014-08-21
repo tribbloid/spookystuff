@@ -12,7 +12,7 @@ trait SparkRunnable {
 
   final def main(args: Array[String]) {
     conf = new SparkConf().setAppName(this.getClass.getName)
-    conf.setMaster("local[8,3]")
+    conf.setMaster("local[8,2]")
     conf.setSparkHome(System.getenv("SPARK_HOME"))
 
     sc = new SparkContext(conf)
