@@ -53,6 +53,80 @@ case class Page(
 
   def isExpired = (new Date().getTime - timestamp.getTime > Const.pageExpireAfter*1000)
 
+  def getFilePath(fileName: String = "#{resolved-url}", dir: String = Const.savePagePath): String ={
+    var formattedFileName = ActionUtils.formatWithContext(fileName, this.context)
+
+    formattedFileName = formattedFileName.replace("#{resolved-url}", this.resolvedUrl)
+    formattedFileName = formattedFileName.replace("#{timestamp}", DateFormat.getInstance.format(this.timestamp))
+
+    //sanitizing filename can save me a lot of trouble
+    formattedFileName = formattedFileName.replaceAll("[:\\\\/*?|<>_]+", ".")
+    if (formattedFileName.length>200) formattedFileName = formattedFileName.substring(0,200) //max fileName length is 256
+
+    var formattedDir = dir
+    if (!formattedDir.endsWith("/")) formattedDir = dir+"/"
+    val dirPath = new Path(formattedDir)
+    return new Path(dirPath, formattedFileName).toString
+  }
+
+  //this will lose information as charset encoding will be different
+  def save(fileName: String = "#{resolved-url}", dir: String = Const.savePagePath, overwrite: Boolean = false)(hConf: Configuration): String = {
+
+    //    val path = new Path(dir)
+
+    //TODO: slow to check if the dir exist
+    //    val fs = path.getFileSystem(hConf)
+    //    if (!fs.isDirectory(path)) {
+    //      if (!fs.mkdirs(path)) {
+    //        throw new SparkException("Failed to create save path " + path) //TODO: Still SparkException?
+    //      }
+    //    }
+
+    val fullPathString = getFilePath(fileName, dir)
+    var fullPath = new Path(fullPathString)
+
+    val fs = fullPath.getFileSystem(hConf)
+
+    if (overwrite==false && fs.exists(fullPath)) {
+      fullPath = new Path(fullPathString +"_"+ UUID.randomUUID())
+    }
+    val fos = fs.create(fullPath, overwrite) //don't overwrite important file
+
+    //    val writer = new BufferedWriter(new OutputStreamWriter(fileOutputStream,"UTF-8")) //why using two buffers
+
+    IOUtils.write(content,fos)
+    fos.close()
+
+    return fullPath.getName
+  }
+
+  def saveLocal(fileName: String = "#{resolved-url}", dir: String = Const.localSavePagePath, overwrite: Boolean = false): String = {
+
+    val path: File = new File(dir)
+    if (!path.isDirectory) path.mkdirs()
+
+    val fullPathString = getFilePath(fileName, dir)
+
+    var file: File = new File(fullPathString)
+
+    if (overwrite==false && file.exists()) {
+      file = new File(fullPathString +"_"+ UUID.randomUUID())
+    }
+
+    file.createNewFile();
+
+    val fos = new FileOutputStream(file)
+
+    IOUtils.write(content,fos)
+    fos.close()
+
+    return file.getAbsolutePath
+  }
+
+  def asJson(): String = {
+    jsonMapper.writeValueAsString(this.context)
+  }
+
   //only slice contents inside the container, other parts are discarded
   //this will generate doc from scratch but otherwise induces heavy load on serialization
   def slice(
@@ -279,76 +353,6 @@ case class Page(
       }
     }
     result
-  }
-
-  def getFilePath(fileName: String = "#{resolved-url}", dir: String = Const.savePagePath): String ={
-    var formattedFileName = ActionUtils.formatWithContext(fileName, this.context)
-
-    formattedFileName = formattedFileName.replace("#{resolved-url}", this.resolvedUrl)
-    formattedFileName = formattedFileName.replace("#{timestamp}", DateFormat.getInstance.format(this.timestamp))
-
-    //sanitizing filename can save me a lot of trouble
-    formattedFileName = formattedFileName.replaceAll("[:\\\\/*?|<>_]+", ".")
-    if (formattedFileName.length>200) formattedFileName = formattedFileName.substring(0,200) //max fileName length is 256
-
-    var formattedDir = dir
-    if (!formattedDir.endsWith("/")) formattedDir = dir+"/"
-    val dirPath = new Path(formattedDir)
-    return new Path(dirPath, formattedFileName).toString
-  }
-
-  //this will lose information as charset encoding will be different
-  def save(fileName: String = "#{resolved-url}", dir: String = Const.savePagePath, overwrite: Boolean = false)(hConf: Configuration): String = {
-
-    //    val path = new Path(dir)
-
-    //TODO: slow to check if the dir exist
-    //    val fs = path.getFileSystem(hConf)
-    //    if (!fs.isDirectory(path)) {
-    //      if (!fs.mkdirs(path)) {
-    //        throw new SparkException("Failed to create save path " + path) //TODO: Still SparkException?
-    //      }
-    //    }
-
-    val fullPathString = getFilePath(fileName, dir)
-    var fullPath = new Path(fullPathString)
-
-    val fs = fullPath.getFileSystem(hConf)
-
-    if (overwrite==false && fs.exists(fullPath)) {
-      fullPath = new Path(fullPathString +"_"+ UUID.randomUUID())
-    }
-    val fos = fs.create(fullPath, overwrite) //don't overwrite important file
-
-    //    val writer = new BufferedWriter(new OutputStreamWriter(fileOutputStream,"UTF-8")) //why using two buffers
-
-    IOUtils.write(content,fos)
-    fos.close()
-
-    return fullPath.getName
-  }
-
-  def saveLocal(fileName: String = "#{resolved-url}", dir: String = Const.localSavePagePath, overwrite: Boolean = false): String = {
-
-    val path: File = new File(dir)
-    if (!path.isDirectory) path.mkdirs()
-
-    val fullPathString = getFilePath(fileName, dir)
-
-    var file: File = new File(fullPathString)
-
-    if (overwrite==false && file.exists()) {
-      file = new File(fullPathString +"_"+ UUID.randomUUID())
-    }
-
-    file.createNewFile();
-
-    val fos = new FileOutputStream(file)
-
-    IOUtils.write(content,fos)
-    fos.close()
-
-    return file.getAbsolutePath
   }
 }
 

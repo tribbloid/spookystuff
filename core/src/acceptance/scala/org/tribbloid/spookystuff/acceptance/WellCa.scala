@@ -7,7 +7,7 @@ import org.apache.spark.SparkContext._
 /**
  * This job will find and printout urls of Sanjay Gupta, Arun Gupta and Hardik Gupta in your area
  */
-object WellCa extends AcceptanceTestCore {
+object WellCa extends SparkTestCore {
 
   def doMain() = {
 

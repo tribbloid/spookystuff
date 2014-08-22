@@ -1,12 +1,13 @@
-package org.tribbloid.spookystuff.acceptance
+package org.tribbloid.spookystuff.acceptance.forum
 
 import org.tribbloid.spookystuff.SpookyContext._
+import org.tribbloid.spookystuff.acceptance.SparkTestCore
 import org.tribbloid.spookystuff.entity._
 
 /**
  * Created by peng on 04/07/14.
  */
-object Youtube extends AcceptanceTestCore{
+object Youtube extends SparkTestCore{
 
   override def doMain() = {
     (((sc.parallelize(Seq("MetallicaTV")) +>

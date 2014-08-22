@@ -7,7 +7,7 @@ import org.tribbloid.spookystuff.entity._
 * A more complex linkedIn job that finds name and printout skills of all Sanjay Gupta in your local area
 */
 //remember infix operator cannot be written in new line
-object LinkedIn extends AcceptanceTestCore {
+object LinkedIn extends SparkTestCore {
 
   def doMain() = {
 

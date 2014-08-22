@@ -1,12 +1,13 @@
-package org.tribbloid.spookystuff.acceptance
+package org.tribbloid.spookystuff.acceptance.forum
 
 import org.tribbloid.spookystuff.SpookyContext._
+import org.tribbloid.spookystuff.acceptance.SparkTestCore
 import org.tribbloid.spookystuff.entity._
 
 /**
  * Created by peng on 18/06/14.
  */
-object ResellerRatings extends AcceptanceTestCore {
+object ResellerRatings extends SparkTestCore {
 
   def doMain() = {
 

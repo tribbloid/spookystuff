@@ -7,7 +7,7 @@ import org.tribbloid.spookystuff.entity._
 /**
  * Created by peng on 07/06/14.
  */
-object AppliancePartsPros extends FreeSpec with AcceptanceTestCore {
+object AppliancePartsPros extends SparkTestCore {
 
   override def doMain() = {
     (sc.parallelize(Seq("A210S")) +>
@@ -31,11 +31,5 @@ object AppliancePartsPros extends FreeSpec with AcceptanceTestCore {
           page.text1("div.m-pdct div.m-chm p")
           )
       ).collect()
-  }
-
-  "Query" - {
-    "should print our result" in {
-      result.foreach(println(_))
-    }
   }
 }

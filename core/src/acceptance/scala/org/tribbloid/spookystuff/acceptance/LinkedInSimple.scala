@@ -6,7 +6,7 @@ import org.tribbloid.spookystuff.entity._
 /**
  * This job will find and printout urls of Sanjay Gupta, Arun Gupta and Hardik Gupta in your area
  */
-object LinkedInSimple extends AcceptanceTestCore {
+object LinkedInSimple extends SparkTestCore {
 
   def doMain() = {
 

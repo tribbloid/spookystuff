@@ -1,14 +1,14 @@
-package org.tribbloid.spookystuff.example.forum
+package org.tribbloid.spookystuff.acceptance.forum
 
 import org.tribbloid.spookystuff.SpookyContext._
+import org.tribbloid.spookystuff.acceptance.SparkTestCore
 import org.tribbloid.spookystuff.entity._
-import org.tribbloid.spookystuff.example.SparkSubmittable
 
 /**
  * Created by peng on 20/08/14.
  */
-object RottenTomatoes extends SparkSubmittable {
-  override def doMain(): Unit = {
+object RottenTomatoes extends SparkTestCore {
+  override def doMain(): Array[_] = {
     (sc.parallelize(Seq("Dummy")) +>
       Wget("http://www.rottentomatoes.com/") !==)
       .wgetJoin("table.top_box_office tr.sidebarInTheaterTopBoxOffice a", indexKey = "rank")
@@ -32,6 +32,6 @@ object RottenTomatoes extends SparkSubmittable {
         "total_reviews_ratings" -> (_.text("div.media_block div.clearfix dd").toString())
       )
       .asJsonRDD()
-      .saveAsTextFile("file:///home/peng/spookystuff/rottentomatoes/result")
+      .collect()
   }
 }

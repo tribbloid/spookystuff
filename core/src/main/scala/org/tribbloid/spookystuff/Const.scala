@@ -37,6 +37,4 @@ final object Const {
   val driverCallTimeout = 60
 
   val localRetry = 3
-
-  val objectMapper = new ObjectMapper()
 }

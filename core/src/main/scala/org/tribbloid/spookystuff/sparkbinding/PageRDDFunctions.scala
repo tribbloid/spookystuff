@@ -1,14 +1,14 @@
 package org.tribbloid.spookystuff.sparkbinding
 
 import java.io.Serializable
+import java.util
 
 import org.apache.spark.SerializableWritable
 import org.apache.spark.rdd.RDD
 import org.tribbloid.spookystuff.Const
-import org.tribbloid.spookystuff.entity._
-import java.util
-
 import org.tribbloid.spookystuff.SpookyContext._
+import org.tribbloid.spookystuff.entity._
+import scala.collection.JavaConversions._
 import org.tribbloid.spookystuff.factory.PageBuilder
 
 import scala.collection.mutable.ArrayBuffer
@@ -71,6 +71,14 @@ class PageRDDFunctions(val self: RDD[Page]) {
       val map = page.extractPropertiesAsMap(keyAndF: _*)
       page.copy(context = map)
     }
+  }
+
+  def asJsonRDD(): RDD[String] = self.map {
+    _.asJson()
+  }
+
+  def asTsvRDD(): RDD[String] = self.map {
+    _.context.values().mkString("\t")
   }
 
   /**

@@ -4,7 +4,7 @@ import org.tribbloid.spookystuff.SpookyContext._
 import org.tribbloid.spookystuff.entity._
 import org.apache.spark.SparkContext._
 
-object Dealmoon extends AcceptanceTestCore {
+object Dealmoon extends SparkTestCore {
 
   def doMain() = {
 

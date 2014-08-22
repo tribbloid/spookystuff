@@ -1,17 +1,15 @@
-package org.tribbloid.spookystuff.example.forum
+package org.tribbloid.spookystuff.acceptance.forum
 
 import org.tribbloid.spookystuff.SpookyContext._
+import org.tribbloid.spookystuff.acceptance.SparkTestCore
 import org.tribbloid.spookystuff.entity._
-import org.tribbloid.spookystuff.example.SparkSubmittable
-
-import scala.collection.JavaConversions._
 
 /**
  * Created by peng on 20/08/14.
  */
-object Imdb extends SparkSubmittable {
+object Imdb extends SparkTestCore {
 
-  override def doMain(): Unit = {
+  override def doMain(): Array[_] = {
 
     (sc.parallelize(Seq("Dummy")) +>
       Wget("http://www.imdb.com/chart") !==)
@@ -48,18 +46,7 @@ object Imdb extends SparkSubmittable {
         "user_review_count" -> (_.text1("div.reviews div.see-more")),
         "user_rating_histogram" -> (_.attr("div.overall div.histogram-horizontal a","title").toString())
       )
-
-      .map(_.context.values().mkString("\t"))
-      .saveAsTextFile("file:///home/peng/spookystuff/imdb/result")
-
-//      .wgetInsertPagination(
-//        "div#survey-header ul.pagination a:contains(next)"
-//      ).joinBySlice("div.review").map{ page =>
-//      (page.context.get("_"), //just check if it is preserved
-//        page.text1("div.rating strong"),
-//        page.text1("div.date span"),
-//        page.text1("p.review-body")
-//        ).productIterator.toList.mkString("\t")
-//    }.collect.foreach(println(_))
+      .asJsonRDD()
+      .collect()
   }
 }

@@ -14,11 +14,6 @@
 
     <dependencies>
         <dependency>
-            <groupId>org.apache.spark</groupId>
-            <artifactId>spark-sql_2.10</artifactId>
-            <version>1.0.0</version>
-        </dependency>
-        <dependency>
             <groupId>org.tribbloid.spookystuff</groupId>
             <artifactId>spookystuff-core</artifactId>
             <version>${project.version}</version>
