@@ -87,7 +87,7 @@ class ActionPlanRDDFunctions(val self: RDD[ActionPlan]) {
    * each ActionPlan may yield several pages in a row, depending on the number of Export(s) in it
    * @return RDD[Page] as results of execution
    */
-  def !(): RDD[Page] = {
+  def !==(): RDD[Page] = {
     val hConfWrapper = self.context.broadcast(new SerializableWritable(self.context.hadoopConfiguration))
 
     self.flatMap {

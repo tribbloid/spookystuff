@@ -13,7 +13,7 @@ object AppliancePartsPros extends SparkSubmittable {
       Visit("http://www.appliancepartspros.com/") +>
       TextInput("input.ac-input","#{_}") +>
       Click("input[value=\"Search\"]") +>
-      Delay(10) ! //TODO: change to DelayFor to save time
+      Delay(10) !== //TODO: change to DelayFor to save time
       ).selectInto(
         "model" -> { _.text1("div.dgrm-lst div.header h2") }
       ).wgetJoin("div.inner li a:has(img)")

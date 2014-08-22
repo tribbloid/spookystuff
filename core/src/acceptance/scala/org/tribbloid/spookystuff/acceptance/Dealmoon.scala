@@ -9,7 +9,7 @@ object Dealmoon extends AcceptanceTestCore {
   def doMain() = {
 
     (sc.parallelize(Seq("Dummy")) +>
-      Wget("http://www.dealmoon.com/Online-Stores/Amazon-com?expired=n")!).wgetInsertPagination(
+      Wget("http://www.dealmoon.com/Online-Stores/Amazon-com?expired=n")!==).wgetInsertPagination(
         "a.next_link"
       ).map{
       page =>

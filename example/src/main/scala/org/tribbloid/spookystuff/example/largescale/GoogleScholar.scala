@@ -16,7 +16,7 @@ object GoogleScholar extends SparkSubmittable {
       DelayFor("form[role=search]",50) +>
       TextInput("input[name=\"q\"]","#{_}") +>
       Submit("button#gs_hp_tsb") +>
-      DelayFor("div[role=main]",50) !).selectInto(
+      DelayFor("div[role=main]",50) !==).selectInto(
         "title" -> (_.text1("div.gs_r h3.gs_rt a")),
         "citation" -> (_.text1("div.gs_r div.gs_ri div.gs_fl a:contains(Cited)"))
       ).leftJoin(

@@ -6,7 +6,7 @@ import java.util.Date
 import org.apache.hadoop.conf.Configuration
 import org.openqa.selenium.Capabilities
 import org.openqa.selenium.remote.server.DriverFactory
-import org.tribbloid.spookystuff.Conf
+import org.tribbloid.spookystuff.Const
 import org.tribbloid.spookystuff.entity._
 
 import scala.collection.mutable.ArrayBuffer
@@ -65,7 +65,7 @@ object PageBuilder {
 
 class PageBuilder(
                    val hConf: Configuration,
-                   val driverFactory: DriverFactory = Conf.defaultDriverFactory,
+                   val driverFactory: DriverFactory = Const.defaultDriverFactory,
                    val caps: Capabilities = null
                    ) {
 

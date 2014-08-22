@@ -13,7 +13,7 @@ object Imdb extends SparkRunnable {
   override def doMain(): Unit = {
 
     (sc.parallelize(Seq("Dummy")) +>
-      Wget("http://www.imdb.com/chart") !)
+      Wget("http://www.imdb.com/chart") !==)
       .joinBySlice("div#boxoffice tbody tr")
       .select(
         "rank" -> (_.ownText1("tr td.titleColumn").replaceAll("\"","").trim),

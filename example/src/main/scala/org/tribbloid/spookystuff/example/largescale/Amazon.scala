@@ -12,7 +12,7 @@ object Amazon extends SparkSubmittable {
       Visit("http://www.amazon.com/") +>
       TextInput("input#twotabsearchtextbox", "#{item}") +>
       Submit("input.nav-submit-input") +>
-      DelayFor("div#resultsCol",50) !).saveAs(
+      DelayFor("div#resultsCol",50) !==).saveAs(
         dir = "s3n://spookystuff/amazonsearch", overwrite = true
       ).selectInto(
         "DidYouMean" -> {_.text1("div#didYouMean a") },

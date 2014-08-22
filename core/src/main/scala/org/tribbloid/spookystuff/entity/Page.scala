@@ -11,7 +11,7 @@ import org.apache.hadoop.fs.Path
 import org.apache.http.entity.ContentType
 import org.jsoup.Jsoup
 import org.jsoup.nodes.Element
-import org.tribbloid.spookystuff.Conf
+import org.tribbloid.spookystuff.Const
 
 import scala.collection.JavaConversions._
 
@@ -39,7 +39,7 @@ case class Page(
 
   @transient lazy val parsedContentType: ContentType = {
     var result = ContentType.parse(this.contentType)
-    if (result.getCharset == null) result = result.withCharset(Conf.defaultCharset)
+    if (result.getCharset == null) result = result.withCharset(Const.defaultCharset)
     result
   }
   @transient lazy val contentStr: String = new String(this.content,this.parsedContentType.getCharset)
@@ -51,11 +51,16 @@ case class Page(
     None
   }
 
-  def isExpired = (new Date().getTime - timestamp.getTime > Conf.pageExpireAfter*1000)
+  def isExpired = (new Date().getTime - timestamp.getTime > Const.pageExpireAfter*1000)
 
   //only slice contents inside the container, other parts are discarded
   //this will generate doc from scratch but otherwise induces heavy load on serialization
-  def slice(selector: String, alias: String = null, limit: Int = Conf.fetchLimit): Seq[Page] = doc match {
+  def slice(
+             selector: String,
+             alias: String = null,
+             limit: Int = Const.fetchLimit,
+             indexKey: String = null
+             ): Seq[Page] = doc match {
 
     case Some(doc: Element) => {
       val elements = doc.select(selector)
@@ -65,12 +70,18 @@ case class Page(
       if (alias != null) newAlias = alias
 
       return elements.subList(0, length).zipWithIndex.map {
-        elementWithIndex => {
+        tuple => {
+          val context = new util.LinkedHashMap[String,Serializable](this.context)
+
+          if (indexKey!=null) {
+            context.put(indexKey, tuple._2)
+          }
+
           this.copy(
-            resolvedUrl = this.resolvedUrl + "#" + elementWithIndex._2,
-            content = ("<table>"+elementWithIndex._1.html()+"</table>").getBytes(parsedContentType.getCharset),//otherwise tr and td won't be parsed
+            resolvedUrl = this.resolvedUrl + "#" + tuple._2,
+            content = ("<table>"+tuple._1.html()+"</table>").getBytes(parsedContentType.getCharset),//otherwise tr and td won't be parsed
             alias = newAlias,
-            context = new util.LinkedHashMap(this.context)
+            context = context
           )
         }
       }
@@ -127,7 +138,7 @@ case class Page(
    * @param distinct whether to remove duplicate values
    * @return values of the attributes as a sequence of strings
    */
-  def attr(selector: String, attr: String, limit: Int = Conf.fetchLimit, distinct: Boolean = false): Seq[String] = doc match {
+  def attr(selector: String, attr: String, limit: Int = Const.fetchLimit, distinct: Boolean = false): Seq[String] = doc match {
     case Some(doc: Element) => {
 
       val elements = doc.select(selector)
@@ -163,7 +174,7 @@ case class Page(
    * @param distinct whether to remove duplicate values
    * @return values of the attributes as a sequence of strings
    */
-  def href(selector: String, limit: Int = Conf.fetchLimit, absolute: Boolean = true, distinct: Boolean = false): Seq[String] = {
+  def href(selector: String, limit: Int = Const.fetchLimit, absolute: Boolean = true, distinct: Boolean = false): Seq[String] = {
     if (absolute == true) attr(selector,"abs:href",limit,distinct)
     else attr(selector,"href",limit,distinct)
   }
@@ -187,7 +198,7 @@ case class Page(
    * @param distinct whether to remove duplicate values
    * @return values of the attributes as a sequence of strings
    */
-  def src(selector: String, limit: Int = Conf.fetchLimit, absolute: Boolean = true, distinct: Boolean = false): Seq[String] = {
+  def src(selector: String, limit: Int = Const.fetchLimit, absolute: Boolean = true, distinct: Boolean = false): Seq[String] = {
     if (absolute == true) attr(selector,"abs:src",limit,distinct)
     else attr(selector,"src",limit,distinct)
   }
@@ -210,13 +221,13 @@ case class Page(
   }
 
   /** Return an array of texts enclosed by their respective elements
-   * return [] if selector has no match
-   * @param selector css selector of all elements,
-   * @param limit only the first n elements will be used
-   * @param distinct whether to remove duplicate values
-   * @return enclosed text as a sequence of strings
-   */
-  def text(selector: String, limit: Int = Conf.fetchLimit, distinct: Boolean = false): Seq[String] = doc match {
+    * return [] if selector has no match
+    * @param selector css selector of all elements,
+    * @param limit only the first n elements will be used
+    * @param distinct whether to remove duplicate values
+    * @return enclosed text as a sequence of strings
+    */
+  def text(selector: String, limit: Int = Const.fetchLimit, distinct: Boolean = false): Seq[String] = doc match {
     case Some(doc: Element) => {
       val elements = doc.select(selector)
       val length = Math.min(elements.size, limit)
@@ -242,7 +253,7 @@ case class Page(
     case _ => null
   }
 
-  def ownText(selector: String, limit: Int = Conf.fetchLimit, distinct: Boolean = false): Seq[String] = doc match {
+  def ownText(selector: String, limit: Int = Const.fetchLimit, distinct: Boolean = false): Seq[String] = doc match {
     case Some(doc: Element) => {
       val elements = doc.select(selector)
       val length = Math.min(elements.size, limit)
@@ -270,7 +281,7 @@ case class Page(
     result
   }
 
-  def getFilePath(fileName: String = "#{resolved-url}", dir: String = Conf.savePagePath): String ={
+  def getFilePath(fileName: String = "#{resolved-url}", dir: String = Const.savePagePath): String ={
     var formattedFileName = ActionUtils.formatWithContext(fileName, this.context)
 
     formattedFileName = formattedFileName.replace("#{resolved-url}", this.resolvedUrl)
@@ -287,7 +298,7 @@ case class Page(
   }
 
   //this will lose information as charset encoding will be different
-  def save(fileName: String = "#{resolved-url}", dir: String = Conf.savePagePath, overwrite: Boolean = false)(hConf: Configuration): String = {
+  def save(fileName: String = "#{resolved-url}", dir: String = Const.savePagePath, overwrite: Boolean = false)(hConf: Configuration): String = {
 
     //    val path = new Path(dir)
 
@@ -317,7 +328,7 @@ case class Page(
     return fullPath.getName
   }
 
-  def saveLocal(fileName: String = "#{resolved-url}", dir: String = Conf.localSavePagePath, overwrite: Boolean = false): String = {
+  def saveLocal(fileName: String = "#{resolved-url}", dir: String = Const.localSavePagePath, overwrite: Boolean = false): String = {
 
     val path: File = new File(dir)
     if (!path.isDirectory) path.mkdirs()

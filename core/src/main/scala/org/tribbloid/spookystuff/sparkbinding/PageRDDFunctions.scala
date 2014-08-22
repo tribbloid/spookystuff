@@ -4,7 +4,7 @@ import java.io.Serializable
 
 import org.apache.spark.SerializableWritable
 import org.apache.spark.rdd.RDD
-import org.tribbloid.spookystuff.Conf
+import org.tribbloid.spookystuff.Const
 import org.tribbloid.spookystuff.entity._
 import java.util
 
@@ -42,8 +42,8 @@ class PageRDDFunctions(val self: RDD[Page]) {
   //TODO: this is the most abominable interface so far, will gradually evolve to resemble Spark SQL's select
   /**
    * extract parts of each Page and insert into their respective context
-   * if a key already exist in old context it will be replaced with the new one.
-   * @param keyAndF a key-function map, each element is used to generate a key-value map using the Page itself
+   * if a indexKey already exist in old context it will be replaced with the new one.
+   * @param keyAndF a indexKey-function map, each element is used to generate a indexKey-value map using the Page itself
    * @return new RDD[Page]
    */
   def selectInto(keyAndF: (String, Page => Serializable)*): RDD[Page] = self.map {
@@ -51,7 +51,7 @@ class PageRDDFunctions(val self: RDD[Page]) {
     page => {
       val map = page.extractPropertiesAsMap(keyAndF: _*)
 
-      //always replace old key-value pairs with new ones, old ones are flushed out
+      //always replace old indexKey-value pairs with new ones, old ones are flushed out
       val newContext = new util.LinkedHashMap[String,Serializable](page.context)
       newContext.putAll(map)
 
@@ -84,7 +84,7 @@ class PageRDDFunctions(val self: RDD[Page]) {
    *                  false: append an unique suffix to the new file name
    * @return the same RDD[Page] with file paths carried as metadata
    */
-  def saveAs(fileName: String = "#{resolved-url}", dir: String = Conf.savePagePath, overwrite: Boolean = false): RDD[Page] = self.map {
+  def saveAs(fileName: String = "#{resolved-url}", dir: String = Const.savePagePath, overwrite: Boolean = false): RDD[Page] = self.map {
     val hConfWrapper = self.context.broadcast(new SerializableWritable(self.context.hadoopConfiguration))
 
     page => {
@@ -104,7 +104,7 @@ class PageRDDFunctions(val self: RDD[Page]) {
    *                  false: append an unique suffix to the new file name
    * @return an array of file paths
    */
-  def dump(fileName: String = "#{resolved-url}", dir: String = Conf.savePagePath, overwrite: Boolean = false): Array[String] = {
+  def dump(fileName: String = "#{resolved-url}", dir: String = Const.savePagePath, overwrite: Boolean = false): Array[String] = {
     val hConfWrapper = self.context.broadcast(new SerializableWritable(self.context.hadoopConfiguration))
 
     self.map(page => page.save(fileName, dir, overwrite)(hConfWrapper.value.value)).collect()
@@ -115,21 +115,32 @@ class PageRDDFunctions(val self: RDD[Page]) {
    * all context of Pages will be persisted to the resulted ActionPlans
    * pages that doesn't contain the link will be ignored
    * @param selector css selector of page elements with a crawlable link
-   * @param limit only the first n links will be used, default to Conf.fetchLimit
+   * @param limit only the first n links will be used, default to Const.fetchLimit
    * @param attr attribute of the element that denotes the link target, default to absolute href
    * @return RDD[ActionPlan]
    */
-  def visit(selector: String, limit: Int = Conf.fetchLimit, attr :String = "abs:href", distinct: Boolean = true): RDD[ActionPlan] = self.flatMap{
+  def visit(
+             selector: String,
+             limit: Int = Const.fetchLimit,
+             attr :String = "abs:href",
+             indexKey: String = null,
+             distinct: Boolean = true
+             ): RDD[ActionPlan] = self.flatMap{
     page => {
 
-      val context = page.context
-      var links = page.attr(selector,attr,limit).filter(!_.isEmpty)
-      if (distinct == true) {
-        links = links.distinct
-      }
+      val links = page.attr(selector,attr,limit,distinct).filter(!_.isEmpty)
 
-      links.map {
-        str => new ActionPlan(context, Visit(str))
+      links.zipWithIndex.map {
+
+        tuple => {
+          val context = new util.LinkedHashMap[String,Serializable](page.context)
+
+          if (indexKey!=null) {
+            context.put(indexKey, tuple._2)
+          }
+
+          new ActionPlan(context, Visit(tuple._1))
+        }
       }
     }
   }
@@ -137,55 +148,86 @@ class PageRDDFunctions(val self: RDD[Page]) {
   /**
    * same as visit, but pages that doesn't contain the link will yield an EmptyActionPlan
    * @param selector css selector of page elements with a crawlable link
-   * @param limit only the first n links will be used, default to Conf.fetchLimit
+   * @param limit only the first n links will be used, default to Const.fetchLimit
    * @param attr attribute of the element that denotes the link target, default to absolute href
    * @return RDD[ActionPlan]
    */
-  def leftVisit(selector: String, limit: Int = Conf.fetchLimit, attr :String = "abs:href", distinct: Boolean = true): RDD[ActionPlan] = self.flatMap{
+  def leftVisit(
+                 selector: String,
+                 limit: Int = Const.fetchLimit,
+                 attr :String = "abs:href",
+                 indexKey: String = null,
+                 distinct: Boolean = true
+                 ): RDD[ActionPlan] = self.flatMap{
     page => {
 
-      val context = page.context
-      var links = page.attr(selector,attr,limit).filter(!_.isEmpty)
-      if (distinct == true) {
-        links = links.distinct
+      val links = page.attr(selector,attr,limit,distinct).filter(!_.isEmpty)
+
+      var results = links.zipWithIndex.map {
+        tuple => {
+          val context = new util.LinkedHashMap[String,Serializable](page.context)
+
+          if (indexKey!=null) {
+            context.put(indexKey, tuple._2)
+          }
+
+          new ActionPlan(context, Visit(tuple._1))
+        }
       }
 
-      var results = links.map {
-        str => new ActionPlan(context, Visit(str))
-      }
-      if (results.size==0) results = results.:+(new EmptyActionPlan(context))
+      if (results.size==0) results = results.:+(new EmptyActionPlan(page.context))
       results
     }
   }
 
-  private def wget(selector: String, limit: Int = Conf.fetchLimit, attr :String = "abs:href", distinct: Boolean = true): RDD[ActionPlan] = self.flatMap{
+  private def wget(
+                    selector: String,
+                    limit: Int = Const.fetchLimit,
+                    attr :String = "abs:href",
+                    indexKey: String = null,
+                    distinct: Boolean = true
+                    ): RDD[ActionPlan] = self.flatMap{
     page => {
 
-      val context = page.context
-      var links = page.attr(selector,attr,limit).filter(!_.isEmpty)
-      if (distinct == true) {
-        links = links.distinct
-      }
+      val links = page.attr(selector,attr,limit, distinct).filter(!_.isEmpty)
 
-      links.map {
-        str => new ActionPlan(context, Wget(str))
+      links.zipWithIndex.map {
+        tuple => {
+          val context = new util.LinkedHashMap[String,Serializable](page.context)
+
+          if (indexKey!=null) {
+            context.put(indexKey, tuple._2)
+          }
+
+          new ActionPlan(context, Wget(tuple._1))
+        }
       }
     }
   }
 
-  private def leftWget(selector: String, limit: Int = Conf.fetchLimit, attr :String = "abs:href", distinct: Boolean = true): RDD[ActionPlan] = self.flatMap{
+  private def leftWget(
+                        selector: String,
+                        limit: Int = Const.fetchLimit,
+                        attr :String = "abs:href",
+                        indexKey: String = null,
+                        distinct: Boolean = true
+                        ): RDD[ActionPlan] = self.flatMap{
     page => {
 
-      val context = page.context
-      var links = page.attr(selector,attr,limit).filter(!_.isEmpty)
-      if (distinct == true) {
-        links = links.distinct
-      }
+      val links = page.attr(selector,attr,limit,distinct).filter(!_.isEmpty)
 
-      var results = links.map {
-        str => new ActionPlan(context, Wget(str))
+      var results = links.zipWithIndex.map {
+        tuple => {
+          val context = new util.LinkedHashMap[String,Serializable](page.context)
+
+          if (indexKey!=null) {
+            context.put(indexKey, tuple._2)
+          }
+
+          new ActionPlan(context, Wget(tuple._1))
+        }
       }
-      if (results.size==0) results = results.:+(new ActionPlan(context) + Wget(null))
+      if (results.size==0) results = results.:+(new ActionPlan(page.context) + Wget(null))
       results
     }
   }
@@ -194,66 +236,96 @@ class PageRDDFunctions(val self: RDD[Page]) {
    * results in a new set of Pages by crawling links on old pages
    * old pages that doesn't contain the link will be ignored
    * @param selector css selector of page elements with a crawlable link
-   * @param limit only the first n links will be used, default to Conf.fetchLimit
+   * @param limit only the first n links will be used, default to Const.fetchLimit
    * @param attr attribute of the element that denotes the link target, default to absolute href
    * @return RDD[Page]
    */
-  def join(selector: String, limit: Int = Conf.fetchLimit, attr :String = "abs:href"): RDD[Page] =
-    this.visit(selector, limit, attr) !><
+  def join(
+            selector: String,
+            limit: Int = Const.fetchLimit,
+            attr :String = "abs:href",
+            indexKey: String = null
+            ): RDD[Page] =
+    this.visit(selector, limit, attr, indexKey) !><
 
   /**
    * same as join, but avoid launching a browser by using direct http GET (wget) to download new pages
    * much faster and less stressful to both crawling and target server(s)
    * @param selector css selector of page elements with a crawlable link
-   * @param limit only the first n links will be used, default to Conf.fetchLimit
+   * @param limit only the first n links will be used, default to Const.fetchLimit
    * @param attr attribute of the element that denotes the link target, default to absolute href
    * @return RDD[Page]
    */
-  def wgetJoin(selector: String, limit: Int = Conf.fetchLimit, attr :String = "abs:href"): RDD[Page] =
-    this.wget(selector, limit, attr) !><
+  def wgetJoin(
+                selector: String,
+                limit: Int = Const.fetchLimit,
+                attr :String = "abs:href",
+                indexKey: String = null
+                ): RDD[Page] =
+    this.wget(selector, limit, attr, indexKey) !><
 
   /**
    * same as join, but old pages that doesn't contain the link will yield an EmptyPage
    * @param selector css selector of page elements with a crawlable link
-   * @param limit only the first n links will be used, default to Conf.fetchLimit
+   * @param limit only the first n links will be used, default to Const.fetchLimit
    * @param attr attribute of the element that denotes the link target, default to absolute href
    * @return RDD[Page]
    */
-  def leftJoin(selector: String, limit: Int = Conf.fetchLimit, attr :String = "abs:href"): RDD[Page] =
-    this.leftVisit(selector, limit, attr) !><
+  def leftJoin(
+                selector: String,
+                limit: Int = Const.fetchLimit,
+                attr :String = "abs:href",
+                indexKey: String = null
+                ): RDD[Page] =
+    this.leftVisit(selector, limit, attr, indexKey) !><
 
   /**
    * same as wgetJoin, but old pages that doesn't contain the link will yield an EmptyPage
    * @param selector css selector of page elements with a crawlable link
-   * @param limit only the first n links will be used, default to Conf.fetchLimit
+   * @param limit only the first n links will be used, default to Const.fetchLimit
    * @param attr attribute of the element that denotes the link target, default to absolute href
    * @return RDD[Page]
    */
-  def wgetLeftJoin(selector: String, limit: Int = Conf.fetchLimit, attr :String = "abs:href"): RDD[Page] =
-    this.leftWget(selector, limit, attr) !><
+  def wgetLeftJoin(
+                    selector: String,
+                    limit: Int = Const.fetchLimit,
+                    attr :String = "abs:href",
+                    indexKey: String = null
+                    ): RDD[Page] =
+    this.leftWget(selector, limit, attr, indexKey) !><
 
   /**
    * break each page into 'shards', used to extract structured data from tables
    * @param selector denotes enclosing elements of each shards
    * @param as alias of resulted shards
-   * @param limit only the first n elements will be used, default to Conf.fetchLimit
+   * @param limit only the first n elements will be used, default to Const.fetchLimit
    * @return RDD[Page], each page will generate several shards
    */
-  def joinBySlice(selector: String, as: String = null, limit: Int = Conf.fetchLimit): RDD[Page] =
-    self.flatMap(_.slice(selector, as, limit))
+  def joinBySlice(
+                   selector: String,
+                   as: String = null,
+                   limit: Int = Const.fetchLimit,
+                   indexKey: String = null
+                   ): RDD[Page] =
+    self.flatMap(_.slice(selector, as, limit, indexKey))
 
   /**
    * same as joinBySlice, but old pages that doesn't contain the element will yield an EmptyPage
    * @param selector denotes enclosing elements of each shards
    * @param as alias of resulted shards
-   * @param limit only the first n elements will be used, default to Conf.fetchLimit
+   * @param limit only the first n elements will be used, default to Const.fetchLimit
    * @return RDD[Page], each page will generate several shards
    */
-  def leftJoinBySlice(selector: String, as: String = null, limit: Int = Conf.fetchLimit): RDD[Page] =
+  def leftJoinBySlice(
+                       selector: String,
+                       as: String = null,
+                       limit: Int = Const.fetchLimit,
+                       indexKey: String = null
+                       ): RDD[Page] =
     self.flatMap {
       page => {
 
-        val results = page.slice(selector, as, limit)
+        val results = page.slice(selector, as, limit, indexKey)
         if (results.size==0) Seq(PageBuilder.emptyPage.copy(context = page.context))
         else results
       }
@@ -266,7 +338,11 @@ class PageRDDFunctions(val self: RDD[Page]) {
    * @param limit depth of recursion
    * @return RDD[Page], contains both old and new pages
    */
-  def insertPagination(selector: String, limit: Int = Conf.fetchLimit): RDD[Page] = {
+  def insertPagination(
+                        selector: String,
+                        limit: Int = Const.fetchLimit,
+                        indexKey: String = null
+                        ): RDD[Page] = {
     val hConfWrapper = self.context.broadcast(new SerializableWritable(self.context.hadoopConfiguration))
 
     self.flatMap {
@@ -276,10 +352,17 @@ class PageRDDFunctions(val self: RDD[Page]) {
         var currentPage = page
         var i = 0
         while (currentPage.attrExist(selector,"abs:href") && i< limit) {
-          i = i+1
+          i = i + 1
           val nextUrl = currentPage.href1(selector) //not null because already validated
           currentPage = PageBuilder.resolve(Visit(nextUrl))(hConfWrapper.value.value)(0)
-          results.+=(currentPage.copy(context = page.context))
+
+          val context = new util.LinkedHashMap[String,Serializable](page.context)
+
+          if (indexKey!=null) {
+            context.put(indexKey, i)
+          }
+
+          results.+=(currentPage.copy(context = context))
         }
 
         results
@@ -294,12 +377,22 @@ class PageRDDFunctions(val self: RDD[Page]) {
    * @param limit depth of recursion
    * @return RDD[Page], contains both old and new pages
    */
-  def wgetInsertPagination(selector: String, limit: Int = Conf.fetchLimit): RDD[Page] = {
+  def wgetInsertPagination(
+                            selector: String,
+                            limit: Int = Const.fetchLimit,
+                            indexKey: String = null
+                            ): RDD[Page] = {
     val hConfWrapper = self.context.broadcast(new SerializableWritable(self.context.hadoopConfiguration))
 
     self.flatMap {
       page => {
-        val results = ArrayBuffer[Page](page)
+        val context = new util.LinkedHashMap[String,Serializable](page.context)
+
+        if (indexKey!=null) {
+          context.put(indexKey, 0)
+        }
+
+        val results = ArrayBuffer[Page](page.copy(context = context))
 
         var currentPage = page
         var i = 0
@@ -307,7 +400,14 @@ class PageRDDFunctions(val self: RDD[Page]) {
           i = i+1
           val nextUrl = currentPage.href1(selector) //not null because already validated
           currentPage = PageBuilder.resolve(Wget(nextUrl))(hConfWrapper.value.value)(0)
-          results.+=(currentPage.copy(context = page.context))
+
+          val context = new util.LinkedHashMap[String,Serializable](page.context)
+
+          if (indexKey!=null) {
+            context.put(indexKey, i)
+          }
+
+          results.+=(currentPage.copy(context = context))
         }
 
         results
@@ -316,7 +416,7 @@ class PageRDDFunctions(val self: RDD[Page]) {
   }
 
   //TODO: this will automatically detect patterns from urls of pages and advance in larger batch
-  //  def smartJoinByPagination(selector: String, limit: Int = Conf.fetchLimit, attr :String = "abs:href")
+  //  def smartJoinByPagination(selector: String, limit: Int = Const.fetchLimit, attr :String = "abs:href")
 
   //  def crawlFirstIf(selector: String)(condition: HtmlPage => Boolean): RDD[HtmlPage] = self.map{
   //    page => {
@@ -344,12 +444,12 @@ class PageRDDFunctions(val self: RDD[Page]) {
   /**
    * same as join, but only crawls pages that meet the condition, keep other pages in the result
    * @param selector css selector of page elements with a crawlable link
-   * @param limit only the first n links will be used, default to Conf.fetchLimit
+   * @param limit only the first n links will be used, default to Const.fetchLimit
    * @param attr attribute of the element that denotes the link target, default to absolute href
    * @param condition css selector, if elements denoted by this selector doesn't exist on the page, the page will not be crawled, instead it will be retained in the result
    * @return
    */
-  def joinOrKeep(selector: String, limit: Int = Conf.fetchLimit, attr: String = "abs:href")(condition: String = selector): RDD[Page] = {
+  def joinOrKeep(selector: String, limit: Int = Const.fetchLimit, attr: String = "abs:href")(condition: String = selector): RDD[Page] = {
     val groupedPageRDD = self.map{ page => (page.elementExist(condition), page) }
     val falsePageRDD = groupedPageRDD.filter(_._1 == false).map(_._2)
     val truePageRDD = groupedPageRDD.filter(_._1 == true).map(_._2)
@@ -360,12 +460,12 @@ class PageRDDFunctions(val self: RDD[Page]) {
   /**
    * same as wgetJoin, but only crawls pages that meet the condition, keep other pages in the result
    * @param selector css selector of page elements with a crawlable link
-   * @param limit only the first n links will be used, default to Conf.fetchLimit
+   * @param limit only the first n links will be used, default to Const.fetchLimit
    * @param attr attribute of the element that denotes the link target, default to absolute href
    * @param condition css selector, if elements denoted by this selector doesn't exist on the page, the page will not be crawled, instead it will be retained in the result
    * @return
    */
-  def wgetJoinOrKeep(selector: String, limit: Int = Conf.fetchLimit, attr: String = "abs:href")(condition: String = selector): RDD[Page] = {
+  def wgetJoinOrKeep(selector: String, limit: Int = Const.fetchLimit, attr: String = "abs:href")(condition: String = selector): RDD[Page] = {
     val groupedPageRDD = self.map{ page => (page.elementExist(condition), page) }
     val falsePageRDD = groupedPageRDD.filter(_._1 == false).map(_._2)
     val truePageRDD = groupedPageRDD.filter(_._1 == true).map(_._2)

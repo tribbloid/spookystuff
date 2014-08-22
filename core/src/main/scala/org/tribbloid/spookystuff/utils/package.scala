@@ -11,7 +11,7 @@ package object utils {
 
   // Returning T, throwing the exception on failure
   @annotation.tailrec
-  def retry[T](n: Int = Conf.localRetry)(fn: => T): T = {
+  def retry[T](n: Int = Const.localRetry)(fn: => T): T = {
     util.Try { fn } match {
       case util.Success(x) => x
       case _ if n > 1 => retry(n - 1)(fn)

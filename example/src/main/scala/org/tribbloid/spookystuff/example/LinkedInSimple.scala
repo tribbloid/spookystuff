@@ -14,7 +14,7 @@ object LinkedInSimple extends SparkSubmittable {
       Visit("https://www.linkedin.com/") +>
       TextInput("input#first","#{_}") +>
       TextInput("input#last","Gupta") +>
-      Submit("input[name=\"search\"]") !)
+      Submit("input[name=\"search\"]") !==)
       .map {page => page.href("ol#result-set h2 a")}
       .collect().foreach{
       value => {

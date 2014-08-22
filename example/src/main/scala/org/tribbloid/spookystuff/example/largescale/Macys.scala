@@ -11,7 +11,7 @@ object Macys extends SparkSubmittable {
 
   override def doMain(): Unit = {
     ((sc.parallelize(Seq("Dummy")) +>
-      Wget("http://www.macys.com/")!
+      Wget("http://www.macys.com/")!==
       ).wgetJoin(
         "div#globalMastheadCategoryMenu li a"
       ).selectInto(

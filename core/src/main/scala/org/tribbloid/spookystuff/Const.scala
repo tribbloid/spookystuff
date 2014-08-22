@@ -1,5 +1,6 @@
 package org.tribbloid.spookystuff
 
+import com.fasterxml.jackson.databind.{ObjectMapper, ObjectWriter}
 import org.tribbloid.spookystuff.factory.NaiveDriverFactory
 
 /**
@@ -7,7 +8,7 @@ import org.tribbloid.spookystuff.factory.NaiveDriverFactory
  */
 //TODO: propose to merge with SpookyContext
 //TODO: can use singleton pattern? those values never changes after SparkContext is defined
-final object Conf {
+final object Const {
 
   val pageDelay = 10
   val resourceTimeout = 60
@@ -36,4 +37,6 @@ final object Conf {
   val driverCallTimeout = 60
 
   val localRetry = 3
+
+  val objectMapper = new ObjectMapper()
 }

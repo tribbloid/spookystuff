@@ -14,7 +14,7 @@ object Youtube extends AcceptanceTestCore{
       Loop(2) (
         Click("button.load-more-button span.load-more-text"),
         DelayFor("button.load-more-button span.hid.load-more-loading", 10)
-      ) !).leftJoinBySlice("li.channels-content-item",limit=100).selectInto(
+      ) !==).leftJoinBySlice("li.channels-content-item",limit=100).selectInto(
         "title" -> (_.text1("h3.yt-lockup-title"))
       ).leftVisit(
         "h3.yt-lockup-title a.yt-uix-tile-link", limit = 1
@@ -32,7 +32,7 @@ object Youtube extends AcceptanceTestCore{
       Loop(2) (
         Click("span[title^=Load]"),
         DelayFor("span.PA[style^=display]",10)
-      ) !).selectInto(
+      ) !==).selectInto(
         "num_comments" -> (_.text1("div.DJa"))
       ).leftJoinBySlice(
         "div[id^=update]"

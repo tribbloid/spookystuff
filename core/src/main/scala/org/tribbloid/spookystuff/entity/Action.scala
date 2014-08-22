@@ -13,7 +13,7 @@ import org.openqa.selenium.htmlunit.HtmlUnitDriver
 import org.openqa.selenium.remote.RemoteWebDriver
 import org.openqa.selenium.support.events.EventFiringWebDriver
 import org.openqa.selenium.support.ui
-import org.tribbloid.spookystuff.Conf
+import org.tribbloid.spookystuff.Const
 import org.tribbloid.spookystuff.factory.PageBuilder
 import org.tribbloid.spookystuff.utils.InsecureTrustManager
 import org.tribbloid.spookystuff.utils.withDeadline
@@ -26,7 +26,7 @@ import scala.collection.mutable.ArrayBuffer
  */
 
 object ActionUtils {
-  //TODO: reverse the direction of look-up, if a '#{...}' has no corresponding key in the context, throws an exception
+  //TODO: reverse the direction of look-up, if a '#{...}' has no corresponding indexKey in the context, throws an exception
   def formatWithContext[T](str: String, context: util.Map[String,T]): String = {
     if ((str == null)||(str.isEmpty)) return str
     else if ((context == null)||(context.isEmpty)) return str
@@ -70,7 +70,7 @@ trait Action extends Serializable with Cloneable {
 
   var timeline: Long = -1
 
-  val timeout: Int = Conf.driverCallTimeout
+  val timeout: Int = Const.driverCallTimeout
 
   def format[T](context: util.Map[String,T]): this.type = this
 
@@ -105,11 +105,11 @@ trait Action extends Serializable with Cloneable {
 
           val page = Snapshot().exe(pb).toList(0)
           try {
-            page.save(dir = Conf.errorPageDumpDir)(pb.hConf)
+            page.save(dir = Const.errorPageDumpDir)(pb.hConf)
           }
           catch {
             case e: Throwable => {
-              page.saveLocal(dir = Conf.localErrorPageDumpDir)
+              page.saveLocal(dir = Const.localErrorPageDumpDir)
             }
           }
           //                  TODO: logError("Error Page saved as "+errorFileName)
@@ -191,8 +191,8 @@ case class Visit(val url: String) extends Interactive {
  * Wait for some time
  * @param delay seconds to be wait for
  */
-case class Delay(val delay: Int = Conf.pageDelay) extends Interactive {
-  override val timeout = Math.max(Conf.driverCallTimeout, delay + 10)
+case class Delay(val delay: Int = Const.pageDelay) extends Interactive {
+  override val timeout = Math.max(Const.driverCallTimeout, delay + 10)
 
   override def exeWithoutResult(pb: PageBuilder) {
     Thread.sleep(delay * 1000)
@@ -205,8 +205,8 @@ case class Delay(val delay: Int = Conf.pageDelay) extends Interactive {
  * @param delay maximum waiting time in seconds,
  *              after which it will throw an exception!
  */
-case class DelayFor(val selector: String,val delay: Int = Conf.pageDelay) extends Interactive {
-  override val timeout = Math.max(Conf.driverCallTimeout, delay + 10)
+case class DelayFor(val selector: String,val delay: Int = Const.pageDelay) extends Interactive {
+  override val timeout = Math.max(Const.driverCallTimeout, delay + 10)
 
   override def exeWithoutResult(pb: PageBuilder) {
     val wait = new ui.WebDriverWait(pb.driver, delay)
@@ -283,7 +283,7 @@ case class SwitchToFrame(val selector: String) extends Interactive {
  * Execute a javascript snippet
  * @param script support context interpolation
  */
-case class ExeScript(val script: String, override val timeout: Int = Conf.driverCallTimeout) extends Interactive {
+case class ExeScript(val script: String, override val timeout: Int = Const.driverCallTimeout) extends Interactive {
   override def exeWithoutResult(pb: PageBuilder) {
     pb.driver match {
       case d: HtmlUnitDriver => d.executeScript(script)
@@ -374,10 +374,10 @@ case class Wget(val url: String) extends Export with Sessionless{
 /**
  * Contains several sub-actions that are iterated for multiple times
  * Will iterate until max iteration is reached or execution is impossible (sub-action throws an exception)
- * @param times max iteration, default to Conf.fetchLimit
+ * @param times max iteration, default to Const.fetchLimit
  * @param actions a list of actions being iterated through
  */
-case class Loop(val times: Int = Conf.fetchLimit)(val actions: Action*) extends Container {
+case class Loop(val times: Int = Const.fetchLimit)(val actions: Action*) extends Container {
 
   override def doExe(pb: PageBuilder): Array[Page] = {
 
