@@ -10,6 +10,7 @@ import org.apache.commons.io.IOUtils
 import org.apache.http.conn.ssl.AllowAllHostnameVerifier
 import org.openqa.selenium.By
 import org.openqa.selenium.htmlunit.HtmlUnitDriver
+import org.openqa.selenium.interactions.Actions
 import org.openqa.selenium.remote.RemoteWebDriver
 import org.openqa.selenium.support.events.EventFiringWebDriver
 import org.openqa.selenium.support.ui
@@ -80,9 +81,9 @@ trait Action extends Serializable with Cloneable {
 
     try {
       var pages =
-// withDeadline(this.timeout) { //TODO: useless in most cases
+      // withDeadline(this.timeout) { //TODO: useless in most cases
         doExe(pb: PageBuilder)
-//      }
+      //      }
 
       val newTimeline = new Date().getTime - pb.start_time
 
@@ -296,6 +297,40 @@ case class ExeScript(val script: String, override val timeout: Int = Const.drive
 
   override def format[T](context: util.Map[String,T]): this.type = {
     ExeScript(ActionUtils.formatWithContext(this.script,context)).asInstanceOf[this.type]
+  }
+}
+
+/**
+ *
+ * @param selector selector of the slide bar
+ * @param percentage distance and direction of moving of the slider handle, positive number is up/right, negative number is down/left
+ * @param handleSelector
+ */
+case class DragSlider(
+                       val selector: String,
+                       val percentage: Double,
+                       val handleSelector: String = "*"
+                       )
+  extends Interactive {
+
+  override def exeWithoutResult(pb: PageBuilder): Unit = {
+
+    val slideBar = pb.driver.findElement(By.cssSelector(selector))
+
+    val slider = slideBar.findElement(By.cssSelector(handleSelector))
+
+    val dim = slideBar.getSize
+    val height = dim.getHeight
+    val width = dim.getWidth
+
+    val move = new Actions(pb.driver);
+
+    if (width > height){
+      move.dragAndDropBy(slider, (width*percentage).asInstanceOf[Int], 0).build().perform();
+    }
+    else {
+      move.dragAndDropBy(slider, 0, (height*percentage).asInstanceOf[Int]).build().perform();
+    }
   }
 }
 
