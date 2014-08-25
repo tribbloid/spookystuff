@@ -25,8 +25,8 @@ object PageBuilder {
     }
   }
 
-  def resolve(actions: Action*)(hConf: Configuration): Array[Page] = {
-    if (ActionUtils.mayHaveResult(actions: _*) == true) {
+  def resolve(actions: ClientAction*)(hConf: Configuration): Array[Page] = {
+    if (ClientAction.mayHaveResult(actions: _*) == true) {
       resolvePlain(actions: _*)(hConf)
     }
     else
@@ -37,7 +37,7 @@ object PageBuilder {
 
   // Major API shrink! resolveFinal will be merged here
   // if a resolve has no potential to output page then a snapshot will be appended at the end
-  private def resolvePlain(actions: Action*)(hConf: Configuration): Array[Page] = {
+  private def resolvePlain(actions: ClientAction*)(hConf: Configuration): Array[Page] = {
 
     val results = ArrayBuffer[Page]()
 
@@ -82,7 +82,7 @@ class PageBuilder(
   //  TODO: Runtime.getRuntime.addShutdownHook()
   //by default drivers should be reset and reused in this case, but whatever
 
-  //  def exe(action: Action): Array[Page] = action.exe(this)
+  //  def exe(action: ClientAction): Array[Page] = action.exe(this)
 
   //remember to call this! don't want thousands of phantomJS browsers opened
   override def finalize = {

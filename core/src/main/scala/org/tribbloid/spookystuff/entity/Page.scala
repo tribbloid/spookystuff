@@ -54,7 +54,7 @@ case class Page(
   def isExpired = (new Date().getTime - timestamp.getTime > Const.pageExpireAfter*1000)
 
   def getFilePath(fileName: String = "#{resolved-url}", dir: String = Const.savePagePath): String ={
-    var formattedFileName = ActionUtils.formatWithContext(fileName, this.context)
+    var formattedFileName = ClientAction.formatWithContext(fileName, this.context)
 
     formattedFileName = formattedFileName.replace("#{resolved-url}", this.resolvedUrl)
     formattedFileName = formattedFileName.replace("#{timestamp}", DateFormat.getInstance.format(this.timestamp))

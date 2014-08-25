@@ -13,11 +13,10 @@ import org.openqa.selenium.htmlunit.HtmlUnitDriver
 import org.openqa.selenium.interactions.Actions
 import org.openqa.selenium.remote.RemoteWebDriver
 import org.openqa.selenium.support.events.EventFiringWebDriver
-import org.openqa.selenium.support.ui
+import org.openqa.selenium.support.ui.{ExpectedConditions, Select, WebDriverWait}
 import org.tribbloid.spookystuff.Const
 import org.tribbloid.spookystuff.factory.PageBuilder
 import org.tribbloid.spookystuff.utils.InsecureTrustManager
-import org.tribbloid.spookystuff.utils.withDeadline
 
 import scala.collection.JavaConversions._
 import scala.collection.mutable.ArrayBuffer
@@ -26,7 +25,8 @@ import scala.collection.mutable.ArrayBuffer
  * Created by peng on 04/06/14.
  */
 
-object ActionUtils {
+object ClientAction {
+
   //TODO: reverse the direction of look-up, if a '#{...}' has no corresponding indexKey in the context, throws an exception
   def formatWithContext[T](str: String, context: util.Map[String,T]): String = {
     if ((str == null)||(str.isEmpty)) return str
@@ -45,7 +45,7 @@ object ActionUtils {
     strVar
   }
 
-  def mayHaveResult(actions: Action*): Boolean = {
+  def mayHaveResult(actions: ClientAction*): Boolean = {
     for (action <- actions) {
       action match {
         case a: Export => return true
@@ -67,11 +67,18 @@ object ActionUtils {
  * by inserting context's keys enclosed by `#{}`, in execution they will be replaced with values they map to.
  * This is used almost exclusively in typing into a textbox, but it's flexible enough to be used anywhere.
  */
-trait Action extends Serializable with Cloneable {
+trait ClientAction extends Serializable with Cloneable {
 
   var timeline: Long = -1
 
-  val timeout: Int = Const.driverCallTimeout
+  //  val timeout: Int = Const.driverCallTimeout
+
+  private var canFail: Boolean = false
+
+  def canFail(value: Boolean = true): this.type = {
+    this.canFail = value
+    return this
+  }
 
   def format[T](context: util.Map[String,T]): this.type = this
 
@@ -113,10 +120,15 @@ trait Action extends Serializable with Cloneable {
               page.saveLocal(dir = Const.localErrorPageDumpDir)
             }
           }
-          //                  TODO: logError("Error Page saved as "+errorFileName)
+          // TODO: logError("Error Page saved as "+errorFileName)
         }
 
-        throw e
+        if (canFail == false) {
+          throw e
+        }
+        else {
+          return null
+        }
       }
     }
   }
@@ -129,7 +141,7 @@ trait Action extends Serializable with Cloneable {
  * these will be logged into target page's backtrace.
  * failed interactive will trigger an error dump by snapshot.
  */
-trait Interactive extends Action {
+trait Interactive extends ClientAction {
 
   override final def doExe(pb: PageBuilder): Array[Page] = {
     exeWithoutResult(pb)
@@ -143,7 +155,7 @@ trait Interactive extends Action {
  * Http client operations that doesn't require a browser
  * e.g. wget, restful API invocation
  */
-trait Sessionless extends Action {
+trait Sessionless extends ClientAction {
 
   override final def doExe(pb: PageBuilder): Array[Page] = this.exeWithoutSession
 
@@ -155,8 +167,8 @@ trait Sessionless extends Action {
  * each defines a nested/non-linear subroutine that may or may not be executed
  * once or multiple times depending on situations.
  */
-trait Container extends Action {
-  override val timeout: Int = Int.MaxValue
+trait Container extends ClientAction {
+  //  override val timeout: Int = Int.MaxValue
 
   def mayHaveResult: Boolean
 }
@@ -165,7 +177,7 @@ trait Container extends Action {
  * Export a page from the browser or http client
  * the page an be anything including HTML/XML file, image, PDF file or JSON string.
  */
-trait Export extends Action {
+trait Export extends ClientAction {
   var alias: String = null
 
   def as(alias: String): this.type = { //TODO: better way to return type?
@@ -184,7 +196,7 @@ case class Visit(val url: String) extends Interactive {
   }
 
   override def format[T](context: util.Map[String,T]): this.type = {
-    Visit(ActionUtils.formatWithContext(this.url,context)).asInstanceOf[this.type]
+    Visit(ClientAction.formatWithContext(this.url,context)).asInstanceOf[this.type]
   }
 }
 
@@ -193,7 +205,7 @@ case class Visit(val url: String) extends Interactive {
  * @param delay seconds to be wait for
  */
 case class Delay(val delay: Int = Const.pageDelay) extends Interactive {
-  override val timeout = Math.max(Const.driverCallTimeout, delay + 10)
+  //  override val timeout = Math.max(Const.driverCallTimeout, delay + 10)
 
   override def exeWithoutResult(pb: PageBuilder) {
     Thread.sleep(delay * 1000)
@@ -206,12 +218,12 @@ case class Delay(val delay: Int = Const.pageDelay) extends Interactive {
  * @param delay maximum waiting time in seconds,
  *              after which it will throw an exception!
  */
-case class DelayFor(val selector: String,val delay: Int = Const.pageDelay) extends Interactive {
-  override val timeout = Math.max(Const.driverCallTimeout, delay + 10)
+case class DelayFor(val selector: String, val delay: Int = Const.pageDelay) extends Interactive {
+  //  override val timeout = Math.max(Const.driverCallTimeout, delay + 10)
 
   override def exeWithoutResult(pb: PageBuilder) {
-    val wait = new ui.WebDriverWait(pb.driver, delay)
-    wait.until(ui.ExpectedConditions.presenceOfAllElementsLocatedBy(By.cssSelector(selector)))
+    val wait = new WebDriverWait(pb.driver, delay)
+    wait.until(ExpectedConditions.presenceOfAllElementsLocatedBy(By.cssSelector(selector)))
   }
 }
 
@@ -219,8 +231,11 @@ case class DelayFor(val selector: String,val delay: Int = Const.pageDelay) exten
  * Click an element with your mouse pointer.
  * @param selector css selector of the element, only the first element will be affected
  */
-case class Click(val selector: String) extends Interactive {
+case class Click(val selector: String, val delay: Int = Const.pageDelay) extends Interactive {
   override def exeWithoutResult(pb: PageBuilder) {
+    val wait = new WebDriverWait(pb.driver, delay)
+    wait.until(ExpectedConditions.presenceOfAllElementsLocatedBy(By.cssSelector(selector)))
+
     pb.driver.findElement(By.cssSelector(selector)).click()
   }
 }
@@ -229,8 +244,11 @@ case class Click(val selector: String) extends Interactive {
  * Submit a form, wait until new content returned by the submission has finished loading
  * @param selector css selector of the element, only the first element will be affected
  */
-case class Submit(val selector: String) extends Interactive {
+case class Submit(val selector: String, val delay: Int = Const.pageDelay) extends Interactive {
   override def exeWithoutResult(pb: PageBuilder) {
+    val wait = new WebDriverWait(pb.driver, delay)
+    wait.until(ExpectedConditions.presenceOfAllElementsLocatedBy(By.cssSelector(selector)))
+
     pb.driver.findElement(By.cssSelector(selector)).submit()
   }
 }
@@ -240,13 +258,16 @@ case class Submit(val selector: String) extends Interactive {
  * @param selector css selector of the textbox, only the first element will be affected
  * @param text support context interpolation
  */
-case class TextInput(val selector: String, val text: String) extends Interactive {
+case class TextInput(val selector: String, val text: String, val delay: Int = Const.pageDelay) extends Interactive {
   override def exeWithoutResult(pb: PageBuilder) {
+    val wait = new WebDriverWait(pb.driver, delay)
+    wait.until(ExpectedConditions.presenceOfAllElementsLocatedBy(By.cssSelector(selector)))
+
     pb.driver.findElement(By.cssSelector(selector)).sendKeys(text)
   }
 
   override def format[T](context: util.Map[String,T]): this.type = {
-    TextInput(this.selector, ActionUtils.formatWithContext(this.text,context)).asInstanceOf[this.type]
+    TextInput(this.selector, ClientAction.formatWithContext(this.text,context)).asInstanceOf[this.type]
   }
 }
 
@@ -255,15 +276,18 @@ case class TextInput(val selector: String, val text: String) extends Interactive
  * @param selector css selector of the drop down list, only the first element will be affected
  * @param text support context interpolation
  */
-case class DropDownSelect(val selector: String, val text: String) extends Interactive {
+case class DropDownSelect(val selector: String, val text: String, val delay: Int = Const.pageDelay) extends Interactive {
   override def exeWithoutResult(pb: PageBuilder) {
+    val wait = new WebDriverWait(pb.driver, delay)
+    wait.until(ExpectedConditions.presenceOfAllElementsLocatedBy(By.cssSelector(selector)))
+
     val element = pb.driver.findElement(By.cssSelector(selector))
-    val select = new ui.Select(element)
+    val select = new Select(element)
     select.selectByValue(text)
   }
 
   override def format[T](context: util.Map[String,T]): this.type = {
-    DropDownSelect(this.selector, ActionUtils.formatWithContext(this.text,context)).asInstanceOf[this.type]
+    DropDownSelect(this.selector, ClientAction.formatWithContext(this.text,context)).asInstanceOf[this.type]
   }
 }
 
@@ -273,8 +297,11 @@ case class DropDownSelect(val selector: String, val text: String) extends Intera
  * Can be used multiple times to switch focus back and forth
  * @param selector css selector of the frame/iframe, only the first element will be affected
  */
-case class SwitchToFrame(val selector: String) extends Interactive {
+case class SwitchToFrame(val selector: String, val delay: Int = Const.pageDelay) extends Interactive {
   override def exeWithoutResult(pb: PageBuilder) {
+    val wait = new WebDriverWait(pb.driver, delay)
+    wait.until(ExpectedConditions.presenceOfAllElementsLocatedBy(By.cssSelector(selector)))
+
     val element = pb.driver.findElement(By.cssSelector(selector))
     pb.driver.switchTo().frame(element)
   }
@@ -284,7 +311,10 @@ case class SwitchToFrame(val selector: String) extends Interactive {
  * Execute a javascript snippet
  * @param script support context interpolation
  */
-case class ExeScript(val script: String, override val timeout: Int = Const.driverCallTimeout) extends Interactive {
+case class ExeScript(
+                      val script: String
+                      //                      override val timeout: Int = Const.driverCallTimeout
+                      ) extends Interactive {
   override def exeWithoutResult(pb: PageBuilder) {
     pb.driver match {
       case d: HtmlUnitDriver => d.executeScript(script)
@@ -296,7 +326,7 @@ case class ExeScript(val script: String, override val timeout: Int = Const.drive
   }
 
   override def format[T](context: util.Map[String,T]): this.type = {
-    ExeScript(ActionUtils.formatWithContext(this.script,context)).asInstanceOf[this.type]
+    ExeScript(ClientAction.formatWithContext(this.script,context)).asInstanceOf[this.type]
   }
 }
 
@@ -309,11 +339,15 @@ case class ExeScript(val script: String, override val timeout: Int = Const.drive
 case class DragSlider(
                        val selector: String,
                        val percentage: Double,
+                       val delay: Int = Const.pageDelay,
                        val handleSelector: String = "*"
                        )
   extends Interactive {
 
   override def exeWithoutResult(pb: PageBuilder): Unit = {
+
+    val wait = new WebDriverWait(pb.driver, delay)
+    wait.until(ExpectedConditions.presenceOfAllElementsLocatedBy(By.cssSelector(selector)))
 
     val slideBar = pb.driver.findElement(By.cssSelector(selector))
 
@@ -402,7 +436,7 @@ case class Wget(val url: String) extends Export with Sessionless{
   }
 
   override def format[T](context: util.Map[String,T]): this.type = {
-    Wget(ActionUtils.formatWithContext(this.url,context)).asInstanceOf[this.type]
+    Wget(ClientAction.formatWithContext(this.url,context)).asInstanceOf[this.type]
   }
 }
 
@@ -412,7 +446,7 @@ case class Wget(val url: String) extends Export with Sessionless{
  * @param times max iteration, default to Const.fetchLimit
  * @param actions a list of actions being iterated through
  */
-case class Loop(val times: Int = Const.fetchLimit)(val actions: Action*) extends Container {
+case class Loop(val times: Int = Const.fetchLimit)(val actions: ClientAction*) extends Container {
 
   override def doExe(pb: PageBuilder): Array[Page] = {
 
@@ -435,9 +469,9 @@ case class Loop(val times: Int = Const.fetchLimit)(val actions: Action*) extends
     return results.toArray
   }
 
-  override def mayHaveResult: Boolean = ActionUtils.mayHaveResult(actions: _*)
+  override def mayHaveResult: Boolean = ClientAction.mayHaveResult(actions: _*)
 }
 
-//case class If(selector: String)(exist: Action*)(notExist: Action*) extends Container {
+//case class If(selector: String)(exist: ClientAction*)(notExist: ClientAction*) extends Container {
 //
 //}

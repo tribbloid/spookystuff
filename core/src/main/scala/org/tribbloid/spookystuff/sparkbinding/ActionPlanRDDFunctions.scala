@@ -2,7 +2,7 @@ package org.tribbloid.spookystuff.sparkbinding
 
 import org.apache.spark.SerializableWritable
 import org.apache.spark.rdd.RDD
-import org.tribbloid.spookystuff.entity.{Page, ActionPlan, Action}
+import org.tribbloid.spookystuff.entity.{Page, ActionPlan, ClientAction}
 import org.tribbloid.spookystuff.factory.PageBuilder
 import scala.collection.mutable.ArrayBuffer
 import java.util
@@ -28,10 +28,10 @@ class ActionPlanRDDFunctions(val self: RDD[ActionPlan]) {
 
   /**
    * append an action
-   * @param action any object that inherits org.tribbloid.spookystuff.entity.Action
+   * @param action any object that inherits org.tribbloid.spookystuff.entity.ClientAction
    * @return new RDD[ActionPlan]
    */
-  def +>(action: Action): RDD[ActionPlan] = self.map {
+  def +>(action: ClientAction): RDD[ActionPlan] = self.map {
     _ + (action)
   }
 
@@ -41,7 +41,7 @@ class ActionPlanRDDFunctions(val self: RDD[ActionPlan]) {
    * @param actions = Seq(action1, action2,...)
    * @return new RDD[ActionPlan]
    */
-  def +>(actions: Seq[Action]): RDD[ActionPlan] = self.map {
+  def +>(actions: Seq[ClientAction]): RDD[ActionPlan] = self.map {
     _ + (actions)
   }
 
@@ -61,7 +61,7 @@ class ActionPlanRDDFunctions(val self: RDD[ActionPlan]) {
    * each old ActionPlan yields N new ActionPlans, where N is the size of the new set
    * results in a cartesian product of old and new set.
    * @param actions a set of Actions/Sequences to be appended and executed in parallel
-   *                 can be Seq[Action], Seq[ Seq[Action] ] or Seq[ActionPlan], or any of their combinations.
+   *                 can be Seq[ClientAction], Seq[ Seq[ClientAction] ] or Seq[ActionPlan], or any of their combinations.
    *                 CANNOT be RDD[ActionPlan], but this may become an option in the next release
    * @return new RDD[ActionPlan], of which size = [size of old RDD] * [size of actions]
    */
@@ -69,12 +69,12 @@ class ActionPlanRDDFunctions(val self: RDD[ActionPlan]) {
     old => {
       val results: ArrayBuffer[ActionPlan] = ArrayBuffer()
 
-      actions.foreach {
-        action => action match {
-          case a: Action => results += (old + a)
-          case sa: Seq[Action] => results += (old + sa)
+      for (action <- actions) {
+        action match {
+          case a: ClientAction => results += (old + a)
+          case sa: Seq[ClientAction] => results += (old + sa)
           case ap: ActionPlan => results += (old + ap)
-          case _ => throw new UnsupportedOperationException("Can only append Action, Seq[Action] or ActionPlan")
+          case _ => throw new UnsupportedOperationException("Can only append ClientAction, Seq[ClientAction] or ActionPlan")
         }
       }
 

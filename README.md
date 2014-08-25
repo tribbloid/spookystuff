@@ -386,7 +386,7 @@ These are the same actions a human would do to access the data page, their order
 
 Many Actions supports **Context Interpolation**: you can embed context reference in their constructor by inserting context's keys enclosed by `#{}`, which will be automatically replaced with values they map to in runtime. This is used almost exclusively in typing into a textbox.
 
-For more information on Actions and Action Plan usage, please refer to the scaladoc of Action.scala and ActionPlanRDDFunction.scala respectively.
+For more information on Actions and Action Plan usage, please refer to the scaladoc of ClientAction.scala and ActionPlanRDDFunction.scala respectively.
 
 **Extraction** defines a transformation from Pages (including immediate pages from Action Plans and their link connections -- see *join/left-join*) to relational data output. This is often the goal and last step of data collection, but not always -- there is no constraint on their relative order, you can reuse extraction results as context to get more data on a different site, or feed into another data flow implemented by other components of Apache Spark (Of course, only if you know them).
 

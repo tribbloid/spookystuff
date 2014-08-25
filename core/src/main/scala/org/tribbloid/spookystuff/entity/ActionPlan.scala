@@ -26,13 +26,13 @@ import scala.collection.JavaConversions._
 //(all other special characters)
 class ActionPlan(val context: util.LinkedHashMap[String, Serializable] = null) extends Serializable {
 
-  def this(context: util.LinkedHashMap[String, Serializable], as: Action*) = {
+  def this(context: util.LinkedHashMap[String, Serializable], as: ClientAction*) = {
     this(context)
     this.+=(as)
   }
 
   // everything in this list is formatted
-  val actions: util.List[Action] = new util.ArrayList()
+  val actions: util.List[ClientAction] = new util.ArrayList()
 
   override def equals(a: Any): Boolean = a match {
     case e: EmptyActionPlan => return false
@@ -47,11 +47,11 @@ class ActionPlan(val context: util.LinkedHashMap[String, Serializable] = null) e
     "ActionPlan("+this.context.toString+","+this.actions.toString+")"
   }
 
-  private def +=(a: Action) {
+  private def +=(a: ClientAction) {
     this.actions.add(a.format(context))
   }
 
-  private def +=(as: Seq[Action]) {
+  private def +=(as: Seq[ClientAction]) {
     as.foreach{
       a => this.actions.add(a.format(context))
     }
@@ -62,13 +62,13 @@ class ActionPlan(val context: util.LinkedHashMap[String, Serializable] = null) e
     this.+=(ac.actions)
   }
 
-  def + (a: Action): ActionPlan = {
+  def + (a: ClientAction): ActionPlan = {
     val result = new ActionPlan(this.context, this.actions: _*)
     result.+=(a)
     result
   }
 
-  def + (as: Seq[Action]): ActionPlan = {
+  def + (as: Seq[ClientAction]): ActionPlan = {
     val result = new ActionPlan(this.context, this.actions: _*)
     result.+=(as)
     result
@@ -95,9 +95,9 @@ class EmptyActionPlan(context: util.LinkedHashMap[String, Serializable] = null) 
     "EmptyActionPlan("+this.context.toString+")"
   }
 
-  override def + (a: Action): EmptyActionPlan = this
+  override def + (a: ClientAction): EmptyActionPlan = this
 
-  override def + (as: Seq[Action]): EmptyActionPlan = this
+  override def + (as: Seq[ClientAction]): EmptyActionPlan = this
 
   override def + (ac: ActionPlan): EmptyActionPlan = this
 }

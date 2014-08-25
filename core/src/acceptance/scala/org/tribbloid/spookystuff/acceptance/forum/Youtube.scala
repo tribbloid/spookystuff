@@ -21,9 +21,8 @@ object Youtube extends SparkTestCore{
         "h3.yt-lockup-title a.yt-uix-tile-link", limit = 1
       ).repartition(400) +>
       ExeScript("window.scrollBy(0,500)") +>
-      Loop(1)( //TODO: some page doesn't have an iframe, in which case it should allow incomplete execution
-        DelayFor("iframe[title^=Comment]", 50)
-      )!><).selectInto(
+      DelayFor("iframe[title^=Comment]", 50).canFail()
+      !><).selectInto(
         "description" -> (_.text1("div#watch-description-text")),
         "publish" -> (_.text1("p#watch-uploader-info")),
         "total_view" -> (_.text1("div#watch7-views-info span.watch-view-count")),
@@ -37,19 +36,11 @@ object Youtube extends SparkTestCore{
         "num_comments" -> (_.text1("div.DJa"))
       ).leftJoinBySlice(
         "div[id^=update]"
-      ).map(
-        page => (
-          page.context.get("_"),
-          page.context.get("title"),
-          page.context.get("description"),
-          page.context.get("publish"),
-          page.context.get("total_view"),
-          page.context.get("like_count"),
-          page.context.get("dislike_count"),
-          page.context.get("num_comments"),
-          page.text1("h3.Mpa"),
-          page.text1("div.Al")
-          ).productIterator.toList.mkString("\t")
-      ).collect()
+      ).selectInto(
+        "comment1" -> (_.text1("h3.Mpa")),
+        "comment2" -> (_.text1("div.Al"))
+      )
+      .asTsvRDD()
+      .collect()
   }
 }
