@@ -77,7 +77,7 @@ Examples
       Delay(10) ! //TODO: change to DelayFor to save time
       ).selectInto(
         "model" -> { _.text1("div.dgrm-lst div.header h2") },
-        "time1" -> { _.backtrace.last.timeline.asInstanceOf[Serializable] } //ugly tail
+        "time1" -> { _.backtrace.last.timeline} //ugly tail
       ).wgetJoin("div.inner li a:has(img)")
       .selectInto("schematic" -> {_.text1("div#ctl00_cphMain_up1 h1 span")})
       .wgetJoin("tbody.m-bsc td.pdct-descr h2 a")

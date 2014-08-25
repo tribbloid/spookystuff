@@ -31,7 +31,7 @@ case class Page(
                  val alias: String = null,
 
                  val backtrace: Array[Interactive] = new Array(0), //immutable, also the uid
-                 val context: util.LinkedHashMap[String, Serializable] = new util.LinkedHashMap, //Mutable! caused a lot of headache
+                 val context: util.LinkedHashMap[String, Any] = new util.LinkedHashMap, //Mutable! caused a lot of headache
                  val timestamp: Date = new Date,
                  val savePath: String = null
                  )
@@ -145,7 +145,7 @@ case class Page(
 
       return elements.subList(0, length).zipWithIndex.map {
         tuple => {
-          val context = new util.LinkedHashMap[String,Serializable](this.context)
+          val context = new util.LinkedHashMap[String,Any](this.context)
 
           if (indexKey!=null) {
             context.put(indexKey, tuple._2)
@@ -343,8 +343,8 @@ case class Page(
     case _ => Seq[String]()
   }
 
-  def extractPropertiesAsMap(keyAndF: (String, Page => Serializable)*): util.LinkedHashMap[String, Serializable] = {
-    val result: util.LinkedHashMap[String, Serializable] = new util.LinkedHashMap()
+  def extractPropertiesAsMap(keyAndF: (String, Page => Any)*): util.LinkedHashMap[String, Any] = {
+    val result: util.LinkedHashMap[String, Any] = new util.LinkedHashMap()
 
     keyAndF.foreach {
       fEntity => {

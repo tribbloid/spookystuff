@@ -1,6 +1,5 @@
 package org.tribbloid.spookystuff.sparkbinding
 
-import java.io.Serializable
 import java.util
 
 import org.apache.spark.SerializableWritable
@@ -46,13 +45,13 @@ class PageRDDFunctions(val self: RDD[Page]) {
    * @param keyAndF a indexKey-function map, each element is used to generate a indexKey-value map using the Page itself
    * @return new RDD[Page]
    */
-  def selectInto(keyAndF: (String, Page => Serializable)*): RDD[Page] = self.map {
+  def selectInto(keyAndF: (String, Page => Any)*): RDD[Page] = self.map {
 
     page => {
       val map = page.extractPropertiesAsMap(keyAndF: _*)
 
       //always replace old indexKey-value pairs with new ones, old ones are flushed out
-      val newContext = new util.LinkedHashMap[String,Serializable](page.context)
+      val newContext = new util.LinkedHashMap[String,Any](page.context)
       newContext.putAll(map)
 
       page.copy(context = newContext)
@@ -65,7 +64,7 @@ class PageRDDFunctions(val self: RDD[Page]) {
    * @param keyAndF
    * @return new RDD[Page]
    */
-  def select(keyAndF: (String, Page => Serializable)*): RDD[Page] = self.map {
+  def select(keyAndF: (String, Page => Any)*): RDD[Page] = self.map {
 
     page => {
       val map = page.extractPropertiesAsMap(keyAndF: _*)
@@ -141,7 +140,7 @@ class PageRDDFunctions(val self: RDD[Page]) {
       links.zipWithIndex.map {
 
         tuple => {
-          val context = new util.LinkedHashMap[String,Serializable](page.context)
+          val context = new util.LinkedHashMap[String,Any](page.context)
 
           if (indexKey!=null) {
             context.put(indexKey, tuple._2)
@@ -173,7 +172,7 @@ class PageRDDFunctions(val self: RDD[Page]) {
 
       var results = links.zipWithIndex.map {
         tuple => {
-          val context = new util.LinkedHashMap[String,Serializable](page.context)
+          val context = new util.LinkedHashMap[String,Any](page.context)
 
           if (indexKey!=null) {
             context.put(indexKey, tuple._2)
@@ -201,7 +200,7 @@ class PageRDDFunctions(val self: RDD[Page]) {
 
       links.zipWithIndex.map {
         tuple => {
-          val context = new util.LinkedHashMap[String,Serializable](page.context)
+          val context = new util.LinkedHashMap[String,Any](page.context)
 
           if (indexKey!=null) {
             context.put(indexKey, tuple._2)
@@ -226,7 +225,7 @@ class PageRDDFunctions(val self: RDD[Page]) {
 
       var results = links.zipWithIndex.map {
         tuple => {
-          val context = new util.LinkedHashMap[String,Serializable](page.context)
+          val context = new util.LinkedHashMap[String,Any](page.context)
 
           if (indexKey!=null) {
             context.put(indexKey, tuple._2)
@@ -364,7 +363,7 @@ class PageRDDFunctions(val self: RDD[Page]) {
           val nextUrl = currentPage.href1(selector) //not null because already validated
           currentPage = PageBuilder.resolve(Visit(nextUrl))(hConfWrapper.value.value)(0)
 
-          val context = new util.LinkedHashMap[String,Serializable](page.context)
+          val context = new util.LinkedHashMap[String,Any](page.context)
 
           if (indexKey!=null) {
             context.put(indexKey, i)
@@ -394,7 +393,7 @@ class PageRDDFunctions(val self: RDD[Page]) {
 
     self.flatMap {
       page => {
-        val context = new util.LinkedHashMap[String,Serializable](page.context)
+        val context = new util.LinkedHashMap[String,Any](page.context)
 
         if (indexKey!=null) {
           context.put(indexKey, 0)
@@ -409,7 +408,7 @@ class PageRDDFunctions(val self: RDD[Page]) {
           val nextUrl = currentPage.href1(selector) //not null because already validated
           currentPage = PageBuilder.resolve(Wget(nextUrl))(hConfWrapper.value.value)(0)
 
-          val context = new util.LinkedHashMap[String,Serializable](page.context)
+          val context = new util.LinkedHashMap[String,Any](page.context)
 
           if (indexKey!=null) {
             context.put(indexKey, i)

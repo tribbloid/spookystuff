@@ -1,6 +1,5 @@
 package org.tribbloid.spookystuff
 
-import java.io.Serializable
 import java.util
 
 import org.apache.spark.rdd.RDD
@@ -26,8 +25,8 @@ object SpookyContext {
   //these are the entry points of SpookyStuff starting from a common RDD of strings or maps
   implicit def stringRDDToActionPlanRDD(rdd: RDD[String]): RDD[ActionPlan] = rdd.map{
     str => {
-      val context = new util.LinkedHashMap[String,Serializable]
-      context.put("_", str.asInstanceOf[Serializable])
+      val context = new util.LinkedHashMap[String,Any]
+      if (str!=null) context.put("_", str)
       new ActionPlan(context)
     }
   }
@@ -38,11 +37,18 @@ object SpookyContext {
 
   implicit def mapRDDToActionPlanRDD[T <: util.Map[String,String]](rdd: RDD[T]) = rdd.map{
     map => {
-      new ActionPlan(new util.LinkedHashMap[String,Serializable](map))
+      if (map!=null) {
+        new ActionPlan(new util.LinkedHashMap[String,Any](map))
+      }
+      else {
+        new ActionPlan(new util.LinkedHashMap[String,Any]())
+      }
     }
   }
 
   implicit def mapRDDToActionPlanRDDFunctions[T <: util.Map[String,String]](rdd: RDD[T]) = new ActionPlanRDDFunctions(mapRDDToActionPlanRDD(rdd))
+
+
 
   implicit def pageRDDToActionPlanRDD(rdd: RDD[Page]) = rdd.map{
     page => {

@@ -11,7 +11,7 @@ object WellCa extends SparkTestCore {
 
   def doMain() = {
 
-    (sc.parallelize(Seq("Dummy")) +>
+    (sc.parallelize(Seq(null)) +>
       Wget("http://well.ca/whatsnew/") !==).saveAs(
         dir = "file:///home/peng/wellca", overwrite = true
       ).joinBySlice(

@@ -1,8 +1,6 @@
 package org.tribbloid.spookystuff.entity
 
 import java.util
-import java.io.Serializable
-import org.tribbloid.spookystuff.factory.PageBuilder
 
 import scala.collection.JavaConversions._
 
@@ -24,9 +22,9 @@ import scala.collection.JavaConversions._
 //+ -
 //* / %
 //(all other special characters)
-class ActionPlan(val context: util.LinkedHashMap[String, Serializable] = null) extends Serializable {
+class ActionPlan(val context: util.LinkedHashMap[String, Any] = null) extends Serializable {
 
-  def this(context: util.LinkedHashMap[String, Serializable], as: ClientAction*) = {
+  def this(context: util.LinkedHashMap[String, Any], as: ClientAction*) = {
     this(context)
     this.+=(as)
   }
@@ -81,7 +79,7 @@ class ActionPlan(val context: util.LinkedHashMap[String, Serializable] = null) e
   }
 }
 
-class EmptyActionPlan(context: util.LinkedHashMap[String, Serializable] = null) extends ActionPlan(context) {
+class EmptyActionPlan(context: util.LinkedHashMap[String, Any] = null) extends ActionPlan(context) {
 
   override def equals(a: Any): Boolean = a match {
     case a: EmptyActionPlan => {

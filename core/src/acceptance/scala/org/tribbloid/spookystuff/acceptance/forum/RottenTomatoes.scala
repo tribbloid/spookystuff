@@ -10,7 +10,7 @@ import org.tribbloid.spookystuff.entity._
 object RottenTomatoes extends SparkTestCore {
   override def doMain(): Array[_] = {
 
-    (sc.parallelize(Seq("Dummy")) +>
+    (sc.parallelize(Seq(null)) +>
       Wget("http://www.rottentomatoes.com/") !==)
       .wgetJoin("table.top_box_office tr.sidebarInTheaterTopBoxOffice a", indexKey = "rank") //go to movie page, e.g. http://www.rottentomatoes.com/m/guardians_of_the_galaxy/
       .selectInto(

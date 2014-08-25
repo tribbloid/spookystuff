@@ -1,6 +1,5 @@
 package org.tribbloid.spookystuff.entity
 
-import java.io.Serializable
 import java.net._
 import java.util
 import java.util.Date

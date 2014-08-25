@@ -8,7 +8,7 @@ object Dealmoon extends SparkTestCore {
 
   def doMain() = {
 
-    (sc.parallelize(Seq("Dummy")) +>
+    (sc.parallelize(Seq(null)) +>
       Wget("http://www.dealmoon.com/Online-Stores/Amazon-com?expired=n")!==).wgetInsertPagination(
         "a.next_link"
       ).map{

@@ -11,7 +11,7 @@ object Imdb extends SparkTestCore {
 
   override def doMain(): Array[_] = {
 
-    (sc.parallelize(Seq("Dummy")) +>
+    (sc.parallelize(Seq(null)) +>
       Wget("http://www.imdb.com/chart") !==)
       .joinBySlice("div#boxoffice tbody tr") //slice into rows of top office table
       .selectInto(
