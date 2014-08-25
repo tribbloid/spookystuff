@@ -403,6 +403,8 @@ case class Wget(val url: String) extends Export with Sessionless{
     CookieHandler.setDefault(new CookieManager(null, CookiePolicy.ACCEPT_ALL));
 
     val uc: URLConnection =  new URL(url).openConnection()
+    uc.setConnectTimeout(Const.resourceTimeout*1000)
+    uc.setReadTimeout(Const.resourceTimeout*1000)
 
     uc match {
       case huc: HttpsURLConnection => {
