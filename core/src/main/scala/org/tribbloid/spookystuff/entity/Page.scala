@@ -134,7 +134,7 @@ case class Page(
              alias: String = null,
              limit: Int = Const.fetchLimit,
              indexKey: String = null
-             ): Seq[Page] = doc match {
+             ): Array[Page] = doc match {
 
     case Some(doc: Element) => {
       val elements = doc.select(selector)
@@ -153,15 +153,15 @@ case class Page(
 
           this.copy(
             resolvedUrl = this.resolvedUrl + "#" + tuple._2,
-            content = ("<table>"+tuple._1.html()+"</table>").getBytes(parsedContentType.getCharset),//otherwise tr and td won't be parsed
+            content = ("<table>"+tuple._1.outerHtml()+"</table>").getBytes(parsedContentType.getCharset),//otherwise tr and td won't be parsed
             alias = newAlias,
             context = context
           )
         }
-      }
+      }.toArray
     }
 
-    case _ => return Seq[Page]()
+    case _ => return Array[Page]()
 
   }
 
@@ -212,7 +212,7 @@ case class Page(
    * @param distinct whether to remove duplicate values
    * @return values of the attributes as a sequence of strings
    */
-  def attr(selector: String, attr: String, limit: Int = Const.fetchLimit, distinct: Boolean = false): Seq[String] = doc match {
+  def attr(selector: String, attr: String, limit: Int = Const.fetchLimit, distinct: Boolean = false): Array[String] = doc match {
     case Some(doc: Element) => {
 
       val elements = doc.select(selector)
@@ -222,11 +222,11 @@ case class Page(
         _.attr(attr)
       }
 
-      if (distinct == true) return result.distinct
-      else return result
+      if (distinct == true) return result.distinct.toArray
+      else return result.toArray
     }
 
-    case _ => Seq[String]()
+    case _ => Array[String]()
   }
 
   /**
@@ -248,7 +248,7 @@ case class Page(
    * @param distinct whether to remove duplicate values
    * @return values of the attributes as a sequence of strings
    */
-  def href(selector: String, limit: Int = Const.fetchLimit, absolute: Boolean = true, distinct: Boolean = false): Seq[String] = {
+  def href(selector: String, limit: Int = Const.fetchLimit, absolute: Boolean = true, distinct: Boolean = false): Array[String] = {
     if (absolute == true) attr(selector,"abs:href",limit,distinct)
     else attr(selector,"href",limit,distinct)
   }
@@ -272,7 +272,7 @@ case class Page(
    * @param distinct whether to remove duplicate values
    * @return values of the attributes as a sequence of strings
    */
-  def src(selector: String, limit: Int = Const.fetchLimit, absolute: Boolean = true, distinct: Boolean = false): Seq[String] = {
+  def src(selector: String, limit: Int = Const.fetchLimit, absolute: Boolean = true, distinct: Boolean = false): Array[String] = {
     if (absolute == true) attr(selector,"abs:src",limit,distinct)
     else attr(selector,"src",limit,distinct)
   }
@@ -301,7 +301,7 @@ case class Page(
     * @param distinct whether to remove duplicate values
     * @return enclosed text as a sequence of strings
     */
-  def text(selector: String, limit: Int = Const.fetchLimit, distinct: Boolean = false): Seq[String] = doc match {
+  def text(selector: String, limit: Int = Const.fetchLimit, distinct: Boolean = false): Array[String] = doc match {
     case Some(doc: Element) => {
       val elements = doc.select(selector)
       val length = Math.min(elements.size, limit)
@@ -310,11 +310,11 @@ case class Page(
         _.text
       }
 
-      if (distinct == true) return result.distinct
-      else return result
+      if (distinct == true) return result.distinct.toArray
+      else return result.toArray
     }
 
-    case _ => Seq[String]()
+    case _ => Array[String]()
   }
 
   def ownText1(selector: String): String = doc match {
@@ -327,7 +327,7 @@ case class Page(
     case _ => null
   }
 
-  def ownText(selector: String, limit: Int = Const.fetchLimit, distinct: Boolean = false): Seq[String] = doc match {
+  def ownText(selector: String, limit: Int = Const.fetchLimit, distinct: Boolean = false): Array[String] = doc match {
     case Some(doc: Element) => {
       val elements = doc.select(selector)
       val length = Math.min(elements.size, limit)
@@ -336,11 +336,11 @@ case class Page(
         _.ownText()
       }
 
-      if (distinct == true) return result.distinct
-      else return result
+      if (distinct == true) return result.distinct.toArray
+      else return result.toArray
     }
 
-    case _ => Seq[String]()
+    case _ => Array[String]()
   }
 
   def extractPropertiesAsMap(keyAndF: (String, Page => Any)*): util.LinkedHashMap[String, Any] = {

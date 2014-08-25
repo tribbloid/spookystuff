@@ -29,12 +29,12 @@ object Imdb extends SparkTestCore {
         "review_count" -> (_.text1("td#overview-top span[itemprop=reviewCount]"))
       )
       .wgetLeftJoin("div#maindetails_quicklinks a:contains(Reviews)") //go to review pages, e.g. http://www.imdb.com/title/tt2015381/reviews?ref_=tt_urv
-      .wgetInsertPagination("div#tn15content a:has(img[alt~=Next])",500) //grab all pages by using the right arrow button.
+      .wgetInsertPagination("div#tn15content a:has(img[alt~=Next])",2) //grab all pages by using the right arrow button.
       .joinBySlice("div#tn15content div:has(h2)") //slice into rows of reviews
       .selectInto(
         "review_rating" -> (_.attr1("img[alt]","alt")),
         "review_title" -> (_.text1("h2")),
-        "review_meta" -> (_.text("small").toString())
+        "review_meta" -> (_.text("small"))
       )
       .wgetLeftJoin("a") //go to reviewers' page, e.g. http://www.imdb.com/user/ur23582121/
       .selectInto(
@@ -43,9 +43,9 @@ object Imdb extends SparkTestCore {
         "user_post_count" -> (_.ownText1("div.user-lists div.see-more")),
         "user_rating_count" -> (_.text1("div.ratings div.see-more")),
         "user_review_count" -> (_.text1("div.reviews div.see-more")),
-        "user_rating_histogram" -> (_.attr("div.overall div.histogram-horizontal a","title").toString())
+        "user_rating_histogram" -> (_.attr("div.overall div.histogram-horizontal a","title"))
       )
-      .asTsvRDD() //Output as TSV file
+      .asJsonRDD() //Output as TSV file
       .collect()
   }
 }

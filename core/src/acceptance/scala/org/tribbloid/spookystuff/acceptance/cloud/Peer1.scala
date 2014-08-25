@@ -22,7 +22,7 @@ object Peer1 extends SparkTestCore {
       "monthly_price" -> (_.text1("span#monthly")),
       "hourly_price" -> (_.text1("span#hourly"))
     )
-      .asTsvRDD()
+      .asJsonRDD()
       .collect()
   }
 }

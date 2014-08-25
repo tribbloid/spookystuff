@@ -37,12 +37,11 @@ object SpookyContext {
 
   implicit def mapRDDToActionPlanRDD[T <: util.Map[String,String]](rdd: RDD[T]) = rdd.map{
     map => {
+      val context = new util.LinkedHashMap[String,Any]()
       if (map!=null) {
-        new ActionPlan(new util.LinkedHashMap[String,Any](map))
+        context.putAll(map)
       }
-      else {
-        new ActionPlan(new util.LinkedHashMap[String,Any]())
-      }
+      new ActionPlan(context)
     }
   }
 
