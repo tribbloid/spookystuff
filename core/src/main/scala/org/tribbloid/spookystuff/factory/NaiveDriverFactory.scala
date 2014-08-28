@@ -29,7 +29,7 @@ class NaiveDriverFactory extends DriverFactory {
     val newCap = baseCaps.merge(capabilities)
 
     return retry () {
-      withDeadline(Const.driverCallTimeout) {
+      withDeadline(Const.sessionInitializationTimeout) {
         new PhantomJSDriver(newCap)
       }
     }

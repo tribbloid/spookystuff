@@ -15,7 +15,7 @@ import org.openqa.selenium.support.events.EventFiringWebDriver
 import org.openqa.selenium.support.ui.{ExpectedConditions, Select, WebDriverWait}
 import org.tribbloid.spookystuff.Const
 import org.tribbloid.spookystuff.factory.PageBuilder
-import org.tribbloid.spookystuff.utils.InsecureTrustManager
+import org.tribbloid.spookystuff.utils._
 
 import scala.collection.JavaConversions._
 import scala.collection.mutable.ArrayBuffer
@@ -70,8 +70,6 @@ trait ClientAction extends Serializable with Cloneable {
 
   var timeline: Long = -1
 
-  //  val timeout: Int = Const.driverCallTimeout
-
   private var canFail: Boolean = false
 
   def canFail(value: Boolean = true): this.type = {
@@ -86,10 +84,15 @@ trait ClientAction extends Serializable with Cloneable {
   final def exe(pb: PageBuilder): Array[Page] = {
 
     try {
-      var pages =
-      // withDeadline(this.timeout) { //TODO: useless in most cases
-        doExe(pb: PageBuilder)
-      //      }
+      var pages = this match {
+        case d: Deadlined => {
+          withDeadline(d.timeout) {
+            doExe(pb: PageBuilder)
+          }
+        }
+        case _ => doExe(pb: PageBuilder)
+      }
+
 
       val newTimeline = new Date().getTime - pb.start_time
 
@@ -133,6 +136,11 @@ trait ClientAction extends Serializable with Cloneable {
   }
 
   def doExe(pb: PageBuilder): Array[Page]
+}
+
+trait Deadlined extends ClientAction {
+
+  val timeout: Int = Const.resourceTimeout
 }
 
 /**
@@ -189,7 +197,7 @@ trait Export extends ClientAction {
  * Type into browser's url bar and click "goto"
  * @param url support context interpolation
  */
-case class Visit(val url: String) extends Interactive {
+case class Visit(val url: String) extends Interactive with Deadlined {
   override def exeWithoutResult(pb: PageBuilder) {
     pb.driver.get(url)
   }
