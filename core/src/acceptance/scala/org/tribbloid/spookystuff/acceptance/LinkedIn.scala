@@ -4,8 +4,8 @@ import org.tribbloid.spookystuff.SpookyContext._
 import org.tribbloid.spookystuff.entity._
 
 /**
-* A more complex linkedIn job that finds name and printout skills of all Sanjay Gupta in your local area
-*/
+ * A more complex linkedIn job that finds name and printout skills of all Sanjay Gupta in your local area
+ */
 //remember infix operator cannot be written in new line
 object LinkedIn extends SparkTestCore {
 
@@ -18,11 +18,10 @@ object LinkedIn extends SparkTestCore {
       Submit("input[name=\"search\"]")
       !==).wgetJoin(
         "ol#result-set h2 a"
-      ).map{ page => (
-      page.text1("span.full-name"),
-      page.text1("p.title"),
-      page.text("div#profile-skills li")
-      )
-    }.collect()
+      ).selectInto (
+      "name" -> (_.text1("span.full-name")),
+      "title" -> (_.text1("p.title")),
+      "skills" -> (_.text("div#profile-skills li"))
+    ).asTsvRDD().collect()
   }
 }

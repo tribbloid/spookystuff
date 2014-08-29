@@ -241,9 +241,9 @@ case class DelayFor(val selector: String, val delay: Int = Const.pageDelay) exte
 case class Click(val selector: String, val delay: Int = Const.pageDelay) extends Interactive {
   override def exeWithoutResult(pb: PageBuilder) {
     val wait = new WebDriverWait(pb.driver, delay)
-    wait.until(ExpectedConditions.presenceOfAllElementsLocatedBy(By.cssSelector(selector)))
+    val element = wait.until(ExpectedConditions.visibilityOfElementLocated(By.cssSelector(selector)))
 
-    pb.driver.findElement(By.cssSelector(selector)).click()
+    element.click()
   }
 }
 
