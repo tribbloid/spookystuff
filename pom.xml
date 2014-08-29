@@ -104,6 +104,11 @@
             <artifactId>jsoup</artifactId>
             <version>1.7.3</version>
         </dependency>
+        <dependency>
+            <groupId>com.syncthemall</groupId>
+            <artifactId>boilerpipe</artifactId>
+            <version>1.2.2</version>
+        </dependency>
 
     </dependencies>
 

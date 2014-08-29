@@ -80,6 +80,10 @@ class PageRDDFunctions(val self: RDD[Page]) {
     _.context.values().mkString("\t")
   }
 
+//  def asTsv(): String = this.asJsonRDD().collect()
+
+//  def mailTo
+
   /**
    * save each page to a designated directory
    * this is a narrow transformation, use it to save overhead for scheduling

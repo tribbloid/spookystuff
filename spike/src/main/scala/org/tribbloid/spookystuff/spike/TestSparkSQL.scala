@@ -15,21 +15,24 @@ object TestSparkSQL {
     val conf = new SparkConf().setAppName("Spark SQL")
     //    conf.setMaster("local-cluster[2,4,1000]") //no can do! spark cannot find jars
     conf.setMaster("local[8,3]")
-    conf.setSparkHome(System.getenv("SPARK_HOME"))
+//    conf.setSparkHome(System.getenv("SPARK_HOME"))
 
     val sc = new SparkContext(conf)
 
-    val sqlContext = new SQLContext(sc)
+    val sql = new SQLContext(sc)
 
     // Importing the SQL context gives access to all the SQL functions and implicit conversions.
-    import sqlContext._
+    import sql._
 
     val rdd = sc.parallelize((1 to 100).map(i => Record(i, s"val_${200-i}")))
 
     val schemaRDD = rdd.where('key > 20)
-    val rows = schemaRDD.orderBy('key.asc).select('value).collect()
+    val rowRDD = schemaRDD.orderBy('key.asc)
+//    rowRDD.baseSchemaRDD.sche
+    println(rowRDD.schemaString)
 
-    rows.foreach(row => println(row(0)))
+    val rows = rowRDD.collect()
+    rows.foreach(println(_))
 
 //      .collect()
 //    rows.foreach(println(_))

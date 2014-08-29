@@ -85,7 +85,7 @@ trait ClientAction extends Serializable with Cloneable {
 
     try {
       var pages = this match {
-        case d: Deadlined => {
+        case d: Timed => {
           withDeadline(d.timeout) {
             doExe(pb: PageBuilder)
           }
@@ -138,7 +138,7 @@ trait ClientAction extends Serializable with Cloneable {
   def doExe(pb: PageBuilder): Array[Page]
 }
 
-trait Deadlined extends ClientAction {
+trait Timed extends ClientAction {
 
   val timeout: Int = Const.resourceTimeout
 }
@@ -197,7 +197,7 @@ trait Export extends ClientAction {
  * Type into browser's url bar and click "goto"
  * @param url support context interpolation
  */
-case class Visit(val url: String) extends Interactive with Deadlined {
+case class Visit(val url: String) extends Interactive with Timed {
   override def exeWithoutResult(pb: PageBuilder) {
     pb.driver.get(url)
   }
