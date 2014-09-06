@@ -1,7 +1,7 @@
 package org.tribbloid.spookystuff.entity
 
 import org.scalatest.{BeforeAndAfter, FunSuite}
-import org.tribbloid.spookystuff.factory.PageBuilder
+import org.tribbloid.spookystuff.factory.{NaiveDriverFactory, PageBuilder}
 
 /**
  * Created by peng on 22/06/14.
@@ -37,10 +37,22 @@ class TestPage extends FunSuite with BeforeAndAfter {
 
 class TestEmptyPage extends FunSuite with BeforeAndAfter {
 
+  //shorthand for resolving the final stage after some interactions
+  lazy val emptyPage: Page = {
+    val pb = new PageBuilder(null,NaiveDriverFactory)
+
+    try {
+      Snapshot().exe(pb).toList(0)
+    }
+    finally {
+      pb.finalize
+    }
+  }
+
   var page: Page = null
 
   before {
-    page = PageBuilder.emptyPage
+    page = emptyPage
   }
 
   test("attr1") {assert (page.attr1("div.dummy","href") === null)}
@@ -51,7 +63,7 @@ class TestEmptyPage extends FunSuite with BeforeAndAfter {
 
   test("text") {assert (page.text("div.dummy") === Seq[String]())}
 
-  test("slice") {assert (page.slice("div.dummy") === Seq[Page]())}
+  test("slice") {assert (page.slice("div.dummy")() === Seq[Page]())}
 
   test("elementExist") {assert (page.elementExist("div.dummy") === false)}
 

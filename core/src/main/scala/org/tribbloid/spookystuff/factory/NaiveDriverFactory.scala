@@ -4,13 +4,12 @@ import org.openqa.selenium.phantomjs.{PhantomJSDriver, PhantomJSDriverService}
 import org.openqa.selenium.remote.server.DriverFactory
 import org.openqa.selenium.remote.{CapabilityType, DesiredCapabilities}
 import org.openqa.selenium.{Capabilities, WebDriver}
-import org.tribbloid.spookystuff.Const
-import org.tribbloid.spookystuff.utils._
+import org.tribbloid.spookystuff.{Utils, Const}
 
 /**
  * Created by peng on 25/07/14.
  */
-class NaiveDriverFactory extends DriverFactory {
+trait NaiveDriverFactory extends DriverFactory {
 
   val baseCaps = new DesiredCapabilities;
   baseCaps.setJavascriptEnabled(true);                //< not really needed: JS enabled by default
@@ -28,8 +27,8 @@ class NaiveDriverFactory extends DriverFactory {
   override def newInstance(capabilities: Capabilities): WebDriver = {
     val newCap = baseCaps.merge(capabilities)
 
-    return retry () {
-      withDeadline(Const.sessionInitializationTimeout) {
+    return Utils.retry () {
+      Utils.withDeadline(Const.sessionInitializationTimeout) {
         new PhantomJSDriver(newCap)
       }
     }
@@ -39,3 +38,5 @@ class NaiveDriverFactory extends DriverFactory {
     return true
   }
 }
+
+object NaiveDriverFactory extends NaiveDriverFactory

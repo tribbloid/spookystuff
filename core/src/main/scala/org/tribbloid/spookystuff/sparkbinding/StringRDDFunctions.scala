@@ -1,7 +1,8 @@
 package org.tribbloid.spookystuff.sparkbinding
 
 import org.apache.spark.rdd.RDD
-import java.util
+
+import scala.collection.mutable
 
 /**
  * Created by peng on 12/06/14.
@@ -9,7 +10,7 @@ import java.util
 class StringRDDFunctions(val self: RDD[String]) {
 
   //csv has to be headerless, there is no better solution as header will be shuffled to nowhere
-  def csvToMap(headerRow: String, splitter: String = ","): RDD[util.LinkedHashMap[String,String]] = {
+  def csvToMap(headerRow: String, splitter: String = ","): RDD[Map[String,String]] = {
     val headers = headerRow.split(splitter)
     val width = headers.length
 
@@ -17,13 +18,13 @@ class StringRDDFunctions(val self: RDD[String]) {
     self.map {
       str => {
         val values = str.split(splitter)
-        val row: util.LinkedHashMap[String,String] = new util.LinkedHashMap()
+        val row: mutable.Map[String,String] = mutable.Map()
 
         for (i <- 0 to width-1)
         {
           row.put(headers(i), values(i))
         }
-        row
+        row.toMap
       }
     }
   }

@@ -6,46 +6,34 @@ import java.util.Date
 import org.apache.hadoop.conf.Configuration
 import org.openqa.selenium.Capabilities
 import org.openqa.selenium.remote.server.DriverFactory
-import org.tribbloid.spookystuff.Const
+import org.tribbloid.spookystuff.SpookyContext
 import org.tribbloid.spookystuff.entity._
 
 import scala.collection.mutable.ArrayBuffer
 
 object PageBuilder {
 
-  //shorthand for resolving the final stage after some interactions
-  lazy val emptyPage: Page = {
-    val pb = new PageBuilder(null)
+  def resolve(actions: ClientAction*)(implicit spooky: SpookyContext): Array[Page] = {
 
-    try {
-      Snapshot().exe(pb).toList(0)
+    if (ClientAction.snapshotNotOmitted(actions: _*)) {
+      resolvePlain(actions: _*)(spooky)
     }
-    finally {
-      pb.finalize
-    }
-  }
-
-  def resolve(actions: ClientAction*)(hConf: Configuration): Array[Page] = {
-    if (ClientAction.mayHaveResult(actions: _*) == true) {
-      resolvePlain(actions: _*)(hConf)
-    }
-    else
-    {
-      resolvePlain(actions.:+(Snapshot()): _*)(hConf)
+    else {
+      resolvePlain(actions :+ Snapshot(): _*)(spooky)
     }
   }
 
   // Major API shrink! resolveFinal will be merged here
   // if a resolve has no potential to output page then a snapshot will be appended at the end
-  private def resolvePlain(actions: ClientAction*)(hConf: Configuration): Array[Page] = {
+  private def resolvePlain(actions: ClientAction*)(implicit spooky: SpookyContext): Array[Page] = {
 
     val results = ArrayBuffer[Page]()
 
-    val pb = if (actions.forall( _.isInstanceOf[Sessionless] )) {
-      new PageBuilder(hConf, null)
+    val pb = if (actions.isEmpty||actions.forall(_.isInstanceOf[Sessionless])) {
+      new PageBuilder(spooky.hConf, null)
     }
     else {
-      new PageBuilder(hConf)
+      new PageBuilder(spooky.hConf, spooky.driverFactory)
     }
 
     try {
@@ -54,18 +42,17 @@ object PageBuilder {
         if (pages != null) results.++=(pages)
       }
 
-      return results.toArray
+      results.toArray
     }
     finally {
-      pb.finalize
+      pb.finalize()
     }
   }
-
 }
 
 class PageBuilder(
                    val hConf: Configuration,
-                   val driverFactory: DriverFactory = Const.defaultDriverFactory,
+                   val driverFactory: DriverFactory,
                    val caps: Capabilities = null
                    ) {
 
@@ -85,7 +72,7 @@ class PageBuilder(
   //  def exe(action: ClientAction): Array[Page] = action.exe(this)
 
   //remember to call this! don't want thousands of phantomJS browsers opened
-  override def finalize = {
+  override def finalize() = {
     try{
       if (driver != null) {
         driver.close()
@@ -94,7 +81,7 @@ class PageBuilder(
     }catch{
       case t: Throwable => throw t;
     }finally{
-      super.finalize();
+      super.finalize()
     }
   }
 }

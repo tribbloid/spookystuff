@@ -2,6 +2,7 @@ package org.tribbloid.spookystuff
 
 import com.fasterxml.jackson.databind.{ObjectMapper, ObjectWriter}
 import org.tribbloid.spookystuff.factory.NaiveDriverFactory
+import org.tribbloid.spookystuff.operator.Inner
 
 /**
  * Created by peng on 04/06/14.
@@ -16,7 +17,7 @@ final object Const {
   val pageExpireAfter = 1800
 
   //default max number of elements scraped from a page, set to Int.max to allow unlimited fetch
-  val fetchLimit = 100
+  val fetchLimit = 500
 
   val defaultCharset = "ISO-8859-1"
 
@@ -28,8 +29,11 @@ final object Const {
   val errorPageDumpDir = "s3n://spooky-errordump"
   val localErrorPageDumpDir = "temp/spooky-errordump"
 
-  val defaultDriverFactory = new NaiveDriverFactory()
 //  type Logging = com.typesafe.scalalogging.slf4j.Logging
+
+  val defaultJoinType = Inner
+
+  val jsonMapper = new ObjectMapper()
 
 //  val webClientOptions = new WebClientOptions
 //  webClientOptions.setUseInsecureSSL(true)

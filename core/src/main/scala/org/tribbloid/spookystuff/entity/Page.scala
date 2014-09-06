@@ -1,8 +1,6 @@
 package org.tribbloid.spookystuff.entity
 
 import java.io._
-import java.text.DateFormat
-import java.util
 import java.util.{Date, UUID}
 
 import org.apache.commons.io.IOUtils
@@ -14,6 +12,8 @@ import org.jsoup.nodes.Element
 import org.tribbloid.spookystuff.Const
 
 import scala.collection.JavaConversions._
+import scala.collection.immutable.ListMap
+import scala.collection.mutable
 
 /**
  * Created by peng on 04/06/14.
@@ -21,21 +21,16 @@ import scala.collection.JavaConversions._
 
 //immutable! we don't want to lose old pages
 //keep small, will be passed around by Spark
-//I'm always using the more familiar Java collection, also for backward compatibility
-//TODO: Java convention or Scala conventions?
 case class Page(
-                 val resolvedUrl: String,
-                 val content: Array[Byte],
-                 val contentType: String,
+                 resolvedUrl: String,
+                 content: Array[Byte],
+                 contentType: String,
 
-                 val alias: String = null,
-
-                 val backtrace: Array[Interactive] = new Array(0), //immutable, also the uid
-                 val context: util.LinkedHashMap[String, Any] = new util.LinkedHashMap, //Mutable! caused a lot of headache
-                 val timestamp: Date = new Date,
-                 val savePath: String = null
+                 backtrace: Array[Interactive] = null, //immutable, also the uid
+                 timestamp: Date = new Date,
+                 var filePath: String = null
                  )
-  extends Serializable{
+  extends Serializable {
 
   @transient lazy val parsedContentType: ContentType = {
     var result = ContentType.parse(this.contentType)
@@ -51,13 +46,11 @@ case class Page(
     None
   }
 
-  def isExpired = (new Date().getTime - timestamp.getTime > Const.pageExpireAfter*1000)
+  def isExpired = new Date().getTime - timestamp.getTime > Const.pageExpireAfter * 1000
 
-  def getFilePath(fileName: String = "#{resolved-url}", dir: String = Const.savePagePath): String ={
-    var formattedFileName = ClientAction.formatWithContext(fileName, this.context)
+  def getFilePath(fileName: String = this.resolvedUrl, dir: String = Const.savePagePath): String ={
 
-    formattedFileName = formattedFileName.replace("#{resolved-url}", this.resolvedUrl)
-    formattedFileName = formattedFileName.replace("#{timestamp}", DateFormat.getInstance.format(this.timestamp))
+    var formattedFileName = fileName
 
     //sanitizing filename can save me a lot of trouble
     formattedFileName = formattedFileName.replaceAll("[:\\\\/*?|<>_]+", ".")
@@ -66,11 +59,11 @@ case class Page(
     var formattedDir = dir
     if (!formattedDir.endsWith("/")) formattedDir = dir+"/"
     val dirPath = new Path(formattedDir)
-    return new Path(dirPath, formattedFileName).toString
+    new Path(dirPath, formattedFileName).toString
   }
 
   //this will lose information as charset encoding will be different
-  def save(fileName: String = "#{resolved-url}", dir: String = Const.savePagePath, overwrite: Boolean = false)(hConf: Configuration): String = {
+  def save(fileName: String = this.resolvedUrl, dir: String = Const.savePagePath, overwrite: Boolean = false)(hConf: Configuration): Unit = {
 
     //    val path = new Path(dir)
 
@@ -87,7 +80,7 @@ case class Page(
 
     val fs = fullPath.getFileSystem(hConf)
 
-    if (overwrite==false && fs.exists(fullPath)) {
+    if (!overwrite && fs.exists(fullPath)) {
       fullPath = new Path(fullPathString +"_"+ UUID.randomUUID())
     }
     val fos = fs.create(fullPath, overwrite) //don't overwrite important file
@@ -97,10 +90,10 @@ case class Page(
     IOUtils.write(content,fos)
     fos.close()
 
-    return fullPath.getName
+    this.filePath = fullPath.getName
   }
 
-  def saveLocal(fileName: String = "#{resolved-url}", dir: String = Const.localSavePagePath, overwrite: Boolean = false): String = {
+  def saveLocal(fileName: String = this.resolvedUrl, dir: String = Const.localSavePagePath, overwrite: Boolean = false): Unit = {
 
     val path: File = new File(dir)
     if (!path.isDirectory) path.mkdirs()
@@ -109,60 +102,18 @@ case class Page(
 
     var file: File = new File(fullPathString)
 
-    if (overwrite==false && file.exists()) {
+    if (!overwrite && file.exists()) {
       file = new File(fullPathString +"_"+ UUID.randomUUID())
     }
 
-    file.createNewFile();
+    file.createNewFile()
 
     val fos = new FileOutputStream(file)
 
     IOUtils.write(content,fos)
     fos.close()
 
-    return file.getAbsolutePath
-  }
-
-  def asJson(): String = {
-    jsonMapper.writeValueAsString(this.context)
-  }
-
-  //only slice contents inside the container, other parts are discarded
-  //this will generate doc from scratch but otherwise induces heavy load on serialization
-  def slice(
-             selector: String,
-             alias: String = null,
-             limit: Int = Const.fetchLimit,
-             indexKey: String = null
-             ): Array[Page] = doc match {
-
-    case Some(doc: Element) => {
-      val elements = doc.select(selector)
-      val length = Math.min(elements.size, limit)
-
-      var newAlias = this.alias
-      if (alias != null) newAlias = alias
-
-      return elements.subList(0, length).zipWithIndex.map {
-        tuple => {
-          val context = new util.LinkedHashMap[String,Any](this.context)
-
-          if (indexKey!=null) {
-            context.put(indexKey, tuple._2)
-          }
-
-          this.copy(
-            resolvedUrl = this.resolvedUrl + "#" + tuple._2,
-            content = ("<table>"+tuple._1.outerHtml()+"</table>").getBytes(parsedContentType.getCharset),//otherwise tr and td won't be parsed
-            alias = newAlias,
-            context = context
-          )
-        }
-      }.toArray
-    }
-
-    case _ => return Array[Page]()
-
+    this.filePath = "file://" + file.getAbsolutePath
   }
 
   //  def refresh(): Page = {
@@ -174,14 +125,17 @@ case class Page(
 
     case Some(doc: Element) => !doc.select(selector).isEmpty
 
-    case _ => return false
+    case _ => false
   }
 
-  def attrExist(selector: String, attr: String): Boolean = doc match {
+  def attrExist(
+                 selector: String,
+                 attr: String
+                 ): Boolean = doc match {
 
     case Some(doc: Element) => elementExist(selector) && doc.select(selector).hasAttr(attr)
 
-    case _ => return false
+    case _ => false
   }
 
   /**
@@ -191,16 +145,11 @@ case class Page(
    * @param attr attribute
    * @return value of the attribute as string
    */
-  def attr1(selector: String, attr: String): String = doc match {
-    case Some(doc: Element) => {
-
-      val element = doc.select(selector).first()
-      if (element == null) null
-      else element.attr(attr)
-    }
-
-    case _ => null
-  }
+  def attr1(
+             selector: String,
+             attr: String,
+             noEmpty: Boolean = true
+             ): String = this.attr(selector, attr, noEmpty).headOption.orNull
 
   /**
    * Return a sequence of attributes of all elements that match the selector.
@@ -208,23 +157,23 @@ case class Page(
    * returned Sequence may contains "" for elements that match the selector but without required attribute, use filter if you don't want them
    * @param selector css selector of all elements
    * @param attr attribute
-   * @param limit only the first n elements will be used
-   * @param distinct whether to remove duplicate values
    * @return values of the attributes as a sequence of strings
    */
-  def attr(selector: String, attr: String, limit: Int = Const.fetchLimit, distinct: Boolean = false): Array[String] = doc match {
-    case Some(doc: Element) => {
+  def attr(
+            selector: String,
+            attr: String,
+            noEmpty: Boolean = true
+            ): Array[String] = doc match {
+    case Some(doc: Element) =>
 
       val elements = doc.select(selector)
-      val length = Math.min(elements.size, limit)
 
-      val result = elements.subList(0, length).map {
+      val result = elements.map {
         _.attr(attr)
-      }
+      }.toArray
 
-      if (distinct == true) return result.distinct.toArray
-      else return result.toArray
-    }
+      if (noEmpty) result.filter(_.nonEmpty)
+      else result
 
     case _ => Array[String]()
   }
@@ -235,22 +184,25 @@ case class Page(
    * @param absolute whether to use absolute path (site url + relative path) or relative path, default to true
    * @return value of the attribute as string
    */
-  def href1(selector: String, absolute: Boolean = true): String = {
-    if (absolute == true) attr1(selector,"abs:href")
-    else attr1(selector,"href")
-  }
+  def href1(
+             selector: String,
+             absolute: Boolean = true,
+             noEmpty: Boolean = true
+             ): String = this.href(selector, absolute, noEmpty).headOption.orNull
 
   /**
    * Shorthand for attr("href")
    * @param selector css selector of all elements
-   * @param limit only the first n elements will be used
    * @param absolute whether to use absolute path (site url + relative path) or relative path, default to true
-   * @param distinct whether to remove duplicate values
    * @return values of the attributes as a sequence of strings
    */
-  def href(selector: String, limit: Int = Const.fetchLimit, absolute: Boolean = true, distinct: Boolean = false): Array[String] = {
-    if (absolute == true) attr(selector,"abs:href",limit,distinct)
-    else attr(selector,"href",limit,distinct)
+  def href(
+            selector: String,
+            absolute: Boolean = true,
+            noEmpty: Boolean = true
+            ): Array[String] = {
+    if (absolute) attr(selector,"abs:href")
+    else attr(selector,"href")
   }
 
   /**
@@ -259,22 +211,25 @@ case class Page(
    * @param absolute whether to use absolute path (site url + relative path) or relative path, default to true
    * @return value of the attribute as string
    */
-  def src1(selector: String, absolute: Boolean = true): String = {
-    if (absolute == true) attr1(selector,"abs:src")
-    else attr1(selector,"src")
-  }
+  def src1(
+            selector: String,
+            absolute: Boolean = true,
+            noEmpty: Boolean = true
+            ): String = this.src(selector, absolute, noEmpty).headOption.orNull
 
   /**
    * Shorthand for attr("src")
    * @param selector css selector of all elements
-   * @param limit only the first n elements will be used
    * @param absolute whether to use absolute path (site url + relative path) or relative path, default to true
-   * @param distinct whether to remove duplicate values
    * @return values of the attributes as a sequence of strings
    */
-  def src(selector: String, limit: Int = Const.fetchLimit, absolute: Boolean = true, distinct: Boolean = false): Array[String] = {
-    if (absolute == true) attr(selector,"abs:src",limit,distinct)
-    else attr(selector,"src",limit,distinct)
+  def src(
+           selector: String,
+           absolute: Boolean = true,
+           noEmpty: Boolean = true
+           ): Array[String] = {
+    if (absolute) attr(selector,"abs:src",noEmpty)
+    else attr(selector,"src",noEmpty)
   }
 
   //return null if selector found nothing, return "" if found something without text
@@ -284,76 +239,116 @@ case class Page(
    * @param selector css selector of the element, only the first match will be return
    * @return enclosed text as string
    */
-  def text1(selector: String): String = doc match {
-    case Some(doc: Element) => {
-      val element = doc.select(selector).first()
-      if (element == null) null
-      else element.text
-    }
-
-    case _ => null
-  }
+  def text1(
+             selector: String,
+             own: Boolean = false
+             ): String = this.text(selector, own).headOption.orNull
 
   /** Return an array of texts enclosed by their respective elements
     * return [] if selector has no match
     * @param selector css selector of all elements,
-    * @param limit only the first n elements will be used
-    * @param distinct whether to remove duplicate values
     * @return enclosed text as a sequence of strings
     */
-  def text(selector: String, limit: Int = Const.fetchLimit, distinct: Boolean = false): Array[String] = doc match {
-    case Some(doc: Element) => {
+  def text(
+            selector: String,
+            own: Boolean = false
+            ): Array[String] = doc match {
+    case Some(doc: Element) =>
       val elements = doc.select(selector)
-      val length = Math.min(elements.size, limit)
 
-      val result = elements.subList(0, length).map {
-        _.text
-      }
+      val result = if (!own) elements.map (_.text)
+      else elements.map(_.ownText)
 
-      if (distinct == true) return result.distinct.toArray
-      else return result.toArray
-    }
+      result.toArray
 
     case _ => Array[String]()
   }
 
-  def ownText1(selector: String): String = doc match {
-    case Some(doc: Element) => {
-      val element = doc.select(selector).first()
-      if (element == null) null
-      else element.ownText()
-    }
-
-    case _ => null
+  def extractAsMap[T](keyAndF: (String, Page => T)*): ListMap[String, T] = {
+    ListMap(
+      keyAndF.map{
+        tuple => (tuple._1, tuple._2(this))
+      }: _*
+    )
   }
 
-  def ownText(selector: String, limit: Int = Const.fetchLimit, distinct: Boolean = false): Array[String] = doc match {
-    case Some(doc: Element) => {
-      val elements = doc.select(selector)
-      val length = Math.min(elements.size, limit)
+  def crawl1(
+              action: ClientAction,
+              f: Page => _
+              ): PageRow = {
 
-      val result = elements.subList(0, length).map {
-        _.ownText()
+    f(this) match {
+      case null => DeadRow
+      case s: Any =>
+        val fa = action.interpolate(Map("~" -> s))
+        PageRow(actions = Seq(fa))
+    }
+  }
+
+  def crawl(
+             action: ClientAction,
+             f: Page => Array[_]
+             )(
+             distinct: Boolean = true,
+             limit: Int = Const.fetchLimit,
+             indexKey: String = null
+             ): Array[PageRow] = {
+
+    val attrs = f(this)
+
+    if (attrs.isEmpty) return Array(DeadRow)
+
+    var actions = attrs.map( attr => action.interpolate(Map("~" -> attr)))
+
+    if (distinct) actions = actions.distinct
+
+    if (actions.size > limit) {
+      actions = actions.slice(0,limit)
+    }
+
+    actions.zipWithIndex.map(
+      tuple => {
+        if (indexKey == null) {
+          PageRow(actions = Seq(tuple._1))
+        }
+        else {
+          PageRow(cells = ListMap(indexKey -> tuple._2),actions = Seq(tuple._1))
+        }
       }
-
-      if (distinct == true) return result.distinct.toArray
-      else return result.toArray
-    }
-
-    case _ => Array[String]()
+    ).toArray
   }
 
-  def extractPropertiesAsMap(keyAndF: (String, Page => Any)*): util.LinkedHashMap[String, Any] = {
-    val result: util.LinkedHashMap[String, Any] = new util.LinkedHashMap()
+  //only slice contents inside the container, other parts are discarded
+  //this will generate doc from scratch but otherwise induces heavy load on serialization
+  //sliced page should not be saved. This function will be removed soon.
+  def slice(
+             selector: String,
+             expand :Int = 0
+             )(
+             limit: Int = Const.fetchLimit
+             ): Array[Page] = {
 
-    keyAndF.foreach {
-      fEntity => {
-        val value = fEntity._2(this)
-        result.put(fEntity._1, value)
-      }
+    doc match {
+
+      case Some(doc: Element) =>
+        val elements = doc.select(selector)
+        val length = Math.min(elements.size, limit)
+
+        elements.subList(0, length).zipWithIndex.map {
+          tuple => {
+
+            this.copy(
+              resolvedUrl = this.resolvedUrl + "#" + tuple._2,
+              content = ("<table>"+tuple._1.outerHtml()+"</table>").getBytes(parsedContentType.getCharset)//otherwise tr and td won't be parsed
+            )
+          }
+        }.toArray
+
+      case _ => Array[Page]()
+
     }
-    result
   }
+
 }
 
 //object EmptyPage extends Page(
