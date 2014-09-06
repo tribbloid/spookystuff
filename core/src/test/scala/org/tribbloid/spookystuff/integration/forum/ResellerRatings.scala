@@ -1,8 +1,8 @@
-package org.tribbloid.spookystuff.acceptance.forum
+package org.tribbloid.spookystuff.integration.forum
 
 import org.tribbloid.spookystuff.SpookyContext._
-import org.tribbloid.spookystuff.acceptance.SpookyTestCore
-import org.tribbloid.spookystuff.acceptance.forum.Imdb._
+import org.tribbloid.spookystuff.integration.SpookyTestCore
+import org.tribbloid.spookystuff.integration.forum.Imdb._
 import org.tribbloid.spookystuff.entity._
 
 /**

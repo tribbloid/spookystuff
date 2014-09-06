@@ -1,4 +1,4 @@
-package org.tribbloid.spookystuff.acceptance
+package org.tribbloid.spookystuff.integration
 
 import org.tribbloid.spookystuff.entity._
 

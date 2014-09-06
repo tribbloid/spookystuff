@@ -1,4 +1,4 @@
-package org.tribbloid.spookystuff.acceptance
+package org.tribbloid.spookystuff.integration
 
 import org.apache.spark.sql.{SchemaRDD, SQLContext}
 import org.apache.spark.{SparkConf, SparkContext}
