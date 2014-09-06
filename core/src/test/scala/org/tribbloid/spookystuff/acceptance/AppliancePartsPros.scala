@@ -16,7 +16,6 @@ object AppliancePartsPros extends SpookyTestCore {
       Click("input[value=\"Search\"]") +>
       Delay(10) !=!() //TODO: change to DelayFor to save time
       )
-//      .saveAs(dir = "file:///home/peng/spookystuff/AppliancePartsPros/")
       .select(
         "model" -> ( _.text1("div.dgrm-lst div.header h2") )
       )

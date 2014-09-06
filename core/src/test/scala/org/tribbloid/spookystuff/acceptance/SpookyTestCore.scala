@@ -15,8 +15,7 @@ trait SpookyTestCore extends FunSuite {
 
   lazy val appName = this.getClass.getName
   lazy val conf: SparkConf = new SparkConf().setAppName(appName)
-    .setMaster("local[1,3]")
-//    .setSparkHome(System.getenv("SPARK_HOME"))
+    .setMaster("local[8,3]")
 
   lazy val sc: SparkContext = new SparkContext(conf)
   lazy val sql: SQLContext = new SQLContext(sc)

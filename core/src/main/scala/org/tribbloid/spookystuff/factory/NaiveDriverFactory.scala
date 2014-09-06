@@ -15,8 +15,8 @@ trait NaiveDriverFactory extends DriverFactory {
   baseCaps.setJavascriptEnabled(true);                //< not really needed: JS enabled by default
   baseCaps.setCapability(CapabilityType.SUPPORTS_FINDING_BY_CSS,true)
   //  baseCaps.setCapability("takesScreenshot", true);    //< yeah, GhostDriver haz screenshotz!
-  val phantomJSRootPath = "/usr/lib/phantomjs/"
-  baseCaps.setCapability(PhantomJSDriverService.PHANTOMJS_EXECUTABLE_PATH_PROPERTY, phantomJSRootPath + "bin/phantomjs");
+  val phantomJSPath = System.getenv("PHANTOMJS_PATH")
+  baseCaps.setCapability(PhantomJSDriverService.PHANTOMJS_EXECUTABLE_PATH_PROPERTY, phantomJSPath);
   baseCaps.setCapability(PhantomJSDriverService.PHANTOMJS_PAGE_SETTINGS_PREFIX+"loadImages", false);
   baseCaps.setCapability(PhantomJSDriverService.PHANTOMJS_PAGE_SETTINGS_PREFIX+"resourceTimeout", Const.resourceTimeout*1000)
 
