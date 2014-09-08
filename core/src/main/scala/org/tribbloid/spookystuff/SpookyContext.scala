@@ -20,20 +20,31 @@ import scala.collection.immutable.ListMap
 
 //will be shipped everywhere as implicit parameter
 class SpookyContext (
-                           @transient val sql: SQLContext, //compulsory, many things are not possible without SQL
-                           var driverFactory: DriverFactory = NaiveDriverFactory,
+                      @transient sql: SQLContext, //compulsory, many things are not possible without SQL
+                      var driverFactory: DriverFactory = NaiveDriverFactory,
 
-                           var autoSave: Boolean = true,
-                           var saveRoot: String = "s3n://spooky-page/",
-                           var saveSelect: Page => String = SelectUrlEncodingPath,
+                      var autoSave: Boolean = true,
+                      var saveRoot: String = "s3n://spooky-page/",
+                      var saveSelect: Page => String = SelectUrlEncodingPath,
 
-                           var errorDumpRoot: String = "s3n://spooky-error/",
-                           var localErrorDumpRoot: String = "temp/spooky-error/"
-                           )
+                      var errorDumpRoot: String = "s3n://spooky-error/",
+                      var localErrorDumpRoot: String = "temp/spooky-error/"
+                      )
   extends Serializable{
 
-  def this(sc: SparkContext) {
-    this(new SQLContext(sc))
+  def this(
+            sc: SparkContext,
+            driverFactory: DriverFactory = NaiveDriverFactory,
+
+            autoSave: Boolean = true,
+            saveRoot: String = "s3n://spooky-page/",
+            saveSelect: Page => String = SelectUrlEncodingPath,
+
+            errorDumpRoot: String = "s3n://spooky-error/",
+            localErrorDumpRoot: String = "temp/spooky-error/"
+            ) {
+
+    this(new SQLContext(sc), driverFactory, autoSave, saveRoot, saveSelect, errorDumpRoot, localErrorDumpRoot)
   }
 
   def this(conf: SparkConf) {
@@ -58,7 +69,7 @@ class SpookyContext (
                           page: Page
                           ) = pagePath(page, localErrorDumpRoot)
 
-  val hConfWrapper =  new SerializableWritable(sql.sparkContext.hadoopConfiguration)
+  val hConfWrapper =  new SerializableWritable(this.sql.sparkContext.hadoopConfiguration)
 
   def hConf = hConfWrapper.value
 
@@ -67,7 +78,7 @@ class SpookyContext (
   implicit def pageRowRDDToItsFunctions[T <% RDD[PageRow]](rdd: T) = new PageRowRDDFunctions(rdd)(this)
 
   //these are the entry points of SpookyStuff starting from a common RDD of strings or maps
-  val empty: RDD[PageRow] = sql.sparkContext.parallelize(Seq(PageRow()))
+  val empty: RDD[PageRow] = this.sql.sparkContext.parallelize(Seq(PageRow()))
 
   implicit def nullRDDToPageRowRDD(rdd: RDD[scala.Null]): RDD[PageRow] = rdd.map {
     str => PageRow()
