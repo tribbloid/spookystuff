@@ -13,7 +13,6 @@ import org.tribbloid.spookystuff.Const
 
 import scala.collection.JavaConversions._
 import scala.collection.immutable.ListMap
-import scala.collection.mutable
 
 /**
  * Created by peng on 04/06/14.
@@ -28,7 +27,7 @@ case class Page(
 
                  backtrace: Array[Interactive] = null, //immutable, also the uid
                  timestamp: Date = new Date,
-                 var filePath: String = null
+                 filePath: String = null
                  )
   extends Serializable {
 
@@ -48,62 +47,43 @@ case class Page(
 
   def isExpired = new Date().getTime - timestamp.getTime > Const.pageExpireAfter * 1000
 
-  def getFilePath(fileName: String = this.resolvedUrl, dir: String = Const.savePagePath): String ={
-
-    var formattedFileName = fileName
-
-    //sanitizing filename can save me a lot of trouble
-    formattedFileName = formattedFileName.replaceAll("[:\\\\/*?|<>_]+", ".")
-    if (formattedFileName.length>200) formattedFileName = formattedFileName.substring(0,200) //max fileName length is 256
-
-    var formattedDir = dir
-    if (!formattedDir.endsWith("/")) formattedDir = dir+"/"
-    val dirPath = new Path(formattedDir)
-    new Path(dirPath, formattedFileName).toString
-  }
-
   //this will lose information as charset encoding will be different
-  def save(fileName: String = this.resolvedUrl, dir: String = Const.savePagePath, overwrite: Boolean = false)(hConf: Configuration): Unit = {
+  def save(
+            path: String,
+            overwrite: Boolean = false
+            )(hConf: Configuration
+    ): Page = {
 
-    //    val path = new Path(dir)
-
-    //TODO: slow to check if the dir exist
-    //    val fs = path.getFileSystem(hConf)
-    //    if (!fs.isDirectory(path)) {
-    //      if (!fs.mkdirs(path)) {
-    //        throw new SparkException("Failed to create save path " + path) //TODO: Still SparkException?
-    //      }
-    //    }
-
-    val fullPathString = getFilePath(fileName, dir)
-    var fullPath = new Path(fullPathString)
+    var fullPath = new Path(path)
 
     val fs = fullPath.getFileSystem(hConf)
 
     if (!overwrite && fs.exists(fullPath)) {
-      fullPath = new Path(fullPathString +"_"+ UUID.randomUUID())
+      fullPath = new Path(path +"-"+ UUID.randomUUID())
     }
-    val fos = fs.create(fullPath, overwrite) //don't overwrite important file
-
-    //    val writer = new BufferedWriter(new OutputStreamWriter(fileOutputStream,"UTF-8")) //why using two buffers
+    val fos = fs.create(fullPath, overwrite)
 
     IOUtils.write(content,fos)
     fos.close()
 
-    this.filePath = fullPath.getName
+
+    this.copy(filePath = fullPath.getName)
   }
 
-  def saveLocal(fileName: String = this.resolvedUrl, dir: String = Const.localSavePagePath, overwrite: Boolean = false): Unit = {
+  def saveLocal(
+                 path: String,
+                 overwrite: Boolean = false
+                 ): Page = {
 
-    val path: File = new File(dir)
-    if (!path.isDirectory) path.mkdirs()
+//    val path: File = new File(dir)
+//    if (!path.isDirectory) path.mkdirs()
+//
+//    val fullPathString = getFilePath(fileName, dir)
 
-    val fullPathString = getFilePath(fileName, dir)
-
-    var file: File = new File(fullPathString)
+    var file: File = new File(path)
 
     if (!overwrite && file.exists()) {
-      file = new File(fullPathString +"_"+ UUID.randomUUID())
+      file = new File(path +"-"+ UUID.randomUUID())
     }
 
     file.createNewFile()
@@ -113,7 +93,7 @@ case class Page(
     IOUtils.write(content,fos)
     fos.close()
 
-    this.filePath = "file://" + file.getAbsolutePath
+    this.copy(filePath = "file://" + file.getAbsolutePath)
   }
 
   //  def refresh(): Page = {

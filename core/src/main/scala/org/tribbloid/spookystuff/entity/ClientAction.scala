@@ -24,7 +24,6 @@ import scala.collection.mutable.ArrayBuffer
 
 object ClientAction {
 
-  //TODO: reverse the direction of look-up, if a '#{...}' has no corresponding indexKey in the map, throws an exception
   def interpolate[T](str: String, map: collection.Map[String,T]): String = {
     if ((str == null)|| str.isEmpty) return str
     else if ((map == null)|| map.isEmpty) return str
@@ -35,7 +34,6 @@ object ClientAction {
       {
         var value: String = "null"
         if (entry._2 != null) {value = entry._2.toString}
-        //      TODO:  if (value.matches("[^#{}]+") == false) throw new UnsupportedOperationException("map value cannot contain #{} etc.")
         strVar = strVar.replace(sub, value)
       }
     }
@@ -115,13 +113,13 @@ trait ClientAction extends Serializable with Cloneable {
 
           val page = Snapshot().exe(pb).toList(0)
           try {
-            page.save(dir = Const.errorPageDumpDir)(pb.hConf)
+            page.save(pb.spooky.errorDumpPath(page))(pb.spooky.hConf)
           }
           catch {
             case e: Throwable =>
-              page.saveLocal(dir = Const.localErrorPageDumpDir)
+              page.saveLocal(pb.spooky.localErrorDumpPath(page))
           }
-          // TODO: logError("Error Page saved as "+errorFileName)
+          // TODO: logError("error Page saved as "+errorFileName)
         }
 
         if (!canFail) {

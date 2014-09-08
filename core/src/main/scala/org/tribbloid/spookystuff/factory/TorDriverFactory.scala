@@ -7,7 +7,13 @@ import org.openqa.selenium.phantomjs.PhantomJSDriverService
  */
 object TorDriverFactory extends NaiveDriverFactory {
 
+//  baseCaps.setCapability(
+//    PhantomJSDriverService.PHANTOMJS_GHOSTDRIVER_CLI_ARGS,
+//    Array("--proxy=127.0.0.1:9050", "--proxy-type=socks5")
+//  )
+
   baseCaps.setCapability(
-    PhantomJSDriverService.PHANTOMJS_GHOSTDRIVER_CLI_ARGS,
-    Array("--proxy=127.0.0.1:9050", "--proxy-type=socks5"))
+    PhantomJSDriverService.PHANTOMJS_CLI_ARGS,
+    Array("--proxy=127.0.0.1:9050", "--proxy-type=socks5")
+  )
 }

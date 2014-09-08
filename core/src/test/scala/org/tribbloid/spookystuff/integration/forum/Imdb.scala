@@ -38,6 +38,7 @@ object Imdb extends SpookyTestCore {
         "review_title" -> (_.text1("h2")),
         "review_meta" -> (_.text("small"))
       )
+
       .wgetJoin("a")(joinType = LeftOuter) //go to reviewers' page, e.g. http://www.imdb.com/user/ur23582121/
       .select(
         "user_name" -> (_.text1("div.user-profile h1")),

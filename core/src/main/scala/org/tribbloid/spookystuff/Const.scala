@@ -9,9 +9,9 @@ import org.tribbloid.spookystuff.operator.Inner
  */
 //TODO: propose to merge with SpookyContext
 //TODO: can use singleton pattern? those values never changes after SparkContext is defined
-final object Const {
+object Const {
 
-  val pageDelay = 10
+  val pageDelay = 20
   val resourceTimeout = 60
 //  val usePageCache = false //delegated to smart execution
   val pageExpireAfter = 1800
@@ -21,15 +21,9 @@ final object Const {
 
   val defaultCharset = "ISO-8859-1"
 
-  val savePagePath = "s3n://spooky-page"
-
-  val localSavePagePath = "temp/spooky-page/"
-//  val saveScreenshotPath = "file:///home/peng/spookystuffScreenShots/"
-
-  val errorPageDumpDir = "s3n://spooky-errordump"
-  val localErrorPageDumpDir = "temp/spooky-errordump"
-
 //  type Logging = com.typesafe.scalalogging.slf4j.Logging
+
+  val phantomJSPath = System.getenv("PHANTOMJS_PATH")
 
   val defaultJoinType = Inner
 

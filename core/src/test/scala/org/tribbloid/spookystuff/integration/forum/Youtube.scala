@@ -1,9 +1,7 @@
 package org.tribbloid.spookystuff.integration.forum
 
-import org.tribbloid.spookystuff.SpookyContext._
-import org.tribbloid.spookystuff.integration.SpookyTestCore
-import org.tribbloid.spookystuff.integration.forum.RottenTomatoes._
 import org.tribbloid.spookystuff.entity._
+import org.tribbloid.spookystuff.integration.SpookyTestCore
 import org.tribbloid.spookystuff.operator.LeftOuter
 
 /**

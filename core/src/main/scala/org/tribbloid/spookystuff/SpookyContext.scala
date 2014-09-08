@@ -4,8 +4,9 @@ import org.apache.spark.{SparkConf, SparkContext, SerializableWritable}
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.SQLContext
 import org.openqa.selenium.remote.server.DriverFactory
-import org.tribbloid.spookystuff.entity.PageRow
+import org.tribbloid.spookystuff.entity.{Page, PageRow}
 import org.tribbloid.spookystuff.factory.NaiveDriverFactory
+import org.tribbloid.spookystuff.operator.SelectUrlEncodingPath
 import org.tribbloid.spookystuff.sparkbinding.{PageRowRDDFunctions, StringRDDFunctions}
 
 import scala.collection.immutable.ListMap
@@ -18,9 +19,16 @@ import scala.collection.immutable.ListMap
 //}
 
 //will be shipped everywhere as implicit parameter
-case class SpookyContext (
-                           @transient sql: SQLContext, //compulsory, many things are not possible without SQL
-                           var driverFactory: DriverFactory = NaiveDriverFactory
+class SpookyContext (
+                           @transient val sql: SQLContext, //compulsory, many things are not possible without SQL
+                           var driverFactory: DriverFactory = NaiveDriverFactory,
+
+                           var autoSave: Boolean = true,
+                           var saveRoot: String = "s3n://spooky-page/",
+                           var saveSelect: Page => String = SelectUrlEncodingPath,
+
+                           var errorDumpRoot: String = "s3n://spooky-error/",
+                           var localErrorDumpRoot: String = "temp/spooky-error/"
                            )
   extends Serializable{
 
@@ -32,6 +40,24 @@ case class SpookyContext (
     this(new SQLContext(new SparkContext(conf)))
   }
 
+  def pagePath(
+                page: Page,
+                root: String = saveRoot,
+                select: Page => String = saveSelect
+                ): String = {
+
+    if (!root.endsWith("/")) root + "/" + saveSelect(page)
+    else root + saveSelect(page)
+  }
+
+  def errorDumpPath(
+                     page: Page
+                     ) = pagePath(page, errorDumpRoot)
+
+  def localErrorDumpPath(
+                          page: Page
+                          ) = pagePath(page, localErrorDumpRoot)
+
   val hConfWrapper =  new SerializableWritable(sql.sparkContext.hadoopConfiguration)
 
   def hConf = hConfWrapper.value
@@ -41,7 +67,7 @@ case class SpookyContext (
   implicit def pageRowRDDToItsFunctions[T <% RDD[PageRow]](rdd: T) = new PageRowRDDFunctions(rdd)(this)
 
   //these are the entry points of SpookyStuff starting from a common RDD of strings or maps
-  val Empty: RDD[PageRow] = sql.sparkContext.parallelize(Seq(PageRow()))
+  val empty: RDD[PageRow] = sql.sparkContext.parallelize(Seq(PageRow()))
 
   implicit def nullRDDToPageRowRDD(rdd: RDD[scala.Null]): RDD[PageRow] = rdd.map {
     str => PageRow()

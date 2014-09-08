@@ -12,14 +12,14 @@ object LinkedInSimple extends SpookyTestCore {
 
   def doMain() = {
 
-    (sc.parallelize(Seq("Sanjay", "Arun", "Hardik"))
+    //    (sc.parallelize(Seq("Sanjay", "Arun", "Hardik"))
+    (sc.parallelize(Seq("Sanjay"))
       +> Visit("https://www.linkedin.com/")
-//      +> TextInput("input#first","#{_}")
-//      +> TextInput("input#last","Gupta")
-//      +> Submit("input[name=\"search\"]")
+      //      +> TextInput("input#first","#{_}")
+      //      +> TextInput("input#last","Gupta")
+      //      +> Submit("input[name=\"search\"]")
       !=!())
-//      .select("links" -> (_.href("ol#result-set h2 a").mkString("\t")))
-      .saveAs(dir = "file:///home/peng/spookystuff/LinkedInSimple/")
+      //      .select("links" -> (_.href("ol#result-set h2 a").mkString("\t")))
       .asSchemaRDD()
   }
 }

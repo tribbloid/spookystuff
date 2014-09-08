@@ -14,7 +14,6 @@ object WellCa extends SpookyTestCore {
     (sc.parallelize(Seq(null))
       +> Visit("http://well.ca/whatsnew/")
       !=!())
-      .saveAs(dir = "file:///home/peng/spookystuff/wellca")
       .sliceJoin("div.product_grid_full_categories")()
       .select(
         "name" -> (_.text1("div.product_grid_info_top_text_container"))

@@ -3,9 +3,7 @@ package org.tribbloid.spookystuff.factory
 import java.util
 import java.util.Date
 
-import org.apache.hadoop.conf.Configuration
 import org.openqa.selenium.Capabilities
-import org.openqa.selenium.remote.server.DriverFactory
 import org.tribbloid.spookystuff.SpookyContext
 import org.tribbloid.spookystuff.entity._
 
@@ -30,16 +28,21 @@ object PageBuilder {
     val results = ArrayBuffer[Page]()
 
     val pb = if (actions.isEmpty||actions.forall(_.isInstanceOf[Sessionless])) {
-      new PageBuilder(spooky.hConf, null)
+      new PageBuilder(spooky, true)
     }
     else {
-      new PageBuilder(spooky.hConf, spooky.driverFactory)
+      new PageBuilder(spooky)
     }
 
     try {
       for (action <- actions) {
-        val pages = action.exe(pb)
-        if (pages != null) results.++=(pages)
+        var pages = action.exe(pb)
+        if (pages != null) {
+
+          if (spooky.autoSave) pages = pages.map(page => page.save(spooky.pagePath(page))(spooky.hConf) )
+
+          results ++= pages
+        }
       }
 
       results.toArray
@@ -51,16 +54,16 @@ object PageBuilder {
 }
 
 class PageBuilder(
-                   val hConf: Configuration,
-                   val driverFactory: DriverFactory,
-                   val caps: Capabilities = null
+                   val spooky: SpookyContext,
+                   sessionless: Boolean = false,
+                   caps: Capabilities = null
                    ) {
 
-  val driver = if (driverFactory != null) {
-    this.driverFactory.newInstance(caps)
+  val driver = if (sessionless) {
+    null
   }
   else {
-    null
+    spooky.driverFactory.newInstance(caps)
   }
 
   val start_time: Long = new Date().getTime

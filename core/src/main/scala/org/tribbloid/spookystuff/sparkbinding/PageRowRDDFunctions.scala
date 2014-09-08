@@ -57,7 +57,14 @@ class PageRowRDDFunctions(@transient val self: RDD[PageRow])(@transient val spoo
     _.asJson()
   }
 
-  def asSchemaRDD(): SchemaRDD = this.spooky.sql.jsonRDD(this.asJsonRDD())
+  def asSchemaRDD(): SchemaRDD = {
+
+    self.persist() //for some unknown reason SQLContext.jsonRDD uses the parameter RDD twice, this has to be fixed by somebody else
+
+    val result = this.spooky.sql.jsonRDD(this.asJsonRDD())
+
+    result
+  }
 
   def asCsvRDD(separator: String = ","): RDD[String] = this.asSchemaRDD().map {
     _.mkString(separator)
@@ -80,7 +87,9 @@ class PageRowRDDFunctions(@transient val self: RDD[PageRow])(@transient val spoo
 
     implicit def spookyImplicit: SpookyContext = spookyBroad.value
 
-    self.flatMap (_.!=!(joinType,flatten,indexKey) )
+    self.flatMap {
+      _.!=!(joinType,flatten,indexKey)
+    }
   }
 
   //  def !>><<(
@@ -167,25 +176,28 @@ class PageRowRDDFunctions(@transient val self: RDD[PageRow])(@transient val spoo
    * save each page to a designated directory
    * this is a narrow transformation, use it to save overhead for scheduling
    * support many file systems including but not limited to HDFS, S3 and local HDD
-   * @param dir (file/s3/s3n/hdfs)://path
+   * @param root (file/s3/s3n/hdfs)://path
    * @param overwrite if a file with the same name already exist:
    *                  true: overwrite it
    *                  false: append an unique suffix to the new file name
    * @return the same RDD[Page] with file paths carried as metadata
    */
   def saveAs(
-//              fileName: String = "#{resolved-url}",
-              dir: String = Const.savePagePath,
+              root: String = this.spooky.saveRoot, //support context interpolation
+              select: Page => String = this.spooky.saveSelect,
               overwrite: Boolean = false
               ): RDD[PageRow] = {
-    val spookyBroad = self.context.broadcast(this.spooky)
+    val hconfBroad = self.context.broadcast(this.spooky.hConf)
 
     self.map {
 
       pageRow => {
-        pageRow.pages.foreach(_.save(dir = dir, overwrite = overwrite)(spookyBroad.value.hConf))
 
-        pageRow
+        val rootInterpolated = ClientAction.interpolate(root, pageRow.cells)
+
+        val newPages = pageRow.pages.map(page => page.save(spooky.pagePath(page, rootInterpolated, select), overwrite = overwrite)(hconfBroad.value))
+
+        pageRow.copy(pages = newPages)
       }
     }
   }
@@ -193,19 +205,19 @@ class PageRowRDDFunctions(@transient val self: RDD[PageRow])(@transient val spoo
   /**
    * same as saveAs
    * but this is an action that will be executed immediately
-   * @param dir (file/s3/s3n/hdfs)://path
+   * @param root (file/s3/s3n/hdfs)://path
    * @param overwrite if a file with the same name already exist:
    *                  true: overwrite it
    *                  false: append an unique suffix to the new file name
    * @return an array of file paths
    */
   def dump(
-//            fileName: String = "#{resolved-url}",
-            dir: String = Const.savePagePath,
+            root: String = this.spooky.saveRoot, //support context interpolation
+            select: Page => String = this.spooky.saveSelect,
             overwrite: Boolean = false
             ): Array[String] = {
 
-    this.saveAs(dir, overwrite).flatMap{
+    this.saveAs(root, select, overwrite).flatMap{
       _.pages.map{
         _.filePath
       }

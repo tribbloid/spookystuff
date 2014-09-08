@@ -21,7 +21,7 @@ class TestPageBuilder extends FunSuite {
   lazy val spooky: SpookyContext = new SpookyContext(sql)
 
   test("visit and snapshot", pageBuilderTag) {
-    val builder = new PageBuilder(null,NaiveDriverFactory)
+    val builder = new PageBuilder(new SpookyContext(null: SQLContext))
     Visit("http://en.wikipedia.org").exe(builder)
     val page = Snapshot().exe(builder).toList(0)
     //    val url = builder.getUrl
@@ -34,7 +34,7 @@ class TestPageBuilder extends FunSuite {
   }
 
   test("visit, input submit and snapshot", pageBuilderTag) {
-    val builder = new PageBuilder(null,NaiveDriverFactory)
+    val builder = new PageBuilder(new SpookyContext(null: SQLContext))
     Visit("https://www.linkedin.com/").exe(builder)
     TextInput("input#first","Adam").exe(builder)
     TextInput("input#last","Muise").exe(builder)
@@ -113,8 +113,6 @@ class TestPageBuilder extends FunSuite {
     val resultsList = results.toArray
     assert(resultsList.size === 1)
     val page1 = resultsList(0)
-
-    page1.saveLocal()
   }
 
   test("wget html and save", pageTag) {
@@ -126,7 +124,6 @@ class TestPageBuilder extends FunSuite {
     assert(resultsList.size === 1)
     val page1 = resultsList(0)
 
-    page1.saveLocal()
     assert(page1.text1("title") === "Google")
   }
 
@@ -138,8 +135,6 @@ class TestPageBuilder extends FunSuite {
     val resultsList = results.toArray
     assert(resultsList.size === 1)
     val page1 = resultsList(0)
-
-    page1.saveLocal()
   }
 
   test("wget pdf and save", pageTag) {
@@ -150,8 +145,6 @@ class TestPageBuilder extends FunSuite {
     val resultsList = results.toArray
     assert(resultsList.size === 1)
     val page1 = resultsList(0)
-
-    page1.saveLocal()
   }
 
 }

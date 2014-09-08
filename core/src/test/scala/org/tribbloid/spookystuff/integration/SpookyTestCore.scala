@@ -1,10 +1,11 @@
 package org.tribbloid.spookystuff.integration
 
-import org.apache.spark.sql.{SchemaRDD, SQLContext}
+import org.apache.spark.rdd.RDD
+import org.apache.spark.sql.SQLContext
 import org.apache.spark.{SparkConf, SparkContext}
 import org.scalatest.FunSuite
 import org.tribbloid.spookystuff.SpookyContext
-import org.tribbloid.spookystuff.factory.{NaiveDriverFactory, HtmlUnitDriverFactory, ChromeDriverFactory, FirefoxDriverFactory}
+import org.tribbloid.spookystuff.factory.NaiveDriverFactory
 
 /**
  * Created by peng on 22/06/14.
@@ -13,22 +14,28 @@ import org.tribbloid.spookystuff.factory.{NaiveDriverFactory, HtmlUnitDriverFact
  */
 trait SpookyTestCore extends FunSuite {
 
-  lazy val appName = this.getClass.getName
+  lazy val appName = this.getClass.getSimpleName.replace("$","")
   lazy val conf: SparkConf = new SparkConf().setAppName(appName)
     .setMaster("local[8,3]")
 
   lazy val sc: SparkContext = new SparkContext(conf)
   lazy val sql: SQLContext = new SQLContext(sc)
-  lazy val spooky: SpookyContext = new SpookyContext(sql, NaiveDriverFactory)
-  val result = doMain()
+  lazy val spooky: SpookyContext = new SpookyContext(
+    sql,
+    driverFactory = NaiveDriverFactory,
+    saveRoot = "file:///home/peng/spooky-page/"+appName,
+    errorDumpRoot = "file:///home/peng/spooky-error/"+appName,
+    localErrorDumpRoot = "temp/spooky-error/"+appName
+  )
+  lazy val result = doMain()
 
-  def doMain(): SchemaRDD
+  def doMain(): RDD[_]
 
   test("Print query result") {
     result.collect().foreach(println(_))
   }
 
   final def main(args: Array[String]): Unit = {
-    result.foreach(println(_))
+    result.collect().foreach(println(_))
   }
 }
