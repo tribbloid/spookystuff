@@ -1,9 +1,8 @@
-package org.tribbloid.spookystuff.factory
+package org.tribbloid.spookystuff.factory.driver
 
-import org.openqa.selenium.firefox.FirefoxDriver
 import org.openqa.selenium.htmlunit.HtmlUnitDriver
-import org.openqa.selenium.remote.{CapabilityType, DesiredCapabilities}
 import org.openqa.selenium.remote.server.DriverFactory
+import org.openqa.selenium.remote.{CapabilityType, DesiredCapabilities}
 import org.openqa.selenium.{Capabilities, WebDriver}
 import org.tribbloid.spookystuff.{Const, Utils}
 

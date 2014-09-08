@@ -1,7 +1,7 @@
 package org.tribbloid.spookystuff.integration.forum
 
 import org.tribbloid.spookystuff.entity._
-import org.tribbloid.spookystuff.factory.TorDriverFactory
+import org.tribbloid.spookystuff.factory.driver.TorDriverFactory
 import org.tribbloid.spookystuff.integration.SpookyTestCore
 
 /**

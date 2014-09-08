@@ -23,4 +23,4 @@ fi
 
 export JAVA_HOME="/usr/lib/jvm/java-7-oracle"
 export SPARK_HOME="{{spark_home}}"
-export PHANTOMJS_HOME="/usr/lib/phantomjs"
+export PHANTOMJS_PATH="/usr/lib/phantomjs/bin/phantomjs"

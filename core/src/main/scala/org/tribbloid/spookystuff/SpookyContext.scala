@@ -5,7 +5,7 @@ import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.SQLContext
 import org.openqa.selenium.remote.server.DriverFactory
 import org.tribbloid.spookystuff.entity.{Page, PageRow}
-import org.tribbloid.spookystuff.factory.NaiveDriverFactory
+import org.tribbloid.spookystuff.factory.driver.NaiveDriverFactory
 import org.tribbloid.spookystuff.operator.SelectUrlEncodingPath
 import org.tribbloid.spookystuff.sparkbinding.{PageRowRDDFunctions, StringRDDFunctions}
 
@@ -20,7 +20,7 @@ import scala.collection.immutable.ListMap
 
 //will be shipped everywhere as implicit parameter
 class SpookyContext (
-                      @transient sql: SQLContext, //compulsory, many things are not possible without SQL
+                      @transient val sql: SQLContext, //compulsory, many things are not possible without SQL
                       var driverFactory: DriverFactory = NaiveDriverFactory,
 
                       var autoSave: Boolean = true,
@@ -31,21 +31,6 @@ class SpookyContext (
                       var localErrorDumpRoot: String = "temp/spooky-error/"
                       )
   extends Serializable{
-
-  def this(
-            sc: SparkContext,
-            driverFactory: DriverFactory = NaiveDriverFactory,
-
-            autoSave: Boolean = true,
-            saveRoot: String = "s3n://spooky-page/",
-            saveSelect: Page => String = SelectUrlEncodingPath,
-
-            errorDumpRoot: String = "s3n://spooky-error/",
-            localErrorDumpRoot: String = "temp/spooky-error/"
-            ) {
-
-    this(new SQLContext(sc), driverFactory, autoSave, saveRoot, saveSelect, errorDumpRoot, localErrorDumpRoot)
-  }
 
   def this(conf: SparkConf) {
     this(new SQLContext(new SparkContext(conf)))

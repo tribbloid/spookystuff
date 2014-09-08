@@ -1,7 +1,7 @@
 package org.tribbloid.spookystuff
 
 import com.fasterxml.jackson.databind.{ObjectMapper, ObjectWriter}
-import org.tribbloid.spookystuff.factory.NaiveDriverFactory
+import org.tribbloid.spookystuff.factory.driver.NaiveDriverFactory
 import org.tribbloid.spookystuff.operator.Inner
 
 /**

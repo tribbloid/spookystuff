@@ -2,7 +2,7 @@ package org.tribbloid.spookystuff.integration
 
 import org.apache.spark.rdd.RDD
 import org.tribbloid.spookystuff.entity.Visit
-import org.tribbloid.spookystuff.factory.TorDriverFactory
+import org.tribbloid.spookystuff.factory.driver.TorDriverFactory
 
 /**
  * Created by peng on 9/7/14.

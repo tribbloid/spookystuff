@@ -1,10 +1,10 @@
-package org.tribbloid.spookystuff.factory
+package org.tribbloid.spookystuff.factory.driver
 
 import org.openqa.selenium.phantomjs.{PhantomJSDriver, PhantomJSDriverService}
+import org.openqa.selenium.remote.DesiredCapabilities
 import org.openqa.selenium.remote.server.DriverFactory
-import org.openqa.selenium.remote.{CapabilityType, DesiredCapabilities}
 import org.openqa.selenium.{Capabilities, WebDriver}
-import org.tribbloid.spookystuff.{Utils, Const}
+import org.tribbloid.spookystuff.{Const, Utils}
 
 /**
  * Created by peng on 25/07/14.

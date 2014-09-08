@@ -5,7 +5,7 @@ import org.apache.spark.sql.SQLContext
 import org.apache.spark.{SparkConf, SparkContext}
 import org.scalatest.FunSuite
 import org.tribbloid.spookystuff.SpookyContext
-import org.tribbloid.spookystuff.factory.NaiveDriverFactory
+import org.tribbloid.spookystuff.factory.driver.NaiveDriverFactory
 
 /**
  * Created by peng on 22/06/14.

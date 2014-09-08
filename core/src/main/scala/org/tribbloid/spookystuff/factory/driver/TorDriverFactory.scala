@@ -1,4 +1,4 @@
-package org.tribbloid.spookystuff.factory
+package org.tribbloid.spookystuff.factory.driver
 
 import org.openqa.selenium.phantomjs.PhantomJSDriverService
 
