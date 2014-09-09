@@ -2,7 +2,6 @@ package org.tribbloid.spookystuff.factory.driver
 
 import org.openqa.selenium.firefox.FirefoxDriver
 import org.openqa.selenium.remote.DesiredCapabilities
-import org.openqa.selenium.remote.server.DriverFactory
 import org.openqa.selenium.{Capabilities, WebDriver}
 import org.tribbloid.spookystuff.{Const, Utils}
 
@@ -20,10 +19,6 @@ object FirefoxDriverFactory extends DriverFactory {
 //  baseCaps.setCapability("webdriver.firefox.bin", "firefox");
 //  baseCaps.setCapability("webdriver.firefox.profile", "WebDriver");
 
-  override def registerDriver(capabilities: Capabilities, implementation: Class[_ <: WebDriver]): Unit =  {
-    throw new UnsupportedOperationException("cannot add new driver type")
-  }
-
   override def newInstance(capabilities: Capabilities): WebDriver = {
     val newCap = baseCaps.merge(capabilities)
 
@@ -32,10 +27,6 @@ object FirefoxDriverFactory extends DriverFactory {
         new FirefoxDriver(newCap)
       }
     }
-  }
-
-  override def hasMappingFor(capabilities: Capabilities): Boolean = {
-    return true
   }
 
 }

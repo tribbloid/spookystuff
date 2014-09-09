@@ -2,7 +2,6 @@ package org.tribbloid.spookystuff.factory.driver
 
 import org.openqa.selenium.phantomjs.{PhantomJSDriver, PhantomJSDriverService}
 import org.openqa.selenium.remote.DesiredCapabilities
-import org.openqa.selenium.remote.server.DriverFactory
 import org.openqa.selenium.{Capabilities, WebDriver}
 import org.tribbloid.spookystuff.{Const, Utils}
 
@@ -19,10 +18,6 @@ trait NaiveDriverFactory extends DriverFactory {
   baseCaps.setCapability(PhantomJSDriverService.PHANTOMJS_PAGE_SETTINGS_PREFIX+"loadImages", false);
   baseCaps.setCapability(PhantomJSDriverService.PHANTOMJS_PAGE_SETTINGS_PREFIX+"resourceTimeout", Const.resourceTimeout*1000)
 
-  override def registerDriver(capabilities: Capabilities, implementation: Class[_ <: WebDriver]) {
-    throw new UnsupportedOperationException("cannot add new driver type")
-  }
-
   override def newInstance(capabilities: Capabilities): WebDriver = {
     val newCap = baseCaps.merge(capabilities)
 
@@ -31,10 +26,6 @@ trait NaiveDriverFactory extends DriverFactory {
         new PhantomJSDriver(newCap)
       }
     }
-  }
-
-  override def hasMappingFor(capabilities: Capabilities): Boolean = {
-    return true
   }
 }
 

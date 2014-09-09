@@ -7,7 +7,7 @@ import org.tribbloid.spookystuff.entity.Page
 /**
 * Created by peng on 8/29/14.
 */
-abstract class Select[T] extends (Page => T)
+abstract class Select[T] extends (Page => T) with Serializable
 
 object SelectUrlEncodingPath extends Select[String] {
 

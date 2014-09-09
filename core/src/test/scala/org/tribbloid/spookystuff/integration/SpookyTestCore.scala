@@ -20,22 +20,21 @@ trait SpookyTestCore extends FunSuite {
 
   lazy val sc: SparkContext = new SparkContext(conf)
   lazy val sql: SQLContext = new SQLContext(sc)
-  lazy val spooky: SpookyContext = new SpookyContext(
-    sql,
-    driverFactory = NaiveDriverFactory,
-    saveRoot = "file:///home/peng/spooky-page/"+appName,
-    errorDumpRoot = "file:///home/peng/spooky-error/"+appName,
-    localErrorDumpRoot = "temp/spooky-error/"+appName
-  )
+  lazy val spooky: SpookyContext = new SpookyContext(sql)
+  spooky.driverFactory = NaiveDriverFactory
+  spooky.saveRoot = "file:///home/peng/spooky/page/"+appName
+  spooky.errorDumpRoot = "file:///home/peng/spooky/error/"+appName
+  spooky.localErrorDumpRoot = "temp/spooky/error/"+appName
+
   lazy val result = doMain()
 
   def doMain(): RDD[_]
 
   test("Print query result") {
-    result.collect().foreach(println(_))
+    result.collect().foreach(println)
   }
 
   final def main(args: Array[String]): Unit = {
-    result.collect().foreach(println(_))
+    result.collect().foreach(println)
   }
 }

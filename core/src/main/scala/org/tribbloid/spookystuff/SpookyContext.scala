@@ -3,9 +3,8 @@ package org.tribbloid.spookystuff
 import org.apache.spark.{SparkConf, SparkContext, SerializableWritable}
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.SQLContext
-import org.openqa.selenium.remote.server.DriverFactory
 import org.tribbloid.spookystuff.entity.{Page, PageRow}
-import org.tribbloid.spookystuff.factory.driver.NaiveDriverFactory
+import org.tribbloid.spookystuff.factory.driver.{DriverFactory, NaiveDriverFactory}
 import org.tribbloid.spookystuff.operator.SelectUrlEncodingPath
 import org.tribbloid.spookystuff.sparkbinding.{PageRowRDDFunctions, StringRDDFunctions}
 
@@ -24,11 +23,11 @@ class SpookyContext (
                       var driverFactory: DriverFactory = NaiveDriverFactory,
 
                       var autoSave: Boolean = true,
-                      var saveRoot: String = "s3n://spooky-page/",
+                      var saveRoot: String = "s3n://spooky/page/",
                       var saveSelect: Page => String = SelectUrlEncodingPath,
 
-                      var errorDumpRoot: String = "s3n://spooky-error/",
-                      var localErrorDumpRoot: String = "temp/spooky-error/"
+                      var errorDumpRoot: String = "s3n://spooky/error/",
+                      var localErrorDumpRoot: String = "temp/error/"
                       )
   extends Serializable{
 

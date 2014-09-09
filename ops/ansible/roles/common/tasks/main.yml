@@ -4,8 +4,10 @@
   apt: pkg={{item}} state=present update_cache=yes
   with_items:
     - curl
-#    - sysstat
-#    - iptraf
+    - python-pip
+    - libzmq3
+    - python-zmq
+    - tor
   tags: java
 
 - name: Ensure ubuntu user exists
