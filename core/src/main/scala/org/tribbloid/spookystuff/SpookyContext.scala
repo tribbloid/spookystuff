@@ -28,7 +28,8 @@ class SpookyContext (
 
                       var errorDumpRoot: String = "s3n://spooky/error/",
                       var localErrorDumpRoot: String = "temp/error/"
-                      ) {
+                      )
+extends Serializable {
 
   def this(conf: SparkConf) {
     this(new SQLContext(new SparkContext(conf)))
