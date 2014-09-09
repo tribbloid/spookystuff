@@ -23,7 +23,7 @@ object Const {
 
 //  type Logging = com.typesafe.scalalogging.slf4j.Logging
 
-  val phantomJSPath = System.getenv("PHANTOMJS_PATH")
+  def phantomJSPath = System.getenv("PHANTOMJS_PATH")
 
   val defaultJoinType = Inner
 

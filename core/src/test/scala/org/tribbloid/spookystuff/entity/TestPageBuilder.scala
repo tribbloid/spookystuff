@@ -12,15 +12,15 @@ import org.tribbloid.spookystuff.factory.PageBuilder
 
 class TestPageBuilder extends FunSuite {
 
-  object pageBuilderTag extends Tag("PageBuilder")
-  object pageTag extends Tag("Page")
+  object PB extends Tag("PageBuilder")
+  object P extends Tag("Page")
 
   lazy val conf: SparkConf = new SparkConf().setAppName("dummy").setMaster("local")
   lazy val sc: SparkContext = new SparkContext(conf)
   lazy val sql: SQLContext = new SQLContext(sc)
   lazy val spooky: SpookyContext = new SpookyContext(sql)
 
-  test("visit and snapshot", pageBuilderTag) {
+  test("visit and snapshot", PB) {
     val builder = new PageBuilder(new SpookyContext(null: SQLContext))
     Visit("http://en.wikipedia.org").exe(builder)
     val page = Snapshot().exe(builder).toList(0)
@@ -33,7 +33,7 @@ class TestPageBuilder extends FunSuite {
     //    assert(url === "http://www.google.com")
   }
 
-  test("visit, input submit and snapshot", pageBuilderTag) {
+  test("visit, input submit and snapshot", PB) {
     val builder = new PageBuilder(new SpookyContext(null: SQLContext))
     Visit("https://www.linkedin.com/").exe(builder)
     TextInput("input#first","Adam").exe(builder)
@@ -47,7 +47,7 @@ class TestPageBuilder extends FunSuite {
     //    assert(url === "https://www.linkedin.com/ Input(input#first,Adam) Input(input#last,Muise) Submit(input[name=\"search\"])")
   }
 
-  test("resolve", pageBuilderTag) {
+  test("resolve", PB) {
     val results = PageBuilder.resolve(
       Visit("https://www.linkedin.com/"),
       DelayFor("input[name=\"search\"]",40),
@@ -76,7 +76,7 @@ class TestPageBuilder extends FunSuite {
 //    assert(res2.alias === "B")
   }
 
-  test("extract", pageBuilderTag) {
+  test("extract", PB) {
     val result = PageBuilder.resolve(
       Visit("https://www.linkedin.com/"),
       DelayFor("input[name=\"search\"]", 40),
@@ -91,7 +91,7 @@ class TestPageBuilder extends FunSuite {
     assert(result(0).resolvedUrl === "https://www.linkedin.com/pub/dir/?first=Adam&last=Muise")
   }
 
-  test("attributes", pageBuilderTag) {
+  test("attributes", PB) {
     val result = PageBuilder.resolve(
       Visit("http://www.amazon.com/"),
       TextInput("input#twotabsearchtextbox", "Lord of the Rings"),
@@ -104,7 +104,7 @@ class TestPageBuilder extends FunSuite {
     assert(result(0).attr1("div#result_0 h3 span.bold","title") === "")
   }
 
-  test("save", pageTag) {
+  test("save", P) {
     val results = PageBuilder.resolve(
       Visit("https://www.linkedin.com/"),
       Snapshot().as("T")
@@ -115,7 +115,7 @@ class TestPageBuilder extends FunSuite {
     val page1 = resultsList(0)
   }
 
-  test("wget html and save", pageTag) {
+  test("wget html and save", P) {
     val results = PageBuilder.resolve(
       Wget("https://www.google.hk")
     )(spooky)
@@ -127,7 +127,7 @@ class TestPageBuilder extends FunSuite {
     assert(page1.text1("title") === "Google")
   }
 
-  test("wget image and save", pageTag) {
+  test("wget image and save", P) {
     val results = PageBuilder.resolve(
       Wget("http://col.stb01.s-msn.com/i/74/A177116AA6132728F299DCF588F794.gif")
     )(spooky)
@@ -137,7 +137,7 @@ class TestPageBuilder extends FunSuite {
     val page1 = resultsList(0)
   }
 
-  test("wget pdf and save", pageTag) {
+  test("wget pdf and save", P) {
     val results = PageBuilder.resolve(
       Wget("http://www.cs.toronto.edu/~ranzato/publications/DistBeliefNIPS2012_withAppendix.pdf")
     )(spooky)

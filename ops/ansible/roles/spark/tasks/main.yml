@@ -12,9 +12,9 @@
   tags: spark
 
 - name: download sources
-  get_url: url={{spark_url}} dest={{spark_fulltgz}}
+  get_url: url={{spark_http}} dest={{spark_fulltgz}}
   tags: spark
 
 - name: Extract spark archive
-  unarchive: src={{spark_fulltgz}} dest={{spark_root}}
+  unarchive: src={{spark_fulltgz}} dest={{spark_root}} copy=no
   tags: spark

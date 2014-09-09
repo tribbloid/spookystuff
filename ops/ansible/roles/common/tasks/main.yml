@@ -8,6 +8,8 @@
     - libzmq3
     - python-zmq
     - tor
+    - git
+    - maven
   tags: java
 
 - name: Ensure ubuntu user exists

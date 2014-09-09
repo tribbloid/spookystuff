@@ -1,9 +1,10 @@
 package org.tribbloid.spookystuff.integration
 
+import akka.actor.IO.Accept
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.SQLContext
 import org.apache.spark.{SparkConf, SparkContext}
-import org.scalatest.FunSuite
+import org.scalatest.{Tag, FunSuite}
 import org.tribbloid.spookystuff.SpookyContext
 import org.tribbloid.spookystuff.factory.driver.NaiveDriverFactory
 
@@ -13,6 +14,8 @@ import org.tribbloid.spookystuff.factory.driver.NaiveDriverFactory
  * keep each test as small as possible, by using downsampling & very few iterations
  */
 trait SpookyTestCore extends FunSuite {
+
+  object Integration extends Tag("Integration")
 
   lazy val appName = this.getClass.getSimpleName.replace("$","")
   lazy val conf: SparkConf = new SparkConf().setAppName(appName)
@@ -30,11 +33,11 @@ trait SpookyTestCore extends FunSuite {
 
   def doMain(): RDD[_]
 
-  test("Print query result") {
+  test("Print query result",Integration) {
     result.collect().foreach(println)
   }
 
-  final def main(args: Array[String]): Unit = {
+  final def main(args: Array[String]) {
     result.collect().foreach(println)
   }
 }
