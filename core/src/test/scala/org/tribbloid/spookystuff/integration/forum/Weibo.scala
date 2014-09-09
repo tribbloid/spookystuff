@@ -13,7 +13,7 @@ object Weibo extends SpookyTestCore {
 
   def doMain() = {
 
-    spooky.driverFactory = TorDriverFactory
+    spooky.driverFactory = TorDriverFactory()
 
     (sc.parallelize(Seq("锤子手机"))
       +> Visit("http://www.weibo.com/login.php")

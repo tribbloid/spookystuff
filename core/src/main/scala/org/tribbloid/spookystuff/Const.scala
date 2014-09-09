@@ -23,8 +23,6 @@ object Const {
 
 //  type Logging = com.typesafe.scalalogging.slf4j.Logging
 
-  def phantomJSPath = System.getenv("PHANTOMJS_PATH")
-
   val defaultJoinType = Inner
 
   val jsonMapper = new ObjectMapper()

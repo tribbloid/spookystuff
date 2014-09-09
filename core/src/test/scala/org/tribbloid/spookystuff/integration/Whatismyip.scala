@@ -13,7 +13,7 @@ object Whatismyip extends SpookyTestCore {
 
   override def doMain(): RDD[_] = {
 
-    spooky.driverFactory = TorDriverFactory
+    spooky.driverFactory = TorDriverFactory()
 
     (empty
       +> Visit("http://www.whatsmyip.org/")

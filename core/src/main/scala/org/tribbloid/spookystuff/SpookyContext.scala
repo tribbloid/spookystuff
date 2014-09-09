@@ -20,7 +20,7 @@ import scala.collection.immutable.ListMap
 //will be shipped everywhere as implicit parameter
 class SpookyContext (
                       @transient val sql: SQLContext, //compulsory, many things are not possible without SQL
-                      var driverFactory: DriverFactory = NaiveDriverFactory,
+                      var driverFactory: DriverFactory = NaiveDriverFactory(),
 
                       var autoSave: Boolean = true,
                       var saveRoot: String = "s3n://spooky/page/",
@@ -28,8 +28,7 @@ class SpookyContext (
 
                       var errorDumpRoot: String = "s3n://spooky/error/",
                       var localErrorDumpRoot: String = "temp/error/"
-                      )
-  extends Serializable{
+                      ) {
 
   def this(conf: SparkConf) {
     this(new SQLContext(new SparkContext(conf)))
