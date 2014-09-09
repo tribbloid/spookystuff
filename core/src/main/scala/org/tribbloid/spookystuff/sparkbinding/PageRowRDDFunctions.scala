@@ -59,11 +59,11 @@ class PageRowRDDFunctions(@transient val self: RDD[PageRow])(@transient val spoo
 
   def asSchemaRDD(): SchemaRDD = {
 
-    self.persist() //for some unknown reason SQLContext.jsonRDD uses the parameter RDD twice, this has to be fixed by somebody else
+    val jsonRDD = this.asJsonRDD()
 
-    val result = this.spooky.sql.jsonRDD(this.asJsonRDD())
+    jsonRDD.persist() //for some unknown reason SQLContext.jsonRDD uses the parameter RDD twice, this has to be fixed by somebody else
 
-    result
+    this.spooky.sql.jsonRDD(jsonRDD)
   }
 
   def asCsvRDD(separator: String = ","): RDD[String] = this.asSchemaRDD().map {

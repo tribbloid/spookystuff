@@ -64,9 +64,9 @@ extends Serializable {
   //these are the entry points of SpookyStuff starting from a common RDD of strings or maps
   val empty: RDD[PageRow] = this.sql.sparkContext.parallelize(Seq(PageRow()))
 
-  implicit def nullRDDToPageRowRDD(rdd: RDD[scala.Null]): RDD[PageRow] = rdd.map {
-    str => PageRow()
-  }
+//  implicit def nullRDDToPageRowRDD(rdd: RDD[scala.Null]): RDD[PageRow] = rdd.map {
+//    str => PageRow()
+//  }
 
   implicit def stringRDDToPageRowRDD(rdd: RDD[String]): RDD[PageRow] = rdd.map{
     str => {
@@ -77,7 +77,7 @@ extends Serializable {
     }
   }
 
-  implicit def mapRDDToPageRowRDD[T <: Map[String,Any]](rdd: RDD[T]) = rdd.map{
+  implicit def mapRDDToPageRowRDD[T <: Map[String,Any]](rdd: RDD[T]): RDD[PageRow] = rdd.map{
     map => {
       var cells = ListMap[String,Any]()
       if (map!=null) cells = cells ++ map

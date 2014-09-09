@@ -12,9 +12,9 @@ import org.openqa.selenium.interactions.Actions
 import org.openqa.selenium.remote.RemoteWebDriver
 import org.openqa.selenium.support.events.EventFiringWebDriver
 import org.openqa.selenium.support.ui.{ExpectedConditions, Select, WebDriverWait}
-import org.tribbloid.spookystuff.{Utils, Const}
 import org.tribbloid.spookystuff.factory.PageBuilder
 import org.tribbloid.spookystuff.utils._
+import org.tribbloid.spookystuff.{Const, Utils}
 
 import scala.collection.mutable.ArrayBuffer
 
@@ -212,6 +212,18 @@ case class Delay(delay: Int = Const.pageDelay) extends Interactive {
 
   override def exeWithoutResult(pb: PageBuilder) {
     Thread.sleep(delay * 1000)
+  }
+}
+
+/**
+ * Wait for some random time, add some unpredictability
+ * @param from seconds to be wait for
+ */
+case class RandomDelay(from: Int = Const.pageDelay)(to: Int = from*2) extends Interactive {
+  //  override val timeout = Math.max(Const.driverCallTimeout, delay + 10)
+
+  override def exeWithoutResult(pb: PageBuilder) {
+    Thread.sleep(from * 1000 + Utils.random.nextInt((to - from) * 1000) )
   }
 }
 

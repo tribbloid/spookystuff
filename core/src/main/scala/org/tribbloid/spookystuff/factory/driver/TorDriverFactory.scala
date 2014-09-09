@@ -8,11 +8,6 @@ import org.openqa.selenium.phantomjs.PhantomJSDriverService
 class TorDriverFactory(phantomJSPath: String)
   extends NaiveDriverFactory(phantomJSPath: String) {
 
-//  baseCaps.setCapability(
-//    PhantomJSDriverService.PHANTOMJS_GHOSTDRIVER_CLI_ARGS,
-//    Array("--proxy=127.0.0.1:9050", "--proxy-type=socks5")
-//  )
-
   baseCaps.setCapability(
     PhantomJSDriverService.PHANTOMJS_CLI_ARGS,
     Array("--proxy=127.0.0.1:9050", "--proxy-type=socks5")

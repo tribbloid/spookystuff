@@ -1,5 +1,8 @@
 package org.tribbloid.spookystuff.integration.forum
 
+import java.text.SimpleDateFormat
+import java.util.Date
+
 import org.tribbloid.spookystuff.entity._
 import org.tribbloid.spookystuff.factory.driver.TorDriverFactory
 import org.tribbloid.spookystuff.integration.SpookyTestCore
@@ -13,12 +16,22 @@ object WeiboNoSession extends SpookyTestCore {
 
   def doMain() = {
 
-//    spooky.driverFactory = TorDriverFactory
+    spooky.driverFactory = TorDriverFactory()
 
-    (sc.parallelize(Seq("锤子手机"))
-      +> Visit("http://s.weibo.com/wb/smartisan&xsort=time&timescope=custom:2014-05-01-12:2014-05-04-13&Refer=g")
+    val df = new SimpleDateFormat("yyyy-MM-dd-HH")
+
+    val start = df.parse("2014-06-01-00").getTime
+    val end = df.parse("2014-06-05-00").getTime
+
+    val range = start.to(end, 3600*1000).map(time => df.format(new Date(time)))
+
+    val RDD = (sc.parallelize(range)
+      +> Visit("http://s.weibo.com/wb/%25E9%2594%25A4%25E5%25AD%2590%25E6%2589%258B%25E6%259C%25BA&xsort=time&timescope=custom:#{_}:#{_}&Refer=g")
+      +> RandomDelay(40)(80)
+      +> DelayFor("div.search_feed dl.feed_list",15)
       !=!())
-      .sliceJoin("dl.feed_list")(indexKey = "item")
+      .select("count" -> (_.text("div.search_feed dl.feed_list").size))
+      .sliceJoin("div.search_feed dl.feed_list")(indexKey = "item")
       .select(
         "text" -> (_.text1("p > em")),
         "author" -> (_.text1("dd.content p:nth-of-type(1) > a:nth-of-type(1)")),
@@ -26,5 +39,11 @@ object WeiboNoSession extends SpookyTestCore {
         "from" -> (_.text1("p.info:nth-of-type(2) > a[target]"))
       )
       .asSchemaRDD()
+
+    RDD.persist()
+
+    RDD.saveAsTextFile("s3n://spOOky/dump/weibo")
+
+    RDD
   }
 }

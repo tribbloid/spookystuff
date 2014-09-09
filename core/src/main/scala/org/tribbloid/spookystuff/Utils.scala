@@ -3,6 +3,7 @@ package org.tribbloid.spookystuff
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._
 import scala.concurrent.{Await, ExecutionContext, Future}
+import scala.util.Random
 
 /**
  * Created by peng on 06/08/14.
@@ -25,4 +26,5 @@ object Utils {
     return Await.result(future, n seconds)
   }
 
+  val random = new Random()
 }

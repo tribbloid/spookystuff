@@ -8,6 +8,7 @@ import org.tribbloid.spookystuff.{Const, Utils}
 /**
  * Created by peng on 9/5/14.
  */
+//just for debugging
 //a bug in this driver has caused it unusable in Firefox 32
 object FirefoxDriverFactory extends DriverFactory {
 
