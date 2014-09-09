@@ -23,10 +23,10 @@ class SpookyContext (
                       var driverFactory: DriverFactory = NaiveDriverFactory(),
 
                       var autoSave: Boolean = true,
-                      var saveRoot: String = "s3n://spooky/page/",
+                      var saveRoot: String = "s3n://spOOky/page/",
                       var saveSelect: Page => String = SelectUrlEncodingPath,
 
-                      var errorDumpRoot: String = "s3n://spooky/error/",
+                      var errorDumpRoot: String = "s3n://spOOky/error/",
                       var localErrorDumpRoot: String = "temp/error/"
                       )
 extends Serializable {
