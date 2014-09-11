@@ -1,6 +1,6 @@
 package org.tribbloid.spookystuff.integration
 
-import org.tribbloid.spookystuff.entity._
+import org.tribbloid.spookystuff.entity.clientaction._
 
 /**
  * A more complex linkedIn job that finds name and printout skills of all Sanjay Gupta in your local area
@@ -17,9 +17,9 @@ object LinkedIn extends SpookyTestCore {
       TextInput("input#first", "#{_}") +*>
       Seq( TextInput("input#last", "Gupta"), TextInput("input#last", "Krishnamurthy")) +>
       Submit("input[name=\"search\"]")
-      !=!()).join(
+      !=!()).visitJoin(
         "ol#result-set h2 a"
-      )().select (
+      )().extract (
       "name" -> (_.text1("span.full-name")),
       "title" -> (_.text1("p.title")),
       "skills" -> (_.text("div#profile-skills li"))

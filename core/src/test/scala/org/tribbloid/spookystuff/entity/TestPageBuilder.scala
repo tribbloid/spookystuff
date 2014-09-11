@@ -4,6 +4,7 @@ import org.apache.spark.{SparkConf, SparkContext}
 import org.apache.spark.sql.SQLContext
 import org.scalatest.{FunSuite, Tag}
 import org.tribbloid.spookystuff.SpookyContext
+import org.tribbloid.spookystuff.entity.clientaction._
 import org.tribbloid.spookystuff.factory.PageBuilder
 
 /**

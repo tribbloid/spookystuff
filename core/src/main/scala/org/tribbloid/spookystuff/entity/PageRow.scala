@@ -2,6 +2,7 @@ package org.tribbloid.spookystuff.entity
 
 import java.util
 
+import org.tribbloid.spookystuff.entity.clientaction.{Visit, Wget, ClientAction}
 import org.tribbloid.spookystuff.factory.PageBuilder
 import org.tribbloid.spookystuff.operator.{JoinType, LeftOuter, Merge, Replace}
 import org.tribbloid.spookystuff.{Const, SpookyContext}
@@ -79,7 +80,7 @@ case class PageRow(
     for (action <- actions) {
       action match {
         case a: ClientAction => results += (this +> a)
-        case sa: Seq[ClientAction] => results += (this +> sa)
+        case sa: Seq[_] => results += (this +> sa.filter(_.isInstanceOf[ClientAction]).asInstanceOf[Seq[ClientAction]])
         case pr: PageRow => results += (this +> pr)
         //        case am: (ClientAction, Map[String, Any]) => results += (this +> am._1).copy(cells = this.cells ++ am._2)
         //        case sam: (Seq[ClientAction], Map[String, Any]) => results += (this +> sam._1).copy(cells = this.cells ++ sam._2)

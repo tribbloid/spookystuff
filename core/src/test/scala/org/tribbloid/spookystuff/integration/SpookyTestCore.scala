@@ -1,12 +1,10 @@
 package org.tribbloid.spookystuff.integration
 
-import akka.actor.IO.Accept
 import org.apache.spark.rdd.RDD
-import org.apache.spark.sql.SQLContext
+import org.apache.spark.sql.{SchemaRDD, SQLContext}
 import org.apache.spark.{SparkConf, SparkContext}
-import org.scalatest.{Tag, FunSuite}
+import org.scalatest.{FunSuite, Tag}
 import org.tribbloid.spookystuff.SpookyContext
-import org.tribbloid.spookystuff.factory.driver.NaiveDriverFactory
 
 /**
  * Created by peng on 22/06/14.
@@ -24,18 +22,30 @@ trait SpookyTestCore extends FunSuite {
   lazy val sc: SparkContext = new SparkContext(conf)
   lazy val sql: SQLContext = new SQLContext(sc)
   lazy val spooky: SpookyContext = new SpookyContext(sql)
-  spooky.saveRoot = "file:///home/peng/spOOky/page/"+appName
+  spooky.pageSaveRoot = "file:///home/peng/spOOky/page/"+appName
   spooky.errorDumpRoot = "file:///home/peng/spOOky/error/"+appName
 
   lazy val result = doMain()
 
-  def doMain(): RDD[_]
+  def doMain(): SchemaRDD
 
   test("Print query result",Integration) {
-    result.collect().foreach(println)
+    val array = result.collect()
+
+    array.foreach(println)
+
+    println("-------------------returned "+array.length+" rows------------------")
+
+    result.printSchema()
   }
 
   final def main(args: Array[String]) {
-    result.collect().foreach(println)
+    val array = result.collect()
+
+    array.foreach(println)
+
+    println("-------------------returned "+array.length+" rows------------------")
+
+    result.printSchema()
   }
 }

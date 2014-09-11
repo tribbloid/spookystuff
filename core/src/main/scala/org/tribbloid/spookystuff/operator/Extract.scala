@@ -7,9 +7,9 @@ import org.tribbloid.spookystuff.entity.Page
 /**
 * Created by peng on 8/29/14.
 */
-abstract class Select[T] extends (Page => T) with Serializable
+abstract class Extract[T] extends (Page => T) with Serializable
 
-object SelectUrlEncodingPath extends Select[String] {
+object ExtractUrlEncodingPath extends Extract[String] {
 
   override def apply(page: Page): String = {
     val suffix = if (page.backtrace == null||page.backtrace.size<=2) ""

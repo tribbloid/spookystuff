@@ -11,7 +11,8 @@ import org.tribbloid.spookystuff.operator.Inner
 //TODO: can use singleton pattern? those values never changes after SparkContext is defined
 object Const {
 
-  val pageDelay = 20
+  val actionDelayMax = 20
+  val actionDelayMin = 2
   val resourceTimeout = 60
 //  val usePageCache = false //delegated to smart execution
   val pageExpireAfter = 1800

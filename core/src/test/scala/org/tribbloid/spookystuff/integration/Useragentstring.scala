@@ -2,23 +2,23 @@ package org.tribbloid.spookystuff.integration
 
 import org.apache.spark.rdd.RDD
 import org.tribbloid.spookystuff.entity.clientaction._
-import org.tribbloid.spookystuff.factory.driver.TorDriverFactory
+import org.tribbloid.spookystuff.factory.driver._
 
 /**
  * Created by peng on 9/7/14.
  */
-object Whatismyip extends SpookyTestCore {
+object Useragentstring extends SpookyTestCore {
 
   import spooky._
 
   override def doMain() = {
 
-//    spooky.driverFactory = TorDriverFactory()
+    spooky.driverFactory = TorDriverFactory()
 
     (noInput
-      +> Visit("http://www.whatsmyip.org/")
+      +> Wget("http://www.useragentstring.com/pages/Browserlist/")
       !=!())
-      .extract("ip" -> (_.text1("h1")))
+      .extract("agent-string" -> (_.text("li a")))
       .asSchemaRDD()
   }
 }

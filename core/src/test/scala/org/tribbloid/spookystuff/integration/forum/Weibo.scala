@@ -1,6 +1,7 @@
 package org.tribbloid.spookystuff.integration.forum
 
-import org.tribbloid.spookystuff.entity._
+import org.tribbloid.spookystuff.entity.clientaction._
+import org.tribbloid.spookystuff.entity.clientaction.Loop
 import org.tribbloid.spookystuff.factory.driver.TorDriverFactory
 import org.tribbloid.spookystuff.integration.SpookyTestCore
 
@@ -33,7 +34,7 @@ object Weibo extends SpookyTestCore {
       )
       !=!(indexKey = "page"))
       .sliceJoin("dl.feed_list")(indexKey = "item")
-      .select(
+      .extract(
         "text" -> (_.text1("dl.feed_list p em"))
       )
       .asSchemaRDD()

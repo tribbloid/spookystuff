@@ -1,6 +1,6 @@
 package org.tribbloid.spookystuff.integration
 
-import org.tribbloid.spookystuff.entity._
+import org.tribbloid.spookystuff.entity.clientaction._
 
 object Dealmoon extends SpookyTestCore {
 
@@ -12,7 +12,7 @@ object Dealmoon extends SpookyTestCore {
       +> Wget("http://www.dealmoon.com/Online-Stores/Amazon-com?expired=n")
       !=!()
       ).paginate("a.next_link")()
-      .select(
+      .extract(
         "name" -> (_.text("div.mlist div.mtxt h2 span:not([style])"))
       )
       .asSchemaRDD()

@@ -3,6 +3,7 @@ package org.tribbloid.spookystuff.entity
 import org.apache.spark.sql.SQLContext
 import org.scalatest.{BeforeAndAfter, FunSuite}
 import org.tribbloid.spookystuff.SpookyContext
+import org.tribbloid.spookystuff.entity.clientaction.Snapshot
 import org.tribbloid.spookystuff.factory.PageBuilder
 
 /**
@@ -19,7 +20,7 @@ class TestEmptyPage extends FunSuite with BeforeAndAfter {
       Snapshot().exe(pb).toList(0)
     }
     finally {
-      pb.finalize
+      pb.finalize()
     }
   }
 

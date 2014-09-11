@@ -1,7 +1,7 @@
 package org.tribbloid.spookystuff.integration.forum
 
 import org.tribbloid.spookystuff.integration.SpookyTestCore
-import org.tribbloid.spookystuff.entity._
+import org.tribbloid.spookystuff.entity.clientaction._
 import org.tribbloid.spookystuff.operator.LeftOuter
 
 /**
@@ -16,7 +16,7 @@ object Imdb extends SpookyTestCore {
     (sc.parallelize(Seq(null))
       +>  Wget("http://www.imdb.com/chart") !=!())
       .sliceJoin("div#boxoffice tbody tr")() //slice into rows of top office table
-      .select(
+      .extract(
         "rank" -> (_.text1("tr td.titleColumn", own = true).replaceAll("\"","").trim),
         "name" -> (_.text1("tr td.titleColumn a")),
         "year" -> (_.text1("tr td.titleColumn span")),
@@ -25,7 +25,7 @@ object Imdb extends SpookyTestCore {
         "weeks" -> (_.text1("tr td.weeksColumn"))
       )
       .wgetJoin("tr td.titleColumn a")() //go to movie pages, e.g. http://www.imdb.com/title/tt2015381/?ref_=cht_bo_1
-      .select(
+      .extract(
         "score" -> (_.text1("td#overview-top div.titlePageSprite")),
         "rating_count" -> (_.text1("td#overview-top span[itemprop=ratingCount]")),
         "review_count" -> (_.text1("td#overview-top span[itemprop=reviewCount]"))
@@ -33,14 +33,14 @@ object Imdb extends SpookyTestCore {
       .wgetJoin("div#maindetails_quicklinks a:contains(Reviews)")(joinType = LeftOuter) //go to review pages, e.g. http://www.imdb.com/title/tt2015381/reviews?ref_=tt_urv
       .paginate("div#tn15content a:has(img[alt~=Next])")(limit = 2) //grab all pages by using the right arrow button.
       .sliceJoin("div#tn15content div:has(h2)")(joinType = LeftOuter) //slice into rows of reviews
-      .select(
+      .extract(
         "review_rating" -> (_.attr1("img[alt]","alt")),
         "review_title" -> (_.text1("h2")),
         "review_meta" -> (_.text("small"))
       )
 
       .wgetJoin("a")(joinType = LeftOuter) //go to reviewers' page, e.g. http://www.imdb.com/user/ur23582121/
-      .select(
+      .extract(
         "user_name" -> (_.text1("div.user-profile h1")),
         "user_timestamp" -> (_.text1("div.user-profile div.timestamp")),
         "user_post_count" -> (_.text1("div.user-lists div.see-more", own = true)),

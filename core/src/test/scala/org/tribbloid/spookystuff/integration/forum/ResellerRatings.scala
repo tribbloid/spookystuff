@@ -1,6 +1,6 @@
 package org.tribbloid.spookystuff.integration.forum
 
-import org.tribbloid.spookystuff.entity._
+import org.tribbloid.spookystuff.entity.clientaction._
 import org.tribbloid.spookystuff.integration.SpookyTestCore
 
 /**
@@ -16,7 +16,7 @@ object ResellerRatings extends SpookyTestCore {
       Wget( "http://www.resellerratings.com/store/#{_}") !=!())
       .paginate( "div#survey-header ul.pagination a:contains(next)")(indexKey = "page")
       .sliceJoin("div.review")()
-      .select(
+      .extract(
         "rating" -> (_.text1("div.rating strong")),
         "date" -> (_.text1("div.date span")),
         "body" -> (_.text1("p.review-body"))

@@ -10,6 +10,7 @@ import org.apache.http.entity.ContentType
 import org.jsoup.Jsoup
 import org.jsoup.nodes.Element
 import org.tribbloid.spookystuff.Const
+import org.tribbloid.spookystuff.entity.clientaction.{ClientAction, Interactive}
 
 import scala.collection.JavaConversions._
 import scala.collection.immutable.ListMap

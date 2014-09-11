@@ -3,6 +3,7 @@ package org.tribbloid.spookystuff.sparkbinding
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.SchemaRDD
 import org.tribbloid.spookystuff.entity._
+import org.tribbloid.spookystuff.entity.clientaction.{Wget, Visit, ClientAction}
 import org.tribbloid.spookystuff.factory.PageBuilder
 import org.tribbloid.spookystuff.operator.{JoinType, LeftOuter, Merge, Replace}
 import org.tribbloid.spookystuff.{Const, SpookyContext}
@@ -164,7 +165,7 @@ class PageRowRDDFunctions(@transient val self: RDD[PageRow])(@transient val spoo
    * @param keyAndF a key-function map, each element is used to generate a key-value map using the Page itself
    * @return new RDD[Page]
    */
-  def select(keyAndF: (String, Page => Any)*): RDD[PageRow] = self.map {
+  def extract(keyAndF: (String, Page => Any)*): RDD[PageRow] = self.map {
     _.select(keyAndF: _*)
   }
 
@@ -183,8 +184,8 @@ class PageRowRDDFunctions(@transient val self: RDD[PageRow])(@transient val spoo
    * @return the same RDD[Page] with file paths carried as metadata
    */
   def saveAs(
-              root: String = this.spooky.saveRoot, //support context interpolation
-              select: Page => String = this.spooky.saveSelect,
+              root: String = this.spooky.pageSaveRoot, //support context interpolation
+              select: Page => String = this.spooky.pageSaveExtract,
               overwrite: Boolean = false
               ): RDD[PageRow] = {
     val hconfBroad = self.context.broadcast(this.spooky.hConf)
@@ -212,8 +213,8 @@ class PageRowRDDFunctions(@transient val self: RDD[PageRow])(@transient val spoo
    * @return an array of file paths
    */
   def dump(
-            root: String = this.spooky.saveRoot, //support context interpolation
-            select: Page => String = this.spooky.saveSelect,
+            root: String = this.spooky.pageSaveRoot, //support context interpolation
+            select: Page => String = this.spooky.pageSaveExtract,
             overwrite: Boolean = false
             ): Array[String] = {
 
@@ -298,7 +299,7 @@ class PageRowRDDFunctions(@transient val self: RDD[PageRow])(@transient val spoo
    * @param attr attribute of the element that denotes the link tar  implicit def spookyImplicit: SpookyContext = spookyBroad.valueget, default to absolute href
    * @return RDD[Page]
    */
-  def join(
+  def visitJoin(
             selector: String,
             attr :String = "abs:href"
             )(

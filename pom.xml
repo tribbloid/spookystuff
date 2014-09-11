@@ -63,8 +63,17 @@
         <module>core</module>
         <module>spike</module>
         <module>example</module>
-        <module>shell</module>
     </modules>
+
+
+    <profiles>
+        <profile>
+            <id>ispark</id>
+            <modules>
+                <module>shell</module>
+            </modules>
+        </profile>
+    </profiles>
 
     <dependencies>
         <dependency>

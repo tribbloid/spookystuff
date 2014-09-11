@@ -1,6 +1,7 @@
 package org.tribbloid.spookystuff.integration.forum
 
-import org.tribbloid.spookystuff.entity._
+import org.tribbloid.spookystuff.entity.clientaction._
+import org.tribbloid.spookystuff.entity.clientaction.Loop
 import org.tribbloid.spookystuff.integration.SpookyTestCore
 import org.tribbloid.spookystuff.operator.LeftOuter
 
@@ -20,12 +21,12 @@ object Youtube extends SpookyTestCore{
         DelayFor("button.load-more-button span.hid.load-more-loading", 10)
       ) !=!())
       .sliceJoin("li.channels-content-item")(limit=100)
-      .select("title" -> (_.text1("h3.yt-lockup-title")))
+      .extract("title" -> (_.text1("h3.yt-lockup-title")))
       .visit("h3.yt-lockup-title a.yt-uix-tile-link")(limit = 1)
       .repartition(400) +>
       ExeScript("window.scrollBy(0,500)") +>
       DelayFor("iframe[title^=Comment]", 50).canFail()
-      !><()).select(
+      !><()).extract(
         "description" -> (_.text1("div#watch-description-text")),
         "publish" -> (_.text1("p#watch-uploader-info")),
         "total_view" -> (_.text1("div#watch7-views-info span.watch-view-count")),
@@ -37,9 +38,9 @@ object Youtube extends SpookyTestCore{
         Click("span[title^=Load]"),
         DelayFor("span.PA[style^=display]",10)
       ) !=!(joinType = LeftOuter))
-      .select("num_comments" -> (_.text1("div.DJa")))
+      .extract("num_comments" -> (_.text1("div.DJa")))
       .sliceJoin("div[id^=update]")()
-      .select(
+      .extract(
         "comment1" -> (_.text1("h3.Mpa")),
         "comment2" -> (_.text1("div.Al"))
       )

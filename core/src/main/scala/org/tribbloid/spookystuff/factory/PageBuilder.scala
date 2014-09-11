@@ -2,9 +2,11 @@ package org.tribbloid.spookystuff.factory
 
 import java.util
 import java.util.Date
+import java.util.concurrent.TimeUnit
 
 import org.openqa.selenium.Capabilities
-import org.tribbloid.spookystuff.SpookyContext
+import org.tribbloid.spookystuff.entity.clientaction.{Snapshot, ClientAction, Interactive, Sessionless}
+import org.tribbloid.spookystuff.{Const, SpookyContext}
 import org.tribbloid.spookystuff.entity._
 
 import scala.collection.mutable.ArrayBuffer
@@ -39,7 +41,7 @@ object PageBuilder {
         var pages = action.exe(pb)
         if (pages != null) {
 
-          if (spooky.autoSave) pages = pages.map(page => page.save(spooky.pagePath(page))(spooky.hConf) )
+          if (spooky.autoSavePage) pages = pages.map(page => page.save(spooky.pagePath(page))(spooky.hConf) )
 
           results ++= pages
         }
@@ -63,7 +65,12 @@ class PageBuilder(
     null
   }
   else {
-    spooky.driverFactory.newInstance(caps)
+    val driver = spooky.driverFactory.newInstance(caps)
+    driver.manage().timeouts()
+      .pageLoadTimeout(Const.resourceTimeout,TimeUnit.SECONDS)
+      .setScriptTimeout(Const.resourceTimeout,TimeUnit.SECONDS)
+
+    driver
   }
 
   val start_time: Long = new Date().getTime
