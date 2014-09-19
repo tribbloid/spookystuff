@@ -1,6 +1,7 @@
 package org.tribbloid.spookystuff.integration
 
 import org.tribbloid.spookystuff.entity.client._
+import scala.concurrent.duration._
 
 /**
  * Created by peng on 07/06/14.
@@ -8,7 +9,6 @@ import org.tribbloid.spookystuff.entity.client._
 object AppliancePartsPros extends SpookyTestCore {
 
   import spooky._
-  import scala.concurrent.duration._
 
   override def doMain() = {
     (sc.parallelize(Seq("A210S")) +>

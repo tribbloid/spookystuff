@@ -35,7 +35,7 @@ class SpookyContext (
 
                       var autoCache: Boolean = true,//slow, reduce bombarding highly aware sites
                       //                      var autoRestore: Boolean = true,//slow, reduce bombarding highly aware sites
-                      var autoCacheRoot: String = "s3n://spOOky/"+"backup/",
+                      var autoCacheRoot: String = "s3n://spOOky/"+"cache/",
 
                       var errorDump: Boolean = true,
                       var errorDumpRoot: String = "s3n://spOOky/"+"error/",
@@ -57,7 +57,7 @@ class SpookyContext (
   def setRoot(root: String): Unit = {
 
     autoSaveRoot = Utils.urlConcat(root, "page/")
-    autoCacheRoot = Utils.urlConcat(root, "backup/")
+    autoCacheRoot = Utils.urlConcat(root, "cache/")
     localErrorDumpRoot = Utils.urlConcat(root, "error/")
   }
 

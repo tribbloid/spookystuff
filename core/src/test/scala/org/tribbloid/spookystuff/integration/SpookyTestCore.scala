@@ -21,9 +21,7 @@ trait SpookyTestCore extends FunSuite {
   lazy val sc: SparkContext = new SparkContext(conf)
   lazy val sql: SQLContext = new SQLContext(sc)
   lazy val spooky: SpookyContext = new SpookyContext(sql)
-  spooky.autoSaveRoot = "file:///home/peng/spOOky/page/"+appName
-  spooky.autoCacheRoot = "file:///home/peng/spOOky/cache/"+appName
-  spooky.errorDumpRoot = "file:///home/peng/spOOky/error/"+appName
+  spooky.setRoot("file://"+System.getProperty("user.home")+"/spOOky/"+appName)
 
   lazy val result = {
     val result = doMain()

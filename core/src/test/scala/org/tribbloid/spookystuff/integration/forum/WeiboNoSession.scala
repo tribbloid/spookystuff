@@ -4,9 +4,7 @@ import java.text.SimpleDateFormat
 import java.util.Date
 
 import org.tribbloid.spookystuff.entity.client._
-import org.tribbloid.spookystuff.factory.driver.TorDriverFactory
 import org.tribbloid.spookystuff.integration.SpookyTestCore
-import org.tribbloid.spookystuff.integration.forum.Weibo._
 
 /**
 * Created by peng on 8/28/14.
@@ -16,12 +14,13 @@ object WeiboNoSession extends SpookyTestCore {
   def doMain() = {
 
     import spooky._
-    import scala.concurrent.duration._
+
+import scala.concurrent.duration._
 
     val df = new SimpleDateFormat("yyyy-MM-dd-HH")
 
     val start = df.parse("2014-06-01-00").getTime
-    val end = df.parse("2014-06-05-00").getTime
+    val end = df.parse("2014-06-01-01").getTime
 
     val range = start.to(end, 3600*1000).map(time => df.format(new Date(time)))
 
@@ -42,7 +41,7 @@ object WeiboNoSession extends SpookyTestCore {
 
     RDD.persist()
 
-    RDD.saveAsTextFile("s3n://spOOky/dump/weibo")
+    RDD.saveAsTextFile("file://"+System.getProperty("user.home")+"/spOOky/dump/weibo")
 
     RDD
   }
