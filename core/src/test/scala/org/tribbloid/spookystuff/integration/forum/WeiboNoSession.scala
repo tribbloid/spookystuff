@@ -27,7 +27,7 @@ import scala.concurrent.duration._
     val RDD = ((sc.parallelize(range)
       +> Visit("http://s.weibo.com/wb/%25E6%2588%2590%25E9%2583%25BD%25E9%2593%25B6%25E8%25A1%258C&xsort=time&timescope=custom:#{_}:#{_}&Refer=g")
       +> RandomDelay(40.seconds, 80.seconds)
-      +> DelayFor("div.search_feed dl.feed_list").in(60.seconds)
+      +> Try(DelayFor("div.search_feed dl.feed_list").in(60.seconds) :: Nil)
       !=!())
       .extract(
         "count" -> (_.text("div.search_feed dl.feed_list").size),
@@ -51,7 +51,7 @@ import scala.concurrent.duration._
       .+> (DelayForDocumentReady)
       !><())
       .extract(
-        "author.CAPCHAS2" -> (_.text1("p.code_tit")),
+        "author.CAPCHAS" -> (_.text1("p.code_tit")),
         "author.follow" -> (_.text1("li.S_line1 strong")),
         "author.fans" -> (_.text1("li.follower strong")),
         "author.tweets" -> (_.text1("li.W_no_border strong")),

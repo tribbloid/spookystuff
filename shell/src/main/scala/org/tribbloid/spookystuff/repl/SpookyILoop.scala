@@ -5,14 +5,14 @@ import org.apache.spark.repl.SparkILoop
 class SpookyILoop extends SparkILoop {
 
   private val postInitScript =
-    "import org.tribbloid.spookystuff.SpookyContext._" ::
+    "import org.tribbloid.spookystuff.SpookyContext._" :: //TODO: this is obsolete, revise according to ISpark counterpart
       "import org.tribbloid.spookystuff.entity._" ::
       Nil
 
   override protected def postInitialization() {
     super.postInitialization()
     this.beQuietDuring {
-      postInitScript.foreach(command(_))
+      postInitScript.foreach(command)
     }
   }
 
@@ -24,7 +24,7 @@ class SpookyILoop extends SparkILoop {
         |      ____                / /
         |     / __/__  ___  ___   / /__ _   _
         |    _\ \/ _ \/ _ \/ _ \ /  '_// |_/ /
-        |   /___/ .__/\___/\___//_/\_\ \_.  /  STUFF  version 0.1.0
+        |   /___/ .__/\___/\___//_/\_\ \_.  /  STUFF  version 0.2.0
         |      / /                      _/ /
         |     / /                      /__/
 

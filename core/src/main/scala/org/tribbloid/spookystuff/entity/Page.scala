@@ -3,12 +3,13 @@ package org.tribbloid.spookystuff.entity
 import java.io._
 import java.util.{Date, UUID}
 
+import de.l3s.boilerpipe.extractors.ArticleExtractor
 import org.apache.commons.io.IOUtils
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.Path
 import org.apache.http.entity.ContentType
 import org.jsoup.Jsoup
-import org.jsoup.nodes.Element
+import org.jsoup.nodes.{Document, Element}
 import org.tribbloid.spookystuff.entity.client.Action
 import org.tribbloid.spookystuff.{Const, SpookyContext, Utils}
 
@@ -47,7 +48,7 @@ case class Page(
   @transient lazy val contentStr: String = new String(this.content,this.parsedContentType.getCharset)
 
   @transient lazy val doc: Option[Any] = if (parsedContentType.getMimeType.contains("html")){
-    Option(Jsoup.parse(this.contentStr, resolvedUrl)) //not serialize, parsing is faster
+    Some(Jsoup.parse(this.contentStr, resolvedUrl)) //not serialize, parsing is faster
   }
   else{
     None
@@ -181,11 +182,6 @@ case class Page(
   //    fos.close()
   //
   //    this.copy(savedTo = "file://" + file.getCanonicalPath)
-  //  }
-
-  //  def refresh(): Page = {
-  //    val page = PageBuilder.resolveFinal(this.backtrace: _*).modify(this.alias,this.context)
-  //    return page
   //  }
 
   def elementExist(selector: String): Boolean = doc match {
@@ -329,6 +325,14 @@ case class Page(
       result.toArray
 
     case _ => Array[String]()
+  }
+
+  def boilerPipe(): String = doc match {
+    case Some(doc: Document) =>
+
+      ArticleExtractor.INSTANCE.getText(doc.html());
+
+    case _ => null
   }
 
   def extractAsMap[T](keyAndF: (String, Page => T)*): ListMap[String, T] = {

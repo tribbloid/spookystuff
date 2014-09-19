@@ -45,7 +45,7 @@
                 <configuration>
                     <!--<shadedArtifactAttached>false</shadedArtifactAttached>-->
                     <!--<minimizeJar>true</minimizeJar> DON'T USE! will cause error-->
-                    <outputFile>${project.build.directory}/${project.artifactId}-assembly-${project.version}.jar</outputFile>
+                    <outputFile>${project.build.directory}/scala-${scala.version}/${project.artifactId}-assembly-${project.version}.jar</outputFile>
                     <filters>
                         <filter>
                             <artifact>*:*</artifact>
