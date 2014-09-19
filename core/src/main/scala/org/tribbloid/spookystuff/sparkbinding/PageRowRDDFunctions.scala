@@ -270,9 +270,15 @@ class PageRowRDDFunctions(@transient val self: RDD[PageRow])(@transient val spoo
              distinct: Boolean = true,
              limit: Int = Const.fetchLimit, //applied after distinct
              indexKey: String = null
-             ): RDD[PageRow] =
-    this.+*%>(Visit("#{~}") -> (_.attr(selector, attr))
+             ): RDD[PageRow] = {
+
+    import spooky._
+
+    this.dropActions().+*%>(
+      Visit("#{~}") -> (_.attr(selector, attr))
     )(distinct, limit, indexKey)
+  }
+
 
   def wget(
                     selector: String,
@@ -281,9 +287,13 @@ class PageRowRDDFunctions(@transient val self: RDD[PageRow])(@transient val spoo
                     distinct: Boolean = true,
                     limit: Int = Const.fetchLimit, //applied after distinct
                     indexKey: String = null
-                    ): RDD[PageRow] =
-    this.+*%>(Wget("#{~}") -> (_.attr(selector, attr))
+                    ): RDD[PageRow] = {
+    import spooky._
+
+    this.dropActions().+*%>(
+      Wget("#{~}") -> (_.attr(selector, attr))
     )(distinct, limit, indexKey)
+  }
 
   /**
    * results in a new set of Pages by crawling links on old pages
@@ -304,13 +314,9 @@ class PageRowRDDFunctions(@transient val self: RDD[PageRow])(@transient val spoo
             flatten: Boolean = true
             ): RDD[PageRow] ={
 
-    val spookyBroad = self.context.broadcast(this.spooky)
-
-    implicit def spookyImplicit: SpookyContext = spookyBroad.value
-
     import spooky._
 
-    this.dropActions().visit(selector, attr)(distinct, limit, indexKey).!><(joinType, flatten)
+    this.visit(selector, attr)(distinct, limit, indexKey).!><(joinType, flatten)
   }
 
   /**
@@ -332,13 +338,9 @@ class PageRowRDDFunctions(@transient val self: RDD[PageRow])(@transient val spoo
                 flatten: Boolean = true
                 ): RDD[PageRow] ={
 
-    val spookyBroad = self.context.broadcast(this.spooky)
-
-    implicit def spookyImplicit: SpookyContext = spookyBroad.value
-
     import spooky._
 
-    this.dropActions().wget(selector, attr)(distinct, limit, indexKey).!><(joinType, flatten)
+    this.wget(selector, attr)(distinct, limit, indexKey).!><(joinType, flatten)
   }
 
   /**

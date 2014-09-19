@@ -26,7 +26,7 @@ trait ProxyFeed extends SpookyTestCore {
 
     val httpPageRowRDD = (noInput
       +> Visit("http://www.us-proxy.org/")
-      +> DelayForDocumentReady()
+      +> DelayForDocumentReady
       +> LoadMore(
       "a.next:not([class*=ui-state-disabled])",
       limit =15,
@@ -48,7 +48,7 @@ trait ProxyFeed extends SpookyTestCore {
 
     val socksPageRowRDD = (noInput
       +> Visit("http://www.socks-proxy.net/")
-      +> DelayForDocumentReady()
+      +> DelayForDocumentReady
       +> LoadMore(
       "a.next:not([class*=ui-state-disabled])",
       limit =15,

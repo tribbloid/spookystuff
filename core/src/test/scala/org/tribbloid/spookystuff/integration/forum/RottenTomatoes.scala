@@ -31,7 +31,7 @@ object RottenTomatoes extends SpookyTestCore {
       )
       .wgetJoin("div.criticinfo strong a")() //go to critic page, e.g. http://www.rottentomatoes.com/critic/sean-means/
       .extract(
-        "total_reviews_ratings" -> (_.text("div.media_block div.clearfix dd").toString())
+        "total_reviews_ratings" -> (_.text("div.media_block div.clearfix dd").toString)
       )
       .asSchemaRDD()
   }

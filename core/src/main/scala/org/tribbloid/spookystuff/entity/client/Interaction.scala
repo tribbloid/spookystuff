@@ -110,7 +110,7 @@ object DocumentReadyCondition extends ExpectedCondition[Boolean] {
   }
 }
 
-case class DelayForDocumentReady() extends Interaction with Timed {
+case object DelayForDocumentReady extends Interaction with Timed {
 
   override def exeWithoutPage(pb: PageBuilder): Unit = {
     val wait = new WebDriverWait(pb.driver, delay.toSeconds)
