@@ -21,6 +21,8 @@ printf "AWS-credential = $AWSAccessKeyId:$AWSSecretKey\n"
 # limitations under the License.
 #
 
+SCALA_VERSION=2.10
+
 if [ -n "$1" ]; then
   EXAMPLE_CLASS="$1"
   shift
@@ -31,7 +33,7 @@ else
   exit 1
 fi
 
-export SPOOKY_EXAMPLES_JAR=./example/target/spookystuff-example-assembly-0.1.0-SNAPSHOT.jar
+export SPOOKY_EXAMPLES_JAR=example/target/scala_scala-$SCALA_VERSION/spookystuff-example-assembly-0.1.0-SNAPSHOT.jar
 
 if [[ -z SPOOKY_EXAMPLES_JAR ]]; then
   echo "Failed to find Spookystuff examples assembly in ./example/target/" >&2

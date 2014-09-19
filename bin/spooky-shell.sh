@@ -20,6 +20,8 @@
 # Enter posix mode for bash
 #set -o posix
 
+SCALA_VERSION=2.10
+
 source bin/rootkey.csv
 
 if [[ "$@" = *--help ]] || [[ "$@" = *-h ]]; then
@@ -36,7 +38,7 @@ function main(){
   AWS_ACCESS_KEY_ID=$AWSAccessKeyId \
   AWS_SECRET_ACCESS_KEY=$AWSSecretKey \
   $SPARK_HOME/bin/spark-submit \
-  ./shell/target/spookystuff-shell-assembly-0.1.0-SNAPSHOT.jar \
+  shell/target/scala-$SCALA_VERSION/spookystuff-shell-assembly-0.1.0-SNAPSHOT.jar \
   "$@" --class org.tribbloid.spookystuff.shell.Main \
   --executor-memory 2G
 }
