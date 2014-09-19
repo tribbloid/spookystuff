@@ -19,13 +19,13 @@ import scala.concurrent.duration._
 
     val df = new SimpleDateFormat("yyyy-MM-dd-HH")
 
-    val start = df.parse("2014-06-01-00").getTime
-    val end = df.parse("2014-06-01-01").getTime
+    val start = df.parse("2014-06-14-09").getTime
+    val end = df.parse("2014-06-14-10").getTime
 
-    val range = start.to(end, 3600*1000).map(time => df.format(new Date(time)))
+    val range = start.until(end, 3600*1000).map(time => df.format(new Date(time)))
 
     val RDD = ((sc.parallelize(range)
-      +> Visit("http://s.weibo.com/wb/%25E9%2594%25A4%25E5%25AD%2590%25E6%2589%258B%25E6%259C%25BA&xsort=time&timescope=custom:#{_}:#{_}&Refer=g")
+      +> Visit("http://s.weibo.com/wb/%25E6%2588%2590%25E9%2583%25BD%25E9%2593%25B6%25E8%25A1%258C&xsort=time&timescope=custom:#{_}:#{_}&Refer=g")
       +> RandomDelay(40.seconds, 80.seconds)
       +> DelayFor("div.search_feed dl.feed_list").in(60.seconds)
       !=!())
@@ -35,6 +35,7 @@ import scala.concurrent.duration._
       )
       .sliceJoin("div.search_feed dl.feed_list")(indexKey = "item")
       .extract(
+        "name" -> (page => "成都银行"),
         "text" -> (_.text1("p > em")),
         "forum" -> (page => "weibo"),
         "source" -> (_.text1("p.info:nth-of-type(2) > a[target]")),
@@ -48,7 +49,7 @@ import scala.concurrent.duration._
       .visit("dd.content p:nth-of-type(1) > a:nth-of-type(1)")()
       .+> (RandomDelay(40.seconds, 80.seconds))
       .+> (DelayForDocumentReady)
-      !=!())
+      !><())
       .extract(
         "author.CAPCHAS2" -> (_.text1("p.code_tit")),
         "author.follow" -> (_.text1("li.S_line1 strong")),
@@ -64,7 +65,7 @@ import scala.concurrent.duration._
 
     RDD.persist()
 
-    RDD.saveAsTextFile("file://"+System.getProperty("user.home")+"/spOOky/dump/weibo")
+    RDD.map(row => row.mkString("/t")).saveAsTextFile("file://"+System.getProperty("user.home")+"/spOOky/dump/weibo")
 
     RDD
   }
