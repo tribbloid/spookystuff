@@ -1,14 +1,17 @@
 package org.tribbloid.spookystuff
 
-import org.apache.spark.{SparkConf, SparkContext, SerializableWritable}
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.SQLContext
-import org.tribbloid.spookystuff.entity.{Page, PageRow}
+import org.apache.spark.{SerializableWritable, SparkConf, SparkContext}
+import org.tribbloid.spookystuff.entity.PageRow
 import org.tribbloid.spookystuff.factory.driver.{DriverFactory, NaiveDriverFactory}
-import org.tribbloid.spookystuff.operator.ExtractUrlEncodingPath
+import org.tribbloid.spookystuff.operator._
 import org.tribbloid.spookystuff.sparkbinding.{PageRowRDDFunctions, StringRDDFunctions}
 
 import scala.collection.immutable.ListMap
+import scala.concurrent.duration.Duration
+
+import scala.concurrent.duration._
 
 /**
  * Created by peng on 12/06/14.
@@ -18,57 +21,55 @@ import scala.collection.immutable.ListMap
 //}
 
 //will be shipped everywhere as implicit parameter
+
 class SpookyContext (
                       @transient val sql: SQLContext, //compulsory, many things are not possible without SQL
+
                       var driverFactory: DriverFactory = NaiveDriverFactory(),
 
-                      var autoSavePage: Boolean = true,
-                      var autoSaveOutput: Boolean = false,
-                      var pageSaveRoot: String = "s3n://spOOky/page/",
-                      var pageSaveExtract: Page => String = ExtractUrlEncodingPath,
+                      var PagePathLookup: Lookup[_] = VerbosePathLookup,
+                      var PagePathExtract: Extract[_] = ExtractTimestamp,
 
-                      var errorDumpRoot: String = "s3n://spOOky/error/",
-                      var localErrorDumpRoot: String = "temp/error/"
+                      var autoSave: Boolean = true,//slow, for debugging only
+                      var autoSaveRoot: String = "s3n://spOOky/"+"page/",
+
+                      var autoCache: Boolean = true,//slow, reduce bombarding highly aware sites
+                      //                      var autoRestore: Boolean = true,//slow, reduce bombarding highly aware sites
+                      var autoCacheRoot: String = "s3n://spOOky/"+"backup/",
+
+                      var errorDump: Boolean = true,
+                      var errorDumpRoot: String = "s3n://spOOky/"+"error/",
+                      var localErrorDumpRoot: String = "file:///spOOky/"+"error/",
+
+                      var resourceTimeout: Duration = 60.seconds
                       )
-extends Serializable {
+  extends Serializable {
+
+  val hConfWrapper =  if (sql!=null) new SerializableWritable(this.sql.sparkContext.hadoopConfiguration)
+  else null
+
+  def hConf = hConfWrapper.value
+
+  @transient lazy val noInput: RDD[PageRow] = this.sql.sparkContext.parallelize(Seq(PageRow()))
+
+//  implicit def self: SpookyContext = this
+
+  def setRoot(root: String): Unit = {
+
+    autoSaveRoot = Utils.urlConcat(root, "page/")
+    autoCacheRoot = Utils.urlConcat(root, "backup/")
+    localErrorDumpRoot = Utils.urlConcat(root, "error/")
+  }
 
   def this(conf: SparkConf) {
     this(new SQLContext(new SparkContext(conf)))
   }
-
-  def pagePath(
-                page: Page,
-                root: String = pageSaveRoot,
-                select: Page => String = pageSaveExtract
-                ): String = {
-
-    if (!root.endsWith("/")) root + "/" + pageSaveExtract(page)
-    else root + pageSaveExtract(page)
-  }
-
-  def errorDumpPath(
-                     page: Page
-                     ) = pagePath(page, errorDumpRoot)
-
-  def localErrorDumpPath(
-                          page: Page
-                          ) = pagePath(page, localErrorDumpRoot)
-
-  val hConfWrapper =  new SerializableWritable(this.sql.sparkContext.hadoopConfiguration)
-
-  def hConf = hConfWrapper.value
 
   implicit def stringRDDToItsFunctions(rdd: RDD[String]) = new StringRDDFunctions(rdd)
 
   implicit def pageRowRDDToItsFunctions[T <% RDD[PageRow]](rdd: T) = new PageRowRDDFunctions(rdd)(this)
 
   //these are the entry points of SpookyStuff starting from a common RDD of strings or maps
-  val noInput: RDD[PageRow] = this.sql.sparkContext.parallelize(Seq(PageRow()))
-
-//  implicit def nullRDDToPageRowRDD(rdd: RDD[scala.Null]): RDD[PageRow] = rdd.map {
-//    str => PageRow()
-//  }
-
   implicit def stringRDDToPageRowRDD(rdd: RDD[String]): RDD[PageRow] = rdd.map{
     str => {
       var cells = ListMap[String,Any]()

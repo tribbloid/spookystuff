@@ -3,23 +3,20 @@ package org.tribbloid.spookystuff.integration.forum
 import java.text.SimpleDateFormat
 import java.util.Date
 
-import org.apache.spark.sql.SchemaRDD
-import org.tribbloid.spookystuff.entity.clientaction._
-import org.tribbloid.spookystuff.factory.driver.{RandomProxyDriverFactory, TorDriverFactory}
-import org.tribbloid.spookystuff.integration.{ProxyFeed, Proxies, SpookyTestCore}
+import org.tribbloid.spookystuff.entity.client._
+import org.tribbloid.spookystuff.factory.driver.TorDriverFactory
+import org.tribbloid.spookystuff.integration.SpookyTestCore
+import org.tribbloid.spookystuff.integration.forum.Weibo._
 
 /**
- * Created by peng on 8/28/14.
- */
-object WeiboNoSession extends ProxyFeed {
-
-  import spooky._
+* Created by peng on 8/28/14.
+*/
+object WeiboNoSession extends SpookyTestCore {
 
   def doMain() = {
 
-//    proxies.foreach(println)
-
-    spooky.driverFactory = RandomProxyDriverFactory(proxies: _*)
+    import spooky._
+    import scala.concurrent.duration._
 
     val df = new SimpleDateFormat("yyyy-MM-dd-HH")
 
@@ -30,8 +27,8 @@ object WeiboNoSession extends ProxyFeed {
 
     val RDD = (sc.parallelize(range)
       +> Visit("http://s.weibo.com/wb/%25E9%2594%25A4%25E5%25AD%2590%25E6%2589%258B%25E6%259C%25BA&xsort=time&timescope=custom:#{_}:#{_}&Refer=g")
-      +> RandomDelay(40, 80)
-      +> DelayFor("div.search_feed dl.feed_list",60)
+      +> RandomDelay(40.seconds, 80.seconds)
+      +> DelayFor("div.search_feed dl.feed_list").in(60.seconds)
       !=!())
       .extract("count" -> (_.text("div.search_feed dl.feed_list").size))
       .sliceJoin("div.search_feed dl.feed_list")(indexKey = "item")

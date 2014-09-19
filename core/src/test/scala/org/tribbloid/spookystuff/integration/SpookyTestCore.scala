@@ -1,7 +1,6 @@
 package org.tribbloid.spookystuff.integration
 
-import org.apache.spark.rdd.RDD
-import org.apache.spark.sql.{SchemaRDD, SQLContext}
+import org.apache.spark.sql.{SQLContext, SchemaRDD}
 import org.apache.spark.{SparkConf, SparkContext}
 import org.scalatest.{FunSuite, Tag}
 import org.tribbloid.spookystuff.SpookyContext
@@ -17,15 +16,22 @@ trait SpookyTestCore extends FunSuite {
 
   lazy val appName = this.getClass.getSimpleName.replace("$","")
   lazy val conf: SparkConf = new SparkConf().setAppName(appName)
-    .setMaster("local[8,3]")
+    .setMaster("local[4,2]")
 
   lazy val sc: SparkContext = new SparkContext(conf)
   lazy val sql: SQLContext = new SQLContext(sc)
   lazy val spooky: SpookyContext = new SpookyContext(sql)
-  spooky.pageSaveRoot = "file:///home/peng/spOOky/page/"+appName
+  spooky.autoSaveRoot = "file:///home/peng/spOOky/page/"+appName
+  spooky.autoCacheRoot = "file:///home/peng/spOOky/cache/"+appName
   spooky.errorDumpRoot = "file:///home/peng/spOOky/error/"+appName
 
-  lazy val result = doMain()
+  lazy val result = {
+    val result = doMain()
+
+    result.persist()
+
+    result
+  }
 
   def doMain(): SchemaRDD
 

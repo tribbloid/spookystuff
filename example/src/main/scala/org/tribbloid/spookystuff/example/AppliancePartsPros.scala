@@ -1,6 +1,7 @@
 package org.tribbloid.spookystuff.example
 
-import org.tribbloid.spookystuff.entity.clientaction._
+import org.tribbloid.spookystuff.entity.client._
+import scala.concurrent.duration._
 
 /**
  * Created by peng on 07/06/14.
@@ -14,7 +15,7 @@ object AppliancePartsPros extends SparkSubmittable {
       Visit("http://www.appliancepartspros.com/") +>
       TextInput("input.ac-input","#{_}") +>
       Click("input[value=\"Search\"]") +>
-      Delay(10) !=!() //TODO: change to DelayFor to save time
+      Delay(10.seconds) !=!() //TODO: change to DelayFor to save time
       )
       .extract(
         "model" -> ( _.text1("div.dgrm-lst div.header h2") )

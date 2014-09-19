@@ -1,26 +1,37 @@
 package org.tribbloid.spookystuff.operator
 
-import java.net.URLEncoder
-
+import org.openqa.selenium.By
+import org.openqa.selenium.support.ui.{ExpectedCondition, ExpectedConditions}
 import org.tribbloid.spookystuff.entity.Page
 
 /**
-* Created by peng on 8/29/14.
-*/
-abstract class Extract[T] extends (Page => T) with Serializable
+ * Created by peng on 8/29/14.
+ */
+abstract class Extract[T] extends (Page => T) with Serializable with Product {
 
-object ExtractUrlEncodingPath extends Extract[String] {
+  val selector: String = null
+}
 
-  override def apply(page: Page): String = {
-    val suffix = if (page.backtrace == null||page.backtrace.size<=2) ""
-    else "-"+page.backtrace.hashCode().toString
+case object ExtractTrue extends Extract[Boolean] {
 
-    var uid = URLEncoder.encode((page.resolvedUrl + suffix).replaceAll("[:\\\\/]+", "*"), "UTF-8")
-    if (uid.length>255) uid = uid.substring(0,255)
+  override def apply(page: Page): Boolean = {
 
-    var timeid = page.timestamp.getTime.toString
-    if (timeid.length>255) timeid = timeid.substring(0,255)
+    true
+  }
+}
 
-    uid+"/"+timeid
+case object ExtractTimestamp extends Extract[Long] {
+
+  override def apply(page: Page): Long = {
+
+    page.timestamp.getTime
+  }
+}
+
+case class ExtractIfElementExist(override val selector: String) extends Extract[Boolean] {
+
+  override def apply(page: Page): Boolean = {
+
+    page.elementExist(selector)
   }
 }

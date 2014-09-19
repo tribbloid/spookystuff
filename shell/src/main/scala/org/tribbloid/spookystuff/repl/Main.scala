@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.tribbloid.spookystuff.shell
+package org.tribbloid.spookystuff.repl
 
 object Main {
 

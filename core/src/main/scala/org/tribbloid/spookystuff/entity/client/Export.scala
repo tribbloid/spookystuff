@@ -1,12 +1,11 @@
-package org.tribbloid.spookystuff.entity.clientaction
+package org.tribbloid.spookystuff.entity.client
 
 import java.net._
-import javax.net.ssl.{TrustManager, SSLContext, HttpsURLConnection}
+import javax.net.ssl.{HttpsURLConnection, SSLContext, TrustManager}
 
 import org.apache.commons.io.IOUtils
 import org.apache.http.conn.ssl.AllowAllHostnameVerifier
-import org.tribbloid.spookystuff.Const
-import org.tribbloid.spookystuff.entity.Page
+import org.tribbloid.spookystuff.entity.{Page, PageUID}
 import org.tribbloid.spookystuff.factory.PageBuilder
 import org.tribbloid.spookystuff.utils.InsecureTrustManager
 
@@ -14,13 +13,19 @@ import org.tribbloid.spookystuff.utils.InsecureTrustManager
  * Export a page from the browser or http client
  * the page an be anything including HTML/XML file, image, PDF file or JSON string.
  */
-trait Export extends ClientAction {
+abstract class Export extends Action {
   var alias: String = null
 
-  def as(alias: String): this.type = { //TODO: better way to return type?
+  def as(alias: String): this.type = {
     this.alias = alias
     this
   }
+
+  final override def mayExport() = true
+
+  final override def trunk() = None //have not impact to driver
+
+  def doExe(pb: PageBuilder): Seq[Page]
 }
 
 /**
@@ -31,18 +36,32 @@ trait Export extends ClientAction {
  */
 case class Snapshot() extends Export {
   // all other fields are empty
-  override def doExe(pb: PageBuilder): Array[Page] = {
-    val page =       new Page(
+  override def doExe(pb: PageBuilder): Seq[Page] = {
+    val backtrace = pb.backtrace.toSeq :+ this
+
+//    import scala.collection.JavaConversions._
+
+//    val cookies = pb.driver.manage().getCookies
+//    val serializableCookies = ArrayBuffer[SerializableCookie]()
+//
+//    for (cookie <- cookies) {
+//      serializableCookies += cookie.asInstanceOf[SerializableCookie]
+//    }
+
+    val page = Page(
+      PageUID(backtrace),
       pb.driver.getCurrentUrl,
-      pb.driver.getPageSource.getBytes("UTF8"),
-      contentType = "text/html; charset=UTF-8"
+      "text/html; charset=UTF-8",
+      pb.driver.getPageSource.getBytes("UTF8")
+//      serializableCookies
     )
 
-    val backtrace = pb.backtrace.toArray(new Array[Interactive](pb.backtrace.size()))
-
-    Array[Page](page.copy(backtrace = backtrace))
+    Seq(page)
   }
 }
+
+//this is used to save GC when invoked by anothor component
+object DefaultSnapshot extends Snapshot()
 
 /**
  * use an http GET to fetch a remote resource deonted by url
@@ -51,21 +70,21 @@ case class Snapshot() extends Export {
  * actions for more complex http/restful API call will be added per request.
  * @param url support cell interpolation
  */
-case class Wget(url: String) extends Export with Sessionless{
+case class Wget(url: String) extends Export with Sessionless {
 
-  override def exeWithoutSession: Array[Page] = {
+  override def doExe(pb: PageBuilder): Seq[Page] = {
     if ((url == null)|| url.isEmpty) return Array[Page]()
 
     CookieHandler.setDefault(new CookieManager(null, CookiePolicy.ACCEPT_ALL))
 
     val uc: URLConnection =  new URL(url).openConnection()
-    uc.setConnectTimeout(Const.resourceTimeout*1000)
-    uc.setReadTimeout(Const.resourceTimeout*1000)
+    uc.setConnectTimeout(pb.spooky.resourceTimeout.toMillis.toInt)
+    uc.setReadTimeout(pb.spooky.resourceTimeout.toMillis.toInt)
 
     uc match {
       case huc: HttpsURLConnection =>
         // Install the all-trusting trust manager
-        val sslContext = SSLContext.getInstance( "SSL" )
+        val sslContext = SSLContext.getInstance("SSL")
         sslContext.init(null, Array[TrustManager](new InsecureTrustManager()), null)
         // Create an ssl socket factory with our all-trusting manager
         val sslSocketFactory  = sslContext.getSocketFactory
@@ -83,15 +102,19 @@ case class Wget(url: String) extends Export with Sessionless{
 
     is.close()
 
-    Array[Page](
-      new Page(url,
-        content,
-        contentType = uc.getContentType
-      ) //will not export backtrace right now
+    val backtrace = Seq[Action](this)
+
+    val page = new Page(
+      PageUID(backtrace),
+      url,
+      "text/html; charset=UTF-8",
+      content
     )
+
+    Seq(page)
   }
 
-  override def interpolate[T](map: Map[String,T]): this.type = {
-    Wget(ClientAction.interpolate(this.url,map)).asInstanceOf[this.type]
+  override def interpolateFromMap[T](map: Map[String,T]): this.type = {
+    this.copy(url = Action.interpolateFromMap(this.url,map)).asInstanceOf[this.type]
   }
 }

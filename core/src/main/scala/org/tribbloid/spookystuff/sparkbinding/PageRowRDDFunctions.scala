@@ -3,7 +3,7 @@ package org.tribbloid.spookystuff.sparkbinding
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.SchemaRDD
 import org.tribbloid.spookystuff.entity._
-import org.tribbloid.spookystuff.entity.clientaction.{Wget, Visit, ClientAction}
+import org.tribbloid.spookystuff.entity.client.{Action, Visit, Wget}
 import org.tribbloid.spookystuff.factory.PageBuilder
 import org.tribbloid.spookystuff.operator.{JoinType, LeftOuter, Merge, Replace}
 import org.tribbloid.spookystuff.{Const, SpookyContext}
@@ -19,7 +19,7 @@ class PageRowRDDFunctions(@transient val self: RDD[PageRow])(@transient val spoo
    * @param action any object that inherits org.tribbloid.spookystuff.entity.ClientAction
    * @return new RDD[ActionPlan]
    */
-  def +>(action: ClientAction): RDD[PageRow] = self.map {
+  def +>(action: Action): RDD[PageRow] = self.map {
     _ +> action
   }
 
@@ -29,7 +29,7 @@ class PageRowRDDFunctions(@transient val self: RDD[PageRow])(@transient val spoo
    * @param actions = Seq(action1, action2,...)
    * @return new RDD[ActionPlan]
    */
-  def +>(actions: Seq[ClientAction]): RDD[PageRow] = self.map {
+  def +>(actions: Seq[Action]): RDD[PageRow] = self.map {
     _ +> actions
   }
 
@@ -135,13 +135,13 @@ class PageRowRDDFunctions(@transient val self: RDD[PageRow])(@transient val spoo
     val squashedRDD = self.map {
       selfRow => {
 
-        (selfRow.actions, selfRow)
+        ((selfRow.actions,selfRow.dead), selfRow)
       }
     }.groupByKey()
 
     squashedRDD.flatMap {
       tuple => {
-        val newPages = PageBuilder.resolve(tuple._1: _*)
+        val newPages = PageBuilder.resolve(tuple._1._1, tuple._1._2)
 
         var newPageRows = joinType match {
           case Replace if newPages.isEmpty =>
@@ -169,7 +169,7 @@ class PageRowRDDFunctions(@transient val self: RDD[PageRow])(@transient val spoo
     _.select(keyAndF: _*)
   }
 
-  def unselect(keys: String*): RDD[PageRow] = self.map {
+  def remove(keys: String*): RDD[PageRow] = self.map {
     _.unselect(keys: _*)
   }
 
@@ -177,15 +177,13 @@ class PageRowRDDFunctions(@transient val self: RDD[PageRow])(@transient val spoo
    * save each page to a designated directory
    * this is a narrow transformation, use it to save overhead for scheduling
    * support many file systems including but not limited to HDFS, S3 and local HDD
-   * @param root (file/s3/s3n/hdfs)://path
    * @param overwrite if a file with the same name already exist:
    *                  true: overwrite it
    *                  false: append an unique suffix to the new file name
    * @return the same RDD[Page] with file paths carried as metadata
    */
   def saveAs(
-              root: String = this.spooky.pageSaveRoot, //support context interpolation
-              select: Page => String = this.spooky.pageSaveExtract,
+              select: Page => String,
               overwrite: Boolean = false
               ): RDD[PageRow] = {
     val hconfBroad = self.context.broadcast(this.spooky.hConf)
@@ -194,9 +192,7 @@ class PageRowRDDFunctions(@transient val self: RDD[PageRow])(@transient val spoo
 
       pageRow => {
 
-        val rootInterpolated = ClientAction.interpolate(root, pageRow.cells)
-
-        val newPages = pageRow.pages.map(page => page.save(spooky.pagePath(page, rootInterpolated, select), overwrite = overwrite)(hconfBroad.value))
+        val newPages = pageRow.pages.map(page => page.save(select(page), overwrite = overwrite)(hconfBroad.value))
 
         pageRow.copy(pages = newPages)
       }
@@ -206,31 +202,29 @@ class PageRowRDDFunctions(@transient val self: RDD[PageRow])(@transient val spoo
   /**
    * same as saveAs
    * but this is an action that will be executed immediately
-   * @param root (file/s3/s3n/hdfs)://path
    * @param overwrite if a file with the same name already exist:
    *                  true: overwrite it
    *                  false: append an unique suffix to the new file name
    * @return an array of file paths
    */
   def dump(
-            root: String = this.spooky.pageSaveRoot, //support context interpolation
-            select: Page => String = this.spooky.pageSaveExtract,
+            select: Page => String,
             overwrite: Boolean = false
             ): Array[String] = {
 
-    this.saveAs(root, select, overwrite).flatMap{
+    this.saveAs(select, overwrite).flatMap{
       _.pages.map{
-        _.filePath
+        _.saved
       }
     }.collect()
   }
 
   def +%>(
-           actionAndF: (ClientAction, Page => _)
+           actionAndF: (Action, Page => _)
            ): RDD[PageRow] = self.map( _.+%>(actionAndF) )
 
   def +*%>(
-            actionAndF: (ClientAction, Page => Array[_])
+            actionAndF: (Action, Page => Array[_])
             )(
             distinct: Boolean = true,
             limit: Int = Const.fetchLimit, //applied after distinct

@@ -3,7 +3,7 @@ package org.tribbloid.spookystuff.entity
 import org.apache.spark.sql.SQLContext
 import org.scalatest.{BeforeAndAfter, FunSuite}
 import org.tribbloid.spookystuff.SpookyContext
-import org.tribbloid.spookystuff.entity.clientaction.Snapshot
+import org.tribbloid.spookystuff.entity.client.Snapshot
 import org.tribbloid.spookystuff.factory.PageBuilder
 
 /**
@@ -14,10 +14,10 @@ class TestEmptyPage extends FunSuite with BeforeAndAfter {
 
   //shorthand for resolving the final stage after some interactions
   lazy val emptyPage: Page = {
-    val pb = new PageBuilder(new SpookyContext(null: SQLContext))
+    val pb = new PageBuilder(new SpookyContext(null: SQLContext))()
 
     try {
-      Snapshot().exe(pb).toList(0)
+      Snapshot().doExe(pb).toList(0)
     }
     finally {
       pb.finalize()

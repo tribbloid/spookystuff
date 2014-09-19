@@ -11,7 +11,7 @@ import org.tribbloid.spookystuff.{Const, Utils}
 //a bug in this driver has caused it unusable in Firefox 32
 object HtmlUnitDriverFactory extends DriverFactory {
 
-   val baseCaps = new DesiredCapabilities;
+   val baseCaps = new DesiredCapabilities
    baseCaps.setJavascriptEnabled(true);                //< not really needed: JS enabled by default
    baseCaps.setCapability(CapabilityType.SUPPORTS_FINDING_BY_CSS,true)
 
@@ -22,7 +22,7 @@ object HtmlUnitDriverFactory extends DriverFactory {
    override def newInstance(capabilities: Capabilities): WebDriver = {
      val newCap = baseCaps.merge(capabilities)
 
-     return Utils.retry () {
+     Utils.retry () {
        Utils.withDeadline(Const.sessionInitializationTimeout) {
          new HtmlUnitDriver(newCap)
        }

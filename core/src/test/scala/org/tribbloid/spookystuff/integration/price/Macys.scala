@@ -1,8 +1,6 @@
 package org.tribbloid.spookystuff.integration.price
 
-import org.apache.spark.rdd.RDD
-import org.tribbloid.spookystuff.entity.clientaction._
-import org.tribbloid.spookystuff.entity.clientaction.Loop
+import org.tribbloid.spookystuff.entity.client._
 import org.tribbloid.spookystuff.integration.SpookyTestCore
 
 /**
@@ -12,8 +10,10 @@ object Macys extends SpookyTestCore {
 
   import spooky._
 
+import scala.concurrent.duration._
+
   override def doMain() = {
-    ((sc.parallelize(Seq("Dummy"))
+    ((noInput
       +> Wget("http://www.macys.com/")
       !=!())
       .wgetJoin("div#globalMastheadCategoryMenu li a")()
@@ -21,13 +21,15 @@ object Macys extends SpookyTestCore {
         "category" -> (_.text1("div#nav_title"))
       )
       .visit("div#localNavigationContainer li.nav_cat_item_bold a")() +>
-      DelayFor("ul#thumbnails li.productThumbnail",20).canFail() +>
+      DelayFor("ul#thumbnails li.productThumbnail").in(20.seconds) +>
       Snapshot() +>
-      Loop(2) (
-        Click("a.arrowRight"),
-        Delay(5),
-        DelayFor("ul#thumbnails li.productThumbnail",20),
-        Snapshot()
+      Loop(
+        Click("a.arrowRight")
+          :: Delay(5.seconds)
+          :: DelayFor("ul#thumbnails li.productThumbnail").in(20.seconds)
+          :: Snapshot()
+          :: Nil,
+        2
       )
       !><())
       .extract(

@@ -2,7 +2,9 @@ package org.tribbloid.spookystuff
 
 import com.fasterxml.jackson.databind.{ObjectMapper, ObjectWriter}
 import org.tribbloid.spookystuff.factory.driver.NaiveDriverFactory
-import org.tribbloid.spookystuff.operator.Inner
+import org.tribbloid.spookystuff.operator.{LeftOuter, Inner}
+
+import scala.concurrent.duration.Duration
 
 /**
  * Created by peng on 04/06/14.
@@ -11,11 +13,10 @@ import org.tribbloid.spookystuff.operator.Inner
 //TODO: can use singleton pattern? those values never changes after SparkContext is defined
 object Const {
 
-  val actionDelayMax = 20
-  val actionDelayMin = 2
-  val resourceTimeout = 60
+  import scala.concurrent.duration._
+
 //  val usePageCache = false //delegated to smart execution
-  val pageExpireAfter = 1800
+  val pageExpireAfter: Duration = 30.minutes
 
   //default max number of elements scraped from a page, set to Int.max to allow unlimited fetch
   val fetchLimit = 500
@@ -24,7 +25,7 @@ object Const {
 
 //  type Logging = com.typesafe.scalalogging.slf4j.Logging
 
-  val defaultJoinType = Inner
+  val defaultJoinType = LeftOuter
 
   val jsonMapper = new ObjectMapper()
 
@@ -33,5 +34,9 @@ object Const {
 
   val sessionInitializationTimeout = 60
 
-  val localRetry = 3
+  val defaultLocalRetry = 3
+  val resolveRetry = 2
+
+  val actionDelayMax: Duration = 20.seconds
+  val actionDelayMin: Duration = 2.seconds
 }

@@ -1,8 +1,7 @@
 package org.tribbloid.spookystuff.entity
 
 import java.util
-
-import org.tribbloid.spookystuff.entity.clientaction.{Visit, Wget, ClientAction}
+import org.tribbloid.spookystuff.entity.client.{Visit, Wget, Action}
 import org.tribbloid.spookystuff.factory.PageBuilder
 import org.tribbloid.spookystuff.operator.{JoinType, LeftOuter, Merge, Replace}
 import org.tribbloid.spookystuff.{Const, SpookyContext}
@@ -33,23 +32,23 @@ import scala.collection.mutable.ArrayBuffer
 case class PageRow(
                     cells: ListMap[String, Any] = ListMap(), // ListMap or immutable.LinkedHashMap is favoured but due to a bug/missing feature in scala they both don't work
                     pages: Seq[Page] = Seq(),
-                    actions: Seq[ClientAction] = Seq(),
+                    actions: Seq[Action] = Seq(),
                     dead: Boolean = false
                     )
   extends Serializable {
 
-  def +>(a: ClientAction): PageRow = {
+  def +>(a: Action): PageRow = {
     if (!this.dead) {
-      this.copy(actions = this.actions :+ a.interpolate(cells))
+      this.copy(actions = this.actions :+ a.interpolateFromMap(cells))
     }
     else {
       this
     }
   }
 
-  def +>(as: Seq[ClientAction]): PageRow = {
+  def +>(as: Seq[Action]): PageRow = {
     if (!this.dead) {
-      this.copy(actions = this.actions ++ as.map(_.interpolate(cells)))
+      this.copy(actions = this.actions ++ as.map(_.interpolateFromMap(cells)))
     }
     else {
       this
@@ -61,7 +60,7 @@ case class PageRow(
       this.copy(
         cells = this.cells ++ pr.cells,
         pages = this.pages ++ pr.pages,
-        actions = this.actions ++ pr.actions.map(_.interpolate(cells)),
+        actions = this.actions ++ pr.actions.map(_.interpolateFromMap(cells)),
         dead = pr.dead
       )
     }
@@ -79,8 +78,8 @@ case class PageRow(
 
     for (action <- actions) {
       action match {
-        case a: ClientAction => results += (this +> a)
-        case sa: Seq[_] => results += (this +> sa.filter(_.isInstanceOf[ClientAction]).asInstanceOf[Seq[ClientAction]])
+        case a: Action => results += (this +> a)
+        case sa: Seq[_] => results += (this +> sa.filter(_.isInstanceOf[Action]).asInstanceOf[Seq[Action]])
         case pr: PageRow => results += (this +> pr)
         //        case am: (ClientAction, Map[String, Any]) => results += (this +> am._1).copy(cells = this.cells ++ am._2)
         //        case sam: (Seq[ClientAction], Map[String, Any]) => results += (this +> sam._1).copy(cells = this.cells ++ sam._2)
@@ -165,7 +164,7 @@ case class PageRow(
   }
 
   def +%>(
-           actionAndF: (ClientAction, Page => Any)
+           actionAndF: (Action, Page => Any)
            ): PageRow = {
 
     this.pages.lastOption match {
@@ -176,7 +175,7 @@ case class PageRow(
 
   //only apply to last page
   def +*%>(
-            actionAndF: (ClientAction, Page => Array[_])
+            actionAndF: (Action, Page => Array[_])
             )(
             distinct: Boolean = true,
             limit: Int = Const.fetchLimit, //applied after distinct
@@ -230,9 +229,9 @@ case class PageRow(
       case Replace if this.actions.isEmpty =>
         this.pages
       case Merge =>
-        this.pages ++ PageBuilder.resolve(this.actions: _*)
+        this.pages ++ PageBuilder.resolve(this.actions, this.dead)
       case _ =>
-        PageBuilder.resolve(this.actions: _*)
+        PageBuilder.resolve(this.actions, this.dead)
     }
 
     if (flatten) PageRow(cells = this.cells, pages = pages).flatten(joinType == LeftOuter, indexKey)

@@ -1,6 +1,6 @@
 package org.tribbloid.spookystuff.integration
 
-import org.tribbloid.spookystuff.entity.clientaction._
+import org.tribbloid.spookystuff.entity.client._
 
 /**
  * Created by peng on 07/06/14.
@@ -8,13 +8,14 @@ import org.tribbloid.spookystuff.entity.clientaction._
 object AppliancePartsPros extends SpookyTestCore {
 
   import spooky._
+  import scala.concurrent.duration._
 
   override def doMain() = {
     (sc.parallelize(Seq("A210S")) +>
       Visit("http://www.appliancepartspros.com/") +>
       TextInput("input.ac-input","#{_}") +>
       Click("input[value=\"Search\"]") +>
-      Delay(10) !=!() //TODO: change to DelayFor to save time
+      Delay(10.seconds) !=!() //TODO: change to DelayFor to save time
       )
       .extract(
         "model" -> ( _.text1("div.dgrm-lst div.header h2") )

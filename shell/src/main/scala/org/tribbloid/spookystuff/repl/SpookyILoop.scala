@@ -1,4 +1,4 @@
-package org.tribbloid.spookystuff.shell
+package org.tribbloid.spookystuff.repl
 
 import org.apache.spark.repl.SparkILoop
 

@@ -3,7 +3,7 @@ package org.tribbloid.spookystuff.operator
 /**
  * Created by peng on 8/31/14.
  */
-sealed abstract class JoinType extends Serializable
+sealed abstract class JoinType extends Serializable with Product
 
 //trait LeftLink extends JoinType //Join yield at least 1 PageRow that may have empty action chain, now assuming always happen
 case object Inner extends JoinType

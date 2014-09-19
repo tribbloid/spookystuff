@@ -1,7 +1,7 @@
 package org.tribbloid.spookystuff.integration
 
 import org.apache.spark.rdd.RDD
-import org.tribbloid.spookystuff.entity.clientaction._
+import org.tribbloid.spookystuff.entity.client._
 import org.tribbloid.spookystuff.factory.driver.TorDriverFactory
 
 /**

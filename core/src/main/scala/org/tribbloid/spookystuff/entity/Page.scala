@@ -9,8 +9,8 @@ import org.apache.hadoop.fs.Path
 import org.apache.http.entity.ContentType
 import org.jsoup.Jsoup
 import org.jsoup.nodes.Element
-import org.tribbloid.spookystuff.Const
-import org.tribbloid.spookystuff.entity.clientaction.{ClientAction, Interactive}
+import org.tribbloid.spookystuff.entity.client.Action
+import org.tribbloid.spookystuff.{Const, SpookyContext, Utils}
 
 import scala.collection.JavaConversions._
 import scala.collection.immutable.ListMap
@@ -18,17 +18,24 @@ import scala.collection.immutable.ListMap
 /**
  * Created by peng on 04/06/14.
  */
+//use to genterate a lookup key for each page so
+case class PageUID(
+                    backtrace: Seq[Action],
+                    blockKey: Int = -1 //-1 is no sub key
+                    )
 
 //immutable! we don't want to lose old pages
 //keep small, will be passed around by Spark
 case class Page(
-                 resolvedUrl: String,
-                 content: Array[Byte],
-                 contentType: String,
+                 uid: PageUID,
 
-                 backtrace: Array[Interactive] = null, //immutable, also the uid
+                 resolvedUrl: String,
+                 contentType: String,
+                 content: Array[Byte],
+
+//                 cookie: Seq[SerializableCookie] = Seq(),
                  timestamp: Date = new Date,
-                 filePath: String = null
+                 saved: String = null
                  )
   extends Serializable {
 
@@ -46,56 +53,135 @@ case class Page(
     None
   }
 
-  def isExpired = new Date().getTime - timestamp.getTime > Const.pageExpireAfter * 1000
+  def backtrace = this.uid.backtrace
+  def blockKey = this.uid.blockKey
 
   //this will lose information as charset encoding will be different
   def save(
             path: String,
             overwrite: Boolean = false
-            )(hConf: Configuration
-    ): Page = {
+            //            metadata: Boolean = true
+            )(hConf: Configuration): Page = {
 
     var fullPath = new Path(path)
 
     val fs = fullPath.getFileSystem(hConf)
 
-    if (!overwrite && fs.exists(fullPath)) {
-      fullPath = new Path(path +"-"+ UUID.randomUUID())
-    }
+    if (!overwrite && fs.exists(fullPath)) fullPath = new Path(path +"-"+ UUID.randomUUID())
+
     val fos = fs.create(fullPath, overwrite)
 
     IOUtils.write(content,fos)
     fos.close()
 
-
-    this.copy(filePath = fullPath.getName)
+    this.copy(saved = fullPath.toString)
   }
 
-  def saveLocal(
-                 path: String,
+  //unlike save, this will store all information in an unreadable, serialized, probably compressed file
+  def cache(
+             path: String,
+             overwrite: Boolean = false
+             )(hConf: Configuration): Page = {
+
+    var fullPath = new Path(path)
+
+    val fs = fullPath.getFileSystem(hConf)
+
+    if (!overwrite && fs.exists(fullPath)) fullPath = new Path(path +"-"+ UUID.randomUUID())
+
+    val fos = fs.create(fullPath, overwrite)
+
+    val objectOS = new ObjectOutputStream(fos)
+
+    objectOS.writeObject(this)
+    objectOS.close()
+
+    this
+  }
+
+  //  private def autoPath[T](
+  //                           root: String,
+  //                           lookup: Lookup,
+  //                           extract: Extract[_]
+  //                           ): String = {
+  //
+  //    if (!root.endsWith("/")) root + "/" + lookup(backtrace,resolvedUrl) + "/" + extract(this)
+  //    else root + lookup(backtrace,resolvedUrl) + "/" + extract(this)
+  //  }
+
+  def autoSave(
+                spooky: SpookyContext,
+                overwrite: Boolean = false
+                ): Page = this.save(
+    Utils.urlConcat(
+      spooky.autoSaveRoot,
+      spooky.PagePathLookup(uid).toString,
+      spooky.PagePathExtract(this).toString
+    ),
+    overwrite = false
+  )(spooky.hConf)
+
+  def autoCache(
+                  spooky: SpookyContext,
+                  overwrite: Boolean = false
+                  ): Page = this.cache(
+    Utils.urlConcat(
+      spooky.autoCacheRoot,
+      spooky.PagePathLookup(uid).toString,
+      spooky.PagePathExtract(this).toString
+    ),
+    overwrite = false
+  )(spooky.hConf)
+
+  def errorDump(
+                 spooky: SpookyContext,
                  overwrite: Boolean = false
-                 ): Page = {
+                 ): Page = this.save(
+    Utils.urlConcat(
+      spooky.errorDumpRoot,
+      spooky.PagePathLookup(uid).toString,
+      spooky.PagePathExtract(this).toString
+    ),
+    overwrite = false
+  )(spooky.hConf)
 
-//    val path: File = new File(dir)
-//    if (!path.isDirectory) path.mkdirs()
-//
-//    val fullPathString = getFilePath(fileName, dir)
+  def localErrorDump(
+                      spooky: SpookyContext,
+                      overwrite: Boolean = false
+                      ): Page = this.save(
+    Utils.urlConcat(
+      spooky.localErrorDumpRoot,
+      spooky.PagePathLookup(uid).toString,
+      spooky.PagePathExtract(this).toString
+    ),
+    overwrite = false
+  )(spooky.hConf)
 
-    var file: File = new File(path)
-
-    if (!overwrite && file.exists()) {
-      file = new File(path +"-"+ UUID.randomUUID())
-    }
-
-    file.createNewFile()
-
-    val fos = new FileOutputStream(file)
-
-    IOUtils.write(content,fos)
-    fos.close()
-
-    this.copy(filePath = "file://" + file.getAbsolutePath)
-  }
+  //  def saveLocal(
+  //                 path: String,
+  //                 overwrite: Boolean = false
+  //                 ): Page = {
+  //
+  ////    val path: File = new File(dir)
+  ////    if (!path.isDirectory) path.mkdirs()
+  ////
+  ////    val fullPathString = getFilePath(fileName, dir)
+  //
+  //    var file: File = new File(path)
+  //
+  //    if (!overwrite && file.exists()) {
+  //      file = new File(path +"-"+ UUID.randomUUID())
+  //    }
+  //
+  //    file.createNewFile()
+  //
+  //    val fos = new FileOutputStream(file)
+  //
+  //    IOUtils.write(content,fos)
+  //    fos.close()
+  //
+  //    this.copy(savedTo = "file://" + file.getCanonicalPath)
+  //  }
 
   //  def refresh(): Page = {
   //    val page = PageBuilder.resolveFinal(this.backtrace: _*).modify(this.alias,this.context)
@@ -254,20 +340,20 @@ case class Page(
   }
 
   def crawl1(
-              action: ClientAction,
+              action: Action,
               f: Page => _
               ): PageRow = {
 
     f(this) match {
       case null => DeadRow
       case s: Any =>
-        val fa = action.interpolate(Map("~" -> s))
+        val fa = action.interpolateFromMap(Map("~" -> s))
         PageRow(actions = Seq(fa))
     }
   }
 
   def crawl(
-             action: ClientAction,
+             action: Action,
              f: Page => Array[_]
              )(
              distinct: Boolean = true,
@@ -279,7 +365,7 @@ case class Page(
 
     if (attrs.isEmpty) return Array(DeadRow)
 
-    var actions = attrs.map( attr => action.interpolate(Map("~" -> attr)))
+    var actions = attrs.map( attr => action.interpolateFromMap(Map("~" -> attr)))
 
     if (distinct) actions = actions.distinct
 
