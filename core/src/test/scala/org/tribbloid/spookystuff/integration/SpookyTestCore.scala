@@ -36,7 +36,7 @@ trait SpookyTestCore extends FunSuite {
   test("Print query result",Integration) {
     val array = result.collect()
 
-    array.mkString("\t").foreach(println)
+    array.foreach(row => println(row.mkString("\t")))
 
     println("-------------------returned "+array.length+" rows------------------")
 
@@ -46,7 +46,7 @@ trait SpookyTestCore extends FunSuite {
   final def main(args: Array[String]) {
     val array = result.collect()
 
-    array.foreach(row => println(row.mkString("/t")))
+    array.foreach(row => println(row.mkString("\t")))
 
     println("-------------------returned "+array.length+" rows------------------")
 
