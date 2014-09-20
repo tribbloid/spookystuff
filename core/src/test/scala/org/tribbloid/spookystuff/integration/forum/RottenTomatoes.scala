@@ -11,7 +11,7 @@ object RottenTomatoes extends SpookyTestCore {
 
     import spooky._
 
-    (sc.parallelize(Seq(null)) +>
+    (noInput +>
       Wget("http://www.rottentomatoes.com/") !=!())
       .wgetJoin("table.top_box_office tr.sidebarInTheaterTopBoxOffice a")(indexKey = "rank") //go to movie page, e.g. http://www.rottentomatoes.com/m/guardians_of_the_galaxy/
       .extract(

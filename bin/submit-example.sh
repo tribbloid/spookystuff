@@ -33,7 +33,7 @@ else
   exit 1
 fi
 
-export SPOOKY_EXAMPLES_JAR=example/target/scala_scala-$SCALA_VERSION/spookystuff-example-assembly-0.2.0-SNAPSHOT.jar
+export SPOOKY_EXAMPLES_JAR=example/target/scala-$SCALA_VERSION/spookystuff-example-assembly-0.2.0-SNAPSHOT.jar
 
 if [[ -z SPOOKY_EXAMPLES_JAR ]]; then
   echo "Failed to find Spookystuff examples assembly in ./example/target/" >&2

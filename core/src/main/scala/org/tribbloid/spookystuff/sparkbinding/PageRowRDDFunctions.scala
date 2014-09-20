@@ -12,7 +12,9 @@ import org.tribbloid.spookystuff.{Const, SpookyContext}
  * Created by peng on 8/29/14.
  */
 //TODO: where is it serialized?
-class PageRowRDDFunctions(@transient val self: RDD[PageRow])(@transient val spooky: SpookyContext) extends Serializable{
+class PageRowRDDFunctions(@transient val self: RDD[PageRow])
+                         (@transient val spooky: SpookyContext)
+  extends Serializable{
 
   /**
    * append an action

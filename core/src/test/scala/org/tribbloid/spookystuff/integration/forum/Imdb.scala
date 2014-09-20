@@ -13,7 +13,7 @@ object Imdb extends SpookyTestCore {
 
     import spooky._
 
-    (sc.parallelize(Seq(null))
+    (noInput
       +>  Wget("http://www.imdb.com/chart") !=!())
       .sliceJoin("div#boxoffice tbody tr")() //slice into rows of top office table
       .extract(

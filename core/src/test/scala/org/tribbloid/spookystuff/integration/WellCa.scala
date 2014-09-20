@@ -11,7 +11,7 @@ object WellCa extends SpookyTestCore {
 
   override def doMain() = {
 
-    (sc.parallelize(Seq(null))
+    (noInput
       +> Visit("http://well.ca/whatsnew/")
       !=!())
       .sliceJoin("div.product_grid_full_categories")()

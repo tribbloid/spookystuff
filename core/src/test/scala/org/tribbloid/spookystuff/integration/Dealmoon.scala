@@ -8,7 +8,7 @@ object Dealmoon extends SpookyTestCore {
 
   def doMain() = {
 
-    (sc.parallelize(Seq(null))
+    (noInput
       +> Wget("http://www.dealmoon.com/Online-Stores/Amazon-com?expired=n")
       !=!()
       ).paginate("a.next_link")()
