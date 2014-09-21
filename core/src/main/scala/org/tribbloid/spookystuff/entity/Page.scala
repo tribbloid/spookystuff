@@ -14,7 +14,6 @@ import org.tribbloid.spookystuff.entity.client.Action
 import org.tribbloid.spookystuff.{Const, SpookyContext, Utils}
 
 import scala.collection.JavaConversions._
-import scala.collection.immutable.ListMap
 
 /**
  * Created by peng on 04/06/14.
@@ -335,8 +334,8 @@ case class Page(
     case _ => null
   }
 
-  def extractAsMap[T](keyAndF: (String, Page => T)*): ListMap[String, T] = {
-    ListMap(
+  def extractAsMap[T](keyAndF: (String, Page => T)*): Map[String, T] = {
+    Map(
       keyAndF.map{
         tuple => (tuple._1, tuple._2(this))
       }: _*
@@ -383,7 +382,7 @@ case class Page(
           PageRow(actions = Seq(tuple._1))
         }
         else {
-          PageRow(cells = ListMap(indexKey -> tuple._2),actions = Seq(tuple._1))
+          PageRow(cells = Map(indexKey -> tuple._2),actions = Seq(tuple._1))
         }
       }
     ).toArray

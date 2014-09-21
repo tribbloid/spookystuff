@@ -2,18 +2,24 @@ package org.tribbloid.spookystuff.sparkbinding
 
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.SchemaRDD
+import org.apache.spark.sql.catalyst.analysis.UnresolvedAttribute
 import org.tribbloid.spookystuff.entity._
 import org.tribbloid.spookystuff.entity.client.{Action, Visit, Wget}
 import org.tribbloid.spookystuff.factory.PageBuilder
 import org.tribbloid.spookystuff.operator.{JoinType, LeftOuter, Merge, Replace}
 import org.tribbloid.spookystuff.{Const, SpookyContext}
 
+import scala.collection.immutable.ListSet
+
 /**
  * Created by peng on 8/29/14.
  */
-//TODO: where is it serialized?
-class PageRowRDDFunctions(@transient val self: RDD[PageRow])
-                         (@transient val spooky: SpookyContext)
+//TODO: to deserve its name it has to extend RDD[PageRow] and implement all methods
+case class PageSchemaRDD(
+                          @transient self: RDD[PageRow],
+                          @transient columnNames: ListSet[String] = ListSet(),
+                          @transient spooky: SpookyContext
+                          )
   extends Serializable{
 
   /**
@@ -21,9 +27,7 @@ class PageRowRDDFunctions(@transient val self: RDD[PageRow])
    * @param action any object that inherits org.tribbloid.spookystuff.entity.ClientAction
    * @return new RDD[ActionPlan]
    */
-  def +>(action: Action): RDD[PageRow] = self.map {
-    _ +> action
-  }
+  def +>(action: Action): PageSchemaRDD = this.copy(self.map(_ +> action))
 
   /**
    * append a series of actions
@@ -31,13 +35,9 @@ class PageRowRDDFunctions(@transient val self: RDD[PageRow])
    * @param actions = Seq(action1, action2,...)
    * @return new RDD[ActionPlan]
    */
-  def +>(actions: Seq[Action]): RDD[PageRow] = self.map {
-    _ +> actions
-  }
+  def +>(actions: Seq[Action]): PageSchemaRDD = this.copy(self.map(_ +> actions))
 
-  def +>(pr: PageRow): RDD[PageRow] = self.map {
-    _ +> pr
-  }
+  def +>(pr: PageRow): PageSchemaRDD = this.copy(self.map (_ +> pr))
 
   /**
    * append a set of actions or ActionPlans to be executed in parallel
@@ -48,17 +48,11 @@ class PageRowRDDFunctions(@transient val self: RDD[PageRow])
    *                CANNOT be RDD[ActionPlan], but this may become an option in the next release
    * @return new RDD[ActionPlan], of which size = [size of old RDD] * [size of actions]
    */
-  def +*>(actions: Seq[_]): RDD[PageRow] = self.flatMap {
-    _ +*> actions
-  }
+  def +*>(actions: Seq[_]): PageSchemaRDD = this.copy(self.flatMap (_ +*> actions))
 
-  def asMapRDD(): RDD[Map[String,Any]] = self.map {
-    _.cells
-  }
+  def asMapRDD(): RDD[Map[String,Any]] = self.map (_.cells)
 
-  def asJsonRDD(): RDD[String] = self.map {
-    _.asJson()
-  }
+  def asJsonRDD(): RDD[String] = self.map (_.asJson())
 
   def asSchemaRDD(): SchemaRDD = {
 
@@ -66,7 +60,12 @@ class PageRowRDDFunctions(@transient val self: RDD[PageRow])
 
     jsonRDD.persist() //for some unknown reason SQLContext.jsonRDD uses the parameter RDD twice, this has to be fixed by somebody else
 
+    //by default, will order the columns to be identical to the sequence they are extracted, data input will be ignored
+
     this.spooky.sql.jsonRDD(jsonRDD)
+      .select(
+      columnNames.toSeq.reverse.map(header => UnresolvedAttribute(header)): _*
+    )
   }
 
   def asCsvRDD(separator: String = ","): RDD[String] = this.asSchemaRDD().map {
@@ -74,7 +73,7 @@ class PageRowRDDFunctions(@transient val self: RDD[PageRow])
   }
 
   def asTsvRDD(): RDD[String] = this.asCsvRDD("\t")
-  
+
   /**
    * parallel execution in browser(s) to yield a set of web pages
    * each ActionPlan may yield several pages in a row, depending on the number of Export(s) in it
@@ -84,15 +83,15 @@ class PageRowRDDFunctions(@transient val self: RDD[PageRow])
            joinType: JoinType = Const.defaultJoinType,
            flatten: Boolean = true,
            indexKey: String = null
-           ): RDD[PageRow] = {
+           ): PageSchemaRDD = {
 
     val spookyBroad = self.context.broadcast(this.spooky)
 
     implicit def spookyImplicit: SpookyContext = spookyBroad.value
 
-    self.flatMap {
-      _.!=!(joinType,flatten,indexKey)
-    }
+    val result = self.flatMap(_.!=!(joinType,flatten,indexKey))
+
+    this.copy(result)
   }
 
   //  def !>><<(
@@ -116,7 +115,7 @@ class PageRowRDDFunctions(@transient val self: RDD[PageRow])
   //  }
 
   //TODO: this definitely need some logging to let us know how many actual resolves.
-  //TODO: actionless row needs to be treated differently, current implementation skewed bad
+  //TODO: empty action rows needs to be treated differently, current implementation skewed bad
   /**
    * smart execution: group identical ActionPlans, execute in parallel, and duplicate result pages to match their original contexts
    * reduce workload by avoiding repeated access to the same url caused by duplicated context or diamond links (A->B,A->C,B->D,C->D)
@@ -127,7 +126,8 @@ class PageRowRDDFunctions(@transient val self: RDD[PageRow])
            joinType: JoinType = Const.defaultJoinType,
            flatten: Boolean = true,
            indexKey: String = null
-           ): RDD[PageRow] = {
+           ): PageSchemaRDD = {
+
     val spookyBroad = self.context.broadcast(this.spooky)
 
     implicit def spookyImplicit: SpookyContext = spookyBroad.value
@@ -141,7 +141,7 @@ class PageRowRDDFunctions(@transient val self: RDD[PageRow])
       }
     }.groupByKey()
 
-    squashedRDD.flatMap {
+    val result = squashedRDD.flatMap {
       tuple => {
         val newPages = PageBuilder.resolve(tuple._1._1, tuple._1._2)
 
@@ -159,6 +159,8 @@ class PageRowRDDFunctions(@transient val self: RDD[PageRow])
         newPageRows
       }
     }
+
+    this.copy(result)
   }
 
   /**
@@ -167,13 +169,15 @@ class PageRowRDDFunctions(@transient val self: RDD[PageRow])
    * @param keyAndF a key-function map, each element is used to generate a key-value map using the Page itself
    * @return new RDD[Page]
    */
-  def extract(keyAndF: (String, Page => Any)*): RDD[PageRow] = self.map {
-    _.select(keyAndF: _*)
-  }
+  def extract(keyAndF: (String, Page => Any)*): PageSchemaRDD = this.copy(
+    self.map(_.select(keyAndF: _*)),
+    columnNames = this.columnNames ++ keyAndF.map(_._1)
+  )
 
-  def remove(keys: String*): RDD[PageRow] = self.map {
-    _.unselect(keys: _*)
-  }
+  def remove(keys: String*): PageSchemaRDD = this.copy(
+    self.map(_.unselect(keys: _*)),
+    columnNames = this.columnNames -- keys
+  )
 
   /**
    * save each page to a designated directory
@@ -187,10 +191,10 @@ class PageRowRDDFunctions(@transient val self: RDD[PageRow])
   def saveAs(
               select: Page => String,
               overwrite: Boolean = false
-              ): RDD[PageRow] = {
+              ): PageSchemaRDD = {
     val hconfBroad = self.context.broadcast(this.spooky.hConf)
 
-    self.map {
+    val result = self.map {
 
       pageRow => {
 
@@ -199,6 +203,8 @@ class PageRowRDDFunctions(@transient val self: RDD[PageRow])
         pageRow.copy(pages = newPages)
       }
     }
+
+    this.copy(result)
   }
 
   /**
@@ -212,18 +218,13 @@ class PageRowRDDFunctions(@transient val self: RDD[PageRow])
   def dump(
             select: Page => String,
             overwrite: Boolean = false
-            ): Array[String] = {
+            ): Array[String] = this.saveAs(select, overwrite).self.flatMap{
+    _.pages.map{
+      _.saved
+    }
+  }.collect()
 
-    this.saveAs(select, overwrite).flatMap{
-      _.pages.map{
-        _.saved
-      }
-    }.collect()
-  }
-
-  def +%>(
-           actionAndF: (Action, Page => _)
-           ): RDD[PageRow] = self.map( _.+%>(actionAndF) )
+  def +%>(actionAndF: (Action, Page => _)): PageSchemaRDD = this.copy(self.map( _.+%>(actionAndF) ))
 
   def +*%>(
             actionAndF: (Action, Page => Array[_])
@@ -231,14 +232,9 @@ class PageRowRDDFunctions(@transient val self: RDD[PageRow])
             distinct: Boolean = true,
             limit: Int = Const.fetchLimit, //applied after distinct
             indexKey: String = null
-            ): RDD[PageRow] = self.flatMap(_.+*%>(actionAndF)(distinct,limit,indexKey))
+            ): PageSchemaRDD = this.copy(self.flatMap(_.+*%>(actionAndF)(distinct,limit,indexKey)))
 
-  def dropActions(): RDD[PageRow] = {
-
-    self.map {
-      _.copy(actions = Seq(), dead = false)
-    }
-  }
+  def dropActions(): PageSchemaRDD = this.copy(self.map (_.copy(actions = Seq(), dead = false)))
 
   //  private def join(
   //                    action: ClientAction,
@@ -272,30 +268,20 @@ class PageRowRDDFunctions(@transient val self: RDD[PageRow])
              distinct: Boolean = true,
              limit: Int = Const.fetchLimit, //applied after distinct
              indexKey: String = null
-             ): RDD[PageRow] = {
-
-    import spooky._
-
-    this.dropActions().+*%>(
-      Visit("#{~}") -> (_.attr(selector, attr))
-    )(distinct, limit, indexKey)
-  }
-
+             ): PageSchemaRDD = this.dropActions().+*%>(
+    Visit("#{~}") -> (_.attr(selector, attr))
+  )(distinct, limit, indexKey)
 
   def wget(
-                    selector: String,
-                    attr: String = "abs:href"
-                    )(
-                    distinct: Boolean = true,
-                    limit: Int = Const.fetchLimit, //applied after distinct
-                    indexKey: String = null
-                    ): RDD[PageRow] = {
-    import spooky._
-
-    this.dropActions().+*%>(
-      Wget("#{~}") -> (_.attr(selector, attr))
-    )(distinct, limit, indexKey)
-  }
+            selector: String,
+            attr: String = "abs:href"
+            )(
+            distinct: Boolean = true,
+            limit: Int = Const.fetchLimit, //applied after distinct
+            indexKey: String = null
+            ): PageSchemaRDD = this.dropActions().+*%>(
+    Wget("#{~}") -> (_.attr(selector, attr))
+  )(distinct, limit, indexKey)
 
   /**
    * results in a new set of Pages by crawling links on old pages
@@ -306,17 +292,15 @@ class PageRowRDDFunctions(@transient val self: RDD[PageRow])
    * @return RDD[Page]
    */
   def visitJoin(
-            selector: String,
-            attr :String = "abs:href"
-            )(
-            distinct: Boolean = true,
-            limit: Int = Const.fetchLimit, //applied after distinct
-            indexKey: String = null,
-            joinType: JoinType = Const.defaultJoinType,
-            flatten: Boolean = true
-            ): RDD[PageRow] ={
-
-    import spooky._
+                 selector: String,
+                 attr :String = "abs:href"
+                 )(
+                 distinct: Boolean = true,
+                 limit: Int = Const.fetchLimit, //applied after distinct
+                 indexKey: String = null,
+                 joinType: JoinType = Const.defaultJoinType,
+                 flatten: Boolean = true
+                 ): PageSchemaRDD ={
 
     this.visit(selector, attr)(distinct, limit, indexKey).!><(joinType, flatten)
   }
@@ -338,9 +322,7 @@ class PageRowRDDFunctions(@transient val self: RDD[PageRow])
                 indexKey: String = null,
                 joinType: JoinType = Const.defaultJoinType,
                 flatten: Boolean = true
-                ): RDD[PageRow] ={
-
-    import spooky._
+                ): PageSchemaRDD ={
 
     this.wget(selector, attr)(distinct, limit, indexKey).!><(joinType, flatten)
   }
@@ -359,12 +341,14 @@ class PageRowRDDFunctions(@transient val self: RDD[PageRow])
                  indexKey: String = null,
                  joinType: JoinType = Const.defaultJoinType,
                  flatten: Boolean = true
-                 ): RDD[PageRow] ={
+                 ): PageSchemaRDD ={
 
-    self.flatMap {
+    val result = self.flatMap {
 
       _.dropActions().slice(selector, expand)(limit, indexKey, joinType, flatten)
     }
+
+    this.copy(result)
   }
 
   /**
@@ -374,22 +358,34 @@ class PageRowRDDFunctions(@transient val self: RDD[PageRow])
    * @return RDD[Page], contains both old and new pages
    */
   def paginate(
-              selector: String,
-              attr :String = "abs:href",
-              wget: Boolean = true
-              )(
-              limit: Int = Const.fetchLimit,
-              indexKey: String = null,
-              flatten: Boolean = true
-              ): RDD[PageRow] = {
+                selector: String,
+                attr :String = "abs:href",
+                wget: Boolean = true
+                )(
+                limit: Int = Const.fetchLimit,
+                indexKey: String = null,
+                flatten: Boolean = true
+                ): PageSchemaRDD = {
 
     val spookyBroad = self.context.broadcast(this.spooky)
 
     implicit def spookyImplicit: SpookyContext = spookyBroad.value
 
-    self.flatMap {
+    val result = self.flatMap {
       _.paginate(selector, attr, wget)(limit, indexKey, flatten)
     }
+
+    this.copy(result)
   }
 
+  def union(other: PageSchemaRDD): PageSchemaRDD = {
+    this.copy(
+      this.self.union(other.self),
+      columnNames = this.columnNames ++ other.columnNames
+    )
+  }
+
+  def repartition(numPartitions: Int): PageSchemaRDD = {
+    this.copy(this.self.repartition(numPartitions))
+  }
 }

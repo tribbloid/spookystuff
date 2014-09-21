@@ -1,12 +1,12 @@
 package org.tribbloid.spookystuff.entity
 
 import java.util
-import org.tribbloid.spookystuff.entity.client.{Visit, Wget, Action}
+
+import org.tribbloid.spookystuff.entity.client.{Action, Visit, Wget}
 import org.tribbloid.spookystuff.factory.PageBuilder
 import org.tribbloid.spookystuff.operator.{JoinType, LeftOuter, Merge, Replace}
 import org.tribbloid.spookystuff.{Const, SpookyContext}
 
-import scala.collection.immutable.ListMap
 import scala.collection.mutable.ArrayBuffer
 
 /**
@@ -30,7 +30,7 @@ import scala.collection.mutable.ArrayBuffer
 //now using immutable pattern to increase maintainability
 //put all narrow transformation closures here
 case class PageRow(
-                    cells: ListMap[String, Any] = ListMap(), // ListMap or immutable.LinkedHashMap is favoured but due to a bug/missing feature in scala they both don't work
+                    cells: Map[String, Any] = Map(),
                     pages: Seq[Page] = Seq(),
                     actions: Seq[Action] = Seq(),
                     dead: Boolean = false

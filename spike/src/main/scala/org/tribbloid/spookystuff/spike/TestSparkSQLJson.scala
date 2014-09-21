@@ -20,16 +20,18 @@ object TestSparkSQLJson {
     // Importing the SQL context gives access to all the SQL functions and implicit conversions.
     import sql._
 
-    val rdd = sc.parallelize(1 to 100).map( vvv => "{ \"key name\": "+vvv.toString+", \"value name\": 2 }" )
-    val schemaRDD = sql.jsonRDD(rdd)
-//
-    val schemaRDD2 = schemaRDD.where(Symbol("key name") > 20)
-//    val rowRDD = schemaRDD.orderBy('key.asc)
-    val rowRDD = schemaRDD
-    println(rowRDD.schemaString)
+    val rdd = sc.parallelize(1 to 100).map( vvv => "{ \"key name\": "+vvv.toString+", \"value name\": 2, \"beta\": 5, \"able\": 3, \"hotel\": 7 }" )
+    val schemaRDD = sql.jsonRDD(rdd).select('beta, 'able, 'hotel)
 
-    val rows = rowRDD.collect()
-    rows.foreach(println(_))
+    schemaRDD.printSchema()
+//
+//    val schemaRDD2 = schemaRDD.where(Symbol("key name") > 20)
+////    val rowRDD = schemaRDD.orderBy('key.asc)
+//    val rowRDD = schemaRDD
+//    println(rowRDD.schemaString)
+//
+//    val rows = rowRDD.collect()
+//    rows.foreach(println(_))
 
 //      .collect()
 //    rows.foreach(println(_))

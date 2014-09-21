@@ -6,12 +6,9 @@ import org.apache.spark.{SerializableWritable, SparkConf, SparkContext}
 import org.tribbloid.spookystuff.entity.PageRow
 import org.tribbloid.spookystuff.factory.driver.{DriverFactory, NaiveDriverFactory}
 import org.tribbloid.spookystuff.operator._
-import org.tribbloid.spookystuff.sparkbinding.{PageRowRDDFunctions, StringRDDFunctions}
+import org.tribbloid.spookystuff.sparkbinding.{PageSchemaRDD, StringRDDFunctions}
 
-import scala.collection.immutable.ListMap
-import scala.concurrent.duration.Duration
-
-import scala.concurrent.duration._
+import scala.concurrent.duration.{Duration, _}
 
 /**
  * Created by peng on 12/06/14.
@@ -50,7 +47,7 @@ class SpookyContext (
 
   def hConf = hConfWrapper.value
 
-  @transient lazy val noInput: RDD[PageRow] = this.sql.sparkContext.parallelize(Seq(PageRow()))
+  @transient lazy val noInput: PageSchemaRDD = new PageSchemaRDD(this.sql.sparkContext.parallelize(Seq(PageRow())),spooky = this)
 
 //  implicit def self: SpookyContext = this
 
@@ -67,24 +64,32 @@ class SpookyContext (
 
   implicit def stringRDDToItsFunctions(rdd: RDD[String]) = new StringRDDFunctions(rdd)
 
-  implicit def pageRowRDDToItsFunctions[T <% RDD[PageRow]](rdd: T) = new PageRowRDDFunctions(rdd)(this)
+//  implicit def pageRowRDDToItsFunctions[T <% RDD[PageRow]](rdd: T) = new PageRowRDD(rdd)(this)
 
   //these are the entry points of SpookyStuff starting from a common RDD of strings or maps
-  implicit def stringRDDToPageRowRDD(rdd: RDD[String]): RDD[PageRow] = rdd.map{
-    str => {
-      var cells = ListMap[String,Any]()
-      if (str!=null) cells = cells + ("_" -> str)
+  implicit def stringRDDToPageRowRDD(rdd: RDD[String]): PageSchemaRDD = {
+    val result = rdd.map{
+      str => {
+        var cells = Map[String,Any]()
+        if (str!=null) cells = cells + ("_" -> str)
 
-      new PageRow(cells)
+        new PageRow(cells)
+      }
     }
+
+    new PageSchemaRDD(result, spooky = this)
   }
 
-  implicit def mapRDDToPageRowRDD[T <: Map[String,Any]](rdd: RDD[T]): RDD[PageRow] = rdd.map{
-    map => {
-      var cells = ListMap[String,Any]()
-      if (map!=null) cells = cells ++ map
+  implicit def mapRDDToPageRowRDD(rdd: RDD[Map[String,Any]]): PageSchemaRDD = {
+    val result = rdd.map{
+      map => {
+        var cells = Map[String,Any]()
+        if (map!=null) cells = cells ++ map
 
-      new PageRow(cells)
+        new PageRow(cells)
+      }
     }
+
+    new PageSchemaRDD(result, spooky = this)
   }
 }
