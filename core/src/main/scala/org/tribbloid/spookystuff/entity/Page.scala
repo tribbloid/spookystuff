@@ -26,6 +26,7 @@ case class PageUID(
 
 //immutable! we don't want to lose old pages
 //keep small, will be passed around by Spark
+@SerialVersionUID(1925602137496052L)
 case class Page(
                  uid: PageUID,
 
@@ -33,7 +34,7 @@ case class Page(
                  contentType: String,
                  content: Array[Byte],
 
-//                 cookie: Seq[SerializableCookie] = Seq(),
+                 //                 cookie: Seq[SerializableCookie] = Seq(),
                  timestamp: Date = new Date,
                  saved: String = null
                  )
@@ -71,8 +72,12 @@ case class Page(
 
     val fos = fs.create(fullPath, overwrite)
 
-    IOUtils.write(content,fos)
-    fos.close()
+    try {
+      IOUtils.write(content,fos)
+    }
+    finally {
+      fos.close()
+    }
 
     this.copy(saved = fullPath.toString)
   }
@@ -90,11 +95,14 @@ case class Page(
     if (!overwrite && fs.exists(fullPath)) fullPath = new Path(path +"-"+ UUID.randomUUID())
 
     val fos = fs.create(fullPath, overwrite)
-
     val objectOS = new ObjectOutputStream(fos)
 
-    objectOS.writeObject(this)
-    objectOS.close()
+    try {
+      objectOS.writeObject(this)
+    }
+    finally {
+      objectOS.close()
+    }
 
     this
   }
@@ -122,9 +130,9 @@ case class Page(
   )(spooky.hConf)
 
   def autoCache(
-                  spooky: SpookyContext,
-                  overwrite: Boolean = false
-                  ): Page = this.cache(
+                 spooky: SpookyContext,
+                 overwrite: Boolean = false
+                 ): Page = this.cache(
     Utils.urlConcat(
       spooky.autoCacheRoot,
       spooky.PagePathLookup(uid).toString,

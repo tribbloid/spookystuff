@@ -53,22 +53,12 @@
                         </goals>
                         <configuration>
                             <createDependencyReducedPom>false</createDependencyReducedPom>
-                            <!--<relocations>-->
-                                <!--<relocation>-->
-                                    <!--<pattern>org.apache.http</pattern>-->
-                                    <!--<shadedPattern>org.shaded.apache.http</shadedPattern>-->
-                                <!--</relocation>-->
-                            <!--</relocations>-->
-
-                            <!--<transformers>-->
-                                <!--<transformer implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer" />-->
-                                <!--<transformer implementation="org.apache.maven.plugins.shade.resource.AppendingTransformer">-->
-                                    <!--<resource>reference.conf</resource>-->
-                                <!--</transformer>-->
-                                <!--<transformer implementation="org.apache.maven.plugins.shade.resource.DontIncludeResourceTransformer">-->
-                                    <!--<resource>log4j.properties</resource>-->
-                                <!--</transformer>-->
-                            <!--</transformers>-->
+                            <relocations>
+                                <relocation>
+                                    <pattern>org.apache.http</pattern>
+                                    <shadedPattern>org.shaded.apache.http</shadedPattern>
+                                </relocation>
+                            </relocations>
                         </configuration>
                     </execution>
                 </executions>

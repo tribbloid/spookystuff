@@ -7,6 +7,7 @@ import org.apache.commons.io.IOUtils
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.Path
 import org.openqa.selenium.{Capabilities, WebDriver}
+import org.slf4j.LoggerFactory
 import org.tribbloid.spookystuff.entity._
 import org.tribbloid.spookystuff.entity.client._
 import org.tribbloid.spookystuff.{Const, SpookyContext, Utils}
@@ -65,11 +66,12 @@ object PageBuilder {
 
       val fis = fs.open(fullPath)
 
-      val content = IOUtils.toByteArray(fis)
-
-      fis.close()
-
-      content
+      try {
+        IOUtils.toByteArray(fis)
+      }
+      finally {
+        fis.close()
+      }
     }
     else null
   }
@@ -80,14 +82,14 @@ object PageBuilder {
 
     if (fs.exists(fullPath)) {
       val fis = fs.open(fullPath)
-
       val objectIS = new ObjectInputStream(fis)
 
-      val page = objectIS.readObject().asInstanceOf[Page]
-
-      objectIS.close()
-
-      page
+      try {
+        objectIS.readObject().asInstanceOf[Page]
+      }
+      finally {
+        objectIS.close()
+      }
     }
     else null
   }
@@ -196,8 +198,19 @@ class PageBuilder(
   def +=(action: Action): Unit = {
     if (action.mayExport()) {
 
+      //TODO: special backtace for sessionless!
       //always try to read from cache first
-      val restored = if (autoRestore) restore(action)
+      val restored = if (autoRestore) {
+        try {
+          restore(action)
+        }
+        catch {
+          case e: Throwable => {
+            LoggerFactory.getLogger(this.getClass).warn("cannot fetch from cache", e)
+            null
+          }
+        }
+      }
       else null
 
       if (restored != null) pages ++= restored
