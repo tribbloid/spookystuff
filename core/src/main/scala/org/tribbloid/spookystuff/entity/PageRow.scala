@@ -148,18 +148,34 @@ case class PageRow(
   }
 
   //only apply to last page
-  def select(keyAndF: (String, Page => Any)*): PageRow = {
+  def extract(keyAndF: (String, Page => Any)*): PageRow = {
 
     this.pages.lastOption match {
       case None => this
       case Some(page) =>
-        val map = page.extractAsMap(keyAndF: _*)
+        val map = Map(
+          keyAndF.map{
+            tuple => (tuple._1, tuple._2(page))
+          }: _*
+        )
 
         this.copy(cells = this.cells ++ map)
     }
   }
 
-  def unselect(keys: String*): PageRow = {
+  //TODO: this will become the default extract at some point, but not now
+  def select(keyAndF: (String, PageRow => Any)*): PageRow = {
+
+    val map = Map(
+      keyAndF.map {
+        tuple => (tuple._1, tuple._2(this))
+      }: _*
+    )
+
+    this.copy(cells = this.cells ++ map)
+  }
+
+  def remove(keys: String*): PageRow = {
     this.copy(cells = this.cells -- keys)
   }
 

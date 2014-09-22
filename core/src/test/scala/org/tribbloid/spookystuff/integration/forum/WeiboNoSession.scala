@@ -24,7 +24,7 @@ import scala.concurrent.duration._
 
     val range = start.until(end, 3600*1000).map(time => df.format(new Date(time)))
 
-    val RDD = ((sc.parallelize(range)
+    val RDD = ((sc.parallelize(range,1000)
       +> Visit("http://s.weibo.com/wb/%25E6%2588%2590%25E9%2583%25BD%25E9%2593%25B6%25E8%25A1%258C&xsort=time&timescope=custom:#{_}:#{_}&Refer=g")
       +> RandomDelay(40.seconds, 80.seconds)
       +> Try(DelayFor("div.search_feed dl.feed_list").in(60.seconds) :: Nil)

@@ -35,9 +35,9 @@ abstract class Export extends Action {
  * always export as UTF8 charset
  */
 case class Snapshot() extends Export {
+
   // all other fields are empty
   override def doExe(pb: PageBuilder): Seq[Page] = {
-    val backtrace = pb.backtrace.toSeq :+ this
 
 //    import scala.collection.JavaConversions._
 
@@ -49,7 +49,7 @@ case class Snapshot() extends Export {
 //    }
 
     val page = Page(
-      PageUID(backtrace),
+      PageUID(backtrace(pb)),
       pb.driver.getCurrentUrl,
       "text/html; charset=UTF-8",
       pb.driver.getPageSource.getBytes("UTF8")
@@ -102,10 +102,8 @@ case class Wget(url: String) extends Export with Sessionless {
 
     is.close()
 
-    val backtrace = Seq[Action](this)
-
     val page = new Page(
-      PageUID(backtrace),
+      PageUID(backtrace(pb)),
       url,
       "text/html; charset=UTF-8",
       content

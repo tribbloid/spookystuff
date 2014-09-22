@@ -175,14 +175,14 @@ class PageBuilder(
         _driver.quit()
       }
     }catch{
-      case t: Throwable => throw t;
+      case t: Throwable => throw t
     }finally{
       super.finalize()
     }
   }
 
   def restore(action: Action): Seq[Page] = {
-    val uid = PageUID(buffer :+ action)
+    val uid = PageUID(action.backtrace(this))
 
     val path = new Path(
       Utils.urlConcat(
@@ -205,10 +205,9 @@ class PageBuilder(
           restore(action)
         }
         catch {
-          case e: Throwable => {
+          case e: Throwable =>
             LoggerFactory.getLogger(this.getClass).warn("cannot fetch from cache", e)
             null
-          }
         }
       }
       else null

@@ -342,14 +342,6 @@ case class Page(
     case _ => null
   }
 
-  def extractAsMap[T](keyAndF: (String, Page => T)*): Map[String, T] = {
-    Map(
-      keyAndF.map{
-        tuple => (tuple._1, tuple._2(this))
-      }: _*
-    )
-  }
-
   def crawl1(
               action: Action,
               f: Page => _

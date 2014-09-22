@@ -54,6 +54,7 @@ case class PageSchemaRDD(
 
   def asJsonRDD(): RDD[String] = self.map (_.asJson())
 
+  //TODO: header cannot use special characters, notably dot(.)
   def asSchemaRDD(): SchemaRDD = {
 
     val jsonRDD = this.asJsonRDD()
@@ -64,7 +65,7 @@ case class PageSchemaRDD(
 
     this.spooky.sql.jsonRDD(jsonRDD)
       .select(
-      columnNames.toSeq.reverse.map(header => UnresolvedAttribute(header)): _*
+      columnNames.toSeq.reverse.map(names => UnresolvedAttribute(names)): _*
     )
   }
 
@@ -170,12 +171,17 @@ case class PageSchemaRDD(
    * @return new RDD[Page]
    */
   def extract(keyAndF: (String, Page => Any)*): PageSchemaRDD = this.copy(
+    self.map(_.extract(keyAndF: _*)),
+    columnNames = this.columnNames ++ keyAndF.map(_._1)
+  )
+
+  def select(keyAndF: (String, PageRow => Any)*): PageSchemaRDD = this.copy(
     self.map(_.select(keyAndF: _*)),
     columnNames = this.columnNames ++ keyAndF.map(_._1)
   )
 
   def remove(keys: String*): PageSchemaRDD = this.copy(
-    self.map(_.unselect(keys: _*)),
+    self.map(_.remove(keys: _*)),
     columnNames = this.columnNames -- keys
   )
 

@@ -1,11 +1,8 @@
 package org.tribbloid.spookystuff.entity.client
 
-import org.openqa.selenium.By
-import org.openqa.selenium.support.ui.{ExpectedConditions, WebDriverWait}
 import org.tribbloid.spookystuff.Const
 import org.tribbloid.spookystuff.entity.{Page, PageUID}
 import org.tribbloid.spookystuff.factory.PageBuilder
-import org.tribbloid.spookystuff.operator.{Extract, ExtractTrue}
 
 import scala.collection.mutable.ArrayBuffer
 import scala.concurrent.duration.Duration
@@ -45,9 +42,7 @@ case class Try(actions: Seq[Action]) extends Block {
       //Do nothing because just trying
     }
 
-    val backtrace = pb.backtrace.toSeq :+ this
-
-    pages.zipWithIndex.map(tuple => tuple._1.copy(uid = PageUID(backtrace,tuple._2)))
+    pages.zipWithIndex.map(tuple => tuple._1.copy(uid = PageUID(backtrace(pb),tuple._2)))
   }
 
   override def interpolateFromMap[T](map: Map[String,T]): this.type = {
@@ -98,8 +93,7 @@ case class Loop(
       //Do nothing, loop until not possible
     }
 
-    val backtrace = pb.backtrace.toSeq :+ this
-    pages.zipWithIndex.map(tuple => tuple._1.copy(uid = PageUID(backtrace,tuple._2)))
+    pages.zipWithIndex.map(tuple => tuple._1.copy(uid = PageUID(backtrace(pb),tuple._2)))
   }
 
   override def interpolateFromMap[T](map: Map[String,T]): this.type = {
@@ -145,8 +139,7 @@ case class LoadMore(
       //Do nothing, loop until conditions are not met
     }
 
-    val backtrace = pb.backtrace.toSeq :+ this
-    pages.zipWithIndex.map(tuple => tuple._1.copy(uid = PageUID(backtrace,tuple._2)))
+    pages.zipWithIndex.map(tuple => tuple._1.copy(uid = PageUID(backtrace(pb),tuple._2)))
   }
 
   //the minimal equivalent action that can be put into backtrace
