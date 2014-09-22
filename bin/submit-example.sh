@@ -41,7 +41,7 @@ if [[ -z SPOOKY_EXAMPLES_JAR ]]; then
   exit 1
 fi
 
-EXAMPLE_MASTER=${MASTER:-"local[*]"}
+EXAMPLE_MASTER=${MASTER:-"local[4,2,2000]"}
 
 if [[ ! $EXAMPLE_CLASS == org.tribbloid.spookystuff.example* ]]; then
   EXAMPLE_CLASS="org.tribbloid.spookystuff.example.$EXAMPLE_CLASS"

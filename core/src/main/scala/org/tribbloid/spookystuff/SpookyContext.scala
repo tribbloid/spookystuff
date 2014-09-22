@@ -30,8 +30,8 @@ class SpookyContext (
                       var autoSave: Boolean = true,//slow, for debugging only
                       var autoSaveRoot: String = "s3n://spOOky/"+"page/",
 
-                      var autoCache: Boolean = true,//slow, reduce bombarding highly aware sites
-                      //                      var autoRestore: Boolean = true,//slow, reduce bombarding highly aware sites
+                      var autoCache: Boolean = true,//slow, but reduce bombarding highly aware sites
+                      var autoRestore: Boolean = true,//slow, but reduce bombarding highly aware sites
                       var autoCacheRoot: String = "s3n://spOOky/"+"cache/",
 
                       var errorDump: Boolean = true,
@@ -49,7 +49,7 @@ class SpookyContext (
 
   @transient lazy val noInput: PageSchemaRDD = new PageSchemaRDD(this.sql.sparkContext.parallelize(Seq(PageRow())),spooky = this)
 
-//  implicit def self: SpookyContext = this
+  //  implicit def self: SpookyContext = this
 
   def setRoot(root: String): Unit = {
 
@@ -64,7 +64,7 @@ class SpookyContext (
 
   implicit def stringRDDToItsFunctions(rdd: RDD[String]) = new StringRDDFunctions(rdd)
 
-//  implicit def pageRowRDDToItsFunctions[T <% RDD[PageRow]](rdd: T) = new PageRowRDD(rdd)(this)
+  //  implicit def pageRowRDDToItsFunctions[T <% RDD[PageRow]](rdd: T) = new PageRowRDD(rdd)(this)
 
   //these are the entry points of SpookyStuff starting from a common RDD of strings or maps
   implicit def stringRDDToPageRowRDD(rdd: RDD[String]): PageSchemaRDD = {

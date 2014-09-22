@@ -5,8 +5,8 @@ import java.util.Date
 
 import org.apache.commons.io.IOUtils
 import org.apache.hadoop.conf.Configuration
-import org.apache.hadoop.fs.{PathFilter, Path}
-import org.openqa.selenium.{WebDriver, Capabilities}
+import org.apache.hadoop.fs.Path
+import org.openqa.selenium.{Capabilities, WebDriver}
 import org.tribbloid.spookystuff.entity._
 import org.tribbloid.spookystuff.entity.client._
 import org.tribbloid.spookystuff.{Const, SpookyContext, Utils}
@@ -15,7 +15,7 @@ import scala.collection.mutable.ArrayBuffer
 
 object PageBuilder {
 
-  def resolve(actions: Seq[Action], dead: Boolean)(implicit spooky: SpookyContext): Array[Page] = {
+  def resolve(actions: Seq[Action], dead: Boolean)(implicit spooky: SpookyContext): Seq[Page] = {
 
     Utils.retry (Const.resolveRetry){
       if (Action.mayExport(actions: _*) || dead) {
@@ -30,7 +30,7 @@ object PageBuilder {
 
   // Major API shrink! resolveFinal will be merged here
   // if a resolve has no potential to output page then a snapshot will be appended at the end
-  private def resolvePlain(actions: Seq[Action])(implicit spooky: SpookyContext): Array[Page] = {
+  private def resolvePlain(actions: Seq[Action])(implicit spooky: SpookyContext): Seq[Page] = {
 
     //    val results = ArrayBuffer[Page]()
 
@@ -39,7 +39,7 @@ object PageBuilder {
     try {
       pb ++= actions
 
-      pb.pages.toArray
+      pb.pages
       //      for (action <- actions) {
       //        var pages = action.exe(pb)
       //        if (pages != null) {
@@ -92,42 +92,46 @@ object PageBuilder {
     else null
   }
 
-  class PrefixFilter(val prefix: String) extends PathFilter {
-
-    override def accept(path: Path): Boolean = path.getName.startsWith(prefix)
-  }
-
-  def getDirsByPrefix(dirPath: Path, prefix: String)(hConf: Configuration): Seq[Path] = {
-
-    val fs = dirPath.getFileSystem(hConf)
-
-    if (fs.getFileStatus(dirPath).isDir) {
-      val status = fs.listStatus(dirPath, new PrefixFilter(prefix))
-
-      status.map(_.getPath)
-    }
-    else Seq()
-  }
+  //  class PrefixFilter(val prefix: String) extends PathFilter {
+  //
+  //    override def accept(path: Path): Boolean = path.getName.startsWith(prefix)
+  //  }
+  //
+  //  def getDirsByPrefix(dirPath: Path, prefix: String)(hConf: Configuration): Seq[Path] = {
+  //
+  //    val fs = dirPath.getFileSystem(hConf)
+  //
+  //    if (fs.getFileStatus(dirPath).isDir) {
+  //      val status = fs.listStatus(dirPath, new PrefixFilter(prefix))
+  //
+  //      status.map(_.getPath)
+  //    }
+  //    else Seq()
+  //  }
 
   //restore latest in a directory
-  def restoreLatest(dirPath: Path)(hConf: Configuration): Page = {
+  def restoreLatest(dirPath: Path)(hConf: Configuration): Seq[Page] = {
 
     val fs = dirPath.getFileSystem(hConf)
 
-    if (fs.getFileStatus(dirPath).isDir) {
+    if (fs.exists(dirPath) && fs.getFileStatus(dirPath).isDir) {
+      val results = new ArrayBuffer[Page]()
+
       val statuses = fs.listStatus(dirPath)
 
-      val latest = statuses.filter(!_.isDir).sortBy(_.getModificationTime).last
+      val latestStatus = statuses.filter(!_.isDir).sortBy(_.getModificationTime).lastOption
 
-      val fis = fs.open(latest.getPath)
+      latestStatus match {
+        case Some(status) => results += restore(status.getPath)(hConf)
+        case _ =>
+      }
 
-      val objectIS = new ObjectInputStream(fis)
+      val subDirs = statuses.filter(_.isDir).map(_.getPath).sortBy(_.getName)
+      for (path <- subDirs) {
+        results ++= restoreLatest(path)(hConf)
+      }
 
-      val page = objectIS.readObject().asInstanceOf[Page]
-
-      objectIS.close()
-
-      page
+      results
     }
     else null
   }
@@ -139,7 +143,8 @@ class PageBuilder(
                    val startTime: Long = new Date().getTime
                    )(
                    val autoSave: Boolean = spooky.autoSave,
-                   val cache: Boolean = spooky.autoCache
+                   val autoCache: Boolean = spooky.autoCache,
+                   val autoRestore: Boolean = spooky.autoRestore
                    ) {
 
   private var _driver: WebDriver = null
@@ -174,20 +179,42 @@ class PageBuilder(
     }
   }
 
+  def restore(action: Action): Seq[Page] = {
+    val uid = PageUID(buffer :+ action)
+
+    val path = new Path(
+      Utils.urlConcat(
+        spooky.autoCacheRoot,
+        spooky.PagePathLookup(uid).toString
+      )
+    )
+
+    PageBuilder.restoreLatest(path)(spooky.hConf)
+  }
+
   //lazy execution by default.
   def +=(action: Action): Unit = {
     if (action.mayExport()) {
-      for (buffered <- this.buffer)
-      {
-        pages ++= buffered.exe(this)() // I know buffered one should only have empty result, just for safety
+
+      //always try to read from cache first
+      val restored = if (autoRestore) restore(action)
+      else null
+
+      if (restored != null) pages ++= restored
+      else {
+
+        for (buffered <- this.buffer)
+        {
+          pages ++= buffered.exe(this)() // I know buffered one should only have empty result, just for safety
+        }
+        buffer.clear()
+        var batch = action.exe(this)()
+
+        if (autoSave) batch = batch.map(_.autoSave(spooky))
+        if (autoCache) batch = batch.map(_.autoCache(spooky))
+
+        pages ++= batch
       }
-      buffer.clear()
-      var batch = action.exe(this)()
-
-      if (autoSave) batch = batch.map(_.autoSave(spooky))
-      if (cache) batch = batch.map(_.autoCache(spooky))
-
-      pages ++= batch
     }
     else {
       this.buffer += action
