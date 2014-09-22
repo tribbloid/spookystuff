@@ -8,6 +8,7 @@ import org.tribbloid.spookystuff.factory.driver.{DriverFactory, NaiveDriverFacto
 import org.tribbloid.spookystuff.operator._
 import org.tribbloid.spookystuff.sparkbinding.{PageSchemaRDD, StringRDDFunctions}
 
+import scala.collection.immutable.ListSet
 import scala.concurrent.duration.{Duration, _}
 
 /**
@@ -77,7 +78,7 @@ class SpookyContext (
       }
     }
 
-    new PageSchemaRDD(result, spooky = this)
+    new PageSchemaRDD(result, columnNames = ListSet("_"), spooky = this)
   }
 
   implicit def mapRDDToPageRowRDD(rdd: RDD[Map[String,Any]]): PageSchemaRDD = {
