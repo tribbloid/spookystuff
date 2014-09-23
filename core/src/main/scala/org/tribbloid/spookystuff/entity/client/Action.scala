@@ -61,8 +61,6 @@ trait Action extends Serializable with Product {
 
   def interpolateFromMap[T](map: Map[String,T]): this.type = this
 
-  def backtrace(pb: PageBuilder) = pb.backtrace.toSeq :+ this
-
   //this should handle autoSave, cache and errorDump
   def exe(
            session: PageBuilder

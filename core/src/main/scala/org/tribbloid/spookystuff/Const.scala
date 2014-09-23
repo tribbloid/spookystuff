@@ -16,7 +16,6 @@ object Const {
   import scala.concurrent.duration._
 
 //  val usePageCache = false //delegated to smart execution
-  val pageExpireAfter: Duration = 30.minutes
 
   //default max number of elements scraped from a page, set to Int.max to allow unlimited fetch
   val fetchLimit = 500

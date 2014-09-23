@@ -25,17 +25,19 @@ class SpookyContext (
 
                       var driverFactory: DriverFactory = NaiveDriverFactory(),
 
-                      var PagePathLookup: Lookup[_] = VerbosePathLookup,
-                      var PagePathExtract: Extract[_] = ExtractTimestamp,
-
                       var autoSave: Boolean = true,//slow, for debugging only
-                      var autoSaveRoot: String = "s3n://spOOky/"+"page/",
-
                       var autoCache: Boolean = true,//slow, but reduce bombarding highly aware sites
                       var autoRestore: Boolean = true,//slow, but reduce bombarding highly aware sites
-                      var autoCacheRoot: String = "s3n://spOOky/"+"cache/",
-
                       var errorDump: Boolean = true,
+
+                      var pageExpireAfter: Duration = 30.minutes,
+
+                      var autoSaveExtract: Extract[_] = ExtractTimestamp(VerbosePathLookup),
+                      var autoCacheLookup: Lookup[_] = VerbosePathLookup,
+                      var errorDumpExtract: Extract[_] = ExtractTimestamp(VerbosePathLookup),
+
+                      var autoSaveRoot: String = "s3n://spOOky/"+"page/",
+                      var autoCacheRoot: String = "s3n://spOOky/"+"cache/",
                       var errorDumpRoot: String = "s3n://spOOky/"+"error/",
                       var localErrorDumpRoot: String = "file:///spOOky/"+"error/",
 

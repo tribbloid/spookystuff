@@ -204,7 +204,7 @@ case class PageSchemaRDD(
 
       pageRow => {
 
-        val newPages = pageRow.pages.map(page => page.save(select(page), overwrite = overwrite)(hconfBroad.value))
+        val newPages = pageRow.pages.map(page => page.save(Seq(select(page)), overwrite = overwrite)(hconfBroad.value))
 
         pageRow.copy(pages = newPages)
       }

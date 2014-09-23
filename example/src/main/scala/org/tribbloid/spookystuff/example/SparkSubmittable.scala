@@ -5,6 +5,8 @@ import org.apache.spark.sql.SQLContext
 import org.apache.spark.{SparkConf, SparkContext}
 import org.tribbloid.spookystuff.SpookyContext
 
+import scala.concurrent.duration._
+
 /**
  * Created by peng on 22/06/14.
  */
@@ -14,6 +16,8 @@ trait SparkSubmittable {
   var sc: SparkContext = new SparkContext(conf)
   val sql: SQLContext = new SQLContext(sc)
   val spooky: SpookyContext = new SpookyContext(sql)
+
+  spooky.pageExpireAfter = 30.days
 
   final def main(args: Array[String]) {
 

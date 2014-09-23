@@ -42,7 +42,7 @@ case class Try(actions: Seq[Action]) extends Block {
       //Do nothing because just trying
     }
 
-    pages.zipWithIndex.map(tuple => tuple._1.copy(uid = PageUID(backtrace(pb),tuple._2)))
+    pages.zipWithIndex.map(tuple => tuple._1.copy(uid = PageUID(pb.backtrace :+ this,tuple._2)))
   }
 
   override def interpolateFromMap[T](map: Map[String,T]): this.type = {
@@ -93,7 +93,7 @@ case class Loop(
       //Do nothing, loop until not possible
     }
 
-    pages.zipWithIndex.map(tuple => tuple._1.copy(uid = PageUID(backtrace(pb),tuple._2)))
+    pages.zipWithIndex.map(tuple => tuple._1.copy(uid = PageUID(pb.backtrace :+ this,tuple._2)))
   }
 
   override def interpolateFromMap[T](map: Map[String,T]): this.type = {
@@ -139,7 +139,7 @@ case class LoadMore(
       //Do nothing, loop until conditions are not met
     }
 
-    pages.zipWithIndex.map(tuple => tuple._1.copy(uid = PageUID(backtrace(pb),tuple._2)))
+    pages.zipWithIndex.map(tuple => tuple._1.copy(uid = PageUID(pb.backtrace :+ this,tuple._2)))
   }
 
   //the minimal equivalent action that can be put into backtrace

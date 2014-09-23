@@ -4,7 +4,7 @@ import org.apache.hadoop.fs.Path
 import org.apache.spark.sql.SQLContext
 import org.apache.spark.{SparkConf, SparkContext}
 import org.scalatest.FunSuite
-import org.tribbloid.spookystuff.{Utils, SpookyContext}
+import org.tribbloid.spookystuff.SpookyContext
 import org.tribbloid.spookystuff.entity.client._
 import org.tribbloid.spookystuff.factory.PageBuilder
 
@@ -108,9 +108,9 @@ class TestPageBuilder extends FunSuite {
       dead = false
     )(spooky)
 
-    assert(result(0).attrExist("div#result_0 h3 span.bold","title") === true)
-    assert(result(0).attr1("div#result_0 h3 span.dummy","title") === null)
-    assert(result(0).attr1("div#result_0 h3 span.bold","dummy") === null)
+    assert(result(0).attrExist("div#result_0","name") === true)
+    assert(result(0).attr1("div#result_0 dummy","title") === null)
+    assert(result(0).attr1("div#result_0 h3","dummy") === null)
   }
 
   test("save and load") {
@@ -126,68 +126,62 @@ class TestPageBuilder extends FunSuite {
 
     val page1Saved = page1.autoSave(spooky,overwrite = true)
 
-    val loadedContent = PageBuilder.load(new Path(page1Saved.saved))(spooky.hConf)
+    val loadedContent = Page.load(new Path(page1Saved.saved))(spooky.hConf)
 
     assert(loadedContent === page1Saved.content)
   }
 
   test("cache and restore") {
-    val results = PageBuilder.resolve(
+    val pages = PageBuilder.resolve(
       Visit("https://www.linkedin.com/") ::
         Snapshot().as("T") :: Nil,
       dead = false
     )(spooky)
 
-    val resultsList = results.toArray
-    assert(resultsList.size === 1)
-    val page1 = resultsList(0)
+    assert(pages.size === 1)
+    val page1 = pages(0)
 
-    val page1Cached = page1.autoCache(spooky,overwrite = true)
+    assert(page1.uid === PageUID( Visit("https://www.linkedin.com/") :: Snapshot() :: Nil))
 
-    val uid = PageUID( Visit("https://www.linkedin.com/") :: Snapshot() :: Nil)
+    Page.autoCache(pages, page1.uid, spooky)
 
-    val cachedPath = new Path(
-      Utils.urlConcat(
-        spooky.autoCacheRoot,
-        spooky.PagePathLookup(uid).toString
-      )
-    )
+    val loadedPages = Page.autoRestoreLatest(page1.uid,spooky)
 
-    val loadedPage = PageBuilder.restoreLatest(cachedPath)(spooky.hConf)(0)
+    assert(loadedPages.length === 1)
 
-    assert(page1Cached.content === loadedPage.content)
+    assert(pages(0).content === loadedPages(0).content)
 
-    assert(page1Cached.copy(content = null) === loadedPage.copy(content = null))
+    assert(pages(0).copy(content = null) === loadedPages(0).copy(content = null))
   }
 
-  test("cache multiple pages and restore") {
-    val results = PageBuilder.resolve(
-      Visit("https://www.linkedin.com/") ::
-        Snapshot().as("T") :: Nil,
-      dead = false
-    )(spooky)
-
-    val resultsList = results.toArray
-    assert(resultsList.size === 1)
-    val page1 = resultsList(0)
-
-    val page1Cached = page1.autoCache(spooky,overwrite = true)
-
-    val uid = PageUID( Visit("https://www.linkedin.com/") :: Snapshot() :: Nil)
-
-    val cachedPath = new Path(
-      Utils.urlConcat(
-        spooky.autoCacheRoot,
-        spooky.PagePathLookup(uid).toString
-      )
-    )
-
-    val loadedPage = PageBuilder.restoreLatest(cachedPath)(spooky.hConf)(0)
-
-    assert(page1Cached.content === loadedPage.content)
-
-    assert(page1Cached.copy(content = null) === loadedPage.copy(content = null))
-  }
+//  test("cache multiple pages and restore") {
+//    val results = PageBuilder.resolve(
+//      Visit("https://www.linkedin.com/") ::
+//        Snapshot().as("T") :: Nil,
+//      dead = false
+//    )(spooky)
+//
+//    val resultsList = results.toArray
+//    assert(resultsList.size === 1)
+//    val page1 = resultsList(0)
+//
+//    val page1Cached = page1.autoCache(spooky,overwrite = true)
+//
+//    val uid = PageUID( Visit("https://www.linkedin.com/") :: Snapshot() :: Nil)
+//
+//    val cachedPath = new Path(
+//      Utils.urlConcat(
+//        spooky.autoCacheRoot,
+//        spooky.PagePathLookup(uid).toString
+//      )
+//    )
+//
+//    val loadedPage = PageBuilder.restoreLatest(cachedPath)(spooky.hConf)(0)
+//
+//    assert(page1Cached.content === loadedPage.content)
+//
+//    assert(page1Cached.copy(content = null) === loadedPage.copy(content = null))
+//  }
 
   test("wget html, save and load") {
     val results = PageBuilder.resolve(
@@ -203,7 +197,7 @@ class TestPageBuilder extends FunSuite {
 
     val page1Saved = page1.autoSave(spooky,overwrite = true)
 
-    val loadedContent = PageBuilder.load(new Path(page1Saved.saved))(spooky.hConf)
+    val loadedContent = Page.load(new Path(page1Saved.saved))(spooky.hConf)
 
     assert(loadedContent === page1Saved.content)
   }
@@ -220,7 +214,7 @@ class TestPageBuilder extends FunSuite {
 
     val page1Saved = page1.autoSave(spooky,overwrite = true)
 
-    val loadedContent = PageBuilder.load(new Path(page1Saved.saved))(spooky.hConf)
+    val loadedContent = Page.load(new Path(page1Saved.saved))(spooky.hConf)
 
     assert(loadedContent === page1Saved.content)
   }
@@ -237,7 +231,7 @@ class TestPageBuilder extends FunSuite {
 
     val page1Saved = page1.autoSave(spooky,overwrite = true)
 
-    val loadedContent = PageBuilder.load(new Path(page1Saved.saved))(spooky.hConf)
+    val loadedContent = Page.load(new Path(page1Saved.saved))(spooky.hConf)
 
     assert(loadedContent === page1Saved.content)
   }

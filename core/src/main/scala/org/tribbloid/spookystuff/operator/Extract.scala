@@ -2,6 +2,7 @@ package org.tribbloid.spookystuff.operator
 
 import org.openqa.selenium.By
 import org.openqa.selenium.support.ui.{ExpectedCondition, ExpectedConditions}
+import org.tribbloid.spookystuff.Utils
 import org.tribbloid.spookystuff.entity.Page
 
 /**
@@ -20,11 +21,11 @@ case object ExtractTrue extends Extract[Boolean] {
   }
 }
 
-case object ExtractTimestamp extends Extract[Long] {
+case class ExtractTimestamp(lookup: Lookup[_]) extends Extract[String] {
 
-  override def apply(page: Page): Long = {
+  override def apply(page: Page): String = {
 
-    page.timestamp.getTime
+    Utils.urlConcat(lookup(page.uid).toString, page.timestamp.getTime.toString)
   }
 }
 

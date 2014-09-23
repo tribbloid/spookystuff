@@ -49,7 +49,7 @@ case class Snapshot() extends Export {
 //    }
 
     val page = Page(
-      PageUID(backtrace(pb)),
+      PageUID(pb.backtrace :+ this),
       pb.driver.getCurrentUrl,
       "text/html; charset=UTF-8",
       pb.driver.getPageSource.getBytes("UTF8")
@@ -103,7 +103,7 @@ case class Wget(url: String) extends Export with Sessionless {
     is.close()
 
     val page = new Page(
-      PageUID(backtrace(pb)),
+      PageUID(pb.backtrace :+ this),
       url,
       "text/html; charset=UTF-8",
       content

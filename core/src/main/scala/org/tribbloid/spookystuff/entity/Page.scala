@@ -15,6 +15,136 @@ import org.tribbloid.spookystuff.{Const, SpookyContext, Utils}
 
 import scala.collection.JavaConversions._
 
+object Page {
+
+  def load(fullPath: Path)(hConf: Configuration): Array[Byte] = {
+
+    val fs = fullPath.getFileSystem(hConf)
+
+    if (fs.exists(fullPath)) {
+
+      val fis = fs.open(fullPath)
+
+      try {
+        IOUtils.toByteArray(fis)
+      }
+      finally {
+        fis.close()
+      }
+    }
+    else null
+  }
+
+  //unlike save, this will store all information in an unreadable, serialized, probably compressed file
+  def cache(
+             pages: Seq[Page],
+             path: String,
+             overwrite: Boolean = false
+             )(hConf: Configuration): Unit = {
+
+    var fullPath = new Path(path)
+
+    val fs = fullPath.getFileSystem(hConf)
+
+    if (!overwrite && fs.exists(fullPath)) fullPath = new Path(path +"-"+ UUID.randomUUID())
+
+    val fos = fs.create(fullPath, overwrite)
+    val objectOS = new ObjectOutputStream(fos)
+
+    try {
+      objectOS.writeObject(pages)
+    }
+    finally {
+      objectOS.close()
+    }
+  }
+
+  def autoCache(
+                 pages: Seq[Page],
+                 uid: PageUID,
+                 spooky: SpookyContext
+                 ): Unit = {
+    val pathStr = Utils.urlConcat(
+      spooky.autoCacheRoot,
+      spooky.autoCacheLookup(uid).toString,
+      UUID.randomUUID().toString
+    )
+
+    Page.cache(pages, pathStr)(spooky.hConf)
+  }
+
+  def restore(fullPath: Path)(hConf: Configuration): Seq[Page] = {
+
+    val fs = fullPath.getFileSystem(hConf)
+
+    if (fs.exists(fullPath)) {
+      val fis = fs.open(fullPath)
+      val objectIS = new ObjectInputStream(fis)
+
+      try {
+        objectIS.readObject().asInstanceOf[Seq[Page]]
+      }
+      finally {
+        objectIS.close()
+      }
+    }
+    else null
+  }
+
+  //  class PrefixFilter(val prefix: String) extends PathFilter {
+  //
+  //    override def accept(path: Path): Boolean = path.getName.startsWith(prefix)
+  //  }
+  //
+  //  def getDirsByPrefix(dirPath: Path, prefix: String)(hConf: Configuration): Seq[Path] = {
+  //
+  //    val fs = dirPath.getFileSystem(hConf)
+  //
+  //    if (fs.getFileStatus(dirPath).isDir) {
+  //      val status = fs.listStatus(dirPath, new PrefixFilter(prefix))
+  //
+  //      status.map(_.getPath)
+  //    }
+  //    else Seq()
+  //  }
+
+  //TODO: put all batch into the same folder
+  //restore latest in a directory
+  //returns: Seq() => has backtrace dir but contains no page
+  //returns null => no backtrace dir
+  def restoreLatest(
+                     dirPath: Path,
+                     earliestModificationTime: Long = 0
+                     )(hConf: Configuration): Seq[Page] = {
+
+    val fs = dirPath.getFileSystem(hConf)
+
+    if (fs.exists(dirPath) && fs.getFileStatus(dirPath).isDir) {
+      //      val results = new ArrayBuffer[Page]()
+
+      val statuses = fs.listStatus(dirPath)
+
+      val latestStatus = statuses.filter(status => !status.isDir && status.getModificationTime >= earliestModificationTime).sortBy(_.getModificationTime).lastOption
+
+      latestStatus match {
+        case Some(status) => restore(status.getPath)(hConf)
+        case _ => null
+      }
+    }
+    else null
+  }
+
+  //TODO: cannot handle infinite duration, avoid using it!
+  def autoRestoreLatest(
+                         uid: PageUID,
+                         spooky: SpookyContext
+                         ): Seq[Page] = {
+    val pathStr = Utils.urlConcat(spooky.autoCacheRoot, spooky.autoCacheLookup(uid).toString)
+
+    restoreLatest(new Path(pathStr), System.currentTimeMillis() - spooky.pageExpireAfter.toMillis)(spooky.hConf)
+  }
+}
+
 /**
  * Created by peng on 04/06/14.
  */
@@ -59,10 +189,12 @@ case class Page(
 
   //this will lose information as charset encoding will be different
   def save(
-            path: String,
+            pathParts: Seq[String],
             overwrite: Boolean = false
             //            metadata: Boolean = true
             )(hConf: Configuration): Page = {
+
+    val path = Utils.urlConcat(pathParts: _*)
 
     var fullPath = new Path(path)
 
@@ -82,30 +214,7 @@ case class Page(
     this.copy(saved = fullPath.toString)
   }
 
-  //unlike save, this will store all information in an unreadable, serialized, probably compressed file
-  def cache(
-             path: String,
-             overwrite: Boolean = false
-             )(hConf: Configuration): Page = {
 
-    var fullPath = new Path(path)
-
-    val fs = fullPath.getFileSystem(hConf)
-
-    if (!overwrite && fs.exists(fullPath)) fullPath = new Path(path +"-"+ UUID.randomUUID())
-
-    val fos = fs.create(fullPath, overwrite)
-    val objectOS = new ObjectOutputStream(fos)
-
-    try {
-      objectOS.writeObject(this)
-    }
-    finally {
-      objectOS.close()
-    }
-
-    this
-  }
 
   //  private def autoPath[T](
   //                           root: String,
@@ -121,48 +230,21 @@ case class Page(
                 spooky: SpookyContext,
                 overwrite: Boolean = false
                 ): Page = this.save(
-    Utils.urlConcat(
-      spooky.autoSaveRoot,
-      spooky.PagePathLookup(uid).toString,
-      spooky.PagePathExtract(this).toString
-    ),
-    overwrite = false
-  )(spooky.hConf)
-
-  def autoCache(
-                 spooky: SpookyContext,
-                 overwrite: Boolean = false
-                 ): Page = this.cache(
-    Utils.urlConcat(
-      spooky.autoCacheRoot,
-      spooky.PagePathLookup(uid).toString,
-      spooky.PagePathExtract(this).toString
-    ),
-    overwrite = false
+    spooky.autoSaveRoot :: spooky.autoSaveExtract(this).toString :: Nil
   )(spooky.hConf)
 
   def errorDump(
                  spooky: SpookyContext,
                  overwrite: Boolean = false
                  ): Page = this.save(
-    Utils.urlConcat(
-      spooky.errorDumpRoot,
-      spooky.PagePathLookup(uid).toString,
-      spooky.PagePathExtract(this).toString
-    ),
-    overwrite = false
+    spooky.errorDumpRoot :: spooky.errorDumpExtract(this).toString :: Nil
   )(spooky.hConf)
 
   def localErrorDump(
                       spooky: SpookyContext,
                       overwrite: Boolean = false
                       ): Page = this.save(
-    Utils.urlConcat(
-      spooky.localErrorDumpRoot,
-      spooky.PagePathLookup(uid).toString,
-      spooky.PagePathExtract(this).toString
-    ),
-    overwrite = false
+    spooky.localErrorDumpRoot :: spooky.errorDumpExtract(this).toString :: Nil
   )(spooky.hConf)
 
   //  def saveLocal(

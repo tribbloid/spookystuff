@@ -26,9 +26,6 @@ case object VerbosePathLookup extends Lookup[String] {
 
     val hash = "-"+uid.backtrace.hashCode
 
-    val block = if (uid.blockKey == -1) ""
-    else "/"+uid.blockKey
-
-    Utils.canonize(truncated + suffix + hash) + block
+    Utils.canonize(truncated + suffix + hash)
   }
 }

@@ -1,7 +1,7 @@
 package org.tribbloid.spookystuff.factory
 
 import java.io.ObjectInputStream
-import java.util.Date
+import java.util.{UUID, Date}
 
 import org.apache.commons.io.IOUtils
 import org.apache.hadoop.conf.Configuration
@@ -58,85 +58,7 @@ object PageBuilder {
     }
   }
 
-  def load(fullPath: Path)(hConf: Configuration): Array[Byte] = {
 
-    val fs = fullPath.getFileSystem(hConf)
-
-    if (fs.exists(fullPath)) {
-
-      val fis = fs.open(fullPath)
-
-      try {
-        IOUtils.toByteArray(fis)
-      }
-      finally {
-        fis.close()
-      }
-    }
-    else null
-  }
-
-  def restore(fullPath: Path)(hConf: Configuration): Page = {
-
-    val fs = fullPath.getFileSystem(hConf)
-
-    if (fs.exists(fullPath)) {
-      val fis = fs.open(fullPath)
-      val objectIS = new ObjectInputStream(fis)
-
-      try {
-        objectIS.readObject().asInstanceOf[Page]
-      }
-      finally {
-        objectIS.close()
-      }
-    }
-    else null
-  }
-
-  //  class PrefixFilter(val prefix: String) extends PathFilter {
-  //
-  //    override def accept(path: Path): Boolean = path.getName.startsWith(prefix)
-  //  }
-  //
-  //  def getDirsByPrefix(dirPath: Path, prefix: String)(hConf: Configuration): Seq[Path] = {
-  //
-  //    val fs = dirPath.getFileSystem(hConf)
-  //
-  //    if (fs.getFileStatus(dirPath).isDir) {
-  //      val status = fs.listStatus(dirPath, new PrefixFilter(prefix))
-  //
-  //      status.map(_.getPath)
-  //    }
-  //    else Seq()
-  //  }
-
-  //restore latest in a directory
-  def restoreLatest(dirPath: Path)(hConf: Configuration): Seq[Page] = {
-
-    val fs = dirPath.getFileSystem(hConf)
-
-    if (fs.exists(dirPath) && fs.getFileStatus(dirPath).isDir) {
-      val results = new ArrayBuffer[Page]()
-
-      val statuses = fs.listStatus(dirPath)
-
-      val latestStatus = statuses.filter(!_.isDir).sortBy(_.getModificationTime).lastOption
-
-      latestStatus match {
-        case Some(status) => results += restore(status.getPath)(hConf)
-        case _ =>
-      }
-
-      val subDirs = statuses.filter(_.isDir).map(_.getPath).sortBy(_.getName)
-      for (path <- subDirs) {
-        results ++= restoreLatest(path)(hConf)
-      }
-
-      results
-    }
-    else null
-  }
 }
 
 class PageBuilder(
@@ -181,36 +103,29 @@ class PageBuilder(
     }
   }
 
-  def restore(action: Action): Seq[Page] = {
-    val uid = PageUID(action.backtrace(this))
-
-    val path = new Path(
-      Utils.urlConcat(
-        spooky.autoCacheRoot,
-        spooky.PagePathLookup(uid).toString
-      )
-    )
-
-    PageBuilder.restoreLatest(path)(spooky.hConf)
-  }
-
   //lazy execution by default.
   def +=(action: Action): Unit = {
+    val uid = PageUID(this.backtrace :+ action)
+
     if (action.mayExport()) {
       //always try to read from cache first
       val restored = if (autoRestore) {
         try {
-          restore(action)
+          Page.autoRestoreLatest(uid, spooky)
         }
         catch {
           case e: Throwable =>
-            LoggerFactory.getLogger(this.getClass).warn("cannot fetch from cache", e)
+            LoggerFactory.getLogger(this.getClass).warn("cannot read from cache", e)
             null
         }
       }
       else null
 
-      if (restored != null) pages ++= restored
+      if (restored != null) {
+        pages ++= restored
+
+        LoggerFactory.getLogger(this.getClass).info("using cached page")
+      }
       else {
 
         for (buffered <- this.buffer)
@@ -221,7 +136,10 @@ class PageBuilder(
         var batch = action.exe(this)()
 
         if (autoSave) batch = batch.map(_.autoSave(spooky))
-        if (autoCache) batch = batch.map(_.autoCache(spooky))
+        if (autoCache) {
+
+          Page.autoCache(batch, uid,spooky)
+        }
 
         pages ++= batch
       }
