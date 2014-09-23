@@ -23,9 +23,7 @@ trait SpookyTestCore extends FunSuite {
   lazy val sc: SparkContext = new SparkContext(conf)
   lazy val sql: SQLContext = new SQLContext(sc)
   lazy val spooky: SpookyContext = new SpookyContext(sql)
-//  spooky.setRoot("file://"+System.getProperty("user.home")+"/spOOky/"+appName)
-
-  spooky.setRoot("s3n://AKIAIIC77SN525EOLTUA:6c4zfslStJfEhRuYr0csC0SBr6GiXbornuP47CCX@spOOky-unit/"+appName)
+  spooky.setRoot("file://"+System.getProperty("user.home")+"/spOOky/"+appName)
 
   spooky.pageExpireAfter = 30.days
 
