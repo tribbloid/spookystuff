@@ -197,8 +197,6 @@ class PageBuilder(
   //lazy execution by default.
   def +=(action: Action): Unit = {
     if (action.mayExport()) {
-
-      //TODO: special backtace for sessionless!
       //always try to read from cache first
       val restored = if (autoRestore) {
         try {

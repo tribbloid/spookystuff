@@ -148,6 +148,8 @@ case class PageRow(
   }
 
   //only apply to last page
+  //TODO: don't use any String that contains dot as column name, or you will encounter bug SPARK-2775
+  //see https://issues.apache.org/jira/browse/SPARK-2775
   def extract(keyAndF: (String, Page => Any)*): PageRow = {
 
     this.pages.lastOption match {
@@ -204,7 +206,6 @@ case class PageRow(
     }
   }
 
-  //TODO: preserve action?
   def slice(
              selector: String,
              expand: Int = 0
