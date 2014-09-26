@@ -262,21 +262,27 @@ case class DragSlider(
   override def exeWithoutPage(pb: PageBuilder): Unit = {
 
     val wait = new WebDriverWait(pb.driver, delay.toSeconds)
-    val element = wait.until(ExpectedConditions.presenceOfElementLocated(By.cssSelector(selector)))
+//    val element = wait.until(ExpectedConditions.elementToBeClickable(By.cssSelector(selector)))
+    val element = wait.until(ExpectedConditions.visibilityOfElementLocated(By.cssSelector(selector)))
 
-    val slider = element.findElement(By.cssSelector(handleSelector))
+    val handle = element.findElement(By.cssSelector(handleSelector))
 
     val dim = element.getSize
     val height = dim.getHeight
     val width = dim.getWidth
 
-    val move = new Actions(pb.driver)
+    new Actions(pb.driver).clickAndHold(handle).perform()
 
-    if (width > height) {
-      move.dragAndDropBy(slider, (width * percentage).asInstanceOf[Int], 0).build().perform()
-    }
-    else {
-      move.dragAndDropBy(slider, 0, (height * percentage).asInstanceOf[Int]).build().perform()
-    }
+    Thread.sleep(1000)
+
+    new Actions(pb.driver).moveByOffset(1, 0).perform()
+
+    Thread.sleep(1000)
+
+    new Actions(pb.driver).moveByOffset((width * percentage).asInstanceOf[Int], 0).perform()
+
+    Thread.sleep(1000)
+
+    new Actions(pb.driver).release().perform()
   }
 }

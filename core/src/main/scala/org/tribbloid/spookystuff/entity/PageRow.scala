@@ -263,7 +263,8 @@ case class PageRow(
               )(
               limit: Int = Const.fetchLimit,
               indexKey: String = null,
-              flatten: Boolean = true
+              flatten: Boolean = true,
+              last: Boolean = false
               )(
               implicit spooky: SpookyContext
               ): Array[PageRow] = {
@@ -272,8 +273,8 @@ case class PageRow(
 
     while (oldRow.pages.size <= limit && oldRow.pages.last.attrExist(selector, attr)) {
 
-      val actionRow = if (!wget) oldRow +%> (Visit("#{~}") -> (_.attr1(selector, attr)))
-      else oldRow +%> (Wget("#{~}") -> (_.attr1(selector, attr)))
+      val actionRow = if (!wget) oldRow +%> (Visit("#{~}") -> (_.attr1(selector, attr, noEmpty = true, last = last)))
+      else oldRow +%> (Wget("#{~}") -> (_.attr1(selector, attr, noEmpty = true, last = last)))
 
       oldRow = actionRow.!=!(joinType = Merge, flatten = false).head
     }

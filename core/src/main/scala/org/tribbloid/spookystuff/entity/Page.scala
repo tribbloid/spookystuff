@@ -300,8 +300,12 @@ case class Page(
   def attr1(
              selector: String,
              attr: String,
-             noEmpty: Boolean = true
-             ): String = this.attr(selector, attr, noEmpty).headOption.orNull
+             noEmpty: Boolean = true,
+             last: Boolean = false
+             ): String = {
+    if (!last) this.attr(selector, attr, noEmpty).headOption.orNull
+    else this.attr(selector, attr, noEmpty).lastOption.orNull
+  }
 
   /**
    * Return a sequence of attributes of all elements that match the selector.
@@ -393,8 +397,12 @@ case class Page(
    */
   def text1(
              selector: String,
-             own: Boolean = false
-             ): String = this.text(selector, own).headOption.orNull
+             own: Boolean = false,
+             last: Boolean = false
+             ): String = {
+    if (!last) this.text(selector, own).headOption.orNull
+    else this.text(selector, own).lastOption.orNull
+  }
 
   /** Return an array of texts enclosed by their respective elements
     * return [] if selector has no match

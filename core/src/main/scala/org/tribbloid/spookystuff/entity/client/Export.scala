@@ -5,6 +5,7 @@ import javax.net.ssl.{HttpsURLConnection, SSLContext, TrustManager}
 
 import org.apache.commons.io.IOUtils
 import org.apache.http.conn.ssl.AllowAllHostnameVerifier
+import org.openqa.selenium.{OutputType, TakesScreenshot}
 import org.tribbloid.spookystuff.entity.{Page, PageUID}
 import org.tribbloid.spookystuff.factory.PageBuilder
 import org.tribbloid.spookystuff.utils.InsecureTrustManager
@@ -62,6 +63,28 @@ case class Snapshot() extends Export {
 
 //this is used to save GC when invoked by anothor component
 object DefaultSnapshot extends Snapshot()
+
+case class Screenshot() extends Export {
+
+  override def doExe(pb: PageBuilder): Seq[Page] = {
+
+    val content = pb.driver match {
+      case ts: TakesScreenshot => ts.getScreenshotAs(OutputType.BYTES)
+      case _ => throw new UnsupportedOperationException("driver doesn't support snapshot")
+    }
+
+    val page = Page(
+      PageUID(pb.backtrace :+ this),
+      pb.driver.getCurrentUrl,
+      "image/png",
+      content
+    )
+
+    Seq(page)
+  }
+}
+
+object DefaultScreenshot extends Screenshot()
 
 /**
  * use an http GET to fetch a remote resource deonted by url

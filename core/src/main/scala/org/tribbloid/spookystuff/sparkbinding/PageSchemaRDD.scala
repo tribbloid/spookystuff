@@ -63,7 +63,7 @@ case class PageSchemaRDD(
 
     //by default, will order the columns to be identical to the sequence they are extracted, data input will be ignored
 
-    this.spooky.sql.jsonRDD(jsonRDD)
+    this.spooky.sqlContext.jsonRDD(jsonRDD)
       .select(
       columnNames.toSeq.reverse.map(names => UnresolvedAttribute(names)): _*
     )
@@ -92,7 +92,7 @@ case class PageSchemaRDD(
 
     val result = self.flatMap(_.!=!(joinType,flatten,indexKey))
 
-    this.copy(result)
+    this.copy(result, this.columnNames ++ Option(indexKey))
   }
 
   //  def !>><<(
@@ -161,7 +161,7 @@ case class PageSchemaRDD(
       }
     }
 
-    this.copy(result)
+    this.copy(result, this.columnNames ++ Option(indexKey))
   }
 
   /**
@@ -172,17 +172,17 @@ case class PageSchemaRDD(
    */
   def extract(keyAndF: (String, Page => Any)*): PageSchemaRDD = this.copy(
     self.map(_.extract(keyAndF: _*)),
-    columnNames = this.columnNames ++ keyAndF.map(_._1)
+    this.columnNames ++ keyAndF.map(_._1)
   )
 
   def select(keyAndF: (String, PageRow => Any)*): PageSchemaRDD = this.copy(
     self.map(_.select(keyAndF: _*)),
-    columnNames = this.columnNames ++ keyAndF.map(_._1)
+    this.columnNames ++ keyAndF.map(_._1)
   )
 
   def remove(keys: String*): PageSchemaRDD = this.copy(
     self.map(_.remove(keys: _*)),
-    columnNames = this.columnNames -- keys
+    this.columnNames -- keys
   )
 
   /**
@@ -238,7 +238,11 @@ case class PageSchemaRDD(
             distinct: Boolean = true,
             limit: Int = Const.fetchLimit, //applied after distinct
             indexKey: String = null
-            ): PageSchemaRDD = this.copy(self.flatMap(_.+*%>(actionAndF)(distinct,limit,indexKey)))
+            ): PageSchemaRDD =
+    this.copy(
+      self.flatMap(_.+*%>(actionAndF)(distinct,limit,indexKey)),
+      this.columnNames ++ Option(indexKey)
+    )
 
   def dropActions(): PageSchemaRDD = this.copy(self.map (_.copy(actions = Seq(), dead = false)))
 
@@ -354,7 +358,7 @@ case class PageSchemaRDD(
       _.dropActions().slice(selector, expand)(limit, indexKey, joinType, flatten)
     }
 
-    this.copy(result)
+    this.copy(result, this.columnNames ++ Option(indexKey))
   }
 
   /**
@@ -370,7 +374,8 @@ case class PageSchemaRDD(
                 )(
                 limit: Int = Const.fetchLimit,
                 indexKey: String = null,
-                flatten: Boolean = true
+                flatten: Boolean = true,
+                last: Boolean = false
                 ): PageSchemaRDD = {
 
     val spookyBroad = self.context.broadcast(this.spooky)
@@ -378,16 +383,16 @@ case class PageSchemaRDD(
     implicit def spookyImplicit: SpookyContext = spookyBroad.value
 
     val result = self.flatMap {
-      _.paginate(selector, attr, wget)(limit, indexKey, flatten)
+      _.paginate(selector, attr, wget)(limit, indexKey, flatten, last)
     }
 
-    this.copy(result)
+    this.copy(result, this.columnNames ++ Option(indexKey))
   }
 
   def union(other: PageSchemaRDD): PageSchemaRDD = {
     this.copy(
       this.self.union(other.self),
-      columnNames = this.columnNames ++ other.columnNames
+      this.columnNames ++ other.columnNames
     )
   }
 

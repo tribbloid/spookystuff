@@ -21,7 +21,7 @@ import scala.concurrent.duration.{Duration, _}
 //will be shipped everywhere as implicit parameter
 
 class SpookyContext (
-                      @transient val sql: SQLContext, //compulsory, many things are not possible without SQL
+                      @transient val sqlContext: SQLContext, //compulsory, many things are not possible without SQL
 
                       var driverFactory: DriverFactory = NaiveDriverFactory(),
 
@@ -45,12 +45,12 @@ class SpookyContext (
                       )
   extends Serializable {
 
-  val hConfWrapper =  if (sql!=null) new SerializableWritable(this.sql.sparkContext.hadoopConfiguration)
+  val hConfWrapper =  if (sqlContext!=null) new SerializableWritable(this.sqlContext.sparkContext.hadoopConfiguration)
   else null
 
   def hConf = hConfWrapper.value
 
-  @transient lazy val noInput: PageSchemaRDD = new PageSchemaRDD(this.sql.sparkContext.parallelize(Seq(PageRow())),spooky = this)
+  @transient lazy val noInput: PageSchemaRDD = new PageSchemaRDD(this.sqlContext.sparkContext.parallelize(Seq(PageRow())),spooky = this)
 
   //  implicit def self: SpookyContext = this
 

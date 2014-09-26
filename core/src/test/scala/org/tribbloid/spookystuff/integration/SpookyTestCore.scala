@@ -1,5 +1,7 @@
 package org.tribbloid.spookystuff.integration
 
+import java.util.UUID
+
 import org.apache.spark.sql.{SQLContext, SchemaRDD}
 import org.apache.spark.{SparkConf, SparkContext}
 import org.scalatest.{FunSuite, Tag}
@@ -25,7 +27,7 @@ trait SpookyTestCore extends FunSuite {
   lazy val spooky: SpookyContext = new SpookyContext(sql)
   spooky.setRoot("file://"+System.getProperty("user.home")+"/spOOky/"+appName)
 
-  spooky.pageExpireAfter = 30.days
+  spooky.pageExpireAfter = 0.milliseconds
 
   lazy val result = {
     val result = doMain()
@@ -48,6 +50,10 @@ trait SpookyTestCore extends FunSuite {
   }
 
   final def main(args: Array[String]) {
+    result.persist()
+
+    result.map(row => row.mkString("\t")).saveAsTextFile("file://"+System.getProperty("user.home")+"/spOOky/"+appName+"/dump"+UUID.randomUUID())
+
     val array = result.collect()
 
     array.foreach(row => println(row.mkString("\t")))
