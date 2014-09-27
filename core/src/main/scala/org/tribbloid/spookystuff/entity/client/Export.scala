@@ -1,14 +1,11 @@
 package org.tribbloid.spookystuff.entity.client
 
-import java.net._
-import javax.net.ssl.{HttpsURLConnection, SSLContext, TrustManager}
-
 import org.apache.commons.io.IOUtils
-import org.apache.http.conn.ssl.AllowAllHostnameVerifier
 import org.openqa.selenium.{OutputType, TakesScreenshot}
 import org.tribbloid.spookystuff.entity.{Page, PageUID}
 import org.tribbloid.spookystuff.factory.PageBuilder
-import org.tribbloid.spookystuff.utils.InsecureTrustManager
+import org.apache.http.impl.client.HttpClientBuilder
+import org.apache.http.client.config.RequestConfig
 
 /**
  * Export a page from the browser or http client
@@ -40,21 +37,21 @@ case class Snapshot() extends Export {
   // all other fields are empty
   override def doExe(pb: PageBuilder): Seq[Page] = {
 
-//    import scala.collection.JavaConversions._
+    //    import scala.collection.JavaConversions._
 
-//    val cookies = pb.driver.manage().getCookies
-//    val serializableCookies = ArrayBuffer[SerializableCookie]()
-//
-//    for (cookie <- cookies) {
-//      serializableCookies += cookie.asInstanceOf[SerializableCookie]
-//    }
+    //    val cookies = pb.driver.manage().getCookies
+    //    val serializableCookies = ArrayBuffer[SerializableCookie]()
+    //
+    //    for (cookie <- cookies) {
+    //      serializableCookies += cookie.asInstanceOf[SerializableCookie]
+    //    }
 
     val page = Page(
       PageUID(pb.backtrace :+ this),
       pb.driver.getCurrentUrl,
       "text/html; charset=UTF-8",
       pb.driver.getPageSource.getBytes("UTF8")
-//      serializableCookies
+      //      serializableCookies
     )
 
     Seq(page)
@@ -93,49 +90,70 @@ object DefaultScreenshot extends Screenshot()
  * actions for more complex http/restful API call will be added per request.
  * @param url support cell interpolation
  */
-case class Wget(url: String) extends Export with Sessionless {
+case class Wget(
+                 url: String,
+                 userAgent: String = null,
+                 headers: Map[String, String] = Map()
+                 ) extends Export with Sessionless {
 
   override def doExe(pb: PageBuilder): Seq[Page] = {
-    if ((url == null)|| url.isEmpty) return Array[Page]()
 
-    CookieHandler.setDefault(new CookieManager(null, CookiePolicy.ACCEPT_ALL))
+    if ( url.trim().isEmpty ) return Seq ()
 
-    val uc: URLConnection =  new URL(url).openConnection()
-    uc.setConnectTimeout(pb.spooky.resourceTimeout.toMillis.toInt)
-    uc.setReadTimeout(pb.spooky.resourceTimeout.toMillis.toInt)
+    import org.apache.http.client.methods.HttpGet
+    val request = new HttpGet ( url )
 
-    uc match {
-      case huc: HttpsURLConnection =>
-        // Install the all-trusting trust manager
-        val sslContext = SSLContext.getInstance("SSL")
-        sslContext.init(null, Array[TrustManager](new InsecureTrustManager()), null)
-        // Create an ssl socket factory with our all-trusting manager
-        val sslSocketFactory  = sslContext.getSocketFactory
-
-        huc.setSSLSocketFactory(sslSocketFactory)
-        huc.setHostnameVerifier(new AllowAllHostnameVerifier)
-
-      case _ =>
+    if (userAgent!=null) request.addHeader( "User-Agent", userAgent )
+    for (pair <- headers) {
+      request.addHeader( pair._1, pair._2 )
     }
 
-    uc.connect()
-    val is = uc.getInputStream
+    val timeoutMillis = pb.spooky.resourceTimeout.toMillis.toInt
 
-    val content = IOUtils.toByteArray(is)
+    val settings = RequestConfig.custom()
+      .setConnectTimeout ( timeoutMillis )
+      .setConnectionRequestTimeout ( timeoutMillis )
+      .build()
 
-    is.close()
+    val httpClient = HttpClientBuilder.create()
+      .setDefaultRequestConfig ( settings )
+      .build()
 
-    val page = new Page(
-      PageUID(pb.backtrace :+ this),
-      url,
-      "text/html; charset=UTF-8",
-      content
-    )
+    val response = httpClient.execute ( request )
+    try {
+      //      val httpStatus = response.getStatusLine().getStatusCode()
+      val entity = response.getEntity
 
-    Seq(page)
+      val stream = entity.getContent
+      try {
+        val content = IOUtils.toByteArray ( stream )
+        val contentType = entity.getContentType.getValue
+
+        val result = Page(
+          PageUID(pb.backtrace :+ this),
+          url,
+          contentType,
+          content
+        )
+
+        Seq(result)
+      }
+      finally {
+        stream.close()
+      }
+    }
+    finally {
+      response.close()
+    }
   }
 
   override def interpolateFromMap[T](map: Map[String,T]): this.type = {
-    this.copy(url = Action.interpolateFromMap(this.url,map)).asInstanceOf[this.type]
+    val interpolatedHeaders = this.headers.mapValues(value => Action.interpolateFromMap(value, map))
+
+    this.copy(
+      url = Action.interpolateFromMap(this.url,map),
+      userAgent = Action.interpolateFromMap(this.userAgent, map),
+      headers = interpolatedHeaders
+    ).asInstanceOf[this.type]
   }
 }
