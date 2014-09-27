@@ -1,12 +1,12 @@
 package org.tribbloid.spookystuff.integration.price
 
 import org.tribbloid.spookystuff.entity.client._
-import org.tribbloid.spookystuff.integration.SpookyTestCore
+import org.tribbloid.spookystuff.integration.TestCore
 
 /**
  * Created by peng on 14/08/14.
  */
-object Macys extends SpookyTestCore {
+object Macys extends TestCore {
 
   import spooky._
 

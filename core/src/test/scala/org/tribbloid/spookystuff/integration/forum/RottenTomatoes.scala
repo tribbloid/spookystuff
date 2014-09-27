@@ -1,12 +1,12 @@
 package org.tribbloid.spookystuff.integration.forum
 
 import org.tribbloid.spookystuff.entity.client._
-import org.tribbloid.spookystuff.integration.SpookyTestCore
+import org.tribbloid.spookystuff.integration.TestCore
 
 /**
 * Created by peng on 20/08/14.
 */
-object RottenTomatoes extends SpookyTestCore {
+object RottenTomatoes extends TestCore {
   override def doMain() = {
 
     import spooky._

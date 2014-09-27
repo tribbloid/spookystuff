@@ -2,13 +2,13 @@ package org.tribbloid.spookystuff.integration.forum
 
 import org.tribbloid.spookystuff.entity.client._
 import org.tribbloid.spookystuff.entity.client.Loop
-import org.tribbloid.spookystuff.integration.SpookyTestCore
+import org.tribbloid.spookystuff.integration.TestCore
 import org.tribbloid.spookystuff.operator.LeftOuter
 
 /**
  * Created by peng on 04/07/14.
  */
-object Youtube extends SpookyTestCore{
+object Youtube extends TestCore{
 
   override def doMain() = {
 

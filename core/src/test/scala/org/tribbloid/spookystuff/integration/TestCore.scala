@@ -14,7 +14,7 @@ import scala.concurrent.duration._
  * allowing execution as a main object and tested as a test class
  * keep each test as small as possible, by using downsampling & very few iterations
  */
-trait SpookyTestCore extends FunSuite {
+trait TestCore extends FunSuite {
 
   object Integration extends Tag("Integration")
 

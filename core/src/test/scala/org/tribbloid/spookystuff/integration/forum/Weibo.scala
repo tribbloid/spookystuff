@@ -1,14 +1,14 @@
 package org.tribbloid.spookystuff.integration.forum
 
 import org.tribbloid.spookystuff.entity.client.{Loop, _}
-import org.tribbloid.spookystuff.integration.SpookyTestCore
+import org.tribbloid.spookystuff.integration.TestCore
 
 import scala.concurrent.duration._
 
 /**
  * Created by peng on 8/28/14.
  */
-object Weibo extends SpookyTestCore {
+object Weibo extends TestCore {
 
   import spooky._
 

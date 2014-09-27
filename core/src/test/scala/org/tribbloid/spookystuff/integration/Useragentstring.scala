@@ -7,7 +7,7 @@ import org.tribbloid.spookystuff.factory.driver._
 /**
  * Created by peng on 9/7/14.
  */
-object Useragentstring extends SpookyTestCore {
+object Useragentstring extends TestCore {
 
   import spooky._
 

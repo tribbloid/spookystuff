@@ -83,7 +83,7 @@ class SpookyContext (
     new PageSchemaRDD(result, columnNames = ListSet("_"), spooky = this)
   }
 
-  implicit def mapRDDToPageRowRDD(rdd: RDD[Map[String,Any]]): PageSchemaRDD = {
+  implicit def mapRDDToPageRowRDD[T <: Any](rdd: RDD[Map[String,T]]): PageSchemaRDD = {
     val result = rdd.map{
       map => {
         var cells = Map[String,Any]()

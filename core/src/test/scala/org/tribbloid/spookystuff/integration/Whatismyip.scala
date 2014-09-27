@@ -6,7 +6,7 @@ import org.tribbloid.spookystuff.factory.driver.TorDriverFactory
 /**
  * Created by peng on 9/7/14.
  */
-object Whatismyip extends SpookyTestCore {
+object Whatismyip extends TestCore {
 
   import spooky._
 

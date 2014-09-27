@@ -1,13 +1,14 @@
-package org.tribbloid.spookystuff.integration.cloud
+package org.tribbloid.spookystuff.integration.price.cloud
 
 import org.tribbloid.spookystuff.entity.client._
-import org.tribbloid.spookystuff.integration.SpookyTestCore
+import org.tribbloid.spookystuff.integration.TestCore
 import scala.concurrent.duration._
 
 /**
  * Created by peng on 23/08/14.
  */
-object Softlayer2 extends SpookyTestCore {
+//TODO: can't move hidden slider, fix it!
+object SoftLayer extends TestCore {
 
   import spooky._
 

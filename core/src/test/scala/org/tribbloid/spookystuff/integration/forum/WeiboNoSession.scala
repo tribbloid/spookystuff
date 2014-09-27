@@ -4,12 +4,12 @@ import java.text.SimpleDateFormat
 import java.util.Date
 
 import org.tribbloid.spookystuff.entity.client._
-import org.tribbloid.spookystuff.integration.SpookyTestCore
+import org.tribbloid.spookystuff.integration.TestCore
 
 /**
 * Created by peng on 8/28/14.
 */
-object WeiboNoSession extends SpookyTestCore {
+object WeiboNoSession extends TestCore {
 
   def doMain() = {
 

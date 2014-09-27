@@ -3,7 +3,7 @@ package org.tribbloid.spookystuff.example
 import org.tribbloid.spookystuff.entity.client._
 import org.tribbloid.spookystuff.example.AppliancePartsPros._
 
-object Dealmoon extends SparkSubmittable {
+object Dealmoon extends ExampleCore {
 
   def doMain() = {
 

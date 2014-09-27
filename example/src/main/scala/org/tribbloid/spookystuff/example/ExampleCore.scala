@@ -10,7 +10,7 @@ import scala.concurrent.duration._
 /**
  * Created by peng on 22/06/14.
  */
-trait SparkSubmittable {
+trait ExampleCore {
 
   var conf: SparkConf = new SparkConf().setAppName(this.getClass.getName)
   var sc: SparkContext = new SparkContext(conf)

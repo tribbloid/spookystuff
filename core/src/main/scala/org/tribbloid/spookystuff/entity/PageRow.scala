@@ -37,6 +37,8 @@ case class PageRow(
                     )
   extends Serializable {
 
+  def apply(key: String): Any = this.cells.getOrElse(key, null)
+
   def +>(a: Action): PageRow = {
     if (!this.dead) {
       this.copy(actions = this.actions :+ a.interpolateFromMap(cells))

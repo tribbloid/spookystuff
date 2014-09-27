@@ -1,13 +1,13 @@
 package org.tribbloid.spookystuff.integration.forum
 
-import org.tribbloid.spookystuff.integration.SpookyTestCore
+import org.tribbloid.spookystuff.integration.TestCore
 import org.tribbloid.spookystuff.entity.client._
 import org.tribbloid.spookystuff.operator.LeftOuter
 
 /**
  * Created by peng on 20/08/14.
  */
-object Imdb extends SpookyTestCore {
+object Imdb extends TestCore {
 
   override def doMain() = {
 

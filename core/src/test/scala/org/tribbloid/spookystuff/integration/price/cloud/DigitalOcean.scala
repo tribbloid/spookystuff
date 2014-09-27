@@ -1,12 +1,12 @@
-package org.tribbloid.spookystuff.integration.cloud
+package org.tribbloid.spookystuff.integration.price.cloud
 
 import org.tribbloid.spookystuff.entity.client._
-import org.tribbloid.spookystuff.integration.SpookyTestCore
+import org.tribbloid.spookystuff.integration.TestCore
 
 /**
 * Created by peng on 25/08/14.
 */
-object DigitalOcean extends SpookyTestCore {
+object DigitalOcean extends TestCore {
 
   import spooky._
 

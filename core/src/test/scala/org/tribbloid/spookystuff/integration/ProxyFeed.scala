@@ -8,7 +8,7 @@ import scala.concurrent.duration._
 /**
  * Created by peng on 9/11/14.
  */
-trait ProxyFeed extends SpookyTestCore {
+trait ProxyFeed extends TestCore {
 
   import spooky._
   import sql._

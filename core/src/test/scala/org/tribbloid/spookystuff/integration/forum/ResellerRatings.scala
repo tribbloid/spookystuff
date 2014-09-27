@@ -1,12 +1,12 @@
 package org.tribbloid.spookystuff.integration.forum
 
 import org.tribbloid.spookystuff.entity.client._
-import org.tribbloid.spookystuff.integration.SpookyTestCore
+import org.tribbloid.spookystuff.integration.TestCore
 
 /**
  * Created by peng on 18/06/14.
  */
-object ResellerRatings extends SpookyTestCore {
+object ResellerRatings extends TestCore {
 
   import spooky._
 

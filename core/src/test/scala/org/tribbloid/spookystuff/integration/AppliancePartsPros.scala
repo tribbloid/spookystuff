@@ -6,7 +6,7 @@ import scala.concurrent.duration._
 /**
  * Created by peng on 07/06/14.
  */
-object AppliancePartsPros extends SpookyTestCore {
+object AppliancePartsPros extends TestCore {
 
   import spooky._
 

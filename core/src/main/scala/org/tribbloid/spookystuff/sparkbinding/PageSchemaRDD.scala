@@ -7,7 +7,7 @@ import org.tribbloid.spookystuff.entity._
 import org.tribbloid.spookystuff.entity.client.{Action, Visit, Wget}
 import org.tribbloid.spookystuff.factory.PageBuilder
 import org.tribbloid.spookystuff.operator.{JoinType, LeftOuter, Merge, Replace}
-import org.tribbloid.spookystuff.{Const, SpookyContext}
+import org.tribbloid.spookystuff.{Utils, Const, SpookyContext}
 
 import scala.collection.immutable.ListSet
 
@@ -65,8 +65,8 @@ case class PageSchemaRDD(
 
     this.spooky.sqlContext.jsonRDD(jsonRDD)
       .select(
-      columnNames.toSeq.reverse.map(names => UnresolvedAttribute(names)): _*
-    )
+        columnNames.toSeq.reverse.map(names => UnresolvedAttribute(names)): _*
+      )
   }
 
   def asCsvRDD(separator: String = ","): RDD[String] = this.asSchemaRDD().map {
@@ -194,17 +194,40 @@ case class PageSchemaRDD(
    *                  false: append an unique suffix to the new file name
    * @return the same RDD[Page] with file paths carried as metadata
    */
-  def saveAs(
-              select: Page => String,
+  def saveContent(
+              select: PageRow => Any = null,
+              extract: Page => Any = null,
               overwrite: Boolean = false
               ): PageSchemaRDD = {
+    assert(select!=null || extract!=null)
+
     val hconfBroad = self.context.broadcast(this.spooky.hConf)
 
     val result = self.map {
 
       pageRow => {
 
-        val newPages = pageRow.pages.map(page => page.save(Seq(select(page)), overwrite = overwrite)(hconfBroad.value))
+        val selectPath = select match {
+          case f: (PageRow => Any) => f(pageRow).toString
+          case _ => ""
+        }
+
+        val newPages = pageRow.pages.map{
+          page => {
+
+            val extractPath = extract match {
+              case f: (Page => Any) => f(page).toString
+              case _ => ""
+            }
+
+            val path = Utils.urlConcat(selectPath, extractPath)
+
+            page.save(
+              Seq(path),
+              overwrite = overwrite
+            )(hconfBroad.value)
+          }
+        }
 
         pageRow.copy(pages = newPages)
       }
@@ -221,10 +244,11 @@ case class PageSchemaRDD(
    *                  false: append an unique suffix to the new file name
    * @return an array of file paths
    */
-  def dump(
-            select: Page => String,
+  def dumpContent(
+            select: PageRow => String = null,
+            extract: Page => String = null,
             overwrite: Boolean = false
-            ): Array[String] = this.saveAs(select, overwrite).self.flatMap{
+            ): Array[String] = this.saveContent(select, extract, overwrite).self.flatMap{
     _.pages.map{
       _.saved
     }

@@ -6,7 +6,7 @@ import org.tribbloid.spookystuff.entity.client._
  * This job will find and printout urls of Sanjay Gupta, Arun Gupta and Hardik Gupta in your area
  */
 //TODO: LinkedIn is down
-object LinkedInSimple extends SpookyTestCore {
+object LinkedInSimple extends TestCore {
 
   import spooky._
 

@@ -6,7 +6,7 @@ import scala.concurrent.duration._
 /**
  * Created by peng on 07/06/14.
  */
-object AppliancePartsPros extends SparkSubmittable {
+object AppliancePartsPros extends ExampleCore {
 
   import spooky._
 

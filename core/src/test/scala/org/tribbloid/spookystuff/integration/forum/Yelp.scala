@@ -1,12 +1,12 @@
 package org.tribbloid.spookystuff.integration.forum
 
 import org.tribbloid.spookystuff.entity.client.Wget
-import org.tribbloid.spookystuff.integration.SpookyTestCore
+import org.tribbloid.spookystuff.integration.TestCore
 
 /**
  * Created by peng on 9/26/14.
  */
-object Yelp extends SpookyTestCore {
+object Yelp extends TestCore {
 
   import spooky._
 
