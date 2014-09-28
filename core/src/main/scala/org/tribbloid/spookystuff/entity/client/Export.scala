@@ -6,6 +6,7 @@ import org.tribbloid.spookystuff.entity.{Page, PageUID}
 import org.tribbloid.spookystuff.factory.PageBuilder
 import org.apache.http.impl.client.HttpClientBuilder
 import org.apache.http.client.config.RequestConfig
+import org.apache.http.client.methods.HttpGet
 
 /**
  * Export a page from the browser or http client
@@ -100,8 +101,7 @@ case class Wget(
 
     if ( url.trim().isEmpty ) return Seq ()
 
-    import org.apache.http.client.methods.HttpGet
-    val request = new HttpGet ( url )
+    val request = new HttpGet(url)
 
     if (userAgent!=null) request.addHeader( "User-Agent", userAgent )
     for (pair <- headers) {
@@ -148,7 +148,8 @@ case class Wget(
   }
 
   override def interpolateFromMap[T](map: Map[String,T]): this.type = {
-    val interpolatedHeaders = this.headers.mapValues(value => Action.interpolateFromMap(value, map))
+    //ugly workaround of https://issues.scala-lang.org/browse/SI-7005
+    val interpolatedHeaders = this.headers.mapValues(value => Action.interpolateFromMap(value, map)).map(identity)
 
     this.copy(
       url = Action.interpolateFromMap(this.url,map),
