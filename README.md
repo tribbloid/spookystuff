@@ -23,7 +23,7 @@ Powered by
 
 Demo
 -----------
-[Click me](http://ec2-54-88-40-125.compute-1.amazonaws.com:8888) for a quick impression.
+[Click me](http://ec2-54-88-74-212.compute-1.amazonaws.com:8888/tree) for a quick impression.
 
 This environment is deployed on a Spark cluster with 8+ cores. It may not be accessible during system upgrade or maintenance. Please contact a committer/project manager for a customized demo.
 

@@ -5,7 +5,7 @@ import java.util
 import org.tribbloid.spookystuff.entity.client.{Action, Visit, Wget}
 import org.tribbloid.spookystuff.factory.PageBuilder
 import org.tribbloid.spookystuff.operator.{JoinType, LeftOuter, Merge, Replace}
-import org.tribbloid.spookystuff.{Const, SpookyContext}
+import org.tribbloid.spookystuff.{Utils, Const, SpookyContext}
 
 import scala.collection.mutable.ArrayBuffer
 
@@ -117,14 +117,7 @@ case class PageRow(
   //      }
   //    }
 
-  def asJson(): String = {
-
-    import scala.collection.JavaConversions._
-
-    val jsonCompatible: util.Map[String, _] = this.cells
-
-    Const.jsonMapper.writeValueAsString(jsonCompatible)
-  }
+  def asJson(): String = Utils.map2Json(this.cells)
 
   def flatten(
                left: Boolean = false,

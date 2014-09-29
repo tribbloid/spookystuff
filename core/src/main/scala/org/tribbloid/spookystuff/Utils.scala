@@ -1,9 +1,11 @@
 package org.tribbloid.spookystuff
 
+import java.util
+
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._
 import scala.concurrent.{Await, Future}
-import scala.util.Random
+import scala.util.{Failure, Success, Try, Random}
 
 /**
  * Created by peng on 06/08/14.
@@ -13,12 +15,12 @@ object Utils {
   // Returning T, throwing the exception on failure
   @annotation.tailrec
   def retry[T](n: Int = Const.defaultLocalRetry)(fn: => T): T = {
-    util.Try { fn } match {
-      case util.Success(x) =>
+    Try { fn } match {
+      case Success(x) =>
         x
       case _ if n > 1 =>
         retry(n - 1)(fn)
-      case util.Failure(e) =>
+      case Failure(e) =>
         throw e
     }
   }
@@ -47,5 +49,14 @@ object Utils {
     if (result.length > 255) result = result.substring(0, 255)
 
     result
+  }
+
+  def map2Json(map: Map[String, Any]): String = {
+
+    import scala.collection.JavaConversions._
+
+    val jsonCompatible: util.Map[String, _] = map
+
+    Const.jsonMapper.writeValueAsString(jsonCompatible)
   }
 }
