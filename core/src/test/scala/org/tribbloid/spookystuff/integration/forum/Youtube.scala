@@ -21,9 +21,9 @@ object Youtube extends TestCore{
         Click("button.load-more-button span.load-more-text")
           :: DelayFor("button.load-more-button span.hid.load-more-loading").in(10.seconds)
           :: Nil,
-        2
+        1
       ) !=!())
-      .sliceJoin("li.channels-content-item")(limit=100)
+      .sliceJoin("li.channels-content-item")()
       .extract("title" -> (_.text1("h3.yt-lockup-title")))
       .visit("h3.yt-lockup-title a.yt-uix-tile-link")(limit = 1)
       .repartition(400) +>
@@ -36,12 +36,11 @@ object Youtube extends TestCore{
         "like_count" -> (_.text1("div#watch7-views-info span.likes-count")),
         "dislike_count" -> (_.text1("div#watch7-views-info span.dislikes-count"))
       )
-      .visit("iframe[title^=Comment]", attr = "abs:src")(limit = 10) +>
+      .visit("iframe[title^=Comment]", attr = "abs:src")() +>
       Loop(
         Click("span[title^=Load]")
           :: DelayFor("span.PA[style^=display]").in(10.seconds)
-          :: Nil,
-        2
+          :: Nil
       ) !=!(joinType = LeftOuter))
       .extract("num_comments" -> (_.text1("div.DJa")))
       .sliceJoin("div[id^=update]")()

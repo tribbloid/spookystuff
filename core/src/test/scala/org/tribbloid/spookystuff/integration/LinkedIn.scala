@@ -15,10 +15,7 @@ object LinkedIn extends TestCore {
     (sc.parallelize(Seq("Sanjay", "Arun", "Hardik"))
       +> Visit("https://www.linkedin.com/")
       +> TextInput("input#first", "#{_}")
-      +*> (
-      TextInput("input#last", "Gupta") ::
-        TextInput("input#last", "Krishnamurthy") :: Nil
-      )
+      +*> (TextInput("input#last", "Gupta") :: TextInput("input#last", "Krishnamurthy") :: Nil)
       +> Submit("input[name=\"search\"]")
       !=!())
       .visitJoin("ol#result-set h2 a")()

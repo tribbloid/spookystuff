@@ -1,7 +1,11 @@
+SpookyStuff welcomes two more commiters! All hail their exalted reinforcements!
+ **[Sandeep Singh @techaddict](https://github.com/techaddict)** has added new sbt build files to make it friendly to native scala developers.
+ **[Terry Lin @ithinkicancode](https://github.com/ithinkicancode)** has added new features supporting more http operations with more customizable parameters.
+
 SpookyStuff
 ===========
 
-**SpookyStuff** is a scalable query engine for web scraping/data mashup/acceptance QA. The goal is to allow the Web being queried and ETL'ed like a relational database.
+... is a scalable query engine for web scraping/data mashup/acceptance QA. The goal is to allow the Web being queried and ETL'ed like a relational database.
 
 **SpookyStuff** is the fastest big data collection engine in history, with a speed record of querying 330404 dynamic pages per hour on 300 cores.
 
@@ -39,31 +43,32 @@ How it works
 
 Examples
 -----------
+
+For a complete list of examples please refer to [source code page](https://github.com/tribbloid/spookystuff/tree/master/example/src/main/scala/org/tribbloid/spookystuff/example)
+
 #### 1. Search on LinkedIn
 - Goal: Find high-ranking professionals in you area on [http://www.linkedin.com/], whose first name is either 'Sanjay', 'Arun' or 'Hardik', and last name is either 'Gupta' or 'Krishnamurthy', print out their full names, titles and lists of skills
 - Query:
 ```
-    (sc.parallelize(Seq("Sanjay", "Arun", "Hardik")) +>
-      Visit("https://www.linkedin.com/") +>
-      TextInput("input#first", "#{_}") +*>
-      Seq( TextInput("input#last", "Gupta"), TextInput("input#last", "Krishnamurthy")) +>
-      Submit("input[name=\"search\"]") !)
-      .wgetJoin("ol#result-set h2 a") //faster
-      .map{ page => (
-      page.text1("span.full-name"),
-      page.text1("p.title"),
-      page.text("div#profile-skills li")
-      )
-    }.collect().foreach(println(_))
+    (sc.parallelize(Seq("Sanjay", "Arun", "Hardik"))
+      +> Visit("https://www.linkedin.com/")
+      +> TextInput("input#first", "#{_}")
+      +*> (TextInput("input#last", "Gupta") :: TextInput("input#last", "Krishnamurthy") :: Nil)
+      +> Submit("input[name=\"search\"]")
+      !=!())
+      .visitJoin("ol#result-set h2 a")()
+      .extract (
+      "name" -> (_.text1("span.full-name")),
+      "title" -> (_.text1("p.title")),
+      "skills" -> (_.text("div#profile-skills li"))
+    ).asSchemaRDD()
 ```
 - Result (truncated, finished in 1 minutes on a laptop with ~400k/s wifi):
 ```
-(Abhishek Arun Gupta,President & Senior IT Expert / Joint Chairman - IT Cell at Agra User Group / National Chamber of Industries & Commerce,ArrayBuffer(Requirements Analysis, SQL, Business Intelligence, Unix, Testing, President & Senior IT Expert, Joint Chairman - IT Cell, Quality Assurance (QA) & Automation Systems, Senior Automation Testing Expert, Senior Executive, Industry Interface))
-(hardik gupta,--,ArrayBuffer())
-(Arun Gupta,Sales at adjust by adeven,ArrayBuffer(Mobile, Business Strategy, Digital Media, Advertising Sales, Direct Sales, New Business Development, Mobile Marketing, Mobile Advertising, Publishing, Mobile Devices, Strategic Partnerships, Start-ups, Online Marketing, Mobile Applications, SEO, SEM, Business Development, Social Networking, Digital Marketing, Management, Digital Strategy))
-(Dr. Sanjay Gupta,Co-Founder & Director at IMPACT PSD Private Limited,ArrayBuffer(Computer proficiency, Secondary Research, Operations Management, Qualitative Research, Research and M&E, Data Management, Data Interpretation, M&E, Research, Report Writing, Data Analysis, Proposal Writing, Program Management, Capacity Building, NGOs, Leadership, Market Research, Policy, Civil Society, International Development, Nonprofits, Public Policy, Corporate Social Responsibility, Training, Program Evaluation, Analysis, Business Development, Sustainable Development, Data Collection, Technical Assistance, Organizational Development, Fundraising, Community Development, Quantitative Research, Government, Program Development, Policy Analysis, Reproductive Health))
-(Dr. Arun Kumar Gupta,Chief Executive Officer,ArrayBuffer())
-... (75 lines)
+Arun	Arun Gupta	Consultant , Global Canesugar services Pvt.Ltd.	ArrayBuffer(Filtration, Project Planning, Energy, Renewable Energy, Engineering, Power Generation, Procurement, Biofuels, Gas, Instrumentation, DCS, Design & Developments, Boilers, Commissioning, Construction, EPC, Energy Management, Factory, ISO, Maintenance Management, Manufacturing, Materials, Negotiation, Operations Management, PLC, Petrochemical, Power Plants, Process Control, Process Engineering, Product Development, MS Project, Project Engineering, Project Management, Pumps, R&D, Refinery, SAP, Steam Turbines, Supply Chain Management, Turbines, Water Treatment)
+Sanjay	Sanjay Gupta	Researcher at REC ltd	ArrayBuffer(Internet Recruiting, Candidate Generation, Passive Candidate Generation, Research, Databases, Data Mining, Data Entry)
+Arun	Arun Krishnamurthy	Global Incident Manager at IFF	ArrayBuffer(Service Delivery Management, Management, Service Delivery, Transition Management, IT Service Management, Sla, ITIL, Vendor Management, Team Management, Business Analysis, Incident Management, Technical Support, Business Process, Resource Management)
+... -------------------returned 116 rows------------------
 ```
 
 #### 2. Query the Machine Parts Database of AppliancePartsPros
@@ -73,33 +78,29 @@ Examples
     (sc.parallelize(Seq("A210S")) +>
       Visit("http://www.appliancepartspros.com/") +>
       TextInput("input.ac-input","#{_}") +>
-      Click("input[value=\"Search\"]") +> //TODO: can't use Submit, why?
-      Delay(10) ! //TODO: change to DelayFor to save time
-      ).selectInto(
-        "model" -> { _.text1("div.dgrm-lst div.header h2") },
-        "time1" -> { _.backtrace.last.timeline} //ugly tail
-      ).wgetJoin("div.inner li a:has(img)")
-      .selectInto("schematic" -> {_.text1("div#ctl00_cphMain_up1 h1 span")})
-      .wgetJoin("tbody.m-bsc td.pdct-descr h2 a")
-      .map(
-        page => (
-          page.context.get("_"),
-          page.context.get("time1"),
-          page.context.get("model"),
-          page.context.get("schematic"),
-          page.text1("div.m-pdct h1"),
-          page.text1("div.m-pdct td[itemprop=\"brand\"] span"),
-          page.text1("div.m-bsc div.mod ul li:contains(Manufacturer) strong"),
-          page.text1("div.m-pdct div.m-chm p")
-          )
-      ).collect().foreach(println(_))
+      Click("input[value=\"Search\"]") +>
+      Delay(10.seconds) !=!() //TODO: change to DelayFor to save time
+      )
+      .extract(
+        "model" -> ( _.text1("div.dgrm-lst div.header h2") )
+      )
+      .wgetJoin("div.inner li a:has(img)")()
+      .extract("schematic" -> {_.text1("div#ctl00_cphMain_up1 h1")})
+      .wgetJoin("tbody.m-bsc td.pdct-descr h2 a")()
+      .extract(
+        "name" -> (_.text1("div.m-pdct h1")),
+        "brand" ->  (_.text1("div.m-pdct td[itemprop=brand]")),
+        "manufacturer" -> (_.text1("div.m-bsc div.mod ul li:contains(Manufacturer) strong")),
+        "replace" -> (_.text1("div.m-pdct div.m-chm p"))
+      )
+      .asSchemaRDD()
 ```
 - Result (truncated, process finished in 2 minutes on one r3.large instance):
 ```
-(A210S,A210S Washer-Top Loading ,07-Transmissions Parts for Maytag A210S,Collar-Dri,Whirlpool,Y014839,Part Number Y014839 (AP4277202) replaces 014839, 14839.)
-(A210S,A210S Washer-Top Loading ,08-Transmissions Parts for Maytag A210S,Collar-Dri,Whirlpool,Y014839,Part Number Y014839 (AP4277202) replaces 014839, 14839.)
-(A210S,A210S Washer-Top Loading ,05-Suds Saver Parts for Maytag A210S,Screw, Strainer to Pump,Maytag,911266,null)
-... (311 lines)
+A210S	A210S Washer-Top Loading 	Parts for Maytag A210S: Top Cover\console\lid Switch Parts	Moisture Barrier for Switch	Whirlpool	214987	Part Number 214987 (AP4025452) replaces 2-14987, 438912, AH2018922, EA2018922, PS2018922.
+A210S	A210S Washer-Top Loading 	Parts for Maytag A210S: Transmissions Parts	Gear, Pwr Kit	Whirlpool	204967	Part Number 204967 (AP4023771) replaces 2-13068, 2-13069, 2-4967, 213068, 213069, 214278, 435155, AH2017141, EA2017141, PS2017141.
+A210S	A210S Washer-Top Loading 	Parts for Maytag A210S: Transmissions Parts	Gear, Pwr Kit	Whirlpool	204967	Part Number 204967 (AP4023771) replaces 2-13068, 2-13069, 2-4967, 213068, 213069, 214278, 435155, AH2017141, EA2017141, PS2017141.
+... -------------------returned 293 rows------------------
 ```
 
 #### 3. Download University Logos
@@ -108,17 +109,27 @@ Examples
     - The following query will visit 4000+ pages and web resources so its better to test it on a cluster
 - Query:
 ```
-    ((sc.parallelize(Seq("dummy")) +>
-      Visit("http://www.utexas.edu/world/univ/alpha/") !)
-      .flatMap(_.text("div.box2 a", limit = Int.MaxValue, distinct = true))
-      .repartition(400) +> //importantissimo! otherwise will only have 2 partitions
-      Visit("http://images.google.com/") +>
-      DelayFor("form[action=\"/search\"]",50) +>
-      TextInput("input[name=\"q\"]","#{_} Logo") +>
-      Submit("input[name=\"btnG\"]") +>
-      DelayFor("div#search",50) !).wgetJoin(
-        "div#search img",1,"src"
-      ).dump("#{_}", "s3n://college-logo").foreach(println(_))
+    ((noInput
+      +> Visit("http://www.utexas.edu/world/univ/alpha/")
+      !=!())
+      .sliceJoin("div.box2 a")()
+      .extract(
+        "name" -> (_.text1("*"))
+      )
+      .repartition(400)
+      +> Visit("http://images.google.com/")
+      +> DelayFor("form[action=\"/search\"]")
+      +> TextInput("input[name=\"q\"]","Logo #{name}")
+      +> Submit("input[name=\"btnG\"]")
+      +> DelayFor("div#search")
+      !=!())
+      .wgetJoin("div#search img","src")(limit = 1)
+      .saveContent(pageRow =>
+      "file://"+System.getProperty("user.home")+"/spOOky/"+appName+"/images/"+pageRow("name"))
+      .extract(
+        "path" -> (_.saved)
+      )
+      .asSchemaRDD()
 ```
 - Result (process finished in 13 mintues on 4 r3.large instances, image files can be downloaded from S3 with a file transfer client supporting S3 (e.g. S3 web UI, crossFTP): 
 
@@ -130,29 +141,25 @@ Examples
     - The following query will download 4000+ pages and extract 43000+ items from them so its better to test it on a cluster.
 - Query:
 ```
-    (sc.parallelize(Seq("Dummy")) +>
-      Wget("http://ca.iherb.com/")!!!).wgetJoin(
-        "div.category a"
-      ).wgetInsertPagination(
-        "p.pagination a:contains(Next)", 1000
-      ).saveAs(
-        dir = "s3n://[$your reference page bucket$]", overwrite = true
-      ).slice(
-        "div.prodSlotWide"
-      ).map {
-      page => (
-        page.savePath,
-        page.text1("p.description"),
-        page.text1("div.price")
-        ).productIterator.toList.mkString("\t")
-    }.saveAsTextFile("s3n://[$your list bucket$]")
+    (noInput
+      +> Wget("http://ca.iherb.com/")
+      !=!())
+      .wgetJoin("div.category a")()
+      .paginate("p.pagination a:contains(Next)")(indexKey = "page")
+      .sliceJoin("div.prodSlotWide")(indexKey = "row")
+      .extract(
+        "description" -> (_.text1("p.description")),
+        "price" -> (_.text1("div.price")),
+        "saved" -> (_.saved)
+      )
+      .asSchemaRDD()
 ```
 - Result (process finished in 6.1 mintues on 4 r3.large instances)
 ```
 http.ca.iherb.com.Food-Grocery-Items    St. Dalfour, Wild Blueberry, Deluxe Wild Blueberry Spread, 10 oz (284 g)	$4.49
 http.ca.iherb.com.Food-Grocery-Items    Eden Foods, Organic, Wild Berry Mix, Nuts, Seeds & Berries, 4 oz (113 g)	$3.76
 http.ca.iherb.com.Food-Grocery-Items    St. Dalfour, Organic, Golden Mango Green Tea, 25 Tea Bags, 1.75 oz (50 g))	$3.32
-... (42821 lines)
+... -------------------returned 42821 rows------------------
 ```
 
 #### 4.b. Cross-website price comparison.
@@ -167,40 +174,27 @@ Save the table as a tsv file and keep all visited pages as a reference.
 
 - Query:
 ```
-    (sc.textFile("[$file source$]").distinct(400).tsvToMap("url\titem\tiherb-price") +>
-      Visit("http://www.amazon.com/") +>
-      TextInput("input#twotabsearchtextbox", "#{item}") +>
-      Submit("input.nav-submit-input") +>
-      DelayFor("div#resultsCol",50) !).saveAs(
-        dir = "[$reference page sink$]", overwrite = true
-      ).selectInto(
+    (sc.textFile("iherb.tsv")
+      .tsvToMap("url\titem\tiherb-price")
+      +> Visit("http://www.amazon.com/")
+      +> TextInput("input#twotabsearchtextbox", "#{item}")
+      +> Submit("input.nav-submit-input")
+      +> DelayFor("div#resultsCol")
+      !=!())
+      .extract(
         "DidYouMean" -> {_.text1("div#didYouMean a") },
         "noResultsTitle" -> {_.text1("h1#noResultsTitle")},
-        "savePath" -> {_.savePath}
-      ).slice(
-        "div.prod[id^=result_]:not([id$=empty])", limit = 10
-      ).map{ page =>
-    {
-      var itemName: String = null
-      if (page.attrExist("h3 span.bold", "title")) {
-        itemName = page.attr1("h3 span.bold", "title")
-      }
-      else {
-        itemName = page.text1("h3 span.bold")
-      }
-      (page.context.get("item"),
-        itemName,
-        page.context.get("iherb-price"),
-        page.text1("span.bld"),
-        page.text1("li.sss2"),
-        page.attr1("a[alt$=stars]", "alt"),
-        page.text1("span.rvwCnt a"),
-        page.context.get("DidYouMean"),
-        page.context.get("noResultsTitle"),
-        page.context.get("savePath")
-        ).productIterator.toList.mkString("\t")
-    }
-    }.saveAsTextFile("[$tsv file sink$]")
+        "savePath" -> {_.saved}
+      )
+      .sliceJoin("div.prod[id^=result_]:not([id$=empty])")(limit = 10)
+      .extract(
+        "item_name" -> (page => Option(page.attr1("h3 span.bold", "title")).getOrElse(page.text1("h3 span.bold"))),
+        "price" -> (_.text1("span.bld")),
+        "shipping" -> (_.text1("li.sss2")),
+        "stars" -> (_.attr1("a[alt$=stars]", "alt")),
+        "num_rating" -> (_.text1("span.rvwCnt a"))
+      )
+      .asSchemaRDD()
 ```
 - Result (process finished in 2.1 hours on 11 r3.large instances)
 ```
@@ -208,7 +202,7 @@ MusclePharm Assault Fruit Punch	Muscle Pharm Assault Pre-Workout System Fruit Pu
 Paradise Herbs, L-Carnosine, 60 Veggie Caps	Paradise Herbs L-Carnosine Cellular Rejuvenation, Veggie Caps 60 ea	$50.00	null	null	null	null	null	http.www.amazon.com.s.ie=UTF8&page=1&rh=i%3Aaps%2Ck%3AParadise%20Herbs%5Cc%20L-Carnosine%5Cc%2060%20Veggie%20Caps
 Nature's Bounty, Acetyl L-Carnitine HCI, 400 mg, 30 Capsules	Nature's Bounty Acetyl L-Carnitine 400mg, with Alpha Lipoic Acid 200mg, 30 capsules	$15.99	FREE Shipping on orders over $35	3.6 out of 5 stars	7	null	null	http.www.amazon.com.s.ie=UTF8&page=1&rh=i%3Aaps%2Ck%3ANature%27s%20Bounty%5Cc%20Acetyl%20L-Carnitine%20HCI%5Cc%20400%20mg%5Cc%2030%20Capsules
 Lansinoh, Breastmilk Storage Bags, 25 Pre-Sterilized Bags	Lansinoh Breastmilk Storage Bags, 25-Count Boxes (Pack of 3)	$13.49	FREE Shipping on orders over $35	4 out of 5 stars	727	null	null	http.www.amazon.com.s.ie=UTF8&page=1&rh=i%3Aaps%2Ck%3ALansinoh%5Cc%20Breastmilk%20Storage%20Bags%5Cc%2025%20Pre-Sterilized%20Bags
-... (35737 lines)
+... -------------------returned 35737 rows------------------
 ```
 
 #### 5 Download comments and ratings from [http://www.resellerratings.com/]
@@ -218,16 +212,15 @@ Lansinoh, Breastmilk Storage Bags, 25 Pre-Sterilized Bags	Lansinoh Breastmilk St
 - Query:
 ```
     (sc.parallelize(Seq("Hewlett_Packard")) +>
-      Wget(
-        "http://www.resellerratings.com/store/#{_}") !!!
-      ).wgetInsertPagination(
-        "div#survey-header ul.pagination a:contains(next)"
-      ).slice("div.review").map{ page =>
-      (page.text1("div.rating strong"),
-        page.text1("div.date span"),
-        page.text1("p.review-body")
-        ).productIterator.toList.mkString("\t")
-    }.saveAsTextFile("s3n://spookystuff/reseller-ratings/result")
+      Wget( "http://www.resellerratings.com/store/#{_}") !=!())
+      .paginate( "div#survey-header ul.pagination a:contains(next)")(indexKey = "page")
+      .sliceJoin("div.review")()
+      .extract(
+        "rating" -> (_.text1("div.rating strong")),
+        "date" -> (_.text1("div.date span")),
+        "body" -> (_.text1("p.review-body"))
+      )
+      .asSchemaRDD()
 ```
 
 - Result:
@@ -235,7 +228,7 @@ Lansinoh, Breastmilk Storage Bags, 25 Pre-Sterilized Bags	Lansinoh Breastmilk St
 1/5	2013-09-08	"Extremely pained by the service and behaviour of HP. My Envy touch screen Ultrabook crashed 3 weeks back, which I bought in January this year. It came with preloaded Windows 8 OS and they refuse to load the OS without charging me for it. The laptop is under warranty. Best was that the reason given for the crash by the service engineer is 'Monsoons'. Never buy an HP machine. "
 1/5	2013-09-04	"I can not believe how bad the service was. I wanted our company to resell HP products. I have been calling HP for weeks. Every time I call I feel like they push me to tears. When I first called the women didn't know English, she had no one else to speak to me. I called another number, an American answered, but he had no understanding of how to make a new contract but suggested he could transfer me. He did and I got a live person, until he put me on hold and the call was disconnected. I called the number on the HP partners website and they said that they are a whole other company that works for HP and don't have any idea of what to do or who to call. This continued on. It was so stressful. I mean I am so sad and stressed. I may be better off finding another company to work with. I have wasted many valuable days of work and so has my assistant. It is time consuming and costly dealing with them."
 1/5	2013-09-03	"I bought a HP CM-1015 multi-function printer/scanner/copier several years ago. It worked fine when connected to a WindowsXP print server. When I upgraded the XP to Windows 7 (about three years ago), I could not find a driver for it, so I waited, waited, and waited more. Today is September 3, 2013, I installed the newest posted driver that I downloaded from the HP’s website, and it still does not work: It only prints black-and-white, not color. I am not even asking to have all the functions of the machine to work, just the printer part, is this too much for HP? I am very disappointed at the HP product and its service. I bought the HP brand because I thought I would get a great product with great service. What I got is the opposite. Now, I am looking at this almost new machine (it has not been used much in the past years) and wondering: Should I get rid of it ($500+ when purchased) and get another brand? It is really a waste of money and time."
-... (189 lines)
+... -------------------returned 189 rows------------------
 ```
 
 #### 6 Download comments and ratings from [http://www.youtube.com/]
@@ -246,50 +239,42 @@ Lansinoh, Breastmilk Storage Bags, 25 Pre-Sterilized Bags	Lansinoh Breastmilk St
 ```
     (((sc.parallelize(Seq("MetallicaTV")) +>
       Visit("http://www.youtube.com/user/#{_}/videos") +>
-      Loop() (
-        Click("button.load-more-button span.load-more-text"),
-        DelayFor("button.load-more-button span.hid.load-more-loading", 10)
-      ) !).leftJoinBySlice("li.channels-content-item").selectInto(
-        "title" -> (_.text1("h3.yt-lockup-title"))
-      ).leftVisit(
-        "h3.yt-lockup-title a.yt-uix-tile-link", limit = 1
-      ) +>
+      Loop(
+        Click("button.load-more-button span.load-more-text")
+          :: DelayFor("button.load-more-button span.hid.load-more-loading").in(10.seconds)
+          :: Nil
+      ) !=!())
+      .sliceJoin("li.channels-content-item")()
+      .extract("title" -> (_.text1("h3.yt-lockup-title")))
+      .visit("h3.yt-lockup-title a.yt-uix-tile-link")()
+      .repartition(400) +>
       ExeScript("window.scrollBy(0,500)") +>
-      DelayFor("iframe[title^=Comment]", 50) !><).selectInto(
+      Try(DelayFor("iframe[title^=Comment]").in(50.seconds) :: Nil)
+      !><()).extract(
         "description" -> (_.text1("div#watch-description-text")),
         "publish" -> (_.text1("p#watch-uploader-info")),
         "total_view" -> (_.text1("div#watch7-views-info span.watch-view-count")),
         "like_count" -> (_.text1("div#watch7-views-info span.likes-count")),
         "dislike_count" -> (_.text1("div#watch7-views-info span.dislikes-count"))
-      ).leftVisit("iframe[title^=Comment]",limit=10,attr = "abs:src") +>
-      Loop() (
-        Click("span[title^=Load]"),
-        DelayFor("span.PA[style^=display]",10)
-      ) !).saveAs(dir="file:///home/peng/youtube").selectInto(
-        "num_comments" -> (_.text1("div.DJa"))
-      ).leftJoinBySlice(
-        "div[id^=update]"
-      ).map(
-        page => (
-          page.context.get("_"),
-          page.context.get("title"),
-          page.context.get("description"),
-          page.context.get("publish"),
-          page.context.get("total_view"),
-          page.context.get("like_count"),
-          page.context.get("dislike_count"),
-          page.context.get("num_comments"),
-          page.text1("h3.Mpa"),
-          page.text1("div.Al")
-          ).productIterator.toList.mkString("\t")
-      ).saveAsTextFile("file:///home/peng/youtube/result")
+      )
+      .visit("iframe[title^=Comment]", attr = "abs:src")() +>
+      Loop(
+        Click("span[title^=Load]") :: DelayFor("span.PA[style^=display]").in(10.seconds) :: Nil
+      ) !=!(joinType = LeftOuter))
+      .extract("num_comments" -> (_.text1("div.DJa")))
+      .sliceJoin("div[id^=update]")()
+      .extract(
+        "comment1" -> (_.text1("h3.Mpa")),
+        "comment2" -> (_.text1("div.Al"))
+      )
+      .asSchemaRDD()
 ```
 - Result (finished in 9 minutes on 19 r3.large instances):
 ```
-MetallicaTV	Metallica: Ride The Lightning and Wherever I May Roam (MetOnTour - Landgraaf, Netherlands - 2014)	Fly on the wall footage shot by the MetOnTour reporter on June 9, 2014 in Landgraaf, Netherlands. Footage includes some Tuning Room shenanigans and both "Ride The Lightning" and "Wherever I May Roam" from the show. Download the full audio from the show at LiveMetallica.com: http://www.livemetallica.com/live-mus... Follow Metallica: http://www.metallica.com http://www.livemetallica.com http://www.facebook.com/metallica http://www.twitter.com/metallica http://www.instagram.com/metallica http://www.youtube.com/metallicatv	Published on Jul 3, 2014	172,017	1,839	10	All comments (220)	DavincstyleGames	  I was there and it was well worth the wait!﻿ Read more Show less
-MetallicaTV	Metallica: Ride The Lightning and Wherever I May Roam (MetOnTour - Landgraaf, Netherlands - 2014)	Fly on the wall footage shot by the MetOnTour reporter on June 9, 2014 in Landgraaf, Netherlands. Footage includes some Tuning Room shenanigans and both "Ride The Lightning" and "Wherever I May Roam" from the show. Download the full audio from the show at LiveMetallica.com: http://www.livemetallica.com/live-mus... Follow Metallica: http://www.metallica.com http://www.livemetallica.com http://www.facebook.com/metallica http://www.twitter.com/metallica http://www.instagram.com/metallica http://www.youtube.com/metallicatv	Published on Jul 3, 2014	172,017	1,839	10	All comments (220)	thebossman222	  They're amazingly busy all the time, surprised his voice hasn't completely given out by now﻿ Read more Show less
-MetallicaTV	Metallica: Ride The Lightning and Wherever I May Roam (MetOnTour - Landgraaf, Netherlands - 2014)	Fly on the wall footage shot by the MetOnTour reporter on June 9, 2014 in Landgraaf, Netherlands. Footage includes some Tuning Room shenanigans and both "Ride The Lightning" and "Wherever I May Roam" from the show. Download the full audio from the show at LiveMetallica.com: http://www.livemetallica.com/live-mus... Follow Metallica: http://www.metallica.com http://www.livemetallica.com http://www.facebook.com/metallica http://www.twitter.com/metallica http://www.instagram.com/metallica http://www.youtube.com/metallicatv	Published on Jul 3, 2014	172,017	1,839	10	All comments (220)	spikesfunshow	  I forgot the name of the song he is playing at the beginning? Can someone help me out? Thanks﻿ Read more Show less
-... (47236 lines)
+MetallicaTV	Metallica: Welcome Home (Sanitarium) & Sad But True (MetOnTour - Asunción, Paraguay - 2014)	Fly on the wall footage shot by the MetOnTour reporter on March 24, 2014 in Asunción, Paraguay. Footage includes the band warming up in the Tuning Room as well as both "Welcome Home (Sanitarium)" and "Sad But True" from the show. Download the full audio from the show at LiveMetallica.com: http://talli.ca/Asuncion2014 Follow Metallica: http://www.metallica.com http://www.livemetallica.com http://www.facebook.com/metallica http://www.twitter.com/metallica http://www.instagram.com/metallica http://www.youtube.com/metallicatv	Published on Apr 1, 2014	null	null	null	All comments (453)	Max Galvan	  james: what sound do u want? guy: SED BOT TRU!!!!! lol ﻿ Read more Show less
+MetallicaTV	Metallica: Welcome Home (Sanitarium) & Sad But True (MetOnTour - Asunción, Paraguay - 2014)	Fly on the wall footage shot by the MetOnTour reporter on March 24, 2014 in Asunción, Paraguay. Footage includes the band warming up in the Tuning Room as well as both "Welcome Home (Sanitarium)" and "Sad But True" from the show. Download the full audio from the show at LiveMetallica.com: http://talli.ca/Asuncion2014 Follow Metallica: http://www.metallica.com http://www.livemetallica.com http://www.facebook.com/metallica http://www.twitter.com/metallica http://www.instagram.com/metallica http://www.youtube.com/metallicatv	Published on Apr 1, 2014	null	null	null	All comments (453)	J	  lol@ 14:41 James telling the fan not to bow before him XD﻿ Read more Show less
+MetallicaTV	Metallica: Welcome Home (Sanitarium) & Sad But True (MetOnTour - Asunción, Paraguay - 2014)	Fly on the wall footage shot by the MetOnTour reporter on March 24, 2014 in Asunción, Paraguay. Footage includes the band warming up in the Tuning Room as well as both "Welcome Home (Sanitarium)" and "Sad But True" from the show. Download the full audio from the show at LiveMetallica.com: http://talli.ca/Asuncion2014 Follow Metallica: http://www.metallica.com http://www.livemetallica.com http://www.facebook.com/metallica http://www.twitter.com/metallica http://www.instagram.com/metallica http://www.youtube.com/metallicatv	Published on Apr 1, 2014	null	null	null	All comments (453)	Damian Sobik	  Lol Kirk at 3:30 hahah WTF ?!﻿ Read more Show less
+... -------------------returned 47236 rows------------------
 ```
 
 #### 7 Download forward citations from [Google Scholar](http://scholar.google.com)
@@ -298,35 +283,27 @@ MetallicaTV	Metallica: Ride The Lightning and Wherever I May Roam (MetOnTour - L
 
 - Query:
 ```
-    (sc.parallelize(Seq("Large scale distributed deep networks")) +>
-      Visit("http://scholar.google.com/") +>
-      DelayFor("form[role=search]",50) +>
-      TextInput("input[name=\"q\"]","#{_}") +>
-      Submit("button#gs_hp_tsb") +>
-      DelayFor("div[role=main]",50) !).selectInto(
+    (sc.parallelize(Seq("Large scale distributed deep networks"))
+      +> Visit("http://scholar.google.com/")
+      +> DelayFor("form[role=search]")
+      +> TextInput("input[name=\"q\"]","#{_}")
+      +> Submit("button#gs_hp_tsb")
+      +> DelayFor("div[role=main]")
+      !=!())
+      .extract(
         "title" -> (_.text1("div.gs_r h3.gs_rt a")),
         "citation" -> (_.text1("div.gs_r div.gs_ri div.gs_fl a:contains(Cited)"))
-      ).leftJoin(
-        "div.gs_r div.gs_ri div.gs_fl a:contains(Cited)",1
-      ).insertPagination(
-        "div#gs_n td[align=left] a"
-      ).leftJoinBySlice("div.gs_r").selectInto(
+      )
+      .visitJoin("div.gs_r div.gs_ri div.gs_fl a:contains(Cited)")(limit = 1)
+      .paginate("div#gs_n td[align=left] a")()
+      .sliceJoin("div.gs_r")()
+      .extract(
         "citation_title" -> (_.text1("h3.gs_rt a")),
         "citation_abstract" -> (_.text1("div.gs_rs"))
-      ).wgetLeftJoin(
-        "div.gs_md_wp a"
-      ).saveAs(
-        fileName = "#{citation_title}",
-        dir = "file:///home/peng/scholar/"
-      ).map(
-        page => (
-          page.context.get("_"),
-          page.context.get("title"),
-          page.context.get("citation"),
-          page.context.get("citation_title"),
-          page.context.get("citation_abstract")
-          ).productIterator.toList.mkString("\t")
-      ).saveAsTextFile("file:///home/peng/scholar/result")
+      )
+      .wgetJoin("div.gs_md_wp a")()
+      .saveContent(select = _("citation_title"))
+      .asSchemaRDD()
 ```
 
 - Result (finished in 1.5 minute on my laptop with ~450k download speed):
@@ -334,7 +311,7 @@ MetallicaTV	Metallica: Ride The Lightning and Wherever I May Roam (MetOnTour - L
 Large scale distributed deep networks	Large scale distributed deep networks	Cited by 119	Good practice in large-scale learning for image classification	Abstract—We benchmark several SVM objective functions for large-scale image classification. We consider one-versus-rest, multiclass, ranking, and weighted approximate ranking SVMs. A comparison of online and batch methods for optimizing the objectives ...
 Large scale distributed deep networks	Large scale distributed deep networks	Cited by 119	Deep learning with cots hpc systems	Abstract Scaling up deep learning algorithms has been shown to lead to increased performance in benchmark tasks and to enable discovery of complex high-level features. Recent efforts to train extremely large networks (with over 1 billion parameters) have ...
 Large scale distributed deep networks	Large scale distributed deep networks	Cited by 119	A reliable effective terascale linear learning system	Abstract: We present a system and a set of techniques for learning linear predictors with convex losses on terascale datasets, with trillions of features,{The number of features here refers to the number of non-zero entries in the data matrix.} billions of training examples ...
-... (119 lines)
+... -------------------returned 119 rows------------------
 ```
 
 Performance
@@ -352,11 +329,11 @@ Performance
 Usage
 -----------
 
-Current implementation only supports LINQ(Language INtegrated Query)-style query, APIs are not finalized (in fact, still far from that) and may change anytime in the future. Support for SQL is on the roadmap but may be abandoned in favour of simplicity.
+Current implementation only supports Language INtegrated Query (LINQ), APIs are not finalized and may change anytime in the future. Support for SQL is on the roadmap but may be abandoned in favour of simplicity.
 
 Each query is a combination of 3 parts: Context, Action Plan and Extraction.
 
-**Context** represents input and output data of a scraping job in key-value format. They are always created as strings or key-value pairs, then be carried around by Action Plans and Pages as metadata through a query's lifespan.
+**Context** represents input and output data of a scraping job in key-value format. They are always created as strings or key-value pairs, being carried by other entities as metadata through a query's lifespan.
 
 Creating of **Context** can use any Spark parallelization or transformation (though this is rarely used), e.g.:
 ```
@@ -367,6 +344,8 @@ Creating of **Context** can use any Spark parallelization or transformation (tho
 - sc.parallelize("Taylor\tSwift", "Avril\tLavigne").csvToMap("first name\tlast name", "\t")
 
 - sc.fromTextFile("products.txt")
+
+- noInput(this creates a query entry point with no context)
 ```
 
 **Action Plan** always has the following format:
@@ -392,13 +371,13 @@ For more information on Actions and Action Plan usage, please refer to the scala
 
 Functions in **Extraction** have four types:
 
-- *map*: Extract data from Pages by using data's enclosing elements' HTML/XML/JSON selector(s) and attribute(s) as anchor points.
+- *extract*: Extract data from Pages by using data's enclosing elements' HTML/XML/JSON selector(s) and attribute(s) as anchor points.
 
 - *save/dump*: Save all pages into a file system (HDD/S3/HDFS).
 
 - *select*: Extract data from Pages and insert them into the pages' respective context as metadata.
 
-- *join/left-join*: This is similar to the notion of join in relational databases, except that links between pages are used as foreign keys between tables. (Technical not just links, but anything that infers a connection between web resources, including frames, iframes, sources and redirection).
+- *join*: This is similar to the notion of join in relational databases, except that links between pages are used as foreign keys between tables. (Technical not just links, but anything that infers a connection between web resources, including frames, iframes, sources and redirection).
 
 For more information on Extraction syntax, please refer to the scaladoc of Page.scala and PageRDDFunction.scala.
 
