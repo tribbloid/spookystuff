@@ -1,6 +1,8 @@
 SpookyStuff welcomes two more commiters! All hail their exalted reinforcements!
- **[Sandeep Singh @techaddict](https://github.com/techaddict)** has added new sbt build files to make it friendly to native scala developers.
- **[Terry Lin @ithinkicancode](https://github.com/ithinkicancode)** has added new features supporting more http operations with more customizable parameters.
+
+- **[Sandeep Singh @techaddict](https://github.com/techaddict)** has added new sbt build files to make it friendly to native scala developers.
+ 
+- **[Terry Lin @ithinkicancode](https://github.com/ithinkicancode)** has added new features supporting more http operations with more customizable parameters.
 
 SpookyStuff
 ===========
