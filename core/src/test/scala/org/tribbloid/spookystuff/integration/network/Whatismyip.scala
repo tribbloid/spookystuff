@@ -1,7 +1,8 @@
-package org.tribbloid.spookystuff.integration
+package org.tribbloid.spookystuff.integration.network
 
 import org.tribbloid.spookystuff.entity.client._
 import org.tribbloid.spookystuff.factory.driver.TorDriverFactory
+import org.tribbloid.spookystuff.integration.TestCore
 
 /**
  * Created by peng on 9/7/14.

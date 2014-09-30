@@ -1,6 +1,7 @@
-package org.tribbloid.spookystuff.integration
+package org.tribbloid.spookystuff.integration.social
 
 import org.tribbloid.spookystuff.entity.client._
+import org.tribbloid.spookystuff.integration.TestCore
 
 /**
  * This job will find and printout urls of Sanjay Gupta, Arun Gupta and Hardik Gupta in your area

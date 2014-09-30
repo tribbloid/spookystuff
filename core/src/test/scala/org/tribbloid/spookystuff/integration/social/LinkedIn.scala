@@ -1,6 +1,7 @@
-package org.tribbloid.spookystuff.integration
+package org.tribbloid.spookystuff.integration.social
 
 import org.tribbloid.spookystuff.entity.client._
+import org.tribbloid.spookystuff.integration.TestCore
 
 /**
  * A more complex linkedIn job that finds name and printout skills of all Sanjay Gupta in your local area
