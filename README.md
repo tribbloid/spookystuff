@@ -2,7 +2,7 @@ SpookyStuff welcomes two more commiters! All hail their exalted reinforcements!
 
 - **[Sandeep Singh @techaddict](https://github.com/techaddict)** has added new sbt build files to make it friendly to native scala developers.
  
-- **[Terry Lin @ithinkicancode](https://github.com/ithinkicancode)** has added new features supporting more http operations with more customizable parameters.
+- **[Terry Lin @ithinkicancode](https://github.com/ithinkicancode)** has added new features supporting more http operations with more customization options.
 
 SpookyStuff
 ===========
@@ -422,6 +422,6 @@ you can use scripts in $SPARK_HOME/ec2 to setup a Spark cluster with transient H
 License
 -----------
 
-Copyright &copy; 2014 by Peng Cheng and contributors.
+Copyright &copy; 2014 by Peng Cheng @tribbloid, Sandeep Singh @techaddict, Terry Lin @ithinkicancode and contributors.
 
 Published under ASF License, see LICENSE.

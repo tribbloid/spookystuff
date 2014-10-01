@@ -7,11 +7,8 @@ spark_subdir: spark-1.1.0-bin-hadoop2.4
 
 spark_tgz: "{{spark_subdir}}.tgz"
 
-spark_master_dns: ec2-54-88-74-212.compute-1.amazonaws.com
 git_home: /home/ubuntu/git
 
 spark_home: "{{spark_root}}/{{spark_subdir}}"
 spark_http: "{{spark_httpdir}}/{{spark_tgz}}"
 spark_fulltgz: "{{spark_root}}/{{spark_tgz}}"
-
-spark_master: "spark://{{spark_master_dns}}:7077"
