@@ -61,7 +61,6 @@
 
     <modules>
         <module>core</module>
-        <module>spike</module>
         <module>example</module>
         <module>shell</module>
     </modules>
