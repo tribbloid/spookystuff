@@ -394,7 +394,8 @@ case class PageSchemaRDD(
   def paginate(
                 selector: String,
                 attr :String = "abs:href",
-                wget: Boolean = true
+                wget: Boolean = true,
+                postAction: Seq[Action] = Seq()
                 )(
                 limit: Int = Const.fetchLimit,
                 indexKey: String = null,
@@ -407,7 +408,7 @@ case class PageSchemaRDD(
     implicit def spookyImplicit: SpookyContext = spookyBroad.value
 
     val result = self.flatMap {
-      _.paginate(selector, attr, wget)(limit, indexKey, flatten, last)
+      _.paginate(selector, attr, wget, postAction)(limit, indexKey, flatten, last)
     }
 
     this.copy(result, this.columnNames ++ Option(indexKey))

@@ -254,7 +254,8 @@ case class PageRow(
   def paginate(
               selector: String,
               attr: String = "abs:href",
-              wget: Boolean = true
+              wget: Boolean = true,
+              postActions: Seq[Action] = Seq()
               )(
               limit: Int = Const.fetchLimit,
               indexKey: String = null,
@@ -271,7 +272,8 @@ case class PageRow(
       val actionRow = if (!wget) oldRow +%> (Visit("#{~}") -> (_.attr1(selector, attr, noEmpty = true, last = last)))
       else oldRow +%> (Wget("#{~}") -> (_.attr1(selector, attr, noEmpty = true, last = last)))
 
-      oldRow = actionRow.!=!(joinType = Merge, flatten = false).head
+
+      oldRow = (actionRow +> postActions).!=!(joinType = Merge, flatten = false).head
     }
 
     if (flatten) oldRow.flatten(indexKey = indexKey)
@@ -281,3 +283,7 @@ case class PageRow(
 }
 
 object DeadRow extends PageRow(dead = true)
+
+object JoinVisit extends Visit("#{~}")
+
+object JoinWget extends Wget("#{~}")

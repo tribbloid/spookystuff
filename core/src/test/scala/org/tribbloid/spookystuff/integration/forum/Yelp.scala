@@ -12,8 +12,21 @@ object Yelp extends TestCore {
 
   def doMain() = {
 
-    (noInput
-      +> Wget("http://www.yelp.ca/biz/black-hoof-toronto?sort_by=date_desc")
+    (sc.parallelize(Seq(
+//    "http://www.yelp.com/biz/bottega-louie-los-angeles?sort_by=date_desc",
+//    "http://www.yelp.com/biz/wurstk%C3%BCche-los-angeles-2?sort_by=date_desc",
+//    "http://www.yelp.com/biz/daikokuya-los-angeles?sort_by=date_desc",
+//    "http://www.yelp.com/biz/pizzeria-mozza-los-angeles?sort_by=date_desc",
+//    "http://www.yelp.com/biz/sushi-gen-los-angeles?sort_by=date_desc",
+//    "http://www.yelp.com/biz/animal-los-angeles?sort_by=date_desc",
+//    "http://www.yelp.com/biz/blu-jam-caf%C3%A9-los-angeles-2?sort_by=date_desc",
+//    "http://www.yelp.com/biz/langers-los-angeles-2?sort_by=date_desc",
+//    "http://www.yelp.com/biz/roscoes-house-of-chicken-and-waffles-los-angeles-3?sort_by=date_desc",
+//    "http://www.yelp.com/biz/masa-of-echo-park-los-angeles?sort_by=date_desc",
+//    "http://www.yelp.com/biz/bld-los-angeles?sort_by=date_desc",
+    "http://www.yelp.com/biz/providence-los-angeles-2?sort_by=date_desc"
+    ))
+      +> Wget("#{_}")
       !=!())
       .paginate("a.page-option.prev-next:contains(→)")(indexKey = "page", last = true)
       .sliceJoin("div.review")(indexKey = "row")

@@ -152,12 +152,37 @@ case object DelayForDocumentReady extends Interaction with Timed {
  * Click an element with your mouse pointer.
  * @param selector css selector of the element, only the first element will be affected
  */
-case class Click(selector: String)extends Interaction with Timed {
+case class Click(
+                  selector: String
+                  )extends Interaction with Timed {
   override def exeWithoutPage(pb: PageBuilder) {
     val wait = new WebDriverWait(pb.driver, delay.toSeconds)
     val element = wait.until(ExpectedConditions.elementToBeClickable(By.cssSelector(selector)))
 
     element.click()
+  }
+}
+
+/**
+ * Click an element with your mouse pointer.
+ * @param selector css selector of the element, only the first element will be affected
+ */
+case class ClickAll(
+                  selector: String
+                  )extends Interaction with Timed {
+  override def exeWithoutPage(pb: PageBuilder) {
+    val wait = new WebDriverWait(pb.driver, delay.toSeconds)
+    val elements = wait.until(ExpectedConditions.presenceOfAllElementsLocatedBy(By.cssSelector(selector)))
+
+
+    import scala.collection.JavaConversions._
+
+    elements.foreach{
+      element => {
+        wait.until(ExpectedConditions.elementToBeClickable(element))
+        element.click()
+      }
+    }
   }
 }
 
