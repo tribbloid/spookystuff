@@ -13,7 +13,7 @@ object Useragentstring extends TestCore {
 
   override def doMain() = {
 
-    spooky.driverFactory = TorDriverFactory()
+//    spooky.driverFactory = TorDriverFactory()
 
     (noInput
       +> Wget("http://www.useragentstring.com/pages/Browserlist/")

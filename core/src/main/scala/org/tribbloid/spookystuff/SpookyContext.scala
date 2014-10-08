@@ -21,7 +21,7 @@ import scala.concurrent.duration.{Duration, _}
 //will be shipped everywhere as implicit parameter
 
 class SpookyContext (
-//TODO: all declare private to avoid being imported and littered everywhere
+                      //TODO: all declare private to avoid being imported and littered everywhere
                       @transient val sqlContext: SQLContext, //compulsory, many things are not possible without SQL
 
                       var driverFactory: DriverFactory = NaiveDriverFactory(),
@@ -30,6 +30,7 @@ class SpookyContext (
                       var autoCache: Boolean = true,//slow, but reduce bombarding highly aware sites
                       var autoRestore: Boolean = true,//slow, but reduce bombarding highly aware sites
                       var errorDump: Boolean = true,
+                      var errorDumpScreenshot: Boolean = true,
 
                       var pageExpireAfter: Duration = 30.minutes,
 
@@ -40,7 +41,9 @@ class SpookyContext (
                       var autoSaveRoot: String = "s3n://spOOky/"+"page/",
                       var autoCacheRoot: String = "s3n://spOOky/"+"cache/",
                       var errorDumpRoot: String = "s3n://spOOky/"+"error/",
+//                      var errorDumpScreenshotRoot: String = "s3n://spOOky/"+"error-screenshot/",
                       var localErrorDumpRoot: String = "file:///spOOky/"+"error/",
+//                      var localErrorDumpScreenshotRoot: String = "file:///spOOky/"+"error-screenshot/",
 
                       var resourceTimeout: Duration = 60.seconds
                       )

@@ -16,16 +16,19 @@ case object VerbosePathLookup extends Lookup[String] {
 
   override def apply(uid: PageUID): String = {
 
-    val actions = uid.backtrace.slice(0,3).mkString("~")
+    val actionStrs = uid.backtrace.map(_.toString)
 
-    val truncated = if (actions.length<=200) actions
-    else actions.substring(0,200)
+    val actionConcat = if (actionStrs.size > 4) {
+      val oneTwoThree = actionStrs.slice(0,3)
+      val last = actionStrs.last
+      val omitted = "..."+(uid.backtrace.length-4).toString+"more"+"..."
 
-    val suffix = if (uid.backtrace.length <=3 ) ""
-    else "..."+(uid.backtrace.length-3).toString+"more"
+      oneTwoThree.mkString("~")+omitted+last
+    }
+    else actionStrs.mkString("~")
 
     val hash = "-"+uid.backtrace.hashCode
 
-    Utils.canonize(truncated + suffix + hash)
+    Utils.canonize(actionConcat + hash)
   }
 }

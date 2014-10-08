@@ -273,6 +273,12 @@ case class Page(
   //    this.copy(savedTo = "file://" + file.getCanonicalPath)
   //  }
 
+  def numElements(selector: String): Int = doc match {
+    case Some(doc: Element) => doc.select(selector).size()
+
+    case _ => 0
+  }
+
   def elementExist(selector: String): Boolean = doc match {
 
     case Some(doc: Element) => !doc.select(selector).isEmpty

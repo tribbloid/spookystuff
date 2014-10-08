@@ -6,6 +6,7 @@ import org.apache.spark.sql.{SQLContext, SchemaRDD}
 import org.apache.spark.{SparkConf, SparkContext}
 import org.scalatest.{FunSuite, Tag}
 import org.tribbloid.spookystuff.SpookyContext
+import org.tribbloid.spookystuff.factory.driver.NaiveDriverFactory
 
 import scala.concurrent.duration._
 
@@ -24,10 +25,12 @@ trait TestCore extends FunSuite {
 
   lazy val sc: SparkContext = new SparkContext(conf)
   lazy val sql: SQLContext = new SQLContext(sc)
-  lazy val spooky: SpookyContext = new SpookyContext(sql)
+  lazy val spooky: SpookyContext = new SpookyContext(
+    sql,
+    driverFactory = NaiveDriverFactory(loadImages = true),
+    pageExpireAfter = 0.milliseconds
+  )
   spooky.setRoot("file://"+System.getProperty("user.home")+"/spOOky/"+appName)
-
-  spooky.pageExpireAfter = 0.milliseconds
 
   lazy val result = {
     val result = doMain()

@@ -18,13 +18,8 @@ class StringRDDFunctions(val self: RDD[String]) {
     self.map {
       str => {
         val values = str.split(splitter)
-        val row: mutable.Map[String,String] = mutable.Map()
 
-        for (i <- 0 to width-1)
-        {
-          row.put(headers(i), values(i))
-        }
-        row.toMap
+        Map(headers.zip(values): _*)
       }
     }
   }

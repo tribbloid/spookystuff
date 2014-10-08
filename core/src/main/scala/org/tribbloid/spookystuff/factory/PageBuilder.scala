@@ -80,6 +80,7 @@ class PageBuilder(
   }
 
   val backtrace: ArrayBuffer[Action] = ArrayBuffer() //kept in session, but it is action deciding if they fit in or what part to export
+  val realBacktrace: ArrayBuffer[Action] = ArrayBuffer() //real one excluding buffered
 
   private val buffer: ArrayBuffer[Action] = ArrayBuffer()
   private val pages: ArrayBuffer[Page] = ArrayBuffer()
@@ -131,17 +132,16 @@ class PageBuilder(
         for (buffered <- this.buffer)
         {
           pages ++= buffered.exe(this)() // I know buffered one should only have empty result, just for safety
+          this.realBacktrace ++= buffered.trunk()
         }
         buffer.clear()
         var batch = action.exe(this)()
 
         if (autoSave) batch = batch.map(_.autoSave(spooky))
-        if (autoCache) {
-
-          Page.autoCache(batch, uid,spooky)
-        }
+        if (autoCache) Page.autoCache(batch, uid,spooky)
 
         pages ++= batch
+        this.realBacktrace ++= action.trunk()
       }
     }
     else {

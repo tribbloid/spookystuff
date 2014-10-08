@@ -36,7 +36,10 @@ class RandomProxyDriverFactory(
 
 object RandomProxyDriverFactory {
 
-  def apply(phantomJSPath: String, proxies: (String, String)*) = new RandomProxyDriverFactory(phantomJSPath, proxies: _*)
+  def apply(
+             phantomJSPath: String,
+             proxies: (String, String)*
+             ) = new RandomProxyDriverFactory(phantomJSPath, proxies: _*)
 
   def apply(proxies: (String, String)*) = new RandomProxyDriverFactory(System.getenv("PHANTOMJS_PATH"), proxies: _*)
 }

@@ -48,7 +48,7 @@ case class Snapshot() extends Export {
     //    }
 
     val page = Page(
-      PageUID(pb.backtrace :+ this),
+      PageUID(pb.realBacktrace :+ this),
       pb.driver.getCurrentUrl,
       "text/html; charset=UTF-8",
       pb.driver.getPageSource.getBytes("UTF8")
@@ -72,7 +72,7 @@ case class Screenshot() extends Export {
     }
 
     val page = Page(
-      PageUID(pb.backtrace :+ this),
+      PageUID(pb.realBacktrace :+ this),
       pb.driver.getCurrentUrl,
       "image/png",
       content
@@ -113,6 +113,7 @@ case class Wget(
     val settings = RequestConfig.custom()
       .setConnectTimeout ( timeoutMillis )
       .setConnectionRequestTimeout ( timeoutMillis )
+      .setSocketTimeout( timeoutMillis )
       .build()
 
     val httpClient = HttpClientBuilder.create()
@@ -130,7 +131,7 @@ case class Wget(
         val contentType = entity.getContentType.getValue
 
         val result = Page(
-          PageUID(pb.backtrace :+ this),
+          PageUID(pb.realBacktrace :+ this),
           url,
           contentType,
           content

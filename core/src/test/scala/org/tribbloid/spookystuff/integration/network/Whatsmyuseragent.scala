@@ -13,7 +13,7 @@ object Whatsmyuseragent extends TestCore {
 
   override def doMain() = {
 
-    spooky.driverFactory = TorDriverFactory()
+//    spooky.driverFactory = TorDriverFactory()
 
     (noInput
       +> Visit("http://www.whatsmyuseragent.com/")

@@ -44,7 +44,7 @@ object Utils {
   }
 
   def canonize(name: String): String = {
-    var result = name.replaceAll("[ ]","").replaceAll("[,]","|").replaceAll("[:\\\\/]+", "*")
+    var result = name.replaceAll("[ ]","_").replaceAll("[,]","|").replaceAll("[:\\\\/]+", "*")
 
     if (result.length > 255) result = result.substring(0, 255)
 

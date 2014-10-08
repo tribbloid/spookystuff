@@ -65,11 +65,12 @@ trait Action extends Serializable with Product {
   def exe(
            session: PageBuilder
            )(
-           errorDump: Boolean = session.spooky.errorDump
+           errorDump: Boolean = session.spooky.errorDump,
+           errorDumpScreenshot: Boolean = session.spooky.errorDumpScreenshot
            ): Seq[Page] = {
 
     val results = try {
-      doExe(session) //TODO: if mayExport, read from cache first
+      doExe(session)
     }
     catch {
       case e: Throwable =>
@@ -88,31 +89,48 @@ trait Action extends Serializable with Product {
           }
         }.mkString("\n")+"\n"
 
-        if (!isInBacktrace) message += "|>" + this+"\n"
+        if (!isInBacktrace) message += "|>" + this
 
-        if ((!this.isInstanceOf[Sessionless]) && errorDump) {
-          var page = DefaultSnapshot.exe(session)(errorDump = false).toList(0)
-          try {
-            page = page.errorDump(session.spooky)
-            message += "snapshot saved to: " + page.saved
+        if (!this.isInstanceOf[Sessionless]) {
+          if (errorDump) {
+            var page = DefaultSnapshot.doExe(session).toList(0)
+            try {
+              page = page.errorDump(session.spooky)
+              message += "\n"+"snapshot saved to: " + page.saved
+            }
+            catch {
+              case e: Throwable =>
+                try {
+                  page = page.localErrorDump(session.spooky)
+                  message += "\n"+"distributed file system inaccessible.........snapshot saved to: " + page.saved
+                }
+                catch {
+                  case e: Throwable =>
+                    message += "\n"+"all file systems inaccessible.........snapshot not saved"
+                }
+            }
           }
-          catch {
-            case e: Throwable =>
-              try {
-                page = page.localErrorDump(session.spooky)
-                message += "distributed file system inaccessible.........snapshot saved to: " + page.saved
-              }
-              catch {
-                case e: Throwable =>
-                  message += "all file systems inaccessible.........snapshot not saved"
-              }
+          if (errorDumpScreenshot) {
+            var page = DefaultScreenshot.doExe(session).toList(0)
+            try {
+              page = page.errorDump(session.spooky)
+              message += "\n"+"screenshot saved to: " + page.saved
+            }
+            catch {
+              case e: Throwable =>
+                try {
+                  page = page.localErrorDump(session.spooky)
+                  message += "\n"+"distributed file system inaccessible.........screenshot saved to: " + page.saved
+                }
+                catch {
+                  case e: Throwable =>
+                    message += "\n"+"all file systems inaccessible.........screenshot not saved"
+                }
+            }
           }
         }
+
         throw new ActionException(message, e)
-    }
-
-    if (this.mayExport()) {
-
     }
 
     this.timeElapsed = System.currentTimeMillis() - session.startTime
