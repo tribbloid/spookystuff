@@ -91,7 +91,7 @@ class SpookyContext (
 
   implicit def schemaRDDToPageRowRDD(rdd: SchemaRDD): PageSchemaRDD = {
 
-    val result = new SchemaRDDFunctions(rdd).toMap.map{
+    val result = new SchemaRDDFunctions(rdd).toMapRDD.map{
       map => new PageRow(Option(map).getOrElse(Map()))
     }
 

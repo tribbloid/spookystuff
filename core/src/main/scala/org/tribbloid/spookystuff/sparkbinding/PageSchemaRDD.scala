@@ -1,13 +1,14 @@
 package org.tribbloid.spookystuff.sparkbinding
 
 import org.apache.spark.rdd.RDD
-import org.apache.spark.sql.SchemaRDD
+import org.apache.spark.sql._
 import org.apache.spark.sql.catalyst.analysis.UnresolvedAttribute
+import org.apache.spark.storage.StorageLevel
 import org.tribbloid.spookystuff.entity._
 import org.tribbloid.spookystuff.entity.client.{Action, Visit, Wget}
 import org.tribbloid.spookystuff.factory.PageBuilder
 import org.tribbloid.spookystuff.operator.{JoinType, LeftOuter, Merge, Replace}
-import org.tribbloid.spookystuff.{Utils, Const, SpookyContext}
+import org.tribbloid.spookystuff.{Const, SpookyContext, Utils}
 
 import scala.collection.immutable.ListSet
 
@@ -21,6 +22,27 @@ case class PageSchemaRDD(
                           @transient spooky: SpookyContext
                           )
   extends Serializable{
+
+//  @DeveloperApi
+//  override def compute(split: Partition, context: TaskContext): Iterator[PageRow] =
+//    firstParent[PageRow].compute(split, context).map(_.copy())
+//
+//  override protected def getPartitions: Array[Partition] = firstParent[PageRow].partitions
+
+  def union(other: PageSchemaRDD): PageSchemaRDD = {
+    this.copy(
+      this.self.union(other.self),
+      this.columnNames ++ other.columnNames
+    )
+  }
+
+  def repartition(numPartitions: Int): PageSchemaRDD =
+    this.copy(this.self.repartition(numPartitions))
+
+  // I don't know why RDD.persist can't do it, guess I don't know enough.
+  def persist(newLevel: StorageLevel = StorageLevel.MEMORY_ONLY): PageSchemaRDD = {
+    PageSchemaRDD(self.persist(newLevel), columnNames, spooky)
+  }
 
   /**
    * append an action
@@ -412,16 +434,5 @@ case class PageSchemaRDD(
     }
 
     this.copy(result, this.columnNames ++ Option(indexKey))
-  }
-
-  def union(other: PageSchemaRDD): PageSchemaRDD = {
-    this.copy(
-      this.self.union(other.self),
-      this.columnNames ++ other.columnNames
-    )
-  }
-
-  def repartition(numPartitions: Int): PageSchemaRDD = {
-    this.copy(this.self.repartition(numPartitions))
   }
 }

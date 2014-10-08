@@ -9,7 +9,7 @@ import org.apache.spark.sql.SchemaRDD
 //I really don't want to do this but SparkSQL is an alpha component
 class SchemaRDDFunctions(val self: SchemaRDD) {
 
-  def toMap: RDD[Map[String,Any]] = {
+  def toMapRDD: RDD[Map[String,Any]] = {
     val headers = self.schema.fieldNames
 
     self.map{

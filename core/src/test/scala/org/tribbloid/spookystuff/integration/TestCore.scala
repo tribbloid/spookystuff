@@ -63,6 +63,6 @@ trait TestCore extends FunSuite {
 
     println("-------------------returned "+array.length+" rows------------------")
 
-    result.printSchema()
+    println(result.schema.fieldNames.mkString("\t"))
   }
 }
