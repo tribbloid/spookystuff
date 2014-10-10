@@ -39,9 +39,9 @@ object SigmaAldrich extends TestCore {
       )
       .remove("header","content")
 
-    base.persist()
-
-    base.asJsonRDD().collect().foreach(println)
+//    base.persist()
+//
+//    base.asJsonRDD().collect().foreach(println)
 
     base
       .asSchemaRDD()

@@ -115,7 +115,7 @@ case class PageRow(
   //      }
   //    }
 
-  def asJson(): String = Utils.map2Json(this.cells)
+  def asJson(): String = Utils.toJson(this.cells)
 
   def flatten(
                left: Boolean = false,

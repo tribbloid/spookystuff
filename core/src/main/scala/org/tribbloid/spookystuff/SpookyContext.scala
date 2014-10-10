@@ -103,7 +103,7 @@ class SpookyContext (
 
   implicit def mapRDDToPageRowRDD[T <: Any](rdd: RDD[Map[String,T]]): PageSchemaRDD = {
 
-    val jsonRDD = rdd.map(map => Utils.map2Json(map))
+    val jsonRDD = rdd.map(map => Utils.toJson(map))
     jsonRDD.persist()
     val schemaRDD = sqlContext.jsonRDD(jsonRDD)
 

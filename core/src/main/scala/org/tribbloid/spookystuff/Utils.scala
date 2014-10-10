@@ -1,5 +1,7 @@
 package org.tribbloid.spookystuff
 
+import org.json4s.DefaultFormats
+
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._
 import scala.concurrent.{Await, Future}
@@ -49,15 +51,10 @@ object Utils {
     result
   }
 
-  def map2Json(map: Map[String, Any]): String = {
-
-//    import org.json4s._
-//    import org.json4s.jackson.JsonMethods._
+  def toJson(obj: AnyRef): String = {
 
     import org.json4s.jackson.Serialization
-    import org.json4s.jackson.Serialization
-    import org.json4s.DefaultFormats
 
-    Serialization.write(map)(DefaultFormats)
+    Serialization.write(obj)(DefaultFormats)
   }
 }

@@ -20,8 +20,6 @@ object Const {
 
   val defaultJoinType = LeftOuter
 
-  val jsonMapper = new ObjectMapper()
-
 //  val webClientOptions = new WebClientOptions
 //  webClientOptions.setUseInsecureSSL(true)
 

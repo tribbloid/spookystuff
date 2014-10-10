@@ -59,10 +59,10 @@ trait TestCore extends FunSuite {
 
     val array = result.collect()
 
+    println(result.schema.fieldNames.mkString("\t"))
     array.foreach(row => println(row.mkString("\t")))
 
     println("-------------------returned "+array.length+" rows------------------")
-
-    println(result.schema.fieldNames.mkString("\t"))
+    result.printSchema()
   }
 }
