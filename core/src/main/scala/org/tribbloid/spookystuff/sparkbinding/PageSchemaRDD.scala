@@ -150,6 +150,7 @@ case class PageSchemaRDD(
    * @return RDD[Page] as results of execution
    */
   def !><(
+           numPartitions: Int = -1,
            joinType: JoinType = Const.defaultJoinType,
            flatten: Boolean = true,
            indexKey: String = null
@@ -159,57 +160,10 @@ case class PageSchemaRDD(
 
     implicit def spookyImplicit: SpookyContext = spookyBroad.value
 
-    import org.apache.spark.SparkContext._
-
-    val squashedRDD = self.map {
-      selfRow => {
-
-        ((selfRow.actions,selfRow.dead), selfRow)
-      }
-    }.groupByKey()
-
-    val result = squashedRDD.flatMap {
-      tuple => {
-        val newPages = PageBuilder.resolve(tuple._1._1, tuple._1._2)
-
-        var newPageRows = joinType match {
-          case Replace if newPages.isEmpty =>
-            tuple._2.map( oldPageRow => PageRow(cells = oldPageRow.cells, pages = oldPageRow.pages) )
-          case Merge =>
-            tuple._2.map( oldPageRow => PageRow(cells = oldPageRow.cells, pages = oldPageRow.pages ++ newPages) )
-          case _ =>
-            tuple._2.map( oldPageRow => PageRow(cells = oldPageRow.cells, pages = newPages) )
-        }
-
-        if (flatten) newPageRows = newPageRows.flatMap(_.flatten(joinType == LeftOuter, indexKey))
-
-        newPageRows
-      }
-    }
-
-    this.copy(result, this.columnNames ++ Option(indexKey))
-  }
-
-  //add numPartitions as an extra parameter
-  def !><(
-           numPartitions: Int,
-           joinType: JoinType = Const.defaultJoinType,
-           flatten: Boolean = true,
-           indexKey: String = null
-           ): PageSchemaRDD = {
-
-    val spookyBroad = self.context.broadcast(this.spooky)
-
-    implicit def spookyImplicit: SpookyContext = spookyBroad.value
-
-    import org.apache.spark.SparkContext._
-
-    val squashedRDD = self.map {
-      selfRow => {
-
-        ((selfRow.actions,selfRow.dead), selfRow)
-      }
-    }.groupByKey(numPartitions)
+    val squashedRDD = if (numPartitions == -1)
+      self.groupBy(row => (row.actions,row.dead))
+    else
+      self.groupBy((row => (row.actions, row.dead)): (PageRow => (Seq[Action],Boolean)), numPartitions = numPartitions) //scala is stupid on this
 
     val result = squashedRDD.flatMap {
       tuple => {
@@ -402,11 +356,12 @@ case class PageSchemaRDD(
                  limit: Int = spooky.joinLimit, //applied after distinct
                  distinct: Boolean = true,
                  indexKey: String = null,
+                 numPartitions: Int = -1,
                  joinType: JoinType = Const.defaultJoinType,
                  flatten: Boolean = true
                  ): PageSchemaRDD ={
 
-    this.visit(selector, attr)(limit, distinct, indexKey).!><(joinType, flatten)
+    this.visit(selector, attr)(limit, distinct, indexKey).!><(numPartitions, joinType, flatten)
   }
 
   /**
@@ -424,11 +379,12 @@ case class PageSchemaRDD(
                 limit: Int = spooky.joinLimit, //applied after distinct
                 distinct: Boolean = true,
                 indexKey: String = null,
+                numPartitions: Int = -1,
                 joinType: JoinType = Const.defaultJoinType,
                 flatten: Boolean = true
                 ): PageSchemaRDD ={
 
-    this.wget(selector, attr)(limit, distinct, indexKey).!><(joinType, flatten)
+    this.wget(selector, attr)(limit, distinct, indexKey).!><(numPartitions, joinType, flatten)
   }
 
   /**
