@@ -281,12 +281,12 @@ case class PageSchemaRDD(
   def +*%>(
             actionAndF: (Action, Page => Array[_])
             )(
+            limit: Int = spooky.joinLimit, //applied after distinct
             distinct: Boolean = true,
-            limit: Int = Const.fetchLimit, //applied after distinct
             indexKey: String = null
             ): PageSchemaRDD =
     this.copy(
-      self.flatMap(_.+*%>(actionAndF)(distinct,limit,indexKey)),
+      self.flatMap(_.+*%>(actionAndF)(limit,distinct,indexKey)),
       this.columnNames ++ Option(indexKey)
     )
 
@@ -321,23 +321,23 @@ case class PageSchemaRDD(
              selector: String,
              attr: String = "abs:href"
              )(
+             limit: Int = spooky.joinLimit, //applied after distinct
              distinct: Boolean = true,
-             limit: Int = Const.fetchLimit, //applied after distinct
              indexKey: String = null
              ): PageSchemaRDD = this.dropActions().+*%>(
     Visit("#{~}") -> (_.attr(selector, attr))
-  )(distinct, limit, indexKey)
+  )(limit, distinct, indexKey)
 
   def wget(
             selector: String,
             attr: String = "abs:href"
             )(
+            limit: Int = spooky.joinLimit, //applied after distinct
             distinct: Boolean = true,
-            limit: Int = Const.fetchLimit, //applied after distinct
             indexKey: String = null
             ): PageSchemaRDD = this.dropActions().+*%>(
     Wget("#{~}") -> (_.attr(selector, attr))
-  )(distinct, limit, indexKey)
+  )(limit, distinct, indexKey)
 
   /**
    * results in a new set of Pages by crawling links on old pages
@@ -351,14 +351,14 @@ case class PageSchemaRDD(
                  selector: String,
                  attr :String = "abs:href"
                  )(
+                 limit: Int = spooky.joinLimit, //applied after distinct
                  distinct: Boolean = true,
-                 limit: Int = Const.fetchLimit, //applied after distinct
                  indexKey: String = null,
                  joinType: JoinType = Const.defaultJoinType,
                  flatten: Boolean = true
                  ): PageSchemaRDD ={
 
-    this.visit(selector, attr)(distinct, limit, indexKey).!><(joinType, flatten)
+    this.visit(selector, attr)(limit, distinct, indexKey).!><(joinType, flatten)
   }
 
   /**
@@ -373,14 +373,14 @@ case class PageSchemaRDD(
                 selector: String,
                 attr :String = "abs:href"
                 )(
+                limit: Int = spooky.joinLimit, //applied after distinct
                 distinct: Boolean = true,
-                limit: Int = Const.fetchLimit, //applied after distinct
                 indexKey: String = null,
                 joinType: JoinType = Const.defaultJoinType,
                 flatten: Boolean = true
                 ): PageSchemaRDD ={
 
-    this.wget(selector, attr)(distinct, limit, indexKey).!><(joinType, flatten)
+    this.wget(selector, attr)(limit, distinct, indexKey).!><(joinType, flatten)
   }
 
   /**
@@ -393,7 +393,7 @@ case class PageSchemaRDD(
                  selector: String,
                  expand :Int = 0
                  )(
-                 limit: Int = Const.fetchLimit, //applied after distinct
+                 limit: Int = spooky.joinLimit, //applied after distinct
                  indexKey: String = null,
                  joinType: JoinType = Const.defaultJoinType,
                  flatten: Boolean = true
@@ -419,7 +419,7 @@ case class PageSchemaRDD(
                 wget: Boolean = true,
                 postAction: Seq[Action] = Seq()
                 )(
-                limit: Int = Const.fetchLimit,
+                limit: Int = spooky.joinLimit,
                 indexKey: String = null,
                 flatten: Boolean = true,
                 last: Boolean = false

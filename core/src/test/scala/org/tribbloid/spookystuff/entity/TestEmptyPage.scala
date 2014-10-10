@@ -38,7 +38,7 @@ class TestEmptyPage extends FunSuite with BeforeAndAfter {
 
   test("text") {assert (page.text("div.dummy") === Seq[String]())}
 
-  test("slice") {assert (page.slice("div.dummy")() === Seq[Page]())}
+  test("slice") {assert (page.slice("div.dummy")(10) === Seq[Page]())}
 
   test("elementExist") {assert (page.elementExist("div.dummy") === false)}
 

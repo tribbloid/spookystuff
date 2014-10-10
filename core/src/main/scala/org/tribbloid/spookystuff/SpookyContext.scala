@@ -41,11 +41,14 @@ class SpookyContext (
                       var autoSaveRoot: String = "s3n://spOOky/"+"page/",
                       var autoCacheRoot: String = "s3n://spOOky/"+"cache/",
                       var errorDumpRoot: String = "s3n://spOOky/"+"error/",
-//                      var errorDumpScreenshotRoot: String = "s3n://spOOky/"+"error-screenshot/",
+                      //                      var errorDumpScreenshotRoot: String = "s3n://spOOky/"+"error-screenshot/",
                       var localErrorDumpRoot: String = "file:///spOOky/"+"error/",
-//                      var localErrorDumpScreenshotRoot: String = "file:///spOOky/"+"error-screenshot/",
+                      //                      var localErrorDumpScreenshotRoot: String = "file:///spOOky/"+"error-screenshot/",
 
-                      var resourceTimeout: Duration = 60.seconds
+                      var resourceTimeout: Duration = 60.seconds,
+
+                      //default max number of elements scraped from a page, set to Int.MaxValue to allow unlimited fetch
+                      var joinLimit: Int = Int.MaxValue
                       )
   extends Serializable {
 

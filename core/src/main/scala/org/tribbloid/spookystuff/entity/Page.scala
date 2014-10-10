@@ -455,8 +455,8 @@ case class Page(
              action: Action,
              f: Page => Array[_]
              )(
+             limit: Int,
              distinct: Boolean = true,
-             limit: Int = Const.fetchLimit,
              indexKey: String = null
              ): Array[PageRow] = {
 
@@ -491,7 +491,7 @@ case class Page(
              selector: String,
              expand :Int = 0
              )(
-             limit: Int = Const.fetchLimit
+             limit: Int
              ): Array[Page] = {
 
     doc match {

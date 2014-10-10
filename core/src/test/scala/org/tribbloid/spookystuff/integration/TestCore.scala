@@ -21,7 +21,7 @@ trait TestCore extends FunSuite {
 
   lazy val appName = this.getClass.getSimpleName.replace("$","")
   lazy val conf: SparkConf = new SparkConf().setAppName(appName)
-    .setMaster("local[4,2]")
+    .setMaster("local[*]")
 
   lazy val sc: SparkContext = new SparkContext(conf)
   lazy val sql: SQLContext = new SQLContext(sc)

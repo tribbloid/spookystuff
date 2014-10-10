@@ -1,11 +1,9 @@
 package org.tribbloid.spookystuff.entity
 
-import java.util
-
 import org.tribbloid.spookystuff.entity.client.{Action, Visit, Wget}
 import org.tribbloid.spookystuff.factory.PageBuilder
 import org.tribbloid.spookystuff.operator.{JoinType, LeftOuter, Merge, Replace}
-import org.tribbloid.spookystuff.{Utils, Const, SpookyContext}
+import org.tribbloid.spookystuff.{Const, SpookyContext, Utils}
 
 import scala.collection.mutable.ArrayBuffer
 
@@ -190,14 +188,14 @@ case class PageRow(
   def +*%>(
             actionAndF: (Action, Page => Array[_])
             )(
+            limit: Int, //applied after distinct
             distinct: Boolean = true,
-            limit: Int = Const.fetchLimit, //applied after distinct
             indexKey: String = null
             ): Array[PageRow] = {
 
     this.pages.lastOption match {
       case None => Array(this.die())
-      case Some(page) => this +*> page.crawl(actionAndF._1, actionAndF._2)(distinct, limit, indexKey)
+      case Some(page) => this +*> page.crawl(actionAndF._1, actionAndF._2)(limit, distinct, indexKey)
     }
   }
 
@@ -205,7 +203,7 @@ case class PageRow(
              selector: String,
              expand: Int = 0
              )(
-             limit: Int = Const.fetchLimit, //applied after distinct
+             limit: Int, //applied after distinct
              indexKey: String = null,
              joinType: JoinType = Const.defaultJoinType,
              flatten: Boolean = true
@@ -251,19 +249,20 @@ case class PageRow(
   }
 
   //affect last page
+  //TODO: switch to recursive !>< to enable parallelization
   def paginate(
-              selector: String,
-              attr: String = "abs:href",
-              wget: Boolean = true,
-              postActions: Seq[Action] = Seq()
-              )(
-              limit: Int = Const.fetchLimit,
-              indexKey: String = null,
-              flatten: Boolean = true,
-              last: Boolean = false
-              )(
-              implicit spooky: SpookyContext
-              ): Array[PageRow] = {
+                selector: String,
+                attr: String = "abs:href",
+                wget: Boolean = true,
+                postActions: Seq[Action] = Seq()
+                )(
+                limit: Int,
+                indexKey: String = null,
+                flatten: Boolean = true,
+                last: Boolean = false
+                )(
+                implicit spooky: SpookyContext
+                ): Array[PageRow] = {
 
     var oldRow = this.dropActions()
 
@@ -272,14 +271,12 @@ case class PageRow(
       val actionRow = if (!wget) oldRow +%> (Visit("#{~}") -> (_.attr1(selector, attr, noEmpty = true, last = last)))
       else oldRow +%> (Wget("#{~}") -> (_.attr1(selector, attr, noEmpty = true, last = last)))
 
-
       oldRow = (actionRow +> postActions).!=!(joinType = Merge, flatten = false).head
     }
 
     if (flatten) oldRow.flatten(indexKey = indexKey)
     else Array(oldRow)
   }
-
 }
 
 object DeadRow extends PageRow(dead = true)

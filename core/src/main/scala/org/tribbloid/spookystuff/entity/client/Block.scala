@@ -59,7 +59,7 @@ case class Try(actions: Seq[Action]) extends Block {
  */
 case class Loop(
                  actions: Seq[Action],
-                 limit: Int = Const.fetchLimit
+                 limit: Int = Const.maxLoop
                  ) extends Block {
 
   assert(limit>0)
@@ -108,7 +108,7 @@ case class Loop(
 //syntax sugar for loop-click-wait
 case class LoadMore(
                      selector: String,
-                     limit: Int = Const.fetchLimit,
+                     limit: Int = Const.maxLoop,
                      intervalMin: Duration = Const.actionDelayMin,
                      intervalMax: Duration = Const.actionDelayMax,
                      snapshot: Boolean = false

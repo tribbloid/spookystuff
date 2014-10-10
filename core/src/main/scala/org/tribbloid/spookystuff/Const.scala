@@ -1,10 +1,7 @@
 package org.tribbloid.spookystuff
 
-import com.fasterxml.jackson.databind.{ObjectMapper, ObjectWriter}
-import org.tribbloid.spookystuff.factory.driver.NaiveDriverFactory
-import org.tribbloid.spookystuff.operator.{LeftOuter, Inner}
-
-import scala.concurrent.duration.Duration
+import com.fasterxml.jackson.databind.ObjectMapper
+import org.tribbloid.spookystuff.operator.LeftOuter
 
 /**
  * Created by peng on 04/06/14.
@@ -15,10 +12,7 @@ object Const {
 
   import scala.concurrent.duration._
 
-//  val usePageCache = false //delegated to smart execution
-
-  //default max number of elements scraped from a page, set to Int.max to allow unlimited fetch
-  val fetchLimit = 500
+  val maxLoop = 500
 
   val defaultCharset = "ISO-8859-1"
 

@@ -1,11 +1,9 @@
 package org.tribbloid.spookystuff
 
-import java.util
-
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._
 import scala.concurrent.{Await, Future}
-import scala.util.{Failure, Success, Try, Random}
+import scala.util.{Failure, Random, Success, Try}
 
 /**
  * Created by peng on 06/08/14.
@@ -53,10 +51,13 @@ object Utils {
 
   def map2Json(map: Map[String, Any]): String = {
 
-    import scala.collection.JavaConversions._
+//    import org.json4s._
+//    import org.json4s.jackson.JsonMethods._
 
-    val jsonCompatible: util.Map[String, _] = map
+    import org.json4s.jackson.Serialization
+    import org.json4s.jackson.Serialization
+    import org.json4s.DefaultFormats
 
-    Const.jsonMapper.writeValueAsString(jsonCompatible)
+    Serialization.write(map)(DefaultFormats)
   }
 }

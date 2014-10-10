@@ -15,7 +15,7 @@ object FoodPoco extends TestCore {
     val base = (noInput
       +> Wget("http://cd.food.poco.cn/restaurant/res_search.php?sp_id=107001&reslocateID=101022001&reslocateID1=&reslocateID2=&seatxt=%BB%F0%B9%F8&%CC%E1%BD%BB=%CB%D1+%CB%F7")
       !=!())
-      .paginate("div.page a[title=下一页]")(indexKey = "page", limit = 2)
+      .paginate("div.page a[title=下一页]")(indexKey = "page", limit = 10)
       .sliceJoin("div.page_content")(indexKey = "row")
       .extract(
         "name" -> (_.text1("h2 a")),
@@ -30,11 +30,11 @@ object FoodPoco extends TestCore {
 
     val RDD1 = base
       .extract(
+        "type" -> (_ => "comment"),
         "link" -> (_.resolvedUrl)
       )
       .sliceJoin("div#food_comment_list ul.text_con")(indexKey = "commentRow")
       .extract(
-        "type" -> (_ => "comment"),
         "comment" -> (_.text1("div#res_cmts_content")),
         "user_ratings" -> (_.attr("li.ph_text p img","alt").mkString("|")),
         "user" -> (_.text1("li.ph_tag p")),
@@ -42,13 +42,15 @@ object FoodPoco extends TestCore {
       )
 
     val RDD2 = base
+      .extract(
+        "type" -> (_ => "review")
+      )
       .wgetJoin("div.main_wrap > div.more a")(limit = 1)
       .extract(
         "link" -> (_.resolvedUrl)
       )
       .sliceJoin("li.text")(indexKey = "commentRow")
       .extract(
-        "type" -> (_ => "comment"),
         "title" -> (_.text1("div.title a")),
         "comment" -> (_.text1("p.lh18")),
         "user" -> (_.text1("p.lh20 a")),
@@ -56,6 +58,9 @@ object FoodPoco extends TestCore {
         "date" -> (_.text1("p.fr"))
       )
 
+    import sql._
+
     RDD1.union(RDD2).asSchemaRDD()
+    .orderBy( 'page.asc, 'row.asc)
   }
 }
