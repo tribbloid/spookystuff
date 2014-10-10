@@ -2,6 +2,7 @@ package org.tribbloid.spookystuff.sparkbinding
 
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.SchemaRDD
+import org.tribbloid.spookystuff.Utils
 
 /**
  * Created by peng on 12/06/14.
@@ -17,4 +18,5 @@ class SchemaRDDFunctions(val self: SchemaRDD) {
     }
   }
 
+  def toJsonRDD: RDD[String] = this.toMapRDD.map(map => Utils.toJson(map))
 }

@@ -51,10 +51,11 @@ object Utils {
     result
   }
 
-  def toJson(obj: AnyRef): String = {
+  def toJson(obj: AnyRef, beautiful: Boolean = false): String = {
 
     import org.json4s.jackson.Serialization
 
-    Serialization.write(obj)(DefaultFormats)
+    if (beautiful) Serialization.writePretty(obj)(DefaultFormats)
+    else Serialization.write(obj)(DefaultFormats)
   }
 }

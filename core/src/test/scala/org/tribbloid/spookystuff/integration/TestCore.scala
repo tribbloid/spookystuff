@@ -28,7 +28,8 @@ trait TestCore extends FunSuite {
   lazy val spooky: SpookyContext = new SpookyContext(
     sql,
     driverFactory = NaiveDriverFactory(loadImages = true),
-    pageExpireAfter = 0.milliseconds
+    pageExpireAfter = 0.milliseconds,
+    joinLimit = 2
   )
   spooky.setRoot("file://"+System.getProperty("user.home")+"/spOOky/"+appName)
 
