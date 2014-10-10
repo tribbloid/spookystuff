@@ -23,11 +23,11 @@ case class PageSchemaRDD(
                           )
   extends Serializable{
 
-//  @DeveloperApi
-//  override def compute(split: Partition, context: TaskContext): Iterator[PageRow] =
-//    firstParent[PageRow].compute(split, context).map(_.copy())
-//
-//  override protected def getPartitions: Array[Partition] = firstParent[PageRow].partitions
+  //  @DeveloperApi
+  //  override def compute(split: Partition, context: TaskContext): Iterator[PageRow] =
+  //    firstParent[PageRow].compute(split, context).map(_.copy())
+  //
+  //  override protected def getPartitions: Array[Partition] = firstParent[PageRow].partitions
 
   def union(other: PageSchemaRDD): PageSchemaRDD = {
     this.copy(
@@ -43,6 +43,10 @@ case class PageSchemaRDD(
   def persist(newLevel: StorageLevel = StorageLevel.MEMORY_ONLY): PageSchemaRDD = {
     PageSchemaRDD(self.persist(newLevel), columnNames, spooky)
   }
+
+  def count() = self.count()
+
+  def collect() = self.collect()
 
   /**
    * append an action
@@ -142,7 +146,7 @@ case class PageSchemaRDD(
   /**
    * smart execution: group identical ActionPlans, execute in parallel, and duplicate result pages to match their original contexts
    * reduce workload by avoiding repeated access to the same url caused by duplicated context or diamond links (A->B,A->C,B->D,C->D)
-   * recommended for most cases, mandatory for RDD[ActionPlan] with high duplicate factor, only use !() if you are sure that duplicate doesn't exist.
+   * recommended for most cases, mandatory for RDD[ActionPlan] with high duplicate factor, only use !=!() if you are sure that duplicate doesn't exist.
    * @return RDD[Page] as results of execution
    */
   def !><(
@@ -163,6 +167,49 @@ case class PageSchemaRDD(
         ((selfRow.actions,selfRow.dead), selfRow)
       }
     }.groupByKey()
+
+    val result = squashedRDD.flatMap {
+      tuple => {
+        val newPages = PageBuilder.resolve(tuple._1._1, tuple._1._2)
+
+        var newPageRows = joinType match {
+          case Replace if newPages.isEmpty =>
+            tuple._2.map( oldPageRow => PageRow(cells = oldPageRow.cells, pages = oldPageRow.pages) )
+          case Merge =>
+            tuple._2.map( oldPageRow => PageRow(cells = oldPageRow.cells, pages = oldPageRow.pages ++ newPages) )
+          case _ =>
+            tuple._2.map( oldPageRow => PageRow(cells = oldPageRow.cells, pages = newPages) )
+        }
+
+        if (flatten) newPageRows = newPageRows.flatMap(_.flatten(joinType == LeftOuter, indexKey))
+
+        newPageRows
+      }
+    }
+
+    this.copy(result, this.columnNames ++ Option(indexKey))
+  }
+
+  //add numPartitions as an extra parameter
+  def !><(
+           numPartitions: Int,
+           joinType: JoinType = Const.defaultJoinType,
+           flatten: Boolean = true,
+           indexKey: String = null
+           ): PageSchemaRDD = {
+
+    val spookyBroad = self.context.broadcast(this.spooky)
+
+    implicit def spookyImplicit: SpookyContext = spookyBroad.value
+
+    import org.apache.spark.SparkContext._
+
+    val squashedRDD = self.map {
+      selfRow => {
+
+        ((selfRow.actions,selfRow.dead), selfRow)
+      }
+    }.groupByKey(numPartitions)
 
     val result = squashedRDD.flatMap {
       tuple => {
@@ -217,10 +264,10 @@ case class PageSchemaRDD(
    * @return the same RDD[Page] with file paths carried as metadata
    */
   def saveContent(
-              select: PageRow => Any = null,
-              extract: Page => Any = null,
-              overwrite: Boolean = false
-              ): PageSchemaRDD = {
+                   select: PageRow => Any = null,
+                   extract: Page => Any = null,
+                   overwrite: Boolean = false
+                   ): PageSchemaRDD = {
     assert(select!=null || extract!=null)
 
     val hconfBroad = self.context.broadcast(this.spooky.hConf)
@@ -267,10 +314,10 @@ case class PageSchemaRDD(
    * @return an array of file paths
    */
   def dumpContent(
-            select: PageRow => String = null,
-            extract: Page => String = null,
-            overwrite: Boolean = false
-            ): Array[String] = this.saveContent(select, extract, overwrite).self.flatMap{
+                   select: PageRow => String = null,
+                   extract: Page => String = null,
+                   overwrite: Boolean = false
+                   ): Array[String] = this.saveContent(select, extract, overwrite).self.flatMap{
     _.pages.map{
       _.saved
     }
@@ -335,9 +382,10 @@ case class PageSchemaRDD(
             limit: Int = spooky.joinLimit, //applied after distinct
             distinct: Boolean = true,
             indexKey: String = null
-            ): PageSchemaRDD = this.dropActions().+*%>(
-    Wget("#{~}") -> (_.attr(selector, attr))
-  )(limit, distinct, indexKey)
+            ): PageSchemaRDD = this.dropActions()
+    .+*%>(
+      Wget("#{~}") -> (_.attr(selector, attr))
+    )(limit, distinct, indexKey)
 
   /**
    * results in a new set of Pages by crawling links on old pages
@@ -393,7 +441,7 @@ case class PageSchemaRDD(
                  selector: String,
                  expand :Int = 0
                  )(
-                 limit: Int = spooky.joinLimit, //applied after distinct
+                 limit: Int = spooky.sliceLimit, //applied after distinct
                  indexKey: String = null,
                  joinType: JoinType = Const.defaultJoinType,
                  flatten: Boolean = true

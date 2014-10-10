@@ -32,7 +32,7 @@ class SpookyContext (
                       var errorDump: Boolean = true,
                       var errorDumpScreenshot: Boolean = true,
 
-                      var pageExpireAfter: Duration = 30.minutes,
+                      var pageExpireAfter: Duration = 1.day,
 
                       var autoSaveExtract: Extract[_] = ExtractTimestamp(VerbosePathLookup),
                       var autoCacheLookup: Lookup[_] = VerbosePathLookup,
@@ -48,7 +48,8 @@ class SpookyContext (
                       var resourceTimeout: Duration = 60.seconds,
 
                       //default max number of elements scraped from a page, set to Int.MaxValue to allow unlimited fetch
-                      var joinLimit: Int = Int.MaxValue
+                      var joinLimit: Int = Int.MaxValue,
+                      var sliceLimit: Int = Int.MaxValue
                       )
   extends Serializable {
 

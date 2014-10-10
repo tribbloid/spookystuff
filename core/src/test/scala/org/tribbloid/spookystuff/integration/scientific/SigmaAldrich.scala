@@ -16,22 +16,47 @@ object SigmaAldrich extends TestCore {
   import spooky._
 
   override def doMain(): SchemaRDD = {
-    val base = (noInput
+    val base0 = (noInput
       +> Wget("http://www.sigmaaldrich.com/life-science/life-science-catalog.html")
       !=!())
-      .wgetJoin("table.normal tr:nth-of-type(n+2) a")()
-      .wgetJoin("li.section_square a")(joinType = Replace)
-      .wgetJoin("li.section_square a")(joinType = Replace)
-      .wgetJoin("li.section_square a")(joinType = Replace)
-      .wgetJoin("li.section_square a")(joinType = Replace)
-      .wgetJoin("li.section_square a")(joinType = Replace)
-      .wgetJoin("li.section_square a")(joinType = Replace)
+      .wgetJoin("table.normal tr:nth-of-type(n+2) a")().persist()
+
+    println(base0.count())
+
+    val base1 = base0
+      .wgetJoin("li.section_square a")(joinType = Inner).persist()
+
+    println(base1.count())
+
+    val base2 = base1
+      .wgetJoin("li.section_square a")(joinType = Inner).persist()
+
+    println(base2.count())
+
+    val base3 = base2
+      .wgetJoin("li.section_square a")(joinType = Inner).persist()
+
+    println(base3.count())
+
+    val base4 = base3
+      .wgetJoin("li.section_square a")(joinType = Inner).persist()
+
+    println(base4.count())
+
+    val base5 = base4
+      .wgetJoin("li.section_square a")(joinType = Inner).persist()
+
+    println(base5.count())
+
+    val all = base0.union(base1).union(base2).union(base3).union(base4).union(base5)
+
+    val result = all
       .extract(
         "url" -> (_.resolvedUrl),
         "breadcrumb" -> (_.text1("div.crumb p")),
         "header" -> (_.text("table.opcTable thead tr th[class!=nosort]"))
       )
-      .sliceJoin("table.opcTable tbody tr[class!=opcparow]")(indexKey = "row")
+      .sliceJoin("table.opcTable tbody tr[class!=opcparow]")(joinType = Inner, indexKey = "row")
       .extract(
         "content" -> (_.text("td[class!=pricingButton]"))
       )
@@ -40,9 +65,11 @@ object SigmaAldrich extends TestCore {
       )
       .remove("header","content")
 
+//    result.asSchemaRDD()
+
     import org.apache.spark.SparkContext._
 
-    val json = base.asMapRDD()
+    val json = result.asMapRDD()
       .map(map => (map("url") -> map("breadcrumb"), map("KV"))).groupByKey()
       .map(
         tuple => Map("url"->tuple._1._1, "breadcrumb"->tuple._1._2, "KVs"->tuple._2)
