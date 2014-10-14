@@ -108,7 +108,6 @@ object Page {
   //    else Seq()
   //  }
 
-  //TODO: put all batch into the same folder
   //restore latest in a directory
   //returns: Seq() => has backtrace dir but contains no page
   //returns null => no backtrace dir
@@ -164,6 +163,7 @@ case class Page(
                  contentType: String,
                  content: Array[Byte],
 
+                 name: String = null,
                  //                 cookie: Seq[SerializableCookie] = Seq(),
                  timestamp: Date = new Date,
                  saved: String = null
@@ -279,21 +279,19 @@ case class Page(
     case _ => 0
   }
 
-  def elementExist(selector: String): Boolean = doc match {
-
-    case Some(doc: Element) => !doc.select(selector).isEmpty
-
-    case _ => false
-  }
+  def elementExist(selector: String): Boolean = numElements(selector) > 0
 
   def attrExist(
                  selector: String,
                  attr: String
-                 ): Boolean = doc match {
+                 ): Boolean = {
 
-    case Some(doc: Element) => elementExist(selector) && doc.select(selector).hasAttr(attr)
+    elementExist(selector) && (doc match {
 
-    case _ => false
+      case Some(doc: Element) => doc.select(selector).hasAttr(attr)
+
+      case _ => false
+    })
   }
 
   /**

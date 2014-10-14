@@ -250,6 +250,7 @@ case class PageRow(
 
   //affect last page
   //TODO: switch to recursive !>< to enable parallelization
+  //TODO: lambda support
   def paginate(
                 selector: String,
                 attr: String = "abs:href",

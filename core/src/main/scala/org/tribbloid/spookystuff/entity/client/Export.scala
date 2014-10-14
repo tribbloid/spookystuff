@@ -24,7 +24,11 @@ abstract class Export extends Action {
 
   final override def trunk() = None //have not impact to driver
 
-  def doExe(pb: PageBuilder): Seq[Page]
+  def doExe(session: PageBuilder) = doExeNoAlias(session).map(_.copy(name = this.alias))
+
+  def doExeNoAlias(session: PageBuilder): Seq[Page]
+
+//  def doExe(pb: PageBuilder): Seq[Page]
 }
 
 /**
@@ -36,7 +40,7 @@ abstract class Export extends Action {
 case class Snapshot() extends Export {
 
   // all other fields are empty
-  override def doExe(pb: PageBuilder): Seq[Page] = {
+  override def doExeNoAlias(pb: PageBuilder): Seq[Page] = {
 
     //    import scala.collection.JavaConversions._
 
@@ -64,7 +68,7 @@ object DefaultSnapshot extends Snapshot()
 
 case class Screenshot() extends Export {
 
-  override def doExe(pb: PageBuilder): Seq[Page] = {
+  override def doExeNoAlias(pb: PageBuilder): Seq[Page] = {
 
     val content = pb.driver match {
       case ts: TakesScreenshot => ts.getScreenshotAs(OutputType.BYTES)
@@ -97,7 +101,7 @@ case class Wget(
                  headers: Map[String, String] = Map()
                  ) extends Export with Sessionless {
 
-  override def doExe(pb: PageBuilder): Seq[Page] = {
+  override def doExeNoAlias(pb: PageBuilder): Seq[Page] = {
 
     if ( url.trim().isEmpty ) return Seq ()
 

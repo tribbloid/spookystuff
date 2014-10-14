@@ -34,9 +34,9 @@ class SpookyContext (
 
                       var pageExpireAfter: Duration = 1.day,
 
-                      var autoSaveExtract: Extract[_] = ExtractTimestamp(VerbosePathLookup),
+                      var autoSaveExtract: Extract[_] = TimestampPath(VerbosePathLookup),
                       var autoCacheLookup: Lookup[_] = VerbosePathLookup,
-                      var errorDumpExtract: Extract[_] = ExtractTimestamp(VerbosePathLookup),
+                      var errorDumpExtract: Extract[_] = TimestampPath(VerbosePathLookup),
 
                       var autoSaveRoot: String = "s3n://spOOky/"+"page/",
                       var autoCacheRoot: String = "s3n://spOOky/"+"cache/",
