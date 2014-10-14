@@ -6,7 +6,7 @@ import org.tribbloid.spookystuff.entity.{Page, PageRow}
  * Created by peng on 10/11/14.
  * This is the preferred way of defining extraction
  */
-abstract class Select[T] extends (PageRow => T)  with Serializable with Dynamic {
+abstract class Select[T] extends (PageRow => T)  with Serializable {
 
   var name: String = this.toString()
 
@@ -14,13 +14,6 @@ abstract class Select[T] extends (PageRow => T)  with Serializable with Dynamic 
 
     this.name = name.name
     this
-  }
-
-  def applyDynamic[K](name: String)(another: Select[K]): Select[_] = new Select[_]{
-
-    override var name = super.name + another.name
-
-
   }
 }
 
