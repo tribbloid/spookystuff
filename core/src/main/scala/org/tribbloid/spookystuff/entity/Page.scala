@@ -138,7 +138,10 @@ object Page {
                          uid: PageUID,
                          spooky: SpookyContext
                          ): Seq[Page] = {
-    val pathStr = Utils.urlConcat(spooky.autoCacheRoot, spooky.autoCacheLookup(uid).toString)
+    val pathStr = Utils.urlConcat(
+      spooky.autoCacheRoot,
+      spooky.autoCacheLookup(uid).toString
+    )
 
     restoreLatest(new Path(pathStr), System.currentTimeMillis() - spooky.pageExpireAfter.toMillis)(spooky.hConf)
   }

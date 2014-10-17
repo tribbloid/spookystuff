@@ -130,8 +130,9 @@ trait Action extends Serializable with Product {
           }
         }
 
-        val us = e
-        throw new ActionException(message, e)
+        val ex = new ActionException(message, e)
+        ex.setStackTrace(e.getStackTrace)
+        throw ex
     }
 
     this.timeElapsed = System.currentTimeMillis() - session.startTime
