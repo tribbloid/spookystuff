@@ -58,7 +58,7 @@ case class Visit(url: String) extends Interaction with Timed {
 case class Delay(min: Duration = Const.actionDelayMax) extends Interaction {
   //  override val timeout = Math.max(Const.driverCallTimeout, delay + 10)
 
-  this.delay = delay
+  this.delay = min
 
   override def exeWithoutPage(pb: PageBuilder) {
     Thread.sleep(min.toMillis)
@@ -75,6 +75,8 @@ case class RandomDelay(
                         ) extends Interaction {
 
   assert(max >= min)
+
+  this.delay = max
 
   //  override val timeout = Math.max(Const.driverCallTimeout, delay + 10)
 
