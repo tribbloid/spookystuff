@@ -77,7 +77,7 @@ trait Action extends Serializable with Product {
 
         var isInBacktrace = false
 
-        var message: String = "[[[backtrace]]]\n"
+        var message: String = "\n[backtrace]"
 
         message += session.backtrace.map{
           action =>{
@@ -89,7 +89,7 @@ trait Action extends Serializable with Product {
           }
         }.mkString("\n")+"\n"
 
-        if (!isInBacktrace) message += "|>" + this
+        if (!isInBacktrace) message += "+>" + this
 
         if (!this.isInstanceOf[Sessionless]) {
           if (errorDump) {
@@ -130,6 +130,7 @@ trait Action extends Serializable with Product {
           }
         }
 
+        val us = e
         throw new ActionException(message, e)
     }
 

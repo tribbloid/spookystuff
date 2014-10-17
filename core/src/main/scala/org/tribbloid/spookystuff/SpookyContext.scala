@@ -73,9 +73,9 @@ class SpookyContext (
     this(new SQLContext(new SparkContext(conf)))
   }
 
-  implicit def stringRDDToItsFunctions(rdd: RDD[String]) = new StringRDDFunctions(rdd)
+  implicit def stringRDDToItsFunctions(rdd: RDD[String]): StringRDDFunctions = new StringRDDFunctions(rdd)
 
-  implicit def schemaRDDToItsFunctions(rdd: SchemaRDD) = new SchemaRDDFunctions(rdd)
+  implicit def schemaRDDToItsFunctions(rdd: SchemaRDD): SchemaRDDFunctions = new SchemaRDDFunctions(rdd)
 
   //  implicit def pageRowRDDToItsFunctions[T <% RDD[PageRow]](rdd: T) = new PageRowRDD(rdd)(this)
 

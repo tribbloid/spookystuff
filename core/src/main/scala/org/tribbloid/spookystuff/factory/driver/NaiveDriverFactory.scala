@@ -40,7 +40,7 @@ class NaiveDriverFactory(
           .pageLoadTimeout(Const.sessionInitializationTimeout,TimeUnit.SECONDS)
           .setScriptTimeout(Const.sessionInitializationTimeout,TimeUnit.SECONDS)
 
-        if (resolution!=null) driver.manage().window().setSize(new Dimension(resolution._1, resolution._2));
+        if (resolution!=null) driver.manage().window().setSize(new Dimension(resolution._1, resolution._2))
 
           driver
       }

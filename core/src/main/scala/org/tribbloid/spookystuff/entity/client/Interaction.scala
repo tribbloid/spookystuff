@@ -38,9 +38,12 @@ abstract class Interaction extends Action {
  * Type into browser's url bar and click "goto"
  * @param url support cell interpolation
  */
-case class Visit(url: String) extends Interaction {
+case class Visit(url: String) extends Interaction with Timed {
   override def exeWithoutPage(pb: PageBuilder) {
     pb.driver.get(url)
+
+    val wait = new WebDriverWait(pb.driver, delay.toSeconds)
+    wait.until(ExpectedConditions.not(ExpectedConditions.titleIs("")))
   }
 
   override def interpolateFromMap[T](map: Map[String,T]): this.type = {

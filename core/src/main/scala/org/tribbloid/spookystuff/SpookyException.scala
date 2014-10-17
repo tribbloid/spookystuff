@@ -9,4 +9,6 @@ abstract class SpookyException (
                                  val cause: Throwable = null
                                  )
   extends RuntimeException(message, cause) {
+
+  override def getMessage: String = this.message+"\nCaused by: "+this.getCause.toString
 }
