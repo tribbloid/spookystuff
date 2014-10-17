@@ -158,7 +158,7 @@ case class PageUID(
 
 //immutable! we don't want to lose old pages
 //keep small, will be passed around by Spark
-@SerialVersionUID(1925602137496052L)
+//@SerialVersionUID(1925602137496052L)
 case class Page(
                  uid: PageUID,
 
@@ -173,7 +173,7 @@ case class Page(
                  )
   extends Serializable {
 
-  private final val serialVersionUID: Long = 1925602137496052L;
+  private final val serialVersionUID: Long = 1925602137496052L
 
   @transient lazy val parsedContentType: ContentType = {
     var result = ContentType.parse(this.contentType)

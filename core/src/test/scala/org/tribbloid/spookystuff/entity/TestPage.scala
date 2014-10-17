@@ -52,6 +52,12 @@ class TestPage extends FunSuite with BeforeAndAfter {
 
     val page3 = Page.autoRestoreLatest(page.head.uid, spooky)
     assert(page3 === null)
+
+    spooky.pageExpireAfter = 30.days
+
+    assert(page2.size === 1)
+    assert(page2.head.copy(content = null) === page.head.copy(content = null))
+    assert(page2.head.contentStr === page2.head.contentStr)
   }
 
   test ("s3 cache") {
@@ -70,5 +76,11 @@ class TestPage extends FunSuite with BeforeAndAfter {
 
     val page3 = Page.autoRestoreLatest(page.head.uid, spooky)
     assert(page3 === null)
+
+    spooky.pageExpireAfter = 30.days
+
+    assert(page2.size === 1)
+    assert(page2.head.copy(content = null) === page.head.copy(content = null))
+    assert(page2.head.contentStr === page2.head.contentStr)
   }
 }
