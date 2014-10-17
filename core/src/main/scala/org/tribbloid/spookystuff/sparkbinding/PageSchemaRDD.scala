@@ -150,7 +150,7 @@ case class PageSchemaRDD(
    * @return RDD[Page] as results of execution
    */
   def !><(
-           numPartitions: Int = -1,
+           numPartitions: Int = self.sparkContext.defaultParallelism,
            joinType: JoinType = Const.defaultJoinType,
            flatten: Boolean = true,
            indexKey: String = null
@@ -160,9 +160,7 @@ case class PageSchemaRDD(
 
     implicit def spookyImplicit: SpookyContext = spookyBroad.value
 
-    val squashedRDD = if (numPartitions == -1)
-      self.groupBy(row => (row.actions,row.dead))
-    else
+    val squashedRDD =
       self.groupBy((row => (row.actions, row.dead)): (PageRow => (Seq[Action],Boolean)), numPartitions = numPartitions) //scala is stupid on this
 
     val result = squashedRDD.flatMap {
