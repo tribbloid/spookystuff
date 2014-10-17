@@ -4,7 +4,7 @@ import org.apache.spark.{SparkContext, SparkConf}
 import org.apache.spark.sql.SQLContext
 import org.scalatest.{BeforeAndAfter, FunSuite}
 import org.tribbloid.spookystuff.SpookyContext
-import org.tribbloid.spookystuff.entity.client.{Snapshot, Visit}
+import org.tribbloid.spookystuff.entity.client.{Wget, Snapshot, Visit}
 import org.tribbloid.spookystuff.factory.PageBuilder
 import org.tribbloid.spookystuff.factory.driver.NaiveDriverFactory
 
@@ -33,7 +33,18 @@ class TestPage extends FunSuite with BeforeAndAfter {
     val builder = new PageBuilder(spooky)()
     builder += Visit("http://en.wikipedia.org")
 
-    Snapshot().doExe(builder)
+    val res = Snapshot().doExe(builder)
+
+    builder.finalize()
+    res
+  }
+
+  val wgetPage = {
+    val builder = new PageBuilder(spooky)()
+    val res = Wget("http://en.wikipedia.org").doExe(builder)
+
+    builder.finalize()
+    res
   }
 
   test ("local cache") {
@@ -57,6 +68,30 @@ class TestPage extends FunSuite with BeforeAndAfter {
 
     assert(page2.size === 1)
     assert(page2.head.copy(content = null) === page.head.copy(content = null))
+    assert(page2.head.contentStr === page2.head.contentStr)
+  }
+
+  test ("wget local cache") {
+    spooky.setRoot("file://"+System.getProperty("user.home")+"/spOOky/"+"test")
+    spooky.pageExpireAfter = 2.seconds
+
+    Page.autoCache(wgetPage, wgetPage.head.uid, spooky)
+
+    val page2 = Page.autoRestoreLatest(wgetPage.head.uid, spooky)
+
+    assert(page2.size === 1)
+    assert(page2.head.copy(content = null) === wgetPage.head.copy(content = null))
+    assert(page2.head.contentStr === page2.head.contentStr)
+
+    Thread.sleep(2000)
+
+    val page3 = Page.autoRestoreLatest(wgetPage.head.uid, spooky)
+    assert(page3 === null)
+
+    spooky.pageExpireAfter = 30.days
+
+    assert(page2.size === 1)
+    assert(page2.head.copy(content = null) === wgetPage.head.copy(content = null))
     assert(page2.head.contentStr === page2.head.contentStr)
   }
 

@@ -53,8 +53,6 @@ object PageBuilder {
       pb.finalize()
     }
   }
-
-
 }
 
 class PageBuilder(
@@ -107,14 +105,14 @@ class PageBuilder(
     if (action.mayExport()) {
       //always try to read from cache first
       val restored = if (autoRestore) {
-//        try {
+        try {
           Page.autoRestoreLatest(uid, spooky)
-//        }
-//        catch {
-//          case e: Throwable =>
-//            LoggerFactory.getLogger(this.getClass).warn("cannot read from cache", e)
-//            null
-//        }
+        }
+        catch {
+          case e: Throwable =>
+            LoggerFactory.getLogger(this.getClass).warn("cannot read from cache", e)
+            null
+        }
       }
       else null
 

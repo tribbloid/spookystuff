@@ -8,8 +8,7 @@ import org.apache.commons.io.IOUtils
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.Path
 import org.apache.http.entity.ContentType
-import org.apache.spark.{SparkEnv, SparkContext, SparkConf}
-import org.apache.spark.serializer.JavaSerializer
+import org.apache.spark.SparkEnv
 import org.jsoup.Jsoup
 import org.jsoup.nodes.{Document, Element}
 import org.tribbloid.spookystuff.entity.client.Action

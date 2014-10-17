@@ -354,7 +354,7 @@ case class PageSchemaRDD(
                  limit: Int = spooky.joinLimit, //applied after distinct
                  distinct: Boolean = true,
                  indexKey: String = null,
-                 numPartitions: Int = -1,
+                 numPartitions: Int = self.sparkContext.defaultParallelism,
                  joinType: JoinType = Const.defaultJoinType,
                  flatten: Boolean = true
                  ): PageSchemaRDD ={
@@ -377,7 +377,7 @@ case class PageSchemaRDD(
                 limit: Int = spooky.joinLimit, //applied after distinct
                 distinct: Boolean = true,
                 indexKey: String = null,
-                numPartitions: Int = -1,
+                numPartitions: Int = self.sparkContext.defaultParallelism,
                 joinType: JoinType = Const.defaultJoinType,
                 flatten: Boolean = true
                 ): PageSchemaRDD ={

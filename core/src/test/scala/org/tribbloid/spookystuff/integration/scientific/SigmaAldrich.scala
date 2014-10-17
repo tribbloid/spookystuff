@@ -48,7 +48,17 @@ object SigmaAldrich extends TestCore {
 
     println(base5.count())
 
-    val all = base0.union(base1).union(base2).union(base3).union(base4).union(base5)
+    val base6 = base5
+      .wgetJoin("li.section_square a")(joinType = Inner).persist()
+
+    println(base6.count())
+
+    val base7 = base6
+      .wgetJoin("li.section_square a")(joinType = Inner).persist()
+
+    println(base7.count())
+
+    val all = base0.union(base1).union(base2).union(base3).union(base4).union(base5).union(base6).union(base7)
 
     val result = all
       .extract(
@@ -70,10 +80,14 @@ object SigmaAldrich extends TestCore {
     import org.apache.spark.SparkContext._
 
     val json = result.asMapRDD()
-      .map(map => (map("url") -> map("breadcrumb"), map("KV"))).groupByKey()
-      .map(
-        tuple => Map("url"->tuple._1._1, "breadcrumb"->tuple._1._2, "KVs"->tuple._2)
-      )
+      .keyBy(_("url"))
+      .reduceByKey((v1,v2) => v1)
+      .map(_._2)
+
+//      .map(map => (map("url") -> map("breadcrumb"), map("KV"))).groupByKey()
+//      .map(
+//        tuple => Map("url"->tuple._1._1, "breadcrumb"->tuple._1._2, "KVs"->tuple._2)
+//      )
       .map(
         map => Utils.toJson(map)
       )
