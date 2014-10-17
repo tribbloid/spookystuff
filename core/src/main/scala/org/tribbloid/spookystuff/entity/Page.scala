@@ -8,6 +8,8 @@ import org.apache.commons.io.IOUtils
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.Path
 import org.apache.http.entity.ContentType
+import org.apache.spark.{SparkEnv, SparkContext, SparkConf}
+import org.apache.spark.serializer.JavaSerializer
 import org.jsoup.Jsoup
 import org.jsoup.nodes.{Document, Element}
 import org.tribbloid.spookystuff.entity.client.Action
@@ -48,14 +50,15 @@ object Page {
 
     if (!overwrite && fs.exists(fullPath)) fullPath = new Path(path +"-"+ UUID.randomUUID())
 
-    val fos = fs.create(fullPath, overwrite)
-    val objectOS = new ObjectOutputStream(fos)
+    val ser = SparkEnv.get.serializer.newInstance()
+    val copy = ser.serialize(pages)
 
+    val fos = fs.create(fullPath, overwrite)
     try {
-      objectOS.writeObject(pages)
+      fos.write(copy.array())
     }
     finally {
-      objectOS.close()
+      fos.close()
     }
   }
 
@@ -79,14 +82,13 @@ object Page {
 
     if (fs.exists(fullPath)) {
       val fis = fs.open(fullPath)
-      val objectIS = new ObjectInputStream(fis)
 
-      try {
-        objectIS.readObject().asInstanceOf[Seq[Page]]
-      }
-      finally {
-        objectIS.close()
-      }
+      val ser = SparkEnv.get.serializer.newInstance()
+
+      val serIn = ser.deserializeStream(fis)
+      val obj = serIn.readObject[Seq[Page]]()
+      serIn.close()
+      obj
     }
     else null
   }
@@ -158,7 +160,7 @@ case class PageUID(
 
 //immutable! we don't want to lose old pages
 //keep small, will be passed around by Spark
-//@SerialVersionUID(1925602137496052L)
+@SerialVersionUID(1925602137496052L)
 case class Page(
                  uid: PageUID,
 
@@ -173,7 +175,7 @@ case class Page(
                  )
   extends Serializable {
 
-  private final val serialVersionUID: Long = 1925602137496052L
+//  private final val serialVersionUID: Long = 1925602137496052L
 
   @transient lazy val parsedContentType: ContentType = {
     var result = ContentType.parse(this.contentType)
