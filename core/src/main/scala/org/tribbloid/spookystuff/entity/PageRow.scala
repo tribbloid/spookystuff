@@ -267,7 +267,7 @@ case class PageRow(
 
     var oldRow = this.dropActions()
 
-    while (oldRow.pages.size <= limit && oldRow.pages.last.attrExist(selector, attr)) {
+    while (oldRow.pages.size <= limit && oldRow.pages.nonEmpty && oldRow.pages.last.attrExist(selector, attr)) {
 
       val actionRow = if (!wget) oldRow +%> (Visit("#{~}") -> (_.attr1(selector, attr, noEmpty = true, last = last)))
       else oldRow +%> (Wget("#{~}") -> (_.attr1(selector, attr, noEmpty = true, last = last)))
@@ -275,7 +275,7 @@ case class PageRow(
       oldRow = (actionRow +> postActions).!=!(joinType = Merge, flatten = false).head
     }
 
-    if (flatten) oldRow.flatten(indexKey = indexKey)
+    if (flatten) oldRow.flatten(left = true, indexKey = indexKey)
     else Array(oldRow)
   }
 }

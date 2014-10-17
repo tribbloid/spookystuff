@@ -1,0 +1,10 @@
+- name: Environment to setup spark-worker
+  hosts: spark-worker
+  user: ubuntu
+  sudo: yes
+
+  roles:
+    - common
+    - browsers
+    - spark
+    - spark-both
