@@ -51,7 +51,7 @@ object Page {
     if (!overwrite && fs.exists(fullPath)) fullPath = new Path(path +"-"+ UUID.randomUUID())
 
     val ser = SparkEnv.get.serializer.newInstance()
-    val copy = ser.serialize(pages)
+    val copy = ser.serialize(new PageSeqWrapper(pages))
 
     val fos = fs.create(fullPath, overwrite)
     try {
@@ -86,9 +86,9 @@ object Page {
       val ser = SparkEnv.get.serializer.newInstance()
 
       val serIn = ser.deserializeStream(fis)
-      val obj = serIn.readObject[Seq[Page]]()
+      val obj = serIn.readObject[PageSeqWrapper]()
       serIn.close()
-      obj
+      obj.pages
     }
     else null
   }
@@ -149,6 +149,9 @@ object Page {
   }
 }
 
+@SerialVersionUID(1096592834L)
+class PageSeqWrapper(val pages: Seq[Page]) extends Serializable
+
 /**
  * Created by peng on 04/06/14.
  */
@@ -160,7 +163,7 @@ case class PageUID(
 
 //immutable! we don't want to lose old pages
 //keep small, will be passed around by Spark
-@SerialVersionUID(1925602137496052L)
+@SerialVersionUID(94865098324L)
 case class Page(
                  uid: PageUID,
 
