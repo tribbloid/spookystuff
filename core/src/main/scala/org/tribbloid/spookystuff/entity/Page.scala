@@ -173,6 +173,8 @@ case class Page(
                  )
   extends Serializable {
 
+  private final val serialVersionUID: Long = 1925602137496052L;
+
   @transient lazy val parsedContentType: ContentType = {
     var result = ContentType.parse(this.contentType)
     if (result.getCharset == null) result = result.withCharset(Const.defaultCharset)
