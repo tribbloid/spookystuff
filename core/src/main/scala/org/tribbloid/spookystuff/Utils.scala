@@ -25,10 +25,10 @@ object Utils {
     }
   }
 
-  def withDeadline[T](n: Int)(fn: => T): T = {
+  def withDeadline[T](n: Duration)(fn: => T): T = {
     val future = Future { fn }
 
-    Await.result(future, n seconds)
+    Await.result(future, n)
   }
 
   lazy val random = new Random()

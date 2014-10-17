@@ -37,8 +37,9 @@ class NaiveDriverFactory(
         val driver = new PhantomJSDriver(newCap)
 
         driver.manage().timeouts()
-          .pageLoadTimeout(Const.sessionInitializationTimeout,TimeUnit.SECONDS)
-          .setScriptTimeout(Const.sessionInitializationTimeout,TimeUnit.SECONDS)
+          .implicitlyWait(Const.sessionInitializationTimeout.toSeconds,TimeUnit.SECONDS)
+          .pageLoadTimeout(Const.sessionInitializationTimeout.toSeconds,TimeUnit.SECONDS)
+          .setScriptTimeout(Const.sessionInitializationTimeout.toSeconds,TimeUnit.SECONDS)
 
         if (resolution!=null) driver.manage().window().setSize(new Dimension(resolution._1, resolution._2))
 

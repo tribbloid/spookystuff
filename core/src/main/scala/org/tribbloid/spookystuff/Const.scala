@@ -23,7 +23,7 @@ object Const {
 //  val webClientOptions = new WebClientOptions
 //  webClientOptions.setUseInsecureSSL(true)
 
-  val sessionInitializationTimeout = 60
+  val sessionInitializationTimeout = 60.seconds
 
   val defaultLocalRetry = 3
   val resolveRetry = 2

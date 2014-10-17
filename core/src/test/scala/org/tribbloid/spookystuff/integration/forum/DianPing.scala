@@ -28,10 +28,10 @@ object DianPing extends TestCore {
       )
       .dropActions()
       .+*%>(
-        Wget("#{~}/review_all") -> (_.attr("p.title > a.shopname", "abs:href"))
+        Visit("#{~}/review_all") -> (_.attr("p.title > a.shopname", "abs:href"))
       )(limit =1)
       .!><(30)
-      .paginate("div.Pages > a.NextPage")(indexKey="comment_page")
+      .paginate("div.Pages > a.NextPage", wget = false)(indexKey="comment_page")
       .sliceJoin("div.comment-list > ul > li")(indexKey = "comment_row")
       .extract(
         "rating" -> (_.attr1("span.item-rank-rst","class")),

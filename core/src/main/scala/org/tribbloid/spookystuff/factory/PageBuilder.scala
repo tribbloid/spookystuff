@@ -1,11 +1,7 @@
 package org.tribbloid.spookystuff.factory
 
-import java.io.ObjectInputStream
-import java.util.{UUID, Date}
+import java.util.Date
 
-import org.apache.commons.io.IOUtils
-import org.apache.hadoop.conf.Configuration
-import org.apache.hadoop.fs.Path
 import org.openqa.selenium.{Capabilities, WebDriver}
 import org.slf4j.LoggerFactory
 import org.tribbloid.spookystuff.entity._
@@ -111,14 +107,14 @@ class PageBuilder(
     if (action.mayExport()) {
       //always try to read from cache first
       val restored = if (autoRestore) {
-        try {
+//        try {
           Page.autoRestoreLatest(uid, spooky)
-        }
-        catch {
-          case e: Throwable =>
-            LoggerFactory.getLogger(this.getClass).warn("cannot read from cache", e)
-            null
-        }
+//        }
+//        catch {
+//          case e: Throwable =>
+//            LoggerFactory.getLogger(this.getClass).warn("cannot read from cache", e)
+//            null
+//        }
       }
       else null
 
@@ -128,7 +124,6 @@ class PageBuilder(
         LoggerFactory.getLogger(this.getClass).info("using cached page")
       }
       else {
-
         for (buffered <- this.buffer)
         {
           pages ++= buffered.exe(this)() // I know buffered one should only have empty result, just for safety

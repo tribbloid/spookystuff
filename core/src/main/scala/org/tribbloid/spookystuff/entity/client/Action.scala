@@ -1,6 +1,6 @@
 package org.tribbloid.spookystuff.entity.client
 
-import org.tribbloid.spookystuff.Const
+import org.tribbloid.spookystuff.{Utils, Const}
 import org.tribbloid.spookystuff.entity.Page
 import org.tribbloid.spookystuff.factory.PageBuilder
 
@@ -61,6 +61,8 @@ trait Action extends Serializable with Product {
 
   def interpolateFromMap[T](map: Map[String,T]): this.type = this
 
+  protected var delay: Duration = Const.actionDelayMax
+
   //this should handle autoSave, cache and errorDump
   def exe(
            session: PageBuilder
@@ -70,7 +72,9 @@ trait Action extends Serializable with Product {
            ): Seq[Page] = {
 
     val results = try {
-      doExe(session)
+      Utils.withDeadline(delay + session.spooky.resourceTimeout) {
+        doExe(session)
+      }
     }
     catch {
       case e: Throwable =>
@@ -150,7 +154,6 @@ trait Action extends Serializable with Product {
 }
 
 trait Timed extends Action{
-  var delay: Duration = Const.actionDelayMax
 
   def in(delay: Duration): this.type = {
     this.delay = delay

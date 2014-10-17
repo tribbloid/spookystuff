@@ -53,13 +53,15 @@ case class Visit(url: String) extends Interaction with Timed {
 
 /**
  * Wait for some time
- * @param delay seconds to be wait for
+ * @param min seconds to be wait for
  */
-case class Delay(delay: Duration = Const.actionDelayMax) extends Interaction {
+case class Delay(min: Duration = Const.actionDelayMax) extends Interaction {
   //  override val timeout = Math.max(Const.driverCallTimeout, delay + 10)
 
+  this.delay = delay
+
   override def exeWithoutPage(pb: PageBuilder) {
-    Thread.sleep(delay.toMillis)
+    Thread.sleep(min.toMillis)
   }
 }
 
