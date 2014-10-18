@@ -1,5 +1,6 @@
 package org.tribbloid.spookystuff.factory
 
+import java.io.ObjectStreamException
 import java.util.Date
 
 import org.openqa.selenium.{Capabilities, WebDriver}
@@ -14,7 +15,7 @@ object PageBuilder {
 
   def resolve(actions: Seq[Action], dead: Boolean)(implicit spooky: SpookyContext): Seq[Page] = {
 
-    Utils.retry (Const.resolveRetry){
+    Utils.retry (Const.remoteResourceInPartitionRetry){
       if (Action.mayExport(actions: _*) || dead) {
         resolvePlain(actions)(spooky)
       }
@@ -109,8 +110,8 @@ class PageBuilder(
           Page.autoRestoreLatest(uid, spooky)
         }
         catch {
-          case e: Throwable =>
-            LoggerFactory.getLogger(this.getClass).warn("cannot read from cache", e)
+          case e: ObjectStreamException =>
+            LoggerFactory.getLogger(this.getClass).warn("cached page(s) cannot be deserialized", e)
             null
         }
       }
@@ -119,7 +120,7 @@ class PageBuilder(
       if (restored != null) {
         pages ++= restored
 
-        LoggerFactory.getLogger(this.getClass).info("using cached page")
+        LoggerFactory.getLogger(this.getClass).info("cached page(s) found, won't go online")
       }
       else {
         for (buffered <- this.buffer)
@@ -147,5 +148,4 @@ class PageBuilder(
   def ++= (actions: Seq[Action]): Unit = {
     actions.foreach(this += _)
   }
-
 }

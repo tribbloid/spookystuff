@@ -112,7 +112,7 @@ case class Wget(
       request.addHeader( pair._1, pair._2 )
     }
 
-    val timeoutMillis = pb.spooky.resourceTimeout.toMillis.toInt
+    val timeoutMillis = pb.spooky.remoteResourceTimeout.toMillis.toInt
 
     val settings = RequestConfig.custom()
       .setConnectTimeout ( timeoutMillis )

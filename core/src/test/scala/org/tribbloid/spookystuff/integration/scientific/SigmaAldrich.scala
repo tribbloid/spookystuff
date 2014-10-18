@@ -59,6 +59,9 @@ object SigmaAldrich extends TestCore {
     println(base7.count())
 
     val all = base0.union(base1).union(base2).union(base3).union(base4).union(base5).union(base6).union(base7)
+    import org.apache.spark.SparkContext._
+    val selfRed = all.self.keyBy(_.pages.lastOption.getOrElse("")).reduceByKey((v1,v2) => v1).map(_._2)
+    val allRed = all.copy(self = selfRed)
 
     val result = all
       .extract(
@@ -77,12 +80,7 @@ object SigmaAldrich extends TestCore {
 
 //    result.asSchemaRDD()
 
-    import org.apache.spark.SparkContext._
-
     val json = result.asMapRDD()
-      .keyBy(_("url"))
-      .reduceByKey((v1,v2) => v1)
-      .map(_._2)
 
 //      .map(map => (map("url") -> map("breadcrumb"), map("KV"))).groupByKey()
 //      .map(

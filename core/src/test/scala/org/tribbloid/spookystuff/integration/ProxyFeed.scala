@@ -73,5 +73,5 @@ trait ProxyFeed extends TestCore {
 //      .where(('Anonymity !== "transparent")&& 'Code.like("US"))
   }
 
-  this.spooky.resourceTimeout = 120.seconds
+  this.spooky.remoteResourceTimeout = 120.seconds
 }

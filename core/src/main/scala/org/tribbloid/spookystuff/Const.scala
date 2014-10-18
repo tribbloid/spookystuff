@@ -25,8 +25,8 @@ object Const {
 
   val sessionInitializationTimeout = 60.seconds
 
-  val defaultLocalRetry = 3
-  val resolveRetry = 2
+  val inPartitionRetry = 3
+  val remoteResourceInPartitionRetry = 2
 
   val actionDelayMax: Duration = 20.seconds
   val actionDelayMin: Duration = 2.seconds

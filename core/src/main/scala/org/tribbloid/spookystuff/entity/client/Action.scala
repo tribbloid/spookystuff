@@ -61,8 +61,6 @@ trait Action extends Serializable with Product {
 
   def interpolateFromMap[T](map: Map[String,T]): this.type = this
 
-  protected var delay: Duration = Const.actionDelayMax
-
   //this should handle autoSave, cache and errorDump
   def exe(
            session: PageBuilder
@@ -72,8 +70,13 @@ trait Action extends Serializable with Product {
            ): Seq[Page] = {
 
     val results = try {
-      Utils.withDeadline(delay + session.spooky.resourceTimeout) {
-        doExe(session)
+      this match {
+        case t: Timed =>
+          Utils.withDeadline(t.delay + session.spooky.remoteResourceTimeout) {
+            doExe(session)
+          }
+        case _ =>
+          doExe(session)
       }
     }
     catch {
@@ -81,7 +84,7 @@ trait Action extends Serializable with Product {
 
         var isInBacktrace = false
 
-        var message: String = "\n[backtrace]"
+        var message: String = ""
 
         message += session.backtrace.map{
           action =>{
@@ -154,6 +157,8 @@ trait Action extends Serializable with Product {
 }
 
 trait Timed extends Action{
+
+  var delay: Duration = Const.actionDelayMax
 
   def in(delay: Duration): this.type = {
     this.delay = delay

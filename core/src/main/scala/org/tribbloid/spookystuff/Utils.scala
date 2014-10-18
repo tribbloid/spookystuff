@@ -14,7 +14,7 @@ object Utils {
 
   // Returning T, throwing the exception on failure
   @annotation.tailrec
-  def retry[T](n: Int = Const.defaultLocalRetry)(fn: => T): T = {
+  def retry[T](n: Int = Const.inPartitionRetry)(fn: => T): T = {
     Try { fn } match {
       case Success(x) =>
         x

@@ -16,24 +16,27 @@ import org.tribbloid.spookystuff.{Const, SpookyContext, Utils}
 
 import scala.collection.JavaConversions._
 
+//TODO: all these operations are prone to timeout, add timebound
 object Page {
 
-  def load(fullPath: Path)(hConf: Configuration): Array[Byte] = {
+  def load(fullPath: Path)(spooky: SpookyContext): Array[Byte] = {
 
-    val fs = fullPath.getFileSystem(hConf)
+    Utils.withDeadline(spooky.distributedResourceTimeout) {
+      val fs = fullPath.getFileSystem(spooky.hConf)
 
-    if (fs.exists(fullPath)) {
+      if (fs.exists(fullPath)) {
 
-      val fis = fs.open(fullPath)
+        val fis = fs.open(fullPath)
 
-      try {
-        IOUtils.toByteArray(fis)
+        try {
+          IOUtils.toByteArray(fis)
+        }
+        finally {
+          fis.close()
+        }
       }
-      finally {
-        fis.close()
-      }
+      else null
     }
-    else null
   }
 
   //unlike save, this will store all information in an unreadable, serialized, probably compressed file
@@ -41,23 +44,25 @@ object Page {
              pages: Seq[Page],
              path: String,
              overwrite: Boolean = false
-             )(hConf: Configuration): Unit = {
+             )(spooky: SpookyContext): Unit = {
 
-    var fullPath = new Path(path)
+    Utils.withDeadline(spooky.distributedResourceTimeout) {
+      var fullPath = new Path(path)
 
-    val fs = fullPath.getFileSystem(hConf)
+      val fs = fullPath.getFileSystem(spooky.hConf)
 
-    if (!overwrite && fs.exists(fullPath)) fullPath = new Path(path +"-"+ UUID.randomUUID())
+      if (!overwrite && fs.exists(fullPath)) fullPath = new Path(path + "-" + UUID.randomUUID())
 
-    val ser = SparkEnv.get.serializer.newInstance()
-    val copy = ser.serialize(new PageSeqWrapper(pages))
+      val ser = SparkEnv.get.serializer.newInstance()
+      val copy = ser.serialize(new PageSeqWrapper(pages))
 
-    val fos = fs.create(fullPath, overwrite)
-    try {
-      fos.write(copy.array())
-    }
-    finally {
-      fos.close()
+      val fos = fs.create(fullPath, overwrite)
+      try {
+        fos.write(copy.array())
+      }
+      finally {
+        fos.close()
+      }
     }
   }
 
@@ -72,12 +77,12 @@ object Page {
       UUID.randomUUID().toString
     )
 
-    Page.cache(pages, pathStr)(spooky.hConf)
+    Page.cache(pages, pathStr)(spooky)
   }
 
-  def restore(fullPath: Path)(hConf: Configuration): Seq[Page] = {
+  private def _restore(fullPath: Path)(spooky: SpookyContext): Seq[Page] = {
 
-    val fs = fullPath.getFileSystem(hConf)
+    val fs = fullPath.getFileSystem(spooky.hConf)
 
     if (fs.exists(fullPath)) {
       val fis = fs.open(fullPath)
@@ -90,6 +95,13 @@ object Page {
       obj.pages
     }
     else null
+  }
+
+  def restore(fullPath: Path)(spooky: SpookyContext): Seq[Page] = {
+
+    Utils.withDeadline(spooky.distributedResourceTimeout) {
+      _restore(fullPath)(spooky)
+    }
   }
 
   //  class PrefixFilter(val prefix: String) extends PathFilter {
@@ -115,23 +127,26 @@ object Page {
   def restoreLatest(
                      dirPath: Path,
                      earliestModificationTime: Long = 0
-                     )(hConf: Configuration): Seq[Page] = {
+                     )(spooky: SpookyContext): Seq[Page] = {
 
-    val fs = dirPath.getFileSystem(hConf)
+    Utils.withDeadline(spooky.distributedResourceTimeout) {
 
-    if (fs.exists(dirPath) && fs.getFileStatus(dirPath).isDir) {
-      //      val results = new ArrayBuffer[Page]()
+      val fs = dirPath.getFileSystem(spooky.hConf)
 
-      val statuses = fs.listStatus(dirPath)
+      if (fs.exists(dirPath) && fs.getFileStatus(dirPath).isDir) {
+        //      val results = new ArrayBuffer[Page]()
 
-      val latestStatus = statuses.filter(status => !status.isDir && status.getModificationTime >= earliestModificationTime).sortBy(_.getModificationTime).lastOption
+        val statuses = fs.listStatus(dirPath)
 
-      latestStatus match {
-        case Some(status) => restore(status.getPath)(hConf)
-        case _ => null
+        val latestStatus = statuses.filter(status => !status.isDir && status.getModificationTime >= earliestModificationTime).sortBy(_.getModificationTime).lastOption
+
+        latestStatus match {
+          case Some(status) => _restore(status.getPath)(spooky)
+          case _ => null
+        }
       }
+      else null
     }
-    else null
   }
 
   //TODO: cannot handle infinite duration, avoid using it!
@@ -144,7 +159,7 @@ object Page {
       spooky.autoCacheLookup(uid).toString
     )
 
-    restoreLatest(new Path(pathStr), System.currentTimeMillis() - spooky.pageExpireAfter.toMillis)(spooky.hConf)
+    restoreLatest(new Path(pathStr), System.currentTimeMillis() - spooky.pageExpireAfter.toMillis)(spooky)
   }
 }
 
@@ -177,8 +192,6 @@ case class Page(
                  )
   extends Serializable {
 
-//  private final val serialVersionUID: Long = 1925602137496052L
-
   @transient lazy val parsedContentType: ContentType = {
     var result = ContentType.parse(this.contentType)
     if (result.getCharset == null) result = result.withCharset(Const.defaultCharset)
@@ -201,26 +214,28 @@ case class Page(
             pathParts: Seq[String],
             overwrite: Boolean = false
             //            metadata: Boolean = true
-            )(hConf: Configuration): Page = {
+            )(spooky: SpookyContext): Page = {
 
-    val path = Utils.urlConcat(pathParts: _*)
+    Utils.withDeadline(spooky.distributedResourceTimeout) {
+      val path = Utils.urlConcat(pathParts: _*)
 
-    var fullPath = new Path(path)
+      var fullPath = new Path(path)
 
-    val fs = fullPath.getFileSystem(hConf)
+      val fs = fullPath.getFileSystem(spooky.hConf)
 
-    if (!overwrite && fs.exists(fullPath)) fullPath = new Path(path +"-"+ UUID.randomUUID())
+      if (!overwrite && fs.exists(fullPath)) fullPath = new Path(path +"-"+ UUID.randomUUID())
 
-    val fos = fs.create(fullPath, overwrite)
+      val fos = fs.create(fullPath, overwrite)
 
-    try {
-      IOUtils.write(content,fos)
+      try {
+        IOUtils.write(content,fos)
+      }
+      finally {
+        fos.close()
+      }
+
+      this.copy(saved = fullPath.toString)
     }
-    finally {
-      fos.close()
-    }
-
-    this.copy(saved = fullPath.toString)
   }
 
 
@@ -240,21 +255,21 @@ case class Page(
                 overwrite: Boolean = false
                 ): Page = this.save(
     spooky.autoSaveRoot :: spooky.autoSaveExtract(this).toString :: Nil
-  )(spooky.hConf)
+  )(spooky)
 
   def errorDump(
                  spooky: SpookyContext,
                  overwrite: Boolean = false
                  ): Page = this.save(
     spooky.errorDumpRoot :: spooky.errorDumpExtract(this).toString :: Nil
-  )(spooky.hConf)
+  )(spooky)
 
   def localErrorDump(
                       spooky: SpookyContext,
                       overwrite: Boolean = false
                       ): Page = this.save(
     spooky.localErrorDumpRoot :: spooky.errorDumpExtract(this).toString :: Nil
-  )(spooky.hConf)
+  )(spooky)
 
   //  def saveLocal(
   //                 path: String,

@@ -1,5 +1,6 @@
 package org.tribbloid.spookystuff.entity.client
 
+import org.openqa.selenium.android.library.AndroidWebDriver
 import org.openqa.selenium.htmlunit.HtmlUnitDriver
 import org.openqa.selenium.interactions.Actions
 import org.openqa.selenium.remote.RemoteWebDriver
@@ -26,9 +27,9 @@ abstract class Interaction extends Action {
 
   final override def doExe(pb: PageBuilder): Seq[Page] = {
 
-      exeWithoutPage(pb: PageBuilder)
+    exeWithoutPage(pb: PageBuilder)
 
-      Seq()
+    Seq()
   }
 
   def exeWithoutPage(pb: PageBuilder): Unit
@@ -55,7 +56,7 @@ case class Visit(url: String) extends Interaction with Timed {
  * Wait for some time
  * @param min seconds to be wait for
  */
-case class Delay(min: Duration = Const.actionDelayMax) extends Interaction {
+case class Delay(min: Duration = Const.actionDelayMax) extends Interaction with Timed {
   //  override val timeout = Math.max(Const.driverCallTimeout, delay + 10)
 
   this.delay = min
@@ -72,7 +73,7 @@ case class Delay(min: Duration = Const.actionDelayMax) extends Interaction {
 case class RandomDelay(
                         min: Duration = Const.actionDelayMin,
                         max: Duration = Const.actionDelayMax
-                        ) extends Interaction {
+                        ) extends Interaction with Timed {
 
   assert(max >= min)
 
@@ -175,8 +176,8 @@ case class Click(
  * @param selector css selector of the element, only the first element will be affected
  */
 case class ClickAll(
-                  selector: String
-                  )extends Interaction with Timed {
+                     selector: String
+                     )extends Interaction with Timed {
   override def exeWithoutPage(pb: PageBuilder) {
     val wait = new WebDriverWait(pb.driver, delay.toSeconds)
     val elements = wait.until(ExpectedConditions.presenceOfAllElementsLocatedBy(By.cssSelector(selector)))
@@ -266,7 +267,7 @@ case class ExeScript(script: String) extends Interaction {
   override def exeWithoutPage(pb: PageBuilder) {
     pb.driver match {
       case d: HtmlUnitDriver => d.executeScript(script)
-      //      case d: AndroidWebDriver => d.executeScript(script)
+//      case d: AndroidWebDriver => throw new UnsupportedOperationException("this web browser driver is not supported")
       case d: EventFiringWebDriver => d.executeScript(script)
       case d: RemoteWebDriver => d.executeScript(script)
       case _ => throw new UnsupportedOperationException("this web browser driver is not supported")
@@ -294,7 +295,7 @@ case class DragSlider(
   override def exeWithoutPage(pb: PageBuilder): Unit = {
 
     val wait = new WebDriverWait(pb.driver, delay.toSeconds)
-//    val element = wait.until(ExpectedConditions.elementToBeClickable(By.cssSelector(selector)))
+    //    val element = wait.until(ExpectedConditions.elementToBeClickable(By.cssSelector(selector)))
     val element = wait.until(ExpectedConditions.visibilityOfElementLocated(By.cssSelector(selector)))
 
     val handle = element.findElement(By.cssSelector(handleSelector))

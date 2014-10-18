@@ -126,7 +126,7 @@ class TestPageBuilder extends FunSuite {
 
     val page1Saved = page1.autoSave(spooky,overwrite = true)
 
-    val loadedContent = Page.load(new Path(page1Saved.saved))(spooky.hConf)
+    val loadedContent = Page.load(new Path(page1Saved.saved))(spooky)
 
     assert(loadedContent === page1Saved.content)
   }
@@ -197,7 +197,7 @@ class TestPageBuilder extends FunSuite {
 
     val page1Saved = page1.autoSave(spooky,overwrite = true)
 
-    val loadedContent = Page.load(new Path(page1Saved.saved))(spooky.hConf)
+    val loadedContent = Page.load(new Path(page1Saved.saved))(spooky)
 
     assert(loadedContent === page1Saved.content)
   }
@@ -214,7 +214,7 @@ class TestPageBuilder extends FunSuite {
 
     val page1Saved = page1.autoSave(spooky,overwrite = true)
 
-    val loadedContent = Page.load(new Path(page1Saved.saved))(spooky.hConf)
+    val loadedContent = Page.load(new Path(page1Saved.saved))(spooky)
 
     assert(loadedContent === page1Saved.content)
   }
@@ -231,9 +231,8 @@ class TestPageBuilder extends FunSuite {
 
     val page1Saved = page1.autoSave(spooky,overwrite = true)
 
-    val loadedContent = Page.load(new Path(page1Saved.saved))(spooky.hConf)
+    val loadedContent = Page.load(new Path(page1Saved.saved))(spooky)
 
     assert(loadedContent === page1Saved.content)
   }
-
 }

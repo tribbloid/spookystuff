@@ -101,6 +101,11 @@ case class PageSchemaRDD(
 
   def asTsvRDD(): RDD[String] = this.asCsvRDD("\t")
 
+  //TODO: these are very useful in crawling
+//  def groupByPageUID
+//  def reduceByPageUID
+//  def distinctPageUID
+
   /**
    * parallel execution in browser(s) to yield a set of web pages
    * each ActionPlan may yield several pages in a row, depending on the number of Export(s) in it
@@ -222,7 +227,7 @@ case class PageSchemaRDD(
                    ): PageSchemaRDD = {
     assert(select!=null || extract!=null)
 
-    val hconfBroad = self.context.broadcast(this.spooky.hConf)
+    val spookyBroad = self.context.broadcast(this.spooky)
 
     val result = self.map {
 
@@ -246,7 +251,7 @@ case class PageSchemaRDD(
             page.save(
               Seq(path),
               overwrite = overwrite
-            )(hconfBroad.value)
+            )(spookyBroad.value)
           }
         }
 
