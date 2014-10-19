@@ -21,7 +21,7 @@ case class PageSchemaRDD(
                           @transient columnNames: ListSet[String] = ListSet(),
                           @transient spooky: SpookyContext
                           )
-  extends Serializable{
+  extends Serializable {
 
   //  @DeveloperApi
   //  override def compute(split: Partition, context: TaskContext): Iterator[PageRow] =
@@ -63,7 +63,7 @@ case class PageSchemaRDD(
    */
   def +>(actions: Seq[Action]): PageSchemaRDD = this.copy(self.map(_ +> actions))
 
-  def +>(pr: PageRow): PageSchemaRDD = this.copy(self.map (_ +> pr))
+  def +>(pr: PageRow): PageSchemaRDD = this.copy(self.map(_ +> pr))
 
   /**
    * append a set of actions or ActionPlans to be executed in parallel
@@ -74,11 +74,11 @@ case class PageSchemaRDD(
    *                CANNOT be RDD[ActionPlan], but this may become an option in the next release
    * @return new RDD[ActionPlan], of which size = [size of old RDD] * [size of actions]
    */
-  def +*>(actions: Seq[_]): PageSchemaRDD = this.copy(self.flatMap (_ +*> actions))
+  def +*>(actions: Seq[_]): PageSchemaRDD = this.copy(self.flatMap(_ +*> actions))
 
-  def asMapRDD(): RDD[Map[String,Any]] = self.map (_.cells)
+  def asMapRDD(): RDD[Map[String, Any]] = self.map(_.cells)
 
-  def asJsonRDD(): RDD[String] = self.map (_.asJson())
+  def asJsonRDD(): RDD[String] = self.map(_.asJson())
 
   //TODO: header cannot use special characters, notably dot(.)
   def asSchemaRDD(): SchemaRDD = {
@@ -102,9 +102,17 @@ case class PageSchemaRDD(
   def asTsvRDD(): RDD[String] = this.asCsvRDD("\t")
 
   //TODO: these are very useful in crawling
-//  def groupByPageUID
-//  def reduceByPageUID
-//  def distinctPageUID
+  //  def groupByPageUID
+  //  def reduceByPageUID
+
+  //by default discard cells & flatten
+  def distinctPageUID(): PageSchemaRDD = {
+
+    import org.apache.spark.SparkContext._
+
+    val selfRed = this.flatten().self.keyBy(_.pages.lastOption.getOrElse("")).reduceByKey((v1, v2) => v1).map(_._2)
+    this.copy(self = selfRed)
+  }
 
   /**
    * parallel execution in browser(s) to yield a set of web pages
@@ -121,7 +129,7 @@ case class PageSchemaRDD(
 
     implicit def spookyImplicit: SpookyContext = spookyBroad.value
 
-    val result = self.flatMap(_.!=!(joinType,flatten,indexKey))
+    val result = self.flatMap(_.!=!(joinType, flatten, indexKey))
 
     this.copy(result, this.columnNames ++ Option(indexKey))
   }
@@ -159,14 +167,16 @@ case class PageSchemaRDD(
            joinType: JoinType = Const.defaultJoinType,
            flatten: Boolean = true,
            indexKey: String = null
-           ): PageSchemaRDD = {
+           )
+  //           TODO: reference: PageSchemaRDD*
+  : PageSchemaRDD = {
 
     val spookyBroad = self.context.broadcast(this.spooky)
 
     implicit def spookyImplicit: SpookyContext = spookyBroad.value
 
     val squashedRDD =
-      self.groupBy((row => (row.actions, row.dead)): (PageRow => (Seq[Action],Boolean)), numPartitions = numPartitions) //scala is stupid on this
+      self.groupBy((row => (row.actions, row.dead)): (PageRow => (Seq[Action], Boolean)), numPartitions = numPartitions) //scala is stupid on this
 
     val result = squashedRDD.flatMap {
       tuple => {
@@ -174,11 +184,11 @@ case class PageSchemaRDD(
 
         var newPageRows = joinType match {
           case Replace if newPages.isEmpty =>
-            tuple._2.map( oldPageRow => PageRow(cells = oldPageRow.cells, pages = oldPageRow.pages) )
+            tuple._2.map(oldPageRow => PageRow(cells = oldPageRow.cells, pages = oldPageRow.pages))
           case Merge =>
-            tuple._2.map( oldPageRow => PageRow(cells = oldPageRow.cells, pages = oldPageRow.pages ++ newPages) )
+            tuple._2.map(oldPageRow => PageRow(cells = oldPageRow.cells, pages = oldPageRow.pages ++ newPages))
           case _ =>
-            tuple._2.map( oldPageRow => PageRow(cells = oldPageRow.cells, pages = newPages) )
+            tuple._2.map(oldPageRow => PageRow(cells = oldPageRow.cells, pages = newPages))
         }
 
         if (flatten) newPageRows = newPageRows.flatMap(_.flatten(joinType == LeftOuter, indexKey))
@@ -225,7 +235,7 @@ case class PageSchemaRDD(
                    extract: Page => Any = null,
                    overwrite: Boolean = false
                    ): PageSchemaRDD = {
-    assert(select!=null || extract!=null)
+    assert(select != null || extract != null)
 
     val spookyBroad = self.context.broadcast(this.spooky)
 
@@ -238,7 +248,7 @@ case class PageSchemaRDD(
           case _ => ""
         }
 
-        val newPages = pageRow.pages.map{
+        val newPages = pageRow.pages.map {
           page => {
 
             val extractPath = extract match {
@@ -274,13 +284,23 @@ case class PageSchemaRDD(
                    select: PageRow => String = null,
                    extract: Page => String = null,
                    overwrite: Boolean = false
-                   ): Array[String] = this.saveContent(select, extract, overwrite).self.flatMap{
-    _.pages.map{
+                   ): Array[String] = this.saveContent(select, extract, overwrite).self.flatMap {
+    _.pages.map {
       _.saved
     }
   }.collect()
 
-  def +%>(actionAndF: (Action, Page => _)): PageSchemaRDD = this.copy(self.map( _.+%>(actionAndF) ))
+  def flatten(
+               left: Boolean = false,
+               indexKey: String = null
+               ): PageSchemaRDD = {
+
+    this.copy(
+      this.self.flatMap(_.flatten(left, indexKey))
+    )
+  }
+
+  def +%>(actionAndF: (Action, Page => _)): PageSchemaRDD = this.copy(self.map(_.+%>(actionAndF)))
 
   def +*%>(
             actionAndF: (Action, Page => Array[_])
@@ -290,11 +310,11 @@ case class PageSchemaRDD(
             indexKey: String = null
             ): PageSchemaRDD =
     this.copy(
-      self.flatMap(_.+*%>(actionAndF)(limit,distinct,indexKey)),
+      self.flatMap(_.+*%>(actionAndF)(limit, distinct, indexKey)),
       this.columnNames ++ Option(indexKey)
     )
 
-  def dropActions(): PageSchemaRDD = this.copy(self.map (_.copy(actions = Seq(), dead = false)))
+  def dropActions(): PageSchemaRDD = this.copy(self.map(_.copy(actions = Seq(), dead = false)))
 
   //  private def join(
   //                    action: ClientAction,
@@ -354,7 +374,7 @@ case class PageSchemaRDD(
    */
   def visitJoin(
                  selector: String,
-                 attr :String = "abs:href"
+                 attr: String = "abs:href"
                  )(
                  limit: Int = spooky.joinLimit, //applied after distinct
                  distinct: Boolean = true,
@@ -362,7 +382,7 @@ case class PageSchemaRDD(
                  numPartitions: Int = self.sparkContext.defaultParallelism,
                  joinType: JoinType = Const.defaultJoinType,
                  flatten: Boolean = true
-                 ): PageSchemaRDD ={
+                 ): PageSchemaRDD = {
 
     this.visit(selector, attr)(limit, distinct, indexKey).!><(numPartitions, joinType, flatten)
   }
@@ -377,7 +397,7 @@ case class PageSchemaRDD(
    */
   def wgetJoin(
                 selector: String,
-                attr :String = "abs:href"
+                attr: String = "abs:href"
                 )(
                 limit: Int = spooky.joinLimit, //applied after distinct
                 distinct: Boolean = true,
@@ -385,7 +405,7 @@ case class PageSchemaRDD(
                 numPartitions: Int = self.sparkContext.defaultParallelism,
                 joinType: JoinType = Const.defaultJoinType,
                 flatten: Boolean = true
-                ): PageSchemaRDD ={
+                ): PageSchemaRDD = {
 
     this.wget(selector, attr)(limit, distinct, indexKey).!><(numPartitions, joinType, flatten)
   }
@@ -398,13 +418,13 @@ case class PageSchemaRDD(
    */
   def sliceJoin(
                  selector: String,
-                 expand :Int = 0
+                 expand: Int = 0
                  )(
                  limit: Int = spooky.sliceLimit, //applied after distinct
                  indexKey: String = null,
                  joinType: JoinType = Const.defaultJoinType,
                  flatten: Boolean = true
-                 ): PageSchemaRDD ={
+                 ): PageSchemaRDD = {
 
     val result = self.flatMap {
 
@@ -422,7 +442,7 @@ case class PageSchemaRDD(
    */
   def paginate(
                 selector: String,
-                attr :String = "abs:href",
+                attr: String = "abs:href",
                 wget: Boolean = true,
                 postAction: Seq[Action] = Seq()
                 )(
@@ -441,5 +461,29 @@ case class PageSchemaRDD(
     }
 
     this.copy(result, this.columnNames ++ Option(indexKey))
+  }
+
+  def deepJoin(
+                selector: String,
+                attr: String = "abs:href",
+                wget: Boolean = true
+//                postAction: Seq[Action] = Seq()
+                )(
+                depth: Int = spooky.recursionDepth,
+                limit: Int = spooky.joinLimit,
+                joinType: JoinType = Merge//flatten option unavailabe befor v0.3 upgrade, always flatten
+                ): PageSchemaRDD = {
+
+    var previous = this
+
+    for (i <- 0 to depth){
+
+      val joined = if (wget)
+        previous.wgetJoin(selector,attr)(limit, distinct = true, joinType = joinType, flatten = true)
+      else
+        previous.visitJoin(selector,attr)(limit, distinct = true, joinType = joinType, flatten = true)
+
+      null
+    }
   }
 }

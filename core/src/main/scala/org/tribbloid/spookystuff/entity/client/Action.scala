@@ -28,7 +28,7 @@ object Action {
     strVar
   }
 
-  def mayExport(actions: Action*): Boolean = {
+  def mayExport(actions: Seq[Action]): Boolean = {
     for (action <- actions) {
       if (action.mayExport()) return true
     }

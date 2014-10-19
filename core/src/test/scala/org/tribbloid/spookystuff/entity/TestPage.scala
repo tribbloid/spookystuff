@@ -96,7 +96,7 @@ class TestPage extends FunSuite with BeforeAndAfter {
   }
 
   test ("s3 cache") {
-    spooky.setRoot("s3n://AKIAIIC77SN525EOLTUA:6c4zfslStJfEhRuYr0csC0SBr6GiXbornuP47CCX@spOOky-unit/")
+    spooky.setRoot("s3n://a:a@spOOky/unit-test/")
     spooky.pageExpireAfter = 10.seconds
 
     Page.autoCache(page, page.head.uid, spooky)

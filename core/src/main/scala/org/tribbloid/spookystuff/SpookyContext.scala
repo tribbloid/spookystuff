@@ -50,7 +50,9 @@ class SpookyContext (
 
                       //default max number of elements scraped from a page, set to Int.MaxValue to allow unlimited fetch
                       var joinLimit: Int = Int.MaxValue,
-                      var sliceLimit: Int = Int.MaxValue
+                      var sliceLimit: Int = Int.MaxValue,
+
+                      var recursionDepth: Int = 500 //unknown if it is enough
                       )
   extends Serializable {
 

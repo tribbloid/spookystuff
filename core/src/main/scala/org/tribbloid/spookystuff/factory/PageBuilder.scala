@@ -13,17 +13,16 @@ import scala.collection.mutable.ArrayBuffer
 
 object PageBuilder {
 
+  def autoSnapshot(actions: Seq[Action], dead: Boolean): Seq[Action] = {
+    if (Action.mayExport(actions) || dead) actions
+    else actions :+ Snapshot() //Don't use singleton, otherwise will flush timestamp
+  }
+
   def resolve(actions: Seq[Action], dead: Boolean)(implicit spooky: SpookyContext): Seq[Page] = {
 
     Utils.retry (Const.remoteResourceInPartitionRetry){
-      if (Action.mayExport(actions: _*) || dead) {
-        resolvePlain(actions)(spooky)
-      }
-      else {
-        resolvePlain(actions :+ Snapshot())(spooky) //Don't use singleton, otherwise will flush timestamp
-      }
+        resolvePlain(autoSnapshot(actions, dead))(spooky)
     }
-
   }
 
   // Major API shrink! resolveFinal will be merged here

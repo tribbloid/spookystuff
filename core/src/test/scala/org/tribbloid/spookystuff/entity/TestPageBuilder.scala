@@ -115,7 +115,7 @@ class TestPageBuilder extends FunSuite {
 
   test("save and load") {
     val results = PageBuilder.resolve(
-      Visit("https://www.linkedin.com/") ::
+      Visit("http://en.wikipedia.org") ::
       Snapshot().as("T") :: Nil,
       dead = false
     )(spooky)
@@ -133,7 +133,7 @@ class TestPageBuilder extends FunSuite {
 
   test("cache and restore") {
     val pages = PageBuilder.resolve(
-      Visit("https://www.linkedin.com/") ::
+      Visit("http://en.wikipedia.org") ::
         Snapshot().as("T") :: Nil,
       dead = false
     )(spooky)
