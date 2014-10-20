@@ -16,7 +16,7 @@ abstract class Block extends Action
 
 case class Try(actions: Seq[Action]) extends Block {
 
-  override def mayExport(): Boolean = Action.mayExport(actions: _*)
+  override def mayExport(): Boolean = Action.mayExport(actions)
 
   final override def trunk() = {
     val trunked = actions.flatMap {
@@ -64,7 +64,7 @@ case class Loop(
 
   assert(limit>0)
 
-  override def mayExport(): Boolean = Action.mayExport(actions: _*)
+  override def mayExport(): Boolean = Action.mayExport(actions)
 
   final override def trunk() = {
     val trunked = actions.flatMap {

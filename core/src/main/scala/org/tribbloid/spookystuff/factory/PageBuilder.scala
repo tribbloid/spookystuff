@@ -112,6 +112,9 @@ class PageBuilder(
           case e: ObjectStreamException =>
             LoggerFactory.getLogger(this.getClass).warn("cached page(s) cannot be deserialized", e)
             null
+          case e: ReflectiveOperationException =>
+            LoggerFactory.getLogger(this.getClass).warn("cached page(s) cannot be deserialized", e)
+            null
         }
       }
       else null

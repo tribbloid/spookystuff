@@ -463,27 +463,27 @@ case class PageSchemaRDD(
     this.copy(result, this.columnNames ++ Option(indexKey))
   }
 
-  def deepJoin(
-                selector: String,
-                attr: String = "abs:href",
-                wget: Boolean = true
-//                postAction: Seq[Action] = Seq()
-                )(
-                depth: Int = spooky.recursionDepth,
-                limit: Int = spooky.joinLimit,
-                joinType: JoinType = Merge//flatten option unavailabe befor v0.3 upgrade, always flatten
-                ): PageSchemaRDD = {
-
-    var previous = this
-
-    for (i <- 0 to depth){
-
-      val joined = if (wget)
-        previous.wgetJoin(selector,attr)(limit, distinct = true, joinType = joinType, flatten = true)
-      else
-        previous.visitJoin(selector,attr)(limit, distinct = true, joinType = joinType, flatten = true)
-
-      null
-    }
-  }
+//  def deepJoin(
+//                selector: String,
+//                attr: String = "abs:href",
+//                wget: Boolean = true
+////                postAction: Seq[Action] = Seq()
+//                )(
+//                depth: Int = spooky.recursionDepth,
+//                limit: Int = spooky.joinLimit,
+//                joinType: JoinType = Merge//flatten option unavailabe befor v0.3 upgrade, always flatten
+//                ): PageSchemaRDD = {
+//
+//    var previous = this
+//
+//    for (i <- 0 to depth){
+//
+//      val joined = if (wget)
+//        previous.wgetJoin(selector,attr)(limit, distinct = true, joinType = joinType, flatten = true)
+//      else
+//        previous.visitJoin(selector,attr)(limit, distinct = true, joinType = joinType, flatten = true)
+//
+//      null
+//    }
+//  }
 }
