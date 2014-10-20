@@ -29,6 +29,27 @@ case object VerbosePathLookup extends Lookup[String] {
 
     val hash = "-"+uid.backtrace.hashCode
 
-    Utils.canonize(actionConcat + hash)
+    Utils.canonizeFileName(actionConcat + hash)
+  }
+}
+
+case object HierarchicalUrnLookup extends Lookup[String] {
+
+  override def apply(uid: PageUID): String = {
+
+    val actionStrs = uid.backtrace.map(_.toString)
+
+    val actionConcat = if (actionStrs.size > 4) {
+      val oneTwoThree = actionStrs.slice(0,3)
+      val last = actionStrs.last
+      val omitted = "/"+(uid.backtrace.length-4).toString+"more"+"/"
+
+      oneTwoThree.mkString("/")+omitted+last
+    }
+    else actionStrs.mkString("/")
+
+    val hash = "-"+uid.backtrace.hashCode
+
+    Utils.canonizeUrn(actionConcat + hash)
   }
 }

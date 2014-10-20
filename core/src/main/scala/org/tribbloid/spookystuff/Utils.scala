@@ -43,10 +43,24 @@ object Utils {
     result
   }
 
-  def canonize(name: String): String = {
+  def canonizeFileName(name: String): String = {
     var result = name.replaceAll("[ ]","_").replaceAll("[,]","|").replaceAll("[:\\\\/]+", "*")
 
     if (result.length > 255) result = result.substring(0, 255)
+
+    result
+  }
+
+  def canonizeUrn(name: String): String = {
+
+    var result = name.replaceAll("[ ]","_").replaceAll("[,]","/").replaceAll("[:\\\\/]+", "/")
+
+    result = result.split("/").map{
+      part => {
+        if (part.length > 255) part.substring(0, 255)
+        else part
+      }
+    }.mkString("/")
 
     result
   }
