@@ -10,6 +10,7 @@ import org.tribbloid.spookystuff.sparkbinding.{SchemaRDDFunctions, PageSchemaRDD
 
 import scala.collection.immutable.ListSet
 import scala.concurrent.duration.{Duration, _}
+import scala.language.implicitConversions
 
 /**
  * Created by peng on 12/06/14.

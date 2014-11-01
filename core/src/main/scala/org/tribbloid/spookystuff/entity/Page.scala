@@ -19,7 +19,7 @@ import scala.collection.JavaConversions._
 //TODO: all these operations are prone to timeout, add timebound
 object Page {
 
-  def DFSAccess[T](pathStr: String, spooky: SpookyContext)(f: => T): T = {
+  def DFSRead[T](message: String, pathStr: String, spooky: SpookyContext)(f: => T): T = {
     try {
       Utils.retryWithDeadline(Const.distributedResourceInPartitionRetry, spooky.distributedResourceTimeout) {
         f
@@ -27,19 +27,33 @@ object Page {
     }
     catch {
       case e: Throwable =>
-        val ex = new DFSAccessException("path: "+pathStr ,e)
+        val ex = new DFSAccessException(pathStr ,e)
         ex.setStackTrace(e.getStackTrace)
         if (spooky.failOnDFSError) throw ex
         else {
-          LoggerFactory.getLogger(this.getClass).warn("cached page(s) inaccessible", ex)
+          LoggerFactory.getLogger(this.getClass).warn(message, ex)
           null.asInstanceOf[T] //TODO: WTF?
         }
     }
   }
 
+  def DFSWrite[T](message: String, pathStr: String, spooky: SpookyContext)(f: => T): T = {
+    try {
+      Utils.retryWithDeadline(Const.distributedResourceInPartitionRetry, spooky.distributedResourceTimeout) {
+        f
+      }
+    }
+    catch {
+      case e: Throwable =>
+        val ex = new DFSAccessException(pathStr ,e)
+        ex.setStackTrace(e.getStackTrace)
+        throw ex
+    }
+  }
+
   def load(fullPath: Path)(spooky: SpookyContext): Array[Byte] = {
 
-    DFSAccess(fullPath.toString, spooky) {
+    DFSRead("load", fullPath.toString, spooky) {
       val fs = fullPath.getFileSystem(spooky.hConf)
 
       if (fs.exists(fullPath)) {
@@ -64,7 +78,7 @@ object Page {
              overwrite: Boolean = false
              )(spooky: SpookyContext): Unit = {
 
-    DFSAccess(path, spooky) {
+    DFSWrite("cache", path, spooky) {
       var fullPath = new Path(path)
 
       val fs = fullPath.getFileSystem(spooky.hConf)
@@ -98,27 +112,22 @@ object Page {
     Page.cache(pages, pathStr)(spooky)
   }
 
-  private def _restore(fullPath: Path)(spooky: SpookyContext): Seq[Page] = {
-
-    val fs = fullPath.getFileSystem(spooky.hConf)
-
-    if (fs.exists(fullPath)) {
-      val fis = fs.open(fullPath)
-
-      val ser = SparkEnv.get.serializer.newInstance()
-
-      val serIn = ser.deserializeStream(fis)
-      val obj = serIn.readObject[PageSeqWrapper]()
-      serIn.close()
-      obj.pages
-    }
-    else null
-  }
-
   def restore(fullPath: Path)(spooky: SpookyContext): Seq[Page] = {
 
-    DFSAccess(fullPath.toString, spooky) {
-      _restore(fullPath)(spooky)
+    DFSRead("restore", fullPath.toString, spooky) {
+      val fs = fullPath.getFileSystem(spooky.hConf)
+
+      if (fs.exists(fullPath)) {
+        val fis = fs.open(fullPath)
+
+        val ser = SparkEnv.get.serializer.newInstance()
+
+        val serIn = ser.deserializeStream(fis)
+        val obj = serIn.readObject[PageSeqWrapper]()
+        serIn.close()
+        obj.pages
+      }
+      else null
     }
   }
 
@@ -147,7 +156,7 @@ object Page {
                      earliestModificationTime: Long = 0
                      )(spooky: SpookyContext): Seq[Page] = {
 
-    DFSAccess(dirPath.toString, spooky) {
+    val latestStatus = DFSRead("get latest version", dirPath.toString, spooky) {
 
       val fs = dirPath.getFileSystem(spooky.hConf)
 
@@ -156,14 +165,14 @@ object Page {
 
         val statuses = fs.listStatus(dirPath)
 
-        val latestStatus = statuses.filter(status => !status.isDir && status.getModificationTime >= earliestModificationTime).sortBy(_.getModificationTime).lastOption
-
-        latestStatus match {
-          case Some(status) => _restore(status.getPath)(spooky)
-          case _ => null
-        }
+        statuses.filter(status => !status.isDir && status.getModificationTime >= earliestModificationTime).sortBy(_.getModificationTime).lastOption
       }
-      else null
+      else None
+    }
+
+    latestStatus match {
+      case Some(status) => restore(status.getPath)(spooky)
+      case _ => null
     }
   }
 
@@ -236,7 +245,7 @@ case class Page(
 
     val path = Utils.urlConcat(pathParts: _*)
 
-    Page.DFSAccess(path, spooky) {
+    Page.DFSWrite("save", path, spooky) {
 
       var fullPath = new Path(path)
 
