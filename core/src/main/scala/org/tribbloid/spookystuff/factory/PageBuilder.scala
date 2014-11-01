@@ -10,6 +10,7 @@ import org.tribbloid.spookystuff.entity.client._
 import org.tribbloid.spookystuff.{Const, SpookyContext, Utils}
 
 import scala.collection.mutable.ArrayBuffer
+import scala.concurrent.TimeoutException
 
 object PageBuilder {
 
@@ -109,6 +110,9 @@ class PageBuilder(
           Page.autoRestoreLatest(uid, spooky)
         }
         catch {
+          case e: TimeoutException =>
+            LoggerFactory.getLogger(this.getClass).warn("cached page(s) cannot be deserialized", e)
+            null
           case e: ObjectStreamException =>
             LoggerFactory.getLogger(this.getClass).warn("cached page(s) cannot be deserialized", e)
             null
