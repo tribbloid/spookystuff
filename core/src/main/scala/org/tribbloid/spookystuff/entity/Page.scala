@@ -31,7 +31,7 @@ object Page {
         ex.setStackTrace(e.getStackTrace)
         if (spooky.failOnDFSError) throw ex
         else {
-          LoggerFactory.getLogger(this.getClass).warn("cached page(s) inaccessible", e)
+          LoggerFactory.getLogger(this.getClass).warn("cached page(s) inaccessible", ex)
           null.asInstanceOf[T] //TODO: WTF?
         }
     }
