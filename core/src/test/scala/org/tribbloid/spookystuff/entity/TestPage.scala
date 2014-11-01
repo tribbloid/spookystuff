@@ -48,7 +48,7 @@ class TestPage extends FunSuite with BeforeAndAfter {
   }
 
   test ("local cache") {
-    spooky.setRoot("file://"+System.getProperty("user.home")+"/spOOky/"+"test")
+    spooky.setRoot("file://"+System.getProperty("user.home")+"/spooky-unit/")
     spooky.pageExpireAfter = 2.seconds
 
     Page.autoCache(page, page.head.uid, spooky)
@@ -72,7 +72,7 @@ class TestPage extends FunSuite with BeforeAndAfter {
   }
 
   test ("wget local cache") {
-    spooky.setRoot("file://"+System.getProperty("user.home")+"/spOOky/"+"test")
+    spooky.setRoot("file://"+System.getProperty("user.home")+"/spooky-unit/")
     spooky.pageExpireAfter = 2.seconds
 
     Page.autoCache(wgetPage, wgetPage.head.uid, spooky)
@@ -96,7 +96,7 @@ class TestPage extends FunSuite with BeforeAndAfter {
   }
 
   test ("s3 cache") {
-    spooky.setRoot("s3n://a:a@spOOky/unit-test/")
+    spooky.setRoot("s3n://a:a@spooky-unit/")
     spooky.pageExpireAfter = 10.seconds
 
     Page.autoCache(page, page.head.uid, spooky)

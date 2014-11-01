@@ -63,10 +63,6 @@ import scala.concurrent.duration._
       )
       .asSchemaRDD()
 
-    RDD.persist()
-
-    RDD.map(row => row.mkString("/t")).saveAsTextFile("file://"+System.getProperty("user.home")+"/spOOky/dump/weibo")
-
     RDD
   }
 }

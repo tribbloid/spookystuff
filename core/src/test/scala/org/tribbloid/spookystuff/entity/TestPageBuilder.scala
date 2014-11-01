@@ -19,7 +19,7 @@ class TestPageBuilder extends FunSuite {
   lazy val sc: SparkContext = new SparkContext(conf)
   lazy val sql: SQLContext = new SQLContext(sc)
   lazy implicit val spooky: SpookyContext = new SpookyContext(sql)
-  spooky.setRoot("file://"+System.getProperty("user.home")+"/spOOky/"+"unit")
+  spooky.setRoot("file://"+System.getProperty("user.home")+"/spooky-unit/")
   spooky.autoSave = false
   spooky.autoCache = false
   spooky.autoRestore = false

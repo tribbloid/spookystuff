@@ -28,7 +28,7 @@ object GoogleImage extends TestCore {
       !=!())
       .wgetJoin("div#search img","src")(limit = 1)
       .saveContent(pageRow =>
-      "file://"+System.getProperty("user.home")+"/spOOky/"+appName+"/images/"+pageRow("name"))
+      "file://"+System.getProperty("user.home")+"/spooky-integration/"+appName+"/images/"+pageRow("name"))
       .extract(
         "path" -> (_.saved)
       )

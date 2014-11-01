@@ -127,7 +127,7 @@ A210S	A210S Washer-Top Loading 	Parts for Maytag A210S: Transmissions Parts	Gea
       !=!())
       .wgetJoin("div#search img","src")(limit = 1)
       .saveContent(pageRow =>
-      "file://"+System.getProperty("user.home")+"/spOOky/"+appName+"/images/"+pageRow("name"))
+      "file://"+System.getProperty("user.home")+"/spooky/"+appName+"/images/"+pageRow("name"))
       .extract(
         "path" -> (_.saved)
       )

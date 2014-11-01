@@ -39,12 +39,12 @@ class SpookyContext (
                       var autoCacheLookup: Lookup[_] = HierarchicalUrnLookup,
                       var errorDumpExtract: Extract[_] = TimestampPath(HierarchicalUrnLookup),
 
-                      var autoSaveRoot: String = "s3n://spOOky/"+"page/",
-                      var autoCacheRoot: String = "s3n://spOOky/"+"cache/",
-                      var errorDumpRoot: String = "s3n://spOOky/"+"error/",
-                      //                      var errorDumpScreenshotRoot: String = "s3n://spOOky/"+"error-screenshot/",
-                      var localErrorDumpRoot: String = "file:///spOOky/"+"error/",
-                      //                      var localErrorDumpScreenshotRoot: String = "file:///spOOky/"+"error-screenshot/",
+                      var autoSaveRoot: String = "s3n://spooky-page/",
+                      var autoCacheRoot: String = "s3n://spooky-cache/",
+                      var errorDumpRoot: String = "s3n://spooky-error/",
+                      var errorDumpScreenshotRoot: String = "s3n://spooky-error-screenshot/",
+                      var localErrorDumpRoot: String = "file:///spooky-error/",
+                      var localErrorDumpScreenshotRoot: String = "file:///spooky-error-screenshot/",
 
                       var remoteResourceTimeout: Duration = 60.seconds,
                       var distributedResourceTimeout: Duration = 60.seconds,
@@ -70,9 +70,10 @@ class SpookyContext (
 
   def setRoot(root: String): Unit = {
 
-    autoSaveRoot = Utils.urlConcat(root, "page/")
-    autoCacheRoot = Utils.urlConcat(root, "cache/")
-    localErrorDumpRoot = Utils.urlConcat(root, "error/")
+    autoSaveRoot = root+"page"
+    autoCacheRoot = root+"cache"
+    errorDumpRoot = root+"error"
+    errorDumpScreenshotRoot = root+"error-screenshot"
   }
 
   def this(conf: SparkConf) {

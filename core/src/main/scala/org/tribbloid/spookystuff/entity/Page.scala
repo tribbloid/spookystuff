@@ -11,7 +11,7 @@ import org.apache.spark.SparkEnv
 import org.jsoup.Jsoup
 import org.jsoup.nodes.{Document, Element}
 import org.slf4j.LoggerFactory
-import org.tribbloid.spookystuff.entity.client.Action
+import org.tribbloid.spookystuff.entity.client.{Screenshot, Action}
 import org.tribbloid.spookystuff.{DFSAccessException, Const, SpookyContext, Utils}
 
 import scala.collection.JavaConversions._
@@ -288,16 +288,30 @@ case class Page(
   def errorDump(
                  spooky: SpookyContext,
                  overwrite: Boolean = false
-                 ): Page = this.save(
-    spooky.errorDumpRoot :: spooky.errorDumpExtract(this).toString :: Nil
-  )(spooky)
+                 ): Page = {
+    val root = this.uid.backtrace.last match{
+      case ss: Screenshot => spooky.errorDumpScreenshotRoot
+      case _ => spooky.errorDumpRoot
+    }
+
+    this.save(
+      root :: spooky.errorDumpExtract(this).toString :: Nil
+    )(spooky)
+  }
 
   def localErrorDump(
                       spooky: SpookyContext,
                       overwrite: Boolean = false
-                      ): Page = this.save(
-    spooky.localErrorDumpRoot :: spooky.errorDumpExtract(this).toString :: Nil
-  )(spooky)
+                      ): Page = {
+    val root = this.uid.backtrace.last match{
+      case ss: Screenshot => spooky.localErrorDumpScreenshotRoot
+      case _ => spooky.localErrorDumpRoot
+    }
+
+    this.save(
+      root :: spooky.errorDumpExtract(this).toString :: Nil
+    )(spooky)
+  }
 
   //  def saveLocal(
   //                 path: String,

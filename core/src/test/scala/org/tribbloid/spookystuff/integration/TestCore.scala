@@ -31,7 +31,7 @@ trait TestCore extends FunSuite {
     pageExpireAfter = 0.milliseconds,
     joinLimit = 2
   )
-  spooky.setRoot("file://"+System.getProperty("user.home")+"/spOOky/"+appName)
+  spooky.setRoot("file://"+System.getProperty("user.home")+"/spooky-integration/"+appName+"/")
 
   lazy val result = {
     val result = doMain()
@@ -56,7 +56,7 @@ trait TestCore extends FunSuite {
   final def main(args: Array[String]) {
     result.persist()
 
-    result.map(row => row.mkString("\t")).saveAsTextFile("file://"+System.getProperty("user.home")+"/spOOky/"+appName+"/dump"+UUID.randomUUID())
+    result.map(row => row.mkString("\t")).saveAsTextFile("file://"+System.getProperty("user.home")+"/spooky-integration/"+appName+"/dump"+UUID.randomUUID())
 
     val array = result.collect()
 
