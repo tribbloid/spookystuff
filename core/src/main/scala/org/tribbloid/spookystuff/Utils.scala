@@ -46,7 +46,7 @@ object Utils {
   }
 
   def canonizeFileName(name: String): String = {
-    var result = name.replaceAll("[ ]","_").replaceAll("[,]","|").replaceAll("[:\\\\/]+", "*")
+    var result = name.replaceAll("[ ]","_").replaceAll("[,&\\?]+","|").replaceAll("[:\\\\/]+", "*")
 
     if (result.length > 255) result = result.substring(0, 255)
 
@@ -55,7 +55,7 @@ object Utils {
 
   def canonizeUrn(name: String): String = {
 
-    var result = name.replaceAll("[ ]","_").replaceAll("[,]","/").replaceAll("[:\\\\/]+", "/")
+    var result = name.replaceAll("[ ]","_").replaceAll("[:,&\\?\\\\]+","/")
 
     result = result.split("/").map{
       part => {
