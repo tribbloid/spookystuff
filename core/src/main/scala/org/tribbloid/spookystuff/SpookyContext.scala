@@ -45,8 +45,8 @@ class SpookyContext (
                       var localErrorDumpRoot: String = "file:///spOOky/"+"error/",
                       //                      var localErrorDumpScreenshotRoot: String = "file:///spOOky/"+"error-screenshot/",
 
-                      var remoteResourceTimeout: Duration = 60.seconds,
-                      var distributedResourceTimeout: Duration = 60.seconds,
+                      var remoteResourceTimeout: Duration = 180.seconds,
+                      var distributedResourceTimeout: Duration = 180.seconds,
 
                       //default max number of elements scraped from a page, set to Int.MaxValue to allow unlimited fetch
                       var joinLimit: Int = Int.MaxValue,

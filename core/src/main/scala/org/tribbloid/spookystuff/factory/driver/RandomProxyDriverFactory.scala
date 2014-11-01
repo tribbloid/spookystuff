@@ -1,9 +1,7 @@
 package org.tribbloid.spookystuff.factory.driver
 
-import org.openqa.selenium.remote.DesiredCapabilities
-import org.openqa.selenium.{WebDriver, Capabilities}
-import org.openqa.selenium.phantomjs.{PhantomJSDriver, PhantomJSDriverService}
-import org.tribbloid.spookystuff.{Const, Utils}
+import org.openqa.selenium.Capabilities
+import org.openqa.selenium.phantomjs.PhantomJSDriverService
 
 import scala.util.Random
 
@@ -12,13 +10,21 @@ import scala.util.Random
  */
 
 class RandomProxyDriverFactory(
+                                proxies: Seq[(String, String)],
                                 phantomJSPath: String,
-                                val proxies: (String, String)*
+                                loadImages: Boolean = false,
+                                userAgent: String = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/37.0.2062.120 Safari/537.36",
+                                resolution: (Int,Int) = (1920, 1080)
                                 )
-  extends NaiveDriverFactory(phantomJSPath) {
+  extends NaiveDriverFactory(
+    phantomJSPath,
+    loadImages,
+    userAgent,
+    resolution
+  ) {
 
-  override def newInstance(capabilities: Capabilities): WebDriver = {
-    val proxyCap = new DesiredCapabilities(baseCaps).merge(capabilities)
+  override def newCap(capabilities: Capabilities) = {
+    val proxyCap = baseCaps.merge(capabilities)
     val proxy = proxies(Random.nextInt(proxies.size))
 
     proxyCap.setCapability(
@@ -26,20 +32,18 @@ class RandomProxyDriverFactory(
       Array("--proxy=" + proxy._1, "--proxy-type=" + proxy._2)
     )
 
-    Utils.retry () {
-      Utils.withDeadline(Const.sessionInitializationTimeout) {
-        new PhantomJSDriver(proxyCap)
-      }
-    }
+    proxyCap
   }
+
 }
 
 object RandomProxyDriverFactory {
 
   def apply(
-             phantomJSPath: String,
-             proxies: (String, String)*
-             ) = new RandomProxyDriverFactory(phantomJSPath, proxies: _*)
-
-  def apply(proxies: (String, String)*) = new RandomProxyDriverFactory(System.getenv("PHANTOMJS_PATH"), proxies: _*)
+             proxies: Seq[(String, String)],
+             phantomJSPath: String = System.getenv("PHANTOMJS_PATH"),
+             loadImages: Boolean = false,
+             userAgent: String = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/37.0.2062.120 Safari/537.36",
+             resolution: (Int,Int) = (1920, 1080)
+             ): RandomProxyDriverFactory = new RandomProxyDriverFactory(proxies, phantomJSPath, loadImages, userAgent, resolution)
 }

@@ -5,7 +5,6 @@ import java.util.{Date, UUID}
 
 import de.l3s.boilerpipe.extractors.ArticleExtractor
 import org.apache.commons.io.IOUtils
-import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.Path
 import org.apache.http.entity.ContentType
 import org.apache.spark.SparkEnv

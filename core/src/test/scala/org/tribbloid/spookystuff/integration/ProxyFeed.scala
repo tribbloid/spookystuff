@@ -2,7 +2,7 @@ package org.tribbloid.spookystuff.integration
 
 import org.tribbloid.spookystuff.entity.client._
 import org.tribbloid.spookystuff.factory.driver.RandomProxyDriverFactory
-import org.tribbloid.spookystuff.operator._
+
 import scala.concurrent.duration._
 
 /**
@@ -13,7 +13,7 @@ trait ProxyFeed extends TestCore {
   import spooky._
   import sql._
 
-  spooky.driverFactory = RandomProxyDriverFactory(proxies: _*)
+  spooky.driverFactory = RandomProxyDriverFactory(proxies)
 
   lazy val proxies = {
     proxyRDD
@@ -23,6 +23,7 @@ trait ProxyFeed extends TestCore {
   }
 
   lazy val proxyRDD = {
+
 
     val httpPageRowRDD = (noInput
       +> Visit("http://www.us-proxy.org/")

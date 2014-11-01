@@ -70,7 +70,7 @@ class PageBuilder(
 
   //mimic lazy val but retain ability to destruct it on demand
   def driver: WebDriver = {
-    if (_driver == null) _driver = spooky.driverFactory.newInstance(caps)
+    if (_driver == null) _driver = spooky.driverFactory.newInstance(caps, spooky)
     _driver
   }
 

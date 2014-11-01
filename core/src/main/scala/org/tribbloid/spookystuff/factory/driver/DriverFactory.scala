@@ -17,9 +17,10 @@ package org.tribbloid.spookystuff.factory.driver
 
 import org.openqa.selenium.Capabilities
 import org.openqa.selenium.WebDriver
+import org.tribbloid.spookystuff.SpookyContext
 
 trait DriverFactory extends Serializable{
 
-  def newInstance(capabilities: Capabilities): WebDriver
+  def newInstance(capabilities: Capabilities, spooky: SpookyContext): WebDriver
 
 }

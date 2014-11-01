@@ -3,7 +3,7 @@ package org.tribbloid.spookystuff.factory.driver
 import org.openqa.selenium.firefox.FirefoxDriver
 import org.openqa.selenium.remote.DesiredCapabilities
 import org.openqa.selenium.{Capabilities, WebDriver}
-import org.tribbloid.spookystuff.{Const, Utils}
+import org.tribbloid.spookystuff.{SpookyContext, Const, Utils}
 
 /**
  * Created by peng on 9/5/14.
@@ -20,7 +20,7 @@ object FirefoxDriverFactory extends DriverFactory {
 //  baseCaps.setCapability("webdriver.firefox.bin", "firefox");
 //  baseCaps.setCapability("webdriver.firefox.profile", "WebDriver");
 
-  override def newInstance(capabilities: Capabilities): WebDriver = {
+  override def newInstance(capabilities: Capabilities, spooky: SpookyContext): WebDriver = {
     val newCap = baseCaps.merge(capabilities)
 
     Utils.retry () {
