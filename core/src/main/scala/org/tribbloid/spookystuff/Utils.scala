@@ -106,7 +106,7 @@ the opening curly brace {,
 These special characters are often called "metacharacters".
    */
   def canonizeFileName(name: String): String = {
-    var result = name.replaceAll("[ ]","_").replaceAll("[^0-9a-zA-Z!-_\\.\\*'\\(\\)]+","*")
+    var result = name.replaceAll("[ ]","_").replaceAll("""[^0-9a-zA-Z!_.*'()-]+""","*")
 
     if (result.length > 255) result = result.substring(0, 255)
 
@@ -115,7 +115,7 @@ These special characters are often called "metacharacters".
 
   def canonizeUrn(name: String): String = {
 
-    var result = name.replaceAll("[ ]","_").replaceAll("[^0-9a-zA-Z!-_\\.\\*'\\(\\)]+","/")
+    var result = name.replaceAll("[ ]","_").replaceAll("""[^0-9a-zA-Z!_.*'()-]+""","/")
 
     result = result.split("/").map{
       part => {
