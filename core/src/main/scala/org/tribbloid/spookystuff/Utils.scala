@@ -14,7 +14,7 @@ object Utils {
 
   // Returning T, throwing the exception on failure
   @annotation.tailrec
-  def retry[T](n: Int = Const.inPartitionRetry)(fn: => T): T = {
+  def retry[T](n: Int)(fn: => T): T = {
     Try { fn } match {
       case Success(x) =>
         x
@@ -30,6 +30,8 @@ object Utils {
 
     Await.result(future, n)
   }
+
+  def retryWithDeadline[T](n: Int, t: Duration)(fn: => T): T = retry(n){withDeadline(t){fn}}
 
   lazy val random = new Random()
 

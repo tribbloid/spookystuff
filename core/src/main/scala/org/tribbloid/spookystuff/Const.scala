@@ -1,6 +1,5 @@
 package org.tribbloid.spookystuff
 
-import com.fasterxml.jackson.databind.ObjectMapper
 import org.tribbloid.spookystuff.operator.LeftOuter
 
 /**
@@ -27,6 +26,7 @@ object Const {
 
   val inPartitionRetry = 3
   val remoteResourceInPartitionRetry = 2
+  val distributedResourceInPartitionRetry = 2
 
   val actionDelayMax: Duration = 20.seconds
   val actionDelayMin: Duration = 2.seconds

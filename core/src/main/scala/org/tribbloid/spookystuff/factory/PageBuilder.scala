@@ -1,6 +1,5 @@
 package org.tribbloid.spookystuff.factory
 
-import java.io.ObjectStreamException
 import java.util.Date
 
 import org.openqa.selenium.{Capabilities, WebDriver}
@@ -10,7 +9,6 @@ import org.tribbloid.spookystuff.entity.client._
 import org.tribbloid.spookystuff.{Const, SpookyContext, Utils}
 
 import scala.collection.mutable.ArrayBuffer
-import scala.concurrent.TimeoutException
 
 object PageBuilder {
 
@@ -22,7 +20,7 @@ object PageBuilder {
   def resolve(actions: Seq[Action], dead: Boolean)(implicit spooky: SpookyContext): Seq[Page] = {
 
     Utils.retry (Const.remoteResourceInPartitionRetry){
-        resolvePlain(autoSnapshot(actions, dead))(spooky)
+      resolvePlain(autoSnapshot(actions, dead))(spooky)
     }
   }
 
@@ -106,20 +104,9 @@ class PageBuilder(
     if (action.mayExport()) {
       //always try to read from cache first
       val restored = if (autoRestore) {
-        try {
+
           Page.autoRestoreLatest(uid, spooky)
-        }
-        catch {
-          case e: TimeoutException =>
-            LoggerFactory.getLogger(this.getClass).warn("cached page(s) cannot be deserialized", e)
-            null
-          case e: ObjectStreamException =>
-            LoggerFactory.getLogger(this.getClass).warn("cached page(s) cannot be deserialized", e)
-            null
-          case e: ReflectiveOperationException =>
-            LoggerFactory.getLogger(this.getClass).warn("cached page(s) cannot be deserialized", e)
-            null
-        }
+
       }
       else null
 

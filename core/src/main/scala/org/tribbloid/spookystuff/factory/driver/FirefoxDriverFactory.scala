@@ -13,21 +13,18 @@ import org.tribbloid.spookystuff.{SpookyContext, Const, Utils}
 object FirefoxDriverFactory extends DriverFactory {
 
   val baseCaps = new DesiredCapabilities
-//  baseCaps.setJavascriptEnabled(true);                //< not really needed: JS enabled by default
-//  baseCaps.setCapability(CapabilityType.SUPPORTS_FINDING_BY_CSS,true)
+  //  baseCaps.setJavascriptEnabled(true);                //< not really needed: JS enabled by default
+  //  baseCaps.setCapability(CapabilityType.SUPPORTS_FINDING_BY_CSS,true)
 
-//  val FirefoxRootPath = "/usr/lib/phantomjs/"
-//  baseCaps.setCapability("webdriver.firefox.bin", "firefox");
-//  baseCaps.setCapability("webdriver.firefox.profile", "WebDriver");
+  //  val FirefoxRootPath = "/usr/lib/phantomjs/"
+  //  baseCaps.setCapability("webdriver.firefox.bin", "firefox");
+  //  baseCaps.setCapability("webdriver.firefox.profile", "WebDriver");
 
   override def newInstance(capabilities: Capabilities, spooky: SpookyContext): WebDriver = {
     val newCap = baseCaps.merge(capabilities)
 
-    Utils.retry () {
-      Utils.withDeadline(Const.sessionInitializationTimeout) {
-        new FirefoxDriver(newCap)
-      }
+    Utils.retryWithDeadline(Const.inPartitionRetry, Const.sessionInitializationTimeout) {
+      new FirefoxDriver(newCap)
     }
   }
-
 }

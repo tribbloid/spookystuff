@@ -48,6 +48,8 @@ class SpookyContext (
                       var remoteResourceTimeout: Duration = 180.seconds,
                       var distributedResourceTimeout: Duration = 180.seconds,
 
+                      var failOnDFSError: Boolean = false,
+
                       //default max number of elements scraped from a page, set to Int.MaxValue to allow unlimited fetch
                       var joinLimit: Int = Int.MaxValue,
                       var sliceLimit: Int = Int.MaxValue,

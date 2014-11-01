@@ -33,19 +33,17 @@ class NaiveDriverFactory(
 
   override def newInstance(capabilities: Capabilities, spooky: SpookyContext): WebDriver = {
 
-    Utils.retry () {
-      Utils.withDeadline(Const.sessionInitializationTimeout) {
-        val driver = new PhantomJSDriver(newCap(capabilities))
+    Utils.retryWithDeadline(Const.inPartitionRetry, Const.sessionInitializationTimeout) {
+      val driver = new PhantomJSDriver(newCap(capabilities))
 
-        driver.manage().timeouts()
-          .implicitlyWait(spooky.remoteResourceTimeout.toSeconds,TimeUnit.SECONDS)
-          .pageLoadTimeout(spooky.remoteResourceTimeout.toSeconds,TimeUnit.SECONDS)
-          .setScriptTimeout(spooky.remoteResourceTimeout.toSeconds,TimeUnit.SECONDS)
+      driver.manage().timeouts()
+        .implicitlyWait(spooky.remoteResourceTimeout.toSeconds,TimeUnit.SECONDS)
+        .pageLoadTimeout(spooky.remoteResourceTimeout.toSeconds,TimeUnit.SECONDS)
+        .setScriptTimeout(spooky.remoteResourceTimeout.toSeconds,TimeUnit.SECONDS)
 
-        if (resolution!=null) driver.manage().window().setSize(new Dimension(resolution._1, resolution._2))
+      if (resolution!=null) driver.manage().window().setSize(new Dimension(resolution._1, resolution._2))
 
-        driver
-      }
+      driver
     }
   }
 }

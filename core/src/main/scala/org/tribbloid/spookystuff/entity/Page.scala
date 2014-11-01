@@ -10,17 +10,36 @@ import org.apache.http.entity.ContentType
 import org.apache.spark.SparkEnv
 import org.jsoup.Jsoup
 import org.jsoup.nodes.{Document, Element}
+import org.slf4j.LoggerFactory
 import org.tribbloid.spookystuff.entity.client.Action
-import org.tribbloid.spookystuff.{Const, SpookyContext, Utils}
+import org.tribbloid.spookystuff.{DFSAccessException, Const, SpookyContext, Utils}
 
 import scala.collection.JavaConversions._
 
 //TODO: all these operations are prone to timeout, add timebound
 object Page {
 
+  def DFSAccess[T](pathStr: String, spooky: SpookyContext)(f: => T): T = {
+    try {
+      Utils.retryWithDeadline(Const.distributedResourceInPartitionRetry, spooky.distributedResourceTimeout) {
+        f
+      }
+    }
+    catch {
+      case e: Throwable =>
+        val ex = new DFSAccessException("path: "+pathStr ,e)
+        ex.setStackTrace(e.getStackTrace)
+        if (spooky.failOnDFSError) throw ex
+        else {
+          LoggerFactory.getLogger(this.getClass).warn("cached page(s) inaccessible", e)
+          null.asInstanceOf[T] //TODO: WTF?
+        }
+    }
+  }
+
   def load(fullPath: Path)(spooky: SpookyContext): Array[Byte] = {
 
-    Utils.withDeadline(spooky.distributedResourceTimeout) {
+    DFSAccess(fullPath.toString, spooky) {
       val fs = fullPath.getFileSystem(spooky.hConf)
 
       if (fs.exists(fullPath)) {
@@ -45,7 +64,7 @@ object Page {
              overwrite: Boolean = false
              )(spooky: SpookyContext): Unit = {
 
-    Utils.withDeadline(spooky.distributedResourceTimeout) {
+    DFSAccess(path, spooky) {
       var fullPath = new Path(path)
 
       val fs = fullPath.getFileSystem(spooky.hConf)
@@ -98,7 +117,7 @@ object Page {
 
   def restore(fullPath: Path)(spooky: SpookyContext): Seq[Page] = {
 
-    Utils.withDeadline(spooky.distributedResourceTimeout) {
+    DFSAccess(fullPath.toString, spooky) {
       _restore(fullPath)(spooky)
     }
   }
@@ -128,7 +147,7 @@ object Page {
                      earliestModificationTime: Long = 0
                      )(spooky: SpookyContext): Seq[Page] = {
 
-    Utils.withDeadline(spooky.distributedResourceTimeout) {
+    DFSAccess(dirPath.toString, spooky) {
 
       val fs = dirPath.getFileSystem(spooky.hConf)
 
@@ -215,8 +234,9 @@ case class Page(
             //            metadata: Boolean = true
             )(spooky: SpookyContext): Page = {
 
-    Utils.withDeadline(spooky.distributedResourceTimeout) {
-      val path = Utils.urlConcat(pathParts: _*)
+    val path = Utils.urlConcat(pathParts: _*)
+
+    Page.DFSAccess(path, spooky) {
 
       var fullPath = new Path(path)
 
