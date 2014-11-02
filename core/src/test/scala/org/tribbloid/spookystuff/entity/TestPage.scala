@@ -39,6 +39,9 @@ class TestPage extends FunSuite with BeforeAndAfter {
       sql,
       driverFactory = NaiveDriverFactory(loadImages = true)
     )
+    spooky.autoSave = false
+    spooky.autoCache = false
+    spooky.autoRestore = false
 
     spooky
   }
@@ -46,8 +49,8 @@ class TestPage extends FunSuite with BeforeAndAfter {
   val page = {
     val builder = new PageBuilder(spooky)()
     builder += Visit("http://en.wikipedia.org")
-
-    val res = Snapshot().doExe(builder)
+    builder += Snapshot()
+    val res = builder.pages
 
     builder.finalize()
     res
@@ -55,7 +58,8 @@ class TestPage extends FunSuite with BeforeAndAfter {
 
   val wgetPage = {
     val builder = new PageBuilder(spooky)()
-    val res = Wget("http://en.wikipedia.org").doExe(builder)
+    builder += Wget("http://en.wikipedia.org")
+    val res = builder.pages
 
     builder.finalize()
     res

@@ -76,7 +76,7 @@ class PageBuilder(
   val realBacktrace: ArrayBuffer[Action] = ArrayBuffer() //real one excluding buffered
 
   private val buffer: ArrayBuffer[Action] = ArrayBuffer()
-  private val pages: ArrayBuffer[Page] = ArrayBuffer()
+  val pages: ArrayBuffer[Page] = ArrayBuffer()
 
   //  TODO: Runtime.getRuntime.addShutdownHook()
   //by default drivers should be reset and reused in this case, but whatever
