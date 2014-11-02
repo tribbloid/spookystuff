@@ -1,6 +1,6 @@
 package org.tribbloid.spookystuff.entity.client
 
-import org.tribbloid.spookystuff.Const
+import org.tribbloid.spookystuff.{Utils, Const}
 import org.tribbloid.spookystuff.entity.Page
 import org.tribbloid.spookystuff.factory.PageBuilder
 
@@ -70,14 +70,14 @@ trait Action extends Serializable with Product {
            ): Seq[Page] = {
 
     val results = try {
-//      this match { //temporarily disabled as we assume that DFS is the culprit for causing deadlock
-//        case t: Timed =>
-//          Utils.withDeadline(t.delay + session.spooky.remoteResourceTimeout) {
-//            doExe(session)
-//          }
-//        case _ =>
+      this match { //temporarily disabled as we assume that DFS is the culprit for causing deadlock
+        case t: Timed =>
+          Utils.withDeadline(t.delay + session.spooky.remoteResourceTimeout) {
+            doExe(session)
+          }
+        case _ =>
           doExe(session)
-//      }
+      }
     }
     catch {
       case e: Throwable =>
