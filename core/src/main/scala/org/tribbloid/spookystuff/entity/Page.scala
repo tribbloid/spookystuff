@@ -261,7 +261,7 @@ case class Page(
       val fos = fs.create(fullPath, overwrite)
 
       try {
-        IOUtils.write(content,fos)
+        fos.write(content)//       remember that apache IOUtils is defective for DFS!
       }
       finally {
         fos.close()
