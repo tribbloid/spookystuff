@@ -7,12 +7,13 @@ import org.tribbloid.spookystuff.integration.TestCore
 /**
  * Created by peng on 11/1/14.
  */
-object Biocompare extends TestCore {
+object BioCompare extends TestCore {
+  
   import spooky._
 
   override def doMain(): SchemaRDD = {
 
-    (sc.parallelize(Seq(
+    val ranges = (sc.parallelize(Seq(
       "http://www.biocompare.com/1997-BrowseCategory/browse/gb1/9776/num",
       "http://www.biocompare.com/1997-BrowseCategory/browse/gb1/9776/A",
       "http://www.biocompare.com/1997-BrowseCategory/browse/gb1/9776/B",
@@ -43,17 +44,34 @@ object Biocompare extends TestCore {
     ),27)
       +> Visit("#{_}")
       !=!())
-      .visitJoin("div.guidedBrowseResults > ul > li a")()
-      .visitJoin("div.vendorRow a.viewAll")()
-      .paginate("ul.pages > li.next > a", wget = false)()
-      .sliceJoin("tr.productRow")()
+      .wgetJoin("div.guidedBrowseCurrentOptionsSegments a")(indexKey = "range_index")
       .extract(
-        "Product name" -> (_.text1("h5")),
-        "Applications" -> (_.text1("td:nth-of-type(2)")),
-        "Reactivity" -> (_.text1("td:nth-of-type(3)")),
-        "Conjugate/Tag/Label" -> (_.text1("td:nth-of-type(4)")),
-        "Quantity" -> (_.text1("td:nth-of-type(5)"))
-      )
-      .asSchemaRDD()
+        "range" -> (_.text1("h1"))
+      ).persist()
+
+    print(ranges.count())
+
+    val categories = ranges
+      .sliceJoin("div.guidedBrowseResults > ul > li a")(indexKey = "category_index")
+      .extract(
+        "category" -> (_.text1("*"))
+      ).persist()
+
+    print(categories.count())
+
+    categories.asSchemaRDD()
+
+    //      .visitJoin("div.guidedBrowseResults > ul > li a")()
+    //      .visitJoin("div.vendorRow a.viewAll")()
+    //      .paginate("ul.pages > li.next > a", wget = false)()
+    //      .sliceJoin("tr.productRow")()
+    //      .extract(
+    //        "Product name" -> (_.text1("h5")),
+    //        "Applications" -> (_.text1("td:nth-of-type(2)")),
+    //        "Reactivity" -> (_.text1("td:nth-of-type(3)")),
+    //        "Conjugate/Tag/Label" -> (_.text1("td:nth-of-type(4)")),
+    //        "Quantity" -> (_.text1("td:nth-of-type(5)"))
+    //      )
+    //      .asSchemaRDD()
   }
 }

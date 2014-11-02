@@ -446,7 +446,7 @@ case class PageSchemaRDD(
                 wget: Boolean = true,
                 postAction: Seq[Action] = Seq()
                 )(
-                limit: Int = spooky.joinLimit,
+                limit: Int = spooky.paginationLimit,
                 indexKey: String = null,
                 flatten: Boolean = true,
                 last: Boolean = false

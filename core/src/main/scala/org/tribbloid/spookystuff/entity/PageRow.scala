@@ -257,14 +257,14 @@ case class PageRow(
   //TODO: lambda support
   def paginate(
                 selector: String,
-                attr: String = "abs:href",
-                wget: Boolean = true,
-                postActions: Seq[Action] = Seq()
+                attr: String,
+                wget: Boolean,
+                postActions: Seq[Action]
                 )(
                 limit: Int,
-                indexKey: String = null,
-                flatten: Boolean = true,
-                last: Boolean = false
+                indexKey: String,
+                flatten: Boolean,
+                last: Boolean
                 )(
                 implicit spooky: SpookyContext
                 ): Array[PageRow] = {
