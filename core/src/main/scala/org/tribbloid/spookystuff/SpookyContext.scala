@@ -35,9 +35,9 @@ class SpookyContext (
 
                       var pageExpireAfter: Duration = 1.day,
 
-                      var autoSaveExtract: Extract[_] = TimestampPath(HierarchicalUrnLookup),
+                      var autoSaveExtract: Extract[_] = UUIDPath(HierarchicalUrnLookup),
                       var autoCacheLookup: Lookup[_] = HierarchicalUrnLookup,
-                      var errorDumpExtract: Extract[_] = TimestampPath(HierarchicalUrnLookup),
+                      var errorDumpExtract: Extract[_] = UUIDPath(HierarchicalUrnLookup),
 
                       var autoSaveRoot: String = "s3n://spooky-page/",
                       var autoCacheRoot: String = "s3n://spooky-cache/",

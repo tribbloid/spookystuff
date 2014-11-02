@@ -42,7 +42,7 @@ object Utils {
       if (part.endsWith("/")) result += part
       else result += part+"/"
     }
-    result
+    result.substring(0, result.length-2)
   }
 
   /*

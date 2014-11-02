@@ -197,6 +197,7 @@ class PageSeqWrapper(val pages: Seq[Page]) extends Serializable
  * Created by peng on 04/06/14.
  */
 //use to genterate a lookup key for each page so
+@SerialVersionUID(612503421395L)
 case class PageUID(
                     backtrace: Seq[Action],
                     blockKey: Int = -1 //-1 is no sub key
@@ -265,18 +266,6 @@ case class Page(
       this.copy(saved = fullPath.toString)
     }
   }
-
-
-
-  //  private def autoPath[T](
-  //                           root: String,
-  //                           lookup: Lookup,
-  //                           extract: Extract[_]
-  //                           ): String = {
-  //
-  //    if (!root.endsWith("/")) root + "/" + lookup(backtrace,resolvedUrl) + "/" + extract(this)
-  //    else root + lookup(backtrace,resolvedUrl) + "/" + extract(this)
-  //  }
 
   def autoSave(
                 spooky: SpookyContext,

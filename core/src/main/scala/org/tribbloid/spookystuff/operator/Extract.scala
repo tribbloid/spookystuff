@@ -1,5 +1,7 @@
 package org.tribbloid.spookystuff.operator
 
+import java.util.UUID
+
 import org.tribbloid.spookystuff.Utils
 import org.tribbloid.spookystuff.entity.Page
 
@@ -20,11 +22,19 @@ abstract class Extract[T] extends (Page => T) with Serializable {
 //  }
 //}
 
-case class TimestampPath(lookup: Lookup[_]) extends Extract[String] {
+//case class TimestampPath(lookup: Lookup[_]) extends Extract[String] {
+//
+//  override def apply(page: Page): String = {
+//
+//    Utils.urlConcat(lookup(page.uid).toString, page.timestamp.getTime.toString)
+//  }
+//}
+
+case class UUIDPath(lookup: Lookup[_]) extends Extract[String] {
 
   override def apply(page: Page): String = {
 
-    Utils.urlConcat(lookup(page.uid).toString, page.timestamp.getTime.toString)
+    Utils.urlConcat(lookup(page.uid).toString, UUID.randomUUID().toString)
   }
 }
 

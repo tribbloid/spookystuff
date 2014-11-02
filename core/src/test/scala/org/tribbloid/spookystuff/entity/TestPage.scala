@@ -1,10 +1,12 @@
 package org.tribbloid.spookystuff.entity
 
-import org.apache.spark.{SparkContext, SparkConf}
+import java.util.Properties
+
 import org.apache.spark.sql.SQLContext
+import org.apache.spark.{SparkConf, SparkContext}
 import org.scalatest.{BeforeAndAfter, FunSuite}
 import org.tribbloid.spookystuff.SpookyContext
-import org.tribbloid.spookystuff.entity.client.{Wget, Snapshot, Visit}
+import org.tribbloid.spookystuff.entity.client.{Snapshot, Visit, Wget}
 import org.tribbloid.spookystuff.factory.PageBuilder
 import org.tribbloid.spookystuff.factory.driver.NaiveDriverFactory
 
@@ -15,11 +17,23 @@ import scala.concurrent.duration._
  */
 class TestPage extends FunSuite with BeforeAndAfter {
 
+  val prop = new Properties()
+  prop.load(ClassLoader.getSystemResourceAsStream("rootkey.csv"))
+  val AWSAccessKeyId = prop.getProperty("AWSAccessKeyId")
+  val AWSSecretKey = prop.getProperty("AWSSecretKey")
+
   val spooky = {
     val conf: SparkConf = new SparkConf().setAppName("test")
       .setMaster("local[*]")
 
     val sc: SparkContext = new SparkContext(conf)
+
+    sc.hadoopConfiguration
+      .set("fs.s3n.awsAccessKeyId", AWSAccessKeyId)
+
+    sc.hadoopConfiguration
+      .set("fs.s3n.awsSecretAccessKey", AWSSecretKey)
+
     val sql: SQLContext = new SQLContext(sc)
     val spooky: SpookyContext = new SpookyContext(
       sql,
@@ -96,7 +110,8 @@ class TestPage extends FunSuite with BeforeAndAfter {
   }
 
   test ("s3 cache") {
-    spooky.setRoot("s3n://a:a@spooky-unit/")
+
+    spooky.setRoot(s"s3n://spooky-unit/")
     spooky.pageExpireAfter = 10.seconds
 
     Page.autoCache(page, page.head.uid, spooky)

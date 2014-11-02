@@ -20,7 +20,7 @@ object Abcom extends TestCore {
       .extract(
         "category" -> (_.text1("*"))
       )
-      .wgetJoin("*")(numPartitions = 100)
+      .wgetJoin("*")(numPartitions = 200)
       .paginate("li.nextLink > a")(indexKey = "page")
       .sliceJoin("div.pws-item-info")(indexKey = "product_row", joinType = Inner)
       .extract(
