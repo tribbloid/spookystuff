@@ -22,6 +22,7 @@ object Abcom extends TestCore {
       )
       .wgetJoin("*")(numPartitions = 200)
       .paginate("li.nextLink > a")(indexKey = "page")
+      .repartition(1000)
       .sliceJoin("div.pws-item-info")(indexKey = "product_row", joinType = Inner)
       .extract(
         "name" -> (_.text1("h3 a")),

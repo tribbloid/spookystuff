@@ -123,9 +123,13 @@ object Page {
         val ser = SparkEnv.get.serializer.newInstance()
 
         val serIn = ser.deserializeStream(fis)
-        val obj = serIn.readObject[PageSeqWrapper]()
-        serIn.close()
-        obj.pages
+        try {
+          val obj = serIn.readObject[PageSeqWrapper]()
+          obj.pages
+        }
+        finally{
+          serIn.close()
+        }
       }
       else null
     }

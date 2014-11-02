@@ -104,7 +104,7 @@ the closing parenthesis ),
 and the opening square bracket [,
 the opening curly brace {,
 These special characters are often called "metacharacters".
-   */
+  */
   def canonizeFileName(name: String): String = {
     var result = name.replaceAll("[ ]","_").replaceAll("""[^0-9a-zA-Z!_.*'()-]+""","*")
 
