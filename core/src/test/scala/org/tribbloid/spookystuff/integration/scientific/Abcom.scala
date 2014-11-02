@@ -13,15 +13,19 @@ object Abcom extends TestCore {
   import spooky._
 
   override def doMain(): SchemaRDD = {
-    (noInput
+    val firstPages = (noInput
       +> Visit("http://www.abcam.com/products")
       !=!())
       .sliceJoin("li.first_menu ul.pws_menu_level3 > li > a.level2-link")(indexKey = "category_index")
       .extract(
         "category" -> (_.text1("*"))
       )
-      .wgetJoin("*")(numPartitions = 200)
-      .paginate("li.nextLink > a")(indexKey = "page")
+      .wgetJoin("*")(numPartitions = 200).persist()
+
+    println(firstPages.count())
+
+    val rdd = firstPages
+      .paginate("li.nextlink[class!=disabled] > a[class!=disabled]")(indexKey = "page")
       .repartition(1000)
       .sliceJoin("div.pws-item-info")(indexKey = "product_row", joinType = Inner)
       .extract(
@@ -30,5 +34,7 @@ object Abcom extends TestCore {
         "application" -> (_.text1("div.pws_item.Application div.pws_value"))
       )
       .asSchemaRDD()
+
+    rdd
   }
 }
