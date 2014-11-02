@@ -42,7 +42,7 @@ object BioCompare extends TestCore {
       "http://www.biocompare.com/1997-BrowseCategory/browse/gb1/9776/Y",
       "http://www.biocompare.com/1997-BrowseCategory/browse/gb1/9776/Z"
     ),27)
-      +> Visit("#{_}")
+      +> Wget("#{_}")
       !=!())
       .wgetJoin("div.guidedBrowseCurrentOptionsSegments a")(indexKey = "range_index")
       .extract(

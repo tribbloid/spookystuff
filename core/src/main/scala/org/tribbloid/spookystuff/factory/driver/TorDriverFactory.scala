@@ -5,8 +5,18 @@ import org.openqa.selenium.phantomjs.PhantomJSDriverService
 /**
  * Created by peng on 07/08/14.
  */
-class TorDriverFactory(phantomJSPath: String)
-  extends NaiveDriverFactory(phantomJSPath: String) {
+class TorDriverFactory(
+                        phantomJSPath: String,
+                        loadImages: Boolean = false,
+                        userAgent: String = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/37.0.2062.120 Safari/537.36",
+                        resolution: (Int,Int) = (1920, 1080)
+                        )
+  extends NaiveDriverFactory(
+    phantomJSPath: String,
+    loadImages: Boolean,
+    userAgent: String,
+    resolution: (Int,Int)
+  ) {
 
   baseCaps.setCapability(
     PhantomJSDriverService.PHANTOMJS_CLI_ARGS,
@@ -16,7 +26,10 @@ class TorDriverFactory(phantomJSPath: String)
 
 object TorDriverFactory {
 
-  def apply(phantomJSPath: String) = new TorDriverFactory(phantomJSPath)
-
-  def apply() = new TorDriverFactory(System.getenv("PHANTOMJS_PATH"))
+  def apply(
+             phantomJSPath: String = System.getenv("PHANTOMJS_PATH"),
+             loadImages: Boolean = false,
+             userAgent: String = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/37.0.2062.120 Safari/537.36",
+             resolution: (Int,Int) = (1920, 1080)
+             ) = new TorDriverFactory(phantomJSPath, loadImages, userAgent, resolution)
 }
