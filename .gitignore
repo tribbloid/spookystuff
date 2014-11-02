@@ -40,8 +40,8 @@ foo
 **/rootkey.csv
 
 #spark deployment and autoscaling scripts
-**/inventories0/
-**/inventories1/
-**/inventories2/
-**/inventories3/
-**/inventories4/
+**/inventories0
+**/inventories1
+**/inventories2
+**/inventories3
+**/inventories4
