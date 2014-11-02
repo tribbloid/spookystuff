@@ -12,7 +12,7 @@ import org.jsoup.Jsoup
 import org.jsoup.nodes.{Document, Element}
 import org.slf4j.LoggerFactory
 import org.tribbloid.spookystuff.entity.client.{Screenshot, Action}
-import org.tribbloid.spookystuff.{DFSAccessException, Const, SpookyContext, Utils}
+import org.tribbloid.spookystuff._
 
 import scala.collection.JavaConversions._
 
@@ -27,7 +27,7 @@ object Page {
     }
     catch {
       case e: Throwable =>
-        val ex = new DFSAccessException(pathStr ,e)
+        val ex = new DFSReadException(pathStr ,e)
         ex.setStackTrace(e.getStackTrace)
         if (spooky.failOnDFSError) throw ex
         else {
@@ -39,13 +39,13 @@ object Page {
 
   def DFSWrite[T](message: String, pathStr: String, spooky: SpookyContext)(f: => T): T = {
     try {
-      Utils.retryWithDeadline(Const.distributedResourceInPartitionRetry, spooky.distributedResourceTimeout) {
+      Utils.retry(Const.distributedResourceInPartitionRetry) {
         f
       }
     }
     catch {
       case e: Throwable =>
-        val ex = new DFSAccessException(pathStr ,e)
+        val ex = new DFSWriteException(pathStr ,e)
         ex.setStackTrace(e.getStackTrace)
         throw ex
     }
