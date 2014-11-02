@@ -9,4 +9,5 @@ sealed abstract class JoinType extends Serializable with Product
 case object Inner extends JoinType
 case object LeftOuter extends JoinType //Flatten yield at least 1 PageRow that may have no page
 case object Replace extends JoinType //keep the original pages if action chain is empty
-case object Merge extends JoinType //always keep the original pages
+case object Append extends JoinType //always keep the original pages
+case object Merge extends JoinType

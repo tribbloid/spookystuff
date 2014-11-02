@@ -33,7 +33,7 @@ class SpookyContext (
                       var errorDump: Boolean = true,
                       var errorDumpScreenshot: Boolean = true,
 
-                      var pageExpireAfter: Duration = 1.day,
+                      var pageExpireAfter: Duration = 7.day,
 
                       var autoSaveExtract: Extract[_] = UUIDPath(HierarchicalUrnLookup),
                       var autoCacheLookup: Lookup[_] = HierarchicalUrnLookup,

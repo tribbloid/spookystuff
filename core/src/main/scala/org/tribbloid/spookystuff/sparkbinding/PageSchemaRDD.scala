@@ -7,7 +7,7 @@ import org.apache.spark.storage.StorageLevel
 import org.tribbloid.spookystuff.entity._
 import org.tribbloid.spookystuff.entity.client.{Action, Visit, Wget}
 import org.tribbloid.spookystuff.factory.PageBuilder
-import org.tribbloid.spookystuff.operator.{JoinType, LeftOuter, Merge, Replace}
+import org.tribbloid.spookystuff.operator.{JoinType, LeftOuter, Append, Replace}
 import org.tribbloid.spookystuff.{Const, SpookyContext, Utils}
 
 import scala.collection.immutable.ListSet
@@ -185,7 +185,7 @@ case class PageSchemaRDD(
         var newPageRows = joinType match {
           case Replace if newPages.isEmpty =>
             tuple._2.map(oldPageRow => PageRow(cells = oldPageRow.cells, pages = oldPageRow.pages))
-          case Merge =>
+          case Append =>
             tuple._2.map(oldPageRow => PageRow(cells = oldPageRow.cells, pages = oldPageRow.pages ++ newPages))
           case _ =>
             tuple._2.map(oldPageRow => PageRow(cells = oldPageRow.cells, pages = newPages))

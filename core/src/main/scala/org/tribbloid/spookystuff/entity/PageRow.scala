@@ -2,7 +2,7 @@ package org.tribbloid.spookystuff.entity
 
 import org.tribbloid.spookystuff.entity.client.{Action, Visit, Wget}
 import org.tribbloid.spookystuff.factory.PageBuilder
-import org.tribbloid.spookystuff.operator.{JoinType, LeftOuter, Merge, Replace}
+import org.tribbloid.spookystuff.operator._
 import org.tribbloid.spookystuff.{Const, SpookyContext, Utils}
 
 import scala.collection.mutable.ArrayBuffer
@@ -217,7 +217,7 @@ case class PageRow(
     val pages: Seq[Page] = joinType match {
       case Replace if sliced.isEmpty =>
         this.pages
-      case Merge =>
+      case Append =>
         this.pages ++ sliced
       case _ =>
         sliced
@@ -238,8 +238,12 @@ case class PageRow(
     val pages: Seq[Page] = joinType match {
       case Replace if this.actions.isEmpty =>
         this.pages
-      case Merge =>
+      case Append =>
         this.pages ++ PageBuilder.resolve(this.actions, this.dead)
+      case Merge =>
+        val oldUids = this.pages.map(_.uid)
+        val newPages = PageBuilder.resolve(this.actions, this.dead).filter(newPage => !oldUids.contains(newPage.uid))
+        this.pages ++ newPages
       case _ =>
         PageBuilder.resolve(this.actions, this.dead)
     }
@@ -265,18 +269,24 @@ case class PageRow(
                 implicit spooky: SpookyContext
                 ): Array[PageRow] = {
 
-    var oldRow = this.dropActions()
+    var currentRow = this.dropActions()
+    var increment = currentRow.pages.size
 
-    while (oldRow.pages.size <= limit && oldRow.pages.nonEmpty && oldRow.pages.last.attrExist(selector, attr)) {
+    while (currentRow.pages.size <= limit && increment > 0 && currentRow.pages.last.attrExist(selector, attr)) {
 
-      val actionRow = if (!wget) oldRow +%> (Visit("#{~}") -> (_.attr1(selector, attr, noEmpty = true, last = last)))
-      else oldRow +%> (Wget("#{~}") -> (_.attr1(selector, attr, noEmpty = true, last = last)))
+      val actionRow = if (!wget) currentRow +%> (Visit("#{~}") -> (_.attr1(selector, attr, noEmpty = true, last = last)))
+      else currentRow +%> (Wget("#{~}") -> (_.attr1(selector, attr, noEmpty = true, last = last)))
 
-      oldRow = (actionRow +> postActions).!=!(joinType = Merge, flatten = false).head
+      val newRow = (actionRow +> postActions).!=!(joinType = Merge, flatten = false).head
+
+      val oldSize = currentRow.pages.size
+
+      currentRow = (actionRow +> postActions).!=!(joinType = Merge, flatten = false).head
+      increment = currentRow.pages.size - oldSize
     }
 
-    if (flatten) oldRow.flatten(left = true, indexKey = indexKey)
-    else Array(oldRow)
+    if (flatten) currentRow.flatten(left = true, indexKey = indexKey)
+    else Array(currentRow)
   }
 }
 
