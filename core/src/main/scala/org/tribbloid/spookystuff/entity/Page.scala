@@ -21,7 +21,7 @@ object Page {
 
   def DFSRead[T](message: String, pathStr: String, spooky: SpookyContext)(f: => T): T = {
     try {
-      Utils.withDeadline(spooky.distributedResourceTimeout) {
+      Utils.retryWithDeadline(Const.DFSInPartitionRetry, spooky.distributedResourceTimeout) {
         f
       }
     }
@@ -39,7 +39,7 @@ object Page {
 
   def DFSWrite[T](message: String, pathStr: String, spooky: SpookyContext)(f: => T): T = {
     try {
-      Utils.withDeadline(spooky.distributedResourceTimeout) {
+      Utils.retryWithDeadline(Const.DFSInPartitionRetry, spooky.distributedResourceTimeout) {
         f
       }
     }
