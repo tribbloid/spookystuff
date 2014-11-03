@@ -8,7 +8,7 @@ import org.tribbloid.spookystuff.integration.TestCore
  * Created by peng on 11/1/14.
  */
 object BioCompare extends TestCore {
-  
+
   import spooky._
 
   override def doMain(): SchemaRDD = {
@@ -54,15 +54,20 @@ object BioCompare extends TestCore {
     val categories = ranges
       .sliceJoin("div.guidedBrowseResults > ul > li a")(indexKey = "category_index")
       .extract(
-        "category" -> (_.text1("*"))
+        "category" -> (_.text1("*")),
+        "first_page_url" -> (_.href1("*"))
       ).persist()
 
     print(categories.count())
 
-    categories.asSchemaRDD()
+    val firstPages = (categories
+      +> Visit("#{first_page_link}?vcmpv=true")
+      !><(numPartitions = 1000))
+      .extract(
+        "category_header" -> (_.text1("h1"))
+      )
 
     //      .visitJoin("div.guidedBrowseResults > ul > li a")()
-    //      .visitJoin("div.vendorRow a.viewAll")()
     //      .paginate("ul.pages > li.next > a", wget = false)()
     //      .sliceJoin("tr.productRow")()
     //      .extract(

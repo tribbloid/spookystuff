@@ -101,6 +101,8 @@ class PageBuilder(
   def +=(action: Action): Unit = {
     val uid = PageUID(this.backtrace :+ action)
 
+
+    this.backtrace ++= action.trunk()//always put into backtrace.
     if (action.mayExport()) {
       //always try to read from cache first
       val restored = if (autoRestore) {
@@ -118,24 +120,24 @@ class PageBuilder(
       else {
         for (buffered <- this.buffer)
         {
-          pages ++= buffered.exe(this)() // I know buffered one should only have empty result, just for safety
           this.realBacktrace ++= buffered.trunk()
+          pages ++= buffered.exe(this)() // I know buffered one should only have empty result, just for safety
         }
         buffer.clear()
+
+
+        this.realBacktrace ++= action.trunk()
         var batch = action.exe(this)()
 
         if (autoSave) batch = batch.map(_.autoSave(spooky))
         if (autoCache) Page.autoCache(batch, uid,spooky)
 
         pages ++= batch
-        this.realBacktrace ++= action.trunk()
       }
     }
     else {
       this.buffer += action
     }
-
-    this.backtrace ++= action.trunk()//always put into backtrace.
   }
 
   def ++= (actions: Seq[Action]): Unit = {
