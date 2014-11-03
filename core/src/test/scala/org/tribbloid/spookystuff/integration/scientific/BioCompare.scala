@@ -55,13 +55,13 @@ object BioCompare extends TestCore {
       .sliceJoin("div.guidedBrowseResults > ul > li a")(indexKey = "category_index")
       .extract(
         "category" -> (_.text1("*")),
-        "first_page_url" -> (_.href1("*"))
+        "first_page_link" -> (_.href1("*"))
       ).persist()
 
     print(categories.count())
 
     val firstPages = (categories
-      +> Visit("#{first_page_link}?vcmpv=true")
+      +> Wget("#{first_page_link}?vcmpv=true")
       !><(numPartitions = 1000))
       .extract(
         "category_header" -> (_.text1("h1"))
@@ -78,5 +78,7 @@ object BioCompare extends TestCore {
     //        "Quantity" -> (_.text1("td:nth-of-type(5)"))
     //      )
     //      .asSchemaRDD()
+
+    firstPages.asSchemaRDD()
   }
 }

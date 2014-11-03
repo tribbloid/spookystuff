@@ -28,6 +28,6 @@ object Const {
   val remoteResourceInPartitionRetry = 2
   val DFSInPartitionRetry = 2
 
-  val actionDelayMax: Duration = 20.seconds
-  val actionDelayMin: Duration = 2.seconds
+  val actionDelayMax: Duration = 60.seconds
+  val actionDelayMin: Duration = 10.seconds
 }

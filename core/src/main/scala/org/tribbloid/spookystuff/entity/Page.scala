@@ -124,7 +124,7 @@ object Page {
 
         val serIn = ser.deserializeStream(fis)
         try {
-          val obj = serIn.readObject[PageSeqWrapper]()
+          val obj = serIn.readObject[Any]().asInstanceOf[PageSeqWrapper]
           obj.pages
         }
         finally{
