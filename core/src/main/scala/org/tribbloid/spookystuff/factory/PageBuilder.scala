@@ -85,7 +85,7 @@ class PageBuilder(
 
   override def finalize(): Unit = {
     try {
-      LoggerFactory.getLogger(this.getClass).warn("FINALIZER THE ULTIMATE EVIL WAS SUMMONED!!!!!!")
+      LoggerFactory.getLogger(this.getClass).info("PageBuilder is finalized by GC")
       this.close() //this is greate evil, make sure it is never called by normal means
     }
     finally{
