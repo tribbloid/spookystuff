@@ -12,9 +12,9 @@ import org.tribbloid.spookystuff.{SpookyContext, Const, Utils}
  */
 class NaiveDriverFactory(
                           phantomJSPath: String,
-                          loadImages: Boolean = false,
-                          userAgent: String = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/37.0.2062.120 Safari/537.36",
-                          resolution: (Int,Int) = (1920, 1080)
+                          loadImages: Boolean,
+                          userAgent: String,
+                          resolution: (Int,Int)
                           )
   extends DriverFactory {
 
@@ -36,14 +36,19 @@ class NaiveDriverFactory(
     Utils.retryWithDeadline(Const.inPartitionRetry, Const.sessionInitializationTimeout) {
       val driver = new PhantomJSDriver(newCap(capabilities))
 
-      driver.manage().timeouts()
-        .implicitlyWait(spooky.remoteResourceTimeout.toSeconds,TimeUnit.SECONDS)
-        .pageLoadTimeout(spooky.remoteResourceTimeout.toSeconds,TimeUnit.SECONDS)
-        .setScriptTimeout(spooky.remoteResourceTimeout.toSeconds,TimeUnit.SECONDS)
+      try {
+        driver.manage().timeouts()
+          .implicitlyWait(spooky.remoteResourceTimeout.toSeconds,TimeUnit.SECONDS)
+          .pageLoadTimeout(spooky.remoteResourceTimeout.toSeconds,TimeUnit.SECONDS)
+          .setScriptTimeout(spooky.remoteResourceTimeout.toSeconds,TimeUnit.SECONDS)
+        if (resolution!=null) driver.manage().window().setSize(new Dimension(resolution._1, resolution._2))
 
-      if (resolution!=null) driver.manage().window().setSize(new Dimension(resolution._1, resolution._2))
-
-      driver
+        driver
+      }
+      finally {
+        driver.close()
+        driver.quit()
+      }
     }
   }
 }
