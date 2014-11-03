@@ -1,6 +1,0 @@
-[spark-worker]
-...worker public dns here...
-
-[spark-worker:vars]
-spark_master_dns=...master public dns here...
-spark_master=spark://{{spark_master_dns}}:7077
