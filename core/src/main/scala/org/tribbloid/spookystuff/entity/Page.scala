@@ -87,14 +87,15 @@ object Page {
       if (!overwrite && fs.exists(fullPath)) fullPath = new Path(path + "-" + UUID.randomUUID())
 
       val ser = SparkEnv.get.serializer.newInstance()
-      val copy = ser.serialize(Cacheable(pages))
-
       val fos = fs.create(fullPath, overwrite)
+      val serOut = ser.serializeStream(fos)
+
       try {
-        fos.write(copy.array())
+        serOut.writeObject[Seq[Page] with Cacheable](Cacheable[Seq[Page]](pages))
       }
       finally {
         fos.close()
+        serOut.close()
       }
     }
   }
@@ -119,16 +120,16 @@ object Page {
       val fs = fullPath.getFileSystem(spooky.hConf)
 
       if (fs.exists(fullPath)) {
-        val fis = fs.open(fullPath)
 
         val ser = SparkEnv.get.serializer.newInstance()
-
+        val fis = fs.open(fullPath)
         val serIn = ser.deserializeStream(fis)
         try {
           val obj = serIn.readObject[Any]()
           obj.asInstanceOf[Seq[Page]]
         }
         finally{
+          fis.close()
           serIn.close()
         }
       }
