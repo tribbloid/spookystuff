@@ -27,7 +27,7 @@ class TestPageBuilder extends FunSuite {
   import scala.concurrent.duration._
 
   test("visit and snapshot") {
-    val builder = new PageBuilder(new SpookyContext(null: SQLContext))()
+    val builder = new PageBuilder(new SpookyContext(null: SQLContext))
     Visit("http://en.wikipedia.org").doExe(builder)
     val page = Snapshot().doExe(builder).toList(0)
     //    val url = builder.getUrl
@@ -40,7 +40,7 @@ class TestPageBuilder extends FunSuite {
   }
 
   test("visit, input submit and snapshot") {
-    val builder = new PageBuilder(new SpookyContext(null: SQLContext))()
+    val builder = new PageBuilder(new SpookyContext(null: SQLContext))
     Visit("https://www.linkedin.com/").doExe(builder)
     TextInput("input#first","Adam").doExe(builder)
     TextInput("input#last","Muise").doExe(builder)

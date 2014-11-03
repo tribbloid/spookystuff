@@ -14,13 +14,13 @@ class TestEmptyPage extends FunSuite with BeforeAndAfter {
 
   //shorthand for resolving the final stage after some interactions
   lazy val emptyPage: Page = {
-    val pb = new PageBuilder(new SpookyContext(null: SQLContext))()
+    val pb = new PageBuilder(new SpookyContext(null: SQLContext))
 
     try {
       Snapshot().doExe(pb).toList(0)
     }
     finally {
-      pb.finalize()
+      pb.close()
     }
   }
 

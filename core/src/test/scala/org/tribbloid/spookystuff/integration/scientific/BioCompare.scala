@@ -2,6 +2,7 @@ package org.tribbloid.spookystuff.integration.scientific
 
 import org.apache.spark.sql.SchemaRDD
 import org.tribbloid.spookystuff.entity.client._
+import org.tribbloid.spookystuff.factory.driver.TorDriverFactory
 import org.tribbloid.spookystuff.integration.TestCore
 
 /**
@@ -9,6 +10,7 @@ import org.tribbloid.spookystuff.integration.TestCore
  */
 object BioCompare extends TestCore {
 
+  spooky.driverFactory = TorDriverFactory()
   import spooky._
 
   override def doMain(): SchemaRDD = {
@@ -42,30 +44,44 @@ object BioCompare extends TestCore {
       "http://www.biocompare.com/1997-BrowseCategory/browse/gb1/9776/Y",
       "http://www.biocompare.com/1997-BrowseCategory/browse/gb1/9776/Z"
     ),27)
-      +> Wget("#{_}")
+      +> Visit("#{_}")
       !=!())
-      .wgetJoin("div.guidedBrowseCurrentOptionsSegments a")(indexKey = "range_index")
+      .visitJoin("div.guidedBrowseCurrentOptionsSegments a")(indexKey = "range_index")
       .extract(
         "range" -> (_.text1("h1"))
       ).persist()
 
-    print(ranges.count())
+    println(ranges.count())
 
     val categories = ranges
       .sliceJoin("div.guidedBrowseResults > ul > li a")(indexKey = "category_index")
       .extract(
         "category" -> (_.text1("*")),
-        "first_page_link" -> (_.href1("*"))
+        "first_page_url" -> (_.href1("*"))
       ).persist()
 
-    print(categories.count())
+    println(categories.count())
 
     val firstPages = (categories
-      +> Wget("#{first_page_link}?vcmpv=true")
-      !><(numPartitions = 1000))
+      +> Visit("#{first_page_url}?vcmpv=true")
+      !><(numPartitions = 10000))
       .extract(
         "category_header" -> (_.text1("h1"))
       )
+
+    val allPages  = firstPages
+      .paginate("ul.pages > li.next > a", wget = false)(indexKey = "page")
+      .persist()
+
+    println(allPages.count())
+
+    val sliced = allPages
+      .sliceJoin("tr.productRow")()
+      .persist()
+
+    println(sliced.count())
+
+
 
     //      .visitJoin("div.guidedBrowseResults > ul > li a")()
     //      .paginate("ul.pages > li.next > a", wget = false)()
@@ -79,6 +95,6 @@ object BioCompare extends TestCore {
     //      )
     //      .asSchemaRDD()
 
-    firstPages.asSchemaRDD()
+    sliced.asSchemaRDD()
   }
 }

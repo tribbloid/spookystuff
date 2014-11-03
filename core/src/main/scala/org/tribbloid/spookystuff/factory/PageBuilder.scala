@@ -30,26 +30,15 @@ object PageBuilder {
 
     //    val results = ArrayBuffer[Page]()
 
-    val pb = new PageBuilder(spooky)()
+    val pb = new PageBuilder(spooky)
 
     try {
       pb ++= actions
 
       pb.pages
-      //      for (action <- actions) {
-      //        var pages = action.exe(pb)
-      //        if (pages != null) {
-      //
-      //          if (spooky.autoSave) pages = pages.map(page => page.autoSave(spooky) )
-      //
-      //          results ++= pages
-      //        }
-      //      }
-      //
-      //      results.toArray
     }
     finally {
-      pb.finalize()
+      pb.close()
     }
   }
 }
@@ -58,15 +47,17 @@ class PageBuilder(
                    val spooky: SpookyContext,
                    caps: Capabilities = null,
                    val startTime: Long = new Date().getTime
-                   )(
-                   val autoSave: Boolean = spooky.autoSave,
-                   val autoCache: Boolean = spooky.autoCache,
-                   val autoRestore: Boolean = spooky.autoRestore
-                   ) {
+                   ){
 
+  val autoSave = spooky.autoSave
+  val autoCache = spooky.autoCache
+  val autoRestore = spooky.autoRestore
+
+  @volatile
   private var _driver: WebDriver = null
 
   //mimic lazy val but retain ability to destruct it on demand
+  //not thread safe?
   def driver: WebDriver = {
     if (_driver == null) _driver = spooky.driverFactory.newInstance(caps, spooky)
     _driver
@@ -83,16 +74,21 @@ class PageBuilder(
 
   //  def exe(action: Action): Array[Page] = action.exe(this)
 
+
   //remember to call this! don't want thousands of phantomJS browsers opened
-  override def finalize() = {
-    try{
-      if (_driver != null) {
-        _driver.close()
-        _driver.quit()
-      }
-    }catch{
-      case t: Throwable => throw t
-    }finally{
+  def close(): Unit = {
+    if (_driver != null) {
+      _driver.close()
+      _driver.quit()
+    }
+  }
+
+  override def finalize(): Unit = {
+    try {
+      LoggerFactory.getLogger(this.getClass).warn("FINALIZER THE ULTIMATE EVIL WAS SUMMONED!!!!!!")
+      this.close() //this is greate evil, make sure it is never called by normal means
+    }
+    finally{
       super.finalize()
     }
   }
@@ -101,14 +97,12 @@ class PageBuilder(
   def +=(action: Action): Unit = {
     val uid = PageUID(this.backtrace :+ action)
 
-
     this.backtrace ++= action.trunk()//always put into backtrace.
     if (action.mayExport()) {
       //always try to read from cache first
       val restored = if (autoRestore) {
 
           Page.autoRestoreLatest(uid, spooky)
-
       }
       else null
 
@@ -124,7 +118,6 @@ class PageBuilder(
           pages ++= buffered.exe(this)() // I know buffered one should only have empty result, just for safety
         }
         buffer.clear()
-
 
         this.realBacktrace ++= action.trunk()
         var batch = action.exe(this)()

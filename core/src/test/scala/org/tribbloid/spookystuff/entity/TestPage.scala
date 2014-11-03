@@ -47,21 +47,30 @@ class TestPage extends FunSuite with BeforeAndAfter {
   }
 
   val page = {
-    val builder = new PageBuilder(spooky)()
-    builder += Visit("http://en.wikipedia.org")
-    builder += Snapshot()
-    val res = builder.pages
+    val builder = new PageBuilder(spooky)
+    val res = try {
+      builder += Visit("http://en.wikipedia.org")
+      builder += Snapshot()
+      builder.pages
+    }
+    finally{
+      builder.close()
+    }
 
-    builder.finalize()
     res
   }
 
   val wgetPage = {
-    val builder = new PageBuilder(spooky)()
-    builder += Wget("http://en.wikipedia.org")
-    val res = builder.pages
+    val builder = new PageBuilder(spooky)
 
-    builder.finalize()
+    val res = try {
+      builder += Wget("http://en.wikipedia.org")
+      builder.pages
+    }
+    finally {
+      builder.close()
+    }
+
     res
   }
 
