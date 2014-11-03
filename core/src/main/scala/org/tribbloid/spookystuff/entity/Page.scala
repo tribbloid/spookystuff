@@ -13,6 +13,7 @@ import org.jsoup.nodes.{Document, Element}
 import org.slf4j.LoggerFactory
 import org.tribbloid.spookystuff.entity.client.{Screenshot, Action}
 import org.tribbloid.spookystuff._
+import org.tribbloid.spookystuff.utils.Cacheable
 
 import scala.collection.JavaConversions._
 
@@ -86,7 +87,7 @@ object Page {
       if (!overwrite && fs.exists(fullPath)) fullPath = new Path(path + "-" + UUID.randomUUID())
 
       val ser = SparkEnv.get.serializer.newInstance()
-      val copy = ser.serialize(new PageSeqWrapper(pages))
+      val copy = ser.serialize(Cacheable(pages))
 
       val fos = fs.create(fullPath, overwrite)
       try {
@@ -124,8 +125,8 @@ object Page {
 
         val serIn = ser.deserializeStream(fis)
         try {
-          val obj = serIn.readObject[Any]().asInstanceOf[PageSeqWrapper]
-          obj.pages
+          val obj = serIn.readObject[Any]()
+          obj.asInstanceOf[Seq[Page]]
         }
         finally{
           serIn.close()
@@ -193,9 +194,6 @@ object Page {
     restoreLatest(new Path(pathStr), System.currentTimeMillis() - spooky.pageExpireAfter.toMillis)(spooky)
   }
 }
-
-@SerialVersionUID(1096592834L)
-class PageSeqWrapper(val pages: Seq[Page]) extends Serializable
 
 /**
  * Created by peng on 04/06/14.
@@ -305,32 +303,6 @@ case class Page(
       root :: spooky.errorDumpExtract(this).toString :: Nil
     )(spooky)
   }
-
-  //  def saveLocal(
-  //                 path: String,
-  //                 overwrite: Boolean = false
-  //                 ): Page = {
-  //
-  ////    val path: File = new File(dir)
-  ////    if (!path.isDirectory) path.mkdirs()
-  ////
-  ////    val fullPathString = getFilePath(fileName, dir)
-  //
-  //    var file: File = new File(path)
-  //
-  //    if (!overwrite && file.exists()) {
-  //      file = new File(path +"-"+ UUID.randomUUID())
-  //    }
-  //
-  //    file.createNewFile()
-  //
-  //    val fos = new FileOutputStream(file)
-  //
-  //    IOUtils.write(content,fos)
-  //    fos.close()
-  //
-  //    this.copy(savedTo = "file://" + file.getCanonicalPath)
-  //  }
 
   def numElements(selector: String): Int = doc match {
     case Some(doc: Element) => doc.select(selector).size()
