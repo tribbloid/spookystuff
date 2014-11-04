@@ -66,7 +66,7 @@ object BioCompare extends TestCore {
 
     val firstPages = (categories
       +> Visit("#{first_page_url}?vcmpv=true")
-      !><(numPartitions = 10000))
+      !><(numPartitions = initials.length*500))
       .extract(
         "category_header" -> (_.text1("h1"))
       )
@@ -78,7 +78,7 @@ object BioCompare extends TestCore {
     println(allPages.count())
 
     val sliced = allPages
-      .sliceJoin("tr.productRow")()
+      .sliceJoin("tr.productRow")(indexKey = "row")
       .persist()
 
     println(sliced.count())
@@ -86,14 +86,14 @@ object BioCompare extends TestCore {
     //      .visitJoin("div.guidedBrowseResults > ul > li a")()
     //      .paginate("ul.pages > li.next > a", wget = false)()
     //      .sliceJoin("tr.productRow")()
-    //      .extract(
-    //        "Product name" -> (_.text1("h5")),
-    //        "Applications" -> (_.text1("td:nth-of-type(2)")),
-    //        "Reactivity" -> (_.text1("td:nth-of-type(3)")),
-    //        "Conjugate/Tag/Label" -> (_.text1("td:nth-of-type(4)")),
-    //        "Quantity" -> (_.text1("td:nth-of-type(5)"))
-    //      )
-    //      .asSchemaRDD()
+//          .extract(
+//            "Product name" -> (_.text1("h5")),
+//            "Applications" -> (_.text1("td:nth-of-type(2)")),
+//            "Reactivity" -> (_.text1("td:nth-of-type(3)")),
+//            "Conjugate/Tag/Label" -> (_.text1("td:nth-of-type(4)")),
+//            "Quantity" -> (_.text1("td:nth-of-type(5)"))
+//          )
+//          .asSchemaRDD()
 
     sliced.asSchemaRDD()
   }

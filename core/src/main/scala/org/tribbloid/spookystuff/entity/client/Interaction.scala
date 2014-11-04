@@ -1,6 +1,5 @@
 package org.tribbloid.spookystuff.entity.client
 
-import org.openqa.selenium.android.library.AndroidWebDriver
 import org.openqa.selenium.htmlunit.HtmlUnitDriver
 import org.openqa.selenium.interactions.Actions
 import org.openqa.selenium.remote.RemoteWebDriver
