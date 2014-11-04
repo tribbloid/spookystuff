@@ -12,6 +12,7 @@ object BioCompare extends TestCore {
 
   spooky.driverFactory = TorDriverFactory()
   import spooky._
+  import sql._
 
   override def doMain(): SchemaRDD = {
 
@@ -83,18 +84,16 @@ object BioCompare extends TestCore {
 
     println(sliced.count())
 
-    //      .visitJoin("div.guidedBrowseResults > ul > li a")()
-    //      .paginate("ul.pages > li.next > a", wget = false)()
-    //      .sliceJoin("tr.productRow")()
-//          .extract(
-//            "Product name" -> (_.text1("h5")),
-//            "Applications" -> (_.text1("td:nth-of-type(2)")),
-//            "Reactivity" -> (_.text1("td:nth-of-type(3)")),
-//            "Conjugate/Tag/Label" -> (_.text1("td:nth-of-type(4)")),
-//            "Quantity" -> (_.text1("td:nth-of-type(5)"))
-//          )
-//          .asSchemaRDD()
+    val data = sliced
+      .extract(
+        "Product name" -> (_.text1("h5")),
+        "Applications" -> (_.text1("td:nth-of-type(2)")),
+        "Reactivity" -> (_.text1("td:nth-of-type(3)")),
+        "Conjugate/Tag/Label" -> (_.text1("td:nth-of-type(4)")),
+        "Quantity" -> (_.text1("td:nth-of-type(5)"))
+      )
+      .asSchemaRDD()
 
-    sliced.asSchemaRDD()
+    data.orderBy('range_index.asc, 'category_index.asc, 'page.asc, 'row.asc)
   }
 }

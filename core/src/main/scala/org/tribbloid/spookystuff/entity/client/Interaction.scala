@@ -38,7 +38,9 @@ abstract class Interaction extends Action {
  * Type into browser's url bar and click "goto"
  * @param url support cell interpolation
  */
-case class Visit(url: String) extends Interaction with Timed {
+case class Visit(
+                  url: String
+                  ) extends Interaction with Timed {
   override def exeWithoutPage(pb: PageBuilder) {
     pb.driver.get(url)
 
