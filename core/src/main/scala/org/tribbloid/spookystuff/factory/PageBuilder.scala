@@ -30,7 +30,7 @@ object PageBuilder {
 
     //    val results = ArrayBuffer[Page]()
 
-    val pb = new PageBuilder(spooky, null, actions.filterNot(_.isInstanceOf[Sessionless]).isEmpty)
+    val pb = new PageBuilder(spooky, null)
 
     try {
       pb ++= actions
@@ -45,8 +45,7 @@ object PageBuilder {
 
 class PageBuilder(
                    val spooky: SpookyContext,
-                   caps: Capabilities = null,
-                   sessionless: Boolean = false
+                   caps: Capabilities = null
                    ){
 
   val startTime: Long = new Date().getTime
@@ -55,10 +54,15 @@ class PageBuilder(
   val autoCache = spooky.autoCache
   val autoRestore = spooky.autoRestore
 
+  @volatile
+  private var _driver: WebDriver = null
+
   //mimic lazy val but retain ability to destruct it on demand
   //not thread safe?
-  val driver: WebDriver = if (sessionless) null
-  else spooky.driverFactory.newInstance(caps, spooky)
+  def driver: WebDriver = {
+    if (_driver == null) _driver = spooky.driverFactory.newInstance(caps, spooky)
+    _driver
+  }
 
   val backtrace: ArrayBuffer[Action] = ArrayBuffer() //kept in session, but it is action deciding if they fit in or what part to export
   val realBacktrace: ArrayBuffer[Action] = ArrayBuffer() //real one excluding buffered
@@ -73,9 +77,11 @@ class PageBuilder(
 
 
   //remember to call this! don't want thousands of phantomJS browsers opened
-  def close(): Unit = if (!sessionless) {
-    driver.close()
-    driver.quit()
+  def close(): Unit = {
+    if (_driver != null) {
+      _driver.close()
+      _driver.quit()
+    }
   }
 
   override def finalize(): Unit = {
