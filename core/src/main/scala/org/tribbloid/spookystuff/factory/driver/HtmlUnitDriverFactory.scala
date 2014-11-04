@@ -3,7 +3,8 @@ package org.tribbloid.spookystuff.factory.driver
 import org.openqa.selenium.htmlunit.HtmlUnitDriver
 import org.openqa.selenium.remote.{CapabilityType, DesiredCapabilities}
 import org.openqa.selenium.{Capabilities, WebDriver}
-import org.tribbloid.spookystuff.{SpookyContext, Const, Utils}
+import org.tribbloid.spookystuff.utils.{Utils, Const}
+import org.tribbloid.spookystuff.SpookyContext
 
 /**
  * Created by peng on 9/5/14.

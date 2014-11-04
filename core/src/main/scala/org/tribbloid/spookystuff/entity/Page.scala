@@ -13,7 +13,7 @@ import org.jsoup.nodes.{Document, Element}
 import org.slf4j.LoggerFactory
 import org.tribbloid.spookystuff.entity.client.{Screenshot, Action}
 import org.tribbloid.spookystuff._
-import org.tribbloid.spookystuff.utils.Cacheable
+import org.tribbloid.spookystuff.utils.{Utils, Const, Cacheable}
 
 import scala.collection.JavaConversions._
 

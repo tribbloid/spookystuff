@@ -1,10 +1,11 @@
-package org.tribbloid.spookystuff
+package org.tribbloid.spookystuff.utils
 
 import org.json4s.DefaultFormats
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._
 import scala.concurrent.{Await, Future}
+import scala.language.implicitConversions
 import scala.util.{Failure, Random, Success, Try}
 
 /**
@@ -134,4 +135,27 @@ These special characters are often called "metacharacters".
     if (beautiful) Serialization.writePretty(obj)(DefaultFormats)
     else Serialization.write(obj)(DefaultFormats)
   }
+
+  //TODO: reverse the direction of look-up, if a '#{...}' has no corresponding indexKey in the map, throws an exception
+  def interpolateFromMap[T](
+                             str: String,
+                             map: collection.Map[String,T],
+                             delimiter: String = "#"
+                             ): String = {
+    if ((str == null)|| str.isEmpty) return str
+    else if ((map == null)|| map.isEmpty) return str
+    var strVar = str
+    for (entry <- map) {
+      val sub = delimiter+"{".concat(entry._1).concat("}")
+      if (strVar.contains(sub))
+      {
+        var value: String = "null"
+        if (entry._2 != null) {value = entry._2.toString}
+        strVar = strVar.replace(sub, value)
+      }
+    }
+    strVar
+  }
+
+  implicit def mapFunctions[K](map: Map[K,_]): MapFunctions[K] = new MapFunctions[K](map)
 }

@@ -1,4 +1,4 @@
-package org.tribbloid.spookystuff
+package org.tribbloid.spookystuff.utils
 
 import org.tribbloid.spookystuff.operator.LeftOuter
 

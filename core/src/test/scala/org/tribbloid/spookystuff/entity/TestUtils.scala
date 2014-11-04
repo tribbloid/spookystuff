@@ -1,7 +1,7 @@
 package org.tribbloid.spookystuff.entity
 
 import org.scalatest.FunSuite
-import org.tribbloid.spookystuff.Utils
+import org.tribbloid.spookystuff.utils.Utils
 
 /**
  * Created by peng on 11/1/14.

@@ -6,7 +6,8 @@ import org.openqa.selenium.{Capabilities, WebDriver}
 import org.slf4j.LoggerFactory
 import org.tribbloid.spookystuff.entity._
 import org.tribbloid.spookystuff.entity.client._
-import org.tribbloid.spookystuff.{Const, SpookyContext, Utils}
+import org.tribbloid.spookystuff.utils.{Utils, Const}
+import org.tribbloid.spookystuff.SpookyContext
 
 import scala.collection.mutable.ArrayBuffer
 

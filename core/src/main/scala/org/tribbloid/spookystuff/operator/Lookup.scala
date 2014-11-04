@@ -2,10 +2,9 @@ package org.tribbloid.spookystuff.operator
 
 import java.net.URLEncoder
 import java.util.UUID
-
-import org.tribbloid.spookystuff.Utils
 import org.tribbloid.spookystuff.entity.PageUID
 import org.tribbloid.spookystuff.entity.client.Action
+import org.tribbloid.spookystuff.utils.Utils
 
 /**
  * Created by peng on 9/12/14.

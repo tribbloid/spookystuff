@@ -5,7 +5,8 @@ import java.util.concurrent.TimeUnit
 import org.openqa.selenium.phantomjs.{PhantomJSDriver, PhantomJSDriverService}
 import org.openqa.selenium.remote.{CapabilityType, DesiredCapabilities}
 import org.openqa.selenium.{Dimension, Capabilities, WebDriver}
-import org.tribbloid.spookystuff.{SpookyContext, Const, Utils}
+import org.tribbloid.spookystuff.utils.{Utils, Const}
+import org.tribbloid.spookystuff.SpookyContext
 
 /**
  * Created by peng on 25/07/14.

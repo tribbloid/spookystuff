@@ -7,6 +7,7 @@ import org.tribbloid.spookystuff.entity.PageRow
 import org.tribbloid.spookystuff.factory.driver.{DriverFactory, NaiveDriverFactory}
 import org.tribbloid.spookystuff.operator._
 import org.tribbloid.spookystuff.sparkbinding.{SchemaRDDFunctions, PageSchemaRDD, StringRDDFunctions}
+import org.tribbloid.spookystuff.utils.Utils
 
 import scala.collection.immutable.ListSet
 import scala.concurrent.duration.{Duration, _}

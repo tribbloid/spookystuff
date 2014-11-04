@@ -8,7 +8,7 @@ import org.openqa.selenium.support.ui.{ExpectedCondition, ExpectedConditions, Se
 import org.openqa.selenium.{By, WebDriver}
 import org.tribbloid.spookystuff.entity.Page
 import org.tribbloid.spookystuff.factory.PageBuilder
-import org.tribbloid.spookystuff.{Const, Utils}
+import org.tribbloid.spookystuff.utils.{Const, Utils}
 
 import scala.concurrent.duration.Duration
 
@@ -49,7 +49,7 @@ case class Visit(
   }
 
   override def interpolateFromMap[T](map: Map[String,T]): this.type = {
-    this.copy(url = Action.interpolateFromMap(this.url,map)).asInstanceOf[this.type]
+    this.copy(url = Utils.interpolateFromMap(this.url,map)).asInstanceOf[this.type]
   }
 }
 
@@ -222,7 +222,7 @@ case class TextInput(selector: String, text: String) extends Interaction with Ti
   }
 
   override def interpolateFromMap[T](map: Map[String,T]): this.type = {
-    this.copy(text = Action.interpolateFromMap(this.text,map)).in(this.delay).asInstanceOf[this.type]
+    this.copy(text = Utils.interpolateFromMap(this.text,map)).in(this.delay).asInstanceOf[this.type]
   }
 }
 
@@ -241,7 +241,7 @@ case class DropDownSelect(selector: String, text: String) extends Interaction wi
   }
 
   override def interpolateFromMap[T](map: Map[String,T]): this.type = {
-    this.copy(text = Action.interpolateFromMap(this.text,map)).in(this.delay).asInstanceOf[this.type]
+    this.copy(text = Utils.interpolateFromMap(this.text,map)).in(this.delay).asInstanceOf[this.type]
   }
 }
 
@@ -276,7 +276,7 @@ case class ExeScript(script: String) extends Interaction {
   }
 
   override def interpolateFromMap[T](map: Map[String,T]): this.type = {
-    this.copy(script = Action.interpolateFromMap(this.script,map)).asInstanceOf[this.type]
+    this.copy(script = Utils.interpolateFromMap(this.script,map)).asInstanceOf[this.type]
   }
 }
 

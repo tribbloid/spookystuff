@@ -1,8 +1,8 @@
 package org.tribbloid.spookystuff.entity.client
 
-import org.tribbloid.spookystuff.Const
 import org.tribbloid.spookystuff.entity.{Page, PageUID}
 import org.tribbloid.spookystuff.factory.PageBuilder
+import org.tribbloid.spookystuff.utils.Const
 
 import scala.collection.mutable.ArrayBuffer
 import scala.concurrent.duration.Duration

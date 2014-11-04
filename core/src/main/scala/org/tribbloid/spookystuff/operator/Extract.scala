@@ -1,9 +1,8 @@
 package org.tribbloid.spookystuff.operator
 
 import java.util.UUID
-
-import org.tribbloid.spookystuff.Utils
 import org.tribbloid.spookystuff.entity.Page
+import org.tribbloid.spookystuff.utils.Utils
 
 /**
  * Created by peng on 8/29/14.

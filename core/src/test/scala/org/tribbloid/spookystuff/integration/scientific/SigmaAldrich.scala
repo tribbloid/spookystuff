@@ -1,10 +1,10 @@
 package org.tribbloid.spookystuff.integration.scientific
 
 import org.apache.spark.sql.SchemaRDD
-import org.tribbloid.spookystuff.Utils
 import org.tribbloid.spookystuff.entity.client._
 import org.tribbloid.spookystuff.integration.TestCore
 import org.tribbloid.spookystuff.operator._
+import org.tribbloid.spookystuff.utils.Utils
 
 import scala.collection.immutable.ListMap
 

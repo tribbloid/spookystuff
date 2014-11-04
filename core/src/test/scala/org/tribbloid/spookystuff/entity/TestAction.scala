@@ -1,14 +1,14 @@
 package org.tribbloid.spookystuff.entity
 
 import org.scalatest.FunSuite
-import org.tribbloid.spookystuff.entity.client.Action
+import org.tribbloid.spookystuff.utils.Utils
 
 /**
  * Created by peng on 07/07/14.
  */
 class TestAction extends FunSuite {
 
-  test("formatNullString") {assert (Action.interpolateFromMap(null, Map[String,String]()) === null)}
+  test("formatNullString") {assert (Utils.interpolateFromMap(null, Map[String,String]()) === null)}
 
-  test("formatEmptyString") {assert (Action.interpolateFromMap("", Map[String,String]()) === "")}
+  test("formatEmptyString") {assert (Utils.interpolateFromMap("", Map[String,String]()) === "")}
 }

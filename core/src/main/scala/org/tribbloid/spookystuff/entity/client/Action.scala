@@ -1,6 +1,7 @@
 package org.tribbloid.spookystuff.entity.client
 
-import org.tribbloid.spookystuff.{ActionException, Utils, Const}
+import org.tribbloid.spookystuff.utils.{Utils, Const}
+import org.tribbloid.spookystuff.ActionException
 import org.tribbloid.spookystuff.entity.Page
 import org.tribbloid.spookystuff.factory.PageBuilder
 
@@ -11,22 +12,6 @@ import scala.concurrent.duration.Duration
  */
 
 object Action {
-
-  def interpolateFromMap[T](str: String, map: collection.Map[String,T]): String = {
-    if ((str == null)|| str.isEmpty) return str
-    else if ((map == null)|| map.isEmpty) return str
-    var strVar = str
-    for (entry <- map) {
-      val sub = "#{".concat(entry._1).concat("}")
-      if (strVar.contains(sub))
-      {
-        var value: String = "null"
-        if (entry._2 != null) {value = entry._2.toString}
-        strVar = strVar.replace(sub, value)
-      }
-    }
-    strVar
-  }
 
   def mayExport(actions: Seq[Action]): Boolean = {
     for (action <- actions) {

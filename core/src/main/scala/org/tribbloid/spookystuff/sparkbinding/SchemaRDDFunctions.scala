@@ -2,7 +2,7 @@ package org.tribbloid.spookystuff.sparkbinding
 
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.SchemaRDD
-import org.tribbloid.spookystuff.Utils
+import org.tribbloid.spookystuff.utils.Utils
 
 /**
  * Created by peng on 12/06/14.
