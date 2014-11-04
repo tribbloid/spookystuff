@@ -80,8 +80,8 @@ class PageBuilder(
 
   override def finalize(): Unit = {
     try {
-      LoggerFactory.getLogger(this.getClass).info("PageBuilder is finalized by GC")
       this.close() //this is greate evil, make sure it is never called by normal means
+      LoggerFactory.getLogger(this.getClass).info("PageBuilder is finalized by GC")
     }
     finally{
       super.finalize()
