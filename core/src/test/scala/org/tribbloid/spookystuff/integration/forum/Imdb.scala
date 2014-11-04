@@ -1,7 +1,7 @@
 package org.tribbloid.spookystuff.integration.forum
 
 import org.tribbloid.spookystuff.integration.TestCore
-import org.tribbloid.spookystuff.entity.client._
+import org.tribbloid.spookystuff.actions._
 import org.tribbloid.spookystuff.expressions.LeftOuter
 
 /**

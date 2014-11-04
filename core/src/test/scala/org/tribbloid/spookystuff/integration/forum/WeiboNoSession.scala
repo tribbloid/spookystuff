@@ -3,7 +3,7 @@ package org.tribbloid.spookystuff.integration.forum
 import java.text.SimpleDateFormat
 import java.util.Date
 
-import org.tribbloid.spookystuff.entity.client._
+import org.tribbloid.spookystuff.actions._
 import org.tribbloid.spookystuff.integration.TestCore
 
 /**

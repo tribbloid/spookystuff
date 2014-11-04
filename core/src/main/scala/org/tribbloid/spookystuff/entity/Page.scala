@@ -11,9 +11,9 @@ import org.apache.spark.SparkEnv
 import org.jsoup.Jsoup
 import org.jsoup.nodes.{Document, Element}
 import org.slf4j.LoggerFactory
-import org.tribbloid.spookystuff.entity.client.{Screenshot, Action}
 import org.tribbloid.spookystuff._
-import org.tribbloid.spookystuff.utils.{Utils, Const, Cacheable}
+import org.tribbloid.spookystuff.actions._
+import org.tribbloid.spookystuff.utils.{Cacheable, Const, Utils}
 
 import scala.collection.JavaConversions._
 

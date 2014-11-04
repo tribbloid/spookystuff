@@ -5,7 +5,7 @@ import org.apache.spark.sql.SQLContext
 import org.apache.spark.{SparkConf, SparkContext}
 import org.scalatest.FunSuite
 import org.tribbloid.spookystuff.SpookyContext
-import org.tribbloid.spookystuff.entity.client._
+import org.tribbloid.spookystuff.actions._
 import org.tribbloid.spookystuff.factory.PageBuilder
 
 /**

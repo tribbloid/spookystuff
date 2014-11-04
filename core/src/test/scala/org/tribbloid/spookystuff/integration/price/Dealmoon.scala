@@ -1,6 +1,6 @@
 package org.tribbloid.spookystuff.integration.price
 
-import org.tribbloid.spookystuff.entity.client._
+import org.tribbloid.spookystuff.actions._
 import org.tribbloid.spookystuff.integration.TestCore
 
 object Dealmoon extends TestCore {

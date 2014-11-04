@@ -1,4 +1,4 @@
-package org.tribbloid.spookystuff.entity.client
+package org.tribbloid.spookystuff.actions
 
 import org.tribbloid.spookystuff.entity.{Page, PageUID}
 import org.tribbloid.spookystuff.factory.PageBuilder

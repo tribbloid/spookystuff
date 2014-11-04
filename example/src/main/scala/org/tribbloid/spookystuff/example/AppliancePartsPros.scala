@@ -1,6 +1,6 @@
 package org.tribbloid.spookystuff.example
 
-import org.tribbloid.spookystuff.entity.client._
+import org.tribbloid.spookystuff.actions._
 import scala.concurrent.duration._
 
 /**

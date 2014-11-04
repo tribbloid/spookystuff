@@ -1,4 +1,4 @@
-package org.tribbloid.spookystuff.entity.client
+package org.tribbloid.spookystuff.actions
 
 import org.openqa.selenium.htmlunit.HtmlUnitDriver
 import org.openqa.selenium.interactions.Actions

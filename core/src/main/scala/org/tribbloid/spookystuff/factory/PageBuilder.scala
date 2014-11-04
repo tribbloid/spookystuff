@@ -4,10 +4,10 @@ import java.util.Date
 
 import org.openqa.selenium.{Capabilities, WebDriver}
 import org.slf4j.LoggerFactory
-import org.tribbloid.spookystuff.entity._
-import org.tribbloid.spookystuff.entity.client._
-import org.tribbloid.spookystuff.utils.{Utils, Const}
 import org.tribbloid.spookystuff.SpookyContext
+import org.tribbloid.spookystuff.actions._
+import org.tribbloid.spookystuff.entity._
+import org.tribbloid.spookystuff.utils.{Const, Utils}
 
 import scala.collection.mutable.ArrayBuffer
 

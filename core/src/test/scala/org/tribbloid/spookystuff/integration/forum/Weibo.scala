@@ -1,6 +1,6 @@
 package org.tribbloid.spookystuff.integration.forum
 
-import org.tribbloid.spookystuff.entity.client.{Loop, _}
+import org.tribbloid.spookystuff.actions.{Loop, _}
 import org.tribbloid.spookystuff.integration.TestCore
 
 import scala.concurrent.duration._

@@ -4,12 +4,12 @@ import org.apache.spark.rdd.RDD
 import org.apache.spark.sql._
 import org.apache.spark.sql.catalyst.analysis.UnresolvedAttribute
 import org.apache.spark.storage.StorageLevel
-import org.tribbloid.spookystuff.entity._
-import org.tribbloid.spookystuff.entity.client.{Action, Visit, Wget}
-import org.tribbloid.spookystuff.factory.PageBuilder
-import org.tribbloid.spookystuff.expressions.{JoinType, LeftOuter, Append, Replace}
-import org.tribbloid.spookystuff.utils.{Utils, Const}
 import org.tribbloid.spookystuff.SpookyContext
+import org.tribbloid.spookystuff.actions._
+import org.tribbloid.spookystuff.entity._
+import org.tribbloid.spookystuff.expressions.{Append, JoinType, LeftOuter, Replace}
+import org.tribbloid.spookystuff.factory.PageBuilder
+import org.tribbloid.spookystuff.utils.{Const, Utils}
 
 import scala.collection.immutable.ListSet
 
@@ -51,7 +51,7 @@ case class PageSchemaRDD(
 
   /**
    * append an action
-   * @param action any object that inherits org.tribbloid.spookystuff.entity.ClientAction
+   * @param action any object that inherits org.tribbloid.spookystuff.actionsAction
    * @return new RDD[ActionPlan]
    */
   def +>(action: Action): PageSchemaRDD = this.copy(self.map(_ +> action))

@@ -1,13 +1,13 @@
-package org.tribbloid.spookystuff.entity.client
+package org.tribbloid.spookystuff.actions
 
 import org.apache.commons.io.IOUtils
+import org.apache.http.client.config.RequestConfig
+import org.apache.http.client.methods.HttpGet
+import org.apache.http.impl.client.HttpClientBuilder
 import org.openqa.selenium.{OutputType, TakesScreenshot}
 import org.tribbloid.spookystuff.entity.{Page, PageUID}
 import org.tribbloid.spookystuff.factory.PageBuilder
-import org.apache.http.impl.client.HttpClientBuilder
-import org.apache.http.client.config.RequestConfig
-import org.apache.http.client.methods.HttpGet
-import org.tribbloid.spookystuff.utils.Utils
+import org.tribbloid.spookystuff.utils.{Const, Utils}
 
 /**
  * Export a page from the browser or http client
@@ -29,7 +29,7 @@ abstract class Export extends Action {
 
   def doExeNoAlias(session: PageBuilder): Seq[Page]
 
-//  def doExe(pb: PageBuilder): Seq[Page]
+  //  def doExe(pb: PageBuilder): Seq[Page]
 }
 
 /**
@@ -98,7 +98,8 @@ object DefaultScreenshot extends Screenshot()
  */
 case class Wget(
                  url: String,
-                 userAgent: String = null,
+                 userAgent: String = Const.userAgent,
+                 proxy: (String,String) = null,
                  headers: Map[String, String] = Map()
                  ) extends Export with Sessionless {
 

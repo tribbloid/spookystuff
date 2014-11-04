@@ -1,6 +1,6 @@
 package org.tribbloid.spookystuff.integration
 
-import org.tribbloid.spookystuff.entity.client._
+import org.tribbloid.spookystuff.actions._
 import org.tribbloid.spookystuff.factory.driver.RandomProxyDriverFactory
 
 import scala.concurrent.duration._

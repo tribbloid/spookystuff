@@ -1,10 +1,10 @@
 package org.tribbloid.spookystuff.entity
 
-import org.tribbloid.spookystuff.entity.client.{Action, Visit, Wget}
-import org.tribbloid.spookystuff.factory.PageBuilder
-import org.tribbloid.spookystuff.expressions._
-import org.tribbloid.spookystuff.utils.{Utils, Const}
 import org.tribbloid.spookystuff.SpookyContext
+import org.tribbloid.spookystuff.actions._
+import org.tribbloid.spookystuff.expressions._
+import org.tribbloid.spookystuff.factory.PageBuilder
+import org.tribbloid.spookystuff.utils.{Const, Utils}
 
 import scala.collection.mutable.ArrayBuffer
 

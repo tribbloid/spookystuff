@@ -3,7 +3,7 @@ package org.tribbloid.spookystuff.entity
 import org.apache.spark.sql.SQLContext
 import org.scalatest.{BeforeAndAfter, FunSuite}
 import org.tribbloid.spookystuff.SpookyContext
-import org.tribbloid.spookystuff.entity.client.Snapshot
+import org.tribbloid.spookystuff.actions.Snapshot
 import org.tribbloid.spookystuff.factory.PageBuilder
 
 /**

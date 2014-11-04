@@ -1,6 +1,6 @@
 package org.tribbloid.spookystuff.integration.forum
 
-import org.tribbloid.spookystuff.entity.client.Wget
+import org.tribbloid.spookystuff.actions.Wget
 import org.tribbloid.spookystuff.integration.TestCore
 
 /**

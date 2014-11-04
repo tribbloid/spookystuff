@@ -1,6 +1,6 @@
 package org.tribbloid.spookystuff.integration.network
 
-import org.tribbloid.spookystuff.entity.client._
+import org.tribbloid.spookystuff.actions._
 import org.tribbloid.spookystuff.factory.driver._
 import org.tribbloid.spookystuff.integration.TestCore
 

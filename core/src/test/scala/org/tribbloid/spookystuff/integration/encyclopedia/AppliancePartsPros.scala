@@ -1,6 +1,6 @@
 package org.tribbloid.spookystuff.integration.encyclopedia
 
-import org.tribbloid.spookystuff.entity.client._
+import org.tribbloid.spookystuff.actions._
 import org.tribbloid.spookystuff.integration.TestCore
 
 import scala.concurrent.duration._

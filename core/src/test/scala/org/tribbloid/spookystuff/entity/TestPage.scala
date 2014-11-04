@@ -6,7 +6,7 @@ import org.apache.spark.sql.SQLContext
 import org.apache.spark.{SparkConf, SparkContext}
 import org.scalatest.{BeforeAndAfter, FunSuite}
 import org.tribbloid.spookystuff.SpookyContext
-import org.tribbloid.spookystuff.entity.client.{Snapshot, Visit, Wget}
+import org.tribbloid.spookystuff.actions.{Snapshot, Visit, Wget}
 import org.tribbloid.spookystuff.factory.PageBuilder
 import org.tribbloid.spookystuff.factory.driver.NaiveDriverFactory
 
