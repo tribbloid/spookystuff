@@ -91,7 +91,7 @@ object Page {
       val serOut = ser.serializeStream(fos)
 
       try {
-        serOut.writeObject[Seq[Page] with Cacheable](Cacheable[Seq[Page]](pages))
+        serOut.writeObject[Seq[Page]](Cacheable[Seq[Page]](pages))
       }
       finally {
         fos.close()
@@ -125,7 +125,7 @@ object Page {
         val fis = fs.open(fullPath)
         val serIn = ser.deserializeStream(fis)
         try {
-          val obj = serIn.readObject[Any]()
+          val obj = serIn.readObject[Seq[Page]]()
           obj.asInstanceOf[Seq[Page]]
         }
         finally{

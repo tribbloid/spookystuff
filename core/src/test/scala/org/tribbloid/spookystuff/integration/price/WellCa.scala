@@ -13,7 +13,7 @@ object WellCa extends TestCore {
   override def doMain() = {
 
     (noInput
-      +> Visit("http://well.ca/whatsnew/")
+      +> Wget("http://well.ca/whatsnew/")
       !=!())
       .sliceJoin("div.product_grid_full_categories")()
       .extract(
