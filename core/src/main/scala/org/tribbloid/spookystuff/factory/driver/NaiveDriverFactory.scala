@@ -33,6 +33,7 @@ class NaiveDriverFactory(
 
   override def newInstance(capabilities: Capabilities, spooky: SpookyContext): WebDriver = {
 
+    //TODO: this is a browser leakage loose end, switching to resource pool!
     val driver = Utils.retryWithDeadline(Const.inPartitionRetry, Const.sessionInitializationTimeout) {
       new PhantomJSDriver(newCap(capabilities))
     }
@@ -60,9 +61,9 @@ class NaiveDriverFactory(
 object NaiveDriverFactory {
 
   def apply(
-             phantomJSPath: String = System.getenv("PHANTOMJS_PATH"),
+             phantomJSPath: String = Const.phantomJSPath,
              loadImages: Boolean = false,
-             userAgent: String = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/37.0.2062.120 Safari/537.36",
+             userAgent: String = Const.userAgent,
              resolution: (Int,Int) = (1920, 1080)
              ) = new NaiveDriverFactory(phantomJSPath, loadImages, userAgent, resolution)
 }

@@ -15,36 +15,38 @@ object BioCompare extends TestCore {
 
   override def doMain(): SchemaRDD = {
 
-    val ranges = (sc.parallelize(Seq(
-      "http://www.biocompare.com/1997-BrowseCategory/browse/gb1/9776/num",
-      "http://www.biocompare.com/1997-BrowseCategory/browse/gb1/9776/A",
-      "http://www.biocompare.com/1997-BrowseCategory/browse/gb1/9776/B",
-      "http://www.biocompare.com/1997-BrowseCategory/browse/gb1/9776/C",
-      "http://www.biocompare.com/1997-BrowseCategory/browse/gb1/9776/D",
-      "http://www.biocompare.com/1997-BrowseCategory/browse/gb1/9776/E",
-      "http://www.biocompare.com/1997-BrowseCategory/browse/gb1/9776/F",
-      "http://www.biocompare.com/1997-BrowseCategory/browse/gb1/9776/G",
-      "http://www.biocompare.com/1997-BrowseCategory/browse/gb1/9776/H",
-      "http://www.biocompare.com/1997-BrowseCategory/browse/gb1/9776/I",
-      "http://www.biocompare.com/1997-BrowseCategory/browse/gb1/9776/J",
-      "http://www.biocompare.com/1997-BrowseCategory/browse/gb1/9776/K",
-      "http://www.biocompare.com/1997-BrowseCategory/browse/gb1/9776/L",
-      "http://www.biocompare.com/1997-BrowseCategory/browse/gb1/9776/M",
-      "http://www.biocompare.com/1997-BrowseCategory/browse/gb1/9776/N",
-      "http://www.biocompare.com/1997-BrowseCategory/browse/gb1/9776/O",
-      "http://www.biocompare.com/1997-BrowseCategory/browse/gb1/9776/P",
-      "http://www.biocompare.com/1997-BrowseCategory/browse/gb1/9776/Q",
-      "http://www.biocompare.com/1997-BrowseCategory/browse/gb1/9776/R",
-      "http://www.biocompare.com/1997-BrowseCategory/browse/gb1/9776/S",
-      "http://www.biocompare.com/1997-BrowseCategory/browse/gb1/9776/T",
-      "http://www.biocompare.com/1997-BrowseCategory/browse/gb1/9776/U",
-      "http://www.biocompare.com/1997-BrowseCategory/browse/gb1/9776/V",
-      "http://www.biocompare.com/1997-BrowseCategory/browse/gb1/9776/W",
-      "http://www.biocompare.com/1997-BrowseCategory/browse/gb1/9776/X",
-      "http://www.biocompare.com/1997-BrowseCategory/browse/gb1/9776/Y",
-      "http://www.biocompare.com/1997-BrowseCategory/browse/gb1/9776/Z"
-    ),27)
-      +> Visit("#{_}")
+    val initials = Seq(
+      "num",
+      "A",
+      "B",
+      "C",
+      "D",
+      "E",
+      "F",
+      "G",
+      "H",
+      "I",
+      "J",
+      "K",
+      "L",
+      "M",
+      "N",
+      "O",
+      "P",
+      "Q",
+      "R",
+      "S",
+      "T",
+      "U",
+      "V",
+      "W",
+      "X",
+      "Y",
+      "Z"
+    )
+    
+    val ranges = (sc.parallelize(initials)
+      +> Visit("http://www.biocompare.com/1997-BrowseCategory/browse/gb1/9776/#{_}")
       !=!())
       .visitJoin("div.guidedBrowseCurrentOptionsSegments a")(indexKey = "range_index")
       .extract(
@@ -80,8 +82,6 @@ object BioCompare extends TestCore {
       .persist()
 
     println(sliced.count())
-
-
 
     //      .visitJoin("div.guidedBrowseResults > ul > li a")()
     //      .paginate("ul.pages > li.next > a", wget = false)()
