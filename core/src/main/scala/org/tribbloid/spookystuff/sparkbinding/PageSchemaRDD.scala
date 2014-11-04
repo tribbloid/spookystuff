@@ -7,7 +7,7 @@ import org.apache.spark.storage.StorageLevel
 import org.tribbloid.spookystuff.entity._
 import org.tribbloid.spookystuff.entity.client.{Action, Visit, Wget}
 import org.tribbloid.spookystuff.factory.PageBuilder
-import org.tribbloid.spookystuff.operator.{JoinType, LeftOuter, Append, Replace}
+import org.tribbloid.spookystuff.expressions.{JoinType, LeftOuter, Append, Replace}
 import org.tribbloid.spookystuff.utils.{Utils, Const}
 import org.tribbloid.spookystuff.SpookyContext
 

@@ -1,17 +1,14 @@
-package org.tribbloid.spookystuff.operator
+package org.tribbloid.spookystuff.expressions
 
-import java.net.URLEncoder
-import java.util.UUID
 import org.tribbloid.spookystuff.entity.PageUID
-import org.tribbloid.spookystuff.entity.client.Action
 import org.tribbloid.spookystuff.utils.Utils
 
 /**
  * Created by peng on 9/12/14.
  */
-abstract class Lookup[T] extends (PageUID => T) with Serializable with Product
+abstract class TraceEncoder[T] extends (PageUID => T) with Serializable with Product
 
-case object VerbosePathLookup extends Lookup[String] {
+case object VerboseEncoder extends TraceEncoder[String] {
 
   override def apply(uid: PageUID): String = {
 
@@ -32,7 +29,7 @@ case object VerbosePathLookup extends Lookup[String] {
   }
 }
 
-case object HierarchicalUrnLookup extends Lookup[String] {
+case object HierarchicalUrnEncoder extends TraceEncoder[String] {
 
   override def apply(uid: PageUID): String = {
 

@@ -2,7 +2,7 @@ package org.tribbloid.spookystuff.integration.forum
 
 import org.tribbloid.spookystuff.integration.TestCore
 import org.tribbloid.spookystuff.entity.client._
-import org.tribbloid.spookystuff.operator.LeftOuter
+import org.tribbloid.spookystuff.expressions.LeftOuter
 
 /**
  * Created by peng on 20/08/14.

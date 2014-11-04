@@ -2,7 +2,7 @@ package org.tribbloid.spookystuff.entity
 
 import org.tribbloid.spookystuff.entity.client.{Action, Visit, Wget}
 import org.tribbloid.spookystuff.factory.PageBuilder
-import org.tribbloid.spookystuff.operator._
+import org.tribbloid.spookystuff.expressions._
 import org.tribbloid.spookystuff.utils.{Utils, Const}
 import org.tribbloid.spookystuff.SpookyContext
 

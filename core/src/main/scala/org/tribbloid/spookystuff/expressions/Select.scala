@@ -1,4 +1,4 @@
-package org.tribbloid.spookystuff.operator
+package org.tribbloid.spookystuff.expressions
 
 import org.tribbloid.spookystuff.entity.{Page, PageRow}
 

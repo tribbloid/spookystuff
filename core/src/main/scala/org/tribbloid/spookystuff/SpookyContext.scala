@@ -5,7 +5,7 @@ import org.apache.spark.sql.{SchemaRDD, SQLContext}
 import org.apache.spark.{SerializableWritable, SparkConf, SparkContext}
 import org.tribbloid.spookystuff.entity.PageRow
 import org.tribbloid.spookystuff.factory.driver.{DriverFactory, NaiveDriverFactory}
-import org.tribbloid.spookystuff.operator._
+import org.tribbloid.spookystuff.expressions._
 import org.tribbloid.spookystuff.sparkbinding.{SchemaRDDFunctions, PageSchemaRDD, StringRDDFunctions}
 import org.tribbloid.spookystuff.utils.Utils
 
@@ -36,9 +36,9 @@ class SpookyContext (
 
                       var pageExpireAfter: Duration = 7.day,
 
-                      var autoSaveExtract: Extract[_] = UUIDPath(HierarchicalUrnLookup),
-                      var autoCacheLookup: Lookup[_] = HierarchicalUrnLookup,
-                      var errorDumpExtract: Extract[_] = UUIDPath(HierarchicalUrnLookup),
+                      var autoSaveExtract: Extract[_] = UUIDPath(HierarchicalUrnEncoder),
+                      var cacheTraceEncoder: TraceEncoder[_] = HierarchicalUrnEncoder,
+                      var errorDumpExtract: Extract[_] = UUIDPath(HierarchicalUrnEncoder),
 
                       var autoSaveRoot: String = "s3n://spooky-page/",
                       var autoCacheRoot: String = "s3n://spooky-cache/",

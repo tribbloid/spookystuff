@@ -1,4 +1,4 @@
-package org.tribbloid.spookystuff.operator
+package org.tribbloid.spookystuff.expressions
 
 import java.util.UUID
 import org.tribbloid.spookystuff.entity.Page
@@ -29,11 +29,11 @@ abstract class Extract[T] extends (Page => T) with Serializable {
 //  }
 //}
 
-case class UUIDPath(lookup: Lookup[_]) extends Extract[String] {
+case class UUIDPath(encoder: TraceEncoder[_]) extends Extract[String] {
 
   override def apply(page: Page): String = {
 
-    Utils.urlConcat(lookup(page.uid).toString, UUID.randomUUID().toString)
+    Utils.urlConcat(encoder(page.uid).toString, UUID.randomUUID().toString)
   }
 }
 

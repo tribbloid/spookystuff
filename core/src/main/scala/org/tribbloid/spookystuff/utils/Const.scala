@@ -1,6 +1,6 @@
 package org.tribbloid.spookystuff.utils
 
-import org.tribbloid.spookystuff.operator.LeftOuter
+import org.tribbloid.spookystuff.expressions.LeftOuter
 
 /**
  * Created by peng on 04/06/14.

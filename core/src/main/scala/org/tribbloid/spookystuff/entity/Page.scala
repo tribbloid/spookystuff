@@ -107,7 +107,7 @@ object Page {
                  ): Unit = {
     val pathStr = Utils.urlConcat(
       spooky.autoCacheRoot,
-      spooky.autoCacheLookup(uid).toString,
+      spooky.cacheTraceEncoder(uid).toString,
       UUID.randomUUID().toString
     )
 
@@ -189,7 +189,7 @@ object Page {
                          ): Seq[Page] = {
     val pathStr = Utils.urlConcat(
       spooky.autoCacheRoot,
-      spooky.autoCacheLookup(uid).toString
+      spooky.cacheTraceEncoder(uid).toString
     )
 
     restoreLatest(new Path(pathStr), System.currentTimeMillis() - spooky.pageExpireAfter.toMillis)(spooky)

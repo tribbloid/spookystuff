@@ -1,4 +1,4 @@
-package org.tribbloid.spookystuff.operator
+package org.tribbloid.spookystuff.expressions
 
 /**
  * Created by peng on 8/31/14.
