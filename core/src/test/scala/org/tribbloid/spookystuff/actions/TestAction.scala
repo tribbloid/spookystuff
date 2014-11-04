@@ -1,4 +1,4 @@
-package org.tribbloid.spookystuff.entity
+package org.tribbloid.spookystuff.actions
 
 import org.scalatest.FunSuite
 import org.tribbloid.spookystuff.utils.Utils
