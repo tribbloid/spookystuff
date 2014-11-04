@@ -13,6 +13,11 @@ abstract class SpookyException (
   override def getMessage: String = this.message+"\nCaused by: "+this.getCause.toString
 }
 
+class ActionException(
+                       override val message: String = "",
+                       override val cause: Throwable = null
+                       ) extends SpookyException(message, cause)
+
 class DFSReadException(
                        override val message: String = "",
                        override val cause: Throwable = null

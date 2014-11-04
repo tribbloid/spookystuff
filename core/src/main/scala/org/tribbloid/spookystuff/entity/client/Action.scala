@@ -1,6 +1,6 @@
 package org.tribbloid.spookystuff.entity.client
 
-import org.tribbloid.spookystuff.{Utils, Const}
+import org.tribbloid.spookystuff.{ActionException, Utils, Const}
 import org.tribbloid.spookystuff.entity.Page
 import org.tribbloid.spookystuff.factory.PageBuilder
 
