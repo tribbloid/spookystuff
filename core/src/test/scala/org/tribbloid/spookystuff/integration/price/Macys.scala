@@ -21,12 +21,12 @@ import scala.concurrent.duration._
         "category" -> (_.text1("div#nav_title"))
       )
       .visit("div#localNavigationContainer li.nav_cat_item_bold a")() +>
-      DelayFor("ul#thumbnails li.productThumbnail").in(20.seconds) +>
+      WaitFor("ul#thumbnails li.productThumbnail").in(20.seconds) +>
       Snapshot() +>
       Loop(
         Click("a.arrowRight")
           :: Delay(5.seconds)
-          :: DelayFor("ul#thumbnails li.productThumbnail").in(20.seconds)
+          :: WaitFor("ul#thumbnails li.productThumbnail").in(20.seconds)
           :: Snapshot()
           :: Nil,
         2

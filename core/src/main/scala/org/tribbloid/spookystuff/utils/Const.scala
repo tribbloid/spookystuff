@@ -22,7 +22,7 @@ object Const {
 //  val webClientOptions = new WebClientOptions
 //  webClientOptions.setUseInsecureSSL(true)
 
-  val sessionInitializationTimeout = 120.seconds
+//  val sessionInitializationTimeout = 120.seconds TODO: can't be used due to being initialized lazily
 
   val inPartitionRetry = 3
   val remoteResourceInPartitionRetry = 2
@@ -30,6 +30,8 @@ object Const {
 
   val actionDelayMax: Duration = 60.seconds
   val actionDelayMin: Duration = 10.seconds
+
+  val hardTerminateOverhead: Duration = 20.seconds
 
   val phantomJSPath = System.getenv("PHANTOMJS_PATH")
 //  val userAgent = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/37.0.2062.120 Safari/537.36",

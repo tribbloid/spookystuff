@@ -48,7 +48,7 @@ class SpookyContext (
                       var localErrorDumpScreenshotRoot: String = "file:///spooky-error-screenshot/",
 
                       var remoteResourceTimeout: Duration = 180.seconds,
-                      var distributedResourceTimeout: Duration = 180.seconds,
+                      var DFSTimeout: Duration = 180.seconds,
 
                       var failOnDFSError: Boolean = false,
 
@@ -57,7 +57,8 @@ class SpookyContext (
                       var sliceLimit: Int = Int.MaxValue,
                       var paginationLimit: Int = Int.MaxValue,
 
-                      var recursionDepth: Int = 500 //unknown if it is enough
+                      var recursionDepth: Int = 500, //unknown if it is enough
+                      val browserResolution: (Int, Int) = (1920, 1080)
                       )
   extends Serializable {
 

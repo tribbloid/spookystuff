@@ -1,6 +1,6 @@
 package org.tribbloid.spookystuff.actions
 
-import org.tribbloid.spookystuff.entity.{Page, PageUID}
+import org.tribbloid.spookystuff.entity.{PageRow, Page, PageUID}
 import org.tribbloid.spookystuff.factory.PageBuilder
 import org.tribbloid.spookystuff.utils.Const
 
@@ -45,9 +45,9 @@ case class Try(actions: Seq[Action]) extends Block {
     pages.zipWithIndex.map(tuple => tuple._1.copy(uid = PageUID(pb.realBacktrace :+ this,tuple._2)))
   }
 
-  override def interpolateFromMap[T](map: Map[String,T]): this.type = {
+  override def interpolate(pageRow: PageRow): this.type = {
 
-    this.copy(actions = actions.map(_.interpolateFromMap(map))).asInstanceOf[this.type]
+    this.copy(actions = actions.map(_.interpolate(pageRow))).asInstanceOf[this.type]
   }
 }
 
@@ -96,9 +96,9 @@ case class Loop(
     pages.zipWithIndex.map(tuple => tuple._1.copy(uid = PageUID(pb.realBacktrace :+ this,tuple._2)))
   }
 
-  override def interpolateFromMap[T](map: Map[String,T]): this.type = {
+  override def interpolate(pageRow: PageRow): this.type = {
 
-    this.copy(actions = actions.map(_.interpolateFromMap(map))).asInstanceOf[this.type]
+    this.copy(actions = actions.map(_.interpolate(pageRow))).asInstanceOf[this.type]
   }
 }
 

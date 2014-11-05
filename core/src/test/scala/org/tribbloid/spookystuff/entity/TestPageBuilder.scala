@@ -56,7 +56,7 @@ class TestPageBuilder extends FunSuite {
   test("resolve") {
     val results = PageBuilder.resolve(
       Visit("https://www.linkedin.com/") ::
-      DelayFor("input[name=\"search\"]").in(40.seconds) ::
+      WaitFor("input[name=\"search\"]").in(40.seconds) ::
       Snapshot().as("A") ::
       TextInput("input#first","Adam") ::
       TextInput("input#last","Muise") ::
@@ -70,13 +70,13 @@ class TestPageBuilder extends FunSuite {
     val res1 = resultsList(0)
     val res2 = resultsList(1)
 
-    val id1 = Seq[Action](Visit("https://www.linkedin.com/"), DelayFor("input[name=\"search\"]"), Snapshot())
+    val id1 = Seq[Action](Visit("https://www.linkedin.com/"), WaitFor("input[name=\"search\"]"), Snapshot())
     assert(res1.backtrace === id1)
     assert(res1.contentStr.contains("<title>World's Largest Professional Network | LinkedIn</title>"))
     assert(res1.resolvedUrl === "https://www.linkedin.com/")
 //    assert(res1.alias === "A")
 
-    val id2 = Seq[Action](Visit("https://www.linkedin.com/"), DelayFor("input[name=\"search\"]"), TextInput("input#first","Adam"),TextInput("input#last","Muise"),Submit("input[name=\"search\"]"), Snapshot())
+    val id2 = Seq[Action](Visit("https://www.linkedin.com/"), WaitFor("input[name=\"search\"]"), TextInput("input#first","Adam"),TextInput("input#last","Muise"),Submit("input[name=\"search\"]"), Snapshot())
     assert(res2.backtrace === id2)
     assert(res2.contentStr.contains("<title>Adam Muise profiles | LinkedIn</title>"))
     assert(res2.resolvedUrl === "https://www.linkedin.com/pub/dir/?first=Adam&last=Muise")
@@ -86,14 +86,14 @@ class TestPageBuilder extends FunSuite {
   test("extract") {
     val result = PageBuilder.resolve(
       Visit("https://www.linkedin.com/") ::
-      DelayFor("input[name=\"search\"]").in(40.seconds) ::
+      WaitFor("input[name=\"search\"]").in(40.seconds) ::
       TextInput("input#first", "Adam") ::
       TextInput("input#last", "Muise") ::
       Submit("input[name=\"search\"]") :: Nil,
       dead = false
     )(spooky)
 
-    val id = Seq[Action](Visit("https://www.linkedin.com/"), DelayFor("input[name=\"search\"]"), TextInput("input#first","Adam"),TextInput("input#last","Muise"),Submit("input[name=\"search\"]"), Snapshot())
+    val id = Seq[Action](Visit("https://www.linkedin.com/"), WaitFor("input[name=\"search\"]"), TextInput("input#first","Adam"),TextInput("input#last","Muise"),Submit("input[name=\"search\"]"), Snapshot())
     assert(result(0).backtrace === id)
     assert(result(0).contentStr.contains("<title>Adam Muise profiles | LinkedIn</title>"))
     assert(result(0).resolvedUrl === "https://www.linkedin.com/pub/dir/?first=Adam&last=Muise")
@@ -104,7 +104,7 @@ class TestPageBuilder extends FunSuite {
       Visit("http://www.amazon.com/") ::
       TextInput("input#twotabsearchtextbox", "Lord of the Rings") ::
       Submit("input.nav-submit-input") ::
-      DelayFor("div#resultsCol").in(40.seconds) :: Nil,
+      WaitFor("div#resultsCol").in(40.seconds) :: Nil,
       dead = false
     )(spooky)
 

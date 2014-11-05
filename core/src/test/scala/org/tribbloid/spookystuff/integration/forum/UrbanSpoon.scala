@@ -31,7 +31,7 @@ object UrbanSpoon extends TestCore {
       .tsvToMap("type\turl")
       +> Visit("#{url}")
       +> Click("ul.PostTabs li.active a")
-      +> DelayFor("div.tab-pane.active li.review")
+      +> WaitFor("div.tab-pane.active li.review")
       !=! ())
       //      .extract(
       //        "count" -> (_.text1("li.active span.count"))

@@ -22,8 +22,8 @@ object Page {
 
   def DFSRead[T](message: String, pathStr: String, spooky: SpookyContext)(f: => T): T = {
     try {
-      Utils.retryWithDeadline(Const.DFSInPartitionRetry, spooky.distributedResourceTimeout) {
-        f
+      Utils.retry(Const.DFSInPartitionRetry) {
+        Utils.withDeadline(spooky.DFSTimeout) {f}
       }
     }
     catch {
@@ -40,8 +40,8 @@ object Page {
 
   def DFSWrite[T](message: String, pathStr: String, spooky: SpookyContext)(f: => T): T = {
     try {
-      Utils.retryWithDeadline(Const.DFSInPartitionRetry, spooky.distributedResourceTimeout) {
-        f
+      Utils.retry(Const.DFSInPartitionRetry) {
+        Utils.withDeadline(spooky.DFSTimeout) {f}
       }
     }
     catch {
@@ -476,7 +476,7 @@ case class Page(
     f(this) match {
       case null => DeadRow
       case s: Any =>
-        val fa = action.interpolateFromMap(Map("~" -> s))
+        val fa = action.interpolate(PageRow(cells = Map("~" -> s)))
         PageRow(actions = Seq(fa))
     }
   }
@@ -494,7 +494,7 @@ case class Page(
 
     if (attrs.isEmpty) return Array(DeadRow)
 
-    var actions = attrs.map( attr => action.interpolateFromMap(Map("~" -> attr)))
+    var actions: Array[Action] = attrs.map( attr => action.interpolate(PageRow(cells = Map("~" -> attr))))
 
     if (distinct) actions = actions.distinct
 

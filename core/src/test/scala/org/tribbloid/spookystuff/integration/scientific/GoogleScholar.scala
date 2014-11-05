@@ -14,10 +14,10 @@ object GoogleScholar extends TestCore {
 
     (sc.parallelize(Seq("Large scale distributed deep networks"))
       +> Visit("http://scholar.google.com/")
-      +> DelayFor("form[role=search]")
+      +> WaitFor("form[role=search]")
       +> TextInput("input[name=\"q\"]","#{_}")
       +> Submit("button#gs_hp_tsb")
-      +> DelayFor("div[role=main]")
+      +> WaitFor("div[role=main]")
       !=!())
       .extract(
         "title" -> (_.text1("div.gs_r h3.gs_rt a")),

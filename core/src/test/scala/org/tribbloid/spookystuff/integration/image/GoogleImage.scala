@@ -21,10 +21,10 @@ object GoogleImage extends TestCore {
       )
       .repartition(10)
       +> Visit("http://images.google.com/")
-      +> DelayFor("form[action=\"/search\"]")
+      +> WaitFor("form[action=\"/search\"]")
       +> TextInput("input[name=\"q\"]","Logo #{name}")
       +> Submit("input[name=\"btnG\"]")
-      +> DelayFor("div#search")
+      +> WaitFor("div#search")
       !=!())
       .wgetJoin("div#search img","src")(limit = 1)
       .saveContent(pageRow =>

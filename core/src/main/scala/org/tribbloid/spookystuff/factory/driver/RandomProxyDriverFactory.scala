@@ -2,6 +2,7 @@ package org.tribbloid.spookystuff.factory.driver
 
 import org.openqa.selenium.Capabilities
 import org.openqa.selenium.phantomjs.PhantomJSDriverService
+import org.tribbloid.spookystuff.SpookyContext
 
 import scala.util.Random
 
@@ -23,16 +24,16 @@ class RandomProxyDriverFactory(
     resolution
   ) {
 
-  override def newCap(capabilities: Capabilities) = {
-    val proxyCap = baseCaps.merge(capabilities)
-    val proxy = proxies(Random.nextInt(proxies.size))
+  override def newCap(capabilities: Capabilities, spooky: SpookyContext) = {
+    val cap = super.newCap(capabilities,spooky)
 
-    proxyCap.setCapability(
+    val proxy = proxies(Random.nextInt(proxies.size))
+    cap.setCapability(
       PhantomJSDriverService.PHANTOMJS_CLI_ARGS,
       Array("--proxy=" + proxy._1, "--proxy-type=" + proxy._2)
     )
 
-    proxyCap
+    cap
   }
 
 }

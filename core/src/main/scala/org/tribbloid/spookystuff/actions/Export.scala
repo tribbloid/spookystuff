@@ -6,7 +6,7 @@ import org.apache.http.client.config.RequestConfig
 import org.apache.http.client.methods.HttpGet
 import org.apache.http.impl.client.HttpClientBuilder
 import org.openqa.selenium.{OutputType, TakesScreenshot}
-import org.tribbloid.spookystuff.entity.{Page, PageUID}
+import org.tribbloid.spookystuff.entity.{PageRow, Page, PageUID}
 import org.tribbloid.spookystuff.factory.PageBuilder
 import org.tribbloid.spookystuff.utils.{Const, Utils}
 
@@ -161,13 +161,13 @@ case class Wget(
     }
   }
 
-  override def interpolateFromMap[T](map: Map[String,T]): this.type = {
+  override def interpolate(pageRow: PageRow): this.type = {
     //ugly workaround of https://issues.scala-lang.org/browse/SI-7005
-    val interpolatedHeaders = this.headers.mapValues(value => Utils.interpolateFromMap(value, map)).map(identity)
+    val interpolatedHeaders = this.headers.mapValues(value => Utils.interpolateFromMap(value, pageRow.cells)).map(identity)
 
     this.copy(
-      url = Utils.interpolateFromMap(this.url,map),
-      userAgent = Utils.interpolateFromMap(this.userAgent, map),
+      url = Utils.interpolateFromMap(this.url,pageRow.cells),
+      userAgent = Utils.interpolateFromMap(this.userAgent, pageRow.cells),
       headers = interpolatedHeaders
     ).asInstanceOf[this.type]
   }

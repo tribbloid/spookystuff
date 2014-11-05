@@ -6,7 +6,7 @@ import org.openqa.selenium.remote.RemoteWebDriver
 import org.openqa.selenium.support.events.EventFiringWebDriver
 import org.openqa.selenium.support.ui.{ExpectedCondition, ExpectedConditions, Select, WebDriverWait}
 import org.openqa.selenium.{By, WebDriver}
-import org.tribbloid.spookystuff.entity.Page
+import org.tribbloid.spookystuff.entity.{PageRow, Page}
 import org.tribbloid.spookystuff.factory.PageBuilder
 import org.tribbloid.spookystuff.utils.{Const, Utils}
 
@@ -41,15 +41,16 @@ abstract class Interaction extends Action {
 case class Visit(
                   url: String
                   ) extends Interaction with Timed {
+
   override def exeWithoutPage(pb: PageBuilder) {
     pb.driver.get(url)
 
-    val wait = new WebDriverWait(pb.driver, delay.toSeconds)
+    val wait = new WebDriverWait(pb.driver, timeout.toSeconds)
     wait.until(ExpectedConditions.not(ExpectedConditions.titleIs("")))
   }
 
-  override def interpolateFromMap[T](map: Map[String,T]): this.type = {
-    this.copy(url = Utils.interpolateFromMap(this.url,map)).asInstanceOf[this.type]
+  override def interpolate(pageRow: PageRow): this.type = {
+    this.copy(url = Utils.interpolateFromMap(this.url,pageRow.cells)).asInstanceOf[this.type]
   }
 }
 
@@ -57,10 +58,8 @@ case class Visit(
  * Wait for some time
  * @param min seconds to be wait for
  */
-case class Delay(min: Duration = Const.actionDelayMax) extends Interaction with Timed {
+case class Delay(min: Duration = Const.actionDelayMax) extends Interaction {
   //  override val timeout = Math.max(Const.driverCallTimeout, delay + 10)
-
-  this.delay = min
 
   override def exeWithoutPage(pb: PageBuilder) {
     Thread.sleep(min.toMillis)
@@ -74,11 +73,9 @@ case class Delay(min: Duration = Const.actionDelayMax) extends Interaction with 
 case class RandomDelay(
                         min: Duration = Const.actionDelayMin,
                         max: Duration = Const.actionDelayMax
-                        ) extends Interaction with Timed {
+                        ) extends Interaction {
 
   assert(max >= min)
-
-  this.delay = max
 
   //  override val timeout = Math.max(Const.driverCallTimeout, delay + 10)
 
@@ -92,11 +89,11 @@ case class RandomDelay(
  * @param selector css selector of the element
  *              after which it will throw an exception!
  */
-case class DelayFor(selector: String) extends Interaction with Timed {
+case class WaitFor(selector: String) extends Interaction with Timed {
   //  override val timeout = Math.max(Const.driverCallTimeout, delay + 10)
 
   override def exeWithoutPage(pb: PageBuilder) {
-    val wait = new WebDriverWait(pb.driver, delay.toSeconds)
+    val wait = new WebDriverWait(pb.driver, timeout.toSeconds)
     wait.until(ExpectedConditions.presenceOfElementLocated(By.cssSelector(selector)))
   }
 }
@@ -119,10 +116,10 @@ object DocumentReadyCondition extends ExpectedCondition[Boolean] {
   }
 }
 
-case object DelayForDocumentReady extends Interaction with Timed {
+case object WaitForDocumentReady extends Interaction with Timed {
 
   override def exeWithoutPage(pb: PageBuilder): Unit = {
-    val wait = new WebDriverWait(pb.driver, delay.toSeconds)
+    val wait = new WebDriverWait(pb.driver, timeout.toSeconds)
 
     wait.until(DocumentReadyCondition)
   }
@@ -165,7 +162,7 @@ case class Click(
                   selector: String
                   )extends Interaction with Timed {
   override def exeWithoutPage(pb: PageBuilder) {
-    val wait = new WebDriverWait(pb.driver, delay.toSeconds)
+    val wait = new WebDriverWait(pb.driver, timeout.toSeconds)
     val element = wait.until(ExpectedConditions.elementToBeClickable(By.cssSelector(selector)))
 
     element.click()
@@ -180,7 +177,7 @@ case class ClickAll(
                      selector: String
                      )extends Interaction with Timed {
   override def exeWithoutPage(pb: PageBuilder) {
-    val wait = new WebDriverWait(pb.driver, delay.toSeconds)
+    val wait = new WebDriverWait(pb.driver, timeout.toSeconds)
     val elements = wait.until(ExpectedConditions.presenceOfAllElementsLocatedBy(By.cssSelector(selector)))
 
 
@@ -201,7 +198,7 @@ case class ClickAll(
  */
 case class Submit(selector: String) extends Interaction with Timed {
   override def exeWithoutPage(pb: PageBuilder) {
-    val wait = new WebDriverWait(pb.driver, delay.toSeconds)
+    val wait = new WebDriverWait(pb.driver, timeout.toSeconds)
     val element = wait.until(ExpectedConditions.presenceOfElementLocated(By.cssSelector(selector)))
 
     element.submit()
@@ -215,14 +212,14 @@ case class Submit(selector: String) extends Interaction with Timed {
  */
 case class TextInput(selector: String, text: String) extends Interaction with Timed {
   override def exeWithoutPage(pb: PageBuilder) {
-    val wait = new WebDriverWait(pb.driver, delay.toSeconds)
+    val wait = new WebDriverWait(pb.driver, timeout.toSeconds)
     val element = wait.until(ExpectedConditions.presenceOfElementLocated(By.cssSelector(selector)))
 
     element.sendKeys(text)
   }
 
-  override def interpolateFromMap[T](map: Map[String,T]): this.type = {
-    this.copy(text = Utils.interpolateFromMap(this.text,map)).in(this.delay).asInstanceOf[this.type]
+  override def interpolate(pageRow: PageRow): this.type = {
+    this.copy(text = Utils.interpolateFromMap(this.text,pageRow.cells)).in(this.timeout).asInstanceOf[this.type]
   }
 }
 
@@ -233,15 +230,15 @@ case class TextInput(selector: String, text: String) extends Interaction with Ti
  */
 case class DropDownSelect(selector: String, text: String) extends Interaction with Timed {
   override def exeWithoutPage(pb: PageBuilder) {
-    val wait = new WebDriverWait(pb.driver, delay.toSeconds)
+    val wait = new WebDriverWait(pb.driver, timeout.toSeconds)
     val element = wait.until(ExpectedConditions.presenceOfElementLocated(By.cssSelector(selector)))
 
     val select = new Select(element)
     select.selectByValue(text)
   }
 
-  override def interpolateFromMap[T](map: Map[String,T]): this.type = {
-    this.copy(text = Utils.interpolateFromMap(this.text,map)).in(this.delay).asInstanceOf[this.type]
+  override def interpolate(pageRow: PageRow): this.type = {
+    this.copy(text = Utils.interpolateFromMap(this.text,pageRow.cells)).in(this.timeout).asInstanceOf[this.type]
   }
 }
 
@@ -253,7 +250,7 @@ case class DropDownSelect(selector: String, text: String) extends Interaction wi
  */
 case class SwitchToFrame(selector: String)extends Interaction with Timed {
   override def exeWithoutPage(pb: PageBuilder) {
-    val wait = new WebDriverWait(pb.driver, delay.toSeconds)
+    val wait = new WebDriverWait(pb.driver, timeout.toSeconds)
     val element = wait.until(ExpectedConditions.presenceOfElementLocated(By.cssSelector(selector)))
 
     pb.driver.switchTo().frame(element)
@@ -264,19 +261,19 @@ case class SwitchToFrame(selector: String)extends Interaction with Timed {
  * Execute a javascript snippet
  * @param script support cell interpolation
  */
-case class ExeScript(script: String) extends Interaction {
+case class ExeScript(script: String) extends Interaction with Timed {
   override def exeWithoutPage(pb: PageBuilder) {
     pb.driver match {
       case d: HtmlUnitDriver => d.executeScript(script)
-//      case d: AndroidWebDriver => throw new UnsupportedOperationException("this web browser driver is not supported")
+      //      case d: AndroidWebDriver => throw new UnsupportedOperationException("this web browser driver is not supported")
       case d: EventFiringWebDriver => d.executeScript(script)
       case d: RemoteWebDriver => d.executeScript(script)
       case _ => throw new UnsupportedOperationException("this web browser driver is not supported")
     }
   }
 
-  override def interpolateFromMap[T](map: Map[String,T]): this.type = {
-    this.copy(script = Utils.interpolateFromMap(this.script,map)).asInstanceOf[this.type]
+  override def interpolate(pageRow: PageRow): this.type = {
+    this.copy(script = Utils.interpolateFromMap(this.script,pageRow.cells)).asInstanceOf[this.type]
   }
 }
 
@@ -295,7 +292,7 @@ case class DragSlider(
 
   override def exeWithoutPage(pb: PageBuilder): Unit = {
 
-    val wait = new WebDriverWait(pb.driver, delay.toSeconds)
+    val wait = new WebDriverWait(pb.driver, timeout.toSeconds)
     //    val element = wait.until(ExpectedConditions.elementToBeClickable(By.cssSelector(selector)))
     val element = wait.until(ExpectedConditions.visibilityOfElementLocated(By.cssSelector(selector)))
 

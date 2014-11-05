@@ -32,7 +32,7 @@ object Utils {
     Await.result(future, n)
   }
 
-  def retryWithDeadline[T](n: Int, t: Duration)(fn: => T): T = retry(n){withDeadline(t){fn}}
+//  def retryWithDeadline[T](n: Int, t: Duration)(fn: => T): T = retry(n){withDeadline(t){fn}}
 
   lazy val random = new Random()
 

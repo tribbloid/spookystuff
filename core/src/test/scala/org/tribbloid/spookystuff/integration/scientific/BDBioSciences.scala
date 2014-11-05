@@ -14,8 +14,8 @@ object BDBioSciences extends TestCore {
 
     val firstPages = (noInput
       +> Visit("http://www.bdbiosciences.com/nvCategory.jsp?action=SELECT&form=formTree_catBean&item=744667")
-      +> DelayForDocumentReady
-      +> DelayFor("div.pane_column.pane_column_left a")
+      +> WaitForDocumentReady
+      +> WaitFor("div.pane_column.pane_column_left a")
       !=!())
       .wgetJoin("div.pane_column.pane_column_left a")()
       .wgetJoin("li a:not([href^=javascript])")()

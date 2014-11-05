@@ -14,7 +14,7 @@ object Amazon extends TestCore {
       +> Visit("http://www.amazon.com/")
       +> TextInput("input#twotabsearchtextbox", "#{item}")
       +> Submit("input.nav-submit-input")
-      +> DelayFor("div#resultsCol")
+      +> WaitFor("div#resultsCol")
       !=!())
       .extract(
         "DidYouMean" -> {_.text1("div#didYouMean a") },

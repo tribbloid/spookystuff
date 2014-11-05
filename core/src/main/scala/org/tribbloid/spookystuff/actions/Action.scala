@@ -1,9 +1,9 @@
 package org.tribbloid.spookystuff.actions
 
-import org.tribbloid.spookystuff.utils.{Utils, Const}
 import org.tribbloid.spookystuff.ActionException
-import org.tribbloid.spookystuff.entity.Page
+import org.tribbloid.spookystuff.entity.{Page, PageRow}
 import org.tribbloid.spookystuff.factory.PageBuilder
+import org.tribbloid.spookystuff.utils.{Const, Utils}
 
 import scala.concurrent.duration.Duration
 
@@ -44,7 +44,7 @@ trait Action extends Serializable with Product {
 
   //  val optional: Boolean
 
-  def interpolateFromMap[T](map: Map[String,T]): this.type = this
+  def interpolate(pageRow: PageRow): this.type = this
 
   //this should handle autoSave, cache and errorDump
   def exe(
@@ -56,8 +56,11 @@ trait Action extends Serializable with Product {
 
     val results = try {
       this match { //temporarily disabled as we assume that DFS is the culprit for causing deadlock
-        case t: Timed =>
-          Utils.withDeadline(t.delay + session.spooky.remoteResourceTimeout) {
+        case tt: Timed =>
+          val timeout = (if (tt.timeout == null) session.spooky.remoteResourceTimeout
+          else tt.timeout) + Const.hardTerminateOverhead
+
+          Utils.withDeadline(timeout) {
             doExe(session)
           }
         case _ =>
@@ -143,10 +146,10 @@ trait Action extends Serializable with Product {
 
 trait Timed extends Action{
 
-  var delay: Duration = Const.actionDelayMax
+  var timeout: Duration = null
 
-  def in(delay: Duration): this.type = {
-    this.delay = delay
+  def in(deadline: Duration): this.type = {
+    this.timeout = deadline
     this
   }
 }

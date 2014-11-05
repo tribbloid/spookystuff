@@ -1,8 +1,9 @@
 package org.tribbloid.spookystuff.factory
 
 import java.util.Date
+import java.util.concurrent.TimeUnit
 
-import org.openqa.selenium.{Capabilities, WebDriver}
+import org.openqa.selenium.{Dimension, WebDriver}
 import org.slf4j.LoggerFactory
 import org.tribbloid.spookystuff.SpookyContext
 import org.tribbloid.spookystuff.actions._
@@ -31,7 +32,7 @@ object PageBuilder {
 
     //    val results = ArrayBuffer[Page]()
 
-    val pb = new PageBuilder(spooky, null)
+    val pb = new PageBuilder(spooky)
 
     try {
       pb ++= actions
@@ -44,10 +45,8 @@ object PageBuilder {
   }
 }
 
-class PageBuilder(
-                   val spooky: SpookyContext,
-                   caps: Capabilities = null
-                   ){
+//TODO: this should be minimized and delegated to resource pool
+class PageBuilder(val spooky: SpookyContext){
 
   val startTime: Long = new Date().getTime
 
@@ -61,7 +60,18 @@ class PageBuilder(
   //mimic lazy val but retain ability to destruct it on demand
   //not thread safe?
   def driver: WebDriver = {
-    if (_driver == null) _driver = spooky.driverFactory.newInstance(caps, spooky)
+    if (_driver == null) {
+      _driver = spooky.driverFactory.newInstance(null, spooky)
+
+      _driver.manage().timeouts()
+        .implicitlyWait(spooky.remoteResourceTimeout.toSeconds, TimeUnit.SECONDS)
+        .pageLoadTimeout(spooky.remoteResourceTimeout.toSeconds, TimeUnit.SECONDS)
+        .setScriptTimeout(spooky.remoteResourceTimeout.toSeconds, TimeUnit.SECONDS)
+
+      val resolution = spooky.browserResolution
+      if (resolution != null) _driver.manage().window().setSize(new Dimension(resolution._1, resolution._2))
+    }
+
     _driver
   }
 

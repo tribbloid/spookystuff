@@ -19,7 +19,7 @@ object Youtube extends TestCore{
       Visit("http://www.youtube.com/user/#{_}/videos") +>
       Loop(
         Click("button.load-more-button span.load-more-text")
-          :: DelayFor("button.load-more-button span.hid.load-more-loading").in(10.seconds)
+          :: WaitFor("button.load-more-button span.hid.load-more-loading").in(10.seconds)
           :: Nil,
         1
       ) !=!())
@@ -28,7 +28,7 @@ object Youtube extends TestCore{
       .visit("h3.yt-lockup-title a.yt-uix-tile-link")(limit = 1)
       .repartition(400) +>
       ExeScript("window.scrollBy(0,500)") +>
-      Try(DelayFor("iframe[title^=Comment]").in(50.seconds) :: Nil)
+      Try(WaitFor("iframe[title^=Comment]").in(50.seconds) :: Nil)
       !><()).extract(
         "description" -> (_.text1("div#watch-description-text")),
         "publish" -> (_.text1("p#watch-uploader-info")),
@@ -39,7 +39,7 @@ object Youtube extends TestCore{
       .visit("iframe[title^=Comment]", attr = "abs:src")() +>
       Loop(
         Click("span[title^=Load]")
-          :: DelayFor("span.PA[style^=display]").in(10.seconds)
+          :: WaitFor("span.PA[style^=display]").in(10.seconds)
           :: Nil
       ) !=!(joinType = LeftOuter))
       .extract("num_comments" -> (_.text1("div.DJa")))

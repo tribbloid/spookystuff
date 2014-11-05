@@ -27,7 +27,7 @@ object Weibo extends TestCore {
       +> Loop(
         Click("ul.search_page_M li:last-of-type a") ::
         Delay(10.seconds) ::
-        DelayFor("ul.search_page_M li:nth-of-type(10) a").in(10.seconds) ::
+        WaitFor("ul.search_page_M li:nth-of-type(10) a").in(10.seconds) ::
         Snapshot() :: Nil,
         50
       )
