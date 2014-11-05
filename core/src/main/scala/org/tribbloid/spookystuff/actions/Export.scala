@@ -1,6 +1,7 @@
 package org.tribbloid.spookystuff.actions
 
 import org.apache.commons.io.IOUtils
+import org.apache.http.HttpHost
 import org.apache.http.client.config.RequestConfig
 import org.apache.http.client.methods.HttpGet
 import org.apache.http.impl.client.HttpClientBuilder
@@ -99,7 +100,7 @@ object DefaultScreenshot extends Screenshot()
 case class Wget(
                  url: String,
                  userAgent: String = Const.userAgent,
-                 proxy: (String,String) = null,
+                 proxy: ProxySetting = null,
                  headers: Map[String, String] = Map()
                  ) extends Export with Sessionless {
 
@@ -116,11 +117,17 @@ case class Wget(
 
     val timeoutMillis = pb.spooky.remoteResourceTimeout.toMillis.toInt
 
-    val settings = RequestConfig.custom()
+    var builder = RequestConfig.custom()
       .setConnectTimeout ( timeoutMillis )
       .setConnectionRequestTimeout ( timeoutMillis )
       .setSocketTimeout( timeoutMillis )
-      .build()
+
+    builder = if (proxy!=null) builder.setProxy(new HttpHost(proxy.addr, proxy.port, proxy.protocol))
+    else builder
+
+    val settings = builder.build()
+    
+    if (proxy!=null) settings
 
     val httpClient = HttpClientBuilder.create()
       .setDefaultRequestConfig ( settings )
