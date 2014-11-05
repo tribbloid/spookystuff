@@ -71,21 +71,8 @@ class PageBuilder(val spooky: SpookyContext){
       val resolution = spooky.browserResolution
       if (resolution != null) _driver.manage().window().setSize(new Dimension(resolution._1, resolution._2))
     }
-
     _driver
   }
-
-  val backtrace: ArrayBuffer[Action] = ArrayBuffer() //kept in session, but it is action deciding if they fit in or what part to export
-  val realBacktrace: ArrayBuffer[Action] = ArrayBuffer() //real one excluding buffered
-
-  private val buffer: ArrayBuffer[Action] = ArrayBuffer()
-  val pages: ArrayBuffer[Page] = ArrayBuffer()
-
-  //  TODO: Runtime.getRuntime.addShutdownHook()
-  //by default drivers should be reset and reused in this case, but whatever
-
-  //  def exe(action: Action): Array[Page] = action.exe(this)
-
 
   //remember to call this! don't want thousands of phantomJS browsers opened
   def close(): Unit = {
@@ -104,6 +91,17 @@ class PageBuilder(val spooky: SpookyContext){
       super.finalize()
     }
   }
+
+  val backtrace: ArrayBuffer[Action] = ArrayBuffer() //kept in session, but it is action deciding if they fit in or what part to export
+  val realBacktrace: ArrayBuffer[Action] = ArrayBuffer() //real one excluding buffered
+
+  private val buffer: ArrayBuffer[Action] = ArrayBuffer()
+  val pages: ArrayBuffer[Page] = ArrayBuffer()
+
+  //  TODO: Runtime.getRuntime.addShutdownHook()
+  //by default drivers should be reset and reused in this case, but whatever
+
+  //  def exe(action: Action): Array[Page] = action.exe(this)
 
   //lazy execution by default.
   def +=(action: Action): Unit = {

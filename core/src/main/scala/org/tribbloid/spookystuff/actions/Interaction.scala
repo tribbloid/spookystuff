@@ -45,7 +45,7 @@ case class Visit(
   override def exeWithoutPage(pb: PageBuilder) {
     pb.driver.get(url)
 
-    val wait = new WebDriverWait(pb.driver, timeout.toSeconds)
+    val wait = new WebDriverWait(pb.driver, timeout(pb).toSeconds)
     wait.until(ExpectedConditions.not(ExpectedConditions.titleIs("")))
   }
 
@@ -93,7 +93,7 @@ case class WaitFor(selector: String) extends Interaction with Timed {
   //  override val timeout = Math.max(Const.driverCallTimeout, delay + 10)
 
   override def exeWithoutPage(pb: PageBuilder) {
-    val wait = new WebDriverWait(pb.driver, timeout.toSeconds)
+    val wait = new WebDriverWait(pb.driver, timeout(pb).toSeconds)
     wait.until(ExpectedConditions.presenceOfElementLocated(By.cssSelector(selector)))
   }
 }
@@ -119,7 +119,7 @@ object DocumentReadyCondition extends ExpectedCondition[Boolean] {
 case object WaitForDocumentReady extends Interaction with Timed {
 
   override def exeWithoutPage(pb: PageBuilder): Unit = {
-    val wait = new WebDriverWait(pb.driver, timeout.toSeconds)
+    val wait = new WebDriverWait(pb.driver, timeout(pb).toSeconds)
 
     wait.until(DocumentReadyCondition)
   }
@@ -162,7 +162,7 @@ case class Click(
                   selector: String
                   )extends Interaction with Timed {
   override def exeWithoutPage(pb: PageBuilder) {
-    val wait = new WebDriverWait(pb.driver, timeout.toSeconds)
+    val wait = new WebDriverWait(pb.driver, timeout(pb).toSeconds)
     val element = wait.until(ExpectedConditions.elementToBeClickable(By.cssSelector(selector)))
 
     element.click()
@@ -177,7 +177,7 @@ case class ClickAll(
                      selector: String
                      )extends Interaction with Timed {
   override def exeWithoutPage(pb: PageBuilder) {
-    val wait = new WebDriverWait(pb.driver, timeout.toSeconds)
+    val wait = new WebDriverWait(pb.driver, timeout(pb).toSeconds)
     val elements = wait.until(ExpectedConditions.presenceOfAllElementsLocatedBy(By.cssSelector(selector)))
 
 
@@ -198,7 +198,7 @@ case class ClickAll(
  */
 case class Submit(selector: String) extends Interaction with Timed {
   override def exeWithoutPage(pb: PageBuilder) {
-    val wait = new WebDriverWait(pb.driver, timeout.toSeconds)
+    val wait = new WebDriverWait(pb.driver, timeout(pb).toSeconds)
     val element = wait.until(ExpectedConditions.presenceOfElementLocated(By.cssSelector(selector)))
 
     element.submit()
@@ -212,14 +212,14 @@ case class Submit(selector: String) extends Interaction with Timed {
  */
 case class TextInput(selector: String, text: String) extends Interaction with Timed {
   override def exeWithoutPage(pb: PageBuilder) {
-    val wait = new WebDriverWait(pb.driver, timeout.toSeconds)
+    val wait = new WebDriverWait(pb.driver, timeout(pb).toSeconds)
     val element = wait.until(ExpectedConditions.presenceOfElementLocated(By.cssSelector(selector)))
 
     element.sendKeys(text)
   }
 
   override def interpolate(pageRow: PageRow): this.type = {
-    this.copy(text = Utils.interpolateFromMap(this.text,pageRow.cells)).in(this.timeout).asInstanceOf[this.type]
+    this.copy(text = Utils.interpolateFromMap(this.text,pageRow.cells)).asInstanceOf[this.type]
   }
 }
 
@@ -230,7 +230,7 @@ case class TextInput(selector: String, text: String) extends Interaction with Ti
  */
 case class DropDownSelect(selector: String, text: String) extends Interaction with Timed {
   override def exeWithoutPage(pb: PageBuilder) {
-    val wait = new WebDriverWait(pb.driver, timeout.toSeconds)
+    val wait = new WebDriverWait(pb.driver, timeout(pb).toSeconds)
     val element = wait.until(ExpectedConditions.presenceOfElementLocated(By.cssSelector(selector)))
 
     val select = new Select(element)
@@ -238,7 +238,7 @@ case class DropDownSelect(selector: String, text: String) extends Interaction wi
   }
 
   override def interpolate(pageRow: PageRow): this.type = {
-    this.copy(text = Utils.interpolateFromMap(this.text,pageRow.cells)).in(this.timeout).asInstanceOf[this.type]
+    this.copy(text = Utils.interpolateFromMap(this.text,pageRow.cells)).asInstanceOf[this.type]
   }
 }
 
@@ -250,7 +250,7 @@ case class DropDownSelect(selector: String, text: String) extends Interaction wi
  */
 case class SwitchToFrame(selector: String)extends Interaction with Timed {
   override def exeWithoutPage(pb: PageBuilder) {
-    val wait = new WebDriverWait(pb.driver, timeout.toSeconds)
+    val wait = new WebDriverWait(pb.driver, timeout(pb).toSeconds)
     val element = wait.until(ExpectedConditions.presenceOfElementLocated(By.cssSelector(selector)))
 
     pb.driver.switchTo().frame(element)
@@ -292,7 +292,7 @@ case class DragSlider(
 
   override def exeWithoutPage(pb: PageBuilder): Unit = {
 
-    val wait = new WebDriverWait(pb.driver, timeout.toSeconds)
+    val wait = new WebDriverWait(pb.driver, timeout(pb).toSeconds)
     //    val element = wait.until(ExpectedConditions.elementToBeClickable(By.cssSelector(selector)))
     val element = wait.until(ExpectedConditions.visibilityOfElementLocated(By.cssSelector(selector)))
 

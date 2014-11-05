@@ -57,10 +57,8 @@ trait Action extends Serializable with Product {
     val results = try {
       this match { //temporarily disabled as we assume that DFS is the culprit for causing deadlock
         case tt: Timed =>
-          val timeout = (if (tt.timeout == null) session.spooky.remoteResourceTimeout
-          else tt.timeout) + Const.hardTerminateOverhead
 
-          Utils.withDeadline(timeout) {
+          Utils.withDeadline(tt.timeout(session)) {
             doExe(session)
           }
         case _ =>
@@ -146,11 +144,19 @@ trait Action extends Serializable with Product {
 
 trait Timed extends Action{
 
-  var timeout: Duration = null
+  private var _timeout: Duration = null
 
+  //TODO: implement inject to enable it!
   def in(deadline: Duration): this.type = {
-    this.timeout = deadline
+    this._timeout = deadline
     this
+  }
+
+  def timeout(session: PageBuilder): Duration = {
+    val base = if (this._timeout == null) session.spooky.remoteResourceTimeout
+    else this._timeout
+
+    base + Const.hardTerminateOverhead
   }
 }
 

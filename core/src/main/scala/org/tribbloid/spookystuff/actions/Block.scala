@@ -110,7 +110,7 @@ case class LoadMore(
                      selector: String,
                      limit: Int = Const.maxLoop,
                      intervalMin: Duration = Const.actionDelayMin,
-                     intervalMax: Duration = Const.actionDelayMax,
+                     intervalMax: Duration = null,
                      snapshot: Boolean = false
                      ) extends Block {
 
@@ -123,8 +123,9 @@ case class LoadMore(
     val pages = new ArrayBuffer[Page]()
 
     val snapshotAction = Snapshot()
-    val delayAction = Delay(intervalMin)
-    val clickAction = Click(selector).in(intervalMax-intervalMin)
+    val delayAction = if (intervalMax == null) Delay(intervalMin)
+    else RandomDelay(intervalMin, intervalMax)
+    val clickAction = Click(selector)//.in(intervalMax-intervalMin)
 
     try {
       for (i <- 0 until limit) {

@@ -182,13 +182,13 @@
                         <javacArg>-target</javacArg>
                         <javacArg>${java.version}</javacArg>
                     </javacArgs>
-                    <compilerPlugins>
-                        <compilerPlugin>
-                            <groupId>org.scalamacros</groupId>
-                            <artifactId>paradise_2.10.4</artifactId>
-                            <version>2.0.1</version>
-                        </compilerPlugin>
-                    </compilerPlugins>
+                    <!--<compilerPlugins>-->
+                        <!--<compilerPlugin>-->
+                            <!--<groupId>org.scalamacros</groupId>-->
+                            <!--<artifactId>paradise_2.10.4</artifactId>-->
+                            <!--<version>2.0.1</version>-->
+                        <!--</compilerPlugin>-->
+                    <!--</compilerPlugins>-->
                 </configuration>
             </plugin>
             <plugin>
