@@ -8,14 +8,14 @@ import org.apache.http.client.config.RequestConfig
 import org.apache.http.client.methods.HttpGet
 import org.apache.http.client.protocol.HttpClientContext
 import org.apache.http.config.RegistryBuilder
-import org.apache.http.conn.socket.{ConnectionSocketFactory, PlainConnectionSocketFactory}
+import org.apache.http.conn.socket.ConnectionSocketFactory
 import org.apache.http.conn.ssl.SSLContexts
 import org.apache.http.impl.client.HttpClients
 import org.apache.http.impl.conn.PoolingHttpClientConnectionManager
 import org.openqa.selenium.{OutputType, TakesScreenshot}
 import org.tribbloid.spookystuff.entity.{Page, PageRow, PageUID}
 import org.tribbloid.spookystuff.factory.PageBuilder
-import org.tribbloid.spookystuff.utils.{Const, MyConnectionSocketFactory, Utils}
+import org.tribbloid.spookystuff.utils.{Const, SocksProxyConnectionSocketFactory, SocksProxySSLConnectionSocketFactory, Utils}
 
 /**
  * Export a page from the browser or http client
@@ -132,8 +132,8 @@ case class Wget(
 
     val httpClient = if (proxy !=null && proxy.protocol.startsWith("socks")) {
       val reg = RegistryBuilder.create[ConnectionSocketFactory]
-        .register("http", PlainConnectionSocketFactory.INSTANCE)
-        .register("https", new MyConnectionSocketFactory(SSLContexts.createSystemDefault()))
+        .register("http", new SocksProxyConnectionSocketFactory())
+        .register("https", new SocksProxySSLConnectionSocketFactory(SSLContexts.createSystemDefault()))
         .build()
       val cm = new PoolingHttpClientConnectionManager(reg)
 
@@ -186,6 +186,8 @@ case class Wget(
           contentType,
           content
         )
+
+        assert(!result.contentStr.contains("<title></title>"))
 
         Seq(result)
       }

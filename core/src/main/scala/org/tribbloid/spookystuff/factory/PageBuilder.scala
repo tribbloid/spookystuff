@@ -19,7 +19,7 @@ object PageBuilder {
     else actions :+ Snapshot() //Don't use singleton, otherwise will flush timestamp
   }
 
-  def resolve(actions: Seq[Action], dead: Boolean)(implicit spooky: SpookyContext): Seq[Page] = {
+  def resolve(actions: Seq[Action], dead: Boolean)(spooky: SpookyContext): Seq[Page] = {
 
     Utils.retry (Const.remoteResourceInPartitionRetry){
       resolvePlain(autoSnapshot(actions, dead))(spooky)
@@ -28,7 +28,7 @@ object PageBuilder {
 
   // Major API shrink! resolveFinal will be merged here
   // if a resolve has no potential to output page then a snapshot will be appended at the end
-  private def resolvePlain(actions: Seq[Action])(implicit spooky: SpookyContext): Seq[Page] = {
+  def resolvePlain(actions: Seq[Action])(spooky: SpookyContext): Seq[Page] = {
 
     //    val results = ArrayBuffer[Page]()
 

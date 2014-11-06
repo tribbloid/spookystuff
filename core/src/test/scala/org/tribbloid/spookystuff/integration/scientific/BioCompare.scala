@@ -68,13 +68,16 @@ object BioCompare extends TestCore {
 
     val firstPages = (categories
       +> Wget("#{first_page_url}?vcmpv=true")
-      !><(numPartitions = initials.length*500))
+      !><(numPartitions = initials.length*2500))
       .extract(
         "category_header" -> (_.text1("h1"))
       )
 
     val allPages  = firstPages
       .paginate("ul.pages > li.next > a")(indexKey = "page")
+      .extract(
+        "url" -> (_.resolvedUrl)
+      )
       .persist()
 
     println(allPages.count())

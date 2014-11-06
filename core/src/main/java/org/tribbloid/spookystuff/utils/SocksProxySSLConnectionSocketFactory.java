@@ -1,8 +1,5 @@
 package org.tribbloid.spookystuff.utils;
 
-import org.apache.http.HttpHost;
-import org.apache.http.conn.ConnectTimeoutException;
-import org.apache.http.conn.socket.ConnectionSocketFactory;
 import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
 import org.apache.http.protocol.HttpContext;
 
@@ -11,7 +8,6 @@ import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.Proxy;
 import java.net.Socket;
-import java.net.SocketTimeoutException;
 
 //public class MyConnectionSocketFactory implements ConnectionSocketFactory {
 //
@@ -48,9 +44,9 @@ import java.net.SocketTimeoutException;
 //    }
 //}
 
-public class MyConnectionSocketFactory extends SSLConnectionSocketFactory {
+public class SocksProxySSLConnectionSocketFactory extends SSLConnectionSocketFactory {
 
-    public MyConnectionSocketFactory(final SSLContext sslContext) {
+    public SocksProxySSLConnectionSocketFactory(final SSLContext sslContext) {
         super(sslContext);
     }
 

@@ -20,51 +20,98 @@ class TestWget extends FunSuite {
   spooky.autoSave = false
   spooky.autoCache = false
   spooky.autoRestore = false
+  lazy val noProxyIP = {
+      spooky.proxy = null
 
-  val noProxyIP = {
-    val results = PageBuilder.resolve(
-      Wget("http://www.whatsmyip.org/") :: Nil,
-      //      Wget("https://www.google.hk") :: Nil,
-      dead = false
-    )(spooky)
+      val results = PageBuilder.resolvePlain(
+        Wget("http://www.whatsmyuseragent.com/") :: Nil
+      )(spooky)
 
-    results(0).text1("h1 span")
+      results(0).text1("h3.info")
+    }
+
+  test("use TOR socks5 proxy for http") {
+
+    val newIP = {
+      spooky.proxy = TorProxySetting()
+
+      val results = PageBuilder.resolvePlain(
+        Wget("http://www.whatsmyuseragent.com/") :: Nil
+      )(spooky)
+
+      results(0).text1("h3.info")
+    }
+
+    assert(newIP !== null)
+    assert(newIP !== "")
+    assert(newIP !== noProxyIP)
   }
 
   //TODO: find a test site for https!
   test("use TOR socks5 proxy for https") {
 
-    spooky.proxy = TorProxySetting()
+    val newIP = {
+      spooky.proxy = TorProxySetting()
 
-    val results = PageBuilder.resolve(
-      Wget("https://www.whatsmyip.org/") :: Nil,
-//      Wget("https://www.google.hk") :: Nil,
-      dead = false
-    )(spooky)
+      val results = PageBuilder.resolvePlain(
+        Wget("https://www.astrill.com/what-is-my-ip-address.php") :: Nil
+      )(spooky)
 
-    val newIP = results(0).text1("h1 span")
+      results(0).text1("h1")
+    }
 
-    assert(results(0).text1("title") === "What's My IP Address? Networking Tools & More")
     assert(newIP !== null)
     assert(newIP !== "")
     assert(newIP !== noProxyIP)
   }
 
-  test("use TOR socks5 proxy for http") {
+  test("revert proxy setting for http") {
 
-    spooky.proxy = TorProxySetting()
+    val newIP = {
+      spooky.proxy = TorProxySetting()
 
-    val results = PageBuilder.resolve(
-      Wget("http://www.whatsmyip.org/") :: Nil,
-      //      Wget("https://www.google.hk") :: Nil,
-      dead = false
-    )(spooky)
+      val results = PageBuilder.resolvePlain(
+        Wget("http://www.whatsmyuseragent.com/") :: Nil
+      )(spooky)
 
-    val newIP = results(0).text1("h1 span")
+      results(0).text1("h3.info")
+    }
 
-    assert(results(0).text1("title") === "What's My IP Address? Networking Tools & More")
-    assert(newIP !== null)
-    assert(newIP !== "")
-    assert(newIP !== noProxyIP)
+    val noProxyIP2 = {
+      spooky.proxy = null
+
+      val results = PageBuilder.resolvePlain(
+        Wget("http://www.whatsmyuseragent.com/") :: Nil
+      )(spooky)
+
+      results(0).text1("h3.info")
+    }
+
+    assert(newIP !== noProxyIP2)
+  }
+
+  test("revert proxy setting for https") {
+
+    val newIP = {
+      spooky.proxy = TorProxySetting()
+
+      val results = PageBuilder.resolvePlain(
+        Wget("https://www.astrill.com/what-is-my-ip-address.php") :: Nil
+      )(spooky)
+
+      results(0).text1("h1")
+    }
+
+    val noProxyIP2 = {
+      spooky.proxy = null
+
+      val results = PageBuilder.resolvePlain(
+        Wget("https://www.astrill.com/what-is-my-ip-address.php") :: Nil
+      )(spooky)
+
+      results(0).text1("h1")
+    }
+
+    assert(newIP !== noProxyIP2)
   }
 }
