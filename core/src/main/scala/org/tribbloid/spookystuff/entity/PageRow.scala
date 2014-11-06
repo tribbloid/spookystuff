@@ -240,13 +240,13 @@ case class PageRow(
       case Replace if this.actions.isEmpty =>
         this.pages
       case Append =>
-        this.pages ++ PageBuilder.resolve(this.actions, this.dead)
+        this.pages ++ PageBuilder.resolve(this.actions, this.dead)(spooky)
       case Merge =>
         val oldUids = this.pages.map(_.uid)
-        val newPages = PageBuilder.resolve(this.actions, this.dead).filter(newPage => !oldUids.contains(newPage.uid))
+        val newPages = PageBuilder.resolve(this.actions, this.dead)(spooky).filter(newPage => !oldUids.contains(newPage.uid))
         this.pages ++ newPages
       case _ =>
-        PageBuilder.resolve(this.actions, this.dead)
+        PageBuilder.resolve(this.actions, this.dead)(spooky)
     }
 
     if (flatten) PageRow(cells = this.cells, pages = pages).flatten(joinType == LeftOuter, indexKey)

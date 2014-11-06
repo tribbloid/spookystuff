@@ -181,7 +181,7 @@ case class PageSchemaRDD(
 
     val result = squashedRDD.flatMap {
       tuple => {
-        val newPages = PageBuilder.resolve(tuple._1._1, tuple._1._2)
+        val newPages = PageBuilder.resolve(tuple._1._1, tuple._1._2)(this.spooky)
 
         var newPageRows = joinType match {
           case Replace if newPages.isEmpty =>
