@@ -55,7 +55,7 @@ case class Snapshot() extends Export {
 
     val page = Page(
       PageUID(pb.realBacktrace :+ this),
-      pb.getDriver.getCurrentUrl,
+      pb.existingDriver.get.getCurrentUrl,
       "text/html; charset=UTF-8",
       pb.existingDriver.get.getPageSource.getBytes("UTF8")
       //      serializableCookies
@@ -79,7 +79,7 @@ case class Screenshot() extends Export {
 
     val page = Page(
       PageUID(pb.realBacktrace :+ this),
-      pb.getDriver.getCurrentUrl,
+      pb.existingDriver.get.getCurrentUrl,
       "image/png",
       content
     )
