@@ -3,7 +3,7 @@ package org.tribbloid.spookystuff.factory
 import java.util.Date
 import java.util.concurrent.TimeUnit
 
-import org.openqa.selenium.{Dimension, WebDriver}
+import org.openqa.selenium.Dimension
 import org.slf4j.LoggerFactory
 import org.tribbloid.spookystuff.SpookyContext
 import org.tribbloid.spookystuff.actions._
@@ -55,13 +55,13 @@ class PageBuilder(val spooky: SpookyContext){
   val autoRestore = spooky.autoRestore
 
   @volatile
-  private var _driver: WebDriver = null
+  private var _driver: CleanWebDriver = null
 
-  def existingDriver: Option[WebDriver] = Option(_driver)
+  def existingDriver: Option[CleanWebDriver] = Option(_driver)
 
   //mimic lazy val but retain ability to destruct it on demand
   //TODO: make sure it can only be invoked by a subroutine with a deadline, or it will take forever!
-  def getDriver: WebDriver = {
+  def getDriver: CleanWebDriver = {
     if (_driver == null) {
       _driver = spooky.driverFactory.newInstance(null, spooky)
 

@@ -122,6 +122,9 @@ trait Action extends Serializable with Product {
             }
           }
         }
+        else{
+          message += "\n"+"driver not initialize, snapshot/screenshot not available"
+        }
 
         val ex = new ActionException(message, e)
         ex.setStackTrace(e.getStackTrace)
@@ -145,6 +148,7 @@ trait Action extends Serializable with Product {
 trait Timed extends Action{
 
   private var _timeout: Duration = null
+  protected val hardTerminateOverhead = Const.hardTerminateOverhead
 
   //TODO: implement inject to enable it!
   def in(deadline: Duration): this.type = {
@@ -156,7 +160,7 @@ trait Timed extends Action{
     val base = if (this._timeout == null) session.spooky.remoteResourceTimeout
     else this._timeout
 
-    base + Const.hardTerminateOverhead
+    base + hardTerminateOverhead
   }
 }
 

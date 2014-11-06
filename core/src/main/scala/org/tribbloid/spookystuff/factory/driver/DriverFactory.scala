@@ -16,11 +16,12 @@ limitations under the License.
 package org.tribbloid.spookystuff.factory.driver
 
 import org.openqa.selenium.Capabilities
-import org.openqa.selenium.WebDriver
 import org.tribbloid.spookystuff.SpookyContext
+import org.tribbloid.spookystuff.factory.CleanWebDriver
 
+//TODO: switch to DriverPool! Tor cannot handle too many connection request.
 trait DriverFactory extends Serializable{
 
-  def newInstance(capabilities: Capabilities, spooky: SpookyContext): WebDriver
+  def newInstance(capabilities: Capabilities, spooky: SpookyContext): CleanWebDriver
 
 }

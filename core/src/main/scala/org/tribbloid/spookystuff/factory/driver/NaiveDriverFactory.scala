@@ -1,9 +1,10 @@
 package org.tribbloid.spookystuff.factory.driver
 
+import org.openqa.selenium.Capabilities
 import org.openqa.selenium.phantomjs.{PhantomJSDriver, PhantomJSDriverService}
 import org.openqa.selenium.remote.{CapabilityType, DesiredCapabilities}
-import org.openqa.selenium.{Capabilities, WebDriver}
 import org.tribbloid.spookystuff.SpookyContext
+import org.tribbloid.spookystuff.factory.CleanWebDriver
 import org.tribbloid.spookystuff.utils.Const
 
 /**
@@ -34,7 +35,7 @@ class NaiveDriverFactory(
     baseCaps.merge(capabilities)
   }
 
-  override def newInstance(capabilities: Capabilities, spooky: SpookyContext): WebDriver =
+  override def newInstance(capabilities: Capabilities, spooky: SpookyContext): CleanWebDriver =
     new PhantomJSDriver(newCap(capabilities, spooky))
 }
 
