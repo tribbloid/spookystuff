@@ -1,14 +1,21 @@
 package org.tribbloid.spookystuff.actions
 
+import java.net.InetSocketAddress
+
 import org.apache.commons.io.IOUtils
 import org.apache.http.HttpHost
 import org.apache.http.client.config.RequestConfig
 import org.apache.http.client.methods.HttpGet
-import org.apache.http.impl.client.HttpClientBuilder
+import org.apache.http.client.protocol.HttpClientContext
+import org.apache.http.config.RegistryBuilder
+import org.apache.http.conn.socket.{ConnectionSocketFactory, PlainConnectionSocketFactory}
+import org.apache.http.conn.ssl.SSLContexts
+import org.apache.http.impl.client.HttpClients
+import org.apache.http.impl.conn.PoolingHttpClientConnectionManager
 import org.openqa.selenium.{OutputType, TakesScreenshot}
-import org.tribbloid.spookystuff.entity.{PageRow, Page, PageUID}
+import org.tribbloid.spookystuff.entity.{Page, PageRow, PageUID}
 import org.tribbloid.spookystuff.factory.PageBuilder
-import org.tribbloid.spookystuff.utils.{Const, Utils}
+import org.tribbloid.spookystuff.utils.{Const, MyConnectionSocketFactory, Utils}
 
 /**
  * Export a page from the browser or http client
@@ -100,7 +107,6 @@ object DefaultScreenshot extends Screenshot()
 case class Wget(
                  url: String,
                  userAgent: String = Const.userAgent,
-                 proxy: ProxySetting = null,
                  headers: Map[String, String] = Map()
                  ) extends Export with Sessionless {
 
@@ -108,32 +114,63 @@ case class Wget(
 
     if ( url.trim().isEmpty ) return Seq ()
 
-    val request = new HttpGet(url)
+    val proxy = pb.spooky.proxy
 
-    if (userAgent!=null) request.addHeader( "User-Agent", userAgent )
-    for (pair <- headers) {
-      request.addHeader( pair._1, pair._2 )
+    val defaultSetting = {
+      val timeoutMillis = pb.spooky.remoteResourceTimeout.toMillis.toInt
+
+      var builder = RequestConfig.custom()
+        .setConnectTimeout ( timeoutMillis )
+        .setConnectionRequestTimeout ( timeoutMillis )
+        .setSocketTimeout( timeoutMillis )
+
+      if (proxy!=null && !proxy.protocol.startsWith("socks")) builder=builder.setProxy(new HttpHost(proxy.addr, proxy.port, proxy.protocol))
+
+      val settings = builder.build()
+      settings
     }
 
-    val timeoutMillis = pb.spooky.remoteResourceTimeout.toMillis.toInt
+    val httpClient = if (proxy !=null && proxy.protocol.startsWith("socks")) {
+      val reg = RegistryBuilder.create[ConnectionSocketFactory]
+        .register("http", PlainConnectionSocketFactory.INSTANCE)
+        .register("https", new MyConnectionSocketFactory(SSLContexts.createSystemDefault()))
+        .build()
+      val cm = new PoolingHttpClientConnectionManager(reg)
 
-    var builder = RequestConfig.custom()
-      .setConnectTimeout ( timeoutMillis )
-      .setConnectionRequestTimeout ( timeoutMillis )
-      .setSocketTimeout( timeoutMillis )
+      val httpClient = HttpClients.custom
+        .setDefaultRequestConfig ( defaultSetting )
+        .setConnectionManager(cm)
+        .build
 
-    builder = if (proxy!=null) builder.setProxy(new HttpHost(proxy.addr, proxy.port, proxy.protocol))
-    else builder
+      httpClient
+    }
+    else {
+      val httpClient = HttpClients.custom
+        .setDefaultRequestConfig ( defaultSetting )
+        .build()
 
-    val settings = builder.build()
-    
-    if (proxy!=null) settings
+      httpClient
+    }
 
-    val httpClient = HttpClientBuilder.create()
-      .setDefaultRequestConfig ( settings )
-      .build()
+    val request = {
+      val request = new HttpGet(url)
+      if (userAgent != null) request.addHeader("User-Agent", userAgent)
+      for (pair <- headers) {
+        request.addHeader(pair._1, pair._2)
+      }
 
-    val response = httpClient.execute ( request )
+      request
+    }
+    val context = if (proxy !=null && proxy.protocol.startsWith("socks")) {
+      val socksaddr: InetSocketAddress = new InetSocketAddress(proxy.addr, proxy.port)
+      val context: HttpClientContext = HttpClientContext.create
+      context.setAttribute("socks.address", socksaddr)
+
+      context
+    }
+    else null
+
+    val response = httpClient.execute ( request, context )
     try {
       //      val httpStatus = response.getStatusLine().getStatusCode()
       val entity = response.getEntity

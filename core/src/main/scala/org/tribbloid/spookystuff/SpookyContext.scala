@@ -4,6 +4,7 @@ import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.{SchemaRDD, SQLContext}
 import org.apache.spark.{SerializableWritable, SparkConf, SparkContext}
 import org.tribbloid.spookystuff.entity.PageRow
+import org.tribbloid.spookystuff.factory.ProxySetting
 import org.tribbloid.spookystuff.factory.driver.{DriverFactory, NaiveDriverFactory}
 import org.tribbloid.spookystuff.expressions._
 import org.tribbloid.spookystuff.sparkbinding.{SchemaRDDFunctions, PageSchemaRDD, StringRDDFunctions}
@@ -27,6 +28,7 @@ class SpookyContext (
                       @transient val sqlContext: SQLContext, //compulsory, many things are not possible without SQL
 
                       var driverFactory: DriverFactory = NaiveDriverFactory(),
+                      var proxy: ProxySetting = null,
 
                       var autoSave: Boolean = true,//slow, for debugging only
                       var autoCache: Boolean = true,//slow, but reduce bombarding highly aware sites

@@ -2,6 +2,7 @@ package org.tribbloid.spookystuff.integration.scientific
 
 import org.apache.spark.sql.SchemaRDD
 import org.tribbloid.spookystuff.actions._
+import org.tribbloid.spookystuff.factory.TorProxySetting
 import org.tribbloid.spookystuff.factory.driver.TorDriverFactory
 import org.tribbloid.spookystuff.integration.TestCore
 
@@ -11,45 +12,46 @@ import org.tribbloid.spookystuff.integration.TestCore
 object BioCompare extends TestCore {
 
   spooky.driverFactory = TorDriverFactory()
+  spooky.proxy = TorProxySetting()
   import spooky._
   import sql._
 
   override def doMain(): SchemaRDD = {
 
     val initials = Seq(
-      "num",
-      "A",
-      "B",
-      "C",
-      "D",
-      "E",
-      "F",
-      "G",
-      "H",
-      "I",
-      "J",
-      "K",
-      "L",
-      "M",
-      "N",
-      "O",
-      "P",
-      "Q",
-      "R",
-      "S",
-      "T",
-      "U",
-      "V",
-      "W",
-      "X",
-      "Y",
-      "Z"
+//      "num",
+      "A"
+//      "B",
+//      "C",
+//      "D",
+//      "E",
+//      "F",
+//      "G",
+//      "H",
+//      "I",
+//      "J",
+//      "K",
+//      "L",
+//      "M",
+//      "N",
+//      "O",
+//      "P",
+//      "Q",
+//      "R",
+//      "S",
+//      "T",
+//      "U",
+//      "V",
+//      "W",
+//      "X",
+//      "Y",
+//      "Z"
     )
     
     val ranges = (sc.parallelize(initials)
-      +> Visit("http://www.biocompare.com/1997-BrowseCategory/browse/gb1/9776/#{_}")
+      +> Wget("http://www.biocompare.com/1997-BrowseCategory/browse/gb1/9776/#{_}")
       !=!())
-      .visitJoin("div.guidedBrowseCurrentOptionsSegments a")(indexKey = "range_index")
+      .wgetJoin("div.guidedBrowseCurrentOptionsSegments a")(indexKey = "range_index")
       .extract(
         "range" -> (_.text1("h1"))
       ).persist()
@@ -66,14 +68,14 @@ object BioCompare extends TestCore {
     println(categories.count())
 
     val firstPages = (categories
-      +> Visit("#{first_page_url}?vcmpv=true")
+      +> Wget("#{first_page_url}?vcmpv=true")
       !><(numPartitions = initials.length*500))
       .extract(
         "category_header" -> (_.text1("h1"))
       )
 
     val allPages  = firstPages
-      .paginate("ul.pages > li.next > a", wget = false)(indexKey = "page")
+      .paginate("ul.pages > li.next > a")(indexKey = "page")
       .persist()
 
     println(allPages.count())
