@@ -42,7 +42,7 @@ case class PageSchemaRDD(
 
   // I don't know why RDD.persist can't do it, guess I don't know enough.
   def persist(newLevel: StorageLevel = StorageLevel.MEMORY_ONLY): PageSchemaRDD = {
-    PageSchemaRDD(self.persist(newLevel), columnNames, spooky)
+    this.copy(self = self.persist(newLevel))
   }
 
   def count() = self.count()
@@ -181,7 +181,7 @@ case class PageSchemaRDD(
 
     val result = squashedRDD.flatMap {
       tuple => {
-        val newPages = PageBuilder.resolve(tuple._1._1, tuple._1._2)(this.spooky)
+        val newPages = PageBuilder.resolve(tuple._1._1, tuple._1._2)(spookyImplicit)
 
         var newPageRows = joinType match {
           case Replace if newPages.isEmpty =>
