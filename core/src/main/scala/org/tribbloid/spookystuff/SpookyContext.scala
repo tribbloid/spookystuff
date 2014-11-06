@@ -47,8 +47,8 @@ class SpookyContext (
                       var localErrorDumpRoot: String = "file:///spooky-error/",
                       var localErrorDumpScreenshotRoot: String = "file:///spooky-error-screenshot/",
 
-                      var remoteResourceTimeout: Duration = 180.seconds,
-                      var DFSTimeout: Duration = 180.seconds,
+                      var remoteResourceTimeout: Duration = 120.seconds,
+                      var DFSTimeout: Duration = 60.seconds,
 
                       var failOnDFSError: Boolean = false,
 
