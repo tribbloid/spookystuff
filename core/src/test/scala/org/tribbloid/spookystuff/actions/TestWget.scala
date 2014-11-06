@@ -4,7 +4,8 @@ import org.apache.spark.sql.SQLContext
 import org.apache.spark.{SparkConf, SparkContext}
 import org.scalatest.FunSuite
 import org.tribbloid.spookystuff.SpookyContext
-import org.tribbloid.spookystuff.factory.{TorProxySetting, PageBuilder}
+import org.tribbloid.spookystuff.factory.PageBuilder
+import org.tribbloid.spookystuff.factory.driver.TorProxySetting
 
 /**
  * Created by peng on 11/6/14.

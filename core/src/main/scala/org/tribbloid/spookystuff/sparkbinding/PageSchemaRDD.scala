@@ -8,7 +8,7 @@ import org.tribbloid.spookystuff.SpookyContext
 import org.tribbloid.spookystuff.actions._
 import org.tribbloid.spookystuff.entity._
 import org.tribbloid.spookystuff.expressions.{Append, JoinType, LeftOuter, Replace}
-import org.tribbloid.spookystuff.factory.{ProxySetting, PageBuilder}
+import org.tribbloid.spookystuff.factory.PageBuilder
 import org.tribbloid.spookystuff.utils.{Const, Utils}
 
 import scala.collection.immutable.ListSet

@@ -1,4 +1,4 @@
-package org.tribbloid.spookystuff.factory
+package org.tribbloid.spookystuff.factory.driver
 
 /**
  * Created by peng on 11/4/14.

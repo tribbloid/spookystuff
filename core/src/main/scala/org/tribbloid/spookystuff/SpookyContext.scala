@@ -4,8 +4,7 @@ import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.{SchemaRDD, SQLContext}
 import org.apache.spark.{SerializableWritable, SparkConf, SparkContext}
 import org.tribbloid.spookystuff.entity.PageRow
-import org.tribbloid.spookystuff.factory.ProxySetting
-import org.tribbloid.spookystuff.factory.driver.{DriverFactory, NaiveDriverFactory}
+import org.tribbloid.spookystuff.factory.driver.{ProxySetting, DriverFactory, NaiveDriverFactory}
 import org.tribbloid.spookystuff.expressions._
 import org.tribbloid.spookystuff.sparkbinding.{SchemaRDDFunctions, PageSchemaRDD, StringRDDFunctions}
 import org.tribbloid.spookystuff.utils.Utils
