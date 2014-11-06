@@ -1,6 +1,7 @@
 package org.tribbloid.spookystuff.utils
 
 import org.json4s.DefaultFormats
+import org.slf4j.LoggerFactory
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._
@@ -19,7 +20,8 @@ object Utils {
     Try { fn } match {
       case Success(x) =>
         x
-      case _ if n > 1 =>
+      case Failure(e) if n > 1 =>
+        LoggerFactory.getLogger(this.getClass).warn(s"Retrying... ${n-1} times left", e)
         retry(n - 1)(fn)
       case Failure(e) =>
         throw e
