@@ -57,9 +57,11 @@ class PageBuilder(val spooky: SpookyContext){
   @volatile
   private var _driver: WebDriver = null
 
+  def existingDriver: Option[WebDriver] = Option(_driver)
+
   //mimic lazy val but retain ability to destruct it on demand
   //not thread safe?
-  def driver: WebDriver = {
+  def getDriver: WebDriver = {
     if (_driver == null) {
       _driver = spooky.driverFactory.newInstance(null, spooky)
 

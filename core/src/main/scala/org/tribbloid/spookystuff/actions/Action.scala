@@ -84,7 +84,7 @@ trait Action extends Serializable with Product {
 
         if (!isInBacktrace) message += "+>" + this
 
-        if (!this.isInstanceOf[Sessionless]) {
+        if (!this.isInstanceOf[Sessionless] && session.existingDriver.nonEmpty ) {
           if (errorDump) {
             var page = DefaultSnapshot.doExe(session).toList(0)
             try {

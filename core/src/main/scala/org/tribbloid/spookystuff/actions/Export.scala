@@ -55,9 +55,9 @@ case class Snapshot() extends Export {
 
     val page = Page(
       PageUID(pb.realBacktrace :+ this),
-      pb.driver.getCurrentUrl,
+      pb.getDriver.getCurrentUrl,
       "text/html; charset=UTF-8",
-      pb.driver.getPageSource.getBytes("UTF8")
+      pb.existingDriver.get.getPageSource.getBytes("UTF8")
       //      serializableCookies
     )
 
@@ -72,14 +72,14 @@ case class Screenshot() extends Export {
 
   override def doExeNoAlias(pb: PageBuilder): Seq[Page] = {
 
-    val content = pb.driver match {
+    val content = pb.existingDriver.get match {
       case ts: TakesScreenshot => ts.getScreenshotAs(OutputType.BYTES)
       case _ => throw new UnsupportedOperationException("driver doesn't support snapshot")
     }
 
     val page = Page(
       PageUID(pb.realBacktrace :+ this),
-      pb.driver.getCurrentUrl,
+      pb.getDriver.getCurrentUrl,
       "image/png",
       content
     )

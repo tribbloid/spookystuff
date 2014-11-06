@@ -43,9 +43,9 @@ case class Visit(
                   ) extends Interaction with Timed {
 
   override def exeWithoutPage(pb: PageBuilder) {
-    pb.driver.get(url)
+    pb.getDriver.get(url)
 
-    val wait = new WebDriverWait(pb.driver, timeout(pb).toSeconds)
+    val wait = new WebDriverWait(pb.getDriver, timeout(pb).toSeconds)
     wait.until(ExpectedConditions.not(ExpectedConditions.titleIs("")))
   }
 
@@ -93,7 +93,7 @@ case class WaitFor(selector: String) extends Interaction with Timed {
   //  override val timeout = Math.max(Const.driverCallTimeout, delay + 10)
 
   override def exeWithoutPage(pb: PageBuilder) {
-    val wait = new WebDriverWait(pb.driver, timeout(pb).toSeconds)
+    val wait = new WebDriverWait(pb.getDriver, timeout(pb).toSeconds)
     wait.until(ExpectedConditions.presenceOfElementLocated(By.cssSelector(selector)))
   }
 }
@@ -119,7 +119,7 @@ object DocumentReadyCondition extends ExpectedCondition[Boolean] {
 case object WaitForDocumentReady extends Interaction with Timed {
 
   override def exeWithoutPage(pb: PageBuilder): Unit = {
-    val wait = new WebDriverWait(pb.driver, timeout(pb).toSeconds)
+    val wait = new WebDriverWait(pb.getDriver, timeout(pb).toSeconds)
 
     wait.until(DocumentReadyCondition)
   }
@@ -162,7 +162,7 @@ case class Click(
                   selector: String
                   )extends Interaction with Timed {
   override def exeWithoutPage(pb: PageBuilder) {
-    val wait = new WebDriverWait(pb.driver, timeout(pb).toSeconds)
+    val wait = new WebDriverWait(pb.getDriver, timeout(pb).toSeconds)
     val element = wait.until(ExpectedConditions.elementToBeClickable(By.cssSelector(selector)))
 
     element.click()
@@ -177,7 +177,7 @@ case class ClickAll(
                      selector: String
                      )extends Interaction with Timed {
   override def exeWithoutPage(pb: PageBuilder) {
-    val wait = new WebDriverWait(pb.driver, timeout(pb).toSeconds)
+    val wait = new WebDriverWait(pb.getDriver, timeout(pb).toSeconds)
     val elements = wait.until(ExpectedConditions.presenceOfAllElementsLocatedBy(By.cssSelector(selector)))
 
 
@@ -198,7 +198,7 @@ case class ClickAll(
  */
 case class Submit(selector: String) extends Interaction with Timed {
   override def exeWithoutPage(pb: PageBuilder) {
-    val wait = new WebDriverWait(pb.driver, timeout(pb).toSeconds)
+    val wait = new WebDriverWait(pb.getDriver, timeout(pb).toSeconds)
     val element = wait.until(ExpectedConditions.presenceOfElementLocated(By.cssSelector(selector)))
 
     element.submit()
@@ -212,7 +212,7 @@ case class Submit(selector: String) extends Interaction with Timed {
  */
 case class TextInput(selector: String, text: String) extends Interaction with Timed {
   override def exeWithoutPage(pb: PageBuilder) {
-    val wait = new WebDriverWait(pb.driver, timeout(pb).toSeconds)
+    val wait = new WebDriverWait(pb.getDriver, timeout(pb).toSeconds)
     val element = wait.until(ExpectedConditions.presenceOfElementLocated(By.cssSelector(selector)))
 
     element.sendKeys(text)
@@ -230,7 +230,7 @@ case class TextInput(selector: String, text: String) extends Interaction with Ti
  */
 case class DropDownSelect(selector: String, text: String) extends Interaction with Timed {
   override def exeWithoutPage(pb: PageBuilder) {
-    val wait = new WebDriverWait(pb.driver, timeout(pb).toSeconds)
+    val wait = new WebDriverWait(pb.getDriver, timeout(pb).toSeconds)
     val element = wait.until(ExpectedConditions.presenceOfElementLocated(By.cssSelector(selector)))
 
     val select = new Select(element)
@@ -250,10 +250,10 @@ case class DropDownSelect(selector: String, text: String) extends Interaction wi
  */
 case class SwitchToFrame(selector: String)extends Interaction with Timed {
   override def exeWithoutPage(pb: PageBuilder) {
-    val wait = new WebDriverWait(pb.driver, timeout(pb).toSeconds)
+    val wait = new WebDriverWait(pb.getDriver, timeout(pb).toSeconds)
     val element = wait.until(ExpectedConditions.presenceOfElementLocated(By.cssSelector(selector)))
 
-    pb.driver.switchTo().frame(element)
+    pb.getDriver.switchTo().frame(element)
   }
 }
 
@@ -263,7 +263,7 @@ case class SwitchToFrame(selector: String)extends Interaction with Timed {
  */
 case class ExeScript(script: String) extends Interaction with Timed {
   override def exeWithoutPage(pb: PageBuilder) {
-    pb.driver match {
+    pb.getDriver match {
       case d: HtmlUnitDriver => d.executeScript(script)
       //      case d: AndroidWebDriver => throw new UnsupportedOperationException("this web browser driver is not supported")
       case d: EventFiringWebDriver => d.executeScript(script)
@@ -292,7 +292,7 @@ case class DragSlider(
 
   override def exeWithoutPage(pb: PageBuilder): Unit = {
 
-    val wait = new WebDriverWait(pb.driver, timeout(pb).toSeconds)
+    val wait = new WebDriverWait(pb.getDriver, timeout(pb).toSeconds)
     //    val element = wait.until(ExpectedConditions.elementToBeClickable(By.cssSelector(selector)))
     val element = wait.until(ExpectedConditions.visibilityOfElementLocated(By.cssSelector(selector)))
 
@@ -302,18 +302,18 @@ case class DragSlider(
     val height = dim.getHeight
     val width = dim.getWidth
 
-    new Actions(pb.driver).clickAndHold(handle).perform()
+    new Actions(pb.getDriver).clickAndHold(handle).perform()
 
     Thread.sleep(1000)
 
-    new Actions(pb.driver).moveByOffset(1, 0).perform()
+    new Actions(pb.getDriver).moveByOffset(1, 0).perform()
 
     Thread.sleep(1000)
 
-    new Actions(pb.driver).moveByOffset((width * percentage).asInstanceOf[Int], 0).perform()
+    new Actions(pb.getDriver).moveByOffset((width * percentage).asInstanceOf[Int], 0).perform()
 
     Thread.sleep(1000)
 
-    new Actions(pb.driver).release().perform()
+    new Actions(pb.getDriver).release().perform()
   }
 }
