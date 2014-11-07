@@ -22,17 +22,20 @@ class TestPage extends FunSuite with BeforeAndAfter {
   val AWSAccessKeyId = prop.getProperty("AWSAccessKeyId")
   val AWSSecretKey = prop.getProperty("AWSSecretKey")
 
-  val spooky = {
-    val conf: SparkConf = new SparkConf().setAppName("test")
-      .setMaster("local[*]")
+  val conf: SparkConf = new SparkConf().setAppName("test")
+    .setMaster("local[*]")
 
-    val sc: SparkContext = new SparkContext(conf)
-
+  val sc: SparkContext = {
+    val sc = new SparkContext(conf)
     sc.hadoopConfiguration
       .set("fs.s3n.awsAccessKeyId", AWSAccessKeyId)
-
     sc.hadoopConfiguration
       .set("fs.s3n.awsSecretAccessKey", AWSSecretKey)
+
+    sc
+  }
+
+  val spooky = {
 
     val sql: SQLContext = new SQLContext(sc)
     val spooky: SpookyContext = new SpookyContext(
@@ -44,6 +47,10 @@ class TestPage extends FunSuite with BeforeAndAfter {
     spooky.autoRestore = false
 
     spooky
+  }
+
+  override def finalize(){
+    sc.stop()
   }
 
   val page = {

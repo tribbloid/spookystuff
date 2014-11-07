@@ -17,6 +17,7 @@ class TestEmptyPage extends FunSuite with BeforeAndAfter {
     val pb = new PageBuilder(new SpookyContext(null: SQLContext))
 
     try {
+      pb.getDriver
       Snapshot().doExe(pb).toList(0)
     }
     finally {

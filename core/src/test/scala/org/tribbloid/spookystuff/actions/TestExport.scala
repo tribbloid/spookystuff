@@ -29,6 +29,10 @@ class TestExport extends FunSuite {
       results(0).text1("h3.info")
     }
 
+  override def finalize(){
+    sc.stop()
+  }
+
   test("use TOR socks5 proxy for http wget") {
 
     val newIP = {

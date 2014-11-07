@@ -24,12 +24,16 @@ class TestTrace extends FunSuite {
   spooky.autoCache = false
   spooky.autoRestore = false
 
+  override def finalize(){
+    sc.stop()
+  }
+
   import scala.concurrent.duration._
 
   test("visit and snapshot") {
     val builder = new PageBuilder(new SpookyContext(null: SQLContext))
-    Visit("http://en.wikipedia.org").doExe(builder)
-    val page = Snapshot().doExe(builder).toList(0)
+    Visit("http://en.wikipedia.org")(builder)
+    val page = Snapshot()(builder).toList(0)
     //    val url = builder.getUrl
 
     assert(page.contentStr.startsWith("<!DOCTYPE html>"))
@@ -40,28 +44,26 @@ class TestTrace extends FunSuite {
   }
 
   test("visit, input submit and snapshot") {
-    val builder = new PageBuilder(new SpookyContext(null: SQLContext))
-    Visit("https://www.linkedin.com/").doExe(builder)
-    TextInput("input#first","Adam").doExe(builder)
-    TextInput("input#last","Muise").doExe(builder)
-    Submit("input[name=\"search\"]").doExe(builder)
-    val page = Snapshot().doExe(builder).toList(0)
+    val builder = new PageBuilder(new SpookyContext(sql))
+    Visit("http://www.wikipedia.org")(builder)
+    TextInput("input#searchInput","Deep learning")(builder)
+    Submit("input.formBtn")(builder)
+    val page = Snapshot()(builder).toList(0)
     //    val url = builder.getUrl
 
-    assert(page.contentStr.contains("<title>Adam Muise profiles | LinkedIn</title>"))
-    assert(page.resolvedUrl === "https://www.linkedin.com/pub/dir/?first=Adam&last=Muise")
+    assert(page.contentStr.contains("<title>Deep learning - Wikipedia, the free encyclopedia</title>"))
+    assert(page.resolvedUrl === "http://en.wikipedia.org/wiki/Deep_learning")
     //    assert(url === "https://www.linkedin.com/ Input(input#first,Adam) Input(input#last,Muise) Submit(input[name=\"search\"])")
   }
 
   test("resolve") {
     val results = Trace(
-      Visit("https://www.linkedin.com/") ::
-      WaitFor("input[name=\"search\"]").in(40.seconds) ::
-      Snapshot().as("A") ::
-      TextInput("input#first","Adam") ::
-      TextInput("input#last","Muise") ::
-      Submit("input[name=\"search\"]") ::
-      Snapshot().as("B") :: Nil
+      Visit("http://www.wikipedia.org") ::
+        WaitFor("input#searchInput").in(40.seconds) ::
+        Snapshot().as("A") ::
+        TextInput("input#searchInput","Deep learning") ::
+        Submit("input.formBtn") ::
+        Snapshot().as("B") :: Nil
     ).resolve(spooky)
 
     val resultsList = results
@@ -69,45 +71,31 @@ class TestTrace extends FunSuite {
     val res1 = resultsList(0)
     val res2 = resultsList(1)
 
-    val id1 = Seq[Action](Visit("https://www.linkedin.com/"), WaitFor("input[name=\"search\"]"), Snapshot())
-    assert(res1.backtrace === id1)
-    assert(res1.contentStr.contains("<title>World's Largest Professional Network | LinkedIn</title>"))
-    assert(res1.resolvedUrl === "https://www.linkedin.com/")
-//    assert(res1.alias === "A")
+    val id1 = Trace(Visit("http://www.wikipedia.org")::WaitFor("input#searchInput")::Snapshot()::Nil)
+    assert(res1.uid.backtrace === id1)
+    assert(res1.contentStr.contains("<title>Wikipedia</title>"))
+    assert(res1.resolvedUrl === "http://www.wikipedia.org/")
+    assert(res1.name === "A")
 
-    val id2 = Seq[Action](Visit("https://www.linkedin.com/"), WaitFor("input[name=\"search\"]"), TextInput("input#first","Adam"),TextInput("input#last","Muise"),Submit("input[name=\"search\"]"), Snapshot())
-    assert(res2.backtrace === id2)
-    assert(res2.contentStr.contains("<title>Adam Muise profiles | LinkedIn</title>"))
-    assert(res2.resolvedUrl === "https://www.linkedin.com/pub/dir/?first=Adam&last=Muise")
-//    assert(res2.alias === "B")
-  }
-
-  test("extract") {
-    val result = Trace(
-      Visit("https://www.linkedin.com/") ::
-      WaitFor("input[name=\"search\"]").in(40.seconds) ::
-      TextInput("input#first", "Adam") ::
-      TextInput("input#last", "Muise") ::
-      Submit("input[name=\"search\"]") :: Nil
-    ).resolve(spooky)
-
-    val id = Seq[Action](Visit("https://www.linkedin.com/"), WaitFor("input[name=\"search\"]"), TextInput("input#first","Adam"),TextInput("input#last","Muise"),Submit("input[name=\"search\"]"), Snapshot())
-    assert(result(0).backtrace === id)
-    assert(result(0).contentStr.contains("<title>Adam Muise profiles | LinkedIn</title>"))
-    assert(result(0).resolvedUrl === "https://www.linkedin.com/pub/dir/?first=Adam&last=Muise")
+    val id2 = Trace(Visit("http://www.wikipedia.org")::WaitFor("input#searchInput")::TextInput("input#searchInput","Deep learning")::Submit("input.formBtn")::Snapshot()::Nil)
+    assert(res2.uid.backtrace === id2)
+    assert(res2.contentStr.contains("<title>Deep learning - Wikipedia, the free encyclopedia</title>"))
+    assert(res2.resolvedUrl === "http://en.wikipedia.org/wiki/Deep_learning")
+    assert(res2.name === "B")
   }
 
   test("attributes") {
     val result = Trace(
-      Visit("http://www.amazon.com/") ::
-      TextInput("input#twotabsearchtextbox", "Lord of the Rings") ::
-      Submit("input.nav-submit-input") ::
-      WaitFor("div#resultsCol").in(40.seconds) :: Nil
-    ).resolve(spooky)
+      Visit("http://www.amazon.com") ::
+        TextInput("input#twotabsearchtextbox", "Lord of the Rings") ::
+        Submit("input[type=submit]") ::
+        WaitFor("div#resultsCol").in(40.seconds) :: Nil
+    ).autoSnapshot.resolve(spooky)
 
-    assert(result(0).attrExist("div#result_0","name") === true)
-    assert(result(0).attr1("div#result_0 dummy","title") === null)
-    assert(result(0).attr1("div#result_0 h3","dummy") === null)
+    assert(result(0).attrExist("li#result_0","id") === true)
+    assert(result(0).attr1("li#result_0 dummy","title") === null)
+    assert(result(0).attr1("li#result_0 h3","dummy") === null)
+    assert(result(0).attr1("li#result_0 h3","class") !== null)
   }
 
   test("save and load") {
@@ -136,7 +124,7 @@ class TestTrace extends FunSuite {
     assert(pages.size === 1)
     val page1 = pages(0)
 
-    assert(page1.uid === PageUID( Trace(Visit("https://www.linkedin.com/") :: Snapshot() :: Nil), Snapshot()))
+    assert(page1.uid === PageUID(Trace(Visit("http://en.wikipedia.org") :: Snapshot() :: Nil), Snapshot()))
 
     Page.autoCache(pages, page1.uid, spooky)
 
@@ -146,8 +134,7 @@ class TestTrace extends FunSuite {
 
     assert(pages(0).content === loadedPages(0).content)
 
-    assert(pages(0).copy(content = null) === loadedPages(0).copy(content = null))
-  }
+    assert(pages(0).copy(content = null) === loadedPages(0).copy(content = null))  }
 
 //  test("cache multiple pages and restore") {
 //    val results = PageBuilder.resolve(
