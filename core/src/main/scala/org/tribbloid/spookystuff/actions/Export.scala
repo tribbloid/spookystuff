@@ -21,23 +21,15 @@ import org.tribbloid.spookystuff.utils.{Const, SocksProxyConnectionSocketFactory
  * Export a page from the browser or http client
  * the page an be anything including HTML/XML file, image, PDF file or JSON string.
  */
-abstract class Export extends Action {
-  var alias: String = null
-
-  def as(alias: String): this.type = {
-    this.alias = alias
-    this
-  }
+abstract class Export extends Action with Named{
 
   final override def mayExport() = true
 
   final override def trunk() = None //have not impact to driver
 
-  def doExe(session: PageBuilder) = doExeNoAlias(session).map(_.copy(name = this.alias))
+  def doExe(session: PageBuilder) = doExeNoName(session)
 
-  def doExeNoAlias(session: PageBuilder): Seq[Page]
-
-  //  def doExe(pb: PageBuilder): Seq[Page]
+  def doExeNoName(session: PageBuilder): Seq[Page]
 }
 
 /**
@@ -46,10 +38,10 @@ abstract class Export extends Action {
  * only for html page, please use wget for images and pdf files
  * always export as UTF8 charset
  */
-case class Snapshot() extends Export {
+case class Snapshot() extends Export{
 
   // all other fields are empty
-  override def doExeNoAlias(pb: PageBuilder): Seq[Page] = {
+  override def doExeNoName(pb: PageBuilder): Seq[Page] = {
 
     //    import scala.collection.JavaConversions._
 
@@ -77,7 +69,7 @@ object DefaultSnapshot extends Snapshot()
 
 case class Screenshot() extends Export {
 
-  override def doExeNoAlias(pb: PageBuilder): Seq[Page] = {
+  override def doExeNoName(pb: PageBuilder): Seq[Page] = {
 
     val content = pb.existingDriver.get match {
       case ts: TakesScreenshot => ts.getScreenshotAs(OutputType.BYTES)
@@ -110,7 +102,7 @@ case class Wget(
                  headers: Map[String, String] = Map()
                  ) extends Export with Sessionless {
 
-  override def doExeNoAlias(pb: PageBuilder): Seq[Page] = {
+  override def doExeNoName(pb: PageBuilder): Seq[Page] = {
 
     if ( url.trim().isEmpty ) return Seq ()
 
@@ -200,7 +192,7 @@ case class Wget(
     }
   }
 
-  override def interpolate(pageRow: PageRow): this.type = {
+  override def doInterpolate(pageRow: PageRow): this.type = {
     //ugly workaround of https://issues.scala-lang.org/browse/SI-7005
     val interpolatedHeaders = this.headers.mapValues(value => Utils.interpolateFromMap(value, pageRow.cells)).map(identity)
 

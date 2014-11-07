@@ -1,6 +1,6 @@
 package org.tribbloid.spookystuff.expressions
 
-import org.tribbloid.spookystuff.entity.{Page, PageRow}
+import org.tribbloid.spookystuff.entity.PageRow
 
 /**
  * Created by peng on 10/11/14.
@@ -42,22 +42,22 @@ abstract class Select[T] extends (PageRow => T)  with Serializable {
 //  val selectors: Seq[String] = Seq() //used to delay for element to exist
 //}
 
-case class FromPage[T](from: String = "*", extract: Extract[T]) extends Select[T] {
-
-  def from(from: Symbol): FromPage[T] = this.copy(from = from.name)
-
-  private def filter(pages: Seq[Page]): Page = {
-
-    if (from == "*") {
-      pages.last
-    }
-    else {
-      pages.filter(page => page.name == from).last
-    }
-  }
-
-  override def apply(pageRow: PageRow) = extract(filter(pageRow.pages))
-}
+//case class FromPage[T](from: String = "*", extract: Extract[T]) extends Select[T] {
+//
+//  def from(from: Symbol): FromPage[T] = this.copy(from = from.name)
+//
+//  private def filter(pages: Seq[Page]): Page = {
+//
+//    if (from == "*") {
+//      pages.last
+//    }
+//    else {
+//      pages.filter(page => page.name == from).last
+//    }
+//  }
+//
+//  override def apply(pageRow: PageRow) = extract(filter(pageRow.pages))
+//}
 
 case class FromCell(key: String) extends Select[Any] {
 

@@ -40,7 +40,7 @@ case class PageRow(
 
   def +>(a: Action): PageRow = {
     if (!this.dead) {
-      this.copy(actions = this.actions :+ a.interpolate(this))
+      this.copy(actions = this.actions :+ a.interpolate(this).get)
     }
     else {
       this
@@ -49,7 +49,7 @@ case class PageRow(
 
   def +>(as: Seq[Action]): PageRow = {
     if (!this.dead) {
-      this.copy(actions = this.actions ++ as.map(_.interpolate(this)))
+      this.copy(actions = this.actions ++ as.map(_.interpolate(this).get))
     }
     else {
       this
@@ -61,7 +61,7 @@ case class PageRow(
       this.copy(
         cells = this.cells ++ pr.cells,
         pages = this.pages ++ pr.pages,
-        actions = this.actions ++ pr.actions.map(_.interpolate(this)),
+        actions = this.actions ++ pr.actions.map(_.interpolate(this).get),
         dead = pr.dead
       )
     }

@@ -216,7 +216,6 @@ case class Page(
                  contentType: String,
                  content: Array[Byte],
 
-                 name: String = null,
                  //                 cookie: Seq[SerializableCookie] = Seq(),
                  timestamp: Date = new Date,
                  saved: String = null
@@ -468,6 +467,7 @@ case class Page(
     case _ => null
   }
 
+  //TODO: abomination
   def crawl1(
               action: Action,
               f: Page => _
@@ -476,8 +476,9 @@ case class Page(
     f(this) match {
       case null => DeadRow
       case s: Any =>
-        val fa = action.interpolate(PageRow(cells = Map("~" -> s)))
-        PageRow(actions = Seq(fa))
+        val fa = action.interpolate(PageRow(cells = Map("~" -> s))).map(_.asInstanceOf[Action]).toSeq
+        if (fa.isEmpty) DeadRow
+        else PageRow(actions = fa)
     }
   }
 
@@ -494,7 +495,7 @@ case class Page(
 
     if (attrs.isEmpty) return Array(DeadRow)
 
-    var actions: Array[Action] = attrs.map( attr => action.interpolate(PageRow(cells = Map("~" -> attr))))
+    var actions: Array[Action] = attrs.flatMap( attr => action.interpolate(PageRow(cells = Map("~" -> attr))))
 
     if (distinct) actions = actions.distinct
 

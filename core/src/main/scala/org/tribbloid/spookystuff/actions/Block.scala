@@ -45,9 +45,9 @@ case class Try(actions: Seq[Action]) extends Block {
     pages.zipWithIndex.map(tuple => tuple._1.copy(uid = PageUID(pb.realBacktrace :+ this,tuple._2)))
   }
 
-  override def interpolate(pageRow: PageRow): this.type = {
+  override def doInterpolate(pageRow: PageRow): this.type = {
 
-    this.copy(actions = actions.map(_.interpolate(pageRow))).asInstanceOf[this.type]
+    this.copy(actions = actions.map(_.doInterpolate(pageRow))).asInstanceOf[this.type] //doesn't involve inject, inject itself is deep
   }
 }
 
@@ -96,9 +96,9 @@ case class Loop(
     pages.zipWithIndex.map(tuple => tuple._1.copy(uid = PageUID(pb.realBacktrace :+ this,tuple._2)))
   }
 
-  override def interpolate(pageRow: PageRow): this.type = {
+  override def doInterpolate(pageRow: PageRow): this.type = {
 
-    this.copy(actions = actions.map(_.interpolate(pageRow))).asInstanceOf[this.type]
+    this.copy(actions = actions.map(_.doInterpolate(pageRow))).asInstanceOf[this.type]
   }
 }
 
@@ -112,7 +112,7 @@ case class LoadMore(
                      intervalMin: Duration = Const.actionDelayMin,
                      intervalMax: Duration = null,
                      snapshot: Boolean = false
-                     ) extends Block {
+                     ) extends Block with Named {
 
   assert(limit>0)
 

@@ -49,7 +49,7 @@ case class Visit(
     wait.until(ExpectedConditions.not(ExpectedConditions.titleIs("")))
   }
 
-  override def interpolate(pageRow: PageRow): this.type = {
+  override def doInterpolate(pageRow: PageRow): this.type = {
     this.copy(url = Utils.interpolateFromMap(this.url,pageRow.cells)).asInstanceOf[this.type]
   }
 }
@@ -218,7 +218,7 @@ case class TextInput(selector: String, text: String) extends Interaction with Ti
     element.sendKeys(text)
   }
 
-  override def interpolate(pageRow: PageRow): this.type = {
+  override def doInterpolate(pageRow: PageRow): this.type = {
     this.copy(text = Utils.interpolateFromMap(this.text,pageRow.cells)).asInstanceOf[this.type]
   }
 }
@@ -237,7 +237,7 @@ case class DropDownSelect(selector: String, text: String) extends Interaction wi
     select.selectByValue(text)
   }
 
-  override def interpolate(pageRow: PageRow): this.type = {
+  override def doInterpolate(pageRow: PageRow): this.type = {
     this.copy(text = Utils.interpolateFromMap(this.text,pageRow.cells)).asInstanceOf[this.type]
   }
 }
@@ -272,7 +272,7 @@ case class ExeScript(script: String) extends Interaction with Timed {
     }
   }
 
-  override def interpolate(pageRow: PageRow): this.type = {
+  override def doInterpolate(pageRow: PageRow): this.type = {
     this.copy(script = Utils.interpolateFromMap(this.script,pageRow.cells)).asInstanceOf[this.type]
   }
 }

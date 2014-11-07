@@ -10,7 +10,7 @@ import org.tribbloid.spookystuff.factory.driver.TorProxySetting
 /**
  * Created by peng on 11/6/14.
  */
-class TestWget extends FunSuite {
+class TestInteraction extends FunSuite {
 
   lazy val conf: SparkConf = new SparkConf().setAppName("dummy").setMaster("local")
   lazy val sc: SparkContext = new SparkContext(conf)
@@ -30,7 +30,7 @@ class TestWget extends FunSuite {
       results(0).text1("h3.info")
     }
 
-  test("use TOR socks5 proxy for http") {
+  test("use TOR socks5 proxy for http wget") {
 
     val newIP = {
       spooky.proxy = TorProxySetting()
@@ -48,7 +48,7 @@ class TestWget extends FunSuite {
   }
 
   //TODO: find a test site for https!
-  test("use TOR socks5 proxy for https") {
+  test("use TOR socks5 proxy for https wget") {
 
     val newIP = {
       spooky.proxy = TorProxySetting()
@@ -65,7 +65,7 @@ class TestWget extends FunSuite {
     assert(newIP !== noProxyIP)
   }
 
-  test("revert proxy setting for http") {
+  test("revert proxy setting for http wget") {
 
     val newIP = {
       spooky.proxy = TorProxySetting()
@@ -90,7 +90,7 @@ class TestWget extends FunSuite {
     assert(newIP !== noProxyIP2)
   }
 
-  test("revert proxy setting for https") {
+  test("revert proxy setting for https wget") {
 
     val newIP = {
       spooky.proxy = TorProxySetting()

@@ -44,21 +44,28 @@ trait Action extends Serializable with Product {
 
   //  val optional: Boolean
 
-  def interpolate(pageRow: PageRow): this.type = this
+  final def interpolate(pr: PageRow): Option[this.type] = {
+    val result = Option[this.type](this.doInterpolate(pr))
+    result.foreach(_.inject(this))
+    result
+  }
+  
+  def doInterpolate(pageRow: PageRow): this.type = this //TODO: return Option as well
+
+  def inject(same: this.type ): Unit = {
+  }
 
   //this should handle autoSave, cache and errorDump
-  def exe(
-           session: PageBuilder
-           )(
-           errorDump: Boolean = session.spooky.errorDump,
-           errorDumpScreenshot: Boolean = session.spooky.errorDumpScreenshot
-           ): Seq[Page] = {
+  def apply(session: PageBuilder): Seq[Page] = {
+
+    val errorDump: Boolean = session.spooky.errorDump
+    val errorDumpScreenshot: Boolean = session.spooky.errorDumpScreenshot
 
     val results = try {
       this match { //temporarily disabled as we assume that DFS is the culprit for causing deadlock
         case tt: Timed =>
 
-          Utils.withDeadline(tt.timeout(session)) {
+          Utils.withDeadline(tt.hardTerminateTimeout(session)) {
             doExe(session)
           }
         case _ =>
@@ -148,7 +155,6 @@ trait Action extends Serializable with Product {
 trait Timed extends Action{
 
   private var _timeout: Duration = null
-  protected val hardTerminateOverhead = Const.hardTerminateOverhead
 
   //TODO: implement inject to enable it!
   def in(deadline: Duration): this.type = {
@@ -160,7 +166,43 @@ trait Timed extends Action{
     val base = if (this._timeout == null) session.spooky.remoteResourceTimeout
     else this._timeout
 
-    base + hardTerminateOverhead
+    base
+  }
+
+  def hardTerminateTimeout(session: PageBuilder): Duration = timeout(session) + Const.hardTerminateOverhead
+
+  override def inject(same: this.type): Unit = {
+    super.inject(same)
+
+    same match {
+      case same: Timed =>
+        this._timeout = same._timeout
+    }
+  }
+}
+
+trait Named extends Action {
+
+  private var _name: String = "-" //can only set once
+
+  def as(name: String): this.type = if (name != "-" && !this.mayExport)
+    throw new UnsupportedOperationException("cannot set name for action with no export")
+  else if (name == null)
+    throw new UnsupportedOperationException("cannot set name = null")
+  else {
+    this._name = name
+    this
+  }
+
+  def name: String = _name
+
+  override def inject(same: this.type): Unit = {
+    super.inject(same)
+
+    same match {
+      case same: Named =>
+        this._name = same.name
+    }
   }
 }
 
