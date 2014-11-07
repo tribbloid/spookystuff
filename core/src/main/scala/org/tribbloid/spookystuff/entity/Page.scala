@@ -203,6 +203,7 @@ object Page {
 @SerialVersionUID(612503421395L)
 case class PageUID(
                     backtrace: Seq[Action],
+                    leaf: Named,
                     blockKey: Int = -1 //-1 is no sub key
                     )
 
@@ -238,6 +239,8 @@ case class Page(
 
   def backtrace = this.uid.backtrace
   def blockKey = this.uid.blockKey
+
+  def name = this.uid.leaf.name
 
   //this will lose information as charset encoding will be different
   def save(

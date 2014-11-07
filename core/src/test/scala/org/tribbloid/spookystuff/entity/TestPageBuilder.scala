@@ -141,7 +141,7 @@ class TestPageBuilder extends FunSuite {
     assert(pages.size === 1)
     val page1 = pages(0)
 
-    assert(page1.uid === PageUID( Visit("https://www.linkedin.com/") :: Snapshot() :: Nil))
+    assert(page1.uid === PageUID( Visit("https://www.linkedin.com/") :: Snapshot() :: Nil, Snapshot()))
 
     Page.autoCache(pages, page1.uid, spooky)
 

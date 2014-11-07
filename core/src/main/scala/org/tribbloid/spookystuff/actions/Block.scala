@@ -1,6 +1,6 @@
 package org.tribbloid.spookystuff.actions
 
-import org.tribbloid.spookystuff.entity.{PageRow, Page, PageUID}
+import org.tribbloid.spookystuff.entity.{Page, PageRow}
 import org.tribbloid.spookystuff.factory.PageBuilder
 import org.tribbloid.spookystuff.utils.Const
 
@@ -42,7 +42,12 @@ case class Try(actions: Seq[Action]) extends Block {
       //Do nothing because just trying
     }
 
-    pages.zipWithIndex.map(tuple => tuple._1.copy(uid = PageUID(pb.realBacktrace :+ this,tuple._2)))
+    pages.zipWithIndex.map(
+      tuple => {
+        val page = tuple._1
+        page.copy(uid = page.uid.copy(backtrace = pb.realBacktrace :+ this,blockKey = tuple._2))
+      }
+    )
   }
 
   override def doInterpolate(pageRow: PageRow): this.type = {
@@ -93,7 +98,12 @@ case class Loop(
       //Do nothing, loop until not possible
     }
 
-    pages.zipWithIndex.map(tuple => tuple._1.copy(uid = PageUID(pb.realBacktrace :+ this,tuple._2)))
+    pages.zipWithIndex.map(
+      tuple => {
+        val page = tuple._1
+        page.copy(uid = page.uid.copy(backtrace = pb.realBacktrace :+ this,blockKey = tuple._2))
+      }
+    )
   }
 
   override def doInterpolate(pageRow: PageRow): this.type = {
@@ -140,7 +150,12 @@ case class LoadMore(
       //Do nothing, loop until conditions are not met
     }
 
-    pages.zipWithIndex.map(tuple => tuple._1.copy(uid = PageUID(pb.realBacktrace :+ this,tuple._2)))
+    pages.zipWithIndex.map(
+      tuple => {
+        val page = tuple._1
+        page.copy(uid = page.uid.copy(backtrace = pb.realBacktrace :+ this,blockKey = tuple._2))
+      }
+    )
   }
 
   //the minimal equivalent action that can be put into backtrace

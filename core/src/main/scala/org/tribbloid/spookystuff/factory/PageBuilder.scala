@@ -107,7 +107,7 @@ class PageBuilder(val spooky: SpookyContext){
 
   //lazy execution by default.
   def +=(action: Action): Unit = {
-    val uid = PageUID(this.backtrace :+ action)
+    val uid = PageUID(this.backtrace :+ action, null)//TODO: this shouldn't happen
 
     this.backtrace ++= action.trunk()//always put into backtrace.
     if (action.mayExport()) {
