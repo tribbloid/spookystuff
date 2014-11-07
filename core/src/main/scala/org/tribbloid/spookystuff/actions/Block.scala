@@ -12,28 +12,46 @@ import scala.concurrent.duration.Duration
  * each defines a nested/non-linear subroutine that may or may not be executed
  * once or multiple times depending on situations.
  */
-abstract class Block extends Action
+abstract class Block(override val self: Seq[Action]) extends Actions(self) with Named {
 
-case class Try(actions: Seq[Action]) extends Block {
+  override def as(name: String) = {
+    super.as(name)
 
-  override def mayExport(): Boolean = Action.mayExport(actions)
-
-  final override def trunk() = {
-    val trunked = actions.flatMap {
-      case interaction: Interaction => Some(interaction)
-      case export: Export => None
-      case container: Block => container.trunk()
+    self.foreach{
+      case n: Named => n.as(name)
+      case _ =>
     }
 
-    Some(Try(trunked))
+    this
   }
 
-  override def doExe(pb: PageBuilder): Seq[Page] = {
+  final override def doExe(pb: PageBuilder): Seq[Page] = {
+
+    val pages = this.doExeNoUID(pb)
+
+    val backtrace = Trace(pb.realBacktrace :+ this)
+    pages.zipWithIndex.map {
+      tuple => {
+        val page = tuple._1
+
+        page.copy(uid = page.uid.copy(backtrace = backtrace, blockKey = tuple._2))
+      }
+    }
+  }
+
+  def doExeNoUID(pb: PageBuilder): Seq[Page]
+}
+
+final case class Try(override val self: Seq[Action]) extends Block(self) {
+
+  override def trunk = Some(Try(this.trunkSeq).asInstanceOf[this.type])
+
+  override def doExeNoUID(pb: PageBuilder): Seq[Page] = {
 
     val pages = new ArrayBuffer[Page]()
 
     try {
-      for (action <- actions) {
+      for (action <- self) {
         pages ++= action.doExe(pb)
       }
     }
@@ -42,17 +60,13 @@ case class Try(actions: Seq[Action]) extends Block {
       //Do nothing because just trying
     }
 
-    pages.zipWithIndex.map(
-      tuple => {
-        val page = tuple._1
-        page.copy(uid = page.uid.copy(backtrace = pb.realBacktrace :+ this,blockKey = tuple._2))
-      }
-    )
+    pages
   }
 
-  override def doInterpolate(pageRow: PageRow): this.type = {
-
-    this.copy(actions = actions.map(_.doInterpolate(pageRow))).asInstanceOf[this.type] //doesn't involve inject, inject itself is deep
+  override def doInterpolate(pageRow: PageRow): this.type ={
+    val seq = this.doInterpolateSeq(pageRow)
+    if (seq==null) null
+    this.copy(self = seq).asInstanceOf[this.type] //doesn't involve inject, inject itself is deep
   }
 }
 
@@ -60,35 +74,25 @@ case class Try(actions: Seq[Action]) extends Block {
  * Contains several sub-actions that are iterated for multiple times
  * Will iterate until max iteration is reached or execution is impossible (sub-action throws an exception)
  * @param limit max iteration, default to Const.fetchLimit
- * @param actions a list of actions being iterated through
+ * @param self a list of actions being iterated through
  */
-case class Loop(
-                 actions: Seq[Action],
-                 limit: Int = Const.maxLoop
-                 ) extends Block {
+final case class Loop(
+                       override val self: Seq[Action],
+                       limit: Int = Const.maxLoop
+                       ) extends Block(self) {
 
   assert(limit>0)
 
-  override def mayExport(): Boolean = Action.mayExport(actions)
+  override def trunk = Some(this.copy(self = this.trunkSeq).asInstanceOf[this.type])
 
-  final override def trunk() = {
-    val trunked = actions.flatMap {
-      case interaction: Interaction => Some(interaction)
-      case export: Export => None
-      case container: Block => container.trunk()
-    }
-
-    Some(Loop(trunked, limit))
-  }
-
-  override def doExe(pb: PageBuilder): Seq[Page] = {
+  override def doExeNoUID(pb: PageBuilder): Seq[Page] = {
 
     val pages = new ArrayBuffer[Page]()
 
     try {
       for (i <- 0 until limit) {
 
-        for (action <- actions) {
+        for (action <- self) {
           pages ++= action.doExe(pb)
         }
       }
@@ -98,66 +102,43 @@ case class Loop(
       //Do nothing, loop until not possible
     }
 
-    pages.zipWithIndex.map(
-      tuple => {
-        val page = tuple._1
-        page.copy(uid = page.uid.copy(backtrace = pb.realBacktrace :+ this,blockKey = tuple._2))
-      }
-    )
+    pages
   }
 
-  override def doInterpolate(pageRow: PageRow): this.type = {
-
-    this.copy(actions = actions.map(_.doInterpolate(pageRow))).asInstanceOf[this.type]
+  override def doInterpolate(pageRow: PageRow): this.type ={
+    val seq = this.doInterpolateSeq(pageRow)
+    if (seq==null) null
+    this.copy(self = seq).asInstanceOf[this.type] //doesn't involve inject, inject itself is deep
   }
 }
 
-/**
- * Created by peng on 9/10/14.
- */
+//case class cannot be overridden
 //syntax sugar for loop-click-wait
-case class LoadMore(
-                     selector: String,
-                     limit: Int = Const.maxLoop,
-                     intervalMin: Duration = Const.actionDelayMin,
-                     intervalMax: Duration = null,
-                     snapshot: Boolean = false
-                     ) extends Block with Named {
+object LoadMore {
 
-  assert(limit>0)
+  def apply(
+             selector: String,
+             limit: Int = Const.maxLoop,
+             intervalMin: Duration = Const.actionDelayMin,
+             intervalMax: Duration = Const.actionDelayMax
+             ): Loop =
+    new Loop(
+      Seq(Delay(intervalMin), Click(selector).in(intervalMax-intervalMin)),
+      limit
+    )
+}
 
-  override def mayExport(): Boolean = snapshot
+object Paginate {
 
-  override def doExe(pb: PageBuilder): Seq[Page] = {
-
-    val pages = new ArrayBuffer[Page]()
-
-    val snapshotAction = Snapshot()
-    val delayAction = if (intervalMax == null) Delay(intervalMin)
-    else RandomDelay(intervalMin, intervalMax)
-    val clickAction = Click(selector)//.in(intervalMax-intervalMin)
-
-    try {
-      for (i <- 0 until limit) {
-
-        if (snapshot) pages ++= snapshotAction.doExe(pb)
-        delayAction.doExe(pb)
-        clickAction.doExe(pb)
-      }
-    }
-    catch {
-      case e: Throwable =>
-      //Do nothing, loop until conditions are not met
-    }
-
-    pages.zipWithIndex.map(
-      tuple => {
-        val page = tuple._1
-        page.copy(uid = page.uid.copy(backtrace = pb.realBacktrace :+ this,blockKey = tuple._2))
-      }
+  def apply(
+             selector: String,
+             limit: Int = Const.maxLoop,
+             intervalMin: Duration = Const.actionDelayMin,
+             intervalMax: Duration = Const.actionDelayMax
+             ): Loop = {
+    new Loop(
+      Delay(intervalMin)::Snapshot():: Click(selector).in(intervalMax - intervalMin) ::Nil,
+      limit
     )
   }
-
-  //the minimal equivalent action that can be put into backtrace
-  override def trunk(): Option[Action] = Some(this.copy(snapshot = false))
 }

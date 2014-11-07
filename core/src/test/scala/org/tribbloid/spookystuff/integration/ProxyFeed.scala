@@ -28,10 +28,9 @@ trait ProxyFeed extends TestCore {
     val httpPageRowRDD = (noInput
       +> Visit("http://www.us-proxy.org/")
       +> WaitForDocumentReady
-      +> LoadMore(
+      +> Paginate(
       "a.next:not([class*=ui-state-disabled])",
-      limit =15,
-      snapshot = true
+      limit =15
     )
       !=!(indexKey = "page"))
       .sliceJoin("table.dataTable tbody tr")()
@@ -50,10 +49,9 @@ trait ProxyFeed extends TestCore {
     val socksPageRowRDD = (noInput
       +> Visit("http://www.socks-proxy.net/")
       +> WaitForDocumentReady
-      +> LoadMore(
+      +> Paginate(
       "a.next:not([class*=ui-state-disabled])",
-      limit =15,
-      snapshot = true
+      limit =15
     )
       !=!(indexKey = "page"))
       .sliceJoin("table.dataTable tbody tr")()

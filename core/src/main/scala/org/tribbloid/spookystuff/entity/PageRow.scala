@@ -3,7 +3,6 @@ package org.tribbloid.spookystuff.entity
 import org.tribbloid.spookystuff.SpookyContext
 import org.tribbloid.spookystuff.actions._
 import org.tribbloid.spookystuff.expressions._
-import org.tribbloid.spookystuff.factory.PageBuilder
 import org.tribbloid.spookystuff.utils.{Const, Utils}
 
 import scala.collection.mutable.ArrayBuffer
@@ -240,13 +239,13 @@ case class PageRow(
       case Replace if this.actions.isEmpty =>
         this.pages
       case Append =>
-        this.pages ++ PageBuilder.resolve(this.actions, this.dead)(spooky)
+        this.pages ++ Trace(this.actions).resolve(spooky)
       case Merge =>
         val oldUids = this.pages.map(_.uid)
-        val newPages = PageBuilder.resolve(this.actions, this.dead)(spooky).filter(newPage => !oldUids.contains(newPage.uid))
+        val newPages = Trace(this.actions).resolve(spooky).filter(newPage => !oldUids.contains(newPage.uid))
         this.pages ++ newPages
       case _ =>
-        PageBuilder.resolve(this.actions, this.dead)(spooky)
+        Trace(this.actions).resolve(spooky)
     }
 
     if (flatten) PageRow(cells = this.cells, pages = pages).flatten(joinType == LeftOuter, indexKey)

@@ -1,0 +1,99 @@
+package org.tribbloid.spookystuff.actions
+
+import org.tribbloid.spookystuff.SpookyContext
+import org.tribbloid.spookystuff.entity.{Page, PageRow}
+import org.tribbloid.spookystuff.factory.PageBuilder
+import org.tribbloid.spookystuff.utils.{Utils, Const}
+
+/**
+ * Created by peng on 10/25/14.
+ */
+final case class Trace(
+                  override val self: Seq[Action]
+                  ) extends Actions(self) { //remember chain is not a block! its the super container that cannot be wrapped
+
+  override def doInterpolate(pr: PageRow) = {
+    val seq = this.doInterpolateSeq(pr)
+    if (seq==null) null
+    else Trace(seq).asInstanceOf[this.type]
+  }
+
+  //TODO: migrate all lazy-evaluation and cache here, PageBuilder should not handle this
+  override def apply(session: PageBuilder): Seq[Page] = {
+
+    session ++= self
+    session.pages
+  }
+
+  //invoke before interpolation!
+  def autoSnapshot: Trace = {
+    if (this.mayExport && self.nonEmpty) this
+    else Trace(self :+ Snapshot()) //Don't use singleton, otherwise will flush timestamp and name
+  }
+
+  def resolve(spooky: SpookyContext): Seq[Page] = {
+
+    Utils.retry (Const.remoteResourceInPartitionRetry){
+      resolvePlain(spooky)
+    }
+  }
+
+  //no retry
+  def resolvePlain(spooky: SpookyContext): Seq[Page] = {
+
+    //    val results = ArrayBuffer[Page]()
+
+    val pb = new PageBuilder(spooky)
+
+    try {
+      this.apply(pb)
+    }
+    finally {
+      pb.close()
+    }
+  }
+
+  //the minimal equivalent action that can be put into backtrace
+  override def trunk = Some(Trace(this.trunkSeq).asInstanceOf[this.type])
+}
+
+//TODO: verify this! document is really scarce
+//The precedence of an inﬁx operator is determined by the operator’s ﬁrst character.
+//Characters are listed below in increasing order of precedence, with characters on
+//the same line having the same precedence.
+//(all letters)
+//|
+//^
+//&
+//= !.................................................(new doc)
+//< >
+//= !.................................................(old doc)
+//:
+//+ -
+//* / %
+//(all other special characters)
+//now using immutable pattern to increase maintainability
+//put all narrow transformation closures here
+final class TraceSetFunctions(self: Set[Trace]) {
+
+  //one-to-one
+  def ->(another: Action): Set[Trace] = self.map(chain => Trace(chain.self :+ another))
+  def ->(others: Seq[Action]): Set[Trace] = self.map(chain => Trace(chain.self ++ others))
+
+  //one-to-one truncate longer
+  def +>(others: Set[Trace]): Set[Trace] = self.zip(others).map(tuple => Trace(tuple._1.self ++ tuple._2.self))
+
+  //one-to-many
+  def *>(others: Set[Trace]): Set[Trace] = self.flatMap(chain => others.map(other => Trace(chain.self ++ other.self)))
+
+  def ||(other: Set[Trace]): Set[Trace] = self ++ other
+
+  def interpolate(
+                   pr: PageRow,
+                   autoSnapshot: Boolean = true
+                   ): Set[Trace] = {
+
+    if (autoSnapshot) self.flatMap(_.autoSnapshot.interpolate(pr))
+    else self.flatMap(_.interpolate(pr))
+  }
+}

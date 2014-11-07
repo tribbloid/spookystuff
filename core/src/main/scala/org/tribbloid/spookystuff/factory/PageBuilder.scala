@@ -8,42 +8,41 @@ import org.slf4j.LoggerFactory
 import org.tribbloid.spookystuff.SpookyContext
 import org.tribbloid.spookystuff.actions._
 import org.tribbloid.spookystuff.entity._
-import org.tribbloid.spookystuff.utils.{Const, Utils}
 
 import scala.collection.mutable.ArrayBuffer
 
-object PageBuilder {
-
-  def autoSnapshot(actions: Seq[Action], dead: Boolean): Seq[Action] = {
-    if (Action.mayExport(actions) || dead) actions
-    else actions :+ Snapshot() //Don't use singleton, otherwise will flush timestamp
-  }
-
-  def resolve(actions: Seq[Action], dead: Boolean)(spooky: SpookyContext): Seq[Page] = {
-
-    Utils.retry (Const.remoteResourceInPartitionRetry){
-      resolvePlain(autoSnapshot(actions, dead))(spooky)
-    }
-  }
-
-  // Major API shrink! resolveFinal will be merged here
-  // if a resolve has no potential to output page then a snapshot will be appended at the end
-  def resolvePlain(actions: Seq[Action])(spooky: SpookyContext): Seq[Page] = {
-
-    //    val results = ArrayBuffer[Page]()
-
-    val pb = new PageBuilder(spooky)
-
-    try {
-      pb ++= actions
-
-      pb.pages
-    }
-    finally {
-      pb.close()
-    }
-  }
-}
+//object PageBuilder {
+//
+//  def autoSnapshot(actions: Seq[Action], dead: Boolean): Seq[Action] = {
+//    if (Action.mayExport(actions) || dead) actions
+//    else actions :+ Snapshot() //Don't use singleton, otherwise will flush timestamp
+//  }
+//
+//  def resolve(actions: Seq[Action], dead: Boolean)(spooky: SpookyContext): Seq[Page] = {
+//
+//    Utils.retry (Const.remoteResourceInPartitionRetry){
+//      resolvePlain(autoSnapshot(actions, dead))(spooky)
+//    }
+//  }
+//
+//  // Major API shrink! resolveFinal will be merged here
+//  // if a resolve has no potential to output page then a snapshot will be appended at the end
+//  def resolvePlain(actions: Seq[Action])(spooky: SpookyContext): Seq[Page] = {
+//
+//    //    val results = ArrayBuffer[Page]()
+//
+//    val pb = new PageBuilder(spooky)
+//
+//    try {
+//      pb ++= actions
+//
+//      pb.pages
+//    }
+//    finally {
+//      pb.close()
+//    }
+//  }
+//}
 
 //TODO: this should be minimized and delegated to resource pool
 class PageBuilder(val spooky: SpookyContext){
@@ -107,10 +106,10 @@ class PageBuilder(val spooky: SpookyContext){
 
   //lazy execution by default.
   def +=(action: Action): Unit = {
-    val uid = PageUID(this.backtrace :+ action, null)//TODO: this shouldn't happen
+    val uid = PageUID(Trace(this.backtrace :+ action), null)//TODO: this shouldn't happen
 
-    this.backtrace ++= action.trunk()//always put into backtrace.
-    if (action.mayExport()) {
+    this.backtrace ++= action.trunk//always put into backtrace.
+    if (action.mayExport) {
       //always try to read from cache first
       val restored = if (autoRestore) {
 
@@ -126,12 +125,12 @@ class PageBuilder(val spooky: SpookyContext){
       else {
         for (buffered <- this.buffer)
         {
-          this.realBacktrace ++= buffered.trunk()
+          this.realBacktrace ++= buffered.trunk
           pages ++= buffered.apply(this) // I know buffered one should only have empty result, just for safety
         }
         buffer.clear()
 
-        this.realBacktrace ++= action.trunk()
+        this.realBacktrace ++= action.trunk
         var batch = action.apply(this)
 
         if (autoSave) batch = batch.map(_.autoSave(spooky))

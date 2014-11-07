@@ -1,7 +1,7 @@
 package org.tribbloid.spookystuff.actions
 
 import org.tribbloid.spookystuff.ActionException
-import org.tribbloid.spookystuff.entity.{Page, PageRow}
+import org.tribbloid.spookystuff.entity.Page
 import org.tribbloid.spookystuff.factory.PageBuilder
 import org.tribbloid.spookystuff.utils.{Const, Utils}
 
@@ -11,25 +11,6 @@ import scala.concurrent.duration.Duration
  * Created by peng on 04/06/14.
  */
 
-object Action {
-
-  def mayExport(actions: Seq[Action]): Boolean = {
-    for (action <- actions) {
-      if (action.mayExport()) return true
-    }
-    false
-  }
-
-  //  def snapshotNotOmitted(actions: Action*): Boolean = {
-  //    if (actions.isEmpty) {
-  //      true //indicating a dead action chain
-  //    }
-  //    else {
-  //      mayExport(actions: _*)
-  //    }
-  //  }
-}
-
 /**
  * These are the same actions a human would do to get to the data page,
  * their order of execution is identical to that they are defined.
@@ -38,22 +19,11 @@ object Action {
  * This is used almost exclusively in typing into an url bar or textbox, but it's flexible enough to be used anywhere.
  * extends Product to make sure all subclasses are case classes
  */
-trait Action extends Serializable with Product {
+trait Action extends ActionLike {
 
   private var timeElapsed: Long = -1 //only set once
 
   //  val optional: Boolean
-
-  final def interpolate(pr: PageRow): Option[this.type] = {
-    val result = Option[this.type](this.doInterpolate(pr))
-    result.foreach(_.inject(this))
-    result
-  }
-  
-  def doInterpolate(pageRow: PageRow): this.type = this //TODO: return Option as well
-
-  def inject(same: this.type ): Unit = {
-  }
 
   //this should handle autoSave, cache and errorDump
   def apply(session: PageBuilder): Seq[Page] = {
@@ -145,11 +115,10 @@ trait Action extends Serializable with Product {
 
   def doExe(session: PageBuilder): Seq[Page]
 
-  //used to determine if snapshot needs to be appended or if possible to be executed lazily
-  def mayExport(): Boolean
-
-  //the minimal equivalent action that can be put into backtrace
-  def trunk(): Option[Action]
+  override def inject(same: this.type): Unit = {
+//    super.inject(same)
+    this.timeElapsed = same.timeElapsed
+  }
 }
 
 trait Timed extends Action{
@@ -173,11 +142,7 @@ trait Timed extends Action{
 
   override def inject(same: this.type): Unit = {
     super.inject(same)
-
-    same match {
-      case same: Timed =>
-        this._timeout = same._timeout
-    }
+    this._timeout = same._timeout
   }
 }
 
@@ -198,11 +163,7 @@ trait Named extends Action {
 
   override def inject(same: this.type): Unit = {
     super.inject(same)
-
-    same match {
-      case same: Named =>
-        this._name = same.name
-    }
+    this._name = same.name
   }
 }
 

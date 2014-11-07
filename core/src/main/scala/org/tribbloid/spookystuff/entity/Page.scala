@@ -202,7 +202,7 @@ object Page {
 //use to genterate a lookup key for each page so
 @SerialVersionUID(612503421395L)
 case class PageUID(
-                    backtrace: Seq[Action],
+                    backtrace: Trace,
                     leaf: Named,
                     blockKey: Int = -1 //-1 is no sub key
                     )
@@ -283,7 +283,7 @@ case class Page(
                  spooky: SpookyContext,
                  overwrite: Boolean = false
                  ): Page = {
-    val root = this.uid.backtrace.last match{
+    val root = this.uid.leaf match{
       case ss: Screenshot => spooky.errorDumpScreenshotRoot
       case _ => spooky.errorDumpRoot
     }
@@ -297,7 +297,7 @@ case class Page(
                       spooky: SpookyContext,
                       overwrite: Boolean = false
                       ): Page = {
-    val root = this.uid.backtrace.last match{
+    val root = this.uid.leaf match{
       case ss: Screenshot => spooky.localErrorDumpScreenshotRoot
       case _ => spooky.localErrorDumpRoot
     }

@@ -1,7 +1,7 @@
 package org.tribbloid.spookystuff.actions
 
 import org.openqa.selenium.htmlunit.HtmlUnitDriver
-import org.openqa.selenium.interactions.Actions
+import org.openqa.selenium.interactions.{Actions => SeleniumActions}
 import org.openqa.selenium.remote.RemoteWebDriver
 import org.openqa.selenium.support.events.EventFiringWebDriver
 import org.openqa.selenium.support.ui.{ExpectedCondition, ExpectedConditions, Select, WebDriverWait}
@@ -20,9 +20,9 @@ import scala.concurrent.duration.Duration
  */
 abstract class Interaction extends Action {
 
-  final override def mayExport() = false
+  final override def mayExport = false
 
-  final override def trunk() = Some(this) //can't be ommitted
+  final override def trunk = Some(this) //can't be ommitted
 
   final override def doExe(pb: PageBuilder): Seq[Page] = {
 
@@ -98,25 +98,25 @@ case class WaitFor(selector: String) extends Interaction with Timed {
   }
 }
 
-object DocumentReadyCondition extends ExpectedCondition[Boolean] {
-
-  override def apply(input: WebDriver): Boolean = {
-
-    val script = "return document.readyState"
-
-    val result = input match {
-      case d: HtmlUnitDriver => d.executeScript(script)
-      //      case d: AndroidWebDriver => d.executeScript(script)
-      case d: EventFiringWebDriver => d.executeScript(script)
-      case d: RemoteWebDriver => d.executeScript(script)
-      case _ => throw new UnsupportedOperationException("this web browser driver is not supported")
-    }
-
-    result == "complete"
-  }
-}
-
 case object WaitForDocumentReady extends Interaction with Timed {
+
+  object DocumentReadyCondition extends ExpectedCondition[Boolean] {
+
+    override def apply(input: WebDriver): Boolean = {
+
+      val script = "return document.readyState"
+
+      val result = input match {
+        case d: HtmlUnitDriver => d.executeScript(script)
+        //      case d: AndroidWebDriver => d.executeScript(script)
+        case d: EventFiringWebDriver => d.executeScript(script)
+        case d: RemoteWebDriver => d.executeScript(script)
+        case _ => throw new UnsupportedOperationException("this web browser driver is not supported")
+      }
+
+      result == "complete"
+    }
+  }
 
   override def exeWithoutPage(pb: PageBuilder): Unit = {
     val wait = new WebDriverWait(pb.getDriver, timeout(pb).toSeconds)
@@ -302,18 +302,19 @@ case class DragSlider(
     val height = dim.getHeight
     val width = dim.getWidth
 
-    new Actions(pb.getDriver).clickAndHold(handle).perform()
+    new SeleniumActions(pb.getDriver).clickAndHold(handle).perform()
 
     Thread.sleep(1000)
 
-    new Actions(pb.getDriver).moveByOffset(1, 0).perform()
+    new SeleniumActions(pb.getDriver).moveByOffset(1, 0).perform()
 
     Thread.sleep(1000)
 
-    new Actions(pb.getDriver).moveByOffset((width * percentage).asInstanceOf[Int], 0).perform()
+    if (width > height) new SeleniumActions(pb.getDriver).moveByOffset((width * percentage).asInstanceOf[Int], 0).perform()
+    else new SeleniumActions(pb.getDriver).moveByOffset(0, (height * percentage).asInstanceOf[Int]).perform()
 
     Thread.sleep(1000)
 
-    new Actions(pb.getDriver).release().perform()
+    new SeleniumActions(pb.getDriver).release().perform()
   }
 }

@@ -12,12 +12,12 @@ case object VerboseEncoder extends TraceEncoder[String] {
 
   override def apply(uid: PageUID): String = {
 
-    val actionStrs = uid.backtrace.map(_.toString)
+    val actionStrs = uid.backtrace.self.map(_.toString())
 
     val actionConcat = if (actionStrs.size > 4) {
       val oneTwoThree = actionStrs.slice(0,3)
       val last = actionStrs.last
-      val omitted = "..."+(uid.backtrace.length-4).toString+"more"+"..."
+      val omitted = "..."+(uid.backtrace.self.length-4).toString+"more"+"..."
 
       oneTwoThree.mkString("~")+omitted+last
     }
@@ -33,12 +33,12 @@ case object HierarchicalUrnEncoder extends TraceEncoder[String] {
 
   override def apply(uid: PageUID): String = {
 
-    val actionStrs = uid.backtrace.map(_.toString)
+    val actionStrs = uid.backtrace.self.map(_.toString())
 
     val actionConcat = if (actionStrs.size > 4) {
       val oneTwoThree = actionStrs.slice(0,3)
       val last = actionStrs.last
-      val omitted = "/"+(uid.backtrace.length-4).toString+"more"+"/"
+      val omitted = "/"+(uid.backtrace.self.length-4).toString+"more"+"/"
 
       oneTwoThree.mkString("/")+omitted+last
     }

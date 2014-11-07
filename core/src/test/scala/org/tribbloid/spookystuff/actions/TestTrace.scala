@@ -1,11 +1,11 @@
-package org.tribbloid.spookystuff.entity
+package org.tribbloid.spookystuff.actions
 
 import org.apache.hadoop.fs.Path
 import org.apache.spark.sql.SQLContext
 import org.apache.spark.{SparkConf, SparkContext}
 import org.scalatest.FunSuite
 import org.tribbloid.spookystuff.SpookyContext
-import org.tribbloid.spookystuff.actions._
+import org.tribbloid.spookystuff.entity.{Page, PageUID}
 import org.tribbloid.spookystuff.factory.PageBuilder
 
 /**
@@ -13,7 +13,7 @@ import org.tribbloid.spookystuff.factory.PageBuilder
  */
 
 //TODO: this need some serious reorganization
-class TestPageBuilder extends FunSuite {
+class TestTrace extends FunSuite {
 
   lazy val conf: SparkConf = new SparkConf().setAppName("dummy").setMaster("local")
   lazy val sc: SparkContext = new SparkContext(conf)
@@ -54,16 +54,15 @@ class TestPageBuilder extends FunSuite {
   }
 
   test("resolve") {
-    val results = PageBuilder.resolve(
+    val results = Trace(
       Visit("https://www.linkedin.com/") ::
       WaitFor("input[name=\"search\"]").in(40.seconds) ::
       Snapshot().as("A") ::
       TextInput("input#first","Adam") ::
       TextInput("input#last","Muise") ::
       Submit("input[name=\"search\"]") ::
-      Snapshot().as("B") :: Nil,
-      dead = false
-    )(spooky)
+      Snapshot().as("B") :: Nil
+    ).resolve(spooky)
 
     val resultsList = results
     assert(resultsList.length === 2)
@@ -84,14 +83,13 @@ class TestPageBuilder extends FunSuite {
   }
 
   test("extract") {
-    val result = PageBuilder.resolve(
+    val result = Trace(
       Visit("https://www.linkedin.com/") ::
       WaitFor("input[name=\"search\"]").in(40.seconds) ::
       TextInput("input#first", "Adam") ::
       TextInput("input#last", "Muise") ::
-      Submit("input[name=\"search\"]") :: Nil,
-      dead = false
-    )(spooky)
+      Submit("input[name=\"search\"]") :: Nil
+    ).resolve(spooky)
 
     val id = Seq[Action](Visit("https://www.linkedin.com/"), WaitFor("input[name=\"search\"]"), TextInput("input#first","Adam"),TextInput("input#last","Muise"),Submit("input[name=\"search\"]"), Snapshot())
     assert(result(0).backtrace === id)
@@ -100,13 +98,12 @@ class TestPageBuilder extends FunSuite {
   }
 
   test("attributes") {
-    val result = PageBuilder.resolve(
+    val result = Trace(
       Visit("http://www.amazon.com/") ::
       TextInput("input#twotabsearchtextbox", "Lord of the Rings") ::
       Submit("input.nav-submit-input") ::
-      WaitFor("div#resultsCol").in(40.seconds) :: Nil,
-      dead = false
-    )(spooky)
+      WaitFor("div#resultsCol").in(40.seconds) :: Nil
+    ).resolve(spooky)
 
     assert(result(0).attrExist("div#result_0","name") === true)
     assert(result(0).attr1("div#result_0 dummy","title") === null)
@@ -114,11 +111,10 @@ class TestPageBuilder extends FunSuite {
   }
 
   test("save and load") {
-    val results = PageBuilder.resolve(
+    val results = Trace(
       Visit("http://en.wikipedia.org") ::
-      Snapshot().as("T") :: Nil,
-      dead = false
-    )(spooky)
+      Snapshot().as("T") :: Nil
+    ).resolve(spooky)
 
     val resultsList = results.toArray
     assert(resultsList.size === 1)
@@ -132,16 +128,15 @@ class TestPageBuilder extends FunSuite {
   }
 
   test("cache and restore") {
-    val pages = PageBuilder.resolve(
+    val pages = Trace(
       Visit("http://en.wikipedia.org") ::
-        Snapshot().as("T") :: Nil,
-      dead = false
-    )(spooky)
+        Snapshot().as("T") :: Nil
+    ).resolve(spooky)
 
     assert(pages.size === 1)
     val page1 = pages(0)
 
-    assert(page1.uid === PageUID( Visit("https://www.linkedin.com/") :: Snapshot() :: Nil, Snapshot()))
+    assert(page1.uid === PageUID( Trace(Visit("https://www.linkedin.com/") :: Snapshot() :: Nil), Snapshot()))
 
     Page.autoCache(pages, page1.uid, spooky)
 
@@ -184,10 +179,9 @@ class TestPageBuilder extends FunSuite {
 //  }
 
   test("wget html, save and load") {
-    val results = PageBuilder.resolve(
-      Wget("https://www.google.hk") :: Nil,
-      dead = false
-    )(spooky)
+    val results = Trace(
+      Wget("https://www.google.hk") :: Nil
+    ).resolve(spooky)
 
     val resultsList = results.toArray
     assert(resultsList.size === 1)
@@ -203,10 +197,9 @@ class TestPageBuilder extends FunSuite {
   }
 
   test("wget image, save and load") {
-    val results = PageBuilder.resolve(
-      Wget("http://col.stb01.s-msn.com/i/74/A177116AA6132728F299DCF588F794.gif") :: Nil,
-      dead = false
-    )(spooky)
+    val results = Trace(
+      Wget("http://col.stb01.s-msn.com/i/74/A177116AA6132728F299DCF588F794.gif") :: Nil
+    ).resolve(spooky)
 
     val resultsList = results.toArray
     assert(resultsList.size === 1)
@@ -220,10 +213,9 @@ class TestPageBuilder extends FunSuite {
   }
 
   test("wget pdf, save and load") {
-    val results = PageBuilder.resolve(
-      Wget("http://www.cs.toronto.edu/~ranzato/publications/DistBeliefNIPS2012_withAppendix.pdf") :: Nil,
-      dead = false
-    )(spooky)
+    val results = Trace(
+      Wget("http://www.cs.toronto.edu/~ranzato/publications/DistBeliefNIPS2012_withAppendix.pdf") :: Nil
+    ).resolve(spooky)
 
     val resultsList = results.toArray
     assert(resultsList.size === 1)

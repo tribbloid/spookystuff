@@ -4,13 +4,12 @@ import org.apache.spark.sql.SQLContext
 import org.apache.spark.{SparkConf, SparkContext}
 import org.scalatest.FunSuite
 import org.tribbloid.spookystuff.SpookyContext
-import org.tribbloid.spookystuff.factory.PageBuilder
 import org.tribbloid.spookystuff.factory.driver.TorProxySetting
 
 /**
  * Created by peng on 11/6/14.
  */
-class TestInteraction extends FunSuite {
+class TestExport extends FunSuite {
 
   lazy val conf: SparkConf = new SparkConf().setAppName("dummy").setMaster("local")
   lazy val sc: SparkContext = new SparkContext(conf)
@@ -23,9 +22,9 @@ class TestInteraction extends FunSuite {
   lazy val noProxyIP = {
       spooky.proxy = null
 
-      val results = PageBuilder.resolvePlain(
+      val results = Trace(
         Wget("http://www.whatsmyuseragent.com/") :: Nil
-      )(spooky)
+      ).resolvePlain(spooky)
 
       results(0).text1("h3.info")
     }
@@ -35,9 +34,9 @@ class TestInteraction extends FunSuite {
     val newIP = {
       spooky.proxy = TorProxySetting()
 
-      val results = PageBuilder.resolvePlain(
+      val results = Trace(
         Wget("http://www.whatsmyuseragent.com/") :: Nil
-      )(spooky)
+      ).resolvePlain(spooky)
 
       results(0).text1("h3.info")
     }
@@ -53,9 +52,9 @@ class TestInteraction extends FunSuite {
     val newIP = {
       spooky.proxy = TorProxySetting()
 
-      val results = PageBuilder.resolvePlain(
+      val results = Trace(
         Wget("https://www.astrill.com/what-is-my-ip-address.php") :: Nil
-      )(spooky)
+      ).resolvePlain(spooky)
 
       results(0).text1("h1")
     }
@@ -70,9 +69,9 @@ class TestInteraction extends FunSuite {
     val newIP = {
       spooky.proxy = TorProxySetting()
 
-      val results = PageBuilder.resolvePlain(
+      val results = Trace(
         Wget("http://www.whatsmyuseragent.com/") :: Nil
-      )(spooky)
+      ).resolvePlain(spooky)
 
       results(0).text1("h3.info")
     }
@@ -80,9 +79,9 @@ class TestInteraction extends FunSuite {
     val noProxyIP2 = {
       spooky.proxy = null
 
-      val results = PageBuilder.resolvePlain(
+      val results = Trace(
         Wget("http://www.whatsmyuseragent.com/") :: Nil
-      )(spooky)
+      ).resolvePlain(spooky)
 
       results(0).text1("h3.info")
     }
@@ -95,9 +94,9 @@ class TestInteraction extends FunSuite {
     val newIP = {
       spooky.proxy = TorProxySetting()
 
-      val results = PageBuilder.resolvePlain(
+      val results = Trace(
         Wget("https://www.astrill.com/what-is-my-ip-address.php") :: Nil
-      )(spooky)
+      ).resolvePlain(spooky)
 
       results(0).text1("h1")
     }
@@ -105,9 +104,9 @@ class TestInteraction extends FunSuite {
     val noProxyIP2 = {
       spooky.proxy = null
 
-      val results = PageBuilder.resolvePlain(
+      val results = Trace(
         Wget("https://www.astrill.com/what-is-my-ip-address.php") :: Nil
-      )(spooky)
+      ).resolvePlain(spooky)
 
       results(0).text1("h1")
     }

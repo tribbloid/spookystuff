@@ -23,9 +23,9 @@ import org.tribbloid.spookystuff.utils.{Const, SocksProxyConnectionSocketFactory
  */
 abstract class Export extends Action with Named{
 
-  final override def mayExport() = true
+  final override def mayExport = true
 
-  final override def trunk() = None //have not impact to driver
+  final override def trunk = None //have not impact to driver
 
   def doExe(session: PageBuilder) = doExeNoName(session)
 
@@ -53,7 +53,7 @@ case class Snapshot() extends Export{
     //    }
 
     val page = Page(
-      PageUID(pb.realBacktrace :+ this, this),
+      PageUID(Trace(pb.realBacktrace :+ this), this),
       pb.existingDriver.get.getCurrentUrl,
       "text/html; charset=UTF-8",
       pb.existingDriver.get.getPageSource.getBytes("UTF8")
@@ -77,7 +77,7 @@ case class Screenshot() extends Export {
     }
 
     val page = Page(
-      PageUID(pb.realBacktrace :+ this, this),
+      PageUID(Trace(pb.realBacktrace :+ this), this),
       pb.existingDriver.get.getCurrentUrl,
       "image/png",
       content
@@ -173,7 +173,7 @@ case class Wget(
         val contentType = entity.getContentType.getValue
 
         val result = Page(
-          PageUID(pb.realBacktrace :+ this, this),
+          PageUID(Trace(pb.realBacktrace :+ this), this),
           url,
           contentType,
           content

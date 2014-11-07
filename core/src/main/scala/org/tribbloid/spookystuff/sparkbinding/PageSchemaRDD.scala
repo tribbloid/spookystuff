@@ -8,7 +8,6 @@ import org.tribbloid.spookystuff.SpookyContext
 import org.tribbloid.spookystuff.actions._
 import org.tribbloid.spookystuff.entity._
 import org.tribbloid.spookystuff.expressions.{Append, JoinType, LeftOuter, Replace}
-import org.tribbloid.spookystuff.factory.PageBuilder
 import org.tribbloid.spookystuff.utils.{Const, Utils}
 
 import scala.collection.immutable.ListSet
@@ -177,11 +176,11 @@ case class PageSchemaRDD(
     implicit def spookyImplicit: SpookyContext = spookyBroad.value
 
     val squashedRDD =
-      self.groupBy((row => (row.actions, row.dead)): (PageRow => (Seq[Action], Boolean)), numPartitions = numPartitions) //scala is stupid on this
+      self.groupBy((row => row.actions): (PageRow => Seq[Action]), numPartitions = numPartitions) //scala is stupid on this
 
     val result = squashedRDD.flatMap {
       tuple => {
-        val newPages = PageBuilder.resolve(tuple._1._1, tuple._1._2)(spookyImplicit)
+        val newPages = Trace(tuple._1).resolve(spookyImplicit)
 
         var newPageRows = joinType match {
           case Replace if newPages.isEmpty =>
