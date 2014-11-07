@@ -102,12 +102,12 @@ object Page {
 
   def autoCache(
                  pages: Seq[Page],
-                 uid: PageUID,
+                 trace: Trace,
                  spooky: SpookyContext
                  ): Unit = {
     val pathStr = Utils.urlConcat(
       spooky.autoCacheRoot,
-      spooky.cacheTraceEncoder(uid).toString,
+      spooky.cacheTraceEncoder(trace).toString,
       UUID.randomUUID().toString
     )
 
@@ -184,12 +184,12 @@ object Page {
 
   //TODO: cannot handle infinite duration, avoid using it!
   def autoRestoreLatest(
-                         uid: PageUID,
+                         trace: Trace,
                          spooky: SpookyContext
                          ): Seq[Page] = {
     val pathStr = Utils.urlConcat(
       spooky.autoCacheRoot,
-      spooky.cacheTraceEncoder(uid).toString
+      spooky.cacheTraceEncoder(trace).toString
     )
 
     restoreLatest(new Path(pathStr), System.currentTimeMillis() - spooky.pageExpireAfter.toMillis)(spooky)

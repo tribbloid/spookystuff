@@ -126,9 +126,9 @@ class TestTrace extends FunSuite {
 
     assert(page1.uid === PageUID(Trace(Visit("http://en.wikipedia.org") :: Snapshot() :: Nil), Snapshot()))
 
-    Page.autoCache(pages, page1.uid, spooky)
+    Page.autoCache(pages, page1.uid.backtrace, spooky)
 
-    val loadedPages = Page.autoRestoreLatest(page1.uid,spooky)
+    val loadedPages = Page.autoRestoreLatest(page1.uid.backtrace,spooky)
 
     assert(loadedPages.length === 1)
 

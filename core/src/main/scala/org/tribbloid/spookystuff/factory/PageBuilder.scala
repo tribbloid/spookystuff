@@ -111,14 +111,14 @@ class PageBuilder(val spooky: SpookyContext){
 
   //lazy execution by default.
   def +=(action: Action): Unit = {
-    val uid = PageUID(Trace(this.backtrace :+ action), null)//TODO: this shouldn't happen
+    val trace = Trace(this.backtrace :+ action)//TODO: this shouldn't happen
 
     this.backtrace ++= action.trunk//always put into backtrace.
     if (action.mayExport) {
       //always try to read from cache first
       val restored = if (autoRestore) {
 
-        Page.autoRestoreLatest(uid, spooky)
+        Page.autoRestoreLatest(trace, spooky)
       }
       else null
 
@@ -139,7 +139,7 @@ class PageBuilder(val spooky: SpookyContext){
         var batch = action.apply(this)
 
         if (autoSave) batch = batch.map(_.autoSave(spooky))
-        if (autoCache) Page.autoCache(batch, uid,spooky)
+        if (autoCache) Page.autoCache(batch, trace,spooky)
 
         pages ++= batch
       }

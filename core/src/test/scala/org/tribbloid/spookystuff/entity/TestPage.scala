@@ -85,9 +85,9 @@ class TestPage extends FunSuite with BeforeAndAfter {
     spooky.setRoot("file://"+System.getProperty("user.home")+"/spooky-unit/")
     spooky.pageExpireAfter = 2.seconds
 
-    Page.autoCache(page, page.head.uid, spooky)
+    Page.autoCache(page, page.head.uid.backtrace, spooky)
 
-    val page2 = Page.autoRestoreLatest(page.head.uid, spooky)
+    val page2 = Page.autoRestoreLatest(page.head.uid.backtrace, spooky)
 
     assert(page2.size === 1)
     assert(page2.head.copy(content = null) === page.head.copy(content = null))
@@ -95,7 +95,7 @@ class TestPage extends FunSuite with BeforeAndAfter {
 
     Thread.sleep(2000)
 
-    val page3 = Page.autoRestoreLatest(page.head.uid, spooky)
+    val page3 = Page.autoRestoreLatest(page.head.uid.backtrace, spooky)
     assert(page3 === null)
 
     spooky.pageExpireAfter = 30.days
@@ -109,9 +109,9 @@ class TestPage extends FunSuite with BeforeAndAfter {
     spooky.setRoot("file://"+System.getProperty("user.home")+"/spooky-unit/")
     spooky.pageExpireAfter = 2.seconds
 
-    Page.autoCache(wgetPage, wgetPage.head.uid, spooky)
+    Page.autoCache(wgetPage, wgetPage.head.uid.backtrace, spooky)
 
-    val page2 = Page.autoRestoreLatest(wgetPage.head.uid, spooky)
+    val page2 = Page.autoRestoreLatest(wgetPage.head.uid.backtrace, spooky)
 
     assert(page2.size === 1)
     assert(page2.head.copy(content = null) === wgetPage.head.copy(content = null))
@@ -119,7 +119,7 @@ class TestPage extends FunSuite with BeforeAndAfter {
 
     Thread.sleep(2000)
 
-    val page3 = Page.autoRestoreLatest(wgetPage.head.uid, spooky)
+    val page3 = Page.autoRestoreLatest(wgetPage.head.uid.backtrace, spooky)
     assert(page3 === null)
 
     spooky.pageExpireAfter = 30.days
@@ -134,9 +134,9 @@ class TestPage extends FunSuite with BeforeAndAfter {
     spooky.setRoot(s"s3n://spooky-unit/")
     spooky.pageExpireAfter = 10.seconds
 
-    Page.autoCache(page, page.head.uid, spooky)
+    Page.autoCache(page, page.head.uid.backtrace, spooky)
 
-    val page2 = Page.autoRestoreLatest(page.head.uid, spooky)
+    val page2 = Page.autoRestoreLatest(page.head.uid.backtrace, spooky)
 
     assert(page2.size === 1)
     assert(page2.head.copy(content = null) === page.head.copy(content = null))
@@ -144,7 +144,7 @@ class TestPage extends FunSuite with BeforeAndAfter {
 
     Thread.sleep(12000)
 
-    val page3 = Page.autoRestoreLatest(page.head.uid, spooky)
+    val page3 = Page.autoRestoreLatest(page.head.uid.backtrace, spooky)
     assert(page3 === null)
 
     spooky.pageExpireAfter = 30.days

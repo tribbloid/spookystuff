@@ -1,29 +1,29 @@
 package org.tribbloid.spookystuff.expressions
 
-import org.tribbloid.spookystuff.entity.PageUID
+import org.tribbloid.spookystuff.actions.Trace
 import org.tribbloid.spookystuff.utils.Utils
 
 /**
  * Created by peng on 9/12/14.
  */
-abstract class TraceEncoder[T] extends (PageUID => T) with Serializable with Product
+abstract class TraceEncoder[T] extends (Trace => T) with Serializable with Product
 
 case object VerboseEncoder extends TraceEncoder[String] {
 
-  override def apply(uid: PageUID): String = {
+  override def apply(trace: Trace): String = {
 
-    val actionStrs = uid.backtrace.self.map(_.toString())
+    val actionStrs = trace.self.map(_.toString)
 
     val actionConcat = if (actionStrs.size > 4) {
       val oneTwoThree = actionStrs.slice(0,3)
       val last = actionStrs.last
-      val omitted = "..."+(uid.backtrace.self.length-4).toString+"more"+"..."
+      val omitted = "..."+(trace.self.length-4).toString+"more"+"..."
 
       oneTwoThree.mkString("~")+omitted+last
     }
     else actionStrs.mkString("~")
 
-    val hash = "-"+uid.backtrace.hashCode
+    val hash = "-"+trace.hashCode
 
     Utils.canonizeFileName(actionConcat + hash)
   }
@@ -31,20 +31,20 @@ case object VerboseEncoder extends TraceEncoder[String] {
 
 case object HierarchicalUrnEncoder extends TraceEncoder[String] {
 
-  override def apply(uid: PageUID): String = {
+  override def apply(trace: Trace): String = {
 
-    val actionStrs = uid.backtrace.self.map(_.toString())
+    val actionStrs = trace.self.map(_.toString)
 
     val actionConcat = if (actionStrs.size > 4) {
       val oneTwoThree = actionStrs.slice(0,3)
       val last = actionStrs.last
-      val omitted = "/"+(uid.backtrace.self.length-4).toString+"more"+"/"
+      val omitted = "/"+(trace.self.length-4).toString+"more"+"/"
 
       oneTwoThree.mkString("/")+omitted+last
     }
     else actionStrs.mkString("/")
 
-    val hash = "-"+uid.backtrace.hashCode
+    val hash = "-"+trace.hashCode
 
     Utils.canonizeUrn(actionConcat + hash)
   }

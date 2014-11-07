@@ -33,7 +33,7 @@ case class UUIDPath(encoder: TraceEncoder[_]) extends Extract[String] {
 
   override def apply(page: Page): String = {
 
-    Utils.urlConcat(encoder(page.uid).toString, UUID.randomUUID().toString)
+    Utils.urlConcat(encoder(page.uid.backtrace).toString, UUID.randomUUID().toString)
   }
 }
 
