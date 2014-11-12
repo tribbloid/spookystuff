@@ -29,7 +29,7 @@ trait TestCore extends FunSuite {
     sql,
     driverFactory = NaiveDriverFactory(loadImages = true),
     pageExpireAfter = 0.milliseconds,
-//    joinLimit = 2,
+    joinLimit = 2,
     sliceLimit = 3
   )
   spooky.setRoot("file://"+System.getProperty("user.home")+"/spooky-integration/"+appName+"/")
