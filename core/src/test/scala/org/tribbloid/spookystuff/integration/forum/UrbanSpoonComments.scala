@@ -13,7 +13,7 @@ object UrbanSpoonComments extends TestCore {
   import spooky._
 
   override def doMain(): SchemaRDD = {
-    (sc.parallelize(Seq(
+    sc.parallelize(Seq(
       "http://www.urbanspoon.com/r/5/1435892/restaurant/Downtown/Bottega-Louie-LA",
       "http://www.urbanspoon.com/r/5/778534/restaurant/Downtown/Wurstkuche-LA",
       "http://www.urbanspoon.com/r/5/63832/restaurant/Little-Tokyo/Daikokuya-LA",
@@ -29,14 +29,15 @@ object UrbanSpoonComments extends TestCore {
     ),12)
       .flatMap(url => Seq("#comments").map(tag => tag+"\t"+url+tag))
       .tsvToMap("type\turl")
-      +> Visit("#{url}")
-      +> Click("ul.PostTabs li.active a")
-      +> WaitFor("div.tab-pane.active li.review")
-      !=! ())
+      .fetch(
+        Visit("#{url}")
+          +> Click("ul.PostTabs li.active a")
+          +> WaitFor("div.tab-pane.active li.review")
+      )
       //      .extract(
       //        "count" -> (_.text1("li.active span.count"))
       //      )
-      .sliceJoin("div.tab-pane.active li.review")(indexKey = "row")
+      .sliceJoin("div.tab-pane.active li.review")(indexKey = 'row)
       .extract(
         "comment" -> (page => page.text1("li.comment div.title") + ": " + page.text1("li.comment div.body")),
         "date&status" -> (_.text1("time.posted-on")),

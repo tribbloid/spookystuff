@@ -14,7 +14,7 @@ import scala.concurrent.duration.Duration
  */
 abstract class Block(override val self: Seq[Action]) extends Actions(self) with Named {
 
-  override def as(name: String) = {
+  override def as(name: Symbol) = {
     super.as(name)
 
     self.foreach{

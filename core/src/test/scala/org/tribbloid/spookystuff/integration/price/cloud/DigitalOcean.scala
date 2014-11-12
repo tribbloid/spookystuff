@@ -11,10 +11,11 @@ object DigitalOcean extends TestCore {
   import spooky._
 
   override def doMain() = {
-    (noInput
-      +> Visit("https://www.digitalocean.com/pricing/")
-      !=!())
-      .sliceJoin("div.plan")(indexKey = "row")
+    noInput
+      .fetch(
+        Visit("https://www.digitalocean.com/pricing/")
+      )
+      .sliceJoin("div.plan")(indexKey = 'row)
       .extract(
         "Memory" -> {_.text("ul li")(0)},
         "Core" -> {_.text("ul li")(1)},

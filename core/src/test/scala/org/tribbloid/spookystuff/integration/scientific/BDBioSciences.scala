@@ -2,6 +2,7 @@ package org.tribbloid.spookystuff.integration.scientific
 
 import org.apache.spark.sql.SchemaRDD
 import org.tribbloid.spookystuff.actions._
+import org.tribbloid.spookystuff.expressions._
 import org.tribbloid.spookystuff.integration.TestCore
 
 /**
@@ -12,13 +13,14 @@ object BDBioSciences extends TestCore {
 
   override def doMain(): SchemaRDD = {
 
-    val firstPages = (noInput
-      +> Visit("http://www.bdbiosciences.com/nvCategory.jsp?action=SELECT&form=formTree_catBean&item=744667")
-      +> WaitForDocumentReady
-      +> WaitFor("div.pane_column.pane_column_left a")
-      !=!())
-      .wgetJoin("div.pane_column.pane_column_left a")()
-      .wgetJoin("li a:not([href^=javascript])")()
+    val firstPages = noInput
+      .fetch(
+        Visit("http://www.bdbiosciences.com/nvCategory.jsp?action=SELECT&form=formTree_catBean&item=744667")
+          +> WaitForDocumentReady
+          +> WaitFor("div.pane_column.pane_column_left a")
+      )
+      .wgetJoin('* href "div.pane_column.pane_column_left a")()
+      .wgetJoin('* href "li a:not([href^=javascript])")()
       .extract(
         "url" -> (_.resolvedUrl),
         "leaf" -> (_.text1("h1")),

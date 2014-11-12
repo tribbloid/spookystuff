@@ -7,8 +7,8 @@ import org.apache.spark.storage.StorageLevel
 import org.tribbloid.spookystuff.SpookyContext
 import org.tribbloid.spookystuff.actions._
 import org.tribbloid.spookystuff.entity._
-import org.tribbloid.spookystuff.expressions.{Append, JoinType, LeftOuter, Replace}
-import org.tribbloid.spookystuff.utils.{Const, Utils}
+import org.tribbloid.spookystuff.expressions._
+import org.tribbloid.spookystuff.utils._
 
 import scala.collection.immutable.ListSet
 
@@ -18,7 +18,7 @@ import scala.collection.immutable.ListSet
 //TODO: to deserve its name it has to extend RDD[PageRow] and implement all methods
 case class PageSchemaRDD(
                           @transient self: RDD[PageRow],
-                          @transient columnNames: ListSet[String] = ListSet(),
+                          @transient keys: ListSet[KeyLike] = ListSet(),
                           @transient spooky: SpookyContext
                           )
   extends Serializable {
@@ -32,7 +32,7 @@ case class PageSchemaRDD(
   def union(other: PageSchemaRDD): PageSchemaRDD = {
     this.copy(
       this.self.union(other.self),
-      this.columnNames ++ other.columnNames
+      this.keys ++ other.keys
     )
   }
 
@@ -48,35 +48,9 @@ case class PageSchemaRDD(
 
   def collect() = self.collect()
 
-  /**
-   * append an action
-   * @param action any object that inherits org.tribbloid.spookystuff.actionsAction
-   * @return new RDD[ActionPlan]
-   */
-  def +>(action: Action): PageSchemaRDD = this.copy(self.map(_ +> action))
+  //TODO:-------------------ALL BEFORE THESE LINES SHOULD BE DELEGATE TO DEFAULT RDD IMPLEMENTATION--------------------
 
-  /**
-   * append a series of actions
-   * equivalent to ... +> action1 +> action2 +>...actionN, where action{1...N} are elements of actions
-   * @param actions = Seq(action1, action2,...)
-   * @return new RDD[ActionPlan]
-   */
-  def +>(actions: Seq[Action]): PageSchemaRDD = this.copy(self.map(_ +> actions))
-
-  def +>(pr: PageRow): PageSchemaRDD = this.copy(self.map(_ +> pr))
-
-  /**
-   * append a set of actions or ActionPlans to be executed in parallel
-   * each old ActionPlan yields N new ActionPlans, where N is the size of the new set
-   * results in a cartesian product of old and new set.
-   * @param actions a set of Actions/Sequences to be appended and executed in parallel
-   *                can be Seq[ClientAction], Seq[ Seq[ClientAction] ] or Seq[ActionPlan], or any of their combinations.
-   *                CANNOT be RDD[ActionPlan], but this may become an option in the next release
-   * @return new RDD[ActionPlan], of which size = [size of old RDD] * [size of actions]
-   */
-  def +*>(actions: Seq[_]): PageSchemaRDD = this.copy(self.flatMap(_ +*> actions))
-
-  def asMapRDD(): RDD[Map[String, Any]] = self.map(_.cells)
+  def asMapRDD(): RDD[Map[String, Any]] = self.map(_.asMap())
 
   def asJsonRDD(): RDD[String] = self.map(_.asJson())
 
@@ -89,9 +63,10 @@ case class PageSchemaRDD(
 
     //by default, will order the columns to be identical to the sequence they are extracted, data input will be ignored
 
+    //TODO: handle missing columns
     this.spooky.sqlContext.jsonRDD(jsonRDD)
       .select(
-        columnNames.toSeq.reverse.map(names => UnresolvedAttribute(names)): _*
+        keys.toSeq.reverse.map(key => UnresolvedAttribute(key.name)): _*
       )
   }
 
@@ -100,126 +75,6 @@ case class PageSchemaRDD(
   }
 
   def asTsvRDD(): RDD[String] = this.asCsvRDD("\t")
-
-  //TODO: these are very useful in crawling
-  //  def groupByPageUID
-  //  def reduceByPageUID
-
-  //by default discard cells & flatten
-  def distinctPageUID(): PageSchemaRDD = {
-
-    import org.apache.spark.SparkContext._
-
-    val selfRed = this.flatten().self.keyBy(_.pages.lastOption.getOrElse("")).reduceByKey((v1, v2) => v1).map(_._2)
-    this.copy(self = selfRed)
-  }
-
-  /**
-   * parallel execution in browser(s) to yield a set of web pages
-   * each ActionPlan may yield several pages in a row, depending on the number of Export(s) in it
-   * @return RDD[Page] as results of execution
-   */
-  def !=!(
-           joinType: JoinType = Const.defaultJoinType,
-           flatten: Boolean = true,
-           indexKey: String = null
-           ): PageSchemaRDD = {
-
-    val spookyBroad = self.context.broadcast(this.spooky)
-
-    implicit def spookyImplicit: SpookyContext = spookyBroad.value
-
-    val result = self.flatMap(_.!=!(joinType, flatten, indexKey))
-
-    this.copy(result, this.columnNames ++ Option(indexKey))
-  }
-
-  //  def !>><<(
-  //             joinType: JoinType = Const.defaultJoinType,
-  //             flatten: Boolean = true
-  //             ): RDD[PageRow] = {
-  //    val spookyBroad = self.context.broadcast(this.spooky)
-  //
-  //    import org.apache.spark.SparkContext._
-  //nodule
-  //    self.persist()
-  //
-  //    val squashedRDD = self.map {
-  //      _.actions
-  //    }.distinct()
-  //
-  //    val exeRDD = squashedRDD.map(actions => actions -> PageBuilder.resolve(actions: _*) )
-  //
-  //    self.map
-  //
-  //  }
-
-  //TODO: this definitely need some logging to let us know how many actual resolves.
-  //TODO: empty action rows needs to be treated differently, current implementation skewed bad
-  /**
-   * smart execution: group identical ActionPlans, execute in parallel, and duplicate result pages to match their original contexts
-   * reduce workload by avoiding repeated access to the same url caused by duplicated context or diamond links (A->B,A->C,B->D,C->D)
-   * recommended for most cases, mandatory for RDD[ActionPlan] with high duplicate factor, only use !=!() if you are sure that duplicate doesn't exist.
-   * @return RDD[Page] as results of execution
-   */
-  def !><(
-           numPartitions: Int = self.sparkContext.defaultParallelism,
-           joinType: JoinType = Const.defaultJoinType,
-           flatten: Boolean = true,
-           indexKey: String = null
-           )
-  //           TODO: reference: PageSchemaRDD*
-  : PageSchemaRDD = {
-
-    val spookyBroad = self.context.broadcast(this.spooky)
-
-    implicit def spookyImplicit: SpookyContext = spookyBroad.value
-
-    val squashedRDD =
-      self.groupBy((row => row.actions): (PageRow => Seq[Action]), numPartitions = numPartitions) //scala is stupid on this
-
-    val result = squashedRDD.flatMap {
-      tuple => {
-        val newPages = Trace(tuple._1).resolve(spookyImplicit)
-
-        var newPageRows = joinType match {
-          case Replace if newPages.isEmpty =>
-            tuple._2.map(oldPageRow => PageRow(cells = oldPageRow.cells, pages = oldPageRow.pages))
-          case Append =>
-            tuple._2.map(oldPageRow => PageRow(cells = oldPageRow.cells, pages = oldPageRow.pages ++ newPages))
-          case _ =>
-            tuple._2.map(oldPageRow => PageRow(cells = oldPageRow.cells, pages = newPages))
-        }
-
-        if (flatten) newPageRows = newPageRows.flatMap(_.flatten(joinType == LeftOuter, indexKey))
-
-        newPageRows
-      }
-    }
-
-    this.copy(result, this.columnNames ++ Option(indexKey))
-  }
-
-  /**
-   * extract parts of each Page and insert into their respective context
-   * if a key already exist in old context it will be replaced with the new one.
-   * @param keyAndF a key-function map, each element is used to generate a key-value map using the Page itself
-   * @return new RDD[Page]
-   */
-  def extract(keyAndF: (String, Page => Any)*): PageSchemaRDD = this.copy(
-    self.map(_.extract(keyAndF: _*)),
-    this.columnNames ++ keyAndF.map(_._1)
-  )
-
-  def select(keyAndF: (String, PageRow => Any)*): PageSchemaRDD = this.copy(
-    self.map(_.select(keyAndF: _*)),
-    this.columnNames ++ keyAndF.map(_._1)
-  )
-
-  def remove(keys: String*): PageSchemaRDD = this.copy(
-    self.map(_.remove(keys: _*)),
-    this.columnNames -- keys
-  )
 
   /**
    * save each page to a designated directory
@@ -290,126 +145,216 @@ case class PageSchemaRDD(
     }
   }.collect()
 
-  def flatten(
-               left: Boolean = false,
-               indexKey: String = null
-               ): PageSchemaRDD = {
+  /**
+   * extract parts of each Page and insert into their respective context
+   * if a key already exist in old context it will be replaced with the new one.
+   * @param keyAndF a key-function map, each element is used to generate a key-value map using the Page itself
+   * @return new RDD[Page]
+   */
+  def extract(keyAndF: (String, Page => Any)*): PageSchemaRDD = this.copy(
+    self.map(_.extract(keyAndF)),
+    this.keys ++ keyAndF.map(tuple => Key(tuple._1))
+  )
+
+  def select(exprs: Expr[_]*): PageSchemaRDD = {
+
+    val _exprs = exprs.filterNot {
+      case ex: ByKeyExpr => ex.name == ex.keyName
+      case _ => false
+    }
+
+    val newKeys: Seq[Key] = _exprs.map {
+      expr =>
+        val key = Key(expr.name)
+        assert(!this.keys.contains(key))
+        key
+    }
 
     this.copy(
-      this.self.flatMap(_.flatten(left, indexKey))
+      self = self.map(_.select(newKeys, _exprs)),
+      keys = this.keys ++ newKeys
     )
   }
 
-  def +%>(actionAndF: (Action, Page => _)): PageSchemaRDD = this.copy(self.map(_.+%>(actionAndF)))
+  private def selectTemp(exprs: Expr[_]*): PageSchemaRDD = {
 
-  def +*%>(
-            actionAndF: (Action, Page => Array[_])
-            )(
-            limit: Int = spooky.joinLimit, //applied after distinct
-            distinct: Boolean = true,
-            indexKey: String = null
-            ): PageSchemaRDD =
+    val newKeys: Seq[TempKey] = exprs.map {
+      expr =>
+        val key = TempKey(expr.name)
+        assert(!this.keys.contains(key))
+        key
+    }
+
     this.copy(
-      self.flatMap(_.+*%>(actionAndF)(limit, distinct, indexKey)),
-      this.columnNames ++ Option(indexKey)
+      self = self.map(_.select(newKeys, exprs)),
+      keys = this.keys ++ newKeys
     )
+  }
 
-  def dropActions(): PageSchemaRDD = this.copy(self.map(_.copy(actions = Seq(), dead = false)))
+  def remove(keys: Symbol*): PageSchemaRDD = {
+    val names = keys.map(key => Key(key))
+    this.copy(
+      self = self.map(_.remove(names)),
+      keys = this.keys -- names
+    )
+  }
 
-  //  private def join(
-  //                    action: ClientAction,
-  //                    f: Page => Array[_]
-  //                    )(
-  //                    distinct: Boolean = true,
-  //                    limit: Int = Const.fetchLimit, //applied after distinct
-  //                    indexKey: String = null
-  //                    joinType: JoinType = Const.defaultJoinType,
-  //                    flatten: Boolean = true
-  //                    ): RDD[PageRow] = {
-  //
-  //    import spooky._
-  //
-  //    this.cleanActions.+%>(action, f).!><
-  //  }
+  private def clearTemp: PageSchemaRDD = {
+    this.copy(
+      self = self.map(_.filterKeys(!_.isInstanceOf[TempKey])),
+      keys = keys.filter(!_.isInstanceOf[TempKey])
+    )
+  }
+
+  def flatten(
+               expr: Expr[_],
+               indexKey: Symbol = null,
+               limit: Int = spooky.joinLimit,
+               left: Boolean = true
+               ): PageSchemaRDD = {
+    val selected = this.select(expr)
+
+    val selectedSelf = selected.self
+    selected.copy(self = selectedSelf.flatMap(_.flatten(expr.name, Key(indexKey), limit, left)))
+  }
+
+  def flattenTemp(
+                   expr: Expr[_],
+                   indexKey: Symbol = null,
+                   limit: Int = spooky.joinLimit,
+                   left: Boolean = true
+                   ): PageSchemaRDD = {
+    val selected = this.selectTemp(expr)
+
+    val selectedSelf = selected.self
+    selected.copy(self = selectedSelf.flatMap(_.flatten(expr.name, Key(indexKey), limit, left)))
+  }
+
+  def explode(
+               expr: Expr[_],
+               indexKey: Symbol = null,
+               limit: Int = spooky.joinLimit,
+               left: Boolean = true
+               ): PageSchemaRDD = flatten(expr, indexKey, limit, left)
+
+  def flattenPages(
+                    pattern: String = "*",
+                    indexKey: Symbol = null
+                    ): PageSchemaRDD =
+    this.copy(self = self.flatMap(_.flattenPages(pattern, Key(indexKey))))
+
+  //TODO: these are very useful in crawling
+  //  def groupByPageUID
+  //  def reduceByPageUID
+
+  //by default discard cells & flatten
+  //TODO: merge cells
+//  def distinctPageUID(): PageSchemaRDD = {
+//
+//    import org.apache.spark.SparkContext._
+//
+//    val selfRed = this.flattenPages().self.keyBy(_.pages.lastOption.getOrElse("")).reduceByKey((v1, v2) => v1).map(_._2)
+//    this.copy(self = selfRed)
+//  }
 
   /**
-   * generate a set of ActionPlans that crawls from current Pages by visiting their links
-   * all context of Pages will be persisted to the resulted ActionPlans
-   * pages that doesn't contain the link will be ignored
-   * @param selector css selector of page elements with a crawlable link
-   * @param limit only the first n links will be used, default to Const.fetchLimit
-   * @param attr attribute of the element that denotes the link target, default to absolute href
-   * @return RDD[ActionPlan]
+   * parallel execution in browser(s) to yield a set of web pages
+   * each ActionPlan may yield several pages in a row, depending on the number of Export(s) in it
+   * @return RDD[Page] as results of execution
    */
-  def visit(
-             selector: String,
-             attr: String = "abs:href"
-             )(
-             limit: Int = spooky.joinLimit, //applied after distinct
-             distinct: Boolean = true,
-             indexKey: String = null
-             ): PageSchemaRDD = this.dropActions().+*%>(
-    Visit("#{~}") -> (_.attr(selector, attr))
-  )(limit, distinct, indexKey)
+  //TODO: this definitely need some logging to let us know how many actual resolves.
+  //TODO: empty action rows needs to be treated differently, current implementation skewed bad
+  /**
+   * smart execution: group identical ActionPlans, execute in parallel, and duplicate result pages to match their original contexts
+   * reduce workload by avoiding repeated access to the same url caused by duplicated context or diamond links (A->B,A->C,B->D,C->D)
+   * recommended for most cases, mandatory for RDD[ActionPlan] with high duplicate factor, only use !=!() if you are sure that duplicate doesn't exist.
+   * @return RDD[Page] as results of execution
+   */
+  def fetch(
+             traces: Set[Trace],
+             joinType: JoinType = Const.defaultJoinType,
+             numPartitions: Int = self.sparkContext.defaultParallelism,
+             autoFlatten: Boolean = true, //if all page outputs have identical names they will be flattened.
+             indexKey: Symbol = null
+             ): PageSchemaRDD = {
 
-  def wget(
-            selector: String,
-            attr: String = "abs:href"
+    import org.apache.spark.SparkContext._
+
+    val realChains = traces.autoSnapshot
+
+    val withTrace = self.flatMap(
+      row => realChains.interpolate(row).map(_ -> row)
+    )
+
+    val spookyBroad = self.context.broadcast(this.spooky)
+    implicit def _spooky: SpookyContext = spookyBroad.value
+
+    val withPages = {
+
+      val withTraceSquashed = withTrace.groupByKey()
+      val withPagesSquashed = withTraceSquashed.map{ //Unfortunately there is no mapKey
+        tuple => tuple._1.resolve(_spooky) -> tuple._2
+      }
+      withPagesSquashed.flatMapValues(rows => rows)
+    }
+
+    val result = this.copy(self = withPages.flatMap(tuple => tuple._2.putPages(tuple._1, joinType)))
+
+    val keys = realChains.outputs
+    if (autoFlatten && keys.size <=1) result.flattenPages(keys.head,indexKey)
+    else result
+  }
+
+  //TODO: add 'hidden keys' to avoid join messing with other data
+  def join(
+            expr: Expr[_],
+            indexKey: Symbol = null, //left & idempotent parameters are missing as they are always set to true
+            limit: Int = spooky.joinLimit
             )(
-            limit: Int = spooky.joinLimit, //applied after distinct
-            distinct: Boolean = true,
-            indexKey: String = null
-            ): PageSchemaRDD = this.dropActions()
-    .+*%>(
-      Wget("#{~}") -> (_.attr(selector, attr))
-    )(limit, distinct, indexKey)
+            traces: Set[Trace],
+            joinType: JoinType = Const.defaultJoinType,
+            numPartitions: Int = self.sparkContext.defaultParallelism,
+            autoFlatten: Boolean = true
+            ): PageSchemaRDD = this
+    .flattenTemp(expr, indexKey, limit, left = true)
+    .fetch(traces, joinType, numPartitions, autoFlatten)
+    .clearTemp
 
   /**
    * results in a new set of Pages by crawling links on old pages
    * old pages that doesn't contain the link will be ignored
-   * @param selector css selector of page elements with a crawlable link
    * @param limit only the first n links will be used, default to Const.fetchLimit
-   * @param attr attribute of the element that denotes the link tar  implicit def spookyImplicit: SpookyContext = spookyBroad.valueget, default to absolute href
    * @return RDD[Page]
    */
   def visitJoin(
-                 selector: String,
-                 attr: String = "abs:href"
+                 expr: Expr[_],
+                 indexKey: Symbol = null, //left & idempotent parameters are missing as they are always set to true
+                 limit: Int = spooky.joinLimit
                  )(
-                 limit: Int = spooky.joinLimit, //applied after distinct
-                 distinct: Boolean = true,
-                 indexKey: String = null,
-                 numPartitions: Int = self.sparkContext.defaultParallelism,
                  joinType: JoinType = Const.defaultJoinType,
-                 flatten: Boolean = true
-                 ): PageSchemaRDD = {
-
-    this.visit(selector, attr)(limit, distinct, indexKey).!><(numPartitions, joinType, flatten)
-  }
+                 numPartitions: Int = self.sparkContext.defaultParallelism,
+                 autoFlatten: Boolean = true
+                 ): PageSchemaRDD =
+    this.join(expr, indexKey, limit)(Visit("#{"+expr.name+"}"), joinType, numPartitions, autoFlatten)
 
   /**
    * same as join, but avoid launching a browser by using direct http GET (wget) to download new pages
    * much faster and less stressful to both crawling and target server(s)
-   * @param selector css selector of page elements with a crawlable link
    * @param limit only the first n links will be used, default to Const.fetchLimit
-   * @param attr attribute of the element that denotes the link target, default to absolute href
    * @return RDD[Page]
    */
   def wgetJoin(
-                selector: String,
-                attr: String = "abs:href"
+                expr: Expr[_],
+                indexKey: Symbol = null, //left & idempotent parameters are missing as they are always set to true
+                limit: Int = spooky.joinLimit
                 )(
-                limit: Int = spooky.joinLimit, //applied after distinct
-                distinct: Boolean = true,
-                indexKey: String = null,
-                numPartitions: Int = self.sparkContext.defaultParallelism,
                 joinType: JoinType = Const.defaultJoinType,
-                flatten: Boolean = true
-                ): PageSchemaRDD = {
+                numPartitions: Int = self.sparkContext.defaultParallelism,
+                autoFlatten: Boolean = true
+                ): PageSchemaRDD =
+    this.join(expr, indexKey, limit)(Wget("#{"+expr.name+"}"), joinType, numPartitions, autoFlatten)
 
-    this.wget(selector, attr)(limit, distinct, indexKey).!><(numPartitions, joinType, flatten)
-  }
-
+  //TODO: deprecate to flatten
   /**
    * break each page into 'shards', used to extract structured data from tables
    * @param selector denotes enclosing elements of each shards
@@ -421,19 +366,21 @@ case class PageSchemaRDD(
                  expand: Int = 0
                  )(
                  limit: Int = spooky.sliceLimit, //applied after distinct
-                 indexKey: String = null,
+                 indexKey: Symbol = null,
                  joinType: JoinType = Const.defaultJoinType,
                  flatten: Boolean = true
                  ): PageSchemaRDD = {
 
-    val result = self.flatMap {
+    val realIndexKey = Key(indexKey)
 
-      _.dropActions().slice(selector, expand)(limit, indexKey, joinType, flatten)
+    val result = self.flatMap {
+      _.slice(selector, expand)(limit, realIndexKey, joinType, flatten)
     }
 
-    this.copy(result, this.columnNames ++ Option(indexKey))
+    this.copy(result, this.keys ++ Option(realIndexKey))
   }
 
+  //TODO: deprecate to
   /**
    * insert many pages for each old page by recursively visiting "next page" link
    * @param selector selector of the "next page" element
@@ -447,7 +394,7 @@ case class PageSchemaRDD(
                 postAction: Seq[Action] = Seq()
                 )(
                 limit: Int = spooky.paginationLimit,
-                indexKey: String = null,
+                indexKey: Symbol = null,
                 flatten: Boolean = true,
                 last: Boolean = false
                 ): PageSchemaRDD = {
@@ -456,11 +403,13 @@ case class PageSchemaRDD(
 
     implicit def spookyImplicit: SpookyContext = spookyBroad.value
 
+    val realIndexKey = Key(indexKey)
+
     val result = self.flatMap {
-      _.paginate(selector, attr, wget, postAction)(limit, indexKey, flatten, last)
+      _.paginate(selector, attr, wget, postAction)(limit, Key(indexKey), flatten, last)
     }
 
-    this.copy(result, this.columnNames ++ Option(indexKey))
+    this.copy(result, this.keys ++ Option(realIndexKey))
   }
 
   //  def deepJoin(

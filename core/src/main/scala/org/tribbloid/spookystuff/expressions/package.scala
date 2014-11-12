@@ -3,10 +3,24 @@ package org.tribbloid.spookystuff
 import org.tribbloid.spookystuff.entity.PageRow
 import org.tribbloid.spookystuff.utils._
 
+import scala.language.implicitConversions
+
 /**
  * Created by peng on 10/14/14.
  */
 package object expressions {
+
+//  def href(selector: String,
+//           absolute: Boolean = true,
+//           noEmpty: Boolean = true
+//            ) = '*.href(selector,absolute,noEmpty)
+//
+//  def src(selector: String,
+//          absolute: Boolean = true,
+//          noEmpty: Boolean = true
+//           ) = '*.src(selector,absolute,noEmpty)
+
+  implicit def symbolToByKeyExpr(symbol: Symbol): ByKeyExpr = ByKeyExpr(symbol.name)
 
   implicit class StrExprHelper(val strC: StringContext) {
 
@@ -27,23 +41,22 @@ package object expressions {
 
       new Expr[String] {
 
+        name = {
+          val fStrs = fs.map(_.name)
+
+          parts.zip(fStrs).map(tuple => tuple._1+tuple._2).mkString
+        }
+
         override def apply(pageRow: PageRow): String = {
 
           val builder = new StringBuilder
 
           for (i <- 0 to fs.size) {
-            builder.append(Utils.interpolateFromMap(parts(i),pageRow.cells))
+            builder.append(Utils.interpolate(parts(i),pageRow))
             builder.append(fs(i)(pageRow))
           }
 
           builder.mkString
-        }
-
-        override def name: String = {
-
-          val fStrs = fs.map(_.toString())
-
-          parts.zip(fStrs).map(tuple => tuple._1+tuple._2).mkString
         }
       }
     }

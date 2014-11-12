@@ -9,13 +9,14 @@ object Amazon extends TestCore {
 
   override def doMain() = {
 
-    (sc.parallelize(Seq("http://dummy.com\tLord of the Rings\t3.0"))
+    sc.parallelize(Seq("http://dummy.com\tLord of the Rings\t3.0"))
       .tsvToMap("url\titem\tiherb-price")
-      +> Visit("http://www.amazon.com/")
-      +> TextInput("input#twotabsearchtextbox", "#{item}")
-      +> Submit("input.nav-submit-input")
-      +> WaitFor("div#resultsCol")
-      !=!())
+      .fetch(
+        Visit("http://www.amazon.com/")
+          +> TextInput("input#twotabsearchtextbox", "#{item}")
+          +> Submit("input.nav-submit-input")
+          +> WaitFor("div#resultsCol")
+      )
       .extract(
         "DidYouMean" -> {_.text1("div#didYouMean a") },
         "noResultsTitle" -> {_.text1("h1#noResultsTitle")},

@@ -4,16 +4,17 @@ import org.tribbloid.spookystuff.actions.Wget
 import org.tribbloid.spookystuff.integration.TestCore
 
 /**
-* Created by peng on 25/08/14.
-*/
+ * Created by peng on 25/08/14.
+ */
 object SingleHop extends TestCore {
 
   import spooky._
 
   override def doMain() = {
-    (noInput
-      +> Wget("http://www.singlehop.com/server-hosting/dedicated-servers/")
-      !=!())
+    noInput
+      .fetch(
+        Wget("http://www.singlehop.com/server-hosting/dedicated-servers/")
+      )
       .sliceJoin("tbody tr")()
       .extract(
         "CPU" -> {_.text1("span")},

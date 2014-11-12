@@ -9,10 +9,11 @@ object Dealmoon extends TestCore {
 
   def doMain() = {
 
-    (noInput
-      +> Wget("http://www.dealmoon.com/Online-Stores/Amazon-com?expired=n")
-      !=!()
-      ).paginate("a.next_link")()
+    noInput
+      .fetch(
+        Wget("http://www.dealmoon.com/Online-Stores/Amazon-com?expired=n")
+      )
+      .paginate("a.next_link")()
       .extract(
         "name" -> (_.text("div.mlist div.mtxt h2 span:not([style])"))
       )

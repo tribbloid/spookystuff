@@ -30,35 +30,25 @@ class MapFunctions[K](m1: Map[K,_]) {
 //    m1 ++ halfMerged
 //  }
 
-  def keyFlatten(
+  def flattenKey(
                   key: K,
-                  indexKey: K,
-                  idempotent: Boolean
-                  ): Seq[Map[K,_]]  = keyFlatten(key,key,indexKey,idempotent)
-
-  def keyFlatten(
-                  oldKey: K,
-                  newKey: K,
-                  indexKey: K,
-                  idempotent: Boolean
+                  indexKey: K
                   ): Seq[Map[K,_]] = {
 
-    val valueOption = m1.get(oldKey)
+    val valueOption = m1.get(key)
 
-    val value: Iterable[_] = valueOption.seq.flatMap {
+    val values: Iterable[_] = valueOption.toSeq.flatMap {
       case v: TraversableOnce[_] => v
-      case v: Any =>
-        if (idempotent) Seq[Any](v)
-        else throw new UnsupportedOperationException("cannot flatten a value that is not traversable")
+      case v: Array[_] => v
+      case v: Any => Seq[Any](v)
     }
 
-    val cleaned = if (oldKey != newKey) m1 - oldKey
-    else m1
+    val cleaned = m1 - key
     val result = Option(indexKey) match {
-      case Some(str) => value.zipWithIndex.toSeq.map(value => cleaned + (newKey-> value._1, indexKey -> value._2))
-      case None => value.toSeq.map(value => cleaned + (newKey-> value))
+      case Some(str) => values.zipWithIndex.toSeq.map(value => cleaned + (key-> value._1, indexKey -> value._2))
+      case None => values.toSeq.map(value => cleaned + (key-> value))
     }
-    if (result.isEmpty) result :+ Seq(cleaned)
+
     result
   }
 }

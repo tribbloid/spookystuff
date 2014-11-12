@@ -4,17 +4,18 @@ import org.tribbloid.spookystuff.actions._
 import org.tribbloid.spookystuff.integration.TestCore
 
 /**
-* Created by peng on 24/08/14.
-*/
+ * Created by peng on 24/08/14.
+ */
 object Rackspace extends TestCore {
 
   import spooky._
 
   override def doMain() = {
-    (noInput +>
-      Wget("http://www.rackspace.com/cloud/servers/")
-      !=! ())
-      .sliceJoin("tr.pricing-row")(indexKey = "row")
+    noInput
+      .fetch(
+        Wget("http://www.rackspace.com/cloud/servers/")
+      )
+      .sliceJoin("tr.pricing-row")(indexKey = 'row)
       .extract(
         "type" -> {_.attr1("tr","class").replaceAll("pricing-row","").replaceAll("-p1|-p2|-dark","")},
         "name" -> {_.text("td")(0)},

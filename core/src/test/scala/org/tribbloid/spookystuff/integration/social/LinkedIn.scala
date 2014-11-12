@@ -1,6 +1,7 @@
 package org.tribbloid.spookystuff.integration.social
 
 import org.tribbloid.spookystuff.actions._
+import org.tribbloid.spookystuff.expressions._
 import org.tribbloid.spookystuff.integration.TestCore
 
 /**
@@ -13,13 +14,14 @@ object LinkedIn extends TestCore {
 
   def doMain() = {
 
-    (sc.parallelize(Seq("Sanjay", "Arun", "Hardik"))
-      +> Visit("https://www.linkedin.com/")
-      +> TextInput("input#first", "#{_}")
-      +*> (TextInput("input#last", "Gupta") :: TextInput("input#last", "Krishnamurthy") :: Nil)
-      +> Submit("input[name=\"search\"]")
-      !=!())
-      .visitJoin("ol#result-set h2 a")()
+    sc.parallelize(Seq("Sanjay", "Arun", "Hardik"))
+      .fetch(
+        Visit("https://www.linkedin.com/")
+          +> TextInput("input#first", "#{_}")
+          *> (TextInput("input#last", "Gupta") :: TextInput("input#last", "Krishnamurthy") :: Nil)
+          +> Submit("input[name=\"search\"]")
+      )
+      .visitJoin('* href "ol#result-set h2 a")()
       .extract (
       "name" -> (_.text1("span.full-name")),
       "title" -> (_.text1("p.title")),

@@ -470,54 +470,55 @@ case class Page(
     case _ => null
   }
 
+//
+//  def crawl1(
+//              action: Action,
+//              f: Page => _
+//              ): PageRow = {
+//
+//    f(this) match {
+//      case null => DeadRow
+//      case s: Any =>
+//        val fa = action.interpolate(PageRow(cells = Map("~" -> s))).map(_.asInstanceOf[Action]).toSeq
+//        if (fa.isEmpty) DeadRow
+//        else PageRow(actions = fa)
+//    }
+//  }
+//
+//  def crawl(
+//             action: Action,
+//             f: Page => Array[_]
+//             )(
+//             limit: Int,
+//             distinct: Boolean = true,
+//             indexKey: String = null
+//             ): Array[PageRow] = {
+//
+//    val attrs = f(this)
+//
+//    if (attrs.isEmpty) return Array(DeadRow)
+//
+//    var actions: Array[Action] = attrs.flatMap( attr => action.interpolate(PageRow(cells = Map("~" -> attr))))
+//
+//    if (distinct) actions = actions.distinct
+//
+//    if (actions.size > limit) {
+//      actions = actions.slice(0,limit)
+//    }
+//
+//    actions.zipWithIndex.map(
+//      tuple => {
+//        if (indexKey == null) {
+//          PageRow(actions = Seq(tuple._1))
+//        }
+//        else {
+//          PageRow(cells = Map(indexKey -> tuple._2),actions = Seq(tuple._1))
+//        }
+//      }
+//    ).toArray
+//  }
+
   //TODO: abomination
-  def crawl1(
-              action: Action,
-              f: Page => _
-              ): PageRow = {
-
-    f(this) match {
-      case null => DeadRow
-      case s: Any =>
-        val fa = action.interpolate(PageRow(cells = Map("~" -> s))).map(_.asInstanceOf[Action]).toSeq
-        if (fa.isEmpty) DeadRow
-        else PageRow(actions = fa)
-    }
-  }
-
-  def crawl(
-             action: Action,
-             f: Page => Array[_]
-             )(
-             limit: Int,
-             distinct: Boolean = true,
-             indexKey: String = null
-             ): Array[PageRow] = {
-
-    val attrs = f(this)
-
-    if (attrs.isEmpty) return Array(DeadRow)
-
-    var actions: Array[Action] = attrs.flatMap( attr => action.interpolate(PageRow(cells = Map("~" -> attr))))
-
-    if (distinct) actions = actions.distinct
-
-    if (actions.size > limit) {
-      actions = actions.slice(0,limit)
-    }
-
-    actions.zipWithIndex.map(
-      tuple => {
-        if (indexKey == null) {
-          PageRow(actions = Seq(tuple._1))
-        }
-        else {
-          PageRow(cells = Map(indexKey -> tuple._2),actions = Seq(tuple._1))
-        }
-      }
-    ).toArray
-  }
-
   //only slice contents inside the container, other parts are discarded
   //this will generate doc from scratch but otherwise induces heavy load on serialization
   //sliced page should not be saved. This function will be removed soon.
@@ -526,7 +527,7 @@ case class Page(
              expand :Int = 0
              )(
              limit: Int
-             ): Array[Page] = {
+             ): Seq[Page] = {
 
     doc match {
 
@@ -542,10 +543,9 @@ case class Page(
               content = ("<table>"+tuple._1.outerHtml()+"</table>").getBytes(parsedContentType.getCharset)//otherwise tr and td won't be parsed
             )
           }
-        }.toArray
+        }
 
-      case _ => Array[Page]()
-
+      case _ => Seq[Page]()
     }
   }
 

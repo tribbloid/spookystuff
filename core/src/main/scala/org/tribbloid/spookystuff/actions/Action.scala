@@ -148,22 +148,18 @@ trait Timed extends Action{
 
 trait Named extends Action {
 
-  private var _name: String = "-" //can only set once
+  var name: String = this.hashCode().toString
 
-  def as(name: String): this.type = if (name != "-" && !this.mayExport)
-    throw new UnsupportedOperationException("cannot set name for action with no export")
-  else if (name == null)
-    throw new UnsupportedOperationException("cannot set name = null")
-  else {
-    this._name = name
+  def as(name: Symbol): this.type = {
+    assert(name != null)
+
+    this.name = name.name
     this
   }
 
-  def name: String = _name
-
   override def inject(same: this.type): Unit = {
     super.inject(same)
-    this._name = same.name
+    this.name = same.name
   }
 }
 

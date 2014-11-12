@@ -21,9 +21,9 @@ import org.tribbloid.spookystuff.utils.{Const, SocksProxyConnectionSocketFactory
  * Export a page from the browser or http client
  * the page an be anything including HTML/XML file, image, PDF file or JSON string.
  */
-abstract class Export extends Action with Named{
+abstract class Export extends Named{
 
-  final override def mayExport = true
+  final override def outputs = Set(this.name)
 
   final override def trunk = None //have not impact to driver
 
@@ -194,12 +194,11 @@ case class Wget(
 
   override def doInterpolate(pageRow: PageRow): this.type = {
     //ugly workaround of https://issues.scala-lang.org/browse/SI-7005
-    val interpolatedHeaders = this.headers.mapValues(value => Utils.interpolateFromMap(value, pageRow.cells)).map(identity)
 
     this.copy(
-      url = Utils.interpolateFromMap(this.url,pageRow.cells),
-      userAgent = Utils.interpolateFromMap(this.userAgent, pageRow.cells),
-      headers = interpolatedHeaders
+      url = Utils.interpolate(this.url,pageRow),
+      userAgent = this.userAgent,
+      headers = this.headers
     ).asInstanceOf[this.type]
   }
 }

@@ -4,18 +4,19 @@ import java.text.SimpleDateFormat
 import java.util.Date
 
 import org.tribbloid.spookystuff.actions._
+import org.tribbloid.spookystuff.expressions._
 import org.tribbloid.spookystuff.integration.TestCore
 
 /**
-* Created by peng on 8/28/14.
-*/
+ * Created by peng on 8/28/14.
+ */
 object WeiboNoSession extends TestCore {
 
   def doMain() = {
 
     import spooky._
 
-import scala.concurrent.duration._
+    import scala.concurrent.duration._
 
     val df = new SimpleDateFormat("yyyy-MM-dd-HH")
 
@@ -24,16 +25,17 @@ import scala.concurrent.duration._
 
     val range = start.until(end, 3600*1000).map(time => df.format(new Date(time)))
 
-    val RDD = ((sc.parallelize(range,1000)
-      +> Visit("http://s.weibo.com/wb/%25E6%2588%2590%25E9%2583%25BD%25E9%2593%25B6%25E8%25A1%258C&xsort=time&timescope=custom:#{_}:#{_}&Refer=g")
-      +> RandomDelay(40.seconds, 80.seconds)
-      +> Try(WaitFor("div.search_feed dl.feed_list").in(60.seconds) :: Nil)
-      !=!())
+    val RDD = sc.parallelize(range,1000)
+      .fetch(
+        RandomDelay(40.seconds, 80.seconds)
+          +> Visit("http://s.weibo.com/wb/%25E6%2588%2590%25E9%2583%25BD%25E9%2593%25B6%25E8%25A1%258C&xsort=time&timescope=custom:#{_}:#{_}&Refer=g")
+          +> Try(WaitFor("div.search_feed dl.feed_list").in(60.seconds) :: Nil)
+      )
       .extract(
         "count" -> (_.text("div.search_feed dl.feed_list").size),
         "CAPCHAS" -> (_.text1("p.code_tit"))
       )
-      .sliceJoin("div.search_feed dl.feed_list")(indexKey = "item")
+      .sliceJoin("div.search_feed dl.feed_list")(indexKey = 'item)
       .extract(
         "name" -> (page => "成都银行"),
         "text" -> (_.text1("p > em")),
@@ -46,10 +48,11 @@ import scala.concurrent.duration._
         "retweet" -> (_.text1("p.info:nth-of-type(n+2) span a:nth-of-type(2)")),
         "reply" -> (_.text1("p.info:nth-of-type(n+2) a:nth-of-type(4)"))
       )
-      .visit("dd.content p:nth-of-type(1) > a:nth-of-type(1)")()
-      .+> (RandomDelay(40.seconds, 80.seconds))
-      .+> (WaitForDocumentReady)
-      !><())
+      .join('* href "dd.content p:nth-of-type(1) > a:nth-of-type(1)" as '~)(
+        Visit("#{~}")
+          .+> (RandomDelay(40.seconds, 80.seconds))
+          .+> (WaitForDocumentReady)
+      )
       .extract(
         "author.CAPCHAS" -> (_.text1("p.code_tit")),
         "author.follow" -> (_.text1("li.S_line1 strong")),

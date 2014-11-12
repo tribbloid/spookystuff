@@ -5,6 +5,8 @@ import org.tribbloid.spookystuff.entity.{Page, PageRow}
 import org.tribbloid.spookystuff.factory.PageBuilder
 import org.tribbloid.spookystuff.utils.{Utils, Const}
 
+import scala.reflect.ClassTag
+
 /**
  * Created by peng on 10/25/14.
  */
@@ -77,23 +79,26 @@ final case class Trace(
 final class TraceSetFunctions(self: Set[Trace]) {
 
   //one-to-one
-  def ->(another: Action): Set[Trace] = self.map(chain => Trace(chain.self :+ another))
-  def ->(others: Seq[Action]): Set[Trace] = self.map(chain => Trace(chain.self ++ others))
+  def +>(another: Action): Set[Trace] = self.map(chain => Trace(chain.self :+ another))
+  def +>(others: TraversableOnce[Action]): Set[Trace] = self.map(chain => Trace(chain.self ++ others))
 
   //one-to-one truncate longer
-  def +>(others: Set[Trace]): Set[Trace] = self.zip(others).map(tuple => Trace(tuple._1.self ++ tuple._2.self))
+  def +>(others: Iterable[Trace]): Set[Trace] = self.zip(others).map(tuple => Trace(tuple._1.self ++ tuple._2.self))
 
   //one-to-many
-  def *>(others: Set[Trace]): Set[Trace] = self.flatMap(chain => others.map(other => Trace(chain.self ++ other.self)))
 
-  def ||(other: Set[Trace]): Set[Trace] = self ++ other
+  def *>[T: ClassTag](others: TraversableOnce[T]): Set[Trace] = self.flatMap(
+    trace => others.map {
+      case action: Action => Trace(trace.self :+ action)
+      case other: Trace => Trace(trace.self ++ other.self)
+    }
+  )
 
-  def interpolate(
-                   pr: PageRow,
-                   autoSnapshot: Boolean = true
-                   ): Set[Trace] = {
+  def ||(other: TraversableOnce[Trace]): Set[Trace] = self ++ other
 
-    if (autoSnapshot) self.flatMap(_.autoSnapshot.interpolate(pr))
-    else self.flatMap(_.interpolate(pr))
-  }
+  def autoSnapshot: Set[Trace] = self.map(_.autoSnapshot)
+
+  def interpolate(pr: PageRow): Set[Trace] = self.flatMap(_.interpolate(pr))
+
+  def outputs: Set[String] = self.map(_.outputs).reduce(_ ++ _)
 }

@@ -4,30 +4,18 @@ import java.util.UUID
 import org.tribbloid.spookystuff.entity.Page
 import org.tribbloid.spookystuff.utils.Utils
 
+import scala.runtime.ScalaRunTime
+
 /**
  * Created by peng on 8/29/14.
  */
-abstract class Extract[T] extends (Page => T) with Serializable {
+trait Extract[T] extends (Page => T) with Serializable with Product {
 
   //this is used to delay for element to exist
   val selectors: Seq[String] = Seq()
+
+  override def toString() = ScalaRunTime._toString(this)
 }
-
-//case object ExtractTrue extends Extract[Boolean] {
-//
-//  override def apply(page: Page): Boolean = {
-//
-//    true
-//  }
-//}
-
-//case class TimestampPath(lookup: Lookup[_]) extends Extract[String] {
-//
-//  override def apply(page: Page): String = {
-//
-//    Utils.urlConcat(lookup(page.uid).toString, page.timestamp.getTime.toString)
-//  }
-//}
 
 case class UUIDPath(encoder: TraceEncoder[_]) extends Extract[String] {
 
@@ -37,33 +25,62 @@ case class UUIDPath(encoder: TraceEncoder[_]) extends Extract[String] {
   }
 }
 
-//case class ExtractIfElementExist(override val selector: String) extends Extract[Boolean] {
-//
-//  override def apply(page: Page): Boolean = {
-//
-//    page.elementExist(selector)
-//  }
-//}
-
-abstract class FromElement[T](selector: String) extends Extract[T] {
+abstract class FromElements[T](selector: String) extends Extract[T] {
 
   override val selectors = Seq(selector)
 }
 
-case class NumElements(selector: String) extends FromElement[Int](selector) {
+//case class ElementExist(selector: String) extends FromElements[Boolean](selector) {
+//
+//  override def apply(page: Page): Boolean = page.elementExist(selector)
+//}
+//
+//case class NumElements(selector: String) extends FromElements[Int](selector) {
+//
+//  override def apply(page: Page): Int = page.numElements(selector)
+//}
+//
+//case class AttrExist(
+//                      selector: String,
+//                      attr: String
+//                      ) extends FromElements[Boolean](selector) {
+//
+//  override def apply(page: Page): Boolean = page.attrExist(selector, attr)
+//}
 
-  override def apply(page: Page): Int = page.numElements(selector)
+case class Attr(
+                 selector: String,
+                 attr: String,
+                 noEmpty: Boolean = true
+                 ) extends FromElements[Array[String]](selector) {
+
+  override def apply(page: Page): Array[String] = page.attr(selector, attr, noEmpty)
 }
 
-case class ElementExist(selector: String) extends FromElement[Boolean](selector) {
+object Href {
 
-  override def apply(page: Page): Boolean = page.elementExist(selector)
+  def apply(
+             selector: String,
+             absolute: Boolean = true,
+             noEmpty: Boolean = true
+             ): Attr = {
+    val attr = if (absolute) "abs:href"
+    else "href"
+
+    Attr(selector, attr, noEmpty)
+  }
 }
 
-case class AttrExist(
-                      selector: String,
-                      attr: String
-                      ) extends FromElement[Boolean](selector) {
+object Src {
 
-  override def apply(page: Page): Boolean = page.attrExist(selector, attr)
+  def apply(
+             selector: String,
+             absolute: Boolean = true,
+             noEmpty: Boolean = true
+             ): Attr = {
+    val attr = if (absolute) "abs:src"
+    else "src"
+
+    Attr(selector, attr, noEmpty)
+  }
 }

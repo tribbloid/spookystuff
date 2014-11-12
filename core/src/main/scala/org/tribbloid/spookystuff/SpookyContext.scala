@@ -3,7 +3,7 @@ package org.tribbloid.spookystuff
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.{SchemaRDD, SQLContext}
 import org.apache.spark.{SerializableWritable, SparkConf, SparkContext}
-import org.tribbloid.spookystuff.entity.PageRow
+import org.tribbloid.spookystuff.entity.{KeyLike, Key, PageRow}
 import org.tribbloid.spookystuff.factory.driver.{ProxySetting, DriverFactory, NaiveDriverFactory}
 import org.tribbloid.spookystuff.expressions._
 import org.tribbloid.spookystuff.sparkbinding.{SchemaRDDFunctions, PageSchemaRDD, StringRDDFunctions}
@@ -37,9 +37,9 @@ class SpookyContext (
 
                       var pageExpireAfter: Duration = 7.day,
 
-                      var autoSaveExtract: Extract[_] = UUIDPath(HierarchicalUrnEncoder),
-                      var cacheTraceEncoder: TraceEncoder[_] = HierarchicalUrnEncoder,
-                      var errorDumpExtract: Extract[_] = UUIDPath(HierarchicalUrnEncoder),
+                      var autoSaveExtract: Extract[String] = UUIDPath(HierarchicalUrnEncoder),
+                      var cacheTraceEncoder: TraceEncoder[String] = HierarchicalUrnEncoder,
+                      var errorDumpExtract: Extract[String] = UUIDPath(HierarchicalUrnEncoder),
 
                       var autoSaveRoot: String = "s3n://spooky-page/",
                       var autoCacheRoot: String = "s3n://spooky-cache/",
@@ -56,7 +56,7 @@ class SpookyContext (
                       //default max number of elements scraped from a page, set to Int.MaxValue to allow unlimited fetch
                       var joinLimit: Int = Int.MaxValue,
                       var sliceLimit: Int = Int.MaxValue,
-                      var paginationLimit: Int = Int.MaxValue,
+                      var paginationLimit: Int = 1000, //TODO: higher than this may cause JVM heapspace overflow
 
                       var recursionDepth: Int = 500, //unknown if it is enough
                       val browserResolution: (Int, Int) = (1920, 1080)
@@ -94,23 +94,23 @@ class SpookyContext (
   implicit def stringRDDToPageRowRDD(rdd: RDD[String]): PageSchemaRDD = {
     val result = rdd.map{
       str => {
-        var cells = Map[String,Any]()
-        if (str!=null) cells = cells + ("_" -> str)
+        var cells = Map[KeyLike,Any]()
+        if (str!=null) cells = cells + (Key("_") -> str)
 
         new PageRow(cells)
       }
     }
 
-    new PageSchemaRDD(result, columnNames = ListSet("_"), spooky = this)
+    new PageSchemaRDD(result, keys = ListSet(Key("_")), spooky = this)
   }
 
   implicit def schemaRDDToPageRowRDD(rdd: SchemaRDD): PageSchemaRDD = {
 
     val result = new SchemaRDDFunctions(rdd).toMapRDD.map{
-      map => new PageRow(Option(map).getOrElse(Map()))
+      map => new PageRow(Option(map).getOrElse(Map()).map(tuple => (Key(tuple._1),tuple._2)))
     }
 
-    new PageSchemaRDD(result, columnNames = ListSet(rdd.schema.fieldNames: _*), spooky = this)
+    new PageSchemaRDD(result, keys = ListSet(rdd.schema.fieldNames: _*).map(Key(_)), spooky = this)
   }
 
   implicit def mapRDDToPageRowRDD[T <: Any](rdd: RDD[Map[String,T]]): PageSchemaRDD = {

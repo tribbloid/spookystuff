@@ -24,15 +24,16 @@ trait ProxyFeed extends TestCore {
 
   lazy val proxyRDD = {
 
-
-    val httpPageRowRDD = (noInput
-      +> Visit("http://www.us-proxy.org/")
-      +> WaitForDocumentReady
-      +> Paginate(
-      "a.next:not([class*=ui-state-disabled])",
-      limit =15
-    )
-      !=!(indexKey = "page"))
+    val httpPageRowRDD = noInput
+      .fetch(
+        Visit("http://www.us-proxy.org/")
+          +> WaitForDocumentReady
+          +> Paginate(
+          "a.next:not([class*=ui-state-disabled])",
+          limit =15
+        ),
+        indexKey = 'page
+      )
       .sliceJoin("table.dataTable tbody tr")()
       .extract(
         "IP" -> (_.text("td")(0)),
@@ -46,14 +47,16 @@ trait ProxyFeed extends TestCore {
         "Type" -> (page => "http")
       )
 
-    val socksPageRowRDD = (noInput
-      +> Visit("http://www.socks-proxy.net/")
-      +> WaitForDocumentReady
-      +> Paginate(
-      "a.next:not([class*=ui-state-disabled])",
-      limit =15
-    )
-      !=!(indexKey = "page"))
+    val socksPageRowRDD = noInput
+      .fetch(
+        Visit("http://www.socks-proxy.net/")
+          +> WaitForDocumentReady
+          +> Paginate(
+          "a.next:not([class*=ui-state-disabled])",
+          limit =15
+        ),
+        indexKey = 'page
+      )
       .sliceJoin("table.dataTable tbody tr")()
       .extract(
         "IP" -> (_.text("td")(0)),
@@ -69,7 +72,7 @@ trait ProxyFeed extends TestCore {
 
     httpPageRowRDD.union(socksPageRowRDD)
       .asSchemaRDD()
-//      .where(('Anonymity !== "transparent")&& 'Code.like("US"))
+    //      .where(('Anonymity !== "transparent")&& 'Code.like("US"))
   }
 
   this.spooky.remoteResourceTimeout = 120.seconds

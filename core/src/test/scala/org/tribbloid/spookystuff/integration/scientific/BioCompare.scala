@@ -2,6 +2,7 @@ package org.tribbloid.spookystuff.integration.scientific
 
 import org.apache.spark.sql.SchemaRDD
 import org.tribbloid.spookystuff.actions._
+import org.tribbloid.spookystuff.expressions._
 import org.tribbloid.spookystuff.factory.driver.{TorProxySetting, TorDriverFactory}
 import org.tribbloid.spookystuff.integration.TestCore
 
@@ -18,47 +19,48 @@ object BioCompare extends TestCore {
   override def doMain(): SchemaRDD = {
 
     val initials = Seq(
-//      "num",
+      //      "num",
       "A"
-//      "B",
-//      "C",
-//      "D",
-//      "E",
-//      "F",
-//      "G",
-//      "H",
-//      "I",
-//      "J",
-//      "K",
-//      "L",
-//      "M",
-//      "N",
-//      "O",
-//      "P",
-//      "Q",
-//      "R",
-//      "S",
-//      "T",
-//      "U",
-//      "V",
-//      "W",
-//      "X",
-//      "Y",
-//      "Z"
+      //      "B",
+      //      "C",
+      //      "D",
+      //      "E",
+      //      "F",
+      //      "G",
+      //      "H",
+      //      "I",
+      //      "J",
+      //      "K",
+      //      "L",
+      //      "M",
+      //      "N",
+      //      "O",
+      //      "P",
+      //      "Q",
+      //      "R",
+      //      "S",
+      //      "T",
+      //      "U",
+      //      "V",
+      //      "W",
+      //      "X",
+      //      "Y",
+      //      "Z"
     )
-    
-    val ranges = (sc.parallelize(initials)
-      +> Wget("http://www.biocompare.com/1997-BrowseCategory/browse/gb1/9776/#{_}")
-      !=!())
-      .wgetJoin("div.guidedBrowseCurrentOptionsSegments a")(indexKey = "range_index")
+
+    val ranges = sc.parallelize(initials)
+      .fetch(
+        Wget("http://www.biocompare.com/1997-BrowseCategory/browse/gb1/9776/#{_}")
+      )
+      .wgetJoin('* href "div.guidedBrowseCurrentOptionsSegments a", indexKey = 'range_index)()
       .extract(
         "range" -> (_.text1("h1"))
       ).persist()
 
-    println(ranges.count())
+      println(ranges.count())
 
     val categories = ranges
-      .sliceJoin("div.guidedBrowseResults > ul > li a")(indexKey = "category_index")
+      .sliceJoin("div.guidedBrowseResults > ul > li a")(indexKey = 'category_index)
       .extract(
         "category" -> (_.text1("*")),
         "first_page_url" -> (_.href1("*"))
@@ -66,15 +68,17 @@ object BioCompare extends TestCore {
 
     println(categories.count())
 
-    val firstPages = (categories
-      +> Wget("#{first_page_url}?vcmpv=true")
-      !><(numPartitions = initials.length*2500))
+    val firstPages = categories
+    .fetch(
+        Wget("#{first_page_url}?vcmpv=true"),
+        numPartitions = initials.length*2500
+      )
       .extract(
         "category_header" -> (_.text1("h1"))
       )
 
     val allPages  = firstPages
-      .paginate("ul.pages > li.next > a")(indexKey = "page")
+      .paginate("ul.pages > li.next > a")(indexKey = 'page)
       .extract(
         "url" -> (_.resolvedUrl)
       )
@@ -83,7 +87,7 @@ object BioCompare extends TestCore {
     println(allPages.count())
 
     val sliced = allPages
-      .sliceJoin("tr.productRow")(indexKey = "row")
+      .sliceJoin("tr.productRow")(indexKey = 'row)
       .persist()
 
     println(sliced.count())

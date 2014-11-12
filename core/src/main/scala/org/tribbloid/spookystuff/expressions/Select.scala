@@ -59,7 +59,7 @@ abstract class Select[T] extends (PageRow => T)  with Serializable {
 //  override def apply(pageRow: PageRow) = extract(filter(pageRow.pages))
 //}
 
-case class FromCell(key: String) extends Select[Any] {
-
-  override def apply(pageRow: PageRow) = pageRow(key)
-}
+//case class FromCell(key: String) extends Select[Any] {
+//
+//  override def apply(pageRow: PageRow) = pageRow(key)
+//}

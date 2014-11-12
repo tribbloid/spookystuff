@@ -2,6 +2,7 @@ package org.tribbloid.spookystuff.integration.forum
 
 import org.tribbloid.spookystuff.integration.TestCore
 import org.tribbloid.spookystuff.actions._
+import org.tribbloid.spookystuff.expressions._
 import org.tribbloid.spookystuff.expressions.LeftOuter
 
 /**
@@ -13,8 +14,10 @@ object Imdb extends TestCore {
 
     import spooky._
 
-    (noInput
-      +>  Wget("http://www.imdb.com/chart") !=!())
+    noInput
+    .fetch(
+        Wget("http://www.imdb.com/chart")
+      )
       .sliceJoin("div#boxoffice tbody tr")() //slice into rows of top office table
       .extract(
         "rank" -> (_.text1("tr td.titleColumn", own = true).replaceAll("\"","").trim),
@@ -24,13 +27,13 @@ object Imdb extends TestCore {
         "box_gross" -> (_.text("td.ratingColumn")(1)),
         "weeks" -> (_.text1("tr td.weeksColumn"))
       )
-      .wgetJoin("tr td.titleColumn a")() //go to movie pages, e.g. http://www.imdb.com/title/tt2015381/?ref_=cht_bo_1
+      .wgetJoin('* href "tr td.titleColumn a")() //go to movie pages, e.g. http://www.imdb.com/title/tt2015381/?ref_=cht_bo_1
       .extract(
         "score" -> (_.text1("td#overview-top div.titlePageSprite")),
         "rating_count" -> (_.text1("td#overview-top span[itemprop=ratingCount]")),
         "review_count" -> (_.text1("td#overview-top span[itemprop=reviewCount]"))
       )
-      .wgetJoin("div#maindetails_quicklinks a:contains(Reviews)")(joinType = LeftOuter) //go to review pages, e.g. http://www.imdb.com/title/tt2015381/reviews?ref_=tt_urv
+      .wgetJoin('* href "div#maindetails_quicklinks a:contains(Reviews)")(joinType = LeftOuter) //go to review pages, e.g. http://www.imdb.com/title/tt2015381/reviews?ref_=tt_urv
       .paginate("div#tn15content a:has(img[alt~=Next])")(limit = 2) //grab all pages by using the right arrow button.
       .sliceJoin("div#tn15content div:has(h2)")(joinType = LeftOuter) //slice into rows of reviews
       .extract(
@@ -38,8 +41,7 @@ object Imdb extends TestCore {
         "review_title" -> (_.text1("h2")),
         "review_meta" -> (_.text("small"))
       )
-
-      .wgetJoin("a")(joinType = LeftOuter) //go to reviewers' page, e.g. http://www.imdb.com/user/ur23582121/
+      .wgetJoin('* href "a")(joinType = LeftOuter) //go to reviewers' page, e.g. http://www.imdb.com/user/ur23582121/
       .extract(
         "user_name" -> (_.text1("div.user-profile h1")),
         "user_timestamp" -> (_.text1("div.user-profile div.timestamp")),

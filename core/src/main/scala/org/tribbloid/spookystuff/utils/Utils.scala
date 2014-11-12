@@ -2,6 +2,7 @@ package org.tribbloid.spookystuff.utils
 
 import org.json4s.DefaultFormats
 import org.slf4j.LoggerFactory
+import org.tribbloid.spookystuff.entity.PageRow
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._
@@ -34,7 +35,7 @@ object Utils {
     Await.result(future, n)
   }
 
-//  def retryWithDeadline[T](n: Int, t: Duration)(fn: => T): T = retry(n){withDeadline(t){fn}}
+  //  def retryWithDeadline[T](n: Int, t: Duration)(fn: => T): T = retry(n){withDeadline(t){fn}}
 
   lazy val random = new Random()
 
@@ -141,23 +142,41 @@ These special characters are often called "metacharacters".
   //TODO: reverse the direction of look-up, if a '#{...}' has no corresponding indexKey in the map, throws an exception
   def interpolateFromMap[T](
                              str: String,
-                             map: collection.Map[String,T],
-                             delimiter: String = "#"
+                             map: Map[String,T],
+                             delimiter: String = Const.keyDelimiter
                              ): String = {
     if ((str == null)|| str.isEmpty) return str
     else if ((map == null)|| map.isEmpty) return str
-    var strVar = str
-    for (entry <- map) {
-      val sub = delimiter+"{".concat(entry._1).concat("}")
-      if (strVar.contains(sub))
-      {
-        var value: String = "null"
-        if (entry._2 != null) {value = entry._2.toString}
-        strVar = strVar.replace(sub, value)
-      }
-    }
-    strVar
+
+    val regex = (delimiter+"\\{[^\\{\\}\r\n]*\\}").r
+
+    regex.replaceAllIn(str,m => {
+      val original = m.group(0)
+      val key = original.substring(2, original.size-1)
+      map.get(key).get.toString
+    })
   }
 
-  implicit def mapFunctions[K](map: Map[K,_]): MapFunctions[K] = new MapFunctions[K](map)
+  def interpolate(
+                   str: String,
+                   row: PageRow,
+                   delimiter: String = Const.keyDelimiter
+                   ): String = {
+    if ((str == null)|| str.isEmpty) return str
+
+    val regex = (delimiter+"\\{[^\\{\\}\r\n]*\\}").r
+
+    val result = regex.replaceAllIn(str,m => {
+      val original = m.group(0)
+      val key = original.substring(2, original.size-1)
+      row.get(key) match {
+        case Some(v) => v.toString
+        case None => throw new UnsupportedOperationException("key " + key + " not found")
+      }
+    })
+
+    result
+  }
+
+  implicit def mapFunctions[K](map: Map[K, _]): MapFunctions[K] = new MapFunctions[K](map)
 }

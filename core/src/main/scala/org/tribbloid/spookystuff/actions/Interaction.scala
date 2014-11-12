@@ -20,7 +20,7 @@ import scala.concurrent.duration.Duration
  */
 abstract class Interaction extends Action {
 
-  final override def mayExport = false
+  final override def outputs = Set()
 
   final override def trunk = Some(this) //can't be ommitted
 
@@ -50,7 +50,7 @@ case class Visit(
   }
 
   override def doInterpolate(pageRow: PageRow): this.type = {
-    this.copy(url = Utils.interpolateFromMap(this.url,pageRow.cells)).asInstanceOf[this.type]
+    this.copy(url = Utils.interpolate(this.url,pageRow)).asInstanceOf[this.type]
   }
 }
 
@@ -219,7 +219,7 @@ case class TextInput(selector: String, text: String) extends Interaction with Ti
   }
 
   override def doInterpolate(pageRow: PageRow): this.type = {
-    this.copy(text = Utils.interpolateFromMap(this.text,pageRow.cells)).asInstanceOf[this.type]
+    this.copy(text = Utils.interpolate(this.text,pageRow)).asInstanceOf[this.type]
   }
 }
 
@@ -238,7 +238,7 @@ case class DropDownSelect(selector: String, text: String) extends Interaction wi
   }
 
   override def doInterpolate(pageRow: PageRow): this.type = {
-    this.copy(text = Utils.interpolateFromMap(this.text,pageRow.cells)).asInstanceOf[this.type]
+    this.copy(text = Utils.interpolate(this.text,pageRow)).asInstanceOf[this.type]
   }
 }
 
@@ -273,7 +273,7 @@ case class ExeScript(script: String) extends Interaction with Timed {
   }
 
   override def doInterpolate(pageRow: PageRow): this.type = {
-    this.copy(script = Utils.interpolateFromMap(this.script,pageRow.cells)).asInstanceOf[this.type]
+    this.copy(script = Utils.interpolate(this.script,pageRow)).asInstanceOf[this.type]
   }
 }
 

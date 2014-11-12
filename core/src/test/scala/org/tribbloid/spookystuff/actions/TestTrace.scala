@@ -60,10 +60,10 @@ class TestTrace extends FunSuite {
     val results = Trace(
       Visit("http://www.wikipedia.org") ::
         WaitFor("input#searchInput").in(40.seconds) ::
-        Snapshot().as("A") ::
+        Snapshot().as('A) ::
         TextInput("input#searchInput","Deep learning") ::
         Submit("input.formBtn") ::
-        Snapshot().as("B") :: Nil
+        Snapshot().as('B) :: Nil
     ).resolve(spooky)
 
     val resultsList = results
@@ -101,7 +101,7 @@ class TestTrace extends FunSuite {
   test("save and load") {
     val results = Trace(
       Visit("http://en.wikipedia.org") ::
-      Snapshot().as("T") :: Nil
+      Snapshot().as('T) :: Nil
     ).resolve(spooky)
 
     val resultsList = results.toArray
@@ -118,7 +118,7 @@ class TestTrace extends FunSuite {
   test("cache and restore") {
     val pages = Trace(
       Visit("http://en.wikipedia.org") ::
-        Snapshot().as("T") :: Nil
+        Snapshot().as('T) :: Nil
     ).resolve(spooky)
 
     assert(pages.size === 1)

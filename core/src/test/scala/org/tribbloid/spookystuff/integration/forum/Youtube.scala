@@ -1,9 +1,8 @@
 package org.tribbloid.spookystuff.integration.forum
 
 import org.tribbloid.spookystuff.actions._
-import org.tribbloid.spookystuff.actions.Loop
+import org.tribbloid.spookystuff.expressions._
 import org.tribbloid.spookystuff.integration.TestCore
-import org.tribbloid.spookystuff.expressions.LeftOuter
 
 /**
  * Created by peng on 04/07/14.
@@ -13,35 +12,42 @@ object Youtube extends TestCore{
   override def doMain() = {
 
     import spooky._
+
     import scala.concurrent.duration._
 
-    (((sc.parallelize(Seq("MetallicaTV")) +>
-      Visit("http://www.youtube.com/user/#{_}/videos") +>
-      Loop(
-        Click("button.load-more-button span.load-more-text")
-          :: WaitFor("button.load-more-button span.hid.load-more-loading").in(10.seconds)
-          :: Nil,
-        1
-      ) !=!())
+    sc.parallelize(Seq("MetallicaTV"))
+      .fetch(
+        Visit("http://www.youtube.com/user/#{_}/videos")
+          +> Loop(
+          Click("button.load-more-button span.load-more-text")
+            :: WaitFor("button.load-more-button span.hid.load-more-loading").in(10.seconds)
+            :: Nil,
+          1
+        )
+      )
       .sliceJoin("li.channels-content-item")()
       .extract("title" -> (_.text1("h3.yt-lockup-title")))
-      .visit("h3.yt-lockup-title a.yt-uix-tile-link")(limit = 1)
-      .repartition(400) +>
-      ExeScript("window.scrollBy(0,500)") +>
-      Try(WaitFor("iframe[title^=Comment]").in(50.seconds) :: Nil)
-      !><()).extract(
+      .join('* href "h3.yt-lockup-title a.yt-uix-tile-link" as '~, limit = 1)(
+        Visit("#{~}")
+          +> ExeScript("window.scrollBy(0,500)")
+          +> Try(WaitFor("iframe[title^=Comment]").in(50.seconds) :: Nil)
+      )
+      .repartition(400)
+      .extract(
         "description" -> (_.text1("div#watch-description-text")),
         "publish" -> (_.text1("p#watch-uploader-info")),
         "total_view" -> (_.text1("div#watch7-views-info span.watch-view-count")),
         "like_count" -> (_.text1("div#watch7-views-info span.likes-count")),
         "dislike_count" -> (_.text1("div#watch7-views-info span.dislikes-count"))
       )
-      .visit("iframe[title^=Comment]", attr = "abs:src")() +>
-      Loop(
-        Click("span[title^=Load]")
-          :: WaitFor("span.PA[style^=display]").in(10.seconds)
-          :: Nil
-      ) !=!(joinType = LeftOuter))
+      .join('* src "iframe[title^=Comment]" as '~)(
+        Visit("#{~}")
+          +> Loop(
+          Click("span[title^=Load]")
+            :: WaitFor("span.PA[style^=display]").in(10.seconds)
+            :: Nil
+        )
+      )
       .extract("num_comments" -> (_.text1("div.DJa")))
       .sliceJoin("div[id^=update]")()
       .extract(

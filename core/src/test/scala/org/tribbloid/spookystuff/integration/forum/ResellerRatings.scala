@@ -12,9 +12,11 @@ object ResellerRatings extends TestCore {
 
   def doMain() = {
 
-    (sc.parallelize(Seq("Hewlett_Packard")) +>
-      Wget( "http://www.resellerratings.com/store/#{_}") !=!())
-      .paginate( "div#survey-header ul.pagination a:contains(next)")(indexKey = "page")
+    sc.parallelize(Seq("Hewlett_Packard"))
+      .fetch(
+        Wget( "http://www.resellerratings.com/store/#{_}")
+      )
+      .paginate( "div#survey-header ul.pagination a:contains(next)")(indexKey = 'page)
       .sliceJoin("div.review")()
       .extract(
         "rating" -> (_.text1("div.rating strong")),

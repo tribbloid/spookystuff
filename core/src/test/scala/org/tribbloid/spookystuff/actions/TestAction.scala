@@ -1,7 +1,7 @@
 package org.tribbloid.spookystuff.actions
 
 import org.scalatest.FunSuite
-import org.tribbloid.spookystuff.entity.PageRow
+import org.tribbloid.spookystuff.entity.{Key, PageRow}
 import org.tribbloid.spookystuff.utils.Utils
 
 import scala.util.Random
@@ -21,16 +21,16 @@ class TestAction extends FunSuite {
     val randomTimeout = Random.nextInt().seconds
     val action = Visit("#{~}").in(randomTimeout)
 
-    val rewritten = action.interpolate(new PageRow(cells = Map("~" -> "http://www.dummy.com")))
+    val rewritten = action.interpolate(new PageRow(cells = Map(Key("~") -> "http://www.dummy.com")))
 
     assert(rewritten.get.timeout(null) === randomTimeout)
   }
 
   test("interpolate should not change name") {
 
-    val action = Wget("#{~}").as("dummy_name")
+    val action = Wget("#{~}").as('dummy_name)
 
-    val rewritten = action.interpolate(new PageRow(cells = Map("~" -> "http://www.dummy.com")))
+    val rewritten = action.interpolate(new PageRow(cells = Map(Key("~") -> "http://www.dummy.com")))
 
     assert(rewritten.get.name === "dummy_name")
   }

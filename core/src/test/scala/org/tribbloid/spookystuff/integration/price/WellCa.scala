@@ -12,9 +12,10 @@ object WellCa extends TestCore {
 
   override def doMain() = {
 
-    (noInput
-      +> Wget("http://well.ca/whatsnew/")
-      !=!())
+    noInput
+      .fetch(
+        Wget("http://well.ca/whatsnew/")
+      )
       .sliceJoin("div.product_grid_full_categories")()
       .extract(
         "name" -> (_.text1("div.product_grid_info_top_text_container"))

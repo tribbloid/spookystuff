@@ -2,37 +2,36 @@ package org.tribbloid.spookystuff.integration.forum
 
 import org.apache.spark.sql.SchemaRDD
 import org.tribbloid.spookystuff.actions._
+import org.tribbloid.spookystuff.expressions._
 import org.tribbloid.spookystuff.integration.TestCore
 
 /**
  * Created by peng on 10/16/14.
  */
-object DianPing extends TestCore {
+object DianPingFirepot extends TestCore {
 
   import spooky._
 
   override def doMain(): SchemaRDD = {
 
-    (sc.parallelize(Seq(
+    sc.parallelize(Seq(
+      "http://www.dianping.com/search/keyword/8/0_%E6%88%90%E9%83%BD%E4%BE%BF%E5%88%A9%E5%BA%97/x1y50#sortBar",
       "http://www.dianping.com/search/category/8/10/g110o8x1y50#sortBar",
       "http://www.dianping.com/search/category/8/10/g110o8x51y70#sortBar",
       "http://www.dianping.com/search/category/8/10/g110o8x71y999#sortBar"
-    ),3)
-      +> Visit("#{_}")
-      !=!())
-      .paginate("div.page > a.next", wget = false)(indexKey="page")
-      .sliceJoin("ul.shop-list > li")(indexKey = "row")
+    ))
+      .fetch(
+        Visit("#{_}")
+      )
+      .paginate("div.page > a.next", wget = false)(indexKey='page)
+      .sliceJoin("ul.shop-list > li")(indexKey = 'row)
       .extract(
         "title" -> (_.text1("span.big-name")),
         "review_count" -> (_.text1("span > a"))
       )
-      .dropActions()
-      .+*%>(
-        Visit("#{~}/review_all") -> (_.attr("p.title > a.shopname", "abs:href"))
-      )(limit =1)
-      .!><(30)
-      .paginate("div.Pages > a.NextPage", wget = false)(indexKey="comment_page")
-      .sliceJoin("div.comment-list > ul > li")(indexKey = "comment_row")
+      .join('*.href("p.title > a.shopname").as('~), limit = 1)(Visit("#{~}/review_all"))
+      .paginate("div.Pages > a.NextPage", wget = false)(indexKey='comment_page)
+      .sliceJoin("div.comment-list > ul > li")(indexKey = 'comment_row)
       .extract(
         "rating" -> (_.attr1("span.item-rank-rst","class")),
         "date" -> (_.text1("span.time")),
