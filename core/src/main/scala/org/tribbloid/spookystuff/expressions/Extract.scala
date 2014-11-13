@@ -52,9 +52,9 @@ case class Attr(
                  selector: String,
                  attr: String,
                  noEmpty: Boolean = true
-                 ) extends FromElements[Array[String]](selector) {
+                 ) extends FromElements[Seq[String]](selector) {
 
-  override def apply(page: Page): Array[String] = page.attr(selector, attr, noEmpty)
+  override def apply(page: Page): Seq[String] = page.attr(selector, attr, noEmpty)
 }
 
 object Href {

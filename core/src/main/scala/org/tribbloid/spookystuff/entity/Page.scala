@@ -17,7 +17,6 @@ import org.tribbloid.spookystuff.utils.{Cacheable, Const, Utils}
 
 import scala.collection.JavaConversions._
 
-//TODO: all these operations are prone to timeout, add timebound
 object Page {
 
   def DFSRead[T](message: String, pathStr: String, spooky: SpookyContext)(f: => T): T = {
@@ -33,11 +32,12 @@ object Page {
         if (spooky.failOnDFSError) throw ex
         else {
           LoggerFactory.getLogger(this.getClass).warn(message, ex)
-          null.asInstanceOf[T] //TODO: WTF?
+          null.asInstanceOf[T]
         }
     }
   }
 
+  //always fail on retry depletion and timeout
   def DFSWrite[T](message: String, pathStr: String, spooky: SpookyContext)(f: => T): T = {
     try {
       Utils.retry(Const.DFSInPartitionRetry) {
@@ -73,6 +73,7 @@ object Page {
   }
 
   //unlike save, this will store all information in an unreadable, serialized, probably compressed file
+  //always overwrite
   def cache(
              pages: Seq[Page],
              path: String,
@@ -80,11 +81,9 @@ object Page {
              )(spooky: SpookyContext): Unit = {
 
     DFSWrite("cache", path, spooky) {
-      var fullPath = new Path(path)
+      val fullPath = new Path(path)
 
       val fs = fullPath.getFileSystem(spooky.hConf)
-
-      if (!overwrite && fs.exists(fullPath)) fullPath = new Path(path + "-" + UUID.randomUUID())
 
       val ser = SparkEnv.get.serializer.newInstance()
       val fos = fs.create(fullPath, overwrite)
@@ -167,11 +166,11 @@ object Page {
       val fs = dirPath.getFileSystem(spooky.hConf)
 
       if (fs.exists(dirPath) && fs.getFileStatus(dirPath).isDir) {
-        //      val results = new ArrayBuffer[Page]()
 
         val statuses = fs.listStatus(dirPath)
 
-        statuses.filter(status => !status.isDir && status.getModificationTime >= earliestModificationTime).sortBy(_.getModificationTime).lastOption
+        statuses.filter(status => !status.isDir && status.getModificationTime >= earliestModificationTime)
+          .sortBy(_.getModificationTime).lastOption
       }
       else None
     }
@@ -192,7 +191,18 @@ object Page {
       spooky.cacheTraceEncoder(trace).toString
     )
 
-    restoreLatest(new Path(pathStr), System.currentTimeMillis() - spooky.pageExpireAfter.toMillis)(spooky)
+    val pages = restoreLatest(
+      new Path(pathStr),
+      System.currentTimeMillis() - spooky.pageExpireAfter.toMillis
+    )(spooky)
+
+    if (pages != null) for (page <- pages) {
+      val pageTrace: Trace = page.uid.backtrace
+
+      pageTrace.inject(trace.asInstanceOf[pageTrace.type ])
+      //this is to allow actions in backtrace to have different name than those cached
+    }
+    pages
   }
 }
 
@@ -357,19 +367,19 @@ case class Page(
             selector: String,
             attr: String,
             noEmpty: Boolean = true
-            ): Array[String] = doc match {
+            ): Seq[String] = doc match {
     case Some(doc: Element) =>
 
       val elements = doc.select(selector)
 
       val result = elements.map {
         _.attr(attr)
-      }.toArray
+      }
 
       if (noEmpty) result.filter(_.nonEmpty)
       else result
 
-    case _ => Array[String]()
+    case _ => Seq[String]()
   }
 
   /**
@@ -394,7 +404,7 @@ case class Page(
             selector: String,
             absolute: Boolean = true,
             noEmpty: Boolean = true
-            ): Array[String] = {
+            ): Seq[String] = {
     if (absolute) attr(selector,"abs:href")
     else attr(selector,"href")
   }
@@ -421,7 +431,7 @@ case class Page(
            selector: String,
            absolute: Boolean = true,
            noEmpty: Boolean = true
-           ): Array[String] = {
+           ): Seq[String] = {
     if (absolute) attr(selector,"abs:src",noEmpty)
     else attr(selector,"src",noEmpty)
   }
@@ -442,7 +452,7 @@ case class Page(
     else this.text(selector, own).lastOption.orNull
   }
 
-  /** Return an array of texts enclosed by their respective elements
+  /** Return an seq of texts enclosed by their respective elements
     * return [] if selector has no match
     * @param selector css selector of all elements,
     * @return enclosed text as a sequence of strings
@@ -450,16 +460,16 @@ case class Page(
   def text(
             selector: String,
             own: Boolean = false
-            ): Array[String] = doc match {
+            ): Seq[String] = doc match {
     case Some(doc: Element) =>
       val elements = doc.select(selector)
 
       val result = if (!own) elements.map (_.text)
       else elements.map(_.ownText)
 
-      result.toArray
+      result
 
-    case _ => Array[String]()
+    case _ => Seq[String]()
   }
 
   def boilerPipe(): String = doc match {
@@ -469,54 +479,6 @@ case class Page(
 
     case _ => null
   }
-
-//
-//  def crawl1(
-//              action: Action,
-//              f: Page => _
-//              ): PageRow = {
-//
-//    f(this) match {
-//      case null => DeadRow
-//      case s: Any =>
-//        val fa = action.interpolate(PageRow(cells = Map("~" -> s))).map(_.asInstanceOf[Action]).toSeq
-//        if (fa.isEmpty) DeadRow
-//        else PageRow(actions = fa)
-//    }
-//  }
-//
-//  def crawl(
-//             action: Action,
-//             f: Page => Array[_]
-//             )(
-//             limit: Int,
-//             distinct: Boolean = true,
-//             indexKey: String = null
-//             ): Array[PageRow] = {
-//
-//    val attrs = f(this)
-//
-//    if (attrs.isEmpty) return Array(DeadRow)
-//
-//    var actions: Array[Action] = attrs.flatMap( attr => action.interpolate(PageRow(cells = Map("~" -> attr))))
-//
-//    if (distinct) actions = actions.distinct
-//
-//    if (actions.size > limit) {
-//      actions = actions.slice(0,limit)
-//    }
-//
-//    actions.zipWithIndex.map(
-//      tuple => {
-//        if (indexKey == null) {
-//          PageRow(actions = Seq(tuple._1))
-//        }
-//        else {
-//          PageRow(cells = Map(indexKey -> tuple._2),actions = Seq(tuple._1))
-//        }
-//      }
-//    ).toArray
-//  }
 
   //TODO: abomination
   //only slice contents inside the container, other parts are discarded
@@ -548,11 +510,4 @@ case class Page(
       case _ => Seq[Page]()
     }
   }
-
 }
-
-//object EmptyPage extends Page(
-//  "about:empty",
-//  new Array[Byte](0),
-//  "text/html; charset=UTF-8"
-//)
