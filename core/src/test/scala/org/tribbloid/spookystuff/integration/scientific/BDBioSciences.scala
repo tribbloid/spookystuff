@@ -18,7 +18,7 @@ object BDBioSciences extends TestCore {
         +> DropDownSelect("select#region","CA")
         +> Click("input#goButton")
 //        +> ExeScript(".arguments[0].click();","img.okButton")
-        +> Click("img.okButton")
+        +> Click("img.okButton", clickable = false)
         +> WaitForDocumentReady
       )
 

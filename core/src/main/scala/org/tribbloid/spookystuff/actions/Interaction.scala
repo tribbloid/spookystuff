@@ -159,11 +159,13 @@ case object WaitForDocumentReady extends Interaction with Timed {
  * @param selector css selector of the element, only the first element will be affected
  */
 case class Click(
-                  selector: String
+                  selector: String,
+                  clickable: Boolean = true
                   )extends Interaction with Timed {
   override def exeWithoutPage(pb: PageBuilder) {
     val wait = new WebDriverWait(pb.getDriver, timeout(pb).toSeconds)
-    val element = wait.until(ExpectedConditions.elementToBeClickable(By.cssSelector(selector)))
+    val element = if (clickable) wait.until(ExpectedConditions.elementToBeClickable(By.cssSelector(selector)))
+    else wait.until(ExpectedConditions.presenceOfElementLocated(By.cssSelector(selector)))
 
     element.click()
   }
@@ -179,7 +181,6 @@ case class ClickAll(
   override def exeWithoutPage(pb: PageBuilder) {
     val wait = new WebDriverWait(pb.getDriver, timeout(pb).toSeconds)
     val elements = wait.until(ExpectedConditions.presenceOfAllElementsLocatedBy(By.cssSelector(selector)))
-
 
     import scala.collection.JavaConversions._
 
