@@ -142,3 +142,37 @@ object Paginate {
     )
   }
 }
+
+final case class If(
+                     condition: Page => Boolean,
+                     ifTrue: Seq[Action] = Seq(),
+                     ifFalse: Seq[Action] = Seq()
+                     ) extends Block(ifTrue ++ ifFalse) {
+
+  override def trunk = Some(this.copy(ifTrue = ifTrue.flatMap(_.trunk), ifFalse = ifFalse.flatMap(_.trunk)).asInstanceOf[this.type])
+
+  override def doExeNoUID(pb: PageBuilder): Seq[Page] = {
+
+    val current = DefaultSnapshot.apply(pb)(0)
+
+    val pages = new ArrayBuffer[Page]()
+    if (condition(current)) {
+      for (action <- ifTrue) {
+        pages ++= action.doExe(pb)
+      }
+    }
+    else {
+      for (action <- ifFalse) {
+        pages ++= action.doExe(pb)
+      }
+    }
+
+    pages
+  }
+
+  override def doInterpolate(pageRow: PageRow): this.type ={
+    val ifTrueInterpolated = Actions.doInterppolateSeq(ifTrue, pageRow)
+    val ifFalseInterpolated = Actions.doInterppolateSeq(ifFalse, pageRow)
+    this.copy(ifTrue = ifTrueInterpolated, ifFalse = ifFalseInterpolated).asInstanceOf[this.type]
+  }
+}

@@ -6,6 +6,7 @@ import org.slf4j.LoggerFactory
 /**
  * Created by peng on 11/5/14.
  */
+
 trait CleanWebDriverFinalize {
   self: WebDriver =>
 

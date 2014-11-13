@@ -14,16 +14,15 @@ object BDBioSciences extends TestCore {
   override def doMain(): SchemaRDD = {
 
     val selectRegion = (
-      Try(
-        DropDownSelect("select#region","CA")
-          :: Click("input#goButton")
-          :: Click("img.okButton")
-          :: Nil
-      )
+      WaitForDocumentReady
+        +> DropDownSelect("select#region","CA")
+        +> Click("input#goButton")
+//        +> ExeScript(".arguments[0].click();","img.okButton")
+        +> Click("img.okButton")
         +> WaitForDocumentReady
       )
 
-    val firstPages = noInput
+    val result = noInput
       .fetch(
         Visit("http://www.bdbiosciences.com/nvCategory.jsp?action=SELECT&form=formTree_catBean&item=744667")
           +> selectRegion
@@ -55,8 +54,8 @@ object BDBioSciences extends TestCore {
       )
       .persist()
 
-    println(firstPages.count())
+    println(result.count())
 
-    firstPages.asSchemaRDD()
+    result.asSchemaRDD()
   }
 }

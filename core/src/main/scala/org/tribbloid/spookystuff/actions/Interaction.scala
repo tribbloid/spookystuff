@@ -260,14 +260,23 @@ case class SwitchToFrame(selector: String)extends Interaction with Timed {
 /**
  * Execute a javascript snippet
  * @param script support cell interpolation
+ * @param selector selector of the element this script is executed against, if null, against the entire page
  */
-case class ExeScript(script: String) extends Interaction with Timed {
+case class ExeScript(script: String, selector: String = null) extends Interaction with Timed {
   override def exeWithoutPage(pb: PageBuilder) {
+
+    val element = if (selector == null) None
+    else {
+      val wait = new WebDriverWait(pb.getDriver, timeout(pb).toSeconds)
+      val result = wait.until(ExpectedConditions.presenceOfElementLocated(By.cssSelector(selector)))
+      Some(result)
+    }
+
     pb.getDriver match {
-      case d: HtmlUnitDriver => d.executeScript(script)
+      case d: HtmlUnitDriver => d.executeScript(script, element.toArray: _*)//scala can't cast directly
       //      case d: AndroidWebDriver => throw new UnsupportedOperationException("this web browser driver is not supported")
-      case d: EventFiringWebDriver => d.executeScript(script)
-      case d: RemoteWebDriver => d.executeScript(script)
+      case d: EventFiringWebDriver => d.executeScript(script, element.toArray: _*)
+      case d: RemoteWebDriver => d.executeScript(script, element.toArray: _*)
       case _ => throw new UnsupportedOperationException("this web browser driver is not supported")
     }
   }
