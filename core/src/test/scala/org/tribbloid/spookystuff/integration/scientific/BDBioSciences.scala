@@ -13,20 +13,45 @@ object BDBioSciences extends TestCore {
 
   override def doMain(): SchemaRDD = {
 
-    val selectRegion = Visit("")
+    val selectRegion = (
+      Try(
+        DropDownSelect("select#region","CA")
+          :: Click("input#goButton")
+          :: Click("img.okButton")
+          :: Nil
+      )
+        +> WaitForDocumentReady
+      )
 
     val firstPages = noInput
       .fetch(
         Visit("http://www.bdbiosciences.com/nvCategory.jsp?action=SELECT&form=formTree_catBean&item=744667")
-          +> WaitForDocumentReady
-          +> WaitFor("div.pane_column.pane_column_left a")
+          +> selectRegion
+          +> WaitFor("div.pane_column.pane_column_left")
       )
-      .wgetJoin('* href "div.pane_column.pane_column_left a")()
-      .wgetJoin('* href "li a:not([href^=javascript])")()
+      .join('* href "div.pane_column.pane_column_left a" as '~)(
+        Visit("#{~}")
+          +> selectRegion
+          +> WaitFor("div#main")
+      )
+      .join('* href "div#main li a:not([href^=javascript])" as '~)(
+        Visit("#{~}")
+          +> selectRegion
+          +> WaitFor("div#container")
+      )
       .extract(
         "url" -> (_.resolvedUrl),
-        "leaf" -> (_.text1("h1")),
+        "leaf" -> (_.text1("div#container h1")),
         "breadcrumb" -> (_.text1("div#breadcrumb"))
+      )
+      .sliceJoin("table#productTable > tbody > tr:nth-of-type(n+2)")(indexKey = 'row, joinType = Inner)
+      .extract(
+        "Catalog" -> (_.text1(" td:nth-of-type(1)")),
+        "Brand" -> (_.text1(" td:nth-of-type(2)")),
+        "Name" -> (_.text1(" td:nth-of-type(3)")),
+        "Size" -> (_.text1(" td:nth-of-type(4)")),
+        "Documentation" -> (_.text1(" td:nth-of-type(5)")),
+        "List_Price" -> (_.text1(" td:nth-of-type(6)"))
       )
       .persist()
 

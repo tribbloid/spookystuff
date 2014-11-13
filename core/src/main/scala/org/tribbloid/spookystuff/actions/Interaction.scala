@@ -226,19 +226,19 @@ case class TextInput(selector: String, text: String) extends Interaction with Ti
 /**
  * Select an item from a drop down list
  * @param selector css selector of the drop down list, only the first element will be affected
- * @param text support cell interpolation
+ * @param value support cell interpolation
  */
-case class DropDownSelect(selector: String, text: String) extends Interaction with Timed {
+case class DropDownSelect(selector: String, value: String) extends Interaction with Timed {
   override def exeWithoutPage(pb: PageBuilder) {
     val wait = new WebDriverWait(pb.getDriver, timeout(pb).toSeconds)
     val element = wait.until(ExpectedConditions.presenceOfElementLocated(By.cssSelector(selector)))
 
     val select = new Select(element)
-    select.selectByValue(text)
+    select.selectByValue(value)
   }
 
   override def doInterpolate(pageRow: PageRow): this.type = {
-    this.copy(text = Utils.interpolate(this.text,pageRow)).asInstanceOf[this.type]
+    this.copy(value = Utils.interpolate(this.value,pageRow)).asInstanceOf[this.type]
   }
 }
 
