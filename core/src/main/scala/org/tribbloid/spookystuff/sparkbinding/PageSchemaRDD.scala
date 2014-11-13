@@ -207,7 +207,7 @@ case class PageSchemaRDD(
   }
 
   def flatten(
-               expr: Expr[_],
+               expr: Expr[TraversableOnce[_]],
                indexKey: Symbol = null,
                limit: Int = spooky.joinLimit,
                left: Boolean = true
@@ -219,7 +219,7 @@ case class PageSchemaRDD(
   }
 
   def flattenTemp(
-                   expr: Expr[_],
+                   expr: Expr[TraversableOnce[_]],
                    indexKey: Symbol = null,
                    limit: Int = spooky.joinLimit,
                    left: Boolean = true
@@ -231,7 +231,7 @@ case class PageSchemaRDD(
   }
 
   def explode(
-               expr: Expr[_],
+               expr: Expr[TraversableOnce[_]],
                indexKey: Symbol = null,
                limit: Int = spooky.joinLimit,
                left: Boolean = true
@@ -307,7 +307,7 @@ case class PageSchemaRDD(
 
   //TODO: add 'hidden keys' to avoid join messing with other data
   def join(
-            expr: Expr[_],
+            expr: Expr[TraversableOnce[_]],
             indexKey: Symbol = null, //left & idempotent parameters are missing as they are always set to true
             limit: Int = spooky.joinLimit
             )(
@@ -327,7 +327,7 @@ case class PageSchemaRDD(
    * @return RDD[Page]
    */
   def visitJoin(
-                 expr: Expr[_],
+                 expr: Expr[TraversableOnce[_]],
                  indexKey: Symbol = null, //left & idempotent parameters are missing as they are always set to true
                  limit: Int = spooky.joinLimit
                  )(
@@ -344,7 +344,7 @@ case class PageSchemaRDD(
    * @return RDD[Page]
    */
   def wgetJoin(
-                expr: Expr[_],
+                expr: Expr[TraversableOnce[_]],
                 indexKey: Symbol = null, //left & idempotent parameters are missing as they are always set to true
                 limit: Int = spooky.joinLimit
                 )(

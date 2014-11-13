@@ -8,13 +8,11 @@ import org.openqa.selenium.phantomjs.PhantomJSDriverService
 class TorDriverFactory(
                         phantomJSPath: String,
                         loadImages: Boolean,
-                        userAgent: String,
                         resolution: (Int,Int)
                         )
   extends NaiveDriverFactory(
     phantomJSPath: String,
     loadImages: Boolean,
-    userAgent: String,
     resolution: (Int,Int)
   ) {
 
@@ -31,5 +29,5 @@ object TorDriverFactory {
              loadImages: Boolean = false,
              userAgent: String = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/37.0.2062.120 Safari/537.36",
              resolution: (Int,Int) = (1920, 1080)
-             ) = new TorDriverFactory(phantomJSPath, loadImages, userAgent, resolution)
+             ) = new TorDriverFactory(phantomJSPath, loadImages, resolution)
 }

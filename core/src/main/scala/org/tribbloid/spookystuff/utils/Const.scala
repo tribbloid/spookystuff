@@ -34,8 +34,6 @@ object Const {
   val hardTerminateOverhead: Duration = 20.seconds
 
   val phantomJSPath = System.getenv("PHANTOMJS_PATH")
-//  val userAgent = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/37.0.2062.120 Safari/537.36",
-  val userAgent = null
 
   val keyDelimiter = "#" //TODO: change to '
 }

@@ -28,6 +28,9 @@ class SpookyContext (
 
                       var driverFactory: DriverFactory = NaiveDriverFactory(),
                       var proxy: ProxySetting = null,
+                      var userAgent: String = null,
+                      //  val userAgent = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/37.0.2062.120 Safari/537.36",
+                      var headers: Map[String, String] = Map(),
 
                       var autoSave: Boolean = true,//slow, for debugging only
                       var autoCache: Boolean = true,//slow, but reduce bombarding highly aware sites

@@ -9,7 +9,7 @@ import scala.runtime.ScalaRunTime
 /**
  * Created by peng on 8/29/14.
  */
-trait Extract[T] extends (Page => T) with Serializable with Product {
+trait Extract[+T] extends (Page => T) with Serializable with Product {
 
   //this is used to delay for element to exist
   val selectors: Seq[String] = Seq()

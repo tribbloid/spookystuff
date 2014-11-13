@@ -10,7 +10,7 @@ import org.tribbloid.spookystuff.entity.PageRow
 
 //name: target column
 //
-trait Expr[T] extends (PageRow => T) with Serializable {
+trait Expr[+T] extends (PageRow => T) with Serializable {
 
   //this won't be rendered unless used against a PageRow
   def value: T = throw new UnsupportedOperationException("PENDING")

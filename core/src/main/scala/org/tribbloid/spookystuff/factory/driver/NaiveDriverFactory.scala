@@ -13,7 +13,6 @@ import org.tribbloid.spookystuff.utils.Const
 class NaiveDriverFactory(
                           phantomJSPath: String,
                           loadImages: Boolean,
-                          userAgent: String,
                           resolution: (Int,Int)
                           )
   extends DriverFactory {
@@ -26,12 +25,15 @@ class NaiveDriverFactory(
   baseCaps.setCapability("takesScreenshot", true)
   baseCaps.setCapability(PhantomJSDriverService.PHANTOMJS_EXECUTABLE_PATH_PROPERTY, phantomJSPath)
   baseCaps.setCapability(PhantomJSDriverService.PHANTOMJS_PAGE_SETTINGS_PREFIX + "loadImages", loadImages)
-  if (userAgent != null) baseCaps.setCapability(PhantomJSDriverService.PHANTOMJS_PAGE_SETTINGS_PREFIX + "userAgent", userAgent)
 
   //    baseCaps.setCapability(PhantomJSDriverService.PHANTOMJS_PAGE_SETTINGS_PREFIX+"resourceTimeout", Const.resourceTimeout*1000)
 
   def newCap(capabilities: Capabilities, spooky: SpookyContext): DesiredCapabilities = {
     baseCaps.setCapability(PhantomJSDriverService.PHANTOMJS_PAGE_SETTINGS_PREFIX+"resourceTimeout", spooky.remoteResourceTimeout*1000)
+
+    val userAgent = spooky.userAgent
+    if (userAgent != null) baseCaps.setCapability(PhantomJSDriverService.PHANTOMJS_PAGE_SETTINGS_PREFIX + "userAgent", userAgent)
+
     baseCaps.merge(capabilities)
   }
 
@@ -44,9 +46,8 @@ object NaiveDriverFactory {
   def apply(
              phantomJSPath: String = Const.phantomJSPath,
              loadImages: Boolean = false,
-             userAgent: String = Const.userAgent,
              resolution: (Int, Int) = (1920, 1080)
-             ) = new NaiveDriverFactory(phantomJSPath, loadImages, userAgent, resolution)
+             ) = new NaiveDriverFactory(phantomJSPath, loadImages, resolution)
 }
 
 //case class NaiveDriverFactory(phantomJSPath: String) extends NaiveDriverFactory(phantomJSPath)

@@ -13,6 +13,8 @@ object BDBioSciences extends TestCore {
 
   override def doMain(): SchemaRDD = {
 
+    val selectRegion = Visit("")
+
     val firstPages = noInput
       .fetch(
         Visit("http://www.bdbiosciences.com/nvCategory.jsp?action=SELECT&form=formTree_catBean&item=744667")

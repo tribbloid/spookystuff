@@ -15,7 +15,7 @@ import org.apache.http.impl.conn.PoolingHttpClientConnectionManager
 import org.openqa.selenium.{OutputType, TakesScreenshot}
 import org.tribbloid.spookystuff.entity.{Page, PageRow, PageUID}
 import org.tribbloid.spookystuff.factory.PageBuilder
-import org.tribbloid.spookystuff.utils.{Const, SocksProxyConnectionSocketFactory, SocksProxySSLConnectionSocketFactory, Utils}
+import org.tribbloid.spookystuff.utils.{SocksProxyConnectionSocketFactory, SocksProxySSLConnectionSocketFactory, Utils}
 
 /**
  * Export a page from the browser or http client
@@ -96,17 +96,15 @@ object DefaultScreenshot extends Screenshot()
  * actions for more complex http/restful API call will be added per request.
  * @param url support cell interpolation
  */
-case class Wget(
-                 url: String,
-                 userAgent: String = Const.userAgent,
-                 headers: Map[String, String] = Map()
-                 ) extends Export with Sessionless {
+case class Wget(url: String) extends Export with Sessionless {
 
   override def doExeNoName(pb: PageBuilder): Seq[Page] = {
 
     if ( url.trim().isEmpty ) return Seq ()
 
     val proxy = pb.spooky.proxy
+    val userAgent = pb.spooky.userAgent
+    val headers = pb.spooky.headers
 
     val defaultSetting = {
       val timeoutMillis = pb.spooky.remoteResourceTimeout.toMillis.toInt
@@ -195,10 +193,6 @@ case class Wget(
   override def doInterpolate(pageRow: PageRow): this.type = {
     //ugly workaround of https://issues.scala-lang.org/browse/SI-7005
 
-    this.copy(
-      url = Utils.interpolate(this.url,pageRow),
-      userAgent = this.userAgent,
-      headers = this.headers
-    ).asInstanceOf[this.type]
+    this.copy(Utils.interpolate(this.url,pageRow)).asInstanceOf[this.type]
   }
 }
