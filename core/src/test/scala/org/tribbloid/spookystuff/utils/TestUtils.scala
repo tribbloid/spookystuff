@@ -21,7 +21,7 @@ class TestUtils extends FunSuite {
   test("interpolate throws an exception when key not found") {
     var thrown = false
     try {
-      val someMap = Map("abc" -> 1, "def" -> 2.2)
+      val someMap = Map("abc" -> 1, "rpk" -> 2.2)
       val result = Utils.interpolateFromMap("rpk#{abc}aek#{def}", someMap)
     }
     catch {

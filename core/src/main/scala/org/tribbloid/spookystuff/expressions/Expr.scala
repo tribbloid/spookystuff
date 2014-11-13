@@ -55,12 +55,12 @@ final case class ByKeyExpr(keyName: String) extends Expr[Any] {
   def href(selector: String,
            absolute: Boolean = true,
            noEmpty: Boolean = true
-            ): FromPageExpr[Array[String]] = new FromPageExpr(keyName, Href(selector, absolute, noEmpty))
+            ): FromPageExpr[Seq[String]] = new FromPageExpr(keyName, Href(selector, absolute, noEmpty))
 
   def src(selector: String,
           absolute: Boolean = true,
           noEmpty: Boolean = true
-           ): FromPageExpr[Array[String]] = new FromPageExpr(keyName, Href(selector, absolute, noEmpty))
+           ): FromPageExpr[Seq[String]] = new FromPageExpr(keyName, Href(selector, absolute, noEmpty))
 }
 
 final case class FromPageExpr[T](pageName: String, extract: Extract[T]) extends Expr[T] {

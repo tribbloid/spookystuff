@@ -6,8 +6,7 @@ import org.apache.spark.sql.SQLContext
 import org.apache.spark.{SparkConf, SparkContext}
 import org.scalatest.{BeforeAndAfter, FunSuite}
 import org.tribbloid.spookystuff.SpookyContext
-import org.tribbloid.spookystuff.actions.{Snapshot, Visit, Wget}
-import org.tribbloid.spookystuff.factory.PageBuilder
+import org.tribbloid.spookystuff.actions.{Snapshot, Trace, Visit, Wget}
 import org.tribbloid.spookystuff.factory.driver.NaiveDriverFactory
 
 import scala.concurrent.duration._
@@ -53,33 +52,9 @@ class TestPage extends FunSuite with BeforeAndAfter {
     sc.stop()
   }
 
-  val page = {
-    val builder = new PageBuilder(spooky)
-    val res = try {
-      builder += Visit("http://en.wikipedia.org")
-      builder += Snapshot()
-      builder.pages
-    }
-    finally{
-      builder.close()
-    }
+  val page = Trace(Visit("http://en.wikipedia.org")::Snapshot().as('old)::Nil).resolve(spooky)
 
-    res
-  }
-
-  val wgetPage = {
-    val builder = new PageBuilder(spooky)
-
-    val res = try {
-      builder += Wget("http://en.wikipedia.org")
-      builder.pages
-    }
-    finally {
-      builder.close()
-    }
-
-    res
-  }
+  val wgetPage = Trace(Wget("http://en.wikipedia.org").as('oldWget)::Nil).resolve(spooky)
 
   test ("local cache") {
     spooky.setRoot("file://"+System.getProperty("user.home")+"/spooky-unit/")
@@ -87,11 +62,14 @@ class TestPage extends FunSuite with BeforeAndAfter {
 
     Page.autoCache(page, page.head.uid.backtrace, spooky)
 
-    val page2 = Page.autoRestoreLatest(page.head.uid.backtrace, spooky)
+    val newTrace = Trace(Visit("http://en.wikipedia.org")::Snapshot().as('new)::Nil)
+
+    val page2 = Page.autoRestoreLatest(newTrace, spooky)
 
     assert(page2.size === 1)
     assert(page2.head.copy(content = null) === page.head.copy(content = null))
     assert(page2.head.contentStr === page2.head.contentStr)
+    assert(page2.head.name === "new")
 
     Thread.sleep(2000)
 
@@ -111,11 +89,14 @@ class TestPage extends FunSuite with BeforeAndAfter {
 
     Page.autoCache(wgetPage, wgetPage.head.uid.backtrace, spooky)
 
-    val page2 = Page.autoRestoreLatest(wgetPage.head.uid.backtrace, spooky)
+    val newTrace = Trace(Wget("http://en.wikipedia.org").as('newWget)::Nil)
+
+    val page2 = Page.autoRestoreLatest(newTrace, spooky)
 
     assert(page2.size === 1)
     assert(page2.head.copy(content = null) === wgetPage.head.copy(content = null))
     assert(page2.head.contentStr === page2.head.contentStr)
+    assert(page2.head.name === "newWget")
 
     Thread.sleep(2000)
 
@@ -136,11 +117,14 @@ class TestPage extends FunSuite with BeforeAndAfter {
 
     Page.autoCache(page, page.head.uid.backtrace, spooky)
 
-    val page2 = Page.autoRestoreLatest(page.head.uid.backtrace, spooky)
+    val newTrace = Trace(Visit("http://en.wikipedia.org")::Snapshot().as('new)::Nil)
+
+    val page2 = Page.autoRestoreLatest(newTrace, spooky)
 
     assert(page2.size === 1)
     assert(page2.head.copy(content = null) === page.head.copy(content = null))
     assert(page2.head.contentStr === page2.head.contentStr)
+    assert(page2.head.name === "new")
 
     Thread.sleep(12000)
 
