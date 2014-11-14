@@ -1,12 +1,12 @@
 package org.tribbloid.spookystuff
 
 import org.apache.spark.rdd.RDD
-import org.apache.spark.sql.{SchemaRDD, SQLContext}
+import org.apache.spark.sql.{SQLContext, SchemaRDD}
 import org.apache.spark.{SerializableWritable, SparkConf, SparkContext}
-import org.tribbloid.spookystuff.entity.{KeyLike, Key, PageRow}
-import org.tribbloid.spookystuff.factory.driver.{ProxySetting, DriverFactory, NaiveDriverFactory}
+import org.tribbloid.spookystuff.entity.{Key, KeyLike, PageRow}
 import org.tribbloid.spookystuff.expressions._
-import org.tribbloid.spookystuff.sparkbinding.{SchemaRDDFunctions, PageSchemaRDD, StringRDDFunctions}
+import org.tribbloid.spookystuff.factory.driver.{DriverFactory, NaiveDriverFactory, ProxySetting}
+import org.tribbloid.spookystuff.sparkbinding.{PageSchemaRDD, SchemaRDDFunctions, StringRDDFunctions}
 import org.tribbloid.spookystuff.utils.Utils
 
 import scala.collection.immutable.ListSet
@@ -75,6 +75,8 @@ class SpookyContext (
 
   //  implicit def self: SpookyContext = this
 
+
+
   def setRoot(root: String): Unit = {
 
     autoSaveRoot = root+"page"
@@ -123,5 +125,20 @@ class SpookyContext (
     val schemaRDD = sqlContext.jsonRDD(jsonRDD)
 
     schemaRDDToPageRowRDD(schemaRDD)
+  }
+
+  object Accumulables {
+
+    private val sc = SpookyContext.this.sqlContext.sparkContext
+
+    import SparkContext._
+
+    val driverInitialized = sc.accumulator(0, "driver initialized")
+
+    val driverClosed = sc.accumulator(0, "driver closed")
+
+    val DFSReadSuccess = sc.accumulator(0, "DFS read success")
+
+    val DFSReadFail = sc.accumulator(0, "DFS read fail")
   }
 }

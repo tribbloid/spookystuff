@@ -21,12 +21,15 @@ object Page {
 
   def DFSRead[T](message: String, pathStr: String, spooky: SpookyContext)(f: => T): T = {
     try {
-      Utils.retry(Const.DFSInPartitionRetry) {
+      val result = Utils.retry(Const.DFSInPartitionRetry) {
         Utils.withDeadline(spooky.DFSTimeout) {f}
       }
+      spooky.Accumulables.DFSReadSuccess += 1
+      result
     }
     catch {
       case e: Throwable =>
+        spooky.Accumulables.DFSReadFail += 1
         val ex = new DFSReadException(pathStr ,e)
         ex.setStackTrace(e.getStackTrace)
         if (spooky.failOnDFSError) throw ex
