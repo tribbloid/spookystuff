@@ -14,9 +14,11 @@ final case class Trace(
                   override val self: Seq[Action]
                   ) extends Actions(self) { //remember chain is not a block! its the super container that cannot be wrapped
 
-  override def doInterpolate(pr: PageRow) = {
+  //always has output to handle left join
+  override def doInterpolate(pr: PageRow): Option[this.type] = {
     val seq = this.doInterpolateSeq(pr)
-    seq.map(Trace).asInstanceOf[Option[this.type]]
+
+    Some(Trace(seq).asInstanceOf[this.type])
   }
 
   //TODO: migrate all lazy-evaluation and cache here, PageBuilder should not handle this

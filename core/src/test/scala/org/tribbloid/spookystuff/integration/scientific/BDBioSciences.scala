@@ -43,15 +43,15 @@ object BDBioSciences extends TestCore {
         "leaf" -> (_.text1("div#container h1")),
         "breadcrumb" -> (_.text1("div#breadcrumb"))
       )
-      .sliceJoin("table#productTable > tbody > tr:nth-of-type(n+2)")(indexKey = 'row)
-      .extract(
-        "Catalog" -> (_.text1(" td:nth-of-type(1)")),
-        "Brand" -> (_.text1(" td:nth-of-type(2)")),
-        "Name" -> (_.text1(" td:nth-of-type(3)")),
-        "Size" -> (_.text1(" td:nth-of-type(4)")),
-        "Documentation" -> (_.text1(" td:nth-of-type(5)")),
-        "List_Price" -> (_.text1(" td:nth-of-type(6)"))
-      )
+//      .sliceJoin("table#productTable > tbody > tr:nth-of-type(n+2)")(indexKey = 'row)
+//      .extract(
+//        "Catalog" -> (_.text1(" td:nth-of-type(1)")),
+//        "Brand" -> (_.text1(" td:nth-of-type(2)")),
+//        "Name" -> (_.text1(" td:nth-of-type(3)")),
+//        "Size" -> (_.text1(" td:nth-of-type(4)")),
+//        "Documentation" -> (_.text1(" td:nth-of-type(5)")),
+//        "List_Price" -> (_.text1(" td:nth-of-type(6)"))
+//      )
       .persist()
 
     println(result.count())

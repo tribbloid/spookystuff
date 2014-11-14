@@ -22,7 +22,9 @@ case class PageRow(
     else cells.get(Key(keyStr))
   }
 
-  def asMap(): Map[String, Any] = this.cells.filterKeys(!_.isInstanceOf[TempKey]).map( tuple => tuple._1.name -> tuple._2)
+  def asMap(): Map[String, Any] = this.cells
+    .filterKeys(!_.isInstanceOf[TempKey]).map(identity)
+    .map( tuple => tuple._1.name -> tuple._2)
 
   def asJson(): String = Utils.toJson(this.asMap())
 
@@ -45,7 +47,7 @@ case class PageRow(
       Seq(this.copy(cells = this.cells - key)) //this will make sure you dont't lose anything
     }
     else {
-      newCells.map(cell => this.copy(cells = cell))
+      newCells.map(newCell => this.copy(cells = newCell))
     }
   }
 
@@ -128,7 +130,7 @@ case class PageRow(
   }
 
   def filterKeys(f: KeyLike => Boolean): PageRow = {
-    this.copy(cells = this.cells.filterKeys(f))
+    this.copy(cells = this.cells.filterKeys(f).map(identity))
   }
 
   //affect last page

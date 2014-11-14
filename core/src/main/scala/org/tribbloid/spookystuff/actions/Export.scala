@@ -191,8 +191,6 @@ case class Wget(url: String) extends Export with Sessionless {
   }
 
   override def doInterpolate(pageRow: PageRow): Option[this.type] = {
-    //ugly workaround of https://issues.scala-lang.org/browse/SI-7005
-
     Utils.interpolate(this.url,pageRow).map(str => this.copy(str).asInstanceOf[this.type])
   }
 }

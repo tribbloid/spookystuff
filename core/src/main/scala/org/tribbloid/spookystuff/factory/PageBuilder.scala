@@ -90,7 +90,7 @@ class PageBuilder(val spooky: SpookyContext){
     }
     catch {
       case e: Throwable =>
-        LoggerFactory.getLogger(this.getClass).warn("!!!!!FAIL TO CLEANED UP DRIVER!!!!!")
+        LoggerFactory.getLogger(this.getClass).warn("!!!!!FAIL TO CLEANED UP PAGEBUILDER!!!!!"+e)
         throw e
     }
     finally{

@@ -139,7 +139,6 @@ These special characters are often called "metacharacters".
     else Serialization.write(obj)(DefaultFormats)
   }
 
-  //TODO: reverse the direction of look-up, if a '#{...}' has no corresponding indexKey in the map, throws an exception
   def interpolateFromMap[T](
                              str: String,
                              map: Map[String,T],

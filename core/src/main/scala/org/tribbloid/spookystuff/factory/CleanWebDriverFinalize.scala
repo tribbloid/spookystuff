@@ -17,7 +17,7 @@ trait CleanWebDriverFinalize {
     }
     catch {
       case e: Throwable =>
-        LoggerFactory.getLogger(this.getClass).warn("!!!!!FAIL TO CLEANED UP DRIVER!!!!!")
+        LoggerFactory.getLogger(this.getClass).warn("!!!!!FAIL TO CLEANED UP DRIVER!!!!!"+e)
         throw e
     }
     finally {

@@ -4,7 +4,7 @@ package org.tribbloid.spookystuff.entity
  * Created by peng on 11/7/14.
  */
 
-trait KeyLike{
+trait KeyLike extends Serializable {
   val name: String
 }
 
@@ -22,6 +22,6 @@ object TempKey{
   def apply(sym: Symbol): TempKey = Option(sym).map(_.name).map(new TempKey(_)).orNull
 }
 
-case object NoKey extends KeyLike {
-  override val name: String = null
-}
+//case object NoKey extends KeyLike {
+//  override val name: String = null
+//}

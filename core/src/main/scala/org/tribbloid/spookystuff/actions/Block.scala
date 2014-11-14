@@ -14,6 +14,8 @@ import scala.concurrent.duration.Duration
  */
 abstract class Block(override val self: Seq[Action]) extends Actions(self) with Named {
 
+//  assert(self.nonEmpty)
+
   override def as(name: Symbol) = {
     super.as(name)
 
@@ -65,7 +67,8 @@ final case class Try(override val self: Seq[Action]) extends Block(self) {
 
   override def doInterpolate(pageRow: PageRow): Option[this.type] ={
     val seq = this.doInterpolateSeq(pageRow)
-    seq.map(seq => this.copy(self = seq).asInstanceOf[this.type])
+    if (seq.isEmpty) None
+    else Some(this.copy(self = seq).asInstanceOf[this.type])
   }
 }
 
@@ -106,7 +109,8 @@ final case class Loop(
 
   override def doInterpolate(pageRow: PageRow): Option[this.type] ={
     val seq = this.doInterpolateSeq(pageRow)
-    seq.map(seq => this.copy(self = seq).asInstanceOf[this.type])
+    if (seq.isEmpty) None
+    else Some(this.copy(self = seq).asInstanceOf[this.type])
   }
 }
 
@@ -169,8 +173,8 @@ final case class If(
   }
 
   override def doInterpolate(pageRow: PageRow): Option[this.type] ={
-    val ifTrueInterpolated = Actions.doInterppolateSeq(ifTrue, pageRow).getOrElse(Seq())
-    val ifFalseInterpolated = Actions.doInterppolateSeq(ifFalse, pageRow).getOrElse(Seq())
+    val ifTrueInterpolated = Actions.doInterppolateSeq(ifTrue, pageRow)
+    val ifFalseInterpolated = Actions.doInterppolateSeq(ifFalse, pageRow)
     val result = this.copy(ifTrue = ifTrueInterpolated, ifFalse = ifFalseInterpolated).asInstanceOf[this.type]
     Some(result)
   }

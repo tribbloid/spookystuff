@@ -226,8 +226,9 @@ case class PageSchemaRDD(
                    ): PageSchemaRDD = {
     val selected = this.selectTemp(expr)
 
-    val selectedSelf = selected.self
-    selected.copy(self = selectedSelf.flatMap(_.flatten(expr.name, Key(indexKey), limit, left)))
+    val flattened = selected.self.flatMap(_.flatten(expr.name, Key(indexKey), limit, left))
+
+    selected.copy(self = flattened)
   }
 
   def explode(
@@ -295,7 +296,8 @@ case class PageSchemaRDD(
       val withPagesSquashed = withTraceSquashed.map{ //Unfortunately there is no mapKey
         tuple => tuple._1.resolve(_spooky) -> tuple._2
       }
-      withPagesSquashed.flatMapValues(rows => rows)
+      //TODO: ugly workaround of https://issues.scala-lang.org/browse/SI-7005
+      withPagesSquashed.flatMapValues(rows => rows).map(identity)
     }
 
     val result = this.copy(self = withPages.flatMap(tuple => tuple._2.putPages(tuple._1, joinType)))

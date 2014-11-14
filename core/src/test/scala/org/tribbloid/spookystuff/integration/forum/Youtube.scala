@@ -15,7 +15,7 @@ object Youtube extends TestCore{
 
     import scala.concurrent.duration._
 
-    sc.parallelize(Seq("MetallicaTV"))
+    val catalog = sc.parallelize(Seq("MetallicaTV"))
       .fetch(
         Visit("http://www.youtube.com/user/#{_}/videos")
           +> Loop(
@@ -40,6 +40,11 @@ object Youtube extends TestCore{
         "like_count" -> (_.text1("div#watch7-views-info span.likes-count")),
         "dislike_count" -> (_.text1("div#watch7-views-info span.dislikes-count"))
       )
+      .persist()
+
+    println(catalog.count())
+
+    val video = catalog
       .join('* src "iframe[title^=Comment]" as '~)(
         Visit("#{~}")
           +> Loop(
@@ -49,11 +54,19 @@ object Youtube extends TestCore{
         )
       )
       .extract("num_comments" -> (_.text1("div.DJa")))
+      .persist()
+
+    println(video.count())
+
+    val result = video
       .sliceJoin("div[id^=update]")()
       .extract(
         "comment1" -> (_.text1("h3.Mpa")),
         "comment2" -> (_.text1("div.Al"))
-      )
-      .asSchemaRDD()
+      ).persist()
+
+    println(result.count())
+
+    result.asSchemaRDD()
   }
 }
