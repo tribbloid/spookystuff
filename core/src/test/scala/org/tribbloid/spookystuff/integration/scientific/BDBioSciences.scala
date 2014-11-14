@@ -17,7 +17,7 @@ object BDBioSciences extends TestCore {
       WaitForDocumentReady
         +> DropDownSelect("select#region","CA")
         +> Click("input#goButton")
-//        +> ExeScript(".arguments[0].click();","img.okButton")
+//        +> ExeScript(".arguments[0].click();","img.okButton") //TIDO: This doesn't work, why?
         +> Click("img.okButton", clickable = false)
         +> WaitForDocumentReady
       )
@@ -43,7 +43,7 @@ object BDBioSciences extends TestCore {
         "leaf" -> (_.text1("div#container h1")),
         "breadcrumb" -> (_.text1("div#breadcrumb"))
       )
-      .sliceJoin("table#productTable > tbody > tr:nth-of-type(n+2)")(indexKey = 'row, joinType = Inner)
+      .sliceJoin("table#productTable > tbody > tr:nth-of-type(n+2)")(indexKey = 'row)
       .extract(
         "Catalog" -> (_.text1(" td:nth-of-type(1)")),
         "Brand" -> (_.text1(" td:nth-of-type(2)")),

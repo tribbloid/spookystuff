@@ -3,7 +3,7 @@ package org.tribbloid.spookystuff.integration.scientific
 import org.apache.spark.sql.SchemaRDD
 import org.tribbloid.spookystuff.actions._
 import org.tribbloid.spookystuff.expressions._
-import org.tribbloid.spookystuff.factory.driver.{TorProxySetting, TorDriverFactory}
+import org.tribbloid.spookystuff.factory.driver.TorProxyFactory
 import org.tribbloid.spookystuff.integration.TestCore
 
 /**
@@ -11,8 +11,7 @@ import org.tribbloid.spookystuff.integration.TestCore
  */
 object BioCompare extends TestCore {
 
-  spooky.driverFactory = TorDriverFactory()
-  spooky.proxy = TorProxySetting()
+  spooky.proxy = TorProxyFactory
   import spooky._
   import sql._
 

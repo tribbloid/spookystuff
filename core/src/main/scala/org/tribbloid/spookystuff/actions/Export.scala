@@ -102,9 +102,9 @@ case class Wget(url: String) extends Export with Sessionless {
 
     if ( url.trim().isEmpty ) return Seq ()
 
-    val proxy = pb.spooky.proxy
-    val userAgent = pb.spooky.userAgent
-    val headers = pb.spooky.headers
+    val proxy = pb.spooky.proxy()
+    val userAgent = pb.spooky.userAgent()
+    val headers = pb.spooky.headers()
 
     val defaultSetting = {
       val timeoutMillis = pb.spooky.remoteResourceTimeout.toMillis.toInt

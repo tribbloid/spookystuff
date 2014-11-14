@@ -4,7 +4,7 @@ import org.apache.spark.sql.SQLContext
 import org.apache.spark.{SparkConf, SparkContext}
 import org.scalatest.FunSuite
 import org.tribbloid.spookystuff.SpookyContext
-import org.tribbloid.spookystuff.factory.driver.TorProxySetting
+import org.tribbloid.spookystuff.factory.driver.TorProxyFactory
 
 /**
  * Created by peng on 11/6/14.
@@ -36,7 +36,7 @@ class TestExport extends FunSuite {
   test("use TOR socks5 proxy for http wget") {
 
     val newIP = {
-      spooky.proxy = TorProxySetting()
+      spooky.proxy = TorProxyFactory
 
       val results = Trace(
         Wget("http://www.whatsmyuseragent.com/") :: Nil
@@ -54,7 +54,7 @@ class TestExport extends FunSuite {
   test("use TOR socks5 proxy for https wget") {
 
     val newIP = {
-      spooky.proxy = TorProxySetting()
+      spooky.proxy = TorProxyFactory
 
       val results = Trace(
         Wget("https://www.astrill.com/what-is-my-ip-address.php") :: Nil
@@ -71,7 +71,7 @@ class TestExport extends FunSuite {
   test("revert proxy setting for http wget") {
 
     val newIP = {
-      spooky.proxy = TorProxySetting()
+      spooky.proxy = TorProxyFactory
 
       val results = Trace(
         Wget("http://www.whatsmyuseragent.com/") :: Nil
@@ -96,7 +96,7 @@ class TestExport extends FunSuite {
   test("revert proxy setting for https wget") {
 
     val newIP = {
-      spooky.proxy = TorProxySetting()
+      spooky.proxy = TorProxyFactory
 
       val results = Trace(
         Wget("https://www.astrill.com/what-is-my-ip-address.php") :: Nil

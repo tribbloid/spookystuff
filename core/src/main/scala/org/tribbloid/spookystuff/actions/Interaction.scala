@@ -160,7 +160,7 @@ case object WaitForDocumentReady extends Interaction with Timed {
  */
 case class Click(
                   selector: String,
-                  clickable: Boolean = true
+                  clickable: Boolean = true //TODO: probably useless in most cases
                   )extends Interaction with Timed {
   override def exeWithoutPage(pb: PageBuilder) {
     val wait = new WebDriverWait(pb.getDriver, timeout(pb).toSeconds)

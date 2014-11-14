@@ -22,7 +22,7 @@ class NaiveDriverFactory(
   val baseCaps = new DesiredCapabilities
   baseCaps.setJavascriptEnabled(true); //< not really needed: JS enabled by default
   baseCaps.setCapability(CapabilityType.SUPPORTS_FINDING_BY_CSS, true)
-  baseCaps.setCapability(CapabilityType.HAS_NATIVE_EVENTS, false)
+//  baseCaps.setCapability(CapabilityType.HAS_NATIVE_EVENTS, false)
   baseCaps.setCapability("takesScreenshot", true)
   baseCaps.setCapability(PhantomJSDriverService.PHANTOMJS_EXECUTABLE_PATH_PROPERTY, phantomJSPath)
   baseCaps.setCapability(PhantomJSDriverService.PHANTOMJS_PAGE_SETTINGS_PREFIX + "loadImages", loadImages)
@@ -30,12 +30,22 @@ class NaiveDriverFactory(
   //    baseCaps.setCapability(PhantomJSDriverService.PHANTOMJS_PAGE_SETTINGS_PREFIX+"resourceTimeout", Const.resourceTimeout*1000)
 
   def newCap(capabilities: Capabilities, spooky: SpookyContext): DesiredCapabilities = {
-    baseCaps.setCapability(PhantomJSDriverService.PHANTOMJS_PAGE_SETTINGS_PREFIX+"resourceTimeout", spooky.remoteResourceTimeout*1000)
+    val result = new DesiredCapabilities(baseCaps)
+
+    result.setCapability(PhantomJSDriverService.PHANTOMJS_PAGE_SETTINGS_PREFIX+"resourceTimeout", spooky.remoteResourceTimeout*1000)
 
     val userAgent = spooky.userAgent
-    if (userAgent != null) baseCaps.setCapability(PhantomJSDriverService.PHANTOMJS_PAGE_SETTINGS_PREFIX + "userAgent", userAgent)
+    if (userAgent != null) result.setCapability(PhantomJSDriverService.PHANTOMJS_PAGE_SETTINGS_PREFIX + "userAgent", userAgent)
 
-    baseCaps.merge(capabilities)
+    val proxy = spooky.proxy()
+
+    if (proxy != null)
+      result.setCapability(
+        PhantomJSDriverService.PHANTOMJS_CLI_ARGS,
+        Array("--proxy=" + proxy.addr+":"+proxy.port, "--proxy-type=" + proxy.protocol)
+      )
+
+    result.merge(capabilities)
   }
 
   override def newInstance(capabilities: Capabilities, spooky: SpookyContext): CleanWebDriver =

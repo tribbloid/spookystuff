@@ -1,5 +1,7 @@
 package org.tribbloid.spookystuff.factory.driver
 
+import scala.util.Random
+
 /**
  * Created by peng on 11/4/14.
  */
@@ -11,6 +13,10 @@ case class ProxySetting (
 
 }
 
-object TorProxySetting{
+object TorProxyFactory extends (() => ProxySetting) {
   def apply() = ProxySetting("127.0.0.1", 9050, "socks5")
+}
+
+case class RandomProxyFactory(proxies: Seq[ProxySetting]) extends (() => ProxySetting) {
+  def apply() = proxies(Random.nextInt(proxies.size))
 }
