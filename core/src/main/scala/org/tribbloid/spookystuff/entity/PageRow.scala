@@ -40,9 +40,13 @@ case class PageRow(
     else Key(keyStr)
 
     val newCells =cells.flattenKey(key, indexKey).slice(0, limit)
-    val result = newCells.map(cell => this.copy(cells = cell))
-    if (left && result.isEmpty) Seq(this) //this will make sure you dont't lose anything
-    else result
+
+    if (left && newCells.isEmpty) {
+      Seq(this.copy(cells = this.cells - key)) //this will make sure you dont't lose anything
+    }
+    else {
+      newCells.map(cell => this.copy(cells = cell))
+    }
   }
 
   //always left, discard old page row
