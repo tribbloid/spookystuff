@@ -66,6 +66,8 @@ class SpookyContext (
                       )
   extends Serializable {
 
+  val accumulables = new Accumulables
+  
   val hConfWrapper =  if (sqlContext!=null) new SerializableWritable(this.sqlContext.sparkContext.hadoopConfiguration)
   else null
 
@@ -127,7 +129,7 @@ class SpookyContext (
     schemaRDDToPageRowRDD(schemaRDD)
   }
 
-  object Accumulables {
+  class Accumulables {
 
     private val sc = SpookyContext.this.sqlContext.sparkContext
 

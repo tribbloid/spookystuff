@@ -24,12 +24,12 @@ object Page {
       val result = Utils.retry(Const.DFSInPartitionRetry) {
         Utils.withDeadline(spooky.DFSTimeout) {f}
       }
-      spooky.Accumulables.DFSReadSuccess += 1
+      spooky.accumulables.DFSReadSuccess += 1
       result
     }
     catch {
       case e: Throwable =>
-        spooky.Accumulables.DFSReadFail += 1
+        spooky.accumulables.DFSReadFail += 1
         val ex = new DFSReadException(pathStr ,e)
         ex.setStackTrace(e.getStackTrace)
         if (spooky.failOnDFSError) throw ex

@@ -46,7 +46,7 @@ final case class Trace(
     //    val results = ArrayBuffer[Page]()
 
     val pb = new PageBuilder(spooky)
-    spooky.Accumulables.driverInitialized += 1
+    spooky.accumulables.driverInitialized += 1
 
     try {
       this.apply(pb)
@@ -54,7 +54,7 @@ final case class Trace(
     finally {
       pb.close()
 
-      spooky.Accumulables.driverClosed += 1
+      spooky.accumulables.driverClosed += 1
     }
   }
 
