@@ -45,8 +45,8 @@ object Youtube extends TestCore{
     println(catalog.count())
 
     val video = catalog
-      .join('* src "iframe[title^=Comment]" as '~)(
-        Visit("#{~}")
+      .join('* src "iframe[title^=Comment]" as '~, limit = 1)(
+        Visit("#{~}", hasTitle = false)
           +> Loop(
           Click("span[title^=Load]")
             :: WaitFor("span.PA[style^=display]").in(10.seconds)

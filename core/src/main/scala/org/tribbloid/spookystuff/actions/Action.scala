@@ -138,7 +138,9 @@ trait Timed extends Action{
     base
   }
 
-  def hardTerminateTimeout(session: PageBuilder): Duration = timeout(session) + Const.hardTerminateOverhead
+  def hardTerminateTimeout(session: PageBuilder): Duration = {
+    timeout(session) + Const.hardTerminateOverhead
+  }
 
   override def inject(same: this.type): Unit = {
     super.inject(same)

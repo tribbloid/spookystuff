@@ -39,14 +39,17 @@ abstract class Interaction extends Action {
  * @param url support cell interpolation
  */
 case class Visit(
-                  url: String
+                  url: String,
+                  hasTitle: Boolean = true
                   ) extends Interaction with Timed {
 
   override def exeWithoutPage(pb: PageBuilder) {
     pb.getDriver.get(url)
 
-    val wait = new WebDriverWait(pb.getDriver, timeout(pb).toSeconds)
-    wait.until(ExpectedConditions.not(ExpectedConditions.titleIs("")))
+    if (hasTitle) {
+      val wait = new WebDriverWait(pb.getDriver, timeout(pb).toSeconds)
+      wait.until(ExpectedConditions.not(ExpectedConditions.titleIs("")))
+    }
   }
 
   override def doInterpolate(pageRow: PageRow): Option[this.type] = {

@@ -131,12 +131,13 @@ class PageBuilder(val spooky: SpookyContext){
         for (buffered <- this.buffer)
         {
           this.realBacktrace ++= buffered.trunk
-          pages ++= buffered.apply(this) // I know buffered one should only have empty result, just for safety
+//          pages.clear()//TODO: need to save later version if buffered is refreshed
+          buffered(this) // buffered one may have non-empty results that are restored before
         }
         buffer.clear()
 
         this.realBacktrace ++= action.trunk
-        var batch = action.apply(this)
+        var batch = action(this)
 
         if (autoSave) batch = batch.map(_.autoSave(spooky))
         if (autoCache) Page.autoCache(batch, trace,spooky)
