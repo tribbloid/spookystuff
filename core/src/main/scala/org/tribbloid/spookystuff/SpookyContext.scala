@@ -129,9 +129,9 @@ class SpookyContext (
     schemaRDDToPageRowRDD(schemaRDD)
   }
 
-  class Accumulables {
+  class Accumulables extends Serializable {
 
-    private val sc = SpookyContext.this.sqlContext.sparkContext
+    def sc = SpookyContext.this.sqlContext.sparkContext
 
     import SparkContext._
 
