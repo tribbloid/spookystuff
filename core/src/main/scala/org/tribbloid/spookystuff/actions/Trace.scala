@@ -16,8 +16,7 @@ final case class Trace(
 
   override def doInterpolate(pr: PageRow) = {
     val seq = this.doInterpolateSeq(pr)
-    if (seq==null) null
-    else Trace(seq).asInstanceOf[this.type]
+    seq.map(Trace).asInstanceOf[Option[this.type]]
   }
 
   //TODO: migrate all lazy-evaluation and cache here, PageBuilder should not handle this

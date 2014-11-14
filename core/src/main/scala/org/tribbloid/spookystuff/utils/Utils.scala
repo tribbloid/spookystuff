@@ -144,25 +144,31 @@ These special characters are often called "metacharacters".
                              str: String,
                              map: Map[String,T],
                              delimiter: String = Const.keyDelimiter
-                             ): String = {
-    if ((str == null)|| str.isEmpty) return str
-    else if ((map == null)|| map.isEmpty) return str
+                             ): Option[String] = {
+    if (str == null) return None
+    if (str.isEmpty) return Some(str)
 
     val regex = (delimiter+"\\{[^\\{\\}\r\n]*\\}").r
 
-    regex.replaceAllIn(str,m => {
+    val result = regex.replaceAllIn(str,m => {
       val original = m.group(0)
       val key = original.substring(2, original.size-1)
-      map.get(key).get.toString
+      map.get(key) match {
+        case Some(v) => v.toString
+        case None => return None
+      }
     })
+
+    Some(result)
   }
 
   def interpolate(
                    str: String,
                    row: PageRow,
                    delimiter: String = Const.keyDelimiter
-                   ): String = {
-    if ((str == null)|| str.isEmpty) return str
+                   ): Option[String] = {
+    if (str == null) return None
+    if (str.isEmpty) return Some(str)
 
     val regex = (delimiter+"\\{[^\\{\\}\r\n]*\\}").r
 
@@ -171,11 +177,11 @@ These special characters are often called "metacharacters".
       val key = original.substring(2, original.size-1)
       row.get(key) match {
         case Some(v) => v.toString
-        case None => throw new UnsupportedOperationException("key " + key + " not found")
+        case None => return None
       }
     })
 
-    result
+    Some(result)
   }
 
   implicit def mapFunctions[K](map: Map[K, _]): MapFunctions[K] = new MapFunctions[K](map)

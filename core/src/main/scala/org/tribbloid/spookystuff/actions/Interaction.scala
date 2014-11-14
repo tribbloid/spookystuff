@@ -49,8 +49,8 @@ case class Visit(
     wait.until(ExpectedConditions.not(ExpectedConditions.titleIs("")))
   }
 
-  override def doInterpolate(pageRow: PageRow): this.type = {
-    this.copy(url = Utils.interpolate(this.url,pageRow)).asInstanceOf[this.type]
+  override def doInterpolate(pageRow: PageRow): Option[this.type] = {
+    Utils.interpolate(this.url,pageRow).map(str => this.copy(str).asInstanceOf[this.type])
   }
 }
 
@@ -219,8 +219,8 @@ case class TextInput(selector: String, text: String) extends Interaction with Ti
     element.sendKeys(text)
   }
 
-  override def doInterpolate(pageRow: PageRow): this.type = {
-    this.copy(text = Utils.interpolate(this.text,pageRow)).asInstanceOf[this.type]
+  override def doInterpolate(pageRow: PageRow): Option[this.type] = {
+    Utils.interpolate(this.text,pageRow).map(str => this.copy(text = str).asInstanceOf[this.type])
   }
 }
 
@@ -238,8 +238,8 @@ case class DropDownSelect(selector: String, value: String) extends Interaction w
     select.selectByValue(value)
   }
 
-  override def doInterpolate(pageRow: PageRow): this.type = {
-    this.copy(value = Utils.interpolate(this.value,pageRow)).asInstanceOf[this.type]
+  override def doInterpolate(pageRow: PageRow): Option[this.type] = {
+    Utils.interpolate(this.value,pageRow).map(str => this.copy(value = str).asInstanceOf[this.type])
   }
 }
 
@@ -282,8 +282,8 @@ case class ExeScript(script: String, selector: String = null) extends Interactio
     }
   }
 
-  override def doInterpolate(pageRow: PageRow): this.type = {
-    this.copy(script = Utils.interpolate(this.script,pageRow)).asInstanceOf[this.type]
+  override def doInterpolate(pageRow: PageRow): Option[this.type] = {
+    Utils.interpolate(this.script,pageRow).map(str => this.copy(script = str).asInstanceOf[this.type])
   }
 }
 

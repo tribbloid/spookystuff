@@ -12,12 +12,12 @@ trait ActionLike
   with Product {
 
   final def interpolate(pr: PageRow): Option[this.type] = {
-    val result = Option[this.type](this.doInterpolate(pr))
+    val result = this.doInterpolate(pr)
     result.foreach(_.inject(this))
     result
   }
 
-  def doInterpolate(pageRow: PageRow): this.type = this //TODO: return Option as well
+  def doInterpolate(pageRow: PageRow): Option[this.type] = Some(this) //TODO: return Option as well
 
   def inject(same: this.type ): Unit
 

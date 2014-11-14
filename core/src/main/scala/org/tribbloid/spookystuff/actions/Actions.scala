@@ -12,7 +12,7 @@ abstract class Actions(val self: Seq[Action]) extends ActionLike {
   final protected def trunkSeq: Seq[Action] = self.flatMap(_.trunk)
 
   //TODO: use inheritance and super functions
-  final protected def doInterpolateSeq(pr: PageRow): Seq[Action] = Actions.doInterppolateSeq(self, pr)
+  final protected def doInterpolateSeq(pr: PageRow): Option[Seq[Action]] = Actions.doInterppolateSeq(self, pr)
 
   //names are not encoded in PageUID and are injected after being read from cache
   override def inject(same: this.type): Unit = {
@@ -30,10 +30,10 @@ abstract class Actions(val self: Seq[Action]) extends ActionLike {
 
 object Actions {
 
-  def doInterppolateSeq(self: Seq[Action], pr: PageRow): Seq[Action] = {
-    val seq = self.map(_.doInterpolate(pr))
+  def doInterppolateSeq(self: Seq[Action], pr: PageRow): Option[Seq[Action]] = { //TODO: use inheritance and super functions
+  val seq = self.map(_.doInterpolate(pr))
 
-    if (seq.contains(null)) null
-    else seq.map(action => action)
+    if (seq.contains(None)) None
+    else Some(seq.flatMap(option => option))
   }
 }

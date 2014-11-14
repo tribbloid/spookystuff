@@ -63,10 +63,9 @@ final case class Try(override val self: Seq[Action]) extends Block(self) {
     pages
   }
 
-  override def doInterpolate(pageRow: PageRow): this.type ={
+  override def doInterpolate(pageRow: PageRow): Option[this.type] ={
     val seq = this.doInterpolateSeq(pageRow)
-    if (seq==null) null
-    this.copy(self = seq).asInstanceOf[this.type] //doesn't involve inject, inject itself is deep
+    seq.map(seq => this.copy(self = seq).asInstanceOf[this.type])
   }
 }
 
@@ -105,10 +104,9 @@ final case class Loop(
     pages
   }
 
-  override def doInterpolate(pageRow: PageRow): this.type ={
+  override def doInterpolate(pageRow: PageRow): Option[this.type] ={
     val seq = this.doInterpolateSeq(pageRow)
-    if (seq==null) null
-    this.copy(self = seq).asInstanceOf[this.type] //doesn't involve inject, inject itself is deep
+    seq.map(seq => this.copy(self = seq).asInstanceOf[this.type])
   }
 }
 
@@ -170,9 +168,10 @@ final case class If(
     pages
   }
 
-  override def doInterpolate(pageRow: PageRow): this.type ={
-    val ifTrueInterpolated = Actions.doInterppolateSeq(ifTrue, pageRow)
-    val ifFalseInterpolated = Actions.doInterppolateSeq(ifFalse, pageRow)
-    this.copy(ifTrue = ifTrueInterpolated, ifFalse = ifFalseInterpolated).asInstanceOf[this.type]
+  override def doInterpolate(pageRow: PageRow): Option[this.type] ={
+    val ifTrueInterpolated = Actions.doInterppolateSeq(ifTrue, pageRow).getOrElse(Seq())
+    val ifFalseInterpolated = Actions.doInterppolateSeq(ifFalse, pageRow).getOrElse(Seq())
+    val result = this.copy(ifTrue = ifTrueInterpolated, ifFalse = ifFalseInterpolated).asInstanceOf[this.type]
+    Some(result)
   }
 }

@@ -18,7 +18,7 @@ object BDBioSciences extends TestCore {
         +> DropDownSelect("select#region","CA")
         +> Click("input#goButton")
 //        +> ExeScript(".arguments[0].click();","img.okButton") //TIDO: This doesn't work, why?
-        +> Click("img.okButton", clickable = false)
+        +> Click("img.okButton")
         +> WaitForDocumentReady
       )
 
