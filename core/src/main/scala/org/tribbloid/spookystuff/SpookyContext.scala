@@ -79,12 +79,14 @@ class SpookyContext (
 
 
 
-  def setRoot(root: String): Unit = {
+  def setRoot(root: String): SpookyContext = {
 
     autoSaveRoot = root+"page"
     autoCacheRoot = root+"cache"
     errorDumpRoot = root+"error"
     errorDumpScreenshotRoot = root+"error-screenshot"
+
+    this
   }
 
   def this(conf: SparkConf) {
