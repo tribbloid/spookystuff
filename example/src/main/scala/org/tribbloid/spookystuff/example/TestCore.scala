@@ -21,7 +21,7 @@ trait TestCore extends FunSuite with BeforeAndAfter {
   val sc: SparkContext = {
     var conf: SparkConf = new SparkConf().setAppName(appName)
 
-    if (conf.get("spark.master") == null)
+    if (!conf.contains("spark.master"))
       conf = conf.setMaster("local[*]")
 
     new SparkContext(conf)
@@ -40,7 +40,7 @@ trait TestCore extends FunSuite with BeforeAndAfter {
     sql
   )
 
-  def previeweMode: Unit = {
+  def previeweMode(): Unit = {
 
     spooky.driverFactory = NaiveDriverFactory(loadImages = true)
     spooky.pageExpireAfter = 0.milliseconds
@@ -52,29 +52,30 @@ trait TestCore extends FunSuite with BeforeAndAfter {
   def doMain(): SchemaRDD
 
   before {
-    previeweMode
+    previeweMode()
   }
 
   test("Print query result",Integration) {
-    val array = doMain.collect()
+    val result = doMain().persist()
 
+    val array = result.collect()
     array.foreach(row => println(row.mkString("\t")))
 
     println("-------------------returned "+array.length+" rows------------------")
-    println(doMain.schema.fieldNames.mkString("\t"))
+    println(result.schema.fieldNames.mkString("\t"))
   }
 
   final def main(args: Array[String]) {
 
-    if (!args.contains("--fullrun")) this.previeweMode
+    if (!args.contains("--fullrun")) this.previeweMode()
 
-    doMain.persist()
+    val result = doMain().persist()
 
-    val array = doMain.collect()
+    val array = result.collect()
 
     array.foreach(row => println(row.mkString("\t")))
 
     println("-------------------returned "+array.length+" rows------------------")
-    println(doMain.schema.fieldNames.mkString("\t"))
+    println(result.schema.fieldNames.mkString("\t"))
   }
 }

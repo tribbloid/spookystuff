@@ -15,18 +15,13 @@ class TestUtils extends FunSuite {
   test("interpolate") {
     val someMap = Map("abc" -> 1, "def" -> 2.2)
     val result = Utils.interpolateFromMap("rpk#{abc}aek#{def}", someMap)
-    assert(result === "rpk1aek2.2")
+    assert(result === Some("rpk1aek2.2"))
   }
 
-  test("interpolate throws an exception when key not found") {
-    var thrown = false
-    try {
-      val someMap = Map("abc" -> 1, "rpk" -> 2.2)
-      val result = Utils.interpolateFromMap("rpk#{abc}aek#{def}", someMap)
-    }
-    catch {
-      case e: Throwable => thrown = true
-    }
-    assert(thrown === true)
+  test("interpolate returns None when key not found") {
+
+    val someMap = Map("abc" -> 1, "rpk" -> 2.2)
+    val result = Utils.interpolateFromMap("rpk#{abc}aek#{def}", someMap)
+    assert(result === None)
   }
 }

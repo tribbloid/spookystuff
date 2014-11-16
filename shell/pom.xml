@@ -43,8 +43,6 @@
                 <artifactId>maven-shade-plugin</artifactId>
                 <version>2.3</version>
                 <configuration>
-                    <!--<shadedArtifactAttached>false</shadedArtifactAttached>-->
-                    <!--<minimizeJar>true</minimizeJar> DON'T USE! will cause error-->
                     <outputFile>${project.build.directory}/scala-${scala.binary.version}/${project.artifactId}-assembly-${project.version}.jar</outputFile>
                     <filters>
                         <filter>

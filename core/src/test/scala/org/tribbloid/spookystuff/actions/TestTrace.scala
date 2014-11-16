@@ -31,7 +31,7 @@ class TestTrace extends FunSuite {
   import scala.concurrent.duration._
 
   test("visit and snapshot") {
-    val builder = new PageBuilder(new SpookyContext(null: SQLContext))
+    val builder = new PageBuilder(new SpookyContext(sql))
     Visit("http://en.wikipedia.org")(builder)
     val page = Snapshot()(builder).toList(0)
     //    val url = builder.getUrl
@@ -185,7 +185,7 @@ class TestTrace extends FunSuite {
 
   test("wget image, save and load") {
     val results = Trace(
-      Wget("http://col.stb01.s-msn.com/i/74/A177116AA6132728F299DCF588F794.gif") :: Nil
+      Wget("https://www.google.ca/images/srpr/logo11w.png") :: Nil
     ).resolve(spooky)
 
     val resultsList = results.toArray

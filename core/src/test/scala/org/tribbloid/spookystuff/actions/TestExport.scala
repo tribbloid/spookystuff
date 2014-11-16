@@ -20,7 +20,7 @@ class TestExport extends FunSuite {
   spooky.autoCache = false
   spooky.autoRestore = false
   lazy val noProxyIP = {
-      spooky.proxy = null
+      spooky.proxy = () => null
 
       val results = Trace(
         Wget("http://www.whatsmyuseragent.com/") :: Nil
@@ -81,7 +81,7 @@ class TestExport extends FunSuite {
     }
 
     val noProxyIP2 = {
-      spooky.proxy = null
+      spooky.proxy = () => null
 
       val results = Trace(
         Wget("http://www.whatsmyuseragent.com/") :: Nil
@@ -106,7 +106,7 @@ class TestExport extends FunSuite {
     }
 
     val noProxyIP2 = {
-      spooky.proxy = null
+      spooky.proxy = () => null
 
       val results = Trace(
         Wget("https://www.astrill.com/what-is-my-ip-address.php") :: Nil

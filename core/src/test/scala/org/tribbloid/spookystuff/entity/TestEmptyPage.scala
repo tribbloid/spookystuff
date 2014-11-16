@@ -1,5 +1,6 @@
 package org.tribbloid.spookystuff.entity
 
+import org.apache.spark.{SparkContext, SparkConf}
 import org.apache.spark.sql.SQLContext
 import org.scalatest.{BeforeAndAfter, FunSuite}
 import org.tribbloid.spookystuff.SpookyContext
@@ -12,9 +13,18 @@ import org.tribbloid.spookystuff.factory.PageBuilder
 
 class TestEmptyPage extends FunSuite with BeforeAndAfter {
 
+  val conf: SparkConf = new SparkConf().setAppName("test")
+    .setMaster("local[*]")
+
+  val sc: SparkContext = {
+    new SparkContext(conf)
+  }
+
+  val sql: SQLContext = new SQLContext(sc)
+
   //shorthand for resolving the final stage after some interactions
   lazy val emptyPage: Page = {
-    val pb = new PageBuilder(new SpookyContext(null: SQLContext))
+    val pb = new PageBuilder(new SpookyContext(sql: SQLContext))
 
     try {
       pb.getDriver

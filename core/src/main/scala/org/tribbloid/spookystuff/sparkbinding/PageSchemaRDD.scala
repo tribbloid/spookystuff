@@ -151,10 +151,14 @@ case class PageSchemaRDD(
    * @param keyAndF a key-function map, each element is used to generate a key-value map using the Page itself
    * @return new RDD[Page]
    */
-  def extract(keyAndF: (String, Page => Any)*): PageSchemaRDD = this.copy(
-    self.map(_.extract(keyAndF)),
-    this.keys ++ keyAndF.map(tuple => Key(tuple._1))
-  )
+  def extract(keyAndF: (String, Page => Any)*): PageSchemaRDD = {
+    val keys = this.keys ++ keyAndF.map(tuple => Key(tuple._1))
+
+    this.copy(
+      self = self.map(_.extract(keyAndF)),
+      keys = keys
+    )
+  }
 
   def select(exprs: Expr[_]*): PageSchemaRDD = {
 
@@ -202,7 +206,7 @@ case class PageSchemaRDD(
   private def clearTemp: PageSchemaRDD = {
     this.copy(
       self = self.map(_.filterKeys(!_.isInstanceOf[TempKey])),
-      keys = keys.filter(!_.isInstanceOf[TempKey])
+      keys = ListSet(keys.toSeq.filter(!_.isInstanceOf[TempKey]): _*) //circumvent https://issues.scala-lang.org/browse/SI-8985
     )
   }
 

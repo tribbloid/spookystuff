@@ -29,7 +29,9 @@ object AppliancePartsPros extends TestCore {
 
     val rdd2 = rdd1
       .wgetJoin('* href "div.inner li a:has(img)")()
-      .extract("schematic" -> {_.text1("div#ctl00_cphMain_up1 h1")}).persist()
+      .extract(
+        "schematic" -> ( _.text1("div#ctl00_cphMain_up1 h1") )
+      ).persist()
 
     println(rdd2.count())
 
