@@ -226,7 +226,7 @@ case class PageUID(
 case class Page(
                  uid: PageUID,
 
-                 resolvedUrl: String,
+                 url: String, //redirected
                  contentType: String,
                  content: Array[Byte],
 
@@ -244,7 +244,7 @@ case class Page(
   @transient lazy val contentStr: String = new String(this.content,this.parsedContentType.getCharset)
 
   @transient lazy val doc: Option[Any] = if (parsedContentType.getMimeType.contains("html")){
-    Some(Jsoup.parse(this.contentStr, resolvedUrl)) //not serialize, parsing is faster
+    Some(Jsoup.parse(this.contentStr, url)) //not serialize, parsing is faster
   }
   else{
     None
@@ -504,7 +504,7 @@ case class Page(
           tuple => {
 
             this.copy(
-              resolvedUrl = this.resolvedUrl + "#" + tuple._2,
+              url = this.url + "#" + tuple._2,
               content = ("<table>"+tuple._1.outerHtml()+"</table>").getBytes(parsedContentType.getCharset)//otherwise tr and td won't be parsed
             )
           }

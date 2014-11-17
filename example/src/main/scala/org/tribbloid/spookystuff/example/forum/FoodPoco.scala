@@ -1,17 +1,17 @@
 package org.tribbloid.spookystuff.example.forum
 
+import org.tribbloid.spookystuff.SpookyContext
 import org.tribbloid.spookystuff.actions._
 import org.tribbloid.spookystuff.expressions._
-import org.tribbloid.spookystuff.example.TestCore
+import org.tribbloid.spookystuff.example.ExampleCore
 
 /**
  * Created by peng on 10/7/14.
  */
-object FoodPoco extends TestCore {
+object FoodPoco extends ExampleCore {
 
-  import spooky._
-
-  def doMain() = {
+  override def doMain(spooky: SpookyContext) = {
+    import spooky._
 
     val base = noInput
       .fetch(
@@ -31,7 +31,7 @@ object FoodPoco extends TestCore {
     val RDD1 = base
       .extract(
         "type" -> (_ => "comment"),
-        "link" -> (_.resolvedUrl)
+        "link" -> (_.url)
       )
       .sliceJoin("div#food_comment_list ul.text_con")(indexKey = 'commentRow)
       .extract(
@@ -47,7 +47,7 @@ object FoodPoco extends TestCore {
       )
       .wgetJoin('*.href("div.main_wrap > div.more a"), limit = 1)()
       .extract(
-        "link" -> (_.resolvedUrl)
+        "link" -> (_.url)
       )
       .sliceJoin("li.text")(indexKey = 'commentRow)
       .extract(

@@ -1,17 +1,17 @@
 package org.tribbloid.spookystuff.example.scientific
 
+import org.tribbloid.spookystuff.SpookyContext
 import org.tribbloid.spookystuff.actions._
 import org.tribbloid.spookystuff.expressions._
-import org.tribbloid.spookystuff.example.TestCore
+import org.tribbloid.spookystuff.example.ExampleCore
 
 /**
  * Created by peng on 06/07/14.
  */
-object GoogleScholar extends TestCore {
+object GoogleScholar extends ExampleCore {
 
-  import spooky._
-
-  override def doMain() = {
+  override def doMain(spooky: SpookyContext) = {
+    import spooky._
 
     sc.parallelize(Seq("Large scale distributed deep networks"))
       .fetch(

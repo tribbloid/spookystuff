@@ -1,13 +1,13 @@
 package org.tribbloid.spookystuff.example.price
 
+import org.tribbloid.spookystuff.SpookyContext
 import org.tribbloid.spookystuff.actions._
-import org.tribbloid.spookystuff.example.TestCore
+import org.tribbloid.spookystuff.example.ExampleCore
 
-object Amazon extends TestCore {
+object Amazon extends ExampleCore {
 
-  import spooky._
-
-  override def doMain() = {
+  override def doMain(spooky: SpookyContext) = {
+    import spooky._
 
     sc.parallelize(Seq("http://dummy.com\tLord of the Rings\t3.0"))
       .tsvToMap("url\titem\tiherb-price")

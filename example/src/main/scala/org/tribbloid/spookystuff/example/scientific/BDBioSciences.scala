@@ -1,17 +1,16 @@
 package org.tribbloid.spookystuff.example.scientific
 
-import org.apache.spark.sql.SchemaRDD
+import org.tribbloid.spookystuff.SpookyContext
 import org.tribbloid.spookystuff.actions._
+import org.tribbloid.spookystuff.example.ExampleCore
 import org.tribbloid.spookystuff.expressions._
-import org.tribbloid.spookystuff.example.TestCore
 
 /**
  * Created by peng on 11/2/14.
  */
-object BDBioSciences extends TestCore {
-  import spooky._
-
-  override def doMain(): SchemaRDD = {
+object BDBioSciences extends ExampleCore {
+  override def doMain(spooky: SpookyContext) = {
+    import spooky._
 
     val selectRegion = (
       WaitForDocumentReady
@@ -39,7 +38,7 @@ object BDBioSciences extends TestCore {
           +> WaitFor("div#container")
       )
       .extract(
-        "url" -> (_.resolvedUrl),
+        "url" -> (_.url),
         "leaf" -> (_.text1("div#container h1")),
         "breadcrumb" -> (_.text1("div#breadcrumb"))
       )

@@ -1,13 +1,13 @@
 package org.tribbloid.spookystuff.example.price
 
+import org.tribbloid.spookystuff.SpookyContext
 import org.tribbloid.spookystuff.actions._
-import org.tribbloid.spookystuff.example.TestCore
+import org.tribbloid.spookystuff.example.ExampleCore
 
-object Dealmoon extends TestCore {
+object Dealmoon extends ExampleCore {
 
-  import spooky._
-
-  def doMain() = {
+  override def doMain(spooky: SpookyContext) = {
+    import spooky._
 
     noInput
       .fetch(

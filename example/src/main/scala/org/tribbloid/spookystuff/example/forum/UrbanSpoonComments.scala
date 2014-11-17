@@ -1,18 +1,18 @@
 package org.tribbloid.spookystuff.example.forum
 
-import org.apache.spark.sql.SchemaRDD
+import org.tribbloid.spookystuff.SpookyContext
 import org.tribbloid.spookystuff.actions._
-import org.tribbloid.spookystuff.example.TestCore
+import org.tribbloid.spookystuff.example.ExampleCore
 
 
 /**
  * Created by peng on 10/6/14.
  */
-object UrbanSpoonComments extends TestCore {
+object UrbanSpoonComments extends ExampleCore {
 
-  import spooky._
+  override def doMain(spooky: SpookyContext) = {
+    import spooky._
 
-  override def doMain(): SchemaRDD = {
     sc.parallelize(Seq(
       "http://www.urbanspoon.com/r/5/1435892/restaurant/Downtown/Bottega-Louie-LA",
       "http://www.urbanspoon.com/r/5/778534/restaurant/Downtown/Wurstkuche-LA",

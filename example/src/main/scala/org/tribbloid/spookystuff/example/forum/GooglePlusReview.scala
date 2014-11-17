@@ -1,16 +1,16 @@
 package org.tribbloid.spookystuff.example.forum
 
+import org.tribbloid.spookystuff.SpookyContext
 import org.tribbloid.spookystuff.actions._
-import org.tribbloid.spookystuff.example.TestCore
+import org.tribbloid.spookystuff.example.ExampleCore
 
 /**
  * Created by peng on 9/26/14.
  */
-object GooglePlusReview extends TestCore {
+object GooglePlusReview extends ExampleCore {
 
-  import spooky._
-
-  def doMain() = {
+  override def doMain(spooky: SpookyContext) = {
+    import spooky._
 
     sc.parallelize(Seq(
       "https://plus.google.com/111847129364038020241/about",

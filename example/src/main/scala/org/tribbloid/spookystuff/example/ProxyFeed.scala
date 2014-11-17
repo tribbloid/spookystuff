@@ -1,28 +1,42 @@
 package org.tribbloid.spookystuff.example
 
+import org.apache.spark.sql.SchemaRDD
+import org.tribbloid.spookystuff.SpookyContext
 import org.tribbloid.spookystuff.actions._
 import org.tribbloid.spookystuff.factory.driver.{ProxySetting, RandomProxyFactory}
-
-import scala.concurrent.duration._
 
 /**
  * Created by peng on 9/11/14.
  */
-trait ProxyFeed extends TestCore {
+trait ProxyFeed extends ExampleCore {
 
-  import spooky._
-  import sql._
+  override def localPreviewContext(): SpookyContext = {
+    val spooky = super.localPreviewContext()
 
-  spooky.proxy = RandomProxyFactory(proxies)
+//    val proxies = proxyRDD(spooky).select('IP, 'Port, 'Type)
+//      .map(row => ProxySetting(row.getString(0), row.getInt(1), row.getString(2)))
+//      .collect().toSeq
 
-  lazy val proxies = {
-    proxyRDD
-      .select('IP, 'Port, "http" as 'Type)
-      .map(row => ProxySetting(row.getString(0), row.getInt(1), row.getString(2)))
-      .collect().toSeq
+//    spooky.proxy = RandomProxyFactory(proxies)
+    spooky
   }
 
-  lazy val proxyRDD = {
+  override def fullRunContext(): SpookyContext = {
+    val spooky = super.fullRunContext()
+
+    import sql._
+
+    val proxies = proxyRDD(spooky).select('IP, 'Port, 'Type)
+      .map(row => ProxySetting(row.getString(0), row.getInt(1), row.getString(2)))
+      .collect().toSeq
+
+    spooky.proxy = RandomProxyFactory(proxies)
+    spooky
+  }
+
+  def proxyRDD(spooky: SpookyContext): SchemaRDD = {
+
+    import spooky._
 
     val httpPageRowRDD = noInput
       .fetch(
@@ -67,13 +81,11 @@ trait ProxyFeed extends TestCore {
         "Anonymity" -> (_.text("td")(5)),
         "Https" -> (_.text("td")(6)),
         "LastChecked" -> (_.text("td")(7)),
-        "Type" -> (page => "socks5")
+        "Type" -> (_ => "socks5")
       )
 
     httpPageRowRDD.union(socksPageRowRDD)
       .asSchemaRDD()
     //      .where(('Anonymity !== "transparent")&& 'Code.like("US"))
   }
-
-  this.spooky.remoteResourceTimeout = 120.seconds
 }

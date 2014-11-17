@@ -1,18 +1,17 @@
 package org.tribbloid.spookystuff.example.forum
 
-import org.apache.spark.sql.SchemaRDD
+import org.tribbloid.spookystuff.SpookyContext
 import org.tribbloid.spookystuff.actions._
+import org.tribbloid.spookystuff.example.ExampleCore
 import org.tribbloid.spookystuff.expressions._
-import org.tribbloid.spookystuff.example.TestCore
 
 /**
  * Created by peng on 10/16/14.
  */
-object DianPingFirepot extends TestCore {
+object DianPingFirepot extends ExampleCore {
 
-  import spooky._
-
-  override def doMain(): SchemaRDD = {
+  override def doMain(spooky: SpookyContext) = {
+    import spooky._
 
     sc.parallelize(Seq(
       "http://www.dianping.com/search/keyword/8/0_%E6%88%90%E9%83%BD%E4%BE%BF%E5%88%A9%E5%BA%97/x1y50#sortBar",

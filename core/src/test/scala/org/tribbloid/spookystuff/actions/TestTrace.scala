@@ -39,7 +39,7 @@ class TestTrace extends FunSuite {
     assert(page.contentStr.startsWith("<!DOCTYPE html>"))
     assert(page.contentStr.contains("<title>Wikipedia"))
 
-    assert(page.resolvedUrl.startsWith("http://en.wikipedia.org/wiki/Main_Page"))
+    assert(page.url.startsWith("http://en.wikipedia.org/wiki/Main_Page"))
     //    assert(url === "http://www.google.com")
   }
 
@@ -52,7 +52,7 @@ class TestTrace extends FunSuite {
     //    val url = builder.getUrl
 
     assert(page.contentStr.contains("<title>Deep learning - Wikipedia, the free encyclopedia</title>"))
-    assert(page.resolvedUrl === "http://en.wikipedia.org/wiki/Deep_learning")
+    assert(page.url === "http://en.wikipedia.org/wiki/Deep_learning")
     //    assert(url === "https://www.linkedin.com/ Input(input#first,Adam) Input(input#last,Muise) Submit(input[name=\"search\"])")
   }
 
@@ -74,13 +74,13 @@ class TestTrace extends FunSuite {
     val id1 = Trace(Visit("http://www.wikipedia.org")::WaitFor("input#searchInput")::Snapshot()::Nil)
     assert(res1.uid.backtrace === id1)
     assert(res1.contentStr.contains("<title>Wikipedia</title>"))
-    assert(res1.resolvedUrl === "http://www.wikipedia.org/")
+    assert(res1.url === "http://www.wikipedia.org/")
     assert(res1.name === "A")
 
     val id2 = Trace(Visit("http://www.wikipedia.org")::WaitFor("input#searchInput")::TextInput("input#searchInput","Deep learning")::Submit("input.formBtn")::Snapshot()::Nil)
     assert(res2.uid.backtrace === id2)
     assert(res2.contentStr.contains("<title>Deep learning - Wikipedia, the free encyclopedia</title>"))
-    assert(res2.resolvedUrl === "http://en.wikipedia.org/wiki/Deep_learning")
+    assert(res2.url === "http://en.wikipedia.org/wiki/Deep_learning")
     assert(res2.name === "B")
   }
 

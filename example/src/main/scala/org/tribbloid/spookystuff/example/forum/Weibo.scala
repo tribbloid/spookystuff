@@ -1,18 +1,18 @@
 package org.tribbloid.spookystuff.example.forum
 
+import org.tribbloid.spookystuff.SpookyContext
 import org.tribbloid.spookystuff.actions.{Loop, _}
-import org.tribbloid.spookystuff.example.TestCore
+import org.tribbloid.spookystuff.example.ExampleCore
 
 import scala.concurrent.duration._
 
 /**
  * Created by peng on 8/28/14.
  */
-object Weibo extends TestCore {
+object Weibo extends ExampleCore {
 
-  import spooky._
-
-  def doMain() = {
+  override def doMain(spooky: SpookyContext) = {
+    import spooky._
 
     sc.parallelize(Seq("锤子手机"))
     .fetch(

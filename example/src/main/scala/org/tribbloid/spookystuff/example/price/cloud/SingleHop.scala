@@ -1,16 +1,16 @@
 package org.tribbloid.spookystuff.example.price.cloud
 
+import org.tribbloid.spookystuff.SpookyContext
 import org.tribbloid.spookystuff.actions.Wget
-import org.tribbloid.spookystuff.example.TestCore
+import org.tribbloid.spookystuff.example.ExampleCore
 
 /**
  * Created by peng on 25/08/14.
  */
-object SingleHop extends TestCore {
+object SingleHop extends ExampleCore {
 
-  import spooky._
-
-  override def doMain() = {
+  override def doMain(spooky: SpookyContext) = {
+    import spooky._
     noInput
       .fetch(
         Wget("http://www.singlehop.com/server-hosting/dedicated-servers/")

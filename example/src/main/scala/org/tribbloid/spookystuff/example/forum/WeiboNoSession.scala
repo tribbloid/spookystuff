@@ -3,17 +3,17 @@ package org.tribbloid.spookystuff.example.forum
 import java.text.SimpleDateFormat
 import java.util.Date
 
+import org.tribbloid.spookystuff.SpookyContext
 import org.tribbloid.spookystuff.actions._
 import org.tribbloid.spookystuff.expressions._
-import org.tribbloid.spookystuff.example.TestCore
+import org.tribbloid.spookystuff.example.ExampleCore
 
 /**
  * Created by peng on 8/28/14.
  */
-object WeiboNoSession extends TestCore {
+object WeiboNoSession extends ExampleCore {
 
-  def doMain() = {
-
+  override def doMain(spooky: SpookyContext) = {
     import spooky._
 
     import scala.concurrent.duration._
@@ -41,7 +41,7 @@ object WeiboNoSession extends TestCore {
         "text" -> (_.text1("p > em")),
         "forum" -> (page => "weibo"),
         "source" -> (_.text1("p.info:nth-of-type(2) > a[target]")),
-        "URL" -> (_.resolvedUrl),
+        "URL" -> (_.url),
         "author" -> (_.text1("dd.content p:nth-of-type(1) > a:nth-of-type(1)")),
         "date" -> (_.text1("p.info:nth-of-type(2) a.date")),
         "thumb ups" -> (_.text1("p.info:nth-of-type(2) span a:nth-of-type(1)")),

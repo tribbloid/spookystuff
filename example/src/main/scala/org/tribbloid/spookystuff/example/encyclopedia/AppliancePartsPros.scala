@@ -1,7 +1,8 @@
 package org.tribbloid.spookystuff.example.encyclopedia
 
+import org.tribbloid.spookystuff.SpookyContext
 import org.tribbloid.spookystuff.actions._
-import org.tribbloid.spookystuff.example.TestCore
+import org.tribbloid.spookystuff.example.ExampleCore
 import org.tribbloid.spookystuff.expressions._
 
 import scala.concurrent.duration._
@@ -9,11 +10,11 @@ import scala.concurrent.duration._
 /**
  * Created by peng on 07/06/14.
  */
-object AppliancePartsPros extends TestCore {
+object AppliancePartsPros extends ExampleCore {
 
-  import spooky._
+  override def doMain(spooky: SpookyContext) = {
+    import spooky._
 
-  override def doMain() = {
     val rdd1 = sc.parallelize(Seq("A210S"))
       .fetch(
         Visit("http://www.appliancepartspros.com/")

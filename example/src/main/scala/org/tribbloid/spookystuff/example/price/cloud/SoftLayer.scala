@@ -1,7 +1,8 @@
 package org.tribbloid.spookystuff.example.price.cloud
 
+import org.tribbloid.spookystuff.SpookyContext
 import org.tribbloid.spookystuff.actions._
-import org.tribbloid.spookystuff.example.TestCore
+import org.tribbloid.spookystuff.example.ExampleCore
 
 import scala.concurrent.duration._
 
@@ -9,11 +10,10 @@ import scala.concurrent.duration._
  * Created by peng on 23/08/14.
  */
 //TODO: can't move hidden slider, fix it!
-object SoftLayer extends TestCore {
+object SoftLayer extends ExampleCore {
 
-  import spooky._
-
-  override def doMain() = {
+  override def doMain(spooky: SpookyContext) = {
+    import spooky._
     sc.parallelize(Seq("private-local"))
       .fetch(
         Visit("http://www.softlayer.com/virtual-servers")

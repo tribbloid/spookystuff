@@ -1,19 +1,19 @@
 package org.tribbloid.spookystuff.example.scientific
 
-import org.apache.spark.sql.SchemaRDD
+import org.tribbloid.spookystuff.SpookyContext
 import org.tribbloid.spookystuff.actions._
+import org.tribbloid.spookystuff.example.ExampleCore
 import org.tribbloid.spookystuff.expressions._
-import org.tribbloid.spookystuff.example.TestCore
 import org.tribbloid.spookystuff.utils.Utils
 
 /**
  * Created by peng on 10/9/14.
  */
-object SigmaAldrich extends TestCore {
+object SigmaAldrich extends ExampleCore {
 
-  import spooky._
+  override def doMain(spooky: SpookyContext) = {
+    import spooky._
 
-  override def doMain(): SchemaRDD = {
     val base0 = noInput
       .fetch(
         Wget("http://www.sigmaaldrich.com/life-science/life-science-catalog.html")
@@ -64,7 +64,7 @@ object SigmaAldrich extends TestCore {
 
     val result = all
       .extract(
-        "url" -> (_.resolvedUrl),
+        "url" -> (_.url),
         "breadcrumb" -> (_.text1("div.crumb p")),
         "header" -> (_.text("table.opcTable thead tr th[class!=nosort]"))
       )

@@ -1,16 +1,16 @@
 package org.tribbloid.spookystuff.example.forum
 
+import org.tribbloid.spookystuff.SpookyContext
 import org.tribbloid.spookystuff.actions.Wget
-import org.tribbloid.spookystuff.example.TestCore
+import org.tribbloid.spookystuff.example.ExampleCore
 
 /**
  * Created by peng on 9/26/14.
  */
-object Yelp extends TestCore {
+object Yelp extends ExampleCore {
 
-  import spooky._
-
-  def doMain() = {
+  override def doMain(spooky: SpookyContext) = {
+    import spooky._
 
     sc.parallelize(Seq(
       "http://www.yelp.com/biz/bottega-louie-los-angeles?sort_by=date_desc",

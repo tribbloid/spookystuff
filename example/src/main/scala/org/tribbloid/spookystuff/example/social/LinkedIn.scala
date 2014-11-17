@@ -1,18 +1,18 @@
 package org.tribbloid.spookystuff.example.social
 
+import org.tribbloid.spookystuff.SpookyContext
 import org.tribbloid.spookystuff.actions._
 import org.tribbloid.spookystuff.expressions._
-import org.tribbloid.spookystuff.example.TestCore
+import org.tribbloid.spookystuff.example.ExampleCore
 
 /**
  * A more complex linkedIn job that finds name and printout skills of all Sanjay Gupta in your local area
  */
 //remember infix operator cannot be written in new line
-object LinkedIn extends TestCore {
+object LinkedIn extends ExampleCore {
 
-  import spooky._
-
-  def doMain() = {
+  override def doMain(spooky: SpookyContext) = {
+    import spooky._
 
     sc.parallelize(Seq("Sanjay", "Arun", "Hardik"))
       .fetch(

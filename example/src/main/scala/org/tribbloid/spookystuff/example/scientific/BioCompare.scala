@@ -1,21 +1,20 @@
 package org.tribbloid.spookystuff.example.scientific
 
-import org.apache.spark.sql.SchemaRDD
+import org.tribbloid.spookystuff.SpookyContext
 import org.tribbloid.spookystuff.actions._
+import org.tribbloid.spookystuff.example.ExampleCore
 import org.tribbloid.spookystuff.expressions._
 import org.tribbloid.spookystuff.factory.driver.TorProxyFactory
-import org.tribbloid.spookystuff.example.TestCore
 
 /**
  * Created by peng on 11/1/14.
  */
-object BioCompare extends TestCore {
+object BioCompare extends ExampleCore {
 
-  spooky.proxy = TorProxyFactory
-  import spooky._
-  import sql._
-
-  override def doMain(): SchemaRDD = {
+  override def doMain(spooky: SpookyContext) = {
+    spooky.proxy = TorProxyFactory
+    import spooky._
+    import sql._
 
     val initials = Seq(
       //      "num",
@@ -79,7 +78,7 @@ object BioCompare extends TestCore {
     val allPages  = firstPages
       .paginate("ul.pages > li.next > a")(indexKey = 'page)
       .extract(
-        "url" -> (_.resolvedUrl)
+        "url" -> (_.url)
       )
       .persist()
 

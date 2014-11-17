@@ -1,16 +1,16 @@
 package org.tribbloid.spookystuff.example.forum
 
+import org.tribbloid.spookystuff.SpookyContext
 import org.tribbloid.spookystuff.actions._
-import org.tribbloid.spookystuff.example.TestCore
+import org.tribbloid.spookystuff.example.ExampleCore
 
 /**
  * Created by peng on 9/26/14.
  */
-object TripAdvisor extends TestCore {
+object TripAdvisor extends ExampleCore {
 
-  import spooky._
-
-  def doMain() = {
+  override def doMain(spooky: SpookyContext) = {
+    import spooky._
 
     sc.parallelize(Seq(
       "http://www.tripadvisor.ca/Restaurant_Review-g32655-d1474645-Reviews-Bottega_Louie-Los_Angeles_California.html#REVIEWS",

@@ -1,17 +1,16 @@
 package org.tribbloid.spookystuff.example.forum
 
-import org.tribbloid.spookystuff.example.TestCore
+import org.tribbloid.spookystuff.SpookyContext
 import org.tribbloid.spookystuff.actions._
-import org.tribbloid.spookystuff.expressions._
-import org.tribbloid.spookystuff.expressions.LeftOuter
+import org.tribbloid.spookystuff.example.ExampleCore
+import org.tribbloid.spookystuff.expressions.{LeftOuter, _}
 
 /**
  * Created by peng on 20/08/14.
  */
-object Imdb extends TestCore {
+object Imdb extends ExampleCore {
 
-  override def doMain() = {
-
+  override def doMain(spooky: SpookyContext) = {
     import spooky._
 
     noInput

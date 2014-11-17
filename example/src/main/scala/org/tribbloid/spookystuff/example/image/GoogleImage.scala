@@ -1,17 +1,17 @@
 package org.tribbloid.spookystuff.example.image
 
+import org.tribbloid.spookystuff.SpookyContext
 import org.tribbloid.spookystuff.actions._
 import org.tribbloid.spookystuff.expressions._
-import org.tribbloid.spookystuff.example.TestCore
+import org.tribbloid.spookystuff.example.ExampleCore
 
 /**
  * Created by peng on 10/06/14.
  */
-object GoogleImage extends TestCore {
+object GoogleImage extends ExampleCore {
 
-  import spooky._
-
-  override def doMain() = {
+  override def doMain(spooky: SpookyContext) = {
+    import spooky._
 
     noInput
       .fetch(
