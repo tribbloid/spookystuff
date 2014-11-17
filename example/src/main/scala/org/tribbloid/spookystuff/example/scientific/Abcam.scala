@@ -8,7 +8,7 @@ import org.tribbloid.spookystuff.expressions._
 /**
  * Created by peng on 10/31/14.
  */
-object Abcom extends TestCore {
+object Abcam extends TestCore {
 
   import spooky._
 
@@ -32,6 +32,9 @@ object Abcom extends TestCore {
     println(allPages.count())
 
     val rdd = allPages
+      .extract(
+        "url" -> (_.resolvedUrl)
+      )
       .sliceJoin("div.pws-item-info")(indexKey = 'product_row, joinType = Inner)
       .extract(
         "name" -> (_.text1("h3 a")),
