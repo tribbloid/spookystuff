@@ -29,7 +29,7 @@ object AppliancePartsPros extends ExampleCore {
     println(rdd1.count())
 
     val rdd2 = rdd1
-      .wgetJoin('* href "div.inner li a:has(img)")()
+      .wgetJoin('* href "div.inner li a:has(img)", indexKey = 'schematic_index)()
       .extract(
         "schematic" -> ( _.text1("div#ctl00_cphMain_up1 h1") )
       ).persist()
@@ -37,7 +37,7 @@ object AppliancePartsPros extends ExampleCore {
     println(rdd2.count())
 
     val rdd3 = rdd2
-      .wgetJoin('* href "tbody.m-bsc td.pdct-descr h2 a")()
+      .wgetJoin('* href "tbody.m-bsc td.pdct-descr h2 a", indexKey = 'part_index)()
       .extract(
         "name" -> (_.text1("div.m-pdct h1")),
         "brand" ->  (_.text1("div.m-pdct td[itemprop=brand]")),

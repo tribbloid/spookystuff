@@ -299,15 +299,17 @@ case class PageSchemaRDD(
     val spookyBroad = self.context.broadcast(this.spooky)
     implicit def _spooky: SpookyContext = spookyBroad.value
 
-    val withPages = {
+//    val traceDistinct = withTrace.map(_._1).distinct(numPartitions)
+//    val traceWithPages = traceDistinct.map(trace => trace -> trace.resolve(_spooky))
+//    val withPages = withTrace.join(traceWithPages, numPartitions = numPartitions).map(_._2)
+//    val result = this.copy(self = withPages.flatMap(tuple => tuple._1.putPages(tuple._2, joinType)))
 
       val withTraceSquashed = withTrace.groupByKey()
       val withPagesSquashed = withTraceSquashed.map{ //Unfortunately there is no mapKey
         tuple => tuple._1.resolve(_spooky) -> tuple._2
       }
       //TODO: ugly workaround of https://issues.scala-lang.org/browse/SI-7005
-      withPagesSquashed.flatMapValues(rows => rows).map(identity)
-    }
+      val withPages = withPagesSquashed.flatMapValues(rows => rows).map(identity)
 
     val result = this.copy(self = withPages.flatMap(tuple => tuple._2.putPages(tuple._1, joinType)))
 

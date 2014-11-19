@@ -113,7 +113,7 @@ case class PageRow(
 
   //TODO: don't use any String that contains dot as column name, or you will encounter bug SPARK-2775
   //TODO: this will become the default extract at some point, but not now
-  def select(keys: Seq[KeyLike], fs: Seq[PageRow => _]): PageRow = {
+  def select(keys: Seq[KeyLike], fs: Seq[Expr[_]]): PageRow = {
 
     val newKVs = Map(
       keys.zip(fs).map{
