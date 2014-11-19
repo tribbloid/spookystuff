@@ -54,7 +54,7 @@ case class PageSchemaRDD(
 
   def asJsonRDD(): RDD[String] = self.map(_.asJson())
 
-  //TODO: header cannot use special characters, notably dot(.)
+  //TODO: header cannot use special characters, notably dot(.), this is a bug of Spark SQL
   def asSchemaRDD(): SchemaRDD = {
 
     val jsonRDD = this.asJsonRDD()
@@ -225,12 +225,12 @@ case class PageSchemaRDD(
     )
   }
 
-  def flattenTemp(
-                   expr: Expr[TraversableOnce[_]],
-                   indexKey: Symbol = null,
-                   limit: Int = spooky.joinLimit,
-                   left: Boolean = true
-                   ): PageSchemaRDD = {
+  private def flattenTemp(
+                           expr: Expr[TraversableOnce[_]],
+                           indexKey: Symbol = null,
+                           limit: Int = spooky.joinLimit,
+                           left: Boolean = true
+                           ): PageSchemaRDD = {
     val selected = this.selectTemp(expr)
 
     val flattened = selected.self.flatMap(_.flatten(expr.name, Key(indexKey), limit, left))
@@ -262,21 +262,22 @@ case class PageSchemaRDD(
 
   //by default discard cells & flatten
   //TODO: merge cells
-//  def distinctPageUID(): PageSchemaRDD = {
-//
-//    import org.apache.spark.SparkContext._
-//
-//    val selfRed = this.flattenPages().self.keyBy(_.pages.lastOption.getOrElse("")).reduceByKey((v1, v2) => v1).map(_._2)
-//    this.copy(self = selfRed)
-//  }
+  //  def distinctPageUID(): PageSchemaRDD = {
+  //
+  //    import org.apache.spark.SparkContext._
+  //
+  //    val selfRed = this.flattenPages().self.keyBy(_.pages.lastOption.getOrElse("")).reduceByKey((v1, v2) => v1).map(_._2)
+  //    this.copy(self = selfRed)
+  //  }
 
   /**
    * parallel execution in browser(s) to yield a set of web pages
    * each ActionPlan may yield several pages in a row, depending on the number of Export(s) in it
    * @return RDD[Page] as results of execution
    */
-  //TODO: this definitely need some logging to let us know how many actual resolves.
+
   //TODO: empty action rows needs to be treated differently, current implementation skewed bad
+  //TODO: this should also be a component for ergodic join
   /**
    * smart execution: group identical ActionPlans, execute in parallel, and duplicate result pages to match their original contexts
    * reduce workload by avoiding repeated access to the same url caused by duplicated context or diamond links (A->B,A->C,B->D,C->D)
@@ -288,7 +289,9 @@ case class PageSchemaRDD(
              joinType: JoinType = Const.defaultJoinType,
              numPartitions: Int = self.sparkContext.defaultParallelism,
              autoFlatten: Boolean = true, //if all page outputs have identical names they will be flattened.
-             indexKey: Symbol = null
+             indexKey: Symbol = null,
+             exclude: Symbol = null //if
+             //always search from self first before resolve?
              ): PageSchemaRDD = {
 
     import org.apache.spark.SparkContext._
@@ -302,28 +305,30 @@ case class PageSchemaRDD(
     val spookyBroad = self.context.broadcast(this.spooky)
     implicit def _spooky: SpookyContext = spookyBroad.value
 
-//    val traceDistinct = withTrace.map(_._1).distinct(numPartitions)
-//    val traceWithPages = traceDistinct.map(trace => trace -> trace.resolve(_spooky))
-//    val withPages = withTrace.join(traceWithPages, numPartitions = numPartitions).map(_._2)
-//    val result = this.copy(self = withPages.flatMap(tuple => tuple._1.putPages(tuple._2, joinType)))
+    var traceDistinct = withTrace.map(_._1).distinct(numPartitions)
 
-      val withTraceSquashed = withTrace.groupByKey()
-      val withPagesSquashed = withTraceSquashed.map{ //Unfortunately there is no mapKey
-        tuple => tuple._1.resolve(_spooky) -> tuple._2
-      }
-      //TODO: ugly workaround of https://issues.scala-lang.org/browse/SI-7005
-      val withPages = withPagesSquashed.flatMapValues(rows => rows).map(identity)
+    if (exclude != null) {
+      val selfTrace = self.flatMap(row => row.getPages(exclude.name).map(_.uid.backtrace))
 
-    val result = this.copy(
-      self = withPages.flatMap(tuple => tuple._2.putPages(tuple._1, joinType))
-    )
+      traceDistinct = traceDistinct.subtract(selfTrace)
+    }
+
+    val traceWithPages = traceDistinct.map(trace => trace -> trace.resolve(_spooky))
+    val withPages = withTrace.leftOuterJoin(traceWithPages, numPartitions = numPartitions).map(_._2)
+    val result = this.copy(self = withPages.flatMap(tuple => tuple._1.putPages(tuple._2.get, joinType)))
+
+    //    val withTraceSquashed = withTrace.groupByKey()
+    //    val withPagesSquashed = withTraceSquashed.map{ //Unfortunately there is no mapKey
+    //      tuple => tuple._1.resolve(_spooky) -> tuple._2
+    //    }
+    //    val withPages = withPagesSquashed.flatMapValues(rows => rows).map(identity)
+    //    val result = this.copy(self = withPages.flatMap(tuple => tuple._2.putPages(tuple._1, joinType)))
 
     val keys = _trace.outputs
     if (autoFlatten && keys.size ==1) result.flattenPages(keys.head,indexKey)
     else result
   }
 
-  //TODO: add 'hidden keys' to avoid join messing with other data
   def join(
             expr: Expr[TraversableOnce[_]],
             indexKey: Symbol = null, //left & idempotent parameters are missing as they are always set to true
@@ -373,8 +378,6 @@ case class PageSchemaRDD(
                 ): PageSchemaRDD =
     this.join(expr, indexKey, limit)(Wget("#{"+expr.name+"}"), joinType, numPartitions, autoFlatten)
 
-
-
   //TODO: deprecate to flatten
   /**
    * break each page into 'shards', used to extract structured data from tables
@@ -401,7 +404,7 @@ case class PageSchemaRDD(
     this.copy(result, this.keys ++ Option(_indexKey))
   }
 
-  //TODO: deprecate to
+  //TODO: deprecate to deep join
   /**
    * insert many pages for each old page by recursively visiting "next page" link
    * @param selector selector of the "next page" element

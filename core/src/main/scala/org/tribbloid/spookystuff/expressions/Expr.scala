@@ -63,13 +63,12 @@ final case class ByKeyExpr(keyName: String) extends Expr[Any] {
            ): FromPageExpr[Seq[String]] = new FromPageExpr(keyName, Src(selector, absolute, noEmpty))
 }
 
-final case class FromPageExpr[T](pageName: String, extract: Extract[T]) extends Expr[T] {
+final case class FromPageExpr[T](pageKey: String, extract: Extract[T]) extends Expr[T] {
 
-  name = pageName +"." + extract.toString()
+  name = pageKey +"." + extract.toString()
 
   override def apply(v1: PageRow): T = {
-    val pages = if (pageName == "*") v1.pages
-    else v1.pages.filter(_.name == pageName)
+    val pages = v1.getPages(pageKey)
 
     if (pages.size > 1) throw new UnsupportedOperationException("multiple pages with the same name, flatten first")
     else if (pages.size == 0) return null.asInstanceOf[T]

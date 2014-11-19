@@ -22,6 +22,12 @@ case class PageRow(
     else cells.get(Key(keyStr))
   }
 
+  def getPages(pageKey: String): Seq[Page] = {
+
+    if (pageKey == "*") this.pages
+    else this.pages.filter(_.name == pageKey)
+  }
+
   def asMap(): Map[String, Any] = this.cells
     .filterKeys(!_.isInstanceOf[TempKey]).map(identity)
     .map( tuple => tuple._1.name -> tuple._2)

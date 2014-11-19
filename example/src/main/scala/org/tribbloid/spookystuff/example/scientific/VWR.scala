@@ -31,10 +31,13 @@ object VWR extends ExampleCore {
           +>Paginate("a[title=Next]"),
         pageIndexKey = 'page
       )
+      .extract(
+        "url" -> (_.url),
+        "expired" ->(_.text1("div div h2"))
+      )
       .sliceJoin("div.w99 > table:nth-child(5) > tbody > tr" )()
       .sliceJoin("td" )()
       .extract(
-        "url" -> (_.url),
         "name" -> (_.text1("div.desc"))
       )
       .asSchemaRDD()

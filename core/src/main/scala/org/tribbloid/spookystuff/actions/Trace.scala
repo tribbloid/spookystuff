@@ -36,9 +36,13 @@ final case class Trace(
 
   def resolve(spooky: SpookyContext): Seq[Page] = {
 
-    Utils.retry (Const.remoteResourceInPartitionRetry){
+    val result = Utils.retry (Const.remoteResourceInPartitionRetry){
       resolvePlain(spooky)
     }
+    
+    spooky.metrics.pageCount += result.size
+
+    result
   }
 
   //no retry
@@ -47,7 +51,7 @@ final case class Trace(
     //    val results = ArrayBuffer[Page]()
 
     val pb = new PageBuilder(spooky)
-    spooky.accumulables.driverInitialized += 1
+    spooky.metrics.driverInitialized += 1
 
     try {
       this.apply(pb)
@@ -55,7 +59,7 @@ final case class Trace(
     finally {
       pb.close()
 
-      spooky.accumulables.driverClosed += 1
+      spooky.metrics.driverClosed += 1
     }
   }
 

@@ -66,7 +66,7 @@ class SpookyContext (
                       )
   extends Serializable {
 
-  val accumulables = new Accumulables
+  val metrics = new Metrics
   
   val hConfWrapper =  if (sqlContext!=null) new SerializableWritable(this.sqlContext.sparkContext.hadoopConfiguration)
   else null
@@ -131,9 +131,9 @@ class SpookyContext (
     schemaRDDToPageRowRDD(schemaRDD)
   }
 
-  class Accumulables extends Serializable {
+  class Metrics extends Serializable {
 
-    def sc = SpookyContext.this.sqlContext.sparkContext
+    private def sc = SpookyContext.this.sqlContext.sparkContext
 
     import SparkContext._
 
@@ -144,5 +144,7 @@ class SpookyContext (
     val DFSReadSuccess = sc.accumulator(0, "DFS read success")
 
     val DFSReadFail = sc.accumulator(0, "DFS read fail")
+
+    val pageCount = sc.accumulator(0, "DFS read fail")
   }
 }
