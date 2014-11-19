@@ -7,6 +7,7 @@ import org.openqa.selenium.support.events.EventFiringWebDriver
 import org.openqa.selenium.support.ui.{ExpectedCondition, ExpectedConditions, Select, WebDriverWait}
 import org.openqa.selenium.{By, WebDriver}
 import org.tribbloid.spookystuff.entity.{PageRow, Page}
+import org.tribbloid.spookystuff.expressions.{Value, Expr}
 import org.tribbloid.spookystuff.factory.PageBuilder
 import org.tribbloid.spookystuff.utils.{Const, Utils}
 
@@ -39,12 +40,12 @@ abstract class Interaction extends Action {
  * @param url support cell interpolation
  */
 case class Visit(
-                  url: String,
+                  url: Expr[String],
                   hasTitle: Boolean = true
                   ) extends Interaction with Timed {
 
   override def exeWithoutPage(pb: PageBuilder) {
-    pb.getDriver.get(url)
+    pb.getDriver.get(url.value)
 
     if (hasTitle) {
       val wait = new WebDriverWait(pb.getDriver, timeout(pb).toSeconds)
@@ -53,7 +54,7 @@ case class Visit(
   }
 
   override def doInterpolate(pageRow: PageRow): Option[this.type] = {
-    Utils.interpolate(this.url,pageRow).map(str => this.copy(str).asInstanceOf[this.type])
+    Option(this.url(pageRow)).map(url => this.copy(url = Value(url)).asInstanceOf[this.type])
   }
 }
 
@@ -214,16 +215,16 @@ case class Submit(selector: String) extends Interaction with Timed {
  * @param selector css selector of the textbox, only the first element will be affected
  * @param text support cell interpolation
  */
-case class TextInput(selector: String, text: String) extends Interaction with Timed {
+case class TextInput(selector: String, text: Expr[String]) extends Interaction with Timed {
   override def exeWithoutPage(pb: PageBuilder) {
     val wait = new WebDriverWait(pb.getDriver, timeout(pb).toSeconds)
     val element = wait.until(ExpectedConditions.presenceOfElementLocated(By.cssSelector(selector)))
 
-    element.sendKeys(text)
+    element.sendKeys(text.value)
   }
 
   override def doInterpolate(pageRow: PageRow): Option[this.type] = {
-    Utils.interpolate(this.text,pageRow).map(str => this.copy(text = str).asInstanceOf[this.type])
+    Option(this.text(pageRow)).map(text => this.copy(text = Value(text)).asInstanceOf[this.type])
   }
 }
 
@@ -232,17 +233,17 @@ case class TextInput(selector: String, text: String) extends Interaction with Ti
  * @param selector css selector of the drop down list, only the first element will be affected
  * @param value support cell interpolation
  */
-case class DropDownSelect(selector: String, value: String) extends Interaction with Timed {
+case class DropDownSelect(selector: String, value: Expr[String]) extends Interaction with Timed {
   override def exeWithoutPage(pb: PageBuilder) {
     val wait = new WebDriverWait(pb.getDriver, timeout(pb).toSeconds)
     val element = wait.until(ExpectedConditions.presenceOfElementLocated(By.cssSelector(selector)))
 
     val select = new Select(element)
-    select.selectByValue(value)
+    select.selectByValue(value.value)
   }
 
   override def doInterpolate(pageRow: PageRow): Option[this.type] = {
-    Utils.interpolate(this.value,pageRow).map(str => this.copy(value = str).asInstanceOf[this.type])
+    Option(this.value(pageRow)).map(value => this.copy(value = Value(value)).asInstanceOf[this.type])
   }
 }
 
@@ -266,7 +267,7 @@ case class SwitchToFrame(selector: String)extends Interaction with Timed {
  * @param script support cell interpolation
  * @param selector selector of the element this script is executed against, if null, against the entire page
  */
-case class ExeScript(script: String, selector: String = null) extends Interaction with Timed {
+case class ExeScript(script: Expr[String], selector: String = null) extends Interaction with Timed {
   override def exeWithoutPage(pb: PageBuilder) {
 
     val element = if (selector == null) None
@@ -277,16 +278,16 @@ case class ExeScript(script: String, selector: String = null) extends Interactio
     }
 
     pb.getDriver match {
-      case d: HtmlUnitDriver => d.executeScript(script, element.toArray: _*)//scala can't cast directly
+      case d: HtmlUnitDriver => d.executeScript(script.value, element.toArray: _*)//scala can't cast directly
       //      case d: AndroidWebDriver => throw new UnsupportedOperationException("this web browser driver is not supported")
-      case d: EventFiringWebDriver => d.executeScript(script, element.toArray: _*)
-      case d: RemoteWebDriver => d.executeScript(script, element.toArray: _*)
+      case d: EventFiringWebDriver => d.executeScript(script.value, element.toArray: _*)
+      case d: RemoteWebDriver => d.executeScript(script.value, element.toArray: _*)
       case _ => throw new UnsupportedOperationException("this web browser driver is not supported")
     }
   }
 
   override def doInterpolate(pageRow: PageRow): Option[this.type] = {
-    Utils.interpolate(this.script,pageRow).map(str => this.copy(script = str).asInstanceOf[this.type])
+    Option(this.script(pageRow)).map(script => this.copy(script = Value(script)).asInstanceOf[this.type])
   }
 }
 

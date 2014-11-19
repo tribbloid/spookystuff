@@ -32,7 +32,7 @@ object GoogleImage extends ExampleCore {
       .wgetJoin('* src "div#search img", limit = 1)()
       .saveContent(
         pageRow =>
-          "file://"+System.getProperty("user.home")+"/spooky-integration/"+appName+"/images/"+pageRow.get("name"))
+          "file://"+System.getProperty("user.home")+"/spooky-integration/"+appName+"/images/"+pageRow.get("name").get)
       .extract(
         "path" -> (_.saved)
       )

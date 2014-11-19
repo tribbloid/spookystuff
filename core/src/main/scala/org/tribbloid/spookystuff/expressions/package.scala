@@ -22,6 +22,14 @@ package object expressions {
 
   implicit def symbolToByKeyExpr(symbol: Symbol): ByKeyExpr = ByKeyExpr(symbol.name)
 
+  implicit def stringToExpr(str: String): Expr[String] = {
+
+    new Expr[String] {
+
+      override def apply(v1: PageRow): String = Utils.interpolate(str,v1).orNull
+    }
+  }
+
   implicit class StrExprHelper(val strC: StringContext) {
 
     private def parts = strC.parts
@@ -52,8 +60,10 @@ package object expressions {
           val builder = new StringBuilder
 
           for (i <- 0 to fs.size) {
-            builder.append(Utils.interpolate(parts(i),pageRow))
-            builder.append(fs(i)(pageRow))
+            val value = fs(i)(pageRow)
+            if (value == null ) return null
+            builder.append(stringToExpr(parts(i))(pageRow))
+            builder.append(value)
           }
 
           builder.mkString

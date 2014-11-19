@@ -150,7 +150,7 @@ trait Timed extends Action{
 
 trait Named extends Action {
 
-  var name: String = this.hashCode().toString
+  var name: String = null
 
   def as(name: Symbol): this.type = {
     assert(name != null)

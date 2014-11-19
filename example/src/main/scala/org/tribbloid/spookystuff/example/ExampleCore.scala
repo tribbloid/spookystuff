@@ -22,7 +22,7 @@ trait ExampleCore extends FunSuite with BeforeAndAfter {
     var conf: SparkConf = new SparkConf().setAppName(appName)
 
     if (!conf.contains("spark.master"))
-      conf = conf.setMaster("local[*]")
+      conf = conf.setMaster("local[4,3]") //fail fast
 
     new SparkContext(conf)
   }

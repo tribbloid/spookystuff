@@ -177,8 +177,8 @@ case class PageRow(
 
     while (currentRow.pages.size <= limit && increment > 0 && currentRow.pages.last.attrExist(selector, attr)) {
 
-      val action = if (!wget) Visit(currentRow.pages.last.attr1(selector, attr, noEmpty = true, last = last))
-      else Wget(currentRow.pages.last.attr1(selector, attr, noEmpty = true, last = last))
+      val action = if (!wget) Visit(Value(currentRow.pages.last.attr1(selector, attr, noEmpty = true, last = last)))
+      else Wget(Value(currentRow.pages.last.attr1(selector, attr, noEmpty = true, last = last)))
 
       val newRow = currentRow.putPages(Trace(action::Nil).resolve(spooky), joinType = Merge).get
 

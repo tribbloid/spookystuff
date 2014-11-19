@@ -48,7 +48,6 @@ trait ProxyFeed extends ExampleCore {
         ),
         indexKey = 'page
       )
-      .sliceJoin("table.dataTable tbody tr")()
       .extract(
         "IP" -> (_.text("td")(0)),
         "Port" -> (_.text("td")(1)),
@@ -59,7 +58,7 @@ trait ProxyFeed extends ExampleCore {
         "Https" -> (_.text("td")(6)),
         "LastChecked" -> (_.text("td")(7)),
         "Type" -> (page => "http")
-      )
+      ).persist()
 
     val socksPageRowRDD = noInput
       .fetch(
@@ -82,7 +81,7 @@ trait ProxyFeed extends ExampleCore {
         "Https" -> (_.text("td")(6)),
         "LastChecked" -> (_.text("td")(7)),
         "Type" -> (_ => "socks5")
-      )
+      ).persist()
 
     httpPageRowRDD.union(socksPageRowRDD)
       .asSchemaRDD()

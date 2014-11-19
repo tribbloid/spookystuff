@@ -206,7 +206,7 @@ case class PageSchemaRDD(
   private def clearTemp: PageSchemaRDD = {
     this.copy(
       self = self.map(_.filterKeys(!_.isInstanceOf[TempKey])),
-      keys = ListSet(keys.toSeq.filter(!_.isInstanceOf[TempKey]): _*) //circumvent https://issues.scala-lang.org/browse/SI-8985
+      keys = keys -- keys.filter(_.isInstanceOf[TempKey])//circumvent https://issues.scala-lang.org/browse/SI-8985
     )
   }
 
@@ -218,8 +218,11 @@ case class PageSchemaRDD(
                ): PageSchemaRDD = {
     val selected = this.select(expr)
 
-    val selectedSelf = selected.self
-    selected.copy(self = selectedSelf.flatMap(_.flatten(expr.name, Key(indexKey), limit, left)))
+    val flattened = selected.self.flatMap(_.flatten(expr.name, Key(indexKey), limit, left))
+    selected.copy(
+      self = flattened,
+      keys = selected.keys ++ Option(Key(indexKey))
+    )
   }
 
   def flattenTemp(
@@ -231,8 +234,10 @@ case class PageSchemaRDD(
     val selected = this.selectTemp(expr)
 
     val flattened = selected.self.flatMap(_.flatten(expr.name, Key(indexKey), limit, left))
-
-    selected.copy(self = flattened)
+    selected.copy(
+      self = flattened,
+      keys = selected.keys ++ Option(Key(indexKey))
+    )
   }
 
   def explode(
@@ -285,10 +290,10 @@ case class PageSchemaRDD(
 
     import org.apache.spark.SparkContext._
 
-    val realChains = traces.autoSnapshot
+    val _trace = traces.autoSnapshot
 
     val withTrace = self.flatMap(
-      row => realChains.interpolate(row).map(_ -> row)
+      row => _trace.interpolate(row).map(_ -> row)
     )
 
     val spookyBroad = self.context.broadcast(this.spooky)
@@ -306,8 +311,8 @@ case class PageSchemaRDD(
 
     val result = this.copy(self = withPages.flatMap(tuple => tuple._2.putPages(tuple._1, joinType)))
 
-    val keys = realChains.outputs
-    if (autoFlatten && keys.size <=1) result.flattenPages(keys.head,indexKey)
+    val keys = _trace.outputs
+    if (autoFlatten && keys.size ==1) result.flattenPages(keys.head,indexKey)
     else result
   }
 
@@ -377,13 +382,13 @@ case class PageSchemaRDD(
                  flatten: Boolean = true
                  ): PageSchemaRDD = {
 
-    val realIndexKey = Key(indexKey)
+    val _indexKey = Key(indexKey)
 
     val result = self.flatMap {
-      _.slice(selector, expand)(limit, realIndexKey, joinType, flatten)
+      _.slice(selector, expand)(limit, _indexKey, joinType, flatten)
     }
 
-    this.copy(result, this.keys ++ Option(realIndexKey))
+    this.copy(result, this.keys ++ Option(_indexKey))
   }
 
   //TODO: deprecate to

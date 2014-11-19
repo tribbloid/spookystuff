@@ -11,9 +11,9 @@ import scala.util.Random
  */
 class TestAction extends FunSuite {
 
-  test("formatNullString") {assert (Utils.interpolateFromMap(null, Map[String,String]()) === None)}
+  test("formatNullString") {assert (Utils.interpolate(null, PageRow(Map())) === None)}
 
-  test("formatEmptyString") {assert (Utils.interpolateFromMap("", Map[String,String]()) === Some(""))}
+  test("formatEmptyString") {assert (Utils.interpolate("", PageRow(Map())) === Some(""))}
 
   test("interpolate should not change timeout") {
     import scala.concurrent.duration._

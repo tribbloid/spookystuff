@@ -14,8 +14,9 @@ import org.apache.http.impl.client.HttpClients
 import org.apache.http.impl.conn.PoolingHttpClientConnectionManager
 import org.openqa.selenium.{OutputType, TakesScreenshot}
 import org.tribbloid.spookystuff.entity.{Page, PageRow, PageUID}
+import org.tribbloid.spookystuff.expressions.{Expr, Value}
 import org.tribbloid.spookystuff.factory.PageBuilder
-import org.tribbloid.spookystuff.utils.{SocksProxyConnectionSocketFactory, SocksProxySSLConnectionSocketFactory, Utils}
+import org.tribbloid.spookystuff.utils.{SocksProxyConnectionSocketFactory, SocksProxySSLConnectionSocketFactory}
 
 /**
  * Export a page from the browser or http client
@@ -96,11 +97,11 @@ object DefaultScreenshot extends Screenshot()
  * actions for more complex http/restful API call will be added per request.
  * @param url support cell interpolation
  */
-case class Wget(url: String) extends Export with Sessionless {
+case class Wget(url: Expr[String]) extends Export with Sessionless {
 
   override def doExeNoName(pb: PageBuilder): Seq[Page] = {
 
-    if ( url.trim().isEmpty ) return Seq ()
+    if ( url.value.trim().isEmpty ) return Seq ()
 
     val proxy = pb.spooky.proxy()
     val userAgent = pb.spooky.userAgent()
@@ -143,7 +144,7 @@ case class Wget(url: String) extends Export with Sessionless {
     }
 
     val request = {
-      val request = new HttpGet(url)
+      val request = new HttpGet(url.value)
       if (userAgent != null) request.addHeader("User-Agent", userAgent)
       for (pair <- headers) {
         request.addHeader(pair._1, pair._2)
@@ -172,7 +173,7 @@ case class Wget(url: String) extends Export with Sessionless {
 
         val result = Page(
           PageUID(Trace(pb.realBacktrace :+ this), this),
-          url,
+          url.value,
           contentType,
           content
         )
@@ -191,6 +192,6 @@ case class Wget(url: String) extends Export with Sessionless {
   }
 
   override def doInterpolate(pageRow: PageRow): Option[this.type] = {
-    Utils.interpolate(this.url,pageRow).map(str => this.copy(str).asInstanceOf[this.type])
+    Option(this.url(pageRow)).map(url => this.copy(url = Value(url)).asInstanceOf[this.type])
   }
 }

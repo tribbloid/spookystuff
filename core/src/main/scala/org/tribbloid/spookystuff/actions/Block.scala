@@ -1,5 +1,6 @@
 package org.tribbloid.spookystuff.actions
 
+import org.slf4j.LoggerFactory
 import org.tribbloid.spookystuff.entity.{Page, PageRow}
 import org.tribbloid.spookystuff.factory.PageBuilder
 import org.tribbloid.spookystuff.utils.Const
@@ -59,7 +60,7 @@ final case class Try(override val self: Seq[Action]) extends Block(self) {
     }
     catch {
       case e: Throwable =>
-      //Do nothing because just trying
+        LoggerFactory.getLogger(this.getClass).info("Aborted on exception: " + e)
     }
 
     pages
@@ -101,7 +102,7 @@ final case class Loop(
     }
     catch {
       case e: Throwable =>
-      //Do nothing, loop until not possible
+        LoggerFactory.getLogger(this.getClass).info("Aborted on exception: " + e)
     }
 
     pages

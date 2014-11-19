@@ -139,27 +139,27 @@ These special characters are often called "metacharacters".
     else Serialization.write(obj)(DefaultFormats)
   }
 
-  def interpolateFromMap[T](
-                             str: String,
-                             map: Map[String,T],
-                             delimiter: String = Const.keyDelimiter
-                             ): Option[String] = {
-    if (str == null) return None
-    if (str.isEmpty) return Some(str)
-
-    val regex = (delimiter+"\\{[^\\{\\}\r\n]*\\}").r
-
-    val result = regex.replaceAllIn(str,m => {
-      val original = m.group(0)
-      val key = original.substring(2, original.size-1)
-      map.get(key) match {
-        case Some(v) => v.toString
-        case None => return None
-      }
-    })
-
-    Some(result)
-  }
+//  def interpolateFromMap[T](
+//                             str: String,
+//                             map: Map[String,T],
+//                             delimiter: String = Const.keyDelimiter
+//                             ): Option[String] = {
+//    if (str == null) return None
+//    if (str.isEmpty) return Some(str)
+//
+//    val regex = (delimiter+"\\{[^\\{\\}\r\n]*\\}").r
+//
+//    val result = regex.replaceAllIn(str,m => {
+//      val original = m.group(0)
+//      val key = original.substring(2, original.size-1)
+//      map.get(key) match {
+//        case Some(v) => v.toString
+//        case None => return None
+//      }
+//    })
+//
+//    Some(result)
+//  }
 
   def interpolate(
                    str: String,

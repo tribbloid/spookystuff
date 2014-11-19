@@ -14,7 +14,7 @@ object Amazon extends ExampleCore {
       .fetch(
         Visit("http://www.amazon.com/")
           +> TextInput("input#twotabsearchtextbox", "#{item}")
-          +> Submit("input.nav-submit-input")
+          +> Submit("input[type=submit]")
           +> WaitFor("div#resultsCol")
       )
       .extract(
@@ -22,13 +22,12 @@ object Amazon extends ExampleCore {
         "noResultsTitle" -> {_.text1("h1#noResultsTitle")},
         "savePath" -> {_.saved}
       )
-      .sliceJoin("div.prod[id^=result_]:not([id$=empty])")(limit = 10)
+      .sliceJoin("div.s-item-container > div.a-fixed-left-grid > div.a-fixed-left-grid-inner")(limit = 10)
       .extract(
-        "item_name" -> (page => Option(page.attr1("h3 span.bold", "title")).getOrElse(page.text1("h3 span.bold"))),
-        "price" -> (_.text1("span.bld")),
-        "shipping" -> (_.text1("li.sss2")),
-        "stars" -> (_.attr1("a[alt$=stars]", "alt")),
-        "num_rating" -> (_.text1("span.rvwCnt a"))
+        "item_name" -> (page => Option(page.attr1("a.s-access-detail-page", "title")).getOrElse(page.text1("a.s-access-detail-page"))),
+        "price" -> (_.text1("span.a-size-base.s-price")),
+        "stars" -> (_.text1("span.a-icon-alt")),
+        "num_rating" -> (_.text1("div.a-column.a-span5 > div.a-row > a.a-size-small"))
       )
       .asSchemaRDD()
   }

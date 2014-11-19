@@ -40,7 +40,8 @@ class MapFunctions[K](m1: Map[K,_]) {
     val values: Iterable[_] = valueOption.toSeq.flatMap {
       case v: TraversableOnce[_] => v
       case v: Array[_] => v
-      case v: Any => Seq[Any](v)
+      case v: Any => Seq(v)
+      case _ => Seq()
     }
 
     val cleaned = m1 - key
