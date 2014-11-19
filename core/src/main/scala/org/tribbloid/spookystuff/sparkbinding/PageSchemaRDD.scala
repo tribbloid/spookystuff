@@ -251,7 +251,10 @@ case class PageSchemaRDD(
                     pattern: String = "*",
                     indexKey: Symbol = null
                     ): PageSchemaRDD =
-    this.copy(self = self.flatMap(_.flattenPages(pattern, Key(indexKey))))
+    this.copy(
+      self = self.flatMap(_.flattenPages(pattern, Key(indexKey))),
+      keys = this.keys ++ Option(Key(indexKey))
+    )
 
   //TODO: these are very useful in crawling
   //  def groupByPageUID
@@ -311,7 +314,9 @@ case class PageSchemaRDD(
       //TODO: ugly workaround of https://issues.scala-lang.org/browse/SI-7005
       val withPages = withPagesSquashed.flatMapValues(rows => rows).map(identity)
 
-    val result = this.copy(self = withPages.flatMap(tuple => tuple._2.putPages(tuple._1, joinType)))
+    val result = this.copy(
+      self = withPages.flatMap(tuple => tuple._2.putPages(tuple._1, joinType))
+    )
 
     val keys = _trace.outputs
     if (autoFlatten && keys.size ==1) result.flattenPages(keys.head,indexKey)
@@ -367,6 +372,8 @@ case class PageSchemaRDD(
                 autoFlatten: Boolean = true
                 ): PageSchemaRDD =
     this.join(expr, indexKey, limit)(Wget("#{"+expr.name+"}"), joinType, numPartitions, autoFlatten)
+
+
 
   //TODO: deprecate to flatten
   /**

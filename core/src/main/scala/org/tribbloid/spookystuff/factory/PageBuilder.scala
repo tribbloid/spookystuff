@@ -11,39 +11,6 @@ import org.tribbloid.spookystuff.entity._
 
 import scala.collection.mutable.ArrayBuffer
 
-//object PageBuilder {
-//
-//  def autoSnapshot(actions: Seq[Action], dead: Boolean): Seq[Action] = {
-//    if (Action.mayExport(actions) || dead) actions
-//    else actions :+ Snapshot() //Don't use singleton, otherwise will flush timestamp
-//  }
-//
-//  def resolve(actions: Seq[Action], dead: Boolean)(spooky: SpookyContext): Seq[Page] = {
-//
-//    Utils.retry (Const.remoteResourceInPartitionRetry){
-//      resolvePlain(autoSnapshot(actions, dead))(spooky)
-//    }
-//  }
-//
-//  // Major API shrink! resolveFinal will be merged here
-//  // if a resolve has no potential to output page then a snapshot will be appended at the end
-//  def resolvePlain(actions: Seq[Action])(spooky: SpookyContext): Seq[Page] = {
-//
-//    //    val results = ArrayBuffer[Page]()
-//
-//    val pb = new PageBuilder(spooky)
-//
-//    try {
-//      pb ++= actions
-//
-//      pb.pages
-//    }
-//    finally {
-//      pb.close()
-//    }
-//  }
-//}
-
 //TODO: this should be minimized and delegated to resource pool
 class PageBuilder(val spooky: SpookyContext){
 
