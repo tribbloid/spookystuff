@@ -325,10 +325,11 @@ case class PageSchemaRDD(
             traces: Set[Trace],
             joinType: JoinType = Const.defaultJoinType,
             numPartitions: Int = self.sparkContext.defaultParallelism,
-            autoFlatten: Boolean = true
+            autoFlatten: Boolean = true,
+            pageIndexKey: Symbol = null
             ): PageSchemaRDD = this
     .flattenTemp(expr, indexKey, limit, left = true)
-    .fetch(traces, joinType, numPartitions, autoFlatten)
+    .fetch(traces, joinType, numPartitions, autoFlatten, pageIndexKey)
     .clearTemp
 
   /**
