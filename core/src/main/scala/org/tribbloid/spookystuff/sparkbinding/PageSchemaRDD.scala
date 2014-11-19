@@ -300,13 +300,12 @@ case class PageSchemaRDD(
 
     val withTrace = self.flatMap(
       row => _trace.interpolate(row).map(_ -> row)
-    )
+    ).persist()
 
     val spookyBroad = self.context.broadcast(this.spooky)
     implicit def _spooky: SpookyContext = spookyBroad.value
 
     var traceDistinct = withTrace.map(_._1).distinct(numPartitions)
-
     if (exclude != null) {
       val selfTrace = self.flatMap(row => row.getPages(exclude.name).map(_.uid.backtrace))
 

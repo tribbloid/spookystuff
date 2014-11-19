@@ -145,6 +145,6 @@ class SpookyContext (
 
     val DFSReadFail = sc.accumulator(0, "DFS read fail")
 
-    val pageCount = sc.accumulator(0, "DFS read fail")
+    val pageCount = sc.accumulator(0, "Page Count")
   }
 }
