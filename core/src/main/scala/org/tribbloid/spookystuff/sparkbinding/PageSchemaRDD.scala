@@ -289,8 +289,8 @@ case class PageSchemaRDD(
              joinType: JoinType = Const.defaultJoinType,
              numPartitions: Int = self.sparkContext.defaultParallelism,
              autoFlatten: Boolean = true, //if all page outputs have identical names they will be flattened.
-             indexKey: Symbol = null,
-             exclude: Symbol = null //if
+             indexKey: Symbol = null
+//             exclude: Symbol = null //to make sure that each page in the collection gets its linked pages, we have to make sure that rows with identical pages must have different cells?
              //always search from self first before resolve?
              ): PageSchemaRDD = {
 
@@ -300,28 +300,29 @@ case class PageSchemaRDD(
 
     val withTrace = self.flatMap(
       row => _trace.interpolate(row).map(_ -> row)
-    ).persist()
+    )
 
+    val withTracePersisted = withTrace.persist()
     val spookyBroad = self.context.broadcast(this.spooky)
     implicit def _spooky: SpookyContext = spookyBroad.value
 
-    var traceDistinct = withTrace.map(_._1).distinct(numPartitions)
-    if (exclude != null) {
-      val selfTrace = self.flatMap(row => row.getPages(exclude.name).map(_.uid.backtrace))
-
-      traceDistinct = traceDistinct.subtract(selfTrace)
-    }
-
-    val traceWithPages = traceDistinct.map(trace => trace -> trace.resolve(_spooky))
-    val withPages = withTrace.leftOuterJoin(traceWithPages, numPartitions = numPartitions).map(_._2)
-    val result = this.copy(self = withPages.flatMap(tuple => tuple._1.putPages(tuple._2.get, joinType)))
-
-    //    val withTraceSquashed = withTrace.groupByKey()
-    //    val withPagesSquashed = withTraceSquashed.map{ //Unfortunately there is no mapKey
-    //      tuple => tuple._1.resolve(_spooky) -> tuple._2
+    //    var traceDistinct = withTracePersisted.map(_._1).distinct(numPartitions)
+    //    if (exclude != null) {
+    //      val selfTrace = self.flatMap(row => row.getPages(exclude.name).map(_.uid.backtrace))
+    //
+    //      traceDistinct = traceDistinct.subtract(selfTrace)
     //    }
-    //    val withPages = withPagesSquashed.flatMapValues(rows => rows).map(identity)
-    //    val result = this.copy(self = withPages.flatMap(tuple => tuple._2.putPages(tuple._1, joinType)))
+    //
+    //    val traceWithPages = traceDistinct.map(trace => trace -> trace.resolve(_spooky))
+    //    val withPages = withTracePersisted.leftOuterJoin(traceWithPages, numPartitions = numPartitions).map(_._2)
+    //    val result = this.copy(self = withPages.flatMap(tuple => tuple._1.putPages(tuple._2.get, joinType)))
+
+    val withTraceSquashed = withTrace.groupByKey()
+    val withPagesSquashed = withTraceSquashed.map{ //Unfortunately there is no mapKey
+      tuple => tuple._1.resolve(_spooky) -> tuple._2
+    }
+    val withPages = withPagesSquashed.flatMapValues(rows => rows).map(identity)
+    val result = this.copy(self = withPages.flatMap(tuple => tuple._2.putPages(tuple._1, joinType)))
 
     val keys = _trace.outputs
     if (autoFlatten && keys.size ==1) result.flattenPages(keys.head,indexKey)

@@ -15,7 +15,7 @@ object AppliancePartsPros extends ExampleCore {
   override def doMain(spooky: SpookyContext) = {
     import spooky._
 
-    val rdd1 = sc.parallelize(Seq("A210S"))
+    sc.parallelize(Seq("A210S"))
       .fetch(
         Visit("http://www.appliancepartspros.com/")
           +> TextInput("input.ac-input","#{_}")
@@ -24,29 +24,18 @@ object AppliancePartsPros extends ExampleCore {
       )
       .extract(
         "model" -> ( _.text1("div.dgrm-lst div.header h2") )
-      ).persist()
-
-    println(rdd1.count())
-
-    val rdd2 = rdd1
+      )
       .wgetJoin('* href "div.inner li a:has(img)", indexKey = 'schematic_index)()
       .extract(
         "schematic" -> ( _.text1("div#ctl00_cphMain_up1 h1") )
-      ).persist()
-
-    println(rdd2.count())
-
-    val rdd3 = rdd2
+      )
       .wgetJoin('* href "tbody.m-bsc td.pdct-descr h2 a", indexKey = 'part_index)()
       .extract(
         "name" -> (_.text1("div.m-pdct h1")),
         "brand" ->  (_.text1("div.m-pdct td[itemprop=brand]")),
         "manufacturer" -> (_.text1("div.m-bsc div.mod ul li:contains(Manufacturer) strong")),
         "replace" -> (_.text1("div.m-pdct div.m-chm p"))
-      ).persist()
-
-    println(rdd3.count())
-
-    rdd3.asSchemaRDD()
+      )
+      .asSchemaRDD()
   }
 }

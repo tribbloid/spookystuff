@@ -35,8 +35,7 @@ object VWR extends ExampleCore {
         "url" -> (_.url),
         "expired" ->(_.text1("div div h2"))
       )
-      .sliceJoin("div.w99 > table:nth-child(5) > tbody > tr" )()
-      .sliceJoin("td" )()
+      .sliceJoin("div.w99 > table:nth-child(5) > tbody > tr td" )()
       .extract(
         "name" -> (_.text1("div.desc"))
       )

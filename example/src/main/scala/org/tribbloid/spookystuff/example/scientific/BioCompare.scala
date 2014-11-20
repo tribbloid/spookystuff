@@ -15,6 +15,7 @@ object BioCompare extends ExampleCore {
     spooky.proxy = TorProxyFactory
     import spooky._
     import sql._
+    import scala.concurrent.duration._
 
     val initials = Seq(
       //      "num",
@@ -64,12 +65,14 @@ object BioCompare extends ExampleCore {
         "first_page_url" -> (_.href1("*"))
       ).persist()
 
-    println(categories.count())
+    val pageCount = categories.count()
+    println(pageCount)
 
     val firstPages = categories
     .fetch(
-        Wget("#{first_page_url}?vcmpv=true"),
-        numPartitions = initials.length*2500
+        RandomDelay(10.seconds,20.seconds)
+          +> Wget("#{first_page_url}?vcmpv=true"),
+        numPartitions = (pageCount/10).toInt
       )
       .extract(
         "category_header" -> (_.text1("h1"))
