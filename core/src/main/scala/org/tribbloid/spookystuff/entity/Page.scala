@@ -250,9 +250,6 @@ case class Page(
     None
   }
 
-  def backtrace = this.uid.backtrace
-  def blockKey = this.uid.blockKey
-
   def name = this.uid.leaf.name
 
   //this will lose information as charset encoding will be different

@@ -47,7 +47,7 @@ trait Action extends ActionLike {
 
         var isInBacktrace = false
 
-        var message: String = ""
+        var message: String = "\n"
 
         message += session.backtrace.map{
           action =>{
@@ -57,7 +57,7 @@ trait Action extends ActionLike {
             }
             else "| "+action.toString
           }
-        }.mkString("\n")+"\n"
+        }.mkString("\n")
 
         if (!isInBacktrace) message += "+>" + this
 

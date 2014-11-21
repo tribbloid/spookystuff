@@ -290,29 +290,21 @@ case class PageSchemaRDD(
              numPartitions: Int = self.sparkContext.defaultParallelism,
              autoFlatten: Boolean = true, //if all page outputs have identical names they will be flattened.
              indexKey: Symbol = null
-//             exclude: Symbol = null //to make sure that each page in the collection gets its linked pages, we have to make sure that rows with identical pages must have different cells?
-             //always search from self first before resolve?
+//TODO:             cache: RDD[Page] = null
              ): PageSchemaRDD = {
 
     import org.apache.spark.SparkContext._
 
     val _trace = traces.autoSnapshot
-
     val withTrace = self.flatMap(
       row => _trace.interpolate(row).map(_ -> row)
     )
 
-    val withTracePersisted = withTrace.persist()
     val spookyBroad = self.context.broadcast(this.spooky)
     implicit def _spooky: SpookyContext = spookyBroad.value
 
+    //    val withTracePersisted = withTrace.persist()
     //    var traceDistinct = withTracePersisted.map(_._1).distinct(numPartitions)
-    //    if (exclude != null) {
-    //      val selfTrace = self.flatMap(row => row.getPages(exclude.name).map(_.uid.backtrace))
-    //
-    //      traceDistinct = traceDistinct.subtract(selfTrace)
-    //    }
-    //
     //    val traceWithPages = traceDistinct.map(trace => trace -> trace.resolve(_spooky))
     //    val withPages = withTracePersisted.leftOuterJoin(traceWithPages, numPartitions = numPartitions).map(_._2)
     //    val result = this.copy(self = withPages.flatMap(tuple => tuple._1.putPages(tuple._2.get, joinType)))
@@ -327,6 +319,34 @@ case class PageSchemaRDD(
     val keys = _trace.outputs
     if (autoFlatten && keys.size ==1) result.flattenPages(keys.head,indexKey)
     else result
+  }
+
+  /* if the following conditions are met, row will be removed
+* 1. row has identical trace and name
+* 2. the row has identical cells*/
+  def exclude(others: RDD[PageRow]): PageSchemaRDD = {
+
+    import org.apache.spark.SparkContext._
+
+    val otherSignatures = others.map {
+      row =>
+        val pages = row.pages
+        val signature = (row.cells, pages.map(_.uid), pages.map(_.name))
+        signature -> null
+    }
+
+    val selfWithSignatures = self.map{
+      row =>
+        val pages = row.pages
+        val signature = (row.cells, pages.map(_.uid), pages.map(_.name))
+        signature -> row
+    }
+
+    val excluded = selfWithSignatures.subtractByKey(otherSignatures).values
+
+    this.copy(
+      self = excluded
+    )
   }
 
   def join(
@@ -405,36 +425,36 @@ case class PageSchemaRDD(
   }
 
   //TODO: deprecate to deep join
-  /**
-   * insert many pages for each old page by recursively visiting "next page" link
-   * @param selector selector of the "next page" element
-   * @param limit depth of recursion
-   * @return RDD[Page], contains both old and new pages
-   */
-  def paginate(
-                selector: String,
-                attr: String = "abs:href",
-                wget: Boolean = true,
-                postAction: Seq[Action] = Seq()
-                )(
-                limit: Int = spooky.paginationLimit,
-                indexKey: Symbol = null,
-                flatten: Boolean = true,
-                last: Boolean = false
-                ): PageSchemaRDD = {
-
-    val spookyBroad = self.context.broadcast(this.spooky)
-
-    implicit def spookyImplicit: SpookyContext = spookyBroad.value
-
-    val realIndexKey = Key(indexKey)
-
-    val result = self.flatMap {
-      _.paginate(selector, attr, wget, postAction)(limit, Key(indexKey), flatten, last)
-    }
-
-    this.copy(result, this.keys ++ Option(realIndexKey))
-  }
+  //  /**
+  //   * insert many pages for each old page by recursively visiting "next page" link
+  //   * @param selector selector of the "next page" element
+  //   * @param limit depth of recursion
+  //   * @return RDD[Page], contains both old and new pages
+  //   */
+  //  def paginate(
+  //                selector: String,
+  //                attr: String = "abs:href",
+  //                wget: Boolean = true,
+  //                postAction: Seq[Action] = Seq()
+  //                )(
+  //                limit: Int = spooky.paginationLimit,
+  //                indexKey: Symbol = null,
+  //                flatten: Boolean = true,
+  //                last: Boolean = false
+  //                ): PageSchemaRDD = {
+  //
+  //    val spookyBroad = self.context.broadcast(this.spooky)
+  //
+  //    implicit def spookyImplicit: SpookyContext = spookyBroad.value
+  //
+  //    val realIndexKey = Key(indexKey)
+  //
+  //    val result = self.flatMap {
+  //      _.paginate(selector, attr, wget, postAction)(limit, Key(indexKey), flatten, last)
+  //    }
+  //
+  //    this.copy(result, this.keys ++ Option(realIndexKey))
+  //  }
 
   //  def deepJoin(
   //                selector: String,
