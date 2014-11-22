@@ -24,7 +24,7 @@ object RottenTomatoes extends ExampleCore {
         "review_count" -> (_.text1("div#all-critics-numbers p.critic_stats span[itemprop=reviewCount]"))
       )
       .wgetJoin('* href "div#contentReviews h3 a")() //go to review page, e.g. http://www.rottentomatoes.com/m/guardians_of_the_galaxy/reviews/
-      .paginate("div.scroller a.right")(indexKey = 'page) // grab all pages by using right arrow button
+      .wgetExplore('* href "div.scroller a.right")(depthKey = 'page) // grab all pages by using right arrow button
       .sliceJoin("div#reviews div.media_block")() //slice into review blocks
       .extract(
         "critic_name" -> (_.text1("div.criticinfo strong a")),
@@ -34,7 +34,7 @@ object RottenTomatoes extends ExampleCore {
       )
       .wgetJoin('* href "div.criticinfo strong a")() //go to critic page, e.g. http://www.rottentomatoes.com/critic/sean-means/
       .extract(
-        "total_reviews_ratings" -> (_.text("div.media_block div.clearfix dd").toString)
+        "total_reviews_ratings" -> (_.text("div.media_block div.clearfix dd").toString())
       )
       .asSchemaRDD()
   }

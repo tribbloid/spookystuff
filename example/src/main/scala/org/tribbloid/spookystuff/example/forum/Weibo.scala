@@ -32,7 +32,7 @@ object Weibo extends ExampleCore {
             Snapshot() :: Nil,
           50
         ),
-        indexKey = 'page
+        flattenPagesIndexKey = 'page
       )
       .sliceJoin("dl.feed_list")(indexKey = 'item)
       .extract(

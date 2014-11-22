@@ -46,7 +46,7 @@ trait ProxyFeed extends ExampleCore {
           "a.next:not([class*=ui-state-disabled])",
           limit =15
         ),
-        indexKey = 'page
+        flattenPagesIndexKey = 'page
       )
       .extract(
         "IP" -> (_.text("td")(0)),
@@ -68,7 +68,7 @@ trait ProxyFeed extends ExampleCore {
           "a.next:not([class*=ui-state-disabled])",
           limit =15
         ),
-        indexKey = 'page
+        flattenPagesIndexKey = 'page
       )
       .sliceJoin("table.dataTable tbody tr")()
       .extract(

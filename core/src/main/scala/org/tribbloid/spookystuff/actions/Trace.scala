@@ -108,5 +108,5 @@ final class TraceSetFunctions(self: Set[Trace]) {
 
   def interpolate(pr: PageRow): Set[Trace] = self.flatMap(_.interpolate(pr))
 
-  def outputs: Set[String] = self.map(_.outputs).reduce(_ ++ _)
+  def outputNames: Set[String] = self.map(_.outputNames).reduce(_ ++ _)
 }

@@ -40,7 +40,7 @@ final case class Value[T](override val value: T) extends Expr[T] {//all select u
 
   name = value.toString
 
-  override def as(name: Symbol): this.type = throw new UnsupportedOperationException("cannot change name of value")
+//  override def as(name: Symbol): this.type = throw new UnsupportedOperationException("cannot change name of value")
 
   override def apply(v1: PageRow): T = value
 }

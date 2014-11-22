@@ -17,7 +17,7 @@ object FoodPoco extends ExampleCore {
       .fetch(
         Wget("http://cd.food.poco.cn/restaurant/res_search.php?sp_id=107001&reslocateID=101022001&reslocateID1=&reslocateID2=&seatxt=%BB%F0%B9%F8&%CC%E1%BD%BB=%CB%D1+%CB%F7")
       )
-      .paginate("div.page a[title=下一页]")(indexKey = 'page)
+      .wgetExplore('* href "div.page a[title=下一页]")(depthKey = 'page)
       .sliceJoin("div.page_content")(indexKey = 'row)
       .extract(
         "name" -> (_.text1("h2 a")),

@@ -232,9 +232,18 @@ case class Page(
 
                  //                 cookie: Seq[SerializableCookie] = Seq(),
                  timestamp: Date = new Date,
-                 saved: String = null
+                 var saved: String = null
                  )
   extends Serializable {
+
+  //these customization is to ensure that
+//  override def equals(obj: Any): Boolean = obj match {
+//    case other: Page =>
+//      (this.uid == other.uid) && (this.name == other.name)
+//    case _ => false
+//  }
+//
+//  override def hashCode(): Int = (this.uid, this.name).hashCode()
 
   @transient lazy val parsedContentType: ContentType = {
     var result = ContentType.parse(this.contentType)
@@ -278,7 +287,8 @@ case class Page(
         fos.close()
       }
 
-      this.copy(saved = fullPath.toString)
+      this.saved = fullPath.toString
+      this
     }
   }
 

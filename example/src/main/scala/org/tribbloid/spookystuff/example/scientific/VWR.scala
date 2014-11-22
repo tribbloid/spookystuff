@@ -29,7 +29,7 @@ object VWR extends ExampleCore {
         Visit("#{~}")
           //+>Try(Click("#GoTo64") :: Nil)
           +>Paginate("a[title=Next]"),
-        pageIndexKey = 'page
+        flattenPagesIndexKey = 'page
       )
       .extract(
         "url" -> (_.url),

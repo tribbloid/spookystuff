@@ -79,7 +79,7 @@ object BioCompare extends ExampleCore {
       )
 
     val allPages  = firstPages
-      .paginate("ul.pages > li.next > a")(indexKey = 'page)
+      .wgetExplore('* href "ul.pages > li.next > a")(depthKey = 'page)
       .extract(
         "url" -> (_.url)
       )

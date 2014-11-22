@@ -21,7 +21,7 @@ import scala.concurrent.duration.Duration
  */
 abstract class Interaction extends Action {
 
-  final override def outputs = Set()
+  final override def outputNames = Set()
 
   final override def trunk = Some(this) //can't be ommitted
 

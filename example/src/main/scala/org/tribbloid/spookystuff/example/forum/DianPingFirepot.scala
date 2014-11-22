@@ -22,14 +22,14 @@ object DianPingFirepot extends ExampleCore {
       .fetch(
         Visit("#{_}")
       )
-      .paginate("div.page > a.next", wget = false)(indexKey='page)
+      .wgetExplore('* href "div.page > a.next")(depthKey='page)
       .sliceJoin("ul.shop-list > li")(indexKey = 'row)
       .extract(
         "title" -> (_.text1("span.big-name")),
         "review_count" -> (_.text1("span > a"))
       )
       .join('*.href("p.title > a.shopname").as('~), limit = 1)(Visit("#{~}/review_all"))
-      .paginate("div.Pages > a.NextPage", wget = false)(indexKey='comment_page)
+      .wgetExplore('* href "div.Pages > a.NextPage")(depthKey='comment_page)
       .sliceJoin("div.comment-list > ul > li")(indexKey = 'comment_row)
       .extract(
         "rating" -> (_.attr1("span.item-rank-rst","class")),

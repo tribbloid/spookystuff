@@ -33,7 +33,7 @@ object Imdb extends ExampleCore {
         "review_count" -> (_.text1("td#overview-top span[itemprop=reviewCount]"))
       )
       .wgetJoin('* href "div#maindetails_quicklinks a:contains(Reviews)")(joinType = LeftOuter) //go to review pages, e.g. http://www.imdb.com/title/tt2015381/reviews?ref_=tt_urv
-      .paginate("div#tn15content a:has(img[alt~=Next])")(limit = 2) //grab all pages by using the right arrow button.
+      .wgetExplore('* href "div#tn15content a:has(img[alt~=Next])")(depthKey = 'page) //grab all pages by using the right arrow button.
       .sliceJoin("div#tn15content div:has(h2)")(joinType = LeftOuter) //slice into rows of reviews
       .extract(
         "review_rating" -> (_.attr1("img[alt]","alt")),

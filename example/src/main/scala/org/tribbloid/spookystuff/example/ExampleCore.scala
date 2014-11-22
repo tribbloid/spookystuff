@@ -42,7 +42,8 @@ trait ExampleCore extends FunSuite with BeforeAndAfter {
       driverFactory = NaiveDriverFactory(loadImages = true),
       pageExpireAfter = 0.milliseconds,
       joinLimit = 2,
-      sliceLimit = 3
+      sliceLimit = 3,
+      maxExploreDepth = Int.MaxValue //TODO: don't need that much
     )
     .setRoot("file://"+System.getProperty("user.home")+"/spooky-integration/"+appName+"/")
   }

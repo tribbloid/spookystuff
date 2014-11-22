@@ -59,9 +59,9 @@ class SpookyContext (
                       //default max number of elements scraped from a page, set to Int.MaxValue to allow unlimited fetch
                       var joinLimit: Int = Int.MaxValue,
                       var sliceLimit: Int = Int.MaxValue,
+                      var maxExploreDepth: Int = Int.MaxValue,
                       var paginationLimit: Int = 1000, //TODO: higher than this may cause JVM heapspace overflow
 
-                      var recursionDepth: Int = 500, //unknown if it is enough
                       val browserResolution: (Int, Int) = (1920, 1080)
                       )
   extends Serializable {

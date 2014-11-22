@@ -5,7 +5,7 @@ import org.tribbloid.spookystuff.entity.PageRow
 
 abstract class Actions(val self: Seq[Action]) extends ActionLike {
 
-  final def outputs = self.map(_.outputs).reduce(_ ++ _)
+  final def outputNames = self.map(_.outputNames).reduce(_ ++ _)
 
   final protected def trunkSeq: Seq[Action] = self.flatMap(_.trunk)
 

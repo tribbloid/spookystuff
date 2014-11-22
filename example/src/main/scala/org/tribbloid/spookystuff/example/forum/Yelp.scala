@@ -3,6 +3,7 @@ package org.tribbloid.spookystuff.example.forum
 import org.tribbloid.spookystuff.SpookyContext
 import org.tribbloid.spookystuff.actions.Wget
 import org.tribbloid.spookystuff.example.ExampleCore
+import org.tribbloid.spookystuff.expressions._
 
 /**
  * Created by peng on 9/26/14.
@@ -29,7 +30,7 @@ object Yelp extends ExampleCore {
       .fetch(
         Wget("#{_}")
       )
-      .paginate("a.page-option.prev-next:contains(→)")(indexKey = 'page, last = true)
+      .wgetExplore('* href "a.page-option.prev-next:contains(→)")(depthKey = 'page)
       .sliceJoin("div.review")(indexKey = 'row)
       .extract(
         "comment" -> (_.text1("p.review_comment")),

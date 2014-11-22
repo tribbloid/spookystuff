@@ -26,7 +26,7 @@ object GoogleScholar extends ExampleCore {
         "citation" -> (_.text1("div.gs_r div.gs_ri div.gs_fl a:contains(Cited)"))
       )
       .visitJoin('* href "div.gs_r div.gs_ri div.gs_fl a:contains(Cited)", limit = 1)()
-      .paginate("div#gs_n td[align=left] a")()
+      .wgetExplore('* href "div#gs_n td[align=left] a")(depthKey = 'page)
       .sliceJoin("div.gs_r")()
       .extract(
         "citation_title" -> (_.text1("h3.gs_rt a")),

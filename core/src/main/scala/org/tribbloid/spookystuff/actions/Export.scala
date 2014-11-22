@@ -24,7 +24,7 @@ import org.tribbloid.spookystuff.utils.{SocksProxyConnectionSocketFactory, Socks
  */
 abstract class Export extends Named{
 
-  final override def outputs = Set(this.name)
+  final override def outputNames = Set(this.name)
 
   final override def trunk = None //have not impact to driver
 

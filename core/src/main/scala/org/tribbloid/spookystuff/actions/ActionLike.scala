@@ -22,9 +22,9 @@ trait ActionLike
   def inject(same: this.type ): Unit
 
   //used to determine if snapshot needs to be appended or if possible to be executed lazily
-  final def mayExport: Boolean = outputs.nonEmpty
+  final def mayExport: Boolean = outputNames.nonEmpty
 
-  def outputs: Set[String]
+  def outputNames: Set[String]
 
   //the minimal equivalent action that can be put into backtrace
   def trunk: Option[this.type]

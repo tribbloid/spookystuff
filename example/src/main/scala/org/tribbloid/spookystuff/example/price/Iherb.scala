@@ -15,7 +15,7 @@ object Iherb extends ExampleCore {
         Wget("http://ca.iherb.com/")
       )
       .wgetJoin('* href "div.category a")()
-      .paginate("p.pagination a:contains(Next)")(indexKey = 'page, limit = 2)
+      .wgetExplore('* href "p.pagination a:contains(Next)")(depthKey = 'page)
       .sliceJoin("div.prodSlotWide")(indexKey = 'row)
       .extract(
         "description" -> (_.text1("p.description")),

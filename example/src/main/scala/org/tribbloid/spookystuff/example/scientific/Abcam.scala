@@ -26,7 +26,7 @@ object Abcam extends ExampleCore {
     println(firstPages.count())
 
     val allPages = firstPages
-      .paginate("li.nextlink[class!=disabled] > a[class!=disabled]")(indexKey = 'page)
+      .wgetExplore('* href "li.nextlink[class!=disabled] > a[class!=disabled]")(depthKey = 'page)
       .repartition(1000).persist()
 
     println(allPages.count())

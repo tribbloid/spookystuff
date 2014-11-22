@@ -3,6 +3,7 @@ package org.tribbloid.spookystuff.example.forum
 import org.tribbloid.spookystuff.SpookyContext
 import org.tribbloid.spookystuff.actions._
 import org.tribbloid.spookystuff.example.ExampleCore
+import org.tribbloid.spookystuff.expressions._
 
 /**
  * Created by peng on 9/26/14.
@@ -30,7 +31,11 @@ object TripAdvisor extends ExampleCore {
         Visit("#{_}")
           +> Try(Click("span.partnerRvw span.taLnk") :: Nil)
       )
-      .paginate("a.sprite-pageNext", wget = false, postAction = Try(Click("span.partnerRvw span.taLnk")::Nil) :: Nil)(indexKey = 'page)
+      .explore('* href "a.sprite-pageNext" as '~)(
+        Visit("#{~}")
+          +> Try(Click("span.partnerRvw span.taLnk")::Nil),
+        depthKey = 'page
+      )
       .sliceJoin("div.reviewSelector")(indexKey = 'row)
       .extract(
         "comment" -> (_.text1("p", last=true)),
