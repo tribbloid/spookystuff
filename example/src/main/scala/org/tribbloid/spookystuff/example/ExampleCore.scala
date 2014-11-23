@@ -21,8 +21,10 @@ trait ExampleCore extends FunSuite with BeforeAndAfter {
   val sc: SparkContext = {
     var conf: SparkConf = new SparkConf().setAppName(appName)
 
-    if (!conf.contains("spark.master"))
-      conf = conf.setMaster("local[4,3]") //fail fast
+    var master: String = null
+    master = Option(master).getOrElse(conf.getOption("spark.master").orNull)
+    master = Option(master).getOrElse(System.getenv("MASTER"))
+    master = Option(master).getOrElse("local[4,3]")//fail fast
 
     new SparkContext(conf)
   }
