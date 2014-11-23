@@ -2,10 +2,9 @@ package org.tribbloid.spookystuff.repl
 
 import org.apache.spark.repl.SparkILoop
 import org.apache.spark.sql.SQLContext
-import org.tribbloid.spookystuff.SpookyContext
 
 import scala.collection.immutable
-import scala.tools.nsc.interpreter._
+import scala.tools.nsc.interpreter.{Results, NamedParam}
 
 class SpookyILoop extends SparkILoop {
 
@@ -15,7 +14,7 @@ class SpookyILoop extends SparkILoop {
       "import org.tribbloid.spookystuff.factory.driver._" ::
       "import org.tribbloid.spookystuff.expressions._" ::
       "import org.tribbloid.spookystuff.SpookyContext" ::
-      "import sql._" ::
+      "val spooky = new SpookyContext(sql)" ::
       "import spooky._" ::
       Nil
 
@@ -25,15 +24,8 @@ class SpookyILoop extends SparkILoop {
       val sql = new SQLContext(this.sparkContext)
       val sqlParam = NamedParam[SQLContext]("sql", sql)
       intp.bind(sqlParam.name, sqlParam.tpe, sqlParam.value, immutable.List("@transient")) match {
-        case IR.Success =>
+        case Results.Success =>
         case _ => throw new RuntimeException("SQL failed to initialize")
-      }
-
-      val spooky = new SpookyContext(sql)
-      val spookyParam = NamedParam[SpookyContext]("spooky", spooky)
-      intp.bind(spookyParam.name, spookyParam.tpe, spookyParam.value, immutable.List("@transient")) match {
-        case IR.Success =>
-        case _ => throw new RuntimeException("SpookyContext failed to initialize")
       }
 
       postInitScript.foreach(command)
