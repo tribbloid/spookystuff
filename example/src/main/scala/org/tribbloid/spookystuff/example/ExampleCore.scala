@@ -46,7 +46,7 @@ trait ExampleCore extends FunSuite with BeforeAndAfter {
       pageExpireAfter = 0.milliseconds,
       joinLimit = 2,
       sliceLimit = 3,
-      maxExploreDepth = Int.MaxValue //TODO: don't need that much
+      maxExploreDepth = 3
     )
     .setRoot("file://"+System.getProperty("user.home")+"/spooky-integration/"+appName+"/")
   }

@@ -269,20 +269,6 @@ case class PageSchemaRDD(
       keys = this.keys ++ Option(Key(indexKey))
     )
 
-  //TODO: these are very useful in crawling
-  //  def groupByPageUID
-  //  def reduceByPageUID
-
-  //by default discard cells & flatten
-  //TODO: merge cells
-  //  def distinctPageUID(): PageSchemaRDD = {
-  //
-  //    import org.apache.spark.SparkContext._
-  //
-  //    val selfRed = this.flattenPages().self.keyBy(_.pages.lastOption.getOrElse("")).reduceByKey((v1, v2) => v1).map(_._2)
-  //    this.copy(self = selfRed)
-  //  }
-
   /**
    * parallel execution in browser(s) to yield a set of web pages
    * each ActionPlan may yield several pages in a row, depending on the number of Export(s) in it
@@ -296,7 +282,6 @@ case class PageSchemaRDD(
                  numPartitions: Int = self.sparkContext.defaultParallelism,
                  flattenPagesPattern: Symbol = '*, //by default, always flatten all pages
                  flattenPagesIndexKey: Symbol = null
-                 //TODO:             cache: RDD[Page] = null
                  ): PageSchemaRDD = {
 
     val _trace = traces.autoSnapshot
@@ -317,7 +302,6 @@ case class PageSchemaRDD(
   }
 
   //TODO: empty action rows needs to be treated differently, current implementation skewed bad
-  //TODO: this should also be a component for ergodic join
   /**
    * smart execution: group identical ActionPlans, execute in parallel, and duplicate result pages to match their original contexts
    * reduce workload by avoiding repeated access to the same url caused by duplicated context or diamond links (A->B,A->C,B->D,C->D)
@@ -329,7 +313,7 @@ case class PageSchemaRDD(
              joinType: JoinType = Const.defaultJoinType,
              numPartitions: Int = self.sparkContext.defaultParallelism,
              flattenPagesPattern: Symbol = '*, //by default, always flatten all pages
-             flattenPagesIndexKey: Symbol = null
+             flattenPagesIndexKey: Symbol = null //TODO: investigate if there is better options
              //TODO:             cache: RDD[Page] = null  & always use self as cache
              ): PageSchemaRDD = {
 
@@ -476,16 +460,16 @@ case class PageSchemaRDD(
       val newRowsCount = newRows.count()
 
       if (newRowsCount == 0){
-        return this.copy(self = total) //early stop condition if no new pages with the same data is detected
+        return this.copy(self = total.coalesce(numPartitions)) //early stop condition if no new pages with the same data is detected
       }
 
       total = total.union(
         if (depthKey != null) newRows.select(Value(depth) as depthKey).self
         else newRows.self
-      )//.coalesce(numPartitions)
+      )
     }
 
-    this.copy(self = total)
+    this.copy(self = total.coalesce(numPartitions))
   }
 
   def visitExplore(
@@ -532,7 +516,6 @@ case class PageSchemaRDD(
     this.copy(result, this.keys ++ Option(_indexKey))
   }
 
-  //TODO: deprecate to explore
   /**
    * insert many pages for each old page by recursively visiting "next page" link
    * @param selector selector of the "next page" element

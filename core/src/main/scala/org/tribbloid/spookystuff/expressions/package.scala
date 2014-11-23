@@ -24,9 +24,19 @@ package object expressions {
 
   implicit def stringToExpr(str: String): Expr[String] = {
 
-    new Expr[String] {
+    val delimiter = Const.keyDelimiter
+    val regex = (delimiter+"\\{[^\\{\\}\r\n]*\\}").r
 
-      override def apply(v1: PageRow): String = Utils.interpolate(str,v1).orNull
+    if (regex.findFirstIn(str).isEmpty) {
+      new Value[String](str)
+    }
+    else {
+      new Expr[String] {
+
+        name = str
+
+        override def apply(v1: PageRow): String = Utils.interpolate(str, v1).orNull
+      }
     }
   }
 

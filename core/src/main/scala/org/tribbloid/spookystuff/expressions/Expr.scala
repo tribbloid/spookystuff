@@ -47,7 +47,7 @@ final case class Value[T](override val value: T) extends Expr[T] {//all select u
 
 final case class ByKeyExpr(keyName: String) extends Expr[Any] {
 
-  name = keyName
+  name = "'"+keyName
 
   override def apply(v1: PageRow): Any =
     v1.get(keyName)
@@ -65,7 +65,7 @@ final case class ByKeyExpr(keyName: String) extends Expr[Any] {
 
 final case class FromPageExpr[T](pageKey: String, extract: Extract[T]) extends Expr[T] {
 
-  name = pageKey +"." + extract.toString()
+  name = "'"+pageKey +" " + extract.toString()
 
   override def apply(v1: PageRow): T = {
     val pages = v1.getPages(pageKey)
