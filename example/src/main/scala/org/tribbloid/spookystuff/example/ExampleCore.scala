@@ -26,6 +26,7 @@ trait ExampleCore extends FunSuite with BeforeAndAfter {
     master = Option(master).getOrElse(System.getenv("MASTER"))
     master = Option(master).getOrElse("local[4,3]")//fail fast
 
+    conf.setMaster(master)
     new SparkContext(conf)
   }
 

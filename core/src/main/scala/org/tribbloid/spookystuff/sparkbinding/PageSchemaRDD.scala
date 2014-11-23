@@ -330,7 +330,7 @@ case class PageSchemaRDD(
              numPartitions: Int = self.sparkContext.defaultParallelism,
              flattenPagesPattern: Symbol = '*, //by default, always flatten all pages
              flattenPagesIndexKey: Symbol = null
-             //TODO:             cache: RDD[Page] = null
+             //TODO:             cache: RDD[Page] = null  & always use self as cache
              ): PageSchemaRDD = {
 
     import org.apache.spark.SparkContext._
