@@ -159,6 +159,7 @@ object Page {
   //restore latest in a directory
   //returns: Seq() => has backtrace dir but contains no page
   //returns null => no backtrace dir
+  //TODO: cannot handle infinite duration, avoid using it!
   def restoreLatest(
                      dirPath: Path,
                      earliestModificationTime: Long = 0
@@ -184,7 +185,6 @@ object Page {
     }
   }
 
-  //TODO: cannot handle infinite duration, avoid using it!
   def autoRestoreLatest(
                          trace: Trace,
                          spooky: SpookyContext

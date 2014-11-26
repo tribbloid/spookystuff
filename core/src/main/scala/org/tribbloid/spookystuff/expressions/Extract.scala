@@ -51,7 +51,7 @@ abstract class FromElements[T](selector: String) extends Extract[T] {
 case class Attr(
                  selector: String,
                  attr: String,
-                 noEmpty: Boolean = true
+                 noEmpty: Boolean
                  ) extends FromElements[Seq[String]](selector) {
 
   override def apply(page: Page): Seq[String] = page.attr(selector, attr, noEmpty)
@@ -61,8 +61,8 @@ object Href {
 
   def apply(
              selector: String,
-             absolute: Boolean = true,
-             noEmpty: Boolean = true
+             absolute: Boolean,
+             noEmpty: Boolean
              ): Attr = {
     val attr = if (absolute) "abs:href"
     else "href"
@@ -75,12 +75,20 @@ object Src {
 
   def apply(
              selector: String,
-             absolute: Boolean = true,
-             noEmpty: Boolean = true
+             absolute: Boolean,
+             noEmpty: Boolean
              ): Attr = {
     val attr = if (absolute) "abs:src"
     else "src"
 
     Attr(selector, attr, noEmpty)
   }
+}
+
+case class Text(
+                 selector: String,
+                 own: Boolean
+                 ) extends FromElements[Seq[String]](selector) {
+
+  override def apply(page: Page): Seq[String] = page.text(selector, own)
 }

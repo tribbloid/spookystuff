@@ -30,9 +30,9 @@ object Youtube extends ExampleCore{
       .join('* href "h3.yt-lockup-title a.yt-uix-tile-link" as '~, limit = 1)(
         Visit("#{~}")
           +> ExeScript("window.scrollBy(0,500)")
-          +> Try(WaitFor("iframe[title^=Comment]").in(50.seconds) :: Nil)
+          +> Try(WaitFor("iframe[title^=Comment]").in(50.seconds) :: Nil),
+        numPartitions = 400
       )
-      .repartition(400)
       .extract(
         "description" -> (_.text1("div#watch-description-text")),
         "publish" -> (_.text1("p#watch-uploader-info")),

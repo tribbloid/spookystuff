@@ -6,7 +6,7 @@ import org.apache.spark.{SerializableWritable, SparkConf, SparkContext}
 import org.tribbloid.spookystuff.entity.{Key, KeyLike, PageRow}
 import org.tribbloid.spookystuff.expressions._
 import org.tribbloid.spookystuff.factory.driver.{DriverFactory, NaiveDriverFactory, ProxySetting}
-import org.tribbloid.spookystuff.sparkbinding.{PageSchemaRDD, SchemaRDDFunctions, StringRDDFunctions}
+import org.tribbloid.spookystuff.sparkbinding.{PageRowRDD, SchemaRDDFunctions, StringRDDFunctions}
 import org.tribbloid.spookystuff.utils.Utils
 
 import scala.collection.immutable.ListSet
@@ -73,7 +73,7 @@ class SpookyContext (
 
   def hConf = hConfWrapper.value
 
-  @transient lazy val noInput: PageSchemaRDD = new PageSchemaRDD(this.sqlContext.sparkContext.parallelize(Seq(PageRow())),spooky = this)
+  @transient lazy val noInput: PageRowRDD = new PageRowRDD(this.sqlContext.sparkContext.parallelize(Seq(PageRow())),spooky = this)
 
   //  implicit def self: SpookyContext = this
 
@@ -100,7 +100,7 @@ class SpookyContext (
   //  implicit def pageRowRDDToItsFunctions[T <% RDD[PageRow]](rdd: T) = new PageRowRDD(rdd)(this)
 
   //these are the entry points of SpookyStuff starting from a common RDD of strings or maps
-  implicit def stringRDDToPageRowRDD(rdd: RDD[String]): PageSchemaRDD = {
+  implicit def stringRDDToPageRowRDD(rdd: RDD[String]): PageRowRDD = {
     val result = rdd.map{
       str => {
         var cells = Map[KeyLike,Any]()
@@ -110,19 +110,19 @@ class SpookyContext (
       }
     }
 
-    new PageSchemaRDD(result, keys = ListSet(Key("_")), spooky = this)
+    new PageRowRDD(result, keys = ListSet(Key("_")), spooky = this)
   }
 
-  implicit def schemaRDDToPageRowRDD(rdd: SchemaRDD): PageSchemaRDD = {
+  implicit def schemaRDDToPageRowRDD(rdd: SchemaRDD): PageRowRDD = {
 
     val result = new SchemaRDDFunctions(rdd).toMapRDD.map{
       map => new PageRow(Option(map).getOrElse(Map()).map(tuple => (Key(tuple._1),tuple._2)))
     }
 
-    new PageSchemaRDD(result, keys = ListSet(rdd.schema.fieldNames: _*).map(Key(_)), spooky = this)
+    new PageRowRDD(result, keys = ListSet(rdd.schema.fieldNames: _*).map(Key(_)), spooky = this)
   }
 
-  implicit def mapRDDToPageRowRDD[T <: Any](rdd: RDD[Map[String,T]]): PageSchemaRDD = {
+  implicit def mapRDDToPageRowRDD[T <: Any](rdd: RDD[Map[String,T]]): PageRowRDD = {
 
     val jsonRDD = rdd.map(map => Utils.toJson(map))
     jsonRDD.persist()

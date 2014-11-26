@@ -61,6 +61,10 @@ final case class ByKeyExpr(keyName: String) extends Expr[Any] {
           absolute: Boolean = true,
           noEmpty: Boolean = true
            ): FromPageExpr[Seq[String]] = new FromPageExpr(keyName, Src(selector, absolute, noEmpty))
+
+  def text(selector: String,
+           own: Boolean = false
+            ): FromPageExpr[Seq[String]] = new FromPageExpr(keyName, Text(selector, own))
 }
 
 final case class FromPageExpr[T](pageKey: String, extract: Extract[T]) extends Expr[T] {
