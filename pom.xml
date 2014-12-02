@@ -64,6 +64,7 @@
         <module>core</module>
         <module>example</module>
         <module>shell</module>
+	<module>test</module>
     </modules>
 
     <!--<profiles>-->
@@ -215,6 +216,9 @@
         <artifactId>maven-failsafe-plugin</artifactId>
         <version>${failsafe.version}</version>
 	<configuration>
+	  <includes>
+		<include>**/*IT.scala</include>
+	  </includes>
 	</configuration>
         <executions>
           <execution>
