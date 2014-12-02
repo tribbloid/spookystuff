@@ -419,6 +419,12 @@ you can use scripts in $SPARK_HOME/ec2 to setup a Spark cluster with transient H
     - Autoscaling is currently not supported.
     - Spark installation directory is hardcoded to '/root/spark', if your client has a different directory it may cause some compatibility issue.
 
+
+Integration Test
+----------------
+
+	mvn clean test-compile failsafe:integration-test
+
 License
 -----------
 
