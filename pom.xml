@@ -15,6 +15,7 @@
         <spark.version>1.1.0</spark.version>
         <PermGen>512m</PermGen>
         <MaxPermGen>2g</MaxPermGen>
+	<failsafe.version>2.18</failsafe.version>
     </properties>
 
     <groupId>org.tribbloid.spookystuff</groupId>
@@ -209,7 +210,21 @@
                     </execution>
                 </executions>
             </plugin>
-
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-failsafe-plugin</artifactId>
+        <version>${failsafe.version}</version>
+	<configuration>
+	</configuration>
+        <executions>
+          <execution>
+            <goals>
+              <goal>integration-test</goal>
+              <goal>verify</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
         </plugins>
     </build>
 
