@@ -2,7 +2,7 @@ package org.tribbloid.spookystuff.example.forum
 
 import org.tribbloid.spookystuff.SpookyContext
 import org.tribbloid.spookystuff.actions._
-import org.tribbloid.spookystuff.expressions._
+import org.tribbloid.spookystuff.dsl._
 import org.tribbloid.spookystuff.example.ExampleCore
 
 /**
@@ -16,25 +16,24 @@ object RottenTomatoes extends ExampleCore {
     .fetch(
         Wget("http://www.rottentomatoes.com/")
       )
-      .wgetJoin('* href "table.top_box_office tr.sidebarInTheaterTopBoxOffice a", indexKey = 'rank)() //go to movie page, e.g. http://www.rottentomatoes.com/m/guardians_of_the_galaxy/
-      .extract(
-        "name" -> (_.text1("h1.movie_title")),
-        "meter" -> (_.text1("div#all-critics-numbers span#all-critics-meter")),
-        "rating" -> (_.text1("div#all-critics-numbers p.critic_stats span")),
-        "review_count" -> (_.text1("div#all-critics-numbers p.critic_stats span[itemprop=reviewCount]"))
+      .wgetJoin($"table.top_box_office tr.sidebarInTheaterTopBoxOffice a", indexKey = 'rank)() //go to movie page, e.g. http://www.rottentomatoes.com/m/guardians_of_the_galaxy/
+      .select(
+        $"h1.movie_title".text > 'name,
+        $"div#all-critics-numbers span#all-critics-meter".text > 'meter,
+        $"div#all-critics-numbers p.critic_stats span".text > 'meter,
+        $"div#all-critics-numbers p.critic_stats span[itemprop=reviewCount]" > 'review_count
       )
-      .wgetJoin('* href "div#contentReviews h3 a")() //go to review page, e.g. http://www.rottentomatoes.com/m/guardians_of_the_galaxy/reviews/
-      .wgetExplore('* href "div.scroller a.right")(depthKey = 'page) // grab all pages by using right arrow button
-      .sliceJoin("div#reviews div.media_block")() //slice into review blocks
-      .extract(
-        "critic_name" -> (_.text1("div.criticinfo strong a")),
-        "critic_org" -> (_.text1("div.criticinfo em.subtle")),
-        "critic_review" -> (_.text1("div.reviewsnippet p")),
-        "critic_score" -> (_.text1("div.reviewsnippet p.subtle",own = true))
-      )
-      .wgetJoin('* href "div.criticinfo strong a")() //go to critic page, e.g. http://www.rottentomatoes.com/critic/sean-means/
-      .extract(
-        "total_reviews_ratings" -> (_.text("div.media_block div.clearfix dd").toString())
+      .wgetJoin($"div#contentReviews h3 a")() //go to review page, e.g. http://www.rottentomatoes.com/m/guardians_of_the_galaxy/reviews/
+      .wgetExplore($"div.scroller a.right")(depthKey = 'page) // grab all pages by using right arrow button
+      .flatSelect($"div#reviews div.media_block")(
+        A"div.criticinfo strong a".text > 'critic_name,
+        A"div.criticinfo em.subtle".text > 'critic_org,
+        A"div.reviewsnippet p".text > 'critic_review,
+        A"div.reviewsnippet p.subtle".ownText > 'critic_score
+      ) //slice into review blocks
+      .wgetJoin(A"div.criticinfo strong a")() //go to critic page, e.g. http://www.rottentomatoes.com/critic/sean-means/
+      .select(
+        $"div.media_block div.clearfix dd".text > 'total_reviews_ratings
       )
       .asSchemaRDD()
   }

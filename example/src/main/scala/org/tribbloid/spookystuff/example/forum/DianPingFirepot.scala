@@ -3,7 +3,7 @@ package org.tribbloid.spookystuff.example.forum
 import org.tribbloid.spookystuff.SpookyContext
 import org.tribbloid.spookystuff.actions._
 import org.tribbloid.spookystuff.example.ExampleCore
-import org.tribbloid.spookystuff.expressions._
+import org.tribbloid.spookystuff.dsl._
 
 /**
  * Created by peng on 10/16/14.
@@ -20,25 +20,24 @@ object DianPingFirepot extends ExampleCore {
       "http://www.dianping.com/search/category/8/10/g110o8x71y999#sortBar"
     ))
       .fetch(
-        Visit("#{_}")
+        Visit('_)
       )
-      .wgetExplore('* href "div.page > a.next")(depthKey='page)
-      .sliceJoin("ul.shop-list > li")(indexKey = 'row)
-      .extract(
-        "title" -> (_.text1("span.big-name")),
-        "review_count" -> (_.text1("span > a"))
+      .wgetExplore($("div.page > a.next"))(depthKey='page)
+      .join($("ul.shop-list > li"), indexKey = 'row)(
+        Visit(x"${A("p.title > a.shopname").href}/review_all")
+      )(
+        A("span.big-name").text > 'title,
+        A("span > a").text > 'review_count
       )
-      .join('*.href("p.title > a.shopname").as('~), limit = 1)(Visit("#{~}/review_all"))
-      .wgetExplore('* href "div.Pages > a.NextPage")(depthKey='comment_page)
-      .sliceJoin("div.comment-list > ul > li")(indexKey = 'comment_row)
-      .extract(
-        "rating" -> (_.attr1("span.item-rank-rst","class")),
-        "date" -> (_.text1("span.time")),
-        "average_price" -> (_.text1("span.comm-per")),
-        "taste" -> (_.text1("span.rst:nth-of-type(1)")),
-        "service" -> (_.text1("span.rst:nth-of-type(3)")),
-        "comment" -> (_.text1("div.comment-txt > div.J_brief-cont")),
-        "commentExtra" ->(_.text1("div.comment-txt > div.J_extra-cont"))
+      .wgetExplore($("div.Pages > a.NextPage"))(depthKey='comment_page)
+      .flatSelect($("div.comment-list > ul > li"), indexKey = 'comment_row)(
+        A("span.item-rank-rst").attr("class") > 'rating,
+        A("span.time").text > 'date,
+        A("span.comm-per").text > 'average_price,
+        A("pan.rst:nth-of-type(1)").text > 'taste,
+        A("span.rst:nth-of-type(3)").text > 'service,
+        A("div.comment-txt > div.J_brief-cont").text > 'comment,
+        A("div.comment-txt > div.J_extra-cont").text > 'comment_extra
       )
       .asSchemaRDD().persist()
   }

@@ -1,8 +1,9 @@
 package org.tribbloid.spookystuff.example.forum
 
-import org.tribbloid.spookystuff.SpookyContext
+import org.tribbloid.spookystuff.{dsl, SpookyContext}
 import org.tribbloid.spookystuff.actions.{Loop, _}
 import org.tribbloid.spookystuff.example.ExampleCore
+import dsl._
 
 import scala.concurrent.duration._
 
@@ -21,7 +22,7 @@ object Weibo extends ExampleCore {
           +> TextInput("div.password input.W_input","A9e7k1")
           +> Click("div.info_list a.W_btn_g span").in(40.seconds)
           +> Delay(10.seconds)
-          +> TextInput("input.gn_input", "#{_}\n")
+          +> TextInput("input.gn_input", "'{_}\n")
           +> Click("ul.formbox_tab a:nth-of-type(2)")
           +> Delay(10.seconds)
           +> Snapshot()
@@ -34,9 +35,8 @@ object Weibo extends ExampleCore {
         ),
         flattenPagesIndexKey = 'page
       )
-      .sliceJoin("dl.feed_list")(indexKey = 'item)
-      .extract(
-        "text" -> (_.text1("dl.feed_list p em"))
+      .flatSelect($"dl.feed_list", indexKey = 'item)(
+        A"dl.feed_list p em".text > 'text
       )
       .asSchemaRDD()
   }

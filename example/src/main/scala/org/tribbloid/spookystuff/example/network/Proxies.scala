@@ -8,5 +8,5 @@ import org.tribbloid.spookystuff.example.ProxyFeed
 */
 object Proxies extends ProxyFeed {
 
-  override def doMain(spooky: SpookyContext) = proxyRDD(spooky)
+  override def doMain(spooky: SpookyContext) = proxyRDD
 }

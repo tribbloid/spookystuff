@@ -5,7 +5,7 @@ import java.util.Date
 
 import org.tribbloid.spookystuff.SpookyContext
 import org.tribbloid.spookystuff.actions._
-import org.tribbloid.spookystuff.expressions._
+import org.tribbloid.spookystuff.dsl._
 import org.tribbloid.spookystuff.example.ExampleCore
 
 /**
@@ -25,47 +25,44 @@ object WeiboNoSession extends ExampleCore {
 
     val range = start.until(end, 3600*1000).map(time => df.format(new Date(time)))
 
-    val RDD = sc.parallelize(range,1000)
+    sc.parallelize(range,1000)
       .fetch(
         RandomDelay(40.seconds, 80.seconds)
           +> Visit("http://s.weibo.com/wb/%25E6%2588%2590%25E9%2583%25BD%25E9%2593%25B6%25E8%25A1%258C&xsort=time&timescope=custom:#{_}:#{_}&Refer=g")
           +> Try(WaitFor("div.search_feed dl.feed_list").in(60.seconds) :: Nil)
       )
-      .extract(
-        "count" -> (_.text("div.search_feed dl.feed_list").size),
-        "CAPCHAS" -> (_.text1("p.code_tit"))
+      .select(
+        A"div.search_feed dl.feed_list".size > 'count,
+        A"p.code_tit".text > 'CAPCHAS
       )
-      .sliceJoin("div.search_feed dl.feed_list")(indexKey = 'item)
-      .extract(
-        "name" -> (page => "成都银行"),
-        "text" -> (_.text1("p > em")),
-        "forum" -> (page => "weibo"),
-        "source" -> (_.text1("p.info:nth-of-type(2) > a[target]")),
-        "URL" -> (_.url),
-        "author" -> (_.text1("dd.content p:nth-of-type(1) > a:nth-of-type(1)")),
-        "date" -> (_.text1("p.info:nth-of-type(2) a.date")),
-        "thumb ups" -> (_.text1("p.info:nth-of-type(2) span a:nth-of-type(1)")),
-        "retweet" -> (_.text1("p.info:nth-of-type(n+2) span a:nth-of-type(2)")),
-        "reply" -> (_.text1("p.info:nth-of-type(n+2) a:nth-of-type(4)"))
+      .flatSelect($"div.search_feed dl.feed_list", indexKey = 'item)(
+        "成都银行" > 'name,
+        A"p > em".text > 'text,
+        "weibo" > 'forum,
+        A"p.info:nth-of-type(2) > a[target]".text > 'source,
+        'A.uri > 'URI,
+        A"dd.content p:nth-of-type(1) > a:nth-of-type(1)".text > 'author,
+        A"p.info:nth-of-type(2) a.date".text > 'date,
+        A"p.info:nth-of-type(2) span a:nth-of-type(1)".text > 'thumb_ups,
+        A"p.info:nth-of-type(n+2) span a:nth-of-type(2)".text > 'retweet,
+        A"p.info:nth-of-type(n+2) a:nth-of-type(4)".text > 'reply
       )
-      .join('* href "dd.content p:nth-of-type(1) > a:nth-of-type(1)" as '~)(
-        Visit("#{~}")
+      .join(A"dd.content p:nth-of-type(1) > a:nth-of-type(1)")(
+        Visit('A.href)
           .+> (RandomDelay(40.seconds, 80.seconds))
           .+> (WaitForDocumentReady)
-      )
-      .extract(
-        "author.CAPCHAS" -> (_.text1("p.code_tit")),
-        "author.follow" -> (_.text1("li.S_line1 strong")),
-        "author.fans" -> (_.text1("li.follower strong")),
-        "author.tweets" -> (_.text1("li.W_no_border strong")),
-        "author.gender" -> (_.attr1("div.tags em.W_ico12","title")),
-        "author.tags" -> (_.text1("div.tags")),
-        "author.level" -> (_.attr1("span.W_level_ico span.W_level_num","title")),
-        "author.credit" -> (_.text1("div.pf_star_info p:nth-of-type(1)")),
-        "author.interests" -> (_.text1("div.pf_star_info p:nth-of-type(2)"))
+      )()
+      .select(
+        $"p.code_tit".text > 'author_CAPCHAS,
+        $"li.S_line1 strong".text > 'author_follow,
+        $"li.follower strong".text > 'author_fans,
+        $"li.W_no_border strong".text > 'author_tweets,
+        $"div.tags em.W_ico12".attr("title") > 'author_gender,
+        $"div.tags".text > 'author_tags,
+        $"span.W_level_ico span.W_level_num".attr("title") > 'author_level,
+        $"div.pf_star_info p:nth-of-type(1)".text > 'author_credit,
+        $"div.pf_star_info p:nth-of-type(2)".text > 'author_interests
       )
       .asSchemaRDD()
-
-    RDD
   }
 }

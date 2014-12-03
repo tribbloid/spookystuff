@@ -3,7 +3,7 @@ package org.tribbloid.spookystuff.example.forum
 import org.tribbloid.spookystuff.SpookyContext
 import org.tribbloid.spookystuff.actions.Wget
 import org.tribbloid.spookystuff.example.ExampleCore
-import org.tribbloid.spookystuff.expressions._
+import org.tribbloid.spookystuff.dsl._
 
 /**
  * Created by peng on 9/26/14.
@@ -28,19 +28,18 @@ object Yelp extends ExampleCore {
       "http://www.yelp.com/biz/providence-los-angeles-2?sort_by=date_desc"
     ))
       .fetch(
-        Wget("#{_}")
+        Wget('_)
       )
-      .wgetExplore('* href "a.page-option.prev-next:contains(→)")(depthKey = 'page)
-      .sliceJoin("div.review")(indexKey = 'row)
-      .extract(
-        "comment" -> (_.text1("p.review_comment")),
-        "date&status" -> (_.text1("div.review-content span.rating-qualifier")),
-        "stars" -> (_.attr1("div.biz-rating div div.rating-very-large meta","content")),
-        "useful" -> (_.text1("div.review-wrapper > div.review-footer a.ybtn.useful span.i-wrap span.count")),
-        "user_name" -> (_.text1("li.user-name a.user-display-name")),
-        "user_location" -> (_.text1("li.user-location")),
-        "friend_count" -> (_.text1("li.friend-count b")),
-        "review_count" -> (_.text1("li.review-count b"))
+      .wgetExplore($"a.page-option.prev-next:contains(→)")(depthKey = 'page)
+      .flatSelect($"div.review", indexKey = 'row) (
+        A"p.review_comment".text > 'comment,
+        A"div.review-content span.rating-qualifier".text > 'date_status,
+        A"div.biz-rating div div.rating-very-large meta".attr("content") > 'stars,
+        A"div.review-wrapper > div.review-footer a.ybtn.useful span.i-wrap span.count".text > 'useful,
+        A"li.user-name a.user-display-name".text > 'user_name,
+        A"li.user-location".text > 'user_location,
+        A"li.friend-count b" > 'friend_count,
+        A"li.review-count b".text > 'review_count
       )
       .asSchemaRDD()
   }

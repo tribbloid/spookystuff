@@ -1,9 +1,9 @@
 package org.tribbloid.spookystuff.actions
 
-import org.tribbloid.spookystuff.ActionException
-import org.tribbloid.spookystuff.entity.Page
-import org.tribbloid.spookystuff.factory.PageBuilder
-import org.tribbloid.spookystuff.utils.{Const, Utils}
+import org.tribbloid.spookystuff.{Const, ActionException}
+import org.tribbloid.spookystuff.session.Session
+import org.tribbloid.spookystuff.pages.Page
+import org.tribbloid.spookystuff.utils.Utils
 
 import scala.concurrent.duration.Duration
 
@@ -26,7 +26,7 @@ trait Action extends ActionLike {
   //  val optional: Boolean
 
   //this should handle autoSave, cache and errorDump
-  def apply(session: PageBuilder): Seq[Page] = {
+  def apply(session: Session): Seq[Page] = {
 
     val errorDump: Boolean = session.spooky.errorDump
     val errorDumpScreenshot: Boolean = session.spooky.errorDumpScreenshot
@@ -113,7 +113,7 @@ trait Action extends ActionLike {
     results
   }
 
-  def doExe(session: PageBuilder): Seq[Page]
+  def doExe(session: Session): Seq[Page]
 
   override def inject(same: this.type): Unit = {
 //    super.inject(same)
@@ -131,14 +131,14 @@ trait Timed extends Action{
     this
   }
 
-  def timeout(session: PageBuilder): Duration = {
+  def timeout(session: Session): Duration = {
     val base = if (this._timeout == null) session.spooky.remoteResourceTimeout
     else this._timeout
 
     base
   }
 
-  def hardTerminateTimeout(session: PageBuilder): Duration = {
+  def hardTerminateTimeout(session: Session): Duration = {
     timeout(session) + Const.hardTerminateOverhead
   }
 
@@ -158,6 +158,8 @@ trait Named extends Action {
     this.name = name.name
     this
   }
+
+  final def >(name: Symbol): this.type = as(name)
 
   override def inject(same: this.type): Unit = {
     super.inject(same)

@@ -1,8 +1,9 @@
 package org.tribbloid.spookystuff.example.social
 
-import org.tribbloid.spookystuff.SpookyContext
+import org.tribbloid.spookystuff.{dsl, SpookyContext}
 import org.tribbloid.spookystuff.actions._
 import org.tribbloid.spookystuff.example.ExampleCore
+import dsl._
 
 /**
  * This job will find and printout urls of Sanjay Gupta, Arun Gupta and Hardik Gupta in your area

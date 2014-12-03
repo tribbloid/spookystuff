@@ -1,9 +1,10 @@
 package org.tribbloid.spookystuff.actions
 
 import org.slf4j.LoggerFactory
-import org.tribbloid.spookystuff.entity.{Page, PageRow}
-import org.tribbloid.spookystuff.factory.PageBuilder
-import org.tribbloid.spookystuff.utils.Const
+import org.tribbloid.spookystuff.Const
+import org.tribbloid.spookystuff.entity.PageRow
+import org.tribbloid.spookystuff.session.Session
+import org.tribbloid.spookystuff.pages.Page
 
 import scala.collection.mutable.ArrayBuffer
 import scala.concurrent.duration.Duration
@@ -28,7 +29,7 @@ abstract class Block(override val self: Seq[Action]) extends Actions(self) with 
     this
   }
 
-  final override def doExe(pb: PageBuilder): Seq[Page] = {
+  final override def doExe(pb: Session): Seq[Page] = {
 
     val pages = this.doExeNoUID(pb)
 
@@ -42,14 +43,14 @@ abstract class Block(override val self: Seq[Action]) extends Actions(self) with 
     }
   }
 
-  def doExeNoUID(pb: PageBuilder): Seq[Page]
+  def doExeNoUID(pb: Session): Seq[Page]
 }
 
 final case class Try(override val self: Seq[Action]) extends Block(self) {
 
   override def trunk = Some(Try(this.trunkSeq).asInstanceOf[this.type])
 
-  override def doExeNoUID(pb: PageBuilder): Seq[Page] = {
+  override def doExeNoUID(pb: Session): Seq[Page] = {
 
     val pages = new ArrayBuffer[Page]()
 
@@ -88,7 +89,7 @@ final case class Loop(
 
   override def trunk = Some(this.copy(self = this.trunkSeq).asInstanceOf[this.type])
 
-  override def doExeNoUID(pb: PageBuilder): Seq[Page] = {
+  override def doExeNoUID(pb: Session): Seq[Page] = {
 
     val pages = new ArrayBuffer[Page]()
 
@@ -154,7 +155,7 @@ final case class If(
 
   override def trunk = Some(this.copy(ifTrue = ifTrue.flatMap(_.trunk), ifFalse = ifFalse.flatMap(_.trunk)).asInstanceOf[this.type])
 
-  override def doExeNoUID(pb: PageBuilder): Seq[Page] = {
+  override def doExeNoUID(pb: Session): Seq[Page] = {
 
     val current = DefaultSnapshot.apply(pb)(0)
 

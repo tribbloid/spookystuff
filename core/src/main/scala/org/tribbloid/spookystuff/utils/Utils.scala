@@ -2,6 +2,7 @@ package org.tribbloid.spookystuff.utils
 
 import org.json4s.DefaultFormats
 import org.slf4j.LoggerFactory
+import org.tribbloid.spookystuff.Const
 import org.tribbloid.spookystuff.entity.PageRow
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -139,7 +140,7 @@ These special characters are often called "metacharacters".
     else Serialization.write(obj)(DefaultFormats)
   }
 
-  def interpolate(
+  def replaceKey(
                    str: String,
                    row: PageRow,
                    delimiter: String = Const.keyDelimiter
@@ -160,6 +161,4 @@ These special characters are often called "metacharacters".
 
     Some(result)
   }
-
-  implicit def mapFunctions[K](map: Map[K, _]): MapFunctions[K] = new MapFunctions[K](map)
 }

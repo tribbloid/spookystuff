@@ -1,8 +1,9 @@
 package org.tribbloid.spookystuff.example.forum
 
-import org.tribbloid.spookystuff.SpookyContext
+import org.tribbloid.spookystuff.{dsl, SpookyContext}
 import org.tribbloid.spookystuff.actions._
 import org.tribbloid.spookystuff.example.ExampleCore
+import dsl._
 
 /**
  * Created by peng on 9/26/14.
@@ -27,15 +28,14 @@ object GooglePlusReview extends ExampleCore {
       "https://plus.google.com/108890902290663191606/about"
     ))
       .fetch(
-        Visit("#{_}")
+        Visit("'{_}")
           +> Loop(Click("div.R4 span.d-s") :: Nil)
       )
-      .sliceJoin("div.Qxb div.Ee")(indexKey = 'row)
-      .extract(
-        "comment" -> (_.text1("div.VSb span.GKa")),
-        "date&status" -> (_.text1("span.VUb")),
-        "stars" -> (_.numElements("div.b-db span.b-db-ac-th")),
-        "user_name" -> (_.text1("span.Gl a.d-s"))
+      .flatSelect($("div.Qxb div.Ee"), indexKey = 'row)(
+        A("div.VSb span.GKa").text > 'comment,
+        A("span.VUb").text > 'date_status,
+        A("div.b-db span.b-db-ac-th").size > 'stars,
+        A("span.Gl a.d-s").text > 'user_name
         //        "user_location" -> (_ => "pending"),
         //        "friend_count" -> (_ => "pending"),
         //        "review_count" -> (_ => "pending")

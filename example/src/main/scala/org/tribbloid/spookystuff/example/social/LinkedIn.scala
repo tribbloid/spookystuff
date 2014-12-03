@@ -2,7 +2,7 @@ package org.tribbloid.spookystuff.example.social
 
 import org.tribbloid.spookystuff.SpookyContext
 import org.tribbloid.spookystuff.actions._
-import org.tribbloid.spookystuff.expressions._
+import org.tribbloid.spookystuff.dsl._
 import org.tribbloid.spookystuff.example.ExampleCore
 
 /**
@@ -17,15 +17,15 @@ object LinkedIn extends ExampleCore {
     sc.parallelize(Seq("Sanjay", "Arun", "Hardik"))
       .fetch(
         Visit("https://www.linkedin.com/")
-          +> TextInput("input#first", "#{_}")
+          +> TextInput("input#first", '_)
           *> (TextInput("input#last", "Gupta") :: TextInput("input#last", "Krishnamurthy") :: Nil)
           +> Submit("input[name=\"search\"]")
       )
-      .visitJoin('* href "ol#result-set h2 a")()
-      .extract (
-      "name" -> (_.text1("span.full-name")),
-      "title" -> (_.text1("p.title")),
-      "skills" -> (_.text("div#profile-skills li"))
-    ).asSchemaRDD()
+      .visitJoin($"ol#result-set h2 a")()
+      .select(
+        $"span.full-name".text > 'name,
+        $"p.title".text > 'title,
+        $"div#profile-skills li".text > 'skills
+      ).asSchemaRDD()
   }
 }

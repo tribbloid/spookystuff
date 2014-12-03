@@ -1,9 +1,10 @@
 package org.tribbloid.spookystuff.actions
 
-import org.tribbloid.spookystuff.SpookyContext
-import org.tribbloid.spookystuff.entity.{Page, PageRow}
-import org.tribbloid.spookystuff.factory.PageBuilder
-import org.tribbloid.spookystuff.utils.{Utils, Const}
+import org.tribbloid.spookystuff.entity.PageRow
+import org.tribbloid.spookystuff.session.Session
+import org.tribbloid.spookystuff.pages.Page
+import org.tribbloid.spookystuff.utils.Utils
+import org.tribbloid.spookystuff.{Const, SpookyContext}
 
 import scala.reflect.ClassTag
 
@@ -22,7 +23,7 @@ final case class Trace(
   }
 
   //TODO: migrate all lazy-evaluation and cache here, PageBuilder should not handle this
-  override def apply(session: PageBuilder): Seq[Page] = {
+  override def apply(session: Session): Seq[Page] = {
 
     session ++= self
     session.pages
@@ -50,16 +51,13 @@ final case class Trace(
 
     //    val results = ArrayBuffer[Page]()
 
-    val pb = new PageBuilder(spooky)
-    spooky.metrics.driverInitialized += 1
+    val session = new Session(spooky)
 
     try {
-      this.apply(pb)
+      this.apply(session)
     }
     finally {
-      pb.close()
-
-      spooky.metrics.driverClosed += 1
+      session.close()
     }
   }
 
@@ -84,7 +82,7 @@ final case class Trace(
 //(all other special characters)
 //now using immutable pattern to increase maintainability
 //put all narrow transformation closures here
-final class TraceSetFunctions(self: Set[Trace]) {
+final class TraceSetView(self: Set[Trace]) {
 
   //one-to-one
   def +>(another: Action): Set[Trace] = self.map(chain => Trace(chain.self :+ another))

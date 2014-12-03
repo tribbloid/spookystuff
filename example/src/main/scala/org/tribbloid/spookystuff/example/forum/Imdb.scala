@@ -2,8 +2,8 @@ package org.tribbloid.spookystuff.example.forum
 
 import org.tribbloid.spookystuff.SpookyContext
 import org.tribbloid.spookystuff.actions._
+import org.tribbloid.spookystuff.dsl._
 import org.tribbloid.spookystuff.example.ExampleCore
-import org.tribbloid.spookystuff.expressions.{LeftOuter, _}
 
 /**
  * Created by peng on 20/08/14.
@@ -14,40 +14,38 @@ object Imdb extends ExampleCore {
     import spooky._
 
     noInput
-    .fetch(
+      .fetch(
         Wget("http://www.imdb.com/chart")
       )
-      .sliceJoin("div#boxoffice tbody tr")() //slice into rows of top office table
-      .extract(
-        "rank" -> (_.text1("tr td.titleColumn", own = true).replaceAll("\"","").trim),
-        "name" -> (_.text1("tr td.titleColumn a")),
-        "year" -> (_.text1("tr td.titleColumn span")),
-        "box_weekend" -> (_.text("tr td.ratingColumn")(0)),
-        "box_gross" -> (_.text("td.ratingColumn")(1)),
-        "weeks" -> (_.text1("tr td.weeksColumn"))
+      .flatSelect($("div#boxoffice tbody tr"))(
+        A"tr td.titleColumn".ownText.replaceAll("\"","").trim > 'rank,
+        A"tr td.titleColumn a".text > 'name,
+        A("tr td.titleColumn span").text > 'year,
+        A("tr td.ratingColumn",0).text > 'box_weekend,
+        A("td.ratingColumn",1).text > 'box_gross,
+        A("tr td.weeksColumn").text > 'weeks
       )
-      .wgetJoin('* href "tr td.titleColumn a")() //go to movie pages, e.g. http://www.imdb.com/title/tt2015381/?ref_=cht_bo_1
-      .extract(
-        "score" -> (_.text1("td#overview-top div.titlePageSprite")),
-        "rating_count" -> (_.text1("td#overview-top span[itemprop=ratingCount]")),
-        "review_count" -> (_.text1("td#overview-top span[itemprop=reviewCount]"))
+      .wgetJoin($"tr td.titleColumn a")() //go to movie pages, e.g. http://www.imdb.com/title/tt2015381/?ref_=cht_bo_1
+      .select(
+        $("td#overview-top div.titlePageSprite").text > 'score,
+        $("td#overview-top span[itemprop=ratingCount]").text > 'rating_count,
+        $("td#overview-top span[itemprop=reviewCount]").text > 'review_count
       )
-      .wgetJoin('* href "div#maindetails_quicklinks a:contains(Reviews)")(joinType = LeftOuter) //go to review pages, e.g. http://www.imdb.com/title/tt2015381/reviews?ref_=tt_urv
-      .wgetExplore('* href "div#tn15content a:has(img[alt~=Next])")(depthKey = 'page) //grab all pages by using the right arrow button.
-      .sliceJoin("div#tn15content div:has(h2)")(joinType = LeftOuter) //slice into rows of reviews
-      .extract(
-        "review_rating" -> (_.attr1("img[alt]","alt")),
-        "review_title" -> (_.text1("h2")),
-        "review_meta" -> (_.text("small"))
+      .wgetJoin($("div#maindetails_quicklinks a:contains(Reviews)"))() //go to review pages, e.g. http://www.imdb.com/title/tt2015381/reviews?ref_=tt_urv
+      .wgetExplore($("div#tn15content a:has(img[alt~=Next])"))(depthKey = 'page) //grab all pages by using the right arrow button.
+      .flatSelect($("div#tn15content div:has(h2)"))(
+        A("img[alt]").attr("alt") > 'review_rating,
+        A("h2").text > 'review_title,
+        A("small").text > 'review_meta
       )
-      .wgetJoin('* href "a")(joinType = LeftOuter) //go to reviewers' page, e.g. http://www.imdb.com/user/ur23582121/
-      .extract(
-        "user_name" -> (_.text1("div.user-profile h1")),
-        "user_timestamp" -> (_.text1("div.user-profile div.timestamp")),
-        "user_post_count" -> (_.text1("div.user-lists div.see-more", own = true)),
-        "user_rating_count" -> (_.text1("div.ratings div.see-more")),
-        "user_review_count" -> (_.text1("div.reviews div.see-more")),
-        "user_rating_histogram" -> (_.attr("div.overall div.histogram-horizontal a","title"))
+      .wgetJoin($("a"))() //go to reviewers' page, e.g. http://www.imdb.com/user/ur23582121/
+      .select(
+        $("div.user-profile h1").text > 'user_name,
+        $("div.user-profile div.timestamp").text > 'user_timestamp,
+        $("div.user-lists div.see-more").text > 'user_post_count,
+        $("div.ratings div.see-more").text > 'user_rating_count,
+        $("div.reviews div.see-more").text > 'user_review_count,
+        $("div.overall div.histogram-horizontal a").attrs("title") > 'user_rating_histogram
       )
       .asSchemaRDD()
   }

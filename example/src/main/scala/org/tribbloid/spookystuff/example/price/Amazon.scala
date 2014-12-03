@@ -1,8 +1,9 @@
 package org.tribbloid.spookystuff.example.price
 
-import org.tribbloid.spookystuff.SpookyContext
+import org.tribbloid.spookystuff.{dsl, SpookyContext}
 import org.tribbloid.spookystuff.actions._
 import org.tribbloid.spookystuff.example.ExampleCore
+import dsl._
 
 object Amazon extends ExampleCore {
 
@@ -13,21 +14,20 @@ object Amazon extends ExampleCore {
       .tsvToMap("url\titem\tiherb-price")
       .fetch(
         Visit("http://www.amazon.com/")
-          +> TextInput("input#twotabsearchtextbox", "#{item}")
+          +> TextInput("input#twotabsearchtextbox", 'item)
           +> Submit("input[type=submit]")
           +> WaitFor("div#resultsCol")
       )
-      .extract(
-        "DidYouMean" -> {_.text1("div#didYouMean a") },
-        "noResultsTitle" -> {_.text1("h1#noResultsTitle")},
-        "savePath" -> {_.saved}
+      .select(
+        $"div#didYouMean a".text > 'DidYouMean,
+        $"h1#noResultsTitle".text > 'noResultsTitle,
+        '*.saved > 'savePath
       )
-      .sliceJoin("div.s-item-container > div.a-fixed-left-grid > div.a-fixed-left-grid-inner")(limit = 10)
-      .extract(
-        "item_name" -> (page => Option(page.attr1("a.s-access-detail-page", "title")).getOrElse(page.text1("a.s-access-detail-page"))),
-        "price" -> (_.text1("span.a-size-base.s-price")),
-        "stars" -> (_.text1("span.a-icon-alt")),
-        "num_rating" -> (_.text1("div.a-column.a-span5 > div.a-row > a.a-size-small"))
+      .flatSelect($"div.s-item-container > div.a-fixed-left-grid > div.a-fixed-left-grid-inner") (
+        A"a.s-access-detail-page".head.flatMap(element => element.attr("title").orElse(element.text)) > 'item_name,
+        A"span.a-size-base.s-price".text > 'price,
+        A"span.a-icon-alt".text > 'stars,
+        A"div.a-column.a-span5 > div.a-row > a.a-size-small".text > 'num_rating
       )
       .asSchemaRDD()
   }

@@ -3,7 +3,7 @@ package org.tribbloid.spookystuff.example.price
 import org.tribbloid.spookystuff.SpookyContext
 import org.tribbloid.spookystuff.actions._
 import org.tribbloid.spookystuff.example.ExampleCore
-import org.tribbloid.spookystuff.expressions._
+import org.tribbloid.spookystuff.dsl._
 
 object Dealmoon extends ExampleCore {
 
@@ -14,11 +14,10 @@ object Dealmoon extends ExampleCore {
       .fetch(
         Wget("http://www.dealmoon.com/Online-Stores/Amazon-com?expired=n")
       )
-      .wgetExplore('* href "div.pagelink a")(depthKey = 'page)
-      .extract(
-        "name" -> (_.text("div.mlist div.mtxt h2 span:not([style])"))
+      .wgetExplore($"div.pagelink a")(depthKey = 'page)
+      .flatten(
+        $"div.mlist div.mtxt h2 span:not([style])".text > 'name
       )
-      .flatten('name)
       .asSchemaRDD()
   }
 }

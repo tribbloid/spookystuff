@@ -1,8 +1,9 @@
 package org.tribbloid.spookystuff.example.forum
 
-import org.tribbloid.spookystuff.SpookyContext
+import org.tribbloid.spookystuff.{dsl, SpookyContext}
 import org.tribbloid.spookystuff.actions._
 import org.tribbloid.spookystuff.example.ExampleCore
+import dsl._
 
 
 /**
@@ -30,22 +31,18 @@ object UrbanSpoonComments extends ExampleCore {
       .flatMap(url => Seq("#comments").map(tag => tag+"\t"+url+tag))
       .tsvToMap("type\turl")
       .fetch(
-        Visit("#{url}")
+        Visit('url)
           +> Click("ul.PostTabs li.active a")
           +> WaitFor("div.tab-pane.active li.review")
       )
-      //      .extract(
-      //        "count" -> (_.text1("li.active span.count"))
-      //      )
-      .sliceJoin("div.tab-pane.active li.review")(indexKey = 'row)
-      .extract(
-        "comment" -> (page => page.text1("li.comment div.title") + ": " + page.text1("li.comment div.body")),
-        "date&status" -> (_.text1("time.posted-on")),
-        "stars" -> (_.text1("div.details > div.aside")),
-        "useful" -> (_.text1("div.details > div.Helpful div.vote-stats")),
-        "user_name" -> (_.text1("div.byline a:nth-of-type(1)")),
-        "user_location" -> (_.text1("span.type")),
-        "review_count" -> (_.text1("div.byline a:nth-of-type(2)"))
+      .flatSelect($"div.tab-pane.active li.review", indexKey = 'row)(
+        x"${A"li.comment div.title".text}: ${A"li.comment div.body".text}" > 'comment,
+        A"time.posted-on".text > 'date_status,
+        A"div.details > div.aside".text > 'stars,
+        A"div.details > div.Helpful div.vote-stats".text > 'useful,
+        A"div.byline a:nth-of-type(1)".text > 'user_name,
+        A"span.type".text > 'user_location,
+        A"div.byline a:nth-of-type(2)".text > 'review_count
       )
       .asSchemaRDD()
   }

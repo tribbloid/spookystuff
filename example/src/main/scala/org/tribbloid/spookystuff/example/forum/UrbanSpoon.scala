@@ -1,8 +1,9 @@
 package org.tribbloid.spookystuff.example.forum
 
-import org.tribbloid.spookystuff.SpookyContext
+import org.tribbloid.spookystuff.{dsl, SpookyContext}
 import org.tribbloid.spookystuff.actions._
 import org.tribbloid.spookystuff.example.ExampleCore
+import dsl._
 
 
 /**
@@ -37,14 +38,13 @@ object UrbanSpoon extends ExampleCore {
       //      .extract(
       //        "count" -> (_.text1("li.active span.count"))
       //      )
-      .sliceJoin("div.tab-pane.active li.review")(indexKey = 'row)
-      .extract(
-        "comment" -> (_.text1("div.body")),
-        "date&status" -> (_.text1("time.posted-on")),
-        "stars" -> (_.text1("div.details > div.aside")),
-        "user_name" -> (_.text1("div.title a")),
-        "user_location" -> (_.text1("span.type")),
-        "review_count" -> (_.text1("div.byline a"))
+      .flatSelect($"div.tab-pane.active li.review", indexKey = 'row)(
+        A"div.body".text > 'comment,
+        A"time.posted-on".text > 'date_status,
+        A"div.details > div.aside".text > 'stars,
+        A"div.title a".text > 'user_name,
+        A"span.type".text > 'user_location,
+        A"div.byline a".text > 'review_count
       )
       .asSchemaRDD()
   }

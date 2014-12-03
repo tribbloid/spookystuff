@@ -1,82 +1,58 @@
 package org.tribbloid.spookystuff.expressions
 
 import org.tribbloid.spookystuff.entity.PageRow
+import org.tribbloid.spookystuff.pages.{Page, Unstructured}
+import org.tribbloid.spookystuff.utils.Utils
 
-/**
- * Created by peng on 10/11/14.
- * This is the preferred way of defining extraction
- * entry point for all "query lambda"
- */
+import scala.reflect.ClassTag
 
-//name: target column
-//
-trait Expr[+T] extends (PageRow => T) with Serializable {
 
-  //this won't be rendered unless used against a PageRow
-  def value: T = throw new UnsupportedOperationException("PENDING")
-
-  final var name: String = this.hashCode().toString
-
-  def as(name: Symbol): this.type = {
-    assert(name != null)
-
-    this.name = name.name
-    this
-  }
-
-  final override def toString(): String = name
-}
-
-object Expr {
-
-  def apply[T](f: PageRow => T) = f.asInstanceOf[PageRow => T with Expr[T]]
-
-  def apply[T](value: T) = Value[T](value)
-}
 
 //just a simple wrapper for T, this is the only way to execute a action
 //this is the only Expression that can be shipped remotely
-final case class Value[T](override val value: T) extends Expr[T] {//all select used in query cannot have name changed
+final case class Value[+T: ClassTag](value: T) extends Expr[T] {//all select used in query cannot have name changed
 
-  name = value.toString
+  override var name = value.toString
 
-//  override def as(name: Symbol): this.type = throw new UnsupportedOperationException("cannot change name of value")
-
-  override def apply(v1: PageRow): T = value
+  override def apply(v1: PageRow): Option[T] = Some(value)
 }
 
-final case class ByKeyExpr(keyName: String) extends Expr[Any] {
+class GetExpr(override var name: String) extends Expr[Any] {
 
-  name = "'"+keyName
-
-  override def apply(v1: PageRow): Any =
-    v1.get(keyName)
-
-  def href(selector: String,
-           absolute: Boolean = true,
-           noEmpty: Boolean = true
-            ): FromPageExpr[Seq[String]] = new FromPageExpr(keyName, Href(selector, absolute, noEmpty))
-
-  def src(selector: String,
-          absolute: Boolean = true,
-          noEmpty: Boolean = true
-           ): FromPageExpr[Seq[String]] = new FromPageExpr(keyName, Src(selector, absolute, noEmpty))
-
-  def text(selector: String,
-           own: Boolean = false
-            ): FromPageExpr[Seq[String]] = new FromPageExpr(keyName, Text(selector, own))
+  override def apply(v1: PageRow): Option[Any] = v1.get(name)
 }
 
-final case class FromPageExpr[T](pageKey: String, extract: Extract[T]) extends Expr[T] {
+class GetUnstructuredExpr(override var name: String) extends Expr[Unstructured] {
 
-  name = "'"+pageKey +" " + extract.toString()
+  override def apply(v1: PageRow): Option[Unstructured] = v1.getUnstructured(name)
+}
 
-  override def apply(v1: PageRow): T = {
-    val pages = v1.getPages(pageKey)
+class GetPageExpr(override var name: String) extends Expr[Page] {
 
-    if (pages.size > 1) throw new UnsupportedOperationException("multiple pages with the same name, flatten first")
-    else if (pages.size == 0) return null.asInstanceOf[T]
+  override def apply(v1: PageRow): Option[Page] = v1.getPage(name)
+}
 
-    extract(pages(0))
+class ReplaceKeyExpr(str: String) extends Expr[String] {
+
+  override var name = str
+
+  override def apply(v1: PageRow): Option[String] = Utils.replaceKey(str, v1)
+}
+
+class InterpolateExpr(parts: Seq[String], fs: Seq[Expr[Any]])
+  extends Expr[String] {
+
+  override var name = parts.zip(fs.map(_.name)).map(tpl => tpl._1+tpl._2).mkString + parts.last
+
+  if (parts.length != fs.length + 1)
+    throw new IllegalArgumentException("wrong number of arguments for interpolated string")
+
+  override def apply(v1: PageRow): Option[String] = {
+
+    val iParts = parts.map(Utils.replaceKey(_, v1))
+    val iFs = fs.map(_.apply(v1))
+
+    if (iParts.contains(None) || iFs.contains(None)) None
+    else Some(iParts.zip(iFs).map(tpl => tpl._1.get + tpl._2.get).mkString + iParts.last)
   }
 }

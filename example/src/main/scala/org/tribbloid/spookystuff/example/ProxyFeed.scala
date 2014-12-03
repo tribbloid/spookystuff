@@ -3,33 +3,28 @@ package org.tribbloid.spookystuff.example
 import org.apache.spark.sql.SchemaRDD
 import org.tribbloid.spookystuff.SpookyContext
 import org.tribbloid.spookystuff.actions._
-import org.tribbloid.spookystuff.factory.driver.{ProxySetting, RandomProxyFactory}
+import org.tribbloid.spookystuff.dsl._
 
 /**
  * Created by peng on 9/11/14.
  */
 trait ProxyFeed extends ExampleCore {
 
-  override def localPreviewContext(): SpookyContext = {
-    val spooky = super.localPreviewContext()
+  var proxyRDD: SchemaRDD = null
 
-//    val proxies = proxyRDD(spooky).select('IP, 'Port, 'Type)
-//      .map(row => ProxySetting(row.getString(0), row.getInt(1), row.getString(2)))
-//      .collect().toSeq
-
-//    spooky.proxy = RandomProxyFactory(proxies)
-    spooky
-  }
-
-  override def fullRunContext(): SpookyContext = {
-    val spooky = super.fullRunContext()
+  override def getSpooky(args: Array[String]): SpookyContext = {
+    val noProxy = super.getSpooky(args)
 
     import sql._
 
-    val proxies = proxyRDD(spooky).select('IP, 'Port, 'Type)
-      .map(row => ProxySetting(row.getString(0), row.getInt(1), row.getString(2)))
-      .collect().toSeq
+    proxyRDD = proxyRDD(noProxy)
 
+    val proxyRows = proxyRDD.select('IP, 'Port, 'Type)
+      .collect()
+
+    val proxies = proxyRows.map(row => ProxySetting(row.getString(0), Integer.parseInt(row.getString(1)), row.getString(2)))
+
+    val spooky = noProxy
     spooky.proxy = RandomProxyFactory(proxies)
     spooky
   }
@@ -48,16 +43,16 @@ trait ProxyFeed extends ExampleCore {
         ),
         flattenPagesIndexKey = 'page
       )
-      .extract(
-        "IP" -> (_.text("td")(0)),
-        "Port" -> (_.text("td")(1)),
-        "Code" -> (_.text("td")(2)),
-        "Country" -> (_.text("td")(3)),
-        "Anonymity" -> (_.text("td")(4)),
-        "Google" -> (_.text("td")(5)),
-        "Https" -> (_.text("td")(6)),
-        "LastChecked" -> (_.text("td")(7)),
-        "Type" -> (page => "http")
+      .flatSelect($"table.dataTable tbody tr")(
+        A("td", 0).text as 'IP,
+        A("td", 1).text as 'Port,
+        A("td", 2).text as 'Code,
+        A("td", 3).text as 'Country,
+        A("td", 4).text as 'Anonymity,
+        A("td", 5).text as 'Google,
+        A("td", 6).text as 'Https,
+        A("td", 7).text as 'LastChecked,
+        "http" as 'Type
       ).persist()
 
     val socksPageRowRDD = noInput
@@ -70,17 +65,16 @@ trait ProxyFeed extends ExampleCore {
         ),
         flattenPagesIndexKey = 'page
       )
-      .sliceJoin("table.dataTable tbody tr")()
-      .extract(
-        "IP" -> (_.text("td")(0)),
-        "Port" -> (_.text("td")(1)),
-        "Code" -> (_.text("td")(2)),
-        "Country" -> (_.text("td")(3)),
-        "Version" -> (_.text("td")(4)),
-        "Anonymity" -> (_.text("td")(5)),
-        "Https" -> (_.text("td")(6)),
-        "LastChecked" -> (_.text("td")(7)),
-        "Type" -> (_ => "socks5")
+      .flatSelect($"table.dataTable tbody tr")(
+        A("td", 0).text as 'IP,
+        A("td", 1).text as 'Port,
+        A("td", 2).text as 'Code,
+        A("td", 3).text as 'Country,
+        A("td", 4).text as 'Version,
+        A("td", 5).text as 'Anonymity,
+        A("td", 6).text as 'Https,
+        A("td", 7).text as 'LastChecked,
+        "socks5" as 'Type
       ).persist()
 
     httpPageRowRDD.union(socksPageRowRDD)

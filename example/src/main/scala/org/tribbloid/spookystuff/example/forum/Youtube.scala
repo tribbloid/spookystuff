@@ -2,7 +2,7 @@ package org.tribbloid.spookystuff.example.forum
 
 import org.tribbloid.spookystuff.SpookyContext
 import org.tribbloid.spookystuff.actions._
-import org.tribbloid.spookystuff.expressions._
+import org.tribbloid.spookystuff.dsl._
 import org.tribbloid.spookystuff.example.ExampleCore
 
 /**
@@ -25,44 +25,44 @@ object Youtube extends ExampleCore{
           1
         )
       )
-      .sliceJoin("li.channels-content-item")()
-      .extract("title" -> (_.text1("h3.yt-lockup-title")))
-      .join('* href "h3.yt-lockup-title a.yt-uix-tile-link" as '~, limit = 1)(
-        Visit("#{~}")
+      .flatSelect($"li.channels-content-item")(
+        A"h3.yt-lockup-title".text > 'title
+      )
+      .join(A"h3.yt-lockup-title a.yt-uix-tile-link", limit = 1)(
+        Visit('A.href)
           +> ExeScript("window.scrollBy(0,500)")
           +> Try(WaitFor("iframe[title^=Comment]").in(50.seconds) :: Nil),
         numPartitions = 400
-      )
-      .extract(
-        "description" -> (_.text1("div#watch-description-text")),
-        "publish" -> (_.text1("p#watch-uploader-info")),
-        "total_view" -> (_.text1("div#watch7-views-info span.watch-view-count")),
-        "like_count" -> (_.text1("div#watch7-views-info span.likes-count")),
-        "dislike_count" -> (_.text1("div#watch7-views-info span.dislikes-count"))
+      )()
+      .select(
+        $"div#watch-description-text".text > 'description,
+        $"p#watch-uploader-info".text > 'publish,
+        $"div#watch7-views-info span.watch-view-count".text > 'total_view,
+        $"div#watch7-views-info span.likes-count".text > 'like_count,
+        $"div#watch7-views-info span.dislikes-count".text > 'dislike_count
       )
       .persist()
 
     println(catalog.count())
 
     val video = catalog
-      .join('* src "iframe[title^=Comment]" as '~, limit = 1)(
-        Visit("#{~}", hasTitle = false)
+      .fetch(
+        Visit($"iframe[title^=Comment]".src, hasTitle = false)
           +> Loop(
           Click("span[title^=Load]")
             :: WaitFor("span.PA[style^=display]").in(10.seconds)
             :: Nil
         )
       )
-      .extract("num_comments" -> (_.text1("div.DJa")))
+      .select($"div.DJa".text > 'num_comments)
       .persist()
 
     println(video.count())
 
     val result = video
-      .sliceJoin("div[id^=update]")()
-      .extract(
-        "comment1" -> (_.text1("h3.Mpa")),
-        "comment2" -> (_.text1("div.Al"))
+      .flatSelect($"div[id^=update]")(
+        A"h3.Mpa".text > 'comment1,
+        A"div.Al".text > 'comment2
       ).persist()
 
     println(result.count())

@@ -1,8 +1,10 @@
 package org.tribbloid.spookystuff.entity
 
-import org.tribbloid.spookystuff.SpookyContext
+import org.tribbloid.spookystuff.{views, SpookyContext}
 import org.tribbloid.spookystuff.actions._
+import org.tribbloid.spookystuff.dsl._
 import org.tribbloid.spookystuff.expressions._
+import org.tribbloid.spookystuff.pages.{Unstructured, Page}
 import org.tribbloid.spookystuff.utils._
 
 /**
@@ -16,25 +18,117 @@ case class PageRow(
                     )
   extends Serializable {
 
-  //TempKey precedes ordinary Key because they are ephemeral
-  def get(keyStr: String): Option[Any] = {
-    if (cells.contains(TempKey(keyStr))) cells.get(TempKey(keyStr))
-    else cells.get(Key(keyStr))
+  private def resolveKey(keyStr: String): KeyLike = {
+    val tempKey = TempKey(keyStr)
+    if (cells.contains(tempKey)) tempKey
+    else Key(keyStr)
   }
 
-  def getPages(pageKey: String): Seq[Page] = {
+  //TempKey precedes ordinary Key because they are ephemeral
+  def get(keyStr: String): Option[Any] = {
+    cells.get(resolveKey(keyStr))
+  }
 
-    if (pageKey == "*") this.pages
-    else this.pages.filter(_.name == pageKey)
+  def getPage(keyStr: String): Option[Page] = {
+
+    val pages = if (keyStr == "*") this.pages
+    else this.pages.filter(_.name == keyStr)
+
+    if (pages.size > 1) throw new UnsupportedOperationException("Ambiguous key referring to multiple pages")
+    else if (pages.size == 0) None
+    else Some(pages(0))
+  }
+
+  def getUnstructured(keyStr: String): Option[Unstructured] = {
+
+    val page = getPage(keyStr)
+    val value = get(keyStr).flatMap {
+      case u: Unstructured => Option(u)
+      case _ => None
+    }
+
+    if (page.nonEmpty && value.nonEmpty) throw new UnsupportedOperationException("Ambiguous key referring to both page and data")
+    else page.orElse(value)
   }
 
   def signature(exclude: Iterable[KeyLike]) = (this.cells -- exclude, pages.map(_.uid), pages.map(_.name))
 
   def asMap(): Map[String, Any] = this.cells
-    .filterKeys(!_.isInstanceOf[TempKey]).map(identity)
+    .filterKeys(_.isInstanceOf[Key]).map(identity)
     .map( tuple => tuple._1.name -> tuple._2)
 
   def asJson(): String = Utils.toJson(this.asMap())
+
+  //TODO: don't use any String that contains dot as column name, or you will encounter bug SPARK-2775
+  //TODO: this will become the default extract at some point, but not now
+//  //TODO: need special handling of Option[_]
+//  def select(keys: Seq[KeyLike], fs: Seq[Expr[Any]]): PageRow = {
+//
+//    val newKVs = Map(
+//      keys.zip(fs).flatMap{
+//        tuple =>
+//          val value = tuple._2(this)
+//          value match {
+//            case Some(v) => Some(tuple._1 -> v)
+//            case None => None
+//          }
+//      }: _*
+//    )
+//    this.copy(cells = this.cells ++ newKVs)
+//  }
+
+  //TODO: don't use any String that contains dot as column name, or you will encounter bug SPARK-2775
+  def select(fs: Seq[Expr[Any]]): PageRow = {
+    val newKVs = fs.flatMap{
+      f =>
+        val value = f(this)
+        value match {
+          case Some(v) => Some(Key(f.name) -> v)
+          case None => None
+        }
+    }
+    this.copy(cells = this.cells ++ newKVs)
+  }
+
+  def selectTemp(fs: Seq[Expr[Any]]): PageRow = {
+    val newKVs = fs.flatMap{
+      f =>
+        val value = f(this)
+        value match {
+          case Some(v) => Some(TempKey(f.name) -> v)
+          case None => None
+        }
+    }
+    this.copy(cells = this.cells ++ newKVs)
+  }
+
+  def remove(keys: Seq[KeyLike]): PageRow = {
+    this.copy(cells = this.cells -- keys)
+  }
+
+  def filterKeys(f: KeyLike => Boolean): PageRow = {
+    this.copy(cells = this.cells.filterKeys(f).map(identity))
+  }
+
+  def putPages(others: Seq[Page], joinType: JoinType): Option[PageRow] = {
+    joinType match {
+      case Inner =>
+        if (others.isEmpty) None
+        else Some(this.copy(pages = others))
+      case LeftOuter =>
+        Some(this.copy(pages = others))
+      case Replace =>
+        if (others.isEmpty) Some(this)
+        else Some(this.copy(pages = this.pages ++ others))
+      case Append =>
+        Some(this.copy(pages = this.pages ++ others))
+      case Merge =>
+        val oldUids = this.pages.map(_.uid)
+        val newPages = others.filter(newPage => !oldUids.contains(newPage.uid))
+        Some(this.copy(pages = this.pages ++ newPages))
+    }
+  }
+
 
   //retain old pageRow,
   //always left
@@ -45,9 +139,9 @@ case class PageRow(
                left: Boolean
                ): Seq[PageRow] = {
 
-    val tempKey = TempKey(keyStr)
-    val key = if (cells.contains(tempKey)) tempKey
-    else Key(keyStr)
+    val key = resolveKey(keyStr)
+
+    import views._
 
     val newCells =cells.flattenKey(key, indexKey).slice(0, limit)
 
@@ -83,89 +177,26 @@ case class PageRow(
     }
   }
 
-  def putPages(others: Seq[Page], joinType: JoinType): Option[PageRow] = {
-    joinType match {
-      case Inner =>
-        if (others.isEmpty) None
-        else Some(this.copy(pages = others))
-      case LeftOuter => Some(this.copy(pages = others))
-      case Replace =>
-        if (others.isEmpty) Some(this)
-        else Some(this.copy(pages = this.pages ++ others))
-      case Append =>
-        Some(this.copy(pages = this.pages ++ others))
-      case Merge =>
-        val oldUids = this.pages.map(_.uid)
-        val newPages = others.filter(newPage => !oldUids.contains(newPage.uid))
-        Some(this.copy(pages = this.pages ++ newPages))
-    }
-  }
-
   //only apply to last page
   //TODO: don't use any String that contains dot as column name, or you will encounter bug SPARK-2775
   //see https://issues.apache.org/jira/browse/SPARK-2775
-  def extract(keyAndF: Seq[(String, Page => Any)]): PageRow = {
-
-    this.pages.lastOption match {
-      case None => this
-      case Some(page) =>
-        val map = Map(
-          keyAndF.map{
-            tuple => (new Key(tuple._1), tuple._2(page))
-          }: _*
-        )
-
-        this.copy(cells = this.cells ++ map)
-    }
-  }
-
-  //TODO: don't use any String that contains dot as column name, or you will encounter bug SPARK-2775
-  //TODO: this will become the default extract at some point, but not now
-  def select(keys: Seq[KeyLike], fs: Seq[Expr[_]]): PageRow = {
-
-    val newKVs = Map(
-      keys.zip(fs).map{
-        tuple =>
-          assert(!this.cells.contains(tuple._1))
-          tuple._1 -> tuple._2(this)
-      }: _*
-    )
-    this.copy(cells = this.cells ++ newKVs)
-  }
-
-  def remove(keys: Seq[KeyLike]): PageRow = {
-    this.copy(cells = this.cells -- keys)
-  }
-
-  def filterKeys(f: KeyLike => Boolean): PageRow = {
-    this.copy(cells = this.cells.filterKeys(f).map(identity))
-  }
+  //  def extract(keyAndF: Seq[(String, Page => Any)]): PageRow = {
+  //
+  //    this.pages.lastOption match {
+  //      case None => this
+  //      case Some(page) =>
+  //        val map = Map(
+  //          keyAndF.map{
+  //            tuple => (new Key(tuple._1), tuple._2(page))
+  //          }: _*
+  //        )
+  //
+  //        this.copy(cells = this.cells ++ map)
+  //    }
+  //  }
 
   //affect last page
-  def slice(
-             selector: String,
-             expand: Int
-             )(
-             limit: Int, //applied after distinct
-             indexKey: Key,
-             joinType: JoinType,
-             flatten: Boolean
-             ): Seq[PageRow] = {
-
-    val sliced = this.pages.lastOption match {
-      case None => Seq[Page]()
-      case Some(page) => page.slice(selector, expand)(limit)
-    }
-
-    val results = this.putPages(sliced, joinType).toSeq
-
-    if (flatten) results.flatMap(_.flattenPages("*", indexKey = indexKey))
-    else results
-  }
-
-  //affect last page
-  //TODO: switch to recursive !>< to enable parallelization
-  //TODO: lambda support
+  //TODO: deprecate? or enable pagekey
   def paginate(
                 selector: String,
                 attr: String,
@@ -174,19 +205,18 @@ case class PageRow(
                 )(
                 limit: Int,
                 indexKey: Key,
-                flatten: Boolean,
-                last: Boolean
+                flatten: Boolean
                 )(
-                implicit spooky: SpookyContext
+                spooky: SpookyContext
                 ): Seq[PageRow] = {
 
     var currentRow = this
     var increment = this.pages.size
 
-    while (currentRow.pages.size <= limit && increment > 0 && currentRow.pages.last.attrExist(selector, attr)) {
+    while (currentRow.pages.size <= limit && increment > 0 && currentRow.pages.last.children(selector).attrs(attr, noEmpty = true).nonEmpty) {
 
-      val action = if (!wget) Visit(Value(currentRow.pages.last.attr1(selector, attr, noEmpty = true, last = last)))
-      else Wget(Value(currentRow.pages.last.attr1(selector, attr, noEmpty = true, last = last)))
+      val action = if (!wget) Visit(new Value(currentRow.pages.last.children(selector).attrs(attr, noEmpty = true).head))
+      else Wget(new Value(currentRow.pages.last.children(selector).attrs(attr, noEmpty = true).head))
 
       val newRow = currentRow.putPages(Trace(action::Nil).resolve(spooky), joinType = Merge).get
 

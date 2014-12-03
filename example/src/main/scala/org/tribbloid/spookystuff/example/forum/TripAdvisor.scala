@@ -3,7 +3,7 @@ package org.tribbloid.spookystuff.example.forum
 import org.tribbloid.spookystuff.SpookyContext
 import org.tribbloid.spookystuff.actions._
 import org.tribbloid.spookystuff.example.ExampleCore
-import org.tribbloid.spookystuff.expressions._
+import org.tribbloid.spookystuff.dsl._
 
 /**
  * Created by peng on 9/26/14.
@@ -28,24 +28,23 @@ object TripAdvisor extends ExampleCore {
       "http://www.tripadvisor.ca/Restaurant_Review-g32655-d594024-Reviews-Providence-Los_Angeles_California.html"
     ))
       .fetch(
-        Visit("#{_}")
+        Visit('_)
           +> Try(Click("span.partnerRvw span.taLnk") :: Nil)
       )
-      .explore('* href "a.sprite-pageNext" as '~)(
-        Visit("#{~}")
+      .explore($"a.sprite-pageNext")(
+        Visit('A.href)
           +> Try(Click("span.partnerRvw span.taLnk")::Nil),
         depthKey = 'page
-      )
-      .sliceJoin("div.reviewSelector")(indexKey = 'row)
-      .extract(
-        "comment" -> (_.text1("p", last=true)),
-        "date&status" -> (_.text1("span.ratingDate", last=true)),
-        "stars" -> (_.attr1("div.innerBubble img.sprite-rating_s_fill","alt", last=true)),
-        "useful" -> (_.text1("span.numHlpIn", last=true)),
-        "user_name" -> (_.text1("div.member_info div.username mo", last=true)),
-        "user_location" -> (_.text1("div.member_info div.location", last=true)),
-        "city_count" -> (_.text1("div.passportStampsBadge span.badgeText", last=true)),
-        "review_count" -> (_.text1("div.totalReviewBadge", last=true))
+      )()
+      .flatSelect($"div.reviewSelector", indexKey = 'row)(
+        A"p".last.text > 'comment,
+        A"span.ratingDate".last.text > 'date_status,
+        A"div.innerBubble img.sprite-rating_s_fill".last.attr("alt") > 'stars,
+        A"span.numHlpIn".last.text > 'useful,
+        A"div.member_info div.username mo".last.text > 'user_name,
+        A"div.member_info div.location".last.text > 'user_location,
+        A"div.passportStampsBadge span.badgeText".last.text > 'city_count,
+        A"div.totalReviewBadge" > 'review_count
       )
       .asSchemaRDD()
   }

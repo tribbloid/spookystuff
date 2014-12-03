@@ -2,20 +2,18 @@ package org.tribbloid.spookystuff.example
 
 import org.apache.spark.sql.{SQLContext, SchemaRDD}
 import org.apache.spark.{SparkConf, SparkContext}
-import org.scalatest.{BeforeAndAfter, FunSuite, Tag}
 import org.tribbloid.spookystuff.SpookyContext
-import org.tribbloid.spookystuff.factory.driver.NaiveDriverFactory
+import org.tribbloid.spookystuff.dsl.driverfactory.NaiveDriverFactory
 
-import scala.concurrent.duration._
+import scala.concurrent.duration
+import duration._
 
 /**
  * Created by peng on 22/06/14.
  * allowing execution as a main object and tested as a test class
  * keep each test as small as possible, by using downsampling & very few iterations
  */
-trait ExampleCore extends FunSuite with BeforeAndAfter {
-
-  object Integration extends Tag("Integration")
+trait ExampleCore extends {
 
   val appName = this.getClass.getSimpleName.replace("$","")
   val sc: SparkContext = {
@@ -39,40 +37,30 @@ trait ExampleCore extends FunSuite with BeforeAndAfter {
     new SQLContext(sc)
   }
 
-  def localPreviewContext(): SpookyContext ={
-    new SpookyContext(
-      sql,
-      driverFactory = NaiveDriverFactory(loadImages = true),
-      pageExpireAfter = 0.milliseconds,
-      joinLimit = 2,
-      sliceLimit = 3,
-      maxExploreDepth = 3
-    )
-    .setRoot("file://"+System.getProperty("user.home")+"/spooky-integration/"+appName+"/")
-  }
+  def getSpooky(args: Array[String]): SpookyContext = {
 
-  def fullRunContext(): SpookyContext = {
-    new SpookyContext(sql)
+    val spooky = if (args.contains("--nopreview"))
+      new SpookyContext(
+        sql,
+        driverFactory = NaiveDriverFactory(loadImages = true)
+        //      joinLimit = 2,
+        //      maxExploreDepth = 3
+      )
+    else
+      new SpookyContext(sql)
+
+    if (!args.contains("--dfscache")) spooky.setRoot("file://"+System.getProperty("user.home")+"/spooky-example/"+appName+"/")
+
+    if (args.contains("--nocache")) spooky.pageExpireAfter = 0.milliseconds
+
+    spooky
   }
 
   def doMain(spooky: SpookyContext): SchemaRDD
 
-  test("Print query result",Integration) {
-    val spooky = localPreviewContext()
-
-    val result = doMain(spooky).persist()
-
-    val array = result.collect()
-    array.foreach(row => println(row.mkString("\t")))
-
-    println("-------------------returned "+array.length+" rows------------------")
-    println(result.schema.fieldNames.mkString("\t"))
-  }
-
   final def main(args: Array[String]) {
 
-    val spooky = if (!args.contains("--fullrun")) localPreviewContext()
-    else fullRunContext()
+    val spooky = getSpooky(args)
 
     val result = doMain(spooky).persist()
 
@@ -81,5 +69,6 @@ trait ExampleCore extends FunSuite with BeforeAndAfter {
 
     println("-------------------returned "+array.length+" rows------------------")
     println(result.schema.fieldNames.mkString("\t"))
+    println(s"------------------fetched ${spooky.metrics.pageCount} pages-----------------")
   }
 }

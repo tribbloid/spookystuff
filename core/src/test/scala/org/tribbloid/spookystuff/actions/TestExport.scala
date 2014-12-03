@@ -1,24 +1,14 @@
 package org.tribbloid.spookystuff.actions
 
-import org.apache.spark.sql.SQLContext
-import org.apache.spark.{SparkConf, SparkContext}
-import org.scalatest.FunSuite
-import org.tribbloid.spookystuff.SpookyContext
-import org.tribbloid.spookystuff.factory.driver.TorProxyFactory
+import org.tribbloid.spookystuff.{dsl, SparkEnvSuite}
+import org.tribbloid.spookystuff.dsl.TorProxyFactory
+import dsl._
 
 /**
  * Created by peng on 11/6/14.
  */
-class TestExport extends FunSuite {
+class TestExport extends SparkEnvSuite {
 
-  lazy val conf: SparkConf = new SparkConf().setAppName("dummy").setMaster("local")
-  lazy val sc: SparkContext = new SparkContext(conf)
-  lazy val sql: SQLContext = new SQLContext(sc)
-  lazy implicit val spooky: SpookyContext = new SpookyContext(sql)
-  spooky.setRoot("file://"+System.getProperty("user.home")+"/spooky-unit/")
-  spooky.autoSave = false
-  spooky.autoCache = false
-  spooky.autoRestore = false
   lazy val noProxyIP = {
       spooky.proxy = () => null
 
@@ -26,7 +16,7 @@ class TestExport extends FunSuite {
         Wget("http://www.whatsmyuseragent.com/") :: Nil
       ).resolvePlain(spooky)
 
-      results(0).text1("h3.info")
+      results(0)("h3.info").texts.head
     }
 
   override def finalize(){
@@ -42,7 +32,7 @@ class TestExport extends FunSuite {
         Wget("http://www.whatsmyuseragent.com/") :: Nil
       ).resolvePlain(spooky)
 
-      results(0).text1("h3.info")
+      results(0)("h3.info").texts.head
     }
 
     assert(newIP !== null)
@@ -60,7 +50,7 @@ class TestExport extends FunSuite {
         Wget("https://www.astrill.com/what-is-my-ip-address.php") :: Nil
       ).resolvePlain(spooky)
 
-      results(0).text1("h1")
+      results(0)("h1").texts.head
     }
 
     assert(newIP !== null)
@@ -77,7 +67,7 @@ class TestExport extends FunSuite {
         Wget("http://www.whatsmyuseragent.com/") :: Nil
       ).resolvePlain(spooky)
 
-      results(0).text1("h3.info")
+      results(0)("h3.info").texts.head
     }
 
     val noProxyIP2 = {
@@ -87,7 +77,7 @@ class TestExport extends FunSuite {
         Wget("http://www.whatsmyuseragent.com/") :: Nil
       ).resolvePlain(spooky)
 
-      results(0).text1("h3.info")
+      results(0)("h3.info").texts.head
     }
 
     assert(newIP !== noProxyIP2)
@@ -102,7 +92,7 @@ class TestExport extends FunSuite {
         Wget("https://www.astrill.com/what-is-my-ip-address.php") :: Nil
       ).resolvePlain(spooky)
 
-      results(0).text1("h1")
+      results(0)("h1").texts.head
     }
 
     val noProxyIP2 = {
@@ -112,7 +102,7 @@ class TestExport extends FunSuite {
         Wget("https://www.astrill.com/what-is-my-ip-address.php") :: Nil
       ).resolvePlain(spooky)
 
-      results(0).text1("h1")
+      results(0)("h1").texts.head
     }
 
     assert(newIP !== noProxyIP2)

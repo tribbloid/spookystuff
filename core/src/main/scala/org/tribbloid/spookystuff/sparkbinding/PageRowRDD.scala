@@ -5,11 +5,13 @@ import org.apache.spark.rdd.RDD
 import org.apache.spark.sql._
 import org.apache.spark.sql.catalyst.analysis.UnresolvedAttribute
 import org.apache.spark.{Partition, TaskContext}
-import org.tribbloid.spookystuff.SpookyContext
 import org.tribbloid.spookystuff.actions._
+import org.tribbloid.spookystuff.dsl.{Inner, JoinType, _}
 import org.tribbloid.spookystuff.entity._
 import org.tribbloid.spookystuff.expressions._
+import org.tribbloid.spookystuff.pages.Page
 import org.tribbloid.spookystuff.utils._
+import org.tribbloid.spookystuff.{Const, SpookyContext}
 
 import scala.collection.immutable.ListSet
 import scala.language.implicitConversions
@@ -18,12 +20,11 @@ import scala.reflect.ClassTag
 /**
  * Created by peng on 8/29/14.
  */
-//TODO: to deserve its name it has to extend RDD[PageRow] and implement all methods
 case class PageRowRDD(
-                          @transient self: RDD[PageRow],
-                          @transient keys: ListSet[KeyLike] = ListSet(),
-                          @transient spooky: SpookyContext
-                          )
+                       @transient self: RDD[PageRow],
+                       @transient keys: ListSet[KeyLike] = ListSet(),
+                       @transient spooky: SpookyContext
+                       )
   extends RDD[PageRow](self) {
 
   @DeveloperApi
@@ -51,8 +52,8 @@ case class PageRowRDD(
     super.coalesce(numPartitions, shuffle)(ord)
 
   override def sample(withReplacement: Boolean,
-                        fraction: Double,
-                        seed: Long = Utils.random.nextLong()): PageRowRDD =
+                      fraction: Double,
+                      seed: Long = Utils.random.nextLong()): PageRowRDD =
     super.sample(withReplacement, fraction, seed)
 
   override def union(other: RDD[PageRow]): PageRowRDD = other match {
@@ -68,10 +69,10 @@ case class PageRowRDD(
   override def ++(other: RDD[PageRow]): PageRowRDD = this.union(other)
 
   override def sortBy[K](
-                 f: (PageRow) => K,
-                 ascending: Boolean = true,
-                 numPartitions: Int = this.partitions.size)
-               (implicit ord: Ordering[K], ctag: ClassTag[K]): PageRowRDD = super.sortBy(f, ascending, numPartitions)(ord, ctag)
+                          f: (PageRow) => K,
+                          ascending: Boolean = true,
+                          numPartitions: Int = this.partitions.size)
+                        (implicit ord: Ordering[K], ctag: ClassTag[K]): PageRowRDD = super.sortBy(f, ascending, numPartitions)(ord, ctag)
 
   override def intersection(other: RDD[PageRow]): PageRowRDD = other match {
 
@@ -94,14 +95,16 @@ case class PageRowRDD(
   }
   //-------------------all before this lines are self typed wrappers--------------------
 
-  def asMapRDD(): RDD[Map[String, Any]] = self.map(_.asMap())
+  def toPageRowRDD: PageRowRDD = this
 
-  def asJsonRDD(): RDD[String] = self.map(_.asJson())
+  def toMapRDD: RDD[Map[String, Any]] = self.map(_.asMap())
+
+  def toJsonRDD: RDD[String] = self.map(_.asJson())
 
   //TODO: header cannot use special characters, notably dot(.), this is a bug of Spark SQL
   def asSchemaRDD(): SchemaRDD = {
 
-    val jsonRDD = this.asJsonRDD()
+    val jsonRDD = this.toJsonRDD
 
     jsonRDD.persist() //for some unknown reason SQLContext.jsonRDD uses the parameter RDD twice, this has to be fixed by somebody else
 
@@ -110,7 +113,7 @@ case class PageRowRDD(
     //TODO: handle missing columns
     this.spooky.sqlContext.jsonRDD(jsonRDD)
       .select(
-        keys.toSeq.reverse.map(key => UnresolvedAttribute(key.name)): _*
+        keys.toSeq.filter(_.isInstanceOf[Key]).reverse.map(key => UnresolvedAttribute(key.name)): _*
       )
   }
 
@@ -142,6 +145,7 @@ case class PageRowRDD(
    *                  false: append an unique suffix to the new file name
    * @return the same RDD[Page] with file paths carried as metadata
    */
+  //TODO: obsolete
   def saveContent(
                    select: PageRow => Any = null,
                    extract: Page => Any = null,
@@ -202,52 +206,58 @@ case class PageRowRDD(
     }
   }.collect()
 
-  /**
-   * extract parts of each Page and insert into their respective context
-   * if a key already exist in old context it will be replaced with the new one.
-   * @param keyAndF a key-function map, each element is used to generate a key-value map using the Page itself
-   * @return new RDD[Page]
-   */
-  def extract(keyAndF: (String, Page => Any)*): PageRowRDD = {
-    val keys = this.keys ++ keyAndF.map(tuple => Key(tuple._1))
+  //  /**
+  //   * extract parts of each Page and insert into their respective context
+  //   * if a key already exist in old context it will be replaced with the new one.
+  //   * @param keyAndF a key-function map, each element is used to generate a key-value map using the Page itself
+  //   * @return new RDD[Page]
+  //   */
+  //  def extract(keyAndF: (String, Page => Any)*): PageRowRDD = {
+  //    val keys = this.keys ++ keyAndF.map(tuple => Key(tuple._1))
+  //
+  //    this.copy(
+  //      self = self.map(_.extract(keyAndF)),
+  //      keys = keys
+  //    )
+  //  }
 
-    this.copy(
-      self = self.map(_.extract(keyAndF)),
-      keys = keys
-    )
-  }
+  def select(exprs: Expr[Any]*): PageRowRDD = {
 
-  def select(exprs: Expr[_]*): PageRowRDD = {
-
-    val _exprs = exprs.filterNot {
-      case ex: ByKeyExpr => ex.name == ex.keyName
-      case _ => false
-    }
+    //    val _exprs = exprs.filterNot {
+    //      case ex: GetExpr => ex.name == ex.name
+    //      case _ => false
+    //    }
+    val _exprs = exprs
 
     val newKeys: Seq[Key] = _exprs.map {
       expr =>
         val key = Key(expr.name)
-        assert(!this.keys.contains(key))
+        assert(!this.keys.contains(key)) //can't insert the same key twice
         key
     }
 
     this.copy(
-      self = self.map(_.select(newKeys, _exprs)),
+      self = self.map(_.select(_exprs)),
       keys = this.keys ++ newKeys
     )
   }
 
-  private def selectTemp(exprs: Expr[_]*): PageRowRDD = {
+  private def selectTemp(exprs: Expr[Any]*): PageRowRDD = {
 
-    val newKeys: Seq[TempKey] = exprs.map {
+    //    val _exprs = exprs.filterNot {
+    //      case ex: GetExpr => ex.name == ex.name
+    //      case _ => false
+    //    } //TODO: optional!
+    val _exprs = exprs
+
+    val newKeys: Seq[TempKey] = _exprs.map {
       expr =>
         val key = TempKey(expr.name)
-        assert(!this.keys.contains(key))
         key
     }
 
     this.copy(
-      self = self.map(_.select(newKeys, exprs)),
+      self = self.map(_.selectTemp(_exprs)),
       keys = this.keys ++ newKeys
     )
   }
@@ -260,15 +270,15 @@ case class PageRowRDD(
     )
   }
 
-  private def clearTemp: PageRowRDD = {
-    this.copy(
-      self = self.map(_.filterKeys(!_.isInstanceOf[TempKey])),
-      keys = keys -- keys.filter(_.isInstanceOf[TempKey])//circumvent https://issues.scala-lang.org/browse/SI-8985
-    )
-  }
+  //  private def clearTemp: PageRowRDD = {
+  //    this.copy(
+  //      self = self.map(_.filterKeys(!_.isInstanceOf[TempKey])),
+  //      keys = keys -- keys.filter(_.isInstanceOf[TempKey])//circumvent https://issues.scala-lang.org/browse/SI-8985
+  //    )
+  //  }
 
   def flatten(
-               expr: Expr[_],
+               expr: Expr[Any],
                indexKey: Symbol = null,
                limit: Int = Int.MaxValue,
                left: Boolean = true
@@ -283,7 +293,7 @@ case class PageRowRDD(
   }
 
   private def flattenTemp(
-                           expr: Expr[_],
+                           expr: Expr[Any],
                            indexKey: Symbol = null,
                            limit: Int = Int.MaxValue,
                            left: Boolean = true
@@ -298,11 +308,24 @@ case class PageRowRDD(
   }
 
   def explode(
-               expr: Expr[_],
+               expr: Expr[Any],
                indexKey: Symbol = null,
-               limit: Int = spooky.joinLimit,
+               limit: Int = Int.MaxValue,
                left: Boolean = true
                ): PageRowRDD = flatten(expr, indexKey, limit, left)
+
+  def flatSelect(
+                  expr: Expr[Any],
+                  indexKey: Symbol = null,
+                  limit: Int = Int.MaxValue,
+                  left: Boolean = true
+                  )(exprs: Expr[Any]*) ={
+
+    this
+      .flattenTemp(expr > Symbol(Const.joinExprKey), indexKey, limit, left)
+      .select(exprs: _*)
+    //      .clearTemp
+  }
 
   def flattenPages(
                     pattern: Symbol = '*,
@@ -345,7 +368,6 @@ case class PageRowRDD(
     else result
   }
 
-  //TODO: empty action rows needs to be treated differently, current implementation skewed bad
   /**
    * smart execution: group identical ActionPlans, execute in parallel, and duplicate result pages to match their original contexts
    * reduce workload by avoiding repeated access to the same url caused by duplicated context or diamond links (A->B,A->C,B->D,C->D)
@@ -382,14 +404,16 @@ case class PageRowRDD(
       tuple => tuple._1.resolve(_spooky) -> tuple._2
     }
     val withPages = withPagesSquashed.flatMapValues(rows => rows).map(identity)
-    val result = this.copy(self = withPages.flatMap(tuple => tuple._2.putPages(tuple._1, joinType)))
+    val result = this.copy(
+      self = withPages.flatMap(tuple => tuple._2.putPages(tuple._1, joinType))
+    )
 
     if (flattenPagesPattern != null) result.flattenPages(flattenPagesPattern,flattenPagesIndexKey)
     else result
   }
 
   def join(
-            expr: Expr[_],
+            expr: Expr[Any], //name is discarded
             indexKey: Symbol = null, //left & idempotent parameters are missing as they are always set to true
             limit: Int = spooky.joinLimit
             )(
@@ -398,10 +422,16 @@ case class PageRowRDD(
             numPartitions: Int = self.sparkContext.defaultParallelism,
             flattenPagesPattern: Symbol = '*,
             flattenPagesIndexKey: Symbol = null
-            ): PageRowRDD = this
-    .flattenTemp(expr, indexKey, limit, left = true)
-    .fetch(traces, joinType, numPartitions, flattenPagesPattern, flattenPagesIndexKey)
-    .clearTemp
+            )(
+            exprs: Expr[Any]*
+            ): PageRowRDD = {
+
+    this
+      .flattenTemp(expr > Symbol(Const.joinExprKey), indexKey, limit, left = true)
+      .fetch(traces, joinType, numPartitions, flattenPagesPattern, flattenPagesIndexKey)
+      .select(exprs: _*)
+    //      .clearTemp
+  }
 
   /**
    * results in a new set of Pages by crawling links on old pages
@@ -410,14 +440,14 @@ case class PageRowRDD(
    * @return RDD[Page]
    */
   def visitJoin(
-                 expr: Expr[_],
+                 expr: Expr[Any],
                  indexKey: Symbol = null, //left & idempotent parameters are missing as they are always set to true
                  limit: Int = spooky.joinLimit
                  )(
                  joinType: JoinType = Const.defaultJoinType,
                  numPartitions: Int = self.sparkContext.defaultParallelism
                  ): PageRowRDD =
-    this.join(expr, indexKey, limit)(Visit("#{"+expr.name+"}"), joinType, numPartitions)
+    this.join(expr, indexKey, limit)(Visit(new GetExpr(Const.joinExprKey)), joinType, numPartitions)()
 
   /**
    * same as join, but avoid launching a browser by using direct http GET (wget) to download new pages
@@ -426,15 +456,31 @@ case class PageRowRDD(
    * @return RDD[Page]
    */
   def wgetJoin(
-                expr: Expr[_],
+                expr: Expr[Any],
                 indexKey: Symbol = null, //left & idempotent parameters are missing as they are always set to true
                 limit: Int = spooky.joinLimit
                 )(
                 joinType: JoinType = Const.defaultJoinType,
                 numPartitions: Int = self.sparkContext.defaultParallelism
                 ): PageRowRDD =
-    this.join(expr, indexKey, limit)(Wget("#{"+expr.name+"}"), joinType, numPartitions)
+    this.join(expr, indexKey, limit)(Wget(new GetExpr(Const.joinExprKey)), joinType, numPartitions)()
 
+  def distinctSignature(
+                         exclude: Iterable[Symbol],
+                         numPartitions: Int = self.sparkContext.defaultParallelism
+                         ): PageRowRDD = {
+    import org.apache.spark.SparkContext._
+
+    val excludeKeys = exclude.map(Key(_))
+    val selfWithSignatures = self.map{
+      row => row.signature(excludeKeys) -> row
+    }
+    val distinct = selfWithSignatures.reduceByKey((row1, row2) => row1).values
+
+    this.copy(
+      self = distinct
+    )
+  }
 
   /* if the following conditions are met, row will be removed
 * 1. row has identical trace and name
@@ -461,26 +507,10 @@ case class PageRowRDD(
     )
   }
 
-  def distinctSignature(
-                         exclude: Iterable[Symbol],
-                         numPartitions: Int = self.sparkContext.defaultParallelism
-                         ): PageRowRDD = {
-    import org.apache.spark.SparkContext._
-
-    val excludeKeys = exclude.map(Key(_))
-    val selfWithSignatures = self.map{
-      row => row.signature(excludeKeys) -> row
-    }
-    val distinct = selfWithSignatures.reduceByKey((row1, row2) => row1).values
-
-    this.copy(
-      self = distinct
-    )
-  }
-
+  //TODO: handling of exprs is defective!
   //recursive join and union! applicable to many situations like (wide) pagination and deep crawling
   def explore(
-               expr: Expr[_],
+               expr: Expr[Any],
                indexKey: Symbol = null, //left & idempotent parameters are missing as they are always set to true
                maxDepth: Int = spooky.maxExploreDepth
                )(
@@ -489,15 +519,21 @@ case class PageRowRDD(
                flattenPagesPattern: Symbol = '*,
                flattenPagesIndexKey: Symbol = null,
                depthKey: Symbol = null
+               )(
+               exprs: Expr[Any]*
                ): PageRowRDD = {
 
     var newRows = this
-    var total = if (depthKey != null) this.select(Value(0) as depthKey).self
+    var total = if (depthKey != null) this.select(Value(0) > depthKey).self
     else this.self
 
     for (depth <- 1 to maxDepth) {
       //always inner join
-      val joined = newRows.join(expr, indexKey, Int.MaxValue)(traces, Inner, numPartitions, flattenPagesPattern, flattenPagesIndexKey)
+      val joined = newRows
+        .flattenTemp(expr, indexKey, Int.MaxValue, left = true)
+        .fetch(traces, Inner, numPartitions, flattenPagesPattern, flattenPagesIndexKey)
+        .select(exprs: _*)
+      //        .clearTemp
 
       newRows = joined.distinctSignature(Option(depthKey)).subtractSignature(total, Option(depthKey)).persist()
 
@@ -508,7 +544,7 @@ case class PageRowRDD(
       }
 
       total = total.union(
-        if (depthKey != null) newRows.select(Value(depth) as depthKey).self
+        if (depthKey != null) newRows.select(new Value(depth) > depthKey).self
         else newRows.self
       )
     }
@@ -517,48 +553,47 @@ case class PageRowRDD(
   }
 
   def visitExplore(
-                    expr: Expr[_],
+                    expr: Expr[Any],
                     indexKey: Symbol = null, //left & idempotent parameters are missing as they are always set to true
                     maxDepth: Int = spooky.maxExploreDepth
                     )(
                     numPartitions: Int = self.sparkContext.defaultParallelism,
                     depthKey: Symbol = null
-                    ): PageRowRDD = explore(expr, indexKey, maxDepth)(Visit("#{"+expr.name+"}"), numPartitions, depthKey = depthKey)
+                    ): PageRowRDD = explore(expr, indexKey, maxDepth)(Visit(new GetExpr(Const.joinExprKey)), numPartitions, depthKey = depthKey)()
 
   def wgetExplore(
-                   expr: Expr[_],
+                   expr: Expr[Any],
                    indexKey: Symbol = null, //left & idempotent parameters are missing as they are always set to true
                    maxDepth: Int = spooky.maxExploreDepth
                    )(
                    numPartitions: Int = self.sparkContext.defaultParallelism,
                    depthKey: Symbol = null
-                   ): PageRowRDD = explore(expr, indexKey, maxDepth)(Wget("#{"+expr.name+"}"), numPartitions, depthKey = depthKey)
+                   ): PageRowRDD = explore(expr, indexKey, maxDepth)(Wget(new GetExpr(Const.joinExprKey)), numPartitions, depthKey = depthKey)()
 
-  //TODO: deprecate to flatten
-  /**
-   * break each page into 'shards', used to extract structured data from tables
-   * @param selector denotes enclosing elements of each shards
-   * @param limit only the first n elements will be used, default to Const.fetchLimit
-   * @return RDD[Page], each page will generate several shards
-   */
-  def sliceJoin(
-                 selector: String,
-                 expand: Int = 0
-                 )(
-                 limit: Int = spooky.sliceLimit, //applied after distinct
-                 indexKey: Symbol = null,
-                 joinType: JoinType = Const.defaultJoinType,
-                 flatten: Boolean = true
-                 ): PageRowRDD = {
-
-    val _indexKey = Key(indexKey)
-
-    val result = self.flatMap {
-      _.slice(selector, expand)(limit, _indexKey, joinType, flatten)
-    }
-
-    this.copy(result, this.keys ++ Option(_indexKey))
-  }
+  //  /**
+  //   * break each page into 'shards', used to extract structured data from tables
+  //   * @param selector denotes enclosing elements of each shards
+  //   * @param limit only the first n elements will be used, default to Const.fetchLimit
+  //   * @return RDD[Page], each page will generate several shards
+  //   */
+  //  def sliceJoin(
+  //                 selector: String,
+  //                 expand: Int = 0
+  //                 )(
+  //                 limit: Int = spooky.sliceLimit, //applied after distinct
+  //                 indexKey: Symbol = null,
+  //                 joinType: JoinType = Const.defaultJoinType,
+  //                 flatten: Boolean = true
+  //                 ): PageRowRDD = {
+  //
+  //    val _indexKey = Key(indexKey)
+  //
+  //    val result = self.flatMap {
+  //      _.slice(selector, expand)(limit, _indexKey, joinType, flatten)
+  //    }
+  //
+  //    this.copy(result, this.keys ++ Option(_indexKey))
+  //  }
 
   /**
    * insert many pages for each old page by recursively visiting "next page" link
@@ -585,7 +620,7 @@ case class PageRowRDD(
     val realIndexKey = Key(indexKey)
 
     val result = self.flatMap {
-      _.paginate(selector, attr, wget, postAction)(limit, Key(indexKey), flatten, last)
+      _.paginate(selector, attr, wget, postAction)(limit, Key(indexKey), flatten)(spooky)
     }
 
     this.copy(result, this.keys ++ Option(realIndexKey))

@@ -1,9 +1,3 @@
-SpookyStuff welcomes two more commiters! All hail their exalted reinforcements!
-
-- **[Sandeep Singh @techaddict](https://github.com/techaddict)** has added new sbt build files to make it friendly to native scala developers.
- 
-- **[Terry Lin @ithinkicancode](https://github.com/ithinkicancode)** has added new features supporting more http operations with more customization options.
-
 SpookyStuff
 ===========
 
@@ -428,6 +422,6 @@ Integration Test
 License
 -----------
 
-Copyright &copy; 2014 by Peng Cheng @tribbloid, Sandeep Singh @techaddict, Terry Lin @ithinkicancode and contributors.
+Copyright &copy; 2014 by Peng Cheng @tribbloid, Sandeep Singh @techaddict, Terry Lin @ithinkicancode, Long Yao @l2yao and contributors.
 
 Published under ASF License, see LICENSE.

@@ -1,49 +1,54 @@
 package org.tribbloid.spookystuff.sparkbinding
 
-import org.apache.spark.sql.SQLContext
-import org.apache.spark.{SparkConf, SparkContext}
-import org.scalatest.FunSuite
-import org.tribbloid.spookystuff.SpookyContext
+import org.tribbloid.spookystuff.SparkEnvSuite
 import org.tribbloid.spookystuff.actions.Wget
-import org.tribbloid.spookystuff.factory.driver.NaiveDriverFactory
-import org.tribbloid.spookystuff.expressions._
+import org.tribbloid.spookystuff.dsl._
 
 /**
  * Created by peng on 11/26/14.
  */
-class TestPageRowRDD extends FunSuite {
-
-  val conf: SparkConf = new SparkConf().setAppName("test")
-    .setMaster("local[*]")
-
-  val sc: SparkContext = new SparkContext(conf)
-
-  val spooky = {
-
-    val sql: SQLContext = new SQLContext(sc)
-    val spooky: SpookyContext = new SpookyContext(
-      sql,
-      driverFactory = NaiveDriverFactory(loadImages = true)
-    )
-    spooky.autoSave = false
-    spooky.autoCache = false
-    spooky.autoRestore = false
-
-    spooky
-  }
+class TestPageRowRDD extends SparkEnvSuite {
 
   test("inherited RDD operation") {
     import spooky._
 
-    val texts = noInput
+    val rdd = noInput
       .fetch(
         Wget("http://www.wikipedia.org/")
       )
-      .select('* text "div.central-featured-lang" as '~)
+      .select(
+        $"div.central-featured-lang".texts > '~
+      )
+
+    val texts = rdd
       .flatMap(_.get("~").get.asInstanceOf[Seq[String]])
       .collect()
 
     assert(texts.size === 10)
-    assert(texts(0).startsWith("English"))
+    assert(texts.head.startsWith("English"))
+  }
+
+  test("flatSelect") {
+
+    import spooky._
+
+    val rdd = noInput
+      .fetch(
+        Wget("http://www.wikipedia.org/")
+      )
+      .flatSelect($"div.central-featured-lang")(
+        'A.attr("lang") as 'lang,
+        A"a".href as 'link,
+        A"a em".text as 'sub
+      )
+      .asSchemaRDD()
+
+    val res = rdd.collect()
+
+    assert(res.size === 10)
+    assert(res.head.size === 3)
+    assert(res.head.getString(0) === "en")
+    assert(res.head.getString(1) === "http://en.wikipedia.org/")
+    assert(res.head.getString(2) === "The Free Encyclopedia")
   }
 }

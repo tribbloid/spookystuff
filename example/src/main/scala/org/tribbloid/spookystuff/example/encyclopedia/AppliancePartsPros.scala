@@ -3,7 +3,7 @@ package org.tribbloid.spookystuff.example.encyclopedia
 import org.tribbloid.spookystuff.SpookyContext
 import org.tribbloid.spookystuff.actions._
 import org.tribbloid.spookystuff.example.ExampleCore
-import org.tribbloid.spookystuff.expressions._
+import org.tribbloid.spookystuff.dsl._
 
 import scala.concurrent.duration._
 
@@ -18,23 +18,24 @@ object AppliancePartsPros extends ExampleCore {
     sc.parallelize(Seq("A210S"))
       .fetch(
         Visit("http://www.appliancepartspros.com/")
-          +> TextInput("input.ac-input","#{_}")
+          +> TextInput("input.ac-input","'{_}")
           +> Click("input[value=\"Search\"]")
           +> Delay(10.seconds) //TODO: change to DelayFor to save time
       )
-      .extract(
-        "model" -> ( _.text1("div.dgrm-lst div.header h2") )
+      .select(
+        $"div.dgrm-lst div.header h2".text > 'model
       )
-      .wgetJoin('* href "div.inner li a:has(img)", indexKey = 'schematic_index)()
-      .extract(
-        "schematic" -> ( _.text1("div#ctl00_cphMain_up1 h1") )
+      .wgetJoin($("div.inner li a:has(img)"), indexKey = 'schematic_index)()
+      .select(
+        $"div#ctl00_cphMain_up1 h1".text > 'schematic
       )
-      .wgetJoin('* href "tbody.m-bsc td.pdct-descr h2 a", indexKey = 'part_index)()
-      .extract(
-        "name" -> (_.text1("div.m-pdct h1")),
-        "brand" ->  (_.text1("div.m-pdct td[itemprop=brand]")),
-        "manufacturer" -> (_.text1("div.m-bsc div.mod ul li:contains(Manufacturer) strong")),
-        "replace" -> (_.text1("div.m-pdct div.m-chm p"))
+      .wgetJoin($("tbody.m-bsc td.pdct-descr h2 a"), indexKey = 'part_index)()
+      .select(
+        $"div.m-pdct h1".text > 'name,
+        $("div.m-pdct td[itemprop=brand]").text > 'brand,
+        $("div.m-bsc div.mod ul li:contains(Manufacturer) strong").text > 'manufacturer,
+        $("div.m-pdct div.m-chm p").text > 'replace,
+        '$.uri > 'uri
       )
       .asSchemaRDD()
   }

@@ -1,7 +1,8 @@
 package org.tribbloid.spookystuff.actions
 
-import org.tribbloid.spookystuff.entity.{Page, PageRow}
-import org.tribbloid.spookystuff.factory.PageBuilder
+import org.tribbloid.spookystuff.entity.PageRow
+import org.tribbloid.spookystuff.session.Session
+import org.tribbloid.spookystuff.pages.Page
 
 /**
  * Created by peng on 11/7/14.
@@ -29,5 +30,5 @@ trait ActionLike
   //the minimal equivalent action that can be put into backtrace
   def trunk: Option[this.type]
 
-  def apply(session: PageBuilder): Seq[Page]
+  def apply(session: Session): Seq[Page]
 }

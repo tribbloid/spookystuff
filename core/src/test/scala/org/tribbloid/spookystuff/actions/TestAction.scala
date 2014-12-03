@@ -1,8 +1,8 @@
 package org.tribbloid.spookystuff.actions
 
 import org.scalatest.FunSuite
+import org.tribbloid.spookystuff.dsl._
 import org.tribbloid.spookystuff.entity.{Key, PageRow}
-import org.tribbloid.spookystuff.utils.Utils
 
 import scala.util.Random
 
@@ -10,10 +10,6 @@ import scala.util.Random
  * Created by peng on 07/07/14.
  */
 class TestAction extends FunSuite {
-
-  test("formatNullString") {assert (Utils.interpolate(null, PageRow(Map())) === None)}
-
-  test("formatEmptyString") {assert (Utils.interpolate("", PageRow(Map())) === Some(""))}
 
   test("interpolate should not change timeout") {
     import scala.concurrent.duration._

@@ -13,9 +13,10 @@ import org.apache.http.conn.ssl.SSLContexts
 import org.apache.http.impl.client.HttpClients
 import org.apache.http.impl.conn.PoolingHttpClientConnectionManager
 import org.openqa.selenium.{OutputType, TakesScreenshot}
-import org.tribbloid.spookystuff.entity.{Page, PageRow, PageUID}
+import org.tribbloid.spookystuff.entity.PageRow
 import org.tribbloid.spookystuff.expressions.{Expr, Value}
-import org.tribbloid.spookystuff.factory.PageBuilder
+import org.tribbloid.spookystuff.session.Session
+import org.tribbloid.spookystuff.pages.{Unstructured, HtmlElement, Page, PageUID}
 import org.tribbloid.spookystuff.utils.{SocksProxyConnectionSocketFactory, SocksProxySSLConnectionSocketFactory}
 
 /**
@@ -28,9 +29,9 @@ abstract class Export extends Named{
 
   final override def trunk = None //have not impact to driver
 
-  def doExe(session: PageBuilder) = doExeNoName(session)
+  def doExe(session: Session) = doExeNoName(session)
 
-  def doExeNoName(session: PageBuilder): Seq[Page]
+  def doExeNoName(session: Session): Seq[Page]
 }
 
 /**
@@ -42,7 +43,7 @@ abstract class Export extends Named{
 case class Snapshot() extends Export{
 
   // all other fields are empty
-  override def doExeNoName(pb: PageBuilder): Seq[Page] = {
+  override def doExeNoName(pb: Session): Seq[Page] = {
 
     //    import scala.collection.JavaConversions._
 
@@ -53,7 +54,7 @@ case class Snapshot() extends Export{
     //      serializableCookies += cookie.asInstanceOf[SerializableCookie]
     //    }
 
-    val page = Page(
+    val page = new Page(
       PageUID(Trace(pb.realBacktrace :+ this), this),
       pb.existingDriver.get.getCurrentUrl,
       "text/html; charset=UTF-8",
@@ -70,14 +71,14 @@ object DefaultSnapshot extends Snapshot()
 
 case class Screenshot() extends Export {
 
-  override def doExeNoName(pb: PageBuilder): Seq[Page] = {
+  override def doExeNoName(pb: Session): Seq[Page] = {
 
     val content = pb.existingDriver.get match {
       case ts: TakesScreenshot => ts.getScreenshotAs(OutputType.BYTES)
       case _ => throw new UnsupportedOperationException("driver doesn't support snapshot")
     }
 
-    val page = Page(
+    val page = new Page(
       PageUID(Trace(pb.realBacktrace :+ this), this),
       pb.existingDriver.get.getCurrentUrl,
       "image/png",
@@ -95,13 +96,14 @@ object DefaultScreenshot extends Screenshot()
  * http client is much faster than browser, also load much less resources
  * recommended for most static pages.
  * actions for more complex http/restful API call will be added per request.
- * @param url support cell interpolation
+ * @param uri support cell interpolation
  */
-case class Wget(url: Expr[String]) extends Export with Sessionless {
+case class Wget(uri: Expr[Any]) extends Export with Sessionless {
 
-  override def doExeNoName(pb: PageBuilder): Seq[Page] = {
+  override def doExeNoName(pb: Session): Seq[Page] = {
 
-    if ( url.value.trim().isEmpty ) return Seq ()
+    val urlStr = uri.asInstanceOf[Value[String]].value
+    if ( urlStr.trim().isEmpty ) return Seq ()
 
     val proxy = pb.spooky.proxy()
     val userAgent = pb.spooky.userAgent()
@@ -144,7 +146,7 @@ case class Wget(url: Expr[String]) extends Export with Sessionless {
     }
 
     val request = {
-      val request = new HttpGet(url.value)
+      val request = new HttpGet(urlStr)
       if (userAgent != null) request.addHeader("User-Agent", userAgent)
       for (pair <- headers) {
         request.addHeader(pair._1, pair._2)
@@ -171,14 +173,15 @@ case class Wget(url: Expr[String]) extends Export with Sessionless {
         val content = IOUtils.toByteArray ( stream )
         val contentType = entity.getContentType.getValue
 
-        val result = Page(
+        val result = new Page(
           PageUID(Trace(pb.realBacktrace :+ this), this),
-          url.value,
+          urlStr,
           contentType,
           content
         )
 
-        assert(!result.contentStr.contains("<title></title>"))
+        if (result.root.isInstanceOf[HtmlElement])
+        assert(!result.markup.get.contains("<title></title>"))
 
         Seq(result)
       }
@@ -192,6 +195,16 @@ case class Wget(url: Expr[String]) extends Export with Sessionless {
   }
 
   override def doInterpolate(pageRow: PageRow): Option[this.type] = {
-    Option(this.url(pageRow)).map(url => this.copy(url = Value(url)).asInstanceOf[this.type])
+    val uriStr: Option[String] = this.uri(pageRow).flatMap {
+      case element: Unstructured => element.href
+      case str: String => Option(str)
+      case obj: Any => Option(obj.toString)
+      case other => None
+    }
+
+    uriStr.map(
+      str =>
+        this.copy(uri = new Value(str)).asInstanceOf[this.type]
+    )
   }
 }

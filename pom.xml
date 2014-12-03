@@ -15,7 +15,7 @@
         <spark.version>1.1.0</spark.version>
         <PermGen>512m</PermGen>
         <MaxPermGen>2g</MaxPermGen>
-	<failsafe.version>2.18</failsafe.version>
+        <failsafe.version>2.18</failsafe.version>
     </properties>
 
     <groupId>org.tribbloid.spookystuff</groupId>
@@ -64,16 +64,16 @@
         <module>core</module>
         <module>example</module>
         <module>shell</module>
-	<module>test</module>
+        <module>integration</module>
     </modules>
 
     <!--<profiles>-->
-        <!--<profile>-->
-            <!--<id>ispark</id>-->
-            <!--<modules>-->
-                <!--<module>shell</module>-->
-            <!--</modules>-->
-        <!--</profile>-->
+    <!--<profile>-->
+    <!--<id>ispark</id>-->
+    <!--<modules>-->
+    <!--<module>shell</module>-->
+    <!--</modules>-->
+    <!--</profile>-->
     <!--</profiles>-->
 
     <dependencies>
@@ -110,14 +110,9 @@
             <version>1.2.0</version>
         </dependency>
         <!--<dependency>-->
-            <!--<groupId>com.github.detro.ghostdriver</groupId>-->
-            <!--<artifactId>phantomjsdriver</artifactId>-->
-            <!--<version>1.1.0</version>-->
-        <!--</dependency>-->
-        <!--<dependency>-->
-            <!--<groupId>org.apache.tika</groupId>-->
-            <!--<artifactId>tika-java7</artifactId>-->
-            <!--<version>1.5</version>-->
+        <!--<groupId>org.apache.tika</groupId>-->
+        <!--<artifactId>tika-java7</artifactId>-->
+        <!--<version>1.5</version>-->
         <!--</dependency>-->
         <dependency>
             <groupId>org.jsoup</groupId>
@@ -130,9 +125,9 @@
             <version>1.2.2</version>
         </dependency>
         <!--<dependency>-->
-            <!--<groupId>org.glassfish.jersey.core</groupId>-->
-            <!--<artifactId>jersey-client</artifactId>-->
-            <!--<version>2.12</version>-->
+        <!--<groupId>org.glassfish.jersey.core</groupId>-->
+        <!--<artifactId>jersey-client</artifactId>-->
+        <!--<version>2.12</version>-->
         <!--</dependency>-->
 
     </dependencies>
@@ -190,11 +185,11 @@
                         <javacArg>${java.version}</javacArg>
                     </javacArgs>
                     <!--<compilerPlugins>-->
-                        <!--<compilerPlugin>-->
-                            <!--<groupId>org.scalamacros</groupId>-->
-                            <!--<artifactId>paradise_2.10.4</artifactId>-->
-                            <!--<version>2.0.1</version>-->
-                        <!--</compilerPlugin>-->
+                    <!--<compilerPlugin>-->
+                    <!--<groupId>org.scalamacros</groupId>-->
+                    <!--<artifactId>paradise_2.10.4</artifactId>-->
+                    <!--<version>2.0.1</version>-->
+                    <!--</compilerPlugin>-->
                     <!--</compilerPlugins>-->
                 </configuration>
             </plugin>
@@ -211,24 +206,24 @@
                     </execution>
                 </executions>
             </plugin>
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-failsafe-plugin</artifactId>
-        <version>${failsafe.version}</version>
-	<configuration>
-	  <includes>
-		<include>**/*IT.scala</include>
-	  </includes>
-	</configuration>
-        <executions>
-          <execution>
-            <goals>
-              <goal>integration-test</goal>
-              <goal>verify</goal>
-            </goals>
-          </execution>
-        </executions>
-      </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-failsafe-plugin</artifactId>
+                <version>${failsafe.version}</version>
+                <configuration>
+                    <includes>
+                        <include>**/*IT.scala</include>
+                    </includes>
+                </configuration>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>integration-test</goal>
+                            <goal>verify</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
         </plugins>
     </build>
 

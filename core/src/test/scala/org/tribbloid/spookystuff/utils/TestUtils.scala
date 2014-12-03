@@ -15,14 +15,18 @@ class TestUtils extends FunSuite {
 
   test("interpolate") {
     val someMap = Map[KeyLike, Any](Key("abc") -> 1, Key("def") -> 2.2)
-    val result = Utils.interpolate("rpk#{abc}aek#{def}", PageRow(someMap))
+    val result = Utils.replaceKey("rpk'{abc}aek'{def}", PageRow(someMap))
     assert(result === Some("rpk1aek2.2"))
   }
 
   test("interpolate returns None when key not found") {
 
     val someMap = Map[KeyLike, Any](Key("abc") -> 1, Key("rpk") -> 2.2)
-    val result = Utils.interpolate("rpk#{abc}aek#{def}", PageRow(someMap))
+    val result = Utils.replaceKey("rpk'{abc}aek'{def}", PageRow(someMap))
     assert(result === None)
   }
+
+  test("formatNullString") {assert (Utils.replaceKey(null, PageRow(Map())) === None)}
+
+  test("formatEmptyString") {assert (Utils.replaceKey("", PageRow(Map())) === Some(""))}
 }

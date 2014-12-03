@@ -2,7 +2,7 @@ package org.tribbloid.spookystuff.example.price
 
 import org.tribbloid.spookystuff.SpookyContext
 import org.tribbloid.spookystuff.actions._
-import org.tribbloid.spookystuff.expressions._
+import org.tribbloid.spookystuff.dsl._
 import org.tribbloid.spookystuff.example.ExampleCore
 
 import scala.concurrent.duration._
@@ -19,12 +19,12 @@ object Macys extends ExampleCore {
       .fetch(
         Wget("http://www.macys.com/")
       )
-      .wgetJoin('* href "div#globalMastheadCategoryMenu li a")()
-      .extract(
-        "category" -> (_.text1("div#nav_title"))
+      .wgetJoin($"div#globalMastheadCategoryMenu li a")()
+      .select(
+        $"div#nav_title".text > 'category
       )
-      .join('* href "div#localNavigationContainer li.nav_cat_item_bold a" as '~)(
-        Visit("#{~}")
+      .join($"div#localNavigationContainer li.nav_cat_item_bold a")(
+        Visit('A)
           +> WaitFor("ul#thumbnails li.productThumbnail").in(20.seconds)
           +> Snapshot()
           +> Loop(
@@ -35,16 +35,15 @@ object Macys extends ExampleCore {
             :: Nil,
           2
         )
+      )()
+      .select(
+        $"h1#currentCatNavHeading".text > 'subcategory
       )
-      .extract(
-        "subcategory" -> (_.text1("h1#currentCatNavHeading"))
-      )
-      .sliceJoin("ul#thumbnails li.productThumbnail")(indexKey = 'page)
-      .extract(
-        "short-description" -> (_.text1("div.shortDescription")),
-        "prices" -> (_.text1("div.prices")),
-        "rating" -> (_.attr1("div.pdpreviews span.rating span", "style")),
-        "reviews" -> (_.text1("div.pdpreviews"))
+      .flatSelect($"ul#thumbnails li.productThumbnail", indexKey = 'page)(
+        A"div.shortDescription".text > 'short_description,
+        A"div.prices".text > 'prices,
+        A"div.pdpreviews span.rating span".attr("style") > 'rating,
+        A"div.pdpreviews".text > 'reviews
       )
       .asSchemaRDD()
   }
