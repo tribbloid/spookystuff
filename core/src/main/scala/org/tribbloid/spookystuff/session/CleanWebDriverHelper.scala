@@ -1,6 +1,7 @@
 package org.tribbloid.spookystuff.session
 
 import org.openqa.selenium.WebDriver
+import org.openqa.selenium.remote.SessionNotFoundException
 import org.slf4j.LoggerFactory
 
 /**
@@ -16,9 +17,9 @@ trait CleanWebDriverHelper {
       this.quit()
     }
     catch {
+      case e: SessionNotFoundException => //already cleaned before
       case e: Throwable =>
-        LoggerFactory.getLogger(this.getClass).warn("!!!!!FAIL TO CLEANED UP DRIVER!!!!!"+e)
-        throw e
+        LoggerFactory.getLogger(this.getClass).warn("!!!!!FAIL TO CLEANE UP DRIVER!!!!!"+e)
     }
     finally {
       super.finalize()

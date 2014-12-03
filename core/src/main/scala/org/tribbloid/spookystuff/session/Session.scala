@@ -4,6 +4,7 @@ import java.util.Date
 import java.util.concurrent.TimeUnit
 
 import org.openqa.selenium.Dimension
+import org.openqa.selenium.remote.SessionNotFoundException
 import org.slf4j.LoggerFactory
 import org.tribbloid.spookystuff.SpookyContext
 import org.tribbloid.spookystuff.actions._
@@ -57,9 +58,9 @@ class Session(val spooky: SpookyContext){
       LoggerFactory.getLogger(this.getClass).info("Session is finalized by GC")
     }
     catch {
+      case e: SessionNotFoundException => //already cleaned before
       case e: Throwable =>
-        LoggerFactory.getLogger(this.getClass).warn("!!!!!FAIL TO CLEANED UP SESSION!!!!!"+e)
-        throw e
+        LoggerFactory.getLogger(this.getClass).warn("!!!!!FAIL TO CLEAN UP SESSION!!!!!"+e)
     }
     finally{
       super.finalize()
