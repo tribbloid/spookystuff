@@ -11,7 +11,7 @@ class StringExprView(self: Expr[String]) {
   import dsl._
 
   def replaceAll(regex: String, replacement: String): Expr[String] =
-    self.map(_.replaceAll(regex, replacement), s"replaceAll($regex,$replacement)")
+    self.andMap(_.replaceAll(regex, replacement), s"replaceAll($regex,$replacement)")
 
-  def trim: Expr[String] = self.map(_.trim, "trim")
+  def trim: Expr[String] = self.andMap(_.trim, "trim")
 }

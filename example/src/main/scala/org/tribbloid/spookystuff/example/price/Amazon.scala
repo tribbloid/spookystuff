@@ -24,7 +24,7 @@ object Amazon extends ExampleCore {
         '*.saved > 'savePath
       )
       .flatSelect($"div.s-item-container > div.a-fixed-left-grid > div.a-fixed-left-grid-inner") (
-        A"a.s-access-detail-page".head.flatMap(element => element.attr("title").orElse(element.text)) > 'item_name,
+        A"a.s-access-detail-page".head.andFlatMap(element => element.attr("title").orElse(element.text)) > 'item_name,
         A"span.a-size-base.s-price".text > 'price,
         A"span.a-icon-alt".text > 'stars,
         A"div.a-column.a-span5 > div.a-row > a.a-size-small".text > 'num_rating

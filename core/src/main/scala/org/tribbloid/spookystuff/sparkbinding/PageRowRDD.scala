@@ -101,7 +101,7 @@ case class PageRowRDD(
 
   def toJsonRDD: RDD[String] = self.map(_.asJson())
 
-  //TODO: header cannot use special characters, notably dot(.), this is a bug of Spark SQL
+  //TODO: use the new applySchema api to avoid losing type info
   def asSchemaRDD(): SchemaRDD = {
 
     val jsonRDD = this.toJsonRDD
@@ -113,7 +113,7 @@ case class PageRowRDD(
     //TODO: handle missing columns
     this.spooky.sqlContext.jsonRDD(jsonRDD)
       .select(
-        keys.toSeq.filter(_.isInstanceOf[Key]).reverse.map(key => UnresolvedAttribute(key.name)): _*
+        keys.toSeq.filter(_.isInstanceOf[Key]).reverse.map(key => UnresolvedAttribute(Utils.canonizeColumnName(key.name))): _*
       )
   }
 
@@ -236,10 +236,11 @@ case class PageRowRDD(
         key
     }
 
-    this.copy(
+    val result = this.copy(
       self = self.map(_.select(_exprs)),
       keys = this.keys ++ newKeys
     )
+    result
   }
 
   private def selectTemp(exprs: Expr[Any]*): PageRowRDD = {
@@ -322,7 +323,7 @@ case class PageRowRDD(
                   )(exprs: Expr[Any]*) ={
 
     this
-      .flattenTemp(expr > Symbol(Const.joinExprKey), indexKey, limit, left)
+      .flattenTemp(expr defaultAs Symbol(Const.joinExprKey), indexKey, limit, left)
       .select(exprs: _*)
     //      .clearTemp
   }
@@ -427,7 +428,7 @@ case class PageRowRDD(
             ): PageRowRDD = {
 
     this
-      .flattenTemp(expr > Symbol(Const.joinExprKey), indexKey, limit, left = true)
+      .flattenTemp(expr defaultAs Symbol(Const.joinExprKey), indexKey, limit, left = true)
       .fetch(traces, joinType, numPartitions, flattenPagesPattern, flattenPagesIndexKey)
       .select(exprs: _*)
     //      .clearTemp
@@ -524,13 +525,13 @@ case class PageRowRDD(
                ): PageRowRDD = {
 
     var newRows = this
-    var total = if (depthKey != null) this.select(Value(0) > depthKey).self
+    var total = if (depthKey != null) this.select(Literal(0) > depthKey).self
     else this.self
 
     for (depth <- 1 to maxDepth) {
       //always inner join
       val joined = newRows
-        .flattenTemp(expr, indexKey, Int.MaxValue, left = true)
+        .flattenTemp(expr defaultAs Symbol(Const.joinExprKey), indexKey, Int.MaxValue, left = true)
         .fetch(traces, Inner, numPartitions, flattenPagesPattern, flattenPagesIndexKey)
         .select(exprs: _*)
       //        .clearTemp
@@ -544,7 +545,7 @@ case class PageRowRDD(
       }
 
       total = total.union(
-        if (depthKey != null) newRows.select(new Value(depth) > depthKey).self
+        if (depthKey != null) newRows.select(new Literal(depth) > depthKey).self
         else newRows.self
       )
     }

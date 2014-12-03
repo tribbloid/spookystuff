@@ -16,7 +16,6 @@ class TestPages extends SparkEnvSuite {
   val wgetPage = Trace(Wget("http://en.wikipedia.org").as('oldWget)::Nil).resolve(spooky)
 
   test("cache and restore") {
-    spooky.setRoot("file://"+System.getProperty("user.home")+"/spooky-unit/")
     spooky.pageExpireAfter = 2.seconds
 
     val pages = Trace(
@@ -39,7 +38,6 @@ class TestPages extends SparkEnvSuite {
   }
 
   test ("local cache") {
-    spooky.setRoot("file://"+System.getProperty("user.home")+"/spooky-unit/")
     spooky.pageExpireAfter = 2.seconds
 
     Pages.autoCache(page, page.head.uid.backtrace, spooky)
@@ -66,7 +64,6 @@ class TestPages extends SparkEnvSuite {
   }
 
   test ("wget local cache") {
-    spooky.setRoot("file://"+System.getProperty("user.home")+"/spooky-unit/")
     spooky.pageExpireAfter = 2.seconds
 
     Pages.autoCache(wgetPage, wgetPage.head.uid.backtrace, spooky)

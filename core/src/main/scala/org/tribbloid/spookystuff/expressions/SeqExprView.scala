@@ -11,11 +11,11 @@ class SeqExprView[T: ClassTag](self: Expr[Seq[T]]) {
 
   import dsl._
 
-  def head: Expr[T] = self.flatMap(_.headOption, "head")
+  def head: Expr[T] = self.andFlatMap(_.headOption, "head")
 
-  def last: Expr[T] = self.flatMap(_.lastOption, "last")
+  def last: Expr[T] = self.andFlatMap(_.lastOption, "last")
 
-  def get(i: Int): Expr[T] = self.flatMap({
+  def get(i: Int): Expr[T] = self.andFlatMap({
     seq =>
       val realIdx = if (i >= 0) i
       else seq.size - i
@@ -25,9 +25,9 @@ class SeqExprView[T: ClassTag](self: Expr[Seq[T]]) {
   },
   s"get($i)")
 
-  def size: Expr[Int] = self.map(_.size, "size")
+  def size: Expr[Int] = self.andMap(_.size, "size")
 
-  def mkString(sep: String): Expr[String] = self.map(_.mkString(sep), s"mkString($sep)")
+  def mkString(sep: String): Expr[String] = self.andMap(_.mkString(sep), s"mkString($sep)")
 
   //TODO: handle exception
   //  def only: Expr[T] =

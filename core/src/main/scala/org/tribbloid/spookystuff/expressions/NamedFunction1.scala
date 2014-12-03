@@ -6,11 +6,20 @@ package org.tribbloid.spookystuff.expressions
 trait NamedFunction1[-T, +R] extends (T => R) with Serializable {
 
   var name: String
+  var hasDefaultName: Boolean = true
 
   final def as(name: Symbol): this.type = {
     assert(name != null)
 
     this.name = name.name
+    this.hasDefaultName = false
+    this
+  }
+
+  final def defaultAs(name: Symbol): this.type = {
+    assert(name != null)
+
+    if (hasDefaultName) this.name = name.name
     this
   }
 

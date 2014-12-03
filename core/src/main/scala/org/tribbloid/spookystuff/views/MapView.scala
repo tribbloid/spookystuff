@@ -1,11 +1,13 @@
 package org.tribbloid.spookystuff.views
 
+import org.tribbloid.spookystuff.utils.Utils
+
 import scala.reflect.ClassTag
 
 /**
  * Created by peng on 10/29/14.
  */
-class MapView[K](m1: Map[K,_]) {
+class MapView[K, V](m1: Map[K,V]) {
 
   def getTyped[T: ClassTag](key: K): Option[T] = m1.get(key) match {
 
@@ -17,18 +19,18 @@ class MapView[K](m1: Map[K,_]) {
     case _ => None
   }
 
-//  def merge(m2: Map[K,_], strategy: MergeStrategy): Map[K,_] = {
-//    val halfMerged = m2.map{
-//      kv => {
-//        m1.get(kv._1) match {
-//          case None => kv
-//          case Some(v) => (kv._1, strategy.f(v, kv._2))
-//        }
-//      }
-//    }
-//
-//    m1 ++ halfMerged
-//  }
+  //  def merge(m2: Map[K,_], strategy: MergeStrategy): Map[K,_] = {
+  //    val halfMerged = m2.map{
+  //      kv => {
+  //        m1.get(kv._1) match {
+  //          case None => kv
+  //          case Some(v) => (kv._1, strategy.f(v, kv._2))
+  //        }
+  //      }
+  //    }
+  //
+  //    m1 ++ halfMerged
+  //  }
 
   def flattenKey(
                   key: K,
@@ -38,7 +40,7 @@ class MapView[K](m1: Map[K,_]) {
     val valueOption = m1.get(key)
 
     val values: Iterable[_] = valueOption.toSeq.flatMap {
-      case v: TraversableOnce[_] => v
+      case v: TraversableOnce[_] => v.toSeq
       case v: Array[_] => v
       case v: Any => Seq(v)
       case _ => Seq()
@@ -52,4 +54,9 @@ class MapView[K](m1: Map[K,_]) {
 
     result
   }
+
+  def canonizeKeysToColumnNames: Map[String,V] = m1.map(
+    tuple =>
+      (Utils.canonizeColumnName(tuple._1.toString), tuple._2)
+  )
 }

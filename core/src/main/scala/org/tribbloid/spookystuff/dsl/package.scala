@@ -24,9 +24,11 @@ package object dsl {
 //
 //  val A = GetExpr("A")
 
-  def $(selector: String, i: Int): Expr[Unstructured] = Symbol(Const.pageWildCardKey).children(selector).get(i)
+  def $(selector: String, i: Int): Expr[Unstructured] = new GetPageExpr(Const.pageWildCardKey).children(selector).get(i)
 
-  def $(selector: String): Expr[Seq[Unstructured]] = Symbol(Const.pageWildCardKey).children(selector)
+  def $(selector: String): Expr[Seq[Unstructured]] = new GetPageExpr(Const.pageWildCardKey).children(selector)
+
+  def $ = new GetPageExpr(Const.pageWildCardKey)
 
   def A(selector: String, i: Int): Expr[Unstructured] = 'A.children(selector).get(i)
 
@@ -60,7 +62,10 @@ package object dsl {
   implicit def symbolToExpr(symbol: Symbol): GetExpr =
     new GetExpr(symbol.name)
 
-//  implicit def symbolToStrExpr(symbol: Symbol): Expr[String] = exprView[Any](new GetExpr(symbol.name)).map(_.toString) //TODO: handle cases where symbol is unstructured
+//  implicit def symbolToStrExpr(symbol: Symbol): Expr[String] = exprView[Any](new GetExpr(symbol.name)).map(_.toString)
+
+  implicit def symbolToExprView(symbol: Symbol): ExprView[Any] =
+    new GetExpr(symbol.name)
 
   implicit def symbolToUnstructuredExprView(symbol: Symbol): UnstructuedExprView =
     new GetUnstructuredExpr(symbol.name)
@@ -74,7 +79,7 @@ package object dsl {
     val regex = (delimiter+"\\{[^\\{\\}\r\n]*\\}").r
 
     if (regex.findFirstIn(str).isEmpty)
-      new Value[String](str)
+      new Literal[String](str)
     else
       new ReplaceKeyExpr(str)
   }

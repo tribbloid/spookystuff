@@ -5,11 +5,11 @@ package org.tribbloid.spookystuff.pages
  */
 trait Unstructured extends Serializable {
 
-   final def apply(selector: String) = children(selector)
-
    val uri: String
 
    def children(selector: String): Seq[Unstructured]
+
+   final def apply(selector: String) = children(selector)
 
    def markup: Option[String]
 

@@ -118,9 +118,12 @@ class SpookyContext (
     new PageRowRDD(result, keys = ListSet(rdd.schema.fieldNames: _*).map(Key(_)), spooky = this)
   }
 
+  //TODO: doesn't preserve order, impossible without applySchema api
   implicit def mapRDDToPageRowRDD[T <: Any](rdd: RDD[Map[String,T]]): PageRowRDD = {
 
-    val jsonRDD = rdd.map(map => Utils.toJson(map))
+    import views._
+
+    val jsonRDD = rdd.map(map => Utils.toJson(map.canonizeKeysToColumnNames))
     jsonRDD.persist()
     val schemaRDD = sqlContext.jsonRDD(jsonRDD)
 

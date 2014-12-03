@@ -10,13 +10,13 @@ class UnstructuedSeqExprView(self: Expr[Seq[Unstructured]]) {
 
   import dsl._
 
-  def allChildren(selector: String): Expr[Seq[Unstructured]] = self.map(_.allChildren(selector), s"select($selector)")
+  def allChildren(selector: String): Expr[Seq[Unstructured]] = self.andMap(_.allChildren(selector), s"allChildren($selector)")
 
-  def texts: Expr[Seq[String]] = self.map(_.texts, "text")
+  def texts: Expr[Seq[String]] = self.andMap(_.texts, "texts")
 
-  def ownTexts: Expr[Seq[String]] = self.map(_.ownTexts, "ownText")
+  def ownTexts: Expr[Seq[String]] = self.andMap(_.ownTexts, "ownTexts")
 
-  def attrs(attrKey: String, noEmpty: Boolean = true): Expr[Seq[String]] = self.map(_.attrs(attrKey, noEmpty), s"attr($attrKey,$noEmpty)")
+  def attrs(attrKey: String, noEmpty: Boolean = true): Expr[Seq[String]] = self.andMap(_.attrs(attrKey, noEmpty), s"attrs($attrKey,$noEmpty)")
 
   def hrefs = attrs("abs:href", noEmpty = true)
 

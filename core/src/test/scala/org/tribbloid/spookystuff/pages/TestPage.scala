@@ -25,7 +25,6 @@ class TestPage extends SparkEnvSuite {
   }
 
   test("save and load") {
-    spooky.setRoot("file://"+System.getProperty("user.home")+"/spooky-unit/")
 
     val results = Trace(
       Visit("http://en.wikipedia.org") ::
@@ -63,7 +62,6 @@ class TestPage extends SparkEnvSuite {
   }
 
   test("wget html, save and load") {
-    spooky.setRoot("file://"+System.getProperty("user.home")+"/spooky-unit/")
 
     val results = Trace(
       Wget("https://www.google.hk") :: Nil
@@ -83,7 +81,6 @@ class TestPage extends SparkEnvSuite {
   }
 
   test("wget image, save and load") {
-    spooky.setRoot("file://"+System.getProperty("user.home")+"/spooky-unit/")
 
     val results = Trace(
       Wget("https://www.google.ca/images/srpr/logo11w.png") :: Nil
@@ -101,7 +98,6 @@ class TestPage extends SparkEnvSuite {
   }
 
   test("wget pdf, save and load") {
-    spooky.setRoot("file://"+System.getProperty("user.home")+"/spooky-unit/")
 
     val results = Trace(
       Wget("http://www.cs.toronto.edu/~ranzato/publications/DistBeliefNIPS2012_withAppendix.pdf") :: Nil

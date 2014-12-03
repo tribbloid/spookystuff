@@ -2,8 +2,6 @@ package org.tribbloid.spookystuff.utils
 
 import org.json4s.DefaultFormats
 import org.slf4j.LoggerFactory
-import org.tribbloid.spookystuff.Const
-import org.tribbloid.spookystuff.entity.PageRow
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._
@@ -132,33 +130,15 @@ These special characters are often called "metacharacters".
     result
   }
 
+  // Spark SQL does not currently support column names with dots (see SPARK-2775),
+  // so we'll need to post-process the inferred schema to convert dots into underscores:
+  def canonizeColumnName(name: String): String = name.replaceAllLiterally(".", "_")
+
   def toJson(obj: AnyRef, beautiful: Boolean = false): String = {
 
     import org.json4s.jackson.Serialization
 
     if (beautiful) Serialization.writePretty(obj)(DefaultFormats)
     else Serialization.write(obj)(DefaultFormats)
-  }
-
-  def replaceKey(
-                   str: String,
-                   row: PageRow,
-                   delimiter: String = Const.keyDelimiter
-                   ): Option[String] = {
-    if (str == null) return None
-    if (str.isEmpty) return Some(str)
-
-    val regex = (delimiter+"\\{[^\\{\\}\r\n]*\\}").r
-
-    val result = regex.replaceAllIn(str,m => {
-      val original = m.group(0)
-      val key = original.substring(2, original.size-1)
-      row.get(key) match {
-        case Some(v) => v.toString
-        case None => return None
-      }
-    })
-
-    Some(result)
   }
 }

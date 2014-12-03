@@ -14,7 +14,7 @@ import org.apache.http.impl.client.HttpClients
 import org.apache.http.impl.conn.PoolingHttpClientConnectionManager
 import org.openqa.selenium.{OutputType, TakesScreenshot}
 import org.tribbloid.spookystuff.entity.PageRow
-import org.tribbloid.spookystuff.expressions.{Expr, Value}
+import org.tribbloid.spookystuff.expressions.{Expr, Literal}
 import org.tribbloid.spookystuff.session.Session
 import org.tribbloid.spookystuff.pages.{Unstructured, HtmlElement, Page, PageUID}
 import org.tribbloid.spookystuff.utils.{SocksProxyConnectionSocketFactory, SocksProxySSLConnectionSocketFactory}
@@ -102,7 +102,7 @@ case class Wget(uri: Expr[Any]) extends Export with Sessionless {
 
   override def doExeNoName(pb: Session): Seq[Page] = {
 
-    val urlStr = uri.asInstanceOf[Value[String]].value
+    val urlStr = uri.asInstanceOf[Literal[String]].value
     if ( urlStr.trim().isEmpty ) return Seq ()
 
     val proxy = pb.spooky.proxy()
@@ -204,7 +204,7 @@ case class Wget(uri: Expr[Any]) extends Export with Sessionless {
 
     uriStr.map(
       str =>
-        this.copy(uri = new Value(str)).asInstanceOf[this.type]
+        this.copy(uri = new Literal(str)).asInstanceOf[this.type]
     )
   }
 }

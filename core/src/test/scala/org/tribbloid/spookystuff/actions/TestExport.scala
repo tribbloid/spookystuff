@@ -14,14 +14,10 @@ class TestExport extends SparkEnvSuite {
 
       val results = Trace(
         Wget("http://www.whatsmyuseragent.com/") :: Nil
-      ).resolvePlain(spooky)
+      ).resolve(spooky)
 
       results(0)("h3.info").texts.head
     }
-
-  override def finalize(){
-    sc.stop()
-  }
 
   test("use TOR socks5 proxy for http wget") {
 
@@ -30,7 +26,7 @@ class TestExport extends SparkEnvSuite {
 
       val results = Trace(
         Wget("http://www.whatsmyuseragent.com/") :: Nil
-      ).resolvePlain(spooky)
+      ).resolve(spooky)
 
       results(0)("h3.info").texts.head
     }
@@ -48,7 +44,7 @@ class TestExport extends SparkEnvSuite {
 
       val results = Trace(
         Wget("https://www.astrill.com/what-is-my-ip-address.php") :: Nil
-      ).resolvePlain(spooky)
+      ).resolve(spooky)
 
       results(0)("h1").texts.head
     }
@@ -65,7 +61,7 @@ class TestExport extends SparkEnvSuite {
 
       val results = Trace(
         Wget("http://www.whatsmyuseragent.com/") :: Nil
-      ).resolvePlain(spooky)
+      ).resolve(spooky)
 
       results(0)("h3.info").texts.head
     }
@@ -75,7 +71,7 @@ class TestExport extends SparkEnvSuite {
 
       val results = Trace(
         Wget("http://www.whatsmyuseragent.com/") :: Nil
-      ).resolvePlain(spooky)
+      ).resolve(spooky)
 
       results(0)("h3.info").texts.head
     }
@@ -90,7 +86,7 @@ class TestExport extends SparkEnvSuite {
 
       val results = Trace(
         Wget("https://www.astrill.com/what-is-my-ip-address.php") :: Nil
-      ).resolvePlain(spooky)
+      ).resolve(spooky)
 
       results(0)("h1").texts.head
     }
@@ -100,7 +96,7 @@ class TestExport extends SparkEnvSuite {
 
       val results = Trace(
         Wget("https://www.astrill.com/what-is-my-ip-address.php") :: Nil
-      ).resolvePlain(spooky)
+      ).resolve(spooky)
 
       results(0)("h1").texts.head
     }

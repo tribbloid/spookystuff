@@ -8,7 +8,7 @@ import org.openqa.selenium.support.ui.{ExpectedCondition, ExpectedConditions, Se
 import org.openqa.selenium.{By, WebDriver}
 import org.tribbloid.spookystuff.Const
 import org.tribbloid.spookystuff.entity.PageRow
-import org.tribbloid.spookystuff.expressions.{Expr, Value}
+import org.tribbloid.spookystuff.expressions.{Expr, Literal}
 import org.tribbloid.spookystuff.session.Session
 import org.tribbloid.spookystuff.pages.{Unstructured, Page}
 import org.tribbloid.spookystuff.utils.Utils
@@ -47,7 +47,7 @@ case class Visit(
                   ) extends Interaction with Timed {
 
   override def exeWithoutPage(pb: Session) {
-    pb.getDriver.get(uri.asInstanceOf[Value[String]].value)
+    pb.getDriver.get(uri.asInstanceOf[Literal[String]].value)
 
     if (hasTitle) {
       val wait = new WebDriverWait(pb.getDriver, timeout(pb).toSeconds)
@@ -65,7 +65,7 @@ case class Visit(
 
     uriStr.map(
       str =>
-        this.copy(uri = new Value(str)).asInstanceOf[this.type]
+        this.copy(uri = new Literal(str)).asInstanceOf[this.type]
     )
   }
 }
@@ -232,7 +232,7 @@ case class TextInput(selector: String, text: Expr[Any]) extends Interaction with
     val wait = new WebDriverWait(pb.getDriver, timeout(pb).toSeconds)
     val element = wait.until(ExpectedConditions.presenceOfElementLocated(By.cssSelector(selector)))
 
-    element.sendKeys(text.asInstanceOf[Value[String]].value)
+    element.sendKeys(text.asInstanceOf[Literal[String]].value)
   }
 
   override def doInterpolate(pageRow: PageRow): Option[this.type] = {
@@ -245,7 +245,7 @@ case class TextInput(selector: String, text: Expr[Any]) extends Interaction with
 
     textStr.map(
       str =>
-        this.copy(text = new Value(str)).asInstanceOf[this.type]
+        this.copy(text = new Literal(str)).asInstanceOf[this.type]
     )
   }
 }
@@ -261,7 +261,7 @@ case class DropDownSelect(selector: String, value: Expr[Any]) extends Interactio
     val element = wait.until(ExpectedConditions.presenceOfElementLocated(By.cssSelector(selector)))
 
     val select = new Select(element)
-    select.selectByValue(value.asInstanceOf[Value[String]].value)
+    select.selectByValue(value.asInstanceOf[Literal[String]].value)
   }
 
   override def doInterpolate(pageRow: PageRow): Option[this.type] = {
@@ -274,7 +274,7 @@ case class DropDownSelect(selector: String, value: Expr[Any]) extends Interactio
 
     valueStr.map(
       str =>
-        this.copy(value = new Value(str)).asInstanceOf[this.type]
+        this.copy(value = new Literal(str)).asInstanceOf[this.type]
     )
   }
 }
@@ -309,7 +309,7 @@ case class ExeScript(script: Expr[Any], selector: String = null) extends Interac
       Some(result)
     }
 
-    val scriptStr = script.asInstanceOf[Value[String]].value
+    val scriptStr = script.asInstanceOf[Literal[String]].value
     pb.getDriver match {
       case d: HtmlUnitDriver => d.executeScript(scriptStr, element.toArray: _*)//scala can't cast directly
       //      case d: AndroidWebDriver => throw new UnsupportedOperationException("this web browser driver is not supported")
@@ -329,7 +329,7 @@ case class ExeScript(script: Expr[Any], selector: String = null) extends Interac
 
     scriptStr.map(
       str =>
-        this.copy(script = new Value(str)).asInstanceOf[this.type]
+        this.copy(script = new Literal(str)).asInstanceOf[this.type]
     )
   }
 }

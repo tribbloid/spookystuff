@@ -7,7 +7,7 @@ import scala.language.implicitConversions
  */
 package object views {
 
-  implicit def mapToItsView[K](map: Map[K,_]): MapView[K] = new MapView[K](map)
+  implicit def mapToItsView[K, V](map: Map[K,V]): MapView[K, V] = new MapView(map)
 
   //  def identical[T](vs: TraversableOnce[T]): Boolean = vs.reduce{
   //    (v1,v2) => {

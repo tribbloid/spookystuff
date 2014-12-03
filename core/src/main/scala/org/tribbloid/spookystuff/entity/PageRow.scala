@@ -1,6 +1,6 @@
 package org.tribbloid.spookystuff.entity
 
-import org.tribbloid.spookystuff.{views, SpookyContext}
+import org.tribbloid.spookystuff.{Const, views, SpookyContext}
 import org.tribbloid.spookystuff.actions._
 import org.tribbloid.spookystuff.dsl._
 import org.tribbloid.spookystuff.expressions._
@@ -13,7 +13,7 @@ import org.tribbloid.spookystuff.utils._
 //some guideline: All key parameters are Symbols to align with Spark SQL.
 //cells & pages share the same key pool but different data structure
 case class PageRow(
-                    cells: Map[KeyLike, Any] = Map(), //TODO: also carry PageUID & property type (Vertex/Edge)
+                    cells: Map[KeyLike, Any] = Map(), //TODO: also carry PageUID & property type (Vertex/Edge) for GraphX
                     pages: Seq[Page] = Seq() // discarded after new page coming in
                     )
   extends Serializable {
@@ -31,7 +31,7 @@ case class PageRow(
 
   def getPage(keyStr: String): Option[Page] = {
 
-    val pages = if (keyStr == "*") this.pages
+    val pages = if (keyStr == Const.pageWildCardKey) this.pages
     else this.pages.filter(_.name == keyStr)
 
     if (pages.size > 1) throw new UnsupportedOperationException("Ambiguous key referring to multiple pages")
@@ -51,33 +51,39 @@ case class PageRow(
     else page.orElse(value)
   }
 
+  def replaceInto(
+                  str: String,
+                  delimiter: String = Const.keyDelimiter
+                  ): Option[String] = {
+    if (str == null) return None
+    if (str.isEmpty) return Some(str)
+
+    val regex = (delimiter+"\\{[^\\{\\}\r\n]*\\}").r
+
+    val result = regex.replaceAllIn(str,m => {
+      val original = m.group(0)
+      val key = original.substring(2, original.size-1)
+      this.get(key) match {
+        case Some(v) => v.toString
+        case None => return None
+      }
+    })
+
+    Some(result)
+  }
+
   def signature(exclude: Iterable[KeyLike]) = (this.cells -- exclude, pages.map(_.uid), pages.map(_.name))
 
   def asMap(): Map[String, Any] = this.cells
     .filterKeys(_.isInstanceOf[Key]).map(identity)
     .map( tuple => tuple._1.name -> tuple._2)
 
-  def asJson(): String = Utils.toJson(this.asMap())
+  def asJson(): String = {
+    import views._
 
-  //TODO: don't use any String that contains dot as column name, or you will encounter bug SPARK-2775
-  //TODO: this will become the default extract at some point, but not now
-//  //TODO: need special handling of Option[_]
-//  def select(keys: Seq[KeyLike], fs: Seq[Expr[Any]]): PageRow = {
-//
-//    val newKVs = Map(
-//      keys.zip(fs).flatMap{
-//        tuple =>
-//          val value = tuple._2(this)
-//          value match {
-//            case Some(v) => Some(tuple._1 -> v)
-//            case None => None
-//          }
-//      }: _*
-//    )
-//    this.copy(cells = this.cells ++ newKVs)
-//  }
+    Utils.toJson(this.asMap().canonizeKeysToColumnNames)
+  }
 
-  //TODO: don't use any String that contains dot as column name, or you will encounter bug SPARK-2775
   def select(fs: Seq[Expr[Any]]): PageRow = {
     val newKVs = fs.flatMap{
       f =>
@@ -177,24 +183,6 @@ case class PageRow(
     }
   }
 
-  //only apply to last page
-  //TODO: don't use any String that contains dot as column name, or you will encounter bug SPARK-2775
-  //see https://issues.apache.org/jira/browse/SPARK-2775
-  //  def extract(keyAndF: Seq[(String, Page => Any)]): PageRow = {
-  //
-  //    this.pages.lastOption match {
-  //      case None => this
-  //      case Some(page) =>
-  //        val map = Map(
-  //          keyAndF.map{
-  //            tuple => (new Key(tuple._1), tuple._2(page))
-  //          }: _*
-  //        )
-  //
-  //        this.copy(cells = this.cells ++ map)
-  //    }
-  //  }
-
   //affect last page
   //TODO: deprecate? or enable pagekey
   def paginate(
@@ -215,8 +203,8 @@ case class PageRow(
 
     while (currentRow.pages.size <= limit && increment > 0 && currentRow.pages.last.children(selector).attrs(attr, noEmpty = true).nonEmpty) {
 
-      val action = if (!wget) Visit(new Value(currentRow.pages.last.children(selector).attrs(attr, noEmpty = true).head))
-      else Wget(new Value(currentRow.pages.last.children(selector).attrs(attr, noEmpty = true).head))
+      val action = if (!wget) Visit(new Literal(currentRow.pages.last.children(selector).attrs(attr, noEmpty = true).head))
+      else Wget(new Literal(currentRow.pages.last.children(selector).attrs(attr, noEmpty = true).head))
 
       val newRow = currentRow.putPages(Trace(action::Nil).resolve(spooky), joinType = Merge).get
 
@@ -225,7 +213,7 @@ case class PageRow(
       currentRow = newRow
     }
 
-    if (flatten) currentRow.flattenPages("*",indexKey = indexKey)
+    if (flatten) currentRow.flattenPages(Const.pageWildCardKey,indexKey = indexKey)
     else Seq(currentRow)
   }
 }

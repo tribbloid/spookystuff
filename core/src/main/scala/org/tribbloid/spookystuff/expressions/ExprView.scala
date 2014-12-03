@@ -19,13 +19,13 @@ import scala.reflect.ClassTag
 
 class ExprView[T: ClassTag](self: Expr[T]) {
 
-  def map[A](g: T => A): Expr[A] = self.andThen(_.map(v => g(v))) //TODO: this downcast should work
+  def andMap[A](g: T => A): Expr[A] = self.andThen(_.map(v => g(v)))
 
-  def map[A](g: T => A, name: String): Expr[A] = map(NamedFunction1(g, name))
+  def andMap[A](g: T => A, name: String): Expr[A] = self.andThen(NamedFunction1(_.map(v => g(v)), name))
 
-  def flatMap[A](g: T => Option[A]): Expr[A] = self.andThen(_.flatMap(v => g(v)))
+  def andFlatMap[A](g: T => Option[A]): Expr[A] = self.andThen(_.flatMap(v => g(v)))
 
-  def flatMap[A](g: T => Option[A], name: String): Expr[A] = flatMap(NamedFunction1(g, name))
+  def andFlatMap[A](g: T => Option[A], name: String): Expr[A] = self.andThen(NamedFunction1(_.flatMap(v => g(v)), name))
 
 //  def defaultToHrefExpr = (self match {
 //    case expr: Expr[Unstructured] => expr.href

@@ -2,17 +2,14 @@ package org.tribbloid.spookystuff.expressions
 
 import org.tribbloid.spookystuff.entity.PageRow
 import org.tribbloid.spookystuff.pages.{Page, Unstructured}
-import org.tribbloid.spookystuff.utils.Utils
 
 import scala.reflect.ClassTag
 
-
-
 //just a simple wrapper for T, this is the only way to execute a action
 //this is the only Expression that can be shipped remotely
-final case class Value[+T: ClassTag](value: T) extends Expr[T] {//all select used in query cannot have name changed
+final case class Literal[+T: ClassTag](value: T) extends Expr[T] {//all select used in query cannot have name changed
 
-  override var name = value.toString
+  override var name = "'"+value.toString+"'" //quoted to avoid confusion with Get-ish Expr
 
   override def apply(v1: PageRow): Option[T] = Some(value)
 }
@@ -36,7 +33,7 @@ class ReplaceKeyExpr(str: String) extends Expr[String] {
 
   override var name = str
 
-  override def apply(v1: PageRow): Option[String] = Utils.replaceKey(str, v1)
+  override def apply(v1: PageRow): Option[String] = v1.replaceInto(str)
 }
 
 class InterpolateExpr(parts: Seq[String], fs: Seq[Expr[Any]])
@@ -49,7 +46,7 @@ class InterpolateExpr(parts: Seq[String], fs: Seq[Expr[Any]])
 
   override def apply(v1: PageRow): Option[String] = {
 
-    val iParts = parts.map(Utils.replaceKey(_, v1))
+    val iParts = parts.map(v1.replaceInto(_))
     val iFs = fs.map(_.apply(v1))
 
     if (iParts.contains(None) || iFs.contains(None)) None

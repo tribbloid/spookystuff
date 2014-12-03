@@ -42,9 +42,9 @@ trait ExampleCore extends {
     val spooky = if (args.contains("--nopreview"))
       new SpookyContext(
         sql,
-        driverFactory = NaiveDriverFactory(loadImages = true)
-        //      joinLimit = 2,
-        //      maxExploreDepth = 3
+        driverFactory = NaiveDriverFactory(loadImages = true),
+        joinLimit = 2,
+        maxExploreDepth = 3
       )
     else
       new SpookyContext(sql)

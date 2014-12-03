@@ -12,15 +12,15 @@ class UnstructuedExprView(self: Expr[Unstructured]) {
 
   import dsl._
 
-  def uri: Expr[String] = self.map(_.uri, "uri")
+  def uri: Expr[String] = self.andMap(_.uri, "uri")
 
-  def children(selector: String): Expr[Seq[Unstructured]] = self.map(_.children(selector), s"select($selector)")
+  def children(selector: String): Expr[Seq[Unstructured]] = self.andMap(_.children(selector), s"children($selector)")
 
-  def text: Expr[String] = self.flatMap(_.text, "text")
+  def text: Expr[String] = self.andFlatMap(_.text, "text")
 
-  def ownText: Expr[String] = self.flatMap(_.ownText, "ownText")
+  def ownText: Expr[String] = self.andFlatMap(_.ownText, "ownText")
 
-  def attr(attrKey: String, noEmpty: Boolean = true): Expr[String] = self.flatMap(_.attr(attrKey, noEmpty), s"attr($attrKey,$noEmpty)")
+  def attr(attrKey: String, noEmpty: Boolean = true): Expr[String] = self.andFlatMap(_.attr(attrKey, noEmpty), s"attr($attrKey,$noEmpty)")
 
   def href = attr("abs:href", noEmpty = true)
 
@@ -33,7 +33,7 @@ class PageExprView(self: Expr[Page]) {
 
   import dsl._
 
-  def timestamp: Expr[Date] = self.map(_.timestamp, "timestamp")
+  def timestamp: Expr[Date] = self.andMap(_.timestamp, "timestamp")
 
-  def saved = self.map(_.saved, "saved")
+  def saved = self.andMap(_.saved, "saved")
 }
