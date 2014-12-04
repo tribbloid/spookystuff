@@ -8,7 +8,7 @@ import org.tribbloid.spookystuff.dsl._
 /**
  * Created by peng on 9/11/14.
  */
-trait ProxyFeed extends ExampleCore {
+abstract class ProxyFeed extends ExampleCore {
 
   var proxyRDD: SchemaRDD = null
 

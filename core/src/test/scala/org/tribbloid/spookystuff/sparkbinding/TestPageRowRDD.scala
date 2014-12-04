@@ -2,14 +2,14 @@ package org.tribbloid.spookystuff.sparkbinding
 
 import java.text.SimpleDateFormat
 
-import org.tribbloid.spookystuff.SparkEnvSuite
+import org.tribbloid.spookystuff.SpookyEnvSuite
 import org.tribbloid.spookystuff.actions.Wget
 import org.tribbloid.spookystuff.dsl._
 
 /**
  * Created by peng on 11/26/14.
  */
-class TestPageRowRDD extends SparkEnvSuite {
+class TestPageRowRDD extends SpookyEnvSuite {
 
   test("flatMap inherited from RDD") {
     import spooky._
@@ -50,9 +50,9 @@ class TestPageRowRDD extends SparkEnvSuite {
 
     assert(
       fields ===
-        "*_uri" ::
-          "*_timestamp" ::
-          "*_children(div_central-featured-lang)_texts" :: Nil
+        "$_uri" ::
+          "$_timestamp" ::
+          "$_children(div_central-featured-lang)_texts" :: Nil
     )
 
     val finishedTime = System.currentTimeMillis()
@@ -70,6 +70,10 @@ class TestPageRowRDD extends SparkEnvSuite {
     val texts = head.apply(2).asInstanceOf[Iterable[String]]
     assert(texts.size === 10)
     assert(texts.head.startsWith("English"))
+  }
+
+  test("avoid key conflict in select"){
+    //TODO
   }
 
   test("flatSelect") {
@@ -98,7 +102,7 @@ class TestPageRowRDD extends SparkEnvSuite {
         "A_attr(lang,true)" ::
           "A_children(a)_head_attr(abs:href,true)" ::
           "A_children(a em)_head_text" ::
-          "*_uri" ::
+          "$_uri" ::
           "A_uri" :: Nil
     )
 

@@ -9,7 +9,7 @@ import org.tribbloid.spookystuff.dsl.driverfactory.NaiveDriverFactory
 /**
  * Created by peng on 12/2/14.
  */
-trait IntegrationCore extends FunSuite with BeforeAndAfter {
+abstract class IntegrationCore extends FunSuite with BeforeAndAfter {
 
   import scala.concurrent.duration._
 

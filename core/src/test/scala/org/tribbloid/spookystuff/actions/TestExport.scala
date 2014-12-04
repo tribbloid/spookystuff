@@ -1,13 +1,13 @@
 package org.tribbloid.spookystuff.actions
 
-import org.tribbloid.spookystuff.{dsl, SparkEnvSuite}
+import org.tribbloid.spookystuff.{dsl, SpookyEnvSuite}
 import org.tribbloid.spookystuff.dsl.TorProxyFactory
 import dsl._
 
 /**
  * Created by peng on 11/6/14.
  */
-class TestExport extends SparkEnvSuite {
+class TestExport extends SpookyEnvSuite {
 
   lazy val noProxyIP = {
       spooky.proxy = () => null

@@ -1,7 +1,7 @@
 package org.tribbloid.spookystuff.pages
 
 import org.apache.hadoop.fs.Path
-import org.tribbloid.spookystuff.SparkEnvSuite
+import org.tribbloid.spookystuff.SpookyEnvSuite
 import org.tribbloid.spookystuff.actions.{Wget, Visit, Trace, Snapshot}
 import org.tribbloid.spookystuff.dsl._
 import org.tribbloid.spookystuff.session.Session
@@ -9,7 +9,7 @@ import org.tribbloid.spookystuff.session.Session
 /**
  * Created by peng on 10/17/14.
  */
-class TestPage extends SparkEnvSuite {
+class TestPage extends SpookyEnvSuite {
 
   val emptyPage: Page = {
     val pb = new Session(spooky)

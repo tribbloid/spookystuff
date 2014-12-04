@@ -1,6 +1,6 @@
 package org.tribbloid.spookystuff.actions
 
-import org.tribbloid.spookystuff.SparkEnvSuite
+import org.tribbloid.spookystuff.SpookyEnvSuite
 import org.tribbloid.spookystuff.dsl._
 import org.tribbloid.spookystuff.session.Session
 
@@ -9,7 +9,7 @@ import org.tribbloid.spookystuff.session.Session
  */
 
 //TODO: this need some serious reorganization
-class TestTrace extends SparkEnvSuite {
+class TestTrace extends SpookyEnvSuite {
 
   import scala.concurrent.duration._
 
@@ -65,20 +65,6 @@ class TestTrace extends SparkEnvSuite {
     assert(res2.markup.get.contains("<title>Deep learning - Wikipedia, the free encyclopedia</title>"))
     assert(res2.uri === "http://en.wikipedia.org/wiki/Deep_learning")
     assert(res2.name === "B")
-  }
-
-  test("attributes") {
-    val result = Trace(
-      Visit("http://www.amazon.com") ::
-        TextInput("input#twotabsearchtextbox", "Lord of the Rings") ::
-        Submit("input[type=submit]") ::
-        WaitFor("div#resultsCol").in(40.seconds) :: Nil
-    ).autoSnapshot.resolve(spooky)
-
-    assert(result(0)("li#result_0").attrs("id").nonEmpty)
-    assert(result(0)("li#result_0 dummy").attrs("title").isEmpty)
-    assert(result(0)("li#result_0 h3").attrs("dummy").isEmpty)
-    assert(result(0)("li#result_0 h3").attrs("class").nonEmpty)
   }
 
 //  test("cache multiple pages and restore") {

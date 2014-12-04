@@ -1,6 +1,6 @@
 package org.tribbloid.spookystuff.expression
 
-import org.tribbloid.spookystuff.SparkEnvSuite
+import org.tribbloid.spookystuff.SpookyEnvSuite
 import org.tribbloid.spookystuff.actions.{Trace, Wget}
 import org.tribbloid.spookystuff.entity.PageRow
 import org.tribbloid.spookystuff.expressions.NamedFunction1
@@ -8,7 +8,7 @@ import org.tribbloid.spookystuff.expressions.NamedFunction1
 /**
  * Created by peng on 12/3/14.
  */
-class TestExprView extends SparkEnvSuite {
+class TestExprView extends SpookyEnvSuite {
 
   import org.tribbloid.spookystuff.dsl._
 

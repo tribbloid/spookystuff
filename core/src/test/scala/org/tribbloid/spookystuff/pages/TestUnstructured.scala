@@ -1,19 +1,19 @@
 package org.tribbloid.spookystuff.pages
 
 import org.apache.spark.SparkEnv
-import org.tribbloid.spookystuff.{dsl, SparkEnvSuite}
-import org.tribbloid.spookystuff.actions.{Trace, Wget}
+import org.tribbloid.spookystuff.{dsl, SpookyEnvSuite}
+import org.tribbloid.spookystuff.actions._
 import dsl._
 
 /**
  * Created by peng on 11/30/14.
  */
-class TestUnstructured extends SparkEnvSuite {
+class TestUnstructured extends SpookyEnvSuite {
 
-  val page = Trace(Wget("http://www.wikipedia.org/").as('old)::Nil).resolve(spooky)
+  val page = Trace(Wget("http://www.wikipedia.org/").as('old)::Nil).resolve(spooky).head
 
   test("Unstructured is serializable") {
-    val elements = page.allChildren("div.central-featured-lang")
+    val elements = page.children("div.central-featured-lang")
 
     assert(elements.size === 10)
 
@@ -24,5 +24,12 @@ class TestUnstructured extends SparkEnvSuite {
         val element2 = ser.deserialize[Unstructured](serElement)
         assert (element === element2)
     }
+  }
+
+  test("attrs") {
+
+    assert(page("h1.central-textlogo img").attrs("title").nonEmpty)
+    assert(page("h1.central-textlogo img dummy").attrs("title").isEmpty)
+    assert(page("h1.central-textlogo img").attrs("dummy").isEmpty)
   }
 }

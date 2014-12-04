@@ -1,13 +1,13 @@
 package org.tribbloid.spookystuff.expression
 
-import org.tribbloid.spookystuff.SparkEnvSuite
+import org.tribbloid.spookystuff.SpookyEnvSuite
 import org.tribbloid.spookystuff.actions.{Trace, Wget}
 import org.tribbloid.spookystuff.entity.PageRow
 
 /**
  * Created by peng on 12/3/14.
  */
-class TestUnstructuredExprView extends SparkEnvSuite {
+class TestUnstructuredExprView extends SpookyEnvSuite {
 
   import org.tribbloid.spookystuff.dsl._
 

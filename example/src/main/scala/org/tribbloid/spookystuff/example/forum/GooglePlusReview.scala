@@ -26,19 +26,16 @@ object GooglePlusReview extends ExampleCore {
       "https://plus.google.com/109825052255681007824/about",
       "https://plus.google.com/109302266591770935966/about",
       "https://plus.google.com/108890902290663191606/about"
-    ))
+    ),12)
       .fetch(
         Visit("'{_}")
-          +> Loop(Click("div.R4 span.d-s") :: Nil)
+          +> LoadMore("div.R4 span.d-s")
       )
       .flatSelect($("div.Qxb div.Ee"), indexKey = 'row)(
         A("div.VSb span.GKa").text > 'comment,
         A("span.VUb").text > 'date_status,
         A("div.b-db span.b-db-ac-th").size > 'stars,
         A("span.Gl a.d-s").text > 'user_name
-        //        "user_location" -> (_ => "pending"),
-        //        "friend_count" -> (_ => "pending"),
-        //        "review_count" -> (_ => "pending")
       )
       .asSchemaRDD()
   }

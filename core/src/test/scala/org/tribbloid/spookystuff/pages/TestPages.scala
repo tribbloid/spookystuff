@@ -1,6 +1,6 @@
 package org.tribbloid.spookystuff.pages
 
-import org.tribbloid.spookystuff.SparkEnvSuite
+import org.tribbloid.spookystuff.SpookyEnvSuite
 import org.tribbloid.spookystuff.actions.{Snapshot, Trace, Visit, Wget}
 import org.tribbloid.spookystuff.dsl._
 
@@ -9,7 +9,7 @@ import scala.concurrent.duration._
 /**
  * Created by peng on 10/17/14.
  */
-class TestPages extends SparkEnvSuite {
+class TestPages extends SpookyEnvSuite {
 
   val page = Trace(Visit("http://en.wikipedia.org")::Snapshot().as('old)::Nil).resolve(spooky)
 

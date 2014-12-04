@@ -10,7 +10,7 @@ import org.tribbloid.spookystuff.dsl.driverfactory.NaiveDriverFactory
 /**
  * Created by peng on 11/30/14.
  */
-abstract class SparkEnvSuite extends FunSuite with BeforeAndAfter {
+abstract class SpookyEnvSuite extends FunSuite with BeforeAndAfter {
 
   val conf: SparkConf = new SparkConf().setAppName("test")
     .setMaster("local[*]")

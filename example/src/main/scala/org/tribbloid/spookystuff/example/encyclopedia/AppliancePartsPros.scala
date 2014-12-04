@@ -2,10 +2,8 @@ package org.tribbloid.spookystuff.example.encyclopedia
 
 import org.tribbloid.spookystuff.SpookyContext
 import org.tribbloid.spookystuff.actions._
-import org.tribbloid.spookystuff.example.ExampleCore
 import org.tribbloid.spookystuff.dsl._
-
-import scala.concurrent.duration._
+import org.tribbloid.spookystuff.example.ExampleCore
 
 /**
  * Created by peng on 07/06/14.
@@ -20,7 +18,7 @@ object AppliancePartsPros extends ExampleCore {
         Visit("http://www.appliancepartspros.com/")
           +> TextInput("input.ac-input","'{_}")
           +> Click("input[value=\"Search\"]")
-          +> Delay(10.seconds) //TODO: change to DelayFor to save time
+          +> WaitFor("div.dgrm-lst div.header h2")
       )
       .select(
         $"div.dgrm-lst div.header h2".text > 'model

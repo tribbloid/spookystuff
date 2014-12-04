@@ -1,12 +1,12 @@
 package org.tribbloid.spookystuff.entity
 
-import org.tribbloid.spookystuff.{dsl, SparkEnvSuite}
+import org.tribbloid.spookystuff.{dsl, SpookyEnvSuite}
 import org.tribbloid.spookystuff.actions.{Wget, Trace}
 
 /**
  * Created by peng on 12/3/14.
  */
-class TestPageRow extends SparkEnvSuite {
+class TestPageRow extends SpookyEnvSuite {
 
   import dsl._
 
