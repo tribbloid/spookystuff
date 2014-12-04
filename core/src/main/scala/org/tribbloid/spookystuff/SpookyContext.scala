@@ -2,7 +2,7 @@ package org.tribbloid.spookystuff
 
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.{SQLContext, SchemaRDD}
-import org.apache.spark.{SerializableWritable, SparkConf, SparkContext}
+import org.apache.spark.{Accumulator, SerializableWritable, SparkConf, SparkContext}
 import org.tribbloid.spookystuff.dsl._
 import org.tribbloid.spookystuff.dsl.driverfactory.{DriverFactory, NaiveDriverFactory}
 import org.tribbloid.spookystuff.entity.{Key, KeyLike, PageRow}
@@ -64,7 +64,11 @@ class SpookyContext (
                       )
   extends Serializable {
 
-  val metrics = new Metrics
+  var metrics = new Metrics
+
+  def cleanMetrics(): Unit = {
+    metrics = new Metrics
+  }
   
   val hConfWrapper =  if (sqlContext!=null) new SerializableWritable(this.sqlContext.sparkContext.hadoopConfiguration)
   else null
@@ -136,18 +140,16 @@ class SpookyContext (
 
     import org.apache.spark.SparkContext._
 
-    val driverInitialized = sc.accumulator(0, "driver initialized")
+    val driverInitialized: Accumulator[Int] = sc.accumulator(0, "driverInitialized")
+    val driverReclaimed: Accumulator[Int] = sc.accumulator(0, "driverReclaimed")
 
-    val driverReclaimed = sc.accumulator(0, "driver reclaimed")
+    val DFSReadSuccess: Accumulator[Int] = sc.accumulator(0, "DFSReadSuccess")
+    val DFSReadFail: Accumulator[Int] = sc.accumulator(0, "DFSReadFail")
 
-    val DFSReadSuccess = sc.accumulator(0, "DFS read success")
+    val DFSWriteSuccess: Accumulator[Int] = sc.accumulator(0, "DFSWriteSuccess")
+    val DFSWriteFail: Accumulator[Int] = sc.accumulator(0, "DFSWriteFail")
 
-    val DFSReadFail = sc.accumulator(0, "DFS read fail")
-
-    val DFSWriteSuccess = sc.accumulator(0, "DFS write success")
-
-    val DFSWriteFail = sc.accumulator(0, "DFS write fail")
-
-    val pageCount = sc.accumulator(0, "Page Count")
+    val pagesFetchedFromCache: Accumulator[Int] = sc.accumulator(0, "pagesFetchedFromCache")
+    val pagesFetched: Accumulator[Int] = sc.accumulator(0, "pagesFetched")
   }
 }

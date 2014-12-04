@@ -127,7 +127,9 @@ object Pages {
          val fis = fs.open(fullPath)
          val serIn = ser.deserializeStream(fis)
          try {
-           serIn.readObject[Seq[Page]]()
+           val result = serIn.readObject[Seq[Page]]()
+           spooky.metrics.pagesFetchedFromCache += result.size
+           result
 //           obj.asInstanceOf[Seq[Page]]
          }
          finally{

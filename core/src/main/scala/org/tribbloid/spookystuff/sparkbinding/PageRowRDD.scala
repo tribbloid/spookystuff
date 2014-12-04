@@ -1,6 +1,5 @@
 package org.tribbloid.spookystuff.sparkbinding
 
-import org.apache.spark.annotation.DeveloperApi
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql._
 import org.apache.spark.sql.catalyst.analysis.UnresolvedAttribute
@@ -21,26 +20,25 @@ import scala.reflect.ClassTag
  * Created by peng on 8/29/14.
  */
 case class PageRowRDD(
-                       @transient self: RDD[PageRow],
+                       self: RDD[PageRow],
                        @transient keys: ListSet[KeyLike] = ListSet(),
                        @transient spooky: SpookyContext
                        )
   extends RDD[PageRow](self) {
 
-  @DeveloperApi
-  override def compute(split: Partition, context: TaskContext): Iterator[PageRow] =
-    firstParent[PageRow].compute(split, context).map(_.copy())
+  override def getPartitions: Array[Partition] = firstParent[PageRow].partitions
 
-  override protected def getPartitions: Array[Partition] = firstParent[PageRow].partitions
+  override val partitioner = self.partitioner
 
+  override def compute(split: Partition, context: TaskContext) =
+    firstParent[PageRow].iterator(split, context)
   //-----------------------------------------------------------------------
 
   private implicit def selfToPageRowRDD(self: RDD[PageRow]): PageRowRDD = this.copy(self = self)
 
   override def filter(f: PageRow => Boolean): PageRowRDD = super.filter(f)
 
-  override def distinct(): PageRowRDD =
-    super.distinct()
+  override def distinct(): PageRowRDD = super.distinct()
 
   override def distinct(numPartitions: Int)(implicit ord: Ordering[PageRow] = null): PageRowRDD =
     super.distinct(numPartitions)(ord)
@@ -94,6 +92,14 @@ case class PageRowRDD(
     case _ => super.intersection(other, numPartitions)
   }
   //-------------------all before this lines are self typed wrappers--------------------
+
+//  override def persist(newLevel: StorageLevel): this.type = this.copy(self = self.persist(newLevel)).asInstanceOf[this.type]
+//
+//  override def persist(): this.type = persist(StorageLevel.MEMORY_ONLY)
+//
+//  override def cache(): this.type = persist()
+
+  //unfortunately it won't persist dependency, has to be overriden
 
   def toPageRowRDD: PageRowRDD = this
 

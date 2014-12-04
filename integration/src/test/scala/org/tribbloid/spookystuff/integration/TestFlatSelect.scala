@@ -1,0 +1,52 @@
+package org.tribbloid.spookystuff.integration
+
+import org.tribbloid.spookystuff.SpookyContext
+import org.tribbloid.spookystuff.actions._
+import org.tribbloid.spookystuff.dsl._
+
+/**
+ * Created by peng on 11/26/14.
+ */
+class TestFlatSelect extends IntegrationSuite {
+
+  override def doMain(spooky: SpookyContext) {
+
+    import spooky._
+
+    val result = noInput
+      .fetch(
+        Visit("http://www.wikipedia.org/")
+      )
+      .select(
+        $"div.central-featured-lang".texts > '~
+      )
+      .flatSelect($"div.central-featured-lang")(
+        'A.attr("lang"),
+        A"a".href,
+        A"a em".text,
+        'A.uri
+      )
+      .asSchemaRDD()
+
+    assert(
+      result.schema.fieldNames ===
+        "A_attr(lang,true)" ::
+          "A_children(a)_head_attr(abs:href,true)" ::
+          "A_children(a em)_head_text" ::
+          "$_uri" ::
+          "A_uri" :: Nil
+    )
+
+    val rows = result.collect()
+
+    assert(rows.size === 10)
+    assert(rows.head.size === 5)
+    assert(rows.head.getString(0) === "en")
+    assert(rows.head.getString(1) === "http://en.wikipedia.org/")
+    assert(rows.head.getString(2) === "The Free Encyclopedia")
+    assert(rows.head.getString(3) === "http://www.wikipedia.org/")
+    assert(rows.head.getString(4) === "http://www.wikipedia.org/")
+  }
+
+  override def expectedPages: Int = 1
+}

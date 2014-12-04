@@ -41,7 +41,7 @@ final case class Trace(
       resolvePlain(spooky)
     }
     
-    spooky.metrics.pageCount += result.size
+    spooky.metrics.pagesFetched += result.size
 
     result
   }
