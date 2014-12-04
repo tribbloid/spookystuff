@@ -40,14 +40,14 @@ trait ExampleCore extends {
   def getSpooky(args: Array[String]): SpookyContext = {
 
     val spooky = if (args.contains("--nopreview"))
+      new SpookyContext(sql)
+    else
       new SpookyContext(
         sql,
         driverFactory = NaiveDriverFactory(loadImages = true),
         joinLimit = 2,
         maxExploreDepth = 3
       )
-    else
-      new SpookyContext(sql)
 
     if (!args.contains("--dfscache")) spooky.setRoot("file://"+System.getProperty("user.home")+"/spooky-example/"+appName+"/")
 

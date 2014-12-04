@@ -20,15 +20,30 @@ package object dsl {
 
   implicit def actionToTraceSetView(action: Action): TraceSetView = Set(Trace(Seq(action)))
 
-//  val $ = GetPagedExpr("$")
-//
-//  val A = GetExpr("A")
+  //------------------------------------------------------------
 
-  def $(selector: String, i: Int): Expr[Unstructured] = new GetPageExpr(Const.pageWildCardKey).children(selector).get(i)
+  //this hierarchy aims to create a short DSL for selecting components from PageRow, e.g.:
+  //'abc:  cells with key "abc", tempkey precedes ordinary key
+  //'abc.$("div#a1"): all children of an unstructured field (either a page or element) that match the selector
+  //$("div#a1"): all children of the only page that match the selector, if multiple page per row, throws an exception
+  //$_*("div#a1"): all children of all pages that match the selector, if multiple page per row, throws an exception
+  //'abc.$("div#a1").head: first child of an unstructured field (either a page or element) that match the selector
+  //'abc.$("div#a1").text: first text of an unstructured field that match the selector
+  //'abc.$("div#a1").texts: all texts of an unstructured field that match the selector
+  //'abc.$("div#a1").attr("src"): first "src" attribute of an unstructured field that match the selector
+  //'abc.$("div#a1").attrs("src"): first "src" attribute of an unstructured field that match the selector
 
-  def $(selector: String): Expr[Seq[Unstructured]] = new GetPageExpr(Const.pageWildCardKey).children(selector)
+  def $(selector: String, i: Int): Expr[Unstructured] = GetOnlyPageExpr.children(selector).get(i)
 
-  def $ = new GetPageExpr(Const.pageWildCardKey)
+  def $(selector: String): Expr[Seq[Unstructured]] = GetOnlyPageExpr.children(selector)
+
+  def $: Expr[Page] = GetOnlyPageExpr
+
+  def $_*(selector: String, i: Int): Expr[Unstructured] = GetAllPagesExpr.allChildren(selector).get(i)
+
+  def $_*(selector: String): Expr[Seq[Unstructured]] = GetAllPagesExpr.allChildren(selector)
+
+  def `$_*`: Expr[Seq[Page]] = GetAllPagesExpr
 
   def A(selector: String, i: Int): Expr[Unstructured] = 'A.children(selector).get(i)
 
@@ -88,10 +103,11 @@ package object dsl {
 
     def x(fs: Expr[Any]*) = new InterpolateExpr(strC.parts, fs)
 
-    def $() = Symbol(Const.pageWildCardKey).children(strC.parts.mkString)
+    def $() = GetOnlyPageExpr.children(strC.parts.mkString)
+
+    def $_*() = GetAllPagesExpr.allChildren(strC.parts.mkString)
 
     def A() = 'A.children(strC.parts.mkString)
-    //    def *() = new GetUnstructuredExpr("*").select(strC.parts.head)
   }
 
   //--------------------------------------------------

@@ -18,7 +18,7 @@ class TestUnstructuredExprView extends SparkEnvSuite {
     .select($"title".head.>('abc) :: Nil)
 
   test("uri"){
-    assert('*.uri.apply(row).get === "http://www.wikipedia.org/")
+    assert($.uri.apply(row).get === "http://www.wikipedia.org/")
     assert('page.uri.apply(row).get === "http://www.wikipedia.org/")
     assert('abc.uri.apply(row).get === "http://www.wikipedia.org/")
   }

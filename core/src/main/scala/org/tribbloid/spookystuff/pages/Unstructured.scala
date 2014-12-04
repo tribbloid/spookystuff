@@ -5,7 +5,7 @@ package org.tribbloid.spookystuff.pages
  */
 trait Unstructured extends Serializable {
 
-   val uri: String
+   def uri: String
 
    def children(selector: String): Seq[Unstructured]
 
@@ -27,6 +27,8 @@ trait Unstructured extends Serializable {
 }
 
 final class UnstructuredSeqView(self: Seq[Unstructured]) {
+
+   def uris: Seq[String] = self.map(_.uri)
 
    def allChildren(selector: String): Seq[Unstructured] = self.flatMap(_.children(selector))
 

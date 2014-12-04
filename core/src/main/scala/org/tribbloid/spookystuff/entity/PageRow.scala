@@ -29,10 +29,19 @@ case class PageRow(
     cells.get(resolveKey(keyStr))
   }
 
+  def getOnlyPage: Option[Page] = {
+    val pages = this.pages
+
+    if (pages.size > 1) throw new UnsupportedOperationException("Ambiguous key referring to multiple pages")
+    else if (pages.size == 0) None
+    else Some(pages(0))
+  }
+
+  def getAllPages: Seq[Page] = this.pages
+
   def getPage(keyStr: String): Option[Page] = {
 
-    val pages = if (keyStr == Const.pageWildCardKey) this.pages
-    else this.pages.filter(_.name == keyStr)
+    val pages = this.pages.filter(_.name == keyStr)
 
     if (pages.size > 1) throw new UnsupportedOperationException("Ambiguous key referring to multiple pages")
     else if (pages.size == 0) None
@@ -213,7 +222,7 @@ case class PageRow(
       currentRow = newRow
     }
 
-    if (flatten) currentRow.flattenPages(Const.pageWildCardKey,indexKey = indexKey)
+    if (flatten) currentRow.flattenPages(Const.getAllPagesKey,indexKey = indexKey)
     else Seq(currentRow)
   }
 }

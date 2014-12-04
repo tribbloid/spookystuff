@@ -323,7 +323,7 @@ case class PageRowRDD(
                   )(exprs: Expr[Any]*) ={
 
     this
-      .flattenTemp(expr defaultAs Symbol(Const.joinExprKey), indexKey, limit, left)
+      .flattenTemp(expr defaultAs Symbol(Const.defaultJoinKey), indexKey, limit, left)
       .select(exprs: _*)
     //      .clearTemp
   }
@@ -428,7 +428,7 @@ case class PageRowRDD(
             ): PageRowRDD = {
 
     this
-      .flattenTemp(expr defaultAs Symbol(Const.joinExprKey), indexKey, limit, left = true)
+      .flattenTemp(expr defaultAs Symbol(Const.defaultJoinKey), indexKey, limit, left = true)
       .fetch(traces, joinType, numPartitions, flattenPagesPattern, flattenPagesIndexKey)
       .select(exprs: _*)
     //      .clearTemp
@@ -448,7 +448,7 @@ case class PageRowRDD(
                  joinType: JoinType = Const.defaultJoinType,
                  numPartitions: Int = self.sparkContext.defaultParallelism
                  ): PageRowRDD =
-    this.join(expr, indexKey, limit)(Visit(new GetExpr(Const.joinExprKey)), joinType, numPartitions)()
+    this.join(expr, indexKey, limit)(Visit(new GetExpr(Const.defaultJoinKey)), joinType, numPartitions)()
 
   /**
    * same as join, but avoid launching a browser by using direct http GET (wget) to download new pages
@@ -464,7 +464,7 @@ case class PageRowRDD(
                 joinType: JoinType = Const.defaultJoinType,
                 numPartitions: Int = self.sparkContext.defaultParallelism
                 ): PageRowRDD =
-    this.join(expr, indexKey, limit)(Wget(new GetExpr(Const.joinExprKey)), joinType, numPartitions)()
+    this.join(expr, indexKey, limit)(Wget(new GetExpr(Const.defaultJoinKey)), joinType, numPartitions)()
 
   def distinctSignature(
                          exclude: Iterable[Symbol],
@@ -531,7 +531,7 @@ case class PageRowRDD(
     for (depth <- 1 to maxDepth) {
       //always inner join
       val joined = newRows
-        .flattenTemp(expr defaultAs Symbol(Const.joinExprKey), indexKey, Int.MaxValue, left = true)
+        .flattenTemp(expr defaultAs Symbol(Const.defaultJoinKey), indexKey, Int.MaxValue, left = true)
         .fetch(traces, Inner, numPartitions, flattenPagesPattern, flattenPagesIndexKey)
         .select(exprs: _*)
       //        .clearTemp
@@ -560,7 +560,7 @@ case class PageRowRDD(
                     )(
                     numPartitions: Int = self.sparkContext.defaultParallelism,
                     depthKey: Symbol = null
-                    ): PageRowRDD = explore(expr, indexKey, maxDepth)(Visit(new GetExpr(Const.joinExprKey)), numPartitions, depthKey = depthKey)()
+                    ): PageRowRDD = explore(expr, indexKey, maxDepth)(Visit(new GetExpr(Const.defaultJoinKey)), numPartitions, depthKey = depthKey)()
 
   def wgetExplore(
                    expr: Expr[Any],
@@ -569,7 +569,7 @@ case class PageRowRDD(
                    )(
                    numPartitions: Int = self.sparkContext.defaultParallelism,
                    depthKey: Symbol = null
-                   ): PageRowRDD = explore(expr, indexKey, maxDepth)(Wget(new GetExpr(Const.joinExprKey)), numPartitions, depthKey = depthKey)()
+                   ): PageRowRDD = explore(expr, indexKey, maxDepth)(Wget(new GetExpr(Const.defaultJoinKey)), numPartitions, depthKey = depthKey)()
 
   //  /**
   //   * break each page into 'shards', used to extract structured data from tables

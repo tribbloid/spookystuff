@@ -26,7 +26,7 @@ object LinkedIn extends ExampleCore {
         $"span.full-name".text > 'name,
         $"p.title".text > 'title,
         $"div#profile-skills li".texts.mkString("|") > 'skills,
-        '$.uri as 'uri
+        $.uri as 'uri
       )
       .asSchemaRDD()
   }

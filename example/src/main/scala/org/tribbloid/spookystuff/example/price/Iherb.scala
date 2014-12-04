@@ -19,7 +19,8 @@ object Iherb extends ExampleCore {
       .flatSelect($"div.prodSlotWide", indexKey = 'row)(
         A"p.description".text > 'description,
         A"div.price".text > 'price,
-        '$.saved > 'saved
+        $.saved > 'saved,
+        $.uri > 'uri
       )
       .asSchemaRDD()
   }

@@ -35,7 +35,7 @@ object AppliancePartsPros extends ExampleCore {
         $("div.m-pdct td[itemprop=brand]").text > 'brand,
         $("div.m-bsc div.mod ul li:contains(Manufacturer) strong").text > 'manufacturer,
         $("div.m-pdct div.m-chm p").text > 'replace,
-        '$.uri > 'uri
+        $.uri > 'uri
       )
       .asSchemaRDD()
   }

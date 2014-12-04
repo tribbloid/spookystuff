@@ -35,6 +35,7 @@ object Const {
 
   val defaultInputKey = "_"
   val keyDelimiter = "'"
-  val pageWildCardKey = "*"
-  val joinExprKey = "A"
+  val getOnlyPageKey = "$"
+  val getAllPagesKey = "$_*"
+  val defaultJoinKey = "A"
 }

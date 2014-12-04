@@ -21,7 +21,7 @@ object Amazon extends ExampleCore {
       .select(
         $"div#didYouMean a".text > 'DidYouMean,
         $"h1#noResultsTitle".text > 'noResultsTitle,
-        '*.saved > 'savePath
+        $.saved > 'savePath
       )
       .flatSelect($"div.s-item-container > div.a-fixed-left-grid > div.a-fixed-left-grid-inner") (
         A"a.s-access-detail-page".head.andFlatMap(element => element.attr("title").orElse(element.text)) > 'item_name,

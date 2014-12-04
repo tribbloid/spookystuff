@@ -16,7 +16,7 @@ class TestPageRow extends SparkEnvSuite {
     ).resolve(spooky)
     val row = PageRow(pages = page)
 
-    val page1 = row.getPage("*")
+    val page1 = row.getOnlyPage
     assert(page1.get === page.head)
 
     val page2 = row.getPage("Wget('http://www.wikipedia.org/')")
@@ -28,11 +28,8 @@ class TestPageRow extends SparkEnvSuite {
       Wget("http://www.wikipedia.org/").as('pp) :: Nil
     ).resolve(spooky)
     val row = PageRow(pages = page)
-      .select('*.children("h1.central-textlogo img").head.as('e1) :: Nil)
+      .select($("h1.central-textlogo img").head.as('e1) :: Nil)
       .selectTemp('pp.children("label").head :: Nil)
-
-    val page1 = row.getUnstructured("*")
-    assert(page1.get === page.head)
 
     val page2 = row.getUnstructured("pp")
     assert(page2.get === page.head)

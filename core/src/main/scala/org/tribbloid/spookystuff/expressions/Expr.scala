@@ -1,5 +1,6 @@
 package org.tribbloid.spookystuff.expressions
 
+import org.tribbloid.spookystuff.Const
 import org.tribbloid.spookystuff.entity.PageRow
 import org.tribbloid.spookystuff.pages.{Page, Unstructured}
 
@@ -27,6 +28,18 @@ class GetUnstructuredExpr(override var name: String) extends Expr[Unstructured] 
 class GetPageExpr(override var name: String) extends Expr[Page] {
 
   override def apply(v1: PageRow): Option[Page] = v1.getPage(name)
+}
+
+object GetOnlyPageExpr extends Expr[Page] {
+  override var name = Const.getOnlyPageKey
+
+  override def apply(v1: PageRow): Option[Page] = v1.getOnlyPage
+}
+
+object GetAllPagesExpr extends Expr[Seq[Page]] {
+  override var name = Const.getAllPagesKey
+
+  override def apply(v1: PageRow): Option[Seq[Page]] = Some(v1.getAllPages)
 }
 
 class ReplaceKeyExpr(str: String) extends Expr[String] {

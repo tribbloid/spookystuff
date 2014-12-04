@@ -30,7 +30,7 @@ object RottenTomatoes extends ExampleCore {
         A"div.criticinfo em.subtle".text > 'critic_org,
         A"div.reviewsnippet p".text > 'critic_review,
         A"div.reviewsnippet p.subtle".ownText > 'critic_score
-      ) //slice into review blocks
+      )
       .wgetJoin(A"div.criticinfo strong a")() //go to critic page, e.g. http://www.rottentomatoes.com/critic/sean-means/
       .select(
         $"div.media_block div.clearfix dd".text > 'total_reviews_ratings

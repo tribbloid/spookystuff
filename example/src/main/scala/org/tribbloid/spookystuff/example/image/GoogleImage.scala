@@ -31,7 +31,7 @@ object GoogleImage extends ExampleCore {
         pageRow =>
           "file://"+System.getProperty("user.home")+"/spooky-integration/"+appName+"/images/"+pageRow.get("name").get)
       .select(
-        '*.saved > 'path
+        $.saved > 'path
       )
       .asSchemaRDD()
   }

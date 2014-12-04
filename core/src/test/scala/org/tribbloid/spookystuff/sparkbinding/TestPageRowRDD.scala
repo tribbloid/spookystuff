@@ -38,8 +38,8 @@ class TestPageRowRDD extends SparkEnvSuite {
         Wget("http://www.wikipedia.org/")
       )
       .select(
-        '*.uri,
-        '*.timestamp, //TODO:'$.saved,
+        $.uri,
+        $.timestamp, //TODO:'$.saved,
         $"div.central-featured-lang".texts
       )
 
@@ -84,7 +84,7 @@ class TestPageRowRDD extends SparkEnvSuite {
         'A.attr("lang"),
         A"a".href,
         A"a em".text,
-        '*.uri,
+        $.uri,
         'A.uri
       )
 
