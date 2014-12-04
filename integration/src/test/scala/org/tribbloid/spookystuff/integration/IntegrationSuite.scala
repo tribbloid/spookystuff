@@ -4,39 +4,46 @@ import java.util.Properties
 
 import org.apache.spark.sql.SQLContext
 import org.apache.spark.{SparkConf, SparkContext}
-import org.scalatest.{BeforeAndAfter, FunSuite, Tag}
+import org.scalatest.{BeforeAndAfterAll, FunSuite}
 import org.tribbloid.spookystuff.SpookyContext
-
-import scala.concurrent.duration
 
 /**
  * Created by peng on 12/2/14.
  */
-abstract class IntegrationSuite extends FunSuite with BeforeAndAfter {
+abstract class IntegrationSuite extends FunSuite with BeforeAndAfterAll {
 
-  import duration._
+  import scala.concurrent.duration._
 
-  object Integration extends Tag("Integration")
+//  object Integration extends Tag("Integration")
 
-  val appName = this.getClass.getSimpleName.replace("$","")
-  val conf: SparkConf = new SparkConf().setAppName(appName)
-    .setMaster("local[*]")
+  @transient var sc: SparkContext = _
+  @transient var sql: SQLContext = _
 
-  val sc: SparkContext = {
+  override def beforeAll() {
+    val conf: SparkConf = new SparkConf().setAppName("integration")
+      .setMaster("local[*]")
+
     val prop = new Properties()
     prop.load(ClassLoader.getSystemResourceAsStream("rootkey.csv"))
     val AWSAccessKeyId = prop.getProperty("AWSAccessKeyId")
     val AWSSecretKey = prop.getProperty("AWSSecretKey")
 
-    val sc = new SparkContext(conf)
+    sc = new SparkContext(conf)
     sc.hadoopConfiguration
       .set("fs.s3n.awsAccessKeyId", AWSAccessKeyId)
     sc.hadoopConfiguration
       .set("fs.s3n.awsSecretAccessKey", AWSSecretKey)
+    super.beforeAll()
 
-    sc
+    sql = new SQLContext(sc)
   }
-  val sql: SQLContext = new SQLContext(sc)
+
+  override def afterAll() {
+    if (sc != null) {
+      sc.stop()
+    }
+    super.afterAll()
+  }
 
   lazy val noCacheReadEnv = {
     val spooky: SpookyContext = new SpookyContext(sql)
@@ -52,11 +59,7 @@ abstract class IntegrationSuite extends FunSuite with BeforeAndAfter {
     spooky
   }
 
-  override def finalize(){
-    sc.stop()
-  }
-
-  test("local cache", Integration) {
+  test("local cache") {
 
     doMain(noCacheReadEnv)
 
