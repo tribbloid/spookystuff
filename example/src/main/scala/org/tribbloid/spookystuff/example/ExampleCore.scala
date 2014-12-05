@@ -3,7 +3,7 @@ package org.tribbloid.spookystuff.example
 import org.apache.spark.sql.{SQLContext, SchemaRDD}
 import org.apache.spark.{SparkConf, SparkContext}
 import org.tribbloid.spookystuff.SpookyContext
-import org.tribbloid.spookystuff.dsl.driverfactory.NaiveDriverFactory
+import org.tribbloid.spookystuff.dsl.NaiveDriverFactory
 
 import scala.concurrent.duration
 import duration._

@@ -4,7 +4,7 @@ package org.tribbloid.spookystuff.dsl
  * Created by peng on 8/31/14.
  */
 
-sealed trait JoinType extends Serializable with Product
+sealed abstract class JoinType extends Serializable with Product
 
 //trait LeftLink extends JoinType //Join yield at least 1 PageRow that may have empty action chain, now assuming always happen
 case object Inner extends JoinType

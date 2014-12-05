@@ -4,7 +4,7 @@ import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.{SQLContext, SchemaRDD}
 import org.apache.spark.{Accumulator, SerializableWritable, SparkConf, SparkContext}
 import org.tribbloid.spookystuff.dsl._
-import org.tribbloid.spookystuff.dsl.driverfactory.{DriverFactory, NaiveDriverFactory}
+import org.tribbloid.spookystuff.dsl.driverfactory.NaiveDriverFactory
 import org.tribbloid.spookystuff.entity.{Key, KeyLike, PageRow}
 import org.tribbloid.spookystuff.sparkbinding.{PageRowRDD, SchemaRDDView, StringRDDView}
 import org.tribbloid.spookystuff.utils.Utils

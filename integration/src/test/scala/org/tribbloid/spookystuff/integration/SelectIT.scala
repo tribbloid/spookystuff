@@ -9,7 +9,7 @@ import org.tribbloid.spookystuff.dsl._
 /**
  * Created by peng on 11/26/14.
  */
-class TestSelect extends IntegrationSuite {
+class SelectIT extends IntegrationSuite {
 
   override def doMain(spooky: SpookyContext) {
 

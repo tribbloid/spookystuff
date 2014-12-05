@@ -3,7 +3,7 @@ package org.tribbloid.spookystuff
 import org.apache.spark.sql.SQLContext
 import org.apache.spark.{SparkConf, SparkContext}
 import org.scalatest.{BeforeAndAfter, BeforeAndAfterAll, FunSuite}
-import org.tribbloid.spookystuff.dsl.driverfactory.NaiveDriverFactory
+import org.tribbloid.spookystuff.dsl.NaiveDriverFactory
 
 /**
  * Created by peng on 11/30/14.
