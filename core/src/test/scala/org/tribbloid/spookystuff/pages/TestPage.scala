@@ -11,14 +11,14 @@ import org.tribbloid.spookystuff.session.Session
  */
 class TestPage extends SpookyEnvSuite {
 
-  val emptyPage: Page = {
-    val pb = new Session(spooky)
-
-    pb.getDriver
-    Snapshot().doExe(pb).toList(0)
-  }
-
   test("empty page") {
+    val emptyPage: Page = {
+      val pb = new Session(spooky)
+
+      pb.getDriver
+      Snapshot().doExe(pb).toList(0)
+    }
+
     assert (emptyPage("div.dummy").attrs("href").isEmpty)
     assert (emptyPage("div.dummy").markups.isEmpty)
     assert (emptyPage("div.dummy").isEmpty)
@@ -64,14 +64,14 @@ class TestPage extends SpookyEnvSuite {
   test("wget html, save and load") {
 
     val results = Trace(
-      Wget("https://www.google.hk") :: Nil
+      Wget("http://en.wikipedia.org") :: Nil
     ).resolve(spooky)
 
     val resultsList = results.toArray
     assert(resultsList.size === 1)
     val page1 = resultsList(0)
 
-    assert(page1("title").texts.head === "Google")
+    assert(page1("title").texts.head === "Wikipedia, the free encyclopedia")
 
     val page1Saved = page1.autoSave(spooky,overwrite = true)
 

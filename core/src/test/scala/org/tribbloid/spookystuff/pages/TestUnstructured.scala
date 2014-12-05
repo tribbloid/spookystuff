@@ -1,16 +1,16 @@
 package org.tribbloid.spookystuff.pages
 
 import org.apache.spark.SparkEnv
-import org.tribbloid.spookystuff.{dsl, SpookyEnvSuite}
+import org.tribbloid.spookystuff.SpookyEnvSuite
 import org.tribbloid.spookystuff.actions._
-import dsl._
+import org.tribbloid.spookystuff.dsl._
 
 /**
  * Created by peng on 11/30/14.
  */
 class TestUnstructured extends SpookyEnvSuite {
 
-  val page = Trace(Wget("http://www.wikipedia.org/").as('old)::Nil).resolve(spooky).head
+  lazy val page = Trace(Wget("http://www.wikipedia.org/").as('old)::Nil).resolve(spooky).head
 
   test("Unstructured is serializable") {
     val elements = page.children("div.central-featured-lang")

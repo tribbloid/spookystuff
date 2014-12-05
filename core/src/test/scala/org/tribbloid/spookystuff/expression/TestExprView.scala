@@ -12,10 +12,10 @@ class TestExprView extends SpookyEnvSuite {
 
   import org.tribbloid.spookystuff.dsl._
 
-  val page = Trace(
+  lazy val page = Trace(
     Wget("http://www.wikipedia.org/") :: Nil
   ).resolve(spooky)
-  val row = PageRow(pages = page)
+  lazy val row = PageRow(pages = page)
     .select($"title".head.text.>('abc) :: Nil)
 
   test("symbol as Expr"){
