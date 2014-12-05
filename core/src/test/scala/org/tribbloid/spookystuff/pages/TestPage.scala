@@ -42,24 +42,24 @@ class TestPage extends SpookyEnvSuite {
     assert(loadedContent === page1Saved.content)
   }
 
-  test("s3 save and load") {
-    spooky.setRoot(s"s3n://spooky-unit/")
-
-    val results = Trace(
-      Visit("http://en.wikipedia.org") ::
-        Snapshot().as('T) :: Nil
-    ).resolve(spooky)
-
-    val resultsList = results.toArray
-    assert(resultsList.size === 1)
-    val page1 = resultsList(0)
-
-    val page1Saved = page1.autoSave(spooky,overwrite = true)
-
-    val loadedContent = Pages.load(new Path(page1Saved.saved))(spooky)
-
-    assert(loadedContent === page1Saved.content)
-  }
+//  test("s3 save and load") {
+//    spooky.setRoot(s"s3n://spooky-unit/")
+//
+//    val results = Trace(
+//      Visit("http://en.wikipedia.org") ::
+//        Snapshot().as('T) :: Nil
+//    ).resolve(spooky)
+//
+//    val resultsList = results.toArray
+//    assert(resultsList.size === 1)
+//    val page1 = resultsList(0)
+//
+//    val page1Saved = page1.autoSave(spooky,overwrite = true)
+//
+//    val loadedContent = Pages.load(new Path(page1Saved.saved))(spooky)
+//
+//    assert(loadedContent === page1Saved.content)
+//  }
 
   test("wget html, save and load") {
 

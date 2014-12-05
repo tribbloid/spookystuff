@@ -1,10 +1,8 @@
 package org.tribbloid.spookystuff
 
-import java.util.Properties
-
 import org.apache.spark.sql.SQLContext
 import org.apache.spark.{SparkConf, SparkContext}
-import org.scalatest.{BeforeAndAfterAll, BeforeAndAfter, FunSuite}
+import org.scalatest.{BeforeAndAfter, BeforeAndAfterAll, FunSuite}
 import org.tribbloid.spookystuff.dsl.driverfactory.NaiveDriverFactory
 
 /**
@@ -20,16 +18,7 @@ abstract class SpookyEnvSuite extends FunSuite with BeforeAndAfter with BeforeAn
     val conf: SparkConf = new SparkConf().setAppName("integration")
       .setMaster("local[*]")
 
-    val prop = new Properties()
-    prop.load(ClassLoader.getSystemResourceAsStream("rootkey.csv"))
-    val AWSAccessKeyId = prop.getProperty("AWSAccessKeyId")
-    val AWSSecretKey = prop.getProperty("AWSSecretKey")
-
     sc = new SparkContext(conf)
-    sc.hadoopConfiguration
-      .set("fs.s3n.awsAccessKeyId", AWSAccessKeyId)
-    sc.hadoopConfiguration
-      .set("fs.s3n.awsSecretAccessKey", AWSSecretKey)
 
     val sql: SQLContext = new SQLContext(sc)
 

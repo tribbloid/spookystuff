@@ -88,32 +88,32 @@ class TestPages extends SpookyEnvSuite {
     assert(page2.head.markup === page2.head.markup)
   }
 
-  test ("s3 cache") {
-
-    spooky.setRoot(s"s3n://spooky-unit/")
-    spooky.pageExpireAfter = 10.seconds
-
-    Pages.autoCache(page, page.head.uid.backtrace, spooky)
-
-    val newTrace = Trace(Visit("http://en.wikipedia.org")::Snapshot().as('new)::Nil)
-
-    val page2 = Pages.autoRestoreLatest(newTrace, spooky)
-
-    assert(page2.size === 1)
-    assert(page2.head.copy(content = null) === page.head.copy(content = null))
-    assert(page2.head.markup === page2.head.markup)
-    assert(page2.head.name === "new")
-
-    Thread.sleep(12000)
-
-    val page3 = Pages.autoRestoreLatest(page.head.uid.backtrace, spooky)
-    assert(page3 === null)
-
-    spooky.pageExpireAfter = 30.days
-
-    assert(page2.size === 1)
-    assert(page2.head.copy(content = null) === page.head.copy(content = null))
-    assert(page2.head.markup === page2.head.markup)
-  }
+//  test ("s3 cache") {
+//
+//    spooky.setRoot(s"s3n://spooky-unit/")
+//    spooky.pageExpireAfter = 10.seconds
+//
+//    Pages.autoCache(page, page.head.uid.backtrace, spooky)
+//
+//    val newTrace = Trace(Visit("http://en.wikipedia.org")::Snapshot().as('new)::Nil)
+//
+//    val page2 = Pages.autoRestoreLatest(newTrace, spooky)
+//
+//    assert(page2.size === 1)
+//    assert(page2.head.copy(content = null) === page.head.copy(content = null))
+//    assert(page2.head.markup === page2.head.markup)
+//    assert(page2.head.name === "new")
+//
+//    Thread.sleep(12000)
+//
+//    val page3 = Pages.autoRestoreLatest(page.head.uid.backtrace, spooky)
+//    assert(page3 === null)
+//
+//    spooky.pageExpireAfter = 30.days
+//
+//    assert(page2.size === 1)
+//    assert(page2.head.copy(content = null) === page.head.copy(content = null))
+//    assert(page2.head.markup === page2.head.markup)
+//  }
 
 }
