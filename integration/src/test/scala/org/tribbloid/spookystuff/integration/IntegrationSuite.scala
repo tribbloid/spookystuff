@@ -14,8 +14,6 @@ abstract class IntegrationSuite extends FunSuite with BeforeAndAfterAll {
 
   import scala.concurrent.duration._
 
-//  object Integration extends Tag("Integration")
-
   @transient var sc: SparkContext = _
   @transient var sql: SQLContext = _
 
@@ -33,9 +31,10 @@ abstract class IntegrationSuite extends FunSuite with BeforeAndAfterAll {
       .set("fs.s3n.awsAccessKeyId", AWSAccessKeyId)
     sc.hadoopConfiguration
       .set("fs.s3n.awsSecretAccessKey", AWSSecretKey)
-    super.beforeAll()
 
     sql = new SQLContext(sc)
+
+    super.beforeAll()
   }
 
   override def afterAll() {
