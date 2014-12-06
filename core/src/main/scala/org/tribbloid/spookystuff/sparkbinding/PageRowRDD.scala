@@ -103,14 +103,14 @@ case class PageRowRDD(
 
   def toPageRowRDD: PageRowRDD = this
 
-  def toMapRDD: RDD[Map[String, Any]] = this.map(_.asMap())
+  def asMapRDD: RDD[Map[String, Any]] = this.map(_.asMap())
 
-  def toJsonRDD: RDD[String] = this.map(_.asJson())
+  def asJsonRDD: RDD[String] = this.map(_.asJson())
 
   //TODO: use the new applySchema api to avoid losing type info
   def asSchemaRDD(): SchemaRDD = {
 
-    val jsonRDD = this.toJsonRDD
+    val jsonRDD = this.asJsonRDD
 
     jsonRDD.persist() //for some unknown reason SQLContext.jsonRDD uses the parameter RDD twice, this has to be fixed by somebody else
 
