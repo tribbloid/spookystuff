@@ -22,6 +22,7 @@ import scala.reflect.ClassTag
 case class PageRowRDD(
                        self: RDD[PageRow],
                        @transient keys: ListSet[KeyLike] = ListSet(),
+                       @transient indexKeys: ListSet[Key] = ListSet(),
                        @transient spooky: SpookyContext
                        )
   extends RDD[PageRow](self) {
@@ -93,11 +94,11 @@ case class PageRowRDD(
   }
   //-------------------all before this lines are self typed wrappers--------------------
 
-//  override def persist(newLevel: StorageLevel): this.type = this.copy(self = self.persist(newLevel)).asInstanceOf[this.type]
-//
-//  override def persist(): this.type = persist(StorageLevel.MEMORY_ONLY)
-//
-//  override def cache(): this.type = persist()
+  //  override def persist(newLevel: StorageLevel): this.type = this.copy(self = self.persist(newLevel)).asInstanceOf[this.type]
+  //
+  //  override def persist(): this.type = persist(StorageLevel.MEMORY_ONLY)
+  //
+  //  override def cache(): this.type = persist()
 
   //unfortunately it won't persist dependency, has to be overriden
 
@@ -116,11 +117,18 @@ case class PageRowRDD(
 
     //by default, will order the columns to be identical to the sequence they are extracted, data input will be ignored
 
+    val columns = keys.toSeq.filter(_.isInstanceOf[Key]).reverse.map(key => UnresolvedAttribute(Utils.canonizeColumnName(key.name)))
+
+    import spooky.sqlContext._
     //TODO: handle missing columns
-    this.spooky.sqlContext.jsonRDD(jsonRDD)
-      .select(
-        keys.toSeq.filter(_.isInstanceOf[Key]).reverse.map(key => UnresolvedAttribute(Utils.canonizeColumnName(key.name))): _*
-      )
+    val result = this.spooky.sqlContext.jsonRDD(jsonRDD)
+      .select(columns: _*)
+
+    if (indexKeys.isEmpty) result
+    else {
+      val indexColumns = indexKeys.toSeq.reverse.map(key => Symbol(key.name))
+      result.orderBy(indexColumns.map(_.asc): _*)
+    }
   }
 
   def asCsvRDD(separator: String = ","): RDD[String] = this.asSchemaRDD().map {
@@ -286,7 +294,8 @@ case class PageRowRDD(
     val flattened = selected.flatMap(_.flatten(expr.name, Key(indexKey), limit, left))
     selected.copy(
       self = flattened,
-      keys = selected.keys ++ Option(Key(indexKey))
+      keys = selected.keys ++ Option(Key(indexKey)),
+      indexKeys = selected.indexKeys ++ Option(Key(indexKey))
     )
   }
 
@@ -301,7 +310,8 @@ case class PageRowRDD(
     val flattened = selected.flatMap(_.flatten(expr.name, Key(indexKey), limit, left))
     selected.copy(
       self = flattened,
-      keys = selected.keys ++ Option(Key(indexKey))
+      keys = selected.keys ++ Option(Key(indexKey)),
+      indexKeys = selected.indexKeys ++ Option(Key(indexKey))
     )
   }
 
@@ -337,7 +347,8 @@ case class PageRowRDD(
                     ): PageRowRDD =
     this.copy(
       self = this.flatMap(_.flattenPages(pattern.name, Key(indexKey))),
-      keys = this.keys ++ Option(Key(indexKey))
+      keys = this.keys ++ Option(Key(indexKey)),
+      indexKeys = this.indexKeys ++ Option(Key(indexKey))
     )
 
   /**
@@ -563,7 +574,11 @@ case class PageRowRDD(
                     )(
                     numPartitions: Int = this.sparkContext.defaultParallelism,
                     depthKey: Symbol = null
-                    ): PageRowRDD = explore(expr, indexKey, maxDepth)(Visit(new GetExpr(Const.defaultJoinKey)), numPartitions, depthKey = depthKey)()
+                    ): PageRowRDD =
+    explore(expr, indexKey, maxDepth)(
+      Visit(new GetExpr(Const.defaultJoinKey)),
+      numPartitions, depthKey = depthKey
+    )()
 
   def wgetExplore(
                    expr: Expr[Any],
@@ -572,7 +587,11 @@ case class PageRowRDD(
                    )(
                    numPartitions: Int = this.sparkContext.defaultParallelism,
                    depthKey: Symbol = null
-                   ): PageRowRDD = explore(expr, indexKey, maxDepth)(Wget(new GetExpr(Const.defaultJoinKey)), numPartitions, depthKey = depthKey)()
+                   ): PageRowRDD =
+    explore(expr, indexKey, maxDepth)(
+      Wget(new GetExpr(Const.defaultJoinKey)),
+      numPartitions, depthKey = depthKey
+    )()
 
   /**
    * insert many pages for each old page by recursively visiting "next page" link
@@ -602,6 +621,10 @@ case class PageRowRDD(
       _.paginate(selector, attr, wget, postAction)(limit, Key(indexKey), flatten)(spooky)
     }
 
-    this.copy(result, this.keys ++ Option(realIndexKey))
+    this.copy(
+      self = result,
+      keys = this.keys ++ Option(realIndexKey),
+      indexKeys = this.indexKeys ++ Option(Key(indexKey))
+    )
   }
 }

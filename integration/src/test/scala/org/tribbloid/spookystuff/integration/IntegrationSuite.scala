@@ -44,7 +44,7 @@ abstract class IntegrationSuite extends FunSuite with BeforeAndAfterAll {
     super.afterAll()
   }
 
-  lazy val noCacheReadEnv = {
+  lazy val localCacheWriteOnlyEnv = {
     val spooky: SpookyContext = new SpookyContext(sql)
     spooky.setRoot("file://"+System.getProperty("user.home")+"/spooky-integration/")
     spooky.pageExpireAfter = 0.seconds
@@ -58,12 +58,26 @@ abstract class IntegrationSuite extends FunSuite with BeforeAndAfterAll {
     spooky
   }
 
+  lazy val s3CacheWriteOnlyEnv = {
+    val spooky: SpookyContext = new SpookyContext(sql)
+    spooky.setRoot("s3n://spooky-integration/")
+    spooky.pageExpireAfter = 0.seconds
+    spooky
+  }
+
+  lazy val s3CacheEnv = {
+    val spooky: SpookyContext = new SpookyContext(sql)
+    spooky.setRoot("s3n://spooky-integration/")
+    spooky.pageExpireAfter = 10.minutes
+    spooky
+  }
+
   test("local cache") {
 
-    doMain(noCacheReadEnv)
+    doMain(localCacheWriteOnlyEnv)
 
-    assert(noCacheReadEnv.metrics.pagesFetched.value === expectedPages)
-    assert(noCacheReadEnv.metrics.pagesFetchedFromCache.value === 0)
+    assert(localCacheWriteOnlyEnv.metrics.pagesFetched.value === expectedPages)
+    assert(localCacheWriteOnlyEnv.metrics.pagesFetchedFromCache.value === 0)
 
     doMain(localCacheEnv)
 
@@ -72,6 +86,22 @@ abstract class IntegrationSuite extends FunSuite with BeforeAndAfterAll {
     assert(localCacheEnv.metrics.driverInitialized.value === 0)
     assert(localCacheEnv.metrics.DFSReadSuccess.value > 0)
     assert(localCacheEnv.metrics.DFSReadFail.value === 0)
+  }
+
+  test("s3 cache") {
+
+    doMain(s3CacheWriteOnlyEnv)
+
+    assert(s3CacheWriteOnlyEnv.metrics.pagesFetched.value === expectedPages)
+    assert(s3CacheWriteOnlyEnv.metrics.pagesFetchedFromCache.value === 0)
+
+    doMain(s3CacheEnv)
+
+    assert(s3CacheEnv.metrics.pagesFetched.value === expectedPages)
+    assert(s3CacheEnv.metrics.pagesFetchedFromCache.value === expectedPages)
+    assert(s3CacheEnv.metrics.driverInitialized.value === 0)
+    assert(s3CacheEnv.metrics.DFSReadSuccess.value > 0)
+    assert(s3CacheEnv.metrics.DFSReadFail.value === 0)
   }
 
   def doMain(spooky: SpookyContext): Unit

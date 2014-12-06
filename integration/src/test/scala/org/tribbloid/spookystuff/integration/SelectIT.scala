@@ -49,7 +49,7 @@ class SelectIT extends IntegrationSuite {
     assert(rows.head.getString(0) === "http://www.wikipedia.org/")
     val parsedTime = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'").parse(rows.head.getString(1)).getTime
     assert(parsedTime < finishTime +2000) //due to round-off error
-    assert(parsedTime > finishTime-5000) //5s delay is long enough
+    assert(parsedTime > finishTime-60000) //long enough even after the second time it is retrieved from the cache
     val texts2 = rows.head.apply(2).asInstanceOf[Iterable[String]]
     assert(texts2.size === 10)
     assert(texts2.head.startsWith("English"))
