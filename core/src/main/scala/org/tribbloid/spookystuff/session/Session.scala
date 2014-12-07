@@ -8,7 +8,7 @@ import org.openqa.selenium.remote.SessionNotFoundException
 import org.slf4j.LoggerFactory
 import org.tribbloid.spookystuff.SpookyContext
 import org.tribbloid.spookystuff.actions._
-import org.tribbloid.spookystuff.pages.{Pages, Page}
+import org.tribbloid.spookystuff.pages.{NoPage, PageLike, PageUtils, Page}
 
 import scala.collection.mutable.ArrayBuffer
 
@@ -71,7 +71,7 @@ class Session(val spooky: SpookyContext){
   val realBacktrace: ArrayBuffer[Action] = ArrayBuffer() //real one excluding buffered
 
   private val buffer: ArrayBuffer[Action] = ArrayBuffer()
-  val pages: ArrayBuffer[Page] = ArrayBuffer()
+  val pageLikes: ArrayBuffer[PageLike] = ArrayBuffer()
 
   //  TODO: Runtime.getRuntime.addShutdownHook()
   //by default drivers should be reset and reused in this case, but whatever
@@ -87,12 +87,12 @@ class Session(val spooky: SpookyContext){
       //always try to read from cache first
       val restored = if (autoRestore) {
 
-        Pages.autoRestoreLatest(trace, spooky)
+        PageUtils.autoRestoreLatest(trace, spooky)
       }
       else null
 
       if (restored != null) {
-        pages ++= restored
+        pageLikes ++= restored
 
         LoggerFactory.getLogger(this.getClass).info("cached page(s) found, won't go online")
       }
@@ -108,10 +108,13 @@ class Session(val spooky: SpookyContext){
         this.realBacktrace ++= action.trunk
         var batch = action(this)
 
-        if (autoSave) batch = batch.map(_.autoSave(spooky))
-        if (autoCache) Pages.autoCache(batch, trace,spooky)
+        if (autoSave) batch = batch.map{
+          case page: Page => page.autoSave(spooky)
+          case noPage: NoPage => noPage
+        }
+        if (autoCache) PageUtils.autoCache(batch, spooky)
 
-        pages ++= batch
+        pageLikes ++= batch
       }
     }
     else {

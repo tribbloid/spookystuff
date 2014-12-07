@@ -17,25 +17,31 @@
 //         Visit("http://webscraper.io/test-sites/e-commerce/allinone")
 //       )
 //
-//     val joined = base
-//       .join($"div.sidebar-nav a")(
-//         Visit('A.href)
+//     val explored = base
+//       .explore($"div.sidebar-nav a", indexKey = 'i1)(
+//         Visit('A.href),
+//         depthKey = 'depth
 //       )(
 //         'A.text > 'category
 //       )
-//       .join($"a.subcategory-link")(
-//         Visit('A.href)
-//       )(
-//         'A.text > 'subcategory
-//       )
-//       .select($"h1" > 'header)
+//       .select($"h1".text > 'header)
 //       .asSchemaRDD()
 //
-//     val rows = joined.collect()
-//     assert(rows.size === 3)
+//     assert(
+//       explored.schema.fieldNames ===
+//         "i1" ::
+//           "category" ::
+//           "depth" ::
+//           "header" :: Nil
+//     )
 //
-// //    assert()
+//     val rows = explored.collect()
+//     assert(rows.size === 6)
+//
+//     assert(rows(0).mkString("|") === "1|Computers|0|Laptops|Computers / Laptops")
+//     assert(rows(1).mkString("|") === "1|Computers|1|Tablets|Computers / Tablets")
+//     assert(rows(2).mkString("|") === "2|Phones|0|Touch|Phones / Touch")
 //   }
 //
-//   override def expectedPages: Int = ???
-// }
+//   override def numPages: Int = 7
+//}

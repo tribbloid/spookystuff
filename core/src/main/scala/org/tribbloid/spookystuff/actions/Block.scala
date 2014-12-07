@@ -4,7 +4,7 @@ import org.slf4j.LoggerFactory
 import org.tribbloid.spookystuff.Const
 import org.tribbloid.spookystuff.entity.PageRow
 import org.tribbloid.spookystuff.session.Session
-import org.tribbloid.spookystuff.pages.Page
+import org.tribbloid.spookystuff.pages.{PageUID, NoPage, PageLike, Page}
 
 import scala.collection.mutable.ArrayBuffer
 import scala.concurrent.duration.Duration
@@ -29,18 +29,20 @@ abstract class Block(override val self: Seq[Action]) extends Actions(self) with 
     this
   }
 
-  final override def doExe(pb: Session): Seq[Page] = {
+  final override def doExe(pb: Session): Seq[PageLike] = {
 
     val pages = this.doExeNoUID(pb)
 
     val backtrace = Trace(pb.realBacktrace :+ this)
-    pages.zipWithIndex.map {
+    val result = pages.zipWithIndex.map {
       tuple => {
         val page = tuple._1
 
         page.copy(uid = page.uid.copy(backtrace = backtrace, blockKey = tuple._2))
       }
     }
+    if (result.isEmpty && this.mayExport) Seq(NoPage(uid = PageUID(backtrace = backtrace, leaf = null)))
+    else result
   }
 
   def doExeNoUID(pb: Session): Seq[Page]
@@ -56,7 +58,10 @@ final case class Try(override val self: Seq[Action]) extends Block(self) {
 
     try {
       for (action <- self) {
-        pages ++= action.doExe(pb)
+        pages ++= action.doExe(pb).flatMap{
+          case page: Page => Some(page)
+          case noPage: NoPage => None
+        }
       }
     }
     catch {
@@ -97,7 +102,10 @@ final case class Loop(
       for (i <- 0 until limit) {
 
         for (action <- self) {
-          pages ++= action.doExe(pb)
+          pages ++= action.doExe(pb).flatMap{
+            case page: Page => Some(page)
+            case noPage: NoPage => None
+          }
         }
       }
     }
@@ -157,17 +165,23 @@ final case class If(
 
   override def doExeNoUID(pb: Session): Seq[Page] = {
 
-    val current = DefaultSnapshot.apply(pb)(0)
+    val current = DefaultSnapshot.apply(pb)(0).asInstanceOf[Page]
 
     val pages = new ArrayBuffer[Page]()
     if (condition(current)) {
       for (action <- ifTrue) {
-        pages ++= action.doExe(pb)
+        pages ++= action.doExe(pb).flatMap{
+          case page: Page => Some(page)
+          case noPage: NoPage => None
+        }
       }
     }
     else {
       for (action <- ifFalse) {
-        pages ++= action.doExe(pb)
+        pages ++= action.doExe(pb).flatMap{
+          case page: Page => Some(page)
+          case noPage: NoPage => None
+        }
       }
     }
 

@@ -29,7 +29,7 @@ abstract class Export extends Named{
 
   final override def trunk = None //have not impact to driver
 
-  def doExe(session: Session) = doExeNoName(session)
+  final def doExe(session: Session) = doExeNoName(session)
 
   def doExeNoName(session: Session): Seq[Page]
 }

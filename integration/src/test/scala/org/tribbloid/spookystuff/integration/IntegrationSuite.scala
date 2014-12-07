@@ -76,13 +76,13 @@ abstract class IntegrationSuite extends FunSuite with BeforeAndAfterAll {
 
     doMain(localCacheWriteOnlyEnv)
 
-    assert(localCacheWriteOnlyEnv.metrics.pagesFetched.value === expectedPages)
+    assert(localCacheWriteOnlyEnv.metrics.pagesFetched.value === numPages)
     assert(localCacheWriteOnlyEnv.metrics.pagesFetchedFromCache.value === 0)
 
     doMain(localCacheEnv)
 
-    assert(localCacheEnv.metrics.pagesFetched.value === expectedPages)
-    assert(localCacheEnv.metrics.pagesFetchedFromCache.value === expectedPages)
+    assert(localCacheEnv.metrics.pagesFetched.value === numPages)
+    assert(localCacheEnv.metrics.pagesFetchedFromCache.value === numPages)
     assert(localCacheEnv.metrics.driverInitialized.value === 0)
     assert(localCacheEnv.metrics.DFSReadSuccess.value > 0)
     assert(localCacheEnv.metrics.DFSReadFail.value === 0)
@@ -92,13 +92,13 @@ abstract class IntegrationSuite extends FunSuite with BeforeAndAfterAll {
 
     doMain(s3CacheWriteOnlyEnv)
 
-    assert(s3CacheWriteOnlyEnv.metrics.pagesFetched.value === expectedPages)
+    assert(s3CacheWriteOnlyEnv.metrics.pagesFetched.value === numPages)
     assert(s3CacheWriteOnlyEnv.metrics.pagesFetchedFromCache.value === 0)
 
     doMain(s3CacheEnv)
 
-    assert(s3CacheEnv.metrics.pagesFetched.value === expectedPages)
-    assert(s3CacheEnv.metrics.pagesFetchedFromCache.value === expectedPages)
+    assert(s3CacheEnv.metrics.pagesFetched.value === numPages)
+    assert(s3CacheEnv.metrics.pagesFetchedFromCache.value === numPages)
     assert(s3CacheEnv.metrics.driverInitialized.value === 0)
     assert(s3CacheEnv.metrics.DFSReadSuccess.value > 0)
     assert(s3CacheEnv.metrics.DFSReadFail.value === 0)
@@ -106,5 +106,5 @@ abstract class IntegrationSuite extends FunSuite with BeforeAndAfterAll {
 
   def doMain(spooky: SpookyContext): Unit
 
-  def expectedPages: Int
+  def numPages: Int
 }

@@ -10,7 +10,7 @@ import org.tribbloid.spookystuff.dsl._
  */
 class TestUnstructured extends SpookyEnvSuite {
 
-  lazy val page = Trace(Wget("http://www.wikipedia.org/").as('old)::Nil).resolve(spooky).head
+  lazy val page = Trace(Wget("http://www.wikipedia.org/").as('old)::Nil).resolve(spooky).head.asInstanceOf[Page]
 
   test("Unstructured is serializable") {
     val elements = page.children("div.central-featured-lang")
@@ -28,8 +28,8 @@ class TestUnstructured extends SpookyEnvSuite {
 
   test("attrs") {
 
-    assert(page("h1.central-textlogo img").attrs("title").nonEmpty)
-    assert(page("h1.central-textlogo img dummy").attrs("title").isEmpty)
-    assert(page("h1.central-textlogo img").attrs("dummy").isEmpty)
+    assert(page.children("h1.central-textlogo img").attrs("title").nonEmpty)
+    assert(page.children("h1.central-textlogo img dummy").attrs("title").isEmpty)
+    assert(page.children("h1.central-textlogo img").attrs("dummy").isEmpty)
   }
 }

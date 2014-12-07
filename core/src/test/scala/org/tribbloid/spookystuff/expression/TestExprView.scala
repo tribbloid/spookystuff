@@ -15,7 +15,7 @@ class TestExprView extends SpookyEnvSuite {
   lazy val page = Trace(
     Wget("http://www.wikipedia.org/") :: Nil
   ).resolve(spooky)
-  lazy val row = PageRow(pages = page)
+  lazy val row = PageRow(pageLikes = page)
     .select($"title".head.text.>('abc) :: Nil)
 
   test("symbol as Expr"){

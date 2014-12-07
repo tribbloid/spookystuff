@@ -14,7 +14,7 @@ class TestPageRow extends SpookyEnvSuite {
     val page = Trace(
       Wget("http://www.wikipedia.org/") :: Nil
     ).resolve(spooky)
-    val row = PageRow(pages = page)
+    val row = PageRow(pageLikes = page)
 
     val page1 = row.getOnlyPage
     assert(page1.get === page.head)
@@ -27,7 +27,7 @@ class TestPageRow extends SpookyEnvSuite {
     val page = Trace(
       Wget("http://www.wikipedia.org/").as('pp) :: Nil
     ).resolve(spooky)
-    val row = PageRow(pages = page)
+    val row = PageRow(pageLikes = page)
       .select($("h1.central-textlogo img").head.as('e1) :: Nil)
       .selectTemp('pp.children("label").head :: Nil)
 

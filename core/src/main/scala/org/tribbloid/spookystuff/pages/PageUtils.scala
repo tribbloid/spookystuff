@@ -14,7 +14,7 @@ import org.tribbloid.spookystuff.{Const, DFSReadException, DFSWriteException, Sp
 /**
  * Created by peng on 11/27/14.
  */
-object Pages {
+object PageUtils {
 
    def DFSRead[T](message: String, pathStr: String, spooky: SpookyContext)(f: => T): T = {
      try {
@@ -78,7 +78,7 @@ object Pages {
    //unlike save, this will store all information in an unreadable, serialized, probably compressed file
    //always overwrite
    def cache(
-              pages: Seq[Page],
+              pageLikes: Seq[PageLike],
               path: String,
               overwrite: Boolean = false
               )(spooky: SpookyContext): Unit = {
@@ -93,7 +93,7 @@ object Pages {
        val serOut = ser.serializeStream(fos)
 
        try {
-         serOut.writeObject[Seq[Page]](Serializable[Seq[Page]](pages, 91252374923L))
+         serOut.writeObject[Seq[PageLike]](Serializable[Seq[PageLike]](pageLikes, 91252374923L))
        }
        finally {
          fos.close()
@@ -103,20 +103,19 @@ object Pages {
    }
 
    def autoCache(
-                  pages: Seq[Page],
-                  trace: Trace,
+                  pageLikes: Seq[PageLike],
                   spooky: SpookyContext
                   ): Unit = {
      val pathStr = Utils.urlConcat(
        spooky.autoCacheRoot,
-       spooky.cacheTraceEncoder(trace).toString,
+       spooky.cacheTraceEncoder(pageLikes.head.uid.backtrace).toString,
        UUID.randomUUID().toString
      )
 
-     cache(pages, pathStr)(spooky)
+     cache(pageLikes, pathStr)(spooky)
    }
 
-   def restore(fullPath: Path)(spooky: SpookyContext): Seq[Page] = {
+   def restore(fullPath: Path)(spooky: SpookyContext): Seq[PageLike] = {
 
      DFSRead("restore", fullPath.toString, spooky) {
        val fs = fullPath.getFileSystem(spooky.hConf)
@@ -127,8 +126,8 @@ object Pages {
          val fis = fs.open(fullPath)
          val serIn = ser.deserializeStream(fis)
          try {
-           val result = serIn.readObject[Seq[Page]]()
-           spooky.metrics.pagesFetchedFromCache += result.size
+           val result = serIn.readObject[Seq[PageLike]]()
+           spooky.metrics.pagesFetchedFromCache += result.count(_.isInstanceOf[Page])
            result
 //           obj.asInstanceOf[Seq[Page]]
          }
@@ -148,7 +147,7 @@ object Pages {
    def restoreLatest(
                       dirPath: Path,
                       earliestModificationTime: Long = 0
-                      )(spooky: SpookyContext): Seq[Page] = {
+                      )(spooky: SpookyContext): Seq[PageLike] = {
 
      val latestStatus = DFSRead("get latest version", dirPath.toString, spooky) {
 
@@ -173,7 +172,7 @@ object Pages {
    def autoRestoreLatest(
                           trace: Trace,
                           spooky: SpookyContext
-                          ): Seq[Page] = {
+                          ): Seq[PageLike] = {
      val pathStr = Utils.urlConcat(
        spooky.autoCacheRoot,
        spooky.cacheTraceEncoder(trace).toString

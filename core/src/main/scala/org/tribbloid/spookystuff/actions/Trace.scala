@@ -1,11 +1,12 @@
 package org.tribbloid.spookystuff.actions
 
 import org.tribbloid.spookystuff.entity.PageRow
+import org.tribbloid.spookystuff.pages.PageLike
 import org.tribbloid.spookystuff.session.Session
-import org.tribbloid.spookystuff.pages.Page
 import org.tribbloid.spookystuff.utils.Utils
 import org.tribbloid.spookystuff.{Const, SpookyContext}
 
+import scala.collection.mutable.ArrayBuffer
 import scala.reflect.ClassTag
 
 /**
@@ -23,10 +24,20 @@ final case class Trace(
   }
 
   //TODO: migrate all lazy-evaluation and cache here, PageBuilder should not handle this
-  override def apply(session: Session): Seq[Page] = {
+  override def apply(session: Session): Seq[PageLike] = {
 
     session ++= self
-    session.pages
+    session.pageLikes
+  }
+
+  def dryRun: Seq[Trace] = {
+    def result: ArrayBuffer[Trace] = ArrayBuffer()
+
+    for (i <- 0 until self.size) {
+      if (self(i).mayExport) result :+ Trace(self.slice(0, i)).trunk
+    }
+
+    result
   }
 
   //invoke before interpolation!
@@ -35,7 +46,7 @@ final case class Trace(
     else Trace(self :+ Snapshot()) //Don't use singleton, otherwise will flush timestamp and name
   }
 
-  def resolve(spooky: SpookyContext): Seq[Page] = {
+  def resolve(spooky: SpookyContext): Seq[PageLike] = {
 
     val result = Utils.retry (Const.remoteResourceInPartitionRetry){
       resolvePlain(spooky)
@@ -47,7 +58,7 @@ final case class Trace(
   }
 
   //no retry
-  def resolvePlain(spooky: SpookyContext): Seq[Page] = {
+  def resolvePlain(spooky: SpookyContext): Seq[PageLike] = {
 
     //    val results = ArrayBuffer[Page]()
 

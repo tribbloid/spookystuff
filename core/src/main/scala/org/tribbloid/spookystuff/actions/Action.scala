@@ -2,7 +2,7 @@ package org.tribbloid.spookystuff.actions
 
 import org.tribbloid.spookystuff.{Const, ActionException}
 import org.tribbloid.spookystuff.session.Session
-import org.tribbloid.spookystuff.pages.Page
+import org.tribbloid.spookystuff.pages.{PageLike, Page}
 import org.tribbloid.spookystuff.utils.Utils
 
 import scala.concurrent.duration.Duration
@@ -26,7 +26,7 @@ trait Action extends ActionLike {
   //  val optional: Boolean
 
   //this should handle autoSave, cache and errorDump
-  def apply(session: Session): Seq[Page] = {
+  def apply(session: Session): Seq[PageLike] = {
 
     val errorDump: Boolean = session.spooky.errorDump
     val errorDumpScreenshot: Boolean = session.spooky.errorDumpScreenshot
@@ -113,7 +113,7 @@ trait Action extends ActionLike {
     results
   }
 
-  def doExe(session: Session): Seq[Page]
+  def doExe(session: Session): Seq[PageLike]
 
   override def inject(same: this.type): Unit = {
 //    super.inject(same)

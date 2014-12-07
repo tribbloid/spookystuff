@@ -20,11 +20,18 @@ case class PageUID(
                     blockKey: Int = -1 //-1 is no sub key
                     )
 
+trait PageLike {
+  val uid: PageUID
+}
+
+//Merely a placeholder when a Block returns nothing
+case class NoPage(override val uid: PageUID) extends Serializable with PageLike
+
 //immutable! we don't want to lose old pages
 //keep small, will be passed around by Spark
 @SerialVersionUID(94865098324L)
 case class Page(
-            uid: PageUID,
+            override val uid: PageUID,
 
             override val uri: String, //redirected
             contentType: String,
@@ -34,7 +41,7 @@ case class Page(
             timestamp: Date = new Date,
             var saved: String = null
             )
-  extends Serializable with Unstructured {
+  extends Unstructured with PageLike {
 
   def name = this.uid.leaf.name
 
@@ -77,7 +84,7 @@ case class Page(
 
     val path = Utils.urlConcat(pathParts: _*)
 
-    Pages.DFSWrite("save", path, spooky) {
+    PageUtils.DFSWrite("save", path, spooky) {
 
       var fullPath = new Path(path)
 

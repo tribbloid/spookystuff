@@ -8,7 +8,7 @@ import org.tribbloid.spookystuff.actions._
 import org.tribbloid.spookystuff.dsl.{Inner, JoinType, _}
 import org.tribbloid.spookystuff.entity._
 import org.tribbloid.spookystuff.expressions._
-import org.tribbloid.spookystuff.pages.Page
+import org.tribbloid.spookystuff.pages.{NoPage, Page}
 import org.tribbloid.spookystuff.utils._
 import org.tribbloid.spookystuff.{Const, SpookyContext}
 
@@ -178,9 +178,9 @@ case class PageRowRDD(
           case _ => ""
         }
 
-        val newPages = pageRow.pages.map {
-          page => {
-
+        val newPageLikes = pageRow.pageLikes.map {
+          case noPage: NoPage => noPage
+          case page: Page =>
             val extractPath = extract match {
               case f: (Page => Any) => f(page).toString
               case _ => ""
@@ -192,10 +192,9 @@ case class PageRowRDD(
               Seq(path),
               overwrite = overwrite
             )(spookyBroad.value)
-          }
         }
 
-        pageRow.copy(pages = newPages)
+        pageRow.copy(pageLikes = newPageLikes)
       }
     }
 
@@ -342,7 +341,7 @@ case class PageRowRDD(
   }
 
   def flattenPages(
-                    pattern: Symbol = '*,
+                    pattern: Symbol = '*, //TODO: enable it
                     indexKey: Symbol = null
                     ): PageRowRDD =
     this.copy(
@@ -394,8 +393,8 @@ case class PageRowRDD(
              joinType: JoinType = Const.defaultJoinType,
              numPartitions: Int = this.sparkContext.defaultParallelism,
              flattenPagesPattern: Symbol = '*, //by default, always flatten all pages
-             flattenPagesIndexKey: Symbol = null
-             //TODO:             cache: RDD[Page] = null  & always use self as cache
+             flattenPagesIndexKey: Symbol = null,
+             cache: RDD[Page] = null  //& always use self as cache
              ): PageRowRDD = {
 
     import org.apache.spark.SparkContext._
@@ -415,6 +414,7 @@ case class PageRowRDD(
     //    val result = this.copy(self = withPages.flatMap(tuple => tuple._1.putPages(tuple._2.get, joinType)))
 
     val withTraceSquashed = withTrace.groupByKey()
+
     val withPagesSquashed = withTraceSquashed.map{ //Unfortunately there is no mapKey
       tuple => tuple._1.resolve(_spooky) -> tuple._2
     }
@@ -511,7 +511,7 @@ case class PageRowRDD(
     val excludeKeys = exclude.map(Key(_))
     val otherSignatures = others.map {
       row => row.signature(excludeKeys) -> null
-    }
+    }.distinct()
     val withSignatures = this.map{
       row => row.signature(excludeKeys) -> row
     }
@@ -547,15 +547,14 @@ case class PageRowRDD(
       val joined = newRows
         .flattenTemp(expr defaultAs Symbol(Const.defaultJoinKey), indexKey, Int.MaxValue, left = true)
         .fetch(traces, Inner, numPartitions, flattenPagesPattern, flattenPagesIndexKey)
-        .select(exprs: _*)
       //        .clearTemp
 
-      newRows = joined.distinctSignature(Option(depthKey)).subtractSignature(total, Option(depthKey)).persist()
+      newRows = joined.subtractSignature(total, Seq(depthKey, indexKey, flattenPagesIndexKey).filter(_ != null)).persist()
 
       val newRowsCount = newRows.count()
 
       if (newRowsCount == 0){
-        return this.copy(self = total.coalesce(numPartitions)) //early stop condition if no new pages with the same data is detected
+        return this.copy(self = total.select(exprs: _*).coalesce(numPartitions)) //early stop condition if no new pages with the same data is detected
       }
 
       total = total.union(
@@ -564,7 +563,7 @@ case class PageRowRDD(
       )
     }
 
-    this.copy(self = total.coalesce(numPartitions))
+    this.copy(self = total.select(exprs: _*).coalesce(numPartitions))
   }
 
   def visitExplore(

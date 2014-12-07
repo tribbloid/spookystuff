@@ -4,7 +4,7 @@ import org.tribbloid.spookystuff.{Const, views, SpookyContext}
 import org.tribbloid.spookystuff.actions._
 import org.tribbloid.spookystuff.dsl._
 import org.tribbloid.spookystuff.expressions._
-import org.tribbloid.spookystuff.pages.{Unstructured, Page}
+import org.tribbloid.spookystuff.pages.{PageLike, Unstructured, Page}
 import org.tribbloid.spookystuff.utils._
 
 /**
@@ -14,9 +14,14 @@ import org.tribbloid.spookystuff.utils._
 //cells & pages share the same key pool but different data structure
 case class PageRow(
                     cells: Map[KeyLike, Any] = Map(), //TODO: also carry PageUID & property type (Vertex/Edge) for GraphX
-                    pages: Seq[Page] = Seq() // discarded after new page coming in
+                    pageLikes: Seq[PageLike] = Seq() // discarded after new page coming in
                     )
   extends Serializable {
+
+  def pages: Seq[Page] = pageLikes.flatMap {
+    case page: Page => Some(page)
+    case _ => None
+  }
 
   private def resolveKey(keyStr: String): KeyLike = {
     val tempKey = TempKey(keyStr)
@@ -61,9 +66,9 @@ case class PageRow(
   }
 
   def replaceInto(
-                  str: String,
-                  delimiter: String = Const.keyDelimiter
-                  ): Option[String] = {
+                   str: String,
+                   delimiter: String = Const.keyDelimiter
+                   ): Option[String] = {
     if (str == null) return None
     if (str.isEmpty) return Some(str)
 
@@ -125,25 +130,24 @@ case class PageRow(
     this.copy(cells = this.cells.filterKeys(f).map(identity))
   }
 
-  def putPages(others: Seq[Page], joinType: JoinType): Option[PageRow] = {
+  def putPages(others: Seq[PageLike], joinType: JoinType): Option[PageRow] = {
     joinType match {
       case Inner =>
         if (others.isEmpty) None
-        else Some(this.copy(pages = others))
+        else Some(this.copy(pageLikes = others))
       case LeftOuter =>
-        Some(this.copy(pages = others))
+        Some(this.copy(pageLikes = others))
       case Replace =>
         if (others.isEmpty) Some(this)
-        else Some(this.copy(pages = this.pages ++ others))
+        else Some(this.copy(pageLikes = others))
       case Append =>
-        Some(this.copy(pages = this.pages ++ others))
+        Some(this.copy(pageLikes = this.pageLikes ++ others))
       case Merge =>
-        val oldUids = this.pages.map(_.uid)
+        val oldUids = this.pageLikes.map(_.uid)
         val newPages = others.filter(newPage => !oldUids.contains(newPage.uid))
-        Some(this.copy(pages = this.pages ++ newPages))
+        Some(this.copy(pageLikes = this.pageLikes ++ newPages))
     }
   }
-
 
   //retain old pageRow,
   //always left
@@ -169,23 +173,25 @@ case class PageRow(
   }
 
   //always left, discard old page row
+  //warning: sometimes this always lose information regardless of pattern, e.g. all NoPage will be discarded
   def flattenPages(
                     pattern: String, //TODO: enable soon
                     indexKey: Key
                     ): Seq[PageRow] = {
+
     val result = if (indexKey == null) {
       this.pages.map{
-        page => this.copy(cells = this.cells, pages = Seq(page))
+        page => this.copy(cells = this.cells, pageLikes = Seq(page))
       }
     }
     else {
       this.pages.zipWithIndex.map{
-        tuple => this.copy(cells = this.cells + (indexKey -> tuple._2), pages = Seq(tuple._1))
+        tuple => this.copy(cells = this.cells + (indexKey -> tuple._2), pageLikes = Seq(tuple._1))
       }
     }
 
     if (result.isEmpty) {
-      Seq(this.copy(pages = Seq()))
+      Seq(this.copy(pageLikes = Seq()))
     }
     else {
       result
@@ -208,7 +214,7 @@ case class PageRow(
                 ): Seq[PageRow] = {
 
     var currentRow = this
-    var increment = this.pages.size
+    var increment = this.pageLikes.size
 
     while (currentRow.pages.size <= limit && increment > 0 && currentRow.pages.last.children(selector).attrs(attr, noEmpty = true).nonEmpty) {
 
@@ -217,7 +223,7 @@ case class PageRow(
 
       val newRow = currentRow.putPages(Trace(action::Nil).resolve(spooky), joinType = Merge).get
 
-      increment = newRow.pages.size - currentRow.pages.size
+      increment = newRow.pageLikes.size - currentRow.pageLikes.size
 
       currentRow = newRow
     }

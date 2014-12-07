@@ -43,5 +43,5 @@ class FlatSelectIT extends IntegrationSuite {
     assert(rows.head.getString(3) === "http://www.wikipedia.org/")
   }
 
-  override def expectedPages: Int = 1
+  override def numPages: Int = 1
 }

@@ -61,5 +61,5 @@ class SelectIT extends IntegrationSuite {
     }
   }
 
-  override def expectedPages: Int = 1
+  override def numPages: Int = 1
 }

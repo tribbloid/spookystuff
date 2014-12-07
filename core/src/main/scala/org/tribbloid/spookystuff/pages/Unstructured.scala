@@ -9,7 +9,7 @@ trait Unstructured extends Serializable {
 
    def children(selector: String): Seq[Unstructured]
 
-   final def apply(selector: String) = children(selector)
+//   final def apply(selector: String) = children(selector)
 
    def markup: Option[String]
 

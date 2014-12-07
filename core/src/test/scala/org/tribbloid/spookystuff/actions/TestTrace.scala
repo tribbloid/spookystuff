@@ -2,6 +2,7 @@ package org.tribbloid.spookystuff.actions
 
 import org.tribbloid.spookystuff.SpookyEnvSuite
 import org.tribbloid.spookystuff.dsl._
+import org.tribbloid.spookystuff.pages.Page
 import org.tribbloid.spookystuff.session.Session
 
 /**
@@ -16,7 +17,7 @@ class TestTrace extends SpookyEnvSuite {
   test("visit and snapshot") {
     val builder = new Session(spooky)
     Visit("http://en.wikipedia.org")(builder)
-    val page = Snapshot()(builder).toList(0)
+    val page = Snapshot()(builder).toList(0).asInstanceOf[Page]
     //    val url = builder.getUrl
 
     assert(page.markup.get.startsWith("<!DOCTYPE html>"))
@@ -31,7 +32,7 @@ class TestTrace extends SpookyEnvSuite {
     Visit("http://www.wikipedia.org")(builder)
     TextInput("input#searchInput","Deep learning")(builder)
     Submit("input.formBtn")(builder)
-    val page = Snapshot()(builder).toList(0)
+    val page = Snapshot()(builder).toList(0).asInstanceOf[Page]
     //    val url = builder.getUrl
 
     assert(page.markup.get.contains("<title>Deep learning - Wikipedia, the free encyclopedia</title>"))
@@ -51,8 +52,8 @@ class TestTrace extends SpookyEnvSuite {
 
     val resultsList = results
     assert(resultsList.length === 2)
-    val res1 = resultsList(0)
-    val res2 = resultsList(1)
+    val res1 = resultsList(0).asInstanceOf[Page]
+    val res2 = resultsList(1).asInstanceOf[Page]
 
     val id1 = Trace(Visit("http://www.wikipedia.org")::WaitFor("input#searchInput")::Snapshot().as('C)::Nil)
     assert(res1.uid.backtrace === id1)

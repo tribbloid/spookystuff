@@ -19,9 +19,9 @@ class TestPage extends SpookyEnvSuite {
       Snapshot().doExe(pb).toList(0)
     }
 
-    assert (emptyPage("div.dummy").attrs("href").isEmpty)
-    assert (emptyPage("div.dummy").markups.isEmpty)
-    assert (emptyPage("div.dummy").isEmpty)
+    assert (emptyPage.children("div.dummy").attrs("href").isEmpty)
+    assert (emptyPage.children("div.dummy").markups.isEmpty)
+    assert (emptyPage.children("div.dummy").isEmpty)
   }
 
   test("save and load") {
@@ -33,11 +33,11 @@ class TestPage extends SpookyEnvSuite {
 
     val resultsList = results.toArray
     assert(resultsList.size === 1)
-    val page1 = resultsList(0)
+    val page1 = resultsList(0).asInstanceOf[Page]
 
     val page1Saved = page1.autoSave(spooky,overwrite = true)
 
-    val loadedContent = Pages.load(new Path(page1Saved.saved))(spooky)
+    val loadedContent = PageUtils.load(new Path(page1Saved.saved))(spooky)
 
     assert(loadedContent === page1Saved.content)
   }
@@ -69,13 +69,13 @@ class TestPage extends SpookyEnvSuite {
 
     val resultsList = results.toArray
     assert(resultsList.size === 1)
-    val page1 = resultsList(0)
+    val page1 = resultsList(0).asInstanceOf[Page]
 
-    assert(page1("title").texts.head === "Wikipedia, the free encyclopedia")
+    assert(page1.children("title").texts.head === "Wikipedia, the free encyclopedia")
 
     val page1Saved = page1.autoSave(spooky,overwrite = true)
 
-    val loadedContent = Pages.load(new Path(page1Saved.saved))(spooky)
+    val loadedContent = PageUtils.load(new Path(page1Saved.saved))(spooky)
 
     assert(loadedContent === page1Saved.content)
   }
@@ -88,11 +88,11 @@ class TestPage extends SpookyEnvSuite {
 
     val resultsList = results.toArray
     assert(resultsList.size === 1)
-    val page1 = resultsList(0)
+    val page1 = resultsList(0).asInstanceOf[Page]
 
     val page1Saved = page1.autoSave(spooky,overwrite = true)
 
-    val loadedContent = Pages.load(new Path(page1Saved.saved))(spooky)
+    val loadedContent = PageUtils.load(new Path(page1Saved.saved))(spooky)
 
     assert(loadedContent === page1Saved.content)
   }
@@ -105,11 +105,11 @@ class TestPage extends SpookyEnvSuite {
 
     val resultsList = results.toArray
     assert(resultsList.size === 1)
-    val page1 = resultsList(0)
+    val page1 = resultsList(0).asInstanceOf[Page]
 
     val page1Saved = page1.autoSave(spooky,overwrite = true)
 
-    val loadedContent = Pages.load(new Path(page1Saved.saved))(spooky)
+    val loadedContent = PageUtils.load(new Path(page1Saved.saved))(spooky)
 
     assert(loadedContent === page1Saved.content)
   }

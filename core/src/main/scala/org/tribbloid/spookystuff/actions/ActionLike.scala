@@ -2,7 +2,7 @@ package org.tribbloid.spookystuff.actions
 
 import org.tribbloid.spookystuff.entity.PageRow
 import org.tribbloid.spookystuff.session.Session
-import org.tribbloid.spookystuff.pages.Page
+import org.tribbloid.spookystuff.pages.{PageLike, Page}
 
 /**
  * Created by peng on 11/7/14.
@@ -30,5 +30,5 @@ trait ActionLike
   //the minimal equivalent action that can be put into backtrace
   def trunk: Option[this.type]
 
-  def apply(session: Session): Seq[Page]
+  def apply(session: Session): Seq[PageLike]
 }
