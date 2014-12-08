@@ -13,8 +13,8 @@ import scala.reflect.ClassTag
  * Created by peng on 10/25/14.
  */
 final case class Trace(
-                  override val self: Seq[Action]
-                  ) extends Actions(self) { //remember chain is not a block! its the super container that cannot be wrapped
+                        override val self: Seq[Action]
+                        ) extends Actions(self) { //remember chain is not a block! its the super container that cannot be wrapped
 
   //always has output to handle left join
   override def doInterpolate(pr: PageRow): Option[this.type] = {
@@ -30,14 +30,19 @@ final case class Trace(
     session.pageLikes
   }
 
-  def dryRun: Seq[Trace] = {
-    def result: ArrayBuffer[Trace] = ArrayBuffer()
+  //the result can never be empty.
+  def dryrun: Seq[Trace] = {
+    val result: ArrayBuffer[Trace] = ArrayBuffer()
 
     for (i <- 0 until self.size) {
-      if (self(i).mayExport) result :+ Trace(self.slice(0, i)).trunk
+      if (self(i).mayExport){
+        val backtrace = Trace(self.slice(0, i).flatMap(_.trunk) :+ self(i))
+        result += backtrace
+      }
     }
 
-    result
+    if (result.isEmpty) Seq(Trace(Seq()))
+    else result
   }
 
   //invoke before interpolation!
@@ -51,7 +56,7 @@ final case class Trace(
     val result = Utils.retry (Const.remoteResourceInPartitionRetry){
       resolvePlain(spooky)
     }
-    
+
     spooky.metrics.pagesFetched += result.size
 
     result

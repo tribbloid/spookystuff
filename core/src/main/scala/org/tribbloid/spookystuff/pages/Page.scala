@@ -17,7 +17,8 @@ import org.tribbloid.spookystuff.utils.Utils
 case class PageUID(
                     backtrace: Trace,
                     leaf: Named,
-                    blockKey: Int = -1 //-1 is no sub key
+                    blockIndex: Int = -1, //-1 is no sub key
+                    total: Int = 1 //number of pages in a batch
                     )
 
 trait PageLike {

@@ -184,9 +184,9 @@ object PageUtils {
      )(spooky)
 
      if (pages != null) for (page <- pages) {
-       val pageTrace: Trace = page.uid.backtrace
+       val pageBacktrace: Trace = page.uid.backtrace
 
-       pageTrace.inject(trace.asInstanceOf[pageTrace.type ])
+       pageBacktrace.inject(trace.asInstanceOf[pageBacktrace.type])
        //this is to allow actions in backtrace to have different name than those cached
      }
      pages
