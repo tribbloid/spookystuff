@@ -23,7 +23,7 @@ Powered by
 
 Demo
 -----------
-[Click me](http://ec2-54-165-231-62.compute-1.amazonaws.com:8888/tree) for a quick impression.
+[Click me](http://ec2-54-165-231-62.compute-1.amazonaws.com:8888/notebooks/all_inclusive_do_not_create_new_notebook.ipynb) for a quick impression.
 
 This environment is deployed on a Spark cluster with 8+ cores. It may not be accessible during system upgrade or maintenance. Please contact a committer/project manager for a customized demo.
 
