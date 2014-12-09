@@ -12,7 +12,6 @@ class SpookyILoop extends SparkILoop {
     "import scala.concurrent.duration._" ::
       "import org.tribbloid.spookystuff.actions._" ::
       "import org.tribbloid.spookystuff.dsl._" ::
-      "import org.tribbloid.spookystuff.expressions._" ::
       "import org.tribbloid.spookystuff.SpookyContext" ::
       "val spooky = new SpookyContext(sql)" ::
       "import spooky._" ::
