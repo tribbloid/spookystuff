@@ -21,7 +21,7 @@
     <groupId>org.tribbloid.spookystuff</groupId>
     <artifactId>spookystuff</artifactId>
     <packaging>pom</packaging>
-    <version>${project.version}</version>
+    <version>0.3.0-SNAPSHOT</version>
     <name>spookystuff</name>
     <url>https://github.com/tribbloid/spookystuff</url>
 
