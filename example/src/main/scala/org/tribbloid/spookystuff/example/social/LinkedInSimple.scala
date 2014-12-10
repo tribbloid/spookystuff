@@ -14,15 +14,15 @@ object LinkedInSimple extends ExampleCore {
   override def doMain(spooky: SpookyContext) = {
     import spooky._
 
-    //    (sc.parallelize(Seq("Sanjay", "Arun", "Hardik"))
-    sc.parallelize(Seq("Sanjay"))
+    sc.parallelize(Seq("Sanjay", "Arun", "Hardik"))
       .fetch(
         Visit("https://www.linkedin.com/")
+          +> TextInput("input#first", "'{_}")
+          +> TextInput("input#last", "Gupta")
+          +> Submit("input[name=\"search\"]")
       )
-      //      +> TextInput("input#first","#{_}")
-      //      +> TextInput("input#last","Gupta")
-      //      +> Submit("input[name=\"search\"]")
-      //      .select("links" -> (_.href("ol#result-set h2 a").mkString("\t")))
+
+      .select($"ol#result-set h2 a".hrefs.mkString(" ") > 'names)
       .asSchemaRDD()
   }
 }

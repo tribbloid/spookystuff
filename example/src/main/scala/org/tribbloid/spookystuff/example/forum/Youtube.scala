@@ -17,7 +17,7 @@ object Youtube extends ExampleCore{
 
     val catalog = sc.parallelize(Seq("MetallicaTV"))
       .fetch(
-        Visit("http://www.youtube.com/user/#{_}/videos")
+        Visit("http://www.youtube.com/user/'{_}/videos")
           +> Loop(
           Click("button.load-more-button span.load-more-text")
             :: WaitFor("button.load-more-button span.hid.load-more-loading").in(10.seconds)
@@ -25,21 +25,20 @@ object Youtube extends ExampleCore{
           1
         )
       )
-      .flatSelect($"li.channels-content-item")(
-        A"h3.yt-lockup-title".text > 'title
-      )
-      .join(A"h3.yt-lockup-title a.yt-uix-tile-link", limit = 1)(
-        Visit('A.href)
+      .join($"li.channels-content-item")(
+        Visit(A"h3.yt-lockup-title a.yt-uix-tile-link".href)
           +> ExeScript("window.scrollBy(0,500)")
           +> Try(WaitFor("iframe[title^=Comment]").in(50.seconds) :: Nil),
         numPartitions = 400
-      )()
+      )(
+        A"h3.yt-lockup-title".text > 'title
+      )
       .select(
         $"div#watch-description-text".text > 'description,
-        $"p#watch-uploader-info".text > 'publish,
-        $"div#watch7-views-info span.watch-view-count".text > 'total_view,
-        $"div#watch7-views-info span.likes-count".text > 'like_count,
-        $"div#watch7-views-info span.dislikes-count".text > 'dislike_count
+        $"strong.watch-time-text".text > 'publish,
+        $"div.watch-view-count".text > 'total_view,
+        $"button#watch-like".text > 'like_count,
+        $"button#watch-dislike".text > 'dislike_count
       )
       .persist()
 
