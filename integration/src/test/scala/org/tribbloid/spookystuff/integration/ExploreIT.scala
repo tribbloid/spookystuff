@@ -1,8 +1,8 @@
 package org.tribbloid.spookystuff.integration
 
+import org.tribbloid.spookystuff.SpookyContext
 import org.tribbloid.spookystuff.actions.Visit
 import org.tribbloid.spookystuff.dsl._
-import org.tribbloid.spookystuff.{SpookyContext, dsl}
 
 /**
 * Created by peng on 12/5/14.
@@ -18,10 +18,9 @@ class ExploreIT extends IntegrationSuite {
       )
 
     val explored = base
-      .explore($"div.sidebar-nav a", indexKey = 'i1)(
+      .explore($"div.sidebar-nav a", depthKey = 'depth, indexKey = 'i1)(
         Visit('A.href),
-        flattenPagesIndexKey = 'page,
-        depthKey = 'depth
+        flattenPagesIndexKey = 'page
       )(
         'A.text > 'category
       )

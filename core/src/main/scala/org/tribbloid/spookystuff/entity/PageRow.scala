@@ -87,7 +87,7 @@ case class PageRow(
   }
 
   def signature(ignore: Iterable[String]) = (
-    this.cells.filterKeys(_.isInstanceOf[Key]) -- ignore.map(Key(_)),
+    this.cells.filterKeys(_.isInstanceOf[Key]).map(identity) -- ignore.map(Key(_)),
     pages.map(_.uid),
     pages.map(_.name)
     )

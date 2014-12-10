@@ -1,7 +1,7 @@
 package org.tribbloid.spookystuff.integration
 
 import org.tribbloid.spookystuff.SpookyContext
-import org.tribbloid.spookystuff.actions.Visit
+import org.tribbloid.spookystuff.actions._
 import org.tribbloid.spookystuff.dsl._
 
 /**
@@ -14,18 +14,18 @@ class LeftJoinIT extends IntegrationSuite {
 
      val base = noInput
        .fetch(
-         Visit("http://webscraper.io/test-sites/e-commerce/allinone")
+         Wget("http://webscraper.io/test-sites/e-commerce/allinone")
        )
 
      val joined = base
        .join($"div.sidebar-nav a", indexKey = 'i1)(
-         Visit('A.href),
+         Wget('A.href),
         joinType = LeftOuter
        )(
          'A.text > 'category
        )
        .join($"a.subcategory-link", indexKey = 'i2)(
-         Visit('A.href),
+         Wget('A.href),
          joinType = LeftOuter
        )(
          'A.text > 'subcategory

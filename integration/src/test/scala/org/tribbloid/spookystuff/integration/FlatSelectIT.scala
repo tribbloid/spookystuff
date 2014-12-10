@@ -15,7 +15,7 @@ class FlatSelectIT extends IntegrationSuite {
 
     val result = noInput
       .fetch(
-        Visit("http://www.wikipedia.org/")
+        Wget("http://www.wikipedia.org/")
       )
       .flatSelect($"div.central-featured-lang")(
         'A.attr("lang"),

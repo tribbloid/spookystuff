@@ -1,7 +1,8 @@
 package org.tribbloid.spookystuff.actions
 
 import org.scalatest.FunSuite
-import org.tribbloid.spookystuff.SpookyEnvSuite
+import org.tribbloid.spookystuff.expressions.Literal
+import org.tribbloid.spookystuff.{Const, SpookyEnvSuite}
 import org.tribbloid.spookystuff.dsl._
 import org.tribbloid.spookystuff.entity.{Key, PageRow}
 import org.tribbloid.spookystuff.pages.Page
@@ -18,22 +19,23 @@ class TestAction extends SpookyEnvSuite {
     import scala.concurrent.duration._
 
     val randomTimeout = Random.nextInt().seconds
-    val action = Visit("#{~}").in(randomTimeout)
+    val action = Visit(Const.keyDelimiter+"{~}").in(randomTimeout)
 
-    val rewritten = action.interpolate(new PageRow(cells = Map(Key("~") -> "http://www.dummy.com")))
+    val rewritten = action.interpolate(new PageRow(cells = Map(Key("~") -> "http://www.dummy.com"))).get
 
-    assert(rewritten.get.timeout(null) === randomTimeout)
+    assert(rewritten === Visit(Literal("http://www.dummy.com")))
+    assert(rewritten.timeout(null) === randomTimeout)
   }
 
   test("interpolate should not change name") {
 
-    val action = Wget("#{~}").as('dummy_name)
+    val action = Wget("'{~}").as('dummy_name)
 
-    val rewritten = action.interpolate(new PageRow(cells = Map(Key("~") -> "http://www.dummy.com")))
+    val rewritten = action.interpolate(new PageRow(cells = Map(Key("~") -> "http://www.dummy.com"))).get
 
-    assert(rewritten.get.name === "dummy_name")
+    assert(rewritten === Visit(Literal("http://www.dummy.com")))
+    assert(rewritten.name === "dummy_name")
   }
-
 
   test("visit and snapshot") {
     val builder = new Session(spooky)

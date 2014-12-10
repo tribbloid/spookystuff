@@ -25,20 +25,20 @@ object Imdb extends ExampleCore {
         A("td.ratingColumn",1).text > 'box_gross,
         A("tr td.weeksColumn").text > 'weeks
       )
-      .wgetJoin($"tr td.titleColumn a")() //go to movie pages, e.g. http://www.imdb.com/title/tt2015381/?ref_=cht_bo_1
+      .wgetJoin($"tr td.titleColumn a") //go to movie pages, e.g. http://www.imdb.com/title/tt2015381/?ref_=cht_bo_1
       .select(
         $("td#overview-top div.titlePageSprite").text > 'score,
         $("td#overview-top span[itemprop=ratingCount]").text > 'rating_count,
         $("td#overview-top span[itemprop=reviewCount]").text > 'review_count
       )
-      .wgetJoin($("div#maindetails_quicklinks a:contains(Reviews)"))() //go to review pages, e.g. http://www.imdb.com/title/tt2015381/reviews?ref_=tt_urv
-      .wgetExplore($("div#tn15content a:has(img[alt~=Next])"))(depthKey = 'page) //grab all pages by using the right arrow button.
+      .wgetJoin($("div#maindetails_quicklinks a:contains(Reviews)")) //go to review pages, e.g. http://www.imdb.com/title/tt2015381/reviews?ref_=tt_urv
+      .wgetExplore($"div#tn15content a:has(img[alt~=Next])", depthKey = 'page) //grab all pages by using the right arrow button.
       .flatSelect($("div#tn15content div:has(h2)"))(
         A("img[alt]").attr("alt") > 'review_rating,
         A("h2").text > 'review_title,
         A("small").text > 'review_meta
       )
-      .wgetJoin($("a"))() //go to reviewers' page, e.g. http://www.imdb.com/user/ur23582121/
+      .wgetJoin($("a")) //go to reviewers' page, e.g. http://www.imdb.com/user/ur23582121/
       .select(
         $("div.user-profile h1").text > 'user_name,
         $("div.user-profile div.timestamp").text > 'user_timestamp,

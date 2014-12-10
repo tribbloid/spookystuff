@@ -21,7 +21,7 @@ object LinkedIn extends ExampleCore {
           *> (TextInput("input#last", "Gupta") :: TextInput("input#last", "Krishnamurthy") :: Nil)
           +> Submit("input[name=\"search\"]")
       )
-      .visitJoin($"ol#result-set h2 a")()
+      .visitJoin($"ol#result-set h2 a")
       .select(
         $"span.full-name".text > 'name,
         $"p.title".text > 'title,

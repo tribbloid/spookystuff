@@ -19,7 +19,7 @@ object Macys extends ExampleCore {
       .fetch(
         Wget("http://www.macys.com/")
       )
-      .wgetJoin($"div#globalMastheadCategoryMenu li a")()
+      .wgetJoin($"div#globalMastheadCategoryMenu li a")
       .select(
         $"div#nav_title".text > 'category
       )

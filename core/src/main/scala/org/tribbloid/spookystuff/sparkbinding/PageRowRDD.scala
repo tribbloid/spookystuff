@@ -389,7 +389,7 @@ case class PageRowRDD(
              numPartitions: Int = this.sparkContext.defaultParallelism,
              flattenPagesPattern: Symbol = '*, //by default, always flatten all pages
              flattenPagesIndexKey: Symbol = null,
-             lookupFrom: RDD[PageLike] = this.flatMap(_.pageLikes)  //& always use self as cache
+             lookupFrom: RDD[PageLike] = this.flatMap(_.pageLikes)  //by default use self as cache
              ): PageRowRDD = {
 
     import org.apache.spark.SparkContext._
@@ -399,57 +399,67 @@ case class PageRowRDD(
     val traceRDD = this.flatMap(
       row => _trace.interpolate(row)
     )
-    val traceToRow = traceRDD.zip(this) //I'll assume this is safe
-
-    //----------------lookup start-------------------
-
-    val lookupBacktraceToPages = lookupFrom //key unique due to groupBy
-      .keyBy(_.uid).reduceByKey((v1,v2) => v1).values
-      .groupBy(_.uid.backtrace)
-      .mapValues{
-      pages =>
-        val _pages = pages.toSeq
-        val sorted = _pages.sortBy(_.uid.blockIndex)
-        sorted.slice(0, sorted.head.uid.total)
-    }
-
     val traceDistinct = traceRDD.distinct()
-
-    val backtraceToTraceIndex = traceDistinct.flatMap{ //key unique: traceDistinct.dryrun still yield distinct trace
-      trace =>
-        val dryruns = trace.dryrun.zipWithIndex
-        dryruns.map(tuple => tuple._1 -> (trace, tuple._2))
-    }
-
-    val joinedTraceIndexToPages = backtraceToTraceIndex.leftOuterJoin(lookupBacktraceToPages)
-    val traceToPagesFromLookup = joinedTraceIndexToPages.map{
-      tuple =>
-        val backtrace = tuple._1
-        val traceIndexToPages = tuple._2
-        traceIndexToPages._2.foreach(_.foreach{
-          page =>
-            val pageBacktrace = page.uid.backtrace
-            pageBacktrace.inject(backtrace.asInstanceOf[pageBacktrace.type])
-        })
-        traceIndexToPages._1._1 -> (traceIndexToPages._1._2, traceIndexToPages._2)
-    }.groupByKey().flatMap{
-      tuple =>
-        if (tuple._2.map(_._2).toSeq.contains(None)) None
-        else {
-          val pages = tuple._2.toSeq.sortBy(_._1).flatMap(_._2.get)
-          Some(tuple._1 -> pages)
-        }
-    }
-    //-------------------lookup finished-----------------
 
     val spookyBroad = this.context.broadcast(this.spooky)
     implicit def _spooky: SpookyContext = spookyBroad.value
 
-    val traceToRowNotFromCache = traceToRow.subtractByKey(traceToPagesFromLookup).repartition(numPartitions) //slow but more balanced
+    val traceToPages = if (lookupFrom == null) {
+      traceDistinct.map{
+        trace => trace -> trace.resolve(_spooky)
+      }
+    }
+    else {
+      //----------------lookup start-------------------
+      val lookupBacktraceToPages = lookupFrom //key unique due to groupBy
+        .keyBy(_.uid).reduceByKey((v1,v2) => v1).values
+        .groupBy(_.uid.backtrace)
+        .mapValues{
+        pages =>
+          val _pages = pages.toSeq
+          val sorted = _pages.sortBy(_.uid.blockIndex)
+          sorted.slice(0, sorted.head.uid.total)
+      }
 
-    val traceToPages = traceToRowNotFromCache.map{
-      tuple => tuple._1 -> tuple._1.resolve(_spooky)
-    }.union(traceToPagesFromLookup)
+      val backtraceToTraceIndex = traceDistinct.flatMap{ //key unique: traceDistinct.dryrun still yield distinct trace
+        trace =>
+          val dryruns = trace.dryrun.zipWithIndex
+          dryruns.map(tuple => tuple._1 -> (trace, tuple._2))
+      }
+
+      val joinedTraceIndexToPages = backtraceToTraceIndex.leftOuterJoin(lookupBacktraceToPages)
+      val traceToPagesFromLookup = joinedTraceIndexToPages.map{
+        tuple =>
+          val backtrace = tuple._1
+          val traceIndexToPages = tuple._2
+          traceIndexToPages._2.foreach(_.foreach{
+            page =>
+              val pageBacktrace = page.uid.backtrace
+              pageBacktrace.inject(backtrace.asInstanceOf[pageBacktrace.type])
+          })
+          traceIndexToPages._1._1 -> (traceIndexToPages._1._2, traceIndexToPages._2)
+      }.groupByKey().flatMap{
+        tuple =>
+          if (tuple._2.map(_._2).toSeq.contains(None)) None
+          else {
+            val pages = tuple._2.toSeq.sortBy(_._1).flatMap(_._2.get)
+            Some(tuple._1 -> pages)
+          }
+      }
+      val traceNotFromCache = traceDistinct
+        .map(_ -> null)
+        .subtractByKey(traceToPagesFromLookup)
+        .map(_._1)
+        .repartition(numPartitions) //slow but well-balanced
+      //-------------------lookup finished-----------------
+
+      traceNotFromCache.map{
+        trace => trace -> trace.resolve(_spooky)
+      }.union(traceToPagesFromLookup)
+    }
+
+    val traceToRow = traceRDD.zip(this) //I'll assume this is safe
+
     val joinedRowToPages = traceToRow.leftOuterJoin(traceToPages, numPartitions = numPartitions)
     val RowToPages = joinedRowToPages.map(_._2)
     val result = this.copy(self = RowToPages.flatMap(tuple => tuple._1.putPages(tuple._2.get, joinType)))
@@ -497,8 +507,7 @@ case class PageRowRDD(
   def visitJoin(
                  expr: Expr[Any],
                  indexKey: Symbol = null, //left & idempotent parameters are missing as they are always set to true
-                 limit: Int = spooky.joinLimit
-                 )(
+                 limit: Int = spooky.joinLimit,
                  joinType: JoinType = Const.defaultJoinType,
                  numPartitions: Int = this.sparkContext.defaultParallelism
                  ): PageRowRDD =
@@ -513,20 +522,19 @@ case class PageRowRDD(
   def wgetJoin(
                 expr: Expr[Any],
                 indexKey: Symbol = null, //left & idempotent parameters are missing as they are always set to true
-                limit: Int = spooky.joinLimit
-                )(
+                limit: Int = spooky.joinLimit,
                 joinType: JoinType = Const.defaultJoinType,
                 numPartitions: Int = this.sparkContext.defaultParallelism
                 ): PageRowRDD =
     this.join(expr, indexKey, limit)(Wget(new GetExpr(Const.defaultJoinKey)), joinType, numPartitions)()
 
   def distinctSignature(
-                         exclude: Iterable[Symbol],
+                         ignore: Iterable[Symbol],
                          numPartitions: Int = this.sparkContext.defaultParallelism
                          ): PageRowRDD = {
     import org.apache.spark.SparkContext._
 
-    val ignoreKeyNames = exclude.map(_.name)
+    val ignoreKeyNames = ignore.map(_.name)
     val withSignatures = this.map{
       row => row.signature(ignoreKeyNames) -> row
     }
@@ -548,14 +556,14 @@ case class PageRowRDD(
 
     import org.apache.spark.SparkContext._
 
-    val excludeKeys = ignore.map(_.name)
+    val ignoreKeyNames = ignore.map(_.name)
     val otherSignatures = others.map {
-      row => row.signature(excludeKeys)
+      row => row.signature(ignoreKeyNames)
     }.distinct().map{
       signature => signature -> null
     }
     val withSignatures = this.map{
-      row => row.signature(excludeKeys) -> row
+      row => row.signature(ignoreKeyNames) -> row
     }
     val excluded = withSignatures.subtractByKey(otherSignatures, numPartitions).values
 
@@ -567,14 +575,14 @@ case class PageRowRDD(
   //recursive join and union! applicable to many situations like (wide) pagination and deep crawling
   def explore(
                expr: Expr[Any],
+               depthKey: Symbol = null,
                indexKey: Symbol = null, //left & idempotent parameters are missing as they are always set to true
                maxDepth: Int = spooky.maxExploreDepth
                )(
                traces: Set[Trace],
                numPartitions: Int = this.sparkContext.defaultParallelism,
                flattenPagesPattern: Symbol = '*,
-               flattenPagesIndexKey: Symbol = null,
-               depthKey: Symbol = null
+               flattenPagesIndexKey: Symbol = null
                )(
                exprs: Expr[Any]*
                ): PageRowRDD = {
@@ -592,7 +600,12 @@ case class PageRowRDD(
         .flattenTemp(expr defaultAs Symbol(Const.defaultJoinKey), indexKey, Int.MaxValue, left = true)
         .fetch(traces, Inner, numPartitions, flattenPagesPattern, flattenPagesIndexKey, lookupFrom = total.flatMap(_.pageLikes)) //TODO: total is not persisted here, may be inefficient
 
-      newRows = joined.subtractSignature(total, Seq(depthKey, indexKey, flattenPagesIndexKey).filter(_ != null)).persist()
+      val allIgnoredKeys = Seq(depthKey, indexKey, flattenPagesIndexKey).filter(_ != null)
+
+      newRows = joined
+        .distinctSignature(allIgnoredKeys)
+        .subtractSignature(total, allIgnoredKeys)
+        .persist()
 
       val newRowsCount = newRows.count()
 
@@ -611,28 +624,26 @@ case class PageRowRDD(
 
   def visitExplore(
                     expr: Expr[Any],
+                    depthKey: Symbol = null,
                     indexKey: Symbol = null, //left & idempotent parameters are missing as they are always set to true
-                    maxDepth: Int = spooky.maxExploreDepth
-                    )(
-                    numPartitions: Int = this.sparkContext.defaultParallelism,
-                    depthKey: Symbol = null
+                    maxDepth: Int = spooky.maxExploreDepth,
+                    numPartitions: Int = this.sparkContext.defaultParallelism
                     ): PageRowRDD =
-    explore(expr, indexKey, maxDepth)(
+    explore(expr, depthKey, indexKey, maxDepth)(
       Visit(new GetExpr(Const.defaultJoinKey)),
-      numPartitions, depthKey = depthKey
+      numPartitions
     )()
 
   def wgetExplore(
                    expr: Expr[Any],
+                   depthKey: Symbol = null,
                    indexKey: Symbol = null, //left & idempotent parameters are missing as they are always set to true
-                   maxDepth: Int = spooky.maxExploreDepth
-                   )(
-                   numPartitions: Int = this.sparkContext.defaultParallelism,
-                   depthKey: Symbol = null
+                   maxDepth: Int = spooky.maxExploreDepth,
+                   numPartitions: Int = this.sparkContext.defaultParallelism
                    ): PageRowRDD =
-    explore(expr, indexKey, maxDepth)(
+    explore(expr, depthKey, indexKey, maxDepth)(
       Wget(new GetExpr(Const.defaultJoinKey)),
-      numPartitions, depthKey = depthKey
+      numPartitions
     )()
 
   /**

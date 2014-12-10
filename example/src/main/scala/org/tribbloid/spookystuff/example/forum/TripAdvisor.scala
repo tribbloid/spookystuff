@@ -31,10 +31,9 @@ object TripAdvisor extends ExampleCore {
         Visit('_)
           +> Try(Click("span.partnerRvw span.taLnk") :: Nil)
       )
-      .explore($"a.sprite-pageNext")(
+      .explore($"a.sprite-pageNext", depthKey = 'page)(
         Visit('A.href)
-          +> Try(Click("span.partnerRvw span.taLnk")::Nil),
-        depthKey = 'page
+          +> Try(Click("span.partnerRvw span.taLnk")::Nil)
       )()
       .flatSelect($"div.reviewSelector", indexKey = 'row)(
         A"p".last.text > 'comment,

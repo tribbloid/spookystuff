@@ -17,7 +17,7 @@ object ResellerRatings extends ExampleCore {
       .fetch(
         Wget( "http://www.resellerratings.com/store/#{_}")
       )
-      .wgetExplore($"div#survey-header ul.pagination a:contains(next)")(depthKey = 'page)
+      .wgetExplore($"div#survey-header ul.pagination a:contains(next)", depthKey = 'page)
       .flatSelect($"div.review")(
         A("div.rating strong").text > 'rating,
         A("div.date span").text > 'date,

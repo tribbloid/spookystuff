@@ -26,7 +26,7 @@ object GoogleImage extends ExampleCore {
           +> Submit("input[name=\"btnG\"]")
           +> WaitFor("div#search")
       )
-      .wgetJoin($"div#search img".src, limit = 1)()
+      .wgetJoin($"div#search img".src, limit = 1)
       .saveContent(
         pageRow =>
           "file://"+System.getProperty("user.home")+"/spooky-integration/"+appName+"/images/"+pageRow.get("name").get)

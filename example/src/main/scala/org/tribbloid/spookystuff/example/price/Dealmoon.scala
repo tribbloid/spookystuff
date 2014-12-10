@@ -14,7 +14,7 @@ object Dealmoon extends ExampleCore {
       .fetch(
         Wget("http://www.dealmoon.com/Online-Stores/Amazon-com?expired=n")
       )
-      .wgetExplore($"div.pagelink a")(depthKey = 'page)
+      .wgetExplore($"div.pagelink a", depthKey = 'page)
       .flatten(
         $"div.mlist div.mtxt h2 span:not([style])".text > 'name
       )
