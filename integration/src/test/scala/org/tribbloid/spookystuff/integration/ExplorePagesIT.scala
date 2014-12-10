@@ -7,12 +7,12 @@ import org.tribbloid.spookystuff.dsl._
 /**
  * Created by peng on 12/10/14.
  */
-class ExplorePaginationIT extends IntegrationSuite {
+class ExplorePagesIT extends IntegrationSuite {
 
   override def doMain(spooky: SpookyContext): Unit = {
     import spooky._
 
-    val pages = noInput
+    val result = noInput
       .fetch(
         Wget("http://webscraper.io/test-sites/e-commerce/static/computers/tablets")
       )
@@ -20,11 +20,7 @@ class ExplorePaginationIT extends IntegrationSuite {
         Wget('A.href)
       )(
         'A.text as 'page
-      ).persist()
-
-    assert(pages.count() === 5)
-
-    val result = pages
+      )
       .select($.uri > 'uri)
       .asSchemaRDD()
 
@@ -37,7 +33,6 @@ class ExplorePaginationIT extends IntegrationSuite {
     )
 
     val rows = result.collect()
-
     assert(rows.size === 5)
 
     assert(rows(0).mkString("|") === "0|null|null|http://webscraper.io/test-sites/e-commerce/static/computers/tablets")

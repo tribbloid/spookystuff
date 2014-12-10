@@ -270,12 +270,12 @@ case class PageRowRDD(
     )
   }
 
-  //  private def clearTemp: PageRowRDD = {
-  //    this.copy(
-  //      self = this.map(_.filterKeys(!_.isInstanceOf[TempKey])),
-  //      keys = keys -- keys.filter(_.isInstanceOf[TempKey])//circumvent https://issues.scala-lang.org/browse/SI-8985
-  //    )
-  //  }
+  private def clearTemp: PageRowRDD = {
+    this.copy(
+      self = this.map(_.filterKeys(!_.isInstanceOf[TempKey])),
+      keys = keys -- keys.filter(_.isInstanceOf[TempKey])//circumvent https://issues.scala-lang.org/browse/SI-8985
+    )
+  }
 
   def flatten(
                expr: Expr[Any],
@@ -332,7 +332,7 @@ case class PageRowRDD(
     this
       .flattenTemp(expr defaultAs Symbol(Const.defaultJoinKey), indexKey, limit, left)
       .select(exprs: _*)
-    //      .clearTemp
+      .clearTemp
   }
 
   def flattenPages(
@@ -495,7 +495,7 @@ case class PageRowRDD(
       .flattenTemp(expr defaultAs Symbol(Const.defaultJoinKey), indexKey, limit, left = true)
       .fetch(traces, joinType, numPartitions, flattenPagesPattern, flattenPagesIndexKey)
       .select(exprs: _*)
-    //      .clearTemp
+      .clearTemp
   }
 
   /**
@@ -610,7 +610,10 @@ case class PageRowRDD(
       val newRowsCount = newRows.count()
 
       if (newRowsCount == 0){
-        return total.select(exprs: _*).coalesce(numPartitions) //early stop condition if no new pages with the same data is detected
+        return total
+          .select(exprs: _*)
+          .clearTemp
+          .coalesce(numPartitions) //early stop condition if no new pages with the same data is detected
       }
 
       total = total.union(
@@ -619,7 +622,10 @@ case class PageRowRDD(
       )
     }
 
-    total.select(exprs: _*).coalesce(numPartitions)
+    total
+      .select(exprs: _*)
+      .clearTemp
+      .coalesce(numPartitions)
   }
 
   def visitExplore(
