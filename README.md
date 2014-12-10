@@ -387,10 +387,10 @@ Deployment
     - recommended to install to '/usr/lib/phantomjs', otherwise please change *phantomJSRootPath* in *org.tribbloid.spookystuff.Const.scala* to point to your PhantomJS directory and recompile.
     - also provided by Ubuntu official repository (so you can apt-get it) but current binary is severely obsolete (1.9.0), use of this binary is NOT recommended and may cause unpredictable error.
 4. git clone this repository.
-5. MAVEN_OPTS="-Xmx2g -XX:MaxPermSize=512M -XX:ReservedCodeCacheSize=512m" mvn package -DskipTest=true
+5. Run `MAVEN_OPTS="-Xmx2g -XX:MaxPermSize=512M -XX:ReservedCodeCacheSize=512m" mvn package -DskipTests=true` or run  `./mvn-package.sh`
     - increasing jvm heapspace size for Apache Maven is mandatory as 2 modules (example and shell) will generate uber jars.
 6. That's it! Now you have 3 options to use it:
-    - (easiest) launch spooky-shell and improvise your query: bin/spooky-shell.sh
+    - (easiest) launch spooky-shell and improvise your query: `./bin/spooky-shell.sh`
     - give any example a test run: bin/submit-example.sh *name of the example*
     - write your own application by importing spooky-core into your dependencies.
 
