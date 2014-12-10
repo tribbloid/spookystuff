@@ -19,31 +19,4 @@
         </dependency>
     </dependencies>
 
-    <!--<profiles>-->
-        <!--<profile>-->
-            <!--<id>skip-integration-tests</id>-->
-            <!--<build>-->
-                <!--<plugins>-->
-                    <!--<plugin>-->
-                        <!--<groupId>org.scalatest</groupId>-->
-                        <!--<artifactId>scalatest-maven-plugin</artifactId>-->
-                        <!--<configuration>-->
-                            <!--<tagsToExclude>Integration</tagsToExclude>-->
-                        <!--</configuration>-->
-                        <!--&lt;!&ndash;<artifactId>maven-failsafe-plugin</artifactId>&ndash;&gt;-->
-                        <!--&lt;!&ndash;<version>2.12</version>&ndash;&gt;-->
-                        <!--&lt;!&ndash;<executions>&ndash;&gt;-->
-                            <!--&lt;!&ndash;<execution>&ndash;&gt;-->
-                                <!--&lt;!&ndash;<goals>&ndash;&gt;-->
-                                    <!--&lt;!&ndash;<goal>integration-test</goal>&ndash;&gt;-->
-                                    <!--&lt;!&ndash;<goal>verify</goal>&ndash;&gt;-->
-                                <!--&lt;!&ndash;</goals>&ndash;&gt;-->
-                            <!--&lt;!&ndash;</execution>&ndash;&gt;-->
-                        <!--&lt;!&ndash;</executions>&ndash;&gt;-->
-                    <!--</plugin>-->
-                <!--</plugins>-->
-            <!--</build>-->
-        <!--</profile>-->
-    <!--</profiles>-->
-
 </project>

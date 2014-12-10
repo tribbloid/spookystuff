@@ -41,8 +41,7 @@ final case class Trace(
       }
     }
 
-    if (result.isEmpty) Seq(Trace(Seq()))
-    else result
+    result
   }
 
   //invoke before interpolation!

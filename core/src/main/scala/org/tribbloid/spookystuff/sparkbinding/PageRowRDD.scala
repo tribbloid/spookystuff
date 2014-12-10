@@ -60,7 +60,8 @@ case class PageRowRDD(
     case other: PageRowRDD =>
       this.copy(
         super.union(other.self),
-        this.keys ++ other.keys
+        this.keys ++ other.keys.toSeq.reverse,
+        this.indexKeys ++ other.indexKeys.toSeq.reverse
       )
     case _ => super.union(other)
   }
@@ -78,29 +79,23 @@ case class PageRowRDD(
     case other: PageRowRDD =>
       this.copy(
         super.intersection(other.self),
-        this.keys -- other.keys
+        this.keys.intersect(other.keys),//TODO: need validation that it won't change sequence
+        this.indexKeys.intersect(other.indexKeys)
       )
     case _ => super.intersection(other)
   }
 
-  override def intersection(other: RDD[PageRow], numPartitions: Int) = other match {
+  override def intersection(other: RDD[PageRow], numPartitions: Int): PageRowRDD = other match {
 
     case other: PageRowRDD =>
       this.copy(
         super.intersection(other.self),
-        this.keys -- other.keys
+        this.keys.intersect(other.keys),
+        this.indexKeys.intersect(other.indexKeys)
       )
     case _ => super.intersection(other, numPartitions)
   }
   //-------------------all before this lines are self typed wrappers--------------------
-
-  //  override def persist(newLevel: StorageLevel): this.type = this.copy(self = self.persist(newLevel)).asInstanceOf[this.type]
-  //
-  //  override def persist(): this.type = persist(StorageLevel.MEMORY_ONLY)
-  //
-  //  override def cache(): this.type = persist()
-
-  //unfortunately it won't persist dependency, has to be overriden
 
   def toPageRowRDD: PageRowRDD = this
 
@@ -394,7 +389,7 @@ case class PageRowRDD(
              numPartitions: Int = this.sparkContext.defaultParallelism,
              flattenPagesPattern: Symbol = '*, //by default, always flatten all pages
              flattenPagesIndexKey: Symbol = null,
-             lookupFrom: RDD[PageLike] = null  //& always use self as cache
+             lookupFrom: RDD[PageLike] = this.flatMap(_.pageLikes)  //& always use self as cache
              ): PageRowRDD = {
 
     import org.apache.spark.SparkContext._
@@ -407,10 +402,8 @@ case class PageRowRDD(
     val traceToRow = traceRDD.zip(this) //I'll assume this is safe
 
     //----------------lookup start-------------------
-    var lookupPages = this.flatMap(_.pageLikes)
-    if (lookupFrom != null) lookupPages = lookupPages.union(lookupFrom)
 
-    val lookupBacktraceToPages = lookupPages //key unique due to groupBy
+    val lookupBacktraceToPages = lookupFrom //key unique due to groupBy
       .keyBy(_.uid).reduceByKey((v1,v2) => v1).values
       .groupBy(_.uid.backtrace)
       .mapValues{
@@ -429,22 +422,22 @@ case class PageRowRDD(
     }
 
     val joinedTraceIndexToPages = backtraceToTraceIndex.leftOuterJoin(lookupBacktraceToPages)
-    val traceToPagesSemi = joinedTraceIndexToPages.map{
+    val traceToPagesFromLookup = joinedTraceIndexToPages.map{
       tuple =>
         val backtrace = tuple._1
         val traceIndexToPages = tuple._2
         traceIndexToPages._2.foreach(_.foreach{
           page =>
-          val pageBacktrace = page.uid.backtrace
-          pageBacktrace.inject(backtrace.asInstanceOf[pageBacktrace.type])
+            val pageBacktrace = page.uid.backtrace
+            pageBacktrace.inject(backtrace.asInstanceOf[pageBacktrace.type])
         })
         traceIndexToPages._1._1 -> (traceIndexToPages._1._2, traceIndexToPages._2)
-    }.groupByKey(numPartitions).map{
+    }.groupByKey().flatMap{
       tuple =>
-        if (tuple._2.map(_._2).toSeq.contains(None)) tuple._1 -> null
+        if (tuple._2.map(_._2).toSeq.contains(None)) None
         else {
           val pages = tuple._2.toSeq.sortBy(_._1).flatMap(_._2.get)
-          tuple._1 -> pages
+          Some(tuple._1 -> pages)
         }
     }
     //-------------------lookup finished-----------------
@@ -452,11 +445,11 @@ case class PageRowRDD(
     val spookyBroad = this.context.broadcast(this.spooky)
     implicit def _spooky: SpookyContext = spookyBroad.value
 
-    val traceToPages = traceToPagesSemi.map{
-      tuple =>
-        if (tuple._2 == null) tuple._1 -> tuple._1.resolve(_spooky)
-        else tuple
-    }
+    val traceToRowNotFromCache = traceToRow.subtractByKey(traceToPagesFromLookup).repartition(numPartitions) //slow but more balanced
+
+    val traceToPages = traceToRowNotFromCache.map{
+      tuple => tuple._1 -> tuple._1.resolve(_spooky)
+    }.union(traceToPagesFromLookup)
     val joinedRowToPages = traceToRow.leftOuterJoin(traceToPages, numPartitions = numPartitions)
     val RowToPages = joinedRowToPages.map(_._2)
     val result = this.copy(self = RowToPages.flatMap(tuple => tuple._1.putPages(tuple._2.get, joinType)))
@@ -533,9 +526,9 @@ case class PageRowRDD(
                          ): PageRowRDD = {
     import org.apache.spark.SparkContext._
 
-    val excludeKeys = exclude.map(Key(_))
+    val ignoreKeyNames = exclude.map(_.name)
     val withSignatures = this.map{
-      row => row.signature(excludeKeys) -> row
+      row => row.signature(ignoreKeyNames) -> row
     }
     val distinct = withSignatures.reduceByKey((row1, row2) => row1).values
 
@@ -549,16 +542,18 @@ case class PageRowRDD(
 * 2. the row has identical cells*/
   def subtractSignature(
                          others: RDD[PageRow],
-                         exclude: Iterable[Symbol],
+                         ignore: Iterable[Symbol],
                          numPartitions: Int = this.sparkContext.defaultParallelism
                          ): PageRowRDD = {
 
     import org.apache.spark.SparkContext._
 
-    val excludeKeys = exclude.map(Key(_))
+    val excludeKeys = ignore.map(_.name)
     val otherSignatures = others.map {
-      row => row.signature(excludeKeys) -> null
-    }.distinct()
+      row => row.signature(excludeKeys)
+    }.distinct().map{
+      signature => signature -> null
+    }
     val withSignatures = this.map{
       row => row.signature(excludeKeys) -> row
     }
@@ -569,7 +564,6 @@ case class PageRowRDD(
     )
   }
 
-  //TODO: handling of exprs is defective!
   //recursive join and union! applicable to many situations like (wide) pagination and deep crawling
   def explore(
                expr: Expr[Any],
@@ -586,22 +580,24 @@ case class PageRowRDD(
                ): PageRowRDD = {
 
     var newRows = this
-    var total = if (depthKey != null) this.select(Literal(0) > depthKey)
+
+    var total = if (depthKey != null)
+      this.select(Literal(0) > depthKey)
+        .copy(indexKeys = this.indexKeys + Key(depthKey))
     else this
 
     for (depth <- 1 to maxDepth) {
       //always inner join
       val joined = newRows
         .flattenTemp(expr defaultAs Symbol(Const.defaultJoinKey), indexKey, Int.MaxValue, left = true)
-        .fetch(traces, Inner, numPartitions, flattenPagesPattern, flattenPagesIndexKey)
-      //        .clearTemp
+        .fetch(traces, Inner, numPartitions, flattenPagesPattern, flattenPagesIndexKey, lookupFrom = total.flatMap(_.pageLikes)) //TODO: total is not persisted here, may be inefficient
 
       newRows = joined.subtractSignature(total, Seq(depthKey, indexKey, flattenPagesIndexKey).filter(_ != null)).persist()
 
       val newRowsCount = newRows.count()
 
       if (newRowsCount == 0){
-        return this.copy(self = total.select(exprs: _*).coalesce(numPartitions)) //early stop condition if no new pages with the same data is detected
+        return total.select(exprs: _*).coalesce(numPartitions) //early stop condition if no new pages with the same data is detected
       }
 
       total = total.union(
@@ -610,7 +606,7 @@ case class PageRowRDD(
       )
     }
 
-    this.copy(self = total.select(exprs: _*).coalesce(numPartitions))
+    total.select(exprs: _*).coalesce(numPartitions)
   }
 
   def visitExplore(

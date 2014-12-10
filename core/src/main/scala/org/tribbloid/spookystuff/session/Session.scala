@@ -17,10 +17,6 @@ class Session(val spooky: SpookyContext){
 
   val startTime: Long = new Date().getTime
 
-  val autoSave = spooky.autoSave
-  val autoCache = spooky.autoCache
-  val autoRestore = spooky.autoRestore
-
   @volatile
   private var _driver: CleanWebDriver = null
 
@@ -85,7 +81,7 @@ class Session(val spooky: SpookyContext){
     this.backtrace ++= action.trunk//always put into backtrace.
     if (action.mayExport) {
       //always try to read from cache first
-      val restored = if (autoRestore) {
+      val restored = if (spooky.autoRestore) {
 
         PageUtils.autoRestoreLatest(trace, spooky)
       }
@@ -108,11 +104,11 @@ class Session(val spooky: SpookyContext){
         this.realBacktrace ++= action.trunk
         var batch = action(this)
 
-        if (autoSave) batch = batch.map{
+        if (spooky.autoSave) batch = batch.map{
           case page: Page => page.autoSave(spooky)
           case noPage: NoPage => noPage
         }
-        if (autoCache) PageUtils.autoCache(batch, spooky)
+        if (spooky.autoCache) PageUtils.autoCache(batch, spooky)
 
         pageLikes ++= batch
       }
