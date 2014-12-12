@@ -1,23 +1,588 @@
----
-layout: default
----
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset='utf-8'>
+    <meta http-equiv="X-UA-Compatible" content="chrome=1">
+    <link href='https://fonts.googleapis.com/css?family=Chivo:900' rel='stylesheet' type='text/css'>
+    <link rel="stylesheet" type="text/css" href="stylesheets/stylesheet.css" media="screen">
+    <link rel="stylesheet" type="text/css" href="stylesheets/pygment_trac.css" media="screen">
+    <link rel="stylesheet" type="text/css" href="stylesheets/print.css" media="print">
+    <!--[if lt IE 9]>
+    <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <title>Spookystuff by l2yao</title>
+  </head>
 
-<div class="home">
+  <body>
+    <div id="container">
+      <div class="inner">
 
-  <h1 class="page-heading">Posts</h1>
+        <header>
+          <h1>Spookystuff</h1>
+          <h2>Scalable query engine for web scrapping/data mashup/acceptance QA, powered by Apache Spark</h2>
+        </header>
 
-  <ul class="post-list">
-    {% for post in site.posts %}
-      <li>
-        <span class="post-meta">{{ post.date | date: "%b %-d, %Y" }}</span>
+        <section id="downloads" class="clearfix">
+          <a href="https://github.com/l2yao/spookystuff/zipball/master" id="download-zip" class="button"><span>Download .zip</span></a>
+          <a href="https://github.com/l2yao/spookystuff/tarball/master" id="download-tar-gz" class="button"><span>Download .tar.gz</span></a>
+          <a href="https://github.com/l2yao/spookystuff" id="view-on-github" class="button"><span>View on GitHub</span></a>
+        </section>
 
-        <h2>
-          <a class="post-link" href="{{ post.url | prepend: site.baseurl }}">{{ post.title }}</a>
-        </h2>
-      </li>
-    {% endfor %}
-  </ul>
+        <hr>
 
-  <p class="rss-subscribe">subscribe <a href="{{ "/feed.xml" | prepend: site.baseurl }}">via RSS</a></p>
+        <section id="main_content">
+          <h1>
+<a id="spookystuff" class="anchor" href="#spookystuff" aria-hidden="true"><span class="octicon octicon-link"></span></a>SpookyStuff</h1>
 
-</div>
+<p>... is a scalable query engine for web scraping/data mashup/acceptance QA. The goal is to allow the Web being queried and ETL'ed like a relational database.</p>
+
+<p><strong>SpookyStuff</strong> is the fastest big data collection engine in history, with a speed record of querying 330404 dynamic pages per hour on 300 cores.</p>
+
+<h2>
+<a id="powered-by" class="anchor" href="#powered-by" aria-hidden="true"><span class="octicon octicon-link"></span></a>Powered by</h2>
+
+<ul>
+<li>Apache Spark</li>
+<li>Selenium
+
+<ul>
+<li>GhostDriver/PhantomJS</li>
+</ul>
+</li>
+<li>JSoup</li>
+<li>Apache Tika</li>
+<li>(build by) Apache Maven
+
+<ul>
+<li>Scala/ScalaTest plugins</li>
+</ul>
+</li>
+<li>(deployed by) Ansible</li>
+<li>Current implementation is influenced by Spark SQL and Mahout Sparkbinding.</li>
+</ul>
+
+<p><img src="http://spark.apache.org/images/spark-logo.png" alt="Apache Spark"> <img src="http://docs.seleniumhq.org/images/big-logo.png" alt="Selenium"> <img src="http://phantomjs.org/img/phantomjs-logo.png" alt="PhantomJS"></p>
+
+<p><img src="http://tika.apache.org/tika.png" alt="Apache Tika"> <img src="http://maven.apache.org/images/logos/maven-feather.png" alt="Build by Apache Maven"> <img src="https://support.ansible.com/system/logos/2070/1448/ansible_logo.png" alt="Ansible"></p>
+
+<h2>
+<a id="demo" class="anchor" href="#demo" aria-hidden="true"><span class="octicon octicon-link"></span></a>Demo</h2>
+
+<p><a href="http://ec2-54-165-231-62.compute-1.amazonaws.com:8888/tree">Click me</a> for a quick impression.</p>
+
+<p>This environment is deployed on a Spark cluster with 8+ cores. It may not be accessible during system upgrade or maintenance. Please contact a committer/project manager for a customized demo.</p>
+
+<h2>
+<a id="how-it-works" class="anchor" href="#how-it-works" aria-hidden="true"><span class="octicon octicon-link"></span></a>How it works</h2>
+
+<ul>
+<li><p>In a nutshell, <strong>SpookyStuff</strong> scales up data collection by distributing web clients to many machines. Each of them receives a portion of heterogeneous tasks and run them independently. After that, their results can either be transformed and reused to dig deeper into the web by visiting more dynamic pages, or be exported into one of many data storage: including local HDD, HDFS, Amazon S3, or simply Memory block in JVM.</p></li>
+<li><p><strong>SpookyStuff</strong> is extremely lightweight by offloading most of the task scheduling &amp; data transformation work to Apache Spark. It doesn't depend on any file system (even HDFS is optional), backend database, or message queue, or any SOA. Your query speed is only bounded by your bandwidth and CPU power.</p></li>
+<li><p><strong>SpookyStuff</strong> use phantomjs/GhostDriver to access dynamic pages and mimic human interactions with them, but it doesn't render them - nor does it download any image embedded in them by default (unless you take a screenshot), which makes it still considerably faster even on a single machine.</p></li>
+<li><p><strong>SpookyStuff</strong>'s query language is an extension of Spark API, there is no problem in mixing it with other Spark-based environments, notably SparkSQL and MLlib.</p></li>
+</ul>
+
+<h2>
+<a id="examples" class="anchor" href="#examples" aria-hidden="true"><span class="octicon octicon-link"></span></a>Examples</h2>
+
+<p>For a complete list of examples please refer to <a href="https://github.com/tribbloid/spookystuff/tree/master/example/src/main/scala/org/tribbloid/spookystuff/example">source code page</a></p>
+
+<h4>
+<a id="1-search-on-linkedin" class="anchor" href="#1-search-on-linkedin" aria-hidden="true"><span class="octicon octicon-link"></span></a>1. Search on LinkedIn</h4>
+
+<ul>
+<li>Goal: Find high-ranking professionals in you area on [<a href="http://www.linkedin.com/">http://www.linkedin.com/</a>], whose first name is either 'Sanjay', 'Arun' or 'Hardik', and last name is either 'Gupta' or 'Krishnamurthy', print out their full names, titles and lists of skills</li>
+<li>Query:</li>
+</ul>
+
+<pre><code>    (sc.parallelize(Seq("Sanjay", "Arun", "Hardik"))
+      +&gt; Visit("https://www.linkedin.com/")
+      +&gt; TextInput("input#first", "#{_}")
+      +*&gt; (TextInput("input#last", "Gupta") :: TextInput("input#last", "Krishnamurthy") :: Nil)
+      +&gt; Submit("input[name=\"search\"]")
+      !=!())
+      .visitJoin("ol#result-set h2 a")()
+      .extract (
+      "name" -&gt; (_.text1("span.full-name")),
+      "title" -&gt; (_.text1("p.title")),
+      "skills" -&gt; (_.text("div#profile-skills li"))
+    ).asSchemaRDD()
+</code></pre>
+
+<ul>
+<li>Result (truncated, finished in 1 minutes on a laptop with ~400k/s wifi):</li>
+</ul>
+
+<pre><code>Arun    Arun Gupta  Consultant , Global Canesugar services Pvt.Ltd. ArrayBuffer(Filtration, Project Planning, Energy, Renewable Energy, Engineering, Power Generation, Procurement, Biofuels, Gas, Instrumentation, DCS, Design &amp; Developments, Boilers, Commissioning, Construction, EPC, Energy Management, Factory, ISO, Maintenance Management, Manufacturing, Materials, Negotiation, Operations Management, PLC, Petrochemical, Power Plants, Process Control, Process Engineering, Product Development, MS Project, Project Engineering, Project Management, Pumps, R&amp;D, Refinery, SAP, Steam Turbines, Supply Chain Management, Turbines, Water Treatment)
+Sanjay  Sanjay Gupta    Researcher at REC ltd   ArrayBuffer(Internet Recruiting, Candidate Generation, Passive Candidate Generation, Research, Databases, Data Mining, Data Entry)
+Arun    Arun Krishnamurthy  Global Incident Manager at IFF  ArrayBuffer(Service Delivery Management, Management, Service Delivery, Transition Management, IT Service Management, Sla, ITIL, Vendor Management, Team Management, Business Analysis, Incident Management, Technical Support, Business Process, Resource Management)
+... -------------------returned 116 rows------------------
+</code></pre>
+
+<h4>
+<a id="2-query-the-machine-parts-database-of-appliancepartspros" class="anchor" href="#2-query-the-machine-parts-database-of-appliancepartspros" aria-hidden="true"><span class="octicon octicon-link"></span></a>2. Query the Machine Parts Database of AppliancePartsPros</h4>
+
+<ul>
+<li>Goal: Given a washing machine model 'A210S', search on [<a href="http://www.appliancepartspros.com/">http://www.appliancepartspros.com/</a>] for the model's full name,  a list of schematic descriptions (with each one describing a subsystem), for each schematic, search for data of all enumerated machine parts: description, manufacturer, OEM number, and a list of each one's substitutes. Join them all together and print them out.</li>
+<li>Query:</li>
+</ul>
+
+<pre><code>    (sc.parallelize(Seq("A210S")) +&gt;
+      Visit("http://www.appliancepartspros.com/") +&gt;
+      TextInput("input.ac-input","#{_}") +&gt;
+      Click("input[value=\"Search\"]") +&gt;
+      Delay(10.seconds) !=!() //TODO: change to DelayFor to save time
+      )
+      .extract(
+        "model" -&gt; ( _.text1("div.dgrm-lst div.header h2") )
+      )
+      .wgetJoin("div.inner li a:has(img)")()
+      .extract("schematic" -&gt; {_.text1("div#ctl00_cphMain_up1 h1")})
+      .wgetJoin("tbody.m-bsc td.pdct-descr h2 a")()
+      .extract(
+        "name" -&gt; (_.text1("div.m-pdct h1")),
+        "brand" -&gt;  (_.text1("div.m-pdct td[itemprop=brand]")),
+        "manufacturer" -&gt; (_.text1("div.m-bsc div.mod ul li:contains(Manufacturer) strong")),
+        "replace" -&gt; (_.text1("div.m-pdct div.m-chm p"))
+      )
+      .asSchemaRDD()
+</code></pre>
+
+<ul>
+<li>Result (truncated, process finished in 2 minutes on one r3.large instance):</li>
+</ul>
+
+<pre><code>A210S   A210S Washer-Top Loading   Parts for Maytag A210S: Top Cover\console\lid Switch Parts  Moisture Barrier for Switch Whirlpool   214987  Part Number 214987 (AP4025452) replaces 2-14987, 438912, AH2018922, EA2018922, PS2018922.
+A210S   A210S Washer-Top Loading   Parts for Maytag A210S: Transmissions Parts Gear, Pwr Kit   Whirlpool   204967  Part Number 204967 (AP4023771) replaces 2-13068, 2-13069, 2-4967, 213068, 213069, 214278, 435155, AH2017141, EA2017141, PS2017141.
+A210S   A210S Washer-Top Loading   Parts for Maytag A210S: Transmissions Parts Gear, Pwr Kit   Whirlpool   204967  Part Number 204967 (AP4023771) replaces 2-13068, 2-13069, 2-4967, 213068, 213069, 214278, 435155, AH2017141, EA2017141, PS2017141.
+... -------------------returned 293 rows------------------
+</code></pre>
+
+<h4>
+<a id="3-download-university-logos" class="anchor" href="#3-download-university-logos" aria-hidden="true"><span class="octicon octicon-link"></span></a>3. Download University Logos</h4>
+
+<ul>
+<li>Goal: Search for Logos of all US Universities on Google Image (a list of US Universities can be found at [<a href="http://www.utexas.edu/world/univ/alpha/">http://www.utexas.edu/world/univ/alpha/</a>]), download them to one of your s3 bucket.
+
+<ul>
+<li>You need to set up your S3 credential through environment variables</li>
+<li>The following query will visit 4000+ pages and web resources so its better to test it on a cluster</li>
+</ul>
+</li>
+<li>Query:</li>
+</ul>
+
+<pre><code>    ((noInput
+      +&gt; Visit("http://www.utexas.edu/world/univ/alpha/")
+      !=!())
+      .sliceJoin("div.box2 a")()
+      .extract(
+        "name" -&gt; (_.text1("*"))
+      )
+      .repartition(400)
+      +&gt; Visit("http://images.google.com/")
+      +&gt; DelayFor("form[action=\"/search\"]")
+      +&gt; TextInput("input[name=\"q\"]","Logo #{name}")
+      +&gt; Submit("input[name=\"btnG\"]")
+      +&gt; DelayFor("div#search")
+      !=!())
+      .wgetJoin("div#search img","src")(limit = 1)
+      .saveContent(pageRow =&gt;
+      "file://"+System.getProperty("user.home")+"/spooky/"+appName+"/images/"+pageRow("name"))
+      .extract(
+        "path" -&gt; (_.saved)
+      )
+      .asSchemaRDD()
+</code></pre>
+
+<ul>
+<li>Result (process finished in 13 mintues on 4 r3.large instances, image files can be downloaded from S3 with a file transfer client supporting S3 (e.g. S3 web UI, crossFTP): </li>
+</ul>
+
+<p><img src="http://i.imgur.com/ou6pCjO.png" alt="Imgur"></p>
+
+<h4>
+<a id="4a-etl-the-product-database-of-httpwwwiherbcom" class="anchor" href="#4a-etl-the-product-database-of-httpwwwiherbcom" aria-hidden="true"><span class="octicon octicon-link"></span></a>4.a. ETL the product database of [<a href="http://www.iherb.com/">http://www.iherb.com/</a>].</h4>
+
+<ul>
+<li>Goal: Generate a complete list of all products and their prices offered on [<a href="http://www.iherb.com/">http://www.iherb.com/</a>] and load into designated S3 bucket as a tsv file, also save every product page being visited as a reference.
+
+<ul>
+<li>The following query will download 4000+ pages and extract 43000+ items from them so its better to test it on a cluster.</li>
+</ul>
+</li>
+<li>Query:</li>
+</ul>
+
+<pre><code>    (noInput
+      +&gt; Wget("http://ca.iherb.com/")
+      !=!())
+      .wgetJoin("div.category a")()
+      .paginate("p.pagination a:contains(Next)")(indexKey = "page")
+      .sliceJoin("div.prodSlotWide")(indexKey = "row")
+      .extract(
+        "description" -&gt; (_.text1("p.description")),
+        "price" -&gt; (_.text1("div.price")),
+        "saved" -&gt; (_.saved)
+      )
+      .asSchemaRDD()
+</code></pre>
+
+<ul>
+<li>Result (process finished in 6.1 mintues on 4 r3.large instances)</li>
+</ul>
+
+<pre><code>http.ca.iherb.com.Food-Grocery-Items    St. Dalfour, Wild Blueberry, Deluxe Wild Blueberry Spread, 10 oz (284 g)    $4.49
+http.ca.iherb.com.Food-Grocery-Items    Eden Foods, Organic, Wild Berry Mix, Nuts, Seeds &amp; Berries, 4 oz (113 g)    $3.76
+http.ca.iherb.com.Food-Grocery-Items    St. Dalfour, Organic, Golden Mango Green Tea, 25 Tea Bags, 1.75 oz (50 g))  $3.32
+... -------------------returned 42821 rows------------------
+</code></pre>
+
+<h4>
+<a id="4b-cross-website-price-comparison" class="anchor" href="#4b-cross-website-price-comparison" aria-hidden="true"><span class="octicon octicon-link"></span></a>4.b. Cross-website price comparison.</h4>
+
+<ul>
+<li>Goal: Use the product-price list generated in 4.a. as a reference and query on [<a href="http://www.amazon.com">http://www.amazon.com</a>] for possible alternative offers, generate a table containing data of the first 10 matches for each product, the format of the table is defined by:</li>
+</ul>
+
+<pre><code> (From left to right)
+ product name on iherb|product name on amazon|original price on iherb|price on amazon|shipping condition|user's rating|number of users that rated|"Do you mean" heuristic|exact match info|reference page
+</code></pre>
+
+<p>Save the table as a tsv file and keep all visited pages as a reference.
+    - this query will open 43000+ browser sessions so it's recommended to deploy on a cluster with 10+ nodes, alternatively you can truncate the result in 4.a. for a dry-run.</p>
+
+<ul>
+<li>Query:</li>
+</ul>
+
+<pre><code>    (sc.textFile("iherb.tsv")
+      .tsvToMap("url\titem\tiherb-price")
+      +&gt; Visit("http://www.amazon.com/")
+      +&gt; TextInput("input#twotabsearchtextbox", "#{item}")
+      +&gt; Submit("input.nav-submit-input")
+      +&gt; DelayFor("div#resultsCol")
+      !=!())
+      .extract(
+        "DidYouMean" -&gt; {_.text1("div#didYouMean a") },
+        "noResultsTitle" -&gt; {_.text1("h1#noResultsTitle")},
+        "savePath" -&gt; {_.saved}
+      )
+      .sliceJoin("div.prod[id^=result_]:not([id$=empty])")(limit = 10)
+      .extract(
+        "item_name" -&gt; (page =&gt; Option(page.attr1("h3 span.bold", "title")).getOrElse(page.text1("h3 span.bold"))),
+        "price" -&gt; (_.text1("span.bld")),
+        "shipping" -&gt; (_.text1("li.sss2")),
+        "stars" -&gt; (_.attr1("a[alt$=stars]", "alt")),
+        "num_rating" -&gt; (_.text1("span.rvwCnt a"))
+      )
+      .asSchemaRDD()
+</code></pre>
+
+<ul>
+<li>Result (process finished in 2.1 hours on 11 r3.large instances)</li>
+</ul>
+
+<pre><code>MusclePharm Assault Fruit Punch Muscle Pharm Assault Pre-Workout System Fruit Punch, 0.96 Pound $33.11  FREE Shipping on orders over $35    3.8 out of 5 stars  484 muscle pharm assault fruit punch    null    http.www.amazon.com.s.ie=UTF8&amp;page=1&amp;rh=i%3Aaps%2Ck%3AMusclePharm%20Assault%20Fruit%20Punch
+Paradise Herbs, L-Carnosine, 60 Veggie Caps Paradise Herbs L-Carnosine Cellular Rejuvenation, Veggie Caps 60 ea $50.00  null    null    null    null    null    http.www.amazon.com.s.ie=UTF8&amp;page=1&amp;rh=i%3Aaps%2Ck%3AParadise%20Herbs%5Cc%20L-Carnosine%5Cc%2060%20Veggie%20Caps
+Nature's Bounty, Acetyl L-Carnitine HCI, 400 mg, 30 Capsules    Nature's Bounty Acetyl L-Carnitine 400mg, with Alpha Lipoic Acid 200mg, 30 capsules $15.99  FREE Shipping on orders over $35    3.6 out of 5 stars  7   null    null    http.www.amazon.com.s.ie=UTF8&amp;page=1&amp;rh=i%3Aaps%2Ck%3ANature%27s%20Bounty%5Cc%20Acetyl%20L-Carnitine%20HCI%5Cc%20400%20mg%5Cc%2030%20Capsules
+Lansinoh, Breastmilk Storage Bags, 25 Pre-Sterilized Bags   Lansinoh Breastmilk Storage Bags, 25-Count Boxes (Pack of 3)    $13.49  FREE Shipping on orders over $35    4 out of 5 stars    727 null    null    http.www.amazon.com.s.ie=UTF8&amp;page=1&amp;rh=i%3Aaps%2Ck%3ALansinoh%5Cc%20Breastmilk%20Storage%20Bags%5Cc%2025%20Pre-Sterilized%20Bags
+... -------------------returned 35737 rows------------------
+</code></pre>
+
+<h4>
+<a id="5-download-comments-and-ratings-from-httpwwwresellerratingscom" class="anchor" href="#5-download-comments-and-ratings-from-httpwwwresellerratingscom" aria-hidden="true"><span class="octicon octicon-link"></span></a>5 Download comments and ratings from [<a href="http://www.resellerratings.com/">http://www.resellerratings.com/</a>]</h4>
+
+<ul>
+<li><p>Goal: Given a list of vendors, download their ratings and comments with timestamp from customers.</p></li>
+<li><p>Query:</p></li>
+</ul>
+
+<pre><code>    (sc.parallelize(Seq("Hewlett_Packard")) +&gt;
+      Wget( "http://www.resellerratings.com/store/#{_}") !=!())
+      .paginate( "div#survey-header ul.pagination a:contains(next)")(indexKey = "page")
+      .sliceJoin("div.review")()
+      .extract(
+        "rating" -&gt; (_.text1("div.rating strong")),
+        "date" -&gt; (_.text1("div.date span")),
+        "body" -&gt; (_.text1("p.review-body"))
+      )
+      .asSchemaRDD()
+</code></pre>
+
+<ul>
+<li>Result:</li>
+</ul>
+
+<pre><code>1/5 2013-09-08  "Extremely pained by the service and behaviour of HP. My Envy touch screen Ultrabook crashed 3 weeks back, which I bought in January this year. It came with preloaded Windows 8 OS and they refuse to load the OS without charging me for it. The laptop is under warranty. Best was that the reason given for the crash by the service engineer is 'Monsoons'. Never buy an HP machine. "
+1/5 2013-09-04  "I can not believe how bad the service was. I wanted our company to resell HP products. I have been calling HP for weeks. Every time I call I feel like they push me to tears. When I first called the women didn't know English, she had no one else to speak to me. I called another number, an American answered, but he had no understanding of how to make a new contract but suggested he could transfer me. He did and I got a live person, until he put me on hold and the call was disconnected. I called the number on the HP partners website and they said that they are a whole other company that works for HP and don't have any idea of what to do or who to call. This continued on. It was so stressful. I mean I am so sad and stressed. I may be better off finding another company to work with. I have wasted many valuable days of work and so has my assistant. It is time consuming and costly dealing with them."
+1/5 2013-09-03  "I bought a HP CM-1015 multi-function printer/scanner/copier several years ago. It worked fine when connected to a WindowsXP print server. When I upgraded the XP to Windows 7 (about three years ago), I could not find a driver for it, so I waited, waited, and waited more. Today is September 3, 2013, I installed the newest posted driver that I downloaded from the HP’s website, and it still does not work: It only prints black-and-white, not color. I am not even asking to have all the functions of the machine to work, just the printer part, is this too much for HP? I am very disappointed at the HP product and its service. I bought the HP brand because I thought I would get a great product with great service. What I got is the opposite. Now, I am looking at this almost new machine (it has not been used much in the past years) and wondering: Should I get rid of it ($500+ when purchased) and get another brand? It is really a waste of money and time."
+... -------------------returned 189 rows------------------
+</code></pre>
+
+<h4>
+<a id="6-download-comments-and-ratings-from-httpwwwyoutubecom" class="anchor" href="#6-download-comments-and-ratings-from-httpwwwyoutubecom" aria-hidden="true"><span class="octicon octicon-link"></span></a>6 Download comments and ratings from [<a href="http://www.youtube.com/">http://www.youtube.com/</a>]</h4>
+
+<ul>
+<li><p>Goal: Visit Metallica's youtube channel, click 'show more' button repeatedly until all videos are displayed. Collect their respective titles, descriptions, date of publishing, number of watched users, number of positive votes, number of negative votes, number of comments. Finally, click 'show more comments' button repeatedly and collect all top-level comments (not replies), also, save each fully expanded comment iframe for validation.</p></li>
+<li><p>Query:</p></li>
+</ul>
+
+<pre><code>    (((sc.parallelize(Seq("MetallicaTV")) +&gt;
+      Visit("http://www.youtube.com/user/#{_}/videos") +&gt;
+      Loop(
+        Click("button.load-more-button span.load-more-text")
+          :: DelayFor("button.load-more-button span.hid.load-more-loading").in(10.seconds)
+          :: Nil
+      ) !=!())
+      .sliceJoin("li.channels-content-item")()
+      .extract("title" -&gt; (_.text1("h3.yt-lockup-title")))
+      .visit("h3.yt-lockup-title a.yt-uix-tile-link")()
+      .repartition(400) +&gt;
+      ExeScript("window.scrollBy(0,500)") +&gt;
+      Try(DelayFor("iframe[title^=Comment]").in(50.seconds) :: Nil)
+      !&gt;&lt;()).extract(
+        "description" -&gt; (_.text1("div#watch-description-text")),
+        "publish" -&gt; (_.text1("p#watch-uploader-info")),
+        "total_view" -&gt; (_.text1("div#watch7-views-info span.watch-view-count")),
+        "like_count" -&gt; (_.text1("div#watch7-views-info span.likes-count")),
+        "dislike_count" -&gt; (_.text1("div#watch7-views-info span.dislikes-count"))
+      )
+      .visit("iframe[title^=Comment]", attr = "abs:src")() +&gt;
+      Loop(
+        Click("span[title^=Load]") :: DelayFor("span.PA[style^=display]").in(10.seconds) :: Nil
+      ) !=!(joinType = LeftOuter))
+      .extract("num_comments" -&gt; (_.text1("div.DJa")))
+      .sliceJoin("div[id^=update]")()
+      .extract(
+        "comment1" -&gt; (_.text1("h3.Mpa")),
+        "comment2" -&gt; (_.text1("div.Al"))
+      )
+      .asSchemaRDD()
+</code></pre>
+
+<ul>
+<li>Result (finished in 9 minutes on 19 r3.large instances):</li>
+</ul>
+
+<pre><code>MetallicaTV Metallica: Welcome Home (Sanitarium) &amp; Sad But True (MetOnTour - Asunción, Paraguay - 2014)    Fly on the wall footage shot by the MetOnTour reporter on March 24, 2014 in Asunción, Paraguay. Footage includes the band warming up in the Tuning Room as well as both "Welcome Home (Sanitarium)" and "Sad But True" from the show. Download the full audio from the show at LiveMetallica.com: http://talli.ca/Asuncion2014 Follow Metallica: http://www.metallica.com http://www.livemetallica.com http://www.facebook.com/metallica http://www.twitter.com/metallica http://www.instagram.com/metallica http://www.youtube.com/metallicatv    Published on Apr 1, 2014    null    null    null    All comments (453)  Max Galvan    james: what sound do u want? guy: SED BOT TRU!!!!! lol ﻿ Read more Show less
+MetallicaTV Metallica: Welcome Home (Sanitarium) &amp; Sad But True (MetOnTour - Asunción, Paraguay - 2014)    Fly on the wall footage shot by the MetOnTour reporter on March 24, 2014 in Asunción, Paraguay. Footage includes the band warming up in the Tuning Room as well as both "Welcome Home (Sanitarium)" and "Sad But True" from the show. Download the full audio from the show at LiveMetallica.com: http://talli.ca/Asuncion2014 Follow Metallica: http://www.metallica.com http://www.livemetallica.com http://www.facebook.com/metallica http://www.twitter.com/metallica http://www.instagram.com/metallica http://www.youtube.com/metallicatv    Published on Apr 1, 2014    null    null    null    All comments (453)  J     lol@ 14:41 James telling the fan not to bow before him XD﻿ Read more Show less
+MetallicaTV Metallica: Welcome Home (Sanitarium) &amp; Sad But True (MetOnTour - Asunción, Paraguay - 2014)    Fly on the wall footage shot by the MetOnTour reporter on March 24, 2014 in Asunción, Paraguay. Footage includes the band warming up in the Tuning Room as well as both "Welcome Home (Sanitarium)" and "Sad But True" from the show. Download the full audio from the show at LiveMetallica.com: http://talli.ca/Asuncion2014 Follow Metallica: http://www.metallica.com http://www.livemetallica.com http://www.facebook.com/metallica http://www.twitter.com/metallica http://www.instagram.com/metallica http://www.youtube.com/metallicatv    Published on Apr 1, 2014    null    null    null    All comments (453)  Damian Sobik      Lol Kirk at 3:30 hahah WTF ?!﻿ Read more Show less
+... -------------------returned 47236 rows------------------
+</code></pre>
+
+<h4>
+<a id="7-download-forward-citations-from-google-scholar" class="anchor" href="#7-download-forward-citations-from-google-scholar" aria-hidden="true"><span class="octicon octicon-link"></span></a>7 Download forward citations from <a href="http://scholar.google.com">Google Scholar</a>
+</h4>
+
+<ul>
+<li><p>Goal: Given a list of titles of papers, search them on Google Scholar, collect the first result of each and information (namely titles and abstracts) of its forward citations (all publications that cites them) download all of them.</p></li>
+<li><p>Query:</p></li>
+</ul>
+
+<pre><code>    (sc.parallelize(Seq("Large scale distributed deep networks"))
+      +&gt; Visit("http://scholar.google.com/")
+      +&gt; DelayFor("form[role=search]")
+      +&gt; TextInput("input[name=\"q\"]","#{_}")
+      +&gt; Submit("button#gs_hp_tsb")
+      +&gt; DelayFor("div[role=main]")
+      !=!())
+      .extract(
+        "title" -&gt; (_.text1("div.gs_r h3.gs_rt a")),
+        "citation" -&gt; (_.text1("div.gs_r div.gs_ri div.gs_fl a:contains(Cited)"))
+      )
+      .visitJoin("div.gs_r div.gs_ri div.gs_fl a:contains(Cited)")(limit = 1)
+      .paginate("div#gs_n td[align=left] a")()
+      .sliceJoin("div.gs_r")()
+      .extract(
+        "citation_title" -&gt; (_.text1("h3.gs_rt a")),
+        "citation_abstract" -&gt; (_.text1("div.gs_rs"))
+      )
+      .wgetJoin("div.gs_md_wp a")()
+      .saveContent(select = _("citation_title"))
+      .asSchemaRDD()
+</code></pre>
+
+<ul>
+<li>Result (finished in 1.5 minute on my laptop with ~450k download speed):</li>
+</ul>
+
+<pre><code>Large scale distributed deep networks   Large scale distributed deep networks   Cited by 119    Good practice in large-scale learning for image classification  Abstract—We benchmark several SVM objective functions for large-scale image classification. We consider one-versus-rest, multiclass, ranking, and weighted approximate ranking SVMs. A comparison of online and batch methods for optimizing the objectives ...
+Large scale distributed deep networks   Large scale distributed deep networks   Cited by 119    Deep learning with cots hpc systems Abstract Scaling up deep learning algorithms has been shown to lead to increased performance in benchmark tasks and to enable discovery of complex high-level features. Recent efforts to train extremely large networks (with over 1 billion parameters) have ...
+Large scale distributed deep networks   Large scale distributed deep networks   Cited by 119    A reliable effective terascale linear learning system   Abstract: We present a system and a set of techniques for learning linear predictors with convex losses on terascale datasets, with trillions of features,{The number of features here refers to the number of non-zero entries in the data matrix.} billions of training examples ...
+... -------------------returned 119 rows------------------
+</code></pre>
+
+<h2>
+<a id="performance" class="anchor" href="#performance" aria-hidden="true"><span class="octicon octicon-link"></span></a>Performance</h2>
+
+<ul>
+<li>
+<p>In the above University Logo example test run, each single r3.large instance (2 threads, 15g memory) achieved 410k/s download speed in average with 45% CPU usage. Thus, the entire 4-node, 8-thread cluster is able to finish the job in 13 minutes by downloading 1279M of data, including 1271M by browsers (no surprise, GoogleImage shows a hell lot of images on page 1!) and 7.7M by direct HTTP GET.</p>
+
+<ul>
+<li>Query speed can be further improved by enabling over-provisioning of executors per thread (since web agents are idle while waiting for responses). For example, allowing 4 executors to be run on each r3.large node can double CPU usage to ~90%, thus potentially doubling your query speed to 820k/s. However, this tuning will be ineffective if network bandwidth has been reached.</li>
+</ul>
+</li>
+<li><p>We haven't tested but many others' Spark test run that involves HTTP client (e.g. querying a distributed Solr/ElasticSearch service) and heterogeneous data processing has achieved near-linear scalability under 150 nodes (theoretically, a speedup of x900 comparing to conventional single-browser scrapping! assuming you are just using r3.large instance). Massive Spark clusters (the largest in history being 1000 nodes) has also been experimented in some facilities but their performances are still unknown.</p></li>
+<li><p>Using Wget (equivalent to simple HTTP GET) instead of Visit for static/non-interactive pages in your Action Plan can save you a lot of time and network throughput in query as it won't start the browser and download any resources for the page.</p></li>
+<li><p>Further optimization options may include switching to <a href="https://code.google.com/p/kryo/">Kryo serializer</a> (to replace Java serializer) and <a href="http://hadoop.apache.org/docs/current/hadoop-yarn/hadoop-yarn-site/YARN.html">YARN (Hadoop 2 component)</a> (to replace Spark Standalone Master), however these options are not tested yet. So we encourage you to test these options and post any performance issue/bug you encountered, but not using them in production.</p></li>
+</ul>
+
+<h2>
+<a id="usage" class="anchor" href="#usage" aria-hidden="true"><span class="octicon octicon-link"></span></a>Usage</h2>
+
+<p>Current implementation only supports Language INtegrated Query (LINQ), APIs are not finalized and may change anytime in the future. Support for SQL is on the roadmap but may be abandoned in favour of simplicity.</p>
+
+<p>Each query is a combination of 3 parts: Context, Action Plan and Extraction.</p>
+
+<p><strong>Context</strong> represents input and output data of a scraping job in key-value format. They are always created as strings or key-value pairs, being carried by other entities as metadata through a query's lifespan.</p>
+
+<p>Creating of <strong>Context</strong> can use any Spark parallelization or transformation (though this is rarely used), e.g.:</p>
+
+<pre><code>- sc.parallelize("Metallica","Megadeth","Slayer","Anthrax")
+
+- sc.parallelize(Map("first name"-&gt;"Taylor","last name"=&gt;"Swift"), Map("first name"-&gt;"Avril","last name"-&gt;"Lavigne"))
+
+- sc.parallelize("Taylor\tSwift", "Avril\tLavigne").csvToMap("first name\tlast name", "\t")
+
+- sc.fromTextFile("products.txt")
+
+- noInput(this creates a query entry point with no context)
+</code></pre>
+
+<p><strong>Action Plan</strong> always has the following format:</p>
+
+<pre><code>(**Context** +&gt; Action1 +&gt; Action2 +&gt; ... +&gt; ActionN !)
+</code></pre>
+
+<p>These are the same actions a human would do to access the data page, their order of execution is identical to that they are defined.</p>
+
+<p><strong>Actions</strong> have 3 types:</p>
+
+<ul>
+<li><p><em>Export</em>: Export a page from a browser or client, the page an be any web resource including HTML/XML file, image, PDF file or JSON string.</p></li>
+<li><p><em>Interactive</em>: Interact with the browser (e.g. click a button or type into a search box) to reach the data page, all interactive executed before a page will be logged into that page's backtrace.</p></li>
+<li><p><em>Container</em>: Only for complex workflow control, each defines a nested/non-linear subroutine that may or may not be executed once or multiple times depending on situations.</p></li>
+</ul>
+
+<p>Many Actions supports <strong>Context Interpolation</strong>: you can embed context reference in their constructor by inserting context's keys enclosed by <code>#{}</code>, which will be automatically replaced with values they map to in runtime. This is used almost exclusively in typing into a textbox.</p>
+
+<p>For more information on Actions and Action Plan usage, please refer to the scaladoc of ClientAction.scala and ActionPlanRDDFunction.scala respectively.</p>
+
+<p><strong>Extraction</strong> defines a transformation from Pages (including immediate pages from Action Plans and their link connections -- see <em>join/left-join</em>) to relational data output. This is often the goal and last step of data collection, but not always -- there is no constraint on their relative order, you can reuse extraction results as context to get more data on a different site, or feed into another data flow implemented by other components of Apache Spark (Of course, only if you know them).</p>
+
+<p>Functions in <strong>Extraction</strong> have four types:</p>
+
+<ul>
+<li><p><em>extract</em>: Extract data from Pages by using data's enclosing elements' HTML/XML/JSON selector(s) and attribute(s) as anchor points.</p></li>
+<li><p><em>save/dump</em>: Save all pages into a file system (HDD/S3/HDFS).</p></li>
+<li><p><em>select</em>: Extract data from Pages and insert them into the pages' respective context as metadata.</p></li>
+<li><p><em>join</em>: This is similar to the notion of join in relational databases, except that links between pages are used as foreign keys between tables. (Technical not just links, but anything that infers a connection between web resources, including frames, iframes, sources and redirection).</p></li>
+</ul>
+
+<p>For more information on Extraction syntax, please refer to the scaladoc of Page.scala and PageRDDFunction.scala.</p>
+
+<h2>
+<a id="deployment" class="anchor" href="#deployment" aria-hidden="true"><span class="octicon octicon-link"></span></a>Deployment</h2>
+
+<h3>
+<a id="-to-local-computersingle-node" class="anchor" href="#-to-local-computersingle-node" aria-hidden="true"><span class="octicon octicon-link"></span></a>... to Local Computer/Single Node</h3>
+
+<ol>
+<li>Install Apache Spark 1.0.0 from [<a href="http://spark.apache.org/downloads.html">http://spark.apache.org/downloads.html</a>]</li>
+<li>(Optional, highly recommended otherwise you have to set it everytime before running the shell or application) Edit your startup script to point the environment variable of Spark to your Spark installation directory:
+
+<ul>
+<li>export SPARK_HOME=<em>your Spark installation directory</em>
+</li>
+</ul>
+</li>
+<li>Install PhantomJS 1.9.7 from [<a href="http://phantomjs.org/download.html">http://phantomjs.org/download.html</a>]
+
+<ul>
+<li>recommended to install to '/usr/lib/phantomjs', otherwise please change <em>phantomJSRootPath</em> in <em>org.tribbloid.spookystuff.Const.scala</em> to point to your PhantomJS directory and recompile.</li>
+<li>also provided by Ubuntu official repository (so you can apt-get it) but current binary is severely obsolete (1.9.0), use of this binary is NOT recommended and may cause unpredictable error.</li>
+</ul>
+</li>
+<li>git clone this repository.</li>
+<li>MAVEN_OPTS="-Xmx2g -XX:MaxPermSize=512M -XX:ReservedCodeCacheSize=512m" mvn package -DskipTest=true
+
+<ul>
+<li>increasing jvm heapspace size for Apache Maven is mandatory as 2 modules (example and shell) will generate uber jars.</li>
+</ul>
+</li>
+<li>That's it! Now you have 3 options to use it:
+
+<ul>
+<li>(easiest) launch spooky-shell and improvise your query: bin/spooky-shell.sh</li>
+<li>give any example a test run: bin/submit-example.sh <em>name of the example</em>
+</li>
+<li>write your own application by importing spooky-core into your dependencies.</li>
+</ul>
+</li>
+</ol>
+
+<h3>
+<a id="-to-clusteramazon-ec2" class="anchor" href="#-to-clusteramazon-ec2" aria-hidden="true"><span class="octicon octicon-link"></span></a>... to Cluster/Amazon EC2</h3>
+
+<ol>
+<li>Setup a cluster and assure mutual connectivity</li>
+<li>Install Ubuntu 12+ on all nodes.
+
+<ul>
+<li>scripts to autodeploy on other Spark-compatible OS is currently NOT under active development. Please vote on the issue tracker if you demand it.</li>
+<li>the easiest way to set it up is on Amazon EC2, AMI with pre-installed environment and autoscaling ability will be made public shortly</li>
+</ul>
+</li>
+<li>Install Ansible on your client and make sure you can ssh into all your nodes with a valid private key (id_rsa).</li>
+<li>Edit files in ops/ansible/inventories.template to include ip/dns of your master node and all worker nodes. Change the directory name to /ops/ansible/inventories</li>
+<li>cd into ops/ansible and:
+
+<ul>
+<li>deploy master: ./ansible-playbook deploy-master.yml -i ./inventories --private-key=<em>yor private key (id_rsa)</em>
+</li>
+<li>deploy workers: .ansible-ploybook deploy-worker.yml -i ./inventories --private-key=<em>yor private key (id_rsa)</em>
+</li>
+<li>this will install oracle-java7 and do step 1,2,3, automatically on all nodes. You can do it manually but that's a lot of work!</li>
+</ul>
+</li>
+<li>Do step 4,5 on master node and run any of the 3 options
+
+<ul>
+<li>you can download and run it on any node in the same subnet of the cluster, but expect heavy traffic between your client node and master node.</li>
+</ul>
+</li>
+</ol>
+
+<h3>
+<a id="alternatively-" class="anchor" href="#alternatively-" aria-hidden="true"><span class="octicon octicon-link"></span></a>alternatively ...</h3>
+
+<p>you can use scripts in $SPARK_HOME/ec2 to setup a Spark cluster with transient HDFS support. But this has 2 problems:
+    - Autoscaling is currently not supported.
+    - Spark installation directory is hardcoded to '/root/spark', if your client has a different directory it may cause some compatibility issue.</p>
+
+<h2>
+<a id="integration-test" class="anchor" href="#integration-test" aria-hidden="true"><span class="octicon octicon-link"></span></a>Integration Test</h2>
+
+<pre><code>mvn clean test-compile failsafe:integration-test
+</code></pre>
+
+<h2>
+<a id="license" class="anchor" href="#license" aria-hidden="true"><span class="octicon octicon-link"></span></a>License</h2>
+
+<p>Copyright © 2014 by Peng Cheng <a href="https://github.com/tribbloid" class="user-mention">@tribbloid</a>, Sandeep Singh <a href="https://github.com/techaddict" class="user-mention">@techaddict</a>, Terry Lin <a href="https://github.com/ithinkicancode" class="user-mention">@ithinkicancode</a>, Long Yao <a href="https://github.com/l2yao" class="user-mention">@l2yao</a> and contributors.</p>
+
+<p>Published under ASF License, see LICENSE.</p>
+        </section>
+
+        <footer>
+          Spookystuff is maintained by <a href="https://github.com/l2yao">l2yao</a><br>
+          This page was generated by <a href="http://pages.github.com">GitHub Pages</a>. Tactile theme by <a href="https://twitter.com/jasonlong">Jason Long</a>.
+        </footer>
+
+        
+      </div>
+    </div>
+  </body>
+</html>
