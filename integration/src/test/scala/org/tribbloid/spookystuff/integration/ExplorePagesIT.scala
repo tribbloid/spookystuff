@@ -42,5 +42,7 @@ class ExplorePagesIT extends IntegrationSuite {
     assert(rows(4).mkString("|") === "2|1|1|http://webscraper.io/test-sites/e-commerce/static/computers/tablets/1")
   }
 
-  override def numPages: Int = 5
+  override def numPages = 5
+
+  override def numDrivers = 0
 }

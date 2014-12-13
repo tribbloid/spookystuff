@@ -20,7 +20,7 @@ trait ActionLike
 
   def doInterpolate(pageRow: PageRow): Option[this.type] = Some(this) //TODO: return Option as well
 
-  def inject(same: this.type ): Unit
+  def inject(same: this.type ): Unit = {} //do nothing
 
   //used to determine if snapshot needs to be appended or if possible to be executed lazily
   final def mayExport: Boolean = outputNames.nonEmpty

@@ -33,7 +33,7 @@ class TestAction extends SpookyEnvSuite {
 
     val rewritten = action.interpolate(new PageRow(cells = Map(Key("~") -> "http://www.dummy.com"))).get
 
-    assert(rewritten === Visit(Literal("http://www.dummy.com")))
+    assert(rewritten === Wget(Literal("http://www.dummy.com")))
     assert(rewritten.name === "dummy_name")
   }
 

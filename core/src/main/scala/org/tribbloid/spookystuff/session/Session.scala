@@ -15,6 +15,8 @@ import scala.collection.mutable.ArrayBuffer
 //TODO: this should be minimized and delegated to resource pool
 class Session(val spooky: SpookyContext){
 
+  spooky.metrics.sessionInitialized += 1
+
   val startTime: Long = new Date().getTime
 
   @volatile
@@ -22,7 +24,7 @@ class Session(val spooky: SpookyContext){
 
   def existingDriver: Option[CleanWebDriver] = Option(_driver)
 
-  //mimic lazy val but retain ability to destruct it on demand
+  //mimic lazy val but retain ability to destruct it on demandairframe
   //TODO: make sure it can only be invoked by a subroutine with a deadline, or it will take forever!
   def getDriver: CleanWebDriver = {
     if (_driver == null) {
@@ -39,8 +41,8 @@ class Session(val spooky: SpookyContext){
     _driver
   }
 
-  //remember to call this! don't want thousands of phantomJS browsers opened
   def close(): Unit = {
+    spooky.metrics.sessionReclaimed += 1
     if (_driver != null) {
       _driver.close()
       _driver.quit()
@@ -50,7 +52,7 @@ class Session(val spooky: SpookyContext){
 
   override def finalize(): Unit = {
     try {
-      this.close() //this is great evil, make sure it is never called by normal means
+      this.close()
       LoggerFactory.getLogger(this.getClass).info("Session is finalized by GC")
     }
     catch {
@@ -95,14 +97,14 @@ class Session(val spooky: SpookyContext){
       else {
         for (buffered <- this.buffer)
         {
-          this.realBacktrace ++= buffered.trunk
 //          pages.clear()//TODO: need to save later version if buffered is refreshed
           buffered(this) // buffered one may have non-empty results that are restored before
+          this.realBacktrace ++= buffered.trunk
         }
         buffer.clear()
 
-        this.realBacktrace ++= action.trunk
         var batch = action(this)
+        this.realBacktrace ++= action.trunk
 
         if (spooky.autoSave) batch = batch.map{
           case page: Page => page.autoSave(spooky)

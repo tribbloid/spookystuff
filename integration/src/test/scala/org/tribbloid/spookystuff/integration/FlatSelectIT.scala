@@ -44,4 +44,6 @@ class FlatSelectIT extends IntegrationSuite {
   }
 
   override def numPages: Int = 1
+
+  override def numDrivers = 0
 }

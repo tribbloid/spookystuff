@@ -52,7 +52,7 @@ class SpookyContext (
                       var localErrorDumpRoot: String = "file:///spooky-error/",
                       var localErrorDumpScreenshotRoot: String = "file:///spooky-error-screenshot/",
 
-                      var remoteResourceTimeout: Duration = 120.seconds,
+                      var remoteResourceTimeout: Duration = 60.seconds,
                       var DFSTimeout: Duration = 60.seconds,
 
                       var failOnDFSError: Boolean = false,
@@ -142,6 +142,9 @@ class SpookyContext (
 
     val driverInitialized: Accumulator[Int] = sc.accumulator(0, "driverInitialized")
     val driverReclaimed: Accumulator[Int] = sc.accumulator(0, "driverReclaimed")
+
+    val sessionInitialized: Accumulator[Int] = sc.accumulator(0, "sessionInitialized")
+    val sessionReclaimed: Accumulator[Int] = sc.accumulator(0, "sessionReclaimed")
 
     val DFSReadSuccess: Accumulator[Int] = sc.accumulator(0, "DFSReadSuccess")
     val DFSReadFail: Accumulator[Int] = sc.accumulator(0, "DFSReadFail")

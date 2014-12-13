@@ -5,8 +5,8 @@ import org.tribbloid.spookystuff.actions.Visit
 import org.tribbloid.spookystuff.dsl._
 
 /**
-* Created by peng on 12/5/14.
-*/
+ * Created by peng on 12/5/14.
+ */
 class ExploreIT extends IntegrationSuite {
   override def doMain(spooky: SpookyContext): Unit = {
 

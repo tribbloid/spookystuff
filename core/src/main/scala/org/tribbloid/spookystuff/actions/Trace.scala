@@ -1,7 +1,7 @@
 package org.tribbloid.spookystuff.actions
 
 import org.tribbloid.spookystuff.entity.PageRow
-import org.tribbloid.spookystuff.pages.PageLike
+import org.tribbloid.spookystuff.pages.{Page, PageLike}
 import org.tribbloid.spookystuff.session.Session
 import org.tribbloid.spookystuff.utils.Utils
 import org.tribbloid.spookystuff.{Const, SpookyContext}
@@ -56,7 +56,7 @@ final case class Trace(
       resolvePlain(spooky)
     }
 
-    spooky.metrics.pagesFetched += result.size
+    spooky.metrics.pagesFetched += result.count(_.isInstanceOf[Page])
 
     result
   }
@@ -64,15 +64,16 @@ final case class Trace(
   //no retry
   def resolvePlain(spooky: SpookyContext): Seq[PageLike] = {
 
-    //    val results = ArrayBuffer[Page]()
+    if (self.isEmpty) Seq()
+    else {
+      val session = new Session(spooky)
 
-    val session = new Session(spooky)
-
-    try {
-      this.apply(session)
-    }
-    finally {
-      session.close()
+      try {
+        this.apply(session)
+      }
+      finally {
+        session.close()
+      }
     }
   }
 

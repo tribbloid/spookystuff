@@ -23,37 +23,34 @@ case class PageUID(
 
 trait PageLike {
   val uid: PageUID
+  val timestamp: Date
 }
 
 //Merely a placeholder when a Block returns nothing
-case class NoPage(override val uid: PageUID) extends Serializable with PageLike
+case class NoPage(
+                   trace: Trace,
+                   override val timestamp: Date = new Date
+                   ) extends Serializable with PageLike {
+  override val uid: PageUID = PageUID(trace, null, -1, 0)
+}
 
 //immutable! we don't want to lose old pages
 //keep small, will be passed around by Spark
 @SerialVersionUID(94865098324L)
 case class Page(
-            override val uid: PageUID,
+                 override val uid: PageUID,
 
-            override val uri: String, //redirected
-            contentType: String,
-            content: Array[Byte],
+                 override val uri: String, //redirected
+                 contentType: String,
+                 content: Array[Byte],
 
-            //                 cookie: Seq[SerializableCookie] = Seq(),
-            timestamp: Date = new Date,
-            var saved: String = null
-            )
+                 //                 cookie: Seq[SerializableCookie] = Seq(),
+                 override val timestamp: Date = new Date,
+                 var saved: String = null
+                 )
   extends Unstructured with PageLike {
 
   def name = this.uid.leaf.name
-
-  //TODO: these customization is to ensure that little resources is spent on comparison
-//  override def equals(obj: Any): Boolean = obj match {
-//    case other: Page =>
-//      (this.uid == other.uid) && (this.name == other.name) && (this.timestamp == other.timestamp)
-//    case _ => false
-//  }
-//
-//  override def hashCode(): Int = (this.uid, this.name, this.timestamp).hashCode()
 
   @transient lazy val parsedContentType: ContentType = {
     var result = ContentType.parse(this.contentType)
@@ -66,7 +63,7 @@ case class Page(
   }
   else {
     null
-//    throw new UnsupportedOperationException("Cannot parse mime type " + parsedContentType.getMimeType)
+    //    throw new UnsupportedOperationException("Cannot parse mime type " + parsedContentType.getMimeType)
   }
 
   override def children(selector: String): Seq[Unstructured] = root.children(selector)

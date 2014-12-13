@@ -72,4 +72,6 @@ class JoinAndExplorePagesIT extends IntegrationSuite {
   }
 
   override def numPages: Int = 15
+
+  override def numDrivers = 0
 }

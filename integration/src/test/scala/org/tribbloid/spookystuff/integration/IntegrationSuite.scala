@@ -78,6 +78,8 @@ abstract class IntegrationSuite extends FunSuite with BeforeAndAfterAll {
 
     assert(localCacheWriteOnlyEnv.metrics.pagesFetched.value === numPages)
     assert(localCacheWriteOnlyEnv.metrics.pagesFetchedFromCache.value === 0)
+    assert(localCacheWriteOnlyEnv.metrics.sessionInitialized.value === numSessions)
+    assert(localCacheWriteOnlyEnv.metrics.driverInitialized.value === numDrivers)
 
     doMain(localCacheEnv)
 
@@ -94,6 +96,8 @@ abstract class IntegrationSuite extends FunSuite with BeforeAndAfterAll {
 
     assert(s3CacheWriteOnlyEnv.metrics.pagesFetched.value === numPages)
     assert(s3CacheWriteOnlyEnv.metrics.pagesFetchedFromCache.value === 0)
+    assert(s3CacheWriteOnlyEnv.metrics.sessionInitialized.value === numSessions)
+    assert(s3CacheWriteOnlyEnv.metrics.driverInitialized.value === numDrivers)
 
     doMain(s3CacheEnv)
 
@@ -107,4 +111,8 @@ abstract class IntegrationSuite extends FunSuite with BeforeAndAfterAll {
   def doMain(spooky: SpookyContext): Unit
 
   def numPages: Int
+
+  def numSessions: Int = numPages
+
+  def numDrivers: Int = numPages
 }

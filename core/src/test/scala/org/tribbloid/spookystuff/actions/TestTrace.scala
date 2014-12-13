@@ -1,9 +1,7 @@
 package org.tribbloid.spookystuff.actions
 
 import org.tribbloid.spookystuff.SpookyEnvSuite
-import org.tribbloid.spookystuff.dsl._
 import org.tribbloid.spookystuff.pages.Page
-import org.tribbloid.spookystuff.session.Session
 
 /**
  * Created by peng on 05/06/14.
@@ -12,6 +10,8 @@ import org.tribbloid.spookystuff.session.Session
 //TODO: this need some serious reorganization
 class TestTrace extends SpookyEnvSuite {
 
+  import org.tribbloid.spookystuff.actions._
+  import org.tribbloid.spookystuff.dsl._
   import scala.concurrent.duration._
 
   test("resolve") {
@@ -42,32 +42,26 @@ class TestTrace extends SpookyEnvSuite {
     assert(res2.name === "B")
   }
 
-//  test("cache multiple pages and restore") {
-//    val results = PageBuilder.resolve(
-//      Visit("https://www.linkedin.com/") ::
-//        Snapshot().as("T") :: Nil,
-//      dead = false
-//    )(spooky)
-//
-//    val resultsList = results.toArray
-//    assert(resultsList.size === 1)
-//    val page1 = resultsList(0)
-//
-//    val page1Cached = page1.autoCache(spooky,overwrite = true)
-//
-//    val uid = PageUID( Visit("https://www.linkedin.com/") :: Snapshot() :: Nil)
-//
-//    val cachedPath = new Path(
-//      Utils.urlConcat(
-//        spooky.autoCacheRoot,
-//        spooky.PagePathLookup(uid).toString
-//      )
-//    )
-//
-//    val loadedPage = PageBuilder.restoreLatest(cachedPath)(spooky.hConf)(0)
-//
-//    assert(page1Cached.content === loadedPage.content)
-//
-//    assert(page1Cached.copy(content = null) === loadedPage.copy(content = null))
-//  }
+  test("inject") {
+
+    val t1 = Trace(
+      Visit("http://webscraper.io/test-sites/e-commerce/ajax/computers/laptops")
+        :: Snapshot().as('a)
+        :: Loop (
+        ClickNext("button.btn","1"::Nil) :: Delay(2.seconds) :: Snapshot().as('b) :: Nil
+      ):: Nil
+    )
+
+    val t2 = Trace(
+      Visit("http://webscraper.io/test-sites/e-commerce/ajax/computers/laptops")
+        :: Snapshot().as('c)
+        :: Loop (
+        ClickNext("button.btn","1"::Nil) :: Delay(2.seconds) :: Snapshot().as('d) :: Nil
+      ):: Nil
+    )
+
+    t1.inject(t2.asInstanceOf[t1.type ])
+
+    assert(t1.outputNames === Set("c","d"))
+  }
 }

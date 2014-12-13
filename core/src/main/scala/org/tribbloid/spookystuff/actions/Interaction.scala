@@ -1,5 +1,6 @@
 package org.tribbloid.spookystuff.actions
 
+import com.thoughtworks.selenium.SeleniumException
 import org.openqa.selenium.htmlunit.HtmlUnitDriver
 import org.openqa.selenium.interactions.{Actions => SeleniumActions}
 import org.openqa.selenium.remote.RemoteWebDriver
@@ -9,10 +10,11 @@ import org.openqa.selenium.{By, WebDriver}
 import org.tribbloid.spookystuff.Const
 import org.tribbloid.spookystuff.entity.PageRow
 import org.tribbloid.spookystuff.expressions.{Expr, Literal}
+import org.tribbloid.spookystuff.pages.{Page, Unstructured}
 import org.tribbloid.spookystuff.session.Session
-import org.tribbloid.spookystuff.pages.{Unstructured, Page}
 import org.tribbloid.spookystuff.utils.Utils
 
+import scala.collection.mutable
 import scala.concurrent.duration.Duration
 
 /**
@@ -191,9 +193,44 @@ case class Click(
  * Click an element with your mouse pointer.
  * @param selector css selector of the element, only the first element will be affected
  */
+case class ClickNext(
+                      selector: String,
+                      exclude: Seq[String]
+                      )extends Interaction with Timed {
+
+  val clicked: mutable.HashSet[String] = mutable.HashSet(exclude: _*)
+
+  override def exeWithoutPage(pb: Session) {
+    val wait = new WebDriverWait(pb.getDriver, timeout(pb).toSeconds)
+    val elements = wait.until(ExpectedConditions.presenceOfAllElementsLocatedBy(By.cssSelector(selector)))
+
+    import scala.collection.JavaConversions._
+
+    elements.foreach{
+      element => {
+        wait.until(ExpectedConditions.elementToBeClickable(element))
+        if (!clicked.contains(element.getText)){
+          element.click()
+          clicked += element.getText
+          return
+        }
+      }
+    }
+    throw new SeleniumException("all elements has been clicked before")
+  }
+
+  override def doInterpolate(pageRow: PageRow): Option[this.type] =
+    Some(this.copy().asInstanceOf[this.type])
+}
+
+/**
+ * Click an element with your mouse pointer.
+ * @param selector css selector of the element, only the first element will be affected
+ */
 case class ClickAll(
                      selector: String
                      )extends Interaction with Timed {
+
   override def exeWithoutPage(pb: Session) {
     val wait = new WebDriverWait(pb.getDriver, timeout(pb).toSeconds)
     val elements = wait.until(ExpectedConditions.presenceOfAllElementsLocatedBy(By.cssSelector(selector)))

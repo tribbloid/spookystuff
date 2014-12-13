@@ -432,11 +432,14 @@ case class PageRowRDD(
         tuple =>
           val backtrace = tuple._1
           val traceIndexToPages = tuple._2
-          traceIndexToPages._2.foreach(_.foreach{
-            page =>
-              val pageBacktrace = page.uid.backtrace
-              pageBacktrace.inject(backtrace.asInstanceOf[pageBacktrace.type])
-          })
+          traceIndexToPages._2.foreach{
+            seq =>
+              seq.foreach{
+                page =>
+                  val pageBacktrace = page.uid.backtrace
+                  pageBacktrace.inject(backtrace.asInstanceOf[pageBacktrace.type])
+              }
+          }
           traceIndexToPages._1._1 -> (traceIndexToPages._1._2, traceIndexToPages._2)
       }.groupByKey().flatMap{
         tuple =>
@@ -594,11 +597,21 @@ case class PageRowRDD(
         .copy(indexKeys = this.indexKeys + Key(depthKey))
     else this
 
+    var totalPages =this.flatMap(_.pageLikes)
+
     for (depth <- 1 to maxDepth) {
       //always inner join
-      val joined = newRows
+      val joinedBeforeFlatten = newRows
         .flattenTemp(expr defaultAs Symbol(Const.defaultJoinKey), indexKey, Int.MaxValue, left = true)
-        .fetch(traces, Inner, numPartitions, flattenPagesPattern, flattenPagesIndexKey, lookupFrom = total.flatMap(_.pageLikes)) //TODO: total is not persisted here, may be inefficient
+        .fetch(traces, Inner, numPartitions, null, null, lookupFrom = totalPages) //TODO: total is not persisted here, may be inefficient
+
+      val joinedPages = joinedBeforeFlatten.flatMap(_.pageLikes)
+
+      import org.apache.spark.SparkContext._
+
+      totalPages = totalPages.union(joinedPages).keyBy(_.uid).reduceByKey((v1,v2) => v1).values
+
+      val joined = joinedBeforeFlatten.flattenPages(flattenPagesPattern, flattenPagesIndexKey)
 
       val allIgnoredKeys = Seq(depthKey, indexKey, flattenPagesIndexKey).filter(_ != null)
 

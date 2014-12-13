@@ -116,7 +116,7 @@ trait Action extends ActionLike {
   def doExe(session: Session): Seq[PageLike]
 
   override def inject(same: this.type): Unit = {
-//    super.inject(same)
+    super.inject(same)
     this.timeElapsed = same.timeElapsed
   }
 }

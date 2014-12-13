@@ -3,8 +3,8 @@ package org.tribbloid.spookystuff.actions
 import org.slf4j.LoggerFactory
 import org.tribbloid.spookystuff.Const
 import org.tribbloid.spookystuff.entity.PageRow
+import org.tribbloid.spookystuff.pages.{NoPage, Page, PageLike}
 import org.tribbloid.spookystuff.session.Session
-import org.tribbloid.spookystuff.pages.{PageUID, NoPage, PageLike, Page}
 
 import scala.collection.mutable.ArrayBuffer
 import scala.concurrent.duration.Duration
@@ -41,7 +41,7 @@ abstract class Block(override val self: Seq[Action]) extends Actions(self) with 
         page.copy(uid = page.uid.copy(backtrace = backtrace, blockIndex = tuple._2, total = pages.size))
       }
     }
-    if (result.isEmpty && this.mayExport) Seq(NoPage(uid = PageUID(backtrace = backtrace, leaf = null)))
+    if (result.isEmpty && this.mayExport) Seq(NoPage(backtrace))
     else result
   }
 

@@ -14,7 +14,7 @@ abstract class Actions(val self: Seq[Action]) extends ActionLike {
 
   //names are not encoded in PageUID and are injected after being read from cache
   override def inject(same: this.type): Unit = {
-
+    super.inject(same)
     val zipped = this.self.zip(same.self)
 
     for (tuple <- zipped) {
