@@ -5,17 +5,19 @@ import org.tribbloid.spookystuff.actions._
 import org.tribbloid.spookystuff.dsl._
 
 /**
-* Created by peng on 11/26/14.
-*/
-class FetchIT extends IntegrationSuite {
+ * Created by peng on 12/14/14.
+ */
+class FetchInteractionsIT extends IntegrationSuite{
 
-  override def doMain(spooky: SpookyContext) {
-
+  override def doMain(spooky: SpookyContext): Unit = {
     import spooky._
 
     val RDD = noInput
       .fetch(
-        Visit("http://www.wikipedia.org/")
+        Visit("http://www.wikipedia.org")
+          +> TextInput("input#searchInput","深度学习")
+          +> DropDownSelect("select#searchLanguage","zh")
+          +> Submit("input.formBtn")
       ).persist()
 
     val pageRows = RDD.collect()
@@ -23,7 +25,7 @@ class FetchIT extends IntegrationSuite {
     val finishTime = System.currentTimeMillis()
     assert(pageRows.size === 1)
     assert(pageRows(0).pages.size === 1)
-    assert(pageRows(0).pages.apply(0).uri === "http://www.wikipedia.org/")
+    assert(pageRows(0).pages.apply(0).uri === "http://zh.wikipedia.org/wiki/深度学习")
     assert(pageRows(0).pages.apply(0).name === "Snapshot()")
     val pageTime = pageRows(0).pages.head.timestamp.getTime
     assert(pageTime < finishTime)
@@ -31,7 +33,11 @@ class FetchIT extends IntegrationSuite {
 
     val RDDAppended = RDD
       .fetch(
-        Visit("http://www.wikipedia.org/") +> Snapshot().as('b),
+        Visit("http://www.wikipedia.org")
+          +> TextInput("input#searchInput","深度学习")
+          +> DropDownSelect("select#searchLanguage","zh")
+          +> Submit("input.formBtn")
+          +> Snapshot().as('b),
         joinType = Append
       )
 
