@@ -490,38 +490,47 @@ Large scale distributed deep networks   Large scale distributed deep networks   
 <a id="-to-local-computersingle-node" class="anchor" href="#-to-local-computersingle-node" aria-hidden="true"><span class="octicon octicon-link"></span></a>... to Local Computer/Single Node</h3>
 
 <ol>
-<li>Install Apache Spark 1.0.0 from [<a href="http://spark.apache.org/downloads.html">http://spark.apache.org/downloads.html</a>]</li>
-<li>(Optional, highly recommended otherwise you have to set it everytime before running the shell or application) Edit your startup script to point the environment variable of Spark to your Spark installation directory:
 
-<ul>
-<li>export SPARK_HOME=<em>your Spark installation directory</em>
+<li> <strong>Install Apache Spark 1.1.1</strong> from [<a href="http://spark.apache.org/downloads.html">http://spark.apache.org/downloads.html</a>]
+(Optional, highly recommended otherwise you have to set it everytime before running the shell or application i.e. add path to .bash_profile file) Edit your startup script to point the environment variable of Spark to your Spark installation directory: <br>
+<code>export SPARK_HOME=<em>"{PATH_TO}/spark-1.1.1-bin-hadoop2.4"</em></code>
 </li>
+
+<li> <strong>Install Java</strong> (optional: If no Java has installed and set environment before). In Ubuntu, use apt-get to install Java by <code>sudo apt-get install openjdk-7-jdk</code>
+and add Java to path as follow example<br>
+<code>export JAVA_HOME=<em>"/usr/lib/jvm/java-7-openjdk-amd64"</em></code>
+</li>
+
+<li> <strong>Install PhantomJS 1.9.8</strong> from [<a href="http://phantomjs.org/download.html">http://phantomjs.org/download.html</a>]
+<ul>
+<li> For zip file, the binary <code>bin/phantomjs</code> is ready to use. Then add PhantomJS to .bash_profile or start-up script as <br>
+<code>export PHANTOMJS_PATH=<em>"{PATH_TO}/bin/phantomjs"</em></code></li>
+Alternatively, add binary PhantomJS to <code>/usr/lib/</code> and add path to PhantomJS as <code>export PATH=${PATH}:/usr/lib</code>
+<li> PhantomJS is also provided by Ubuntu official repository (so you can apt-get it) but current binary is severely obsolete (1.9.0), use of this binary is NOT recommended and may cause unpredictable error.</li>
 </ul>
 </li>
-<li>Install PhantomJS 1.9.7 from [<a href="http://phantomjs.org/download.html">http://phantomjs.org/download.html</a>]
 
+<li>
+  <strong>Git clone Spooky Stuff repository</strong>: <code>git clone https://github.com/tribbloid/spookystuff</code>
+</li>
+
+<li> Run <code>./mvn-install.sh</code> to setup Spooky Stuff which contains bash script as follows<br>
+<code>MAVEN_OPTS="-Xmx2g -XX:MaxPermSize=512M -XX:ReservedCodeCacheSize=512m" mvn package -DskipTests=true</code>
 <ul>
-<li>recommended to install to '/usr/lib/phantomjs', otherwise please change <em>phantomJSRootPath</em> in <em>org.tribbloid.spookystuff.Const.scala</em> to point to your PhantomJS directory and recompile.</li>
-<li>also provided by Ubuntu official repository (so you can apt-get it) but current binary is severely obsolete (1.9.0), use of this binary is NOT recommended and may cause unpredictable error.</li>
+Note that increasing jvm heapspace size for Apache Maven is mandatory as 2 modules (example and shell) will generate uber jars. Also make sure that Maven is installed. On Ubuntu, we can install Maven by <code>sudo apt-get install maven</code> (version >=3.0.0)
 </ul>
 </li>
-<li>git clone this repository.</li>
-<li>MAVEN_OPTS="-Xmx2g -XX:MaxPermSize=512M -XX:ReservedCodeCacheSize=512m" mvn package -DskipTest=true
 
-<ul>
-<li>increasing jvm heapspace size for Apache Maven is mandatory as 2 modules (example and shell) will generate uber jars.</li>
-</ul>
-</li>
 <li>That's it! Now you have 3 options to use it:
-
 <ul>
-<li>(easiest) launch spooky-shell and improvise your query: bin/spooky-shell.sh</li>
-<li>give any example a test run: bin/submit-example.sh <em>name of the example</em>
-</li>
-<li>write your own application by importing spooky-core into your dependencies.</li>
+  <li>(easiest) launch spooky-shell and improvise your query: <code>bin/spooky-shell.sh</code> </li>
+  <li>give any example a test run: bin/submit-example.sh <em>name of the example</em></li>
+  <li>write your own application by importing spooky-core into your dependencies.</li>
 </ul>
 </li>
+
 </ol>
+
 
 <h3>
 <a id="-to-clusteramazon-ec2" class="anchor" href="#-to-clusteramazon-ec2" aria-hidden="true"><span class="octicon octicon-link"></span></a>... to Cluster/Amazon EC2</h3>
