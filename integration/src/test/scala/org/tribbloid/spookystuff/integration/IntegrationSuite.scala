@@ -48,6 +48,7 @@ abstract class IntegrationSuite extends FunSuite with BeforeAndAfterAll {
     val spooky: SpookyContext = new SpookyContext(sql)
     spooky.setRoot("file://"+System.getProperty("user.home")+"/spooky-integration/")
     spooky.pageExpireAfter = 0.seconds
+    spooky.autoSave = false
     spooky
   }
 
@@ -55,6 +56,7 @@ abstract class IntegrationSuite extends FunSuite with BeforeAndAfterAll {
     val spooky: SpookyContext = new SpookyContext(sql)
     spooky.setRoot("file://"+System.getProperty("user.home")+"/spooky-integration/")
     spooky.pageExpireAfter = 10.minutes
+    spooky.autoSave = false
     spooky
   }
 
@@ -62,6 +64,7 @@ abstract class IntegrationSuite extends FunSuite with BeforeAndAfterAll {
     val spooky: SpookyContext = new SpookyContext(sql)
     spooky.setRoot("s3n://spooky-integration/")
     spooky.pageExpireAfter = 0.seconds
+    spooky.autoSave = false
     spooky
   }
 
@@ -69,6 +72,7 @@ abstract class IntegrationSuite extends FunSuite with BeforeAndAfterAll {
     val spooky: SpookyContext = new SpookyContext(sql)
     spooky.setRoot("s3n://spooky-integration/")
     spooky.pageExpireAfter = 10.minutes
+    spooky.autoSave = false
     spooky
   }
 
