@@ -106,9 +106,9 @@ class Session(val spooky: SpookyContext){
         var batch = action(this)
         this.realBacktrace ++= action.trunk
 
-        if (spooky.autoSave) batch = batch.map{
+        if (spooky.autoSave) batch.foreach{
           case page: Page => page.autoSave(spooky)
-          case noPage: NoPage => noPage
+          case _ =>
         }
         if (spooky.autoCache) PageUtils.autoCache(batch, spooky)
 

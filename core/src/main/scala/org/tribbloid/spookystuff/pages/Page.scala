@@ -78,7 +78,7 @@ case class Page(
   def save(
             pathParts: Seq[String],
             overwrite: Boolean = false
-            )(spooky: SpookyContext): Page = {
+            )(spooky: SpookyContext): Unit = {
 
     val path = Utils.urlConcat(pathParts: _*)
 
@@ -100,21 +100,20 @@ case class Page(
       }
 
       this.saved = fullPath.toString
-      this
     }
   }
 
   def autoSave(
                 spooky: SpookyContext,
                 overwrite: Boolean = false
-                ): Page = this.save(
+                ): Unit = this.save(
     spooky.autoSaveRoot :: spooky.autoSaveExtract(this).toString :: Nil
   )(spooky)
 
   def errorDump(
                  spooky: SpookyContext,
                  overwrite: Boolean = false
-                 ): Page = {
+                 ): Unit = {
     val root = this.uid.leaf match {
       case ss: Screenshot => spooky.errorDumpScreenshotRoot
       case _ => spooky.errorDumpRoot
@@ -128,7 +127,7 @@ case class Page(
   def localErrorDump(
                       spooky: SpookyContext,
                       overwrite: Boolean = false
-                      ): Page = {
+                      ): Unit = {
     val root = this.uid.leaf match {
       case ss: Screenshot => spooky.localErrorDumpScreenshotRoot
       case _ => spooky.localErrorDumpRoot

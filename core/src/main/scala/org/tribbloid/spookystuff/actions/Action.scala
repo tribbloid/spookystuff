@@ -63,15 +63,15 @@ trait Action extends ActionLike {
 
         if (!this.isInstanceOf[Sessionless] && session.existingDriver.nonEmpty ) {
           if (errorDump) {
-            var page = DefaultSnapshot.doExe(session).toList(0)
+            val page = DefaultSnapshot.doExe(session).toList(0)
             try {
-              page = page.errorDump(session.spooky)
+              page.errorDump(session.spooky)
               message += "\n"+"snapshot saved to: " + page.saved
             }
             catch {
               case e: Throwable =>
                 try {
-                  page = page.localErrorDump(session.spooky)
+                  page.localErrorDump(session.spooky)
                   message += "\n"+"distributed file system inaccessible.........snapshot saved to: " + page.saved
                 }
                 catch {
@@ -81,15 +81,15 @@ trait Action extends ActionLike {
             }
           }
           if (errorDumpScreenshot) {
-            var page = DefaultScreenshot.doExe(session).toList(0)
+            val page = DefaultScreenshot.doExe(session).toList(0)
             try {
-              page = page.errorDump(session.spooky)
+              page.errorDump(session.spooky)
               message += "\n"+"screenshot saved to: " + page.saved
             }
             catch {
               case e: Throwable =>
                 try {
-                  page = page.localErrorDump(session.spooky)
+                  page.localErrorDump(session.spooky)
                   message += "\n"+"distributed file system inaccessible.........screenshot saved to: " + page.saved
                 }
                 catch {
@@ -125,7 +125,6 @@ trait Timed extends Action{
 
   private var _timeout: Duration = null
 
-  //TODO: implement inject to enable it!
   def in(deadline: Duration): this.type = {
     this._timeout = deadline
     this

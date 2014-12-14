@@ -27,9 +27,9 @@ object GoogleImage extends ExampleCore {
           +> WaitFor("div#search")
       )
       .wgetJoin($"div#search img".src, limit = 1)
-      .saveContent(
-        pageRow =>
-          "file://"+System.getProperty("user.home")+"/spooky-integration/"+appName+"/images/"+pageRow.get("name").get)
+      .save(
+        x"file://${System.getProperty("user.home")}/spooky-example/$appName/images/${'name}"
+      )
       .select(
         $.saved > 'path
       )

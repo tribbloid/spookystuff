@@ -51,6 +51,8 @@ class ExploreAJAXPagesIT extends IntegrationSuite {
 
     val rows = result.collect()
     assert(rows.size === 12)
+
+    //TODO: more assertions
   }
 
   override def numSessions = 6

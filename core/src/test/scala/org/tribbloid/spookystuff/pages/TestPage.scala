@@ -35,11 +35,11 @@ class TestPage extends SpookyEnvSuite {
     assert(resultsList.size === 1)
     val page1 = resultsList(0).asInstanceOf[Page]
 
-    val page1Saved = page1.autoSave(spooky,overwrite = true)
+    page1.autoSave(spooky,overwrite = true)
 
-    val loadedContent = PageUtils.load(new Path(page1Saved.saved))(spooky)
+    val loadedContent = PageUtils.load(new Path(page1.saved))(spooky)
 
-    assert(loadedContent === page1Saved.content)
+    assert(loadedContent === page1.content)
   }
 
 //  test("s3 save and load") {
@@ -73,11 +73,11 @@ class TestPage extends SpookyEnvSuite {
 
     assert(page1.children("title").texts.head === "Wikipedia, the free encyclopedia")
 
-    val page1Saved = page1.autoSave(spooky,overwrite = true)
+    page1.autoSave(spooky,overwrite = true)
 
-    val loadedContent = PageUtils.load(new Path(page1Saved.saved))(spooky)
+    val loadedContent = PageUtils.load(new Path(page1.saved))(spooky)
 
-    assert(loadedContent === page1Saved.content)
+    assert(loadedContent === page1.content)
   }
 
   test("wget image, save and load") {
@@ -90,11 +90,11 @@ class TestPage extends SpookyEnvSuite {
     assert(resultsList.size === 1)
     val page1 = resultsList(0).asInstanceOf[Page]
 
-    val page1Saved = page1.autoSave(spooky,overwrite = true)
+    page1.autoSave(spooky,overwrite = true)
 
-    val loadedContent = PageUtils.load(new Path(page1Saved.saved))(spooky)
+    val loadedContent = PageUtils.load(new Path(page1.saved))(spooky)
 
-    assert(loadedContent === page1Saved.content)
+    assert(loadedContent === page1.content)
   }
 
   test("wget pdf, save and load") {
@@ -107,10 +107,10 @@ class TestPage extends SpookyEnvSuite {
     assert(resultsList.size === 1)
     val page1 = resultsList(0).asInstanceOf[Page]
 
-    val page1Saved = page1.autoSave(spooky,overwrite = true)
+    page1.autoSave(spooky,overwrite = true)
 
-    val loadedContent = PageUtils.load(new Path(page1Saved.saved))(spooky)
+    val loadedContent = PageUtils.load(new Path(page1.saved))(spooky)
 
-    assert(loadedContent === page1Saved.content)
+    assert(loadedContent === page1.content)
   }
 }

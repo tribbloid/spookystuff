@@ -63,6 +63,6 @@ class InterpolateExpr(parts: Seq[String], fs: Seq[Expr[Any]])
     val iFs = fs.map(_.apply(v1))
 
     if (iParts.contains(None) || iFs.contains(None)) None
-    else Some(iParts.zip(iFs).map(tpl => tpl._1.get + tpl._2.get).mkString + iParts.last)
+    else Some(iParts.zip(iFs).map(tpl => tpl._1.get + tpl._2.get).mkString + iParts.last.get)
   }
 }
