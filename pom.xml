@@ -67,15 +67,6 @@
         <module>integration</module>
     </modules>
 
-    <!--<profiles>-->
-    <!--<profile>-->
-    <!--<id>ispark</id>-->
-    <!--<modules>-->
-    <!--<module>shell</module>-->
-    <!--</modules>-->
-    <!--</profile>-->
-    <!--</profiles>-->
-
     <dependencies>
         <dependency>
             <groupId>org.apache.spark</groupId>
@@ -124,11 +115,6 @@
             <artifactId>boilerpipe</artifactId>
             <version>1.2.2</version>
         </dependency>
-        <!--<dependency>-->
-        <!--<groupId>org.glassfish.jersey.core</groupId>-->
-        <!--<artifactId>jersey-client</artifactId>-->
-        <!--<version>2.12</version>-->
-        <!--</dependency>-->
 
     </dependencies>
 

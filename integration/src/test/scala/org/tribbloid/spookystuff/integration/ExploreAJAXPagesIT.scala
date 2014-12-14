@@ -19,8 +19,7 @@ class ExploreAJAXPagesIT extends IntegrationSuite {
           +> Snapshot().as('first)
           +> Loop (
           ClickNext("button.btn", "1"::Nil) :: Delay(2.seconds) :: Snapshot() :: Nil
-        ),
-        flattenPagesPattern = null
+        )
       )
 
     val result = base

@@ -4,7 +4,7 @@ import org.tribbloid.spookystuff.{Const, views, SpookyContext}
 import org.tribbloid.spookystuff.actions._
 import org.tribbloid.spookystuff.dsl._
 import org.tribbloid.spookystuff.expressions._
-import org.tribbloid.spookystuff.pages.{PageLike, Unstructured, Page}
+import org.tribbloid.spookystuff.pages.{NoPage, PageLike, Unstructured, Page}
 import org.tribbloid.spookystuff.utils._
 
 /**
@@ -20,6 +20,11 @@ case class PageRow(
 
   def pages: Seq[Page] = pageLikes.flatMap {
     case page: Page => Some(page)
+    case _ => None
+  }
+
+  def noPages: Seq[NoPage] = pageLikes.flatMap {
+    case noPage: NoPage => Some(noPage)
     case _ => None
   }
 
@@ -178,6 +183,7 @@ case class PageRow(
 
   //always left, discard old page row
   //warning: sometimes this always lose information regardless of pattern, e.g. all NoPage will be discarded
+  //this operation will try to keep NoPages in the first row for lookup
   def flattenPages(
                     pattern: String, //TODO: enable soon
                     indexKey: Key
@@ -195,10 +201,14 @@ case class PageRow(
     }
 
     if (result.isEmpty) {
-      Seq(this.copy(pageLikes = Seq()))
+      Seq(this.copy(pageLikes = this.noPages))
     }
     else {
-      result
+      result.zipWithIndex.map{
+        tuple =>
+          if (tuple._2 == 0) tuple._1.copy(pageLikes = tuple._1.pageLikes ++ this.noPages)
+          else tuple._1
+      }
     }
   }
 
