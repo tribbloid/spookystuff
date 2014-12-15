@@ -15,7 +15,7 @@ object ResellerRatings extends ExampleCore {
 
     sc.parallelize(Seq("Hewlett_Packard"))
       .fetch(
-        Wget( "http://www.resellerratings.com/store/#{_}")
+        Wget( "http://www.resellerratings.com/store/'{_}")
       )
       .wgetExplore($"div#survey-header ul.pagination a:contains(next)", depthKey = 'page)
       .flatSelect($"div.review")(

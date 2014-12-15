@@ -31,7 +31,7 @@ object UrbanSpoon extends ExampleCore {
       .flatMap(url => Seq("#reviews","#blog_posts").map(tag => tag+"\t"+url+tag))
       .tsvToMap("type\turl")
       .fetch(
-        Visit("#{url}")
+        Visit("'{url}")
           +> Click("ul.PostTabs li.active a")
           +> WaitFor("div.tab-pane.active li.review")
       )
