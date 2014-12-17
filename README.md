@@ -23,7 +23,7 @@ Powered by
 
 Demo
 -----------
-[Click me](http://ec2-54-165-231-62.compute-1.amazonaws.com:8888/notebooks/all_inclusive_do_not_create_new_notebook.ipynb) for a quick impression.
+[Click me](http://ec2-54-183-195-216.us-west-1.compute.amazonaws.com:8888/notebooks/all_inclusive_do_not_create_new_notebook.ipynb) for a quick impression.
 
 This environment is deployed on a Spark cluster with 8+ cores. It may not be accessible during system upgrade or maintenance. Please contact a committer/project manager for a customized demo.
 
@@ -377,42 +377,10 @@ Functions in **Extraction** have four types:
 
 For more information on Extraction syntax, please refer to the scaladoc of Page.scala and PageRDDFunction.scala.
 
-Deployment
+Installation & Deployment
 ---------------
-### ... to Local Computer/Single Node
-1. Install Apache Spark 1.0.0 from [http://spark.apache.org/downloads.html]
-2. (Optional, highly recommended otherwise you have to set it everytime before running the shell or application) Edit your startup script to point the environment variable of Spark to your Spark installation directory:
-    - export SPARK_HOME=*your Spark installation directory*
-3. Install PhantomJS 1.9.7 from [http://phantomjs.org/download.html]
-    - recommended to install to '/usr/lib/phantomjs', otherwise please change *phantomJSRootPath* in *org.tribbloid.spookystuff.Const.scala* to point to your PhantomJS directory and recompile.
-    - also provided by Ubuntu official repository (so you can apt-get it) but current binary is severely obsolete (1.9.0), use of this binary is NOT recommended and may cause unpredictable error.
-4. git clone this repository.
-5. Run `MAVEN_OPTS="-Xmx2g -XX:MaxPermSize=512M -XX:ReservedCodeCacheSize=512m" mvn package -DskipTests=true` or run  `./mvn-package.sh`
-    - increasing jvm heapspace size for Apache Maven is mandatory as 2 modules (example and shell) will generate uber jars.
-6. That's it! Now you have 3 options to use it:
-    - (easiest) launch spooky-shell and improvise your query: `./bin/spooky-shell.sh`
-    - give any example a test run: bin/submit-example.sh *name of the example*
-    - write your own application by importing spooky-core into your dependencies.
 
-### ... to Cluster/Amazon EC2
-1. Setup a cluster and assure mutual connectivity
-2. Install Ubuntu 12+ on all nodes.
-    - scripts to autodeploy on other Spark-compatible OS is currently NOT under active development. Please vote on the issue tracker if you demand it.
-    - the easiest way to set it up is on Amazon EC2, AMI with pre-installed environment and autoscaling ability will be made public shortly
-3. Install Ansible on your client and make sure you can ssh into all your nodes with a valid private key (id_rsa).
-4. Edit files in ops/ansible/inventories.template to include ip/dns of your master node and all worker nodes. Change the directory name to /ops/ansible/inventories
-5. cd into ops/ansible and:
-    - deploy master: ./ansible-playbook deploy-master.yml -i ./inventories --private-key=*yor private key (id_rsa)*
-    - deploy workers: .ansible-ploybook deploy-worker.yml -i ./inventories --private-key=*yor private key (id_rsa)*
-    - this will install oracle-java7 and do step 1,2,3, automatically on all nodes. You can do it manually but that's a lot of work!
-6. Do step 4,5 on master node and run any of the 3 options
-    - you can download and run it on any node in the same subnet of the cluster, but expect heavy traffic between your client node and master node.
-
-### alternatively ...
-you can use scripts in $SPARK_HOME/ec2 to setup a Spark cluster with transient HDFS support. But this has 2 problems:
-    - Autoscaling is currently not supported.
-    - Spark installation directory is hardcoded to '/root/spark', if your client has a different directory it may cause some compatibility issue.
-
+###### Please refer to [SpookyOps readme](https://github.com/tribbloid/spookyops/blob/master/README.md)
 
 Integration Test
 ----------------
