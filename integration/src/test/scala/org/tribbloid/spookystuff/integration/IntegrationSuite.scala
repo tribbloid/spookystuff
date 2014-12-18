@@ -89,6 +89,7 @@ abstract class IntegrationSuite extends FunSuite with BeforeAndAfterAll {
 
     assert(localCacheEnv.metrics.pagesFetched.value === numPages)
     assert(localCacheEnv.metrics.pagesFetchedFromCache.value === numPages)
+    assert(localCacheEnv.metrics.sessionInitialized.value === numSessions)
     assert(localCacheEnv.metrics.driverInitialized.value === 0)
     assert(localCacheEnv.metrics.DFSReadSuccess.value > 0)
     assert(localCacheEnv.metrics.DFSReadFail.value === 0)
@@ -107,6 +108,7 @@ abstract class IntegrationSuite extends FunSuite with BeforeAndAfterAll {
 
     assert(s3CacheEnv.metrics.pagesFetched.value === numPages)
     assert(s3CacheEnv.metrics.pagesFetchedFromCache.value === numPages)
+    assert(s3CacheEnv.metrics.sessionInitialized.value === numSessions)
     assert(s3CacheEnv.metrics.driverInitialized.value === 0)
     assert(s3CacheEnv.metrics.DFSReadSuccess.value > 0)
     assert(s3CacheEnv.metrics.DFSReadFail.value === 0)

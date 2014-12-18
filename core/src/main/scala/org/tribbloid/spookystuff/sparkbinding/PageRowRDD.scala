@@ -374,7 +374,8 @@ case class PageRowRDD(
              numPartitions: Int = this.sparkContext.defaultParallelism,
              flattenPagesPattern: Symbol = '*, //by default, always flatten all pages
              flattenPagesIndexKey: Symbol = null,
-             lookupFrom: RDD[PageLike] = this.flatMap(_.pageLikes)  //by default use self as cache
+             lookupFrom: RDD[PageLike] = this.flatMap(_.pageLikes)
+//           lookupFrom: RDD[PageLike] = null
              ): PageRowRDD = {
 
     import org.apache.spark.SparkContext._
@@ -476,13 +477,13 @@ case class PageRowRDD(
             flattenPagesPattern: Symbol = '*,
             flattenPagesIndexKey: Symbol = null
             )(
-            exprs: Expr[Any]*
+            select: Expr[Any]*
             ): PageRowRDD = {
 
     this
       .flattenTemp(expr defaultAs Symbol(Const.defaultJoinKey), indexKey, limit, left = true)
       .fetch(traces, joinType, numPartitions, flattenPagesPattern, flattenPagesIndexKey)
-      .select(exprs: _*)
+      .select(select: _*)
       .clearTemp
   }
 
@@ -497,9 +498,14 @@ case class PageRowRDD(
                  indexKey: Symbol = null, //left & idempotent parameters are missing as they are always set to true
                  limit: Int = spooky.joinLimit,
                  joinType: JoinType = Const.defaultJoinType,
-                 numPartitions: Int = this.sparkContext.defaultParallelism
+                 numPartitions: Int = this.sparkContext.defaultParallelism,
+                 select: Expr[Any] = null
                  ): PageRowRDD =
-    this.join(expr, indexKey, limit)(Visit(new GetExpr(Const.defaultJoinKey)), joinType, numPartitions)()
+    this.join(expr, indexKey, limit)(
+      Visit(new GetExpr(Const.defaultJoinKey)),
+      joinType,
+      numPartitions
+    )(Option(select).toSeq: _*)
 
   /**
    * same as join, but avoid launching a browser by using direct http GET (wget) to download new pages
@@ -512,9 +518,14 @@ case class PageRowRDD(
                 indexKey: Symbol = null, //left & idempotent parameters are missing as they are always set to true
                 limit: Int = spooky.joinLimit,
                 joinType: JoinType = Const.defaultJoinType,
-                numPartitions: Int = this.sparkContext.defaultParallelism
+                numPartitions: Int = this.sparkContext.defaultParallelism,
+                select: Expr[Any] = null
                 ): PageRowRDD =
-    this.join(expr, indexKey, limit)(Wget(new GetExpr(Const.defaultJoinKey)), joinType, numPartitions)()
+    this.join(expr, indexKey, limit)(
+      Wget(new GetExpr(Const.defaultJoinKey)),
+      joinType,
+      numPartitions
+    )(Option(select).toSeq: _*)
 
   def distinctSignature(
                          ignore: Iterable[Symbol],
@@ -572,7 +583,7 @@ case class PageRowRDD(
                flattenPagesPattern: Symbol = '*,
                flattenPagesIndexKey: Symbol = null
                )(
-               exprs: Expr[Any]*
+               select: Expr[Any]*
                ): PageRowRDD = {
 
     var newRows = this
@@ -594,7 +605,7 @@ case class PageRowRDD(
 
       import org.apache.spark.SparkContext._
 
-      totalPages = totalPages.union(joinedPages).keyBy(_.uid).reduceByKey((v1,v2) => v1).values
+      totalPages = totalPages.union(joinedPages).keyBy(_.uid).reduceByKey((v1,v2) => v1, numPartitions).values
 
       val joined = joinedBeforeFlatten.flattenPages(flattenPagesPattern, flattenPagesIndexKey)
 
@@ -609,7 +620,7 @@ case class PageRowRDD(
 
       if (newRowsCount == 0){
         return total
-          .select(exprs: _*)
+          .select(select: _*)
           .clearTemp
           .coalesce(numPartitions) //early stop condition if no new pages with the same data is detected
       }
@@ -617,11 +628,11 @@ case class PageRowRDD(
       total = total.union(
         if (depthKey != null) newRows.select(new Literal(depth) > depthKey)
         else newRows
-      )
+      ).coalesce(numPartitions)
     }
 
     total
-      .select(exprs: _*)
+      .select(select: _*)
       .clearTemp
       .coalesce(numPartitions)
   }
@@ -631,24 +642,26 @@ case class PageRowRDD(
                     depthKey: Symbol = null,
                     indexKey: Symbol = null, //left & idempotent parameters are missing as they are always set to true
                     maxDepth: Int = spooky.maxExploreDepth,
-                    numPartitions: Int = this.sparkContext.defaultParallelism
+                    numPartitions: Int = this.sparkContext.defaultParallelism,
+                    select: Expr[Any] = null
                     ): PageRowRDD =
     explore(expr, depthKey, indexKey, maxDepth)(
       Visit(new GetExpr(Const.defaultJoinKey)),
       numPartitions
-    )()
+    )(Option(select).toSeq: _*)
 
   def wgetExplore(
                    expr: Expr[Any],
                    depthKey: Symbol = null,
                    indexKey: Symbol = null, //left & idempotent parameters are missing as they are always set to true
                    maxDepth: Int = spooky.maxExploreDepth,
-                   numPartitions: Int = this.sparkContext.defaultParallelism
+                   numPartitions: Int = this.sparkContext.defaultParallelism,
+                   select: Expr[Any] = null
                    ): PageRowRDD =
     explore(expr, depthKey, indexKey, maxDepth)(
       Wget(new GetExpr(Const.defaultJoinKey)),
       numPartitions
-    )()
+    )(Option(select).toSeq: _*)
 
   /**
    * insert many pages for each old page by recursively visiting "next page" link

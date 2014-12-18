@@ -14,8 +14,8 @@ object Iherb extends ExampleCore {
       .fetch(
         Wget("http://ca.iherb.com/")
       )
-      .wgetJoin($"div.category a")
-      .wgetExplore($"p.pagination a:contains(Next)", depthKey = 'page)
+      .wgetJoin($"div.category a", indexKey = 'category_index)
+      .wgetExplore($"p.pagination a", select = 'A.text > 'page)
       .flatSelect($"div.prodSlotWide", indexKey = 'row)(
         A"p.description".text > 'description,
         A"div.price".text > 'price,
