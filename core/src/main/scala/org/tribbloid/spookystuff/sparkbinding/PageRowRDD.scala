@@ -439,7 +439,7 @@ case class PageRowRDD(
         .map(_ -> null)
         .subtractByKey(traceToPagesFromLookup)
         .map(_._1)
-        .repartition(numPartitions) //slow but well-balanced
+        .coalesce(numPartitions)
       //-------------------lookup finished-----------------
 
       traceNotFromCache.map{
