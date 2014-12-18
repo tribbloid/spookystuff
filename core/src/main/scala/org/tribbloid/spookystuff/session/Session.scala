@@ -15,8 +15,6 @@ import scala.collection.mutable.ArrayBuffer
 //TODO: this should be minimized and delegated to resource pool
 class Session(val spooky: SpookyContext){
 
-  spooky.metrics.sessionInitialized += 1
-
   val startTime: Long = new Date().getTime
 
   @volatile

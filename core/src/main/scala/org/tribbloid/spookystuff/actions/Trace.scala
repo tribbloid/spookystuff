@@ -67,6 +67,7 @@ final case class Trace(
     if (self.isEmpty) Seq()
     else {
       val session = new Session(spooky)
+      spooky.metrics.sessionInitialized += 1
 
       try {
         this.apply(session)
