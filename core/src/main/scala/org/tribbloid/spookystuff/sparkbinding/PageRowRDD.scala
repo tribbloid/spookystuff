@@ -207,10 +207,6 @@ case class PageRowRDD(
   //   */
   def select(exprs: Expr[Any]*): PageRowRDD = {
 
-    //    val _exprs = exprs.filterNot {
-    //      case ex: GetExpr => ex.name == ex.name
-    //      case _ => false
-    //    }
     val _exprs = exprs
 
     val newKeys: Seq[Key] = _exprs.map {
@@ -229,10 +225,6 @@ case class PageRowRDD(
 
   private def selectTemp(exprs: Expr[Any]*): PageRowRDD = {
 
-    //    val _exprs = exprs.filterNot {
-    //      case ex: GetExpr => ex.name == ex.name
-    //      case _ => false
-    //    } //TODO: optional!
     val _exprs = exprs
 
     val newKeys: Seq[TempKey] = _exprs.map {
@@ -403,7 +395,7 @@ case class PageRowRDD(
     val traceRDD = this.flatMap(
       row => _trace.interpolate(row)
     )
-    val traceDistinct = traceRDD.distinct()
+    val traceDistinct = traceRDD.distinct(numPartitions)
 
     val traceToPages = if (lookupFrom == null) {
       traceDistinct.map{
@@ -425,11 +417,12 @@ case class PageRowRDD(
       val backtraceToTraceIndex = traceDistinct.flatMap{ //key unique: traceDistinct.dryrun still yield distinct trace
         trace =>
           val dryruns = trace.dryrun.zipWithIndex
-          dryruns.map(tuple => tuple._1 -> (trace, tuple._2))
+          if (dryruns.nonEmpty) dryruns.map(tuple => tuple._1 -> (trace, tuple._2))
+          else Seq(null.asInstanceOf[Trace] -> (trace, 0))
       }
 
       val joinedTraceIndexToPages = backtraceToTraceIndex.leftOuterJoin(lookupBacktraceToPages)
-      val traceToPagesFromLookup = joinedTraceIndexToPages.map{
+      joinedTraceIndexToPages.map{
         tuple =>
           val backtrace = tuple._1
           val traceIndexToPages = tuple._2
@@ -442,24 +435,15 @@ case class PageRowRDD(
               }
           }
           traceIndexToPages._1._1 -> (traceIndexToPages._1._2, traceIndexToPages._2)
-      }.groupByKey().flatMap{
+      }.groupByKey(numPartitions).map{
         tuple =>
-          if (tuple._2.map(_._2).toSeq.contains(None)) None
+          if (tuple._2.map(_._2).toSeq.contains(None)) tuple._1 -> tuple._1.resolve(_spooky)
           else {
             val pages = tuple._2.toSeq.sortBy(_._1).flatMap(_._2.get)
-            Some(tuple._1 -> pages)
+            tuple._1 -> pages
           }
       }
-      val traceNotFromCache = traceDistinct
-        .map(_ -> null)
-        .subtractByKey(traceToPagesFromLookup)
-        .map(_._1)
-        .coalesce(numPartitions)
-      //-------------------lookup finished-----------------
-
-      traceNotFromCache.map{
-        trace => trace -> trace.resolve(_spooky)
-      }.union(traceToPagesFromLookup)
+      //----------------lookup finish-------------------
     }
 
     val traceToRow = traceRDD.zip(this) //I'll assume this is safe
@@ -568,7 +552,7 @@ case class PageRowRDD(
     val ignoreKeyNames = ignore.map(_.name)
     val otherSignatures = others.map {
       row => row.signature(ignoreKeyNames)
-    }.distinct().map{
+    }.map{
       signature => signature -> null
     }
     val withSignatures = this.map{
