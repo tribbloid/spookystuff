@@ -142,7 +142,7 @@ object PageUtils {
       }
       else null
     }
-    spooky.metrics.pagesFetchedFromCache += result.count(_.isInstanceOf[Page])
+    if (result!=null) spooky.metrics.pagesFetchedFromCache += result.count(_.isInstanceOf[Page])
 
     result
   }
