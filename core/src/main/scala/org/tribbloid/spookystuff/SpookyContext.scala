@@ -46,7 +46,7 @@ class SpookyContext (
                       var errorDumpExtract: Extract[String] = new UUIDFileName(Hierarchical),
 
                       var autoSaveRoot: String = "s3n://spooky-page/",
-                      var autoCacheRoot: String = "s3n://spooky-cache/",
+                      private var _autoCacheRoot: String = "s3n://spooky-cache/",
                       var errorDumpRoot: String = "s3n://spooky-error/",
                       var errorDumpScreenshotRoot: String = "s3n://spooky-error-screenshot/",
                       var localErrorDumpRoot: String = "file:///spooky-error/",
@@ -64,9 +64,16 @@ class SpookyContext (
                       )
   extends Serializable {
 
-//  if (sqlContext.sparkContext.getCheckpointDir.isEmpty){
-//    sqlContext.sparkContext.setCheckpointDir(autoCacheRoot)
-//  }
+  if (sqlContext.sparkContext.getCheckpointDir.isEmpty){
+    sqlContext.sparkContext.setCheckpointDir(_autoCacheRoot)
+  }
+
+  def autoCacheRoot = _autoCacheRoot
+
+  def autoCacheRoot_=(v: String): Unit = {
+    _autoCacheRoot = v
+    sqlContext.sparkContext.setCheckpointDir(_autoCacheRoot)
+  }
 
   var metrics = new Metrics
 

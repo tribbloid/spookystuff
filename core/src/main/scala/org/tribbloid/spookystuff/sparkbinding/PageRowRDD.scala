@@ -619,6 +619,10 @@ case class PageRowRDD(
       import org.apache.spark.SparkContext._
 
       totalPages = totalPages.union(joinedPages).keyBy(_.uid).reduceByKey((v1,v2) => PageUtils.later(v1,v2), numPartitions).values
+      if (depth % 20 == 0) {
+        totalPages.checkpoint()
+        totalPages.count()
+      }
 
       val joined = joinedBeforeFlatten.flattenPages(flattenPagesPattern, flattenPagesIndexKey)
 
@@ -642,6 +646,10 @@ case class PageRowRDD(
         if (depthKey != null) newRows.select(new Literal(depth) > depthKey)
         else newRows
       ).coalesce(numPartitions)
+      if (depth % 20 == 0) {
+        total.checkpoint()
+        total.count()
+      }
     }
 
     total
