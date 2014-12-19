@@ -86,12 +86,14 @@ abstract class IntegrationSuite extends FunSuite with BeforeAndAfterAll {
       Thread.sleep(2000)
       localCacheWriteOnlyEnv.metrics.pagesFetched.value
 
-
-      assert(localCacheWriteOnlyEnv.metrics.pagesFetched.value === numPages)
-      assert(localCacheWriteOnlyEnv.metrics.pagesFetchedFromWeb.value === numPages)
-      assert(localCacheWriteOnlyEnv.metrics.pagesFetchedFromCache.value === 0)
-      assert(localCacheWriteOnlyEnv.metrics.sessionInitialized.value === numSessions + 1 +- 1)
-      assert(localCacheWriteOnlyEnv.metrics.driverInitialized.value === numDrivers + 1 +- 1)
+      val metrics = localCacheWriteOnlyEnv.metrics
+      assert(metrics.pagesFetched.value === numPages)
+      assert(metrics.pagesFetchedFromWeb.value === numPages)
+      assert(metrics.pagesFetchedFromCache.value === 0)
+      assert(metrics.sessionInitialized.value === numSessions + 1 +- 1)
+      assert(metrics.sessionReclaimed.value >= metrics.sessionInitialized.value)
+      assert(metrics.driverInitialized.value === numDrivers + 1 +- 1)
+      assert(metrics.driverReclaimed.value >= metrics.driverInitialized.value)
     }
 
     doMain(localCacheEnv)
@@ -99,13 +101,16 @@ abstract class IntegrationSuite extends FunSuite with BeforeAndAfterAll {
     Utils.retry(10) {
       Thread.sleep(2000)
 
-      assert(localCacheEnv.metrics.pagesFetched.value === numPages)
-      assert(localCacheEnv.metrics.pagesFetchedFromWeb.value === 0)
-      assert(localCacheEnv.metrics.pagesFetchedFromCache.value === numPages)
-      assert(localCacheEnv.metrics.sessionInitialized.value === 0)
-      assert(localCacheEnv.metrics.driverInitialized.value === 0)
-      assert(localCacheEnv.metrics.DFSReadSuccess.value > 0)
-      assert(localCacheEnv.metrics.DFSReadFail.value === 0)
+      val metrics = localCacheEnv.metrics
+      assert(metrics.pagesFetched.value === numPages)
+      assert(metrics.pagesFetchedFromWeb.value === 0)
+      assert(metrics.pagesFetchedFromCache.value === numPages)
+      assert(metrics.sessionInitialized.value === 0)
+      assert(metrics.sessionReclaimed.value >= metrics.sessionInitialized.value)
+      assert(metrics.driverInitialized.value === 0)
+      assert(metrics.driverReclaimed.value >= metrics.driverInitialized.value)
+      assert(metrics.DFSReadSuccess.value > 0)
+      assert(metrics.DFSReadFail.value === 0)
     }
   }
 
