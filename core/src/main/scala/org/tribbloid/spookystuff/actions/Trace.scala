@@ -1,8 +1,8 @@
 package org.tribbloid.spookystuff.actions
 
 import org.tribbloid.spookystuff.entity.PageRow
-import org.tribbloid.spookystuff.pages.{Page, PageLike}
-import org.tribbloid.spookystuff.session.Session
+import org.tribbloid.spookystuff.pages.{Page, PageLike, PageUtils}
+import org.tribbloid.spookystuff.session.{DriverSession, NoDriverSession, Session}
 import org.tribbloid.spookystuff.utils.Utils
 import org.tribbloid.spookystuff.{Const, SpookyContext}
 
@@ -23,11 +23,27 @@ final case class Trace(
     Some(Trace(seq).asInstanceOf[this.type])
   }
 
-  //TODO: migrate all lazy-evaluation and cache here, PageBuilder should not handle this
   override def apply(session: Session): Seq[PageLike] = {
 
-    session ++= self
-    session.pageLikes
+    val results = new ArrayBuffer[PageLike]()
+
+    this.self.foreach {
+      action =>
+        val result = action.apply(session)
+        session.backtrace ++= action.trunk
+
+        results ++= result
+
+        val spooky = session.spooky
+
+        if (spooky.autoSave) result.foreach{
+          case page: Page => page.autoSave(spooky)
+          case _ =>
+        }
+        if (spooky.autoCache && result.nonEmpty) PageUtils.autoCache(result, spooky)
+    }
+
+    results
   }
 
   //the result can never be empty.
@@ -52,7 +68,7 @@ final case class Trace(
 
   def resolve(spooky: SpookyContext): Seq[PageLike] = {
 
-    val result = Utils.retry (Const.remoteResourceInPartitionRetry){
+    val result = Utils.retry (Const.remoteResourceLocalRetry){
       resolvePlain(spooky)
     }
 
@@ -64,17 +80,23 @@ final case class Trace(
   //no retry
   def resolvePlain(spooky: SpookyContext): Seq[PageLike] = {
 
-    if (self.isEmpty) Seq()
-    else {
-      val session = new Session(spooky)
-      spooky.metrics.sessionInitialized += 1
+    if (self.isEmpty) return Seq()
 
-      try {
-        this.apply(session)
-      }
-      finally {
-        session.close()
-      }
+    val drys = this.dryrun
+    val pagesFromCache = drys.map(dry => PageUtils.autoRestoreLatest(dry, spooky))
+
+    if (!pagesFromCache.contains(null)){
+      val result = pagesFromCache.flatMap(seq => seq)
+      return result
+    }
+
+    val session = if (self.count(_.isInstanceOf[Driverless]) == self.size) new NoDriverSession(spooky)
+    else new DriverSession(spooky)
+    try {
+      this.apply(session)
+    }
+    finally {
+      session.close()
     }
   }
 
@@ -112,8 +134,8 @@ final class TraceSetView(self: Set[Trace]) {
 
   def *>[T: ClassTag](others: TraversableOnce[T]): Set[Trace] = self.flatMap(
     trace => others.map {
-      case action: Action => Trace(trace.self :+ action)
-      case other: Trace => Trace(trace.self ++ other.self)
+      case otherAction: Action => Trace(trace.self :+ otherAction)
+      case otherTrace: Trace => Trace(trace.self ++ otherTrace.self)
     }
   )
 

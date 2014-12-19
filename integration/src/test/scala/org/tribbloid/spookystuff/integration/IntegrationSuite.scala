@@ -6,6 +6,7 @@ import org.apache.spark.sql.SQLContext
 import org.apache.spark.{SparkConf, SparkContext}
 import org.scalatest.{Matchers, BeforeAndAfterAll, FunSuite}
 import org.tribbloid.spookystuff.SpookyContext
+import org.tribbloid.spookystuff.utils.Utils
 
 /**
  * Created by peng on 12/2/14.
@@ -81,39 +82,51 @@ abstract class IntegrationSuite extends FunSuite with BeforeAndAfterAll {
 
     doMain(localCacheWriteOnlyEnv)
 
-    assert(localCacheWriteOnlyEnv.metrics.pagesFetched.value === numPages)
-    assert(localCacheWriteOnlyEnv.metrics.pagesFetchedFromCache.value === 0)
-    assert(localCacheWriteOnlyEnv.metrics.sessionInitialized.value === numSessions + 1 +- 1)
-    assert(localCacheWriteOnlyEnv.metrics.driverInitialized.value === numDrivers + 1 +- 1)
+    Utils.retry(10) { //sometimes accumulator takes time to signal back
+      Thread.sleep(2000)
+      localCacheWriteOnlyEnv.metrics.pagesFetched.value
+
+
+      assert(localCacheWriteOnlyEnv.metrics.pagesFetched.value === numPages)
+      assert(localCacheWriteOnlyEnv.metrics.pagesFetchedFromWeb.value === numPages)
+      assert(localCacheWriteOnlyEnv.metrics.pagesFetchedFromCache.value === 0)
+      assert(localCacheWriteOnlyEnv.metrics.sessionInitialized.value === numSessions + 1 +- 1)
+      assert(localCacheWriteOnlyEnv.metrics.driverInitialized.value === numDrivers + 1 +- 1)
+    }
 
     doMain(localCacheEnv)
 
-    assert(localCacheEnv.metrics.pagesFetched.value === numPages)
-    assert(localCacheEnv.metrics.pagesFetchedFromCache.value === numPages)
-    assert(localCacheEnv.metrics.sessionInitialized.value === numSessions + 1 +- 1)
-    assert(localCacheEnv.metrics.driverInitialized.value === 0)
-    assert(localCacheEnv.metrics.DFSReadSuccess.value > 0)
-    assert(localCacheEnv.metrics.DFSReadFail.value === 0)
+    Utils.retry(10) {
+      Thread.sleep(2000)
+
+      assert(localCacheEnv.metrics.pagesFetched.value === numPages)
+      assert(localCacheEnv.metrics.pagesFetchedFromWeb.value === 0)
+      assert(localCacheEnv.metrics.pagesFetchedFromCache.value === numPages)
+      assert(localCacheEnv.metrics.sessionInitialized.value === 0)
+      assert(localCacheEnv.metrics.driverInitialized.value === 0)
+      assert(localCacheEnv.metrics.DFSReadSuccess.value > 0)
+      assert(localCacheEnv.metrics.DFSReadFail.value === 0)
+    }
   }
 
-  test("s3 cache") {
-
-    doMain(s3CacheWriteOnlyEnv)
-
-    assert(s3CacheWriteOnlyEnv.metrics.pagesFetched.value === numPages)
-    assert(s3CacheWriteOnlyEnv.metrics.pagesFetchedFromCache.value === 0)
-    assert(s3CacheWriteOnlyEnv.metrics.sessionInitialized.value === numSessions + 1 +- 1)
-    assert(s3CacheWriteOnlyEnv.metrics.driverInitialized.value === numDrivers + 1 +- 1)
-
-    doMain(s3CacheEnv)
-
-    assert(s3CacheEnv.metrics.pagesFetched.value === numPages)
-    assert(s3CacheEnv.metrics.pagesFetchedFromCache.value === numPages)
-    assert(s3CacheEnv.metrics.sessionInitialized.value === numSessions + 1 +- 1)
-    assert(s3CacheEnv.metrics.driverInitialized.value === 0)
-    assert(s3CacheEnv.metrics.DFSReadSuccess.value > 0)
-    assert(s3CacheEnv.metrics.DFSReadFail.value === 0)
-  }
+//  test("s3 cache") {
+//
+//    doMain(s3CacheWriteOnlyEnv)
+//
+//    assert(s3CacheWriteOnlyEnv.metrics.pagesFetchedFromWeb.value === numPages)
+//    assert(s3CacheWriteOnlyEnv.metrics.pagesFetchedFromCache.value === 0)
+//    assert(s3CacheWriteOnlyEnv.metrics.sessionInitialized.value === numSessions + 1 +- 1)
+//    assert(s3CacheWriteOnlyEnv.metrics.driverInitialized.value === numDrivers + 1 +- 1)
+//
+//    doMain(s3CacheEnv)
+//
+//    assert(s3CacheEnv.metrics.pagesFetchedFromWeb.value === 0)
+//    assert(s3CacheEnv.metrics.pagesFetchedFromCache.value === numPages)
+//    assert(s3CacheEnv.metrics.sessionInitialized.value === 0)
+//    assert(s3CacheEnv.metrics.driverInitialized.value === 0)
+//    assert(s3CacheEnv.metrics.DFSReadSuccess.value > 0)
+//    assert(s3CacheEnv.metrics.DFSReadFail.value === 0)
+//  }
 
   def doMain(spooky: SpookyContext): Unit
 

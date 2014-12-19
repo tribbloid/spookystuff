@@ -8,7 +8,7 @@ import org.tribbloid.spookystuff.actions._
 import org.tribbloid.spookystuff.dsl.{Inner, JoinType, _}
 import org.tribbloid.spookystuff.entity._
 import org.tribbloid.spookystuff.expressions._
-import org.tribbloid.spookystuff.pages.PageLike
+import org.tribbloid.spookystuff.pages.{PageUtils, PageLike}
 import org.tribbloid.spookystuff.utils._
 import org.tribbloid.spookystuff.{Const, SpookyContext}
 
@@ -398,7 +398,7 @@ case class PageRowRDD(
     else {
       //----------------lookup start-------------------
       val lookupBacktraceToPages = lookupFrom //key unique due to groupBy
-        .keyBy(_.uid).reduceByKey((v1,v2) => v1).values
+        .keyBy(_.uid).reduceByKey((v1,v2) => PageUtils.later(v1,v2)).values
         .groupBy(_.uid.backtrace)
         .mapValues{
         pages =>
@@ -534,9 +534,7 @@ case class PageRowRDD(
     import org.apache.spark.SparkContext._
 
     val ignoreKeyNames = ignore.map(_.name)
-    val withSignatures = this.map{
-      row => row.signature(ignoreKeyNames) -> row
-    }
+    val withSignatures = this.keyBy(_.signature(ignoreKeyNames))
     val distinct = withSignatures.reduceByKey((row1, row2) => row1).values
 
     this.copy(
@@ -605,15 +603,15 @@ case class PageRowRDD(
 
       import org.apache.spark.SparkContext._
 
-      totalPages = totalPages.union(joinedPages).keyBy(_.uid).reduceByKey((v1,v2) => v1, numPartitions).values
+      totalPages = totalPages.union(joinedPages).keyBy(_.uid).reduceByKey((v1,v2) => PageUtils.later(v1,v2), numPartitions).values
 
       val joined = joinedBeforeFlatten.flattenPages(flattenPagesPattern, flattenPagesIndexKey)
 
       val allIgnoredKeys = Seq(depthKey, indexKey, flattenPagesIndexKey).filter(_ != null)
 
       newRows = joined
-        .distinctSignature(allIgnoredKeys)
         .subtractSignature(total, allIgnoredKeys)
+        .distinctSignature(allIgnoredKeys)
         .persist()
 
       val newRowsCount = newRows.count()

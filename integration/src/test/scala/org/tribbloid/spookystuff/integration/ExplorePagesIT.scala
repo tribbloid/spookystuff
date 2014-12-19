@@ -39,7 +39,7 @@ class ExplorePagesIT extends IntegrationSuite {
     assert(rows(1).mkString("|") === "1|0|2|http://webscraper.io/test-sites/e-commerce/static/computers/tablets/2")
     assert(rows(2).mkString("|") === "1|1|3|http://webscraper.io/test-sites/e-commerce/static/computers/tablets/3")
     assert(rows(3).mkString("|") === "1|2|4|http://webscraper.io/test-sites/e-commerce/static/computers/tablets/4")
-    assert(rows(4).mkString("|") === "2|1|1|http://webscraper.io/test-sites/e-commerce/static/computers/tablets/1")
+    assert(rows(4).mkString("|") === "2|0|«|http://webscraper.io/test-sites/e-commerce/static/computers/tablets/1")
   }
 
   override def numPages = 5

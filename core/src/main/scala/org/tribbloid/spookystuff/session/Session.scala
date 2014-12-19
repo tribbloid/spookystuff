@@ -6,46 +6,23 @@ import java.util.concurrent.TimeUnit
 import org.openqa.selenium.Dimension
 import org.openqa.selenium.remote.SessionNotFoundException
 import org.slf4j.LoggerFactory
-import org.tribbloid.spookystuff.SpookyContext
+import org.tribbloid.spookystuff.{Const, SpookyContext}
 import org.tribbloid.spookystuff.actions._
-import org.tribbloid.spookystuff.pages.{NoPage, PageLike, PageUtils, Page}
+import org.tribbloid.spookystuff.utils.Utils
 
 import scala.collection.mutable.ArrayBuffer
 
 //TODO: this should be minimized and delegated to resource pool
-class Session(val spooky: SpookyContext){
+abstract class Session(val spooky: SpookyContext) {
 
+  spooky.metrics.sessionInitialized += 1
   val startTime: Long = new Date().getTime
+  val backtrace: ArrayBuffer[Action] = ArrayBuffer()
 
-  @volatile
-  private var _driver: CleanWebDriver = null
-
-  def existingDriver: Option[CleanWebDriver] = Option(_driver)
-
-  //mimic lazy val but retain ability to destruct it on demandairframe
-  //TODO: make sure it can only be invoked by a subroutine with a deadline, or it will take forever!
-  def getDriver: CleanWebDriver = {
-    if (_driver == null) {
-      _driver = spooky.driverFactory.newInstance(null, spooky)
-
-      _driver.manage().timeouts()
-        .implicitlyWait(spooky.remoteResourceTimeout.toSeconds, TimeUnit.SECONDS)
-        .pageLoadTimeout(spooky.remoteResourceTimeout.toSeconds, TimeUnit.SECONDS)
-        .setScriptTimeout(spooky.remoteResourceTimeout.toSeconds, TimeUnit.SECONDS)
-
-      val resolution = spooky.browserResolution
-      if (resolution != null) _driver.manage().window().setSize(new Dimension(resolution._1, resolution._2))
-    }
-    _driver
-  }
+  val driver: CleanWebDriver
 
   def close(): Unit = {
     spooky.metrics.sessionReclaimed += 1
-    if (_driver != null) {
-      _driver.close()
-      _driver.quit()
-      spooky.metrics.driverReclaimed += 1
-    }
   }
 
   override def finalize(): Unit = {
@@ -56,69 +33,55 @@ class Session(val spooky: SpookyContext){
     catch {
       case e: SessionNotFoundException => //already cleaned before
       case e: Throwable =>
-        LoggerFactory.getLogger(this.getClass).warn("!!!!!FAIL TO CLEAN UP SESSION!!!!!"+e)
+        LoggerFactory.getLogger(this.getClass).warn("!!!!!FAIL TO CLEAN UP SESSION!!!!!" + e)
     }
-    finally{
+    finally {
       super.finalize()
     }
+
+    //  TODO: Runtime.getRuntime.addShutdownHook()
   }
+}
 
-  val backtrace: ArrayBuffer[Action] = ArrayBuffer() //kept in session, but it is action deciding if they fit in or what part to export
-  val realBacktrace: ArrayBuffer[Action] = ArrayBuffer() //real one excluding buffered
+class DriverSession(override val spooky: SpookyContext) extends Session(spooky){
 
-  private val buffer: ArrayBuffer[Action] = ArrayBuffer()
-  val pageLikes: ArrayBuffer[PageLike] = ArrayBuffer()
+  override val driver: CleanWebDriver = Utils.retry(Const.localResourceLocalRetry){
+    Utils.withDeadline(Const.sessionInitializationTimeout){
+      var successful = false
+      val driver = spooky.driverFactory.newInstance(null, spooky)
+      try {
+        driver.manage().timeouts()
+          .implicitlyWait(spooky.remoteResourceTimeout.toSeconds, TimeUnit.SECONDS)
+          .pageLoadTimeout(spooky.remoteResourceTimeout.toSeconds, TimeUnit.SECONDS)
+          .setScriptTimeout(spooky.remoteResourceTimeout.toSeconds, TimeUnit.SECONDS)
 
-  //  TODO: Runtime.getRuntime.addShutdownHook()
-  //by default drivers should be reset and reused in this case, but whatever
+        val resolution = spooky.browserResolution
+        if (resolution != null) driver.manage().window().setSize(new Dimension(resolution._1, resolution._2))
 
-  //  def exe(action: Action): Array[Page] = action.exe(this)
+        spooky.metrics.driverInitialized += 1
+        successful = true
 
-  //lazy execution by default.
-  def +=(action: Action): Unit = {
-    val trace = Trace(this.backtrace :+ action)//TODO: this shouldn't happen
-
-    this.backtrace ++= action.trunk//always put into backtrace.
-    if (action.mayExport) {
-      //always try to read from cache first
-      val restored = if (spooky.autoRestore) {
-
-        PageUtils.autoRestoreLatest(trace, spooky)
+        driver
       }
-      else null
-
-      if (restored != null) {
-        pageLikes ++= restored
-
-        LoggerFactory.getLogger(this.getClass).info("cached page(s) found, won't go online")
-      }
-      else {
-        for (buffered <- this.buffer)
-        {
-//          pages.clear()//TODO: need to save later version if buffered is refreshed
-          buffered(this) // buffered one may have non-empty results that are restored before
-          this.realBacktrace ++= buffered.trunk
+      finally {
+        if (!successful){
+          driver.close()
+          driver.quit()
+          spooky.metrics.driverReclaimed += 1
         }
-        buffer.clear()
-
-        var batch = action(this)
-        this.realBacktrace ++= action.trunk
-
-        if (spooky.autoSave) batch.foreach{
-          case page: Page => page.autoSave(spooky)
-          case _ =>
-        }
-        if (spooky.autoCache) PageUtils.autoCache(batch, spooky)
-
-        pageLikes ++= batch
       }
-    }
-    else {
-      this.buffer += action
     }
   }
 
-  def ++= (actions: Seq[Action]): Unit = {
-    actions.foreach(this += _)
+  override def close(): Unit = {
+    driver.close()
+    driver.quit()
+    spooky.metrics.driverReclaimed += 1
+    super.close()
   }
+}
+
+class NoDriverSession(override val spooky: SpookyContext) extends Session(spooky) {
+
+  override val driver: CleanWebDriver = null
 }

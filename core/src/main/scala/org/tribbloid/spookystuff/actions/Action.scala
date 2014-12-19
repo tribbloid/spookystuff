@@ -45,23 +45,16 @@ trait Action extends ActionLike {
     catch {
       case e: Throwable =>
 
-        var isInBacktrace = false
-
         var message: String = "\n"
 
         message += session.backtrace.map{
-          action =>{
-            if (action eq this) {
-              isInBacktrace = true
-              "+>"+action.toString
-            }
-            else "| "+action.toString
-          }
+          action =>
+            "| "+action.toString
         }.mkString("\n")
 
-        if (!isInBacktrace) message += "+>" + this
+        message += "\n+>" + this.toString
 
-        if (!this.isInstanceOf[Sessionless] && session.existingDriver.nonEmpty ) {
+        if (!this.isInstanceOf[Driverless] ) {
           if (errorDump) {
             val page = DefaultSnapshot.doExe(session).toList(0)
             try {
@@ -109,6 +102,7 @@ trait Action extends ActionLike {
     }
 
     this.timeElapsed = System.currentTimeMillis() - session.startTime
+    session.spooky.metrics.pagesFetchedFromWeb += results.count(_.isInstanceOf[Page])
 
     results
   }
@@ -166,4 +160,4 @@ trait Named extends Action {
   }
 }
 
-trait Sessionless extends Action
+trait Driverless extends Action

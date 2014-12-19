@@ -55,10 +55,10 @@ case class Snapshot() extends Export{
     //    }
 
     val page = new Page(
-      PageUID(Trace(pb.realBacktrace :+ this), this),
-      pb.existingDriver.get.getCurrentUrl,
+      PageUID(Trace(pb.backtrace :+ this), this),
+      pb.driver.getCurrentUrl,
       "text/html; charset=UTF-8",
-      pb.existingDriver.get.getPageSource.getBytes("UTF8")
+      pb.driver.getPageSource.getBytes("UTF8")
       //      serializableCookies
     )
 
@@ -73,14 +73,14 @@ case class Screenshot() extends Export {
 
   override def doExeNoName(pb: Session): Seq[Page] = {
 
-    val content = pb.existingDriver.get match {
+    val content = pb.driver match {
       case ts: TakesScreenshot => ts.getScreenshotAs(OutputType.BYTES)
       case _ => throw new UnsupportedOperationException("driver doesn't support snapshot")
     }
 
     val page = new Page(
-      PageUID(Trace(pb.realBacktrace :+ this), this),
-      pb.existingDriver.get.getCurrentUrl,
+      PageUID(Trace(pb.backtrace :+ this), this),
+      pb.driver.getCurrentUrl,
       "image/png",
       content
     )
@@ -98,7 +98,7 @@ object DefaultScreenshot extends Screenshot()
  * actions for more complex http/restful API call will be added per request.
  * @param uri support cell interpolation
  */
-case class Wget(uri: Expr[Any]) extends Export with Sessionless {
+case class Wget(uri: Expr[Any]) extends Export with Driverless {
 
   override def doExeNoName(pb: Session): Seq[Page] = {
 
@@ -174,7 +174,7 @@ case class Wget(uri: Expr[Any]) extends Export with Sessionless {
         val contentType = entity.getContentType.getValue
 
         val result = new Page(
-          PageUID(Trace(pb.realBacktrace :+ this), this),
+          PageUID(Trace(pb.backtrace :+ this), this),
           urlStr,
           contentType,
           content

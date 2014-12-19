@@ -16,179 +16,188 @@ import org.tribbloid.spookystuff.{Const, DFSReadException, DFSWriteException, Sp
  */
 object PageUtils {
 
-   def DFSRead[T](message: String, pathStr: String, spooky: SpookyContext)(f: => T): T = {
-     try {
-       val result = Utils.retry(Const.DFSInPartitionRetry) {
-         Utils.withDeadline(spooky.DFSTimeout) {f}
-       }
-       spooky.metrics.DFSReadSuccess += 1
-       result
-     }
-     catch {
-       case e: Throwable =>
-         spooky.metrics.DFSReadFail += 1
-         val ex = new DFSReadException(pathStr ,e)
-         ex.setStackTrace(e.getStackTrace)
-         if (spooky.failOnDFSError) throw ex
-         else {
-           LoggerFactory.getLogger(this.getClass).warn(message, ex)
-           null.asInstanceOf[T]
-         }
-     }
-   }
+  def DFSRead[T](message: String, pathStr: String, spooky: SpookyContext)(f: => T): T = {
+    try {
+      val result = Utils.retry(Const.DFSLocalRetry) {
+        Utils.withDeadline(spooky.DFSTimeout) {f}
+      }
+      spooky.metrics.DFSReadSuccess += 1
+      result
+    }
+    catch {
+      case e: Throwable =>
+        spooky.metrics.DFSReadFail += 1
+        val ex = new DFSReadException(pathStr ,e)
+        ex.setStackTrace(e.getStackTrace)
+        if (spooky.failOnDFSError) throw ex
+        else {
+          LoggerFactory.getLogger(this.getClass).warn(message, ex)
+          null.asInstanceOf[T]
+        }
+    }
+  }
 
-   //always fail on retry depletion and timeout
-   def DFSWrite[T](message: String, pathStr: String, spooky: SpookyContext)(f: => T): T = {
-     try {
-       val result = Utils.retry(Const.DFSInPartitionRetry) {
-         Utils.withDeadline(spooky.DFSTimeout) {f}
-       }
-       spooky.metrics.DFSWriteSuccess += 1
-       result
-     }
-     catch {
-       case e: Throwable =>
-         spooky.metrics.DFSWriteFail += 1
-         val ex = new DFSWriteException(pathStr ,e)
-         ex.setStackTrace(e.getStackTrace)
-         throw ex
-     }
-   }
+  //always fail on retry depletion and timeout
+  def DFSWrite[T](message: String, pathStr: String, spooky: SpookyContext)(f: => T): T = {
+    try {
+      val result = Utils.retry(Const.DFSLocalRetry) {
+        Utils.withDeadline(spooky.DFSTimeout) {f}
+      }
+      spooky.metrics.DFSWriteSuccess += 1
+      result
+    }
+    catch {
+      case e: Throwable =>
+        spooky.metrics.DFSWriteFail += 1
+        val ex = new DFSWriteException(pathStr ,e)
+        ex.setStackTrace(e.getStackTrace)
+        throw ex
+    }
+  }
 
-   def load(fullPath: Path)(spooky: SpookyContext): Array[Byte] = {
+  def later(v1: PageLike, v2: PageLike): PageLike = {
+    if (v1.timestamp after v2.timestamp) v1
+    else v2
+  }
 
-     DFSRead("load", fullPath.toString, spooky) {
-       val fs = fullPath.getFileSystem(spooky.hConf)
+  //TODO: return option
+  def load(fullPath: Path)(spooky: SpookyContext): Array[Byte] = {
 
-       if (fs.exists(fullPath)) {
+    DFSRead("load", fullPath.toString, spooky) {
+      val fs = fullPath.getFileSystem(spooky.hConf)
 
-         val fis = fs.open(fullPath)
+      if (fs.exists(fullPath)) {
 
-         try {
-           IOUtils.toByteArray(fis) //TODO: according to past experience, IOUtils is not stable?
-         }
-         finally {
-           fis.close()
-         }
-       }
-       else null
-     }
-   }
+        val fis = fs.open(fullPath)
 
-   //unlike save, this will store all information in an unreadable, serialized, probably compressed file
-   //always overwrite
-   def cache(
-              pageLikes: Seq[PageLike],
-              path: String,
-              overwrite: Boolean = false
-              )(spooky: SpookyContext): Unit = {
+        try {
+          IOUtils.toByteArray(fis) //TODO: according to past experience, IOUtils is not stable?
+        }
+        finally {
+          fis.close()
+        }
+      }
+      else null
+    }
+  }
 
-     DFSWrite("cache", path, spooky) {
-       val fullPath = new Path(path)
+  //unlike save, this will store all information in an unreadable, serialized, probably compressed file
+  //always overwrite
+  def cache(
+             pageLikes: Seq[PageLike],
+             path: String,
+             overwrite: Boolean = false
+             )(spooky: SpookyContext): Unit = {
 
-       val fs = fullPath.getFileSystem(spooky.hConf)
+    DFSWrite("cache", path, spooky) {
+      val fullPath = new Path(path)
 
-       val ser = SparkEnv.get.serializer.newInstance()
-       val fos = fs.create(fullPath, overwrite)
-       val serOut = ser.serializeStream(fos)
+      val fs = fullPath.getFileSystem(spooky.hConf)
 
-       try {
-         serOut.writeObject[Seq[PageLike]](Serializable[Seq[PageLike]](pageLikes, 91252374923L))
-       }
-       finally {
-         fos.close()
-         serOut.close()
-       }
-     }
-   }
+      val ser = SparkEnv.get.serializer.newInstance()
+      val fos = fs.create(fullPath, overwrite)
+      val serOut = ser.serializeStream(fos)
 
-   def autoCache(
-                  pageLikes: Seq[PageLike],
-                  spooky: SpookyContext
-                  ): Unit = {
-     val pathStr = Utils.urlConcat(
-       spooky.autoCacheRoot,
-       spooky.cacheTraceEncoder(pageLikes.head.uid.backtrace).toString,
-       UUID.randomUUID().toString
-     )
+      try {
+        serOut.writeObject[Seq[PageLike]](Serializable[Seq[PageLike]](pageLikes, 91252374923L))
+      }
+      finally {
+        fos.close()
+        serOut.close()
+      }
+    }
+  }
 
-     cache(pageLikes, pathStr)(spooky)
-   }
+  def autoCache(
+                 pageLikes: Seq[PageLike],
+                 spooky: SpookyContext
+                 ): Unit = {
+    val pathStr = Utils.urlConcat(
+      spooky.autoCacheRoot,
+      spooky.cacheTraceEncoder(pageLikes.head.uid.backtrace).toString,
+      UUID.randomUUID().toString
+    )
 
-   def restore(fullPath: Path)(spooky: SpookyContext): Seq[PageLike] = {
+    cache(pageLikes, pathStr)(spooky)
+  }
 
-     DFSRead("restore", fullPath.toString, spooky) {
-       val fs = fullPath.getFileSystem(spooky.hConf)
+  //TODO: return option
+  def restore(fullPath: Path)(spooky: SpookyContext): Seq[PageLike] = {
 
-       if (fs.exists(fullPath)) {
+    val result = DFSRead("restore", fullPath.toString, spooky) {
+      val fs = fullPath.getFileSystem(spooky.hConf)
 
-         val ser = SparkEnv.get.serializer.newInstance()
-         val fis = fs.open(fullPath)
-         val serIn = ser.deserializeStream(fis)
-         try {
-           val result = serIn.readObject[Seq[PageLike]]()
-           spooky.metrics.pagesFetchedFromCache += result.count(_.isInstanceOf[Page])
-           result
-//           obj.asInstanceOf[Seq[Page]]
-         }
-         finally{
-           fis.close()
-           serIn.close()
-         }
-       }
-       else null
-     }
-   }
+      if (fs.exists(fullPath)) {
 
-   //restore latest in a directory
-   //returns: Seq() => has backtrace dir but contains no page
-   //returns null => no backtrace dir
-   //TODO: cannot handle infinite duration, avoid using it!
-   def restoreLatest(
-                      dirPath: Path,
-                      earliestModificationTime: Long = 0
-                      )(spooky: SpookyContext): Seq[PageLike] = {
+        val ser = SparkEnv.get.serializer.newInstance()
+        val fis = fs.open(fullPath)
+        val serIn = ser.deserializeStream(fis)
+        try {
+          serIn.readObject[Seq[PageLike]]()
+        }
+        finally{
+          fis.close()
+          serIn.close()
+        }
+      }
+      else null
+    }
+    spooky.metrics.pagesFetchedFromCache += result.count(_.isInstanceOf[Page])
 
-     val latestStatus = DFSRead("get latest version", dirPath.toString, spooky) {
+    result
+  }
 
-       val fs = dirPath.getFileSystem(spooky.hConf)
+  //restore latest in a directory
+  //returns: Seq() => has backtrace dir but contains no page
+  //returns null => no backtrace dir
+  //TODO: cannot handle infinite duration, avoid using it!
+  //TODO: return option
+  def restoreLatest(
+                     dirPath: Path,
+                     earliestModificationTime: Long = 0
+                     )(spooky: SpookyContext): Seq[PageLike] = {
 
-       if (fs.exists(dirPath) && fs.getFileStatus(dirPath).isDir) {
+    val latestStatus = DFSRead("get latest version", dirPath.toString, spooky) {
 
-         val statuses = fs.listStatus(dirPath)
+      val fs = dirPath.getFileSystem(spooky.hConf)
 
-         statuses.filter(status => !status.isDir && status.getModificationTime >= earliestModificationTime)
-           .sortBy(_.getModificationTime).lastOption
-       }
-       else None
-     }
+      if (fs.exists(dirPath) && fs.getFileStatus(dirPath).isDir) {
 
-     latestStatus match {
-       case Some(status) => restore(status.getPath)(spooky)
-       case _ => null
-     }
-   }
+        val statuses = fs.listStatus(dirPath)
 
-   def autoRestoreLatest(
-                          trace: Trace,
-                          spooky: SpookyContext
-                          ): Seq[PageLike] = {
-     val pathStr = Utils.urlConcat(
-       spooky.autoCacheRoot,
-       spooky.cacheTraceEncoder(trace).toString
-     )
+        statuses.filter(status => !status.isDir && status.getModificationTime >= earliestModificationTime)
+          .sortBy(_.getModificationTime).lastOption
+      }
+      else None
+    }
 
-     val pages = restoreLatest(
-       new Path(pathStr),
-       System.currentTimeMillis() - spooky.pageExpireAfter.toMillis
-     )(spooky)
+    latestStatus match {
+      case Some(status) => restore(status.getPath)(spooky)
+      case _ => null
+    }
+  }
 
-     if (pages != null) for (page <- pages) {
-       val pageBacktrace: Trace = page.uid.backtrace
+  //TODO: return option
+  def autoRestoreLatest(
+                         trace: Trace,
+                         spooky: SpookyContext
+                         ): Seq[PageLike] = {
+    val pathStr = Utils.urlConcat(
+      spooky.autoCacheRoot,
+      spooky.cacheTraceEncoder(trace).toString
+    )
 
-       pageBacktrace.inject(trace.asInstanceOf[pageBacktrace.type])
-       //this is to allow actions in backtrace to have different name than those cached
-     }
-     pages
-   }
- }
+    val pages = restoreLatest(
+      new Path(pathStr),
+      System.currentTimeMillis() - spooky.pageExpireAfter.toMillis
+    )(spooky)
+
+    if (pages != null) for (page <- pages) {
+      val pageBacktrace: Trace = page.uid.backtrace
+
+      pageBacktrace.inject(trace.asInstanceOf[pageBacktrace.type])
+      //this is to allow actions in backtrace to have different name than those cached
+    }
+    pages
+  }
+}

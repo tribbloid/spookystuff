@@ -29,11 +29,11 @@ abstract class Block(override val self: Seq[Action]) extends Actions(self) with 
     this
   }
 
-  final override def doExe(pb: Session): Seq[PageLike] = {
+  final override def doExe(session: Session): Seq[PageLike] = {
 
-    val pages = this.doExeNoUID(pb)
+    val pages = this.doExeNoUID(session)
 
-    val backtrace = Trace(pb.realBacktrace :+ this)
+    val backtrace = Trace(session.backtrace :+ this)
     val result = pages.zipWithIndex.map {
       tuple => {
         val page = tuple._1
@@ -45,20 +45,20 @@ abstract class Block(override val self: Seq[Action]) extends Actions(self) with 
     else result
   }
 
-  def doExeNoUID(pb: Session): Seq[Page]
+  def doExeNoUID(session: Session): Seq[Page]
 }
 
 final case class Try(override val self: Seq[Action]) extends Block(self) {
 
   override def trunk = Some(Try(this.trunkSeq).asInstanceOf[this.type])
 
-  override def doExeNoUID(pb: Session): Seq[Page] = {
+  override def doExeNoUID(session: Session): Seq[Page] = {
 
     val pages = new ArrayBuffer[Page]()
 
     try {
       for (action <- self) {
-        pages ++= action.doExe(pb).flatMap{
+        pages ++= action.doExe(session).flatMap{
           case page: Page => Some(page)
           case noPage: NoPage => None
         }
@@ -94,7 +94,7 @@ final case class Loop(
 
   override def trunk = Some(this.copy(self = this.trunkSeq).asInstanceOf[this.type])
 
-  override def doExeNoUID(pb: Session): Seq[Page] = {
+  override def doExeNoUID(session: Session): Seq[Page] = {
 
     val pages = new ArrayBuffer[Page]()
 
@@ -102,7 +102,7 @@ final case class Loop(
       for (i <- 0 until limit) {
 
         for (action <- self) {
-          pages ++= action.doExe(pb).flatMap{
+          pages ++= action.doExe(session).flatMap{
             case page: Page => Some(page)
             case noPage: NoPage => None
           }
@@ -163,14 +163,14 @@ final case class If(
 
   override def trunk = Some(this.copy(ifTrue = ifTrue.flatMap(_.trunk), ifFalse = ifFalse.flatMap(_.trunk)).asInstanceOf[this.type])
 
-  override def doExeNoUID(pb: Session): Seq[Page] = {
+  override def doExeNoUID(session: Session): Seq[Page] = {
 
-    val current = DefaultSnapshot.apply(pb)(0).asInstanceOf[Page]
+    val current = DefaultSnapshot.doExe(session)(0)
 
     val pages = new ArrayBuffer[Page]()
     if (condition(current)) {
       for (action <- ifTrue) {
-        pages ++= action.doExe(pb).flatMap{
+        pages ++= action.doExe(session).flatMap{
           case page: Page => Some(page)
           case noPage: NoPage => None
         }
@@ -178,7 +178,7 @@ final case class If(
     }
     else {
       for (action <- ifFalse) {
-        pages ++= action.doExe(pb).flatMap{
+        pages ++= action.doExe(session).flatMap{
           case page: Page => Some(page)
           case noPage: NoPage => None
         }

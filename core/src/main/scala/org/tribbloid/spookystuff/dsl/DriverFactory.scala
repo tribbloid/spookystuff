@@ -27,7 +27,6 @@ sealed abstract class DriverFactory extends Serializable{
   final def newInstance(capabilities: Capabilities, spooky: SpookyContext): CleanWebDriver = {
     val result = _newInstance(capabilities, spooky)
 
-    spooky.metrics.driverInitialized += 1
     result
   }
 

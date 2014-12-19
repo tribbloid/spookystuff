@@ -213,7 +213,7 @@ case class PageRow(
   }
 
   //affect last page
-  //TODO: deprecate? or enable pagekey
+  //TODO: deprecate?
   def paginate(
                 selector: String,
                 attr: String,

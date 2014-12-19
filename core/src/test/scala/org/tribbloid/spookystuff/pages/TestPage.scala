@@ -4,7 +4,7 @@ import org.apache.hadoop.fs.Path
 import org.tribbloid.spookystuff.SpookyEnvSuite
 import org.tribbloid.spookystuff.actions.{Wget, Visit, Trace, Snapshot}
 import org.tribbloid.spookystuff.dsl._
-import org.tribbloid.spookystuff.session.Session
+import org.tribbloid.spookystuff.session.{DriverSession, Session}
 
 /**
  * Created by peng on 10/17/14.
@@ -13,9 +13,8 @@ class TestPage extends SpookyEnvSuite {
 
   test("empty page") {
     val emptyPage: Page = {
-      val pb = new Session(spooky)
+      val pb = new DriverSession(spooky)
 
-      pb.getDriver
       Snapshot().doExe(pb).toList(0)
     }
 

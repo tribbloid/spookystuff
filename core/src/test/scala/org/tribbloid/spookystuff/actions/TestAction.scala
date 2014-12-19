@@ -1,12 +1,11 @@
 package org.tribbloid.spookystuff.actions
 
-import org.scalatest.FunSuite
-import org.tribbloid.spookystuff.expressions.Literal
-import org.tribbloid.spookystuff.{Const, SpookyEnvSuite}
 import org.tribbloid.spookystuff.dsl._
 import org.tribbloid.spookystuff.entity.{Key, PageRow}
+import org.tribbloid.spookystuff.expressions.Literal
 import org.tribbloid.spookystuff.pages.Page
-import org.tribbloid.spookystuff.session.Session
+import org.tribbloid.spookystuff.session.DriverSession
+import org.tribbloid.spookystuff.{Const, SpookyEnvSuite}
 
 import scala.util.Random
 
@@ -38,7 +37,7 @@ class TestAction extends SpookyEnvSuite {
   }
 
   test("visit and snapshot") {
-    val builder = new Session(spooky)
+    val builder = new DriverSession(spooky)
     Visit("http://en.wikipedia.org")(builder)
     val page = Snapshot()(builder).toList(0).asInstanceOf[Page]
     //    val url = builder.getUrl
@@ -51,7 +50,7 @@ class TestAction extends SpookyEnvSuite {
   }
 
   test("visit, input submit and snapshot") {
-    val builder = new Session(spooky)
+    val builder = new DriverSession(spooky)
     Visit("http://www.wikipedia.org")(builder)
     TextInput("input#searchInput","Deep learning")(builder)
     Submit("input.formBtn")(builder)

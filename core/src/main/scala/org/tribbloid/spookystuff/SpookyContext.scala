@@ -33,9 +33,9 @@ class SpookyContext (
                       var headers: ()=> Map[String, String] = () => Map(),
                       val browserResolution: (Int, Int) = (1920, 1080),
 
-                      var autoSave: Boolean = true,//slow, for debugging only
-                      var autoCache: Boolean = true,//slow, but reduce bombarding highly aware sites
-                      var autoRestore: Boolean = true,//slow, but reduce bombarding highly aware sites
+                      var autoSave: Boolean = false,//slow, for debugging only
+                      var autoCache: Boolean = true,
+                      var autoRestore: Boolean = true,//reduce bombarding sites
                       var errorDump: Boolean = true,
                       var errorDumpScreenshot: Boolean = true,
 
@@ -52,8 +52,8 @@ class SpookyContext (
                       var localErrorDumpRoot: String = "file:///spooky-error/",
                       var localErrorDumpScreenshotRoot: String = "file:///spooky-error-screenshot/",
 
-                      var remoteResourceTimeout: Duration = 60.seconds,
-                      var DFSTimeout: Duration = 60.seconds,
+                      var remoteResourceTimeout: Duration = 20.seconds,
+                      var DFSTimeout: Duration = 40.seconds,
 
                       var failOnDFSError: Boolean = false,
 
@@ -63,6 +63,10 @@ class SpookyContext (
                       var paginationLimit: Int = 1000 //TODO: deprecate soon
                       )
   extends Serializable {
+
+//  if (sqlContext.sparkContext.getCheckpointDir.isEmpty){
+//    sqlContext.sparkContext.setCheckpointDir(autoCacheRoot)
+//  }
 
   var metrics = new Metrics
 
@@ -152,7 +156,8 @@ class SpookyContext (
     val DFSWriteSuccess: Accumulator[Int] = sc.accumulator(0, "DFSWriteSuccess")
     val DFSWriteFail: Accumulator[Int] = sc.accumulator(0, "DFSWriteFail")
 
-    val pagesFetchedFromCache: Accumulator[Int] = sc.accumulator(0, "pagesFetchedFromCache")
     val pagesFetched: Accumulator[Int] = sc.accumulator(0, "pagesFetched")
+    val pagesFetchedFromWeb: Accumulator[Int] = sc.accumulator(0, "pagesFetchedFromWeb")
+    val pagesFetchedFromCache: Accumulator[Int] = sc.accumulator(0, "pagesFetchedFromCache")
   }
 }

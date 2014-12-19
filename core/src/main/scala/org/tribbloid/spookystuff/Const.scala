@@ -5,8 +5,6 @@ import org.tribbloid.spookystuff.dsl.LeftOuter
 /**
  * Created by peng on 04/06/14.
  */
-//TODO: propose to merge with SpookyContext
-//TODO: can use singleton pattern? those values never changes after SparkContext is defined
 object Const {
 
   import scala.concurrent.duration._
@@ -20,11 +18,11 @@ object Const {
 //  val webClientOptions = new WebClientOptions
 //  webClientOptions.setUseInsecureSSL(true)
 
-//  val sessionInitializationTimeout = 120.seconds TODO: can't be used due to being initialized lazily
+  val sessionInitializationTimeout = 40.seconds
 
-  val inPartitionRetry = 3
-  val remoteResourceInPartitionRetry = 2
-  val DFSInPartitionRetry = 2
+  val localResourceLocalRetry = 3
+  val remoteResourceLocalRetry = 2
+  val DFSLocalRetry = 2
 
   val actionDelayMax: Duration = 60.seconds
   val actionDelayMin: Duration = 10.seconds
