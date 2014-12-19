@@ -162,7 +162,7 @@ case class PageRowRDD(
             ): PageRowRDD = {
 
     val spookyBroad = this.context.broadcast(this.spooky)
-    implicit def _spooky: SpookyContext = spookyBroad.value
+    def _spooky: SpookyContext = spookyBroad.value
 
     val saved = this.map {
 
@@ -351,7 +351,7 @@ case class PageRowRDD(
     )
 
     val spookyBroad = this.context.broadcast(this.spooky)
-    implicit def _spooky: SpookyContext = spookyBroad.value
+    def _spooky: SpookyContext = spookyBroad.value
 
     val withPages = withTrace.map{
       tuple => tuple._1.resolve(_spooky) -> tuple._2
@@ -375,8 +375,26 @@ case class PageRowRDD(
              flattenPagesPattern: Symbol = '*, //by default, always flatten all pages
              flattenPagesIndexKey: Symbol = null,
              lookupFrom: RDD[PageLike] = this.flatMap(_.pageLikes)
-//           lookupFrom: RDD[PageLike] = null
+             //           lookupFrom: RDD[PageLike] = null
              ): PageRowRDD = {
+
+    val spookyBroad = this.context.broadcast(this.spooky)
+    def _spooky: SpookyContext = spookyBroad.value
+
+    val result = _fetch(traces, joinType, numPartitions, lookupFrom, _spooky)
+
+    if (flattenPagesPattern != null) result.flattenPages(flattenPagesPattern,flattenPagesIndexKey)
+    else result
+  }
+
+  private def _fetch(
+                      traces: Set[Trace],
+                      joinType: JoinType,
+                      numPartitions: Int,
+                      lookupFrom: RDD[PageLike],
+                      _spooky: SpookyContext
+                      //           lookupFrom: RDD[PageLike] = null
+                      ): PageRowRDD = {
 
     import org.apache.spark.SparkContext._
 
@@ -386,9 +404,6 @@ case class PageRowRDD(
       row => _trace.interpolate(row)
     )
     val traceDistinct = traceRDD.distinct()
-
-    val spookyBroad = this.context.broadcast(this.spooky)
-    implicit def _spooky: SpookyContext = spookyBroad.value
 
     val traceToPages = if (lookupFrom == null) {
       traceDistinct.map{
@@ -451,7 +466,7 @@ case class PageRowRDD(
 
     val joinedRowToPages = traceToRow.leftOuterJoin(traceToPages, numPartitions = numPartitions)
     val RowToPages = joinedRowToPages.map(_._2)
-    val result = this.copy(self = RowToPages.flatMap(tuple => tuple._1.putPages(tuple._2.get, joinType)))
+    this.copy(self = RowToPages.flatMap(tuple => tuple._1.putPages(tuple._2.get, joinType)))
 
     //    val withTraceSquashed = withTrace.groupByKey()
     //    val withPagesSquashed = withTraceSquashed.map{ //Unfortunately there is no mapKey
@@ -461,9 +476,6 @@ case class PageRowRDD(
     //    val result = this.copy(
     //      self = withPages.flatMap(tuple => tuple._2.putPages(tuple._1, joinType))
     //    )
-
-    if (flattenPagesPattern != null) result.flattenPages(flattenPagesPattern,flattenPagesIndexKey)
-    else result
   }
 
   def join(
@@ -593,11 +605,14 @@ case class PageRowRDD(
 
     var totalPages =this.flatMap(_.pageLikes)
 
+    val spookyBroad = this.context.broadcast(this.spooky)
+    def _spooky: SpookyContext = spookyBroad.value
+
     for (depth <- 1 to maxDepth) {
       //always inner join
       val joinedBeforeFlatten = newRows
         .flattenTemp(expr defaultAs Symbol(Const.defaultJoinKey), indexKey, Int.MaxValue, left = true)
-        .fetch(traces, Inner, numPartitions, null, null, lookupFrom = totalPages)
+        ._fetch(traces, Inner, numPartitions, lookupFrom = totalPages, _spooky = _spooky)
 
       val joinedPages = joinedBeforeFlatten.flatMap(_.pageLikes)
 
@@ -680,13 +695,12 @@ case class PageRowRDD(
                 ): PageRowRDD = {
 
     val spookyBroad = this.context.broadcast(this.spooky)
-
-    implicit def spookyImplicit: SpookyContext = spookyBroad.value
+    def _spooky: SpookyContext = spookyBroad.value
 
     val realIndexKey = Key(indexKey)
 
     val result = this.flatMap {
-      _.paginate(selector, attr, wget, postAction)(limit, Key(indexKey), flatten)(spooky)
+      _.paginate(selector, attr, wget, postAction)(limit, Key(indexKey), flatten)(_spooky)
     }
 
     this.copy(
