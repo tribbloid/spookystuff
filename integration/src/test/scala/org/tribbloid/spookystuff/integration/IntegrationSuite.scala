@@ -84,7 +84,6 @@ abstract class IntegrationSuite extends FunSuite with BeforeAndAfterAll {
 
     Utils.retry(10) { //sometimes accumulator takes time to signal back
       Thread.sleep(2000)
-      localCacheWriteOnlyEnv.metrics.pagesFetched.value
 
       val metrics = localCacheWriteOnlyEnv.metrics
       assert(metrics.pagesFetched.value === numPages)
@@ -114,24 +113,40 @@ abstract class IntegrationSuite extends FunSuite with BeforeAndAfterAll {
     }
   }
 
-//  test("s3 cache") {
-//
-//    doMain(s3CacheWriteOnlyEnv)
-//
-//    assert(s3CacheWriteOnlyEnv.metrics.pagesFetchedFromWeb.value === numPages)
-//    assert(s3CacheWriteOnlyEnv.metrics.pagesFetchedFromCache.value === 0)
-//    assert(s3CacheWriteOnlyEnv.metrics.sessionInitialized.value === numSessions + 1 +- 1)
-//    assert(s3CacheWriteOnlyEnv.metrics.driverInitialized.value === numDrivers + 1 +- 1)
-//
-//    doMain(s3CacheEnv)
-//
-//    assert(s3CacheEnv.metrics.pagesFetchedFromWeb.value === 0)
-//    assert(s3CacheEnv.metrics.pagesFetchedFromCache.value === numPages)
-//    assert(s3CacheEnv.metrics.sessionInitialized.value === 0)
-//    assert(s3CacheEnv.metrics.driverInitialized.value === 0)
-//    assert(s3CacheEnv.metrics.DFSReadSuccess.value > 0)
-//    assert(s3CacheEnv.metrics.DFSReadFail.value === 0)
-//  }
+  test("s3 cache") {
+
+    doMain(s3CacheWriteOnlyEnv)
+
+    Utils.retry(10) { //sometimes accumulator takes time to signal back
+      Thread.sleep(2000)
+
+      val metrics = s3CacheWriteOnlyEnv.metrics
+      assert(metrics.pagesFetched.value === numPages)
+      assert(metrics.pagesFetchedFromWeb.value === numPages)
+      assert(metrics.pagesFetchedFromCache.value === 0)
+      assert(metrics.sessionInitialized.value === numSessions + 1 +- 1)
+      assert(metrics.sessionReclaimed.value >= metrics.sessionInitialized.value)
+      assert(metrics.driverInitialized.value === numDrivers + 1 +- 1)
+      assert(metrics.driverReclaimed.value >= metrics.driverInitialized.value)
+    }
+
+    doMain(s3CacheEnv)
+
+    Utils.retry(10) { //sometimes accumulator takes time to signal back
+      Thread.sleep(2000)
+
+      val metrics = s3CacheEnv.metrics
+      assert(metrics.pagesFetched.value === numPages)
+      assert(metrics.pagesFetchedFromWeb.value === 0)
+      assert(metrics.pagesFetchedFromCache.value === numPages)
+      assert(metrics.sessionInitialized.value === 0)
+      assert(metrics.sessionReclaimed.value >= metrics.sessionInitialized.value)
+      assert(metrics.driverInitialized.value === 0)
+      assert(metrics.driverReclaimed.value >= metrics.driverInitialized.value)
+      assert(metrics.DFSReadSuccess.value > 0)
+      assert(metrics.DFSReadFail.value === 0)
+    }
+  }
 
   def doMain(spooky: SpookyContext): Unit
 

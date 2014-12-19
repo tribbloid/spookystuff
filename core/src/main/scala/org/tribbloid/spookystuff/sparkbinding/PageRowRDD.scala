@@ -392,10 +392,12 @@ case class PageRowRDD(
 
     val _trace = traces.autoSnapshot
 
-    val traceRDD = this.flatMap(
-      row => _trace.interpolate(row)
-    )
-    val traceDistinct = traceRDD.distinct(numPartitions)
+    val traceToRow = this.flatMap {
+      row =>
+        _trace.interpolate(row).map(interpolatedTrace => interpolatedTrace -> row)
+    }
+
+    val traceDistinct = traceToRow.map(_._1).distinct(numPartitions)
 
     val traceToPages = if (lookupFrom == null) {
       traceDistinct.map{
@@ -445,8 +447,6 @@ case class PageRowRDD(
       }
       //----------------lookup finish-------------------
     }
-
-    val traceToRow = traceRDD.zip(this) //I'll assume this is safe
 
     val joinedRowToPages = traceToRow.leftOuterJoin(traceToPages, numPartitions = numPartitions)
     val RowToPages = joinedRowToPages.map(_._2)
