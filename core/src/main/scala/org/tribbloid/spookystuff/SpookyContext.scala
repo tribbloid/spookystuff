@@ -2,7 +2,7 @@ package org.tribbloid.spookystuff
 
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.{SQLContext, SchemaRDD}
-import org.apache.spark.{Accumulator, SerializableWritable, SparkConf, SparkContext}
+import org.apache.spark._
 import org.tribbloid.spookystuff.dsl._
 import org.tribbloid.spookystuff.dsl.NaiveDriverFactory
 import org.tribbloid.spookystuff.entity.{Key, KeyLike, PageRow}
@@ -46,7 +46,7 @@ class SpookyContext (
                       var errorDumpExtract: Extract[String] = new UUIDFileName(Hierarchical),
 
                       var autoSaveRoot: String = "s3n://spooky-page/",
-                      private var _autoCacheRoot: String = "s3n://spooky-cache/",
+                      var autoCacheRoot: String = "s3n://spooky-cache/",
                       var errorDumpRoot: String = "s3n://spooky-error/",
                       var errorDumpScreenshotRoot: String = "s3n://spooky-error-screenshot/",
                       var localErrorDumpRoot: String = "file:///spooky-error/",
@@ -64,31 +64,24 @@ class SpookyContext (
                       )
   extends Serializable {
 
-  if (sqlContext.sparkContext.getCheckpointDir.isEmpty){
-    sqlContext.sparkContext.setCheckpointDir(_autoCacheRoot)
-  }
-
-  def autoCacheRoot = _autoCacheRoot
-
-  def autoCacheRoot_=(v: String): Unit = {
-    _autoCacheRoot = v
-    sqlContext.sparkContext.setCheckpointDir(_autoCacheRoot)
-  }
+  checkPointDir = "spooky-checkpoint/"
 
   var metrics = new Metrics
 
   def cleanMetrics(): Unit = {
     metrics = new Metrics
   }
-  
+
+  def checkPointDir = this.sqlContext.sparkContext.getCheckpointDir
+
+  def checkPointDir_=(dir: String): Unit = this.sqlContext.sparkContext.setCheckpointDir(dir)
+
   val hConfWrapper =  if (sqlContext!=null) new SerializableWritable(this.sqlContext.sparkContext.hadoopConfiguration)
   else null
 
   def hConf = hConfWrapper.value
 
   @transient lazy val noInput: PageRowRDD = new PageRowRDD(this.sqlContext.sparkContext.parallelize(Seq(PageRow())),spooky = this)
-
-  //  implicit def self: SpookyContext = this
 
   def setRoot(root: String): SpookyContext = {
 
@@ -147,24 +140,26 @@ class SpookyContext (
 
   class Metrics extends Serializable {
 
-    private def sc = SpookyContext.this.sqlContext.sparkContext
+    private def accumulator[T](initialValue: T, name: String)(implicit param: AccumulatorParam[T]) = {
+      new Accumulator(initialValue, param, Some(name))
+    }
 
     import org.apache.spark.SparkContext._
 
-    val driverInitialized: Accumulator[Int] = sc.accumulator(0, "driverInitialized")
-    val driverReclaimed: Accumulator[Int] = sc.accumulator(0, "driverReclaimed")
+    val driverInitialized: Accumulator[Int] = accumulator(0, "driverInitialized")
+    val driverReclaimed: Accumulator[Int] = accumulator(0, "driverReclaimed")
 
-    val sessionInitialized: Accumulator[Int] = sc.accumulator(0, "sessionInitialized")
-    val sessionReclaimed: Accumulator[Int] = sc.accumulator(0, "sessionReclaimed")
+    val sessionInitialized: Accumulator[Int] = accumulator(0, "sessionInitialized")
+    val sessionReclaimed: Accumulator[Int] = accumulator(0, "sessionReclaimed")
 
-    val DFSReadSuccess: Accumulator[Int] = sc.accumulator(0, "DFSReadSuccess")
-    val DFSReadFail: Accumulator[Int] = sc.accumulator(0, "DFSReadFail")
+    val DFSReadSuccess: Accumulator[Int] = accumulator(0, "DFSReadSuccess")
+    val DFSReadFail: Accumulator[Int] = accumulator(0, "DFSReadFail")
 
-    val DFSWriteSuccess: Accumulator[Int] = sc.accumulator(0, "DFSWriteSuccess")
-    val DFSWriteFail: Accumulator[Int] = sc.accumulator(0, "DFSWriteFail")
+    val DFSWriteSuccess: Accumulator[Int] = accumulator(0, "DFSWriteSuccess")
+    val DFSWriteFail: Accumulator[Int] = accumulator(0, "DFSWriteFail")
 
-    val pagesFetched: Accumulator[Int] = sc.accumulator(0, "pagesFetched")
-    val pagesFetchedFromWeb: Accumulator[Int] = sc.accumulator(0, "pagesFetchedFromWeb")
-    val pagesFetchedFromCache: Accumulator[Int] = sc.accumulator(0, "pagesFetchedFromCache")
+    val pagesFetched: Accumulator[Int] = accumulator(0, "pagesFetched")
+    val pagesFetchedFromWeb: Accumulator[Int] = accumulator(0, "pagesFetchedFromWeb")
+    val pagesFetchedFromCache: Accumulator[Int] = accumulator(0, "pagesFetchedFromCache")
   }
 }

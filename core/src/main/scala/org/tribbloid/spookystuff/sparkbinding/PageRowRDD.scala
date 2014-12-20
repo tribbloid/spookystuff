@@ -407,7 +407,9 @@ case class PageRowRDD(
     else {
       //----------------lookup start-------------------
       val lookupBacktraceToPages = lookupFrom //key unique due to groupBy
-        .keyBy(_.uid).reduceByKey((v1,v2) => PageUtils.later(v1,v2)).values
+        .keyBy(_.uid)
+        .reduceByKey((v1,v2) => PageUtils.later(v1,v2))
+        .values
         .groupBy(_.uid.backtrace)
         .mapValues{
         pages =>
