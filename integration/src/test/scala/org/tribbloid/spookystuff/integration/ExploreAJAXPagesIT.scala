@@ -16,7 +16,7 @@ class ExploreAJAXPagesIT extends IntegrationSuite {
     val base = noInput
       .fetch(
         Visit("http://webscraper.io/test-sites/e-commerce/ajax")
-          +> Snapshot() ~ 'base
+          +> Snapshot() ~ 'first
           +> Loop (
           ClickNext("button.btn", "1"::Nil) :: Delay(2.seconds) :: Snapshot() :: Nil
         )
