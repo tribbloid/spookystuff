@@ -107,7 +107,7 @@ case class Page(
                 spooky: SpookyContext,
                 overwrite: Boolean = false
                 ): Unit = this.save(
-    spooky.autoSaveRoot :: spooky.autoSaveExtract(this).toString :: Nil
+    spooky.autoSaveDir :: spooky.autoSaveExtract(this).toString :: Nil
   )(spooky)
 
   def errorDump(
@@ -115,8 +115,8 @@ case class Page(
                  overwrite: Boolean = false
                  ): Unit = {
     val root = this.uid.leaf match {
-      case ss: Screenshot => spooky.errorDumpScreenshotRoot
-      case _ => spooky.errorDumpRoot
+      case ss: Screenshot => spooky.errorScreenshotDir
+      case _ => spooky.errorDumpDir
     }
 
     this.save(
@@ -129,8 +129,8 @@ case class Page(
                       overwrite: Boolean = false
                       ): Unit = {
     val root = this.uid.leaf match {
-      case ss: Screenshot => spooky.localErrorDumpScreenshotRoot
-      case _ => spooky.localErrorDumpRoot
+      case ss: Screenshot => spooky.errorScreenshotLocalDir
+      case _ => spooky.errorDumpLocalDir
     }
 
     this.save(

@@ -40,7 +40,7 @@ final case class Trace(
           case page: Page => page.autoSave(spooky)
           case _ =>
         }
-        if (spooky.autoCache && result.nonEmpty) PageUtils.autoCache(result, spooky)
+        if (spooky.cacheWrite && result.nonEmpty) PageUtils.autoCache(result, spooky)
     }
 
     results

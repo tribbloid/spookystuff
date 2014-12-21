@@ -17,12 +17,12 @@ abstract class ExampleCore extends {
 
   val appName = this.getClass.getSimpleName.replace("$","")
   val sc: SparkContext = {
-    var conf: SparkConf = new SparkConf().setAppName(appName)
+    val conf: SparkConf = new SparkConf().setAppName(appName)
 
     var master: String = null
     master = Option(master).getOrElse(conf.getOption("spark.master").orNull)
     master = Option(master).getOrElse(System.getenv("MASTER"))
-    master = Option(master).getOrElse("local[4,3]")//fail fast
+    master = Option(master).getOrElse("local[8,3]")
 
     conf.setMaster(master)
     new SparkContext(conf)

@@ -1,5 +1,6 @@
 package org.tribbloid.spookystuff.sparkbinding
 
+import org.apache.spark.broadcast.Broadcast
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql._
 import org.apache.spark.sql.catalyst.analysis.UnresolvedAttribute
@@ -371,9 +372,8 @@ case class PageRowRDD(
              ): PageRowRDD = {
 
     val spookyBroad = this.context.broadcast(this.spooky)
-    def _spooky: SpookyContext = spookyBroad.value
 
-    val result = _fetch(traces, joinType, numPartitions, lookupFrom, _spooky)
+    val result = _fetch(traces, joinType, numPartitions, lookupFrom, spookyBroad)
 
     if (flattenPagesPattern != null) result.flattenPages(flattenPagesPattern,flattenPagesIndexKey)
     else result
@@ -384,9 +384,10 @@ case class PageRowRDD(
                       joinType: JoinType,
                       numPartitions: Int,
                       lookupFrom: RDD[PageLike],
-                      _spooky: SpookyContext
-                      //           lookupFrom: RDD[PageLike] = null
+                      spookyBroad: Broadcast[SpookyContext]
                       ): PageRowRDD = {
+
+    def _spooky: SpookyContext = spookyBroad.value
 
     import org.apache.spark.SparkContext._
 
@@ -592,21 +593,23 @@ case class PageRowRDD(
     var totalPages =this.flatMap(_.pageLikes)
 
     val spookyBroad = this.context.broadcast(this.spooky)
-    def _spooky: SpookyContext = spookyBroad.value
 
     for (depth <- 1 to maxDepth) {
       //always inner join
       val joinedBeforeFlatten = newRows
         .flattenTemp(expr defaultAs Symbol(Const.defaultJoinKey), indexKey, Int.MaxValue, left = true)
-        ._fetch(traces, Inner, numPartitions, lookupFrom = totalPages, _spooky = _spooky)
+        ._fetch(traces, Inner, numPartitions, totalPages, spookyBroad)
 
       val joinedPages = joinedBeforeFlatten.flatMap(_.pageLikes)
 
       import org.apache.spark.SparkContext._
 
-      totalPages = totalPages.union(joinedPages).keyBy(_.uid).reduceByKey((v1,v2) => PageUtils.later(v1,v2), numPartitions).values
+      totalPages = totalPages.union(joinedPages)
+        .keyBy(_.uid)
+        .reduceByKey((v1,v2) => PageUtils.later(v1,v2), numPartitions)
+        .values
       if (depth % 20 == 0) {
-        totalPages.checkpoint()
+        totalPages.persist().checkpoint()
         totalPages.count()
       }
 
@@ -633,7 +636,7 @@ case class PageRowRDD(
         else newRows
       ).coalesce(numPartitions)
       if (depth % 20 == 0) {
-        total.checkpoint()
+        total.persist().checkpoint()
         total.count()
       }
     }

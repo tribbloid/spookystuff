@@ -34,10 +34,10 @@ class SpookyContext (
                       val browserResolution: (Int, Int) = (1920, 1080),
 
                       var autoSave: Boolean = false,//slow, for debugging only
-                      var autoCache: Boolean = true,
-                      var autoRestore: Boolean = true,//reduce bombarding sites
+                      var cacheWrite: Boolean = true,
+                      var cacheRead: Boolean = true,//reduce bombarding sites
                       var errorDump: Boolean = true,
-                      var errorDumpScreenshot: Boolean = true,
+                      var errorScreenshot: Boolean = true,
 
                       var pageExpireAfter: Duration = 7.day,
 
@@ -45,12 +45,13 @@ class SpookyContext (
                       var cacheTraceEncoder: TraceEncoder[String] = Hierarchical,
                       var errorDumpExtract: Extract[String] = new UUIDFileName(Hierarchical),
 
-                      var autoSaveRoot: String = "s3n://spooky-page/",
-                      var autoCacheRoot: String = "s3n://spooky-cache/",
-                      var errorDumpRoot: String = "s3n://spooky-error/",
-                      var errorDumpScreenshotRoot: String = "s3n://spooky-error-screenshot/",
-                      var localErrorDumpRoot: String = "file:///spooky-error/",
-                      var localErrorDumpScreenshotRoot: String = "file:///spooky-error-screenshot/",
+                      var autoSaveDir: String = Option(System.getProperty("spooky.autosave.dir")).getOrElse("s3n://spooky-page/"),
+                      var cacheDir: String = Option(System.getProperty("spooky.cache.dir")).getOrElse("s3n://spooky-cache/"),
+                      var errorDumpDir: String = Option(System.getProperty("spooky.error.dump.dir")).getOrElse("s3n://spooky-error/"),
+                      var errorScreenshotDir: String = Option(System.getProperty("spooky.error.screenshot.dir")).getOrElse("s3n://spooky-error-screenshot/"),
+                      var errorDumpLocalDir: String = Option(System.getProperty("spooky.error.dump.local.dir")).getOrElse("temp/error/"),
+                      var errorScreenshotLocalDir: String = Option(System.getProperty("spooky.error.screenshot.local.dir")).getOrElse("temp/error-screenshot/"),
+                      private val _checkpointDir: String = Option(System.getProperty("spooky.checkpoint.dir")).getOrElse("temp/checkpoint/"),
 
                       var remoteResourceTimeout: Duration = 20.seconds,
                       var DFSTimeout: Duration = 40.seconds,
@@ -64,7 +65,7 @@ class SpookyContext (
                       )
   extends Serializable {
 
-  checkPointDir = "spooky-checkpoint/"
+  this.checkpointDir_=(_checkpointDir)
 
   var metrics = new Metrics
 
@@ -72,9 +73,9 @@ class SpookyContext (
     metrics = new Metrics
   }
 
-  def checkPointDir = this.sqlContext.sparkContext.getCheckpointDir
+  def checkpointDir = this.sqlContext.sparkContext.getCheckpointDir
 
-  def checkPointDir_=(dir: String): Unit = this.sqlContext.sparkContext.setCheckpointDir(dir)
+  def checkpointDir_=(dir: String): Unit = this.sqlContext.sparkContext.setCheckpointDir(dir)
 
   val hConfWrapper =  if (sqlContext!=null) new SerializableWritable(this.sqlContext.sparkContext.hadoopConfiguration)
   else null
@@ -85,10 +86,10 @@ class SpookyContext (
 
   def setRoot(root: String): SpookyContext = {
 
-    autoSaveRoot = root+"page"
-    autoCacheRoot = root+"cache"
-    errorDumpRoot = root+"error"
-    errorDumpScreenshotRoot = root+"error-screenshot"
+    autoSaveDir = root+"page"
+    cacheDir = root+"cache"
+    errorDumpDir = root+"error"
+    errorScreenshotDir = root+"error-screenshot"
 
     this
   }

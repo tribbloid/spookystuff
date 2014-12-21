@@ -28,8 +28,8 @@ abstract class SpookyEnvSuite extends FunSuite with BeforeAndAfter with BeforeAn
     )
 
     spooky.autoSave = false
-    spooky.autoCache = false
-    spooky.autoRestore = false
+    spooky.cacheWrite = false
+    spooky.cacheRead = false
 
     spooky.setRoot("file://"+System.getProperty("user.home")+"/spooky-unit/")
 
@@ -45,8 +45,8 @@ abstract class SpookyEnvSuite extends FunSuite with BeforeAndAfter with BeforeAn
 
   before{
     spooky.autoSave = false
-    spooky.autoCache = false
-    spooky.autoRestore = false
+    spooky.cacheWrite = false
+    spooky.cacheRead = false
 
     spooky.setRoot("file://"+System.getProperty("user.home")+"/spooky-unit/")
   }

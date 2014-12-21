@@ -29,7 +29,7 @@ trait Action extends ActionLike {
   def apply(session: Session): Seq[PageLike] = {
 
     val errorDump: Boolean = session.spooky.errorDump
-    val errorDumpScreenshot: Boolean = session.spooky.errorDumpScreenshot
+    val errorDumpScreenshot: Boolean = session.spooky.errorScreenshot
 
     val results = try {
       this match { //temporarily disabled as we assume that DFS is the culprit for causing deadlock
