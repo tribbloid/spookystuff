@@ -622,6 +622,10 @@ case class PageRowRDD(
         .distinctSignature(allIgnoredKeys)
         .persist()
 
+      if (depth % 20 == 0) {
+        newRows.checkpoint()
+      }
+
       val newRowsCount = newRows.count()
 
       if (newRowsCount == 0){

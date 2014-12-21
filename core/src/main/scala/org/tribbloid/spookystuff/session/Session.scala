@@ -49,6 +49,7 @@ class DriverSession(override val spooky: SpookyContext) extends Session(spooky){
     Utils.withDeadline(Const.sessionInitializationTimeout){
       var successful = false
       val driver = spooky.driverFactory.newInstance(null, spooky)
+      spooky.metrics.driverInitialized += 1
       try {
         driver.manage().timeouts()
           .implicitlyWait(spooky.remoteResourceTimeout.toSeconds, TimeUnit.SECONDS)
@@ -58,7 +59,6 @@ class DriverSession(override val spooky: SpookyContext) extends Session(spooky){
         val resolution = spooky.browserResolution
         if (resolution != null) driver.manage().window().setSize(new Dimension(resolution._1, resolution._2))
 
-        spooky.metrics.driverInitialized += 1
         successful = true
 
         driver
