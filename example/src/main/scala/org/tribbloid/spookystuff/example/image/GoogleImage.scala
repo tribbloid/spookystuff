@@ -17,7 +17,7 @@ object GoogleImage extends ExampleCore {
       .fetch(
         Visit("http://www.utexas.edu/world/univ/alpha/")
       )
-      .flatten($"div.box2 a".text > 'name, limit = 10)
+      .flatten($"div.box2 a".text ~ 'name, limit = 10)
       .repartition(10)
       .fetch(
         Visit("http://images.google.com/")
@@ -31,7 +31,7 @@ object GoogleImage extends ExampleCore {
         x"file://${System.getProperty("user.home")}/spooky-example/$appName/images/${'name}"
       )
       .select(
-        $.saved > 'path
+        $.saved ~ 'path
       )
       .asSchemaRDD()
   }

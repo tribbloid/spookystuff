@@ -31,14 +31,14 @@ object Youtube extends ExampleCore{
           +> Try(WaitFor("iframe[title^=Comment]").in(50.seconds) :: Nil),
         numPartitions = 400
       )(
-        A"h3.yt-lockup-title".text > 'title
+        A"h3.yt-lockup-title".text ~ 'title
       )
       .select(
-        $"div#watch-description-text".text > 'description,
-        $"strong.watch-time-text".text > 'publish,
-        $"div.watch-view-count".text > 'total_view,
-        $"button#watch-like".text > 'like_count,
-        $"button#watch-dislike".text > 'dislike_count
+        $"div#watch-description-text".text ~ 'description,
+        $"strong.watch-time-text".text ~ 'publish,
+        $"div.watch-view-count".text ~ 'total_view,
+        $"button#watch-like".text ~ 'like_count,
+        $"button#watch-dislike".text ~ 'dislike_count
       )
       .persist()
 
@@ -53,15 +53,15 @@ object Youtube extends ExampleCore{
             :: Nil
         )
       )
-      .select($"div.DJa".text > 'num_comments)
+      .select($"div.DJa".text ~ 'num_comments)
       .persist()
 
     println(video.count())
 
     val result = video
       .flatSelect($"div[id^=update]")(
-        A"h3.Mpa".text > 'comment1,
-        A"div.Al".text > 'comment2
+        A"h3.Mpa".text ~ 'comment1,
+        A"div.Al".text ~ 'comment2
       ).persist()
 
     println(result.count())

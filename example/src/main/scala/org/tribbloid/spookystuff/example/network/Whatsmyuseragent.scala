@@ -20,9 +20,9 @@ object Whatsmyuseragent extends ExampleCore {
         Visit("http://www.whatsmyuseragent.com/")
       )
       .select(
-        $"h3.info".text > 'ip,
-        $"h2.info".text > 'user_agent,
-        $"table.table-striped".text > 'referer
+        $"h3.info".text ~ 'ip,
+        $"h2.info".text ~ 'user_agent,
+        $"table.table-striped".text ~ 'referer
       )
       .asSchemaRDD()
   }

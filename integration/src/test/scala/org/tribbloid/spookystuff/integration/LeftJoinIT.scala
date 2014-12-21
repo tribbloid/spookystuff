@@ -22,15 +22,15 @@ class LeftJoinIT extends IntegrationSuite {
         Wget('A.href),
         joinType = LeftOuter
       )(
-        'A.text > 'category
+        'A.text ~ 'category
       )
       .join($"a.subcategory-link", indexKey = 'i2)(
         Wget('A.href),
         joinType = LeftOuter
       )(
-        'A.text > 'subcategory
+        'A.text ~ 'subcategory
       )
-      .select($"h1".text > 'header)
+      .select($"h1".text ~ 'header)
       .asSchemaRDD()
 
     assert(

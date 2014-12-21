@@ -23,15 +23,15 @@ class InnerJoinIT extends IntegrationSuite {
         joinType = Inner,
         flattenPagesIndexKey = 'page
       )(
-        'A.text > 'category
+        'A.text ~ 'category
       )
       .join($"a.subcategory-link", indexKey = 'i2)(
         Visit('A.href),
         joinType = Inner
       )(
-        'A.text > 'subcategory
+        'A.text ~ 'subcategory
       )
-      .select($"h1".text > 'header)
+      .select($"h1".text ~ 'header)
       .asSchemaRDD()
 
     assert(

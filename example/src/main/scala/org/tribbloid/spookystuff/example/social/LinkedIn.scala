@@ -23,9 +23,9 @@ object LinkedIn extends ExampleCore {
       )
       .visitJoin($"ol#result-set h2 a")
       .select(
-        $"span.full-name".text > 'name,
-        $"p.title".text > 'title,
-        $"div#profile-skills li".texts.mkString("|") > 'skills,
+        $"span.full-name".text ~ 'name,
+        $"p.title".text ~ 'title,
+        $"div#profile-skills li".texts.mkString("|") ~ 'skills,
         $.uri as 'uri
       )
       .asSchemaRDD()

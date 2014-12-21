@@ -36,13 +36,13 @@ object UrbanSpoonComments extends ExampleCore {
           +> WaitFor("div.tab-pane.active li.review")
       )
       .flatSelect($"div.tab-pane.active li.review", indexKey = 'row)(
-        x"${A"li.comment div.title".text}: ${A"li.comment div.body".text}" > 'comment,
-        A"time.posted-on".text > 'date_status,
-        A"div.details > div.aside".text > 'stars,
-        A"div.details > div.Helpful div.vote-stats".text > 'useful,
-        A"div.byline a:nth-of-type(1)".text > 'user_name,
-        A"span.type".text > 'user_location,
-        A"div.byline a:nth-of-type(2)".text > 'review_count
+        x"${A"li.comment div.title".text}: ${A"li.comment div.body".text}" ~ 'comment,
+        A"time.posted-on".text ~ 'date_status,
+        A"div.details > div.aside".text ~ 'stars,
+        A"div.details > div.Helpful div.vote-stats".text ~ 'useful,
+        A"div.byline a:nth-of-type(1)".text ~ 'user_name,
+        A"span.type".text ~ 'user_location,
+        A"div.byline a:nth-of-type(2)".text ~ 'review_count
       )
       .asSchemaRDD()
   }

@@ -20,15 +20,15 @@ class JoinAndExplorePagesIT extends IntegrationSuite {
         Wget('A.href),
         joinType = LeftOuter
       )(
-        'A.text > 'category
+        'A.text ~ 'category
       )
       .join($"a.subcategory-link", indexKey = 'i2)(
         Wget('A.href),
         joinType = LeftOuter
       )(
-        'A.text > 'subcategory
+        'A.text ~ 'subcategory
       )
-      .select($"h1".text > 'header)
+      .select($"h1".text ~ 'header)
 
     val result = joined
       .explore($"ul.pagination a", depthKey = 'depth, indexKey = 'i3)(
@@ -36,7 +36,7 @@ class JoinAndExplorePagesIT extends IntegrationSuite {
       )(
         'A.text as 'page
       )
-      .select($.uri > 'uri)
+      .select($.uri ~ 'uri)
       .asSchemaRDD()
       .persist()
 

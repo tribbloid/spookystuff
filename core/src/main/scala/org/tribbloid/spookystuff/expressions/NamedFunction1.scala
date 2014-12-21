@@ -23,7 +23,7 @@ trait NamedFunction1[-T, +R] extends (T => R) with Serializable {
     this
   }
 
-  final def >(name: Symbol): this.type = as(name)
+  final def ~(name: Symbol): this.type = as(name)
 
   @annotation.unspecialized override def compose[A](g: A => T): NamedFunction1[A, R] =
     NamedFunction1(

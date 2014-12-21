@@ -156,7 +156,7 @@ trait Named extends Action {
     this
   }
 
-  final def >(name: Symbol): this.type = as(name)
+  final def ~(name: Symbol): this.type = as(name)
 
   override def inject(same: this.type): Unit = {
     super.inject(same)

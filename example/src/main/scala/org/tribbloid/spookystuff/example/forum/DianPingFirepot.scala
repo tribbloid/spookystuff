@@ -26,18 +26,18 @@ object DianPingFirepot extends ExampleCore {
       .join($("ul.shop-list > li"), indexKey = 'row)(
         Visit(x"${A("p.title > a.shopname").href}/review_all")
       )(
-        A("span.big-name").text > 'title,
-        A("span > a").text > 'review_count
+        A("span.big-name").text ~ 'title,
+        A("span > a").text ~ 'review_count
       )
       .wgetExplore($("div.Pages > a.NextPage"), depthKey='comment_page)
       .flatSelect($("div.comment-list > ul > li"), indexKey = 'comment_row)(
-        A("span.item-rank-rst").attr("class") > 'rating,
-        A("span.time").text > 'date,
-        A("span.comm-per").text > 'average_price,
-        A("pan.rst:nth-of-type(1)").text > 'taste,
-        A("span.rst:nth-of-type(3)").text > 'service,
-        A("div.comment-txt > div.J_brief-cont").text > 'comment,
-        A("div.comment-txt > div.J_extra-cont").text > 'comment_extra
+        A("span.item-rank-rst").attr("class") ~ 'rating,
+        A("span.time").text ~ 'date,
+        A("span.comm-per").text ~ 'average_price,
+        A("pan.rst:nth-of-type(1)").text ~ 'taste,
+        A("span.rst:nth-of-type(3)").text ~ 'service,
+        A("div.comment-txt > div.J_brief-cont").text ~ 'comment,
+        A("div.comment-txt > div.J_extra-cont").text ~ 'comment_extra
       )
       .asSchemaRDD().persist()
   }

@@ -18,7 +18,7 @@ object WellCa extends ExampleCore {
         Wget("http://well.ca/whatsnew/")
       )
       .flatSelect($"div.product_grid_full_categories")(
-        A"div.product_grid_info_top_text_container".text > 'name
+        A"div.product_grid_info_top_text_container".text ~ 'name
       )
       .asSchemaRDD()
   }

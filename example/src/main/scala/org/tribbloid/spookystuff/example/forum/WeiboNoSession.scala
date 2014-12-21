@@ -32,20 +32,20 @@ object WeiboNoSession extends ExampleCore {
           +> Try(WaitFor("div.search_feed dl.feed_list").in(60.seconds) :: Nil)
       )
       .select(
-        A"div.search_feed dl.feed_list".size > 'count,
-        A"p.code_tit".text > 'CAPCHAS
+        A"div.search_feed dl.feed_list".size ~ 'count,
+        A"p.code_tit".text ~ 'CAPCHAS
       )
       .flatSelect($"div.search_feed dl.feed_list", indexKey = 'item)(
-        "成都银行" > 'name,
-        A"p > em".text > 'text,
-        "weibo" > 'forum,
-        A"p.info:nth-of-type(2) > a[target]".text > 'source,
-        'A.uri > 'URI,
-        A"dd.content p:nth-of-type(1) > a:nth-of-type(1)".text > 'author,
-        A"p.info:nth-of-type(2) a.date".text > 'date,
-        A"p.info:nth-of-type(2) span a:nth-of-type(1)".text > 'thumb_ups,
-        A"p.info:nth-of-type(n+2) span a:nth-of-type(2)".text > 'retweet,
-        A"p.info:nth-of-type(n+2) a:nth-of-type(4)".text > 'reply
+        "成都银行" ~ 'name,
+        A"p > em".text ~ 'text,
+        "weibo" ~ 'forum,
+        A"p.info:nth-of-type(2) > a[target]".text ~ 'source,
+        'A.uri ~ 'URI,
+        A"dd.content p:nth-of-type(1) > a:nth-of-type(1)".text ~ 'author,
+        A"p.info:nth-of-type(2) a.date".text ~ 'date,
+        A"p.info:nth-of-type(2) span a:nth-of-type(1)".text ~ 'thumb_ups,
+        A"p.info:nth-of-type(n+2) span a:nth-of-type(2)".text ~ 'retweet,
+        A"p.info:nth-of-type(n+2) a:nth-of-type(4)".text ~ 'reply
       )
       .join(A"dd.content p:nth-of-type(1) > a:nth-of-type(1)")(
         Visit('A.href)
@@ -53,15 +53,15 @@ object WeiboNoSession extends ExampleCore {
           .+> (WaitForDocumentReady)
       )()
       .select(
-        $"p.code_tit".text > 'author_CAPCHAS,
-        $"li.S_line1 strong".text > 'author_follow,
-        $"li.follower strong".text > 'author_fans,
-        $"li.W_no_border strong".text > 'author_tweets,
-        $"div.tags em.W_ico12".attr("title") > 'author_gender,
-        $"div.tags".text > 'author_tags,
-        $"span.W_level_ico span.W_level_num".attr("title") > 'author_level,
-        $"div.pf_star_info p:nth-of-type(1)".text > 'author_credit,
-        $"div.pf_star_info p:nth-of-type(2)".text > 'author_interests
+        $"p.code_tit".text ~ 'author_CAPCHAS,
+        $"li.S_line1 strong".text ~ 'author_follow,
+        $"li.follower strong".text ~ 'author_fans,
+        $"li.W_no_border strong".text ~ 'author_tweets,
+        $"div.tags em.W_ico12".attr("title") ~ 'author_gender,
+        $"div.tags".text ~ 'author_tags,
+        $"span.W_level_ico span.W_level_num".attr("title") ~ 'author_level,
+        $"div.pf_star_info p:nth-of-type(1)".text ~ 'author_credit,
+        $"div.pf_star_info p:nth-of-type(2)".text ~ 'author_interests
       )
       .asSchemaRDD()
   }

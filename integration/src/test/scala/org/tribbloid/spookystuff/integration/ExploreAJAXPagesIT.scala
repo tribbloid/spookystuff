@@ -16,7 +16,7 @@ class ExploreAJAXPagesIT extends IntegrationSuite {
     val base = noInput
       .fetch(
         Visit("http://webscraper.io/test-sites/e-commerce/ajax")
-          +> Snapshot().as('first)
+          +> Snapshot() ~ 'base
           +> Loop (
           ClickNext("button.btn", "1"::Nil) :: Delay(2.seconds) :: Snapshot() :: Nil
         )
@@ -25,16 +25,16 @@ class ExploreAJAXPagesIT extends IntegrationSuite {
     val result = base
       .explore($"div.sidebar-nav a", depthKey = 'depth, indexKey = 'i1)(
         Visit('A.href)
-          +> Snapshot().as('first)
+          +> Snapshot() ~ 'first
           +> Loop (
           ClickNext("button.btn", "1"::Nil) :: Delay(2.seconds) :: Snapshot() :: Nil
         ),
         flattenPagesIndexKey = 'page
       )(
-        $"button.btn.btn-primary".text > 'real_page,
-        'A.text > 'category,
-        'first.children("h1").text > 'title,
-        $"a.title".size > 'num_product
+        $"button.btn.btn-primary".text ~ 'real_page,
+        'A.text ~ 'category,
+        'first.children("h1").text ~ 'title,
+        $"a.title".size ~ 'num_product
       )
       .asSchemaRDD()
 

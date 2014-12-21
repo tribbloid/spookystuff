@@ -36,7 +36,7 @@ object Weibo extends ExampleCore {
         flattenPagesIndexKey = 'page
       )
       .flatSelect($"dl.feed_list", indexKey = 'item)(
-        A"dl.feed_list p em".text > 'text
+        A"dl.feed_list p em".text ~ 'text
       )
       .asSchemaRDD()
   }

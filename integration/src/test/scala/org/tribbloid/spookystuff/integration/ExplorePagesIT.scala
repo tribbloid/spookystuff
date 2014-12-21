@@ -19,9 +19,9 @@ class ExplorePagesIT extends IntegrationSuite {
       .explore($"ul.pagination a", depthKey = 'depth, indexKey = 'idx)(
         Wget('A.href)
       )(
-        'A.text as 'page
+        'A.text ~ 'page
       )
-      .select($.uri > 'uri)
+      .select($.uri ~ 'uri)
       .asSchemaRDD()
 
     assert(

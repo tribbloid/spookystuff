@@ -19,7 +19,7 @@ object Useragentstring extends ExampleCore {
       .fetch(
         Wget("http://www.useragentstring.com/pages/Browserlist/")
       )
-      .select($"li a".text > 'agent_string)
+      .select($"li a".text ~ 'agent_string)
       .asSchemaRDD()
   }
 }

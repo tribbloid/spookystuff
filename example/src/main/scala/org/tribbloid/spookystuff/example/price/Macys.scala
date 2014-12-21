@@ -21,7 +21,7 @@ object Macys extends ExampleCore {
       )
       .wgetJoin($"div#globalMastheadCategoryMenu li a")
       .select(
-        $"div#nav_title".text > 'category
+        $"div#nav_title".text ~ 'category
       )
       .join($"div#localNavigationContainer li.nav_cat_item_bold a")(
         Visit('A)
@@ -37,13 +37,13 @@ object Macys extends ExampleCore {
         )
       )()
       .select(
-        $"h1#currentCatNavHeading".text > 'subcategory
+        $"h1#currentCatNavHeading".text ~ 'subcategory
       )
       .flatSelect($"ul#thumbnails li.productThumbnail", indexKey = 'page)(
-        A"div.shortDescription".text > 'short_description,
-        A"div.prices".text > 'prices,
-        A"div.pdpreviews span.rating span".attr("style") > 'rating,
-        A"div.pdpreviews".text > 'reviews
+        A"div.shortDescription".text ~ 'short_description,
+        A"div.prices".text ~ 'prices,
+        A"div.pdpreviews span.rating span".attr("style") ~ 'rating,
+        A"div.pdpreviews".text ~ 'reviews
       )
       .asSchemaRDD()
   }

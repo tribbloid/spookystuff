@@ -36,14 +36,14 @@ object TripAdvisor extends ExampleCore {
           +> Try(Click("span.partnerRvw span.taLnk")::Nil)
       )()
       .flatSelect($"div.reviewSelector", indexKey = 'row)(
-        A"p".last.text > 'comment,
-        A"span.ratingDate".last.text > 'date_status,
-        A"div.innerBubble img.sprite-rating_s_fill".last.attr("alt") > 'stars,
-        A"span.numHlpIn".last.text > 'useful,
-        A"div.member_info div.username mo".last.text > 'user_name,
-        A"div.member_info div.location".last.text > 'user_location,
-        A"div.passportStampsBadge span.badgeText".last.text > 'city_count,
-        A"div.totalReviewBadge" > 'review_count
+        A"p".last.text ~ 'comment,
+        A"span.ratingDate".last.text ~ 'date_status,
+        A"div.innerBubble img.sprite-rating_s_fill".last.attr("alt") ~ 'stars,
+        A"span.numHlpIn".last.text ~ 'useful,
+        A"div.member_info div.username mo".last.text ~ 'user_name,
+        A"div.member_info div.location".last.text ~ 'user_location,
+        A"div.passportStampsBadge span.badgeText".last.text ~ 'city_count,
+        A"div.totalReviewBadge" ~ 'review_count
       )
       .asSchemaRDD()
   }

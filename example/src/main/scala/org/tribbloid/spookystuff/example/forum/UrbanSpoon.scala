@@ -39,12 +39,12 @@ object UrbanSpoon extends ExampleCore {
       //        "count" -> (_.text1("li.active span.count"))
       //      )
       .flatSelect($"div.tab-pane.active li.review", indexKey = 'row)(
-        A"div.body".text > 'comment,
-        A"time.posted-on".text > 'date_status,
-        A"div.details > div.aside".text > 'stars,
-        A"div.title a".text > 'user_name,
-        A"span.type".text > 'user_location,
-        A"div.byline a".text > 'review_count
+        A"div.body".text ~ 'comment,
+        A"time.posted-on".text ~ 'date_status,
+        A"div.details > div.aside".text ~ 'stars,
+        A"div.title a".text ~ 'user_name,
+        A"span.type".text ~ 'user_location,
+        A"div.byline a".text ~ 'review_count
       )
       .asSchemaRDD()
   }

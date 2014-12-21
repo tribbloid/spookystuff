@@ -586,7 +586,7 @@ case class PageRowRDD(
     var newRows = this
 
     var total = if (depthKey != null)
-      this.select(Literal(0) > depthKey)
+      this.select(Literal(0) ~ depthKey)
         .copy(indexKeys = this.indexKeys + Key(depthKey))
     else this
 
@@ -632,7 +632,7 @@ case class PageRowRDD(
       }
 
       total = total.union(
-        if (depthKey != null) newRows.select(new Literal(depth) > depthKey)
+        if (depthKey != null) newRows.select(new Literal(depth) ~ depthKey)
         else newRows
       ).coalesce(numPartitions)
       if (depth % 20 == 0) {

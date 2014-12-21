@@ -22,7 +22,7 @@ object LinkedInSimple extends ExampleCore {
           +> Submit("input[name=\"search\"]")
       )
 
-      .select($"ol#result-set h2 a".hrefs.mkString(" ") > 'names)
+      .select($"ol#result-set h2 a".hrefs.mkString(" ") ~ 'names)
       .asSchemaRDD()
   }
 }

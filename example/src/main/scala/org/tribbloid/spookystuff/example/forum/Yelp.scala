@@ -32,14 +32,14 @@ object Yelp extends ExampleCore {
       )
       .wgetExplore($"a.page-option.prev-next:contains(→)", depthKey = 'page)
       .flatSelect($"div.review", indexKey = 'row) (
-        A"p.review_comment".text > 'comment,
-        A"div.review-content span.rating-qualifier".text > 'date_status,
-        A"div.biz-rating div div.rating-very-large meta".attr("content") > 'stars,
-        A"div.review-wrapper > div.review-footer a.ybtn.useful span.i-wrap span.count".text > 'useful,
-        A"li.user-name a.user-display-name".text > 'user_name,
-        A"li.user-location".text > 'user_location,
-        A"li.friend-count b" > 'friend_count,
-        A"li.review-count b".text > 'review_count
+        A"p.review_comment".text ~ 'comment,
+        A"div.review-content span.rating-qualifier".text ~ 'date_status,
+        A"div.biz-rating div div.rating-very-large meta".attr("content") ~ 'stars,
+        A"div.review-wrapper > div.review-footer a.ybtn.useful span.i-wrap span.count".text ~ 'useful,
+        A"li.user-name a.user-display-name".text ~ 'user_name,
+        A"li.user-location".text ~ 'user_location,
+        A"li.friend-count b" ~ 'friend_count,
+        A"li.review-count b".text ~ 'review_count
       )
       .asSchemaRDD()
   }

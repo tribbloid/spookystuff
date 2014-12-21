@@ -31,7 +31,7 @@ class FetchVisitIT extends IntegrationSuite {
 
     val RDDAppended = RDD
       .fetch(
-        Visit("http://www.wikipedia.org/") +> Snapshot().as('b),
+        Visit("http://www.wikipedia.org/") +> Snapshot() ~ 'b,
         joinType = Append
       )
 

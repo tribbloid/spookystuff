@@ -22,9 +22,9 @@ class ExploreIT extends IntegrationSuite {
         Visit('A.href),
         flattenPagesIndexKey = 'page
       )(
-        'A.text > 'category
+        'A.text ~ 'category
       )
-      .select($"h1".text > 'header)
+      .select($"h1".text ~ 'header)
       .asSchemaRDD()
 
     assert(

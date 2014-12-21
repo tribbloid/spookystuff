@@ -16,7 +16,7 @@ object Dealmoon extends ExampleCore {
       )
       .wgetExplore($"div.pagelink a", depthKey = 'page)
       .flatten(
-        $"div.mlist div.mtxt h2 span:not([style])".text > 'name
+        $"div.mlist div.mtxt h2 span:not([style])".text ~ 'name
       )
       .asSchemaRDD()
   }

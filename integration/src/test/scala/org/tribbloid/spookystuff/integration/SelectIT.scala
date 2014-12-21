@@ -22,7 +22,7 @@ class SelectIT extends IntegrationSuite {
       .select(
         $.uri,
         $.timestamp, //TODO:'$.saved,
-        $"div.central-featured-lang".texts > '~
+        $"div.central-featured-lang".texts ~ '~
       )
       .persist()
 
@@ -56,7 +56,7 @@ class SelectIT extends IntegrationSuite {
 
     intercept[AssertionError] {
       RDD.select(
-        $"title".text > '~
+        $"title".text ~ '~
       )
     }
   }

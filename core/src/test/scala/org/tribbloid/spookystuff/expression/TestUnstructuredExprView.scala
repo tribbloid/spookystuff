@@ -12,10 +12,10 @@ class TestUnstructuredExprView extends SpookyEnvSuite {
   import org.tribbloid.spookystuff.dsl._
 
   lazy val page = Trace(
-    Wget("http://www.wikipedia.org/").>('page) :: Nil
+    Wget("http://www.wikipedia.org/").~('page) :: Nil
   ).resolve(spooky)
   lazy val row = PageRow(pageLikes = page)
-    .select($"title".head.>('abc) :: Nil)
+    .select($"title".head.~('abc) :: Nil)
 
   test("uri"){
     assert($.uri.apply(row).get === "http://www.wikipedia.org/")
