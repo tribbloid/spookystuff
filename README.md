@@ -27,16 +27,6 @@ Demo
 
 This environment is deployed on a Spark cluster with 8+ cores. It may not be accessible during system upgrade or maintenance. Please contact a committer/project manager for a customized demo.
 
-How it works
------------
-- In a nutshell, **SpookyStuff** scales up data collection by distributing web clients to many machines. Each of them receives a portion of heterogeneous tasks and run them independently. After that, their results can either be transformed and reused to dig deeper into the web by visiting more dynamic pages, or be exported into one of many data storage: including local HDD, HDFS, Amazon S3, or simply Memory block in JVM.
-
-- **SpookyStuff** is extremely lightweight by offloading most of the task scheduling & data transformation work to Apache Spark. It doesn't depend on any file system (even HDFS is optional), backend database, or message queue, or any SOA. Your query speed is only bounded by your bandwidth and CPU power.
-
-- **SpookyStuff** use phantomjs/GhostDriver to access dynamic pages and mimic human interactions with them, but it doesn't render them - nor does it download any image embedded in them by default (unless you take a screenshot), which makes it still considerably faster even on a single machine.
-
-- **SpookyStuff**'s query language is an extension of Spark API, there is no problem in mixing it with other Spark-based environments, notably SparkSQL and MLlib.
-
 Examples
 -----------
 
