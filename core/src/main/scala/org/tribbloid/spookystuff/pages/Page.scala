@@ -85,13 +85,9 @@ case class Page(
     PageUtils.DFSWrite("save", path, spooky) {
 
       var fullPath = new Path(path)
-
       val fs = fullPath.getFileSystem(spooky.hConf)
-
       if (!overwrite && fs.exists(fullPath)) fullPath = new Path(path + "-" + UUID.randomUUID())
-
       val fos = fs.create(fullPath, overwrite)
-
       try {
         fos.write(content) //       remember that apache IOUtils is defective for DFS!
       }

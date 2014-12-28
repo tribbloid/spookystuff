@@ -18,7 +18,7 @@ trait ActionLike
     result
   }
 
-  def doInterpolate(pageRow: PageRow): Option[this.type] = Some(this) //TODO: return Option as well
+  def doInterpolate(pageRow: PageRow): Option[this.type] = Some(this)
 
   def inject(same: this.type ): Unit = {} //do nothing
 

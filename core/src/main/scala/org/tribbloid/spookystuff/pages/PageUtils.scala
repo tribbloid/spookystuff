@@ -55,7 +55,7 @@ object PageUtils {
     }
   }
 
-  def later(v1: PageLike, v2: PageLike): PageLike = {
+  def laterOf(v1: PageLike, v2: PageLike): PageLike = {
     if (v1.timestamp after v2.timestamp) v1
     else v2
   }
