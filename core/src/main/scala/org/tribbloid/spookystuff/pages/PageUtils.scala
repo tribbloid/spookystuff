@@ -113,7 +113,7 @@ object PageUtils {
                  spooky: SpookyContext
                  ): Unit = {
     val pathStr = Utils.urlConcat(
-      spooky.cacheDir,
+      spooky.dir.cache,
       spooky.cacheTraceEncoder(pageLikes.head.uid.backtrace).toString,
       UUID.randomUUID().toString
     )
@@ -183,7 +183,7 @@ object PageUtils {
                          spooky: SpookyContext
                          ): Seq[PageLike] = {
     val pathStr = Utils.urlConcat(
-      spooky.cacheDir,
+      spooky.dir.cache,
       spooky.cacheTraceEncoder(trace).toString
     )
 

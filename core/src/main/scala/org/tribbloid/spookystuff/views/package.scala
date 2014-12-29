@@ -1,5 +1,7 @@
 package org.tribbloid.spookystuff
 
+import org.apache.spark.SparkContext
+
 import scala.language.implicitConversions
 
 /**
@@ -8,6 +10,8 @@ import scala.language.implicitConversions
 package object views {
 
   implicit def mapToItsView[K, V](map: Map[K,V]): MapView[K, V] = new MapView(map)
+
+  implicit def scToItsView(self: SparkContext): SparkContextView = new SparkContextView(self)
 
   //  def identical[T](vs: TraversableOnce[T]): Boolean = vs.reduce{
   //    (v1,v2) => {

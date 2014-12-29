@@ -49,7 +49,7 @@ abstract class ExampleCore extends {
         maxExploreDepth = 3
       )
 
-    if (!args.contains("--dfscache")) spooky.setRoot("file://"+System.getProperty("user.home")+"/spooky-example/"+appName+"/")
+    if (!args.contains("--dfscache")) spooky.dir.setRoot("file://"+System.getProperty("user.home")+"/spooky-example/"+appName+"/")
 
     if (args.contains("--nocache")) spooky.pageExpireAfter = 0.milliseconds
 

@@ -35,7 +35,7 @@ class SpookyContext (
 
                       var autoSave: Boolean = false,//slow, for debugging only
                       var cacheWrite: Boolean = true,
-                      var cacheRead: Boolean = true,//reduce bombarding sites
+                      var cacheRead: Boolean = true,
                       var errorDump: Boolean = true,
                       var errorScreenshot: Boolean = true,
 
@@ -44,14 +44,6 @@ class SpookyContext (
                       var autoSaveExtract: Extract[String] = new UUIDFileName(Hierarchical),
                       var cacheTraceEncoder: TraceEncoder[String] = Hierarchical,
                       var errorDumpExtract: Extract[String] = new UUIDFileName(Hierarchical),
-
-                      var autoSaveDir: String = Option(System.getProperty("spooky.autosave.dir")).getOrElse("s3n://spooky-page/"),
-                      var cacheDir: String = Option(System.getProperty("spooky.cache.dir")).getOrElse("s3n://spooky-cache/"),
-                      var errorDumpDir: String = Option(System.getProperty("spooky.error.dump.dir")).getOrElse("s3n://spooky-error/"),
-                      var errorScreenshotDir: String = Option(System.getProperty("spooky.error.screenshot.dir")).getOrElse("s3n://spooky-error-screenshot/"),
-                      var errorDumpLocalDir: String = Option(System.getProperty("spooky.error.dump.local.dir")).getOrElse("temp/error/"),
-                      var errorScreenshotLocalDir: String = Option(System.getProperty("spooky.error.screenshot.local.dir")).getOrElse("temp/error-screenshot/"),
-                      private val _checkpointDir: String = Option(System.getProperty("spooky.checkpoint.dir")).getOrElse("temp/checkpoint/"),
 
                       var remoteResourceTimeout: Duration = 20.seconds,
                       var DFSTimeout: Duration = 40.seconds,
@@ -65,7 +57,9 @@ class SpookyContext (
                       )
   extends Serializable {
 
-  this.checkpointDir_=(_checkpointDir)
+  val dir = new DirConfiguration()
+
+  import views._
 
   var metrics = new Metrics
 
@@ -73,36 +67,22 @@ class SpookyContext (
     metrics = new Metrics
   }
 
-  def checkpointDir = this.sqlContext.sparkContext.getCheckpointDir
-
-  def checkpointDir_=(dir: String): Unit = this.sqlContext.sparkContext.setCheckpointDir(dir)
-
   val hConfWrapper =  if (sqlContext!=null) new SerializableWritable(this.sqlContext.sparkContext.hadoopConfiguration)
   else null
 
   def hConf = hConfWrapper.value
 
-  @transient lazy val noInput: PageRowRDD = new PageRowRDD(this.sqlContext.sparkContext.parallelize(Seq(PageRow())),spooky = this)
-
-  def setRoot(root: String): SpookyContext = {
-
-    autoSaveDir = root+"page"
-    cacheDir = root+"cache"
-    errorDumpDir = root+"error"
-    errorScreenshotDir = root+"error-screenshot"
-
-    this
-  }
+  @transient lazy val noInput: PageRowRDD = PageRowRDD(this.sqlContext.sparkContext.noInput, spooky = this)
 
   def this(conf: SparkConf) {
     this(new SQLContext(new SparkContext(conf)))
   }
 
-  implicit def stringRDDToItsFunctions(rdd: RDD[String]): StringRDDView = new StringRDDView(rdd)
+  implicit def stringRDDToItsView(rdd: RDD[String]): StringRDDView = new StringRDDView(rdd)
 
-  implicit def schemaRDDToItsFunctions(rdd: SchemaRDD): SchemaRDDView = new SchemaRDDView(rdd)
+  implicit def schemaRDDToItsView(rdd: SchemaRDD): SchemaRDDView = new SchemaRDDView(rdd)
 
-  //  implicit def pageRowRDDToItsFunctions[T <% RDD[PageRow]](rdd: T) = new PageRowRDD(rdd)(this)
+//  implicit def selfToPageRowRDD(rdd: RDD[PageRow]): PageRowRDD = PageRowRDD(rdd, spooky = this)
 
   //these are the entry points of SpookyStuff starting from a common RDD of strings or maps
   implicit def stringRDDToPageRowRDD(rdd: RDD[String]): PageRowRDD = {
@@ -127,7 +107,6 @@ class SpookyContext (
     new PageRowRDD(result, keys = ListSet(rdd.schema.fieldNames: _*).map(Key(_)), spooky = this)
   }
 
-  //TODO: doesn't preserve order, impossible without applySchema api
   implicit def mapRDDToPageRowRDD[T <: Any](rdd: RDD[Map[String,T]]): PageRowRDD = {
 
     import views._
@@ -137,6 +116,42 @@ class SpookyContext (
     val schemaRDD = sqlContext.jsonRDD(jsonRDD)
 
     schemaRDDToPageRowRDD(schemaRDD)
+  }
+
+  class DirConfiguration extends Serializable {
+
+    private def conf = sqlContext.sparkContext.getConf
+
+//    var root = conf.getOption("spooky.root").orNull
+    var _root = conf.getOption("spooky.root")
+    var _autoSave = conf.getOption("spooky.autosave")
+    var _cache = conf.getOption("spooky.cache")
+    var _errorDump = conf.getOption("spooky.error.dump")
+    var _errorScreenshot = conf.getOption("spooky.error.screenshot")
+    var _checkpoint = conf.getOption("spooky.checkpoint")
+    var _errorDumpLocal = conf.getOption("spooky.error.dump.local")
+    var _errorScreenshotLocal = conf.getOption("spooky.error.screenshot.local")
+
+    def setRoot(v: String): Unit = {
+      _root = Option(v)
+    }
+
+//    def root_=(v: String): Unit = _root = Option(v)
+//    def autoSave_=(v: String): Unit = _autoSave = Option(v)
+//    def cache_=(v: String): Unit = _cache = Option(v)
+//    def errorDump_=(v: String): Unit = _errorDump = Option(v)
+//    def errorScreenshot_=(v: String): Unit = _errorScreenshot = Option(v)
+//    def checkpoint_=(v: String): Unit = _checkpoint = Option(v)
+//    def errorDumpLocal_=(v: String): Unit = _errorDumpLocal = Option(v)
+//    def errorScreenshotLocal_=(v: String): Unit = _errorScreenshotLocal = Option(v)
+
+    def autoSave = _autoSave.orElse(_root.map(_+"page")).getOrElse("temp/page/")
+    def cache = _cache.orElse(_root.map(_+"cache")).getOrElse("temp/cache/")
+    def errorDump = _errorDump.orElse(_root.map(_+"error")).getOrElse("temp/error/")
+    def errorScreenshot = _errorScreenshot.orElse(_root.map(_+"error-screenshot")).getOrElse("temp/error-screenshot/")
+    def checkpoint = _checkpoint.orElse(_root.map(_+"checkpoint")).getOrElse("temp/checkpoint/")
+    def errorDumpLocal = _errorDumpLocal.getOrElse("temp/error/")
+    def errorScreenshotLocal = _errorScreenshotLocal.getOrElse("temp/error-screenshot/")
   }
 
   class Metrics extends Serializable {

@@ -48,7 +48,7 @@ abstract class IntegrationSuite extends FunSuite with BeforeAndAfterAll {
 
   lazy val localCacheWriteOnlyEnv = {
     val spooky: SpookyContext = new SpookyContext(sql)
-    spooky.setRoot("file://"+System.getProperty("user.home")+"/spooky-integration/")
+    spooky.dir.setRoot("file://"+System.getProperty("user.home")+"/spooky-integration/")
     spooky.pageExpireAfter = 0.seconds
     spooky.autoSave = false
     spooky
@@ -56,7 +56,7 @@ abstract class IntegrationSuite extends FunSuite with BeforeAndAfterAll {
 
   lazy val localCacheEnv = {
     val spooky: SpookyContext = new SpookyContext(sql)
-    spooky.setRoot("file://"+System.getProperty("user.home")+"/spooky-integration/")
+    spooky.dir.setRoot("file://"+System.getProperty("user.home")+"/spooky-integration/")
     spooky.pageExpireAfter = 10.minutes
     spooky.autoSave = false
     spooky
@@ -64,7 +64,7 @@ abstract class IntegrationSuite extends FunSuite with BeforeAndAfterAll {
 
   lazy val s3CacheWriteOnlyEnv = {
     val spooky: SpookyContext = new SpookyContext(sql)
-    spooky.setRoot("s3n://spooky-integration/")
+    spooky.dir.setRoot("s3n://spooky-integration/")
     spooky.pageExpireAfter = 0.seconds
     spooky.autoSave = false
     spooky
@@ -72,7 +72,7 @@ abstract class IntegrationSuite extends FunSuite with BeforeAndAfterAll {
 
   lazy val s3CacheEnv = {
     val spooky: SpookyContext = new SpookyContext(sql)
-    spooky.setRoot("s3n://spooky-integration/")
+    spooky.dir.setRoot("s3n://spooky-integration/")
     spooky.pageExpireAfter = 10.minutes
     spooky.autoSave = false
     spooky

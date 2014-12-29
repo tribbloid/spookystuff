@@ -594,6 +594,7 @@ case class PageRowRDD(
     var totalPages =this.flatMap(_.pageLikes)
 
     val spookyBroad = this.context.broadcast(this.spooky)
+    if (this.context.getCheckpointDir == null) this.context.setCheckpointDir(spooky.dir.checkpoint)
 
     for (depth <- 1 to maxDepth) {
       //always inner join

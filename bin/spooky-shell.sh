@@ -24,6 +24,8 @@ SCALA_VERSION=2.10
 
 source bin/rootkey.csv
 
+printf "AWS-credential = $AWSAccessKeyId:$AWSSecretKey\n"
+
 if [[ "$@" = *--help ]] || [[ "$@" = *-h ]]; then
   echo "Usage: ./bin/spooky-shell [options]"
   $SPARK_HOME/bin/spark-submit --help 2>&1 | grep -v Usage 1>&2
@@ -38,9 +40,11 @@ function main(){
   AWS_ACCESS_KEY_ID=$AWSAccessKeyId \
   AWS_SECRET_ACCESS_KEY=$AWSSecretKey \
   $SPARK_HOME/bin/spark-submit \
-  "$@" --class org.tribbloid.spookystuff.repl.Main \
+  --class org.tribbloid.spookystuff.repl.Main \
   --executor-memory 2G \
-  shell/target/scala-$SCALA_VERSION/spookystuff-shell-assembly-0.3.0-SNAPSHOT.jar
+  --conf spooky.root=s3n://spooky- \
+  shell/target/scala-$SCALA_VERSION/spookystuff-shell-assembly-0.3.0-SNAPSHOT.jar \
+  "$@"
 }
 
 # Copy restore-TTY-on-exit functions from Scala script so spark-shell exits properly even in
