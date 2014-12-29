@@ -82,7 +82,7 @@ class SpookyContext (
 
   implicit def schemaRDDToItsView(rdd: SchemaRDD): SchemaRDDView = new SchemaRDDView(rdd)
 
-//  implicit def selfToPageRowRDD(rdd: RDD[PageRow]): PageRowRDD = PageRowRDD(rdd, spooky = this)
+  //  implicit def selfToPageRowRDD(rdd: RDD[PageRow]): PageRowRDD = PageRowRDD(rdd, spooky = this)
 
   //these are the entry points of SpookyStuff starting from a common RDD of strings or maps
   implicit def stringRDDToPageRowRDD(rdd: RDD[String]): PageRowRDD = {
@@ -118,40 +118,37 @@ class SpookyContext (
     schemaRDDToPageRowRDD(schemaRDD)
   }
 
-  class DirConfiguration extends Serializable {
+  case class DirConfiguration(
+                               var root: String = System.getProperty("spooky.root"),
+                               var _autoSave: String = System.getProperty("spooky.autosave"),
+                               var _cache: String = System.getProperty("spooky.cache"),
+                               var _errorDump: String = System.getProperty("spooky.error.dump"),
+                               var _errorScreenshot: String = System.getProperty("spooky.error.screenshot"),
+                               var _checkpoint: String = System.getProperty("spooky.checkpoint"),
+                               var _errorDumpLocal: String = System.getProperty("spooky.error.dump.local"),
+                               var _errorScreenshotLocal: String = System.getProperty("spooky.error.screenshot.local")
+                               ) extends Serializable {
 
-    private def conf = sqlContext.sparkContext.getConf
+    def setRoot(v: String): Unit = {root = v}
 
-//    var root = conf.getOption("spooky.root").orNull
-    var _root = conf.getOption("spooky.root")
-    var _autoSave = conf.getOption("spooky.autosave")
-    var _cache = conf.getOption("spooky.cache")
-    var _errorDump = conf.getOption("spooky.error.dump")
-    var _errorScreenshot = conf.getOption("spooky.error.screenshot")
-    var _checkpoint = conf.getOption("spooky.checkpoint")
-    var _errorDumpLocal = conf.getOption("spooky.error.dump.local")
-    var _errorScreenshotLocal = conf.getOption("spooky.error.screenshot.local")
+    def rootOption = Option(root)
 
-    def setRoot(v: String): Unit = {
-      _root = Option(v)
-    }
+    //    def root_=(v: String): Unit = _root = Option(v)
+    //    def autoSave_=(v: String): Unit = _autoSave = Option(v)
+    //    def cache_=(v: String): Unit = _cache = Option(v)
+    //    def errorDump_=(v: String): Unit = _errorDump = Option(v)
+    //    def errorScreenshot_=(v: String): Unit = _errorScreenshot = Option(v)
+    //    def checkpoint_=(v: String): Unit = _checkpoint = Option(v)
+    //    def errorDumpLocal_=(v: String): Unit = _errorDumpLocal = Option(v)
+    //    def errorScreenshotLocal_=(v: String): Unit = _errorScreenshotLocal = Option(v)
 
-//    def root_=(v: String): Unit = _root = Option(v)
-//    def autoSave_=(v: String): Unit = _autoSave = Option(v)
-//    def cache_=(v: String): Unit = _cache = Option(v)
-//    def errorDump_=(v: String): Unit = _errorDump = Option(v)
-//    def errorScreenshot_=(v: String): Unit = _errorScreenshot = Option(v)
-//    def checkpoint_=(v: String): Unit = _checkpoint = Option(v)
-//    def errorDumpLocal_=(v: String): Unit = _errorDumpLocal = Option(v)
-//    def errorScreenshotLocal_=(v: String): Unit = _errorScreenshotLocal = Option(v)
-
-    def autoSave = _autoSave.orElse(_root.map(_+"page")).getOrElse("temp/page/")
-    def cache = _cache.orElse(_root.map(_+"cache")).getOrElse("temp/cache/")
-    def errorDump = _errorDump.orElse(_root.map(_+"error")).getOrElse("temp/error/")
-    def errorScreenshot = _errorScreenshot.orElse(_root.map(_+"error-screenshot")).getOrElse("temp/error-screenshot/")
-    def checkpoint = _checkpoint.orElse(_root.map(_+"checkpoint")).getOrElse("temp/checkpoint/")
-    def errorDumpLocal = _errorDumpLocal.getOrElse("temp/error/")
-    def errorScreenshotLocal = _errorScreenshotLocal.getOrElse("temp/error-screenshot/")
+    def autoSave = Option(_autoSave).orElse(rootOption.map(_+"page")).getOrElse("temp/page/")
+    def cache = Option(_cache).orElse(rootOption.map(_+"cache")).getOrElse("temp/cache/")
+    def errorDump = Option(_errorDump).orElse(rootOption.map(_+"error")).getOrElse("temp/error/")
+    def errorScreenshot = Option(_errorScreenshot).orElse(rootOption.map(_+"error-screenshot")).getOrElse("temp/error-screenshot/")
+    def checkpoint = Option(_checkpoint).orElse(rootOption.map(_+"checkpoint")).getOrElse("temp/checkpoint/")
+    def errorDumpLocal = Option(_errorDumpLocal).getOrElse("temp/error/")
+    def errorScreenshotLocal = Option(_errorScreenshotLocal).getOrElse("temp/error-screenshot/")
   }
 
   class Metrics extends Serializable {
