@@ -117,62 +117,62 @@ class SpookyContext (
 
     schemaRDDToPageRowRDD(schemaRDD)
   }
+}
 
-  case class DirConfiguration(
-                               var root: String = System.getProperty("spooky.root"),
-                               var _autoSave: String = System.getProperty("spooky.autosave"),
-                               var _cache: String = System.getProperty("spooky.cache"),
-                               var _errorDump: String = System.getProperty("spooky.error.dump"),
-                               var _errorScreenshot: String = System.getProperty("spooky.error.screenshot"),
-                               var _checkpoint: String = System.getProperty("spooky.checkpoint"),
-                               var _errorDumpLocal: String = System.getProperty("spooky.error.dump.local"),
-                               var _errorScreenshotLocal: String = System.getProperty("spooky.error.screenshot.local")
-                               ) extends Serializable {
+case class DirConfiguration(
+                             var root: String = System.getProperty("spooky.root"),
+                             var _autoSave: String = System.getProperty("spooky.autosave"),
+                             var _cache: String = System.getProperty("spooky.cache"),
+                             var _errorDump: String = System.getProperty("spooky.error.dump"),
+                             var _errorScreenshot: String = System.getProperty("spooky.error.screenshot"),
+                             var _checkpoint: String = System.getProperty("spooky.checkpoint"),
+                             var _errorDumpLocal: String = System.getProperty("spooky.error.dump.local"),
+                             var _errorScreenshotLocal: String = System.getProperty("spooky.error.screenshot.local")
+                             ) extends Serializable {
 
-    def setRoot(v: String): Unit = {root = v}
+  def setRoot(v: String): Unit = {root = v}
 
-    def rootOption = Option(root)
+  def rootOption = Option(root)
 
-    //    def root_=(v: String): Unit = _root = Option(v)
-    //    def autoSave_=(v: String): Unit = _autoSave = Option(v)
-    //    def cache_=(v: String): Unit = _cache = Option(v)
-    //    def errorDump_=(v: String): Unit = _errorDump = Option(v)
-    //    def errorScreenshot_=(v: String): Unit = _errorScreenshot = Option(v)
-    //    def checkpoint_=(v: String): Unit = _checkpoint = Option(v)
-    //    def errorDumpLocal_=(v: String): Unit = _errorDumpLocal = Option(v)
-    //    def errorScreenshotLocal_=(v: String): Unit = _errorScreenshotLocal = Option(v)
+  //    def root_=(v: String): Unit = _root = Option(v)
+  //    def autoSave_=(v: String): Unit = _autoSave = Option(v)
+  //    def cache_=(v: String): Unit = _cache = Option(v)
+  //    def errorDump_=(v: String): Unit = _errorDump = Option(v)
+  //    def errorScreenshot_=(v: String): Unit = _errorScreenshot = Option(v)
+  //    def checkpoint_=(v: String): Unit = _checkpoint = Option(v)
+  //    def errorDumpLocal_=(v: String): Unit = _errorDumpLocal = Option(v)
+  //    def errorScreenshotLocal_=(v: String): Unit = _errorScreenshotLocal = Option(v)
 
-    def autoSave = Option(_autoSave).orElse(rootOption.map(_+"page")).getOrElse("temp/page/")
-    def cache = Option(_cache).orElse(rootOption.map(_+"cache")).getOrElse("temp/cache/")
-    def errorDump = Option(_errorDump).orElse(rootOption.map(_+"error")).getOrElse("temp/error/")
-    def errorScreenshot = Option(_errorScreenshot).orElse(rootOption.map(_+"error-screenshot")).getOrElse("temp/error-screenshot/")
-    def checkpoint = Option(_checkpoint).orElse(rootOption.map(_+"checkpoint")).getOrElse("temp/checkpoint/")
-    def errorDumpLocal = Option(_errorDumpLocal).getOrElse("temp/error/")
-    def errorScreenshotLocal = Option(_errorScreenshotLocal).getOrElse("temp/error-screenshot/")
+  def autoSave = Option(_autoSave).orElse(rootOption.map(_+"page")).getOrElse("temp/page/")
+  def cache = Option(_cache).orElse(rootOption.map(_+"cache")).getOrElse("temp/cache/")
+  def errorDump = Option(_errorDump).orElse(rootOption.map(_+"error")).getOrElse("temp/error/")
+  def errorScreenshot = Option(_errorScreenshot).orElse(rootOption.map(_+"error-screenshot")).getOrElse("temp/error-screenshot/")
+  def checkpoint = Option(_checkpoint).orElse(rootOption.map(_+"checkpoint")).getOrElse("temp/checkpoint/")
+  def errorDumpLocal = Option(_errorDumpLocal).getOrElse("temp/error/")
+  def errorScreenshotLocal = Option(_errorScreenshotLocal).getOrElse("temp/error-screenshot/")
+}
+
+class Metrics extends Serializable {
+
+  private def accumulator[T](initialValue: T, name: String)(implicit param: AccumulatorParam[T]) = {
+    new Accumulator(initialValue, param, Some(name))
   }
 
-  class Metrics extends Serializable {
+  import org.apache.spark.SparkContext._
 
-    private def accumulator[T](initialValue: T, name: String)(implicit param: AccumulatorParam[T]) = {
-      new Accumulator(initialValue, param, Some(name))
-    }
+  val driverInitialized: Accumulator[Int] = accumulator(0, "driverInitialized")
+  val driverReclaimed: Accumulator[Int] = accumulator(0, "driverReclaimed")
 
-    import org.apache.spark.SparkContext._
+  val sessionInitialized: Accumulator[Int] = accumulator(0, "sessionInitialized")
+  val sessionReclaimed: Accumulator[Int] = accumulator(0, "sessionReclaimed")
 
-    val driverInitialized: Accumulator[Int] = accumulator(0, "driverInitialized")
-    val driverReclaimed: Accumulator[Int] = accumulator(0, "driverReclaimed")
+  val DFSReadSuccess: Accumulator[Int] = accumulator(0, "DFSReadSuccess")
+  val DFSReadFail: Accumulator[Int] = accumulator(0, "DFSReadFail")
 
-    val sessionInitialized: Accumulator[Int] = accumulator(0, "sessionInitialized")
-    val sessionReclaimed: Accumulator[Int] = accumulator(0, "sessionReclaimed")
+  val DFSWriteSuccess: Accumulator[Int] = accumulator(0, "DFSWriteSuccess")
+  val DFSWriteFail: Accumulator[Int] = accumulator(0, "DFSWriteFail")
 
-    val DFSReadSuccess: Accumulator[Int] = accumulator(0, "DFSReadSuccess")
-    val DFSReadFail: Accumulator[Int] = accumulator(0, "DFSReadFail")
-
-    val DFSWriteSuccess: Accumulator[Int] = accumulator(0, "DFSWriteSuccess")
-    val DFSWriteFail: Accumulator[Int] = accumulator(0, "DFSWriteFail")
-
-    val pagesFetched: Accumulator[Int] = accumulator(0, "pagesFetched")
-    val pagesFetchedFromWeb: Accumulator[Int] = accumulator(0, "pagesFetchedFromWeb")
-    val pagesFetchedFromCache: Accumulator[Int] = accumulator(0, "pagesFetchedFromCache")
-  }
+  val pagesFetched: Accumulator[Int] = accumulator(0, "pagesFetched")
+  val pagesFetchedFromWeb: Accumulator[Int] = accumulator(0, "pagesFetchedFromWeb")
+  val pagesFetchedFromCache: Accumulator[Int] = accumulator(0, "pagesFetchedFromCache")
 }
