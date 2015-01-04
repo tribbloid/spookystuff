@@ -107,7 +107,7 @@ Installation & Deployment
 Integration Test
 ----------------
 
-	mvn clean test-compile failsafe:integration-test
+	mvn integration-test
 
 License
 -----------
