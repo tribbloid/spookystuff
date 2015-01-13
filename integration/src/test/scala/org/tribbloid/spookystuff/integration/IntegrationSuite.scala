@@ -5,7 +5,7 @@ import java.util.Properties
 import org.apache.spark.sql.SQLContext
 import org.apache.spark.{SparkConf, SparkContext}
 import org.scalatest.{Matchers, BeforeAndAfterAll, FunSuite}
-import org.tribbloid.spookystuff.SpookyContext
+import org.tribbloid.spookystuff.{Metrics, SpookyContext}
 import org.tribbloid.spookystuff.utils.Utils
 
 /**
@@ -78,38 +78,48 @@ abstract class IntegrationSuite extends FunSuite with BeforeAndAfterAll {
     spooky
   }
 
+  private def assertBeforeCache(metrics: Metrics): Unit = {
+    val pageFetched = metrics.pagesFetched.value
+    assert(pageFetched === numPages +- 1)
+    assert(metrics.pagesFetchedFromWeb.value === pageFetched)
+    assert(metrics.pagesFetchedFromCache.value === 0)
+    assert(metrics.sessionInitialized.value === numSessions +- 1)
+    assert(metrics.sessionReclaimed.value >= metrics.sessionInitialized.value)
+    assert(metrics.driverInitialized.value === numDrivers +- 1)
+    assert(metrics.driverReclaimed.value >= metrics.driverInitialized.value)
+  }
+
+  private def assertAfterCache(metrics: Metrics): Unit = {
+    val pageFetched = metrics.pagesFetched.value
+    assert(pageFetched === numPages +- 1)
+    assert(metrics.pagesFetchedFromWeb.value === 0)
+    assert(metrics.pagesFetchedFromCache.value === pageFetched)
+    assert(metrics.sessionInitialized.value === 0)
+    assert(metrics.sessionReclaimed.value >= metrics.sessionInitialized.value)
+    assert(metrics.driverInitialized.value === 0)
+    assert(metrics.driverReclaimed.value >= metrics.driverInitialized.value)
+    assert(metrics.DFSReadSuccess.value > 0)
+    assert(metrics.DFSReadFail.value === 0)
+  }
+
   test("local cache") {
 
     doMain(localCacheWriteOnlyEnv)
 
-    Utils.retry(10) { //sometimes accumulator takes time to signal back
+    Utils.retry(3) { //sometimes accumulator takes time to signal back
       Thread.sleep(2000)
 
       val metrics = localCacheWriteOnlyEnv.metrics
-      assert(metrics.pagesFetched.value === numPages)
-      assert(metrics.pagesFetchedFromWeb.value === numPages)
-      assert(metrics.pagesFetchedFromCache.value === 0)
-      assert(metrics.sessionInitialized.value === numSessions + 1 +- 1)
-      assert(metrics.sessionReclaimed.value >= metrics.sessionInitialized.value)
-      assert(metrics.driverInitialized.value === numDrivers + 1 +- 1)
-      assert(metrics.driverReclaimed.value >= metrics.driverInitialized.value)
+      assertBeforeCache(metrics)
     }
 
     doMain(localCacheEnv)
 
-    Utils.retry(10) {
+    Utils.retry(3) {
       Thread.sleep(2000)
 
       val metrics = localCacheEnv.metrics
-      assert(metrics.pagesFetched.value === numPages)
-      assert(metrics.pagesFetchedFromWeb.value === 0)
-      assert(metrics.pagesFetchedFromCache.value === numPages)
-      assert(metrics.sessionInitialized.value === 0)
-      assert(metrics.sessionReclaimed.value >= metrics.sessionInitialized.value)
-      assert(metrics.driverInitialized.value === 0)
-      assert(metrics.driverReclaimed.value >= metrics.driverInitialized.value)
-      assert(metrics.DFSReadSuccess.value > 0)
-      assert(metrics.DFSReadFail.value === 0)
+      assertAfterCache(metrics)
     }
   }
 
@@ -117,34 +127,20 @@ abstract class IntegrationSuite extends FunSuite with BeforeAndAfterAll {
 
     doMain(s3CacheWriteOnlyEnv)
 
-    Utils.retry(10) { //sometimes accumulator takes time to signal back
+    Utils.retry(3) { //sometimes accumulator takes time to signal back
       Thread.sleep(2000)
 
       val metrics = s3CacheWriteOnlyEnv.metrics
-      assert(metrics.pagesFetched.value === numPages)
-      assert(metrics.pagesFetchedFromWeb.value === numPages)
-      assert(metrics.pagesFetchedFromCache.value === 0)
-      assert(metrics.sessionInitialized.value === numSessions + 1 +- 1)
-      assert(metrics.sessionReclaimed.value >= metrics.sessionInitialized.value)
-      assert(metrics.driverInitialized.value === numDrivers + 1 +- 1)
-      assert(metrics.driverReclaimed.value >= metrics.driverInitialized.value)
+      assertBeforeCache(metrics)
     }
 
     doMain(s3CacheEnv)
 
-    Utils.retry(10) { //sometimes accumulator takes time to signal back
+    Utils.retry(3) {
       Thread.sleep(2000)
 
       val metrics = s3CacheEnv.metrics
-      assert(metrics.pagesFetched.value === numPages)
-      assert(metrics.pagesFetchedFromWeb.value === 0)
-      assert(metrics.pagesFetchedFromCache.value === numPages)
-      assert(metrics.sessionInitialized.value === 0)
-      assert(metrics.sessionReclaimed.value >= metrics.sessionInitialized.value)
-      assert(metrics.driverInitialized.value === 0)
-      assert(metrics.driverReclaimed.value >= metrics.driverInitialized.value)
-      assert(metrics.DFSReadSuccess.value > 0)
-      assert(metrics.DFSReadFail.value === 0)
+      assertAfterCache(metrics)
     }
   }
 

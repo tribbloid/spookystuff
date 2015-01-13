@@ -16,7 +16,7 @@ object AppliancePartsPros extends ExampleCore {
     sc.parallelize(Seq("A210S"))
       .fetch(
         Visit("http://www.appliancepartspros.com/")
-          +> TextInput("input.ac-input","'{_}")
+          +> TextInput("input.ac-input",'_)
           +> Click("input[value=\"Search\"]")
           +> WaitFor("div.dgrm-lst div.header h2")
       )
