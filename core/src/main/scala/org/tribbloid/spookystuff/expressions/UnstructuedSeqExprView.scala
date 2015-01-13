@@ -8,19 +8,19 @@ import org.tribbloid.spookystuff.pages.{Page, Unstructured}
 /**
  * Created by peng on 11/29/14.
  */
-class UnstructuedSeqExprView(self: Expr[Seq[Unstructured]]) {
+class UnstructuedSeqExprView(self: Expression[Seq[Unstructured]]) {
 
   import dsl._
 
-  def uris: Expr[Seq[String]] = self.andMap(_.uris, "uris")
+  def uris: Expression[Seq[String]] = self.andMap(_.uris, "uris")
 
-  def allChildren(selector: String): Expr[Seq[Unstructured]] = self.andMap(_.allChildren(selector), s"allChildren($selector)")
+  def allChildren(selector: String): Expression[Seq[Unstructured]] = self.andMap(_.allChildren(selector), s"allChildren($selector)")
 
-  def texts: Expr[Seq[String]] = self.andMap(_.texts, "texts")
+  def texts: Expression[Seq[String]] = self.andMap(_.texts, "texts")
 
-  def ownTexts: Expr[Seq[String]] = self.andMap(_.ownTexts, "ownTexts")
+  def ownTexts: Expression[Seq[String]] = self.andMap(_.ownTexts, "ownTexts")
 
-  def attrs(attrKey: String, noEmpty: Boolean = true): Expr[Seq[String]] = self.andMap(_.attrs(attrKey, noEmpty), s"attrs($attrKey,$noEmpty)")
+  def attrs(attrKey: String, noEmpty: Boolean = true): Expression[Seq[String]] = self.andMap(_.attrs(attrKey, noEmpty), s"attrs($attrKey,$noEmpty)")
 
   def hrefs = attrs("abs:href", noEmpty = true)
 
@@ -29,11 +29,11 @@ class UnstructuedSeqExprView(self: Expr[Seq[Unstructured]]) {
   //  def boilerPiple
 }
 
-class PageSeqExprView(self: Expr[Seq[Page]]) {
+class PageSeqExprView(self: Expression[Seq[Page]]) {
 
   import dsl._
 
-  def timestamps: Expr[Seq[Date]] = self.andMap(_.map(_.timestamp), "timestamps")
+  def timestamps: Expression[Seq[Date]] = self.andMap(_.map(_.timestamp), "timestamps")
 
-  def saveds: Expr[Seq[String]] = self.andMap(_.map(_.saved), "saveds")
+  def saveds: Expression[Seq[String]] = self.andMap(_.map(_.saved), "saveds")
 }

@@ -7,5 +7,5 @@ import org.tribbloid.spookystuff.entity.PageRow
  */
 package object expressions {
 
-  type Expr[+T] = NamedFunction1[PageRow, Option[T]]
+  type Expression[+T] = NamedFunction1[PageRow, Option[T]]
 }

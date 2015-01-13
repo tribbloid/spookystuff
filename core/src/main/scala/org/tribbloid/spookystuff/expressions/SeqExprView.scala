@@ -7,15 +7,15 @@ import scala.reflect.ClassTag
 /**
  * Created by peng on 11/29/14.
  */
-class SeqExprView[T: ClassTag](self: Expr[Seq[T]]) {
+class SeqExprView[T: ClassTag](self: Expression[Seq[T]]) {
 
   import dsl._
 
-  def head: Expr[T] = self.andFlatMap(_.headOption, "head")
+  def head: Expression[T] = self.andFlatMap(_.headOption, "head")
 
-  def last: Expr[T] = self.andFlatMap(_.lastOption, "last")
+  def last: Expression[T] = self.andFlatMap(_.lastOption, "last")
 
-  def get(i: Int): Expr[T] = self.andFlatMap({
+  def get(i: Int): Expression[T] = self.andFlatMap({
     seq =>
       val realIdx = if (i >= 0) i
       else seq.size - i
@@ -25,9 +25,9 @@ class SeqExprView[T: ClassTag](self: Expr[Seq[T]]) {
   },
   s"get($i)")
 
-  def size: Expr[Int] = self.andMap(_.size, "size")
+  def size: Expression[Int] = self.andMap(_.size, "size")
 
-  def mkString(sep: String): Expr[String] = self.andMap(_.mkString(sep), s"mkString($sep)")
+  def mkString(sep: String): Expression[String] = self.andMap(_.mkString(sep), s"mkString($sep)")
 
   //TODO: handle exception
   //  def only: Expr[T] =

@@ -33,43 +33,43 @@ package object dsl {
   //'abc.$("div#a1").attr("src"): first "src" attribute of an unstructured field that match the selector
   //'abc.$("div#a1").attrs("src"): first "src" attribute of an unstructured field that match the selector
 
-  def $(selector: String, i: Int): Expr[Unstructured] = GetOnlyPageExpr.children(selector).get(i)
+  def $(selector: String, i: Int): Expression[Unstructured] = GetOnlyPageExpr.children(selector).get(i)
 
-  def $(selector: String): Expr[Seq[Unstructured]] = GetOnlyPageExpr.children(selector)
+  def $(selector: String): Expression[Seq[Unstructured]] = GetOnlyPageExpr.children(selector)
 
-  def $: Expr[Page] = GetOnlyPageExpr
+  def $: Expression[Page] = GetOnlyPageExpr
 
-  def $_*(selector: String, i: Int): Expr[Unstructured] = GetAllPagesExpr.allChildren(selector).get(i)
+  def $_*(selector: String, i: Int): Expression[Unstructured] = GetAllPagesExpr.allChildren(selector).get(i)
 
-  def $_*(selector: String): Expr[Seq[Unstructured]] = GetAllPagesExpr.allChildren(selector)
+  def $_*(selector: String): Expression[Seq[Unstructured]] = GetAllPagesExpr.allChildren(selector)
 
-  def `$_*`: Expr[Seq[Page]] = GetAllPagesExpr
+  def `$_*`: Expression[Seq[Page]] = GetAllPagesExpr
 
-  def A(selector: String, i: Int): Expr[Unstructured] = 'A.children(selector).get(i)
+  def A(selector: String, i: Int): Expression[Unstructured] = 'A.children(selector).get(i)
 
-  def A(selector: String): Expr[Seq[Unstructured]] = 'A.children(selector)
+  def A(selector: String): Expression[Seq[Unstructured]] = 'A.children(selector)
 
 //  implicit def functionToExpr[R](f: PageRow => Option[R]): Expr[R] = Expr(f)
 
-  implicit def exprView[T: ClassTag](expr: Expr[T]): ExprView[T] =
+  implicit def exprView[T: ClassTag](expr: Expression[T]): ExprView[T] =
     new ExprView(expr)
 
-  implicit def unstructuredExprView(expr: Expr[Unstructured]): UnstructuedExprView =
+  implicit def unstructuredExprView(expr: Expression[Unstructured]): UnstructuedExprView =
     new UnstructuedExprView(expr)
 
-  implicit def pageExprView(expr: Expr[Page]): PageExprView =
+  implicit def pageExprView(expr: Expression[Page]): PageExprView =
     new PageExprView(expr)
 
-  implicit def unstructuredSeqExprView(expr: Expr[Seq[Unstructured]]): UnstructuedSeqExprView =
+  implicit def unstructuredSeqExprView(expr: Expression[Seq[Unstructured]]): UnstructuedSeqExprView =
     new UnstructuedSeqExprView(expr)
 
-  implicit def unstructuredSeqExprToUnstructuredExprView(expr: Expr[Seq[Unstructured]]): UnstructuedExprView =
+  implicit def unstructuredSeqExprToUnstructuredExprView(expr: Expression[Seq[Unstructured]]): UnstructuedExprView =
     expr.head
 
-  implicit def seqExprView[T: ClassTag](expr: Expr[Seq[T]]): SeqExprView[T] =
+  implicit def seqExprView[T: ClassTag](expr: Expression[Seq[T]]): SeqExprView[T] =
     new SeqExprView[T](expr)
 
-  implicit def stringExprView(expr: Expr[String]): StringExprView =
+  implicit def stringExprView(expr: Expression[String]): StringExprView =
     new StringExprView(expr)
 
   //--------------------------------------------------
@@ -88,7 +88,7 @@ package object dsl {
   implicit def symbolToPageExprView(symbol: Symbol): PageExprView =
     new GetPageExpr(symbol.name)
 
-  implicit def stringToExpr(str: String): Expr[String] = {
+  implicit def stringToExpr(str: String): Expression[String] = {
 
     val delimiter = Const.keyDelimiter
     val regex = (delimiter+"\\{[^\\{\\}\r\n]*\\}").r
@@ -101,7 +101,7 @@ package object dsl {
 
   implicit class StrContextHelper(val strC: StringContext) {
 
-    def x(fs: Expr[Any]*) = new InterpolateExpr(strC.parts, fs)
+    def x(fs: Expression[Any]*) = new InterpolateExpr(strC.parts, fs)
 
     def $() = GetOnlyPageExpr.children(strC.parts.mkString)
 

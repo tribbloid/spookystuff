@@ -158,7 +158,7 @@ case class PageRowRDD(
    */
   //always use the same path pattern for filtered pages, if you want pages to be saved with different path, use multiple saveContent with different names
   def save(
-            path: Expr[Any],
+            path: Expression[Any],
             name: Symbol = null,
             overwrite: Boolean = false
             ): PageRowRDD = {
@@ -192,7 +192,7 @@ case class PageRowRDD(
    * @return an array of file paths
    */
   def dump(
-            path: Expr[String] = null,
+            path: Expression[String] = null,
             name: Symbol = null,
             overwrite: Boolean = false
             ): Array[String] = this.save(path, name, overwrite).flatMap {
@@ -207,7 +207,7 @@ case class PageRowRDD(
   //   * @param exprs
   //   * @return new PageRowRDD
   //   */
-  def select(exprs: Expr[Any]*): PageRowRDD = {
+  def select(exprs: Expression[Any]*): PageRowRDD = {
 
     val _exprs = exprs
 
@@ -225,7 +225,7 @@ case class PageRowRDD(
     result
   }
 
-  private def selectTemp(exprs: Expr[Any]*): PageRowRDD = {
+  private def selectTemp(exprs: Expression[Any]*): PageRowRDD = {
 
     val _exprs = exprs
 
@@ -257,7 +257,7 @@ case class PageRowRDD(
   }
 
   def flatten(
-               expr: Expr[Any],
+               expr: Expression[Any],
                indexKey: Symbol = null,
                limit: Int = Int.MaxValue,
                left: Boolean = true
@@ -273,7 +273,7 @@ case class PageRowRDD(
   }
 
   private def flattenTemp(
-                           expr: Expr[Any],
+                           expr: Expression[Any],
                            indexKey: Symbol = null,
                            limit: Int = Int.MaxValue,
                            left: Boolean = true
@@ -289,7 +289,7 @@ case class PageRowRDD(
   }
 
   def explode(
-               expr: Expr[Any],
+               expr: Expression[Any],
                indexKey: Symbol = null,
                limit: Int = Int.MaxValue,
                left: Boolean = true
@@ -302,11 +302,11 @@ case class PageRowRDD(
   //   * @return RDD[Page], each page will generate several shards
   //   */
   def flatSelect(
-                  expr: Expr[Any],
+                  expr: Expression[Any],
                   indexKey: Symbol = null,
                   limit: Int = Int.MaxValue,
                   left: Boolean = true
-                  )(exprs: Expr[Any]*) ={
+                  )(exprs: Expression[Any]*) ={
 
     this
       .flattenTemp(expr defaultAs Symbol(Const.defaultJoinKey), indexKey, limit, left)
@@ -467,7 +467,7 @@ case class PageRowRDD(
   }
 
   def join(
-            expr: Expr[Any], //name is discarded
+            expr: Expression[Any], //name is discarded
             indexKey: Symbol = null, //left & idempotent parameters are missing as they are always set to true
             limit: Int = spooky.joinLimit
             )(
@@ -477,7 +477,7 @@ case class PageRowRDD(
             flattenPagesPattern: Symbol = '*,
             flattenPagesIndexKey: Symbol = null
             )(
-            select: Expr[Any]*
+            select: Expression[Any]*
             ): PageRowRDD = {
 
     this
@@ -494,12 +494,12 @@ case class PageRowRDD(
    * @return RDD[Page]
    */
   def visitJoin(
-                 expr: Expr[Any],
+                 expr: Expression[Any],
                  indexKey: Symbol = null, //left & idempotent parameters are missing as they are always set to true
                  limit: Int = spooky.joinLimit,
                  joinType: JoinType = Const.defaultJoinType,
                  numPartitions: Int = this.sparkContext.defaultParallelism,
-                 select: Expr[Any] = null
+                 select: Expression[Any] = null
                  ): PageRowRDD =
     this.join(expr, indexKey, limit)(
       Visit(new GetExpr(Const.defaultJoinKey)),
@@ -514,12 +514,12 @@ case class PageRowRDD(
    * @return RDD[Page]
    */
   def wgetJoin(
-                expr: Expr[Any],
+                expr: Expression[Any],
                 indexKey: Symbol = null, //left & idempotent parameters are missing as they are always set to true
                 limit: Int = spooky.joinLimit,
                 joinType: JoinType = Const.defaultJoinType,
                 numPartitions: Int = this.sparkContext.defaultParallelism,
-                select: Expr[Any] = null
+                select: Expression[Any] = null
                 ): PageRowRDD =
     this.join(expr, indexKey, limit)(
       Wget(new GetExpr(Const.defaultJoinKey)),
@@ -570,8 +570,9 @@ case class PageRowRDD(
   }
 
   //recursive join and union! applicable to many situations like (wide) pagination and deep crawling
+  //TODO: secondary engine allowing 'narrow' asynchronous explore
   def explore(
-               expr: Expr[Any],
+               expr: Expression[Any],
                depthKey: Symbol = null,
                indexKey: Symbol = null, //left & idempotent parameters are missing as they are always set to true
                maxDepth: Int = spooky.maxExploreDepth
@@ -581,7 +582,7 @@ case class PageRowRDD(
                flattenPagesPattern: Symbol = '*,
                flattenPagesIndexKey: Symbol = null
                )(
-               select: Expr[Any]*
+               select: Expression[Any]*
                ): PageRowRDD = {
 
     var newRows = this
@@ -657,12 +658,12 @@ case class PageRowRDD(
   }
 
   def visitExplore(
-                    expr: Expr[Any],
+                    expr: Expression[Any],
                     depthKey: Symbol = null,
                     indexKey: Symbol = null, //left & idempotent parameters are missing as they are always set to true
                     maxDepth: Int = spooky.maxExploreDepth,
                     numPartitions: Int = this.sparkContext.defaultParallelism,
-                    select: Expr[Any] = null
+                    select: Expression[Any] = null
                     ): PageRowRDD =
     explore(expr, depthKey, indexKey, maxDepth)(
       Visit(new GetExpr(Const.defaultJoinKey)),
@@ -670,12 +671,12 @@ case class PageRowRDD(
     )(Option(select).toSeq: _*)
 
   def wgetExplore(
-                   expr: Expr[Any],
+                   expr: Expression[Any],
                    depthKey: Symbol = null,
                    indexKey: Symbol = null, //left & idempotent parameters are missing as they are always set to true
                    maxDepth: Int = spooky.maxExploreDepth,
                    numPartitions: Int = this.sparkContext.defaultParallelism,
-                   select: Expr[Any] = null
+                   select: Expression[Any] = null
                    ): PageRowRDD =
     explore(expr, depthKey, indexKey, maxDepth)(
       Wget(new GetExpr(Const.defaultJoinKey)),
@@ -687,6 +688,7 @@ case class PageRowRDD(
    * @param selector selector of the "next page" element
    * @param limit depth of recursion
    * @return RDD[Page], contains both old and new pages
+   *         TODO: deprecate
    */
   def paginate(
                 selector: String,

@@ -107,7 +107,7 @@ case class PageRow(
     Utils.toJson(this.asMap().canonizeKeysToColumnNames)
   }
 
-  def select(fs: Seq[Expr[Any]]): PageRow = {
+  def select(fs: Seq[Expression[Any]]): PageRow = {
     val newKVs = fs.flatMap{
       f =>
         val value = f(this)
@@ -119,7 +119,7 @@ case class PageRow(
     this.copy(cells = this.cells ++ newKVs)
   }
 
-  def selectTemp(fs: Seq[Expr[Any]]): PageRow = {
+  def selectTemp(fs: Seq[Expression[Any]]): PageRow = {
     val newKVs = fs.flatMap{
       f =>
         val value = f(this)

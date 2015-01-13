@@ -8,15 +8,15 @@ import scala.reflect.ClassTag
  * entry point for all "query lambda"
  */
 
-class ExprView[T: ClassTag](self: Expr[T]) {
+class ExprView[T: ClassTag](self: Expression[T]) {
 
-  def andMap[A](g: T => A): Expr[A] = self.andThen(_.map(v => g(v)))
+  def andMap[A](g: T => A): Expression[A] = self.andThen(_.map(v => g(v)))
 
-  def andMap[A](g: T => A, name: String): Expr[A] = self.andThen(NamedFunction1(_.map(v => g(v)), name))
+  def andMap[A](g: T => A, name: String): Expression[A] = self.andThen(NamedFunction1(_.map(v => g(v)), name))
 
-  def andFlatMap[A](g: T => Option[A]): Expr[A] = self.andThen(_.flatMap(v => g(v)))
+  def andFlatMap[A](g: T => Option[A]): Expression[A] = self.andThen(_.flatMap(v => g(v)))
 
-  def andFlatMap[A](g: T => Option[A], name: String): Expr[A] = self.andThen(NamedFunction1(_.flatMap(v => g(v)), name))
+  def andFlatMap[A](g: T => Option[A], name: String): Expression[A] = self.andThen(NamedFunction1(_.flatMap(v => g(v)), name))
 
 //  def defaultToHrefExpr = (self match {
 //    case expr: Expr[Unstructured] => expr.href

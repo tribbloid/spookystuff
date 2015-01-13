@@ -14,7 +14,7 @@ import org.apache.http.impl.client.HttpClients
 import org.apache.http.impl.conn.PoolingHttpClientConnectionManager
 import org.openqa.selenium.{OutputType, TakesScreenshot}
 import org.tribbloid.spookystuff.entity.PageRow
-import org.tribbloid.spookystuff.expressions.{Expr, Literal}
+import org.tribbloid.spookystuff.expressions.{Expression, Literal}
 import org.tribbloid.spookystuff.session.Session
 import org.tribbloid.spookystuff.pages.{Unstructured, HtmlElement, Page, PageUID}
 import org.tribbloid.spookystuff.utils.{SocksProxyConnectionSocketFactory, SocksProxySSLConnectionSocketFactory}
@@ -98,7 +98,7 @@ object DefaultScreenshot extends Screenshot()
  * actions for more complex http/restful API call will be added per request.
  * @param uri support cell interpolation
  */
-case class Wget(uri: Expr[Any]) extends Export with Driverless {
+case class Wget(uri: Expression[Any]) extends Export with Driverless {
 
   override def doExeNoName(pb: Session): Seq[Page] = {
 

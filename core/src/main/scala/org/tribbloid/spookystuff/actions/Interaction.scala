@@ -9,7 +9,7 @@ import org.openqa.selenium.support.ui.{ExpectedCondition, ExpectedConditions, Se
 import org.openqa.selenium.{By, WebDriver}
 import org.tribbloid.spookystuff.Const
 import org.tribbloid.spookystuff.entity.PageRow
-import org.tribbloid.spookystuff.expressions.{Expr, Literal}
+import org.tribbloid.spookystuff.expressions.{Expression, Literal}
 import org.tribbloid.spookystuff.pages.{Page, Unstructured}
 import org.tribbloid.spookystuff.session.Session
 import org.tribbloid.spookystuff.utils.Utils
@@ -44,7 +44,7 @@ abstract class Interaction extends Action {
  * @param uri support cell interpolation
  */
 case class Visit(
-                  uri: Expr[Any],
+                  uri: Expression[Any],
                   hasTitle: Boolean = true
                   ) extends Interaction with Timed {
 
@@ -262,7 +262,7 @@ case class Submit(selector: String) extends Interaction with Timed {
  * @param selector css selector of the textbox, only the first element will be affected
  * @param text support cell interpolation
  */
-case class TextInput(selector: String, text: Expr[Any]) extends Interaction with Timed {
+case class TextInput(selector: String, text: Expression[Any]) extends Interaction with Timed {
   override def exeWithoutPage(session: Session) {
     val wait = new WebDriverWait(session.driver, timeout(session).toSeconds)
     val element = wait.until(ExpectedConditions.presenceOfElementLocated(By.cssSelector(selector)))
@@ -290,7 +290,7 @@ case class TextInput(selector: String, text: Expr[Any]) extends Interaction with
  * @param selector css selector of the drop down list, only the first element will be affected
  * @param value support cell interpolation
  */
-case class DropDownSelect(selector: String, value: Expr[Any]) extends Interaction with Timed {
+case class DropDownSelect(selector: String, value: Expression[Any]) extends Interaction with Timed {
   override def exeWithoutPage(session: Session) {
     val wait = new WebDriverWait(session.driver, timeout(session).toSeconds)
     val element = wait.until(ExpectedConditions.presenceOfElementLocated(By.cssSelector(selector)))
@@ -334,7 +334,7 @@ case class SwitchToFrame(selector: String)extends Interaction with Timed {
  * @param script support cell interpolation
  * @param selector selector of the element this script is executed against, if null, against the entire page
  */
-case class ExeScript(script: Expr[Any], selector: String = null) extends Interaction with Timed {
+case class ExeScript(script: Expression[Any], selector: String = null) extends Interaction with Timed {
   override def exeWithoutPage(session: Session) {
 
     val element = if (selector == null) None

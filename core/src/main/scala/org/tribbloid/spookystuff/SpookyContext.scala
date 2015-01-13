@@ -74,6 +74,14 @@ class SpookyContext (
 
   @transient lazy val noInput: PageRowRDD = PageRowRDD(this.sqlContext.sparkContext.noInput, spooky = this)
 
+  def this(sqlContext: SQLContext) {
+    this(sqlContext, driverFactory = NaiveDriverFactory())
+  }
+
+  def this(sc: SparkContext) {
+    this(new SQLContext(sc))
+  }
+
   def this(conf: SparkConf) {
     this(new SQLContext(new SparkContext(conf)))
   }

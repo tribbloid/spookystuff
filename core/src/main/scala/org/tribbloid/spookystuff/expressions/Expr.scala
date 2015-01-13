@@ -8,49 +8,49 @@ import scala.reflect.ClassTag
 
 //just a simple wrapper for T, this is the only way to execute a action
 //this is the only Expression that can be shipped remotely
-final case class Literal[+T: ClassTag](value: T) extends Expr[T] {//all select used in query cannot have name changed
+final case class Literal[+T: ClassTag](value: T) extends Expression[T] {//all select used in query cannot have name changed
 
   override var name = "'"+value.toString+"'" //quoted to avoid confusion with Get-ish Expr
 
   override def apply(v1: PageRow): Option[T] = Some(value)
 }
 
-class GetExpr(override var name: String) extends Expr[Any] {
+class GetExpr(override var name: String) extends Expression[Any] {
 
   override def apply(v1: PageRow): Option[Any] = v1.get(name)
 }
 
-class GetUnstructuredExpr(override var name: String) extends Expr[Unstructured] {
+class GetUnstructuredExpr(override var name: String) extends Expression[Unstructured] {
 
   override def apply(v1: PageRow): Option[Unstructured] = v1.getUnstructured(name)
 }
 
-class GetPageExpr(override var name: String) extends Expr[Page] {
+class GetPageExpr(override var name: String) extends Expression[Page] {
 
   override def apply(v1: PageRow): Option[Page] = v1.getPage(name)
 }
 
-object GetOnlyPageExpr extends Expr[Page] {
+object GetOnlyPageExpr extends Expression[Page] {
   override var name = Const.getOnlyPageKey
 
   override def apply(v1: PageRow): Option[Page] = v1.getOnlyPage
 }
 
-object GetAllPagesExpr extends Expr[Seq[Page]] {
+object GetAllPagesExpr extends Expression[Seq[Page]] {
   override var name = Const.getAllPagesKey
 
   override def apply(v1: PageRow): Option[Seq[Page]] = Some(v1.getAllPages)
 }
 
-class ReplaceKeyExpr(str: String) extends Expr[String] {
+class ReplaceKeyExpr(str: String) extends Expression[String] {
 
   override var name = str
 
   override def apply(v1: PageRow): Option[String] = v1.replaceInto(str)
 }
 
-class InterpolateExpr(parts: Seq[String], fs: Seq[Expr[Any]])
-  extends Expr[String] {
+class InterpolateExpr(parts: Seq[String], fs: Seq[Expression[Any]])
+  extends Expression[String] {
 
   override var name = parts.zip(fs.map(_.name)).map(tpl => tpl._1+tpl._2).mkString + parts.last
 
