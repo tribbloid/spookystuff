@@ -14,6 +14,8 @@ object LinkedIn extends ExampleCore {
   override def doMain(spooky: SpookyContext) = {
     import spooky._
 
+//    spooky.proxy = TorProxyFactory
+
     sc.parallelize(Seq("Sanjay", "Arun", "Hardik"))
       .fetch(
         Visit("https://www.linkedin.com/")
@@ -26,7 +28,7 @@ object LinkedIn extends ExampleCore {
         $"span.full-name".text ~ 'name,
         $"p.title".text ~ 'title,
         $"div#profile-skills li".texts.mkString("|") ~ 'skills,
-        $.uri as 'uri
+        $.uri ~ 'uri
       )
       .asSchemaRDD()
   }

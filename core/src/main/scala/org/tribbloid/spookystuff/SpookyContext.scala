@@ -27,7 +27,7 @@ class SpookyContext (
                       @transient val sqlContext: SQLContext, //compulsory, many things are not possible without SQL
 
                       var driverFactory: DriverFactory = NaiveDriverFactory(),
-                      var proxy: ()=> ProxySetting =  () => null,
+                      var proxy: ProxyFactory = NoProxyFactory,
                       var userAgent: ()=> String = () => null,
                       //  val userAgent = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/37.0.2062.120 Safari/537.36",
                       var headers: ()=> Map[String, String] = () => Map(),

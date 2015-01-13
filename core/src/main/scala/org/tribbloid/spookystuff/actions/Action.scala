@@ -76,7 +76,7 @@ trait Action extends ActionLike {
             }
           }
           if (errorDumpScreenshot) {
-            val rawPage = DefaultSnapshot.doExe(session).toList(0)
+            val rawPage = DefaultScreenshot.doExe(session).toList(0)
             val uid = rawPage.uid.copy(backtrace = Trace(rawPage.uid.backtrace.self :+ this))
             val page = rawPage.copy(uid = uid)
             try {

@@ -11,7 +11,7 @@ import dsl._
 class TestExport extends SpookyEnvSuite {
 
   lazy val noProxyIP = {
-      spooky.proxy = () => null
+      spooky.proxy = NoProxyFactory
 
       val results = Trace(
         Wget("http://www.whatsmyuseragent.com/") :: Nil
@@ -68,7 +68,7 @@ class TestExport extends SpookyEnvSuite {
     }
 
     val noProxyIP2 = {
-      spooky.proxy = () => null
+      spooky.proxy = NoProxyFactory
 
       val results = Trace(
         Wget("http://www.whatsmyuseragent.com/") :: Nil
@@ -93,7 +93,7 @@ class TestExport extends SpookyEnvSuite {
     }
 
     val noProxyIP2 = {
-      spooky.proxy = () => null
+      spooky.proxy = NoProxyFactory
 
       val results = Trace(
         Wget("https://www.astrill.com/what-is-my-ip-address.php") :: Nil

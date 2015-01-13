@@ -14,14 +14,15 @@ object LinkedInSimple extends ExampleCore {
   override def doMain(spooky: SpookyContext) = {
     import spooky._
 
+//    spooky.proxy = TorProxyFactory
+
     sc.parallelize(Seq("Sanjay", "Arun", "Hardik"))
       .fetch(
         Visit("https://www.linkedin.com/")
-          +> TextInput("input#first", "'{_}")
+          +> TextInput("input#first", '_)
           +> TextInput("input#last", "Gupta")
           +> Submit("input[name=\"search\"]")
       )
-
       .select($"ol#result-set h2 a".hrefs.mkString(" ") ~ 'names)
       .asSchemaRDD()
   }
