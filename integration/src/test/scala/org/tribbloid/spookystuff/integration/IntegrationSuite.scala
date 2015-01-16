@@ -123,26 +123,26 @@ abstract class IntegrationSuite extends FunSuite with BeforeAndAfterAll {
     }
   }
 
-//  test("s3 cache") {
-//
-//    doMain(s3CacheWriteOnlyEnv)
-//
-//    Utils.retry(3) { //sometimes accumulator takes time to signal back
-//      Thread.sleep(2000)
-//
-//      val metrics = s3CacheWriteOnlyEnv.metrics
-//      assertBeforeCache(metrics)
-//    }
-//
-//    doMain(s3CacheEnv)
-//
-//    Utils.retry(3) {
-//      Thread.sleep(2000)
-//
-//      val metrics = s3CacheEnv.metrics
-//      assertAfterCache(metrics)
-//    }
-//  }
+  test("s3 cache") {
+
+    doMain(s3CacheWriteOnlyEnv)
+
+    Utils.retry(3) { //sometimes accumulator takes time to signal back
+      Thread.sleep(2000)
+
+      val metrics = s3CacheWriteOnlyEnv.metrics
+      assertBeforeCache(metrics)
+    }
+
+    doMain(s3CacheEnv)
+
+    Utils.retry(3) {
+      Thread.sleep(2000)
+
+      val metrics = s3CacheEnv.metrics
+      assertAfterCache(metrics)
+    }
+  }
 
   def doMain(spooky: SpookyContext): Unit
 

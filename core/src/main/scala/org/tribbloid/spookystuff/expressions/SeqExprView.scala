@@ -40,6 +40,8 @@ class SeqExprView[T: ClassTag](self: Expression[Seq[T]]) {
 //    }
 //  }
 
+//  def asValueOf()
+
   //TODO: handle exception
   //  def only: Expr[T] =
   //    expr.andThen(NamedFunction1("only", _.map{
