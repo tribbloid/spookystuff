@@ -80,18 +80,18 @@ abstract class IntegrationSuite extends FunSuite with BeforeAndAfterAll {
 
   private def assertBeforeCache(metrics: Metrics): Unit = {
     val pageFetched = metrics.pagesFetched.value
-    assert(pageFetched === numPages +- 1)
+    assert(pageFetched === numPages)
     assert(metrics.pagesFetchedFromWeb.value === pageFetched)
     assert(metrics.pagesFetchedFromCache.value === 0)
-    assert(metrics.sessionInitialized.value === numSessions +- 1)
+    assert(metrics.sessionInitialized.value === numSessions)
     assert(metrics.sessionReclaimed.value >= metrics.sessionInitialized.value)
-    assert(metrics.driverInitialized.value === numDrivers +- 1)
+    assert(metrics.driverInitialized.value === numDrivers)
     assert(metrics.driverReclaimed.value >= metrics.driverInitialized.value)
   }
 
   private def assertAfterCache(metrics: Metrics): Unit = {
     val pageFetched = metrics.pagesFetched.value
-    assert(pageFetched === numPages +- 1)
+    assert(pageFetched === numPages)
     assert(metrics.pagesFetchedFromWeb.value === 0)
     assert(metrics.pagesFetchedFromCache.value === pageFetched)
     assert(metrics.sessionInitialized.value === 0)
@@ -123,26 +123,26 @@ abstract class IntegrationSuite extends FunSuite with BeforeAndAfterAll {
     }
   }
 
-  test("s3 cache") {
-
-    doMain(s3CacheWriteOnlyEnv)
-
-    Utils.retry(3) { //sometimes accumulator takes time to signal back
-      Thread.sleep(2000)
-
-      val metrics = s3CacheWriteOnlyEnv.metrics
-      assertBeforeCache(metrics)
-    }
-
-    doMain(s3CacheEnv)
-
-    Utils.retry(3) {
-      Thread.sleep(2000)
-
-      val metrics = s3CacheEnv.metrics
-      assertAfterCache(metrics)
-    }
-  }
+//  test("s3 cache") {
+//
+//    doMain(s3CacheWriteOnlyEnv)
+//
+//    Utils.retry(3) { //sometimes accumulator takes time to signal back
+//      Thread.sleep(2000)
+//
+//      val metrics = s3CacheWriteOnlyEnv.metrics
+//      assertBeforeCache(metrics)
+//    }
+//
+//    doMain(s3CacheEnv)
+//
+//    Utils.retry(3) {
+//      Thread.sleep(2000)
+//
+//      val metrics = s3CacheEnv.metrics
+//      assertAfterCache(metrics)
+//    }
+//  }
 
   def doMain(spooky: SpookyContext): Unit
 

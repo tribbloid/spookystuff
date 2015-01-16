@@ -10,13 +10,24 @@ import org.tribbloid.spookystuff.actions._
 import org.tribbloid.spookystuff.dsl.{Inner, JoinType, _}
 import org.tribbloid.spookystuff.entity._
 import org.tribbloid.spookystuff.expressions._
-import org.tribbloid.spookystuff.pages.{PageUtils, PageLike}
+import org.tribbloid.spookystuff.pages.{PageLike, PageUID, PageUtils}
 import org.tribbloid.spookystuff.utils._
 import org.tribbloid.spookystuff.{Const, SpookyContext}
 
 import scala.collection.immutable.ListSet
+import scala.collection.mutable
 import scala.language.implicitConversions
 import scala.reflect.ClassTag
+
+//object PageRowRDD {
+//  def generateTraceLookup(
+//                           lookup: RDD[(PageUID, PageLike)],
+//                           traces: RDD[Trace]
+//                           ): RDD[(Trace, Seq[PageLike])] = {
+//
+//
+//  }
+//}
 
 /**
  * Created by peng on 8/29/14.
@@ -356,6 +367,10 @@ case class PageRowRDD(
     else result
   }
 
+  def lookup(): RDD[(Trace, PageLike)] = {
+    this.flatMap(_.pageLikes.map(page => page.uid.backtrace -> page ))
+  }
+
   /**
    * smart execution: group identical ActionPlans, execute in parallel, and duplicate result pages to match their original contexts
    * reduce workload by avoiding repeated access to the same url caused by duplicated context or diamond links (A->B,A->C,B->D,C->D)
@@ -368,8 +383,7 @@ case class PageRowRDD(
              numPartitions: Int = this.sparkContext.defaultParallelism,
              flattenPagesPattern: Symbol = '*, //by default, always flatten all pages
              flattenPagesIndexKey: Symbol = null,
-             lookupFrom: RDD[PageLike] = this.flatMap(_.pageLikes)
-             //           lookupFrom: RDD[PageLike] = null
+             lookupFrom: RDD[(Trace, PageLike)] = this.persist().lookup()//TODO: really takes a lot of space, how to eliminate?
              ): PageRowRDD = {
 
     val spookyBroad = this.context.broadcast(this.spooky)
@@ -384,7 +398,7 @@ case class PageRowRDD(
                       traces: Set[Trace],
                       joinType: JoinType,
                       numPartitions: Int,
-                      lookupFrom: RDD[PageLike],
+                      lookupFrom: RDD[(Trace, PageLike)],
                       spookyBroad: Broadcast[SpookyContext]
                       ): PageRowRDD = {
 
@@ -399,72 +413,96 @@ case class PageRowRDD(
         _trace.interpolate(row).map(interpolatedTrace => interpolatedTrace -> row)
     }
 
-    val traceDistinct = traceToRow.map(_._1).distinct(numPartitions)
+    val squashes = traceToRow.groupByKey().map(tuple => Squash(tuple._1, tuple._2))
 
-    val traceToPages = if (lookupFrom == null) {
-      traceDistinct.map{
-        trace => trace -> trace.resolve(_spooky)
-      }
+    val resultRows: RDD[PageRow] = if (lookupFrom == null) {
+      //no lookup
+      squashes.flatMap(_.resolveAndPut(_spooky, joinType))
     }
     else {
-      //----------------lookup start-------------------
-      val lookupBacktraceToPages = lookupFrom //key unique due to groupBy
-        .keyBy(_.uid)
-        .reduceByKey((v1,v2) => PageUtils.laterOf(v1,v2))
-        .values
-        .groupBy(_.uid.backtrace)
-        .mapValues{
-        pages =>
-          val _pages = pages.toSeq
-          val sorted = _pages.sortBy(_.uid.blockIndex)
-          sorted.slice(0, sorted.head.uid.total)
+      //lookup
+      val backtraceToSquashWithIndex = squashes.flatMap{
+        //key not unique, different trace may yield to same backtrace.
+        squash =>
+          val dryruns = squash.trace.dryrun.zipWithIndex
+          if (dryruns.nonEmpty) dryruns.map(tuple => tuple._1 -> (squash, tuple._2))
+          else Seq(null.asInstanceOf[Trace] -> (squash, -1))
       }
 
-      val backtraceToTraceIndex = traceDistinct.flatMap{ //key unique: traceDistinct.dryrun still yield distinct trace
-        trace =>
-          val dryruns = trace.dryrun.zipWithIndex
-          if (dryruns.nonEmpty) dryruns.map(tuple => tuple._1 -> (trace, tuple._2))
-          else Seq(null.asInstanceOf[Trace] -> (trace, 0))
-      }
+      val cogrouped = backtraceToSquashWithIndex
+        .cogroup(lookupFrom)
 
-      val joinedTraceIndexToPages = backtraceToTraceIndex.leftOuterJoin(lookupBacktraceToPages)
-      joinedTraceIndexToPages.map{
-        tuple =>
-          val backtrace = tuple._1
-          val traceIndexToPages = tuple._2
-          traceIndexToPages._2.foreach{
-            seq =>
-              seq.foreach{
-                page =>
-                  val pageBacktrace = page.uid.backtrace
-                  pageBacktrace.inject(backtrace.asInstanceOf[pageBacktrace.type])
-              }
+      val squashToIndexWithPagesOption = cogrouped.flatMap{
+        triplet =>
+          val backtrace = triplet._1
+          val tuple = triplet._2
+          val squashedWithIndexes = tuple._1
+          if (squashedWithIndexes.isEmpty) {
+            Seq()
           }
-          traceIndexToPages._1._1 -> (traceIndexToPages._1._2, traceIndexToPages._2)
-      }.groupByKey(numPartitions).map{
-        tuple =>
-          if (tuple._2.map(_._2).toSeq.contains(None)) tuple._1 -> tuple._1.resolve(_spooky)
+          else if (backtrace == null) {
+            squashedWithIndexes.map{
+              squashedWithIndex =>
+                squashedWithIndex._1 -> (squashedWithIndex._2, Some(Seq()))
+            }
+          }
           else {
-            val pages = tuple._2.toSeq.sortBy(_._1).flatMap(_._2.get)
-            tuple._1 -> pages
+            val pages = tuple._2
+
+            val pagesOption = if (pages.nonEmpty) {
+              val uniquePages = mutable.HashMap[PageUID, PageLike]()
+              for (page <- pages) {
+                val pageBacktrace = page.uid.backtrace
+                pageBacktrace.injectFrom(backtrace.asInstanceOf[pageBacktrace.type ])
+                val oldPage = uniquePages.get(page.uid)
+                if (oldPage.isEmpty || page.laterThan(oldPage.get)) uniquePages.put(page.uid, page)
+              }
+              val sorted = uniquePages.values.toSeq.sortBy(_.uid.blockIndex)
+              Some(sorted.slice(0, sorted.head.uid.total))
+            }
+            else {
+              None
+            }
+
+            squashedWithIndexes.map{
+              squashedWithIndex =>
+                squashedWithIndex._1 -> (squashedWithIndex._2, pagesOption)
+            }
           }
       }
-      //----------------lookup finish-------------------
+
+      val result = squashToIndexWithPagesOption.groupByKey(numPartitions).flatMap{
+        tuple =>
+          val squash = tuple._1
+          val IndexWithPageOptions = tuple._2.toSeq
+          if (IndexWithPageOptions.map(_._2).contains(None)) squash.resolveAndPut(_spooky, joinType)
+          else {
+            val pages = IndexWithPageOptions.sortBy(_._1).flatMap(_._2.get)
+            squash.rows.flatMap(_.putPages(pages, joinType))
+          }
+      }
+
+      result
     }
 
-    val joinedRowToPages = traceToRow.leftOuterJoin(traceToPages, numPartitions = numPartitions)
-    val RowToPages = joinedRowToPages.map(_._2)
-    this.copy(self = RowToPages.flatMap(tuple => tuple._1.putPages(tuple._2.get, joinType)))
-
-    //    val withTraceSquashed = withTrace.groupByKey()
-    //    val withPagesSquashed = withTraceSquashed.map{ //Unfortunately there is no mapKey
-    //      tuple => tuple._1.resolve(_spooky) -> tuple._2
-    //    }
-    //    val withPages = withPagesSquashed.flatMapValues(rows => rows).map(identity)
-    //    val result = this.copy(
-    //      self = withPages.flatMap(tuple => tuple._2.putPages(tuple._1, joinType))
-    //    )
+    resultRows
   }
+  //--------------------------discard after this line
+
+  //----------------lookup start-------------------
+
+
+
+
+
+  //----------------lookup finish-------------------
+
+  //  val joinedRowToPages = traceToRow.leftOuterJoin(traceToPages, numPartitions = numPartitions)
+  //  val RowToPages = joinedRowToPages.map(_._2)
+  //  this.copy(self = RowToPages.flatMap(tuple => tuple._1.putPages(tuple._2.get, joinType)))
+  //
+  //
+  //}
 
   def join(
             expr: Expression[Any], //name is discarded
@@ -543,8 +581,8 @@ case class PageRowRDD(
   }
 
   /* if the following conditions are met, row will be removed
-* 1. row has identical trace and name
-* 2. the row has identical cells*/
+  * 1. row has identical trace and name
+  * 2. the row has identical cells*/
   def subtractSignature(
                          others: RDD[PageRow],
                          ignore: Iterable[Symbol],
@@ -592,7 +630,7 @@ case class PageRowRDD(
         .copy(indexKeys = this.indexKeys + Key(depthKey))
     else this
 
-    var totalPages =this.flatMap(_.pageLikes)
+    var totalPages: RDD[(Trace, PageLike)] =this.persist().lookup()
 
     val spookyBroad = this.context.broadcast(this.spooky)
     if (this.context.getCheckpointDir.isEmpty) this.context.setCheckpointDir(spooky.dir.checkpoint)
@@ -603,14 +641,13 @@ case class PageRowRDD(
         .flattenTemp(expr defaultAs Symbol(Const.defaultJoinKey), indexKey, Int.MaxValue, left = true)
         ._fetch(traces, Inner, numPartitions, totalPages, spookyBroad)
 
-      val joinedPages = joinedBeforeFlatten.flatMap(_.pageLikes)
+      val joinedPages = joinedBeforeFlatten.persist().lookup()
 
       import org.apache.spark.SparkContext._
 
       totalPages = totalPages.union(joinedPages)
-        .keyBy(_.uid)
-        .reduceByKey((v1,v2) => PageUtils.laterOf(v1,v2), numPartitions)
-        .values
+        .reduceByKey((v1,v2) => v1.laterOf(v2), numPartitions)
+
       if (depth % 20 == 0) {
         totalPages.persist().checkpoint()
         val size = totalPages.count()
@@ -716,5 +753,24 @@ case class PageRowRDD(
       keys = this.keys ++ Option(realIndexKey),
       indexKeys = this.indexKeys ++ Option(Key(indexKey))
     )
+  }
+}
+
+//squash identical trace together even PageRows are different
+case class Squash(trace: Trace, rows: Iterable[PageRow]) {
+  override def hashCode(): Int ={
+    trace.hashCode()
+  }
+
+  override def equals(obj: Any): Boolean = {
+    obj match {
+      case s: Squash => this.trace.equals(s.trace)
+      case _ => false
+    }
+  }
+
+  def resolveAndPut(spooky: SpookyContext, joinType: JoinType) = {
+    val pages = this.trace.resolve(spooky)
+    this.rows.flatMap(_.putPages(pages, joinType))
   }
 }

@@ -69,6 +69,6 @@ abstract class ExampleCore extends {
 
     println("-------------------returned "+array.length+" rows------------------")
     println(result.schema.fieldNames.mkString("\t"))
-    println(s"------------------fetched ${spooky.metrics.pagesFetched} pages-----------------")
+    println(s"------------------fetched ${spooky.metrics.pagesFetched.value} pages-----------------")
   }
 }

@@ -60,7 +60,7 @@ class TestTrace extends SpookyEnvSuite {
       ):: Nil
     )
 
-    t1.inject(t2.asInstanceOf[t1.type ])
+    t1.injectFrom(t2.asInstanceOf[t1.type ])
 
     assert(t1.outputNames === Set("c","d"))
   }

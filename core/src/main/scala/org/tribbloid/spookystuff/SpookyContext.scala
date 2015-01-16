@@ -61,10 +61,10 @@ class SpookyContext (
 
   import views._
 
-  var metrics = new Metrics
+  var metrics = new Metrics(this.sqlContext.sparkContext)
 
   def cleanMetrics(): Unit = {
-    metrics = new Metrics
+    metrics = new Metrics(this.sqlContext.sparkContext)
   }
 
   val hConfWrapper =  if (sqlContext!=null) new SerializableWritable(this.sqlContext.sparkContext.hadoopConfiguration)
@@ -160,27 +160,28 @@ case class DirConfiguration(
   def errorScreenshotLocal = Option(_errorScreenshotLocal).getOrElse("temp/error-screenshot/")
 }
 
-class Metrics extends Serializable {
+class Metrics(sc: SparkContext) extends Serializable {
 
-  private def accumulator[T](initialValue: T, name: String)(implicit param: AccumulatorParam[T]) = {
-    new Accumulator(initialValue, param, Some(name))
-  }
+  //works but temporarily disabled as not part of 'official' API
+//  private def accumulator[T](initialValue: T, name: String)(implicit param: AccumulatorParam[T]) = {
+//    new Accumulator(initialValue, param, Some(name))
+//  }
 
   import org.apache.spark.SparkContext._
 
-  val driverInitialized: Accumulator[Int] = accumulator(0, "driverInitialized")
-  val driverReclaimed: Accumulator[Int] = accumulator(0, "driverReclaimed")
+  val driverInitialized: Accumulator[Int] = sc.accumulator(0, "driverInitialized")
+  val driverReclaimed: Accumulator[Int] = sc.accumulator(0, "driverReclaimed")
 
-  val sessionInitialized: Accumulator[Int] = accumulator(0, "sessionInitialized")
-  val sessionReclaimed: Accumulator[Int] = accumulator(0, "sessionReclaimed")
+  val sessionInitialized: Accumulator[Int] = sc.accumulator(0, "sessionInitialized")
+  val sessionReclaimed: Accumulator[Int] = sc.accumulator(0, "sessionReclaimed")
 
-  val DFSReadSuccess: Accumulator[Int] = accumulator(0, "DFSReadSuccess")
-  val DFSReadFail: Accumulator[Int] = accumulator(0, "DFSReadFail")
+  val DFSReadSuccess: Accumulator[Int] = sc.accumulator(0, "DFSReadSuccess")
+  val DFSReadFail: Accumulator[Int] = sc.accumulator(0, "DFSReadFail")
 
-  val DFSWriteSuccess: Accumulator[Int] = accumulator(0, "DFSWriteSuccess")
-  val DFSWriteFail: Accumulator[Int] = accumulator(0, "DFSWriteFail")
+  val DFSWriteSuccess: Accumulator[Int] = sc.accumulator(0, "DFSWriteSuccess")
+  val DFSWriteFail: Accumulator[Int] = sc.accumulator(0, "DFSWriteFail")
 
-  val pagesFetched: Accumulator[Int] = accumulator(0, "pagesFetched")
-  val pagesFetchedFromWeb: Accumulator[Int] = accumulator(0, "pagesFetchedFromWeb")
-  val pagesFetchedFromCache: Accumulator[Int] = accumulator(0, "pagesFetchedFromCache")
+  val pagesFetched: Accumulator[Int] = sc.accumulator(0, "pagesFetched")
+  val pagesFetchedFromWeb: Accumulator[Int] = sc.accumulator(0, "pagesFetchedFromWeb")
+  val pagesFetchedFromCache: Accumulator[Int] = sc.accumulator(0, "pagesFetchedFromCache")
 }

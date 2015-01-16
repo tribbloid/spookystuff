@@ -18,12 +18,17 @@ case class PageUID(
                     backtrace: Trace,
                     leaf: Named,
                     blockIndex: Int = -1, //-1 is no sub key
-                    total: Int = 1 //number of pages in a batch
+                    total: Int = 1 //number of pages in a block output
                     )
 
 trait PageLike {
   val uid: PageUID
   val timestamp: Date
+
+  def laterThan(v2: PageLike): Boolean = this.timestamp after v2.timestamp
+
+  def laterOf(v2: PageLike): PageLike = if (laterThan(v2)) this
+  else v2
 }
 
 //Merely a placeholder when a Block returns nothing

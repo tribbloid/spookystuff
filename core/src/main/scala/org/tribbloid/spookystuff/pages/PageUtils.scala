@@ -55,11 +55,6 @@ object PageUtils {
     }
   }
 
-  def laterOf(v1: PageLike, v2: PageLike): PageLike = {
-    if (v1.timestamp after v2.timestamp) v1
-    else v2
-  }
-
   //TODO: return option
   def load(fullPath: Path)(spooky: SpookyContext): Array[Byte] = {
 
@@ -142,7 +137,6 @@ object PageUtils {
       }
       else null
     }
-    if (result!=null) spooky.metrics.pagesFetchedFromCache += result.count(_.isInstanceOf[Page])
 
     result
   }
@@ -195,7 +189,7 @@ object PageUtils {
     if (pages != null) for (page <- pages) {
       val pageBacktrace: Trace = page.uid.backtrace
 
-      pageBacktrace.inject(trace.asInstanceOf[pageBacktrace.type])
+      pageBacktrace.injectFrom(trace.asInstanceOf[pageBacktrace.type])
       //this is to allow actions in backtrace to have different name than those cached
     }
     pages

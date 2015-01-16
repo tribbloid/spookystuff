@@ -11,4 +11,43 @@
 
     <artifactId>spookystuff-core</artifactId>
 
+    <dependencies>
+        <dependency>
+            <groupId>org.apache.spark</groupId>
+            <artifactId>spark-core_${scala.binary.version}</artifactId>
+            <version>${spark.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.spark</groupId>
+            <artifactId>spark-sql_${scala.binary.version}</artifactId>
+            <version>${spark.version}</version>
+        </dependency>
+        <!--<dependency>-->
+            <!--<groupId>org.apache.spark</groupId>-->
+            <!--<artifactId>spark-graphx_${scala.binary.version}</artifactId>-->
+            <!--<version>${spark.version}</version>-->
+        <!--</dependency>-->
+        <dependency>
+            <groupId>com.github.detro</groupId>
+            <artifactId>phantomjsdriver</artifactId>
+            <version>1.2.0</version>
+        </dependency>
+        <!--<dependency>-->
+        <!--<groupId>org.apache.tika</groupId>-->
+        <!--<artifactId>tika-java7</artifactId>-->
+        <!--<version>1.5</version>-->
+        <!--</dependency>-->
+        <dependency>
+            <groupId>org.jsoup</groupId>
+            <artifactId>jsoup</artifactId>
+            <version>1.8.1</version>
+        </dependency>
+        <dependency>
+            <groupId>com.syncthemall</groupId>
+            <artifactId>boilerpipe</artifactId>
+            <version>1.2.2</version>
+        </dependency>
+
+    </dependencies>
+
 </project>

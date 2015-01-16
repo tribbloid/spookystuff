@@ -32,26 +32,33 @@ final case class Trace(
         val result = action.apply(session)
         session.backtrace ++= action.trunk
 
-        results ++= result
+        if (action.hasExport) {
+          assert(result.nonEmpty) //should always happen after introduction of NoPage
 
-        val spooky = session.spooky
+          results ++= result
+          session.spooky.metrics.pagesFetchedFromWeb += result.count(_.isInstanceOf[Page])
 
-        if (spooky.autoSave) result.foreach{
-          case page: Page => page.autoSave(spooky)
-          case _ =>
+          val spooky = session.spooky
+
+          if (spooky.autoSave) result.foreach{
+            case page: Page => page.autoSave(spooky)
+            case _ =>
+          }
+          if (spooky.cacheWrite) PageUtils.autoCache(result, spooky)
         }
-        if (spooky.cacheWrite && result.nonEmpty) PageUtils.autoCache(result, spooky)
+        else {
+          assert(result.isEmpty)
+        }
     }
 
     results
   }
 
-  //the result can never be empty.
-  def dryrun: Seq[Trace] = {
+  lazy val dryrun: Seq[Trace] = {
     val result: ArrayBuffer[Trace] = ArrayBuffer()
 
     for (i <- 0 until self.size) {
-      if (self(i).mayExport){
+      if (self(i).hasExport){
         val backtrace = Trace(self.slice(0, i).flatMap(_.trunk) :+ self(i))
         result += backtrace
       }
@@ -62,32 +69,30 @@ final case class Trace(
 
   //invoke before interpolation!
   def autoSnapshot: Trace = {
-    if (this.mayExport && self.nonEmpty) this
+    if (this.hasExport && self.nonEmpty) this
     else Trace(self :+ Snapshot()) //Don't use singleton, otherwise will flush timestamp and name
   }
 
   def resolve(spooky: SpookyContext): Seq[PageLike] = {
 
-    val result = Utils.retry (Const.remoteResourceLocalRetry){
+    val results = Utils.retry (Const.remoteResourceLocalRetry){
       resolvePlain(spooky)
     }
-
-    spooky.metrics.pagesFetched += result.count(_.isInstanceOf[Page])
-
-    result
+    val numPages = results.count(_.isInstanceOf[Page])
+    spooky.metrics.pagesFetched += numPages
+    results
   }
 
-  //no retry
   def resolvePlain(spooky: SpookyContext): Seq[PageLike] = {
 
-    if (self.isEmpty) return Seq()
+    if (!this.hasExport) return Seq()
 
-    val drys = this.dryrun
-    val pagesFromCache = drys.map(dry => PageUtils.autoRestoreLatest(dry, spooky))
+    val pagesFromCache = dryrun.map(dry => PageUtils.autoRestoreLatest(dry, spooky))
 
     if (!pagesFromCache.contains(null)){
-      val result = pagesFromCache.flatMap(seq => seq)
-      return result
+      val results = pagesFromCache.flatten
+      spooky.metrics.pagesFetchedFromCache += results.count(_.isInstanceOf[Page])
+      return results
     }
 
     val session = if (self.count(_.isInstanceOf[Driverless]) == self.size) new NoDriverSession(spooky)
@@ -104,7 +109,6 @@ final case class Trace(
   override def trunk = Some(Trace(this.trunkSeq).asInstanceOf[this.type])
 }
 
-//TODO: verify this! document is really scarce
 //The precedence of an inﬁx operator is determined by the operator’s ﬁrst character.
 //Characters are listed below in increasing order of precedence, with characters on
 //the same line having the same precedence.

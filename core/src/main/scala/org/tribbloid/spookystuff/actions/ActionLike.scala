@@ -1,8 +1,8 @@
 package org.tribbloid.spookystuff.actions
 
 import org.tribbloid.spookystuff.entity.PageRow
+import org.tribbloid.spookystuff.pages.PageLike
 import org.tribbloid.spookystuff.session.Session
-import org.tribbloid.spookystuff.pages.{PageLike, Page}
 
 /**
  * Created by peng on 11/7/14.
@@ -13,17 +13,17 @@ trait ActionLike
   with Product {
 
   final def interpolate(pr: PageRow): Option[this.type] = {
-    val result = this.doInterpolate(pr)
-    result.foreach(_.inject(this))
-    result
+    val results = this.doInterpolate(pr)
+    results.foreach(_.injectFrom(this))
+    results
   }
 
   def doInterpolate(pageRow: PageRow): Option[this.type] = Some(this)
 
-  def inject(same: this.type ): Unit = {} //do nothing
+  def injectFrom(same: this.type ): Unit = {} //do nothing
 
   //used to determine if snapshot needs to be appended or if possible to be executed lazily
-  final def mayExport: Boolean = outputNames.nonEmpty
+  final def hasExport: Boolean = outputNames.nonEmpty
 
   def outputNames: Set[String]
 

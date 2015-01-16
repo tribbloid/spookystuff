@@ -15,7 +15,7 @@ trait Unstructured extends Serializable {
 
    def attr(attr: String, noEmpty: Boolean = true): Option[String]
 
-   final def href = attr("abs:href")
+   final def href = attr("abs:href") //TODO: if this is identical to the uri itself, it should be considered an inline/invalid link and have None output
 
    final def src = attr("abs:src")
 

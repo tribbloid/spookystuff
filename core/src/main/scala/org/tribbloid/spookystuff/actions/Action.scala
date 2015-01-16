@@ -106,15 +106,14 @@ trait Action extends ActionLike {
     }
 
     this.timeElapsed = System.currentTimeMillis() - session.startTime
-    session.spooky.metrics.pagesFetchedFromWeb += results.count(_.isInstanceOf[Page])
 
     results
   }
 
   def doExe(session: Session): Seq[PageLike]
 
-  override def inject(same: this.type): Unit = {
-    super.inject(same)
+  override def injectFrom(same: this.type): Unit = {
+    super.injectFrom(same)
     this.timeElapsed = same.timeElapsed
   }
 }
@@ -139,8 +138,8 @@ trait Timed extends Action{
     timeout(session) + Const.hardTerminateOverhead
   }
 
-  override def inject(same: this.type): Unit = {
-    super.inject(same)
+  override def injectFrom(same: this.type): Unit = {
+    super.injectFrom(same)
     this._timeout = same._timeout
   }
 }
@@ -158,8 +157,8 @@ trait Named extends Action {
 
   final def ~(name: Symbol): this.type = as(name)
 
-  override def inject(same: this.type): Unit = {
-    super.inject(same)
+  override def injectFrom(same: this.type): Unit = {
+    super.injectFrom(same)
     this.name = same.name
   }
 }
