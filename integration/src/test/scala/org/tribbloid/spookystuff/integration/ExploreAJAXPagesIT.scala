@@ -52,10 +52,6 @@ class ExploreAJAXPagesIT extends IntegrationSuite {
     val rows = result.collect()
     assert(rows.size === 12)
 
-    rows.foreach{
-      row => println(row.mkString("|"))
-    }
-
     assert(rows(0).mkString("|") === "0|null|null|null|null|E-commerce training site|3")
     assert(rows(1).mkString("|") === "1|1|0|null|Computers|Computers category|3")
     assert(rows(2).mkString("|") === "1|2|0|null|Phones|Phones category|3")
@@ -67,7 +63,7 @@ class ExploreAJAXPagesIT extends IntegrationSuite {
     assert(rows(8).mkString("|") === "2|3|1|2|Touch|null|6")
     assert(rows(9).mkString("|") === "2|3|1|2|Tablets|null|6")
     assert(rows(10).mkString("|") === "2|3|2|3|Tablets|null|6")
-    assert(rows(11).mkString("|") === "2|3|2|3|Tablets|null|6")
+    assert(rows(11).mkString("|") === "2|3|3|4|Tablets|null|6")
   }
 
   override def numSessions = 6
