@@ -116,7 +116,7 @@ case class PageRowRDD(
 
   def asJsonRDD: RDD[String] = this.map(_.asJson())
 
-  //TODO: use the new applySchema api to avoid losing type info
+  //TODO: investigate using the new applySchema api to avoid losing type info
   def asSchemaRDD(): SchemaRDD = {
 
     val jsonRDD = this.asJsonRDD
@@ -168,7 +168,7 @@ case class PageRowRDD(
    * @return the same RDD[Page] with file paths carried as metadata
    */
   //always use the same path pattern for filtered pages, if you want pages to be saved with different path, use multiple saveContent with different names
-  def save(
+  def savePages(
             path: Expression[Any],
             name: Symbol = null,
             overwrite: Boolean = false
@@ -184,7 +184,7 @@ case class PageRowRDD(
           str =>
             val strCanon = str
             val page =
-              if (name == null) pageRow.getOnlyPage
+              if (name == null || name == '$) pageRow.getOnlyPage
               else pageRow.getPage(name.name)
 
             page.foreach(_.save(Seq(strCanon.toString), overwrite)(_spooky))
@@ -202,11 +202,11 @@ case class PageRowRDD(
    *                  false: append an unique suffix to the new file name
    * @return an array of file paths
    */
-  def dump(
+  def dumpPages(
             path: Expression[String] = null,
             name: Symbol = null,
             overwrite: Boolean = false
-            ): Array[String] = this.save(path, name, overwrite).flatMap {
+            ): Array[String] = this.savePages(path, name, overwrite).flatMap {
     _.pages.map {
       _.saved
     }

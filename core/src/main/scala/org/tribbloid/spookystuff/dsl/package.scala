@@ -49,8 +49,6 @@ package object dsl {
 
   def A(selector: String): Expression[Seq[Unstructured]] = 'A.children(selector)
 
-//  implicit def functionToExpr[R](f: PageRow => Option[R]): Expr[R] = Expr(f)
-
   implicit def exprView[T: ClassTag](expr: Expression[T]): ExprView[T] =
     new ExprView(expr)
 
@@ -88,6 +86,9 @@ package object dsl {
   implicit def symbolToPageExprView(symbol: Symbol): PageExprView =
     new GetPageExpr(symbol.name)
 
+  implicit def symbolToSeqExprView(symbol: Symbol): SeqExprView[Any] =
+    new GetSeqExpr(symbol.name)
+
   implicit def stringToExpr(str: String): Expression[String] = {
 
     val delimiter = Const.keyDelimiter
@@ -114,11 +115,4 @@ package object dsl {
 
   implicit def unstructuredSeqView(self: Seq[Unstructured]): UnstructuredSeqView =
     new UnstructuredSeqView(self)
-
-//  implicit def namedFunction1[T, R](f: T => R): NamedFunction1[T, R] = new NamedFunction1[T, R] {
-//
-//    override var name = f.toString()
-//
-//    override def apply(v1: T): R = f(v1)
-//  }
 }

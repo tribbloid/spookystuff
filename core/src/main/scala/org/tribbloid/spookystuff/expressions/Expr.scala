@@ -30,6 +30,15 @@ class GetPageExpr(override var name: String) extends Expression[Page] {
   override def apply(v1: PageRow): Option[Page] = v1.getPage(name)
 }
 
+class GetSeqExpr(override var name: String) extends Expression[Seq[Any]] {
+
+  override def apply(v1: PageRow): Option[Seq[Any]] = v1.get(name).flatMap {
+    case v: TraversableOnce[Any] => Some(v.toSeq)
+    case v: Array[Any] => Some(v)
+    case _ => None
+  }
+}
+
 object GetOnlyPageExpr extends Expression[Page] {
   override var name = Const.getOnlyPageKey
 
@@ -64,5 +73,21 @@ class InterpolateExpr(parts: Seq[String], fs: Seq[Expression[Any]])
 
     if (iParts.contains(None) || iFs.contains(None)) None
     else Some(iParts.zip(iFs).map(tpl => tpl._1.get + tpl._2.get).mkString + iParts.last.get)
+  }
+}
+
+class ZippedExpr[T1,T2](e1: Expression[Seq[T1]], e2: Expression[Seq[T2]]) extends Expression[Map[T1, T2]] {
+  override var name: String = s"${e1.name}.zip(${e2.name})"
+
+  override def apply(v1: PageRow): Option[Map[T1, T2]] = {
+
+    val z1Option = e1(v1)
+    val z2Option = e2(v1)
+
+    if (z1Option.isEmpty || z2Option.isEmpty) return None
+
+    val map = Map(z1Option.get.zip(z2Option.get).toSeq: _*)
+
+    Some(map)
   }
 }

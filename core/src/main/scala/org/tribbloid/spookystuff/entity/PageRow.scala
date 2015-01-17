@@ -7,6 +7,8 @@ import org.tribbloid.spookystuff.expressions._
 import org.tribbloid.spookystuff.pages.{NoPage, PageLike, Unstructured, Page}
 import org.tribbloid.spookystuff.utils._
 
+import scala.reflect.ClassTag
+
 /**
  * Created by peng on 8/29/14.
  */
@@ -35,6 +37,13 @@ case class PageRow(
   }
 
   //TempKey precedes ordinary Key because they are ephemeral
+  def getTyped[T: ClassTag](keyStr: String): Option[T] = {
+    this.get(keyStr).flatMap {
+      case v: T => Some(v)
+      case _ => None
+    }
+  }
+
   def get(keyStr: String): Option[Any] = {
     cells.get(resolveKey(keyStr))
   }
@@ -50,6 +59,8 @@ case class PageRow(
   def getAllPages: Seq[Page] = this.pages
 
   def getPage(keyStr: String): Option[Page] = {
+
+    if (keyStr == Const.getOnlyPageKey) return getOnlyPage
 
     val pages = this.pages.filter(_.name == keyStr)
 

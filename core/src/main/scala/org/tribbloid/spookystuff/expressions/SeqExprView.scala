@@ -1,8 +1,5 @@
 package org.tribbloid.spookystuff.expressions
 
-import org.tribbloid.spookystuff.dsl
-import org.tribbloid.spookystuff.entity.PageRow
-
 import scala.reflect.ClassTag
 
 /**
@@ -10,7 +7,7 @@ import scala.reflect.ClassTag
  */
 class SeqExprView[T: ClassTag](self: Expression[Seq[T]]) {
 
-  import dsl._
+  import org.tribbloid.spookystuff.dsl._
 
   def head: Expression[T] = self.andFlatMap(_.headOption, "head")
 
@@ -30,17 +27,11 @@ class SeqExprView[T: ClassTag](self: Expression[Seq[T]]) {
 
   def mkString(sep: String): Expression[String] = self.andMap(_.mkString(sep), s"mkString($sep)")
 
-//  def zip[R: ClassTag](another: Expression[Seq[R]]): Expression[Seq[(T,R)]] = {
-//    new Expression {
-//      override var name: String = s"${this.name}.zip(${another.name})"
-//
-//      override def apply(v1: PageRow): Option[Seq[(T,R)]] = {
-//        val z1 = this(v1)
-//      }
-//    }
-//  }
+  def zipWithKeys(keys: Expression[Any]): ZippedExpr[Any, T] =
+    new ZippedExpr[Any,T](keys.filterByType[Seq[Any]], self)
 
-//  def asValueOf()
+  def zipWithValues(values: Expression[Any]): ZippedExpr[T, Any] =
+    new ZippedExpr[T,Any](self, values.filterByType[Seq[Any]])
 
   //TODO: handle exception
   //  def only: Expr[T] =

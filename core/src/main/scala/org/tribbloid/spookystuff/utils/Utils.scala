@@ -141,4 +141,11 @@ These special characters are often called "metacharacters".
     if (beautiful) Serialization.writePretty(obj)(DefaultFormats)
     else Serialization.write(obj)(DefaultFormats)
   }
+
+  def encapsulateAsIterable(obj: Any): Iterable[Any] = obj match {
+    case v: TraversableOnce[_] => v.toIterable
+    case v: Array[_] => v
+    case v: Any => Iterable(v)
+    case _ => Seq()
+  }
 }

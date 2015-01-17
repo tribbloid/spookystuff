@@ -54,5 +54,7 @@ object NamedFunction1 {
       override def apply(v1: T): R = f(v1)
     }
 
+  def apply[T, R](f: T => R): NamedFunction1[T, R] = this.apply(f, ""+f.hashCode())
+
 //  def apply[T, R](f: T => R): NamedFunction1[T, R] = apply(f.toString(), f)
 }

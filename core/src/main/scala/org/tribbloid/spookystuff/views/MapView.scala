@@ -39,12 +39,7 @@ class MapView[K, V](m1: Map[K,V]) {
 
     val valueOption = m1.get(key)
 
-    val values: Iterable[_] = valueOption.toSeq.flatMap {
-      case v: TraversableOnce[_] => v.toSeq
-      case v: Array[_] => v
-      case v: Any => Seq(v)
-      case _ => Seq()
-    }
+    val values: Iterable[_] = valueOption.toSeq.flatMap(Utils.encapsulateAsIterable)
 
     val cleaned = m1 - key
     val result = Option(indexKey) match {

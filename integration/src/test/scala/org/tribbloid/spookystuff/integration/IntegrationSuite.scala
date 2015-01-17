@@ -83,9 +83,9 @@ abstract class IntegrationSuite extends FunSuite with BeforeAndAfterAll {
     assert(pageFetched === numPages)
     assert(metrics.pagesFetchedFromWeb.value === pageFetched)
     assert(metrics.pagesFetchedFromCache.value === 0)
-    assert(metrics.sessionInitialized.value === numSessions)
+    assert(metrics.sessionInitialized.value === numSessions +- 1)
     assert(metrics.sessionReclaimed.value >= metrics.sessionInitialized.value)
-    assert(metrics.driverInitialized.value === numDrivers)
+    assert(metrics.driverInitialized.value === numDrivers +- 1)
     assert(metrics.driverReclaimed.value >= metrics.driverInitialized.value)
   }
 

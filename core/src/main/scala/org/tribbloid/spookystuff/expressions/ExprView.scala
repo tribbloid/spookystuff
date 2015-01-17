@@ -18,15 +18,23 @@ class ExprView[T: ClassTag](self: Expression[T]) {
 
   def andFlatMap[A](g: T => Option[A], name: String): Expression[A] = self.andThen(NamedFunction1(_.flatMap(v => g(v)), name))
 
-//  def defaultToHrefExpr = (self match {
-//    case expr: Expr[Unstructured] => expr.href
-//    case expr: Expr[Seq[Unstructured]] => expr.hrefs
-//    case _ => self
-//  }) > Symbol(Const.joinExprKey)
+  def filterByType[A](implicit ev: ClassTag[A]) = this.andFlatMap[A](
+  {
+    case res: A => Some(res)
+    case _ => None
+  }: T => Option[A],
+  s"filterByType[${ev.toString()}}]"
+  )
 
-//  def defaultToTextExpr = (this match {
-//    case expr: Expr[Unstructured] => expr.text
-//    case expr: Expr[Seq[Unstructured]] => expr.texts
-//    case _ => this
-//  }) as Symbol(Const.joinExprKey)
+  //  def defaultToHrefExpr = (self match {
+  //    case expr: Expr[Unstructured] => expr.href
+  //    case expr: Expr[Seq[Unstructured]] => expr.hrefs
+  //    case _ => self
+  //  }) > Symbol(Const.joinExprKey)
+
+  //  def defaultToTextExpr = (this match {
+  //    case expr: Expr[Unstructured] => expr.text
+  //    case expr: Expr[Seq[Unstructured]] => expr.texts
+  //    case _ => this
+  //  }) as Symbol(Const.joinExprKey)
 }
