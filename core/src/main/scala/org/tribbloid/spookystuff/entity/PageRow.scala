@@ -15,7 +15,7 @@ import scala.reflect.ClassTag
 //some guideline: All key parameters are Symbols to align with Spark SQL.
 //cells & pages share the same key pool but different data structure
 case class PageRow(
-                    cells: Map[KeyLike, Any] = Map(), //TODO: also carry PageUID & property type (Vertex/Edge) for GraphX
+                    cells: Map[KeyLike, Any] = Map(), //TODO: also carry PageUID & property type (Vertex/Edge) for GraphX, ListMap may be slower but has tighter serialization footage
                     pageLikes: Seq[PageLike] = Seq() // discarded after new page coming in
                     )
   extends Serializable {

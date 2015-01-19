@@ -7,7 +7,6 @@ import org.tribbloid.spookystuff.utils.Utils
 /**
  * Created by peng on 12/06/14.
  */
-//I really don't want to do this but SparkSQL is an alpha component
 class SchemaRDDView(val self: SchemaRDD) {
 
   def asMapRDD: RDD[Map[String,Any]] = {
@@ -18,5 +17,6 @@ class SchemaRDDView(val self: SchemaRDD) {
     }
   }
 
-  def asJsonRDD: RDD[String] = this.asMapRDD.map(map => Utils.toJson(map))
+  //SchemaRDD.toJson already exist
+//  def asJsonRDD: RDD[String] = this.asMapRDD.map(map => Utils.toJson(map))
 }

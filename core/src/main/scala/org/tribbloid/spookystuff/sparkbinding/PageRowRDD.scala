@@ -630,7 +630,7 @@ case class PageRowRDD(
         .copy(indexKeys = this.indexKeys + Key(depthKey))
     else this
 
-    var totalPages: RDD[(Trace, PageLike)] =this.persist().lookup()
+    var lookups: RDD[(Trace, PageLike)] =this.persist().lookup()
 
     val spookyBroad = this.context.broadcast(this.spooky)
     if (this.context.getCheckpointDir.isEmpty) this.context.setCheckpointDir(spooky.dir.checkpoint)
@@ -639,18 +639,18 @@ case class PageRowRDD(
       //always inner join
       val joinedBeforeFlatten = newRows
         .flattenTemp(expr defaultAs Symbol(Const.defaultJoinKey), indexKey, Int.MaxValue, left = true)
-        ._fetch(traces, Inner, numPartitions, totalPages, spookyBroad)
-
-      val joinedPages = joinedBeforeFlatten.persist().lookup()
+        ._fetch(traces, Inner, numPartitions, lookups, spookyBroad)
 
       import org.apache.spark.SparkContext._
 
-      totalPages = totalPages.union(joinedPages)
+      lookups = lookups.union{
+        joinedBeforeFlatten.persist().lookup()
+      }
         .reduceByKey((v1,v2) => v1.laterOf(v2), numPartitions)
 
       if (depth % 20 == 0) {
-        totalPages.persist().checkpoint()
-        val size = totalPages.count()
+        lookups.persist().checkpoint()
+        val size = lookups.count()
         LoggerFactory.getLogger(this.getClass).info(s"explored $size pages in total")
       }
 

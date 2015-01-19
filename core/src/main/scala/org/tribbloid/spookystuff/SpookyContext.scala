@@ -45,7 +45,7 @@ class SpookyContext (
                       var cacheTraceEncoder: TraceEncoder[String] = Hierarchical,
                       var errorDumpExtract: Extract[String] = new UUIDFileName(Hierarchical),
 
-                      var remoteResourceTimeout: Duration = 20.seconds,
+                      var remoteResourceTimeout: Duration = 60.seconds,
                       var DFSTimeout: Duration = 40.seconds,
 
                       var failOnDFSError: Boolean = false,
