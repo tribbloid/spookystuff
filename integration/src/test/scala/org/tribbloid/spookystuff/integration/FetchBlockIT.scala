@@ -20,7 +20,9 @@ class FetchBlockIT extends IntegrationSuite {
         Visit("http://webscraper.io/test-sites/e-commerce/ajax/computers/laptops")
           +> Snapshot().as('a)
           +> Loop (
-          ClickNext("button.btn","1"::Nil) :: Delay(2.seconds) :: Snapshot().as('b) :: Nil
+          ClickNext("button.btn","1"::Nil)
+            +> Delay(2.seconds)
+            +> Snapshot().as('b)
         ),
         flattenPagesPattern = null
       ).persist()
@@ -42,7 +44,9 @@ class FetchBlockIT extends IntegrationSuite {
         Visit("http://webscraper.io/test-sites/e-commerce/ajax/computers/laptops")
           +> Snapshot().as('c)
           +> Loop (
-          ClickNext("button.btn", "1"::Nil) :: Delay(2.seconds) :: Snapshot().as('d) :: Nil
+          ClickNext("button.btn","1"::Nil)
+            +> Delay(2.seconds)
+            +> Snapshot().as('d)
         ),
         joinType = Append,
         flattenPagesPattern = null

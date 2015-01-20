@@ -18,7 +18,9 @@ class ExploreAJAXPagesIT extends IntegrationSuite {
         Visit("http://webscraper.io/test-sites/e-commerce/ajax")
           +> Snapshot() ~ 'first
           +> Loop (
-          ClickNext("button.btn", "1"::Nil) :: Delay(2.seconds) :: Snapshot() :: Nil
+          ClickNext("button.btn", "1"::Nil)
+            +> Delay(2.seconds)
+            +> Snapshot()
         )
       )
 
@@ -27,7 +29,9 @@ class ExploreAJAXPagesIT extends IntegrationSuite {
         Visit('A.href)
           +> Snapshot() ~ 'first
           +> Loop (
-          ClickNext("button.btn", "1"::Nil) :: Delay(2.seconds) :: Snapshot() :: Nil
+          ClickNext("button.btn", "1"::Nil)
+            +> Delay(2.seconds)
+            +> Snapshot()
         ),
         flattenPagesIndexKey = 'page_index
       )(
