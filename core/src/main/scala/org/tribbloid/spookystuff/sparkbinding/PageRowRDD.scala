@@ -415,7 +415,7 @@ case class PageRowRDD(
         _trace.interpolate(row).map(interpolatedTrace => interpolatedTrace -> row)
     }
 
-    val squashes = traceToRow.groupByKey().map(tuple => Squash(tuple._1, tuple._2))
+    val squashes = traceToRow.groupByKey(numPartitions).map(tuple => Squash(tuple._1, tuple._2))
 
     val resultRows: RDD[PageRow] = if (lookupFrom == null) {
       //no lookup
