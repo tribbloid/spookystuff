@@ -9,6 +9,8 @@ import org.tribbloid.spookystuff._
 import org.tribbloid.spookystuff.actions._
 import org.tribbloid.spookystuff.utils.Utils
 
+import scala.collection.immutable.ListSet
+
 /**
  * Created by peng on 04/06/14.
  */
@@ -51,7 +53,7 @@ case class Page(
 
                  //                 cookie: Seq[SerializableCookie] = Seq(),
                  override val timestamp: Date = new Date,
-                 var saved: String = null
+                 var saved: ListSet[String] = ListSet()
                  )
   extends Unstructured with PageLike {
 
@@ -100,7 +102,7 @@ case class Page(
         fos.close()
       }
 
-      this.saved = fullPath.toString
+      saved = saved + fullPath.toString
     }
   }
 

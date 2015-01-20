@@ -5,6 +5,8 @@ import java.util.Date
 import org.tribbloid.spookystuff.dsl
 import org.tribbloid.spookystuff.pages.{Page, Unstructured}
 
+import scala.collection.immutable.ListSet
+
 /**
  * Created by peng on 11/29/14.
  */
@@ -35,5 +37,5 @@ class PageExprView(self: Expression[Page]) {
 
   def timestamp: Expression[Date] = self.andMap(_.timestamp, "timestamp")
 
-  def saved = self.andMap(_.saved, "saved")
+  def saved: Expression[ListSet[String]] = self.andMap(_.saved, "saved")
 }

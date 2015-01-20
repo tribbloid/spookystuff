@@ -6,6 +6,8 @@ import org.tribbloid.spookystuff.actions._
 import org.tribbloid.spookystuff.dsl._
 import org.tribbloid.spookystuff.pages.PageUtils
 
+import scala.collection.immutable.ListSet
+
 /**
  * Created by peng on 11/26/14.
  */
@@ -35,7 +37,7 @@ class FetchWgetAndSaveIT extends IntegrationSuite {
 
     val content = pageRows(0).pages.head.content
 
-    assert(pageRows(0).get("saved_path").get === s"file:${System.getProperty("user.home")}/spooky-integration/save/Wikipedia.png")
+    assert(pageRows(0).get("saved_path").get === ListSet(s"file:${System.getProperty("user.home")}/spooky-integration/save/Wikipedia.png"))
 
     val loadedContent = PageUtils.load(new Path(s"file://${System.getProperty("user.home")}/spooky-integration/save/Wikipedia.png"))(spooky)
 

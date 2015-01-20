@@ -169,10 +169,10 @@ case class PageRowRDD(
    */
   //always use the same path pattern for filtered pages, if you want pages to be saved with different path, use multiple saveContent with different names
   def savePages(
-            path: Expression[Any],
-            name: Symbol = null,
-            overwrite: Boolean = false
-            ): PageRowRDD = {
+                 path: Expression[Any],
+                 name: Symbol = null,
+                 overwrite: Boolean = false
+                 ): PageRowRDD = {
 
     val spookyBroad = this.context.broadcast(this.spooky)
     def _spooky: SpookyContext = spookyBroad.value
@@ -180,11 +180,13 @@ case class PageRowRDD(
     val saved = this.map {
 
       pageRow =>
-        path(pageRow).foreach {
+        val pathStr = path(pageRow)
+
+        pathStr.foreach {
           str =>
             val strCanon = str
             val page =
-              if (name == null || name == '$) pageRow.getOnlyPage
+              if (name == null || name.name == Const.getOnlyPageKey) pageRow.getOnlyPage
               else pageRow.getPage(name.name)
 
             page.foreach(_.save(Seq(strCanon.toString), overwrite)(_spooky))
@@ -203,10 +205,10 @@ case class PageRowRDD(
    * @return an array of file paths
    */
   def dumpPages(
-            path: Expression[String] = null,
-            name: Symbol = null,
-            overwrite: Boolean = false
-            ): Array[String] = this.savePages(path, name, overwrite).flatMap {
+                 path: Expression[String],
+                 name: Symbol = null,
+                 overwrite: Boolean = false
+                 ): Array[ListSet[String]] = this.savePages(path, name, overwrite).flatMap {
     _.pages.map {
       _.saved
     }

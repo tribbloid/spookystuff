@@ -2,9 +2,9 @@ package org.tribbloid.spookystuff.pages
 
 import org.apache.hadoop.fs.Path
 import org.tribbloid.spookystuff.SpookyEnvSuite
-import org.tribbloid.spookystuff.actions.{Wget, Visit, Trace, Snapshot}
+import org.tribbloid.spookystuff.actions.{Snapshot, Trace, Visit, Wget}
 import org.tribbloid.spookystuff.dsl._
-import org.tribbloid.spookystuff.session.{DriverSession, Session}
+import org.tribbloid.spookystuff.session.DriverSession
 
 /**
  * Created by peng on 10/17/14.
@@ -36,7 +36,7 @@ class TestPage extends SpookyEnvSuite {
 
     page1.autoSave(spooky,overwrite = true)
 
-    val loadedContent = PageUtils.load(new Path(page1.saved))(spooky)
+    val loadedContent = PageUtils.load(new Path(page1.saved.head))(spooky)
 
     assert(loadedContent === page1.content)
   }
@@ -74,7 +74,7 @@ class TestPage extends SpookyEnvSuite {
 
     page1.autoSave(spooky,overwrite = true)
 
-    val loadedContent = PageUtils.load(new Path(page1.saved))(spooky)
+    val loadedContent = PageUtils.load(new Path(page1.saved.head))(spooky)
 
     assert(loadedContent === page1.content)
   }
@@ -91,7 +91,7 @@ class TestPage extends SpookyEnvSuite {
 
     page1.autoSave(spooky,overwrite = true)
 
-    val loadedContent = PageUtils.load(new Path(page1.saved))(spooky)
+    val loadedContent = PageUtils.load(new Path(page1.saved.head))(spooky)
 
     assert(loadedContent === page1.content)
   }
@@ -108,7 +108,7 @@ class TestPage extends SpookyEnvSuite {
 
     page1.autoSave(spooky,overwrite = true)
 
-    val loadedContent = PageUtils.load(new Path(page1.saved))(spooky)
+    val loadedContent = PageUtils.load(new Path(page1.saved.head))(spooky)
 
     assert(loadedContent === page1.content)
   }

@@ -92,16 +92,17 @@ final case class Trace(
     if (!pagesFromCache.contains(null)){
       val results = pagesFromCache.flatten
       spooky.metrics.pagesFetchedFromCache += results.count(_.isInstanceOf[Page])
-      return results
+      results
     }
-
-    val session = if (self.count(_.isInstanceOf[Driverless]) == self.size) new NoDriverSession(spooky)
-    else new DriverSession(spooky)
-    try {
-      this.apply(session)
-    }
-    finally {
-      session.close()
+    else {
+      val session = if (self.count(_.isInstanceOf[Driverless]) == self.size) new NoDriverSession(spooky)
+      else new DriverSession(spooky)
+      try {
+        this.apply(session)
+      }
+      finally {
+        session.close()
+      }
     }
   }
 
