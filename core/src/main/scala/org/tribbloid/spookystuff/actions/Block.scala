@@ -16,7 +16,7 @@ import scala.concurrent.duration.Duration
  */
 abstract class Block(override val self: Seq[Action]) extends Actions(self) with Named {
 
-//  assert(self.nonEmpty)
+  //  assert(self.nonEmpty)
 
   override def as(name: Symbol) = {
     super.as(name)
@@ -79,6 +79,17 @@ final case class Try(override val self: Seq[Action]) extends Block(self) {
   }
 }
 
+object Try {
+
+  def apply(
+             trace: Set[Trace]
+             ): Try = {
+    assert(trace.size == 1)
+
+    Try(trace.head.self)
+  }
+}
+
 /**
  * Contains several sub-actions that are iterated for multiple times
  * Will iterate until max iteration is reached or execution is impossible (sub-action throws an exception)
@@ -87,7 +98,7 @@ final case class Try(override val self: Seq[Action]) extends Block(self) {
  */
 final case class Loop(
                        override val self: Seq[Action],
-                       limit: Int = Const.maxLoop
+                       limit: Int
                        ) extends Block(self) {
 
   assert(limit>0)
@@ -121,6 +132,18 @@ final case class Loop(
     val seq = this.doInterpolateSeq(pageRow)
     if (seq.isEmpty) None
     else Some(this.copy(self = seq).asInstanceOf[this.type])
+  }
+}
+
+object Loop {
+
+  def apply(
+             trace: Set[Trace],
+             limit: Int = Const.maxLoop
+             ): Loop = {
+    assert(trace.size == 1)
+
+    Loop(trace.head.self, limit)
   }
 }
 

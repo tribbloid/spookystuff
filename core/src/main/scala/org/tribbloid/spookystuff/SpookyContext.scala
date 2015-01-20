@@ -33,7 +33,7 @@ class SpookyContext (
                       var headers: ()=> Map[String, String] = () => Map(),
                       val browserResolution: (Int, Int) = (1920, 1080),
 
-                      var autoSave: Boolean = false,//slow, for debugging only
+                      var autoSave: Boolean = true,
                       var cacheWrite: Boolean = true,
                       var cacheRead: Boolean = true,
                       var errorDump: Boolean = true,

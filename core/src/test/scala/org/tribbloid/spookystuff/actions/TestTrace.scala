@@ -48,7 +48,9 @@ class TestTrace extends SpookyEnvSuite {
       Visit("http://webscraper.io/test-sites/e-commerce/ajax/computers/laptops")
         :: Snapshot().as('a)
         :: Loop (
-        ClickNext("button.btn","1"::Nil) :: Delay(2.seconds) :: Snapshot().as('b) :: Nil
+        ClickNext("button.btn","1"::Nil)
+          +> Delay(2.seconds)
+          +> Snapshot() ~'b
       ):: Nil
     )
 
@@ -56,7 +58,9 @@ class TestTrace extends SpookyEnvSuite {
       Visit("http://webscraper.io/test-sites/e-commerce/ajax/computers/laptops")
         :: Snapshot().as('c)
         :: Loop (
-        ClickNext("button.btn","1"::Nil) :: Delay(2.seconds) :: Snapshot().as('d) :: Nil
+        ClickNext("button.btn","1"::Nil)
+          +> Delay(2.seconds)
+          +> Snapshot() ~'d
       ):: Nil
     )
 

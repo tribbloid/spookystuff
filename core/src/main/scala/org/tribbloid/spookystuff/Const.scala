@@ -25,7 +25,7 @@ object Const {
   val DFSLocalRetry = 2
 
   val actionDelayMax: Duration = 60.seconds
-  val actionDelayMin: Duration = 10.seconds
+  val actionDelayMin: Duration = 2.seconds
 
   val hardTerminateOverhead: Duration = 20.seconds
 

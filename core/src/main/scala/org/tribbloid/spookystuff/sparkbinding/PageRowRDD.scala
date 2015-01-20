@@ -10,7 +10,7 @@ import org.tribbloid.spookystuff.actions._
 import org.tribbloid.spookystuff.dsl.{Inner, JoinType, _}
 import org.tribbloid.spookystuff.entity._
 import org.tribbloid.spookystuff.expressions._
-import org.tribbloid.spookystuff.pages.{PageLike, PageUID}
+import org.tribbloid.spookystuff.pages.{Unstructured, PageLike, PageUID}
 import org.tribbloid.spookystuff.utils._
 import org.tribbloid.spookystuff.{Const, SpookyContext}
 
@@ -315,7 +315,7 @@ case class PageRowRDD(
   //   * @return RDD[Page], each page will generate several shards
   //   */
   def flatSelect(
-                  expr: Expression[Any],
+                  expr: Expression[Seq[Unstructured]], //avoid confusion
                   indexKey: Symbol = null,
                   limit: Int = Int.MaxValue,
                   left: Boolean = true
@@ -608,6 +608,26 @@ case class PageRowRDD(
       self = excluded
     )
   }
+
+  //with narrow engine.
+//  def narrowExplore(
+//                     expr: Expression[Any],
+//                     depthKey: Symbol = null,
+//                     indexKey: Symbol = null, //left & idempotent parameters are missing as they are always set to true
+//                     maxDepth: Int = spooky.maxExploreDepth
+//                     )(
+//                     traces: Set[Trace],
+//                     numPartitions: Int = this.sparkContext.defaultParallelism,
+//                     flattenPagesPattern: Symbol = '*,
+//                     flattenPagesIndexKey: Symbol = null
+//                     )(
+//                     select: Expression[Any]*
+//                     ): PageRowRDD = {
+//
+//    val pageRowWithExisting = this.map(row => row -> Set())
+//
+//    null
+//  }
 
   //recursive join and union! applicable to many situations like (wide) pagination and deep crawling
   //TODO: secondary engine allowing 'narrow' asynchronous explore
