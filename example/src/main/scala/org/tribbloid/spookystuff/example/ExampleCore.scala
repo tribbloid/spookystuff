@@ -13,7 +13,7 @@ import duration._
  * allowing execution as a main object and tested as a test class
  * keep each test as small as possible, by using downsampling & very few iterations
  */
-abstract class ExampleCore extends {
+trait ExampleCore extends {
 
   val appName = this.getClass.getSimpleName.replace("$","")
   val sc: SparkContext = {

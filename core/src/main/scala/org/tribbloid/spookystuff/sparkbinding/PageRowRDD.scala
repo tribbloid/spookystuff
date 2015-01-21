@@ -489,22 +489,6 @@ case class PageRowRDD(
 
     resultRows
   }
-  //--------------------------discard after this line
-
-  //----------------lookup start-------------------
-
-
-
-
-
-  //----------------lookup finish-------------------
-
-  //  val joinedRowToPages = traceToRow.leftOuterJoin(traceToPages, numPartitions = numPartitions)
-  //  val RowToPages = joinedRowToPages.map(_._2)
-  //  this.copy(self = RowToPages.flatMap(tuple => tuple._1.putPages(tuple._2.get, joinType)))
-  //
-  //
-  //}
 
   def join(
             expr: Expression[Any], //name is discarded

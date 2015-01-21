@@ -28,10 +28,15 @@
             <!--<version>${spark.version}</version>-->
         <!--</dependency>-->
         <dependency>
-            <groupId>com.github.detro</groupId>
+            <groupId>com.codeborne</groupId>
             <artifactId>phantomjsdriver</artifactId>
-            <version>1.2.0</version>
+            <version>1.2.1</version>
         </dependency>
+        <!--<dependency>-->
+            <!--<groupId>com.codeborne</groupId>-->
+            <!--<artifactId>selenide</artifactId>-->
+            <!--<version>2.16</version>-->
+        <!--</dependency>-->
         <!--<dependency>-->
         <!--<groupId>org.apache.tika</groupId>-->
         <!--<artifactId>tika-java7</artifactId>-->

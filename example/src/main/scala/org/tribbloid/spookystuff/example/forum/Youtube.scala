@@ -49,8 +49,7 @@ object Youtube extends ExampleCore{
         Visit($"iframe[title^=Comment]".src, hasTitle = false)
           +> Loop(
           Click("span[title^=Load]")
-            :: WaitFor("span.PA[style^=display]").in(10.seconds)
-            :: Nil
+            +> WaitFor("span.PA[style^=display]").in(10.seconds)
         )
       )
       .select($"div.DJa".text ~ 'num_comments)
