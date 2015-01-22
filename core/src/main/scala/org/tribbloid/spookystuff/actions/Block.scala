@@ -154,11 +154,10 @@ object LoadMore {
   def apply(
              selector: String,
              limit: Int = Const.maxLoop,
-             intervalMin: Duration = Const.actionDelayMin,
-             intervalMax: Duration = Const.actionDelayMax
+             delay: Duration = Const.actionDelayMin
              ): Loop =
     new Loop(
-      Seq(Delay(intervalMin), Click(selector).in(intervalMax-intervalMin)),
+      Delay(delay) :: Click(selector) :: Nil,
       limit
     )
 }
@@ -168,11 +167,10 @@ object Paginate {
   def apply(
              selector: String,
              limit: Int = Const.maxLoop,
-             intervalMin: Duration = Const.actionDelayMin,
-             intervalMax: Duration = Const.actionDelayMax
+             delay: Duration = Const.actionDelayMin
              ): Loop = {
     new Loop(
-      Delay(intervalMin)::Snapshot():: Click(selector).in(intervalMax - intervalMin) ::Nil,
+      Delay(delay)::Snapshot():: Click(selector) ::Nil,
       limit
     )
   }

@@ -76,7 +76,7 @@ case class Visit(
  * Wait for some time
  * @param min seconds to be wait for
  */
-case class Delay(min: Duration = Const.actionDelayMax) extends Interaction {
+case class Delay(min: Duration = Const.actionDelayMin) extends Interaction {
   //  override val timeout = Math.max(Const.driverCallTimeout, delay + 10)
 
   override def exeWithoutPage(session: Session) {

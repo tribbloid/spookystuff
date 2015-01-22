@@ -125,14 +125,17 @@ case class PageRowRDD(
 
     //by default, will order the columns to be identical to the sequence they are extracted, data input will be ignored
 
-    val columns = keys.toSeq.filter(_.isInstanceOf[Key]).reverse.map(key => UnresolvedAttribute(Utils.canonizeColumnName(key.name)))
-
     import spooky.sqlContext._
-    //TODO: handle missing columns
-    val result = this.spooky.sqlContext.jsonRDD(jsonRDD)
+    val schemaRDD = this.spooky.sqlContext.jsonRDD(jsonRDD)
+
+    val validKeys = keys.toSeq.filter(key => key.isInstanceOf[Key] && schemaRDD.schema.fieldNames.contains(key.name))
+    val columns = validKeys.reverse.map(key => UnresolvedAttribute(Utils.canonizeColumnName(key.name)))
+
+    val result = schemaRDD
       .select(columns: _*)
 
-    if (indexKeys.isEmpty) result
+    val validIndexKeys = indexKeys.filter(key => key.isInstanceOf[Key] && schemaRDD.schema.fieldNames.contains(key.name))
+    if (validIndexKeys.isEmpty) result
     else {
       val indexColumns = indexKeys.toSeq.reverse.map(key => Symbol(key.name))
       result.orderBy(indexColumns.map(_.asc): _*)
@@ -594,24 +597,24 @@ case class PageRowRDD(
   }
 
   //with narrow engine.
-//  def narrowExplore(
-//                     expr: Expression[Any],
-//                     depthKey: Symbol = null,
-//                     indexKey: Symbol = null, //left & idempotent parameters are missing as they are always set to true
-//                     maxDepth: Int = spooky.maxExploreDepth
-//                     )(
-//                     traces: Set[Trace],
-//                     numPartitions: Int = this.sparkContext.defaultParallelism,
-//                     flattenPagesPattern: Symbol = '*,
-//                     flattenPagesIndexKey: Symbol = null
-//                     )(
-//                     select: Expression[Any]*
-//                     ): PageRowRDD = {
-//
-//    val pageRowWithExisting = this.map(row => row -> Set())
-//
-//    null
-//  }
+  //  def narrowExplore(
+  //                     expr: Expression[Any],
+  //                     depthKey: Symbol = null,
+  //                     indexKey: Symbol = null, //left & idempotent parameters are missing as they are always set to true
+  //                     maxDepth: Int = spooky.maxExploreDepth
+  //                     )(
+  //                     traces: Set[Trace],
+  //                     numPartitions: Int = this.sparkContext.defaultParallelism,
+  //                     flattenPagesPattern: Symbol = '*,
+  //                     flattenPagesIndexKey: Symbol = null
+  //                     )(
+  //                     select: Expression[Any]*
+  //                     ): PageRowRDD = {
+  //
+  //    val pageRowWithExisting = this.map(row => row -> Set())
+  //
+  //    null
+  //  }
 
   //recursive join and union! applicable to many situations like (wide) pagination and deep crawling
   //TODO: secondary engine allowing 'narrow' asynchronous explore
