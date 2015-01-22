@@ -223,6 +223,22 @@ case class PageRow(
     }
   }
 
+//  def narrowExplore(
+//                     expr: Expression[Any],
+//                     depthKey: Symbol,
+//                     indexKey: Symbol, //left & idempotent parameters are missing as they are always set to true
+//                     maxDepth: Int
+//                     )(
+//                     traces: Set[Trace],
+//                     numPartitions: Int,
+//                     flattenPagesPattern: Symbol,
+//                     flattenPagesIndexKey: Symbol
+//                     )(
+//                     select: Expression[Any]*
+//                     ): Seq[PageRow] = {
+//
+//  }
+
   //affect last page
   //TODO: deprecate?
   def paginate(

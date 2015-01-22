@@ -12,6 +12,7 @@ import org.tribbloid.spookystuff.utils.Utils
 import scala.collection.immutable.ListSet
 import scala.concurrent.duration.{Duration, _}
 import scala.language.implicitConversions
+import scala.reflect.ClassTag
 
 /**
  * Created by peng on 12/06/14.
@@ -92,38 +93,47 @@ class SpookyContext (
 
   //  implicit def selfToPageRowRDD(rdd: RDD[PageRow]): PageRowRDD = PageRowRDD(rdd, spooky = this)
 
-  //these are the entry points of SpookyStuff starting from a common RDD of strings or maps
-  implicit def stringRDDToPageRowRDD(rdd: RDD[String]): PageRowRDD = {
-    val result = rdd.map{
-      str => {
-        var cells = Map[KeyLike,Any]()
-        if (str!=null) cells = cells + (Key("_") -> str)
-
-        new PageRow(cells)
-      }
-    }
-
-    new PageRowRDD(result, keys = ListSet(Key("_")), spooky = this)
-  }
-
-  implicit def schemaRDDToPageRowRDD(rdd: SchemaRDD): PageRowRDD = {
-
-    val result = new SchemaRDDView(rdd).asMapRDD.map{
-      map => new PageRow(Option(map).getOrElse(Map()).map(tuple => (Key(tuple._1),tuple._2)))
-    }
-
-    new PageRowRDD(result, keys = ListSet(rdd.schema.fieldNames: _*).map(Key(_)), spooky = this)
-  }
-
-  implicit def mapRDDToPageRowRDD[T <: Any](rdd: RDD[Map[String,T]]): PageRowRDD = {
-
+  implicit def RDDToPageRowRDD[T: ClassTag](rdd: RDD[T]): PageRowRDD = {
     import views._
+    import scala.reflect._
+//    import scala.reflect.runtime.universe._
 
-    val jsonRDD = rdd.map(map => Utils.toJson(map.canonizeKeysToColumnNames))
-    jsonRDD.persist()
-    val schemaRDD = sqlContext.jsonRDD(jsonRDD)
+    rdd match {
+      case rdd: SchemaRDD =>
+        val self = new SchemaRDDView(rdd).asMapRDD.map{
+          map =>
+            new PageRow(
+              Option(map)
+                .getOrElse(Map())
+                .map(tuple => (Key(tuple._1),tuple._2))
+            )
+        }
+        new PageRowRDD(self, keys = ListSet(rdd.schema.fieldNames: _*).map(Key(_)), spooky = this)
+      case _ if classOf[Map[_,_]].isAssignableFrom(classTag[T].runtimeClass) => //use classOf everywhere?
+        val canonRdd = rdd.map(
+          map =>map.asInstanceOf[Map[_,_]].canonizeKeysToColumnNames
+        )
 
-    schemaRDDToPageRowRDD(schemaRDD)
+        val jsonRDD = canonRdd.map(
+          map =>
+            Utils.toJson(map)
+        )
+        val schemaRDD = sqlContext.jsonRDD(jsonRDD)
+        val self = canonRdd.map(
+          map =>
+            PageRow(map.map(tuple => (Key(tuple._1),tuple._2)), Seq())
+        )
+        new PageRowRDD(self, keys = ListSet(schemaRDD.schema.fieldNames: _*).map(Key(_)), spooky = this)
+      case _ =>
+        val self = rdd.map{
+          str =>
+            var cells = Map[KeyLike,Any]()
+            if (str!=null) cells = cells + (Key("_") -> str)
+
+            new PageRow(cells)
+        }
+        new PageRowRDD(self, keys = ListSet(Key("_")), spooky = this)
+    }
   }
 }
 
@@ -163,9 +173,9 @@ case class DirConfiguration(
 class Metrics(sc: SparkContext) extends Serializable {
 
   //works but temporarily disabled as not part of 'official' API
-//  private def accumulator[T](initialValue: T, name: String)(implicit param: AccumulatorParam[T]) = {
-//    new Accumulator(initialValue, param, Some(name))
-//  }
+  //  private def accumulator[T](initialValue: T, name: String)(implicit param: AccumulatorParam[T]) = {
+  //    new Accumulator(initialValue, param, Some(name))
+  //  }
 
   import org.apache.spark.SparkContext._
 
