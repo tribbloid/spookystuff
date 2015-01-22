@@ -1,9 +1,9 @@
 package org.tribbloid.spookystuff.actions
 
-import org.tribbloid.spookystuff.{Const, ActionException}
+import org.tribbloid.spookystuff.pages.PageLike
 import org.tribbloid.spookystuff.session.Session
-import org.tribbloid.spookystuff.pages.{PageLike, Page}
 import org.tribbloid.spookystuff.utils.Utils
+import org.tribbloid.spookystuff.{ActionException, Const}
 
 import scala.concurrent.duration.Duration
 
