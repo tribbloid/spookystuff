@@ -128,16 +128,22 @@ case class PageRowRDD(
     import spooky.sqlContext._
     val schemaRDD = this.spooky.sqlContext.jsonRDD(jsonRDD)
 
-    val validKeys = keys.toSeq.filter(key => key.isInstanceOf[Key] && schemaRDD.schema.fieldNames.contains(key.name))
-    val columns = validKeys.reverse.map(key => UnresolvedAttribute(Utils.canonizeColumnName(key.name)))
+    val validKeyNames = keys.toSeq
+      .filter(key => key.isInstanceOf[Key])
+      .map(key => Utils.canonizeColumnName(key.name))
+      .filter(name => schemaRDD.schema.fieldNames.contains(name))
+    val columns = validKeyNames.reverse.map(name => UnresolvedAttribute(name))
 
     val result = schemaRDD
       .select(columns: _*)
 
-    val validIndexKeys = indexKeys.filter(key => key.isInstanceOf[Key] && schemaRDD.schema.fieldNames.contains(key.name))
-    if (validIndexKeys.isEmpty) result
+    val validIndexKeyNames = indexKeys.toSeq
+      .filter(key => key.isInstanceOf[Key])
+      .map(key => Utils.canonizeColumnName(key.name))
+      .filter(name => schemaRDD.schema.fieldNames.contains(name))
+    if (validIndexKeyNames.isEmpty) result
     else {
-      val indexColumns = indexKeys.toSeq.reverse.map(key => Symbol(key.name))
+      val indexColumns = validIndexKeyNames.reverse.map(name => Symbol(name))
       result.orderBy(indexColumns.map(_.asc): _*)
     }
   }
