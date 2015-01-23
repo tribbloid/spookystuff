@@ -184,7 +184,6 @@ case class PageRowRDD(
                  ): PageRowRDD = {
 
     val spookyBroad = this.context.broadcast(this.spooky)
-    def _spooky: SpookyContext = spookyBroad.value
 
     val saved = this.map {
 
@@ -195,10 +194,10 @@ case class PageRowRDD(
           str =>
             val strCanon = str
             val page =
-              if (name == null || name.name == Const.getOnlyPageKey) pageRow.getOnlyPage
+              if (name == null || name.name == Const.onlyPageWildcard) pageRow.getOnlyPage
               else pageRow.getPage(name.name)
 
-            page.foreach(_.save(Seq(strCanon.toString), overwrite)(_spooky))
+            page.foreach(_.save(Seq(strCanon.toString), overwrite)(spookyBroad.value))
         }
         pageRow
     }
@@ -241,7 +240,7 @@ case class PageRowRDD(
     }
 
     val result = this.copy(
-      self = this.map(_.select(_exprs)),
+      self = this.flatMap(_.select(_exprs)),
       keys = this.keys ++ newKeys
     )
     result
@@ -258,7 +257,7 @@ case class PageRowRDD(
     }
 
     this.copy(
-      self = this.map(_.selectTemp(_exprs)),
+      self = this.flatMap(_.selectTemp(_exprs)),
       keys = this.keys ++ newKeys
     )
   }
@@ -310,6 +309,7 @@ case class PageRowRDD(
     )
   }
 
+  //alias of flatten
   def explode(
                expr: Expression[Any],
                indexKey: Symbol = null,
@@ -337,7 +337,7 @@ case class PageRowRDD(
   }
 
   def flattenPages(
-                    pattern: Symbol = '*, //TODO: enable it
+                    pattern: Symbol = Symbol(Const.onlyPageWildcard), //TODO: enable it
                     indexKey: Symbol = null
                     ): PageRowRDD =
     this.copy(
@@ -356,23 +356,19 @@ case class PageRowRDD(
   def dumbFetch(
                  traces: Set[Trace],
                  joinType: JoinType = Const.defaultJoinType,
-                 numPartitions: Int = this.sparkContext.defaultParallelism,
-                 flattenPagesPattern: Symbol = '*, //by default, always flatten all pages
+                 flattenPagesPattern: Symbol = Symbol(Const.onlyPageWildcard), //by default, always flatten all pages
                  flattenPagesIndexKey: Symbol = null
                  ): PageRowRDD = {
 
     val _trace = traces.autoSnapshot
-    val withTrace = this.flatMap(
-      row => _trace.interpolate(row).map(_ -> row)
-    )
 
     val spookyBroad = this.context.broadcast(this.spooky)
-    def _spooky: SpookyContext = spookyBroad.value
 
-    val withPages = withTrace.map{
-      tuple => tuple._1.resolve(_spooky) -> tuple._2
-    }
-    val result = this.copy(self = withPages.flatMap(tuple => tuple._2.putPages(tuple._1, joinType)))
+    val self = this.flatMap(
+      _.dumpFetch(_trace, joinType, spookyBroad)
+    )
+
+    val result = this.copy(self)
 
     if (flattenPagesPattern != null) result.flattenPages(flattenPagesPattern,flattenPagesIndexKey)
     else result
@@ -391,9 +387,9 @@ case class PageRowRDD(
   def fetch(
              traces: Set[Trace],
              joinType: JoinType = Const.defaultJoinType,
-             numPartitions: Int = this.sparkContext.defaultParallelism,
              flattenPagesPattern: Symbol = '*, //by default, always flatten all pages
              flattenPagesIndexKey: Symbol = null,
+             numPartitions: Int = this.sparkContext.defaultParallelism,
              lookupFrom: RDD[(Trace, PageLike)] = this.persist().lookup()//TODO: really takes a lot of space, how to eliminate?
              ): PageRowRDD = {
 
@@ -413,8 +409,6 @@ case class PageRowRDD(
                       spookyBroad: Broadcast[SpookyContext]
                       ): PageRowRDD = {
 
-    def _spooky: SpookyContext = spookyBroad.value
-
     import org.apache.spark.SparkContext._
 
     val _trace = traces.autoSnapshot
@@ -428,7 +422,7 @@ case class PageRowRDD(
 
     val resultRows: RDD[PageRow] = if (lookupFrom == null) {
       //no lookup
-      squashes.flatMap(_.resolveAndPut(_spooky, joinType))
+      squashes.flatMap(_.resolveAndPut(joinType, spookyBroad))
     }
     else {
       //lookup
@@ -486,7 +480,7 @@ case class PageRowRDD(
         tuple =>
           val squash = tuple._1
           val IndexWithPageOptions = tuple._2.toSeq
-          if (IndexWithPageOptions.map(_._2).contains(None)) squash.resolveAndPut(_spooky, joinType)
+          if (IndexWithPageOptions.map(_._2).contains(None)) squash.resolveAndPut(joinType, spookyBroad)
           else {
             val pages = IndexWithPageOptions.sortBy(_._1).flatMap(_._2.get)
             squash.rows.flatMap(_.putPages(pages, joinType))
@@ -515,7 +509,7 @@ case class PageRowRDD(
 
     this
       .flattenTemp(expr defaultAs Symbol(Const.defaultJoinKey), indexKey, limit, left = true)
-      .fetch(traces, joinType, numPartitions, flattenPagesPattern, flattenPagesIndexKey)
+      .fetch(traces, joinType, flattenPagesPattern, flattenPagesIndexKey, numPartitions)
       .select(select: _*)
       .clearTemp
   }
@@ -603,24 +597,24 @@ case class PageRowRDD(
   }
 
   //with narrow engine.
-  //  def narrowExplore(
-  //                     expr: Expression[Any],
-  //                     depthKey: Symbol = null,
-  //                     indexKey: Symbol = null, //left & idempotent parameters are missing as they are always set to true
-  //                     maxDepth: Int = spooky.maxExploreDepth
-  //                     )(
-  //                     traces: Set[Trace],
-  //                     numPartitions: Int = this.sparkContext.defaultParallelism,
-  //                     flattenPagesPattern: Symbol = '*,
-  //                     flattenPagesIndexKey: Symbol = null
-  //                     )(
-  //                     select: Expression[Any]*
-  //                     ): PageRowRDD = {
-  //
-  //    val pageRowWithExisting = this.map(row => row -> Set())
-  //
-  //    null
-  //  }
+  def dumbExplore(
+                     expr: Expression[Any],
+                     depthKey: Symbol = null,
+                     indexKey: Symbol = null, //left & idempotent parameters are missing as they are always set to true
+                     maxDepth: Int = spooky.maxExploreDepth
+                     )(
+                     traces: Set[Trace],
+                     numPartitions: Int = this.sparkContext.defaultParallelism,
+                     flattenPagesPattern: Symbol = '*,
+                     flattenPagesIndexKey: Symbol = null
+                     )(
+                     select: Expression[Any]*
+                     ): PageRowRDD = {
+
+    val pageRowWithExisting = this.map(row => row -> Set())
+
+    null
+  }
 
   //recursive join and union! applicable to many situations like (wide) pagination and deep crawling
   //TODO: secondary engine allowing 'narrow' asynchronous explore
@@ -756,12 +750,11 @@ case class PageRowRDD(
                 ): PageRowRDD = {
 
     val spookyBroad = this.context.broadcast(this.spooky)
-    def _spooky: SpookyContext = spookyBroad.value
 
     val realIndexKey = Key(indexKey)
 
     val result = this.flatMap {
-      _.paginate(selector, attr, wget, postAction)(limit, Key(indexKey), flatten)(_spooky)
+      _.paginate(selector, attr, wget, postAction)(limit, Key(indexKey), flatten)(spookyBroad.value)
     }
 
     this.copy(
@@ -785,8 +778,8 @@ case class Squash(trace: Trace, rows: Iterable[PageRow]) {
     }
   }
 
-  def resolveAndPut(spooky: SpookyContext, joinType: JoinType) = {
-    val pages = this.trace.resolve(spooky)
+  def resolveAndPut(joinType: JoinType, spookyBroad: Broadcast[SpookyContext]) = {
+    val pages = this.trace.resolve(spookyBroad.value)
     this.rows.flatMap(_.putPages(pages, joinType))
   }
 }

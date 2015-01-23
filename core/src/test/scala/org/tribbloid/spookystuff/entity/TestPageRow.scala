@@ -28,8 +28,8 @@ class TestPageRow extends SpookyEnvSuite {
       Wget("http://www.wikipedia.org/").as('pp) :: Nil
     ).resolve(spooky)
     val row = PageRow(pageLikes = page)
-      .select($("h1.central-textlogo img").head.as('e1) :: Nil)
-      .selectTemp('pp.children("label").head :: Nil)
+      .select($("h1.central-textlogo img").head.as('e1) :: Nil).head
+      .selectTemp('pp.children("label").head :: Nil).head
 
     val page2 = row.getUnstructured("pp")
     assert(page2.get === page.head)

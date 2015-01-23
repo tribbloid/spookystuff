@@ -40,13 +40,13 @@ class GetSeqExpr(override var name: String) extends Expression[Seq[Any]] {
 }
 
 object GetOnlyPageExpr extends Expression[Page] {
-  override var name = Const.getOnlyPageKey
+  override var name = Const.onlyPageWildcard
 
   override def apply(v1: PageRow): Option[Page] = v1.getOnlyPage
 }
 
 object GetAllPagesExpr extends Expression[Seq[Page]] {
-  override var name = Const.getAllPagesKey
+  override var name = Const.allPagesWildcard
 
   override def apply(v1: PageRow): Option[Seq[Page]] = Some(v1.getAllPages)
 }

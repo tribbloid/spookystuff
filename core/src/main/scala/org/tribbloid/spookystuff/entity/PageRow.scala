@@ -1,5 +1,6 @@
 package org.tribbloid.spookystuff.entity
 
+import org.apache.spark.broadcast.Broadcast
 import org.tribbloid.spookystuff.{Const, views, SpookyContext}
 import org.tribbloid.spookystuff.actions._
 import org.tribbloid.spookystuff.dsl._
@@ -60,7 +61,7 @@ case class PageRow(
 
   def getPage(keyStr: String): Option[Page] = {
 
-    if (keyStr == Const.getOnlyPageKey) return getOnlyPage
+    if (keyStr == Const.onlyPageWildcard) return getOnlyPage
 
     val pages = this.pages.filter(_.name == keyStr)
 
@@ -81,6 +82,7 @@ case class PageRow(
     else page.orElse(value)
   }
 
+  //replace each '{key} in a string with their respective value in cells
   def replaceInto(
                    str: String,
                    delimiter: String = Const.keyDelimiter
@@ -118,28 +120,28 @@ case class PageRow(
     Utils.toJson(this.asMap().canonizeKeysToColumnNames)
   }
 
-  def select(fs: Seq[Expression[Any]]): PageRow = {
+  def select(fs: Seq[Expression[Any]]): Seq[PageRow] = {
     val newKVs = fs.flatMap{
-      f =>
-        val value = f(this)
+      expr =>
+        val value = expr(this)
         value match {
-          case Some(v) => Some(Key(f.name) -> v)
+          case Some(v) => Some(Key(expr.name) -> v)
           case None => None
         }
     }
-    this.copy(cells = this.cells ++ newKVs)
+    Seq(this.copy(cells = this.cells ++ newKVs))
   }
 
-  def selectTemp(fs: Seq[Expression[Any]]): PageRow = {
+  def selectTemp(fs: Seq[Expression[Any]]): Seq[PageRow] = {
     val newKVs = fs.flatMap{
-      f =>
-        val value = f(this)
+      expr =>
+        val value = expr(this)
         value match {
-          case Some(v) => Some(TempKey(f.name) -> v)
+          case Some(v) => Some(TempKey(expr.name) -> v)
           case None => None
         }
     }
-    this.copy(cells = this.cells ++ newKVs)
+    Seq(this.copy(cells = this.cells ++ newKVs))
   }
 
   def remove(keys: Seq[KeyLike]): PageRow = {
@@ -223,19 +225,34 @@ case class PageRow(
     }
   }
 
-//  def narrowExplore(
-//                     expr: Expression[Any],
-//                     depthKey: Symbol,
-//                     indexKey: Symbol, //left & idempotent parameters are missing as they are always set to true
-//                     maxDepth: Int
-//                     )(
-//                     traces: Set[Trace],
-//                     numPartitions: Int,
-//                     flattenPagesPattern: Symbol,
-//                     flattenPagesIndexKey: Symbol
-//                     )(
-//                     select: Expression[Any]*
-//                     ): Seq[PageRow] = {
+  def dumpFetch(
+                 _trace: Set[Trace],
+                 joinType: JoinType,
+                 spookyBroad: Broadcast[SpookyContext]
+                 ): Set[PageRow] = {
+    _trace
+      .interpolate(this)
+      .flatMap{
+      trace =>
+        val pages = trace.resolve(spookyBroad.value)
+        this.putPages(pages, joinType)
+    }
+  }
+
+//  def dumbExplore(
+//                   expr: Expression[Any],
+//                   depthKey: Symbol,
+//                   indexKey: Symbol, //left & idempotent parameters are missing as they are always set to true
+//                   maxDepth: Int,
+//                   spookyBroad: Broadcast[SpookyContext]
+//                   )(
+//                   traces: Set[Trace],
+//                   numPartitions: Int,
+//                   flattenPagesPattern: Symbol,
+//                   flattenPagesIndexKey: Symbol
+//                   )(
+//                   select: Expression[Any]*
+//                   ): Seq[PageRow] = {
 //
 //  }
 
@@ -269,7 +286,7 @@ case class PageRow(
       currentRow = newRow
     }
 
-    if (flatten) currentRow.flattenPages(Const.getAllPagesKey,indexKey = indexKey)
+    if (flatten) currentRow.flattenPages(Const.onlyPageWildcard,indexKey = indexKey)
     else Seq(currentRow)
   }
 }

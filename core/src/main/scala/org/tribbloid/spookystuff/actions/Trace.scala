@@ -150,7 +150,7 @@ final class TraceSetView(self: Set[Trace]) {
 
   def autoSnapshot: Set[Trace] = self.map(_.autoSnapshot)
 
-  def interpolate(pr: PageRow): Set[Trace] = self.flatMap(_.interpolate(pr))
+  def interpolate(row: PageRow): Set[Trace] = self.flatMap(_.interpolate(row))
 
   def outputNames: Set[String] = self.map(_.outputNames).reduce(_ ++ _)
 }

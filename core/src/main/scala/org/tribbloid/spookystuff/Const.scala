@@ -33,7 +33,7 @@ object Const {
 
   val defaultInputKey = "_"
   val keyDelimiter = "'"
-  val getOnlyPageKey = "$"
-  val getAllPagesKey = "$_*"
+  val onlyPageWildcard = "$"
+  val allPagesWildcard = "$_*"
   val defaultJoinKey = "A"
 }

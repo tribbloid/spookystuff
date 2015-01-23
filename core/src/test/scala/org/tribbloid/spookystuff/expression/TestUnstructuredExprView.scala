@@ -16,6 +16,7 @@ class TestUnstructuredExprView extends SpookyEnvSuite {
   ).resolve(spooky)
   lazy val row = PageRow(pageLikes = page)
     .select($"title".head.~('abc) :: Nil)
+    .head
 
   test("uri"){
     assert($.uri.apply(row).get === "http://www.wikipedia.org/")

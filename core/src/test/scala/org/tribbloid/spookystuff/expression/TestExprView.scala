@@ -17,6 +17,7 @@ class TestExprView extends SpookyEnvSuite {
   ).resolve(spooky)
   lazy val row = PageRow(pageLikes = page)
     .select($"title".head.text.~('abc) :: Nil)
+    .head
 
   test("symbol as Expr"){
     assert('abc.apply(row) === Some("Wikipedia"))
