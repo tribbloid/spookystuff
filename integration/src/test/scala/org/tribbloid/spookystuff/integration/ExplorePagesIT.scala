@@ -16,7 +16,7 @@ class ExplorePagesIT extends IntegrationSuite {
       .fetch(
         Wget("http://webscraper.io/test-sites/e-commerce/static/computers/tablets")
       )
-      .explore($"ul.pagination a", depthKey = 'depth, indexKey = 'idx)(
+      .explore($"ul.pagination a", depthKey = 'depth)(
         Wget('A.href)
       )(
         'A.text ~ 'page
@@ -27,22 +27,21 @@ class ExplorePagesIT extends IntegrationSuite {
     assert(
       result.schema.fieldNames ===
         "depth" ::
-          "idx" ::
           "page" ::
           "uri" :: Nil
     )
 
-    val rows = result.collect()
+    val rows = result.collect().map(_.mkString("|"))
     assert(rows.size === 5)
 
-    assert(rows(0).mkString("|") === "0|null|null|http://webscraper.io/test-sites/e-commerce/static/computers/tablets")
-    assert(rows(1).mkString("|") === "1|0|2|http://webscraper.io/test-sites/e-commerce/static/computers/tablets/2")
-    assert(rows(2).mkString("|") === "1|1|3|http://webscraper.io/test-sites/e-commerce/static/computers/tablets/3")
-    assert(rows(3).mkString("|") === "1|2|4|http://webscraper.io/test-sites/e-commerce/static/computers/tablets/4")
-    assert(rows(4).mkString("|") === "2|0|«|http://webscraper.io/test-sites/e-commerce/static/computers/tablets/1")
+    assert(rows contains "0|null|http://webscraper.io/test-sites/e-commerce/static/computers/tablets")
+    assert(rows contains "1|2|http://webscraper.io/test-sites/e-commerce/static/computers/tablets/2")
+    assert(rows contains "1|3|http://webscraper.io/test-sites/e-commerce/static/computers/tablets/3")
+    assert(rows contains "1|4|http://webscraper.io/test-sites/e-commerce/static/computers/tablets/4")
+    assert(rows contains "2|1|http://webscraper.io/test-sites/e-commerce/static/computers/tablets/1")
   }
 
-  override def numPages = 5
+  override def numPages = _ => 5
 
-  override def numDrivers = 0
+  override def numDrivers = _ => 0
 }

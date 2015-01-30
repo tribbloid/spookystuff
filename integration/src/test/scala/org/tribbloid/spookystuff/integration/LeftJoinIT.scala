@@ -50,7 +50,10 @@ class LeftJoinIT extends IntegrationSuite {
     assert(rows(3).mkString("|") === "2|Phones|0|Touch|Phones / Touch")
   }
 
-  override def numPages: Int = 6
+  override def numPages = {
+    case Minimal => 7
+    case _ => 6
+  }
 
-  override def numDrivers = 0
+  override def numDrivers = _ => 0
 }

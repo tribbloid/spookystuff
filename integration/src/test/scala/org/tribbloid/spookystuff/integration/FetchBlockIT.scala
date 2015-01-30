@@ -61,9 +61,13 @@ class FetchBlockIT extends IntegrationSuite {
     assert(appendedRows(0).pages(5).name === "d")
   }
 
-  override def numPages: Int = 3
+  override def numPages = {
+    case Minimal => 6
+    case _ => 3
+  }
 
-  override def numSessions: Int = 1
-
-  override def numDrivers: Int = 1
+  override def numSessions = {
+    case Minimal => 2
+    case _ => 1
+  }
 }

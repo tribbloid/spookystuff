@@ -4,9 +4,11 @@ import org.tribbloid.spookystuff.SpookyContext
 import org.tribbloid.spookystuff.actions._
 import org.tribbloid.spookystuff.dsl._
 
+import scala.concurrent.duration
+
 /**
-* Created by peng on 11/26/14.
-*/
+ * Created by peng on 11/26/14.
+ */
 class FetchVisitIT extends IntegrationSuite {
 
   override def doMain(spooky: SpookyContext) {
@@ -31,18 +33,39 @@ class FetchVisitIT extends IntegrationSuite {
 
     val RDDAppended = RDD
       .fetch(
-        Visit("http://www.wikipedia.org/") +> Snapshot() ~ 'b,
+        Visit($.uri) +> Snapshot() ~ 'b,
         joinType = Append
-      )
+      ).persist()
 
     val appendedRows = RDDAppended.collect()
 
     assert(appendedRows.size === 2)
-    assert(appendedRows(0).pages.apply(0).copy(content = null) === appendedRows(1).pages.apply(0).copy(content = null))
-    assert(appendedRows(0).pages.apply(0).content === appendedRows(1).pages.apply(0).content)
-    assert(appendedRows(0).pages.apply(0).name === "Snapshot()")
-    assert(appendedRows(1).pages.apply(0).name === "b")
+    assert(appendedRows(0).pages(0).copy(timestamp = null, content = null) === appendedRows(1).pages(0).copy(timestamp = null, content = null))
+
+    import duration._
+    if (spooky.defaultQueryOptimizer != Minimal && spooky.pageExpireAfter >= 10.minutes) {
+      assert(appendedRows(0).pages(0).timestamp === appendedRows(1).pages(0).timestamp)
+      assert(appendedRows(0).pages(0).content === appendedRows(1).pages.apply(0).content)
+    }
+    assert(appendedRows(0).getOnlyPage.get.content === appendedRows(1).pages.apply(0).content)
+    assert(appendedRows(0).getOnlyPage.get.name === "Snapshot()")
+    assert(appendedRows(1).getOnlyPage.get.name === "b")
+
+    //this is to ensure that an invalid expression (with None interpolation result) won't cause loss of information
+    val RDDfetchNone = RDDAppended
+      .fetch(
+        Visit('noSuchField) +> Snapshot() ~ 'c
+      )
+
+    val fetchNoneRows = RDDfetchNone.collect()
+
+    assert(fetchNoneRows.size === 2)
+    assert(fetchNoneRows(0).pages.size === 0)
+    assert(fetchNoneRows(1).pages.size === 0)
   }
 
-  override def numPages: Int = 1
+  override def numPages = {
+    case Minimal => 2
+    case _ => 1
+  }
 }

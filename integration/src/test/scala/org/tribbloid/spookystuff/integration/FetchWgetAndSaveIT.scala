@@ -7,6 +7,7 @@ import org.tribbloid.spookystuff.dsl._
 import org.tribbloid.spookystuff.pages.PageUtils
 
 import scala.collection.immutable.ListSet
+import scala.concurrent.duration
 
 /**
  * Created by peng on 11/26/14.
@@ -26,18 +27,18 @@ class FetchWgetAndSaveIT extends IntegrationSuite {
       .select($.saved ~ 'saved_path)
       .persist()
 
-    val pageRows = RDD.collect()
+    val savedPageRows = RDD.collect()
 
     val finishTime = System.currentTimeMillis()
-    assert(pageRows.size === 1)
-    assert(pageRows(0).pages.size === 1)
-    val pageTime = pageRows(0).pages.head.timestamp.getTime
+    assert(savedPageRows.size === 1)
+    assert(savedPageRows(0).pages.size === 1)
+    val pageTime = savedPageRows(0).pages.head.timestamp.getTime
     assert(pageTime < finishTime)
     assert(pageTime > finishTime-60000) //long enough even after the second time it is retrieved from s3 cache
 
-    val content = pageRows(0).pages.head.content
+    val content = savedPageRows(0).pages.head.content
 
-    assert(pageRows(0).get("saved_path").get === ListSet(s"file:${System.getProperty("user.home")}/spooky-integration/save/Wikipedia.png"))
+    assert(savedPageRows(0).get("saved_path").get === ListSet(s"file:${System.getProperty("user.home")}/spooky-integration/save/Wikipedia.png"))
 
     val loadedContent = PageUtils.load(new Path(s"file://${System.getProperty("user.home")}/spooky-integration/save/Wikipedia.png"))(spooky)
 
@@ -52,12 +53,21 @@ class FetchWgetAndSaveIT extends IntegrationSuite {
     val appendedRows = RDDAppended.collect()
 
     assert(appendedRows.size === 2)
-    assert(appendedRows(0).pages.apply(0).copy(content = null) === appendedRows(1).pages.apply(0).copy(content = null))
+    assert(appendedRows(0).pages.apply(0).copy(timestamp = null, content = null, saved = null) === appendedRows(1).pages.apply(0).copy(timestamp = null, content = null, saved = null))
+
+    import duration._
+    if (spooky.defaultQueryOptimizer != Minimal && spooky.pageExpireAfter >= 10.minutes) {
+      assert(appendedRows(0).pages(0).timestamp === appendedRows(1).pages(0).timestamp)
+      assert(appendedRows(0).pages(0).content === appendedRows(1).pages.apply(0).content)
+    }
     assert(appendedRows(0).pages.apply(0).content === appendedRows(1).pages.apply(0).content)
     assert(appendedRows(1).pages.apply(0).name === "b")
   }
 
-  override def numPages: Int = 1
+  override def numPages = {
+    case Minimal => 2
+    case _ => 1
+  }
 
-  override def numDrivers: Int = 0
+  override def numDrivers = _ => 0
 }

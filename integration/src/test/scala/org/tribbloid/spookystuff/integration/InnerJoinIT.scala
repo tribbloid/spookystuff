@@ -52,5 +52,8 @@ class InnerJoinIT extends IntegrationSuite {
     assert(rows(2).mkString("|") === "2|0|Phones|0|Touch|Phones / Touch")
   }
 
-  override def numPages: Int = 6
+  override def numPages = {
+    case Minimal => 7
+    case _ => 6
+  }
 }

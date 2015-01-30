@@ -15,7 +15,7 @@ class TestUnstructuredExprView extends SpookyEnvSuite {
     Wget("http://www.wikipedia.org/").~('page) :: Nil
   ).resolve(spooky)
   lazy val row = PageRow(pageLikes = page)
-    .select($"title".head.~('abc) :: Nil)
+    .select($"title".head.~('abc))
     .head
 
   test("uri"){

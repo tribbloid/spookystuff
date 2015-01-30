@@ -1,7 +1,6 @@
 package org.tribbloid.spookystuff.actions
 
 import org.tribbloid.spookystuff.entity.PageRow
-;
 
 abstract class Actions(val self: Seq[Action]) extends ActionLike {
 
@@ -16,9 +15,9 @@ abstract class Actions(val self: Seq[Action]) extends ActionLike {
   final protected def doInterpolateSeq(pr: PageRow): Seq[Action] = Actions.doInterppolateSeq(self, pr)
 
   //names are not encoded in PageUID and are injected after being read from cache
-  override def injectFrom(same: this.type): Unit = {
+  override def injectFrom(same: ActionLike): Unit = {
     super.injectFrom(same)
-    val zipped = this.self.zip(same.self)
+    val zipped = this.self.zip(same.asInstanceOf[Actions].self)
 
     for (tuple <- zipped) {
       tuple._1.injectFrom(tuple._2.asInstanceOf[tuple._1.type ]) //recursive

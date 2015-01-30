@@ -18,7 +18,7 @@ class ExploreIT extends IntegrationSuite {
       )
 
     val explored = base
-      .explore($"div.sidebar-nav a", depthKey = 'depth, indexKey = 'i1)(
+      .explore($"div.sidebar-nav a", depthKey = 'depth)(
         Visit('A.href),
         flattenPagesIndexKey = 'page
       )(
@@ -30,22 +30,21 @@ class ExploreIT extends IntegrationSuite {
     assert(
       explored.schema.fieldNames ===
         "depth" ::
-          "i1" ::
           "page" ::
           "category" ::
           "header" :: Nil
     )
 
-    val rows = explored.collect()
+    val rows = explored.collect().map(_.mkString("|"))
     assert(rows.size === 6)
 
-    assert(rows(0).mkString("|") === "0|null|null|null|E-commerce training site")
-    assert(rows(1).mkString("|") === "1|1|0|Computers|Computers category")
-    assert(rows(2).mkString("|") === "1|2|0|Phones|Phones category")
-    assert(rows(3).mkString("|") === "2|2|0|Laptops|Computers / Laptops")
-    assert(rows(4).mkString("|") === "2|3|0|Tablets|Computers / Tablets")
-    assert(rows(5).mkString("|") === "2|3|0|Touch|Phones / Touch")
+    assert(rows contains "0|null|null|E-commerce training site")
+    assert(rows contains "1|0|Computers|Computers category")
+    assert(rows contains "1|0|Phones|Phones category")
+    assert(rows contains "2|0|Laptops|Computers / Laptops")
+    assert(rows contains "2|0|Tablets|Computers / Tablets")
+    assert(rows contains "2|0|Touch|Phones / Touch")
   }
 
-  override def numPages: Int = 6
+  override def numPages = _ => 6
 }

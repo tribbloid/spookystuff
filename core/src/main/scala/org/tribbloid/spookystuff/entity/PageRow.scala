@@ -1,13 +1,15 @@
 package org.tribbloid.spookystuff.entity
 
-import org.apache.spark.broadcast.Broadcast
-import org.tribbloid.spookystuff.{Const, views, SpookyContext}
+import org.slf4j.LoggerFactory
 import org.tribbloid.spookystuff.actions._
 import org.tribbloid.spookystuff.dsl._
 import org.tribbloid.spookystuff.expressions._
-import org.tribbloid.spookystuff.pages.{NoPage, PageLike, Unstructured, Page}
+import org.tribbloid.spookystuff.pages._
 import org.tribbloid.spookystuff.utils._
+import org.tribbloid.spookystuff.{Const, SpookyContext}
 
+import scala.collection.mutable
+import scala.collection.mutable.ArrayBuffer
 import scala.reflect.ClassTag
 
 /**
@@ -106,22 +108,23 @@ case class PageRow(
 
   def signature(ignore: Iterable[String]) = (
     this.cells.filterKeys(_.isInstanceOf[Key]).map(identity) -- ignore.map(Key(_)),
-    pages.map(_.uid),
-    pages.map(_.name)
+    pagesSignature
     )
+
+  def pagesSignature = pages.map(_.uid) -> pages.map(_.name)
 
   def asMap(): Map[String, Any] = this.cells
     .filterKeys(_.isInstanceOf[Key]).map(identity)
     .map( tuple => tuple._1.name -> tuple._2)
 
   def asJson(): String = {
-    import views._
+    import org.tribbloid.spookystuff.views._
 
     Utils.toJson(this.asMap().canonizeKeysToColumnNames)
   }
 
-  def select(fs: Seq[Expression[Any]]): Seq[PageRow] = {
-    val newKVs = fs.flatMap{
+  def select(exprs: Expression[Any]*): Option[PageRow] = {
+    val newKVs = exprs.flatMap{
       expr =>
         val value = expr(this)
         value match {
@@ -129,11 +132,11 @@ case class PageRow(
           case None => None
         }
     }
-    Seq(this.copy(cells = this.cells ++ newKVs))
+    Some(this.copy(cells = this.cells ++ newKVs))
   }
 
-  def selectTemp(fs: Seq[Expression[Any]]): Seq[PageRow] = {
-    val newKVs = fs.flatMap{
+  def selectTemp(exprs: Expression[Any]*): Option[PageRow] = {
+    val newKVs = exprs.flatMap{
       expr =>
         val value = expr(this)
         value match {
@@ -141,7 +144,7 @@ case class PageRow(
           case None => None
         }
     }
-    Seq(this.copy(cells = this.cells ++ newKVs))
+    Some(this.copy(cells = this.cells ++ newKVs))
   }
 
   def remove(keys: Seq[KeyLike]): PageRow = {
@@ -151,6 +154,8 @@ case class PageRow(
   def filterKeys(f: KeyLike => Boolean): PageRow = {
     this.copy(cells = this.cells.filterKeys(f).map(identity))
   }
+
+  def clearTemp: PageRow = this.filterKeys(!_.isInstanceOf[TempKey])
 
   def putPages(others: Seq[PageLike], joinType: JoinType): Option[PageRow] = {
     joinType match {
@@ -182,7 +187,7 @@ case class PageRow(
 
     val key = resolveKey(keyStr)
 
-    import views._
+    import org.tribbloid.spookystuff.views._
 
     val newCells =cells.flattenKey(key, indexKey).slice(0, limit)
 
@@ -225,36 +230,80 @@ case class PageRow(
     }
   }
 
-  def dumpFetch(
-                 _trace: Set[Trace],
-                 joinType: JoinType,
-                 spookyBroad: Broadcast[SpookyContext]
-                 ): Set[PageRow] = {
-    _trace
-      .interpolate(this)
-      .flatMap{
-      trace =>
-        val pages = trace.resolve(spookyBroad.value)
-        this.putPages(pages, joinType)
-    }
-  }
+  //TODO: avoid memory overflow by export allResults into a different RDD periodically
+  def dumbExplore(
+                   expr: Expression[Any],
+                   depthKey: Symbol,
+                   maxDepth: Int,
+                   spooky: SpookyContext
+                   )(
+                   _traces: Set[Trace],
+                   flattenPagesPattern: Symbol,
+                   flattenPagesIndexKey: Symbol
+                   ): Seq[PageRow] = {
 
-//  def dumbExplore(
-//                   expr: Expression[Any],
-//                   depthKey: Symbol,
-//                   indexKey: Symbol, //left & idempotent parameters are missing as they are always set to true
-//                   maxDepth: Int,
-//                   spookyBroad: Broadcast[SpookyContext]
-//                   )(
-//                   traces: Set[Trace],
-//                   numPartitions: Int,
-//                   flattenPagesPattern: Symbol,
-//                   flattenPagesIndexKey: Symbol
-//                   )(
-//                   select: Expression[Any]*
-//                   ): Seq[PageRow] = {
-//
-//  }
+    val total: ArrayBuffer[PageRow] = if (depthKey != null)
+      ArrayBuffer(this.select(Literal(0) ~ depthKey).toSeq: _*)
+    else ArrayBuffer(this)
+
+    val allTraces = mutable.HashSet[Trace]()
+
+    val firstRowBacktraces = this
+      .pageLikes
+      .map(_.uid)
+      .groupBy(_.backtrace)
+      .filter{
+      tuple =>
+        tuple._2.size == tuple._2.head.total
+    }
+      .keys.toSeq
+
+    var previousRows = Iterable(this)
+
+    for (depth <- 1 to maxDepth) {
+      val squashes = previousRows
+        .flatMap(_.selectTemp(expr))
+        .flatMap(_.flatten(expr.name, null, Int.MaxValue, left = true))
+        .flatMap{
+        row =>
+          _traces.interpolate(row)
+            .filterNot{
+            trace =>
+              val traceExist = allTraces.contains(trace)
+              val rowExistInSeed = firstRowBacktraces == trace.dryrun
+              traceExist || rowExistInSeed
+          }
+            .map(interpolatedTrace => interpolatedTrace -> row)
+      }
+        .groupBy(_._1)
+        .map {
+        tuple =>
+          Squash(tuple._1, tuple._2.map(_._2).headOption)
+      }
+
+      allTraces ++= squashes.map(_.trace)
+
+      val newRows = squashes
+        .flatMap{//defective!
+        squash =>
+          squash.resolveAndPut(Inner, spooky)
+      }
+        .flatMap{
+        row =>
+          if (flattenPagesPattern != null) row.flattenPages(flattenPagesPattern.name,Key(flattenPagesIndexKey))
+          else Seq(row)
+      }
+
+      LoggerFactory.getLogger(this.getClass).info(s"found ${newRows.size} new row(s) at $depth depth")
+      if (newRows.size == 0) return total
+
+      total ++= newRows.flatMap(_.select(Literal(depth) ~ depthKey))
+
+      previousRows = newRows
+    }
+
+    total
+  }
 
   //affect last page
   //TODO: deprecate?
@@ -288,5 +337,24 @@ case class PageRow(
 
     if (flatten) currentRow.flattenPages(Const.onlyPageWildcard,indexKey = indexKey)
     else Seq(currentRow)
+  }
+}
+
+//squash identical trace together even PageRows are different
+case class Squash(trace: Trace, rows: Iterable[PageRow]) {
+  override def hashCode(): Int ={
+    trace.hashCode()
+  }
+
+  override def equals(obj: Any): Boolean = {
+    obj match {
+      case s: Squash => this.trace.equals(s.trace)
+      case _ => false
+    }
+  }
+
+  def resolveAndPut(joinType: JoinType, spooky: SpookyContext) = {
+    val pages = this.trace.resolve(spooky)
+    this.rows.flatMap(_.putPages(pages, joinType))
   }
 }

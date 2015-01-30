@@ -31,7 +31,7 @@ class JoinAndExplorePagesIT extends IntegrationSuite {
       .select($"h1".text ~ 'header)
 
     val result = joined
-      .explore($"ul.pagination a", depthKey = 'depth, indexKey = 'i3)(
+      .explore($"ul.pagination a", depthKey = 'depth)(
         Wget('A.href)
       )(
         'A.text as 'page
@@ -48,30 +48,32 @@ class JoinAndExplorePagesIT extends IntegrationSuite {
           "subcategory" ::
           "header" ::
           "depth" ::
-          "i3" ::
           "page" ::
           "uri" :: Nil
     )
 
-    val rows = result.collect()
+    val rows = result.collect().map(_.mkString("|"))
     assert(rows.size === 13)
 
-    assert(rows(0).mkString("|") === "0|Home|null|null|null|0|null|null|null")
-    assert(rows(1).mkString("|") === "1|Computers|0|Laptops|Computers / Laptops|0|null|null|http://webscraper.io/test-sites/e-commerce/static/computers/laptops")
-    assert(rows(2).mkString("|") === "1|Computers|0|Laptops|Computers / Laptops|1|0|2|http://webscraper.io/test-sites/e-commerce/static/computers/laptops/2")
-    assert(rows(3).mkString("|") === "1|Computers|0|Laptops|Computers / Laptops|1|1|3|http://webscraper.io/test-sites/e-commerce/static/computers/laptops/3")
-    assert(rows(4).mkString("|") === "1|Computers|0|Laptops|Computers / Laptops|2|1|1|http://webscraper.io/test-sites/e-commerce/static/computers/laptops/1")
-    assert(rows(5).mkString("|") === "1|Computers|1|Tablets|Computers / Tablets|0|null|null|http://webscraper.io/test-sites/e-commerce/static/computers/tablets")
-    assert(rows(6).mkString("|") === "1|Computers|1|Tablets|Computers / Tablets|1|0|2|http://webscraper.io/test-sites/e-commerce/static/computers/tablets/2")
-    assert(rows(7).mkString("|") === "1|Computers|1|Tablets|Computers / Tablets|1|1|3|http://webscraper.io/test-sites/e-commerce/static/computers/tablets/3")
-    assert(rows(8).mkString("|") === "1|Computers|1|Tablets|Computers / Tablets|1|2|4|http://webscraper.io/test-sites/e-commerce/static/computers/tablets/4")
-    assert(rows(9).mkString("|") === "1|Computers|1|Tablets|Computers / Tablets|2|0|«|http://webscraper.io/test-sites/e-commerce/static/computers/tablets/1")
-    assert(rows(10).mkString("|") === "2|Phones|0|Touch|Phones / Touch|0|null|null|http://webscraper.io/test-sites/e-commerce/static/phones/touch")
-    assert(rows(11).mkString("|") === "2|Phones|0|Touch|Phones / Touch|1|0|2|http://webscraper.io/test-sites/e-commerce/static/phones/touch/2")
-    assert(rows(12).mkString("|") === "2|Phones|0|Touch|Phones / Touch|2|0|«|http://webscraper.io/test-sites/e-commerce/static/phones/touch/1")
+    assert(rows contains "0|Home|null|null|null|0|null|null")
+    assert(rows contains "1|Computers|0|Laptops|Computers / Laptops|0|null|http://webscraper.io/test-sites/e-commerce/static/computers/laptops")
+    assert(rows contains "1|Computers|0|Laptops|Computers / Laptops|1|2|http://webscraper.io/test-sites/e-commerce/static/computers/laptops/2")
+    assert(rows contains "1|Computers|0|Laptops|Computers / Laptops|1|3|http://webscraper.io/test-sites/e-commerce/static/computers/laptops/3")
+    assert(rows contains "1|Computers|0|Laptops|Computers / Laptops|2|1|http://webscraper.io/test-sites/e-commerce/static/computers/laptops/1")
+    assert(rows contains "1|Computers|1|Tablets|Computers / Tablets|0|null|http://webscraper.io/test-sites/e-commerce/static/computers/tablets")
+    assert(rows contains "1|Computers|1|Tablets|Computers / Tablets|1|2|http://webscraper.io/test-sites/e-commerce/static/computers/tablets/2")
+    assert(rows contains "1|Computers|1|Tablets|Computers / Tablets|1|3|http://webscraper.io/test-sites/e-commerce/static/computers/tablets/3")
+    assert(rows contains "1|Computers|1|Tablets|Computers / Tablets|1|4|http://webscraper.io/test-sites/e-commerce/static/computers/tablets/4")
+    assert(rows contains "1|Computers|1|Tablets|Computers / Tablets|2|1|http://webscraper.io/test-sites/e-commerce/static/computers/tablets/1")
+    assert(rows contains "2|Phones|0|Touch|Phones / Touch|0|null|http://webscraper.io/test-sites/e-commerce/static/phones/touch")
+    assert(rows contains "2|Phones|0|Touch|Phones / Touch|1|2|http://webscraper.io/test-sites/e-commerce/static/phones/touch/2")
+    assert(rows contains "2|Phones|0|Touch|Phones / Touch|2|«|http://webscraper.io/test-sites/e-commerce/static/phones/touch/1")
   }
 
-  override def numPages: Int = 15
+  override def numPages = {
+    case Minimal => 16
+    case _ => 15
+  }
 
-  override def numDrivers = 0
+  override def numDrivers = _ => 0
 }

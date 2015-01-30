@@ -7,20 +7,21 @@ import org.tribbloid.spookystuff.session.Session
 /**
  * Created by peng on 11/7/14.
  */
-//can't extend function, will override toString() of case classes
 trait ActionLike
   extends Serializable
   with Product {
 
   final def interpolate(pr: PageRow): Option[this.type] = {
-    val results = this.doInterpolate(pr)
-    results.foreach(_.injectFrom(this))
-    results
+    val option = this.doInterpolate(pr)
+    option.foreach(action => action.injectFrom(this))
+    option
   }
 
   def doInterpolate(pageRow: PageRow): Option[this.type] = Some(this)
 
-  def injectFrom(same: this.type ): Unit = {} //do nothing
+  def injectFrom(same: ActionLike): Unit = {} //TODO: change to immutable pattern to avoid one Trace being used twice with different names
+
+  final def injectTo(same: ActionLike): Unit = same.injectFrom(this)
 
   //used to determine if snapshot needs to be appended or if possible to be executed lazily
   final def hasExport: Boolean = outputNames.nonEmpty

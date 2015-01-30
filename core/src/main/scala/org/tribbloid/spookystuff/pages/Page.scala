@@ -19,9 +19,12 @@ import scala.collection.immutable.ListSet
 case class PageUID(
                     backtrace: Trace,
                     leaf: Named,
-                    blockIndex: Int = -1, //-1 is no sub key
-                    total: Int = 1 //number of pages in a block output
-                    )
+//                    sessionStartTime: Long, //TODO: add for sanity check
+                    blockIndex: Int = 0,
+                    total: Int = 1 //number of pages in a block output,
+                    ) {
+
+}
 
 trait PageLike {
   val uid: PageUID
@@ -38,7 +41,7 @@ case class NoPage(
                    trace: Trace,
                    override val timestamp: Date = new Date
                    ) extends Serializable with PageLike {
-  override val uid: PageUID = PageUID(trace, null, -1, 0)
+  override val uid: PageUID = PageUID(trace, null, 0, 1)
 }
 
 //immutable! we don't want to lose old pages

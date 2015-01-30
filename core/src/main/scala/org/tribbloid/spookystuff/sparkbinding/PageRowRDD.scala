@@ -10,24 +10,13 @@ import org.tribbloid.spookystuff.actions._
 import org.tribbloid.spookystuff.dsl.{Inner, JoinType, _}
 import org.tribbloid.spookystuff.entity._
 import org.tribbloid.spookystuff.expressions._
-import org.tribbloid.spookystuff.pages.{Unstructured, PageLike, PageUID}
+import org.tribbloid.spookystuff.pages.{PageLike, PageUtils, Unstructured}
 import org.tribbloid.spookystuff.utils._
 import org.tribbloid.spookystuff.{Const, SpookyContext}
 
 import scala.collection.immutable.ListSet
-import scala.collection.mutable
 import scala.language.implicitConversions
 import scala.reflect.ClassTag
-
-//object PageRowRDD {
-//  def generateTraceLookup(
-//                           lookup: RDD[(PageUID, PageLike)],
-//                           traces: RDD[Trace]
-//                           ): RDD[(Trace, Seq[PageLike])] = {
-//
-//
-//  }
-//}
 
 /**
  * Created by peng on 8/29/14.
@@ -240,7 +229,7 @@ case class PageRowRDD(
     }
 
     val result = this.copy(
-      self = this.flatMap(_.select(_exprs)),
+      self = this.flatMap(_.select(_exprs: _*)),
       keys = this.keys ++ newKeys
     )
     result
@@ -257,7 +246,7 @@ case class PageRowRDD(
     }
 
     this.copy(
-      self = this.flatMap(_.selectTemp(_exprs)),
+      self = this.flatMap(_.selectTemp(_exprs: _*)),
       keys = this.keys ++ newKeys
     )
   }
@@ -272,7 +261,7 @@ case class PageRowRDD(
 
   private def clearTemp: PageRowRDD = {
     this.copy(
-      self = this.map(_.filterKeys(!_.isInstanceOf[TempKey])),
+      self = this.map(_.clearTemp),
       keys = keys -- keys.filter(_.isInstanceOf[TempKey])//circumvent https://issues.scala-lang.org/browse/SI-8985
     )
   }
@@ -346,83 +335,80 @@ case class PageRowRDD(
       indexKeys = this.indexKeys ++ Option(Key(indexKey))
     )
 
-  /**
-   * parallel execution in browser(s) to yield a set of web pages
-   * each ActionPlan may yield several pages in a row, depending on the number of Export(s) in it
-   * @return RDD[Page] as results of execution
-   */
-
-  //this won't merge identical traces, only used in case each resolve may yield different result
-  def dumbFetch(
-                 traces: Set[Trace],
-                 joinType: JoinType = Const.defaultJoinType,
-                 flattenPagesPattern: Symbol = Symbol(Const.onlyPageWildcard), //by default, always flatten all pages
-                 flattenPagesIndexKey: Symbol = null
-                 ): PageRowRDD = {
-
-    val _trace = traces.autoSnapshot
-
-    val spookyBroad = this.context.broadcast(this.spooky)
-
-    val self = this.flatMap(
-      _.dumpFetch(_trace, joinType, spookyBroad)
-    )
-
-    val result = this.copy(self)
-
-    if (flattenPagesPattern != null) result.flattenPages(flattenPagesPattern,flattenPagesIndexKey)
-    else result
-  }
-
   def lookup(): RDD[(Trace, PageLike)] = {
-    this.flatMap(_.pageLikes.map(page => page.uid.backtrace -> page ))
+    this.persist().flatMap(_.pageLikes.map(page => page.uid.backtrace -> page ))//TODO: really takes a lot of space, how to eliminate?
   }
 
-  /**
-   * smart execution: group identical ActionPlans, execute in parallel, and duplicate result pages to match their original contexts
-   * reduce workload by avoiding repeated access to the same url caused by duplicated context or diamond links (A->B,A->C,B->D,C->D)
-   * recommended for most cases, mandatory for RDD[ActionPlan] with high duplicate factor, only use !=!() if you are sure that duplicate doesn't exist.
-   * @return RDD[Page] as results of execution
-   */
   def fetch(
              traces: Set[Trace],
              joinType: JoinType = Const.defaultJoinType,
              flattenPagesPattern: Symbol = '*, //by default, always flatten all pages
              flattenPagesIndexKey: Symbol = null,
              numPartitions: Int = this.sparkContext.defaultParallelism,
-             lookupFrom: RDD[(Trace, PageLike)] = this.persist().lookup()//TODO: really takes a lot of space, how to eliminate?
+             optimizer: QueryOptimizer = spooky.defaultQueryOptimizer
              ): PageRowRDD = {
 
     val spookyBroad = this.context.broadcast(this.spooky)
 
-    val result = _fetch(traces, joinType, numPartitions, lookupFrom, spookyBroad)
+    val _traces = traces.autoSnapshot
+
+    val result = optimizer match {
+      case Minimal =>
+        //        if (lookup != null)throw new UnsupportedOperationException(s"${optimizer.getClass.getSimpleName} optimizer can't use lookup table")
+        _dumbFetch(_traces, joinType, numPartitions, spookyBroad)
+      case Smart =>
+        _smartFetch(_traces, joinType, numPartitions, lookup(), spookyBroad)
+      case _ => throw new UnsupportedOperationException(s"${optimizer.getClass.getSimpleName} optimizer is not supported in this query")
+    }
 
     if (flattenPagesPattern != null) result.flattenPages(flattenPagesPattern,flattenPagesIndexKey)
     else result
   }
 
-  private def _fetch(
-                      traces: Set[Trace],
-                      joinType: JoinType,
-                      numPartitions: Int,
-                      lookupFrom: RDD[(Trace, PageLike)],
-                      spookyBroad: Broadcast[SpookyContext]
-                      ): PageRowRDD = {
+  private def _dumbFetch(
+                          _traces: Set[Trace],
+                          joinType: JoinType,
+                          numPartitions: Int,
+                          spookyBroad: Broadcast[SpookyContext]
+                          ): PageRowRDD = {
+
+    val resultRows = this
+      .coalesce(numPartitions)
+      .flatMap(
+        row =>
+          _traces
+            .interpolate(row)
+            .flatMap{
+            trace =>
+              val pages = trace.resolve(spookyBroad.value)
+
+              row.putPages(pages, joinType)
+          }
+      )
+
+    this.copy(resultRows)
+  }
+
+  private def _smartFetch(
+                           _traces: Set[Trace],
+                           joinType: JoinType,
+                           numPartitions: Int,
+                           lookup: RDD[(Trace, PageLike)],
+                           spookyBroad: Broadcast[SpookyContext] //TODO: experiment things to eliminate unnecessary broadcast
+                           ): PageRowRDD = {
 
     import org.apache.spark.SparkContext._
 
-    val _trace = traces.autoSnapshot
-
     val traceToRow = this.flatMap {
       row =>
-        _trace.interpolate(row).map(interpolatedTrace => interpolatedTrace -> row)
+        _traces.interpolate(row).map(interpolatedTrace => interpolatedTrace -> row)
     }
 
     val squashes = traceToRow.groupByKey(numPartitions).map(tuple => Squash(tuple._1, tuple._2))
 
-    val resultRows: RDD[PageRow] = if (lookupFrom == null) {
+    val resultRows: RDD[PageRow] = if (lookup == null) {
       //no lookup
-      squashes.flatMap(_.resolveAndPut(joinType, spookyBroad))
+      squashes.flatMap(_.resolveAndPut(joinType, spookyBroad.value))
     }
     else {
       //lookup
@@ -435,7 +421,7 @@ case class PageRowRDD(
       }
 
       val cogrouped = backtraceToSquashWithIndex
-        .cogroup(lookupFrom)
+        .cogroup(lookup)
 
       val squashToIndexWithPagesOption = cogrouped.flatMap{
         triplet =>
@@ -452,26 +438,14 @@ case class PageRowRDD(
             }
           }
           else {
-            val pages = tuple._2
+            val lookupPages = tuple._2
+            lookupPages.foreach(_.uid.backtrace.injectFrom(backtrace))
 
-            val pagesOption = if (pages.nonEmpty) {
-              val uniquePages = mutable.HashMap[PageUID, PageLike]()
-              for (page <- pages) {
-                val pageBacktrace = page.uid.backtrace
-                pageBacktrace.injectFrom(backtrace.asInstanceOf[pageBacktrace.type ])
-                val oldPage = uniquePages.get(page.uid)
-                if (oldPage.isEmpty || page.laterThan(oldPage.get)) uniquePages.put(page.uid, page)
-              }
-              val sorted = uniquePages.values.toSeq.sortBy(_.uid.blockIndex)
-              Some(sorted.slice(0, sorted.head.uid.total))
-            }
-            else {
-              None
-            }
+            val latestBatchOption = PageUtils.discoverLatestBlockOutput(lookupPages)
 
             squashedWithIndexes.map{
               squashedWithIndex =>
-                squashedWithIndex._1 -> (squashedWithIndex._2, pagesOption)
+                squashedWithIndex._1 -> (squashedWithIndex._2, latestBatchOption)
             }
           }
       }
@@ -480,7 +454,7 @@ case class PageRowRDD(
         tuple =>
           val squash = tuple._1
           val IndexWithPageOptions = tuple._2.toSeq
-          if (IndexWithPageOptions.map(_._2).contains(None)) squash.resolveAndPut(joinType, spookyBroad)
+          if (IndexWithPageOptions.map(_._2).contains(None)) squash.resolveAndPut(joinType, spookyBroad.value)
           else {
             val pages = IndexWithPageOptions.sortBy(_._1).flatMap(_._2.get)
             squash.rows.flatMap(_.putPages(pages, joinType))
@@ -490,7 +464,7 @@ case class PageRowRDD(
       result
     }
 
-    resultRows
+    this.copy(resultRows)
   }
 
   def join(
@@ -502,14 +476,15 @@ case class PageRowRDD(
             joinType: JoinType = Const.defaultJoinType,
             numPartitions: Int = this.sparkContext.defaultParallelism,
             flattenPagesPattern: Symbol = '*,
-            flattenPagesIndexKey: Symbol = null
+            flattenPagesIndexKey: Symbol = null,
+            optimizer: QueryOptimizer = spooky.defaultQueryOptimizer
             )(
             select: Expression[Any]*
             ): PageRowRDD = {
 
     this
       .flattenTemp(expr defaultAs Symbol(Const.defaultJoinKey), indexKey, limit, left = true)
-      .fetch(traces, joinType, flattenPagesPattern, flattenPagesIndexKey, numPartitions)
+      .fetch(traces, joinType, flattenPagesPattern, flattenPagesIndexKey, numPartitions, optimizer)
       .select(select: _*)
       .clearTemp
   }
@@ -526,12 +501,14 @@ case class PageRowRDD(
                  limit: Int = spooky.joinLimit,
                  joinType: JoinType = Const.defaultJoinType,
                  numPartitions: Int = this.sparkContext.defaultParallelism,
-                 select: Expression[Any] = null
+                 select: Expression[Any] = null,
+                 optimizer: QueryOptimizer = spooky.defaultQueryOptimizer
                  ): PageRowRDD =
     this.join(expr, indexKey, limit)(
       Visit(new GetExpr(Const.defaultJoinKey)),
       joinType,
-      numPartitions
+      numPartitions,
+      optimizer = optimizer
     )(Option(select).toSeq: _*)
 
   /**
@@ -546,12 +523,14 @@ case class PageRowRDD(
                 limit: Int = spooky.joinLimit,
                 joinType: JoinType = Const.defaultJoinType,
                 numPartitions: Int = this.sparkContext.defaultParallelism,
-                select: Expression[Any] = null
+                select: Expression[Any] = null,
+                optimizer: QueryOptimizer = spooky.defaultQueryOptimizer
                 ): PageRowRDD =
     this.join(expr, indexKey, limit)(
       Wget(new GetExpr(Const.defaultJoinKey)),
       joinType,
-      numPartitions
+      numPartitions,
+      optimizer = optimizer
     )(Option(select).toSeq: _*)
 
   def distinctSignature(
@@ -596,41 +575,87 @@ case class PageRowRDD(
     )
   }
 
-  //with narrow engine.
-  def dumbExplore(
-                     expr: Expression[Any],
-                     depthKey: Symbol = null,
-                     indexKey: Symbol = null, //left & idempotent parameters are missing as they are always set to true
-                     maxDepth: Int = spooky.maxExploreDepth
-                     )(
-                     traces: Set[Trace],
-                     numPartitions: Int = this.sparkContext.defaultParallelism,
-                     flattenPagesPattern: Symbol = '*,
-                     flattenPagesIndexKey: Symbol = null
-                     )(
-                     select: Expression[Any]*
-                     ): PageRowRDD = {
-
-    val pageRowWithExisting = this.map(row => row -> Set())
-
-    null
-  }
-
-  //recursive join and union! applicable to many situations like (wide) pagination and deep crawling
-  //TODO: secondary engine allowing 'narrow' asynchronous explore
   def explore(
                expr: Expression[Any],
                depthKey: Symbol = null,
-               indexKey: Symbol = null, //left & idempotent parameters are missing as they are always set to true
                maxDepth: Int = spooky.maxExploreDepth
                )(
                traces: Set[Trace],
                numPartitions: Int = this.sparkContext.defaultParallelism,
                flattenPagesPattern: Symbol = '*,
-               flattenPagesIndexKey: Symbol = null
+               flattenPagesIndexKey: Symbol = null,
+               optimizer: QueryOptimizer = spooky.defaultQueryOptimizer
                )(
                select: Expression[Any]*
                ): PageRowRDD = {
+
+    val _traces = traces.autoSnapshot
+
+    optimizer match {
+      case Minimal =>
+        _dumbExplore(expr, depthKey, maxDepth)(_traces, numPartitions, flattenPagesPattern, flattenPagesIndexKey)(select: _*)
+      case Smart =>
+        _smartExplore(expr, depthKey, maxDepth)(_traces, numPartitions, flattenPagesPattern, flattenPagesIndexKey)(select: _*)
+      case _ => throw new UnsupportedOperationException(s"${optimizer.getClass.getSimpleName} optimizer is not supported in this query")
+    }
+  }
+
+  //this is a single-threaded explore, of which implementation is similar to good old pagination.
+  private def _dumbExplore(
+                            expr: Expression[Any],
+                            depthKey: Symbol = null,
+                            maxDepth: Int = spooky.maxExploreDepth
+                            )(
+                            _traces: Set[Trace],
+                            numPartitions: Int = this.sparkContext.defaultParallelism,
+                            flattenPagesPattern: Symbol = '*,
+                            flattenPagesIndexKey: Symbol = null
+                            )(
+                            select: Expression[Any]*
+                            ): PageRowRDD = {
+
+    val spookyBroad = this.context.broadcast(this.spooky)
+
+    val _expr = expr defaultAs Symbol(Const.defaultJoinKey)
+
+    val beforeSelectSelf = this.flatMap{
+      _.dumbExplore(
+        _expr,
+        depthKey,
+        maxDepth,
+        spookyBroad.value
+      )(
+          _traces,
+          flattenPagesPattern,
+          flattenPagesIndexKey
+        )
+    }
+
+    val beforeSelectKeys = this.keys ++ Seq(TempKey(_expr.name), Key(depthKey), Key(flattenPagesIndexKey)).flatMap(Option(_))
+    val beforeSelectIndexKeys = this.indexKeys ++ Seq(Key(depthKey), Key(flattenPagesIndexKey)).flatMap(Option(_))
+
+    val beforeSelect = this.copy(self = beforeSelectSelf, keys = beforeSelectKeys, indexKeys = beforeSelectIndexKeys)
+
+    val result = beforeSelect
+      .select(select: _*)
+      .clearTemp
+
+    result
+  }
+
+  //recursive join and union! applicable to many situations like (wide) pagination and deep crawling
+  private def _smartExplore(
+                             expr: Expression[Any],
+                             depthKey: Symbol = null,
+                             maxDepth: Int = spooky.maxExploreDepth
+                             )(
+                             _traces: Set[Trace],
+                             numPartitions: Int = this.sparkContext.defaultParallelism,
+                             flattenPagesPattern: Symbol = '*,
+                             flattenPagesIndexKey: Symbol = null
+                             )(
+                             select: Expression[Any]*
+                             ): PageRowRDD = {
 
     var newRows = this
 
@@ -644,30 +669,30 @@ case class PageRowRDD(
     val spookyBroad = this.context.broadcast(this.spooky)
     if (this.context.getCheckpointDir.isEmpty) this.context.setCheckpointDir(spooky.dir.checkpoint)
 
+    val _expr = expr defaultAs Symbol(Const.defaultJoinKey)
+
     for (depth <- 1 to maxDepth) {
       //always inner join
-      val joinedBeforeFlatten = newRows
-        .flattenTemp(expr defaultAs Symbol(Const.defaultJoinKey), indexKey, Int.MaxValue, left = true)
-        ._fetch(traces, Inner, numPartitions, lookups, spookyBroad)
+      val joined = newRows
+        .flattenTemp(_expr, null, Int.MaxValue, left = true)
+        ._smartFetch(_traces, Inner, numPartitions, lookups, spookyBroad)
 
-      import org.apache.spark.SparkContext._
+      //      import org.apache.spark.SparkContext._
 
-      lookups = lookups.union{
-        joinedBeforeFlatten.persist().lookup()
-      }
-        .reduceByKey((v1,v2) => v1.laterOf(v2), numPartitions)
+      val newLookups = joined.persist().lookup()
+
+      lookups = lookups.union(newLookups) //TODO: remove pages with identical uid but different _traces? or set the lookup table as backtrace -> seq directly.
 
       if (depth % 20 == 0) {
         lookups.persist().checkpoint()
         val size = lookups.count()
-        LoggerFactory.getLogger(this.getClass).info(s"explored $size pages in total")
       }
 
-      val joined = joinedBeforeFlatten.flattenPages(flattenPagesPattern, flattenPagesIndexKey)
+      val flattened = joined.flattenPages(flattenPagesPattern, flattenPagesIndexKey)
 
-      val allIgnoredKeys = Seq(depthKey, indexKey, flattenPagesIndexKey).filter(_ != null)
+      val allIgnoredKeys = Seq(depthKey, flattenPagesIndexKey).filter(_ != null)
 
-      newRows = joined
+      newRows = flattened
         .subtractSignature(total, allIgnoredKeys)
         .distinctSignature(allIgnoredKeys)
         .persist()
@@ -677,7 +702,7 @@ case class PageRowRDD(
       }
 
       val newRowsSize = newRows.count()
-      LoggerFactory.getLogger(this.getClass).info(s"fetched $newRowsSize new row(s)")
+      LoggerFactory.getLogger(this.getClass).info(s"found $newRowsSize new row(s) at $depth depth")
 
       if (newRowsSize == 0){
         return total
@@ -693,7 +718,6 @@ case class PageRowRDD(
       if (depth % 20 == 0) {
         total.persist().checkpoint()
         val size = total.count()
-        LoggerFactory.getLogger(this.getClass).info(s"fetched $size rows in total")
       }
     }
 
@@ -706,27 +730,29 @@ case class PageRowRDD(
   def visitExplore(
                     expr: Expression[Any],
                     depthKey: Symbol = null,
-                    indexKey: Symbol = null, //left & idempotent parameters are missing as they are always set to true
                     maxDepth: Int = spooky.maxExploreDepth,
                     numPartitions: Int = this.sparkContext.defaultParallelism,
-                    select: Expression[Any] = null
+                    select: Expression[Any] = null,
+                    optimizer: QueryOptimizer = spooky.defaultQueryOptimizer
                     ): PageRowRDD =
-    explore(expr, depthKey, indexKey, maxDepth)(
+    explore(expr, depthKey, maxDepth)(
       Visit(new GetExpr(Const.defaultJoinKey)),
-      numPartitions
+      numPartitions,
+      optimizer = optimizer
     )(Option(select).toSeq: _*)
 
   def wgetExplore(
                    expr: Expression[Any],
                    depthKey: Symbol = null,
-                   indexKey: Symbol = null, //left & idempotent parameters are missing as they are always set to true
                    maxDepth: Int = spooky.maxExploreDepth,
                    numPartitions: Int = this.sparkContext.defaultParallelism,
-                   select: Expression[Any] = null
+                   select: Expression[Any] = null,
+                   optimizer: QueryOptimizer = spooky.defaultQueryOptimizer
                    ): PageRowRDD =
-    explore(expr, depthKey, indexKey, maxDepth)(
+    explore(expr, depthKey, maxDepth)(
       Wget(new GetExpr(Const.defaultJoinKey)),
-      numPartitions
+      numPartitions,
+      optimizer = optimizer
     )(Option(select).toSeq: _*)
 
 
@@ -762,24 +788,5 @@ case class PageRowRDD(
       keys = this.keys ++ Option(realIndexKey),
       indexKeys = this.indexKeys ++ Option(Key(indexKey))
     )
-  }
-}
-
-//squash identical trace together even PageRows are different
-case class Squash(trace: Trace, rows: Iterable[PageRow]) {
-  override def hashCode(): Int ={
-    trace.hashCode()
-  }
-
-  override def equals(obj: Any): Boolean = {
-    obj match {
-      case s: Squash => this.trace.equals(s.trace)
-      case _ => false
-    }
-  }
-
-  def resolveAndPut(joinType: JoinType, spookyBroad: Broadcast[SpookyContext]) = {
-    val pages = this.trace.resolve(spookyBroad.value)
-    this.rows.flatMap(_.putPages(pages, joinType))
   }
 }

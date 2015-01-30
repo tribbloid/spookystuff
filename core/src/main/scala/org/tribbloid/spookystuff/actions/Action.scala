@@ -112,13 +112,13 @@ trait Action extends ActionLike {
 
   def doExe(session: Session): Seq[PageLike]
 
-  override def injectFrom(same: this.type): Unit = {
+  override def injectFrom(same: ActionLike): Unit = {
     super.injectFrom(same)
-    this.timeElapsed = same.timeElapsed
+    this.timeElapsed = same.asInstanceOf[Action].timeElapsed
   }
 }
 
-trait Timed extends Action{
+trait Timed extends Action {
 
   private var _timeout: Duration = null
 
@@ -138,9 +138,9 @@ trait Timed extends Action{
     timeout(session) + Const.hardTerminateOverhead
   }
 
-  override def injectFrom(same: this.type): Unit = {
+  override def injectFrom(same: ActionLike): Unit = {
     super.injectFrom(same)
-    this._timeout = same._timeout
+    this._timeout = same.asInstanceOf[Timed]._timeout
   }
 }
 
@@ -157,9 +157,9 @@ trait Named extends Action {
 
   final def ~(name: Symbol): this.type = as(name)
 
-  override def injectFrom(same: this.type): Unit = {
+  override def injectFrom(same: ActionLike): Unit = {
     super.injectFrom(same)
-    this.name = same.name
+    this.name = same.asInstanceOf[Named].name
   }
 }
 

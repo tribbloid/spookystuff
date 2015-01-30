@@ -25,7 +25,9 @@ import scala.reflect.ClassTag
 
 class SpookyContext (
                       //TODO: these should not be imported and littered everywhere
-                      @transient val sqlContext: SQLContext, //compulsory, many things are not possible without SQL
+                      @transient val sqlContext: SQLContext, //compulsory, many things are not possible without SQL,
+
+                      val dir: DirConf = new DirConf(),
 
                       var driverFactory: DriverFactory = NaiveDriverFactory(),
                       var proxy: ProxyFactory = NoProxyFactory,
@@ -54,11 +56,12 @@ class SpookyContext (
                       //default max number of elements scraped from a page, set to Int.MaxValue to allow unlimited fetch
                       var joinLimit: Int = Int.MaxValue,
                       var maxExploreDepth: Int = Int.MaxValue,
+
+                      var defaultQueryOptimizer: QueryOptimizer = Smart,
+
                       var paginationLimit: Int = 1000 //TODO: deprecate soon
                       )
   extends Serializable {
-
-  val dir = new DirConfiguration()
 
   import views._
 
@@ -137,7 +140,7 @@ class SpookyContext (
   }
 }
 
-case class DirConfiguration(
+case class DirConf(
                              var root: String = System.getProperty("spooky.root"),
                              var _autoSave: String = System.getProperty("spooky.autosave"),
                              var _cache: String = System.getProperty("spooky.cache"),

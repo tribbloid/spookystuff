@@ -11,6 +11,8 @@ import org.tribbloid.spookystuff.utils.Utils
 import org.tribbloid.spookystuff.views.Serializable
 import org.tribbloid.spookystuff.{Const, DFSReadException, DFSWriteException, SpookyContext}
 
+import scala.collection.mutable
+
 /**
  * Created by peng on 11/27/14.
  */
@@ -141,6 +143,31 @@ object PageUtils {
     result
   }
 
+  def discoverLatestBlockOutput(pages: Iterable[PageLike]): Option[Seq[PageLike]] = {
+    //assume that all inputs already has identical backtraces
+
+    if (pages.isEmpty) return None
+
+    val blockIndexToPages = mutable.HashMap[Int, PageLike]()
+    for (page <- pages) {
+      val oldPage = blockIndexToPages.get(page.uid.blockIndex)
+      if (oldPage.isEmpty || page.laterThan(oldPage.get)) blockIndexToPages.put(page.uid.blockIndex, page)
+    }
+    val sorted = blockIndexToPages.toSeq.sortBy(_._1).map(_._2)
+
+    //extensive sanity check to make sure that none of them are obsolete
+    val total = sorted.head.uid.total
+    if (sorted.size < total) return None
+    val trunk = sorted.slice(0, sorted.head.uid.total)
+
+    trunk.foreach{
+      page =>
+        if (page.uid.total != total) return None
+    }
+
+    Some(sorted.slice(0, sorted.head.uid.total))
+  }
+
   //restore latest in a directory
   //returns: Seq() => has backtrace dir but contains no page
   //returns null => no backtrace dir
@@ -189,7 +216,7 @@ object PageUtils {
     if (pages != null) for (page <- pages) {
       val pageBacktrace: Trace = page.uid.backtrace
 
-      pageBacktrace.injectFrom(trace.asInstanceOf[pageBacktrace.type])
+      pageBacktrace.injectFrom(trace)
       //this is to allow actions in backtrace to have different name than those cached
     }
     pages
