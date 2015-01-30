@@ -297,7 +297,10 @@ case class PageRow(
       LoggerFactory.getLogger(this.getClass).info(s"found ${newRows.size} new row(s) at $depth depth")
       if (newRows.size == 0) return total
 
-      total ++= newRows.flatMap(_.select(Literal(depth) ~ depthKey))
+      val newRowsWithDepthKey = if (depthKey != null) newRows.flatMap(_.select(Literal(depth) ~ depthKey))
+      else newRows
+
+      total ++= newRowsWithDepthKey
 
       previousRows = newRows
     }
