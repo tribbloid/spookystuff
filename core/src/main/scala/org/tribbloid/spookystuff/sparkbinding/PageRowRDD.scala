@@ -497,6 +497,7 @@ case class PageRowRDD(
    */
   def visitJoin(
                  expr: Expression[Any],
+                 hasTitle: Boolean = true,
                  indexKey: Symbol = null, //left & idempotent parameters are missing as they are always set to true
                  limit: Int = spooky.joinLimit,
                  joinType: JoinType = Const.defaultJoinType,
@@ -505,7 +506,7 @@ case class PageRowRDD(
                  optimizer: QueryOptimizer = spooky.defaultQueryOptimizer
                  ): PageRowRDD =
     this.join(expr, indexKey, limit)(
-      Visit(new GetExpr(Const.defaultJoinKey)),
+      Visit(new GetExpr(Const.defaultJoinKey), hasTitle),
       joinType,
       numPartitions,
       optimizer = optimizer
@@ -519,6 +520,7 @@ case class PageRowRDD(
    */
   def wgetJoin(
                 expr: Expression[Any],
+                hasTitle: Boolean = true,
                 indexKey: Symbol = null, //left & idempotent parameters are missing as they are always set to true
                 limit: Int = spooky.joinLimit,
                 joinType: JoinType = Const.defaultJoinType,
@@ -527,7 +529,7 @@ case class PageRowRDD(
                 optimizer: QueryOptimizer = spooky.defaultQueryOptimizer
                 ): PageRowRDD =
     this.join(expr, indexKey, limit)(
-      Wget(new GetExpr(Const.defaultJoinKey)),
+      Wget(new GetExpr(Const.defaultJoinKey), hasTitle),
       joinType,
       numPartitions,
       optimizer = optimizer
@@ -729,6 +731,7 @@ case class PageRowRDD(
 
   def visitExplore(
                     expr: Expression[Any],
+                    hasTitle: Boolean = true,
                     depthKey: Symbol = null,
                     maxDepth: Int = spooky.maxExploreDepth,
                     numPartitions: Int = this.sparkContext.defaultParallelism,
@@ -736,13 +739,14 @@ case class PageRowRDD(
                     optimizer: QueryOptimizer = spooky.defaultQueryOptimizer
                     ): PageRowRDD =
     explore(expr, depthKey, maxDepth)(
-      Visit(new GetExpr(Const.defaultJoinKey)),
+      Visit(new GetExpr(Const.defaultJoinKey), hasTitle),
       numPartitions,
       optimizer = optimizer
     )(Option(select).toSeq: _*)
 
   def wgetExplore(
                    expr: Expression[Any],
+                   hasTitle: Boolean = true,
                    depthKey: Symbol = null,
                    maxDepth: Int = spooky.maxExploreDepth,
                    numPartitions: Int = this.sparkContext.defaultParallelism,
@@ -750,7 +754,7 @@ case class PageRowRDD(
                    optimizer: QueryOptimizer = spooky.defaultQueryOptimizer
                    ): PageRowRDD =
     explore(expr, depthKey, maxDepth)(
-      Wget(new GetExpr(Const.defaultJoinKey)),
+      Wget(new GetExpr(Const.defaultJoinKey), hasTitle),
       numPartitions,
       optimizer = optimizer
     )(Option(select).toSeq: _*)

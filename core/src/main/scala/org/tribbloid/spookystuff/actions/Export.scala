@@ -98,7 +98,10 @@ object DefaultScreenshot extends Screenshot()
  * actions for more complex http/restful API call will be added per request.
  * @param uri support cell interpolation
  */
-case class Wget(uri: Expression[Any]) extends Export with Driverless {
+case class Wget(
+                 uri: Expression[Any],
+                 hasTitle: Boolean = true
+                 ) extends Export with Driverless {
 
   override def doExeNoName(pb: Session): Seq[Page] = {
 
@@ -180,8 +183,8 @@ case class Wget(uri: Expression[Any]) extends Export with Driverless {
           content
         )
 
-        if (result.root.isInstanceOf[HtmlElement])
-        assert(!result.markup.get.contains("<title></title>"))
+        if (result.root.isInstanceOf[HtmlElement] && hasTitle)
+          assert(!result.markup.get.contains("<title></title>"))
 
         Seq(result)
       }
