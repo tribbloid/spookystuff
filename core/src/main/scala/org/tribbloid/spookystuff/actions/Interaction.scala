@@ -76,7 +76,7 @@ case class Visit(
  * Wait for some time
  * @param min seconds to be wait for
  */
-case class Delay(min: Duration = Const.actionDelayMin) extends Interaction {
+case class Delay(min: Duration = Const.actionDelayMin) extends Interaction with Driverless {
   //  override val timeout = Math.max(Const.driverCallTimeout, delay + 10)
 
   override def exeWithoutPage(session: Session) {
@@ -91,7 +91,7 @@ case class Delay(min: Duration = Const.actionDelayMin) extends Interaction {
 case class RandomDelay(
                         min: Duration = Const.actionDelayMin,
                         max: Duration = Const.actionDelayMax
-                        ) extends Interaction {
+                        ) extends Interaction with Driverless {
 
   assert(max >= min)
 
