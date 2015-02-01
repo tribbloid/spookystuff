@@ -24,7 +24,7 @@ object DianPingFirepot extends ExampleCore {
       )
       .wgetExplore($("div.page > a.next"), depthKey='page)
       .join($("ul.shop-list > li"), indexKey = 'row)(
-        Visit(x"${A("p.title > a.shopname").href}/review_all")
+        Visit(x"${A"p.title > a.shopname".href}/review_all")
       )(
         A("span.big-name").text ~ 'title,
         A("span > a").text ~ 'review_count

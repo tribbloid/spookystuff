@@ -231,82 +231,82 @@ case class PageRow(
   }
 
   //TODO: avoid memory overflow by export allResults into a different RDD periodically
-  def dumbExplore(
-                   expr: Expression[Any],
-                   depthKey: Symbol,
-                   maxDepth: Int,
-                   spooky: SpookyContext
-                   )(
-                   _traces: Set[Trace],
-                   flattenPagesPattern: Symbol,
-                   flattenPagesIndexKey: Symbol
-                   ): Seq[PageRow] = {
-
-    val total: ArrayBuffer[PageRow] = if (depthKey != null)
-      ArrayBuffer(this.select(Literal(0) ~ depthKey).toSeq: _*)
-    else ArrayBuffer(this)
-
-    val allTraces = mutable.HashSet[Trace]()
-
-    val firstRowBacktraces = this
-      .pageLikes
-      .map(_.uid)
-      .groupBy(_.backtrace)
-      .filter{
-      tuple =>
-        tuple._2.size == tuple._2.head.total
-    }
-      .keys.toSeq
-
-    var previousRows = Iterable(this)
-
-    for (depth <- 1 to maxDepth) {
-      val squashes = previousRows
-        .flatMap(_.selectTemp(expr))
-        .flatMap(_.flatten(expr.name, null, Int.MaxValue, left = true))
-        .flatMap{
-        row =>
-          _traces.interpolate(row)
-            .filterNot{
-            trace =>
-              val traceExist = allTraces.contains(trace)
-              val rowExistInSeed = firstRowBacktraces == trace.dryrun
-              traceExist || rowExistInSeed
-          }
-            .map(interpolatedTrace => interpolatedTrace -> row)
-      }
-        .groupBy(_._1)
-        .map {
-        tuple =>
-          Squash(tuple._1, tuple._2.map(_._2).headOption)
-      }
-
-      allTraces ++= squashes.map(_.trace)
-
-      val newRows = squashes
-        .flatMap{//defective!
-        squash =>
-          squash.resolveAndPut(Inner, spooky)
-      }
-        .flatMap{
-        row =>
-          if (flattenPagesPattern != null) row.flattenPages(flattenPagesPattern.name,Key(flattenPagesIndexKey))
-          else Seq(row)
-      }
-
-      LoggerFactory.getLogger(this.getClass).info(s"found ${newRows.size} new row(s) at $depth depth")
-      if (newRows.size == 0) return total
-
-      val newRowsWithDepthKey = if (depthKey != null) newRows.flatMap(_.select(Literal(depth) ~ depthKey))
-      else newRows
-
-      total ++= newRowsWithDepthKey
-
-      previousRows = newRows
-    }
-
-    total
-  }
+//  def dumbExplore(
+//                   expr: Expression[Any],
+//                   depthKey: Symbol,
+//                   maxDepth: Int,
+//                   spooky: SpookyContext
+//                   )(
+//                   _traces: Set[Trace],
+//                   flattenPagesPattern: Symbol,
+//                   flattenPagesIndexKey: Symbol
+//                   ): Seq[PageRow] = {
+//
+//    val total: ArrayBuffer[PageRow] = if (depthKey != null)
+//      ArrayBuffer(this.select(Literal(0) ~ depthKey).toSeq: _*)
+//    else ArrayBuffer(this)
+//
+//    val allTraces = mutable.HashSet[Trace]()
+//
+//    val firstRowBacktraces = this
+//      .pageLikes
+//      .map(_.uid)
+//      .groupBy(_.backtrace)
+//      .filter{
+//      tuple =>
+//        tuple._2.size == tuple._2.head.total
+//    }
+//      .keys.toSeq
+//
+//    var previousRows = Iterable(this)
+//
+//    for (depth <- 1 to maxDepth) {
+//      val squashes = previousRows
+//        .flatMap(_.selectTemp(expr))
+//        .flatMap(_.flatten(expr.name, null, Int.MaxValue, left = true))
+//        .flatMap{
+//        row =>
+//          _traces.interpolate(row)
+//            .filterNot{
+//            trace =>
+//              val traceExist = allTraces.contains(trace)
+//              val rowExistInSeed = firstRowBacktraces == trace.dryrun
+//              traceExist || rowExistInSeed
+//          }
+//            .map(interpolatedTrace => interpolatedTrace -> row)
+//      }
+//        .groupBy(_._1)
+//        .map {
+//        tuple =>
+//          Squash(tuple._1, tuple._2.map(_._2).headOption)
+//      }
+//
+//      allTraces ++= squashes.map(_.trace)
+//
+//      val newRows = squashes
+//        .flatMap{
+//        squash =>
+//          squash.resolveAndPut(Inner, spooky)
+//      }
+//        .flatMap{
+//        row =>
+//          if (flattenPagesPattern != null) row.flattenPages(flattenPagesPattern.name,Key(flattenPagesIndexKey))
+//          else Seq(row)
+//      }
+//
+//      LoggerFactory.getLogger(this.getClass).info(s"found ${newRows.size} new row(s) at $depth depth")
+//      if (newRows.size == 0) return total
+//
+//      val newRowsWithDepthKey = if (depthKey != null) newRows.flatMap(_.select(Literal(depth) ~ depthKey))
+//      else newRows
+//
+//      total ++= newRowsWithDepthKey
+//
+//      previousRows = newRows
+//    }
+//
+//    total
+//  }
 
   //affect last page
   //TODO: deprecate?
@@ -340,6 +340,103 @@ case class PageRow(
 
     if (flatten) currentRow.flattenPages(Const.onlyPageWildcard,indexKey = indexKey)
     else Seq(currentRow)
+  }
+}
+
+object PageRow {
+
+  //won't insert depthKey for seed.
+  def dumbExplore(
+                   seeds: Seq[PageRow], //should have the same depth
+                   excludeTraces: mutable.Set[Trace],
+                   excludeDryruns: Set[Seq[Trace]] = Set()
+                   )(
+                   expr: Expression[Any],
+                   depthKey: Symbol,
+                   maxDepth: Int,
+                   spooky: SpookyContext
+                   )(
+                   _traces: Set[Trace],
+                   flattenPagesPattern: Symbol,
+                   flattenPagesIndexKey: Symbol
+                   ): (Iterable[PageRow], Iterable[PageRow]) = {
+
+    val total: ArrayBuffer[PageRow] = ArrayBuffer(seeds: _*)
+
+    var previousRows: Iterable[PageRow] = seeds
+
+    for (depth <- 1 to maxDepth) {
+      val squashes = previousRows
+        .flatMap(_.selectTemp(expr))
+        .flatMap(_.flatten(expr.name, null, Int.MaxValue, left = true))
+        .flatMap {
+        row =>
+          _traces.interpolate(row)
+            .filterNot {
+            trace =>
+              val traceExists = excludeTraces.contains(trace)
+              val dryrunExists = excludeDryruns.contains(trace.dryrun)
+              traceExists || dryrunExists
+          }
+            .map(interpolatedTrace => interpolatedTrace -> row)
+      }
+        .groupBy(_._1)
+        .map {
+        tuple =>
+          Squash(tuple._1, tuple._2.map(_._2).headOption)
+      }
+
+      excludeTraces ++= squashes.map(_.trace)
+
+      val newRows = squashes
+        .flatMap {
+        squash =>
+          squash.resolveAndPut(Inner, spooky)
+      }
+        .flatMap {
+        row =>
+          if (flattenPagesPattern != null) row.flattenPages(flattenPagesPattern.name, Key(flattenPagesIndexKey))
+          else Seq(row)
+      }
+
+      LoggerFactory.getLogger(this.getClass).info(s"found ${newRows.size} new row(s) at $depth depth")
+      if (newRows.size == 0) return (total, previousRows)
+
+      val newRowsWithDepthKey = if (depthKey != null) newRows.flatMap(_.select(Literal(depth) ~ depthKey))
+      else newRows
+
+      total ++= newRowsWithDepthKey
+
+      previousRows = newRows
+    }
+
+    (total, previousRows)
+  }
+
+
+  def discoverLatestBlockOutput(pages: Iterable[PageLike]): Option[Seq[PageLike]] = {
+    //assume that all inputs already has identical backtraces
+
+    if (pages.isEmpty) return None
+
+    val blockIndexToPages = mutable.HashMap[Int, PageLike]()
+    for (page <- pages) {
+      val oldPage = blockIndexToPages.get(page.uid.blockIndex)
+      if (oldPage.isEmpty || page.laterThan(oldPage.get)) blockIndexToPages.put(page.uid.blockIndex, page)
+    }
+    val sorted = blockIndexToPages.toSeq.sortBy(_._1).map(_._2)
+
+    //extensive sanity check to make sure that none of them are obsolete
+    val total = sorted.head.uid.total
+    if (sorted.size < total) return None
+    val trunk = sorted.slice(0, sorted.head.uid.total)
+
+    trunk.foreach{
+      page =>
+        if (page.uid.total != total) return None
+    }
+
+    Some(sorted.slice(0, sorted.head.uid.total))
   }
 }
 

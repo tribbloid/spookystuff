@@ -4,6 +4,7 @@ import org.tribbloid.spookystuff.Const
 import org.tribbloid.spookystuff.entity.PageRow
 import org.tribbloid.spookystuff.pages.{Page, Unstructured}
 
+import scala.collection.TraversableOnce
 import scala.reflect.ClassTag
 
 //just a simple wrapper for T, this is the only way to execute a action
@@ -91,3 +92,21 @@ class ZippedExpr[T1,T2](e1: Expression[Seq[T1]], e2: Expression[Seq[T2]]) extend
     Some(map)
   }
 }
+
+class PlusExpr[T: ClassTag](override var name: String, expr: Expression[T]) extends Expression[Seq[T]] {
+
+  override def apply(v1: PageRow): Option[Seq[T]] = {
+    val lastOption = expr(v1)
+    val oldOption = v1.get(name)
+
+    //in current implementation
+    oldOption match {
+      case Some(v: TraversableOnce[T]) => Some(v.toSeq ++ lastOption)
+      case Some(v: Array[T]) => Some(v ++ lastOption)
+      case Some(v: T) => Some(Seq(v) ++ lastOption)
+      case None => Some(lastOption.toSeq)
+      case _ => Some(lastOption.toSeq)
+    }
+  }
+}
+

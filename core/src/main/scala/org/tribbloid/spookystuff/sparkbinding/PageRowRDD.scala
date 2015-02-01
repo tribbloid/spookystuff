@@ -15,6 +15,7 @@ import org.tribbloid.spookystuff.utils._
 import org.tribbloid.spookystuff.{Const, SpookyContext}
 
 import scala.collection.immutable.ListSet
+import scala.collection.mutable
 import scala.language.implicitConversions
 import scala.reflect.ClassTag
 
@@ -224,7 +225,7 @@ case class PageRowRDD(
     val newKeys: Seq[Key] = _exprs.map {
       expr =>
         val key = Key(expr.name)
-        assert(!this.keys.contains(key)) //can't insert the same key twice
+        assert(!this.keys.contains(key) || expr.isInstanceOf[PlusExpr[_]]) //can't insert the same key twice
         key
     }
 
@@ -441,7 +442,7 @@ case class PageRowRDD(
             val lookupPages = tuple._2
             lookupPages.foreach(_.uid.backtrace.injectFrom(backtrace))
 
-            val latestBatchOption = PageUtils.discoverLatestBlockOutput(lookupPages)
+            val latestBatchOption = PageRow.discoverLatestBlockOutput(lookupPages)
 
             squashedWithIndexes.map{
               squashedWithIndex =>
@@ -621,16 +622,37 @@ case class PageRowRDD(
     val _expr = expr defaultAs Symbol(Const.defaultJoinKey)
 
     val beforeSelectSelf = this.flatMap{
-      _.dumbExplore(
-        _expr,
-        depthKey,
-        maxDepth,
-        spookyBroad.value
-      )(
-          _traces,
-          flattenPagesPattern,
-          flattenPagesIndexKey
-        )
+      row =>
+        val seeds = row.select(Literal(0) ~ depthKey).toSeq
+
+        val excludeTraces = mutable.HashSet[Trace]()
+
+        val excludeDryruns = row
+          .pageLikes
+          .map(_.uid)
+          .groupBy(_.backtrace)
+          .filter{
+          tuple =>
+            tuple._2.size == tuple._2.head.total
+        }
+          .keys.toSeq
+
+        val tuple = PageRow.dumbExplore(
+          seeds,
+          excludeTraces,
+          excludeDryruns = Set(excludeDryruns)
+        )(
+          _expr,
+          depthKey,
+          maxDepth,
+          spookyBroad.value
+          )(
+            _traces,
+            flattenPagesPattern,
+            flattenPagesIndexKey
+          )
+
+        tuple._1
     }
 
     val beforeSelectKeys = this.keys ++ Seq(TempKey(_expr.name), Key(depthKey), Key(flattenPagesIndexKey)).flatMap(Option(_))

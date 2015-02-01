@@ -26,6 +26,9 @@ class ExprView[T: ClassTag](self: Expression[T]) {
   s"filterByType[${ev.toString()}}]"
   )
 
+  def into(name: Symbol): Expression[Traversable[T]] = new PlusExpr[T](name.name, self)
+  def ~+(name: Symbol) = into(name)
+
   //  def defaultToHrefExpr = (self match {
   //    case expr: Expr[Unstructured] => expr.href
   //    case expr: Expr[Seq[Unstructured]] => expr.hrefs
