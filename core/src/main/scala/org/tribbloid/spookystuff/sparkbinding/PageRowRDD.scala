@@ -1,6 +1,5 @@
 package org.tribbloid.spookystuff.sparkbinding
 
-import org.apache.spark.broadcast.Broadcast
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql._
 import org.apache.spark.sql.catalyst.analysis.UnresolvedAttribute
@@ -24,10 +23,10 @@ import scala.reflect.ClassTag
  * Created by peng on 8/29/14.
  */
 case class PageRowRDD(
-                       self: RDD[PageRow],
+                       @transient self: RDD[PageRow],
                        @transient keys: ListSet[KeyLike] = ListSet(),
                        @transient indexKeys: ListSet[Key] = ListSet(),
-                       @transient spooky: SpookyContext
+                       spooky: SpookyContext
                        )
   extends RDD[PageRow](self) {
 
@@ -165,8 +164,6 @@ case class PageRowRDD(
                  overwrite: Boolean = false
                  ): PageRowRDD = {
 
-    val spookyBroad = this.context.broadcast(this.spooky)
-
     val saved = this.map {
 
       pageRow =>
@@ -179,7 +176,7 @@ case class PageRowRDD(
               if (name == null || name.name == Const.onlyPageWildcard) pageRow.getOnlyPage
               else pageRow.getPage(name.name)
 
-            page.foreach(_.save(Seq(strCanon.toString), overwrite)(spookyBroad.value))
+            page.foreach(_.save(Seq(strCanon.toString), overwrite)(spooky))
         }
         pageRow
     }
@@ -346,16 +343,14 @@ case class PageRowRDD(
              optimizer: QueryOptimizer = spooky.defaultQueryOptimizer
              ): PageRowRDD = {
 
-    val spookyBroad = this.context.broadcast(this.spooky)
-
     val _traces = traces.autoSnapshot
 
     val result = optimizer match {
       case Minimal =>
         //        if (lookup != null)throw new UnsupportedOperationException(s"${optimizer.getClass.getSimpleName} optimizer can't use lookup table")
-        _dumbFetch(_traces, joinType, numPartitions, spookyBroad)
+        _dumbFetch(_traces, joinType, numPartitions)
       case Smart =>
-        _smartFetch(_traces, joinType, numPartitions, lookup(), spookyBroad)
+        _smartFetch(_traces, joinType, numPartitions, lookup())
       case _ => throw new UnsupportedOperationException(s"${optimizer.getClass.getSimpleName} optimizer is not supported in this query")
     }
 
@@ -366,8 +361,7 @@ case class PageRowRDD(
   private def _dumbFetch(
                           _traces: Set[Trace],
                           joinType: JoinType,
-                          numPartitions: Int,
-                          spookyBroad: Broadcast[SpookyContext]
+                          numPartitions: Int
                           ): PageRowRDD = {
 
     val resultRows = this
@@ -378,7 +372,7 @@ case class PageRowRDD(
             .interpolate(row)
             .flatMap{
             trace =>
-              val pages = trace.resolve(spookyBroad.value)
+              val pages = trace.resolve(spooky)
 
               row.putPages(pages, joinType)
           }
@@ -391,8 +385,7 @@ case class PageRowRDD(
                            _traces: Set[Trace],
                            joinType: JoinType,
                            numPartitions: Int,
-                           lookup: RDD[(Trace, PageLike)],
-                           spookyBroad: Broadcast[SpookyContext] //TODO: experiment things to eliminate unnecessary broadcast
+                           lookup: RDD[(Trace, PageLike)]
                            ): PageRowRDD = {
 
     val traceToRow = this.flatMap {
@@ -404,7 +397,7 @@ case class PageRowRDD(
 
     val resultRows: RDD[PageRow] = if (lookup == null) {
       //no lookup
-      squashes.flatMap(_.resolveAndPut(joinType, spookyBroad.value))
+      squashes.flatMap(_.resolveAndPut(joinType, spooky))
     }
     else {
       //lookup
@@ -450,7 +443,7 @@ case class PageRowRDD(
         tuple =>
           val squash = tuple._1
           val IndexWithPageOptions = tuple._2.toSeq
-          if (IndexWithPageOptions.map(_._2).contains(None)) squash.resolveAndPut(joinType, spookyBroad.value)
+          if (IndexWithPageOptions.map(_._2).contains(None)) squash.resolveAndPut(joinType, spooky)
           else {
             val pages = IndexWithPageOptions.sortBy(_._1).flatMap(_._2.get)
             squash.rows.flatMap(_.putPages(pages, joinType))
@@ -609,8 +602,6 @@ case class PageRowRDD(
                             select: Expression[Any]*
                             ): PageRowRDD = {
 
-    val spookyBroad = this.context.broadcast(this.spooky)
-
     val _expr = expr defaultAs Symbol(Const.defaultJoinKey)
 
     val beforeSelectSelf = this.flatMap{
@@ -637,7 +628,7 @@ case class PageRowRDD(
             _expr,
             depthKey,
             maxDepth,
-            spookyBroad.value
+            spooky
           )(
             _traces,
             flattenPagesPattern,
@@ -682,7 +673,6 @@ case class PageRowRDD(
 
     var lookups: RDD[(Trace, PageLike)] =this.lookup()
 
-    val spookyBroad = this.context.broadcast(this.spooky)
     if (this.context.getCheckpointDir.isEmpty) this.context.setCheckpointDir(spooky.dir.checkpoint)
 
     val _expr = expr defaultAs Symbol(Const.defaultJoinKey)
@@ -691,7 +681,7 @@ case class PageRowRDD(
       //ALWAYS inner join
       val joined = newRows
         .flattenTemp(_expr, null, Int.MaxValue, left = true)
-        ._smartFetch(_traces, Inner, numPartitions, lookups, spookyBroad)
+        ._smartFetch(_traces, Inner, numPartitions, lookups)
 
       val newLookups = joined.lookup()
 
@@ -789,12 +779,10 @@ case class PageRowRDD(
                             last: Boolean = false
                             ): PageRowRDD = {
 
-    val spookyBroad = this.context.broadcast(this.spooky)
-
     val realIndexKey = Key(indexKey)
 
     val result = this.flatMap {
-      _.paginate(selector, attr, wget, postAction)(limit, Key(indexKey), flatten)(spookyBroad.value)
+      _.paginate(selector, attr, wget, postAction)(limit, Key(indexKey), flatten)(spooky)
     }
 
     this.copy(

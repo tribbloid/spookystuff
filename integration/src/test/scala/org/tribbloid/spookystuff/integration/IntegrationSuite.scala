@@ -94,14 +94,14 @@ import scala.concurrent.duration._
   private def doTest(spooky: SpookyContext): Unit ={
 
     Utils.retry(2) { //sometimes accumulator missed a few for no reason
-      spooky.pageExpireAfter = 0.second
+      spooky.cacheRead = false
       spooky.cleanMetrics()
       doMain(spooky)
       assertBeforeCache(spooky)
     }
 
     Utils.retry(2) {
-      spooky.pageExpireAfter = 10.minutes
+      spooky.cacheRead = true
       spooky.cleanMetrics()
       doMain(spooky)
       assertAfterCache(spooky)
