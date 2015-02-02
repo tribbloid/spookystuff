@@ -107,7 +107,7 @@ case class PageRowRDD(
   def asJsonRDD: RDD[String] = this.map(_.asJson())
 
   //TODO: investigate using the new applySchema api to avoid losing type info
-  def asSchemaRDD(): SchemaRDD = {
+  def asSchemaRDD(order: Boolean = true): SchemaRDD = {
 
     val jsonRDD = this.asJsonRDD
 
@@ -127,14 +127,17 @@ case class PageRowRDD(
     val result = schemaRDD
       .select(columns: _*)
 
-    val validIndexKeyNames = indexKeys.toSeq
-      .filter(key => key.isInstanceOf[Key])
-      .map(key => Utils.canonizeColumnName(key.name))
-      .filter(name => schemaRDD.schema.fieldNames.contains(name))
-    if (validIndexKeyNames.isEmpty) result
+    if (!order) result
     else {
-      val indexColumns = validIndexKeyNames.reverse.map(name => Symbol(name))
-      result.orderBy(indexColumns.map(_.asc): _*)
+      val validIndexKeyNames = indexKeys.toSeq
+        .filter(key => key.isInstanceOf[Key])
+        .map(key => Utils.canonizeColumnName(key.name))
+        .filter(name => schemaRDD.schema.fieldNames.contains(name))
+      if (validIndexKeyNames.isEmpty) result
+      else {
+        val indexColumns = validIndexKeyNames.reverse.map(name => Symbol(name))
+        result.orderBy(indexColumns.map(_.asc): _*)
+      }
     }
   }
 
