@@ -4,7 +4,8 @@ import org.apache.spark.broadcast.Broadcast
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql._
 import org.apache.spark.sql.catalyst.analysis.UnresolvedAttribute
-import org.apache.spark.{Partition, TaskContext}
+import org.apache.spark.storage.StorageLevel
+import org.apache.spark.{HashPartitioner, Partition, TaskContext}
 import org.slf4j.LoggerFactory
 import org.tribbloid.spookystuff.actions._
 import org.tribbloid.spookystuff.dsl.{Inner, JoinType, _}
@@ -29,6 +30,8 @@ case class PageRowRDD(
                        @transient spooky: SpookyContext
                        )
   extends RDD[PageRow](self) {
+
+  import org.apache.spark.SparkContext._
 
   override def getPartitions: Array[Partition] = firstParent[PageRow].partitions
 
@@ -102,18 +105,17 @@ case class PageRowRDD(
 
   def toPageRowRDD: PageRowRDD = this
 
-  def asMapRDD: RDD[Map[String, Any]] = this.map(_.asMap())
+  def toMapRDD: RDD[Map[String, Any]] = this.map(_.asMap())
 
-  def asJsonRDD: RDD[String] = this.map(_.asJson())
+  def toJSON: RDD[String] = this.map(_.toJSON())
 
   //TODO: investigate using the new applySchema api to avoid losing type info
-  def asSchemaRDD(order: Boolean = true): SchemaRDD = {
+  def toSchemaRDD(order: Boolean = true): SchemaRDD = {
 
-    val jsonRDD = this.asJsonRDD
+    val jsonRDD = this.toJSON
 
-    jsonRDD.persist() //for some unknown reason SQLContext.jsonRDD uses the parameter RDD twice, this has to be fixed by somebody else
-
-    //by default, will order the columns to be identical to the sequence they are extracted, data input will be ignored
+    jsonRDD.persist(StorageLevel.MEMORY_AND_DISK) //for some unknown reason SQLContext.jsonRDD uses the parameter RDD twice, this has to be fixed by somebody else
+    //TODO: unpersist after next action, is it even possible
 
     import spooky.sqlContext._
     val schemaRDD = this.spooky.sqlContext.jsonRDD(jsonRDD)
@@ -141,24 +143,11 @@ case class PageRowRDD(
     }
   }
 
-  def asCsvRDD(separator: String = ","): RDD[String] = this.asSchemaRDD().map {
+  def toCSV(separator: String = ","): RDD[String] = this.toSchemaRDD().map {
     _.mkString(separator)
   }
 
-  def asTsvRDD(): RDD[String] = this.asCsvRDD("\t")
-
-  //  def groupByData(): PageSchemaRDD = {
-  //    import org.apache.spark.SparkContext._
-  //
-  //    val result = this.map(row => (row.cells, row.pages))
-  //      .groupByKey()
-  //      .mapValues(pages => pages.flatMap(itr => itr))
-  //      .map(tuple => PageRow(tuple._1, tuple._2.toSeq))
-  //
-  //    this.copy(
-  //      self = result
-  //    )
-  //  }
+  def toTSV: RDD[String] = this.toCSV("\t")
 
   /**
    * save each page to a designated directory
@@ -340,7 +329,10 @@ case class PageRowRDD(
     )
 
   def lookup(): RDD[(Trace, PageLike)] = {
-    this.persist().flatMap(_.pageLikes.map(page => page.uid.backtrace -> page ))//TODO: really takes a lot of space, how to eliminate?
+    this
+      .persist(StorageLevel.MEMORY_AND_DISK)
+      .flatMap(_.pageLikes.map(page => page.uid.backtrace -> page ))
+      //TODO: really takes a lot of space, how to eliminate?
   }
 
   def fetch(
@@ -400,8 +392,6 @@ case class PageRowRDD(
                            lookup: RDD[(Trace, PageLike)],
                            spookyBroad: Broadcast[SpookyContext] //TODO: experiment things to eliminate unnecessary broadcast
                            ): PageRowRDD = {
-
-    import org.apache.spark.SparkContext._
 
     val traceToRow = this.flatMap {
       row =>
@@ -543,7 +533,6 @@ case class PageRowRDD(
                          ignore: Iterable[Symbol],
                          numPartitions: Int = this.sparkContext.defaultParallelism
                          ): PageRowRDD = {
-    import org.apache.spark.SparkContext._
 
     val ignoreKeyNames = ignore.map(_.name)
     val withSignatures = this.keyBy(_.signature(ignoreKeyNames))
@@ -562,8 +551,6 @@ case class PageRowRDD(
                          ignore: Iterable[Symbol],
                          numPartitions: Int = this.sparkContext.defaultParallelism
                          ): PageRowRDD = {
-
-    import org.apache.spark.SparkContext._
 
     val ignoreKeyNames = ignore.map(_.name)
     val otherSignatures = others.map {
@@ -691,7 +678,7 @@ case class PageRowRDD(
         .copy(indexKeys = this.indexKeys + Key(depthKey))
     else this
 
-    var lookups: RDD[(Trace, PageLike)] =this.persist().lookup()
+    var lookups: RDD[(Trace, PageLike)] =this.lookup()
 
     val spookyBroad = this.context.broadcast(this.spooky)
     if (this.context.getCheckpointDir.isEmpty) this.context.setCheckpointDir(spooky.dir.checkpoint)
@@ -699,14 +686,12 @@ case class PageRowRDD(
     val _expr = expr defaultAs Symbol(Const.defaultJoinKey)
 
     for (depth <- 1 to maxDepth) {
-      //always inner join
+      //ALWAYS inner join
       val joined = newRows
         .flattenTemp(_expr, null, Int.MaxValue, left = true)
         ._smartFetch(_traces, Inner, numPartitions, lookups, spookyBroad)
 
-      //      import org.apache.spark.SparkContext._
-
-      val newLookups = joined.persist().lookup()
+      val newLookups = joined.lookup()
 
       lookups = lookups.union(newLookups) //TODO: remove pages with identical uid but different _traces? or set the lookup table as backtrace -> seq directly.
 
@@ -789,9 +774,8 @@ case class PageRowRDD(
    * @param selector selector of the "next page" element
    * @param limit depth of recursion
    * @return RDD[Page], contains both old and new pages
-   *         TODO: deprecate
    */
-  def paginate(
+  @Deprecated def paginate(
                 selector: String,
                 attr: String = "abs:href",
                 wget: Boolean = true,

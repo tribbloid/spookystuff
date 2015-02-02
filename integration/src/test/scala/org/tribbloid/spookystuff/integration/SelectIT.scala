@@ -28,7 +28,7 @@ class SelectIT extends IntegrationSuite {
       .persist()
 
       val RDD = pageRowRDD
-      .asSchemaRDD()
+      .toSchemaRDD()
 
     assert(
       RDD.schema.fieldNames ===
@@ -62,7 +62,7 @@ class SelectIT extends IntegrationSuite {
       .select(
         $"div.central-featured-lang strong".text ~+ 'title
       )
-      .asSchemaRDD()
+      .toSchemaRDD()
 
     assert(
       RDD2.schema.fieldNames ===

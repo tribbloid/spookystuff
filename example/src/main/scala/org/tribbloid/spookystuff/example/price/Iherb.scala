@@ -22,6 +22,6 @@ object Iherb extends ExampleCore {
         $.saved ~ 'saved,
         $.uri ~ 'uri
       )
-      .asSchemaRDD()
+      .toSchemaRDD()
   }
 }

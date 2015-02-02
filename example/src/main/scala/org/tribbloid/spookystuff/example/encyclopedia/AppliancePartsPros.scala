@@ -35,6 +35,6 @@ object AppliancePartsPros extends ExampleCore {
         $("div.m-pdct div.m-chm p").text ~ 'replace,
         $.uri ~ 'uri
       )
-      .asSchemaRDD()
+      .toSchemaRDD()
   }
 }

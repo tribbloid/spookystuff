@@ -20,6 +20,6 @@ object Whatismyip extends ExampleCore {
         Visit("http://www.whatsmyip.org/")
       )
       .select($"h1".text ~ 'ip)
-      .asSchemaRDD()
+      .toSchemaRDD()
   }
 }

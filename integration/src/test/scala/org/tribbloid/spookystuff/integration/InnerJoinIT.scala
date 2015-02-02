@@ -32,7 +32,7 @@ class InnerJoinIT extends IntegrationSuite {
         'A.text ~ 'subcategory
       )
       .select($"h1".text ~ 'header)
-      .asSchemaRDD()
+      .toSchemaRDD()
 
     assert(
       joined.schema.fieldNames ===

@@ -44,6 +44,6 @@ object UrbanSpoonComments extends ExampleCore {
         A"span.type".text ~ 'user_location,
         A"div.byline a:nth-of-type(2)".text ~ 'review_count
       )
-      .asSchemaRDD()
+      .toSchemaRDD()
   }
 }

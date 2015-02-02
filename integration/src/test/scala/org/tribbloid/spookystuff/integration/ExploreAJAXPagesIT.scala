@@ -38,7 +38,7 @@ class ExploreAJAXPagesIT extends IntegrationSuite {
         'first.children("h1").text ~ 'title,
         $"a.title".size ~ 'num_product
       )
-      .asSchemaRDD()
+      .toSchemaRDD()
 
     assert(
       result.schema.fieldNames ===

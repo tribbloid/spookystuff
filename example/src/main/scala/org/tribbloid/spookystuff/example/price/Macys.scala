@@ -45,6 +45,6 @@ object Macys extends ExampleCore {
         A"div.pdpreviews span.rating span".attr("style") ~ 'rating,
         A"div.pdpreviews".text ~ 'reviews
       )
-      .asSchemaRDD()
+      .toSchemaRDD()
   }
 }

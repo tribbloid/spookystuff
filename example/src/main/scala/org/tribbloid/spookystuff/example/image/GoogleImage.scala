@@ -33,6 +33,6 @@ object GoogleImage extends ExampleCore {
       .select(
         $.saved ~ 'path
       )
-      .asSchemaRDD()
+      .toSchemaRDD()
   }
 }

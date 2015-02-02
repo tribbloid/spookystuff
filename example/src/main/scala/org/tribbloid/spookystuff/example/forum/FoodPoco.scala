@@ -55,7 +55,7 @@ object FoodPoco extends ExampleCore {
 
     import sql._
 
-    RDD1.union(RDD2).asSchemaRDD()
+    RDD1.union(RDD2).toSchemaRDD()
       .orderBy( 'page.asc, 'row.asc)
   }
 }

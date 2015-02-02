@@ -37,6 +37,6 @@ object GooglePlusReview extends ExampleCore {
         A("div.b-db span.b-db-ac-th").size ~ 'stars,
         A("span.Gl a.d-s").text ~ 'user_name
       )
-      .asSchemaRDD()
+      .toSchemaRDD()
   }
 }

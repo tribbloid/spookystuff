@@ -30,6 +30,6 @@ object LinkedIn extends ExampleCore {
         $"div#profile-skills li".texts.mkString("|") ~ 'skills,
         $.uri ~ 'uri
       )
-      .asSchemaRDD()
+      .toSchemaRDD()
   }
 }

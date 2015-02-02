@@ -38,6 +38,6 @@ object Weibo extends ExampleCore {
       .flatSelect($"dl.feed_list", indexKey = 'item)(
         A"dl.feed_list p em".text ~ 'text
       )
-      .asSchemaRDD()
+      .toSchemaRDD()
   }
 }

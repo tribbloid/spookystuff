@@ -117,7 +117,7 @@ case class PageRow(
     .filterKeys(_.isInstanceOf[Key]).map(identity)
     .map( tuple => tuple._1.name -> tuple._2)
 
-  def asJson(): String = {
+  def toJSON(): String = {
     import org.tribbloid.spookystuff.views._
 
     Utils.toJson(this.asMap().canonizeKeysToColumnNames)
@@ -229,84 +229,6 @@ case class PageRow(
       }
     }
   }
-
-  //TODO: avoid memory overflow by export allResults into a different RDD periodically
-//  def dumbExplore(
-//                   expr: Expression[Any],
-//                   depthKey: Symbol,
-//                   maxDepth: Int,
-//                   spooky: SpookyContext
-//                   )(
-//                   _traces: Set[Trace],
-//                   flattenPagesPattern: Symbol,
-//                   flattenPagesIndexKey: Symbol
-//                   ): Seq[PageRow] = {
-//
-//    val total: ArrayBuffer[PageRow] = if (depthKey != null)
-//      ArrayBuffer(this.select(Literal(0) ~ depthKey).toSeq: _*)
-//    else ArrayBuffer(this)
-//
-//    val allTraces = mutable.HashSet[Trace]()
-//
-//    val firstRowBacktraces = this
-//      .pageLikes
-//      .map(_.uid)
-//      .groupBy(_.backtrace)
-//      .filter{
-//      tuple =>
-//        tuple._2.size == tuple._2.head.total
-//    }
-//      .keys.toSeq
-//
-//    var previousRows = Iterable(this)
-//
-//    for (depth <- 1 to maxDepth) {
-//      val squashes = previousRows
-//        .flatMap(_.selectTemp(expr))
-//        .flatMap(_.flatten(expr.name, null, Int.MaxValue, left = true))
-//        .flatMap{
-//        row =>
-//          _traces.interpolate(row)
-//            .filterNot{
-//            trace =>
-//              val traceExist = allTraces.contains(trace)
-//              val rowExistInSeed = firstRowBacktraces == trace.dryrun
-//              traceExist || rowExistInSeed
-//          }
-//            .map(interpolatedTrace => interpolatedTrace -> row)
-//      }
-//        .groupBy(_._1)
-//        .map {
-//        tuple =>
-//          Squash(tuple._1, tuple._2.map(_._2).headOption)
-//      }
-//
-//      allTraces ++= squashes.map(_.trace)
-//
-//      val newRows = squashes
-//        .flatMap{
-//        squash =>
-//          squash.resolveAndPut(Inner, spooky)
-//      }
-//        .flatMap{
-//        row =>
-//          if (flattenPagesPattern != null) row.flattenPages(flattenPagesPattern.name,Key(flattenPagesIndexKey))
-//          else Seq(row)
-//      }
-//
-//      LoggerFactory.getLogger(this.getClass).info(s"found ${newRows.size} new row(s) at $depth depth")
-//      if (newRows.size == 0) return total
-//
-//      val newRowsWithDepthKey = if (depthKey != null) newRows.flatMap(_.select(Literal(depth) ~ depthKey))
-//      else newRows
-//
-//      total ++= newRowsWithDepthKey
-//
-//      previousRows = newRows
-//    }
-//
-//    total
-//  }
 
   //affect last page
   //TODO: deprecate?

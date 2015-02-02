@@ -35,6 +35,6 @@ object RottenTomatoes extends ExampleCore {
       .select(
         $"div.media_block div.clearfix dd".text ~ 'total_reviews_ratings
       )
-      .asSchemaRDD()
+      .toSchemaRDD()
   }
 }

@@ -23,7 +23,7 @@ class FlatSelectIT extends IntegrationSuite {
         A"a em".text,
         'A.uri
       )
-      .asSchemaRDD()
+      .toSchemaRDD()
 
     assert(
       result.schema.fieldNames ===

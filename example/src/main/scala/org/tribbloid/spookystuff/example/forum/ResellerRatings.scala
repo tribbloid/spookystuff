@@ -23,6 +23,6 @@ object ResellerRatings extends ExampleCore {
         A("div.date span").text ~ 'date,
         A("p.review-body").text ~ 'body
       )
-      .asSchemaRDD()
+      .toSchemaRDD()
   }
 }

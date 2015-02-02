@@ -20,6 +20,6 @@ object Useragentstring extends ExampleCore {
         Wget("http://www.useragentstring.com/pages/Browserlist/")
       )
       .select($"li a".text ~ 'agent_string)
-      .asSchemaRDD()
+      .toSchemaRDD()
   }
 }

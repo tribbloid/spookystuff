@@ -22,7 +22,7 @@ class ExplorePagesIT extends IntegrationSuite {
         'A.text ~ 'page
       )
       .select($.uri ~ 'uri)
-      .asSchemaRDD()
+      .toSchemaRDD()
 
     assert(
       result.schema.fieldNames ===

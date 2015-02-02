@@ -41,6 +41,6 @@ object Yelp extends ExampleCore {
         A"li.friend-count b" ~ 'friend_count,
         A"li.review-count b".text ~ 'review_count
       )
-      .asSchemaRDD()
+      .toSchemaRDD()
   }
 }

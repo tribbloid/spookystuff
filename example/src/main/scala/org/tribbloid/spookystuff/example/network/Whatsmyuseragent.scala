@@ -24,6 +24,6 @@ object Whatsmyuseragent extends ExampleCore {
         $"h2.info".text ~ 'user_agent,
         $"table.table-striped".text ~ 'referer
       )
-      .asSchemaRDD()
+      .toSchemaRDD()
   }
 }

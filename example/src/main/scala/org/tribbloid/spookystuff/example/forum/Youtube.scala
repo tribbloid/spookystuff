@@ -65,6 +65,6 @@ object Youtube extends ExampleCore{
 
     println(result.count())
 
-    result.asSchemaRDD()
+    result.toSchemaRDD()
   }
 }
