@@ -59,15 +59,15 @@ class JoinAndExplorePagesIT extends IntegrationSuite {
     assert(rows contains "1|Computers|0|Laptops|Computers / Laptops|0|null|http://webscraper.io/test-sites/e-commerce/static/computers/laptops")
     assert(rows contains "1|Computers|0|Laptops|Computers / Laptops|1|2|http://webscraper.io/test-sites/e-commerce/static/computers/laptops/2")
     assert(rows contains "1|Computers|0|Laptops|Computers / Laptops|1|3|http://webscraper.io/test-sites/e-commerce/static/computers/laptops/3")
-    assert(rows contains "1|Computers|0|Laptops|Computers / Laptops|2|1|http://webscraper.io/test-sites/e-commerce/static/computers/laptops/1")
+//    assert(rows contains "1|Computers|0|Laptops|Computers / Laptops|2|1|http://webscraper.io/test-sites/e-commerce/static/computers/laptops/1")
     assert(rows contains "1|Computers|1|Tablets|Computers / Tablets|0|null|http://webscraper.io/test-sites/e-commerce/static/computers/tablets")
     assert(rows contains "1|Computers|1|Tablets|Computers / Tablets|1|2|http://webscraper.io/test-sites/e-commerce/static/computers/tablets/2")
     assert(rows contains "1|Computers|1|Tablets|Computers / Tablets|1|3|http://webscraper.io/test-sites/e-commerce/static/computers/tablets/3")
     assert(rows contains "1|Computers|1|Tablets|Computers / Tablets|1|4|http://webscraper.io/test-sites/e-commerce/static/computers/tablets/4")
-    assert(rows contains "1|Computers|1|Tablets|Computers / Tablets|2|1|http://webscraper.io/test-sites/e-commerce/static/computers/tablets/1")
+//    assert(rows contains "1|Computers|1|Tablets|Computers / Tablets|2|1|http://webscraper.io/test-sites/e-commerce/static/computers/tablets/1")
     assert(rows contains "2|Phones|0|Touch|Phones / Touch|0|null|http://webscraper.io/test-sites/e-commerce/static/phones/touch")
     assert(rows contains "2|Phones|0|Touch|Phones / Touch|1|2|http://webscraper.io/test-sites/e-commerce/static/phones/touch/2")
-    assert(rows contains "2|Phones|0|Touch|Phones / Touch|2|«|http://webscraper.io/test-sites/e-commerce/static/phones/touch/1")
+//    assert(rows contains "2|Phones|0|Touch|Phones / Touch|2|«|http://webscraper.io/test-sites/e-commerce/static/phones/touch/1")
   }
 
   override def numPages = {

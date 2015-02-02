@@ -10,7 +10,7 @@ import org.tribbloid.spookystuff.actions._
 import org.tribbloid.spookystuff.dsl.{Inner, JoinType, _}
 import org.tribbloid.spookystuff.entity._
 import org.tribbloid.spookystuff.expressions._
-import org.tribbloid.spookystuff.pages.{PageLike, PageUtils, Unstructured}
+import org.tribbloid.spookystuff.pages.{PageLike, Unstructured}
 import org.tribbloid.spookystuff.utils._
 import org.tribbloid.spookystuff.{Const, SpookyContext}
 
@@ -780,7 +780,6 @@ case class PageRowRDD(
       numPartitions,
       optimizer = optimizer
     )(Option(select).toSeq: _*)
-
 
   /**
    * insert many pages for each old page by recursively visiting "next page" link
