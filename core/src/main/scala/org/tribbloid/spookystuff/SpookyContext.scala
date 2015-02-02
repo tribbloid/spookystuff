@@ -173,6 +173,7 @@ case class DirConf(
   def errorScreenshotLocal = Option(_errorScreenshotLocal).getOrElse("temp/error-screenshot/")
 }
 
+//TODO: metrics should not be broadcasted like rest of SpookyContext!
 class Metrics(sc: SparkContext) extends Serializable {
 
   //works but temporarily disabled as not part of 'official' API

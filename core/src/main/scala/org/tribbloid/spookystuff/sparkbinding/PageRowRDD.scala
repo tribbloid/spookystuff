@@ -5,7 +5,7 @@ import org.apache.spark.rdd.RDD
 import org.apache.spark.sql._
 import org.apache.spark.sql.catalyst.analysis.UnresolvedAttribute
 import org.apache.spark.storage.StorageLevel
-import org.apache.spark.{HashPartitioner, Partition, TaskContext}
+import org.apache.spark.{Partition, TaskContext}
 import org.slf4j.LoggerFactory
 import org.tribbloid.spookystuff.actions._
 import org.tribbloid.spookystuff.dsl.{Inner, JoinType, _}
@@ -114,7 +114,7 @@ case class PageRowRDD(
 
     val jsonRDD = this.toJSON
 
-    jsonRDD.persist(StorageLevel.MEMORY_AND_DISK) //for some unknown reason SQLContext.jsonRDD uses the parameter RDD twice, this has to be fixed by somebody else
+    if (jsonRDD.getStorageLevel == StorageLevel.NONE) jsonRDD.persist(StorageLevel.MEMORY_AND_DISK) //for some unknown reason SQLContext.jsonRDD uses the parameter RDD twice, this has to be fixed by somebody else
     //TODO: unpersist after next action, is it even possible
 
     import spooky.sqlContext._
@@ -329,10 +329,12 @@ case class PageRowRDD(
     )
 
   def lookup(): RDD[(Trace, PageLike)] = {
-    this
-      .persist(StorageLevel.MEMORY_AND_DISK)
+    val persisted = if (this.getStorageLevel == StorageLevel.NONE) this.persist(StorageLevel.MEMORY_AND_DISK)
+    else this
+
+    persisted
       .flatMap(_.pageLikes.map(page => page.uid.backtrace -> page ))
-      //TODO: really takes a lot of space, how to eliminate?
+    //TODO: really takes a lot of space, how to eliminate?
   }
 
   def fetch(
@@ -632,10 +634,10 @@ case class PageRowRDD(
           excludeTraces,
           excludeDryruns = Set(excludeDryruns)
         )(
-          _expr,
-          depthKey,
-          maxDepth,
-          spookyBroad.value
+            _expr,
+            depthKey,
+            maxDepth,
+            spookyBroad.value
           )(
             _traces,
             flattenPagesPattern,
@@ -696,7 +698,7 @@ case class PageRowRDD(
       lookups = lookups.union(newLookups) //TODO: remove pages with identical uid but different _traces? or set the lookup table as backtrace -> seq directly.
 
       if (depth % 20 == 0) {
-        lookups.persist().checkpoint()
+        lookups.checkpoint()
         val size = lookups.count()
       }
 
@@ -707,7 +709,7 @@ case class PageRowRDD(
       newRows = flattened
         .subtractSignature(total, allIgnoredKeys)
         .distinctSignature(allIgnoredKeys)
-        .persist()
+        .persist(StorageLevel.MEMORY_AND_DISK)
 
       if (depth % 20 == 0) {
         newRows.checkpoint()
@@ -728,7 +730,7 @@ case class PageRowRDD(
         else newRows
       ).coalesce(numPartitions)
       if (depth % 20 == 0) {
-        total.persist().checkpoint()
+        total.checkpoint()
         val size = total.count()
       }
     }
@@ -776,16 +778,16 @@ case class PageRowRDD(
    * @return RDD[Page], contains both old and new pages
    */
   @Deprecated def paginate(
-                selector: String,
-                attr: String = "abs:href",
-                wget: Boolean = true,
-                postAction: Seq[Action] = Seq()
-                )(
-                limit: Int = spooky.paginationLimit,
-                indexKey: Symbol = null,
-                flatten: Boolean = true,
-                last: Boolean = false
-                ): PageRowRDD = {
+                            selector: String,
+                            attr: String = "abs:href",
+                            wget: Boolean = true,
+                            postAction: Seq[Action] = Seq()
+                            )(
+                            limit: Int = spooky.paginationLimit,
+                            indexKey: Symbol = null,
+                            flatten: Boolean = true,
+                            last: Boolean = false
+                            ): PageRowRDD = {
 
     val spookyBroad = this.context.broadcast(this.spooky)
 
