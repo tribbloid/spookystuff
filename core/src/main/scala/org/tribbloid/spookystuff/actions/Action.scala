@@ -28,8 +28,8 @@ trait Action extends ActionLike {
   //this should handle autoSave, cache and errorDump
   def apply(session: Session): Seq[PageLike] = {
 
-    val errorDump: Boolean = session.spooky.errorDump
-    val errorDumpScreenshot: Boolean = session.spooky.errorScreenshot
+    val errorDump: Boolean = session.spooky.conf.errorDump
+    val errorDumpScreenshot: Boolean = session.spooky.conf.errorScreenshot
 
     val results = try {
       this match { //temporarily disabled as we assume that DFS is the culprit for causing deadlock
@@ -128,7 +128,7 @@ trait Timed extends Action {
   }
 
   def timeout(session: Session): Duration = {
-    val base = if (this._timeout == null) session.spooky.remoteResourceTimeout
+    val base = if (this._timeout == null) session.spooky.conf.remoteResourceTimeout
     else this._timeout
 
     base

@@ -11,7 +11,7 @@ import dsl._
 class TestExport extends SpookyEnvSuite {
 
   lazy val noProxyIP = {
-      spooky.proxy = NoProxyFactory
+      spooky.conf.proxy = NoProxyFactory
 
       val results = Trace(
         Wget("http://www.whatsmyuseragent.com/") :: Nil
@@ -23,7 +23,7 @@ class TestExport extends SpookyEnvSuite {
   test("use TOR socks5 proxy for http wget") {
 
     val newIP = {
-      spooky.proxy = TorProxyFactory
+      spooky.conf.proxy = TorProxyFactory
 
       val results = Trace(
         Wget("http://www.whatsmyuseragent.com/") :: Nil
@@ -41,7 +41,7 @@ class TestExport extends SpookyEnvSuite {
   test("use TOR socks5 proxy for https wget") {
 
     val newIP = {
-      spooky.proxy = TorProxyFactory
+      spooky.conf.proxy = TorProxyFactory
 
       val results = Trace(
         Wget("https://www.astrill.com/what-is-my-ip-address.php") :: Nil
@@ -58,7 +58,7 @@ class TestExport extends SpookyEnvSuite {
   test("revert proxy setting for http wget") {
 
     val newIP = {
-      spooky.proxy = TorProxyFactory
+      spooky.conf.proxy = TorProxyFactory
 
       val results = Trace(
         Wget("http://www.whatsmyuseragent.com/") :: Nil
@@ -68,7 +68,7 @@ class TestExport extends SpookyEnvSuite {
     }
 
     val noProxyIP2 = {
-      spooky.proxy = NoProxyFactory
+      spooky.conf.proxy = NoProxyFactory
 
       val results = Trace(
         Wget("http://www.whatsmyuseragent.com/") :: Nil
@@ -83,7 +83,7 @@ class TestExport extends SpookyEnvSuite {
   test("revert proxy setting for https wget") {
 
     val newIP = {
-      spooky.proxy = TorProxyFactory
+      spooky.conf.proxy = TorProxyFactory
 
       val results = Trace(
         Wget("https://www.astrill.com/what-is-my-ip-address.php") :: Nil
@@ -93,7 +93,7 @@ class TestExport extends SpookyEnvSuite {
     }
 
     val noProxyIP2 = {
-      spooky.proxy = NoProxyFactory
+      spooky.conf.proxy = NoProxyFactory
 
       val results = Trace(
         Wget("https://www.astrill.com/what-is-my-ip-address.php") :: Nil

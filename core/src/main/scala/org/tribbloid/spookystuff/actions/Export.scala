@@ -108,12 +108,12 @@ case class Wget(
     val urlStr = uri.asInstanceOf[Literal[String]].value
     if ( urlStr.trim().isEmpty ) return Seq ()
 
-    val proxy = pb.spooky.proxy()
-    val userAgent = pb.spooky.userAgent()
-    val headers = pb.spooky.headers()
+    val proxy = pb.spooky.conf.proxy()
+    val userAgent = pb.spooky.conf.userAgent()
+    val headers = pb.spooky.conf.headers()
 
     val defaultSetting = {
-      val timeoutMillis = pb.spooky.remoteResourceTimeout.toMillis.toInt
+      val timeoutMillis = pb.spooky.conf.remoteResourceTimeout.toMillis.toInt
 
       var builder = RequestConfig.custom()
         .setConnectTimeout ( timeoutMillis )

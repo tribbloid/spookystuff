@@ -48,15 +48,15 @@ class DriverSession(override val spooky: SpookyContext) extends Session(spooky){
   override val driver: CleanWebDriver = Utils.retry(Const.localResourceLocalRetry){
     Utils.withDeadline(Const.sessionInitializationTimeout){
       var successful = false
-      val driver = spooky.driverFactory.newInstance(null, spooky)
+      val driver = spooky.conf.driverFactory.newInstance(null, spooky)
       spooky.metrics.driverInitialized += 1
       try {
         driver.manage().timeouts()
-          .implicitlyWait(spooky.remoteResourceTimeout.toSeconds, TimeUnit.SECONDS)
-          .pageLoadTimeout(spooky.remoteResourceTimeout.toSeconds, TimeUnit.SECONDS)
-          .setScriptTimeout(spooky.remoteResourceTimeout.toSeconds, TimeUnit.SECONDS)
+          .implicitlyWait(spooky.conf.remoteResourceTimeout.toSeconds, TimeUnit.SECONDS)
+          .pageLoadTimeout(spooky.conf.remoteResourceTimeout.toSeconds, TimeUnit.SECONDS)
+          .setScriptTimeout(spooky.conf.remoteResourceTimeout.toSeconds, TimeUnit.SECONDS)
 
-        val resolution = spooky.browserResolution
+        val resolution = spooky.conf.browserResolution
         if (resolution != null) driver.manage().window().setSize(new Dimension(resolution._1, resolution._2))
 
         successful = true

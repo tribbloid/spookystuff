@@ -25,7 +25,7 @@ abstract class ProxyFeed extends ExampleCore {
     val proxies = proxyRows.map(row => ProxySetting(row.getString(0), Integer.parseInt(row.getString(1)), row.getString(2)))
 
     val spooky = noProxy
-    spooky.proxy = RandomProxyFactory(proxies)
+    spooky.conf.proxy = RandomProxyFactory(proxies)
     spooky
   }
 

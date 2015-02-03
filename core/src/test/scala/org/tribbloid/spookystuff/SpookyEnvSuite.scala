@@ -22,16 +22,16 @@ abstract class SpookyEnvSuite extends FunSuite with BeforeAndAfter with BeforeAn
 
     val sql: SQLContext = new SQLContext(sc)
 
-    spooky = new SpookyContext(
-      sql,
-      driverFactory = NaiveDriverFactory(loadImages = true)
+    val sConf = new SpookyConf(
+      driverFactory = NaiveDriverFactory(loadImages = true),
+      autoSave = false,
+      cacheWrite = false,
+      cacheRead = false
     )
 
-    spooky.autoSave = false
-    spooky.cacheWrite = false
-    spooky.cacheRead = false
+    sConf.dirs.setRoot("file://"+System.getProperty("user.home")+"/spooky-unit/")
 
-    spooky.dir.setRoot("file://"+System.getProperty("user.home")+"/spooky-unit/")
+    spooky = new SpookyContext(sql, sConf)
 
     super.beforeAll()
   }
@@ -44,10 +44,10 @@ abstract class SpookyEnvSuite extends FunSuite with BeforeAndAfter with BeforeAn
   }
 
   before{
-    spooky.autoSave = false
-    spooky.cacheWrite = false
-    spooky.cacheRead = false
+    spooky.conf.autoSave = false
+    spooky.conf.cacheWrite = false
+    spooky.conf.cacheRead = false
 
-    spooky.dir.setRoot("file://"+System.getProperty("user.home")+"/spooky-unit/")
+    spooky.conf.dirs.setRoot("file://"+System.getProperty("user.home")+"/spooky-unit/")
   }
 }

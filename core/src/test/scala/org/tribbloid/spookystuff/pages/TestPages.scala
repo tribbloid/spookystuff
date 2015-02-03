@@ -15,7 +15,7 @@ class TestPages extends SpookyEnvSuite {
   lazy val wgetPage = Trace(Wget("http://en.wikipedia.org").as('oldWget)::Nil).resolve(spooky).map(_.asInstanceOf[Page])
 
   test("cache and restore") {
-    spooky.pageExpireAfter = 2.seconds
+    spooky.conf.pageExpireAfter = 2.seconds
 
     assert(page(0).uid === PageUID(Trace(Visit("http://en.wikipedia.org") :: Snapshot().as('U) :: Nil), Snapshot()))
 
@@ -29,7 +29,7 @@ class TestPages extends SpookyEnvSuite {
   }
 
   test ("local cache") {
-    spooky.pageExpireAfter = 2.seconds
+    spooky.conf.pageExpireAfter = 2.seconds
 
     PageUtils.autoCache(page, spooky)
 
@@ -47,7 +47,7 @@ class TestPages extends SpookyEnvSuite {
     val page3 = PageUtils.autoRestoreLatest(page.head.uid.backtrace, spooky)
     assert(page3 === null)
 
-    spooky.pageExpireAfter = 30.days
+    spooky.conf.pageExpireAfter = 30.days
 
     assert(page2.size === 1)
     assert(page2.head.copy(content = null) === page.head.copy(content = null))
@@ -55,7 +55,7 @@ class TestPages extends SpookyEnvSuite {
   }
 
   test ("wget local cache") {
-    spooky.pageExpireAfter = 2.seconds
+    spooky.conf.pageExpireAfter = 2.seconds
 
     PageUtils.autoCache(wgetPage, spooky)
 
@@ -73,7 +73,7 @@ class TestPages extends SpookyEnvSuite {
     val page3 = PageUtils.autoRestoreLatest(wgetPage.head.uid.backtrace, spooky)
     assert(page3 === null)
 
-    spooky.pageExpireAfter = 30.days
+    spooky.conf.pageExpireAfter = 30.days
 
     assert(page2.size === 1)
     assert(page2.head.copy(content = null) === wgetPage.head.copy(content = null))

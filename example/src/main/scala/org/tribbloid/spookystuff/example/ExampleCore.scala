@@ -2,7 +2,7 @@ package org.tribbloid.spookystuff.example
 
 import org.apache.spark.sql.{SQLContext, SchemaRDD}
 import org.apache.spark.{SparkConf, SparkContext}
-import org.tribbloid.spookystuff.SpookyContext
+import org.tribbloid.spookystuff.{SpookyConf, SpookyContext}
 import org.tribbloid.spookystuff.dsl.NaiveDriverFactory
 
 import scala.concurrent.duration
@@ -44,14 +44,16 @@ trait ExampleCore extends {
     else
       new SpookyContext(
         sql,
-        driverFactory = NaiveDriverFactory(loadImages = true),
-        joinLimit = 2,
-        maxExploreDepth = 3
+        new SpookyConf(
+          driverFactory = NaiveDriverFactory(loadImages = true),
+          joinLimit = 2,
+          maxExploreDepth = 3
+        )
       )
 
-    if (!args.contains("--dfscache")) spooky.dir.setRoot("file://"+System.getProperty("user.home")+"/spooky-example/"+appName+"/")
+    if (!args.contains("--dfscache")) spooky.conf.dirs.setRoot("file://"+System.getProperty("user.home")+"/spooky-example/"+appName+"/")
 
-    if (args.contains("--nocache")) spooky.pageExpireAfter = 0.milliseconds
+    if (args.contains("--nocache")) spooky.conf.cacheRead = false
 
     spooky
   }

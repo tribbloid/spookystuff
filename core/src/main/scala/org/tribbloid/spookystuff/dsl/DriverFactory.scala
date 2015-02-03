@@ -55,12 +55,12 @@ case class NaiveDriverFactory(
   def newCap(capabilities: Capabilities, spooky: SpookyContext): DesiredCapabilities = {
     val result = new DesiredCapabilities(baseCaps)
 
-    result.setCapability(PhantomJSDriverService.PHANTOMJS_PAGE_SETTINGS_PREFIX+"resourceTimeout", spooky.remoteResourceTimeout*1000)
+    result.setCapability(PhantomJSDriverService.PHANTOMJS_PAGE_SETTINGS_PREFIX+"resourceTimeout", spooky.conf.remoteResourceTimeout*1000)
 
-    val userAgent = spooky.userAgent
+    val userAgent = spooky.conf.userAgent
     if (userAgent != null) result.setCapability(PhantomJSDriverService.PHANTOMJS_PAGE_SETTINGS_PREFIX + "userAgent", userAgent)
 
-    val proxy = spooky.proxy()
+    val proxy = spooky.conf.proxy()
 
     if (proxy != null)
       result.setCapability(

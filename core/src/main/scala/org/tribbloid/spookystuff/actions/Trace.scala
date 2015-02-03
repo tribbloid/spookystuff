@@ -41,11 +41,11 @@ final case class Trace(
 
           val spooky = session.spooky
 
-          if (spooky.autoSave) result.foreach{
+          if (spooky.conf.autoSave) result.foreach{
             case page: Page => page.autoSave(spooky)
             case _ =>
           }
-          if (spooky.cacheWrite) PageUtils.autoCache(result, spooky)
+          if (spooky.conf.cacheWrite) PageUtils.autoCache(result, spooky)
         }
         else {
           assert(result.isEmpty)
@@ -81,7 +81,7 @@ final case class Trace(
     }
     val numPages = results.count(_.isInstanceOf[Page])
     spooky.metrics.pagesFetched += numPages
-    LoggerFactory.getLogger(this.getClass).info(s"resolved ${numPages} pages")
+    LoggerFactory.getLogger(this.getClass).info(s"resolved $numPages pages")
     results
   }
 
@@ -89,7 +89,7 @@ final case class Trace(
 
     if (!this.hasExport) return Seq()
 
-    val pagesFromCache = if (!spooky.cacheRead) Seq(null)
+    val pagesFromCache = if (!spooky.conf.cacheRead) Seq(null)
     else dryrun.map(dry => PageUtils.autoRestoreLatest(dry, spooky))
 
     if (!pagesFromCache.contains(null)){

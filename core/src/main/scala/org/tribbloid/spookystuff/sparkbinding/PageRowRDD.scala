@@ -164,6 +164,8 @@ case class PageRowRDD(
                  overwrite: Boolean = false
                  ): PageRowRDD = {
 
+    val spooky = this.spooky.broadcast()
+
     val saved = this.map {
 
       pageRow =>
@@ -340,10 +342,12 @@ case class PageRowRDD(
              flattenPagesPattern: Symbol = '*, //by default, always flatten all pages
              flattenPagesIndexKey: Symbol = null,
              numPartitions: Int = this.sparkContext.defaultParallelism,
-             optimizer: QueryOptimizer = spooky.defaultQueryOptimizer
+             optimizer: QueryOptimizer = spooky.conf.defaultQueryOptimizer
              ): PageRowRDD = {
 
     val _traces = traces.autoSnapshot
+
+    spooky.broadcast()
 
     val result = optimizer match {
       case Minimal =>
@@ -363,6 +367,8 @@ case class PageRowRDD(
                           joinType: JoinType,
                           numPartitions: Int
                           ): PageRowRDD = {
+
+    val spooky = this.spooky
 
     val resultRows = this
       .coalesce(numPartitions)
@@ -387,6 +393,8 @@ case class PageRowRDD(
                            numPartitions: Int,
                            lookup: RDD[(Trace, PageLike)]
                            ): PageRowRDD = {
+
+    val spooky = this.spooky
 
     val traceToRow = this.flatMap {
       row =>
@@ -459,14 +467,14 @@ case class PageRowRDD(
   def join(
             expr: Expression[Any], //name is discarded
             indexKey: Symbol = null, //left & idempotent parameters are missing as they are always set to true
-            limit: Int = spooky.joinLimit
+            limit: Int = spooky.conf.joinLimit
             )(
             traces: Set[Trace],
             joinType: JoinType = Const.defaultJoinType,
             numPartitions: Int = this.sparkContext.defaultParallelism,
             flattenPagesPattern: Symbol = '*,
             flattenPagesIndexKey: Symbol = null,
-            optimizer: QueryOptimizer = spooky.defaultQueryOptimizer
+            optimizer: QueryOptimizer = spooky.conf.defaultQueryOptimizer
             )(
             select: Expression[Any]*
             ): PageRowRDD = {
@@ -488,11 +496,11 @@ case class PageRowRDD(
                  expr: Expression[Any],
                  hasTitle: Boolean = true,
                  indexKey: Symbol = null, //left & idempotent parameters are missing as they are always set to true
-                 limit: Int = spooky.joinLimit,
+                 limit: Int = spooky.conf.joinLimit,
                  joinType: JoinType = Const.defaultJoinType,
                  numPartitions: Int = this.sparkContext.defaultParallelism,
                  select: Expression[Any] = null,
-                 optimizer: QueryOptimizer = spooky.defaultQueryOptimizer
+                 optimizer: QueryOptimizer = spooky.conf.defaultQueryOptimizer
                  ): PageRowRDD =
     this.join(expr, indexKey, limit)(
       Visit(new GetExpr(Const.defaultJoinKey), hasTitle),
@@ -511,11 +519,11 @@ case class PageRowRDD(
                 expr: Expression[Any],
                 hasTitle: Boolean = true,
                 indexKey: Symbol = null, //left & idempotent parameters are missing as they are always set to true
-                limit: Int = spooky.joinLimit,
+                limit: Int = spooky.conf.joinLimit,
                 joinType: JoinType = Const.defaultJoinType,
                 numPartitions: Int = this.sparkContext.defaultParallelism,
                 select: Expression[Any] = null,
-                optimizer: QueryOptimizer = spooky.defaultQueryOptimizer
+                optimizer: QueryOptimizer = spooky.conf.defaultQueryOptimizer
                 ): PageRowRDD =
     this.join(expr, indexKey, limit)(
       Wget(new GetExpr(Const.defaultJoinKey), hasTitle),
@@ -566,18 +574,20 @@ case class PageRowRDD(
   def explore(
                expr: Expression[Any],
                depthKey: Symbol = null,
-               maxDepth: Int = spooky.maxExploreDepth
+               maxDepth: Int = spooky.conf.maxExploreDepth
                )(
                traces: Set[Trace],
                numPartitions: Int = this.sparkContext.defaultParallelism,
                flattenPagesPattern: Symbol = '*,
                flattenPagesIndexKey: Symbol = null,
-               optimizer: QueryOptimizer = spooky.defaultQueryOptimizer
+               optimizer: QueryOptimizer = spooky.conf.defaultQueryOptimizer
                )(
                select: Expression[Any]*
                ): PageRowRDD = {
 
     val _traces = traces.autoSnapshot
+
+    spooky.broadcast()
 
     optimizer match {
       case Minimal =>
@@ -592,7 +602,7 @@ case class PageRowRDD(
   private def _dumbExplore(
                             expr: Expression[Any],
                             depthKey: Symbol = null,
-                            maxDepth: Int = spooky.maxExploreDepth
+                            maxDepth: Int = spooky.conf.maxExploreDepth
                             )(
                             _traces: Set[Trace],
                             numPartitions: Int = this.sparkContext.defaultParallelism,
@@ -601,6 +611,8 @@ case class PageRowRDD(
                             )(
                             select: Expression[Any]*
                             ): PageRowRDD = {
+
+    val spooky = this.spooky
 
     val _expr = expr defaultAs Symbol(Const.defaultJoinKey)
 
@@ -654,7 +666,7 @@ case class PageRowRDD(
   private def _smartExplore(
                              expr: Expression[Any],
                              depthKey: Symbol = null,
-                             maxDepth: Int = spooky.maxExploreDepth
+                             maxDepth: Int = spooky.conf.maxExploreDepth
                              )(
                              _traces: Set[Trace],
                              numPartitions: Int = this.sparkContext.defaultParallelism,
@@ -663,6 +675,8 @@ case class PageRowRDD(
                              )(
                              select: Expression[Any]*
                              ): PageRowRDD = {
+
+    val spooky = this.spooky
 
     var newRows = this
 
@@ -673,7 +687,7 @@ case class PageRowRDD(
 
     var lookups: RDD[(Trace, PageLike)] =this.lookup()
 
-    if (this.context.getCheckpointDir.isEmpty) this.context.setCheckpointDir(spooky.dir.checkpoint)
+    if (this.context.getCheckpointDir.isEmpty) this.context.setCheckpointDir(spooky.conf.dirs.checkpoint)
 
     val _expr = expr defaultAs Symbol(Const.defaultJoinKey)
 
@@ -735,10 +749,10 @@ case class PageRowRDD(
                     expr: Expression[Any],
                     hasTitle: Boolean = true,
                     depthKey: Symbol = null,
-                    maxDepth: Int = spooky.maxExploreDepth,
+                    maxDepth: Int = spooky.conf.maxExploreDepth,
                     numPartitions: Int = this.sparkContext.defaultParallelism,
                     select: Expression[Any] = null,
-                    optimizer: QueryOptimizer = spooky.defaultQueryOptimizer
+                    optimizer: QueryOptimizer = spooky.conf.defaultQueryOptimizer
                     ): PageRowRDD =
     explore(expr, depthKey, maxDepth)(
       Visit(new GetExpr(Const.defaultJoinKey), hasTitle),
@@ -750,10 +764,10 @@ case class PageRowRDD(
                    expr: Expression[Any],
                    hasTitle: Boolean = true,
                    depthKey: Symbol = null,
-                   maxDepth: Int = spooky.maxExploreDepth,
+                   maxDepth: Int = spooky.conf.maxExploreDepth,
                    numPartitions: Int = this.sparkContext.defaultParallelism,
                    select: Expression[Any] = null,
-                   optimizer: QueryOptimizer = spooky.defaultQueryOptimizer
+                   optimizer: QueryOptimizer = spooky.conf.defaultQueryOptimizer
                    ): PageRowRDD =
     explore(expr, depthKey, maxDepth)(
       Wget(new GetExpr(Const.defaultJoinKey), hasTitle),
@@ -773,11 +787,13 @@ case class PageRowRDD(
                             wget: Boolean = true,
                             postAction: Seq[Action] = Seq()
                             )(
-                            limit: Int = spooky.paginationLimit,
+                            limit: Int = spooky.conf.paginationLimit,
                             indexKey: Symbol = null,
                             flatten: Boolean = true,
                             last: Boolean = false
                             ): PageRowRDD = {
+
+    val spooky = this.spooky.broadcast()
 
     val realIndexKey = Key(indexKey)
 

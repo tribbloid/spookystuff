@@ -95,7 +95,7 @@ case class Page(
     PageUtils.DFSWrite("save", path, spooky) {
 
       var fullPath = new Path(path)
-      val fs = fullPath.getFileSystem(spooky.hConf)
+      val fs = fullPath.getFileSystem(spooky.hadoopConf)
       if (!overwrite && fs.exists(fullPath)) fullPath = new Path(path + "-" + UUID.randomUUID())
       val fos = fs.create(fullPath, overwrite)
       try {
@@ -113,7 +113,7 @@ case class Page(
                 spooky: SpookyContext,
                 overwrite: Boolean = false
                 ): Unit = this.save(
-    spooky.dir.autoSave :: spooky.autoSaveExtract(this).toString :: Nil
+    spooky.conf.dirs.autoSave :: spooky.conf.autoSaveExtract(this).toString :: Nil
   )(spooky)
 
   def errorDump(
@@ -121,12 +121,12 @@ case class Page(
                  overwrite: Boolean = false
                  ): Unit = {
     val root = this.uid.leaf match {
-      case ss: Screenshot => spooky.dir.errorScreenshot
-      case _ => spooky.dir.errorDump
+      case ss: Screenshot => spooky.conf.dirs.errorScreenshot
+      case _ => spooky.conf.dirs.errorDump
     }
 
     this.save(
-      root :: spooky.errorDumpExtract(this).toString :: Nil
+      root :: spooky.conf.errorDumpExtract(this).toString :: Nil
     )(spooky)
   }
 
@@ -135,12 +135,12 @@ case class Page(
                       overwrite: Boolean = false
                       ): Unit = {
     val root = this.uid.leaf match {
-      case ss: Screenshot => spooky.dir.errorScreenshotLocal
-      case _ => spooky.dir.errorDumpLocal
+      case ss: Screenshot => spooky.conf.dirs.errorScreenshotLocal
+      case _ => spooky.conf.dirs.errorDumpLocal
     }
 
     this.save(
-      root :: spooky.errorDumpExtract(this).toString :: Nil
+      root :: spooky.conf.errorDumpExtract(this).toString :: Nil
     )(spooky)
   }
 }

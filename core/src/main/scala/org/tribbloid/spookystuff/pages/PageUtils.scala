@@ -11,8 +11,6 @@ import org.tribbloid.spookystuff.utils.Utils
 import org.tribbloid.spookystuff.views.Serializable
 import org.tribbloid.spookystuff.{Const, DFSReadException, DFSWriteException, SpookyContext}
 
-import scala.collection.mutable
-
 /**
  * Created by peng on 11/27/14.
  */
@@ -21,7 +19,7 @@ object PageUtils {
   def DFSRead[T](message: String, pathStr: String, spooky: SpookyContext)(f: => T): T = {
     try {
       val result = Utils.retry(Const.DFSLocalRetry) {
-        Utils.withDeadline(spooky.DFSTimeout) {f}
+        Utils.withDeadline(spooky.conf.DFSTimeout) {f}
       }
       spooky.metrics.DFSReadSuccess += 1
       result
@@ -31,7 +29,7 @@ object PageUtils {
         spooky.metrics.DFSReadFail += 1
         val ex = new DFSReadException(pathStr ,e)
         ex.setStackTrace(e.getStackTrace)
-        if (spooky.failOnDFSError) throw ex
+        if (spooky.conf.failOnDFSError) throw ex
         else {
           LoggerFactory.getLogger(this.getClass).warn(message, ex)
           null.asInstanceOf[T]
@@ -43,7 +41,7 @@ object PageUtils {
   def DFSWrite[T](message: String, pathStr: String, spooky: SpookyContext)(f: => T): T = {
     try {
       val result = Utils.retry(Const.DFSLocalRetry) {
-        Utils.withDeadline(spooky.DFSTimeout) {f}
+        Utils.withDeadline(spooky.conf.DFSTimeout) {f}
       }
       spooky.metrics.DFSWriteSuccess += 1
       result
@@ -61,7 +59,7 @@ object PageUtils {
   def load(fullPath: Path)(spooky: SpookyContext): Array[Byte] = {
 
     DFSRead("load", fullPath.toString, spooky) {
-      val fs = fullPath.getFileSystem(spooky.hConf)
+      val fs = fullPath.getFileSystem(spooky.hadoopConf)
 
       if (fs.exists(fullPath)) {
 
@@ -89,7 +87,7 @@ object PageUtils {
     DFSWrite("cache", path, spooky) {
       val fullPath = new Path(path)
 
-      val fs = fullPath.getFileSystem(spooky.hConf)
+      val fs = fullPath.getFileSystem(spooky.hadoopConf)
 
       val ser = SparkEnv.get.serializer.newInstance()
       val fos = fs.create(fullPath, overwrite)
@@ -110,8 +108,8 @@ object PageUtils {
                  spooky: SpookyContext
                  ): Unit = {
     val pathStr = Utils.urlConcat(
-      spooky.dir.cache,
-      spooky.cacheTraceEncoder(pageLikes.head.uid.backtrace).toString,
+      spooky.conf.dirs.cache,
+      spooky.conf.cacheTraceEncoder(pageLikes.head.uid.backtrace).toString,
       UUID.randomUUID().toString
     )
 
@@ -122,7 +120,7 @@ object PageUtils {
   def restore(fullPath: Path)(spooky: SpookyContext): Seq[PageLike] = {
 
     val result = DFSRead("restore", fullPath.toString, spooky) {
-      val fs = fullPath.getFileSystem(spooky.hConf)
+      val fs = fullPath.getFileSystem(spooky.hadoopConf)
 
       if (fs.exists(fullPath)) {
 
@@ -155,7 +153,7 @@ object PageUtils {
 
     val latestStatus = DFSRead("get latest version", dirPath.toString, spooky) {
 
-      val fs = dirPath.getFileSystem(spooky.hConf)
+      val fs = dirPath.getFileSystem(spooky.hadoopConf)
 
       if (fs.exists(dirPath) && fs.getFileStatus(dirPath).isDir) {
 
@@ -179,13 +177,13 @@ object PageUtils {
                          spooky: SpookyContext
                          ): Seq[PageLike] = {
     val pathStr = Utils.urlConcat(
-      spooky.dir.cache,
-      spooky.cacheTraceEncoder(trace).toString
+      spooky.conf.dirs.cache,
+      spooky.conf.cacheTraceEncoder(trace).toString
     )
 
     val pages = restoreLatest(
       new Path(pathStr),
-      System.currentTimeMillis() - spooky.pageExpireAfter.toMillis
+      System.currentTimeMillis() - spooky.conf.pageExpireAfter.toMillis
     )(spooky)
 
     if (pages != null) for (page <- pages) {
