@@ -36,16 +36,20 @@ object Utils {
 
   //  def retryWithDeadline[T](n: Int, t: Duration)(fn: => T): T = retry(n){withDeadline(t){fn}}
 
-  lazy val random = new Random()
+  @transient lazy val random = new Random()
 
   def urlConcat(parts: String*): String = {
     var result = ""
 
     for (part <- parts) {
-      if (part.endsWith("/")) result += part
-      else result += part+"/"
+      result += urlSlash(part)
     }
     result.substring(0, result.length-1)
+  }
+
+  def urlSlash(part: String): String = {
+    if (part.endsWith("/")) part
+    else part+"/"
   }
 
   /*

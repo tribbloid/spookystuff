@@ -111,11 +111,11 @@ abstract class IntegrationSuite extends FunSuite with BeforeAndAfterAll {
     }
   }
 
-  test("local cache, smart optimizer") {
-
-    localCacheEnv.conf.defaultQueryOptimizer = Smart
-    doTest(localCacheEnv)
-  }
+//  test("local cache, smart optimizer") {
+//
+//    localCacheEnv.conf.defaultQueryOptimizer = Smart
+//    doTest(localCacheEnv)
+//  }
 
   test("s3 cache, smart optimizer") {
 
@@ -123,11 +123,11 @@ abstract class IntegrationSuite extends FunSuite with BeforeAndAfterAll {
     doTest(s3CacheEnv)
   }
 
-  test("local cache, minimal optimizer") {
-
-    localCacheEnv.conf.defaultQueryOptimizer = Minimal
-    doTest(localCacheEnv)
-  }
+//  test("local cache, minimal optimizer") {
+//
+//    localCacheEnv.conf.defaultQueryOptimizer = Minimal
+//    doTest(localCacheEnv)
+//  }
 
   test("s3 cache, minimal optimizer") {
 

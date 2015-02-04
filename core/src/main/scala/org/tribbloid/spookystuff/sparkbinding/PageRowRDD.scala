@@ -114,7 +114,7 @@ case class PageRowRDD(
     val jsonRDD = this.toJSON
 
     if (jsonRDD.getStorageLevel == StorageLevel.NONE) jsonRDD.persist(StorageLevel.MEMORY_AND_DISK) //for some unknown reason SQLContext.jsonRDD uses the parameter RDD twice, this has to be fixed by somebody else
-    //TODO: unpersist after next action, is it even possible
+    //TODO: unpersist after next action, is it even possible?
 
     import spooky.sqlContext._
     val schemaRDD = this.spooky.sqlContext.jsonRDD(jsonRDD)
@@ -574,7 +574,8 @@ case class PageRowRDD(
   def explore(
                expr: Expression[Any],
                depthKey: Symbol = null,
-               maxDepth: Int = spooky.conf.maxExploreDepth
+               maxDepth: Int = spooky.conf.maxExploreDepth,
+               checkpointInterval: Int = 20
                )(
                traces: Set[Trace],
                numPartitions: Int = this.sparkContext.defaultParallelism,
@@ -591,9 +592,9 @@ case class PageRowRDD(
 
     optimizer match {
       case Minimal =>
-        _dumbExplore(expr, depthKey, maxDepth)(_traces, numPartitions, flattenPagesPattern, flattenPagesIndexKey)(select: _*)
+        _dumbExplore(expr, depthKey, maxDepth, checkpointInterval)(_traces, numPartitions, flattenPagesPattern, flattenPagesIndexKey)(select: _*)
       case Smart =>
-        _smartExplore(expr, depthKey, maxDepth)(_traces, numPartitions, flattenPagesPattern, flattenPagesIndexKey)(select: _*)
+        _smartExplore(expr, depthKey, maxDepth, checkpointInterval)(_traces, numPartitions, flattenPagesPattern, flattenPagesIndexKey)(select: _*)
       case _ => throw new UnsupportedOperationException(s"${optimizer.getClass.getSimpleName} optimizer is not supported in this query")
     }
   }
@@ -602,12 +603,13 @@ case class PageRowRDD(
   private def _dumbExplore(
                             expr: Expression[Any],
                             depthKey: Symbol = null,
-                            maxDepth: Int = spooky.conf.maxExploreDepth
+                            maxDepth: Int,
+                            checkpointInterval: Int
                             )(
                             _traces: Set[Trace],
-                            numPartitions: Int = this.sparkContext.defaultParallelism,
-                            flattenPagesPattern: Symbol = '*,
-                            flattenPagesIndexKey: Symbol = null
+                            numPartitions: Int,
+                            flattenPagesPattern: Symbol,
+                            flattenPagesIndexKey: Symbol
                             )(
                             select: Expression[Any]*
                             ): PageRowRDD = {
@@ -665,13 +667,14 @@ case class PageRowRDD(
   //recursive join and union! applicable to many situations like (wide) pagination and deep crawling
   private def _smartExplore(
                              expr: Expression[Any],
-                             depthKey: Symbol = null,
-                             maxDepth: Int = spooky.conf.maxExploreDepth
+                             depthKey: Symbol,
+                             maxDepth: Int,
+                             checkpointInterval: Int
                              )(
                              _traces: Set[Trace],
-                             numPartitions: Int = this.sparkContext.defaultParallelism,
-                             flattenPagesPattern: Symbol = '*,
-                             flattenPagesIndexKey: Symbol = null
+                             numPartitions: Int,
+                             flattenPagesPattern: Symbol,
+                             flattenPagesIndexKey: Symbol
                              )(
                              select: Expression[Any]*
                              ): PageRowRDD = {
@@ -701,7 +704,7 @@ case class PageRowRDD(
 
       lookups = lookups.union(newLookups) //TODO: remove pages with identical uid but different _traces? or set the lookup table as backtrace -> seq directly.
 
-      if (depth % 20 == 0) {
+      if (depth % checkpointInterval == 0) {
         lookups.checkpoint()
         val size = lookups.count()
       }
@@ -715,7 +718,7 @@ case class PageRowRDD(
         .distinctSignature(allIgnoredKeys)
         .persist(StorageLevel.MEMORY_AND_DISK)
 
-      if (depth % 20 == 0) {
+      if (depth % checkpointInterval == 0) {
         newRows.checkpoint()
       }
 
@@ -733,7 +736,7 @@ case class PageRowRDD(
         if (depthKey != null) newRows.select(new Literal(depth) ~ depthKey)
         else newRows
       ).coalesce(numPartitions)
-      if (depth % 20 == 0) {
+      if (depth % checkpointInterval == 0) {
         total.checkpoint()
         val size = total.count()
       }
