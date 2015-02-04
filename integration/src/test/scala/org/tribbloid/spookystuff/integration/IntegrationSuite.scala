@@ -98,14 +98,14 @@ abstract class IntegrationSuite extends FunSuite with BeforeAndAfterAll {
 
     Utils.retry(2) { //sometimes accumulator missed a few for no reason
       spooky.conf.cacheRead = false
-      spooky.clearMetrics()
+      spooky.zeroIn()
       doMain(spooky)
       assertBeforeCache(spooky)
     }
 
     Utils.retry(2) {
       spooky.conf.cacheRead = true
-      spooky.clearMetrics()
+      spooky.zeroIn()
       doMain(spooky)
       assertAfterCache(spooky)
     }

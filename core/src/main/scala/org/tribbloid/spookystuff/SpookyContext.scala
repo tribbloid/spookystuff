@@ -8,42 +8,54 @@ import org.tribbloid.spookystuff.entity.{Key, KeyLike, PageRow}
 import org.tribbloid.spookystuff.sparkbinding.{PageRowRDD, SchemaRDDView, StringRDDView}
 import org.tribbloid.spookystuff.utils.Utils
 
-import scala.collection.immutable.ListSet
+import scala.collection.immutable.{ListMap, ListSet}
 import scala.language.implicitConversions
 import scala.reflect.ClassTag
 
-class Metrics() extends Serializable {
+import org.apache.spark.SparkContext._
 
-  //works but temporarily disabled as not part of 'official' API
+object Metrics {
+
   private def accumulator[T](initialValue: T, name: String)(implicit param: AccumulatorParam[T]) = {
     new Accumulator(initialValue, param, Some(name))
   }
-
-  import org.apache.spark.SparkContext._
-
-  val driverInitialized: Accumulator[Int] = accumulator(0, "driverInitialized")
-  val driverReclaimed: Accumulator[Int] = accumulator(0, "driverReclaimed")
-
-  val sessionInitialized: Accumulator[Int] = accumulator(0, "sessionInitialized")
-  val sessionReclaimed: Accumulator[Int] = accumulator(0, "sessionReclaimed")
-
-  val DFSReadSuccess: Accumulator[Int] = accumulator(0, "DFSReadSuccess")
-  val DFSReadFail: Accumulator[Int] = accumulator(0, "DFSReadFail")
-
-  val DFSWriteSuccess: Accumulator[Int] = accumulator(0, "DFSWriteSuccess")
-  val DFSWriteFail: Accumulator[Int] = accumulator(0, "DFSWriteFail")
-
-  val pagesFetched: Accumulator[Int] = accumulator(0, "pagesFetched")
-  val pagesFetchedFromWeb: Accumulator[Int] = accumulator(0, "pagesFetchedFromWeb")
-  val pagesFetchedFromCache: Accumulator[Int] = accumulator(0, "pagesFetchedFromCache")
 }
 
-class SpookyContext (
-                      @transient val sqlContext: SQLContext, //can't be used on executors
-                      @transient private val _spookyConf: SpookyConf = new SpookyConf(), //can only be used on executors after broadcast
-                      var metrics: Metrics = new Metrics() //don't broadcast
-                      )
-  extends Serializable {
+case class Metrics(
+                    driverInitialized: Accumulator[Int] = Metrics.accumulator(0, "driverInitialized"),
+                    driverReclaimed: Accumulator[Int] = Metrics.accumulator(0, "driverReclaimed"),
+
+                    sessionInitialized: Accumulator[Int] = Metrics.accumulator(0, "sessionInitialized"),
+                    sessionReclaimed: Accumulator[Int] = Metrics.accumulator(0, "sessionReclaimed"),
+
+                    DFSReadSuccess: Accumulator[Int] = Metrics.accumulator(0, "DFSReadSuccess"),
+                    DFSReadFail: Accumulator[Int] = Metrics.accumulator(0, "DFSReadFail"),
+
+                    DFSWriteSuccess: Accumulator[Int] = Metrics.accumulator(0, "DFSWriteSuccess"),
+                    DFSWriteFail: Accumulator[Int] = Metrics.accumulator(0, "DFSWriteFail"),
+
+                    pagesFetched: Accumulator[Int] = Metrics.accumulator(0, "pagesFetched"),
+                    pagesFetchedFromWeb: Accumulator[Int] = Metrics.accumulator(0, "pagesFetchedFromWeb"),
+                    pagesFetchedFromCache: Accumulator[Int] = Metrics.accumulator(0, "pagesFetchedFromCache")
+               ) { //TODO: change name to avoid mingle with Spark UI metrics
+
+  def toJSON: String = {
+    val tuples = this.productIterator.flatMap{
+      case acc: Accumulator[_] => acc.name.map(_ -> acc.value)
+      case _ => None
+    }.toSeq
+
+    val map = ListMap(tuples: _*)
+
+    Utils.toJson(map, beautiful = true)
+  }
+}
+
+case class SpookyContext (
+                           @transient sqlContext: SQLContext, //can't be used on executors
+                           @transient private val _spookyConf: SpookyConf = new SpookyConf(), //can only be used on executors after broadcast
+                           var metrics: Metrics = new Metrics() //accumulators cannot be broadcasted
+                           ) {
 
   def this(sqlContext: SQLContext) {
     this(sqlContext, new SpookyConf(), new Metrics())
@@ -58,7 +70,7 @@ class SpookyContext (
   }
 
   import org.tribbloid.spookystuff.views._
-  
+
   var broadcastedSpookyConf = sqlContext.sparkContext.broadcast(_spookyConf)
 
   def conf = if (_spookyConf == null) broadcastedSpookyConf.value
@@ -74,10 +86,12 @@ class SpookyContext (
 
   def hadoopConf: Configuration = broadcastedHadoopConf.value.value
 
-  def clearMetrics(): SpookyContext ={
+  def zeroIn(): SpookyContext ={
     metrics = new Metrics()
     this
   }
+
+  def newZero: SpookyContext = this.copy(metrics = new Metrics)
 
   @transient lazy val noInput: PageRowRDD = PageRowRDD(this.sqlContext.sparkContext.noInput, spooky = this)
 
