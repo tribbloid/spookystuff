@@ -2,7 +2,9 @@ package org.tribbloid.spookystuff
 
 import org.tribbloid.spookystuff.SpookyConf.Dirs
 import org.tribbloid.spookystuff.dsl._
+import org.tribbloid.spookystuff.utils.Utils
 
+import scala.collection.immutable.IndexedSeq
 import scala.concurrent.duration._
 
 /**
@@ -32,15 +34,15 @@ object SpookyConf {
     //    def errorScreenshot_=(v: String): Unit = _errorScreenshot = Option(v)
     //    def checkpoint_=(v: String): Unit = _checkpoint = Option(v)
     //    def errorDumpLocal_=(v: String): Unit = _errorDumpLocal = Option(v)
-    //    def errorScreenshotLocal_=(v: String): Unit = _errorScreenshotLocal = Option(v)
+    //    def errorScreenshotLocal_=(v: String): Unit = _errorScreenshotLocal = Option(v)Utils.urlSlash(
 
-    def autoSave = Option(_autoSave).orElse(rootOption.map(_+"page")).getOrElse("temp/page/")
-    def cache = Option(_cache).orElse(rootOption.map(_+"cache")).getOrElse("temp/cache/")
-    def errorDump = Option(_errorDump).orElse(rootOption.map(_+"error")).getOrElse("temp/error/")
-    def errorScreenshot = Option(_errorScreenshot).orElse(rootOption.map(_+"error-screenshot")).getOrElse("temp/error-screenshot/")
-    def checkpoint = Option(_checkpoint).orElse(rootOption.map(_+"checkpoint")).getOrElse("temp/checkpoint/")
-    def errorDumpLocal = Option(_errorDumpLocal).getOrElse("temp/error/")
-    def errorScreenshotLocal = Option(_errorScreenshotLocal).getOrElse("temp/error-screenshot/")
+    def autoSave: String = Utils.urlSlash(Option(_autoSave).orElse(rootOption.map(_+"page/")).getOrElse("temp/page/"))
+    def cache: String = Utils.urlSlash(Option(_cache).orElse(rootOption.map(_+"cache/")).getOrElse("temp/cache/"))
+    def errorDump: String = Utils.urlSlash(Option(_errorDump).orElse(rootOption.map(_+"error/")).getOrElse("temp/error/"))
+    def errorScreenshot: String = Utils.urlSlash(Option(_errorScreenshot).orElse(rootOption.map(_+"error-screenshot/")).getOrElse("temp/error-screenshot/"))
+    def checkpoint: String = Utils.urlSlash(Option(_checkpoint).orElse(rootOption.map(_+"checkpoint/")).getOrElse("temp/checkpoint/"))
+    def errorDumpLocal: String = Utils.urlSlash(Option(_errorDumpLocal).getOrElse("temp/error/"))
+    def errorScreenshotLocal: String = Utils.urlSlash(Option(_errorScreenshotLocal).getOrElse("temp/error-screenshot/"))
   }
 }
 
