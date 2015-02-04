@@ -54,6 +54,7 @@ abstract class IntegrationSuite extends FunSuite with BeforeAndAfterAll {
     sql,
     new SpookyConf(
       localDirs,
+      sharedMetrics = true,
       autoSave = false
     )
   )
@@ -62,6 +63,7 @@ abstract class IntegrationSuite extends FunSuite with BeforeAndAfterAll {
     sql,
     new SpookyConf(
       s3Dirs,
+      sharedMetrics = true,
       autoSave = false
     )
   )

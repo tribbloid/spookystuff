@@ -15,9 +15,9 @@ import org.apache.http.impl.conn.PoolingHttpClientConnectionManager
 import org.openqa.selenium.{OutputType, TakesScreenshot}
 import org.tribbloid.spookystuff.entity.PageRow
 import org.tribbloid.spookystuff.expressions.{Expression, Literal}
+import org.tribbloid.spookystuff.pages.{HtmlElement, Page, PageUID, Unstructured}
 import org.tribbloid.spookystuff.session.Session
-import org.tribbloid.spookystuff.pages.{Unstructured, HtmlElement, Page, PageUID}
-import org.tribbloid.spookystuff.utils.{SocksProxyConnectionSocketFactory, SocksProxySSLConnectionSocketFactory}
+import org.tribbloid.spookystuff.utils.{SocksProxyConnectionSocketFactory, SocksProxySSLConnectionSocketFactory, UrlEncodingRedirectStrategy}
 
 /**
  * Export a page from the browser or http client
@@ -135,6 +135,7 @@ case class Wget(
 
       val httpClient = HttpClients.custom
         .setDefaultRequestConfig ( defaultSetting )
+        .setRedirectStrategy(new UrlEncodingRedirectStrategy())
         .setConnectionManager(cm)
         .build
 
@@ -143,6 +144,7 @@ case class Wget(
     else {
       val httpClient = HttpClients.custom
         .setDefaultRequestConfig ( defaultSetting )
+        .setRedirectStrategy(new UrlEncodingRedirectStrategy())
         .build()
 
       httpClient

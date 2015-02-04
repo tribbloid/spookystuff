@@ -91,19 +91,22 @@ case class SpookyContext (
     this
   }
 
-  def newZero: SpookyContext = this.copy(metrics = new Metrics)
+//  def newZero: SpookyContext = this.copy(metrics = new Metrics)
 
-  @transient lazy val noInput: PageRowRDD = PageRowRDD(this.sqlContext.sparkContext.noInput, spooky = this)
+  def getContextForNewInput = if (conf.sharedMetrics) this
+  else this.copy(metrics = new Metrics)
+
+  @transient lazy val noInput: PageRowRDD = PageRowRDD(this.sqlContext.sparkContext.noInput, spooky = getContextForNewInput)
 
   implicit def stringRDDToItsView(rdd: RDD[String]): StringRDDView = new StringRDDView(rdd)
 
   implicit def schemaRDDToItsView(rdd: SchemaRDD): SchemaRDDView = new SchemaRDDView(rdd)
 
-  //  implicit def selfToPageRowRDD(rdd: RDD[PageRow]): PageRowRDD = PageRowRDD(rdd, spooky = this)
+  //  implicit def selfToPageRowRDD(rdd: RDD[PageRow]): PageRowRDD = PageRowRDD(rdd, spooky = this.copy(metrics = new Metrics))
 
+  //every input or noInput will generate a new metrics
   implicit def RDDToPageRowRDD[T: ClassTag](rdd: RDD[T]): PageRowRDD = {
     import org.tribbloid.spookystuff.views._
-
     import scala.reflect._
 
     rdd match {
@@ -116,7 +119,7 @@ case class SpookyContext (
                 .map(tuple => (Key(tuple._1),tuple._2))
             )
         }
-        new PageRowRDD(self, keys = ListSet(rdd.schema.fieldNames: _*).map(Key(_)), spooky = this)
+        new PageRowRDD(self, keys = ListSet(rdd.schema.fieldNames: _*).map(Key(_)), spooky = getContextForNewInput)
       case _ if classOf[Map[_,_]].isAssignableFrom(classTag[T].runtimeClass) => //use classOf everywhere?
         val canonRdd = rdd.map(
           map =>map.asInstanceOf[Map[_,_]].canonizeKeysToColumnNames
@@ -131,7 +134,7 @@ case class SpookyContext (
           map =>
             PageRow(map.map(tuple => (Key(tuple._1),tuple._2)), Seq())
         )
-        new PageRowRDD(self, keys = ListSet(schemaRDD.schema.fieldNames: _*).map(Key(_)), spooky = this)
+        new PageRowRDD(self, keys = ListSet(schemaRDD.schema.fieldNames: _*).map(Key(_)), spooky = getContextForNewInput)
       case _ =>
         val self = rdd.map{
           str =>
@@ -140,7 +143,7 @@ case class SpookyContext (
 
             new PageRow(cells)
         }
-        new PageRowRDD(self, keys = ListSet(Key("_")), spooky = this)
+        new PageRowRDD(self, keys = ListSet(Key("_")), spooky = getContextForNewInput)
     }
   }
 }

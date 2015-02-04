@@ -97,7 +97,7 @@ trait Action extends ActionLike {
           }
         }
         else{
-          message += "\n"+"driver not initialize, snapshot/screenshot not available"
+          message += "\n"+"(no snapshot or screenshot for driverless action)"
         }
 
         val ex = new ActionException(message, e)

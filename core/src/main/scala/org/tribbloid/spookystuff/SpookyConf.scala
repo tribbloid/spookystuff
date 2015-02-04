@@ -13,15 +13,15 @@ import scala.concurrent.duration._
 object SpookyConf {
 
   class Dirs(
-                 var root: String = System.getProperty("spooky.root"),
-                 var _autoSave: String = System.getProperty("spooky.autosave"),
-                 var _cache: String = System.getProperty("spooky.cache"),
-                 var _errorDump: String = System.getProperty("spooky.error.dump"),
-                 var _errorScreenshot: String = System.getProperty("spooky.error.screenshot"),
-                 var _checkpoint: String = System.getProperty("spooky.checkpoint"),
-                 var _errorDumpLocal: String = System.getProperty("spooky.error.dump.local"),
-                 var _errorScreenshotLocal: String = System.getProperty("spooky.error.screenshot.local")
-                 ) extends Serializable {
+              var root: String = System.getProperty("spooky.root"),
+              var _autoSave: String = System.getProperty("spooky.autosave"),
+              var _cache: String = System.getProperty("spooky.cache"),
+              var _errorDump: String = System.getProperty("spooky.error.dump"),
+              var _errorScreenshot: String = System.getProperty("spooky.error.screenshot"),
+              var _checkpoint: String = System.getProperty("spooky.checkpoint"),
+              var _errorDumpLocal: String = System.getProperty("spooky.error.dump.local"),
+              var _errorScreenshotLocal: String = System.getProperty("spooky.error.screenshot.local")
+              ) extends Serializable {
 
     def setRoot(v: String): Unit = {root = v}
 
@@ -57,6 +57,8 @@ object SpookyConf {
 
 class SpookyConf (
                    val dirs: Dirs = new Dirs(),
+
+                   val sharedMetrics: Boolean = false,
 
                    var driverFactory: DriverFactory = NaiveDriverFactory(),
                    var proxy: ProxyFactory = NoProxyFactory,
