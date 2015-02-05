@@ -621,7 +621,9 @@ case class PageRowRDD(
 
     val _expr = expr defaultAs Symbol(Const.defaultJoinKey)
 
-    val beforeSelectSelf = this.flatMap{
+    val beforeSelectSelf = this
+      .coalesce(numPartitions)
+      .flatMap{
       row =>
         val seeds = row.select(Literal(0) ~ depthKey).toSeq
 
