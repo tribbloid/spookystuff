@@ -727,7 +727,7 @@ case class PageRowRDD(
       total = total.union(
         if (depthKey != null) newRows.select(new Literal(depth) ~ depthKey)
         else newRows
-      ).coalesce(numPartitions)
+      )
     }
 
     total
@@ -807,7 +807,7 @@ case class PageRowRDD(
       total = total.union(
         if (depthKey != null) newRows.select(new Literal(depth) ~ depthKey)
         else newRows
-      ).coalesce(numPartitions)
+      )
     }
 
     total
