@@ -2,6 +2,7 @@ package org.tribbloid.spookystuff
 
 import org.tribbloid.spookystuff.SpookyConf.Dirs
 import org.tribbloid.spookystuff.dsl._
+import org.tribbloid.spookystuff.sparkbinding.PageRowRDD
 import org.tribbloid.spookystuff.utils.Utils
 
 import scala.collection.immutable.IndexedSeq
@@ -78,6 +79,11 @@ class SpookyConf (
                    var autoSaveExtract: Extract[String] = new UUIDFileName(Hierarchical),
                    var cacheTraceEncoder: TraceEncoder[String] = Hierarchical,
                    var errorDumpExtract: Extract[String] = new UUIDFileName(Hierarchical),
+
+                   var defaultParallelism: PageRowRDD => Int = {
+                     row =>
+                       row.sparkContext.defaultParallelism * 2
+                   },
 
                    var remoteResourceTimeout: Duration = 60.seconds,
                    var DFSTimeout: Duration = 40.seconds,

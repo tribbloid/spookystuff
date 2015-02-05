@@ -340,7 +340,7 @@ case class PageRowRDD(
              joinType: JoinType = Const.defaultJoinType,
              flattenPagesPattern: Symbol = '*, //by default, always flatten all pages
              flattenPagesIndexKey: Symbol = null,
-             numPartitions: Int = this.sparkContext.defaultParallelism,
+             numPartitions: Int = spooky.conf.defaultParallelism(this),
              optimizer: QueryOptimizer = spooky.conf.defaultQueryOptimizer
              ): PageRowRDD = {
 
@@ -472,7 +472,7 @@ case class PageRowRDD(
             )(
             traces: Set[Trace],
             joinType: JoinType = Const.defaultJoinType,
-            numPartitions: Int = this.sparkContext.defaultParallelism,
+            numPartitions: Int = spooky.conf.defaultParallelism(this),
             flattenPagesPattern: Symbol = '*,
             flattenPagesIndexKey: Symbol = null,
             optimizer: QueryOptimizer = spooky.conf.defaultQueryOptimizer
@@ -499,7 +499,7 @@ case class PageRowRDD(
                  indexKey: Symbol = null, //left & idempotent parameters are missing as they are always set to true
                  limit: Int = spooky.conf.joinLimit,
                  joinType: JoinType = Const.defaultJoinType,
-                 numPartitions: Int = this.sparkContext.defaultParallelism,
+                 numPartitions: Int = spooky.conf.defaultParallelism(this),
                  select: Expression[Any] = null,
                  optimizer: QueryOptimizer = spooky.conf.defaultQueryOptimizer
                  ): PageRowRDD =
@@ -522,7 +522,7 @@ case class PageRowRDD(
                 indexKey: Symbol = null, //left & idempotent parameters are missing as they are always set to true
                 limit: Int = spooky.conf.joinLimit,
                 joinType: JoinType = Const.defaultJoinType,
-                numPartitions: Int = this.sparkContext.defaultParallelism,
+                numPartitions: Int = spooky.conf.defaultParallelism(this),
                 select: Expression[Any] = null,
                 optimizer: QueryOptimizer = spooky.conf.defaultQueryOptimizer
                 ): PageRowRDD =
@@ -535,7 +535,7 @@ case class PageRowRDD(
 
   def distinctSignature(
                          ignore: Iterable[Symbol],
-                         numPartitions: Int = this.sparkContext.defaultParallelism
+                         numPartitions: Int = spooky.conf.defaultParallelism(this)
                          ): PageRowRDD = {
 
     val ignoreKeyNames = ignore.map(_.name)
@@ -553,7 +553,7 @@ case class PageRowRDD(
   def subtractSignature(
                          others: RDD[PageRow],
                          ignore: Iterable[Symbol],
-                         numPartitions: Int = this.sparkContext.defaultParallelism
+                         numPartitions: Int = spooky.conf.defaultParallelism(this)
                          ): PageRowRDD = {
 
     val ignoreKeyNames = ignore.map(_.name)
@@ -579,7 +579,7 @@ case class PageRowRDD(
                checkpointInterval: Int = 20
                )(
                traces: Set[Trace],
-               numPartitions: Int = this.sparkContext.defaultParallelism,
+               numPartitions: Int = spooky.conf.defaultParallelism(this),
                flattenPagesPattern: Symbol = '*,
                flattenPagesIndexKey: Symbol = null,
                optimizer: QueryOptimizer = spooky.conf.defaultQueryOptimizer
@@ -823,7 +823,7 @@ case class PageRowRDD(
                     hasTitle: Boolean = true,
                     depthKey: Symbol = null,
                     maxDepth: Int = spooky.conf.maxExploreDepth,
-                    numPartitions: Int = this.sparkContext.defaultParallelism,
+                    numPartitions: Int = spooky.conf.defaultParallelism(this),
                     select: Expression[Any] = null,
                     optimizer: QueryOptimizer = spooky.conf.defaultQueryOptimizer
                     ): PageRowRDD =
@@ -838,7 +838,7 @@ case class PageRowRDD(
                    hasTitle: Boolean = true,
                    depthKey: Symbol = null,
                    maxDepth: Int = spooky.conf.maxExploreDepth,
-                   numPartitions: Int = this.sparkContext.defaultParallelism,
+                   numPartitions: Int = spooky.conf.defaultParallelism(this),
                    select: Expression[Any] = null,
                    optimizer: QueryOptimizer = spooky.conf.defaultQueryOptimizer
                    ): PageRowRDD =
