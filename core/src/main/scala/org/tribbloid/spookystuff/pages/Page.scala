@@ -90,7 +90,7 @@ case class Page(
             overwrite: Boolean = false
             )(spooky: SpookyContext): Unit = {
 
-    val path = Utils.urlConcat(pathParts: _*)
+    val path = Utils.uriConcat(pathParts: _*)
 
     PageUtils.DFSWrite("save", path, spooky) {
 

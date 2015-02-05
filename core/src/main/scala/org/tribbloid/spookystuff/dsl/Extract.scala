@@ -14,5 +14,5 @@ sealed abstract class Extract[+R] extends (Page => R) with Serializable
 
 class UUIDFileName(encoder: TraceEncoder[_]) extends Extract[String] {
   override def apply(page: Page): String =
-    Utils.urlConcat(encoder(page.uid.backtrace).toString, UUID.randomUUID().toString)
+    Utils.uriConcat(encoder(page.uid.backtrace).toString, UUID.randomUUID().toString)
 }

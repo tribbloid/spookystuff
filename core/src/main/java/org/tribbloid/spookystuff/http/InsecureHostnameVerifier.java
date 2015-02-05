@@ -1,4 +1,4 @@
-package org.tribbloid.spookystuff.utils;
+package org.tribbloid.spookystuff.http;
 
 import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.SSLSession;

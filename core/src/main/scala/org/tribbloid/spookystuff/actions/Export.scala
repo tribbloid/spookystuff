@@ -17,7 +17,7 @@ import org.tribbloid.spookystuff.entity.PageRow
 import org.tribbloid.spookystuff.expressions.{Expression, Literal}
 import org.tribbloid.spookystuff.pages.{HtmlElement, Page, PageUID, Unstructured}
 import org.tribbloid.spookystuff.session.Session
-import org.tribbloid.spookystuff.utils.{SocksProxyConnectionSocketFactory, SocksProxySSLConnectionSocketFactory, UrlEncodingRedirectStrategy}
+import org.tribbloid.spookystuff.http.{SocksProxyConnectionSocketFactory, SocksProxySSLConnectionSocketFactory, ResilientRedirectStrategy}
 
 /**
  * Export a page from the browser or http client
@@ -105,25 +105,30 @@ case class Wget(
 
   override def doExeNoName(pb: Session): Seq[Page] = {
 
-    val urlStr = uri.asInstanceOf[Literal[String]].value
-    if ( urlStr.trim().isEmpty ) return Seq ()
+    val uriStr = uri.asInstanceOf[Literal[String]].value.trim()
+    if ( uriStr.isEmpty ) return Seq ()
+
+    val uriURI = HttpUtils.uri(uriStr)
 
     val proxy = pb.spooky.conf.proxy()
     val userAgent = pb.spooky.conf.userAgent()
     val headers = pb.spooky.conf.headers()
 
-    val defaultSetting = {
+    val requestConfig = {
       val timeoutMillis = pb.spooky.conf.remoteResourceTimeout.toMillis.toInt
 
       var builder = RequestConfig.custom()
         .setConnectTimeout ( timeoutMillis )
         .setConnectionRequestTimeout ( timeoutMillis )
         .setSocketTimeout( timeoutMillis )
+        .setRedirectsEnabled(true)
+        .setRelativeRedirectsAllowed(true)
+        .setAuthenticationEnabled(false)
 
       if (proxy!=null && !proxy.protocol.startsWith("socks")) builder=builder.setProxy(new HttpHost(proxy.addr, proxy.port, proxy.protocol))
 
-      val settings = builder.build()
-      settings
+      val result = builder.build()
+      result
     }
 
     val httpClient = if (proxy !=null && proxy.protocol.startsWith("socks")) {
@@ -134,8 +139,8 @@ case class Wget(
       val cm = new PoolingHttpClientConnectionManager(reg)
 
       val httpClient = HttpClients.custom
-        .setDefaultRequestConfig ( defaultSetting )
-        .setRedirectStrategy(new UrlEncodingRedirectStrategy())
+        .setDefaultRequestConfig ( requestConfig )
+        .setRedirectStrategy(new ResilientRedirectStrategy())
         .setConnectionManager(cm)
         .build
 
@@ -143,15 +148,15 @@ case class Wget(
     }
     else {
       val httpClient = HttpClients.custom
-        .setDefaultRequestConfig ( defaultSetting )
-        .setRedirectStrategy(new UrlEncodingRedirectStrategy())
+        .setDefaultRequestConfig ( requestConfig )
+        .setRedirectStrategy(new ResilientRedirectStrategy())
         .build()
 
       httpClient
     }
 
     val request = {
-      val request = new HttpGet(urlStr)
+      val request = new HttpGet(uriURI)
       if (userAgent != null) request.addHeader("User-Agent", userAgent)
       for (pair <- headers) {
         request.addHeader(pair._1, pair._2)
@@ -180,7 +185,7 @@ case class Wget(
 
         val result = new Page(
           PageUID(Trace(pb.backtrace :+ this), this),
-          urlStr,
+          uriURI.toASCIIString,
           contentType,
           content
         )

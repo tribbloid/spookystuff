@@ -105,12 +105,34 @@ class TestExport extends SpookyEnvSuite {
     assert(newIP !== noProxyIP2)
   }
 
-  test("wget should redirect") {
+  test("wget should encode malformed url") {
+    spooky.conf.proxy = NoProxyFactory
+
+    val results = Trace(
+      Wget("http://www.sigmaaldrich.com/catalog/search?term=38183-12-9&interface=CAS No.&N=0&mode=partialmax&lang=en&region=US&focus=product",hasTitle = false) :: Nil
+    ).resolve(spooky)
+
+    assert(results.size === 1)
+    results(0).asInstanceOf[Page]
+  }
+
+  test("wget should encode redirection to malformed url") {
 
     spooky.conf.proxy = NoProxyFactory
 
     val results = Trace(
       Wget("http://www.sigmaaldrich.com/catalog/search/SearchResultsPage?Query=%3Ca+href%3D%22%2Fcatalog%2Fsearch%3Fterm%3D81-25-4%26interface%3DCAS+No.%26N%3D0%26mode%3Dpartialmax%26lang%3Den%26region%3DUS%26focus%3Dproduct%22%3E81-25-4%3C%2Fa%3E&Scope=CASSearch&btnSearch.x=1",hasTitle = false) :: Nil
+    ).resolve(spooky)
+
+    assert(results.size === 1)
+    results(0).asInstanceOf[Page]
+  }
+
+  test("wget should correct redirection to relative url path") {
+    spooky.conf.proxy = NoProxyFactory
+
+    val results = Trace(
+      Wget("http://www.sigmaaldrich.com/etc/controller/controller-page.html?TablePage=17193175",hasTitle = false) :: Nil
     ).resolve(spooky)
 
     assert(results.size === 1)

@@ -38,16 +38,16 @@ object Utils {
 
   @transient lazy val random = new Random()
 
-  def urlConcat(parts: String*): String = {
+  def uriConcat(parts: String*): String = {
     var result = ""
 
     for (part <- parts) {
-      result += urlSlash(part)
+      result += uriSlash(part)
     }
     result.substring(0, result.length-1)
   }
 
-  def urlSlash(part: String): String = {
+  def uriSlash(part: String): String = {
     if (part.endsWith("/")) part
     else part+"/"
   }
