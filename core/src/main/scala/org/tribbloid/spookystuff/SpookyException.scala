@@ -5,9 +5,9 @@ package org.tribbloid.spookystuff
  * doesn't have to catch it every time
  */
 class SpookyException (
-                                 val message: String = "",
-                                 val cause: Throwable = null
-                                 )
+                        val message: String = "",
+                        val cause: Throwable = null
+                        )
   extends RuntimeException(message, cause) {
 
   override def getMessage: String = this.message+"\nCaused by: "+this.getCause.toString
@@ -19,11 +19,16 @@ class ActionException(
                        ) extends SpookyException(message, cause)
 
 class DFSReadException(
-                       override val message: String = "",
-                       override val cause: Throwable = null
-                       ) extends SpookyException(message, cause)
-
-class DFSWriteException(
                         override val message: String = "",
                         override val cause: Throwable = null
                         ) extends SpookyException(message, cause)
+
+class DFSWriteException(
+                         override val message: String = "",
+                         override val cause: Throwable = null
+                         ) extends SpookyException(message, cause)
+
+class UnsupportedContentTypeException(
+                                        override val message: String = "",
+                                        override val cause: Throwable = null
+                                        ) extends SpookyException(message, cause)
