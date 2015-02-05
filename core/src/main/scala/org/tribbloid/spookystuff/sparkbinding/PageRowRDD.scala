@@ -331,8 +331,7 @@ case class PageRowRDD(
     val persisted = if (this.getStorageLevel == StorageLevel.NONE) this.persist(StorageLevel.MEMORY_AND_DISK)
     else this
 
-    persisted
-      .flatMap(_.pageLikes.map(page => page.uid.backtrace -> page ))
+    persisted.flatMap(_.pageLikes.map(page => page.uid.backtrace -> page ))
     //TODO: really takes a lot of space, how to eliminate?
   }
 
@@ -353,6 +352,8 @@ case class PageRowRDD(
       case Minimal =>
         //        if (lookup != null)throw new UnsupportedOperationException(s"${optimizer.getClass.getSimpleName} optimizer can't use lookup table")
         _dumbFetch(_traces, joinType, numPartitions)
+      case SmartNoLookup =>
+        _smartFetch(_traces, joinType, numPartitions, null)
       case Smart =>
         _smartFetch(_traces, joinType, numPartitions, lookup())
       case _ => throw new UnsupportedOperationException(s"${optimizer.getClass.getSimpleName} optimizer is not supported in this query")
@@ -593,6 +594,8 @@ case class PageRowRDD(
     optimizer match {
       case Minimal =>
         _dumbExplore(expr, depthKey, maxDepth, checkpointInterval)(_traces, numPartitions, flattenPagesPattern, flattenPagesIndexKey)(select: _*)
+      case SmartNoLookup =>
+        _smartNoLookupExplore(expr, depthKey, maxDepth, checkpointInterval)(_traces, numPartitions, flattenPagesPattern, flattenPagesIndexKey)(select: _*)
       case Smart =>
         _smartExplore(expr, depthKey, maxDepth, checkpointInterval)(_traces, numPartitions, flattenPagesPattern, flattenPagesIndexKey)(select: _*)
       case _ => throw new UnsupportedOperationException(s"${optimizer.getClass.getSimpleName} optimizer is not supported in this query")
@@ -662,6 +665,75 @@ case class PageRowRDD(
       .clearTemp
 
     result
+  }
+
+  //recursive join and union! applicable to many situations like (wide) pagination and deep crawling
+  private def _smartNoLookupExplore(
+                             expr: Expression[Any],
+                             depthKey: Symbol,
+                             maxDepth: Int,
+                             checkpointInterval: Int
+                             )(
+                             _traces: Set[Trace],
+                             numPartitions: Int,
+                             flattenPagesPattern: Symbol,
+                             flattenPagesIndexKey: Symbol
+                             )(
+                             select: Expression[Any]*
+                             ): PageRowRDD = {
+
+    val spooky = this.spooky
+
+    var newRows = this
+
+    var total = if (depthKey != null)
+      this.select(Literal(0) ~ depthKey)
+        .copy(indexKeys = this.indexKeys + Key(depthKey))
+    else this
+
+    if (this.context.getCheckpointDir.isEmpty) this.context.setCheckpointDir(spooky.conf.dirs.checkpoint)
+
+    val _expr = expr defaultAs Symbol(Const.defaultJoinKey)
+
+    for (depth <- 1 to maxDepth) {
+      //ALWAYS inner join
+      val joined = newRows
+        .flattenTemp(_expr, null, Int.MaxValue, left = true)
+        ._smartFetch(_traces, Inner, numPartitions, null)
+
+      val flattened = joined.flattenPages(flattenPagesPattern, flattenPagesIndexKey)
+
+      val allIgnoredKeys = Seq(depthKey, flattenPagesIndexKey).filter(_ != null)
+
+      newRows = flattened
+        .subtractSignature(total, allIgnoredKeys)
+        .distinctSignature(allIgnoredKeys)
+        .persist(StorageLevel.MEMORY_AND_DISK)
+
+      if (depth % checkpointInterval == 0) {
+        newRows.checkpoint()
+      }
+
+      val newRowsSize = newRows.count()
+      LoggerFactory.getLogger(this.getClass).info(s"found $newRowsSize new row(s) at $depth depth")
+
+      if (newRowsSize == 0){
+        return total
+          .select(select: _*)
+          .clearTemp
+          .coalesce(numPartitions) //early stop condition if no new pages with the same data is detected
+      }
+
+      total = total.union(
+        if (depthKey != null) newRows.select(new Literal(depth) ~ depthKey)
+        else newRows
+      ).coalesce(numPartitions)
+    }
+
+    total
+      .select(select: _*)
+      .clearTemp
+      .coalesce(numPartitions)
   }
 
   //recursive join and union! applicable to many situations like (wide) pagination and deep crawling
@@ -736,10 +808,6 @@ case class PageRowRDD(
         if (depthKey != null) newRows.select(new Literal(depth) ~ depthKey)
         else newRows
       ).coalesce(numPartitions)
-      if (depth % checkpointInterval == 0) {
-        total.checkpoint()
-        val size = total.count()
-      }
     }
 
     total
