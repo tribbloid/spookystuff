@@ -17,7 +17,7 @@ import org.tribbloid.spookystuff.entity.PageRow
 import org.tribbloid.spookystuff.expressions.{Expression, Literal}
 import org.tribbloid.spookystuff.pages.{HtmlElement, Page, PageUID, Unstructured}
 import org.tribbloid.spookystuff.session.Session
-import org.tribbloid.spookystuff.http.{SocksProxyConnectionSocketFactory, SocksProxySSLConnectionSocketFactory, ResilientRedirectStrategy}
+import org.tribbloid.spookystuff.http.{HttpUtils, SocksProxyConnectionSocketFactory, SocksProxySSLConnectionSocketFactory, ResilientRedirectStrategy}
 
 /**
  * Export a page from the browser or http client
