@@ -81,7 +81,6 @@ final case class Trace(
     }
     val numPages = results.count(_.isInstanceOf[Page])
     spooky.metrics.pagesFetched += numPages
-    LoggerFactory.getLogger(this.getClass).info(s"resolved $numPages pages")
     results
   }
 

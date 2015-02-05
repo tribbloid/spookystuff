@@ -70,7 +70,7 @@ class TestPage extends SpookyEnvSuite {
     assert(resultsList.size === 1)
     val page1 = resultsList(0).asInstanceOf[Page]
 
-    assert(page1.children("title").texts.head === "Wikipedia, the free encyclopedia")
+    assert(page1.children("title").texts.head startsWith "Wikipedia")
 
     page1.autoSave(spooky,overwrite = true)
 
