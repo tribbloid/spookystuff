@@ -9,7 +9,7 @@ import org.jsoup.nodes.{Document, Element}
 /**
  * Created by peng on 11/30/14.
  */
-class HtmlElement private ( //this is the only way to declare private primary constructor
+class HtmlElement private (
                             @transient _parsed: Element,
                             val html: String,
                             override val uri: String

@@ -72,8 +72,7 @@ case class Page(
     new HtmlElement(content, parsedContentType.getCharset, uri) //not serialize, parsing is faster
   }
   else {
-    throw new UnsupportedContentTypeException(this.contentType)
-    //    throw new UnsupportedOperationException("Cannot parse mime type " + parsedContentType.getMimeType)
+    new UnknownElement(uri)
   }
 
   override def children(selector: String): Seq[Unstructured] = root.children(selector)
