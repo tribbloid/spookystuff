@@ -1,6 +1,6 @@
 package org.tribbloid.spookystuff.sparkbinding
 
-import org.apache.spark.rdd.RDD
+import org.apache.spark.rdd.{UnionRDD, RDD}
 import org.apache.spark.sql._
 import org.apache.spark.sql.catalyst.analysis.UnresolvedAttribute
 import org.apache.spark.storage.StorageLevel
@@ -16,6 +16,7 @@ import org.tribbloid.spookystuff.{Const, SpookyContext}
 
 import scala.collection.immutable.ListSet
 import scala.collection.mutable
+import scala.collection.mutable.ArrayBuffer
 import scala.language.implicitConversions
 import scala.reflect.ClassTag
 
@@ -113,7 +114,7 @@ case class PageRowRDD(
 
     val jsonRDD = this.toJSON
 
-    if (jsonRDD.getStorageLevel == StorageLevel.NONE) jsonRDD.persist(StorageLevel.MEMORY_AND_DISK) //for some unknown reason SQLContext.jsonRDD uses the parameter RDD twice, this has to be fixed by somebody else
+    if (jsonRDD.getStorageLevel == StorageLevel.NONE) jsonRDD.persist(StorageLevel.MEMORY_AND_DISK_SER) //for some unknown reason SQLContext.jsonRDD uses the parameter RDD twice, this has to be fixed by somebody else
     //TODO: unpersist after next action, is it even possible?
 
     import spooky.sqlContext._
@@ -328,7 +329,7 @@ case class PageRowRDD(
     )
 
   def lookup(): RDD[(Trace, PageLike)] = {
-    val persisted = if (this.getStorageLevel == StorageLevel.NONE) this.persist(StorageLevel.MEMORY_AND_DISK)
+    val persisted = if (this.getStorageLevel == StorageLevel.NONE) this.persist(StorageLevel.MEMORY_AND_DISK_SER)
     else this
 
     persisted.flatMap(_.pageLikes.map(page => page.uid.backtrace -> page ))
@@ -622,11 +623,11 @@ case class PageRowRDD(
 
     val _expr = expr defaultAs Symbol(Const.defaultJoinKey)
 
-//    var remainingDepth = maxDepth
+    var remainingDepth = maxDepth
 
-    val pre = this.coalesce(numPartitions)
+    val firstResultRDD = this.coalesce(numPartitions).persist(StorageLevel.MEMORY_AND_DISK_SER)
 
-    val firstStage = pre
+    val firstStageRDD = firstResultRDD
       .map {
       row =>
         val seeds = row.select(Literal(0) ~ depthKey)
@@ -643,40 +644,50 @@ case class PageRowRDD(
         ExploreStage(seeds, dryruns = Set(dryruns))
     }
 
-//    var done = false
-//    while(!done) {
-//
-//    }
+    val resultRDDs = ArrayBuffer[RDD[PageRow]](firstResultRDD.select(Literal(0) ~ depthKey))
 
-    val beforeSelectSelf = firstStage
-      .flatMap{
-      stage =>
-        val tuple = PageRow.dumbExplore(
-          stage
-        )(
-            _expr,
-            depthKey,
-            maxDepth,
-            spooky
+    var done = false
+    var stageRDD = firstStageRDD
+    while(!done) {
+
+      val batchDepth = Math.min(remainingDepth, batchSize)
+      remainingDepth = remainingDepth - batchDepth
+
+      val batchExeRDD = stageRDD.map {
+        stage =>
+          PageRow.dumbExplore(
+            stage
           )(
-            _traces,
-            flattenPagesPattern,
-            flattenPagesIndexKey
-          )
+              _expr,
+              depthKey,
+              batchDepth,
+              spooky
+            )(
+              _traces,
+              flattenPagesPattern,
+              flattenPagesIndexKey
+            )
+      }.persist(StorageLevel.MEMORY_AND_DISK_SER) // change to checkpoint?
 
-        stage.seeds ++ tuple._1
+      if (batchExeRDD.count() == 0 || remainingDepth == 0) done = true
+
+      stageRDD = batchExeRDD.map(_._2).filter(_.hasMore)
+
+      val totalRDD = batchExeRDD.flatMap(_._1)
+
+      resultRDDs += totalRDD
     }
 
-    val beforeSelectKeys = this.keys ++ Seq(TempKey(_expr.name), Key(depthKey), Key(flattenPagesIndexKey)).flatMap(Option(_))
-    val beforeSelectIndexKeys = this.indexKeys ++ Seq(Key(depthKey), Key(flattenPagesIndexKey)).flatMap(Option(_))
+    val resultSelf = new UnionRDD(this.sparkContext, resultRDDs).coalesce(numPartitions) //TODO: not an 'official' API
 
-    val beforeSelect = this.copy(self = beforeSelectSelf, keys = beforeSelectKeys, indexKeys = beforeSelectIndexKeys)
+    val resultKeys = this.keys ++ Seq(TempKey(_expr.name), Key(depthKey), Key(flattenPagesIndexKey)).flatMap(Option(_))
+    val resultIndexKeys = this.indexKeys ++ Seq(Key(depthKey), Key(flattenPagesIndexKey)).flatMap(Option(_))
 
-    val result = beforeSelect
-      .select(select: _*)
-      .clearTemp
+    val result = this.copy(self = resultSelf, keys = resultKeys, indexKeys = resultIndexKeys)
 
     result
+      .select(select: _*)
+      .clearTemp
   }
 
   //recursive join and union! applicable to many situations like (wide) pagination and deep crawling
@@ -720,7 +731,7 @@ case class PageRowRDD(
       newRows = flattened
         .subtractSignature(total, allIgnoredKeys)
         .distinctSignature(allIgnoredKeys)
-        .persist(StorageLevel.MEMORY_AND_DISK)
+        .persist(StorageLevel.MEMORY_AND_DISK_SER)
 
       if (depth % checkpointInterval == 0) {
         newRows.checkpoint()
@@ -800,7 +811,7 @@ case class PageRowRDD(
       newRows = flattened
         .subtractSignature(total, allIgnoredKeys)
         .distinctSignature(allIgnoredKeys)
-        .persist(StorageLevel.MEMORY_AND_DISK)
+        .persist(StorageLevel.MEMORY_AND_DISK_SER)
 
       if (depth % checkpointInterval == 0) {
         newRows.checkpoint()

@@ -382,4 +382,7 @@ case class ExploreStage(
                          seeds: Iterable[PageRow], //pages that hasn't be been crawled before
                          traces: Set[Trace] = Set(), //already resolved traces
                          dryruns: Set[Seq[Trace]] = Set() //already resolved pages, of which original traces used to resolve them is intractable
-                         )
+                         ) {
+
+  def hasMore = seeds.nonEmpty
+}
