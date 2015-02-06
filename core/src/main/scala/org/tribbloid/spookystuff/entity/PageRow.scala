@@ -285,7 +285,7 @@ object PageRow {
     var seeds = stage.seeds
     var traces = stage.traces
 
-    for (depth <- depthStartExclusive to depthEndInclusive) {
+    for (depth <- depthStartExclusive + 1 to depthEndInclusive) {
 
       val squashes = seeds
         .flatMap(_.selectTemp(expr))

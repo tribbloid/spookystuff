@@ -650,9 +650,6 @@ case class PageRowRDD(
     var stageRDD = firstStageRDD
     while(!done) {
 
-//      val batchDepth = Math.min(remainingDepth, batchSize)
-//      remainingDepth = remainingDepth - batchDepth
-
       val depthEnd = Math.min(depthStart + batchSize, maxDepth)
 
       val batchExeRDD = stageRDD.map {
