@@ -623,7 +623,7 @@ case class PageRowRDD(
 
     val _expr = expr defaultAs Symbol(Const.defaultJoinKey)
 
-    var remainingDepth = maxDepth
+    var depthStart = 0
 
     val firstResultRDD = this.coalesce(numPartitions).persist(StorageLevel.MEMORY_AND_DISK_SER)
 
@@ -650,8 +650,10 @@ case class PageRowRDD(
     var stageRDD = firstStageRDD
     while(!done) {
 
-      val batchDepth = Math.min(remainingDepth, batchSize)
-      remainingDepth = remainingDepth - batchDepth
+//      val batchDepth = Math.min(remainingDepth, batchSize)
+//      remainingDepth = remainingDepth - batchDepth
+
+      val depthEnd = Math.min(depthStart + batchSize, maxDepth)
 
       val batchExeRDD = stageRDD.map {
         stage =>
@@ -660,7 +662,8 @@ case class PageRowRDD(
           )(
               _expr,
               depthKey,
-              batchDepth,
+              depthStart,
+              depthEnd,
               spooky
             )(
               _traces,
@@ -669,7 +672,13 @@ case class PageRowRDD(
             )
       }.persist(StorageLevel.MEMORY_AND_DISK_SER) // change to checkpoint?
 
-      if (batchExeRDD.count() == 0 || remainingDepth == 0) done = true
+      val count = batchExeRDD.count()
+
+      LoggerFactory.getLogger(this.getClass).info(s"$count groups have found new rows after $depthEnd iterations")
+
+      depthStart = depthEnd
+
+      if (count == 0 || depthEnd == maxDepth) done = true
 
       stageRDD = batchExeRDD.map(_._2).filter(_.hasMore)
 
@@ -690,7 +699,7 @@ case class PageRowRDD(
       .clearTemp
   }
 
-  //recursive join and union! applicable to many situations like (wide) pagination and deep crawling
+  //no lookup, purely relies on cache to avoid redundant fetch
   private def _smartNoLookupExplore(
                                      expr: Expression[Any],
                                      depthKey: Symbol,
@@ -738,7 +747,7 @@ case class PageRowRDD(
       }
 
       val newRowsSize = newRows.count()
-      LoggerFactory.getLogger(this.getClass).info(s"found $newRowsSize new row(s) at $depth depth")
+      LoggerFactory.getLogger(this.getClass).info(s"found $newRowsSize new row(s) after $depth iteration")
 
       if (newRowsSize == 0){
         return total

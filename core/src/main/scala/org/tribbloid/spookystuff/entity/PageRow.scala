@@ -271,7 +271,8 @@ object PageRow {
                    )(
                    expr: Expression[Any],
                    depthKey: Symbol,
-                   maxDepth: Int,
+                   depthStartExclusive: Int,
+                   depthEndInclusive: Int,
                    spooky: SpookyContext
                    )(
                    _traces: Set[Trace],
@@ -284,7 +285,7 @@ object PageRow {
     var seeds = stage.seeds
     var traces = stage.traces
 
-    for (depth <- 1 to maxDepth) {
+    for (depth <- depthStartExclusive to depthEndInclusive) {
 
       val squashes = seeds
         .flatMap(_.selectTemp(expr))
@@ -319,7 +320,7 @@ object PageRow {
           else Seq(row)
       }
 
-      LoggerFactory.getLogger(this.getClass).info(s"found ${seeds.size} new row(s) at $depth depth")
+      LoggerFactory.getLogger(this.getClass).info(s"found ${seeds.size} new row(s) after $depth iteration")
       if (seeds.size == 0) return (total, stage.copy(seeds = seeds, traces = traces))
 
       val newRowsWithDepthKey = if (depthKey != null) seeds.flatMap(_.select(Literal(depth) ~ depthKey))
