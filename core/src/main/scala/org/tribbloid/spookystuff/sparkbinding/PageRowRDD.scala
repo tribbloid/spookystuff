@@ -577,7 +577,7 @@ case class PageRowRDD(
                expr: Expression[Any],
                depthKey: Symbol = null,
                maxDepth: Int = spooky.conf.maxExploreDepth,
-               checkpointInterval: Int = 50
+               checkpointInterval: Int = spooky.conf.checkpointInterval
                )(
                traces: Set[Trace],
                numPartitions: Int = spooky.conf.defaultParallelism(this),
@@ -609,7 +609,7 @@ case class PageRowRDD(
                             depthKey: Symbol = null,
                             maxDepth: Int,
                             checkpointInterval: Int,
-                            batchSize: Int = 500
+                            batchSize: Int = spooky.conf.batchSize
                             )(
                             _traces: Set[Trace],
                             numPartitions: Int,

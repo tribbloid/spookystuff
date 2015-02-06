@@ -6,16 +6,14 @@ import org.apache.spark.sql.SQLContext
 import org.apache.spark.{SparkConf, SparkContext}
 import org.scalatest.{BeforeAndAfterAll, FunSuite}
 import org.tribbloid.spookystuff.SpookyConf.Dirs
-import org.tribbloid.spookystuff.{SpookyConf, SpookyContext}
 import org.tribbloid.spookystuff.dsl.{Minimal, QueryOptimizer, Smart}
 import org.tribbloid.spookystuff.utils.Utils
+import org.tribbloid.spookystuff.{SpookyConf, SpookyContext}
 
 /**
  * Created by peng on 12/2/14.
  */
 abstract class IntegrationSuite extends FunSuite with BeforeAndAfterAll {
-
-  import org.scalatest.Matchers._
 
   @transient var sc: SparkContext = _
   @transient var sql: SQLContext = _
@@ -55,7 +53,9 @@ abstract class IntegrationSuite extends FunSuite with BeforeAndAfterAll {
     new SpookyConf(
       localDirs,
       sharedMetrics = true,
-      autoSave = false
+      autoSave = false,
+      checkpointInterval = 2,
+      batchSize = 2
     )
   )
 
@@ -64,7 +64,9 @@ abstract class IntegrationSuite extends FunSuite with BeforeAndAfterAll {
     new SpookyConf(
       s3Dirs,
       sharedMetrics = true,
-      autoSave = false
+      autoSave = false,
+      checkpointInterval = 2,
+      batchSize = 2
     )
   )
 
@@ -75,9 +77,9 @@ abstract class IntegrationSuite extends FunSuite with BeforeAndAfterAll {
     assert(pageFetched === numPages(spooky.conf.defaultQueryOptimizer))
     assert(metrics.pagesFetchedFromWeb.value === pageFetched)
     assert(metrics.pagesFetchedFromCache.value === 0)
-    assert(metrics.sessionInitialized.value === numSessions(spooky.conf.defaultQueryOptimizer) +- 1)
+    assert(metrics.sessionInitialized.value === numSessions(spooky.conf.defaultQueryOptimizer))
     assert(metrics.sessionReclaimed.value >= metrics.sessionInitialized.value)
-    assert(metrics.driverInitialized.value === numDrivers(spooky.conf.defaultQueryOptimizer) +- 1)
+    assert(metrics.driverInitialized.value === numDrivers(spooky.conf.defaultQueryOptimizer))
     assert(metrics.driverReclaimed.value >= metrics.driverInitialized.value)
   }
 

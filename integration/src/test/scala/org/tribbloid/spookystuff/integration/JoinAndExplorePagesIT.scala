@@ -31,7 +31,7 @@ class JoinAndExplorePagesIT extends IntegrationSuite {
       .select($"h1".text ~ 'header)
 
     val result = joined
-      .explore($"ul.pagination a", depthKey = 'depth, checkpointInterval = 2)(
+      .explore($"ul.pagination a", depthKey = 'depth)(
         Wget('A.href)
       )(
         'A.text as 'page

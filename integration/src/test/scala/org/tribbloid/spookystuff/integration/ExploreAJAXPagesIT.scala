@@ -28,7 +28,7 @@ class ExploreAJAXPagesIT extends IntegrationSuite {
       )
 
     val result = base
-      .explore($"div.sidebar-nav a", depthKey = 'depth, checkpointInterval = 2)(
+      .explore($"div.sidebar-nav a", depthKey = 'depth)(
         Visit('A.href)
           +> snapshotAllPages,
         flattenPagesIndexKey = 'page_index

@@ -5,7 +5,6 @@ import org.tribbloid.spookystuff.dsl._
 import org.tribbloid.spookystuff.sparkbinding.PageRowRDD
 import org.tribbloid.spookystuff.utils.Utils
 
-import scala.collection.immutable.IndexedSeq
 import scala.concurrent.duration._
 
 /**
@@ -96,11 +95,14 @@ class SpookyConf (
 
                    var defaultQueryOptimizer: QueryOptimizer = Smart,
 
-                   var paginationLimit: Int = 1000 //TODO: deprecate soon
+                   var checkpointInterval: Int = 50,
+                   var batchSize: Int = 500,
+
+                   var paginationLimit: Int = 1000 //TODO: deprecate
                    ) extends Serializable {
 
-  def toJSON: String = {
-
-    Utils.toJson(this, beautiful = true)
-  }
+  //  def toJSON: String = { //useless for non-case class
+  //
+  //    Utils.toJson(this, beautiful = true)
+  //  }
 }
