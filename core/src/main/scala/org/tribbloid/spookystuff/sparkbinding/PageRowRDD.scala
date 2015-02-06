@@ -626,8 +626,8 @@ case class PageRowRDD(
 
     val pre = this.coalesce(numPartitions)
 
-    val beforeSelectSelf = pre
-      .flatMap{
+    val firstStage = pre
+      .map {
       row =>
         val seeds = row.select(Literal(0) ~ depthKey)
         val dryruns = row
@@ -640,10 +640,19 @@ case class PageRowRDD(
         }
           .keys.toSeq
 
-        val initialStage = ExploreStage(seeds, dryruns = Set(dryruns))
+        ExploreStage(seeds, dryruns = Set(dryruns))
+    }
 
+//    var done = false
+//    while(!done) {
+//
+//    }
+
+    val beforeSelectSelf = firstStage
+      .flatMap{
+      stage =>
         val tuple = PageRow.dumbExplore(
-          initialStage
+          stage
         )(
             _expr,
             depthKey,
@@ -655,7 +664,7 @@ case class PageRowRDD(
             flattenPagesIndexKey
           )
 
-        seeds ++ tuple._1
+        stage.seeds ++ tuple._1
     }
 
     val beforeSelectKeys = this.keys ++ Seq(TempKey(_expr.name), Key(depthKey), Key(flattenPagesIndexKey)).flatMap(Option(_))

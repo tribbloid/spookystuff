@@ -294,7 +294,7 @@ object PageRow {
           _traces.interpolate(row)
             .filterNot {
             trace =>
-              val traceExists = stage.traces.contains(trace)
+              val traceExists = traces.contains(trace)
               val dryrunExists = stage.dryruns.contains(trace.dryrun)
               traceExists || dryrunExists
           }
