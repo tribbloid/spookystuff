@@ -18,7 +18,7 @@ class ExploreIT extends IntegrationSuite {
       )
 
     val explored = base
-      .explore($"div.sidebar-nav a", depthKey = 'depth, checkpointInterval = 1)(
+      .explore($"div.sidebar-nav a", depthKey = 'depth, checkpointInterval = 2)(
         Visit('A.href),
         flattenPagesIndexKey = 'page
       )(

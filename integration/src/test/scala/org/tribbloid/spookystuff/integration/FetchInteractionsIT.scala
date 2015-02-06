@@ -31,7 +31,7 @@ class FetchInteractionsIT extends IntegrationSuite{
     assert(pageRows(0).pages(0).name === "Snapshot()")
     val pageTime = pageRows(0).pages.head.timestamp.getTime
     assert(pageTime < finishTime)
-    assert(pageTime > finishTime-60000) //long enough even after the second time it is retrieved from s3 cache
+    assert(pageTime > finishTime-120000) //long enough even after the second time it is retrieved from s3 cache
 
     val RDDAppended = RDD
       .fetch(

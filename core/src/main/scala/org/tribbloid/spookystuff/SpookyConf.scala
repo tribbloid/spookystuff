@@ -97,4 +97,10 @@ class SpookyConf (
                    var defaultQueryOptimizer: QueryOptimizer = Smart,
 
                    var paginationLimit: Int = 1000 //TODO: deprecate soon
-                   ) extends Serializable
+                   ) extends Serializable {
+
+  def toJSON: String = {
+
+    Utils.toJson(this, beautiful = true)
+  }
+}

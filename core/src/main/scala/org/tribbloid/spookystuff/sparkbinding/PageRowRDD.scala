@@ -106,7 +106,7 @@ case class PageRowRDD(
 
   def toMapRDD: RDD[Map[String, Any]] = this.map(_.asMap())
 
-  def toJSON: RDD[String] = this.map(_.toJSON())
+  def toJSON: RDD[String] = this.map(_.toJSON)
 
   //TODO: investigate using the new applySchema api to avoid losing type info
   def toSchemaRDD(order: Boolean = true): SchemaRDD = {
@@ -576,7 +576,7 @@ case class PageRowRDD(
                expr: Expression[Any],
                depthKey: Symbol = null,
                maxDepth: Int = spooky.conf.maxExploreDepth,
-               checkpointInterval: Int = 20
+               checkpointInterval: Int = 50
                )(
                traces: Set[Trace],
                numPartitions: Int = spooky.conf.defaultParallelism(this),
@@ -607,7 +607,8 @@ case class PageRowRDD(
                             expr: Expression[Any],
                             depthKey: Symbol = null,
                             maxDepth: Int,
-                            checkpointInterval: Int
+                            checkpointInterval: Int,
+                            batchSize: Int = 500
                             )(
                             _traces: Set[Trace],
                             numPartitions: Int,
@@ -621,28 +622,28 @@ case class PageRowRDD(
 
     val _expr = expr defaultAs Symbol(Const.defaultJoinKey)
 
-    val beforeSelectSelf = this
-      .coalesce(numPartitions)
+//    var remainingDepth = maxDepth
+
+    val pre = this.coalesce(numPartitions)
+
+    val beforeSelectSelf = pre
       .flatMap{
       row =>
-        val seeds = row.select(Literal(0) ~ depthKey).toSeq
-
-        val excludeTraces = mutable.HashSet[Trace]()
-
-        val excludeDryruns = row
+        val seeds = row.select(Literal(0) ~ depthKey)
+        val dryruns = row
           .pageLikes
           .map(_.uid)
           .groupBy(_.backtrace)
           .filter{
           tuple =>
-            tuple._2.size == tuple._2.head.total
+            tuple._2.size == tuple._2.head.total //I hope this is sufficient condition
         }
           .keys.toSeq
 
+        val initialStage = ExploreStage(seeds, dryruns = Set(dryruns))
+
         val tuple = PageRow.dumbExplore(
-          seeds,
-          excludeTraces,
-          excludeDryruns = Set(excludeDryruns)
+          initialStage
         )(
             _expr,
             depthKey,
@@ -654,7 +655,7 @@ case class PageRowRDD(
             flattenPagesIndexKey
           )
 
-        tuple._1
+        seeds ++ tuple._1
     }
 
     val beforeSelectKeys = this.keys ++ Seq(TempKey(_expr.name), Key(depthKey), Key(flattenPagesIndexKey)).flatMap(Option(_))
@@ -671,18 +672,18 @@ case class PageRowRDD(
 
   //recursive join and union! applicable to many situations like (wide) pagination and deep crawling
   private def _smartNoLookupExplore(
-                             expr: Expression[Any],
-                             depthKey: Symbol,
-                             maxDepth: Int,
-                             checkpointInterval: Int
-                             )(
-                             _traces: Set[Trace],
-                             numPartitions: Int,
-                             flattenPagesPattern: Symbol,
-                             flattenPagesIndexKey: Symbol
-                             )(
-                             select: Expression[Any]*
-                             ): PageRowRDD = {
+                                     expr: Expression[Any],
+                                     depthKey: Symbol,
+                                     maxDepth: Int,
+                                     checkpointInterval: Int
+                                     )(
+                                     _traces: Set[Trace],
+                                     numPartitions: Int,
+                                     flattenPagesPattern: Symbol,
+                                     flattenPagesIndexKey: Symbol
+                                     )(
+                                     select: Expression[Any]*
+                                     ): PageRowRDD = {
 
     val spooky = this.spooky
 

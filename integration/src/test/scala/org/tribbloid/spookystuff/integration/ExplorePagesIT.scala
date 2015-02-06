@@ -16,7 +16,7 @@ class ExplorePagesIT extends IntegrationSuite {
       .fetch(
         Wget("http://webscraper.io/test-sites/e-commerce/static/computers/tablets")
       )
-      .explore($"ul.pagination a", depthKey = 'depth, checkpointInterval = 1)(
+      .explore($"ul.pagination a", depthKey = 'depth, checkpointInterval = 2)(
         Wget('A.href)
       )(
         'A.text ~ 'page
@@ -38,7 +38,7 @@ class ExplorePagesIT extends IntegrationSuite {
     assert(rows contains "1|2|http://webscraper.io/test-sites/e-commerce/static/computers/tablets/2")
     assert(rows contains "1|3|http://webscraper.io/test-sites/e-commerce/static/computers/tablets/3")
     assert(rows contains "1|4|http://webscraper.io/test-sites/e-commerce/static/computers/tablets/4")
-    assert(rows contains "2|1|http://webscraper.io/test-sites/e-commerce/static/computers/tablets/1")
+//    assert(rows contains "2|1|http://webscraper.io/test-sites/e-commerce/static/computers/tablets/1")
   }
 
   override def numPages = _ => 5

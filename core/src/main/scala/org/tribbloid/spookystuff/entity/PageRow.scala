@@ -117,7 +117,7 @@ case class PageRow(
     .filterKeys(_.isInstanceOf[Key]).map(identity)
     .map( tuple => tuple._1.name -> tuple._2)
 
-  def toJSON(): String = {
+  def toJSON: String = {
     import org.tribbloid.spookystuff.views._
 
     Utils.toJson(this.asMap().canonizeKeysToColumnNames)
@@ -230,8 +230,6 @@ case class PageRow(
     }
   }
 
-  //affect last page
-  //TODO: deprecate?
   def paginate(
                 selector: String,
                 attr: String,
@@ -269,9 +267,7 @@ object PageRow {
 
   //won't insert depthKey for seed.
   def dumbExplore(
-                   seeds: Seq[PageRow], //should have the same depth
-                   excludeTraces: mutable.Set[Trace],
-                   excludeDryruns: Set[Seq[Trace]] = Set()
+                   stage: ExploreStage
                    )(
                    expr: Expression[Any],
                    depthKey: Symbol,
@@ -281,14 +277,16 @@ object PageRow {
                    _traces: Set[Trace],
                    flattenPagesPattern: Symbol,
                    flattenPagesIndexKey: Symbol
-                   ): (Iterable[PageRow], Iterable[PageRow]) = {
+                   ): (Iterable[PageRow], ExploreStage) = {
 
-    val total: ArrayBuffer[PageRow] = ArrayBuffer(seeds: _*)
+    val total: ArrayBuffer[PageRow] = ArrayBuffer()
 
-    var previousRows: Iterable[PageRow] = seeds
+    var seeds = stage.seeds
+    var traces = stage.traces
 
     for (depth <- 1 to maxDepth) {
-      val squashes = previousRows
+
+      val squashes = seeds
         .flatMap(_.selectTemp(expr))
         .flatMap(_.flatten(expr.name, null, Int.MaxValue, left = true))
         .flatMap {
@@ -296,8 +294,8 @@ object PageRow {
           _traces.interpolate(row)
             .filterNot {
             trace =>
-              val traceExists = excludeTraces.contains(trace)
-              val dryrunExists = excludeDryruns.contains(trace.dryrun)
+              val traceExists = stage.traces.contains(trace)
+              val dryrunExists = stage.dryruns.contains(trace.dryrun)
               traceExists || dryrunExists
           }
             .map(interpolatedTrace => interpolatedTrace -> row)
@@ -308,9 +306,9 @@ object PageRow {
           Squash(tuple._1, tuple._2.map(_._2).headOption)
       }
 
-      excludeTraces ++= squashes.map(_.trace)
+      traces = traces ++ squashes.map(_.trace)
 
-      val newRows = squashes
+      seeds = squashes
         .flatMap {
         squash =>
           squash.resolveAndPut(Inner, spooky)
@@ -321,18 +319,16 @@ object PageRow {
           else Seq(row)
       }
 
-      LoggerFactory.getLogger(this.getClass).info(s"found ${newRows.size} new row(s) at $depth depth")
-      if (newRows.size == 0) return (total, previousRows)
+      LoggerFactory.getLogger(this.getClass).info(s"found ${seeds.size} new row(s) at $depth depth")
+      if (seeds.size == 0) return (total, stage.copy(seeds = seeds, traces = traces))
 
-      val newRowsWithDepthKey = if (depthKey != null) newRows.flatMap(_.select(Literal(depth) ~ depthKey))
-      else newRows
+      val newRowsWithDepthKey = if (depthKey != null) seeds.flatMap(_.select(Literal(depth) ~ depthKey))
+      else seeds
 
       total ++= newRowsWithDepthKey
-
-      previousRows = newRows
     }
 
-    (total, previousRows)
+    (total, stage.copy(seeds = seeds, traces = traces))
   }
 
 
@@ -380,3 +376,10 @@ case class Squash(trace: Trace, rows: Iterable[PageRow]) {
     this.rows.flatMap(_.putPages(pages, joinType))
   }
 }
+
+//intermediate variable representing a stage in web crawling.
+case class ExploreStage(
+                         seeds: Iterable[PageRow], //pages that hasn't be been crawled before
+                         traces: Set[Trace] = Set(), //already resolved traces
+                         dryruns: Set[Seq[Trace]] = Set() //already resolved pages, of which original traces used to resolve them is intractable
+                         )
