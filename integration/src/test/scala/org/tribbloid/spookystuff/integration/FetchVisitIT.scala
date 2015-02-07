@@ -43,7 +43,7 @@ class FetchVisitIT extends IntegrationSuite {
     assert(appendedRows(0).pages(0).copy(timestamp = null, content = null) === appendedRows(1).pages(0).copy(timestamp = null, content = null))
 
     import duration._
-    if (spooky.conf.defaultQueryOptimizer != Minimal && spooky.conf.pageExpireAfter >= 10.minutes) {
+    if (spooky.conf.defaultQueryOptimizer != Narrow && spooky.conf.pageExpireAfter >= 10.minutes) {
       assert(appendedRows(0).pages(0).timestamp === appendedRows(1).pages(0).timestamp)
       assert(appendedRows(0).pages(0).content === appendedRows(1).pages.apply(0).content)
     }
@@ -65,7 +65,7 @@ class FetchVisitIT extends IntegrationSuite {
   }
 
   override def numPages = {
-    case Minimal => 2
+    case Narrow => 2
     case _ => 1
   }
 }

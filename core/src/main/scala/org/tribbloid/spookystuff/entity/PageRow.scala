@@ -287,24 +287,27 @@ object PageRow {
 
     for (depth <- depthStartExclusive + 1 to depthEndInclusive) {
 
-      val squashes = seeds
-        .flatMap(_.selectTemp(expr))
-        .flatMap(_.flatten(expr.name, null, Int.MaxValue, left = true))
-        .flatMap {
+      val traceToRows = seeds
+        .flatMap(_.selectTemp(expr)) //join start: select 1
+        .flatMap(_.flatten(expr.name, null, Int.MaxValue, left = true)) //select 2
+        .flatMap { //generate traces
         row =>
           _traces.interpolate(row)
-            .filterNot {
+            .filterNot { //if trace or dryrun already exist returns None
             trace =>
-              val traceExists = traces.contains(trace)
-              val dryrunExists = stage.dryruns.contains(trace.dryrun)
+              val traceExists = traces.contains(trace) //if trace ...
+              val dryrunExists = stage.dryruns.contains(trace.dryrun) //... or dryrun exist
               traceExists || dryrunExists
           }
             .map(interpolatedTrace => interpolatedTrace -> row)
       }
+
+      val squashes = traceToRows
         .groupBy(_._1)
         .map {
         tuple =>
           Squash(tuple._1, tuple._2.map(_._2).headOption)
+          //when multiple links on one or more pages leads to the same uri, keep the first one
       }
 
       traces = traces ++ squashes.map(_.trace)

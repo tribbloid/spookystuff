@@ -6,7 +6,7 @@ import org.apache.spark.sql.SQLContext
 import org.apache.spark.{SparkConf, SparkContext}
 import org.scalatest.{BeforeAndAfterAll, FunSuite}
 import org.tribbloid.spookystuff.SpookyConf.Dirs
-import org.tribbloid.spookystuff.dsl.{Minimal, QueryOptimizer, Smart}
+import org.tribbloid.spookystuff.dsl.{Narrow, QueryOptimizer, Wide}
 import org.tribbloid.spookystuff.utils.Utils
 import org.tribbloid.spookystuff.{SpookyConf, SpookyContext}
 
@@ -117,25 +117,25 @@ abstract class IntegrationSuite extends FunSuite with BeforeAndAfterAll {
 
   test("local cache, smart optimizer") {
 
-    localCacheEnv.conf.defaultQueryOptimizer = Smart
+    localCacheEnv.conf.defaultQueryOptimizer = Wide
     doTest(localCacheEnv)
   }
 
   test("s3 cache, smart optimizer") {
 
-    localCacheEnv.conf.defaultQueryOptimizer = Smart
+    localCacheEnv.conf.defaultQueryOptimizer = Wide
     doTest(s3CacheEnv)
   }
 
   test("local cache, minimal optimizer") {
 
-    localCacheEnv.conf.defaultQueryOptimizer = Minimal
+    localCacheEnv.conf.defaultQueryOptimizer = Narrow
     doTest(localCacheEnv)
   }
 
   test("s3 cache, minimal optimizer") {
 
-    s3CacheEnv.conf.defaultQueryOptimizer = Minimal
+    s3CacheEnv.conf.defaultQueryOptimizer = Narrow
     doTest(s3CacheEnv)
   }
 

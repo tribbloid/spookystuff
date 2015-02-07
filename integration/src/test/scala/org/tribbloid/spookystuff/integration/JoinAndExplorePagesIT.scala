@@ -71,7 +71,7 @@ class JoinAndExplorePagesIT extends IntegrationSuite {
   }
 
   override def numPages = {
-    case Minimal => 16
+    case Narrow => 16
     case _ => 15
   }
 

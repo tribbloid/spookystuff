@@ -93,7 +93,7 @@ class SpookyConf (
                    var joinLimit: Int = Int.MaxValue,
                    var maxExploreDepth: Int = Int.MaxValue,
 
-                   var defaultQueryOptimizer: QueryOptimizer = Smart,
+                   var defaultQueryOptimizer: QueryOptimizer = Wide,
 
                    var checkpointInterval: Int = 50,
                    var batchSize: Int = 500,

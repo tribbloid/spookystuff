@@ -1,6 +1,6 @@
 package org.tribbloid.spookystuff.sparkbinding
 
-import org.apache.spark.rdd.{UnionRDD, RDD}
+import org.apache.spark.rdd.{RDD, UnionRDD}
 import org.apache.spark.sql._
 import org.apache.spark.sql.catalyst.analysis.UnresolvedAttribute
 import org.apache.spark.storage.StorageLevel
@@ -15,7 +15,6 @@ import org.tribbloid.spookystuff.utils._
 import org.tribbloid.spookystuff.{Const, SpookyContext}
 
 import scala.collection.immutable.ListSet
-import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
 import scala.language.implicitConversions
 import scala.reflect.ClassTag
@@ -350,12 +349,12 @@ case class PageRowRDD(
     spooky.broadcast()
 
     val result = optimizer match {
-      case Minimal =>
+      case Narrow =>
         //        if (lookup != null)throw new UnsupportedOperationException(s"${optimizer.getClass.getSimpleName} optimizer can't use lookup table")
         _dumbFetch(_traces, joinType, numPartitions)
-      case SmartNoLookup =>
+      case WideNoLookup =>
         _smartFetch(_traces, joinType, numPartitions, null)
-      case Smart =>
+      case Wide =>
         _smartFetch(_traces, joinType, numPartitions, lookup())
       case _ => throw new UnsupportedOperationException(s"${optimizer.getClass.getSimpleName} optimizer is not supported in this query")
     }
@@ -393,7 +392,8 @@ case class PageRowRDD(
                            _traces: Set[Trace],
                            joinType: JoinType,
                            numPartitions: Int,
-                           lookup: RDD[(Trace, PageLike)]
+                           lookup: RDD[(Trace, PageLike)],
+                           keepFirst: Boolean = false
                            ): PageRowRDD = {
 
     val spooky = this.spooky
@@ -403,7 +403,8 @@ case class PageRowRDD(
         _traces.interpolate(row).map(interpolatedTrace => interpolatedTrace -> row)
     }
 
-    val squashes = traceToRow.groupByKey(numPartitions).map(tuple => Squash(tuple._1, tuple._2))
+    val squashes = if (keepFirst) traceToRow.groupByKey(numPartitions).map(tuple => Squash(tuple._1, tuple._2.headOption))
+      else traceToRow.groupByKey(numPartitions).map(tuple => Squash(tuple._1, tuple._2))
 
     val resultRows: RDD[PageRow] = if (lookup == null) {
       //no lookup
@@ -593,11 +594,11 @@ case class PageRowRDD(
     spooky.broadcast()
 
     optimizer match {
-      case Minimal =>
+      case Narrow =>
         _dumbExplore(expr, depthKey, maxDepth, checkpointInterval)(_traces, numPartitions, flattenPagesPattern, flattenPagesIndexKey)(select: _*)
-      case SmartNoLookup =>
+      case WideNoLookup =>
         _smartNoLookupExplore(expr, depthKey, maxDepth, checkpointInterval)(_traces, numPartitions, flattenPagesPattern, flattenPagesIndexKey)(select: _*)
-      case Smart =>
+      case Wide =>
         _smartExplore(expr, depthKey, maxDepth, checkpointInterval)(_traces, numPartitions, flattenPagesPattern, flattenPagesIndexKey)(select: _*)
       case _ => throw new UnsupportedOperationException(s"${optimizer.getClass.getSimpleName} optimizer is not supported in this query")
     }
@@ -728,7 +729,7 @@ case class PageRowRDD(
       //ALWAYS inner join
       val joined = newRows
         .flattenTemp(_expr, null, Int.MaxValue, left = true)
-        ._smartFetch(_traces, Inner, numPartitions, null)
+        ._smartFetch(_traces, Inner, numPartitions, null, keepFirst = true)
 
       val flattened = joined.flattenPages(flattenPagesPattern, flattenPagesIndexKey)
 
@@ -799,7 +800,7 @@ case class PageRowRDD(
       //ALWAYS inner join
       val joined = newRows
         .flattenTemp(_expr, null, Int.MaxValue, left = true)
-        ._smartFetch(_traces, Inner, numPartitions, lookups)
+        ._smartFetch(_traces, Inner, numPartitions, lookups, keepFirst = true)
 
       val newLookups = joined.lookup()
 

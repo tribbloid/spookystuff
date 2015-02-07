@@ -5,15 +5,14 @@ package org.tribbloid.spookystuff.dsl
  */
 sealed abstract class QueryOptimizer
 
-
 //this won't merge identical traces and do lookup, only used in case each resolve may yield different result
-case object Minimal extends QueryOptimizer
+case object Narrow extends QueryOptimizer
 
-case object SmartNoLookup extends QueryOptimizer
+case object WideNoLookup extends QueryOptimizer
 
 //group identical ActionPlans, execute in parallel, and duplicate result pages to match their original contexts
 //reduce workload by avoiding repeated access to the same url caused by duplicated context or diamond links (A->B,A->C,B->D,C->D)
-case object Smart extends QueryOptimizer
+case object Wide extends QueryOptimizer
 
 case object Inductive extends QueryOptimizer
 

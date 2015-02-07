@@ -62,12 +62,12 @@ class FetchBlockIT extends IntegrationSuite {
   }
 
   override def numPages = {
-    case Minimal => 6
+    case Narrow => 6
     case _ => 3
   }
 
   override def numSessions = {
-    case Minimal => 2
+    case Narrow => 2
     case _ => 1
   }
 }

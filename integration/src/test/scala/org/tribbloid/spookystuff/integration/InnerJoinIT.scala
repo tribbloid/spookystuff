@@ -53,7 +53,7 @@ class InnerJoinIT extends IntegrationSuite {
   }
 
   override def numPages = {
-    case Minimal => 7
+    case Narrow => 7
     case _ => 6
   }
 }
