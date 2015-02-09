@@ -155,11 +155,11 @@ object PageUtils {
 
       val fs = dirPath.getFileSystem(spooky.hadoopConf)
 
-      if (fs.exists(dirPath) && fs.getFileStatus(dirPath).isDir) {
+      if (fs.exists(dirPath) && fs.getFileStatus(dirPath).isDirectory) {
 
         val statuses = fs.listStatus(dirPath)
 
-        statuses.filter(status => !status.isDir && status.getModificationTime >= earliestModificationTime)
+        statuses.filter(status => !status.isDirectory && status.getModificationTime >= earliestModificationTime)
           .sortBy(_.getModificationTime).lastOption
       }
       else None

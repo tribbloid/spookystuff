@@ -102,6 +102,8 @@ case class PageRowRDD(
   }
   //-------------------all before this lines are self typed wrappers--------------------
 
+  def generateGroupID: PageRowRDD = this.copy(self = this.map(_.generateGroupID))
+
   def toPageRowRDD: PageRowRDD = this
 
   def toMapRDD: RDD[Map[String, Any]] = this.map(_.asMap())
@@ -348,7 +350,7 @@ case class PageRowRDD(
 
     spooky.broadcast()
 
-    val result = optimizer match {
+    val _result = optimizer match {
       case Narrow =>
         //        if (lookup != null)throw new UnsupportedOperationException(s"${optimizer.getClass.getSimpleName} optimizer can't use lookup table")
         _dumbFetch(_traces, joinType, numPartitions)
@@ -358,6 +360,8 @@ case class PageRowRDD(
         _smartFetch(_traces, joinType, numPartitions, lookup())
       case _ => throw new UnsupportedOperationException(s"${optimizer.getClass.getSimpleName} optimizer is not supported in this query")
     }
+
+    val result = _result.generateGroupID
 
     if (flattenPagesPattern != null) result.flattenPages(flattenPagesPattern,flattenPagesIndexKey)
     else result
@@ -392,8 +396,7 @@ case class PageRowRDD(
                            _traces: Set[Trace],
                            joinType: JoinType,
                            numPartitions: Int,
-                           lookup: RDD[(Trace, PageLike)],
-                           keepFirst: Boolean = false
+                           lookup: RDD[(Trace, PageLike)]
                            ): PageRowRDD = {
 
     val spooky = this.spooky
@@ -403,8 +406,7 @@ case class PageRowRDD(
         _traces.interpolate(row).map(interpolatedTrace => interpolatedTrace -> row)
     }
 
-    val squashes = if (keepFirst) traceToRow.groupByKey(numPartitions).map(tuple => Squash(tuple._1, tuple._2.headOption))
-      else traceToRow.groupByKey(numPartitions).map(tuple => Squash(tuple._1, tuple._2))
+    val squashes = traceToRow.groupByKey(numPartitions).map(tuple => Squash(tuple._1, tuple._2))
 
     val resultRows: RDD[PageRow] = if (lookup == null) {
       //no lookup
@@ -441,7 +443,7 @@ case class PageRowRDD(
             val lookupPages = tuple._2
             lookupPages.foreach(_.uid.backtrace.injectFrom(backtrace))
 
-            val latestBatchOption = PageRow.discoverLatestBlockOutput(lookupPages)
+            val latestBatchOption = PageRow.discoverLatestBatch(lookupPages)
 
             squashedWithIndexes.map{
               squashedWithIndex =>
@@ -535,42 +537,38 @@ case class PageRowRDD(
       optimizer = optimizer
     )(Option(select).toSeq: _*)
 
-  def distinctSignature(
-                         ignore: Iterable[Symbol],
-                         numPartitions: Int = spooky.conf.defaultParallelism(this)
-                         ): PageRowRDD = {
-
-    val ignoreKeyNames = ignore.map(_.name)
-    val withSignatures = this.keyBy(_.signature(ignoreKeyNames))
-    val distinct = withSignatures.reduceByKey((row1, row2) => row1).values
-
-    this.copy(
-      self = distinct
-    )
-  }
-
   /* if the following conditions are met, row will be removed
-  * 1. row has identical trace and name
-  * 2. the row has identical cells*/
-  def subtractSignature(
-                         others: RDD[PageRow],
-                         ignore: Iterable[Symbol],
-                         numPartitions: Int = spooky.conf.defaultParallelism(this)
+* 1. row has identical trace and name
+* 2. the row has identical cells*/
+  private def subtractSignature(
+                         another: RDD[PageRow],
+                         numPartitions: Int
                          ): PageRowRDD = {
 
-    val ignoreKeyNames = ignore.map(_.name)
-    val otherSignatures = others.map {
-      row => row.signature(ignoreKeyNames)
+    val otherSignatures = another.map {
+      row => row.signature
     }.map{
       signature => signature -> null
     }
     val withSignatures = this.map{
-      row => row.signature(ignoreKeyNames) -> row
+      row => row.signature -> row
     }
     val excluded = withSignatures.subtractByKey(otherSignatures, numPartitions).values
 
     this.copy(
       self = excluded
+    )
+  }
+
+  private def distinctSignature(
+                         numPartitions: Int
+                         ): PageRowRDD = {
+
+    val withSignatures = this.keyBy(_.signature)
+    val distinct = withSignatures.reduceByKey((row1, row2) => row1).values
+
+    this.copy(
+      self = distinct
     )
   }
 
@@ -593,7 +591,7 @@ case class PageRowRDD(
 
     spooky.broadcast()
 
-    optimizer match {
+    val result = optimizer match {
       case Narrow =>
         _dumbExplore(expr, depthKey, maxDepth, checkpointInterval)(_traces, numPartitions, flattenPagesPattern, flattenPagesIndexKey)(select: _*)
       case WideNoLookup =>
@@ -602,6 +600,8 @@ case class PageRowRDD(
         _smartExplore(expr, depthKey, maxDepth, checkpointInterval)(_traces, numPartitions, flattenPagesPattern, flattenPagesIndexKey)(select: _*)
       case _ => throw new UnsupportedOperationException(s"${optimizer.getClass.getSimpleName} optimizer is not supported in this query")
     }
+
+    result.generateGroupID
   }
 
   //this is a single-threaded explore, of which implementation is similar to good old pagination.
@@ -638,7 +638,7 @@ case class PageRowRDD(
           .groupBy(_.backtrace)
           .filter{
           tuple =>
-            tuple._2.size == tuple._2.head.total //I hope this is sufficient condition
+            tuple._2.size == tuple._2.head.blockTotal //I hope this is sufficient condition
         }
           .keys.toSeq
 
@@ -673,7 +673,6 @@ case class PageRowRDD(
       val count = batchExeRDD.count()
 
       LoggerFactory.getLogger(this.getClass).info(s"$count groups have found new rows after $depthEnd iterations")
-
       depthStart = depthEnd
 
       if (count == 0 || depthEnd == maxDepth) done = true
@@ -727,17 +726,15 @@ case class PageRowRDD(
 
     for (depth <- 1 to maxDepth) {
       //ALWAYS inner join
-      val joined = newRows
+      val fetched = newRows
         .flattenTemp(_expr, null, Int.MaxValue, left = true)
-        ._smartFetch(_traces, Inner, numPartitions, null, keepFirst = true)
+        ._smartFetch(_traces, Inner, numPartitions, null)
 
-      val flattened = joined.flattenPages(flattenPagesPattern, flattenPagesIndexKey)
-
-      val allIgnoredKeys = Seq(depthKey, flattenPagesIndexKey).filter(_ != null)
+      val flattened = fetched.flattenPages(flattenPagesPattern, flattenPagesIndexKey)
 
       newRows = flattened
-        .subtractSignature(total, allIgnoredKeys)
-        .distinctSignature(allIgnoredKeys)
+        .distinctSignature(numPartitions)
+        .subtractSignature(total, numPartitions)
         .persist(StorageLevel.MEMORY_AND_DISK_SER)
 
       if (depth % checkpointInterval == 0) {
@@ -745,7 +742,7 @@ case class PageRowRDD(
       }
 
       val newRowsSize = newRows.count()
-      LoggerFactory.getLogger(this.getClass).info(s"found $newRowsSize new row(s) after $depth iteration")
+      LoggerFactory.getLogger(this.getClass).info(s"found $newRowsSize new row(s) after $depth iterations")
 
       if (newRowsSize == 0){
         return total
@@ -798,11 +795,11 @@ case class PageRowRDD(
 
     for (depth <- 1 to maxDepth) {
       //ALWAYS inner join
-      val joined = newRows
+      val fetched = newRows
         .flattenTemp(_expr, null, Int.MaxValue, left = true)
-        ._smartFetch(_traces, Inner, numPartitions, lookups, keepFirst = true)
+        ._smartFetch(_traces, Inner, numPartitions, lookups)
 
-      val newLookups = joined.lookup()
+      val newLookups = fetched.lookup()
 
       lookups = lookups.union(newLookups) //TODO: remove pages with identical uid but different _traces? or set the lookup table as backtrace -> seq directly.
 
@@ -811,13 +808,11 @@ case class PageRowRDD(
         val size = lookups.count()
       }
 
-      val flattened = joined.flattenPages(flattenPagesPattern, flattenPagesIndexKey)
-
-      val allIgnoredKeys = Seq(depthKey, flattenPagesIndexKey).filter(_ != null)
+      val flattened = fetched.flattenPages(flattenPagesPattern, flattenPagesIndexKey)
 
       newRows = flattened
-        .subtractSignature(total, allIgnoredKeys)
-        .distinctSignature(allIgnoredKeys)
+        .distinctSignature(numPartitions)
+        .subtractSignature(total, numPartitions)
         .persist(StorageLevel.MEMORY_AND_DISK_SER)
 
       if (depth % checkpointInterval == 0) {
@@ -825,7 +820,7 @@ case class PageRowRDD(
       }
 
       val newRowsSize = newRows.count()
-      LoggerFactory.getLogger(this.getClass).info(s"found $newRowsSize new row(s) at $depth depth")
+      LoggerFactory.getLogger(this.getClass).info(s"found $newRowsSize new row(s) after $depth iterations")
 
       if (newRowsSize == 0){
         return total
@@ -875,37 +870,4 @@ case class PageRowRDD(
       numPartitions,
       optimizer = optimizer
     )(Option(select).toSeq: _*)
-
-  /**
-   * insert many pages for each old page by recursively visiting "next page" link
-   * @param selector selector of the "next page" element
-   * @param limit depth of recursion
-   * @return RDD[Page], contains both old and new pages
-   */
-  @Deprecated def paginate(
-                            selector: String,
-                            attr: String = "abs:href",
-                            wget: Boolean = true,
-                            postAction: Seq[Action] = Seq()
-                            )(
-                            limit: Int = spooky.conf.paginationLimit,
-                            indexKey: Symbol = null,
-                            flatten: Boolean = true,
-                            last: Boolean = false
-                            ): PageRowRDD = {
-
-    val spooky = this.spooky.broadcast()
-
-    val realIndexKey = Key(indexKey)
-
-    val result = this.flatMap {
-      _.paginate(selector, attr, wget, postAction)(limit, Key(indexKey), flatten)(spooky)
-    }
-
-    this.copy(
-      self = result,
-      keys = this.keys ++ Option(realIndexKey),
-      indexKeys = this.indexKeys ++ Option(Key(indexKey))
-    )
-  }
 }

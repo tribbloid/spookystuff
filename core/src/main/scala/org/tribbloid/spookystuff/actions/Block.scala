@@ -1,7 +1,7 @@
 package org.tribbloid.spookystuff.actions
 
 import org.slf4j.LoggerFactory
-import org.tribbloid.spookystuff.Const
+import org.tribbloid.spookystuff.{dsl, Const}
 import org.tribbloid.spookystuff.entity.PageRow
 import org.tribbloid.spookystuff.pages.{NoPage, Page, PageLike}
 import org.tribbloid.spookystuff.session.Session
@@ -38,7 +38,7 @@ abstract class Block(override val self: Seq[Action]) extends Actions(self) with 
       tuple => {
         val page = tuple._1
 
-        page.copy(uid = page.uid.copy(backtrace = backtrace, blockIndex = tuple._2, total = pages.size))
+        page.copy(uid = page.uid.copy(backtrace = backtrace, blockIndex = tuple._2, blockTotal = pages.size))
       }
     }
     if (result.isEmpty && this.hasExport) Seq(NoPage(backtrace))
@@ -151,26 +151,33 @@ object Loop {
 //syntax sugar for loop-click-wait
 object LoadMore {
 
+  import dsl._
+
   def apply(
              selector: String,
              limit: Int = Const.maxLoop,
              delay: Duration = Const.actionDelayMin
              ): Loop =
-    new Loop(
-      Delay(delay) :: Click(selector) :: Nil,
+    Loop(
+      Delay(delay)
+        +> Click(selector),
       limit
     )
 }
 
 object Paginate {
 
+  import dsl._
+
   def apply(
              selector: String,
              limit: Int = Const.maxLoop,
              delay: Duration = Const.actionDelayMin
              ): Loop = {
-    new Loop(
-      Delay(delay)::Snapshot():: Click(selector) ::Nil,
+    Loop(
+      Delay(delay)
+        +> Snapshot()
+        +> Click(selector),
       limit
     )
   }

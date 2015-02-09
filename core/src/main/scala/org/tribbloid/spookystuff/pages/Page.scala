@@ -21,7 +21,7 @@ case class PageUID(
                     leaf: Named,
 //                    sessionStartTime: Long, //TODO: add for sanity check
                     blockIndex: Int = 0,
-                    total: Int = 1 //number of pages in a block output,
+                    blockTotal: Int = 1 //number of pages in a block output,
                     ) {
 
 }

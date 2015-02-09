@@ -1,5 +1,7 @@
 package org.tribbloid.spookystuff.entity
 
+import java.util.UUID
+
 import org.slf4j.LoggerFactory
 import org.tribbloid.spookystuff.actions._
 import org.tribbloid.spookystuff.dsl._
@@ -19,7 +21,8 @@ import scala.reflect.ClassTag
 //cells & pages share the same key pool but different data structure
 case class PageRow(
                     cells: Map[KeyLike, Any] = Map(), //TODO: also carry PageUID & property type (Vertex/Edge) for GraphX, ListMap may be slower but has tighter serialization footage
-                    pageLikes: Seq[PageLike] = Seq() // discarded after new page coming in
+                    pageLikes: Seq[PageLike] = Seq(), // discarded after new page coming in
+                    groupID: Long = PageRow.newGroupID //keep flattened rows together
                     )
   extends Serializable {
 
@@ -46,6 +49,8 @@ case class PageRow(
       case _ => None
     }
   }
+
+  def generateGroupID = this.copy(groupID = PageRow.newGroupID)
 
   def get(keyStr: String): Option[Any] = {
     cells.get(resolveKey(keyStr))
@@ -80,7 +85,7 @@ case class PageRow(
       case _ => None
     }
 
-    if (page.nonEmpty && value.nonEmpty) throw new UnsupportedOperationException("Ambiguous key referring to both page and data")
+    if (page.nonEmpty && value.nonEmpty) throw new UnsupportedOperationException("Ambiguous key referring to both pages and data")
     else page.orElse(value)
   }
 
@@ -106,12 +111,10 @@ case class PageRow(
     Some(result)
   }
 
-  def signature(ignore: Iterable[String]) = (
-    this.cells.filterKeys(_.isInstanceOf[Key]).map(identity) -- ignore.map(Key(_)),
-    pagesSignature
+  def signature = (
+    groupID,
+    pages.map(_.uid)
     )
-
-  def pagesSignature = pages.map(_.uid) -> pages.map(_.name)
 
   def asMap(): Map[String, Any] = this.cells
     .filterKeys(_.isInstanceOf[Key]).map(identity)
@@ -151,7 +154,7 @@ case class PageRow(
     this.copy(cells = this.cells -- keys)
   }
 
-  def filterKeys(f: KeyLike => Boolean): PageRow = {
+  private def filterKeys(f: KeyLike => Boolean): PageRow = {
     this.copy(cells = this.cells.filterKeys(f).map(identity))
   }
 
@@ -229,41 +232,11 @@ case class PageRow(
       }
     }
   }
-
-  def paginate(
-                selector: String,
-                attr: String,
-                wget: Boolean,
-                postActions: Seq[Action]
-                )(
-                limit: Int,
-                indexKey: Key,
-                flatten: Boolean
-                )(
-                spooky: SpookyContext
-                ): Seq[PageRow] = {
-
-    var currentRow = this
-    var increment = this.pageLikes.size
-
-    while (currentRow.pages.size <= limit && increment > 0 && currentRow.pages.last.children(selector).attrs(attr, noEmpty = true).nonEmpty) {
-
-      val action = if (!wget) Visit(new Literal(currentRow.pages.last.children(selector).attrs(attr, noEmpty = true).head))
-      else Wget(new Literal(currentRow.pages.last.children(selector).attrs(attr, noEmpty = true).head))
-
-      val newRow = currentRow.putPages(Trace(action::Nil).resolve(spooky), joinType = Merge).get
-
-      increment = newRow.pageLikes.size - currentRow.pageLikes.size
-
-      currentRow = newRow
-    }
-
-    if (flatten) currentRow.flattenPages(Const.onlyPageWildcard,indexKey = indexKey)
-    else Seq(currentRow)
-  }
 }
 
 object PageRow {
+
+  def newGroupID = UUID.randomUUID().getMostSignificantBits
 
   //won't insert depthKey for seed.
   def dumbExplore(
@@ -296,7 +269,7 @@ object PageRow {
             .filterNot { //if trace or dryrun already exist returns None
             trace =>
               val traceExists = traces.contains(trace) //if trace ...
-              val dryrunExists = stage.dryruns.contains(trace.dryrun) //... or dryrun exist
+            val dryrunExists = stage.dryruns.contains(trace.dryrun) //... or dryrun exist
               traceExists || dryrunExists
           }
             .map(interpolatedTrace => interpolatedTrace -> row)
@@ -307,7 +280,7 @@ object PageRow {
         .map {
         tuple =>
           Squash(tuple._1, tuple._2.map(_._2).headOption)
-          //when multiple links on one or more pages leads to the same uri, keep the first one
+        //when multiple links on one or more pages leads to the same uri, keep the first one
       }
 
       traces = traces ++ squashes.map(_.trace)
@@ -336,7 +309,7 @@ object PageRow {
   }
 
 
-  def discoverLatestBlockOutput(pages: Iterable[PageLike]): Option[Seq[PageLike]] = {
+  def discoverLatestBatch(pages: Iterable[PageLike]): Option[Seq[PageLike]] = {
     //assume that all inputs already has identical backtraces
 
     if (pages.isEmpty) return None
@@ -349,16 +322,16 @@ object PageRow {
     val sorted = blockIndexToPages.toSeq.sortBy(_._1).map(_._2)
 
     //extensive sanity check to make sure that none of them are obsolete
-    val total = sorted.head.uid.total
+    val total = sorted.head.uid.blockTotal
     if (sorted.size < total) return None
-    val trunk = sorted.slice(0, sorted.head.uid.total)
+    val trunk = sorted.slice(0, sorted.head.uid.blockTotal)
 
     trunk.foreach{
       page =>
-        if (page.uid.total != total) return None
+        if (page.uid.blockTotal != total) return None
     }
 
-    Some(sorted.slice(0, sorted.head.uid.total))
+    Some(sorted.slice(0, sorted.head.uid.blockTotal))
   }
 }
 
