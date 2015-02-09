@@ -18,6 +18,8 @@ import org.tribbloid.spookystuff.expressions.{Expression, Literal}
 import org.tribbloid.spookystuff.pages.{HtmlElement, Page, PageUID, Unstructured}
 import org.tribbloid.spookystuff.session.Session
 import org.tribbloid.spookystuff.http.{HttpUtils, SocksProxyConnectionSocketFactory, SocksProxySSLConnectionSocketFactory, ResilientRedirectStrategy}
+import org.tribbloid.spookystuff.utils
+import org.tribbloid.spookystuff.utils.Utils
 
 /**
  * Export a page from the browser or http client
@@ -205,7 +207,9 @@ case class Wget(
   }
 
   override def doInterpolate(pageRow: PageRow): Option[this.type] = {
-    val uriStr: Option[String] = this.uri(pageRow).flatMap {
+    val first = this.uri(pageRow).map(Utils.encapsulateAsIterable(_).head)
+
+    val uriStr: Option[String] = first.flatMap {
       case element: Unstructured => element.href
       case str: String => Option(str)
       case obj: Any => Option(obj.toString)
