@@ -238,7 +238,6 @@ object PageRow {
 
   def newGroupID = UUID.randomUUID().getMostSignificantBits
 
-  //won't insert depthKey for seed.
   def dumbExplore(
                    stage: ExploreStage
                    )(
@@ -246,6 +245,7 @@ object PageRow {
                    depthKey: Symbol,
                    depthStartExclusive: Int,
                    depthEndInclusive: Int,
+                 jointLimit: Int,
                    spooky: SpookyContext
                    )(
                    _traces: Set[Trace],
@@ -263,6 +263,7 @@ object PageRow {
       val traceToRows = seeds
         .flatMap(_.selectTemp(expr)) //join start: select 1
         .flatMap(_.flatten(expr.name, null, Int.MaxValue, left = true)) //select 2
+        .slice(0, jointLimit)
         .flatMap { //generate traces
         row =>
           _traces.interpolate(row)

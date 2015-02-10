@@ -96,9 +96,7 @@ class SpookyConf (
                    var defaultQueryOptimizer: QueryOptimizer = Wide,
 
                    var checkpointInterval: Int = 50,
-                   var batchSize: Int = 500,
-
-                   var paginationLimit: Int = 1000 //TODO: deprecate
+                   var batchSize: Int = 500
                    ) extends Serializable {
 
   //  def toJSON: String = { //useless for non-case class

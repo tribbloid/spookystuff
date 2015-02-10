@@ -541,9 +541,9 @@ case class PageRowRDD(
 * 1. row has identical trace and name
 * 2. the row has identical cells*/
   private def subtractSignature(
-                         another: RDD[PageRow],
-                         numPartitions: Int
-                         ): PageRowRDD = {
+                                 another: RDD[PageRow],
+                                 numPartitions: Int
+                                 ): PageRowRDD = {
 
     val otherSignatures = another.map {
       row => row.signature
@@ -561,8 +561,8 @@ case class PageRowRDD(
   }
 
   private def distinctSignature(
-                         numPartitions: Int
-                         ): PageRowRDD = {
+                                 numPartitions: Int
+                                 ): PageRowRDD = {
 
     val withSignatures = this.keyBy(_.signature)
     val distinct = withSignatures.reduceByKey((row1, row2) => row1).values
@@ -576,7 +576,8 @@ case class PageRowRDD(
                expr: Expression[Any],
                depthKey: Symbol = null,
                maxDepth: Int = spooky.conf.maxExploreDepth,
-               checkpointInterval: Int = spooky.conf.checkpointInterval
+               checkpointInterval: Int = spooky.conf.checkpointInterval,
+               joinLimit: Int = spooky.conf.joinLimit
                )(
                traces: Set[Trace],
                numPartitions: Int = spooky.conf.defaultParallelism(this),
@@ -593,11 +594,11 @@ case class PageRowRDD(
 
     val result = optimizer match {
       case Narrow =>
-        _dumbExplore(expr, depthKey, maxDepth, checkpointInterval)(_traces, numPartitions, flattenPagesPattern, flattenPagesIndexKey)(select: _*)
+        _dumbExplore(expr, depthKey, maxDepth, checkpointInterval, joinLimit)(_traces, numPartitions, flattenPagesPattern, flattenPagesIndexKey)(select: _*)
       case WideNoLookup =>
-        _smartNoLookupExplore(expr, depthKey, maxDepth, checkpointInterval)(_traces, numPartitions, flattenPagesPattern, flattenPagesIndexKey)(select: _*)
+        _smartNoLookupExplore(expr, depthKey, maxDepth, checkpointInterval, joinLimit)(_traces, numPartitions, flattenPagesPattern, flattenPagesIndexKey)(select: _*)
       case Wide =>
-        _smartExplore(expr, depthKey, maxDepth, checkpointInterval)(_traces, numPartitions, flattenPagesPattern, flattenPagesIndexKey)(select: _*)
+        _smartExplore(expr, depthKey, maxDepth, checkpointInterval, joinLimit)(_traces, numPartitions, flattenPagesPattern, flattenPagesIndexKey)(select: _*)
       case _ => throw new UnsupportedOperationException(s"${optimizer.getClass.getSimpleName} optimizer is not supported in this query")
     }
 
@@ -610,6 +611,7 @@ case class PageRowRDD(
                             depthKey: Symbol = null,
                             maxDepth: Int,
                             checkpointInterval: Int,
+                            joinLimit: Int,
                             batchSize: Int = spooky.conf.batchSize
                             )(
                             _traces: Set[Trace],
@@ -662,6 +664,7 @@ case class PageRowRDD(
               depthKey,
               depthStart,
               depthEnd,
+              joinLimit,
               spooky
             )(
               _traces,
@@ -701,7 +704,8 @@ case class PageRowRDD(
                                      expr: Expression[Any],
                                      depthKey: Symbol,
                                      maxDepth: Int,
-                                     checkpointInterval: Int
+                                     checkpointInterval: Int,
+                                     joinLimit: Int
                                      )(
                                      _traces: Set[Trace],
                                      numPartitions: Int,
@@ -727,7 +731,7 @@ case class PageRowRDD(
     for (depth <- 1 to maxDepth) {
       //ALWAYS inner join
       val fetched = newRows
-        .flattenTemp(_expr, null, Int.MaxValue, left = true)
+        .flattenTemp(_expr, null, joinLimit, left = true)
         ._smartFetch(_traces, Inner, numPartitions, null)
 
       val flattened = fetched.flattenPages(flattenPagesPattern, flattenPagesIndexKey)
@@ -768,7 +772,8 @@ case class PageRowRDD(
                              expr: Expression[Any],
                              depthKey: Symbol,
                              maxDepth: Int,
-                             checkpointInterval: Int
+                             checkpointInterval: Int,
+                             joinLimit: Int
                              )(
                              _traces: Set[Trace],
                              numPartitions: Int,
@@ -796,7 +801,7 @@ case class PageRowRDD(
     for (depth <- 1 to maxDepth) {
       //ALWAYS inner join
       val fetched = newRows
-        .flattenTemp(_expr, null, Int.MaxValue, left = true)
+        .flattenTemp(_expr, null, joinLimit, left = true)
         ._smartFetch(_traces, Inner, numPartitions, lookups)
 
       val newLookups = fetched.lookup()
