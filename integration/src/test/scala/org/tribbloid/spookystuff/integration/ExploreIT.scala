@@ -20,7 +20,7 @@ class ExploreIT extends IntegrationSuite {
     val explored = base
       .explore($"div.sidebar-nav a", depthKey = 'depth)(
         Visit('A.href),
-        flattenPagesIndexKey = 'page
+        flattenPagesOrdinalKey = 'page
       )(
         'A.text ~ 'category
       )

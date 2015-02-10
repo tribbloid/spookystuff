@@ -39,7 +39,7 @@ object Macys extends ExampleCore {
       .select(
         $"h1#currentCatNavHeading".text ~ 'subcategory
       )
-      .flatSelect($"ul#thumbnails li.productThumbnail", indexKey = 'page)(
+      .flatSelect($"ul#thumbnails li.productThumbnail", ordinalKey = 'page)(
         A"div.shortDescription".text ~ 'short_description,
         A"div.prices".text ~ 'prices,
         A"div.pdpreviews span.rating span".attr("style") ~ 'rating,

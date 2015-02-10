@@ -41,7 +41,7 @@ abstract class ProxyFeed extends ExampleCore {
           "a.next:not([class*=ui-state-disabled])",
           limit =15
         ),
-        flattenPagesIndexKey = 'page
+        flattenPagesOrdinalKey = 'page
       )
       .flatSelect($"table.dataTable tbody tr")(
         A("td", 0).text as 'IP,
@@ -63,7 +63,7 @@ abstract class ProxyFeed extends ExampleCore {
           "a.next:not([class*=ui-state-disabled])",
           limit =15
         ),
-        flattenPagesIndexKey = 'page
+        flattenPagesOrdinalKey = 'page
       )
       .flatSelect($"table.dataTable tbody tr")(
         A("td", 0).text as 'IP,

@@ -33,9 +33,9 @@ object Weibo extends ExampleCore {
             Snapshot() :: Nil,
           50
         ),
-        flattenPagesIndexKey = 'page
+        flattenPagesOrdinalKey = 'page
       )
-      .flatSelect($"dl.feed_list", indexKey = 'item)(
+      .flatSelect($"dl.feed_list", ordinalKey = 'item)(
         A"dl.feed_list p em".text ~ 'text
       )
       .toSchemaRDD()

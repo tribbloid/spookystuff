@@ -35,7 +35,7 @@ object TripAdvisor extends ExampleCore {
         Visit('A.href)
           +> Try(Click("span.partnerRvw span.taLnk")::Nil)
       )()
-      .flatSelect($"div.reviewSelector", indexKey = 'row)(
+      .flatSelect($"div.reviewSelector", ordinalKey = 'row)(
         A"p".last.text ~ 'comment,
         A"span.ratingDate".last.text ~ 'date_status,
         A"div.innerBubble img.sprite-rating_s_fill".last.attr("alt") ~ 'stars,

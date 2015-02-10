@@ -18,14 +18,14 @@ class InnerJoinIT extends IntegrationSuite {
       )
 
     val joined = base
-      .join($"div.sidebar-nav a", indexKey = 'i1)(
+      .join($"div.sidebar-nav a", ordinalKey = 'i1)(
         Visit('A.href),
         joinType = Inner,
-        flattenPagesIndexKey = 'page
+        flattenPagesOrdinalKey = 'page
       )(
         'A.text ~ 'category
       )
-      .join($"a.subcategory-link", indexKey = 'i2)(
+      .join($"a.subcategory-link", ordinalKey = 'i2)(
         Visit('A.href),
         joinType = Inner
       )(

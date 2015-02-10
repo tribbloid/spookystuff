@@ -32,7 +32,7 @@ object FoodPoco extends ExampleCore {
         "comment" ~ 'type,
         $.uri ~ 'uri
       )
-      .flatSelect($("div#food_comment_list ul.text_con"), indexKey = 'commentRow)(
+      .flatSelect($("div#food_comment_list ul.text_con"), ordinalKey = 'commentRow)(
         A("div#res_cmts_content").text ~ 'comment,
         A("li.ph_text p img").attrs("alt").mkString("|") ~ 'user_ratings,
         A("li.ph_tag p").text ~ 'user,
@@ -45,7 +45,7 @@ object FoodPoco extends ExampleCore {
         "review" ~ 'type,
         $.uri ~ 'uri
       )
-      .flatSelect($("li.text"), indexKey = 'commentRow)(
+      .flatSelect($("li.text"), ordinalKey = 'commentRow)(
         A("div.title a").text ~ 'title,
         A("p.lh18").text ~ 'comment,
         A("p.lh20 a").text ~ 'user,

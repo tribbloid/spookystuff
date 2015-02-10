@@ -31,7 +31,7 @@ object GooglePlusReview extends ExampleCore {
         Visit("'{_}")
           +> LoadMore("div.R4 span.d-s")
       )
-      .flatSelect($("div.Qxb div.Ee"), indexKey = 'row)(
+      .flatSelect($("div.Qxb div.Ee"), ordinalKey = 'row)(
         A("div.VSb span.GKa").text ~ 'comment,
         A("span.VUb").text ~ 'date_status,
         A("div.b-db span.b-db-ac-th").size ~ 'stars,

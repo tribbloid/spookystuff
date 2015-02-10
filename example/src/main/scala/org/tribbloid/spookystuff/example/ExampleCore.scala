@@ -46,7 +46,7 @@ trait ExampleCore extends {
         sql,
         new SpookyConf(
           driverFactory = NaiveDriverFactory(loadImages = true),
-          joinLimit = 2,
+          maxJoinOrdinal = 2,
           maxExploreDepth = 3
         )
       )

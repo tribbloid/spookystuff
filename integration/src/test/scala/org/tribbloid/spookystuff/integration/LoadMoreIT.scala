@@ -24,7 +24,7 @@
 //          ,10
 //        )
 //          +> Snapshot().as('~),
-//        flattenPagesIndexKey = 'times
+//        flattenPagesOrdinalKey = 'times
 //      )
 //      .select(
 //        '~.children("a.title").size > 'num_product

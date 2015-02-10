@@ -18,13 +18,13 @@ class LeftJoinIT extends IntegrationSuite {
       )
 
     val joined = base
-      .join($"div.sidebar-nav a", indexKey = 'i1)(
+      .join($"div.sidebar-nav a", ordinalKey = 'i1)(
         Wget('A.href),
         joinType = LeftOuter
       )(
         'A.text ~ 'category
       )
-      .join($"a.subcategory-link", indexKey = 'i2)(
+      .join($"a.subcategory-link", ordinalKey = 'i2)(
         Wget('A.href),
         joinType = LeftOuter
       )(

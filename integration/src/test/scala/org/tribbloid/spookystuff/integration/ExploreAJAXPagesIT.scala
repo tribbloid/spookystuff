@@ -31,7 +31,7 @@ class ExploreAJAXPagesIT extends IntegrationSuite {
       .explore($"div.sidebar-nav a", depthKey = 'depth)(
         Visit('A.href)
           +> snapshotAllPages,
-        flattenPagesIndexKey = 'page_index
+        flattenPagesOrdinalKey = 'page_index
       )(
         $"button.btn.btn-primary".text ~ 'page_number,
         'A.text ~ 'category,

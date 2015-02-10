@@ -90,7 +90,7 @@ class SpookyConf (
                    var failOnDFSError: Boolean = false,
 
                    //default max number of elements scraped from a page, set to Int.MaxValue to allow unlimited fetch
-                   var joinLimit: Int = Int.MaxValue,
+                   var maxJoinOrdinal: Int = Int.MaxValue,
                    var maxExploreDepth: Int = Int.MaxValue,
 
                    var defaultQueryOptimizer: QueryOptimizer = Wide,

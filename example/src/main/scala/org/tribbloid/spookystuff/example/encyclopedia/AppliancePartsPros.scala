@@ -23,11 +23,11 @@ object AppliancePartsPros extends ExampleCore {
       .select(
         $"div.dgrm-lst div.header h2".text ~ 'model
       )
-      .wgetJoin($("div.inner li a:has(img)"), indexKey = 'schematic_index)
+      .wgetJoin($("div.inner li a:has(img)"), ordinalKey = 'schematic_index)
       .select(
         $"div#ctl00_cphMain_up1 h1".text ~ 'schematic
       )
-      .wgetJoin($("tbody.m-bsc td.pdct-descr h2 a"), indexKey = 'part_index)
+      .wgetJoin($("tbody.m-bsc td.pdct-descr h2 a"), ordinalKey = 'part_index)
       .select(
         $"div.m-pdct h1".text ~ 'name,
         $("div.m-pdct td[itemprop=brand]").text ~ 'brand,

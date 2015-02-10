@@ -16,7 +16,7 @@ object RottenTomatoes extends ExampleCore {
     .fetch(
         Wget("http://www.rottentomatoes.com/")
       )
-      .wgetJoin($"table.top_box_office tr.sidebarInTheaterTopBoxOffice a", indexKey = 'rank) //go to movie page, e.g. http://www.rottentomatoes.com/m/guardians_of_the_galaxy/
+      .wgetJoin($"table.top_box_office tr.sidebarInTheaterTopBoxOffice a", ordinalKey = 'rank) //go to movie page, e.g. http://www.rottentomatoes.com/m/guardians_of_the_galaxy/
       .select(
         $"h1.movie_title".text ~ 'name,
         $"div#all-critics-numbers span#all-critics-meter".text ~ 'meter,

@@ -23,14 +23,14 @@ object DianPingFirepot extends ExampleCore {
         Visit('_)
       )
       .wgetExplore($("div.page > a.next"), depthKey='page)
-      .join($("ul.shop-list > li"), indexKey = 'row)(
+      .join($("ul.shop-list > li"), ordinalKey = 'row)(
         Visit(x"${A"p.title > a.shopname".href}/review_all")
       )(
         A("span.big-name").text ~ 'title,
         A("span > a").text ~ 'review_count
       )
       .wgetExplore($("div.Pages > a.NextPage"), depthKey='comment_page)
-      .flatSelect($("div.comment-list > ul > li"), indexKey = 'comment_row)(
+      .flatSelect($("div.comment-list > ul > li"), ordinalKey = 'comment_row)(
         A("span.item-rank-rst").attr("class") ~ 'rating,
         A("span.time").text ~ 'date,
         A("span.comm-per").text ~ 'average_price,

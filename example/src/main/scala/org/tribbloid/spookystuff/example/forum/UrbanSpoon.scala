@@ -38,7 +38,7 @@ object UrbanSpoon extends ExampleCore {
       //      .extract(
       //        "count" -> (_.text1("li.active span.count"))
       //      )
-      .flatSelect($"div.tab-pane.active li.review", indexKey = 'row)(
+      .flatSelect($"div.tab-pane.active li.review", ordinalKey = 'row)(
         A"div.body".text ~ 'comment,
         A"time.posted-on".text ~ 'date_status,
         A"div.details > div.aside".text ~ 'stars,

@@ -183,8 +183,8 @@ case class PageRow(
   //always left
   def flatten(
                keyStr: String,
-               indexKey: Key,
-               limit: Int,
+               ordinalKey: Key,
+               maxOrdinal: Int,
                left: Boolean
                ): Seq[PageRow] = {
 
@@ -192,7 +192,7 @@ case class PageRow(
 
     import org.tribbloid.spookystuff.views._
 
-    val newCells =cells.flattenKey(key, indexKey).slice(0, limit)
+    val newCells =cells.flattenKey(key, ordinalKey).slice(0, maxOrdinal)
 
     if (left && newCells.isEmpty) {
       Seq(this.copy(cells = this.cells - key)) //this will make sure you dont't lose anything
@@ -207,17 +207,17 @@ case class PageRow(
   //this operation will try to keep NoPages in the first row for lookup
   def flattenPages(
                     pattern: String, //TODO: enable soon
-                    indexKey: Key
+                    ordinalKey: Key
                     ): Seq[PageRow] = {
 
-    val result = if (indexKey == null) {
+    val result = if (ordinalKey == null) {
       this.pages.map{
         page => this.copy(cells = this.cells, pageLikes = Seq(page))
       }
     }
     else {
       this.pages.zipWithIndex.map{
-        tuple => this.copy(cells = this.cells + (indexKey -> tuple._2), pageLikes = Seq(tuple._1))
+        tuple => this.copy(cells = this.cells + (ordinalKey -> tuple._2), pageLikes = Seq(tuple._1))
       }
     }
 
@@ -243,14 +243,14 @@ object PageRow {
                    )(
                    expr: Expression[Any],
                    depthKey: Symbol,
-                   depthStartExclusive: Int,
-                   depthEndInclusive: Int,
-                 jointLimit: Int,
+                   depthFromExclusive: Int,
+                   depthToInclusive: Int,
+                   maxOrdinal: Int,
                    spooky: SpookyContext
                    )(
                    _traces: Set[Trace],
                    flattenPagesPattern: Symbol,
-                   flattenPagesIndexKey: Symbol
+                   flattenPagesOrdinalKey: Symbol
                    ): (Iterable[PageRow], ExploreStage) = {
 
     val total: ArrayBuffer[PageRow] = ArrayBuffer()
@@ -258,12 +258,12 @@ object PageRow {
     var seeds = stage.seeds
     var traces = stage.traces
 
-    for (depth <- depthStartExclusive + 1 to depthEndInclusive) {
+    for (depth <- depthFromExclusive + 1 to depthToInclusive) {
 
       val traceToRows = seeds
         .flatMap(_.selectTemp(expr)) //join start: select 1
         .flatMap(_.flatten(expr.name, null, Int.MaxValue, left = true)) //select 2
-        .slice(0, jointLimit)
+        .slice(0, maxOrdinal)
         .flatMap { //generate traces
         row =>
           _traces.interpolate(row)
@@ -293,7 +293,7 @@ object PageRow {
       }
         .flatMap {
         row =>
-          if (flattenPagesPattern != null) row.flattenPages(flattenPagesPattern.name, Key(flattenPagesIndexKey))
+          if (flattenPagesPattern != null) row.flattenPages(flattenPagesPattern.name, Key(flattenPagesOrdinalKey))
           else Seq(row)
       }
 

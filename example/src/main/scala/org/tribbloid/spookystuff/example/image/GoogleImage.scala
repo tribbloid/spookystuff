@@ -17,7 +17,7 @@ object GoogleImage extends ExampleCore {
       .fetch(
         Visit("http://www.utexas.edu/world/univ/alpha/")
       )
-      .flatten($"div.box2 a".text ~ 'name, limit = 10)
+      .flatten($"div.box2 a".text ~ 'name, maxOrdinal = 10)
       .repartition(10)
       .fetch(
         Visit("http://images.google.com/")
@@ -26,7 +26,7 @@ object GoogleImage extends ExampleCore {
           +> Submit("input[name=\"btnG\"]")
           +> WaitFor("div#search")
       )
-      .wgetJoin($"div#search img".src, limit = 1)
+      .wgetJoin($"div#search img".src, maxOrdinal = 1)
       .savePages(
         x"file://${System.getProperty("user.home")}/spooky-example/$appName/images/${'name}"
       )

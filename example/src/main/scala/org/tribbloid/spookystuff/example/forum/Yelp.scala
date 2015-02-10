@@ -31,7 +31,7 @@ object Yelp extends ExampleCore {
         Wget('_)
       )
       .wgetExplore($"a.page-option.prev-next:contains(→)", depthKey = 'page)
-      .flatSelect($"div.review", indexKey = 'row) (
+      .flatSelect($"div.review", ordinalKey = 'row) (
         A"p.review_comment".text ~ 'comment,
         A"div.review-content span.rating-qualifier".text ~ 'date_status,
         A"div.biz-rating div div.rating-very-large meta".attr("content") ~ 'stars,
