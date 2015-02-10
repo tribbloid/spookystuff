@@ -104,6 +104,10 @@ case class PageRowRDD(
 
   def generateGroupID: PageRowRDD = this.copy(self = this.map(_.generateGroupID))
 
+  def persistIfNot(newLevel: StorageLevel = spooky.conf.defaultStorageLevel): PageRowRDD =
+    if (this.getStorageLevel == StorageLevel.NONE) this.persist(newLevel)
+    else this
+
   def toPageRowRDD: PageRowRDD = this
 
   def toMapRDD: RDD[Map[String, Any]] = this.map(_.asMap())
@@ -113,9 +117,8 @@ case class PageRowRDD(
   //TODO: investigate using the new applySchema api to avoid losing type info
   def toSchemaRDD(order: Boolean = true): SchemaRDD = {
 
-    val jsonRDD = this.toJSON
-
-    if (jsonRDD.getStorageLevel == StorageLevel.NONE) jsonRDD.persist(StorageLevel.MEMORY_AND_DISK_SER) //for some unknown reason SQLContext.jsonRDD uses the parameter RDD twice, this has to be fixed by somebody else
+    val jsonRDD = this.toJSON.persist(spooky.conf.defaultStorageLevel)
+    //for some unknown reason SQLContext.jsonRDD uses the parameter RDD twice, this has to be fixed by somebody else
     //TODO: unpersist after next action, is it even possible?
 
     import spooky.sqlContext._
@@ -330,10 +333,8 @@ case class PageRowRDD(
     )
 
   def lookup(): RDD[(Trace, PageLike)] = {
-    val persisted = if (this.getStorageLevel == StorageLevel.NONE) this.persist(StorageLevel.MEMORY_AND_DISK_SER)
-    else this
 
-    persisted.flatMap(_.pageLikes.map(page => page.uid.backtrace -> page ))
+      this.persistIfNot().flatMap(_.pageLikes.map(page => page.uid.backtrace -> page ))
     //TODO: really takes a lot of space, how to eliminate?
   }
 
@@ -631,7 +632,7 @@ case class PageRowRDD(
 
     var depthStart = 0
 
-    val firstResultRDD = this.coalesce(numPartitions).persist(StorageLevel.MEMORY_AND_DISK_SER)
+    val firstResultRDD = this.coalesce(numPartitions).persistIfNot()
 
     val firstStageRDD = firstResultRDD
       .map {
@@ -674,7 +675,7 @@ case class PageRowRDD(
               flattenPagesPattern,
               flattenPagesOrdinalKey
             )
-      }.persist(StorageLevel.MEMORY_AND_DISK_SER) // change to checkpoint?
+      }.persist(spooky.conf.defaultStorageLevel) // change to checkpoint?
 
       val count = batchExeRDD.count()
 
@@ -743,7 +744,7 @@ case class PageRowRDD(
       newRows = flattened
         .distinctSignature(numPartitions)
         .subtractSignature(total, numPartitions)
-        .persist(StorageLevel.MEMORY_AND_DISK_SER)
+        .persistIfNot()
 
       if (depth % checkpointInterval == 0) {
         newRows.checkpoint()
@@ -823,7 +824,7 @@ case class PageRowRDD(
       newRows = flattened
         .distinctSignature(numPartitions)
         .subtractSignature(total, numPartitions)
-        .persist(StorageLevel.MEMORY_AND_DISK_SER)
+        .persistIfNot()
 
       if (depth % checkpointInterval == 0) {
         newRows.checkpoint()

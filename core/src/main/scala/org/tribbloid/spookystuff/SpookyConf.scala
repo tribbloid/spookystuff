@@ -1,5 +1,6 @@
 package org.tribbloid.spookystuff
 
+import org.apache.spark.storage.StorageLevel
 import org.tribbloid.spookystuff.SpookyConf.Dirs
 import org.tribbloid.spookystuff.dsl._
 import org.tribbloid.spookystuff.sparkbinding.PageRowRDD
@@ -96,7 +97,9 @@ class SpookyConf (
                    var defaultQueryOptimizer: QueryOptimizer = Wide,
 
                    var checkpointInterval: Int = 50,
-                   var batchSize: Int = 500
+                   var batchSize: Int = 500,
+
+                   var defaultStorageLevel: StorageLevel = StorageLevel.MEMORY_ONLY_SER
                    ) extends Serializable {
 
   //  def toJSON: String = { //useless for non-case class
