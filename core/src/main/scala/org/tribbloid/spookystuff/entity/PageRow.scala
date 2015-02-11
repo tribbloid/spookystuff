@@ -277,7 +277,7 @@ object PageRow {
 
   def newGroupID = UUID.randomUUID().getMostSignificantBits
 
-  def dumbExplore(
+  def narrowExplore(
                    stage: ExploreStage,
                    sortKeys: Seq[Key],
                    spooky: SpookyContext

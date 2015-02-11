@@ -104,9 +104,15 @@ case class PageRowRDD(
 
   private def generateGroupID: PageRowRDD = this.copy(self = this.map(_.generateGroupID))
 
-  private def persistIfNot(newLevel: StorageLevel = spooky.conf.defaultStorageLevel): PageRowRDD =
-    if (this.getStorageLevel == StorageLevel.NONE) this.persist(newLevel)
-    else this
+  private def persistDuring[T <: RDD[_]](newLevel: StorageLevel = spooky.conf.defaultStorageLevel)(fn: => T): T =
+    if (this.getStorageLevel == StorageLevel.NONE){
+      this.persist(newLevel)
+      val result = fn
+      result.count()
+      this.unpersist()//TODO: what's the point of block argument?
+      result
+    }
+    else fn
 
   private def discardPages: PageRowRDD = this.copy(self = this.map(_.copy(pageLikes = Seq())))
 
@@ -116,9 +122,10 @@ case class PageRowRDD(
 
     import Ordering.Implicits._
 
-    this
-      .persistIfNot()
-      .sortBy{_.sortSignature(sortKeysSeq)} //remember sortBy & sortByKey always render the RDD.
+    this.persistDuring(){
+      val result = this.sortBy{_.sortSignature(sortKeysSeq)}
+      result
+    }
   }
 
   def toMapRDD(sorted: Boolean = true): RDD[Map[String, Any]] =
@@ -138,9 +145,7 @@ case class PageRowRDD(
   //TODO: investigate using the new applySchema api to avoid losing type info
   def toSchemaRDD(sorted: Boolean = true): SchemaRDD = {
 
-    val jsonRDD = this.toJSON(sorted).persist()
-    //for some unknown reason SQLContext.jsonRDD uses the parameter RDD twice, this has to be fixed by somebody else
-    //TODO: unpersist after next action, is it even possible?
+    val jsonRDD = this.toJSON(sorted)
 
     val schemaRDD = this.spooky.sqlContext.jsonRDD(jsonRDD)
 
@@ -343,8 +348,12 @@ case class PageRowRDD(
 
   def lookup(): RDD[(Trace, PageLike)] = {
 
-    this.persistIfNot().flatMap(_.pageLikes.map(page => page.uid.backtrace -> page ))
+    if (this.getStorageLevel == StorageLevel.NONE)
+      this.persist(spooky.conf.defaultStorageLevel)
+
+    this.flatMap(_.pageLikes.map(page => page.uid.backtrace -> page ))
     //TODO: really takes a lot of space, how to eliminate?
+    //TODO: unpersist after next action, is it even possible?
   }
 
   def fetch(
@@ -362,12 +371,11 @@ case class PageRowRDD(
 
     val _result = optimizer match {
       case Narrow =>
-        //        if (lookup != null)throw new UnsupportedOperationException(s"${optimizer.getClass.getSimpleName} optimizer can't use lookup table")
-        _dumbFetch(_traces, joinType, numPartitions)
+        _narrowFetch(_traces, joinType, numPartitions)
       case WideNoLookup =>
-        _smartFetch(_traces, joinType, numPartitions, null)
+        _wideFetch(_traces, joinType, numPartitions, null)
       case Wide =>
-        _smartFetch(_traces, joinType, numPartitions, lookup())
+        _wideFetch(_traces, joinType, numPartitions, lookup())
       case _ => throw new UnsupportedOperationException(s"${optimizer.getClass.getSimpleName} optimizer is not supported in this query")
     }
 
@@ -377,11 +385,11 @@ case class PageRowRDD(
     else result
   }
 
-  private def _dumbFetch(
-                          _traces: Set[Trace],
-                          joinType: JoinType,
-                          numPartitions: Int
-                          ): PageRowRDD = {
+  private def _narrowFetch(
+                            _traces: Set[Trace],
+                            joinType: JoinType,
+                            numPartitions: Int
+                            ): PageRowRDD = {
 
     val spooky = this.spooky
 
@@ -402,12 +410,12 @@ case class PageRowRDD(
     this.copy(resultRows)
   }
 
-  private def _smartFetch(
-                           _traces: Set[Trace],
-                           joinType: JoinType,
-                           numPartitions: Int,
-                           lookup: RDD[(Trace, PageLike)]
-                           ): PageRowRDD = {
+  private def _wideFetch(
+                          _traces: Set[Trace],
+                          joinType: JoinType,
+                          numPartitions: Int,
+                          lookup: RDD[(Trace, PageLike)]
+                          ): PageRowRDD = {
 
     val spooky = this.spooky
 
@@ -615,11 +623,11 @@ case class PageRowRDD(
 
     val result = optimizer match {
       case Narrow =>
-        _dumbExplore(expr, depthKey, maxDepth, ordinalKey, maxOrdinal, checkpointInterval)(_traces, numPartitions, flattenPagesPattern, flattenPagesOrdinalKey)(select: _*)
+        _narrowExplore(expr, depthKey, maxDepth, ordinalKey, maxOrdinal, checkpointInterval)(_traces, numPartitions, flattenPagesPattern, flattenPagesOrdinalKey)(select: _*)
       case WideNoLookup =>
-        _smartNoLookupExplore(expr, depthKey, maxDepth, ordinalKey, maxOrdinal, checkpointInterval)(_traces, numPartitions, flattenPagesPattern, flattenPagesOrdinalKey)(select: _*)
+        _wideNoLookupExplore(expr, depthKey, maxDepth, ordinalKey, maxOrdinal, checkpointInterval)(_traces, numPartitions, flattenPagesPattern, flattenPagesOrdinalKey)(select: _*)
       case Wide =>
-        _smartExplore(expr, depthKey, maxDepth, ordinalKey, maxOrdinal, checkpointInterval)(_traces, numPartitions, flattenPagesPattern, flattenPagesOrdinalKey)(select: _*)
+        _wideExplore(expr, depthKey, maxDepth, ordinalKey, maxOrdinal, checkpointInterval)(_traces, numPartitions, flattenPagesPattern, flattenPagesOrdinalKey)(select: _*)
       case _ => throw new UnsupportedOperationException(s"${optimizer.getClass.getSimpleName} optimizer is not supported in this query")
     }
 
@@ -627,21 +635,21 @@ case class PageRowRDD(
   }
 
   //this is a single-threaded explore, of which implementation is similar to good old pagination.
-  private def _dumbExplore(
-                            expr: Expression[Any],
-                            depthKey: Symbol,
-                            maxDepth: Int,
-                            ordinalKey: Symbol,
-                            maxOrdinal: Int,
-                            checkpointInterval: Int
-                            )(
-                            _traces: Set[Trace],
-                            numPartitions: Int,
-                            flattenPagesPattern: Symbol,
-                            flattenPagesOrdinalKey: Symbol
-                            )(
-                            select: Expression[Any]*
-                            ): PageRowRDD = {
+  private def _narrowExplore(
+                              expr: Expression[Any],
+                              depthKey: Symbol,
+                              maxDepth: Int,
+                              ordinalKey: Symbol,
+                              maxOrdinal: Int,
+                              checkpointInterval: Int
+                              )(
+                              _traces: Set[Trace],
+                              numPartitions: Int,
+                              flattenPagesPattern: Symbol,
+                              flattenPagesOrdinalKey: Symbol
+                              )(
+                              select: Expression[Any]*
+                              ): PageRowRDD = {
 
     val batchSize = this.spooky.conf.batchSize
 
@@ -651,7 +659,7 @@ case class PageRowRDD(
 
     var depthStart = 0
 
-    val firstResultRDD = this.coalesce(numPartitions).persistIfNot()
+    val firstResultRDD = this.coalesce(numPartitions).persist(spooky.conf.defaultStorageLevel)
 
     val firstStageRDD = firstResultRDD
       .map {
@@ -685,7 +693,7 @@ case class PageRowRDD(
 
       val batchExeRDD = stageRDD.map {
         stage =>
-          PageRow.dumbExplore(
+          PageRow.narrowExplore(
             stage,
             resultSortKeysSeq,
             spooky
@@ -727,21 +735,21 @@ case class PageRowRDD(
   }
 
   //no lookup, purely relies on cache to avoid redundant fetch
-  private def _smartNoLookupExplore(
-                                     expr: Expression[Any],
-                                     depthKey: Symbol,
-                                     maxDepth: Int,
-                                     ordinalKey: Symbol,
-                                     maxOrdinal: Int,
-                                     checkpointInterval: Int
-                                     )(
-                                     _traces: Set[Trace],
-                                     numPartitions: Int,
-                                     flattenPagesPattern: Symbol,
-                                     flattenPagesOrdinalKey: Symbol
-                                     )(
-                                     select: Expression[Any]*
-                                     ): PageRowRDD = {
+  private def _wideNoLookupExplore(
+                                    expr: Expression[Any],
+                                    depthKey: Symbol,
+                                    maxDepth: Int,
+                                    ordinalKey: Symbol,
+                                    maxOrdinal: Int,
+                                    checkpointInterval: Int
+                                    )(
+                                    _traces: Set[Trace],
+                                    numPartitions: Int,
+                                    flattenPagesPattern: Symbol,
+                                    flattenPagesOrdinalKey: Symbol
+                                    )(
+                                    select: Expression[Any]*
+                                    ): PageRowRDD = {
 
     val spooky = this.spooky
 
@@ -760,17 +768,19 @@ case class PageRowRDD(
       //ALWAYS inner join
       val fetched = newRows
         .flattenTemp(_expr, ordinalKey, maxOrdinal, left = true)
-        ._smartFetch(_traces, Inner, numPartitions, null)
+        ._wideFetch(_traces, Inner, numPartitions, null)
 
       val flattened = fetched.flattenPages(flattenPagesPattern, flattenPagesOrdinalKey)
 
       newRows = flattened
         .distinctBySignature(numPartitions)
         .subtractBySignature(total, numPartitions)
-        .persistIfNot()
 
       if (depth % checkpointInterval == 0) {
         newRows.checkpoint()
+      }
+      else {
+        newRows.persist(spooky.conf.defaultStorageLevel)
       }
 
       val newRowsSize = newRows.count()
@@ -796,21 +806,21 @@ case class PageRowRDD(
   }
 
   //recursive join and union! applicable to many situations like (wide) pagination and deep crawling
-  private def _smartExplore(
-                             expr: Expression[Any],
-                             depthKey: Symbol,
-                             maxDepth: Int,
-                             ordinalKey: Symbol,
-                             maxOrdinal: Int,
-                             checkpointInterval: Int
-                             )(
-                             _traces: Set[Trace],
-                             numPartitions: Int,
-                             flattenPagesPattern: Symbol,
-                             flattenPagesOrdinalKey: Symbol
-                             )(
-                             select: Expression[Any]*
-                             ): PageRowRDD = {
+  private def _wideExplore(
+                            expr: Expression[Any],
+                            depthKey: Symbol,
+                            maxDepth: Int,
+                            ordinalKey: Symbol,
+                            maxOrdinal: Int,
+                            checkpointInterval: Int
+                            )(
+                            _traces: Set[Trace],
+                            numPartitions: Int,
+                            flattenPagesPattern: Symbol,
+                            flattenPagesOrdinalKey: Symbol
+                            )(
+                            select: Expression[Any]*
+                            ): PageRowRDD = {
 
     val spooky = this.spooky
 
@@ -831,7 +841,7 @@ case class PageRowRDD(
       //ALWAYS inner join
       val fetched = newRows
         .flattenTemp(_expr, ordinalKey, maxOrdinal, left = true)
-        ._smartFetch(_traces, Inner, numPartitions, lookups)
+        ._wideFetch(_traces, Inner, numPartitions, lookups)
 
       val newLookups = fetched.lookup()
 
@@ -847,7 +857,7 @@ case class PageRowRDD(
       newRows = flattened
         .distinctBySignature(numPartitions)
         .subtractBySignature(total, numPartitions)
-        .persistIfNot()
+        .persist(spooky.conf.defaultStorageLevel)
 
       if (depth % checkpointInterval == 0) {
         newRows.checkpoint()
