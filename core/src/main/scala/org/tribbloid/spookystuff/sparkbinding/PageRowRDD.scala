@@ -623,11 +623,11 @@ case class PageRowRDD(
 
     val result = optimizer match {
       case Narrow =>
-        _narrowExplore(expr, depthKey, maxDepth, ordinalKey, maxOrdinal, checkpointInterval)(_traces, numPartitions, flattenPagesPattern, flattenPagesOrdinalKey)(select: _*)
+        _narrowExplore(expr, depthKey, maxDepth, ordinalKey, maxOrdinal)(_traces, numPartitions, flattenPagesPattern, flattenPagesOrdinalKey)(select: _*)
       case WideNoLookup =>
-        _wideNoLookupExplore(expr, depthKey, maxDepth, ordinalKey, maxOrdinal, checkpointInterval)(_traces, numPartitions, flattenPagesPattern, flattenPagesOrdinalKey)(select: _*)
+        _wideExplore(expr, depthKey, maxDepth, ordinalKey, maxOrdinal, checkpointInterval, null)(_traces, numPartitions, flattenPagesPattern, flattenPagesOrdinalKey)(select: _*)
       case Wide =>
-        _wideExplore(expr, depthKey, maxDepth, ordinalKey, maxOrdinal, checkpointInterval)(_traces, numPartitions, flattenPagesPattern, flattenPagesOrdinalKey)(select: _*)
+        _wideExplore(expr, depthKey, maxDepth, ordinalKey, maxOrdinal, checkpointInterval, this.lookup())(_traces, numPartitions, flattenPagesPattern, flattenPagesOrdinalKey)(select: _*)
       case _ => throw new UnsupportedOperationException(s"${optimizer.getClass.getSimpleName} optimizer is not supported in this query")
     }
 
@@ -640,8 +640,7 @@ case class PageRowRDD(
                               depthKey: Symbol,
                               maxDepth: Int,
                               ordinalKey: Symbol,
-                              maxOrdinal: Int,
-                              checkpointInterval: Int
+                              maxOrdinal: Int
                               )(
                               _traces: Set[Trace],
                               numPartitions: Int,
@@ -734,77 +733,6 @@ case class PageRowRDD(
       .clearTemp
   }
 
-  //no lookup, purely relies on cache to avoid redundant fetch
-  private def _wideNoLookupExplore(
-                                    expr: Expression[Any],
-                                    depthKey: Symbol,
-                                    maxDepth: Int,
-                                    ordinalKey: Symbol,
-                                    maxOrdinal: Int,
-                                    checkpointInterval: Int
-                                    )(
-                                    _traces: Set[Trace],
-                                    numPartitions: Int,
-                                    flattenPagesPattern: Symbol,
-                                    flattenPagesOrdinalKey: Symbol
-                                    )(
-                                    select: Expression[Any]*
-                                    ): PageRowRDD = {
-
-    val spooky = this.spooky
-
-    var newRows = this
-
-    var total = if (depthKey != null)
-      this.select(Literal(0) ~ depthKey)
-        .copy(sortKeys = this.sortKeys + Key(depthKey))
-    else this
-
-    if (this.context.getCheckpointDir.isEmpty) this.context.setCheckpointDir(spooky.conf.dirs.checkpoint)
-
-    val _expr = expr defaultAs Symbol(Const.defaultJoinKey)
-
-    for (depth <- 1 to maxDepth) {
-      //ALWAYS inner join
-      val fetched = newRows
-        .flattenTemp(_expr, ordinalKey, maxOrdinal, left = true)
-        ._wideFetch(_traces, Inner, numPartitions, null)
-
-      val flattened = fetched.flattenPages(flattenPagesPattern, flattenPagesOrdinalKey)
-
-      newRows = flattened
-        .distinctBySignature(numPartitions)
-        .subtractBySignature(total, numPartitions)
-
-      if (depth % checkpointInterval == 0) {
-        newRows.checkpoint()
-      }
-      else {
-        newRows.persist(spooky.conf.defaultStorageLevel)
-      }
-
-      val newRowsSize = newRows.count()
-      LoggerFactory.getLogger(this.getClass).info(s"found $newRowsSize new row(s) after $depth iterations")
-
-      if (newRowsSize == 0){
-        return total
-          .select(select: _*)
-          .clearTemp
-          .coalesce(numPartitions) //early stop condition if no new pages with the same data is detected
-      }
-
-      total = total.union(
-        if (depthKey != null) newRows.select(new Literal(depth) ~ depthKey)
-        else newRows
-      )
-    }
-
-    total
-      .select(select: _*)
-      .clearTemp
-      .coalesce(numPartitions)
-  }
-
   //recursive join and union! applicable to many situations like (wide) pagination and deep crawling
   private def _wideExplore(
                             expr: Expression[Any],
@@ -812,7 +740,8 @@ case class PageRowRDD(
                             maxDepth: Int,
                             ordinalKey: Symbol,
                             maxOrdinal: Int,
-                            checkpointInterval: Int
+                            checkpointInterval: Int,
+                            lookup: RDD[(Trace, PageLike)]
                             )(
                             _traces: Set[Trace],
                             numPartitions: Int,
@@ -831,25 +760,27 @@ case class PageRowRDD(
         .copy(sortKeys = this.sortKeys + Key(depthKey))
     else this
 
-    var lookups: RDD[(Trace, PageLike)] =this.lookup()
-
     if (this.context.getCheckpointDir.isEmpty) this.context.setCheckpointDir(spooky.conf.dirs.checkpoint)
 
     val _expr = expr defaultAs Symbol(Const.defaultJoinKey)
+
+    var lookupUnion = lookup
 
     for (depth <- 1 to maxDepth) {
       //ALWAYS inner join
       val fetched = newRows
         .flattenTemp(_expr, ordinalKey, maxOrdinal, left = true)
-        ._wideFetch(_traces, Inner, numPartitions, lookups)
+        ._wideFetch(_traces, Inner, numPartitions, lookupUnion)
 
-      val newLookups = fetched.lookup()
+      if (lookupUnion != null) {
+        val newLookups = fetched.lookup()
 
-      lookups = lookups.union(newLookups)
+        lookupUnion = lookupUnion.union(newLookups)
 
-      if (depth % checkpointInterval == 0) {
-        lookups.checkpoint()
-        val size = lookups.count()
+        if (depth % checkpointInterval == 0) {
+          lookupUnion.checkpoint()
+          val size = lookupUnion.count()
+        }
       }
 
       val flattened = fetched.flattenPages(flattenPagesPattern, flattenPagesOrdinalKey)
