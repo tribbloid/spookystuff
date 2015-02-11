@@ -16,26 +16,32 @@ class ExploreNextPageIT extends IntegrationSuite {
       .fetch(
         Wget("http://webscraper.io/test-sites/e-commerce/static/computers/tablets")
       )
-      .explore($"ul.pagination a[rel=next]", depthKey = 'page)(
+      .explore($"ul.pagination a[rel=next]", depthKey = 'page, ordinalKey = 'index)(
         Wget('A.href)
-      )()
+      )(
+        'A.text ~ 'button_text
+      )
       .select($.uri ~ 'uri)
       .toSchemaRDD()
 
     assert(
       result.schema.fieldNames ===
         "page" ::
+          "index" ::
+          "button_text" ::
           "uri" :: Nil
     )
 
-    val rows = result.collect().map(_.mkString("|"))
-    assert(rows.size === 4)
-
-    assert(rows contains "0|http://webscraper.io/test-sites/e-commerce/static/computers/tablets")
-    assert(rows contains "1|http://webscraper.io/test-sites/e-commerce/static/computers/tablets/2")
-    assert(rows contains "2|http://webscraper.io/test-sites/e-commerce/static/computers/tablets/3")
-    assert(rows contains "3|http://webscraper.io/test-sites/e-commerce/static/computers/tablets/4")
-//    assert(rows contains "2|1|http://webscraper.io/test-sites/e-commerce/static/computers/tablets/1")
+    val formatted = result.toJSON.collect().mkString("\n")
+    assert(
+      formatted ===
+        """
+          |{"page":0,"uri":"http://webscraper.io/test-sites/e-commerce/static/computers/tablets"}
+          |{"page":1,"index":[0],"button_text":"»","uri":"http://webscraper.io/test-sites/e-commerce/static/computers/tablets/2"}
+          |{"page":2,"index":[0,0],"button_text":"»","uri":"http://webscraper.io/test-sites/e-commerce/static/computers/tablets/3"}
+          |{"page":3,"index":[0,0,0],"button_text":"»","uri":"http://webscraper.io/test-sites/e-commerce/static/computers/tablets/4"}
+        """.stripMargin.trim
+    )
   }
 
   override def numPages = _ => 4

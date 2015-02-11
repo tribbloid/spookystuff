@@ -98,16 +98,18 @@ abstract class IntegrationSuite extends FunSuite with BeforeAndAfterAll {
     assert(metrics.DFSReadFail.value === 0)
   }
 
+  private val retry = 2
+
   private def doTest(spooky: SpookyContext): Unit ={
 
-    Utils.retry(2) { //sometimes accumulator missed a few for no reason
+    Utils.retry(retry) { //sometimes accumulator missed a few for no reason
       spooky.conf.cacheRead = false
       spooky.zeroIn()
       doMain(spooky)
       assertBeforeCache(spooky)
     }
 
-    Utils.retry(2) {
+    Utils.retry(retry) {
       spooky.conf.cacheRead = true
       spooky.zeroIn()
       doMain(spooky)

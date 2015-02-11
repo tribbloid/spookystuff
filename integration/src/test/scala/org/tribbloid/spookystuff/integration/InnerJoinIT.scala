@@ -1,8 +1,8 @@
 package org.tribbloid.spookystuff.integration
 
-import org.tribbloid.spookystuff.{dsl, SpookyContext}
 import org.tribbloid.spookystuff.actions.Visit
-import dsl._
+import org.tribbloid.spookystuff.dsl._
+import org.tribbloid.spookystuff.{SpookyContext, dsl}
 
 /**
  * Created by peng on 12/5/14.
@@ -44,12 +44,15 @@ class InnerJoinIT extends IntegrationSuite {
           "header" :: Nil
     )
 
-    val rows = joined.collect()
-    assert(rows.size === 3)
-
-    assert(rows(0).mkString("|") === "1|0|Computers|0|Laptops|Computers / Laptops")
-    assert(rows(1).mkString("|") === "1|0|Computers|1|Tablets|Computers / Tablets")
-    assert(rows(2).mkString("|") === "2|0|Phones|0|Touch|Phones / Touch")
+    val formatted = joined.toJSON.collect().mkString("\n")
+    assert(
+      formatted ===
+        """
+          |{"i1":[1],"page":[0],"category":"Computers","i2":[0],"subcategory":"Laptops","header":"Computers / Laptops"}
+          |{"i1":[1],"page":[0],"category":"Computers","i2":[1],"subcategory":"Tablets","header":"Computers / Tablets"}
+          |{"i1":[2],"page":[0],"category":"Phones","i2":[0],"subcategory":"Touch","header":"Phones / Touch"}
+        """.stripMargin.trim
+    )
   }
 
   override def numPages = {

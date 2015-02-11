@@ -42,12 +42,16 @@ class LeftJoinIT extends IntegrationSuite {
           "header" :: Nil
     )
 
-    val rows = joined.collect()
-    assert(rows.size === 4)
-    assert(rows(0).mkString("|") === "0|Home|null|null|null")
-    assert(rows(1).mkString("|") === "1|Computers|0|Laptops|Computers / Laptops")
-    assert(rows(2).mkString("|") === "1|Computers|1|Tablets|Computers / Tablets")
-    assert(rows(3).mkString("|") === "2|Phones|0|Touch|Phones / Touch")
+    val formatted = joined.toJSON.collect().mkString("\n")
+    assert(
+      formatted ===
+        """
+          |{"i1":[0],"category":"Home"}
+          |{"i1":[1],"category":"Computers","i2":[0],"subcategory":"Laptops","header":"Computers / Laptops"}
+          |{"i1":[1],"category":"Computers","i2":[1],"subcategory":"Tablets","header":"Computers / Tablets"}
+          |{"i1":[2],"category":"Phones","i2":[0],"subcategory":"Touch","header":"Phones / Touch"}
+        """.stripMargin.trim
+    )
   }
 
   override def numPages = {

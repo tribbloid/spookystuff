@@ -33,8 +33,7 @@ class MapView[K, V](m1: Map[K,V]) {
   //  }
 
   def flattenKey(
-                  key: K,
-                  ordinalKey: K
+                  key: K
                   ): Seq[Map[K,_]] = {
 
     val valueOption = m1.get(key)
@@ -42,10 +41,7 @@ class MapView[K, V](m1: Map[K,V]) {
     val values: Iterable[_] = valueOption.toSeq.flatMap(Utils.encapsulateAsIterable)
 
     val cleaned = m1 - key
-    val result = Option(ordinalKey) match {
-      case Some(str) => values.zipWithIndex.toSeq.map(value => cleaned + (key-> value._1, ordinalKey -> value._2))
-      case None => values.toSeq.map(value => cleaned + (key-> value))
-    }
+    val result = values.toSeq.map(value => cleaned + (key-> value))
 
     result
   }

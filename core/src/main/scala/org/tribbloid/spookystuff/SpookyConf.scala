@@ -59,7 +59,7 @@ object SpookyConf {
 class SpookyConf (
                    val dirs: Dirs = new Dirs(),
 
-                   val sharedMetrics: Boolean = false,
+                   var sharedMetrics: Boolean = false,
 
                    var driverFactory: DriverFactory = NaiveDriverFactory(),
                    var proxy: ProxyFactory = NoProxyFactory,
@@ -99,7 +99,7 @@ class SpookyConf (
                    var checkpointInterval: Int = 50,
                    var batchSize: Int = 500,
 
-                   var defaultStorageLevel: StorageLevel = StorageLevel.MEMORY_ONLY_SER
+                   var defaultStorageLevel: StorageLevel = StorageLevel.MEMORY_AND_DISK_SER
                    ) extends Serializable {
 
   //  def toJSON: String = { //useless for non-case class

@@ -42,19 +42,46 @@ case class PageRow(
     else Key(keyStr)
   }
 
-  //TempKey precedes ordinary Key because they are ephemeral
-  def getTyped[T: ClassTag](keyStr: String): Option[T] = {
+  def getInt(keyStr: String): Option[Int] = {
     this.get(keyStr).flatMap {
-      case v: T => Some(v)
+      case v: Int => Some(v)
       case _ => None
     }
   }
 
+  def getIntIterable(keyStr: String): Option[Iterable[Int]] = {
+    this.getTyped[Iterable[Int]](keyStr)
+      .orElse{
+      this.getInt(keyStr).map(Seq(_))
+    }
+  }
+
+  //TempKey precedes ordinary Key
+  //T cannot <: AnyVal otherwise will run into https://issues.scala-lang.org/browse/SI-6967
+  def getTyped[T <: AnyRef: ClassTag](keyStr: String): Option[T] = {
+    val res = this.get(keyStr).flatMap {
+      case v: T => Some(v)
+      case _ => None
+    }
+
+    res
+  }
+
+  //T cannot <: AnyVal otherwise will run into https://issues.scala-lang.org/browse/SI-6967
+  def getTypedIterable[T <: AnyRef: ClassTag](keyStr: String): Option[Iterable[T]] = {
+    val res1 = this.getTyped[Iterable[T]](keyStr)
+
+    val res2 = res1.orElse{
+      this.getTyped[T](keyStr).map(Seq(_))
+    }
+    res2
+  }
+
   def generateGroupID = this.copy(groupID = PageRow.newGroupID)
 
-  def get(keyStr: String): Option[Any] = {
-    cells.get(resolveKey(keyStr))
-  }
+  def get(keyStr: String): Option[Any] = get(resolveKey(keyStr))
+
+  def get(key: KeyLike): Option[Any] = cells.get(key)
 
   def getOnlyPage: Option[Page] = {
     val pages = this.pages
@@ -111,19 +138,24 @@ case class PageRow(
     Some(result)
   }
 
-  def signature = (
+  def distictSignature = (
     groupID,
     pages.map(_.uid)
     )
 
-  def asMap(): Map[String, Any] = this.cells
+  def sortSignature(sortKeys: Seq[Key]): Seq[Option[Iterable[Int]]] = {
+    val result = sortKeys.map(key => this.getIntIterable(key.name))
+    result
+  }
+
+  def toMap: Map[String, Any] = this.cells
     .filterKeys(_.isInstanceOf[Key]).map(identity)
     .map( tuple => tuple._1.name -> tuple._2)
 
   def toJSON: String = {
     import org.tribbloid.spookystuff.views._
 
-    Utils.toJson(this.asMap().canonizeKeysToColumnNames)
+    Utils.toJson(this.toMap.canonizeKeysToColumnNames)
   }
 
   def select(exprs: Expression[Any]*): Option[PageRow] = {
@@ -183,7 +215,7 @@ case class PageRow(
   //always left
   def flatten(
                keyStr: String,
-               ordinalKey: Key,
+               ordinalKey: Symbol,
                maxOrdinal: Int,
                left: Boolean
                ): Seq[PageRow] = {
@@ -192,13 +224,19 @@ case class PageRow(
 
     import org.tribbloid.spookystuff.views._
 
-    val newCells =cells.flattenKey(key, ordinalKey).slice(0, maxOrdinal)
+    val newCells =cells.flattenKey(key).slice(0, maxOrdinal)
 
     if (left && newCells.isEmpty) {
       Seq(this.copy(cells = this.cells - key)) //this will make sure you dont't lose anything
     }
     else {
-      newCells.map(newCell => this.copy(cells = newCell))
+      val result = newCells.map(newCell => this.copy(cells = newCell))
+
+      if (ordinalKey == null) result
+      else result.zipWithIndex.flatMap{
+        tuple =>
+          tuple._1.select(Literal(tuple._2) ~+ ordinalKey) //multiple ordinalKey may be inserted sequentially in explore
+      }
     }
   }
 
@@ -207,25 +245,26 @@ case class PageRow(
   //this operation will try to keep NoPages in the first row for lookup
   def flattenPages(
                     pattern: String, //TODO: enable soon
-                    ordinalKey: Key
+                    ordinalKey: Symbol
                     ): Seq[PageRow] = {
 
-    val result = if (ordinalKey == null) {
-      this.pages.map{
-        page => this.copy(cells = this.cells, pageLikes = Seq(page))
-      }
-    }
-    else {
-      this.pages.zipWithIndex.map{
-        tuple => this.copy(cells = this.cells + (ordinalKey -> tuple._2), pageLikes = Seq(tuple._1))
-      }
+    val contentRows = this.pages.map{
+      page => this.copy(cells = this.cells, pageLikes = Seq(page))
     }
 
-    if (result.isEmpty) {
+    if (contentRows.isEmpty) {
       Seq(this.copy(pageLikes = this.noPages))
     }
     else {
-      result.zipWithIndex.map{
+
+      val withOrdinalKey =
+        if (ordinalKey == null) contentRows
+        else contentRows.zipWithIndex.flatMap{
+          tuple =>
+            tuple._1.select(Literal(tuple._2) ~+ ordinalKey) //multiple ordinalKey may be inserted sequentially in explore
+        }
+
+      withOrdinalKey.zipWithIndex.map{
         tuple =>
           if (tuple._2 == 0) tuple._1.copy(pageLikes = tuple._1.pageLikes ++ this.noPages)
           else tuple._1
@@ -239,14 +278,16 @@ object PageRow {
   def newGroupID = UUID.randomUUID().getMostSignificantBits
 
   def dumbExplore(
-                   stage: ExploreStage
+                   stage: ExploreStage,
+                   sortKeys: Seq[Key],
+                   spooky: SpookyContext
                    )(
                    expr: Expression[Any],
                    depthKey: Symbol,
                    depthFromExclusive: Int,
                    depthToInclusive: Int,
-                   maxOrdinal: Int,
-                   spooky: SpookyContext
+                   ordinalKey: Symbol,
+                   maxOrdinal: Int
                    )(
                    _traces: Set[Trace],
                    flattenPagesPattern: Symbol,
@@ -262,8 +303,7 @@ object PageRow {
 
       val traceToRows = seeds
         .flatMap(_.selectTemp(expr)) //join start: select 1
-        .flatMap(_.flatten(expr.name, null, Int.MaxValue, left = true)) //select 2
-        .slice(0, maxOrdinal)
+        .flatMap(_.flatten(expr.name, ordinalKey, maxOrdinal, left = true)) //select 2
         .flatMap { //generate traces
         row =>
           _traces.interpolate(row)
@@ -280,7 +320,18 @@ object PageRow {
         .groupBy(_._1)
         .map {
         tuple =>
-          Squash(tuple._1, tuple._2.map(_._2).headOption)
+
+          import Ordering.Implicits._
+
+          val row = tuple._2.map(_._2).reduce{
+            (row1, row2) =>
+              val sign1 = row1.sortSignature(sortKeys)
+              val sign2 = row2.sortSignature(sortKeys)
+              if (sign1 < sign2) row1
+              else row2
+          }
+
+          Squash(tuple._1, Seq(row))
         //when multiple links on one or more pages leads to the same uri, keep the first one
       }
 
@@ -293,7 +344,7 @@ object PageRow {
       }
         .flatMap {
         row =>
-          if (flattenPagesPattern != null) row.flattenPages(flattenPagesPattern.name, Key(flattenPagesOrdinalKey))
+          if (flattenPagesPattern != null) row.flattenPages(flattenPagesPattern.name, flattenPagesOrdinalKey)
           else Seq(row)
       }
 

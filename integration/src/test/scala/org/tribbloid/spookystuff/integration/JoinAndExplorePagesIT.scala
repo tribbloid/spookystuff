@@ -31,7 +31,7 @@ class JoinAndExplorePagesIT extends IntegrationSuite {
       .select($"h1".text ~ 'header)
 
     val result = joined
-      .explore($"ul.pagination a", depthKey = 'depth)(
+      .explore($"ul.pagination a", depthKey = 'depth, ordinalKey = 'i3)(
         Wget('A.href)
       )(
         'A.text as 'page
@@ -48,26 +48,30 @@ class JoinAndExplorePagesIT extends IntegrationSuite {
           "subcategory" ::
           "header" ::
           "depth" ::
+          "i3" ::
           "page" ::
           "uri" :: Nil
     )
 
-    val rows = result.collect().map(_.mkString("|"))
-    assert(rows.size === 13)
-
-    assert(rows contains "0|Home|null|null|null|0|null|null")
-    assert(rows contains "1|Computers|0|Laptops|Computers / Laptops|0|null|http://webscraper.io/test-sites/e-commerce/static/computers/laptops")
-    assert(rows contains "1|Computers|0|Laptops|Computers / Laptops|1|2|http://webscraper.io/test-sites/e-commerce/static/computers/laptops/2")
-    assert(rows contains "1|Computers|0|Laptops|Computers / Laptops|1|3|http://webscraper.io/test-sites/e-commerce/static/computers/laptops/3")
-//    assert(rows contains "1|Computers|0|Laptops|Computers / Laptops|2|1|http://webscraper.io/test-sites/e-commerce/static/computers/laptops/1")
-    assert(rows contains "1|Computers|1|Tablets|Computers / Tablets|0|null|http://webscraper.io/test-sites/e-commerce/static/computers/tablets")
-    assert(rows contains "1|Computers|1|Tablets|Computers / Tablets|1|2|http://webscraper.io/test-sites/e-commerce/static/computers/tablets/2")
-    assert(rows contains "1|Computers|1|Tablets|Computers / Tablets|1|3|http://webscraper.io/test-sites/e-commerce/static/computers/tablets/3")
-    assert(rows contains "1|Computers|1|Tablets|Computers / Tablets|1|4|http://webscraper.io/test-sites/e-commerce/static/computers/tablets/4")
-//    assert(rows contains "1|Computers|1|Tablets|Computers / Tablets|2|1|http://webscraper.io/test-sites/e-commerce/static/computers/tablets/1")
-    assert(rows contains "2|Phones|0|Touch|Phones / Touch|0|null|http://webscraper.io/test-sites/e-commerce/static/phones/touch")
-    assert(rows contains "2|Phones|0|Touch|Phones / Touch|1|2|http://webscraper.io/test-sites/e-commerce/static/phones/touch/2")
-//    assert(rows contains "2|Phones|0|Touch|Phones / Touch|2|«|http://webscraper.io/test-sites/e-commerce/static/phones/touch/1")
+    val formatted = result.toJSON.collect().mkString("\n")
+    assert(
+      formatted ===
+        """
+          |{"i1":[0],"category":"Home","depth":0}
+          |{"i1":[1],"category":"Computers","i2":[0],"subcategory":"Laptops","header":"Computers / Laptops","depth":0,"uri":"http://webscraper.io/test-sites/e-commerce/static/computers/laptops"}
+          |{"i1":[1],"category":"Computers","i2":[0],"subcategory":"Laptops","header":"Computers / Laptops","depth":1,"i3":[0],"page":"2","uri":"http://webscraper.io/test-sites/e-commerce/static/computers/laptops/2"}
+          |{"i1":[1],"category":"Computers","i2":[0],"subcategory":"Laptops","header":"Computers / Laptops","depth":1,"i3":[1],"page":"3","uri":"http://webscraper.io/test-sites/e-commerce/static/computers/laptops/3"}
+          |{"i1":[1],"category":"Computers","i2":[0],"subcategory":"Laptops","header":"Computers / Laptops","depth":2,"i3":[0,0],"page":"«","uri":"http://webscraper.io/test-sites/e-commerce/static/computers/laptops/1"}
+          |{"i1":[1],"category":"Computers","i2":[1],"subcategory":"Tablets","header":"Computers / Tablets","depth":0,"uri":"http://webscraper.io/test-sites/e-commerce/static/computers/tablets"}
+          |{"i1":[1],"category":"Computers","i2":[1],"subcategory":"Tablets","header":"Computers / Tablets","depth":1,"i3":[0],"page":"2","uri":"http://webscraper.io/test-sites/e-commerce/static/computers/tablets/2"}
+          |{"i1":[1],"category":"Computers","i2":[1],"subcategory":"Tablets","header":"Computers / Tablets","depth":1,"i3":[1],"page":"3","uri":"http://webscraper.io/test-sites/e-commerce/static/computers/tablets/3"}
+          |{"i1":[1],"category":"Computers","i2":[1],"subcategory":"Tablets","header":"Computers / Tablets","depth":1,"i3":[2],"page":"4","uri":"http://webscraper.io/test-sites/e-commerce/static/computers/tablets/4"}
+          |{"i1":[1],"category":"Computers","i2":[1],"subcategory":"Tablets","header":"Computers / Tablets","depth":2,"i3":[0,0],"page":"«","uri":"http://webscraper.io/test-sites/e-commerce/static/computers/tablets/1"}
+          |{"i1":[2],"category":"Phones","i2":[0],"subcategory":"Touch","header":"Phones / Touch","depth":0,"uri":"http://webscraper.io/test-sites/e-commerce/static/phones/touch"}
+          |{"i1":[2],"category":"Phones","i2":[0],"subcategory":"Touch","header":"Phones / Touch","depth":1,"i3":[0],"page":"2","uri":"http://webscraper.io/test-sites/e-commerce/static/phones/touch/2"}
+          |{"i1":[2],"category":"Phones","i2":[0],"subcategory":"Touch","header":"Phones / Touch","depth":2,"i3":[0,0],"page":"«","uri":"http://webscraper.io/test-sites/e-commerce/static/phones/touch/1"}
+        """.stripMargin.trim
+    )
   }
 
   override def numPages = {

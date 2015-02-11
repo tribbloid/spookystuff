@@ -26,7 +26,7 @@ case class PageRowRDD(
                        @transient self: RDD[PageRow],
                        @transient keys: ListSet[KeyLike] = ListSet(),
                        @transient sortKeys: ListSet[Key] = ListSet(),
-                       spooky: SpookyContext
+                       @transient spooky: SpookyContext
                        )
   extends RDD[PageRow](self) {
 
@@ -102,26 +102,46 @@ case class PageRowRDD(
   }
   //-------------------all before this lines are self typed wrappers--------------------
 
-  def generateGroupID: PageRowRDD = this.copy(self = this.map(_.generateGroupID))
+  private def generateGroupID: PageRowRDD = this.copy(self = this.map(_.generateGroupID))
 
-  def persistIfNot(newLevel: StorageLevel = spooky.conf.defaultStorageLevel): PageRowRDD =
+  private def persistIfNot(newLevel: StorageLevel = spooky.conf.defaultStorageLevel): PageRowRDD =
     if (this.getStorageLevel == StorageLevel.NONE) this.persist(newLevel)
     else this
 
-  def toPageRowRDD: PageRowRDD = this
+  private def discardPages: PageRowRDD = this.copy(self = this.map(_.copy(pageLikes = Seq())))
 
-  def toMapRDD: RDD[Map[String, Any]] = this.map(_.asMap())
+  private def defaultOrder: PageRowRDD = {
 
-  def toJSON: RDD[String] = this.map(_.toJSON)
+    val sortKeysSeq: Seq[Key] = this.sortKeys.toSeq.reverse
+
+    import Ordering.Implicits._
+
+    this
+      .persistIfNot()
+      .sortBy{_.sortSignature(sortKeysSeq)} //remember sortBy & sortByKey always render the RDD.
+  }
+
+  def toMapRDD(sorted: Boolean = true): RDD[Map[String, Any]] =
+    if (!sorted) this.map(_.toMap)
+    else this
+      .discardPages
+      .defaultOrder
+      .map(_.toMap)
+
+  def toJSON(sorted: Boolean = true): RDD[String] =
+    if (!sorted) this.map(_.toJSON)
+    else this
+      .discardPages
+      .defaultOrder
+      .map(_.toJSON)
 
   //TODO: investigate using the new applySchema api to avoid losing type info
-  def toSchemaRDD(order: Boolean = true): SchemaRDD = {
+  def toSchemaRDD(sorted: Boolean = true): SchemaRDD = {
 
-    val jsonRDD = this.toJSON.persist(spooky.conf.defaultStorageLevel)
+    val jsonRDD = this.toJSON(sorted).persist()
     //for some unknown reason SQLContext.jsonRDD uses the parameter RDD twice, this has to be fixed by somebody else
     //TODO: unpersist after next action, is it even possible?
 
-    import spooky.sqlContext._
     val schemaRDD = this.spooky.sqlContext.jsonRDD(jsonRDD)
 
     val validKeyNames = keys.toSeq
@@ -133,18 +153,7 @@ case class PageRowRDD(
     val result = schemaRDD
       .select(columns: _*)
 
-    if (!order) result
-    else {
-      val validOrdinalKeyNames = sortKeys.toSeq
-        .filter(key => key.isInstanceOf[Key])
-        .map(key => Utils.canonizeColumnName(key.name))
-        .filter(name => schemaRDD.schema.fieldNames.contains(name))
-      if (validOrdinalKeyNames.isEmpty) result
-      else {
-        val indexColumns = validOrdinalKeyNames.reverse.map(name => Symbol(name))
-        result.orderBy(indexColumns.map(_.asc): _*)
-      }
-    }
+    result
   }
 
   def toCSV(separator: String = ","): RDD[String] = this.toSchemaRDD().map {
@@ -271,7 +280,7 @@ case class PageRowRDD(
                ): PageRowRDD = {
     val selected = this.select(expr)
 
-    val flattened = selected.flatMap(_.flatten(expr.name, Key(ordinalKey), maxOrdinal, left))
+    val flattened = selected.flatMap(_.flatten(expr.name, ordinalKey, maxOrdinal, left))
     selected.copy(
       self = flattened,
       keys = selected.keys ++ Option(Key(ordinalKey)),
@@ -287,7 +296,7 @@ case class PageRowRDD(
                            ): PageRowRDD = {
     val selected = this.selectTemp(expr)
 
-    val flattened = selected.flatMap(_.flatten(expr.name, Key(ordinalKey), maxOrdinal, left))
+    val flattened = selected.flatMap(_.flatten(expr.name, ordinalKey, maxOrdinal, left))
     selected.copy(
       self = flattened,
       keys = selected.keys ++ Option(Key(ordinalKey)),
@@ -327,14 +336,14 @@ case class PageRowRDD(
                     ordinalKey: Symbol = null
                     ): PageRowRDD =
     this.copy(
-      self = this.flatMap(_.flattenPages(pattern.name, Key(ordinalKey))),
+      self = this.flatMap(_.flattenPages(pattern.name, ordinalKey)),
       keys = this.keys ++ Option(Key(ordinalKey)),
       sortKeys = this.sortKeys ++ Option(Key(ordinalKey))
     )
 
   def lookup(): RDD[(Trace, PageLike)] = {
 
-      this.persistIfNot().flatMap(_.pageLikes.map(page => page.uid.backtrace -> page ))
+    this.persistIfNot().flatMap(_.pageLikes.map(page => page.uid.backtrace -> page ))
     //TODO: really takes a lot of space, how to eliminate?
   }
 
@@ -541,18 +550,18 @@ case class PageRowRDD(
   /* if the following conditions are met, row will be removed
 * 1. row has identical trace and name
 * 2. the row has identical cells*/
-  private def subtractSignature(
-                                 another: RDD[PageRow],
-                                 numPartitions: Int
-                                 ): PageRowRDD = {
+  private def subtractBySignature(
+                                   another: RDD[PageRow],
+                                   numPartitions: Int
+                                   ): PageRowRDD = {
 
     val otherSignatures = another.map {
-      row => row.signature
+      row => row.distictSignature
     }.map{
       signature => signature -> null
     }
     val withSignatures = this.map{
-      row => row.signature -> row
+      row => row.distictSignature -> row
     }
     val excluded = withSignatures.subtractByKey(otherSignatures, numPartitions).values
 
@@ -561,12 +570,22 @@ case class PageRowRDD(
     )
   }
 
-  private def distinctSignature(
-                                 numPartitions: Int
-                                 ): PageRowRDD = {
+  private def distinctBySignature(
+                                   numPartitions: Int
+                                   ): PageRowRDD = {
 
-    val withSignatures = this.keyBy(_.signature)
-    val distinct = withSignatures.reduceByKey((row1, row2) => row1).values
+    import Ordering.Implicits._
+
+    val sortKeysSeq: Seq[Key] = this.sortKeys.toSeq.reverse
+
+    val withSignatures = this.keyBy(_.distictSignature)
+    val distinct = withSignatures.reduceByKey{
+      (row1, row2) =>
+        val sign1 = row1.sortSignature(sortKeysSeq)
+        val sign2 = row2.sortSignature(sortKeysSeq)
+        if (sign1 < sign2) row1
+        else row2
+    }.values
 
     this.copy(
       self = distinct
@@ -653,6 +672,11 @@ case class PageRowRDD(
 
     val resultRDDs = ArrayBuffer[RDD[PageRow]](firstResultRDD.select(Literal(0) ~ depthKey))
 
+    val resultKeys = this.keys ++ Seq(TempKey(_expr.name), Key(depthKey), Key(ordinalKey), Key(flattenPagesOrdinalKey)).flatMap(Option(_))
+    val resultSortKeys = this.sortKeys ++ Seq(Key(depthKey), Key(ordinalKey), Key(flattenPagesOrdinalKey)).flatMap(Option(_))
+
+    val resultSortKeysSeq = resultSortKeys.toSeq.reverse
+
     var done = false
     var stageRDD = firstStageRDD
     while(!done) {
@@ -662,14 +686,16 @@ case class PageRowRDD(
       val batchExeRDD = stageRDD.map {
         stage =>
           PageRow.dumbExplore(
-            stage
+            stage,
+            resultSortKeysSeq,
+            spooky
           )(
               _expr,
               depthKey,
               depthStart,
               depthEnd,
-              maxOrdinal,
-              spooky
+              ordinalKey,
+              maxOrdinal
             )(
               _traces,
               flattenPagesPattern,
@@ -693,10 +719,7 @@ case class PageRowRDD(
 
     val resultSelf = new UnionRDD(this.sparkContext, resultRDDs).coalesce(numPartitions) //TODO: not an 'official' API
 
-    val resultKeys = this.keys ++ Seq(TempKey(_expr.name), Key(depthKey), Key(flattenPagesOrdinalKey)).flatMap(Option(_))
-    val resultOrdinalKeys = this.sortKeys ++ Seq(Key(depthKey), Key(flattenPagesOrdinalKey)).flatMap(Option(_))
-
-    val result = this.copy(self = resultSelf, keys = resultKeys, sortKeys = resultOrdinalKeys)
+    val result = this.copy(self = resultSelf, keys = resultKeys, sortKeys = resultSortKeys)
 
     result
       .select(select: _*)
@@ -742,8 +765,8 @@ case class PageRowRDD(
       val flattened = fetched.flattenPages(flattenPagesPattern, flattenPagesOrdinalKey)
 
       newRows = flattened
-        .distinctSignature(numPartitions)
-        .subtractSignature(total, numPartitions)
+        .distinctBySignature(numPartitions)
+        .subtractBySignature(total, numPartitions)
         .persistIfNot()
 
       if (depth % checkpointInterval == 0) {
@@ -812,7 +835,7 @@ case class PageRowRDD(
 
       val newLookups = fetched.lookup()
 
-      lookups = lookups.union(newLookups) //TODO: remove pages with identical uid but different _traces? or set the lookup table as backtrace -> seq directly.
+      lookups = lookups.union(newLookups)
 
       if (depth % checkpointInterval == 0) {
         lookups.checkpoint()
@@ -822,8 +845,8 @@ case class PageRowRDD(
       val flattened = fetched.flattenPages(flattenPagesPattern, flattenPagesOrdinalKey)
 
       newRows = flattened
-        .distinctSignature(numPartitions)
-        .subtractSignature(total, numPartitions)
+        .distinctBySignature(numPartitions)
+        .subtractBySignature(total, numPartitions)
         .persistIfNot()
 
       if (depth % checkpointInterval == 0) {

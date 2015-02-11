@@ -28,7 +28,7 @@ class ExploreAJAXPagesIT extends IntegrationSuite {
       )
 
     val result = base
-      .explore($"div.sidebar-nav a", depthKey = 'depth)(
+      .explore($"div.sidebar-nav a", depthKey = 'depth, ordinalKey = 'index)(
         Visit('A.href)
           +> snapshotAllPages,
         flattenPagesOrdinalKey = 'page_index
@@ -43,6 +43,7 @@ class ExploreAJAXPagesIT extends IntegrationSuite {
     assert(
       result.schema.fieldNames ===
         "depth" ::
+          "index" ::
           "page_index" ::
           "page_number" ::
           "category" ::
@@ -50,21 +51,24 @@ class ExploreAJAXPagesIT extends IntegrationSuite {
           "num_product" :: Nil
     )
 
-    val rows = result.collect().map(_.mkString("|"))
-    assert(rows.size === 12)
-
-    assert(rows contains "0|null|null|null|E-commerce training site|3")//TODO: add back multi-tier index key
-    assert(rows contains "1|0|null|Computers|Computers category|3")
-    assert(rows contains "1|0|null|Phones|Phones category|3")
-    assert(rows contains "2|0|1|Laptops|Computers / Laptops|6")
-    assert(rows contains "2|1|2|Laptops|null|6")
-    assert(rows contains "2|2|3|Laptops|null|6")
-    assert(rows contains "2|0|1|Touch|Phones / Touch|6")
-    assert(rows contains "2|0|1|Tablets|Computers / Tablets|6")
-    assert(rows contains "2|1|2|Touch|null|6")
-    assert(rows contains "2|1|2|Tablets|null|6")
-    assert(rows contains "2|2|3|Tablets|null|6")
-    assert(rows contains "2|3|4|Tablets|null|6")
+    val formatted = result.toJSON.collect().mkString("\n")
+    assert(
+      formatted ===
+        """
+          |{"depth":0,"title":"E-commerce training site","num_product":3}
+          |{"depth":1,"index":[1],"page_index":[0],"category":"Computers","title":"Computers category","num_product":3}
+          |{"depth":1,"index":[2],"page_index":[0],"category":"Phones","title":"Phones category","num_product":3}
+          |{"depth":2,"index":[1,2],"page_index":[0,0],"page_number":"1","category":"Laptops","title":"Computers / Laptops","num_product":6}
+          |{"depth":2,"index":[1,2],"page_index":[0,1],"page_number":"2","category":"Laptops","num_product":6}
+          |{"depth":2,"index":[1,2],"page_index":[0,2],"page_number":"3","category":"Laptops","num_product":6}
+          |{"depth":2,"index":[1,3],"page_index":[0,0],"page_number":"1","category":"Tablets","title":"Computers / Tablets","num_product":6}
+          |{"depth":2,"index":[1,3],"page_index":[0,1],"page_number":"2","category":"Tablets","num_product":6}
+          |{"depth":2,"index":[1,3],"page_index":[0,2],"page_number":"3","category":"Tablets","num_product":6}
+          |{"depth":2,"index":[1,3],"page_index":[0,3],"page_number":"4","category":"Tablets","num_product":6}
+          |{"depth":2,"index":[2,3],"page_index":[0,0],"page_number":"1","category":"Touch","title":"Phones / Touch","num_product":6}
+          |{"depth":2,"index":[2,3],"page_index":[0,1],"page_number":"2","category":"Touch","num_product":6}
+        """.stripMargin.trim
+    )
   }
 
   override def numSessions = _ => 6

@@ -28,10 +28,10 @@ class SeqExprView[T: ClassTag](self: Expression[Seq[T]]) {
   def mkString(sep: String): Expression[String] = self.andMap(_.mkString(sep), s"mkString($sep)")
 
   def zipWithKeys(keys: Expression[Any]): ZippedExpr[Any, T] =
-    new ZippedExpr[Any,T](keys.filterByType[Seq[Any]], self)
+    new ZippedExpr[Any,T](keys.filterByType[Seq[_]], self)
 
   def zipWithValues(values: Expression[Any]): ZippedExpr[T, Any] =
-    new ZippedExpr[T,Any](self, values.filterByType[Seq[Any]])
+    new ZippedExpr[T,Any](self, values.filterByType[Seq[_]])
 
   //TODO: handle exception
   //  def only: Expr[T] =
