@@ -21,7 +21,3 @@ object TempKey{
 
   def apply(sym: Symbol): TempKey = Option(sym).map(_.name).map(new TempKey(_)).orNull
 }
-
-//case object NoKey extends KeyLike {
-//  override val name: String = null
-//}

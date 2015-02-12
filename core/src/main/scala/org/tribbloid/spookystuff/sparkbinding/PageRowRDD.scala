@@ -1,10 +1,10 @@
 package org.tribbloid.spookystuff.sparkbinding
 
+import org.apache.spark.HashPartitioner
 import org.apache.spark.rdd.{RDD, UnionRDD}
 import org.apache.spark.sql._
 import org.apache.spark.sql.catalyst.analysis.UnresolvedAttribute
 import org.apache.spark.storage.StorageLevel
-import org.apache.spark.{HashPartitioner, Partition, TaskContext}
 import org.slf4j.LoggerFactory
 import org.tribbloid.spookystuff.actions._
 import org.tribbloid.spookystuff.dsl.{Inner, JoinType, _}
@@ -18,90 +18,19 @@ import org.tribbloid.spookystuff.{Const, SpookyContext}
 import scala.collection.immutable.ListSet
 import scala.collection.mutable.ArrayBuffer
 import scala.language.implicitConversions
-import scala.reflect.ClassTag
 
 /**
  * Created by peng on 8/29/14.
  */
 case class PageRowRDD(
-                       @transient self: RDD[PageRow],
-                       @transient keys: ListSet[KeyLike] = ListSet(),
-                       @transient sortKeys: ListSet[Key] = ListSet(),
-                       @transient spooky: SpookyContext
+                       @transient override val self: RDD[PageRow],
+                       @transient override val keys: ListSet[KeyLike] = ListSet(),
+                       @transient override val sortKeys: ListSet[Key] = ListSet(),
+                       @transient override val spooky: SpookyContext
                        )
-  extends RDD[PageRow](self) {
+  extends RDD[PageRow](self) with PageRowRDDOverrides {
 
   import org.apache.spark.SparkContext._
-
-  override def getPartitions: Array[Partition] = firstParent[PageRow].partitions
-
-  override val partitioner = self.partitioner
-
-  override def compute(split: Partition, context: TaskContext) =
-    firstParent[PageRow].iterator(split, context)
-  //-----------------------------------------------------------------------
-
-  private implicit def selfToPageRowRDD(self: RDD[PageRow]): PageRowRDD = this.copy(self = self)
-
-  override def filter(f: PageRow => Boolean): PageRowRDD = super.filter(f)
-
-  override def distinct(): PageRowRDD = super.distinct()
-
-  override def distinct(numPartitions: Int)(implicit ord: Ordering[PageRow] = null): PageRowRDD =
-    super.distinct(numPartitions)(ord)
-
-  override def repartition(numPartitions: Int)(implicit ord: Ordering[PageRow] = null): PageRowRDD =
-    super.repartition(numPartitions)(ord)
-
-  override def coalesce(numPartitions: Int, shuffle: Boolean = false)(implicit ord: Ordering[PageRow] = null): PageRowRDD =
-    super.coalesce(numPartitions, shuffle)(ord)
-
-  override def sample(withReplacement: Boolean,
-                      fraction: Double,
-                      seed: Long = Utils.random.nextLong()): PageRowRDD =
-    super.sample(withReplacement, fraction, seed)
-
-  override def union(other: RDD[PageRow]): PageRowRDD = other match {
-
-    case other: PageRowRDD =>
-      this.copy(
-        super.union(other.self),
-        this.keys ++ other.keys.toSeq.reverse,
-        this.sortKeys ++ other.sortKeys.toSeq.reverse
-      )
-    case _ => super.union(other)
-  }
-
-  override def ++(other: RDD[PageRow]): PageRowRDD = this.union(other)
-
-  override def sortBy[K](
-                          f: (PageRow) => K,
-                          ascending: Boolean = true,
-                          numPartitions: Int = this.partitions.size)
-                        (implicit ord: Ordering[K], ctag: ClassTag[K]): PageRowRDD = super.sortBy(f, ascending, numPartitions)(ord, ctag)
-
-  override def intersection(other: RDD[PageRow]): PageRowRDD = other match {
-
-    case other: PageRowRDD =>
-      this.copy(
-        super.intersection(other.self),
-        this.keys.intersect(other.keys),//TODO: need validation that it won't change sequence
-        this.sortKeys.intersect(other.sortKeys)
-      )
-    case _ => super.intersection(other)
-  }
-
-  override def intersection(other: RDD[PageRow], numPartitions: Int): PageRowRDD = other match {
-
-    case other: PageRowRDD =>
-      this.copy(
-        super.intersection(other.self),
-        this.keys.intersect(other.keys),
-        this.sortKeys.intersect(other.sortKeys)
-      )
-    case _ => super.intersection(other, numPartitions)
-  }
-  //-------------------all before this lines are self typed wrappers--------------------
 
   private def generateGroupID: PageRowRDD = this.copy(self = this.map(_.generateGroupID))
 
@@ -121,7 +50,7 @@ case class PageRowRDD(
 
     val sortKeysSeq: Seq[Key] = this.sortKeys.toSeq.reverse
 
-    import Ordering.Implicits._
+    import scala.Ordering.Implicits._
 
     this.persistDuring(){
       val result = this.sortBy{_.ordinal(sortKeysSeq)}
@@ -231,9 +160,7 @@ case class PageRowRDD(
   //   */
   def select(exprs: Expression[Any]*): PageRowRDD = {
 
-    val _exprs = exprs
-
-    val newKeys: Seq[Key] = _exprs.map {
+    val newKeys: Seq[Key] = exprs.map {
       expr =>
         val key = Key(expr.name)
         assert(!this.keys.contains(key) || expr.isInstanceOf[PlusExpr[_]]) //can't insert the same key twice
@@ -241,7 +168,20 @@ case class PageRowRDD(
     }
 
     val result = this.copy(
-      self = this.flatMap(_.select(_exprs: _*)),
+      self = this.flatMap(_.select(exprs: _*)),
+      keys = this.keys ++ newKeys
+    )
+    result
+  }
+
+  def overwrite(exprs: Expression[Any]*): PageRowRDD = {
+
+    val newKeys: Seq[Key] = exprs.map {
+      expr => Key(expr.name)
+    }
+
+    val result = this.copy(
+      self = this.flatMap(_.select(exprs: _*)),
       keys = this.keys ++ newKeys
     )
     result
@@ -249,16 +189,14 @@ case class PageRowRDD(
 
   private def selectTemp(exprs: Expression[Any]*): PageRowRDD = {
 
-    val _exprs = exprs
-
-    val newKeys: Seq[TempKey] = _exprs.map {
+    val newKeys: Seq[TempKey] = exprs.map {
       expr =>
         val key = TempKey(expr.name)
         key
     }
 
     this.copy(
-      self = this.flatMap(_.selectTemp(_exprs: _*)),
+      self = this.flatMap(_.selectTemp(exprs: _*)),
       keys = this.keys ++ newKeys
     )
   }
@@ -692,7 +630,7 @@ case class PageRowRDD(
 
   //has 2 outputs: 1 is self merge another by Signature, 2 is self distinct not covered by another
   //remember base MUST HAVE a hash partitioner!!!
-  private def mergeAndExclude(
+  private def mergeAndSubtractBySignature(
                                base: RDD[(Signature, PageRow)],
                                depthKey: Symbol,
                                depth: Int
@@ -783,14 +721,13 @@ case class PageRowRDD(
 
         if (depth % checkpointInterval == 0) {
           lookupUnion.checkpoint()
-          val size = lookupUnion.count()
         }
       }
 
       val joined = newPages
         .flattenPages(flattenPagesPattern, flattenPagesOrdinalKey)
 
-      val tuple = joined.mergeAndExclude(base, depthKey, depth)
+      val tuple = joined.mergeAndSubtractBySignature(base, depthKey, depth)
       base = tuple._1
       newRows = tuple._2
 
