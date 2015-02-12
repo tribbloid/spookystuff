@@ -5,6 +5,7 @@ import java.util.UUID
 import org.slf4j.LoggerFactory
 import org.tribbloid.spookystuff.actions._
 import org.tribbloid.spookystuff.dsl._
+import org.tribbloid.spookystuff.entity.PageRow.Signature
 import org.tribbloid.spookystuff.expressions._
 import org.tribbloid.spookystuff.pages._
 import org.tribbloid.spookystuff.utils._
@@ -22,7 +23,7 @@ import scala.reflect.ClassTag
 case class PageRow(
                     cells: Map[KeyLike, Any] = Map(), //TODO: also carry PageUID & property type (Vertex/Edge) for GraphX, ListMap may be slower but has tighter serialization footage
                     pageLikes: Seq[PageLike] = Seq(), // discarded after new page coming in
-                    groupID: Long = PageRow.newGroupID //keep flattened rows together
+                    groupID: UUID = PageRow.newGroupID //keep flattened rows together
                     )
   extends Serializable {
 
@@ -138,12 +139,12 @@ case class PageRow(
     Some(result)
   }
 
-  def distictSignature = (
+  def signature: Signature = (
     groupID,
     pages.map(_.uid)
     )
 
-  def sortSignature(sortKeys: Seq[Key]): Seq[Option[Iterable[Int]]] = {
+  def ordinal(sortKeys: Seq[Key]): Seq[Option[Iterable[Int]]] = {
     val result = sortKeys.map(key => this.getIntIterable(key.name))
     result
   }
@@ -275,7 +276,9 @@ case class PageRow(
 
 object PageRow {
 
-  def newGroupID = UUID.randomUUID().getMostSignificantBits
+  type Signature = (UUID, Seq[PageUID])
+
+  def newGroupID = UUID.randomUUID()
 
   def narrowExplore(
                    stage: ExploreStage,
@@ -320,18 +323,8 @@ object PageRow {
         .groupBy(_._1)
         .map {
         tuple =>
-
-          import Ordering.Implicits._
-
-          val row = tuple._2.map(_._2).reduce{
-            (row1, row2) =>
-              val sign1 = row1.sortSignature(sortKeys)
-              val sign2 = row2.sortSignature(sortKeys)
-              if (sign1 < sign2) row1
-              else row2
-          }
-
-          Squash(tuple._1, Seq(row))
+          val first = PageRow.getFirst(tuple._2.map(_._2), sortKeys)
+          Squash(tuple._1, first)
         //when multiple links on one or more pages leads to the same uri, keep the first one
       }
 
@@ -384,6 +377,19 @@ object PageRow {
     }
 
     Some(sorted.slice(0, sorted.head.uid.blockTotal))
+  }
+
+  def getFirst(rows: Iterable[PageRow], keys: Seq[Key]): Option[PageRow] = {
+    if (rows.isEmpty) None
+    else Some(rows.reduce{
+      (row1, row2) =>
+        import Ordering.Implicits._
+
+        val sign1 = row1.ordinal(keys)
+        val sign2 = row2.ordinal(keys)
+        if (sign1 < sign2) row1
+        else row2
+    })
   }
 }
 

@@ -55,7 +55,6 @@ object PageUtils {
     }
   }
 
-  //TODO: return option
   def load(fullPath: Path)(spooky: SpookyContext): Array[Byte] = {
 
     DFSRead("load", fullPath.toString, spooky) {
@@ -78,7 +77,7 @@ object PageUtils {
 
   //unlike save, this will store all information in an unreadable, serialized, probably compressed file
   //always overwrite
-  def cache(
+  private def cache(
              pageLikes: Seq[PageLike],
              path: String,
              overwrite: Boolean = false
@@ -104,9 +103,9 @@ object PageUtils {
   }
 
   def autoCache(
-                 pageLikes: Seq[PageLike],
-                 spooky: SpookyContext
-                 ): Unit = {
+                      pageLikes: Seq[PageLike],
+                      spooky: SpookyContext
+                      ): Unit = {
     val pathStr = Utils.uriConcat(
       spooky.conf.dirs.cache,
       spooky.conf.cacheTraceEncoder(pageLikes.head.uid.backtrace).toString,
@@ -116,8 +115,62 @@ object PageUtils {
     cache(pageLikes, pathStr)(spooky)
   }
 
-  //TODO: return option
-  def restore(fullPath: Path)(spooky: SpookyContext): Seq[PageLike] = {
+  //write a directory
+//  private def tag(
+//           path: String,
+//           spooky: SpookyContext
+//           ): Unit = {
+//
+//    PageUtils.DFSWrite("save", path, spooky) {
+//
+//      val fullPath = new Path(path)
+//      val fs = fullPath.getFileSystem(spooky.hadoopConf)
+//      fs.mkdirs(fullPath)
+//    }
+//  }
+//
+//  def addGroupID(
+//                    backtrace: Trace,
+//                    groupID: UUID,
+//                    spooky: SpookyContext
+//                    ): Unit = {
+//
+//    val pathStr = Utils.uriConcat(
+//      spooky.conf.dirs.cache,
+//      spooky.conf.cacheTraceEncoder(backtrace).toString,
+//      groupID.toString
+//    )
+//
+//    tag(pathStr, spooky)
+//  }
+//
+//  private def getGroupIDs(
+//                backtrace: Trace,
+//                spooky: SpookyContext
+//                ): Seq[UUID] = {
+//
+//    val pathStr = Utils.uriConcat(
+//      spooky.conf.dirs.cache,
+//      spooky.conf.cacheTraceEncoder(backtrace).toString
+//    )
+//
+//    val dirPath = new Path(pathStr)
+//
+//    DFSRead("get latest version", pathStr, spooky) {
+//
+//      val fs = dirPath.getFileSystem(spooky.hadoopConf)
+//
+//      if (fs.exists(dirPath) && fs.getFileStatus(dirPath).isDirectory) {
+//
+//        val statuses = fs.listStatus(dirPath)
+//
+//        statuses.filter(status => status.isDirectory).map(_.getPath.getName).map(UUID.fromString).toSeq
+//      }
+//      else Seq()
+//    }
+//  }
+
+  private def restore(fullPath: Path)(spooky: SpookyContext): Seq[PageLike] = {
 
     val result = DFSRead("restore", fullPath.toString, spooky) {
       val fs = fullPath.getFileSystem(spooky.hadoopConf)
@@ -145,8 +198,7 @@ object PageUtils {
   //returns: Seq() => has backtrace dir but contains no page
   //returns null => no backtrace dir
   //TODO: cannot handle infinite duration, avoid using it!
-  //TODO: return option
-  def restoreLatest(
+  private def restoreLatest(
                      dirPath: Path,
                      earliestModificationTime: Long = 0
                      )(spooky: SpookyContext): Seq[PageLike] = {
@@ -172,13 +224,13 @@ object PageUtils {
   }
 
   //TODO: return option
-  def autoRestoreLatest(
-                         trace: Trace,
+  def autoRestore(
+                         backtrace: Trace,
                          spooky: SpookyContext
                          ): Seq[PageLike] = {
     val pathStr = Utils.uriConcat(
       spooky.conf.dirs.cache,
-      spooky.conf.cacheTraceEncoder(trace).toString
+      spooky.conf.cacheTraceEncoder(backtrace).toString
     )
 
     val pages = restoreLatest(
@@ -189,7 +241,7 @@ object PageUtils {
     if (pages != null) for (page <- pages) {
       val pageBacktrace: Trace = page.uid.backtrace
 
-      pageBacktrace.injectFrom(trace)
+      pageBacktrace.injectFrom(backtrace)
       //this is to allow actions in backtrace to have different name than those cached
     }
     pages

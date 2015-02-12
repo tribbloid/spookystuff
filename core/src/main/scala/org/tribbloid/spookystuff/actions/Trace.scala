@@ -89,7 +89,7 @@ final case class Trace(
     if (!this.hasExport) return Seq()
 
     val pagesFromCache = if (!spooky.conf.cacheRead) Seq(null)
-    else dryrun.map(dry => PageUtils.autoRestoreLatest(dry, spooky))
+    else dryrun.map(dry => PageUtils.autoRestore(dry, spooky))
 
     if (!pagesFromCache.contains(null)){
       val results = pagesFromCache.flatten

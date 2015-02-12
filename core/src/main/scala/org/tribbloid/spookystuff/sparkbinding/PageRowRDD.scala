@@ -4,10 +4,11 @@ import org.apache.spark.rdd.{RDD, UnionRDD}
 import org.apache.spark.sql._
 import org.apache.spark.sql.catalyst.analysis.UnresolvedAttribute
 import org.apache.spark.storage.StorageLevel
-import org.apache.spark.{Partition, TaskContext}
+import org.apache.spark.{HashPartitioner, Partition, TaskContext}
 import org.slf4j.LoggerFactory
 import org.tribbloid.spookystuff.actions._
 import org.tribbloid.spookystuff.dsl.{Inner, JoinType, _}
+import org.tribbloid.spookystuff.entity.PageRow.Signature
 import org.tribbloid.spookystuff.entity._
 import org.tribbloid.spookystuff.expressions._
 import org.tribbloid.spookystuff.pages.{PageLike, Unstructured}
@@ -123,7 +124,7 @@ case class PageRowRDD(
     import Ordering.Implicits._
 
     this.persistDuring(){
-      val result = this.sortBy{_.sortSignature(sortKeysSeq)}
+      val result = this.sortBy{_.ordinal(sortKeysSeq)}
       result
     }
   }
@@ -555,51 +556,6 @@ case class PageRowRDD(
       optimizer = optimizer
     )(Option(select).toSeq: _*)
 
-  /* if the following conditions are met, row will be removed
-* 1. row has identical trace and name
-* 2. the row has identical cells*/
-  private def subtractBySignature(
-                                   another: RDD[PageRow],
-                                   numPartitions: Int
-                                   ): PageRowRDD = {
-
-    val otherSignatures = another.map {
-      row => row.distictSignature
-    }.map{
-      signature => signature -> null
-    }
-    val withSignatures = this.map{
-      row => row.distictSignature -> row
-    }
-    val excluded = withSignatures.subtractByKey(otherSignatures, numPartitions).values
-
-    this.copy(
-      self = excluded
-    )
-  }
-
-  private def distinctBySignature(
-                                   numPartitions: Int
-                                   ): PageRowRDD = {
-
-    import Ordering.Implicits._
-
-    val sortKeysSeq: Seq[Key] = this.sortKeys.toSeq.reverse
-
-    val withSignatures = this.keyBy(_.distictSignature)
-    val distinct = withSignatures.reduceByKey{
-      (row1, row2) =>
-        val sign1 = row1.sortSignature(sortKeysSeq)
-        val sign2 = row2.sortSignature(sortKeysSeq)
-        if (sign1 < sign2) row1
-        else row2
-    }.values
-
-    this.copy(
-      self = distinct
-    )
-  }
-
   def explore(
                expr: Expression[Any],
                depthKey: Symbol = null,
@@ -733,6 +689,46 @@ case class PageRowRDD(
       .clearTemp
   }
 
+
+  //has 2 outputs: 1 is self merge another by Signature, 2 is self distinct not covered by another
+  //remember base MUST HAVE a hash partitioner!!!
+  private def mergeAndExclude(
+                               base: RDD[(Signature, PageRow)],
+                               depthKey: Symbol,
+                               depth: Int
+                               ): (RDD[(Signature, PageRow)], PageRowRDD) = {
+
+    val self = this.keyBy(_.signature)
+
+    val sortKeysSeq: Seq[Key] = this.sortKeys.toSeq.reverse
+
+    val cogrouped = base.cogroup(self)
+    val cogroupedFirst = cogrouped //base first
+      .mapValues(tuple => tuple._1 -> PageRow.getFirst(tuple._2, sortKeysSeq))
+
+    val mixed = cogroupedFirst.map{
+      tuple =>
+        if (tuple._2._1.nonEmpty) {
+          assert(tuple._2._1.size == 1)
+          (tuple._1 -> tuple._2._1.head) -> None
+        }
+        else {
+          val newRow = tuple._2._2.get
+          val withDepth =
+            if (depthKey != null) newRow.select(Literal(depth) ~ depthKey).get
+            else newRow
+
+          (tuple._1 -> withDepth) -> Some(newRow)
+        }
+    }
+      .persist(spooky.conf.defaultStorageLevel)
+
+    val merged = mixed.keys
+    val newRows = mixed.flatMap(_._2)
+
+    merged -> this.copy(self = newRows)
+  }
+
   //recursive join and union! applicable to many situations like (wide) pagination and deep crawling
   private def _wideExplore(
                             expr: Expression[Any],
@@ -755,25 +751,35 @@ case class PageRowRDD(
 
     var newRows = this
 
-    var total = if (depthKey != null)
-      this.select(Literal(0) ~ depthKey)
-        .copy(sortKeys = this.sortKeys + Key(depthKey))
-    else this
+    val withDepthKey =
+      if (depthKey != null) this.select(Literal(0) ~ depthKey)
+      else this
+
+    var base = withDepthKey
+      .keyBy(_.signature).partitionBy(new HashPartitioner(numPartitions))
 
     if (this.context.getCheckpointDir.isEmpty) this.context.setCheckpointDir(spooky.conf.dirs.checkpoint)
 
     val _expr = expr defaultAs Symbol(Const.defaultJoinKey)
 
+    val resultKeys = this.keys ++ Seq(TempKey(_expr.name), Key(depthKey), Key(ordinalKey), Key(flattenPagesOrdinalKey)).flatMap(Option(_))
+    val resultSortKeys = this.sortKeys ++ Seq(Key(depthKey), Key(ordinalKey), Key(flattenPagesOrdinalKey)).flatMap(Option(_))
+
+    def getResult: PageRowRDD = this
+      .copy(self = base.values, keys = resultKeys, sortKeys = resultSortKeys)
+      .select(select: _*)
+      .clearTemp
+    //      .coalesce(numPartitions)
+
     var lookupUnion = lookup
 
     for (depth <- 1 to maxDepth) {
-      //ALWAYS inner join
-      val fetched = newRows
+      val newPages = newRows
         .flattenTemp(_expr, ordinalKey, maxOrdinal, left = true)
         ._wideFetch(_traces, Inner, numPartitions, lookupUnion)
 
       if (lookupUnion != null) {
-        val newLookups = fetched.lookup()
+        val newLookups = newPages.lookup()
 
         lookupUnion = lookupUnion.union(newLookups)
 
@@ -783,37 +789,20 @@ case class PageRowRDD(
         }
       }
 
-      val flattened = fetched.flattenPages(flattenPagesPattern, flattenPagesOrdinalKey)
+      val joined = newPages
+        .flattenPages(flattenPagesPattern, flattenPagesOrdinalKey)
 
-      newRows = flattened
-        .distinctBySignature(numPartitions)
-        .subtractBySignature(total, numPartitions)
-        .persist(spooky.conf.defaultStorageLevel)
-
-      if (depth % checkpointInterval == 0) {
-        newRows.checkpoint()
-      }
+      val tuple = joined.mergeAndExclude(base, depthKey, depth)
+      base = tuple._1
+      newRows = tuple._2
 
       val newRowsSize = newRows.count()
       LoggerFactory.getLogger(this.getClass).info(s"found $newRowsSize new row(s) after $depth iterations")
 
-      if (newRowsSize == 0){
-        return total
-          .select(select: _*)
-          .clearTemp
-          .coalesce(numPartitions) //early stop condition if no new pages with the same data is detected
-      }
-
-      total = total.union(
-        if (depthKey != null) newRows.select(new Literal(depth) ~ depthKey)
-        else newRows
-      )
+      if (newRowsSize == 0) return getResult
     }
 
-    total
-      .select(select: _*)
-      .clearTemp
-      .coalesce(numPartitions)
+    getResult
   }
 
   def visitExplore(

@@ -21,7 +21,7 @@ class TestPages extends SpookyEnvSuite {
 
     PageUtils.autoCache(page, spooky)
 
-    val loadedPages = PageUtils.autoRestoreLatest(page(0).uid.backtrace,spooky).map(_.asInstanceOf[Page])
+    val loadedPages = PageUtils.autoRestore(page(0).uid.backtrace,spooky).map(_.asInstanceOf[Page])
 
     assert(loadedPages.length === 1)
     assert(page(0).content === loadedPages(0).content)
@@ -35,7 +35,7 @@ class TestPages extends SpookyEnvSuite {
 
     val newTrace = Trace(Visit("http://en.wikipedia.org")::Snapshot().as('new)::Nil)
 
-    val page2 = PageUtils.autoRestoreLatest(newTrace, spooky).map(_.asInstanceOf[Page])
+    val page2 = PageUtils.autoRestore(newTrace, spooky).map(_.asInstanceOf[Page])
 
     assert(page2.size === 1)
     assert(page2.head.copy(content = null) === page.head.copy(content = null))
@@ -44,7 +44,7 @@ class TestPages extends SpookyEnvSuite {
 
     Thread.sleep(2000)
 
-    val page3 = PageUtils.autoRestoreLatest(page.head.uid.backtrace, spooky)
+    val page3 = PageUtils.autoRestore(page.head.uid.backtrace, spooky)
     assert(page3 === null)
 
     spooky.conf.pageExpireAfter = 30.days
@@ -61,7 +61,7 @@ class TestPages extends SpookyEnvSuite {
 
     val newTrace = Trace(Wget("http://en.wikipedia.org").as('newWget)::Nil)
 
-    val page2 = PageUtils.autoRestoreLatest(newTrace, spooky).map(_.asInstanceOf[Page])
+    val page2 = PageUtils.autoRestore(newTrace, spooky).map(_.asInstanceOf[Page])
 
     assert(page2.size === 1)
     assert(page2.head.copy(content = null) === wgetPage.head.copy(content = null))
@@ -70,7 +70,7 @@ class TestPages extends SpookyEnvSuite {
 
     Thread.sleep(2000)
 
-    val page3 = PageUtils.autoRestoreLatest(wgetPage.head.uid.backtrace, spooky)
+    val page3 = PageUtils.autoRestore(wgetPage.head.uid.backtrace, spooky)
     assert(page3 === null)
 
     spooky.conf.pageExpireAfter = 30.days
