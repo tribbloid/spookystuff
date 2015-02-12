@@ -1,10 +1,10 @@
-package org.tribbloid.spookystuff.integration
+package org.tribbloid.spookystuff.integration.dynamic
 
-import org.tribbloid.spookystuff.{dsl, SpookyContext}
+import org.tribbloid.spookystuff.SpookyContext
 import org.tribbloid.spookystuff.actions._
-import dsl._
-import scala.concurrent.duration
-import duration._
+import org.tribbloid.spookystuff.dsl._
+import org.tribbloid.spookystuff.integration.IntegrationSuite
+import scala.concurrent.duration._
 
 /**
  * Created by peng on 12/10/14.

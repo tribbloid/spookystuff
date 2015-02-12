@@ -281,21 +281,20 @@ object PageRow {
   def newGroupID = UUID.randomUUID()
 
   def narrowExplore(
-                   stage: ExploreStage,
-                   sortKeys: Seq[Key],
-                   spooky: SpookyContext
-                   )(
-                   expr: Expression[Any],
-                   depthKey: Symbol,
-                   depthFromExclusive: Int,
-                   depthToInclusive: Int,
-                   ordinalKey: Symbol,
-                   maxOrdinal: Int
-                   )(
-                   _traces: Set[Trace],
-                   flattenPagesPattern: Symbol,
-                   flattenPagesOrdinalKey: Symbol
-                   ): (Iterable[PageRow], ExploreStage) = {
+                     stage: ExploreStage,
+                     spooky: SpookyContext
+                     )(
+                     expr: Expression[Any],
+                     depthKey: Symbol,
+                     depthFromExclusive: Int,
+                     depthToInclusive: Int,
+                     ordinalKey: Symbol,
+                     maxOrdinal: Int
+                     )(
+                     _traces: Set[Trace],
+                     flattenPagesPattern: Symbol,
+                     flattenPagesOrdinalKey: Symbol
+                     ): (Iterable[PageRow], ExploreStage) = {
 
     val total: ArrayBuffer[PageRow] = ArrayBuffer()
 
@@ -323,7 +322,7 @@ object PageRow {
         .groupBy(_._1)
         .map {
         tuple =>
-          val first = PageRow.selectFirstRow(tuple._2.map(_._2), sortKeys)
+          val first = PageRow.selectFirstRow(tuple._2.map(_._2), ordinalKey)
           Squash(tuple._1, first)
         //when multiple links on one or more pages leads to the same uri, keep the first one
       }
@@ -379,14 +378,15 @@ object PageRow {
     Some(sorted.slice(0, sorted.head.uid.blockTotal))
   }
 
-  def selectFirstRow(rows: Iterable[PageRow], keys: Seq[KeyLike]): Option[PageRow] = {//TODO: only one key is enough
+  def selectFirstRow(rows: Iterable[PageRow], key: Symbol): Option[PageRow] = {//TODO: only one key is enough
     if (rows.isEmpty) None
+    else if (key == null) rows.headOption
     else Some(rows.reduce{
       (row1, row2) =>
         import Ordering.Implicits._
 
-        val sign1 = row1.ordinal(keys)
-        val sign2 = row2.ordinal(keys)
+        val sign1 = row1.getInt(key.name)
+        val sign2 = row2.getInt(key.name)
         if (sign1 < sign2) row1
         else row2
     })

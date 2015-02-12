@@ -1,5 +1,7 @@
 package org.tribbloid.spookystuff.sparkbinding
 
+import java.util.UUID
+
 import org.apache.spark.HashPartitioner
 import org.apache.spark.rdd.{RDD, UnionRDD}
 import org.apache.spark.sql._
@@ -11,7 +13,7 @@ import org.tribbloid.spookystuff.dsl.{Inner, JoinType, _}
 import org.tribbloid.spookystuff.entity.PageRow.Signature
 import org.tribbloid.spookystuff.entity._
 import org.tribbloid.spookystuff.expressions._
-import org.tribbloid.spookystuff.pages.{PageLike, Unstructured}
+import org.tribbloid.spookystuff.pages.{PageUID, PageLike, Unstructured}
 import org.tribbloid.spookystuff.utils._
 import org.tribbloid.spookystuff.{Const, SpookyContext}
 
@@ -314,9 +316,9 @@ case class PageRowRDD(
     val _result = optimizer match {
       case Narrow =>
         _narrowFetch(_traces, joinType, numPartitions)
-      case WideNoLookup =>
-        _wideFetch(_traces, joinType, numPartitions, null)
       case Wide =>
+        _wideFetch(_traces, joinType, numPartitions, null)
+      case WideLookup =>
         _wideFetch(_traces, joinType, numPartitions, lookup())
       case _ => throw new UnsupportedOperationException(s"${optimizer.getClass.getSimpleName} optimizer is not supported in this query")
     }
@@ -521,9 +523,9 @@ case class PageRowRDD(
     val result = optimizer match {
       case Narrow =>
         _narrowExplore(expr, depthKey, maxDepth, ordinalKey, maxOrdinal)(_traces, numPartitions, flattenPagesPattern, flattenPagesOrdinalKey)(select: _*)
-      case WideNoLookup =>
-        _wideExplore(expr, depthKey, maxDepth, ordinalKey, maxOrdinal, checkpointInterval, null)(_traces, numPartitions, flattenPagesPattern, flattenPagesOrdinalKey)(select: _*)
       case Wide =>
+        _wideExplore(expr, depthKey, maxDepth, ordinalKey, maxOrdinal, checkpointInterval, null)(_traces, numPartitions, flattenPagesPattern, flattenPagesOrdinalKey)(select: _*)
+      case WideLookup =>
         _wideExplore(expr, depthKey, maxDepth, ordinalKey, maxOrdinal, checkpointInterval, this.lookup())(_traces, numPartitions, flattenPagesPattern, flattenPagesOrdinalKey)(select: _*)
       case _ => throw new UnsupportedOperationException(s"${optimizer.getClass.getSimpleName} optimizer is not supported in this query")
     }
@@ -578,10 +580,10 @@ case class PageRowRDD(
 
     val resultKeys = this.keys ++ Seq(TempKey(_expr.name), Key.sortKey(depthKey), Key.sortKey(ordinalKey), Key.sortKey(flattenPagesOrdinalKey)).flatMap(Option(_))
 
-    val resultSortKeysSeq: Seq[Key] = resultKeys.toSeq.reverse.flatMap{
-      case k: Key with SortKey => Some(k)
-      case _ => None
-    }
+    //    val resultSortKeysSeq: Seq[Key] = resultKeys.toSeq.reverse.flatMap{
+    //      case k: Key with SortKey => Some(k)
+    //      case _ => None
+    //    }
 
     var done = false
     var stageRDD = firstStageRDD
@@ -593,7 +595,6 @@ case class PageRowRDD(
         stage =>
           PageRow.narrowExplore(
             stage,
-            resultSortKeysSeq,
             spooky
           )(
               _expr,
@@ -636,7 +637,8 @@ case class PageRowRDD(
   //has 2 outputs: 1 is self merge another by Signature, 2 is self distinct not covered by another
   //remember base MUST HAVE a hash partitioner!!!
   private def mergeAndSubtractBySignature(
-                                           base: RDD[(Signature, PageRow)]
+                                           base: RDD[(Signature, PageRow)],
+                                           ordinalKey: Symbol
                                            )(
                                            select: Expression[Any]*
                                            ): (RDD[(Signature, PageRow)], PageRowRDD) = {
@@ -654,7 +656,7 @@ case class PageRowRDD(
           tuple._1.head -> None
         }
         else {
-          val newRowOption = PageRow.selectFirstRow(tuple._2, sortKeysSeq)
+          val newRowOption = PageRow.selectFirstRow(tuple._2, ordinalKey)
           val newRowSelected = newRowOption.get.select(select: _*).get
 
           newRowSelected -> newRowOption
@@ -694,7 +696,7 @@ case class PageRowRDD(
       if (depthKey != null) this.select(Literal(0) ~ depthKey)
       else this
 
-    var base = withDepthKey
+    var base: RDD[(Signature, PageRow)] = withDepthKey
       .keyBy(_.signature).partitionBy(new HashPartitioner(numPartitions))
 
     if (this.context.getCheckpointDir.isEmpty) this.context.setCheckpointDir(spooky.conf.dirs.checkpoint)
@@ -729,7 +731,7 @@ case class PageRowRDD(
       val joined = newPages
         .flattenPages(flattenPagesPattern, flattenPagesOrdinalKey)
 
-      val tuple = joined.mergeAndSubtractBySignature(base)(
+      val tuple = joined.mergeAndSubtractBySignature(base, ordinalKey)(
         Option(depthKey).map(k => Literal(depth) ~ k).toSeq: _*
       )
       base = tuple._1

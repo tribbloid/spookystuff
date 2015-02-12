@@ -6,7 +6,7 @@ import org.apache.spark.sql.SQLContext
 import org.apache.spark.{SparkConf, SparkContext}
 import org.scalatest.{BeforeAndAfterAll, FunSuite}
 import org.tribbloid.spookystuff.SpookyConf.Dirs
-import org.tribbloid.spookystuff.dsl.{WideNoLookup, Narrow, QueryOptimizer, Wide}
+import org.tribbloid.spookystuff.dsl.{Wide, Narrow, QueryOptimizer, WideLookup}
 import org.tribbloid.spookystuff.utils.Utils
 import org.tribbloid.spookystuff.{SpookyConf, SpookyContext}
 
@@ -117,27 +117,27 @@ abstract class IntegrationSuite extends FunSuite with BeforeAndAfterAll {
     }
   }
 
-  test("local cache, wide optimizer") {
+  test("local cache, wide-lookup optimizer") {
 
-    localCacheEnv.conf.defaultQueryOptimizer = Wide
+    localCacheEnv.conf.defaultQueryOptimizer = WideLookup
     doTest(localCacheEnv)
   }
 
-  test("s3 cache, wide optimizer") {
+  test("s3 cache, wide-lookup optimizer") {
 
-    localCacheEnv.conf.defaultQueryOptimizer = Wide
+    s3CacheEnv.conf.defaultQueryOptimizer = WideLookup
     doTest(s3CacheEnv)
   }
 
 //  test("local cache, wide (no lookup) optimizer") {
 //
-//    localCacheEnv.conf.defaultQueryOptimizer = WideNoLookup
+//    localCacheEnv.conf.defaultQueryOptimizer = Wide
 //    doTest(localCacheEnv)
 //  }
 //
 //  test("s3 cache, wide (no lookup) optimizer") {
 //
-//    localCacheEnv.conf.defaultQueryOptimizer = WideNoLookup
+//    localCacheEnv.conf.defaultQueryOptimizer = Wide
 //    doTest(s3CacheEnv)
 //  }
 
