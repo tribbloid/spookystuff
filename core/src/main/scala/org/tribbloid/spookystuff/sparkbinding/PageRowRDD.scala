@@ -703,28 +703,26 @@ case class PageRowRDD(
     val sortKeysSeq: Seq[Key] = this.sortKeys.toSeq.reverse
 
     val cogrouped = base.cogroup(self)
-    val cogroupedFirst = cogrouped //base first
-      .mapValues(tuple => tuple._1 -> PageRow.getFirst(tuple._2, sortKeysSeq))
 
-    val mixed = cogroupedFirst.map{
+    val mixed = cogrouped.mapValues{
       tuple =>
-        if (tuple._2._1.nonEmpty) {
-          assert(tuple._2._1.size == 1)
-          (tuple._1 -> tuple._2._1.head) -> None
+        if (tuple._1.nonEmpty) {
+          assert(tuple._1.size == 1)
+          tuple._1.head -> None
         }
         else {
-          val newRow = tuple._2._2.get
+          val newRow = PageRow.getFirst(tuple._2, sortKeysSeq).get
           val withDepth =
             if (depthKey != null) newRow.select(Literal(depth) ~ depthKey).get
             else newRow
 
-          (tuple._1 -> withDepth) -> Some(newRow)
+          withDepth -> Some(newRow)
         }
     }
       .persist(spooky.conf.defaultStorageLevel)
 
-    val merged = mixed.keys
-    val newRows = mixed.flatMap(_._2)
+    val merged = mixed.mapValues(_._1)
+    val newRows = mixed.values.flatMap(_._2)
 
     merged -> this.copy(self = newRows)
   }
