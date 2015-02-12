@@ -249,7 +249,6 @@ case class PageRowRDD(
     selected.copy(
       self = flattened,
       keys = selected.keys ++ Option(Key.sortKey(ordinalKey))
-//      sortKeys = selected.sortKeys ++ Option(Key(ordinalKey))
     )
   }
 
@@ -287,7 +286,6 @@ case class PageRowRDD(
     this.copy(
       self = this.flatMap(_.flattenPages(pattern.name, ordinalKey)),
       keys = this.keys ++ Option(Key.sortKey(ordinalKey))
-//      sortKeys = this.sortKeys ++ Option(Key(ordinalKey))
     )
 
   def lookup(): RDD[(Trace, PageLike)] = {
@@ -638,10 +636,10 @@ case class PageRowRDD(
   //has 2 outputs: 1 is self merge another by Signature, 2 is self distinct not covered by another
   //remember base MUST HAVE a hash partitioner!!!
   private def mergeAndSubtractBySignature(
-                               base: RDD[(Signature, PageRow)],
-                               depthKey: Symbol,
-                               depth: Int
-                               ): (RDD[(Signature, PageRow)], PageRowRDD) = {
+                                           base: RDD[(Signature, PageRow)]
+                                           )(
+                                           select: Expression[Any]*
+                                           ): (RDD[(Signature, PageRow)], PageRowRDD) = {
 
     val self = this.keyBy(_.signature)
 
@@ -656,12 +654,10 @@ case class PageRowRDD(
           tuple._1.head -> None
         }
         else {
-          val newRow = PageRow.getFirst(tuple._2, sortKeysSeq).get
-          val withDepth =
-            if (depthKey != null) newRow.select(Literal(depth) ~ depthKey).get
-            else newRow
+          val newRowOption = PageRow.selectFirstRow(tuple._2, sortKeysSeq)
+          val newRowSelected = newRowOption.get.select(select: _*).get
 
-          withDepth -> Some(newRow)
+          newRowSelected -> newRowOption
         }
     }
       .persist(spooky.conf.defaultStorageLevel)
@@ -733,7 +729,9 @@ case class PageRowRDD(
       val joined = newPages
         .flattenPages(flattenPagesPattern, flattenPagesOrdinalKey)
 
-      val tuple = joined.mergeAndSubtractBySignature(base, depthKey, depth)
+      val tuple = joined.mergeAndSubtractBySignature(base)(
+        Option(depthKey).map(k => Literal(depth) ~ k).toSeq: _*
+      )
       base = tuple._1
       newRows = tuple._2
 

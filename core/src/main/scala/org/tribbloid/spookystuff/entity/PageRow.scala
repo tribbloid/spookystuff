@@ -323,7 +323,7 @@ object PageRow {
         .groupBy(_._1)
         .map {
         tuple =>
-          val first = PageRow.getFirst(tuple._2.map(_._2), sortKeys)
+          val first = PageRow.selectFirstRow(tuple._2.map(_._2), sortKeys)
           Squash(tuple._1, first)
         //when multiple links on one or more pages leads to the same uri, keep the first one
       }
@@ -379,7 +379,7 @@ object PageRow {
     Some(sorted.slice(0, sorted.head.uid.blockTotal))
   }
 
-  def getFirst(rows: Iterable[PageRow], keys: Seq[KeyLike]): Option[PageRow] = {//TODO: only one key is enough
+  def selectFirstRow(rows: Iterable[PageRow], keys: Seq[KeyLike]): Option[PageRow] = {//TODO: only one key is enough
     if (rows.isEmpty) None
     else Some(rows.reduce{
       (row1, row2) =>
