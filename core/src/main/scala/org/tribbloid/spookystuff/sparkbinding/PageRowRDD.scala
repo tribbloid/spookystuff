@@ -25,7 +25,6 @@ import scala.language.implicitConversions
 case class PageRowRDD(
                        @transient override val self: RDD[PageRow],
                        @transient override val keys: ListSet[KeyLike] = ListSet(),
-                       @transient override val sortKeys: ListSet[Key] = ListSet(),
                        @transient override val spooky: SpookyContext
                        )
   extends RDD[PageRow](self) with PageRowRDDOverrides {
@@ -46,9 +45,16 @@ case class PageRowRDD(
 
   private def discardPages: PageRowRDD = this.copy(self = this.map(_.copy(pageLikes = Seq())))
 
+  @transient def keysSeq: Seq[KeyLike] = this.keys.toSeq.reverse
+
+  @transient def sortKeysSeq: Seq[KeyLike with SortKey] = keysSeq.flatMap{
+    case k: SortKey => Some(k)
+    case _ => None
+  }
+
   private def defaultOrder: PageRowRDD = {
 
-    val sortKeysSeq: Seq[Key] = this.sortKeys.toSeq.reverse
+    val sortKeysSeq = this.sortKeysSeq
 
     import scala.Ordering.Implicits._
 
@@ -79,11 +85,11 @@ case class PageRowRDD(
 
     val schemaRDD = this.spooky.sqlContext.jsonRDD(jsonRDD)
 
-    val validKeyNames = keys.toSeq
+    val validKeyNames = keysSeq
       .filter(key => key.isInstanceOf[Key])
       .map(key => Utils.canonizeColumnName(key.name))
       .filter(name => schemaRDD.schema.fieldNames.contains(name))
-    val columns = validKeyNames.reverse.map(name => UnresolvedAttribute(name))
+    val columns = validKeyNames.map(name => UnresolvedAttribute(name))
 
     val result = schemaRDD
       .select(columns: _*)
@@ -227,8 +233,7 @@ case class PageRowRDD(
     val flattened = selected.flatMap(_.flatten(expr.name, ordinalKey, maxOrdinal, left))
     selected.copy(
       self = flattened,
-      keys = selected.keys ++ Option(Key(ordinalKey)),
-      sortKeys = selected.sortKeys ++ Option(Key(ordinalKey))
+      keys = selected.keys ++ Option(Key.sortKey(ordinalKey))
     )
   }
 
@@ -243,8 +248,8 @@ case class PageRowRDD(
     val flattened = selected.flatMap(_.flatten(expr.name, ordinalKey, maxOrdinal, left))
     selected.copy(
       self = flattened,
-      keys = selected.keys ++ Option(Key(ordinalKey)),
-      sortKeys = selected.sortKeys ++ Option(Key(ordinalKey))
+      keys = selected.keys ++ Option(Key.sortKey(ordinalKey))
+//      sortKeys = selected.sortKeys ++ Option(Key(ordinalKey))
     )
   }
 
@@ -281,8 +286,8 @@ case class PageRowRDD(
                     ): PageRowRDD =
     this.copy(
       self = this.flatMap(_.flattenPages(pattern.name, ordinalKey)),
-      keys = this.keys ++ Option(Key(ordinalKey)),
-      sortKeys = this.sortKeys ++ Option(Key(ordinalKey))
+      keys = this.keys ++ Option(Key.sortKey(ordinalKey))
+//      sortKeys = this.sortKeys ++ Option(Key(ordinalKey))
     )
 
   def lookup(): RDD[(Trace, PageLike)] = {
@@ -573,10 +578,12 @@ case class PageRowRDD(
 
     val resultRDDs = ArrayBuffer[RDD[PageRow]](firstResultRDD.select(Literal(0) ~ depthKey))
 
-    val resultKeys = this.keys ++ Seq(TempKey(_expr.name), Key(depthKey), Key(ordinalKey), Key(flattenPagesOrdinalKey)).flatMap(Option(_))
-    val resultSortKeys = this.sortKeys ++ Seq(Key(depthKey), Key(ordinalKey), Key(flattenPagesOrdinalKey)).flatMap(Option(_))
+    val resultKeys = this.keys ++ Seq(TempKey(_expr.name), Key.sortKey(depthKey), Key.sortKey(ordinalKey), Key.sortKey(flattenPagesOrdinalKey)).flatMap(Option(_))
 
-    val resultSortKeysSeq = resultSortKeys.toSeq.reverse
+    val resultSortKeysSeq: Seq[Key] = resultKeys.toSeq.reverse.flatMap{
+      case k: Key with SortKey => Some(k)
+      case _ => None
+    }
 
     var done = false
     var stageRDD = firstStageRDD
@@ -620,7 +627,7 @@ case class PageRowRDD(
 
     val resultSelf = new UnionRDD(this.sparkContext, resultRDDs).coalesce(numPartitions) //TODO: not an 'official' API
 
-    val result = this.copy(self = resultSelf, keys = resultKeys, sortKeys = resultSortKeys)
+    val result = this.copy(self = resultSelf, keys = resultKeys)
 
     result
       .select(select: _*)
@@ -638,7 +645,7 @@ case class PageRowRDD(
 
     val self = this.keyBy(_.signature)
 
-    val sortKeysSeq: Seq[Key] = this.sortKeys.toSeq.reverse
+    val sortKeysSeq: Seq[KeyLike] = this.sortKeysSeq
 
     val cogrouped = base.cogroup(self)
 
@@ -698,11 +705,10 @@ case class PageRowRDD(
 
     val _expr = expr defaultAs Symbol(Const.defaultJoinKey)
 
-    val resultKeys = this.keys ++ Seq(TempKey(_expr.name), Key(depthKey), Key(ordinalKey), Key(flattenPagesOrdinalKey)).flatMap(Option(_))
-    val resultSortKeys = this.sortKeys ++ Seq(Key(depthKey), Key(ordinalKey), Key(flattenPagesOrdinalKey)).flatMap(Option(_))
+    val resultKeys = this.keys ++ Seq(TempKey(_expr.name), Key.sortKey(depthKey), Key.sortKey(ordinalKey), Key.sortKey(flattenPagesOrdinalKey)).flatMap(Option(_))
 
     def getResult: PageRowRDD = this
-      .copy(self = base.values, keys = resultKeys, sortKeys = resultSortKeys)
+      .copy(self = base.values, keys = resultKeys)
       .select(select: _*)
       .clearTemp
     //      .coalesce(numPartitions)

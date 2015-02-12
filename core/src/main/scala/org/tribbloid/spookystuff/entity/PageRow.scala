@@ -144,7 +144,7 @@ case class PageRow(
     pages.map(_.uid)
     )
 
-  def ordinal(sortKeys: Seq[Key]): Seq[Option[Iterable[Int]]] = {
+  def ordinal(sortKeys: Seq[KeyLike]): Seq[Option[Iterable[Int]]] = {
     val result = sortKeys.map(key => this.getIntIterable(key.name))
     result
   }
@@ -379,7 +379,7 @@ object PageRow {
     Some(sorted.slice(0, sorted.head.uid.blockTotal))
   }
 
-  def getFirst(rows: Iterable[PageRow], keys: Seq[Key]): Option[PageRow] = {
+  def getFirst(rows: Iterable[PageRow], keys: Seq[KeyLike]): Option[PageRow] = {//TODO: only one key is enough
     if (rows.isEmpty) None
     else Some(rows.reduce{
       (row1, row2) =>

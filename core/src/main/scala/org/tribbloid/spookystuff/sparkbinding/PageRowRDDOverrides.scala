@@ -18,7 +18,6 @@ trait PageRowRDDOverrides extends RDD[PageRow]{
 
   @transient val self: RDD[PageRow]
   @transient val keys: ListSet[KeyLike] = ListSet()
-  @transient val sortKeys: ListSet[Key] = ListSet()
   @transient val spooky: SpookyContext
 
   override def getPartitions: Array[Partition] = firstParent[PageRow].partitions
@@ -54,8 +53,7 @@ trait PageRowRDDOverrides extends RDD[PageRow]{
     case other: PageRowRDD =>
       this.copy(
         super.union(other.self),
-        this.keys ++ other.keys.toSeq.reverse,
-        this.sortKeys ++ other.sortKeys.toSeq.reverse
+        this.keys ++ other.keys.toSeq.reverse
       )
     case _ => super.union(other)
   }
@@ -73,8 +71,7 @@ trait PageRowRDDOverrides extends RDD[PageRow]{
     case other: PageRowRDD =>
       this.copy(
         super.intersection(other.self),
-        this.keys.intersect(other.keys),//TODO: need validation that it won't change sequence
-        this.sortKeys.intersect(other.sortKeys)
+        this.keys.intersect(other.keys)//TODO: need validation that it won't change sequence
       )
     case _ => super.intersection(other)
   }
@@ -84,8 +81,7 @@ trait PageRowRDDOverrides extends RDD[PageRow]{
     case other: PageRowRDD =>
       this.copy(
         super.intersection(other.self),
-        this.keys.intersect(other.keys),
-        this.sortKeys.intersect(other.sortKeys)
+        this.keys.intersect(other.keys)
       )
     case _ => super.intersection(other, numPartitions)
   }
