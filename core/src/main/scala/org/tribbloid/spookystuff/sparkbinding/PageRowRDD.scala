@@ -360,29 +360,32 @@ case class PageRowRDD(
 
     val spooky = this.spooky
 
-    val traceToRow = this.flatMap {
+    val traceToRows = this.flatMap {
       row =>
         _traces.interpolate(row).map(interpolatedTrace => interpolatedTrace -> row)
-    }
+    }.persist(spooky.conf.defaultStorageLevel)
 
-    val squashes = traceToRow.groupByKey(numPartitions).map(tuple => Squash(tuple._1, tuple._2))
+    val traces = traceToRows.keys.distinct(numPartitions)
 
-    val resultRows: RDD[PageRow] = if (lookup == null) {
-      squashes.flatMap(_.resolveAndPut(joinType, spooky))
+    val traceToPages = if (lookup == null) {
+      traces.map{
+        trace =>
+          trace -> trace.resolve(spooky)
+      }
     }
     else {
-      val backtraceToSquashWithIndex = squashes.flatMap{
+      val backtraceToTraceWithIndex: RDD[(Trace, (Trace, Int))] = traces.flatMap{
         //key not unique, different trace may yield to same backtrace.
-        squash =>
-          val dryruns = squash.trace.dryrun.zipWithIndex
-          if (dryruns.nonEmpty) dryruns.map(tuple => tuple._1 -> (squash, tuple._2))
-          else Seq(null.asInstanceOf[Trace] -> (squash, -1))
+        trace =>
+          val dryruns = trace.dryrun.zipWithIndex
+          if (dryruns.nonEmpty) dryruns.map(tuple => tuple._1 -> (trace, tuple._2))
+          else Seq(null.asInstanceOf[Trace] -> (trace, -1))
       }
 
-      val cogrouped = backtraceToSquashWithIndex
+      val cogrouped = backtraceToTraceWithIndex
         .cogroup(lookup)
 
-      val squashToIndexWithPagesOption = cogrouped.flatMap{
+      val traceToIndexWithPagesOption: RDD[(Trace, (Int, Option[Seq[PageLike]]))] = cogrouped.flatMap{
         triplet =>
           val backtrace = triplet._1
           val tuple = triplet._2
@@ -409,21 +412,27 @@ case class PageRowRDD(
           }
       }
 
-      val result = squashToIndexWithPagesOption.groupByKey(numPartitions).flatMap{
+      traceToIndexWithPagesOption.groupByKey(numPartitions).map{
         tuple =>
-          val squash = tuple._1
+          val trace = tuple._1
           val IndexWithPageOptions = tuple._2.toSeq
-          if (IndexWithPageOptions.map(_._2).contains(None)) squash.resolveAndPut(joinType, spooky)
+          if (IndexWithPageOptions.map(_._2).contains(None)) trace -> trace.resolve(spooky)
           else {
-            val pages = IndexWithPageOptions.sortBy(_._1).flatMap(_._2.get)
-            squash.rows.flatMap(_.putPages(pages, joinType))
+            trace -> IndexWithPageOptions.sortBy(_._1).flatMap(_._2.get)
           }
       }
-
-      result
     }
 
-    this.copy(self = resultRows)
+    val rowsToPages = traceToRows.cogroup(traceToPages).values
+
+    val newRows: RDD[PageRow] = rowsToPages.flatMap{
+      tuple =>
+        assert(tuple._2.size == 1)
+        val pages = tuple._2.head
+        tuple._1.flatMap(_.putPages(pages, joinType))
+    }
+
+    this.copy(self = newRows)
   }
 
   def join(
