@@ -590,7 +590,7 @@ case class PageRowRDD(
 
       val batchExeRDD = stageRDD.map {
         stage =>
-          PageRow.narrowExplore(
+          PageRow.localExplore(
             stage,
             spooky
           )(

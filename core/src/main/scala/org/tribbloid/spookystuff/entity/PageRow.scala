@@ -274,7 +274,7 @@ object PageRow {
 
   def newGroupID = UUID.randomUUID()
 
-  def narrowExplore(
+  def localExplore(
                      stage: ExploreStage,
                      spooky: SpookyContext
                      )(
