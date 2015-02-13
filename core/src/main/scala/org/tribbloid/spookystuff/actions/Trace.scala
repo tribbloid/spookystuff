@@ -17,7 +17,7 @@ final case class Trace(
                         override val self: Seq[Action]
                         ) extends Actions(self) { //remember chain is not a block! its the super container that cannot be wrapped
 
-  //always has output to handle left join
+  //always has output (Sometimes Empty) to handle left join
   override def doInterpolate(pr: PageRow): Option[this.type] = {
     val seq = this.doInterpolateSeq(pr)
 
