@@ -1,7 +1,5 @@
 package org.tribbloid.spookystuff.sparkbinding
 
-import java.util.UUID
-
 import org.apache.spark.HashPartitioner
 import org.apache.spark.rdd.{RDD, UnionRDD}
 import org.apache.spark.sql._
@@ -13,7 +11,7 @@ import org.tribbloid.spookystuff.dsl.{Inner, JoinType, _}
 import org.tribbloid.spookystuff.entity.PageRow.Signature
 import org.tribbloid.spookystuff.entity._
 import org.tribbloid.spookystuff.expressions._
-import org.tribbloid.spookystuff.pages.{PageUID, PageLike, Unstructured}
+import org.tribbloid.spookystuff.pages.{PageLike, Unstructured}
 import org.tribbloid.spookystuff.utils._
 import org.tribbloid.spookystuff.{Const, SpookyContext}
 
@@ -292,8 +290,7 @@ case class PageRowRDD(
 
   def lookup(): RDD[(Trace, PageLike)] = {
 
-    if (this.getStorageLevel == StorageLevel.NONE)
-      this.persist(spooky.conf.defaultStorageLevel)
+    if (this.getStorageLevel == StorageLevel.NONE) this.persist(spooky.conf.defaultStorageLevel)
 
     this.flatMap(_.pageLikes.map(page => page.uid.backtrace -> page ))
     //TODO: really takes a lot of space, how to eliminate?
@@ -371,11 +368,9 @@ case class PageRowRDD(
     val squashes = traceToRow.groupByKey(numPartitions).map(tuple => Squash(tuple._1, tuple._2))
 
     val resultRows: RDD[PageRow] = if (lookup == null) {
-      //no lookup
       squashes.flatMap(_.resolveAndPut(joinType, spooky))
     }
     else {
-      //lookup
       val backtraceToSquashWithIndex = squashes.flatMap{
         //key not unique, different trace may yield to same backtrace.
         squash =>
@@ -428,7 +423,7 @@ case class PageRowRDD(
       result
     }
 
-    this.copy(resultRows)
+    this.copy(self = resultRows)
   }
 
   def join(
@@ -557,7 +552,9 @@ case class PageRowRDD(
 
     var depthStart = 0
 
-    val firstResultRDD = this.coalesce(numPartitions).persist(spooky.conf.defaultStorageLevel)
+    if (this.getStorageLevel == StorageLevel.NONE) this.persist(spooky.conf.defaultStorageLevel)
+
+    val firstResultRDD = this.coalesce(numPartitions) //TODO: simplify
 
     val firstStageRDD = firstResultRDD
       .map {
@@ -617,7 +614,7 @@ case class PageRowRDD(
 
       if (count == 0 || depthEnd == maxDepth) done = true
 
-      stageRDD = batchExeRDD.map(_._2).filter(_.hasMore)
+      stageRDD = batchExeRDD.map(_._2).filter(_.hasMore) //TODO: repartition to balance
 
       val totalRDD = batchExeRDD.flatMap(_._1)
 
@@ -644,8 +641,6 @@ case class PageRowRDD(
                                            ): (RDD[(Signature, PageRow)], PageRowRDD) = {
 
     val self = this.keyBy(_.signature)
-
-    val sortKeysSeq: Seq[KeyLike] = this.sortKeysSeq
 
     val cogrouped = base.cogroup(self)
 
@@ -690,13 +685,13 @@ case class PageRowRDD(
 
     val spooky = this.spooky
 
+    if (this.getStorageLevel == StorageLevel.NONE) this.persist(spooky.conf.defaultStorageLevel)
+
     var newRows = this
 
-    val withDepthKey =
-      if (depthKey != null) this.select(Literal(0) ~ depthKey)
-      else this
-
-    var base: RDD[(Signature, PageRow)] = withDepthKey
+    var base: RDD[(Signature, PageRow)] =
+      this
+      .select(Option(depthKey).map(key => Literal(0) ~ key).toSeq: _*)
       .keyBy(_.signature).partitionBy(new HashPartitioner(numPartitions))
 
     if (this.context.getCheckpointDir.isEmpty) this.context.setCheckpointDir(spooky.conf.dirs.checkpoint)
@@ -704,12 +699,6 @@ case class PageRowRDD(
     val _expr = expr defaultAs Symbol(Const.defaultJoinKey)
 
     val resultKeys = this.keys ++ Seq(TempKey(_expr.name), Key.sortKey(depthKey), Key.sortKey(ordinalKey), Key.sortKey(flattenPagesOrdinalKey)).flatMap(Option(_))
-
-    def getResult: PageRowRDD = this
-      .copy(self = base.values, keys = resultKeys)
-      .select(select: _*)
-      .clearTemp
-    //      .coalesce(numPartitions)
 
     var lookupUnion = lookup
 
@@ -740,10 +729,16 @@ case class PageRowRDD(
       val newRowsSize = newRows.count()
       LoggerFactory.getLogger(this.getClass).info(s"found $newRowsSize new row(s) after $depth iterations")
 
-      if (newRowsSize == 0) return getResult
+      if (newRowsSize == 0) return this //TODO: find way to break
+        .copy(self = base.values, keys = resultKeys)
+        .select(select: _*)
+        .clearTemp
     }
 
-    getResult
+    this
+      .copy(self = base.values, keys = resultKeys)
+      .select(select: _*)
+      .clearTemp
   }
 
   def visitExplore(

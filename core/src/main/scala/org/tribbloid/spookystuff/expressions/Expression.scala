@@ -49,7 +49,7 @@ object GetOnlyPageExpr extends Expression[Page] {
 object GetAllPagesExpr extends Expression[Seq[Page]] {
   override var name = Const.allPagesWildcard
 
-  override def apply(v1: PageRow): Option[Seq[Page]] = Some(v1.getAllPages)
+  override def apply(v1: PageRow): Option[Seq[Page]] = Some(v1.pages)
 }
 
 class ReplaceKeyExpr(str: String) extends Expression[String] {

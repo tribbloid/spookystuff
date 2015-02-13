@@ -64,7 +64,6 @@ case class PageRow(
       case v: T => Some(v)
       case _ => None
     }
-
     res
   }
 
@@ -91,8 +90,6 @@ case class PageRow(
     else if (pages.size == 0) None
     else Some(pages(0))
   }
-
-  def getAllPages: Seq[Page] = this.pages
 
   def getPage(keyStr: String): Option[Page] = {
 
@@ -139,10 +136,7 @@ case class PageRow(
     Some(result)
   }
 
-  def signature: Signature = (
-    groupID,
-    pages.map(_.uid)
-    )
+  @transient lazy val signature: Signature = (groupID, pages.map(_.uid))
 
   def ordinal(sortKeys: Seq[KeyLike]): Seq[Option[Iterable[Int]]] = {
     val result = sortKeys.map(key => this.getIntIterable(key.name))
@@ -378,7 +372,7 @@ object PageRow {
     Some(sorted.slice(0, sorted.head.uid.blockTotal))
   }
 
-  def selectFirstRow(rows: Iterable[PageRow], key: Symbol): Option[PageRow] = {//TODO: only one key is enough
+  def selectFirstRow(rows: Iterable[PageRow], key: Symbol): Option[PageRow] = {
     if (rows.isEmpty) None
     else if (key == null) rows.headOption
     else Some(rows.reduce{
