@@ -1,4 +1,4 @@
-package org.tribbloid.spookystuff.integration.dynamic
+package org.tribbloid.spookystuff.integration.slow
 
 import org.tribbloid.spookystuff.SpookyContext
 import org.tribbloid.spookystuff.actions._

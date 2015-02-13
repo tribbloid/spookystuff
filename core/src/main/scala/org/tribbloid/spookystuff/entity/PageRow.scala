@@ -373,17 +373,19 @@ object PageRow {
   }
 
   def selectFirstRow(rows: Iterable[PageRow], key: Symbol): Option[PageRow] = {
-    if (rows.isEmpty) None
+    val result = if (rows.isEmpty) None
     else if (key == null) rows.headOption
     else Some(rows.reduce{
       (row1, row2) =>
         import Ordering.Implicits._
 
-        val sign1 = row1.getInt(key.name)
-        val sign2 = row2.getInt(key.name)
-        if (sign1 < sign2) row1
+        val v1 = row1.getIntIterable(key.name)
+        val v2 = row2.getIntIterable(key.name)
+        if (v1 <= v2) row1
         else row2
     })
+
+    result
   }
 }
 
