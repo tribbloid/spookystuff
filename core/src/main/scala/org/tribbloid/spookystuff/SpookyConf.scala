@@ -99,7 +99,7 @@ class SpookyConf (
                    var checkpointInterval: Int = 50,
                    var batchSize: Int = 500,
 
-                   var defaultStorageLevel: StorageLevel = StorageLevel.MEMORY_AND_DISK
+                   var defaultStorageLevel: StorageLevel = StorageLevel.MEMORY
                    ) extends Serializable {
 
   //  def toJSON: String = { //useless for non-case class
