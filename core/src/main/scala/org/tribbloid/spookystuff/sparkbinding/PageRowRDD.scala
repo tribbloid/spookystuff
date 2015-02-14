@@ -414,7 +414,7 @@ case class PageRowRDD(
           }
       }
 
-      traceToIndexWithPagesOption.groupByKey(numPartitions).map{ //TODO: great evil! remove it
+      traceToIndexWithPagesOption.groupByKey(numPartitions).map{ //TODO: great evil! remove it, but not before determining lookup format
         tuple =>
           val trace = tuple._1
           val IndexWithPageOptions = tuple._2.toSeq
