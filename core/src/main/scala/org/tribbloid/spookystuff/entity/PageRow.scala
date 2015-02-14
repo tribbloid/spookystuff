@@ -273,6 +273,8 @@ object PageRow {
 
   type Signature = (UUID, Seq[PageUID])
 
+  type Squash = (Trace, Iterable[PageRow])
+
   def newGroupID = UUID.randomUUID()
 
   def localExplore(
@@ -318,16 +320,18 @@ object PageRow {
         .map {
         tuple =>
           val first = PageRow.selectFirstRow(tuple._2.map(_._2), ordinalKey)
-          Squash(tuple._1, first)
+          (tuple._1, first)
         //when multiple links on one or more pages leads to the same uri, keep the first one
       }
 
-      traces = traces ++ squashes.map(_.trace)
+      traces = traces ++ squashes.map(_._1)
 
       seeds = squashes
         .flatMap {
         squash =>
-          squash.resolveAndPut(Inner, spooky)
+          val trace = squash._1
+          val rows = squash._2
+          rows.flatMap(_.putPages(trace.resolve(spooky), Inner))
       }
         .flatMap {
         row =>
@@ -387,25 +391,6 @@ object PageRow {
     })
 
     result
-  }
-}
-
-//squash identical trace together even PageRows are different
-case class Squash(trace: Trace, rows: Iterable[PageRow]) {
-  override def hashCode(): Int ={
-    trace.hashCode()
-  }
-
-  override def equals(obj: Any): Boolean = {
-    obj match {
-      case s: Squash => this.trace.equals(s.trace)
-      case _ => false
-    }
-  }
-
-  def resolveAndPut(joinType: JoinType, spooky: SpookyContext) = {
-    val pages = this.trace.resolve(spooky)
-    this.rows.flatMap(_.putPages(pages, joinType))
   }
 }
 
