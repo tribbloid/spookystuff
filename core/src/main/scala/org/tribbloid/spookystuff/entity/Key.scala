@@ -25,6 +25,10 @@ object Key{
   def sortKey(str: String): Key = Option(str).map(v => new Key(str) with SortKey).orNull
 
   def sortKey(sym: Symbol): Key = Option(sym).map(v => new Key(v.name) with SortKey).orNull
+
+  def hiddenKey(str: String): Key = Option(str).map(v => new Key(str) with HiddenKey).orNull
+
+  def hiddenKey(sym: Symbol): Key = Option(sym).map(v => new Key(v.name) with HiddenKey).orNull
 }
 
 case class TempKey(override val name: String) extends KeyLike
