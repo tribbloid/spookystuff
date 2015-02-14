@@ -44,7 +44,6 @@ case class NoPage(
   override val uid: PageUID = PageUID(trace, null, 0, 1)
 }
 
-//immutable! we don't want to lose old pages
 //keep small, will be passed around by Spark
 @SerialVersionUID(94865098324L)
 case class Page(

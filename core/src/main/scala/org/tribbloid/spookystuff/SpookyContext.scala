@@ -114,8 +114,8 @@ case class SpookyContext (
         val self = new SchemaRDDView(rdd).asMapRDD.map{
           map =>
             new PageRow(
-              Option(map)
-                .getOrElse(Map())
+              Option(ListMap(map.toSeq: _*))
+                .getOrElse(ListMap())
                 .map(tuple => (Key(tuple._1),tuple._2))
             )
         }
@@ -132,13 +132,13 @@ case class SpookyContext (
         val schemaRDD = sqlContext.jsonRDD(jsonRDD)
         val self = canonRdd.map(
           map =>
-            PageRow(map.map(tuple => (Key(tuple._1),tuple._2)), Seq())
+            PageRow(ListMap(map.map(tuple => (Key(tuple._1),tuple._2)).toSeq: _*), Seq())
         )
         new PageRowRDD(self, keys = ListSet(schemaRDD.schema.fieldNames: _*).map(Key(_)), spooky = getContextForNewInput)
       case _ =>
         val self = rdd.map{
           str =>
-            var cells = Map[KeyLike,Any]()
+            var cells = ListMap[KeyLike,Any]()
             if (str!=null) cells = cells + (Key("_") -> str)
 
             new PageRow(cells)

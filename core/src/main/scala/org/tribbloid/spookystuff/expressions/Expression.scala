@@ -5,6 +5,7 @@ import org.tribbloid.spookystuff.entity.PageRow
 import org.tribbloid.spookystuff.pages.{Page, Unstructured}
 
 import scala.collection.TraversableOnce
+import scala.collection.immutable.ListMap
 import scala.reflect.ClassTag
 
 //just a simple wrapper for T, this is the only way to execute a action
@@ -87,7 +88,7 @@ class ZippedExpr[T1,T2](e1: Expression[Seq[T1]], e2: Expression[Seq[T2]]) extend
 
     if (z1Option.isEmpty || z2Option.isEmpty) return None
 
-    val map = Map(z1Option.get.zip(z2Option.get).toSeq: _*)
+    val map = ListMap(z1Option.get.zip(z2Option.get).toSeq: _*)
 
     Some(map)
   }

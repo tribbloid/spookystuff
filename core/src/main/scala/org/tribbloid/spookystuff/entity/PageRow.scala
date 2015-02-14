@@ -11,6 +11,7 @@ import org.tribbloid.spookystuff.pages._
 import org.tribbloid.spookystuff.utils._
 import org.tribbloid.spookystuff.{Const, SpookyContext}
 
+import scala.collection.immutable.ListMap
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
 import scala.reflect.ClassTag
@@ -21,7 +22,7 @@ import scala.reflect.ClassTag
 //some guideline: All key parameters are Symbols to align with Spark SQL.
 //cells & pages share the same key pool but different data structure
 case class PageRow(
-                    cells: Map[KeyLike, Any] = Map(), //TODO: also carry PageUID & property type (Vertex/Edge) for GraphX, ListMap may be slower but has tighter serialization footage
+                    cells: ListMap[KeyLike, Any] = ListMap(), //TODO: also carry PageUID & property type (Vertex/Edge) for GraphX, ListMap may be slower but has tighter serialization footage
                     pageLikes: Seq[PageLike] = Seq(), // discarded after new page coming in
                     groupID: UUID = PageRow.newGroupID //keep flattened rows together
                     )
@@ -182,7 +183,7 @@ case class PageRow(
   }
 
   private def filterKeys(f: KeyLike => Boolean): PageRow = {
-    this.copy(cells = this.cells.filterKeys(f).map(identity))
+    this.copy(cells = ListMap(this.cells.filterKeys(f).toSeq: _*))
   }
 
   def clearTemp: PageRow = this.filterKeys(!_.isInstanceOf[TempKey])
@@ -225,7 +226,7 @@ case class PageRow(
       Seq(this.copy(cells = this.cells - key)) //this will make sure you dont't lose anything
     }
     else {
-      val result = newCells.map(newCell => this.copy(cells = newCell))
+      val result = newCells.map(newCell => this.copy(cells = ListMap(newCell.toSeq: _*)))
 
       if (ordinalKey == null) result
       else result.zipWithIndex.flatMap{

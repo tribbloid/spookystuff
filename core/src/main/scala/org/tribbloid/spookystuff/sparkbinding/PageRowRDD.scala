@@ -363,7 +363,9 @@ case class PageRowRDD(
     val traceToRows = this.flatMap {
       row =>
         _traces.interpolate(row).map(interpolatedTrace => interpolatedTrace -> row)
-    }.persist(spooky.conf.defaultStorageLevel)
+    }
+      .partitionBy(new HashPartitioner(numPartitions))
+      .persist(spooky.conf.defaultStorageLevel)
 
     val traces = traceToRows.keys.distinct(numPartitions)
 
@@ -412,7 +414,7 @@ case class PageRowRDD(
           }
       }
 
-      traceToIndexWithPagesOption.groupByKey(numPartitions).map{
+      traceToIndexWithPagesOption.groupByKey(numPartitions).map{ //TODO: great evil! remove it
         tuple =>
           val trace = tuple._1
           val IndexWithPageOptions = tuple._2.toSeq

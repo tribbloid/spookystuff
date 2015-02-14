@@ -2,7 +2,8 @@ package org.tribbloid.spookystuff.sparkbinding
 
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.SchemaRDD
-import org.tribbloid.spookystuff.utils.Utils
+
+import scala.collection.immutable.ListMap
 
 /**
  * Created by peng on 12/06/14.
@@ -13,7 +14,7 @@ class SchemaRDDView(val self: SchemaRDD) {
     val headers = self.schema.fieldNames
 
     self.map{
-      row => Map(headers.zip(row): _*)
+      row => ListMap(headers.zip(row): _*)
     }
   }
 

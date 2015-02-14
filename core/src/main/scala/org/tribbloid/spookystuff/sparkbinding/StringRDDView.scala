@@ -2,6 +2,8 @@ package org.tribbloid.spookystuff.sparkbinding
 
 import org.apache.spark.rdd.RDD
 
+import scala.collection.immutable.ListMap
+
 /**
  * Created by peng on 12/06/14.
  */
@@ -16,7 +18,7 @@ class StringRDDView(val self: RDD[String]) {
       str => {
         val values = str.split(splitter)
 
-        Map(headers.zip(values): _*)
+        ListMap(headers.zip(values): _*)
       }
     }
   }
