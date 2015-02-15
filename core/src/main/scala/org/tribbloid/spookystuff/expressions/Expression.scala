@@ -53,6 +53,12 @@ object GetAllPagesExpr extends Expression[Seq[Page]] {
   override def apply(v1: PageRow): Option[Seq[Page]] = Some(v1.pages)
 }
 
+object GetSegmentIDExpr extends Expression[String] {
+  override var name = "SegmentID"
+
+  override def apply(v1: PageRow): Option[String] =Option(v1.segmentID.toString)
+}
+
 class ReplaceKeyExpr(str: String) extends Expression[String] {
 
   override var name = str

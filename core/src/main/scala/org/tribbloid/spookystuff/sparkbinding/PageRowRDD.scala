@@ -1,6 +1,8 @@
 package org.tribbloid.spookystuff.sparkbinding
 
-import org.apache.spark.HashPartitioner
+import java.util.UUID
+
+import org.apache.spark.{SparkEnv, HashPartitioner}
 import org.apache.spark.rdd.{RDD, UnionRDD}
 import org.apache.spark.sql._
 import org.apache.spark.sql.catalyst.analysis.UnresolvedAttribute
@@ -31,7 +33,20 @@ case class PageRowRDD(
 
   import org.apache.spark.SparkContext._
 
-  private def generateGroupID: PageRowRDD = this.copy(self = this.map(_.generateGroupID))
+  def segmentBy(exprs: Expression[Any]*): PageRowRDD = { //TODO: need spike
+
+    this.copy(self.map{
+      row =>
+        val ser = SparkEnv.get.serializer.newInstance()
+        val values = exprs.map(_.apply(row))
+        val buffer = ser.serialize(values)
+        row.copy(segmentID = UUID.nameUUIDFromBytes(buffer.array()))
+    })
+  }
+
+  def segmentByRow: PageRowRDD = {
+    this.copy(self.map(_.copy(segmentID = UUID.randomUUID())))
+  }
 
   private def persistDuring[T <: RDD[_]](newLevel: StorageLevel = spooky.conf.defaultStorageLevel)(fn: => T): T =
     if (this.getStorageLevel == StorageLevel.NONE){
@@ -310,7 +325,7 @@ case class PageRowRDD(
 
     spooky.broadcast()
 
-    val _result = optimizer match {
+    val result = optimizer match {
       case Narrow =>
         _narrowFetch(_traces, joinType, numPartitions)
       case Wide =>
@@ -319,8 +334,6 @@ case class PageRowRDD(
         _wideFetch(_traces, joinType, numPartitions, lookup())
       case _ => throw new UnsupportedOperationException(s"${optimizer.getClass.getSimpleName} optimizer is not supported in this query")
     }
-
-    val result = _result.generateGroupID
 
     if (flattenPagesPattern != null) result.flattenPages(flattenPagesPattern,flattenPagesOrdinalKey)
     else result
@@ -536,10 +549,11 @@ case class PageRowRDD(
       case _ => throw new UnsupportedOperationException(s"${optimizer.getClass.getSimpleName} optimizer is not supported in this query")
     }
 
-    result.generateGroupID
+    result
   }
 
   //this is a single-threaded explore, of which implementation is similar to good old pagination.
+  //may fetch same page twice or more if pages of this can reach each others. TODO: Deduplicate happens between stages
   private def _narrowExplore(
                               expr: Expression[Any],
                               depthKey: Symbol,
@@ -702,8 +716,8 @@ case class PageRowRDD(
 
     var base: RDD[(Signature, PageRow)] =
       this
-      .select(Option(depthKey).map(key => Literal(0) ~ key).toSeq: _*)
-      .keyBy(_.signature).partitionBy(new HashPartitioner(numPartitions))
+        .select(Option(depthKey).map(key => Literal(0) ~ key).toSeq: _*)
+        .keyBy(_.signature).partitionBy(new HashPartitioner(numPartitions))
 
     if (this.context.getCheckpointDir.isEmpty) this.context.setCheckpointDir(spooky.conf.dirs.checkpoint)
 
@@ -740,7 +754,7 @@ case class PageRowRDD(
       val newRowsSize = newRows.count()
       LoggerFactory.getLogger(this.getClass).info(s"found $newRowsSize new row(s) after $depth iterations")
 
-      if (newRowsSize == 0) return this //TODO: find way to break
+      if (newRowsSize == 0) return this //TODO: find way to break the loop
         .copy(self = base.values, keys = resultKeys)
         .select(select: _*)
         .clearTemp

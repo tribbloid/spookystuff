@@ -24,7 +24,7 @@ import scala.reflect.ClassTag
 case class PageRow(
                     cells: ListMap[KeyLike, Any] = ListMap(), //TODO: also carry PageUID & property type (Vertex/Edge) for GraphX, ListMap may be slower but has tighter serialization footage
                     pageLikes: Seq[PageLike] = Seq(), // discarded after new page coming in
-                    groupID: UUID = PageRow.newGroupID //keep flattened rows together
+                    segmentID: UUID = UUID.randomUUID() //keep flattened rows together
                     )
   extends Serializable {
 
@@ -77,8 +77,6 @@ case class PageRow(
     }
     res2
   }
-
-  def generateGroupID = this.copy(groupID = PageRow.newGroupID)
 
   def get(keyStr: String): Option[Any] = get(resolveKey(keyStr))
 
@@ -137,7 +135,7 @@ case class PageRow(
     Some(result)
   }
 
-  @transient lazy val signature: Signature = (groupID, pages.map(_.uid))
+  @transient lazy val signature: Signature = (segmentID, pages.map(_.uid))
 
   def ordinal(sortKeys: Seq[KeyLike]): Seq[Option[Iterable[Int]]] = {
     val result = sortKeys.map(key => this.getIntIterable(key.name))
@@ -274,8 +272,6 @@ object PageRow {
   type Signature = (UUID, Seq[PageUID])
 
   type Squash = (Trace, Iterable[PageRow])
-
-  def newGroupID = UUID.randomUUID()
 
   def localExplore(
                      stage: ExploreStage,
