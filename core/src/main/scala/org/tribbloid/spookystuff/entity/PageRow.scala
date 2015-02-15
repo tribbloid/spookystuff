@@ -273,7 +273,26 @@ object PageRow {
 
   type Signature = (UUID, Seq[PageUID])
 
-  type Squash = (Trace, Iterable[PageRow])
+  object Squash {
+    def apply(v1: Trace, v2: Iterable[PageRow]) = new Tuple2(v1, v2) with SquashHelper
+  }
+
+  type Squash = (Trace, Iterable[PageRow]) with SquashHelper
+
+  sealed trait SquashHelper {
+    this: Squash =>
+
+    override def hashCode(): Int ={
+      _1.hashCode()
+    }
+
+    override def equals(obj: Any): Boolean = {
+      obj match {
+        case s: Squash => this._1.equals(s._1)
+        case _ => false
+      }
+    }
+  }
 
   def newGroupID = UUID.randomUUID()
 

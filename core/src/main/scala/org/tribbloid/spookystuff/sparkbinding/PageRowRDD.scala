@@ -8,7 +8,7 @@ import org.apache.spark.storage.StorageLevel
 import org.slf4j.LoggerFactory
 import org.tribbloid.spookystuff.actions._
 import org.tribbloid.spookystuff.dsl.{Inner, JoinType, _}
-import org.tribbloid.spookystuff.entity.PageRow.{Squash, Signature}
+import org.tribbloid.spookystuff.entity.PageRow.{Signature, Squash}
 import org.tribbloid.spookystuff.entity._
 import org.tribbloid.spookystuff.expressions._
 import org.tribbloid.spookystuff.pages.{PageLike, Unstructured}
@@ -364,14 +364,14 @@ case class PageRowRDD(
         _traces.interpolate(row).map(interpolatedTrace => interpolatedTrace -> row)
     }
 
-    val squashes: RDD[Squash] = traceToRow.groupByKey(numPartitions).map(tuple => (tuple._1, tuple._2))
+    val squashes: RDD[Squash] = traceToRow.groupByKey(numPartitions).map(tuple => Squash(tuple._1, tuple._2))
 
     val resultRows: RDD[PageRow] = if (lookup == null) {
       squashes.flatMap {
         squash =>
           val newPages = squash._1.resolve(spooky)
           val rows = squash._2
-          rows.flatMap(_.putPages(newPages, Inner))
+          rows.flatMap(_.putPages(newPages, joinType))
       }
     }
     else {
@@ -420,7 +420,7 @@ case class PageRowRDD(
           if (IndexWithPageOptions.map(_._2).contains(None)){
             val newPages = squash._1.resolve(spooky)
             val rows = squash._2
-            rows.flatMap(_.putPages(newPages, Inner))
+            rows.flatMap(_.putPages(newPages, joinType))
           }
           else {
             val pages = IndexWithPageOptions.sortBy(_._1).flatMap(_._2.get)
@@ -699,8 +699,8 @@ case class PageRowRDD(
 
     var base: RDD[(Signature, PageRow)] =
       this
-      .select(Option(depthKey).map(key => Literal(0) ~ key).toSeq: _*)
-      .keyBy(_.signature).partitionBy(new HashPartitioner(numPartitions))
+        .select(Option(depthKey).map(key => Literal(0) ~ key).toSeq: _*)
+        .keyBy(_.signature).partitionBy(new HashPartitioner(numPartitions))
 
     if (this.context.getCheckpointDir.isEmpty) this.context.setCheckpointDir(spooky.conf.dirs.checkpoint)
 
