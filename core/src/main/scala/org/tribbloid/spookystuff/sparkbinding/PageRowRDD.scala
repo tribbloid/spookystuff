@@ -343,7 +343,6 @@ case class PageRowRDD(
             .flatMap{
             trace =>
               val pages = trace.resolve(spooky)
-
               row.putPages(pages, joinType)
           }
       )
@@ -370,9 +369,9 @@ case class PageRowRDD(
     val resultRows: RDD[PageRow] = if (lookup == null) {
       squashes.flatMap {
         squash =>
-          val trace = squash._1
+          val newPages = squash._1.resolve(spooky)
           val rows = squash._2
-          rows.flatMap(_.putPages(trace.resolve(spooky), Inner))
+          rows.flatMap(_.putPages(newPages, Inner))
       }
     }
     else {
@@ -419,9 +418,9 @@ case class PageRowRDD(
           val squash = tuple._1
           val IndexWithPageOptions = tuple._2.toSeq
           if (IndexWithPageOptions.map(_._2).contains(None)){
-            val trace = squash._1
+            val newPages = squash._1.resolve(spooky)
             val rows = squash._2
-            rows.flatMap(_.putPages(trace.resolve(spooky), Inner))
+            rows.flatMap(_.putPages(newPages, Inner))
           }
           else {
             val pages = IndexWithPageOptions.sortBy(_._1).flatMap(_._2.get)
