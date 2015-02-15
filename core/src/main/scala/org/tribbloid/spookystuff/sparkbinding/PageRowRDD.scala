@@ -726,8 +726,9 @@ case class PageRowRDD(
 
     val resultKeys = this.keys ++ Seq(TempKey(_expr.name), Key.sortKey(depthKey), Key.sortKey(ordinalKey), Key.sortKey(flattenPagesOrdinalKey)).flatMap(Option(_))
 
-    var lookupAccumulated = lookup
-      .partitionBy(new HashPartitioner(numPartitions))
+    var lookupAccumulated = Option(lookup).map{
+      _.partitionBy(new HashPartitioner(numPartitions))
+    }.orNull
 
     for (depth <- 1 to maxDepth) {
       val newPages = newRows
