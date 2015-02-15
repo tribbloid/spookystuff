@@ -8,7 +8,7 @@ import org.apache.spark.storage.StorageLevel
 import org.slf4j.LoggerFactory
 import org.tribbloid.spookystuff.actions._
 import org.tribbloid.spookystuff.dsl.{Inner, JoinType, _}
-import org.tribbloid.spookystuff.entity.PageRow.Signature
+import org.tribbloid.spookystuff.entity.PageRow.{Squash, Signature}
 import org.tribbloid.spookystuff.entity._
 import org.tribbloid.spookystuff.expressions._
 import org.tribbloid.spookystuff.pages.{PageLike, Unstructured}
@@ -360,34 +360,34 @@ case class PageRowRDD(
 
     val spooky = this.spooky
 
-    val traceToRows = this.flatMap {
+    val traceToRow = this.flatMap {
       row =>
         _traces.interpolate(row).map(interpolatedTrace => interpolatedTrace -> row)
     }
-      .partitionBy(new HashPartitioner(numPartitions))
-      .persist(spooky.conf.defaultStorageLevel)
 
-    val traces = traceToRows.keys.distinct(numPartitions)
+    val squashes: RDD[Squash] = traceToRow.groupByKey(numPartitions).map(tuple => (tuple._1, tuple._2))
 
-    val traceToPages = if (lookup == null) {
-      traces.map{
-        trace =>
-          trace -> trace.resolve(spooky)
+    val resultRows: RDD[PageRow] = if (lookup == null) {
+      squashes.flatMap {
+        squash =>
+          val trace = squash._1
+          val rows = squash._2
+          rows.flatMap(_.putPages(trace.resolve(spooky), Inner))
       }
     }
     else {
-      val backtraceToTraceWithIndex: RDD[(Trace, (Trace, Int))] = traces.flatMap{
+      val backtraceToSquashWithIndex = squashes.flatMap{
         //key not unique, different trace may yield to same backtrace.
-        trace =>
-          val dryruns = trace.dryrun.zipWithIndex
-          if (dryruns.nonEmpty) dryruns.map(tuple => tuple._1 -> (trace, tuple._2))
-          else Seq(null.asInstanceOf[Trace] -> (trace, -1))
+        squash =>
+          val dryruns = squash._1.dryrun.zipWithIndex
+          if (dryruns.nonEmpty) dryruns.map(tuple => tuple._1 -> (squash, tuple._2))
+          else Seq(null.asInstanceOf[Trace] -> (squash, -1))
       }
 
-      val cogrouped = backtraceToTraceWithIndex
+      val cogrouped = backtraceToSquashWithIndex
         .cogroup(lookup)
 
-      val traceToIndexWithPagesOption: RDD[(Trace, (Int, Option[Seq[PageLike]]))] = cogrouped.flatMap{
+      val squashToIndexWithPagesOption = cogrouped.flatMap{
         triplet =>
           val backtrace = triplet._1
           val tuple = triplet._2
@@ -414,27 +414,25 @@ case class PageRowRDD(
           }
       }
 
-      traceToIndexWithPagesOption.groupByKey(numPartitions).map{ //TODO: great evil! remove it, but not before determining lookup format
+      val result = squashToIndexWithPagesOption.groupByKey(numPartitions).flatMap{
         tuple =>
-          val trace = tuple._1
+          val squash = tuple._1
           val IndexWithPageOptions = tuple._2.toSeq
-          if (IndexWithPageOptions.map(_._2).contains(None)) trace -> trace.resolve(spooky)
+          if (IndexWithPageOptions.map(_._2).contains(None)){
+            val trace = squash._1
+            val rows = squash._2
+            rows.flatMap(_.putPages(trace.resolve(spooky), Inner))
+          }
           else {
-            trace -> IndexWithPageOptions.sortBy(_._1).flatMap(_._2.get)
+            val pages = IndexWithPageOptions.sortBy(_._1).flatMap(_._2.get)
+            squash._2.flatMap(_.putPages(pages, joinType))
           }
       }
+
+      result
     }
 
-    val rowsToPages = traceToRows.cogroup(traceToPages).values
-
-    val newRows: RDD[PageRow] = rowsToPages.flatMap{
-      tuple =>
-        assert(tuple._2.size == 1)
-        val pages = tuple._2.head
-        tuple._1.flatMap(_.putPages(pages, joinType))
-    }
-
-    this.copy(self = newRows)
+    this.copy(self = resultRows)
   }
 
   def join(
