@@ -672,8 +672,8 @@ case class PageRowRDD(
     val mixed = cogrouped.mapValues{
       tuple =>
         if (tuple._1.nonEmpty) {
-          assert(tuple._1.size == 1)
-          tuple._1.head -> None
+          val oldRowOption = PageRow.selectFirstRow(tuple._1, ordinalKey)
+          oldRowOption.head -> None
         }
         else {
           val newRowOption = PageRow.selectFirstRow(tuple._2, ordinalKey)
@@ -714,10 +714,11 @@ case class PageRowRDD(
 
     var newRows = this
 
-    var base: RDD[(Signature, PageRow)] =
+    var accumulated: RDD[(Signature, PageRow)] =
       this
         .select(Option(depthKey).map(key => Literal(0) ~ key).toSeq: _*)
-        .keyBy(_.signature).partitionBy(new HashPartitioner(numPartitions))
+        .keyBy(_.signature)
+        .partitionBy(new HashPartitioner(numPartitions))
 
     if (this.context.getCheckpointDir.isEmpty) this.context.setCheckpointDir(spooky.conf.dirs.checkpoint)
 
@@ -725,43 +726,44 @@ case class PageRowRDD(
 
     val resultKeys = this.keys ++ Seq(TempKey(_expr.name), Key.sortKey(depthKey), Key.sortKey(ordinalKey), Key.sortKey(flattenPagesOrdinalKey)).flatMap(Option(_))
 
-    var lookupUnion = lookup
+    var lookupAccumulated = lookup
+      .partitionBy(new HashPartitioner(numPartitions))
 
     for (depth <- 1 to maxDepth) {
       val newPages = newRows
         .flattenTemp(_expr, ordinalKey, maxOrdinal, left = true)
-        ._wideFetch(_traces, Inner, numPartitions, lookupUnion)
+        ._wideFetch(_traces, Inner, numPartitions, lookupAccumulated)
 
-      if (lookupUnion != null) {
+      if (lookupAccumulated != null) {
         val newLookups = newPages.lookup()
 
-        lookupUnion = lookupUnion.union(newLookups)
+        lookupAccumulated = lookupAccumulated.union(newLookups)
 
         if (depth % checkpointInterval == 0) {
-          lookupUnion.checkpoint()
+          lookupAccumulated.checkpoint()
         }
       }
 
       val joined = newPages
         .flattenPages(flattenPagesPattern, flattenPagesOrdinalKey)
 
-      val tuple = joined.mergeAndSubtractBySignature(base, ordinalKey)(
+      val tuple = joined.mergeAndSubtractBySignature(accumulated, ordinalKey)(
         Option(depthKey).map(k => Literal(depth) ~ k).toSeq: _*
       )
-      base = tuple._1
+      accumulated = tuple._1
       newRows = tuple._2
 
       val newRowsSize = newRows.count()
       LoggerFactory.getLogger(this.getClass).info(s"found $newRowsSize new row(s) after $depth iterations")
 
       if (newRowsSize == 0) return this //TODO: find way to break the loop
-        .copy(self = base.values, keys = resultKeys)
+        .copy(self = accumulated.values, keys = resultKeys)
         .select(select: _*)
         .clearTemp
     }
 
     this
-      .copy(self = base.values, keys = resultKeys)
+      .copy(self = accumulated.values, keys = resultKeys)
       .select(select: _*)
       .clearTemp
   }

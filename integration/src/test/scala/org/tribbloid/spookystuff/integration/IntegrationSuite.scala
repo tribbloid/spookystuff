@@ -6,7 +6,7 @@ import org.apache.spark.sql.SQLContext
 import org.apache.spark.{SparkConf, SparkContext}
 import org.scalatest.{BeforeAndAfterAll, FunSuite}
 import org.tribbloid.spookystuff.SpookyConf.Dirs
-import org.tribbloid.spookystuff.dsl.{Wide, Narrow, QueryOptimizer, WideLookup}
+import org.tribbloid.spookystuff.dsl.{Narrow, QueryOptimizer, WideLookup}
 import org.tribbloid.spookystuff.utils.Utils
 import org.tribbloid.spookystuff.{SpookyConf, SpookyContext}
 
