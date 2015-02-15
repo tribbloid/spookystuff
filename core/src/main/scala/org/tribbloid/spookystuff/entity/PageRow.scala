@@ -329,9 +329,9 @@ object PageRow {
       seeds = squashes
         .flatMap {
         squash =>
-          val trace = squash._1
+          val newPages = squash._1.resolve(spooky)
           val rows = squash._2
-          rows.flatMap(_.putPages(trace.resolve(spooky), Inner))
+          rows.flatMap(_.putPages(newPages, Inner))
       }
         .flatMap {
         row =>
