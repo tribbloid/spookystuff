@@ -6,7 +6,7 @@ import org.tribbloid.spookystuff.dsl
 * Created by peng on 12/1/14.
 */
 //TODO: is it possible to use reflective on this?
-class StringExprView(self: Expression[String]) {
+final class StringExprView(self: Expression[String]) {
 
   import dsl._
 

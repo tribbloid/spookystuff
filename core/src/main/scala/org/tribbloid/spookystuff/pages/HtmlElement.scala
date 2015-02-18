@@ -45,7 +45,7 @@ class HtmlElement private (
    override def attr(attr: String, noEmpty: Boolean = true): Option[String] = {
       val result = parsed.attr(attr)
 
-      if (noEmpty && result.isEmpty) None
+      if (noEmpty && result.trim.replaceAll("\u00A0", "").isEmpty) None
       else Option(result)
    }
 

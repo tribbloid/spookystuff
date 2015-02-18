@@ -84,7 +84,7 @@ class InterpolateExpr(parts: Seq[String], fs: Seq[Expression[Any]])
   }
 }
 
-class ZippedExpr[T1,T2](e1: Expression[Seq[T1]], e2: Expression[Seq[T2]]) extends Expression[Map[T1, T2]] {
+class ZippedExpr[T1,+T2](e1: Expression[Iterable[T1]], e2: Expression[Iterable[T2]]) extends Expression[Map[T1, T2]] {
   override var name: String = s"${e1.name}.zip(${e2.name})"
 
   override def apply(v1: PageRow): Option[Map[T1, T2]] = {
@@ -100,7 +100,7 @@ class ZippedExpr[T1,T2](e1: Expression[Seq[T1]], e2: Expression[Seq[T2]]) extend
   }
 }
 
-class PlusExpr[T: ClassTag](override var name: String, expr: Expression[T]) extends Expression[Seq[T]] {
+class PlusExpr[+T: ClassTag](override var name: String, expr: Expression[T]) extends Expression[Seq[T]] {
 
   override def apply(v1: PageRow): Option[Seq[T]] = {
     val lastOption = expr(v1)

@@ -64,8 +64,8 @@ package object dsl {
   implicit def unstructuredSeqExprToUnstructuredExprView(expr: Expression[Seq[Unstructured]]): UnstructuedExprView =
     expr.head
 
-  implicit def seqExprView[T: ClassTag](expr: Expression[Seq[T]]): SeqExprView[T] =
-    new SeqExprView[T](expr)
+  implicit def seqExprView[T: ClassTag](expr: Expression[Seq[T]]): IterableExprView[T] =
+    new IterableExprView[T](expr)
 
   implicit def stringExprView(expr: Expression[String]): StringExprView =
     new StringExprView(expr)
@@ -86,7 +86,7 @@ package object dsl {
   implicit def symbolToPageExprView(symbol: Symbol): PageExprView =
     new GetPageExpr(symbol.name)
 
-  implicit def symbolToSeqExprView(symbol: Symbol): SeqExprView[Any] =
+  implicit def symbolToSeqExprView(symbol: Symbol): IterableExprView[Any] =
     new GetSeqExpr(symbol.name)
 
   implicit def stringToExpr(str: String): Expression[String] = {

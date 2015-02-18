@@ -21,7 +21,8 @@ import scala.reflect.ClassTag
  */
 //some guideline: All key parameters are Symbols to align with Spark SQL.
 //cells & pages share the same key pool but different data structure
-case class PageRow(
+case class
+PageRow(
                     cells: ListMap[KeyLike, Any] = ListMap(), //TODO: also carry PageUID & property type (Vertex/Edge) for GraphX, ListMap may be slower but has tighter serialization footage
                     pageLikes: Seq[PageLike] = Seq(), // discarded after new page coming in
                     segmentID: UUID = UUID.randomUUID() //keep flattened rows together
@@ -153,27 +154,22 @@ case class PageRow(
   }
 
   def select(exprs: Expression[Any]*): Option[PageRow] = {
-    val newKVs = exprs.flatMap{
-      expr =>
-        val value = expr(this)
-        value match {
-          case Some(v) => Some(Key(expr.name) -> v)
-          case None => None
-        }
-    }
-    Some(this.copy(cells = this.cells ++ newKVs))
+    val newKVs = exprs.map(expr => Key(expr.name) -> expr(this))
+
+    val addKVs = newKVs.filter(_._2.nonEmpty).map(tuple => tuple._1 -> tuple._2.get)
+    val removeKVs = newKVs.filter(_._2.isEmpty).map(_._1)
+
+    Some(this.copy(cells = this.cells ++ addKVs -- removeKVs))
   }
 
   def selectTemp(exprs: Expression[Any]*): Option[PageRow] = {
-    val newKVs = exprs.flatMap{
-      expr =>
-        val value = expr(this)
-        value match {
-          case Some(v) => Some(TempKey(expr.name) -> v)
-          case None => None
-        }
-    }
-    Some(this.copy(cells = this.cells ++ newKVs))
+
+    val newKVs = exprs.map(expr => TempKey(expr.name) -> expr(this))
+
+    val addKVs = newKVs.filter(_._2.nonEmpty).map(tuple => tuple._1 -> tuple._2.get)
+    val removeKVs = newKVs.filter(_._2.isEmpty).map(_._1)
+
+    Some(this.copy(cells = this.cells ++ addKVs -- removeKVs))
   }
 
   def remove(keys: Seq[KeyLike]): PageRow = {

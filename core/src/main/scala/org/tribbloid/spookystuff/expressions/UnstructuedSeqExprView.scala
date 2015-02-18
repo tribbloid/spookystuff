@@ -10,7 +10,7 @@ import scala.collection.immutable.ListSet
 /**
  * Created by peng on 11/29/14.
  */
-class UnstructuedSeqExprView(self: Expression[Seq[Unstructured]]) {
+final class UnstructuedSeqExprView(self: Expression[Seq[Unstructured]]) {
 
   import dsl._
 

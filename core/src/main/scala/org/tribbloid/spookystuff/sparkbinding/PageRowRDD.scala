@@ -291,7 +291,6 @@ case class PageRowRDD(
     this
       .flattenTemp(expr defaultAs Symbol(Const.defaultJoinKey), ordinalKey, maxOrdinal, left)
       .select(exprs: _*)
-      .clearTemp
   }
 
   def flattenPages(
@@ -469,7 +468,6 @@ case class PageRowRDD(
       .flattenTemp(expr defaultAs Symbol(Const.defaultJoinKey), ordinalKey, maxOrdinal, left = true)
       .fetch(traces, joinType, flattenPagesPattern, flattenPagesOrdinalKey, numPartitions, optimizer)
       .select(select: _*)
-      .clearTemp
   }
 
   /**
@@ -652,7 +650,6 @@ case class PageRowRDD(
 
     result
       .select(select: _*)
-      .clearTemp
   }
 
 
@@ -711,16 +708,15 @@ case class PageRowRDD(
     val spooky = this.spooky
 
     if (this.getStorageLevel == StorageLevel.NONE) this.persist(spooky.conf.defaultStorageLevel)
+    if (this.context.getCheckpointDir.isEmpty) this.context.setCheckpointDir(spooky.conf.dirs.checkpoint)
 
     var newRows = this
 
     var accumulated: RDD[(Signature, PageRow)] =
-      this
+      newRows
         .select(Option(depthKey).map(key => Literal(0) ~ key).toSeq: _*)
         .keyBy(_.signature)
         .partitionBy(new HashPartitioner(numPartitions))
-
-    if (this.context.getCheckpointDir.isEmpty) this.context.setCheckpointDir(spooky.conf.dirs.checkpoint)
 
     val _expr = expr defaultAs Symbol(Const.defaultJoinKey)
 
@@ -760,13 +756,11 @@ case class PageRowRDD(
       if (newRowsSize == 0) return this //TODO: find way to break the loop
         .copy(self = accumulated.values, keys = resultKeys)
         .select(select: _*)
-        .clearTemp
     }
 
     this
       .copy(self = accumulated.values, keys = resultKeys)
       .select(select: _*)
-      .clearTemp
   }
 
   def visitExplore(

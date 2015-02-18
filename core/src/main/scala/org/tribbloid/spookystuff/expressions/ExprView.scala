@@ -8,7 +8,7 @@ import scala.reflect.ClassTag
  * entry point for all "query lambda"
  */
 
-class ExprView[T: ClassTag](self: Expression[T]) {
+final class ExprView[+T: ClassTag](self: Expression[T]) {
 
   def andMap[A](g: T => A): Expression[A] = self.andThen(_.map(v => g(v)))
 
@@ -18,12 +18,12 @@ class ExprView[T: ClassTag](self: Expression[T]) {
 
   def andFlatMap[A](g: T => Option[A], name: String): Expression[A] = self.andThen(NamedFunction1(_.flatMap(v => g(v)), name))
 
-  def filterByType[A](implicit ev: ClassTag[A]) = this.andFlatMap[A](
-  {
-    case res: A => Some(res)
-    case _ => None
-  }: T => Option[A],
-  s"filterByType[${ev.toString()}}]"
+  def typed[A](implicit ev: ClassTag[A]) = this.andFlatMap[A](
+    {
+      case res: A => Some(res)
+      case _ => None
+    }: T => Option[A],
+    s"filterByType[${ev.toString()}}]"
   )
 
   def into(name: Symbol): Expression[Traversable[T]] = new PlusExpr[T](name.name, self)
