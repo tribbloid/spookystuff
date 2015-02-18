@@ -32,10 +32,10 @@ object GooglePlusReview extends ExampleCore {
           +> LoadMore("div.R4 span.d-s")
       )
       .flatSelect($("div.Qxb div.Ee"), ordinalKey = 'row)(
-        A("div.VSb span.GKa").text ~ 'comment,
-        A("span.VUb").text ~ 'date_status,
-        A("div.b-db span.b-db-ac-th").size ~ 'stars,
-        A("span.Gl a.d-s").text ~ 'user_name
+        A"div.VSb span.GKa".text ~ 'comment,
+        A"span.VUb".text ~ 'date_status,
+        A"div.b-db span.b-db-ac-th".size ~ 'stars,
+        A"span.Gl a.d-s".text ~ 'user_name
       )
       .toSchemaRDD()
   }

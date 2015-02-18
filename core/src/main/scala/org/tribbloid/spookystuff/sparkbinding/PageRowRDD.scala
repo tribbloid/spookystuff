@@ -596,7 +596,7 @@ case class PageRowRDD(
         ExploreStage(seeds, dryruns = Set(dryruns))
     }
 
-    val resultRDDs = ArrayBuffer[RDD[PageRow]](firstResultRDD.select(Literal(0) ~ depthKey))
+    val resultRDDs = ArrayBuffer[RDD[PageRow]](firstResultRDD.clearTemp.select(Literal(0) ~ depthKey))
 
     val resultKeys = this.keys ++ Seq(TempKey(_expr.name), Key.sortKey(depthKey), Key.sortKey(ordinalKey), Key.sortKey(flattenPagesOrdinalKey)).flatMap(Option(_))
 
@@ -713,7 +713,8 @@ case class PageRowRDD(
     var newRows = this
 
     var accumulated: RDD[(Signature, PageRow)] =
-      newRows
+      this
+        .clearTemp
         .select(Option(depthKey).map(key => Literal(0) ~ key).toSeq: _*)
         .keyBy(_.signature)
         .partitionBy(new HashPartitioner(numPartitions))
