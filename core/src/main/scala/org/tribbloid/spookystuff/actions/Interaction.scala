@@ -17,6 +17,9 @@ import org.tribbloid.spookystuff.utils.Utils
 import scala.collection.mutable
 import scala.concurrent.duration.Duration
 
+//object Interaction {
+//}
+
 /**
  * Interact with the browser (e.g. click a button or type into a search box) to reach the data page.
  * these will be logged into target page's backtrace.
@@ -113,8 +116,7 @@ case class WaitFor(selector: String) extends Interaction with Timed {
   //  override val timeout = Math.max(Const.driverCallTimeout, delay + 10)
 
   override def exeWithoutPage(session: Session) {
-    val wait = new WebDriverWait(session.driver, timeout(session).toSeconds)
-    wait.until(ExpectedConditions.presenceOfElementLocated(By.cssSelector(selector)))
+    this.getElement(selector, session)
   }
 }
 
@@ -139,9 +141,8 @@ case object WaitForDocumentReady extends Interaction with Timed {
   }
 
   override def exeWithoutPage(session: Session): Unit = {
-    val wait = new WebDriverWait(session.driver, timeout(session).toSeconds)
 
-    wait.until(DocumentReadyCondition)
+    driverWait(session).until(DocumentReadyCondition)
   }
 }
 
@@ -182,8 +183,7 @@ case class Click(
                   selector: String
                   )extends Interaction with Timed {
   override def exeWithoutPage(session: Session) {
-    val wait = new WebDriverWait(session.driver, timeout(session).toSeconds)
-    val element = wait.until(ExpectedConditions.presenceOfElementLocated(By.cssSelector(selector)))
+    val element = this.getClickableElement(selector, session)
 
     element.click()
   }
@@ -201,15 +201,15 @@ case class ClickNext(
   val clicked: mutable.HashSet[String] = mutable.HashSet(exclude: _*)
 
   override def exeWithoutPage(session: Session) {
-    val wait = new WebDriverWait(session.driver, timeout(session).toSeconds)
-    val elements = wait.until(ExpectedConditions.presenceOfAllElementsLocatedBy(By.cssSelector(selector)))
+
+    val elements = this.getElements(selector, session)
 
     import scala.collection.JavaConversions._
 
     elements.foreach{
       element => {
-        wait.until(ExpectedConditions.elementToBeClickable(element))
         if (!clicked.contains(element.getText)){
+          driverWait(session).until(ExpectedConditions.elementToBeClickable(element))
           element.click()
           clicked += element.getText
           return
@@ -232,14 +232,14 @@ case class ClickAll(
                      )extends Interaction with Timed {
 
   override def exeWithoutPage(session: Session) {
-    val wait = new WebDriverWait(session.driver, timeout(session).toSeconds)
-    val elements = wait.until(ExpectedConditions.presenceOfAllElementsLocatedBy(By.cssSelector(selector)))
+
+    val elements = this.getElements(selector, session)
 
     import scala.collection.JavaConversions._
 
     elements.foreach{
       element => {
-        wait.until(ExpectedConditions.elementToBeClickable(element))
+        driverWait(session).until(ExpectedConditions.elementToBeClickable(element))
         element.click()
       }
     }
@@ -252,8 +252,8 @@ case class ClickAll(
  */
 case class Submit(selector: String) extends Interaction with Timed {
   override def exeWithoutPage(session: Session) {
-    val wait = new WebDriverWait(session.driver, timeout(session).toSeconds)
-    val element = wait.until(ExpectedConditions.presenceOfElementLocated(By.cssSelector(selector)))
+
+    val element = this.getElement(selector, session)
 
     element.submit()
   }
@@ -266,8 +266,8 @@ case class Submit(selector: String) extends Interaction with Timed {
  */
 case class TextInput(selector: String, text: Expression[Any]) extends Interaction with Timed {
   override def exeWithoutPage(session: Session) {
-    val wait = new WebDriverWait(session.driver, timeout(session).toSeconds)
-    val element = wait.until(ExpectedConditions.presenceOfElementLocated(By.cssSelector(selector)))
+
+    val element = this.getElement(selector, session)
 
     element.sendKeys(text.asInstanceOf[Literal[String]].value)
   }
@@ -296,8 +296,8 @@ case class TextInput(selector: String, text: Expression[Any]) extends Interactio
  */
 case class DropDownSelect(selector: String, value: Expression[Any]) extends Interaction with Timed {
   override def exeWithoutPage(session: Session) {
-    val wait = new WebDriverWait(session.driver, timeout(session).toSeconds)
-    val element = wait.until(ExpectedConditions.presenceOfElementLocated(By.cssSelector(selector)))
+
+    val element = this.getElement(selector, session)
 
     val select = new Select(element)
     select.selectByValue(value.asInstanceOf[Literal[String]].value)
@@ -328,8 +328,8 @@ case class DropDownSelect(selector: String, value: Expression[Any]) extends Inte
  */
 case class SwitchToFrame(selector: String)extends Interaction with Timed {
   override def exeWithoutPage(session: Session) {
-    val wait = new WebDriverWait(session.driver, timeout(session).toSeconds)
-    val element = wait.until(ExpectedConditions.presenceOfElementLocated(By.cssSelector(selector)))
+
+    val element = this.getElement(selector, session)
 
     session.driver.switchTo().frame(element)
   }
@@ -345,9 +345,8 @@ case class ExeScript(script: Expression[Any], selector: String = null) extends I
 
     val element = if (selector == null) None
     else {
-      val wait = new WebDriverWait(session.driver, timeout(session).toSeconds)
-      val result = wait.until(ExpectedConditions.presenceOfElementLocated(By.cssSelector(selector)))
-      Some(result)
+      val element = this.getElement(selector, session)
+      Some(element)
     }
 
     val scriptStr = script.asInstanceOf[Literal[String]].value
@@ -392,9 +391,7 @@ case class DragSlider(
 
   override def exeWithoutPage(session: Session): Unit = {
 
-    val wait = new WebDriverWait(session.driver, timeout(session).toSeconds)
-    //    val element = wait.until(ExpectedConditions.elementToBeClickable(By.cssSelector(selector)))
-    val element = wait.until(ExpectedConditions.visibilityOfElementLocated(By.cssSelector(selector)))
+    val element = this.getElement(selector, session)
 
     val handle = element.findElement(By.cssSelector(handleSelector))
 

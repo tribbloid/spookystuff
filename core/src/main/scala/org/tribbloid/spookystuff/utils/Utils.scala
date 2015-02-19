@@ -14,6 +14,8 @@ import scala.util.{Failure, Random, Success, Try}
  */
 object Utils {
 
+//  val logger = LoggerFactory.getLogger(this.getClass)
+
   // Returning T, throwing the exception on failure
   @annotation.tailrec
   def retry[T](n: Int)(fn: => T): T = {

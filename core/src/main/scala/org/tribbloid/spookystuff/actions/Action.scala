@@ -1,5 +1,8 @@
 package org.tribbloid.spookystuff.actions
 
+import org.openqa.selenium.By
+import org.openqa.selenium.support.ui.{ExpectedConditions, WebDriverWait}
+import org.slf4j.LoggerFactory
 import org.tribbloid.spookystuff.pages.PageLike
 import org.tribbloid.spookystuff.session.Session
 import org.tribbloid.spookystuff.utils.Utils
@@ -103,13 +106,18 @@ trait Action extends ActionLike {
   }
 
   def exe(session: Session): Seq[PageLike] = {
+
     this match { //temporarily disabled as we assume that DFS is the culprit for causing deadlock
       case tt: Timed =>
+        val timeout = tt.hardTerminateTimeout(session)
+        LoggerFactory.getLogger(this.getClass).info(s"executing ${this.toString} in $timeout")
 
-        Utils.withDeadline(tt.hardTerminateTimeout(session)) {
+        Utils.withDeadline(timeout) {
           doExe(session)
         }
       case _ =>
+        LoggerFactory.getLogger(this.getClass).info(s"executing ${this.toString}")
+
         doExe(session)
     }
   }
@@ -140,6 +148,29 @@ trait Timed extends Action {
 
   def hardTerminateTimeout(session: Session): Duration = {
     timeout(session) + Const.hardTerminateOverhead
+  }
+
+  def driverWait(session: Session) = new WebDriverWait(session.driver, this.timeout(session).toSeconds)
+  
+  def getClickableElement(selector: String, session: Session) = {
+    
+    val elements = driverWait(session).until(ExpectedConditions.elementToBeClickable(By.cssSelector(selector)))
+
+    elements
+  }
+
+  def getElement(selector: String, session: Session) = {
+
+    val elements = driverWait(session).until(ExpectedConditions.presenceOfElementLocated(By.cssSelector(selector)))
+
+    elements
+  }
+
+  def getElements(selector: String, session: Session) = {
+
+    val elements = driverWait(session).until(ExpectedConditions.presenceOfAllElementsLocatedBy(By.cssSelector(selector)))
+
+    elements
   }
 
   override def injectFrom(same: ActionLike): Unit = {

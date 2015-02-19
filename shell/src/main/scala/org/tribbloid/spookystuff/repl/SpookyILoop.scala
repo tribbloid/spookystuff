@@ -60,7 +60,7 @@ class SpookyILoop extends SparkILoop {
         |                                       | |       | |
         |                                       | |       | |
         |                                       | |       | |
-        |                                       | |       | |
+        |           ====V 0.3.0====             | |       | |
         |                                      / /       / /
         |                                     / /       / /
         |                                     \/        \/
