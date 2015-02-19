@@ -32,15 +32,7 @@ trait Action extends ActionLike {
     val errorDumpScreenshot: Boolean = session.spooky.conf.errorScreenshot
 
     val results = try {
-      this match { //temporarily disabled as we assume that DFS is the culprit for causing deadlock
-        case tt: Timed =>
-
-          Utils.withDeadline(tt.hardTerminateTimeout(session)) {
-            doExe(session)
-          }
-        case _ =>
-          doExe(session)
-      }
+      exe(session)
     }
     catch {
       case e: Throwable =>
@@ -108,6 +100,18 @@ trait Action extends ActionLike {
     this.timeElapsed = System.currentTimeMillis() - session.startTime
 
     results
+  }
+
+  def exe(session: Session): Seq[PageLike] = {
+    this match { //temporarily disabled as we assume that DFS is the culprit for causing deadlock
+      case tt: Timed =>
+
+        Utils.withDeadline(tt.hardTerminateTimeout(session)) {
+          doExe(session)
+        }
+      case _ =>
+        doExe(session)
+    }
   }
 
   def doExe(session: Session): Seq[PageLike]

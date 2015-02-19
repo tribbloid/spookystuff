@@ -58,7 +58,7 @@ final case class Try(override val self: Seq[Action]) extends Block(self) {
 
     try {
       for (action <- self) {
-        pages ++= action.doExe(session).flatMap{
+        pages ++= action.exe(session).flatMap{
           case page: Page => Some(page)
           case noPage: NoPage => None
         }
@@ -113,7 +113,7 @@ final case class Loop(
       for (i <- 0 until limit) {
 
         for (action <- self) {
-          pages ++= action.doExe(session).flatMap{
+          pages ++= action.exe(session).flatMap{
             case page: Page => Some(page)
             case noPage: NoPage => None
           }
@@ -160,6 +160,7 @@ object LoadMore {
              ): Loop =
     Loop(
       Delay(delay)
+        +> WaitForDocumentReady
         +> Click(selector),
       limit
     )
@@ -176,6 +177,7 @@ object Paginate {
              ): Loop = {
     Loop(
       Delay(delay)
+        +> WaitForDocumentReady
         +> Snapshot()
         +> Click(selector),
       limit
@@ -193,12 +195,12 @@ final case class If(
 
   override def doExeNoUID(session: Session): Seq[Page] = {
 
-    val current = DefaultSnapshot.doExe(session)(0)
+    val current = DefaultSnapshot.exe(session)(0).asInstanceOf[Page]
 
     val pages = new ArrayBuffer[Page]()
     if (condition(current)) {
       for (action <- ifTrue) {
-        pages ++= action.doExe(session).flatMap{
+        pages ++= action.exe(session).flatMap{
           case page: Page => Some(page)
           case noPage: NoPage => None
         }
@@ -206,7 +208,7 @@ final case class If(
     }
     else {
       for (action <- ifFalse) {
-        pages ++= action.doExe(session).flatMap{
+        pages ++= action.exe(session).flatMap{
           case page: Page => Some(page)
           case noPage: NoPage => None
         }
