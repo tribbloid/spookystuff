@@ -1,9 +1,9 @@
 package org.tribbloid.spookystuff.actions
 
-import org.openqa.selenium.By
 import org.openqa.selenium.support.ui.{ExpectedConditions, WebDriverWait}
 import org.slf4j.LoggerFactory
 import org.tribbloid.spookystuff.pages.PageLike
+import org.tribbloid.spookystuff.selenium.BySizzleCssSelector
 import org.tribbloid.spookystuff.session.Session
 import org.tribbloid.spookystuff.utils.Utils
 import org.tribbloid.spookystuff.{ActionException, Const}
@@ -154,21 +154,21 @@ trait Timed extends Action {
   
   def getClickableElement(selector: String, session: Session) = {
     
-    val elements = driverWait(session).until(ExpectedConditions.elementToBeClickable(By.cssSelector(selector)))
+    val elements = driverWait(session).until(ExpectedConditions.elementToBeClickable(new BySizzleCssSelector(selector)))
 
     elements
   }
 
   def getElement(selector: String, session: Session) = {
 
-    val elements = driverWait(session).until(ExpectedConditions.presenceOfElementLocated(By.cssSelector(selector)))
+    val elements = driverWait(session).until(ExpectedConditions.presenceOfElementLocated(new BySizzleCssSelector(selector)))
 
     elements
   }
 
   def getElements(selector: String, session: Session) = {
 
-    val elements = driverWait(session).until(ExpectedConditions.presenceOfAllElementsLocatedBy(By.cssSelector(selector)))
+    val elements = driverWait(session).until(ExpectedConditions.presenceOfAllElementsLocatedBy(new BySizzleCssSelector(selector)))
 
     elements
   }

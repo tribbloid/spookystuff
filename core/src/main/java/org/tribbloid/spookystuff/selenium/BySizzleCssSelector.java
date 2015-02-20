@@ -25,14 +25,26 @@ public class BySizzleCssSelector extends By implements Serializable {
   @Override
   public WebElement findElement(SearchContext context) {
 
-    List<WebElement> webElements = evaluateSizzleSelector(context, selector);
-    return webElements.isEmpty() ? null : webElements.get(0);
+    if (context instanceof JavascriptExecutor) {
+      List<WebElement> webElements = evaluateSizzleSelector((JavascriptExecutor) context, selector);
+      return webElements.isEmpty() ? null : webElements.get(0);
+    }
+    else {
+      throw new WebDriverException(
+        "Driver does not support finding an element by selector: " + selector);
+    }
   }
 
   @Override
   public List<WebElement> findElements(SearchContext context) {
 
-    return evaluateSizzleSelector(context, selector);
+    if (context instanceof JavascriptExecutor) {
+      return evaluateSizzleSelector((JavascriptExecutor) context, selector);
+    }
+    else {
+      throw new WebDriverException(
+        "Driver does not support finding an element by selector: " + selector);
+    }
   }
 
   @Override
@@ -40,7 +52,7 @@ public class BySizzleCssSelector extends By implements Serializable {
     return "By.selector: " + selector;
   }
 
-  protected List<WebElement> evaluateSizzleSelector(SearchContext context, String selector) {
+  protected List<WebElement> evaluateSizzleSelector(JavascriptExecutor context, String selector) {
     injectSizzleIfNeeded(context);
 
     String sizzleSelector = selector.replace("By.selector: ", "");
@@ -50,13 +62,13 @@ public class BySizzleCssSelector extends By implements Serializable {
       return executeJavaScript(context, "return Sizzle(arguments[0])", sizzleSelector);
   }
 
-  protected void injectSizzleIfNeeded(SearchContext context) {
+  protected void injectSizzleIfNeeded(JavascriptExecutor context) {
     if (!sizzleLoaded(context)) {
       injectSizzle(context);
     }
   }
 
-  protected Boolean sizzleLoaded(SearchContext context) {
+  protected Boolean sizzleLoaded(JavascriptExecutor context) {
     try {
       return executeJavaScript(context, "return Sizzle() != null");
     } catch (WebDriverException e) {
@@ -64,7 +76,7 @@ public class BySizzleCssSelector extends By implements Serializable {
     }
   }
 
-  protected static synchronized void injectSizzle(SearchContext context) {
+  protected static synchronized void injectSizzle(JavascriptExecutor context) {
     if (sizzleSource == null) {
       try {
         sizzleSource = IOUtils.toString(currentThread().getContextClassLoader().getResource("sizzle.js"));
@@ -75,7 +87,7 @@ public class BySizzleCssSelector extends By implements Serializable {
     executeJavaScript(context, sizzleSource);
   }
 
-  protected static <T> T executeJavaScript(SearchContext context, String jsCode, Object... arguments) {
-    return (T) ((JavascriptExecutor) context).executeScript(jsCode, arguments);
+  protected static <T> T executeJavaScript(JavascriptExecutor context, String jsCode, Object... arguments) {
+    return (T) context.executeScript(jsCode, arguments);
   }
 }

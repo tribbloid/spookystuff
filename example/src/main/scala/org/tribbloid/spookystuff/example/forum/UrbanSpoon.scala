@@ -28,7 +28,7 @@ object UrbanSpoon extends ExampleCore {
       "http://www.urbanspoon.com/r/5/61528/restaurant/Mid-City-West/BLD-LA",
       "http://www.urbanspoon.com/r/5/73788/restaurant/Mid-Wilshire/Providence-LA"
     ),12)
-      .flatMap(url => Seq("#reviews","#blog_posts").map(tag => tag+"\t"+url+tag))
+      .flatMap(url => Seq("#reviews","#blog_posts").map(tpe => tpe+"\t"+url+tpe))
       .tsvToMap("type\turl")
       .fetch(
         Visit("'{url}")
