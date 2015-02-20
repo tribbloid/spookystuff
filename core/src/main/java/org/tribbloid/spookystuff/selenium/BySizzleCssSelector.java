@@ -3,13 +3,9 @@ package org.tribbloid.spookystuff.selenium;
 import org.apache.commons.io.IOUtils;
 import org.openqa.selenium.*;
 
-import java.io.IOException;
 import java.io.Serializable;
 import java.util.List;
 
-import static java.lang.Thread.currentThread;
-
-//require support from Java
 public class BySizzleCssSelector extends By implements Serializable {
 
   private static final long serialVersionUID = -584931842702178943L;
@@ -76,11 +72,11 @@ public class BySizzleCssSelector extends By implements Serializable {
     }
   }
 
-  protected static synchronized void injectSizzle(JavascriptExecutor context) {
+  protected synchronized void injectSizzle(JavascriptExecutor context) {
     if (sizzleSource == null) {
       try {
-        sizzleSource = IOUtils.toString(currentThread().getContextClassLoader().getResource("sizzle.js"));
-      } catch (IOException e) {
+        sizzleSource = IOUtils.toString(this.getClass().getResource("/sizzle.js"));
+      } catch (Throwable e) {
         throw new RuntimeException("Cannot load sizzle.js from classpath", e);
       }
     }
