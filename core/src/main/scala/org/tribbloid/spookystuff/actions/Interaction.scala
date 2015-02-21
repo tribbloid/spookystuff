@@ -1,13 +1,11 @@
 package org.tribbloid.spookystuff.actions
 
 import com.thoughtworks.selenium.SeleniumException
-import org.openqa.selenium.htmlunit.HtmlUnitDriver
 import org.openqa.selenium.interactions.{Actions => SeleniumActions}
-import org.openqa.selenium.remote.RemoteWebDriver
-import org.openqa.selenium.support.events.EventFiringWebDriver
 import org.openqa.selenium.support.ui.{ExpectedCondition, ExpectedConditions, Select, WebDriverWait}
 import org.openqa.selenium.{By, JavascriptExecutor, WebDriver}
 import org.tribbloid.spookystuff.Const
+import org.tribbloid.spookystuff.actions.WaitForDocumentReady._
 import org.tribbloid.spookystuff.entity.PageRow
 import org.tribbloid.spookystuff.expressions.{Expression, Literal}
 import org.tribbloid.spookystuff.pages.{Page, Unstructured}
@@ -26,7 +24,10 @@ import scala.concurrent.duration.Duration
  * failed interactive will trigger an error dump by snapshot.
  * has an option to be delayed to
  */
-abstract class Interaction extends Action {
+abstract class Interaction(
+                            val delay: Duration,
+                            val untilDocReady: Boolean
+                            ) extends Action {
 
   final override def outputNames = Set()
 
@@ -36,10 +37,32 @@ abstract class Interaction extends Action {
 
     exeWithoutPage(session: Session)
 
+    if (delay != null) {
+      Thread.sleep(delay.toMillis)
+    }
+    if (untilDocReady) {
+      driverWait(session).until(DocumentReadyCondition)
+    }
+
     Seq()
   }
 
   def exeWithoutPage(session: Session): Unit
+}
+
+object DocumentReadyCondition extends ExpectedCondition[Boolean] {
+
+  val script = "return document.readyState"
+
+  override def apply(input: WebDriver): Boolean = {
+
+    val result = input match {
+      case d: JavascriptExecutor => d.executeScript(script)
+      case _ => throw new UnsupportedOperationException("this web browser driver is not supported")
+    }
+
+    result == "complete"
+  }
 }
 
 /**
@@ -48,8 +71,10 @@ abstract class Interaction extends Action {
  */
 case class Visit(
                   uri: Expression[Any],
-                  hasTitle: Boolean = true
-                  ) extends Interaction with Timed {
+                  hasTitle: Boolean = true,
+                  override val delay: Duration = Const.delayMin,
+                  override val untilDocReady: Boolean = Const.untilDocReady
+                  ) extends Interaction(delay, untilDocReady) with Timed {
 
   override def exeWithoutPage(session: Session) {
     session.driver.get(uri.asInstanceOf[Literal[String]].value)
@@ -79,31 +104,33 @@ case class Visit(
 
 /**
  * Wait for some time
- * @param min seconds to be wait for
+ * @param delay seconds to be wait for
  */
-case class Delay(min: Duration = Const.actionDelayMin) extends Interaction with Driverless {
+case class Delay(
+                  override val delay: Duration = Const.delayMin
+                  ) extends Interaction(delay, false) with Driverless {
   //  override val timeout = Math.max(Const.driverCallTimeout, delay + 10)
 
-  override def exeWithoutPage(session: Session) {
-    Thread.sleep(min.toMillis)
+  override def exeWithoutPage(session: Session): Unit = {
+    //do nothing
   }
 }
 
 /**
  * Wait for some random time, add some unpredictability
- * @param min seconds to be wait for
+ * @param delay seconds to be wait for
  */
 case class RandomDelay(
-                        min: Duration = Const.actionDelayMin,
-                        max: Duration = Const.actionDelayMax
-                        ) extends Interaction with Driverless {
+                        override val delay: Duration = Const.delayMin,
+                        max: Duration = Const.delayMax
+                        ) extends Interaction(delay, false) with Driverless {
 
-  assert(max >= min)
+  assert(max >= delay)
 
   //  override val timeout = Math.max(Const.driverCallTimeout, delay + 10)
 
   override def exeWithoutPage(session: Session) {
-    Thread.sleep(min.toMillis + Utils.random.nextInt((max - min).toMillis.toInt) )
+    Thread.sleep(Utils.random.nextInt((max - delay).toMillis.toInt) )
   }
 }
 
@@ -112,7 +139,7 @@ case class RandomDelay(
  * @param selector css selector of the element
  *              after which it will throw an exception!
  */
-case class WaitFor(selector: String) extends Interaction with Timed {
+case class WaitFor(selector: String) extends Interaction(null, false) with Timed {
   //  override val timeout = Math.max(Const.driverCallTimeout, delay + 10)
 
   override def exeWithoutPage(session: Session) {
@@ -120,26 +147,10 @@ case class WaitFor(selector: String) extends Interaction with Timed {
   }
 }
 
-case object WaitForDocumentReady extends Interaction with Timed {
-
-  object DocumentReadyCondition extends ExpectedCondition[Boolean] {
-
-    override def apply(input: WebDriver): Boolean = {
-
-      val script = "return document.readyState"
-
-      val result = input match {
-        case d: JavascriptExecutor => d.executeScript(script)
-        case _ => throw new UnsupportedOperationException("this web browser driver is not supported")
-      }
-
-      result == "complete"
-    }
-  }
+case object WaitForDocumentReady extends Interaction(null, true) with Timed {
 
   override def exeWithoutPage(session: Session): Unit = {
-
-    driverWait(session).until(DocumentReadyCondition)
+    //do nothing
   }
 }
 
@@ -177,8 +188,10 @@ case object WaitForDocumentReady extends Interaction with Timed {
  * @param selector css selector of the element, only the first element will be affected
  */
 case class Click(
-                  selector: String
-                  )extends Interaction with Timed {
+                  selector: String,
+                  override val delay: Duration = Const.delayMin,
+                  override val untilDocReady: Boolean = Const.untilDocReady
+                  ) extends Interaction(delay, untilDocReady) with Timed {
   override def exeWithoutPage(session: Session) {
     val element = this.getClickableElement(selector, session)
 
@@ -192,8 +205,10 @@ case class Click(
  */
 case class ClickNext(
                       selector: String,
-                      exclude: Seq[String]
-                      )extends Interaction with Timed {
+                      exclude: Seq[String],
+                      override val delay: Duration = Const.delayMin,
+                      override val untilDocReady: Boolean = Const.untilDocReady
+                      ) extends Interaction(delay, untilDocReady) with Timed {
 
   val clicked: mutable.HashSet[String] = mutable.HashSet(exclude: _*)
 
@@ -220,34 +235,38 @@ case class ClickNext(
     Some(this.copy().asInstanceOf[this.type])
 }
 
-/**
- * Click an element with your mouse pointer.
- * @param selector css selector of the element, only the first element will be affected
- */
-case class ClickAll(
-                     selector: String
-                     )extends Interaction with Timed {
-
-  override def exeWithoutPage(session: Session) {
-
-    val elements = this.getElements(selector, session)
-
-    import scala.collection.JavaConversions._
-
-    elements.foreach{
-      element => {
-        driverWait(session).until(ExpectedConditions.elementToBeClickable(element))
-        element.click()
-      }
-    }
-  }
-}
+///**
+// * Click an element with your mouse pointer.
+// * @param selector css selector of the element, only the first element will be affected
+// */
+//case class ClickAll(
+//                     selector: String
+//                     )extends Interaction with Timed {
+//
+//  override def exeWithoutPage(session: Session) {
+//
+//    val elements = this.getElements(selector, session)
+//
+//    import scala.collection.JavaConversions._
+//
+//    elements.foreach{
+//      element => {
+//        driverWait(session).until(ExpectedConditions.elementToBeClickable(element))
+//        element.click()
+//      }
+//    }
+//  }
+//}
 
 /**
  * Submit a form, wait until new content returned by the submission has finished loading
  * @param selector css selector of the element, only the first element will be affected
  */
-case class Submit(selector: String) extends Interaction with Timed {
+case class Submit(
+                   selector: String,
+                   override val delay: Duration = Const.delayMin,
+                   override val untilDocReady: Boolean = Const.untilDocReady
+                   ) extends Interaction(delay, untilDocReady) with Timed {
   override def exeWithoutPage(session: Session) {
 
     val element = this.getElement(selector, session)
@@ -261,7 +280,12 @@ case class Submit(selector: String) extends Interaction with Timed {
  * @param selector css selector of the textbox, only the first element will be affected
  * @param text support cell interpolation
  */
-case class TextInput(selector: String, text: Expression[Any]) extends Interaction with Timed {
+case class TextInput(
+                      selector: String,
+                      text: Expression[Any],
+                      override val delay: Duration = Const.delayMin,
+                      override val untilDocReady: Boolean = Const.untilDocReady
+                      ) extends Interaction(delay, untilDocReady) with Timed {
   override def exeWithoutPage(session: Session) {
 
     val element = this.getElement(selector, session)
@@ -292,7 +316,12 @@ case class TextInput(selector: String, text: Expression[Any]) extends Interactio
  * @param selector css selector of the drop down list, only the first element will be affected
  * @param value support cell interpolation
  */
-case class DropDownSelect(selector: String, value: Expression[Any]) extends Interaction with Timed {
+case class DropDownSelect(
+                           selector: String,
+                           value: Expression[Any],
+                           override val delay: Duration = Const.delayMin,
+                           override val untilDocReady: Boolean = Const.untilDocReady
+                           ) extends Interaction(delay, untilDocReady) with Timed {
   override def exeWithoutPage(session: Session) {
 
     val element = this.getElement(selector, session)
@@ -324,7 +353,7 @@ case class DropDownSelect(selector: String, value: Expression[Any]) extends Inte
  * Can be used multiple times to switch focus back and forth
  * @param selector css selector of the frame/iframe, only the first element will be affected
  */
-case class SwitchToFrame(selector: String)extends Interaction with Timed {
+case class SwitchToFrame(selector: String)extends Interaction(null, false) with Timed {
   override def exeWithoutPage(session: Session) {
 
     val element = this.getElement(selector, session)
@@ -338,7 +367,12 @@ case class SwitchToFrame(selector: String)extends Interaction with Timed {
  * @param script support cell interpolation
  * @param selector selector of the element this script is executed against, if null, against the entire page
  */
-case class ExeScript(script: Expression[Any], selector: String = null) extends Interaction with Timed {
+case class ExeScript(
+                      script: Expression[Any],
+                      selector: String = null,
+                      override val delay: Duration = Const.delayMin,
+                      override val untilDocReady: Boolean = Const.untilDocReady
+                      ) extends Interaction(delay, untilDocReady) with Timed {
   override def exeWithoutPage(session: Session) {
 
     val element = if (selector == null) None
@@ -380,9 +414,10 @@ case class ExeScript(script: Expression[Any], selector: String = null) extends I
 case class DragSlider(
                        selector: String,
                        percentage: Double,
-                       handleSelector: String = "*"
-                       )
-  extends Interaction with Timed {
+                       handleSelector: String = "*",
+                       override val delay: Duration = Const.delayMin,
+                       override val untilDocReady: Boolean = Const.untilDocReady
+                       ) extends Interaction(delay, untilDocReady) with Timed {
 
   override def exeWithoutPage(session: Session): Unit = {
 
