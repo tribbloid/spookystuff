@@ -62,7 +62,7 @@ case class PageRowRDD(
 
   @transient def keysSeq: Seq[KeyLike] = this.keys.toSeq.reverse
 
-  @transient def sortKeysSeq: Seq[KeyLike with SortKey] = keysSeq.flatMap{
+  @transient def sortKeysSeq: Seq[SortKey] = keysSeq.flatMap{
     case k: SortKey => Some(k)
     case _ => None
   }
