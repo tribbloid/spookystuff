@@ -37,12 +37,12 @@ class FlatSelectHierarchyIT extends IntegrationSuite {
     assert(
       formatted ===
         """
-          |{"i1":[0],"description":[{"uri":"http://webscraper.io/test-sites/e-commerce/allinone"}],"i2":[0],"name_or_price":"$1178.99"}
-          |{"i1":[0],"description":[{"uri":"http://webscraper.io/test-sites/e-commerce/allinone"}],"i2":[1],"name_or_price":"ThinkPad T540p"}
-          |{"i1":[1],"description":[{"uri":"http://webscraper.io/test-sites/e-commerce/allinone"}],"i2":[0],"name_or_price":"$899.99"}
-          |{"i1":[1],"description":[{"uri":"http://webscraper.io/test-sites/e-commerce/allinone"}],"i2":[1],"name_or_price":"Iphone"}
-          |{"i1":[2],"description":[{"uri":"http://webscraper.io/test-sites/e-commerce/allinone"}],"i2":[0],"name_or_price":"$172.99"}
-          |{"i1":[2],"description":[{"uri":"http://webscraper.io/test-sites/e-commerce/allinone"}],"i2":[1],"name_or_price":"IdeaTab S5000"}
+          |{"i1":[0],"description":[{"uri":"http://webscraper.io/test-sites/e-commerce/allinone"}],"i2":[0],"name_or_price":"$109.99"}
+          |{"i1":[0],"description":[{"uri":"http://webscraper.io/test-sites/e-commerce/allinone"}],"i2":[1],"name_or_price":"Nokia X"}
+          |{"i1":[1],"description":[{"uri":"http://webscraper.io/test-sites/e-commerce/allinone"}],"i2":[0],"name_or_price":"$102.99"}
+          |{"i1":[1],"description":[{"uri":"http://webscraper.io/test-sites/e-commerce/allinone"}],"i2":[1],"name_or_price":"Asus MeMO Pad"}
+          |{"i1":[2],"description":[{"uri":"http://webscraper.io/test-sites/e-commerce/allinone"}],"i2":[0],"name_or_price":"$489.99"}
+          |{"i1":[2],"description":[{"uri":"http://webscraper.io/test-sites/e-commerce/allinone"}],"i2":[1],"name_or_price":"Galaxy Note"}
         """.stripMargin.trim
     )
   }
