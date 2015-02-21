@@ -6,7 +6,7 @@ import org.openqa.selenium.interactions.{Actions => SeleniumActions}
 import org.openqa.selenium.remote.RemoteWebDriver
 import org.openqa.selenium.support.events.EventFiringWebDriver
 import org.openqa.selenium.support.ui.{ExpectedCondition, ExpectedConditions, Select, WebDriverWait}
-import org.openqa.selenium.{By, WebDriver}
+import org.openqa.selenium.{By, JavascriptExecutor, WebDriver}
 import org.tribbloid.spookystuff.Const
 import org.tribbloid.spookystuff.entity.PageRow
 import org.tribbloid.spookystuff.expressions.{Expression, Literal}
@@ -129,10 +129,7 @@ case object WaitForDocumentReady extends Interaction with Timed {
       val script = "return document.readyState"
 
       val result = input match {
-        case d: HtmlUnitDriver => d.executeScript(script)
-        //      case d: AndroidWebDriver => d.executeScript(script)
-        case d: EventFiringWebDriver => d.executeScript(script)
-        case d: RemoteWebDriver => d.executeScript(script)
+        case d: JavascriptExecutor => d.executeScript(script)
         case _ => throw new UnsupportedOperationException("this web browser driver is not supported")
       }
 
@@ -351,10 +348,7 @@ case class ExeScript(script: Expression[Any], selector: String = null) extends I
 
     val scriptStr = script.asInstanceOf[Literal[String]].value
     session.driver match {
-      case d: HtmlUnitDriver => d.executeScript(scriptStr, element.toArray: _*)//scala can't cast directly
-      //      case d: AndroidWebDriver => throw new UnsupportedOperationException("this web browser driver is not supported")
-      case d: EventFiringWebDriver => d.executeScript(scriptStr, element.toArray: _*)
-      case d: RemoteWebDriver => d.executeScript(scriptStr, element.toArray: _*)
+      case d: JavascriptExecutor => d.executeScript(scriptStr, element.toArray: _*)
       case _ => throw new UnsupportedOperationException("this web browser driver is not supported")
     }
   }
