@@ -577,12 +577,13 @@ case class PageRowRDD(
 
     if (this.getStorageLevel == StorageLevel.NONE) this.persist(spooky.conf.defaultStorageLevel)
 
-    val firstResultRDD = this.coalesce(numPartitions) //TODO: simplify
+    val firstResultRDD = this
+      .coalesce(numPartitions) //TODO: simplify
 
     val firstStageRDD = firstResultRDD
       .map {
       row =>
-        val seeds = row.select(Literal(0) ~ depthKey)
+        val seeds = Seq(row)
         val dryruns = row
           .pageLikes
           .map(_.uid)
