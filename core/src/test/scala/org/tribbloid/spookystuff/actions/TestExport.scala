@@ -105,11 +105,22 @@ class TestExport extends SpookyEnvSuite {
     assert(newIP !== noProxyIP2)
   }
 
-  test("wget should encode malformed url") {
+  test("wget should encode malformed url 1") {
     spooky.conf.proxy = NoProxyFactory
 
     val results = Trace(
       Wget("http://www.sigmaaldrich.com/catalog/search?term=38183-12-9&interface=CAS No.&N=0&mode=partialmax&lang=en&region=US&focus=product",hasTitle = false) :: Nil
+    ).resolve(spooky)
+
+    assert(results.size === 1)
+    results(0).asInstanceOf[Page]
+  }
+
+  test("wget should encode malformed url 2") {
+    spooky.conf.proxy = NoProxyFactory
+
+    val results = Trace(
+      Wget("http://www.perkinelmer.ca/Catalog/Gallery.aspx?ID=Mass Spectrometry [GC/MS and ICP-MS]&PID=Gas Chromatography Mass Spectrometry Consumables&refineCat=Technology&N=172 139 78928 4293910906&TechNVal=4293910906",hasTitle = false) :: Nil
     ).resolve(spooky)
 
     assert(results.size === 1)
@@ -136,6 +147,6 @@ class TestExport extends SpookyEnvSuite {
     ).resolve(spooky)
 
     assert(results.size === 1)
-    results(0).asInstanceOf[Page]
+    assert(results(0).asInstanceOf[Page].children("title").head.text.get.contains("Sigma-Aldrich"))
   }
 }
