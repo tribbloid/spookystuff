@@ -61,7 +61,7 @@ case class Visit(
   }
 
   override def doInterpolate(pageRow: PageRow): Option[this.type] = {
-    val first = this.uri(pageRow).map(Utils.encapsulateAsIterable(_).head)
+    val first = this.uri(pageRow).flatMap(Utils.encapsulateAsIterable(_).headOption)
 
     val uriStr: Option[String] = first.flatMap {
       case element: Unstructured => element.href
@@ -270,7 +270,8 @@ case class TextInput(selector: String, text: Expression[Any]) extends Interactio
   }
 
   override def doInterpolate(pageRow: PageRow): Option[this.type] = {
-    val first = this.text(pageRow).map(Utils.encapsulateAsIterable(_).head)
+
+    val first = this.text(pageRow).flatMap(Utils.encapsulateAsIterable(_).headOption)
 
     val textStr: Option[String] = first.flatMap {
       case element: Unstructured => element.text
@@ -301,7 +302,7 @@ case class DropDownSelect(selector: String, value: Expression[Any]) extends Inte
   }
 
   override def doInterpolate(pageRow: PageRow): Option[this.type] = {
-    val first = this.value(pageRow).map(Utils.encapsulateAsIterable(_).head)
+    val first = this.value(pageRow).flatMap(Utils.encapsulateAsIterable(_).headOption)
 
     val valueStr: Option[String] = first.flatMap {
       case element: Unstructured => element.attr("value")
@@ -354,7 +355,7 @@ case class ExeScript(script: Expression[Any], selector: String = null) extends I
   }
 
   override def doInterpolate(pageRow: PageRow): Option[this.type] = {
-    val first = this.script(pageRow).map(Utils.encapsulateAsIterable(_).head)
+    val first = this.script(pageRow).flatMap(Utils.encapsulateAsIterable(_).headOption)
 
     val scriptStr: Option[String] = first.flatMap {
       case element: Unstructured => element.text

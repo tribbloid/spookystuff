@@ -207,7 +207,7 @@ case class Wget(
   }
 
   override def doInterpolate(pageRow: PageRow): Option[this.type] = {
-    val first = this.uri(pageRow).map(Utils.encapsulateAsIterable(_).head)
+    val first = this.uri(pageRow).flatMap(Utils.encapsulateAsIterable(_).headOption)
 
     val uriStr: Option[String] = first.flatMap {
       case element: Unstructured => element.href
