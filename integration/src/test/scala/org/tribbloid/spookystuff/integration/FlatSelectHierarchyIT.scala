@@ -15,7 +15,7 @@ class FlatSelectHierarchyIT extends IntegrationSuite {
 
     val result = noInput
       .fetch(
-        Wget("http://webscraper.io/test-sites/e-commerce/allinone")
+        Wget("http://webscraper.io/test-sites/e-commerce/allinone") //this site is unstable, need to revise
       )
       .flatSelect($"div.thumbnail", ordinalKey = 'i1)(
         A"p.description" ~ 'description
