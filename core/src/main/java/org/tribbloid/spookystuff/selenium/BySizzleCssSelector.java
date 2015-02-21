@@ -19,19 +19,6 @@ public class BySizzleCssSelector extends By implements Serializable {
   }
 
   @Override
-  public WebElement findElement(SearchContext context) {
-
-    if (context instanceof JavascriptExecutor) {
-      List<WebElement> webElements = evaluateSizzleSelector((JavascriptExecutor) context, selector);
-      return webElements.isEmpty() ? null : webElements.get(0);
-    }
-    else {
-      throw new WebDriverException(
-        "Driver does not support finding an element by selector: " + selector);
-    }
-  }
-
-  @Override
   public List<WebElement> findElements(SearchContext context) {
 
     if (context instanceof JavascriptExecutor) {
