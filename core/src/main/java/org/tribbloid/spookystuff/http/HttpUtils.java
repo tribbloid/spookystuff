@@ -22,7 +22,7 @@ public class HttpUtils {
 
   public static URI uri(String s) throws URISyntaxException {
 
-    //this solution is abandoned as it cannot handle
+    //this solution is abandoned as it cannot handle question mark
 //    URI uri;
 //    try {
 //      uri = new URI(s);
