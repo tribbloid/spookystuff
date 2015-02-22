@@ -1,6 +1,6 @@
 package org.tribbloid.spookystuff.actions
 
-import org.tribbloid.spookystuff.pages.Page
+import org.tribbloid.spookystuff.pages.{NoPage, Page}
 import org.tribbloid.spookystuff.{dsl, SpookyEnvSuite}
 import org.tribbloid.spookystuff.dsl.TorProxyFactory
 import dsl._
@@ -148,5 +148,16 @@ class TestExport extends SpookyEnvSuite {
 
     assert(results.size === 1)
     assert(results(0).asInstanceOf[Page].children("title").head.text.get.contains("Sigma-Aldrich"))
+  }
+
+  test("wget should smoothly fail on circular redirection") {
+    spooky.conf.proxy = NoProxyFactory
+
+    val results = Trace(
+      Wget("http://www.perkinelmer.ca/en-ca/products/consumables-accessories/integrated-solutions/for-thermo-scientific-gcs/default.xhtml",hasTitle = false) :: Nil
+    ).resolve(spooky)
+
+    assert(results.size === 1)
+    assert(results(0).isInstanceOf[NoPage])
   }
 }

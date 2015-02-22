@@ -15,7 +15,7 @@ class TestPage extends SpookyEnvSuite {
     val emptyPage: Page = {
       val pb = new DriverSession(spooky)
 
-      Snapshot().doExe(pb).toList(0)
+      Snapshot().doExe(pb).toList(0).asInstanceOf[Page]
     }
 
     assert (emptyPage.children("div.dummy").attrs("href").isEmpty)

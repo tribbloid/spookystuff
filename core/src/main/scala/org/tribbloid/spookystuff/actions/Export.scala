@@ -7,6 +7,7 @@ import org.apache.http.HttpHost
 import org.apache.http.client.config.RequestConfig
 import org.apache.http.client.methods.HttpGet
 import org.apache.http.client.protocol.HttpClientContext
+import org.apache.http.client.{ClientProtocolException, RedirectException}
 import org.apache.http.config.RegistryBuilder
 import org.apache.http.conn.socket.ConnectionSocketFactory
 import org.apache.http.conn.ssl.SSLContexts
@@ -15,10 +16,9 @@ import org.apache.http.impl.conn.PoolingHttpClientConnectionManager
 import org.openqa.selenium.{OutputType, TakesScreenshot}
 import org.tribbloid.spookystuff.entity.PageRow
 import org.tribbloid.spookystuff.expressions.{Expression, Literal}
-import org.tribbloid.spookystuff.pages.{HtmlElement, Page, PageUID, Unstructured}
+import org.tribbloid.spookystuff.http.{HttpUtils, ResilientRedirectStrategy, SocksProxyConnectionSocketFactory, SocksProxySSLConnectionSocketFactory}
+import org.tribbloid.spookystuff.pages._
 import org.tribbloid.spookystuff.session.Session
-import org.tribbloid.spookystuff.http.{HttpUtils, SocksProxyConnectionSocketFactory, SocksProxySSLConnectionSocketFactory, ResilientRedirectStrategy}
-import org.tribbloid.spookystuff.utils
 import org.tribbloid.spookystuff.utils.Utils
 
 /**
@@ -33,7 +33,7 @@ abstract class Export extends Named{
 
   final def doExe(session: Session) = doExeNoName(session)
 
-  def doExeNoName(session: Session): Seq[Page]
+  def doExeNoName(session: Session): Seq[PageLike]
 }
 
 /**
@@ -105,7 +105,7 @@ case class Wget(
                  hasTitle: Boolean = true
                  ) extends Export with Driverless {
 
-  override def doExeNoName(pb: Session): Seq[Page] = {
+  override def doExeNoName(pb: Session): Seq[PageLike] = {
 
     val uriStr = uri.asInstanceOf[Literal[String]].value.trim()
     if ( uriStr.isEmpty ) return Seq ()
@@ -124,6 +124,7 @@ case class Wget(
         .setConnectionRequestTimeout ( timeoutMillis )
         .setSocketTimeout( timeoutMillis )
         .setRedirectsEnabled(true)
+        .setCircularRedirectsAllowed(true)
         .setRelativeRedirectsAllowed(true)
         .setAuthenticationEnabled(false)
 
@@ -175,34 +176,44 @@ case class Wget(
     }
     else null
 
-    val response = httpClient.execute ( request, context )
     try {
-      //      val httpStatus = response.getStatusLine().getStatusCode()
-      val entity = response.getEntity
-
-      val stream = entity.getContent
+      val response = httpClient.execute ( request, context )
       try {
-        val content = IOUtils.toByteArray ( stream )
-        val contentType = entity.getContentType.getValue
+        //      val httpStatus = response.getStatusLine().getStatusCode()
+        val entity = response.getEntity
 
-        val result = new Page(
-          PageUID(Trace(pb.backtrace :+ this), this),
-          uriURI.toASCIIString,
-          contentType,
-          content
-        )
+        val stream = entity.getContent
+        try {
+          val content = IOUtils.toByteArray ( stream )
+          val contentType = entity.getContentType.getValue
 
-        if (result.root.isInstanceOf[HtmlElement] && hasTitle)
-          assert(!result.markup.get.contains("<title></title>"))
+          val result = new Page(
+            PageUID(Trace(pb.backtrace :+ this), this),
+            uriURI.toASCIIString,
+            contentType,
+            content
+          )
 
-        Seq(result)
+          if (result.root.isInstanceOf[HtmlElement] && hasTitle)
+            assert(!result.markup.get.contains("<title></title>"))
+
+          Seq(result)
+        }
+        finally {
+          stream.close()
+        }
       }
       finally {
-        stream.close()
+        response.close()
       }
     }
-    finally {
-      response.close()
+    catch {
+      case e: ClientProtocolException =>
+        val cause = e.getCause
+        if (cause.isInstanceOf[RedirectException]) Seq(NoPage(Trace(pb.backtrace :+ this)))
+        else throw e
+      case e: Throwable =>
+        throw e
     }
   }
 
