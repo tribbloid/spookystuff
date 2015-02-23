@@ -2,7 +2,7 @@ package org.tribbloid.spookystuff
 
 import org.tribbloid.spookystuff.actions.{Action, Trace, TraceSetView}
 import org.tribbloid.spookystuff.expressions._
-import org.tribbloid.spookystuff.pages.{Page, Unstructured, UnstructuredSeqView}
+import org.tribbloid.spookystuff.pages.{Page, Unstructured, UnstructuredIterableView}
 
 import scala.language.implicitConversions
 import scala.reflect.ClassTag
@@ -26,7 +26,7 @@ package object dsl {
   //'abc:  cells with key "abc", tempkey precedes ordinary key
   //'abc.$("div#a1"): all children of an unstructured field (either a page or element) that match the selector
   //$("div#a1"): all children of the only page that match the selector, if multiple page per row, throws an exception
-  //$_*("div#a1"): all children of all pages that match the selector, if multiple page per row, throws an exception
+  //$_*("div#a1"): all children of all pages that match the selector.
   //'abc.$("div#a1").head: first child of an unstructured field (either a page or element) that match the selector
   //'abc.$("div#a1").text: first text of an unstructured field that match the selector
   //'abc.$("div#a1").texts: all texts of an unstructured field that match the selector
@@ -41,7 +41,7 @@ package object dsl {
 
   def $_*(selector: String, i: Int): Expression[Unstructured] = GetAllPagesExpr.allChildren(selector).get(i)
 
-  def $_*(selector: String): Expression[Seq[Unstructured]] = GetAllPagesExpr.allChildren(selector)
+  def $_*(selector: String): Expression[Iterable[Unstructured]] = GetAllPagesExpr.allChildren(selector)
 
   def `$_*`: Expression[Seq[Page]] = GetAllPagesExpr
 
@@ -58,13 +58,13 @@ package object dsl {
   implicit def pageExprView(expr: Expression[Page]): PageExprView =
     new PageExprView(expr)
 
-  implicit def unstructuredSeqExprView(expr: Expression[Seq[Unstructured]]): UnstructuedSeqExprView =
-    new UnstructuedSeqExprView(expr)
+  implicit def UnstructuedIterableExprView(expr: Expression[Iterable[Unstructured]]): UnstructuedIterableExprView =
+    new UnstructuedIterableExprView(expr)
 
-  implicit def unstructuredSeqExprToUnstructuredExprView(expr: Expression[Seq[Unstructured]]): UnstructuedExprView =
+  implicit def unstructuredIterableExprToUnstructuredExprView(expr: Expression[Iterable[Unstructured]]): UnstructuedExprView =
     expr.head
 
-  implicit def seqExprView[T: ClassTag](expr: Expression[Seq[T]]): IterableExprView[T] =
+  implicit def IterableExprView[T: ClassTag](expr: Expression[Iterable[T]]): IterableExprView[T] =
     new IterableExprView[T](expr)
 
   implicit def stringExprView(expr: Expression[String]): StringExprView =
@@ -113,6 +113,6 @@ package object dsl {
 
   //--------------------------------------------------
 
-  implicit def unstructuredSeqView(self: Seq[Unstructured]): UnstructuredSeqView =
-    new UnstructuredSeqView(self)
+  implicit def UnstructuredIterableView(self: Iterable[Unstructured]): UnstructuredIterableView =
+    new UnstructuredIterableView(self)
 }

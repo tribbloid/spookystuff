@@ -3,13 +3,15 @@ package org.tribbloid.spookystuff.pages
 import org.apache.hadoop.fs.Path
 import org.tribbloid.spookystuff.SpookyEnvSuite
 import org.tribbloid.spookystuff.actions.{Snapshot, Trace, Visit, Wget}
-import org.tribbloid.spookystuff.dsl._
+import org.tribbloid.spookystuff.dsl
 import org.tribbloid.spookystuff.session.DriverSession
 
 /**
  * Created by peng on 10/17/14.
  */
 class TestPage extends SpookyEnvSuite {
+
+  import dsl._
 
   test("empty page") {
     val emptyPage: Page = {

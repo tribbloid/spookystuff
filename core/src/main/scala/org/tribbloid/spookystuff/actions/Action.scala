@@ -49,7 +49,7 @@ trait Action extends ActionLike {
 
         message += "\n+>" + this.toString
 
-        if (!this.isInstanceOf[Driverless] ) {
+        if (!this.isInstanceOf[Driverless]) {
           if (errorDump) {
             val rawPage = DefaultSnapshot.exe(session)(0).asInstanceOf[Page]
             val uid = rawPage.uid.copy(backtrace = Trace(rawPage.uid.backtrace.self :+ this))
@@ -71,7 +71,7 @@ trait Action extends ActionLike {
             }
           }
           if (errorDumpScreenshot) {
-            val rawPage = DefaultScreenshot.doExe(session).toList(0).asInstanceOf[Page]
+            val rawPage = DefaultScreenshot.exe(session).toList(0).asInstanceOf[Page]
             val uid = rawPage.uid.copy(backtrace = Trace(rawPage.uid.backtrace.self :+ this))
             val page = rawPage.copy(uid = uid)
             try {
