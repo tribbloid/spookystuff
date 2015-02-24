@@ -21,18 +21,17 @@ import scala.reflect.ClassTag
  */
 //some guideline: All key parameters are Symbols to align with Spark SQL.
 //cells & pages share the same key pool but different data structure
-case class
-PageRow(
+case class PageRow(
                     cells: ListMap[KeyLike, Any] = ListMap(), //TODO: also carry PageUID & property type (Vertex/Edge) for GraphX, ListMap may be slower but has tighter serialization footage
                     pageLikes: Seq[PageLike] = Seq(), // discarded after new page coming in
                     segmentID: UUID = UUID.randomUUID() //keep flattened rows together
                     )
   extends Serializable {
 
-  def pages: Seq[Page] = pageLikes.flatMap {
+  def pages: Elements[Page] = new Elements(pageLikes.flatMap {
     case page: Page => Some(page)
     case _ => None
-  }
+  })
 
   def noPages: Seq[NoPage] = pageLikes.flatMap {
     case noPage: NoPage => Some(noPage)
@@ -87,8 +86,7 @@ PageRow(
     val pages = this.pages
 
     if (pages.size > 1) throw new UnsupportedOperationException("Ambiguous key referring to multiple pages")
-    else if (pages.size == 0) None
-    else Some(pages(0))
+    else pages.headOption
   }
 
   def getPage(keyStr: String): Option[Page] = {
@@ -98,8 +96,7 @@ PageRow(
     val pages = this.pages.filter(_.name == keyStr)
 
     if (pages.size > 1) throw new UnsupportedOperationException("Ambiguous key referring to multiple pages")
-    else if (pages.size == 0) None
-    else Some(pages(0))
+    else pages.headOption
   }
 
   def getUnstructured(keyStr: String): Option[Unstructured] = {
@@ -172,7 +169,7 @@ PageRow(
     Some(this.copy(cells = this.cells ++ addKVs -- removeKVs))
   }
 
-  def remove(keys: Seq[KeyLike]): PageRow = {
+  def remove(keys: KeyLike*): PageRow = {
     this.copy(cells = this.cells -- keys)
   }
 
@@ -236,14 +233,14 @@ PageRow(
   def flattenPages(
                     pattern: String, //TODO: enable soon
                     ordinalKey: Symbol
-                    ): Seq[PageRow] = {
+                    ): Iterable[PageRow] = {
 
     val contentRows = this.pages.map{
       page => this.copy(cells = this.cells, pageLikes = Seq(page))
     }
 
     if (contentRows.isEmpty) {
-      Seq(this.copy(pageLikes = this.noPages))
+      Iterable(this.copy(pageLikes = this.noPages))
     }
     else {
 
@@ -265,7 +262,7 @@ PageRow(
 
 object PageRow {
 
-  type Signature = (UUID, Seq[PageUID])
+  type Signature = (UUID, Iterable[PageUID])
 
   type Squash = (Trace, Iterable[PageRow])
 

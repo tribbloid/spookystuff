@@ -225,7 +225,7 @@ case class PageRowRDD(
   def remove(keys: Symbol*): PageRowRDD = {
     val names = keys.map(key => Key(key))
     this.copy(
-      self = this.map(_.remove(names)),
+      self = this.map(_.remove(names: _*)),
       keys = this.keys -- names
     )
   }

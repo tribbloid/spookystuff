@@ -28,8 +28,8 @@ class FlatSelectIT extends IntegrationSuite {
     assert(
       result.schema.fieldNames ===
         "A_attr(lang,true)" ::
-          "A_children(a)_head_attr(abs:href,true)" ::
-          "A_children(a em)_head_text" ::
+          "A_children(a)_attr(abs:href,true)" ::
+          "A_children(a em)_text" ::
           "A_uri" :: Nil
     )
 

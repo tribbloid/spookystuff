@@ -9,13 +9,14 @@ class UnknownElement(
 
   override def text: Option[String] = None
 
-  override def children(selector: String): Seq[Unstructured] = Seq()
+  override def children(selector: String) = new Elements(Seq())
+
+  override def rangeSelect(start: String, end: String, range: Range): Elements[Elements[Unstructured]] = new Elements(Seq())
 
   override def markup: Option[String] = None
 
   override def ownText: Option[String] = None
 
-  override def boilerPipe(): Option[String] = None
+  override def boilerPipe: Option[String] = None
 
-  override def attr(attr: String, noEmpty: Boolean): Option[String] = None
-}
+  override def attr(attr: String, noEmpty: Boolean): Option[String] = None}

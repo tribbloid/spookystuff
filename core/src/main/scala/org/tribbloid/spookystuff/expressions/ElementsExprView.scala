@@ -3,20 +3,18 @@ package org.tribbloid.spookystuff.expressions
 import java.util.Date
 
 import org.tribbloid.spookystuff.dsl
-import org.tribbloid.spookystuff.pages.{Page, Unstructured}
+import org.tribbloid.spookystuff.pages.{Elements, Page, Unstructured}
 
 import scala.collection.immutable.ListSet
 
 /**
  * Created by peng on 11/29/14.
  */
-final class UnstructuedIterableExprView(self: Expression[Iterable[Unstructured]]) {
+final class ElementsExprView(self: Expression[Elements[_]]) {
 
   import dsl._
 
   def uris: Expression[Iterable[String]] = self.andMap(_.uris, "uris")
-
-  def allChildren(selector: String): Expression[Iterable[Unstructured]] = self.andMap(_.allChildren(selector), s"allChildren($selector)")
 
   def texts: Expression[Iterable[String]] = self.andMap(_.texts, "texts")
 

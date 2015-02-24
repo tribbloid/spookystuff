@@ -2,7 +2,7 @@ package org.tribbloid.spookystuff.expressions
 
 import org.tribbloid.spookystuff.Const
 import org.tribbloid.spookystuff.entity.PageRow
-import org.tribbloid.spookystuff.pages.{Page, Unstructured}
+import org.tribbloid.spookystuff.pages.{Elements, Page, Unstructured}
 
 import scala.collection.TraversableOnce
 import scala.collection.immutable.ListMap
@@ -47,10 +47,10 @@ object GetOnlyPageExpr extends Expression[Page] {
   override def apply(v1: PageRow): Option[Page] = v1.getOnlyPage
 }
 
-object GetAllPagesExpr extends Expression[Seq[Page]] {
+object GetAllPagesExpr extends Expression[Elements[Page]] {
   override var name = Const.allPagesWildcard
 
-  override def apply(v1: PageRow): Option[Seq[Page]] = Some(v1.pages)
+  override def apply(v1: PageRow): Option[Elements[Page]] = Some(v1.pages)
 }
 
 object GetSegmentIDExpr extends Expression[String] {
