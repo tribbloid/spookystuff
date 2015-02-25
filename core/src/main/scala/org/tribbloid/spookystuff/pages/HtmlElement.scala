@@ -4,7 +4,7 @@ import java.nio.charset.Charset
 
 import de.l3s.boilerpipe.extractors.ArticleExtractor
 import org.jsoup.Jsoup
-import org.jsoup.nodes.{Document, Element}
+import org.jsoup.nodes.Element
 
 /**
  * Created by peng on 11/30/14.
@@ -17,8 +17,7 @@ class HtmlElement private (
 
   def this(_parsed: Element) = this(
     _parsed,
-    if (_parsed.isInstanceOf[Document]) _parsed.outerHtml()
-    else "<table>"+_parsed.outerHtml()+"</table>",
+    _parsed.outerHtml(),
     _parsed.baseUri()
   )
 
@@ -34,13 +33,32 @@ class HtmlElement private (
 
   override def hashCode(): Int = (this.html, this.uri).hashCode()
 
-  @transient private lazy val parsed = Option(_parsed).getOrElse(Jsoup.parse(html, uri))
+  @transient private lazy val parsed = Option(_parsed).getOrElse{
+    val tableHtml = "<table>"+html+"</table>"
+    val table = Jsoup.parse(tableHtml, uri)
+    table.child(0)
+  }
 
   import scala.collection.JavaConversions._
 
   override def children(selector: String): Elements[HtmlElement] = new Elements(parsed.select(selector).map(new HtmlElement(_)))
 
-  override def rangeSelect(start: String, end: String, range: Range): Elements[Elements[Unstructured]] = ???
+  override def rangeSelect(start: String, range: Range): Elements[Elements[HtmlElement]] = {
+
+    val elements = parsed.select(start)
+    val coll = elements.map{
+      element =>
+        val allSiblings = element.parent().children()
+        val selfIndex = element.elementSiblingIndex()
+        val selected = allSiblings.slice(selfIndex + range.head, selfIndex + range.last + 1)
+//        val untilIndex = if (until == null) selected.indexWhere(_.select(start).nonEmpty, 1)
+//        else selected.indexWhere(e => e.select(start).nonEmpty || e.select(until).nonEmpty, 1)
+//        val deoverlapped = selected.slice(0, untilIndex)
+
+        new Elements(selected.map(new HtmlElement(_)))
+    }
+    new Elements(coll)
+  }
 
   override def markup: Option[String] = Some(html)
 
