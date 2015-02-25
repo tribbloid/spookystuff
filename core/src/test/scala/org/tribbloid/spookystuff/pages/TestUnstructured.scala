@@ -25,6 +25,7 @@ class TestUnstructured extends SpookyEnvSuite {
         val serElement = ser.serialize(element)
         val element2 = ser.deserialize[Unstructured](serElement)
         assert (element === element2)
+        assert(element2.children("a.link-box").size === 1)
     }
   }
 

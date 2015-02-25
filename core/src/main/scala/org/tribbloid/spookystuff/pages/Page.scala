@@ -75,7 +75,7 @@ case class Page(
   }
 
   override def children(selector: String): Elements[Unstructured] = root.children(selector)
-  override def rangeSelect(start: String, range: Range): Elements[Elements[Unstructured]] = root.rangeSelect(start, range)
+  override def childrenExpanded(start: String, range: Range): Elements[Elements[Unstructured]] = root.childrenExpanded(start, range)
   override def markup: Option[String] = root.markup
   override def attr(attr: String, noEmpty: Boolean): Option[String] = root.attr(attr, noEmpty)
   override def text: Option[String] = root.text

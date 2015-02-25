@@ -16,7 +16,9 @@ final class UnstructuredExprView(self: Expression[Unstructured]) {
 
   def uri: Expression[String] = self.andMap(_.uri, "uri")
 
-  def children(selector: String): Expression[Elements[Unstructured]] = self.andMap(_.children(selector), s"children($selector)")
+  def child(selector: String): ChildExpr = new ChildExpr(selector, self)
+
+  def children(selector: String): ChildrenExpr = new ChildrenExpr(selector, self)
 
   def text: Expression[String] = self.andFlatMap(_.text, "text")
 
@@ -28,7 +30,7 @@ final class UnstructuredExprView(self: Expression[Unstructured]) {
 
   def src = attr("abs:src", noEmpty = true)
 
-  //  def boilerPiple
+  def boilerPiple = self.andFlatMap(_.boilerPipe, "boilerPipe")
 }
 
 class PageExprView(self: Expression[Page]) {

@@ -32,6 +32,32 @@ class GetPageExpr(override var name: String) extends Expression[Page] {
   override def apply(v1: PageRow): Option[Page] = v1.getPage(name)
 }
 
+class ChildExpr(selector: String, base: Expression[Unstructured]) extends Expression[Unstructured] {
+
+  override var name = s"${base.name}.child($selector)"
+
+  override def apply(v1: PageRow): Option[Unstructured] = base(v1).flatMap(_.child(selector))
+
+  def expand(range: Range): Expression[Elements[Unstructured]] = new Expression[Elements[Unstructured]] {
+    override var name: String = s"${this.name}.expand(${range.head} -> ${range.last})"
+
+    override def apply(v1: PageRow): Option[Elements[Unstructured]] = base(v1).flatMap(_.childExpanded(selector, range))
+  }
+}
+
+class ChildrenExpr(selector: String, base: Expression[Unstructured]) extends Expression[Elements[Unstructured]] {
+
+  override var name = s"${base.name}.children($selector)"
+
+  override def apply(v1: PageRow): Option[Elements[Unstructured]] = base(v1).map(_.children(selector))
+
+  def expand(range: Range): Expression[Elements[Elements[Unstructured]]] = new Expression[Elements[Elements[Unstructured]]] {
+    override var name: String = s"${this.name}.expand(${range.head} -> ${range.last})"
+
+    override def apply(v1: PageRow): Option[Elements[Elements[Unstructured]]] = base(v1).map(_.childrenExpanded(selector, range))
+  }
+}
+
 class GetSeqExpr(override var name: String) extends Expression[Seq[Any]] {
 
   override def apply(v1: PageRow): Option[Seq[Any]] = v1.get(name).flatMap {

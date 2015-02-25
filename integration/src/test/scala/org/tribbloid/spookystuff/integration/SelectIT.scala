@@ -23,7 +23,8 @@ class SelectIT extends IntegrationSuite {
         $.uri,
         $.timestamp,
         $"div.central-featured-lang em".text ~ 'title,
-        $"div.central-featured-lang strong".texts ~ 'langs
+        $"div.central-featured-lang strong".texts ~ 'langs,
+        $"a.link-box em".expand(-2 to 1).texts ~ 'expanded
       )
       .persist()
 
@@ -35,13 +36,14 @@ class SelectIT extends IntegrationSuite {
         "$_uri" ::
           "$_timestamp" ::
           "title" ::
-          "langs" :: Nil
+          "langs" ::
+          "expanded" :: Nil
     )
 
     val rows = RDD.collect()
     val finishTime = System.currentTimeMillis()
     assert(rows.size === 1)
-    assert(rows.head.size === 4)
+    assert(rows.head.size === 5)
     assert(rows.head.getString(0) === "http://www.wikipedia.org/")
     val parsedTime = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'").parse(rows.head.getString(1)).getTime
     assert(parsedTime < finishTime +2000) //due to round-off error
@@ -51,6 +53,9 @@ class SelectIT extends IntegrationSuite {
     val langs = rows.head(3).asInstanceOf[Iterable[String]]
     assert(langs.size === 10)
     assert(langs.head === "English")
+    val expanded = rows.head(4).asInstanceOf[Iterable[String]]
+    assert(expanded.size === 10)
+    assert(expanded.head === "English")
 
     intercept[AssertionError] {
       pageRowRDD.select(
@@ -69,7 +74,8 @@ class SelectIT extends IntegrationSuite {
         "$_uri" ::
           "$_timestamp" ::
           "title" ::
-          "langs" :: Nil
+          "langs" ::
+          "expanded" :: Nil
     )
 
     val rows2 = RDD2.collect()

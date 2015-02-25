@@ -43,7 +43,7 @@ class HtmlElement private (
 
   override def children(selector: String): Elements[HtmlElement] = new Elements(parsed.select(selector).map(new HtmlElement(_)))
 
-  override def rangeSelect(start: String, range: Range): Elements[Elements[HtmlElement]] = {
+  override def childrenExpanded(start: String, range: Range): Elements[Elements[HtmlElement]] = {
 
     val elements = parsed.select(start)
     val coll = elements.map{

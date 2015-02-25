@@ -25,10 +25,6 @@ class TestPage extends SpookyEnvSuite {
     assert (emptyPage.children("div.dummy").isEmpty)
   }
 
-  test("serialization and deserialization") {
-    
-  }
-
   test("save and load") {
 
     val results = Trace(
@@ -124,14 +120,13 @@ class TestPage extends SpookyEnvSuite {
       Wget("http://www.wikipedia.org/") :: Nil
     ).resolve(spooky)(0).asInstanceOf[Page]
 
-    val ranges = page.rangeSelect("a.link-box em", -2 to 2)
+    val ranges = page.childrenExpanded("a.link-box em", -2 to 1)
     assert(ranges.size === 10)
     val first = ranges.head
-    assert(first.size === 5)
+    assert(first.size === 4)
     assert(first(0).markup.get.startsWith("<strong"))
     assert(first(1).markup.get.startsWith("<br"))
     assert(first(2).markup.get.startsWith("<em"))
     assert(first(3).markup.get.startsWith("<br"))
-    assert(first(4).markup.get.startsWith("<small"))
   }
 }
