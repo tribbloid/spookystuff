@@ -55,7 +55,7 @@ class SelectIT extends IntegrationSuite {
     assert(langs.head === "English")
     val expanded = rows.head(4).asInstanceOf[Iterable[String]]
     assert(expanded.size === 10)
-    assert(expanded.head === "English")
+    assert(expanded.head === "English The Free Encyclopedia")
 
     intercept[AssertionError] {
       pageRowRDD.select(

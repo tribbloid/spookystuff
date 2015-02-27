@@ -74,8 +74,8 @@ case class Page(
     new UnknownElement(uri)
   }
 
-  override def children(selector: String): Elements[Unstructured] = root.children(selector)
-  override def childrenExpanded(start: String, range: Range): Elements[Elements[Unstructured]] = root.childrenExpanded(start, range)
+  override def children(selector: String) = root.children(selector)
+  override def childrenExpanded(start: String, range: Range) = root.childrenExpanded(start, range)
   override def markup: Option[String] = root.markup
   override def attr(attr: String, noEmpty: Boolean): Option[String] = root.attr(attr, noEmpty)
   override def text: Option[String] = root.text

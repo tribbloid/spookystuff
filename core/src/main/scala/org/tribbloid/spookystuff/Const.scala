@@ -1,6 +1,8 @@
 package org.tribbloid.spookystuff
 
+import org.json4s.DefaultFormats
 import org.tribbloid.spookystuff.dsl.LeftOuter
+import org.tribbloid.spookystuff.pages.HtmlElementSerializer
 
 /**
  * Created by peng on 04/06/14.
@@ -36,4 +38,6 @@ object Const {
   val onlyPageWildcard = "$"
   val allPagesWildcard = "$_*"
   val defaultJoinKey = "A"
+
+  val jsonFormats = DefaultFormats + HtmlElementSerializer
 }

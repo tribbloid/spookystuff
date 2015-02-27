@@ -11,7 +11,7 @@ class UnknownElement(
 
   override def children(selector: String) = new Elements(Seq())
 
-  override def childrenExpanded(start: String, range: Range): Elements[Elements[Unstructured]] = new Elements(Seq())
+  override def childrenExpanded(start: String, range: Range) = new Elements(Seq())
 
   override def markup: Option[String] = None
 

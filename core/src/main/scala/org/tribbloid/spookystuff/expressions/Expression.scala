@@ -2,7 +2,7 @@ package org.tribbloid.spookystuff.expressions
 
 import org.tribbloid.spookystuff.Const
 import org.tribbloid.spookystuff.entity.PageRow
-import org.tribbloid.spookystuff.pages.{Elements, Page, Unstructured}
+import org.tribbloid.spookystuff.pages.{Siblings, Elements, Page, Unstructured}
 
 import scala.collection.TraversableOnce
 import scala.collection.immutable.ListMap
@@ -38,10 +38,10 @@ class ChildExpr(selector: String, base: Expression[Unstructured]) extends Expres
 
   override def apply(v1: PageRow): Option[Unstructured] = base(v1).flatMap(_.child(selector))
 
-  def expand(range: Range): Expression[Elements[Unstructured]] = new Expression[Elements[Unstructured]] {
+  def expand(range: Range) = new Expression[Siblings[Unstructured]] {
     override var name: String = s"${this.name}.expand(${range.head} -> ${range.last})"
 
-    override def apply(v1: PageRow): Option[Elements[Unstructured]] = base(v1).flatMap(_.childExpanded(selector, range))
+    override def apply(v1: PageRow) = base(v1).flatMap(_.childExpanded(selector, range))
   }
 }
 
@@ -51,10 +51,10 @@ class ChildrenExpr(selector: String, base: Expression[Unstructured]) extends Exp
 
   override def apply(v1: PageRow): Option[Elements[Unstructured]] = base(v1).map(_.children(selector))
 
-  def expand(range: Range): Expression[Elements[Elements[Unstructured]]] = new Expression[Elements[Elements[Unstructured]]] {
+  def expand(range: Range) = new Expression[Elements[Siblings[Unstructured]]] {
     override var name: String = s"${this.name}.expand(${range.head} -> ${range.last})"
 
-    override def apply(v1: PageRow): Option[Elements[Elements[Unstructured]]] = base(v1).map(_.childrenExpanded(selector, range))
+    override def apply(v1: PageRow) = base(v1).map(_.childrenExpanded(selector, range))
   }
 }
 

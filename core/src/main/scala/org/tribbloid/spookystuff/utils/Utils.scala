@@ -1,7 +1,7 @@
 package org.tribbloid.spookystuff.utils
 
-import org.json4s.DefaultFormats
 import org.slf4j.LoggerFactory
+import org.tribbloid.spookystuff.Const
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._
@@ -144,8 +144,8 @@ These special characters are often called "metacharacters".
 
     import org.json4s.jackson.Serialization
 
-    if (beautiful) Serialization.writePretty(obj)(DefaultFormats)
-    else Serialization.write(obj)(DefaultFormats)
+    if (beautiful) Serialization.writePretty(obj)(Const.jsonFormats)
+    else Serialization.write(obj)(Const.jsonFormats)
   }
 
   def encapsulateAsIterable(obj: Any): Iterable[Any] = obj match {

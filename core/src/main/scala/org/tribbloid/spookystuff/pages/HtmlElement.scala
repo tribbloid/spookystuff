@@ -3,6 +3,7 @@ package org.tribbloid.spookystuff.pages
 import java.nio.charset.Charset
 
 import de.l3s.boilerpipe.extractors.ArticleExtractor
+import org.json4s._
 import org.jsoup.Jsoup
 import org.jsoup.nodes.Element
 
@@ -33,7 +34,7 @@ class HtmlElement private (
 
   override def hashCode(): Int = (this.html, this.uri).hashCode()
 
-  @transient private lazy val parsed = Option(_parsed).getOrElse{
+  @transient lazy val parsed = Option(_parsed).getOrElse{
     val tableHtml = "<table>"+html+"</table>"
     val table = Jsoup.parse(tableHtml, uri)
     table.child(0)
@@ -41,9 +42,9 @@ class HtmlElement private (
 
   import scala.collection.JavaConversions._
 
-  override def children(selector: String): Elements[HtmlElement] = new Elements(parsed.select(selector).map(new HtmlElement(_)))
+  override def children(selector: String) = new Elements(parsed.select(selector).map(new HtmlElement(_)))
 
-  override def childrenExpanded(start: String, range: Range): Elements[Elements[HtmlElement]] = {
+  override def childrenExpanded(start: String, range: Range) = {
 
     val elements = parsed.select(start)
     val coll = elements.map{
@@ -55,7 +56,7 @@ class HtmlElement private (
 //        else selected.indexWhere(e => e.select(start).nonEmpty || e.select(until).nonEmpty, 1)
 //        val deoverlapped = selected.slice(0, untilIndex)
 
-        new Elements(selected.map(new HtmlElement(_)))
+        new Siblings(selected.map(new HtmlElement(_)))
     }
     new Elements(coll)
   }
@@ -80,4 +81,22 @@ class HtmlElement private (
   }
 
   override def toString: String = html
+}
+
+object HtmlElementSerializer extends Serializer[HtmlElement] {
+
+  import scala.collection.JavaConversions._
+
+  override def deserialize(implicit format: Formats): PartialFunction[(TypeInfo, JValue), HtmlElement] = ??? //TODO: how to support it?
+
+  override def serialize(implicit format: Formats): PartialFunction[Any, JValue] = {
+    case element: HtmlElement =>
+      val attrs = element.parsed.attributes()
+      var fields = attrs.map(attr => JField(attr.getKey, JString(attr.getValue))).toList
+      fields = fields :+ ("tag" -> JString(element.parsed.tag().getName))
+      if (element.uri != null) fields = fields :+ ("uri" -> JString(element.uri))
+      if (element.ownText != None) fields = fields :+ ("ownText" -> JString(element.ownText.get))
+
+      JObject(fields: _*)
+  }
 }

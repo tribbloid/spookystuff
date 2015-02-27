@@ -34,14 +34,15 @@ package object dsl {
   //'abc.$("div#a1").attrs("src"): first "src" attribute of an unstructured field that match the selector
 
   def $(selector: String): Expression[Elements[Unstructured]] = GetOnlyPageExpr.children(selector)
-
+  def $(selector: String, i: Int): Expression[Unstructured] = GetOnlyPageExpr.children(selector).get(i)
   def $: Expression[Page] = GetOnlyPageExpr
 
   def $_*(selector: String): Expression[Elements[Unstructured]] = GetAllPagesExpr.children(selector)
-
+  def $_*(selector: String, i: Int): Expression[Unstructured] = GetAllPagesExpr.children(selector).get(i)
   def `$_*`: Expression[Elements[Page]] = GetAllPagesExpr
 
   def A(selector: String): Expression[Elements[Unstructured]] = 'A.children(selector)
+  def A(selector: String, i: Int): Expression[Unstructured] = 'A.children(selector).get(i)
 
   implicit def exprView[T: ClassTag](expr: Expression[T]): ExprView[T] =
     new ExprView(expr)
