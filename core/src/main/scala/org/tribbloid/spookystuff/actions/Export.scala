@@ -103,7 +103,7 @@ object DefaultScreenshot extends Screenshot()
 case class Wget(
                  uri: Expression[Any],
                  hasTitle: Boolean = true
-                 ) extends Export with Driverless {
+                 ) extends Export with Driverless with Timed {
 
   override def doExeNoName(pb: Session): Seq[PageLike] = {
 
@@ -117,7 +117,7 @@ case class Wget(
     val headers = pb.spooky.conf.headers()
 
     val requestConfig = {
-      val timeoutMillis = pb.spooky.conf.remoteResourceTimeout.toMillis.toInt
+      val timeoutMillis = this.timeout(pb).toMillis.toInt
 
       var builder = RequestConfig.custom()
         .setConnectTimeout ( timeoutMillis )
