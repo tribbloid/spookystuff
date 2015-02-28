@@ -7,12 +7,10 @@
 //import scala.concurrent.duration._
 //
 ///**
-// * Created by peng on 12/10/14.
-// */
+//* Created by peng on 12/10/14.
+//*/
 //class LoadMoreIT extends IntegrationSuite {
 //  override def doMain(spooky: SpookyContext): Unit = {
-//    spooky.autoSave = false
-//    spooky.driverFactory = NaiveDriverFactory(loadImages = true)
 //
 //    import spooky._
 //
