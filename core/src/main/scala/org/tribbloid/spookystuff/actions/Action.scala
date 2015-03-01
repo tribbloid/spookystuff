@@ -62,7 +62,7 @@ trait Action extends ActionLike {
               case e: Throwable =>
                 try {
                   page.errorDumpLocal(session.spooky)
-                  message += "\n"+"distributed file system inaccessible.........snapshot saved to: " + page.saved
+                  message += "\n"+"distributed file system inaccessible.........snapshot saved to: " + page.saved.last
                 }
                 catch {
                   case e: Throwable =>
@@ -82,7 +82,7 @@ trait Action extends ActionLike {
               case e: Throwable =>
                 try {
                   page.errorDumpLocal(session.spooky)
-                  message += "\n"+"distributed file system inaccessible.........screenshot saved to: " + page.saved
+                  message += "\n"+"distributed file system inaccessible.........screenshot saved to: " + page.saved.last
                 }
                 catch {
                   case e: Throwable =>
