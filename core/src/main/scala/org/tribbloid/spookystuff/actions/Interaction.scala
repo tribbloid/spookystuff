@@ -15,9 +15,6 @@ import org.tribbloid.spookystuff.utils.Utils
 import scala.collection.mutable
 import scala.concurrent.duration.Duration
 
-//object Interaction {
-//}
-
 /**
  * Interact with the browser (e.g. click a button or type into a search box) to reach the data page.
  * these will be logged into target page's backtrace.
@@ -26,7 +23,7 @@ import scala.concurrent.duration.Duration
  */
 abstract class Interaction(
                             val delay: Duration,
-                            val untilDocReady: Boolean
+                            val block: Boolean
                             ) extends Action {
 
   final override def outputNames = Set()
@@ -37,10 +34,10 @@ abstract class Interaction(
 
     exeWithoutPage(session: Session)
 
-    if (delay != null) {
+    if (delay != null && delay.toMillis > 0) {
       Thread.sleep(delay.toMillis)
     }
-    if (untilDocReady) {
+    if (block) {
       driverWait(session).until(DocumentReadyCondition)
     }
 
@@ -72,9 +69,9 @@ object DocumentReadyCondition extends ExpectedCondition[Boolean] {
 case class Visit(
                   uri: Expression[Any],
                   hasTitle: Boolean = true,
-                  override val delay: Duration = Const.delayMin,
-                  override val untilDocReady: Boolean = Const.untilDocReady
-                  ) extends Interaction(delay, untilDocReady) with Timed {
+                  override val delay: Duration = Const.interactionDelayMin,
+                  override val block: Boolean = Const.interactionBlock
+                  ) extends Interaction(delay, block) with Timed {
 
   override def exeWithoutPage(session: Session) {
     session.driver.get(uri.asInstanceOf[Literal[String]].value)
@@ -107,9 +104,8 @@ case class Visit(
  * @param delay seconds to be wait for
  */
 case class Delay(
-                  override val delay: Duration = Const.delayMin
+                  override val delay: Duration = Const.interactionDelayMin
                   ) extends Interaction(delay, false) with Driverless {
-  //  override val timeout = Math.max(Const.driverCallTimeout, delay + 10)
 
   override def exeWithoutPage(session: Session): Unit = {
     //do nothing
@@ -121,13 +117,11 @@ case class Delay(
  * @param delay seconds to be wait for
  */
 case class RandomDelay(
-                        override val delay: Duration = Const.delayMin,
-                        max: Duration = Const.delayMax
+                        override val delay: Duration = Const.interactionDelayMin,
+                        max: Duration = Const.interactionDelayMax
                         ) extends Interaction(delay, false) with Driverless {
 
   assert(max >= delay)
-
-  //  override val timeout = Math.max(Const.driverCallTimeout, delay + 10)
 
   override def exeWithoutPage(session: Session) {
     Thread.sleep(Utils.random.nextInt((max - delay).toMillis.toInt) )
@@ -140,7 +134,6 @@ case class RandomDelay(
  *              after which it will throw an exception!
  */
 case class WaitFor(selector: String) extends Interaction(null, false) with Timed {
-  //  override val timeout = Math.max(Const.driverCallTimeout, delay + 10)
 
   override def exeWithoutPage(session: Session) {
     this.getElement(selector, session)
@@ -189,9 +182,9 @@ case object WaitForDocumentReady extends Interaction(null, true) with Timed {
  */
 case class Click(
                   selector: String,
-                  override val delay: Duration = Const.delayMin,
-                  override val untilDocReady: Boolean = Const.untilDocReady
-                  ) extends Interaction(delay, untilDocReady) with Timed {
+                  override val delay: Duration = Const.interactionDelayMin,
+                  override val block: Boolean = Const.interactionBlock
+                  ) extends Interaction(delay, block) with Timed {
   override def exeWithoutPage(session: Session) {
     val element = this.getClickableElement(selector, session)
 
@@ -206,9 +199,9 @@ case class Click(
 case class ClickNext(
                       selector: String,
                       exclude: Seq[String],
-                      override val delay: Duration = Const.delayMin,
-                      override val untilDocReady: Boolean = Const.untilDocReady
-                      ) extends Interaction(delay, untilDocReady) with Timed {
+                      override val delay: Duration = Const.interactionDelayMin,
+                      override val block: Boolean = Const.interactionBlock
+                      ) extends Interaction(delay, block) with Timed {
 
   val clicked: mutable.HashSet[String] = mutable.HashSet(exclude: _*)
 
@@ -264,9 +257,9 @@ case class ClickNext(
  */
 case class Submit(
                    selector: String,
-                   override val delay: Duration = Const.delayMin,
-                   override val untilDocReady: Boolean = Const.untilDocReady
-                   ) extends Interaction(delay, untilDocReady) with Timed {
+                   override val delay: Duration = Const.interactionDelayMin,
+                   override val block: Boolean = Const.interactionBlock
+                   ) extends Interaction(delay, block) with Timed {
   override def exeWithoutPage(session: Session) {
 
     val element = this.getElement(selector, session)
@@ -283,9 +276,9 @@ case class Submit(
 case class TextInput(
                       selector: String,
                       text: Expression[Any],
-                      override val delay: Duration = Const.delayMin,
-                      override val untilDocReady: Boolean = Const.untilDocReady
-                      ) extends Interaction(delay, untilDocReady) with Timed {
+                      override val delay: Duration = Const.interactionDelayMin,
+                      override val block: Boolean = Const.interactionBlock
+                      ) extends Interaction(delay, block) with Timed {
   override def exeWithoutPage(session: Session) {
 
     val element = this.getElement(selector, session)
@@ -319,9 +312,9 @@ case class TextInput(
 case class DropDownSelect(
                            selector: String,
                            value: Expression[Any],
-                           override val delay: Duration = Const.delayMin,
-                           override val untilDocReady: Boolean = Const.untilDocReady
-                           ) extends Interaction(delay, untilDocReady) with Timed {
+                           override val delay: Duration = Const.interactionDelayMin,
+                           override val block: Boolean = Const.interactionBlock
+                           ) extends Interaction(delay, block) with Timed {
   override def exeWithoutPage(session: Session) {
 
     val element = this.getElement(selector, session)
@@ -370,9 +363,9 @@ case class SwitchToFrame(selector: String)extends Interaction(null, false) with 
 case class ExeScript(
                       script: Expression[Any],
                       selector: String = null,
-                      override val delay: Duration = Const.delayMin,
-                      override val untilDocReady: Boolean = Const.untilDocReady
-                      ) extends Interaction(delay, untilDocReady) with Timed {
+                      override val delay: Duration = Const.interactionDelayMin,
+                      override val block: Boolean = Const.interactionBlock
+                      ) extends Interaction(delay, block) with Timed {
   override def exeWithoutPage(session: Session) {
 
     val element = if (selector == null) None
@@ -415,9 +408,9 @@ case class DragSlider(
                        selector: String,
                        percentage: Double,
                        handleSelector: String = "*",
-                       override val delay: Duration = Const.delayMin,
-                       override val untilDocReady: Boolean = Const.untilDocReady
-                       ) extends Interaction(delay, untilDocReady) with Timed {
+                       override val delay: Duration = Const.interactionDelayMin,
+                       override val block: Boolean = Const.interactionBlock
+                       ) extends Interaction(delay, block) with Timed {
 
   override def exeWithoutPage(session: Session): Unit = {
 

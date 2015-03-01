@@ -26,9 +26,9 @@ object Const {
   val remoteResourceLocalRetry = 2
   val DFSLocalRetry = 2
 
-  val delayMax: Duration = 60.seconds
-  val delayMin: Duration = 2.seconds
-  val untilDocReady: Boolean = true
+  val interactionDelayMax: Duration = 60.seconds
+  val interactionDelayMin: Duration = 2.seconds
+  val interactionBlock: Boolean = true
 
   val hardTerminateOverhead: Duration = 20.seconds
 
