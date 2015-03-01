@@ -123,11 +123,11 @@ abstract class IntegrationSuite extends FunSuite with BeforeAndAfterAll {
     doTest(localCacheEnv)
   }
 
-  test("s3 cache, wide-lookup optimizer") {
-
-    s3CacheEnv.conf.defaultQueryOptimizer = WideLookup
-    doTest(s3CacheEnv)
-  }
+//  test("s3 cache, wide-lookup optimizer") {
+//
+//    s3CacheEnv.conf.defaultQueryOptimizer = WideLookup
+//    doTest(s3CacheEnv)
+//  }
 
 //  test("local cache, wide (no lookup) optimizer") {
 //
@@ -147,11 +147,11 @@ abstract class IntegrationSuite extends FunSuite with BeforeAndAfterAll {
     doTest(localCacheEnv)
   }
 
-  test("s3 cache, narrow optimizer") {
-
-    s3CacheEnv.conf.defaultQueryOptimizer = Narrow
-    doTest(s3CacheEnv)
-  }
+//  test("s3 cache, narrow optimizer") {
+//
+//    s3CacheEnv.conf.defaultQueryOptimizer = Narrow
+//    doTest(s3CacheEnv)
+//  }
 
   def doMain(spooky: SpookyContext): Unit
 

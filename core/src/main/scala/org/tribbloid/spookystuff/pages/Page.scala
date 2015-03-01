@@ -75,7 +75,7 @@ case class Page(
   }
 
   override def children(selector: String) = root.children(selector)
-  override def childrenExpanded(start: String, range: Range) = root.childrenExpanded(start, range)
+  override def childrenWithSiblings(start: String, range: Range) = root.childrenWithSiblings(start, range)
   override def markup: Option[String] = root.markup
   override def attr(attr: String, noEmpty: Boolean): Option[String] = root.attr(attr, noEmpty)
   override def text: Option[String] = root.text

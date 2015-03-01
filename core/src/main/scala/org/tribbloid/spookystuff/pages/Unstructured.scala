@@ -11,12 +11,12 @@ trait Unstructured extends Serializable {
 
   final def child(selector: String): Option[Unstructured] = children(selector).headOption
 
-  def childrenExpanded(
+  def childrenWithSiblings(
                         selector: String,
                         range: Range
                         ): Elements[Siblings[Unstructured]]
 
-  final def childExpanded(selector: String, range: Range): Option[Siblings[Unstructured]] = childrenExpanded(selector, range).headOption
+  final def childExpanded(selector: String, range: Range): Option[Siblings[Unstructured]] = childrenWithSiblings(selector, range).headOption
 
   def markup: Option[String]
 
@@ -59,7 +59,7 @@ class Elements[+T <: Unstructured](self: Seq[T]) extends Unstructured with Seq[T
 
   override def children(selector: String) = new Elements(self.flatMap(_.children(selector)))
 
-  override def childrenExpanded(start: String, range: Range) = new Elements(self.flatMap(_.childrenExpanded(start, range)))
+  override def childrenWithSiblings(start: String, range: Range) = new Elements(self.flatMap(_.childrenWithSiblings(start, range)))
 
   override def ownText: Option[String] = ownTexts.headOption
 

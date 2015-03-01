@@ -44,21 +44,28 @@ class HtmlElement private (
 
   override def children(selector: String) = new Elements(parsed.select(selector).map(new HtmlElement(_)))
 
-  override def childrenExpanded(start: String, range: Range) = {
+  override def childrenWithSiblings(start: String, range: Range) = {
 
-    val elements = parsed.select(start)
-    val coll = elements.map{
-      element =>
-        val allSiblings = element.parent().children()
-        val selfIndex = element.elementSiblingIndex()
-        val selected = allSiblings.slice(selfIndex + range.head, selfIndex + range.last + 1)
-//        val untilIndex = if (until == null) selected.indexWhere(_.select(start).nonEmpty, 1)
-//        else selected.indexWhere(e => e.select(start).nonEmpty || e.select(until).nonEmpty, 1)
-//        val deoverlapped = selected.slice(0, untilIndex)
+    val children = parsed.select(start)
+    val colls = children.map{
+      self =>
+        val selfIndex = self.elementSiblingIndex()
+        //        val siblings = self.siblingElements()
+        val siblings = self.parent().children()
+
+        val prevChildIndex = siblings.lastIndexWhere(ee => children.contains(ee), selfIndex - 1)
+        val head = if (prevChildIndex == -1) selfIndex + range.head
+        else Math.max(selfIndex + range.head, prevChildIndex + 1)
+
+        val nextChildIndex = siblings.indexWhere(ee => children.contains(ee), selfIndex + 1)
+        val tail = if (nextChildIndex == -1) selfIndex + range.last
+        else Math.min(selfIndex + range.last, nextChildIndex -1)
+
+        val selected = siblings.slice(head,  tail + 1)
 
         new Siblings(selected.map(new HtmlElement(_)))
     }
-    new Elements(coll)
+    new Elements(colls)
   }
 
   override def markup: Option[String] = Some(html)

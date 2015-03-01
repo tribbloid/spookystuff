@@ -54,7 +54,7 @@ class ChildrenExpr(selector: String, base: Expression[Unstructured]) extends Exp
   def expand(range: Range) = new Expression[Elements[Siblings[Unstructured]]] {
     override var name: String = s"${this.name}.expand(${range.head} -> ${range.last})"
 
-    override def apply(v1: PageRow) = base(v1).map(_.childrenExpanded(selector, range))
+    override def apply(v1: PageRow) = base(v1).map(_.childrenWithSiblings(selector, range))
   }
 }
 

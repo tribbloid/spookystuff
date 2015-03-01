@@ -115,12 +115,12 @@ class TestPage extends SpookyEnvSuite {
     assert(loadedContent === page1.content)
   }
 
-  test("rangeSelect") {
+  test("childrenWithSiblings") {
     val page = Trace(
       Wget("http://www.wikipedia.org/") :: Nil
     ).resolve(spooky)(0).asInstanceOf[Page]
 
-    val ranges = page.childrenExpanded("a.link-box em", -2 to 1)
+    val ranges = page.childrenWithSiblings("a.link-box em", -2 to 1)
     assert(ranges.size === 10)
     val first = ranges.head
     assert(first.size === 4)
@@ -128,5 +128,22 @@ class TestPage extends SpookyEnvSuite {
     assert(first(1).markup.get.startsWith("<br"))
     assert(first(2).markup.get.startsWith("<em"))
     assert(first(3).markup.get.startsWith("<br"))
+  }
+
+  test("childrenWithSiblings with overlapping elimiation") {
+    val page = Trace(
+      Wget("http://www.wikipedia.org/") :: Nil
+    ).resolve(spooky)(0).asInstanceOf[Page]
+
+    val ranges = page.childrenWithSiblings("div.central-featured-lang[lang^=e]", -2 to 2)
+    assert(ranges.size === 2)
+    val first = ranges.head
+    val second = ranges.last
+    assert(first.size === 3)
+    assert(first(1).attr("lang").get === "en")
+    assert(first(2).attr("lang").get === "ru")
+    assert(second.size === 4)
+    assert(second(0).attr("lang").get === "ru")
+    assert(second(1).attr("lang").get === "es")
   }
 }
