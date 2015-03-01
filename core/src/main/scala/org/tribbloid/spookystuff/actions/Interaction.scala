@@ -207,8 +207,8 @@ case class ClickNext(
       element => {
         if (!clicked.contains(element.getText)){
           driverWait(session).until(ExpectedConditions.elementToBeClickable(element))
-          element.click()
           clicked += element.getText
+          element.click()
           return
         }
       }
