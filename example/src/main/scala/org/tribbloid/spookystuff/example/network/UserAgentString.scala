@@ -2,13 +2,13 @@ package org.tribbloid.spookystuff.example.network
 
 import org.tribbloid.spookystuff.{dsl, SpookyContext}
 import org.tribbloid.spookystuff.actions._
-import org.tribbloid.spookystuff.example.ExampleCore
+import org.tribbloid.spookystuff.example.QueryCore
 import dsl._
 
 /**
  * Created by peng on 9/7/14.
  */
-object Whatismyip extends ExampleCore {
+object UserAgentString extends QueryCore {
 
   override def doMain(spooky: SpookyContext) = {
     import spooky._
@@ -17,9 +17,9 @@ object Whatismyip extends ExampleCore {
 
     noInput
       .fetch(
-        Visit("http://www.whatsmyip.org/")
+        Wget("http://www.useragentstring.com/pages/Browserlist/")
       )
-      .select($"h1".text ~ 'ip)
+      .select($"li a".text ~ 'agent_string)
       .toSchemaRDD()
   }
 }

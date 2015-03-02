@@ -2,13 +2,13 @@ package org.tribbloid.spookystuff.example.forum
 
 import org.tribbloid.spookystuff.SpookyContext
 import org.tribbloid.spookystuff.actions.Wget
-import org.tribbloid.spookystuff.example.ExampleCore
+import org.tribbloid.spookystuff.example.QueryCore
 import org.tribbloid.spookystuff.dsl._
 
 /**
  * Created by peng on 9/26/14.
  */
-object Yelp extends ExampleCore {
+object Yelp extends QueryCore {
 
   override def doMain(spooky: SpookyContext) = {
     import spooky._

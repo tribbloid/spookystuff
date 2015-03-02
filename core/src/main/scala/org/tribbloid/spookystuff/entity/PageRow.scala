@@ -267,20 +267,20 @@ object PageRow {
   type Squash = (Trace, Iterable[PageRow])
 
   def localExplore(
-                     stage: ExploreStage,
-                     spooky: SpookyContext
-                     )(
-                     expr: Expression[Any],
-                     depthKey: Symbol,
-                     depthFromExclusive: Int,
-                     depthToInclusive: Int,
-                     ordinalKey: Symbol,
-                     maxOrdinal: Int
-                     )(
-                     _traces: Set[Trace],
-                     flattenPagesPattern: Symbol,
-                     flattenPagesOrdinalKey: Symbol
-                     ): (Iterable[PageRow], ExploreStage) = {
+                    stage: ExploreStage,
+                    spooky: SpookyContext
+                    )(
+                    expr: Expression[Any],
+                    depthKey: Symbol,
+                    depthFromExclusive: Int,
+                    depthToInclusive: Int,
+                    ordinalKey: Symbol,
+                    maxOrdinal: Int
+                    )(
+                    _traces: Set[Trace],
+                    flattenPagesPattern: Symbol,
+                    flattenPagesOrdinalKey: Symbol
+                    ): (Iterable[PageRow], ExploreStage) = {
 
     val total: ArrayBuffer[PageRow] = ArrayBuffer()
 
@@ -298,7 +298,7 @@ object PageRow {
             .filterNot { //if trace or dryrun already exist returns None
             trace =>
               val traceExists = traces.contains(trace) //if trace ...
-            val dryrunExists = stage.dryruns.contains(trace.dryrun) //... or dryrun exist
+            val dryrunExists = stage.dryruns.contains(trace.dryrun.toSet) //... or dryrun exist
               traceExists || dryrunExists
           }
             .map(interpolatedTrace => interpolatedTrace -> row)
@@ -387,7 +387,7 @@ object PageRow {
 case class ExploreStage(
                          seeds: Iterable[PageRow], //pages that hasn't be been crawled before
                          traces: Set[Trace] = Set(), //already resolved traces
-                         dryruns: Set[Seq[Trace]] = Set() //already resolved pages, of which original traces used to resolve them is intractable
+                         dryruns: Set[Set[Trace]] = Set() //already resolved pages, of which original traces used to resolve them is intractable
                          ) {
 
   def hasMore = seeds.nonEmpty

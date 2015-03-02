@@ -3,14 +3,14 @@ package org.tribbloid.spookystuff.example.price
 import org.tribbloid.spookystuff.SpookyContext
 import org.tribbloid.spookystuff.actions._
 import org.tribbloid.spookystuff.dsl._
-import org.tribbloid.spookystuff.example.ExampleCore
+import org.tribbloid.spookystuff.example.QueryCore
 
 import scala.concurrent.duration._
 
 /**
  * Created by peng on 14/08/14.
  */
-object Macys extends ExampleCore {
+object Macys extends QueryCore {
 
   override def doMain(spooky: SpookyContext) = {
     import spooky._

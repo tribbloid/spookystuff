@@ -2,14 +2,14 @@ package org.tribbloid.spookystuff.example.social
 
 import org.tribbloid.spookystuff.{dsl, SpookyContext}
 import org.tribbloid.spookystuff.actions._
-import org.tribbloid.spookystuff.example.ExampleCore
+import org.tribbloid.spookystuff.example.QueryCore
 import dsl._
 
 /**
  * This job will find and printout urls of Sanjay Gupta, Arun Gupta and Hardik Gupta in your area
  */
 //TODO: LinkedIn is down
-object LinkedInSimple extends ExampleCore {
+object LinkedInSimple extends QueryCore {
 
   override def doMain(spooky: SpookyContext) = {
     import spooky._

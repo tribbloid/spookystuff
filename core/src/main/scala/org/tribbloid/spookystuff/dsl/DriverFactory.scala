@@ -33,7 +33,7 @@ sealed abstract class DriverFactory extends Serializable{
   def _newInstance(capabilities: Capabilities, spooky: SpookyContext): CleanWebDriver
 }
 
-case class NaiveDriverFactory(
+case class PhantomJSDriverFactory(
                           phantomJSPath: String = Const.phantomJSPath,
                           loadImages: Boolean = false,
                           resolution: (Int, Int) = (1920, 1080)

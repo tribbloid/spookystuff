@@ -2,7 +2,7 @@ package org.tribbloid.spookystuff.example.forum
 
 import org.tribbloid.spookystuff.{dsl, SpookyContext}
 import org.tribbloid.spookystuff.actions.{Loop, _}
-import org.tribbloid.spookystuff.example.ExampleCore
+import org.tribbloid.spookystuff.example.QueryCore
 import dsl._
 
 import scala.concurrent.duration._
@@ -10,7 +10,7 @@ import scala.concurrent.duration._
 /**
  * Created by peng on 8/28/14.
  */
-object Weibo extends ExampleCore {
+object Weibo extends QueryCore {
 
   override def doMain(spooky: SpookyContext) = {
     import spooky._

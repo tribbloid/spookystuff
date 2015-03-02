@@ -2,14 +2,14 @@ package org.tribbloid.spookystuff.example.forum
 
 import org.tribbloid.spookystuff.{dsl, SpookyContext}
 import org.tribbloid.spookystuff.actions._
-import org.tribbloid.spookystuff.example.ExampleCore
+import org.tribbloid.spookystuff.example.QueryCore
 import dsl._
 
 
 /**
  * Created by peng on 10/6/14.
  */
-object UrbanSpoon extends ExampleCore {
+object UrbanSpoon extends QueryCore {
 
   override def doMain(spooky: SpookyContext) = {
     import spooky._

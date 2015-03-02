@@ -6,13 +6,13 @@ import java.util.Date
 import org.tribbloid.spookystuff.SpookyContext
 import org.tribbloid.spookystuff.actions._
 import org.tribbloid.spookystuff.dsl._
-import org.tribbloid.spookystuff.example.ExampleCore
+import org.tribbloid.spookystuff.example.QueryCore
 import org.tribbloid.spookystuff.expressions.Expression
 
 /**
  * Created by peng on 8/28/14.
  */
-object WeiboNoSession extends ExampleCore {
+object WeiboNoSession extends QueryCore {
 
   override def doMain(spooky: SpookyContext) = {
     import spooky._

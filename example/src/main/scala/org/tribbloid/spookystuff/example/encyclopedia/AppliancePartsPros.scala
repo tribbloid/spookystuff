@@ -3,12 +3,12 @@ package org.tribbloid.spookystuff.example.encyclopedia
 import org.tribbloid.spookystuff.SpookyContext
 import org.tribbloid.spookystuff.actions._
 import org.tribbloid.spookystuff.dsl._
-import org.tribbloid.spookystuff.example.ExampleCore
+import org.tribbloid.spookystuff.example.QueryCore
 
 /**
  * Created by peng on 07/06/14.
  */
-object AppliancePartsPros extends ExampleCore {
+object AppliancePartsPros extends QueryCore {
 
   override def doMain(spooky: SpookyContext) = {
     import spooky._

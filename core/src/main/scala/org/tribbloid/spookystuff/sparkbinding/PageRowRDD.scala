@@ -592,7 +592,7 @@ case class PageRowRDD(
           tuple =>
             tuple._2.size == tuple._2.head.blockTotal //I hope this is sufficient condition
         }
-          .keys.toSeq
+          .keys.toSet
 
         ExploreStage(seeds, dryruns = Set(dryruns))
     }
