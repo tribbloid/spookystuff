@@ -18,6 +18,8 @@ final class ElementsExprView(self: Expression[Elements[_]]) {
 
   def texts: Expression[Iterable[String]] = self.andMap(_.texts, "texts")
 
+  def markups = self.andMap(_.markups, "text")
+
   def ownTexts: Expression[Iterable[String]] = self.andMap(_.ownTexts, "ownTexts")
 
   def attrs(attrKey: String, noEmpty: Boolean = true): Expression[Iterable[String]] = self.andMap(_.attrs(attrKey, noEmpty), s"attrs($attrKey,$noEmpty)")
@@ -26,7 +28,7 @@ final class ElementsExprView(self: Expression[Elements[_]]) {
 
   def srcs = attrs("abs:src", noEmpty = true)
 
-  //  def boilerPipe
+  def boilerPipes = self.andMap(_.boilerPipes, "text")
 }
 
 class PageSeqExprView(self: Expression[Iterable[Page]]) {
