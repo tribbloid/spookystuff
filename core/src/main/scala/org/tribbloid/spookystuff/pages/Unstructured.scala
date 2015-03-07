@@ -18,7 +18,7 @@ trait Unstructured extends Serializable {
 
   final def childExpanded(selector: String, range: Range): Option[Siblings[Unstructured]] = childrenWithSiblings(selector, range).headOption
 
-  def markup: Option[String]
+  def code: Option[String]
 
   def attr(attr: String, noEmpty: Boolean = true): Option[String]
 
@@ -37,7 +37,7 @@ class Elements[+T <: Unstructured](self: Seq[T]) extends Unstructured with Seq[T
 
   def uris: Seq[String] = self.map(_.uri)
 
-  def markups: Seq[String] = self.flatMap(_.markup)
+  def codes: Seq[String] = self.flatMap(_.code)
 
   def attrs(attr: String, noEmpty: Boolean = true): Seq[String] = self.flatMap(_.attr(attr, noEmpty))
 
@@ -55,7 +55,7 @@ class Elements[+T <: Unstructured](self: Seq[T]) extends Unstructured with Seq[T
 
   override def text: Option[String] = texts.headOption
 
-  override def markup: Option[String] = markups.headOption
+  override def code: Option[String] = codes.headOption
 
   override def children(selector: String) = new Elements(self.flatMap(_.children(selector)))
 
@@ -79,8 +79,8 @@ class Siblings[+T <: Unstructured](self: Seq[T]) extends Elements[T](self) {
   override def text = if (texts.isEmpty) None
   else Some(texts.filter(_.nonEmpty).mkString(" "))
 
-  override def markup = if (markups.isEmpty) None
-  else Some(markups.filter(_.nonEmpty).mkString(" "))
+  override def code = if (codes.isEmpty) None
+  else Some(codes.filter(_.nonEmpty).mkString(" "))
 
   override def ownText = if (ownTexts.isEmpty) None
   else Some(ownTexts.filter(_.nonEmpty).mkString(" "))

@@ -22,7 +22,7 @@ final class UnstructuredExprView(self: Expression[Unstructured]) {
 
   def text: Expression[String] = self.andFlatMap(_.text, "text")
 
-  def markup = self.andFlatMap(_.markup, "text")
+  def code = self.andFlatMap(_.code, "text")
 
   def ownText: Expression[String] = self.andFlatMap(_.ownText, "ownText")
 

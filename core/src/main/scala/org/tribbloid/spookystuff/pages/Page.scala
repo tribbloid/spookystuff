@@ -76,7 +76,7 @@ case class Page(
 
   override def children(selector: String) = root.children(selector)
   override def childrenWithSiblings(start: String, range: Range) = root.childrenWithSiblings(start, range)
-  override def markup: Option[String] = root.markup
+  override def code: Option[String] = root.code
   override def attr(attr: String, noEmpty: Boolean): Option[String] = root.attr(attr, noEmpty)
   override def text: Option[String] = root.text
   override def ownText: Option[String] = root.ownText

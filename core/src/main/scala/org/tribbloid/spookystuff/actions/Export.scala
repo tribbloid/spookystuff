@@ -195,7 +195,7 @@ case class Wget(
           )
 
           if (result.root.isInstanceOf[HtmlElement] && hasTitle)
-            assert(!result.markup.get.contains("<title></title>"))
+            assert(!result.code.get.contains("<title></title>"))
 
           Seq(result)
         }

@@ -39,7 +39,7 @@ class TestPages extends SpookyEnvSuite {
 
     assert(page2.size === 1)
     assert(page2.head.copy(content = null) === page.head.copy(content = null))
-    assert(page2.head.markup === page2.head.markup)
+    assert(page2.head.code === page2.head.code)
     assert(page2.head.name === "new")
 
     Thread.sleep(2000)
@@ -51,7 +51,7 @@ class TestPages extends SpookyEnvSuite {
 
     assert(page2.size === 1)
     assert(page2.head.copy(content = null) === page.head.copy(content = null))
-    assert(page2.head.markup === page2.head.markup)
+    assert(page2.head.code === page2.head.code)
   }
 
   test ("wget local cache") {
@@ -65,7 +65,7 @@ class TestPages extends SpookyEnvSuite {
 
     assert(page2.size === 1)
     assert(page2.head.copy(content = null) === wgetPage.head.copy(content = null))
-    assert(page2.head.markup === page2.head.markup)
+    assert(page2.head.code === page2.head.code)
     assert(page2.head.name === "newWget")
 
     Thread.sleep(2000)
@@ -77,7 +77,7 @@ class TestPages extends SpookyEnvSuite {
 
     assert(page2.size === 1)
     assert(page2.head.copy(content = null) === wgetPage.head.copy(content = null))
-    assert(page2.head.markup === page2.head.markup)
+    assert(page2.head.code === page2.head.code)
   }
 
 //  test ("s3 cache") {

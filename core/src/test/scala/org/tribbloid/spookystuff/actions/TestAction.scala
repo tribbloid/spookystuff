@@ -43,8 +43,8 @@ class TestAction extends SpookyEnvSuite {
     val page = Snapshot()(builder).toList(0).asInstanceOf[Page]
     //    val url = builder.getUrl
 
-    assert(page.markup.get.startsWith("<!DOCTYPE html>"))
-    assert(page.markup.get.contains("<title>Wikipedia"))
+    assert(page.code.get.startsWith("<!DOCTYPE html>"))
+    assert(page.code.get.contains("<title>Wikipedia"))
 
     assert(page.uri.startsWith("http://en.wikipedia.org/wiki/Main_Page"))
     //    assert(url === "http://www.google.com")
@@ -58,7 +58,7 @@ class TestAction extends SpookyEnvSuite {
     val page = Snapshot()(builder).toList(0).asInstanceOf[Page]
     //    val url = builder.getUrl
 
-    assert(page.markup.get.contains("<title>Deep learning - Wikipedia, the free encyclopedia</title>"))
+    assert(page.code.get.contains("<title>Deep learning - Wikipedia, the free encyclopedia</title>"))
     assert(page.uri === "http://en.wikipedia.org/wiki/Deep_learning")
     //    assert(url === "https://www.linkedin.com/ Input(input#first,Adam) Input(input#last,Muise) Submit(input[name=\"search\"])")
   }

@@ -21,7 +21,7 @@ class TestPage extends SpookyEnvSuite {
     }
 
     assert (emptyPage.children("div.dummy").attrs("href").isEmpty)
-    assert (emptyPage.children("div.dummy").markups.isEmpty)
+    assert (emptyPage.children("div.dummy").codes.isEmpty)
     assert (emptyPage.children("div.dummy").isEmpty)
   }
 
@@ -124,10 +124,10 @@ class TestPage extends SpookyEnvSuite {
     assert(ranges.size === 10)
     val first = ranges.head
     assert(first.size === 4)
-    assert(first(0).markup.get.startsWith("<strong"))
-    assert(first(1).markup.get.startsWith("<br"))
-    assert(first(2).markup.get.startsWith("<em"))
-    assert(first(3).markup.get.startsWith("<br"))
+    assert(first(0).code.get.startsWith("<strong"))
+    assert(first(1).code.get.startsWith("<br"))
+    assert(first(2).code.get.startsWith("<em"))
+    assert(first(3).code.get.startsWith("<br"))
   }
 
   test("childrenWithSiblings with overlapping elimiation") {

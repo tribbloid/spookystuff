@@ -13,7 +13,7 @@ class UnknownElement(
 
   override def childrenWithSiblings(start: String, range: Range) = new Elements(Seq())
 
-  override def markup: Option[String] = None
+  override def code: Option[String] = None
 
   override def ownText: Option[String] = None
 

@@ -18,7 +18,7 @@ class TestInteraction extends SpookyEnvSuite {
         Snapshot() :: Nil
     ).resolve(spooky)
 
-    val markup = results(0).asInstanceOf[Page].markup.get
+    val markup = results(0).asInstanceOf[Page].code.get
     assert(markup.contains("<title>Wikipedia</title>"))
   }
 }

@@ -16,7 +16,7 @@ final class ElementsExprView(self: Expression[Elements[_]]) {
 
   def texts: Expression[Iterable[String]] = self.andMap(_.texts, "texts")
 
-  def markups = self.andMap(_.markups, "text")
+  def codes = self.andMap(_.codes, "text")
 
   def ownTexts: Expression[Iterable[String]] = self.andMap(_.ownTexts, "ownTexts")
 

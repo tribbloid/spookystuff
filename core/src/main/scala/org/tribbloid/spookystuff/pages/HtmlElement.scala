@@ -68,7 +68,7 @@ class HtmlElement private (
     new Elements(colls)
   }
 
-  override def markup: Option[String] = Some(html)
+  override def code: Option[String] = Some(html)
 
   override def attr(attr: String, noEmpty: Boolean = true): Option[String] = {
     val result = parsed.attr(attr)
@@ -92,18 +92,10 @@ class HtmlElement private (
 
 object HtmlElementSerializer extends Serializer[HtmlElement] {
 
-  import scala.collection.JavaConversions._
-
   override def deserialize(implicit format: Formats): PartialFunction[(TypeInfo, JValue), HtmlElement] = ??? //TODO: how to support it?
 
   override def serialize(implicit format: Formats): PartialFunction[Any, JValue] = {
     case element: HtmlElement =>
-      val attrs = element.parsed.attributes()
-      var fields = attrs.map(attr => JField(attr.getKey, JString(attr.getValue))).toList
-      fields = fields :+ ("tag" -> JString(element.parsed.tag().getName))
-      if (element.uri != null) fields = fields :+ ("uri" -> JString(element.uri))
-      if (element.ownText != None) fields = fields :+ ("ownText" -> JString(element.ownText.get))
-
-      JObject(fields: _*)
+      JString(element.html)
   }
 }

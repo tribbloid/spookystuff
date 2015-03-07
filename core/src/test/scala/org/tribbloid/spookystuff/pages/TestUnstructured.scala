@@ -35,4 +35,12 @@ class TestUnstructured extends SpookyEnvSuite {
     assert(page.children("h1.central-textlogo img dummy").attrs("title").isEmpty)
     assert(page.children("h1.central-textlogo img").attrs("dummy").isEmpty)
   }
+
+  test("xml conversion") {
+    val element = page.child("h1.central-textlogo img").get
+
+    val xml = <td>{element}</td>
+
+    assert(xml.toString() === s"<td>${element.code.get}</td>")
+  }
 }
