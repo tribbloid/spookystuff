@@ -22,8 +22,8 @@ class SelectIT extends IntegrationSuite {
       .select(
         $.uri,
         $.timestamp,
-        $"div.central-featured-lang".head ~ 'element,
-        $"div.central-featured-lang" ~ 'elements,
+//        $"div.central-featured-lang".head ~ 'element,
+//        $"div.central-featured-lang" ~ 'elements,
         $"div.central-featured-lang em".text ~ 'title,
         $"div.central-featured-lang strong".texts ~ 'langs,
         $"a.link-box em".expand(-2 to 1).texts ~ 'expanded
