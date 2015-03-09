@@ -1,5 +1,7 @@
 package org.tribbloid.spookystuff.expressions
 
+import org.tribbloid.spookystuff.entity.PageRow
+
 import scala.reflect.ClassTag
 
 /**
@@ -28,6 +30,8 @@ final class ExprView[+T: ClassTag](self: Expression[T]) {
 
   def into(name: Symbol): Expression[Traversable[T]] = new PlusExpr[T](name.name, self)
   def ~+(name: Symbol) = into(name)
+
+  def notNull: NamedFunction1[PageRow, Boolean] = self.andThen(NamedFunction1(_.nonEmpty, "notNull"))
 
   //  def defaultToHrefExpr = (self match {
   //    case expr: Expr[Unstructured] => expr.href

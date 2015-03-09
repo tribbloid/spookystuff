@@ -1,5 +1,7 @@
 package org.tribbloid.spookystuff.expressions
 
+import org.tribbloid.spookystuff.entity.PageRow
+
 import scala.reflect.ClassTag
 
 /**
@@ -24,6 +26,10 @@ final class IterableExprView[T: ClassTag](self: Expression[Iterable[T]]) {
   s"get($i)")
 
   def size: Expression[Int] = self.andMap(_.size, "size")
+
+  def isEmpty: NamedFunction1[PageRow, Boolean] = self.andThen(NamedFunction1(!_.exists(_.nonEmpty), "isEmpty"))
+
+  def nonEmpty: NamedFunction1[PageRow, Boolean] = self.andThen(NamedFunction1(_.exists(_.nonEmpty), "nonEmpty"))
 
   def mkString(sep: String): Expression[String] = self.andMap(_.mkString(sep), s"mkString($sep)")
 
