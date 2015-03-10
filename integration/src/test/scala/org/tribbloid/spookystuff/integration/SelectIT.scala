@@ -2,7 +2,7 @@ package org.tribbloid.spookystuff.integration
 
 import java.text.SimpleDateFormat
 
-import org.tribbloid.spookystuff.SpookyContext
+import org.tribbloid.spookystuff.{QueryException, SpookyContext}
 import org.tribbloid.spookystuff.actions._
 import org.tribbloid.spookystuff.dsl._
 
@@ -59,7 +59,7 @@ class SelectIT extends IntegrationSuite {
     assert(expanded.size === 10)
     assert(expanded.head === "English The Free Encyclopedia")
 
-    intercept[AssertionError] {
+    intercept[QueryException] {
       pageRowRDD.select(
         $"div.central-featured-lang strong".text ~ 'title
       )
