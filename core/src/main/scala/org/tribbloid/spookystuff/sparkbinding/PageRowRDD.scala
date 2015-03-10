@@ -2,11 +2,11 @@ package org.tribbloid.spookystuff.sparkbinding
 
 import java.util.UUID
 
-import org.apache.spark.{SparkEnv, HashPartitioner}
 import org.apache.spark.rdd.{RDD, UnionRDD}
 import org.apache.spark.sql._
 import org.apache.spark.sql.catalyst.analysis.UnresolvedAttribute
 import org.apache.spark.storage.StorageLevel
+import org.apache.spark.{HashPartitioner, SparkEnv}
 import org.slf4j.LoggerFactory
 import org.tribbloid.spookystuff.actions._
 import org.tribbloid.spookystuff.dsl.{Inner, JoinType, _}
@@ -15,7 +15,7 @@ import org.tribbloid.spookystuff.entity._
 import org.tribbloid.spookystuff.expressions._
 import org.tribbloid.spookystuff.pages.{PageLike, Unstructured}
 import org.tribbloid.spookystuff.utils._
-import org.tribbloid.spookystuff.{Const, SpookyContext}
+import org.tribbloid.spookystuff.{Const, QueryException, SpookyContext}
 
 import scala.collection.immutable.ListSet
 import scala.collection.mutable.ArrayBuffer
@@ -184,7 +184,8 @@ case class PageRowRDD(
     val newKeys: Seq[Key] = exprs.map {
       expr =>
         val key = Key(expr.name)
-        assert(!this.keys.contains(key) || expr.isInstanceOf[PlusExpr[_]]) //can't insert the same key twice
+        if(this.keys.contains(key) && !expr.isInstanceOf[PlusExpr[_]]) //can't insert the same key twice
+          throw new QueryException(s"Key ${key.name} already exist")
         key
     }
 
@@ -194,6 +195,22 @@ case class PageRowRDD(
     )
     result
   }
+
+  private def selectReplace(exprs: Expression[Any]*): PageRowRDD = {
+
+    val newKeys: Seq[Key] = exprs.map {
+      expr =>
+        val key = Key(expr.name)
+        key
+    }
+
+    val result = this.copy(
+      self = this.flatMap(_.select(exprs: _*)),
+      keys = this.keys ++ newKeys
+    )
+    result
+  }
+
 
   def overwrite(exprs: Expression[Any]*): PageRowRDD = {
 

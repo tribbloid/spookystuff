@@ -110,10 +110,9 @@ trait Action extends ActionLike {
 
     this match { //temporarily disabled as we assume that DFS is the culprit for causing deadlock
       case tt: Timed =>
-        val timeout = tt.hardTerminateTimeout(session)
-        LoggerFactory.getLogger(this.getClass).info(s"+> ${this.toString} in $timeout")
+        LoggerFactory.getLogger(this.getClass).info(s"+> ${this.toString} in ${tt.timeout(session)}")
 
-        Utils.withDeadline(timeout) {
+        Utils.withDeadline(tt.hardTerminateTimeout(session)) {
           doExe(session)
         }
       case _ =>
