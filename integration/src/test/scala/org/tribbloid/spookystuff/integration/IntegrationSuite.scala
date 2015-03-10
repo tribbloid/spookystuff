@@ -46,7 +46,7 @@ abstract class IntegrationSuite extends FunSuite with BeforeAndAfterAll {
   }
 
   val roots = Seq(
-    "file://"+System.getProperty("user.home")+"/spooky-integration/",
+    "file://"+System.getProperty("user.home")+"/spooky-integration/"
 //    "s3n://spooky-integration/"
   )
 
