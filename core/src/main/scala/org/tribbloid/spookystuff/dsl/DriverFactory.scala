@@ -15,9 +15,12 @@ limitations under the License.
  */
 package org.tribbloid.spookystuff.dsl
 
-import org.openqa.selenium.Capabilities
+import com.gargoylesoftware.htmlunit.BrowserVersion
+import org.openqa.selenium.htmlunit.HtmlUnitDriver
 import org.openqa.selenium.phantomjs.{PhantomJSDriver, PhantomJSDriverService}
-import org.openqa.selenium.remote.{CapabilityType, DesiredCapabilities}
+import org.openqa.selenium.remote.CapabilityType._
+import org.openqa.selenium.remote.{BrowserType, CapabilityType, DesiredCapabilities}
+import org.openqa.selenium.{Capabilities, Platform, Proxy}
 import org.tribbloid.spookystuff.session.{CleanWebDriver, CleanWebDriverHelper}
 import org.tribbloid.spookystuff.{Const, SpookyContext}
 
@@ -34,19 +37,18 @@ sealed abstract class DriverFactory extends Serializable{
 }
 
 case class PhantomJSDriverFactory(
-                          phantomJSPath: String = Const.phantomJSPath,
-                          loadImages: Boolean = false,
-                          resolution: (Int, Int) = (1920, 1080)
-                          )
+                                   phantomJSPath: String = Const.phantomJSPath,
+                                   loadImages: Boolean = false
+                                   )
   extends DriverFactory {
 
-  //  val phantomJSPath: String
-
-  val baseCaps = new DesiredCapabilities
+  val baseCaps = new DesiredCapabilities(BrowserType.PHANTOMJS, "", Platform.ANY)
   baseCaps.setJavascriptEnabled(true); //< not really needed: JS enabled by default
   baseCaps.setCapability(CapabilityType.SUPPORTS_FINDING_BY_CSS, true)
   //  baseCaps.setCapability(CapabilityType.HAS_NATIVE_EVENTS, false)
-  baseCaps.setCapability("takesScreenshot", true)
+  baseCaps.setCapability(TAKES_SCREENSHOT, true)
+  baseCaps.setCapability(ACCEPT_SSL_CERTS, true)
+  baseCaps.setCapability(SUPPORTS_ALERTS, true)
   baseCaps.setCapability(PhantomJSDriverService.PHANTOMJS_EXECUTABLE_PATH_PROPERTY, phantomJSPath)
   baseCaps.setCapability(PhantomJSDriverService.PHANTOMJS_PAGE_SETTINGS_PREFIX + "loadImages", loadImages)
 
@@ -77,6 +79,38 @@ case class PhantomJSDriverFactory(
   }
 }
 
+case class HtmlUnitDriverFactory(
+                                  browser: BrowserVersion = BrowserVersion.FIREFOX_24
+                                  ) extends DriverFactory {
+
+  val baseCaps = new DesiredCapabilities(BrowserType.HTMLUNIT, "", Platform.ANY)
+
+  def newCap(capabilities: Capabilities, spooky: SpookyContext): DesiredCapabilities = {
+    val result = new DesiredCapabilities(baseCaps)
+
+    val userAgent = spooky.conf.userAgent
+    if (userAgent != null) result.setCapability(PhantomJSDriverService.PHANTOMJS_PAGE_SETTINGS_PREFIX + "userAgent", userAgent)
+
+    val proxy: ProxySetting = spooky.conf.proxy()
+
+    if (proxy != null) {
+      result.setCapability(PROXY, proxy.toSeleniumProxy)
+    }
+
+    result.merge(capabilities)
+  }
+
+  override def _newInstance(capabilities: Capabilities, spooky: SpookyContext): CleanWebDriver = {
+
+    val cap = newCap(capabilities, spooky)
+    val driver = new HtmlUnitDriver(browser) with CleanWebDriverHelper
+    driver.setJavascriptEnabled(true)
+    driver.setProxySettings(Proxy.extractFrom(cap))
+
+    driver
+  }
+}
+
 ////just for debugging
 ////a bug in this driver has caused it unusable in Firefox 32
 //object FirefoxDriverFactory extends DriverFactory {
@@ -96,24 +130,4 @@ case class PhantomJSDriverFactory(
 //      Utils.withDeadline(spooky.distributedResourceTimeout) {new FirefoxDriver(newCap)}
 //    }
 //  }
-//}
-
-//object HtmlUnitDriverFactory extends DriverFactory {
-//
-//  val baseCaps = new DesiredCapabilities
-//  baseCaps.setJavascriptEnabled(true);                //< not really needed: JS enabled by default
-//  baseCaps.setCapability(CapabilityType.SUPPORTS_FINDING_BY_CSS,true)
-//
-//  //  val FirefoxRootPath = "/usr/lib/phantomjs/"
-//  //  baseCaps.setCapability("webdriver.firefox.bin", "firefox");
-//  //  baseCaps.setCapability("webdriver.firefox.profile", "WebDriver");
-//
-//  override def newInstance(capabilities: Capabilities, spooky: SpookyContext): WebDriver = {
-//    val newCap = baseCaps.merge(capabilities)
-//
-//    Utils.retry(Const.DFSInPartitionRetry) {
-//      Utils.withDeadline(spooky.distributedResourceTimeout) {new HtmlUnitDriver(newCap)}
-//    }
-//  }
-//
 //}

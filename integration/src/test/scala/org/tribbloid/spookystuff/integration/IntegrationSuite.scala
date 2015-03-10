@@ -6,7 +6,7 @@ import org.apache.spark.sql.SQLContext
 import org.apache.spark.{SparkConf, SparkContext}
 import org.scalatest.{BeforeAndAfterAll, FunSuite}
 import org.tribbloid.spookystuff.SpookyConf.Dirs
-import org.tribbloid.spookystuff.dsl.{Narrow, QueryOptimizer, WideLookup}
+import org.tribbloid.spookystuff.dsl._
 import org.tribbloid.spookystuff.utils.Utils
 import org.tribbloid.spookystuff.{SpookyConf, SpookyContext}
 
@@ -45,30 +45,42 @@ abstract class IntegrationSuite extends FunSuite with BeforeAndAfterAll {
     super.afterAll()
   }
 
-  val localDirs = new Dirs(root = "file://"+System.getProperty("user.home")+"/spooky-integration/")
-  val s3Dirs = new Dirs(root = "s3n://spooky-integration/")
-
-  lazy val localCacheEnv = new SpookyContext(
-    sql,
-    new SpookyConf(
-      localDirs,
-      sharedMetrics = true,
-      autoSave = false,
-      checkpointInterval = 2,
-      batchSize = 2
-    )
+  val roots = Seq(
+    "file://"+System.getProperty("user.home")+"/spooky-integration/",
+    "s3n://spooky-integration/"
   )
 
-  lazy val s3CacheEnv = new SpookyContext(
-    sql,
-    new SpookyConf(
-      s3Dirs,
-      sharedMetrics = true,
-      autoSave = false,
-      checkpointInterval = 2,
-      batchSize = 2
-    )
+  val drivers = Seq(
+//    PhantomJSDriverFactory(),
+    HtmlUnitDriverFactory()
   )
+
+  val optimizers = Seq(
+    Narrow,
+    WideLookup
+  )
+
+  for (root <- roots) {
+    for (driver <- drivers) {
+      for (optimizer <- optimizers) {
+        lazy val env = new SpookyContext(
+          sql,
+          new SpookyConf(
+            new Dirs(root = root),
+            driverFactory = driver,
+            defaultQueryOptimizer = optimizer,
+            sharedMetrics = true,
+            checkpointInterval = 2,
+            batchSize = 2
+          )
+        )
+
+        test(s"$root, $driver, $optimizer") {
+          doTest(env)
+        }
+      }
+    }
+  }
 
   private def assertBeforeCache(spooky: SpookyContext): Unit = {
     val metrics = spooky.metrics
@@ -116,42 +128,6 @@ abstract class IntegrationSuite extends FunSuite with BeforeAndAfterAll {
       assertAfterCache(spooky)
     }
   }
-
-  test("local cache, wide-lookup optimizer") {
-
-    localCacheEnv.conf.defaultQueryOptimizer = WideLookup
-    doTest(localCacheEnv)
-  }
-
-//  test("s3 cache, wide-lookup optimizer") {
-//
-//    s3CacheEnv.conf.defaultQueryOptimizer = WideLookup
-//    doTest(s3CacheEnv)
-//  }
-
-//  test("local cache, wide (no lookup) optimizer") {
-//
-//    localCacheEnv.conf.defaultQueryOptimizer = Wide
-//    doTest(localCacheEnv)
-//  }
-//
-//  test("s3 cache, wide (no lookup) optimizer") {
-//
-//    localCacheEnv.conf.defaultQueryOptimizer = Wide
-//    doTest(s3CacheEnv)
-//  }
-
-  test("local cache, narrow optimizer") {
-
-    localCacheEnv.conf.defaultQueryOptimizer = Narrow
-    doTest(localCacheEnv)
-  }
-
-//  test("s3 cache, narrow optimizer") {
-//
-//    s3CacheEnv.conf.defaultQueryOptimizer = Narrow
-//    doTest(s3CacheEnv)
-//  }
 
   def doMain(spooky: SpookyContext): Unit
 

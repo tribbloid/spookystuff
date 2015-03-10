@@ -1,5 +1,6 @@
 package org.tribbloid.spookystuff.actions
 
+import org.openqa.selenium.TakesScreenshot
 import org.openqa.selenium.support.ui.{ExpectedConditions, WebDriverWait}
 import org.slf4j.LoggerFactory
 import org.tribbloid.spookystuff.pages.{Page, PageLike}
@@ -70,7 +71,7 @@ trait Action extends ActionLike {
                 }
             }
           }
-          if (errorDumpScreenshot) {
+          if (errorDumpScreenshot && session.driver.isInstanceOf[TakesScreenshot]) {
             val rawPage = DefaultScreenshot.exe(session).toList(0).asInstanceOf[Page]
             val uid = rawPage.uid.copy(backtrace = Trace(rawPage.uid.backtrace.self :+ this))
             val page = rawPage.copy(uid = uid)

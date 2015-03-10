@@ -8,7 +8,7 @@ import dsl._
 /**
  * Created by peng on 11/6/14.
  */
-class TestExport extends SpookyEnvSuite {
+class TestWget extends SpookyEnvSuite {
 
   lazy val noProxyIP = {
       spooky.conf.proxy = NoProxyFactory

@@ -10,8 +10,8 @@ import org.tribbloid.spookystuff.pages.Page
 //TODO: this need some serious reorganization
 class TestTrace extends SpookyEnvSuite {
 
-  import org.tribbloid.spookystuff.actions._
   import org.tribbloid.spookystuff.dsl._
+
   import scala.concurrent.duration._
 
   test("resolve") {
@@ -31,13 +31,13 @@ class TestTrace extends SpookyEnvSuite {
 
     val id1 = Trace(Visit("http://www.wikipedia.org")::WaitFor("input#searchInput")::Snapshot().as('C)::Nil)
     assert(res1.uid.backtrace === id1)
-    assert(res1.code.get.contains("<title>Wikipedia</title>"))
+    assert(res1.code.get.split('\n').map(_.trim).mkString.contains("<title>Wikipedia</title>"))
     assert(res1.uri === "http://www.wikipedia.org/")
     assert(res1.name === "A")
 
     val id2 = Trace(Visit("http://www.wikipedia.org")::WaitFor("input#searchInput")::TextInput("input#searchInput","Deep learning")::Submit("input.formBtn")::Snapshot().as('D)::Nil)
     assert(res2.uid.backtrace === id2)
-    assert(res2.code.get.contains("<title>Deep learning - Wikipedia, the free encyclopedia</title>"))
+    assert(res2.code.get.split('\n').map(_.trim).mkString.contains("<title>Deep learning - Wikipedia, the free encyclopedia</title>"))
     assert(res2.uri === "http://en.wikipedia.org/wiki/Deep_learning")
     assert(res2.name === "B")
   }

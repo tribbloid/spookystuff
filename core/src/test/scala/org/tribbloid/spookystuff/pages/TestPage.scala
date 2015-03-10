@@ -25,7 +25,7 @@ class TestPage extends SpookyEnvSuite {
     assert (emptyPage.children("div.dummy").isEmpty)
   }
 
-  test("save and load") {
+  test("visit, save and load") {
 
     val results = Trace(
       Visit("http://en.wikipedia.org") ::

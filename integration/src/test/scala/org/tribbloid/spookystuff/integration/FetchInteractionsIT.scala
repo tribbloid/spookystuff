@@ -1,5 +1,8 @@
 package org.tribbloid.spookystuff.integration
 
+import java.net.URLEncoder
+
+import org.apache.commons.lang3.StringEscapeUtils
 import org.tribbloid.spookystuff.SpookyContext
 import org.tribbloid.spookystuff.actions._
 import org.tribbloid.spookystuff.dsl._
@@ -27,7 +30,8 @@ class FetchInteractionsIT extends IntegrationSuite{
     val finishTime = System.currentTimeMillis()
     assert(pageRows.size === 1)
     assert(pageRows(0).pages.size === 1)
-    assert(pageRows(0).pages(0).uri === "http://zh.wikipedia.org/wiki/深度学习")
+    val uri = pageRows(0).pages(0).uri
+    assert((uri === "http://zh.wikipedia.org/wiki/深度学习") || uri === "http://zh.wikipedia.org/wiki/"+URLEncoder.encode("深度学习", "UTF-8"))
     assert(pageRows(0).pages(0).name === "Snapshot()")
     val pageTime = pageRows(0).pages.head.timestamp.getTime
     assert(pageTime < finishTime)

@@ -1,5 +1,7 @@
 package org.tribbloid.spookystuff.dsl
 
+import org.openqa.selenium.Proxy
+
 import scala.util.Random
 
 /**
@@ -11,6 +13,15 @@ case class ProxySetting (
                        protocol: String
                        ) {
 
+  lazy val toSeleniumProxy: Proxy = {
+    val seleniumProxy: Proxy = new Proxy
+    seleniumProxy.setProxyType(Proxy.ProxyType.MANUAL)
+    val proxyStr: String = s"$addr:$port"
+    seleniumProxy.setHttpProxy(proxyStr)
+    seleniumProxy.setSslProxy(proxyStr)
+    seleniumProxy.setSocksProxy(proxyStr)
+    seleniumProxy
+  }
 }
 
 abstract class ProxyFactory extends (() => ProxySetting) with Serializable

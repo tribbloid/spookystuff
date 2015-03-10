@@ -3,7 +3,7 @@ package org.tribbloid.spookystuff
 import org.apache.spark.sql.SQLContext
 import org.apache.spark.{SparkConf, SparkContext}
 import org.scalatest.{BeforeAndAfter, BeforeAndAfterAll, FunSuite}
-import org.tribbloid.spookystuff.dsl.PhantomJSDriverFactory
+import org.tribbloid.spookystuff.dsl.{DriverFactory, PhantomJSDriverFactory}
 
 /**
  * Created by peng on 11/30/14.
@@ -14,6 +14,8 @@ abstract class SpookyEnvSuite extends FunSuite with BeforeAndAfter with BeforeAn
   var sql: SQLContext = _
   var spooky: SpookyContext = _
 
+  val driverFactory: DriverFactory = PhantomJSDriverFactory(loadImages = true)
+
   override def beforeAll() {
     val conf: SparkConf = new SparkConf().setAppName("integration")
       .setMaster("local[*]")
@@ -23,7 +25,7 @@ abstract class SpookyEnvSuite extends FunSuite with BeforeAndAfter with BeforeAn
     val sql: SQLContext = new SQLContext(sc)
 
     val sConf = new SpookyConf(
-      driverFactory = PhantomJSDriverFactory(loadImages = true),
+      driverFactory = driverFactory,
       autoSave = false,
       cacheWrite = false,
       cacheRead = false

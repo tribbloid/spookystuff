@@ -1,8 +1,8 @@
 package org.tribbloid.spookystuff.integration
 
+import org.tribbloid.spookystuff.SpookyContext
 import org.tribbloid.spookystuff.actions.Visit
 import org.tribbloid.spookystuff.dsl._
-import org.tribbloid.spookystuff.{SpookyContext, dsl}
 
 /**
  * Created by peng on 12/5/14.
