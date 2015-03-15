@@ -6,7 +6,6 @@ import org.tribbloid.spookystuff.actions._
 import org.tribbloid.spookystuff.dsl._
 import org.tribbloid.spookystuff.pages.PageUtils
 
-import scala.collection.immutable.ListSet
 import scala.concurrent.duration
 
 /**
@@ -38,7 +37,7 @@ class FetchWgetAndSaveIT extends IntegrationSuite {
 
     val content = savedPageRows(0).pages.head.content
 
-    assert(savedPageRows(0).get("saved_path").get === ListSet(s"file:${System.getProperty("user.home")}/spooky-integration/save/Wikipedia.png"))
+    assert(savedPageRows(0).get("saved_path").get.asInstanceOf[Iterable[Any]].head === s"file:${System.getProperty("user.home")}/spooky-integration/save/Wikipedia.png")
 
     val loadedContent = PageUtils.load(new Path(s"file://${System.getProperty("user.home")}/spooky-integration/save/Wikipedia.png"))(spooky)
 
@@ -55,7 +54,7 @@ class FetchWgetAndSaveIT extends IntegrationSuite {
     assert(appendedRows.size === 2)
     assert(appendedRows(0).pages.apply(0).copy(timestamp = null, content = null, saved = null) === appendedRows(1).pages.apply(0).copy(timestamp = null, content = null, saved = null))
 
-    import duration._
+    import scala.concurrent.duration._
     if (spooky.conf.defaultQueryOptimizer != Narrow && spooky.conf.pageExpireAfter >= 10.minutes) {
       assert(appendedRows(0).pages(0).timestamp === appendedRows(1).pages(0).timestamp)
       assert(appendedRows(0).pages(0).content === appendedRows(1).pages.apply(0).content)

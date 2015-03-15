@@ -40,7 +40,8 @@ class FetchVisitIT extends IntegrationSuite {
     val appendedRows = RDDAppended.collect()
 
     assert(appendedRows.size === 2)
-    assert(appendedRows(0).pages(0).copy(timestamp = null, content = null) === appendedRows(1).pages(0).copy(timestamp = null, content = null))
+    assert(appendedRows(0).pages(0).copy(timestamp = null, content = null, saved = null)
+      === appendedRows(1).pages(0).copy(timestamp = null, content = null, saved = null))
 
     import duration._
     if (spooky.conf.defaultQueryOptimizer != Narrow && spooky.conf.pageExpireAfter >= 10.minutes) {
