@@ -94,7 +94,11 @@ final case class Trace(
     if (!pagesFromCache.contains(null)){
       val results = pagesFromCache.flatten
       spooky.metrics.pagesFetchedFromCache += results.count(_.isInstanceOf[Page])
-      LoggerFactory.getLogger(this.getClass).info("cached page(s) found, won't go online")
+      this.self.foreach{
+        action =>
+          LoggerFactory.getLogger(this.getClass).info(s"(cached)+> ${action.toString}")
+      }
+
       results
     }
     else {

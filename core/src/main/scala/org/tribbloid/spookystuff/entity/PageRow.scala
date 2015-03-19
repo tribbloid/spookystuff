@@ -123,7 +123,7 @@ case class PageRow(
 
     val result = regex.replaceAllIn(str,m => {
       val original = m.group(0)
-      val key = original.substring(2, original.size-1)
+      val key = original.substring(2, original.length-1)
       this.get(key) match {
         case Some(v) => v.toString
         case None => return None

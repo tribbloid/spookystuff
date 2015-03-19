@@ -44,16 +44,26 @@ class TestInteraction extends SpookyEnvSuite {
         Snapshot() :: Nil
     ).resolve(spooky)
 
-    val code = results(0).asInstanceOf[Page].code.get.split('\n').map(_.trim).mkString
+    val code = results.head.asInstanceOf[Page].code.get.split('\n').map(_.trim).mkString
     assert(code.contains("<title>Wikipedia</title>"))
   }
 
   test("click should not double click") {
-    val results = Trace(
-      (Visit("https://ca.vwr.com/store/search?&pimId=582903")
-        +> Paginate("a[title=Next]", delay = 2.second)).head.self
-    ).resolve(spooky)
+    spooky.conf.remoteResourceTimeout = 180.seconds
 
-    assert(results.size == 5)
+    try {
+      val results = Trace(
+        (Visit("https://ca.vwr.com/store/search?&pimId=582903")
+          +> Paginate("a[title=Next]", delay = 2.second)).head.self
+      ).resolve(spooky)
+
+      val numPages = results.head.asInstanceOf[Page].children("div.right a").size
+
+      assert(results.size == numPages)
+    }
+
+    finally {
+      spooky.conf.remoteResourceTimeout = 60.seconds
+    }
   }
 }

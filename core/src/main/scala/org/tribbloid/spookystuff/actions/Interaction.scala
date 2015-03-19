@@ -23,7 +23,7 @@ import scala.concurrent.duration.Duration
  */
 abstract class Interaction(
                             val delay: Duration,
-                            val block: Boolean
+                            val blocking: Boolean
                             ) extends Action {
 
   final override def outputNames = Set()
@@ -37,7 +37,7 @@ abstract class Interaction(
     if (delay != null && delay.toMillis > 0) {
       Thread.sleep(delay.toMillis)
     }
-    if (block) {
+    if (blocking) {
       driverWait(session).until(DocumentReadyCondition)
     }
 
@@ -70,8 +70,8 @@ case class Visit(
                   uri: Expression[Any],
                   hasTitle: Boolean = true,
                   override val delay: Duration = Const.interactionDelayMin,
-                  override val block: Boolean = Const.interactionBlock
-                  ) extends Interaction(delay, block) with Timed {
+                  override val blocking: Boolean = Const.interactionBlock
+                  ) extends Interaction(delay, blocking) with Timed {
 
   override def exeWithoutPage(session: Session) {
     session.driver.get(uri.asInstanceOf[Literal[String]].value)
@@ -183,8 +183,8 @@ case object WaitForDocumentReady extends Interaction(null, true) with Timed {
 case class Click(
                   selector: String,
                   override val delay: Duration = Const.interactionDelayMin,
-                  override val block: Boolean = Const.interactionBlock
-                  ) extends Interaction(delay, block) with Timed {
+                  override val blocking: Boolean = Const.interactionBlock
+                  ) extends Interaction(delay, blocking) with Timed {
   override def exeWithoutPage(session: Session) {
     val element = this.getClickableElement(selector, session)
 
@@ -200,8 +200,8 @@ case class ClickNext(
                       selector: String,
                       exclude: Seq[String],
                       override val delay: Duration = Const.interactionDelayMin,
-                      override val block: Boolean = Const.interactionBlock
-                      ) extends Interaction(delay, block) with Timed {
+                      override val blocking: Boolean = Const.interactionBlock
+                      ) extends Interaction(delay, blocking) with Timed {
 
   val clicked: mutable.HashSet[String] = mutable.HashSet(exclude: _*)
 
@@ -258,8 +258,8 @@ case class ClickNext(
 case class Submit(
                    selector: String,
                    override val delay: Duration = Const.interactionDelayMin,
-                   override val block: Boolean = Const.interactionBlock
-                   ) extends Interaction(delay, block) with Timed {
+                   override val blocking: Boolean = Const.interactionBlock
+                   ) extends Interaction(delay, blocking) with Timed {
   override def exeWithoutPage(session: Session) {
 
     val element = this.getElement(selector, session)
@@ -277,8 +277,8 @@ case class TextInput(
                       selector: String,
                       text: Expression[Any],
                       override val delay: Duration = Const.interactionDelayMin,
-                      override val block: Boolean = Const.interactionBlock
-                      ) extends Interaction(delay, block) with Timed {
+                      override val blocking: Boolean = Const.interactionBlock
+                      ) extends Interaction(delay, blocking) with Timed {
   override def exeWithoutPage(session: Session) {
 
     val element = this.getElement(selector, session)
@@ -313,8 +313,8 @@ case class DropDownSelect(
                            selector: String,
                            value: Expression[Any],
                            override val delay: Duration = Const.interactionDelayMin,
-                           override val block: Boolean = Const.interactionBlock
-                           ) extends Interaction(delay, block) with Timed {
+                           override val blocking: Boolean = Const.interactionBlock
+                           ) extends Interaction(delay, blocking) with Timed {
   override def exeWithoutPage(session: Session) {
 
     val element = this.getElement(selector, session)
@@ -364,8 +364,8 @@ case class ExeScript(
                       script: Expression[Any],
                       selector: String = null,
                       override val delay: Duration = Const.interactionDelayMin,
-                      override val block: Boolean = Const.interactionBlock
-                      ) extends Interaction(delay, block) with Timed {
+                      override val blocking: Boolean = Const.interactionBlock
+                      ) extends Interaction(delay, blocking) with Timed {
   override def exeWithoutPage(session: Session) {
 
     val element = if (selector == null) None
@@ -409,8 +409,8 @@ case class DragSlider(
                        percentage: Double,
                        handleSelector: String = "*",
                        override val delay: Duration = Const.interactionDelayMin,
-                       override val block: Boolean = Const.interactionBlock
-                       ) extends Interaction(delay, block) with Timed {
+                       override val blocking: Boolean = Const.interactionBlock
+                       ) extends Interaction(delay, blocking) with Timed {
 
   override def exeWithoutPage(session: Session): Unit = {
 

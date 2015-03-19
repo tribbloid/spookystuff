@@ -79,24 +79,24 @@ case class PageRowRDD(
     }
   }
 
-  def toMapRDD(sorted: Boolean = true): RDD[Map[String, Any]] =
-    if (!sorted) this.map(_.toMap)
+  def toMapRDD(sort: Boolean = true): RDD[Map[String, Any]] =
+    if (!sort) this.map(_.toMap)
     else this
       .discardPages
       .defaultOrder
       .map(_.toMap)
 
-  def toJSON(sorted: Boolean = true): RDD[String] =
-    if (!sorted) this.map(_.toJSON)
+  def toJSON(sort: Boolean = true): RDD[String] =
+    if (!sort) this.map(_.toJSON)
     else this
       .discardPages
       .defaultOrder
       .map(_.toJSON)
 
   //TODO: investigate using the new applySchema api to avoid losing type info
-  def toSchemaRDD(sorted: Boolean = true): SchemaRDD = {
+  def toSchemaRDD(sort: Boolean = true): SchemaRDD = {
 
-    val jsonRDD = this.toJSON(sorted)
+    val jsonRDD = this.toJSON(sort)
 
     val schemaRDD = this.spooky.sqlContext.jsonRDD(jsonRDD)
 

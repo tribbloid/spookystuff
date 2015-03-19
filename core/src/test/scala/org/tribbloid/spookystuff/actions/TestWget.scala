@@ -5,20 +5,22 @@ import org.tribbloid.spookystuff.{dsl, SpookyEnvSuite}
 import org.tribbloid.spookystuff.dsl.TorProxyFactory
 import dsl._
 
+import scala.concurrent.duration
+
 /**
  * Created by peng on 11/6/14.
  */
 class TestWget extends SpookyEnvSuite {
 
   lazy val noProxyIP = {
-      spooky.conf.proxy = NoProxyFactory
+    spooky.conf.proxy = NoProxyFactory
 
-      val results = Trace(
-        Wget("http://www.whatsmyuseragent.com/") :: Nil
-      ).resolve(spooky)
+    val results = Trace(
+      Wget("http://www.whatsmyuseragent.com/") :: Nil
+    ).resolve(spooky)
 
-      results(0).asInstanceOf[Page].children("h3.info").texts.head
-    }
+    results.head.asInstanceOf[Page].children("h3.info").texts.head
+  }
 
   test("use TOR socks5 proxy for http wget") {
 
@@ -29,7 +31,7 @@ class TestWget extends SpookyEnvSuite {
         Wget("http://www.whatsmyuseragent.com/") :: Nil
       ).resolve(spooky)
 
-      results(0).asInstanceOf[Page].children("h3.info").texts.head
+      results.head.asInstanceOf[Page].children("h3.info").texts.head
     }
 
     assert(newIP !== null)
@@ -47,7 +49,7 @@ class TestWget extends SpookyEnvSuite {
         Wget("https://www.astrill.com/what-is-my-ip-address.php") :: Nil
       ).resolve(spooky)
 
-      results(0).asInstanceOf[Page].children("h1").texts.head
+      results.head.asInstanceOf[Page].children("h1").texts.head
     }
 
     assert(newIP !== null)
@@ -63,8 +65,8 @@ class TestWget extends SpookyEnvSuite {
       val results = Trace(
         Wget("http://www.whatsmyuseragent.com/") :: Nil
       ).resolve(spooky)
-
-      results(0).asInstanceOf[Page].children("h3.info").texts.head
+      Actions
+      results.head.asInstanceOf[Page].children("h3.info").texts.head
     }
 
     val noProxyIP2 = {
@@ -74,7 +76,7 @@ class TestWget extends SpookyEnvSuite {
         Wget("http://www.whatsmyuseragent.com/") :: Nil
       ).resolve(spooky)
 
-      results(0).asInstanceOf[Page].children("h3.info").texts.head
+      results.head.asInstanceOf[Page].children("h3.info").texts.head
     }
 
     assert(newIP !== noProxyIP2)
@@ -89,7 +91,7 @@ class TestWget extends SpookyEnvSuite {
         Wget("https://www.astrill.com/what-is-my-ip-address.php") :: Nil
       ).resolve(spooky)
 
-      results(0).asInstanceOf[Page].children("h1").texts.head
+      results.head.asInstanceOf[Page].children("h1").texts.head
     }
 
     val noProxyIP2 = {
@@ -99,7 +101,7 @@ class TestWget extends SpookyEnvSuite {
         Wget("https://www.astrill.com/what-is-my-ip-address.php") :: Nil
       ).resolve(spooky)
 
-      results(0).asInstanceOf[Page].children("h1").texts.head
+      results.head.asInstanceOf[Page].children("h1").texts.head
     }
 
     assert(newIP !== noProxyIP2)
@@ -113,7 +115,7 @@ class TestWget extends SpookyEnvSuite {
     ).resolve(spooky)
 
     assert(results.size === 1)
-    results(0).asInstanceOf[Page]
+    results.head.asInstanceOf[Page]
   }
 
   test("wget should encode malformed url 2") {
@@ -124,7 +126,7 @@ class TestWget extends SpookyEnvSuite {
     ).resolve(spooky)
 
     assert(results.size === 1)
-    results(0).asInstanceOf[Page]
+    results.head.asInstanceOf[Page]
   }
 
   test("wget should encode redirection to malformed url") {
@@ -136,7 +138,7 @@ class TestWget extends SpookyEnvSuite {
     ).resolve(spooky)
 
     assert(results.size === 1)
-    results(0).asInstanceOf[Page]
+    results.head.asInstanceOf[Page]
   }
 
   test("wget should correct redirection to relative url path") {
@@ -147,7 +149,7 @@ class TestWget extends SpookyEnvSuite {
     ).resolve(spooky)
 
     assert(results.size === 1)
-    assert(results(0).asInstanceOf[Page].children("title").head.text.get.contains("Sigma-Aldrich"))
+    assert(results.head.asInstanceOf[Page].children("title").head.text.get.contains("Sigma-Aldrich"))
   }
 
   test("wget should smoothly fail on circular redirection") {
@@ -158,6 +160,21 @@ class TestWget extends SpookyEnvSuite {
     ).resolve(spooky)
 
     assert(results.size === 1)
-    assert(results(0).isInstanceOf[NoPage])
+    assert(results.head.isInstanceOf[NoPage])
+  }
+
+  test("output of wget should not include session's backtrace") {
+    spooky.conf.proxy = NoProxyFactory
+
+    import duration._
+
+    val results = Trace(
+      RandomDelay(10.seconds, 20.seconds)
+        :: Wget("http://www.wikipedia.org")
+        :: Nil
+    ).resolve(spooky)
+
+    assert(results.size === 1)
+    assert(results.head.uid.backtrace.self == Wget("http://www.wikipedia.org") :: Nil)
   }
 }

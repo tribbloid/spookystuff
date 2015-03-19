@@ -188,7 +188,7 @@ case class Wget(
           val contentType = entity.getContentType.getValue
 
           val result = new Page(
-            PageUID(Trace(pb.backtrace :+ this), this),
+            PageUID(Trace(Seq(this)), this),
             uriURI.toASCIIString,
             contentType,
             content
