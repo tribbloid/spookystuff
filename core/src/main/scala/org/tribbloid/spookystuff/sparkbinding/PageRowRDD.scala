@@ -652,14 +652,14 @@ case class PageRowRDD(
             )
       }.persist(spooky.conf.defaultStorageLevel) // change to checkpoint?
 
-      val count = batchExeRDD.count()
+      stageRDD = batchExeRDD.map(_._2).filter(_.hasMore) //TODO: repartition to balance
 
-      LoggerFactory.getLogger(this.getClass).info(s"$count groups have found new rows after $depthEnd iterations")
+      val count = stageRDD.count()
+
+      LoggerFactory.getLogger(this.getClass).info(s"$count segments have uncrawled links after $depthEnd iterations")
       depthStart = depthEnd
 
-      if (count == 0 || depthEnd == maxDepth) done = true
-
-      stageRDD = batchExeRDD.map(_._2).filter(_.hasMore) //TODO: repartition to balance
+      if (count == 0 || depthEnd >= maxDepth) done = true
 
       val totalRDD = batchExeRDD.flatMap(_._1)
 
