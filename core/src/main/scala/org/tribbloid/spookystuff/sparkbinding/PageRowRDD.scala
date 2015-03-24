@@ -25,9 +25,9 @@ import scala.language.implicitConversions
  * Created by peng on 8/29/14.
  */
 case class PageRowRDD(
-                       @transient override val self: RDD[PageRow],
-                       @transient override val keys: ListSet[KeyLike] = ListSet(),
-                       @transient override val spooky: SpookyContext
+                       @transient self: RDD[PageRow],
+                       @transient keys: ListSet[KeyLike] = ListSet(),
+                       @transient spooky: SpookyContext
                        )
   extends RDD[PageRow](self) with PageRowRDDOverrides {
 

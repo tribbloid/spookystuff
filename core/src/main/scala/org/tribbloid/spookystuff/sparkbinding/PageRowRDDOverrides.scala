@@ -16,10 +16,6 @@ import scala.reflect.ClassTag
 trait PageRowRDDOverrides extends RDD[PageRow]{
   this: PageRowRDD =>
 
-  @transient val self: RDD[PageRow]
-  @transient val keys: ListSet[KeyLike] = ListSet()
-  @transient val spooky: SpookyContext
-
   override def getPartitions: Array[Partition] = firstParent[PageRow].partitions
 
   override val partitioner = self.partitioner
@@ -37,10 +33,10 @@ trait PageRowRDDOverrides extends RDD[PageRow]{
   override def distinct(numPartitions: Int)(implicit ord: Ordering[PageRow] = null): PageRowRDD =
     super.distinct(numPartitions)(ord)
 
-  override def repartition(numPartitions: Int)(implicit ord: Ordering[PageRow] = null): PageRowRDD =
+  override def repartition(numPartitions: Int = partitions.length)(implicit ord: Ordering[PageRow] = null): PageRowRDD =
     super.repartition(numPartitions)(ord)
 
-  override def coalesce(numPartitions: Int, shuffle: Boolean = false)(implicit ord: Ordering[PageRow] = null): PageRowRDD =
+  override def coalesce(numPartitions: Int = partitions.length, shuffle: Boolean = false)(implicit ord: Ordering[PageRow] = null): PageRowRDD =
     super.coalesce(numPartitions, shuffle)(ord)
 
   override def sample(withReplacement: Boolean,
@@ -63,7 +59,7 @@ trait PageRowRDDOverrides extends RDD[PageRow]{
   override def sortBy[K](
                           f: (PageRow) => K,
                           ascending: Boolean = true,
-                          numPartitions: Int = this.partitions.size)
+                          numPartitions: Int = partitions.length)
                         (implicit ord: Ordering[K], ctag: ClassTag[K]): PageRowRDD = super.sortBy(f, ascending, numPartitions)(ord, ctag)
 
   override def intersection(other: RDD[PageRow]): PageRowRDD = other match {
