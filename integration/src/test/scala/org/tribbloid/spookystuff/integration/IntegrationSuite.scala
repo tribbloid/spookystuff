@@ -45,17 +45,17 @@ abstract class IntegrationSuite extends FunSuite with BeforeAndAfterAll {
     super.afterAll()
   }
 
-  val roots = Seq(
+  lazy val roots = Seq(
     "file://"+System.getProperty("user.home")+"/spooky-integration/"
 //    "s3n://spooky-integration/"
   )
 
-  val drivers = Seq(
+  lazy val drivers = Seq(
     PhantomJSDriverFactory(),
     HtmlUnitDriverFactory()
   )
 
-  val optimizers = Seq(
+  lazy val optimizers = Seq(
     Narrow,
     WideLookup
   )
@@ -110,7 +110,7 @@ abstract class IntegrationSuite extends FunSuite with BeforeAndAfterAll {
     assert(metrics.DFSReadFail.value === 0)
   }
 
-  private val retry = 2
+  private val retry = 1
 
   private def doTest(spooky: SpookyContext): Unit ={
 

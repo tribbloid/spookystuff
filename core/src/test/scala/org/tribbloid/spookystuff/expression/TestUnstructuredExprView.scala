@@ -11,7 +11,7 @@ class TestUnstructuredExprView extends SpookyEnvSuite {
 
   import org.tribbloid.spookystuff.dsl._
 
-  lazy val page = Trace(
+  lazy val page = (
     Wget("http://www.wikipedia.org/").~('page) :: Nil
   ).resolve(spooky)
   lazy val row = PageRow(pageLikes = page)

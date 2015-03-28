@@ -277,7 +277,7 @@ object PageRow {
                     ordinalKey: Symbol,
                     maxOrdinal: Int
                     )(
-                    _traces: Set[Trace],
+                    _traces: Set[Trace], //input of the explore to generate more pages from seeds
                     flattenPagesPattern: Symbol,
                     flattenPagesOrdinalKey: Symbol
                     ): (Iterable[PageRow], ExploreStage) = {
@@ -287,7 +287,13 @@ object PageRow {
     var seeds = stage.seeds
     var traces = stage.traces
 
+    //    assert(seeds.size == 1, "seeds.size="+seeds.size)
+    //    assert(depthToInclusive > depthFromExclusive)
+    //    assert(traces.size > 1 || depthFromExclusive == 0 , "traces.size="+traces.size)
+
     for (depth <- depthFromExclusive + 1 to depthToInclusive) {
+
+      //      assert(traces.size == depth)
 
       val traceToRows = seeds
         .flatMap(_.selectTemp(expr)) //join start: select 1
@@ -328,8 +334,11 @@ object PageRow {
           else Seq(row)
       }
 
-      LoggerFactory.getLogger(this.getClass).info(s"found ${seeds.size} new row(s) after $depth iteration")
+      LoggerFactory.getLogger(this.getClass)
+        .info(s"found ${seeds.size} new seed(s) after $depth iteration(s) [traces.size = ${traces.size}, total.size = ${total.size}]")
       if (seeds.size == 0) return (total, stage.copy(seeds = seeds, traces = traces))
+
+      //      assert(traces.size == depth+1)
 
       val newRowsWithDepthKey = if (depthKey != null) seeds.flatMap(_.select(Literal(depth) ~ depthKey))
       else seeds
@@ -339,7 +348,6 @@ object PageRow {
 
     (total, stage.copy(seeds = seeds, traces = traces))
   }
-
 
   def discoverLatestBatch(pages: Iterable[PageLike]): Option[Seq[PageLike]] = {
     //assume that all inputs already has identical backtraces
@@ -386,7 +394,7 @@ object PageRow {
 //intermediate variable representing a stage in web crawling.
 case class ExploreStage(
                          seeds: Iterable[PageRow], //pages that hasn't be been crawled before
-                         traces: Set[Trace] = Set(), //already resolved traces
+                         traces: Set[Trace] = Set(Seq()), //already resolved traces
                          dryruns: Set[Set[Trace]] = Set() //already resolved pages, of which original traces used to resolve them is intractable
                          ) {
 

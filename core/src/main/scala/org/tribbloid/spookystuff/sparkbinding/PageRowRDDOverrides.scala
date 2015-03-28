@@ -2,11 +2,9 @@ package org.tribbloid.spookystuff.sparkbinding
 
 import org.apache.spark.rdd.RDD
 import org.apache.spark.{Partition, TaskContext}
-import org.tribbloid.spookystuff.SpookyContext
-import org.tribbloid.spookystuff.entity.{KeyLike, PageRow}
+import org.tribbloid.spookystuff.entity.PageRow
 import org.tribbloid.spookystuff.utils.Utils
 
-import scala.collection.immutable.ListSet
 import scala.language.implicitConversions
 import scala.reflect.ClassTag
 

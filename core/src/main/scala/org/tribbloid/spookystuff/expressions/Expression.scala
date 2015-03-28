@@ -32,29 +32,29 @@ class GetPageExpr(override var name: String) extends Expression[Page] {
   override def apply(v1: PageRow): Option[Page] = v1.getPage(name)
 }
 
-class ChildExpr(selector: String, base: Expression[Unstructured]) extends Expression[Unstructured] {
+class ChildExpr(selector: String, param: Expression[Unstructured]) extends Expression[Unstructured] {
 
-  override var name = s"${base.name}.child($selector)"
+  override var name = s"${param.name}.child($selector)"
 
-  override def apply(v1: PageRow): Option[Unstructured] = base(v1).flatMap(_.child(selector))
+  override def apply(v1: PageRow): Option[Unstructured] = param(v1).flatMap(_.child(selector))
 
   def expand(range: Range) = new Expression[Siblings[Unstructured]] {
     override var name: String = s"${this.name}.expand(${range.head} -> ${range.last})"
 
-    override def apply(v1: PageRow) = base(v1).flatMap(_.childExpanded(selector, range))
+    override def apply(v1: PageRow) = param(v1).flatMap(_.childWithSiblings(selector, range))
   }
 }
 
-class ChildrenExpr(selector: String, base: Expression[Unstructured]) extends Expression[Elements[Unstructured]] {
+class ChildrenExpr(selector: String, param: Expression[Unstructured]) extends Expression[Elements[Unstructured]] {
 
-  override var name = s"${base.name}.children($selector)"
+  override var name = s"${param.name}.children($selector)"
 
-  override def apply(v1: PageRow): Option[Elements[Unstructured]] = base(v1).map(_.children(selector))
+  override def apply(v1: PageRow): Option[Elements[Unstructured]] = param(v1).map(_.children(selector))
 
   def expand(range: Range) = new Expression[Elements[Siblings[Unstructured]]] {
     override var name: String = s"${this.name}.expand(${range.head} -> ${range.last})"
 
-    override def apply(v1: PageRow) = base(v1).map(_.childrenWithSiblings(selector, range))
+    override def apply(v1: PageRow) = param(v1).map(_.childrenWithSiblings(selector, range))
   }
 }
 
@@ -110,13 +110,13 @@ class InterpolateExpr(parts: Seq[String], fs: Seq[Expression[Any]])
   }
 }
 
-class ZippedExpr[T1,+T2](e1: Expression[Iterable[T1]], e2: Expression[Iterable[T2]]) extends Expression[Map[T1, T2]] {
-  override var name: String = s"${e1.name}.zip(${e2.name})"
+class ZippedExpr[T1,+T2](param1: Expression[Iterable[T1]], param2: Expression[Iterable[T2]]) extends Expression[Map[T1, T2]] {
+  override var name: String = s"${param1.name}.zip(${param2.name})"
 
   override def apply(v1: PageRow): Option[Map[T1, T2]] = {
 
-    val z1Option = e1(v1)
-    val z2Option = e2(v1)
+    val z1Option = param1(v1)
+    val z2Option = param2(v1)
 
     if (z1Option.isEmpty || z2Option.isEmpty) return None
 

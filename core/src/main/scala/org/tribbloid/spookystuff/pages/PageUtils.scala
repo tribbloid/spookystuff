@@ -9,7 +9,7 @@ import org.slf4j.LoggerFactory
 import org.tribbloid.spookystuff.actions.Trace
 import org.tribbloid.spookystuff.utils.Utils
 import org.tribbloid.spookystuff.views.Serializable
-import org.tribbloid.spookystuff.{Const, DFSReadException, DFSWriteException, SpookyContext}
+import org.tribbloid.spookystuff._
 
 /**
  * Created by peng on 11/27/14.
@@ -228,6 +228,9 @@ object PageUtils {
                          backtrace: Trace,
                          spooky: SpookyContext
                          ): Seq[PageLike] = {
+
+    import dsl._
+
     val pathStr = Utils.uriConcat(
       spooky.conf.dirs.cache,
       spooky.conf.cacheTraceEncoder(backtrace).toString

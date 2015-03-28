@@ -16,7 +16,7 @@ trait Unstructured extends Serializable {
                         range: Range
                         ): Elements[Siblings[Unstructured]]
 
-  final def childExpanded(selector: String, range: Range): Option[Siblings[Unstructured]] = childrenWithSiblings(selector, range).headOption
+  final def childWithSiblings(selector: String, range: Range): Option[Siblings[Unstructured]] = childrenWithSiblings(selector, range).headOption
 
   def code: Option[String]
 

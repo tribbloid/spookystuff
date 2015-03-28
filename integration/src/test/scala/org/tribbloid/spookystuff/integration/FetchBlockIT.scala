@@ -11,6 +11,10 @@ import duration._
  */
 class FetchBlockIT extends IntegrationSuite {
 
+  override lazy val drivers = Seq(
+    PhantomJSDriverFactory() //TODO: HtmlUnit does not support Backbone.js
+  )
+
   override def doMain(spooky: SpookyContext) {
 
     import spooky._

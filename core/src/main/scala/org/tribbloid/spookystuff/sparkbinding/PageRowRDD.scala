@@ -590,7 +590,7 @@ case class PageRowRDD(
 
     val _expr = expr defaultAs Symbol(Const.defaultJoinKey)
 
-    var depthStart = 0
+    var depthFromExclusive = 0
 
     if (this.getStorageLevel == StorageLevel.NONE) this.persist(spooky.conf.defaultStorageLevel)
 
@@ -627,11 +627,13 @@ case class PageRowRDD(
     //      case _ => None
     //    }
 
-    var done = false
     var stageRDD = firstStageRDD
-    while(!done) {
+    while(true) {
 
-      val depthEnd = Math.min(depthStart + batchSize, maxDepth)
+      val _depthFromExclusive = depthFromExclusive //var in closure being shipped to workers usually end up miserably (not synched properly)
+      val depthToInclusive = Math.min(_depthFromExclusive + batchSize, maxDepth)
+
+      //      assert(_depthFromExclusive < depthToInclusive, _depthFromExclusive.toString+":"+ depthToInclusive)
 
       val batchExeRDD = stageRDD.map {
         stage =>
@@ -641,8 +643,8 @@ case class PageRowRDD(
           )(
               _expr,
               depthKey,
-              depthStart,
-              depthEnd,
+              _depthFromExclusive,
+              depthToInclusive,
               ordinalKey,
               maxOrdinal
             )(
@@ -654,26 +656,25 @@ case class PageRowRDD(
 
       stageRDD = batchExeRDD.map(_._2).filter(_.hasMore) //TODO: repartition to balance
 
-      val count = stageRDD.count()
-
-      LoggerFactory.getLogger(this.getClass).info(s"$count segments have uncrawled links after $depthEnd iterations")
-      depthStart = depthEnd
-
-      if (count == 0 || depthEnd >= maxDepth) done = true
-
       val totalRDD = batchExeRDD.flatMap(_._1)
-
       resultRDDs += totalRDD
+
+      val count = stageRDD.count()
+      LoggerFactory.getLogger(this.getClass).info(s"$count segment(s) have uncrawled seed(s) after $depthToInclusive iteration(s)")
+      depthFromExclusive = depthToInclusive
+
+      if (count == 0 || depthToInclusive >= maxDepth) return result
     }
 
-    val resultSelf = new UnionRDD(this.sparkContext, resultRDDs).coalesce(numPartitions) //TODO: not an 'official' API
+    def result: PageRowRDD = {
 
-    val result = this.copy(self = resultSelf, keys = resultKeys)
+      val resultSelf = new UnionRDD(this.sparkContext, resultRDDs).coalesce(numPartitions) //TODO: not an 'official' API, and not efficient
+      val result = this.copy(self = resultSelf, keys = resultKeys)
+      result.select(select: _*)
+    }
 
     result
-      .select(select: _*)
   }
-
 
   //has 2 outputs: 1 is self merge another by Signature, 2 is self distinct not covered by another
   //remember base MUST HAVE a hash partitioner!!!
@@ -704,9 +705,9 @@ case class PageRowRDD(
       .persist(spooky.conf.defaultStorageLevel)
 
     val merged = mixed.mapValues(_._1)
-    val newRows = mixed.values.flatMap(_._2)
+    val newSeeds = mixed.values.flatMap(_._2)
 
-    merged -> this.copy(self = newRows)
+    merged -> this.copy(self = newSeeds)
   }
 
   //recursive join and union! applicable to many situations like (wide) pagination and deep crawling
@@ -732,7 +733,7 @@ case class PageRowRDD(
     if (this.getStorageLevel == StorageLevel.NONE) this.persist(spooky.conf.defaultStorageLevel)
     if (this.context.getCheckpointDir.isEmpty) this.context.setCheckpointDir(spooky.conf.dirs.checkpoint)
 
-    var newRows = this
+    var newSeeds = this
 
     var accumulated: RDD[(Signature, PageRow)] =
       this
@@ -750,7 +751,7 @@ case class PageRowRDD(
     }.orNull
 
     for (depth <- 1 to maxDepth) {
-      val newPages = newRows
+      val newPages = newSeeds
         .flattenTemp(_expr, ordinalKey, maxOrdinal, left = true)
         ._wideFetch(_traces, Inner, numPartitions, lookupAccumulated)
 
@@ -771,19 +772,21 @@ case class PageRowRDD(
         Option(depthKey).map(k => Literal(depth) ~ k).toSeq: _*
       )
       accumulated = tuple._1
-      newRows = tuple._2
+      newSeeds = tuple._2
 
-      val newRowsSize = newRows.count()
+      val newRowsSize = newSeeds.count()
       LoggerFactory.getLogger(this.getClass).info(s"found $newRowsSize new row(s) after $depth iterations")
 
-      if (newRowsSize == 0) return this //TODO: find way to break the loop
-        .copy(self = accumulated.values, keys = resultKeys)
-        .select(select: _*)
+      if (newRowsSize == 0) return result
     }
 
-    this
-      .copy(self = accumulated.values, keys = resultKeys)
-      .select(select: _*)
+    def result = {
+      val r0 = this.copy(self = accumulated.values, keys = resultKeys)
+      val res = r0.select(select: _*)
+      res
+    }
+
+    result
   }
 
   def visitExplore(

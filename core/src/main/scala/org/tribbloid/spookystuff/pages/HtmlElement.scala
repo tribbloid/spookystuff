@@ -3,26 +3,33 @@ package org.tribbloid.spookystuff.pages
 import java.nio.charset.Charset
 
 import de.l3s.boilerpipe.extractors.ArticleExtractor
-import org.json4s._
 import org.jsoup.Jsoup
 import org.jsoup.nodes.Element
 
 /**
  * Created by peng on 11/30/14.
  */
+object HtmlElement {
+
+}
+
 class HtmlElement private (
                             @transient _parsed: Element,
                             val html: String,
+                            val isFragment: Boolean,
                             override val uri: String
                             ) extends Unstructured {
 
+  //constructor for HtmlElement returned by .children()
   def this(_parsed: Element) = this(
     _parsed,
     _parsed.outerHtml(),
+    true,
     _parsed.baseUri()
   )
 
-  def this(html: String, uri: String) = this(null, html, uri)
+  //constructor for HtmlElemtn returned by
+  def this(html: String, uri: String) = this(null, html, false, uri)
 
   def this(content: Array[Byte], charSet: Charset, uri: String) = this(new String(content, charSet), uri)
 
@@ -34,10 +41,25 @@ class HtmlElement private (
 
   override def hashCode(): Int = (this.html, this.uri).hashCode()
 
-  @transient lazy val parsed = Option(_parsed).getOrElse{
-    val tableHtml = "<table>"+html+"</table>"
-    val table = Jsoup.parse(tableHtml, uri)
-    table.child(0)
+  private def fragmentContainer = Jsoup.parseBodyFragment("<table></table>", uri)
+
+  @transient lazy val parsed = Option(_parsed).getOrElse {
+
+    if (!isFragment) Jsoup.parse(html, uri)
+    else {
+      if (html.startsWith("<tr")) {
+        val container = Jsoup.parseBodyFragment(s"<table>$html</table>", uri)
+        container.select("tr").first()
+      }
+      else if (html.startsWith("<td")) {
+        val container = Jsoup.parseBodyFragment(s"<table>$html</table>", uri)
+        container.select("td").first()
+      }
+      else {
+        val container = Jsoup.parseBodyFragment(html, uri)
+        container.select("body").first().child(0)
+      }
+    }
   }
 
   import scala.collection.JavaConversions._
@@ -90,12 +112,12 @@ class HtmlElement private (
   override def toString: String = html
 }
 
-object HtmlElementSerializer extends Serializer[HtmlElement] {
-
-  override def deserialize(implicit format: Formats): PartialFunction[(TypeInfo, JValue), HtmlElement] = ??? //TODO: how to support it?
-
-  override def serialize(implicit format: Formats): PartialFunction[Any, JValue] = {
-    case element: HtmlElement =>
-      JString(element.html)
-  }
-}
+//object HtmlElementSerializer extends Serializer[HtmlElement] {
+//
+//  override def deserialize(implicit format: Formats): PartialFunction[(TypeInfo, JValue), HtmlElement] = ??? //TODO: how to support it?
+//
+//  override def serialize(implicit format: Formats): PartialFunction[Any, JValue] = {
+//    case element: HtmlElement =>
+//      JString(element.html)
+//  }
+//}

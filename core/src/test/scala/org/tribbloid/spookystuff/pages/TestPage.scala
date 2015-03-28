@@ -1,9 +1,8 @@
 package org.tribbloid.spookystuff.pages
 
 import org.apache.hadoop.fs.Path
-import org.tribbloid.spookystuff.SpookyEnvSuite
-import org.tribbloid.spookystuff.actions.{Snapshot, Trace, Visit, Wget}
-import org.tribbloid.spookystuff.dsl
+import org.tribbloid.spookystuff.actions.{Snapshot, Visit, Wget}
+import org.tribbloid.spookystuff.{SpookyEnvSuite, dsl}
 import org.tribbloid.spookystuff.session.DriverSession
 
 /**
@@ -17,7 +16,7 @@ class TestPage extends SpookyEnvSuite {
     val emptyPage: Page = {
       val pb = new DriverSession(spooky)
 
-      Snapshot().doExe(pb).toList(0).asInstanceOf[Page]
+      Snapshot().doExe(pb).toList.head.asInstanceOf[Page]
     }
 
     assert (emptyPage.children("div.dummy").attrs("href").isEmpty)
@@ -27,13 +26,13 @@ class TestPage extends SpookyEnvSuite {
 
   test("visit, save and load") {
 
-    val results = Trace(
+    val results = (
       Visit("http://en.wikipedia.org") ::
         Snapshot().as('T) :: Nil
     ).resolve(spooky)
 
     val resultsList = results.toArray
-    assert(resultsList.size === 1)
+    assert(resultsList.length === 1)
     val page1 = resultsList(0).asInstanceOf[Page]
 
     page1.autoSave(spooky,overwrite = true)
@@ -64,12 +63,12 @@ class TestPage extends SpookyEnvSuite {
 
   test("wget html, save and load") {
 
-    val results = Trace(
+    val results = (
       Wget("http://en.wikipedia.org") :: Nil
     ).resolve(spooky)
 
     val resultsList = results.toArray
-    assert(resultsList.size === 1)
+    assert(resultsList.length === 1)
     val page1 = resultsList(0).asInstanceOf[Page]
 
     assert(page1.children("title").texts.head startsWith "Wikipedia")
@@ -83,12 +82,12 @@ class TestPage extends SpookyEnvSuite {
 
   test("wget image, save and load") {
 
-    val results = Trace(
+    val results = (
       Wget("https://www.google.ca/images/srpr/logo11w.png") :: Nil
     ).resolve(spooky)
 
     val resultsList = results.toArray
-    assert(resultsList.size === 1)
+    assert(resultsList.length === 1)
     val page1 = resultsList(0).asInstanceOf[Page]
 
     page1.autoSave(spooky,overwrite = true)
@@ -100,12 +99,12 @@ class TestPage extends SpookyEnvSuite {
 
   test("wget pdf, save and load") {
 
-    val results = Trace(
+    val results = (
       Wget("http://www.cs.toronto.edu/~ranzato/publications/DistBeliefNIPS2012_withAppendix.pdf") :: Nil
     ).resolve(spooky)
 
     val resultsList = results.toArray
-    assert(resultsList.size === 1)
+    assert(resultsList.length === 1)
     val page1 = resultsList(0).asInstanceOf[Page]
 
     page1.autoSave(spooky,overwrite = true)
@@ -116,24 +115,24 @@ class TestPage extends SpookyEnvSuite {
   }
 
   test("childrenWithSiblings") {
-    val page = Trace(
+    val page = (
       Wget("http://www.wikipedia.org/") :: Nil
-    ).resolve(spooky)(0).asInstanceOf[Page]
+      ).resolve(spooky).head.asInstanceOf[Page]
 
     val ranges = page.childrenWithSiblings("a.link-box em", -2 to 1)
     assert(ranges.size === 10)
     val first = ranges.head
     assert(first.size === 4)
-    assert(first(0).code.get.startsWith("<strong"))
+    assert(first.head.code.get.startsWith("<strong"))
     assert(first(1).code.get.startsWith("<br"))
     assert(first(2).code.get.startsWith("<em"))
     assert(first(3).code.get.startsWith("<br"))
   }
 
   test("childrenWithSiblings with overlapping elimiation") {
-    val page = Trace(
+    val page = (
       Wget("http://www.wikipedia.org/") :: Nil
-    ).resolve(spooky)(0).asInstanceOf[Page]
+      ).resolve(spooky).head.asInstanceOf[Page]
 
     val ranges = page.childrenWithSiblings("div.central-featured-lang[lang^=e]", -2 to 2)
     assert(ranges.size === 2)
@@ -143,7 +142,7 @@ class TestPage extends SpookyEnvSuite {
     assert(first(1).attr("lang").get === "en")
     assert(first(2).attr("lang").get === "ru")
     assert(second.size === 4)
-    assert(second(0).attr("lang").get === "ru")
+    assert(second.head.attr("lang").get === "ru")
     assert(second(1).attr("lang").get === "es")
   }
 }

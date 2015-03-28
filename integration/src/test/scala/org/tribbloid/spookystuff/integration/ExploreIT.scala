@@ -8,6 +8,11 @@ import org.tribbloid.spookystuff.dsl._
  * Created by peng on 12/5/14.
  */
 class ExploreIT extends IntegrationSuite {
+
+  override lazy val drivers = Seq(
+    PhantomJSDriverFactory() //TODO: HtmlUnit does not support Backbone.js
+  )
+
   override def doMain(spooky: SpookyContext): Unit = {
 
     import spooky._

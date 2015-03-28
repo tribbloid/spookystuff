@@ -9,6 +9,10 @@ import org.tribbloid.spookystuff.dsl._
  */
 class ExploreNextPageIT extends IntegrationSuite {
 
+  override lazy val drivers = Seq(
+    null
+  )
+
   override def doMain(spooky: SpookyContext): Unit = {
     import spooky._
 

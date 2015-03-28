@@ -13,6 +13,10 @@ import scala.concurrent.duration
  */
 class FetchWgetAndSaveIT extends IntegrationSuite {
 
+  override lazy val drivers = Seq(
+    null
+  )
+
   override def doMain(spooky: SpookyContext) {
 
     import spooky._

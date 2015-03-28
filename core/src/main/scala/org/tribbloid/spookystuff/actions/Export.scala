@@ -57,7 +57,7 @@ case class Snapshot() extends Export{
     //    }
 
     val page = new Page(
-      PageUID(Trace(pb.backtrace :+ this), this),
+      PageUID(pb.backtrace :+ this, this),
       pb.driver.getCurrentUrl,
       "text/html; charset=UTF-8",
       pb.driver.getPageSource.getBytes("UTF8")
@@ -81,7 +81,7 @@ case class Screenshot() extends Export {
     }
 
     val page = new Page(
-      PageUID(Trace(pb.backtrace :+ this), this),
+      PageUID(pb.backtrace :+ this, this),
       pb.driver.getCurrentUrl,
       "image/png",
       content
@@ -188,7 +188,7 @@ case class Wget(
           val contentType = entity.getContentType.getValue
 
           val result = new Page(
-            PageUID(Trace(Seq(this)), this),
+            PageUID(Seq(this), this),
             uriURI.toASCIIString,
             contentType,
             content
@@ -210,7 +210,7 @@ case class Wget(
     catch {
       case e: ClientProtocolException =>
         val cause = e.getCause
-        if (cause.isInstanceOf[RedirectException]) Seq(NoPage(Trace(pb.backtrace :+ this)))
+        if (cause.isInstanceOf[RedirectException]) Seq(NoPage(pb.backtrace :+ this))
         else throw e
       case e: Throwable =>
         throw e

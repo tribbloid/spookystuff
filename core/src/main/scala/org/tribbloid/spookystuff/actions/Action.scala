@@ -23,7 +23,7 @@ import scala.concurrent.duration.Duration
  * This is used almost exclusively in typing into an url bar or textbox, but it's flexible enough to be used anywhere.
  * extends Product to make sure all subclasses are case classes
  */
-trait Action extends ActionLike {
+trait Action extends ActionLike with Product {
 
   private var timeElapsed: Long = -1 //only set once
 
@@ -52,8 +52,8 @@ trait Action extends ActionLike {
 
         if (!this.isInstanceOf[Driverless]) {
           if (errorDump) {
-            val rawPage = DefaultSnapshot.exe(session)(0).asInstanceOf[Page]
-            val uid = rawPage.uid.copy(backtrace = Trace(rawPage.uid.backtrace.self :+ this))
+            val rawPage = DefaultSnapshot.exe(session).head.asInstanceOf[Page]
+            val uid = rawPage.uid.copy(backtrace = rawPage.uid.backtrace :+ this)
             val page = rawPage.copy(uid = uid)
             try {
               page.errorDump(session.spooky)
@@ -72,8 +72,8 @@ trait Action extends ActionLike {
             }
           }
           if (errorDumpScreenshot && session.driver.isInstanceOf[TakesScreenshot]) {
-            val rawPage = DefaultScreenshot.exe(session).toList(0).asInstanceOf[Page]
-            val uid = rawPage.uid.copy(backtrace = Trace(rawPage.uid.backtrace.self :+ this))
+            val rawPage = DefaultScreenshot.exe(session).toList.head.asInstanceOf[Page]
+            val uid = rawPage.uid.copy(backtrace = rawPage.uid.backtrace :+ this)
             val page = rawPage.copy(uid = uid)
             try {
               page.errorDump(session.spooky)

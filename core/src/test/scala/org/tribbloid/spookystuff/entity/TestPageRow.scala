@@ -1,7 +1,7 @@
 package org.tribbloid.spookystuff.entity
 
-import org.tribbloid.spookystuff.{dsl, SpookyEnvSuite}
-import org.tribbloid.spookystuff.actions.{Wget, Trace}
+import org.tribbloid.spookystuff.actions.Wget
+import org.tribbloid.spookystuff.{SpookyEnvSuite, dsl}
 
 /**
  * Created by peng on 12/3/14.
@@ -11,7 +11,7 @@ class TestPageRow extends SpookyEnvSuite {
   import dsl._
 
   test("get page") {
-    val page = Trace(
+    val page = (
       Wget("http://www.wikipedia.org/") :: Nil
     ).resolve(spooky)
     val row = PageRow(pageLikes = page)
@@ -24,7 +24,7 @@ class TestPageRow extends SpookyEnvSuite {
   }
 
   test("get unstructured") {
-    val page = Trace(
+    val page = (
       Wget("http://www.wikipedia.org/").as('pp) :: Nil
     ).resolve(spooky)
     val row = PageRow(pageLikes = page)

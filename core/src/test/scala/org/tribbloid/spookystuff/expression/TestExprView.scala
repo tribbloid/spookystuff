@@ -1,7 +1,7 @@
 package org.tribbloid.spookystuff.expression
 
 import org.tribbloid.spookystuff.SpookyEnvSuite
-import org.tribbloid.spookystuff.actions.{Trace, Wget}
+import org.tribbloid.spookystuff.actions.Wget
 import org.tribbloid.spookystuff.entity.PageRow
 import org.tribbloid.spookystuff.expressions.NamedFunction1
 
@@ -12,7 +12,7 @@ class TestExprView extends SpookyEnvSuite {
 
   import org.tribbloid.spookystuff.dsl._
 
-  lazy val page = Trace(
+  lazy val page = (
     Wget("http://www.wikipedia.org/") :: Nil
   ).resolve(spooky)
   lazy val row = PageRow(pageLikes = page)

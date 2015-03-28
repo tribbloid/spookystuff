@@ -15,7 +15,7 @@ class TestTrace extends SpookyEnvSuite {
   import scala.concurrent.duration._
 
   test("resolve") {
-    val results = Trace(
+    val results = (
       Visit("http://www.wikipedia.org") ::
         WaitFor("input#searchInput").in(40.seconds) ::
         Snapshot().as('A) ::
@@ -26,16 +26,16 @@ class TestTrace extends SpookyEnvSuite {
 
     val resultsList = results
     assert(resultsList.length === 2)
-    val res1 = resultsList(0).asInstanceOf[Page]
+    val res1 = resultsList.head.asInstanceOf[Page]
     val res2 = resultsList(1).asInstanceOf[Page]
 
-    val id1 = Trace(Visit("http://www.wikipedia.org")::WaitFor("input#searchInput")::Snapshot().as('C)::Nil)
+    val id1 = Visit("http://www.wikipedia.org") :: WaitFor("input#searchInput") :: Snapshot().as('C) :: Nil
     assert(res1.uid.backtrace === id1)
     assert(res1.code.get.split('\n').map(_.trim).mkString.contains("<title>Wikipedia</title>"))
     assert(res1.uri === "http://www.wikipedia.org/")
     assert(res1.name === "A")
 
-    val id2 = Trace(Visit("http://www.wikipedia.org")::WaitFor("input#searchInput")::TextInput("input#searchInput","Deep learning")::Submit("input.formBtn")::Snapshot().as('D)::Nil)
+    val id2 = Visit("http://www.wikipedia.org") :: WaitFor("input#searchInput") :: TextInput("input#searchInput", "Deep learning") :: Submit("input.formBtn") :: Snapshot().as('D) :: Nil
     assert(res2.uid.backtrace === id2)
     assert(res2.code.get.split('\n').map(_.trim).mkString.contains("<title>Deep learning - Wikipedia, the free encyclopedia</title>"))
     assert(res2.uri === "http://en.wikipedia.org/wiki/Deep_learning")
@@ -44,7 +44,7 @@ class TestTrace extends SpookyEnvSuite {
 
   test("inject") {
 
-    val t1 = Trace(
+    val t1 = (
       Visit("http://webscraper.io/test-sites/e-commerce/ajax/computers/laptops")
         :: Snapshot().as('a)
         :: Loop (
@@ -54,7 +54,7 @@ class TestTrace extends SpookyEnvSuite {
       ):: Nil
     )
 
-    val t2 = Trace(
+    val t2 = (
       Visit("http://webscraper.io/test-sites/e-commerce/ajax/computers/laptops")
         :: Snapshot().as('c)
         :: Loop (

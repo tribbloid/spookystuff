@@ -15,7 +15,7 @@ class TestInteraction extends SpookyEnvSuite {
   test("visit and snapshot") {
     val builder = new DriverSession(spooky)
     Visit("http://en.wikipedia.org")(builder)
-    val page = Snapshot()(builder).toList(0).asInstanceOf[Page]
+    val page = Snapshot()(builder).toList.head.asInstanceOf[Page]
 
 //    assert(page.code.get.startsWith("<!DOCTYPE html>")) //not applicable to HtmlUnit
     assert(page.code.get.split('\n').map(_.trim).mkString.contains("<title>Wikipedia, the free encyclopedia</title>"))
@@ -28,7 +28,7 @@ class TestInteraction extends SpookyEnvSuite {
     Visit("http://www.wikipedia.org")(builder)
     TextInput("input#searchInput","Deep learning")(builder)
     Submit("input.formBtn")(builder)
-    val page = Snapshot()(builder).toList(0).asInstanceOf[Page]
+    val page = Snapshot()(builder).toList.head.asInstanceOf[Page]
     //    val url = builder.getUrl
 
     assert(page.code.get.split('\n').map(_.trim).mkString.contains("<title>Deep learning - Wikipedia, the free encyclopedia</title>"))
@@ -38,7 +38,7 @@ class TestInteraction extends SpookyEnvSuite {
 
   test("sizzle selector should work") {
 
-    val results = Trace(
+    val results = (
       Visit("http://www.wikipedia.org/") ::
         WaitFor("a.link-box:contains(English)") ::
         Snapshot() :: Nil
@@ -52,10 +52,25 @@ class TestInteraction extends SpookyEnvSuite {
     spooky.conf.remoteResourceTimeout = 180.seconds
 
     try {
-      val results = Trace(
-        (Visit("https://ca.vwr.com/store/search?&pimId=582903")
-          +> Paginate("a[title=Next]", delay = 2.second)).head.self
-      ).resolve(spooky)
+      val results = (Visit("https://ca.vwr.com/store/search?&pimId=582903")
+        +> Paginate("a[title=Next]", delay = 2.second)).head.self.resolve(spooky)
+
+      val numPages = results.head.asInstanceOf[Page].children("div.right a").size
+
+      assert(results.size == numPages)
+    }
+
+    finally {
+      spooky.conf.remoteResourceTimeout = 60.seconds
+    }
+  }
+
+  test("dynamic paginate should returns right number of pages") {
+    spooky.conf.remoteResourceTimeout = 180.seconds
+
+    try {
+      val results = (Visit("https://ca.vwr.com/store/search?label=Blotting%20Kits&pimId=3617065")
+        +> Paginate("a[title=Next]", delay = 2.second)).head.self.resolve(spooky)
 
       val numPages = results.head.asInstanceOf[Page].children("div.right a").size
 

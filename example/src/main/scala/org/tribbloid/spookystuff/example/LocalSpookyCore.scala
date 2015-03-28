@@ -19,6 +19,7 @@ trait LocalSpookyCore {
 
   val sc: SparkContext = {
     val conf: SparkConf = new SparkConf().setAppName(appName)
+//    conf.set("spark.task.maxFailures","1000") //TODO: why it doesn't work
 
     var master: String = null
     master = Option(master).getOrElse(conf.getOption("spark.master").orNull)

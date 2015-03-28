@@ -33,7 +33,7 @@ abstract class Block(override val self: Seq[Action]) extends Actions(self) with 
 
     val pages = this.doExeNoUID(session)
 
-    val backtrace = Trace(session.backtrace :+ this)
+    val backtrace = session.backtrace :+ this
     val result = pages.zipWithIndex.map {
       tuple => {
         val page = tuple._1
@@ -86,7 +86,7 @@ object Try {
              ): Try = {
     assert(trace.size == 1)
 
-    Try(trace.head.self)
+    Try(trace.head)
   }
 }
 
@@ -143,7 +143,7 @@ object Loop {
              ): Loop = {
     assert(trace.size == 1)
 
-    Loop(trace.head.self, limit)
+    Loop(trace.head, limit)
   }
 }
 
@@ -191,7 +191,7 @@ final case class If(
 
   override def doExeNoUID(session: Session): Seq[Page] = {
 
-    val current = DefaultSnapshot.exe(session)(0).asInstanceOf[Page]
+    val current = DefaultSnapshot.exe(session).head.asInstanceOf[Page]
 
     val pages = new ArrayBuffer[Page]()
     if (condition(current)) {

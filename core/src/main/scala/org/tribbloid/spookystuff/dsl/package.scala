@@ -1,6 +1,6 @@
 package org.tribbloid.spookystuff
 
-import org.tribbloid.spookystuff.actions.{Action, Trace, TraceSetView}
+import org.tribbloid.spookystuff.actions.{TraceView, Action, Trace, TraceSetView}
 import org.tribbloid.spookystuff.expressions._
 import org.tribbloid.spookystuff.pages.{Page, Unstructured, Elements}
 
@@ -14,11 +14,13 @@ package object dsl {
 
 //  type SerializableCookie = Cookie with Serializable
 
+  implicit def traceView(trace: Trace): TraceView = new TraceView(trace)
+
   implicit def traceSetView(traces: Set[Trace]): TraceSetView = new TraceSetView(traces)
 
-  implicit def actionToTraceSet(action: Action): Set[Trace] = Set(Trace(Seq(action)))
+  implicit def actionToTraceSet(action: Action): Set[Trace] = Set(Seq(action))
 
-  implicit def actionToTraceSetView(action: Action): TraceSetView = Set(Trace(Seq(action)))
+  implicit def actionToTraceSetView(action: Action): TraceSetView = Set(Seq(action))
 
   //------------------------------------------------------------
 
