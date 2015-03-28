@@ -22,16 +22,20 @@ abstract class IntegrationSuite extends FunSuite with BeforeAndAfterAll {
     val conf: SparkConf = new SparkConf().setAppName("integration")
       .setMaster("local[*]")
 
-    val prop = new Properties()
-    prop.load(ClassLoader.getSystemResourceAsStream("rootkey.csv"))
-    val AWSAccessKeyId = prop.getProperty("AWSAccessKeyId")
-    val AWSSecretKey = prop.getProperty("AWSSecretKey")
-
     sc = new SparkContext(conf)
-    sc.hadoopConfiguration
-      .set("fs.s3n.awsAccessKeyId", AWSAccessKeyId)
-    sc.hadoopConfiguration
-      .set("fs.s3n.awsSecretAccessKey", AWSSecretKey)
+
+    try {
+      val prop = new Properties()
+
+      prop.load(ClassLoader.getSystemResourceAsStream("rootkey.csv"))
+      val AWSAccessKeyId = prop.getProperty("AWSAccessKeyId")
+      val AWSSecretKey = prop.getProperty("AWSSecretKey")
+
+      sc.hadoopConfiguration
+        .set("fs.s3n.awsAccessKeyId", AWSAccessKeyId)
+      sc.hadoopConfiguration
+        .set("fs.s3n.awsSecretAccessKey", AWSSecretKey)
+    }
 
     sql = new SQLContext(sc)
 
