@@ -16,7 +16,7 @@ object HtmlElement {
 class HtmlElement private (
                             @transient _parsed: Element,
                             val html: String,
-                            val isFragment: Boolean,
+                            val tag: Option[String],
                             override val uri: String
                             ) extends Unstructured {
 
@@ -24,12 +24,12 @@ class HtmlElement private (
   def this(_parsed: Element) = this(
     _parsed,
     _parsed.outerHtml(),
-    true,
+    Some(_parsed.tagName()),
     _parsed.baseUri()
   )
 
   //constructor for HtmlElemtn returned by
-  def this(html: String, uri: String) = this(null, html, false, uri)
+  def this(html: String, uri: String) = this(null, html, None, uri)
 
   def this(content: Array[Byte], charSet: Charset, uri: String) = this(new String(content, charSet), uri)
 
@@ -45,20 +45,14 @@ class HtmlElement private (
 
   @transient lazy val parsed = Option(_parsed).getOrElse {
 
-    if (!isFragment) Jsoup.parse(html, uri)
-    else {
-      if (html.startsWith("<tr")) {
-        val container = Jsoup.parseBodyFragment(s"<table>$html</table>", uri)
-        container.select("tr").first()
-      }
-      else if (html.startsWith("<td")) {
-        val container = Jsoup.parseBodyFragment(s"<table>$html</table>", uri)
-        container.select("td").first()
-      }
-      else {
-        val container = Jsoup.parseBodyFragment(html, uri)
-        container.select("body").first().child(0)
-      }
+    tag match {
+      case Some(ttag) =>
+        val container = if (ttag == "tr" || ttag == "td") Jsoup.parseBodyFragment(s"<table>$html</table>", uri)
+        else Jsoup.parseBodyFragment(html, uri)
+
+        container.select(ttag).first()
+      case _ =>
+        Jsoup.parse(html, uri)
     }
   }
 
