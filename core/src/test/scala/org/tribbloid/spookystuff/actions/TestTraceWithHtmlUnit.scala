@@ -11,5 +11,5 @@ import org.tribbloid.spookystuff.pages.Page
 //TODO: this need some serious reorganization
 class TestTraceWithHtmlUnit extends TestTrace {
 
-  override val driverFactory = HtmlUnitDriverFactory()
+  override lazy val driverFactory = HtmlUnitDriverFactory()
 }
