@@ -36,6 +36,9 @@ abstract class IntegrationSuite extends FunSuite with BeforeAndAfterAll {
       sc.hadoopConfiguration
         .set("fs.s3n.awsSecretAccessKey", AWSSecretKey)
     }
+    catch {
+      case e: Throwable => println("rootkey.csv not provided")
+    }
 
     sql = new SQLContext(sc)
 
