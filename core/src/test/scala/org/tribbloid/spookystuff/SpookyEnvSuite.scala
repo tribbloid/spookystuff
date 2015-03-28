@@ -14,7 +14,7 @@ abstract class SpookyEnvSuite extends FunSuite with BeforeAndAfter with BeforeAn
   var sql: SQLContext = _
   var spooky: SpookyContext = _
 
-  val driverFactory: DriverFactory = PhantomJSDriverFactory(loadImages = true)
+  lazy val driverFactory: DriverFactory = PhantomJSDriverFactory(loadImages = true)
 
   override def beforeAll() {
     val conf: SparkConf = new SparkConf().setAppName("integration")
