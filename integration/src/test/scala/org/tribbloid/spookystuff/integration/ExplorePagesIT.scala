@@ -14,7 +14,6 @@ class ExplorePagesIT extends IntegrationSuite {
   )
 
   override def doMain(spooky: SpookyContext): Unit = {
-    import spooky._
 
     val result = spooky
       .fetch(

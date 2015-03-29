@@ -1,5 +1,6 @@
 package org.tribbloid.spookystuff.actions
 
+import org.scalatest.tags.Retryable
 import org.tribbloid.spookystuff.pages.{NoPage, Page}
 import org.tribbloid.spookystuff.{dsl, SpookyEnvSuite}
 import org.tribbloid.spookystuff.dsl.TorProxyFactory
@@ -10,6 +11,7 @@ import scala.concurrent.duration
 /**
  * Created by peng on 11/6/14.
  */
+@Retryable
 class TestWget extends SpookyEnvSuite {
 
   lazy val noProxyIP = {

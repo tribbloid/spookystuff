@@ -15,8 +15,6 @@ class LeftJoinIT extends IntegrationSuite {
 
   override def doMain(spooky: SpookyContext): Unit = {
 
-    import spooky._
-
     val base = spooky
       .fetch(
         Wget("http://webscraper.io/test-sites/e-commerce/allinone")
