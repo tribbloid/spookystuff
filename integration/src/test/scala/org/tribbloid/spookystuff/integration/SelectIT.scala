@@ -15,7 +15,7 @@ class SelectIT extends IntegrationSuite {
 
     import spooky._
 
-    val pageRowRDD = noInput
+    val pageRowRDD = spooky
       .fetch(
         Visit("http://www.wikipedia.org/")
       )

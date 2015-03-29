@@ -13,7 +13,7 @@ object GoogleImage extends QueryCore {
   override def doMain(spooky: SpookyContext) = {
     import spooky._
 
-    noInput
+    spooky
       .fetch(
         Visit("http://www.utexas.edu/world/univ/alpha/")
       )

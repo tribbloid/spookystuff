@@ -13,7 +13,7 @@ object WellCa extends QueryCore {
   override def doMain(spooky: SpookyContext) = {
     import spooky._
 
-    noInput
+    spooky
       .fetch(
         Wget("http://well.ca/whatsnew/")
       )

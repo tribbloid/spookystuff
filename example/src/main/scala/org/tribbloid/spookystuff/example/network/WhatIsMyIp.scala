@@ -15,7 +15,7 @@ object WhatIsMyIp extends QueryCore {
 
     //    spooky.driverFactory = TorDriverFactory()
 
-    noInput
+    spooky
       .fetch(
         Visit("http://www.whatsmyip.org/")
       )

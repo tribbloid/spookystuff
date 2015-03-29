@@ -17,7 +17,7 @@ class FlatSelectHierarchyIT extends IntegrationSuite {
 
     import spooky._
 
-    val result = noInput
+    val result = spooky
       .fetch(
         Wget("http://webscraper.io/test-sites/e-commerce/allinone") //this site is unstable, need to revise
       )

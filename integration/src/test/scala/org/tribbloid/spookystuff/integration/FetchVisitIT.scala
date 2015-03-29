@@ -15,7 +15,7 @@ class FetchVisitIT extends IntegrationSuite {
 
     import spooky._
 
-    val RDD = noInput
+    val RDD = spooky
       .fetch(
         Visit("http://www.wikipedia.org/")
       ).persist()

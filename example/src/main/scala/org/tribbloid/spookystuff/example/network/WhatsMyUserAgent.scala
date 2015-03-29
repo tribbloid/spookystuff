@@ -15,7 +15,7 @@ object WhatsMyUserAgent extends QueryCore {
 
     //    spooky.driverFactory = TorDriverFactory()
 
-    noInput
+    spooky
       .fetch(
         Visit("http://www.whatsmyuseragent.com/")
       )

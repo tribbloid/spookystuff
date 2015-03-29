@@ -16,7 +16,7 @@ class ExploreNextPageIT extends IntegrationSuite {
   override def doMain(spooky: SpookyContext): Unit = {
     import spooky._
 
-    val result = noInput
+    val result = spooky
       .fetch(
         Wget("http://webscraper.io/test-sites/e-commerce/static/computers/tablets")
       )

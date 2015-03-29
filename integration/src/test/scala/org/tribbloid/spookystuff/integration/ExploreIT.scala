@@ -17,7 +17,7 @@ class ExploreIT extends IntegrationSuite {
 
     import spooky._
 
-    val base = noInput
+    val base = spooky
       .fetch(
         Visit("http://webscraper.io/test-sites/e-commerce/allinone")
       )

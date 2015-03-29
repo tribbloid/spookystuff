@@ -10,7 +10,7 @@ object Iherb extends QueryCore {
   override def doMain(spooky: SpookyContext) = {
     import spooky._
 
-    noInput
+    spooky
       .fetch(
         Wget("http://ca.iherb.com/")
       )

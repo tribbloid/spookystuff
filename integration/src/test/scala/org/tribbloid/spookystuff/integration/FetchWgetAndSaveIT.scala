@@ -21,7 +21,7 @@ class FetchWgetAndSaveIT extends IntegrationSuite {
 
     import spooky._
 
-    val RDD = noInput
+    val RDD = spooky
       .fetch(
         Wget("http://upload.wikimedia.org/wikipedia/en/thumb/8/80/Wikipedia-logo-v2.svg/220px-Wikipedia-logo-v2.svg.png")
       )

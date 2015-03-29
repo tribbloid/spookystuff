@@ -13,7 +13,7 @@ object FoodPoco extends QueryCore {
   override def doMain(spooky: SpookyContext) = {
     import spooky._
 
-    val base = noInput
+    val base = spooky
       .fetch(
         Wget("http://cd.food.poco.cn/restaurant/res_search.php?sp_id=107001&reslocateID=101022001&reslocateID1=&reslocateID2=&seatxt=%BB%F0%B9%F8&%CC%E1%BD%BB=%CB%D1+%CB%F7")
       )

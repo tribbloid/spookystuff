@@ -17,7 +17,7 @@ class FetchInteractionsIT extends IntegrationSuite{
   override def doMain(spooky: SpookyContext): Unit = {
     import spooky._
 
-    val RDD = noInput
+    val RDD = spooky
       .fetch(
         Visit("http://www.wikipedia.org")
           +> TextInput("input#searchInput","深度学习")

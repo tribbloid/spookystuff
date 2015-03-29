@@ -26,7 +26,7 @@ class ExploreAJAXPagesIT extends IntegrationSuite {
           +> Snapshot()
       ))
 
-    val base = noInput
+    val base = spooky
       .fetch(
         Visit("http://webscraper.io/test-sites/e-commerce/ajax")
           +> snapshotAllPages

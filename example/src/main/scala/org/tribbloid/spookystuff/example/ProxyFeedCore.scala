@@ -33,7 +33,7 @@ abstract class ProxyFeedCore extends QueryCore {
 
     import spooky._
 
-    val httpPageRowRDD = noInput
+    val httpPageRowRDD = spooky
       .fetch(
         Visit("http://www.us-proxy.org/")
           +> WaitForDocumentReady
@@ -55,7 +55,7 @@ abstract class ProxyFeedCore extends QueryCore {
         "http" as 'Type
       ).persist()
 
-    val socksPageRowRDD = noInput
+    val socksPageRowRDD = spooky
       .fetch(
         Visit("http://www.socks-proxy.net/")
           +> WaitForDocumentReady

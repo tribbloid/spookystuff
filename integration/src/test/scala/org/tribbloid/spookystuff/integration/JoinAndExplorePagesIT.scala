@@ -16,7 +16,7 @@ class JoinAndExplorePagesIT extends IntegrationSuite {
   override def doMain(spooky: SpookyContext): Unit = {
     import spooky._
 
-    val joined = noInput
+    val joined = spooky
       .fetch(
         Wget("http://webscraper.io/test-sites/e-commerce/static")
       )

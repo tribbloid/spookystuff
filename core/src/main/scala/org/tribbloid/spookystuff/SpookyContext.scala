@@ -94,9 +94,7 @@ case class SpookyContext (
 //  def newZero: SpookyContext = this.copy(metrics = new Metrics)
 
   def getContextForNewInput = if (conf.sharedMetrics) this
-  else this.copy(metrics = new Metrics)
-
-  @transient lazy val noInput: PageRowRDD = PageRowRDD(this.sqlContext.sparkContext.noInput, spooky = getContextForNewInput)
+  else this.copy(metrics = new Metrics())
 
   implicit def stringRDDToItsView(rdd: RDD[String]): StringRDDView = new StringRDDView(rdd)
 

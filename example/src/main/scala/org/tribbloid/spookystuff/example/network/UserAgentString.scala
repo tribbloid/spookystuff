@@ -15,7 +15,7 @@ object UserAgentString extends QueryCore {
 
     //    spooky.driverFactory = TorDriverFactory()
 
-    noInput
+    spooky
       .fetch(
         Wget("http://www.useragentstring.com/pages/Browserlist/")
       )

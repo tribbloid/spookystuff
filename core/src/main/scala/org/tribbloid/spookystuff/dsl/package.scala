@@ -1,8 +1,10 @@
 package org.tribbloid.spookystuff
 
 import org.tribbloid.spookystuff.actions.{TraceView, Action, Trace, TraceSetView}
+import org.tribbloid.spookystuff.entity.PageRow
 import org.tribbloid.spookystuff.expressions._
 import org.tribbloid.spookystuff.pages.{Page, Unstructured, Elements}
+import org.tribbloid.spookystuff.sparkbinding.PageRowRDD
 
 import scala.language.implicitConversions
 import scala.reflect.ClassTag
@@ -13,6 +15,9 @@ import scala.reflect.ClassTag
 package object dsl {
 
 //  type SerializableCookie = Cookie with Serializable
+
+  implicit def spookyContextToPageRowRDD(spooky: SpookyContext): PageRowRDD =
+    new PageRowRDD(spooky.sqlContext.sparkContext.parallelize(Seq(PageRow())), spooky = spooky.getContextForNewInput)
 
   implicit def traceView(trace: Trace): TraceView = new TraceView(trace)
 

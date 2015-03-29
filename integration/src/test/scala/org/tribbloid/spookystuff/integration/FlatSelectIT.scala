@@ -17,7 +17,7 @@ class FlatSelectIT extends IntegrationSuite {
 
     import spooky._
 
-    val result = noInput
+    val result = spooky
       .fetch(
         Wget("http://www.wikipedia.org/")
       )

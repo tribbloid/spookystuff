@@ -19,7 +19,7 @@ class FetchBlockIT extends IntegrationSuite {
 
     import spooky._
 
-    val RDD = noInput
+    val RDD = spooky
       .fetch(
         Visit("http://webscraper.io/test-sites/e-commerce/ajax/computers/laptops")
           +> Snapshot().as('a)
