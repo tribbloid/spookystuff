@@ -26,7 +26,7 @@ class ExplorePagesIT extends IntegrationSuite {
         'A.text ~ 'page
       )
       .select($.uri ~ 'uri)
-      .toSchemaRDD()
+      .toDataFrame()
 
     assert(
       result.schema.fieldNames ===

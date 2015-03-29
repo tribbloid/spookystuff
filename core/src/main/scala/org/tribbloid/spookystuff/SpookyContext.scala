@@ -5,7 +5,7 @@ import org.apache.spark._
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.{SQLContext, SchemaRDD}
 import org.tribbloid.spookystuff.entity.{Key, KeyLike, PageRow}
-import org.tribbloid.spookystuff.sparkbinding.{PageRowRDD, SchemaRDDView, StringRDDView}
+import org.tribbloid.spookystuff.sparkbinding.{PageRowRDD, DataFrameView, StringRDDView}
 import org.tribbloid.spookystuff.utils.Utils
 
 import scala.collection.immutable.{ListMap, ListSet}
@@ -100,7 +100,7 @@ case class SpookyContext (
 
   implicit def stringRDDToItsView(rdd: RDD[String]): StringRDDView = new StringRDDView(rdd)
 
-  implicit def schemaRDDToItsView(rdd: SchemaRDD): SchemaRDDView = new SchemaRDDView(rdd)
+  implicit def dataFrameToItsView(rdd: SchemaRDD): DataFrameView = new DataFrameView(rdd)
 
   //  implicit def selfToPageRowRDD(rdd: RDD[PageRow]): PageRowRDD = PageRowRDD(rdd, spooky = this.copy(metrics = new Metrics))
 
@@ -111,7 +111,7 @@ case class SpookyContext (
 
     rdd match {
       case rdd: SchemaRDD =>
-        val self = new SchemaRDDView(rdd).asMapRDD.map{
+        val self = new DataFrameView(rdd).asMapRDD.map{
           map =>
             new PageRow(
               Option(ListMap(map.toSeq: _*))
@@ -129,12 +129,12 @@ case class SpookyContext (
           map =>
             Utils.toJson(map)
         )
-        val schemaRDD = sqlContext.jsonRDD(jsonRDD)
+        val dataFrame = sqlContext.jsonRDD(jsonRDD)
         val self = canonRdd.map(
           map =>
             PageRow(ListMap(map.map(tuple => (Key(tuple._1),tuple._2)).toSeq: _*), Seq())
         )
-        new PageRowRDD(self, keys = ListSet(schemaRDD.schema.fieldNames: _*).map(Key(_)), spooky = getContextForNewInput)
+        new PageRowRDD(self, keys = ListSet(dataFrame.schema.fieldNames: _*).map(Key(_)), spooky = getContextForNewInput)
       case _ =>
         val self = rdd.map{
           str =>

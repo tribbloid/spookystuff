@@ -20,6 +20,6 @@ object WellCa extends QueryCore {
       .flatSelect($"div.product_grid_full_categories")(
         A"div.product_grid_info_top_text_container".text ~ 'name
       )
-      .toSchemaRDD()
+      .toDataFrame()
   }
 }

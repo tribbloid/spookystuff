@@ -20,6 +20,6 @@ object UserAgentString extends QueryCore {
         Wget("http://www.useragentstring.com/pages/Browserlist/")
       )
       .select($"li a".text ~ 'agent_string)
-      .toSchemaRDD()
+      .toDataFrame()
   }
 }

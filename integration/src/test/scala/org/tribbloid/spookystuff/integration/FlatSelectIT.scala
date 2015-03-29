@@ -27,7 +27,7 @@ class FlatSelectIT extends IntegrationSuite {
         A"a em".text,
         'A.uri
       )
-      .toSchemaRDD()
+      .toDataFrame()
 
     assert(
       result.schema.fieldNames ===

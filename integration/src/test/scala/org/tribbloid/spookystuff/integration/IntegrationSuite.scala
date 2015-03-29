@@ -117,7 +117,7 @@ abstract class IntegrationSuite extends FunSuite with BeforeAndAfterAll {
     assert(metrics.DFSReadFail.value === 0)
   }
 
-  private val retry = 1
+  private val retry = 2
 
   private def doTest(spooky: SpookyContext): Unit ={
 

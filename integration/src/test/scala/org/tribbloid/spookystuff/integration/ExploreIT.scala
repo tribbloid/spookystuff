@@ -30,7 +30,7 @@ class ExploreIT extends IntegrationSuite {
         'A.text ~ 'category
       )
       .select($"h1".text ~ 'header)
-      .toSchemaRDD()
+      .toDataFrame()
 
     assert(
       explored.schema.fieldNames ===

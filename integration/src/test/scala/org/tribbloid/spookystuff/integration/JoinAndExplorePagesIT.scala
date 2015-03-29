@@ -41,7 +41,7 @@ class JoinAndExplorePagesIT extends IntegrationSuite {
         'A.text as 'page
       )
       .select($.uri ~ 'uri)
-      .toSchemaRDD()
+      .toDataFrame()
       .persist()
 
     assert(

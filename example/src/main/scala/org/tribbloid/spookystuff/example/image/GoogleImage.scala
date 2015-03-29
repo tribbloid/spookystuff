@@ -33,6 +33,6 @@ object GoogleImage extends QueryCore {
       .select(
         $.saved ~ 'path
       )
-      .toSchemaRDD()
+      .toDataFrame()
   }
 }

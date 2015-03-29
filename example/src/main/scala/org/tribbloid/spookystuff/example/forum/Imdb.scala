@@ -47,6 +47,6 @@ object Imdb extends QueryCore {
         $("div.reviews div.see-more").text ~ 'user_review_count,
         $("div.overall div.histogram-horizontal a").attrs("title") ~ 'user_rating_histogram
       )
-      .toSchemaRDD()
+      .toDataFrame()
   }
 }

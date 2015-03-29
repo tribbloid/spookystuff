@@ -94,7 +94,7 @@ case class PageRowRDD(
       .map(_.toJSON)
 
   //TODO: investigate using the new applySchema api to avoid losing type info
-  def toSchemaRDD(sort: Boolean = true): SchemaRDD = {
+  def toDataFrame(sort: Boolean = true, tableName: String = null): SchemaRDD = {
 
     val jsonRDD = this.toJSON(sort)
 
@@ -109,10 +109,12 @@ case class PageRowRDD(
     val result = schemaRDD
       .select(columns: _*)
 
+    if (tableName!=null) spooky.sqlContext.registerRDDAsTable(result, tableName)
+
     result
   }
 
-  def toCSV(separator: String = ","): RDD[String] = this.toSchemaRDD().map {
+  def toCSV(separator: String = ","): RDD[String] = this.toDataFrame().map {
     _.mkString(separator)
   }
 

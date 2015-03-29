@@ -8,7 +8,7 @@ import scala.collection.immutable.ListMap
 /**
  * Created by peng on 12/06/14.
  */
-class SchemaRDDView(val self: SchemaRDD) {
+class DataFrameView(val self: SchemaRDD) {
 
   def asMapRDD: RDD[Map[String,Any]] = {
     val headers = self.schema.fieldNames

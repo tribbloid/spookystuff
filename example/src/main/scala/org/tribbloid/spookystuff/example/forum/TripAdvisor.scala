@@ -45,6 +45,6 @@ object TripAdvisor extends QueryCore {
         A"div.passportStampsBadge span.badgeText".last.text ~ 'city_count,
         A"div.totalReviewBadge" ~ 'review_count
       )
-      .toSchemaRDD()
+      .toDataFrame()
   }
 }

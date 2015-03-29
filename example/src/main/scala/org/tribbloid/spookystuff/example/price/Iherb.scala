@@ -22,6 +22,6 @@ object Iherb extends QueryCore {
         $.saved ~ 'saved,
         $.uri ~ 'uri
       )
-      .toSchemaRDD()
+      .toDataFrame()
   }
 }

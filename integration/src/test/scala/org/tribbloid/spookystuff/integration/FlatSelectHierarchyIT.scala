@@ -27,7 +27,7 @@ class FlatSelectHierarchyIT extends IntegrationSuite {
       .flatSelect(A"h4", ordinalKey = 'i2)(
         'A.attr("class") ~ 'h4_class
       )
-      .toSchemaRDD()
+      .toDataFrame()
 
     assert(
       result.schema.fieldNames ===

@@ -55,7 +55,7 @@ object FoodPoco extends QueryCore {
 
     import sql._
 
-    RDD1.union(RDD2).toSchemaRDD()
+    RDD1.union(RDD2).toDataFrame()
       .orderBy( 'page.asc, 'row.asc)
   }
 }
