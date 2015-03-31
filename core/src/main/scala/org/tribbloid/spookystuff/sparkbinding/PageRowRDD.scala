@@ -65,6 +65,7 @@ case class PageRowRDD(
 
     this.persistDuring(spooky.conf.defaultStorageLevel){
       val result = this.sortBy{_.ordinal(sortKeysSeq)}
+      result.count()
       result
     }
   }

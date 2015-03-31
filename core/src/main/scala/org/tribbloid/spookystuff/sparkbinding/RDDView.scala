@@ -14,7 +14,6 @@ class RDDView(val self: RDD[_]) {
     if (self.getStorageLevel == StorageLevel.NONE){
       self.persist(newLevel)
       val result = fn
-      result.count()
       self.unpersist()//TODO: what's the point of block argument?
       result
     }
@@ -23,6 +22,7 @@ class RDDView(val self: RDD[_]) {
   def checkpointNow(): Unit = {
     persistDuring(StorageLevel.MEMORY_ONLY) {
       self.checkpoint()
+      self.count()
       self
     }
     Unit
