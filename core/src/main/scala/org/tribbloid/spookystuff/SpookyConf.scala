@@ -82,7 +82,7 @@ class SpookyConf (
 
                    var defaultParallelism: PageRowRDD => Int = {
                      row =>
-                       row.sparkContext.defaultParallelism * 4
+                       row.sparkContext.defaultParallelism * 8
                    },
 
                    var remoteResourceTimeout: Duration = 60.seconds,
