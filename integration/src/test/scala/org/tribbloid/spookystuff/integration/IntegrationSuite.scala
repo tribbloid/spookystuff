@@ -77,8 +77,7 @@ abstract class IntegrationSuite extends FunSuite with BeforeAndAfterAll {
             driverFactory = driver,
             defaultQueryOptimizer = optimizer,
             sharedMetrics = true,
-            checkpointInterval = 2,
-            batchSize = 2
+            checkpointInterval = 2
           )
         )
 
@@ -121,7 +120,7 @@ abstract class IntegrationSuite extends FunSuite with BeforeAndAfterAll {
 
   private def doTest(spooky: SpookyContext): Unit ={
 
-    Utils.retry(retry) { //sometimes accumulator missed a few for no reason
+    Utils.retry(retry) {
       spooky.conf.cacheRead = false
       spooky.zeroIn()
       doMain(spooky)

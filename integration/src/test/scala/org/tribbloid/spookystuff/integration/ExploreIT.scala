@@ -15,8 +15,6 @@ class ExploreIT extends IntegrationSuite {
 
   override def doMain(spooky: SpookyContext): Unit = {
 
-    import spooky._
-
     val base = spooky
       .fetch(
         Visit("http://webscraper.io/test-sites/e-commerce/allinone")

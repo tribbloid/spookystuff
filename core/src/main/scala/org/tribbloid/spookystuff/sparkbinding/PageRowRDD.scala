@@ -48,16 +48,6 @@ case class PageRowRDD(
     this.copy(self.map(_.copy(segmentID = UUID.randomUUID())))
   }
 
-  private def persistDuring[T <: RDD[_]](newLevel: StorageLevel = spooky.conf.defaultStorageLevel)(fn: => T): T =
-    if (this.getStorageLevel == StorageLevel.NONE){
-      this.persist(newLevel)
-      val result = fn
-      result.count()
-      this.unpersist()//TODO: what's the point of block argument?
-      result
-    }
-    else fn
-
   private def discardPages: PageRowRDD = this.copy(self = this.map(_.copy(pageLikes = Seq())))
 
   @transient def keysSeq: Seq[KeyLike] = this.keys.toSeq.reverse
@@ -73,7 +63,7 @@ case class PageRowRDD(
 
     import scala.Ordering.Implicits._
 
-    this.persistDuring(){
+    this.persistDuring(spooky.conf.defaultStorageLevel){
       val result = this.sortBy{_.ordinal(sortKeysSeq)}
       result
     }
@@ -558,7 +548,7 @@ case class PageRowRDD(
 
     val result = optimizer match {
       case Narrow =>
-        _narrowExplore(expr, depthKey, maxDepth, ordinalKey, maxOrdinal)(_traces, numPartitions, flattenPagesPattern, flattenPagesOrdinalKey)(select: _*)
+        _narrowExplore(expr, depthKey, maxDepth, ordinalKey, maxOrdinal, checkpointInterval)(_traces, numPartitions, flattenPagesPattern, flattenPagesOrdinalKey)(select: _*)
       case Wide =>
         _wideExplore(expr, depthKey, maxDepth, ordinalKey, maxOrdinal, checkpointInterval, null)(_traces, numPartitions, flattenPagesPattern, flattenPagesOrdinalKey)(select: _*)
       case WideLookup =>
@@ -576,7 +566,8 @@ case class PageRowRDD(
                               depthKey: Symbol,
                               maxDepth: Int,
                               ordinalKey: Symbol,
-                              maxOrdinal: Int
+                              maxOrdinal: Int,
+                              checkpointInterval: Int
                               )(
                               _traces: Set[Trace],
                               numPartitions: Int,
@@ -586,8 +577,6 @@ case class PageRowRDD(
                               select: Expression[Any]*
                               ): PageRowRDD = {
 
-    val batchSize = this.spooky.conf.batchSize
-
     val spooky = this.spooky
 
     val _expr = expr defaultAs Symbol(Const.defaultJoinKey)
@@ -595,6 +584,7 @@ case class PageRowRDD(
     var depthFromExclusive = 0
 
     if (this.getStorageLevel == StorageLevel.NONE) this.persist(spooky.conf.defaultStorageLevel)
+    if (this.context.getCheckpointDir.isEmpty) this.context.setCheckpointDir(spooky.conf.dirs.checkpoint)
 
     val firstResultRDD = this
       .coalesce(numPartitions) //TODO: simplify
@@ -633,7 +623,7 @@ case class PageRowRDD(
     while(true) {
 
       val _depthFromExclusive = depthFromExclusive //var in closure being shipped to workers usually end up miserably (not synched properly)
-      val depthToInclusive = Math.min(_depthFromExclusive + batchSize, maxDepth)
+      val depthToInclusive = Math.min(_depthFromExclusive + checkpointInterval, maxDepth)
 
       //      assert(_depthFromExclusive < depthToInclusive, _depthFromExclusive.toString+":"+ depthToInclusive)
 
@@ -654,9 +644,11 @@ case class PageRowRDD(
               flattenPagesPattern,
               flattenPagesOrdinalKey
             )
-      }.persist(spooky.conf.defaultStorageLevel) // change to checkpoint?
+      }
 
-      stageRDD = batchExeRDD.map(_._2).filter(_.hasMore) //TODO: repartition to balance
+      batchExeRDD.checkpointNow()
+
+      stageRDD = batchExeRDD.map(_._2).filter(_.hasMore) //TODO: repartition to balance?
 
       val totalRDD = batchExeRDD.flatMap(_._1)
       resultRDDs += totalRDD
@@ -682,6 +674,7 @@ case class PageRowRDD(
   //remember base MUST HAVE a hash partitioner!!!
   private def mergeAndSubtractBySignature(
                                            base: RDD[(Signature, PageRow)],
+                                           needCheckpointing: Boolean,
                                            ordinalKey: Symbol
                                            )(
                                            select: Expression[Any]*
@@ -704,7 +697,9 @@ case class PageRowRDD(
           newRowSelected -> newRowOption
         }
     }
-      .persist(spooky.conf.defaultStorageLevel)
+
+    if (needCheckpointing) mixed.checkpointNow()
+    else mixed.persist(spooky.conf.defaultStorageLevel)
 
     val merged = mixed.mapValues(_._1)
     val newSeeds = mixed.values.flatMap(_._2)
@@ -763,14 +758,14 @@ case class PageRowRDD(
         lookupAccumulated = lookupAccumulated.union(newLookups)
 
         if (depth % checkpointInterval == 0) {
-          lookupAccumulated.checkpoint()
+          lookupAccumulated.checkpointNow()
         }
       }
 
       val joined = newPages
         .flattenPages(flattenPagesPattern, flattenPagesOrdinalKey)
 
-      val tuple = joined.mergeAndSubtractBySignature(accumulated, ordinalKey)(
+      val tuple = joined.mergeAndSubtractBySignature(accumulated, depth % checkpointInterval == 0, ordinalKey)(
         Option(depthKey).map(k => Literal(depth) ~ k).toSeq: _*
       )
       accumulated = tuple._1

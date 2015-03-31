@@ -1,18 +1,17 @@
 package org.tribbloid.spookystuff
 
 import org.apache.hadoop.conf.Configuration
+import org.apache.spark.SparkContext._
 import org.apache.spark._
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.{SQLContext, SchemaRDD}
 import org.tribbloid.spookystuff.entity.{Key, KeyLike, PageRow}
-import org.tribbloid.spookystuff.sparkbinding.{PageRowRDD, DataFrameView, StringRDDView}
+import org.tribbloid.spookystuff.sparkbinding.{DataFrameView, PageRowRDD, StringRDDView}
 import org.tribbloid.spookystuff.utils.Utils
 
 import scala.collection.immutable.{ListMap, ListSet}
 import scala.language.implicitConversions
 import scala.reflect.ClassTag
-
-import org.apache.spark.SparkContext._
 
 object Metrics {
 
@@ -69,8 +68,6 @@ case class SpookyContext (
     this(new SparkContext(conf))
   }
 
-  import org.tribbloid.spookystuff.views._
-
   var broadcastedSpookyConf = sqlContext.sparkContext.broadcast(_spookyConf)
 
   def conf = if (_spookyConf == null) broadcastedSpookyConf.value
@@ -96,15 +93,10 @@ case class SpookyContext (
   def getContextForNewInput = if (conf.sharedMetrics) this
   else this.copy(metrics = new Metrics())
 
-  implicit def stringRDDToItsView(rdd: RDD[String]): StringRDDView = new StringRDDView(rdd)
-
-  implicit def dataFrameToItsView(rdd: SchemaRDD): DataFrameView = new DataFrameView(rdd)
-
-  //  implicit def selfToPageRowRDD(rdd: RDD[PageRow]): PageRowRDD = PageRowRDD(rdd, spooky = this.copy(metrics = new Metrics))
-
   //every input or noInput will generate a new metrics
   implicit def RDDToPageRowRDD[T: ClassTag](rdd: RDD[T]): PageRowRDD = {
     import org.tribbloid.spookystuff.views._
+
     import scala.reflect._
 
     rdd match {

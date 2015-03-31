@@ -4,6 +4,7 @@ import org.apache.spark.sql.SQLContext
 import org.apache.spark.{SparkConf, SparkContext}
 import org.scalatest.{Retries, BeforeAndAfter, BeforeAndAfterAll, FunSuite}
 import org.tribbloid.spookystuff.dsl.{DriverFactory, PhantomJSDriverFactory}
+import org.tribbloid.spookystuff.utils.Utils
 
 /**
  * Created by peng on 11/30/14.
@@ -18,7 +19,7 @@ abstract class SpookyEnvSuite extends FunSuite with BeforeAndAfter with BeforeAn
 
   override def withFixture(test: NoArgTest) = {
     if (isRetryable(test))
-      withRetry { super.withFixture(test) }
+      Utils.retry(2) { super.withFixture(test) }
     else
       super.withFixture(test)
   }

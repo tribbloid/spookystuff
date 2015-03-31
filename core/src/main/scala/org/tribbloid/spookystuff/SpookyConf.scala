@@ -97,7 +97,6 @@ class SpookyConf (
                    var defaultQueryOptimizer: QueryOptimizer = Wide,
 
                    var checkpointInterval: Int = 50,
-                   var batchSize: Int = 500,
 
                    var defaultStorageLevel: StorageLevel = StorageLevel.MEMORY_ONLY
                    ) extends Serializable {
