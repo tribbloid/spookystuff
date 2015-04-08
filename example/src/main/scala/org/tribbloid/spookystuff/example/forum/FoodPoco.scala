@@ -11,7 +11,6 @@ import org.tribbloid.spookystuff.example.QueryCore
 object FoodPoco extends QueryCore {
 
   override def doMain(spooky: SpookyContext) = {
-    import spooky._
 
     val base = spooky
       .fetch(
@@ -53,9 +52,8 @@ object FoodPoco extends QueryCore {
         A("p.fr").text ~ 'date
       )
 
-    import sql._
+    import sql.implicits._
 
-    RDD1.union(RDD2).toDataFrame()
-      .orderBy( 'page.asc, 'row.asc)
+    RDD1.union(RDD2).toDataFrame().orderBy( 'page.asc, 'row.asc).rdd
   }
 }

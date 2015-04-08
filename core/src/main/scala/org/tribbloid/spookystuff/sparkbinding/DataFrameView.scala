@@ -14,7 +14,7 @@ class DataFrameView(val self: SchemaRDD) {
     val headers = self.schema.fieldNames
 
     self.map{
-      row => ListMap(headers.zip(row): _*)
+      row => ListMap(headers.zip(row.toSeq): _*)
     }
   }
 

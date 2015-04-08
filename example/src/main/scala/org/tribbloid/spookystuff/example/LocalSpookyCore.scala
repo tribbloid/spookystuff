@@ -34,8 +34,8 @@ trait LocalSpookyCore {
     new SQLContext(sc)
   }
 
-  val maxJoinOrdinal = 3
-  val maxExploreDepth = 2
+  def maxJoinOrdinal = 3
+  def maxExploreDepth = 2
 
   def getSpooky(args: Array[String]): SpookyContext = {
 

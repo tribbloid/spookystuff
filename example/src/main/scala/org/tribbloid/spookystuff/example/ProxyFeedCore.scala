@@ -15,7 +15,7 @@ abstract class ProxyFeedCore extends QueryCore {
   override def getSpooky(args: Array[String]): SpookyContext = {
     val noProxy = super.getSpooky(args)
 
-    import sql._
+    import sql.implicits._
 
     proxyRDD = proxyRDD(noProxy)
 

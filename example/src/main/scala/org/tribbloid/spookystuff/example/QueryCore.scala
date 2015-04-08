@@ -15,9 +15,9 @@ trait QueryCore extends LocalSpookyCore {
   final def main(args: Array[String]) {
 
     val spooky = getSpooky(args)
-    val result = doMain(spooky)
+    val result = doMain(spooky).cache()
 
-    result.persist().saveAsTextFile("file://"+System.getProperty("user.home")+"/spooky-local/result"+s"/$appName-${System.currentTimeMillis()}.json")
+    result.saveAsTextFile("file://"+System.getProperty("user.home")+"/spooky-local/result"+s"/$appName-${System.currentTimeMillis()}.json")
 
     val array = result.collect()
 

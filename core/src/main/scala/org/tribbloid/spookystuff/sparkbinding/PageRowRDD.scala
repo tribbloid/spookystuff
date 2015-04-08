@@ -95,12 +95,11 @@ case class PageRowRDD(
       .filter(key => key.isInstanceOf[Key])
       .map(key => Utils.canonizeColumnName(key.name))
       .filter(name => schemaRDD.schema.fieldNames.contains(name))
-    val columns = validKeyNames.map(name => UnresolvedAttribute(name))
+    val columns = validKeyNames.map(name => new Column(UnresolvedAttribute(name)))
 
-    val result = schemaRDD
-      .select(columns: _*)
+    val result = schemaRDD.select(columns: _*)
 
-    if (tableName!=null) spooky.sqlContext.registerRDDAsTable(result, tableName)
+    if (tableName!=null) result.registerTempTable(tableName)
 
     result
   }

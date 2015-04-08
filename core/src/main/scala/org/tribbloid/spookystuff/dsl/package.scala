@@ -1,7 +1,7 @@
 package org.tribbloid.spookystuff
 
 import org.apache.spark.rdd.RDD
-import org.apache.spark.sql.SchemaRDD
+import org.apache.spark.sql.{DataFrame, SchemaRDD}
 import org.tribbloid.spookystuff.actions.{TraceView, Action, Trace, TraceSetView}
 import org.tribbloid.spookystuff.entity.PageRow
 import org.tribbloid.spookystuff.expressions._
