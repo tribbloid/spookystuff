@@ -10,24 +10,24 @@ trait QueryCore extends LocalSpookyCore {
     sc.stop()
   }
 
-  def doMain(spooky: SpookyContext): RDD[_]
+  def doMain(spooky: SpookyContext): Any
 
   final def main(args: Array[String]) {
 
     val spooky = getSpooky(args)
-    val result = doMain(spooky).cache()
+    val result = doMain(spooky)
 
-    result.saveAsTextFile("file://"+System.getProperty("user.home")+"/spooky-local/result"+s"/$appName-${System.currentTimeMillis()}.json")
-
-    val array = result.collect()
-
-    array.foreach(row => println(row))
-
-    println("-------------------returned "+array.length+" rows------------------")
-    result match {
-      case schemaRdd: SchemaRDD => println(schemaRdd.schema.fieldNames.mkString("\t"))
-      case _ =>
+    val rdd: RDD[_] = result match {
+      case schemaRdd: SchemaRDD =>
+        println(schemaRdd.schema.fieldNames.mkString("\t"))
+        schemaRdd.rdd
+      case rdd: RDD[_] => rdd
     }
+
+    val array = rdd.cache().takeSample(withReplacement = false, num = 10)
+    array.foreach(row => println(row))
+    rdd.saveAsTextFile("file://"+System.getProperty("user.home")+"/spooky-local/result"+s"/$appName-${System.currentTimeMillis()}.json")
+    println("-------------------returned "+rdd.count()+" rows------------------")
     println(s"------------------fetched ${spooky.metrics.pagesFetched.value} pages-----------------")
   }
 }

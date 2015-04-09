@@ -25,17 +25,17 @@ import scala.language.implicitConversions
  * Created by peng on 8/29/14.
  */
 case class PageRowRDD(
-                       @transient self: RDD[PageRow],
+                       @transient store: RDD[PageRow],
                        @transient keys: ListSet[KeyLike] = ListSet(),
                        @transient spooky: SpookyContext
                        )
-  extends RDD[PageRow](self) with PageRowRDDOverrides {
+  extends RDD[PageRow](store) with PageRowRDDOverrides {
 
   import org.apache.spark.SparkContext._
 
   def segmentBy(exprs: Expression[Any]*): PageRowRDD = { //TODO: need spike
 
-    this.copy(self.map{
+    this.copy(store.map{
       row =>
         val ser = SparkEnv.get.serializer.newInstance()
         val values = exprs.map(_.apply(row))
@@ -45,10 +45,10 @@ case class PageRowRDD(
   }
 
   def segmentByRow: PageRowRDD = {
-    this.copy(self.map(_.copy(segmentID = UUID.randomUUID())))
+    this.copy(store.map(_.copy(segmentID = UUID.randomUUID())))
   }
 
-  private def discardPages: PageRowRDD = this.copy(self = this.map(_.copy(pageLikes = Seq())))
+  private def discardPages: PageRowRDD = this.copy(store = this.map(_.copy(pageLikes = Seq())))
 
   @transient def keysSeq: Seq[KeyLike] = this.keys.toSeq.reverse
 
@@ -144,7 +144,7 @@ case class PageRowRDD(
         }
         pageRow
     }
-    this.copy(self = saved)
+    this.copy(store = saved)
   }
 
   /**
@@ -182,7 +182,7 @@ case class PageRowRDD(
     }
 
     val result = this.copy(
-      self = this.flatMap(_.select(exprs: _*)),
+      store = this.flatMap(_.select(exprs: _*)),
       keys = this.keys ++ newKeys
     )
     result
@@ -197,7 +197,7 @@ case class PageRowRDD(
     }
 
     val result = this.copy(
-      self = this.flatMap(_.select(exprs: _*)),
+      store = this.flatMap(_.select(exprs: _*)),
       keys = this.keys ++ newKeys
     )
     result
@@ -211,7 +211,7 @@ case class PageRowRDD(
     }
 
     val result = this.copy(
-      self = this.flatMap(_.select(exprs: _*)),
+      store = this.flatMap(_.select(exprs: _*)),
       keys = this.keys ++ newKeys
     )
     result
@@ -226,7 +226,7 @@ case class PageRowRDD(
     }
 
     this.copy(
-      self = this.flatMap(_.selectTemp(exprs: _*)),
+      store = this.flatMap(_.selectTemp(exprs: _*)),
       keys = this.keys ++ newKeys
     )
   }
@@ -234,14 +234,14 @@ case class PageRowRDD(
   def remove(keys: Symbol*): PageRowRDD = {
     val names = keys.map(key => Key(key))
     this.copy(
-      self = this.map(_.remove(names: _*)),
+      store = this.map(_.remove(names: _*)),
       keys = this.keys -- names
     )
   }
 
   private def clearTemp: PageRowRDD = {
     this.copy(
-      self = this.map(_.clearTemp),
+      store = this.map(_.clearTemp),
       keys = keys -- keys.filter(_.isInstanceOf[TempKey])//circumvent https://issues.scala-lang.org/browse/SI-8985
     )
   }
@@ -256,7 +256,7 @@ case class PageRowRDD(
 
     val flattened = selected.flatMap(_.flatten(expr.name, ordinalKey, maxOrdinal, left))
     selected.copy(
-      self = flattened,
+      store = flattened,
       keys = selected.keys ++ Option(Key.sortKey(ordinalKey))
     )
   }
@@ -271,7 +271,7 @@ case class PageRowRDD(
 
     val flattened = selected.flatMap(_.flatten(expr.name, ordinalKey, maxOrdinal, left))
     selected.copy(
-      self = flattened,
+      store = flattened,
       keys = selected.keys ++ Option(Key.sortKey(ordinalKey))
     )
   }
@@ -307,7 +307,7 @@ case class PageRowRDD(
                     ordinalKey: Symbol = null
                     ): PageRowRDD =
     this.copy(
-      self = this.flatMap(_.flattenPages(pattern.name, ordinalKey)),
+      store = this.flatMap(_.flattenPages(pattern.name, ordinalKey)),
       keys = this.keys ++ Option(Key.sortKey(ordinalKey))
     )
 
@@ -455,7 +455,7 @@ case class PageRowRDD(
         tuple._1.flatMap(_.putPages(pages, joinType))
     }
 
-    this.copy(self = newRows)
+    this.copy(store = newRows)
   }
 
   def join(
@@ -663,7 +663,7 @@ case class PageRowRDD(
     def result: PageRowRDD = {
 
       val resultSelf = new UnionRDD(this.sparkContext, resultRDDs).coalesce(numPartitions) //TODO: not an 'official' API, and not efficient
-      val result = this.copy(self = resultSelf, keys = resultKeys)
+      val result = this.copy(store = resultSelf, keys = resultKeys)
       result.select(select: _*)
     }
 
@@ -704,7 +704,7 @@ case class PageRowRDD(
     val merged = mixed.mapValues(_._1)
     val newSeeds = mixed.values.flatMap(_._2)
 
-    merged -> this.copy(self = newSeeds)
+    merged -> this.copy(store = newSeeds)
   }
 
   //recursive join and union! applicable to many situations like (wide) pagination and deep crawling
@@ -778,7 +778,7 @@ case class PageRowRDD(
     }
 
     def result = {
-      val r0 = this.copy(self = accumulated.values, keys = resultKeys)
+      val r0 = this.copy(store = accumulated.values, keys = resultKeys)
       val res = r0.select(select: _*)
       res
     }

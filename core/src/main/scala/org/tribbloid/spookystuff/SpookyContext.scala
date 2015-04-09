@@ -4,7 +4,7 @@ import org.apache.hadoop.conf.Configuration
 import org.apache.spark.SparkContext._
 import org.apache.spark._
 import org.apache.spark.rdd.RDD
-import org.apache.spark.sql.{SQLContext, SchemaRDD}
+import org.apache.spark.sql.{DataFrame, SQLContext, SchemaRDD}
 import org.tribbloid.spookystuff.entity.{Key, KeyLike, PageRow}
 import org.tribbloid.spookystuff.sparkbinding.{DataFrameView, PageRowRDD, StringRDDView}
 import org.tribbloid.spookystuff.utils.Utils
@@ -93,6 +93,18 @@ case class SpookyContext (
   def getContextForNewInput = if (conf.sharedMetrics) this
   else this.copy(metrics = new Metrics())
 
+  implicit def DataFrameToPageRowRDD(df: DataFrame): PageRowRDD = {
+    val self = new DataFrameView(df).asMapRDD.map {
+      map =>
+        new PageRow(
+          Option(ListMap(map.toSeq: _*))
+            .getOrElse(ListMap())
+            .map(tuple => (Key(tuple._1), tuple._2))
+        )
+    }
+    new PageRowRDD(self, keys = ListSet(df.schema.fieldNames: _*).map(Key(_)), spooky = getContextForNewInput)
+  }
+
   //every input or noInput will generate a new metrics
   implicit def RDDToPageRowRDD[T: ClassTag](rdd: RDD[T]): PageRowRDD = {
     import org.tribbloid.spookystuff.views._
@@ -100,16 +112,6 @@ case class SpookyContext (
     import scala.reflect._
 
     rdd match {
-      case rdd: SchemaRDD =>
-        val self = new DataFrameView(rdd).asMapRDD.map{
-          map =>
-            new PageRow(
-              Option(ListMap(map.toSeq: _*))
-                .getOrElse(ListMap())
-                .map(tuple => (Key(tuple._1),tuple._2))
-            )
-        }
-        new PageRowRDD(self, keys = ListSet(rdd.schema.fieldNames: _*).map(Key(_)), spooky = getContextForNewInput)
       case _ if classOf[Map[_,_]].isAssignableFrom(classTag[T].runtimeClass) => //use classOf everywhere?
         val canonRdd = rdd.map(
           map =>map.asInstanceOf[Map[_,_]].canonizeKeysToColumnNames

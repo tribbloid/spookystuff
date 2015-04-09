@@ -100,7 +100,7 @@ class TestPage extends SpookyEnvSuite {
   test("wget pdf, save and load") {
 
     val results = (
-      Wget("http://www.cs.toronto.edu/~ranzato/publications/DistBeliefNIPS2012_withAppendix.pdf") :: Nil
+      Wget("http://stlab.adobe.com/wiki/images/d/d3/Test.pdf") :: Nil
     ).resolve(spooky)
 
     val resultsList = results.toArray
@@ -138,11 +138,12 @@ class TestPage extends SpookyEnvSuite {
     assert(ranges.size === 2)
     val first = ranges.head
     val second = ranges.last
-    assert(first.size === 3)
+    assert(first.size === 2)
+    assert(first(0).attr("class").get === "central-featured-logo")
     assert(first(1).attr("lang").get === "en")
-    assert(first(2).attr("lang").get === "ru")
-    assert(second.size === 4)
-    assert(second.head.attr("lang").get === "ru")
-    assert(second(1).attr("lang").get === "es")
+    assert(second.size === 3)
+    assert(second(0).attr("lang").get === "es")
+    assert(second(1).attr("lang").get === "de")
+    assert(second(2).attr("lang").get === "ru")
   }
 }

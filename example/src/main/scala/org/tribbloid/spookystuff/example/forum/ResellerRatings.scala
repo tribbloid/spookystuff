@@ -23,6 +23,6 @@ object ResellerRatings extends QueryCore {
         A("div.date span").text ~ 'date,
         A("p.review-body").text ~ 'body
       )
-      .toDataFrame().rdd
+      .toDataFrame()
   }
 }

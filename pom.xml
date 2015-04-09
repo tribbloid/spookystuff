@@ -63,7 +63,6 @@
     <modules>
         <module>core</module>
         <module>example</module>
-        <module>shell</module>
         <module>integration</module>
     </modules>
 

@@ -16,13 +16,13 @@ trait PageRowRDDOverrides extends RDD[PageRow]{
 
   override def getPartitions: Array[Partition] = firstParent[PageRow].partitions
 
-  override val partitioner = self.partitioner
+  override val partitioner = store.partitioner
 
   override def compute(split: Partition, context: TaskContext) =
     firstParent[PageRow].iterator(split, context)
   //-----------------------------------------------------------------------
 
-  private implicit def selfToPageRowRDD(self: RDD[PageRow]): PageRowRDD = this.copy(self = self)
+  private implicit def selfToPageRowRDD(self: RDD[PageRow]): PageRowRDD = this.copy(store = self)
 
   override def filter(f: PageRow => Boolean): PageRowRDD = super.filter(f)
 
@@ -46,7 +46,7 @@ trait PageRowRDDOverrides extends RDD[PageRow]{
 
     case other: PageRowRDD =>
       this.copy(
-        super.union(other.self),
+        super.union(other.store),
         this.keys ++ other.keys.toSeq.reverse
       )
     case _ => super.union(other)
@@ -64,7 +64,7 @@ trait PageRowRDDOverrides extends RDD[PageRow]{
 
     case other: PageRowRDD =>
       this.copy(
-        super.intersection(other.self),
+        super.intersection(other.store),
         this.keys.intersect(other.keys)//TODO: need validation that it won't change sequence
       )
     case _ => super.intersection(other)
@@ -74,7 +74,7 @@ trait PageRowRDDOverrides extends RDD[PageRow]{
 
     case other: PageRowRDD =>
       this.copy(
-        super.intersection(other.self),
+        super.intersection(other.store),
         this.keys.intersect(other.keys)
       )
     case _ => super.intersection(other, numPartitions)
