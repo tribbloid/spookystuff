@@ -30,7 +30,7 @@
 //      .save(
 //        x"file://${System.getProperty("user.home")}/spooky-integration/images/${'times}"
 //      )
-//      .asSchemaRDD()
+//      .asDataFrame()
 //
 //    assert(
 //      result.schema.fieldNames ===

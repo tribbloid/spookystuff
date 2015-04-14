@@ -1,4 +1,4 @@
-package org.tribbloid.spookystuff.views
+package org.tribbloid.spookystuff.utils
 
 import scala.reflect.ClassTag
 

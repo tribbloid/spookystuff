@@ -3,8 +3,6 @@ package org.tribbloid.spookystuff.sparkbinding
 import org.apache.spark.rdd.RDD
 import org.apache.spark.storage.StorageLevel
 
-import scala.collection.immutable.ListMap
-
 /**
  * Created by peng on 12/06/14.
  */
@@ -14,17 +12,17 @@ class RDDView(val self: RDD[_]) {
     if (self.getStorageLevel == StorageLevel.NONE){
       self.persist(newLevel)
       val result = fn
-      self.unpersist()//TODO: what's the point of block argument?
+      self.unpersist()
       result
     }
     else fn
 
-  def checkpointNow(): Unit = {
-    persistDuring(StorageLevel.MEMORY_ONLY) {
-      self.checkpoint()
-      self.count()
-      self
-    }
-    Unit
-  }
+//  def checkpointNow(): Unit = {
+//    persistDuring(StorageLevel.MEMORY_ONLY) {
+//      self.checkpoint()
+//      self.count()
+//      self
+//    }
+//    Unit
+//  }
 }

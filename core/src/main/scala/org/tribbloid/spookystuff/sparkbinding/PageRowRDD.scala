@@ -31,8 +31,6 @@ case class PageRowRDD(
                        )
   extends RDD[PageRow](store) with PageRowRDDOverrides {
 
-  import org.apache.spark.SparkContext._
-
   def segmentBy(exprs: Expression[Any]*): PageRowRDD = { //TODO: need spike
 
     this.copy(store.map{
@@ -57,7 +55,7 @@ case class PageRowRDD(
     case _ => None
   }
 
-  private def defaultOrder: PageRowRDD = {
+  private def defaultSort: PageRowRDD = {
 
     val sortKeysSeq = this.sortKeysSeq
 
@@ -65,7 +63,7 @@ case class PageRowRDD(
 
     this.persistDuring(spooky.conf.defaultStorageLevel){
       val result = this.sortBy{_.ordinal(sortKeysSeq)}
-      result.count()
+      result.count() //TODO: unnecessary
       result
     }
   }
@@ -74,18 +72,18 @@ case class PageRowRDD(
     if (!sort) this.map(_.toMap)
     else this
       .discardPages
-      .defaultOrder
+      .defaultSort
       .map(_.toMap)
 
   def toJSON(sort: Boolean = true): RDD[String] =
     if (!sort) this.map(_.toJSON)
     else this
       .discardPages
-      .defaultOrder
+      .defaultSort
       .map(_.toJSON)
 
   //TODO: investigate using the new applySchema api to avoid losing type info
-  def toDataFrame(sort: Boolean = true, tableName: String = null): SchemaRDD = {
+  def toDataFrame(sort: Boolean = true, tableName: String = null): DataFrame = {
 
     val jsonRDD = this.toJSON(sort)
 
@@ -646,7 +644,7 @@ case class PageRowRDD(
             )
       }
 
-      batchExeRDD.checkpointNow()
+      batchExeRDD.cache().checkpoint()
 
       stageRDD = batchExeRDD.map(_._2).filter(_.hasMore) //TODO: repartition to balance?
 
@@ -698,7 +696,7 @@ case class PageRowRDD(
         }
     }
 
-    if (needCheckpointing) mixed.checkpointNow()
+    if (needCheckpointing) mixed.cache().checkpoint()
     else mixed.persist(spooky.conf.defaultStorageLevel)
 
     val merged = mixed.mapValues(_._1)
@@ -758,7 +756,7 @@ case class PageRowRDD(
         lookupAccumulated = lookupAccumulated.union(newLookups)
 
         if (depth % checkpointInterval == 0) {
-          lookupAccumulated.checkpointNow()
+          lookupAccumulated.cache.checkpoint()
         }
       }
 

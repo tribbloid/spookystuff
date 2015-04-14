@@ -35,7 +35,7 @@
 //        'first.children("h1").text > 'title,
 //        $"a.title".size > 'num_product
 //      )
-//      .asSchemaRDD()
+//      .asDataFrame()
 //
 //    assert(
 //      result.schema.fieldNames ===

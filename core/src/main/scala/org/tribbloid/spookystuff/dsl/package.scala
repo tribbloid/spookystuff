@@ -1,12 +1,12 @@
 package org.tribbloid.spookystuff
 
 import org.apache.spark.rdd.RDD
-import org.apache.spark.sql.{DataFrame, SchemaRDD}
-import org.tribbloid.spookystuff.actions.{TraceView, Action, Trace, TraceSetView}
+import org.apache.spark.sql.DataFrame
+import org.tribbloid.spookystuff.actions.{Action, Trace, TraceSetView, TraceView}
 import org.tribbloid.spookystuff.entity.PageRow
 import org.tribbloid.spookystuff.expressions._
-import org.tribbloid.spookystuff.pages.{Page, Unstructured, Elements}
-import org.tribbloid.spookystuff.sparkbinding.{RDDView, DataFrameView, StringRDDView, PageRowRDD}
+import org.tribbloid.spookystuff.pages.{Elements, Page, Unstructured}
+import org.tribbloid.spookystuff.sparkbinding.{DataFrameView, PageRowRDD, RDDView, StringRDDView}
 
 import scala.language.implicitConversions
 import scala.reflect.ClassTag
@@ -105,17 +105,17 @@ package object dsl {
 
   implicit def stringRDDToItsView(rdd: RDD[String]): StringRDDView = new StringRDDView(rdd)
 
-  implicit def dataFrameToItsView(rdd: SchemaRDD): DataFrameView = new DataFrameView(rdd)
+  implicit def dataFrameToItsView(rdd: DataFrame): DataFrameView = new DataFrameView(rdd)
 
   implicit class StrContextHelper(val strC: StringContext) {
 
     def x(fs: Expression[Any]*) = new InterpolateExpr(strC.parts, fs)
 
-    def $() = GetOnlyPageExpr.children(strC.parts.mkString)
+    def $() = GetOnlyPageExpr.children(strC.s()) //TODO: this is in conflict with Spark SQL 1.3.0 implicits
 
-    def $_*() = GetAllPagesExpr.children(strC.parts.mkString)
+    def $_*() = GetAllPagesExpr.children(strC.s())
 
-    def A() = 'A.children(strC.parts.mkString)
+    def A() = 'A.children(strC.s())
   }
 
   //--------------------------------------------------

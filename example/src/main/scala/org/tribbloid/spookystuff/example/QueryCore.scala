@@ -1,7 +1,7 @@
 package org.tribbloid.spookystuff.example
 
 import org.apache.spark.rdd.RDD
-import org.apache.spark.sql.SchemaRDD
+import org.apache.spark.sql.DataFrame
 import org.tribbloid.spookystuff.SpookyContext
 
 trait QueryCore extends LocalSpookyCore {
@@ -18,7 +18,7 @@ trait QueryCore extends LocalSpookyCore {
     val result = doMain(spooky)
 
     val rdd: RDD[_] = result match {
-      case schemaRdd: SchemaRDD =>
+      case schemaRdd: DataFrame =>
         println(schemaRdd.schema.fieldNames.mkString("\t"))
         schemaRdd.rdd
       case rdd: RDD[_] => rdd

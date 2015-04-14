@@ -1,6 +1,6 @@
 package org.tribbloid.spookystuff.example
 
-import org.apache.spark.sql.SchemaRDD
+import org.apache.spark.sql.DataFrame
 import org.tribbloid.spookystuff.SpookyContext
 import org.tribbloid.spookystuff.actions._
 import org.tribbloid.spookystuff.dsl._
@@ -10,7 +10,7 @@ import org.tribbloid.spookystuff.dsl._
  */
 abstract class ProxyFeedCore extends QueryCore {
 
-  var proxyRDD: SchemaRDD = null
+  var proxyRDD: DataFrame = null
 
   override def getSpooky(args: Array[String]): SpookyContext = {
     val noProxy = super.getSpooky(args)
@@ -29,7 +29,7 @@ abstract class ProxyFeedCore extends QueryCore {
     spooky
   }
 
-  def proxyRDD(spooky: SpookyContext): SchemaRDD = {
+  def proxyRDD(spooky: SpookyContext): DataFrame = {
 
     import spooky._
 

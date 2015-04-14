@@ -1,12 +1,11 @@
 package org.tribbloid.spookystuff
 
 import org.apache.hadoop.conf.Configuration
-import org.apache.spark.SparkContext._
 import org.apache.spark._
 import org.apache.spark.rdd.RDD
-import org.apache.spark.sql.{DataFrame, SQLContext, SchemaRDD}
+import org.apache.spark.sql.{DataFrame, SQLContext}
 import org.tribbloid.spookystuff.entity.{Key, KeyLike, PageRow}
-import org.tribbloid.spookystuff.sparkbinding.{DataFrameView, PageRowRDD, StringRDDView}
+import org.tribbloid.spookystuff.sparkbinding.{DataFrameView, PageRowRDD}
 import org.tribbloid.spookystuff.utils.Utils
 
 import scala.collection.immutable.{ListMap, ListSet}
@@ -94,7 +93,7 @@ case class SpookyContext (
   else this.copy(metrics = new Metrics())
 
   implicit def DataFrameToPageRowRDD(df: DataFrame): PageRowRDD = {
-    val self = new DataFrameView(df).asMapRDD.map {
+    val self = new DataFrameView(df).toMapRDD.map {
       map =>
         new PageRow(
           Option(ListMap(map.toSeq: _*))

@@ -7,8 +7,7 @@ import org.apache.hadoop.fs.Path
 import org.apache.spark.SparkEnv
 import org.slf4j.LoggerFactory
 import org.tribbloid.spookystuff.actions.Trace
-import org.tribbloid.spookystuff.utils.Utils
-import org.tribbloid.spookystuff.views.Serializable
+import org.tribbloid.spookystuff.utils.{Serializable, Utils}
 import org.tribbloid.spookystuff._
 
 /**
