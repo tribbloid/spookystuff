@@ -8,7 +8,7 @@ import org.tribbloid.spookystuff.dsl._
 object Dealmoon extends QueryCore {
 
   override def doMain(spooky: SpookyContext) = {
-    import spooky._
+    import spooky.dsl._
 
     spooky
       .fetch(

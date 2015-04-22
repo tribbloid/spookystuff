@@ -14,7 +14,7 @@ trait SpookyILoopHelper extends SparkILoop { //TODO: merge ispooky initializatio
       "import org.tribbloid.spookystuff.dsl._" ::
       "import org.tribbloid.spookystuff.SpookyContext" ::
       "val spooky = new SpookyContext(sql)" ::
-      "import spooky._" ::
+      "import spooky.dsl._" ::
       Nil
 
   def loadSpooky(): Unit = {

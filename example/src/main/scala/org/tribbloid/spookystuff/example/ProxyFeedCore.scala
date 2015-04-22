@@ -31,7 +31,7 @@ abstract class ProxyFeedCore extends QueryCore {
 
   def proxyRDD(spooky: SpookyContext): DataFrame = {
 
-    import spooky._
+    import spooky.dsl._
 
     val httpPageRowRDD = spooky
       .fetch(

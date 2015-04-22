@@ -16,7 +16,7 @@ class ExploreAJAXPagesIT extends IntegrationSuite {
   )
 
   override def doMain(spooky: SpookyContext): Unit = {
-    import spooky._
+    import spooky.dsl._
 
     val snapshotAllPages = (
       Snapshot() ~ 'first

@@ -11,7 +11,7 @@ import org.tribbloid.spookystuff.dsl._
 object ResellerRatings extends QueryCore {
 
   override def doMain(spooky: SpookyContext) = {
-    import spooky._
+    import spooky.dsl._
 
     sc.parallelize(Seq("Hewlett_Packard"))
       .fetch(

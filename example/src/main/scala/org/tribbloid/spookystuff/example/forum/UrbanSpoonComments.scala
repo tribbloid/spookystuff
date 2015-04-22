@@ -12,7 +12,7 @@ import dsl._
 object UrbanSpoonComments extends QueryCore {
 
   override def doMain(spooky: SpookyContext) = {
-    import spooky._
+    import spooky.dsl._
 
     sc.parallelize(Seq(
       "http://www.urbanspoon.com/r/5/1435892/restaurant/Downtown/Bottega-Louie-LA",

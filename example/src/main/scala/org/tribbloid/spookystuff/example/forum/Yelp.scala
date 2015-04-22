@@ -11,7 +11,7 @@ import org.tribbloid.spookystuff.dsl._
 object Yelp extends QueryCore {
 
   override def doMain(spooky: SpookyContext) = {
-    import spooky._
+    import spooky.dsl._
 
     sc.parallelize(Seq(
       "http://www.yelp.com/biz/bottega-louie-los-angeles?sort_by=date_desc",

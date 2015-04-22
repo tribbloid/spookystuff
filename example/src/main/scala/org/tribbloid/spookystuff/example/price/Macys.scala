@@ -13,7 +13,7 @@ import scala.concurrent.duration._
 object Macys extends QueryCore {
 
   override def doMain(spooky: SpookyContext) = {
-    import spooky._
+    import spooky.dsl._
 
     spooky
       .fetch(

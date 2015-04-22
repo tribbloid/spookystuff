@@ -11,7 +11,7 @@ import org.tribbloid.spookystuff.example.QueryCore
 object Youtube extends QueryCore{
 
   override def doMain(spooky: SpookyContext) = {
-    import spooky._
+    import spooky.dsl._
 
     import scala.concurrent.duration._
 

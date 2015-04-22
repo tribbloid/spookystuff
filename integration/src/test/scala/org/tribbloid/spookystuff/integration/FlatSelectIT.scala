@@ -15,7 +15,7 @@ class FlatSelectIT extends IntegrationSuite {
 
   override def doMain(spooky: SpookyContext) {
 
-    import spooky._
+    import spooky.dsl._
 
     val result = spooky
       .fetch(

@@ -11,7 +11,7 @@ import dsl._
 object GooglePlusReview extends QueryCore {
 
   override def doMain(spooky: SpookyContext) = {
-    import spooky._
+    import spooky.dsl._
 
     sc.parallelize(Seq(
       "https://plus.google.com/111847129364038020241/about",

@@ -12,7 +12,7 @@
 //*/
 //class ExploreLoadMoreIT extends IntegrationSuite {
 //  override def doMain(spooky: SpookyContext): Unit = {
-//    import spooky._
+//    import spooky.dsl._
 //
 //    val base = noInput
 //      .fetch(

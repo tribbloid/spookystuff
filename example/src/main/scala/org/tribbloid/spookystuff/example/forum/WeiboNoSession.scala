@@ -15,7 +15,7 @@ import org.tribbloid.spookystuff.expressions.Expression
 object WeiboNoSession extends QueryCore {
 
   override def doMain(spooky: SpookyContext) = {
-    import spooky._
+    import spooky.dsl._
 
     import scala.concurrent.duration._
 

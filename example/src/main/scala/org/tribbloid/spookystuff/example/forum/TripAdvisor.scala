@@ -11,7 +11,7 @@ import org.tribbloid.spookystuff.dsl._
 object TripAdvisor extends QueryCore {
 
   override def doMain(spooky: SpookyContext) = {
-    import spooky._
+    import spooky.dsl._
 
     sc.parallelize(Seq(
       "http://www.tripadvisor.ca/Restaurant_Review-g32655-d1474645-Reviews-Bottega_Louie-Los_Angeles_California.html#REVIEWS",

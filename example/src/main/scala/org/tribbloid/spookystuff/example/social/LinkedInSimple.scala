@@ -12,7 +12,7 @@ import dsl._
 object LinkedInSimple extends QueryCore {
 
   override def doMain(spooky: SpookyContext) = {
-    import spooky._
+    import spooky.dsl._
 
 //    spooky.proxy = TorProxyFactory
 

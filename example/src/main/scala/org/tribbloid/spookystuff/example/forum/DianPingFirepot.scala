@@ -11,7 +11,7 @@ import org.tribbloid.spookystuff.dsl._
 object DianPingFirepot extends QueryCore {
 
   override def doMain(spooky: SpookyContext) = {
-    import spooky._
+    import spooky.dsl._
 
     sc.parallelize(Seq(
       "http://www.dianping.com/search/keyword/8/0_%E6%88%90%E9%83%BD%E4%BE%BF%E5%88%A9%E5%BA%97/x1y50#sortBar",

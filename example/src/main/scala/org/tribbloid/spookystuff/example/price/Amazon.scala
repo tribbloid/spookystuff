@@ -8,7 +8,7 @@ import dsl._
 object Amazon extends QueryCore {
 
   override def doMain(spooky: SpookyContext) = {
-    import spooky._
+    import spooky.dsl._
 
     sc.parallelize(Seq("http://dummy.com\tLord of the Rings\t3.0"))
       .tsvToMap("url\titem\tiherb-price")

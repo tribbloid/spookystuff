@@ -11,7 +11,7 @@ import dsl._
 object WhatIsMyIp extends QueryCore {
 
   override def doMain(spooky: SpookyContext) = {
-    import spooky._
+    import spooky.dsl._
 
     //    spooky.driverFactory = TorDriverFactory()
 

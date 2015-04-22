@@ -35,7 +35,7 @@ case class Metrics(
                     pagesFetched: Accumulator[Int] = Metrics.accumulator(0, "pagesFetched"),
                     pagesFetchedFromWeb: Accumulator[Int] = Metrics.accumulator(0, "pagesFetchedFromWeb"),
                     pagesFetchedFromCache: Accumulator[Int] = Metrics.accumulator(0, "pagesFetchedFromCache")
-               ) { //TODO: change name to avoid mingle with Spark UI metrics
+                    ) { //TODO: change name to avoid mingle with Spark UI metrics
 
   def toJSON: String = {
     val tuples = this.productIterator.flatMap{
@@ -67,14 +67,38 @@ case class SpookyContext (
     this(new SparkContext(conf))
   }
 
+  //automatically register classes if Kryo serializer is used.
+//  if (sqlContext.sparkContext.getConf.getOption("spark.serializer") == Some(classOf[KryoSerializer].getName))
+//    sqlContext.sparkContext.getConf.registerKryoClasses(Array(
+//      //used by PageRow
+//      classOf[PageRow],
+//      classOf[ListMap[_,_]],
+//      classOf[UUID],
+//      classOf[Elements[_]],
+//      classOf[Siblings[_]],
+//      classOf[HtmlElement],
+//      classOf[Page],
+//      classOf[UnknownElement],
+//      classOf[ExploreStage],
+//
+//      //used by broadcast & accumulator
+//      classOf[SpookyConf],
+//      classOf[Dirs],
+//      classOf[SerializableWritable[_]],
+//      classOf[SpookyContext],
+//      classOf[Metrics]
+//
+//      //used by Expressions
+////      classOf[NamedFunction1]
+//    ))
+
   var broadcastedSpookyConf = sqlContext.sparkContext.broadcast(_spookyConf)
 
   def conf = if (_spookyConf == null) broadcastedSpookyConf.value
   else _spookyConf
 
-  def broadcast(): SpookyContext ={
-    var broadcastedSpookyConf = sqlContext.sparkContext.broadcast(_spookyConf)
-    this
+  def broadcast(): Unit ={
+    broadcastedSpookyConf = sqlContext.sparkContext.broadcast(_spookyConf)
   }
 
   val broadcastedHadoopConf = if (sqlContext!=null) sqlContext.sparkContext.broadcast(new SerializableWritable(this.sqlContext.sparkContext.hadoopConfiguration))
@@ -82,59 +106,62 @@ case class SpookyContext (
 
   def hadoopConf: Configuration = broadcastedHadoopConf.value.value
 
-  def zeroIn(): SpookyContext ={
+  def zeroMetrics(): SpookyContext ={
     metrics = new Metrics()
     this
   }
 
-//  def newZero: SpookyContext = this.copy(metrics = new Metrics)
+  //  def newZero: SpookyContext = this.copy(metrics = new Metrics)
 
   def getContextForNewInput = if (conf.sharedMetrics) this
   else this.copy(metrics = new Metrics())
 
-  implicit def DataFrameToPageRowRDD(df: DataFrame): PageRowRDD = {
-    val self = new DataFrameView(df).toMapRDD.map {
-      map =>
-        new PageRow(
-          Option(ListMap(map.toSeq: _*))
-            .getOrElse(ListMap())
-            .map(tuple => (Key(tuple._1), tuple._2))
-        )
+  object dsl {
+
+    implicit def DataFrameToPageRowRDD(df: DataFrame): PageRowRDD = {
+      val self = new DataFrameView(df).toMapRDD.map {
+        map =>
+          new PageRow(
+            Option(ListMap(map.toSeq: _*))
+              .getOrElse(ListMap())
+              .map(tuple => (Key(tuple._1), tuple._2))
+          )
+      }
+      new PageRowRDD(self, keys = ListSet(df.schema.fieldNames: _*).map(Key(_)), spooky = getContextForNewInput)
     }
-    new PageRowRDD(self, keys = ListSet(df.schema.fieldNames: _*).map(Key(_)), spooky = getContextForNewInput)
-  }
 
-  //every input or noInput will generate a new metrics
-  implicit def RDDToPageRowRDD[T: ClassTag](rdd: RDD[T]): PageRowRDD = {
-    import org.tribbloid.spookystuff.views._
+    //every input or noInput will generate a new metrics
+    implicit def RDDToPageRowRDD[T: ClassTag](rdd: RDD[T]): PageRowRDD = {
+      import org.tribbloid.spookystuff.views._
 
-    import scala.reflect._
+      import scala.reflect._
 
-    rdd match {
-      case _ if classOf[Map[_,_]].isAssignableFrom(classTag[T].runtimeClass) => //use classOf everywhere?
-        val canonRdd = rdd.map(
-          map =>map.asInstanceOf[Map[_,_]].canonizeKeysToColumnNames
-        )
+      rdd match {
+        case _ if classOf[Map[_,_]].isAssignableFrom(classTag[T].runtimeClass) => //use classOf everywhere?
+          val canonRdd = rdd.map(
+            map =>map.asInstanceOf[Map[_,_]].canonizeKeysToColumnNames
+          )
 
-        val jsonRDD = canonRdd.map(
-          map =>
-            Utils.toJson(map)
-        )
-        val dataFrame = sqlContext.jsonRDD(jsonRDD)
-        val self = canonRdd.map(
-          map =>
-            PageRow(ListMap(map.map(tuple => (Key(tuple._1),tuple._2)).toSeq: _*), Seq())
-        )
-        new PageRowRDD(self, keys = ListSet(dataFrame.schema.fieldNames: _*).map(Key(_)), spooky = getContextForNewInput)
-      case _ =>
-        val self = rdd.map{
-          str =>
-            var cells = ListMap[KeyLike,Any]()
-            if (str!=null) cells = cells + (Key("_") -> str)
+          val jsonRDD = canonRdd.map(
+            map =>
+              Utils.toJson(map)
+          )
+          val dataFrame = sqlContext.jsonRDD(jsonRDD)
+          val self = canonRdd.map(
+            map =>
+              PageRow(ListMap(map.map(tuple => (Key(tuple._1),tuple._2)).toSeq: _*), Seq())
+          )
+          new PageRowRDD(self, keys = ListSet(dataFrame.schema.fieldNames: _*).map(Key(_)), spooky = getContextForNewInput)
+        case _ =>
+          val self = rdd.map{
+            str =>
+              var cells = ListMap[KeyLike,Any]()
+              if (str!=null) cells = cells + (Key("_") -> str)
 
-            new PageRow(cells)
-        }
-        new PageRowRDD(self, keys = ListSet(Key("_")), spooky = getContextForNewInput)
+              new PageRow(cells)
+          }
+          new PageRowRDD(self, keys = ListSet(Key("_")), spooky = getContextForNewInput)
+      }
     }
   }
 }

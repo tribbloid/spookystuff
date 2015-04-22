@@ -124,7 +124,8 @@ case class PageRowRDD(
                  overwrite: Boolean = false
                  ): PageRowRDD = {
 
-    val spooky = this.spooky.broadcast()
+    this.spooky.broadcast()
+    val spooky = this.spooky
 
     val saved = this.map {
 

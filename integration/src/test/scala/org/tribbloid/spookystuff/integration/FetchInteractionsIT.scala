@@ -15,7 +15,7 @@ import scala.concurrent.duration
 class FetchInteractionsIT extends IntegrationSuite{
 
   override def doMain(spooky: SpookyContext): Unit = {
-    import spooky._
+    import spooky.dsl._
 
     val RDD = spooky
       .fetch(

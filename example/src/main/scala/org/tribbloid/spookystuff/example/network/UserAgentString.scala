@@ -11,7 +11,7 @@ import dsl._
 object UserAgentString extends QueryCore {
 
   override def doMain(spooky: SpookyContext) = {
-    import spooky._
+    import spooky.dsl._
 
     //    spooky.driverFactory = TorDriverFactory()
 
