@@ -36,6 +36,7 @@ trait LocalSpookyCore {
 
   def maxJoinOrdinal = 3
   def maxExploreDepth = 2
+  var maxInputSize = 3
 
   def getSpooky(args: Array[String]): SpookyContext = {
 
@@ -52,6 +53,9 @@ trait LocalSpookyCore {
     if (p.getProperty("spooky.preview")=="true") {
       spooky.conf.maxJoinOrdinal = maxJoinOrdinal
       spooky.conf.maxExploreDepth = maxExploreDepth
+    }
+    else {
+      this.maxInputSize = Int.MaxValue
     }
 
     spooky

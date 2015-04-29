@@ -24,12 +24,23 @@ import scala.language.implicitConversions
 /**
  * Created by peng on 8/29/14.
  */
-case class PageRowRDD(
-                       @transient store: RDD[PageRow],
-                       @transient keys: ListSet[KeyLike] = ListSet(),
-                       @transient spooky: SpookyContext
-                       )
+class PageRowRDD(
+                  val store: RDD[PageRow],
+                  val keys: ListSet[KeyLike] = ListSet(),
+                  val spooky: SpookyContext,
+                  val cachedRDDs: ArrayBuffer[RDD[_]] = ArrayBuffer()
+                  )
   extends RDD[PageRow](store) with PageRowRDDOverrides {
+
+  def copy(
+            store: RDD[PageRow] = this.store,
+            keys: ListSet[KeyLike] = this.keys,
+            spooky: SpookyContext = this.spooky,
+            cachedRDDs: ArrayBuffer[RDD[_]] = this.cachedRDDs
+            ): PageRowRDD = {
+    val result = new PageRowRDD(store, keys, spooky, cachedRDDs)
+    result
+  }
 
   def segmentBy(exprs: Expression[Any]*): PageRowRDD = { //TODO: need spike
 
@@ -61,11 +72,15 @@ case class PageRowRDD(
 
     import scala.Ordering.Implicits._
 
-    this.persistDuring(spooky.conf.defaultStorageLevel){
-      val result = this.sortBy{_.ordinal(sortKeysSeq)}
-      result.count() //TODO: unnecessary
-      result
+    //    this.persistDuring(spooky.conf.defaultStorageLevel){
+    if (this.getStorageLevel == StorageLevel.NONE){
+      this.cachedRDDs += this.persist(spooky.conf.defaultStorageLevel)
     }
+
+    val result = this.sortBy{_.ordinal(sortKeysSeq)}
+    result.count()
+    this.cleanCachedRDD()
+    result
   }
 
   def toMapRDD(sort: Boolean = true): RDD[Map[String, Any]] =
@@ -81,6 +96,12 @@ case class PageRowRDD(
       .discardPages
       .defaultSort
       .map(_.toJSON)
+
+  def cleanCachedRDD(): PageRowRDD = {
+    this.cachedRDDs.foreach(_.unpersist(blocking = false))
+    this.cachedRDDs.clear()
+    this
+  }
 
   //TODO: investigate using the new applySchema api to avoid losing type info
   def toDataFrame(sort: Boolean = true, tableName: String = null): DataFrame = {
@@ -312,7 +333,9 @@ case class PageRowRDD(
 
   def lookup(): RDD[(Trace, PageLike)] = {
 
-    if (this.getStorageLevel == StorageLevel.NONE) this.persist(spooky.conf.defaultStorageLevel)
+    if (this.getStorageLevel == StorageLevel.NONE) {
+      this.cachedRDDs += this.persist(spooky.conf.defaultStorageLevel)
+    }
 
     this.flatMap(_.pageLikes.map(page => page.uid.backtrace -> page ))
     //TODO: really takes a lot of space, how to eliminate?
@@ -386,6 +409,7 @@ case class PageRowRDD(
     }
       .partitionBy(new HashPartitioner(numPartitions))
       .persist(spooky.conf.defaultStorageLevel)
+    this.cachedRDDs += traceToRows
 
     val traces = traceToRows.keys.distinct(numPartitions)
 
@@ -582,7 +606,9 @@ case class PageRowRDD(
 
     var depthFromExclusive = 0
 
-    if (this.getStorageLevel == StorageLevel.NONE) this.persist(spooky.conf.defaultStorageLevel)
+    if (this.getStorageLevel == StorageLevel.NONE) {
+      this.cachedRDDs += this.persist(spooky.conf.defaultStorageLevel)
+    }
     if (this.context.getCheckpointDir.isEmpty) this.context.setCheckpointDir(spooky.conf.dirs.checkpoint)
 
     val firstResultRDD = this
@@ -645,7 +671,8 @@ case class PageRowRDD(
             )
       }
 
-      batchExeRDD.cache().checkpoint()
+      this.cachedRDDs += batchExeRDD.persist(spooky.conf.defaultStorageLevel)
+      batchExeRDD.checkpoint()
 
       stageRDD = batchExeRDD.map(_._2).filter(_.hasMore) //TODO: repartition to balance?
 
@@ -697,8 +724,8 @@ case class PageRowRDD(
         }
     }
 
-    if (needCheckpointing) mixed.cache().checkpoint()
-    else mixed.persist(spooky.conf.defaultStorageLevel)
+    this.cachedRDDs += mixed.persist(spooky.conf.defaultStorageLevel)
+    if (needCheckpointing) mixed.checkpoint()
 
     val merged = mixed.mapValues(_._1)
     val newSeeds = mixed.values.flatMap(_._2)
@@ -726,7 +753,9 @@ case class PageRowRDD(
 
     val spooky = this.spooky
 
-    if (this.getStorageLevel == StorageLevel.NONE) this.persist(spooky.conf.defaultStorageLevel)
+    if (this.getStorageLevel == StorageLevel.NONE) {
+      this.cachedRDDs += this.persist(spooky.conf.defaultStorageLevel)
+    }
     if (this.context.getCheckpointDir.isEmpty) this.context.setCheckpointDir(spooky.conf.dirs.checkpoint)
 
     var newSeeds = this
@@ -757,7 +786,8 @@ case class PageRowRDD(
         lookupAccumulated = lookupAccumulated.union(newLookups)
 
         if (depth % checkpointInterval == 0) {
-          lookupAccumulated.cache.checkpoint()
+          this.cachedRDDs += lookupAccumulated.persist(spooky.conf.defaultStorageLevel)
+          lookupAccumulated.checkpoint()
         }
       }
 

@@ -15,6 +15,7 @@ import scala.concurrent.duration.FiniteDuration
 /**
  * Created by peng on 4/22/15.
  */
+//TODO: not all classes are registered which renders this class useless
 class SpookyRegistrator extends KryoRegistrator {
 
   override def registerClasses(kryo: Kryo): Unit = {

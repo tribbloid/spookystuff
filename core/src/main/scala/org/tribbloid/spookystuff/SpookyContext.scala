@@ -67,31 +67,6 @@ case class SpookyContext (
     this(new SparkContext(conf))
   }
 
-  //automatically register classes if Kryo serializer is used.
-//  if (sqlContext.sparkContext.getConf.getOption("spark.serializer") == Some(classOf[KryoSerializer].getName))
-//    sqlContext.sparkContext.getConf.registerKryoClasses(Array(
-//      //used by PageRow
-//      classOf[PageRow],
-//      classOf[ListMap[_,_]],
-//      classOf[UUID],
-//      classOf[Elements[_]],
-//      classOf[Siblings[_]],
-//      classOf[HtmlElement],
-//      classOf[Page],
-//      classOf[UnknownElement],
-//      classOf[ExploreStage],
-//
-//      //used by broadcast & accumulator
-//      classOf[SpookyConf],
-//      classOf[Dirs],
-//      classOf[SerializableWritable[_]],
-//      classOf[SpookyContext],
-//      classOf[Metrics]
-//
-//      //used by Expressions
-////      classOf[NamedFunction1]
-//    ))
-
   var broadcastedSpookyConf = sqlContext.sparkContext.broadcast(_spookyConf)
 
   def conf = if (_spookyConf == null) broadcastedSpookyConf.value
@@ -110,8 +85,6 @@ case class SpookyContext (
     metrics = new Metrics()
     this
   }
-
-  //  def newZero: SpookyContext = this.copy(metrics = new Metrics)
 
   def getContextForNewInput = if (conf.sharedMetrics) this
   else this.copy(metrics = new Metrics())
