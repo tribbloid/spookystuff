@@ -407,10 +407,18 @@ object PageRow {
     (row1, row2) =>
       import Ordering.Implicits._
 
-      val v1 = row1.getIntIterable(key.name)
-      val v2 = row2.getIntIterable(key.name)
-      if (v1 <= v2) row1
-      else row2
+      if (key == null) { //TODO: This is a temporary solution, eventually hidden key will eliminate it
+        val v1 = row1.pages.headOption.map(_.timestamp.getTime)
+        val v2 = row2.pages.headOption.map(_.timestamp.getTime)
+        if (v1 <= v2) row1
+        else row2
+      }
+      else {
+        val v1 = row1.getIntIterable(key.name)
+        val v2 = row2.getIntIterable(key.name)
+        if (v1 <= v2) row1
+        else row2
+      }
   }
 }
 

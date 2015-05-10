@@ -12,7 +12,7 @@ trait SortKeyHelper {
   this: KeyLike =>
 }
 
-trait HiddenKeyHelper {
+trait HiddenKeyHelper extends SortKeyHelper {
   this: KeyLike =>
 }
 

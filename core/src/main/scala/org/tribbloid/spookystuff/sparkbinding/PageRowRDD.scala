@@ -747,7 +747,7 @@ class PageRowRDD private (
     }
     val _expr = expr defaultAs Symbol(Const.defaultJoinKey)
 
-    val depth0 = this.clearTemp.select(Literal[Int](0) ~ depthKey)
+    val depth0 = this.clearTemp.select(Option(depthKey).map(key => Literal(0) ~ key).toSeq: _*)
 
     val WebCache0 = {
       val webCache: InMemoryWebCacheRDD = if (useWebCache) depth0.webCache
@@ -771,7 +771,7 @@ class PageRowRDD private (
 
     for (depth <- 1 to maxDepth) {
       val newRows = seeds
-        .selectOverwrite(Literal(depth) ~ depthKey)
+        .selectOverwrite(Option(depthKey).map(key => Literal(depth) ~ key).toSeq: _*)
         .flattenTemp(_expr, ordinalKey, maxOrdinal, left = true)
         ._wideFetch(_traces, Inner, numPartitions, useWebCache = true,
           postProcessing = postProcessing

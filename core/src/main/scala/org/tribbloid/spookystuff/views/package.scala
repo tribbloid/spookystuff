@@ -41,37 +41,37 @@ package object views {
     import RDD._
     //get 3 RDDs that shares key partitioning: leftExclusive, intersection, rightExclusive
     //all 3 can be zipped directly as if joined by key, this has many applications like getting union, intersection and subtraction
-//    def logicalCombinationsByKey[S](
-//                                     other: RDD[(K, V)])(
-//                                     innerReducer: (V, V) => V)(
-//                                     staging: RDD[(K, (Option[V], Option[V]))] => S
-//                                     ): (RDD[(K, V)], RDD[(K, (V, V))], RDD[(K, V)], S) = {
-//
-//      val cogrouped = self.cogroup(other)
-//
-//      val mixed: RDD[(K, (Option[V], Option[V]))] = cogrouped.mapValues{
-//        tuple =>
-//          val leftOption = tuple._1.reduceLeftOption(innerReducer)
-//          val rightOption = tuple._2.reduceLeftOption(innerReducer)
-//
-//          (leftOption, rightOption)
-//      }
-//      val stage = staging(mixed)
-//
-//      val leftExclusive = mixed.flatMapValues {
-//        case (Some(left), None) => Some(left)
-//        case _ => None
-//      }
-//      val Intersection = mixed.flatMapValues {
-//        case (Some(left), Some(right)) => Some(left, right)
-//        case _ => None
-//      }
-//      val rightExclusive = mixed.flatMapValues {
-//        case (None, Some(right)) => Some(right)
-//        case _ => None
-//      }
-//      (leftExclusive, Intersection, rightExclusive, stage)
-//    }
+    //    def logicalCombinationsByKey[S](
+    //                                     other: RDD[(K, V)])(
+    //                                     innerReducer: (V, V) => V)(
+    //                                     staging: RDD[(K, (Option[V], Option[V]))] => S
+    //                                     ): (RDD[(K, V)], RDD[(K, (V, V))], RDD[(K, V)], S) = {
+    //
+    //      val cogrouped = self.cogroup(other)
+    //
+    //      val mixed: RDD[(K, (Option[V], Option[V]))] = cogrouped.mapValues{
+    //        tuple =>
+    //          val leftOption = tuple._1.reduceLeftOption(innerReducer)
+    //          val rightOption = tuple._2.reduceLeftOption(innerReducer)
+    //
+    //          (leftOption, rightOption)
+    //      }
+    //      val stage = staging(mixed)
+    //
+    //      val leftExclusive = mixed.flatMapValues {
+    //        case (Some(left), None) => Some(left)
+    //        case _ => None
+    //      }
+    //      val Intersection = mixed.flatMapValues {
+    //        case (Some(left), Some(right)) => Some(left, right)
+    //        case _ => None
+    //      }
+    //      val rightExclusive = mixed.flatMapValues {
+    //        case (None, Some(right)) => Some(right)
+    //        case _ => None
+    //      }
+    //      (leftExclusive, Intersection, rightExclusive, stage)
+    //    }
 
     def unionByKey(
                     other: RDD[(K, V)])(
@@ -129,9 +129,9 @@ package object views {
     }
 
     def indexRows(
-                                 rows: RDD[PageRow],
-                                 seedFilter: Iterable[PageRow] => Option[PageRow] = _=>None
-                                 ): InMemoryWebCacheRDD = {
+                   rows: RDD[PageRow],
+                   seedFilter: Iterable[PageRow] => Option[PageRow] = _=>None
+                   ): InMemoryWebCacheRDD = {
 
       val dryRun_RowRDD = rows.keyBy(_.dryrun)
       val cogrouped = self.cogroup(dryRun_RowRDD)

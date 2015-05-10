@@ -14,7 +14,6 @@ class JoinAndExplorePagesIT extends IntegrationSuite {
   )
 
   override def doMain(spooky: SpookyContext): Unit = {
-    import spooky.dsl._
 
     val joined = spooky
       .fetch(
