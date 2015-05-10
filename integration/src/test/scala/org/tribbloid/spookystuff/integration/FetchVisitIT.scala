@@ -13,8 +13,6 @@ class FetchVisitIT extends IntegrationSuite {
 
   override def doMain(spooky: SpookyContext) {
 
-    import spooky.dsl._
-
     val RDD = spooky
       .fetch(
         Visit("http://www.wikipedia.org/")
@@ -23,8 +21,8 @@ class FetchVisitIT extends IntegrationSuite {
     val pageRows = RDD.collect()
 
     val finishTime = System.currentTimeMillis()
-    assert(pageRows.size === 1)
-    assert(pageRows(0).pages.size === 1)
+    assert(pageRows.length === 1)
+    assert(pageRows(0).pages.length === 1)
     assert(pageRows(0).pages.apply(0).uri === "http://www.wikipedia.org/")
     assert(pageRows(0).pages.apply(0).name === "Snapshot()")
     val pageTime = pageRows(0).pages.head.timestamp.getTime
@@ -39,7 +37,7 @@ class FetchVisitIT extends IntegrationSuite {
 
     val appendedRows = RDDAppended.collect()
 
-    assert(appendedRows.size === 2)
+    assert(appendedRows.length === 2)
     assert(appendedRows(0).pages(0).copy(timestamp = null, content = null, saved = null)
       === appendedRows(1).pages(0).copy(timestamp = null, content = null, saved = null))
 
@@ -60,9 +58,9 @@ class FetchVisitIT extends IntegrationSuite {
 
     val fetchNoneRows = RDDfetchNone.collect()
 
-    assert(fetchNoneRows.size === 2)
-    assert(fetchNoneRows(0).pages.size === 0)
-    assert(fetchNoneRows(1).pages.size === 0)
+    assert(fetchNoneRows.length === 2)
+    assert(fetchNoneRows(0).pages.length === 0)
+    assert(fetchNoneRows(1).pages.length === 0)
   }
 
   override def numPages = {

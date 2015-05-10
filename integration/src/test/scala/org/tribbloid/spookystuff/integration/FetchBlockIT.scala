@@ -25,7 +25,6 @@ class FetchBlockIT extends IntegrationSuite {
           +> Snapshot().as('a)
           +> Loop (
           ClickNext("button.btn","1"::Nil)
-            +> Delay(2.seconds)
             +> Snapshot().as('b)
         ),
         flattenPagesPattern = null
@@ -34,8 +33,8 @@ class FetchBlockIT extends IntegrationSuite {
     val pageRows = RDD.collect()
 
     val finishTime = System.currentTimeMillis()
-    assert(pageRows.size === 1)
-    assert(pageRows(0).pages.size === 3)
+    assert(pageRows.length === 1)
+    assert(pageRows(0).pages.length === 3)
     assert(pageRows(0).pages(0).name === "a")
     assert(pageRows(0).pages(1).name === "b")
     assert(pageRows(0).pages(2).name === "b")
@@ -49,7 +48,6 @@ class FetchBlockIT extends IntegrationSuite {
           +> Snapshot().as('c)
           +> Loop (
           ClickNext("button.btn","1"::Nil)
-            +> Delay(2.seconds)
             +> Snapshot().as('d)
         ),
         joinType = Append,
@@ -58,8 +56,8 @@ class FetchBlockIT extends IntegrationSuite {
 
     val appendedRows = RDDAppended.collect()
 
-    assert(appendedRows.size === 1)
-    assert(appendedRows(0).pages.size === 6)
+    assert(appendedRows.length === 1)
+    assert(appendedRows(0).pages.length === 6)
     assert(appendedRows(0).pages(3).name === "c")
     assert(appendedRows(0).pages(4).name === "d")
     assert(appendedRows(0).pages(5).name === "d")

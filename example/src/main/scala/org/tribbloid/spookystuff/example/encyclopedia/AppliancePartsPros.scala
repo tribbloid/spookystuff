@@ -35,6 +35,6 @@ object AppliancePartsPros extends QueryCore {
         $("div.m-pdct div.m-chm p").text ~ 'replace,
         $.uri ~ 'uri
       )
-      .toDataFrame()
+      .toDF()
   }
 }

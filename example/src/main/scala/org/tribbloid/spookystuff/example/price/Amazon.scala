@@ -29,6 +29,6 @@ object Amazon extends QueryCore {
         A"span.a-icon-alt".text ~ 'stars,
         A"div.a-column.a-span5 > div.a-row > a.a-size-small".text ~ 'num_rating
       )
-      .toDataFrame()
+      .toDF()
   }
 }

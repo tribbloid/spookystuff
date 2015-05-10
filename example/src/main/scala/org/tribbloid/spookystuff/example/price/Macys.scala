@@ -45,6 +45,6 @@ object Macys extends QueryCore {
         A"div.pdpreviews span.rating span".attr("style") ~ 'rating,
         A"div.pdpreviews".text ~ 'reviews
       )
-      .toDataFrame()
+      .toDF()
   }
 }

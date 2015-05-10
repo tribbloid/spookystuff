@@ -37,7 +37,7 @@ class InnerJoinIT extends IntegrationSuite {
         'A.text ~ 'subcategory
       )
       .select($"h1".text ~ 'header)
-      .toDataFrame()
+      .toDF(sort = true)
 
     assert(
       joined.schema.fieldNames ===

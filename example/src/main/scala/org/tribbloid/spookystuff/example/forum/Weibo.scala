@@ -38,6 +38,6 @@ object Weibo extends QueryCore {
       .flatSelect($"dl.feed_list", ordinalKey = 'item)(
         A"dl.feed_list p em".text ~ 'text
       )
-      .toDataFrame()
+      .toDF()
   }
 }

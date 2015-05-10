@@ -35,6 +35,6 @@ object RottenTomatoes extends QueryCore {
       .select(
         $"div.media_block div.clearfix dd".text ~ 'total_reviews_ratings
       )
-      .toDataFrame()
+      .toDF()
   }
 }

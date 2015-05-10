@@ -76,13 +76,13 @@ object GetOnlyPageExpr extends Expression[Page] {
 object GetAllPagesExpr extends Expression[Elements[Page]] {
   override var name = Const.allPagesWildcard
 
-  override def apply(v1: PageRow): Option[Elements[Page]] = Some(v1.pages)
+  override def apply(v1: PageRow): Option[Elements[Page]] = Some(new Elements(v1.pages))
 }
 
 object GetSegmentIDExpr extends Expression[String] {
   override var name = "SegmentID"
 
-  override def apply(v1: PageRow): Option[String] =Option(v1.segmentID.toString)
+  override def apply(v1: PageRow): Option[String] =Option(v1.segment.toString)
 }
 
 class ReplaceKeyExpr(str: String) extends Expression[String] {
@@ -126,7 +126,7 @@ class ZippedExpr[T1,+T2](param1: Expression[Iterable[T1]], param2: Expression[It
   }
 }
 
-class PlusExpr[+T: ClassTag](override var name: String, expr: Expression[T]) extends Expression[Seq[T]] {
+class InsertIntoExpr[+T: ClassTag](override var name: String, expr: Expression[T]) extends Expression[Seq[T]] {
 
   override def apply(v1: PageRow): Option[Seq[T]] = {
     val lastOption = expr(v1)

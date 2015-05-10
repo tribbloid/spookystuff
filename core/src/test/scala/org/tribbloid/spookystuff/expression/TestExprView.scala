@@ -14,7 +14,7 @@ class TestExprView extends SpookyEnvSuite {
 
   lazy val page = (
     Wget("http://www.wikipedia.org/") :: Nil
-  ).resolve(spooky)
+  ).resolve(spooky).toArray
   lazy val row = PageRow(pageLikes = page)
     .select($"title".head.text.~('abc))
     .head

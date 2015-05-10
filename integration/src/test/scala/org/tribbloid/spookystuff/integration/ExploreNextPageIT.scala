@@ -25,7 +25,7 @@ class ExploreNextPageIT extends IntegrationSuite {
         'A.text ~ 'button_text
       )
       .select($.uri ~ 'uri)
-      .toDataFrame()
+      .toDF(sort = true)
 
     assert(
       result.schema.fieldNames ===

@@ -43,7 +43,7 @@ class ExploreAJAXPagesIT extends IntegrationSuite {
         'first.children("h1").text ~ 'title,
         $"a.title".size ~ 'num_product
       )
-      .toDataFrame()
+      .toDF(sort = true)
 
     assert(
       result.schema.fieldNames ===

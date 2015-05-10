@@ -28,7 +28,7 @@ class ExploreIT extends IntegrationSuite {
         'A.text ~ 'category
       )
       .select($"h1".text ~ 'header)
-      .toDataFrame()
+      .toDF(sort = true)
 
     assert(
       explored.schema.fieldNames ===

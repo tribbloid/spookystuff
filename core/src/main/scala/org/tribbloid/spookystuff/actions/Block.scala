@@ -38,7 +38,7 @@ abstract class Block(override val self: Seq[Action]) extends Actions(self) with 
       tuple => {
         val page = tuple._1
 
-        page.copy(uid = page.uid.copy(backtrace = backtrace, blockIndex = tuple._2, blockTotal = pages.size))
+        page.copy(uid = page.uid.copy(backtrace = backtrace, blockIndex = tuple._2, blockSize = pages.size))
       }
     }
     if (result.isEmpty && this.hasExport) Seq(NoPage(backtrace))

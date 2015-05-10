@@ -20,6 +20,6 @@ object WhatIsMyIp extends QueryCore {
         Visit("http://www.whatsmyip.org/")
       )
       .select($"h1".text ~ 'ip)
-      .toDataFrame()
+      .toDF()
   }
 }

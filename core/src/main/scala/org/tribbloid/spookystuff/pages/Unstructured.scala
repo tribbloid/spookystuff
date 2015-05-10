@@ -33,7 +33,7 @@ trait Unstructured extends Serializable {
   def boilerPipe: Option[String]
 }
 
-class Elements[+T <: Unstructured](self: Seq[T]) extends Unstructured with Seq[T] {
+class Elements[+T <: Unstructured](self: Array[T]) extends Unstructured with Seq[T] {
 
   def uris: Seq[String] = self.map(_.uri)
 
@@ -74,7 +74,7 @@ class Elements[+T <: Unstructured](self: Seq[T]) extends Unstructured with Seq[T
   override def apply(idx: Int): T = self.apply(idx)
 }
 
-class Siblings[+T <: Unstructured](self: Seq[T]) extends Elements[T](self) {
+class Siblings[+T <: Unstructured](self: Array[T]) extends Elements[T](self) {
 
   override def text = if (texts.isEmpty) None
   else Some(texts.filter(_.nonEmpty).mkString(" "))

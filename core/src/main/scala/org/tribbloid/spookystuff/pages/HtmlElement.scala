@@ -58,7 +58,7 @@ class HtmlElement private (
 
   import scala.collection.JavaConversions._
 
-  override def children(selector: String) = new Elements(parsed.select(selector).map(new HtmlElement(_)))
+  override def children(selector: String) = new Elements(parsed.select(selector).map(new HtmlElement(_)).toArray)
 
   override def childrenWithSiblings(start: String, range: Range) = {
 
@@ -79,9 +79,9 @@ class HtmlElement private (
 
         val selected = siblings.slice(head,  tail + 1)
 
-        new Siblings(selected.map(new HtmlElement(_)))
+        new Siblings(selected.map(new HtmlElement(_)).toArray)
     }
-    new Elements(colls)
+    new Elements(colls.toArray)
   }
 
   override def code: Option[String] = Some(html)

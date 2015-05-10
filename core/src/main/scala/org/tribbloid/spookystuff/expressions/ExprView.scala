@@ -28,7 +28,7 @@ final class ExprView[+T: ClassTag](self: Expression[T]) {
     s"filterByType[${ev.toString()}}]"
   )
 
-  def into(name: Symbol): Expression[Traversable[T]] = new PlusExpr[T](name.name, self)
+  def into(name: Symbol): Expression[Traversable[T]] = new InsertIntoExpr[T](name.name, self)
   def ~+(name: Symbol) = into(name)
 
   def notNull: NamedFunction1[PageRow, Boolean] = self.andThen(NamedFunction1(_.nonEmpty, "notNull"))

@@ -65,6 +65,6 @@ object Youtube extends QueryCore{
 
     println(result.count())
 
-    result.toDataFrame()
+    result.toDF()
   }
 }

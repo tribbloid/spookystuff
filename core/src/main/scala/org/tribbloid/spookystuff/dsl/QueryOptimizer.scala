@@ -14,6 +14,6 @@ case object Wide extends QueryOptimizer
 //reduce workload by avoiding repeated access to the same url caused by duplicated context or diamond links (A->B,A->C,B->D,C->D)
 case object WideLookup extends QueryOptimizer
 
-case object Inductive extends QueryOptimizer
-
-case object AutoDetect extends QueryOptimizer
+//case object Inductive extends QueryOptimizer
+//
+//case object AutoDetect extends QueryOptimizer

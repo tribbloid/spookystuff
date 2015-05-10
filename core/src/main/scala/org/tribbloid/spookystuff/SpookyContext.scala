@@ -35,7 +35,7 @@ case class Metrics(
                     pagesFetched: Accumulator[Int] = Metrics.accumulator(0, "pagesFetched"),
                     pagesFetchedFromWeb: Accumulator[Int] = Metrics.accumulator(0, "pagesFetchedFromWeb"),
                     pagesFetchedFromCache: Accumulator[Int] = Metrics.accumulator(0, "pagesFetchedFromCache")
-                    ) { //TODO: change name to avoid mingle with Spark UI metrics
+                    ) {
 
   def toJSON: String = {
     val tuples = this.productIterator.flatMap{
@@ -49,11 +49,22 @@ case class Metrics(
   }
 }
 
+/*
+  cannot be shipped to workers
+  entry point of the pipeline
+ */
 case class SpookyContext (
-                           @transient sqlContext: SQLContext, //can't be used on executors
-                           @transient private val _spookyConf: SpookyConf = new SpookyConf(), //can only be used on executors after broadcast
-                           var metrics: Metrics = new Metrics() //accumulators cannot be broadcasted
+                           sqlContext: SQLContext, //can't be used on executors
+                           private val _spookyConf: SpookyConf = new SpookyConf(), //can only be used on executors after broadcast
+                           var metrics: Metrics = new Metrics() //accumulators cannot be broadcasted,
+                           //                           lookup: Lookup = Lookup()
+                           // shared by multiple initialized PageRowRDDs. Make sure all attempts to change it are blocking! Should be fast as long as no action happens.
+                           // this is disabled in favour of rdd cache in PageRowRDD
                            ) {
+
+  //  if (lookup.rdd == null) {
+  //    lookup.rdd = sqlContext.sparkContext.emptyRDD[(LookupKey, SquashedRow)]//.partitionBy(new HashPartitioner(conf.defaultParallelism))
+  //  }
 
   def this(sqlContext: SQLContext) {
     this(sqlContext, new SpookyConf(), new Metrics())
@@ -94,7 +105,7 @@ case class SpookyContext (
     implicit def DataFrameToPageRowRDD(df: DataFrame): PageRowRDD = {
       val self = new DataFrameView(df).toMapRDD.map {
         map =>
-          new PageRow(
+          PageRow(
             Option(ListMap(map.toSeq: _*))
               .getOrElse(ListMap())
               .map(tuple => (Key(tuple._1), tuple._2))
@@ -122,7 +133,7 @@ case class SpookyContext (
           val dataFrame = sqlContext.jsonRDD(jsonRDD)
           val self = canonRdd.map(
             map =>
-              PageRow(ListMap(map.map(tuple => (Key(tuple._1),tuple._2)).toSeq: _*), Seq())
+              PageRow(ListMap(map.map(tuple => (Key(tuple._1),tuple._2)).toSeq: _*), Array())
           )
           new PageRowRDD(self, keys = ListSet(dataFrame.schema.fieldNames: _*).map(Key(_)), spooky = getContextForNewInput)
         case _ =>
@@ -131,7 +142,7 @@ case class SpookyContext (
               var cells = ListMap[KeyLike,Any]()
               if (str!=null) cells = cells + (Key("_") -> str)
 
-              new PageRow(cells)
+              PageRow(cells)
           }
           new PageRowRDD(self, keys = ListSet(Key("_")), spooky = getContextForNewInput)
       }

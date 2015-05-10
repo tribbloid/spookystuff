@@ -6,7 +6,7 @@ import org.tribbloid.spookystuff.actions.{Action, Trace, TraceSetView, TraceView
 import org.tribbloid.spookystuff.entity.PageRow
 import org.tribbloid.spookystuff.expressions._
 import org.tribbloid.spookystuff.pages.{Elements, Page, Unstructured}
-import org.tribbloid.spookystuff.sparkbinding.{DataFrameView, PageRowRDD, RDDView, StringRDDView}
+import org.tribbloid.spookystuff.sparkbinding.{DataFrameView, PageRowRDD, StringRDDView}
 
 import scala.language.implicitConversions
 import scala.reflect.ClassTag
@@ -100,8 +100,6 @@ package object dsl {
     else
       new ReplaceKeyExpr(str)
   }
-
-  implicit def rddToItsView(rdd: RDD[_]): RDDView = new RDDView(rdd)
 
   implicit def stringRDDToItsView(rdd: RDD[String]): StringRDDView = new StringRDDView(rdd)
 

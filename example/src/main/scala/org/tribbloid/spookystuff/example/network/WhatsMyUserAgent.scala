@@ -24,6 +24,6 @@ object WhatsMyUserAgent extends QueryCore {
         $"h2.info".text ~ 'user_agent,
         $"table.table-striped".text ~ 'referer
       )
-      .toDataFrame()
+      .toDF()
   }
 }

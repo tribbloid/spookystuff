@@ -78,7 +78,7 @@ abstract class ProxyFeedCore extends QueryCore {
       ).persist()
 
     httpPageRowRDD.union(socksPageRowRDD)
-      .toDataFrame()
+      .toDF()
     //      .where(('Anonymity !== "transparent")&& 'Code.like("US"))
   }
 }

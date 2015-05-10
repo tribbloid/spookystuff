@@ -1,63 +1,110 @@
 package org.tribbloid.spookystuff.sparkbinding
 
-import java.util.UUID
-
+import _root_.parquet.org.slf4j.LoggerFactory
+import org.apache.spark.HashPartitioner
 import org.apache.spark.rdd.{RDD, UnionRDD}
 import org.apache.spark.sql._
 import org.apache.spark.sql.catalyst.analysis.UnresolvedAttribute
 import org.apache.spark.storage.StorageLevel
-import org.apache.spark.{HashPartitioner, SparkEnv}
-import org.slf4j.LoggerFactory
 import org.tribbloid.spookystuff.actions._
-import org.tribbloid.spookystuff.dsl.{Inner, JoinType, _}
-import org.tribbloid.spookystuff.entity.PageRow.Signature
+import org.tribbloid.spookystuff.dsl.{JoinType, _}
+import org.tribbloid.spookystuff.entity.PageRow.InMemoryWebCacheRDD
 import org.tribbloid.spookystuff.entity._
 import org.tribbloid.spookystuff.expressions._
-import org.tribbloid.spookystuff.pages.{PageLike, Unstructured}
+import org.tribbloid.spookystuff.pages.Unstructured
 import org.tribbloid.spookystuff.utils._
-import org.tribbloid.spookystuff.{Const, QueryException, SpookyContext}
+import org.tribbloid.spookystuff.{views, Const, QueryException, SpookyContext}
 
 import scala.collection.immutable.ListSet
 import scala.collection.mutable.ArrayBuffer
 import scala.language.implicitConversions
+import scala.util.Random
 
 /**
  * Created by peng on 8/29/14.
+ * Core component, abstraction of distributed Page + schemaless KVStore to represent all stages of remote resource discovery
  */
-class PageRowRDD(
-                  val store: RDD[PageRow],
-                  val keys: ListSet[KeyLike] = ListSet(),
-                  val spooky: SpookyContext,
-                  val cachedRDDs: ArrayBuffer[RDD[_]] = ArrayBuffer()
-                  )
-  extends RDD[PageRow](store) with PageRowRDDOverrides {
+class PageRowRDD private (
+                           val self: RDD[PageRow],
+                           val webCache: InMemoryWebCacheRDD, //used for both quick page lookup from memory and seeding
+                           val keys: ListSet[KeyLike],
+                           val spooky: SpookyContext,
+                           val persisted: ArrayBuffer[RDD[_]]
+                           )
+  extends RDD[PageRow](self) with PageRowRDDOverrides {
+
+  import RDD._
+  import views._
+
+  def this(
+            self: RDD[PageRow],
+            spooky: SpookyContext
+            ) = this(
+
+    self match {
+      case self: PageRowRDD => self.self //avoid recursive 
+      case _ => self
+    },
+    self.sparkContext.emptyRDD,
+    ListSet(), spooky, ArrayBuffer())
+
+  def this(
+            self: RDD[PageRow],
+            keys: ListSet[KeyLike],
+            spooky: SpookyContext
+            ) = this(
+
+    self match {
+      case self: PageRowRDD => self.self //avoid recursive
+      case _ => self
+    },
+    self.sparkContext.emptyRDD,
+    keys, spooky, ArrayBuffer())
 
   def copy(
-            store: RDD[PageRow] = this.store,
+            self: RDD[PageRow] = this.self,
+            webCache: InMemoryWebCacheRDD = this.webCache,
             keys: ListSet[KeyLike] = this.keys,
             spooky: SpookyContext = this.spooky,
-            cachedRDDs: ArrayBuffer[RDD[_]] = this.cachedRDDs
+            cachedRDDs: ArrayBuffer[RDD[_]] = this.persisted
             ): PageRowRDD = {
-    val result = new PageRowRDD(store, keys, spooky, cachedRDDs)
+
+    val result = new PageRowRDD(
+      self match {
+        case self: PageRowRDD => self.self //avoid recursive
+        case _ => self
+      },
+      webCache,
+      keys, spooky, cachedRDDs
+    )
     result
   }
 
-  def segmentBy(exprs: Expression[Any]*): PageRowRDD = { //TODO: need spike
+  def segmentBy(exprs: (PageRow => Any)*): PageRowRDD = {
 
-    this.copy(store.map{
+    this.copy(self.map{
       row =>
-        val ser = SparkEnv.get.serializer.newInstance()
         val values = exprs.map(_.apply(row))
-        val buffer = ser.serialize(values)
-        row.copy(segmentID = UUID.nameUUIDFromBytes(buffer.array()))
+        row.copy(segment = values.hashCode())
     })
   }
 
   def segmentByRow: PageRowRDD = {
-    this.copy(store.map(_.copy(segmentID = UUID.randomUUID())))
+    this.copy(self.map(_.copy(segment = Random.nextLong())))
   }
 
-  private def discardPages: PageRowRDD = this.copy(store = this.map(_.copy(pageLikes = Seq())))
+  private def discardPages: PageRowRDD = this.copy(self = this.map(_.copy(pageLikes = Array())))
+
+  private def discardWebCache: PageRowRDD = {
+    //TODO: unpersist it
+    this.copy(webCache = sparkContext.emptyRDD)
+  }
+
+  def cleanCachedRDDs(): PageRowRDD = {
+    this.persisted.foreach(_.unpersist(blocking = false))
+    this.persisted.clear()
+    this
+  }
 
   @transient def keysSeq: Seq[KeyLike] = this.keys.toSeq.reverse
 
@@ -74,37 +121,31 @@ class PageRowRDD(
 
     //    this.persistDuring(spooky.conf.defaultStorageLevel){
     if (this.getStorageLevel == StorageLevel.NONE){
-      this.cachedRDDs += this.persist(spooky.conf.defaultStorageLevel)
+      this.persisted += this.persist(spooky.conf.defaultStorageLevel)
     }
 
     val result = this.sortBy{_.ordinal(sortKeysSeq)}
     result.count()
-    this.cleanCachedRDD()
+    this.cleanCachedRDDs()
     result
   }
 
-  def toMapRDD(sort: Boolean = true): RDD[Map[String, Any]] =
+  def toMapRDD(sort: Boolean = false): RDD[Map[String, Any]] =
     if (!sort) this.map(_.toMap)
     else this
       .discardPages
       .defaultSort
       .map(_.toMap)
 
-  def toJSON(sort: Boolean = true): RDD[String] =
+  def toJSON(sort: Boolean = false): RDD[String] =
     if (!sort) this.map(_.toJSON)
     else this
       .discardPages
       .defaultSort
       .map(_.toJSON)
 
-  def cleanCachedRDD(): PageRowRDD = {
-    this.cachedRDDs.foreach(_.unpersist(blocking = false))
-    this.cachedRDDs.clear()
-    this
-  }
-
   //TODO: investigate using the new applySchema api to avoid losing type info
-  def toDataFrame(sort: Boolean = true, tableName: String = null): DataFrame = {
+  def toDF(sort: Boolean = false, tableName: String = null): DataFrame = {
 
     val jsonRDD = this.toJSON(sort)
 
@@ -123,7 +164,7 @@ class PageRowRDD(
     result
   }
 
-  def toCSV(separator: String = ","): RDD[String] = this.toDataFrame().map {
+  def toCSV(separator: String = ","): RDD[String] = this.toDF().map {
     _.mkString(separator)
   }
 
@@ -164,7 +205,7 @@ class PageRowRDD(
         }
         pageRow
     }
-    this.copy(store = saved)
+    this.copy(self = saved)
   }
 
   /**
@@ -196,42 +237,27 @@ class PageRowRDD(
     val newKeys: Seq[Key] = exprs.map {
       expr =>
         val key = Key(expr.name)
-        if(this.keys.contains(key) && !expr.isInstanceOf[PlusExpr[_]]) //can't insert the same key twice
+        if(this.keys.contains(key) && !expr.isInstanceOf[InsertIntoExpr[_]]) //can't insert the same key twice
           throw new QueryException(s"Key ${key.name} already exist")
         key
     }
 
     val result = this.copy(
-      store = this.flatMap(_.select(exprs: _*)),
+      self = this.flatMap(_.select(exprs: _*)),
       keys = this.keys ++ newKeys
     )
     result
   }
 
-  private def selectReplace(exprs: Expression[Any]*): PageRowRDD = {
-
-    val newKeys: Seq[Key] = exprs.map {
-      expr =>
-        val key = Key(expr.name)
-        key
-    }
-
-    val result = this.copy(
-      store = this.flatMap(_.select(exprs: _*)),
-      keys = this.keys ++ newKeys
-    )
-    result
-  }
-
-
-  def overwrite(exprs: Expression[Any]*): PageRowRDD = {
+  //no "already exist" check
+  def selectOverwrite(exprs: Expression[Any]*): PageRowRDD = {
 
     val newKeys: Seq[Key] = exprs.map {
       expr => Key(expr.name)
     }
 
     val result = this.copy(
-      store = this.flatMap(_.select(exprs: _*)),
+      self = this.flatMap(_.select(exprs: _*)),
       keys = this.keys ++ newKeys
     )
     result
@@ -246,7 +272,7 @@ class PageRowRDD(
     }
 
     this.copy(
-      store = this.flatMap(_.selectTemp(exprs: _*)),
+      self = this.flatMap(_.selectTemp(exprs: _*)),
       keys = this.keys ++ newKeys
     )
   }
@@ -254,14 +280,14 @@ class PageRowRDD(
   def remove(keys: Symbol*): PageRowRDD = {
     val names = keys.map(key => Key(key))
     this.copy(
-      store = this.map(_.remove(names: _*)),
+      self = this.map(_.remove(names: _*)),
       keys = this.keys -- names
     )
   }
 
   private def clearTemp: PageRowRDD = {
     this.copy(
-      store = this.map(_.clearTemp),
+      self = this.map(_.clearTemp),
       keys = keys -- keys.filter(_.isInstanceOf[TempKey])//circumvent https://issues.scala-lang.org/browse/SI-8985
     )
   }
@@ -276,7 +302,7 @@ class PageRowRDD(
 
     val flattened = selected.flatMap(_.flatten(expr.name, ordinalKey, maxOrdinal, left))
     selected.copy(
-      store = flattened,
+      self = flattened,
       keys = selected.keys ++ Option(Key.sortKey(ordinalKey))
     )
   }
@@ -291,7 +317,7 @@ class PageRowRDD(
 
     val flattened = selected.flatMap(_.flatten(expr.name, ordinalKey, maxOrdinal, left))
     selected.copy(
-      store = flattened,
+      self = flattened,
       keys = selected.keys ++ Option(Key.sortKey(ordinalKey))
     )
   }
@@ -323,29 +349,19 @@ class PageRowRDD(
   }
 
   def flattenPages(
-                    pattern: Symbol = Symbol(Const.onlyPageWildcard), //TODO: enable it
+                    pattern: String = ".*", //TODO: enable it
                     ordinalKey: Symbol = null
                     ): PageRowRDD =
+
     this.copy(
-      store = this.flatMap(_.flattenPages(pattern.name, ordinalKey)),
+      self = this.flatMap(_.flattenPages(pattern.name, ordinalKey)),
       keys = this.keys ++ Option(Key.sortKey(ordinalKey))
     )
-
-  def lookup(): RDD[(Trace, PageLike)] = {
-
-    if (this.getStorageLevel == StorageLevel.NONE) {
-      this.cachedRDDs += this.persist(spooky.conf.defaultStorageLevel)
-    }
-
-    this.flatMap(_.pageLikes.map(page => page.uid.backtrace -> page ))
-    //TODO: really takes a lot of space, how to eliminate?
-    //TODO: unpersist after next action, is it even possible?
-  }
 
   def fetch(
              traces: Set[Trace],
              joinType: JoinType = Const.defaultJoinType,
-             flattenPagesPattern: Symbol = '*, //by default, always flatten all pages
+             flattenPagesPattern: String = ".*",
              flattenPagesOrdinalKey: Symbol = null,
              numPartitions: Int = spooky.conf.defaultParallelism(this),
              optimizer: QueryOptimizer = spooky.conf.defaultQueryOptimizer
@@ -359,9 +375,11 @@ class PageRowRDD(
       case Narrow =>
         _narrowFetch(_traces, joinType, numPartitions)
       case Wide =>
-        _wideFetch(_traces, joinType, numPartitions, null)
+        _wideFetch(_traces, joinType, numPartitions, useWebCache = false)()
+      //          .discardRowsInWebCache //TODO: should be optional
       case WideLookup =>
-        _wideFetch(_traces, joinType, numPartitions, lookup())
+        _wideFetch(_traces, joinType, numPartitions, useWebCache = true)()
+      //          .discardRowsInWebCache
       case _ => throw new UnsupportedOperationException(s"${optimizer.getClass.getSimpleName} optimizer is not supported in this query")
     }
 
@@ -398,87 +416,96 @@ class PageRowRDD(
                           _traces: Set[Trace],
                           joinType: JoinType,
                           numPartitions: Int,
-                          lookup: RDD[(Trace, PageLike)]
+                          useWebCache: Boolean,
+                          postProcessing: PageRow => Iterable[PageRow] = Some(_)
+                          )(
+                          seed: Boolean = false,
+                          seedFilter: Iterable[PageRow] => Option[PageRow] = _=>None //if multiple new PageRows that has identical uid is selected
                           ): PageRowRDD = {
 
     val spooky = this.spooky
 
-    val traceToRows = this.flatMap {
+    val traceToRows: RDD[(Trace, PageRow)] = this.flatMap {
       row =>
         _traces.interpolate(row).map(interpolatedTrace => interpolatedTrace -> row)
     }
       .partitionBy(new HashPartitioner(numPartitions))
-      .persist(spooky.conf.defaultStorageLevel)
-    this.cachedRDDs += traceToRows
 
-    val traces = traceToRows.keys.distinct(numPartitions)
+    //    val traceToSegment: RDD[(Trace, SegmentID)] = traceToRows.mapValues(_.segment)
 
-    val traceToPages = if (lookup == null) {
-      traces.map{
-        trace =>
-          trace -> trace.resolve(spooky)
+    val updated: PageRowRDD = if (!useWebCache) {
+      //trace -> Pages -> segments (should only be injected into row if the row's segmentID is contained)
+      val pageRows = traceToRows
+        .groupByKey(numPartitions)
+        .flatMap {
+        tuple =>
+          val pages = tuple._1.resolve(spooky)
+          val newRows = tuple._2.flatMap(_.putPages(pages, joinType)).flatMap(postProcessing)
+          newRows
       }
+
+      this.copy(self = pageRows)
     }
     else {
-      val backtraceToTraceWithIndex: RDD[(Trace, (Trace, Int))] = traces.flatMap{
-        //key not unique, different trace may yield to same backtrace.
-        trace =>
-          val dryruns = trace.dryrun.zipWithIndex
-          if (dryruns.nonEmpty) dryruns.map(tuple => tuple._1 -> (trace, tuple._2))
-          else Seq(null.asInstanceOf[Trace] -> (trace, -1))
-      }
+      val webCacheRDD = this.webCache
+      val cogrouped: RDD[(DryRun, (Iterable[(Trace, PageRow)], Iterable[SquashedRow]))] =
+        traceToRows.keyBy(_._1.dryrun).cogroup(webCacheRDD, numPartitions)
 
-      val cogrouped = backtraceToTraceWithIndex
-        .cogroup(lookup)
-
-      val traceToIndexWithPagesOption: RDD[(Trace, (Int, Option[Seq[PageLike]]))] = cogrouped.flatMap{
+      val newRows_newCache = cogrouped.map {
         triplet =>
-          val backtrace = triplet._1
           val tuple = triplet._2
-          val squashedWithIndexes = tuple._1
-          if (squashedWithIndexes.isEmpty) {
-            Seq()
-          }
-          else if (backtrace == null) {
-            squashedWithIndexes.map{
-              squashedWithIndex =>
-                squashedWithIndex._1 -> (squashedWithIndex._2, Some(Seq()))
-            }
-          }
-          else {
-            val lookupPages = tuple._2
-            lookupPages.foreach(_.uid.backtrace.injectFrom(backtrace))
+          val rows: Iterable[PageRow] = tuple._1.map(_._2)
+          assert(tuple._2.size <= 1)
+          //tuple._2 should only have one or zero squashedRow
+          val squashedRowOption = tuple._2.reduceOption(_ ++ _)
 
-            val latestBatchOption = PageRow.discoverLatestBatch(lookupPages)
+          squashedRowOption match {
+            case None => //didn't find anything, resolve is the only option, add all new pages into lookup
+              val pageLikes = triplet._2._1.map(_._1).reduce {
+                (s1, s2) =>
+                  if (s1.length < s2.length) s1
+                  else s2
+              }.resolve(spooky)
+              val newRows = rows.flatMap(_.putPages(pageLikes, joinType)).flatMap(postProcessing)
 
-            squashedWithIndexes.map{
-              squashedWithIndex =>
-                squashedWithIndex._1 -> (squashedWithIndex._2, latestBatchOption)
-            }
+              val seedRows = newRows
+                .groupBy(_.uid)
+                .flatMap(tuple => seedFilter(tuple._2))
+
+              val newCached = triplet._1 -> SquashedRow(pageLikes.toArray, seedRows.toArray)
+
+              val newSelf = if (!seed) newRows
+              else seedRows
+
+              newSelf -> newCached
+            case Some(squashedRow) => //found something, use same pages, add into rows except those found with existing segmentIDs, only add new pages with non-existing segmentIDs into lookup
+              val dryrun = triplet._1
+              squashedRow.pageLikes.foreach {
+                pageLike =>
+                  val sameBacktrace = dryrun.find(_ == pageLike.uid.backtrace).get
+                  pageLike.uid.backtrace.injectFrom(sameBacktrace)
+              }
+              val pageLikes = squashedRow.pageLikes
+              val newRows = rows.flatMap(_.putPages(pageLikes, joinType)).flatMap(postProcessing)
+
+              val existingRowUIDs = squashedRow.rows.map(_.uid)
+              val seedRows = newRows.filterNot(row => existingRowUIDs.contains(row.uid))
+                .groupBy(_.uid)
+                .flatMap(tuple => seedFilter(tuple._2))
+
+              val newSelf = if (!seed) newRows
+              else seedRows
+
+              val newCached = triplet._1 -> squashedRow.copy(rows = squashedRow.rows ++ seedRows)
+              newSelf -> newCached
           }
       }
+        .cache()
 
-      traceToIndexWithPagesOption.groupByKey(numPartitions).map{ //TODO: great evil! remove it, but not before determining lookup format
-        tuple =>
-          val trace = tuple._1
-          val IndexWithPageOptions = tuple._2.toSeq
-          if (IndexWithPageOptions.map(_._2).contains(None)) trace -> trace.resolve(spooky)
-          else {
-            trace -> IndexWithPageOptions.sortBy(_._1).flatMap(_._2.get)
-          }
-      }
+      this.copy(self = newRows_newCache.flatMap(_._1), webCache = newRows_newCache.map(_._2))
     }
 
-    val rowsToPages = traceToRows.cogroup(traceToPages).values
-
-    val newRows: RDD[PageRow] = rowsToPages.flatMap{
-      tuple =>
-        assert(tuple._2.size == 1)
-        val pages = tuple._2.head
-        tuple._1.flatMap(_.putPages(pages, joinType))
-    }
-
-    this.copy(store = newRows)
+    updated
   }
 
   def join(
@@ -489,7 +516,7 @@ class PageRowRDD(
             traces: Set[Trace],
             joinType: JoinType = Const.defaultJoinType,
             numPartitions: Int = spooky.conf.defaultParallelism(this),
-            flattenPagesPattern: Symbol = '*,
+            flattenPagesPattern: String = ".*",
             flattenPagesOrdinalKey: Symbol = null,
             optimizer: QueryOptimizer = spooky.conf.defaultQueryOptimizer
             )(
@@ -558,7 +585,7 @@ class PageRowRDD(
                )(
                traces: Set[Trace],
                numPartitions: Int = spooky.conf.defaultParallelism(this),
-               flattenPagesPattern: Symbol = '*,
+               flattenPagesPattern: String = ".*",
                flattenPagesOrdinalKey: Symbol = null,
                optimizer: QueryOptimizer = spooky.conf.defaultQueryOptimizer
                )(
@@ -573,9 +600,9 @@ class PageRowRDD(
       case Narrow =>
         _narrowExplore(expr, depthKey, maxDepth, ordinalKey, maxOrdinal, checkpointInterval)(_traces, numPartitions, flattenPagesPattern, flattenPagesOrdinalKey)(select: _*)
       case Wide =>
-        _wideExplore(expr, depthKey, maxDepth, ordinalKey, maxOrdinal, checkpointInterval, null)(_traces, numPartitions, flattenPagesPattern, flattenPagesOrdinalKey)(select: _*)
+        _wideExplore(expr, depthKey, maxDepth, ordinalKey, maxOrdinal, checkpointInterval, useWebCache = false)(_traces, numPartitions, flattenPagesPattern, flattenPagesOrdinalKey)(select: _*)
       case WideLookup =>
-        _wideExplore(expr, depthKey, maxDepth, ordinalKey, maxOrdinal, checkpointInterval, this.lookup())(_traces, numPartitions, flattenPagesPattern, flattenPagesOrdinalKey)(select: _*)
+        _wideExplore(expr, depthKey, maxDepth, ordinalKey, maxOrdinal, checkpointInterval, useWebCache = true)(_traces, numPartitions, flattenPagesPattern, flattenPagesOrdinalKey)(select: _*)
       case _ => throw new UnsupportedOperationException(s"${optimizer.getClass.getSimpleName} optimizer is not supported in this query")
     }
 
@@ -594,7 +621,7 @@ class PageRowRDD(
                               )(
                               _traces: Set[Trace],
                               numPartitions: Int,
-                              flattenPagesPattern: Symbol,
+                              flattenPagesPattern: String,
                               flattenPagesOrdinalKey: Symbol
                               )(
                               select: Expression[Any]*
@@ -607,7 +634,7 @@ class PageRowRDD(
     var depthFromExclusive = 0
 
     if (this.getStorageLevel == StorageLevel.NONE) {
-      this.cachedRDDs += this.persist(spooky.conf.defaultStorageLevel)
+      this.persisted += this.persist(spooky.conf.defaultStorageLevel)
     }
     if (this.context.getCheckpointDir.isEmpty) this.context.setCheckpointDir(spooky.conf.dirs.checkpoint)
 
@@ -618,15 +645,7 @@ class PageRowRDD(
       .map {
       row =>
         val seeds = Seq(row)
-        val dryruns = row
-          .pageLikes
-          .map(_.uid)
-          .groupBy(_.backtrace)
-          .filter{
-          tuple =>
-            tuple._2.size == tuple._2.head.blockTotal //I hope this is sufficient condition
-        }
-          .keys.toSet
+        val dryruns = row.pageLikes.toSeq.map(_.uid.backtrace).distinct
 
         ExploreStage(seeds, dryruns = Set(dryruns))
     }
@@ -671,7 +690,7 @@ class PageRowRDD(
             )
       }
 
-      this.cachedRDDs += batchExeRDD.persist(spooky.conf.defaultStorageLevel)
+      this.persisted += batchExeRDD.persist(spooky.conf.defaultStorageLevel)
       batchExeRDD.checkpoint()
 
       stageRDD = batchExeRDD.map(_._2).filter(_.hasMore) //TODO: repartition to balance?
@@ -689,48 +708,11 @@ class PageRowRDD(
     def result: PageRowRDD = {
 
       val resultSelf = new UnionRDD(this.sparkContext, resultRDDs).coalesce(numPartitions) //TODO: not an 'official' API, and not efficient
-      val result = this.copy(store = resultSelf, keys = resultKeys)
+      val result = this.copy(self = resultSelf, keys = resultKeys)
       result.select(select: _*)
     }
 
     result
-  }
-
-  //has 2 outputs: 1 is self merge another by Signature, 2 is self distinct not covered by another
-  //remember base MUST HAVE a hash partitioner!!!
-  private def mergeAndSubtractBySignature(
-                                           base: RDD[(Signature, PageRow)],
-                                           needCheckpointing: Boolean,
-                                           ordinalKey: Symbol
-                                           )(
-                                           select: Expression[Any]*
-                                           ): (RDD[(Signature, PageRow)], PageRowRDD) = {
-
-    val self = this.keyBy(_.signature)
-
-    val cogrouped = base.cogroup(self)
-
-    val mixed = cogrouped.mapValues{
-      tuple =>
-        if (tuple._1.nonEmpty) {
-          val oldRowOption = PageRow.selectFirstRow(tuple._1, ordinalKey)
-          oldRowOption.head -> None
-        }
-        else {
-          val newRowOption = PageRow.selectFirstRow(tuple._2, ordinalKey)
-          val newRowSelected = newRowOption.get.select(select: _*).get
-
-          newRowSelected -> newRowOption
-        }
-    }
-
-    this.cachedRDDs += mixed.persist(spooky.conf.defaultStorageLevel)
-    if (needCheckpointing) mixed.checkpoint()
-
-    val merged = mixed.mapValues(_._1)
-    val newSeeds = mixed.values.flatMap(_._2)
-
-    merged -> this.copy(store = newSeeds)
   }
 
   //recursive join and union! applicable to many situations like (wide) pagination and deep crawling
@@ -741,75 +723,71 @@ class PageRowRDD(
                             ordinalKey: Symbol,
                             maxOrdinal: Int,
                             checkpointInterval: Int,
-                            lookup: RDD[(Trace, PageLike)]
+                            useWebCache: Boolean
                             )(
                             _traces: Set[Trace],
                             numPartitions: Int,
-                            flattenPagesPattern: Symbol,
+                            flattenPagesPattern: String,
                             flattenPagesOrdinalKey: Symbol
                             )(
                             select: Expression[Any]*
                             ): PageRowRDD = {
 
     val spooky = this.spooky
-
-    if (this.getStorageLevel == StorageLevel.NONE) {
-      this.cachedRDDs += this.persist(spooky.conf.defaultStorageLevel)
-    }
     if (this.context.getCheckpointDir.isEmpty) this.context.setCheckpointDir(spooky.conf.dirs.checkpoint)
 
-    var newSeeds = this
-
-    var accumulated: RDD[(Signature, PageRow)] =
-      this
-        .clearTemp
-        .select(Option(depthKey).map(key => Literal(0) ~ key).toSeq: _*)
-        .keyBy(_.signature)
-        .partitionBy(new HashPartitioner(numPartitions))
-
+    if (this.getStorageLevel == StorageLevel.NONE) {
+      this.persisted += this.persist(spooky.conf.defaultStorageLevel)
+    }
     val _expr = expr defaultAs Symbol(Const.defaultJoinKey)
 
-    val resultKeys = this.keys ++ Seq(TempKey(_expr.name), Key.sortKey(depthKey), Key.sortKey(ordinalKey), Key.sortKey(flattenPagesOrdinalKey)).flatMap(Option(_))
+    val depth0 = this.clearTemp.select(Literal[Int](0) ~ depthKey)
 
-    var lookupAccumulated = Option(lookup).map{
-      _.partitionBy(new HashPartitioner(numPartitions))
-    }.orNull
+    val WebCache0 = {
+      val webCache: InMemoryWebCacheRDD = if (useWebCache) depth0.webCache
+      else sparkContext.emptyRDD
+
+      webCache.indexRows(
+        depth0.self,
+        rows => rows.headOption
+      )
+    }
+    var seeds = depth0
+      .copy(webCache = WebCache0)
+
+    val postProcessing: PageRow => Iterable[PageRow] = {
+      row =>
+        row.flattenPages(flattenPagesPattern, flattenPagesOrdinalKey)
+      //          .flatMap(_.select(select: _*))
+    }
+
+    val seedFilter: Iterable[PageRow] => Option[PageRow] = rows => rows.reduceOption(PageRow.reducer(ordinalKey))
 
     for (depth <- 1 to maxDepth) {
-      val newPages = newSeeds
+      val newRows = seeds
+        .selectOverwrite(Literal(depth) ~ depthKey)
         .flattenTemp(_expr, ordinalKey, maxOrdinal, left = true)
-        ._wideFetch(_traces, Inner, numPartitions, lookupAccumulated)
+        ._wideFetch(_traces, Inner, numPartitions, useWebCache = true,
+          postProcessing = postProcessing)(
+          seed = true,
+          seedFilter
+        )
 
-      if (lookupAccumulated != null) {
-        val newLookups = newPages.lookup()
-
-        lookupAccumulated = lookupAccumulated.union(newLookups)
-
-        if (depth % checkpointInterval == 0) {
-          this.cachedRDDs += lookupAccumulated.persist(spooky.conf.defaultStorageLevel)
-          lookupAccumulated.checkpoint()
-        }
-      }
-
-      val joined = newPages
-        .flattenPages(flattenPagesPattern, flattenPagesOrdinalKey)
-
-      val tuple = joined.mergeAndSubtractBySignature(accumulated, depth % checkpointInterval == 0, ordinalKey)(
-        Option(depthKey).map(k => Literal(depth) ~ k).toSeq: _*
-      )
-      accumulated = tuple._1
-      newSeeds = tuple._2
-
-      val newRowsSize = newSeeds.count()
+      val newRowsSize = newRows.count()
       LoggerFactory.getLogger(this.getClass).info(s"found $newRowsSize new row(s) after $depth iterations")
 
       if (newRowsSize == 0) return result
+
+      seeds = newRows
     }
 
     def result = {
-      val r0 = this.copy(store = accumulated.values, keys = resultKeys)
-      val res = r0.select(select: _*)
-      res
+      val resultKeys = this.keys ++ Seq(TempKey(_expr.name), Key.sortKey(depthKey), Key.sortKey(ordinalKey), Key.sortKey(flattenPagesOrdinalKey)).flatMap(Option(_))
+
+      val resultWebCache = if (useWebCache) seeds.webCache.discardRows
+      else this.webCache
+      this.copy(seeds.webCache.getRows, resultWebCache, resultKeys)
+        .select(select: _*)
     }
 
     result

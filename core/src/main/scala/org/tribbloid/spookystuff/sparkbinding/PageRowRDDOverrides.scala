@@ -14,15 +14,17 @@ import scala.reflect.ClassTag
 trait PageRowRDDOverrides extends RDD[PageRow]{
   this: PageRowRDD =>
 
+  import org.tribbloid.spookystuff.views._
+
   override def getPartitions: Array[Partition] = firstParent[PageRow].partitions
 
-  override val partitioner = store.partitioner
+  override val partitioner = self.partitioner
 
   override def compute(split: Partition, context: TaskContext) =
     firstParent[PageRow].iterator(split, context)
   //-----------------------------------------------------------------------
 
-  private implicit def selfToPageRowRDD(self: RDD[PageRow]): PageRowRDD = this.copy(store = self)
+  private implicit def selfToPageRowRDD(self: RDD[PageRow]): PageRowRDD = this.copy(self = self)
 
   override def filter(f: PageRow => Boolean): PageRowRDD = super.filter(f)
 
@@ -46,7 +48,8 @@ trait PageRowRDDOverrides extends RDD[PageRow]{
 
     case other: PageRowRDD =>
       this.copy(
-        super.union(other.store),
+        super.union(other.self),
+        this.webCache.unionByKey(other.webCache)(_ ++ _),
         this.keys ++ other.keys.toSeq.reverse
       )
     case _ => super.union(other)
@@ -64,7 +67,8 @@ trait PageRowRDDOverrides extends RDD[PageRow]{
 
     case other: PageRowRDD =>
       this.copy(
-        super.intersection(other.store),
+        super.intersection(other.self),
+        this.webCache.intersectionByKey(other.webCache)(_ ++ _),
         this.keys.intersect(other.keys)//TODO: need validation that it won't change sequence
       )
     case _ => super.intersection(other)
@@ -74,11 +78,10 @@ trait PageRowRDDOverrides extends RDD[PageRow]{
 
     case other: PageRowRDD =>
       this.copy(
-        super.intersection(other.store),
+        super.intersection(other.self),
+        this.webCache.intersectionByKey(other.webCache)(_ ++ _),
         this.keys.intersect(other.keys)
       )
     case _ => super.intersection(other, numPartitions)
   }
-  //-------------------all before this lines are self typed wrappers--------------------
-
 }

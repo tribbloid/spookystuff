@@ -46,6 +46,6 @@ object UrbanSpoon extends QueryCore {
         A"span.type".text ~ 'user_location,
         A"div.byline a".text ~ 'review_count
       )
-      .toDataFrame()
+      .toDF()
   }
 }

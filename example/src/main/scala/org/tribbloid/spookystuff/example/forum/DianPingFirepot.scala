@@ -39,6 +39,6 @@ object DianPingFirepot extends QueryCore {
         A("div.comment-txt > div.J_brief-cont").text ~ 'comment,
         A("div.comment-txt > div.J_extra-cont").text ~ 'comment_extra
       )
-      .toDataFrame()
+      .toDF()
   }
 }

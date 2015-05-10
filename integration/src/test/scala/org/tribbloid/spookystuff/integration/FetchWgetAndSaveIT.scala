@@ -6,8 +6,6 @@ import org.tribbloid.spookystuff.actions._
 import org.tribbloid.spookystuff.dsl._
 import org.tribbloid.spookystuff.pages.PageUtils
 
-import scala.concurrent.duration
-
 /**
  * Created by peng on 11/26/14.
  */
@@ -18,8 +16,6 @@ class FetchWgetAndSaveIT extends IntegrationSuite {
   )
 
   override def doMain(spooky: SpookyContext) {
-
-    import spooky.dsl._
 
     val RDD = spooky
       .fetch(
@@ -33,8 +29,8 @@ class FetchWgetAndSaveIT extends IntegrationSuite {
     val savedPageRows = RDD.collect()
 
     val finishTime = System.currentTimeMillis()
-    assert(savedPageRows.size === 1)
-    assert(savedPageRows(0).pages.size === 1)
+    assert(savedPageRows.length === 1)
+    assert(savedPageRows(0).pages.length === 1)
     val pageTime = savedPageRows(0).pages.head.timestamp.getTime
     assert(pageTime < finishTime)
     assert(pageTime > finishTime-60000) //long enough even after the second time it is retrieved from s3 cache
@@ -55,7 +51,7 @@ class FetchWgetAndSaveIT extends IntegrationSuite {
 
     val appendedRows = RDDAppended.collect()
 
-    assert(appendedRows.size === 2)
+    assert(appendedRows.length === 2)
     assert(appendedRows(0).pages.apply(0).copy(timestamp = null, content = null, saved = null) === appendedRows(1).pages.apply(0).copy(timestamp = null, content = null, saved = null))
 
     import scala.concurrent.duration._

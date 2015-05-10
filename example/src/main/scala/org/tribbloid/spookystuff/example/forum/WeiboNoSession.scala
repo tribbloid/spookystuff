@@ -64,6 +64,6 @@ object WeiboNoSession extends QueryCore {
         $"div.pf_star_info p:nth-of-type(1)".text ~ 'author_credit,
         $"div.pf_star_info p:nth-of-type(2)".text ~ 'author_interests
       )
-      .toDataFrame()
+      .toDF()
   }
 }

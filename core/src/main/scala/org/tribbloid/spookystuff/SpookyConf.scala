@@ -1,5 +1,8 @@
 package org.tribbloid.spookystuff
 
+import java.util.Date
+
+import org.apache.commons.lang.time.DateUtils
 import org.apache.spark.storage.StorageLevel
 import org.tribbloid.spookystuff.SpookyConf.Dirs
 import org.tribbloid.spookystuff.dsl._
@@ -49,13 +52,9 @@ object SpookyConf {
 
 /**
  * Created by peng on 12/06/14.
+ * will be shipped to workers
  */
-//class SpookyContext(val sc: SparkContext) {
-//
-//}
-
-//will be shipped everywhere as implicit parameter
-
+//TODO: is var in serialized closure unstable for Spark production environment? consider changing to ConcurrentHashMap
 class SpookyConf (
                    val dirs: Dirs = new Dirs(),
 
@@ -63,8 +62,7 @@ class SpookyConf (
 
                    var driverFactory: DriverFactory = PhantomJSDriverFactory(),
                    var proxy: ProxyFactory = NoProxyFactory,
-                   var userAgent: ()=> String = () => null,
-                   //  val userAgent = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/37.0.2062.120 Safari/537.36",
+                   var userAgent: ()=> String = () => null, //may change to "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/37.0.2062.120 Safari/537.36",
                    var headers: ()=> Map[String, String] = () => Map(),
                    val browserResolution: (Int, Int) = (1920, 1080),
 
@@ -75,6 +73,7 @@ class SpookyConf (
                    var errorScreenshot: Boolean = true,
 
                    var pageExpireAfter: Duration = 7.day,
+                   var pageExpireBefore: Option[Date] = None,
 
                    var autoSaveExtract: Extract[String] = new UUIDFileName(Hierarchical),
                    var cacheTraceEncoder: TraceEncoder[String] = Hierarchical,
@@ -96,7 +95,7 @@ class SpookyConf (
 
                    var defaultQueryOptimizer: QueryOptimizer = Wide,
 
-                   var checkpointInterval: Int = 50,
+                   var checkpointInterval: Int = 100,
 
                    var defaultStorageLevel: StorageLevel = StorageLevel.MEMORY_ONLY
                    ) extends Serializable {

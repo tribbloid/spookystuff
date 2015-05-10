@@ -55,7 +55,7 @@ class TraceView(
     results
   }
 
-  lazy val dryrun: Seq[Trace] = {
+  lazy val dryrun: DryRun = {
     val result: ArrayBuffer[Trace] = ArrayBuffer()
 
     for (i <- 0 until self.size) {

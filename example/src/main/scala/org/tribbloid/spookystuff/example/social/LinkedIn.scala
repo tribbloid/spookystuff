@@ -30,6 +30,6 @@ object LinkedIn extends QueryCore {
         $"div#profile-skills li".texts.mkString("|") ~ 'skills,
         $.uri ~ 'uri
       )
-      .toDataFrame()
+      .toDF()
   }
 }

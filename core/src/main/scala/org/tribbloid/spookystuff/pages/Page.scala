@@ -18,10 +18,10 @@ import scala.collection.immutable.ListSet
 @SerialVersionUID(612503421395L)
 case class PageUID(
                     backtrace: Trace,
-                    leaf: Named,
-//                    sessionStartTime: Long, //TODO: add for sanity check
+                    output: Named,
+                    //                    sessionStartTime: Long, //TODO: add for sanity check
                     blockIndex: Int = 0,
-                    blockTotal: Int = 1 //number of pages in a block output,
+                    blockSize: Int = 1 //number of pages in a block output,
                     ) {
 
 }
@@ -41,6 +41,7 @@ case class NoPage(
                    trace: Trace,
                    override val timestamp: Date = new Date
                    ) extends Serializable with PageLike {
+
   override val uid: PageUID = PageUID(trace, null, 0, 1)
 }
 
@@ -59,7 +60,7 @@ case class Page(
                  )
   extends Unstructured with PageLike {
 
-  def name = this.uid.leaf.name
+  def name = this.uid.output.name
 
   @transient lazy val parsedContentType: ContentType = {
     var result = ContentType.parse(this.contentType)
@@ -119,7 +120,7 @@ case class Page(
                  spooky: SpookyContext,
                  overwrite: Boolean = false
                  ): Unit = {
-    val root = this.uid.leaf match {
+    val root = this.uid.output match {
       case ss: Screenshot => spooky.conf.dirs.errorScreenshot
       case _ => spooky.conf.dirs.errorDump
     }
@@ -133,7 +134,7 @@ case class Page(
                       spooky: SpookyContext,
                       overwrite: Boolean = false
                       ): Unit = {
-    val root = this.uid.leaf match {
+    val root = this.uid.output match {
       case ss: Screenshot => spooky.conf.dirs.errorScreenshotLocal
       case _ => spooky.conf.dirs.errorDumpLocal
     }
