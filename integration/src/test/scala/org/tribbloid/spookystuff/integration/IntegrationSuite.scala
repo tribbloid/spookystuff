@@ -63,7 +63,8 @@ abstract class IntegrationSuite extends FunSuite with BeforeAndAfterAll {
   )
 
   lazy val optimizers = Seq(
-//    Narrow, //TODO: enable Wide
+    Narrow,
+//    Wide,
     WideLookup
   )
 

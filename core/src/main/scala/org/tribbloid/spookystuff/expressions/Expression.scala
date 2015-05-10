@@ -82,7 +82,7 @@ object GetAllPagesExpr extends Expression[Elements[Page]] {
 object GetSegmentIDExpr extends Expression[String] {
   override var name = "SegmentID"
 
-  override def apply(v1: PageRow): Option[String] =Option(v1.segment.toString)
+  override def apply(v1: PageRow): Option[String] =Option(v1.segmentID.toString)
 }
 
 class ReplaceKeyExpr(str: String) extends Expression[String] {

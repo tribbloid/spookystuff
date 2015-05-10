@@ -42,7 +42,7 @@ class PageRowRDD private (
             ) = this(
 
     self match {
-      case self: PageRowRDD => self.self //avoid recursive 
+      case self: PageRowRDD => self.self //avoid recursive
       case _ => self
     },
     self.sparkContext.emptyRDD,
@@ -85,12 +85,12 @@ class PageRowRDD private (
     this.copy(self.map{
       row =>
         val values = exprs.map(_.apply(row))
-        row.copy(segment = values.hashCode())
+        row.copy(segmentID = values.hashCode())
     })
   }
 
   def segmentByRow: PageRowRDD = {
-    this.copy(self.map(_.copy(segment = Random.nextLong())))
+    this.copy(self.map(_.copy(segmentID = Random.nextLong())))
   }
 
   private def discardPages: PageRowRDD = this.copy(self = this.map(_.copy(pageLikes = Array())))
@@ -466,16 +466,15 @@ class PageRowRDD private (
                   if (s1.length < s2.length) s1
                   else s2
               }.resolve(spooky)
-              val newRows = rows.flatMap(_.putPages(pageLikes, joinType)).flatMap(postProcessing)
-
-              val seedRows = newRows
-                .groupBy(_.uid)
+              val fetchedRows = rows.flatMap(_.putPages(pageLikes, joinType))
+              val seedRows = fetchedRows
+                .groupBy(_.segmentID)
                 .flatMap(tuple => seedFilter(tuple._2))
+              val seedRowsPost = seedRows.flatMap(postProcessing)
 
-              val newCached = triplet._1 -> SquashedRow(pageLikes.toArray, seedRows.toArray)
-
-              val newSelf = if (!seed) newRows
-              else seedRows
+              val newSelf = if (!seed) fetchedRows.flatMap(postProcessing)
+              else seedRowsPost
+              val newCached = triplet._1 -> SquashedRow(pageLikes.toArray, seedRowsPost.toArray)
 
               newSelf -> newCached
             case Some(squashedRow) => //found something, use same pages, add into rows except those found with existing segmentIDs, only add new pages with non-existing segmentIDs into lookup
@@ -486,17 +485,18 @@ class PageRowRDD private (
                   pageLike.uid.backtrace.injectFrom(sameBacktrace)
               }
               val pageLikes = squashedRow.pageLikes
-              val newRows = rows.flatMap(_.putPages(pageLikes, joinType)).flatMap(postProcessing)
+              val fetchedRows = rows.flatMap(_.putPages(pageLikes, joinType))
 
-              val existingRowUIDs = squashedRow.rows.map(_.uid)
-              val seedRows = newRows.filterNot(row => existingRowUIDs.contains(row.uid))
-                .groupBy(_.uid)
+              val existingSegIDs = squashedRow.rows.map(_.segmentID).toSet
+              val seedRows = fetchedRows.filterNot(row => existingSegIDs.contains(row.segmentID))
+                .groupBy(_.segmentID)
                 .flatMap(tuple => seedFilter(tuple._2))
+              val seedRowsPost = seedRows.flatMap(postProcessing)
 
-              val newSelf = if (!seed) newRows
-              else seedRows
+              val newSelf = if (!seed) fetchedRows.flatMap(postProcessing)
+              else seedRowsPost
+              val newCached = triplet._1 -> squashedRow.copy(rows = squashedRow.rows ++ seedRowsPost)
 
-              val newCached = triplet._1 -> squashedRow.copy(rows = squashedRow.rows ++ seedRows)
               newSelf -> newCached
           }
       }
@@ -768,7 +768,8 @@ class PageRowRDD private (
         .selectOverwrite(Literal(depth) ~ depthKey)
         .flattenTemp(_expr, ordinalKey, maxOrdinal, left = true)
         ._wideFetch(_traces, Inner, numPartitions, useWebCache = true,
-          postProcessing = postProcessing)(
+          postProcessing = postProcessing
+        )(
           seed = true,
           seedFilter
         )
@@ -782,11 +783,12 @@ class PageRowRDD private (
     }
 
     def result = {
-      val resultKeys = this.keys ++ Seq(TempKey(_expr.name), Key.sortKey(depthKey), Key.sortKey(ordinalKey), Key.sortKey(flattenPagesOrdinalKey)).flatMap(Option(_))
-
+      val resultSelf = seeds.webCache.getRows
       val resultWebCache = if (useWebCache) seeds.webCache.discardRows
       else this.webCache
-      this.copy(seeds.webCache.getRows, resultWebCache, resultKeys)
+      val resultKeys = this.keys ++ Seq(TempKey(_expr.name), Key.sortKey(depthKey), Key.sortKey(ordinalKey), Key.sortKey(flattenPagesOrdinalKey)).flatMap(Option(_))
+
+      this.copy(resultSelf, resultWebCache, resultKeys)
         .select(select: _*)
     }
 

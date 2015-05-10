@@ -22,7 +22,7 @@ import scala.util.Random
 case class PageRow(
                     store: KVStore = ListMap(), //TODO: also carry PageUID & property type (Vertex/Edge) for GraphX, ListMap may be slower but has tighter serialization footage
                     pageLikes: Array[PageLike] = Array(), // discarded after new page coming in
-                    segment: SegID = Random.nextLong() //keep flattened rows together //unique for an entire context.
+                    segmentID: SegID = Random.nextLong() //keep flattened rows together //unique for an entire context.
                     ) {
 
   def pages: Array[Page] = pageLikes.flatMap {
@@ -35,7 +35,7 @@ case class PageRow(
     case _ => None
   }
 
-  def uid: RowUID = pageLikes.toSeq.map(_.uid) -> segment
+  def uid: RowUID = pageLikes.toSeq.map(_.uid) -> segmentID
 
   private def resolveKey(keyStr: String): KeyLike = {
     val tempKey = TempKey(keyStr)
@@ -346,7 +346,6 @@ object PageRow {
           val firstOption = tuple._2.map(_._2).reduceOption(PageRow.reducer(ordinalKey))
           (tuple._1, firstOption)
         //when multiple links have identical uri/trace, keep the first one
-          //TODO: this deduplication should be handled after flattenPages
       }
 
       traces = traces ++ traceToRows.map(_._1)
@@ -355,8 +354,8 @@ object PageRow {
         .flatMap {
         reducedRow =>
           val newPages = reducedRow._1.resolve(spooky)
-          val rowOption = reducedRow._2
-          rowOption.flatMap(_.putPages(newPages, Inner))
+          val rows = reducedRow._2
+          rows.flatMap(_.putPages(newPages, Inner))
       }
         .flatMap {
         row =>
@@ -370,10 +369,10 @@ object PageRow {
 
       //      assert(traces.size == depth+1)
 
-      val newRowsWithDepthKey = if (depthKey != null) seeds.flatMap(_.select(Literal(depth) ~ depthKey))
+      val newRows: Iterable[PageRow] = if (depthKey != null) seeds.flatMap(_.select(Literal(depth) ~ depthKey))
       else seeds
 
-      total ++= newRowsWithDepthKey
+      total ++= newRows
     }
 
     (total, stage.copy(seeds = seeds, traces = traces))
