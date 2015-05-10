@@ -61,7 +61,7 @@ class InnerJoinIT extends IntegrationSuite {
   }
 
   override def numPages = {
-    case Narrow => 7
-    case _ => 6
+    case WideLookup => 6
+    case _ => 7
   }
 }

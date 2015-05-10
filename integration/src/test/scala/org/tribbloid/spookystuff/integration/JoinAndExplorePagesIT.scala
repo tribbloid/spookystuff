@@ -79,9 +79,9 @@ class JoinAndExplorePagesIT extends IntegrationSuite {
   }
 
   override def numPages = {
-    case Narrow => 16
-    case _ => 15
+    case WideLookup => 15
+    case _ => 16
   }
 
-  override def numDrivers = _ => 0
+  override def numDrivers = 0
 }

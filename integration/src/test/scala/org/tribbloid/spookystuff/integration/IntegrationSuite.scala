@@ -1,6 +1,6 @@
 package org.tribbloid.spookystuff.integration
 
-import java.util.Properties
+import java.util.{Date, Properties}
 
 import org.apache.spark.sql.SQLContext
 import org.apache.spark.{SparkConf, SparkContext}
@@ -54,7 +54,7 @@ abstract class IntegrationSuite extends FunSuite with BeforeAndAfterAll {
 
   lazy val roots = Seq(
     "file://"+System.getProperty("user.home")+"/spooky-integration/"
-//    "s3n://spooky-integration/"
+    //    "s3n://spooky-integration/"
   )
 
   lazy val drivers = Seq(
@@ -64,7 +64,7 @@ abstract class IntegrationSuite extends FunSuite with BeforeAndAfterAll {
 
   lazy val optimizers = Seq(
     Narrow,
-//    Wide,
+    Wide,
     WideLookup
   )
 
@@ -92,13 +92,15 @@ abstract class IntegrationSuite extends FunSuite with BeforeAndAfterAll {
   private def assertBeforeCache(spooky: SpookyContext): Unit = {
     val metrics = spooky.metrics
 
+    val numPages = this.numPages(spooky.conf.defaultQueryOptimizer)
+
     val pageFetched = metrics.pagesFetched.value
-    assert(pageFetched === numPages(spooky.conf.defaultQueryOptimizer))
-    assert(metrics.pagesFetchedFromWeb.value === pageFetched)
-    assert(metrics.pagesFetchedFromCache.value === 0)
-    assert(metrics.sessionInitialized.value === numSessions(spooky.conf.defaultQueryOptimizer))
+    assert(pageFetched === numPages)
+    assert(metrics.pagesFetchedFromWeb.value === numPagesDistinct)
+    assert(metrics.pagesFetchedFromCache.value === numPages - numPagesDistinct)
+    assert(metrics.sessionInitialized.value === numSessions)
     assert(metrics.sessionReclaimed.value >= metrics.sessionInitialized.value)
-    assert(metrics.driverInitialized.value === numDrivers(spooky.conf.defaultQueryOptimizer))
+    assert(metrics.driverInitialized.value === numDrivers)
     assert(metrics.driverReclaimed.value >= metrics.driverInitialized.value)
   }
 
@@ -122,14 +124,13 @@ abstract class IntegrationSuite extends FunSuite with BeforeAndAfterAll {
   private def doTest(spooky: SpookyContext): Unit ={
 
     Utils.retry(retry) {
-      spooky.conf.cacheRead = false
+      spooky.conf.pageNotExpiredSince = Some(new Date(System.currentTimeMillis()))
       spooky.zeroMetrics()
       doMain(spooky)
       assertBeforeCache(spooky)
     }
 
     Utils.retry(retry) {
-      spooky.conf.cacheRead = true
       spooky.zeroMetrics()
       doMain(spooky)
       assertAfterCache(spooky)
@@ -140,7 +141,9 @@ abstract class IntegrationSuite extends FunSuite with BeforeAndAfterAll {
 
   def numPages: QueryOptimizer => Int
 
-  def numSessions: QueryOptimizer => Int = numPages
+  def numPagesDistinct: Int = numPages(WideLookup)
 
-  def numDrivers: QueryOptimizer => Int = numSessions
+  def numSessions: Int = numPagesDistinct
+
+  def numDrivers: Int = numSessions
 }

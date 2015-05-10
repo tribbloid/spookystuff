@@ -36,4 +36,4 @@ class QueryException(
 //class UnsupportedContentTypeException(
 //                                        override val message: String = "",
 //                                        override val cause: Throwable = null
-//                                        ) extends SpookyException(message, cause)
+//                                   ``     ) extends SpookyExc```ion(message, cause)

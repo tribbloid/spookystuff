@@ -3,8 +3,6 @@ package org.tribbloid.spookystuff.integration
 import org.tribbloid.spookystuff.SpookyContext
 import org.tribbloid.spookystuff.actions._
 import org.tribbloid.spookystuff.dsl._
-import scala.concurrent.duration
-import duration._
 
 /**
  * Created by peng on 11/26/14.
@@ -16,8 +14,6 @@ class FetchBlockIT extends IntegrationSuite {
   )
 
   override def doMain(spooky: SpookyContext) {
-
-    import spooky.dsl._
 
     val RDD = spooky
       .fetch(
@@ -64,12 +60,9 @@ class FetchBlockIT extends IntegrationSuite {
   }
 
   override def numPages = {
-    case Narrow => 6
-    case _ => 3
+    case WideLookup => 3
+    case _ => 6
   }
 
-  override def numSessions = {
-    case Narrow => 2
-    case _ => 1
-  }
+  override def numSessions = 1
 }

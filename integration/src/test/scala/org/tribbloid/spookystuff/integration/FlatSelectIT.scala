@@ -15,8 +15,6 @@ class FlatSelectIT extends IntegrationSuite {
 
   override def doMain(spooky: SpookyContext) {
 
-    import spooky.dsl._
-
     val result = spooky
       .fetch(
         Wget("http://www.wikipedia.org/")
@@ -39,7 +37,7 @@ class FlatSelectIT extends IntegrationSuite {
 
     val rows = result.collect()
 
-    assert(rows.size === 10)
+    assert(rows.length === 10)
     assert(rows.head.size === 4)
     assert(rows.head.getString(0) === "en")
     assert(rows.head.getString(1) === "http://en.wikipedia.org/")
@@ -49,5 +47,5 @@ class FlatSelectIT extends IntegrationSuite {
 
   override def numPages = _ => 1
 
-  override def numDrivers = _ => 0
+  override def numDrivers = 0
 }

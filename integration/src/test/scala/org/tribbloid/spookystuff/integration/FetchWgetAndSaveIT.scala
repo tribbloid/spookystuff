@@ -54,19 +54,16 @@ class FetchWgetAndSaveIT extends IntegrationSuite {
     assert(appendedRows.length === 2)
     assert(appendedRows(0).pages.apply(0).copy(timestamp = null, content = null, saved = null) === appendedRows(1).pages.apply(0).copy(timestamp = null, content = null, saved = null))
 
-    import scala.concurrent.duration._
-    if (spooky.conf.defaultQueryOptimizer != Narrow && spooky.conf.pageExpireAfter >= 10.minutes) {
-      assert(appendedRows(0).pages(0).timestamp === appendedRows(1).pages(0).timestamp)
-      assert(appendedRows(0).pages(0).content === appendedRows(1).pages.apply(0).content)
-    }
+    assert(appendedRows(0).pages(0).timestamp === appendedRows(1).pages(0).timestamp)
+    assert(appendedRows(0).pages(0).content === appendedRows(1).pages.apply(0).content)
     assert(appendedRows(0).pages.apply(0).content === appendedRows(1).pages.apply(0).content)
     assert(appendedRows(1).pages.apply(0).name === "b")
   }
 
   override def numPages = {
-    case Narrow => 2
-    case _ => 1
+    case WideLookup => 1
+    case _ => 2
   }
 
-  override def numDrivers = _ => 0
+  override def numDrivers = 0
 }

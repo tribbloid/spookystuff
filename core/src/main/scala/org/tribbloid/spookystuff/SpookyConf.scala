@@ -73,7 +73,7 @@ class SpookyConf (
                    var errorScreenshot: Boolean = true,
 
                    var pageExpireAfter: Duration = 7.day,
-                   var pageExpireBefore: Option[Date] = None,
+                   var pageNotExpiredSince: Option[Date] = None,
 
                    var autoSaveExtract: Extract[String] = new UUIDFileName(Hierarchical),
                    var cacheTraceEncoder: TraceEncoder[String] = Hierarchical,

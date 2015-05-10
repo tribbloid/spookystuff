@@ -58,9 +58,9 @@ class LeftJoinIT extends IntegrationSuite {
   }
 
   override def numPages = {
-    case Narrow => 7
-    case _ => 6
+    case WideLookup => 6
+    case _ => 7
   }
 
-  override def numDrivers = _ => 0
+  override def numDrivers = 0
 }

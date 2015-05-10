@@ -2,7 +2,6 @@ package org.tribbloid.spookystuff.integration
 
 import java.net.URLEncoder
 
-import org.apache.commons.lang3.StringEscapeUtils
 import org.tribbloid.spookystuff.SpookyContext
 import org.tribbloid.spookystuff.actions._
 import org.tribbloid.spookystuff.dsl._
@@ -15,7 +14,6 @@ import scala.concurrent.duration
 class FetchInteractionsIT extends IntegrationSuite{
 
   override def doMain(spooky: SpookyContext): Unit = {
-    import spooky.dsl._
 
     val RDD = spooky
       .fetch(
@@ -28,8 +26,8 @@ class FetchInteractionsIT extends IntegrationSuite{
     val pageRows = RDD.collect()
 
     val finishTime = System.currentTimeMillis()
-    assert(pageRows.size === 1)
-    assert(pageRows(0).pages.size === 1)
+    assert(pageRows.length === 1)
+    assert(pageRows(0).pages.length === 1)
     val uri = pageRows(0).pages(0).uri
     assert((uri === "http://zh.wikipedia.org/wiki/深度学习") || uri === "http://zh.wikipedia.org/wiki/"+URLEncoder.encode("深度学习", "UTF-8"))
     assert(pageRows(0).pages(0).name === "Snapshot()")
@@ -49,21 +47,18 @@ class FetchInteractionsIT extends IntegrationSuite{
 
     val appendedRows = RDDAppended.collect()
 
-    assert(appendedRows.size === 2)
+    assert(appendedRows.length === 2)
     assert(appendedRows(0).pages(0).copy(timestamp = null, content = null, saved = null)
       === appendedRows(1).pages(0).copy(timestamp = null, content = null, saved = null))
 
-    import duration._
-    if (spooky.conf.defaultQueryOptimizer != Narrow && spooky.conf.pageExpireAfter >= 10.minutes) {
-      assert(appendedRows(0).pages(0).timestamp === appendedRows(1).pages(0).timestamp)
-      assert(appendedRows(0).pages(0).content === appendedRows(1).pages.apply(0).content)
-    }
+    assert(appendedRows(0).pages(0).timestamp === appendedRows(1).pages(0).timestamp)
+    assert(appendedRows(0).pages(0).content === appendedRows(1).pages.apply(0).content)
     assert(appendedRows(0).pages(0).name === "Snapshot()")
     assert(appendedRows(1).pages(0).name === "b")
   }
 
   override def numPages ={
-    case Narrow => 2
-    case _ => 1
+    case WideLookup => 1
+    case _ => 2
   }
 }

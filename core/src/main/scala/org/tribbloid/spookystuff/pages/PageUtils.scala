@@ -5,10 +5,13 @@ import java.util.UUID
 import org.apache.commons.io.IOUtils
 import org.apache.hadoop.fs.Path
 import org.apache.spark.SparkEnv
+import org.openqa.selenium.support.ui.Duration
 import org.slf4j.LoggerFactory
+import org.tribbloid.spookystuff._
 import org.tribbloid.spookystuff.actions.Trace
 import org.tribbloid.spookystuff.utils.{Serializable, Utils}
-import org.tribbloid.spookystuff._
+
+import scala.concurrent.duration.Duration.Infinite
 
 /**
  * Created by peng on 11/27/14.
@@ -196,7 +199,6 @@ object PageUtils {
   //restore latest in a directory
   //returns: Seq() => has backtrace dir but contains no page
   //returns null => no backtrace dir
-  //TODO: cannot handle infinite duration, avoid using it!
   private def restoreLatest(
                      dirPath: Path,
                      earliestModificationTime: Long = 0
@@ -210,14 +212,17 @@ object PageUtils {
 
         val statuses = fs.listStatus(dirPath)
 
-        statuses.filter(status => !status.isDirectory && status.getModificationTime >= earliestModificationTime)
+        statuses.filter(status => !status.isDirectory && status.getModificationTime >= earliestModificationTime - 120000) //Long enough for overhead of eventual consistency to take effect and write down file
           .sortBy(_.getModificationTime).lastOption
       }
       else None
     }
 
     latestStatus match {
-      case Some(status) => restore(status.getPath)(spooky)
+      case Some(status) =>
+        val results = restore(status.getPath)(spooky)
+        if (results.head.timestamp.getTime >= earliestModificationTime) results
+        else null
       case _ => null
     }
   }
@@ -235,9 +240,20 @@ object PageUtils {
       spooky.conf.cacheTraceEncoder(backtrace).toString
     )
 
+    val earliestTimeFromDuration = spooky.conf.pageExpireAfter match {
+      case inf: Infinite => Long.MinValue
+      case d => System.currentTimeMillis() - d.toMillis
+    }
+    val earliestTime = spooky.conf.pageNotExpiredSince match {
+      case Some(expire) =>
+        Math.max(expire.getTime, earliestTimeFromDuration)
+      case None =>
+        earliestTimeFromDuration
+    }
+
     val pages = restoreLatest(
       new Path(pathStr),
-      System.currentTimeMillis() - spooky.conf.pageExpireAfter.toMillis
+      earliestTime
     )(spooky)
 
     if (pages != null) for (page <- pages) {
