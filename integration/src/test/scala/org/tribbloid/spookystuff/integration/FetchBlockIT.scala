@@ -60,7 +60,7 @@ class FetchBlockIT extends IntegrationSuite {
   }
 
   override def numPages = {
-    case WideLookup => 3
+    case Wide_WebCachedRDD => 3
     case _ => 6
   }
 

@@ -97,7 +97,12 @@ class PageRowRDD private (
 
   private def discardWebCache: PageRowRDD = {
     //TODO: unpersist it
+    this.webCache.unpersist(blocking = false)
     this.copy(webCache = sparkContext.emptyRDD)
+  }
+
+  private def discardExploredRows: PageRowRDD = {
+    this.copy(webCache = webCache.discardRows)
   }
 
   def cleanCachedRDDs(): PageRowRDD = {
@@ -376,10 +381,10 @@ class PageRowRDD private (
         _narrowFetch(_traces, joinType, numPartitions)
       case Wide =>
         _wideFetch(_traces, joinType, numPartitions, useWebCache = false)()
-      //          .discardRowsInWebCache //TODO: should be optional
-      case WideLookup =>
+          .discardExploredRows //optional
+      case Wide_WebCachedRDD =>
         _wideFetch(_traces, joinType, numPartitions, useWebCache = true)()
-      //          .discardRowsInWebCache
+          .discardExploredRows
       case _ => throw new UnsupportedOperationException(s"${optimizer.getClass.getSimpleName} optimizer is not supported in this query")
     }
 
@@ -392,6 +397,7 @@ class PageRowRDD private (
                             joinType: JoinType,
                             numPartitions: Int
                             ): PageRowRDD = {
+
 
     val spooky = this.spooky
 
@@ -420,7 +426,7 @@ class PageRowRDD private (
                           postProcessing: PageRow => Iterable[PageRow] = Some(_)
                           )(
                           seed: Boolean = false,
-                          seedFilter: Iterable[PageRow] => Option[PageRow] = _=>None //if multiple new PageRows that has identical uid is selected
+                          seedFilter: Iterable[PageRow] => Option[PageRow] = _=>None //by default nothing will be inserted into explored rows
                           ): PageRowRDD = {
 
     val spooky = this.spooky
@@ -601,7 +607,7 @@ class PageRowRDD private (
         _narrowExplore(expr, depthKey, maxDepth, ordinalKey, maxOrdinal, checkpointInterval)(_traces, numPartitions, flattenPagesPattern, flattenPagesOrdinalKey)(select: _*)
       case Wide =>
         _wideExplore(expr, depthKey, maxDepth, ordinalKey, maxOrdinal, checkpointInterval, useWebCache = false)(_traces, numPartitions, flattenPagesPattern, flattenPagesOrdinalKey)(select: _*)
-      case WideLookup =>
+      case Wide_WebCachedRDD =>
         _wideExplore(expr, depthKey, maxDepth, ordinalKey, maxOrdinal, checkpointInterval, useWebCache = true)(_traces, numPartitions, flattenPagesPattern, flattenPagesOrdinalKey)(select: _*)
       case _ => throw new UnsupportedOperationException(s"${optimizer.getClass.getSimpleName} optimizer is not supported in this query")
     }

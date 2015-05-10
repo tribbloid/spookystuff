@@ -58,7 +58,7 @@ class LeftJoinIT extends IntegrationSuite {
   }
 
   override def numPages = {
-    case WideLookup => 6
+    case Wide_WebCachedRDD => 6
     case _ => 7
   }
 

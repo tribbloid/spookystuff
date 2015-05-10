@@ -12,7 +12,7 @@ case object Wide extends QueryOptimizer
 
 //group identical ActionPlans, execute in parallel, and duplicate result pages to match their original contexts
 //reduce workload by avoiding repeated access to the same url caused by duplicated context or diamond links (A->B,A->C,B->D,C->D)
-case object WideLookup extends QueryOptimizer
+case object Wide_WebCachedRDD extends QueryOptimizer
 
 //case object Inductive extends QueryOptimizer
 //

@@ -58,7 +58,7 @@ class FetchInteractionsIT extends IntegrationSuite{
   }
 
   override def numPages ={
-    case WideLookup => 1
+    case Wide_WebCachedRDD => 1
     case _ => 2
   }
 }

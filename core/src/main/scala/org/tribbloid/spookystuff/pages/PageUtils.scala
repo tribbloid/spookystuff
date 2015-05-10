@@ -5,7 +5,6 @@ import java.util.UUID
 import org.apache.commons.io.IOUtils
 import org.apache.hadoop.fs.Path
 import org.apache.spark.SparkEnv
-import org.openqa.selenium.support.ui.Duration
 import org.slf4j.LoggerFactory
 import org.tribbloid.spookystuff._
 import org.tribbloid.spookystuff.actions.Trace
@@ -212,7 +211,7 @@ object PageUtils {
 
         val statuses = fs.listStatus(dirPath)
 
-        statuses.filter(status => !status.isDirectory && status.getModificationTime >= earliestModificationTime - 120000) //Long enough for overhead of eventual consistency to take effect and write down file
+        statuses.filter(status => !status.isDirectory && status.getModificationTime >= earliestModificationTime - 300*1000) //Long enough for overhead of eventual consistency to take effect and write down file
           .sortBy(_.getModificationTime).lastOption
       }
       else None
