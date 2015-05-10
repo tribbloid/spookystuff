@@ -38,6 +38,8 @@ class FetchBlockIT extends IntegrationSuite {
     assert(pageTime < finishTime)
     assert(pageTime > finishTime-60000) //long enough even after the second time it is retrieved from s3 cache
 
+    Thread.sleep(10000) //this delay is necessary to circumvent eventual consistency of HDFS-based cache
+
     val RDDAppended = RDD
       .fetch(
         Visit("http://webscraper.io/test-sites/e-commerce/ajax/computers/laptops")

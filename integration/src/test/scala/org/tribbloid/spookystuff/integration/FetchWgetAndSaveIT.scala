@@ -43,6 +43,8 @@ class FetchWgetAndSaveIT extends IntegrationSuite {
 
     assert(loadedContent === content)
 
+    Thread.sleep(10000) //this delay is necessary to circumvent eventual consistency of HDFS-based cache
+
     val RDDAppended = RDD
       .fetch(
         Wget("http://upload.wikimedia.org/wikipedia/en/thumb/8/80/Wikipedia-logo-v2.svg/220px-Wikipedia-logo-v2.svg.png").as('b),
