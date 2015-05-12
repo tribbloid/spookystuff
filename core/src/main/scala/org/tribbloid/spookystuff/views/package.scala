@@ -1,9 +1,9 @@
 package org.tribbloid.spookystuff
 
-import org.apache.spark.rdd.{PairRDDFunctions, RDD}
+import org.apache.spark.rdd.RDD
 import org.apache.spark.storage.StorageLevel
-import org.tribbloid.spookystuff.entity.{SquashedRow, PageRow}
-import org.tribbloid.spookystuff.entity.PageRow.InMemoryWebCacheRDD
+import org.tribbloid.spookystuff.entity.{Squashed, PageRow}
+import org.tribbloid.spookystuff.entity.PageRow.WebCacheRDD
 import org.tribbloid.spookystuff.utils.Utils
 
 import scala.language.implicitConversions
@@ -11,20 +11,24 @@ import scala.reflect.ClassTag
 
 /**
  * Created by peng on 11/7/14.
+ * implicit conversions in this package are used for development only
  */
-//implicit conversions in this package are used for development only
 package object views {
 
   implicit class RDDView[V](val self: RDD[V]) {
 
-    def persistDuring[T](newLevel: StorageLevel)(fn: => T): T =
+    def persistDuring[T](newLevel: StorageLevel, blocking: Boolean = true)(fn: => T): T =
       if (self.getStorageLevel == StorageLevel.NONE){
         self.persist(newLevel)
         val result = fn
-        self.unpersist()
+        self.unpersist(blocking)
         result
       }
-      else fn
+      else {
+        val result = fn
+        self.unpersist(blocking)
+        result
+      }
 
     //  def checkpointNow(): Unit = {
     //    persistDuring(StorageLevel.MEMORY_ONLY) {
@@ -108,21 +112,21 @@ package object views {
     }
   }
 
-  implicit class InMemoryWebCacheRDDView(self: InMemoryWebCacheRDD) {
+  implicit class InMemoryWebCacheRDDView(self: WebCacheRDD) {
 
     import RDD._
 
-    def discardRows: InMemoryWebCacheRDD = {
+    def discardRows: WebCacheRDD = {
 
       self.mapValues {
-        _.copy(rows = Array())
+        _.copy(metadata = Array())
       }
     }
 
     def getRows: RDD[PageRow] = {
 
       val updated = self.flatMap {
-        _._2.rows
+        _._2.metadata
       }
 
       updated
@@ -131,7 +135,7 @@ package object views {
     def indexRows(
                    rows: RDD[PageRow],
                    seedFilter: Iterable[PageRow] => Option[PageRow] = _=>None
-                   ): InMemoryWebCacheRDD = {
+                   ): WebCacheRDD = {
 
       val dryRun_RowRDD = rows.keyBy(_.dryrun)
       val cogrouped = self.cogroup(dryRun_RowRDD)
@@ -150,17 +154,17 @@ package object views {
 
               val newPageLikes = seedFilter(newRows).get.pageLikes
 
-              val newCached = triplet._1 -> SquashedRow(newPageLikes, seedRows.toArray)
+              val newCached = triplet._1 -> Squashed(newPageLikes, seedRows.toArray)
               newCached
             case Some(squashedRow) =>
               val newRows = tuple._2
 
-              val existingRowUIDs = squashedRow.rows.map(_.uid)
+              val existingRowUIDs = squashedRow.metadata.map(_.uid)
               val seedRows = newRows.filterNot(row => existingRowUIDs.contains(row.uid))
                 .groupBy(_.uid)
                 .flatMap(tuple => seedFilter(tuple._2))
 
-              val newCached = triplet._1 -> squashedRow.copy(rows = squashedRow.rows ++ seedRows)
+              val newCached = triplet._1 -> squashedRow.copy(metadata = squashedRow.metadata ++ seedRows)
               newCached
           }
 

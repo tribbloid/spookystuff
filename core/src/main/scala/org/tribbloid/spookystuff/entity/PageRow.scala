@@ -178,6 +178,15 @@ case class PageRow(
 
   def clearTemp: PageRow = this.filterKeys(!_.isInstanceOf[TempKey])
 
+  //for some join types (Inner/LeftOuter) existing Pages are always useless and should be discarded before shuffling
+  def cleanPagesBeforeFetch(joinType: JoinType): PageRow = {
+    joinType match {
+      case Inner=> this.copy(pageLikes = Array())
+      case LeftOuter => this.copy(pageLikes = Array())
+      case _ => this
+    }
+  }
+
   def putPages(others: Seq[PageLike], joinType: JoinType): Option[PageRow] = {
     joinType match {
       case Inner =>
@@ -274,15 +283,15 @@ case class PageRow(
  2. sink for deep exploration.
  Lookup table is shared between all PageRowRDD from a SpookyContext, but deep exploration sink won't only be used locally.
  */
-case class SquashedRow(
+case class Squashed[T: ClassTag](
                         pageLikes: Array[PageLike],
-                        rows: Array[PageRow] = Array() // data, segment, batchID to distinguish aggregated Rows from the same explore(), discarded upon consolidation
+                        metadata: Array[T] = Array() // data, segment, batchID to distinguish aggregated Rows from the same explore(), discarded upon consolidation
                         ) {
 
   @transient lazy val dryrun: DryRun = pageLikes.toSeq.map(_.uid.backtrace).distinct
 
-  def ++ (another: SquashedRow): SquashedRow = {
-    this.copy(rows = this.rows ++ another.rows)
+  def ++ (another: Squashed[T]): Squashed[T] = {
+    this.copy(metadata = Array.concat[T](this.metadata, another.metadata))
   }
 }
 
@@ -293,7 +302,9 @@ object PageRow {
   type SegID = Long
   type RowUID = (Seq[PageUID], SegID)
 
-  type InMemoryWebCacheRDD = RDD[(DryRun, SquashedRow)]
+  type WebCacheRow = (DryRun, Squashed[PageRow])
+
+  type WebCacheRDD = RDD[WebCacheRow]
 
   def localExplore(
                     stage: ExploreStage,
@@ -322,8 +333,6 @@ object PageRow {
 
     for (depth <- depthFromExclusive + 1 to depthToInclusive) {
 
-      //      assert(traces.size == depth)
-
       val traceToRows = seeds
         .flatMap(_.selectTemp(joinExpr)) //join start: select 1
         .flatMap(_.flatten(joinExpr.name, ordinalKey, maxOrdinal, left = true)) //select 2
@@ -336,7 +345,7 @@ object PageRow {
             val dryrunExists = stage.dryruns.contains(trace.dryrun) //... or dryrun exist
               traceExists || dryrunExists
           }
-            .map(interpolatedTrace => interpolatedTrace -> row)
+            .map(interpolatedTrace => interpolatedTrace -> row.cleanPagesBeforeFetch(Inner))
       }
 
       val reducedRows = traceToRows

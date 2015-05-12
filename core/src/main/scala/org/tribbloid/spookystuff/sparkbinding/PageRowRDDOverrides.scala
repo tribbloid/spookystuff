@@ -1,6 +1,7 @@
 package org.tribbloid.spookystuff.sparkbinding
 
 import org.apache.spark.rdd.RDD
+import org.apache.spark.storage.StorageLevel
 import org.apache.spark.{Partition, TaskContext}
 import org.tribbloid.spookystuff.entity.PageRow
 import org.tribbloid.spookystuff.utils.Utils
@@ -33,10 +34,17 @@ trait PageRowRDDOverrides extends RDD[PageRow]{
   override def distinct(numPartitions: Int)(implicit ord: Ordering[PageRow] = null): PageRowRDD =
     super.distinct(numPartitions)(ord)
 
-  override def repartition(numPartitions: Int = partitions.length)(implicit ord: Ordering[PageRow] = null): PageRowRDD =
+  override def repartition(
+                            numPartitions: Int = partitions.length )(
+                            implicit ord: Ordering[PageRow] = null
+                            ): PageRowRDD =
     super.repartition(numPartitions)(ord)
 
-  override def coalesce(numPartitions: Int = partitions.length, shuffle: Boolean = false)(implicit ord: Ordering[PageRow] = null): PageRowRDD =
+  override def coalesce(
+                         numPartitions: Int = partitions.length,
+                         shuffle: Boolean = false )(
+                         implicit ord: Ordering[PageRow] = null
+                         ): PageRowRDD =
     super.coalesce(numPartitions, shuffle)(ord)
 
   override def sample(withReplacement: Boolean,
@@ -60,8 +68,9 @@ trait PageRowRDDOverrides extends RDD[PageRow]{
   override def sortBy[K](
                           f: (PageRow) => K,
                           ascending: Boolean = true,
-                          numPartitions: Int = partitions.length)
-                        (implicit ord: Ordering[K], ctag: ClassTag[K]): PageRowRDD = super.sortBy(f, ascending, numPartitions)(ord, ctag)
+                          numPartitions: Int = partitions.length )(
+                          implicit ord: Ordering[K], ctag: ClassTag[K]
+                          ): PageRowRDD = super.sortBy(f, ascending, numPartitions)(ord, ctag)
 
   override def intersection(other: RDD[PageRow]): PageRowRDD = other match {
 
@@ -83,5 +92,26 @@ trait PageRowRDDOverrides extends RDD[PageRow]{
         this.keys.intersect(other.keys)
       )
     case _ => super.intersection(other, numPartitions)
+  }
+
+  override def persist(newLevel: StorageLevel): this.type = {
+    self.persist(newLevel)
+    this
+  }
+
+  override def unpersist(blocking: Boolean = true): this.type = {
+    self.unpersist(blocking)
+    this
+  }
+  override def checkpoint() = {
+    self.checkpoint()
+  }
+
+  override def isCheckpointed: Boolean = {
+    self.isCheckpointed
+  }
+
+  override def getCheckpointFile: Option[String] = {
+    self.getCheckpointFile
   }
 }

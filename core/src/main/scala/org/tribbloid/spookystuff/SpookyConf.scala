@@ -3,6 +3,7 @@ package org.tribbloid.spookystuff
 import java.util.Date
 
 import org.apache.commons.lang.time.DateUtils
+import org.apache.spark.rdd.RDD
 import org.apache.spark.storage.StorageLevel
 import org.tribbloid.spookystuff.SpookyConf.Dirs
 import org.tribbloid.spookystuff.dsl._
@@ -79,9 +80,9 @@ class SpookyConf (
                    var cacheTraceEncoder: TraceEncoder[String] = Hierarchical,
                    var errorDumpExtract: Extract[String] = new UUIDFileName(Hierarchical),
 
-                   var defaultParallelism: PageRowRDD => Int = {
-                     row =>
-                       row.sparkContext.defaultParallelism * 8
+                   var defaultParallelism: RDD[_] => Int = {
+                     rdd =>
+                       rdd.sparkContext.defaultParallelism * 8
                    },
 
                    var remoteResourceTimeout: Duration = 60.seconds,
