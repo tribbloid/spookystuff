@@ -95,10 +95,10 @@ class PageRowRDD private (
 
   private def discardPages: PageRowRDD = this.copy(self = this.map(_.copy(pageLikes = Array())))
 
-//  private def discardWebCache: PageRowRDD = {
-//    this.webCache.unpersist(blocking = false)
-//    this.copy(webCache = sparkContext.emptyRDD[WebCacheRow].partitionBy(new HashPartitioner(spooky.conf.defaultParallelism(self))))
-//  }
+  //  private def discardWebCache: PageRowRDD = {
+  //    this.webCache.unpersist(blocking = false)
+  //    this.copy(webCache = sparkContext.emptyRDD[WebCacheRow].partitionBy(new HashPartitioner(spooky.conf.defaultParallelism(self))))
+  //  }
 
   private def discardExploredRows: PageRowRDD = {
     this.copy(webCache = webCache.discardRows)
@@ -123,9 +123,9 @@ class PageRowRDD private (
 
     import scala.Ordering.Implicits._
 
-    //    this.persistDuring(spooky.conf.defaultStorageLevel){
+    self.name = "sort"
     if (this.getStorageLevel == StorageLevel.NONE){
-      this.persisted += this.persist(spooky.conf.defaultStorageLevel)
+      this.persisted += self.persist(spooky.conf.defaultStorageLevel)
     }
 
     val result = this.sortBy{_.ordinal(sortKeysSeq)}
@@ -404,7 +404,7 @@ class PageRowRDD private (
       row =>
         _traces.interpolate(row).map(interpolatedTrace => interpolatedTrace -> row.cleanPagesBeforeFetch(joinType))
     }
-    .repartition(numPartitions)
+      .repartition(numPartitions)
 
     val resultRows = trace_RowRDD
       .flatMap {
@@ -501,7 +501,11 @@ class PageRowRDD private (
               newSelf -> newCached
           }
       }
-        .persist()
+
+      newRows_newCache.name = s"""
+                                 |fetch (optimizer=${Wide_WebCachedRDD.getClass.getSimpleName})
+        """.stripMargin.trim
+      newRows_newCache.persist()
 
       this.copy(self = newRows_newCache.flatMap(_._1), webCache = newRows_newCache.map(_._2))
     }
@@ -661,7 +665,7 @@ class PageRowRDD private (
       val _depthFromExclusive = depthFromExclusive //var in closure being shipped to workers usually end up miserably (not synched properly)
       val depthToInclusive = Math.min(_depthFromExclusive + checkpointInterval, maxDepth)
 
-      val batchExeRDD = stageRDD.map {
+      val newRows_newStageRDD = stageRDD.map {
         stage =>
           PageRow.localExplore(
             stage,
@@ -680,13 +684,18 @@ class PageRowRDD private (
             )
       }
 
-      val count = batchExeRDD.persistDuring(spooky.conf.defaultStorageLevel, blocking = false) {
-        batchExeRDD.checkpoint()
+      newRows_newStageRDD.name =
+        s"""
+           |explore (optimizer=Narrow)
+           |Depth: ${_depthFromExclusive} to $depthToInclusive
+        """.stripMargin.trim
+      val count = newRows_newStageRDD.persistDuring(spooky.conf.defaultStorageLevel, blocking = false) {
+        newRows_newStageRDD.checkpoint()
 
-        val totalRDD = batchExeRDD.flatMap(_._1)
-        resultRDDs += totalRDD
+        val newRows = newRows_newStageRDD.flatMap(_._1)
+        resultRDDs += newRows
 
-        stageRDD = batchExeRDD.map(_._2)
+        stageRDD = newRows_newStageRDD.map(_._2)
           .filter(_.hasMore)
           .repartition(numPartitions) //TODO: repartition to balance?
 
@@ -729,8 +738,9 @@ class PageRowRDD private (
     val spooky = this.spooky
     if (this.context.getCheckpointDir.isEmpty) this.context.setCheckpointDir(spooky.conf.dirs.checkpoint)
 
+    self.name = "initializing wide explore"
     if (this.getStorageLevel == StorageLevel.NONE) {
-      this.persisted += this.persist(spooky.conf.defaultStorageLevel)
+      this.persisted += self.persist(spooky.conf.defaultStorageLevel)
     }
     val _expr = expr defaultAs Symbol(Const.defaultJoinKey)
 
@@ -740,7 +750,7 @@ class PageRowRDD private (
       val webCache: WebCacheRDD = if (useWebCache) depth0.webCache
       else sparkContext.emptyRDD[WebCacheRow].partitionBy(new HashPartitioner(spooky.conf.defaultParallelism(self)))
 
-      webCache.indexRows(
+      webCache.putRows(
         depth0.self,
         rows => rows.headOption
       )

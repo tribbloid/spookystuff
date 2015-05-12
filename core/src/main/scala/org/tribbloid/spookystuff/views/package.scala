@@ -132,7 +132,7 @@ package object views {
       updated
     }
 
-    def indexRows(
+    def putRows(
                    rows: RDD[PageRow],
                    seedFilter: Iterable[PageRow] => Option[PageRow] = _=>None
                    ): WebCacheRDD = {

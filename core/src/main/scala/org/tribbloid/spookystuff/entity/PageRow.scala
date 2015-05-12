@@ -327,10 +327,6 @@ object PageRow {
     var seeds = stage.seeds
     var traces = stage.traces
 
-    //    assert(seeds.size == 1, "seeds.size="+seeds.size)
-    //    assert(depthToInclusive > depthFromExclusive)
-    //    assert(traces.size > 1 || depthFromExclusive == 0 , "traces.size="+traces.size)
-
     for (depth <- depthFromExclusive + 1 to depthToInclusive) {
 
       val traceToRows = seeds
