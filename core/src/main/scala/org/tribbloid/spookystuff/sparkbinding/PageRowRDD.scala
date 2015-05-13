@@ -402,7 +402,7 @@ class PageRowRDD private (
     val trace_RowRDD: RDD[(Trace, PageRow)] = self
       .flatMap {
       row =>
-        _traces.interpolate(row).map(interpolatedTrace => interpolatedTrace -> row.cleanPagesBeforeFetch(joinType))
+        _traces.interpolate(row).map(interpolatedTrace => interpolatedTrace -> row.clearPagesBeforeFetch(joinType))
     }
       .repartition(numPartitions)
 
@@ -433,7 +433,7 @@ class PageRowRDD private (
     val trace_Rows: RDD[(Trace, PageRow)] = self
       .flatMap {
       row =>
-        _traces.interpolate(row).map(interpolatedTrace => interpolatedTrace -> row.cleanPagesBeforeFetch(joinType))
+        _traces.interpolate(row).map(interpolatedTrace => interpolatedTrace -> row.clearPagesBeforeFetch(joinType))
     }
 
     val updated: PageRowRDD = if (!useWebCache) {
@@ -641,16 +641,32 @@ class PageRowRDD private (
 
     val firstResultRDD = this
       .clearTemp
-      .repartition(numPartitions) //TODO: simplify
       .select(Option(depthKey).map(key => Literal(0) ~ key).toSeq: _*)
+
+    firstResultRDD.name =
+      """
+        |explore (optimizer=Narrow)
+        |Depth: 0
+      """.stripMargin.trim
+    val firstCount = firstResultRDD.persistDuring(spooky.conf.defaultStorageLevel, blocking = false){
+      firstResultRDD.checkpoint()
+      firstResultRDD.count()
+    }
+
+    if (firstCount == 0) return this.copy(self = sparkContext.emptyRDD)
 
     val firstStageRDD = firstResultRDD
       .map {
       row =>
+        val dryrun: DryRun = row.pageLikes.toSeq.map(_.uid.backtrace).distinct
         val seeds = Seq(row)
-        val dryruns = row.pageLikes.toSeq.map(_.uid.backtrace).distinct
+        val preJoins = seeds.flatMap{
+          _.localPreJoins(expr,ordinalKey,maxOrdinal)(
+            _traces, existingDryruns = Set(dryrun)
+          )
+        }
 
-        ExploreStage(seeds, dryruns = Set(dryruns))
+        ExploreStage(preJoins.toArray, existingDryruns = Set(dryrun))
     }
 
     val resultRDDs = ArrayBuffer[RDD[PageRow]](
@@ -659,7 +675,7 @@ class PageRowRDD private (
 
     val resultKeys = this.keys ++ Seq(TempKey(_expr.name), Key.sortKey(depthKey), Key.sortKey(ordinalKey), Key.sortKey(flattenPagesOrdinalKey)).flatMap(Option(_))
 
-    var stageRDD = firstStageRDD
+    var stageRDD = firstStageRDD.repartition(numPartitions)
     while(true) {
 
       val _depthFromExclusive = depthFromExclusive //var in closure being shipped to workers usually end up miserably (not synched properly)
@@ -697,7 +713,7 @@ class PageRowRDD private (
 
         stageRDD = newRows_newStageRDD.map(_._2)
           .filter(_.hasMore)
-          .repartition(numPartitions) //TODO: repartition to balance?
+          .repartition(numPartitions)
 
         stageRDD.count()
       }

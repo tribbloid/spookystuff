@@ -20,7 +20,8 @@ import scala.util.Random
  * cells & pages share the same key pool but different data structure
  */
 case class PageRow(
-                    store: KVStore = ListMap(), //TODO: also carry PageUID & property type (Vertex/Edge) for GraphX, ListMap may be slower but has tighter serialization footage
+                    //ListMap may be slower but has tighter serialization size
+                    store: KVStore = ListMap(), //TODO: also carry PageUID & property type (Vertex/Edge) for GraphX
                     pageLikes: Array[PageLike] = Array(), // discarded after new page coming in
                     segmentID: SegID = Random.nextLong() //keep flattened rows together //unique for an entire context.
                     ) {
@@ -179,7 +180,7 @@ case class PageRow(
   def clearTemp: PageRow = this.filterKeys(!_.isInstanceOf[TempKey])
 
   //for some join types (Inner/LeftOuter) existing Pages are always useless and should be discarded before shuffling
-  def cleanPagesBeforeFetch(joinType: JoinType): PageRow = {
+  def clearPagesBeforeFetch(joinType: JoinType): PageRow = {
     joinType match {
       case Inner=> this.copy(pageLikes = Array())
       case LeftOuter => this.copy(pageLikes = Array())
@@ -274,6 +275,33 @@ case class PageRow(
       }
     }
   }
+  //yield a local explore stage that has smaller serialization size
+  def localPreJoins(
+                     joinExpr: Expression[Any],
+                     ordinalKey: Symbol,
+                     maxOrdinal: Int
+                     )(
+                     _traces: Set[Trace], //input of the explore to generate more pages from seeds
+                     existingTraces: Set[Trace] = Set(Seq()),
+                     existingDryruns: Set[DryRun] = Set(Seq())
+                     ): Iterable[(Trace, PageRow)] = {
+
+    this.selectTemp(joinExpr).toIterable
+      .flatMap(_.flatten(joinExpr.name, ordinalKey, maxOrdinal, left = true)) //part of join locally
+      .flatMap {
+      //generate traces, still part of join locally
+      row =>
+        _traces.interpolate(row)
+          .filterNot {
+          //if trace or dryrun already exist returns None
+          trace =>
+            val traceExists = existingTraces.contains(trace) //if trace ...
+          val dryrunExists = existingDryruns.contains(trace.dryrun) //... or dryrun exist
+            traceExists || dryrunExists
+        }
+          .map(interpolatedTrace => interpolatedTrace -> row.clearPagesBeforeFetch(Inner))
+    }
+  }
 }
 
 /*
@@ -284,9 +312,9 @@ case class PageRow(
  Lookup table is shared between all PageRowRDD from a SpookyContext, but deep exploration sink won't only be used locally.
  */
 case class Squashed[T: ClassTag](
-                        pageLikes: Array[PageLike],
-                        metadata: Array[T] = Array() // data, segment, batchID to distinguish aggregated Rows from the same explore(), discarded upon consolidation
-                        ) {
+                                  pageLikes: Array[PageLike],
+                                  metadata: Array[T] = Array() // data, segment, batchID to distinguish aggregated Rows from the same explore(), discarded upon consolidation
+                                  ) {
 
   @transient lazy val dryrun: DryRun = pageLikes.toSeq.map(_.uid.backtrace).distinct
 
@@ -322,29 +350,15 @@ object PageRow {
                     flattenPagesOrdinalKey: Symbol
                     ): (Iterable[PageRow], ExploreStage) = { //PageRows that is one level deeper -> (new Seeds + existing traces/dryruns)
 
-    val total: ArrayBuffer[PageRow] = ArrayBuffer()
+    val allNewRows: ArrayBuffer[PageRow] = ArrayBuffer()
 
-    var seeds = stage.seeds
-    var traces = stage.traces
+    var trace_RowItr = stage.trace_RowItr.toIterable
+    var existingTraces = stage.existingTraces
 
     for (depth <- depthFromExclusive + 1 to depthToInclusive) {
 
-      val traceToRows = seeds
-        .flatMap(_.selectTemp(joinExpr)) //join start: select 1
-        .flatMap(_.flatten(joinExpr.name, ordinalKey, maxOrdinal, left = true)) //select 2
-        .flatMap { //generate traces
-        row =>
-          _traces.interpolate(row)
-            .filterNot { //if trace or dryrun already exist returns None
-            trace =>
-              val traceExists = traces.contains(trace) //if trace ...
-            val dryrunExists = stage.dryruns.contains(trace.dryrun) //... or dryrun exist
-              traceExists || dryrunExists
-          }
-            .map(interpolatedTrace => interpolatedTrace -> row.cleanPagesBeforeFetch(Inner))
-      }
-
-      val reducedRows = traceToRows
+      //won't reduce too much
+      val reducedRows: Map[Trace, Option[PageRow]] = trace_RowItr
         .groupBy(_._1)
         .map {
         tuple =>
@@ -353,9 +367,9 @@ object PageRow {
         //when multiple links have identical uri/trace, keep the first one
       }
 
-      traces = traces ++ traceToRows.map(_._1)
+      existingTraces = existingTraces ++ reducedRows.keys
 
-      seeds = reducedRows
+      val seeds = reducedRows
         .flatMap {
         reducedRow =>
           val newPages = reducedRow._1.resolve(spooky)
@@ -369,18 +383,22 @@ object PageRow {
       }
 
       LoggerFactory.getLogger(this.getClass)
-        .info(s"found ${seeds.size} new seed(s) after $depth iteration(s) [traces.size = ${traces.size}, total.size = ${total.size}]")
-      if (seeds.size == 0) return (total, stage.copy(seeds = seeds, traces = traces))
+        .info(s"found ${seeds.size} new seed(s) after $depth iteration(s) [traces.size = ${existingTraces.size}, total.size = ${allNewRows.size}]")
+      if (seeds.size == 0) return (allNewRows, stage.copy(trace_RowItr = Array(), existingTraces = existingTraces))
 
-      //      assert(traces.size == depth+1)
+      trace_RowItr = seeds.flatMap{
+        _.localPreJoins(joinExpr,ordinalKey,maxOrdinal)(
+          _traces, existingTraces, stage.existingDryruns
+        )
+      }
 
       val newRows: Iterable[PageRow] = if (depthKey != null) seeds.flatMap(_.select(Literal(depth) ~ depthKey))
       else seeds
 
-      total ++= newRows
+      allNewRows ++= newRows
     }
 
-    (total, stage.copy(seeds = seeds, traces = traces))
+    (allNewRows, stage.copy(trace_RowItr = trace_RowItr.toArray, existingTraces = existingTraces))
   }
 
   //  def discoverLatestBatch(pages: Iterable[PageLike]): Option[Seq[PageLike]] = {
@@ -413,7 +431,7 @@ object PageRow {
       import Ordering.Implicits._
 
       if (key == null) { //TODO: This is a temporary solution, eventually hidden key will eliminate it
-        val v1 = row1.pages.headOption.map(_.timestamp.getTime)
+      val v1 = row1.pages.headOption.map(_.timestamp.getTime)
         val v2 = row2.pages.headOption.map(_.timestamp.getTime)
         if (v1 <= v2) row1
         else row2
@@ -429,10 +447,10 @@ object PageRow {
 
 //intermediate variable representing a stage in web crawling.
 case class ExploreStage(
-                         seeds: Iterable[PageRow], //pages that hasn't be been crawled before
-                         traces: Set[Trace] = Set(Seq()), //already resolved traces, Seq() is included as resolving it is pointless
-                         dryruns: Set[DryRun] = Set(Seq()) //already resolved dryruns, Seq() is included as resolving it is pointless
+                         trace_RowItr: Array[(Trace, PageRow)], //pages that hasn't be been crawled before
+                         existingTraces: Set[Trace] = Set(Seq()), //already resolved traces, Seq() is included as resolving it is pointless
+                         existingDryruns: Set[DryRun] = Set(Seq()) //already resolved dryruns, Seq() is included as resolving it is pointless
                          ) {
 
-  def hasMore = seeds.nonEmpty
+  def hasMore = trace_RowItr.nonEmpty
 }
