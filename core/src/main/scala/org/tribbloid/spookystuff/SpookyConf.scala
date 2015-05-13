@@ -2,12 +2,10 @@ package org.tribbloid.spookystuff
 
 import java.util.Date
 
-import org.apache.commons.lang.time.DateUtils
 import org.apache.spark.rdd.RDD
 import org.apache.spark.storage.StorageLevel
 import org.tribbloid.spookystuff.SpookyConf.Dirs
 import org.tribbloid.spookystuff.dsl._
-import org.tribbloid.spookystuff.sparkbinding.PageRowRDD
 import org.tribbloid.spookystuff.utils.Utils
 
 import scala.concurrent.duration._
