@@ -1,6 +1,7 @@
 package org.tribbloid.spookystuff.pages
 
-import java.util.UUID
+import java.text.{SimpleDateFormat, DateFormat}
+import java.util.{Date, UUID}
 
 import org.apache.commons.io.IOUtils
 import org.apache.hadoop.fs.Path
@@ -61,28 +62,24 @@ object PageUtils {
     DFSRead("load", fullPath.toString, spooky) {
       val fs = fullPath.getFileSystem(spooky.hadoopConf)
 
-      if (fs.exists(fullPath)) {
+      val fis = fs.open(fullPath)
 
-        val fis = fs.open(fullPath)
-
-        try {
-          IOUtils.toByteArray(fis) //TODO: according to past experience, IOUtils is not stable?
-        }
-        finally {
-          fis.close()
-        }
+      try {
+        IOUtils.toByteArray(fis) //TODO: according to past experience, IOUtils is not stable?
       }
-      else null
+      finally {
+        fis.close()
+      }
     }
   }
 
   //unlike save, this will store all information in an unreadable, serialized, probably compressed file
   //always overwrite
   private def cache(
-             pageLikes: Seq[PageLike],
-             path: String,
-             overwrite: Boolean = false
-             )(spooky: SpookyContext): Unit = {
+                     pageLikes: Seq[PageLike],
+                     path: String,
+                     overwrite: Boolean = false
+                     )(spooky: SpookyContext): Unit = {
 
     DFSWrite("cache", path, spooky) {
       val fullPath = new Path(path)
@@ -103,9 +100,9 @@ object PageUtils {
   }
 
   def autoCache(
-                      pageLikes: Seq[PageLike],
-                      spooky: SpookyContext
-                      ): Unit = {
+                 pageLikes: Seq[PageLike],
+                 spooky: SpookyContext
+                 ): Unit = {
     val pathStr = Utils.uriConcat(
       spooky.conf.dirs.cache,
       spooky.conf.cacheTraceEncoder(pageLikes.head.uid.backtrace).toString,
@@ -116,78 +113,74 @@ object PageUtils {
   }
 
   //write a directory
-//  private def tag(
-//           path: String,
-//           spooky: SpookyContext
-//           ): Unit = {
-//
-//    PageUtils.DFSWrite("save", path, spooky) {
-//
-//      val fullPath = new Path(path)
-//      val fs = fullPath.getFileSystem(spooky.hadoopConf)
-//      fs.mkdirs(fullPath)
-//    }
-//  }
-//
-//  def addGroupID(
-//                    backtrace: Trace,
-//                    groupID: UUID,
-//                    spooky: SpookyContext
-//                    ): Unit = {
-//
-//    val pathStr = Utils.uriConcat(
-//      spooky.conf.dirs.cache,
-//      spooky.conf.cacheTraceEncoder(backtrace).toString,
-//      groupID.toString
-//    )
-//
-//    tag(pathStr, spooky)
-//  }
-//
-//  private def getGroupIDs(
-//                backtrace: Trace,
-//                spooky: SpookyContext
-//                ): Seq[UUID] = {
-//
-//    val pathStr = Utils.uriConcat(
-//      spooky.conf.dirs.cache,
-//      spooky.conf.cacheTraceEncoder(backtrace).toString
-//    )
-//
-//    val dirPath = new Path(pathStr)
-//
-//    DFSRead("get latest version", pathStr, spooky) {
-//
-//      val fs = dirPath.getFileSystem(spooky.hadoopConf)
-//
-//      if (fs.exists(dirPath) && fs.getFileStatus(dirPath).isDirectory) {
-//
-//        val statuses = fs.listStatus(dirPath)
-//
-//        statuses.filter(status => status.isDirectory).map(_.getPath.getName).map(UUID.fromString).toSeq
-//      }
-//      else Seq()
-//    }
-//  }
+  //  private def tag(
+  //           path: String,
+  //           spooky: SpookyContext
+  //           ): Unit = {
+  //
+  //    PageUtils.DFSWrite("save", path, spooky) {
+  //
+  //      val fullPath = new Path(path)
+  //      val fs = fullPath.getFileSystem(spooky.hadoopConf)
+  //      fs.mkdirs(fullPath)
+  //    }
+  //  }
+  //
+  //  def addGroupID(
+  //                    backtrace: Trace,
+  //                    groupID: UUID,
+  //                    spooky: SpookyContext
+  //                    ): Unit = {
+  //
+  //    val pathStr = Utils.uriConcat(
+  //      spooky.conf.dirs.cache,
+  //      spooky.conf.cacheTraceEncoder(backtrace).toString,
+  //      groupID.toString
+  //    )
+  //
+  //    tag(pathStr, spooky)
+  //  }
+  //
+  //  private def getGroupIDs(
+  //                backtrace: Trace,
+  //                spooky: SpookyContext
+  //                ): Seq[UUID] = {
+  //
+  //    val pathStr = Utils.uriConcat(
+  //      spooky.conf.dirs.cache,
+  //      spooky.conf.cacheTraceEncoder(backtrace).toString
+  //    )
+  //
+  //    val dirPath = new Path(pathStr)
+  //
+  //    DFSRead("get latest version", pathStr, spooky) {
+  //
+  //      val fs = dirPath.getFileSystem(spooky.hadoopConf)
+  //
+  //      if (fs.exists(dirPath) && fs.getFileStatus(dirPath).isDirectory) {
+  //
+  //        val statuses = fs.listStatus(dirPath)
+  //
+  //        statuses.filter(status => status.isDirectory).map(_.getPath.getName).map(UUID.fromString).toSeq
+  //      }
+  //      else Seq()
+  //    }
+  //  }
 
   private def restore(fullPath: Path)(spooky: SpookyContext): Seq[PageLike] = {
 
     val result = DFSRead("restore", fullPath.toString, spooky) {
       val fs = fullPath.getFileSystem(spooky.hadoopConf)
 
-      if (fs.exists(fullPath)) {
-
-        val ser = SparkEnv.get.serializer.newInstance()
-        val fis = fs.open(fullPath)
-        val serIn = ser.deserializeStream(fis)
-        try {
-          serIn.readObject[Seq[PageLike]]()
-        }
-        finally{
-          serIn.close()
-        }
+      val ser = SparkEnv.get.serializer.newInstance()
+      val fis = fs.open(fullPath)
+      val serIn = ser.deserializeStream(fis)
+      try {
+        serIn.readObject[Seq[PageLike]]()
       }
-      else null
+      finally{
+        serIn.close()
+      }
     }
 
     result
@@ -197,9 +190,9 @@ object PageUtils {
   //returns: Seq() => has backtrace dir but contains no page
   //returns null => no backtrace dir
   private def restoreLatest(
-                     dirPath: Path,
-                     earliestModificationTime: Long = 0
-                     )(spooky: SpookyContext): Seq[PageLike] = {
+                             dirPath: Path,
+                             earliestModificationTime: Long = 0
+                             )(spooky: SpookyContext): Seq[PageLike] = {
 
     val latestStatus = DFSRead("get latest version", dirPath.toString, spooky) {
 
@@ -209,7 +202,8 @@ object PageUtils {
 
         val statuses = fs.listStatus(dirPath)
 
-        statuses.filter(status => !status.isDirectory && status.getModificationTime >= earliestModificationTime - 300*1000) //Long enough for overhead of eventual consistency to take effect and write down file
+        statuses
+          //          .filter(status => !status.isDirectory && status.getModificationTime >= earliestModificationTime - 300*1000) //Long enough for overhead of eventual consistency to take effect and write down file
           .sortBy(_.getModificationTime).lastOption
       }
       else None
@@ -219,16 +213,23 @@ object PageUtils {
       case Some(status) =>
         val results = restore(status.getPath)(spooky)
         if (results.head.timestamp.getTime >= earliestModificationTime) results
-        else null
-      case _ => null
+        else {
+          LoggerFactory.getLogger(this.getClass).info(s"All cached contents has become obsolete after ${new Date(earliestModificationTime).toGMTString}:\n" +
+            s"$dirPath")
+          null
+        }
+      case _ =>
+        LoggerFactory.getLogger(this.getClass).info(s"Not cached:\n" +
+          s"$dirPath")
+        null
     }
   }
 
   //TODO: return option
   def autoRestore(
-                         backtrace: Trace,
-                         spooky: SpookyContext
-                         ): Seq[PageLike] = {
+                   backtrace: Trace,
+                   spooky: SpookyContext
+                   ): Seq[PageLike] = {
 
     import dsl._
 
@@ -256,8 +257,7 @@ object PageUtils {
     if (pages != null) for (page <- pages) {
       val pageBacktrace: Trace = page.uid.backtrace
 
-      pageBacktrace.injectFrom(backtrace)
-      //this is to allow actions in backtrace to have different name than those cached
+      pageBacktrace.injectFrom(backtrace) //this is to allow actions in backtrace to have different name than those cached
     }
     pages
   }
