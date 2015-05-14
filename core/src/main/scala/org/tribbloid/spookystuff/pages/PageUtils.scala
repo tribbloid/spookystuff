@@ -97,7 +97,6 @@ object PageUtils {
         serOut.writeObject[Seq[PageLike]](Serializable[Seq[PageLike]](pageLikes, 91252374923L))
       }
       finally {
-        fos.close()
         serOut.close()
       }
     }
@@ -185,7 +184,6 @@ object PageUtils {
           serIn.readObject[Seq[PageLike]]()
         }
         finally{
-          fis.close()
           serIn.close()
         }
       }
