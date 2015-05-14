@@ -23,7 +23,7 @@ import scala.concurrent.duration.Duration
  * This is used almost exclusively in typing into an url bar or textbox, but it's flexible enough to be used anywhere.
  * extends Product to make sure all subclasses are case classes
  */
-trait Action extends ActionLike with Product {
+trait Action extends ActionLike {
 
   private var timeElapsed: Long = -1 //only set once
 

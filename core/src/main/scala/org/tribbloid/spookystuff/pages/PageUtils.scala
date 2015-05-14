@@ -1,6 +1,5 @@
 package org.tribbloid.spookystuff.pages
 
-import java.text.{SimpleDateFormat, DateFormat}
 import java.util.{Date, UUID}
 
 import org.apache.commons.io.IOUtils
@@ -57,30 +56,28 @@ object PageUtils {
     }
   }
 
-  def load(fullPath: Path)(spooky: SpookyContext): Array[Byte] = {
-
+  def load(fullPath: Path)(spooky: SpookyContext): Array[Byte] =
     DFSRead("load", fullPath.toString, spooky) {
       val fs = fullPath.getFileSystem(spooky.hadoopConf)
 
       val fis = fs.open(fullPath)
-
-      try {
+      val result = try {
         IOUtils.toByteArray(fis) //TODO: according to past experience, IOUtils is not stable?
       }
       finally {
         fis.close()
       }
+
+      result
     }
-  }
 
   //unlike save, this will store all information in an unreadable, serialized, probably compressed file
-  //always overwrite
+  //always overwrite, use the same serializer as Spark
   private def cache(
                      pageLikes: Seq[PageLike],
                      path: String,
                      overwrite: Boolean = false
-                     )(spooky: SpookyContext): Unit = {
-
+                     )(spooky: SpookyContext): Unit =
     DFSWrite("cache", path, spooky) {
       val fullPath = new Path(path)
 
@@ -97,7 +94,6 @@ object PageUtils {
         serOut.close()
       }
     }
-  }
 
   def autoCache(
                  pageLikes: Seq[PageLike],
@@ -112,79 +108,22 @@ object PageUtils {
     cache(pageLikes, pathStr)(spooky)
   }
 
-  //write a directory
-  //  private def tag(
-  //           path: String,
-  //           spooky: SpookyContext
-  //           ): Unit = {
-  //
-  //    PageUtils.DFSWrite("save", path, spooky) {
-  //
-  //      val fullPath = new Path(path)
-  //      val fs = fullPath.getFileSystem(spooky.hadoopConf)
-  //      fs.mkdirs(fullPath)
-  //    }
-  //  }
-  //
-  //  def addGroupID(
-  //                    backtrace: Trace,
-  //                    groupID: UUID,
-  //                    spooky: SpookyContext
-  //                    ): Unit = {
-  //
-  //    val pathStr = Utils.uriConcat(
-  //      spooky.conf.dirs.cache,
-  //      spooky.conf.cacheTraceEncoder(backtrace).toString,
-  //      groupID.toString
-  //    )
-  //
-  //    tag(pathStr, spooky)
-  //  }
-  //
-  //  private def getGroupIDs(
-  //                backtrace: Trace,
-  //                spooky: SpookyContext
-  //                ): Seq[UUID] = {
-  //
-  //    val pathStr = Utils.uriConcat(
-  //      spooky.conf.dirs.cache,
-  //      spooky.conf.cacheTraceEncoder(backtrace).toString
-  //    )
-  //
-  //    val dirPath = new Path(pathStr)
-  //
-  //    DFSRead("get latest version", pathStr, spooky) {
-  //
-  //      val fs = dirPath.getFileSystem(spooky.hadoopConf)
-  //
-  //      if (fs.exists(dirPath) && fs.getFileStatus(dirPath).isDirectory) {
-  //
-  //        val statuses = fs.listStatus(dirPath)
-  //
-  //        statuses.filter(status => status.isDirectory).map(_.getPath.getName).map(UUID.fromString).toSeq
-  //      }
-  //      else Seq()
-  //    }
-  //  }
-
-  private def restore(fullPath: Path)(spooky: SpookyContext): Seq[PageLike] = {
-
-    val result = DFSRead("restore", fullPath.toString, spooky) {
+  private def restore(fullPath: Path)(spooky: SpookyContext): Seq[PageLike] =
+    DFSRead("restore", fullPath.toString, spooky) {
       val fs = fullPath.getFileSystem(spooky.hadoopConf)
 
       val ser = SparkEnv.get.serializer.newInstance()
       val fis = fs.open(fullPath)
       val serIn = ser.deserializeStream(fis)
-      try {
+      val result = try {
         serIn.readObject[Seq[PageLike]]()
       }
       finally{
         serIn.close()
       }
-    }
 
-    result
-  }
+      result
+    }
 
   //restore latest in a directory
   //returns: Seq() => has backtrace dir but contains no page
@@ -212,7 +151,11 @@ object PageUtils {
     latestStatus match {
       case Some(status) =>
         val results = restore(status.getPath)(spooky)
-        if (results.head.timestamp.getTime >= earliestModificationTime) results
+        if (results == null) {
+          LoggerFactory.getLogger(this.getClass).warn("Cached content is corrputed")
+          null
+        }
+        else if (results.head.timestamp.getTime >= earliestModificationTime) results
         else {
           LoggerFactory.getLogger(this.getClass).info(s"All cached contents has become obsolete after ${new Date(earliestModificationTime).toGMTString}:\n" +
             s"$dirPath")

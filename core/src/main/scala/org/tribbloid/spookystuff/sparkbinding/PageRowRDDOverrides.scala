@@ -2,7 +2,7 @@ package org.tribbloid.spookystuff.sparkbinding
 
 import org.apache.spark.rdd.RDD
 import org.apache.spark.storage.StorageLevel
-import org.apache.spark.{Partition, TaskContext}
+import org.apache.spark.{Partitioner, Partition, TaskContext}
 import org.tribbloid.spookystuff.entity.PageRow
 import org.tribbloid.spookystuff.utils.Utils
 
@@ -17,12 +17,12 @@ trait PageRowRDDOverrides extends RDD[PageRow]{
 
   import org.tribbloid.spookystuff.views._
 
-  override def getPartitions: Array[Partition] = firstParent[PageRow].partitions
+  override def getPartitions: Array[Partition] = self.partitions
 
-  override val partitioner = self.partitioner
+  override val partitioner: Option[Partitioner] = self.partitioner
 
-  override def compute(split: Partition, context: TaskContext) =
-    firstParent[PageRow].iterator(split, context)
+  override def compute(split: Partition, context: TaskContext): Iterator[PageRow] =
+    self.iterator(split, context)
   //-----------------------------------------------------------------------
 
   private implicit def selfToPageRowRDD(self: RDD[PageRow]): PageRowRDD = this.copy(self = self)

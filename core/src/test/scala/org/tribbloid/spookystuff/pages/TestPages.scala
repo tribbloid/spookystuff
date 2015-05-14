@@ -59,7 +59,7 @@ class TestPages extends SpookyEnvSuite {
 
     PageUtils.autoCache(wgetPage, spooky)
 
-    val newTrace = (Wget("http://en.wikipedia.org").as('newWget)::Nil)
+    val newTrace = Wget("http://en.wikipedia.org").as('newWget) :: Nil
 
     val page2 = PageUtils.autoRestore(newTrace, spooky).map(_.asInstanceOf[Page])
 

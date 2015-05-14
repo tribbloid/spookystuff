@@ -5,25 +5,14 @@ package org.tribbloid.spookystuff.expressions
  */
 trait NamedFunction1[-T, +R] extends (T => R) with Serializable {
 
-  var name: String
-  var hasDefaultName: Boolean = true
+  val name: String
 
-  final def as(name: Symbol): this.type = {
-    assert(name != null)
+  final def as(name: Symbol): Alias[T, R] = new Alias(this, name.name)
 
-    this.name = name.name
-    this.hasDefaultName = false
-    this
-  }
+  //will not rename an already-named Alias.
+  def defaultAs(name: Symbol): Alias[T, R] = as(name)
 
-  final def defaultAs(name: Symbol): this.type = {
-    assert(name != null)
-
-    if (hasDefaultName) this.name = name.name
-    this
-  }
-
-  final def ~(name: Symbol): this.type = as(name)
+  final def ~(name: Symbol) = as(name)
 
   @annotation.unspecialized override def compose[A](g: A => T): NamedFunction1[A, R] =
     NamedFunction1(
@@ -38,10 +27,18 @@ trait NamedFunction1[-T, +R] extends (T => R) with Serializable {
     )
 
   final override def toString(): String = name
+}
 
-  //  override def hashCode = this.toString().hashCode
-  //
-  //  override def equals(any: Any) = this.toString().equals(any)
+class Alias[-T, +R](src: NamedFunction1[T, R], override val name: String) extends NamedFunction1[T, R] {
+
+  val self: NamedFunction1[T, R] = src match {
+    case a: Alias[T, R] => a.self
+    case _ => src
+  }
+
+  override def apply(v1: T): R = self(v1)
+
+  override def defaultAs(name: Symbol): Alias[T, R] = this
 }
 
 object NamedFunction1 {
@@ -49,7 +46,7 @@ object NamedFunction1 {
   def apply[T, R](f: T => R, _name: String): NamedFunction1[T, R] =
     new NamedFunction1[T, R] {
 
-      override var name = _name
+      override val name = _name
 
       override def apply(v1: T): R = f(v1)
     }

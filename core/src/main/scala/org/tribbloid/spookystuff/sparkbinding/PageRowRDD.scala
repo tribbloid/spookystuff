@@ -661,7 +661,7 @@ class PageRowRDD private (
         val dryrun: DryRun = row.pageLikes.toSeq.map(_.uid.backtrace).distinct
         val seeds = Seq(row)
         val preJoins = seeds.flatMap{
-          _.localPreJoins(expr,ordinalKey,maxOrdinal)(
+          _.localPreJoins(_expr,ordinalKey,maxOrdinal)(
             _traces, existingDryruns = Set(dryrun)
           )
         }

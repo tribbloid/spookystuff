@@ -12,34 +12,34 @@ import scala.reflect.ClassTag
 //this is the only Expression that can be shipped remotely
 final case class Literal[+T: ClassTag](value: T) extends Expression[T] {//all select used in query cannot have name changed
 
-  override var name = "'"+value.toString+"'" //quoted to avoid confusion with Get-ish Expr
+  override val name = "'"+value.toString+"'" //quoted to avoid confusion with Get-ish Expr
 
   override def apply(v1: PageRow): Option[T] = Some(value)
 }
 
-class GetExpr(override var name: String) extends Expression[Any] {
+class GetExpr(override val name: String) extends Expression[Any] {
 
   override def apply(v1: PageRow): Option[Any] = v1.get(name)
 }
 
-class GetUnstructuredExpr(override var name: String) extends Expression[Unstructured] {
+class GetUnstructuredExpr(override val name: String) extends Expression[Unstructured] {
 
   override def apply(v1: PageRow): Option[Unstructured] = v1.getUnstructured(name)
 }
 
-class GetPageExpr(override var name: String) extends Expression[Page] {
+class GetPageExpr(override val name: String) extends Expression[Page] {
 
   override def apply(v1: PageRow): Option[Page] = v1.getPage(name)
 }
 
 class ChildExpr(selector: String, param: Expression[Unstructured]) extends Expression[Unstructured] {
 
-  override var name = s"${param.name}.child($selector)"
+  override val name = s"${param.name}.child($selector)"
 
   override def apply(v1: PageRow): Option[Unstructured] = param(v1).flatMap(_.child(selector))
 
   def expand(range: Range) = new Expression[Siblings[Unstructured]] {
-    override var name: String = s"${this.name}.expand(${range.head} -> ${range.last})"
+    override val name: String = s"${this.name}.expand(${range.head} -> ${range.last})"
 
     override def apply(v1: PageRow) = param(v1).flatMap(_.childWithSiblings(selector, range))
   }
@@ -47,18 +47,18 @@ class ChildExpr(selector: String, param: Expression[Unstructured]) extends Expre
 
 class ChildrenExpr(selector: String, param: Expression[Unstructured]) extends Expression[Elements[Unstructured]] {
 
-  override var name = s"${param.name}.children($selector)"
+  override val name = s"${param.name}.children($selector)"
 
   override def apply(v1: PageRow): Option[Elements[Unstructured]] = param(v1).map(_.children(selector))
 
   def expand(range: Range) = new Expression[Elements[Siblings[Unstructured]]] {
-    override var name: String = s"${this.name}.expand(${range.head} -> ${range.last})"
+    override val name: String = s"${this.name}.expand(${range.head} -> ${range.last})"
 
     override def apply(v1: PageRow) = param(v1).map(_.childrenWithSiblings(selector, range))
   }
 }
 
-class GetSeqExpr(override var name: String) extends Expression[Seq[Any]] {
+class GetSeqExpr(override val name: String) extends Expression[Seq[Any]] {
 
   override def apply(v1: PageRow): Option[Seq[Any]] = v1.get(name).flatMap {
     case v: TraversableOnce[Any] => Some(v.toSeq)
@@ -68,26 +68,26 @@ class GetSeqExpr(override var name: String) extends Expression[Seq[Any]] {
 }
 
 object GetOnlyPageExpr extends Expression[Page] {
-  override var name = Const.onlyPageWildcard
+  override val name = Const.onlyPageWildcard
 
   override def apply(v1: PageRow): Option[Page] = v1.getOnlyPage
 }
 
 object GetAllPagesExpr extends Expression[Elements[Page]] {
-  override var name = Const.allPagesWildcard
+  override val name = Const.allPagesWildcard
 
   override def apply(v1: PageRow): Option[Elements[Page]] = Some(new Elements(v1.pages))
 }
 
 object GetSegmentIDExpr extends Expression[String] {
-  override var name = "SegmentID"
+  override val name = "SegmentID"
 
   override def apply(v1: PageRow): Option[String] =Option(v1.segmentID.toString)
 }
 
 class ReplaceKeyExpr(str: String) extends Expression[String] {
 
-  override var name = str
+  override val name = str
 
   override def apply(v1: PageRow): Option[String] = v1.replaceInto(str)
 }
@@ -95,7 +95,7 @@ class ReplaceKeyExpr(str: String) extends Expression[String] {
 class InterpolateExpr(parts: Seq[String], fs: Seq[Expression[Any]])
   extends Expression[String] {
 
-  override var name = parts.zip(fs.map(_.name)).map(tpl => tpl._1+tpl._2).mkString + parts.last
+  override val name = parts.zip(fs.map(_.name)).map(tpl => tpl._1+tpl._2).mkString + parts.last
 
   if (parts.length != fs.length + 1)
     throw new IllegalArgumentException("wrong number of arguments for interpolated string")
@@ -111,7 +111,7 @@ class InterpolateExpr(parts: Seq[String], fs: Seq[Expression[Any]])
 }
 
 class ZippedExpr[T1,+T2](param1: Expression[Iterable[T1]], param2: Expression[Iterable[T2]]) extends Expression[Map[T1, T2]] {
-  override var name: String = s"${param1.name}.zip(${param2.name})"
+  override val name: String = s"${param1.name}.zip(${param2.name})"
 
   override def apply(v1: PageRow): Option[Map[T1, T2]] = {
 
@@ -126,7 +126,7 @@ class ZippedExpr[T1,+T2](param1: Expression[Iterable[T1]], param2: Expression[It
   }
 }
 
-class InsertIntoExpr[+T: ClassTag](override var name: String, expr: Expression[T]) extends Expression[Seq[T]] {
+class InsertIntoExpr[+T: ClassTag](override val name: String, expr: Expression[T]) extends Expression[Seq[T]] {
 
   override def apply(v1: PageRow): Option[Seq[T]] = {
     val lastOption = expr(v1)

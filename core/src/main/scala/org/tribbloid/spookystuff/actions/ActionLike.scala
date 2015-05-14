@@ -7,8 +7,7 @@ import org.tribbloid.spookystuff.session.Session
 /**
  * Created by peng on 11/7/14.
  */
-trait ActionLike
-  extends Serializable {
+trait ActionLike extends Serializable {
 
   final def interpolate(pr: PageRow): Option[this.type] = {
     val option = this.doInterpolate(pr)
