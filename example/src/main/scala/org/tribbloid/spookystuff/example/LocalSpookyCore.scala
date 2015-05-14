@@ -44,8 +44,10 @@ trait LocalSpookyCore {
 
     val dirs = spooky.conf.dirs
 
-    if (dirs.root == null) dirs.setRoot(s"file://${System.getProperty("user.home")}/spooky-local/$appName/")
-    if (dirs._cache == null) dirs._cache = s"file://${System.getProperty("user.home")}/spooky-local/cache/"
+    if (dirs.root == null && dirs._cache == null){
+      dirs.setRoot(s"file://${System.getProperty("user.home")}/spooky-local/$appName/")
+      dirs._cache = s"file://${System.getProperty("user.home")}/spooky-local/cache/"
+    }
 
     val p = new Properties()
     p.load(this.getClass.getResourceAsStream("/conf.properties"))
