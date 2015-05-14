@@ -19,7 +19,7 @@ trait LocalSpookyCore {
 
   val sc: SparkContext = {
     val conf: SparkConf = new SparkConf().setAppName(appName)
-//    conf.set("spark.task.maxFailures","1000") //TODO: why it doesn't work
+    //    conf.set("spark.task.maxFailures","1000") //TODO: why it doesn't work
 
     var master: String = null
     master = Option(master).getOrElse(conf.getOption("spark.master").orNull)
@@ -52,7 +52,8 @@ trait LocalSpookyCore {
     val p = new Properties()
     p.load(this.getClass.getResourceAsStream("/conf.properties"))
 
-    if (p.getProperty("spooky.preview")=="true") {
+    val preview = Option(System.getProperty("spooky.preview")).getOrElse(p.getProperty("spooky.preview"))
+    if (preview == "true") {
       spooky.conf.maxJoinOrdinal = maxJoinOrdinal
       spooky.conf.maxExploreDepth = maxExploreDepth
     }
