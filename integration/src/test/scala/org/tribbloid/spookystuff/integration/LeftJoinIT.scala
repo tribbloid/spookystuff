@@ -10,7 +10,7 @@ import org.tribbloid.spookystuff.dsl._
 class LeftJoinIT extends IntegrationSuite {
 
   override lazy val drivers = Seq(
-    PhantomJSDriverFactory()
+    DriverFactories.PhantomJS() //TODO: HtmlUnit does not support Backbone.js
   )
 
   override def doMain(spooky: SpookyContext): Unit = {

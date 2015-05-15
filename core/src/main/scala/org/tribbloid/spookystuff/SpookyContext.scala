@@ -54,8 +54,8 @@ case class Metrics(
   entry point of the pipeline
  */
 case class SpookyContext (
-                           sqlContext: SQLContext, //can't be used on executors
-                           private val _spookyConf: SpookyConf = new SpookyConf(), //can only be used on executors after broadcast
+                           @transient sqlContext: SQLContext, //can't be used on executors
+                           @transient private val _spookyConf: SpookyConf = new SpookyConf(), //can only be used on executors after broadcast
                            var metrics: Metrics = new Metrics() //accumulators cannot be broadcasted,
                            //                           lookup: Lookup = Lookup()
                            // shared by multiple initialized PageRowRDDs. Make sure all attempts to change it are blocking! Should be fast as long as no action happens.
@@ -78,12 +78,13 @@ case class SpookyContext (
     this(new SparkContext(conf))
   }
 
-  var broadcastedSpookyConf = sqlContext.sparkContext.broadcast(_spookyConf)
+  @volatile var broadcastedSpookyConf = sqlContext.sparkContext.broadcast(_spookyConf)
 
   def conf = if (_spookyConf == null) broadcastedSpookyConf.value
   else _spookyConf
 
   def broadcast(): Unit ={
+    broadcastedSpookyConf.destroy()
     broadcastedSpookyConf = sqlContext.sparkContext.broadcast(_spookyConf)
   }
 

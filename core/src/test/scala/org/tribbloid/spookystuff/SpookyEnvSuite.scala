@@ -3,7 +3,7 @@ package org.tribbloid.spookystuff
 import org.apache.spark.sql.SQLContext
 import org.apache.spark.{SparkConf, SparkContext}
 import org.scalatest.{Retries, BeforeAndAfter, BeforeAndAfterAll, FunSuite}
-import org.tribbloid.spookystuff.dsl.{DriverFactory, PhantomJSDriverFactory}
+import org.tribbloid.spookystuff.dsl.{DriverFactories, DriverFactory}
 import org.tribbloid.spookystuff.utils.Utils
 
 /**
@@ -15,7 +15,7 @@ abstract class SpookyEnvSuite extends FunSuite with BeforeAndAfter with BeforeAn
   var sql: SQLContext = _
   var spooky: SpookyContext = _
 
-  lazy val driverFactory: DriverFactory = PhantomJSDriverFactory(loadImages = true)
+  lazy val driverFactory: DriverFactory = DriverFactories.PhantomJS(loadImages = true)
 
   override def withFixture(test: NoArgTest) = {
     if (isRetryable(test))

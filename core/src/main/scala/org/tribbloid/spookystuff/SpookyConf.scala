@@ -6,6 +6,7 @@ import org.apache.spark.rdd.RDD
 import org.apache.spark.storage.StorageLevel
 import org.tribbloid.spookystuff.SpookyConf.Dirs
 import org.tribbloid.spookystuff.dsl._
+import org.tribbloid.spookystuff.expressions.{CacheFilePath, PageFilePath}
 import org.tribbloid.spookystuff.utils.Utils
 
 import scala.concurrent.duration._
@@ -59,8 +60,8 @@ class SpookyConf (
 
                    var sharedMetrics: Boolean = false,
 
-                   var driverFactory: DriverFactory = PhantomJSDriverFactory(),
-                   var proxy: ProxyFactory = NoProxyFactory,
+                   var driverFactory: DriverFactory = DriverFactories.PhantomJS(),
+                   var proxy: ProxyFactory = ProxyFactories.NoProxy,
                    var userAgent: ()=> String = () => null, //may change to "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/37.0.2062.120 Safari/537.36",
                    var headers: ()=> Map[String, String] = () => Map(),
                    val browserResolution: (Int, Int) = (1920, 1080),
@@ -74,14 +75,11 @@ class SpookyConf (
                    var pageExpireAfter: Duration = 7.day,
                    var pageNotExpiredSince: Option[Date] = None,
 
-                   var autoSaveExtract: Extract[String] = new UUIDFileName(Hierarchical),
-                   var cacheTraceEncoder: TraceEncoder[String] = Hierarchical,
-                   var errorDumpExtract: Extract[String] = new UUIDFileName(Hierarchical),
+                   var cachePath: CacheFilePath[String] = CacheFilePaths.Hierarchical,
+                   var autoSavePath: PageFilePath[String] = PageFilePaths.TimeStampName(CacheFilePaths.Hierarchical),
+                   var errorDumpPath: PageFilePath[String] = PageFilePaths.TimeStampName(CacheFilePaths.Hierarchical),
 
-                   var defaultParallelism: RDD[_] => Int = {
-                     rdd =>
-                       rdd.sparkContext.defaultParallelism * 8
-                   },
+                   var defaultParallelism: RDD[_] => Int = Parallelism.PerCore(8),
 
                    var remoteResourceTimeout: Duration = 60.seconds,
                    var DFSTimeout: Duration = 40.seconds,

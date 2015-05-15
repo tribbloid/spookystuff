@@ -1,9 +1,9 @@
-package org.tribbloid.spookystuff.integration.slow
+package org.tribbloid.spookystuff.integration
 
 import org.tribbloid.spookystuff.SpookyContext
 import org.tribbloid.spookystuff.actions._
 import org.tribbloid.spookystuff.dsl._
-import org.tribbloid.spookystuff.integration.IntegrationSuite
+
 import scala.concurrent.duration._
 
 /**
@@ -12,11 +12,10 @@ import scala.concurrent.duration._
 class ExploreAJAXPagesIT extends IntegrationSuite {
 
   override lazy val drivers = Seq(
-    PhantomJSDriverFactory() //TODO: HtmlUnit does not support Backbone.js
+    DriverFactories.PhantomJS() //TODO: HtmlUnit does not support Backbone.js
   )
 
   override def doMain(spooky: SpookyContext): Unit = {
-    import spooky.dsl._
 
     val snapshotAllPages = (
       Snapshot() ~ 'first

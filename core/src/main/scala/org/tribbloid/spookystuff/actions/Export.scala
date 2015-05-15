@@ -3,7 +3,7 @@ package org.tribbloid.spookystuff.actions
 import java.net.InetSocketAddress
 
 import org.apache.commons.io.IOUtils
-import org.apache.http.HttpHost
+import org.apache.http.{StatusLine, HttpHost}
 import org.apache.http.client.config.RequestConfig
 import org.apache.http.client.methods.HttpGet
 import org.apache.http.client.protocol.HttpClientContext
@@ -179,7 +179,8 @@ case class Wget(
     try {
       val response = httpClient.execute ( request, context )
       try {
-        //      val httpStatus = response.getStatusLine().getStatusCode()
+        val httpStatus: StatusLine = response.getStatusLine
+        assert(httpStatus.getStatusCode.toString.startsWith("2"), httpStatus.toString)
         val entity = response.getEntity
 
         val stream = entity.getContent

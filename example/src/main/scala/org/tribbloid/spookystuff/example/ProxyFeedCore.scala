@@ -4,6 +4,7 @@ import org.apache.spark.sql.DataFrame
 import org.tribbloid.spookystuff.SpookyContext
 import org.tribbloid.spookystuff.actions._
 import org.tribbloid.spookystuff.dsl._
+import org.tribbloid.spookystuff.session.ProxySetting
 
 /**
  * Created by peng on 9/11/14.
@@ -25,7 +26,7 @@ abstract class ProxyFeedCore extends QueryCore {
     val proxies = proxyRows.map(row => ProxySetting(row.getString(0), Integer.parseInt(row.getString(1)), row.getString(2)))
 
     val spooky = noProxy
-    spooky.conf.proxy = RandomProxyFactory(proxies)
+    spooky.conf.proxy = ProxyFactories.Random(proxies)
     spooky
   }
 

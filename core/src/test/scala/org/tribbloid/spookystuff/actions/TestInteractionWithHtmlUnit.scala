@@ -1,6 +1,6 @@
 package org.tribbloid.spookystuff.actions
 
-import org.tribbloid.spookystuff.dsl.HtmlUnitDriverFactory
+import org.tribbloid.spookystuff.dsl.DriverFactories
 import org.tribbloid.spookystuff.pages.Page
 
 import scala.concurrent.duration._
@@ -10,7 +10,7 @@ import scala.concurrent.duration._
  */
 class TestInteractionWithHtmlUnit extends TestInteraction {
 
-  override lazy val driverFactory = HtmlUnitDriverFactory()
+  override lazy val driverFactory = DriverFactories.HtmlUnit()
 
   import org.tribbloid.spookystuff.dsl._
 

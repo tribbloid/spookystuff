@@ -101,7 +101,7 @@ object PageUtils {
                  ): Unit = {
     val pathStr = Utils.uriConcat(
       spooky.conf.dirs.cache,
-      spooky.conf.cacheTraceEncoder(pageLikes.head.uid.backtrace).toString,
+      spooky.conf.cachePath(pageLikes.head.uid.backtrace).toString,
       UUID.randomUUID().toString
     )
 
@@ -157,7 +157,7 @@ object PageUtils {
         }
         else if (results.head.timestamp.getTime >= earliestModificationTime) results
         else {
-          LoggerFactory.getLogger(this.getClass).info(s"All cached contents has become obsolete after ${new Date(earliestModificationTime).toGMTString}:\n" +
+          LoggerFactory.getLogger(this.getClass).info(s"All cached contents has become obsolete after ${new Date(earliestModificationTime).toString}:\n" +
             s"$dirPath")
           null
         }
@@ -178,7 +178,7 @@ object PageUtils {
 
     val pathStr = Utils.uriConcat(
       spooky.conf.dirs.cache,
-      spooky.conf.cacheTraceEncoder(backtrace).toString
+      spooky.conf.cachePath(backtrace).toString
     )
 
     val earliestTimeFromDuration = spooky.conf.pageExpireAfter match {

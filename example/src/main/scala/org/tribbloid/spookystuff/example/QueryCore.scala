@@ -24,7 +24,7 @@ trait QueryCore extends LocalSpookyCore {
       case rdd: RDD[_] => rdd
     }
 
-    val array = rdd.cache().takeSample(withReplacement = false, num = 10)
+    val array = rdd.persist().takeSample(withReplacement = false, num = 10)
     array.foreach(row => println(row))
     rdd.saveAsTextFile("file://"+System.getProperty("user.home")+"/spooky-local/result"+s"/$appName-${System.currentTimeMillis()}.json")
     println("-------------------returned "+rdd.count()+" rows------------------")

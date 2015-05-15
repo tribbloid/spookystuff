@@ -1,11 +1,13 @@
 package org.tribbloid.spookystuff
 
 import java.util.UUID
+import java.util.concurrent.TimeUnit
 
 import com.esotericsoftware.kryo.Kryo
 import org.apache.spark.SerializableWritable
 import org.apache.spark.serializer.KryoRegistrator
 import org.tribbloid.spookystuff.SpookyConf.Dirs
+import org.tribbloid.spookystuff.dsl._
 import org.tribbloid.spookystuff.entity.{ExploreStage, PageRow}
 import org.tribbloid.spookystuff.pages._
 
@@ -42,7 +44,12 @@ class SpookyRegistrator extends KryoRegistrator {
       //      classOf[NamedFunction1]
 
       //parameters
-      classOf[FiniteDuration]
+      classOf[FiniteDuration],
+      classOf[TimeUnit],
+      PageFilePaths.getClass,
+      CacheFilePaths.getClass,
+      Parallelism.getClass,
+      ProxyFactories.getClass
     )
     array.foreach(kryo.register)
   }

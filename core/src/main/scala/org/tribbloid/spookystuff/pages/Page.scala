@@ -113,7 +113,7 @@ case class Page(
                 spooky: SpookyContext,
                 overwrite: Boolean = false
                 ): Unit = this.save(
-    spooky.conf.dirs.autoSave :: spooky.conf.autoSaveExtract(this).toString :: Nil
+    spooky.conf.dirs.autoSave :: spooky.conf.autoSavePath(this).toString :: Nil
   )(spooky)
 
   def errorDump(
@@ -126,7 +126,7 @@ case class Page(
     }
 
     this.save(
-      root :: spooky.conf.errorDumpExtract(this).toString :: Nil
+      root :: spooky.conf.errorDumpPath(this).toString :: Nil
     )(spooky)
   }
 
@@ -140,7 +140,7 @@ case class Page(
     }
 
     this.save(
-      root :: spooky.conf.errorDumpExtract(this).toString :: Nil
+      root :: spooky.conf.errorDumpPath(this).toString :: Nil
     )(spooky)
   }
 }

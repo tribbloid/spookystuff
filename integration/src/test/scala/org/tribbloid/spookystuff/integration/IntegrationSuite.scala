@@ -21,6 +21,10 @@ abstract class IntegrationSuite extends FunSuite with BeforeAndAfterAll {
   override def beforeAll() {
     val conf: SparkConf = new SparkConf().setAppName("integration")
       .setMaster("local[*]")
+//      .set("spark.serializer", "org.apache.spark.serializer.KryoSerializer")
+//      .set("spark.kryo.registrator", "org.tribbloid.spookystuff.SpookyRegistrator")
+//      .set("spark.kryoserializer.buffer.max.mb", "512")
+//      .set("spark.kryo.registrationRequired", "true")
 
     sc = new SparkContext(conf)
 
@@ -58,8 +62,8 @@ abstract class IntegrationSuite extends FunSuite with BeforeAndAfterAll {
   )
 
   lazy val drivers = Seq(
-    PhantomJSDriverFactory(),
-    HtmlUnitDriverFactory()
+    DriverFactories.PhantomJS(),
+    DriverFactories.HtmlUnit()
   )
 
   lazy val optimizers = Seq(

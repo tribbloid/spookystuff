@@ -11,7 +11,7 @@ import org.tribbloid.spookystuff.dsl.{JoinType, _}
 import org.tribbloid.spookystuff.entity.PageRow.{WebCacheRow, WebCacheRDD}
 import org.tribbloid.spookystuff.entity._
 import org.tribbloid.spookystuff.expressions._
-import org.tribbloid.spookystuff.pages.Unstructured
+import org.tribbloid.spookystuff.pages.{PageLike, Unstructured}
 import org.tribbloid.spookystuff.utils._
 import org.tribbloid.spookystuff.{Const, QueryException, SpookyContext, views}
 
@@ -456,11 +456,9 @@ class PageRowRDD private (
         triplet =>
           val tuple = triplet._2
           val rows: Iterable[PageRow] = tuple._1.map(_._2)
-          assert(tuple._2.size <= 1)
-          //tuple._2 should only have one or zero squashedRow
-          val squashedRowOption = tuple._2.reduceOption(_ ++ _)
+          val cachedSquashedRowOption = tuple._2.reduceOption(_ ++ _)
 
-          squashedRowOption match {
+          cachedSquashedRowOption match {
             case None => //didn't find anything, resolve is the only option, add all new pages into lookup
               val pageLikes = triplet._2._1.map(_._1).reduce {
                 (s1, s2) =>
@@ -478,17 +476,21 @@ class PageRowRDD private (
               val newCached = triplet._1 -> Squashed(pageLikes.toArray, seedRowsPost.toArray)
 
               newSelf -> newCached
-            case Some(squashedRow) => //found something, use same pages, add into rows except those found with existing segmentIDs, only add new pages with non-existing segmentIDs into lookup
+            case Some(cachedSquashedRow) => //found something, use same pages, add into rows except those found with existing segmentIDs, only add new pages with non-existing segmentIDs into lookup
               val dryrun = triplet._1
-              squashedRow.pageLikes.foreach {
+              val meta = cachedSquashedRow.metadata
+              val uniqueMeta = meta.groupBy(_.segmentID).values.flatMap(seedFilter(_))
+              val uniqueCachedSquashedRow = cachedSquashedRow.copy(metadata = uniqueMeta.toArray)
+
+              uniqueCachedSquashedRow.pageLikes.foreach {
                 pageLike =>
                   val sameBacktrace = dryrun.find(_ == pageLike.uid.backtrace).get
                   pageLike.uid.backtrace.injectFrom(sameBacktrace)
               }
-              val pageLikes = squashedRow.pageLikes
+              val pageLikes: Array[PageLike] = uniqueCachedSquashedRow.pageLikes
               val fetchedRows = rows.flatMap(_.putPages(pageLikes, joinType))
 
-              val existingSegIDs = squashedRow.metadata.map(_.segmentID).toSet
+              val existingSegIDs = uniqueCachedSquashedRow.metadata.map(_.segmentID).toSet
               val seedRows = fetchedRows.filterNot(row => existingSegIDs.contains(row.segmentID))
                 .groupBy(_.segmentID)
                 .flatMap(tuple => seedFilter(tuple._2))
@@ -496,7 +498,7 @@ class PageRowRDD private (
 
               val newSelf = if (!seed) fetchedRows.flatMap(postProcessing)
               else seedRowsPost
-              val newCached = triplet._1 -> squashedRow.copy(metadata = squashedRow.metadata ++ seedRowsPost)
+              val newCached = triplet._1 -> uniqueCachedSquashedRow.copy(metadata = uniqueCachedSquashedRow.metadata ++ seedRowsPost)
 
               newSelf -> newCached
           }
