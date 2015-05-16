@@ -1,6 +1,6 @@
 package org.tribbloid.spookystuff.sparkbinding
 
-import _root_.parquet.org.slf4j.LoggerFactory
+import org.slf4j.LoggerFactory
 import org.apache.spark.HashPartitioner
 import org.apache.spark.rdd.{RDD, UnionRDD}
 import org.apache.spark.sql._

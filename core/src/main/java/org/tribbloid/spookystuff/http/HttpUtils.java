@@ -41,7 +41,6 @@ public class HttpUtils {
         URL url = new URL(s);
         return new URI(url.getProtocol(), url.getAuthority(), url.getPath(), url.getQuery(), null);
       } catch (MalformedURLException ee) {
-//        throw new RuntimeException(ee);
         URL url;
         try {
           url = new URL(dummyURL, s);
