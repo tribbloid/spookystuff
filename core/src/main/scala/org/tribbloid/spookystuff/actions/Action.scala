@@ -151,9 +151,9 @@ trait Timed extends Action {
   }
 
   def driverWait(session: Session) = new WebDriverWait(session.driver, this.timeout(session).toSeconds)
-  
+
   def getClickableElement(selector: String, session: Session) = {
-    
+
     val elements = driverWait(session).until(ExpectedConditions.elementToBeClickable(new BySizzleCssSelector(selector)))
 
     elements

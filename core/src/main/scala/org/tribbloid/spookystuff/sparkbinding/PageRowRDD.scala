@@ -7,7 +7,7 @@ import org.apache.spark.sql._
 import org.apache.spark.sql.catalyst.analysis.UnresolvedAttribute
 import org.apache.spark.storage.StorageLevel
 import org.tribbloid.spookystuff.actions._
-import org.tribbloid.spookystuff.dsl.{JoinType, _}
+import org.tribbloid.spookystuff.dsl._
 import org.tribbloid.spookystuff.entity.PageRow.{WebCacheRow, WebCacheRDD}
 import org.tribbloid.spookystuff.entity._
 import org.tribbloid.spookystuff.expressions._
@@ -31,7 +31,7 @@ class PageRowRDD private (
                            val spooky: SpookyContext,
                            val persisted: ArrayBuffer[RDD[_]]
                            )
-  extends RDD[PageRow](self) with PageRowRDDOverrides {
+  extends PageRowRDDApi {
 
   import RDD._
   import views._
@@ -41,10 +41,7 @@ class PageRowRDD private (
             spooky: SpookyContext
             ) = this(
 
-    self match {
-      case self: PageRowRDD => self.self //avoid recursive
-      case _ => self
-    },
+    self,
     self.sparkContext.emptyRDD[WebCacheRow].partitionBy(new HashPartitioner(spooky.conf.defaultParallelism(self))),
     ListSet(), spooky, ArrayBuffer())
 
@@ -54,10 +51,7 @@ class PageRowRDD private (
             spooky: SpookyContext
             ) = this(
 
-    self match {
-      case self: PageRowRDD => self.self //avoid recursive
-      case _ => self
-    },
+    self,
     self.sparkContext.emptyRDD[WebCacheRow].partitionBy(new HashPartitioner(spooky.conf.defaultParallelism(self))),
     keys, spooky, ArrayBuffer())
 
@@ -70,10 +64,7 @@ class PageRowRDD private (
             ): PageRowRDD = {
 
     val result = new PageRowRDD(
-      self match {
-        case self: PageRowRDD => self.self //avoid recursive
-        case _ => self
-      },
+      self,
       webCache,
       keys, spooky, persisted
     )
@@ -93,7 +84,7 @@ class PageRowRDD private (
     this.copy(self.map(_.copy(segmentID = Random.nextLong())))
   }
 
-  private def discardPages: PageRowRDD = this.copy(self = this.map(_.copy(pageLikes = Array())))
+  private def discardPages: PageRowRDD = this.copy(self = self.map(_.copy(pageLikes = Array())))
 
   //  private def discardWebCache: PageRowRDD = {
   //    this.webCache.unpersist(blocking = false)
@@ -655,7 +646,7 @@ class PageRowRDD private (
       firstResultRDD.count()
     }
 
-    if (firstCount == 0) return this.copy(self = sparkContext.emptyRDD)
+    if (firstCount == 0) return this.copy(self = self.sparkContext.emptyRDD)
 
     val firstStageRDD = firstResultRDD
       .map {
@@ -766,7 +757,7 @@ class PageRowRDD private (
 
     val WebCache0 = {
       val webCache: WebCacheRDD = if (useWebCache) depth0.webCache
-      else sparkContext.emptyRDD[WebCacheRow].partitionBy(new HashPartitioner(spooky.conf.defaultParallelism(self)))
+      else this.webCache.sparkContext.emptyRDD[WebCacheRow].partitionBy(new HashPartitioner(spooky.conf.defaultParallelism(self)))
 
       webCache.putRows(
         depth0.self,

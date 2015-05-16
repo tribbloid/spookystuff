@@ -4,7 +4,7 @@ import java.net.InetSocketAddress
 
 import org.apache.commons.io.IOUtils
 import org.apache.http.{StatusLine, HttpHost}
-import org.apache.http.client.config.RequestConfig
+import org.apache.http.client.config.{CookieSpecs, RequestConfig}
 import org.apache.http.client.methods.HttpGet
 import org.apache.http.client.protocol.HttpClientContext
 import org.apache.http.client.{ClientProtocolException, RedirectException}
@@ -127,6 +127,7 @@ case class Wget(
         .setCircularRedirectsAllowed(true)
         .setRelativeRedirectsAllowed(true)
         .setAuthenticationEnabled(false)
+//        .setCookieSpec(CookieSpecs.BEST_MATCH)
 
       if (proxy!=null && !proxy.protocol.startsWith("socks")) builder=builder.setProxy(new HttpHost(proxy.addr, proxy.port, proxy.protocol))
 

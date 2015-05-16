@@ -18,6 +18,8 @@ package object dsl {
 
 //  type SerializableCookie = Cookie with Serializable
 
+  implicit def PageRowRDDToSelf(wrapper: PageRowRDD): RDD[PageRow] = wrapper.self
+  
   implicit def spookyContextToPageRowRDD(spooky: SpookyContext): PageRowRDD =
     new PageRowRDD(spooky.sqlContext.sparkContext.parallelize(Seq(PageRow())), spooky = spooky.getContextForNewInput)
 

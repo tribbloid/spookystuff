@@ -15,7 +15,7 @@ import scala.reflect.ClassTag
  */
 package object views {
 
-  implicit class RDDView[V](val self: RDD[V]) {
+  implicit class RDDView[A](val self: A)(implicit ev1: A => RDD[_]) {
 
     def persistDuring[T](newLevel: StorageLevel, blocking: Boolean = true)(fn: => T): T =
       if (self.getStorageLevel == StorageLevel.NONE){
@@ -33,7 +33,7 @@ package object views {
     //  def checkpointNow(): Unit = {
     //    persistDuring(StorageLevel.MEMORY_ONLY) {
     //      self.checkpoint()
-    //      self.count()
+    //      self.foreach(_ =>)
     //      self
     //    }
     //    Unit
@@ -112,7 +112,7 @@ package object views {
     }
   }
 
-  implicit class InMemoryWebCacheRDDView(self: WebCacheRDD) {
+  implicit class WebCacheRDDView(self: WebCacheRDD) {
 
     import RDD._
 

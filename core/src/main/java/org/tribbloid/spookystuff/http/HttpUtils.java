@@ -14,7 +14,7 @@ public class HttpUtils {
     try {
       return new URL("http://www.dummy.com/");
     } catch (MalformedURLException e) {
-      throw new RuntimeException("WTF?");
+      throw new RuntimeException(e);
     }
   }
 
@@ -34,16 +34,22 @@ public class HttpUtils {
 //    return uri.normalize();
 
     try {
-      URL url = new URL(s);
-      return new URI(url.getProtocol(), url.getAuthority(), url.getPath(), url.getQuery(), null);
-    } catch (MalformedURLException e) {
-      URL url = null;
+      return new URI(s);
+    }
+    catch (URISyntaxException e) {
       try {
-        url = new URL(dummyURL, s);
-      } catch (MalformedURLException e1) {
-        throw new RuntimeException(e1);
+        URL url = new URL(s);
+        return new URI(url.getProtocol(), url.getAuthority(), url.getPath(), url.getQuery(), null);
+      } catch (MalformedURLException ee) {
+//        throw new RuntimeException(ee);
+        URL url;
+        try {
+          url = new URL(dummyURL, s);
+        } catch (MalformedURLException eee) {
+          throw new RuntimeException(eee);
+        }
+        return new URI(null, null, url.getPath(), url.getQuery(), null); //this will generate a relative URI the string itself is relative
       }
-      return new URI(null, null, url.getPath(), url.getQuery(), null);
     }
   }
 }

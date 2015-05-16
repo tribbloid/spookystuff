@@ -91,6 +91,8 @@ object DriverFactories {
       val result = new DesiredCapabilities(baseCaps)
 
       val userAgent = spooky.conf.userAgent
+      //TODO: this is useless, need custom BrowserVersion
+      //see http://stackoverflow.com/questions/12853715/setting-user-agent-for-htmlunitdriver-selenium
       if (userAgent != null) result.setCapability(PhantomJSDriverService.PHANTOMJS_PAGE_SETTINGS_PREFIX + "userAgent", userAgent)
 
       val proxy: ProxySetting = spooky.conf.proxy()
