@@ -713,17 +713,24 @@ class PageRowRDD private (
       LoggerFactory.getLogger(this.getClass).info(s"$count segment(s) have uncrawled seed(s) after $depthToInclusive iteration(s)")
       depthFromExclusive = depthToInclusive
 
-      if (count == 0 || depthToInclusive >= maxDepth) return result
+      if (count == 0) {
+        LoggerFactory.getLogger(this.getClass).info("Narrow explore completed: all documents has been crawled")
+        return result
+      }
+      else if (depthToInclusive >= maxDepth) {
+        LoggerFactory.getLogger(this.getClass).info(s"Narrow explore completed: reached maximum number of iterations ($maxDepth)")
+        return result
+      }
     }
 
     def result: PageRowRDD = {
 
       val resultSelf = new UnionRDD(this.sparkContext, resultRDDs).coalesce(numPartitions)
-      val result = this.copy(self = resultSelf, keys = resultKeys)
-      result.select(select: _*)
+      val result = this.copy(self = resultSelf, keys = resultKeys).select(select: _*)
+      result
     }
 
-    result
+    throw new RuntimeException("unreachable")
   }
 
   //recursive join and union! applicable to many situations like (wide) pagination and deep crawling
