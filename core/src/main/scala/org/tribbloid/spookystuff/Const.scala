@@ -1,11 +1,6 @@
 package org.tribbloid.spookystuff
 
-import java.io.File
-
-import org.apache.hadoop.fs.Path
-import org.apache.spark.SparkFiles
 import org.json4s.DefaultFormats
-import org.slf4j.LoggerFactory
 import org.tribbloid.spookystuff.dsl.LeftOuter
 
 /**
@@ -35,15 +30,6 @@ object Const {
   val interactionBlock: Boolean = true
 
   val hardTerminateOverhead: Duration = 20.seconds
-
-  def phantomJSPath(fileName: String) = Option(System.getenv("PHANTOMJS_PATH"))
-    .getOrElse{
-    LoggerFactory.getLogger(this.getClass).info("$PHANTOMJS_PATH does not exist, using tempfile instead")
-    SparkFiles.get(fileName)
-  }
-
-  //used in sc.addFile(...)
-  val phantomJSUrl = System.getenv("PHANTOMJS_PATH") //TODO: download it from public resource
 
   val defaultInputKey = "_"
   val keyDelimiter = "'"

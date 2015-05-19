@@ -1,11 +1,11 @@
 package org.tribbloid.spookystuff
 
 import org.apache.hadoop.conf.Configuration
-import org.apache.hadoop.fs.Path
 import org.apache.spark._
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.{DataFrame, SQLContext}
 import org.slf4j.LoggerFactory
+import org.tribbloid.spookystuff.dsl.DriverFactories
 import org.tribbloid.spookystuff.entity.{Key, KeyLike, PageRow}
 import org.tribbloid.spookystuff.sparkbinding.{DataFrameView, PageRowRDD}
 import org.tribbloid.spookystuff.utils.Utils
@@ -101,12 +101,12 @@ case class SpookyContext (
   def ensureBrowsersExist(): Unit = {
     val sc = sqlContext.sparkContext
     val numExecutors = sc.defaultParallelism
-    val phantomJSFileName = new Path(Const.phantomJSUrl).getName
+    val phantomJSFileName = DriverFactories.PhantomJS.phantomJSFileName
     val hasPhantomJS = sc.parallelize(0 to numExecutors)
-      .map(_ => Const.phantomJSPath(phantomJSFileName) != null).reduce(_ && _)
+      .map(_ => DriverFactories.PhantomJS.phantomJSPath(phantomJSFileName) != null).reduce(_ && _)
     if (!hasPhantomJS) {
       LoggerFactory.getLogger(this.getClass).info("Deploying PhantomJS...")
-      sc.addFile(Const.phantomJSUrl)
+      sc.addFile(DriverFactories.PhantomJS.phantomJSUrl)
       LoggerFactory.getLogger(this.getClass).info("Deploying PhantomJS Finished")
     }
   }
@@ -128,6 +128,7 @@ case class SpookyContext (
     //every input or noInput will generate a new metrics
     implicit def RDDToPageRowRDD[T: ClassTag](rdd: RDD[T]): PageRowRDD = {
       import org.tribbloid.spookystuff.views._
+
       import scala.reflect._
 
       rdd match {

@@ -16,14 +16,16 @@ limitations under the License.
 package org.tribbloid.spookystuff.dsl
 
 import com.gargoylesoftware.htmlunit.BrowserVersion
+import org.apache.hadoop.fs.Path
 import org.apache.spark.SparkFiles
 import org.openqa.selenium.htmlunit.HtmlUnitDriver
 import org.openqa.selenium.phantomjs.{PhantomJSDriver, PhantomJSDriverService}
 import org.openqa.selenium.remote.CapabilityType._
 import org.openqa.selenium.remote.{BrowserType, CapabilityType, DesiredCapabilities}
 import org.openqa.selenium.{Capabilities, Platform, Proxy}
-import org.tribbloid.spookystuff.session.{ProxySetting, CleanWebDriver, CleanWebDriverHelper}
-import org.tribbloid.spookystuff.{Const, SpookyContext}
+import org.slf4j.LoggerFactory
+import org.tribbloid.spookystuff.SpookyContext
+import org.tribbloid.spookystuff.session.{CleanWebDriver, CleanWebDriverHelper, ProxySetting}
 
 //TODO: switch to DriverPool! Tor cannot handle too many connection request.
 sealed abstract class DriverFactory extends Serializable{
@@ -39,13 +41,28 @@ sealed abstract class DriverFactory extends Serializable{
 
 object DriverFactories {
 
+  object PhantomJS {
+
+    def phantomJSPath(fileName: String) = Option(System.getenv("PHANTOMJS_PATH"))
+      .getOrElse{
+      LoggerFactory.getLogger(this.getClass).info("$PHANTOMJS_PATH does not exist, using tempfile instead")
+      SparkFiles.get(fileName)
+    }
+
+    //used in sc.addFile(...)
+    val phantomJSUrl = System.getenv("PHANTOMJS_PATH") //TODO: download it from public resource
+    val phantomJSFileName = new Path(phantomJSUrl).getName
+  }
+
   case class PhantomJS(
-                        exePath: String = Const.phantomJSPath,
+                        fileName: String = PhantomJS.phantomJSFileName,
                         loadImages: Boolean = false
                         )
     extends DriverFactory {
 
-    val baseCaps = new DesiredCapabilities(BrowserType.PHANTOMJS, "", Platform.ANY)
+    def exePath = PhantomJS.phantomJSPath(fileName)
+
+    @transient lazy val baseCaps = new DesiredCapabilities(BrowserType.PHANTOMJS, "", Platform.ANY)
     baseCaps.setJavascriptEnabled(true); //< not really needed: JS enabled by default
     baseCaps.setCapability(CapabilityType.SUPPORTS_FINDING_BY_CSS, true)
     //  baseCaps.setCapability(CapabilityType.HAS_NATIVE_EVENTS, false)
@@ -76,6 +93,7 @@ object DriverFactories {
       result.merge(capabilities)
     }
 
+    //called from executors
     override def _newInstance(capabilities: Capabilities, spooky: SpookyContext): CleanWebDriver = {
 
       new PhantomJSDriver(newCap(capabilities, spooky)) with CleanWebDriverHelper
