@@ -43,7 +43,7 @@ class TestPage extends SpookyEnvSuite {
   }
 
 //  test("s3 save and load") {
-//    spooky.setRoot(s"s3n://spooky-unit/")
+//    spooky.setRoot(s"s3a://spooky-unit/")
 //
 //    val results = Trace(
 //      Visit("http://en.wikipedia.org") ::

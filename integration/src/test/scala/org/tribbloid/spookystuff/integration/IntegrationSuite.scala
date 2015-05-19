@@ -58,7 +58,7 @@ abstract class IntegrationSuite extends FunSuite with BeforeAndAfterAll {
 
   lazy val roots = Seq(
     "file://"+System.getProperty("user.home")+"/spooky-integration/"
-    //    "s3n://spooky-integration/"
+    //    "s3a://spooky-integration/"
   )
 
   lazy val drivers = Seq(

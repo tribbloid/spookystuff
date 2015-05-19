@@ -53,7 +53,7 @@ $SPARK_HOME/bin/spark-submit \
   --master $EXAMPLE_MASTER \
   --class $EXAMPLE_CLASS \
   --executor-memory 2G \
-  --conf spooky.root=s3n://spooky- \
+  --conf spooky.root=s3a://spooky- \
   "$SPOOKY_EXAMPLES_JAR" \
   "$@"
 
