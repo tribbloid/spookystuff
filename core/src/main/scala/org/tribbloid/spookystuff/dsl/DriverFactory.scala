@@ -16,6 +16,7 @@ limitations under the License.
 package org.tribbloid.spookystuff.dsl
 
 import com.gargoylesoftware.htmlunit.BrowserVersion
+import org.apache.spark.SparkFiles
 import org.openqa.selenium.htmlunit.HtmlUnitDriver
 import org.openqa.selenium.phantomjs.{PhantomJSDriver, PhantomJSDriverService}
 import org.openqa.selenium.remote.CapabilityType._
@@ -39,7 +40,7 @@ sealed abstract class DriverFactory extends Serializable{
 object DriverFactories {
 
   case class PhantomJS(
-                        phantomJSPath: String = Const.phantomJSPath,
+                        exePath: String = Const.phantomJSPath,
                         loadImages: Boolean = false
                         )
     extends DriverFactory {
@@ -51,7 +52,7 @@ object DriverFactories {
     baseCaps.setCapability(TAKES_SCREENSHOT, true)
     baseCaps.setCapability(ACCEPT_SSL_CERTS, true)
     baseCaps.setCapability(SUPPORTS_ALERTS, true)
-    baseCaps.setCapability(PhantomJSDriverService.PHANTOMJS_EXECUTABLE_PATH_PROPERTY, phantomJSPath)
+    baseCaps.setCapability(PhantomJSDriverService.PHANTOMJS_EXECUTABLE_PATH_PROPERTY, exePath)
     baseCaps.setCapability(PhantomJSDriverService.PHANTOMJS_PAGE_SETTINGS_PREFIX + "loadImages", loadImages)
 
     //    baseCaps.setCapability(PhantomJSDriverService.PHANTOMJS_PAGE_SETTINGS_PREFIX+"resourceTimeout", Const.resourceTimeout*1000)

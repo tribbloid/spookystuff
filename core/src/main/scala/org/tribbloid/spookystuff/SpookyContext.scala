@@ -4,6 +4,7 @@ import org.apache.hadoop.conf.Configuration
 import org.apache.spark._
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.{DataFrame, SQLContext}
+import org.slf4j.LoggerFactory
 import org.tribbloid.spookystuff.entity.{Key, KeyLike, PageRow}
 import org.tribbloid.spookystuff.sparkbinding.{DataFrameView, PageRowRDD}
 import org.tribbloid.spookystuff.utils.Utils
@@ -57,14 +58,9 @@ case class SpookyContext (
                            @transient sqlContext: SQLContext, //can't be used on executors
                            @transient private val _spookyConf: SpookyConf = new SpookyConf(), //can only be used on executors after broadcast
                            var metrics: Metrics = new Metrics() //accumulators cannot be broadcasted,
-                           //                           lookup: Lookup = Lookup()
-                           // shared by multiple initialized PageRowRDDs. Make sure all attempts to change it are blocking! Should be fast as long as no action happens.
-                           // this is disabled in favour of rdd cache in PageRowRDD
                            ) {
 
-  //  if (lookup.rdd == null) {
-  //    lookup.rdd = sqlContext.sparkContext.emptyRDD[(LookupKey, SquashedRow)]//.partitionBy(new HashPartitioner(conf.defaultParallelism))
-  //  }
+  ensureBrowsersExist()
 
   def this(sqlContext: SQLContext) {
     this(sqlContext, new SpookyConf(), new Metrics())
@@ -101,6 +97,18 @@ case class SpookyContext (
   def getContextForNewInput = if (conf.sharedMetrics) this
   else this.copy(metrics = new Metrics())
 
+  def ensureBrowsersExist(): Unit = {
+    val sc = sqlContext.sparkContext
+    val numExecutors = sc.defaultParallelism
+    val hasPhantomJS = sc.parallelize(0 to numExecutors)
+      .map(_ => Const.phantomJSPath != null).reduce(_ && _)
+    if (!hasPhantomJS) {
+      LoggerFactory.getLogger(this.getClass).info("Deploying PhantomJS...")
+      sc.addFile(Const.phantomJSUrl)
+      LoggerFactory.getLogger(this.getClass).info("Deploying PhantomJS Finished")
+    }
+  }
+
   object dsl {
 
     implicit def DataFrameToPageRowRDD(df: DataFrame): PageRowRDD = {
@@ -118,7 +126,6 @@ case class SpookyContext (
     //every input or noInput will generate a new metrics
     implicit def RDDToPageRowRDD[T: ClassTag](rdd: RDD[T]): PageRowRDD = {
       import org.tribbloid.spookystuff.views._
-
       import scala.reflect._
 
       rdd match {
