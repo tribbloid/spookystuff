@@ -50,10 +50,10 @@ object DriverFactories {
     }
 
     //used in sc.addFile(...)
+    //TODO: download it from public resource
     @transient val phantomJSUrl = Option(System.getenv("PHANTOMJS_PATH")).getOrElse {
       sys.error("Please set PHANTOMJS_PATH on Spark driver system environment")
     }
-    //TODO: download it from public resource
     @transient val phantomJSFileName = new Path(phantomJSUrl).getName
   }
 

@@ -61,7 +61,7 @@ case class SpookyContext (
                            var metrics: Metrics = new Metrics() //accumulators cannot be broadcasted,
                            ) {
 
-  ensureBrowsersExist()
+  val browserExists = browsersExist()
 
   def this(sqlContext: SQLContext) {
     this(sqlContext, new SpookyConf(), new Metrics())
@@ -98,17 +98,23 @@ case class SpookyContext (
   def getContextForNewInput = if (conf.sharedMetrics) this
   else this.copy(metrics = new Metrics())
 
-  def ensureBrowsersExist(): Unit = {
+  private def browsersExist(): Boolean = {
     val sc = sqlContext.sparkContext
     val numExecutors = sc.defaultParallelism
     val phantomJSFileName = DriverFactories.PhantomJS.phantomJSFileName
+    assert(phantomJSFileName!=null)
     val hasPhantomJS = sc.parallelize(0 to numExecutors)
-      .map(_ => DriverFactories.PhantomJS.phantomJSPath(phantomJSFileName) != null).reduce(_ && _)
+      .map{
+      _ =>
+        DriverFactories.PhantomJS.phantomJSPath(phantomJSFileName) != null
+    }
+      .reduce(_ && _)
     if (!hasPhantomJS) {
       LoggerFactory.getLogger(this.getClass).info("Deploying PhantomJS...")
       sc.addFile(DriverFactories.PhantomJS.phantomJSUrl)
       LoggerFactory.getLogger(this.getClass).info("Deploying PhantomJS Finished")
     }
+    true
   }
 
   object dsl {
