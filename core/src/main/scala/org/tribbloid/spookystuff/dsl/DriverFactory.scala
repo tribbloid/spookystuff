@@ -49,12 +49,13 @@ object DriverFactories {
       SparkFiles.get(fileName)
     }
 
-    //used in sc.addFile(...)
+    //used in sc.addFile(...), only accessable from driver
     //TODO: download it from public resource
-    @transient val phantomJSUrl = Option(System.getenv("PHANTOMJS_PATH")).getOrElse {
+    def phantomJSUrl = Option(System.getenv("PHANTOMJS_PATH")).getOrElse {
       sys.error("Please set PHANTOMJS_PATH on Spark driver system environment")
     }
-    @transient val phantomJSFileName = new Path(phantomJSUrl).getName
+    //only accessable from driver
+    def phantomJSFileName = new Path(phantomJSUrl).getName
   }
 
   case class PhantomJS(

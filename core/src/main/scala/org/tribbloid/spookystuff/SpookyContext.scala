@@ -61,7 +61,7 @@ case class SpookyContext (
                            var metrics: Metrics = new Metrics() //accumulators cannot be broadcasted,
                            ) {
 
-  val browserExists = browsersExist()
+  val browsersExist = _browsersExist()
 
   def this(sqlContext: SQLContext) {
     this(sqlContext, new SpookyConf(), new Metrics())
@@ -98,7 +98,7 @@ case class SpookyContext (
   def getContextForNewInput = if (conf.sharedMetrics) this
   else this.copy(metrics = new Metrics())
 
-  private def browsersExist(): Boolean = {
+  private def _browsersExist(): Boolean = {
     val sc = sqlContext.sparkContext
     val numExecutors = sc.defaultParallelism
     val phantomJSFileName = DriverFactories.PhantomJS.phantomJSFileName
