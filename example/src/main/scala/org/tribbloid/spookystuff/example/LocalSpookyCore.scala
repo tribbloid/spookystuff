@@ -52,8 +52,11 @@ trait LocalSpookyCore {
     val p = new Properties()
     p.load(this.getClass.getResourceAsStream("/conf.properties"))
 
-    val preview = Option(System.getProperty("spooky.preview")).getOrElse(p.getProperty("spooky.preview"))
-    if (preview == "true") {
+    val preview = args.headOption.orElse(
+      Option(System.getProperty("spooky.preview.mode"))
+    )
+      .getOrElse(p.getProperty("spooky.preview.mode"))
+    if (preview == "preview") {
       spooky.conf.maxJoinOrdinal = maxJoinOrdinal
       spooky.conf.maxExploreDepth = maxExploreDepth
     }
