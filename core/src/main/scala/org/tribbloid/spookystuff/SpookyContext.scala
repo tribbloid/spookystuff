@@ -1,6 +1,7 @@
 package org.tribbloid.spookystuff
 
 import org.apache.hadoop.conf.Configuration
+import org.apache.hadoop.fs.Path
 import org.apache.spark._
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.{DataFrame, SQLContext}
@@ -100,8 +101,9 @@ case class SpookyContext (
   def ensureBrowsersExist(): Unit = {
     val sc = sqlContext.sparkContext
     val numExecutors = sc.defaultParallelism
+    val phantomJSFileName = new Path(Const.phantomJSUrl).getName
     val hasPhantomJS = sc.parallelize(0 to numExecutors)
-      .map(_ => Const.phantomJSPath != null).reduce(_ && _)
+      .map(_ => Const.phantomJSPath(phantomJSFileName) != null).reduce(_ && _)
     if (!hasPhantomJS) {
       LoggerFactory.getLogger(this.getClass).info("Deploying PhantomJS...")
       sc.addFile(Const.phantomJSUrl)

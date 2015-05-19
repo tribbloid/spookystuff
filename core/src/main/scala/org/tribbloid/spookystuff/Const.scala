@@ -36,15 +36,14 @@ object Const {
 
   val hardTerminateOverhead: Duration = 20.seconds
 
-  def phantomJSPath = Option(System.getenv("PHANTOMJS_PATH"))
+  def phantomJSPath(fileName: String) = Option(System.getenv("PHANTOMJS_PATH"))
     .getOrElse{
     LoggerFactory.getLogger(this.getClass).info("$PHANTOMJS_PATH does not exist, using tempfile instead")
-    SparkFiles.get(phantomJSFileName)
+    SparkFiles.get(fileName)
   }
 
   //used in sc.addFile(...)
   val phantomJSUrl = System.getenv("PHANTOMJS_PATH") //TODO: download it from public resource
-  private val phantomJSFileName = new Path(phantomJSUrl).getName
 
   val defaultInputKey = "_"
   val keyDelimiter = "'"
