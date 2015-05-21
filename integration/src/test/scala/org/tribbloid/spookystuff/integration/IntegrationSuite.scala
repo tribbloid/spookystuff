@@ -27,24 +27,15 @@ abstract class IntegrationSuite extends FunSuite with BeforeAndAfterAll {
     //      .set("spark.kryo.registrationRequired", "true")
 
     sc = new SparkContext(conf)
-
-    try {
-      val prop = new Properties()
-
-      prop.load(ClassLoader.getSystemResourceAsStream("rootkey.csv"))
-      val AWSAccessKeyId = prop.getProperty("AWSAccessKeyId")
-      val AWSSecretKey = prop.getProperty("AWSSecretKey")
-
-      sc.hadoopConfiguration
-        .set("fs.s3n.awsAccessKeyId", AWSAccessKeyId)
-      sc.hadoopConfiguration
-        .set("fs.s3n.awsSecretAccessKey", AWSSecretKey)
-    }
-    catch {
-      case e: Throwable => println("rootkey.csv not provided")
-    }
-
     sql = new SQLContext(sc)
+
+    //TODO: why do I have to do this?
+    Option(System.getProperty("fs.s3n.awsAccessKeyId")).foreach {
+      sc.hadoopConfiguration.set("fs.s3n.awsAccessKeyId", _)
+    }
+    Option(System.getProperty("fs.s3n.awsSecretAccessKey")).foreach {
+      sc.hadoopConfiguration.set("fs.s3n.awsSecretAccessKey", _)
+    }
 
     super.beforeAll()
   }
@@ -56,10 +47,28 @@ abstract class IntegrationSuite extends FunSuite with BeforeAndAfterAll {
     super.afterAll()
   }
 
-  lazy val roots = Seq(
-    "file://"+System.getProperty("user.home")+"/spooky-integration/"
-//    "s3n://spooky-integration/"
-  )
+  lazy val roots = {
+
+    val local = Seq("file://"+System.getProperty("user.home")+"/spooky-integration/")
+
+    try {
+      val prop = new Properties()
+
+      prop.load(ClassLoader.getSystemResourceAsStream("rootkey.csv"))
+      val AWSAccessKeyId = prop.getProperty("AWSAccessKeyId")
+      val AWSSecretKey = prop.getProperty("AWSSecretKey")
+
+      System.setProperty("fs.s3n.awsAccessKeyId", AWSAccessKeyId)
+      System.setProperty("fs.s3n.awsSecretAccessKey", AWSSecretKey)
+
+      local :+ "s3n://spooky-integration/"
+    }
+    catch {
+      case e: Throwable =>
+        println("rootkey.csv not provided: " + e)
+        local
+    }
+  }
 
   lazy val drivers = Seq(
     DriverFactories.PhantomJS(),

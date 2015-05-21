@@ -43,7 +43,10 @@ object DriverFactories {
 
   object PhantomJS {
 
-    def phantomJSPath(fileName: String) = Option(System.getenv("PHANTOMJS_PATH"))
+    def localPathOption = Option(System.getenv("PHANTOMJS_PATH"))
+      .orElse(Option(System.getProperty("phantomjs.binary.path")))
+
+    def path(fileName: String) = localPathOption
       .getOrElse{
       LoggerFactory.getLogger(this.getClass).info("$PHANTOMJS_PATH does not exist, using tempfile instead")
       SparkFiles.get(fileName)
@@ -51,20 +54,20 @@ object DriverFactories {
 
     //used in sc.addFile(...), only accessable from driver
     //TODO: download it from public resource
-    def phantomJSUrl = Option(System.getenv("PHANTOMJS_PATH")).getOrElse {
-      sys.error("Please set PHANTOMJS_PATH on Spark driver system environment")
-    }
+    def resourceUrl = localPathOption.orNull
     //only accessable from driver
-    def phantomJSFileName = new Path(phantomJSUrl).getName
+    def resourceName = Option(resourceUrl).flatMap{
+      _.split("/").lastOption
+    }.orNull
   }
 
   case class PhantomJS(
-                        fileName: String = PhantomJS.phantomJSFileName,
+                        fileName: String = PhantomJS.resourceName,
                         loadImages: Boolean = false
                         )
     extends DriverFactory {
 
-    def exePath = PhantomJS.phantomJSPath(fileName)
+    @transient lazy val exePath = PhantomJS.path(fileName)
 
     @transient lazy val baseCaps = new DesiredCapabilities(BrowserType.PHANTOMJS, "", Platform.ANY)
     baseCaps.setJavascriptEnabled(true); //< not really needed: JS enabled by default

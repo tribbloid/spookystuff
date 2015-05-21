@@ -101,17 +101,17 @@ case class SpookyContext (
   private def _browsersExist(): Boolean = {
     val sc = sqlContext.sparkContext
     val numExecutors = sc.defaultParallelism
-    val phantomJSFileName = DriverFactories.PhantomJS.phantomJSFileName
+    val phantomJSFileName = DriverFactories.PhantomJS.resourceName
     assert(phantomJSFileName!=null)
     val hasPhantomJS = sc.parallelize(0 to numExecutors)
       .map{
       _ =>
-        DriverFactories.PhantomJS.phantomJSPath(phantomJSFileName) != null
+        DriverFactories.PhantomJS.path(phantomJSFileName) != null
     }
       .reduce(_ && _)
     if (!hasPhantomJS) {
       LoggerFactory.getLogger(this.getClass).info("Deploying PhantomJS...")
-      sc.addFile(DriverFactories.PhantomJS.phantomJSUrl)
+      sc.addFile(DriverFactories.PhantomJS.resourceUrl)
       LoggerFactory.getLogger(this.getClass).info("Deploying PhantomJS Finished")
     }
     true
