@@ -21,10 +21,10 @@ abstract class IntegrationSuite extends FunSuite with BeforeAndAfterAll {
   override def beforeAll() {
     val conf: SparkConf = new SparkConf().setAppName("integration")
       .setMaster("local[*]")
-//      .set("spark.serializer", "org.apache.spark.serializer.KryoSerializer")
-//      .set("spark.kryo.registrator", "org.tribbloid.spookystuff.SpookyRegistrator")
-//      .set("spark.kryoserializer.buffer.max.mb", "512")
-//      .set("spark.kryo.registrationRequired", "true")
+    //      .set("spark.serializer", "org.apache.spark.serializer.KryoSerializer")
+    //      .set("spark.kryo.registrator", "org.tribbloid.spookystuff.SpookyRegistrator")
+    //      .set("spark.kryoserializer.buffer.max.mb", "512")
+    //      .set("spark.kryo.registrationRequired", "true")
 
     sc = new SparkContext(conf)
 
@@ -58,7 +58,7 @@ abstract class IntegrationSuite extends FunSuite with BeforeAndAfterAll {
 
   lazy val roots = Seq(
     "file://"+System.getProperty("user.home")+"/spooky-integration/"
-    //    "s3a://spooky-integration/"
+//    "s3n://spooky-integration/"
   )
 
   lazy val drivers = Seq(

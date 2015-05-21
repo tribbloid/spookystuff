@@ -82,7 +82,7 @@ class TestPages extends SpookyEnvSuite {
 
 //  test ("s3 cache") {
 //
-//    spooky.setRoot(s"s3a://spooky-unit/")
+//    spooky.setRoot(s"s3n://spooky-unit/")
 //    spooky.pageExpireAfter = 10.seconds
 //
 //    Pages.autoCache(page, page.head.uid.backtrace, spooky)

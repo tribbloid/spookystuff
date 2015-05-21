@@ -60,7 +60,7 @@
                             <relocations>
                                 <relocation>
                                     <pattern>org.apache.http</pattern>
-                                    <shadedPattern>org.shaded.apache.http</shadedPattern>
+                                    <shadedPattern>org.spookystuff-project.apache.http</shadedPattern>
                                 </relocation>
                             </relocations>
                         </configuration>

@@ -16,19 +16,19 @@
             <groupId>org.tribbloid.spookystuff</groupId>
             <artifactId>spookystuff-core</artifactId>
             <version>${project.version}</version>
-            <!--<scope>provided</scope>-->
+            <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>org.apache.spark</groupId>
             <artifactId>spark-core_${scala.binary.version}</artifactId>
             <version>${spark.version}</version>
-            <!--<scope>provided</scope>-->
+            <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>org.apache.spark</groupId>
             <artifactId>spark-sql_${scala.binary.version}</artifactId>
             <version>${spark.version}</version>
-            <!--<scope>provided</scope>-->
+            <scope>provided</scope>
         </dependency>
     </dependencies>
 
@@ -63,7 +63,7 @@
                             <relocations>
                                 <relocation>
                                     <pattern>org.apache.http</pattern>
-                                    <shadedPattern>org.shaded.apache.http</shadedPattern>
+                                    <shadedPattern>org.spookystuff-project.apache.http</shadedPattern>
                                 </relocation>
                             </relocations>
                         </configuration>

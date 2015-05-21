@@ -3,8 +3,7 @@ package org.tribbloid.spookystuff.actions
 import java.net.InetSocketAddress
 
 import org.apache.commons.io.IOUtils
-import org.apache.http.{StatusLine, HttpHost}
-import org.apache.http.client.config.{CookieSpecs, RequestConfig}
+import org.apache.http.client.config.RequestConfig
 import org.apache.http.client.methods.HttpGet
 import org.apache.http.client.protocol.HttpClientContext
 import org.apache.http.client.{ClientProtocolException, RedirectException}
@@ -13,6 +12,7 @@ import org.apache.http.conn.socket.ConnectionSocketFactory
 import org.apache.http.conn.ssl.SSLContexts
 import org.apache.http.impl.client.HttpClients
 import org.apache.http.impl.conn.PoolingHttpClientConnectionManager
+import org.apache.http.{HttpHost, StatusLine}
 import org.openqa.selenium.{OutputType, TakesScreenshot}
 import org.tribbloid.spookystuff.entity.PageRow
 import org.tribbloid.spookystuff.expressions.{Expression, Literal}
