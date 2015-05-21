@@ -16,7 +16,6 @@ limitations under the License.
 package org.tribbloid.spookystuff.dsl
 
 import com.gargoylesoftware.htmlunit.BrowserVersion
-import org.apache.hadoop.fs.Path
 import org.apache.spark.SparkFiles
 import org.openqa.selenium.htmlunit.HtmlUnitDriver
 import org.openqa.selenium.phantomjs.{PhantomJSDriver, PhantomJSDriverService}
@@ -49,7 +48,7 @@ object DriverFactories {
     def path(fileName: String) = localPathOption
       .getOrElse{
       LoggerFactory.getLogger(this.getClass).info("$PHANTOMJS_PATH does not exist, using tempfile instead")
-      SparkFiles.get(fileName)
+      Option(fileName).map(SparkFiles.get)
     }
 
     //used in sc.addFile(...), only accessable from driver
