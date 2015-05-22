@@ -48,7 +48,7 @@ object DriverFactories {
     def path(fileName: String) = localPathOption
       .getOrElse{
       LoggerFactory.getLogger(this.getClass).info("$PHANTOMJS_PATH does not exist, using tempfile instead")
-      Option(fileName).map(SparkFiles.get)
+      Option(fileName).map(SparkFiles.get).orNull
     }
 
     //used in sc.addFile(...), only accessable from driver
