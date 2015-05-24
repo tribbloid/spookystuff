@@ -65,6 +65,7 @@
         <module>integration</module>
         <module>example</module>
         <module>shell</module>
+        <module>lib</module>
     </modules>
 
     <dependencies>
