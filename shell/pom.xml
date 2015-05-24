@@ -18,15 +18,15 @@
 
     <dependencies>
         <dependency>
+            <groupId>org.tribbloid.spookystuff</groupId>
+            <artifactId>spookystuff-core</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
             <groupId>org.apache.spark</groupId>
             <artifactId>spark-repl_${scala.binary.version}</artifactId>
             <version>${spark.version}</version>
             <scope>provided</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.tribbloid.spookystuff</groupId>
-            <artifactId>spookystuff-core</artifactId>
-            <version>${project.version}</version>
         </dependency>
     </dependencies>
 
