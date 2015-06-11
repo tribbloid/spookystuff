@@ -36,7 +36,9 @@ case class Metrics(
 
                     pagesFetched: Accumulator[Int] = Metrics.accumulator(0, "pagesFetched"),
                     pagesFetchedFromWeb: Accumulator[Int] = Metrics.accumulator(0, "pagesFetchedFromWeb"),
-                    pagesFetchedFromCache: Accumulator[Int] = Metrics.accumulator(0, "pagesFetchedFromCache")
+                    pagesFetchedFromCache: Accumulator[Int] = Metrics.accumulator(0, "pagesFetchedFromCache"),
+
+                    pagesSaved: Accumulator[Int] = Metrics.accumulator(0, "pagesSaved")
                     ) {
 
   def toJSON: String = {

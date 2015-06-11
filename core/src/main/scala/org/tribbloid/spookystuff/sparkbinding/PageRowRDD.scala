@@ -167,7 +167,7 @@ class PageRowRDD private (
 
   /**
    * save each page to a designated directory
-   * this is a narrow transformation, use it to save overhead for scheduling
+   * this is an action that will be triggered immediately
    * support many file systems including but not limited to HDFS, S3 and local HDD
    * @param overwrite if a file with the same name already exist:
    *                  true: overwrite it
@@ -184,42 +184,25 @@ class PageRowRDD private (
     this.spooky.broadcast()
     val spooky = this.spooky
 
-    val saved = this.map {
+    this.foreach {
 
       pageRow =>
         val pathStr = path(pageRow)
 
         pathStr.foreach {
           str =>
-            val strCanon = str
             val page =
               if (name == null || name.name == Const.onlyPageWildcard) pageRow.getOnlyPage
               else pageRow.getPage(name.name)
 
-            page.foreach(_.save(Seq(strCanon.toString), overwrite)(spooky))
+            spooky.metrics.pagesSaved += 1
+
+            page.foreach(_.save(Seq(str.toString), overwrite)(spooky))
         }
         pageRow
     }
-    this.copy(self = saved)
+    this
   }
-
-  /**
-   * same as saveAs
-   * but this is an action that will be executed immediately
-   * @param overwrite if a file with the same name already exist:
-   *                  true: overwrite it
-   *                  false: append an unique suffix to the new file name
-   * @return an array of file paths
-   */
-  def dumpPages(
-                 path: Expression[String],
-                 name: Symbol = null,
-                 overwrite: Boolean = false
-                 ): Array[ListSet[String]] = this.savePages(path, name, overwrite).flatMap {
-    _.pages.map {
-      _.saved
-    }
-  }.collect()
 
   //  /**
   //   * extract parts of each Page and insert into their respective context

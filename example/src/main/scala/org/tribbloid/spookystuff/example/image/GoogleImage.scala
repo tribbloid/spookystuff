@@ -11,13 +11,12 @@ import org.tribbloid.spookystuff.example.QueryCore
 object GoogleImage extends QueryCore {
 
   override def doMain(spooky: SpookyContext) = {
-    import spooky.dsl._
 
     spooky
       .fetch(
         Visit("http://www.utexas.edu/world/univ/alpha/")
       )
-      .flatten($"div.box2 a".text ~ 'name, maxOrdinal = 10)
+      .flatten($"div.box2 a".texts ~ 'name)
       .repartition(10)
       .fetch(
         Visit("http://images.google.com/")
@@ -27,6 +26,7 @@ object GoogleImage extends QueryCore {
           +> WaitFor("div#search")
       )
       .wgetJoin($"div#search img".src, maxOrdinal = 1)
+      .persist()
       .savePages(
         x"file://${System.getProperty("user.home")}/spooky-example/$appName/images/${'name}"
       )
