@@ -76,8 +76,8 @@ class SpookyConf (
                    var pageNotExpiredSince: Option[Date] = None,
 
                    var cachePath: CacheFilePath[String] = CacheFilePaths.Hierarchical,
-                   var autoSavePath: PageFilePath[String] = PageFilePaths.TimeStampName(CacheFilePaths.Hierarchical),
-                   var errorDumpPath: PageFilePath[String] = PageFilePaths.TimeStampName(CacheFilePaths.Hierarchical),
+                   var autoSavePath: PageFilePath[String] = PageFilePaths.UUIDName(CacheFilePaths.Hierarchical),
+                   var errorDumpPath: PageFilePath[String] = PageFilePaths.UUIDName(CacheFilePaths.Hierarchical),
 
                    var defaultParallelism: RDD[_] => Int = Parallelism.PerCore(8),
 

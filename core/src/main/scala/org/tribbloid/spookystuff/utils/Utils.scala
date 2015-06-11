@@ -115,7 +115,7 @@ the opening curly brace {,
 These special characters are often called "metacharacters".
   */
   def canonizeFileName(name: String): String = {
-    var result = name.replaceAll("[ ]","_").replaceAll("""[^0-9a-zA-Z!_.*'()-]+""","*")
+    var result = name.replaceAll("[ ]","_").replaceAll("""[^0-9a-zA-Z!_.*'()-]+""","*") //TODO: * is a metacharacter! why it is used as a replace string???
 
     if (result.length > 255) result = result.substring(0, 255)
 
