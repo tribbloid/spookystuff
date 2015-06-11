@@ -14,10 +14,9 @@ object GoogleImage extends QueryCore {
 
     spooky
       .fetch(
-        Visit("http://www.utexas.edu/world/univ/alpha/")
+        Wget("http://www.utexas.edu/world/univ/alpha/")
       )
       .flatten($"div.box2 a".texts ~ 'name)
-      .repartition(10)
       .fetch(
         Visit("http://images.google.com/")
           +> WaitFor("form[action=\"/search\"]")

@@ -16,11 +16,20 @@ class TestExprView extends SpookyEnvSuite {
     Wget("http://www.wikipedia.org/") :: Nil
   ).resolve(spooky).toArray
   lazy val row = PageRow(pageLikes = page)
-    .select($"title".head.text.~('abc))
+    .select($"title".head.text ~ 'abc)
     .head
 
   test("symbol as Expr"){
     assert('abc.apply(row) === Some("Wikipedia"))
+  }
+
+  test("defaultAs should not rename an Alias") {
+    val renamed = 'abc as 'name1
+    assert(renamed.name == "name1")
+    val renamed2 = renamed as 'name2
+    assert(renamed2.name == "name2")
+    val notRenamed = renamed defaultAs 'name2
+    assert(notRenamed.name == "name1")
   }
 
   test("andThen"){

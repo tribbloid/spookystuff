@@ -19,7 +19,6 @@ class TestPageRowRDD extends SpookyEnvSuite {
       .fetch(Wget("http://en.wikipedia.org")).persist()
     first.checkpoint()
     first.count()
-    first.unpersist()
 
     val second = first.wgetJoin($"a".href, joinType = Append)
       .select($.uri ~ 'uri)
@@ -31,5 +30,81 @@ class TestPageRowRDD extends SpookyEnvSuite {
 
     assert(result.length == 2)
     assert(first.spooky.metrics.pagesFetched.value == 2)
+  }
+
+  test("toDF() should not run preceding transformation multiple times") {
+    val acc = sc.accumulator(0)
+
+    spooky
+      .fetch(
+        Wget("http://www.wikipedia.org/")
+      )
+      .select(
+        $.andFlatMap{
+          page =>
+            acc += 1
+            page.saved.headOption
+        } ~ 'path
+      )
+      .toDF().count()
+
+    assert(acc.value == 2) //TODO: should be 1: reduced to 1 after unpersistAfterRendering() implemented
+  }
+
+  test("toCSV() should not run preceding transformation multiple times") {
+    val acc = sc.accumulator(0)
+
+    spooky
+      .fetch(
+        Wget("http://www.wikipedia.org/")
+      )
+      .select(
+        $.andFlatMap{
+          page =>
+            acc += 1
+            page.saved.headOption
+        } ~ 'path
+      )
+      .toCSV().count()
+
+    assert(acc.value == 2) //TODO: should be 1: reduced to 1 after unpersistAfterRendering() implemented
+  }
+
+  test("toJSON() should not run preceding transformation multiple times") {
+    val acc = sc.accumulator(0)
+
+    spooky
+      .fetch(
+        Wget("http://www.wikipedia.org/")
+      )
+      .select(
+        $.andFlatMap{
+          page =>
+            acc += 1
+            page.saved.headOption
+        } ~ 'path
+      )
+      .toJSON().count()
+
+    assert(acc.value == 1)
+  }
+
+  test("toMapRDD() should not run preceding transformation multiple times") {
+    val acc = sc.accumulator(0)
+
+    spooky
+      .fetch(
+        Wget("http://www.wikipedia.org/")
+      )
+      .select(
+        $.andFlatMap{
+          page =>
+            acc += 1
+            page.saved.headOption
+        } ~ 'path
+      )
+      .toMapRDD().count()
+
+    assert(acc.value == 1)
   }
 }
