@@ -23,20 +23,20 @@ class InnerJoinIT extends IntegrationSuite {
       )
 
     val joined = base
-      .join($"div.sidebar-nav a", ordinalKey = 'i1)(
+      .join(S"div.sidebar-nav a", ordinalKey = 'i1)(
         Visit('A.href),
         joinType = Inner,
         flattenPagesOrdinalKey = 'page
       )(
         'A.text ~ 'category
       )
-      .join($"a.subcategory-link", ordinalKey = 'i2)(
+      .join(S"a.subcategory-link", ordinalKey = 'i2)(
         Visit('A.href),
         joinType = Inner
       )(
         'A.text ~ 'subcategory
       )
-      .select($"h1".text ~ 'header)
+      .select(S"h1".text ~ 'header)
       .toDF(sort = true)
 
     assert(

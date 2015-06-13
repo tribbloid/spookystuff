@@ -31,11 +31,11 @@ object TripAdvisor extends QueryCore {
         Visit('_)
           +> Try(Click("span.partnerRvw span.taLnk") :: Nil)
       )
-      .explore($"a.sprite-pageNext", depthKey = 'page)(
+      .explore(S"a.sprite-pageNext", depthKey = 'page)(
         Visit('A.href)
           +> Try(Click("span.partnerRvw span.taLnk")::Nil)
       )()
-      .flatSelect($"div.reviewSelector", ordinalKey = 'row)(
+      .flatSelect(S"div.reviewSelector", ordinalKey = 'row)(
         A"p".last.text ~ 'comment,
         A"span.ratingDate".last.text ~ 'date_status,
         A"div.innerBubble img.sprite-rating_s_fill".last.attr("alt") ~ 'stars,

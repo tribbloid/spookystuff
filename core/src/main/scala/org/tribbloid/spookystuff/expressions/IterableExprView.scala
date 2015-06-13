@@ -25,13 +25,19 @@ final class IterableExprView[T: ClassTag](self: Expression[Iterable[T]]) {
   },
   s"get($i)")
 
+  def slice(from: Int = Int.MinValue, until: Int = Int.MaxValue): Expression[Iterable[T]] = self.andMap {
+    _.slice(from, until)
+  }
+
   def size: Expression[Int] = self.andMap(_.size, "size")
 
-  def isEmpty: NamedFunction1[PageRow, Boolean] = self.andThen(NamedFunction1(!_.exists(_.nonEmpty), "isEmpty"))
+  def isEmpty: Expression[Boolean] = self.andMap(_.isEmpty)
 
-  def nonEmpty: NamedFunction1[PageRow, Boolean] = self.andThen(NamedFunction1(_.exists(_.nonEmpty), "nonEmpty"))
+  def nonEmpty: Expression[Boolean] = self.andMap(_.nonEmpty)
 
-  def mkString(sep: String): Expression[String] = self.andMap(_.mkString(sep), s"mkString($sep)")
+  def mkString(sep: String = ""): Expression[String] = self.andMap(_.mkString(sep), s"mkString($sep)")
+
+  def mkString(start: String, sep: String, end: String): Expression[String] = self.andMap(_.mkString(start, sep, end), s"mkString($sep)")
 
   //TODO: Why IterableExprView.filter cannot be applied on ZippedExpr? is the scala compiler malfunctioning?
   def zipWithKeys(keys: Expression[Any]): ZippedExpr[Any, T] =

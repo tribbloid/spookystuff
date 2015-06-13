@@ -20,9 +20,9 @@ object WhatsMyUserAgent extends QueryCore {
         Visit("http://www.whatsmyuseragent.com/")
       )
       .select(
-        $"h3.info".text ~ 'ip,
-        $"h2.info".text ~ 'user_agent,
-        $"table.table-striped".text ~ 'referer
+        S"h3.info".text ~ 'ip,
+        S"h2.info".text ~ 'user_agent,
+        S"table.table-striped".text ~ 'referer
       )
       .toDF()
   }

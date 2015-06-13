@@ -44,7 +44,7 @@ abstract class ProxyFeedCore extends QueryCore {
         ),
         flattenPagesOrdinalKey = 'page
       )
-      .flatSelect($"table.dataTable tbody tr")(
+      .flatSelect(S"table.dataTable tbody tr")(
         A("td", 0).text as 'IP,
         A("td", 1).text as 'Port,
         A("td", 2).text as 'Code,
@@ -66,7 +66,7 @@ abstract class ProxyFeedCore extends QueryCore {
         ),
         flattenPagesOrdinalKey = 'page
       )
-      .flatSelect($"table.dataTable tbody tr")(
+      .flatSelect(S"table.dataTable tbody tr")(
         A("td", 0).text as 'IP,
         A("td", 1).text as 'Port,
         A("td", 2).text as 'Code,

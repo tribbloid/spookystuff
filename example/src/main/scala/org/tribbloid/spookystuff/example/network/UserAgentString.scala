@@ -19,7 +19,7 @@ object UserAgentString extends QueryCore {
       .fetch(
         Wget("http://www.useragentstring.com/pages/Browserlist/")
       )
-      .select($"li a".text ~ 'agent_string)
+      .select(S"li a".text ~ 'agent_string)
       .toDF()
   }
 }

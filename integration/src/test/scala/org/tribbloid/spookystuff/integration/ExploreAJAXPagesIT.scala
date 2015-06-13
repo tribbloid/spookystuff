@@ -32,15 +32,15 @@ class ExploreAJAXPagesIT extends IntegrationSuite {
       )
 
     val result = base
-      .explore($"div.sidebar-nav a", depthKey = 'depth, ordinalKey = 'index)(
+      .explore(S"div.sidebar-nav a", depthKey = 'depth, ordinalKey = 'index)(
         Visit('A.href)
           +> snapshotAllPages,
         flattenPagesOrdinalKey = 'page_index
       )(
-        $"button.btn.btn-primary".text ~ 'page_number,
+        S"button.btn.btn-primary".text ~ 'page_number,
         'A.text ~ 'category,
         'first.children("h1").text ~ 'title,
-        $"a.title".size ~ 'num_product
+        S"a.title".size ~ 'num_product
       )
       .toDF(sort = true)
 

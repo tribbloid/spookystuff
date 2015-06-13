@@ -19,7 +19,7 @@ class FlatSelectIT extends IntegrationSuite {
       .fetch(
         Wget("http://www.wikipedia.org/")
       )
-      .flatSelect($"div.central-featured-lang")(
+      .flatSelect(S"div.central-featured-lang")(
         'A.attr("lang"),
         A"a".href,
         A"a em".text,

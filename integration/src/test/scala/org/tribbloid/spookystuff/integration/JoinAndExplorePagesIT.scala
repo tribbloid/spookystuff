@@ -19,22 +19,22 @@ class JoinAndExplorePagesIT extends IntegrationSuite {
       .fetch(
         Wget("http://webscraper.io/test-sites/e-commerce/static")
       )
-      .join($"div.sidebar-nav a", ordinalKey = 'i1)(
+      .join(S"div.sidebar-nav a", ordinalKey = 'i1)(
         Wget('A.href),
         joinType = LeftOuter
       )(
         'A.text ~ 'category
       )
-      .join($"a.subcategory-link", ordinalKey = 'i2)(
+      .join(S"a.subcategory-link", ordinalKey = 'i2)(
         Wget('A.href),
         joinType = LeftOuter
       )(
         'A.text ~ 'subcategory
       )
-      .select($"h1".text ~ 'header)
+      .select(S"h1".text ~ 'header)
 
     val result = joined
-      .explore($"ul.pagination a", depthKey = 'depth, ordinalKey = 'i3)(
+      .explore(S"ul.pagination a", depthKey = 'depth, ordinalKey = 'i3)(
         Wget('A.href)
       )(
         'A.text as 'page

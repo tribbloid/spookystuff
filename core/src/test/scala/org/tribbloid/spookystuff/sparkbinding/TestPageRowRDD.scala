@@ -20,7 +20,7 @@ class TestPageRowRDD extends SpookyEnvSuite {
     first.checkpoint()
     first.count()
 
-    val second = first.wgetJoin($"a".href, joinType = Append)
+    val second = first.wgetJoin(S"a".href, joinType = Append)
       .select($.uri ~ 'uri)
       .repartition(14)
       .toJSON()

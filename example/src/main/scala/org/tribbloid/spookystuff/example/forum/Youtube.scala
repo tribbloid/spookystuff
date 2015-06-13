@@ -25,7 +25,7 @@ object Youtube extends QueryCore{
           1
         )
       )
-      .join($"li.channels-content-item")(
+      .join(S"li.channels-content-item")(
         Visit(A"h3.yt-lockup-title a.yt-uix-tile-link".href)
           +> ExeScript("window.scrollBy(0,500)")
           +> Try(WaitFor("iframe[title^=Comment]").in(50.seconds) :: Nil),
@@ -34,11 +34,11 @@ object Youtube extends QueryCore{
         A"h3.yt-lockup-title".text ~ 'title
       )
       .select(
-        $"div#watch-description-text".text ~ 'description,
-        $"strong.watch-time-text".text ~ 'publish,
-        $"div.watch-view-count".text ~ 'total_view,
-        $"button#watch-like".text ~ 'like_count,
-        $"button#watch-dislike".text ~ 'dislike_count
+        S"div#watch-description-text".text ~ 'description,
+        S"strong.watch-time-text".text ~ 'publish,
+        S"div.watch-view-count".text ~ 'total_view,
+        S"button#watch-like".text ~ 'like_count,
+        S"button#watch-dislike".text ~ 'dislike_count
       )
       .persist()
 
@@ -46,19 +46,19 @@ object Youtube extends QueryCore{
 
     val video = catalog
       .fetch(
-        Visit($"iframe[title^=Comment]".src, hasTitle = false)
+        Visit(S"iframe[title^=Comment]".src, hasTitle = false)
           +> Loop(
           Click("span[title^=Load]")
             +> WaitFor("span.PA[style^=display]").in(10.seconds)
         )
       )
-      .select($"div.DJa".text ~ 'num_comments)
+      .select(S"div.DJa".text ~ 'num_comments)
       .persist()
 
     println(video.count())
 
     val result = video
-      .flatSelect($"div[id^=update]")(
+      .flatSelect(S"div[id^=update]")(
         A"h3.Mpa".text ~ 'comment1,
         A"div.Al".text ~ 'comment2
       ).persist()

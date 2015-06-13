@@ -35,7 +35,7 @@ object Weibo extends QueryCore {
         ),
         flattenPagesOrdinalKey = 'page
       )
-      .flatSelect($"dl.feed_list", ordinalKey = 'item)(
+      .flatSelect(S"dl.feed_list", ordinalKey = 'item)(
         A"dl.feed_list p em".text ~ 'text
       )
       .toDF()

@@ -19,7 +19,7 @@ object WhatIsMyIp extends QueryCore {
       .fetch(
         Visit("http://www.whatsmyip.org/")
       )
-      .select($"h1".text ~ 'ip)
+      .select(S"h1".text ~ 'ip)
       .toDF()
   }
 }

@@ -21,13 +21,13 @@ class ExploreIT extends IntegrationSuite {
       )
 
     val explored = base
-      .explore($"div.sidebar-nav a", depthKey = 'depth, ordinalKey = 'index)(
+      .explore(S"div.sidebar-nav a", depthKey = 'depth, ordinalKey = 'index)(
         Visit('A.href),
         flattenPagesOrdinalKey = 'page
       )(
         'A.text ~ 'category
       )
-      .select($"h1".text ~ 'header)
+      .select(S"h1".text ~ 'header)
       .toDF(sort = true)
 
     assert(

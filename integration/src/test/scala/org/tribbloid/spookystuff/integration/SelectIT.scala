@@ -24,9 +24,9 @@ class SelectIT extends IntegrationSuite {
         $.timestamp,
 //        $"div.central-featured-lang".head ~ 'element,
 //        $"div.central-featured-lang" ~ 'elements,
-        $"div.central-featured-lang em".text ~ 'title,
-        $"div.central-featured-lang strong".texts ~ 'langs,
-        $"a.link-box em".expand(-2 to 1).texts ~ 'expanded
+        S"div.central-featured-lang em".text ~ 'title,
+        S"div.central-featured-lang strong".texts ~ 'langs,
+        S"a.link-box em".expand(-2 to 1).texts ~ 'expanded
       )
       .persist()
 
@@ -61,13 +61,13 @@ class SelectIT extends IntegrationSuite {
 
     intercept[QueryException] {
       pageRowRDD.select(
-        $"div.central-featured-lang strong".text ~ 'title
+        S"div.central-featured-lang strong".text ~ 'title
       )
     }
 
     val RDD2 = pageRowRDD
       .select(
-        $"div.central-featured-lang strong".text ~+ 'title
+        S"div.central-featured-lang strong".text ~+ 'title
       )
       .toDF(sort = true)
 

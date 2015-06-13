@@ -16,16 +16,16 @@ object RottenTomatoes extends QueryCore {
     .fetch(
         Wget("http://www.rottentomatoes.com/")
       )
-      .wgetJoin($"table.top_box_office tr.sidebarInTheaterTopBoxOffice a", ordinalKey = 'rank) //go to movie page, e.g. http://www.rottentomatoes.com/m/guardians_of_the_galaxy/
+      .wgetJoin(S"table.top_box_office tr.sidebarInTheaterTopBoxOffice a", ordinalKey = 'rank) //go to movie page, e.g. http://www.rottentomatoes.com/m/guardians_of_the_galaxy/
       .select(
-        $"h1.movie_title".text ~ 'name,
-        $"div#all-critics-numbers span#all-critics-meter".text ~ 'meter,
-        $"div#all-critics-numbers p.critic_stats span".text ~ 'meter,
-        $"div#all-critics-numbers p.critic_stats span[itemprop=reviewCount]" ~ 'review_count
+        S"h1.movie_title".text ~ 'name,
+        S"div#all-critics-numbers span#all-critics-meter".text ~ 'meter,
+        S"div#all-critics-numbers p.critic_stats span".text ~ 'meter,
+        S"div#all-critics-numbers p.critic_stats span[itemprop=reviewCount]" ~ 'review_count
       )
-      .wgetJoin($"div#contentReviews h3 a") //go to review page, e.g. http://www.rottentomatoes.com/m/guardians_of_the_galaxy/reviews/
-      .wgetExplore($"div.scroller a.right", depthKey = 'page) // grab all pages by using right arrow button
-      .flatSelect($"div#reviews div.media_block")(
+      .wgetJoin(S"div#contentReviews h3 a") //go to review page, e.g. http://www.rottentomatoes.com/m/guardians_of_the_galaxy/reviews/
+      .wgetExplore(S"div.scroller a.right", depthKey = 'page) // grab all pages by using right arrow button
+      .flatSelect(S"div#reviews div.media_block")(
         A"div.criticinfo strong a".text ~ 'critic_name,
         A"div.criticinfo em.subtle".text ~ 'critic_org,
         A"div.reviewsnippet p".text ~ 'critic_review,
@@ -33,7 +33,7 @@ object RottenTomatoes extends QueryCore {
       )
       .wgetJoin(A"div.criticinfo strong a") //go to critic page, e.g. http://www.rottentomatoes.com/critic/sean-means/
       .select(
-        $"div.media_block div.clearfix dd".text ~ 'total_reviews_ratings
+        S"div.media_block div.clearfix dd".text ~ 'total_reviews_ratings
       )
       .toDF()
   }

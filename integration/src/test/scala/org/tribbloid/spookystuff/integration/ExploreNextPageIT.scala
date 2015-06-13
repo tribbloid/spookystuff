@@ -19,7 +19,7 @@ class ExploreNextPageIT extends IntegrationSuite {
       .fetch(
         Wget("http://webscraper.io/test-sites/e-commerce/static/computers/tablets")
       )
-      .explore($"ul.pagination a[rel=next]", depthKey = 'page, ordinalKey = 'index)(
+      .explore(S"ul.pagination a[rel=next]", depthKey = 'page, ordinalKey = 'index)(
         Wget('A.href)
       )(
         'A.text ~ 'button_text

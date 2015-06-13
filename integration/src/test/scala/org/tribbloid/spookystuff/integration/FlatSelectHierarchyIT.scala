@@ -21,7 +21,7 @@ class FlatSelectHierarchyIT extends IntegrationSuite {
       .fetch(
         Wget("http://webscraper.io/test-sites/e-commerce/allinone") //this site is unstable, need to revise
       )
-      .flatSelect($"div.thumbnail", ordinalKey = 'i1)(
+      .flatSelect(S"div.thumbnail", ordinalKey = 'i1)(
         A"p".attr("class") ~ 'p_class
       )
       .flatSelect(A"h4", ordinalKey = 'i2)(

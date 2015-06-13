@@ -19,7 +19,7 @@ class ExplorePagesIT extends IntegrationSuite {
       .fetch(
         Wget("http://webscraper.io/test-sites/e-commerce/static/computers/tablets")
       )
-      .explore($"ul.pagination a", depthKey = 'depth, ordinalKey = 'index)(
+      .explore(S"ul.pagination a", depthKey = 'depth, ordinalKey = 'index)(
         Wget('A.href)
       )(
         'A.text ~ 'page

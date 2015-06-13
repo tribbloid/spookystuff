@@ -16,7 +16,7 @@ object FoodPoco extends QueryCore {
       .fetch(
         Wget("http://cd.food.poco.cn/restaurant/res_search.php?sp_id=107001&reslocateID=101022001&reslocateID1=&reslocateID2=&seatxt=%BB%F0%B9%F8&%CC%E1%BD%BB=%CB%D1+%CB%F7")
       )
-      .wgetExplore($"div.pag a[title=下一页]", depthKey = 'page)
+      .wgetExplore(S"div.pag a[title=下一页]", depthKey = 'page)
       .flatSelect($("div.page_content"))(
         A("h2 a").text ~ 'name,
         A("div.pa_text").text ~ 'info,

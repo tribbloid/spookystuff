@@ -8,20 +8,29 @@ import org.tribbloid.spookystuff.example.QueryCore
 /**
  * Created by peng on 10/06/14.
  */
-object GoogleImage extends QueryCore {
+object GoogleImage_Universities extends QueryCore {
 
   override def doMain(spooky: SpookyContext) = {
-    import spooky.dsl._
 
-    sc.parallelize("Yale University,Havard University".split(","))
+    spooky
       .fetch(
+        Wget("http://www.utexas.edu/world/univ/alpha/")
+      )
+      .join(S"div.box2 a".texts ~ 'name)(
         Visit("http://images.google.com/")
           +> WaitFor("form[action=\"/search\"]")
-          +> TextInput("input[name=\"q\"]","Logo '{_}")
+          +> TextInput("input[name=\"q\"]","Logo '{name}")
           +> Submit("input[name=\"btnG\"]")
           +> WaitFor("div#search")
+      )()
+      .wgetJoin(S"div#search img".src, maxOrdinal = 1)
+      .persist()
+      .savePages(
+        x"file://${System.getProperty("user.home")}/spooky-example/$appName/images/${'name}"
       )
-      .select(x"%html ${S"div#search img".code}" ~ 'logo)
+      .select(
+        $.saved ~ 'path
+      )
       .toDF()
   }
 }

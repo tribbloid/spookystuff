@@ -111,9 +111,11 @@ package object dsl {
 
     def x(fs: Expression[Any]*) = new InterpolateExpr(strC.parts, fs)
 
-    def $() = GetOnlyPageExpr.children(strC.s()) //TODO: this is in conflict with Spark SQL 1.3.0 implicits
+    def CSS() = GetOnlyPageExpr.children(strC.s())
+    def S() = CSS()
 
-    def $_*() = GetAllPagesExpr.children(strC.s())
+    def CSS_*() = GetAllPagesExpr.children(strC.s())
+    def S_*() = CSS_*()
 
     def A() = 'A.children(strC.s())
   }

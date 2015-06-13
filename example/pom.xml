@@ -11,24 +11,37 @@
 
     <artifactId>spookystuff-example</artifactId>
 
+    <properties>
+        <dependencies.scope>provided</dependencies.scope>
+    </properties>
+
+    <profiles>
+        <profile>
+            <id>all-inclusive-jar</id>
+            <properties>
+                <dependencies.scope>compile</dependencies.scope>
+            </properties>
+        </profile>
+    </profiles>
+
     <dependencies>
         <dependency>
             <groupId>org.tribbloid.spookystuff</groupId>
             <artifactId>spookystuff-core</artifactId>
             <version>${project.version}</version>
-            <scope>provided</scope>
+            <scope>${dependencies.scope}</scope>
         </dependency>
         <dependency>
             <groupId>org.apache.spark</groupId>
             <artifactId>spark-core_${scala.binary.version}</artifactId>
             <version>${spark.version}</version>
-            <scope>provided</scope>
+            <scope>${dependencies.scope}</scope>
         </dependency>
         <dependency>
             <groupId>org.apache.spark</groupId>
             <artifactId>spark-sql_${scala.binary.version}</artifactId>
             <version>${spark.version}</version>
-            <scope>provided</scope>
+            <scope>${dependencies.scope}</scope>
         </dependency>
     </dependencies>
 

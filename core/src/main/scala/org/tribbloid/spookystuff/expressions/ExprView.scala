@@ -1,8 +1,9 @@
 package org.tribbloid.spookystuff.expressions
 
 import org.tribbloid.spookystuff.entity.PageRow
+import org.tribbloid.spookystuff.utils.Default
 
-import scala.reflect.ClassTag
+import scala.reflect._
 
 /**
  * Created by peng on 10/11/14.
@@ -11,6 +12,8 @@ import scala.reflect.ClassTag
  */
 
 final class ExprView[+T: ClassTag](self: Expression[T]) {
+
+  def defaultVal: T = Default.value[T]
 
   def andMap[A](g: T => A): Expression[A] = self.andThen(_.map(v => g(v)))
 
@@ -31,7 +34,14 @@ final class ExprView[+T: ClassTag](self: Expression[T]) {
   def into(name: Symbol): Expression[Traversable[T]] = new InsertIntoExpr[T](name.name, self)
   def ~+(name: Symbol) = into(name)
 
-  def notNull: NamedFunction1[PageRow, Boolean] = self.andThen(NamedFunction1(_.nonEmpty, "notNull"))
+  //these will convert Expression to a common function
+  def getOrElse[B >: T](value: =>B = defaultVal): NamedFunction1[PageRow, B] = self.andThen(
+    NamedFunction1(_.getOrElse(value), s"getOrElse($value)")
+  )
+
+  def get: NamedFunction1[PageRow, T] = self.andThen(
+    NamedFunction1(_.get, s"get")
+  )
 
   //  def defaultToHrefExpr = (self match {
   //    case expr: Expr[Unstructured] => expr.href

@@ -21,19 +21,19 @@ class LeftJoinIT extends IntegrationSuite {
       )
 
     val joined = base
-      .join($"div.sidebar-nav a", ordinalKey = 'i1)(
+      .join(S"div.sidebar-nav a", ordinalKey = 'i1)(
         Wget('A.href),
         joinType = LeftOuter
       )(
         'A.text ~ 'category
       )
-      .join($"a.subcategory-link", ordinalKey = 'i2)(
+      .join(S"a.subcategory-link", ordinalKey = 'i2)(
         Wget('A.href),
         joinType = LeftOuter
       )(
         'A.text ~ 'subcategory
       )
-      .select($"h1".text ~ 'header)
+      .select(S"h1".text ~ 'header)
       .toDF(sort = true)
 
     assert(
