@@ -20,7 +20,7 @@ class TestInteraction extends SpookyEnvSuite {
 //    assert(page.code.get.startsWith("<!DOCTYPE html>")) //not applicable to HtmlUnit
     assert(page.code.get.split('\n').map(_.trim).mkString.contains("<title>Wikipedia, the free encyclopedia</title>"))
 
-    assert(page.uri.startsWith("http://en.wikipedia.org/wiki/Main_Page"))
+    assert(page.uri contains "//en.wikipedia.org/wiki/Main_Page")
   }
 
   test("visit, input submit and snapshot") {
@@ -32,7 +32,7 @@ class TestInteraction extends SpookyEnvSuite {
     //    val url = builder.getUrl
 
     assert(page.code.get.split('\n').map(_.trim).mkString.contains("<title>Deep learning - Wikipedia, the free encyclopedia</title>"))
-    assert(page.uri === "http://en.wikipedia.org/wiki/Deep_learning")
+    assert(page.uri contains "//en.wikipedia.org/wiki/Deep_learning")
     //    assert(url === "https://www.linkedin.com/ Input(input#first,Adam) Input(input#last,Muise) Submit(input[name=\"search\"])")
   }
 
