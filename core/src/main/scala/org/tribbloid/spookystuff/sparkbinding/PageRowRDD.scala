@@ -140,7 +140,7 @@ class PageRowRDD private (
       .map(_.toJSON)
 
   //TODO: investigate using the new applySchema api to avoid losing type info
-  def toDF(sort: Boolean = false, tableName: String = null): DataFrame = {
+  def toDF(name: String = null, sort: Boolean = false): DataFrame = {
 
     val jsonRDD = this.toJSON(sort).persist()
 
@@ -154,7 +154,7 @@ class PageRowRDD private (
 
     val result = schemaRDD.select(columns: _*)
 
-    if (tableName!=null) result.registerTempTable(tableName)
+    if (name!=null) result.registerTempTable(name)
     jsonRDD.unpersist()
 
     result
