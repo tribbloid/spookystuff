@@ -46,7 +46,19 @@ final class IterableExprView[T: ClassTag](self: Expression[Iterable[T]]) {
   def zipWithValues(values: Expression[Any]): ZippedExpr[T, Any] =
     new ZippedExpr[T,Any](self, values.typed[Seq[_]])
 
-  def filter(f: T => Boolean) = self.andMap(_.filter(f))
+  def filter(f: T => Boolean): Expression[Iterable[T]] = self.andMap(_.filter(f))
+
+  def distinct: Expression[Seq[T]] = self.andMap(_.toSeq.distinct)
+
+  def groupBy[K](f: T => K): Expression[Map[K, Iterable[T]]] = self.andMap{
+    v =>
+      v.groupBy(f)
+  }
+
+  def distinctBy[K](f: T => K): Expression[Iterable[T]] = this.groupBy(f).andMap{
+    v =>
+      v.values.flatMap(_.headOption)
+  }
 
   //TODO: handle exception
   //  def only: Expr[T] =

@@ -12,15 +12,15 @@ import org.tribbloid.spookystuff.dsl._
  */
 final class ElementsExprView(self: Expression[Elements[_]]) {
 
-  def uris: Expression[Iterable[String]] = self.andMap(_.uris, "uris")
+  def uris: Expression[Seq[String]] = self.andMap(_.uris, "uris")
 
-  def texts: Expression[Iterable[String]] = self.andMap(_.texts, "texts")
+  def texts: Expression[Seq[String]] = self.andMap(_.texts, "texts")
 
-  def codes = self.andMap(_.codes, "text")
+  def codes: Expression[Seq[String]] = self.andMap(_.codes, "text")
 
-  def ownTexts: Expression[Iterable[String]] = self.andMap(_.ownTexts, "ownTexts")
+  def ownTexts: Expression[Seq[String]] = self.andMap(_.ownTexts, "ownTexts")
 
-  def attrs(attrKey: String, noEmpty: Boolean = true): Expression[Iterable[String]] = self.andMap(_.attrs(attrKey, noEmpty), s"attrs($attrKey,$noEmpty)")
+  def attrs(attrKey: String, noEmpty: Boolean = true): Expression[Seq[String]] = self.andMap(_.attrs(attrKey, noEmpty), s"attrs($attrKey,$noEmpty)")
 
   def hrefs = attrs("abs:href", noEmpty = true)
 

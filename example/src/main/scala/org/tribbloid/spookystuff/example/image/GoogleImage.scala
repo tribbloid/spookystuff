@@ -13,7 +13,7 @@ object GoogleImage extends QueryCore {
   override def doMain(spooky: SpookyContext) = {
     import spooky.dsl._
 
-    sc.parallelize("Yale University,Havard University".split(","))
+    sc.parallelize("Yale University,Havard University".split(",").map(_.trim))
       .fetch(
         Visit("http://images.google.com/")
           +> WaitFor("form[action=\"/search\"]")

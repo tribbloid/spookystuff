@@ -31,7 +31,7 @@ object Imdb extends QueryCore {
         $("td#overview-top span[itemprop=reviewCount]").text ~ 'review_count
       )
       .wgetJoin($("div#maindetails_quicklinks a:contains(Reviews)")) //go to review pages, e.g. http://www.imdb.com/title/tt2015381/reviews?ref_=tt_urv
-      .wgetExplore(S"div#tn15content a:has(img[alt~=Next])", depthKey = 'page) //grab all pages by using the right arrow button.
+      .wgetExplore(S"div#tn15content a:has(img[alt~=Next])", depthKey = 'page, optimizer = Narrow) //grab all pages by using the right arrow button.
       .flatSelect($("div#tn15content div:has(h2)"))(
         A("img[alt]").attr("alt") ~ 'review_rating,
         A("h2").text ~ 'review_title,

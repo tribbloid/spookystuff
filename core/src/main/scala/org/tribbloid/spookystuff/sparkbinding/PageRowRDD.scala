@@ -1,14 +1,15 @@
 package org.tribbloid.spookystuff.sparkbinding
 
-import org.slf4j.LoggerFactory
 import org.apache.spark.HashPartitioner
 import org.apache.spark.rdd.{RDD, UnionRDD}
 import org.apache.spark.sql._
 import org.apache.spark.sql.catalyst.analysis.UnresolvedAttribute
+import org.apache.spark.sql.catalyst.expressions.Alias
 import org.apache.spark.storage.StorageLevel
+import org.slf4j.LoggerFactory
 import org.tribbloid.spookystuff.actions._
 import org.tribbloid.spookystuff.dsl._
-import org.tribbloid.spookystuff.entity.PageRow.{WebCacheRow, WebCacheRDD}
+import org.tribbloid.spookystuff.entity.PageRow.{WebCacheRDD, WebCacheRow}
 import org.tribbloid.spookystuff.entity._
 import org.tribbloid.spookystuff.expressions._
 import org.tribbloid.spookystuff.pages.{PageLike, Unstructured}
@@ -146,11 +147,14 @@ class PageRowRDD private (
 
     val schemaRDD = this.spooky.sqlContext.jsonRDD(jsonRDD)
 
-    val validKeyNames = keysSeq
+    val columns = keysSeq
       .filter(key => key.isInstanceOf[Key])
-      .map(key => Utils.canonizeColumnName(key.name))
-      .filter(name => schemaRDD.schema.fieldNames.contains(name))
-    val columns = validKeyNames.map(name => new Column(UnresolvedAttribute(name)))
+      .map {
+      key =>
+        val name = Utils.canonizeColumnName(key.name)
+        if (schemaRDD.schema.fieldNames.contains(name)) new Column(UnresolvedAttribute(name))
+        else new Column(Alias(org.apache.spark.sql.catalyst.expressions.Literal(null), name)())
+    }
 
     val result = schemaRDD.select(columns: _*)
 
@@ -315,7 +319,7 @@ class PageRowRDD private (
   //   * @return RDD[Page], each page will generate several shards
   //   */
   def flatSelect(
-                  expr: Expression[Seq[Unstructured]], //avoid confusion
+                  expr: Expression[Iterable[Unstructured]], //avoid confusion
                   ordinalKey: Symbol = null,
                   maxOrdinal: Int = Int.MaxValue,
                   left: Boolean = true

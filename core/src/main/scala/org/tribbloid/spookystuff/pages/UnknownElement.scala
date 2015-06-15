@@ -9,9 +9,9 @@ class UnknownElement(
 
   override def text: Option[String] = None
 
-  override def children(selector: String) = new Elements(Array())
+  override def children(selector: String): Elements[Unstructured] = new Elements(Array[Unstructured]())
 
-  override def childrenWithSiblings(start: String, range: Range) = new Elements(Array())
+  override def childrenWithSiblings(start: String, range: Range): Elements[Siblings[Unstructured]] = new Elements(Array[Siblings[Unstructured]]())
 
   override def code: Option[String] = None
 

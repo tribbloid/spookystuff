@@ -46,11 +46,11 @@ class HtmlElement private (
   @transient lazy val parsed = Option(_parsed).getOrElse {
 
     tag match {
-      case Some(ttag) =>
-        val container = if (ttag == "tr" || ttag == "td") Jsoup.parseBodyFragment(s"<table>$html</table>", uri)
+      case Some(_tag) =>
+        val container = if (_tag == "tr" || _tag == "td") Jsoup.parseBodyFragment(s"<table>$html</table>", uri)
         else Jsoup.parseBodyFragment(html, uri)
 
-        container.select(ttag).first()
+        container.select(_tag).first()
       case _ =>
         Jsoup.parse(html, uri)
     }

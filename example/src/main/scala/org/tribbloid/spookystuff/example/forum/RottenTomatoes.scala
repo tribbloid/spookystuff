@@ -10,7 +10,6 @@ import org.tribbloid.spookystuff.example.QueryCore
 */
 object RottenTomatoes extends QueryCore {
   override def doMain(spooky: SpookyContext) = {
-    import spooky.dsl._
 
     spooky
     .fetch(

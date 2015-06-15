@@ -68,12 +68,17 @@ case class Page(
     result
   }
 
-  @transient lazy val root: Unstructured = if (parsedContentType.getMimeType.contains("html")) {
-    new HtmlElement(content, parsedContentType.getCharset, uri) //not serialize, parsing is faster
-  }
-  else {
-    new UnknownElement(uri)
-  }
+  //TODO: use reflection to find any element implementation that can resolve supplied MIME type
+  @transient lazy val root: Unstructured =
+    if (parsedContentType.getMimeType.contains("html")) {
+      new HtmlElement(content, parsedContentType.getCharset, uri) //not serialize, parsing is faster
+    }
+    else if (parsedContentType.getMimeType.contains("xml")) {
+      new HtmlElement(content, parsedContentType.getCharset, uri) //not serialize, parsing is faster
+    }
+    else {
+      new UnknownElement(uri)
+    }
 
   override def children(selector: String) = root.children(selector)
   override def childrenWithSiblings(start: String, range: Range) = root.childrenWithSiblings(start, range)
