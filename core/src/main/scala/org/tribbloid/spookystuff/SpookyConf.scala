@@ -62,7 +62,8 @@ class SpookyConf (
 
                    var driverFactory: DriverFactory = DriverFactories.PhantomJS(),
                    var proxy: ProxyFactory = ProxyFactories.NoProxy,
-                   var userAgent: ()=> String = () => null, //may change to "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/37.0.2062.120 Safari/537.36",
+//                   var userAgent: ()=> String = () => null,
+                   var userAgent: ()=> String = () => "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/37.0.2062.120 Safari/537.36",
                    var headers: ()=> Map[String, String] = () => Map(),
                    val browserResolution: (Int, Int) = (1920, 1080),
 

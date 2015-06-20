@@ -135,7 +135,7 @@ case class Page(
     )(spooky)
   }
 
-  def errorDumpLocal(
+  def errorDumpLocally(
                       spooky: SpookyContext,
                       overwrite: Boolean = false
                       ): Unit = {

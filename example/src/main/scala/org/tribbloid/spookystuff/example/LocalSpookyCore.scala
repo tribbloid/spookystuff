@@ -15,7 +15,7 @@ trait LocalSpookyCore {
 
   val appName = this.getClass.getSimpleName.replace("$","")
 
-  val cores = 8
+  val cores = Runtime.getRuntime.availableProcessors()
 
   val sc: SparkContext = {
     val conf: SparkConf = new SparkConf().setAppName(appName)

@@ -47,4 +47,15 @@ class TestInteraction extends SpookyEnvSuite {
     val code = results.head.asInstanceOf[Page].code.get.split('\n').map(_.trim).mkString
     assert(code.contains("<title>Wikipedia</title>"))
   }
+
+  test("visit should handle corsera") {
+
+    val results = (
+      Visit("https://www.coursera.org/yale") ::
+        Snapshot() :: Nil
+      ).resolve(spooky)
+
+    val code = results.head.asInstanceOf[Page].code.get.split('\n').map(_.trim).mkString
+    assert(code.contains("<title>Yale University"))
+  }
 }

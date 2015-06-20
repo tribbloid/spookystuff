@@ -1,5 +1,6 @@
+
 /*
- * Copyright (c) 2002-2013 Gargoyle Software Inc.
+ * Copyright (c) 2002-2009 Gargoyle Software Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,30 +15,26 @@
  */
 package org.tribbloid.spookystuff.http;
 
-import javax.net.ssl.X509TrustManager;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.Set;
+
+import javax.net.ssl.X509TrustManager;
 
 /**
  * A completely insecure (yet very easy to use) x509 trust manager. This manager trusts all servers
  * and all clients, regardless of credentials or lack thereof.
  *
- * @version $Revision: 8393 $
+ * @version $Revision: 4002 $
  * @author Daniel Gredler
- * @author Marc Guillemot
+ * @created Nov 12, 2004
  */
 public class InsecureTrustManager implements X509TrustManager {
-    private final Set<X509Certificate> acceptedIssuers_ = new HashSet<X509Certificate>();
 
     /**
      * {@inheritDoc}
      */
     public void checkClientTrusted(final X509Certificate[] chain, final String authType) throws CertificateException {
         // Everyone is trusted!
-        acceptedIssuers_.addAll(Arrays.asList(chain));
     }
 
     /**
@@ -45,20 +42,13 @@ public class InsecureTrustManager implements X509TrustManager {
      */
     public void checkServerTrusted(final X509Certificate[] chain, final String authType) throws CertificateException {
         // Everyone is trusted!
-        acceptedIssuers_.addAll(Arrays.asList(chain));
     }
 
     /**
      * {@inheritDoc}
      */
     public X509Certificate[] getAcceptedIssuers() {
-        // it seems to be OK for Java <= 6 to return an empty array but not for Java 7 (at least 1.7.0_04-b20):
-        // requesting an URL with a valid certificate (working without WebClient.setUseInsecureSSL(true)) throws a
-        //  javax.net.ssl.SSLPeerUnverifiedException: peer not authenticated
-        // when the array returned here is empty
-        if (acceptedIssuers_.isEmpty()) {
-            return new X509Certificate[0];
-        }
-        return acceptedIssuers_.toArray(new X509Certificate[acceptedIssuers_.size()]);
+        return new X509Certificate[0];
     }
+
 }

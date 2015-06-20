@@ -5,9 +5,9 @@ import org.openqa.selenium.support.ui.{ExpectedConditions, WebDriverWait}
 import org.slf4j.LoggerFactory
 import org.tribbloid.spookystuff.pages.{Page, PageLike}
 import org.tribbloid.spookystuff.selenium.BySizzleCssSelector
-import org.tribbloid.spookystuff.session.Session
+import org.tribbloid.spookystuff.session.{NoDriverSession, DriverSession, Session}
 import org.tribbloid.spookystuff.utils.Utils
-import org.tribbloid.spookystuff.{ActionException, Const}
+import org.tribbloid.spookystuff.{SpookyContext, ActionException, Const}
 
 import scala.concurrent.duration.Duration
 
@@ -50,53 +50,24 @@ trait Action extends ActionLike {
 
         message += "\n+>" + this.toString
 
-        if (!this.isInstanceOf[Driverless]) {
-          if (errorDump) {
-            val rawPage = DefaultSnapshot.exe(session).head.asInstanceOf[Page]
-            val uid = rawPage.uid.copy(backtrace = rawPage.uid.backtrace :+ this)
-            val page = rawPage.copy(uid = uid)
-            try {
-              page.errorDump(session.spooky)
-              message += "\n"+"snapshot saved to: " + page.saved
+        //TODO: this should be handled by implementations of action.
+        session match {
+          case d: DriverSession =>
+            if (errorDump) {
+              val rawPage = DefaultSnapshot.exe(session).head.asInstanceOf[Page]
+              message += "\nSnapshot: " +this.errorDump(message, rawPage, session.spooky)
             }
-            catch {
-              case e: Throwable =>
-                try {
-                  page.errorDumpLocal(session.spooky)
-                  message += "\n"+"distributed file system inaccessible.........snapshot saved to: " + page.saved.last
-                }
-                catch {
-                  case e: Throwable =>
-                    message += "\n"+"all file systems inaccessible.........snapshot not saved"
-                }
+            if (errorDumpScreenshot && session.driver.isInstanceOf[TakesScreenshot]) {
+              val rawPage = DefaultScreenshot.exe(session).toList.head.asInstanceOf[Page]
+              message += "\nScreenshot: " +this.errorDump(message, rawPage, session.spooky)
             }
-          }
-          if (errorDumpScreenshot && session.driver.isInstanceOf[TakesScreenshot]) {
-            val rawPage = DefaultScreenshot.exe(session).toList.head.asInstanceOf[Page]
-            val uid = rawPage.uid.copy(backtrace = rawPage.uid.backtrace :+ this)
-            val page = rawPage.copy(uid = uid)
-            try {
-              page.errorDump(session.spooky)
-              message += "\n"+"screenshot saved to: " + page.saved
-            }
-            catch {
-              case e: Throwable =>
-                try {
-                  page.errorDumpLocal(session.spooky)
-                  message += "\n"+"distributed file system inaccessible.........screenshot saved to: " + page.saved.last
-                }
-                catch {
-                  case e: Throwable =>
-                    message += "\n"+"all file systems inaccessible.........screenshot not saved"
-                }
-            }
-          }
-        }
-        else{
-          message += "\n"+"(no snapshot or screenshot for driverless action)"
+          case d: NoDriverSession =>
         }
 
-        val ex = new ActionException(message, e)
+        val ex = e match {
+          case ae: ActionException => ae
+          case _ =>new ActionException(message, e)
+        }
         ex.setStackTrace(e.getStackTrace)
         throw ex
     }
@@ -104,6 +75,29 @@ trait Action extends ActionLike {
     this.timeElapsed = System.currentTimeMillis() - session.startTime
 
     results
+  }
+
+  def errorDump(message: String, rawPage: Page, spooky: SpookyContext): String = {
+
+    val backtrace = if (rawPage.uid.backtrace.lastOption.exists(_ eq this)) rawPage.uid.backtrace
+    else rawPage.uid.backtrace :+ this
+    val uid = rawPage.uid.copy(backtrace = backtrace)
+    val page = rawPage.copy(uid = uid)
+    try {
+      page.errorDump(spooky)
+      "snapshot saved to: " + page.saved
+    }
+    catch {
+      case e: Throwable =>
+        try {
+          page.errorDumpLocally(spooky)
+          "DFS inaccessible.........saved to: " + page.saved.last
+        }
+        catch {
+          case e: Throwable =>
+            "all file systems inaccessible.........not saved"
+        }
+    }
   }
 
   def exe(session: Session): Seq[PageLike] = {

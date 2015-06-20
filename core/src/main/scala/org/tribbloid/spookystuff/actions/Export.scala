@@ -1,6 +1,8 @@
 package org.tribbloid.spookystuff.actions
 
 import java.net.InetSocketAddress
+import java.security.SecureRandom
+import javax.net.ssl.SSLContext
 
 import org.apache.commons.io.IOUtils
 import org.apache.http.client.config.RequestConfig
@@ -14,9 +16,10 @@ import org.apache.http.impl.client.HttpClients
 import org.apache.http.impl.conn.PoolingHttpClientConnectionManager
 import org.apache.http.{HttpHost, StatusLine}
 import org.openqa.selenium.{OutputType, TakesScreenshot}
+import org.tribbloid.spookystuff.ActionException
 import org.tribbloid.spookystuff.entity.PageRow
 import org.tribbloid.spookystuff.expressions.{Expression, Literal}
-import org.tribbloid.spookystuff.http.{HttpUtils, ResilientRedirectStrategy, SocksProxyConnectionSocketFactory, SocksProxySSLConnectionSocketFactory}
+import org.tribbloid.spookystuff.http._
 import org.tribbloid.spookystuff.pages._
 import org.tribbloid.spookystuff.session.Session
 import org.tribbloid.spookystuff.utils.Utils
@@ -105,19 +108,19 @@ case class Wget(
                  hasTitle: Boolean = true
                  ) extends Export with Driverless with Timed {
 
-  override def doExeNoName(pb: Session): Seq[PageLike] = {
+  override def doExeNoName(session: Session): Seq[PageLike] = {
 
     val uriStr = uri.asInstanceOf[Literal[String]].value.trim()
     if ( uriStr.isEmpty ) return Seq ()
 
     val uriURI = HttpUtils.uri(uriStr)
 
-    val proxy = pb.spooky.conf.proxy()
-    val userAgent = pb.spooky.conf.userAgent()
-    val headers = pb.spooky.conf.headers()
+    val proxy = session.spooky.conf.proxy()
+    val userAgent = session.spooky.conf.userAgent()
+    val headers = session.spooky.conf.headers()
 
     val requestConfig = {
-      val timeoutMillis = this.timeout(pb).toMillis.toInt
+      val timeoutMillis = this.timeout(session).toMillis.toInt
 
       var builder = RequestConfig.custom()
         .setConnectTimeout ( timeoutMillis )
@@ -127,7 +130,7 @@ case class Wget(
         .setCircularRedirectsAllowed(true)
         .setRelativeRedirectsAllowed(true)
         .setAuthenticationEnabled(false)
-//        .setCookieSpec(CookieSpecs.BEST_MATCH)
+      //        .setCookieSpec(CookieSpecs.BEST_MATCH)
 
       if (proxy!=null && !proxy.protocol.startsWith("socks")) builder=builder.setProxy(new HttpHost(proxy.addr, proxy.port, proxy.protocol))
 
@@ -135,17 +138,23 @@ case class Wget(
       result
     }
 
+    val sslContext = SSLContext.getInstance( "SSL" )
+    sslContext.init(null, Array(new InsecureTrustManager()), null)
+    val hostVerifier = new InsecureHostnameVerifier()
+
     val httpClient = if (proxy !=null && proxy.protocol.startsWith("socks")) {
       val reg = RegistryBuilder.create[ConnectionSocketFactory]
         .register("http", new SocksProxyConnectionSocketFactory())
-        .register("https", new SocksProxySSLConnectionSocketFactory(SSLContexts.createSystemDefault()))
+        .register("https", new SocksProxySSLConnectionSocketFactory(sslContext))
         .build()
       val cm = new PoolingHttpClientConnectionManager(reg)
 
       val httpClient = HttpClients.custom
+        .setConnectionManager(cm)
         .setDefaultRequestConfig ( requestConfig )
         .setRedirectStrategy(new ResilientRedirectStrategy())
-        .setConnectionManager(cm)
+        .setSslcontext(sslContext)
+        .setHostnameVerifier(hostVerifier)
         .build
 
       httpClient
@@ -154,6 +163,8 @@ case class Wget(
       val httpClient = HttpClients.custom
         .setDefaultRequestConfig ( requestConfig )
         .setRedirectStrategy(new ResilientRedirectStrategy())
+        .setSslcontext(sslContext)
+        .setHostnameVerifier(hostVerifier)
         .build()
 
       httpClient
@@ -196,8 +207,23 @@ case class Wget(
             content
           )
 
-          if (result.root.isInstanceOf[HtmlElement] && hasTitle)
-            assert(!result.code.get.contains("<title></title>"))
+          if (result.root.isInstanceOf[HtmlElement] && hasTitle){
+            try{
+              assert(!result.code.get.contains("<title></title>"))
+            }
+            catch {
+              case e: Throwable =>
+                var message = "\n\n+>" + this.toString
+
+                val errorDump: Boolean = session.spooky.conf.errorDump
+
+                if (errorDump) {
+                  message += "\nSnapshot: " +this.errorDump(message, result, session.spooky)
+                }
+
+                throw new ActionException(message, e)
+            }
+          }
 
           Seq(result)
         }
@@ -212,7 +238,7 @@ case class Wget(
     catch {
       case e: ClientProtocolException =>
         val cause = e.getCause
-        if (cause.isInstanceOf[RedirectException]) Seq(NoPage(pb.backtrace :+ this))
+        if (cause.isInstanceOf[RedirectException]) Seq(NoPage(session.backtrace :+ this))
         else throw e
       case e: Throwable =>
         throw e

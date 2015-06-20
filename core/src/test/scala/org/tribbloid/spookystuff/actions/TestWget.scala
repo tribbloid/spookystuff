@@ -175,12 +175,22 @@ class TestWget extends SpookyEnvSuite {
     import duration._
 
     val results = (
-      RandomDelay(10.seconds, 20.seconds)
+      RandomDelay(1.seconds, 2.seconds)
         :: Wget("http://www.wikipedia.org")
         :: Nil
       ).resolve(spooky)
 
     assert(results.size === 1)
     assert(results.head.uid.backtrace.self == Wget("http://www.wikipedia.org") :: Nil)
+  }
+
+  test("wget should handle PKIX exception") {
+    spooky.conf.proxy = ProxyFactories.NoProxy
+
+    import duration._
+
+    val results = Seq(
+      Wget("https://www.canadacompany.ca/en/")
+    ).resolve(spooky)
   }
 }

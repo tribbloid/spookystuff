@@ -26,7 +26,8 @@ final class IterableExprView[T: ClassTag](self: Expression[Iterable[T]]) {
   s"get($i)")
 
   def slice(from: Int = Int.MinValue, until: Int = Int.MaxValue): Expression[Iterable[T]] = self.andMap {
-    _.slice(from, until)
+    v =>
+      v.slice(from, until)
   }
 
   def size: Expression[Int] = self.andMap(_.size, "size")
