@@ -50,11 +50,11 @@ abstract class Block(override val self: Seq[Action]) extends Actions(self) with 
 }
 
 final case class Try(
-                        override val self: Seq[Action],
+                        override val self: Seq[Action])(
                         retries: Int
                         ) extends Block(self) {
 
-  override def trunk = Some(Try(this.trunkSeq, retries).asInstanceOf[this.type])
+  override def trunk = Some(Try(this.trunkSeq)( retries).asInstanceOf[this.type])
 
   override def doExeNoUID(session: Session): Seq[Page] = {
 
@@ -95,7 +95,7 @@ object Try {
              ): Try = {
     assert(trace.size == 1)
 
-    Try(trace.head, retries)
+    Try(trace.head)(retries)
   }
 }
 

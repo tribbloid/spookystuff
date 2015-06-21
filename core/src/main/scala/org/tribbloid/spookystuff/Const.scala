@@ -24,7 +24,7 @@ object Const {
   val localResourceLocalRetries = 3
   val remoteResourceLocalRetries = 2
   val DFSLocalRetries = 2
-  val clusterRetries = 4
+  val clusterRetries = 3
 
   val interactionDelayMax: Duration = 60.seconds
   val interactionDelayMin: Duration = 2.seconds
