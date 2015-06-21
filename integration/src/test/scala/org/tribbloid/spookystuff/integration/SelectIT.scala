@@ -44,9 +44,9 @@ class SelectIT extends IntegrationSuite {
 
     val rows = RDD.collect()
     val finishTime = System.currentTimeMillis()
-    assert(rows.size === 1)
+    assert(rows.length === 1)
     assert(rows.head.size === 5)
-    assert(rows.head.getString(0) === "http://www.wikipedia.org/")
+    assert(rows.head.getString(0) contains "://www.wikipedia.org/")
     val parsedTime = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'").parse(rows.head.getString(1)).getTime
     assert(parsedTime < finishTime +2000) //due to round-off error
     assert(parsedTime > finishTime-60000) //long enough even after the second time it is retrieved from the cache
