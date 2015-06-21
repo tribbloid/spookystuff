@@ -1,5 +1,6 @@
 package org.tribbloid.spookystuff.actions
 
+import org.apache.spark.TaskContext
 import org.slf4j.LoggerFactory
 import org.tribbloid.spookystuff.{dsl, Const}
 import org.tribbloid.spookystuff.entity.PageRow
@@ -48,11 +49,17 @@ abstract class Block(override val self: Seq[Action]) extends Actions(self) with 
   def doExeNoUID(session: Session): Seq[Page]
 }
 
-final case class Try(override val self: Seq[Action]) extends Block(self) {
+final case class Try(
+                        override val self: Seq[Action],
+                        retries: Int
+                        ) extends Block(self) {
 
-  override def trunk = Some(Try(this.trunkSeq).asInstanceOf[this.type])
+  override def trunk = Some(Try(this.trunkSeq, retries).asInstanceOf[this.type])
 
   override def doExeNoUID(session: Session): Seq[Page] = {
+
+
+    val taskContext = TaskContext.get()
 
     val pages = new ArrayBuffer[Page]()
 
@@ -66,7 +73,8 @@ final case class Try(override val self: Seq[Action]) extends Block(self) {
     }
     catch {
       case e: Throwable =>
-        LoggerFactory.getLogger(this.getClass).info("Aborted on exception: " + e)
+        if (taskContext.attemptNumber() < retries) throw e
+        else LoggerFactory.getLogger(this.getClass).info("Aborted on exception: " + e)
     }
 
     pages
@@ -82,11 +90,12 @@ final case class Try(override val self: Seq[Action]) extends Block(self) {
 object Try {
 
   def apply(
-             trace: Set[Trace]
+             trace: Set[Trace],
+             retries: Int = Const.clusterRetries
              ): Try = {
     assert(trace.size == 1)
 
-    Try(trace.head)
+    Try(trace.head, retries)
   }
 }
 

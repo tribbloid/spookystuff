@@ -523,19 +523,25 @@ class PageRowRDD private (
   def visitJoin(
                  expr: Expression[Any],
                  hasTitle: Boolean = true,
+                 failSafe: Int = -1,
                  ordinalKey: Symbol = null, //left & idempotent parameters are missing as they are always set to true
                  maxOrdinal: Int = spooky.conf.maxJoinOrdinal,
                  joinType: JoinType = Const.defaultJoinType,
                  numPartitions: Int = spooky.conf.defaultParallelism(this),
                  select: Expression[Any] = null,
                  optimizer: QueryOptimizer = spooky.conf.defaultQueryOptimizer
-                 ): PageRowRDD =
+                 ): PageRowRDD ={
+    val action = if (failSafe < 0) Visit(new GetExpr(Const.defaultJoinKey), hasTitle)
+    else Try(Visit(new GetExpr(Const.defaultJoinKey), hasTitle), failSafe)
+
     this.join(expr, ordinalKey, maxOrdinal)(
-      Visit(new GetExpr(Const.defaultJoinKey), hasTitle),
+      action,
       joinType,
       numPartitions,
       optimizer = optimizer
     )(Option(select).toSeq: _*)
+  }
+
 
   /**
    * same as join, but avoid launching a browser by using direct http GET (wget) to download new pages
@@ -546,19 +552,24 @@ class PageRowRDD private (
   def wgetJoin(
                 expr: Expression[Any],
                 hasTitle: Boolean = true,
+                failSafe: Int = -1,
                 ordinalKey: Symbol = null, //left & idempotent parameters are missing as they are always set to true
                 maxOrdinal: Int = spooky.conf.maxJoinOrdinal,
                 joinType: JoinType = Const.defaultJoinType,
                 numPartitions: Int = spooky.conf.defaultParallelism(this),
                 select: Expression[Any] = null,
                 optimizer: QueryOptimizer = spooky.conf.defaultQueryOptimizer
-                ): PageRowRDD =
+                ): PageRowRDD ={
+    val action = if (failSafe < 0) Wget(new GetExpr(Const.defaultJoinKey), hasTitle)
+    else Try(Wget(new GetExpr(Const.defaultJoinKey), hasTitle), failSafe)
+
     this.join(expr, ordinalKey, maxOrdinal)(
-      Wget(new GetExpr(Const.defaultJoinKey), hasTitle),
+      action,
       joinType,
       numPartitions,
       optimizer = optimizer
     )(Option(select).toSeq: _*)
+  }
 
   def explore(
                expr: Expression[Any],
@@ -803,6 +814,7 @@ class PageRowRDD private (
   def visitExplore(
                     expr: Expression[Any],
                     hasTitle: Boolean = true,
+                    failSafe: Int = -1,
                     depthKey: Symbol = null,
                     maxDepth: Int = spooky.conf.maxExploreDepth,
                     ordinalKey: Symbol = null,
@@ -811,16 +823,22 @@ class PageRowRDD private (
                     numPartitions: Int = spooky.conf.defaultParallelism(this),
                     select: Expression[Any] = null,
                     optimizer: QueryOptimizer = spooky.conf.defaultQueryOptimizer
-                    ): PageRowRDD =
+                    ): PageRowRDD = {
+
+    val action = if (failSafe < 0) Visit(new GetExpr(Const.defaultJoinKey), hasTitle)
+    else Try(Visit(new GetExpr(Const.defaultJoinKey), hasTitle), failSafe)
+
     explore(expr, depthKey, maxDepth, ordinalKey, maxOrdinal, checkpointInterval)(
-      Visit(new GetExpr(Const.defaultJoinKey), hasTitle),
+      action,
       numPartitions,
       optimizer = optimizer
     )(Option(select).toSeq: _*)
+  }
 
   def wgetExplore(
                    expr: Expression[Any],
                    hasTitle: Boolean = true,
+                   failSafe: Int = -1,
                    depthKey: Symbol = null,
                    maxDepth: Int = spooky.conf.maxExploreDepth,
                    ordinalKey: Symbol = null,
@@ -829,10 +847,15 @@ class PageRowRDD private (
                    numPartitions: Int = spooky.conf.defaultParallelism(this),
                    select: Expression[Any] = null,
                    optimizer: QueryOptimizer = spooky.conf.defaultQueryOptimizer
-                   ): PageRowRDD =
+                   ): PageRowRDD = {
+
+    val action = if (failSafe < 0) Wget(new GetExpr(Const.defaultJoinKey), hasTitle)
+    else Try(Wget(new GetExpr(Const.defaultJoinKey), hasTitle), failSafe)
+    
     explore(expr, depthKey, maxDepth, ordinalKey, maxOrdinal, checkpointInterval)(
-      Wget(new GetExpr(Const.defaultJoinKey), hasTitle),
+      action,
       numPartitions,
       optimizer = optimizer
     )(Option(select).toSeq: _*)
+  }
 }

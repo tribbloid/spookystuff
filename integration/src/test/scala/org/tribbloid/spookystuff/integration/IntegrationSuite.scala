@@ -10,6 +10,8 @@ import org.tribbloid.spookystuff.dsl._
 import org.tribbloid.spookystuff.utils.Utils
 import org.tribbloid.spookystuff.{SpookyConf, SpookyContext}
 
+import scala.concurrent.duration
+
 /**
  * Created by peng on 12/2/14.
  */
@@ -81,6 +83,8 @@ abstract class IntegrationSuite extends FunSuite with BeforeAndAfterAll {
     Wide_WebCachedRDD
   )
 
+  import duration._
+
   for (root <- roots) {
     for (driver <- drivers) {
       for (optimizer <- optimizers) {
@@ -91,7 +95,8 @@ abstract class IntegrationSuite extends FunSuite with BeforeAndAfterAll {
             driverFactory = driver,
             defaultQueryOptimizer = optimizer,
             sharedMetrics = true,
-            checkpointInterval = 2
+            checkpointInterval = 2,
+            remoteResourceTimeout = 10.seconds
           )
         )
 

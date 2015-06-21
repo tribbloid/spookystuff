@@ -4,31 +4,35 @@ import java.net.URI
 
 import org.apache.spark.mllib.feature.{HashingTF, IDF}
 import org.tribbloid.spookystuff.SpookyContext
-import org.tribbloid.spookystuff.actions.{Submit, TextInput, Visit}
+import org.tribbloid.spookystuff.actions._
 import org.tribbloid.spookystuff.dsl._
 import org.tribbloid.spookystuff.example.QueryCore
 
 /**
  * Created by peng on 16/06/15.
  */
-object Google_WordVec extends QueryCore {
+
+object Google_TFIDF extends QueryCore {
+
+  case class CompanyKeywords(company: String, associated: String, frequency: String)
 
   override def doMain(spooky: SpookyContext) = {
     import spooky.dsl._
     import sql.implicits._
 
     val tokenized = sc.parallelize("DaJiang Innovations,3D Rototics,Parrot,Airware".split(",").map(_.trim)).fetch(
-        Visit("http://www.google.com/")
-          +> TextInput("input[name=\"q\"]","'{_} Company")
-          +> Submit("input[name=\"btnG\"]")
-      ).wgetExplore(S"a:contains(next)", maxDepth = 1, depthKey = 'page, optimizer = Narrow
+      Visit("http://www.google.com/")
+        +> TextInput("input[name=\"q\"]","'{_} Company")
+        +> Submit("input[name=\"btnG\"]")
+    ).wgetExplore(S"a:contains(next)", maxDepth = 1, depthKey = 'page, optimizer = Narrow
       ).wgetJoin(S"li.g h3.r a[href^=/url]".hrefs.andMap {
       uris =>
         uris.flatMap {
           uri =>
             new URI(uri).getQuery.split("&").find(_.startsWith("q=")).map(_.replaceAll("q=",""))
         }
-    }, hasTitle = false).select(
+    },failSafe = 4
+      ).select(
         '$.boilerPiple ~ 'text
       ).toDF().select('_, 'text).map(r => r.getString(0) -> r.getString(1)).reduceByKey(_ + _).mapValues(
         s => s.split("[^\\w]+").toSeq.filterNot(_.length <3))
@@ -43,8 +47,9 @@ object Google_WordVec extends QueryCore {
       tuple => (tuple._1, tuple._2.map(
         word =>(word, tuple._3(hashingTF.indexOf(word)))
       ).sortBy(- _._2))
-    ).flatMapValues(v => v)
+    ).mapValues(_.slice(0,10)).flatMapValues(v => v)
 
-    wordvec
+    val df = wordvec.map(v => CompanyKeywords(v._1, v._2._1, v._2._2.toString))
+    df.toDF()
   }
 }

@@ -76,7 +76,7 @@ class TraceView(
 
   def resolve(spooky: SpookyContext): Seq[PageLike] = {
 
-    val results = Utils.retry (Const.remoteResourceLocalRetry){
+    val results = Utils.retry (Const.remoteResourceLocalRetries){
       resolvePlain(spooky)
     }
     val numPages = results.count(_.isInstanceOf[Page])

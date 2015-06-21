@@ -19,7 +19,7 @@ object PageUtils {
 
   def DFSRead[T](message: String, pathStr: String, spooky: SpookyContext)(f: => T): T = {
     try {
-      val result = Utils.retry(Const.DFSLocalRetry) {
+      val result = Utils.retry(Const.DFSLocalRetries) {
         Utils.withDeadline(spooky.conf.DFSTimeout) {f}
       }
       spooky.metrics.DFSReadSuccess += 1
@@ -41,7 +41,7 @@ object PageUtils {
   //always fail on retry depletion and timeout
   def DFSWrite[T](message: String, pathStr: String, spooky: SpookyContext)(f: => T): T = {
     try {
-      val result = Utils.retry(Const.DFSLocalRetry) {
+      val result = Utils.retry(Const.DFSLocalRetries) {
         Utils.withDeadline(spooky.conf.DFSTimeout) {f}
       }
       spooky.metrics.DFSWriteSuccess += 1

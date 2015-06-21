@@ -58,7 +58,7 @@ case class Metrics(
   entry point of the pipeline
  */
 case class SpookyContext (
-                           @transient sqlContext: SQLContext, //can't be used on executors
+                           @transient private[spookystuff] val sqlContext: SQLContext, //can't be used on executors
                            @transient private val _spookyConf: SpookyConf = new SpookyConf(), //can only be used on executors after broadcast
                            var metrics: Metrics = new Metrics() //accumulators cannot be broadcasted,
                            ) {

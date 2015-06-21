@@ -45,7 +45,7 @@ abstract class Session(val spooky: SpookyContext) {
 
 class DriverSession(override val spooky: SpookyContext) extends Session(spooky){
 
-  override val driver: CleanWebDriver = Utils.retry(Const.localResourceLocalRetry){
+  override val driver: CleanWebDriver = Utils.retry(Const.localResourceLocalRetries){
     Utils.withDeadline(Const.sessionInitializationTimeout){
       var successful = false
       val driver = spooky.conf.driverFactory.newInstance(null, spooky)

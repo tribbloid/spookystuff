@@ -23,7 +23,7 @@ class FetchVisitIT extends IntegrationSuite {
     val finishTime = System.currentTimeMillis()
     assert(pageRows.length === 1)
     assert(pageRows(0).pages.length === 1)
-    assert(pageRows(0).pages.apply(0).uri === "http://www.wikipedia.org/")
+    assert(pageRows(0).pages.apply(0).uri contains "://www.wikipedia.org/")
     assert(pageRows(0).pages.apply(0).name === "Snapshot()")
     val pageTime = pageRows(0).pages.head.timestamp.getTime
     assert(pageTime < finishTime)

@@ -21,9 +21,10 @@ object Const {
 
   val sessionInitializationTimeout = 40.seconds
 
-  val localResourceLocalRetry = 3
-  val remoteResourceLocalRetry = 2
-  val DFSLocalRetry = 2
+  val localResourceLocalRetries = 3
+  val remoteResourceLocalRetries = 2
+  val DFSLocalRetries = 2
+  val clusterRetries = 4
 
   val interactionDelayMax: Duration = 60.seconds
   val interactionDelayMin: Duration = 2.seconds

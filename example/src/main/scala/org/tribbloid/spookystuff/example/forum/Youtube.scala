@@ -28,7 +28,7 @@ object Youtube extends QueryCore{
       .join(S"li.channels-content-item")(
         Visit(A"h3.yt-lockup-title a.yt-uix-tile-link".href)
           +> ExeScript("window.scrollBy(0,500)")
-          +> Try(WaitFor("iframe[title^=Comment]").in(50.seconds) :: Nil),
+          +> Try(WaitFor("iframe[title^=Comment]").in(50.seconds)),
         numPartitions = 400
       )(
         A"h3.yt-lockup-title".text ~ 'title

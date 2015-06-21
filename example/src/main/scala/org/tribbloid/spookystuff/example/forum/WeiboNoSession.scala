@@ -30,7 +30,7 @@ object WeiboNoSession extends QueryCore {
       .fetch(
         RandomDelay(40.seconds, 80.seconds)
           +> Visit("http://s.weibo.com/wb/%25E6%2588%2590%25E9%2583%25BD%25E9%2593%25B6%25E8%25A1%258C&xsort=time&timescope=custom:'{_}:'{_}&Refer=g")
-          +> Try(WaitFor("div.search_feed dl.feed_list").in(60.seconds) :: Nil)
+          +> Try(WaitFor("div.search_feed dl.feed_list").in(60.seconds))
       )
       .select(
         A"div.search_feed dl.feed_list".size ~ 'count,
