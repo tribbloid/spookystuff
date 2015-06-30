@@ -30,6 +30,8 @@ abstract class Block(override val self: Seq[Action]) extends Actions(self) with 
     this
   }
 
+  def hasEmptyOutput: Boolean = true
+
   final override def doExe(session: Session): Seq[PageLike] = {
 
     val pages = this.doExeNoUID(session)
@@ -42,22 +44,23 @@ abstract class Block(override val self: Seq[Action]) extends Actions(self) with 
         page.copy(uid = page.uid.copy(backtrace = backtrace, blockIndex = tuple._2, blockSize = pages.size))
       }
     }
-    if (result.isEmpty && this.hasExport) Seq(NoPage(backtrace))
+    if (result.isEmpty && this.hasEmptyOutput) Seq(NoPage(backtrace))
     else result
   }
 
   def doExeNoUID(session: Session): Seq[Page]
 }
 
+//TODO: failsafe output (zero output) maybe written into L1&L2 cache and made permanent, need special handling to disable caching!
 final case class Try(
-                        override val self: Seq[Action],
-                        retries: Int
-                        ) extends Block(self) {
+                      override val self: Seq[Action])(
+                      retries: Int,
+                      override val hasEmptyOutput: Boolean
+                      ) extends Block(self) {
 
-  override def trunk = Some(Try(this.trunkSeq, retries).asInstanceOf[this.type])
+  override def trunk = Some(Try(this.trunkSeq)(retries, hasEmptyOutput).asInstanceOf[this.type])
 
   override def doExeNoUID(session: Session): Seq[Page] = {
-
 
     val taskContext = TaskContext.get()
 
@@ -83,7 +86,7 @@ final case class Try(
   override def doInterpolate(pageRow: PageRow): Option[this.type] ={
     val seq = this.doInterpolateSeq(pageRow)
     if (seq.isEmpty) None
-    else Some(this.copy(self = seq).asInstanceOf[this.type])
+    else Some(this.copy(self = seq)(this.retries, this.hasEmptyOutput).asInstanceOf[this.type])
   }
 }
 
@@ -91,11 +94,13 @@ object Try {
 
   def apply(
              trace: Set[Trace],
-             retries: Int = Const.clusterRetries
+             retries: Int = Const.clusterRetries,
+             cacheFailed: Boolean = false
              ): Try = {
+
     assert(trace.size == 1)
 
-    Try(trace.head, retries)
+    Try(trace.head)(retries, cacheFailed)
   }
 }
 

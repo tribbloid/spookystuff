@@ -6,8 +6,7 @@ abstract class Actions(val self: Seq[Action]) extends ActionLike {
 
   final def outputNames = {
     val names = self.map(_.outputNames)
-    if (names.nonEmpty) names.reduce(_ ++ _) //reduce cannot be applied on empty set
-    else Set()
+    names.reduceLeftOption(_ ++ _).getOrElse(Set())
   }
 
   final protected def trunkSeq: Seq[Action] = self.flatMap(_.trunk)

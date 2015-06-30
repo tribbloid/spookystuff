@@ -22,7 +22,7 @@ trait ActionLike extends Serializable {
   final def injectTo(same: ActionLike): Unit = same.injectFrom(this)
 
   //used to determine if snapshot needs to be appended or if possible to be executed lazily
-  final def hasExport: Boolean = outputNames.nonEmpty
+  final def hasOutput: Boolean = outputNames.nonEmpty
 
   def outputNames: Set[String]
 

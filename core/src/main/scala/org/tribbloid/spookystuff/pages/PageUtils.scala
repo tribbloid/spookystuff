@@ -99,6 +99,8 @@ object PageUtils {
                  pageLikes: Seq[PageLike],
                  spooky: SpookyContext
                  ): Unit = {
+    if (pageLikes.isEmpty) return
+
     val pathStr = Utils.uriConcat(
       spooky.conf.dirs.cache,
       spooky.conf.cachePath(pageLikes.head.uid.backtrace).toString,

@@ -33,7 +33,7 @@ class TraceView(
         val result = action.apply(session)
         session.backtrace ++= action.trunk
 
-        if (action.hasExport) {
+        if (action.hasOutput) {
           assert(result.nonEmpty) //should always happen after introduction of NoPage
 
           results ++= result
@@ -58,8 +58,8 @@ class TraceView(
   lazy val dryrun: DryRun = {
     val result: ArrayBuffer[Trace] = ArrayBuffer()
 
-    for (i <- 0 until self.size) {
-      if (self(i).hasExport){
+    for (i <- self.indices) {
+      if (self(i).hasOutput){
         val backtrace = self.slice(0, i).flatMap(_.trunk) :+ self(i)
         result += backtrace
       }
@@ -70,7 +70,7 @@ class TraceView(
 
   //invoke before interpolation!
   def autoSnapshot: Trace = {
-    if (this.hasExport && self.nonEmpty) self
+    if (this.hasOutput && self.nonEmpty) self
     else self :+ Snapshot() //Don't use singleton, otherwise will flush timestamp and name
   }
 
@@ -86,7 +86,7 @@ class TraceView(
 
   def resolvePlain(spooky: SpookyContext): Seq[PageLike] = {
 
-    if (!this.hasExport) return Seq()
+    if (!this.hasOutput) return Seq()
 
     val pagesFromCache = if (!spooky.conf.cacheRead) Seq(null)
     else dryrun.map(dry => PageUtils.autoRestore(dry, spooky))
