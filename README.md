@@ -115,3 +115,7 @@ License
 Copyright &copy; 2014 by Peng Cheng @tribbloid, Sandeep Singh @techaddict, Terry Lin @ithinkicancode, Long Yao @l2yao and contributors.
 
 Published under ASF License, see LICENSE.
+
+
+[![Bitdeli Badge](https://d2weczhvl823v0.cloudfront.net/tribbloid/spookystuff/trend.png)](https://bitdeli.com/free "Bitdeli Badge")
+
