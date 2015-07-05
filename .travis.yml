@@ -6,3 +6,18 @@ jdk:
 
 before_install:
   - "sudo apt-get install -y tor"
+
+before_deploy:
+  - export RELEASE_PKG_FILES=$(ls ./assembly/target/spookystuff-assembly-*.zip)
+  - echo "deploying $RELEASE_PKG_FILE to GitHub releases"
+
+deploy:
+  provider: releases
+  api_key: "05e4fea65b38fba9c294b70041a0238ac8cf10d1"
+  file_glob: true
+  file: "${RELEASE_PKG_FILES}"
+  skip_cleanup: true
+  on:
+    branch:
+      - master
+      - branch
