@@ -19,4 +19,4 @@ deploy:
   on:
     branch:
       - master
-      - branch
+      - branch-*
