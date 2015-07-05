@@ -17,6 +17,21 @@
         <failsafe.version>2.18</failsafe.version>
     </properties>
 
+    <profiles>
+        <profile>
+            <id>spark-1.3</id>
+            <properties>
+                <spark.version>1.3.1</spark.version>
+            </properties>
+        </profile>
+        <profile>
+            <id>spark-1.4</id>
+            <activation>
+                <activeByDefault>true</activeByDefault>
+            </activation>
+        </profile>
+    </profiles>
+
     <groupId>org.tribbloid.spookystuff</groupId>
     <artifactId>spookystuff</artifactId>
     <packaging>pom</packaging>
@@ -63,7 +78,7 @@
         <module>core</module>
         <module>integration</module>
         <module>example</module>
-        <module>shell</module>
+        <module>assembly</module>
     </modules>
 
     <dependencies>

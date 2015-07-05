@@ -9,7 +9,13 @@
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>spookystuff-shell</artifactId>
+    <artifactId>spookystuff-assembly</artifactId>
+
+    <properties>
+        <assembly.jar.dir>scala-${scala.binary.version}</assembly.jar.dir>
+        <assembly.jar.basename>${project.artifactId}-${project.version}.jar</assembly.jar.basename>
+        <example.jar.basename>spookystuff-example-${project.version}.jar</example.jar.basename>
+    </properties>
 
     <dependencies>
         <dependency>
@@ -30,9 +36,9 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-shade-plugin</artifactId>
-                <version>2.3</version>
+                <version>2.4</version>
                 <configuration>
-                    <outputFile>${project.build.directory}/scala-${scala.binary.version}/${project.artifactId}-assembly-${project.version}.jar</outputFile>
+                    <outputFile>${project.build.directory}/${assembly.jar.dir}/${assembly.jar.basename}</outputFile>
                     <filters>
                         <filter>
                             <artifact>*:*</artifact>
@@ -65,4 +71,32 @@
         </plugins>
     </build>
 
+    <profiles>
+        <profile>
+            <id>dist</id>
+            <!-- This profile uses the assembly plugin to create a special "dist" package -->
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-assembly-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>dist</id>
+                                <phase>package</phase>
+                                <goals>
+                                    <goal>single</goal>
+                                </goals>
+                                <configuration>
+                                    <descriptors>
+                                        <descriptor>src/main/assembly/assembly.xml</descriptor>
+                                    </descriptors>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
 </project>

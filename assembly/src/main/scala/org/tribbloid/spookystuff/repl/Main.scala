@@ -28,5 +28,4 @@ object Main {
     org.apache.spark.repl.Main.interp = _interp
     _interp.process(args)
   }
-
 }
