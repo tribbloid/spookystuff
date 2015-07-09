@@ -13,15 +13,12 @@ object GoogleImage extends QueryCore {
   override def doMain(spooky: SpookyContext) = {
     import spooky.dsl._
 
-    sc.parallelize("Yale University,Havard University".split(",").map(_.trim))
-      .fetch(
-        Visit("http://images.google.com/")
-          +> WaitFor("form[action=\"/search\"]")
-          +> TextInput("input[name=\"q\"]","Logo '{_}")
-          +> Submit("input[name=\"btnG\"]")
-          +> WaitFor("div#search")
-      )
-      .select(x"%html ${S"div#search img".code}" ~ 'logo)
-      .toDF()
+    sc.parallelize("Yale University,Havard University".split(",").map(_.trim)).fetch(
+      Visit("http://images.google.com/")
+        +> WaitFor("form[action=\"/search\"]")
+        +> TextInput("input[name=\"q\"]","Logo '{_}")
+        +> Submit("input[name=\"btnG\"]")
+        +> WaitFor("div#search")
+    ).select(x"%html ${S"div#search img".codes.slice(0,5).mkString("<table><tr><td>","</td><td>","</td></tr></table>")}" ~ 'logo).toDF()
   }
 }

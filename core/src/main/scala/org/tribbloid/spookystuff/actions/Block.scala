@@ -30,7 +30,7 @@ abstract class Block(override val self: Seq[Action]) extends Actions(self) with 
     this
   }
 
-  def hasEmptyOutput: Boolean = true
+  def cacheNoPage: Boolean = true
 
   final override def doExe(session: Session): Seq[PageLike] = {
 
@@ -44,7 +44,7 @@ abstract class Block(override val self: Seq[Action]) extends Actions(self) with 
         page.copy(uid = page.uid.copy(backtrace = backtrace, blockIndex = tuple._2, blockSize = pages.size))
       }
     }
-    if (result.isEmpty && this.hasEmptyOutput) Seq(NoPage(backtrace))
+    if (result.isEmpty && this.cacheNoPage) Seq(NoPage(backtrace))
     else result
   }
 
@@ -55,10 +55,10 @@ abstract class Block(override val self: Seq[Action]) extends Actions(self) with 
 final case class Try(
                       override val self: Seq[Action])(
                       retries: Int,
-                      override val hasEmptyOutput: Boolean
+                      override val cacheNoPage: Boolean
                       ) extends Block(self) {
 
-  override def trunk = Some(Try(this.trunkSeq)(retries, hasEmptyOutput).asInstanceOf[this.type])
+  override def trunk = Some(Try(this.trunkSeq)(retries, cacheNoPage).asInstanceOf[this.type])
 
   override def doExeNoUID(session: Session): Seq[Page] = {
 
@@ -86,7 +86,7 @@ final case class Try(
   override def doInterpolate(pageRow: PageRow): Option[this.type] ={
     val seq = this.doInterpolateSeq(pageRow)
     if (seq.isEmpty) None
-    else Some(this.copy(self = seq)(this.retries, this.hasEmptyOutput).asInstanceOf[this.type])
+    else Some(this.copy(self = seq)(this.retries, this.cacheNoPage).asInstanceOf[this.type])
   }
 }
 

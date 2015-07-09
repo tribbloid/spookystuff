@@ -15,7 +15,7 @@ import scala.reflect.ClassTag
  */
 class TraceView(
                         override val self: Seq[Action]
-                        ) extends Actions(self) { //remember chain is not a block! its the super container that cannot be wrapped
+                        ) extends Actions(self) { //remember trace is not a block! its the super container that cannot be wrapped
 
   //always has output (Sometimes Empty) to handle left join
   override def doInterpolate(pr: PageRow): Option[this.type] = {
@@ -34,7 +34,6 @@ class TraceView(
         session.backtrace ++= action.trunk
 
         if (action.hasOutput) {
-          assert(result.nonEmpty) //should always happen after introduction of NoPage
 
           results ++= result
           session.spooky.metrics.pagesFetchedFromWeb += result.count(_.isInstanceOf[Page])
