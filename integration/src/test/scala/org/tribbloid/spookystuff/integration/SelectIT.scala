@@ -20,8 +20,8 @@ class SelectIT extends IntegrationSuite {
         Visit("http://www.wikipedia.org/")
       )
       .select(
-        $.uri,
-        $.timestamp,
+        S.uri,
+        S.timestamp,
 //        $"div.central-featured-lang".head ~ 'element,
 //        $"div.central-featured-lang" ~ 'elements,
         S"div.central-featured-lang em".text ~ 'title,

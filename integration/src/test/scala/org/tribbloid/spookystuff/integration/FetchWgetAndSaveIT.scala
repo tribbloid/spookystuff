@@ -24,7 +24,7 @@ class FetchWgetAndSaveIT extends IntegrationSuite {
       .select("Wikipedia.png" ~ 'name)
       .persist()
       .savePages(x"file://${System.getProperty("user.home")}/spooky-integration/save/${'name}", overwrite = true)
-      .select($.saved ~ 'saved_path)
+      .select(S.saved ~ 'saved_path)
       .persist()
 
     val savedPageRows = RDD.collect()

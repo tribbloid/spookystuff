@@ -24,7 +24,7 @@ class ExploreNextPageIT extends IntegrationSuite {
       )(
         'A.text ~ 'button_text
       )
-      .select($.uri ~ 'uri)
+      .select(S.uri ~ 'uri)
       .toDF(sort = true)
 
     assert(

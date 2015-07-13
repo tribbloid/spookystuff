@@ -21,7 +21,7 @@ class TestPageRowRDD extends SpookyEnvSuite {
     first.count()
 
     val second = first.wgetJoin(S"a".href, joinType = Append)
-      .select($.uri ~ 'uri)
+      .select(S.uri ~ 'uri)
       .repartition(14)
       .toJSON()
 
@@ -40,7 +40,7 @@ class TestPageRowRDD extends SpookyEnvSuite {
         Wget("http://www.wikipedia.org/")
       )
       .select(
-        $.andFlatMap{
+        S.andFlatMap{
           page =>
             acc += 1
             page.saved.headOption
@@ -59,7 +59,7 @@ class TestPageRowRDD extends SpookyEnvSuite {
         Wget("http://www.wikipedia.org/")
       )
       .select(
-        $.andFlatMap{
+        S.andFlatMap{
           page =>
             acc += 1
             page.saved.headOption
@@ -78,7 +78,7 @@ class TestPageRowRDD extends SpookyEnvSuite {
         Wget("http://www.wikipedia.org/")
       )
       .select(
-        $.andFlatMap{
+        S.andFlatMap{
           page =>
             acc += 1
             page.saved.headOption
@@ -97,7 +97,7 @@ class TestPageRowRDD extends SpookyEnvSuite {
         Wget("http://www.wikipedia.org/")
       )
       .select(
-        $.andFlatMap{
+        S.andFlatMap{
           page =>
             acc += 1
             page.saved.headOption

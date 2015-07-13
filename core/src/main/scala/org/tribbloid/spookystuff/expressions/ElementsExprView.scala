@@ -29,7 +29,7 @@ final class ElementsExprView(self: Expression[Elements[_]]) {
   def boilerPipes = self.andMap(_.boilerPipes, "text")
 }
 
-class PageSeqExprView(self: Expression[Iterable[Page]]) {
+class PageIterableExprView(self: Expression[Iterable[Page]]) {
 
   def timestamps: Expression[Iterable[Date]] = self.andMap(_.map(_.timestamp), "timestamps")
 

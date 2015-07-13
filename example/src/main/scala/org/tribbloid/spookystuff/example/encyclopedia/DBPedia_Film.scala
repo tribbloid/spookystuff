@@ -17,7 +17,7 @@ object DBPedia_Film extends QueryCore {
     import sql.implicits._
 
     sc.parallelize(
-      ("Gladiator").split(",").map(_.trim)
+      "Gladiator".split(",").map(_.trim)
     ).fetch(
         Wget("http://lookup.dbpedia.org/api/search/KeywordSearch?QueryClass=film&QueryString='{_}")
       ).join(S"Result".slice(0,3))(

@@ -4,7 +4,7 @@ import org.tribbloid.spookystuff.Const
 import org.tribbloid.spookystuff.entity.PageRow
 import org.tribbloid.spookystuff.pages.{Siblings, Elements, Page, Unstructured}
 
-import scala.collection.TraversableOnce
+import scala.collection.{IterableLike, TraversableOnce}
 import scala.collection.immutable.ListMap
 import scala.reflect.ClassTag
 
@@ -110,7 +110,7 @@ class InterpolateExpr(parts: Seq[String], fs: Seq[Expression[Any]])
   }
 }
 
-class ZippedExpr[T1,+T2](param1: Expression[Iterable[T1]], param2: Expression[Iterable[T2]]) extends Expression[Map[T1, T2]] {
+class ZippedExpr[T1,+T2](param1: Expression[IterableLike[T1, _]], param2: Expression[IterableLike[T2, _]]) extends Expression[Map[T1, T2]] {
   override val name: String = s"${param1.name}.zip(${param2.name})"
 
   override def apply(v1: PageRow): Option[Map[T1, T2]] = {
@@ -120,7 +120,7 @@ class ZippedExpr[T1,+T2](param1: Expression[Iterable[T1]], param2: Expression[It
 
     if (z1Option.isEmpty || z2Option.isEmpty) return None
 
-    val map = ListMap(z1Option.get.zip(z2Option.get).toSeq: _*)
+    val map: ListMap[T1, T2] = ListMap(z1Option.get.toSeq.zip(z2Option.get.toSeq): _*)
 
     Some(map)
   }

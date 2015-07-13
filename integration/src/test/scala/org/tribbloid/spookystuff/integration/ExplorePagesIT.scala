@@ -24,7 +24,7 @@ class ExplorePagesIT extends IntegrationSuite {
       )(
         'A.text ~ 'page
       )
-      .select($.uri ~ 'uri)
+      .select(S.uri ~ 'uri)
       .toDF(sort = true)
 
     assert(

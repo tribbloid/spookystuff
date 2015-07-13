@@ -39,7 +39,7 @@ class JoinAndExplorePagesIT extends IntegrationSuite {
       )(
         'A.text as 'page
       )
-      .select($.uri ~ 'uri)
+      .select(S.uri ~ 'uri)
       .toDF(sort = true)
       .persist()
 

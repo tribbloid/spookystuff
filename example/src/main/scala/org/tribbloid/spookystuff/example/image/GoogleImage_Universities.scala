@@ -18,10 +18,8 @@ object GoogleImage_Universities extends QueryCore {
       )
       .join(S"div.box2 a".texts ~ 'name)(
         Visit("http://images.google.com/")
-          +> WaitFor("form[action=\"/search\"]")
           +> TextInput("input[name=\"q\"]","Logo '{name}")
           +> Submit("input[name=\"btnG\"]")
-          +> WaitFor("div#search")
       )()
       .wgetJoin(S"div#search img".src, maxOrdinal = 1)
       .persist()
@@ -29,7 +27,7 @@ object GoogleImage_Universities extends QueryCore {
         x"file://${System.getProperty("user.home")}/spooky-example/$appName/images/${'name}"
       )
       .select(
-        $.saved ~ 'path
+        S.saved ~ 'path
       )
       .toDF()
   }

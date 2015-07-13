@@ -51,7 +51,6 @@ abstract class Block(override val self: Seq[Action]) extends Actions(self) with 
   def doExeNoUID(session: Session): Seq[Page]
 }
 
-//TODO: failsafe output (zero output) maybe written into L1&L2 cache and made permanent, need special handling to disable caching!
 final case class Try(
                       override val self: Seq[Action])(
                       retries: Int,

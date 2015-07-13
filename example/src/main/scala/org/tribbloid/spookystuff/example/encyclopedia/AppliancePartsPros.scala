@@ -23,17 +23,17 @@ object AppliancePartsPros extends QueryCore {
       .select(
         S"div.dgrm-lst div.header h2".text ~ 'model
       )
-      .wgetJoin($("div.inner li a:has(img)"), ordinalKey = 'schematic_index)
+      .wgetJoin(S("div.inner li a:has(img)"), ordinalKey = 'schematic_index)
       .select(
         S"div#ctl00_cphMain_up1 h1".text ~ 'schematic
       )
-      .wgetJoin($("tbody.m-bsc td.pdct-descr h2 a"), ordinalKey = 'part_index)
+      .wgetJoin(S("tbody.m-bsc td.pdct-descr h2 a"), ordinalKey = 'part_index)
       .select(
         S"div.m-pdct h1".text ~ 'name,
-        $("div.m-pdct td[itemprop=brand]").text ~ 'brand,
-        $("div.m-bsc div.mod ul li:contains(Manufacturer) strong").text ~ 'manufacturer,
-        $("div.m-pdct div.m-chm p").text ~ 'replace,
-        $.uri ~ 'uri
+        S("div.m-pdct td[itemprop=brand]").text ~ 'brand,
+        S("div.m-bsc div.mod ul li:contains(Manufacturer) strong").text ~ 'manufacturer,
+        S("div.m-pdct div.m-chm p").text ~ 'replace,
+        S.uri ~ 'uri
       )
       .toDF()
   }

@@ -1,5 +1,7 @@
 package org.tribbloid.spookystuff.pages
 
+import scala.collection.{SeqLike, mutable}
+
 /**
  * Created by peng on 11/27/14.
  */
@@ -33,7 +35,7 @@ trait Unstructured extends Serializable {
   def boilerPipe: Option[String]
 }
 
-class Elements[+T <: Unstructured](self: Array[T]) extends Unstructured with Seq[T] {
+class Elements[+T <: Unstructured](self: Array[T]) extends Unstructured with Seq[T] with SeqLike[T, Elements[T]] {
 
   def uris: Seq[String] = self.map(_.uri)
 
@@ -41,9 +43,9 @@ class Elements[+T <: Unstructured](self: Array[T]) extends Unstructured with Seq
 
   def attrs(attr: String, noEmpty: Boolean = true): Seq[String] = self.flatMap(_.attr(attr, noEmpty))
 
-  def hrefs(abs: Boolean) = attrs("abs:href")
+  final def hrefs(abs: Boolean) = attrs("abs:href")
 
-  def srcs = attrs("abs:src")
+  final def srcs = attrs("abs:src")
 
   def texts: Seq[String] = self.flatMap(_.text)
 
@@ -72,9 +74,11 @@ class Elements[+T <: Unstructured](self: Array[T]) extends Unstructured with Seq
   override def length: Int = self.length
 
   override def apply(idx: Int): T = self.apply(idx)
+
+  override protected[this] def newBuilder: mutable.Builder[T, Elements[T]] = ???
 }
 
-class Siblings[+T <: Unstructured](self: Array[T]) extends Elements[T](self) {
+class Siblings[+T <: Unstructured](self: Array[T]) extends Elements[T](self) with Seq[T] with SeqLike[T, Siblings[T]] {
 
   override def text = if (texts.isEmpty) None
   else Some(texts.filter(_.nonEmpty).mkString(" "))
@@ -87,4 +91,6 @@ class Siblings[+T <: Unstructured](self: Array[T]) extends Elements[T](self) {
 
   override def boilerPipe = if (boilerPipes.isEmpty) None
   else Some(boilerPipes.filter(_.nonEmpty).mkString(" "))
+
+  override protected[this] def newBuilder: mutable.Builder[T, Siblings[T]] = ???
 }

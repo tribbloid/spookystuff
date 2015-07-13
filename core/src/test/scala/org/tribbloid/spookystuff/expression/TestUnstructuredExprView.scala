@@ -19,7 +19,7 @@ class TestUnstructuredExprView extends SpookyEnvSuite {
     .head
 
   test("uri"){
-    assert($.uri.apply(row).get === "http://www.wikipedia.org/")
+    assert(S.uri.apply(row).get === "http://www.wikipedia.org/")
     assert('page.uri.apply(row).get === "http://www.wikipedia.org/")
     assert('abc.uri.apply(row).get === "http://www.wikipedia.org/")
   }

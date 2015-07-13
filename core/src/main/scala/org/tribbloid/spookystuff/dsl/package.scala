@@ -8,6 +8,7 @@ import org.tribbloid.spookystuff.expressions._
 import org.tribbloid.spookystuff.pages.{Elements, Page, Unstructured}
 import org.tribbloid.spookystuff.sparkbinding.{DataFrameView, PageRowRDD, StringRDDView}
 
+import scala.collection.IterableLike
 import scala.language.implicitConversions
 import scala.reflect.ClassTag
 
@@ -44,13 +45,13 @@ package object dsl {
   //'abc.$("div#a1").attr("src"): first "src" attribute of an unstructured field that match the selector
   //'abc.$("div#a1").attrs("src"): first "src" attribute of an unstructured field that match the selector
 
-  def $(selector: String): ChildrenExpr = GetOnlyPageExpr.children(selector)
-  def $(selector: String, i: Int): Expression[Unstructured] = GetOnlyPageExpr.children(selector).get(i)
-  def $: Expression[Page] = GetOnlyPageExpr
+  def S(selector: String): ChildrenExpr = GetOnlyPageExpr.children(selector)
+  def S(selector: String, i: Int): Expression[Unstructured] = GetOnlyPageExpr.children(selector).get(i)
+  def S: Expression[Page] = GetOnlyPageExpr
 
-  def $_*(selector: String): ChildrenExpr = GetAllPagesExpr.children(selector)
-  def $_*(selector: String, i: Int): Expression[Unstructured] = GetAllPagesExpr.children(selector).get(i)
-  def `$_*`: Expression[Elements[Page]] = GetAllPagesExpr
+  def S_*(selector: String): ChildrenExpr = GetAllPagesExpr.children(selector)
+  def S_*(selector: String, i: Int): Expression[Unstructured] = GetAllPagesExpr.children(selector).get(i)
+  def `S_*`: Expression[Elements[Page]] = GetAllPagesExpr
 
   def A(selector: String): ChildrenExpr = 'A.children(selector)
   def A(selector: String, i: Int): Expression[Unstructured] = 'A.children(selector).get(i)
@@ -67,18 +68,85 @@ package object dsl {
   implicit def elementsExprView(expr: Expression[Elements[_]]): ElementsExprView =
     new ElementsExprView(expr)
 
-  implicit def IterableExprView[T: ClassTag](expr: Expression[Iterable[T]]): IterableExprView[T] =
-    new IterableExprView[T](expr)
+  implicit class IterableLikeExprView[T: ClassTag, Repr](self: Expression[IterableLike[T, Repr]]) {
 
-  implicit def stringExprView(expr: Expression[String]): StringExprView =
-    new StringExprView(expr)
+    def head: Expression[T] = self.andFlatMap(_.headOption, "head")
+
+    def last: Expression[T] = self.andFlatMap(_.lastOption, "last")
+
+    def get(i: Int): Expression[T] = self.andFlatMap({
+      iterable =>
+        val realIdx = if (i >= 0) i
+        else iterable.size - i
+
+        if (realIdx>=iterable.size || realIdx<0) None
+        else Some(iterable.toSeq.apply(realIdx))
+    },
+    s"get($i)")
+
+    def size: Expression[Int] = self.andMap(_.size, "size")
+
+    def isEmpty: Expression[Boolean] = self.andMap(_.isEmpty)
+
+    def nonEmpty: Expression[Boolean] = self.andMap(_.nonEmpty)
+
+    def mkString(sep: String = ""): Expression[String] = self.andMap(_.mkString(sep), s"mkString($sep)")
+
+    def mkString(start: String, sep: String, end: String): Expression[String] = self.andMap(_.mkString(start, sep, end), s"mkString($sep)")
+
+    //TODO: Why IterableExprView.filter cannot be applied on ZippedExpr? is the scala compiler malfunctioning?
+    def zipWithKeys(keys: Expression[Any]): ZippedExpr[Any, T] =
+      new ZippedExpr[Any,T](keys.typed[IterableLike[_,_]], self)
+
+    def zipWithValues(values: Expression[Any]): ZippedExpr[T, Any] =
+      new ZippedExpr[T,Any](self, values.typed[IterableLike[_,_]])
+
+    def groupBy[K](f: T => K): Expression[Map[K, Repr]] = self.andMap {
+      v =>
+        v.groupBy(f)
+    }
+
+    def slice(from: Int = Int.MinValue, until: Int = Int.MaxValue): Expression[Repr] = self.andMap {
+      v =>
+        v.slice(from, until)
+    }
+
+    def filter(f: T => Boolean): Expression[Repr] = self.andMap(_.filter(f))
+
+    def distinct: Expression[Seq[T]] = self.andMap(_.toSeq.distinct)
+
+    def distinctBy[K](f: T => K): Expression[Iterable[T]] = this.groupBy(f).andMap{
+      v =>
+        v.values.flatMap{
+          case repr: Traversable[T] => repr.headOption
+          case repr: T => Some(repr)
+          case _ => None
+        }
+    }
+
+    //TODO: handle exception
+    //  def only: Expr[T] =
+    //    expr.andThen(NamedFunction1("only", _.map{
+    //      seq =>
+    //        assert(seq.size == 1)
+    //        seq.head
+    //    }))
+  }
+
+  implicit class StringExprView(self: Expression[String]) {
+
+    def replaceAll(regex: String, replacement: String): Expression[String] =
+      self.andMap(_.replaceAll(regex, replacement), s"replaceAll($regex,$replacement)")
+
+    def trim: Expression[String] = self.andMap(_.trim, "trim")
+
+    //  def urlParam
+  }
 
   //--------------------------------------------------
 
   implicit def symbolToExpr(symbol: Symbol): GetExpr =
     new GetExpr(symbol.name)
-
-//  implicit def symbolToStrExpr(symbol: Symbol): Expr[String] = exprView[Any](new GetExpr(symbol.name)).map(_.toString)
 
   implicit def symbolToExprView(symbol: Symbol): ExprView[Any] =
     new GetExpr(symbol.name)
@@ -89,7 +157,7 @@ package object dsl {
   implicit def symbolToPageExprView(symbol: Symbol): PageExprView =
     new GetPageExpr(symbol.name)
 
-  implicit def symbolToSeqExprView(symbol: Symbol): IterableExprView[Any] =
+  implicit def symbolToIterableLikeExprView(symbol: Symbol): IterableLikeExprView[Any, Seq[Any]] =
     new GetSeqExpr(symbol.name)
 
   implicit def stringToExpr(str: String): Expression[String] = {
@@ -119,9 +187,4 @@ package object dsl {
 
     def A() = 'A.children(strC.s())
   }
-
-  //--------------------------------------------------
-
-//  implicit def UnstructuredIterableView(self: Iterable[Unstructured]): UnstructuredGroup =
-//    new UnstructuredGroup(self)
 }

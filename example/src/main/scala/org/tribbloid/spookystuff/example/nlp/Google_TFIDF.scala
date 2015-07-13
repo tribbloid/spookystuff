@@ -1,12 +1,11 @@
 package org.tribbloid.spookystuff.example.nlp
 
-import java.net.URI
-
 import org.apache.spark.mllib.feature.{HashingTF, IDF}
 import org.tribbloid.spookystuff.SpookyContext
 import org.tribbloid.spookystuff.actions._
 import org.tribbloid.spookystuff.dsl._
 import org.tribbloid.spookystuff.example.QueryCore
+import org.tribbloid.spookystuff.http.HttpUtils
 
 /**
  * Created by peng on 16/06/15.
@@ -29,9 +28,9 @@ object Google_TFIDF extends QueryCore {
       uris =>
         uris.flatMap {
           uri =>
-            new URI(uri).getQuery.split("&").find(_.startsWith("q=")).map(_.replaceAll("q=",""))
+            HttpUtils.uri(uri).getQuery.split("&").find(_.startsWith("q=")).map(_.replaceAll("q=",""))
         }
-    },failSafe = 4
+    },failSafe = 2
       ).select(
         '$.boilerPiple ~ 'text
       ).toDF().select('_, 'text).map(r => r.getString(0) -> r.getString(1)).reduceByKey(_ + _).mapValues(
