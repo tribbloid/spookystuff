@@ -8,19 +8,20 @@ import org.tribbloid.spookystuff.expressions._
 import org.tribbloid.spookystuff.pages.{Elements, Page, Unstructured}
 import org.tribbloid.spookystuff.sparkbinding.{DataFrameView, PageRowRDD, StringRDDView}
 
-import scala.collection.IterableLike
+import scala.collection.generic.CanBuildFrom
+import scala.collection.{GenTraversableOnce, IterableLike}
 import scala.language.implicitConversions
 import scala.reflect.ClassTag
 
 /**
-* Created by peng on 9/18/14.
-*/
+ * Created by peng on 9/18/14.
+ */
 package object dsl {
 
-//  type SerializableCookie = Cookie with Serializable
+  //  type SerializableCookie = Cookie with Serializable
 
   implicit def PageRowRDDToSelf(wrapper: PageRowRDD): RDD[PageRow] = wrapper.self
-  
+
   implicit def spookyContextToPageRowRDD(spooky: SpookyContext): PageRowRDD =
     new PageRowRDD(spooky.sqlContext.sparkContext.parallelize(Seq(PageRow())), spooky = spooky.getContextForNewInput)
 
@@ -131,6 +132,16 @@ package object dsl {
     //        assert(seq.size == 1)
     //        seq.head
     //    }))
+
+    def map[B, That](f: T => B)(implicit bf: CanBuildFrom[Repr, B, That]) = self.andMap {
+      v =>
+        v.map {f}
+    }
+
+    def flatMap[B, That](f: T => GenTraversableOnce[B])(implicit bf: CanBuildFrom[Repr, B, That]) = self.andMap {
+      v =>
+        v.flatMap {f}
+    }
   }
 
   implicit class StringExprView(self: Expression[String]) {

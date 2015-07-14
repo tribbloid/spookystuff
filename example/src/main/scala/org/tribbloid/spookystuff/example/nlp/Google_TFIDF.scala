@@ -24,12 +24,9 @@ object Google_TFIDF extends QueryCore {
         +> TextInput("input[name=\"q\"]","'{_} Company")
         +> Submit("input[name=\"btnG\"]")
     ).wgetExplore(S"a:contains(next)", maxDepth = 1, depthKey = 'page, optimizer = Narrow
-      ).wgetJoin(S"li.g h3.r a[href^=/url]".hrefs.andMap {
-      uris =>
-        uris.flatMap {
-          uri =>
-            HttpUtils.uri(uri).getQuery.split("&").find(_.startsWith("q=")).map(_.replaceAll("q=",""))
-        }
+      ).wgetJoin(S"li.g h3.r a[href^=/url]".hrefs.flatMap {
+      uri =>
+        HttpUtils.uri(uri).getQuery.split("&").find(_.startsWith("q=")).map(_.replaceAll("q=",""))
     },failSafe = 2
       ).select(
         '$.boilerPiple ~ 'text
