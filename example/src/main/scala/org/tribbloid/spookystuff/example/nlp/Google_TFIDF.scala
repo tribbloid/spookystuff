@@ -27,9 +27,8 @@ object Google_TFIDF extends QueryCore {
       ).wgetJoin(S"li.g h3.r a[href^=/url]".hrefs.flatMap {
       uri =>
         HttpUtils.uri(uri).getQuery.split("&").find(_.startsWith("q=")).map(_.replaceAll("q=",""))
-    },failSafe = 2
-      ).select(
-        '$.boilerPiple ~ 'text
+    },failSafe = 2 ).select(
+        '$.boilerPipe ~ 'text
       ).toDF().select('_, 'text).map(r => r.getString(0) -> r.getString(1)).reduceByKey(_ + _).mapValues(
         s => s.split("[^\\w]+").toSeq.filterNot(_.length <3))
 

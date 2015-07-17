@@ -54,7 +54,7 @@ object SpookyConf {
  * Created by peng on 12/06/14.
  * will be shipped to workers
  */
-//TODO: is var in serialized closure unstable for Spark production environment? consider changing to ConcurrentHashMap
+//TODO: is var in serialized closure unstable for Spark production environment? consider changing to ConcurrentHashMap or merge with SparkConf
 class SpookyConf (
                    val dirs: Dirs = new Dirs(),
 

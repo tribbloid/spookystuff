@@ -51,6 +51,11 @@
             <version>${spark.version}</version>
             <scope>${dependencies.scope}</scope>
         </dependency>
+        <dependency>
+            <groupId>cc.factorie</groupId>
+            <artifactId>factorie_${scala.binary.version}</artifactId>
+            <version>1.1.1</version>
+        </dependency>
     </dependencies>
 
     <build>

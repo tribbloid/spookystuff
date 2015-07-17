@@ -9,16 +9,18 @@ trait Unstructured extends Serializable {
 
   def uri: String
 
-  def children(selector: String): Elements[Unstructured]
+  def children(selector: Selector): Elements[Unstructured]
 
-  final def child(selector: String): Option[Unstructured] = children(selector).headOption
+  final def child(selector: Selector): Option[Unstructured] =
+    children(selector).headOption
 
   def childrenWithSiblings(
-                        selector: String,
+                        selector: Selector,
                         range: Range
                         ): Elements[Siblings[Unstructured]]
 
-  final def childWithSiblings(selector: String, range: Range): Option[Siblings[Unstructured]] = childrenWithSiblings(selector, range).headOption
+  final def childWithSiblings(selector: Selector, range: Range): Option[Siblings[Unstructured]] =
+    childrenWithSiblings(selector, range).headOption
 
   def code: Option[String]
 

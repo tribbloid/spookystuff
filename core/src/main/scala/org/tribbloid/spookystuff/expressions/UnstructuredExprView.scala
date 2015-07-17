@@ -3,7 +3,7 @@ package org.tribbloid.spookystuff.expressions
 import java.util.Date
 
 import org.tribbloid.spookystuff.dsl
-import org.tribbloid.spookystuff.pages.{Elements, Page, Unstructured}
+import org.tribbloid.spookystuff.pages.{Page, Unstructured}
 
 import scala.collection.immutable.ListSet
 
@@ -32,7 +32,7 @@ final class UnstructuredExprView(self: Expression[Unstructured]) {
 
   def src = attr("abs:src", noEmpty = true)
 
-  def boilerPiple = self.andFlatMap(_.boilerPipe, "boilerPipe")
+  def boilerPipe = self.andFlatMap(_.boilerPipe, "boilerPipe")
 }
 
 class PageExprView(self: Expression[Page]) {

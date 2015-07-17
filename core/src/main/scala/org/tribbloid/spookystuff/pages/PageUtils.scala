@@ -73,8 +73,8 @@ object PageUtils {
 
   //unlike save, this will store all information in an unreadable, serialized, probably compressed file
   //always overwrite, use the same serializer as Spark
-  private def cache(
-                     pageLikes: Seq[PageLike],
+  private def cache[T](
+                     pageLikes: Seq[T],
                      path: String,
                      overwrite: Boolean = false
                      )(spooky: SpookyContext): Unit =
@@ -88,11 +88,28 @@ object PageUtils {
       val serOut = ser.serializeStream(fos)
 
       try {
-        serOut.writeObject[Seq[PageLike]](Serializable[Seq[PageLike]](pageLikes, 91252374923L))
+        serOut.writeObject[Seq[T]](Serializable[Seq[T]](pageLikes, 91252374923L))
       }
       finally {
         serOut.close()
       }
+    }
+
+  private def restore[T](fullPath: Path)(spooky: SpookyContext): Seq[T] =
+    DFSRead("restore", fullPath.toString, spooky) {
+      val fs = fullPath.getFileSystem(spooky.hadoopConf)
+
+      val ser = SparkEnv.get.serializer.newInstance()
+      val fis = fs.open(fullPath)
+      val serIn = ser.deserializeStream(fis)
+      val result = try {
+        serIn.readObject[Seq[T]]()
+      }
+      finally{
+        serIn.close()
+      }
+
+      result
     }
 
   def autoCache(
@@ -109,23 +126,6 @@ object PageUtils {
 
     cache(pageLikes, pathStr)(spooky)
   }
-
-  private def restore(fullPath: Path)(spooky: SpookyContext): Seq[PageLike] =
-    DFSRead("restore", fullPath.toString, spooky) {
-      val fs = fullPath.getFileSystem(spooky.hadoopConf)
-
-      val ser = SparkEnv.get.serializer.newInstance()
-      val fis = fs.open(fullPath)
-      val serIn = ser.deserializeStream(fis)
-      val result = try {
-        serIn.readObject[Seq[PageLike]]()
-      }
-      finally{
-        serIn.close()
-      }
-
-      result
-    }
 
   //restore latest in a directory
   //returns: Seq() => has backtrace dir but contains no page
@@ -152,7 +152,7 @@ object PageUtils {
 
     latestStatus match {
       case Some(status) =>
-        val results = restore(status.getPath)(spooky)
+        val results = restore[PageLike](status.getPath)(spooky)
         if (results == null) {
           LoggerFactory.getLogger(this.getClass).warn("Cached content is corrputed")
           null

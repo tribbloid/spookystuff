@@ -11,6 +11,9 @@ import org.jsoup.nodes.Element
  */
 object HtmlElement {
 
+  def apply(html: String, uri: String) = new HtmlElement(null, html, None, uri)
+
+  def apply(content: Array[Byte], charSet: Charset, uri: String) = apply(new String(content, charSet), uri)
 }
 
 class HtmlElement private (
@@ -28,11 +31,6 @@ class HtmlElement private (
     _parsed.baseUri()
   )
 
-  //constructor for HtmlElemtn returned by
-  def this(html: String, uri: String) = this(null, html, None, uri)
-
-  def this(content: Array[Byte], charSet: Charset, uri: String) = this(new String(content, charSet), uri)
-
   override def equals(obj: Any): Boolean = obj match {
     case other: HtmlElement =>
       (this.html == other.html) && (this.uri == other.uri)
@@ -40,8 +38,6 @@ class HtmlElement private (
   }
 
   override def hashCode(): Int = (this.html, this.uri).hashCode()
-
-  private def fragmentContainer = Jsoup.parseBodyFragment("<table></table>", uri)
 
   @transient lazy val parsed = Option(_parsed).getOrElse {
 
@@ -60,9 +56,9 @@ class HtmlElement private (
 
   override def children(selector: String) = new Elements(parsed.select(selector).map(new HtmlElement(_)).toArray)
 
-  override def childrenWithSiblings(start: String, range: Range) = {
+  override def childrenWithSiblings(selector: String, range: Range) = {
 
-    val children = parsed.select(start)
+    val children = parsed.select(selector)
     val colls = children.map{
       self =>
         val selfIndex = self.elementSiblingIndex()
@@ -87,6 +83,7 @@ class HtmlElement private (
   override def code: Option[String] = Some(html)
 
   override def attr(attr: String, noEmpty: Boolean = true): Option[String] = {
+
     val result = parsed.attr(attr)
 
     if (noEmpty && result.trim.replaceAll("\u00A0", "").isEmpty) None
@@ -105,13 +102,3 @@ class HtmlElement private (
 
   override def toString: String = html
 }
-
-//object HtmlElementSerializer extends Serializer[HtmlElement] {
-//
-//  override def deserialize(implicit format: Formats): PartialFunction[(TypeInfo, JValue), HtmlElement] = ??? //TODO: how to support it?
-//
-//  override def serialize(implicit format: Formats): PartialFunction[Any, JValue] = {
-//    case element: HtmlElement =>
-//      JString(element.html)
-//  }
-//}
