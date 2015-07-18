@@ -17,7 +17,7 @@ object JsonElement {
         val res = array.arr.map{
           field =>
             new JsonElement(tag -> field, uri)
-        }.toArray
+        }.toList
         new Siblings(res)
       case _ =>
         new JsonElement(tag -> parsed, uri)
@@ -34,8 +34,6 @@ class JsonElement private (
 
   import org.json4s._
 
-
-
   override def equals(obj: Any): Boolean = obj match {
     case other: JsonElement =>
       (this.field == other.field) && (this.uri == other.uri)
@@ -44,7 +42,7 @@ class JsonElement private (
 
   override def hashCode(): Int = (this.field, this.uri).hashCode()
 
-  override def children(selector: Selector) = {
+  override def children(selector: Selector): Elements[JsonElement] = {
 
     val selected = field._2 \\ selector
 
@@ -53,23 +51,26 @@ class JsonElement private (
         val res = obj.obj.map{
           field =>
             new JsonElement(field, this.uri)
-        }.toArray
+        }.toList
         new Elements(res)
       case array: JArray =>
         val res = array.arr.map{
           field =>
             new JsonElement(selector -> field, this.uri)
-        }.toArray
+        }.toList
         new Siblings(res)
       case _ =>
         new Elements(
-          Array(new JsonElement(selector -> selected, this.uri))
+          List(new JsonElement(selector -> selected, this.uri))
         )
     }
   }
 
-  override def childrenWithSiblings(selector: Selector, range: Range) = //TODO: how to implement?
-    children(selector).map[Siblings[Unstructured], Elements[Siblings[Unstructured]]](unstructured => new Siblings(Array(unstructured)))
+  //TODO: how to implement?
+  override def childrenWithSiblings(selector: Selector, range: Range) = {
+    val children = this.children(selector).self
+    new Elements(children.map(unstructured => new Siblings(List(unstructured))))
+  }
 
   override def code: Option[String] = Some(JsonMethods.compact(field._2))
 
@@ -98,7 +99,7 @@ class JsonElement private (
     case _ => Some(field._2.values.toString)
   }
 
-  override def boilerPipe: Option[String] = None //unsupported
+  override def boilerPipe: Option[String] = ??? //TODO: unsupported, does it make sense
 
   override def toString: String = code.get
 }

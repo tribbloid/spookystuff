@@ -1,4 +1,4 @@
-package org.tribbloid.spookystuff.example.nlp
+package org.tribbloid.spookystuff.example.ml
 
 import org.apache.spark.mllib.feature.{HashingTF, IDF}
 import org.tribbloid.spookystuff.SpookyContext

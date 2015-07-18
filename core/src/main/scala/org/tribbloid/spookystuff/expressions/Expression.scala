@@ -76,7 +76,7 @@ object GetOnlyPageExpr extends Expression[Page] {
 object GetAllPagesExpr extends Expression[Elements[Page]] {
   override val name = Const.allPagesWildcard
 
-  override def apply(v1: PageRow): Option[Elements[Page]] = Some(new Elements(v1.pages))
+  override def apply(v1: PageRow): Option[Elements[Page]] = Some(new Elements(v1.pages.toList))
 }
 
 object GetSegmentIDExpr extends Expression[String] {

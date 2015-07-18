@@ -11,9 +11,9 @@ import org.jsoup.nodes.Element
  */
 object HtmlElement {
 
-  def apply(html: String, uri: String) = new HtmlElement(null, html, None, uri)
+  def apply(html: String, uri: String): HtmlElement = new HtmlElement(null, html, None, uri)
 
-  def apply(content: Array[Byte], charSet: Charset, uri: String) = apply(new String(content, charSet), uri)
+  def apply(content: Array[Byte], charSet: Charset, uri: String): HtmlElement = apply(new String(content, charSet), uri)
 }
 
 class HtmlElement private (
@@ -54,7 +54,7 @@ class HtmlElement private (
 
   import scala.collection.JavaConversions._
 
-  override def children(selector: String) = new Elements(parsed.select(selector).map(new HtmlElement(_)).toArray)
+  override def children(selector: String) = new Elements(parsed.select(selector).map(new HtmlElement(_)).toList)
 
   override def childrenWithSiblings(selector: String, range: Range) = {
 
@@ -75,9 +75,9 @@ class HtmlElement private (
 
         val selected = siblings.slice(head,  tail + 1)
 
-        new Siblings(selected.map(new HtmlElement(_)).toArray)
+        new Siblings(selected.map(new HtmlElement(_)).toList)
     }
-    new Elements(colls.toArray)
+    new Elements(colls.toList)
   }
 
   override def code: Option[String] = Some(html)

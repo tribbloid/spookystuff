@@ -94,7 +94,7 @@ object Try {
   def apply(
              trace: Set[Trace],
              retries: Int = Const.clusterRetries,
-             cacheFailed: Boolean = false
+             cacheFailed: Boolean = true
              ): Try = {
 
     assert(trace.size == 1)
