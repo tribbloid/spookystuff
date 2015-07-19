@@ -1,5 +1,7 @@
 package org.tribbloid.spookystuff
 
+import java.util.Date
+
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.DataFrame
 import org.tribbloid.spookystuff.actions.{Action, Trace, TraceSetView, TraceView}
@@ -7,7 +9,9 @@ import org.tribbloid.spookystuff.entity.PageRow
 import org.tribbloid.spookystuff.expressions._
 import org.tribbloid.spookystuff.pages.{Elements, Page, Unstructured}
 import org.tribbloid.spookystuff.sparkbinding.{DataFrameView, PageRowRDD, StringRDDView}
+import org.tribbloid.spookystuff.utils.Default
 
+import scala.collection.immutable.ListSet
 import scala.collection.{GenTraversableOnce, IterableLike}
 import scala.language.implicitConversions
 import scala.reflect.ClassTag
@@ -56,19 +60,112 @@ package object dsl {
   def A(selector: String): ChildrenExpr = 'A.children(selector)
   def A(selector: String, i: Int): Expression[Unstructured] = 'A.children(selector).get(i)
 
-  implicit def exprView[T: ClassTag](expr: Expression[T]): ExprView[T] =
-    new ExprView(expr)
+  implicit class ExprView[+T: ClassTag](self: Expression[T]) extends Serializable {
 
-  implicit def unstructuredExprView(expr: Expression[Unstructured]): UnstructuredExprView =
-    new UnstructuredExprView(expr)
+    def defaultVal: T = Default.value[T]
 
-  implicit def pageExprView(expr: Expression[Page]): PageExprView =
-    new PageExprView(expr)
+    def andMap[A](g: T => A): Expression[A] = self.andThen(_.map(v => g(v)))
 
-  implicit def elementsExprView(expr: Expression[Elements[_]]): ElementsExprView =
-    new ElementsExprView(expr)
+    def andMap[A](g: T => A, name: String): Expression[A] = self.andThen(NamedFunction1(_.map(v => g(v)), name))
 
-  implicit class IterableLikeExprView[T: ClassTag, Repr](self: Expression[IterableLike[T, Repr]]) {
+    def andFlatMap[A](g: T => Option[A]): Expression[A] = self.andThen(_.flatMap(v => g(v)))
+
+    def andFlatMap[A](g: T => Option[A], name: String): Expression[A] = self.andThen(NamedFunction1(_.flatMap(v => g(v)), name))
+
+    def typed[A](implicit ev: ClassTag[A]) = this.andFlatMap[A](
+      {
+        case res: A => Some(res)
+        case _ => None
+      }: T => Option[A],
+      s"filterByType[${ev.toString()}}]"
+    )
+
+    def into(name: Symbol): Expression[Traversable[T]] = new InsertIntoExpr[T](name.name, self)
+    def ~+(name: Symbol) = into(name)
+
+    //these will convert Expression to a common function
+    def getOrElse[B >: T](value: =>B = defaultVal): NamedFunction1[PageRow, B] = self.andThen(
+      NamedFunction1(_.getOrElse(value), s"getOrElse($value)")
+    )
+
+    def orElse[B >: T](valueOption: =>Option[B] = Some(defaultVal)): Expression[B] = self.andThen(
+      NamedFunction1(_.orElse(valueOption), s"orElse($valueOption)")
+    )
+
+    def get: NamedFunction1[PageRow, T] = self.andThen(
+      NamedFunction1(_.get, s"get")
+    )
+
+    //  def defaultToHrefExpr = (self match {
+    //    case expr: Expr[Unstructured] => expr.href
+    //    case expr: Expr[Seq[Unstructured]] => expr.hrefs
+    //    case _ => self
+    //  }) > Symbol(Const.joinExprKey)
+
+    //  def defaultToTextExpr = (this match {
+    //    case expr: Expr[Unstructured] => expr.text
+    //    case expr: Expr[Seq[Unstructured]] => expr.texts
+    //    case _ => this
+    //  }) as Symbol(Const.joinExprKey)
+  }
+
+  implicit class UnstructuredExprView(self: Expression[Unstructured]) extends Serializable {
+
+    def uri: Expression[String] = self.andMap(_.uri, "uri")
+
+    def child(selector: String): ChildExpr = new ChildExpr(selector, self)
+
+    def children(selector: String): ChildrenExpr = new ChildrenExpr(selector, self)
+
+    def text: Expression[String] = self.andFlatMap(_.text, "text")
+
+    def code = self.andFlatMap(_.code, "text")
+
+    def ownText: Expression[String] = self.andFlatMap(_.ownText, "ownText")
+
+    def attr(attrKey: String, noEmpty: Boolean = true): Expression[String] = self.andFlatMap(_.attr(attrKey, noEmpty), s"attr($attrKey,$noEmpty)")
+
+    def href = attr("abs:href", noEmpty = true)
+
+    def src = attr("abs:src", noEmpty = true)
+
+    def boilerPipe = self.andFlatMap(_.boilerPipe, "boilerPipe")
+  }
+
+  implicit class ElementsExprView(self: Expression[Elements[_]]) extends Serializable {
+
+    def uris: Expression[Seq[String]] = self.andMap(_.uris, "uris")
+
+    def texts: Expression[Seq[String]] = self.andMap(_.texts, "texts")
+
+    def codes: Expression[Seq[String]] = self.andMap(_.codes, "text")
+
+    def ownTexts: Expression[Seq[String]] = self.andMap(_.ownTexts, "ownTexts")
+
+    def attrs(attrKey: String, noEmpty: Boolean = true): Expression[Seq[String]] = self.andMap(_.attrs(attrKey, noEmpty), s"attrs($attrKey,$noEmpty)")
+
+    def hrefs = attrs("abs:href", noEmpty = true)
+
+    def srcs = attrs("abs:src", noEmpty = true)
+
+    def boilerPipes = self.andMap(_.boilerPipes, "text")
+  }
+
+  implicit class PageExprView(self: Expression[Page]) extends Serializable {
+
+    def timestamp: Expression[Date] = self.andMap(_.timestamp, "timestamp")
+
+    def saved: Expression[ListSet[String]] = self.andMap(_.saved, "saved")
+  }
+
+  implicit class PageTraversableOnceExprView(self: Expression[TraversableOnce[Page]]) extends Serializable {
+
+    def timestamps: Expression[Seq[Date]] = self.andMap(_.toSeq.map(_.timestamp), "timestamps")
+
+    def saveds: Expression[Seq[ListSet[String]]] = self.andMap(_.toSeq.map(_.saved), "saveds")
+  }
+
+  implicit class IterableLikeExprView[T: ClassTag, Repr](self: Expression[IterableLike[T, Repr]]) extends Serializable {
 
     def head: Expression[T] = self.andFlatMap(_.headOption, "head")
 
@@ -150,20 +247,19 @@ package object dsl {
       v => v.toSeq.map(f),
       s"map($f)"
     )
+
     def flatMap[B](f: T => GenTraversableOnce[B]): Expression[Seq[B]] = self.andMap (
       v => v.toSeq.flatMap(f),
       s"flatMap($f)"
     )
   }
 
-  implicit class StringExprView(self: Expression[String]) {
+  implicit class StringExprView(self: Expression[String]) extends Serializable {
 
     def replaceAll(regex: String, replacement: String): Expression[String] =
       self.andMap(_.replaceAll(regex, replacement), s"replaceAll($regex,$replacement)")
 
     def trim: Expression[String] = self.andMap(_.trim, "trim")
-
-    //  def urlParam
   }
 
   //--------------------------------------------------
@@ -198,7 +294,7 @@ package object dsl {
 
   implicit def dataFrameToItsView(rdd: DataFrame): DataFrameView = new DataFrameView(rdd)
 
-  implicit class StrContextHelper(val strC: StringContext) {
+  implicit class StrContextHelper(val strC: StringContext) extends Serializable {
 
     def x(fs: Expression[Any]*) = new InterpolateExpr(strC.parts, fs)
 
