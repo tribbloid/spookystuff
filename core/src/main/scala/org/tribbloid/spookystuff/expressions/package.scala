@@ -11,6 +11,8 @@ package object expressions {
 
   type Expression[+R] = NamedFunction1[PageRow, Option[R]]
 
+  type ForceExpression[+R] = ForceNamedFunction1[PageRow, Option[R]]
+
   type PageFilePath[+R] = (Page => R)
 
   type CacheFilePath[+R] = (Trace => R)

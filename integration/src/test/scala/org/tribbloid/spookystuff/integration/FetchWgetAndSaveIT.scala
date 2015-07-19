@@ -64,7 +64,7 @@ class FetchWgetAndSaveIT extends IntegrationSuite {
   }
 
   override def numPages = {
-    case Wide_WebCachedRDD => 1
+    case Wide_RDDWebCache => 1
     case _ => 2
   }
 

@@ -78,7 +78,7 @@ class JoinAndExplorePagesIT extends IntegrationSuite {
   }
 
   override def numPages = {
-    case Wide_WebCachedRDD => 15
+    case Wide_RDDWebCache => 15
     case _ => 16
   }
 

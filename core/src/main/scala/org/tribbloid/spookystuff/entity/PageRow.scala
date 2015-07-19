@@ -150,23 +150,24 @@ case class PageRow(
     Utils.toJson(this.toMap.canonizeKeysToColumnNames)
   }
 
-  def select(exprs: Expression[Any]*): Option[PageRow] = {
-    val newKVs = exprs.map(expr => Key(expr.name) -> expr(this))
+  def select(exprs: Expression[Any]*): Option[PageRow] = _select(exprs, temp = false)
+
+  def selectTemp(exprs: Expression[Any]*): Option[PageRow] = _select(exprs, temp = true)
+
+  private def _select(exprs: Seq[Expression[Any]], temp: Boolean) = {
+    val newKVs = exprs.map{
+      expr =>
+        val key = if (temp) TempKey(expr.name)
+        else Key(expr.name)
+        key -> expr(this)
+    }
 
     val addKVs = newKVs.filter(_._2.nonEmpty).map(tuple => tuple._1 -> tuple._2.get)
-    val removeKVs = newKVs.filter(_._2.isEmpty).map(_._1)
 
-    Some(this.copy(store = this.store ++ addKVs -- removeKVs))
-  }
+//    val removeKVs = newKVs.filter(_._2.isEmpty).map(_._1)
 
-  def selectTemp(exprs: Expression[Any]*): Option[PageRow] = {
-
-    val newKVs = exprs.map(expr => TempKey(expr.name) -> expr(this))
-
-    val addKVs = newKVs.filter(_._2.nonEmpty).map(tuple => tuple._1 -> tuple._2.get)
-    val removeKVs = newKVs.filter(_._2.isEmpty).map(_._1)
-
-    Some(this.copy(store = this.store ++ addKVs -- removeKVs))
+//    Some(this.copy(store = this.store ++ addKVs -- removeKVs))
+    Some(this.copy(store = this.store ++ addKVs)) //TODO: is there an negative impact of not removing empty KVs?
   }
 
   def remove(keys: KeyLike*): PageRow = {

@@ -21,7 +21,7 @@ object Google_TFIDF extends QueryCore {
     import spooky.dsl._
     import sql.implicits._
 
-    val raw = sc.parallelize("DaJiang Innovations,3D Rototics,Parrot,Airware".split(",").map(_.trim)).fetch(
+    val raw = sc.parallelize("Dell, DJI, Starbucks, McDonald".split(",").map(_.trim)).fetch(
       Visit("http://www.google.com/")
         +> TextInput("input[name=\"q\"]","'{_} Company")
         +> Submit("input[name=\"btnG\"]")
@@ -33,7 +33,7 @@ object Google_TFIDF extends QueryCore {
         '$.boilerPipe.orElse(Some("")) ~ 'text
       ).toDF()
 
-    val tokenized = new RegexTokenizer().setInputCol("text").setOutputCol("words").setMinTokenLength(4).setPattern("[^A-Za-z]").transform(raw)
+    val tokenized = new RegexTokenizer().setInputCol("text").setOutputCol("words").setMinTokenLength(3).setPattern("[^A-Za-z]").transform(raw)
       .select('_, 'words).map(row => row.getAs[String]("_") -> row.getAs[Seq[String]]("words")).reduceByKey(_ ++ _)
     val stemmed = tokenized.mapValues(_.map(v => PorterStemmer.apply(v.toLowerCase)))
 

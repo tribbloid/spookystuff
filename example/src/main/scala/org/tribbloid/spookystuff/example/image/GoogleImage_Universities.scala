@@ -16,7 +16,7 @@ object GoogleImage_Universities extends QueryCore {
       .fetch(
         Wget("http://www.utexas.edu/world/univ/alpha/")
       )
-      .join(S"div.box2 a".texts ~ 'name)(
+      .join(S"div.box2 a".texts.distinct ~ 'name)(
         Visit("http://images.google.com/")
           +> TextInput("input[name=\"q\"]","Logo '{name}")
           +> Submit("input[name=\"btnG\"]")

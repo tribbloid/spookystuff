@@ -80,7 +80,7 @@ abstract class IntegrationSuite extends FunSuite with BeforeAndAfterAll {
   lazy val optimizers = Seq(
     Narrow,
     Wide,
-    Wide_WebCachedRDD
+    Wide_RDDWebCache
   )
 
   import duration._
@@ -159,7 +159,7 @@ abstract class IntegrationSuite extends FunSuite with BeforeAndAfterAll {
 
   def numPages: QueryOptimizer => Int
 
-  def numPagesDistinct: Int = numPages(Wide_WebCachedRDD)
+  def numPagesDistinct: Int = numPages(Wide_RDDWebCache)
 
   def numSessions: Int = numPagesDistinct
 

@@ -219,7 +219,7 @@ class PageRowRDD private (
     val newKeys: Seq[Key] = exprs.map {
       expr =>
         val key = Key(expr.name)
-        if(this.keys.contains(key) && !expr.isInstanceOf[InsertIntoExpr[_]]) //can't insert the same key twice
+        if(this.keys.contains(key) && !expr.isInstanceOf[ForceExpression[_]]) //can't insert the same key twice
           throw new QueryException(s"Key ${key.name} already exist")
         key
     }
@@ -231,8 +231,8 @@ class PageRowRDD private (
     result
   }
 
-  //no "already exist" check
-  def selectOverwrite(exprs: Expression[Any]*): PageRowRDD = {
+  //bypass "already exist" check
+  def forceSelect(exprs: Expression[Any]*): PageRowRDD = {
 
     val newKeys: Seq[Key] = exprs.map {
       expr => Key(expr.name)
@@ -359,7 +359,7 @@ class PageRowRDD private (
       case Wide =>
         _wideFetch(_traces, joinType, numPartitions, useWebCache = false)()
           .discardExploredRows //optional
-      case Wide_WebCachedRDD =>
+      case Wide_RDDWebCache =>
         _wideFetch(_traces, joinType, numPartitions, useWebCache = true)()
           .discardExploredRows
       case _ => throw new UnsupportedOperationException(s"${optimizer.getClass.getSimpleName} optimizer is not supported in this query")
@@ -483,7 +483,7 @@ class PageRowRDD private (
       }
 
       newRows_newCache.name = s"""
-                                 |fetch (optimizer=${Wide_WebCachedRDD.getClass.getSimpleName})
+                                 |fetch (optimizer=${Wide_RDDWebCache.getClass.getSimpleName})
         """.stripMargin.trim
       newRows_newCache.persist()
 
@@ -597,7 +597,7 @@ class PageRowRDD private (
         _narrowExplore(expr, depthKey, maxDepth, ordinalKey, maxOrdinal, checkpointInterval)(_traces, numPartitions, flattenPagesPattern, flattenPagesOrdinalKey)(select: _*)
       case Wide =>
         _wideExplore(expr, depthKey, maxDepth, ordinalKey, maxOrdinal, checkpointInterval, useWebCache = false)(_traces, numPartitions, flattenPagesPattern, flattenPagesOrdinalKey)(select: _*)
-      case Wide_WebCachedRDD =>
+      case Wide_RDDWebCache =>
         _wideExplore(expr, depthKey, maxDepth, ordinalKey, maxOrdinal, checkpointInterval, useWebCache = true)(_traces, numPartitions, flattenPagesPattern, flattenPagesOrdinalKey)(select: _*)
       case _ => throw new UnsupportedOperationException(s"${optimizer.getClass.getSimpleName} optimizer is not supported in this query")
     }
@@ -781,7 +781,7 @@ class PageRowRDD private (
 
     for (depth <- 1 to maxDepth) {
       val newRows = seeds
-        .selectOverwrite(Option(depthKey).map(key => Literal(depth) ~ key).toSeq: _*)
+        .forceSelect(Option(depthKey).map(key => Literal(depth) ~ key).toSeq: _*)
         .flattenTemp(_expr, ordinalKey, maxOrdinal, left = true)
         ._wideFetch(_traces, Inner, numPartitions, useWebCache = true,
           postProcessing = postProcessing

@@ -126,7 +126,7 @@ class ZippedExpr[T1,+T2](param1: Expression[IterableLike[T1, _]], param2: Expres
   }
 }
 
-class InsertIntoExpr[+T: ClassTag](override val name: String, expr: Expression[T]) extends Expression[Seq[T]] {
+class InsertIntoExpr[+T: ClassTag](override val name: String, expr: Expression[T]) extends ForceExpression[Seq[T]] {
 
   override def apply(v1: PageRow): Option[Seq[T]] = {
     val lastOption = expr(v1)
@@ -142,4 +142,3 @@ class InsertIntoExpr[+T: ClassTag](override val name: String, expr: Expression[T
     }
   }
 }
-

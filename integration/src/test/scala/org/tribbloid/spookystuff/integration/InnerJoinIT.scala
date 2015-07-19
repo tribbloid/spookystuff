@@ -61,7 +61,7 @@ class InnerJoinIT extends IntegrationSuite {
   }
 
   override def numPages = {
-    case Wide_WebCachedRDD => 6
+    case Wide_RDDWebCache => 6
     case _ => 7
   }
 }

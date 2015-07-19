@@ -13,7 +13,8 @@ class SpookyException (
                         )
   extends RuntimeException(message, cause) {
 
-  override def getMessage: String = s"${this.message}\nCaused by: ${this.getCause}"
+  override def getMessage: String = if (cause == null) this.message
+    else s"${this.message}\nCaused by: ${this.getCause}"
 }
 
 class ActionException(

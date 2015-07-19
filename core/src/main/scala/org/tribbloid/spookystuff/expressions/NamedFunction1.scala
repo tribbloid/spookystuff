@@ -3,16 +3,35 @@ package org.tribbloid.spookystuff.expressions
 /**
  * Created by peng on 11/28/14.
  */
+object NamedFunction1 {
+
+  def apply[T, R](f: T => R, _name: String): NamedFunction1[T, R] =
+    new NamedFunction1[T, R] {
+
+      override val name = _name
+
+      override def apply(v1: T): R = f(v1)
+    }
+
+  def apply[T, R](f: T => R): NamedFunction1[T, R] = this.apply(f, ""+f.hashCode())
+
+  //  def apply[T, R](f: T => R): NamedFunction1[T, R] = apply(f.toString(), f)
+}
+
 trait NamedFunction1[-T, +R] extends (T => R) with Serializable {
 
   val name: String
 
   final def as(name: Symbol): Alias[T, R] = new Alias(this, name.name)
 
+  final def as_!(name: Symbol): Alias[T, R] = new Alias(this, name.name) with ForceNamedFunction1[T, R]
+
   //will not rename an already-named Alias.
   def defaultAs(name: Symbol): Alias[T, R] = as(name)
 
   final def ~(name: Symbol) = as(name)
+
+  final def ~!(name: Symbol) = as_!(name)
 
   @annotation.unspecialized override def compose[A](g: A => T): NamedFunction1[A, R] =
     NamedFunction1(
@@ -41,17 +60,5 @@ class Alias[-T, +R](src: NamedFunction1[T, R], override val name: String) extend
   override def defaultAs(name: Symbol): Alias[T, R] = this
 }
 
-object NamedFunction1 {
-
-  def apply[T, R](f: T => R, _name: String): NamedFunction1[T, R] =
-    new NamedFunction1[T, R] {
-
-      override val name = _name
-
-      override def apply(v1: T): R = f(v1)
-    }
-
-  def apply[T, R](f: T => R): NamedFunction1[T, R] = this.apply(f, ""+f.hashCode())
-
-//  def apply[T, R](f: T => R): NamedFunction1[T, R] = apply(f.toString(), f)
-}
+//subclasses bypass "already exist" check
+trait ForceNamedFunction1[-T, +R] extends NamedFunction1[T, R]
