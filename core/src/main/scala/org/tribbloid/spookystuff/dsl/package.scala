@@ -8,7 +8,6 @@ import org.tribbloid.spookystuff.expressions._
 import org.tribbloid.spookystuff.pages.{Elements, Page, Unstructured}
 import org.tribbloid.spookystuff.sparkbinding.{DataFrameView, PageRowRDD, StringRDDView}
 
-import scala.collection.generic.CanBuildFrom
 import scala.collection.{GenTraversableOnce, IterableLike}
 import scala.language.implicitConversions
 import scala.reflect.ClassTag
@@ -87,9 +86,9 @@ package object dsl {
 
     def size: Expression[Int] = self.andMap(_.size, "size")
 
-    def isEmpty: Expression[Boolean] = self.andMap(_.isEmpty)
+    def isEmpty: Expression[Boolean] = self.andMap(_.isEmpty, "isEmpty")
 
-    def nonEmpty: Expression[Boolean] = self.andMap(_.nonEmpty)
+    def nonEmpty: Expression[Boolean] = self.andMap(_.nonEmpty, "nonEmpty")
 
     def mkString(sep: String = ""): Expression[String] = self.andMap(_.mkString(sep), s"mkString($sep)")
 
@@ -102,28 +101,29 @@ package object dsl {
     def zipWithValues(values: Expression[Any]): ZippedExpr[T, Any] =
       new ZippedExpr[T,Any](self, values.typed[IterableLike[_,_]])
 
-    def groupBy[K](f: T => K): Expression[Map[K, Repr]] = self.andMap {
-      v =>
-        v.groupBy(f)
-    }
+    def groupBy[K](f: T => K): Expression[Map[K, Repr]] = self.andMap (
+      v => v.groupBy(f),
+      s"groupBy($f)"
+    )
 
-    def slice(from: Int = Int.MinValue, until: Int = Int.MaxValue): Expression[Repr] = self.andMap {
-      v =>
-        v.slice(from, until)
-    }
+    def slice(from: Int = Int.MinValue, until: Int = Int.MaxValue): Expression[Repr] = self.andMap (
+      v => v.slice(from, until),
+      s"slice($from,$until)"
+    )
 
-    def filter(f: T => Boolean): Expression[Repr] = self.andMap(_.filter(f))
+    def filter(f: T => Boolean): Expression[Repr] = self.andMap(_.filter(f), s"filter($f)")
 
-    def distinct: Expression[Seq[T]] = self.andMap(_.toSeq.distinct)
+    def distinct: Expression[Seq[T]] = self.andMap(_.toSeq.distinct, "distinct")
 
-    def distinctBy[K](f: T => K): Expression[Iterable[T]] = this.groupBy(f).andMap{
+    def distinctBy[K](f: T => K): Expression[Iterable[T]] = this.groupBy(f).andMap(
       v =>
         v.values.flatMap{
           case repr: Traversable[T] => repr.headOption
           case repr: T => Some(repr)
           case _ => None
-        }
-    }
+        },
+      s"distinctBy($f)"
+    )
 
     //TODO: handle exception
     //  def only: Expr[T] =
@@ -133,15 +133,27 @@ package object dsl {
     //        seq.head
     //    }))
 
-    def map[B, That](f: T => B)(implicit bf: CanBuildFrom[Repr, B, That]) = self.andMap {
-      v =>
-        v.map {f}
-    }
+    //TODO: these will cause unserializable exception, fix it!
+    //    def map[B, That](f: T => B)(implicit bf: CanBuildFrom[Repr, B, That]): Expression[That] = self.andMap (
+    //      v => {
+    //        val vv: IterableLike[T, Repr] = v
+    //        vv.map[B, That](f)(Serializable(bf))
+    //      },
+    //      s"map($f)"
+    //    )
+    //    def flatMap[B, That](f: T => GenTraversableOnce[B])(implicit bf: CanBuildFrom[Repr, B, That]): Expression[That] = self.andMap (
+    //      v => v.flatMap[B, That](f)(Serializable(bf)),
+    //      s"flatMap($f)"
+    //    )
 
-    def flatMap[B, That](f: T => GenTraversableOnce[B])(implicit bf: CanBuildFrom[Repr, B, That]) = self.andMap {
-      v =>
-        v.flatMap {f}
-    }
+    def map[B](f: T => B): Expression[Seq[B]] = self.andMap (
+      v => v.toSeq.map(f),
+      s"map($f)"
+    )
+    def flatMap[B](f: T => GenTraversableOnce[B]): Expression[Seq[B]] = self.andMap (
+      v => v.toSeq.flatMap(f),
+      s"flatMap($f)"
+    )
   }
 
   implicit class StringExprView(self: Expression[String]) {

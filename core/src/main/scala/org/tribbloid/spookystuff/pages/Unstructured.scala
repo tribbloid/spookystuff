@@ -1,5 +1,7 @@
 package org.tribbloid.spookystuff.pages
 
+import scala.collection.generic.{GenericTraversableTemplate, CanBuildFrom}
+import scala.collection.mutable.ArrayBuffer
 import scala.collection.{SeqLike, mutable}
 
 /**
@@ -15,9 +17,9 @@ trait Unstructured extends Serializable {
     children(selector).headOption
 
   def childrenWithSiblings(
-                        selector: Selector,
-                        range: Range
-                        ): Elements[Siblings[Unstructured]]
+                            selector: Selector,
+                            range: Range
+                            ): Elements[Siblings[Unstructured]]
 
   final def childWithSiblings(selector: Selector, range: Range): Option[Siblings[Unstructured]] =
     childrenWithSiblings(selector, range).headOption
@@ -37,7 +39,34 @@ trait Unstructured extends Serializable {
   def boilerPipe: Option[String]
 }
 
-class Elements[+T <: Unstructured](val self: List[T]) extends Unstructured with Seq[T] with SeqLike[T, Elements[T]] {
+//object Elements {
+//
+//  implicit def canBuildFrom[T <: Unstructured]: CanBuildFrom[Elements[Unstructured], T, Elements[T]] =
+//    new CanBuildFrom[Elements[Unstructured], T, Elements[T]] {
+//
+//      override def apply(from: Elements[Unstructured]): mutable.Builder[T, Elements[T]] = newBuilder[T]
+//
+//      override def apply(): mutable.Builder[T, Elements[T]] = newBuilder[T]
+//    }
+//
+//  def newBuilder[T <: Unstructured]: mutable.Builder[T, Elements[T]] = new mutable.Builder[T, Elements[T]] {
+//
+//    val buffer = new ArrayBuffer[T]()
+//
+//    override def +=(elem: T): this.type = {
+//      buffer += elem
+//      this
+//    }
+//
+//    override def result(): Elements[T] = new Elements(buffer.toList)
+//
+//    override def clear(): Unit = buffer.clear()
+//  }
+//}
+
+class Elements[+T <: Unstructured](val self: List[T]) extends Unstructured
+with Seq[T]
+with SeqLike[T, Elements[T]] {
 
   def uris: Seq[String] = self.map(_.uri)
 
@@ -77,10 +106,13 @@ class Elements[+T <: Unstructured](val self: List[T]) extends Unstructured with 
 
   override def apply(idx: Int): T = self.apply(idx)
 
-  override protected[this] def newBuilder: mutable.Builder[T, Elements[T]] = ???
+  override protected[this] def newBuilder = ???
+//    Elements.newBuilder[T]
 }
 
-class Siblings[+T <: Unstructured](override val self: List[T]) extends Elements[T](self) with Seq[T] with SeqLike[T, Siblings[T]] {
+class Siblings[+T <: Unstructured](override val self: List[T]) extends Elements[T](self)
+with Seq[T]
+with SeqLike[T, Siblings[T]] {
 
   override def text = if (texts.isEmpty) None
   else Some(texts.filter(_.nonEmpty).mkString(" "))
@@ -94,5 +126,5 @@ class Siblings[+T <: Unstructured](override val self: List[T]) extends Elements[
   override def boilerPipe = if (boilerPipes.isEmpty) None
   else Some(boilerPipes.filter(_.nonEmpty).mkString(" "))
 
-  override protected[this] def newBuilder: mutable.Builder[T, Siblings[T]] = ???
+  override protected[this] def newBuilder = ???
 }

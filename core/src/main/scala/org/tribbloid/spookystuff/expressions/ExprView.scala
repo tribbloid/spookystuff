@@ -39,6 +39,10 @@ final class ExprView[+T: ClassTag](self: Expression[T]) {
     NamedFunction1(_.getOrElse(value), s"getOrElse($value)")
   )
 
+  def orElse[B >: T](valueOption: =>Option[B] = Some(defaultVal)): Expression[B] = self.andThen(
+    NamedFunction1(_.orElse(valueOption), s"orElse($valueOption)")
+  )
+
   def get: NamedFunction1[PageRow, T] = self.andThen(
     NamedFunction1(_.get, s"get")
   )

@@ -120,7 +120,7 @@ case class SpookyContext (
     true
   }
 
-  object dsl {
+  object dsl extends Serializable {
 
     implicit def DataFrameToPageRowRDD(df: DataFrame): PageRowRDD = {
       val self = new DataFrameView(df).toMapRDD.map {

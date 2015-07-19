@@ -28,6 +28,7 @@ trait QueryCore extends LocalSpookyCore {
     array.foreach(row => println(row))
     println("-------------------returned "+array.length+" rows------------------")
     println(s"------------------fetched ${spooky.metrics.pagesFetched.value} pages-----------------")
+    println(s"------------------${spooky.metrics.pagesFetchedFromCache.value} pages from web cache-----------------")
 
     //    rdd.saveAsTextFile("file://"+System.getProperty("user.home")+"/spooky-local/result"+s"/$appName-${System.currentTimeMillis()}.json")
   }

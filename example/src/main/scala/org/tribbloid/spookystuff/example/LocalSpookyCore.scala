@@ -64,6 +64,8 @@ trait LocalSpookyCore {
       this.maxInputSize = Int.MaxValue
     }
 
+    spooky.conf.sharedMetrics = true
+
     spooky
   }
 }
