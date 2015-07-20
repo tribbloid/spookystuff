@@ -1,7 +1,7 @@
 package org.tribbloid.spookystuff.integration
 
 import org.tribbloid.spookystuff.SpookyContext
-import org.tribbloid.spookystuff.actions.Visit
+import org.tribbloid.spookystuff.actions.Wget
 import org.tribbloid.spookystuff.dsl._
 
 /**
@@ -17,12 +17,12 @@ class ExploreIT extends IntegrationSuite {
 
     val base = spooky
       .fetch(
-        Visit("http://webscraper.io/test-sites/e-commerce/allinone")
+        Wget("http://webscraper.io/test-sites/e-commerce/allinone")
       )
 
     val explored = base
       .explore(S"div.sidebar-nav a", depthKey = 'depth, ordinalKey = 'index)(
-        Visit('A.href),
+        Wget('A.href),
         flattenPagesOrdinalKey = 'page
       )(
         'A.text ~ 'category
@@ -54,4 +54,6 @@ class ExploreIT extends IntegrationSuite {
   }
 
   override def numPages = _ => 6
+
+  override def numDrivers = 0
 }

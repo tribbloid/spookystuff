@@ -245,3 +245,5 @@ install PhantomJS by maven plugin to use TravisCI ..............................
 when Expr returns an array, all actions should only use the first element of it .....................................done
 
 build a hive thrift server that can convert SPARKQL into query plan based on pre-defined prefix and RDF template
+
+add test cases to make sure flatSelect & join won't use previous temporary values

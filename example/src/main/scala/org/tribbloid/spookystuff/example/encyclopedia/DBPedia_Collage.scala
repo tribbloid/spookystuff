@@ -12,25 +12,29 @@ object DBPedia_Collage extends QueryCore {
 
   override def doMain(spooky: SpookyContext) = {
 
-    import spooky.sqlContext.implicits._
-
-    val str = "Gladiator"
-    val cls = "film"
+    val str = "Adam Sandler"
+    val cls = "person"
 
     spooky.fetch(
       Wget(s"http://lookup.dbpedia.org/api/search/KeywordSearch?QueryClass=$cls&QueryString=$str")
-    ).join(S"Result".slice(0,1))(
-        Wget(A"URI".text)
-      )(
-//        A"Label".text ~ 'entity,
-        A"URI".text ~ 'uri
+    ).wgetJoin(
+        S"Result URI".text,
+        failSafe = 2
       ).wgetExplore(
-        S"""a[rel^=dbpprop][href*="//dbpedia.org"]""".distinctBy(_.href).slice(0,10),
+        S"""a[rel^=dbpprop][href*="//dbpedia.org"],a[rev^=dbpprop][href*="//dbpedia.org"]""".distinctBy(_.href).slice(0,25),
         failSafe = 2,
         depthKey = 'depth,
-        maxDepth = 2,
-//        select = 'A.text.replaceAll("dbpedia:","") ~! 'entity
-        select = 'A.href ~! 'uri
-      ).toDF().orderBy('depth.asc)
+        maxDepth = 2
+      ).join(S"h1#title a".text, distinct = true)(
+        Visit("http://images.google.com/")
+          +> TextInput("input[name=\"q\"]",'A)
+          +> Submit("input[name=\"btnG\"]")
+      )('A ~ 'name).wgetJoin(S"div#search img".src, maxOrdinal = 1)
+      .persist()
+      .savePages(
+        x"file://${System.getProperty("user.home")}/spooky-example/$appName/images/level_${'depth}_${'name}"
+      ).select(
+        S.saved ~ 'path
+      ).toDF()
   }
 }

@@ -24,7 +24,7 @@ trait QueryCore extends LocalSpookyCore {
       case rdd: RDD[_] => rdd
     }
 
-    val array = rdd.persist().takeSample(withReplacement = false, num = 10)
+    val array = rdd.persist().takeSample(withReplacement = false, num = 100)
     array.foreach(row => println(row))
     println("-------------------returned "+array.length+" rows------------------")
     println(s"------------------fetched ${spooky.metrics.pagesFetched.value} pages-----------------")

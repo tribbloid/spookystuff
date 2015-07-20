@@ -12,6 +12,7 @@ import org.tribbloid.spookystuff.dsl._
 import org.tribbloid.spookystuff.entity.PageRow.{WebCacheRDD, WebCacheRow}
 import org.tribbloid.spookystuff.entity._
 import org.tribbloid.spookystuff.expressions._
+import org.tribbloid.spookystuff.http.HttpUtils
 import org.tribbloid.spookystuff.pages.{PageLike, Unstructured}
 import org.tribbloid.spookystuff.utils._
 import org.tribbloid.spookystuff.{Const, QueryException, SpookyContext, views}
@@ -70,6 +71,16 @@ class PageRowRDD private (
       keys, spooky, persisted
     )
     result
+  }
+
+  def distinctBy(exprs: (PageRow => Any)*): PageRowRDD = {
+    this.copy(self.groupBy {
+      row =>
+        exprs.map(_.apply(row)).toSeq
+    }.flatMap {
+      tuple =>
+        tuple._2.headOption
+    })
   }
 
   def segmentBy(exprs: (PageRow => Any)*): PageRowRDD = {
@@ -184,6 +195,7 @@ class PageRowRDD private (
                  path: Expression[Any],
                  name: Symbol = null,
                  overwrite: Boolean = false
+//                 enforceURI: Boolean = false
                  ): PageRowRDD = {
 
     this.spooky.broadcast()
@@ -192,7 +204,14 @@ class PageRowRDD private (
     this.foreach {
 
       pageRow =>
-        val pathStr = path(pageRow)
+        val pathStr: Option[String] = path(pageRow).map(_.toString).map{
+          str =>
+            val splitted = str.split(":")
+            if (splitted.size <= 2) str
+            else splitted.head + ":" + splitted.slice(1,Int.MaxValue).mkString("%3A")
+        }
+
+//        if (enforceURI) pathStr = pathStr.map(HttpUtils.uri(_).toString)
 
         pathStr.foreach {
           str =>
@@ -202,7 +221,7 @@ class PageRowRDD private (
 
             spooky.metrics.pagesSaved += 1
 
-            page.foreach(_.save(Seq(str.toString), overwrite)(spooky))
+            page.foreach(_.save(Seq(str), overwrite)(spooky))
         }
     }
     this
@@ -496,7 +515,8 @@ class PageRowRDD private (
   def join(
             expr: Expression[Any], //name is discarded
             ordinalKey: Symbol = null, //left & idempotent parameters are missing as they are always set to true
-            maxOrdinal: Int = spooky.conf.maxJoinOrdinal
+            maxOrdinal: Int = spooky.conf.maxJoinOrdinal,
+            distinct: Boolean = false //set to true to eliminate duplates in join key
             )(
             traces: Set[Trace],
             joinType: JoinType = Const.defaultJoinType,
@@ -508,9 +528,12 @@ class PageRowRDD private (
             select: Expression[Any]*
             ): PageRowRDD = {
 
-    this
+    var flat = this.clearTemp
       .flattenTemp(expr defaultAs Symbol(Const.defaultJoinKey), ordinalKey, maxOrdinal, left = true)
-      .fetch(traces, joinType, flattenPagesPattern, flattenPagesOrdinalKey, numPartitions, optimizer)
+
+    if (distinct) flat = flat.distinctBy(expr)
+
+    flat.fetch(traces, joinType, flattenPagesPattern, flattenPagesOrdinalKey, numPartitions, optimizer)
       .select(select: _*)
   }
 
@@ -526,6 +549,7 @@ class PageRowRDD private (
                  failSafe: Int = -1,
                  ordinalKey: Symbol = null, //left & idempotent parameters are missing as they are always set to true
                  maxOrdinal: Int = spooky.conf.maxJoinOrdinal,
+                 distinct: Boolean = false, //set to true to eliminate duplates in join key
                  joinType: JoinType = Const.defaultJoinType,
                  numPartitions: Int = spooky.conf.defaultParallelism(this),
                  select: Expression[Any] = null,
@@ -534,7 +558,7 @@ class PageRowRDD private (
     val action = if (failSafe < 0) Visit(new GetExpr(Const.defaultJoinKey), hasTitle)
     else Try(Visit(new GetExpr(Const.defaultJoinKey), hasTitle), failSafe)
 
-    this.join(expr, ordinalKey, maxOrdinal)(
+    this.join(expr, ordinalKey, maxOrdinal, distinct)(
       action,
       joinType,
       numPartitions,
@@ -555,6 +579,7 @@ class PageRowRDD private (
                 failSafe: Int = -1,
                 ordinalKey: Symbol = null, //left & idempotent parameters are missing as they are always set to true
                 maxOrdinal: Int = spooky.conf.maxJoinOrdinal,
+                distinct: Boolean = false, //set to true to eliminate duplates in join key
                 joinType: JoinType = Const.defaultJoinType,
                 numPartitions: Int = spooky.conf.defaultParallelism(this),
                 select: Expression[Any] = null,
@@ -563,7 +588,7 @@ class PageRowRDD private (
     val action = if (failSafe < 0) Wget(new GetExpr(Const.defaultJoinKey), hasTitle)
     else Try(Wget(new GetExpr(Const.defaultJoinKey), hasTitle), failSafe)
 
-    this.join(expr, ordinalKey, maxOrdinal)(
+    this.join(expr, ordinalKey, maxOrdinal, distinct)(
       action,
       joinType,
       numPartitions,
@@ -594,11 +619,11 @@ class PageRowRDD private (
 
     val result = optimizer match {
       case Narrow =>
-        _narrowExplore(expr, depthKey, maxDepth, ordinalKey, maxOrdinal, checkpointInterval)(_traces, numPartitions, flattenPagesPattern, flattenPagesOrdinalKey)(select: _*)
+        this.clearTemp._narrowExplore(expr, depthKey, maxDepth, ordinalKey, maxOrdinal, checkpointInterval)(_traces, numPartitions, flattenPagesPattern, flattenPagesOrdinalKey)(select: _*)
       case Wide =>
-        _wideExplore(expr, depthKey, maxDepth, ordinalKey, maxOrdinal, checkpointInterval, useWebCache = false)(_traces, numPartitions, flattenPagesPattern, flattenPagesOrdinalKey)(select: _*)
+        this.clearTemp._wideExplore(expr, depthKey, maxDepth, ordinalKey, maxOrdinal, checkpointInterval, useWebCache = false)(_traces, numPartitions, flattenPagesPattern, flattenPagesOrdinalKey)(select: _*)
       case Wide_RDDWebCache =>
-        _wideExplore(expr, depthKey, maxDepth, ordinalKey, maxOrdinal, checkpointInterval, useWebCache = true)(_traces, numPartitions, flattenPagesPattern, flattenPagesOrdinalKey)(select: _*)
+        this.clearTemp._wideExplore(expr, depthKey, maxDepth, ordinalKey, maxOrdinal, checkpointInterval, useWebCache = true)(_traces, numPartitions, flattenPagesPattern, flattenPagesOrdinalKey)(select: _*)
       case _ => throw new UnsupportedOperationException(s"${optimizer.getClass.getSimpleName} optimizer is not supported in this query")
     }
 
@@ -758,7 +783,7 @@ class PageRowRDD private (
     }
     val _expr = expr defaultAs Symbol(Const.defaultJoinKey)
 
-    val depth0 = this.clearTemp.select(Option(depthKey).map(key => Literal(0) ~ key).toSeq: _*)
+    val depth0 = this.select(Option(depthKey).map(key => Literal(0) ~ key).toSeq: _*)
 
     val WebCache0 = {
       val webCache: WebCacheRDD = if (useWebCache) depth0.webCache
@@ -851,7 +876,7 @@ class PageRowRDD private (
 
     val action = if (failSafe < 0) Wget(new GetExpr(Const.defaultJoinKey), hasTitle)
     else Try(Wget(new GetExpr(Const.defaultJoinKey), hasTitle), failSafe)
-    
+
     explore(expr, depthKey, maxDepth, ordinalKey, maxOrdinal, checkpointInterval)(
       action,
       numPartitions,

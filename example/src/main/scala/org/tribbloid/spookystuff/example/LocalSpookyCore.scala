@@ -15,8 +15,6 @@ trait LocalSpookyCore {
 
   val appName = this.getClass.getSimpleName.replace("$","")
 
-  val cores = Runtime.getRuntime.availableProcessors()
-
   val sc: SparkContext = {
     val conf: SparkConf = new SparkConf().setAppName(appName)
     //    conf.set("spark.task.maxFailures","1000") //TODO: why it doesn't work
@@ -24,7 +22,7 @@ trait LocalSpookyCore {
     var master: String = null
     master = Option(master).getOrElse(conf.getOption("spark.master").orNull)
     master = Option(master).getOrElse(System.getenv("MASTER"))
-    master = Option(master).getOrElse(s"local[$cores,3]")
+    master = Option(master).getOrElse(s"local[${Runtime.getRuntime.availableProcessors()},10]")
 
     conf.setMaster(master)
     new SparkContext(conf)
