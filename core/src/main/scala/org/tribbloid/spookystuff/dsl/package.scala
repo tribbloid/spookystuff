@@ -296,7 +296,7 @@ package object dsl {
 
   implicit class StrContextHelper(val strC: StringContext) extends Serializable {
 
-    def x(fs: Expression[Any]*) = new InterpolateExpr(strC.parts, fs)
+    def x(fs: (PageRow => Option[Any])*) = new InterpolateExpr(strC.parts, fs)
 
     def CSS() = GetOnlyPageExpr.children(strC.s())
     def S() = CSS()

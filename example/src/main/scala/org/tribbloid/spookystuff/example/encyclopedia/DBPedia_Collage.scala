@@ -12,7 +12,7 @@ object DBPedia_Collage extends QueryCore {
 
   override def doMain(spooky: SpookyContext) = {
 
-    val str = "Adam Sandler"
+    val str = "Rob Ford"
     val cls = "person"
 
     spooky.fetch(
@@ -32,7 +32,7 @@ object DBPedia_Collage extends QueryCore {
       )('A ~ 'name).wgetJoin(S"div#search img".src, maxOrdinal = 1)
       .persist()
       .savePages(
-        x"file://${System.getProperty("user.home")}/spooky-example/$appName/images/level_${'depth}_${'name}"
+        x"file://${System.getProperty("user.home")}/spooky-example/$appName/${str}_$cls/level_${'depth}_${'name.andMap(v =>v.toString.replaceAll("[^\\w]","_"))}"
       ).select(
         S.saved ~ 'path
       ).toDF()

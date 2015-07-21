@@ -12,7 +12,6 @@ import org.tribbloid.spookystuff.dsl._
 import org.tribbloid.spookystuff.entity.PageRow.{WebCacheRDD, WebCacheRow}
 import org.tribbloid.spookystuff.entity._
 import org.tribbloid.spookystuff.expressions._
-import org.tribbloid.spookystuff.http.HttpUtils
 import org.tribbloid.spookystuff.pages.{PageLike, Unstructured}
 import org.tribbloid.spookystuff.utils._
 import org.tribbloid.spookystuff.{Const, QueryException, SpookyContext, views}
