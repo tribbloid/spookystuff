@@ -61,4 +61,15 @@ class TestExprView extends SpookyEnvSuite {
     assert(fun2.name === "abc.after")
     assert(fun(row) === Some('W'))
   }
+
+  test("double quotes in selector by attribute should work") {
+    lazy val page = (
+      Wget("http://www.wikipedia.org/") :: Nil
+      ).resolve(spooky).toArray
+    lazy val row = PageRow(pageLikes = page)
+      .select(S"""[href*="wikipedia"]""".href ~ 'uri)
+      .head
+
+    assert(row.get("uri").nonEmpty)
+  }
 }
