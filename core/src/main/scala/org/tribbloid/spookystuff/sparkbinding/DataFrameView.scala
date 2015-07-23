@@ -13,8 +13,10 @@ class DataFrameView(val self: DataFrame) {
   def toMapRDD: RDD[Map[String,Any]] = {
     val headers = self.schema.fieldNames
 
-    self.map{
+    val result: RDD[Map[String,Any]] = self.map{
       row => ListMap(headers.zip(row.toSeq): _*)
     }
+
+    result
   }
 }
