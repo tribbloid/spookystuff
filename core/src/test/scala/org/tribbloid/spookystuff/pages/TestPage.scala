@@ -144,6 +144,6 @@ class TestPage extends SpookyEnvSuite {
     assert(second.size === 3)
     assert(second(0).attr("lang").get === "es")
     assert(second(1).attr("lang").get === "de")
-    assert(second(2).attr("lang").get === "ru")
+    assert(second(2).attr("lang").get === "ja")
   }
 }
