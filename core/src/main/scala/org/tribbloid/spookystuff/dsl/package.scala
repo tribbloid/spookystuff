@@ -4,7 +4,7 @@ import java.util.Date
 
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.DataFrame
-import org.tribbloid.spookystuff.actions.{Action, Trace, TraceSetView, TraceView}
+import org.tribbloid.spookystuff.actions._
 import org.tribbloid.spookystuff.entity.PageRow
 import org.tribbloid.spookystuff.expressions._
 import org.tribbloid.spookystuff.pages.{Elements, Page, Unstructured}
@@ -12,7 +12,7 @@ import org.tribbloid.spookystuff.sparkbinding.{DataFrameView, PageRowRDD, String
 import org.tribbloid.spookystuff.utils.Default
 
 import scala.collection.immutable.ListSet
-import scala.collection.{GenTraversableOnce, IterableLike}
+import scala.collection.{GenTraversableOnce, IterableLike, TraversableOnce}
 import scala.language.implicitConversions
 import scala.reflect.ClassTag
 
@@ -30,11 +30,9 @@ package object dsl {
 
   implicit def traceView(trace: Trace): TraceView = new TraceView(trace)
 
-  implicit def traceSetView(traces: Set[Trace]): TraceSetView = new TraceSetView(traces)
+  implicit def traceSetView[T](traces: T)(implicit f: T => Set[Trace]): TraceSetView = new TraceSetView(traces)
 
   implicit def actionToTraceSet(action: Action): Set[Trace] = Set(Seq(action))
-
-  implicit def actionToTraceSetView(action: Action): TraceSetView = Set(Seq(action))
 
   //------------------------------------------------------------
 
@@ -50,15 +48,28 @@ package object dsl {
   //'abc.$("div#a1").attrs("src"): first "src" attribute of an unstructured field that match the selector
 
   def S(selector: String): ChildrenExpr = GetOnlyPageExpr.children(selector)
-  def S(selector: String, i: Int): Expression[Unstructured] = GetOnlyPageExpr.children(selector).get(i)
+  def S(selector: String, i: Int): Expression[Unstructured] = {
+    val expr = GetOnlyPageExpr.children(selector)
+    new IterableLikeExprView(expr).get(i)
+  }
   def S: Expression[Page] = GetOnlyPageExpr
 
   def S_*(selector: String): ChildrenExpr = GetAllPagesExpr.children(selector)
-  def S_*(selector: String, i: Int): Expression[Unstructured] = GetAllPagesExpr.children(selector).get(i)
+  def S_*(selector: String, i: Int): Expression[Unstructured] = {
+    val expr = GetAllPagesExpr.children(selector)
+    new IterableLikeExprView(expr).get(i)
+  }
   def `S_*`: Expression[Elements[Page]] = GetAllPagesExpr
 
   def A(selector: String): ChildrenExpr = 'A.children(selector)
-  def A(selector: String, i: Int): Expression[Unstructured] = 'A.children(selector).get(i)
+  def A(selector: String, i: Int): Expression[Unstructured] = {
+    val expr = 'A.children(selector)
+    new IterableLikeExprView(expr).get(i)
+  }
+
+  implicit def ExprToSeqFunc[T](self: Expression[T]): (PageRow => Seq[T]) = { //shortcut to use expression in RDD.flatMap etc.
+    self.andThen(_.toSeq)
+  }
 
   implicit class ExprView[+T: ClassTag](self: Expression[T]) extends Serializable {
 

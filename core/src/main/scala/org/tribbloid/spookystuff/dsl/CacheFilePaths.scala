@@ -14,12 +14,12 @@ object CacheFilePaths{
 
     override def apply(trace: Trace): String = {
 
-      val actionStrs = trace.self.map(_.toString)
+      val actionStrs = trace.map(_.toString)
 
       val actionConcat = if (actionStrs.size > 4) {
         val oneTwoThree = actionStrs.slice(0,3)
         val last = actionStrs.last
-        val omitted = "..."+(trace.self.length-4).toString+"more"+"..."
+        val omitted = "..."+(trace.length-4).toString+"more"+"..."
 
         oneTwoThree.mkString("~")+omitted+last
       }
@@ -35,12 +35,12 @@ object CacheFilePaths{
 
     override def apply(trace: Trace): String = {
 
-      val actionStrs = trace.self.map(_.toString)
+      val actionStrs = trace.map(_.toString)
 
       val actionConcat = if (actionStrs.size > 4) {
         val oneTwoThree = actionStrs.slice(0,3)
         val last = actionStrs.last
-        val omitted = "/"+(trace.self.length-4).toString+"more"+"/"
+        val omitted = "/"+(trace.length-4).toString+"more"+"/"
 
         oneTwoThree.mkString("/")+omitted+last
       }

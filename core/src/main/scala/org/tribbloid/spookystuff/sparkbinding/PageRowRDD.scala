@@ -12,7 +12,7 @@ import org.tribbloid.spookystuff.dsl._
 import org.tribbloid.spookystuff.entity.PageRow.{WebCacheRDD, WebCacheRow}
 import org.tribbloid.spookystuff.entity._
 import org.tribbloid.spookystuff.expressions._
-import org.tribbloid.spookystuff.pages.{PageLike, Unstructured}
+import org.tribbloid.spookystuff.pages.{Page, PageLike, Unstructured}
 import org.tribbloid.spookystuff.utils._
 import org.tribbloid.spookystuff.{Const, QueryException, SpookyContext, views}
 
@@ -192,9 +192,9 @@ class PageRowRDD private (
   //always use the same path pattern for filtered pages, if you want pages to be saved with different path, use multiple saveContent with different names
   def savePages(
                  path: Expression[Any],
-                 name: Symbol = null,
-                 overwrite: Boolean = false
-//                 enforceURI: Boolean = false
+                 pageExpr: Expression[Page] = S,
+                 overwrite: Boolean = false //TODO: move to context & more option
+                 //                 enforceURI: Boolean = false
                  ): PageRowRDD = {
 
     this.spooky.broadcast()
@@ -207,16 +207,14 @@ class PageRowRDD private (
           str =>
             val splitted = str.split(":")
             if (splitted.size <= 2) str
-            else splitted.head + ":" + splitted.slice(1,Int.MaxValue).mkString("%3A")
+            else splitted.head + ":" + splitted.slice(1,Int.MaxValue).mkString("%3A") //colon in file paths are reserved for protocol definition
         }
 
-//        if (enforceURI) pathStr = pathStr.map(HttpUtils.uri(_).toString)
+        //        if (enforceURI) pathStr = pathStr.map(HttpUtils.uri(_).toString)
 
         pathStr.foreach {
           str =>
-            val page =
-              if (name == null || name.name == Const.onlyPageWildcard) pageRow.getOnlyPage
-              else pageRow.getPage(name.name)
+            val page = pageExpr(pageRow)
 
             spooky.metrics.pagesSaved += 1
 
@@ -386,6 +384,30 @@ class PageRowRDD private (
     if (flattenPagesPattern != null) result.flattenPages(flattenPagesPattern,flattenPagesOrdinalKey)
     else result
   }
+
+  def visit(
+             expr: Expression[Any],
+             joinType: JoinType = Const.defaultJoinType,
+             numPartitions: Int = spooky.conf.defaultParallelism(this),
+             optimizer: QueryOptimizer = spooky.conf.defaultQueryOptimizer
+             ): PageRowRDD = this.fetch(
+    Visit(expr),
+    joinType = joinType,
+    numPartitions = numPartitions,
+    optimizer = optimizer
+  )
+
+  def wget(
+            expr: Expression[Any],
+            joinType: JoinType = Const.defaultJoinType,
+            numPartitions: Int = spooky.conf.defaultParallelism(this),
+            optimizer: QueryOptimizer = spooky.conf.defaultQueryOptimizer
+            ): PageRowRDD = this.fetch(
+    Wget(expr),
+    joinType = joinType,
+    numPartitions = numPartitions,
+    optimizer = optimizer
+  )
 
   private def _narrowFetch(
                             _traces: Set[Trace],

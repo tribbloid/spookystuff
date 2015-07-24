@@ -15,6 +15,8 @@
         <assembly.jar.dir>scala-${scala.binary.version}</assembly.jar.dir>
         <assembly.jar.basename>${project.artifactId}-${project.version}.jar</assembly.jar.basename>
         <dependencies.scope>provided</dependencies.scope>
+        <!--<nd4j.version>0.0.3.5.5.5</nd4j.version>-->
+        <!--<dl4j.version>0.0.3.3.4.alpha2</dl4j.version>-->
     </properties>
 
     <profiles>
@@ -56,6 +58,16 @@
             <artifactId>factorie_${scala.binary.version}</artifactId>
             <version>1.1.1</version>
         </dependency>
+        <!--<dependency>-->
+            <!--<groupId>org.deeplearning4j</groupId>-->
+            <!--<artifactId>deeplearning4j-nlp</artifactId>-->
+            <!--<version>${dl4j.version}</version>-->
+        <!--</dependency>-->
+        <!--<dependency>-->
+            <!--<groupId>org.nd4j</groupId>-->
+            <!--<artifactId>nd4j-jblas</artifactId>-->
+            <!--<version>${nd4j.version}</version>-->
+        <!--</dependency>-->
     </dependencies>
 
     <build>
