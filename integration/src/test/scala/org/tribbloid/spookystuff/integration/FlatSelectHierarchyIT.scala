@@ -15,8 +15,6 @@ class FlatSelectHierarchyIT extends IntegrationSuite {
 
   override def doMain(spooky: SpookyContext) {
 
-    import spooky.dsl._
-
     val result = spooky
       .fetch(
         Wget("http://webscraper.io/test-sites/e-commerce/allinone") //this site is unstable, need to revise
@@ -27,6 +25,9 @@ class FlatSelectHierarchyIT extends IntegrationSuite {
       .flatSelect(A"h4", ordinalKey = 'i2)(
         'A.attr("class") ~ 'h4_class
       )
+      .flatSelect(S"notexist", ordinalKey = 'notexist_key)( //this is added to ensure that temporary joinKey in KV store won't be used.
+        'A.attr("class") ~ 'notexist_class
+      )
       .toDF(sort = true)
 
     assert(
@@ -34,7 +35,10 @@ class FlatSelectHierarchyIT extends IntegrationSuite {
         "i1" ::
           "p_class" ::
           "i2" ::
-          "h4_class" :: Nil
+          "h4_class" ::
+          "notexist_key" ::
+          "notexist_class" ::
+          Nil
     )
 
     val formatted = result.toJSON.collect().mkString("\n")

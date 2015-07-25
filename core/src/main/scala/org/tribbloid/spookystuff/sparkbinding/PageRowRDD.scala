@@ -677,7 +677,6 @@ class PageRowRDD private (
     var depthFromExclusive = 0
 
     val firstResultRDD = this
-      .clearTemp
       .select(Option(depthKey).map(key => Literal(0) ~ key).toSeq: _*)
 
     firstResultRDD.name =

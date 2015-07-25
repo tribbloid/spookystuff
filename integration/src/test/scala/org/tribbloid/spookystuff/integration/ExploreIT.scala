@@ -28,6 +28,9 @@ class ExploreIT extends IntegrationSuite {
         'A.text ~ 'category
       )
       .select(S"h1".text ~ 'header)
+      .flatSelect(S"notexist", ordinalKey = 'notexist_key)( //this is added to ensure that temporary joinKey in KV store won't be used.
+        'A.attr("class") ~ 'notexist_class
+      )
       .toDF(sort = true)
 
     assert(
@@ -36,7 +39,10 @@ class ExploreIT extends IntegrationSuite {
           "index" ::
           "page" ::
           "category" ::
-          "header" :: Nil
+          "header" ::
+          "notexist_key" ::
+          "notexist_class" ::
+          Nil
     )
 
     val formatted = explored.toJSON.collect().mkString("\n")

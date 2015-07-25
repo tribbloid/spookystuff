@@ -150,11 +150,15 @@ case class PageRow(
     Utils.toJson(this.toMap.canonizeKeysToColumnNames)
   }
 
-  def select(exprs: Expression[Any]*): Option[PageRow] = _select(exprs, temp = false)
+  def select(exprs: Expression[Any]*): Option[PageRow] = _select(exprs, temp = false, clearExisting = false)
 
-  def selectTemp(exprs: Expression[Any]*): Option[PageRow] = _select(exprs, temp = true)
+  def selectTemp(exprs: Expression[Any]*): Option[PageRow] = _select(exprs, temp = true, clearExisting = true)
 
-  private def _select(exprs: Seq[Expression[Any]], temp: Boolean) = {
+  private def _select(
+                       exprs: Seq[Expression[Any]],
+                       temp: Boolean,
+                       clearExisting: Boolean //set to true to ensure that repeated use of an alias (e.g. A for defaultJoinKey) always evict existing values to avoid data corruption.
+                       ) = {
     val newKVs = exprs.map{
       expr =>
         val key = if (temp) TempKey(expr.name)
@@ -164,10 +168,10 @@ case class PageRow(
 
     val addKVs = newKVs.filter(_._2.nonEmpty).map(tuple => tuple._1 -> tuple._2.get)
 
-//    val removeKVs = newKVs.filter(_._2.isEmpty).map(_._1)
+    val existing = if (clearExisting) this.store -- newKVs.map(_._1)
+    else this.store
 
-//    Some(this.copy(store = this.store ++ addKVs -- removeKVs))
-    Some(this.copy(store = this.store ++ addKVs)) //TODO: is there an negative impact of not removing empty KVs?
+    Some(this.copy(store = existing ++ addKVs)) //TODO: is there an negative impact of not removing empty KVs?
   }
 
   def remove(keys: KeyLike*): PageRow = {

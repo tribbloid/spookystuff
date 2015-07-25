@@ -37,6 +37,9 @@ class InnerJoinIT extends IntegrationSuite {
         'A.text ~ 'subcategory
       )
       .select(S"h1".text ~ 'header)
+      .flatSelect(S"notexist", ordinalKey = 'notexist_key)( //this is added to ensure that temporary joinKey in KV store won't be used.
+        'A.attr("class") ~ 'notexist_class
+      )
       .toDF(sort = true)
 
     assert(
@@ -46,7 +49,10 @@ class InnerJoinIT extends IntegrationSuite {
           "category" ::
           "i2" ::
           "subcategory" ::
-          "header" :: Nil
+          "header" ::
+          "notexist_key" ::
+          "notexist_class" ::
+          Nil
     )
 
     val formatted = joined.toJSON.collect().mkString("\n")

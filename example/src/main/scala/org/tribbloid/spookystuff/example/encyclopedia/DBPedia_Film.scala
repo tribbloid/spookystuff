@@ -21,14 +21,14 @@ object DBPedia_Film extends QueryCore {
     ).fetch(
         Wget("http://lookup.dbpedia.org/api/search/KeywordSearch?QueryClass=film&QueryString='{_}")
       ).join(S"Result".slice(0,3))(
-        Wget(A"URI".text)
+        Try(Wget(A"URI".text),2)
       )(
-        A"Label".text ~ 'fullname
-      ).join(S"a[rel*=starring]".distinctBy(_.href))(
-        Wget('A.href)
+        A"Label".text ~ 'movie
+      ).join(S"a[rel^=dbpedia-owl][href*=dbpedia]".distinctBy(_.href))(
+        Try(Wget('A.href),2)
       )(
-        'A.text.replaceAll("dbpedia:", "") ~ 'cast
-      ).flatSelect(S"a[rev*=guests]", left=true)(
+        'A.text.replaceAll("dbpedia:", "") ~ 'personnel
+      ).flatSelect(S"a[rev*=guests]", left=false)(
         'A.text.replaceAll("dbpedia:List_of_", "").replaceAll("_episodes.*","") ~ 'guest_of,
         'A.text.replaceAll("dbpedia:List_of_", "").replaceAll(".*episodes_","") ~ 'episodes
       ).toDF(sort = true)
