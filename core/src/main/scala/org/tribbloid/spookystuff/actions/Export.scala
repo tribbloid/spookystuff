@@ -14,7 +14,7 @@ import org.apache.http.impl.client.HttpClients
 import org.apache.http.impl.conn.PoolingHttpClientConnectionManager
 import org.apache.http.{HttpHost, StatusLine}
 import org.openqa.selenium.{OutputType, TakesScreenshot}
-import org.tribbloid.spookystuff.ActionException
+import org.tribbloid.spookystuff.ExportFilterException
 import org.tribbloid.spookystuff.entity.PageRow
 import org.tribbloid.spookystuff.expressions.{Expression, Literal}
 import org.tribbloid.spookystuff.http._
@@ -207,7 +207,7 @@ case class Wget(
 
           if (result.root.isInstanceOf[HtmlElement] && hasTitle){
             try{
-              assert(!result.code.get.contains("<title></title>"))
+              assert(result.\("html").\("title").text.get.nonEmpty) //TODO: this should be handled in TraceView
             }
             catch {
               case e: Throwable =>
@@ -219,7 +219,7 @@ case class Wget(
                   message += "\nSnapshot: " +this.errorDump(message, result, session.spooky)
                 }
 
-                throw new ActionException(message, e)
+                throw new ExportFilterException(message, e)
             }
           }
 

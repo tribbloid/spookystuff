@@ -68,9 +68,11 @@ case class Page(
     result
   }
 
+  def mimeType = parsedContentType.getMimeType
+
   //TODO: use reflection to find any element implementation that can resolve supplied MIME type
   @transient lazy val root: Unstructured =
-    if (parsedContentType.getMimeType.contains("html")) {
+    if (mimeType.contains("html")) {
       HtmlElement(content, parsedContentType.getCharset, uri) //not serialize, parsing is faster
     }
     else if (parsedContentType.getMimeType.contains("xml")) {
@@ -83,8 +85,10 @@ case class Page(
       new UnknownElement(uri)
     }
 
-  override def children(selector: String) = root.children(selector)
-  override def childrenWithSiblings(start: String, range: Range) = root.childrenWithSiblings(start, range)
+  override def findAll(selector: String) = root.findAll(selector)
+  override def findAllWithSiblings(start: String, range: Range) = root.findAllWithSiblings(start, range)
+  override def children(selector: Selector): Elements[Unstructured] = root.children(selector)
+  override def childrenWithSiblings(selector: Selector, range: Range): Elements[Siblings[Unstructured]] = root.childrenWithSiblings(selector, range)
   override def code: Option[String] = root.code
   override def attr(attr: String, noEmpty: Boolean): Option[String] = root.attr(attr, noEmpty)
   override def text: Option[String] = root.text

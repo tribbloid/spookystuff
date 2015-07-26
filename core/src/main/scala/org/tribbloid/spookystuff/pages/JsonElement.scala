@@ -14,10 +14,10 @@ object JsonElement {
     val parsed = JsonMethods.parse(jsonStr)
     parsed match {
       case array: JArray =>
-        val res = array.arr.map{
+        val res = array.arr.map {
           field =>
             new JsonElement(tag -> field, uri)
-        }.toList
+        }
         new Siblings(res)
       case _ =>
         new JsonElement(tag -> parsed, uri)
@@ -42,34 +42,49 @@ class JsonElement private (
 
   override def hashCode(): Int = (this.field, this.uri).hashCode()
 
-  override def children(selector: Selector): Elements[JsonElement] = {
+  override def findAll(selector: Selector): Elements[JsonElement] = {
 
     val selected = field._2 \\ selector
 
+    jValueToElements(selector, selected)
+  }
+
+  //TODO: how to implement?
+  override def findAllWithSiblings(selector: Selector, range: Range) = {
+    val found = this.findAll(selector).self
+    new Elements(found.map(unstructured => new Siblings(List(unstructured))))
+  }
+
+  private def jValueToElements(defaultFieldName: String, selected: JValue) = {
     selected match {
       case obj: JObject =>
-        val res = obj.obj.map{
+        val res = obj.obj.map {
           field =>
             new JsonElement(field, this.uri)
-        }.toList
+        }
         new Elements(res)
       case array: JArray =>
-        val res = array.arr.map{
+        val res = array.arr.map {
           field =>
-            new JsonElement(selector -> field, this.uri)
-        }.toList
+            new JsonElement(defaultFieldName -> field, this.uri)
+        }
         new Siblings(res)
       case _ =>
         new Elements(
-          List(new JsonElement(selector -> selected, this.uri))
+          List(new JsonElement(defaultFieldName -> selected, this.uri))
         )
     }
   }
 
-  //TODO: how to implement?
-  override def childrenWithSiblings(selector: Selector, range: Range) = {
-    val children = this.children(selector).self
-    new Elements(children.map(unstructured => new Siblings(List(unstructured))))
+  override def children(selector: Selector): Elements[Unstructured] = {
+    val selected = field._2 \ selector
+
+    jValueToElements(selector, selected)
+  }
+
+  override def childrenWithSiblings(selector: Selector, range: Range): Elements[Siblings[Unstructured]] = {
+    val found = this.children(selector).self
+    new Elements(found.map(unstructured => new Siblings(List(unstructured))))
   }
 
   override def code: Option[String] = Some(JsonMethods.compact(field._2))
@@ -99,7 +114,7 @@ class JsonElement private (
     case _ => Some(field._2.values.toString)
   }
 
-  override def boilerPipe: Option[String] = ??? //TODO: unsupported, does it make sense
+  override def boilerPipe: Option[String] = None //TODO: unsupported, does it make sense
 
   override def toString: String = code.get
 }

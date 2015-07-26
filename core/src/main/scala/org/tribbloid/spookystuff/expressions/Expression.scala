@@ -32,6 +32,32 @@ class GetPageExpr(override val name: String) extends Expression[Page] {
   override def apply(v1: PageRow): Option[Page] = v1.getPage(name)
 }
 
+class FindFirstExpr(selector: String, param: Expression[Unstructured]) extends Expression[Unstructured] {
+
+  override val name = s"${param.name}.findFirst($selector)"
+
+  override def apply(v1: PageRow): Option[Unstructured] = param(v1).flatMap(_.findFirst(selector))
+
+  def expand(range: Range) = new Expression[Siblings[Unstructured]] {
+    override val name: String = s"${this.name}.expand(${range.head} -> ${range.last})"
+
+    override def apply(v1: PageRow) = param(v1).flatMap(_.findFirstWithSiblings(selector, range))
+  }
+}
+
+class FindAllExpr(selector: String, param: Expression[Unstructured]) extends Expression[Elements[Unstructured]] {
+
+  override val name = s"${param.name}.findAll($selector)"
+
+  override def apply(v1: PageRow): Option[Elements[Unstructured]] = param(v1).map(_.findAll(selector))
+
+  def expand(range: Range) = new Expression[Elements[Siblings[Unstructured]]] {
+    override val name: String = s"${this.name}.expand(${range.head} -> ${range.last})"
+
+    override def apply(v1: PageRow) = param(v1).map(_.findAllWithSiblings(selector, range))
+  }
+}
+
 class ChildExpr(selector: String, param: Expression[Unstructured]) extends Expression[Unstructured] {
 
   override val name = s"${param.name}.child($selector)"

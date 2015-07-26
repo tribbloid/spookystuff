@@ -22,7 +22,7 @@ class TestInteractionWithHtmlUnit extends TestInteraction {
       val results = (Visit("https://ca.vwr.com/store/search?&pimId=582903")
         +> Paginate("a[title=Next]", delay = 2.second)).head.self.resolve(spooky)
 
-      val numPages = results.head.asInstanceOf[Page].children("div.right a").size
+      val numPages = results.head.asInstanceOf[Page].findAll("div.right a").size
 
       assert(results.size == numPages)
     }
@@ -39,7 +39,7 @@ class TestInteractionWithHtmlUnit extends TestInteraction {
       val results = (Visit("https://ca.vwr.com/store/search?label=Blotting%20Kits&pimId=3617065")
         +> Paginate("a[title=Next]", delay = 2.second)).head.self.resolve(spooky)
 
-      val numPages = results.head.asInstanceOf[Page].children("div.right a").size
+      val numPages = results.head.asInstanceOf[Page].findAll("div.right a").size
 
       assert(results.size == numPages)
     }

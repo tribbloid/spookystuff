@@ -39,7 +39,7 @@ class ExploreAJAXPagesIT extends IntegrationSuite {
       )(
         S"button.btn.btn-primary".text ~ 'page_number,
         'A.text ~ 'category,
-        'first.children("h1").text ~ 'title,
+        'first.findAll("h1").text ~ 'title,
         S"a.title".size ~ 'num_product
       )
       .toDF(sort = true)

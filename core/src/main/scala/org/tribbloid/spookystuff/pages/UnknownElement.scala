@@ -9,9 +9,13 @@ class UnknownElement(
 
   override def text: Option[String] = None
 
-  override def children(selector: String): Elements[Unstructured] = new Elements(List[Unstructured]())
+  override def findAll(selector: String): Elements[Unstructured] = new Elements(List[Unstructured]())
 
-  override def childrenWithSiblings(start: String, range: Range): Elements[Siblings[Unstructured]] = new Elements(List[Siblings[Unstructured]]())
+  override def findAllWithSiblings(start: String, range: Range): Elements[Siblings[Unstructured]] = new Elements(List[Siblings[Unstructured]]())
+
+  override def children(selector: Selector): Elements[Unstructured] = findAll(selector)
+
+  override def childrenWithSiblings(selector: Selector, range: Range): Elements[Siblings[Unstructured]] = findAllWithSiblings(selector, range)
 
   override def code: Option[String] = None
 
@@ -19,4 +23,5 @@ class UnknownElement(
 
   override def boilerPipe: Option[String] = None
 
-  override def attr(attr: String, noEmpty: Boolean): Option[String] = None}
+  override def attr(attr: String, noEmpty: Boolean): Option[String] = None
+}

@@ -29,7 +29,7 @@ class TestPageRow extends SpookyEnvSuite {
     ).resolve(spooky).toArray
     val row = PageRow(pageLikes = page)
       .select(S("h1.central-textlogo img").head.as('e1)).head
-      .selectTemp('pp.children("label").head).head
+      .selectTemp('pp.findAll("label").head).head
 
     val page2 = row.getUnstructured("pp")
     assert(page2.get === page.head)

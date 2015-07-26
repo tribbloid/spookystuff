@@ -20,7 +20,7 @@ class TestWget extends SpookyEnvSuite {
       Wget("http://www.whatsmyuseragent.com/") :: Nil
       ).resolve(spooky)
 
-    results.head.asInstanceOf[Page].children("h3.info").texts.head
+    results.head.asInstanceOf[Page].findAll("h3.info").texts.head
   }
 
   test("use TOR socks5 proxy for http wget") {
@@ -32,7 +32,7 @@ class TestWget extends SpookyEnvSuite {
         Wget("http://www.whatsmyuseragent.com/") :: Nil
         ).resolve(spooky)
 
-      results.head.asInstanceOf[Page].children("h3.info").texts.head
+      results.head.asInstanceOf[Page].findAll("h3.info").texts.head
     }
 
     assert(newIP !== null)
@@ -50,7 +50,7 @@ class TestWget extends SpookyEnvSuite {
         Wget("https://www.astrill.com/what-is-my-ip-address.php") :: Nil
         ).resolve(spooky)
 
-      results.head.asInstanceOf[Page].children("h1").texts.head
+      results.head.asInstanceOf[Page].findAll("h1").texts.head
     }
 
     assert(newIP !== null)
@@ -67,7 +67,7 @@ class TestWget extends SpookyEnvSuite {
         Wget("http://www.whatsmyuseragent.com/") :: Nil
         ).resolve(spooky)
       Actions
-      results.head.asInstanceOf[Page].children("h3.info").texts.head
+      results.head.asInstanceOf[Page].findAll("h3.info").texts.head
     }
 
     val noProxyIP2 = {
@@ -77,7 +77,7 @@ class TestWget extends SpookyEnvSuite {
         Wget("http://www.whatsmyuseragent.com/") :: Nil
         ).resolve(spooky)
 
-      results.head.asInstanceOf[Page].children("h3.info").texts.head
+      results.head.asInstanceOf[Page].findAll("h3.info").texts.head
     }
 
     assert(newIP !== noProxyIP2)
@@ -92,7 +92,7 @@ class TestWget extends SpookyEnvSuite {
         Wget("https://www.astrill.com/what-is-my-ip-address.php") :: Nil
         ).resolve(spooky)
 
-      results.head.asInstanceOf[Page].children("h1").texts.head
+      results.head.asInstanceOf[Page].findAll("h1").texts.head
     }
 
     val noProxyIP2 = {
@@ -102,7 +102,7 @@ class TestWget extends SpookyEnvSuite {
         Wget("https://www.astrill.com/what-is-my-ip-address.php") :: Nil
         ).resolve(spooky)
 
-      results.head.asInstanceOf[Page].children("h1").texts.head
+      results.head.asInstanceOf[Page].findAll("h1").texts.head
     }
 
     assert(newIP !== noProxyIP2)
@@ -155,7 +155,7 @@ class TestWget extends SpookyEnvSuite {
       ).resolve(spooky)
 
     assert(results.size === 1)
-    assert(results.head.asInstanceOf[Page].children("title").head.text.get.contains("Sigma-Aldrich"))
+    assert(results.head.asInstanceOf[Page].findAll("title").head.text.get.contains("Sigma-Aldrich"))
   }
 
   test("wget should smoothly fail on circular redirection") {

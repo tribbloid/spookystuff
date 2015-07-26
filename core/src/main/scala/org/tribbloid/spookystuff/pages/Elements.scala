@@ -56,9 +56,13 @@ with SeqLike[T, Elements[T]] {
 
   override def code: Option[String] = codes.headOption
 
-  override def children(selector: String) = new Elements(self.flatMap(_.children(selector)))
+  override def findAll(selector: String) = new Elements(self.flatMap(_.findAll(selector)))
 
-  override def childrenWithSiblings(start: String, range: Range) = new Elements(self.flatMap(_.childrenWithSiblings(start, range)))
+  override def findAllWithSiblings(selector: String, range: Range) = new Elements(self.flatMap(_.findAllWithSiblings(selector, range)))
+  
+  override def children(selector: Selector) = new Elements(self.flatMap(_.children(selector)))
+
+  override def childrenWithSiblings(selector: Selector, range: Range) = new Elements(self.flatMap(_.childrenWithSiblings(selector, range)))
 
   override def ownText: Option[String] = ownTexts.headOption
 

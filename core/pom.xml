@@ -26,12 +26,6 @@
         </dependency>
         <!--<dependency>-->
             <!--<groupId>org.apache.spark</groupId>-->
-            <!--<artifactId>spark-mllib_${scala.binary.version}</artifactId>-->
-            <!--<version>${spark.version}</version>-->
-            <!--<scope>provided</scope>-->
-        <!--</dependency>-->
-        <!--<dependency>-->
-            <!--<groupId>org.apache.spark</groupId>-->
             <!--<artifactId>spark-graphx_${scala.binary.version}</artifactId>-->
             <!--<version>${spark.version}</version>-->
             <!--<scope>provided</scope>-->
@@ -57,9 +51,9 @@
             <!--<version>2.16</version>-->
         <!--</dependency>-->
         <!--<dependency>-->
-        <!--<groupId>org.apache.tika</groupId>-->
-        <!--<artifactId>tika-java7</artifactId>-->
-        <!--<version>1.5</version>-->
+            <!--<groupId>org.apache.tika</groupId>-->
+            <!--<artifactId>tika-core</artifactId>-->
+            <!--<version>1.9</version>-->
         <!--</dependency>-->
         <dependency>
             <groupId>org.jsoup</groupId>

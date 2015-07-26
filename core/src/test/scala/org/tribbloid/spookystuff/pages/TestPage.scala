@@ -19,9 +19,9 @@ class TestPage extends SpookyEnvSuite {
       Snapshot().doExe(pb).toList.head.asInstanceOf[Page]
     }
 
-    assert (emptyPage.children("div.dummy").attrs("href").isEmpty)
-    assert (emptyPage.children("div.dummy").codes.isEmpty)
-    assert (emptyPage.children("div.dummy").isEmpty)
+    assert (emptyPage.findAll("div.dummy").attrs("href").isEmpty)
+    assert (emptyPage.findAll("div.dummy").codes.isEmpty)
+    assert (emptyPage.findAll("div.dummy").isEmpty)
   }
 
   test("visit, save and load") {
@@ -71,7 +71,7 @@ class TestPage extends SpookyEnvSuite {
     assert(resultsList.length === 1)
     val page1 = resultsList(0).asInstanceOf[Page]
 
-    assert(page1.children("title").texts.head startsWith "Wikipedia")
+    assert(page1.findAll("title").texts.head startsWith "Wikipedia")
 
     page1.autoSave(spooky,overwrite = true)
 
@@ -119,7 +119,7 @@ class TestPage extends SpookyEnvSuite {
       Wget("http://www.wikipedia.org/") :: Nil
       ).resolve(spooky).head.asInstanceOf[Page]
 
-    val ranges = page.childrenWithSiblings("a.link-box em", -2 to 1)
+    val ranges = page.findAllWithSiblings("a.link-box em", -2 to 1)
     assert(ranges.size === 10)
     val first = ranges.head
     assert(first.size === 4)
@@ -134,7 +134,7 @@ class TestPage extends SpookyEnvSuite {
       Wget("http://www.wikipedia.org/") :: Nil
       ).resolve(spooky).head.asInstanceOf[Page]
 
-    val ranges = page.childrenWithSiblings("div.central-featured-lang[lang^=e]", -2 to 2)
+    val ranges = page.findAllWithSiblings("div.central-featured-lang[lang^=e]", -2 to 2)
     assert(ranges.size === 2)
     val first = ranges.head
     val second = ranges.last

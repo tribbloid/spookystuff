@@ -3,7 +3,7 @@ package org.tribbloid.spookystuff.pages
 import java.nio.charset.Charset
 
 import de.l3s.boilerpipe.extractors.ArticleExtractor
-import org.jsoup.Jsoup
+import org.jsoup.{select, Jsoup}
 import org.jsoup.nodes.Element
 
 /**
@@ -54,22 +54,26 @@ class HtmlElement private (
 
   import scala.collection.JavaConversions._
 
-  override def children(selector: String) = new Elements(parsed.select(selector).map(new HtmlElement(_)).toList)
+  override def findAll(selector: String) = new Elements(parsed.select(selector).map(new HtmlElement(_)).toList)
 
-  override def childrenWithSiblings(selector: String, range: Range) = {
+  override def findAllWithSiblings(selector: String, range: Range) = {
 
-    val children = parsed.select(selector)
-    val colls = children.map{
+    val found: select.Elements = parsed.select(selector)
+    expand(found, range)
+  }
+
+  private def expand(found: select.Elements, range: Range) = {
+    val colls = found.map{
       self =>
         val selfIndex = self.elementSiblingIndex()
         //        val siblings = self.siblingElements()
         val siblings = self.parent().children()
 
-        val prevChildIndex = siblings.lastIndexWhere(ee => children.contains(ee), selfIndex - 1)
+        val prevChildIndex = siblings.lastIndexWhere(ee => found.contains(ee), selfIndex - 1)
         val head = if (prevChildIndex == -1) selfIndex + range.head
         else Math.max(selfIndex + range.head, prevChildIndex + 1)
 
-        val nextChildIndex = siblings.indexWhere(ee => children.contains(ee), selfIndex + 1)
+        val nextChildIndex = siblings.indexWhere(ee => found.contains(ee), selfIndex + 1)
         val tail = if (nextChildIndex == -1) selfIndex + range.last
         else Math.min(selfIndex + range.last, nextChildIndex -1)
 
@@ -78,6 +82,18 @@ class HtmlElement private (
         new Siblings(selected.map(new HtmlElement(_)).toList)
     }
     new Elements(colls.toList)
+  }
+
+  override def children(selector: Selector) = {
+
+    val found: select.Elements = new select.Elements(parsed.select(selector).filter(ee => parsed.children().contains(ee)))
+    new Elements(found.map(new HtmlElement(_)).toList)
+  }
+
+  override def childrenWithSiblings(selector: Selector, range: Range): Elements[Siblings[Unstructured]] = {
+
+    val found: select.Elements = new select.Elements(parsed.select(selector).filter(ee => parsed.children().contains(ee)))
+    expand(found, range)
   }
 
   override def code: Option[String] = Some(html)

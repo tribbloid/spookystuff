@@ -47,23 +47,23 @@ package object dsl {
   //'abc.$("div#a1").attr("src"): first "src" attribute of an unstructured field that match the selector
   //'abc.$("div#a1").attrs("src"): first "src" attribute of an unstructured field that match the selector
 
-  def S(selector: String): ChildrenExpr = GetOnlyPageExpr.children(selector)
+  def S(selector: String): FindAllExpr = GetOnlyPageExpr.findAll(selector)
   def S(selector: String, i: Int): Expression[Unstructured] = {
-    val expr = GetOnlyPageExpr.children(selector)
+    val expr = GetOnlyPageExpr.findAll(selector)
     new IterableLikeExprView(expr).get(i)
   }
   def S: Expression[Page] = GetOnlyPageExpr
 
-  def S_*(selector: String): ChildrenExpr = GetAllPagesExpr.children(selector)
+  def S_*(selector: String): FindAllExpr = GetAllPagesExpr.findAll(selector)
   def S_*(selector: String, i: Int): Expression[Unstructured] = {
-    val expr = GetAllPagesExpr.children(selector)
+    val expr = GetAllPagesExpr.findAll(selector)
     new IterableLikeExprView(expr).get(i)
   }
   def `S_*`: Expression[Elements[Page]] = GetAllPagesExpr
 
-  def A(selector: String): ChildrenExpr = 'A.children(selector)
+  def A(selector: String): FindAllExpr = 'A.findAll(selector)
   def A(selector: String, i: Int): Expression[Unstructured] = {
-    val expr = 'A.children(selector)
+    val expr = 'A.findAll(selector)
     new IterableLikeExprView(expr).get(i)
   }
 
@@ -124,9 +124,17 @@ package object dsl {
 
     def uri: Expression[String] = self.andMap(_.uri, "uri")
 
+    def findFirst(selector: String): FindFirstExpr = new FindFirstExpr(selector, self)
+
+    def findAll(selector: String): FindAllExpr = new FindAllExpr(selector, self)
+
+    def \\(selector: String) = findAll(selector)
+
     def child(selector: String): ChildExpr = new ChildExpr(selector, self)
 
     def children(selector: String): ChildrenExpr = new ChildrenExpr(selector, self)
+
+    def \(selector: String) = children(selector)
 
     def text: Expression[String] = self.andFlatMap(_.text, "text")
 
@@ -309,12 +317,12 @@ package object dsl {
 
     def x(fs: (PageRow => Option[Any])*) = new InterpolateExpr(strC.parts, fs)
 
-    def CSS() = GetOnlyPageExpr.children(strC.s())
+    def CSS() = GetOnlyPageExpr.findAll(strC.s())
     def S() = CSS()
 
-    def CSS_*() = GetAllPagesExpr.children(strC.s())
+    def CSS_*() = GetAllPagesExpr.findAll(strC.s())
     def S_*() = CSS_*()
 
-    def A() = 'A.children(strC.s())
+    def A() = 'A.findAll(strC.s())
   }
 }
