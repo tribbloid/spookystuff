@@ -1,8 +1,10 @@
 package org.tribbloid.spookystuff.pages
 
 import java.io._
+import java.nio.charset.Charset
 import java.util.{Date, UUID}
 
+import jodd.util.MimeTypes
 import org.apache.hadoop.fs.Path
 import org.apache.http.entity.ContentType
 import org.tribbloid.spookystuff._
@@ -68,18 +70,21 @@ case class Page(
     result
   }
 
-  def mimeType = parsedContentType.getMimeType
+  def mimeType: String = parsedContentType.getMimeType
+  def charSet: Charset = parsedContentType.getCharset
+  def exts: Array[String] = MimeTypes.findExtensionsByMimeTypes(mimeType, false)
+  def defaultExt: Option[String] = exts.headOption
 
   //TODO: use reflection to find any element implementation that can resolve supplied MIME type
   @transient lazy val root: Unstructured =
     if (mimeType.contains("html")) {
-      HtmlElement(content, parsedContentType.getCharset, uri) //not serialize, parsing is faster
+      HtmlElement(content, charSet, uri) //not serialize, parsing is faster
     }
-    else if (parsedContentType.getMimeType.contains("xml")) {
-      HtmlElement(content, parsedContentType.getCharset, uri) //not serialize, parsing is faster
+    else if (mimeType.contains("xml")) {
+      HtmlElement(content, charSet, uri) //not serialize, parsing is faster
     }
-    else if (parsedContentType.getMimeType.contains("json")) {
-      JsonElement(content, parsedContentType.getCharset, uri) //not serialize, parsing is faster
+    else if (mimeType.contains("json")) {
+      JsonElement(content, charSet, uri) //not serialize, parsing is faster
     }
     else {
       new UnknownElement(uri)

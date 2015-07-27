@@ -21,7 +21,7 @@ class FetchWgetAndSaveIT extends IntegrationSuite {
       .fetch(
         Wget("http://upload.wikimedia.org/wikipedia/en/thumb/8/80/Wikipedia-logo-v2.svg/220px-Wikipedia-logo-v2.svg.png")
       )
-      .select("Wikipedia.png" ~ 'name)
+      .select("Wikipedia" ~ 'name)
       .persist()
       .savePages(x"file://${System.getProperty("user.home")}/spooky-integration/save/${'name}", overwrite = true)
       .select(S.saved ~ 'saved_path)

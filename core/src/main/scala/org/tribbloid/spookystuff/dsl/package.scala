@@ -1,13 +1,15 @@
 package org.tribbloid.spookystuff
 
+import java.nio.charset.Charset
 import java.util.Date
 
+import jodd.util.MimeTypes
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.DataFrame
 import org.tribbloid.spookystuff.actions._
 import org.tribbloid.spookystuff.entity.PageRow
 import org.tribbloid.spookystuff.expressions._
-import org.tribbloid.spookystuff.pages.{Elements, Page, Unstructured}
+import org.tribbloid.spookystuff.pages.{PageUID, Elements, Page, Unstructured}
 import org.tribbloid.spookystuff.sparkbinding.{DataFrameView, PageRowRDD, StringRDDView}
 import org.tribbloid.spookystuff.utils.Default
 
@@ -172,9 +174,23 @@ package object dsl {
 
   implicit class PageExprView(self: Expression[Page]) extends Serializable {
 
+    def uid: Expression[PageUID] = self.andMap(_.uid, "uid")
+
+    def contentType: Expression[String] = self.andMap(_.contentType, "contentType")
+
+    def content: Expression[Seq[Byte]] = self.andMap(_.content.toSeq, "content")
+
     def timestamp: Expression[Date] = self.andMap(_.timestamp, "timestamp")
 
     def saved: Expression[ListSet[String]] = self.andMap(_.saved, "saved")
+
+    def mimeType: Expression[String] = self.andMap(_.mimeType, "mimeType")
+
+    def charSet: Expression[String] = self.andMap(_.charSet.toString, "charSet")
+
+    def exts: Expression[Seq[String]] = self.andMap(_.exts.toSeq, "extensions")
+
+    def defaultExt: Expression[String] = self.andFlatMap(_.defaultExt, "defaultExt")
   }
 
   implicit class PageTraversableOnceExprView(self: Expression[TraversableOnce[Page]]) extends Serializable {

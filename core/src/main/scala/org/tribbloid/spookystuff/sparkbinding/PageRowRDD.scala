@@ -193,24 +193,28 @@ class PageRowRDD private (
   def savePages(
                  path: Expression[Any],
                  pageExpr: Expression[Page] = S,
+                 ext: Expression[Any] = null,
                  overwrite: Boolean = false //TODO: move to context & more option
                  //                 enforceURI: Boolean = false
                  ): PageRowRDD = {
+
+    val effectiveExt = if (ext != null) ext
+    else pageExpr.defaultExt
 
     this.spooky.broadcast()
     val spooky = this.spooky
 
     this.foreach {
-
       pageRow =>
-        val pathStr: Option[String] = path(pageRow).map(_.toString).map{
+        var pathStr: Option[String] = path(pageRow).map(_.toString).map{
           str =>
             val splitted = str.split(":")
             if (splitted.size <= 2) str
             else splitted.head + ":" + splitted.slice(1,Int.MaxValue).mkString("%3A") //colon in file paths are reserved for protocol definition
         }
 
-        //        if (enforceURI) pathStr = pathStr.map(HttpUtils.uri(_).toString)
+        val extOption = effectiveExt(pageRow)
+        if (extOption.nonEmpty) pathStr = pathStr.map(_  + "." + extOption.get.toString)
 
         pathStr.foreach {
           str =>
