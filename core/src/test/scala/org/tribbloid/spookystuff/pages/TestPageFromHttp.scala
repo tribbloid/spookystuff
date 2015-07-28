@@ -47,6 +47,7 @@ class TestPageFromHttp extends SpookyEnvSuite {
 
     assert(page.mimeType == "image/png")
     assert(page.charset.isEmpty)
+    assert(page.findAll("title").text.get == "")
 
     page.autoSave(spooky,overwrite = true)
 
@@ -67,6 +68,7 @@ class TestPageFromHttp extends SpookyEnvSuite {
 
     assert(page.mimeType == "application/pdf")
     assert(page.charset.isEmpty)
+    assert(page.findAll("title").text.get == "Microsoft Word - Document1")
 
     page.autoSave(spooky,overwrite = true)
 

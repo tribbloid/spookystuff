@@ -288,7 +288,7 @@ case class Wget(
             content
           )
 
-          if (result.root.isInstanceOf[HtmlElement] && hasTitle){
+          if (result.mimeType.contains("html") && hasTitle){
             try{
               assert(result.\("html").\("title").text.get.nonEmpty) //TODO: this should be handled in TraceView
             }

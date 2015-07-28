@@ -7,7 +7,7 @@ import jodd.util.MimeTypes
 import org.apache.hadoop.fs.Path
 import org.apache.http.entity.ContentType
 import org.apache.tika.io.TikaInputStream
-import org.apache.tika.metadata.Metadata
+import org.apache.tika.metadata.{TikaMetadataKeys, Metadata}
 import org.mozilla.universalchardet.UniversalDetector
 import org.tribbloid.spookystuff._
 import org.tribbloid.spookystuff.actions._
@@ -98,8 +98,7 @@ case class Page(
     case None =>
       val metadata = new Metadata()
       val slash: Int = uri.lastIndexOf('/')
-      val metaKey = "resourceName"
-      metadata.set(metaKey, uri.substring(slash + 1))
+      metadata.set(TikaMetadataKeys.RESOURCE_NAME_KEY, uri.substring(slash + 1))
       val stream = TikaInputStream.get(content, metadata)
       try {
         val mediaType = Const.detector.detect(stream, metadata)
@@ -128,19 +127,22 @@ case class Page(
   def defaultExt: Option[String] = exts.headOption
 
   //TODO: use reflection to find any element implementation that can resolve supplied MIME type
-  @transient lazy val root: Unstructured =
+  @transient lazy val root: Unstructured = {
+    val effectiveCharset = charset.orNull
+
     if (mimeType.contains("html")) {
-      HtmlElement(content, charset.getOrElse(Const.defaultCharset), uri) //not serialize, parsing is faster
+      HtmlElement(content, effectiveCharset, uri) //not serialize, parsing is faster
     }
     else if (mimeType.contains("xml")) {
-      HtmlElement(content, charset.getOrElse(Const.defaultCharset), uri) //not serialize, parsing is faster
+      HtmlElement(content, effectiveCharset, uri) //not serialize, parsing is faster
     }
     else if (mimeType.contains("json")) {
-      JsonElement(content, charset.getOrElse(Const.defaultCharset), uri) //not serialize, parsing is faster
+      JsonElement(content, effectiveCharset, uri) //not serialize, parsing is faster
     }
     else {
-      new UnknownElement(uri)
+      TikaHtmlElement(content, effectiveCharset, mimeType, uri)
     }
+  }
 
   override def findAll(selector: String) = root.findAll(selector)
   override def findAllWithSiblings(start: String, range: Range) = root.findAllWithSiblings(start, range)

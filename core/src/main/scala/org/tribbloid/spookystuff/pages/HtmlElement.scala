@@ -1,11 +1,8 @@
 package org.tribbloid.spookystuff.pages
 
-import java.io.ByteArrayInputStream
-import java.nio.charset.Charset
-
 import de.l3s.boilerpipe.extractors.ArticleExtractor
 import org.apache.tika.io.TikaInputStream
-import org.apache.tika.metadata.{TikaCoreProperties, Metadata}
+import org.apache.tika.metadata.{HttpHeaders, Metadata}
 import org.apache.tika.parser.{AutoDetectParser, ParseContext}
 import org.apache.tika.sax.ToXMLContentHandler
 import org.jsoup.nodes.Element
@@ -21,25 +18,27 @@ object HtmlElement {
   def apply(content: Array[Byte], charSet: String, uri: String): HtmlElement = apply(new String(content, charSet), uri)
 }
 
-//object AutoDetectElement {
-//
-//  def apply(content: Array[Byte], charSet: Charset, mimeType: String, uri: String) = {
-//
-//    val handler = new ToXMLContentHandler()
-//
-//    val metadata = new Metadata()
-//    metadata.add(TikaCoreProperties.TYPE, DATAFILE_CHARSET)
-//    val stream = TikaInputStream.get(content, metadata)
-//    val parser = new AutoDetectParser()
-//    val context = new ParseContext()
-//    try {
-//      parser.parse(stream, handler, metadata, context)
-//      handler.toString
-//    } finally {
-//      stream.close()
-//    }
-//  }
-//}
+object TikaHtmlElement {
+
+  def apply(content: Array[Byte], charSet: String, mimeType: String, uri: String): HtmlElement = {
+
+    val handler = new ToXMLContentHandler()
+
+    val metadata = new Metadata()
+    val stream = TikaInputStream.get(content, metadata)
+    metadata.set(HttpHeaders.CONTENT_ENCODING, charSet)
+    metadata.set(HttpHeaders.CONTENT_TYPE, mimeType)
+    val parser = new AutoDetectParser()
+    val context = new ParseContext()
+    val html = try {
+      parser.parse(stream, handler, metadata, context)
+      handler.toString
+    } finally {
+      stream.close()
+    }
+    HtmlElement.apply(html, uri)
+  }
+}
 
 class HtmlElement private (
                             @transient _parsed: Element,

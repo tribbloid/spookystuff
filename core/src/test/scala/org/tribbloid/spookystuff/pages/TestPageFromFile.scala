@@ -16,4 +16,3 @@ class TestPageFromAbsoluteFile extends TestPageFromFile {
   override def pngUrl = "file://" + super.pngUrl
   override def pdfUrl = "file://" + super.pdfUrl
 }
-
