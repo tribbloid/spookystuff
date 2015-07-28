@@ -10,9 +10,9 @@ class TestPageFromHttp extends SpookyEnvSuite {
 
   import dsl._
 
-  val htmlUrl = "http://www.wikipedia.org"
-  val pngUrl = "https://www.google.ca/images/srpr/logo11w.png"
-  val pdfUrl = "http://stlab.adobe.com/wiki/images/d/d3/Test.pdf"
+  def htmlUrl = "http://www.wikipedia.org"
+  def pngUrl = "https://www.google.ca/images/srpr/logo11w.png"
+  def pdfUrl = "http://stlab.adobe.com/wiki/images/d/d3/Test.pdf"
 
   test("wget html, save and load") {
 

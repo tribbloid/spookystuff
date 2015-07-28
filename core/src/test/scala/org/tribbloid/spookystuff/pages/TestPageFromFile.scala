@@ -5,7 +5,15 @@ package org.tribbloid.spookystuff.pages
  */
 class TestPageFromFile extends TestPageFromHttp {
 
-  override val htmlUrl = this.getClass.getClassLoader.getResource("site/Wikipedia.html").getPath
-  override val pngUrl = this.getClass.getClassLoader.getResource("site/logo11w.png").getPath
-  override val pdfUrl = this.getClass.getClassLoader.getResource("site/Test.pdf").getPath
+  override def htmlUrl = this.getClass.getClassLoader.getResource("site/Wikipedia.html").getPath
+  override def pngUrl = this.getClass.getClassLoader.getResource("site/logo11w.png").getPath
+  override def pdfUrl = this.getClass.getClassLoader.getResource("site/Test.pdf").getPath
 }
+
+class TestPageFromAbsoluteFile extends TestPageFromFile {
+
+  override def htmlUrl = "file://" + super.htmlUrl
+  override def pngUrl = "file://" + super.pngUrl
+  override def pdfUrl = "file://" + super.pdfUrl
+}
+

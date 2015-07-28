@@ -133,7 +133,10 @@ case class Wget(
 
   //DEFINITELY NOT CACHED
   def getLocal(uri: URI, session: Session): Seq[PageLike] = {
-    val content = LocalResolver.input(uri.toString) {
+
+    val pathStr = uri.toString.replaceFirst("file://","")
+
+    val content = LocalResolver.input(pathStr) {
       fis =>
         IOUtils.toByteArray(fis)
     }
