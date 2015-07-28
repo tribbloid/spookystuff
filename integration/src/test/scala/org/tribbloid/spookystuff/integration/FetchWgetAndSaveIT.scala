@@ -1,6 +1,5 @@
 package org.tribbloid.spookystuff.integration
 
-import org.apache.hadoop.fs.Path
 import org.tribbloid.spookystuff.SpookyContext
 import org.tribbloid.spookystuff.actions._
 import org.tribbloid.spookystuff.dsl._
@@ -40,7 +39,7 @@ class FetchWgetAndSaveIT extends IntegrationSuite {
 
     assert(savedPageRows(0).get("saved_path").get.asInstanceOf[Iterable[Any]].head === s"file:${System.getProperty("user.home")}/spooky-integration/save/Wikipedia.png")
 
-    val loadedContent = PageUtils.load(new Path(s"file://${System.getProperty("user.home")}/spooky-integration/save/Wikipedia.png"))(spooky)
+    val loadedContent = PageUtils.load(s"file://${System.getProperty("user.home")}/spooky-integration/save/Wikipedia.png")(spooky)
 
     assert(loadedContent === content)
 
