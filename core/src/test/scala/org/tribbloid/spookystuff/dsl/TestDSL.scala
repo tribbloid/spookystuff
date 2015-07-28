@@ -1,4 +1,4 @@
-package org.tribbloid.spookystuff.expression
+package org.tribbloid.spookystuff.dsl
 
 import org.tribbloid.spookystuff.SpookyEnvSuite
 import org.tribbloid.spookystuff.actions.Wget
@@ -8,15 +8,17 @@ import org.tribbloid.spookystuff.expressions.NamedFunction1
 /**
  * Created by peng on 12/3/14.
  */
-class TestExprView extends SpookyEnvSuite {
-
-  import org.tribbloid.spookystuff.dsl._
+class TestDSL extends SpookyEnvSuite {
 
   lazy val page = (
-    Wget("http://www.wikipedia.org/") :: Nil
+    Wget("http://www.wikipedia.org/") ~ 'page  :: Nil
   ).resolve(spooky).toArray
+
   lazy val row = PageRow(pageLikes = page)
-    .select(S"title".head.text ~ 'abc)
+    .select(
+      S"title".head.text ~ 'abc,
+      S"title".head ~ 'def
+    )
     .head
 
   test("symbol as Expr"){
@@ -71,5 +73,11 @@ class TestExprView extends SpookyEnvSuite {
       .head
 
     assert(row.get("uri").nonEmpty)
+  }
+
+  test("uri"){
+    assert(S.uri.apply(row).get === "http://www.wikipedia.org/")
+    assert('page.uri.apply(row).get === "http://www.wikipedia.org/")
+    assert('def.uri.apply(row).get === "http://www.wikipedia.org/")
   }
 }

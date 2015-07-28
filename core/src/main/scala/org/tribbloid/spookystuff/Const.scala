@@ -1,5 +1,6 @@
 package org.tribbloid.spookystuff
 
+import org.apache.tika.detect.DefaultDetector
 import org.json4s.DefaultFormats
 import org.tribbloid.spookystuff.dsl.LeftOuter
 
@@ -39,4 +40,6 @@ object Const {
   val defaultJoinKey = "A"
 
   val jsonFormats = DefaultFormats
+
+  val detector = new DefaultDetector()
 }

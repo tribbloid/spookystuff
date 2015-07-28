@@ -1,15 +1,13 @@
 package org.tribbloid.spookystuff
 
-import java.nio.charset.Charset
 import java.util.Date
 
-import jodd.util.MimeTypes
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.DataFrame
 import org.tribbloid.spookystuff.actions._
 import org.tribbloid.spookystuff.entity.PageRow
 import org.tribbloid.spookystuff.expressions._
-import org.tribbloid.spookystuff.pages.{PageUID, Elements, Page, Unstructured}
+import org.tribbloid.spookystuff.pages.{Elements, Page, PageUID, Unstructured}
 import org.tribbloid.spookystuff.sparkbinding.{DataFrameView, PageRowRDD, StringRDDView}
 import org.tribbloid.spookystuff.utils.Default
 
@@ -186,7 +184,7 @@ package object dsl {
 
     def mimeType: Expression[String] = self.andMap(_.mimeType, "mimeType")
 
-    def charSet: Expression[String] = self.andMap(_.charSet.toString, "charSet")
+    def charSet: Expression[String] = self.andFlatMap(_.charset, "charSet")
 
     def exts: Expression[Seq[String]] = self.andMap(_.exts.toSeq, "extensions")
 

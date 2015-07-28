@@ -37,7 +37,7 @@ class TestPageRow extends SpookyEnvSuite {
     val e1 = row.getUnstructured("e1")
     assert(e1.get.attr("title").get === "Wikipedia")
 
-    val e2 = row.getUnstructured("pp.children(label).head")
+    val e2 = row.getUnstructured("pp.findAll(label).head")
     assert(e2.get.text.get === "Find Wikipedia in a language:")
   }
 }

@@ -1,10 +1,15 @@
 package org.tribbloid.spookystuff.pages
 
+import java.io.ByteArrayInputStream
 import java.nio.charset.Charset
 
 import de.l3s.boilerpipe.extractors.ArticleExtractor
-import org.jsoup.{select, Jsoup}
+import org.apache.tika.io.TikaInputStream
+import org.apache.tika.metadata.{TikaCoreProperties, Metadata}
+import org.apache.tika.parser.{AutoDetectParser, ParseContext}
+import org.apache.tika.sax.ToXMLContentHandler
 import org.jsoup.nodes.Element
+import org.jsoup.{Jsoup, select}
 
 /**
  * Created by peng on 11/30/14.
@@ -13,8 +18,28 @@ object HtmlElement {
 
   def apply(html: String, uri: String): HtmlElement = new HtmlElement(null, html, None, uri)
 
-  def apply(content: Array[Byte], charSet: Charset, uri: String): HtmlElement = apply(new String(content, charSet), uri)
+  def apply(content: Array[Byte], charSet: String, uri: String): HtmlElement = apply(new String(content, charSet), uri)
 }
+
+//object AutoDetectElement {
+//
+//  def apply(content: Array[Byte], charSet: Charset, mimeType: String, uri: String) = {
+//
+//    val handler = new ToXMLContentHandler()
+//
+//    val metadata = new Metadata()
+//    metadata.add(TikaCoreProperties.TYPE, DATAFILE_CHARSET)
+//    val stream = TikaInputStream.get(content, metadata)
+//    val parser = new AutoDetectParser()
+//    val context = new ParseContext()
+//    try {
+//      parser.parse(stream, handler, metadata, context)
+//      handler.toString
+//    } finally {
+//      stream.close()
+//    }
+//  }
+//}
 
 class HtmlElement private (
                             @transient _parsed: Element,
@@ -24,7 +49,7 @@ class HtmlElement private (
                             ) extends Unstructured {
 
   //constructor for HtmlElement returned by .children()
-  def this(_parsed: Element) = this(
+  private def this(_parsed: Element) = this(
     _parsed,
     _parsed.outerHtml(),
     Some(_parsed.tagName()),

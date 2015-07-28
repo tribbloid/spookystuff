@@ -1,12 +1,14 @@
 package org.tribbloid.spookystuff.pages
 
 import java.io._
-import java.nio.charset.Charset
 import java.util.{Date, UUID}
 
 import jodd.util.MimeTypes
 import org.apache.hadoop.fs.Path
 import org.apache.http.entity.ContentType
+import org.apache.tika.io.TikaInputStream
+import org.apache.tika.metadata.Metadata
+import org.mozilla.universalchardet.UniversalDetector
 import org.tribbloid.spookystuff._
 import org.tribbloid.spookystuff.actions._
 import org.tribbloid.spookystuff.utils.Utils
@@ -31,6 +33,7 @@ case class PageUID(
 trait PageLike {
   val uid: PageUID
   val timestamp: Date
+  val cacheable: Boolean
 
   def laterThan(v2: PageLike): Boolean = this.timestamp after v2.timestamp
 
@@ -41,7 +44,8 @@ trait PageLike {
 //Merely a placeholder when a Block returns nothing
 case class NoPage(
                    trace: Trace,
-                   override val timestamp: Date = new Date
+                   override val timestamp: Date = new Date,
+                   override val cacheable: Boolean = true
                    ) extends Serializable with PageLike {
 
   override val uid: PageUID = PageUID(trace, null, 0, 1)
@@ -53,38 +57,86 @@ case class Page(
                  override val uid: PageUID,
 
                  override val uri: String, //redirected
-                 contentType: String,
+                 declaredContentType: Option[String],
                  content: Array[Byte],
 
                  //                 cookie: Seq[SerializableCookie] = Seq(),
                  override val timestamp: Date = new Date,
-                 var saved: ListSet[String] = ListSet()
+                 var saved: ListSet[String] = ListSet(),
+                 override val cacheable: Boolean = true
                  )
   extends Unstructured with PageLike {
 
   def name = this.uid.output.name
 
-  @transient lazy val parsedContentType: ContentType = {
-    var result = ContentType.parse(this.contentType)
-    if (result.getCharset == null) result = result.withCharset(Const.defaultCharset)
-    result
+  private def detectCharset(result: ContentType): String = {
+    val charsetD = new UniversalDetector(null)
+    val ss = 4096
+
+    for (i <- 0.until(content.length, ss)) {
+      val length = Math.min(content.length - i, ss)
+      charsetD.handleData(content, i, length)
+      if (charsetD.isDone) return charsetD.getDetectedCharset
+    }
+
+    charsetD.dataEnd()
+    val detected = charsetD.getDetectedCharset
+
+    if (detected == null && result.getMimeType.contains("text")) Const.defaultCharset
+    else detected
   }
 
+  @transient lazy val parsedContentType: ContentType = declaredContentType match {
+    case Some(str) =>
+      val result = ContentType.parse(str)
+      if (result.getCharset == null) {
+
+
+        result.withCharset(detectCharset(result))
+      }
+      else result
+    case None =>
+      val metadata = new Metadata()
+      val slash: Int = uri.lastIndexOf('/')
+      val metaKey = "resourceName"
+      metadata.set(metaKey, uri.substring(slash + 1))
+      val stream = TikaInputStream.get(content, metadata)
+      try {
+        val mediaType = Const.detector.detect(stream, metadata)
+        //        val mimeType = mediaType.getBaseType.toString
+        //        val charset = new CharsetDetector().getString(content, null)
+        //        ContentType.create(mimeType, charset)
+
+        val str = mediaType.toString
+        val result = ContentType.parse(str)
+        if (result.getCharset == null) {
+
+          result.withCharset(detectCharset(result))
+        }
+        else result
+      }
+      finally {
+        stream.close()
+      }
+  }
+
+  def contentType = parsedContentType.toString
+
   def mimeType: String = parsedContentType.getMimeType
-  def charSet: Charset = parsedContentType.getCharset
+  def charset: Option[Selector] = Option(parsedContentType.getCharset).map(_.name())
   def exts: Array[String] = MimeTypes.findExtensionsByMimeTypes(mimeType, false)
   def defaultExt: Option[String] = exts.headOption
 
   //TODO: use reflection to find any element implementation that can resolve supplied MIME type
   @transient lazy val root: Unstructured =
     if (mimeType.contains("html")) {
-      HtmlElement(content, charSet, uri) //not serialize, parsing is faster
+      HtmlElement(content, charset.getOrElse(Const.defaultCharset), uri) //not serialize, parsing is faster
     }
     else if (mimeType.contains("xml")) {
-      HtmlElement(content, charSet, uri) //not serialize, parsing is faster
+      HtmlElement(content, charset.getOrElse(Const.defaultCharset), uri) //not serialize, parsing is faster
     }
     else if (mimeType.contains("json")) {
-      JsonElement(content, charSet, uri) //not serialize, parsing is faster
+      JsonElement(content, charset.getOrElse(Const.defaultCharset), uri) //not serialize, parsing is faster
     }
     else {
       new UnknownElement(uri)
@@ -109,7 +161,7 @@ case class Page(
 
     val path = Utils.uriConcat(pathParts: _*)
 
-    PageUtils.DFSWrite("save", path, spooky) {
+    PageUtils.dfsWrite("save", path, spooky) {
 
       var fullPath = new Path(path)
       val fs = fullPath.getFileSystem(spooky.hadoopConf)
@@ -148,9 +200,9 @@ case class Page(
   }
 
   def errorDumpLocally(
-                      spooky: SpookyContext,
-                      overwrite: Boolean = false
-                      ): Unit = {
+                        spooky: SpookyContext,
+                        overwrite: Boolean = false
+                        ): Unit = {
     val root = this.uid.output match {
       case ss: Screenshot => spooky.conf.dirs.errorScreenshotLocal
       case _ => spooky.conf.dirs.errorDumpLocal

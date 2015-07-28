@@ -1,6 +1,6 @@
 package org.tribbloid.spookystuff.actions
 
-import java.net.InetSocketAddress
+import java.net.{InetSocketAddress, URI}
 import javax.net.ssl.SSLContext
 
 import org.apache.commons.io.IOUtils
@@ -20,7 +20,7 @@ import org.tribbloid.spookystuff.expressions.{Expression, Literal}
 import org.tribbloid.spookystuff.http._
 import org.tribbloid.spookystuff.pages._
 import org.tribbloid.spookystuff.session.Session
-import org.tribbloid.spookystuff.utils.Utils
+import org.tribbloid.spookystuff.utils.{DFSResolver, LocalResolver, Utils}
 
 /**
  * Export a page from the browser or http client
@@ -60,7 +60,7 @@ case class Snapshot() extends Export{
     val page = new Page(
       PageUID(pb.backtrace :+ this, this),
       pb.driver.getCurrentUrl,
-      "text/html; charset=UTF-8",
+      Some("text/html; charset=UTF-8"),
       pb.driver.getPageSource.getBytes("UTF8")
       //      serializableCookies
     )
@@ -84,7 +84,7 @@ case class Screenshot() extends Export {
     val page = new Page(
       PageUID(pb.backtrace :+ this, this),
       pb.driver.getCurrentUrl,
-      "image/png",
+      Some("image/png"),
       content
     )
 
@@ -99,6 +99,7 @@ object DefaultScreenshot extends Screenshot()
  * http client is much faster than browser, also load much less resources
  * recommended for most static pages.
  * actions for more complex http/restful API call will be added per request.
+ * TODO: this should also handle file: hdfs: s3: ftp:
  * @param uri support cell interpolation
  */
 case class Wget(
@@ -106,24 +107,103 @@ case class Wget(
                  hasTitle: Boolean = true
                  ) extends Export with Driverless with Timed {
 
+  lazy val uriOption: Option[URI] = {
+    val uriStr = uri.asInstanceOf[Literal[String]].value.trim()
+    if ( uriStr.isEmpty ) None
+    else Some(HttpUtils.uri(uriStr))
+  }
+
   override def doExeNoName(session: Session): Seq[PageLike] = {
 
-    val uriStr = uri.asInstanceOf[Literal[String]].value.trim()
-    if ( uriStr.isEmpty ) return Seq ()
+    uriOption match {
+      case None => Seq()
+      case Some(uriURI) =>
+        Option(uriURI.getScheme).getOrElse("file") match {
+          case "http" | "https" =>
+            getHttp(uriURI, session)
+          case "ftp" =>
+            getFtp(uriURI, session)
+          case "file" =>
+            getLocal(uriURI, session)
+          case _ =>
+            getDFS(uriURI, session)
+        }
+    }
+  }
 
-    val uriURI = HttpUtils.uri(uriStr)
+  //DEFINITELY NOT CACHED
+  def getLocal(uri: URI, session: Session): Seq[PageLike] = {
+    val content = LocalResolver.input(uri.toString) {
+      fis =>
+        IOUtils.toByteArray(fis)
+    }
+
+    val result = new Page(
+      PageUID(Seq(this), this),
+      uri.toString, //TODO: not considering redirect!
+      None,
+      content,
+      cacheable = false
+    )
+
+    Seq(result)
+  }
+
+  //not cached
+  def getDFS(uri: URI, session: Session): Seq[PageLike] = {
+    val content = DFSResolver(session.spooky.hadoopConf).input(uri.toString) {
+      fis =>
+        IOUtils.toByteArray(fis)
+    }
+
+    val result = new Page(
+      PageUID(Seq(this), this),
+      uri.toString, //TODO: not considering redirect!
+      None,
+      content,
+      cacheable = false
+    )
+
+    Seq(result)
+  }
+
+  def getFtp(uri: URI, session: Session): Seq[PageLike] = {
+
+    val timeoutMs = this.timeout(session).toMillis.toInt
+
+    val uc = uri.toURL.openConnection()
+    uc.setConnectTimeout(timeoutMs)
+    uc.setReadTimeout(timeoutMs)
+
+    uc.connect()
+    uc.getInputStream
+    val stream = uc.getInputStream
+
+    val content = IOUtils.toByteArray ( stream )
+
+    val result = new Page(
+      PageUID(Seq(this), this),
+      uri.toASCIIString, //TODO: not considering redirect!
+      None,
+      content
+    )
+
+    Seq(result)
+  }
+
+  def getHttp(uri: URI, session: Session): Seq[PageLike] = {
 
     val proxy = session.spooky.conf.proxy()
     val userAgent = session.spooky.conf.userAgent()
     val headers = session.spooky.conf.headers()
+    val timeoutMs = this.timeout(session).toMillis.toInt
 
     val requestConfig = {
-      val timeoutMillis = this.timeout(session).toMillis.toInt
 
       var builder = RequestConfig.custom()
-        .setConnectTimeout ( timeoutMillis )
-        .setConnectionRequestTimeout ( timeoutMillis )
-        .setSocketTimeout( timeoutMillis )
+        .setConnectTimeout ( timeoutMs )
+        .setConnectionRequestTimeout ( timeoutMs )
+        .setSocketTimeout( timeoutMs )
         .setRedirectsEnabled(true)
         .setCircularRedirectsAllowed(true)
         .setRelativeRedirectsAllowed(true)
@@ -169,7 +249,7 @@ case class Wget(
     }
 
     val request = {
-      val request = new HttpGet(uriURI)
+      val request = new HttpGet(uri)
       if (userAgent != null) request.addHeader("User-Agent", userAgent)
       for (pair <- headers) {
         request.addHeader(pair._1, pair._2)
@@ -200,8 +280,8 @@ case class Wget(
 
           val result = new Page(
             PageUID(Seq(this), this),
-            uriURI.toASCIIString,
-            contentType,
+            uri.toASCIIString, //TODO: not considering redirect!
+            Some(contentType),
             content
           )
 

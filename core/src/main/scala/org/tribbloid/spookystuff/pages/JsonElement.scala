@@ -24,7 +24,7 @@ object JsonElement {
     }
   }
 
-  def apply(content: Array[Byte], charSet: Charset, uri: String): Unstructured = apply(new String(content, charSet), null, uri)
+  def apply(content: Array[Byte], charSet: String, uri: String): Unstructured = apply(new String(content, charSet), null, uri)
 }
 
 class JsonElement private (

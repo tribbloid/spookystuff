@@ -8,7 +8,7 @@ import org.apache.spark.SparkEnv
 import org.slf4j.LoggerFactory
 import org.tribbloid.spookystuff._
 import org.tribbloid.spookystuff.actions.Trace
-import org.tribbloid.spookystuff.utils.{Serializable, Utils}
+import org.tribbloid.spookystuff.utils.{DFSResolver, Serializable, Utils}
 
 import scala.concurrent.duration.Duration.Infinite
 
@@ -17,7 +17,7 @@ import scala.concurrent.duration.Duration.Infinite
  */
 object PageUtils {
 
-  def DFSRead[T](message: String, pathStr: String, spooky: SpookyContext)(f: => T): T = {
+  def dfsRead[T](message: String, pathStr: String, spooky: SpookyContext)(f: => T): T = {
     try {
       val result = Utils.retry(Const.DFSLocalRetries) {
         Utils.withDeadline(spooky.conf.DFSTimeout) {f}
@@ -39,7 +39,7 @@ object PageUtils {
   }
 
   //always fail on retry depletion and timeout
-  def DFSWrite[T](message: String, pathStr: String, spooky: SpookyContext)(f: => T): T = {
+  def dfsWrite[T](message: String, pathStr: String, spooky: SpookyContext)(f: => T): T = {
     try {
       val result = Utils.retry(Const.DFSLocalRetries) {
         Utils.withDeadline(spooky.conf.DFSTimeout) {f}
@@ -56,16 +56,11 @@ object PageUtils {
     }
   }
 
-  def load(fullPath: Path)(spooky: SpookyContext): Array[Byte] =
-    DFSRead("load", fullPath.toString, spooky) {
-      val fs = fullPath.getFileSystem(spooky.hadoopConf)
-
-      val fis = fs.open(fullPath)
-      val result = try {
-        IOUtils.toByteArray(fis) //TODO: according to past experience, IOUtils is not stable?
-      }
-      finally {
-        fis.close()
+  def load(pathStr: String)(spooky: SpookyContext): Array[Byte] =
+    dfsRead("load", pathStr, spooky) {
+      val result = DFSResolver(spooky.hadoopConf).input(pathStr) {
+        fis =>
+          IOUtils.toByteArray(fis)
       }
 
       result
@@ -74,11 +69,11 @@ object PageUtils {
   //unlike save, this will store all information in an unreadable, serialized, probably compressed file
   //always overwrite, use the same serializer as Spark
   private def cache[T](
-                     pageLikes: Seq[T],
-                     path: String,
-                     overwrite: Boolean = false
-                     )(spooky: SpookyContext): Unit =
-    DFSWrite("cache", path, spooky) {
+                        pageLikes: Seq[T],
+                        path: String,
+                        overwrite: Boolean = false
+                        )(spooky: SpookyContext): Unit =
+    dfsWrite("cache", path, spooky) {
       val fullPath = new Path(path)
 
       val fs = fullPath.getFileSystem(spooky.hadoopConf)
@@ -95,18 +90,20 @@ object PageUtils {
       }
     }
 
-  private def restore[T](fullPath: Path)(spooky: SpookyContext): Seq[T] =
-    DFSRead("restore", fullPath.toString, spooky) {
-      val fs = fullPath.getFileSystem(spooky.hadoopConf)
+  private def restore[T](pathStr: String)(spooky: SpookyContext): Seq[T] =
+    dfsRead("restore", pathStr, spooky) {
 
-      val ser = SparkEnv.get.serializer.newInstance()
-      val fis = fs.open(fullPath)
-      val serIn = ser.deserializeStream(fis)
-      val result = try {
-        serIn.readObject[Seq[T]]()
-      }
-      finally{
-        serIn.close()
+      val result = DFSResolver(spooky.hadoopConf).input(pathStr) {
+        fis =>
+          val ser = SparkEnv.get.serializer.newInstance()
+
+          val serIn = ser.deserializeStream(fis)
+          try {
+            serIn.readObject[Seq[T]]()
+          }
+          finally{
+            serIn.close()
+          }
       }
 
       result
@@ -116,15 +113,16 @@ object PageUtils {
                  pageLikes: Seq[PageLike],
                  spooky: SpookyContext
                  ): Unit = {
-    if (pageLikes.isEmpty) return
+    val effectivePageLikes = pageLikes.filter(_.cacheable)
+    if (effectivePageLikes.isEmpty) return
 
     val pathStr = Utils.uriConcat(
       spooky.conf.dirs.cache,
-      spooky.conf.cachePath(pageLikes.head.uid.backtrace).toString,
+      spooky.conf.cachePath(effectivePageLikes.head.uid.backtrace).toString,
       UUID.randomUUID().toString
     )
 
-    cache(pageLikes, pathStr)(spooky)
+    cache(effectivePageLikes, pathStr)(spooky)
   }
 
   //restore latest in a directory
@@ -135,7 +133,7 @@ object PageUtils {
                              earliestModificationTime: Long = 0
                              )(spooky: SpookyContext): Seq[PageLike] = {
 
-    val latestStatus = DFSRead("get latest version", dirPath.toString, spooky) {
+    val latestStatus = dfsRead("get latest version", dirPath.toString, spooky) {
 
       val fs = dirPath.getFileSystem(spooky.hadoopConf)
 
@@ -152,7 +150,7 @@ object PageUtils {
 
     latestStatus match {
       case Some(status) =>
-        val results = restore[PageLike](status.getPath)(spooky)
+        val results = restore[PageLike](status.getPath.toString)(spooky)
         if (results == null) {
           LoggerFactory.getLogger(this.getClass).warn("Cached content is corrputed")
           null
