@@ -87,6 +87,8 @@ class SpookyConf (
 
                    var failOnDFSError: Boolean = false,
 
+                   val defaultJoinType: JoinType = LeftOuter,
+
                    //default max number of elements scraped from a page, set to Int.MaxValue to allow unlimited fetch
                    var maxJoinOrdinal: Int = Int.MaxValue,
                    var maxExploreDepth: Int = Int.MaxValue,

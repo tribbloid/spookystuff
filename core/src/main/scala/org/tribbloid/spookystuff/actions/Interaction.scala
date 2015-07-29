@@ -2,7 +2,7 @@ package org.tribbloid.spookystuff.actions
 
 import com.thoughtworks.selenium.SeleniumException
 import org.openqa.selenium.interactions.{Actions => SeleniumActions}
-import org.openqa.selenium.support.ui.{ExpectedCondition, ExpectedConditions, Select, WebDriverWait}
+import org.openqa.selenium.support.ui.{ExpectedCondition, ExpectedConditions, Select}
 import org.openqa.selenium.{By, JavascriptExecutor, WebDriver}
 import org.tribbloid.spookystuff.Const
 import org.tribbloid.spookystuff.actions.WaitForDocumentReady._
@@ -68,7 +68,6 @@ object DocumentReadyCondition extends ExpectedCondition[Boolean] {
  */
 case class Visit(
                   uri: Expression[Any],
-                  hasTitle: Boolean = true,
                   override val delay: Duration = Const.interactionDelayMin,
                   override val blocking: Boolean = Const.interactionBlock
                   ) extends Interaction(delay, blocking) with Timed {
@@ -76,10 +75,10 @@ case class Visit(
   override def exeWithoutPage(session: Session) {
     session.driver.get(uri.asInstanceOf[Literal[String]].value)
 
-    if (hasTitle) {
-      val wait = new WebDriverWait(session.driver, timeout(session).toSeconds)
-      wait.until(ExpectedConditions.not(ExpectedConditions.titleIs("")))
-    }
+//    if (hasTitle) {
+//      val wait = new WebDriverWait(session.driver, timeout(session).toSeconds)
+//      wait.until(ExpectedConditions.not(ExpectedConditions.titleIs("")))
+//    }
   }
 
   override def doInterpolate(pageRow: PageRow): Option[this.type] = {

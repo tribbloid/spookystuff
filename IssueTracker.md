@@ -251,3 +251,12 @@ add test cases to make sure consecutive flatSelect & join won't use previous tem
 - join -> flatSelect
 - explore -> flatSelect................................................................................................done
 
+service pipeline: conformity with ML-pipeline:Transformations to enable it to be easily integrated and used
+
+pipeline stage as a service: download pipeline stage from a public hosting service: e.g. GitHub, that is constantly maintained and versioned to upgrade with the website.
+
+define pipeline stage as SPARQL pragma in Hive Server
+
+OAuthIntegration in wget:
+
+full SparkSQL integration: since its graduated from alpha it is safe to use Row and DataFrame to allow more fluent

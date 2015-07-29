@@ -46,7 +46,7 @@ object Youtube extends QueryCore{
 
     val video = catalog
       .fetch(
-        Visit(S"iframe[title^=Comment]".src, hasTitle = false)
+        Visit(S"iframe[title^=Comment]".src)
           +> Loop(
           Click("span[title^=Load]")
             +> WaitFor("span.PA[style^=display]").in(10.seconds)

@@ -101,7 +101,7 @@ case class Page(
       metadata.set(TikaMetadataKeys.RESOURCE_NAME_KEY, uri.substring(slash + 1))
       val stream = TikaInputStream.get(content, metadata)
       try {
-        val mediaType = Const.detector.detect(stream, metadata)
+        val mediaType = Const.mimeDetector.detect(stream, metadata)
         //        val mimeType = mediaType.getBaseType.toString
         //        val charset = new CharsetDetector().getString(content, null)
         //        ContentType.create(mimeType, charset)

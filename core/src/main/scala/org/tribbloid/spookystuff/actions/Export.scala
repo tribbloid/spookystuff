@@ -5,22 +5,24 @@ import javax.net.ssl.SSLContext
 
 import org.apache.commons.io.IOUtils
 import org.apache.http.client.config.RequestConfig
-import org.apache.http.client.methods.HttpGet
+import org.apache.http.client.methods.{HttpGet, HttpUriRequest}
 import org.apache.http.client.protocol.HttpClientContext
 import org.apache.http.client.{ClientProtocolException, RedirectException}
 import org.apache.http.config.RegistryBuilder
 import org.apache.http.conn.socket.ConnectionSocketFactory
 import org.apache.http.impl.client.HttpClients
 import org.apache.http.impl.conn.PoolingHttpClientConnectionManager
+import org.apache.http.protocol.HttpCoreContext
 import org.apache.http.{HttpHost, StatusLine}
 import org.openqa.selenium.{OutputType, TakesScreenshot}
-import org.tribbloid.spookystuff.ExportFilterException
+import org.tribbloid.spookystuff.dsl.ExportFilter
 import org.tribbloid.spookystuff.entity.PageRow
 import org.tribbloid.spookystuff.expressions.{Expression, Literal}
 import org.tribbloid.spookystuff.http._
 import org.tribbloid.spookystuff.pages._
 import org.tribbloid.spookystuff.session.Session
 import org.tribbloid.spookystuff.utils.{DFSResolver, LocalResolver, Utils}
+import org.tribbloid.spookystuff.{Const, ExportFilterException}
 
 /**
  * Export a page from the browser or http client
@@ -28,11 +30,35 @@ import org.tribbloid.spookystuff.utils.{DFSResolver, LocalResolver, Utils}
  */
 abstract class Export extends Named{
 
+  def filter: ExportFilter
+
   final override def outputNames = Set(this.name)
 
   final override def trunk = None //have not impact to driver
 
-  final def doExe(session: Session) = doExeNoName(session)
+  final def doExe(session: Session) = {
+    val results = doExeNoName(session)
+    results.map{
+      case page: Page =>
+        try {
+          filter.apply(page, session)
+        }
+        catch {
+          case e: Throwable =>
+            var message = "\n\n+>" + this.toString
+
+            val errorDump = session.spooky.conf.errorDump
+
+            if (errorDump) {
+              message += "\nSnapshot: " +this.errorDump(message, page, session.spooky)
+            }
+
+            throw new ExportFilterException(message, e)
+        }
+      case other: PageLike =>
+        other
+    }
+  }
 
   def doExeNoName(session: Session): Seq[PageLike]
 }
@@ -43,7 +69,7 @@ abstract class Export extends Named{
  * only for html page, please use wget for images and pdf files
  * always export as UTF8 charset
  */
-case class Snapshot() extends Export{
+case class Snapshot(override val filter: ExportFilter = Const.defaultExportFilter) extends Export{
 
   // all other fields are empty
   override def doExeNoName(pb: Session): Seq[Page] = {
@@ -72,7 +98,7 @@ case class Snapshot() extends Export{
 //this is used to save GC when invoked by anothor component
 object DefaultSnapshot extends Snapshot()
 
-case class Screenshot() extends Export {
+case class Screenshot(override val filter: ExportFilter = Const.defaultExportFilter) extends Export {
 
   override def doExeNoName(pb: Session): Seq[Page] = {
 
@@ -99,12 +125,11 @@ object DefaultScreenshot extends Screenshot()
  * http client is much faster than browser, also load much less resources
  * recommended for most static pages.
  * actions for more complex http/restful API call will be added per request.
- * TODO: this should also handle file: hdfs: s3: ftp:
  * @param uri support cell interpolation
  */
 case class Wget(
                  uri: Expression[Any],
-                 hasTitle: Boolean = true
+                 override val filter: ExportFilter = Const.defaultExportFilter
                  ) extends Export with Driverless with Timed {
 
   lazy val uriOption: Option[URI] = {
@@ -143,7 +168,7 @@ case class Wget(
 
     val result = new Page(
       PageUID(Seq(this), this),
-      uri.toString, //TODO: not considering redirect!
+      uri.toString,
       None,
       content,
       cacheable = false
@@ -161,7 +186,7 @@ case class Wget(
 
     val result = new Page(
       PageUID(Seq(this), this),
-      uri.toString, //TODO: not considering redirect!
+      uri.toString,
       None,
       content,
       cacheable = false
@@ -186,7 +211,7 @@ case class Wget(
 
     val result = new Page(
       PageUID(Seq(this), this),
-      uri.toASCIIString, //TODO: not considering redirect!
+      uri.toASCIIString,
       None,
       content
     )
@@ -219,7 +244,7 @@ case class Wget(
       result
     }
 
-    val sslContext = SSLContext.getInstance( "SSL" )
+    val sslContext: SSLContext = SSLContext.getInstance( "SSL" )
     sslContext.init(null, Array(new InsecureTrustManager()), null)
     val hostVerifier = new InsecureHostnameVerifier()
 
@@ -260,14 +285,14 @@ case class Wget(
 
       request
     }
-    val context = if (proxy !=null && proxy.protocol.startsWith("socks")) {
+    val context: HttpClientContext = if (proxy !=null && proxy.protocol.startsWith("socks")) {
       val socksaddr: InetSocketAddress = new InetSocketAddress(proxy.addr, proxy.port)
       val context: HttpClientContext = HttpClientContext.create
       context.setAttribute("socks.address", socksaddr)
 
       context
     }
-    else null
+    else HttpClientContext.create
 
     try {
       val response = httpClient.execute ( request, context )
@@ -281,30 +306,19 @@ case class Wget(
           val content = IOUtils.toByteArray ( stream )
           val contentType = entity.getContentType.getValue
 
+          val currentReq = context.getAttribute(HttpCoreContext.HTTP_REQUEST).asInstanceOf[HttpUriRequest]
+          val currentHost = context.getAttribute(HttpCoreContext.HTTP_TARGET_HOST).asInstanceOf[HttpHost]
+          val currentUrl = if (currentReq.getURI.isAbsolute) {currentReq.getURI.toString}
+          else {
+            currentHost.toURI + currentReq.getURI
+          }
+
           val result = new Page(
             PageUID(Seq(this), this),
-            uri.toASCIIString, //TODO: not considering redirect!
+            currentUrl,
             Some(contentType),
             content
           )
-
-          if (result.mimeType.contains("html") && hasTitle){
-            try{
-              assert(result.\("html").\("title").text.get.nonEmpty) //TODO: this should be handled in TraceView
-            }
-            catch {
-              case e: Throwable =>
-                var message = "\n\n+>" + this.toString
-
-                val errorDump: Boolean = session.spooky.conf.errorDump
-
-                if (errorDump) {
-                  message += "\nSnapshot: " +this.errorDump(message, result, session.spooky)
-                }
-
-                throw new ExportFilterException(message, e)
-            }
-          }
 
           Seq(result)
         }

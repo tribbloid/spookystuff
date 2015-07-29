@@ -14,7 +14,7 @@ import org.tribbloid.spookystuff.entity._
 import org.tribbloid.spookystuff.expressions._
 import org.tribbloid.spookystuff.pages.{Page, PageLike, Unstructured}
 import org.tribbloid.spookystuff.utils._
-import org.tribbloid.spookystuff.{Const, QueryException, SpookyContext, views}
+import org.tribbloid.spookystuff._
 
 import scala.collection.immutable.ListSet
 import scala.collection.mutable.ArrayBuffer
@@ -35,7 +35,7 @@ class PageRowRDD private (
   extends PageRowRDDApi {
 
   import RDD._
-  import views._
+  import org.tribbloid.spookystuff.views._
 
   def this(
             self: RDD[PageRow],
@@ -362,7 +362,7 @@ class PageRowRDD private (
 
   def fetch(
              traces: Set[Trace],
-             joinType: JoinType = Const.defaultJoinType,
+             joinType: JoinType = spooky.conf.defaultJoinType,
              flattenPagesPattern: String = ".*",
              flattenPagesOrdinalKey: Symbol = null,
              numPartitions: Int = spooky.conf.defaultParallelism(this),
@@ -391,7 +391,7 @@ class PageRowRDD private (
 
   def visit(
              expr: Expression[Any],
-             joinType: JoinType = Const.defaultJoinType,
+             joinType: JoinType = spooky.conf.defaultJoinType,
              numPartitions: Int = spooky.conf.defaultParallelism(this),
              optimizer: QueryOptimizer = spooky.conf.defaultQueryOptimizer
              ): PageRowRDD = this.fetch(
@@ -403,7 +403,7 @@ class PageRowRDD private (
 
   def wget(
             expr: Expression[Any],
-            joinType: JoinType = Const.defaultJoinType,
+            joinType: JoinType = spooky.conf.defaultJoinType,
             numPartitions: Int = spooky.conf.defaultParallelism(this),
             optimizer: QueryOptimizer = spooky.conf.defaultQueryOptimizer
             ): PageRowRDD = this.fetch(
@@ -544,7 +544,7 @@ class PageRowRDD private (
             distinct: Boolean = false //set to true to eliminate duplates in join key
             )(
             traces: Set[Trace],
-            joinType: JoinType = Const.defaultJoinType,
+            joinType: JoinType = spooky.conf.defaultJoinType,
             numPartitions: Int = spooky.conf.defaultParallelism(this),
             flattenPagesPattern: String = ".*",
             flattenPagesOrdinalKey: Symbol = null,
@@ -570,21 +570,25 @@ class PageRowRDD private (
    */
   def visitJoin(
                  expr: Expression[Any],
-                 hasTitle: Boolean = true,
+                 filter: ExportFilter = Const.defaultExportFilter,
                  failSafe: Int = -1,
                  ordinalKey: Symbol = null, //left & idempotent parameters are missing as they are always set to true
                  maxOrdinal: Int = spooky.conf.maxJoinOrdinal,
                  distinct: Boolean = false, //set to true to eliminate duplates in join key
-                 joinType: JoinType = Const.defaultJoinType,
+                 joinType: JoinType = spooky.conf.defaultJoinType,
                  numPartitions: Int = spooky.conf.defaultParallelism(this),
                  select: Expression[Any] = null,
                  optimizer: QueryOptimizer = spooky.conf.defaultQueryOptimizer
                  ): PageRowRDD ={
-    val action = if (failSafe < 0) Visit(new GetExpr(Const.defaultJoinKey), hasTitle)
-    else Try(Visit(new GetExpr(Const.defaultJoinKey), hasTitle), failSafe)
+
+    var trace: Set[Trace] =  (
+      Visit(new GetExpr(Const.defaultJoinKey))
+        +> Snapshot(filter)
+      )
+    if (failSafe > 0) trace = Try(trace, failSafe)
 
     this.join(expr, ordinalKey, maxOrdinal, distinct)(
-      action,
+      trace,
       joinType,
       numPartitions,
       optimizer = optimizer
@@ -600,21 +604,22 @@ class PageRowRDD private (
    */
   def wgetJoin(
                 expr: Expression[Any],
-                hasTitle: Boolean = true,
+                filter: ExportFilter = Const.defaultExportFilter,
                 failSafe: Int = -1,
                 ordinalKey: Symbol = null, //left & idempotent parameters are missing as they are always set to true
                 maxOrdinal: Int = spooky.conf.maxJoinOrdinal,
                 distinct: Boolean = false, //set to true to eliminate duplates in join key
-                joinType: JoinType = Const.defaultJoinType,
+                joinType: JoinType = spooky.conf.defaultJoinType,
                 numPartitions: Int = spooky.conf.defaultParallelism(this),
                 select: Expression[Any] = null,
                 optimizer: QueryOptimizer = spooky.conf.defaultQueryOptimizer
                 ): PageRowRDD ={
-    val action = if (failSafe < 0) Wget(new GetExpr(Const.defaultJoinKey), hasTitle)
-    else Try(Wget(new GetExpr(Const.defaultJoinKey), hasTitle), failSafe)
+
+    var trace: Set[Trace] =  Wget(new GetExpr(Const.defaultJoinKey), filter)
+    if (failSafe > 0) trace = Try(trace, failSafe)
 
     this.join(expr, ordinalKey, maxOrdinal, distinct)(
-      action,
+      trace,
       joinType,
       numPartitions,
       optimizer = optimizer
@@ -862,7 +867,7 @@ class PageRowRDD private (
 
   def visitExplore(
                     expr: Expression[Any],
-                    hasTitle: Boolean = true,
+                    filter: ExportFilter = Const.defaultExportFilter,
                     failSafe: Int = -1,
                     depthKey: Symbol = null,
                     maxDepth: Int = spooky.conf.maxExploreDepth,
@@ -874,11 +879,14 @@ class PageRowRDD private (
                     optimizer: QueryOptimizer = spooky.conf.defaultQueryOptimizer
                     ): PageRowRDD = {
 
-    val action = if (failSafe < 0) Visit(new GetExpr(Const.defaultJoinKey), hasTitle)
-    else Try(Visit(new GetExpr(Const.defaultJoinKey), hasTitle), failSafe)
+    var trace: Set[Trace] =  (
+      Visit(new GetExpr(Const.defaultJoinKey))
+        +> Snapshot(filter)
+      )
+    if (failSafe > 0) trace = Try(trace, failSafe)
 
     explore(expr, depthKey, maxDepth, ordinalKey, maxOrdinal, checkpointInterval)(
-      action,
+      trace,
       numPartitions,
       optimizer = optimizer
     )(Option(select).toSeq: _*)
@@ -886,7 +894,7 @@ class PageRowRDD private (
 
   def wgetExplore(
                    expr: Expression[Any],
-                   hasTitle: Boolean = true,
+                   filter: ExportFilter = Const.defaultExportFilter,
                    failSafe: Int = -1,
                    depthKey: Symbol = null,
                    maxDepth: Int = spooky.conf.maxExploreDepth,
@@ -898,11 +906,11 @@ class PageRowRDD private (
                    optimizer: QueryOptimizer = spooky.conf.defaultQueryOptimizer
                    ): PageRowRDD = {
 
-    val action = if (failSafe < 0) Wget(new GetExpr(Const.defaultJoinKey), hasTitle)
-    else Try(Wget(new GetExpr(Const.defaultJoinKey), hasTitle), failSafe)
+    var trace: Set[Trace] =  Wget(new GetExpr(Const.defaultJoinKey), filter)
+    if (failSafe > 0) trace = Try(trace, failSafe)
 
     explore(expr, depthKey, maxDepth, ordinalKey, maxOrdinal, checkpointInterval)(
-      action,
+      trace,
       numPartitions,
       optimizer = optimizer
     )(Option(select).toSeq: _*)

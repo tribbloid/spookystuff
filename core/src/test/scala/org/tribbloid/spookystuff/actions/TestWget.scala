@@ -112,7 +112,7 @@ class TestWget extends SpookyEnvSuite {
     spooky.conf.proxy = ProxyFactories.NoProxy
 
     val results = (
-      Wget("http://www.sigmaaldrich.com/catalog/search?term=38183-12-9&interface=CAS No.&N=0&mode=partialmax&lang=en&region=US&focus=product",hasTitle = false) :: Nil
+      Wget("http://www.sigmaaldrich.com/catalog/search?term=38183-12-9&interface=CAS No.&N=0&mode=partialmax&lang=en&region=US&focus=product") :: Nil
       ).resolve(spooky)
 
     assert(results.size === 1)
@@ -128,7 +128,7 @@ class TestWget extends SpookyEnvSuite {
     )
 
     val results = (
-      Wget("http://www.perkinelmer.ca/Catalog/Gallery.aspx?ID=Mass Spectrometry [GC/MS and ICP-MS]&PID=Gas Chromatography Mass Spectrometry Consumables&refineCat=Technology&N=172 139 78928 4293910906&TechNVal=4293910906",hasTitle = false) :: Nil
+      Wget("http://www.perkinelmer.ca/Catalog/Gallery.aspx?ID=Mass Spectrometry [GC/MS and ICP-MS]&PID=Gas Chromatography Mass Spectrometry Consumables&refineCat=Technology&N=172 139 78928 4293910906&TechNVal=4293910906") :: Nil
       ).resolve(spooky)
 
     assert(results.size === 1)
@@ -139,30 +139,35 @@ class TestWget extends SpookyEnvSuite {
 
     spooky.conf.proxy = ProxyFactories.NoProxy
 
+    val url = "http://www.sigmaaldrich.com/catalog/search/SearchResultsPage?Query=%3Ca+href%3D%22%2Fcatalog%2Fsearch%3Fterm%3D81-25-4%26interface%3DCAS+No.%26N%3D0%26mode%3Dpartialmax%26lang%3Den%26region%3DUS%26focus%3Dproduct%22%3E81-25-4%3C%2Fa%3E&Scope=CASSearch&btnSearch.x=1"
+
     val results = (
-      Wget("http://www.sigmaaldrich.com/catalog/search/SearchResultsPage?Query=%3Ca+href%3D%22%2Fcatalog%2Fsearch%3Fterm%3D81-25-4%26interface%3DCAS+No.%26N%3D0%26mode%3Dpartialmax%26lang%3Den%26region%3DUS%26focus%3Dproduct%22%3E81-25-4%3C%2Fa%3E&Scope=CASSearch&btnSearch.x=1",hasTitle = false) :: Nil
+      Wget(url) :: Nil
       ).resolve(spooky)
 
     assert(results.size === 1)
-    results.head.asInstanceOf[Page]
+    val page = results.head.asInstanceOf[Page]
+    assert(page.uri.contains("www.sigmaaldrich.com/catalog/AdvancedSearchPage"))
   }
 
   test("wget should correct redirection to relative url path") {
     spooky.conf.proxy = ProxyFactories.NoProxy
 
     val results = (
-      Wget("http://www.sigmaaldrich.com/etc/controller/controller-page.html?TablePage=17193175",hasTitle = false) :: Nil
+      Wget("http://www.sigmaaldrich.com/etc/controller/controller-page.html?TablePage=17193175") :: Nil
       ).resolve(spooky)
 
     assert(results.size === 1)
-    assert(results.head.asInstanceOf[Page].findAll("title").head.text.get.contains("Sigma-Aldrich"))
+    val page = results.head.asInstanceOf[Page]
+    assert(page.findAll("title").head.text.get.contains("Sigma-Aldrich"))
+    assert(page.uri.contains("www.sigmaaldrich.com/labware"))
   }
 
   test("wget should smoothly fail on circular redirection") {
     spooky.conf.proxy = ProxyFactories.NoProxy
 
     val results = (
-      Wget("http://www.perkinelmer.ca/en-ca/products/consumables-accessories/integrated-solutions/for-thermo-scientific-gcs/default.xhtml",hasTitle = false) :: Nil
+      Wget("http://www.perkinelmer.ca/en-ca/products/consumables-accessories/integrated-solutions/for-thermo-scientific-gcs/default.xhtml") :: Nil
       ).resolve(spooky)
 
     assert(results.size === 1)
@@ -186,8 +191,6 @@ class TestWget extends SpookyEnvSuite {
 
   test("wget should handle PKIX exception") {
     spooky.conf.proxy = ProxyFactories.NoProxy
-
-    import duration._
 
     val results = Seq(
       Wget("https://www.canadacompany.ca/en/")

@@ -2,7 +2,7 @@ package org.tribbloid.spookystuff
 
 import org.apache.tika.detect.DefaultDetector
 import org.json4s.DefaultFormats
-import org.tribbloid.spookystuff.dsl.LeftOuter
+import org.tribbloid.spookystuff.dsl.ExportFilters
 
 /**
  * Created by peng on 04/06/14.
@@ -14,8 +14,6 @@ object Const {
   val maxLoop = Int.MaxValue
 
   val defaultCharset = "ISO-8859-1"
-
-  val defaultJoinType = LeftOuter
 
   //  val webClientOptions = new WebClientOptions
   //  webClientOptions.setUseInsecureSSL(true)
@@ -41,5 +39,7 @@ object Const {
 
   val jsonFormats = DefaultFormats
 
-  val detector = new DefaultDetector()
+  val mimeDetector = new DefaultDetector()
+
+  val defaultExportFilter = ExportFilters.MustHaveTitle
 }
