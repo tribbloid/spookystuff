@@ -1,8 +1,12 @@
 #!/usr/bin/env bash
 
-source bin/rootkey.csv
+source bin/.env
 
-printf "AWS-credential = $AWSAccessKeyId:$AWSSecretKey\n"
+if [[ -z $AWSAccessKeyId || -z $AWSSecretKey || -z $AWSBucket ]]; then
+  echo "Failed to find AWS variables in bin/.env" >&2
+  echo "You need to specify AWS keys and a bucket name before running this program" >&2
+  exit 1
+fi
 
 #
 # Licensed to the Apache Software Foundation (ASF) under one or more
@@ -53,7 +57,7 @@ $SPARK_HOME/bin/spark-submit \
   --master $EXAMPLE_MASTER \
   --class $EXAMPLE_CLASS \
   --executor-memory 2G \
-  --conf spooky.root=s3n://spooky- \
+  --conf spooky.root=s3n://$AWSBucket \
   "$SPOOKY_EXAMPLES_JAR" \
   "$@"
 
