@@ -48,7 +48,7 @@ class TestPageRowRDD extends SpookyEnvSuite {
       )
       .toDF().count()
 
-    assert(acc.value == 2) //TODO: should be 1: reduced to 1 after unpersistAfterRendering() implemented
+    assert(acc.value == 1) //TODO: should be 1: reduced to 1 after unpersistAfterRendering() implemented
   }
 
   test("toCSV() should not run preceding transformation multiple times") {
@@ -67,7 +67,7 @@ class TestPageRowRDD extends SpookyEnvSuite {
       )
       .toCSV().count()
 
-    assert(acc.value == 2) //TODO: should be 1: reduced to 1 after unpersistAfterRendering() implemented
+    assert(acc.value == 1) //TODO: should be 1: reduced to 1 after unpersistAfterRendering() implemented
   }
 
   test("toJSON() should not run preceding transformation multiple times") {

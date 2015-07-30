@@ -17,14 +17,16 @@ trait QueryCore extends LocalSpookyCore {
     val spooky = getSpooky(args)
     val result = doMain(spooky)
 
-    val rdd: RDD[_] = result match {
+    val array = result match {
       case schemaRdd: DataFrame =>
-        println(schemaRdd.schema.fieldNames.mkString("\t"))
-        schemaRdd.rdd
-      case rdd: RDD[_] => rdd
+        val array = schemaRdd.rdd.persist().takeSample(withReplacement = false, num = 100)
+        schemaRdd.printSchema()
+        println(schemaRdd.schema.fieldNames.mkString("[","\t","]"))
+        array
+      case rdd: RDD[_] =>
+        rdd.persist().takeSample(withReplacement = false, num = 100)
     }
 
-    val array = rdd.persist().takeSample(withReplacement = false, num = 100)
     array.foreach(row => println(row))
     println("-------------------returned "+array.length+" rows------------------")
     println(s"------------------fetched ${spooky.metrics.pagesFetched.value} pages-----------------")

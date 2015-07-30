@@ -211,7 +211,7 @@ case class Wget(
 
     val result = new Page(
       PageUID(Seq(this), this),
-      uri.toASCIIString,
+      uri.toString,
       None,
       content
     )
@@ -285,6 +285,7 @@ case class Wget(
 
       request
     }
+
     val context: HttpClientContext = if (proxy !=null && proxy.protocol.startsWith("socks")) {
       val socksaddr: InetSocketAddress = new InetSocketAddress(proxy.addr, proxy.port)
       val context: HttpClientContext = HttpClientContext.create
@@ -297,34 +298,35 @@ case class Wget(
     try {
       val response = httpClient.execute ( request, context )
       try {
-        val httpStatus: StatusLine = response.getStatusLine
-        assert(httpStatus.getStatusCode.toString.startsWith("2"), httpStatus.toString)
+        val currentReq = context.getAttribute(HttpCoreContext.HTTP_REQUEST).asInstanceOf[HttpUriRequest]
+        val currentHost = context.getAttribute(HttpCoreContext.HTTP_TARGET_HOST).asInstanceOf[HttpHost]
+        val currentUrl = if (currentReq.getURI.isAbsolute) {currentReq.getURI.toString}
+        else {
+          currentHost.toURI + currentReq.getURI
+        }
+
         val entity = response.getEntity
 
         val stream = entity.getContent
-        try {
+        val result = try {
           val content = IOUtils.toByteArray ( stream )
           val contentType = entity.getContentType.getValue
 
-          val currentReq = context.getAttribute(HttpCoreContext.HTTP_REQUEST).asInstanceOf[HttpUriRequest]
-          val currentHost = context.getAttribute(HttpCoreContext.HTTP_TARGET_HOST).asInstanceOf[HttpHost]
-          val currentUrl = if (currentReq.getURI.isAbsolute) {currentReq.getURI.toString}
-          else {
-            currentHost.toURI + currentReq.getURI
-          }
-
-          val result = new Page(
+          new Page(
             PageUID(Seq(this), this),
             currentUrl,
             Some(contentType),
             content
           )
-
-          Seq(result)
         }
         finally {
           stream.close()
         }
+
+        val httpStatus: StatusLine = response.getStatusLine
+        assert(httpStatus.getStatusCode.toString.startsWith("2"), httpStatus.toString + "\n" + result.code)
+
+        Seq(result)
       }
       finally {
         response.close()

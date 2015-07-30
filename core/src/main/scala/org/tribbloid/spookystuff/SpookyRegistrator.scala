@@ -29,8 +29,9 @@ class SpookyRegistrator extends KryoRegistrator {
       classOf[Elements[_]],
       classOf[Siblings[_]],
       classOf[HtmlElement],
+      classOf[JsonElement],
       classOf[Page],
-      classOf[UnknownElement],
+//      classOf[UnknownElement],
       classOf[ExploreStage],
 
       //used by broadcast & accumulator

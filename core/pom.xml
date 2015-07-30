@@ -45,11 +45,11 @@
             <artifactId>httpclient</artifactId>
             <version>4.3.6</version>
         </dependency>
-        <!--<dependency>-->
-            <!--<groupId>oauth.signpost</groupId>-->
-            <!--<artifactId>oauth-signpost</artifactId>-->
-            <!--<version>1.2.1.2</version>-->
-        <!--</dependency>-->
+        <dependency>
+            <groupId>oauth.signpost</groupId>
+            <artifactId>signpost-core</artifactId>
+            <version>1.2.1.2</version>
+        </dependency>
         <!--<dependency>-->
             <!--<groupId>com.ui4j</groupId>-->
             <!--<artifactId>ui4j-all</artifactId>-->

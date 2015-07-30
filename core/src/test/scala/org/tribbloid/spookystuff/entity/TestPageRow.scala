@@ -19,7 +19,7 @@ class TestPageRow extends SpookyEnvSuite {
     val page1 = row.getOnlyPage
     assert(page1.get === page.head)
 
-    val page2 = row.getPage("Wget('http://www.wikipedia.org/',true)")
+    val page2 = row.getPage("Wget('http://www.wikipedia.org/',MustHaveTitle)")
     assert(page2.get === page.head)
   }
 

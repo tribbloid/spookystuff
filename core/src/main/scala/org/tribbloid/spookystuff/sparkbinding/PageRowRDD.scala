@@ -153,7 +153,7 @@ class PageRowRDD private (
   //TODO: investigate using the new applySchema api to avoid losing type info
   def toDF(name: String = null, sort: Boolean = false): DataFrame = {
 
-    val jsonRDD = this.toJSON(sort).persist()
+    val jsonRDD = this.persist().toJSON(sort)
 
     val schemaRDD = this.spooky.sqlContext.jsonRDD(jsonRDD)
 
@@ -391,11 +391,12 @@ class PageRowRDD private (
 
   def visit(
              expr: Expression[Any],
+             filter: ExportFilter = Const.defaultExportFilter,
              joinType: JoinType = spooky.conf.defaultJoinType,
              numPartitions: Int = spooky.conf.defaultParallelism(this),
              optimizer: QueryOptimizer = spooky.conf.defaultQueryOptimizer
              ): PageRowRDD = this.fetch(
-    Visit(expr),
+    Visit(expr) +> Snapshot(filter),
     joinType = joinType,
     numPartitions = numPartitions,
     optimizer = optimizer
@@ -403,11 +404,12 @@ class PageRowRDD private (
 
   def wget(
             expr: Expression[Any],
+            filter: ExportFilter = Const.defaultExportFilter,
             joinType: JoinType = spooky.conf.defaultJoinType,
             numPartitions: Int = spooky.conf.defaultParallelism(this),
             optimizer: QueryOptimizer = spooky.conf.defaultQueryOptimizer
             ): PageRowRDD = this.fetch(
-    Wget(expr),
+    Wget(expr, filter),
     joinType = joinType,
     numPartitions = numPartitions,
     optimizer = optimizer

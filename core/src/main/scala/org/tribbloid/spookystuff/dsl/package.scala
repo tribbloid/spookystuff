@@ -12,7 +12,7 @@ import org.tribbloid.spookystuff.sparkbinding.{DataFrameView, PageRowRDD, String
 import org.tribbloid.spookystuff.utils.Default
 
 import scala.collection.immutable.ListSet
-import scala.collection.{GenTraversableOnce, IterableLike, TraversableOnce}
+import scala.collection.{GenTraversableOnce, IterableLike}
 import scala.language.implicitConversions
 import scala.reflect.ClassTag
 
@@ -30,7 +30,7 @@ package object dsl {
 
   implicit def traceView(trace: Trace): TraceView = new TraceView(trace)
 
-  implicit def traceSetView[T](traces: T)(implicit f: T => Set[Trace]): TraceSetView = new TraceSetView(traces)
+  implicit def traceSetView[Repr](traces: Repr)(implicit f: Repr => Set[Trace]): TraceSetView = new TraceSetView(traces)
 
   implicit def actionToTraceSet(action: Action): Set[Trace] = Set(Seq(action))
 
@@ -91,6 +91,8 @@ package object dsl {
       s"filterByType[${ev.toString()}}]"
     )
 
+    def toStr = this.andMap(_.toString)
+
     def into(name: Symbol): Expression[Traversable[T]] = new InsertIntoExpr[T](name.name, self)
     def ~+(name: Symbol) = into(name)
 
@@ -119,6 +121,8 @@ package object dsl {
     //    case _ => this
     //  }) as Symbol(Const.joinExprKey)
   }
+
+  implicit def exprToExprView[Repr](expr: Repr)(implicit f: Repr => Expression[Any]): ExprView[Any] = f(expr)
 
   implicit class UnstructuredExprView(self: Expression[Unstructured]) extends Serializable {
 
@@ -191,12 +195,12 @@ package object dsl {
     def defaultExt: Expression[String] = self.andFlatMap(_.defaultExt, "defaultExt")
   }
 
-  implicit class PageTraversableOnceExprView(self: Expression[TraversableOnce[Page]]) extends Serializable {
-
-    def timestamps: Expression[Seq[Date]] = self.andMap(_.toSeq.map(_.timestamp), "timestamps")
-
-    def saveds: Expression[Seq[ListSet[String]]] = self.andMap(_.toSeq.map(_.saved), "saveds")
-  }
+//  implicit class PageTraversableOnceExprView(self: Expression[TraversableOnce[Page]]) extends Serializable {
+//
+//    def timestamps: Expression[Seq[Date]] = self.andMap(_.toSeq.map(_.timestamp), "timestamps")
+//
+//    def saveds: Expression[Seq[ListSet[String]]] = self.andMap(_.toSeq.map(_.saved), "saveds")
+//  }
 
   implicit class IterableLikeExprView[T: ClassTag, Repr](self: Expression[IterableLike[T, Repr]]) extends Serializable {
 
@@ -298,9 +302,6 @@ package object dsl {
   //--------------------------------------------------
 
   implicit def symbolToExpr(symbol: Symbol): GetExpr =
-    new GetExpr(symbol.name)
-
-  implicit def symbolToExprView(symbol: Symbol): ExprView[Any] =
     new GetExpr(symbol.name)
 
   implicit def symbolToUnstructuredExprView(symbol: Symbol): UnstructuredExprView =

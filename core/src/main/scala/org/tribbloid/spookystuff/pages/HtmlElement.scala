@@ -130,6 +130,10 @@ class HtmlElement private (
     else Option(result)
   }
 
+  override def href = attr("abs:href") //TODO: if this is identical to the uri itself, it should be considered an inline/invalid link and have None output
+
+  override def src = attr("abs:src")
+
   override def text: Option[String] = Option(parsed.text)
 
   override def ownText: Option[String] = Option(parsed.ownText)

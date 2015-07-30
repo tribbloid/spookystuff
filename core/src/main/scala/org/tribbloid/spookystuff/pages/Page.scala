@@ -82,7 +82,11 @@ case class Page(
     charsetD.dataEnd()
     val detected = charsetD.getDetectedCharset
 
-    if (detected == null && result.getMimeType.contains("text")) Const.defaultCharset
+    if (detected == null) {
+      if (result.getMimeType.contains("text")) Const.defaultTextCharset
+      else if (result.getMimeType.contains("json")) Const.defaultJsonCharset
+      else null
+    }
     else detected
   }
 
@@ -150,6 +154,8 @@ case class Page(
   override def childrenWithSiblings(selector: Selector, range: Range): Elements[Siblings[Unstructured]] = root.childrenWithSiblings(selector, range)
   override def code: Option[String] = root.code
   override def attr(attr: String, noEmpty: Boolean): Option[String] = root.attr(attr, noEmpty)
+  override def href: Option[String] = root.href
+  override def src: Option[String] = root.src
   override def text: Option[String] = root.text
   override def ownText: Option[String] = root.ownText
   override def boilerPipe: Option[String] = root.boilerPipe

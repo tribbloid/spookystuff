@@ -11,6 +11,7 @@ class TestPageFromHttp extends SpookyEnvSuite {
   import dsl._
 
   def htmlUrl = "http://www.wikipedia.org"
+  def jsonUrl = "https://api.github.com/users/tribbloid"
   def pngUrl = "https://www.google.ca/images/srpr/logo11w.png"
   def pdfUrl = "http://stlab.adobe.com/wiki/images/d/d3/Test.pdf"
 
@@ -27,6 +28,28 @@ class TestPageFromHttp extends SpookyEnvSuite {
     assert(page.mimeType == "text/html")
     assert(page.charset.map(_.toLowerCase).get == "utf-8")
     assert(page.findAll("title").texts.head startsWith "Wikipedia")
+
+    page.autoSave(spooky,overwrite = true)
+
+    val loadedContent = PageUtils.load(page.saved.head)(spooky)
+
+    assert(loadedContent === page.content)
+  }
+
+  test("wget json, save and load") {
+
+    val results = (
+      Wget(jsonUrl) :: Nil
+      ).resolve(spooky)
+
+    val resultsList = results.toArray
+    assert(resultsList.length === 1)
+    val page = resultsList(0).asInstanceOf[Page]
+
+    assert(page.mimeType == "application/json")
+    assert(page.charset.map(_.toLowerCase).get == "utf-8")
+    assert(page.\("html_url").texts.head == "https://github.com/tribbloid")
+    assert(page.\\("html_url").texts.head == "https://github.com/tribbloid")
 
     page.autoSave(spooky,overwrite = true)
 

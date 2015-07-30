@@ -40,9 +40,9 @@ with SeqLike[T, Elements[T]] {
 
   def attrs(attr: String, noEmpty: Boolean = true): Seq[String] = self.flatMap(_.attr(attr, noEmpty))
 
-  final def hrefs(abs: Boolean) = attrs("abs:href")
+  def hrefs = self.flatMap(_.href)
 
-  final def srcs = attrs("abs:src")
+  def srcs = self.flatMap(_.href)
 
   def texts: Seq[String] = self.flatMap(_.text)
 
@@ -70,6 +70,10 @@ with SeqLike[T, Elements[T]] {
 
   override def attr(attr: String, noEmpty: Boolean): Option[String] = attrs(attr, noEmpty).headOption
 
+  override def href: Option[String] = hrefs.headOption
+
+  override def src: Option[String] = srcs.headOption
+
   override def iterator: Iterator[T] = self.iterator
 
   override def length: Int = self.length
@@ -77,4 +81,5 @@ with SeqLike[T, Elements[T]] {
   override def apply(idx: Int): T = self.apply(idx)
 
   override protected[this] def newBuilder = Elements.newBuilder[T]
+
 }

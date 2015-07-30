@@ -1,9 +1,7 @@
 package org.tribbloid.spookystuff.pages
 
-import java.nio.charset.Charset
-
-import org.json4s.{JArray, JField}
 import org.json4s.jackson.JsonMethods
+import org.json4s.{JArray, JField}
 
 /**
  * Created by peng on 11/30/14.
@@ -105,6 +103,10 @@ class JsonElement private (
         else result
     }
   }
+
+  override def href: Option[String] = ownText
+
+  override def src: Option[String] = ownText
 
   override def text: Option[String] = Some(field._2.values.toString)
 

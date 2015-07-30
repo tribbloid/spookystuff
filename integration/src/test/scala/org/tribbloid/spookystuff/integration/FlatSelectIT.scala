@@ -40,9 +40,9 @@ class FlatSelectIT extends IntegrationSuite {
     assert(rows.length === 10)
     assert(rows.head.size === 4)
     assert(rows.head.getString(0) === "en")
-    assert(rows.head.getString(1) === "http://en.wikipedia.org/")
+    assert(rows.head.getString(1) contains "en.wikipedia.org/")
     assert(rows.head.getString(2) === "The Free Encyclopedia")
-    assert(rows.head.getString(3) === "http://www.wikipedia.org/")
+    assert(rows.head.getString(3) contains "www.wikipedia.org/")
   }
 
   override def numPages = _ => 1

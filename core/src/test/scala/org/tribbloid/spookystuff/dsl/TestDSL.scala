@@ -76,8 +76,8 @@ class TestDSL extends SpookyEnvSuite {
   }
 
   test("uri"){
-    assert(S.uri.apply(row).get === "http://www.wikipedia.org/")
-    assert('page.uri.apply(row).get === "http://www.wikipedia.org/")
-    assert('def.uri.apply(row).get === "http://www.wikipedia.org/")
+    assert(S.uri.apply(row).get contains "://www.wikipedia.org/")
+    assert('page.uri.apply(row).get contains "://www.wikipedia.org/")
+    assert('def.uri.apply(row).get contains "://www.wikipedia.org/")
   }
 }

@@ -1,5 +1,12 @@
 package org.tribbloid.spookystuff.http;
 
+import oauth.signpost.basic.DefaultOAuthConsumer;
+import oauth.signpost.exception.OAuthCommunicationException;
+import oauth.signpost.exception.OAuthExpectationFailedException;
+import oauth.signpost.exception.OAuthMessageSignerException;
+import oauth.signpost.signature.HmacSha1MessageSigner;
+import oauth.signpost.signature.PlainTextMessageSigner;
+
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -19,6 +26,10 @@ public class HttpUtils {
   }
 
   private static URL dummyURL = dummyURL();
+
+  public static String uriStr(String s) throws URISyntaxException {
+    return uri(s).toString();
+  }
 
   public static URI uri(String s) throws URISyntaxException {
 
@@ -50,5 +61,31 @@ public class HttpUtils {
         return new URI(null, null, url.getPath(), url.getQuery(), null); //this will generate a relative URI the string itself is relative
       }
     }
+  }
+
+  static PlainTextMessageSigner plainTextMessageSigner = new PlainTextMessageSigner();
+  static HmacSha1MessageSigner hmacSha1MessageSigner = new HmacSha1MessageSigner();
+
+  public static String OauthV2(
+          String uri,
+          String CONSUMER_KEY,
+          String CONSUMER_SECRET,
+
+          String ACCESS_TOKEN,
+          String TOKEN_SECRET
+          ) throws OAuthCommunicationException, OAuthExpectationFailedException, OAuthMessageSignerException {
+
+    // create a consumer object and configure it with the access
+    // token and token secret obtained from the service provider
+    DefaultOAuthConsumer consumer = new DefaultOAuthConsumer(CONSUMER_KEY, CONSUMER_SECRET);
+
+    consumer.setMessageSigner(hmacSha1MessageSigner);
+
+    consumer.setSendEmptyTokens(true);
+    consumer.setTokenWithSecret(ACCESS_TOKEN, TOKEN_SECRET);
+
+    // sign the request
+    String result =  consumer.sign(uri);
+    return result;
   }
 }
