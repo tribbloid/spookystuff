@@ -22,7 +22,7 @@ import scala.collection.immutable.ListSet
 @SerialVersionUID(612503421395L)
 case class PageUID(
                     backtrace: Trace,
-                    output: Named,
+                    output: Export,
                     //                    sessionStartTime: Long,
                     blockIndex: Int = 0,
                     blockSize: Int = 1 //number of pages in a block output,

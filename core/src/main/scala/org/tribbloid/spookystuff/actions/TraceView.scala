@@ -100,7 +100,7 @@ class TraceView(
 
       results
     }
-    else {
+    else { //TODO: this still launch Driver for Blocks (e.g. Try) containing only Driverless Actions
       val session = if (self.count(_.isInstanceOf[Driverless]) == self.size) new NoDriverSession(spooky)
       else new DriverSession(spooky)
       try {

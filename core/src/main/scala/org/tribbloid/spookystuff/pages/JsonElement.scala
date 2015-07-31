@@ -53,14 +53,23 @@ class JsonElement private (
     new Elements(found.map(unstructured => new Siblings(List(unstructured))))
   }
 
-  private def jValueToElements(defaultFieldName: String, selected: JValue) = {
+  private def jValueToElements(defaultFieldName: String, selected: JValue): Elements[JsonElement] = {
     selected match {
       case obj: JObject =>
-        val res = obj.obj.map {
-          field =>
-            new JsonElement(field, this.uri)
+
+        if (obj.obj.map(_._1).distinct.size == 1) { //if the JObject contains many fields with identical names they are combined from many different places
+        val jsonElements = obj.obj.map {
+            field =>
+              new JsonElement(field, this.uri)
+          }
+          new Elements(jsonElements)
         }
-        new Elements(res)
+        else { //otherwise its a single object from the beginning
+          new Elements(
+            List(new JsonElement(defaultFieldName -> selected, this.uri))
+          )
+        }
+
       case array: JArray =>
         val res = array.arr.map {
           field =>

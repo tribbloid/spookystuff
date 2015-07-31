@@ -72,6 +72,11 @@ class PageRowRDD private (
     result
   }
 
+  def set(f: SpookyConf => Unit): PageRowRDD = {
+    f(this.spooky.conf)
+    this
+  }
+
   def distinctBy(exprs: (PageRow => Any)*): PageRowRDD = {
     this.copy(self.groupBy {
       row =>
@@ -649,13 +654,15 @@ class PageRowRDD private (
 
     spooky.broadcast()
 
+    val cleared = this.clearTemp
+
     val result = optimizer match {
       case Narrow =>
-        this.clearTemp._narrowExplore(expr, depthKey, maxDepth, ordinalKey, maxOrdinal, checkpointInterval)(_traces, numPartitions, flattenPagesPattern, flattenPagesOrdinalKey)(select: _*)
+        cleared._narrowExplore(expr, depthKey, maxDepth, ordinalKey, maxOrdinal, checkpointInterval)(_traces, numPartitions, flattenPagesPattern, flattenPagesOrdinalKey)(select: _*)
       case Wide =>
-        this.clearTemp._wideExplore(expr, depthKey, maxDepth, ordinalKey, maxOrdinal, checkpointInterval, useWebCache = false)(_traces, numPartitions, flattenPagesPattern, flattenPagesOrdinalKey)(select: _*)
+        cleared._wideExplore(expr, depthKey, maxDepth, ordinalKey, maxOrdinal, checkpointInterval, useWebCache = false)(_traces, numPartitions, flattenPagesPattern, flattenPagesOrdinalKey)(select: _*)
       case Wide_RDDWebCache =>
-        this.clearTemp._wideExplore(expr, depthKey, maxDepth, ordinalKey, maxOrdinal, checkpointInterval, useWebCache = true)(_traces, numPartitions, flattenPagesPattern, flattenPagesOrdinalKey)(select: _*)
+        cleared._wideExplore(expr, depthKey, maxDepth, ordinalKey, maxOrdinal, checkpointInterval, useWebCache = true)(_traces, numPartitions, flattenPagesPattern, flattenPagesOrdinalKey)(select: _*)
       case _ => throw new UnsupportedOperationException(s"${optimizer.getClass.getSimpleName} optimizer is not supported in this query")
     }
 

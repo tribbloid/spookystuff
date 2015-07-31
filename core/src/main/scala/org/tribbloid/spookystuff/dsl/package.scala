@@ -67,13 +67,15 @@ package object dsl {
     new IterableLikeExprView(expr).get(i)
   }
 
-  implicit def ExprToSeqFunc[T](self: Expression[T]): (PageRow => Seq[T]) = { //shortcut to use expression in RDD.flatMap etc.
+  implicit def exprToSeqFunc[T](self: Expression[T]): (PageRow => Seq[T]) = { //shortcut to use expression in RDD.flatMap etc.
     self.andThen(_.toSeq)
   }
 
+  implicit def SymbolToSeqFunc(symbol: Symbol): (PageRow => Seq[Any]) = exprToSeqFunc(symbol)
+
   implicit class ExprView[+T: ClassTag](self: Expression[T]) extends Serializable {
 
-    def defaultVal: T = Default.value[T]
+    private def defaultVal: T = Default.value[T]
 
     def andMap[A](g: T => A): Expression[A] = self.andThen(_.map(v => g(v)))
 
@@ -101,13 +103,31 @@ package object dsl {
       NamedFunction1(_.getOrElse(value), s"getOrElse($value)")
     )
 
-    def orElse[B >: T](valueOption: =>Option[B] = Some(defaultVal)): Expression[B] = self.andThen(
+    def orDefault[B >: T]() = orElse(Some(defaultVal))
+
+    def orElse[B >: T](valueOption: =>Option[B]): Expression[B] = self.andThen(
       NamedFunction1(_.orElse(valueOption), s"orElse($valueOption)")
     )
+
+    def orElse[B >: T](exprOption: Expression[B]): Expression[B] = new Expression[B] {
+
+      override val name: String = s"$self.orElse($exprOption)"
+
+      override def apply(row: PageRow): Option[B] = self(row).orElse(exprOption(row))
+    }
 
     def get: NamedFunction1[PageRow, T] = self.andThen(
       NamedFunction1(_.get, s"get")
     )
+
+    def ->[B](another: Expression[B]): Expression[(T, B)] = new Expression[(T, B)] {
+      override val name: String = s"$self.->($another)"
+
+      override def apply(row: PageRow): Option[(T, B)] = {
+        if (self(row).isEmpty || another(row).isEmpty) None
+        else Some(self(row).get -> another(row).get)
+      }
+    }
 
     //  def defaultToHrefExpr = (self match {
     //    case expr: Expr[Unstructured] => expr.href
@@ -142,7 +162,7 @@ package object dsl {
 
     def text: Expression[String] = self.andFlatMap(_.text, "text")
 
-    def code = self.andFlatMap(_.code, "text")
+    def code = self.andFlatMap(_.code, "code")
 
     def ownText: Expression[String] = self.andFlatMap(_.ownText, "ownText")
 
@@ -195,12 +215,12 @@ package object dsl {
     def defaultExt: Expression[String] = self.andFlatMap(_.defaultExt, "defaultExt")
   }
 
-//  implicit class PageTraversableOnceExprView(self: Expression[TraversableOnce[Page]]) extends Serializable {
-//
-//    def timestamps: Expression[Seq[Date]] = self.andMap(_.toSeq.map(_.timestamp), "timestamps")
-//
-//    def saveds: Expression[Seq[ListSet[String]]] = self.andMap(_.toSeq.map(_.saved), "saveds")
-//  }
+  //  implicit class PageTraversableOnceExprView(self: Expression[TraversableOnce[Page]]) extends Serializable {
+  //
+  //    def timestamps: Expression[Seq[Date]] = self.andMap(_.toSeq.map(_.timestamp), "timestamps")
+  //
+  //    def saveds: Expression[Seq[ListSet[String]]] = self.andMap(_.toSeq.map(_.saved), "saveds")
+  //  }
 
   implicit class IterableLikeExprView[T: ClassTag, Repr](self: Expression[IterableLike[T, Repr]]) extends Serializable {
 
@@ -297,6 +317,8 @@ package object dsl {
       self.andMap(_.replaceAll(regex, replacement), s"replaceAll($regex,$replacement)")
 
     def trim: Expression[String] = self.andMap(_.trim, "trim")
+
+    def +(another: Expression[Any]): Expression[String] = x"$self$another"
   }
 
   //--------------------------------------------------

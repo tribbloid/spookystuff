@@ -22,7 +22,7 @@ import org.tribbloid.spookystuff.http._
 import org.tribbloid.spookystuff.pages._
 import org.tribbloid.spookystuff.session.Session
 import org.tribbloid.spookystuff.utils.{DFSResolver, LocalResolver, Utils}
-import org.tribbloid.spookystuff.{Const, ExportFilterException}
+import org.tribbloid.spookystuff.{QueryException, Const, ExportFilterException}
 
 /**
  * Export a page from the browser or http client
@@ -356,5 +356,29 @@ case class Wget(
       str =>
         this.copy(uri = new Literal(str)).asInstanceOf[this.type]
     )
+  }
+}
+
+case class OAuthSign(self: Wget) extends Export {
+
+  override def filter: ExportFilter = self.filter
+
+  override def doExeNoName(session: Session): Seq[PageLike] = {
+    val keys = session.spooky.conf.oAuthKeys.apply()
+    if (keys == null) {
+      throw new QueryException("need to set SpookyConf.oAuthKeys first")
+    }
+    val uri = self.uri.asInstanceOf[Literal[String]].value
+    val signed = HttpUtils.OauthV2(uri, keys.consumerKey, keys.consumerSecret, keys.token, keys.tokenSecret)
+    val exec = self.copy(uri = Literal(signed))
+
+    exec.doExeNoName(session).map{
+      case noPage: NoPage => noPage.copy(trace = Seq(this))
+      case page: Page => page.copy(uid = PageUID(Seq(this),this))
+    }
+  }
+
+  override def doInterpolate(pageRow: PageRow): Option[this.type] = self.interpolate(pageRow).map {
+    v => this.copy(self = v.asInstanceOf[Wget]).asInstanceOf[this.type]
   }
 }

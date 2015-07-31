@@ -7,6 +7,7 @@ import org.apache.spark.storage.StorageLevel
 import org.tribbloid.spookystuff.SpookyConf.Dirs
 import org.tribbloid.spookystuff.dsl._
 import org.tribbloid.spookystuff.expressions.{CacheFilePath, PageFilePath}
+import org.tribbloid.spookystuff.session.OAuthKeys
 import org.tribbloid.spookystuff.utils.Utils
 
 import scala.concurrent.duration._
@@ -60,11 +61,14 @@ class SpookyConf (
 
                    var sharedMetrics: Boolean = false,
 
+                   //TODO: 3 of the following functions can be changed to Expressions
                    var driverFactory: DriverFactory = DriverFactories.PhantomJS(),
                    var proxy: ProxyFactory = ProxyFactories.NoProxy,
-//                   var userAgent: ()=> String = () => null,
+                   //                   var userAgent: ()=> String = () => null,
                    var userAgent: ()=> String = () => "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/37.0.2062.120 Safari/537.36",
                    var headers: ()=> Map[String, String] = () => Map(),
+                   var oAuthKeys: () => OAuthKeys = () => null,
+
                    val browserResolution: (Int, Int) = (1920, 1080),
 
                    var autoSave: Boolean = true,
