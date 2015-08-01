@@ -69,7 +69,7 @@ class TestPageFromHttp extends SpookyEnvSuite {
     val page = resultsList(0).asInstanceOf[Page]
 
     assert(page.mimeType == "image/png")
-    assert(page.charset.isEmpty)
+    assert(page.charset.map(_.toLowerCase).get == "utf-8")
     assert(page.findAll("title").text.get == "")
 
     page.autoSave(spooky,overwrite = true)
@@ -90,7 +90,7 @@ class TestPageFromHttp extends SpookyEnvSuite {
     val page = resultsList(0).asInstanceOf[Page]
 
     assert(page.mimeType == "application/pdf")
-    assert(page.charset.isEmpty)
+    assert(page.charset.map(_.toLowerCase).get == "utf-8")
     assert(page.findAll("title").text.get == "Microsoft Word - Document1")
 
     page.autoSave(spooky,overwrite = true)
