@@ -67,12 +67,6 @@ package object dsl {
     new IterableLikeExprView(expr).get(i)
   }
 
-  implicit def exprToSeqFunc[T](self: Expression[T]): (PageRow => Seq[T]) = { //shortcut to use expression in RDD.flatMap etc.
-    self.andThen(_.toSeq)
-  }
-
-  implicit def SymbolToSeqFunc(symbol: Symbol): (PageRow => Seq[Any]) = exprToSeqFunc(symbol)
-
   implicit class ExprView[+T: ClassTag](self: Expression[T]) extends Serializable {
 
     private def defaultVal: T = Default.value[T]
@@ -129,6 +123,7 @@ package object dsl {
       }
     }
 
+    def toSeqFunction: NamedFunction1[PageRow, Seq[T]] = self.andThen(_.toSeq)
     //  def defaultToHrefExpr = (self match {
     //    case expr: Expr[Unstructured] => expr.href
     //    case expr: Expr[Seq[Unstructured]] => expr.hrefs
