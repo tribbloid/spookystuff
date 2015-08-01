@@ -17,19 +17,19 @@ object DBPedia_Film extends QueryCore {
     import sql.implicits._
 
     sc.parallelize(
-      "Gladiator".split(",").map(_.trim)
+      "Jurassic Park".split(",").map(_.trim)
     ).fetch(
         Wget("http://lookup.dbpedia.org/api/search/KeywordSearch?QueryClass=film&QueryString='{_}")
       ).join(S"Result".slice(0,3))(
         Try(Wget(A"URI".text),2)
       )(
         A"Label".text ~ 'movie
-      ).join(S"a[rel^=dbpedia-owl][href*=dbpedia]".distinctBy(_.href))(
+      ).join(S"a[rel^=dbo][href*=dbpedia]".distinctBy(_.href))(
         Try(Wget('A.href),2)
       )(
         S.uri ~ 'uri,
         'A.text.replaceAll("dbpedia:", "") ~ 'personnel
-      ).flatSelect(S"a[rev*=guests]:contains(dbpedia:List_of_)", left=false)(
+      ).flatSelect(S"a[rev*=guests]:contains(dbpedia:List_of_)")(
         'A.text.replaceAll("dbpedia:List_of_", "").replaceAll("_episodes.*","") ~ 'guest_of,
         'A.text.replaceAll("dbpedia:List_of_", "").replaceAll(".*episodes_","") ~ 'episodes
       ).toDF(sort = true)

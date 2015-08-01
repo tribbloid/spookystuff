@@ -84,8 +84,8 @@ case class Page(
 
     if (detected == null) {
       if (result.getMimeType.contains("text")) Const.defaultTextCharset
-      else if (result.getMimeType.contains("json")) Const.defaultJsonCharset
-      else null
+      else if (result.getMimeType.contains("application")) Const.defaultApplicationCharset
+      else Const.defaultApplicationCharset
     }
     else detected
   }

@@ -14,7 +14,7 @@ object Const {
   val maxLoop = Int.MaxValue
 
   val defaultTextCharset = "ISO-8859-1"
-  val defaultJsonCharset = "utf-8"
+  val defaultApplicationCharset = "utf-8"
 
   //  val webClientOptions = new WebClientOptions
   //  webClientOptions.setUseInsecureSSL(true)
