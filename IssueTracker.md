@@ -257,6 +257,10 @@ pipeline stage as a service: download pipeline stage from a public hosting servi
 
 define pipeline stage as SPARQL pragma in Hive Server
 
-OAuthIntegration in wget:
+OAuthIntegration in wget ........................................................................................................done
 
-full SparkSQL integration: since its graduated from alpha it is safe to use Row and DataFrame to allow more fluent
+full SparkSQL integration: since its graduated from alpha it is safe to use Row and DataFrame to allow more seamless integration.
+
+automatically download PhantomJS from Internet.
+
+remember derivative relationship of SpookyContext.metrics to aggregate metrics by their children. Eliminate need to set SpookyConf.shareMetrics

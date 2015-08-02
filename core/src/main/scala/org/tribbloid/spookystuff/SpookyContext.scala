@@ -97,7 +97,7 @@ case class SpookyContext (
     this
   }
 
-  def getContextForNewInput = if (conf.sharedMetrics) this
+  def getContextForNewInput = if (conf.shareMetrics) this
   else this.copy(metrics = new Metrics())
 
   private def _browsersExist(): Boolean = {

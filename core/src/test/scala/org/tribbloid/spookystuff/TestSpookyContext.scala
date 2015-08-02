@@ -11,7 +11,7 @@ class TestSpookyContext extends SpookyEnvSuite{
   test("each noInput should have independent metrics if sharedMetrics=false") {
 
     val spooky = this.spooky
-    spooky.conf.sharedMetrics = false
+    spooky.conf.shareMetrics = false
 
     val rdd1 = spooky
       .fetch(
@@ -33,7 +33,7 @@ class TestSpookyContext extends SpookyEnvSuite{
   test("each noInput should have shared metrics if sharedMetrics=true") {
 
     val spooky = this.spooky
-    spooky.conf.sharedMetrics = true
+    spooky.conf.shareMetrics = true
 
     val rdd1 = spooky
       .fetch(

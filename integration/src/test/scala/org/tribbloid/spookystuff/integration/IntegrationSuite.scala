@@ -94,7 +94,7 @@ abstract class IntegrationSuite extends FunSuite with BeforeAndAfterAll {
             new Dirs(root = root),
             driverFactory = driver,
             defaultQueryOptimizer = optimizer,
-            sharedMetrics = true,
+            shareMetrics = true,
             checkpointInterval = 2,
             remoteResourceTimeout = 10.seconds
           )

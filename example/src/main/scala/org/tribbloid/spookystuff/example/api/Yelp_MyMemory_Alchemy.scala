@@ -14,9 +14,29 @@ import scala.language.postfixOps
  */
 object Yelp_MyMemory_Alchemy extends QueryCore {
 
+  import dsl._
+
+  def nonEnglish(src: Expression[Any]): Expression[String] = src.andFlatMap{
+    str =>
+      val identifier = new LanguageIdentifier(str.toString)
+      if (identifier.getLanguage == "en") None
+      else Some(str.toString)
+  }
+
+  def annotate(src: String, word: String, relevance: Double, sentiment: Double): String = {
+
+    val color = 0x00ff*(sentiment + 1)/2 + 0xff00*(1 - sentiment)/2
+    val colorStr = "#" + String.format("%04X", color.toInt: Integer) +"00"
+    val sizeStr = (relevance*200).toString + "%"
+
+    val regex = word.r
+    assert (regex.findAllMatchIn(src).nonEmpty)
+
+    src.replaceAll(word, s"""<span style="color:$colorStr;font-size:$sizeStr">$word</span>""")
+  }
+
   override def doMain(spooky: SpookyContext): Any = {
 
-    import dsl._
     import spooky.dsl._
     import sql.implicits._
 
@@ -29,25 +49,6 @@ object Yelp_MyMemory_Alchemy extends QueryCore {
 
     val email = "pc175@uow.edu.au"
     val alchemyKey = "500796b5ea023b5db04d48ca70b6d4804c83a9d5"
-
-    def nonEnglish(src: Expression[Any]): Expression[String] = src.andFlatMap{
-      str =>
-        val identifier = new LanguageIdentifier(str.toString)
-        if (identifier.getLanguage == "en") None
-        else Some(str.toString)
-    }
-
-    def annotate(src: String, word: String, relevance: Double, sentiment: Double): String = {
-
-      val color = 0x00ff*(sentiment + 1)/2 + 0xff00*(1 - sentiment)/2
-      val colorStr = "#" + String.format("%04X", color.toInt: Integer) +"00"
-      val sizeStr = (relevance*200).toString + "%"
-
-      val regex = word.r
-      assert (regex.findAllMatchIn(src).nonEmpty)
-
-      src.replaceAll(word, s"""<span style="color:$colorStr;font-size:$sizeStr">$word</span>""")
-    }
 
     val result = sc.parallelize(Seq(Map("q" -> "Epicure", "city" -> "Paris", "lang" -> "fr")))
       .fetch(
@@ -86,7 +87,7 @@ object Yelp_MyMemory_Alchemy extends QueryCore {
             }
         } ~ 'annotated
       )
-      .toDF().select('annotated).persist()
+      .toDF().select('name, 'image, 'map, 'rating, 'excerpt, 'annotated)
 
     result
   }

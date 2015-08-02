@@ -59,7 +59,7 @@ object SpookyConf {
 class SpookyConf (
                    val dirs: Dirs = new Dirs(),
 
-                   var sharedMetrics: Boolean = false,
+                   var shareMetrics: Boolean = false,
 
                    //TODO: 3 of the following functions can be changed to Expressions
                    var driverFactory: DriverFactory = DriverFactories.PhantomJS(),
