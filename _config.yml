@@ -1,0 +1,20 @@
+highlighter: pygments
+markdown: kramdown
+gems:
+  - jekyll-redirect-from
+  - jekyll-sitemap
+
+# For some reason kramdown seems to behave differently on different
+# OS/packages wrt encoding. So we hard code this config.
+kramdown:
+  entity_output: numeric
+
+include:
+  - _static
+  - _modules
+
+SPOOKYSTUFF_VERSION: 0.3.0
+SPARK_VERSION: 1.4.1
+PHANTOMJS_VERSION: 1.9.8
+SCALA_BINARY_VERSION: "2.10"
+SCALA_VERSION: "2.10.4"

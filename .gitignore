@@ -1,2 +1,9 @@
-_site
-.sass-cache
+_site/
+.sass-cache/
+
+api/
+
+# IntelliJ-IDEA specific
+*.iml
+.idea/
+.idea_modules/
