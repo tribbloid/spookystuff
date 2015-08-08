@@ -63,7 +63,7 @@ case class SpookyContext (
                            var metrics: Metrics = new Metrics() //accumulators cannot be broadcasted,
                            ) {
 
-  val browsersExist = _browsersExist()
+  val browsersExist = _phantomJSExist()
 
   def this(sqlContext: SQLContext) {
     this(sqlContext, new SpookyConf(), new Metrics())
@@ -100,12 +100,24 @@ case class SpookyContext (
   def getContextForNewInput = if (conf.shareMetrics) this
   else this.copy(metrics = new Metrics())
 
-  private def _browsersExist(): Boolean = {
+  private def _phantomJSExist(): Boolean = {
     val sc = sqlContext.sparkContext
     val numExecutors = sc.defaultParallelism
-    val phantomJSUrl = DriverFactories.PhantomJS.resourceUrl
-    val phantomJSFileName = DriverFactories.PhantomJS.resourceName
-    if (phantomJSUrl == null || phantomJSFileName == null) return false
+    val phantomJSUrl = DriverFactories.PhantomJS.fileUrl
+    val phantomJSFileName = DriverFactories.PhantomJS.fileName
+    if (phantomJSUrl == null || phantomJSFileName == null) {
+      try {
+        LoggerFactory.getLogger(this.getClass).info("Deploying PhantomJS from https://s3-us-west-1.amazonaws.com/spooky-bin/phantomjs-linux/phantomjs ...")
+        sc.addFile("https://s3-us-west-1.amazonaws.com/spooky-bin/phantomjs-linux/phantomjs")
+        LoggerFactory.getLogger(this.getClass).info("Finished: Deploying PhantomJS from https://s3-us-west-1.amazonaws.com/spooky-bin/phantomjs-linux/phantomjs")
+        return true
+      }
+      catch {
+        case e: Throwable =>
+          LoggerFactory.getLogger(this.getClass).info("FAILED: Deploying PhantomJS from https://s3-us-west-1.amazonaws.com/spooky-bin/phantomjs-linux/phantomjs")
+          return false
+      }
+    }
     val hasPhantomJS = sc.parallelize(0 to numExecutors)
       .map{
       _ =>
@@ -113,9 +125,9 @@ case class SpookyContext (
     }
       .reduce(_ && _)
     if (!hasPhantomJS) {
-      LoggerFactory.getLogger(this.getClass).info("Deploying PhantomJS...")
+      LoggerFactory.getLogger(this.getClass).info("Deploying PhantomJS from Driver ...")
       sc.addFile(phantomJSUrl)
-      LoggerFactory.getLogger(this.getClass).info("Deploying PhantomJS Finished")
+      LoggerFactory.getLogger(this.getClass).info("Finished: Deploying PhantomJS from Driver")
     }
     true
   }

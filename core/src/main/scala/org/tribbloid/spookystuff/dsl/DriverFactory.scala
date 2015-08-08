@@ -53,15 +53,15 @@ object DriverFactories {
 
     //used in sc.addFile(...), only accessable from driver
     //TODO: download it from public resource
-    def resourceUrl = localPathOption.orNull
+    def fileUrl = localPathOption.orNull
     //only accessable from driver
-    def resourceName = Option(resourceUrl).flatMap{
+    def fileName = Option(fileUrl).flatMap{
       _.split("/").lastOption
     }.orNull
   }
 
   case class PhantomJS(
-                        fileName: String = PhantomJS.resourceName,
+                        fileName: String = PhantomJS.fileName,
                         loadImages: Boolean = false
                         )
     extends DriverFactory {

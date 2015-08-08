@@ -72,7 +72,7 @@ class PageRowRDD private (
     result
   }
 
-  def set(f: SpookyConf => Unit): PageRowRDD = {
+  def setConf(f: SpookyConf => Unit): PageRowRDD = {
     f(this.spooky.conf)
     this
   }
@@ -548,7 +548,7 @@ class PageRowRDD private (
             expr: Expression[Any], //name is discarded
             ordinalKey: Symbol = null, //left & idempotent parameters are missing as they are always set to true
             maxOrdinal: Int = spooky.conf.maxJoinOrdinal,
-            distinct: Boolean = false //set to true to eliminate duplates in join key
+            distinct: Boolean = false //experimental: set to true to eliminate duplicates in join key
             )(
             traces: Set[Trace],
             joinType: JoinType = spooky.conf.defaultJoinType,

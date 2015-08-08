@@ -18,28 +18,27 @@ import scala.concurrent.duration._
 object SpookyConf {
 
   class Dirs(
-              var root: String = System.getProperty("spooky.root"),
-              var _autoSave: String = System.getProperty("spooky.autosave"),
-              var _cache: String = System.getProperty("spooky.cache"),
-              var _errorDump: String = System.getProperty("spooky.error.dump"),
-              var _errorScreenshot: String = System.getProperty("spooky.error.screenshot"),
-              var _checkpoint: String = System.getProperty("spooky.checkpoint"),
-              var _errorDumpLocal: String = System.getProperty("spooky.error.dump.local"),
-              var _errorScreenshotLocal: String = System.getProperty("spooky.error.screenshot.local")
+              var root: String = System.getProperty("spooky.dirs.root"),
+              var _autoSave: String = System.getProperty("spooky.dirs.autosave"),
+              var _cache: String = System.getProperty("spooky.dirs.cache"),
+              var _errorDump: String = System.getProperty("spooky.dirs.errordump"),
+              var _errorScreenshot: String = System.getProperty("spooky.dirs.errorscreenshot"),
+              var _checkpoint: String = System.getProperty("spooky.dirs.checkpoint"),
+              var _errorDumpLocal: String = System.getProperty("spooky.dirs.errordump.local"),
+              var _errorScreenshotLocal: String = System.getProperty("spooky.dirs.errorscreenshot.local")
               ) extends Serializable {
 
     def setRoot(v: String): Unit = {root = v}
 
     def rootOption = Option(root)
 
-    //    def root_=(v: String): Unit = _root = Option(v)
-    //    def autoSave_=(v: String): Unit = _autoSave = Option(v)
-    //    def cache_=(v: String): Unit = _cache = Option(v)
-    //    def errorDump_=(v: String): Unit = _errorDump = Option(v)
-    //    def errorScreenshot_=(v: String): Unit = _errorScreenshot = Option(v)
-    //    def checkpoint_=(v: String): Unit = _checkpoint = Option(v)
-    //    def errorDumpLocal_=(v: String): Unit = _errorDumpLocal = Option(v)
-    //    def errorScreenshotLocal_=(v: String): Unit = _errorScreenshotLocal = Option(v)Utils.urlSlash(
+    def autoSave_=(v: String): Unit = _autoSave = v
+    def cache_=(v: String): Unit = _cache = v
+    def errorDump_=(v: String): Unit = _errorDump = v
+    def errorScreenshot_=(v: String): Unit = _errorScreenshot = v
+    def checkpoint_=(v: String): Unit = _checkpoint = v
+    def errorDumpLocal_=(v: String): Unit = _errorDumpLocal = v
+    def errorScreenshotLocal_=(v: String): Unit = _errorScreenshotLocal = v
 
     def autoSave: String = Utils.uriSlash(Option(_autoSave).orElse(rootOption.map(_+"page/")).getOrElse("temp/page/"))
     def cache: String = Utils.uriSlash(Option(_cache).orElse(rootOption.map(_+"cache/")).getOrElse("temp/cache/"))

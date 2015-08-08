@@ -10,7 +10,7 @@ import org.tribbloid.spookystuff.utils.Utils
 
 object CacheFilePaths{
 
-  case object Plain extends CacheFilePath[String] {
+  case object Flat extends CacheFilePath[String] {
 
     override def apply(trace: Trace): String = {
 
