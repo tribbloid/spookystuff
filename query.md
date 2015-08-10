@@ -39,11 +39,31 @@ Multiple SpookyContext can co-exist and their configurations will only affect th
 
 # Clauses
 
-Clauses are programming blocks of a query, each denotes a specific pattern to discover new data from references in old data (e.g. hyperlinks). Clauses can be applied to a SpookyContext, a PageFrame (the data structure returned by a clause as the result enriched dataset, this makes chaining clauses possible), or a compatible common Spark dataset type (e.g. [DataFrame] or String RDD, need to enable implicit conversion first, this will be covered in [I/O section] in detail)
+Clauses are building blocks of a query, each denotes a specific pattern to discover new data from old data's references (e.g. through hyperlinks). Clauses can be applied to any of the following Scala objects:
 
-Most of the clauses returns a PageFrame as output, PageFrame is an abstraction of a distributed and immutable row-storage that contains both unstructured "raw" documents and key-value pairs. it can be easily converted to other Spark dataset types (covered in [I/O section]). In addition, it inherits SpookyContext from its predecessor, so settings in SpookyConf are persisted for all queries and clauses derived from them (unless you change them halfway, this is common if a query uses mutliple web services, each with its own Authentication credential or proxy requirement).
+- PageRowRDD: this is the default data storage optimized for unstructured and linked data operations, like DataFrame optimized for relation data. Internally, PageRowRDD is a distributed and immutable row-storage that contains both unstructured "raw" documents and key-value pairs. it can be created from a compatible Spark dataset type by using SpookyContext.create():
 
-The following 5 main clauses covered most linking patterns in websites, documents and APIs, including one-to-one link, one-to-many link, graph link and pagination.
+        val frame2 = spooky.create(Map("name" -> "Cloudera", "type" -> "company") :: Map("name" -> "Hadoop", "type" -> "Software") :: Nil) //create a PageRowRDD with 2 fields: 'name and 'type
+        val frame1 = spooky.create(1 to 10) //create a PageRowRDD of 10 rows //if source only contains 1 datum per row and its field name is missing, create a PageRowRDD with 1 field: '_
+
+And to those types by the following functions:
+
+        frame1.toStringRDD('_)  // convert one field to RDD[String]
+        frame2.toMapRDD()       // convert to MapRDD
+        frame2.toDF()           // convert to DataFrame
+        frame2.toJSON()         // equal to .toDF().JSON()
+        frame2.toCSV()          // convert to CSV
+        frame2.toTSV()          // convert to TSV
+
+PageRowRDD is also the output of another clause so you can chain multiple clauses easily to form a long data valorization pipeline. In addition, it inherits SpookyContext from its source or predecessor, so settings in SpookyConf are persisted for all queries derived from them (unless you change them halfway, this is common if a query uses mutliple web services, each with its own Authentication credential or proxy requirement).
+
+- SpookyContext: equivalent to applying to an empty PageRowRDD with one row.
+
+- Any compatible Spark dataset type: equivalent to applying to a PageRowRDD initialized from SpookyContext.create(). To use this syntax you need to import context-aware implicit conversions:
+
+        import spooky.dsl._ //
+
+The following 5 main clauses covered most data reference patterns in websites, documents and APIs, including, but not limited to, one-to-one, one-to-many, link graph and paginations.
 
 #### fetch
 
@@ -51,13 +71,15 @@ Syntax:
 
     <Source>.fetch(<Action(s)>, <parameters>)
 
-Fetch is used to remotely fetch unstructured document(s) per row according to provided actions and load them into each row's document buffer, which flush out previous document(s). Fetch can be used resolve actions directly or combine data from different sources based on one-to-one relationship:
+Fetch is used to remotely fetch unstructured document(s) per row according to provided actions and load them into each row's document buffer, which flush out previous document(s). Fetch can be used to retrieve an URI directly or combine data from different sources based on one-to-one relationship, e.g.:
 
-    spooky.fetch(Wget("https://www.wikipedia.com")).flatMap(S.text).collect().foreach(println) // this loads the landing page of Wikipedia into a PageFrame with cardinality 1.
+    spooky.fetch(Wget("https://www.wikipedia.com")).toStringRDD(S.text).collect().foreach(println) // this loads the landing page of Wikipedia into a PageRowRDD with cardinality 1.
 
     spooky.create(1 to 20).fetch(Wget("https://www.wikidata.org/wiki/Q'{_}")).flatMap(S.text).collect().foreach(println) //this loads 20 wikidata pages, 1 page per row
 
-Parameters:
+Where ```Wget``` is a simple [action] that retrieves a document from a specified URI. Notice that the second URI is incomplete: part of it is denoted by ```'{_}'```, this is a shortcut for string interpolation: during execution, any part enclosed in ```'{<key>}'``` will be replaced by a value in the same row the <key> identifies. String interpolation is part of a rich expression system covered in [Expression Section].
+
+Parameters:It should be noted that m
 
 | Name | Default | Means |
 | ---- | ------- | ----- |
@@ -67,7 +89,7 @@ Parameters:
 | numPartitions |
 | optimizer |
 
-#### select
+#### select/remove
 
 Syntax:
 
@@ -84,7 +106,9 @@ Select is used to extract data from unstructured documents and persist into its 
         Wget("https://en.wikipedia.com")
     ).select(S"table#mp-left p" ~ 'featured_article).toDF().collect().foreach(println) //this load the featured article text of Wikipedia(English) into one row
 
-If the alias of an expression already exist in the store it will throw a QueryException and refuse to execute. In this case you can use ```~! <alias>``` to replace old value or ```~+ <alias>``` to append the value to existing ones to form an array.
+If the alias of an expression already exist in the store it will throw a QueryException and refuse to execute. In this case you can use ```~! <alias>``` to replace old value or ```~+ <alias>``` to append the value to existing ones as an array. To remove key-value pairs from PageRowRDD, use remove:
+
+    <Source>.remove('<alias>, '<alias> ...)
 
 #### flatten/explode
 
@@ -104,7 +128,7 @@ Parameters:
 | ---- | ------- | ----- |
 | joinType |
 
-SpookyStuff has a shorthand for flatten + select, which is common for extracting multiple attributes and fields from objects in a list or tree:
+SpookyStuff has a shorthand for flatten + select, which is common for extracting multiple attributes and fields from elements in a list or tree:
 
     <Source>.flatSelect(<expression>)(
         <expression> [~ '<alias>]
@@ -128,7 +152,7 @@ e.g.:
         A"pubDate" ~ 'date
     ).toDF().collect().foreach(println) //explode articles in google RSS feed and select titles and publishing date
 
-You may notice that the first parameter of flatSelect has no alias - SpookyStuff can automatically assign a temporary alias 'A to this intermediate selector, which enables a few shorthand expressions for traversing deeper into objects being flattened. This "Big A Notation" will be used more often in join and explore.
+You may notice that the first parameter of flatSelect has no alias - SpookyStuff can automatically assign a temporary alias 'A to this intermediate selector, which enables a few shorthand expressions for traversing deeper into objects being flattened. This "big A selector" will be used more often in join and explore.
 
 #### join
 
@@ -140,7 +164,7 @@ Syntax:
         ...
     )
 
-Join is used to horizontally combine data from different sources based on one-to-many/many-to-many relationship, e.g. join can combine horizontally data on search/index page with fulltext contents:
+Join is used to horizontally combine data from different sources based on one-to-many/many-to-many relationship, e.g. combining links on a search/index page with fulltext contents:
 
     spooky.create("Gladiator" :: Nil).fetch(
         Wget("http://lookup.dbpedia.org/api/search/KeywordSearch?QueryClass=film&QueryString='{_}")
@@ -151,7 +175,7 @@ Join is used to horizontally combine data from different sources based on one-to
         S"span[property=dbo:abstract]".text ~ 'abstract
     ).toDF().collect().foreach(println) //this search for movies named "Gladiator" on dbpedia Lookup API (http://wiki.dbpedia.org/projects/dbpedia-lookup) and link to their entity pages to extract their respective abstracts
 
-Join is a shorthand for flatten/explode + fetch.
+Join is a shorthand for flatten/explode + fetch, in which case the data/elements being flatten is equivalent to a foreign key.
 
 Parameters:
 
@@ -226,7 +250,7 @@ All out-of-the-box actions are categorized and listed in the following sections.
 
 | Syntax | Means |
 | ---- | ------- |
-| Wget(<URI>, [<filter>]) [~ '<alias>] | retrieve a document by its universal resource identifier (URI), whether its local or remote and the client protocol is determined by schema of the URI, currently, supported schema/protocals are http, https, ftp, file, hdfs, s3, s3n and all Hadoop-compatible file systems.* |
+| Wget(<URI expression>, [<filter>]) [~ '<alias>] | retrieve a document by its universal resource identifier (URI), whether its local or remote and the client protocol is determined by schema of the URI, currently, supported schema/protocals are http, https, ftp, file, hdfs, s3, s3n and all Hadoop-compatible file systems.* |
 | OAuthSign(<Wget>) | sign the http/https request initiated by Wget by OAuth, using credential provided in SpookyContext, not effective on other protocols |
 | Delay([<delay>]) | hibernate the client session for a fixed duration |
 | RandomDelay([<delay>, <max>]) | hibernate the client session for a random duration between <delay> and <max> |
@@ -249,18 +273,18 @@ The following actions are resolved against a browser launched at the beginning o
 
 | Syntax | Means |
 | ---- | ------- |
-| Visit(<URI>, [<delay>, <blocking>]) | go to the website denoted by specified URI in the browser, usually performed by inserting the URI into the browser's address bar and press enter |
-| Snapshot([<filter>]) [~ '<alias>] | export current document in the browser, the document is subjective to all DOM changes caused by preceding actions, all exported documents will be added into the document buffer of each row of the resulted PageFrame in sequence |
+| Visit(<URI expression>, [<delay>, <blocking>]) | go to the website denoted by specified URI in the browser, usually performed by inserting the URI into the browser's address bar and press enter |
+| Snapshot([<filter>]) [~ '<alias>] | export current document in the browser, the document is subjective to all DOM changes caused by preceding actions, exported documents will be loaded into the document buffer of the resulted PageRowRDD, if no SnapShot, Screenshot or Wget is defined in a chain, Snapshot will be automatically appended as the last action|
 | Screenshot([<filter>]) [~ '<alias>] | export screenshot of the browser as an image document in PNG format |
 | Assert([<filter>]) | Same as Snapshot, but this is only a dry-run which ensures that current document in the browser can pass the <filter>, nothing will be exported or cached |
-| Click(<selector>, [<delay>, <blocking>]) | perform 1 mouse click on the 1st visible element that satisfy the jQuery <selector> |
+| Click(<selector>, [<delay>, <blocking>]) | perform 1 mouse click on the 1st visible element that qualify the jQuery <selector> |
 | ClickNext(<selector>, [<delay>, <blocking>]) | perform 1 mouse click on the 1st element that hasn't been clicked before within the session, each session keeps track of its own history of interactions and elements involved |
-| Submit(<selector>, [<delay>, <blocking>]) |  submit the form denoted by the 1st element that satisfy the jQuery <selector>, this is usually performed by clicking, but can also be done by other interactions, like pressing enter on a text box |
-| TextInput(<selector>, <text>, [<delay>, <blocking>]) | focus on the 1st element (usually but not necessarily a text box) that satisfy the jQuery <selector>, then insert/paste the specified text |
-| DropDownSelect(<selector>, <text>, [<delay>, <blocking>]) | focus on the 1st selectable list that satisfy the jQuery <selector>, then select the item with specified value |
-| ExeScript(<script>, [<selector>, <delay>, <blocking>]) | run javascript program against the 1st element that satisfy the jQuery <selector>, or against the whole document if <selector> is set to null or missing |
+| Submit(<selector>, [<delay>, <blocking>]) |  submit the form denoted by the 1st element that qualify the jQuery <selector>, this is usually performed by clicking, but can also be done by other interactions, like pressing enter on a text box |
+| TextInput(<selector>, <text expression>, [<delay>, <blocking>]) | focus on the 1st element (usually but not necessarily a text box) that qualify the jQuery <selector>, then insert/paste the specified text |
+| DropDownSelect(<selector>, <text expression>, [<delay>, <blocking>]) | focus on the 1st selectable list that qualify the jQuery <selector>, then select the item with specified value |
+| ExeScript(<script expression>, [<selector>, <delay>, <blocking>]) | run javascript program against the 1st element that qualify the jQuery <selector>, or against the whole document if <selector> is set to null or missing |
 | DragSlider(<selector>, <percentage>, <handleSelector>, [<delay>, <blocking>]) | drag a slider handle denoted by <handleSelector> to a position defined by a specified percentage and an enclosing bounding box denoted by <selector> |
-| WaitFor(<selector>) | wait until the 1st element that satisfy the jQuery <selector> appears |
+| WaitFor(<selector>) | wait until the 1st element that qualify the jQuery <selector> appears |
 
 * Visit +> Snapshot is the second most common action that does pretty much the same thing as Wget on HTML resources - except that it can render dynamic pages and javascript. Very few formats other than HTML/XML are supported by browsers without plug-in so its mandatory to fetch images and PDF files by Wget only. In addition, its much slower than Wget for obvious reason. If Visit +> Snapshot is the only chained action resolved in a fetch, join or explore, 3 shorthand clauses can be used:
 
@@ -297,19 +321,70 @@ The following actions are resolved against a browser launched at the beginning o
 
 # Expressions
 
+In previous examples, you may already see some short expressions being used as clause or action parameters, like the [string interpolation] in URI templating, or the ["Big S"] / ["Big A"] selectors in many select clauses for unstructured information refinement. These are parts of a much more powerful (and equally short) expression system. It allows complex data reference to be defined in a few words and operators (words! not lines), while other frameworks may take scores of line. E.g. the following query uses an URI expression (in the second Wget), which pipes all titles on Google News RSS feed into a single MyMemory translation API call:
 
+    spooky.fetch(Wget("https://news.google.com/?output=rss")
+    ).fetch(Wget(
 
-// columns
+        //how short do you want it? considering its complexity
+        x"http://api.mymemory.translated.net/get?q=${S"item title".texts.mkString(". ")}&langpair=en|fr"
 
-#### unstructured document parsing and traversing
+    )).toStringRDD(S.text).collect().foreach(println)
+
+Internally, each expression is a function from a single row in PageRowRDD to a nullable data container. Please refer to [Extension Section] if you want to use customized expressions.
+
+The following is a list of basic symbols and functions/operators that are defined explicitly as shorthands:
+
+#### symbols
+
+Scala symbols (identifier preceded by tick/') has 2 meanings: it either returns a key-value pair by its key, or a subset of documents in the unstructured document buffer filtered by their aliases. SpookyStuff's execution engine is smart enough not to throw an error unless there is a conselectorflict - In which case you need to use different names for data and documents.
+
+The following 2 variables are also treated as symbols with special meaning:
+
+- S: Returns the only document in the unstructured document buffer, error out if multiple documents exist.
+
+- S_*: Returns all documents in the unstructured document buffer.
 
 #### string interpolation
 
-#### functions and operators
+You have seen the [basic form] of string interpolation early in some examples, which inserts only key-value pair(s) to a string template. The [above example] demonstrates a more powerful string interpolation, which inserts all kinds of expressions:
 
-# I/O
+    x"<segment> ${<expression>} <segment> ${<expression>} <segment> ..."
 
+Any non-expression, non-string typed identifier is treated as literal.
 
+#### unstructured document traversing
+
+These are operators that does the most important things: traversing DOM of unstructured documents to get data you want (potentially structured or semi-structured).
+
+SpookyStuff supports a wide range of documents including HTML, XHTML, XML, JSON, and [all other formats supported by Apache Tika] (PDF, Microsoft Office etc.). In fact, most of the following operators are **format-agnostic**: they use different parsers on different formats to get the same DOM tree. Not all these formats have equivalent DOM representation (e.g. JSON doesn't have annotated text), so using a few operators on some formats doesn't make sense and always returns null value.
+
+The exact format of a document is dictated by its mime-type indicated by the web resource, if it is not available, SpookyStuff will auto-detect it by analysing its extension name and binary content.
+
+All operators that fits into this category are listed in the following table, with their compatible formats and explanation.
+
+| Operator | Formats | Means |
+| _.findAll("<Selector>") | All | returns all elements that qualify the selector provided, which should be exact field name for JSON type and jQuery selector for all others |
+| _ \\ "<Selector>" | All | Same as above |
+| _.findFirst("<Selector>") | All | first element returned by **findAll** |
+| _.children("<Selector>") | All | returns only the direct children that qualify by the selector provided, which should be exact field name for JSON type and jQuery selector for all others |
+| _ \ "<Selector>" | All | Same as above |
+| _.child("<Selector>") | All | first element returned by **children** |
+| S"<Selector>" | All | Big S selector: equivalent to S.findAll("<Selector>") |
+| A"<Selector>" | All | Big A selector: equivalent to 'A.findAll("<Selector>"), 'A is the default symbol for the elements/data pivoted in flatten, flatSelect, join or explore |
+| S_*"<Selector>" | All | Equivalent to S_*.findAll("<Selector>") |
+| _.uri | All | URI of the document or DOM element, this may be different from the URI specified in Wget or Visit due to redirection(s) |
+| _.code | All | returns the original HTML/XML/JSON code of the parsed document/DOM element as string |
+| _.text | All | returns raw text of the parsed document/DOM element stripped of markups, on JSON this strips all field names and retains only their values |
+| _.ownText | All | returns raw text of the parsed document/DOM element excluding those of its children, on JSON this returns null if the element is an object |
+| _.attr("<attribute name>", [<nullable?>]) | All | returns an attribure value of the parsed document/DOM element, on JSON this returns a property preceded by "@", parameter <nullable?> decides whether a non-existing attribute should be returned as null or an empty string |
+| _.href | All | same as .attr("href") on HTML/XML, same as .ownText on JSON |
+| _.src | All | same as .attr("src") on HTML/XML, same as .ownText on JSON |
+| _.boilerpipe | Non-JSON | use [boilerpipe](https://code.google.com/p/boilerpipe/) to extract the main textual content of a HTML file, this won't work for JSON |
+
+#### others
+
+Many other functions are also supported by the expression system but they are too many to be listed here. Scala users are recommended to refer to source code and scaladoc of ```org.tribbloid.spookystuff.dsl``` package, as these functions are built to resemble Scala functions and operators, rather than the less capable SQL LINQ syntax. In fact, SpookyStuff even use Scala reflective programming API to handle functions it doesn't know.
 
 # More
 
@@ -317,7 +392,12 @@ The following actions are resolved against a browser launched at the beginning o
 
 # Profiling
 
+SpookyStuff has a metric system based on Spark's [Accumulator](https://spark.apache.org/docs/latest/programming-guide.html#AccumLink), it can be accessed from **metrics** property under the SpookyContext:
 
+    println(rows.spooky.metrics.toJSON)
+    ...
+
+By default each query keep track of its own metric, if you would like to have all metrics of queries from the same SpookyContext to be aggregated, simply set **conf.shareMetrics** under SpookyContext to *true*.
 
 # Examples
 
