@@ -1,6 +1,6 @@
 ---
 layout: global
-title: Overview - SpookyStuff SPOOKYSTUFF_VERSION documentation
+title: Overview
 ---
 
 * This will become a table of contents (this text will be scraped).

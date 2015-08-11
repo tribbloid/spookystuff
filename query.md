@@ -1,6 +1,6 @@
 ---
 layout: global
-title: Query - SpookyStuff SPOOKYSTUFF_VERSION documentation
+title: Query
 ---
 
 * This will become a table of contents (this text will be scraped).
@@ -33,7 +33,7 @@ SpookyConf contains configuration options that are enumerated in [Configuration 
     import scala.concurrent.duration.Duration._
 
     spooky.conf.pageExpireAfter = 1.day // OR
-    spooky.<clauses>.setConf(_.pageExpireAfter = 1.day).<clauses>.... // in the middle of a query
+    spooky.{clause(s)}.setConf(_.pageExpireAfter = 1.day).{clause(s)}.... // in the middle of a query
 
 Multiple SpookyContext can co-exist and their configurations will only affect their derived queries respectively.
 
@@ -69,7 +69,7 @@ The following 5 main clauses covered most data reference patterns in websites, d
 
 Syntax:
 
-    <Source>.fetch(<Action(s)>, <parameters>)
+    .fetch(Action(s), [parameters])
 
 Fetch is used to remotely fetch unstructured document(s) per row according to provided actions and load them into each row's document buffer, which flush out previous document(s). Fetch can be used to retrieve an URI directly or combine data from different sources based on one-to-one relationship, e.g.:
 
@@ -77,9 +77,11 @@ Fetch is used to remotely fetch unstructured document(s) per row according to pr
 
     spooky.create(1 to 20).fetch(Wget("https://www.wikidata.org/wiki/Q'{_}")).flatMap(S.text).collect().foreach(println) //this loads 20 wikidata pages, 1 page per row
 
-Where ```Wget``` is a simple [action] that retrieves a document from a specified URI. Notice that the second URI is incomplete: part of it is denoted by ```'{_}'```, this is a shortcut for string interpolation: during execution, any part enclosed in ```'{<key>}'``` will be replaced by a value in the same row the <key> identifies. String interpolation is part of a rich expression system covered in [Expression Section].
+Where ```Wget``` is a simple [action] that retrieves a document from a specified URI. Notice that the second URI is incomplete: part of it is denoted by ```'{_}'```, this is a shortcut for string interpolation: during execution, any part enclosed in ```'{key}'``` will be replaced by a value in the same row the {key} identifies. String interpolation is part of a rich expression system covered in [Expression Section].
 
 Parameters:It should be noted that m
+
+<div class="table" markdown="1">
 
 | Name | Default | Means |
 | ---- | ------- | ----- |
@@ -89,14 +91,16 @@ Parameters:It should be noted that m
 | numPartitions |
 | optimizer |
 
+</div>
+
 #### select/remove
 
 Syntax:
 
-    <Source>.select(
-        <expression> [~ '<alias>],
-        <expression> [~+ '<alias>],
-        <expression> [~! '<alias>]
+    .select(
+        expression [~ 'alias],
+        expression [~+ 'alias],
+        expression [~! 'alias]
         ...
     )
 
@@ -106,15 +110,15 @@ Select is used to extract data from unstructured documents and persist into its 
         Wget("https://en.wikipedia.com")
     ).select(S"table#mp-left p" ~ 'featured_article).toDF().collect().foreach(println) //this load the featured article text of Wikipedia(English) into one row
 
-If the alias of an expression already exist in the store it will throw a QueryException and refuse to execute. In this case you can use ```~! <alias>``` to replace old value or ```~+ <alias>``` to append the value to existing ones as an array. To remove key-value pairs from PageRowRDD, use remove:
+If the alias of an expression already exist in the store it will throw a QueryException and refuse to execute. In this case you can use ```~! 'alias``` to replace old value or ```~+ alias``` to append the value to existing ones as an array. To remove key-value pairs from PageRowRDD, use remove:
 
-    <Source>.remove('<alias>, '<alias> ...)
+    .remove('alias, 'alias ...)
 
 #### flatten/explode
 
 Syntax:
 
-    <Source>.flatten/explode(<expression> [~ alias], <parameters>)
+    .flatten/explode(expression [~ alias], [parameters])
 
 Flatten/Explode is used to transform each row into a sequence of rows, each has an object of the array selected from the original row:
 
@@ -124,22 +128,26 @@ Flatten/Explode is used to transform each row into a sequence of rows, each has 
 
 Parameters:
 
+<div class="table" markdown="1">
+
 | Name | Default | Means |
 | ---- | ------- | ----- |
 | joinType |
 
+</div>
+
 SpookyStuff has a shorthand for flatten + select, which is common for extracting multiple attributes and fields from elements in a list or tree:
 
-    <Source>.flatSelect(<expression>)(
-        <expression> [~ '<alias>]
+    .flatSelect(flatten-expression, [parameters])(
+        select-expression [~ 'alias]
         ...
     )
 
 This is equivalent to:
 
-    <Source>.flatten(<flatten expression> ~ 'A), <flatten parameters>
+    .flatten(flatten-expression ~ 'A), [parameters]
     ).select(
-        <select expression> [~ '<alias>]
+        select-expression> [~ 'alias]
         ...
     )
 
@@ -158,9 +166,9 @@ You may notice that the first parameter of flatSelect has no alias - SpookyStuff
 
 Syntax:
 
-    <Source>.join(<flatten expression> [~ alias], <flatten parameters>
-    )(<Action(s)>, <fetch parameters>)(
-        <select expression> [~ '<alias>]
+    .join(flatten-expression [~ alias], [flatten-parameters]
+    )(Action(s), [fetch-parameters])(
+        select-expression> [~ 'alias]
         ...
     )
 
@@ -175,7 +183,7 @@ Join is used to horizontally combine data from different sources based on one-to
         S"span[property=dbo:abstract]".text ~ 'abstract
     ).toDF().collect().foreach(println) //this search for movies named "Gladiator" on dbpedia Lookup API (http://wiki.dbpedia.org/projects/dbpedia-lookup) and link to their entity pages to extract their respective abstracts
 
-Join is a shorthand for flatten/explode + fetch, in which case the data/elements being flatten is equivalent to a foreign key.
+Join is a shorthand for flatten/explode + fetch, in which case the data/elements being flatten is similar to a foreign key in relational database.
 
 Parameters:
 
@@ -185,9 +193,9 @@ Parameters:
 
 Syntax:
 
-    <Source>.explore(<expression> [~ alias], <flatten parameters>, <explore parameters>
-    )(<Action(s)>, <fetch parameters>)(
-        <select expression> [~ '<alias>]
+    .explore(expression [~ alias], [parameters]
+    )(Action(s), [fetch-parameters])(
+        select-expression> [~ 'alias]
         ...
     )
 
@@ -203,11 +211,13 @@ Explore defines a parallel graph exploring pattern that can be best described as
 
 Parameters:
 
+<div class="table" markdown="1">
+
 | Name | Default | Means |
 | ---- | ------- | ----- |
 | joinType |
 
-
+</div>
 
 #### etc.
 
@@ -250,10 +260,10 @@ All out-of-the-box actions are categorized and listed in the following sections.
 
 | Syntax | Means |
 | ---- | ------- |
-| Wget(<URI expression>, [<filter>]) [~ '<alias>] | retrieve a document by its universal resource identifier (URI), whether its local or remote and the client protocol is determined by schema of the URI, currently, supported schema/protocals are http, https, ftp, file, hdfs, s3, s3n and all Hadoop-compatible file systems.* |
-| OAuthSign(<Wget>) | sign the http/https request initiated by Wget by OAuth, using credential provided in SpookyContext, not effective on other protocols |
-| Delay([<delay>]) | hibernate the client session for a fixed duration |
-| RandomDelay([<delay>, <max>]) | hibernate the client session for a random duration between <delay> and <max> |
+| Wget(URI-expression, [filter]) [~ 'alias] | retrieve a document by its universal resource identifier (URI), whether its local or remote and the client protocol is determined by schema of the URI, currently, supported schema/protocals are http, https, ftp, file, hdfs, s3, s3n and all Hadoop-compatible file systems.* |
+| OAuthSign(Wget(...)) | sign the http/https request initiated by Wget by OAuth, using credential provided in SpookyContext, not effective on other protocols |
+| Delay([duration]) | hibernate the client session for a fixed duration |
+| RandomDelay([min, max]) | hibernate the client session for a random duration between {min} and {max} |
 
 * local resources (file, hdfs, s3, s3n and all Hadoop-compatible file systems) won't be cached: their URIs are obviously not "universal", plus fetching them directly is equally fast.
 
@@ -261,63 +271,75 @@ All out-of-the-box actions are categorized and listed in the following sections.
 
 * Wget is the most common action as well as the quickest. In many cases its the only action resolved in a fetch, join or explore, for which cases 3 shorthands clauses can be used:
 
-        <Source>.wget(<URI>, <>)
+        .wget(URI, [parameters])
 
-        <Source>.wgetJoin(<selector>, <>)
+        .wgetJoin(selector, [parameters])
 
-        <Source>.wgetExplore(<>)
+        .wgetExplore(selector, [parameters])
 
 #### Browser
 
 The following actions are resolved against a browser launched at the beginning of the session. The exact type and specifications (screen resolution, image/javascript supports) of the browser being launched and its proxy setting are subjective to their respective options in SpookyContext. Launching the browser is optional and necessity driven: the session won't launch anything if there is no need.
 
+<div class="table" markdown="1">
+
 | Syntax | Means |
 | ---- | ------- |
-| Visit(<URI expression>, [<delay>, <blocking>]) | go to the website denoted by specified URI in the browser, usually performed by inserting the URI into the browser's address bar and press enter |
-| Snapshot([<filter>]) [~ '<alias>] | export current document in the browser, the document is subjective to all DOM changes caused by preceding actions, exported documents will be loaded into the document buffer of the resulted PageRowRDD, if no SnapShot, Screenshot or Wget is defined in a chain, Snapshot will be automatically appended as the last action|
-| Screenshot([<filter>]) [~ '<alias>] | export screenshot of the browser as an image document in PNG format |
-| Assert([<filter>]) | Same as Snapshot, but this is only a dry-run which ensures that current document in the browser can pass the <filter>, nothing will be exported or cached |
-| Click(<selector>, [<delay>, <blocking>]) | perform 1 mouse click on the 1st visible element that qualify the jQuery <selector> |
-| ClickNext(<selector>, [<delay>, <blocking>]) | perform 1 mouse click on the 1st element that hasn't been clicked before within the session, each session keeps track of its own history of interactions and elements involved |
-| Submit(<selector>, [<delay>, <blocking>]) |  submit the form denoted by the 1st element that qualify the jQuery <selector>, this is usually performed by clicking, but can also be done by other interactions, like pressing enter on a text box |
-| TextInput(<selector>, <text expression>, [<delay>, <blocking>]) | focus on the 1st element (usually but not necessarily a text box) that qualify the jQuery <selector>, then insert/paste the specified text |
-| DropDownSelect(<selector>, <text expression>, [<delay>, <blocking>]) | focus on the 1st selectable list that qualify the jQuery <selector>, then select the item with specified value |
-| ExeScript(<script expression>, [<selector>, <delay>, <blocking>]) | run javascript program against the 1st element that qualify the jQuery <selector>, or against the whole document if <selector> is set to null or missing |
-| DragSlider(<selector>, <percentage>, <handleSelector>, [<delay>, <blocking>]) | drag a slider handle denoted by <handleSelector> to a position defined by a specified percentage and an enclosing bounding box denoted by <selector> |
-| WaitFor(<selector>) | wait until the 1st element that qualify the jQuery <selector> appears |
+| Visit(URI-expression, [delay, blocking]) | go to the website denoted by specified URI in the browser, usually performed by inserting the URI into the browser's address bar and press enter |
+| Snapshot([filter]) [~ 'alias] | export current document in the browser, the document is subjective to all DOM changes caused by preceding actions, exported documents will be loaded into the document buffer of the resulted PageRowRDD, if no SnapShot, Screenshot or Wget is defined in a chain, Snapshot will be automatically appended as the last action|
+| Screenshot([filter]) [~ 'alias] | export screenshot of the browser as an image document in PNG format |
+| Assert([filter]) | Same as Snapshot, but this is only a dry-run which ensures that current document in the browser can pass the {filter}, nothing will be exported or cached |
+| Click(selector, [delay, blocking]) | perform 1 mouse click on the 1st visible element that qualify the jQuery {selector} |
+| ClickNext(selector, [delay, blocking]) | perform 1 mouse click on the 1st element that hasn't been clicked before within the session, each session keeps track of its own history of interactions and elements involved |
+| Submit(selector, [delay, blocking]) |  submit the form denoted by the 1st element that qualify the jQuery {selector}, this is usually performed by clicking, but can also be done by other interactions, like pressing enter on a text box |
+| TextInput(selector, text-expression, [delay, blocking]) | focus on the 1st element (usually but not necessarily a text box) that qualify the jQuery {selector}, then insert/paste the specified text |
+| DropDownSelect(selector, text-expression, [delay, blocking]) | focus on the 1st selectable list that qualify the jQuery {selector}, then select the item with specified value |
+| ExeScript(javascript-expression, [selector, delay, blocking]) | run javascript program against the 1st element that qualify the jQuery {selector}, or against the whole document if {selector} is set to null or missing |
+| DragSlider(selector, percentage, handleSelector, [delay, blocking]) | drag a slider handle denoted by {handleSelector} to a position defined by a specified percentage and an enclosing bounding box denoted by {selector} |
+| WaitFor(selector) | wait until the 1st element that qualify the jQuery {selector} appears |
+
+</div>
 
 * Visit +> Snapshot is the second most common action that does pretty much the same thing as Wget on HTML resources - except that it can render dynamic pages and javascript. Very few formats other than HTML/XML are supported by browsers without plug-in so its mandatory to fetch images and PDF files by Wget only. In addition, its much slower than Wget for obvious reason. If Visit +> Snapshot is the only chained action resolved in a fetch, join or explore, 3 shorthand clauses can be used:
 
-        <Source>.visit(<URI>, <>)
+        .visit(URI, [parameters])
 
-        <Source>.visitJoin(<selector>, <>)
+        .visitJoin(selector, [parameters])
 
-        <Source>.visitExplore(<>)
+        .visitExplore(selector, [parameters])
 
 * Multiple Snapshots and Screenshots can be defined in a chain of actions to persist different states of a browser session, their exported documents can be specifically referred by their aliases.
 
 #### Flow Control
 
+<div class="table" markdown="1">
+
 | Syntax | Means |
 | ---- | ------- |
-| Loop(<Action(s)>, [<limit>]) | Execute the specified <Action(s)> repeatedly until max iteration is reached or an exception is thrown during the execution (can be triggered by Assert) |
-| Try(<Action(s)>, [<retries>, <cacheFailed>]) | By default, if an exception is thrown by an action, the entire session is retried, potentially by a different Spark executor on a different machine, this failover handling process continues until **spark.task.maxFailures** property has been reached, and the entire query failed fast. However, if the <Action(s)> throwing the exception is enclosed in the **Try** block, its last failure will be tolerated and only results in an error page being exported as a placeholder. Make sure to set **spark.task.maxFailures** to be larger than <retries>, or you query will fail fast before it even had a chance to interfere! |
-| If(<condition>, <Action(s) if true>, <Action(s) if false>) | perform a condition check on current document in the browser, then execute different <Action(s)> based on its result |
+| Loop(Action(s), [limit]) | Execute the specified {Action(s)} repeatedly until max iteration is reached or an exception is thrown during the execution (can be triggered by Assert) |
+| Try(Action(s), [retries, cacheError]) | By default, if an exception is thrown by an action, the entire session is retried, potentially by a different Spark executor on a different machine, this failover handling process continues until **spark.task.maxFailures** property has been reached, and the entire query failed fast. However, if the {Action(s)} throwing the exception is enclosed in the **Try** block, its last failure will be tolerated and only results in an error page being exported as a placeholder. Make sure to set **spark.task.maxFailures** to be larger than {retries}, or you query will fail fast before it even had a chance to interfere! |
+| If(condition, Action(s)-if-true, Action(s)-if-false) | perform a condition check on current document in the browser, then execute different <Action(s)> based on its result |
+
+</div>
 
 * Loop(ClickNext +> Snapshot) is generally used for turning pages when its pagination is implemented in AJAX rather than direct hyperlinks, in which case a shorthand is available:
 
 #### Optional Parameters
 
+<div class="table" markdown="1">
+
 | Name | Default | Means |
 | ---- | ------- | ----- |
-| <filter> | org.tribbloid.spookystuff.dsl.ExportFilters.MustHaveTitle |
-| <alias> | <same as Action> |
-| <timeout> | null |
-| <delay> | 1.second |
-| <blocking> | true |
-| <limit> | 500 |
-| <retries> | 3 |
-| <cacheError> | false |
+| filter | ExportFilters.MustHaveTitle |
+| alias | Action.toString |
+| timeout | null |
+| delay | 1.second |
+| blocking | true |
+| limit | 500 |
+| retries | 3 |
+| cacheError | false |
+
+</div>
 
 # Expressions
 
@@ -349,7 +371,7 @@ The following 2 variables are also treated as symbols with special meaning:
 
 You have seen the [basic form] of string interpolation early in some examples, which inserts only key-value pair(s) to a string template. The [above example] demonstrates a more powerful string interpolation, which inserts all kinds of expressions:
 
-    x"<segment> ${<expression>} <segment> ${<expression>} <segment> ..."
+    x"segment ${expression} segment ${expression} segment ..."
 
 Any non-expression, non-string typed identifier is treated as literal.
 
@@ -363,32 +385,32 @@ The exact format of a document is dictated by its mime-type indicated by the web
 
 All operators that fits into this category are listed in the following table, with their compatible formats and explanation.
 
+<div class="table" markdown="1">
+
 | Operator | Formats | Means |
-| _.findAll("<Selector>") | All | returns all elements that qualify the selector provided, which should be exact field name for JSON type and jQuery selector for all others |
-| _ \\ "<Selector>" | All | Same as above |
-| _.findFirst("<Selector>") | All | first element returned by **findAll** |
-| _.children("<Selector>") | All | returns only the direct children that qualify by the selector provided, which should be exact field name for JSON type and jQuery selector for all others |
-| _ \ "<Selector>" | All | Same as above |
-| _.child("<Selector>") | All | first element returned by **children** |
-| S"<Selector>" | All | Big S selector: equivalent to S.findAll("<Selector>") |
-| A"<Selector>" | All | Big A selector: equivalent to 'A.findAll("<Selector>"), 'A is the default symbol for the elements/data pivoted in flatten, flatSelect, join or explore |
-| S_*"<Selector>" | All | Equivalent to S_*.findAll("<Selector>") |
-| _.uri | All | URI of the document or DOM element, this may be different from the URI specified in Wget or Visit due to redirection(s) |
-| _.code | All | returns the original HTML/XML/JSON code of the parsed document/DOM element as string |
-| _.text | All | returns raw text of the parsed document/DOM element stripped of markups, on JSON this strips all field names and retains only their values |
-| _.ownText | All | returns raw text of the parsed document/DOM element excluding those of its children, on JSON this returns null if the element is an object |
-| _.attr("<attribute name>", [<nullable?>]) | All | returns an attribure value of the parsed document/DOM element, on JSON this returns a property preceded by "@", parameter <nullable?> decides whether a non-existing attribute should be returned as null or an empty string |
-| _.href | All | same as .attr("href") on HTML/XML, same as .ownText on JSON |
-| _.src | All | same as .attr("src") on HTML/XML, same as .ownText on JSON |
-| _.boilerpipe | Non-JSON | use [boilerpipe](https://code.google.com/p/boilerpipe/) to extract the main textual content of a HTML file, this won't work for JSON |
+| .findAll(selector) | All | returns all elements that qualify the selector provided, which should be exact field name for JSON type and jQuery selector for all others |
+|  \\ selector | All | Same as above |
+| .findFirst(selector) | All | first element returned by **findAll** |
+| .children(selector") | All | returns only the direct children that qualify by the selector provided, which should be exact field name for JSON type and jQuery selector for all others |
+|  \ selector | All | Same as above |
+| .child(selector) | All | first element returned by **children** |
+| S"selector" | All | Big S selector: equivalent to S.findAll(selector) |
+| A"selector" | All | Big A selector: equivalent to 'A.findAll(selector), 'A is the default symbol for the elements/data pivoted in flatten, flatSelect, join or explore |
+| S_*"selector" | All | Equivalent to S_*.findAll(selector) |
+| .uri | All | URI of the document or DOM element, this may be different from the URI specified in Wget or Visit due to redirection(s) |
+| .code | All | returns the original HTML/XML/JSON code of the parsed document/DOM element as string |
+| .text | All | returns raw text of the parsed document/DOM element stripped of markups, on JSON this strips all field names and retains only their values |
+| .ownText | All | returns raw text of the parsed document/DOM element excluding those of its children, on JSON this returns null if the element is an object |
+| .attr("attribute-name", [nullable?]) | All | returns an attribure value of the parsed document/DOM element, on JSON this returns a property preceded by "@", parameter {nullable?} decides whether a non-existing attribute should be returned as null or an empty string |
+| .href | All | same as .attr("href") on HTML/XML, same as .ownText on JSON |
+| .src | All | same as .attr("src") on HTML/XML, same as .ownText on JSON |
+| .boilerpipe | Non-JSON | use [boilerpipe](https://code.google.com/p/boilerpipe/) to extract the main textual content of a HTML file, this won't work for JSON |
+
+</div>
 
 #### others
 
 Many other functions are also supported by the expression system but they are too many to be listed here. Scala users are recommended to refer to source code and scaladoc of ```org.tribbloid.spookystuff.dsl``` package, as these functions are built to resemble Scala functions and operators, rather than the less capable SQL LINQ syntax. In fact, SpookyStuff even use Scala reflective programming API to handle functions it doesn't know.
-
-# More
-
-
 
 # Profiling
 
