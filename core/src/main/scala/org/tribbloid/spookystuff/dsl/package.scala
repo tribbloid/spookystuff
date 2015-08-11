@@ -163,9 +163,9 @@ package object dsl {
 
     def attr(attrKey: String, noEmpty: Boolean = true): Expression[String] = self.andFlatMap(_.attr(attrKey, noEmpty), s"attr($attrKey,$noEmpty)")
 
-    def href = attr("abs:href", noEmpty = true)
+    def href = self.andFlatMap(_.href, s"href")
 
-    def src = attr("abs:src", noEmpty = true)
+    def src = self.andFlatMap(_.src, s"src")
 
     def boilerPipe = self.andFlatMap(_.boilerPipe, "boilerPipe")
   }
@@ -182,9 +182,9 @@ package object dsl {
 
     def attrs(attrKey: String, noEmpty: Boolean = true): Expression[Seq[String]] = self.andMap(_.attrs(attrKey, noEmpty), s"attrs($attrKey,$noEmpty)")
 
-    def hrefs = attrs("abs:href", noEmpty = true)
+    def hrefs = self.andMap(_.hrefs, s"hrefs")
 
-    def srcs = attrs("abs:src", noEmpty = true)
+    def srcs = self.andMap(_.srcs, s"srcs")
 
     def boilerPipes = self.andMap(_.boilerPipes, "text")
   }
@@ -304,6 +304,8 @@ package object dsl {
       v => v.toSeq.flatMap(f),
       s"flatMap($f)"
     )
+
+    def flatten: NamedFunction1[PageRow, Seq[T]] = self.andThen(_.toSeq.flatten)
   }
 
   implicit class StringExprView(self: Expression[String]) extends Serializable {

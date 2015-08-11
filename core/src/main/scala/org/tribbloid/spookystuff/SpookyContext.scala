@@ -131,10 +131,16 @@ case class SpookyContext (
     }
     true
   }
+  
+  def create(df: DataFrame): PageRowRDD = this.dsl.dataFrameToPageRowRDD(df)
+  def create[T: ClassTag](rdd: RDD[T]): PageRowRDD = this.dsl.rddToPageRowRDD(rdd)
+
+  def create[T: ClassTag](seq: TraversableOnce[T]): PageRowRDD = this.dsl.rddToPageRowRDD(this.sqlContext.sparkContext.parallelize(seq.toSeq))
+  def create[T: ClassTag](seq: TraversableOnce[T], numSlices: Int): PageRowRDD = this.dsl.rddToPageRowRDD(this.sqlContext.sparkContext.parallelize(seq.toSeq, numSlices))
 
   object dsl extends Serializable {
 
-    implicit def DataFrameToPageRowRDD(df: DataFrame): PageRowRDD = {
+    implicit def dataFrameToPageRowRDD(df: DataFrame): PageRowRDD = {
       val self = new DataFrameView(df).toMapRDD.map {
         map =>
           PageRow(
@@ -147,7 +153,7 @@ case class SpookyContext (
     }
 
     //every input or noInput will generate a new metrics
-    implicit def RDDToPageRowRDD[T: ClassTag](rdd: RDD[T]): PageRowRDD = {
+    implicit def rddToPageRowRDD[T: ClassTag](rdd: RDD[T]): PageRowRDD = {
       import org.tribbloid.spookystuff.views._
 
       import scala.reflect._

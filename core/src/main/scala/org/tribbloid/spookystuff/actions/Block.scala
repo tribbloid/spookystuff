@@ -94,12 +94,12 @@ object Try {
   def apply(
              trace: Set[Trace],
              retries: Int = Const.clusterRetries,
-             cacheFailed: Boolean = false
+             cacheError: Boolean = false
              ): Try = {
 
     assert(trace.size == 1)
 
-    Try(trace.head)(retries, cacheFailed)
+    Try(trace.head)(retries, cacheError)
   }
 }
 
@@ -156,7 +156,7 @@ object Loop {
              ): Loop = {
     assert(trace.size == 1)
 
-    Loop(trace.head, limit)
+    Loop(trace.head, limit) //TODO: should persist rule of Cartesian join
   }
 }
 
