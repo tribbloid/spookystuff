@@ -1,6 +1,6 @@
 ---
 layout: global
-title: Integration
+title: More
 ---
 
 * This will become a table of contents (this text will be scraped).

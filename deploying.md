@@ -8,40 +8,77 @@ title: Deploying
 
 # Installation
 
-*Main article: [Installation](installation.html)*
-
 Why so complex? All you need is is a single library in your Java/Scala classpath:
 
     groupId: org.tribbloid.spookystuff
     artifactId: spookystuff-assembly_2.10
-    version: SPOOKYSTUFF_VERSION
+    version: {{site.STABLE_VERSION}}
 
 You have 3 options: download it, build it or let a dependency manager (Apache Maven, sbt, Gradle etc.) do it for you.
 
 #### Direct Download
 
-| Stable (SPOOKYSTUFF_VERSION) |
-| ------------- |
-| [Download pre-built JAR for Spark 1.3.1] |
-| [Download pre-built JAR for Spark 1.4.1] |
+<div class="table" markdown="1">
 
-This JAR provide full functionality out-of-the-box, however you need a compatible Apache Spark installation first (including any integrated Spark environment, e.g. Spark notebook in [Apache Zeppelin] or [databricks™ Cloud]). If you haven't done so, please refer to [Apache Spark installation guide](https://spark.apache.org/docs/latest/cluster-overview.html) or documentation of your Spark distribution.
+|  | Stable ({{site.STABLE_VERSION}}) | Nightly ({{site.NIGHTLY_VERSION}}) |
+| ------------- | ------------------------ | -------------- |
+| Library | [Download .jar](https://s3-us-west-1.amazonaws.com/spooky-bin/spookystuff-assembly-{{site.STABLE_VERSION}}.jar) | [Download .jar](https://s3-us-west-1.amazonaws.com/spooky-bin/spookystuff-assembly-{{site.NIGHTLY_VERSION}}.jar) |
+| Bundled with Spark {{site.SPARK_VERSION0}} | [Download .zip](https://s3-us-west-1.amazonaws.com/spooky-bin/spookystuff-assembly-{{site.STABLE_VERSION}}-bin-spark{{site.SPARK_VERSION0}}.zip) | [Download .zip](https://s3-us-west-1.amazonaws.com/spooky-bin/spookystuff-assembly-{{site.NIGHTLY_VERSION}}-bin-spark{{site.SPARK_VERSION0}}.zip) |
+| Bundled with Spark {{site.SPARK_VERSION1}} | [Download .zip](https://s3-us-west-1.amazonaws.com/spooky-bin/spookystuff-assembly-{{site.STABLE_VERSION}}-bin-spark{{site.SPARK_VERSION1}}.zip) | [Download .zip](https://s3-us-west-1.amazonaws.com/spooky-bin/spookystuff-assembly-{{site.NIGHTLY_VERSION}}-bin-spark{{site.SPARK_VERSION1}}.zip) |
+
+</div>
+
+This pre-built JAR/bundle provide full functionality out-of-the-box, however you need a Apache Spark installation first (including integrated Spark environment, e.g. Notebooks in [databricks™ Cloud](https://databricks.com/product/databricks) or [Apache Zeppelin](https://zeppelin.incubator.apache.org/)). If you haven't done so, please refer to [Apache Spark installation Guide](https://spark.apache.org/docs/latest/cluster-overview.html) or [Integration Section](more.html#integration).
 
 #### As a Dependency
 
-if you want to use SpookyStuff as a library in your source code, the easiest way is to let your dependency manager handle it. By providing the following reference:
+if you want to use SpookyStuff as a library in your source code, the easiest way is to let your dependency manager (e.g. Apache Maven, sbt, gradle) to download it automatically from the [Maven Central Repository](http://search.maven.org/), by adding the following artifact reference into your build definition:
 
-    groupId: org.tribbloid.spookystuff
-    artifactId: spookystuff-assembly_2.10
-    version: SPOOKYSTUFF_VERSION
+<div class="codetabs">
 
-Your dependency manager (e.g. Apache Maven, sbt, gradle) can download it automatically from the [central maven repository].
+<div data-lang="Maven">
 
-Many integrated Spark environments (e.g. Spark-Shell, [Apache Zeppelin] and [databricks™ Cloud]) has built-in dependency manager, which makes deployment much easier by eliminating the necessity of downloading manually. Please refer to [Integration] section for details.
+{% highlight xml %}
+<dependency>
+    <groupId>org.tribbloid.spookystuff</groupId>
+    <artifactId>spookystuff-core_2.10</artifactId>
+    <version>{{site.STABLE_VERSION}}</version>
+</dependency>
+{% endhighlight %}
+
+</div>
+
+<div data-lang="SBT">
+
+{% highlight scala %}
+libraryDependencies += "org.tribbloid.spookystuff" % "spookystuff-core_2.10" % "{{site.STABLE_VERSION}}"
+{% endhighlight %}
+
+</div>
+
+<div data-lang="Gradle">
+
+{% highlight groovy %}
+'org.tribbloid.spookystuff:spookystuff-core_2.10:{{site.STABLE_VERSION}}'
+{% endhighlight %}
+
+</div>
+
+<div data-lang="Leiningen">
+
+{% highlight clojure %}
+[org.tribbloid.spookystuff/spookystuff-core_2.10 "{{site.STABLE_VERSION}}"]
+{% endhighlight %}
+
+</div>
+
+</div>
+
+Many integrated Spark environments (e.g. Spark-Shell, [databricks™ Cloud](https://databricks.com/product/databricks) or [Apache Zeppelin](https://zeppelin.incubator.apache.org/)) has built-in dependency manager, which makes deployment much easier by eliminating the necessity of manual download. This is again covered in [Integration Section](more.html#integration).
 
 #### Optional Components
 
-SpookyStuff natively supports 2 headless browers: [HtmlUnit] and the much more capable [PhantomJS] for deep web mining. The binary executable of PhantomJS is NOT included in the pre-built JAR, and if it's' not detected on all Spark workers, it will be automatically downloaded from a PhantomJS mirror. To avoid repeated download you can download a permanent copy to each Spark worker:
+SpookyStuff natively supports 2 headless browers for deep web access: [HtmlUnit](http://htmlunit.sourceforge.net/) and the much more capable [PhantomJS](http://phantomjs.org/). The binary executable of PhantomJS is NOT included in the pre-built JAR, and if it's' not detected on all Spark workers, it will be automatically downloaded from a PhantomJS mirror. To avoid repeated download you can download a permanent copy to each Spark worker:
 
 - on linux [https://s3-us-west-1.amazonaws.com/spooky-bin/phantomjs-linux/phantomjs](https://s3-us-west-1.amazonaws.com/spooky-bin/phantomjs-linux/phantomjs)
 
@@ -51,9 +88,13 @@ Another optional component for better deep web compatibility is [TOR client](htt
 
 # Configuration
 
-The following options can be set independently and dynamically for each SpookyContext (by changing its *conf.{option name}* property in scala), or set collectively by environment variables and/or system properties. If multiple values for an option are set by different methods (e.g. environment variable *SPOOKY_CACHE* and system property *spooky.cache* are set to different values), The preceding value in the following list will override others.
+The following options can be set independently and dynamically for each SpookyContext (by changing its **conf.{option-name}** property in scala), or set collectively by environment variables and/or system properties. If multiple values for an option are set by different methods (e.g. environment variable *SPOOKY_CACHE* and system property *spooky.cache* are set to different values), The preceding value in the following list will override others.
+
+<div class="table" markdown="1">
 
 | Dynamic/Programmatic | > | System Property | > | Environment Variable | > | Default |
+
+</div>
 
 #### Web Caching
 
@@ -76,7 +117,7 @@ The following options can be set independently and dynamically for each SpookyCo
 | Name | System Property | Environment Variable | Default | Meaning |
 | ---- | --------------- | -------------------- | ------- | ------- |
 | defaultQueryOptimizer | N/A | N/A | Wide | Set default Query Optimizer to one of the 3 options: Narrow, Wide, or Wide_RDDWebCache, Query Optimizer affects how duplicate & unnecessary remote access (e.g. Crawling a directory with diamond links) are handled before being distributed and executed, The meaning of these options are described in the following table |
-| defaultParallelism | N/A | N/A | 8*{number of cores} | Default number of partitions for all RDDs generated by SpookyStuff queries. parallel operations depending on remote access are highly skewed and it is generally a good practice to set the parallelism a few times larger than common Spark tasks |
+| defaultParallelism | N/A | N/A | 8*{number-of-cores} | Default number of partitions for all RDDs generated by SpookyStuff queries. parallel operations depending on remote access are highly skewed and it is generally a good practice to set the parallelism a few times larger than common Spark tasks |
 | defaultStorageLevel | N/A | N/A | MEMORY_ONLY | Default storage level of "temporarily" persisted RDDs during queries' execution. These persisted RDDs takes large chunks of memory to facilitate complex query optimization but are usually evicted immediately beyond their intended usage. If your Spark cluster frequently encounter memory overflow issue, try setting this to *MEMORY_ONLY_SER* or *DISK_ONLY*, please refer to [Spark Storage Level] article for details |
 | checkpointInterval | N/A | N/A | 100 | Like [Spark Streaming] and [MLlib], [exploring link graph] in SpookyStuff is an iterative process and relies on periodic RDD checkpointing to recover from failure and avoid very long dependency graph. If this is set to a positive integer, RDD with a dependency chain longer than this will be checkpointed to a directory defined by **dirs.checkpoint** |
 | dirs.checkpoint | spooky.dirs.checkpoint | N/A | {dirs.root}/checkpoint | URI of the directory for checkpointing, the URI format should be like ```scheme://authority/path``` (read [this article](https://hadoop.apache.org/docs/r2.4.1/hadoop-project-dist/hadoop-common/FileSystemShell.html) for details) |
@@ -91,11 +132,11 @@ The following options can be set independently and dynamically for each SpookyCo
 | --------------- | ------- |
 | Narrow | Try to minimize shuffling and number of stages by avoiding "wide" transformations (grouping, cogrouping): this means duplicated resources in different partitions are fetched as-is and efficient execution relies mostly on web caching, only recommended if you know that chance of duplicates across multiple threads are low, or shuffling costs are high due to heavy iterations (e.g. exploring pagination though links) |
 | Wide | Aggressively merge duplicate actions before each execution and cast fetched results into multiple rows afterwards: this is often the most efficient tradeoff in terms of total cost, with the only notable caveat being exploring deeply through hyperlinks: merging actions across multiple partitions takes at least one wide transformations which may become expensive in iterative graph exploring. The tradeoff between Wide and Narrow Optimizers becomes tricky if both duplication and heavy iterations co-exist, we will gradually improve our query optimizer to be more adaptive.
-| Wide_RDDWebCache* | Include all optimization measures in Wide optimizer, plus an indexed RDD is assigned to each query as an in-memory web cache. reading/writing this cache is faster than the web cache on file system but also eats a lot of memory (similar to an L1-cache as opposed to FS-based L2-cache). RDD web caches are NOT shared between queries and are usually scraped after the query finished execution |
+| Wide_RDDWebCache | Include all optimization measures in Wide optimizer, plus an indexed RDD is assigned to each query as an in-memory web cache. reading/writing this cache is faster than the web cache on file system but also eats a lot of memory (similar to an L1-cache as opposed to FS-based L2-cache). RDD web caches are NOT shared between queries and are usually scraped after the query finished execution |
 
 </div>
 
-* This is an experimental feature that should be used tentatively, RDD are not designed to be friendly to frequent update and using this optimizer to fetch big dataset may easily results in memory overflow. In addition, some Hadoop-compatible file systems (Tachyon and Apache Ignite) may already achieved in-memory speed which renders RDD web cache non-competitive.
+* RDDWebCache is an experimental feature that should be used tentatively, RDDs are designed to be immutable and using this optimizer to fetch big dataset may easily results in memory overflow. In addition, some Hadoop-compatible file systems, e.g. [Tachyon](http://tachyon-project.org/index.html) and [Apache Ignite](https://ignite.incubator.apache.org/), may already achieved in-memory speed which renders RDDWebCache non-competitive.
 
 #### Failover
 
@@ -124,7 +165,7 @@ The following options can be set independently and dynamically for each SpookyCo
 | driverFactory | N/A | N/A | PhantomJS | Meaning |
 | proxy | N/A | N/A | NoProxy | Meaning |
 | userAgent | N/A | N/A | null | Meaning |
-| headers | N/A | N/A | {} | Meaning |
+| headers | N/A | N/A | Map() | Meaning |
 | oAuthKeys | N/A | N/A | null | Meaning |
 | browserResolution | N/A | N/A | 1920x1080 | Meaning |
 
@@ -168,7 +209,7 @@ In addition: We also recommend using the following [Spark properties](http://spa
 
 # More Information
 
-Like other Spark applications, SpookyStuff can benefits from many other option Spark offers, please refer to please refer to [Spark configuration](https://spark.apache.org/docs/SPARK_VERSION/configuration.html) and [Spark Tuning Guide](http://spark.apache.org/docs/latest/tuning.html) for more options.
+Like other Spark applications, SpookyStuff can benefits from many other option Spark offers, please refer to please refer to [Spark configuration](https://spark.apache.org/docs/latest/configuration.html) and [Spark Tuning Guide](http://spark.apache.org/docs/latest/tuning.html) for more options.
 
 #### 1-Line installation with [Ansible](http://www.ansible.com/home)
 

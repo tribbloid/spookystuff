@@ -18,22 +18,28 @@ The following diagram illustrates the elements of SpookyStuff queries: context, 
 
 To run it in any Scala environment, import all members of the package org.tribbloid.spookystuff.dsl:
 
-    import org.tribbloid.spookystuff.dsl._
+{% highlight scala %}
+import org.tribbloid.spookystuff.dsl._
+{% endhighlight %}
 
 # Context
 
 SpookyContext is the entry point of all queries, it can be constructed from a [SparkContext] or [SQLContext], with SpookyConf as an optional parameter:
 
-    val spooky = new SpookyContext(sc: SparkContext) // OR
-    val spooky = new SpookyContext(sql: SQLContext) // OR
-    val spooky = new SpookyContext(sql: SQLContext, conf: SpookyConf)
+{% highlight scala %}
+val spooky = new SpookyContext(sc: SparkContext) // OR
+val spooky = new SpookyContext(sql: SQLContext) // OR
+val spooky = new SpookyContext(sql: SQLContext, conf: SpookyConf)
+{% endhighlight %}
 
 SpookyConf contains configuration options that are enumerated in [Configuration Section], these won't affect the result of the query, but have an impact on execution efficiency and resiliency. all these options can be set statically and changed dynamically, even in the middle of a query, e.g.
 
-    import scala.concurrent.duration.Duration._
+{% highlight scala %}
+import scala.concurrent.duration.Duration._
 
-    spooky.conf.pageExpireAfter = 1.day // OR
-    spooky.{clause(s)}.setConf(_.pageExpireAfter = 1.day).{clause(s)}.... // in the middle of a query
+spooky.conf.pageExpireAfter = 1.day // OR
+spooky.{clause(s)}.setConf(_.pageExpireAfter = 1.day).{clause(s)}.... // in the middle of a query
+{% endhighlight %}
 
 Multiple SpookyContext can co-exist and their configurations will only affect their derived queries respectively.
 
@@ -43,17 +49,27 @@ Clauses are building blocks of a query, each denotes a specific pattern to disco
 
 - PageRowRDD: this is the default data storage optimized for unstructured and linked data operations, like DataFrame optimized for relation data. Internally, PageRowRDD is a distributed and immutable row-storage that contains both unstructured "raw" documents and key-value pairs. it can be created from a compatible Spark dataset type by using SpookyContext.create():
 
-        val frame2 = spooky.create(Map("name" -> "Cloudera", "type" -> "company") :: Map("name" -> "Hadoop", "type" -> "Software") :: Nil) //create a PageRowRDD with 2 fields: 'name and 'type
-        val frame1 = spooky.create(1 to 10) //create a PageRowRDD of 10 rows //if source only contains 1 datum per row and its field name is missing, create a PageRowRDD with 1 field: '_
+{% highlight scala %}
+// if source only contains 1 datum per row and its field name is missing, create a PageRowRDD with 1 field: '_
+val frame1 = spooky.create(1 to 10)
+
+//create a PageRowRDD with 2 fields: 'name and 'type
+val frame2 = spooky.create(
+    Map("name" -> "Cloudera", "type" -> "company") ::
+    Map("name" -> "Hadoop", "type" -> "Software") :: Nil
+)
+{% endhighlight %}
 
 And to those types by the following functions:
 
-        frame1.toStringRDD('_)  // convert one field to RDD[String]
-        frame2.toMapRDD()       // convert to MapRDD
-        frame2.toDF()           // convert to DataFrame
-        frame2.toJSON()         // equal to .toDF().JSON()
-        frame2.toCSV()          // convert to CSV
-        frame2.toTSV()          // convert to TSV
+{% highlight scala %}
+frame1.toStringRDD('_)  // convert one field to RDD[String]
+frame2.toMapRDD()       // convert to MapRDD
+frame2.toDF()           // convert to DataFrame
+frame2.toJSON()         // equal to .toDF().JSON()
+frame2.toCSV()          // convert to CSV
+frame2.toTSV()          // convert to TSV
+{% endhighlight %}
 
 PageRowRDD is also the output of another clause so you can chain multiple clauses easily to form a long data valorization pipeline. In addition, it inherits SpookyContext from its source or predecessor, so settings in SpookyConf are persisted for all queries derived from them (unless you change them halfway, this is common if a query uses mutliple web services, each with its own Authentication credential or proxy requirement).
 
@@ -61,25 +77,33 @@ PageRowRDD is also the output of another clause so you can chain multiple clause
 
 - Any compatible Spark dataset type: equivalent to applying to a PageRowRDD initialized from SpookyContext.create(). To use this syntax you need to import context-aware implicit conversions:
 
-        import spooky.dsl._ //
+{% highlight scala %}
+import spooky.dsl._ // only one SpookyContext can be imported like this
+{% endhighlight %}
 
 The following 5 main clauses covered most data reference patterns in websites, documents and APIs, including, but not limited to, one-to-one, one-to-many, link graph and paginations.
 
 #### fetch
 
-Syntax:
+{% highlight scala %}
+.fetch(Action(s), [parameters])
+{% endhighlight %}
 
-    .fetch(Action(s), [parameters])
+Fetch is used to remotely fetch unstructured document(s) per row according to provided actions and load them into each row's document buffer, which flush out previous document(s). Fetch can be used to retrieve an URI directly or combine data from different sources based on one-to-one relationship, e.g.
 
-Fetch is used to remotely fetch unstructured document(s) per row according to provided actions and load them into each row's document buffer, which flush out previous document(s). Fetch can be used to retrieve an URI directly or combine data from different sources based on one-to-one relationship, e.g.:
+<a name="fetch-example"></a>
 
-    spooky.fetch(Wget("https://www.wikipedia.com")).toStringRDD(S.text).collect().foreach(println) // this loads the landing page of Wikipedia into a PageRowRDD with cardinality 1.
+{% highlight scala %}
+// this loads the landing page of Wikipedia into a PageRowRDD with cardinality 1.
+spooky.fetch(Wget("https://www.wikipedia.com")).toStringRDD(S.text).collect().foreach(println)
 
-    spooky.create(1 to 20).fetch(Wget("https://www.wikidata.org/wiki/Q'{_}")).flatMap(S.text).collect().foreach(println) //this loads 20 wikidata pages, 1 page per row
+//this loads 20 wikidata pages, 1 page per row
+spooky.create(1 to 20).fetch(Wget("https://www.wikidata.org/wiki/Q'{_}")).flatMap(S.text).collect().foreach(println)
+{% endhighlight %}
 
-Where ```Wget``` is a simple [action] that retrieves a document from a specified URI. Notice that the second URI is incomplete: part of it is denoted by ```'{_}'```, this is a shortcut for string interpolation: during execution, any part enclosed in ```'{key}'``` will be replaced by a value in the same row the {key} identifies. String interpolation is part of a rich expression system covered in [Expression Section].
+Where ```Wget``` is a simple [action] that retrieves a document from a specified URI. Notice that the second URI is incomplete: part of it is denoted by ```'{_}'```, this is a shortcut for **string interpolation**: during execution, any part enclosed in ```'{key}'``` will be replaced by a value in the same row the {key} identifies. String interpolation is part of a rich expression system covered in [Expressions Section](#expressions).
 
-Parameters:It should be noted that m
+##### fetch parameters
 
 <div class="table" markdown="1">
 
@@ -93,40 +117,50 @@ Parameters:It should be noted that m
 
 </div>
 
-#### select/remove
+#### select & remove
 
-Syntax:
+{% highlight scala %}
+.select(
+    expression [~ 'alias],
+    expression [~+ 'alias],
+    expression [~! 'alias]
+    ...
+)
+{% endhighlight %}
 
-    .select(
-        expression [~ 'alias],
-        expression [~+ 'alias],
-        expression [~! 'alias]
-        ...
-    )
+Select is used to extract data from unstructured documents and persist into the key-value store, unlike SQL, select won't discard existing data:
 
-Select is used to extract data from unstructured documents and persist into its key-value store, unlike SQL, select won't discard existing data from the store:
+<a name="select-example"></a>
 
-    spooky.fetch(
-        Wget("https://en.wikipedia.com")
-    ).select(S"table#mp-left p" ~ 'featured_article).toDF().collect().foreach(println) //this load the featured article text of Wikipedia(English) into one row
+{% highlight scala %}
+//this load the featured article text of Wikipedia (English) into one row
+spooky.fetch(
+    Wget("https://en.wikipedia.com")
+).select(S"table#mp-left p" ~ 'featured_article).toDF().collect().foreach(println)
+{% endhighlight %}
 
-If the alias of an expression already exist in the store it will throw a QueryException and refuse to execute. In this case you can use ```~! 'alias``` to replace old value or ```~+ alias``` to append the value to existing ones as an array. To remove key-value pairs from PageRowRDD, use remove:
+If the alias of an expression already exist in the store it will throw a QueryException and refuse to execute. In this case you can use ```~! 'alias``` to replace old value or ```~+ alias``` to append the value to existing ones as an array. To discard data from the key-value store, use **remove**:
 
-    .remove('alias, 'alias ...)
+{% highlight scala %}
+.remove('alias, 'alias ...)
+{% endhighlight %}
 
 #### flatten/explode
 
-Syntax:
-
-    .flatten/explode(expression [~ alias], [parameters])
+{% highlight scala %}
+.flatten/explode(expression [~ alias], [parameters])
+{% endhighlight %}
 
 Flatten/Explode is used to transform each row into a sequence of rows, each has an object of the array selected from the original row:
 
-    spooky.fetch(
-        Wget("https://news.google.com/news?q=apple&output=rss")
-    ).flatten(S"item title" ~ 'title).toDF().collect().foreach(println) //select and explode all titles in google RSS feed into multiple rows
+{% highlight scala %}
+//select and explode all titles in google RSS feed into multiple rows
+spooky.fetch(
+    Wget("https://news.google.com/news?q=apple&output=rss")
+).flatten(S"item title" ~ 'title).toDF().collect().foreach(println)
+{% endhighlight %}
 
-Parameters:
+##### flatten/explode parameters
 
 <div class="table" markdown="1">
 
@@ -136,80 +170,93 @@ Parameters:
 
 </div>
 
-SpookyStuff has a shorthand for flatten + select, which is common for extracting multiple attributes and fields from elements in a list or tree:
+SpookyStuff also provides **flatSelect** as a shorthand for **flatten + select**:
 
-    .flatSelect(flatten-expression, [parameters])(
-        select-expression [~ 'alias]
-        ...
-    )
+<a name="flatselect-example"></a>
 
-This is equivalent to:
+{% highlight scala %}
+.flatSelect(flatten-expression, [parameters])(
+    select-expression [~ 'alias] ...
+)
+{% endhighlight %}
 
-    .flatten(flatten-expression ~ 'A), [parameters]
-    ).select(
-        select-expression> [~ 'alias]
-        ...
-    )
+which is equivalent to:
 
-e.g.:
+{% highlight scala %}
+.flatten(flatten-expression ~ 'A), [parameters]
+).select(
+    select-expression> [~ 'alias] ...
+)
+{% endhighlight %}
 
-    spooky.fetch(
-        Wget("https://news.google.com/news?q=apple&output=rss")
-    ).flatSelect(S"item")(
-        A"title" ~ 'title
-        A"pubDate" ~ 'date
-    ).toDF().collect().foreach(println) //explode articles in google RSS feed and select titles and publishing date
+One of its common usages is extracting multiple attributes and fields from DOM elements in a list or tree, e.g.
 
-You may notice that the first parameter of flatSelect has no alias - SpookyStuff can automatically assign a temporary alias 'A to this intermediate selector, which enables a few shorthand expressions for traversing deeper into objects being flattened. This "big A selector" will be used more often in join and explore.
+{% highlight scala %}
+// flatten articles in google RSS feed and select titles and publishing date
+spooky.fetch(
+    Wget("https://news.google.com/news?q=apple&output=rss")
+).flatSelect(S"item")(
+    A"title" ~ 'title
+    A"pubDate" ~ 'date
+).toDF().collect().foreach(println)
+{% endhighlight %}
+
+You may notice that the first parameter of flatSelect has no alias - SpookyStuff automatically assigns an alias 'A to the flatten DOM elements as intermediate data, which also enables a few shorthand expressions for traversing deeper into them. This syntax will be used more often in join and explore.
 
 #### join
 
-Syntax:
-
-    .join(flatten-expression [~ alias], [flatten-parameters]
-    )(Action(s), [fetch-parameters])(
-        select-expression> [~ 'alias]
-        ...
-    )
+{% highlight scala %}
+.join(flatten-expression [~ alias], [flatten-parameters]
+)(Action(s), [fetch-parameters])(
+    select-expression> [~ 'alias]
+    ...
+)
+{% endhighlight %}
 
 Join is used to horizontally combine data from different sources based on one-to-many/many-to-many relationship, e.g. combining links on a search/index page with fulltext contents:
 
-    spooky.create("Gladiator" :: Nil).fetch(
-        Wget("http://lookup.dbpedia.org/api/search/KeywordSearch?QueryClass=film&QueryString='{_}")
-    ).join(S"Result")(
-        Wget(A"URI".text),2
-    )(
-        A"Label".text ~ 'label,
-        S"span[property=dbo:abstract]".text ~ 'abstract
-    ).toDF().collect().foreach(println) //this search for movies named "Gladiator" on dbpedia Lookup API (http://wiki.dbpedia.org/projects/dbpedia-lookup) and link to their entity pages to extract their respective abstracts
+{% highlight scala %}
+// this search for movies named "Gladiator" on dbpedia Lookup API (http://wiki.dbpedia.org/projects/dbpedia-lookup) and link to their entity pages to extract their respective abstracts
+spooky.create("Gladiator" :: Nil).fetch(
+    Wget("http://lookup.dbpedia.org/api/search/KeywordSearch?QueryClass=film&QueryString='{_}")
+).join(S"Result")(
+    Wget(A"URI".text),2
+)(
+    A"Label".text ~ 'label,
+    S"span[property=dbo:abstract]".text ~ 'abstract
+).toDF().collect().foreach(println)
+{% endhighlight %}
 
 Join is a shorthand for flatten/explode + fetch, in which case the data/elements being flatten is similar to a foreign key in relational database.
 
-Parameters:
+##### join parameters
 
-(See [flatten/explode parameters] and [fetch parameters])
+(See [flatten/explode parameters](#flattenexplode-parameters) and [fetch parameters](#fetch-parameters))
 
 #### explore
 
-Syntax:
-
-    .explore(expression [~ alias], [parameters]
-    )(Action(s), [fetch-parameters])(
-        select-expression> [~ 'alias]
-        ...
-    )
+{% highlight scala %}
+.explore(expression [~ alias], [parameters]
+)(Action(s), [fetch-parameters])(
+    select-expression> [~ 'alias]
+    ...
+)
+{% endhighlight %}
 
 Explore defines a parallel graph exploring pattern that can be best described as recursive join with deduplication: In each iteration, each row is joined with one or more documents, they are compared and merged with existing documents that has been traversed before, the iteration stops when maximum exploration depth has been reached, or no more new documents are found. Finally, all documents and their rows are concatenated vertically. Explore is used for conventional web crawling or to uncover "deep" connections in a graph of web resources, e.g. pagination, multi-tier taxonomy/disambiguation pages, "friend-of-a-friend" (FOAF) reference in a social/semantic network:
 
-    spooky.fetch(
-        Wget("http://dbpedia.org/page/Bob_Marley")
-    ).explore(
-        S"a[rel^=dbo],a[rev^=dbo]",
-        maxDepth = 2
-    )(Wget('A.href)
-    )('A.text ~ 'name).toDF().collect().foreach(println) // this retrieve all documents that are related to (rel) or reverse-related to (rev) dbpedia page of Bob Marley
+{% highlight scala %}
+// this retrieve all documents that are related to (rel) or reverse-related to (rev) dbpedia page of Bob Marley
+spooky.fetch(
+    Wget("http://dbpedia.org/page/Bob_Marley")
+).explore(
+    S"a[rel^=dbo],a[rev^=dbo]",
+    maxDepth = 2
+)(Wget('A.href)
+)('A.text ~ 'name).toDF().collect().foreach(println)
+{% endhighlight %}
 
-Parameters:
+##### explore parameters
 
 <div class="table" markdown="1">
 
@@ -219,7 +266,7 @@ Parameters:
 
 </div>
 
-#### etc.
+#### others
 
 # Actions
 
@@ -227,36 +274,47 @@ Each action defines a web client command, such as content download, loading a pa
 
 Action can be chained to define a series of command in a client session, e.g:
 
-    spooky.fetch(
-        Visit("http://www.google.com/")
-          +> TextInput("input[name=\"q\"]","Deep Learning")
-          +> Submit("input[name=\"btnG\"]")
-          +> Snapshot()
-    ).flatMap(S.text).collect().foreach(println) //in a browser session, search "Deep Learning" on Google's landing page
+{% highlight scala %}
+// in a browser session, search "Deep Learning" on Google's landing page
+spooky.fetch(
+    Visit("http://www.google.com/")
+      +> TextInput("input[name=\"q\"]","Deep Learning")
+      +> Submit("input[name=\"btnG\"]")
+      +> Snapshot()
+).flatMap(S.text).collect().foreach(println)
+{% endhighlight %}
 
 In addition to the "chaining" operator **+>**, the following 2 can be used for branching:
 
-- **||**: Combine multiple actions and/or chains in parallel, each executed in its own session and in parallel. This multiplies the cardinality of output with a fixed factor, e.g.:
+- ```Action(s) || Action(s)``` : Combine multiple actions and/or chains in parallel, each executed in its own session and in parallel. This multiplies the cardinality of output with a fixed factor, e.g.
 
-    spooky.create("I'm feeling lucky"
-    ).fetch(
-        Wget("http://api.mymemory.translated.net/get?q='{_}&langpair=en|fr") ||
-        Wget("http://api.mymemory.translated.net/get?q='{_}&langpair=en|de")
-    ).select((S \ "responseData" \ "translatedText" text) ~ 'translated).toDF().collect().foreach(println) // load french and german translation of a sentence in 2 rows.
+{% highlight scala %}
+// load french and german translation of a sentence in 2 rows.
+spooky.create("I'm feeling lucky"
+).fetch(
+    Wget("http://api.mymemory.translated.net/get?q='{_}&langpair=en|fr") ||
+    Wget("http://api.mymemory.translated.net/get?q='{_}&langpair=en|de")
+).select((S \ "responseData" \ "translatedText" text) ~ 'translated).toDF().collect().foreach(println)
+{% endhighlight %}
 
-- **\*>**: Cross/Cartesian join and concatenate a set of actions/chains with another set of actions/chains, resulting in all their combinations being executed in parallel. e.g.:
+- ```Action(s) *> Parallel-Actions(s)``` : Cross/Cartesian join and concatenate a set of actions/chains with another set of actions/chains, resulting in all their combinations being executed in parallel. e.g.
 
-    fetch(
-        Visit("https://www.wikipedia.org/")
-          +> TextInput("input#searchInput","Mont Blanc")
-          *> DropDownSelect("select#searchLanguage","en") || DropDownSelect("select#searchLanguage","fr")
-          +> Submit("input[type=submit]")
-          +> Snapshot()
-    ).flatMap(S.text).collect().foreach(println) // in 2 browser session, search "Mont Blanc" in English and French on Wikipedia's landing page
+{% highlight scala %}
+// in 2 browser session, search "Mont Blanc" in English and French on Wikipedia's landing page
+fetch(
+    Visit("https://www.wikipedia.org/")
+      +> TextInput("input#searchInput","Mont Blanc")
+      *> DropDownSelect("select#searchLanguage","en") || DropDownSelect("select#searchLanguage","fr")
+      +> Submit("input[type=submit]")
+      +> Snapshot()
+).flatMap(S.text).collect().foreach(println)
+{% endhighlight %}
 
-All out-of-the-box actions are categorized and listed in the following sections. parameters enclosed in square brackets are **[optional]** and are explained in [Optional Parameter Section]. If you are still not impressed and would like to write your own action, please refer to [Writing Extension Section].
+The following tables list all out-of-the-box actions. parameters enclosed in square brackets are *[optional]* and are explained in [Optional Parameter Section](#optional-parameters). If you are still not impressed and would like to write your own action, please refer to [Writing Extension Section](dev.html#writing-extensions).
 
-#### Client & Thread
+#### Web Client & System
+
+<div class="table" markdown="1">
 
 | Syntax | Means |
 | ---- | ------- |
@@ -265,17 +323,19 @@ All out-of-the-box actions are categorized and listed in the following sections.
 | Delay([duration]) | hibernate the client session for a fixed duration |
 | RandomDelay([min, max]) | hibernate the client session for a random duration between {min} and {max} |
 
+</div>
+
 * local resources (file, hdfs, s3, s3n and all Hadoop-compatible file systems) won't be cached: their URIs are obviously not "universal", plus fetching them directly is equally fast.
 
-* http and https clients are subjective to proxy option in SpookyContext, see [Configuration Section] for detail.
+* http and https clients are subjective to proxy option in SpookyContext, see [Configuration Section](deploying.html#configuration) for detail.
 
 * Wget is the most common action as well as the quickest. In many cases its the only action resolved in a fetch, join or explore, for which cases 3 shorthands clauses can be used:
 
-        .wget(URI, [parameters])
-
-        .wgetJoin(selector, [parameters])
-
-        .wgetExplore(selector, [parameters])
+{% highlight scala %}
+.wget(URI-expression, [parameters])
+.wgetJoin(selector, [parameters])
+.wgetExplore(selector, [parameters])
+{% endhighlight %}
 
 #### Browser
 
@@ -302,11 +362,11 @@ The following actions are resolved against a browser launched at the beginning o
 
 * Visit +> Snapshot is the second most common action that does pretty much the same thing as Wget on HTML resources - except that it can render dynamic pages and javascript. Very few formats other than HTML/XML are supported by browsers without plug-in so its mandatory to fetch images and PDF files by Wget only. In addition, its much slower than Wget for obvious reason. If Visit +> Snapshot is the only chained action resolved in a fetch, join or explore, 3 shorthand clauses can be used:
 
-        .visit(URI, [parameters])
-
-        .visitJoin(selector, [parameters])
-
-        .visitExplore(selector, [parameters])
+{% highlight scala %}
+.visit(URI-expression, [parameters])
+.visitJoin(selector, [parameters])
+.visitExplore(selector, [parameters])
+{% endhighlight %}
 
 * Multiple Snapshots and Screenshots can be defined in a chain of actions to persist different states of a browser session, their exported documents can be specifically referred by their aliases.
 
@@ -343,17 +403,17 @@ The following actions are resolved against a browser launched at the beginning o
 
 # Expressions
 
-In previous examples, you may already see some short expressions being used as clause or action parameters, like the [string interpolation] in URI templating, or the ["Big S"] / ["Big A"] selectors in many select clauses for unstructured information refinement. These are parts of a much more powerful (and equally short) expression system. It allows complex data reference to be defined in a few words and operators (words! not lines), while other frameworks may take scores of line. E.g. the following query uses an URI expression (in the second Wget), which pipes all titles on Google News RSS feed into a single MyMemory translation API call:
+In previous examples, you may already see some short expressions being used as clause or action parameters, like the [string interpolation](#fetch-example) in URI templating, or the ["Big S"](#select-example) / ["Big A"](#flatselect-example) notations in many select clauses for unstructured information refinement. These are parts of a much more powerful (and equally short) expression system. It allows complex data reference to be defined in a few words and operators (words! not lines), while other frameworks may take scores of line. E.g. the following query uses an URI expression (in the second Wget), which pipes all titles on Google News RSS feed into a single MyMemory translation API call:
 
-    spooky.fetch(Wget("https://news.google.com/?output=rss")
-    ).fetch(Wget(
+{% highlight scala %}
+spooky.fetch(Wget("https://news.google.com/?output=rss")
+).fetch(Wget(
+    //how short do you want it? considering its complexity
+    x"http://api.mymemory.translated.net/get?q=${S"item title".texts.mkString(". ")}&langpair=en|fr"
+)).toStringRDD(S.text).collect().foreach(println)
+{% endhighlight %}
 
-        //how short do you want it? considering its complexity
-        x"http://api.mymemory.translated.net/get?q=${S"item title".texts.mkString(". ")}&langpair=en|fr"
-
-    )).toStringRDD(S.text).collect().foreach(println)
-
-Internally, each expression is a function from a single row in PageRowRDD to a nullable data container. Please refer to [Extension Section] if you want to use customized expressions.
+Internally, each expression is a function from a single row in PageRowRDD to a nullable data container. Please refer to [Writing Extension Section](dev.html#writing-extensions) if you want to use customized expressions.
 
 The following is a list of basic symbols and functions/operators that are defined explicitly as shorthands:
 
@@ -363,15 +423,17 @@ Scala symbols (identifier preceded by tick/') has 2 meanings: it either returns 
 
 The following 2 variables are also treated as symbols with special meaning:
 
-- S: Returns the only document in the unstructured document buffer, error out if multiple documents exist.
+- ```S``` : Returns the only document in the unstructured document buffer, error out if multiple documents exist.
 
-- S_*: Returns all documents in the unstructured document buffer.
+- ```S_*``` : Returns all documents in the unstructured document buffer.
 
 #### string interpolation
 
 You have seen the [basic form] of string interpolation early in some examples, which inserts only key-value pair(s) to a string template. The [above example] demonstrates a more powerful string interpolation, which inserts all kinds of expressions:
 
-    x"segment ${expression} segment ${expression} segment ..."
+{% highlight scala %}
+x"segment ${expression} segment ${expression} segment ..."
+{% endhighlight %}
 
 Any non-expression, non-string typed identifier is treated as literal.
 
@@ -379,7 +441,7 @@ Any non-expression, non-string typed identifier is treated as literal.
 
 These are operators that does the most important things: traversing DOM of unstructured documents to get data you want (potentially structured or semi-structured).
 
-SpookyStuff supports a wide range of documents including HTML, XHTML, XML, JSON, and [all other formats supported by Apache Tika] (PDF, Microsoft Office etc.). In fact, most of the following operators are **format-agnostic**: they use different parsers on different formats to get the same DOM tree. Not all these formats have equivalent DOM representation (e.g. JSON doesn't have annotated text), so using a few operators on some formats doesn't make sense and always returns null value.
+SpookyStuff supports a wide range of documents including HTML, XHTML, XML, JSON, and [all other formats supported by Apache Tika](https://tika.apache.org/1.9/formats.html) (PDF, Microsoft Office and much more). In fact, most of the following operators are **format-agnostic**: they use different parsers on different formats to get the same DOM tree. Not all these formats have equivalent DOM representation (e.g. JSON doesn't have annotated text), so using a few operators on some formats doesn't make sense and always returns null value.
 
 The exact format of a document is dictated by its mime-type indicated by the web resource, if it is not available, SpookyStuff will auto-detect it by analysing its extension name and binary content.
 
@@ -416,10 +478,14 @@ Many other functions are also supported by the expression system but they are to
 
 SpookyStuff has a metric system based on Spark's [Accumulator](https://spark.apache.org/docs/latest/programming-guide.html#AccumLink), it can be accessed from **metrics** property under the SpookyContext:
 
-    println(rows.spooky.metrics.toJSON)
-    ...
+{% highlight scala %}
+println(rows.spooky.metrics.toJSON)
+{% endhighlight %}
 
-By default each query keep track of its own metric, if you would like to have all metrics of queries from the same SpookyContext to be aggregated, simply set **conf.shareMetrics** under SpookyContext to *true*.
+By default each query keep track of its own metric, if you would like to have all metrics of queries from the same SpookyContext to be aggregated, simply set **conf.shareMetrics** property of the SpookyContext to *true*.
 
 # Examples
 
+Interactive examples are maintained on [tribbloid® product page](http://tribbloid.github.io/product/)
+
+More examples can be found under [spookystuff-example package](https://github.com/tribbloid/spookystuff/tree/master/example/src/main/scala/org/tribbloid/spookystuff/example)

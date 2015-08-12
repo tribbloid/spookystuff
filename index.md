@@ -8,7 +8,7 @@ title: Overview
 
 # Overview
 
-**SpookyStuff** is a scalable and lightweight query engine for web scraping/data mashup/acceptance QA. The goal is to allow remote resources to be linked and queried like a relational database. Its currently implementation is influenced by Spark [SQL] and [Machine Learning Pipeline].
+**SpookyStuff** is a scalable and lightweight query engine for web scraping/data mashup/acceptance QA. The goal is to allow remote resources to be linked and queried like a relational database. Its currently implementation is influenced by Spark [SQL](http://spark.apache.org/sql/) and [Machine Learning Pipeline](https://databricks.com/blog/2015/01/07/ml-pipelines-a-new-high-level-api-for-mllib.html).
 
 SpookyStuff is the fastest big data collection engine in history, with a speed record of querying 330404 dynamic pages per hour on 300 cores.
 
@@ -18,24 +18,29 @@ SpookyStuff is the fastest big data collection engine in history, with a speed r
 
 # Installation
 
-*Main article: [Installation](installation.html)*
+*Main article: [Installation](deploying.html#installation)*
 
 Why so complex? All you need is is a single library in your Java/Scala classpath:
 
     groupId: org.tribbloid.spookystuff
     artifactId: spookystuff-assembly_2.10
-    version: SPOOKYSTUFF_VERSION
+    version: {{site.STABLE_VERSION}}
 
 You have 3 options: download it, build it or let a dependency manager (Apache Maven, sbt, Gradle etc.) do it for you.
 
 #### Direct Download
 
-| Stable (SPOOKYSTUFF_VERSION) |
-| ------------- |
-| [Download pre-built JAR for Spark 1.3.1] |
-| [Download pre-built JAR for Spark 1.4.1] |
+<div class="table" markdown="1">
 
-This JAR provide full functionality out-of-the-box, however you need a compatible Apache Spark installation first (including any integrated Spark environment, e.g. Spark notebook in [Apache Zeppelin] or [databricks™ Cloud]). If you haven't done so, please refer to [Apache Spark installation guide](https://spark.apache.org/docs/latest/cluster-overview.html) or documentation of your Spark distribution.
+|  | Stable ({{site.STABLE_VERSION}}) | Nightly ({{site.NIGHTLY_VERSION}}) |
+| ------------- | ------------------------ | -------------- |
+| Library | [Download .jar](https://s3-us-west-1.amazonaws.com/spooky-bin/spookystuff-assembly-{{site.STABLE_VERSION}}.jar) | [Download .jar](https://s3-us-west-1.amazonaws.com/spooky-bin/spookystuff-assembly-{{site.NIGHTLY_VERSION}}.jar) |
+| Bundled with Spark {{site.SPARK_VERSION0}} | [Download .zip](https://s3-us-west-1.amazonaws.com/spooky-bin/spookystuff-assembly-{{site.STABLE_VERSION}}-bin-spark{{site.SPARK_VERSION0}}.zip) | [Download .zip](https://s3-us-west-1.amazonaws.com/spooky-bin/spookystuff-assembly-{{site.NIGHTLY_VERSION}}-bin-spark{{site.SPARK_VERSION0}}.zip) |
+| Bundled with Spark {{site.SPARK_VERSION1}} | [Download .zip](https://s3-us-west-1.amazonaws.com/spooky-bin/spookystuff-assembly-{{site.STABLE_VERSION}}-bin-spark{{site.SPARK_VERSION1}}.zip) | [Download .zip](https://s3-us-west-1.amazonaws.com/spooky-bin/spookystuff-assembly-{{site.NIGHTLY_VERSION}}-bin-spark{{site.SPARK_VERSION1}}.zip) |
+
+</div>
+
+This pre-built JAR/bundle provide full functionality out-of-the-box, however you need a Apache Spark installation first (including integrated Spark environment, e.g. Notebooks in [databricks™ Cloud](https://databricks.com/product/databricks) or [Apache Zeppelin](https://zeppelin.incubator.apache.org/)). If you haven't done so, please refer to [Apache Spark installation Guide](https://spark.apache.org/docs/latest/cluster-overview.html) or [Integration Section](more.html#integration).
 
 <!---
 Alternatively you can download the all-inclusive bundle, this distribution is bundled with Spark and also contains shell scripts to launch examples and spooky-shell (a minimalistic interactive shell that has SpookyStuff pre-loaded):
@@ -46,54 +51,100 @@ Alternatively you can download the all-inclusive bundle, this distribution is bu
 
 #### As a Dependency
 
-if you want to use SpookyStuff as a library in your source code, the easiest way is to let your dependency manager handle it. By providing the following reference:
+if you want to use SpookyStuff as a library in your source code, the easiest way is to let your dependency manager (e.g. Apache Maven, sbt, gradle) to download it automatically from the [Maven Central Repository](http://search.maven.org/), by adding the following artifact reference into your build definition:
 
-    groupId: org.tribbloid.spookystuff
-    artifactId: spookystuff-assembly_2.10
-    version: SPOOKYSTUFF_VERSION
+<div class="codetabs">
 
-Your dependency manager (e.g. Apache Maven, sbt, gradle) can download it automatically from the [central maven repository].
+<div data-lang="Maven">
 
-Many integrated Spark environments (e.g. Spark-Shell, [Apache Zeppelin] and [databricks™ Cloud]) has built-in dependency manager, which makes deployment much easier by eliminating the necessity of downloading manually. Please refer to [Integration] section for details.
+{% highlight xml %}
+<dependency>
+    <groupId>org.tribbloid.spookystuff</groupId>
+    <artifactId>spookystuff-core_2.10</artifactId>
+    <version>{{site.STABLE_VERSION}}</version>
+</dependency>
+{% endhighlight %}
+
+</div>
+
+<div data-lang="SBT">
+
+{% highlight scala %}
+libraryDependencies += "org.tribbloid.spookystuff" % "spookystuff-core_2.10" % "{{site.STABLE_VERSION}}"
+{% endhighlight %}
+
+</div>
+
+<div data-lang="Gradle">
+
+{% highlight groovy %}
+'org.tribbloid.spookystuff:spookystuff-core_2.10:{{site.STABLE_VERSION}}'
+{% endhighlight %}
+
+</div>
+
+<div data-lang="Leiningen">
+
+{% highlight clojure %}
+[org.tribbloid.spookystuff/spookystuff-core_2.10 "{{site.STABLE_VERSION}}"]
+{% endhighlight %}
+
+</div>
+
+</div>
+
+Many integrated Spark environments (e.g. Spark-Shell, [databricks™ Cloud](https://databricks.com/product/databricks) or [Apache Zeppelin](https://zeppelin.incubator.apache.org/)) has built-in dependency manager, which makes deployment much easier by eliminating the necessity of manual download. This is again covered in [Integration Section](more.html#integration).
 
 #### Sourcecode Download
 
 If you are good with programming and prefer to build it from scratch:
 
-| Stable (SPOOKYSTUFF_VERSION) | Nightly (master) |
-| ------------ | ----------- |
-| [Download .zip](https://github.com/tribbloid/spookystuff/zipball/release-SPOOKYSTUFF_VERSION) | [Download .zip](https://github.com/tribbloid/spookystuff/zipball/master) |
-| [Download .tar.gz](https://github.com/tribbloid/spookystuff/tarball/release-SPOOKYSTUFF_VERSION) | [Download .tar.gz](https://github.com/tribbloid/spookystuff/tarball/master) |
+<div class="table" markdown="1">
 
-For how to build from sourcecode, please refer to [Build] section.
+| Stable ({{site.STABLE_VERSION}}) | Nightly ({{site.NIGHTLY_VERSION}}) |
+| ------------ | ----------- |
+| [Download .zip](https://github.com/tribbloid/spookystuff/zipball/release-{{site.STABLE_VERSION}}) | [Download .zip](https://github.com/tribbloid/spookystuff/zipball/master) |
+| [Download .tar.gz](https://github.com/tribbloid/spookystuff/tarball/release-{{site.STABLE_VERSION}}) | [Download .tar.gz](https://github.com/tribbloid/spookystuff/tarball/master) |
+
+</div>
+
+For how to build from sourcecode, please refer to [Build Section](dev.html#build).
 
 # Quick Start
 
 First, make sure Spark is working under your favorite IDE/REPL:
 
-    import org.apache.spark.SparkContext
-    import org.apache.spark.SparkConf
+{% highlight scala %}
+import org.apache.spark.SparkContext
+import org.apache.spark.SparkConf
 
-    // you don't need these if sc has been initialized
-    // val conf = new SparkConf().setAppName("SpookyStuff example").setMaster("local[*]")
-    // val sc = new SparkContext(conf)
-    assert(sc.parallelize(1 to 100).reduce(_ + _) == 5050)
+// you don't need these if SparkContext has been initialized
+// val conf = new SparkConf().setAppName("SpookyStuff example").setMaster("local[*]")
+// val sc = new SparkContext(conf)
+
+assert(sc.parallelize(1 to 100).reduce(_ + _) == 5050)
+{% endhighlight %}
 
 Next, import and initialize a SpookyContext (this is the entry point of all language-integrated queries, much like SQLContext for Spark SQL):
 
-    import org.tribbloid.spookystuff.actions._
-    import org.tribbloid.spookystuff.dsl._
+{% highlight scala %}
+import org.tribbloid.spookystuff.actions._
+import org.tribbloid.spookystuff.dsl._
 
-    val spooky = new org.tribbloid.spookystuff.SpookyContext.SpookyContext(sc)
-    import spooky.dsl._
+//this is the entry point of all queries & configurations
+val spooky = new org.tribbloid.spookystuff.SpookyContext.SpookyContext(sc)
+import spooky.dsl._
+{% endhighlight %}
 
 From this point you can run queries on public datasets immediately. The following is a minimalistic showcase on cross-site "join", one of the 5 main clauses:
 
-    val rows = spooky.wget("https://ajax.googleapis.com/ajax/services/search/news?v=1.0&q=barack%20obama")
-    .select((S\"responseData"\"results"\"content" text) ~ 'news)
-    .wgetJoin(x"http://api.mymemory.translated.net/get?q=${'news}!&langpair=en|fr")
-    .select((S\"responseData"\"translatedText" text) ~ 'translation)
-    rows.toDF().collect().foreach(println)
+{% highlight scala %}
+spooky.wget("https://ajax.googleapis.com/ajax/services/search/news?v=1.0&q=barack%20obama"
+).select((S\"responseData"\"results"\"content" text) ~ 'news
+).wgetJoin(x"http://api.mymemory.translated.net/get?q=${'news}!&langpair=en|fr"
+).select((S\"responseData"\"translatedText" text) ~ 'translation
+).toDF().collect().foreach(println)
+{% endhighlight %}
 
 You will get a list of summaries of English news about BHO and their respective french translations:
 
@@ -101,49 +152,58 @@ You will get a list of summaries of English news about BHO and their respective 
 
 <!-- Wondering what it does in 4 lines? Here is a simple breakdown: -->
 
-For more information on query syntax and usage, please go to [Query Guide].
+For more information on query syntax and usage, please go to [Query Guide](query.html).
 
 # Web Caching
 
-You may already notice that repeatedly running a query takes much less time than running it for the first time. this is because all web resources are cached: cached resources are loaded directly from a file directory (can be on any Hadoop-supported file system, namely HDD, HDFS, Amazon S3 and Tachyon etc.) if they haven't expired. RDD cache is enabled by default to facilitate repeated data wrangling and dry run. To disable it, simply set **conf.cacheRead** under SpookyContext to false or set **conf.pageExpireAfter** to a very small duration:
+You may already notice that repeatedly running a query takes much less time than running it for the first time. this is because all web resources are cached: cached resources are loaded directly from a file directory (can be on any Hadoop-supported file system, namely HDD, HDFS, Amazon S3 and Tachyon etc.) if they haven't expired. RDD cache is enabled by default to facilitate repeated data wrangling and dry run. To disable it, simply set **spooky.conf.cacheRead** = false or set **spooky.conf.pageExpireAfter** to a very small duration:
 
-    import scala.concurrent.duration._
+{% highlight scala %}
+import scala.concurrent.duration._
 
-    spooky.conf.cacheRead = false
-    spooky.conf.pageExpireAfter = 1.minute
+spooky.conf.cacheRead = false // OR
+spooky.conf.pageExpireAfter = 1.minute
+{% endhighlight %}
 
-However, before you run a query, it is recommended to point the web cache directory to a publicly-accessible, high-available storage URL (e.g. starting with ```hdfs://``` or ```s3n://```). Otherwise SpookyStuff will use *<Java working directory>/temp/cache* on local file system by default, which means if your query is running on a cluster, it will have a chance not able to use already cached resources because they are on other machine(s). This directory can be set in SpookyContext by its **conf.dirs._cache**, which affects execution of all queries generated from it:
+However, before you run a query, it is recommended to point the web cache directory to a publicly-accessible, high-available storage URL (e.g. starting with ```hdfs://``` or ```s3n://```). Otherwise SpookyStuff will use *{Java-working-directory}/temp/cache* on local file system by default, which means if your query is running on a cluster, it will have a chance not able to use an already cached resource because it's on another machine. This directory can be set by **spooky.conf.dirs.cache**, which affects execution of all queries derived from it:
 
-    spooky.conf.dirs._cache = "hdfs://spooky-cache"
+{% highlight scala %}
+spooky.conf.dirs._cache = "hdfs://spooky-cache"
+{% endhighlight %}
 
 Or you can override the default web cache directory globally by setting **spooky.cache** system property in your Java option:
 
 - if your query is launched from a standalone Java application:
 
-    -Dspooky.cache=hdfs://spooky-cache
+{% highlight bash %}
+-Dspooky.cache=hdfs://spooky-cache
+{% endhighlight %}
 
 - OR, if your query is launched by spark-submit.sh
 
-    --conf spark.driver.extraJavaOptions="-Dspooky.cache=hdfs://spooky-cache"
+{% highlight bash %}
+--conf spark.driver.extraJavaOptions="-Dspooky.cache=hdfs://spooky-cache"
+{% endhighlight %}
 
-For more performance optimization options, please go to [Deploying Guide].
+For more performance optimization options, please go to [Configuration Section](deploying.html#configuration).
 
 # Scaling
 
 SpookyStuff is optimized for running on Spark [cluster mode](cluster-overview.html), which accelerates execution by parallelizing over multiple machine's processing power and network bandwidth.
 
-It should be noted that despite being able to scale up to hundreds of nodes, SpookyStuff can only approximate linear speed gain (proportional to parallelism) if there is no other bottleneck, namely, your concurrent access should be smoothly handled by the web services being queried (e.g. brokered by a CDN or load balancer) and your cluster's network topology. Otherwise blindly increasing the size of your cluster will only yield diminishing return. Please refer to [Deploying Guide] for more recommended options on cluster mode.
+It should be noted that despite being able to scale up to hundreds of nodes, SpookyStuff can only approximate linear speed gain (proportional to parallelism) if there is no other bottleneck, namely, your concurrent access should be smoothly handled by the web services being queried (e.g. brokered by a CDN or load balancer) and your cluster's network topology. Otherwise blindly increasing the size of your cluster will only yield diminishing return. Please refer to [Scaling Section](deploying.html#scaling) for more recommended options on cluster mode.
 
 #### Performance
 
 # Profiling
 
-SpookyStuff has a metric system based on Spark's [Accumulator](https://spark.apache.org/docs/latest/programming-guide.html#AccumLink), it can be accessed from **metrics** property under the SpookyContext:
+SpookyStuff has a metric system based on Spark's [Accumulator](https://spark.apache.org/docs/latest/programming-guide.html#AccumLink), which can be accessed with **spooky.metrics**:
 
-    println(rows.spooky.metrics.toJSON)
-    ...
+{% highlight scala %}
+println(rows.spooky.metrics.toJSON)
+{% endhighlight %}
 
-By default each query keep track of its own metric, if you would like to have all metrics of queries from the same SpookyContext to be aggregated, simply set **conf.shareMetrics** under SpookyContext to *true*.
+By default each query keep track of its own metric, if you would like to have all metrics of queries from the same SpookyContext to be aggregated, simply set **spooky.conf.shareMetrics** = true.
 
 # How to contribute
 
@@ -157,4 +217,6 @@ By default each query keep track of its own metric, if you would like to have al
 
 Copyright &copy; 2014 by Peng Cheng @tribbloid, Sandeep Singh @techaddict, Terry Lin @ithinkicancode, Long Yao @l2yao and contributors.
 
-Published under ASF License, see LICENSE.
+Supported by [tribbloids®](http://tribbloid.github.io/)
+
+Published under [ASF License v2.0](http://www.apache.org/licenses/LICENSE-2.0).
