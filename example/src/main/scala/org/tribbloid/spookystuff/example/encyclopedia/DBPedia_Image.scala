@@ -16,15 +16,16 @@ object DBPedia_Image extends QueryCore {
       S"Result URI".text,
       failSafe = 2
     ).wgetExplore(
-      S"""a[rel^=dbpedia-owl][href*=dbpedia],a[rev^=dbpedia-owl][href*=dbpedia]""".distinctBy(_.href).slice(0,8),
+      S"""a[rel^=dbo][href*=dbpedia],a[rev^=dbo][href*=dbpedia]""".distinctBy(_.href).slice(0,30),
       failSafe = 2,
       depthKey = 'depth,
-      maxDepth = 2
-    ).join(S"h1#title a".text, distinct = true)(
+      maxDepth = 2,
+      select = S"h1#title a".text ~ 'name
+    ).fetch(
       Visit("http://images.google.com/")
-        +> TextInput("input[name=\"q\"]",'A)
+        +> TextInput("input[name=\"q\"]",'name)
         +> Submit("input[name=\"btnG\"]")
-    )()
+    )
 
   override def doMain(spooky: SpookyContext) = {
 

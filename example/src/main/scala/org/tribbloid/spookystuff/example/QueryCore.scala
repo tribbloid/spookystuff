@@ -25,6 +25,7 @@ trait QueryCore extends LocalSpookyCore {
         array
       case rdd: RDD[_] =>
         rdd.persist().takeSample(withReplacement = false, num = 100)
+      case _ => Array(result)
     }
 
     array.foreach(row => println(row))

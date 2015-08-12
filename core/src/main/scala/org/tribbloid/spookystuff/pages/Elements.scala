@@ -42,7 +42,7 @@ with SeqLike[T, Elements[T]] {
 
   def hrefs = self.flatMap(_.href)
 
-  def srcs = self.flatMap(_.href)
+  def srcs = self.flatMap(_.src)
 
   def texts: Seq[String] = self.flatMap(_.text)
 

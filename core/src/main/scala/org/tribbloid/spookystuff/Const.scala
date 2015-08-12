@@ -34,8 +34,8 @@ object Const {
 
   val defaultInputKey = "_"
   val keyDelimiter = "'"
-  val onlyPageWildcard = "$"
-  val allPagesWildcard = "$_*"
+  val onlyPageWildcard = "S"
+  val allPagesWildcard = "S_*"
   val defaultJoinKey = "A"
 
   val jsonFormats = DefaultFormats

@@ -19,6 +19,7 @@ import org.tribbloid.spookystuff._
 import scala.collection.immutable.ListSet
 import scala.collection.mutable.ArrayBuffer
 import scala.language.implicitConversions
+import scala.reflect.ClassTag
 import scala.util.Random
 
 /**
@@ -184,6 +185,12 @@ class PageRowRDD private (
   }
 
   def toTSV: RDD[String] = this.toCSV("\t")
+
+  def toStringRDD(expr: Expression[Any]): RDD[String] = this.flatMap(expr.toStr.toSeqFunction)
+
+  def toObjectRDD[T: ClassTag](expr: Expression[T]): RDD[T] = this.flatMap(expr.toSeqFunction)
+
+  def toTypedRDD[T: ClassTag](expr: Expression[Any]): RDD[T] = this.flatMap(expr.typed[T].toSeqFunction)
 
   /**
    * save each page to a designated directory

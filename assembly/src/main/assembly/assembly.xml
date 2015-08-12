@@ -15,7 +15,7 @@
   ~ limitations under the License.
   -->
 <assembly>
-  <id>dist</id>
+  <id>bin-spark${spark.version}</id>
   <formats>
     <format>zip</format>
     <format>dir</format>
