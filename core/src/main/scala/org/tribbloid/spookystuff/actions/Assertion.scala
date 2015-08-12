@@ -10,7 +10,7 @@ abstract class Assertion extends Action {
 
   final override def outputNames = Set()
 
-  final override def trunk = None //can't be ommitted
+  final override def trunk = None //can't be omitted
 
   final override def doExe(session: Session): Seq[Page] = {
 

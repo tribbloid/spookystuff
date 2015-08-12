@@ -122,6 +122,8 @@ trait Action extends ActionLike {
     super.injectFrom(same)
     this.timeElapsed = same.asInstanceOf[Action].timeElapsed
   }
+
+  def needDriver: Boolean = true
 }
 
 trait Timed extends Action {
@@ -192,4 +194,7 @@ trait Named extends Action {
   }
 }
 
-trait Driverless extends Action
+trait Driverless extends Action {
+
+  override def needDriver = false
+}

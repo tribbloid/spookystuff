@@ -21,7 +21,8 @@ object DBPedia_Image extends QueryCore {
       depthKey = 'depth,
       maxDepth = 2,
       select = S"h1#title a".text ~ 'name
-    ).fetch(
+    ).distinctBy('name)
+    .fetch(
       Visit("http://images.google.com/")
         +> TextInput("input[name=\"q\"]",'name)
         +> Submit("input[name=\"btnG\"]")
@@ -32,8 +33,8 @@ object DBPedia_Image extends QueryCore {
     val str = "Rob Ford"
     val cls = "person"
 
-    imgPages(spooky, cls, str)
-      .wgetJoin(S"div#search img".src, maxOrdinal = 1)
+    val imgs = imgPages(spooky, cls, str)
+    imgs.wgetJoin(S"div#search img".src, maxOrdinal = 1)
       .persist()
       .savePages(
         x"file://${System.getProperty("user.home")}/spooky-example/$appName/${str}_$cls/level_${'depth}_${'name.andMap(v =>v.toString.replaceAll("[^\\w]","_"))}"

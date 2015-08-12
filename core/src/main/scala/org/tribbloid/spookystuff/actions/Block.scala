@@ -32,6 +32,8 @@ abstract class Block(override val self: Seq[Action]) extends Actions(self) with 
 
   def cacheEmptyOutput: Boolean = true
 
+  override def needDriver = self.map(_.needDriver).reduce(_ || _)
+
   final override def doExe(session: Session): Seq[PageLike] = {
 
     val pages = this.doExeNoUID(session)
