@@ -22,8 +22,8 @@ class SelectIT extends IntegrationSuite {
       .select(
         S.uri,
         S.timestamp,
-//        $"div.central-featured-lang".head ~ 'element,
-//        $"div.central-featured-lang" ~ 'elements,
+//        S"div.central-featured-lang".head ~ 'element,
+//        S"div.central-featured-lang" ~ 'elements,
         S"div.central-featured-lang em".text ~ 'title,
         S"div.central-featured-lang strong".texts ~ 'langs,
         S"a.link-box em".expand(-2 to 1).texts ~ 'expanded
@@ -35,8 +35,8 @@ class SelectIT extends IntegrationSuite {
 
     assert(
       RDD.schema.fieldNames ===
-        "$_uri" ::
-          "$_timestamp" ::
+        "S_uri" ::
+          "S_timestamp" ::
           "title" ::
           "langs" ::
           "expanded" :: Nil
@@ -73,8 +73,8 @@ class SelectIT extends IntegrationSuite {
 
     assert(
       RDD2.schema.fieldNames ===
-        "$_uri" ::
-          "$_timestamp" ::
+        "S_uri" ::
+          "S_timestamp" ::
           "title" ::
           "langs" ::
           "expanded" :: Nil
