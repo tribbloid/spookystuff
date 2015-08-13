@@ -91,7 +91,7 @@ case class PageRow(
 
   def getPage(keyStr: String): Option[Page] = {
 
-    if (keyStr == Const.onlyPageWildcard) return getOnlyPage
+//    if (keyStr == Const.onlyPageWildcard) return getOnlyPage
 
     val pages = this.pages.filter(_.name == keyStr)
 

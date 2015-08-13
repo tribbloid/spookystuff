@@ -24,7 +24,7 @@ object Google_TFIDF extends QueryCore {
         else None
         realURI
     },failSafe = 2 ).select(
-        '$.boilerPipe.orElse(Some("")) ~ 'text
+        S.boilerPipe.orElse(Some("")) ~ 'text
       ).toDF()
 
     val tokenized = new RegexTokenizer().setInputCol("text").setOutputCol("words").setMinTokenLength(3).setPattern("[^A-Za-z]").transform(raw)
