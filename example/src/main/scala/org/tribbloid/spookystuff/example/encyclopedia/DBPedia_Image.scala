@@ -5,6 +5,8 @@ import org.tribbloid.spookystuff.actions._
 import org.tribbloid.spookystuff.dsl._
 import org.tribbloid.spookystuff.example.QueryCore
 
+import scala.concurrent.duration._
+
 /**
  * Created by peng on 14/06/15.
  */
@@ -15,12 +17,12 @@ object DBPedia_Image extends QueryCore {
   ).wgetJoin(
       S"Result URI".text,
       failSafe = 2
-    ).wgetExplore(
+    ).explore(
       S"""a[rel^=dbo][href*=dbpedia],a[rev^=dbo][href*=dbpedia]""".distinctBy(_.href).slice(0,30),
-      failSafe = 2,
       depthKey = 'depth,
-      maxDepth = 2,
-      select = S"h1#title a".text ~ 'name
+      maxDepth = 2
+    )(Try(Delay(2.seconds) +> Wget('A), 3))(
+      S"h1#title a".text.replaceAll("http://dbpedia.org.resource/","") ~ 'name
     ).distinctBy('name)
     .fetch(
       Visit("http://images.google.com/")
@@ -30,7 +32,7 @@ object DBPedia_Image extends QueryCore {
 
   override def doMain(spooky: SpookyContext) = {
 
-    val str = "Rob Ford"
+    val str = "Barack Obama"
     val cls = "person"
 
     val imgs = imgPages(spooky, cls, str)
