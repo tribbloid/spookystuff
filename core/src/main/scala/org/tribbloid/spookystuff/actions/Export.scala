@@ -359,7 +359,7 @@ case class Wget(
   }
 }
 
-case class OAuthSign(self: Wget) extends Export {
+case class OAuthSign(self: Wget) extends Export with Driverless {
 
   override def filter: ExportFilter = self.filter
 

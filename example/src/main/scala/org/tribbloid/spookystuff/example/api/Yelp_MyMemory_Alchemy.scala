@@ -25,8 +25,9 @@ object Yelp_MyMemory_Alchemy extends QueryCore {
 
   def annotate(src: String, word: String, relevance: Double, sentiment: Double): String = {
 
-    val color = 0x00ff*(sentiment + 1)/2 + 0xff00*(1 - sentiment)/2
-    val colorStr = "#" + String.format("%04X", color.toInt: Integer) +"00"
+    val green = 0xff*(sentiment + 1)/2
+    val red = 0xff*(1 - sentiment)/2
+    val colorStr = "#" + String.format("%02X", red.toInt: Integer) + String.format("%02X", green.toInt: Integer) +"00"
     val sizeStr = (relevance*200).toString + "%"
 
     val regex = word.r
@@ -54,19 +55,19 @@ object Yelp_MyMemory_Alchemy extends QueryCore {
       .fetch(
         OAuthSign(Wget("http://api.yelp.com/v2/search?term='{q}&location='{city}"))
       )
-      .join((S \ "businesses").slice(0, 2))(
+      .join((S \ "businesses").slice(0, 10))(
         Try(OAuthSign(Wget(x"http://api.yelp.com/v2/business/${'A \ "id" text}?lang=${'lang}")))
       )(
         //        ('A \ "id").text ~ 'id,
         ('A \ "name").text ~ 'name
       )
       .select(
-        x"""%html <img src="${S \ "image_url" text}"/>""".orElse("") ~ 'image,
+        x"""%html <img src="${S \ "image_url" text}"/>""" ~ 'image,
         x"""%html <img src="https://maps.googleapis.com/maps/api/staticmap?size=600x300&maptype=roadmap&markers=color:orange%7C${S \ "location" \ "coordinate" \ "latitude" text},${S \ "location" \ "coordinate" \ "longitude" text}"/>""" ~ 'map
       )
       .flatSelect(S.\("reviews").slice(0, 2))(
         ('A \ "rating" text) ~ 'rating,
-        ('A \ "excerpt" text).replaceAll("\n", "") ~ 'excerpt
+        ('A \ "excerpt" text).replaceAll("\n", " ") ~ 'excerpt
       )
       .wget(
         x"http://api.mymemory.translated.net/get?q=${nonEnglish('excerpt)}!&langpair=${'lang}|en&de=$email"
@@ -75,16 +76,17 @@ object Yelp_MyMemory_Alchemy extends QueryCore {
       )
       .wget(
         x"http://access.alchemyapi.com/calls/text/TextGetRankedKeywords?apikey=$alchemyKey&text=${'translated}" +
-          "&keywordExtractMode=normal&sentiment=true&outputMode=json&knowledgeGraph=false"
+          "&keywordExtractMode=strict&sentiment=1&outputMode=json&knowledgeGraph=0"
       ).select(
+        //   S.code ~ 'code
         (S \ "keywords" -> 'translated).andMap{
           tuple =>
             "%html " + tuple._1.foldLeft(tuple._2.toString){
               (str, e) =>
-                annotate(str, (e \ "text").text.get, (e \ "relevance").text.get.toDouble, (e \ "sentiment" \ "score").text.get.toDouble)
+                annotate(str, (e \ "text").text.get, (e \ "relevance").text.getOrElse("0").toDouble, (e \ "sentiment" \ "score").text.getOrElse("0").toDouble)
             }
         } ~ 'annotated
-      ).remove('translated)
+      ).remove('q, 'city, 'lang, 'translated)
       .toDF()
   }
 }
