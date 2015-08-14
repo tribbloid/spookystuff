@@ -24,7 +24,7 @@ object ExportFilters {
 
     override def apply(result: Page, session: Session): Page = {
       if (result.mimeType.contains("html")){
-        assert(result.\("html").\("title").text.get.nonEmpty) //TODO: this should be handled in TraceView
+        assert(result.\("html").\("title").text.getOrElse("").nonEmpty, s"Html Page @ ${result.uri} has no title:\n${result.code}")
       }
       result
     }
