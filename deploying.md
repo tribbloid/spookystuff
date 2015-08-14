@@ -189,7 +189,7 @@ The following options can be set independently and dynamically for each SpookyCo
 
 # Scaling
 
-SpookyStuff is optimized for running on Spark [cluster mode](cluster-overview.html), which accelerates execution by parallelizing over multiple machine's processing power and network bandwidth, in most cases this is highly recommended in production, and the only feasible way for running query & valorization on big dataset. However, it is important to understand the following fact and ensure that your query's execution is in compliance with your web service providers, fail to understand the consequence may results in your API key being banned or being prosecuted.
+SpookyStuff is optimized for running on Spark [cluster mode](cluster-overview.html), which accelerates execution by parallelizing over multiple machine's processing power and network bandwidth, in most cases this is highly recommended in production, and the only feasible way for running query & valorization on big dataset. However, it is important to understand the following fact and ensure that your query's execution is in compliance with your web service providers, fail to understand the consequence may results in your API key being banned or yourself being prosecuted.
 
 - Despite being able to scale up to hundreds of nodes, SpookyStuff can only approximate linear speed gain (speed proportional to parallelism) if there is no other bottleneck, namely, your concurrent access should be smoothly handled by the web services being queried (e.g. brokered by a CDN or load balancer) and your cluster's network topology. Otherwise blindly increasing the size of your cluster will only yield diminishing return.
 
