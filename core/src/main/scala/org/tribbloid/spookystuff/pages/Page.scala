@@ -60,7 +60,7 @@ case class Page(
                  declaredContentType: Option[String],
                  content: Array[Byte],
 
-                 //                 cookie: Seq[SerializableCookie] = Seq(),
+                 //                 cookie: Seq[SerializableCookie] = Nil,
                  override val timestamp: Date = new Date,
                  var saved: ListSet[String] = ListSet(),
                  override val cacheable: Boolean = true

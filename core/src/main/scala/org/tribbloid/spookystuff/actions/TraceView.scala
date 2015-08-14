@@ -85,7 +85,7 @@ class TraceView(
 
   def resolvePlain(spooky: SpookyContext): Seq[PageLike] = {
 
-    if (!this.hasOutput) return Seq()
+    if (!this.hasOutput) return Nil
 
     val pagesFromCache = if (!spooky.conf.cacheRead) Seq(null)
     else dryrun.map(dry => PageUtils.autoRestore(dry, spooky))

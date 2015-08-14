@@ -103,11 +103,14 @@ package object dsl {
       NamedFunction1(_.orElse(valueOption), s"orElse($valueOption)")
     )
 
-    def orElse[B >: T](exprOption: Expression[B]): Expression[B] = new Expression[B] {
+    def orElse[B >: T](expr: Expression[B]): Expression[B] = new Expression[B] {
 
-      override val name: String = s"$self.orElse($exprOption)"
+      override val name: String = s"$self.orElse($expr)"
 
-      override def apply(row: PageRow): Option[B] = self(row).orElse(exprOption(row))
+      override def apply(row: PageRow): Option[B] = {
+        val selfValue = self(row)
+        selfValue.orElse{ expr(row) }
+      }
     }
 
     def get: NamedFunction1[PageRow, T] = self.andThen(

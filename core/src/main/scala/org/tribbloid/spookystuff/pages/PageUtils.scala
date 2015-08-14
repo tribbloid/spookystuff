@@ -126,7 +126,7 @@ object PageUtils {
   }
 
   //restore latest in a directory
-  //returns: Seq() => has backtrace dir but contains no page
+  //returns: Nil => has backtrace dir but contains no page
   //returns null => no backtrace dir
   private def restoreLatest(
                              dirPath: Path,

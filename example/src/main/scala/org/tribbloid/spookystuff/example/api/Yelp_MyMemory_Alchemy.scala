@@ -50,7 +50,7 @@ object Yelp_MyMemory_Alchemy extends QueryCore {
     val email = "pc175@uow.edu.au"
     val alchemyKey = "500796b5ea023b5db04d48ca70b6d4804c83a9d5"
 
-    val result = sc.parallelize(Seq(Map("q" -> "Epicure", "city" -> "Paris", "lang" -> "fr")))
+    sc.parallelize(Seq(Map("q" -> "Epicure", "city" -> "Paris", "lang" -> "fr")))
       .fetch(
         OAuthSign(Wget("http://api.yelp.com/v2/search?term='{q}&location='{city}"))
       )
@@ -61,14 +61,12 @@ object Yelp_MyMemory_Alchemy extends QueryCore {
         ('A \ "name").text ~ 'name
       )
       .select(
-        x"""%html <img src="${S \ "image_url" text}"/>""" ~ 'image,
-        x"""%html <img src="https://maps.googleapis.com/maps/api/staticmap?size=600x300&maptype=roadmap
-          &markers=color:orange%7C${S \ "location" \ "coordinate" \ "latitude" text},${S \ "location" \ "coordinate" \ "longitude" text}"
-        />""" ~ 'map
+        x"""%html <img src="${S \ "image_url" text}"/>""".orElse("") ~ 'image,
+        x"""%html <img src="https://maps.googleapis.com/maps/api/staticmap?size=600x300&maptype=roadmap&markers=color:orange%7C${S \ "location" \ "coordinate" \ "latitude" text},${S \ "location" \ "coordinate" \ "longitude" text}"/>""" ~ 'map
       )
       .flatSelect(S.\("reviews").slice(0, 2))(
         ('A \ "rating" text) ~ 'rating,
-        ('A \ "excerpt" text) ~ 'excerpt
+        ('A \ "excerpt" text).replaceAll("\n", "") ~ 'excerpt
       )
       .wget(
         x"http://api.mymemory.translated.net/get?q=${nonEnglish('excerpt)}!&langpair=${'lang}|en&de=$email"
@@ -86,9 +84,7 @@ object Yelp_MyMemory_Alchemy extends QueryCore {
                 annotate(str, (e \ "text").text.get, (e \ "relevance").text.get.toDouble, (e \ "sentiment" \ "score").text.get.toDouble)
             }
         } ~ 'annotated
-      )
-      .toDF().select('name, 'image, 'map, 'rating, 'excerpt, 'annotated)
-
-    result
+      ).remove('translated)
+      .toDF()
   }
 }

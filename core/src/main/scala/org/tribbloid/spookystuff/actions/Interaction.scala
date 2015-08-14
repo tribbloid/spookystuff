@@ -41,7 +41,7 @@ abstract class Interaction(
       driverWait(session).until(DocumentReadyCondition)
     }
 
-    Seq()
+    Nil
   }
 
   def exeWithoutPage(session: Session): Unit

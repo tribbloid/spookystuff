@@ -131,8 +131,10 @@ class InterpolateExpr(parts: Seq[String], fs: Seq[(PageRow => Option[Any])])
     val iParts = parts.map(v1.replaceInto(_))
     val iFs = fs.map(_.apply(v1))
 
-    if (iParts.contains(None) || iFs.contains(None)) None
+    val result = if (iParts.contains(None) || iFs.contains(None)) None
     else Some(iParts.zip(iFs).map(tpl => tpl._1.get + tpl._2.get).mkString + iParts.last.get)
+
+    result
   }
 }
 

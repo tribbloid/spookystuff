@@ -11,10 +11,3 @@ class TestPageFromFile extends TestPageFromHttp {
   override def pdfUrl = this.getClass.getClassLoader.getResource("site/Test.pdf").getPath
 }
 
-class TestPageFromAbsoluteFile extends TestPageFromFile {
-
-  override def htmlUrl = "file://" + super.htmlUrl
-  override def jsonUrl = "file://" + super.jsonUrl
-  override def pngUrl = "file://" + super.pngUrl
-  override def pdfUrl = "file://" + super.pdfUrl
-}

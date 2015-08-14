@@ -266,3 +266,5 @@ automatically download PhantomJS from Internet.
 remember derivative relationship of SpookyContext.metrics to aggregate metrics by their children. Eliminate need to set SpookyConf.shareMetrics
 
 if considering redirection, different trace may leads to identical URI, explore may need to consider this to remove duplicates
+
+allow clauses to take normal function as expression

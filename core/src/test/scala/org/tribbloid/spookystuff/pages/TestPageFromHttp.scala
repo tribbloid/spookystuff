@@ -48,8 +48,11 @@ class TestPageFromHttp extends SpookyEnvSuite {
 
     assert(page.mimeType == "application/json")
     assert(page.charset.map(_.toLowerCase).get == "utf-8")
-    assert(page.\("html_url").texts.head == "https://github.com/tribbloid")
-    assert(page.\\("html_url").texts.head == "https://github.com/tribbloid")
+    assert(page.\("html_url").texts == "https://github.com/tribbloid" :: Nil)
+    assert(page.\\("html_url").texts == "https://github.com/tribbloid" :: Nil)
+
+    assert(page.\("notexist").isEmpty)
+    assert(page.\\("notexist").isEmpty)
 
     page.autoSave(spooky,overwrite = true)
 

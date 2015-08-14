@@ -287,8 +287,8 @@ case class PageRow(
                      maxOrdinal: Int
                      )(
                      _traces: Set[Trace], //input of the explore to generate more pages from seeds
-                     existingTraces: Set[Trace] = Set(Seq()),
-                     existingDryruns: Set[DryRun] = Set(Seq())
+                     existingTraces: Set[Trace] = Set(Nil),
+                     existingDryruns: Set[DryRun] = Set(Nil)
                      ): Iterable[(Trace, PageRow)] = {
 
     this.selectTemp(joinExpr).toIterable
@@ -453,8 +453,8 @@ object PageRow {
 //intermediate variable representing a stage in web crawling.
 case class ExploreStage(
                          trace_RowItr: Array[(Trace, PageRow)], //pages that hasn't be been crawled before
-                         existingTraces: Set[Trace] = Set(Seq()), //already resolved traces, Seq() is included as resolving it is pointless
-                         existingDryruns: Set[DryRun] = Set(Seq()) //already resolved dryruns, Seq() is included as resolving it is pointless
+                         existingTraces: Set[Trace] = Set(Nil), //already resolved traces, Nil is included as resolving it is pointless
+                         existingDryruns: Set[DryRun] = Set(Nil) //already resolved dryruns, Nil is included as resolving it is pointless
                          ) {
 
   def hasMore = trace_RowItr.nonEmpty

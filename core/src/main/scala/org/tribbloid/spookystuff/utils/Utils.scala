@@ -152,6 +152,6 @@ These special characters are often called "metacharacters".
     case v: TraversableOnce[_] => v.toIterable
     case v: Array[_] => v
     case v: Any => Iterable(v)
-    case _ => Seq()
+    case _ => Nil
   }
 }

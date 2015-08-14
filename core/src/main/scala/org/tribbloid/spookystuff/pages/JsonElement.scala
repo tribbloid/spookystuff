@@ -57,7 +57,7 @@ class JsonElement private (
     selected match {
       case obj: JObject =>
 
-        if (obj.obj.map(_._1).distinct.size == 1) { //if the JObject contains many fields with identical names they are combined from many different places
+        if (obj.obj.map(_._1).distinct.size <= 1) { //if the JObject contains many fields with identical names they are combined from many different places
         val jsonElements = obj.obj.map {
             field =>
               new JsonElement(field, this.uri)
@@ -76,6 +76,8 @@ class JsonElement private (
             new JsonElement(defaultFieldName -> field, this.uri)
         }
         new Siblings(res)
+      case JNothing => new Elements(Nil)
+      case JNull => new Elements(Nil)
       case _ =>
         new Elements(
           List(new JsonElement(defaultFieldName -> selected, this.uri))

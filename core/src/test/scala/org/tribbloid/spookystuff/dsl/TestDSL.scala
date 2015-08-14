@@ -80,4 +80,10 @@ class TestDSL extends SpookyEnvSuite {
     assert('page.uri.apply(row).get contains "://www.wikipedia.org/")
     assert('def.uri.apply(row).get contains "://www.wikipedia.org/")
   }
+
+  test("string interpolation") {
+    val expr = x"static ${'notexist}"
+    assert(expr.apply(row).isEmpty)
+    assert(expr.orElse(" ").apply(row).get == " ")
+  }
 }

@@ -20,7 +20,7 @@ object Default extends LowerPriorityImplicits {
   implicit object DefaultBoolean extends Default[Boolean](false)
   implicit object DefaultUnit extends Default[Unit](())
 
-  implicit def defaultSeq[A]: Default[immutable.Seq[A]] = new Default[immutable.Seq[A]](immutable.Seq())
+  implicit def defaultSeq[A]: Default[immutable.Seq[A]] = new Default[immutable.Seq[A]](Nil)
   implicit def defaultSet[A]: Default[Set[A]] = new Default[Set[A]](Set())
   implicit def defaultMap[A, B]: Default[Map[A, B]] = new Default[Map[A, B]](Map[A, B]())
   implicit def defaultOption[A]: Default[Option[A]] = new Default[Option[A]](None)

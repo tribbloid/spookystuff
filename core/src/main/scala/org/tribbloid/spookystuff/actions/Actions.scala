@@ -29,7 +29,7 @@ object Actions {
   def doInterppolateSeq(self: Seq[Action], pr: PageRow): Seq[Action] = {
     val seq = self.map(_.doInterpolate(pr))
 
-    if (seq.contains(None)) Seq()
+    if (seq.contains(None)) Nil
     else seq.flatMap(option => option)
   }
 }

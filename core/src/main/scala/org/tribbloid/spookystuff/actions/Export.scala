@@ -141,7 +141,7 @@ case class Wget(
   override def doExeNoName(session: Session): Seq[PageLike] = {
 
     uriOption match {
-      case None => Seq()
+      case None => Nil
       case Some(uriURI) =>
         Option(uriURI.getScheme).getOrElse("file") match {
           case "http" | "https" =>

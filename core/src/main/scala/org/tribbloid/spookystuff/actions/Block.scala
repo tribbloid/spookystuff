@@ -198,8 +198,8 @@ object Paginate {
 
 final case class If(
                      condition: Page => Boolean,
-                     ifTrue: Seq[Action] = Seq(),
-                     ifFalse: Seq[Action] = Seq()
+                     ifTrue: Seq[Action] = Nil,
+                     ifFalse: Seq[Action] = Nil
                      ) extends Block(ifTrue ++ ifFalse) {
 
   override def trunk = Some(this.copy(ifTrue = ifTrue.flatMap(_.trunk), ifFalse = ifFalse.flatMap(_.trunk)).asInstanceOf[this.type])

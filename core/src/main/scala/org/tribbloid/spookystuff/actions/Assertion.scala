@@ -16,7 +16,7 @@ abstract class Assertion extends Action {
 
     exeWithoutPage(session: Session)
 
-    Seq()
+    Nil
   }
 
   def exeWithoutPage(session: Session): Unit
