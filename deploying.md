@@ -132,11 +132,11 @@ The following options can be set independently and dynamically for each SpookyCo
 | --------------- | ------- |
 | Narrow | Try to minimize shuffling and number of stages by avoiding "wide" transformations (grouping, cogrouping): this means duplicated resources in different partitions are fetched as-is and efficient execution relies mostly on web caching, only recommended if you know that chance of duplicates across multiple threads are low, or shuffling costs are high due to heavy iterations (e.g. exploring pagination though links) |
 | Wide | Aggressively merge duplicate actions before each execution and cast fetched results into multiple rows afterwards: this is often the most efficient tradeoff in terms of total cost, with the only notable caveat being exploring deeply through hyperlinks: merging actions across multiple partitions takes at least one wide transformations which may become expensive in iterative graph exploring. The tradeoff between Wide and Narrow Optimizers becomes tricky if both duplication and heavy iterations co-exist, we will gradually improve our query optimizer to be more adaptive.
-| Wide_RDDWebCache | Include all optimization measures in Wide optimizer, plus an indexed RDD is assigned to each query as an in-memory web cache. reading/writing this cache is faster than the web cache on file system but also eats a lot of memory (similar to an L1-cache as opposed to FS-based L2-cache). RDD web caches are NOT shared between queries and are usually scraped after the query finished execution |
+| Wide_RDDWebCache | Include all optimization measures in Wide optimizer, plus an indexed RDD is assigned to each query as an in-memory web cache. reading/writing this cache is faster than the file system-based web cache but also eats a lot of memory (similar to an L1-cache as opposed to FS-based L2-cache). RDD web caches are NOT shared between queries and are usually scraped after the query finished execution |
 
 </div>
 
-* RDDWebCache is an experimental feature that should be used tentatively, RDDs are designed to be immutable and using this optimizer to fetch big dataset may easily results in memory overflow. In addition, some Hadoop-compatible file systems, e.g. [Tachyon](http://tachyon-project.org/index.html) and [Apache Ignite](https://ignite.incubator.apache.org/), may already achieved in-memory speed which renders RDDWebCache non-competitive.
+* Wide_RDDWebCache is an experimental feature that should be used tentatively, RDDs are designed to be immutable so using this optimizer to collect big dataset may easily results in memory overflow. In addition, some in-memory file systems, e.g. [Tachyon](http://tachyon-project.org/index.html) and [Apache Ignite](https://ignite.incubator.apache.org/), may already achieved comparable speed which renders RDD web cache non-competitive.
 
 #### Failover
 
@@ -150,7 +150,7 @@ The following options can be set independently and dynamically for each SpookyCo
 | errorDump | N/A | N/A | true | Whether to perform a session buffer dump on web client exception |
 | errorScreenshot | N/A | N/A | true | Whether to take a screenshot of a browser viewport on its exception, effective only for browsers supporting screenshot, in this version phantomJS is the only option supporting this feature |
 | dirs.errorDump | spooky.dirs.errordump | N/A | {dirs.root}/cache | URI of the directory for error dump |
-| dirs.errorScreenshot | spooky.dirs.errorscreenshot | N/A | {dirs.root}/cache  URI of the directory for error screenshot |
+| dirs.errorScreenshot | spooky.dirs.errorscreenshot | N/A | {dirs.root}/cache | URI of the directory for error screenshot |
 | dirs.errorDumpLocal | spooky.dirs.errordump.local | N/A | {dirs.root}/cache | if **dirs.errorDump** is not accessible, use this directory as a backup |
 | dirs.errorScreenshotLocal | spooky.dirs.errorscreenshot.local | N/A | {dirs.root}/cache | if **dirs.errorScreenshot** is not accessible, use this directory as a backup |
 
