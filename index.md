@@ -8,7 +8,7 @@ title: Overview
 
 **SpookyStuff** is a scalable and lightweight query engine for web scraping/data mashup/acceptance QA. The goal is to allow remote resources to be linked and queried like a relational database. Its currently implementation is influenced by Spark [SQL](http://spark.apache.org/sql/) and [Machine Learning Pipeline](https://databricks.com/blog/2015/01/07/ml-pipelines-a-new-high-level-api-for-mllib.html).
 
-SpookyStuff is the fastest big data collection engine in history, with a speed record of querying 330404 dynamic pages per hour on 300 cores.
+SpookyStuff is the fastest big data collection engine in history, with a speed record of searching 330404 terms in an hour with 300 browsers.
 
 # Powered by
 
