@@ -191,7 +191,7 @@ For more performance optimization options, please go to [Configuration Section](
 
 SpookyStuff is optimized for running on Spark [cluster mode](cluster-overview.html), which accelerates execution by parallelizing over multiple machine's processing power and network bandwidth.
 
-It should be noted that despite being able to scale up to hundreds of nodes, SpookyStuff can only approximate linear speed gain (proportional to parallelism) if there is no other bottleneck, namely, your concurrent access should be smoothly handled by the web services being queried (e.g. brokered by a CDN or load balancer) and your cluster's network topology. Otherwise blindly increasing the size of your cluster will only yield diminishing return. Please refer to [Scaling Section](deploying.html#scaling) for more recommended options on cluster mode.
+It should be noted that despite being able to scale up to hundreds of nodes, SpookyStuff can only approximate linear speed gain (speed proportional to parallelism) if there is no other bottleneck, namely, your concurrent access should be smoothly handled by the web services being queried (e.g. brokered by a CDN or load balancer) and your cluster's network topology. Otherwise blindly increasing the size of your cluster will only yield diminishing return. Please refer to [Scaling Section](deploying.html#scaling) for more recommended options on cluster mode.
 
 #### Performance
 

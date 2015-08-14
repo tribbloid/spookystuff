@@ -189,19 +189,19 @@ The following options can be set independently and dynamically for each SpookyCo
 
 # Scaling
 
-SpookyStuff is optimized for running on Spark [cluster mode](cluster-overview.html), which accelerates execution by parallelizing over multiple machine's processing power and network bandwidth, in most cases this is highly recommended in production, and the only feasible way for querying/enriching big dataset. However, it is important to understand the following fact and ensure that your query execution's compliance with your web service providers, fail to understand the consequence may results in your API key being banned or being prosecuted.
+SpookyStuff is optimized for running on Spark [cluster mode](cluster-overview.html), which accelerates execution by parallelizing over multiple machine's processing power and network bandwidth, in most cases this is highly recommended in production, and the only feasible way for running query & valorization on big dataset. However, it is important to understand the following fact and ensure that your query's execution is in compliance with your web service providers, fail to understand the consequence may results in your API key being banned or being prosecuted.
 
-- Despite being able to scale up to hundreds of nodes, SpookyStuff can only approximate linear speed gain (proportional to parallelism) if there is no other bottleneck, namely, your concurrent access should be smoothly handled by the web services being queried (e.g. brokered by a CDN or load balancer) and your cluster's network topology. Otherwise blindly increasing the size of your cluster will generally yield diminishing return.
+- Despite being able to scale up to hundreds of nodes, SpookyStuff can only approximate linear speed gain (speed proportional to parallelism) if there is no other bottleneck, namely, your concurrent access should be smoothly handled by the web services being queried (e.g. brokered by a CDN or load balancer) and your cluster's network topology. Otherwise blindly increasing the size of your cluster will only yield diminishing return.
 
-- Your API credential will be shared by multiple IP addresses of your cluster for all API calls, this may cause max out web server's connection pool and cause heavy load on their infrastructures,make sure that this is not frown upon by your API provider!
+- Your API credential will be shared by multiple IP addresses of your cluster for all API calls, this may max out web server's connection pool and cause heavy load on its infrastructure, make sure that this is not frown upon by your API provider!
 
-- Web cache and checkpointing directory has to be on a persistent file system, other direcotries under **dirs** setting are recommended to be there as well.
+- Web cache and checkpointing directory must be on a distributed file system (HDFS, S3 etc.), as well as other options under **SpookyConf.dirs**, otherwise neither SpookyStuff nor yourself can access them reliably.
 
 In addition: We also recommend using the following [Spark properties](http://spark.apache.org/docs/latest/configuration.html#spark-properties) for better performance:
 
-- **spark.task.maxFailures=100** (or any sufficiently high number): external web services are less stable than in-house web services, so make sure SpookyStuff can retry many times from multiple machines to overcome service downtime and connection error. It should be noted that retry is partition-wise, so make sure your web cache is enabled to avoid unnecessary fetch.
+- **spark.task.maxFailures=100** (or any sufficiently high number): external web services are less stable than in-house web services, so make sure SpookyStuff can retry many times from multiple machines to overcome service downtime and connection error. It should be noted that retry is partition-wise, so make sure your web cache is enabled to avoid repeated remote access.
 
-- **spark.serializer=org.apache.spark.serializer.KryoSerializer**: Shuffling and broadcasting over mutiple machines are much more expensive so its time to enable the more efficient [Kryo serializer].
+- **spark.serializer=org.apache.spark.serializer.KryoSerializer**: Shuffling and broadcasting over mutiple machines are much more expensive so try to enable the more efficient [Kryo serializer](https://github.com/EsotericSoftware/kryo) if you haven't done so.
 
 - **spark.kryoserializer.buffer.max=512m** (or a size enough to handle your largest partition): The default value of 64m may be unable to handle large files, increase it if you ran into KryoException.
 
@@ -209,7 +209,7 @@ In addition: We also recommend using the following [Spark properties](http://spa
 
 # More Information
 
-Like other Spark applications, SpookyStuff can benefits from many other option Spark offers, please refer to please refer to [Spark configuration](https://spark.apache.org/docs/latest/configuration.html) and [Spark Tuning Guide](http://spark.apache.org/docs/latest/tuning.html) for more options.
+Like other Spark applications, SpookyStuff can benefit from many other option Spark offered, please refer to [Spark configuration](https://spark.apache.org/docs/latest/configuration.html) and [Spark Tuning Guide](http://spark.apache.org/docs/latest/tuning.html) for more information.
 
 #### 1-Line installation with [Ansible](http://www.ansible.com/home)
 

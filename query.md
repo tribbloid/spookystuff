@@ -71,7 +71,7 @@ frame2.toCSV()          // convert to CSV
 frame2.toTSV()          // convert to TSV
 {% endhighlight %}
 
-PageRowRDD is also the output of another clause so you can chain multiple clauses easily to form a long data valorization pipeline. In addition, it inherits SpookyContext from its source or predecessor, so settings in SpookyConf are persisted for all queries derived from them (unless you change them halfway, this is common if a query uses mutliple web services, each with its own Authentication credential or proxy requirement).
+PageRowRDD is also the output of another clause so you can chain multiple clauses easily to form a long data valorization pipeline. In addition, it inherits SpookyContext from its source or predecessor, so settings in SpookyConf are persisted for all queries derived from it (unless you change them halfway, this is common if a query uses mutliple web services, each with its own Authentication credential or proxy requirement).
 
 - SpookyContext: equivalent to applying to an empty PageRowRDD with one row.
 
