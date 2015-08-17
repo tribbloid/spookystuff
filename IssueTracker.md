@@ -261,10 +261,14 @@ OAuthIntegration in wget .......................................................
 
 full SparkSQL integration: since its graduated from alpha it is safe to use Row and DataFrame to allow more seamless integration.
 
-automatically download PhantomJS from Internet.
+automatically download PhantomJS from Internet....................................................................done
 
 remember derivative relationship of SpookyContext.metrics to aggregate metrics by their children. Eliminate need to set SpookyConf.shareMetrics
 
 if considering redirection, different trace may leads to identical URI, explore may need to consider this to remove duplicates
 
 allow clauses to take normal function as expression
+
+possible uncovered use case?
+root \ "*" \ "selector"
+in which root \ "*" results in Elements.

@@ -12,11 +12,14 @@ before_deploy:
   - echo "deploying $RELEASE_PKG_FILE to GitHub releases"
 
 deploy:
-  provider: releases
+  provider: s3
   file_glob: true
   file: "${RELEASE_PKG_FILES}"
   skip_cleanup: true
-  on:
-    branch:
-      - master
-      - branch-*
+  access_key_id: "${AWSAccessKeyId}"
+  secret_access_key: "${AWSSecretKey}"
+  bucket: "s3://spooky-bin"
+    on:
+      branch:
+        - master
+        - branch-*
