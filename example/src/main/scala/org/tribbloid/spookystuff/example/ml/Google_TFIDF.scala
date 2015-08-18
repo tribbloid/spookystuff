@@ -1,6 +1,5 @@
 package org.tribbloid.spookystuff.example.ml
 
-import org.apache.spark.ml.feature.RegexTokenizer
 import org.apache.spark.mllib.feature.{HashingTF, IDF}
 import org.tribbloid.spookystuff.SpookyContext
 import org.tribbloid.spookystuff.dsl._
@@ -27,10 +26,12 @@ object Google_TFIDF extends QueryCore {
         S.boilerPipe.orElse(Some("")) ~ 'text
       ).toDF()
 
-    val tokenized = new RegexTokenizer().setInputCol("text").setOutputCol("words").setMinTokenLength(3).setPattern("[^A-Za-z]").transform(raw)
-      .select('_, 'words).map(row => row.getAs[String]("_") -> row.getAs[Seq[String]]("words")).reduceByKey(_ ++ _)
+    val tokenized =
+    //      new RegexTokenizer().setInputCol("text").setOutputCol("words").setMinTokenLength(3).setPattern("[^A-Za-z]").transform(raw)
+      raw
+        .select('_, 'words).map(row => row.getAs[String](0) -> row.getAs[Seq[String]](1)).reduceByKey(_ ++ _)
     val stemmed = tokenized.mapValues(_.map(v => v.toLowerCase))
-//    val stemmed = tokenized.mapValues(_.map(v => PorterStemmer.apply(v.toLowerCase)))
+    //    val stemmed = tokenized.mapValues(_.map(v => PorterStemmer.apply(v.toLowerCase)))
 
     val hashingTF = new HashingTF()
     val tf = hashingTF.transform(stemmed.values).persist()

@@ -1,7 +1,5 @@
 package org.tribbloid.spookystuff.example.ml
 
-import cc.factorie.app.strings.PorterStemmer
-import org.apache.spark.ml.feature.RegexTokenizer
 import org.apache.spark.mllib.clustering.LDA
 import org.apache.spark.mllib.feature.{HashingTF, IDF}
 import org.tribbloid.spookystuff.SpookyContext
@@ -36,8 +34,10 @@ object Google_LDA extends QueryCore {
         S.boilerPipe.orElse(Some("")) ~ 'text
       ).toDF()
 
-    val tokenized = new RegexTokenizer().setInputCol("text").setOutputCol("words").setMinTokenLength(4).setPattern("[^A-Za-z]").transform(raw)
-      .select('words).map(row => row.getAs[Seq[String]]("words"))
+    val tokenized =
+    //      new RegexTokenizer().setInputCol("text").setOutputCol("words").setMinTokenLength(4).setPattern("[^A-Za-z]").transform(raw)
+      raw
+        .select('words).map(row => row.getAs[Seq[String]](0))
     val stemmed = tokenized.map(_.map(v => v.toLowerCase)).persist()
 
     val hashingTF = new HashingTF(1 << 22)
