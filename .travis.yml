@@ -9,8 +9,8 @@ before_install:
 
 install:
   - mvn clean
-  - mvn install -Pall-inclusive-examples -Pdist -Pspark-1.3
-  - mvn install -Pall-inclusive-examples -Pdist -Pspark-1.4
+  - mvn install -q -Pall-inclusive-examples -Pdist -Pspark-1.3
+  - mvn install -q -Pall-inclusive-examples -Pdist -Pspark-1.4
 
 before_deploy:
   - export RELEASE_PKG_FILES=$(ls ./assembly/target/spookystuff-assembly-*)
