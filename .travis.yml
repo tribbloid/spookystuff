@@ -18,7 +18,7 @@ deploy:
   local-dir: assembly/target
   access_key_id: "${AWSAccessKeyId}"
   secret_access_key: "${AWSSecretKey}"
-  bucket: "s3://spooky-bin/"
+  bucket: "spooky-bin"
   skip_cleanup: true
 #  acl: public_read
   on:
