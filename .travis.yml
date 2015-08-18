@@ -7,6 +7,10 @@ jdk:
 before_install:
   - "sudo apt-get install -y tor"
 
+install:
+  - mvn clean
+  - mvn install -Pall-inclusive-examples -Pdist -Pspark-1.4
+
 before_deploy:
   - export RELEASE_PKG_FILES=$(ls ./assembly/target/spookystuff-assembly-*)
   - echo "deploying ${RELEASE_PKG_FILES} to GitHub releases"
