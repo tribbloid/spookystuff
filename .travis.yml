@@ -15,11 +15,12 @@ deploy:
   provider: s3
   file_glob: true
   file: "${RELEASE_PKG_FILES}"
-  skip_cleanup: true
   access_key_id: "${AWSAccessKeyId}"
   secret_access_key: "${AWSSecretKey}"
-  bucket: "s3://spooky-bin"
-    on:
-      branch:
-        - master
-        - branch-*
+  bucket: "s3://spooky-bin/"
+  skip_cleanup: true
+  acl: public_read
+  on:
+    branch:
+      - master
+      - branch-*
