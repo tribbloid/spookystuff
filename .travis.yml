@@ -26,7 +26,7 @@ deploy:
 #  file_glob: true
 #  file: "${RELEASE_PKG_FILES}"
   local-dir: assembly/target/scala-2.10
-  upload-dir: scala-2.10
+  upload-dir: spookystuff/spark-${SPARK_BIN_VERSION}-scala-2.10
   access_key_id: "${AWSAccessKeyId}"
   secret_access_key: "${AWSSecretKey}"
   bucket: "spooky-bin"
