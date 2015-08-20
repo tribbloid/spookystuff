@@ -19,7 +19,7 @@ abstract class SpookyEnvSuite extends FunSuite with BeforeAndAfter with BeforeAn
 
   override def withFixture(test: NoArgTest) = {
     if (isRetryable(test))
-      Utils.retry(2) { super.withFixture(test) }
+      Utils.retry(4) { super.withFixture(test) }
     else
       super.withFixture(test)
   }
