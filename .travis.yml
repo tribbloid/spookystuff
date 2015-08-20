@@ -11,9 +11,8 @@ env:
 before_install:
   - "sudo apt-get install -y tor"
 
-install:
-  - mvn clean
-  - mvn install -q -Pall-inclusive-examples -Pdist -Pspark-${SPARK_BIN_VERSION}
+script:
+  - mvn test -B -q -Pall-inclusive-examples -Pdist -Pspark-${SPARK_BIN_VERSION}
 
 before_deploy:
   - export RELEASE_PKG_FILES=$(ls ./assembly/target/spookystuff-assembly-*)
