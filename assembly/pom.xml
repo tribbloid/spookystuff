@@ -88,6 +88,7 @@
                                     <goal>single</goal>
                                 </goals>
                                 <configuration>
+                                    <outputDirectory>${project.build.directory}/${assembly.jar.dir}</outputDirectory>
                                     <descriptors>
                                         <descriptor>src/main/assembly/assembly.xml</descriptor>
                                     </descriptors>

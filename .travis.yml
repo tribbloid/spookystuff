@@ -11,21 +11,24 @@ env:
 before_install:
   - "sudo apt-get install -y tor"
 
+install:
+  - mvn install -q -DskipTests=true -B -q -Pall-inclusive-examples -Pdist -Pspark-${SPARK_BIN_VERSION}
+
 script:
-  - mvn test -B -q -Pall-inclusive-examples -Pdist -Pspark-${SPARK_BIN_VERSION}
+  - mvn test -B -Pspark-${SPARK_BIN_VERSION}
 
 before_deploy:
   - export RELEASE_PKG_FILES=$(ls ./assembly/target/spookystuff-assembly-*)
-  - echo "deploying ${RELEASE_PKG_FILES} to GitHub releases"
+  - echo "deploying ${RELEASE_PKG_FILES} to S3 releases"
 
 deploy:
   provider: s3
 #  file_glob: true
 #  file: "${RELEASE_PKG_FILES}"
-  local-dir: assembly/target
+  local-dir: assembly/target/scala-2.10
   access_key_id: "${AWSAccessKeyId}"
   secret_access_key: "${AWSSecretKey}"
-  bucket: "spooky-bin"
+  bucket: "spooky-bin/scala-2.10"
   skip_cleanup: true
 #  acl: public_read
   on:
