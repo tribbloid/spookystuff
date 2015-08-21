@@ -31,7 +31,7 @@ deploy:
   secret_access_key: "${AWSSecretKey}"
   bucket: "spooky-bin"
   skip_cleanup: true
-#  acl: public_read
+  acl: public_read
   on:
     branch:
       - master

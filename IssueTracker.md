@@ -272,3 +272,11 @@ allow clauses to take normal function as expression
 possible uncovered use case?
 root \ "*" \ "selector"
 in which root \ "*" results in Elements.
+
+allow Snapshot & Wget to override contentType
+
+make declaredContentType only an evidence instead of final type, as it's prone to fail on undisciplined site
+
+add unstructured function to get formatted (indented) code
+
+revise property/sysenv setting of spookyConf +++
