@@ -5,17 +5,17 @@ jdk:
   - oraclejdk8
 
 env:
-  - SPARK_BIN_VERSION=1.3
-  - SPARK_BIN_VERSION=1.4
+  - SPARK_VERSION=1.3.1
+  - SPARK_VERSION=1.4.1
 
 before_install:
   - "sudo apt-get install -y tor"
 
 install:
-  - mvn install -q -DskipTests=true -B -q -Pall-inclusive-examples -Pdist -Pspark-${SPARK_BIN_VERSION}
+  - mvn install -q -DskipTests=true -B -q -Pall-inclusive-examples -Pdist -Pspark-${SPARK_VERSION}
 
 script:
-  - mvn test -B -Pspark-${SPARK_BIN_VERSION}
+  - mvn test -B -Pspark-${SPARK_VERSION}
 
 before_deploy:
   - export RELEASE_PKG_FILES=$(ls ./assembly/target/spookystuff-assembly-*)
@@ -26,7 +26,7 @@ deploy:
 #  file_glob: true
 #  file: "${RELEASE_PKG_FILES}"
   local-dir: assembly/target/scala-2.10
-  upload-dir: spookystuff/spark-${SPARK_BIN_VERSION}-scala-2.10
+  upload-dir: spookystuff/spark-${SPARK_VERSION}-scala-2.10
   access_key_id: "${AWSAccessKeyId}"
   secret_access_key: "${AWSSecretKey}"
   bucket: "spooky-bin"
