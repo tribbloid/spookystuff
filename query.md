@@ -406,11 +406,11 @@ The following actions are resolved against a browser launched at the beginning o
 In previous examples, you may already see some short expressions being used as clause or action parameters, like the [string interpolation](#fetch-example) in URI templating, or the ["Big S"](#select-example) / ["Big A"](#flatselect-example) notations in many select clauses for unstructured information refinement. These are parts of a much more powerful (and equally short) expression system. It allows complex data reference to be defined in a few words and operators (words! not lines), while other frameworks may take scores of line. E.g. the following query uses an URI expression (in the second Wget), which pipes all titles on Google News RSS feed into a single MyMemory translation API call:
 
 {% highlight scala %}
-spooky.fetch(Wget("https://news.google.com/?output=rss")
-).fetch(Wget(
+spooky.wget("https://news.google.com/?output=rss"
+).wget(
     //how short do you want it? considering its complexity
-    x"http://api.mymemory.translated.net/get?q=${S"item title".texts.mkString(". ")}&langpair=en|fr"
-)).toStringRDD(S.text).collect().foreach(println)
+    x"http://api.mymemory.translated.net/get?q=${S"item title".texts.slice(0,5).mkString(". ")}&langpair=en|fr"
+).toStringRDD(S"translatedText".text).collect().foreach(println)
 {% endhighlight %}
 
 Internally, each expression is a function from a single row in PageRowRDD to a nullable data container. Please refer to [Writing Extension Section](dev.html#writing-extensions) if you want to use customized expressions.

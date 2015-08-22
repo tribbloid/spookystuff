@@ -32,9 +32,9 @@ You have 3 options: download it, build it or let a dependency manager (Apache Ma
 
 |  | Stable ({{site.STABLE_VERSION}}) | Nightly ({{site.NIGHTLY_VERSION}}) |
 | ------------- | ------------------------ | -------------- |
-| Library | [Download .jar](https://s3-us-west-1.amazonaws.com/spooky-bin/spookystuff-assembly-{{site.STABLE_VERSION}}.jar) | [Download .jar](https://s3-us-west-1.amazonaws.com/spooky-bin/spookystuff-assembly-{{site.NIGHTLY_VERSION}}.jar) |
-| Bundled with Spark {{site.SPARK_VERSION0}} | [Download .zip](https://s3-us-west-1.amazonaws.com/spooky-bin/spookystuff-assembly-{{site.STABLE_VERSION}}-bin-spark{{site.SPARK_VERSION0}}.zip) | [Download .zip](https://s3-us-west-1.amazonaws.com/spooky-bin/spookystuff-assembly-{{site.NIGHTLY_VERSION}}-bin-spark{{site.SPARK_VERSION0}}.zip) |
-| Bundled with Spark {{site.SPARK_VERSION1}} | [Download .zip](https://s3-us-west-1.amazonaws.com/spooky-bin/spookystuff-assembly-{{site.STABLE_VERSION}}-bin-spark{{site.SPARK_VERSION1}}.zip) | [Download .zip](https://s3-us-west-1.amazonaws.com/spooky-bin/spookystuff-assembly-{{site.NIGHTLY_VERSION}}-bin-spark{{site.SPARK_VERSION1}}.zip) |
+| Library | [Download .jar](https://s3-us-west-1.amazonaws.com/spooky-bin/spookystuff/spark-{{site.SPARK_VERSION0}}-scala-2.10/spookystuff-assembly-{{site.STABLE_VERSION}}.jar) | [Download .jar](https://s3-us-west-1.amazonaws.com/spooky-bin/spookystuff/spark-{{site.SPARK_VERSION0}}-scala-2.10/spookystuff-assembly-{{site.NIGHTLY_VERSION}}.jar) |
+| Bundled with Spark {{site.SPARK_VERSION0}} | [Download .zip](https://s3-us-west-1.amazonaws.com/spooky-bin/spookystuff/spark-{{site.SPARK_VERSION0}}-scala-2.10/spookystuff-assembly-{{site.STABLE_VERSION}}-bin-spark{{site.SPARK_VERSION0}}.zip) | [Download .zip](https://s3-us-west-1.amazonaws.com/spooky-bin/spookystuff/spark-{{site.SPARK_VERSION0}}-scala-2.10/spookystuff-assembly-{{site.NIGHTLY_VERSION}}-bin-spark{{site.SPARK_VERSION0}}.zip) |
+| Bundled with Spark {{site.SPARK_VERSION1}} | [Download .zip](https://s3-us-west-1.amazonaws.com/spooky-bin/spookystuff/spark-{{site.SPARK_VERSION1}}-scala-2.10/spookystuff-assembly-{{site.STABLE_VERSION}}-bin-spark{{site.SPARK_VERSION1}}.zip) | [Download .zip](https://s3-us-west-1.amazonaws.com/spooky-bin/spookystuff/spark-{{site.SPARK_VERSION1}}-scala-2.10/spookystuff-assembly-{{site.NIGHTLY_VERSION}}-bin-spark{{site.SPARK_VERSION1}}.zip) |
 
 </div>
 
@@ -137,16 +137,15 @@ import spooky.dsl._
 From this point you can run queries on public datasets immediately. The following is a minimalistic showcase on cross-site "join", one of the 5 main clauses:
 
 {% highlight scala %}
-spooky.wget("https://ajax.googleapis.com/ajax/services/search/news?v=1.0&q=barack%20obama"
-).select((S\"responseData"\"results"\"content" text) ~ 'news
-).wgetJoin(x"http://api.mymemory.translated.net/get?q=${'news}!&langpair=en|fr"
-).select((S\"responseData"\"translatedText" text) ~ 'translation
-).toDF().collect().foreach(println)
+spooky.wget("https://news.google.com/?output=rss&q=barack%20obama"
+).join(S"item title".texts)(
+    Wget(x"http://api.mymemory.translated.net/get?q=${'A}&langpair=en|fr")
+)('A ~ 'title, S"translatedText".text ~ 'translated).toDF()
 {% endhighlight %}
 
-You will get a list of summaries of English news about BHO and their respective french translations:
+You will get a list of titles of English news about BHO and their respective french translations:
 
-
+![news about BHO and their respective french translations](img/BHOnews_translation.png)
 
 <!-- Wondering what it does in 4 lines? Here is a simple breakdown: -->
 
@@ -154,7 +153,9 @@ For more information on query syntax and usage, please go to [Query Guide](query
 
 # Web Caching
 
-You may already notice that repeatedly running a query takes much less time than running it for the first time. this is because all web resources are cached: cached resources are loaded directly from a file directory (can be on any Hadoop-supported file system, namely HDD, HDFS, Amazon S3 and Tachyon etc.) if they haven't expired. RDD cache is enabled by default to facilitate repeated data wrangling and dry run. To disable it, simply set **spooky.conf.cacheRead** = false or set **spooky.conf.pageExpireAfter** to a very small duration:
+You may already notice that repeatedly running a query takes much less time than running it for the first time. this is because all web resources are cached: cached resources are loaded directly from a file directory (can be on any Hadoop-supported file system, namely HDD, HDFS, Amazon S3 and Tachyon etc.) if they haven't expired. Unlike browsers or most search engines, SpookyStuff also caches dynamic and script-generated contents.
+
+RDD cache is enabled by default to facilitate repeated data wrangling and dry run. To disable it, simply set **spooky.conf.cacheRead** = false or set **spooky.conf.pageExpireAfter** to a very small duration:
 
 {% highlight scala %}
 import scala.concurrent.duration._
@@ -166,7 +167,7 @@ spooky.conf.pageExpireAfter = 1.minute
 However, before you run a query, it is recommended to point the web cache directory to a publicly-accessible, high-available storage URL (e.g. starting with ```hdfs://``` or ```s3n://```). Otherwise SpookyStuff will use *{Java-working-directory}/temp/cache* on local file system by default, which means if your query is running on a cluster, it will have a chance not able to use an already cached resource because it's on another machine. This directory can be set by **spooky.conf.dirs.cache**, which affects execution of all queries derived from it:
 
 {% highlight scala %}
-spooky.conf.dirs._cache = "hdfs://spooky-cache"
+spooky.conf.dirs.cache = "hdfs://spooky-cache"
 {% endhighlight %}
 
 Or you can override the default web cache directory globally by setting **spooky.cache** system property in your Java option:
@@ -180,7 +181,7 @@ Or you can override the default web cache directory globally by setting **spooky
 - OR, if your query is launched by spark-submit.sh
 
 {% highlight bash %}
---conf spark.driver.extraJavaOptions="-Dspooky.cache=hdfs://spooky-cache"
+--conf spooky.cache=hdfs://spooky-cache
 {% endhighlight %}
 
 For more performance optimization options, please go to [Configuration Section](deploying.html#configuration).
