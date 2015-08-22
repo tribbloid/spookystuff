@@ -88,11 +88,11 @@ Another optional component for better deep web compatibility is [TOR client](htt
 
 # Configuration
 
-The following options can be set independently and dynamically for each SpookyContext (by changing its **conf.{option-name}** property in scala), or set collectively by environment variables and/or system properties. If multiple values for an option are set by different methods (e.g. environment variable *SPOOKY_CACHE* and system property *spooky.cache* are set to different values), The preceding value in the following list will override others.
+The following options can be set independently for each SpookyContext (by changing its **conf.{option-name}** property in your program), or set collectively by environment variables and/or Spark/system properties. If multiple values for an option are set by different methods (e.g. environment variable *SPOOKY_CACHE* and Spark property *spooky.cache* are set differently), The preceding value in the following list will override the others.
 
 <div class="table" markdown="1">
 
-| Dynamic/Programmatic | > | System Property | > | Environment Variable | > | Default |
+| In-Program | > | Spark Property | > | System Property | > | Environment Variable | > | Default |
 
 </div>
 
