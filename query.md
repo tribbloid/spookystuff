@@ -185,7 +185,7 @@ which is equivalent to:
 {% highlight scala %}
 .flatten(flatten-expression ~ 'A), [parameters]
 ).select(
-    select-expression> [~ 'alias] ...
+    select-expression [~ 'alias] ...
 )
 {% endhighlight %}
 
@@ -208,7 +208,7 @@ You may notice that the first parameter of flatSelect has no alias - SpookyStuff
 {% highlight scala %}
 .join(flatten-expression [~ alias], [flatten-parameters]
 )(Action(s), [fetch-parameters])(
-    select-expression> [~ 'alias]
+    select-expression [~ 'alias]
     ...
 )
 {% endhighlight %}
@@ -238,7 +238,7 @@ Join is a shorthand for flatten/explode + fetch, in which case the data/elements
 {% highlight scala %}
 .explore(expression [~ alias], [parameters]
 )(Action(s), [fetch-parameters])(
-    select-expression> [~ 'alias]
+    select-expression [~ 'alias]
     ...
 )
 {% endhighlight %}
