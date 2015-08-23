@@ -24,7 +24,7 @@ import org.tribbloid.spookystuff.dsl._
 
 # Context
 
-SpookyContext is the entry point of all queries, it can be constructed from a [SparkContext] or [SQLContext], with SpookyConf as an optional parameter:
+SpookyContext is the entry point of all queries, it can be constructed from a [SparkContext](http://spark.apache.org/docs/latest/programming-guide.html#initializing-spark) or [SQLContext](http://spark.apache.org/docs/latest/sql-programming-guide.html#starting-point-sqlcontext), with SpookyConf as an optional parameter:
 
 {% highlight scala %}
 val spooky = new SpookyContext(sc: SparkContext) // OR
