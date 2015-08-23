@@ -77,14 +77,16 @@ case class SpookyContext (
     this(new SparkContext(conf))
   }
 
-  @volatile var broadcastedSpookyConf = sqlContext.sparkContext.broadcast(_spookyConf)
+  @transient val _effectiveConf = _spookyConf.inject(sqlContext.sparkContext)
 
-  def conf = if (_spookyConf == null) broadcastedSpookyConf.value
-  else _spookyConf
+  @volatile var broadcastedEffectiveConf = sqlContext.sparkContext.broadcast(_effectiveConf)
+
+  def conf = if (_effectiveConf == null) broadcastedEffectiveConf.value
+  else _effectiveConf
 
   def broadcast(): Unit ={
-    broadcastedSpookyConf.destroy()
-    broadcastedSpookyConf = sqlContext.sparkContext.broadcast(_spookyConf)
+    broadcastedEffectiveConf.destroy()
+    broadcastedEffectiveConf = sqlContext.sparkContext.broadcast(_effectiveConf)
   }
 
   val broadcastedHadoopConf = if (sqlContext!=null) sqlContext.sparkContext.broadcast(new SerializableWritable(this.sqlContext.sparkContext.hadoopConfiguration))
@@ -131,7 +133,7 @@ case class SpookyContext (
     }
     true
   }
-  
+
   def create(df: DataFrame): PageRowRDD = this.dsl.dataFrameToPageRowRDD(df)
   def create[T: ClassTag](rdd: RDD[T]): PageRowRDD = this.dsl.rddToPageRowRDD(rdd)
 

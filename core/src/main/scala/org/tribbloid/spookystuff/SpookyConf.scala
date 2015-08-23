@@ -4,6 +4,7 @@ import java.util.Date
 
 import org.apache.spark.rdd.RDD
 import org.apache.spark.storage.StorageLevel
+import org.apache.spark.{SparkConf, SparkContext}
 import org.tribbloid.spookystuff.SpookyConf.Dirs
 import org.tribbloid.spookystuff.dsl._
 import org.tribbloid.spookystuff.expressions.{CacheFilePath, PageFilePath}
@@ -17,36 +18,49 @@ import scala.concurrent.duration._
  */
 object SpookyConf {
 
+  private def getDefault(property: String, backup: String)(implicit conf: SparkConf): String = {
+    val env = property.replace('.','_').toUpperCase
+
+    conf.getOption(property)
+      .orElse{
+      Option(System.getProperty(property))
+    }.orElse{
+      Option(System.getenv(env))
+    }.getOrElse{
+      backup
+    }
+  }
+
   class Dirs(
-              var root: String = System.getProperty("spooky.dirs.root"),
-              var _autoSave: String = System.getProperty("spooky.dirs.autosave"),
-              var _cache: String = System.getProperty("spooky.dirs.cache"),
-              var _errorDump: String = System.getProperty("spooky.dirs.errordump"),
-              var _errorScreenshot: String = System.getProperty("spooky.dirs.errorscreenshot"),
-              var _checkpoint: String = System.getProperty("spooky.dirs.checkpoint"),
-              var _errorDumpLocal: String = System.getProperty("spooky.dirs.errordump.local"),
-              var _errorScreenshotLocal: String = System.getProperty("spooky.dirs.errorscreenshot.local")
+              var root: String = null,//ystem.getProperty("spooky.dirs.root"),
+              var autoSave: String = null,//System.getProperty("spooky.dirs.autosave"),
+              var cache: String = null,//System.getProperty("spooky.dirs.cache"),
+              var errorDump: String = null,//System.getProperty("spooky.dirs.errordump"),
+              var errorScreenshot: String = null,//System.getProperty("spooky.dirs.errorscreenshot"),
+              var checkpoint: String = null,//System.getProperty("spooky.dirs.checkpoint"),
+              var errorDumpLocal: String = null,//System.getProperty("spooky.dirs.errordump.local"),
+              var errorScreenshotLocal: String = null//System.getProperty("spooky.dirs.errorscreenshot.local")
               ) extends Serializable {
 
-    def setRoot(v: String): Unit = {root = v}
-
-    def rootOption = Option(root)
-
-    def autoSave_=(v: String): Unit = _autoSave = v
-    def cache_=(v: String): Unit = _cache = v
-    def errorDump_=(v: String): Unit = _errorDump = v
-    def errorScreenshot_=(v: String): Unit = _errorScreenshot = v
-    def checkpoint_=(v: String): Unit = _checkpoint = v
-    def errorDumpLocal_=(v: String): Unit = _errorDumpLocal = v
-    def errorScreenshotLocal_=(v: String): Unit = _errorScreenshotLocal = v
-
-    def autoSave: String = Utils.uriSlash(Option(_autoSave).orElse(rootOption.map(_+"page/")).getOrElse("temp/page/"))
-    def cache: String = Utils.uriSlash(Option(_cache).orElse(rootOption.map(_+"cache/")).getOrElse("temp/cache/"))
-    def errorDump: String = Utils.uriSlash(Option(_errorDump).orElse(rootOption.map(_+"error/")).getOrElse("temp/error/"))
-    def errorScreenshot: String = Utils.uriSlash(Option(_errorScreenshot).orElse(rootOption.map(_+"error-screenshot/")).getOrElse("temp/error-screenshot/"))
-    def checkpoint: String = Utils.uriSlash(Option(_checkpoint).orElse(rootOption.map(_+"checkpoint/")).getOrElse("temp/checkpoint/"))
-    def errorDumpLocal: String = Utils.uriSlash(Option(_errorDumpLocal).getOrElse("temp/error/"))
-    def errorScreenshotLocal: String = Utils.uriSlash(Option(_errorScreenshotLocal).getOrElse("temp/error-screenshot/"))
+    //    def setRoot(v: String): Unit = {root = v}
+    //
+    //    def rootOption = Option(root)
+    //
+    //    def autoSave_=(v: String): Unit = _autoSave = v
+    //    def cache_=(v: String): Unit = _cache = v
+    //    def errorDump_=(v: String): Unit = _errorDump = v
+    //    def errorScreenshot_=(v: String): Unit = _errorScreenshot = v
+    //    def checkpoint_=(v: String): Unit = _checkpoint = v
+    //    def errorDumpLocal_=(v: String): Unit = _errorDumpLocal = v
+    //    def errorScreenshotLocal_=(v: String): Unit = _errorScreenshotLocal = v
+    //
+    //    def autoSave: String = Utils.uriSlash(Option(_autoSave).orElse(rootOption.map(_+"page/")).getOrElse("temp/page/"))
+    //    def cache: String = Utils.uriSlash(Option(_cache).orElse(rootOption.map(_+"cache/")).getOrElse("temp/cache/"))
+    //    def errorDump: String = Utils.uriSlash(Option(_errorDump).orElse(rootOption.map(_+"error/")).getOrElse("temp/error/"))
+    //    def errorScreenshot: String = Utils.uriSlash(Option(_errorScreenshot).orElse(rootOption.map(_+"error-screenshot/")).getOrElse("temp/error-screenshot/"))
+    //    def checkpoint: String = Utils.uriSlash(Option(_checkpoint).orElse(rootOption.map(_+"checkpoint/")).getOrElse("temp/checkpoint/"))
+    //    def errorDumpLocal: String = Utils.uriSlash(Option(_errorDumpLocal).getOrElse("temp/error/"))
+    //    def errorScreenshotLocal: String = Utils.uriSlash(Option(_errorScreenshotLocal).getOrElse("temp/error-screenshot/"))
   }
 }
 
@@ -58,7 +72,7 @@ object SpookyConf {
 class SpookyConf (
                    val dirs: Dirs = new Dirs(),
 
-                   var shareMetrics: Boolean = false,
+                   var shareMetrics: Boolean = false, //TODO: not necessary
 
                    //TODO: 3 of the following functions can be changed to Expressions
                    var driverFactory: DriverFactory = DriverFactories.PhantomJS(),
@@ -103,8 +117,71 @@ class SpookyConf (
                    var defaultStorageLevel: StorageLevel = StorageLevel.MEMORY_ONLY
                    ) extends Serializable {
 
-  //  def toJSON: String = { //useless for non-case class
-  //
-  //    Utils.toJson(this, beautiful = true)
-  //  }
+  def inject(sc: SparkContext): SpookyConf = {
+    implicit val sparkConf = sc.getConf
+
+    val root = Option(this.dirs.root).getOrElse(SpookyConf.getDefault("spooky.dirs.root", "temp"))
+
+    def root_/(subdir: String) = Utils.uriSlash(root) + subdir
+
+    val dirs = new Dirs(
+      root,
+      Option(this.dirs.autoSave).getOrElse(SpookyConf.getDefault("spooky.dirs.autosave", root_/("autosave"))),
+      Option(this.dirs.cache).getOrElse(SpookyConf.getDefault("spooky.dirs.cache", root_/("cache"))),
+      Option(this.dirs.errorDump).getOrElse(SpookyConf.getDefault("spooky.dirs.error.dump", root_/("errorDump"))),
+      Option(this.dirs.errorScreenshot).getOrElse(SpookyConf.getDefault("spooky.dirs.error.screenshot", root_/("errorScreenshot"))),
+      Option(this.dirs.checkpoint).getOrElse(SpookyConf.getDefault("spooky.dirs.checkpoint", root_/("checkpoint"))),
+      Option(this.dirs.errorDumpLocal).getOrElse(SpookyConf.getDefault("spooky.dirs.error.dump.local", root_/("errorDump"))),
+      Option(this.dirs.errorScreenshotLocal).getOrElse(SpookyConf.getDefault("spooky.dirs.error.screenshot.local", root_/("errorScreenshot")))
+    )
+
+    new SpookyConf(
+      dirs,
+
+      this.shareMetrics,
+
+      this.driverFactory,
+      this.proxy,
+      //                   var userAgent: ()=> String = () => null,
+      this.userAgent,
+      this.headers,
+      this.oAuthKeys,
+
+      this.browserResolution,
+
+      this.autoSave,
+      this.cacheWrite,
+      this.cacheRead,
+      this.errorDump,
+      this.errorScreenshot,
+
+      this.pageExpireAfter,
+      this.pageNotExpiredSince,
+
+      this.cachePath,
+      this.autoSavePath,
+      this.errorDumpPath,
+
+      this.defaultParallelism,
+
+      this.remoteResourceTimeout,
+      this.DFSTimeout,
+
+      this.failOnDFSError,
+
+      this.defaultJoinType,
+
+      //default max number of elements scraped from a page, set to Int.MaxValue to allow unlimited fetch
+      this.maxJoinOrdinal,
+      this.maxExploreDepth,
+
+      this.defaultQueryOptimizer,
+
+      this.checkpointInterval,
+
+      this.defaultStorageLevel
+    )
+  }
+
+
 }

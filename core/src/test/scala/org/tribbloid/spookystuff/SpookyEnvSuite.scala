@@ -39,7 +39,7 @@ abstract class SpookyEnvSuite extends FunSuite with BeforeAndAfter with BeforeAn
       cacheRead = false
     )
 
-    sConf.dirs.setRoot("file://"+System.getProperty("user.home")+"/spooky-unit/")
+    sConf.dirs.root = "file://"+System.getProperty("user.home")+"/spooky-unit/"
 
     spooky = new SpookyContext(sql, sConf)
 
@@ -58,6 +58,6 @@ abstract class SpookyEnvSuite extends FunSuite with BeforeAndAfter with BeforeAn
     spooky.conf.cacheWrite = false
     spooky.conf.cacheRead = false
 
-    spooky.conf.dirs.setRoot("file://"+System.getProperty("user.home")+"/spooky-unit/")
+    spooky.conf.dirs.root = "file://"+System.getProperty("user.home")+"/spooky-unit/"
   }
 }

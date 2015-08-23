@@ -47,6 +47,6 @@ class TestSpookyContext extends SpookyEnvSuite{
       )
     rdd2.count()
 
-    assert(rdd1.spooky.metrics === rdd2.spooky.metrics)
+    assert(rdd1.spooky.metrics.toJSON === rdd2.spooky.metrics.toJSON)
   }
 }
