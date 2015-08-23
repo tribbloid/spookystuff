@@ -10,11 +10,11 @@ title: Query
 
 SpookyStuff's' Query Language is a short and powerful LINQ (Language-Integrated Query) that abstracts away the complexity of unstructured document parsing/traversing, link crawling and parallel computing/optimization, leaving only two things for you to consider: The data you want and the process to discover them. This leads to our first rule in syntax design: identical queries should expect identical results, and vice versa.
 
-SpookyStuff is built on Scala, it borrows some concepts and most of its syntax from [Spark SQL] (e.g. inner & left join, explode, alias and select), notably its own [Language-Integrated Query]. This is for easier understanding and memorizing by SQL users, rather than draw an analogy between relational databases and linked/unstructured datasets. In fact, they have very different specifications: In linked data, join by expression and filter by predicate ("WHERE" clause in SQL) are prohibitively expensive if executed on the client side, which makes URI and web service-based lookup its only standard.
+SpookyStuff is built on Scala, it borrows some concepts and most of its syntax from [Spark SQL](http://spark.apache.org/docs/latest/sql-programming-guide.html) (e.g. inner & left join, explode, alias and select), notably its own [Language-Integrated Query](http://spark.apache.org/docs/latest/sql-programming-guide.html#dataframe-operations). This is for easier understanding and memorizing by SQL users, rather than draw an analogy between relational databases and linked/unstructured datasets. In fact, they have very different specifications: In linked data, join by expression and filter by predicate ("WHERE" clause in SQL) are prohibitively expensive if executed on the client side, which makes URI and web service-based lookup its only standard.
 
 The following diagram illustrates the elements of SpookyStuff queries: context, clauses, actions and expressions.
 
-![img]
+![query-breakdown](img/query-breakdown.png)
 
 To run it in any Scala environment, import all members of the package org.tribbloid.spookystuff.dsl:
 
