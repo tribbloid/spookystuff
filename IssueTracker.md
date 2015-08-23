@@ -280,3 +280,5 @@ make declaredContentType only an evidence instead of final type, as it's prone t
 add unstructured function to get formatted (indented) code
 
 revise property/sysenv setting of spookyConf +++
+
+circumvent rate limit in json API unit test: https://developer.github.com/v3/#rate-limiting
