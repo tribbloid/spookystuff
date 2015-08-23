@@ -32,7 +32,7 @@ val spooky = new SpookyContext(sql: SQLContext) // OR
 val spooky = new SpookyContext(sql: SQLContext, conf: SpookyConf)
 {% endhighlight %}
 
-SpookyConf contains configuration options that are enumerated in [Configuration Section], these won't affect the result of the query, but have an impact on execution efficiency and resiliency. all these options can be set statically and changed dynamically, even in the middle of a query, e.g.
+SpookyConf contains configuration options that are enumerated in [Configuration Section](deploying.html#configuration), these won't affect the result of the query, but have an impact on execution efficiency and resiliency. all these options can be set statically and changed dynamically, even in the middle of a query, e.g.
 
 {% highlight scala %}
 import scala.concurrent.duration.Duration._
