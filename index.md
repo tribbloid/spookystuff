@@ -170,18 +170,18 @@ However, before you run a query, it is recommended to point the web cache direct
 spooky.conf.dirs.cache = "hdfs://spooky-cache"
 {% endhighlight %}
 
-Or you can override the default web cache directory globally by setting **spooky.cache** system property in your Java option:
+Or you can override the default web cache directory globally by setting **spooky.dirs.cache** system property in your Java option:
 
 - if your query is launched from a standalone Java application:
 
 {% highlight bash %}
--Dspooky.cache=hdfs://spooky-cache
+-Dspooky.dirs.cache=hdfs://spooky-cache
 {% endhighlight %}
 
 - OR, if your query is launched by spark-submit.sh
 
 {% highlight bash %}
---conf spooky.cache=hdfs://spooky-cache
+--conf spooky.dirs.cache=hdfs://spooky-cache
 {% endhighlight %}
 
 For more performance optimization options, please go to [Configuration Section](deploying.html#configuration).
