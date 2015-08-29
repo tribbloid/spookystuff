@@ -40,6 +40,9 @@ with SeqLike[T, Siblings[T]] {
   override def code = if (codes.isEmpty) None
   else Some(codes.filter(_.nonEmpty).mkString(" "))
 
+  override def formattedCode = if (formattedCodes.isEmpty) None
+  else Some(formattedCodes.filter(_.nonEmpty).mkString("\n"))
+
   override def ownText = if (ownTexts.isEmpty) None
   else Some(ownTexts.filter(_.nonEmpty).mkString(" "))
 

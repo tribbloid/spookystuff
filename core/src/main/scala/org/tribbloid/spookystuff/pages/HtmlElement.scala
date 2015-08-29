@@ -49,10 +49,13 @@ class HtmlElement private (
 
   //constructor for HtmlElement returned by .children()
   private def this(_parsed: Element) = this(
-    _parsed,
-    _parsed.outerHtml(),
-    Some(_parsed.tagName()),
-    _parsed.baseUri()
+  _parsed,
+  {
+    _parsed.ownerDocument().outputSettings().prettyPrint(false)
+    _parsed.outerHtml()
+  },
+  Some(_parsed.tagName()),
+  _parsed.baseUri()
   )
 
   override def equals(obj: Any): Boolean = obj match {
@@ -120,7 +123,14 @@ class HtmlElement private (
     expand(found, range)
   }
 
-  override def code: Option[String] = Some(html)
+  override def code: Option[String] = {
+    Some(html)
+  }
+
+  override def formattedCode: Option[String] = {
+    parsed.ownerDocument().outputSettings().prettyPrint(true)
+    Some(parsed.outerHtml())
+  }
 
   override def attr(attr: String, noEmpty: Boolean = true): Option[String] = {
 
@@ -139,7 +149,7 @@ class HtmlElement private (
   override def ownText: Option[String] = Option(parsed.ownText)
 
   override def boilerPipe: Option[String] = {
-    val result = ArticleExtractor.INSTANCE.getText(parsed.outerHtml())
+    val result = ArticleExtractor.INSTANCE.getText(html)
 
     Option(result)
   }

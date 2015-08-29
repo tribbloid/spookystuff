@@ -69,7 +69,10 @@ abstract class Export extends Named{
  * only for html page, please use wget for images and pdf files
  * always export as UTF8 charset
  */
-case class Snapshot(override val filter: ExportFilter = Const.defaultExportFilter) extends Export{
+case class Snapshot(
+                     override val filter: ExportFilter = Const.defaultExportFilter,
+                     contentType: String = null
+                     ) extends Export{
 
   // all other fields are empty
   override def doExeNoName(pb: Session): Seq[Page] = {
@@ -91,7 +94,8 @@ case class Snapshot(override val filter: ExportFilter = Const.defaultExportFilte
       //      serializableCookies
     )
 
-    Seq(page)
+    if (contentType != null) Seq(page.copy(declaredContentType = Some(contentType)))
+    else Seq(page)
   }
 }
 
@@ -129,7 +133,8 @@ object DefaultScreenshot extends Screenshot()
  */
 case class Wget(
                  uri: Expression[Any],
-                 override val filter: ExportFilter = Const.defaultExportFilter
+                 override val filter: ExportFilter = Const.defaultExportFilter,
+                 contentType: String = null
                  ) extends Export with Driverless with Timed {
 
   lazy val uriOption: Option[URI] = {
@@ -143,7 +148,7 @@ case class Wget(
     uriOption match {
       case None => Nil
       case Some(uriURI) =>
-        Option(uriURI.getScheme).getOrElse("file") match {
+        val result = Option(uriURI.getScheme).getOrElse("file") match {
           case "http" | "https" =>
             getHttp(uriURI, session)
           case "ftp" =>
@@ -153,6 +158,11 @@ case class Wget(
           case _ =>
             getDFS(uriURI, session)
         }
+        if (this.contentType != null) result.map{
+          case page: Page => page.copy(declaredContentType = Some(this.contentType))
+          case others: PageLike => others
+        }
+        else result
     }
   }
 

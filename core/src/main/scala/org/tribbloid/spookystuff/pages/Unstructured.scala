@@ -39,6 +39,8 @@ trait Unstructured extends Serializable {
 
   def code: Option[String]
 
+  def formattedCode: Option[String]
+
   def attr(attr: String, noEmpty: Boolean = true): Option[String]
 
   def href: Option[String]

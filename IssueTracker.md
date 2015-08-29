@@ -273,10 +273,12 @@ possible uncovered use case?
 root \ "*" \ "selector"
 in which root \ "*" results in Elements.
 
-allow Snapshot & Wget to override contentType
+allow Snapshot & Wget to override contentType .......................................................................done
 
 make declaredContentType only an evidence instead of final type, as it's prone to fail on undisciplined site
 
-add unstructured function to get formatted (indented) code
+add unstructured function to get formatted (indented) code .....................................................done
 
 revise property/sysenv setting of spookyConf +++
+
+OAuth can't handle malformed URL, should kick in after URL is canonized

@@ -98,6 +98,8 @@ class JsonElement private (
 
   override def code: Option[String] = Some(JsonMethods.compact(field._2))
 
+  override def formattedCode: Option[String] = Some(JsonMethods.pretty(field._2))
+
   override def attr(attr: String, noEmpty: Boolean = true): Option[String] = {
 
     val foundOption = field._2.findField{

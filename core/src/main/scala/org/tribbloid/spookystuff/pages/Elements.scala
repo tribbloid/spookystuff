@@ -38,6 +38,8 @@ with SeqLike[T, Elements[T]] {
 
   def codes: Seq[String] = self.flatMap(_.code)
 
+  def formattedCodes: Seq[String] = self.flatMap(_.formattedCode)
+
   def attrs(attr: String, noEmpty: Boolean = true): Seq[String] = self.flatMap(_.attr(attr, noEmpty))
 
   def hrefs = self.flatMap(_.href)
@@ -55,6 +57,8 @@ with SeqLike[T, Elements[T]] {
   override def text: Option[String] = texts.headOption
 
   override def code: Option[String] = codes.headOption
+
+  override def formattedCode: Option[String] = formattedCodes.headOption
 
   override def findAll(selector: String) = new Elements(self.flatMap(_.findAll(selector)))
 

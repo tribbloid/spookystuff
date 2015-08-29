@@ -153,6 +153,7 @@ case class Page(
   override def children(selector: Selector): Elements[Unstructured] = root.children(selector)
   override def childrenWithSiblings(selector: Selector, range: Range): Elements[Siblings[Unstructured]] = root.childrenWithSiblings(selector, range)
   override def code: Option[String] = root.code
+  override def formattedCode: Option[String] = root.formattedCode
   override def attr(attr: String, noEmpty: Boolean): Option[String] = root.attr(attr, noEmpty)
   override def href: Option[String] = root.href
   override def src: Option[String] = root.src
