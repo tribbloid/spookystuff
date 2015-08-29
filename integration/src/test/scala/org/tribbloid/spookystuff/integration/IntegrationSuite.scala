@@ -67,7 +67,7 @@ abstract class IntegrationSuite extends FunSuite with BeforeAndAfterAll {
     }
     catch {
       case e: Throwable =>
-        println("rootkey.csv not provided: " + e)
+        println("rootkey.csv not provided")
         local
     }
   }
