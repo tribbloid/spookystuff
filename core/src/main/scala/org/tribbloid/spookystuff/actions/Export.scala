@@ -143,6 +143,8 @@ case class Wget(
     else Some(HttpUtils.uri(uriStr))
   }
 
+//  def effectiveURIString = uriOption.map(_.toString)
+
   override def doExeNoName(session: Session): Seq[PageLike] = {
 
     uriOption match {
@@ -369,20 +371,30 @@ case class Wget(
   }
 }
 
-case class OAuthSign(self: Wget) extends Export with Driverless {
+case class OAuthV2(self: Wget) extends Export with Driverless {
 
   override def filter: ExportFilter = self.filter
 
-  override def doExeNoName(session: Session): Seq[PageLike] = {
+  def effectiveWget(session: Session): Wget = {
+
     val keys = session.spooky.conf.oAuthKeys.apply()
     if (keys == null) {
       throw new QueryException("need to set SpookyConf.oAuthKeys first")
     }
-    val uri = self.uri.asInstanceOf[Literal[String]].value
-    val signed = HttpUtils.OauthV2(uri, keys.consumerKey, keys.consumerSecret, keys.token, keys.tokenSecret)
-    val exec = self.copy(uri = Literal(signed))
+    val effectiveWget: Wget = self.uriOption match {
+      case Some(uri) =>
+        val signed = HttpUtils.OauthV2(uri.toString, keys.consumerKey, keys.consumerSecret, keys.token, keys.tokenSecret)
+        self.copy(uri = Literal(signed))
+      case None =>
+        self
+    }
+    effectiveWget
+  }
 
-    exec.doExeNoName(session).map{
+  override def doExeNoName(session: Session): Seq[PageLike] = {
+    val effectiveWget = this.effectiveWget(session)
+
+    effectiveWget.doExeNoName(session).map{
       case noPage: NoPage => noPage.copy(trace = Seq(this))
       case page: Page => page.copy(uid = PageUID(Seq(this),this))
     }

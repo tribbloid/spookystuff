@@ -33,13 +33,8 @@ abstract class SpookyEnvSuite extends FunSuite with BeforeAndAfter with BeforeAn
     val sql: SQLContext = new SQLContext(sc)
 
     val sConf = new SpookyConf(
-      driverFactory = driverFactory,
-      autoSave = false,
-      cacheWrite = false,
-      cacheRead = false
+      driverFactory = driverFactory
     )
-
-    sConf.dirs.root = "file://"+System.getProperty("user.home")+"/spooky-unit/"
 
     spooky = new SpookyContext(sql, sConf)
 
@@ -54,10 +49,14 @@ abstract class SpookyEnvSuite extends FunSuite with BeforeAndAfter with BeforeAn
   }
 
   before{
-    spooky.conf.autoSave = false
+    setUp()
+  }
+
+  def setUp(): Unit = {
+    spooky.conf.autoSave = true
     spooky.conf.cacheWrite = false
     spooky.conf.cacheRead = false
 
-    spooky.conf.dirs.root = "file://"+System.getProperty("user.home")+"/spooky-unit/"
+    spooky.conf.dirs.root = "file://"+System.getProperty("user.dir")+"/temp/spooky-unit/"
   }
 }

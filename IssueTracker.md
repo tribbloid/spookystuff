@@ -279,6 +279,10 @@ make declaredContentType only an evidence instead of final type, as it's prone t
 
 add unstructured function to get formatted (indented) code .....................................................done
 
-revise property/sysenv setting of spookyConf +++
+revise property/sysenv setting of spookyConf +++ ............................................................
 
-OAuth can't handle malformed URL, should kick in after URL is canonized
+OAuth can't handle malformed URL, should kick in after URL is canonized ........................................done
+
+history capability: read history data from cache
+
+rewrite expression system using scala reflection API

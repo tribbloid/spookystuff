@@ -5,7 +5,7 @@ import java.util.Date
 import org.apache.spark.rdd.RDD
 import org.apache.spark.storage.StorageLevel
 import org.apache.spark.{SparkConf, SparkContext}
-import org.tribbloid.spookystuff.SpookyConf.Dirs
+import org.tribbloid.spookystuff.SpookyConf.DirConf
 import org.tribbloid.spookystuff.dsl._
 import org.tribbloid.spookystuff.expressions.{CacheFilePath, PageFilePath}
 import org.tribbloid.spookystuff.session.OAuthKeys
@@ -31,36 +31,36 @@ object SpookyConf {
     }
   }
 
-  class Dirs(
-              var root: String = null,//ystem.getProperty("spooky.dirs.root"),
-              var autoSave: String = null,//System.getProperty("spooky.dirs.autosave"),
-              var cache: String = null,//System.getProperty("spooky.dirs.cache"),
-              var errorDump: String = null,//System.getProperty("spooky.dirs.errordump"),
-              var errorScreenshot: String = null,//System.getProperty("spooky.dirs.errorscreenshot"),
-              var checkpoint: String = null,//System.getProperty("spooky.dirs.checkpoint"),
-              var errorDumpLocal: String = null,//System.getProperty("spooky.dirs.errordump.local"),
-              var errorScreenshotLocal: String = null//System.getProperty("spooky.dirs.errorscreenshot.local")
-              ) extends Serializable {
+  class DirConf(
+                 var root: String = null,//ystem.getProperty("spooky.dirs.root"),
+                 var localRoot: String = null,
+                 var _autoSave: String = null,//System.getProperty("spooky.dirs.autosave"),
+                 var _cache: String = null,//System.getProperty("spooky.dirs.cache"),
+                 var _errorDump: String = null,//System.getProperty("spooky.dirs.errordump"),
+                 var _errorScreenshot: String = null,//System.getProperty("spooky.dirs.errorscreenshot"),
+                 var _checkpoint: String = null,//System.getProperty("spooky.dirs.checkpoint"),
+                 var _errorDumpLocal: String = null,//System.getProperty("spooky.dirs.errordump.local"),
+                 var _errorScreenshotLocal: String = null//System.getProperty("spooky.dirs.errorscreenshot.local")
+                 ) extends Serializable {
 
-    //    def setRoot(v: String): Unit = {root = v}
-    //
-    //    def rootOption = Option(root)
-    //
-    //    def autoSave_=(v: String): Unit = _autoSave = v
-    //    def cache_=(v: String): Unit = _cache = v
-    //    def errorDump_=(v: String): Unit = _errorDump = v
-    //    def errorScreenshot_=(v: String): Unit = _errorScreenshot = v
-    //    def checkpoint_=(v: String): Unit = _checkpoint = v
-    //    def errorDumpLocal_=(v: String): Unit = _errorDumpLocal = v
-    //    def errorScreenshotLocal_=(v: String): Unit = _errorScreenshotLocal = v
-    //
-    //    def autoSave: String = Utils.uriSlash(Option(_autoSave).orElse(rootOption.map(_+"page/")).getOrElse("temp/page/"))
-    //    def cache: String = Utils.uriSlash(Option(_cache).orElse(rootOption.map(_+"cache/")).getOrElse("temp/cache/"))
-    //    def errorDump: String = Utils.uriSlash(Option(_errorDump).orElse(rootOption.map(_+"error/")).getOrElse("temp/error/"))
-    //    def errorScreenshot: String = Utils.uriSlash(Option(_errorScreenshot).orElse(rootOption.map(_+"error-screenshot/")).getOrElse("temp/error-screenshot/"))
-    //    def checkpoint: String = Utils.uriSlash(Option(_checkpoint).orElse(rootOption.map(_+"checkpoint/")).getOrElse("temp/checkpoint/"))
-    //    def errorDumpLocal: String = Utils.uriSlash(Option(_errorDumpLocal).getOrElse("temp/error/"))
-    //    def errorScreenshotLocal: String = Utils.uriSlash(Option(_errorScreenshotLocal).getOrElse("temp/error-screenshot/"))
+    def root_/(subdir: String): String = Utils.uriSlash(root) + subdir
+    def localRoot_/(subdir: String) = Utils.uriSlash(root) + subdir
+
+    def autoSave_=(v: String): Unit = _autoSave = v
+    def cache_=(v: String): Unit = _cache = v
+    def errorDump_=(v: String): Unit = _errorDump = v
+    def errorScreenshot_=(v: String): Unit = _errorScreenshot = v
+    def checkpoint_=(v: String): Unit = _checkpoint = v
+    def errorDumpLocal_=(v: String): Unit = _errorDumpLocal = v
+    def errorScreenshotLocal_=(v: String): Unit = _errorScreenshotLocal = v
+
+    def autoSave: String = Option(_autoSave).getOrElse(root_/("autosave"))
+    def cache: String = Option(_autoSave).getOrElse(root_/("cache"))
+    def errorDump: String = Option(_autoSave).getOrElse(root_/("errorDump"))
+    def errorScreenshot: String = Option(_autoSave).getOrElse(root_/("errorScreenshot"))
+    def checkpoint: String = Option(_autoSave).getOrElse(root_/("checkpoint"))
+    def errorDumpLocal: String = Option(_autoSave).getOrElse(localRoot_/("errorDump"))
+    def errorScreenshotLocal: String = Option(_autoSave).getOrElse(localRoot_/("errorScreenshot"))
   }
 }
 
@@ -70,7 +70,7 @@ object SpookyConf {
  */
 //TODO: is var in serialized closure unstable for Spark production environment? consider changing to ConcurrentHashMap or merge with SparkConf
 class SpookyConf (
-                   val dirs: Dirs = new Dirs(),
+                   val dirs: DirConf = new DirConf(),
 
                    var shareMetrics: Boolean = false, //TODO: not necessary
 
@@ -121,18 +121,21 @@ class SpookyConf (
     implicit val sparkConf = sc.getConf
 
     val root = Option(this.dirs.root).getOrElse(SpookyConf.getDefault("spooky.dirs.root", "temp"))
+//    def root_/(subdir: String) = Utils.uriSlash(root) + subdir
 
-    def root_/(subdir: String) = Utils.uriSlash(root) + subdir
+    val localRoot = Option(this.dirs.root).getOrElse(SpookyConf.getDefault("spooky.dirs.root.local", "temp"))
+//    def localRoot_/(subdir: String) = Utils.uriSlash(root) + subdir
 
-    val dirs = new Dirs(
+    val dirs = new DirConf(
       root,
-      Option(this.dirs.autoSave).getOrElse(SpookyConf.getDefault("spooky.dirs.autosave", root_/("autosave"))),
-      Option(this.dirs.cache).getOrElse(SpookyConf.getDefault("spooky.dirs.cache", root_/("cache"))),
-      Option(this.dirs.errorDump).getOrElse(SpookyConf.getDefault("spooky.dirs.error.dump", root_/("errorDump"))),
-      Option(this.dirs.errorScreenshot).getOrElse(SpookyConf.getDefault("spooky.dirs.error.screenshot", root_/("errorScreenshot"))),
-      Option(this.dirs.checkpoint).getOrElse(SpookyConf.getDefault("spooky.dirs.checkpoint", root_/("checkpoint"))),
-      Option(this.dirs.errorDumpLocal).getOrElse(SpookyConf.getDefault("spooky.dirs.error.dump.local", root_/("errorDump"))),
-      Option(this.dirs.errorScreenshotLocal).getOrElse(SpookyConf.getDefault("spooky.dirs.error.screenshot.local", root_/("errorScreenshot")))
+      localRoot,
+      Option(this.dirs._autoSave).getOrElse(SpookyConf.getDefault("spooky.dirs.autosave", null)),
+      Option(this.dirs._cache).getOrElse(SpookyConf.getDefault("spooky.dirs.cache", null)),
+      Option(this.dirs._errorDump).getOrElse(SpookyConf.getDefault("spooky.dirs.error.dump", null)),
+      Option(this.dirs._errorScreenshot).getOrElse(SpookyConf.getDefault("spooky.dirs.error.screenshot", null)),
+      Option(this.dirs._checkpoint).getOrElse(SpookyConf.getDefault("spooky.dirs.checkpoint", null)),
+      Option(this.dirs._errorDumpLocal).getOrElse(SpookyConf.getDefault("spooky.dirs.error.dump.local", null)),
+      Option(this.dirs._errorScreenshotLocal).getOrElse(SpookyConf.getDefault("spooky.dirs.error.screenshot.local", null))
     )
 
     new SpookyConf(

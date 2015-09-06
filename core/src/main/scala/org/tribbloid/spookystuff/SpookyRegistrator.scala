@@ -6,7 +6,7 @@ import java.util.concurrent.TimeUnit
 import com.esotericsoftware.kryo.Kryo
 import org.apache.spark.SerializableWritable
 import org.apache.spark.serializer.KryoRegistrator
-import org.tribbloid.spookystuff.SpookyConf.Dirs
+import org.tribbloid.spookystuff.SpookyConf.DirConf
 import org.tribbloid.spookystuff.dsl._
 import org.tribbloid.spookystuff.entity.{ExploreStage, PageRow}
 import org.tribbloid.spookystuff.pages._
@@ -36,7 +36,7 @@ class SpookyRegistrator extends KryoRegistrator {
 
       //used by broadcast & accumulator
       classOf[SpookyConf],
-      classOf[Dirs],
+      classOf[DirConf],
       classOf[SerializableWritable[_]],
       classOf[SpookyContext],
       classOf[Metrics],

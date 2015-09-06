@@ -2,7 +2,6 @@ package org.tribbloid.spookystuff.actions
 
 import org.scalatest.tags.Retryable
 import org.tribbloid.spookystuff.SpookyEnvSuite
-import org.tribbloid.spookystuff.dsl._
 import org.tribbloid.spookystuff.pages.{NoPage, Page}
 
 import scala.concurrent.duration
@@ -13,11 +12,15 @@ import scala.concurrent.duration
 @Retryable
 class TestWget extends SpookyEnvSuite {
 
+  import org.tribbloid.spookystuff.dsl._
+
+  def wget(uri: String): Action = Wget(uri)
+
   lazy val noProxyIP = {
     spooky.conf.proxy = ProxyFactories.NoProxy
 
     val results = (
-      Wget("http://www.whatsmyuseragent.com/") :: Nil
+      wget("http://www.whatsmyuseragent.com/") :: Nil
       ).resolve(spooky)
 
     results.head.asInstanceOf[Page].findAll("h3.info").texts.head
@@ -29,7 +32,7 @@ class TestWget extends SpookyEnvSuite {
       spooky.conf.proxy = ProxyFactories.Tor
 
       val results = (
-        Wget("http://www.whatsmyuseragent.com/") :: Nil
+        wget("http://www.whatsmyuseragent.com/") :: Nil
         ).resolve(spooky)
 
       results.head.asInstanceOf[Page].findAll("h3.info").texts.head
@@ -47,7 +50,7 @@ class TestWget extends SpookyEnvSuite {
       spooky.conf.proxy = ProxyFactories.Tor
 
       val results = (
-        Wget("https://www.astrill.com/what-is-my-ip-address.php") :: Nil
+        wget("https://www.astrill.com/what-is-my-ip-address.php") :: Nil
         ).resolve(spooky)
 
       results.head.asInstanceOf[Page].findAll("h1").texts.head
@@ -64,7 +67,7 @@ class TestWget extends SpookyEnvSuite {
       spooky.conf.proxy = ProxyFactories.Tor
 
       val results = (
-        Wget("http://www.whatsmyuseragent.com/") :: Nil
+        wget("http://www.whatsmyuseragent.com/") :: Nil
         ).resolve(spooky)
       Actions
       results.head.asInstanceOf[Page].findAll("h3.info").texts.head
@@ -74,7 +77,7 @@ class TestWget extends SpookyEnvSuite {
       spooky.conf.proxy = ProxyFactories.NoProxy
 
       val results = (
-        Wget("http://www.whatsmyuseragent.com/") :: Nil
+        wget("http://www.whatsmyuseragent.com/") :: Nil
         ).resolve(spooky)
 
       results.head.asInstanceOf[Page].findAll("h3.info").texts.head
@@ -89,7 +92,7 @@ class TestWget extends SpookyEnvSuite {
       spooky.conf.proxy = ProxyFactories.Tor
 
       val results = (
-        Wget("https://www.astrill.com/what-is-my-ip-address.php") :: Nil
+        wget("https://www.astrill.com/what-is-my-ip-address.php") :: Nil
         ).resolve(spooky)
 
       results.head.asInstanceOf[Page].findAll("h1").texts.head
@@ -99,7 +102,7 @@ class TestWget extends SpookyEnvSuite {
       spooky.conf.proxy = ProxyFactories.NoProxy
 
       val results = (
-        Wget("https://www.astrill.com/what-is-my-ip-address.php") :: Nil
+        wget("https://www.astrill.com/what-is-my-ip-address.php") :: Nil
         ).resolve(spooky)
 
       results.head.asInstanceOf[Page].findAll("h1").texts.head
@@ -112,7 +115,7 @@ class TestWget extends SpookyEnvSuite {
     spooky.conf.proxy = ProxyFactories.NoProxy
 
     val results = (
-      Wget("http://www.sigmaaldrich.com/catalog/search?term=38183-12-9&interface=CAS No.&N=0&mode=partialmax&lang=en&region=US&focus=product") :: Nil
+      wget("http://www.sigmaaldrich.com/catalog/search?term=38183-12-9&interface=CAS No.&N=0&mode=partialmax&lang=en&region=US&focus=product") :: Nil
       ).resolve(spooky)
 
     assert(results.size === 1)
@@ -128,7 +131,7 @@ class TestWget extends SpookyEnvSuite {
     )
 
     val results = (
-      Wget("http://www.perkinelmer.ca/Catalog/Gallery.aspx?ID=Mass Spectrometry [GC/MS and ICP-MS]&PID=Gas Chromatography Mass Spectrometry Consumables&refineCat=Technology&N=172 139 78928 4293910906&TechNVal=4293910906") :: Nil
+      wget("http://www.perkinelmer.ca/Catalog/Gallery.aspx?ID=Mass Spectrometry [GC/MS and ICP-MS]&PID=Gas Chromatography Mass Spectrometry Consumables&refineCat=Technology&N=172 139 78928 4293910906&TechNVal=4293910906") :: Nil
       ).resolve(spooky)
 
     assert(results.size === 1)
@@ -154,7 +157,7 @@ class TestWget extends SpookyEnvSuite {
     spooky.conf.proxy = ProxyFactories.NoProxy
 
     val results = (
-      Wget("http://www.sigmaaldrich.com/etc/controller/controller-page.html?TablePage=17193175") :: Nil
+      wget("http://www.sigmaaldrich.com/etc/controller/controller-page.html?TablePage=17193175") :: Nil
       ).resolve(spooky)
 
     assert(results.size === 1)
@@ -167,7 +170,7 @@ class TestWget extends SpookyEnvSuite {
     spooky.conf.proxy = ProxyFactories.NoProxy
 
     val results = (
-      Wget("http://www.perkinelmer.ca/en-ca/products/consumables-accessories/integrated-solutions/for-thermo-scientific-gcs/default.xhtml") :: Nil
+      wget("http://www.perkinelmer.ca/en-ca/products/consumables-accessories/integrated-solutions/for-thermo-scientific-gcs/default.xhtml") :: Nil
       ).resolve(spooky)
 
     assert(results.size === 1)
@@ -181,19 +184,19 @@ class TestWget extends SpookyEnvSuite {
 
     val results = (
       RandomDelay(1.seconds, 2.seconds)
-        :: Wget("http://www.wikipedia.org")
+        :: wget("http://www.wikipedia.org")
         :: Nil
       ).resolve(spooky)
 
     assert(results.size === 1)
-    assert(results.head.uid.backtrace.self == Wget("http://www.wikipedia.org") :: Nil)
+    assert(results.head.uid.backtrace.self == wget("http://www.wikipedia.org") :: Nil)
   }
 
   test("wget should handle PKIX exception") {
     spooky.conf.proxy = ProxyFactories.NoProxy
 
     val results = Seq(
-      Wget("https://www.canadacompany.ca/en/")
+      wget("https://www.canadacompany.ca/en/")
     ).resolve(spooky)
   }
 }

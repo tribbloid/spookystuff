@@ -34,7 +34,7 @@ class TestPageFromBrowser extends SpookyEnvSuite {
     assert(resultsList.length === 1)
     val page = resultsList(0).asInstanceOf[Page]
 
-    page.autoSave(spooky,overwrite = true)
+    page.autoSave(spooky, overwrite = true)
 
     val loadedContent = PageUtils.load(page.saved.head)(spooky)
 

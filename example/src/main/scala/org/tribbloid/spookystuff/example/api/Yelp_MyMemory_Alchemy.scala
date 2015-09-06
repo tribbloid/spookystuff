@@ -53,10 +53,10 @@ object Yelp_MyMemory_Alchemy extends QueryCore {
 
     sc.parallelize(Seq(Map("q" -> "Epicure", "city" -> "Paris", "lang" -> "fr")))
       .fetch(
-        OAuthSign(Wget("http://api.yelp.com/v2/search?term='{q}&location='{city}"))
+        OAuthV2(Wget("http://api.yelp.com/v2/search?term='{q}&location='{city}"))
       )
       .join((S \ "businesses").slice(0, 10))(
-        Try(OAuthSign(Wget(x"http://api.yelp.com/v2/business/${'A \ "id" text}?lang=${'lang}")))
+        Try(OAuthV2(Wget(x"http://api.yelp.com/v2/business/${'A \ "id" text}?lang=${'lang}")))
       )(
         //        ('A \ "id").text ~ 'id,
         ('A \ "name").text ~ 'name

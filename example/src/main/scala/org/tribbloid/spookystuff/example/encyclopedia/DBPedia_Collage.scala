@@ -14,10 +14,10 @@ object DBPedia_Collage extends QueryCore {
 
     import sql.implicits._
 
-    val str = "Rob Ford"
+    val str = "Barack Obama"
     val cls = "person"
 
-    DBPedia_Image.imgPages(spooky, cls, str)
+    DBPedia.imgPages(spooky, cls, str)
       .select(S"div#search img".code.replaceAll("<img", """<img style="display:inline"""") ~ 'image
       ).toDF(sort=true).select('image).map(_.getString(0)).collect().mkString("")
   }

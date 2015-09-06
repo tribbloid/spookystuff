@@ -5,7 +5,7 @@ import java.util.{Date, Properties}
 import org.apache.spark.sql.SQLContext
 import org.apache.spark.{SparkConf, SparkContext}
 import org.scalatest.{BeforeAndAfterAll, FunSuite}
-import org.tribbloid.spookystuff.SpookyConf.Dirs
+import org.tribbloid.spookystuff.SpookyConf.DirConf
 import org.tribbloid.spookystuff.dsl._
 import org.tribbloid.spookystuff.utils.Utils
 import org.tribbloid.spookystuff.{SpookyConf, SpookyContext}
@@ -91,7 +91,7 @@ abstract class IntegrationSuite extends FunSuite with BeforeAndAfterAll {
         lazy val env = new SpookyContext(
           sql,
           new SpookyConf(
-            new Dirs(root = root),
+            new DirConf(root = root),
             driverFactory = driver,
             defaultQueryOptimizer = optimizer,
             shareMetrics = true,
