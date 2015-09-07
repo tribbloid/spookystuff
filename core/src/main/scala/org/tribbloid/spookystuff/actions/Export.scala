@@ -1,6 +1,7 @@
 package org.tribbloid.spookystuff.actions
 
 import java.net.{InetSocketAddress, URI}
+import java.util.Date
 import javax.net.ssl.SSLContext
 
 import org.apache.commons.io.IOUtils
@@ -28,7 +29,9 @@ import org.tribbloid.spookystuff.{QueryException, Const, ExportFilterException}
  * Export a page from the browser or http client
  * the page an be anything including HTML/XML file, image, PDF file or JSON string.
  */
-abstract class Export extends Named{
+
+
+abstract class Export extends Named with Wayback{
 
   def filter: ExportFilter
 
@@ -63,6 +66,36 @@ abstract class Export extends Named{
   def doExeNoName(session: Session): Seq[PageLike]
 }
 
+trait WaybackSupport {
+  self: Wayback =>
+
+  import org.tribbloid.spookystuff.dsl._
+
+  var wayback: Expression[Long] = null
+
+  def waybackTo(date: Expression[Date]): this.type = {
+    this.wayback = date.andMap(_.getTime)
+    this
+  }
+
+  def waybackToTimeMillis(time: Expression[Long]): this.type = {
+    this.wayback = time
+    this
+  }
+
+  protected def interpolateWayback(pageRow: PageRow): Option[this.type] = {
+    if (this.wayback == null) Some(this)
+    else {
+      val valueOpt = this.wayback(pageRow)
+      valueOpt.map{
+        v =>
+          this.wayback = Literal(v)
+          this
+      }
+    }
+  }
+}
+
 /**
  * Export the current page from the browser
  * interact with the browser to load the target page first
@@ -70,9 +103,9 @@ abstract class Export extends Named{
  * always export as UTF8 charset
  */
 case class Snapshot(
-                     override val filter: ExportFilter = Const.defaultExportFilter,
+                     override val filter: ExportFilter = Const.defaultDocumentFilter,
                      contentType: String = null
-                     ) extends Export{
+                     ) extends Export with WaybackSupport{
 
   // all other fields are empty
   override def doExeNoName(pb: Session): Seq[Page] = {
@@ -97,12 +130,18 @@ case class Snapshot(
     if (contentType != null) Seq(page.copy(declaredContentType = Some(contentType)))
     else Seq(page)
   }
+
+  override def doInterpolate(pageRow: PageRow) = {
+    this.copy().asInstanceOf[this.type].interpolateWayback(pageRow)
+  }
 }
 
 //this is used to save GC when invoked by anothor component
 object DefaultSnapshot extends Snapshot()
 
-case class Screenshot(override val filter: ExportFilter = Const.defaultExportFilter) extends Export {
+case class Screenshot(
+                       override val filter: ExportFilter = Const.defaultImageFilter
+                       ) extends Export with WaybackSupport {
 
   override def doExeNoName(pb: Session): Seq[Page] = {
 
@@ -120,6 +159,10 @@ case class Screenshot(override val filter: ExportFilter = Const.defaultExportFil
 
     Seq(page)
   }
+
+  override def doInterpolate(pageRow: PageRow) = {
+    this.copy().asInstanceOf[this.type].interpolateWayback(pageRow)
+  }
 }
 
 object DefaultScreenshot extends Screenshot()
@@ -133,9 +176,9 @@ object DefaultScreenshot extends Screenshot()
  */
 case class Wget(
                  uri: Expression[Any],
-                 override val filter: ExportFilter = Const.defaultExportFilter,
+                 override val filter: ExportFilter = Const.defaultDocumentFilter,
                  contentType: String = null
-                 ) extends Export with Driverless with Timed {
+                 ) extends Export with Driverless with Timed with WaybackSupport {
 
   lazy val uriOption: Option[URI] = {
     val uriStr = uri.asInstanceOf[Literal[String]].value.trim()
@@ -143,7 +186,7 @@ case class Wget(
     else Some(HttpUtils.uri(uriStr))
   }
 
-//  def effectiveURIString = uriOption.map(_.toString)
+  //  def effectiveURIString = uriOption.map(_.toString)
 
   override def doExeNoName(session: Session): Seq[PageLike] = {
 
@@ -364,9 +407,9 @@ case class Wget(
       case other => None
     }
 
-    uriStr.map(
+    uriStr.flatMap(
       str =>
-        this.copy(uri = new Literal(str)).asInstanceOf[this.type]
+        this.copy(uri = new Literal(str)).interpolateWayback(pageRow).map(_.asInstanceOf[this.type])
     )
   }
 }
@@ -374,6 +417,8 @@ case class Wget(
 case class OAuthV2(self: Wget) extends Export with Driverless {
 
   override def filter: ExportFilter = self.filter
+
+  override def wayback: Expression[Long] = self.wayback
 
   def effectiveWget(session: Session): Wget = {
 
@@ -384,7 +429,7 @@ case class OAuthV2(self: Wget) extends Export with Driverless {
     val effectiveWget: Wget = self.uriOption match {
       case Some(uri) =>
         val signed = HttpUtils.OauthV2(uri.toString, keys.consumerKey, keys.consumerSecret, keys.token, keys.tokenSecret)
-        self.copy(uri = Literal(signed))
+        self.copy(uri = Literal(signed), contentType = self.contentType)
       case None =>
         self
     }

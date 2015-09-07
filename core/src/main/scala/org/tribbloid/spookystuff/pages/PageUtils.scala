@@ -3,11 +3,12 @@ package org.tribbloid.spookystuff.pages
 import java.util.{Date, UUID}
 
 import org.apache.commons.io.IOUtils
-import org.apache.hadoop.fs.Path
+import org.apache.hadoop.fs.{FileStatus, Path}
 import org.apache.spark.SparkEnv
 import org.slf4j.LoggerFactory
 import org.tribbloid.spookystuff._
-import org.tribbloid.spookystuff.actions.Trace
+import org.tribbloid.spookystuff.actions.{Wayback, Block, Export, Trace}
+import org.tribbloid.spookystuff.expressions.Literal
 import org.tribbloid.spookystuff.utils.{DFSResolver, Serializable, Utils}
 
 import scala.concurrent.duration.Duration.Infinite
@@ -130,10 +131,11 @@ object PageUtils {
   //returns null => no backtrace dir
   private def restoreLatest(
                              dirPath: Path,
-                             earliestModificationTime: Long = 0
+                             earliestModificationTime: Long,
+                             latestModificationTime: Long
                              )(spooky: SpookyContext): Seq[PageLike] = {
 
-    val latestStatus = dfsRead("get latest version", dirPath.toString, spooky) {
+    val latestStatus: Option[FileStatus] = dfsRead("get latest version", dirPath.toString, spooky) {
 
       val fs = dirPath.getFileSystem(spooky.hadoopConf)
 
@@ -143,6 +145,7 @@ object PageUtils {
 
         statuses
           //          .filter(status => !status.isDirectory && status.getModificationTime >= earliestModificationTime - 300*1000) //Long enough for overhead of eventual consistency to take effect and write down file
+          .filter(_.getModificationTime < latestModificationTime) //TODO: may have disk write delay!
           .sortBy(_.getModificationTime).lastOption
       }
       else None
@@ -151,6 +154,7 @@ object PageUtils {
     latestStatus match {
       case Some(status) =>
         val results = restore[PageLike](status.getPath.toString)(spooky)
+
         if (results == null) {
           LoggerFactory.getLogger(this.getClass).warn("Cached content is corrputed")
           null
@@ -181,9 +185,29 @@ object PageUtils {
       spooky.conf.cachePath(backtrace).toString
     )
 
+    val waybackOption = backtrace.last match {
+      case w: Wayback =>
+        Option(w.wayback).map{
+          expr =>
+            val result = expr.asInstanceOf[Literal[Long]].value
+            spooky.conf.pageNotExpiredSince match {
+              case Some(date) =>
+                assert(result > date.getTime, "SpookyConf.pageNotExpiredSince cannot be set to later than wayback date")
+              case None =>
+            }
+            result
+        }
+      case _ =>
+        None
+    }
+
     val earliestTimeFromDuration = spooky.conf.pageExpireAfter match {
       case inf: Infinite => Long.MinValue
-      case d => System.currentTimeMillis() - d.toMillis
+      case d =>
+        waybackOption match {
+          case Some(wayback) => wayback - d.toMillis
+          case None => System.currentTimeMillis() - d.toMillis
+        }
     }
     val earliestTime = spooky.conf.pageNotExpiredSince match {
       case Some(expire) =>
@@ -192,9 +216,12 @@ object PageUtils {
         earliestTimeFromDuration
     }
 
+    val latestTime = waybackOption.getOrElse(Long.MaxValue)
+
     val pages = restoreLatest(
       new Path(pathStr),
-      earliestTime
+      earliestTime,
+      latestTime
     )(spooky)
 
     if (pages != null) for (page <- pages) {

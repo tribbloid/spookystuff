@@ -283,6 +283,6 @@ revise property/sysenv setting of spookyConf +++ ...............................
 
 OAuth can't handle malformed URL, should kick in after URL is canonized ........................................done
 
-history capability: read history data from cache
+wayback support: read history data from cache and wayback public database ..................only cache, need tests
 
-rewrite expression system using scala reflection API
+rewrite expression system using scala reflection API +

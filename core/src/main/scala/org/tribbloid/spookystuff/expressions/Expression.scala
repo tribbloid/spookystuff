@@ -17,6 +17,13 @@ final case class Literal[+T: ClassTag](value: T) extends Expression[T] {//all se
   override def apply(v1: PageRow): Option[T] = Some(value)
 }
 
+case object NullLiteral extends Expression[Null]{
+  
+  override val name: String = "Null"
+
+  override def apply(v1: PageRow): Option[Null] = None
+}
+
 class GetExpr(override val name: String) extends Expression[Any] {
 
   override def apply(v1: PageRow): Option[Any] = v1.get(name)

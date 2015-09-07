@@ -403,7 +403,7 @@ class PageRowRDD private (
 
   def visit(
              expr: Expression[Any],
-             filter: ExportFilter = Const.defaultExportFilter,
+             filter: ExportFilter = Const.defaultDocumentFilter,
              joinType: JoinType = spooky.conf.defaultJoinType,
              numPartitions: Int = spooky.conf.defaultParallelism(this),
              optimizer: QueryOptimizer = spooky.conf.defaultQueryOptimizer
@@ -416,7 +416,7 @@ class PageRowRDD private (
 
   def wget(
             expr: Expression[Any],
-            filter: ExportFilter = Const.defaultExportFilter,
+            filter: ExportFilter = Const.defaultDocumentFilter,
             joinType: JoinType = spooky.conf.defaultJoinType,
             numPartitions: Int = spooky.conf.defaultParallelism(this),
             optimizer: QueryOptimizer = spooky.conf.defaultQueryOptimizer
@@ -584,7 +584,7 @@ class PageRowRDD private (
    */
   def visitJoin(
                  expr: Expression[Any],
-                 filter: ExportFilter = Const.defaultExportFilter,
+                 filter: ExportFilter = Const.defaultDocumentFilter,
                  failSafe: Int = -1,
                  ordinalKey: Symbol = null, //left & idempotent parameters are missing as they are always set to true
                  maxOrdinal: Int = spooky.conf.maxJoinOrdinal,
@@ -618,7 +618,7 @@ class PageRowRDD private (
    */
   def wgetJoin(
                 expr: Expression[Any],
-                filter: ExportFilter = Const.defaultExportFilter,
+                filter: ExportFilter = Const.defaultDocumentFilter,
                 failSafe: Int = -1,
                 ordinalKey: Symbol = null, //left & idempotent parameters are missing as they are always set to true
                 maxOrdinal: Int = spooky.conf.maxJoinOrdinal,
@@ -883,7 +883,7 @@ class PageRowRDD private (
 
   def visitExplore(
                     expr: Expression[Any],
-                    filter: ExportFilter = Const.defaultExportFilter,
+                    filter: ExportFilter = Const.defaultDocumentFilter,
                     failSafe: Int = -1,
                     depthKey: Symbol = null,
                     maxDepth: Int = spooky.conf.maxExploreDepth,
@@ -910,7 +910,7 @@ class PageRowRDD private (
 
   def wgetExplore(
                    expr: Expression[Any],
-                   filter: ExportFilter = Const.defaultExportFilter,
+                   filter: ExportFilter = Const.defaultDocumentFilter,
                    failSafe: Int = -1,
                    depthKey: Symbol = null,
                    maxDepth: Int = spooky.conf.maxExploreDepth,

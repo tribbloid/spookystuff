@@ -1,7 +1,8 @@
 package org.tribbloid.spookystuff.pages
 
 import java.io._
-import java.util.{Date, UUID}
+import java.sql.Date
+import java.util.UUID
 
 import jodd.util.MimeTypes
 import org.apache.hadoop.fs.Path
@@ -44,7 +45,7 @@ trait PageLike {
 //Merely a placeholder when a Block returns nothing
 case class NoPage(
                    trace: Trace,
-                   override val timestamp: Date = new Date,
+                   override val timestamp: Date = new Date(System.currentTimeMillis()),
                    override val cacheable: Boolean = true
                    ) extends Serializable with PageLike {
 
@@ -61,7 +62,7 @@ case class Page(
                  content: Array[Byte],
 
                  //                 cookie: Seq[SerializableCookie] = Nil,
-                 override val timestamp: Date = new Date,
+                 override val timestamp: Date = new Date(System.currentTimeMillis()),
                  var saved: ListSet[String] = ListSet(),
                  override val cacheable: Boolean = true
                  )

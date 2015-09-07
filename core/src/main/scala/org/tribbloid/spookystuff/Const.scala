@@ -42,5 +42,6 @@ object Const {
 
   val mimeDetector = new DefaultDetector()
 
-  val defaultExportFilter = ExportFilters.MustHaveTitle
+  val defaultDocumentFilter = ExportFilters.MustHaveTitle
+  val defaultImageFilter = ExportFilters.PassAll
 }

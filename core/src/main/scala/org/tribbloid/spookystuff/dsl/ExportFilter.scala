@@ -13,7 +13,7 @@ trait ExportFilter extends ((Page, Session) => Page) with Serializable {
 
 object ExportFilters {
 
-  case object NoFilter extends ExportFilter {
+  case object PassAll extends ExportFilter {
 
     override def apply(result: Page, session: Session): Page = {
       result

@@ -3,6 +3,7 @@ package org.tribbloid.spookystuff.actions
 import org.openqa.selenium.TakesScreenshot
 import org.openqa.selenium.support.ui.{ExpectedConditions, WebDriverWait}
 import org.slf4j.LoggerFactory
+import org.tribbloid.spookystuff.expressions._
 import org.tribbloid.spookystuff.pages.{Page, PageLike}
 import org.tribbloid.spookystuff.selenium.BySizzleCssSelector
 import org.tribbloid.spookystuff.session.{NoDriverSession, DriverSession, Session}
@@ -197,4 +198,9 @@ trait Named extends Action {
 trait Driverless extends Action {
 
   override def needDriver = false
+}
+
+trait Wayback extends Action {
+
+  def wayback: Expression[Long]
 }

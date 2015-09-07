@@ -2,6 +2,7 @@ package org.tribbloid.spookystuff.actions
 
 import org.apache.spark.TaskContext
 import org.slf4j.LoggerFactory
+import org.tribbloid.spookystuff.expressions.Expression
 import org.tribbloid.spookystuff.{dsl, Const}
 import org.tribbloid.spookystuff.entity.PageRow
 import org.tribbloid.spookystuff.pages.{NoPage, Page, PageLike}
@@ -15,9 +16,16 @@ import scala.concurrent.duration.Duration
  * each defines a nested/non-linear subroutine that may or may not be executed
  * once or multiple times depending on situations.
  */
-abstract class Block(override val self: Seq[Action]) extends Actions(self) with Named {
+abstract class Block(override val self: Seq[Action]) extends Actions(self) with Named with Wayback {
 
   //  assert(self.nonEmpty)
+
+  override def wayback: Expression[Long] = self.flatMap {
+    case w: Wayback => Some(w)
+    case _ => None
+  }.lastOption.map{
+    _.wayback
+  }.getOrElse(null)
 
   override def as(name: Symbol) = {
     super.as(name)

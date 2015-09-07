@@ -4,7 +4,7 @@ import org.scalatest.tags.Retryable
 import org.tribbloid.spookystuff.session.{NoDriverSession, OAuthKeys}
 
 /**
- * Created by peng on 06/09/15.
+ * Adding OAuth parameters should not affect results of other queries
  */
 @Retryable
 class TestOAuth extends TestWget {
