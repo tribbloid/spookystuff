@@ -81,7 +81,7 @@ class PageRowRDD private (
   def distinctBy(exprs: (PageRow => Any)*): PageRowRDD = {
     this.copy(self.groupBy {
       row =>
-        exprs.map(_.apply(row)).toSeq
+        exprs.map(_.apply(row))
     }.flatMap {
       tuple =>
         tuple._2.headOption

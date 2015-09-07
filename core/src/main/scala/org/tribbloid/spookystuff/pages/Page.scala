@@ -1,7 +1,7 @@
 package org.tribbloid.spookystuff.pages
 
 import java.io._
-import java.sql.Date
+import java.util.Date //TODO: change to sql.Date
 import java.util.UUID
 
 import jodd.util.MimeTypes

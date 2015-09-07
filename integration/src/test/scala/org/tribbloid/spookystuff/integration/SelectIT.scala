@@ -2,9 +2,9 @@ package org.tribbloid.spookystuff.integration
 
 import java.text.SimpleDateFormat
 
-import org.tribbloid.spookystuff.{QueryException, SpookyContext}
 import org.tribbloid.spookystuff.actions._
 import org.tribbloid.spookystuff.dsl._
+import org.tribbloid.spookystuff.{QueryException, SpookyContext}
 
 /**
  * Created by peng on 11/26/14.
@@ -12,8 +12,6 @@ import org.tribbloid.spookystuff.dsl._
 class SelectIT extends IntegrationSuite {
 
   override def doMain(spooky: SpookyContext) {
-
-    import spooky.dsl._
 
     val pageRowRDD = spooky
       .fetch(
@@ -30,11 +28,11 @@ class SelectIT extends IntegrationSuite {
       )
       .persist()
 
-      val RDD = pageRowRDD
+      val df = pageRowRDD
       .toDF(sort = true)
 
     assert(
-      RDD.schema.fieldNames ===
+      df.schema.fieldNames ===
         "S_uri" ::
           "S_timestamp" ::
           "title" ::
@@ -42,7 +40,7 @@ class SelectIT extends IntegrationSuite {
           "expanded" :: Nil
     )
 
-    val rows = RDD.collect()
+    val rows = df.collect()
     val finishTime = System.currentTimeMillis()
     assert(rows.length === 1)
     assert(rows.head.size === 5)

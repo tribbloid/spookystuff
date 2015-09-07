@@ -4,7 +4,7 @@ import org.apache.spark.rdd.RDD
 import org.slf4j.LoggerFactory
 import org.tribbloid.spookystuff.actions._
 import org.tribbloid.spookystuff.dsl._
-import org.tribbloid.spookystuff.entity.PageRow.{RowUID, KVStore, SegID}
+import org.tribbloid.spookystuff.entity.PageRow.{RowUID, dataRow, SegID}
 import org.tribbloid.spookystuff.expressions._
 import org.tribbloid.spookystuff.pages._
 import org.tribbloid.spookystuff.utils._
@@ -21,7 +21,7 @@ import scala.util.Random
  */
 case class PageRow(
                     //ListMap may be slower but has tighter serialization size
-                    store: KVStore = ListMap(), //TODO: also carry PageUID & property type (Vertex/Edge) for GraphX
+                    dataRow: dataRow = ListMap(), //TODO: also carry PageUID & property type (Vertex/Edge) for GraphX
                     pageLikes: Array[PageLike] = Array(), // discarded after new page coming in
                     segmentID: SegID = Random.nextLong() //keep flattened rows together //unique for an entire context.
                     ) {
@@ -40,7 +40,7 @@ case class PageRow(
 
   private def resolveKey(keyStr: String): KeyLike = {
     val tempKey = TempKey(keyStr)
-    if (store.contains(tempKey)) tempKey
+    if (dataRow.contains(tempKey)) tempKey
     else Key(keyStr)
   }
 
@@ -80,7 +80,7 @@ case class PageRow(
 
   def get(keyStr: String): Option[Any] = get(resolveKey(keyStr))
 
-  def get(key: KeyLike): Option[Any] = store.get(key)
+  def get(key: KeyLike): Option[Any] = dataRow.get(key)
 
   def getOnlyPage: Option[Page] = {
     val pages = this.pages
@@ -140,7 +140,7 @@ case class PageRow(
     result
   }
 
-  def toMap: Map[String, Any] = this.store
+  def toMap: Map[String, Any] = this.dataRow
     .filterKeys(_.isInstanceOf[Key]).map(identity)
     .map( tuple => tuple._1.name -> tuple._2)
 
@@ -168,18 +168,18 @@ case class PageRow(
 
     val addKVs = newKVs.filter(_._2.nonEmpty).map(tuple => tuple._1 -> tuple._2.get)
 
-    val existing = if (clearExisting) this.store -- newKVs.map(_._1)
-    else this.store
+    val existing = if (clearExisting) this.dataRow -- newKVs.map(_._1)
+    else this.dataRow
 
-    Some(this.copy(store = existing ++ addKVs)) //TODO: is there an negative impact of not removing empty KVs?
+    Some(this.copy(dataRow = existing ++ addKVs)) //TODO: is there an negative impact of not removing empty KVs?
   }
 
   def remove(keys: KeyLike*): PageRow = {
-    this.copy(store = this.store -- keys)
+    this.copy(dataRow = this.dataRow -- keys)
   }
 
   private def filterKeys(f: KeyLike => Boolean): PageRow = {
-    this.copy(store = ListMap(this.store.filterKeys(f).toSeq: _*))
+    this.copy(dataRow = ListMap(this.dataRow.filterKeys(f).toSeq: _*))
   }
 
   def clearTemp: PageRow = this.filterKeys(!_.isInstanceOf[TempKey])
@@ -225,13 +225,13 @@ case class PageRow(
 
     import org.tribbloid.spookystuff.views._
 
-    val newCells =store.flattenKey(key).slice(0, maxOrdinal)
+    val newCells =dataRow.flattenKey(key).slice(0, maxOrdinal)
 
     if (left && newCells.isEmpty) {
-      Seq(this.copy(store = this.store - key)) //this will make sure you dont't lose anything
+      Seq(this.copy(dataRow = this.dataRow - key)) //this will make sure you dont't lose anything
     }
     else {
-      val result = newCells.map(newCell => this.copy(store = ListMap(newCell.toSeq: _*)))
+      val result = newCells.map(newCell => this.copy(dataRow = ListMap(newCell.toSeq: _*)))
 
       if (ordinalKey == null) result
       else result.zipWithIndex.flatMap{
@@ -258,7 +258,7 @@ case class PageRow(
     //    }
 
     val contentRows = this.pages.map{
-      page => this.copy(store = this.store, pageLikes = Array(page))
+      page => this.copy(dataRow = this.dataRow, pageLikes = Array(page))
     }
 
     if (contentRows.isEmpty) {
@@ -330,7 +330,7 @@ case class Squashed[T: ClassTag](
 
 object PageRow {
 
-  type KVStore =  ListMap[KeyLike, Any]
+  type dataRow =  ListMap[KeyLike, Any]
 
   type SegID = Long
   type RowUID = (Seq[PageUID], SegID)
