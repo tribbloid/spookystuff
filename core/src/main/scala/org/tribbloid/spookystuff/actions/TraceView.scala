@@ -5,7 +5,7 @@ import org.tribbloid.spookystuff.entity.PageRow
 import org.tribbloid.spookystuff.pages.{Page, PageLike, PageUtils}
 import org.tribbloid.spookystuff.session.{DriverSession, NoDriverSession, Session}
 import org.tribbloid.spookystuff.utils.Utils
-import org.tribbloid.spookystuff.{dsl, Const, SpookyContext}
+import org.tribbloid.spookystuff.{RemoteDisabledException, dsl, Const, SpookyContext}
 
 import scala.collection.mutable.ArrayBuffer
 import scala.reflect.ClassTag
@@ -58,8 +58,12 @@ class TraceView(
     val result: ArrayBuffer[Trace] = ArrayBuffer()
 
     for (i <- self.indices) {
-      if (self(i).hasOutput){
-        val backtrace = self.slice(0, i).flatMap(_.trunk) :+ self(i)
+      val selfi = self(i)
+      if (selfi.hasOutput){
+        val backtrace = selfi match {
+          case dl: Driverless => selfi :: Nil
+          case _ => self.slice(0, i).flatMap(_.trunk) :+ selfi
+        }
         result += backtrace
       }
     }
@@ -101,6 +105,8 @@ class TraceView(
       results
     }
     else { //TODO: this still launch Driver for Blocks (e.g. Try) containing only Driverless Actions
+      if (!spooky.conf.remote) throw new RemoteDisabledException("Resource is not cached and not allowed to be fetched remotely, the later can be enabled by setting SpookyContext.conf.remote=true")
+
       val session = if (self.count(_.needDriver) == 0) new NoDriverSession(spooky)
       else new DriverSession(spooky)
       try {

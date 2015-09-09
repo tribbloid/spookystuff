@@ -77,12 +77,17 @@ case class SpookyContext (
     this(new SparkContext(conf))
   }
 
-  @transient val _effectiveConf = _spookyConf.inject(sqlContext.sparkContext)
+  @transient var _effectiveConf = _spookyConf.importFrom(sqlContext.sparkContext.getConf)
 
   @volatile var broadcastedEffectiveConf = sqlContext.sparkContext.broadcast(_effectiveConf)
 
   def conf = if (_effectiveConf == null) broadcastedEffectiveConf.value
   else _effectiveConf
+
+  def conf_=(conf: SpookyConf): Unit = {
+    _effectiveConf = conf.importFrom(sqlContext.sparkContext.getConf)
+    broadcast()
+  }
 
   def broadcast(): Unit ={
     broadcastedEffectiveConf.destroy()

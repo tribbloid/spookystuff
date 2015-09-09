@@ -7,7 +7,7 @@ import org.apache.hadoop.fs.{FileStatus, Path}
 import org.apache.spark.SparkEnv
 import org.slf4j.LoggerFactory
 import org.tribbloid.spookystuff._
-import org.tribbloid.spookystuff.actions.{Wayback, Block, Export, Trace}
+import org.tribbloid.spookystuff.actions.{Trace, Wayback}
 import org.tribbloid.spookystuff.expressions.Literal
 import org.tribbloid.spookystuff.utils.{DFSResolver, Serializable, Utils}
 

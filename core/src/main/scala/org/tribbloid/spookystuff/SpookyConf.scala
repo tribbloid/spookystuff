@@ -18,7 +18,10 @@ import scala.concurrent.duration._
  */
 object SpookyConf {
 
-  private def getDefault(property: String, backup: String)(implicit conf: SparkConf): String = {
+  private def getDefault(
+                          property: String,
+                          backup: String = null
+                          )(implicit conf: SparkConf): String = {
     val env = property.replace('.','_').toUpperCase
 
     conf.getOption(property)
@@ -84,6 +87,7 @@ class SpookyConf (
 
                    val browserResolution: (Int, Int) = (1920, 1080),
 
+                   var remote: Boolean = true, //if disabled won't use remote client at all
                    var autoSave: Boolean = true,
                    var cacheWrite: Boolean = true,
                    var cacheRead: Boolean = true,
@@ -117,25 +121,24 @@ class SpookyConf (
                    var defaultStorageLevel: StorageLevel = StorageLevel.MEMORY_ONLY
                    ) extends Serializable {
 
-  def inject(sc: SparkContext): SpookyConf = {
-    implicit val sparkConf = sc.getConf
+  def importFrom(implicit sparkConf: SparkConf): SpookyConf = {
 
     val root = Option(this.dirs.root).getOrElse(SpookyConf.getDefault("spooky.dirs.root", "temp"))
-//    def root_/(subdir: String) = Utils.uriSlash(root) + subdir
+    //    def root_/(subdir: String) = Utils.uriSlash(root) + subdir
 
     val localRoot = Option(this.dirs.root).getOrElse(SpookyConf.getDefault("spooky.dirs.root.local", "temp"))
-//    def localRoot_/(subdir: String) = Utils.uriSlash(root) + subdir
+    //    def localRoot_/(subdir: String) = Utils.uriSlash(root) + subdir
 
     val dirs = new DirConf(
       root,
       localRoot,
-      Option(this.dirs._autoSave).getOrElse(SpookyConf.getDefault("spooky.dirs.autosave", null)),
-      Option(this.dirs._cache).getOrElse(SpookyConf.getDefault("spooky.dirs.cache", null)),
-      Option(this.dirs._errorDump).getOrElse(SpookyConf.getDefault("spooky.dirs.error.dump", null)),
-      Option(this.dirs._errorScreenshot).getOrElse(SpookyConf.getDefault("spooky.dirs.error.screenshot", null)),
-      Option(this.dirs._checkpoint).getOrElse(SpookyConf.getDefault("spooky.dirs.checkpoint", null)),
-      Option(this.dirs._errorDumpLocal).getOrElse(SpookyConf.getDefault("spooky.dirs.error.dump.local", null)),
-      Option(this.dirs._errorScreenshotLocal).getOrElse(SpookyConf.getDefault("spooky.dirs.error.screenshot.local", null))
+      Option(this.dirs._autoSave).getOrElse(SpookyConf.getDefault("spooky.dirs.autosave")),
+      Option(this.dirs._cache).getOrElse(SpookyConf.getDefault("spooky.dirs.cache")),
+      Option(this.dirs._errorDump).getOrElse(SpookyConf.getDefault("spooky.dirs.error.dump")),
+      Option(this.dirs._errorScreenshot).getOrElse(SpookyConf.getDefault("spooky.dirs.error.screenshot")),
+      Option(this.dirs._checkpoint).getOrElse(SpookyConf.getDefault("spooky.dirs.checkpoint")),
+      Option(this.dirs._errorDumpLocal).getOrElse(SpookyConf.getDefault("spooky.dirs.error.dump.local")),
+      Option(this.dirs._errorScreenshotLocal).getOrElse(SpookyConf.getDefault("spooky.dirs.error.screenshot.local"))
     )
 
     new SpookyConf(
@@ -152,6 +155,7 @@ class SpookyConf (
 
       this.browserResolution,
 
+      this.remote,
       this.autoSave,
       this.cacheWrite,
       this.cacheRead,

@@ -21,10 +21,17 @@ class ActionException(
 
 }
 
+class RemoteDisabledException(
+                               override val message: String = "",
+                               override val cause: Throwable = null
+                               ) extends SpookyException(message, cause) {
+
+}
+
 class ExportFilterException(
-                           override val message: String = "",
-                           override val cause: Throwable = null
-                           ) extends ActionException(message, cause) {
+                             override val message: String = "",
+                             override val cause: Throwable = null
+                             ) extends ActionException(message, cause) {
 
 }
 

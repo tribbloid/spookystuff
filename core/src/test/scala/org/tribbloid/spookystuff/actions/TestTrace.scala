@@ -68,4 +68,15 @@ class TestTrace extends SpookyEnvSuite {
 
     assert(t1.outputNames === Set("c","d"))
   }
+
+  test("dryrun should discard preceding actions when calculating Driverless action's backtrace") {
+
+    val dry = (Delay(10.seconds) +> Wget("http://dum.my")).head.dryrun
+    assert(dry.size == 1)
+    assert(dry.head == Seq(Wget("http://dum.my")))
+
+    val dry2 = (Delay(10.seconds) +> OAuthV2(Wget("http://dum.my"))).head.dryrun
+    assert(dry2.size == 1)
+    assert(dry2.head == Seq(OAuthV2(Wget("http://dum.my"))))
+  }
 }

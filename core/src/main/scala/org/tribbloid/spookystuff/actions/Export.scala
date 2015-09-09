@@ -78,10 +78,14 @@ trait WaybackSupport {
     this
   }
 
+  def waybackTo(date: Date): this.type = this.waybackTo(Literal(date))
+
   def waybackToTimeMillis(time: Expression[Long]): this.type = {
     this.wayback = time
     this
   }
+
+  def waybackToTimeMillis(date: Long): this.type = this.waybackToTimeMillis(Literal(date))
 
   protected def interpolateWayback(pageRow: PageRow): Option[this.type] = {
     if (this.wayback == null) Some(this)

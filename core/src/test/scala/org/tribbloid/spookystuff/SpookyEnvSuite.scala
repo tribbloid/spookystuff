@@ -53,10 +53,14 @@ abstract class SpookyEnvSuite extends FunSuite with BeforeAndAfter with BeforeAn
   }
 
   def setUp(): Unit = {
-    spooky.conf.autoSave = true
-    spooky.conf.cacheWrite = false
-    spooky.conf.cacheRead = false
 
-    spooky.conf.dirs.root = "file://"+System.getProperty("user.dir")+"/temp/spooky-unit/"
+    spooky.conf = new SpookyConf(
+      autoSave = true,
+      cacheWrite = false,
+      cacheRead = false,
+      dirs = new SpookyConf.DirConf(
+        root = "file://"+System.getProperty("user.dir")+"/temp/spooky-unit/"
+      )
+    )
   }
 }
