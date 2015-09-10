@@ -30,6 +30,12 @@
                 <activeByDefault>true</activeByDefault>
             </activation>
         </profile>
+        <profile>
+            <id>spark-1.5.0</id>
+            <properties>
+                <spark.version>1.5.0</spark.version>
+            </properties>
+        </profile>
     </profiles>
 
     <groupId>com.tribbloids.spookystuff</groupId>

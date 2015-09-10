@@ -1,18 +1,21 @@
 package com.tribbloids.spookystuff.pages
 
 import java.io._
-import java.util.Date //TODO: change to sql.Date
+import java.util.Date
+
+import org.apache.tika.mime.MimeTypes
+
+//TODO: change to sql.Date
 import java.util.UUID
 
-import jodd.util.MimeTypes
-import org.apache.hadoop.fs.Path
-import org.apache.http.entity.ContentType
-import org.apache.tika.io.TikaInputStream
-import org.apache.tika.metadata.{TikaMetadataKeys, Metadata}
-import org.mozilla.universalchardet.UniversalDetector
 import com.tribbloids.spookystuff._
 import com.tribbloids.spookystuff.actions._
 import com.tribbloids.spookystuff.utils.Utils
+import org.apache.hadoop.fs.Path
+import org.apache.http.entity.ContentType
+import org.apache.tika.io.TikaInputStream
+import org.apache.tika.metadata.{Metadata, TikaMetadataKeys}
+import org.mozilla.universalchardet.UniversalDetector
 
 import scala.collection.immutable.ListSet
 
@@ -128,7 +131,8 @@ case class Page(
 
   def mimeType: String = parsedContentType.getMimeType
   def charset: Option[Selector] = Option(parsedContentType.getCharset).map(_.name())
-  def exts: Array[String] = MimeTypes.findExtensionsByMimeTypes(mimeType, false)
+  def tikaMime = MimeTypes.getDefaultMimeTypes.forName(mimeType)
+  def exts: Array[String] = tikaMime.getExtensions.toArray.asInstanceOf[Array[String]]//MimeTypes.findExtensionsByMimeTypes(mimeType, false)
   def defaultExt: Option[String] = exts.headOption
 
   //TODO: use reflection to find any element implementation that can resolve supplied MIME type
