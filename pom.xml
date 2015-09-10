@@ -32,7 +32,7 @@
         </profile>
     </profiles>
 
-    <groupId>org.tribbloid.spookystuff</groupId>
+    <groupId>com.tribbloids.spookystuff</groupId>
     <artifactId>spookystuff</artifactId>
     <version>0.3.1-SNAPSHOT</version>
     <packaging>pom</packaging>
