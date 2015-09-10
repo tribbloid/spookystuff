@@ -204,8 +204,8 @@ class PageRowRDD private (
   //always use the same path pattern for filtered pages, if you want pages to be saved with different path, use multiple saveContent with different names
   def savePages(
                  path: Expression[Any],
-                 pageExpr: Expression[Page] = S,
                  ext: Expression[Any] = null,
+                 pageExpr: Expression[Page] = S,
                  overwrite: Boolean = false //TODO: move to context & more option
                  //                 enforceURI: Boolean = false
                  ): PageRowRDD = {

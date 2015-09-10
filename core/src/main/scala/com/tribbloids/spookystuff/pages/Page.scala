@@ -132,7 +132,11 @@ case class Page(
   def mimeType: String = parsedContentType.getMimeType
   def charset: Option[Selector] = Option(parsedContentType.getCharset).map(_.name())
   def tikaMime = MimeTypes.getDefaultMimeTypes.forName(mimeType)
-  def exts: Array[String] = tikaMime.getExtensions.toArray.asInstanceOf[Array[String]]//MimeTypes.findExtensionsByMimeTypes(mimeType, false)
+  def exts: Array[String] = tikaMime.getExtensions.toArray(Array[String]()).map{
+    str =>
+      if (str.startsWith(".")) str.splitAt(1)._2
+      else str
+  }
   def defaultExt: Option[String] = exts.headOption
 
   //TODO: use reflection to find any element implementation that can resolve supplied MIME type
