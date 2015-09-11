@@ -2,11 +2,39 @@
    Author's custom styles
    ========================================================================== */
 
+.navbar-inner {
+  background-color: #ffff70;
+  background-image: none;
+  filter: none
+}
+
 .navbar .brand {
   height: 50px;
   width: 250px;
   margin-left: 1px;
   padding: 0;
+}
+
+.navbar .nav > li > a {
+  color: #000;
+  font-weight: bold;
+}
+
+.navbar .nav > li > a:focus,
+.navbar .nav > li > a:hover {
+  color: #ffff00;
+  /*text-decoration: none;*/
+  background-color: #000;
+  text-shadow: none;
+}
+
+.dropdown-menu li > a:hover,
+.dropdown-menu li > a:focus,
+.dropdown-submenu:hover > a {
+  color: #ffff00;
+  text-decoration: none;
+  background-color: #000;
+  background-image: none;
 }
 
 .version {
@@ -16,7 +44,7 @@
   padding: 0;
   margin: 0;
   font-weight: bold;
-  color: #777;
+  color: #000;
 }
 
 .navbar-inner {
@@ -41,6 +69,10 @@
 
 body #content {
   line-height: 1.6; /* Inspired by Github's wiki style */
+}
+
+.logo img {
+  height: 100px;
 }
 
 .title {

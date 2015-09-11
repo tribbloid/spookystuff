@@ -12,7 +12,11 @@ SpookyStuff is the fastest big data collection engine in history, with a speed r
 
 # Powered by
 
-![Apache Spark](http://spark.apache.org/images/spark-logo.png) ![Selenium](http://docs.seleniumhq.org/images/big-logo.png) ![PhantomJS](http://phantomjs.org/img/phantomjs-logo.png) ![Apache Tika](http://tika.apache.org/tika.png) ![Apache Maven](http://maven.apache.org/images/logos/maven-feather.png) ![Apache Http Components](https://hc.apache.org/images/logos/httpcomponents.png)
+<div class="logo" markdown="1">
+
+![Apache Spark](http://spark.apache.org/images/spark-logo.png) ![Selenium](http://docs.seleniumhq.org/images/big-logo.png) ![PhantomJS](http://phantomjs.org/img/phantomjs-logo.png) ![Apache Http Components](https://hc.apache.org/images/logos/httpcomponents.png) ![Apache Tika](http://tika.apache.org/tika.png) ![Apache Maven](https://maven.apache.org/images/maven-logo-black-on-white.png) ![GitHub](https://assets-cdn.github.com/images/modules/logos_page/Octocat.png) ![Travis-CI](https://travis-ci.com/img/brand-standards/logo-downloads/TravisCI-Full-Color-vertical.png)
+
+</div>
 
 # Installation
 
