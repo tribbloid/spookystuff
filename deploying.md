@@ -10,7 +10,7 @@ title: Deploying
 
 Why so complex? All you need is is a single library in your Java/Scala classpath:
 
-    groupId: org.tribbloid.spookystuff
+    groupId: com.tribbloids.spookystuff
     artifactId: spookystuff-assembly_2.10
     version: {{site.STABLE_VERSION}}
 
@@ -22,9 +22,9 @@ You have 3 options: download it, build it or let a dependency manager (Apache Ma
 
 |  | Stable ({{site.STABLE_VERSION}}) | Nightly ({{site.NIGHTLY_VERSION}}) |
 | ------------- | ------------------------ | -------------- |
-| Library | [Download .jar](https://s3-us-west-1.amazonaws.com/spooky-bin/spookystuff/spark-{{site.SPARK_VERSION0}}-scala-2.10/spookystuff-assembly-{{site.STABLE_VERSION}}.jar) | [Download .jar](https://s3-us-west-1.amazonaws.com/spooky-bin/spookystuff/spark-{{site.SPARK_VERSION0}}-scala-2.10/spookystuff-assembly-{{site.NIGHTLY_VERSION}}.jar) |
-| Bundled with Spark {{site.SPARK_VERSION0}} | [Download .zip](https://s3-us-west-1.amazonaws.com/spooky-bin/spookystuff/spark-{{site.SPARK_VERSION0}}-scala-2.10/spookystuff-assembly-{{site.STABLE_VERSION}}-bin-spark{{site.SPARK_VERSION0}}.zip) | [Download .zip](https://s3-us-west-1.amazonaws.com/spooky-bin/spookystuff/spark-{{site.SPARK_VERSION0}}-scala-2.10/spookystuff-assembly-{{site.NIGHTLY_VERSION}}-bin-spark{{site.SPARK_VERSION0}}.zip) |
-| Bundled with Spark {{site.SPARK_VERSION1}} | [Download .zip](https://s3-us-west-1.amazonaws.com/spooky-bin/spookystuff/spark-{{site.SPARK_VERSION1}}-scala-2.10/spookystuff-assembly-{{site.STABLE_VERSION}}-bin-spark{{site.SPARK_VERSION1}}.zip) | [Download .zip](https://s3-us-west-1.amazonaws.com/spooky-bin/spookystuff/spark-{{site.SPARK_VERSION1}}-scala-2.10/spookystuff-assembly-{{site.NIGHTLY_VERSION}}-bin-spark{{site.SPARK_VERSION1}}.zip) |
+| Library | [Download .jar](https://s3-us-west-1.amazonaws.com/spooky-bin/spookystuff/spark-{{site.SPARK_VERSION.first}}-scala-2.10/spookystuff-assembly-{{site.STABLE_VERSION}}.jar) | [Download .jar](https://s3-us-west-1.amazonaws.com/spooky-bin/spookystuff/spark-{{site.SPARK_VERSION.first}}-scala-2.10/spookystuff-assembly-{{site.NIGHTLY_VERSION}}.jar) |
+{% for version in site.SPARK_VERSION %}| Bundled with Spark {{version}} | [Download .zip](https://s3-us-west-1.amazonaws.com/spooky-bin/spookystuff/spark-{{version}}-scala-2.10/spookystuff-assembly-{{site.STABLE_VERSION}}-bin-spark{{version}}.zip) | [Download .zip](https://s3-us-west-1.amazonaws.com/spooky-bin/spookystuff/spark-{{version}}-scala-2.10/spookystuff-assembly-{{site.NIGHTLY_VERSION}}-bin-spark{{version}}.zip)
+{% endfor %}
 
 </div>
 
@@ -40,7 +40,7 @@ if you want to use SpookyStuff as a library in your source code, the easiest way
 
 {% highlight xml %}
 <dependency>
-    <groupId>org.tribbloid.spookystuff</groupId>
+    <groupId>com.tribbloids.spookystuff</groupId>
     <artifactId>spookystuff-core_2.10</artifactId>
     <version>{{site.STABLE_VERSION}}</version>
 </dependency>
@@ -51,7 +51,7 @@ if you want to use SpookyStuff as a library in your source code, the easiest way
 <div data-lang="SBT">
 
 {% highlight scala %}
-libraryDependencies += "org.tribbloid.spookystuff" % "spookystuff-core_2.10" % "{{site.STABLE_VERSION}}"
+libraryDependencies += "com.tribbloids.spookystuff" % "spookystuff-core_2.10" % "{{site.STABLE_VERSION}}"
 {% endhighlight %}
 
 </div>
@@ -59,7 +59,7 @@ libraryDependencies += "org.tribbloid.spookystuff" % "spookystuff-core_2.10" % "
 <div data-lang="Gradle">
 
 {% highlight groovy %}
-'org.tribbloid.spookystuff:spookystuff-core_2.10:{{site.STABLE_VERSION}}'
+'com.tribbloids.spookystuff:spookystuff-core_2.10:{{site.STABLE_VERSION}}'
 {% endhighlight %}
 
 </div>
@@ -67,7 +67,7 @@ libraryDependencies += "org.tribbloid.spookystuff" % "spookystuff-core_2.10" % "
 <div data-lang="Leiningen">
 
 {% highlight clojure %}
-[org.tribbloid.spookystuff/spookystuff-core_2.10 "{{site.STABLE_VERSION}}"]
+[com.tribbloids.spookystuff/spookystuff-core_2.10 "{{site.STABLE_VERSION}}"]
 {% endhighlight %}
 
 </div>
@@ -205,7 +205,7 @@ In addition: We also recommend using the following [Spark properties](http://spa
 
 - **spark.kryoserializer.buffer.max=512m** (or a size enough to handle your largest partition): The default value of 64m may be unable to handle large files, increase it if you ran into KryoException.
 
-- **spark.kryo.registrator=org.tribbloid.spookystuff.SpookyRegistrator**: Not necessary but can be helpful in reducing Serialization size.
+- **spark.kryo.registrator=com.tribbloids.spookystuff.SpookyRegistrator**: Not necessary but can be helpful in reducing Serialization size.
 
 # More Information
 

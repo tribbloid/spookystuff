@@ -16,10 +16,10 @@ The following diagram illustrates the elements of SpookyStuff queries: context, 
 
 ![query-breakdown](img/query-breakdown.png)
 
-To run it in any Scala environment, import all members of the package org.tribbloid.spookystuff.dsl:
+To run it in any Scala environment, import all members of the package com.tribbloids.spookystuff.dsl:
 
 {% highlight scala %}
-import org.tribbloid.spookystuff.dsl._
+import com.tribbloids.spookystuff.dsl._
 {% endhighlight %}
 
 # Context
@@ -472,7 +472,7 @@ All operators that fits into this category are listed in the following table, wi
 
 #### others
 
-Many other functions are also supported by the expression system but they are too many to be listed here. Scala users are recommended to refer to source code and scaladoc of ```org.tribbloid.spookystuff.dsl``` package, as these functions are built to resemble Scala functions and operators, rather than the less capable SQL LINQ syntax. In fact, SpookyStuff even use Scala reflective programming API to handle functions it doesn't know.
+Many other functions are also supported by the expression system but they are too many to be listed here. Scala users are recommended to refer to source code and scaladoc of ```com.tribbloids.spookystuff.dsl``` package, as these functions are built to resemble Scala functions and operators, rather than the less capable SQL LINQ syntax. In fact, SpookyStuff even use Scala reflective programming API to handle functions it doesn't know.
 
 # Profiling
 
