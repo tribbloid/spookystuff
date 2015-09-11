@@ -11,7 +11,9 @@ class TestPageFromHttp extends SpookyEnvSuite {
   import dsl._
 
   def htmlUrl = "http://www.wikipedia.org"
-  def jsonUrl = "https://api.github.com/users/tribbloid"
+  def jsonUrl = "http://tribbloid.github.io/spookystuff/test/tribbloid.json"
+  //TODO: add this after fetch can semi-auto-detect content-type
+  def jsonUrlIncorrectContentType = "https://raw.githubusercontent.com/tribbloid/spookystuff/master/core/src/test/resources/site/tribbloid.json"
   def pngUrl = "https://www.google.ca/images/srpr/logo11w.png"
   def pdfUrl = "http://stlab.adobe.com/wiki/images/d/d3/Test.pdf"
 
