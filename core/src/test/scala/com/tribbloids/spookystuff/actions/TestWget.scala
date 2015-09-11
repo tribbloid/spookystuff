@@ -20,6 +20,7 @@ class TestWget extends SpookyEnvSuite {
     spooky.conf.proxy = ProxyFactories.NoProxy
 
     val results = (
+      //TODO: may not be stable, alternatives are http://www.whatsmyua.com/ and http://user-agent.me/
       wget("http://www.whatsmyuseragent.com/") :: Nil
       ).resolve(spooky)
 

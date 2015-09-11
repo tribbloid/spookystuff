@@ -21,7 +21,7 @@ printf "AWS-credential = $AWSAccessKeyId:$AWSSecretKey\n"
 # limitations under the License.
 #
 
-VERSION=0.3.1-SNAPSHOT
+VERSION=0.3.2-SNAPSHOT
 SCALA_VERSION=2.10
 
 if [ -n "$1" ]; then
