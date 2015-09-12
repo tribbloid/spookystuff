@@ -16,15 +16,15 @@ limitations under the License.
 package com.tribbloids.spookystuff.dsl
 
 import com.gargoylesoftware.htmlunit.BrowserVersion
+import com.tribbloids.spookystuff.SpookyContext
+import com.tribbloids.spookystuff.session.{CleanWebDriver, CleanWebDriverHelper, ProxySetting}
 import org.apache.spark.SparkFiles
+import org.openqa.selenium.htmlunit.HtmlUnitDriver
 import org.openqa.selenium.phantomjs.{PhantomJSDriver, PhantomJSDriverService}
 import org.openqa.selenium.remote.CapabilityType._
 import org.openqa.selenium.remote.{BrowserType, CapabilityType, DesiredCapabilities}
 import org.openqa.selenium.{Capabilities, Platform, Proxy}
 import org.slf4j.LoggerFactory
-import com.tribbloids.spookystuff.SpookyContext
-import com.tribbloids.spookystuff.selenium.htmlunit.HtmlUnitDriverExt
-import com.tribbloids.spookystuff.session.{CleanWebDriver, CleanWebDriverHelper, ProxySetting}
 
 //TODO: switch to DriverPool! Tor cannot handle too many connection request.
 sealed abstract class DriverFactory extends Serializable{
@@ -132,7 +132,7 @@ object DriverFactories {
     override def _newInstance(capabilities: Capabilities, spooky: SpookyContext): CleanWebDriver = {
 
       val cap = newCap(capabilities, spooky)
-      val driver = new HtmlUnitDriverExt(browser) with CleanWebDriverHelper
+      val driver = new HtmlUnitDriver(browser) with CleanWebDriverHelper
       driver.setJavascriptEnabled(true)
       driver.setProxySettings(Proxy.extractFrom(cap))
 

@@ -48,7 +48,7 @@ class ExplorePagesIT extends IntegrationSuite {
     )
   }
 
-  override def numPages = _ => 5
+  override def numFetchedPages = _ => 5
 
   override def numDrivers = 0
 }

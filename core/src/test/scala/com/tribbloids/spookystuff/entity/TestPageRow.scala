@@ -13,7 +13,7 @@ class TestPageRow extends SpookyEnvSuite {
   test("get page") {
     val page = (
       Wget("http://www.wikipedia.org/") :: Nil
-    ).resolve(spooky).toArray
+    ).fetch(spooky).toArray
     val row = PageRow(pageLikes = page)
 
     val page1 = row.getOnlyPage
@@ -26,7 +26,7 @@ class TestPageRow extends SpookyEnvSuite {
   test("get unstructured") {
     val page = (
       Wget("http://www.wikipedia.org/").as('pp) :: Nil
-    ).resolve(spooky).toArray
+    ).fetch(spooky).toArray
     val row = PageRow(pageLikes = page)
       .select(S("h1.central-textlogo img").head.as('e1)).head
       .selectTemp('pp.findAll("label").head).head

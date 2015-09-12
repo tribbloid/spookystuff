@@ -28,7 +28,7 @@ class TestPageFromBrowser extends SpookyEnvSuite {
     val results = (
       Visit("http://en.wikipedia.org") ::
         Snapshot().as('T) :: Nil
-      ).resolve(spooky)
+      ).fetch(spooky)
 
     val resultsList = results.toArray
     assert(resultsList.length === 1)

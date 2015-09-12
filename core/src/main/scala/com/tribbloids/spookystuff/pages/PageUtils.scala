@@ -28,7 +28,7 @@ object PageUtils {
     }
     catch {
       case e: Throwable =>
-        spooky.metrics.DFSReadFail += 1
+        spooky.metrics.DFSReadFailure += 1
         val ex = new DFSReadException(pathStr ,e)
         ex.setStackTrace(e.getStackTrace)
         if (spooky.conf.failOnDFSError) throw ex
@@ -50,7 +50,7 @@ object PageUtils {
     }
     catch {
       case e: Throwable =>
-        spooky.metrics.DFSWriteFail += 1
+        spooky.metrics.DFSWriteFailure += 1
         val ex = new DFSWriteException(pathStr ,e)
         ex.setStackTrace(e.getStackTrace)
         throw ex

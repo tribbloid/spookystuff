@@ -26,7 +26,6 @@ import javax.net.ssl.X509TrustManager;
  *
  * @version $Revision: 4002 $
  * @author Daniel Gredler
- * @created Nov 12, 2004
  */
 public class InsecureTrustManager implements X509TrustManager {
 

@@ -14,8 +14,8 @@ import scala.reflect.ClassTag
  * Created by peng on 10/25/14.
  */
 class TraceView(
-                        override val self: Seq[Action]
-                        ) extends Actions(self) { //remember trace is not a block! its the super container that cannot be wrapped
+                 override val self: Seq[Action]
+                 ) extends Actions(self) { //remember trace is not a block! its the super container that cannot be wrapped
 
   //always has output (Sometimes Empty) to handle left join
   override def doInterpolate(pr: PageRow): Option[this.type] = {
@@ -77,17 +77,17 @@ class TraceView(
     else self :+ Snapshot() //Don't use singleton, otherwise will flush timestamp and name
   }
 
-  def resolve(spooky: SpookyContext): Seq[PageLike] = {
+  def fetch(spooky: SpookyContext): Seq[PageLike] = {
 
     val results = Utils.retry (Const.remoteResourceLocalRetries){
-      resolvePlain(spooky)
+      fetchOnce(spooky)
     }
     val numPages = results.count(_.isInstanceOf[Page])
     spooky.metrics.pagesFetched += numPages
     results
   }
 
-  def resolvePlain(spooky: SpookyContext): Seq[PageLike] = {
+  def fetchOnce(spooky: SpookyContext): Seq[PageLike] = {
 
     if (!this.hasOutput) return Nil
 
@@ -104,13 +104,23 @@ class TraceView(
 
       results
     }
-    else { //TODO: this still launch Driver for Blocks (e.g. Try) containing only Driverless Actions
-      if (!spooky.conf.remote) throw new RemoteDisabledException("Resource is not cached and not allowed to be fetched remotely, the later can be enabled by setting SpookyContext.conf.remote=true")
+    else {
+      if (!spooky.conf.remote) throw new RemoteDisabledException(
+        "Resource is not cached and not allowed to be fetched remotely, " +
+          "the later can be enabled by setting SpookyContext.conf.remote=true"
+      )
 
       val session = if (self.count(_.needDriver) == 0) new NoDriverSession(spooky)
       else new DriverSession(spooky)
       try {
-        this.apply(session)
+        val result = this.apply(session)
+        spooky.metrics.fetchSuccess += 1
+        result
+      }
+      catch {
+        case e: Throwable =>
+          spooky.metrics.fetchFailure += 1
+          throw e
       }
       finally {
         session.close()

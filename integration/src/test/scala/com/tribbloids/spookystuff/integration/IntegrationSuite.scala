@@ -107,10 +107,10 @@ abstract class IntegrationSuite extends FunSuite with BeforeAndAfterAll {
     }
   }
 
-  private def assertBeforeCache(spooky: SpookyContext): Unit = {
+  def assertBeforeCache(spooky: SpookyContext): Unit = {
     val metrics = spooky.metrics
 
-    val numPages = this.numPages(spooky.conf.defaultQueryOptimizer)
+    val numPages = this.numFetchedPages(spooky.conf.defaultQueryOptimizer)
 
     val pageFetched = metrics.pagesFetched.value
     assert(pageFetched === numPages)
@@ -122,11 +122,11 @@ abstract class IntegrationSuite extends FunSuite with BeforeAndAfterAll {
     assert(metrics.driverReclaimed.value >= metrics.driverInitialized.value)
   }
 
-  private def assertAfterCache(spooky: SpookyContext): Unit = {
+  def assertAfterCache(spooky: SpookyContext): Unit = {
     val metrics = spooky.metrics
 
     val pageFetched = metrics.pagesFetched.value
-    assert(pageFetched === numPages(spooky.conf.defaultQueryOptimizer))
+    assert(pageFetched === numFetchedPages(spooky.conf.defaultQueryOptimizer))
     assert(metrics.pagesFetchedFromWeb.value === 0)
     assert(metrics.pagesFetchedFromCache.value === pageFetched)
     assert(metrics.sessionInitialized.value === 0)
@@ -134,7 +134,7 @@ abstract class IntegrationSuite extends FunSuite with BeforeAndAfterAll {
     assert(metrics.driverInitialized.value === 0)
     assert(metrics.driverReclaimed.value >= metrics.driverInitialized.value)
     assert(metrics.DFSReadSuccess.value > 0)
-    assert(metrics.DFSReadFail.value === 0)
+    assert(metrics.DFSReadFailure.value === 0)
   }
 
   private val retry = 2
@@ -157,11 +157,16 @@ abstract class IntegrationSuite extends FunSuite with BeforeAndAfterAll {
 
   def doMain(spooky: SpookyContext): Unit
 
-  def numPages: QueryOptimizer => Int
+  def numFetchedPages: QueryOptimizer => Int
 
-  def numPagesDistinct: Int = numPages(Wide_RDDWebCache)
+  def numPagesDistinct: Int = numFetchedPages(Wide_RDDWebCache)
 
   def numSessions: Int = numPagesDistinct
 
   def numDrivers: Int = numSessions
+}
+
+abstract class UncacheableIntegrationSuite extends IntegrationSuite {
+
+  override def assertAfterCache(spooky: SpookyContext) = this.assertBeforeCache(spooky)
 }

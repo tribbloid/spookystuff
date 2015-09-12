@@ -21,7 +21,7 @@ class TestPageFromHttp extends SpookyEnvSuite {
 
     val results = (
       Wget(htmlUrl) :: Nil
-    ).resolve(spooky)
+    ).fetch(spooky)
 
     val resultsList = results.toArray
     assert(resultsList.length === 1)
@@ -42,7 +42,7 @@ class TestPageFromHttp extends SpookyEnvSuite {
 
     val results = (
       Wget(jsonUrl) :: Nil
-      ).resolve(spooky)
+      ).fetch(spooky)
 
     val resultsList = results.toArray
     assert(resultsList.length === 1)
@@ -67,7 +67,7 @@ class TestPageFromHttp extends SpookyEnvSuite {
 
     val results = (
       Wget(pngUrl) :: Nil
-    ).resolve(spooky)
+    ).fetch(spooky)
 
     val resultsList = results.toArray
     assert(resultsList.length === 1)
@@ -88,7 +88,7 @@ class TestPageFromHttp extends SpookyEnvSuite {
 
     val results = (
       Wget(pdfUrl) :: Nil
-    ).resolve(spooky)
+    ).fetch(spooky)
 
     val resultsList = results.toArray
     assert(resultsList.length === 1)
@@ -108,7 +108,7 @@ class TestPageFromHttp extends SpookyEnvSuite {
   test("childrenWithSiblings") {
     val page = (
       Wget(htmlUrl) :: Nil
-      ).resolve(spooky).head.asInstanceOf[Page]
+      ).fetch(spooky).head.asInstanceOf[Page]
 
     val ranges = page.findAllWithSiblings("a.link-box em", -2 to 1)
     assert(ranges.size === 10)
@@ -123,7 +123,7 @@ class TestPageFromHttp extends SpookyEnvSuite {
   test("childrenWithSiblings with overlapping elimiation") {
     val page = (
       Wget(htmlUrl) :: Nil
-      ).resolve(spooky).head.asInstanceOf[Page]
+      ).fetch(spooky).head.asInstanceOf[Page]
 
     val ranges = page.findAllWithSiblings("div.central-featured-lang[lang^=e]", -2 to 2)
     assert(ranges.size === 2)

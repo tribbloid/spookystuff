@@ -12,7 +12,7 @@ class TestUnstructured extends SpookyEnvSuite {
 
   import dsl._
 
-  lazy val page = (Wget("http://www.wikipedia.org/").as('old)::Nil).resolve(spooky).head.asInstanceOf[Page]
+  lazy val page = (Wget("http://www.wikipedia.org/").as('old)::Nil).fetch(spooky).head.asInstanceOf[Page]
 
   test("Unstructured is serializable for div") {
     val elements = page.findAll("div.central-featured-lang")
@@ -34,7 +34,7 @@ class TestUnstructured extends SpookyEnvSuite {
     }
   }
 
-  lazy val tablePage = (Wget("http://en.wikipedia.org/").as('old)::Nil).resolve(spooky).head.asInstanceOf[Page]
+  lazy val tablePage = (Wget("http://en.wikipedia.org/").as('old)::Nil).fetch(spooky).head.asInstanceOf[Page]
 
   test("Unstructured is serializable for tr") {
     val elements = tablePage.findAll("table#mp-topbanner > tbody > tr")

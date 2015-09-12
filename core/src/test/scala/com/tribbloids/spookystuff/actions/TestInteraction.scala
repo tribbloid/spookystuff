@@ -42,7 +42,7 @@ class TestInteraction extends SpookyEnvSuite {
       Visit("http://www.wikipedia.org/") ::
         WaitFor("a.link-box:contains(English)") ::
         Snapshot() :: Nil
-    ).resolve(spooky)
+    ).fetch(spooky)
 
     val code = results.head.asInstanceOf[Page].code.get.split('\n').map(_.trim).mkString
     assert(code.contains("<title>Wikipedia</title>"))

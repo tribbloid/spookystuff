@@ -47,7 +47,7 @@ class ExploreNextPageIT extends IntegrationSuite {
     )
   }
 
-  override def numPages = _ => 4
+  override def numFetchedPages = _ => 4
 
   override def numDrivers = 0
 }

@@ -19,7 +19,7 @@ class TestWayback extends SpookyEnvSuite {
 
     val dates: Seq[Long] = (0 to 2).toSeq.map {
       i =>
-        val pages = (Delay(5.seconds) +> Wget("http://www.wikipedia.org")).head.resolve(spooky) //5s is long enough
+        val pages = (Delay(5.seconds) +> Wget("http://www.wikipedia.org")).head.fetch(spooky) //5s is long enough
         assert(pages.size == 1)
         pages.head.timestamp.getTime
     }
@@ -28,7 +28,7 @@ class TestWayback extends SpookyEnvSuite {
 
     val cachedPages = (Delay(5.seconds)
         +> Wget("http://www.wikipedia.org").waybackToTimeMillis(dates(1) + 2000)
-      ).head.resolve(spooky)
+      ).head.fetch(spooky)
     assert(cachedPages.size == 1)
     assert(cachedPages.head.timestamp.getTime == dates(1))
 
@@ -37,7 +37,7 @@ class TestWayback extends SpookyEnvSuite {
     intercept[RemoteDisabledException] {
       (Delay(5.seconds)
         +> Wget("http://www.wikipedia.org").waybackToTimeMillis(dates.head - 2000)
-        ).head.resolve(spooky)
+        ).head.fetch(spooky)
     }
   }
 
@@ -48,7 +48,7 @@ class TestWayback extends SpookyEnvSuite {
     val dates: Seq[Long] = (0 to 2).toSeq.map {
       i =>
         val pages = (Delay(5.seconds)
-          +> Visit("http://www.wikipedia.org")).autoSnapshot.head.resolve(spooky) //5s is long enough
+          +> Visit("http://www.wikipedia.org")).autoSnapshot.head.fetch(spooky) //5s is long enough
         assert(pages.size == 1)
         pages.head.timestamp.getTime
     }
@@ -58,7 +58,7 @@ class TestWayback extends SpookyEnvSuite {
     val cachedPages = (Delay(5.seconds)
       +> Visit("http://www.wikipedia.org")
       +> Snapshot().waybackToTimeMillis(dates(1) + 2000)
-      ).head.resolve(spooky)
+      ).head.fetch(spooky)
     assert(cachedPages.size == 1)
     assert(cachedPages.head.timestamp.getTime == dates(1))
 
@@ -68,7 +68,7 @@ class TestWayback extends SpookyEnvSuite {
       (Delay(5.seconds)
         +> Visit("http://www.wikipedia.org")
         +> Snapshot().waybackToTimeMillis(dates.head - 2000)
-        ).head.resolve(spooky)
+        ).head.fetch(spooky)
     }
   }
 
@@ -80,7 +80,7 @@ class TestWayback extends SpookyEnvSuite {
       i =>
         val pages = (Delay(5.seconds)
           +> Visit("http://www.wikipedia.org")
-          +> Screenshot()).head.resolve(spooky) //5s is long enough
+          +> Screenshot()).head.fetch(spooky) //5s is long enough
         assert(pages.size == 1)
         pages.head.timestamp.getTime
     }
@@ -90,7 +90,7 @@ class TestWayback extends SpookyEnvSuite {
     val cachedPages = (Delay(5.seconds)
       +> Visit("http://www.wikipedia.org")
       +> Screenshot().waybackToTimeMillis(dates(1) + 2000)
-      ).head.resolve(spooky)
+      ).head.fetch(spooky)
     assert(cachedPages.size == 1)
     assert(cachedPages.head.timestamp.getTime == dates(1))
 
@@ -100,7 +100,7 @@ class TestWayback extends SpookyEnvSuite {
       (Delay(5.seconds)
         +> Visit("http://www.wikipedia.org")
         +> Screenshot().waybackToTimeMillis(dates.head - 2000)
-        ).head.resolve(spooky)
+        ).head.fetch(spooky)
     }
   }
 }

@@ -11,8 +11,8 @@ import scala.concurrent.duration._
  */
 class TestPages extends SpookyEnvSuite {
 
-  lazy val page = (Visit("http://en.wikipedia.org")::Snapshot().as('old)::Nil).resolve(spooky).map(_.asInstanceOf[Page])
-  lazy val wgetPage = (Wget("http://en.wikipedia.org").as('oldWget)::Nil).resolve(spooky).map(_.asInstanceOf[Page])
+  lazy val page = (Visit("http://en.wikipedia.org")::Snapshot().as('old)::Nil).fetch(spooky).map(_.asInstanceOf[Page])
+  lazy val wgetPage = (Wget("http://en.wikipedia.org").as('oldWget)::Nil).fetch(spooky).map(_.asInstanceOf[Page])
 
   test("cache and restore") {
     spooky.conf.pageExpireAfter = 2.seconds

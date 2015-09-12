@@ -23,7 +23,9 @@ object Utils {
       case Success(x) =>
         x
       case Failure(e) if n > 1 =>
-        LoggerFactory.getLogger(this.getClass).warn(s"Retrying... ${n-1} times left", e)
+        val logger = LoggerFactory.getLogger(this.getClass)
+        logger.warn(s"Retrying locally on ${e.getClass.getSimpleName}... ${n-1} time(s) left")
+        logger.info("\t\\-->", e)
         retry(n - 1)(fn)
       case Failure(e) =>
         throw e

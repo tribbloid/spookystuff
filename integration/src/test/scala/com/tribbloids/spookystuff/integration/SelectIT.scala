@@ -83,5 +83,5 @@ class SelectIT extends IntegrationSuite {
     assert(titles === Seq("The Free Encyclopedia", "English"))
   }
 
-  override def numPages = _ => 1
+  override def numFetchedPages = _ => 1
 }

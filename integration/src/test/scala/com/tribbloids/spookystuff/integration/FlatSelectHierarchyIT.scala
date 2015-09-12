@@ -55,7 +55,7 @@ class FlatSelectHierarchyIT extends IntegrationSuite {
     )
   }
 
-  override def numPages = _ => 1
+  override def numFetchedPages = _ => 1
 
   override def numDrivers = 0
 }

@@ -33,6 +33,10 @@ class TestBlock extends SpookyEnvSuite {
     assert(!tryy.needDriver)
   }
 
+  test("Try(Wget) can failsafe on malformed uri") {
+
+  }
+
   test("wayback time of loop should be identical to its last child supporting wayback") {
     val waybackDate = new Date()
 

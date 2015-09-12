@@ -22,7 +22,7 @@ class TestWget extends SpookyEnvSuite {
     val results = (
       //TODO: may not be stable, alternatives are http://www.whatsmyua.com/ and http://user-agent.me/
       wget("http://www.whatsmyuseragent.com/") :: Nil
-      ).resolve(spooky)
+      ).fetch(spooky)
 
     results.head.asInstanceOf[Page].findAll("h3.info").texts.head
   }
@@ -34,7 +34,7 @@ class TestWget extends SpookyEnvSuite {
 
       val results = (
         wget("http://www.whatsmyuseragent.com/") :: Nil
-        ).resolve(spooky)
+        ).fetch(spooky)
 
       results.head.asInstanceOf[Page].findAll("h3.info").texts.head
     }
@@ -52,7 +52,7 @@ class TestWget extends SpookyEnvSuite {
 
       val results = (
         wget("https://www.astrill.com/what-is-my-ip-address.php") :: Nil
-        ).resolve(spooky)
+        ).fetch(spooky)
 
       results.head.asInstanceOf[Page].findAll("h1").texts.head
     }
@@ -69,7 +69,7 @@ class TestWget extends SpookyEnvSuite {
 
       val results = (
         wget("http://www.whatsmyuseragent.com/") :: Nil
-        ).resolve(spooky)
+        ).fetch(spooky)
       Actions
       results.head.asInstanceOf[Page].findAll("h3.info").texts.head
     }
@@ -79,7 +79,7 @@ class TestWget extends SpookyEnvSuite {
 
       val results = (
         wget("http://www.whatsmyuseragent.com/") :: Nil
-        ).resolve(spooky)
+        ).fetch(spooky)
 
       results.head.asInstanceOf[Page].findAll("h3.info").texts.head
     }
@@ -94,7 +94,7 @@ class TestWget extends SpookyEnvSuite {
 
       val results = (
         wget("https://www.astrill.com/what-is-my-ip-address.php") :: Nil
-        ).resolve(spooky)
+        ).fetch(spooky)
 
       results.head.asInstanceOf[Page].findAll("h1").texts.head
     }
@@ -104,7 +104,7 @@ class TestWget extends SpookyEnvSuite {
 
       val results = (
         wget("https://www.astrill.com/what-is-my-ip-address.php") :: Nil
-        ).resolve(spooky)
+        ).fetch(spooky)
 
       results.head.asInstanceOf[Page].findAll("h1").texts.head
     }
@@ -117,7 +117,7 @@ class TestWget extends SpookyEnvSuite {
 
     val results = (
       wget("http://www.sigmaaldrich.com/catalog/search?term=38183-12-9&interface=CAS No.&N=0&mode=partialmax&lang=en&region=US&focus=product") :: Nil
-      ).resolve(spooky)
+      ).fetch(spooky)
 
     assert(results.size === 1)
     results.head.asInstanceOf[Page]
@@ -133,7 +133,7 @@ class TestWget extends SpookyEnvSuite {
 
     val results = (
       wget("http://www.perkinelmer.ca/Catalog/Gallery.aspx?ID=Mass Spectrometry [GC/MS and ICP-MS]&PID=Gas Chromatography Mass Spectrometry Consumables&refineCat=Technology&N=172 139 78928 4293910906&TechNVal=4293910906") :: Nil
-      ).resolve(spooky)
+      ).fetch(spooky)
 
     assert(results.size === 1)
     results.head.asInstanceOf[Page]
@@ -147,7 +147,7 @@ class TestWget extends SpookyEnvSuite {
 
     val results = (
       Wget(url) :: Nil
-      ).resolve(spooky)
+      ).fetch(spooky)
 
     assert(results.size === 1)
     val page = results.head.asInstanceOf[Page]
@@ -159,7 +159,7 @@ class TestWget extends SpookyEnvSuite {
 
     val results = (
       wget("http://www.sigmaaldrich.com/etc/controller/controller-page.html?TablePage=17193175") :: Nil
-      ).resolve(spooky)
+      ).fetch(spooky)
 
     assert(results.size === 1)
     val page = results.head.asInstanceOf[Page]
@@ -172,7 +172,7 @@ class TestWget extends SpookyEnvSuite {
 
     val results = (
       wget("http://www.perkinelmer.ca/en-ca/products/consumables-accessories/integrated-solutions/for-thermo-scientific-gcs/default.xhtml") :: Nil
-      ).resolve(spooky)
+      ).fetch(spooky)
 
     assert(results.size === 1)
     assert(results.head.isInstanceOf[NoPage])
@@ -187,7 +187,7 @@ class TestWget extends SpookyEnvSuite {
       RandomDelay(1.seconds, 2.seconds)
         :: wget("http://www.wikipedia.org")
         :: Nil
-      ).resolve(spooky)
+      ).fetch(spooky)
 
     assert(results.size === 1)
     assert(results.head.uid.backtrace.self == wget("http://www.wikipedia.org") :: Nil)
@@ -198,6 +198,6 @@ class TestWget extends SpookyEnvSuite {
 
     val results = Seq(
       wget("https://www.canadacompany.ca/en/")
-    ).resolve(spooky)
+    ).fetch(spooky)
   }
 }

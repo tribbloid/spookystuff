@@ -45,7 +45,7 @@ class FlatSelectIT extends IntegrationSuite {
     assert(rows.head.getString(3) contains "www.wikipedia.org/")
   }
 
-  override def numPages = _ => 1
+  override def numFetchedPages = _ => 1
 
   override def numDrivers = 0
 }

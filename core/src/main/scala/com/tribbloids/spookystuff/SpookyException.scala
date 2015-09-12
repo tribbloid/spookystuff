@@ -21,6 +21,12 @@ class ActionException(
 
 }
 
+
+class TryException(
+                    override val message: String = "",
+                    override val cause: Throwable = null
+                    ) extends ActionException(message, cause)
+
 class RemoteDisabledException(
                                override val message: String = "",
                                override val cause: Throwable = null

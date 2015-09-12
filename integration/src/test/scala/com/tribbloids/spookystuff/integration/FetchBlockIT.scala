@@ -61,7 +61,7 @@ class FetchBlockIT extends IntegrationSuite {
     assert(appendedRows(0).pages(5).name === "d")
   }
 
-  override def numPages = {
+  override def numFetchedPages = {
     case Wide_RDDWebCache => 3
     case _ => 6
   }

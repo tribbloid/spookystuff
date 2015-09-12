@@ -12,7 +12,7 @@ class TestDSL extends SpookyEnvSuite {
 
   lazy val page = (
     Wget("http://www.wikipedia.org/") ~ 'page  :: Nil
-  ).resolve(spooky).toArray
+  ).fetch(spooky).toArray
 
   lazy val row = PageRow(pageLikes = page)
     .select(
@@ -67,7 +67,7 @@ class TestDSL extends SpookyEnvSuite {
   test("double quotes in selector by attribute should work") {
     val page = (
       Wget("http://www.wikipedia.org/") :: Nil
-      ).resolve(spooky).toArray
+      ).fetch(spooky).toArray
     val row = PageRow(pageLikes = page)
       .select(S"""a[href*="wikipedia"]""".href ~ 'uri)
       .head

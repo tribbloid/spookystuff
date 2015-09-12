@@ -62,7 +62,7 @@ class FetchWgetAndSaveIT extends IntegrationSuite {
     assert(appendedRows(1).pages.apply(0).name === "b")
   }
 
-  override def numPages = {
+  override def numFetchedPages = {
     case Wide_RDDWebCache => 1
     case _ => 2
   }

@@ -77,5 +77,5 @@ class ExploreAJAXPagesIT extends IntegrationSuite {
 
   override def numSessions =  6
 
-  override def numPages = _ => 12
+  override def numFetchedPages = _ => 12
 }

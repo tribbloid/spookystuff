@@ -16,6 +16,7 @@ import scala.collection.mutable.ArrayBuffer
 abstract class Session(val spooky: SpookyContext) {
 
   spooky.metrics.sessionInitialized += 1
+//  println("++++SESSION CREATED++++")
   val startTime: Long = new Date().getTime
   val backtrace: ArrayBuffer[Action] = ArrayBuffer()
 

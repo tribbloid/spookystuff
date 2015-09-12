@@ -58,7 +58,7 @@ class FetchVisitIT extends IntegrationSuite {
     assert(fetchNoneRows(1).pages.length === 0)
   }
 
-  override def numPages = {
+  override def numFetchedPages = {
     case Wide_RDDWebCache => 1
     case _ => 2
   }

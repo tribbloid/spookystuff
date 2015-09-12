@@ -3,7 +3,7 @@ package com.tribbloids.spookystuff.actions
 import org.apache.spark.TaskContext
 import org.slf4j.LoggerFactory
 import com.tribbloids.spookystuff.expressions.Expression
-import com.tribbloids.spookystuff.{dsl, Const}
+import com.tribbloids.spookystuff.{TryException, dsl, Const}
 import com.tribbloids.spookystuff.entity.PageRow
 import com.tribbloids.spookystuff.pages.{NoPage, Page, PageLike}
 import com.tribbloids.spookystuff.session.Session
@@ -23,9 +23,9 @@ abstract class Block(override val self: Seq[Action]) extends Actions(self) with 
   override def wayback: Expression[Long] = self.flatMap {
     case w: Wayback => Some(w)
     case _ => None
-  }.lastOption.map{
+  }.lastOption.map {
     _.wayback
-  }.getOrElse(null)
+  }.orNull
 
   override def as(name: Symbol) = {
     super.as(name)
@@ -61,6 +61,20 @@ abstract class Block(override val self: Seq[Action]) extends Actions(self) with 
   def doExeNoUID(session: Session): Seq[Page]
 }
 
+object Try {
+
+  def apply(
+             trace: Set[Trace],
+             retries: Int = Const.clusterRetries,
+             cacheError: Boolean = false
+             ): Try = {
+
+    assert(trace.size == 1)
+
+    Try(trace.head)(retries, cacheError)
+  }
+}
+
 final case class Try(
                       override val self: Seq[Action])(
                       retries: Int,
@@ -85,8 +99,18 @@ final case class Try(
     }
     catch {
       case e: Throwable =>
-        if (taskContext.attemptNumber() < retries) throw e
-        else LoggerFactory.getLogger(this.getClass).info("Aborted on exception: " + e)
+        val logger = LoggerFactory.getLogger(this.getClass)
+        val timesLeft = retries - taskContext.attemptNumber()
+        if (timesLeft > 0) {
+          throw new TryException(
+            s"Retrying cluster-wise on ${e.getClass.getSimpleName}... $timesLeft time(s) left\n" +
+              "(if Spark job failed because of this, please increase your spark.task.maxFailures)" +
+              this.getActionExceptionMessage(session),
+            e
+          )
+        }
+        else logger.warn(s"Failover on ${e.getClass.getSimpleName}: Cluster-wise retries has depleted... ")
+        logger.info("\t\\-->", e)
     }
 
     pages
@@ -99,17 +123,15 @@ final case class Try(
   }
 }
 
-object Try {
+object Loop {
 
   def apply(
              trace: Set[Trace],
-             retries: Int = Const.clusterRetries,
-             cacheError: Boolean = false
-             ): Try = {
-
+             limit: Int = Const.maxLoop
+             ): Loop = {
     assert(trace.size == 1)
 
-    Try(trace.head)(retries, cacheError)
+    Loop(trace.head, limit) //TODO: should persist rule of Cartesian join
   }
 }
 
@@ -155,18 +177,6 @@ final case class Loop(
     val seq = this.doInterpolateSeq(pageRow)
     if (seq.isEmpty) None
     else Some(this.copy(self = seq).asInstanceOf[this.type])
-  }
-}
-
-object Loop {
-
-  def apply(
-             trace: Set[Trace],
-             limit: Int = Const.maxLoop
-             ): Loop = {
-    assert(trace.size == 1)
-
-    Loop(trace.head, limit) //TODO: should persist rule of Cartesian join
   }
 }
 

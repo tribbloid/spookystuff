@@ -1,6 +1,9 @@
 *.class
 *.log
 
+# maven
+*.versionsBackup
+
 # sbt specific
 .cache/
 .history/

@@ -377,7 +377,7 @@ object PageRow {
       val seeds = reducedRows
         .flatMap {
         reducedRow =>
-          val newPages = reducedRow._1.resolve(spooky)
+          val newPages = reducedRow._1.fetch(spooky)
           val rows = reducedRow._2
           rows.flatMap(_.putPages(newPages, Inner))
       }

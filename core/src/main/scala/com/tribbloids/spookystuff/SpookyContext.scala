@@ -29,14 +29,17 @@ case class Metrics(
                     sessionReclaimed: Accumulator[Int] = Metrics.accumulator(0, "sessionReclaimed"),
 
                     DFSReadSuccess: Accumulator[Int] = Metrics.accumulator(0, "DFSReadSuccess"),
-                    DFSReadFail: Accumulator[Int] = Metrics.accumulator(0, "DFSReadFail"),
+                    DFSReadFailure: Accumulator[Int] = Metrics.accumulator(0, "DFSReadFail"),
 
                     DFSWriteSuccess: Accumulator[Int] = Metrics.accumulator(0, "DFSWriteSuccess"),
-                    DFSWriteFail: Accumulator[Int] = Metrics.accumulator(0, "DFSWriteFail"),
+                    DFSWriteFailure: Accumulator[Int] = Metrics.accumulator(0, "DFSWriteFail"),
 
                     pagesFetched: Accumulator[Int] = Metrics.accumulator(0, "pagesFetched"),
                     pagesFetchedFromWeb: Accumulator[Int] = Metrics.accumulator(0, "pagesFetchedFromWeb"),
                     pagesFetchedFromCache: Accumulator[Int] = Metrics.accumulator(0, "pagesFetchedFromCache"),
+
+                    fetchSuccess: Accumulator[Int] = Metrics.accumulator(0, "fetchSuccess"),
+                    fetchFailure: Accumulator[Int] = Metrics.accumulator(0, "fetchFailure"),
 
                     pagesSaved: Accumulator[Int] = Metrics.accumulator(0, "pagesSaved")
                     ) {

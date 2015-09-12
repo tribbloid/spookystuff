@@ -33,37 +33,13 @@ trait Action extends ActionLike {
   //this should handle autoSave, cache and errorDump
   def apply(session: Session): Seq[PageLike] = {
 
-    val errorDump: Boolean = session.spooky.conf.errorDump
-    val errorDumpScreenshot: Boolean = session.spooky.conf.errorScreenshot
-
     val results = try {
       exe(session)
     }
     catch {
       case e: Throwable =>
 
-        var message: String = "\n"
-
-        message += session.backtrace.map{
-          action =>
-            "| "+action.toString
-        }.mkString("\n")
-
-        message += "\n+>" + this.toString
-
-        //TODO: this should be handled by implementations of action.
-        session match {
-          case d: DriverSession =>
-            if (errorDump) {
-              val rawPage = DefaultSnapshot.exe(session).head.asInstanceOf[Page]
-              message += "\nSnapshot: " +this.errorDump(message, rawPage, session.spooky)
-            }
-            if (errorDumpScreenshot && session.driver.isInstanceOf[TakesScreenshot]) {
-              val rawPage = DefaultScreenshot.exe(session).toList.head.asInstanceOf[Page]
-              message += "\nScreenshot: " +this.errorDump(message, rawPage, session.spooky)
-            }
-          case d: NoDriverSession =>
-        }
+        val message: String = getActionExceptionMessage(session)
 
         val ex = e match {
           case ae: ActionException => ae
@@ -76,6 +52,35 @@ trait Action extends ActionLike {
     this.timeElapsed = System.currentTimeMillis() - session.startTime
 
     results
+  }
+
+  def getActionExceptionMessage(session: Session): String = {
+    var message: String = "\n{"
+
+    message += session.backtrace.map {
+      action =>
+        "| " + action.toString
+    }.mkString("\n")
+
+    message += "\n+>" + this.toString
+
+    val errorDump: Boolean = session.spooky.conf.errorDump
+    val errorDumpScreenshot: Boolean = session.spooky.conf.errorScreenshot
+
+    //TODO: this should be handled by implementations of action.
+    session match {
+      case d: DriverSession =>
+        if (errorDump) {
+          val rawPage = DefaultSnapshot.exe(session).head.asInstanceOf[Page]
+          message += "\nSnapshot: " + this.errorDump(message, rawPage, session.spooky)
+        }
+        if (errorDumpScreenshot && session.driver.isInstanceOf[TakesScreenshot]) {
+          val rawPage = DefaultScreenshot.exe(session).toList.head.asInstanceOf[Page]
+          message += "\nScreenshot: " + this.errorDump(message, rawPage, session.spooky)
+        }
+      case d: NoDriverSession =>
+    }
+    message+"\n}"
   }
 
   def errorDump(message: String, rawPage: Page, spooky: SpookyContext): String = {

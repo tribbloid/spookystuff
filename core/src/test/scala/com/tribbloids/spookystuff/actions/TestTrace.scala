@@ -22,7 +22,7 @@ class TestTrace extends SpookyEnvSuite {
         TextInput("input#searchInput","Deep learning") ::
         Submit("input.formBtn") ::
         Snapshot().as('B) :: Nil
-    ).resolve(spooky)
+    ).fetch(spooky)
 
     val resultsList = results
     assert(resultsList.length === 2)

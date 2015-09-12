@@ -59,7 +59,7 @@ class ExploreIT extends IntegrationSuite {
     )
   }
 
-  override def numPages = _ => 6
+  override def numFetchedPages = _ => 6
 
   override def numDrivers = 0
 }

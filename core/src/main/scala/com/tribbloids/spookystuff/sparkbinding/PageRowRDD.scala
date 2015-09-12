@@ -445,7 +445,7 @@ class PageRowRDD private (
     val resultRows = trace_RowRDD
       .flatMap {
       tuple =>
-        val pages = tuple._1.resolve(spooky)
+        val pages = tuple._1.fetch(spooky)
 
         tuple._2.putPages(pages, joinType)
     }
@@ -477,7 +477,7 @@ class PageRowRDD private (
         .groupByKey(numPartitions)
         .flatMap {
         tuple =>
-          val pages = tuple._1.resolve(spooky)
+          val pages = tuple._1.fetch(spooky)
           val newRows = tuple._2.flatMap(_.putPages(pages, joinType)).flatMap(postProcessing)
           newRows
       }
@@ -500,7 +500,7 @@ class PageRowRDD private (
                 (s1, s2) =>
                   if (s1.length < s2.length) s1
                   else s2
-              }.resolve(spooky)
+              }.fetch(spooky)
               val fetchedRows = rows.flatMap(_.putPages(pageLikes, joinType))
               val seedRows = fetchedRows
                 .groupBy(_.segmentID)
