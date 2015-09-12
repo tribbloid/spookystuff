@@ -85,8 +85,10 @@ final case class Try(
     }
     catch {
       case e: Throwable =>
-        if (taskContext.attemptNumber() < retries) throw e
-        else LoggerFactory.getLogger(this.getClass).info("Aborted on exception: " + e)
+        if (taskContext.attemptNumber() > retries) {
+          LoggerFactory.getLogger(this.getClass).info("Aborted on exception: " + e)
+          throw e
+        }
     }
 
     pages
