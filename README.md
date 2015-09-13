@@ -1,3 +1,7 @@
+# Latest doc already moved to:
+
+http://tribbloid.github.io/spookystuff/
+
 SpookyStuff
 ===========
 
