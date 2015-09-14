@@ -160,7 +160,7 @@ final case class TryLocally(
     }
     catch {
       case e: Throwable =>
-        retry[Seq[Page]](retries - 1)({
+        retry[Seq[Page]](retries)({
           val pages = new ArrayBuffer[Page]()
 
           for (action <- self) {
