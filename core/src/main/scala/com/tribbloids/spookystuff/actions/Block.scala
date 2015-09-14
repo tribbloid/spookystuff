@@ -102,15 +102,17 @@ final case class Try(
         val logger = LoggerFactory.getLogger(this.getClass)
         val timesLeft = retries - taskContext.attemptNumber()
         if (timesLeft > 0) {
-          throw new TryException(
+          logger.warn(
             s"Retrying cluster-wise on ${e.getClass.getSimpleName}... $timesLeft time(s) left\n" +
               "(if Spark job failed because of this, please increase your spark.task.maxFailures)" +
               this.getActionExceptionMessage(session),
             e
           )
         }
-        else logger.warn(s"Failover on ${e.getClass.getSimpleName}: Cluster-wise retries has depleted... ")
-        logger.info("\t\\-->", e)
+        else {
+          logger.info("\t\\-->", e)
+          throw new TryException(s"Failover on ${e.getClass.getSimpleName}: Cluster-wise retries has depleted... ")
+        }
     }
 
     pages
