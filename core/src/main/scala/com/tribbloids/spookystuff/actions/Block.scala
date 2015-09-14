@@ -7,6 +7,7 @@ import com.tribbloids.spookystuff.{TryException, dsl, Const}
 import com.tribbloids.spookystuff.entity.PageRow
 import com.tribbloids.spookystuff.pages.{NoPage, Page, PageLike}
 import com.tribbloids.spookystuff.session.Session
+import com.tribbloids.spookystuff.utils.Utils.retry
 
 import scala.collection.mutable.ArrayBuffer
 import scala.concurrent.duration.Duration
@@ -122,6 +123,66 @@ final case class Try(
     else Some(this.copy(self = seq)(this.retries, this.cacheEmptyOutput).asInstanceOf[this.type])
   }
 }
+
+object TryLocally {
+
+  def apply(
+             trace: Set[Trace],
+             retries: Int = Const.clusterRetries,
+             cacheError: Boolean = false
+             ): TryLocally = {
+
+    assert(trace.size == 1)
+
+    TryLocally(trace.head)(retries, cacheError)
+  }
+}
+
+final case class TryLocally(
+                             override val self: Seq[Action])(
+                             retries: Int,
+                             override val cacheEmptyOutput: Boolean
+                             ) extends Block(self) {
+
+  override def trunk = Some(TryLocally(this.trunkSeq)(retries, cacheEmptyOutput).asInstanceOf[this.type])
+
+  override def doExeNoUID(session: Session): Seq[Page] = {
+
+    val pages = new ArrayBuffer[Page]()
+
+    try {
+      for (action <- self) {
+        pages ++= action.exe(session).flatMap{
+          case page: Page => Some(page)
+          case noPage: NoPage => None
+        }
+      }
+    }
+    catch {
+      case e: Throwable =>
+        retry[Seq[Page]](retries - 1)({
+          val pages = new ArrayBuffer[Page]()
+
+          for (action <- self) {
+            pages ++= action.exe(session).flatMap {
+              case page: Page => Some(page)
+              case noPage: NoPage => None
+            }
+          }
+          pages
+        })
+    }
+
+    pages
+  }
+
+  override def doInterpolate(pageRow: PageRow): Option[this.type] ={
+    val seq = this.doInterpolateSeq(pageRow)
+    if (seq.isEmpty) None
+    else Some(this.copy(self = seq)(this.retries, this.cacheEmptyOutput).asInstanceOf[this.type])
+  }
+}
+
 
 object Loop {
 
