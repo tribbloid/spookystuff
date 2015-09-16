@@ -127,26 +127,8 @@ class SpookyConf (
 
   def importFrom(implicit sparkConf: SparkConf): SpookyConf = {
 
-    val root = Option(this.dirs.root).getOrElse(SpookyConf.getDefault("spooky.dirs.root", "temp"))
-    //    def root_/(subdir: String) = Utils.uriSlash(root) + subdir
-
-    val localRoot = Option(this.dirs.root).getOrElse(SpookyConf.getDefault("spooky.dirs.root.local", "temp"))
-    //    def localRoot_/(subdir: String) = Utils.uriSlash(root) + subdir
-
-    val dirs = new DirConf(
-      root,
-      localRoot,
-      Option(this.dirs._autoSave).getOrElse(SpookyConf.getDefault("spooky.dirs.autosave")),
-      Option(this.dirs._cache).getOrElse(SpookyConf.getDefault("spooky.dirs.cache")),
-      Option(this.dirs._errorDump).getOrElse(SpookyConf.getDefault("spooky.dirs.error.dump")),
-      Option(this.dirs._errorScreenshot).getOrElse(SpookyConf.getDefault("spooky.dirs.error.screenshot")),
-      Option(this.dirs._checkpoint).getOrElse(SpookyConf.getDefault("spooky.dirs.checkpoint")),
-      Option(this.dirs._errorDumpLocal).getOrElse(SpookyConf.getDefault("spooky.dirs.error.dump.local")),
-      Option(this.dirs._errorScreenshotLocal).getOrElse(SpookyConf.getDefault("spooky.dirs.error.screenshot.local"))
-    )
-
     new SpookyConf(
-      dirs,
+      this.dirs,
 
       this.shareMetrics,
 

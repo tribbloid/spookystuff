@@ -12,6 +12,7 @@ class TestSpookyContext extends SpookyEnvSuite{
 
     val spooky = this.spooky
     spooky.conf.shareMetrics = false
+    spooky.conf.dirs.cache = "dog"
 
     val rdd2 = spooky.create(Seq("dummy"))
     assert(!(rdd2.spooky eq spooky))
