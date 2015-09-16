@@ -56,14 +56,10 @@ case class Metrics(
   }
 }
 
-/*
-  cannot be shipped to workers
-  entry point of the pipeline
- */
-case class SpookyContext (
+case class SpookyContext private (
                            @transient sqlContext: SQLContext, //can't be used on executors
-                           @transient private var _spookyConf: SpookyConf = new SpookyConf(), //can only be used on executors after broadcast
-                           var metrics: Metrics = new Metrics() //accumulators cannot be broadcasted,
+                           @transient private var _effectiveConf: SpookyConf, //can only be used on executors after broadcast
+                           var metrics: Metrics //accumulators cannot be broadcasted,
                            ) {
 
   val browsersExist = _phantomJSExist()
@@ -80,7 +76,12 @@ case class SpookyContext (
     this(new SparkContext(conf))
   }
 
-  @transient var _effectiveConf = _spookyConf.importFrom(sqlContext.sparkContext.getConf)
+  def this(
+            sqlContext: SQLContext,
+            spookyConf: SpookyConf = new SpookyConf()
+            ) {
+    this(sqlContext, spookyConf.importFrom(sqlContext.sparkContext.getConf), new Metrics())
+  }
 
   @volatile var broadcastedEffectiveConf = sqlContext.sparkContext.broadcast(_effectiveConf)
 
@@ -88,7 +89,6 @@ case class SpookyContext (
   else _effectiveConf
 
   def conf_=(conf: SpookyConf): Unit = {
-    _spookyConf = conf
     _effectiveConf = conf.importFrom(sqlContext.sparkContext.getConf)
     broadcast()
   }

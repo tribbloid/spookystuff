@@ -21,6 +21,21 @@ class TestSpookyContext extends SpookyEnvSuite{
     assert(conf1 == conf2)
   }
 
+  test("derived instances of a SpookyContext should have the same configuration after it has been modified") {
+
+    val spooky = this.spooky
+    spooky.conf.shareMetrics = false
+    spooky.conf.dirs.root = "s3://root"
+    spooky.conf.dirs.cache = "hdfs://dummy"
+
+    val rdd2 = spooky.create(Seq("dummy"))
+    assert(!(rdd2.spooky eq spooky))
+
+    val conf1 = spooky.conf.dirs.toJSON
+    val conf2 = rdd2.spooky.conf.dirs.toJSON
+    assert(conf1 == conf2)
+  }
+
   test("each noInput should have independent metrics if sharedMetrics=false") {
 
     val spooky = this.spooky
