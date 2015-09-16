@@ -8,6 +8,19 @@ import dsl._
  */
 class TestSpookyContext extends SpookyEnvSuite{
 
+  test("derived instances of a SpookyContext should have the same configuration") {
+
+    val spooky = this.spooky
+    spooky.conf.shareMetrics = false
+
+    val rdd2 = spooky.create(Seq("dummy"))
+    assert(!(rdd2.spooky eq spooky))
+
+    val conf1 = spooky.conf.dirs.toJSON
+    val conf2 = rdd2.spooky.conf.dirs.toJSON
+    assert(conf1 == conf2)
+  }
+
   test("each noInput should have independent metrics if sharedMetrics=false") {
 
     val spooky = this.spooky

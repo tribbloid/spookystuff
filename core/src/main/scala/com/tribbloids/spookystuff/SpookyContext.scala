@@ -45,14 +45,14 @@ case class Metrics(
                     ) {
 
   def toJSON: String = {
-    val tuples = this.productIterator.flatMap{
-      case acc: Accumulator[_] => acc.name.map(_ -> acc.value)
-      case _ => None
-    }.toSeq
+//    val tuples = this.productIterator.flatMap{
+//      case acc: Accumulator[_] => acc.name.map(_ -> acc.value)
+//      case _ => None
+//    }.toSeq
+//
+//    val map = ListMap(tuples: _*)
 
-    val map = ListMap(tuples: _*)
-
-    Utils.toJson(map, beautiful = true)
+    Utils.toJson(this, beautiful = true)
   }
 }
 
@@ -62,7 +62,7 @@ case class Metrics(
  */
 case class SpookyContext (
                            @transient sqlContext: SQLContext, //can't be used on executors
-                           @transient private val _spookyConf: SpookyConf = new SpookyConf(), //can only be used on executors after broadcast
+                           @transient private var _spookyConf: SpookyConf = new SpookyConf(), //can only be used on executors after broadcast
                            var metrics: Metrics = new Metrics() //accumulators cannot be broadcasted,
                            ) {
 
@@ -88,6 +88,7 @@ case class SpookyContext (
   else _effectiveConf
 
   def conf_=(conf: SpookyConf): Unit = {
+    _spookyConf = conf
     _effectiveConf = conf.importFrom(sqlContext.sparkContext.getConf)
     broadcast()
   }

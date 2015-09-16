@@ -2,13 +2,12 @@ package com.tribbloids.spookystuff.integration
 
 import java.util.{Date, Properties}
 
+import com.tribbloids.spookystuff.dsl._
+import com.tribbloids.spookystuff.utils.Utils
+import com.tribbloids.spookystuff.{DirConf, SpookyConf, SpookyContext}
 import org.apache.spark.sql.SQLContext
 import org.apache.spark.{SparkConf, SparkContext}
 import org.scalatest.{BeforeAndAfterAll, FunSuite}
-import com.tribbloids.spookystuff.SpookyConf.DirConf
-import com.tribbloids.spookystuff.dsl._
-import com.tribbloids.spookystuff.utils.Utils
-import com.tribbloids.spookystuff.{SpookyConf, SpookyContext}
 
 import scala.concurrent.duration
 
@@ -51,7 +50,7 @@ abstract class IntegrationSuite extends FunSuite with BeforeAndAfterAll {
 
   lazy val roots = {
 
-    val local = Seq("file://"+System.getProperty("user.home")+"/spooky-integration/")
+    val local = Seq("file://"+System.getProperty("user.dir")+"/temp/spooky-integration/")
 
     try {
       val prop = new Properties()

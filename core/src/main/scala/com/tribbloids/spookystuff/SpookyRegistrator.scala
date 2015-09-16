@@ -4,12 +4,11 @@ import java.util.UUID
 import java.util.concurrent.TimeUnit
 
 import com.esotericsoftware.kryo.Kryo
-import org.apache.spark.SerializableWritable
-import org.apache.spark.serializer.KryoRegistrator
-import com.tribbloids.spookystuff.SpookyConf.DirConf
 import com.tribbloids.spookystuff.dsl._
 import com.tribbloids.spookystuff.entity.{ExploreStage, PageRow}
 import com.tribbloids.spookystuff.pages._
+import org.apache.spark.SerializableWritable
+import org.apache.spark.serializer.KryoRegistrator
 
 import scala.collection.immutable.ListMap
 import scala.concurrent.duration.FiniteDuration

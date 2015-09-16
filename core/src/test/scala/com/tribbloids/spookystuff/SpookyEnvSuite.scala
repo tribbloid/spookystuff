@@ -58,7 +58,7 @@ abstract class SpookyEnvSuite extends FunSuite with BeforeAndAfter with BeforeAn
       autoSave = true,
       cacheWrite = false,
       cacheRead = false,
-      dirs = new SpookyConf.DirConf(
+      dirs = new DirConf(
         root = "file://"+System.getProperty("user.dir")+"/temp/spooky-unit/"
       )
     )
