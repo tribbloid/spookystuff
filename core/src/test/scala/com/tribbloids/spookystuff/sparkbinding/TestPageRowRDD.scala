@@ -13,7 +13,7 @@ class TestPageRowRDD extends SpookyEnvSuite {
   test("should support repartition") {
     val spooky = this.spooky
 
-    sc.setCheckpointDir(s"file://${System.getProperty("user.home")}/spooky-local/${this.getClass.getSimpleName}/")
+    sc.setCheckpointDir(s"file://${System.getProperty("user.dir")}/spooky-local/${this.getClass.getSimpleName}/")
 
     val first = spooky
       .fetch(Wget("http://en.wikipedia.org")).persist()

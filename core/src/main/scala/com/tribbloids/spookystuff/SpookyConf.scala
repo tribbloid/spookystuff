@@ -27,8 +27,8 @@ class DirConf(
                var _errorScreenshotLocal: String = null//System.getProperty("spooky.dirs.errorscreenshot.local")
                ) extends Serializable {
 
-  def root_/(subdir: String): String = Utils.uriSlash(root) + subdir
-  def localRoot_/(subdir: String) = Utils.uriSlash(root) + subdir
+  def root_/(subdir: String): String = Option(root).map(Utils.uriSlash(_) + subdir).orNull
+  def localRoot_/(subdir: String) = Option(root).map(Utils.uriSlash(_) + subdir).orNull
 
   def autoSave_=(v: String): Unit = _autoSave = v
   def cache_=(v: String): Unit = _cache = v

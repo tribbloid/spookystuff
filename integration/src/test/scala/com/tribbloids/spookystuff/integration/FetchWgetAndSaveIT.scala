@@ -22,7 +22,7 @@ class FetchWgetAndSaveIT extends IntegrationSuite {
       )
       .select("Wikipedia" ~ 'name)
       .persist()
-      .savePages(x"file://${System.getProperty("user.home")}/spooky-integration/save/${'name}", overwrite = true)
+      .savePages(x"file://${System.getProperty("user.dir")}/spooky-integration/save/${'name}", overwrite = true)
       .select(S.saved ~ 'saved_path)
       .persist()
 
@@ -37,9 +37,9 @@ class FetchWgetAndSaveIT extends IntegrationSuite {
 
     val content = savedPageRows(0).pages.head.content
 
-    assert(savedPageRows(0).get("saved_path").get.asInstanceOf[Iterable[Any]].head === s"file:${System.getProperty("user.home")}/spooky-integration/save/Wikipedia.png")
+    assert(savedPageRows(0).get("saved_path").get.asInstanceOf[Iterable[Any]].head === s"file:${System.getProperty("user.dir")}/spooky-integration/save/Wikipedia.png")
 
-    val loadedContent = PageUtils.load(s"file://${System.getProperty("user.home")}/spooky-integration/save/Wikipedia.png")(spooky)
+    val loadedContent = PageUtils.load(s"file://${System.getProperty("user.dir")}/spooky-integration/save/Wikipedia.png")(spooky)
 
     assert(loadedContent === content)
 
