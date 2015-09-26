@@ -159,11 +159,16 @@ case class PageRow(
                        temp: Boolean,
                        clearExisting: Boolean //set to true to ensure that repeated use of an alias (e.g. A for defaultJoinKey) always evict existing values to avoid data corruption.
                        ) = {
-    val newKVs = exprs.map{
+
+    val newKVs = exprs.flatMap{
       expr =>
-        val key = if (temp) TempKey(expr.name)
-        else Key(expr.name)
-        key -> expr(this)
+        val exprName = expr.name
+        if (exprName == null) None
+        else {
+          val key = if (temp) TempKey(exprName)
+          else Key(exprName)
+          Some(key -> expr(this))
+        }
     }
 
     val addKVs = newKVs.filter(_._2.nonEmpty).map(tuple => tuple._1 -> tuple._2.get)

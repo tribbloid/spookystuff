@@ -22,9 +22,9 @@ trait NamedFunction1[-T, +R] extends (T => R) with Serializable {
 
   val name: String
 
-  final def as(name: Symbol): Alias[T, R] = new Alias(this, name.name)
+  final def as(name: Symbol): Alias[T, R] = new Alias(this, Option(name).map(_.name).orNull)
 
-  final def as_!(name: Symbol): Alias[T, R] = new Alias(this, name.name) with ForceNamedFunction1[T, R]
+  final def as_!(name: Symbol): Alias[T, R] = new Alias(this, Option(name).map(_.name).orNull) with ForceNamedFunction1[T, R]
 
   //will not rename an already-named Alias.
   def defaultAs(name: Symbol): Alias[T, R] = as(name)

@@ -140,7 +140,9 @@ These special characters are often called "metacharacters".
 
   // Spark SQL does not currently support column names with dots (see SPARK-2775),
   // so we'll need to post-process the inferred schema to convert dots into underscores:
-  def canonizeColumnName(name: String): String = name.replaceAllLiterally(".", "_")
+  def canonizeColumnName(name: String): String = {
+    name.replaceAllLiterally(".", "_")
+  }
 
   def toJson(obj: AnyRef, beautiful: Boolean = false): String = {
 

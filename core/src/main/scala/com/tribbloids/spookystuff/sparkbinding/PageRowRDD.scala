@@ -248,12 +248,15 @@ class PageRowRDD private (
   //   */
   def select(exprs: Expression[Any]*): PageRowRDD = {
 
-    val newKeys: Seq[Key] = exprs.map {
+    val newKeys: Seq[Key] = exprs.flatMap {
       expr =>
-        val key = Key(expr.name)
-        if(this.keys.contains(key) && !expr.isInstanceOf[ForceExpression[_]]) //can't insert the same key twice
-          throw new QueryException(s"Key ${key.name} already exist")
-        key
+        if (expr.name == null) None
+        else {
+          val key = Key(expr.name)
+          if(this.keys.contains(key) && !expr.isInstanceOf[ForceExpression[_]]) //can't insert the same key twice
+            throw new QueryException(s"Key ${key.name} already exist")
+          Some(key)
+        }
     }
 
     val result = this.copy(
@@ -266,8 +269,13 @@ class PageRowRDD private (
   //bypass "already exist" check
   def forceSelect(exprs: Expression[Any]*): PageRowRDD = {
 
-    val newKeys: Seq[Key] = exprs.map {
-      expr => Key(expr.name)
+    val newKeys: Seq[Key] = exprs.flatMap {
+      expr =>
+        if (expr.name == null) None
+        else {
+          val key = Key(expr.name)
+          Some(key)
+        }
     }
 
     val result = this.copy(
@@ -279,10 +287,13 @@ class PageRowRDD private (
 
   private def selectTemp(exprs: Expression[Any]*): PageRowRDD = {
 
-    val newKeys: Seq[TempKey] = exprs.map {
+    val newKeys: Seq[TempKey] = exprs.flatMap {
       expr =>
-        val key = TempKey(expr.name)
-        key
+        if (expr.name == null) None
+        else {
+          val key = TempKey(expr.name)
+          Some(key)
+        }
     }
 
     this.copy(
@@ -355,7 +366,7 @@ class PageRowRDD private (
                   ordinalKey: Symbol = null,
                   maxOrdinal: Int = Int.MaxValue,
                   left: Boolean = true
-                  )(exprs: Expression[Any]*) ={
+                  )(exprs: Expression[Any]*) = {
 
     this
       .flattenTemp(expr defaultAs Symbol(Const.defaultJoinKey), ordinalKey, maxOrdinal, left)

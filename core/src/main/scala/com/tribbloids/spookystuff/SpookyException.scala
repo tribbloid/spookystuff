@@ -56,6 +56,11 @@ class QueryException(
                       override val cause: Throwable = null
                       ) extends SpookyException(message, cause)
 
+class PipelineException(
+                      override val message: String = "",
+                      override val cause: Throwable = null
+                      ) extends SpookyException(message, cause)
+
 //class UnsupportedContentTypeException(
 //                                        override val message: String = "",
 //                                        override val cause: Throwable = null
