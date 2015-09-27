@@ -1,14 +1,16 @@
 package com.tribbloids.spookystuff.pipeline
 
+import java.util.UUID
+
 import com.tribbloids.spookystuff.actions._
 import com.tribbloids.spookystuff.dsl
 import com.tribbloids.spookystuff.http.HttpUtils
 import com.tribbloids.spookystuff.sparkbinding.PageRowRDD
-import org.apache.spark.ml.util.Identifiable
 
 
 class GoogleSearchTransformer(
-                               override val uid: String = Identifiable.randomUID("tok")
+                               override val uid: String =
+                               classOf[GoogleSearchTransformer].getCanonicalName + "_" + UUID.randomUUID().toString
                                ) extends DynamicSetter {
 
   import dsl._
