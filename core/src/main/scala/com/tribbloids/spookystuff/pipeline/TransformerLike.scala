@@ -1,5 +1,7 @@
 package com.tribbloids.spookystuff.pipeline
 
+import java.util.UUID
+
 import com.tribbloids.spookystuff.PipelineException
 import com.tribbloids.spookystuff.sparkbinding.PageRowRDD
 import org.apache.spark.ml.param.{Param, ParamMap, Params}
@@ -52,7 +54,8 @@ trait DynamicSetter extends SpookyTransformer with Dynamic {
 
 class ChainTransformer(
                         self: Seq[SpookyTransformer],
-                        override val uid: String = Identifiable.randomUID("tok")
+                        override val uid: String =
+                        classOf[ChainTransformer].getCanonicalName + "_" + UUID.randomUUID().toString
                         ) extends TransformerLike {
 
   //this is mandatory for Params.defaultCopy()

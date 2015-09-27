@@ -32,7 +32,7 @@ class TestTransformer extends SpookyEnvSuite {
 
     val df = result.toDF(sort = true).persist()
 
-    df.show(100, truncate = false)
+    df.collect().foreach(println)
     val maxPage = df.agg(max($"page"))
     assert(maxPage.collect().head.getLong(0) == 2)
 
