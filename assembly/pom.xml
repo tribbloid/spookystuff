@@ -17,6 +17,63 @@
         <example.jar.basename>spookystuff-example-${project.version}.jar</example.jar.basename>
     </properties>
 
+    <profiles>
+        <profile>
+            <id>spark-1.4.1</id>
+
+            <dependencies>
+                <dependency>
+                    <groupId>com.tribbloids.spookystuff</groupId>
+                    <artifactId>spookystuff-pipeline</artifactId>
+                    <version>${project.version}</version>
+                </dependency>
+            </dependencies>
+        </profile>
+
+        <profile>
+            <id>spark-1.5.0</id>
+            <properties>
+                <spark.version>1.5.0</spark.version>
+            </properties>
+
+            <dependencies>
+                <dependency>
+                    <groupId>com.tribbloids.spookystuff</groupId>
+                    <artifactId>spookystuff-pipeline</artifactId>
+                    <version>${project.version}</version>
+                </dependency>
+            </dependencies>
+        </profile>
+
+        <profile>
+            <id>dist</id>
+            <!-- This profile uses the assembly plugin to create a special "dist" package -->
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-assembly-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>dist</id>
+                                <phase>package</phase>
+                                <goals>
+                                    <goal>single</goal>
+                                </goals>
+                                <configuration>
+                                    <outputDirectory>${project.build.directory}/${assembly.jar.dir}</outputDirectory>
+                                    <descriptors>
+                                        <descriptor>src/main/assembly/assembly.xml</descriptor>
+                                    </descriptors>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
+
     <dependencies>
         <dependency>
             <groupId>org.apache.spark</groupId>
@@ -70,34 +127,4 @@
             </plugin>
         </plugins>
     </build>
-
-    <profiles>
-        <profile>
-            <id>dist</id>
-            <!-- This profile uses the assembly plugin to create a special "dist" package -->
-            <build>
-                <plugins>
-                    <plugin>
-                        <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-assembly-plugin</artifactId>
-                        <executions>
-                            <execution>
-                                <id>dist</id>
-                                <phase>package</phase>
-                                <goals>
-                                    <goal>single</goal>
-                                </goals>
-                                <configuration>
-                                    <outputDirectory>${project.build.directory}/${assembly.jar.dir}</outputDirectory>
-                                    <descriptors>
-                                        <descriptor>src/main/assembly/assembly.xml</descriptor>
-                                    </descriptors>
-                                </configuration>
-                            </execution>
-                        </executions>
-                    </plugin>
-                </plugins>
-            </build>
-        </profile>
-    </profiles>
 </project>

@@ -28,7 +28,7 @@
 //        '~.children("a.title").size > 'num_product
 //      )
 //      .save(
-//        x"file://${System.getProperty("user.home")}/spooky-integration/images/${'times}"
+//        x"file://${System.getProperty("user.dir")}/temp/spooky-integration/images/${'times}"
 //      )
 //      .asDataFrame()
 //

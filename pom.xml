@@ -23,23 +23,6 @@
             <properties>
                 <spark.version>1.3.1</spark.version>
             </properties>
-
-            <build>
-                <plugins>
-                    <plugin>
-                        <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-compiler-plugin</artifactId>
-                        <configuration>
-                            <excludes>
-                                <exclude>**/tribbloids/spookystuff/pipeline/**</exclude>
-                            </excludes>
-                            <testExcludes>
-                                <testExclude>**/tribbloids/spookystuff/pipeline/**</testExclude>
-                            </testExcludes>
-                        </configuration>
-                    </plugin>
-                </plugins>
-            </build>
         </profile>
 
         <profile>
@@ -47,13 +30,23 @@
             <activation>
                 <activeByDefault>true</activeByDefault>
             </activation>
+
+            <modules>
+                <module>pipeline</module>
+            </modules>
         </profile>
+
         <profile>
             <id>spark-1.5.0</id>
             <properties>
                 <spark.version>1.5.0</spark.version>
             </properties>
+
+            <modules>
+                <module>pipeline</module>
+            </modules>
         </profile>
+
         <profile>
             <id>release-sign-artifacts</id>
             <build>
@@ -105,42 +98,43 @@
     </scm>
 
     <!--<repositories>-->
-        <!--<repository>-->
-            <!--<id>apache-repo</id>-->
-            <!--<name>Apache Repository</name>-->
-            <!--<url>https://repository.apache.org/content/repositories/releases</url>-->
-            <!--<releases>-->
-                <!--<enabled>true</enabled>-->
-            <!--</releases>-->
-            <!--<snapshots>-->
-                <!--<enabled>false</enabled>-->
-            <!--</snapshots>-->
-        <!--</repository>-->
-        <!--<repository>-->
-            <!--<id>typesafe</id>-->
-            <!--<name>Typesafe - releases</name>-->
-            <!--<url>http://repo.typesafe.com/typesafe/releases/</url>-->
-            <!--<snapshots>-->
-                <!--<enabled>false</enabled>-->
-            <!--</snapshots>-->
-        <!--</repository>-->
-        <!--<repository>-->
-            <!--<id>typesafe-ivy</id>-->
-            <!--<name>Typesafe - ivy - releases</name>-->
-            <!--<url>http://repo.typesafe.com/typesafe/maven-ivy-releases/</url>-->
-            <!--<snapshots>-->
-                <!--<enabled>false</enabled>-->
-            <!--</snapshots>-->
-        <!--</repository>-->
-        <!--<repository>-->
-            <!--<id>oss.sonatype.org</id>-->
-            <!--<name>sonatype sapshots</name>-->
-            <!--<url>https://oss.sonatype.org/content/repositories/snapshots</url>-->
-        <!--</repository>-->
+    <!--<repository>-->
+    <!--<id>apache-repo</id>-->
+    <!--<name>Apache Repository</name>-->
+    <!--<url>https://repository.apache.org/content/repositories/releases</url>-->
+    <!--<releases>-->
+    <!--<enabled>true</enabled>-->
+    <!--</releases>-->
+    <!--<snapshots>-->
+    <!--<enabled>false</enabled>-->
+    <!--</snapshots>-->
+    <!--</repository>-->
+    <!--<repository>-->
+    <!--<id>typesafe</id>-->
+    <!--<name>Typesafe - releases</name>-->
+    <!--<url>http://repo.typesafe.com/typesafe/releases/</url>-->
+    <!--<snapshots>-->
+    <!--<enabled>false</enabled>-->
+    <!--</snapshots>-->
+    <!--</repository>-->
+    <!--<repository>-->
+    <!--<id>typesafe-ivy</id>-->
+    <!--<name>Typesafe - ivy - releases</name>-->
+    <!--<url>http://repo.typesafe.com/typesafe/maven-ivy-releases/</url>-->
+    <!--<snapshots>-->
+    <!--<enabled>false</enabled>-->
+    <!--</snapshots>-->
+    <!--</repository>-->
+    <!--<repository>-->
+    <!--<id>oss.sonatype.org</id>-->
+    <!--<name>sonatype sapshots</name>-->
+    <!--<url>https://oss.sonatype.org/content/repositories/snapshots</url>-->
+    <!--</repository>-->
     <!--</repositories>-->
 
     <modules>
         <module>core</module>
+        <!--<module>pipeline</module>-->
         <module>integration</module>
         <module>example</module>
         <module>assembly</module>
@@ -248,13 +242,13 @@
                 <version>1.6.6</version>
                 <extensions>true</extensions>
                 <!--<executions>-->
-                    <!--<execution>-->
-                        <!--<id>deploy</id>-->
-                        <!--<phase>deploy</phase>-->
-                        <!--<goals>-->
-                            <!--<goal>deploy</goal>-->
-                        <!--</goals>-->
-                    <!--</execution>-->
+                <!--<execution>-->
+                <!--<id>deploy</id>-->
+                <!--<phase>deploy</phase>-->
+                <!--<goals>-->
+                <!--<goal>deploy</goal>-->
+                <!--</goals>-->
+                <!--</execution>-->
                 <!--</executions>-->
                 <configuration>
                     <serverId>ossrh</serverId>
