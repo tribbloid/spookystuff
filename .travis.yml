@@ -5,9 +5,9 @@ jdk:
   - oraclejdk8
 
 env:
-  - SPARK_VERSION="1.3.1 -Ppipeline"
-  - SPARK_VERSION=1.4.1
-  - SPARK_VERSION=1.5.0
+  - SPARK_VERSION="1.3.1"
+  - SPARK_VERSION="1.4.1 -Ppipeline"
+  - SPARK_VERSION="1.5.0 -Ppipeline"
 
 before_install:
   - "sudo apt-get install -y tor"
