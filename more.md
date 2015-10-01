@@ -10,6 +10,8 @@ title: More
 
 #### Spark Shell
 
+#### Databricks Cloud
+
 #### Apache Zeppelin (incubating)
 
 #### IPython

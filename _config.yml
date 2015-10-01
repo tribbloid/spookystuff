@@ -14,8 +14,8 @@ include:
   - _static
   - _modules
 
-NIGHTLY_VERSION: "0.3.2-SNAPSHOT"
-STABLE_VERSION: "0.3.1"
+NIGHTLY_VERSION: "0.3.3-SNAPSHOT"
+STABLE_VERSION: "0.3.2"
 SPARK_VERSION:
   - "1.5.0"
   - "1.4.1"
