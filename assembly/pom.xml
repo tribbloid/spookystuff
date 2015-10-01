@@ -18,6 +18,17 @@
     </properties>
 
     <profiles>
+        <profile>
+            <id>pipeline</id>
+
+            <dependencies>
+                <dependency>
+                    <groupId>com.tribbloids.spookystuff</groupId>
+                    <artifactId>spookystuff-pipeline</artifactId>
+                    <version>${project.version}</version>
+                </dependency>
+            </dependencies>
+        </profile>
 
         <profile>
             <id>dist</id>
@@ -58,11 +69,6 @@
         <dependency>
             <groupId>com.tribbloids.spookystuff</groupId>
             <artifactId>spookystuff-core</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>com.tribbloids.spookystuff</groupId>
-            <artifactId>spookystuff-pipeline</artifactId>
             <version>${project.version}</version>
         </dependency>
     </dependencies>
