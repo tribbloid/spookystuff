@@ -33,7 +33,7 @@ class FetchTryOAuthWgetIT extends UncacheableIntegrationSuite {
     intercept[SparkException]{
       val RDD = sc.parallelize(Seq("http://malformed uri"))
         .fetch(
-          Try(OAuthV2(Wget('_)),11)
+          Try(OAuthV2(Wget('_)),5)
         )
         .select(S.code ~ 'page)
         .collect()

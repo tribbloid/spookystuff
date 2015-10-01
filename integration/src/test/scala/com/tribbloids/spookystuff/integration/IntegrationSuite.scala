@@ -21,7 +21,7 @@ abstract class IntegrationSuite extends FunSuite with BeforeAndAfterAll {
 
   override def beforeAll() {
     val conf: SparkConf = new SparkConf().setAppName("integration")
-      .setMaster(s"local[${Runtime.getRuntime.availableProcessors()},10]")
+      .setMaster(s"local[${Runtime.getRuntime.availableProcessors()},4]")
     //      .set("spark.serializer", "org.apache.spark.serializer.KryoSerializer")
     //      .set("spark.kryo.registrator", "com.tribbloids.spookystuff.SpookyRegistrator")
     //      .set("spark.kryoserializer.buffer.max.mb", "512")
