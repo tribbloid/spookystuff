@@ -10,4 +10,3 @@ class TestPageFromFile extends TestPageFromHttp {
   override def pngUrl = this.getClass.getClassLoader.getResource("site/logo11w.png").getPath
   override def pdfUrl = this.getClass.getClassLoader.getResource("site/Test.pdf").getPath
 }
-

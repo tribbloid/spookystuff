@@ -18,32 +18,6 @@
     </properties>
 
     <profiles>
-        <profile>
-            <id>spark-1.4.1</id>
-
-            <dependencies>
-                <dependency>
-                    <groupId>com.tribbloids.spookystuff</groupId>
-                    <artifactId>spookystuff-pipeline</artifactId>
-                    <version>${project.version}</version>
-                </dependency>
-            </dependencies>
-        </profile>
-
-        <profile>
-            <id>spark-1.5.0</id>
-            <properties>
-                <spark.version>1.5.0</spark.version>
-            </properties>
-
-            <dependencies>
-                <dependency>
-                    <groupId>com.tribbloids.spookystuff</groupId>
-                    <artifactId>spookystuff-pipeline</artifactId>
-                    <version>${project.version}</version>
-                </dependency>
-            </dependencies>
-        </profile>
 
         <profile>
             <id>dist</id>
@@ -84,6 +58,11 @@
         <dependency>
             <groupId>com.tribbloids.spookystuff</groupId>
             <artifactId>spookystuff-core</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.tribbloids.spookystuff</groupId>
+            <artifactId>spookystuff-pipeline</artifactId>
             <version>${project.version}</version>
         </dependency>
     </dependencies>
