@@ -213,8 +213,15 @@ package object views {
     }
 
     def canonizeKeysToColumnNames: Map[String,V] = m1.map(
-      tuple =>
-        (Utils.canonizeColumnName(tuple._1.toString), tuple._2)
+      tuple =>{
+        val keyName = tuple._1 match {
+          case symbol: Symbol =>
+            symbol.name
+          case _ =>
+            tuple._1.toString
+        }
+        (Utils.canonizeColumnName(keyName), tuple._2)
+      }
     )
   }
 

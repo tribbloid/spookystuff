@@ -2,7 +2,7 @@ package com.tribbloids.spookystuff.pipeline
 
 import java.util.UUID
 
-import com.tribbloids.spookystuff.PipelineException
+import com.tribbloids.spookystuff.{SpookyContext, PipelineException}
 import com.tribbloids.spookystuff.sparkbinding.PageRowRDD
 import org.apache.spark.ml.param.{Param, ParamMap, Params}
 
@@ -19,22 +19,24 @@ private[pipeline] trait TransformerLike extends Params with Serializable {
   def copy(extra: ParamMap): TransformerLike = this.defaultCopy(extra)
 
   def +> (another: SpookyTransformer): ChainTransformer
+
+  def test(spooky: SpookyContext): Unit
 }
 
-trait SpookyTransformer extends TransformerLike{
+trait SpookyTransformer extends TransformerLike with Dynamic {
 
   override def copy(extra: ParamMap): SpookyTransformer = this.defaultCopy(extra)
 
   def +> (another: SpookyTransformer): ChainTransformer = new ChainTransformer(Seq(this)) +> another
 
-  def $(col: Param[String]): Symbol = {
+  def toSymbol(col: Param[String]): Symbol = {
     val colName = Option(getOrDefault(col))
     colName.map(Symbol(_)).orNull
   }
-}
 
-trait DynamicSetter extends SpookyTransformer with Dynamic {
-
+  /*
+  This dynamic function automatically add a setter to any property in Param type
+   */
   def applyDynamic(methodName: String)(args: Any*): this.type = {
     assert(args.length == 1)
     val arg = args.head
@@ -76,4 +78,6 @@ class ChainTransformer(
     this.self :+ another,
     uid = this.uid
   )
+
+  override def test(spooky: SpookyContext): Unit = self.foreach(_.test(spooky))
 }

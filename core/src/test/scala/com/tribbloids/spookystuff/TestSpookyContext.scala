@@ -1,6 +1,7 @@
 package com.tribbloids.spookystuff
 
 import com.tribbloids.spookystuff.actions._
+import com.tribbloids.spookystuff.entity.Key
 import dsl._
 
 /**
@@ -76,5 +77,41 @@ class TestSpookyContext extends SpookyEnvSuite{
     rdd2.count()
 
     assert(rdd1.spooky.metrics.toJSON === rdd2.spooky.metrics.toJSON)
+  }
+
+  test("can create PageRow from String") {
+
+    val spooky = this.spooky
+    val rows = spooky.create(Seq("a", "b"))
+
+    val data = rows.collect().map(_.dataRow).toList
+    assert(data == List(Map(Key("_") -> "a"), Map(Key("_") -> "b")))
+  }
+
+  test("can create PageRow from map[String, String]") {
+
+    val spooky = this.spooky
+    val rows = spooky.create(Seq(Map("1" -> "a"), Map("2" -> "b")))
+
+    val data = rows.collect().map(_.dataRow).toList
+    assert(data == List(Map(Key("1") -> "a"), Map(Key("2") -> "b")))
+  }
+
+  test("can create PageRow from map[Symbol, String]") {
+
+    val spooky = this.spooky
+    val rows = spooky.create(Seq(Map('a1 -> "a"), Map('a2 -> "b")))
+
+    val data = rows.collect().map(_.dataRow).toList
+    assert(data == List(Map(Key("a1") -> "a"), Map(Key("a2") -> "b")))
+  }
+
+  test("can create PageRow from map[Int, String]") {
+
+    val spooky = this.spooky
+    val rows = spooky.create(Seq(Map(1 -> "a"), Map(2 -> "b")))
+
+    val data = rows.collect().map(_.dataRow).toList
+    assert(data == List(Map(Key("1") -> "a"), Map(Key("2") -> "b")))
   }
 }
