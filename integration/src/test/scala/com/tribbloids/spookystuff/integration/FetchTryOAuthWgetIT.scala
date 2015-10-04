@@ -28,7 +28,7 @@ class FetchTryOAuthWgetIT extends UncacheableIntegrationSuite {
     assert(RDD.first().getOnlyPage.isEmpty)
 
     val pageRows = RDD.toStringRDD('page).collect()
-    assert(pageRows.length == 0)
+    assert(pageRows sameElements Array(null))
 
     intercept[SparkException]{
       val RDD = sc.parallelize(Seq("http://malformed uri"))
