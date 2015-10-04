@@ -97,6 +97,10 @@ package object dsl {
       NamedFunction1(_.getOrElse(value), s"getOrElse($value)")
     )
 
+    def orNull[B >: T]: NamedFunction1[PageRow, B] = self.andThen(
+      NamedFunction1(_.getOrElse(null.asInstanceOf[B]), "orNull")
+    )
+
     def orDefault[B >: T]() = orElse(Some(defaultVal))
 
     def orElse[B >: T](valueOption: =>Option[B]): Expression[B] = self.andThen(

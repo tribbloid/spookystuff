@@ -2,8 +2,8 @@ package com.tribbloids.spookystuff.pipeline
 
 import java.util.UUID
 
-import com.tribbloids.spookystuff.{SpookyContext, PipelineException}
 import com.tribbloids.spookystuff.sparkbinding.PageRowRDD
+import com.tribbloids.spookystuff.{PipelineException, SpookyContext}
 import org.apache.spark.ml.param.{Param, ParamMap, Params}
 
 import scala.language.dynamics
@@ -49,7 +49,7 @@ trait SpookyTransformer extends TransformerLike with Dynamic {
       set(value, arg)
       this
     }
-    else throw new PipelineException(s"setting $methodName doesn't exist")
+    else throw new PipelineException(s"setter $methodName doesn't exist")
   }
 }
 

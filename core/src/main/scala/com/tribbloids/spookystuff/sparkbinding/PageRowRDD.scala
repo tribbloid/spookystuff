@@ -166,11 +166,11 @@ class PageRowRDD private (
     val columns = keysSeq
       .filter(key => key.isInstanceOf[Key])
       .map {
-      key =>
-        val name = Utils.canonizeColumnName(key.name)
-        if (schemaRDD.schema.fieldNames.contains(name)) new Column(UnresolvedAttribute(name))
-        else new Column(Alias(org.apache.spark.sql.catalyst.expressions.Literal(null), name)())
-    }
+        key =>
+          val name = Utils.canonizeColumnName(key.name)
+          if (schemaRDD.schema.fieldNames.contains(name)) new Column(UnresolvedAttribute(name))
+          else new Column(Alias(org.apache.spark.sql.catalyst.expressions.Literal(null), name)())
+      }
 
     val result = schemaRDD.select(columns: _*)
 
@@ -186,11 +186,18 @@ class PageRowRDD private (
 
   def toTSV: RDD[String] = this.toCSV("\t")
 
-  def toStringRDD(expr: Expression[Any]): RDD[String] = this.flatMap(expr.toStr.toSeqFunction)
+  def toStringRDD(expr: Expression[Any]): RDD[String] = this.map(expr.toStr.orNull)
 
-  def toObjectRDD[T: ClassTag](expr: Expression[T]): RDD[T] = this.flatMap(expr.toSeqFunction)
+  def toObjectRDD[T: ClassTag](expr: Expression[T]): RDD[T] = this.map(expr.orNull)
 
-  def toTypedRDD[T: ClassTag](expr: Expression[Any]): RDD[T] = this.flatMap(expr.typed[T].toSeqFunction)
+  def toTypedRDD[T: ClassTag](expr: Expression[Any]): RDD[T] = this.map(expr.typed[T].orNull)
+
+  def toPairRDD[T1: ClassTag, T2: ClassTag](first: Expression[T1], second: Expression[T2]): RDD[(T1,T2)] = this.map{
+    row =>
+      val t1: T1 = first.orNull.apply(row)
+      val t2: T2 = second.orNull.apply(row)
+      t1 -> t2
+  }
 
   /**
    * save each page to a designated directory
@@ -309,6 +316,8 @@ class PageRowRDD private (
       keys = this.keys -- names
     )
   }
+
+  def deselect(keys: Symbol*) = remove(keys: _*)
 
   private def clearTemp: PageRowRDD = {
     this.copy(
@@ -448,18 +457,18 @@ class PageRowRDD private (
 
     val trace_RowRDD: RDD[(Trace, PageRow)] = self
       .flatMap {
-      row =>
-        _traces.interpolate(row).map(interpolatedTrace => interpolatedTrace -> row.clearPagesBeforeFetch(joinType))
-    }
+        row =>
+          _traces.interpolate(row).map(interpolatedTrace => interpolatedTrace -> row.clearPagesBeforeFetch(joinType))
+      }
       .repartition(numPartitions)
 
     val resultRows = trace_RowRDD
       .flatMap {
-      tuple =>
-        val pages = tuple._1.fetch(spooky)
+        tuple =>
+          val pages = tuple._1.fetch(spooky)
 
-        tuple._2.putPages(pages, joinType)
-    }
+          tuple._2.putPages(pages, joinType)
+      }
 
     this.copy(self = resultRows)
   }
@@ -479,19 +488,19 @@ class PageRowRDD private (
 
     val trace_Rows: RDD[(Trace, PageRow)] = self
       .flatMap {
-      row =>
-        _traces.interpolate(row).map(interpolatedTrace => interpolatedTrace -> row.clearPagesBeforeFetch(joinType))
-    }
+        row =>
+          _traces.interpolate(row).map(interpolatedTrace => interpolatedTrace -> row.clearPagesBeforeFetch(joinType))
+      }
 
     val updated: PageRowRDD = if (!useWebCache) {
       val pageRows = trace_Rows
         .groupByKey(numPartitions)
         .flatMap {
-        tuple =>
-          val pages = tuple._1.fetch(spooky)
-          val newRows = tuple._2.flatMap(_.putPages(pages, joinType)).flatMap(postProcessing)
-          newRows
-      }
+          tuple =>
+            val pages = tuple._1.fetch(spooky)
+            val newRows = tuple._2.flatMap(_.putPages(pages, joinType)).flatMap(postProcessing)
+            newRows
+        }
 
       this.copy(self = pageRows)
     }
@@ -729,17 +738,17 @@ class PageRowRDD private (
 
     val firstStageRDD = firstResultRDD
       .map {
-      row =>
-        val dryrun: DryRun = row.pageLikes.toSeq.map(_.uid.backtrace).distinct
-        val seeds = Seq(row)
-        val preJoins = seeds.flatMap{
-          _.localPreJoins(_expr,ordinalKey,maxOrdinal)(
-            _traces, existingDryruns = Set(dryrun)
-          )
-        }
+        row =>
+          val dryrun: DryRun = row.pageLikes.toSeq.map(_.uid.backtrace).distinct
+          val seeds = Seq(row)
+          val preJoins = seeds.flatMap{
+            _.localPreJoins(_expr,ordinalKey,maxOrdinal)(
+              _traces, existingDryruns = Set(dryrun)
+            )
+          }
 
-        ExploreStage(preJoins.toArray, existingDryruns = Set(dryrun))
-    }
+          ExploreStage(preJoins.toArray, existingDryruns = Set(dryrun))
+      }
 
     val resultRDDs = ArrayBuffer[RDD[PageRow]](
       firstResultRDD
@@ -759,17 +768,17 @@ class PageRowRDD private (
             stage,
             spooky
           )(
-              _expr,
-              depthKey,
-              _depthFromExclusive,
-              depthToInclusive,
-              ordinalKey,
-              maxOrdinal
-            )(
-              _traces,
-              flattenPagesPattern,
-              flattenPagesOrdinalKey
-            )
+            _expr,
+            depthKey,
+            _depthFromExclusive,
+            depthToInclusive,
+            ordinalKey,
+            maxOrdinal
+          )(
+            _traces,
+            flattenPagesPattern,
+            flattenPagesOrdinalKey
+          )
       }
 
       newRows_newStageRDD.name =

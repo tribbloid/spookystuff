@@ -4,10 +4,6 @@ import com.tribbloids.spookystuff.SpookyContext
 import com.tribbloids.spookystuff.actions._
 import com.tribbloids.spookystuff.dsl._
 import com.tribbloids.spookystuff.example.QueryCore
-import com.tribbloids.spookystuff.expressions.Expression
-import com.tribbloids.spookystuff.pages.{Elements, Unstructured}
-
-import scala.collection.SeqView
 
 /**
  * Created by peng on 10/06/14.

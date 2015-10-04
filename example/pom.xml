@@ -36,6 +36,12 @@
             <scope>${dependencies.scope}</scope>
         </dependency>
         <dependency>
+            <groupId>com.tribbloids.spookystuff</groupId>
+            <artifactId>spookystuff-pipeline</artifactId>
+            <version>${project.version}</version>
+            <scope>${dependencies.scope}</scope>
+        </dependency>
+        <dependency>
             <groupId>org.apache.spark</groupId>
             <artifactId>spark-core_${scala.binary.version}</artifactId>
             <version>${spark.version}</version>

@@ -21,10 +21,10 @@ class GoogleImageTransformer(
    * @group param
    */
   final val InputCol: Param[String] = new Param[String](this, "inputCol", "input column name")
-  final val ImageUrlsCol: Param[String] = new Param[String](this, "ImageUrlCol", "output ImageUrlCol column name")
+  final val ImageUrisCol: Param[String] = new Param[String](this, "ImageUrisCol", "output ImageUrisCol column name")
   //TODO: add scrolling down
 
-  setDefault(ImageUrlsCol -> null)
+  setDefault(ImageUrisCol -> null)
 
   override def transform(dataset: PageRowRDD): PageRowRDD = {
 
@@ -33,39 +33,30 @@ class GoogleImageTransformer(
         +> TextInput("input[name=\"q\"]",toSymbol(InputCol))
         +> Submit("input[name=\"btnG\"]")
     ).select(
-      S"div#search img".srcs ~ toSymbol(ImageUrlsCol)
+      S"div#search img".srcs ~ toSymbol(ImageUrisCol)
     )
   }
 
   override def test(spooky: SpookyContext): Unit = {
 
-    import org.apache.spark.sql.functions._
     import spooky.sqlContext.implicits._
 
-    val source = spooky.create(Seq("Giant Robot"))
+    val source = spooky.create(Seq("Giant Robot", "Small Robot"))
 
     val transformer = new GoogleImageTransformer() //TODO: change to copy
       .setInputCol("_")
-      .setImageUrlsCol("uris")
+      .setImageUrisCol("uris")
 
     val result = transformer.transform(source)
-    val df = result.flatten('uris ~ 'uri).toDF(sort = true).persist()
+    val df = result.toDF(sort = true).persist()
 
-    assert(df.columns.toSeq == Seq("_", "uris", "uri"))
+    assert(df.columns.toSeq == Seq("_", "uris"))
     df.collect().foreach(println)
+    assert(df.count() == 2)
     df.select('uris).map{
       v =>
-        val arr = v.get(0).asInstanceOf[Array[String]]
+        val arr = v.getAs[Array[String]](0)
         assert(arr.length >= 10)
     }
-    df.select('uri).map{
-      v =>
-        val str = v.get(0).asInstanceOf[String]
-
-        assert(str != null)
-        assert(str.length >= 0)
-    }
-
-    assert(df.count() >= 10)
   }
 }
