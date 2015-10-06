@@ -22,8 +22,15 @@ case class SpookyContext private (
 
   val browsersExist = _phantomJSExist()
 
+  def this(
+            sqlContext: SQLContext,
+            spookyConf: SpookyConf = new SpookyConf()
+            ) {
+    this(sqlContext, spookyConf.importFrom(sqlContext.sparkContext.getConf), new Metrics())
+  }
+
   def this(sqlContext: SQLContext) {
-    this(sqlContext, new SpookyConf(), new Metrics())
+    this(sqlContext, new SpookyConf())
   }
 
   def this(sc: SparkContext) {
@@ -32,13 +39,6 @@ case class SpookyContext private (
 
   def this(conf: SparkConf) {
     this(new SparkContext(conf))
-  }
-
-  def this(
-            sqlContext: SQLContext,
-            spookyConf: SpookyConf = new SpookyConf()
-            ) {
-    this(sqlContext, spookyConf.importFrom(sqlContext.sparkContext.getConf), new Metrics())
   }
 
   @volatile var broadcastedEffectiveConf = sqlContext.sparkContext.broadcast(_effectiveConf)

@@ -30,7 +30,7 @@ abstract class SpookyEnvSuite extends FunSuite with BeforeAndAfter with BeforeAn
 
     sc = new SparkContext(conf)
 
-    val sql: SQLContext = new SQLContext(sc)
+    sql = new SQLContext(sc)
 
     val sConf = new SpookyConf(
       driverFactory = driverFactory

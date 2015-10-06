@@ -114,4 +114,42 @@ class TestSpookyContext extends SpookyEnvSuite{
     val data = rows.collect().map(_.dataRow).toList
     assert(data == List(Map(Key("1") -> "a"), Map(Key("2") -> "b")))
   }
+
+  test("default SpookyContext should have default dir configs") {
+
+    val context = new SpookyContext(this.sql)
+
+    val dirs = context.conf.dirs
+    val json = dirs.toJSON
+    println(json)
+
+    import dirs._
+    assert(!Seq(root, localRoot, autoSave, cache, errorDump, errorScreenshot, checkpoint, errorDumpLocal, errorScreenshotLocal).contains(null))
+  }
+
+  test("when sharedMetrics=false, new SpookyContext created from default SpookyConf should have default dir configs") {
+
+    val conf: SpookyConf = new SpookyConf(shareMetrics = false)
+    val context = new SpookyContext(this.sql, conf)
+
+    val dirs = context.conf.dirs
+    val json = dirs.toJSON
+    println(json)
+
+    import dirs._
+    assert(!Seq(root, localRoot, autoSave, cache, errorDump, errorScreenshot, checkpoint, errorDumpLocal, errorScreenshotLocal).contains(null))
+  }
+
+  test("when sharedMetrics=true, new SpookyContext created from default SpookyConf should have default dir configs") {
+
+    val conf: SpookyConf = new SpookyConf(shareMetrics = true)
+    val context = new SpookyContext(this.sql, conf)
+
+    val dirs = context.conf.dirs
+    val json = dirs.toJSON
+    println(json)
+
+    import dirs._
+    assert(!Seq(root, localRoot, autoSave, cache, errorDump, errorScreenshot, checkpoint, errorDumpLocal, errorScreenshotLocal).contains(null))
+  }
 }
