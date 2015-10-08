@@ -424,28 +424,48 @@ class PageRowRDD private (
   def visit(
              expr: Expression[Any],
              filter: ExportFilter = Const.defaultDocumentFilter,
+             failSafe: Int = -1,
              joinType: JoinType = spooky.conf.defaultJoinType,
              numPartitions: Int = spooky.conf.defaultParallelism(this),
              optimizer: QueryOptimizer = spooky.conf.defaultQueryOptimizer
-             ): PageRowRDD = this.fetch(
-    Visit(expr) +> Snapshot(filter),
-    joinType = joinType,
-    numPartitions = numPartitions,
-    optimizer = optimizer
-  )
+             ): PageRowRDD = {
+
+    var trace: Set[Trace] =  (
+      Visit(expr)
+        +> Snapshot(filter)
+      )
+    if (failSafe > 0) trace = Try(trace, failSafe)
+
+    this.fetch(
+      trace,
+      joinType = joinType,
+      numPartitions = numPartitions,
+      optimizer = optimizer
+    )
+  }
+
+
 
   def wget(
             expr: Expression[Any],
             filter: ExportFilter = Const.defaultDocumentFilter,
+            failSafe: Int = -1,
             joinType: JoinType = spooky.conf.defaultJoinType,
             numPartitions: Int = spooky.conf.defaultParallelism(this),
             optimizer: QueryOptimizer = spooky.conf.defaultQueryOptimizer
-            ): PageRowRDD = this.fetch(
-    Wget(expr, filter),
-    joinType = joinType,
-    numPartitions = numPartitions,
-    optimizer = optimizer
-  )
+            ): PageRowRDD = {
+
+    var trace: Set[Trace] =  Wget(expr, filter)
+
+    if (failSafe > 0) trace = Try(trace, failSafe)
+
+    this.fetch(
+      trace,
+      joinType = joinType,
+      numPartitions = numPartitions,
+      optimizer = optimizer
+    )
+  }
 
   private def _narrowFetch(
                             _traces: Set[Trace],

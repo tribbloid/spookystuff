@@ -28,17 +28,19 @@ object ListOfFeatures extends QueryCore {
     )).toDF()
     .explode[String, String]("list","item")(_.split(",").map(v => "logo "+v.trim))
 
-    val m = new GoogleImageTransformer().setInputCol("item").setImageUrisCol("uris")
+    val output: RDD[(Int, String, String)] = new GoogleImageTransformer().setInputCol("item").setImageUrisCol("uris")
       .transform(input)
-      .select('uris.head ~ 'logo)
-      .toPairRDD('description, 'logo)
-
-    val output: RDD[(String, String)] = new GoogleImageTransformer().setInputCol("item").setImageUrisCol("uris")
-      .transform(input)
-      .select(x"""<img src="${'uris.head}"/>""" ~ 'logo)
+      .select(x"""<div class="logo"><img src="${'uris.head}"/></div>""" ~ 'logo)
       .toPairRDD('description, 'logo)
       .groupByKey()
-      .map(tuple => tuple._1.asInstanceOf[String] -> ("%html " + tuple._2.mkString))
+      .map {
+        tuple =>
+          (
+            tuple._2.size,
+            tuple._1.asInstanceOf[String],
+            "%html " + tuple._2.mkString
+            )
+      }
 
     output.toDF()
   }
