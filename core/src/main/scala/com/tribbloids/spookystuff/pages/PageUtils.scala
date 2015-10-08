@@ -68,11 +68,11 @@ object PageUtils {
     }
 
   //unlike save, this will store all information in an unreadable, serialized, probably compressed file
-  //always overwrite, use the same serializer as Spark
+  //always overwrite! use the same serializer as Spark
   private def cache[T](
                         pageLikes: Seq[T],
                         path: String,
-                        overwrite: Boolean = false
+                        overwrite: Boolean = true
                         )(spooky: SpookyContext): Unit =
     dfsWrite("cache", path, spooky) {
       val fullPath = new Path(path)
