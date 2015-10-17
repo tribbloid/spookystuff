@@ -5,7 +5,7 @@ import java.util.Date
 import com.tribbloids.spookystuff.dsl._
 import com.tribbloids.spookystuff.expressions.{CacheFilePath, PageFilePath}
 import com.tribbloids.spookystuff.session.OAuthKeys
-import org.apache.spark.SparkConf
+import org.apache.spark.{SparkContext, SparkConf}
 import org.apache.spark.rdd.RDD
 import org.apache.spark.storage.StorageLevel
 
@@ -21,8 +21,8 @@ object SpookyConf {
 
     conf.getOption(property)
       .orElse{
-      Option(System.getProperty(property))
-    }.orElse{
+        Option(System.getProperty(property))
+      }.orElse{
       Option(System.getenv(env))
     }.getOrElse{
       backup
@@ -42,6 +42,7 @@ class SpookyConf (
 
                    //TODO: 3 of the following functions can be changed to Expressions
                    var driverFactory: DriverFactory = DriverFactories.PhantomJS(),
+
                    var proxy: ProxyFactory = ProxyFactories.NoProxy,
                    //                   var userAgent: ()=> String = () => null,
                    var userAgent: ()=> String = () => "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/37.0.2062.120 Safari/537.36",
@@ -81,8 +82,13 @@ class SpookyConf (
 
                    var checkpointInterval: Int = 100,
 
-                   var defaultStorageLevel: StorageLevel = StorageLevel.MEMORY_ONLY
+                   var defaultStorageLevel: StorageLevel = StorageLevel.MEMORY_ONLY,
+
+                   var alwaysDownloadBrowserRemotely: Boolean = false //mostly for testing
+
                    ) extends Serializable {
+
+  def importFrom(sparkContext: SparkContext): SpookyConf = importFrom(sparkContext.getConf)
 
   def importFrom(implicit sparkConf: SparkConf): SpookyConf = {
 
@@ -153,8 +159,8 @@ class SpookyConf (
     )
   }
 
-//  def toJSON: String = {
-//
-//    Utils.toJson(this, beautiful = true)
-//  }
+  //  def toJSON: String = {
+  //
+  //    Utils.toJson(this, beautiful = true)
+  //  }
 }

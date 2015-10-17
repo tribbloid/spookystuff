@@ -19,6 +19,9 @@ abstract class IntegrationSuite extends FunSuite with BeforeAndAfterAll {
   @transient var sc: SparkContext = _
   @transient var sql: SQLContext = _
 
+  val phantomJS = DriverFactories.PhantomJS()
+  val htmlUnit = DriverFactories.HtmlUnit()
+
   override def beforeAll() {
     val conf: SparkConf = new SparkConf().setAppName("integration")
       .set("spark.serializer", "org.apache.spark.serializer.KryoSerializer")
@@ -84,8 +87,8 @@ abstract class IntegrationSuite extends FunSuite with BeforeAndAfterAll {
   }
 
   lazy val drivers = Seq(
-    DriverFactories.PhantomJS(),
-    DriverFactories.HtmlUnit()
+    phantomJS,
+    htmlUnit
   )
 
   lazy val optimizers = Seq(

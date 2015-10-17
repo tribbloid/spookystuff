@@ -12,7 +12,7 @@ import scala.concurrent.duration._
 class ExploreAJAXPagesIT extends IntegrationSuite {
 
   override lazy val drivers = Seq(
-    DriverFactories.PhantomJS() //TODO: HtmlUnit does not support Backbone.js
+    phantomJS //TODO: HtmlUnit does not support Backbone.js
   )
 
   override def doMain(spooky: SpookyContext): Unit = {

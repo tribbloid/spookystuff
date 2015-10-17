@@ -1,5 +1,6 @@
 package com.tribbloids.spookystuff
 
+import com.tribbloids.spookystuff.dsl.DriverFactories.PhantomJS
 import org.apache.hadoop.conf.Configuration
 import org.apache.spark._
 import org.apache.spark.rdd.RDD
@@ -15,18 +16,18 @@ import scala.language.implicitConversions
 import scala.reflect.ClassTag
 
 case class SpookyContext private (
-                           @transient sqlContext: SQLContext, //can't be used on executors
-                           @transient private var _effectiveConf: SpookyConf, //can only be used on executors after broadcast
-                           var metrics: Metrics //accumulators cannot be broadcasted,
-                           ) {
+                                   @transient sqlContext: SQLContext, //can't be used on executors
+                                   @transient private var _effectiveConf: SpookyConf, //can only be used on executors after broadcast
+                                   var metrics: Metrics //accumulators cannot be broadcasted,
+                                   ) {
 
-  val browsersExist = _phantomJSExist()
+  val browsersExist = deployPhantomJS()
 
   def this(
             sqlContext: SQLContext,
             spookyConf: SpookyConf = new SpookyConf()
             ) {
-    this(sqlContext, spookyConf.importFrom(sqlContext.sparkContext.getConf), new Metrics())
+    this(sqlContext, spookyConf.importFrom(sqlContext.sparkContext), new Metrics())
   }
 
   def this(sqlContext: SQLContext) {
@@ -47,7 +48,7 @@ case class SpookyContext private (
   else _effectiveConf
 
   def conf_=(conf: SpookyConf): Unit = {
-    _effectiveConf = conf.importFrom(sqlContext.sparkContext.getConf)
+    _effectiveConf = conf.importFrom(sqlContext.sparkContext)
     broadcast()
   }
 
@@ -69,35 +70,25 @@ case class SpookyContext private (
   def getContextForNewInput = if (conf.shareMetrics) this
   else this.copy(metrics = new Metrics())
 
-  private def _phantomJSExist(): Boolean = {
+  private def deployPhantomJS(): Boolean = {
     val sc = sqlContext.sparkContext
-    val numExecutors = sc.defaultParallelism
-    val phantomJSUrl = DriverFactories.PhantomJS.fileUrl
-    val phantomJSFileName = DriverFactories.PhantomJS.fileName
-    if (phantomJSUrl == null || phantomJSFileName == null) {
-      try {
-        LoggerFactory.getLogger(this.getClass).info("Deploying PhantomJS from https://s3-us-west-1.amazonaws.com/spooky-bin/phantomjs-linux/phantomjs ...")
-        sc.addFile("https://s3-us-west-1.amazonaws.com/spooky-bin/phantomjs-linux/phantomjs")
-        LoggerFactory.getLogger(this.getClass).info("Finished: Deploying PhantomJS from https://s3-us-west-1.amazonaws.com/spooky-bin/phantomjs-linux/phantomjs")
-        return true
-      }
-      catch {
-        case e: Throwable =>
-          LoggerFactory.getLogger(this.getClass).info("FAILED: Deploying PhantomJS from https://s3-us-west-1.amazonaws.com/spooky-bin/phantomjs-linux/phantomjs")
-          return false
-      }
+    val phantomJSUrlOption = DriverFactories.PhantomJS.pathOptionFromEnv
+
+    val effectiveURL = if (phantomJSUrlOption.isEmpty || conf.alwaysDownloadBrowserRemotely) PhantomJS.remotePhantomJSURL
+    else phantomJSUrlOption.get
+
+    try {
+      LoggerFactory.getLogger(this.getClass).info(s"Deploying PhantomJS from $effectiveURL ...")
+      sc.addFile(effectiveURL) //this only adds file into http server, executors doesn't necessarily download it.
+      LoggerFactory.getLogger(this.getClass).info(s"Finished deploying PhantomJS from $effectiveURL")
+      return true
     }
-    val hasPhantomJS = sc.parallelize(0 to numExecutors)
-      .map{
-      _ =>
-        DriverFactories.PhantomJS.path(phantomJSFileName) != null
+    catch {
+      case e: Throwable =>
+        LoggerFactory.getLogger(this.getClass).error(s"FAILED to deploy PhantomJS from $effectiveURL", e)
+        return false
     }
-      .reduce(_ && _)
-    if (!hasPhantomJS) {
-      LoggerFactory.getLogger(this.getClass).info("Deploying PhantomJS from Driver ...")
-      sc.addFile(phantomJSUrl)
-      LoggerFactory.getLogger(this.getClass).info("Finished: Deploying PhantomJS from Driver")
-    }
+
     true
   }
 

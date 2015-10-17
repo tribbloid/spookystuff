@@ -10,7 +10,7 @@ import com.tribbloids.spookystuff.dsl._
 class FetchBlockIT extends IntegrationSuite {
 
   override lazy val drivers = Seq(
-    DriverFactories.PhantomJS() //TODO: HtmlUnit does not support Backbone.js
+    phantomJS //TODO: HtmlUnit does not support Backbone.js
   )
 
   override def doMain(spooky: SpookyContext) {

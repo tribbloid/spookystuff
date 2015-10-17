@@ -42,31 +42,43 @@ object DriverFactories {
 
   object PhantomJS {
 
-    def localPathOption = Option(System.getenv("PHANTOMJS_PATH"))
+    val remotePhantomJSURL = "https://s3-us-west-1.amazonaws.com/spooky-bin/phantomjs-linux/phantomjs"
+
+    def pathOptionFromEnv = Option(System.getenv("PHANTOMJS_PATH"))
       .orElse(Option(System.getProperty("phantomjs.binary.path")))
 
-    def path(fileName: String) = localPathOption
-      .getOrElse{
-      LoggerFactory.getLogger(this.getClass).info("$PHANTOMJS_PATH does not exist, using tempfile instead")
-      Option(fileName).map(SparkFiles.get).orNull
-    }
+    def pathFromSparkMaster(nameFromMaster: String) = Option(nameFromMaster).map(SparkFiles.get).orNull
 
-    def fileUrl = localPathOption.orNull
+    def path(nameFromMaster: String): String = pathOptionFromEnv
+      .getOrElse{
+        LoggerFactory.getLogger(this.getClass).info("$PHANTOMJS_PATH does not exist, downloading from master")
+        pathFromSparkMaster(nameFromMaster)
+      }
+
     //only accessable from driver
-    def fileName = Option(fileUrl).flatMap{
+    @transient def fileName = pathOptionFromEnv.flatMap{
       _.split("/").lastOption
-    }.orNull
+    }.getOrElse{
+      remoteFileName
+    }
+    
+    @transient def remoteFileName =
+      remotePhantomJSURL.split("/").last
   }
 
   case class PhantomJS(
-                        fileName: String = PhantomJS.fileName,
-                        loadImages: Boolean = false
+                        loadImages: Boolean = false,
+                        ignoreExecutableInEnvironment: Boolean = false
                         )
     extends DriverFactory {
 
+    val fileNameFromMaster: String = PhantomJS.fileName
+
     @transient lazy val exePath = {
-      val path = PhantomJS.path(fileName)
-      assert(path !=null, "INTERNAL ERROR: PhantomJS has null path")
+      val path = if (!ignoreExecutableInEnvironment) PhantomJS.path(fileNameFromMaster)
+      else PhantomJS.pathFromSparkMaster(fileNameFromMaster)
+
+      assert(path != null, "INTERNAL ERROR: PhantomJS has null path")
       path
     }
 
