@@ -145,7 +145,7 @@ case class PageRow(
     .map( tuple => tuple._1.name -> tuple._2)
 
   def toJSON: String = {
-    import com.tribbloids.spookystuff.views._
+    import com.tribbloids.spookystuff.Views._
 
     Utils.toJson(this.toMap.canonizeKeysToColumnNames)
   }
@@ -228,7 +228,7 @@ case class PageRow(
 
     val key = resolveKey(keyStr)
 
-    import com.tribbloids.spookystuff.views._
+    import com.tribbloids.spookystuff.Views._
 
     val newCells =dataRow.flattenKey(key).slice(0, maxOrdinal)
 

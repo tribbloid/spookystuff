@@ -14,7 +14,7 @@ import scala.reflect.ClassTag
 trait PageRowRDDApi {
   this: PageRowRDD =>
 
-  import com.tribbloids.spookystuff.views._
+  import com.tribbloids.spookystuff.Views._
 
   private implicit def selfToPageRowRDD(self: RDD[PageRow]): PageRowRDD = this.copy(self = self)
 

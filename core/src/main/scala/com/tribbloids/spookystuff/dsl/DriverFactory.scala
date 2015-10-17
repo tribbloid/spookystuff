@@ -18,6 +18,7 @@ package com.tribbloids.spookystuff.dsl
 import com.gargoylesoftware.htmlunit.BrowserVersion
 import com.tribbloids.spookystuff.SpookyContext
 import com.tribbloids.spookystuff.session.{CleanWebDriver, CleanWebDriverHelper, ProxySetting}
+import com.tribbloids.spookystuff.utils.Utils
 import org.apache.spark.SparkFiles
 import org.openqa.selenium.htmlunit.HtmlUnitDriver
 import org.openqa.selenium.phantomjs.{PhantomJSDriver, PhantomJSDriverService}
@@ -44,15 +45,18 @@ object DriverFactories {
 
     val remotePhantomJSURL = "https://s3-us-west-1.amazonaws.com/spooky-bin/phantomjs-linux/phantomjs"
 
-    def pathOptionFromEnv = Option(System.getenv("PHANTOMJS_PATH"))
-      .orElse(Option(System.getProperty("phantomjs.binary.path")))
+    def pathOptionFromEnv = Utils.validateLocalPath(System.getenv("PHANTOMJS_PATH"))
+      .orElse(Utils.validateLocalPath(System.getProperty("phantomjs.binary.path")))
 
-    def pathFromSparkMaster(nameFromMaster: String) = Option(nameFromMaster).map(SparkFiles.get).orNull
+    def pathFromMaster(nameFromMaster: String) = Option(nameFromMaster).map(SparkFiles.get).orNull
 
-    def path(nameFromMaster: String): String = pathOptionFromEnv
+    def path(path: String, nameFromMaster: String): String = pathOptionFromEnv
+      .orElse{
+        Utils.validateLocalPath(path)
+      }
       .getOrElse{
         LoggerFactory.getLogger(this.getClass).info("$PHANTOMJS_PATH does not exist, downloading from master")
-        pathFromSparkMaster(nameFromMaster)
+        pathFromMaster(nameFromMaster)
       }
 
     //only accessable from driver
@@ -61,25 +65,25 @@ object DriverFactories {
     }.getOrElse{
       remoteFileName
     }
-    
+
     @transient def remoteFileName =
       remotePhantomJSURL.split("/").last
   }
 
   case class PhantomJS(
+                        path: String = PhantomJS.pathOptionFromEnv.orNull,
                         loadImages: Boolean = false,
+                        fileNameFromMaster: String = PhantomJS.fileName,
                         ignoreExecutableInEnvironment: Boolean = false
                         )
     extends DriverFactory {
 
-    val fileNameFromMaster: String = PhantomJS.fileName
-
     @transient lazy val exePath = {
-      val path = if (!ignoreExecutableInEnvironment) PhantomJS.path(fileNameFromMaster)
-      else PhantomJS.pathFromSparkMaster(fileNameFromMaster)
+      val effectivePath = if (!ignoreExecutableInEnvironment) PhantomJS.path(path, fileNameFromMaster)
+      else PhantomJS.pathFromMaster(fileNameFromMaster)
 
-      assert(path != null, "INTERNAL ERROR: PhantomJS has null path")
-      path
+      assert(effectivePath != null, "INTERNAL ERROR: PhantomJS has null path")
+      effectivePath
     }
 
     @transient lazy val baseCaps = {

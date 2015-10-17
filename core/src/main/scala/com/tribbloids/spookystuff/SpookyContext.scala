@@ -114,7 +114,7 @@ case class SpookyContext private (
 
     //every input or noInput will generate a new metrics
     implicit def rddToPageRowRDD[T: ClassTag](rdd: RDD[T]): PageRowRDD = {
-      import com.tribbloids.spookystuff.views._
+      import com.tribbloids.spookystuff.Views._
 
       import scala.reflect._
 

@@ -36,7 +36,7 @@ class PageRowRDD private (
   extends PageRowRDDApi {
 
   import RDD._
-  import com.tribbloids.spookystuff.views._
+  import com.tribbloids.spookystuff.Views._
 
   def this(
             self: RDD[PageRow],

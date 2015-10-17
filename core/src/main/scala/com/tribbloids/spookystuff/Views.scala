@@ -1,19 +1,18 @@
 package com.tribbloids.spookystuff
 
+import com.tribbloids.spookystuff.entity.PageRow._
+import com.tribbloids.spookystuff.entity.{PageRow, Squashed}
+import com.tribbloids.spookystuff.utils.Utils
 import org.apache.spark.rdd.RDD
 import org.apache.spark.storage.StorageLevel
-import com.tribbloids.spookystuff.entity.{Squashed, PageRow}
-import com.tribbloids.spookystuff.entity.PageRow.WebCacheRDD
-import com.tribbloids.spookystuff.utils.Utils
 
-import scala.language.implicitConversions
 import scala.reflect.ClassTag
 
 /**
  * Created by peng on 11/7/14.
  * implicit conversions in this package are used for development only
  */
-package object views {
+object Views {
 
   implicit class RDDView[A](val self: A)(implicit ev1: A => RDD[_]) {
 

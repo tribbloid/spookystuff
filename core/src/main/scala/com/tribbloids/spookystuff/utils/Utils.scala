@@ -1,5 +1,7 @@
 package com.tribbloids.spookystuff.utils
 
+import java.io.File
+
 import org.slf4j.LoggerFactory
 import com.tribbloids.spookystuff.Const
 
@@ -157,5 +159,12 @@ These special characters are often called "metacharacters".
     case v: Array[_] => v
     case v: Any => Iterable(v)
     case _ => Nil
+  }
+
+  def validateLocalPath(path: String): Option[String] = {
+    if (path == null) return None
+    val file = new File(path)
+    if (file.exists()) Some(path)
+    else None
   }
 }
