@@ -154,18 +154,19 @@ class TestWget extends SpookyEnvSuite {
     assert(page.uri.contains("www.sigmaaldrich.com/catalog/AdvancedSearchPage"))
   }
 
-  test("wget should correct redirection to relative url path") {
-    spooky.conf.proxy = ProxyFactories.NoProxy
-
-    val results = (
-      wget("http://www.sigmaaldrich.com/etc/controller/controller-page.html?TablePage=17193175") :: Nil
-      ).fetch(spooky)
-
-    assert(results.size === 1)
-    val page = results.head.asInstanceOf[Page]
-    assert(page.findAll("title").head.text.get.contains("Sigma-Aldrich"))
-    assert(page.uri.contains("www.sigmaaldrich.com/labware"))
-  }
+  //TODO: find a new way to test it!
+//  test("wget should correct redirection to relative url path") {
+//    spooky.conf.proxy = ProxyFactories.NoProxy
+//
+//    val results = (
+//      wget("http://www.sigmaaldrich.com/etc/controller/controller-page.html?TablePage=17193175") :: Nil
+//      ).fetch(spooky)
+//
+//    assert(results.size === 1)
+//    val page = results.head.asInstanceOf[Page]
+//    assert(page.findAll("title").head.text.get.contains("Sigma-Aldrich"))
+//    assert(page.uri.contains("www.sigmaaldrich.com/labware"))
+//  }
 
   test("wget should smoothly fail on circular redirection") {
     spooky.conf.proxy = ProxyFactories.NoProxy
