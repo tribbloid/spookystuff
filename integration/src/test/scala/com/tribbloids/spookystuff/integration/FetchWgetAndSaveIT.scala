@@ -37,7 +37,7 @@ class FetchWgetAndSaveIT extends IntegrationSuite {
 
     val content = savedPageRows(0).pages.head.content
 
-    assert(savedPageRows(0).get("saved_path").get.asInstanceOf[Iterable[Any]].head === s"file:${System.getProperty("user.dir")}/temp/spooky-integration/save/Wikipedia.png")
+    assert(savedPageRows(0).get("saved_path").get.asInstanceOf[Iterable[Any]].last === s"file:${System.getProperty("user.dir")}/temp/spooky-integration/save/Wikipedia.png")
 
     val loadedContent = PageUtils.load(s"file://${System.getProperty("user.dir")}/temp/spooky-integration/save/Wikipedia.png")(spooky)
 

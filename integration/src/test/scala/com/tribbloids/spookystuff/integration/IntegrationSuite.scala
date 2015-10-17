@@ -21,11 +21,23 @@ abstract class IntegrationSuite extends FunSuite with BeforeAndAfterAll {
 
   override def beforeAll() {
     val conf: SparkConf = new SparkConf().setAppName("integration")
-      .setMaster(s"local[${Runtime.getRuntime.availableProcessors()},4]")
-    //      .set("spark.serializer", "org.apache.spark.serializer.KryoSerializer")
-    //      .set("spark.kryo.registrator", "com.tribbloids.spookystuff.SpookyRegistrator")
-    //      .set("spark.kryoserializer.buffer.max.mb", "512")
-    //      .set("spark.kryo.registrationRequired", "true")
+      .set("spark.serializer", "org.apache.spark.serializer.KryoSerializer")
+      .set("spark.kryo.registrator", "com.tribbloids.spookystuff.SpookyRegistrator")
+      .set("spark.kryoserializer.buffer.max", "512m")
+
+    val sparkHome = System.getenv("SPARK_HOME")
+    if (sparkHome == null) {
+      println("initialization Spark Context in local mode")
+      conf.setMaster(s"local[${Runtime.getRuntime.availableProcessors()},4]")
+    }
+    else {
+      println("initialization Spark Context in local-cluster simulation mode")
+      conf
+        .setMaster("local-cluster[4,4,512]")
+        .setSparkHome(sparkHome)
+        .set("spark.driver.extraClassPath", sys.props("java.class.path"))
+        .set("spark.executor.extraClassPath", sys.props("java.class.path"))
+    }
 
     sc = new SparkContext(conf)
     sql = new SQLContext(sc)

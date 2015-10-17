@@ -51,8 +51,6 @@ object DriverFactories {
       Option(fileName).map(SparkFiles.get).orNull
     }
 
-    //used in sc.addFile(...), only accessable from driver
-    //TODO: download it from public resource
     def fileUrl = localPathOption.orNull
     //only accessable from driver
     def fileName = Option(fileUrl).flatMap{
@@ -66,24 +64,32 @@ object DriverFactories {
                         )
     extends DriverFactory {
 
-    @transient lazy val exePath = PhantomJS.path(fileName)
+    @transient lazy val exePath = {
+      val path = PhantomJS.path(fileName)
+      assert(path !=null, "INTERNAL ERROR: PhantomJS has null path")
+      path
+    }
 
-    @transient lazy val baseCaps = new DesiredCapabilities(BrowserType.PHANTOMJS, "", Platform.ANY)
-    baseCaps.setJavascriptEnabled(true); //< not really needed: JS enabled by default
-    baseCaps.setCapability(CapabilityType.SUPPORTS_FINDING_BY_CSS, true)
-    //  baseCaps.setCapability(CapabilityType.HAS_NATIVE_EVENTS, false)
-    baseCaps.setCapability(TAKES_SCREENSHOT, true)
-    baseCaps.setCapability(ACCEPT_SSL_CERTS, true)
-    baseCaps.setCapability(SUPPORTS_ALERTS, true)
-    baseCaps.setCapability(PhantomJSDriverService.PHANTOMJS_EXECUTABLE_PATH_PROPERTY, exePath)
-    baseCaps.setCapability(PhantomJSDriverService.PHANTOMJS_PAGE_SETTINGS_PREFIX + "loadImages", loadImages)
+    @transient lazy val baseCaps = {
+      val baseCaps = new DesiredCapabilities(BrowserType.PHANTOMJS, "", Platform.ANY)
+
+      baseCaps.setJavascriptEnabled(true); //< not really needed: JS enabled by default
+      baseCaps.setCapability(CapabilityType.SUPPORTS_FINDING_BY_CSS, true)
+      //  baseCaps.setCapability(CapabilityType.HAS_NATIVE_EVENTS, false)
+      baseCaps.setCapability(TAKES_SCREENSHOT, true)
+      baseCaps.setCapability(ACCEPT_SSL_CERTS, true)
+      baseCaps.setCapability(SUPPORTS_ALERTS, true)
+      baseCaps.setCapability(PhantomJSDriverService.PHANTOMJS_EXECUTABLE_PATH_PROPERTY, exePath)
+      baseCaps.setCapability(PhantomJSDriverService.PHANTOMJS_PAGE_SETTINGS_PREFIX + "loadImages", loadImages)
+      baseCaps
+    }
 
     //    baseCaps.setCapability(PhantomJSDriverService.PHANTOMJS_PAGE_SETTINGS_PREFIX+"resourceTimeout", Const.resourceTimeout*1000)
 
     def newCap(capabilities: Capabilities, spooky: SpookyContext): DesiredCapabilities = {
       val result = new DesiredCapabilities(baseCaps)
 
-      result.setCapability(PhantomJSDriverService.PHANTOMJS_PAGE_SETTINGS_PREFIX+"resourceTimeout", spooky.conf.remoteResourceTimeout*1000)
+      result.setCapability(PhantomJSDriverService.PHANTOMJS_PAGE_SETTINGS_PREFIX+"resourceTimeout", spooky.conf.remoteResourceTimeout.toMillis)
 
       val userAgent = spooky.conf.userAgent
       if (userAgent != null) result.setCapability(PhantomJSDriverService.PHANTOMJS_PAGE_SETTINGS_PREFIX + "userAgent", userAgent)
@@ -101,6 +107,7 @@ object DriverFactories {
 
     //called from executors
     override def _newInstance(capabilities: Capabilities, spooky: SpookyContext): CleanWebDriver = {
+
 
       new PhantomJSDriver(newCap(capabilities, spooky)) with CleanWebDriverHelper
     }

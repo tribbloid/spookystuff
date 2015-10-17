@@ -38,6 +38,7 @@ object Google_TFIDF extends QueryCore {
     val idf = new IDF().fit(tf)
     val tfidf = idf.transform(tf)
 
+    //TODO: zip is dangerous if source is sorted
     val all = stemmed.zip(tfidf).map(tuple => (tuple._1._1, tuple._1._2.distinct, tuple._2))
     val wordvec = all.map(
       tuple => (tuple._1, tuple._2.map(
