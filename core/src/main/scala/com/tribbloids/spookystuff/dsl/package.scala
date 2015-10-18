@@ -166,6 +166,8 @@ package object dsl {
 
     def code = self.andFlatMap(_.code, "code")
 
+    def formattedCode = self.andFlatMap(_.formattedCode, "code")
+
     def ownText: Expression[String] = self.andFlatMap(_.ownText, "ownText")
 
     def attr(attrKey: String, noEmpty: Boolean = true): Expression[String] = self.andFlatMap(_.attr(attrKey, noEmpty), s"attr($attrKey,$noEmpty)")
