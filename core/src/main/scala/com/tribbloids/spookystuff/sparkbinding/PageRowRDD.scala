@@ -166,7 +166,7 @@ class PageRowRDD private (
   //TODO: investigate using the new applySchema api to avoid losing type info
   def toDF(name: String = null, sort: Boolean = false): DataFrame = {
 
-    val jsonRDD = this.persistTemp().toJSON(sort)
+    val jsonRDD = this.persist().toJSON(sort) //can't persistTemp as jsonRDD itself cannot be immediately cleaned
 
     val schemaRDD = this.spooky.sqlContext.jsonRDD(jsonRDD)
 
