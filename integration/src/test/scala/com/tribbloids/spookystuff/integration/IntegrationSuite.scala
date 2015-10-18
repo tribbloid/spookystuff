@@ -29,14 +29,17 @@ abstract class IntegrationSuite extends FunSuite with BeforeAndAfterAll {
       .set("spark.kryoserializer.buffer.max", "512m")
 
     val sparkHome = System.getenv("SPARK_HOME")
-    if (sparkHome == null || System.getProperty("mode") != "local-cluster") {
+    if (sparkHome == null) {
       println("initialization Spark Context in local mode")
       conf.setMaster(s"local[${Runtime.getRuntime.availableProcessors()},4]")
     }
     else {
       println("initialization Spark Context in local-cluster simulation mode")
+      conf.setMaster("local-cluster[4,4,512]")
+    }
+
+    if (conf.get("spark.master").contains("cluster")) {
       conf
-        .setMaster("local-cluster[4,4,512]")
         .setSparkHome(sparkHome)
         .set("spark.driver.extraClassPath", sys.props("java.class.path"))
         .set("spark.executor.extraClassPath", sys.props("java.class.path"))

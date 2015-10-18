@@ -4,6 +4,14 @@ import java.net.{InetSocketAddress, URI}
 import java.util.Date
 import javax.net.ssl.SSLContext
 
+import com.tribbloids.spookystuff.dsl.ExportFilter
+import com.tribbloids.spookystuff.entity.PageRow
+import com.tribbloids.spookystuff.expressions.{Expression, Literal}
+import com.tribbloids.spookystuff.http._
+import com.tribbloids.spookystuff.pages._
+import com.tribbloids.spookystuff.session.Session
+import com.tribbloids.spookystuff.utils.{HDFSResolver, LocalResolver, Utils}
+import com.tribbloids.spookystuff.{Const, ExportFilterException, QueryException}
 import org.apache.commons.io.IOUtils
 import org.apache.http.client.config.RequestConfig
 import org.apache.http.client.methods.{HttpGet, HttpUriRequest}
@@ -16,14 +24,6 @@ import org.apache.http.impl.conn.PoolingHttpClientConnectionManager
 import org.apache.http.protocol.HttpCoreContext
 import org.apache.http.{HttpHost, StatusLine}
 import org.openqa.selenium.{OutputType, TakesScreenshot}
-import com.tribbloids.spookystuff.dsl.ExportFilter
-import com.tribbloids.spookystuff.entity.PageRow
-import com.tribbloids.spookystuff.expressions.{Expression, Literal}
-import com.tribbloids.spookystuff.http._
-import com.tribbloids.spookystuff.pages._
-import com.tribbloids.spookystuff.session.Session
-import com.tribbloids.spookystuff.utils.{DFSResolver, LocalResolver, Utils}
-import com.tribbloids.spookystuff.{QueryException, Const, ExportFilterException}
 
 /**
  * Export a page from the browser or http client
@@ -205,7 +205,7 @@ case class Wget(
           case "file" =>
             getLocal(uriURI, session)
           case _ =>
-            getDFS(uriURI, session)
+            getHDFS(uriURI, session)
         }
         if (this.contentType != null) result.map{
           case page: Page => page.copy(declaredContentType = Some(this.contentType))
@@ -237,8 +237,8 @@ case class Wget(
   }
 
   //not cached
-  def getDFS(uri: URI, session: Session): Seq[PageLike] = {
-    val content = DFSResolver(session.spooky.hadoopConf).input(uri.toString) {
+  def getHDFS(uri: URI, session: Session): Seq[PageLike] = {
+    val content = HDFSResolver(session.spooky.hadoopConf).input(uri.toString) {
       fis =>
         IOUtils.toByteArray(fis)
     }

@@ -2,14 +2,14 @@ package com.tribbloids.spookystuff.pages
 
 import java.util.{Date, UUID}
 
+import com.tribbloids.spookystuff._
+import com.tribbloids.spookystuff.actions.{Trace, Wayback}
+import com.tribbloids.spookystuff.expressions.Literal
+import com.tribbloids.spookystuff.utils.{HDFSResolver, Serializable, Utils}
 import org.apache.commons.io.IOUtils
 import org.apache.hadoop.fs.{FileStatus, Path}
 import org.apache.spark.SparkEnv
 import org.slf4j.LoggerFactory
-import com.tribbloids.spookystuff._
-import com.tribbloids.spookystuff.actions.{Trace, Wayback}
-import com.tribbloids.spookystuff.expressions.Literal
-import com.tribbloids.spookystuff.utils.{DFSResolver, Serializable, Utils}
 
 import scala.concurrent.duration.Duration.Infinite
 
@@ -59,7 +59,7 @@ object PageUtils {
 
   def load(pathStr: String)(spooky: SpookyContext): Array[Byte] =
     dfsRead("load", pathStr, spooky) {
-      val result = DFSResolver(spooky.hadoopConf).input(pathStr) {
+      val result = HDFSResolver(spooky.hadoopConf).input(pathStr) {
         fis =>
           IOUtils.toByteArray(fis)
       }
@@ -71,30 +71,30 @@ object PageUtils {
   //always overwrite! use the same serializer as Spark
   private def cache[T](
                         pageLikes: Seq[T],
-                        path: String,
+                        pathStr: String,
                         overwrite: Boolean = true
                         )(spooky: SpookyContext): Unit =
-    dfsWrite("cache", path, spooky) {
-      val fullPath = new Path(path)
+    dfsWrite("cache", pathStr, spooky) {
+      val resolver = HDFSResolver(spooky.hadoopConf)
 
-      val fs = fullPath.getFileSystem(spooky.hadoopConf)
+      resolver.output(pathStr, overwrite) {
+        fos =>
+          val ser = SparkEnv.get.serializer.newInstance()
+          val serOut = ser.serializeStream(fos)
 
-      val ser = SparkEnv.get.serializer.newInstance()
-      val fos = fs.create(fullPath, overwrite)
-      val serOut = ser.serializeStream(fos)
-
-      try {
-        serOut.writeObject[Seq[T]](Serializable[Seq[T]](pageLikes, 91252374923L))
-      }
-      finally {
-        serOut.close()
+          try {
+            serOut.writeObject[Seq[T]](Serializable[Seq[T]](pageLikes, 91252374923L))
+          }
+          finally {
+            serOut.close()
+          }
       }
     }
 
   private def restore[T](pathStr: String)(spooky: SpookyContext): Seq[T] =
     dfsRead("restore", pathStr, spooky) {
 
-      val result = DFSResolver(spooky.hadoopConf).input(pathStr) {
+      val result = HDFSResolver(spooky.hadoopConf).input(pathStr) {
         fis =>
           val ser = SparkEnv.get.serializer.newInstance()
 
