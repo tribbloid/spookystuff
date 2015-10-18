@@ -44,4 +44,6 @@ object Const {
 
   val defaultDocumentFilter = ExportFilters.MustHaveTitle
   val defaultImageFilter = ExportFilters.PassAll
+
+  val exploreStageSize = 100
 }

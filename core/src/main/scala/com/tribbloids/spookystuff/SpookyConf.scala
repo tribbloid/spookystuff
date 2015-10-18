@@ -82,6 +82,7 @@ class SpookyConf (
 
                    var checkpointInterval: Int = 100,
 
+                   //TODO: if encounter too many out of memory error, change to MEMORY_AND_DISK_SER
                    var defaultStorageLevel: StorageLevel = StorageLevel.MEMORY_ONLY,
 
                    var alwaysDownloadBrowserRemotely: Boolean = false //mostly for testing

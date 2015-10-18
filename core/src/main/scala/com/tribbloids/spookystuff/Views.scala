@@ -16,18 +16,18 @@ object Views {
 
   implicit class RDDView[A](val self: A)(implicit ev1: A => RDD[_]) {
 
-    def persistDuring[T](newLevel: StorageLevel, blocking: Boolean = true)(fn: => T): T =
-      if (self.getStorageLevel == StorageLevel.NONE){
-        self.persist(newLevel)
-        val result = fn
-        self.unpersist(blocking)
-        result
-      }
-      else {
-        val result = fn
-        self.unpersist(blocking)
-        result
-      }
+//    def persistDuring[T](newLevel: StorageLevel, blocking: Boolean = true)(fn: => T): T =
+//      if (self.getStorageLevel == StorageLevel.NONE){
+//        self.persist(newLevel)
+//        val result = fn
+//        self.unpersist(blocking)
+//        result
+//      }
+//      else {
+//        val result = fn
+//        self.unpersist(blocking)
+//        result
+//      }
 
     //  def checkpointNow(): Unit = {
     //    persistDuring(StorageLevel.MEMORY_ONLY) {

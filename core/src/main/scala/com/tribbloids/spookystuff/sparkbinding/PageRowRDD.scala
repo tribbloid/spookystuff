@@ -28,10 +28,10 @@ import scala.util.Random
  */
 class PageRowRDD private (
                            val self: RDD[PageRow],
-                           val webCache: WebCacheRDD, //in Memory cache, used for both quick page lookup from memory and seeding
+                           val webCacheRDD: WebCacheRDD, //in Memory cache, used for both quick page lookup from memory and seeding
                            val keys: ListSet[KeyLike],
                            val spooky: SpookyContext,
-                           val persisted: ArrayBuffer[RDD[_]]
+                           val persistedTempRDDs: ArrayBuffer[RDD[_]]
                            )
   extends PageRowRDDApi {
 
@@ -59,16 +59,18 @@ class PageRowRDD private (
 
   def copy(
             self: RDD[PageRow] = this.self,
-            webCache: WebCacheRDD = this.webCache,
+            webCache: WebCacheRDD = this.webCacheRDD,
             keys: ListSet[KeyLike] = this.keys,
             spooky: SpookyContext = this.spooky,
-            persisted: ArrayBuffer[RDD[_]] = this.persisted
+            persisted: ArrayBuffer[RDD[_]] = this.persistedTempRDDs
             ): PageRowRDD = {
 
     val result = new PageRowRDD(
       self,
       webCache,
-      keys, spooky, persisted
+      keys,
+      spooky,
+      persisted
     )
     result
   }
@@ -109,12 +111,19 @@ class PageRowRDD private (
   //  }
 
   private def discardExploredRows: PageRowRDD = {
-    this.copy(webCache = webCache.discardRows)
+    this.copy(webCache = webCacheRDD.discardRows)
   }
 
-  def unpersistAllRDDs(): PageRowRDD = {
-    this.persisted.foreach(_.unpersist(blocking = false))
-    this.persisted.clear()
+  def persistTemp(rdd: RDD[_] = self): PageRowRDD = {
+    if (this.getStorageLevel == StorageLevel.NONE) {
+      this.persistedTempRDDs += rdd.persist(spooky.conf.defaultStorageLevel)
+    }
+    this
+  }
+
+  def unpersistAllTemp(): PageRowRDD = {
+    this.persistedTempRDDs.foreach(_.unpersist(blocking = false))
+    this.persistedTempRDDs.clear()
     this
   }
 
@@ -131,14 +140,12 @@ class PageRowRDD private (
 
     import scala.Ordering.Implicits._
 
-    self.name = "sort"
-    if (this.getStorageLevel == StorageLevel.NONE){
-      this.persisted += self.persist(spooky.conf.defaultStorageLevel)
-    }
+    this.persistTemp()
 
-    val result = this.sortBy{_.ordinal(sortKeysSeq)}
+    val result = this.sortBy{_.ordinal(sortKeysSeq)} //sort usually takes 2 passes
     result.foreachPartition{_ =>}
-    this.unpersistAllRDDs()
+    this.unpersistAllTemp()
+    result.name = "sort"
     result
   }
 
@@ -159,11 +166,11 @@ class PageRowRDD private (
   //TODO: investigate using the new applySchema api to avoid losing type info
   def toDF(name: String = null, sort: Boolean = false): DataFrame = {
 
-    val jsonRDD = this.persist().toJSON(sort)
+    val jsonRDD = this.persistTemp().toJSON(sort)
 
     val schemaRDD = this.spooky.sqlContext.jsonRDD(jsonRDD)
 
-    val columns = keysSeq
+    val columns: Seq[Column] = keysSeq
       .filter(key => key.isInstanceOf[Key])
       .map {
         key =>
@@ -175,7 +182,7 @@ class PageRowRDD private (
     val result = schemaRDD.select(columns: _*)
 
     if (name!=null) result.registerTempTable(name)
-    jsonRDD.unpersist()
+    this.unpersistAllTemp()
 
     result
   }
@@ -526,9 +533,9 @@ class PageRowRDD private (
     }
     else {
       val cogrouped: RDD[(DryRun, (Iterable[(Trace, PageRow)], Iterable[Squashed[PageRow]]))] =
-        trace_Rows.keyBy(_._1.dryrun).cogroup(webCache, numPartitions)
+        trace_Rows.keyBy(_._1.dryrun).cogroup(webCacheRDD, numPartitions)
 
-      val newRows_newCache = cogrouped.map {
+      val newRows_newCache: RDD[(Iterable[PageRow], (DryRun, Squashed[PageRow]))] = cogrouped.map {
         triplet =>
           val tuple = triplet._2
           val rows: Iterable[PageRow] = tuple._1.map(_._2)
@@ -583,7 +590,7 @@ class PageRowRDD private (
       newRows_newCache.name = s"""
                                  |fetch (optimizer=${Wide_RDDWebCache.getClass.getSimpleName})
         """.stripMargin.trim
-      newRows_newCache.persist()
+      this.persistTemp(newRows_newCache) //TODO: unpersist
 
       this.copy(self = newRows_newCache.flatMap(_._1), webCache = newRows_newCache.map(_._2))
     }
@@ -749,10 +756,9 @@ class PageRowRDD private (
         |explore (optimizer=Narrow)
         |Depth: 0
       """.stripMargin.trim
-    val firstCount = firstResultRDD.persistDuring(spooky.conf.defaultStorageLevel, blocking = false){
-      firstResultRDD.checkpoint()
-      firstResultRDD.count()
-    }
+
+    firstResultRDD.persistTemp()
+    val firstCount = firstResultRDD.count()
 
     if (firstCount == 0) return this.copy(self = self.sparkContext.emptyRDD)
 
@@ -780,9 +786,9 @@ class PageRowRDD private (
     while(true) {
 
       val _depthFromExclusive = depthFromExclusive //var in closure being shipped to workers usually end up miserably (not synched properly)
-      val depthToInclusive = Math.min(_depthFromExclusive + checkpointInterval, maxDepth)
+      val depthToInclusive = Math.min(_depthFromExclusive + Const.exploreStageSize, maxDepth)
 
-      val newRows_newStageRDD = stageRDD.map {
+      val newRows_newStageRDD: RDD[(Iterable[PageRow], ExploreStage)] = stageRDD.map {
         stage =>
           PageRow.localExplore(
             stage,
@@ -806,18 +812,17 @@ class PageRowRDD private (
            |explore (optimizer=Narrow)
            |Depth: ${_depthFromExclusive} to $depthToInclusive
         """.stripMargin.trim
-      val count = newRows_newStageRDD.persistDuring(spooky.conf.defaultStorageLevel, blocking = false) {
-        newRows_newStageRDD.checkpoint()
 
-        val newRows = newRows_newStageRDD.flatMap(_._1)
-        resultRDDs += newRows
+      this.persistTemp(newRows_newStageRDD)
 
-        stageRDD = newRows_newStageRDD.map(_._2)
-          .filter(_.hasMore)
-          .repartition(numPartitions)
+      val newRows = newRows_newStageRDD.flatMap(_._1)
+      resultRDDs += newRows
 
-        stageRDD.count()
-      }
+      stageRDD = newRows_newStageRDD.map(_._2)
+        .filter(_.hasMore)
+        .repartition(numPartitions)
+
+      val count = stageRDD.count()
       LoggerFactory.getLogger(this.getClass).info(s"$count segment(s) have uncrawled seed(s) after $depthToInclusive iteration(s)")
       depthFromExclusive = depthToInclusive
 
@@ -835,10 +840,11 @@ class PageRowRDD private (
 
       val resultSelf = new UnionRDD(this.sparkContext, resultRDDs).coalesce(numPartitions)
       val result = this.copy(self = resultSelf, keys = resultKeys).select(select: _*)
+
       result
     }
 
-    throw new RuntimeException("unreachable")
+    throw new RuntimeException("INTERNAL ERROR: unreachable")
   }
 
   //recursive join and union! applicable to many situations like (wide) pagination and deep crawling
@@ -863,24 +869,28 @@ class PageRowRDD private (
     if (this.context.getCheckpointDir.isEmpty) this.context.setCheckpointDir(spooky.conf.dirs.checkpoint)
 
     self.name = "initializing wide explore"
-    if (this.getStorageLevel == StorageLevel.NONE) {
-      this.persisted += self.persist(spooky.conf.defaultStorageLevel)
-    }
+    this.persistTemp() //TODO: clean it up?
     val _expr = expr defaultAs Symbol(Const.defaultJoinKey)
 
     val depth0 = this.select(Option(depthKey).map(key => Literal(0) ~ key).toSeq: _*)
 
     val WebCache0 = {
-      val webCache: WebCacheRDD = if (useWebCache) depth0.webCache
-      else this.webCache.sparkContext.emptyRDD[WebCacheRow].partitionBy(new HashPartitioner(spooky.conf.defaultParallelism(self)))
+      val webCache: WebCacheRDD = if (useWebCache) depth0.webCacheRDD
+      else this.webCacheRDD.sparkContext.emptyRDD[WebCacheRow].partitionBy(new HashPartitioner(spooky.conf.defaultParallelism(self)))
 
       webCache.putRows(
         depth0.self,
         rows => rows.headOption
       )
     }
-    var seeds = depth0
+    var seeds: PageRowRDD = depth0
       .copy(webCache = WebCache0)
+
+    seeds.name =
+      """
+        |explore (optimizer=Deep)
+        |Depth: 0
+      """.stripMargin.trim
 
     val postProcessing: PageRow => Iterable[PageRow] = {
       row =>
@@ -906,12 +916,17 @@ class PageRowRDD private (
       if (newRowsCount == 0) return result
 
       seeds = newRows
+      seeds.name =
+        s"""
+           |explore (optimizer=Deep)
+           |Depth: $depth
+        """.stripMargin.trim
     }
 
     def result = {
-      val resultSelf = seeds.webCache.getRows
-      val resultWebCache = if (useWebCache) seeds.webCache.discardRows
-      else this.webCache
+      val resultSelf = seeds.webCacheRDD.getRows
+      val resultWebCache = if (useWebCache) seeds.webCacheRDD.discardRows
+      else this.webCacheRDD
       val resultKeys = this.keys ++ Seq(TempKey(_expr.name), Key.sortKey(depthKey), Key.sortKey(ordinalKey), Key.sortKey(flattenPagesOrdinalKey)).flatMap(Option(_))
 
       this.copy(resultSelf, resultWebCache, resultKeys)

@@ -45,7 +45,7 @@ trait PageRowRDDApi {
 
   def union(other: PageRowRDD): PageRowRDD = this.copy(
     self.union(other.self),
-    this.webCache.unionByKey(other.webCache)(_ ++ _),
+    this.webCacheRDD.unionByKey(other.webCacheRDD)(_ ++ _),
     this.keys ++ other.keys.toSeq.reverse
   )
 
@@ -62,7 +62,7 @@ trait PageRowRDDApi {
 
   def intersection(other: PageRowRDD): PageRowRDD = this.copy(
     self.intersection(other.self),
-    this.webCache.intersectionByKey(other.webCache)(_ ++ _),
+    this.webCacheRDD.intersectionByKey(other.webCacheRDD)(_ ++ _),
     this.keys.intersect(other.keys)//TODO: need validation that it won't change sequence
   )
 
@@ -70,7 +70,7 @@ trait PageRowRDDApi {
 
   def intersection(other: PageRowRDD, numPartitions: Int): PageRowRDD = this.copy(
     self.intersection(other.self, numPartitions),
-    this.webCache.intersectionByKey(other.webCache)(_ ++ _),
+    this.webCacheRDD.intersectionByKey(other.webCacheRDD)(_ ++ _),
     this.keys.intersect(other.keys)
   )
 
@@ -95,6 +95,7 @@ trait PageRowRDDApi {
     self.unpersist(blocking)
     this
   }
+
   def checkpoint() = {
     self.checkpoint()
   }
