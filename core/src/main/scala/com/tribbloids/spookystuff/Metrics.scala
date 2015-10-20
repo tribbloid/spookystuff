@@ -1,7 +1,10 @@
 package com.tribbloids.spookystuff
 
 import com.tribbloids.spookystuff.utils.Utils
-import org.apache.spark.{AccumulatorParam, Accumulator}
+import org.apache.spark.{Accumulable, AccumulatorParam, Accumulator}
+
+import scala.collection.immutable.ListMap
+import scala.collection.mutable.ArrayBuffer
 
 /**
  * Created by peng on 03/10/15.
@@ -27,23 +30,31 @@ case class Metrics(
                     DFSWriteFailure: Accumulator[Int] = Metrics.accumulator(0, "DFSWriteFail"),
 
                     pagesFetched: Accumulator[Int] = Metrics.accumulator(0, "pagesFetched"),
-                    pagesFetchedFromWeb: Accumulator[Int] = Metrics.accumulator(0, "pagesFetchedFromWeb"),
-                    pagesFetchedFromCache: Accumulator[Int] = Metrics.accumulator(0, "pagesFetchedFromCache"),
 
-                    fetchSuccess: Accumulator[Int] = Metrics.accumulator(0, "fetchSuccess"),
-                    fetchFailure: Accumulator[Int] = Metrics.accumulator(0, "fetchFailure"),
+                    pagesFetchedFromCache: Accumulator[Int] = Metrics.accumulator(0, "pagesFetchedFromCache"),
+                    pagesFetchedFromRemote: Accumulator[Int] = Metrics.accumulator(0, "pagesFetchedFromRemote"),
+
+                    fetchFromCacheSuccess: Accumulator[Int] = Metrics.accumulator(0, "fetchFromCacheSuccess"),
+                    fetchFromCacheFailure: Accumulator[Int] = Metrics.accumulator(0, "fetchFromCacheFailure"),
+
+                    fetchFromRemoteSuccess: Accumulator[Int] = Metrics.accumulator(0, "fetchFromRemoteSuccess"),
+                    fetchFromRemoteFailure: Accumulator[Int] = Metrics.accumulator(0, "fetchFromRemoteFailure"),
 
                     pagesSaved: Accumulator[Int] = Metrics.accumulator(0, "pagesSaved")
                     ) {
 
   def toJSON: String = {
-    //    val tuples = this.productIterator.flatMap{
-    //      case acc: Accumulator[_] => acc.name.map(_ -> acc.value)
-    //      case _ => None
-    //    }.toSeq
-    //
-    //    val map = ListMap(tuples: _*)
 
-    Utils.toJson(this, beautiful = true)
+    val map = ListMap(toTuples: _*)
+
+    Utils.toJson(map, beautiful = true)
+  }
+
+  //this is necessary as direct JSON serialization on accumulator only yields meaningless string
+  def toTuples: Seq[(String, Any)] = {
+    this.productIterator.flatMap {
+      case acc: Accumulator[_] => acc.name.map(_ -> acc.value)
+      case _ => None
+    }.toSeq
   }
 }

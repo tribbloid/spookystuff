@@ -7,5 +7,5 @@ import org.openqa.selenium.WebDriver
  */
 package object session {
 
-  type CleanWebDriver = WebDriver with CleanWebDriverHelper
+  type CleanWebDriver = WebDriver with CleanWebDriverMixin
 }

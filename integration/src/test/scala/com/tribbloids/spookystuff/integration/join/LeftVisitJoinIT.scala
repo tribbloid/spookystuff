@@ -1,38 +1,39 @@
-package com.tribbloids.spookystuff.integration
+package com.tribbloids.spookystuff.integration.join
 
 import com.tribbloids.spookystuff.SpookyContext
-import com.tribbloids.spookystuff.actions.Visit
+import com.tribbloids.spookystuff.actions._
 import com.tribbloids.spookystuff.dsl._
+import com.tribbloids.spookystuff.expressions._
+import com.tribbloids.spookystuff.integration.IntegrationSuite
 
 /**
  * Created by peng on 12/5/14.
  */
-class InnerJoinIT extends IntegrationSuite {
+class LeftVisitJoinIT extends IntegrationSuite {
 
   override lazy val drivers = Seq(
     phantomJS //TODO: HtmlUnit does not support Backbone.js
   )
 
-  override def doMain(spooky: SpookyContext): Unit = {
+  def getPage(uri: Expression[String]): Action = Visit(uri)
 
-    import spooky.dsl._
+  override def doMain(spooky: SpookyContext): Unit = {
 
     val base = spooky
       .fetch(
-        Visit("http://webscraper.io/test-sites/e-commerce/allinone")
+        getPage("http://webscraper.io/test-sites/e-commerce/allinone")
       )
 
     val joined = base
       .join(S"div.sidebar-nav a", ordinalKey = 'i1)(
-        Visit('A.href),
-        joinType = Inner,
-        flattenPagesOrdinalKey = 'page
+        getPage('A.href),
+        joinType = LeftOuter
       )(
         'A.text ~ 'category
       )
       .join(S"a.subcategory-link", ordinalKey = 'i2)(
-        Visit('A.href),
-        joinType = Inner
+        getPage('A.href),
+        joinType = LeftOuter
       )(
         'A.text ~ 'subcategory
       )
@@ -40,12 +41,13 @@ class InnerJoinIT extends IntegrationSuite {
       .flatSelect(S"notexist", ordinalKey = 'notexist_key)( //this is added to ensure that temporary joinKey in KV store won't be used.
         'A.attr("class") ~ 'notexist_class
       )
+
+    val df = joined
       .toDF(sort = true)
 
     assert(
-      joined.schema.fieldNames ===
+      df.schema.fieldNames ===
         "i1" ::
-          "page" ::
           "category" ::
           "i2" ::
           "subcategory" ::
@@ -55,13 +57,14 @@ class InnerJoinIT extends IntegrationSuite {
           Nil
     )
 
-    val formatted = joined.toJSON.collect().mkString("\n")
+    val formatted = df.toJSON.collect().mkString("\n")
     assert(
       formatted ===
         """
-          |{"i1":[1],"page":[0],"category":"Computers","i2":[0],"subcategory":"Laptops","header":"Computers / Laptops"}
-          |{"i1":[1],"page":[0],"category":"Computers","i2":[1],"subcategory":"Tablets","header":"Computers / Tablets"}
-          |{"i1":[2],"page":[0],"category":"Phones","i2":[0],"subcategory":"Touch","header":"Phones / Touch"}
+          |{"i1":[0],"category":"Home"}
+          |{"i1":[1],"category":"Computers","i2":[0],"subcategory":"Laptops","header":"Computers / Laptops"}
+          |{"i1":[1],"category":"Computers","i2":[1],"subcategory":"Tablets","header":"Computers / Tablets"}
+          |{"i1":[2],"category":"Phones","i2":[0],"subcategory":"Touch","header":"Phones / Touch"}
         """.stripMargin.trim
     )
   }
@@ -71,3 +74,4 @@ class InnerJoinIT extends IntegrationSuite {
     case _ => 7
   }
 }
+

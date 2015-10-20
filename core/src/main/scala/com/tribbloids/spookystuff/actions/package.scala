@@ -5,7 +5,7 @@ package com.tribbloids.spookystuff
  */
 package object actions {
 
-  type Trace = Seq[Action]
+  type Trace = List[Action]
 
-  type DryRun = Seq[Trace]
+  type DryRun = List[Trace]
 }

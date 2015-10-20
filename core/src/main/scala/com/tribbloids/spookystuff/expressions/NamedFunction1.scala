@@ -22,9 +22,9 @@ trait NamedFunction1[-T, +R] extends (T => R) with Serializable {
 
   val name: String
 
-  final def as(name: Symbol): Alias[T, R] = new Alias(this, Option(name).map(_.name).orNull)
+  final def as(name: Symbol): Alias[T, R] = Alias(this, Option(name).map(_.name).orNull)
 
-  final def as_!(name: Symbol): Alias[T, R] = new Alias(this, Option(name).map(_.name).orNull) with ForceNamedFunction1[T, R]
+  final def as_!(name: Symbol): Alias[T, R] = Alias.forced(this, Option(name).map(_.name).orNull)
 
   //will not rename an already-named Alias.
   def defaultAs(name: Symbol): Alias[T, R] = as(name)
@@ -45,19 +45,41 @@ trait NamedFunction1[-T, +R] extends (T => R) with Serializable {
       NamedFunction1.this.name + "." + g.toString()
     )
 
-  final override def toString(): String = name
+  override def toString(): String = name
 }
 
-class Alias[-T, +R](src: NamedFunction1[T, R], override val name: String) extends NamedFunction1[T, R] {
+object Alias {
 
-  val self: NamedFunction1[T, R] = src match {
-    case a: Alias[T, R] => a.self
-    case _ => src
+  def apply[T, R](src: NamedFunction1[T, R], name: String): Alias[T, R] = {
+
+    val self: NamedFunction1[T, R] = getSelf(src)
+
+    new Alias(self, name)
   }
+
+  def getSelf[R, T](src: NamedFunction1[T, R]): NamedFunction1[T, R] = {
+    val self: NamedFunction1[T, R] = src match {
+      case a: Alias[T, R] => a.self
+      case _ => src
+    }
+    self
+  }
+
+  def forced[T, R](src: NamedFunction1[T, R], name: String): Alias[T, R] = {
+
+    val self: NamedFunction1[T, R] = getSelf(src)
+
+    new Alias(self, name) with ForceNamedFunction1[T, R]
+  }
+}
+
+class Alias[-T, +R] private(val self: NamedFunction1[T, R], override val name: String) extends NamedFunction1[T, R] {
 
   override def apply(v1: T): R = self(v1)
 
   override def defaultAs(name: Symbol): Alias[T, R] = this
+
+  override def toString() = self.toString + " ~ '" + name
 }
 
 //subclasses bypass "already exist" check

@@ -4,7 +4,7 @@ import org.apache.spark.rdd.RDD
 import org.slf4j.LoggerFactory
 import com.tribbloids.spookystuff.actions._
 import com.tribbloids.spookystuff.dsl._
-import com.tribbloids.spookystuff.entity.PageRow.{RowUID, dataRow, SegID}
+import com.tribbloids.spookystuff.entity.PageRow.{RowUID, DataRow, SegID}
 import com.tribbloids.spookystuff.expressions._
 import com.tribbloids.spookystuff.pages._
 import com.tribbloids.spookystuff.utils._
@@ -21,7 +21,7 @@ import scala.util.Random
  */
 case class PageRow(
                     //ListMap may be slower but has tighter serialization size
-                    dataRow: dataRow = ListMap(), //TODO: also carry PageUID & property type (Vertex/Edge) for GraphX
+                    dataRow: DataRow = ListMap(), //TODO: also carry PageUID & property type (Vertex/Edge) for GraphX
                     pageLikes: Array[PageLike] = Array(), // discarded after new page coming in
                     segmentID: SegID = Random.nextLong() //keep flattened rows together //unique for an entire context.
                     ) {
@@ -54,8 +54,8 @@ case class PageRow(
   def getIntIterable(keyStr: String): Option[Iterable[Int]] = {
     this.getTyped[Iterable[Int]](keyStr)
       .orElse{
-      this.getInt(keyStr).map(Seq(_))
-    }
+        this.getInt(keyStr).map(Seq(_))
+      }
   }
 
   //TempKey precedes ordinary Key
@@ -91,7 +91,7 @@ case class PageRow(
 
   def getPage(keyStr: String): Option[Page] = {
 
-//    if (keyStr == Const.onlyPageWildcard) return getOnlyPage
+    //    if (keyStr == Const.onlyPageWildcard) return getOnlyPage
 
     val pages = this.pages.filter(_.name == keyStr)
 
@@ -133,7 +133,7 @@ case class PageRow(
     Some(result)
   }
 
-  @transient lazy val dryrun: DryRun = pageLikes.toSeq.map(_.uid.backtrace).distinct
+  @transient lazy val dryrun: DryRun = pageLikes.toList.map(_.uid.backtrace).distinct
 
   def ordinal(sortKeys: Seq[KeyLike]): Seq[Option[Iterable[Int]]] = {
     val result = sortKeys.map(key => this.getIntIterable(key.name))
@@ -145,7 +145,7 @@ case class PageRow(
     .map( tuple => tuple._1.name -> tuple._2)
 
   def toJSON: String = {
-    import com.tribbloids.spookystuff.Views._
+    import Views._
 
     Utils.toJson(this.toMap.canonizeKeysToColumnNames)
   }
@@ -187,7 +187,7 @@ case class PageRow(
     this.copy(dataRow = ListMap(this.dataRow.filterKeys(f).toSeq: _*))
   }
 
-  def clearTemp: PageRow = this.filterKeys(!_.isInstanceOf[TempKey])
+  def clearTempData: PageRow = this.filterKeys(!_.isInstanceOf[TempKey])
 
   //for some join types (Inner/LeftOuter) existing Pages are always useless and should be discarded before shuffling
   def clearPagesBeforeFetch(joinType: JoinType): PageRow = {
@@ -228,7 +228,7 @@ case class PageRow(
 
     val key = resolveKey(keyStr)
 
-    import com.tribbloids.spookystuff.Views._
+    import Views._
 
     val newCells =dataRow.flattenKey(key).slice(0, maxOrdinal)
 
@@ -289,7 +289,8 @@ case class PageRow(
   def localPreJoins(
                      joinExpr: Expression[Any],
                      ordinalKey: Symbol,
-                     maxOrdinal: Int
+                     maxOrdinal: Int,
+                     spooky: SpookyContext
                      )(
                      _traces: Set[Trace], //input of the explore to generate more pages from seeds
                      existingTraces: Set[Trace] = Set(Nil),
@@ -301,7 +302,7 @@ case class PageRow(
       .flatMap {
       //generate traces, still part of join locally
       row =>
-        _traces.interpolate(row)
+        _traces.interpolate(row, spooky)
           .filterNot {
           //if trace or dryrun already exist returns None
           trace =>
@@ -323,24 +324,26 @@ case class PageRow(
  */
 case class Squashed[T: ClassTag](
                                   pageLikes: Array[PageLike],
-                                  metadata: Array[T] = Array() // data, segment, batchID to distinguish aggregated Rows from the same explore(), discarded upon consolidation
+                                  rows: Array[T] = Array() // data, segment, batchID to distinguish aggregated Rows from the same explore(), discarded upon consolidation
                                   ) {
 
-  @transient lazy val dryrun: DryRun = pageLikes.toSeq.map(_.uid.backtrace).distinct
+  @transient lazy val dryrun: DryRun = pageLikes.toList.map(_.uid.backtrace).distinct
 
   def ++ (another: Squashed[T]): Squashed[T] = {
-    this.copy(metadata = Array.concat[T](this.metadata, another.metadata))
+    this.copy(rows = Array.concat[T](this.rows, another.rows))
   }
 }
 
 object PageRow {
 
-  type dataRow =  ListMap[KeyLike, Any]
+  type DataRow =  ListMap[KeyLike, Any]
 
   type SegID = Long
   type RowUID = (Seq[PageUID], SegID)
 
-  type WebCacheRow = (DryRun, Squashed[PageRow])
+  type SquashedRow = Squashed[PageRow]
+
+  type WebCacheRow = (DryRun, SquashedRow)
 
   type WebCacheRDD = RDD[WebCacheRow]
 
@@ -371,33 +374,33 @@ object PageRow {
       val reducedRows: Map[Trace, Option[PageRow]] = trace_RowItr
         .groupBy(_._1)
         .map {
-        tuple =>
-          val firstOption = tuple._2.map(_._2).reduceOption(PageRow.reducer(ordinalKey))
-          (tuple._1, firstOption)
-        //when multiple links have identical uri/trace, keep the first one
-      }
+          tuple =>
+            val firstOption = tuple._2.map(_._2).reduceOption(PageRow.reducer(ordinalKey))
+            (tuple._1, firstOption)
+          //when multiple links have identical uri/trace, keep the first one
+        }
 
       existingTraces = existingTraces ++ reducedRows.keys
 
       val seeds = reducedRows
         .flatMap {
-        reducedRow =>
-          val newPages = reducedRow._1.fetch(spooky)
-          val rows = reducedRow._2
-          rows.flatMap(_.putPages(newPages, Inner))
-      }
+          reducedRow =>
+            val newPages = reducedRow._1.fetch(spooky)
+            val rows = reducedRow._2
+            rows.flatMap(_.putPages(newPages, Inner))
+        }
         .flatMap {
-        row =>
-          if (flattenPagesPattern != null) row.flattenPages(flattenPagesPattern, flattenPagesOrdinalKey)
-          else Seq(row)
-      }
+          row =>
+            if (flattenPagesPattern != null) row.flattenPages(flattenPagesPattern, flattenPagesOrdinalKey)
+            else Seq(row)
+        }
 
       LoggerFactory.getLogger(this.getClass)
         .info(s"found ${seeds.size} new seed(s) after $depth iteration(s) [traces.size = ${existingTraces.size}, total.size = ${allNewRows.size}]")
-      if (seeds.size == 0) return (allNewRows, stage.copy(trace_RowItr = Array(), existingTraces = existingTraces))
+      if (seeds.isEmpty) return (allNewRows, stage.copy(trace_RowItr = Array(), existingTraces = existingTraces))
 
       trace_RowItr = seeds.flatMap{
-        _.localPreJoins(joinExpr,ordinalKey,maxOrdinal)(
+        _.localPreJoins(joinExpr,ordinalKey,maxOrdinal, spooky)(
           _traces, existingTraces, stage.existingDryruns
         )
       }

@@ -27,7 +27,7 @@ object Const {
   val clusterRetries = 3
 
   val interactionDelayMax: Duration = 60.seconds
-  val interactionDelayMin: Duration = 1.seconds
+  val interactionDelayMin: Duration = 0.seconds
   val interactionBlock: Boolean = true
 
   val hardTerminateOverhead: Duration = 20.seconds

@@ -21,8 +21,8 @@ trait LocalSpookyCore {
     var master: String = null
     master = Option(master).getOrElse(conf.getOption("spark.master").orNull)
     master = Option(master).getOrElse(System.getenv("MASTER"))
-//    master = Option(master).getOrElse(s"local[${Runtime.getRuntime.availableProcessors()},10]")
-    master = Option(master).getOrElse(s"local-cluster[4,4,1024]")
+    master = Option(master).getOrElse(s"local[${Runtime.getRuntime.availableProcessors()},10]")
+//    master = Option(master).getOrElse(s"local-cluster[4,4,1024]")
 
     conf.setMaster(master)
     new SparkContext(conf)

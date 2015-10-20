@@ -5,7 +5,7 @@ package com.tribbloids.spookystuff
  */
 package object entity {
 
-  type SortKey = Key with SortKeyHelper
+  type SortKey = Key with SortKeyMixin
 
-  type HiddenKey = Key with HiddenKeyHelper
+  type HiddenKey = Key with HiddenKeyMixin
 }

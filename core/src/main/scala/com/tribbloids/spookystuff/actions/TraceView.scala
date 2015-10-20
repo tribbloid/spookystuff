@@ -13,13 +13,13 @@ import scala.reflect.ClassTag
 /**
  * Created by peng on 10/25/14.
  */
-class TraceView(
-                 override val self: Seq[Action]
+case class TraceView(
+                 override val self: Trace
                  ) extends Actions(self) { //remember trace is not a block! its the super container that cannot be wrapped
 
   //always has output (Sometimes Empty) to handle left join
-  override def doInterpolate(pr: PageRow): Option[this.type] = {
-    val seq = this.doInterpolateSeq(pr)
+  override def doInterpolate(pr: PageRow, spooky: SpookyContext): Option[this.type] = {
+    val seq = this.doInterpolateSeq(pr, spooky)
 
     Some(new TraceView(seq).asInstanceOf[this.type])
   }
@@ -36,7 +36,7 @@ class TraceView(
         if (action.hasOutput) {
 
           results ++= result
-          session.spooky.metrics.pagesFetchedFromWeb += result.count(_.isInstanceOf[Page])
+          session.spooky.metrics.pagesFetchedFromRemote += result.count(_.isInstanceOf[Page])
 
           val spooky = session.spooky
 
@@ -60,7 +60,7 @@ class TraceView(
     for (i <- self.indices) {
       val selfi = self(i)
       if (selfi.hasOutput){
-        val backtrace = selfi match {
+        val backtrace: List[Action] = selfi match {
           case dl: Driverless => selfi :: Nil
           case _ => self.slice(0, i).flatMap(_.trunk) :+ selfi
         }
@@ -68,7 +68,7 @@ class TraceView(
       }
     }
 
-    result
+    result.toList
   }
 
   //invoke before interpolation!
@@ -84,6 +84,7 @@ class TraceView(
     }
     val numPages = results.count(_.isInstanceOf[Page])
     spooky.metrics.pagesFetched += numPages
+
     results
   }
 
@@ -92,9 +93,15 @@ class TraceView(
     if (!this.hasOutput) return Nil
 
     val pagesFromCache = if (!spooky.conf.cacheRead) Seq(null)
-    else dryrun.map(dry => PageUtils.autoRestore(dry, spooky))
+    else dryrun.map(
+      dry =>
+        PageUtils.autoRestore(dry, spooky)
+    )
 
     if (!pagesFromCache.contains(null)){
+
+      spooky.metrics.fetchFromCacheSuccess += 1
+
       val results = pagesFromCache.flatten
       spooky.metrics.pagesFetchedFromCache += results.count(_.isInstanceOf[Page])
       this.self.foreach{
@@ -105,6 +112,9 @@ class TraceView(
       results
     }
     else {
+
+      spooky.metrics.fetchFromCacheFailure += 1
+
       if (!spooky.conf.remote) throw new RemoteDisabledException(
         "Resource is not cached and not allowed to be fetched remotely, " +
           "the later can be enabled by setting SpookyContext.conf.remote=true"
@@ -114,12 +124,12 @@ class TraceView(
       else new DriverSession(spooky)
       try {
         val result = this.apply(session)
-        spooky.metrics.fetchSuccess += 1
+        spooky.metrics.fetchFromRemoteSuccess += 1
         result
       }
       catch {
         case e: Throwable =>
-          spooky.metrics.fetchFailure += 1
+          spooky.metrics.fetchFromRemoteFailure += 1
           throw e
       }
       finally {
@@ -148,7 +158,7 @@ class TraceView(
 //(all other special characters)
 //now using immutable pattern to increase maintainability
 //put all narrow transformation closures here
-final class TraceSetView(self: Set[Trace]) {
+final case class TraceSetView(self: Set[Trace]) {
 
   import dsl._
 
@@ -172,7 +182,7 @@ final class TraceSetView(self: Set[Trace]) {
 
   def autoSnapshot: Set[Trace] = self.map(_.autoSnapshot)
 
-  def interpolate(row: PageRow): Set[Trace] = self.flatMap(_.interpolate(row).map(_.self))
+  def interpolate(row: PageRow, context: SpookyContext): Set[Trace] = self.flatMap(_.interpolate(row, context: SpookyContext).map(_.self))
 
   def outputNames: Set[String] = self.map(_.outputNames).reduce(_ ++ _)
 }

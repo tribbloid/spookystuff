@@ -17,7 +17,7 @@ package com.tribbloids.spookystuff.dsl
 
 import com.gargoylesoftware.htmlunit.BrowserVersion
 import com.tribbloids.spookystuff.SpookyContext
-import com.tribbloids.spookystuff.session.{CleanWebDriver, CleanWebDriverHelper, ProxySetting}
+import com.tribbloids.spookystuff.session.{CleanWebDriver, CleanWebDriverMixin, ProxySetting}
 import com.tribbloids.spookystuff.utils.Utils
 import org.apache.spark.SparkFiles
 import org.openqa.selenium.htmlunit.HtmlUnitDriver
@@ -74,12 +74,12 @@ object DriverFactories {
                         path: String = PhantomJS.pathOptionFromEnv.orNull,
                         loadImages: Boolean = false,
                         fileNameFromMaster: String = PhantomJS.fileName,
-                        ignoreExecutableInEnvironment: Boolean = false
+                        ignoreSysEnv: Boolean = false
                         )
     extends DriverFactory {
 
     @transient lazy val exePath = {
-      val effectivePath = if (!ignoreExecutableInEnvironment) PhantomJS.path(path, fileNameFromMaster)
+      val effectivePath = if (!ignoreSysEnv) PhantomJS.path(path, fileNameFromMaster)
       else PhantomJS.pathFromMaster(fileNameFromMaster)
 
       assert(effectivePath != null, "INTERNAL ERROR: PhantomJS has null path")
@@ -125,7 +125,7 @@ object DriverFactories {
     override def _newInstance(capabilities: Capabilities, spooky: SpookyContext): CleanWebDriver = {
 
 
-      new PhantomJSDriver(newCap(capabilities, spooky)) with CleanWebDriverHelper
+      new PhantomJSDriver(newCap(capabilities, spooky)) with CleanWebDriverMixin
     }
   }
 
@@ -155,7 +155,7 @@ object DriverFactories {
     override def _newInstance(capabilities: Capabilities, spooky: SpookyContext): CleanWebDriver = {
 
       val cap = newCap(capabilities, spooky)
-      val driver = new HtmlUnitDriver(browser) with CleanWebDriverHelper
+      val driver = new HtmlUnitDriver(browser) with CleanWebDriverMixin
       driver.setJavascriptEnabled(true)
       driver.setProxySettings(Proxy.extractFrom(cap))
 

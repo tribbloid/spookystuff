@@ -1,21 +1,27 @@
 package com.tribbloids.spookystuff.actions
 
+import com.mchange.v2.c3p0.util.TestUtils
+import com.tribbloids.spookystuff.SpookyContext
 import com.tribbloids.spookystuff.entity.PageRow
 import com.tribbloids.spookystuff.pages.PageLike
 import com.tribbloids.spookystuff.session.Session
+import com.tribbloids.spookystuff.utils.Utils
 
 /**
  * Created by peng on 11/7/14.
  */
 trait ActionLike extends Serializable {
 
-  final def interpolate(pr: PageRow): Option[this.type] = {
-    val option = this.doInterpolate(pr)
-    option.foreach(action => action.injectFrom(this))
+  final def interpolate(pr: PageRow, context: SpookyContext): Option[this.type] = {
+    val option = this.doInterpolate(pr, context)
+    option.foreach{
+      action =>
+        action.injectFrom(this)
+    }
     option
   }
 
-  def doInterpolate(pageRow: PageRow): Option[this.type] = Some(this)
+  def doInterpolate(pageRow: PageRow, context: SpookyContext): Option[this.type] = Some(this)
 
   def injectFrom(same: ActionLike): Unit = {} //TODO: change to immutable pattern to avoid one Trace being used twice with different names
 

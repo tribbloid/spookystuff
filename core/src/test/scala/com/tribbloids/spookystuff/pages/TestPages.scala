@@ -29,7 +29,7 @@ class TestPages extends SpookyEnvSuite {
   }
 
   test ("local cache") {
-    spooky.conf.pageExpireAfter = 2.seconds
+    spooky.conf.pageExpireAfter = 5.seconds
 
     PageUtils.autoCache(page, spooky)
 
@@ -42,7 +42,7 @@ class TestPages extends SpookyEnvSuite {
     assert(page2.head.code === page2.head.code)
     assert(page2.head.name === "new")
 
-    Thread.sleep(2000)
+    Thread.sleep(5000)
 
     val page3 = PageUtils.autoRestore(page.head.uid.backtrace, spooky)
     assert(page3 === null)

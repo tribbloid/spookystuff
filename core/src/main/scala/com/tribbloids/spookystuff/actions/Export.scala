@@ -11,7 +11,7 @@ import com.tribbloids.spookystuff.http._
 import com.tribbloids.spookystuff.pages._
 import com.tribbloids.spookystuff.session.Session
 import com.tribbloids.spookystuff.utils.{HDFSResolver, LocalResolver, Utils}
-import com.tribbloids.spookystuff.{Const, ExportFilterException, QueryException}
+import com.tribbloids.spookystuff.{SpookyContext, Const, ExportFilterException, QueryException}
 import org.apache.commons.io.IOUtils
 import org.apache.http.client.config.RequestConfig
 import org.apache.http.client.methods.{HttpGet, HttpUriRequest}
@@ -124,7 +124,7 @@ case class Snapshot(
     //    }
 
     val page = new Page(
-      PageUID(pb.backtrace :+ this, this),
+      PageUID((pb.backtrace :+ this).toList, this),
       pb.driver.getCurrentUrl,
       Some("text/html; charset=UTF-8"),
       pb.driver.getPageSource.getBytes("UTF8")
@@ -135,7 +135,7 @@ case class Snapshot(
     else Seq(page)
   }
 
-  override def doInterpolate(pageRow: PageRow) = {
+  override def doInterpolate(pageRow: PageRow, spooky: SpookyContext) = {
     this.copy().asInstanceOf[this.type].interpolateWayback(pageRow)
   }
 }
@@ -155,7 +155,7 @@ case class Screenshot(
     }
 
     val page = new Page(
-      PageUID(pb.backtrace :+ this, this),
+      PageUID((pb.backtrace :+ this).toList, this),
       pb.driver.getCurrentUrl,
       Some("image/png"),
       content
@@ -164,7 +164,7 @@ case class Screenshot(
     Seq(page)
   }
 
-  override def doInterpolate(pageRow: PageRow) = {
+  override def doInterpolate(pageRow: PageRow, spooky: SpookyContext) = {
     this.copy().asInstanceOf[this.type].interpolateWayback(pageRow)
   }
 }
@@ -226,7 +226,7 @@ case class Wget(
     }
 
     val result = new Page(
-      PageUID(Seq(this), this),
+      PageUID(List(this), this),
       uri.toString,
       None,
       content,
@@ -244,7 +244,7 @@ case class Wget(
     }
 
     val result = new Page(
-      PageUID(Seq(this), this),
+      PageUID(List(this), this),
       uri.toString,
       None,
       content,
@@ -269,7 +269,7 @@ case class Wget(
     val content = IOUtils.toByteArray ( stream )
 
     val result = new Page(
-      PageUID(Seq(this), this),
+      PageUID(List(this), this),
       uri.toString,
       None,
       content
@@ -372,7 +372,7 @@ case class Wget(
           val contentType = entity.getContentType.getValue
 
           new Page(
-            PageUID(Seq(this), this),
+            PageUID(List(this), this),
             currentUrl,
             Some(contentType),
             content
@@ -394,14 +394,14 @@ case class Wget(
     catch {
       case e: ClientProtocolException =>
         val cause = e.getCause
-        if (cause.isInstanceOf[RedirectException]) Seq(NoPage(session.backtrace :+ this))
+        if (cause.isInstanceOf[RedirectException]) Seq(NoPage((session.backtrace :+ this).toList))
         else throw e
       case e: Throwable =>
         throw e
     }
   }
 
-  override def doInterpolate(pageRow: PageRow): Option[this.type] = {
+  override def doInterpolate(pageRow: PageRow, spooky: SpookyContext): Option[this.type] = {
     val first = this.uri(pageRow).flatMap(Utils.encapsulateAsIterable(_).headOption)
 
     val uriStr: Option[String] = first.flatMap {
@@ -444,12 +444,12 @@ case class OAuthV2(self: Wget) extends Export with Driverless {
     val effectiveWget = this.effectiveWget(session)
 
     effectiveWget.doExeNoName(session).map{
-      case noPage: NoPage => noPage.copy(trace = Seq(this))
-      case page: Page => page.copy(uid = PageUID(Seq(this),this))
+      case noPage: NoPage => noPage.copy(trace = List(this))
+      case page: Page => page.copy(uid = PageUID(List(this),this))
     }
   }
 
-  override def doInterpolate(pageRow: PageRow): Option[this.type] = self.interpolate(pageRow).map {
+  override def doInterpolate(pageRow: PageRow, context: SpookyContext): Option[this.type] = self.interpolate(pageRow, context: SpookyContext).map {
     v => this.copy(self = v.asInstanceOf[Wget]).asInstanceOf[this.type]
   }
 }

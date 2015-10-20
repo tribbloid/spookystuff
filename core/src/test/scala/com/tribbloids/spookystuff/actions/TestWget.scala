@@ -197,7 +197,7 @@ class TestWget extends SpookyEnvSuite {
   test("wget should handle PKIX exception") {
     spooky.conf.proxy = ProxyFactories.NoProxy
 
-    val results = Seq(
+    val results = List(
       wget("https://www.canadacompany.ca/en/")
     ).fetch(spooky)
   }

@@ -8,11 +8,11 @@ trait KeyLike extends Serializable {
   val name: String
 }
 
-trait SortKeyHelper {
+trait SortKeyMixin {
   this: KeyLike =>
 }
 
-trait HiddenKeyHelper extends SortKeyHelper {
+trait HiddenKeyMixin extends SortKeyMixin {
   this: KeyLike =>
 }
 
@@ -22,13 +22,13 @@ object Key{
 
   def apply(sym: Symbol): Key = Option(sym).map(v => new Key(v.name)).orNull
 
-  def sortKey(str: String): Key = Option(str).map(v => new Key(str) with SortKeyHelper).orNull
+  def sortKey(str: String): Key = Option(str).map(v => new Key(str) with SortKeyMixin).orNull
 
-  def sortKey(sym: Symbol): Key = Option(sym).map(v => new Key(v.name) with SortKeyHelper).orNull
+  def sortKey(sym: Symbol): Key = Option(sym).map(v => new Key(v.name) with SortKeyMixin).orNull
 
-  def hiddenKey(str: String): Key = Option(str).map(v => new Key(str) with HiddenKeyHelper).orNull
+  def hiddenKey(str: String): Key = Option(str).map(v => new Key(str) with HiddenKeyMixin).orNull
 
-  def hiddenKey(sym: Symbol): Key = Option(sym).map(v => new Key(v.name) with HiddenKeyHelper).orNull
+  def hiddenKey(sym: Symbol): Key = Option(sym).map(v => new Key(v.name) with HiddenKeyMixin).orNull
 }
 
 case class TempKey(override val name: String) extends KeyLike

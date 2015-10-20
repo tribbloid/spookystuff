@@ -1,10 +1,11 @@
 package com.tribbloids.spookystuff
 
+import com.tribbloids.spookystuff.pages.Unstructured
 import org.apache.spark.sql.SQLContext
-import org.apache.spark.{SparkConf, SparkContext}
+import org.apache.spark.{SparkEnv, SparkConf, SparkContext}
 import org.scalatest.{Retries, BeforeAndAfter, BeforeAndAfterAll, FunSuite}
 import com.tribbloids.spookystuff.dsl.{DriverFactories, DriverFactory}
-import com.tribbloids.spookystuff.utils.Utils
+import com.tribbloids.spookystuff.utils.{TestHelper, Utils}
 
 /**
  * Created by peng on 11/30/14.
@@ -25,8 +26,7 @@ abstract class SpookyEnvSuite extends FunSuite with BeforeAndAfter with BeforeAn
   }
 
   override def beforeAll() {
-    val conf: SparkConf = new SparkConf().setAppName("unit")
-      .setMaster("local[*]")
+    val conf: SparkConf = TestHelper.testSparkConf.setAppName("unit")
 
     sc = new SparkContext(conf)
 
@@ -45,6 +45,8 @@ abstract class SpookyEnvSuite extends FunSuite with BeforeAndAfter with BeforeAn
     if (sc != null) {
       sc.stop()
     }
+
+    TestHelper.clearTempDir()
     super.afterAll()
   }
 
@@ -59,7 +61,7 @@ abstract class SpookyEnvSuite extends FunSuite with BeforeAndAfter with BeforeAn
       cacheWrite = false,
       cacheRead = false,
       dirs = new DirConf(
-        root = "file://"+System.getProperty("user.dir")+"/temp/spooky-unit/"
+        root = TestHelper.tempPath + "spooky-unit/"
       )
     )
   }

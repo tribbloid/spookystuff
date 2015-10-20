@@ -1,10 +1,10 @@
-package com.tribbloids.spookystuff
+package com.tribbloids.spookystuff.utils
 
+import com.tribbloids.spookystuff.actions.DryRun
 import com.tribbloids.spookystuff.entity.PageRow._
 import com.tribbloids.spookystuff.entity.{PageRow, Squashed}
-import com.tribbloids.spookystuff.utils.Utils
 import org.apache.spark.rdd.RDD
-import org.apache.spark.storage.StorageLevel
+import org.apache.spark.{Partitioner, SparkContext}
 
 import scala.reflect.ClassTag
 
@@ -14,30 +14,49 @@ import scala.reflect.ClassTag
  */
 object Views {
 
-  implicit class RDDView[A](val self: A)(implicit ev1: A => RDD[_]) {
+  val SPARK_JOB_DESCRIPTION = "spark.job.description"
+  val SPARK_JOB_GROUP_ID = "spark.jobGroup.id"
+  val SPARK_JOB_INTERRUPT_ON_CANCEL = "spark.job.interruptOnCancel"
+  val RDD_SCOPE_KEY = "spark.rdd.scope"
+  val RDD_SCOPE_NO_OVERRIDE_KEY = "spark.rdd.scope.noOverride"
 
-//    def persistDuring[T](newLevel: StorageLevel, blocking: Boolean = true)(fn: => T): T =
-//      if (self.getStorageLevel == StorageLevel.NONE){
-//        self.persist(newLevel)
-//        val result = fn
-//        self.unpersist(blocking)
-//        result
-//      }
-//      else {
-//        val result = fn
-//        self.unpersist(blocking)
-//        result
-//      }
+  implicit class SparkContextView(val self: SparkContext) {
 
-    //  def checkpointNow(): Unit = {
-    //    persistDuring(StorageLevel.MEMORY_ONLY) {
-    //      self.checkpoint()
-    //      self.foreach(_ =>)
-    //      self
-    //    }
-    //    Unit
-    //  }
+    def withJob[T](description: String)(fn: => T): T = {
+      val oldDescription = self.getLocalProperty(SPARK_JOB_DESCRIPTION)
+      if (oldDescription == null) self.setJobDescription(description)
+      else self.setJobDescription(oldDescription + " > " + description)
+
+      val result = fn
+      self.setJobGroup(null,oldDescription)
+      result
+    }
   }
+
+  //  implicit class RDDView[A](val self: A)(implicit ev1: A => RDD[_]) {
+
+  //    def persistDuring[T](newLevel: StorageLevel, blocking: Boolean = true)(fn: => T): T =
+  //      if (self.getStorageLevel == StorageLevel.NONE){
+  //        self.persist(newLevel)
+  //        val result = fn
+  //        self.unpersist(blocking)
+  //        result
+  //      }
+  //      else {
+  //        val result = fn
+  //        self.unpersist(blocking)
+  //        result
+  //      }
+
+  //  def checkpointNow(): Unit = {
+  //    persistDuring(StorageLevel.MEMORY_ONLY) {
+  //      self.checkpoint()
+  //      self.foreach(_ =>)
+  //      self
+  //    }
+  //    Unit
+  //  }
+  //  }
 
   implicit class PairRDDView[K: ClassTag, V: ClassTag](val self: RDD[(K, V)]) {
 
@@ -118,55 +137,70 @@ object Views {
     def discardRows: WebCacheRDD = {
 
       self.mapValues {
-        _.copy(metadata = Array())
+        _.copy(rows = Array())
       }
     }
 
     def getRows: RDD[PageRow] = {
 
       val updated = self.flatMap {
-        _._2.metadata
+        _._2.rows
       }
 
       updated
     }
 
+    /*
+     this add rows into WebCacheRDD using the following rules:
+     WebCacheRDD use dryrun as the only index,
+     any PageRow RDD with S having the same dryrun sequence will be cogrouped into the same WebCacheRow
+     each WebCacheRow must have a unique dryrun, otherwise its defective
+     if >1 new PageRow's dryrun doesn't exist in the WebCacheRow,
+     they are deduplicated to ensure that 2 rows in the same segment won't have the identical pages
+     if the dryrun already exists,
+     rows in the same segment with identical pages are removed first.
+     Then deduplicated.
+    */
     def putRows(
-                   rows: RDD[PageRow],
-                   seedFilter: Iterable[PageRow] => Option[PageRow] = _=>None
-                   ): WebCacheRDD = {
+                 rows: RDD[PageRow],
+                 seedFilter: Iterable[PageRow] => Option[PageRow] = v => v.headOption,
+                 partitionerOption: Option[Partitioner] = None
+                 ): WebCacheRDD = {
 
       val dryRun_RowRDD = rows.keyBy(_.dryrun)
-      val cogrouped = self.cogroup(dryRun_RowRDD)
+      val cogrouped = partitionerOption match {
+        case Some(partitioner) => self.cogroup(dryRun_RowRDD, partitioner)
+        case None => self.cogroup(dryRun_RowRDD)
+      }
       val result = cogrouped.map {
-        triplet =>
-          val tuple = triplet._2
-          assert(tuple._1.size <= 1)
-          val squashedRowOption = triplet._2._1.reduceOption(_ ++ _)
+        (triplet: (DryRun, (Iterable[Squashed[PageRow]], Iterable[PageRow]))) =>
+          val tuple: (Iterable[Squashed[PageRow]], Iterable[PageRow]) = triplet._2
+          //          assert(tuple._1.size <= 1)
+          val squashedRowOption = tuple._1.headOption //can only be 0 or 1
+        val newRows = tuple._2
+
           squashedRowOption match {
             case None =>
-              val newRows = tuple._2
 
-              val seedRows = seedFilter(newRows)
+              val seedRows = newRows
                 .groupBy(_.uid)
                 .flatMap(tuple => seedFilter(tuple._2))
 
-              val newPageLikes = seedFilter(newRows).get.pageLikes
+              val newPageLikes = seedRows.head.pageLikes //all newRows should have identical pageLikes (if using wide optimizer)
 
-              val newCached = triplet._1 -> Squashed(newPageLikes, seedRows.toArray)
+              val newCached = triplet._1 -> Squashed(pageLikes = newPageLikes, rows = seedRows.toArray)
               newCached
             case Some(squashedRow) =>
-              val newRows = tuple._2
 
-              val existingRowUIDs = squashedRow.metadata.map(_.uid)
-              val seedRows = newRows.filterNot(row => existingRowUIDs.contains(row.uid))
+              val existingRowUIDs: Array[RowUID] = squashedRow.rows.map(_.uid)
+              val seedRows = newRows
+                .filterNot(row => existingRowUIDs.contains(row.uid))
                 .groupBy(_.uid)
                 .flatMap(tuple => seedFilter(tuple._2))
 
-              val newCached = triplet._1 -> squashedRow.copy(metadata = squashedRow.metadata ++ seedRows)
+              val newCached = triplet._1 -> squashedRow.copy(rows = squashedRow.rows ++ seedRows)
               newCached
           }
-
       }
       result
     }

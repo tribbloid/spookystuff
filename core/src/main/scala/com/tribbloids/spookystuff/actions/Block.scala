@@ -3,7 +3,7 @@ package com.tribbloids.spookystuff.actions
 import org.apache.spark.TaskContext
 import org.slf4j.LoggerFactory
 import com.tribbloids.spookystuff.expressions.Expression
-import com.tribbloids.spookystuff.{TryException, dsl, Const}
+import com.tribbloids.spookystuff.{SpookyContext, TryException, dsl, Const}
 import com.tribbloids.spookystuff.entity.PageRow
 import com.tribbloids.spookystuff.pages.{NoPage, Page, PageLike}
 import com.tribbloids.spookystuff.session.Session
@@ -17,7 +17,7 @@ import scala.concurrent.duration.Duration
  * each defines a nested/non-linear subroutine that may or may not be executed
  * once or multiple times depending on situations.
  */
-abstract class Block(override val self: Seq[Action]) extends Actions(self) with Named with Wayback {
+abstract class Block(override val self: Trace) extends Actions(self) with Named with Wayback {
 
   //  assert(self.nonEmpty)
 
@@ -47,7 +47,7 @@ abstract class Block(override val self: Seq[Action]) extends Actions(self) with 
 
     val pages = this.doExeNoUID(session)
 
-    val backtrace = session.backtrace :+ this
+    val backtrace = (session.backtrace :+ this).toList
     val result = pages.zipWithIndex.map {
       tuple => {
         val page = tuple._1
@@ -77,7 +77,7 @@ object Try {
 }
 
 final case class Try(
-                      override val self: Seq[Action])(
+                      override val self: Trace)(
                       retries: Int,
                       override val cacheEmptyOutput: Boolean
                       ) extends Block(self) {
@@ -117,8 +117,8 @@ final case class Try(
     pages
   }
 
-  override def doInterpolate(pageRow: PageRow): Option[this.type] ={
-    val seq = this.doInterpolateSeq(pageRow)
+  override def doInterpolate(pageRow: PageRow, spooky: SpookyContext): Option[this.type] ={
+    val seq = this.doInterpolateSeq(pageRow, spooky)
     if (seq.isEmpty) None
     else Some(this.copy(self = seq)(this.retries, this.cacheEmptyOutput).asInstanceOf[this.type])
   }
@@ -139,7 +139,7 @@ object TryLocally {
 }
 
 final case class TryLocally(
-                             override val self: Seq[Action])(
+                             override val self: Trace)(
                              retries: Int,
                              override val cacheEmptyOutput: Boolean
                              ) extends Block(self) {
@@ -176,8 +176,8 @@ final case class TryLocally(
     pages
   }
 
-  override def doInterpolate(pageRow: PageRow): Option[this.type] ={
-    val seq = this.doInterpolateSeq(pageRow)
+  override def doInterpolate(pageRow: PageRow, spooky: SpookyContext): Option[this.type] ={
+    val seq = this.doInterpolateSeq(pageRow, spooky)
     if (seq.isEmpty) None
     else Some(this.copy(self = seq)(this.retries, this.cacheEmptyOutput).asInstanceOf[this.type])
   }
@@ -203,7 +203,7 @@ object Loop {
  * @param self a list of actions being iterated through
  */
 final case class Loop(
-                       override val self: Seq[Action],
+                       override val self: Trace,
                        limit: Int
                        ) extends Block(self) {
 
@@ -234,8 +234,8 @@ final case class Loop(
     pages
   }
 
-  override def doInterpolate(pageRow: PageRow): Option[this.type] ={
-    val seq = this.doInterpolateSeq(pageRow)
+  override def doInterpolate(pageRow: PageRow, spooky: SpookyContext): Option[this.type] ={
+    val seq = this.doInterpolateSeq(pageRow, spooky)
     if (seq.isEmpty) None
     else Some(this.copy(self = seq).asInstanceOf[this.type])
   }
@@ -277,8 +277,8 @@ object Paginate {
 
 final case class If(
                      condition: Page => Boolean,
-                     ifTrue: Seq[Action] = Nil,
-                     ifFalse: Seq[Action] = Nil
+                     ifTrue: Trace = Nil,
+                     ifFalse: Trace = Nil
                      ) extends Block(ifTrue ++ ifFalse) {
 
   override def trunk = Some(this.copy(ifTrue = ifTrue.flatMap(_.trunk), ifFalse = ifFalse.flatMap(_.trunk)).asInstanceOf[this.type])
@@ -308,9 +308,9 @@ final case class If(
     pages
   }
 
-  override def doInterpolate(pageRow: PageRow): Option[this.type] ={
-    val ifTrueInterpolated = Actions.doInterppolateSeq(ifTrue, pageRow)
-    val ifFalseInterpolated = Actions.doInterppolateSeq(ifFalse, pageRow)
+  override def doInterpolate(pageRow: PageRow, spooky: SpookyContext): Option[this.type] ={
+    val ifTrueInterpolated = Actions.doInterppolateSeq(ifTrue, pageRow, spooky)
+    val ifFalseInterpolated = Actions.doInterppolateSeq(ifFalse, pageRow, spooky)
     val result = this.copy(ifTrue = ifTrueInterpolated, ifFalse = ifFalseInterpolated).asInstanceOf[this.type]
     Some(result)
   }

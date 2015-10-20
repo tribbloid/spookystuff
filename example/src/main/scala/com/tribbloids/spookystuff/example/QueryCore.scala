@@ -25,7 +25,7 @@ trait QueryCore extends LocalSpookyCore {
         println(schemaRdd.schema.fieldNames.mkString("[","\t","]"))
         array
       case pageRowRDD: PageRowRDD =>
-        val array = pageRowRDD.self.persist().takeSample(withReplacement = false, num = 100)
+        val array = pageRowRDD.selfRDD.persist().takeSample(withReplacement = false, num = 100)
         println(pageRowRDD.keysSeq)
         array
       case rdd: RDD[_] =>

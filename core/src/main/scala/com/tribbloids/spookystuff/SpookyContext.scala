@@ -9,9 +9,10 @@ import org.slf4j.LoggerFactory
 import com.tribbloids.spookystuff.dsl.DriverFactories
 import com.tribbloids.spookystuff.entity.{Key, KeyLike, PageRow}
 import com.tribbloids.spookystuff.sparkbinding.{DataFrameView, PageRowRDD}
-import com.tribbloids.spookystuff.utils.Utils
+import com.tribbloids.spookystuff.utils.{Views, Utils}
 
 import scala.collection.immutable.{ListMap, ListSet}
+import scala.collection.mutable.ArrayBuffer
 import scala.language.implicitConversions
 import scala.reflect.ClassTag
 
@@ -41,6 +42,8 @@ case class SpookyContext private (
   def this(conf: SparkConf) {
     this(new SparkContext(conf))
   }
+
+  def sparkContext = this.sqlContext.sparkContext
 
   @volatile var broadcastedEffectiveConf = sqlContext.sparkContext.broadcast(_effectiveConf)
 
@@ -114,7 +117,7 @@ case class SpookyContext private (
 
     //every input or noInput will generate a new metrics
     implicit def rddToPageRowRDD[T: ClassTag](rdd: RDD[T]): PageRowRDD = {
-      import com.tribbloids.spookystuff.Views._
+      import Views._
 
       import scala.reflect._
 

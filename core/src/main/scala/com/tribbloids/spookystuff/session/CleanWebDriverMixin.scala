@@ -8,7 +8,7 @@ import org.slf4j.LoggerFactory
  * Created by peng on 11/5/14.
  */
 
-trait CleanWebDriverHelper {
+trait CleanWebDriverMixin {
   this: WebDriver =>
 
   override def finalize(): Unit = {

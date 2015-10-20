@@ -2,7 +2,7 @@ package com.tribbloids.spookystuff.pipeline
 
 import com.tribbloids.spookystuff.{DirConf, SpookyConf, SpookyContext}
 import com.tribbloids.spookystuff.dsl.{DriverFactories, DriverFactory}
-import com.tribbloids.spookystuff.utils.Utils
+import com.tribbloids.spookystuff.utils.{TestHelper, Utils}
 import org.apache.spark.sql.SQLContext
 import org.apache.spark.{SparkConf, SparkContext}
 import org.scalatest.{BeforeAndAfter, BeforeAndAfterAll, FunSuite, Retries}
@@ -26,8 +26,7 @@ abstract class SpookyEnvSuite extends FunSuite with BeforeAndAfter with BeforeAn
   }
 
   override def beforeAll() {
-    val conf: SparkConf = new SparkConf().setAppName("unit")
-      .setMaster("local[*]")
+    val conf: SparkConf = TestHelper.testSparkConf.setAppName("pipeline-unit")
 
     sc = new SparkContext(conf)
 
@@ -46,6 +45,8 @@ abstract class SpookyEnvSuite extends FunSuite with BeforeAndAfter with BeforeAn
     if (sc != null) {
       sc.stop()
     }
+
+    TestHelper.clearTempDir()
     super.afterAll()
   }
 
@@ -60,7 +61,7 @@ abstract class SpookyEnvSuite extends FunSuite with BeforeAndAfter with BeforeAn
       cacheWrite = false,
       cacheRead = false,
       dirs = new DirConf(
-        root = "file://"+System.getProperty("user.dir")+"/temp/spooky-unit/"
+        root = TestHelper.tempPath + "/temp/spooky-pipeline-unit/"
       )
     )
   }

@@ -1,9 +1,10 @@
-package com.tribbloids.spookystuff.integration
+package com.tribbloids.spookystuff.integration.select
 
 import java.text.SimpleDateFormat
 
 import com.tribbloids.spookystuff.actions._
 import com.tribbloids.spookystuff.dsl._
+import com.tribbloids.spookystuff.integration.IntegrationSuite
 import com.tribbloids.spookystuff.{QueryException, SpookyContext}
 
 /**

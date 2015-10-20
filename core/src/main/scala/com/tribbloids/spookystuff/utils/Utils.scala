@@ -2,6 +2,8 @@ package com.tribbloids.spookystuff.utils
 
 import java.io.File
 
+import com.tribbloids.spookystuff.pages.Unstructured
+import org.apache.spark.SparkEnv
 import org.slf4j.LoggerFactory
 import com.tribbloids.spookystuff.Const
 
@@ -9,6 +11,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._
 import scala.concurrent.{Await, Future}
 import scala.language.implicitConversions
+import scala.reflect.ClassTag
 import scala.util.{Failure, Random, Success, Try}
 
 /**
@@ -119,7 +122,9 @@ the opening curly brace {,
 These special characters are often called "metacharacters".
   */
   def canonizeFileName(name: String): String = {
-    var result = name.replaceAll("[ ]","_").replaceAll("""[^0-9a-zA-Z!_.*'()-]+""","*") //TODO: * is a metacharacter! why it is used as a replace string???
+
+    //TODO: * is a metacharacter! why it is used as a replace string???
+    var result = name.replaceAll("[ ]","_").replaceAll("""[^0-9a-zA-Z!_.*'()-]+""","*")
 
     if (result.length > 255) result = result.substring(0, 255)
 
@@ -166,5 +171,16 @@ These special characters are often called "metacharacters".
     val file = new File(path)
     if (file.exists()) Some(path)
     else None
+  }
+
+  def assureSerializable[T <: AnyRef: ClassTag](element: T): Unit = {
+
+    val ser = SparkEnv.get.serializer.newInstance()
+    val serElement = ser.serialize(element)
+    val element2 = ser.deserialize[T](serElement)
+    assert(!element.eq(element2))
+    assert (element == element2)
+    assert(element.hashCode() == element2.hashCode())
+    assert(element.toString == element2.toString)
   }
 }

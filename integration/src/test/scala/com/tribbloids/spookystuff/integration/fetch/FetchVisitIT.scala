@@ -1,8 +1,9 @@
-package com.tribbloids.spookystuff.integration
+package com.tribbloids.spookystuff.integration.fetch
 
 import com.tribbloids.spookystuff.SpookyContext
 import com.tribbloids.spookystuff.actions._
 import com.tribbloids.spookystuff.dsl._
+import com.tribbloids.spookystuff.integration.IntegrationSuite
 
 /**
  * Created by peng on 11/26/14.

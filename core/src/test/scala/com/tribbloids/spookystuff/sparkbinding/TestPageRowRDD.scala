@@ -51,25 +51,6 @@ class TestPageRowRDD extends SpookyEnvSuite {
     assert(acc.value == 1) //TODO: should be 1: reduced to 1 after unpersistAfterRendering() implemented
   }
 
-  test("toCSV() should not run preceding transformation multiple times") {
-    val acc = sc.accumulator(0)
-
-    spooky
-      .fetch(
-        Wget("http://www.wikipedia.org/")
-      )
-      .select(
-        S.andFlatMap{
-          page =>
-            acc += 1
-            page.saved.headOption
-        } ~ 'path
-      )
-      .toCSV().count()
-
-    assert(acc.value == 1) //TODO: should be 1: reduced to 1 after unpersistAfterRendering() implemented
-  }
-
   test("toJSON() should not run preceding transformation multiple times") {
     val acc = sc.accumulator(0)
 

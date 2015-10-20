@@ -23,7 +23,7 @@ package object dsl {
 
   //  type SerializableCookie = Cookie with Serializable
 
-  implicit def PageRowRDDToSelf(wrapper: PageRowRDD): RDD[PageRow] = wrapper.self
+  implicit def PageRowRDDToSelf(wrapper: PageRowRDD): RDD[PageRow] = wrapper.selfRDD
 
   implicit def spookyContextToPageRowRDD(spooky: SpookyContext): PageRowRDD =
     new PageRowRDD(spooky.sqlContext.sparkContext.parallelize(Seq(PageRow())), spooky = spooky.getContextForNewInput)
@@ -32,7 +32,7 @@ package object dsl {
 
   implicit def traceSetView[Repr](traces: Repr)(implicit f: Repr => Set[Trace]): TraceSetView = new TraceSetView(traces)
 
-  implicit def actionToTraceSet(action: Action): Set[Trace] = Set(Seq(action))
+  implicit def actionToTraceSet(action: Action): Set[Trace] = Set(List(action))
 
   //------------------------------------------------------------
 

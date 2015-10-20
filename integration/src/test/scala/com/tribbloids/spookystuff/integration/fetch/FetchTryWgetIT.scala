@@ -1,14 +1,15 @@
-package com.tribbloids.spookystuff.integration
+package com.tribbloids.spookystuff.integration.fetch
 
 import com.tribbloids.spookystuff.SpookyContext
 import com.tribbloids.spookystuff.actions._
 import com.tribbloids.spookystuff.dsl._
+import com.tribbloids.spookystuff.integration.UncacheableIntegrationSuite
 import org.apache.spark.SparkException
 
 /**
  * Created by peng on 11/26/14.
  */
-class FetchTryOAuthWgetIT extends UncacheableIntegrationSuite {
+class FetchTryWgetIT extends UncacheableIntegrationSuite {
 
   override lazy val drivers = Seq(
     null
@@ -20,7 +21,7 @@ class FetchTryOAuthWgetIT extends UncacheableIntegrationSuite {
 
     val RDD = sc.parallelize(Seq("http://malformed uri"))
       .fetch(
-        Try(OAuthV2(Wget('_)),3)
+        Try(Wget('_),3)
       )
       .select(S.code ~ 'page)
       .persist()
@@ -33,7 +34,7 @@ class FetchTryOAuthWgetIT extends UncacheableIntegrationSuite {
     intercept[SparkException]{
       val RDD = sc.parallelize(Seq("http://malformed uri"))
         .fetch(
-          Try(OAuthV2(Wget('_)),5)
+          Try(Wget('_),5)
         )
         .select(S.code ~ 'page)
         .collect()

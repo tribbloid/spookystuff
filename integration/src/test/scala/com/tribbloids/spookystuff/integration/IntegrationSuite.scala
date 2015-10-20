@@ -3,10 +3,10 @@ package com.tribbloids.spookystuff.integration
 import java.util.{Date, Properties}
 
 import com.tribbloids.spookystuff.dsl._
-import com.tribbloids.spookystuff.utils.Utils
+import com.tribbloids.spookystuff.utils.{TestHelper, Utils}
 import com.tribbloids.spookystuff.{DirConf, SpookyConf, SpookyContext}
+import org.apache.spark.SparkContext
 import org.apache.spark.sql.SQLContext
-import org.apache.spark.{SparkConf, SparkContext}
 import org.scalatest.{BeforeAndAfterAll, FunSuite}
 
 import scala.concurrent.duration
@@ -23,38 +23,10 @@ abstract class IntegrationSuite extends FunSuite with BeforeAndAfterAll {
   val htmlUnit = DriverFactories.HtmlUnit()
 
   override def beforeAll() {
-    val conf: SparkConf = new SparkConf().setAppName("integration")
-      .set("spark.serializer", "org.apache.spark.serializer.KryoSerializer")
-      .set("spark.kryo.registrator", "com.tribbloids.spookystuff.SpookyRegistrator")
-      .set("spark.kryoserializer.buffer.max", "512m")
-
-    val sparkHome = System.getenv("SPARK_HOME")
-    if (sparkHome == null) {
-      println("initialization Spark Context in local mode")
-      conf.setMaster(s"local[${Runtime.getRuntime.availableProcessors()},4]")
-    }
-    else {
-      println("initialization Spark Context in local-cluster simulation mode")
-      conf.setMaster("local-cluster[4,4,512]")
-    }
-
-    if (conf.get("spark.master").contains("cluster")) {
-      conf
-        .setSparkHome(sparkHome)
-        .set("spark.driver.extraClassPath", sys.props("java.class.path"))
-        .set("spark.executor.extraClassPath", sys.props("java.class.path"))
-    }
+    val conf = TestHelper.testSparkConf.setAppName("integration")
 
     sc = new SparkContext(conf)
     sql = new SQLContext(sc)
-
-    //TODO: why do I have to do this?
-    Option(System.getProperty("fs.s3n.awsAccessKeyId")).foreach {
-      sc.hadoopConfiguration.set("fs.s3n.awsAccessKeyId", _)
-    }
-    Option(System.getProperty("fs.s3n.awsSecretAccessKey")).foreach {
-      sc.hadoopConfiguration.set("fs.s3n.awsSecretAccessKey", _)
-    }
 
     super.beforeAll()
   }
@@ -63,12 +35,14 @@ abstract class IntegrationSuite extends FunSuite with BeforeAndAfterAll {
     if (sc != null) {
       sc.stop()
     }
+
+    TestHelper.clearTempDir()
     super.afterAll()
   }
 
   lazy val roots = {
 
-    val local = Seq("file://"+System.getProperty("user.dir")+"/temp/spooky-integration/")
+    val local = Seq(TestHelper.tempPath + "spooky-integration/")
 
     try {
       val prop = new Properties()
@@ -76,15 +50,16 @@ abstract class IntegrationSuite extends FunSuite with BeforeAndAfterAll {
       prop.load(ClassLoader.getSystemResourceAsStream("rootkey.csv"))
       val AWSAccessKeyId = prop.getProperty("AWSAccessKeyId")
       val AWSSecretKey = prop.getProperty("AWSSecretKey")
+      val S3Path = prop.getProperty("S3Path")
 
-      System.setProperty("fs.s3n.awsAccessKeyId", AWSAccessKeyId)
-      System.setProperty("fs.s3n.awsSecretAccessKey", AWSSecretKey)
+      System.setProperty("fs.s3.awsAccessKeyId", AWSAccessKeyId)
+      System.setProperty("fs.s3.awsSecretAccessKey", AWSSecretKey)
 
-      local :+ "s3n://spooky-integration/"
+      println("Test on AWS S3 with credentials provided by rootkey.csv")
+      local :+ S3Path
     }
     catch {
       case e: Throwable =>
-        println("rootkey.csv not provided")
         local
     }
   }
@@ -102,37 +77,38 @@ abstract class IntegrationSuite extends FunSuite with BeforeAndAfterAll {
 
   import duration._
 
+  // testing matrix
   for (root <- roots) {
     for (driver <- drivers) {
       for (optimizer <- optimizers) {
-        lazy val env = new SpookyContext(
-          sql,
-          new SpookyConf(
-            new DirConf(root = root),
-            driverFactory = driver,
-            defaultQueryOptimizer = optimizer,
-            shareMetrics = true,
-            checkpointInterval = 2,
-            remoteResourceTimeout = 10.seconds
-          )
-        )
-
         test(s"$root, $driver, $optimizer") {
+          lazy val env = new SpookyContext(
+            sql,
+            new SpookyConf(
+              new DirConf(root = root),
+              driverFactory = driver,
+              defaultQueryOptimizer = optimizer,
+              shareMetrics = true,
+              checkpointInterval = 2,
+              remoteResourceTimeout = 10.seconds
+            )
+          )
+
           doTest(env)
         }
       }
     }
   }
 
+  //TODO: for local-cluster mode, some of these metrics may have higher than expected results because
   def assertBeforeCache(spooky: SpookyContext): Unit = {
     val metrics = spooky.metrics
-
-    val numPages = this.numFetchedPages(spooky.conf.defaultQueryOptimizer)
+    println(metrics.toJSON)
 
     val pageFetched = metrics.pagesFetched.value
-    assert(pageFetched === numPages)
-    assert(metrics.pagesFetchedFromWeb.value === numPagesDistinct)
-    assert(metrics.pagesFetchedFromCache.value === numPages - numPagesDistinct)
+    assert(pageFetched === numFetchedPages(spooky.conf.defaultQueryOptimizer))
+    assert(metrics.pagesFetchedFromRemote.value === numPagesDistinct)
+    assert(metrics.pagesFetchedFromCache.value === pageFetched - numPagesDistinct)
     assert(metrics.sessionInitialized.value === numSessions)
     assert(metrics.sessionReclaimed.value >= metrics.sessionInitialized.value)
     assert(metrics.driverInitialized.value === numDrivers)
@@ -141,10 +117,11 @@ abstract class IntegrationSuite extends FunSuite with BeforeAndAfterAll {
 
   def assertAfterCache(spooky: SpookyContext): Unit = {
     val metrics = spooky.metrics
+    println(metrics.toJSON)
 
     val pageFetched = metrics.pagesFetched.value
     assert(pageFetched === numFetchedPages(spooky.conf.defaultQueryOptimizer))
-    assert(metrics.pagesFetchedFromWeb.value === 0)
+    assert(metrics.pagesFetchedFromRemote.value === 0)
     assert(metrics.pagesFetchedFromCache.value === pageFetched)
     assert(metrics.sessionInitialized.value === 0)
     assert(metrics.sessionReclaimed.value >= metrics.sessionInitialized.value)
@@ -154,21 +131,31 @@ abstract class IntegrationSuite extends FunSuite with BeforeAndAfterAll {
     assert(metrics.DFSReadFailure.value === 0)
   }
 
-  private val retry = 2
+  private val retry = 0
 
-  private def doTest(spooky: SpookyContext): Unit ={
+  protected def doTest(spooky: SpookyContext): Unit ={
 
+    doTestBeforeCache(spooky)
+
+//    Thread.sleep(Long.MaxValue)
+
+//    doTestAfterCache(spooky)
+  }
+
+  protected def doTestAfterCache(spooky: SpookyContext): Unit = {
+    Utils.retry(retry) {
+      spooky.zeroMetrics()
+      doMain(spooky)
+      assertAfterCache(spooky)
+    }
+  }
+
+  protected def doTestBeforeCache(spooky: SpookyContext): Unit = {
     Utils.retry(retry) {
       spooky.conf.pageNotExpiredSince = Some(new Date(System.currentTimeMillis()))
       spooky.zeroMetrics()
       doMain(spooky)
       assertBeforeCache(spooky)
-    }
-
-    Utils.retry(retry) {
-      spooky.zeroMetrics()
-      doMain(spooky)
-      assertAfterCache(spooky)
     }
   }
 
@@ -185,5 +172,8 @@ abstract class IntegrationSuite extends FunSuite with BeforeAndAfterAll {
 
 abstract class UncacheableIntegrationSuite extends IntegrationSuite {
 
-  override def assertAfterCache(spooky: SpookyContext) = this.assertBeforeCache(spooky)
+  override protected def doTest(spooky: SpookyContext): Unit ={
+
+    doTestBeforeCache(spooky)
+  }
 }
