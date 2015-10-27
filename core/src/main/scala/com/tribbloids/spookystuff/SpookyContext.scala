@@ -1,18 +1,17 @@
 package com.tribbloids.spookystuff
 
+import com.tribbloids.spookystuff.dsl.DriverFactories
 import com.tribbloids.spookystuff.dsl.DriverFactories.PhantomJS
+import com.tribbloids.spookystuff.entity.{Key, KeyLike, PageRow}
+import com.tribbloids.spookystuff.sparkbinding.{DataFrameView, PageRowRDD}
+import com.tribbloids.spookystuff.utils.{Utils, Views}
 import org.apache.hadoop.conf.Configuration
 import org.apache.spark._
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.{DataFrame, SQLContext}
 import org.slf4j.LoggerFactory
-import com.tribbloids.spookystuff.dsl.DriverFactories
-import com.tribbloids.spookystuff.entity.{Key, KeyLike, PageRow}
-import com.tribbloids.spookystuff.sparkbinding.{DataFrameView, PageRowRDD}
-import com.tribbloids.spookystuff.utils.{Views, Utils}
 
 import scala.collection.immutable.{ListMap, ListSet}
-import scala.collection.mutable.ArrayBuffer
 import scala.language.implicitConversions
 import scala.reflect.ClassTag
 

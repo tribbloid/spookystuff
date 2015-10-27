@@ -22,12 +22,13 @@ object Views {
 
   implicit class SparkContextView(val self: SparkContext) {
 
-    def withJob[T](description: String)(fn: => T): T = {
+    def withJob[T](description: String)(fn: T): T = {
+
       val oldDescription = self.getLocalProperty(SPARK_JOB_DESCRIPTION)
       if (oldDescription == null) self.setJobDescription(description)
       else self.setJobDescription(oldDescription + " > " + description)
 
-      val result = fn
+      val result: T = fn
       self.setJobGroup(null,oldDescription)
       result
     }
