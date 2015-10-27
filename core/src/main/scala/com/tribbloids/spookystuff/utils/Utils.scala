@@ -2,10 +2,9 @@ package com.tribbloids.spookystuff.utils
 
 import java.io.File
 
-import com.tribbloids.spookystuff.pages.Unstructured
+import com.tribbloids.spookystuff.Const
 import org.apache.spark.SparkEnv
 import org.slf4j.LoggerFactory
-import com.tribbloids.spookystuff.Const
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._

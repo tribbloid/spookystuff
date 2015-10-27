@@ -3,7 +3,7 @@ package com.tribbloids.spookystuff.pipeline.example.image
 import com.tribbloids.spookystuff.SpookyContext
 import com.tribbloids.spookystuff.dsl._
 import com.tribbloids.spookystuff.example.QueryCore
-import com.tribbloids.spookystuff.pipeline.transformer.google.GoogleImageTransformer
+import com.tribbloids.spookystuff.pipeline.transformer.google.ImageSearchTransformer
 import org.apache.spark.rdd.RDD
 
 /**
@@ -28,7 +28,7 @@ object ListOfFeatures extends QueryCore {
     )).toDF()
     .explode[String, String]("list","item")(_.split(",").map(v => "logo "+v.trim))
 
-    val output: RDD[(Int, String, String)] = new GoogleImageTransformer().setInputCol("item").setImageUrisCol("uris")
+    val output: RDD[(Int, String, String)] = new ImageSearchTransformer().setInputCol("item").setImageUrisCol("uris")
       .transform(input)
       .select(x"""<div class="logo"><img src="${'uris.head}"/></div>""" ~ 'logo)
       .toPairRDD('description, 'logo)
