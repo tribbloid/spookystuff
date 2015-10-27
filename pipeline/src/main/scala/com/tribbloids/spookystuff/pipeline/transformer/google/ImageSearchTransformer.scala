@@ -8,9 +8,9 @@ import com.tribbloids.spookystuff.sparkbinding.PageRowRDD
 import com.tribbloids.spookystuff.{SpookyContext, dsl}
 
 
-class GoogleImageTransformer(
+class ImageSearchTransformer(
                               override val uid: String =
-                              classOf[GoogleImageTransformer].getCanonicalName + "_" + UUID.randomUUID().toString
+                              classOf[ImageSearchTransformer].getCanonicalName + "_" + UUID.randomUUID().toString
                               ) extends SpookyTransformer {
 
   import dsl._
@@ -43,7 +43,7 @@ class GoogleImageTransformer(
 
     val source = spooky.create(Seq("Giant Robot", "Small Robot"))
 
-    val transformer = new GoogleImageTransformer() //TODO: change to copy
+    val transformer = new ImageSearchTransformer() //TODO: change to copy
       .setInputCol("_")
       .setImageUrisCol("uris")
 

@@ -8,9 +8,9 @@ import com.tribbloids.spookystuff.pipeline.SpookyTransformer
 import com.tribbloids.spookystuff.sparkbinding.PageRowRDD
 import com.tribbloids.spookystuff.{SpookyContext, dsl}
 
-class GoogleSearchTransformer(
+class WebSearchTransformer(
                                override val uid: String =
-                               classOf[GoogleSearchTransformer].getCanonicalName + "_" + UUID.randomUUID().toString
+                               classOf[WebSearchTransformer].getCanonicalName + "_" + UUID.randomUUID().toString
                                ) extends SpookyTransformer {
 
   import dsl._
@@ -55,7 +55,7 @@ class GoogleSearchTransformer(
 
     val source = spooky.create(Seq(Map("input" -> "Giant Robot")))
 
-    val transformer = new GoogleSearchTransformer()
+    val transformer = new WebSearchTransformer()
       .setInputCol("input")
       .setMaxPages(2)
       .setPageNumCol("page")

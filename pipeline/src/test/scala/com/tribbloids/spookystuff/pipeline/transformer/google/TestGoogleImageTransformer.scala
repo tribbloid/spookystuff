@@ -10,6 +10,6 @@ class TestGoogleImageTransformer extends SpookyEnvSuite {
   test("transformer should transform when all column names are given") {
     val spooky = this.spooky
 
-    new GoogleImageTransformer().test(spooky)
+    new ImageSearchTransformer().test(spooky)
   }
 }
