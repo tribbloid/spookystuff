@@ -5,7 +5,7 @@ import java.util.Date
 import javax.net.ssl.SSLContext
 
 import com.tribbloids.spookystuff.dsl.ExportFilter
-import com.tribbloids.spookystuff.entity.PageRow
+import com.tribbloids.spookystuff.row.PageRow
 import com.tribbloids.spookystuff.expressions.{Expression, Literal}
 import com.tribbloids.spookystuff.http._
 import com.tribbloids.spookystuff.pages._

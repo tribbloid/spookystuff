@@ -24,8 +24,8 @@ object TestHelper {
       .set("spark.kryoserializer.buffer.max", "512m")
 
     val sparkHome = System.getenv("SPARK_HOME") //TODO: add more condition to force local mode?
-    if (sparkHome == null) {
-//      if (true) {
+//    if (sparkHome == null) {
+      if (true) {
       LoggerFactory.getLogger(this.getClass).info("initialization Spark Context in local mode")
       conf.setMaster(s"local[$processors,4]")
     }

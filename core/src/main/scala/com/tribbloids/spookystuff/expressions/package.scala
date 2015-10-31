@@ -1,7 +1,7 @@
 package com.tribbloids.spookystuff
 
 import com.tribbloids.spookystuff.actions._
-import com.tribbloids.spookystuff.entity.PageRow
+import com.tribbloids.spookystuff.row.PageRow
 import com.tribbloids.spookystuff.pages.Page
 
 /**

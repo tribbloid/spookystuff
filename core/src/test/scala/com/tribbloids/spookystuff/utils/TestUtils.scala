@@ -1,7 +1,7 @@
 package com.tribbloids.spookystuff.utils
 
 import org.scalatest.FunSuite
-import com.tribbloids.spookystuff.entity.{KeyLike, PageRow, Key}
+import com.tribbloids.spookystuff.row.{KeyLike, PageRow, Key}
 
 import scala.collection.immutable.ListMap
 

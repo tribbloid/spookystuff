@@ -4,7 +4,7 @@ import org.apache.spark.TaskContext
 import org.slf4j.LoggerFactory
 import com.tribbloids.spookystuff.expressions.Expression
 import com.tribbloids.spookystuff.{SpookyContext, TryException, dsl, Const}
-import com.tribbloids.spookystuff.entity.PageRow
+import com.tribbloids.spookystuff.row.PageRow
 import com.tribbloids.spookystuff.pages.{NoPage, Page, PageLike}
 import com.tribbloids.spookystuff.session.Session
 import com.tribbloids.spookystuff.utils.Utils.retry

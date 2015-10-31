@@ -2,7 +2,7 @@ package com.tribbloids.spookystuff.sparkbinding
 
 import org.apache.spark.rdd.RDD
 import org.apache.spark.storage.StorageLevel
-import com.tribbloids.spookystuff.entity.PageRow
+import com.tribbloids.spookystuff.row.PageRow
 import com.tribbloids.spookystuff.utils.{Views, Utils}
 
 import scala.language.implicitConversions

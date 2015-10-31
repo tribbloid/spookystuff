@@ -1,7 +1,7 @@
 package com.tribbloids.spookystuff.actions
 
 import org.slf4j.LoggerFactory
-import com.tribbloids.spookystuff.entity.PageRow
+import com.tribbloids.spookystuff.row.PageRow
 import com.tribbloids.spookystuff.pages.{Page, PageLike, PageUtils}
 import com.tribbloids.spookystuff.session.{DriverSession, NoDriverSession, Session}
 import com.tribbloids.spookystuff.utils.Utils

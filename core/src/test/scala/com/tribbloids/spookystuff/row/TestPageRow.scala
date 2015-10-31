@@ -1,4 +1,4 @@
-package com.tribbloids.spookystuff.entity
+package com.tribbloids.spookystuff.row
 
 import com.tribbloids.spookystuff.actions.Wget
 import com.tribbloids.spookystuff.{SpookyEnvSuite, dsl}

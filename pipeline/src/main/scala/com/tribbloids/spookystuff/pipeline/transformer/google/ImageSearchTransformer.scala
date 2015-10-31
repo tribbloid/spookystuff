@@ -7,7 +7,6 @@ import com.tribbloids.spookystuff.pipeline.SpookyTransformer
 import com.tribbloids.spookystuff.sparkbinding.PageRowRDD
 import com.tribbloids.spookystuff.{SpookyContext, dsl}
 
-
 class ImageSearchTransformer(
                               override val uid: String =
                               classOf[ImageSearchTransformer].getCanonicalName + "_" + UUID.randomUUID().toString
@@ -20,8 +19,8 @@ class ImageSearchTransformer(
    * Param for input column name.
    * @group param
    */
-  final val InputCol: Param[String] = new Param[String](this, "inputCol", "input column name")
-  final val ImageUrisCol: Param[String] = new Param[String](this, "ImageUrisCol", "output ImageUrisCol column name")
+  final val InputCol: Param[Symbol] = new Param[Symbol](this, "inputCol", "input column name")
+  final val ImageUrisCol: Param[Symbol] = new Param[Symbol](this, "ImageUrisCol", "output ImageUrisCol column name")
   //TODO: add scrolling down
 
   setDefault(ImageUrisCol -> null)
@@ -30,10 +29,10 @@ class ImageSearchTransformer(
 
     dataset.fetch(
       Visit("http://images.google.com/")
-        +> TextInput("input[name=\"q\"]",toSymbol(InputCol))
+        +> TextInput("input[name=\"q\"]",getOrDefault(InputCol))
         +> Submit("input[name=\"btnG\"]")
     ).select(
-      S"div#search img".srcs ~ toSymbol(ImageUrisCol)
+      S"div#search img".srcs ~ getOrDefault(ImageUrisCol)
     )
   }
 
@@ -43,9 +42,9 @@ class ImageSearchTransformer(
 
     val source = spooky.create(Seq("Giant Robot", "Small Robot"))
 
-    val transformer = new ImageSearchTransformer() //TODO: change to copy
-      .setInputCol("_")
-      .setImageUrisCol("uris")
+    val transformer = new ImageSearchTransformer()
+      .setInputCol('_)
+      .setImageUrisCol('uris)
 
     val result = transformer.transform(source)
     val df = result.toDF(sort = true).persist()

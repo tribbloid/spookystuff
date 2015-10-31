@@ -4,38 +4,32 @@ import java.util.UUID
 
 import com.tribbloids.spookystuff.sparkbinding.PageRowRDD
 import com.tribbloids.spookystuff.{PipelineException, SpookyContext}
-import org.apache.spark.ml.param.{Param, ParamMap, Params}
+import org.apache.spark.ml.param.{ParamPair, Param, ParamMap, Params}
 
 import scala.language.dynamics
 
 /**
  * Created by peng on 25/09/15.
  */
-
-private[pipeline] trait TransformerLike extends Params with Serializable {
+private[pipeline] trait SpookyTransformerLike extends Params with Serializable {
 
   def transform(dataset: PageRowRDD): PageRowRDD
 
-  def copy(extra: ParamMap): TransformerLike = this.defaultCopy(extra)
+  def copy(extra: ParamMap): SpookyTransformerLike = this.defaultCopy(extra)
 
-  def +> (another: SpookyTransformer): ChainTransformer
+  def +> (another: SpookyTransformer): TransformerChain
 
   def test(spooky: SpookyContext): Unit
 }
 
-trait SpookyTransformer extends TransformerLike with Dynamic {
+trait SpookyTransformer extends SpookyTransformerLike with Dynamic {
 
   override def copy(extra: ParamMap): SpookyTransformer = this.defaultCopy(extra)
 
-  def +> (another: SpookyTransformer): ChainTransformer = new ChainTransformer(Seq(this)) +> another
-
-  def toSymbol(col: Param[String]): Symbol = {
-    val colName = Option(getOrDefault(col))
-    colName.map(Symbol(_)).orNull
-  }
+  def +> (another: SpookyTransformer): TransformerChain = new TransformerChain(Seq(this)) +> another
 
   /*
-  This dynamic function automatically add a setter to any property in Param type
+  This dynamic function automatically add a setter to any Param-typed property
    */
   def applyDynamic(methodName: String)(args: Any*): this.type = {
     assert(args.length == 1)
@@ -51,13 +45,31 @@ trait SpookyTransformer extends TransformerLike with Dynamic {
     }
     else throw new PipelineException(s"setter $methodName doesn't exist")
   }
+
+  //example value of parameters used for testing
+  val exampleParamMap: ParamMap = ParamMap.empty
+
+  protected final def setExample(paramPairs: ParamPair[_]*): this.type = {
+    paramPairs.foreach { p =>
+      setExample(p.param.asInstanceOf[Param[Any]], p.value)
+    }
+    this
+  }
+
+  protected final def setExample[T](param: Param[T], value: T): this.type = {
+    exampleParamMap.put(param -> value)
+    this
+  }
+
+  //condition that has to be met to pass the test
+  val conditionMap: ParamMap = ParamMap.empty
 }
 
-class ChainTransformer(
+class TransformerChain(
                         self: Seq[SpookyTransformer],
                         override val uid: String =
-                        classOf[ChainTransformer].getCanonicalName + "_" + UUID.randomUUID().toString
-                        ) extends TransformerLike {
+                        classOf[TransformerChain].getCanonicalName + "_" + UUID.randomUUID().toString
+                        ) extends SpookyTransformerLike {
 
   //this is mandatory for Params.defaultCopy()
   def this(uid: String) = this(Nil, uid)
@@ -67,14 +79,14 @@ class ChainTransformer(
       transformer.transform(rdd)
   }
 
-  override def copy(extra: ParamMap): ChainTransformer = new ChainTransformer(
+  override def copy(extra: ParamMap): TransformerChain = new TransformerChain(
     self = this
       .self
       .map(_.copy(extra)),
     uid = this.uid
   )
 
-  def +> (another: SpookyTransformer): ChainTransformer = new ChainTransformer(
+  def +> (another: SpookyTransformer): TransformerChain = new TransformerChain(
     this.self :+ another,
     uid = this.uid
   )

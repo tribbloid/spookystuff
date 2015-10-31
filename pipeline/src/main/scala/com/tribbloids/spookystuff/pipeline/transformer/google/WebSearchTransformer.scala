@@ -9,9 +9,9 @@ import com.tribbloids.spookystuff.sparkbinding.PageRowRDD
 import com.tribbloids.spookystuff.{SpookyContext, dsl}
 
 class WebSearchTransformer(
-                               override val uid: String =
-                               classOf[WebSearchTransformer].getCanonicalName + "_" + UUID.randomUUID().toString
-                               ) extends SpookyTransformer {
+                            override val uid: String =
+                            classOf[WebSearchTransformer].getCanonicalName + "_" + UUID.randomUUID().toString
+                            ) extends SpookyTransformer {
 
   import dsl._
   import org.apache.spark.ml.param._
@@ -20,10 +20,10 @@ class WebSearchTransformer(
    * Param for input column name.
    * @group param
    */
-  final val InputCol: Param[String] = new Param[String](this, "inputCol", "input column name")
+  final val InputCol: Param[Symbol] = new Param[Symbol](this, "inputCol", "input column name")
   final val MaxPages: Param[Int] = new Param[Int](this, "MaxPages", "number of pages")
-  final val PageNumCol: Param[String] = new Param[String](this, "PageNumCol", "output page number column name")
-  final val IndexCol: Param[String] = new Param[String](this, "IndexCol", "output index number column name")
+  final val PageNumCol: Param[Symbol] = new Param[Symbol](this, "PageNumCol", "output page number column name")
+  final val IndexCol: Param[Symbol] = new Param[Symbol](this, "IndexCol", "output index number column name")
 
   setDefault(MaxPages -> 0, PageNumCol -> null, IndexCol -> null)
 
@@ -31,10 +31,10 @@ class WebSearchTransformer(
 
     dataset.fetch(
       Visit("http://www.google.com/") +>
-        TextInput("input[name=\"q\"]",toSymbol(InputCol)) +>
+        TextInput("input[name=\"q\"]",getOrDefault(InputCol)) +>
         Submit("input[name=\"btnG\"]")
     )
-      .wgetExplore(S"div#foot a:contains(Next)", maxDepth = getOrDefault(MaxPages), depthKey = toSymbol(PageNumCol), optimizer = Narrow)
+      .wgetExplore(S"div#foot a:contains(Next)", maxDepth = getOrDefault(MaxPages), depthKey = getOrDefault(PageNumCol), optimizer = Narrow)
       .wgetJoin(S".g h3.r a".hrefs.flatMap {
         uri =>
           val query = HttpUtils.uri(uri).getQuery
@@ -43,7 +43,7 @@ class WebSearchTransformer(
           else None
           realURI
       },
-        ordinalKey = toSymbol(IndexCol),
+        ordinalKey = getOrDefault(IndexCol),
         failSafe = 2 //not all links are viable
       )
   }
@@ -56,16 +56,16 @@ class WebSearchTransformer(
     val source = spooky.create(Seq(Map("input" -> "Giant Robot")))
 
     val transformer = new WebSearchTransformer()
-      .setInputCol("input")
+      .setInputCol('input)
       .setMaxPages(2)
-      .setPageNumCol("page")
-      .setIndexCol("index")
+      .setPageNumCol('page)
+      .setIndexCol('index)
 
     val result = transformer.transform(source)
-      .select(
-        S.uri ~ 'uri,
-        (S \\ "title").text ~ 'title
-      )
+//      .select(
+//        S.uri ~ 'uri,
+//        (S \\ "title").text ~ 'title
+//      )
 
     val df = result.toDF(sort = true).persist()
 

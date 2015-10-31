@@ -1,7 +1,7 @@
 package com.tribbloids.spookystuff
 
 import com.tribbloids.spookystuff.actions._
-import com.tribbloids.spookystuff.entity.Key
+import com.tribbloids.spookystuff.row.Key
 import dsl._
 
 /**

@@ -6,7 +6,7 @@ import org.openqa.selenium.support.ui.{ExpectedCondition, ExpectedConditions, Se
 import org.openqa.selenium.{By, JavascriptExecutor, WebDriver}
 import com.tribbloids.spookystuff.{SpookyContext, Const}
 import com.tribbloids.spookystuff.actions.WaitForDocumentReady._
-import com.tribbloids.spookystuff.entity.PageRow
+import com.tribbloids.spookystuff.row.PageRow
 import com.tribbloids.spookystuff.expressions.{Expression, Literal}
 import com.tribbloids.spookystuff.pages.{Page, Unstructured}
 import com.tribbloids.spookystuff.session.Session

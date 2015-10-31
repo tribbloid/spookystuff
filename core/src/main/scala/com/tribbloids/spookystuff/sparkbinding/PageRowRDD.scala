@@ -1,20 +1,19 @@
 package com.tribbloids.spookystuff.sparkbinding
 
-import org.apache.spark.{Partitioner, HashPartitioner}
+import com.tribbloids.spookystuff._
+import com.tribbloids.spookystuff.actions._
+import com.tribbloids.spookystuff.dsl._
+import com.tribbloids.spookystuff.expressions._
+import com.tribbloids.spookystuff.pages.{Page, PageLike, Unstructured}
+import com.tribbloids.spookystuff.row._
+import com.tribbloids.spookystuff.utils._
 import org.apache.spark.rdd.{RDD, UnionRDD}
 import org.apache.spark.sql._
 import org.apache.spark.sql.catalyst.analysis.UnresolvedAttribute
 import org.apache.spark.sql.catalyst.expressions.Alias
 import org.apache.spark.storage.StorageLevel
+import org.apache.spark.{HashPartitioner, Partitioner}
 import org.slf4j.LoggerFactory
-import com.tribbloids.spookystuff.actions._
-import com.tribbloids.spookystuff.dsl._
-import com.tribbloids.spookystuff.entity.PageRow._
-import com.tribbloids.spookystuff.entity._
-import com.tribbloids.spookystuff.expressions._
-import com.tribbloids.spookystuff.pages.{Page, PageLike, Unstructured}
-import com.tribbloids.spookystuff.utils._
-import com.tribbloids.spookystuff._
 
 import scala.collection.immutable.ListSet
 import scala.collection.mutable.ArrayBuffer
@@ -138,8 +137,8 @@ class PageRowRDD private (
 
   private def discardPages: PageRowRDD = this.copy(selfRDD = selfRDD.map(_.copy(pageLikes = Array())))
 
-  private def discardExploredRows: PageRowRDD = {
-    this.copy(webCache = webCacheRDD.discardRows)
+  private[sparkbinding] def discardDataRowsInWebCacheRDD: PageRowRDD = {
+    this.copy(webCache = webCacheRDD.discardDataRows)
   }
 
   private def persistTemp(rdd: RDD[_]): PageRowRDD = {
@@ -246,39 +245,7 @@ class PageRowRDD private (
                  ext: Expression[Any] = null,
                  pageExpr: Expression[Page] = S,
                  overwrite: Boolean = false //TODO: move to context & more option
-                 //                 enforceURI: Boolean = false
-                 ): PageRowRDD =
-    sparkContext.withJob(s"savePages(path=$path,ext=$ext,pageExpr=$pageExpr,overwrite=$overwrite)"){
-
-      val effectiveExt = if (ext != null) ext
-      else pageExpr.defaultExt
-
-      this.spooky.broadcast()
-      val spooky = this.spooky
-
-      this.foreach {
-        pageRow =>
-          var pathStr: Option[String] = path(pageRow).map(_.toString).map{
-            str =>
-              val splitted = str.split(":")
-              if (splitted.size <= 2) str
-              else splitted.head + ":" + splitted.slice(1,Int.MaxValue).mkString("%3A") //colon in file paths are reserved for protocol definition
-          }
-
-          val extOption = effectiveExt(pageRow)
-          if (extOption.nonEmpty) pathStr = pathStr.map(_  + "." + extOption.get.toString)
-
-          pathStr.foreach {
-            str =>
-              val page = pageExpr(pageRow)
-
-              spooky.metrics.pagesSaved += 1
-
-              page.foreach(_.save(Seq(str), overwrite)(spooky))
-          }
-      }
-      this
-    }
+                 ): PageRowRDD = Operations.SavePages(path, ext, pageExpr, overwrite).apply(this)
 
   //  /**
   //   * extract parts of each Page and insert into their respective context
@@ -286,46 +253,15 @@ class PageRowRDD private (
   //   * @param exprs
   //   * @return new PageRowRDD
   //   */
-  def select(exprs: Expression[Any]*): PageRowRDD =
-    sparkContext.withJob(s"select(${exprs.mkString(",")})"){
+  def select(exprs: Expression[Any]*): PageRowRDD = Operations.Select(exprs: _*).apply(this)
 
-      val newKeys: Seq[Key] = exprs.flatMap {
-        expr =>
-          if (expr.name == null) None
-          else {
-            val key = Key(expr.name)
-            if(this.keys.contains(key) && !expr.isInstanceOf[ForceExpression[_]]) //can't insert the same key twice
-              throw new QueryException(s"Key ${key.name} already exist")
-            Some(key)
-          }
-      }
-
-      val result = this.copy(
-        selfRDD = this.flatMap(_.select(exprs: _*)),
-        keys = this.keys ++ newKeys
-      )
-      result
-    }
+  //alias
+  def extract(exprs: Expression[Any]*) = select(exprs: _*)
 
   //bypass "already exist" check
-  def select_!(exprs: Expression[Any]*): PageRowRDD =
-    sparkContext.withJob(s"select_!(${exprs.mkString(",")})"){
+  def select_!(exprs: Expression[Any]*): PageRowRDD = Operations.Select_!(exprs: _*).apply(this)
 
-      val newKeys: Seq[Key] = exprs.flatMap {
-        expr =>
-          if (expr.name == null) None
-          else {
-            val key = Key(expr.name)
-            Some(key)
-          }
-      }
-
-      val result = this.copy(
-        selfRDD = this.flatMap(_.select(exprs: _*)),
-        keys = this.keys ++ newKeys
-      )
-      result
-    }
+  def extract_!(exprs: Expression[Any]*) = select_!(exprs: _*)
 
   private def selectTemp(exprs: Expression[Any]*): PageRowRDD = {
 
@@ -344,17 +280,12 @@ class PageRowRDD private (
     )
   }
 
-  def remove(keys: Symbol*): PageRowRDD = sparkContext.withJob(s"remove(${keys.mkString(",")})"){
-    val names = keys.map(key => Key(key))
-    this.copy(
-      selfRDD = this.map(_.remove(names: _*)),
-      keys = this.keys -- names
-    )
-  }
+  def remove(keys: Symbol*): PageRowRDD = Operations.Remove(keys: _*).apply(this)
 
+  // alias
   def deselect(keys: Symbol*) = remove(keys: _*)
 
-  private def clearTempData: PageRowRDD = {
+  private[sparkbinding] def clearTempData: PageRowRDD = {
     this.copy(
       selfRDD = this.map(_.clearTempData),
       keys = keys -- keys.filter(_.isInstanceOf[TempKey])//circumvent https://issues.scala-lang.org/browse/SI-8985
@@ -366,23 +297,14 @@ class PageRowRDD private (
                ordinalKey: Symbol = null,
                maxOrdinal: Int = Int.MaxValue,
                left: Boolean = true
-               ): PageRowRDD =
-    sparkContext.withJob(s"flatten(expr=$expr,ordinalKey=$ordinalKey,maxOrdinal=$maxOrdinal,left=$left)"){
-      val selected = this.select(expr)
+               ): PageRowRDD = Operations.Flatten(expr, ordinalKey, maxOrdinal, left).apply(this)
 
-      val flattened = selected.flatMap(_.flatten(expr.name, ordinalKey, maxOrdinal, left))
-      selected.copy(
-        selfRDD = flattened,
-        keys = selected.keys ++ Option(Key.sortKey(ordinalKey))
-      )
-    }
-
-  private def flattenTemp(
-                           expr: Expression[Any],
-                           ordinalKey: Symbol = null,
-                           maxOrdinal: Int = Int.MaxValue,
-                           left: Boolean = true
-                           ): PageRowRDD = {
+  private[sparkbinding] def flattenTemp(
+                                         expr: Expression[Any],
+                                         ordinalKey: Symbol = null,
+                                         maxOrdinal: Int = Int.MaxValue,
+                                         left: Boolean = true
+                                         ): PageRowRDD = {
     val selected = this.selectTemp(expr)
 
     val flattened = selected.flatMap(_.flatten(expr.name, ordinalKey, maxOrdinal, left))
@@ -411,19 +333,20 @@ class PageRowRDD private (
                   ordinalKey: Symbol = null,
                   maxOrdinal: Int = Int.MaxValue,
                   left: Boolean = true
-                  )(exprs: Expression[Any]*) =
-    sparkContext.withJob(s"flatSelect(expr=$expr,ordinalKey=$ordinalKey,maxOrdinal=$maxOrdinal,left=$left)" +
-      s"(${exprs.mkString(",")})"){
+                  )(exprs: Expression[Any]*) = Operations.FlatSelect(expr, ordinalKey, maxOrdinal, left)(exprs: _*).apply(this)
 
-      this
-        .flattenTemp(expr defaultAs Symbol(Const.defaultJoinKey), ordinalKey, maxOrdinal, left)
-        .select(exprs: _*)
-    }
+  //alias
+  def flatExtract(
+                   expr: Expression[Iterable[Unstructured]],
+                   ordinalKey: Symbol = null,
+                   maxOrdinal: Int = Int.MaxValue,
+                   left: Boolean = true
+                   )(exprs: Expression[Any]*) = flatSelect(expr, ordinalKey, maxOrdinal, left)(exprs: _*)
 
-  private def flattenPages(
-                            pattern: String = ".*", //TODO: enable it
-                            ordinalKey: Symbol = null
-                            ): PageRowRDD =
+  private[sparkbinding] def flattenPages(
+                                          pattern: String = ".*", //TODO: enable it, or remvoe all together
+                                          ordinalKey: Symbol = null
+                                          ): PageRowRDD =
 
     this.copy(
       selfRDD = this.flatMap(_.flattenPages(pattern.name, ordinalKey)),
@@ -437,35 +360,7 @@ class PageRowRDD private (
              flattenPagesOrdinalKey: Symbol = null,
              numPartitions: Int = spooky.conf.defaultParallelism(this),
              optimizer: QueryOptimizer = spooky.conf.defaultQueryOptimizer
-             ): PageRowRDD =
-    sparkContext.withJob(
-      s"flatSelect(traces=$traces," +
-        s"joinType=$joinType," +
-        s"flattenPagesPattern=$flattenPagesPattern," +
-        s"flattenPagesOrdinalKey=$flattenPagesOrdinalKey," +
-        s"numPartitions=$numPartitions," +
-        s"optimizer=$optimizer)"
-    ){
-
-      val _traces = traces.autoSnapshot
-
-      spooky.broadcast()
-
-      val result = optimizer match {
-        case Narrow =>
-          _narrowFetch(_traces, joinType, numPartitions)
-        case Wide =>
-          _wideFetch(_traces, joinType, numPartitions, useWebCache = false)()
-            .discardExploredRows //optional
-        case Wide_RDDWebCache =>
-          _wideFetch(_traces, joinType, numPartitions, useWebCache = true)()
-            .discardExploredRows
-        case _ => throw new UnsupportedOperationException(s"${optimizer.getClass.getSimpleName} optimizer is not supported in this query")
-      }
-
-      if (flattenPagesPattern != null) result.flattenPages(flattenPagesPattern,flattenPagesOrdinalKey)
-      else result
-    }
+             ): PageRowRDD = Operations.Fetch(traces, joinType, flattenPagesPattern, flattenPagesOrdinalKey, numPartitions, optimizer).apply(this)
 
   def visit(
              expr: Expression[Any],
@@ -511,11 +406,11 @@ class PageRowRDD private (
     )
   }
 
-  private def _narrowFetch(
-                            _traces: Set[Trace],
-                            joinType: JoinType,
-                            numPartitions: Int
-                            ): PageRowRDD = {
+  private[sparkbinding] def _narrowFetch(
+                                          _traces: Set[Trace],
+                                          joinType: JoinType,
+                                          numPartitions: Int
+                                          ): PageRowRDD = {
 
     val spooky = this.spooky
 
@@ -537,16 +432,16 @@ class PageRowRDD private (
     this.copy(selfRDD = resultRows)
   }
 
-  private def _wideFetch(
-                          _traces: Set[Trace],
-                          joinType: JoinType,
-                          numPartitions: Int,
-                          useWebCache: Boolean,
-                          postProcessing: PageRow => Iterable[PageRow] = Some(_)
-                          )(
-                          seed: Boolean = false,
-                          seedFilter: Iterable[PageRow] => Option[PageRow] = _ => None //by default nothing will be inserted into explored rows
-                          ): PageRowRDD = {
+  private[sparkbinding] def _wideFetch(
+                                        _traces: Set[Trace],
+                                        joinType: JoinType,
+                                        numPartitions: Int,
+                                        useWebCache: Boolean,
+                                        postProcessing: PageRow => Iterable[PageRow] = Some(_)
+                                        )(
+                                        seed: Boolean = false,
+                                        seedFilter: Iterable[PageRow] => Option[PageRow] = _ => None //by default nothing will be inserted into explored rows
+                                        ): PageRowRDD = {
 
     val spooky = this.spooky
 
@@ -650,28 +545,7 @@ class PageRowRDD private (
             optimizer: QueryOptimizer = spooky.conf.defaultQueryOptimizer
             )(
             select: Expression[Any]*
-            ): PageRowRDD = sparkContext.withJob(
-    s"join(expr=$expr," +
-      s"ordinalKey=$ordinalKey," +
-      s" maxOrdinal=$maxOrdinal," +
-      s" distinct=$distinct)(" +
-      s"traces=$traces," +
-      s"joinType=$joinType," +
-      s"flattenPagesPattern=$flattenPagesPattern," +
-      s"flattenPagesOrdinalKey=$flattenPagesOrdinalKey," +
-      s"numPartitions=$numPartitions," +
-      s"optimizer=$optimizer)(" +
-      s"${select.mkString(",")})"
-  ){
-
-    var flat = this.clearTempData
-      .flattenTemp(expr defaultAs Symbol(Const.defaultJoinKey), ordinalKey, maxOrdinal, left = true)
-
-    if (distinct) flat = flat.distinctBy(expr)
-
-    flat.fetch(traces, joinType, flattenPagesPattern, flattenPagesOrdinalKey, numPartitions, optimizer)
-      .select(select: _*)
-  }
+            ): PageRowRDD = Operations.Join(expr, ordinalKey, maxOrdinal, distinct)(traces, joinType, numPartitions, flattenPagesPattern, flattenPagesOrdinalKey, optimizer)(select: _*).apply(this)
 
   /**
    * results in a new set of Pages by crawling links on old pages
@@ -689,6 +563,7 @@ class PageRowRDD private (
                  joinType: JoinType = spooky.conf.defaultJoinType,
                  numPartitions: Int = spooky.conf.defaultParallelism(this),
                  select: Expression[Any] = null,
+                 selects: Traversable[Expression[Any]] = Seq(),
                  optimizer: QueryOptimizer = spooky.conf.defaultQueryOptimizer
                  ): PageRowRDD ={
 
@@ -703,7 +578,7 @@ class PageRowRDD private (
       joinType,
       numPartitions,
       optimizer = optimizer
-    )(Option(select).toSeq: _*)
+    )(Option(select).toSeq ++ selects: _*)
   }
 
 
@@ -723,6 +598,7 @@ class PageRowRDD private (
                 joinType: JoinType = spooky.conf.defaultJoinType,
                 numPartitions: Int = spooky.conf.defaultParallelism(this),
                 select: Expression[Any] = null,
+                selects: Traversable[Expression[Any]] = Seq(),
                 optimizer: QueryOptimizer = spooky.conf.defaultQueryOptimizer
                 ): PageRowRDD ={
 
@@ -734,7 +610,7 @@ class PageRowRDD private (
       joinType,
       numPartitions,
       optimizer = optimizer
-    )(Option(select).toSeq: _*)
+    )(Option(select).toSeq ++ selects: _*)
   }
 
   def explore(
@@ -752,57 +628,28 @@ class PageRowRDD private (
                optimizer: QueryOptimizer = spooky.conf.defaultQueryOptimizer
                )(
                select: Expression[Any]*
-               ): PageRowRDD = sparkContext.withJob(
-    s"explore(expr=$expr," +
-      s"ordinalKey=$ordinalKey," +
-      s"depthKey=$depthKey," +
-      s"maxDepth=$maxDepth," +
-      s"maxOrdinal=$maxOrdinal," +
-      s"checkpointInterval=$checkpointInterval)(" +
-      s"traces=$traces," +
-      s"numPartitions=$numPartitions," +
-      s"flattenPagesPattern=$flattenPagesPattern," +
-      s"flattenPagesOrdinalKey=$flattenPagesOrdinalKey," +
-      s"optimizer=$optimizer)(" +
-      s"${select.mkString(",")})"
-  ){
-
-    val _traces = traces.autoSnapshot
-
-    spooky.broadcast()
-
-    val cleared = this.clearTempData
-
-    val result = optimizer match {
-      case Narrow =>
-        cleared._narrowExplore(expr, depthKey, maxDepth, ordinalKey, maxOrdinal, checkpointInterval)(_traces, numPartitions, flattenPagesPattern, flattenPagesOrdinalKey)(select: _*)
-      case Wide =>
-        cleared._wideExplore(expr, depthKey, maxDepth, ordinalKey, maxOrdinal, checkpointInterval, useWebCache = false)(_traces, numPartitions, flattenPagesPattern, flattenPagesOrdinalKey)(select: _*)
-      case Wide_RDDWebCache =>
-        cleared._wideExplore(expr, depthKey, maxDepth, ordinalKey, maxOrdinal, checkpointInterval, useWebCache = true)(_traces, numPartitions, flattenPagesPattern, flattenPagesOrdinalKey)(select: _*)
-      case _ => throw new UnsupportedOperationException(s"${optimizer.getClass.getSimpleName} optimizer is not supported in this query")
-    }
-
-    result
-  }
+               ): PageRowRDD =
+    Operations.Explore(expr, depthKey, maxDepth, ordinalKey, maxOrdinal, checkpointInterval)(
+      traces, numPartitions, flattenPagesPattern, flattenPagesOrdinalKey, optimizer
+    )(select: _*).apply(this)
 
   //this is a single-threaded explore, of which implementation is similar to good old pagination.
   //may fetch same page twice or more if pages of this can reach each others. TODO: Deduplicate happens between stages
-  private def _narrowExplore(
-                              expr: Expression[Any],
-                              depthKey: Symbol,
-                              maxDepth: Int,
-                              ordinalKey: Symbol,
-                              maxOrdinal: Int,
-                              checkpointInterval: Int
-                              )(
-                              _traces: Set[Trace],
-                              numPartitions: Int,
-                              flattenPagesPattern: String,
-                              flattenPagesOrdinalKey: Symbol
-                              )(
-                              select: Expression[Any]*
-                              ): PageRowRDD = {
+  private[sparkbinding] def _narrowExplore(
+                                            expr: Expression[Any],
+                                            depthKey: Symbol,
+                                            maxDepth: Int,
+                                            ordinalKey: Symbol,
+                                            maxOrdinal: Int,
+                                            checkpointInterval: Int
+                                            )(
+                                            _traces: Set[Trace],
+                                            numPartitions: Int,
+                                            flattenPagesPattern: String,
+                                            flattenPagesOrdinalKey: Symbol
+                                            )(
+                                            select: Expression[Any]*
+                                            ): PageRowRDD = {
 
     val spooky = this.spooky
     if (this.context.getCheckpointDir.isEmpty) this.context.setCheckpointDir(spooky.conf.dirs.checkpoint)
@@ -911,22 +758,22 @@ class PageRowRDD private (
   }
 
   //recursive join and union! applicable to many situations like (wide) pagination and deep crawling
-  private def _wideExplore(
-                            expr: Expression[Any],
-                            depthKey: Symbol,
-                            maxDepth: Int,
-                            ordinalKey: Symbol,
-                            maxOrdinal: Int,
-                            checkpointInterval: Int,
-                            useWebCache: Boolean
-                            )(
-                            _traces: Set[Trace],
-                            numPartitions: Int,
-                            flattenPagesPattern: String,
-                            flattenPagesOrdinalKey: Symbol
-                            )(
-                            select: Expression[Any]*
-                            ): PageRowRDD = {
+  private[sparkbinding] def _wideExplore(
+                                          expr: Expression[Any],
+                                          depthKey: Symbol,
+                                          maxDepth: Int,
+                                          ordinalKey: Symbol,
+                                          maxOrdinal: Int,
+                                          checkpointInterval: Int,
+                                          useWebCache: Boolean
+                                          )(
+                                          _traces: Set[Trace],
+                                          numPartitions: Int,
+                                          flattenPagesPattern: String,
+                                          flattenPagesOrdinalKey: Symbol
+                                          )(
+                                          select: Expression[Any]*
+                                          ): PageRowRDD = {
 
     val spooky = this.spooky
     if (this.context.getCheckpointDir.isEmpty) this.context.setCheckpointDir(spooky.conf.dirs.checkpoint)
@@ -986,7 +833,7 @@ class PageRowRDD private (
 
     def result = {
       val resultSelf = seeds.webCacheRDD.getRows
-      val resultWebCache = if (useWebCache) seeds.webCacheRDD.discardRows
+      val resultWebCache = if (useWebCache) seeds.webCacheRDD.discardDataRows
       else this.webCacheRDD
       val resultKeys = this.keys ++ Seq(TempKey(_expr.name), Key.sortKey(depthKey), Key.sortKey(ordinalKey), Key.sortKey(flattenPagesOrdinalKey)).flatMap(Option(_))
 
@@ -1008,6 +855,7 @@ class PageRowRDD private (
                     checkpointInterval: Int = spooky.conf.checkpointInterval,
                     numPartitions: Int = spooky.conf.defaultParallelism(this),
                     select: Expression[Any] = null,
+                    selects: Traversable[Expression[Any]] = Seq(),
                     optimizer: QueryOptimizer = spooky.conf.defaultQueryOptimizer
                     ): PageRowRDD = {
 
@@ -1021,7 +869,7 @@ class PageRowRDD private (
       trace,
       numPartitions,
       optimizer = optimizer
-    )(Option(select).toSeq: _*)
+    )(Option(select).toSeq ++ selects: _*)
   }
 
   def wgetExplore(
@@ -1035,6 +883,7 @@ class PageRowRDD private (
                    checkpointInterval: Int = spooky.conf.checkpointInterval,
                    numPartitions: Int = spooky.conf.defaultParallelism(this),
                    select: Expression[Any] = null,
+                   selects: Traversable[Expression[Any]] = Seq(),
                    optimizer: QueryOptimizer = spooky.conf.defaultQueryOptimizer
                    ): PageRowRDD = {
 
@@ -1045,6 +894,6 @@ class PageRowRDD private (
       trace,
       numPartitions,
       optimizer = optimizer
-    )(Option(select).toSeq: _*)
+    )(Option(select).toSeq ++ selects: _*)
   }
 }

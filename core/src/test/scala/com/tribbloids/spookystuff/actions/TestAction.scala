@@ -1,7 +1,7 @@
 package com.tribbloids.spookystuff.actions
 
 import com.tribbloids.spookystuff.dsl._
-import com.tribbloids.spookystuff.entity.{Key, PageRow}
+import com.tribbloids.spookystuff.row.{Key, PageRow}
 import com.tribbloids.spookystuff.expressions.Literal
 import com.tribbloids.spookystuff.pages.Page
 import com.tribbloids.spookystuff.session.DriverSession

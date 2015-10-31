@@ -1,7 +1,7 @@
 package com.tribbloids.spookystuff.expressions
 
 import com.tribbloids.spookystuff.Const
-import com.tribbloids.spookystuff.entity.PageRow
+import com.tribbloids.spookystuff.row.PageRow
 import com.tribbloids.spookystuff.pages.{Siblings, Elements, Page, Unstructured}
 
 import scala.collection.{IterableLike, TraversableOnce}

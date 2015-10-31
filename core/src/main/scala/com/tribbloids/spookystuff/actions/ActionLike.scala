@@ -2,7 +2,7 @@ package com.tribbloids.spookystuff.actions
 
 import com.mchange.v2.c3p0.util.TestUtils
 import com.tribbloids.spookystuff.SpookyContext
-import com.tribbloids.spookystuff.entity.PageRow
+import com.tribbloids.spookystuff.row.PageRow
 import com.tribbloids.spookystuff.pages.PageLike
 import com.tribbloids.spookystuff.session.Session
 import com.tribbloids.spookystuff.utils.Utils

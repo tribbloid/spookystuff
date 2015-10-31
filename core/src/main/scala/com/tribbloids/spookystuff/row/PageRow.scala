@@ -1,14 +1,12 @@
-package com.tribbloids.spookystuff.entity
+package com.tribbloids.spookystuff.row
 
-import org.apache.spark.rdd.RDD
-import org.slf4j.LoggerFactory
 import com.tribbloids.spookystuff.actions._
 import com.tribbloids.spookystuff.dsl._
-import com.tribbloids.spookystuff.entity.PageRow.{RowUID, DataRow, SegID}
 import com.tribbloids.spookystuff.expressions._
 import com.tribbloids.spookystuff.pages._
 import com.tribbloids.spookystuff.utils._
 import com.tribbloids.spookystuff.{Const, SpookyContext}
+import org.slf4j.LoggerFactory
 
 import scala.collection.immutable.ListMap
 import scala.collection.mutable.ArrayBuffer
@@ -336,16 +334,6 @@ case class Squashed[T: ClassTag](
 
 object PageRow {
 
-  type DataRow =  ListMap[KeyLike, Any]
-
-  type SegID = Long
-  type RowUID = (Seq[PageUID], SegID)
-
-  type SquashedRow = Squashed[PageRow]
-
-  type WebCacheRow = (DryRun, SquashedRow)
-
-  type WebCacheRDD = RDD[WebCacheRow]
 
   def localExplore(
                     stage: ExploreStage,

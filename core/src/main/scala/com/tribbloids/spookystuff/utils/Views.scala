@@ -1,8 +1,7 @@
 package com.tribbloids.spookystuff.utils
 
 import com.tribbloids.spookystuff.actions.DryRun
-import com.tribbloids.spookystuff.entity.PageRow._
-import com.tribbloids.spookystuff.entity.{PageRow, Squashed}
+import com.tribbloids.spookystuff.row.{PageRow, RowUID, Squashed, WebCacheRDD}
 import org.apache.spark.rdd.RDD
 import org.apache.spark.{Partitioner, SparkContext}
 
@@ -135,7 +134,7 @@ object Views {
 
     import RDD._
 
-    def discardRows: WebCacheRDD = {
+    def discardDataRows: WebCacheRDD = {
 
       self.mapValues {
         _.copy(rows = Array())

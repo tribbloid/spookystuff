@@ -1,4 +1,4 @@
-package com.tribbloids.spookystuff.entity
+package com.tribbloids.spookystuff.row
 
 /**
  * Created by peng on 11/7/14.

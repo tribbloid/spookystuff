@@ -5,7 +5,7 @@ import java.util.Date
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.DataFrame
 import com.tribbloids.spookystuff.actions._
-import com.tribbloids.spookystuff.entity.PageRow
+import com.tribbloids.spookystuff.row.PageRow
 import com.tribbloids.spookystuff.expressions._
 import com.tribbloids.spookystuff.pages.{Elements, Page, PageUID, Unstructured}
 import com.tribbloids.spookystuff.sparkbinding.{DataFrameView, PageRowRDD, StringRDDView}

@@ -2,7 +2,7 @@ package com.tribbloids.spookystuff
 
 import com.tribbloids.spookystuff.dsl.DriverFactories
 import com.tribbloids.spookystuff.dsl.DriverFactories.PhantomJS
-import com.tribbloids.spookystuff.entity.{Key, KeyLike, PageRow}
+import com.tribbloids.spookystuff.row.{Key, KeyLike, PageRow}
 import com.tribbloids.spookystuff.sparkbinding.{DataFrameView, PageRowRDD}
 import com.tribbloids.spookystuff.utils.{Utils, Views}
 import org.apache.hadoop.conf.Configuration

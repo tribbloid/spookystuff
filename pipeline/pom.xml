@@ -23,6 +23,12 @@
             <version>${spark.version}</version>
             <scope>provided</scope>
         </dependency>
+        <dependency>
+            <groupId>org.clapper</groupId>
+            <artifactId>classutil_2.10</artifactId>
+            <version>1.0.5</version>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 
     <build>
