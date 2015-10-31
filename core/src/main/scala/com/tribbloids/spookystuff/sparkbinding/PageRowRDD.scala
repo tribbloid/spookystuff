@@ -310,7 +310,7 @@ class PageRowRDD private (
     val flattened = selected.flatMap(_.flatten(expr.name, ordinalKey, maxOrdinal, left))
     selected.copy(
       selfRDD = flattened,
-      keys = selected.keys ++ Option(Key.sortKey(ordinalKey))
+      keys = selected.keys ++ Option(Key.ordinalKey(ordinalKey))
     )
   }
 
@@ -350,7 +350,7 @@ class PageRowRDD private (
 
     this.copy(
       selfRDD = this.flatMap(_.flattenPages(pattern.name, ordinalKey)),
-      keys = this.keys ++ Option(Key.sortKey(ordinalKey))
+      keys = this.keys ++ Option(Key.ordinalKey(ordinalKey))
     )
 
   def fetch(
@@ -690,7 +690,7 @@ class PageRowRDD private (
       firstResultRDD
     )
 
-    val resultKeys = this.keys ++ Seq(TempKey(_expr.name), Key.sortKey(depthKey), Key.sortKey(ordinalKey), Key.sortKey(flattenPagesOrdinalKey)).flatMap(Option(_))
+    val resultKeys = this.keys ++ Seq(TempKey(_expr.name), Key.depthKey(depthKey, maxDepth), Key.ordinalKey(ordinalKey), Key.ordinalKey(flattenPagesOrdinalKey)).flatMap(Option(_))
 
     var stageRDD = firstStageRDD.repartition(numPartitions)
     while(true) {
@@ -835,7 +835,7 @@ class PageRowRDD private (
       val resultSelf = seeds.webCacheRDD.getRows
       val resultWebCache = if (useWebCache) seeds.webCacheRDD.discardDataRows
       else this.webCacheRDD
-      val resultKeys = this.keys ++ Seq(TempKey(_expr.name), Key.sortKey(depthKey), Key.sortKey(ordinalKey), Key.sortKey(flattenPagesOrdinalKey)).flatMap(Option(_))
+      val resultKeys = this.keys ++ Seq(TempKey(_expr.name), Key.depthKey(depthKey, maxDepth), Key.ordinalKey(ordinalKey), Key.ordinalKey(flattenPagesOrdinalKey)).flatMap(Option(_))
 
       this.copy(resultSelf, resultWebCache, resultKeys)
         .select(select: _*)

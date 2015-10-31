@@ -12,6 +12,16 @@ trait SortKeyMixin {
   this: KeyLike =>
 }
 
+trait OrdinalKeyMixin extends SortKeyMixin {
+  this: KeyLike =>
+}
+
+trait DepthKeyMixin extends SortKeyMixin {
+  this: KeyLike =>
+
+  val maxOption: Option[Int]
+}
+
 trait HiddenKeyMixin extends SortKeyMixin {
   this: KeyLike =>
 }
@@ -22,11 +32,23 @@ object Key{
 
   def apply(sym: Symbol): Key = Option(sym).map(v => new Key(v.name)).orNull
 
-  def sortKey(str: String): Key = Option(str).map(v => new Key(str) with SortKeyMixin).orNull
-
   def sortKey(sym: Symbol): Key = Option(sym).map(v => new Key(v.name) with SortKeyMixin).orNull
 
-  def hiddenKey(str: String): Key = Option(str).map(v => new Key(str) with HiddenKeyMixin).orNull
+  def ordinalKey(sym: Symbol): Key = Option(sym).map(v => new Key(v.name) with OrdinalKeyMixin).orNull
+
+  def depthKey(sym: Symbol): Key = Option(sym).map(
+    v =>
+      new Key(v.name) with DepthKeyMixin {
+        override val maxOption: Option[Int] = None
+      }
+  ).orNull
+
+  def depthKey(sym: Symbol, max: Int): Key = Option(sym).map(
+    v =>
+      new Key(v.name) with DepthKeyMixin {
+        override val maxOption: Option[Int] = Some(max)
+      }
+  ).orNull
 
   def hiddenKey(sym: Symbol): Key = Option(sym).map(v => new Key(v.name) with HiddenKeyMixin).orNull
 }

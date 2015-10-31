@@ -92,7 +92,7 @@ object Operations {
       val flattened = selected.flatMap(_.flatten(expr.name, ordinalKey, maxOrdinal, left))
       selected.copy(
         selfRDD = flattened,
-        keys = selected.keys ++ Option(Key.sortKey(ordinalKey))
+        keys = selected.keys ++ Option(Key.ordinalKey(ordinalKey))
       )
     }
   }
