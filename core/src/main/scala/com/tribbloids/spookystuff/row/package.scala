@@ -13,6 +13,10 @@ package object row {
 
   type SortKey = Key with SortKeyMixin
 
+  type OrdinalKey = Key with OrdinalKeyMixin
+
+  type DepthKey = Key with DepthKeyMixin
+
   type HiddenKey = Key with HiddenKeyMixin
 
   type DataRow =  ListMap[KeyLike, Any]

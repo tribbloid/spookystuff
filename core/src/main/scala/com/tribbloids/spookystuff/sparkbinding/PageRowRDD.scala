@@ -154,9 +154,9 @@ class PageRowRDD private (
     this
   }
 
-  @transient def keysSeq: Seq[KeyLike] = this.keys.toSeq.reverse
+  @transient def keySeq: Seq[KeyLike] = this.keys.toSeq.reverse
 
-  @transient def sortKeysSeq: Seq[SortKey] = keysSeq.flatMap{
+  @transient def sortKeysSeq: Seq[SortKey] = keySeq.flatMap{
     case k: SortKey => Some(k)
     case _ => None
   }
@@ -200,7 +200,7 @@ class PageRowRDD private (
 
     val schemaRDD = this.spooky.sqlContext.jsonRDD(jsonRDD)
 
-    val columns: Seq[Column] = keysSeq
+    val columns: Seq[Column] = keySeq
       .filter(key => key.isInstanceOf[Key])
       .map {
         key =>

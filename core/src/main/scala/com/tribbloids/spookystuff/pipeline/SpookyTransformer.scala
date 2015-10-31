@@ -1,28 +1,18 @@
 package com.tribbloids.spookystuff.pipeline
 
-import java.util.UUID
-
+import com.tribbloids.spookystuff.row.DepthKey
 import com.tribbloids.spookystuff.sparkbinding.PageRowRDD
 import com.tribbloids.spookystuff.{PipelineException, SpookyContext}
-import org.apache.spark.ml.param.{ParamPair, Param, ParamMap, Params}
+import org.apache.spark.ml.param.{Param, ParamMap, ParamPair}
+import org.slf4j.LoggerFactory
 
 import scala.language.dynamics
 
-/**
- * Created by peng on 25/09/15.
- */
-private[pipeline] trait SpookyTransformerLike extends Params with Serializable {
 
-  def transform(dataset: PageRowRDD): PageRowRDD
-
-  def copy(extra: ParamMap): SpookyTransformerLike = this.defaultCopy(extra)
-
-  def +> (another: SpookyTransformer): TransformerChain
-
-  def test(spooky: SpookyContext): Unit
-}
 
 trait SpookyTransformer extends SpookyTransformerLike with Dynamic {
+
+  import com.tribbloids.spookystuff.dsl._
 
   override def copy(extra: ParamMap): SpookyTransformer = this.defaultCopy(extra)
 
@@ -49,6 +39,8 @@ trait SpookyTransformer extends SpookyTransformerLike with Dynamic {
   //example value of parameters used for testing
   val exampleParamMap: ParamMap = ParamMap.empty
 
+  def exampleInput(spooky: SpookyContext): PageRowRDD
+
   protected final def setExample(paramPairs: ParamPair[_]*): this.type = {
     paramPairs.foreach { p =>
       setExample(p.param.asInstanceOf[Param[Any]], p.value)
@@ -63,33 +55,36 @@ trait SpookyTransformer extends SpookyTransformerLike with Dynamic {
 
   //condition that has to be met to pass the test
   val conditionMap: ParamMap = ParamMap.empty
-}
 
-class TransformerChain(
-                        self: Seq[SpookyTransformer],
-                        override val uid: String =
-                        classOf[TransformerChain].getCanonicalName + "_" + UUID.randomUUID().toString
-                        ) extends SpookyTransformerLike {
+  override def test(spooky: SpookyContext): Unit= {
 
-  //this is mandatory for Params.defaultCopy()
-  def this(uid: String) = this(Nil, uid)
+    this.exampleParamMap.toSeq.foreach {
+      pair =>
+        this.set(pair)
+    }
 
-  override def transform(dataset: PageRowRDD): PageRowRDD = self.foldLeft(dataset) {
-    (rdd, transformer) =>
-      transformer.transform(rdd)
+    val result: PageRowRDD = this.transform(this.exampleInput(spooky)).persist()
+    val keys = result.keySeq
+
+    result.toDF(sort = true).show()
+
+    keys.foreach{
+      key =>
+        val distinct = result.flatMap(_.get(key)).distinct()
+        val values = distinct.take(2)
+        assert(values.length >= 1)
+        key match {
+          case depthKey: DepthKey =>
+            depthKey.maxOption.foreach {
+              expectedMax =>
+                assert(expectedMax == distinct.map(_.asInstanceOf[Int]).max())
+            }
+          case _ =>
+        }
+        LoggerFactory.getLogger(this.getClass).info(s"column '${key.name} has passed the test")
+        result.unpersist()
+    }
+
+    assert(result.toObjectRDD(S_*).flatMap(v => v).count() >= 1)
   }
-
-  override def copy(extra: ParamMap): TransformerChain = new TransformerChain(
-    self = this
-      .self
-      .map(_.copy(extra)),
-    uid = this.uid
-  )
-
-  def +> (another: SpookyTransformer): TransformerChain = new TransformerChain(
-    this.self :+ another,
-    uid = this.uid
-  )
-
-  override def test(spooky: SpookyContext): Unit = self.foreach(_.test(spooky))
 }

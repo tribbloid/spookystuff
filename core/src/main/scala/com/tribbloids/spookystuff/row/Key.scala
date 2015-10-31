@@ -19,7 +19,7 @@ trait OrdinalKeyMixin extends SortKeyMixin {
 trait DepthKeyMixin extends SortKeyMixin {
   this: KeyLike =>
 
-  val maxOption: Option[Int]
+  @transient val maxOption: Option[Int]
 }
 
 trait HiddenKeyMixin extends SortKeyMixin {

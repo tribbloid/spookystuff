@@ -24,6 +24,9 @@ class ImageSearchTransformer(
   //TODO: add scrolling down
 
   setDefault(ImageUrisCol -> null)
+  setExample(InputCol -> '_, ImageUrisCol -> 'uris)
+
+  override def exampleInput(spooky: SpookyContext): PageRowRDD = spooky.create(Seq("Giant Robot"))
 
   override def transform(dataset: PageRowRDD): PageRowRDD = {
 
@@ -34,28 +37,5 @@ class ImageSearchTransformer(
     ).select(
       S"div#search img".srcs ~ getOrDefault(ImageUrisCol)
     )
-  }
-
-  override def test(spooky: SpookyContext): Unit = {
-
-    import spooky.sqlContext.implicits._
-
-    val source = spooky.create(Seq("Giant Robot", "Small Robot"))
-
-    val transformer = new ImageSearchTransformer()
-      .setInputCol('_)
-      .setImageUrisCol('uris)
-
-    val result = transformer.transform(source)
-    val df = result.toDF(sort = true).persist()
-
-    assert(df.columns.toSeq == Seq("_", "uris"))
-    df.collect().foreach(println)
-    assert(df.count() == 2)
-    df.select('uris).map{
-      v =>
-        val arr = v.getAs[Array[String]](0)
-        assert(arr.length >= 10)
-    }
   }
 }

@@ -26,6 +26,9 @@ class WebSearchTransformer(
   final val IndexCol: Param[Symbol] = new Param[Symbol](this, "IndexCol", "output index number column name")
 
   setDefault(MaxPages -> 0, PageNumCol -> null, IndexCol -> null)
+  setExample(InputCol -> '_, MaxPages -> 2, PageNumCol -> 'page, IndexCol -> 'index)
+
+  override def exampleInput(spooky: SpookyContext): PageRowRDD = spooky.create(Seq("Giant Robot"))
 
   override def transform(dataset: PageRowRDD): PageRowRDD = {
 
@@ -46,40 +49,5 @@ class WebSearchTransformer(
         ordinalKey = getOrDefault(IndexCol),
         failSafe = 2 //not all links are viable
       )
-  }
-
-  def test(spooky: SpookyContext): Unit = {
-
-    import org.apache.spark.sql.functions._
-    import spooky.sqlContext.implicits._
-
-    val source = spooky.create(Seq(Map("input" -> "Giant Robot")))
-
-    val transformer = new WebSearchTransformer()
-      .setInputCol('input)
-      .setMaxPages(2)
-      .setPageNumCol('page)
-      .setIndexCol('index)
-
-    val result = transformer.transform(source)
-//      .select(
-//        S.uri ~ 'uri,
-//        (S \\ "title").text ~ 'title
-//      )
-
-    val df = result.toDF(sort = true).persist()
-
-    df.collect().foreach(println)
-    val maxPage = df.agg(max($"page"))
-    assert(maxPage.collect().head.getLong(0) == 2)
-
-    val aggIndex = df
-      .select(explode('index) as 'index0, 'page)
-      .groupBy('page).agg(max('index0), count('index0))
-    aggIndex.collect().foreach {
-      row =>
-        assert(row(1).asInstanceOf[Long] >=5 )
-        assert(row(1) == row(2).asInstanceOf[Long] - 1)
-    }
   }
 }
