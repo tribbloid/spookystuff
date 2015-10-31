@@ -128,7 +128,12 @@ class ReplaceKeyExpr(str: String) extends Expression[String] {
 class InterpolateExpr(parts: Seq[String], fs: Seq[(PageRow => Option[Any])])
   extends Expression[String] {
 
-  override val name = parts.zip(fs.map(_.toString())).map(tpl => tpl._1+tpl._2).mkString + parts.last
+  override val name = parts
+    .zip(fs.map{
+      case v: InterpolateExpr => v.toString()
+      case v @ _ => "${"+ v + "}"
+    })
+    .map(tpl => tpl._1+tpl._2).mkString + parts.last
 
   if (parts.length != fs.length + 1)
     throw new IllegalArgumentException("wrong number of arguments for interpolated string")

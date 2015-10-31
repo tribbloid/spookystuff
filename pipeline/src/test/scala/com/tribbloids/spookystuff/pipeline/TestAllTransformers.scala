@@ -1,5 +1,6 @@
 package com.tribbloids.spookystuff.pipeline
 
+import com.tribbloids.spookystuff.pipeline.transformer.dbpedia.LookupTransformer
 import com.tribbloids.spookystuff.pipeline.transformer.google.{ImageSearchTransformer, WebSearchTransformer}
 
 /**
@@ -9,7 +10,8 @@ class TestAllTransformers extends SpookyEnvSuite {
 
   val transformers = Seq(
     new ImageSearchTransformer(),
-    new WebSearchTransformer()
+    new WebSearchTransformer(),
+    new LookupTransformer()
   )
 
   for (transformer <- transformers) {

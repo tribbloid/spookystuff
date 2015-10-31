@@ -545,7 +545,9 @@ class PageRowRDD private (
             optimizer: QueryOptimizer = spooky.conf.defaultQueryOptimizer
             )(
             select: Expression[Any]*
-            ): PageRowRDD = Operations.Join(expr, ordinalKey, maxOrdinal, distinct)(traces, joinType, numPartitions, flattenPagesPattern, flattenPagesOrdinalKey, optimizer)(select: _*).apply(this)
+            ): PageRowRDD = Operations.Join(expr, ordinalKey, maxOrdinal, distinct)(
+    traces, joinType, numPartitions, flattenPagesPattern, flattenPagesOrdinalKey, optimizer
+  )(select: _*).apply(this)
 
   /**
    * results in a new set of Pages by crawling links on old pages
@@ -690,7 +692,13 @@ class PageRowRDD private (
       firstResultRDD
     )
 
-    val resultKeys = this.keys ++ Seq(TempKey(_expr.name), Key.depthKey(depthKey, maxDepth), Key.ordinalKey(ordinalKey), Key.ordinalKey(flattenPagesOrdinalKey)).flatMap(Option(_))
+    val resultKeys = this.keys ++
+      Seq(
+        TempKey(_expr.name),
+        Key.depthKey(depthKey, maxDepth),
+        Key.ordinalKey(ordinalKey),
+        Key.ordinalKey(flattenPagesOrdinalKey)).flatMap(Option(_)
+      )
 
     var stageRDD = firstStageRDD.repartition(numPartitions)
     while(true) {
@@ -835,7 +843,13 @@ class PageRowRDD private (
       val resultSelf = seeds.webCacheRDD.getRows
       val resultWebCache = if (useWebCache) seeds.webCacheRDD.discardDataRows
       else this.webCacheRDD
-      val resultKeys = this.keys ++ Seq(TempKey(_expr.name), Key.depthKey(depthKey, maxDepth), Key.ordinalKey(ordinalKey), Key.ordinalKey(flattenPagesOrdinalKey)).flatMap(Option(_))
+      val resultKeys = this.keys ++
+        Seq(
+          TempKey(_expr.name),
+          Key.depthKey(depthKey, maxDepth),
+          Key.ordinalKey(ordinalKey),
+          Key.ordinalKey(flattenPagesOrdinalKey)).flatMap(Option(_)
+        )
 
       this.copy(resultSelf, resultWebCache, resultKeys)
         .select(select: _*)

@@ -31,7 +31,6 @@ object Operations {
     exprs: Expression[Any]*
     ) extends Operation {
 
-
     override def _apply(rdd: PageRowRDD): PageRowRDD = {
 
       val exprs = this.exprs

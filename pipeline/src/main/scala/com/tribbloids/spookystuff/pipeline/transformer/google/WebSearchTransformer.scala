@@ -20,13 +20,14 @@ class WebSearchTransformer(
    * Param for input column name.
    * @group param
    */
-  final val InputCol: Param[Symbol] = new Param[Symbol](this, "inputCol", "input column name")
+  final val InputCol: Param[Symbol] = new Param[Symbol](this, "InputCol", "input column name")
   final val MaxPages: Param[Int] = new Param[Int](this, "MaxPages", "number of pages")
   final val PageNumCol: Param[Symbol] = new Param[Symbol](this, "PageNumCol", "output page number column name")
   final val IndexCol: Param[Symbol] = new Param[Symbol](this, "IndexCol", "output index number column name")
+  final val UriCol: Param[Symbol] = new Param[Symbol](this, "UriCol", "output URI column name")
 
-  setDefault(MaxPages -> 0, PageNumCol -> null, IndexCol -> null)
-  setExample(InputCol -> '_, MaxPages -> 2, PageNumCol -> 'page, IndexCol -> 'index)
+  setDefault(MaxPages -> 0, PageNumCol -> null, IndexCol -> null, UriCol -> null)
+  setExample(InputCol -> '_, MaxPages -> 2, PageNumCol -> 'page, IndexCol -> 'index, UriCol -> 'uri)
 
   override def exampleInput(spooky: SpookyContext): PageRowRDD = spooky.create(Seq("Giant Robot"))
 
@@ -47,7 +48,8 @@ class WebSearchTransformer(
           realURI
       },
         ordinalKey = getOrDefault(IndexCol),
-        failSafe = 2 //not all links are viable
+        failSafe = 2, //not all links are viable
+        select = 'A ~ getOrDefault(UriCol)
       )
   }
 }
