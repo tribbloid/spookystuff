@@ -1,6 +1,7 @@
 package com.tribbloids.spookystuff
 
 import com.tribbloids.spookystuff.actions._
+import com.tribbloids.spookystuff.expressions.ExpressionLike
 import com.tribbloids.spookystuff.row.PageRow
 import com.tribbloids.spookystuff.pages.Page
 
@@ -9,9 +10,11 @@ import com.tribbloids.spookystuff.pages.Page
  */
 package object expressions {
 
-  type Expression[+R] = NamedFunction1[PageRow, Option[R]]
+//  trait Expression[+R] extends ExpressionLike[PageRow, Option[R]]
 
-  type ForceExpression[+R] = ForceNamedFunction1[PageRow, Option[R]]
+  type Expression[+R] = ExpressionLike[PageRow, Option[R]]
+
+  type ForceExpression[+R] = ForceExpressionLike[PageRow, Option[R]]
 
   type PageFilePath[+R] = (Page => R)
 

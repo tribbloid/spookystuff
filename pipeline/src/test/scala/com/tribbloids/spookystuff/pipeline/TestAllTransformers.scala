@@ -1,7 +1,7 @@
 package com.tribbloids.spookystuff.pipeline
 
-import com.tribbloids.spookystuff.pipeline.transformer.dbpedia.LookupTransformer
-import com.tribbloids.spookystuff.pipeline.transformer.google.{ImageSearchTransformer, WebSearchTransformer}
+import com.tribbloids.spookystuff.pipeline.dbpedia.LookupTransformer
+import com.tribbloids.spookystuff.pipeline.google.{ImageSearchTransformer, WebSearchTransformer}
 
 /**
  * Created by peng on 27/10/15.

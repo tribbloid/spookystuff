@@ -38,28 +38,27 @@ package object dsl {
 
   //this hierarchy aims to create a short DSL for selecting components from PageRow, e.g.:
   //'abc:  cells with key "abc", tempkey precedes ordinary key
-  //'abc.$("div#a1"): all children of an unstructured field (either a page or element) that match the selector
-  //$("div#a1"): all children of the only page that match the selector, if multiple page per row, throws an exception
+  //'abc.S("div#a1"): all children of an unstructured field (either a page or element) that match the selector
+  //S("div#a1"): all children of the only page that match the selector, if multiple page per row, throws an exception
   //$_*("div#a1"): all children of all pages that match the selector.
-  //'abc.$("div#a1").head: first child of an unstructured field (either a page or element) that match the selector
-  //'abc.$("div#a1").text: first text of an unstructured field that match the selector
-  //'abc.$("div#a1").texts: all texts of an unstructured field that match the selector
-  //'abc.$("div#a1").attr("src"): first "src" attribute of an unstructured field that match the selector
-  //'abc.$("div#a1").attrs("src"): first "src" attribute of an unstructured field that match the selector
+  //'abc.S("div#a1").head: first child of an unstructured field (either a page or element) that match the selector
+  //'abc.S("div#a1").text: first text of an unstructured field that match the selector
+  //'abc.S("div#a1").texts: all texts of an unstructured field that match the selector
+  //'abc.S("div#a1").attr("src"): first "src" attribute of an unstructured field that match the selector
+  //'abc.S("div#a1").attrs("src"): first "src" attribute of an unstructured field that match the selector
 
   def S(selector: String): FindAllExpr = GetOnlyPageExpr.findAll(selector)
   def S(selector: String, i: Int): Expression[Unstructured] = {
     val expr = GetOnlyPageExpr.findAll(selector)
     new IterableLikeExprView(expr).get(i)
   }
-  def S: Expression[Page] = GetOnlyPageExpr
-
+  def S = GetOnlyPageExpr
   def S_*(selector: String): FindAllExpr = GetAllPagesExpr.findAll(selector)
   def S_*(selector: String, i: Int): Expression[Unstructured] = {
     val expr = GetAllPagesExpr.findAll(selector)
     new IterableLikeExprView(expr).get(i)
   }
-  def `S_*`: Expression[Elements[Page]] = GetAllPagesExpr
+  def `S_*` = GetAllPagesExpr
 
   def A(selector: String): FindAllExpr = 'A.findAll(selector)
   def A(selector: String, i: Int): Expression[Unstructured] = {
@@ -67,17 +66,19 @@ package object dsl {
     new IterableLikeExprView(expr).get(i)
   }
 
+  def dynamic[T](expr: Expression[T]) = new DynamicExprWrapper(expr)
+
   implicit class ExprView[+T: ClassTag](self: Expression[T]) extends Serializable {
 
     private def defaultVal: T = Default.value[T]
 
     def andMap[A](g: T => A): Expression[A] = self.andThen(_.map(v => g(v)))
 
-    def andMap[A](g: T => A, name: String): Expression[A] = self.andThen(NamedFunction1(_.map(v => g(v)), name))
+    def andMap[A](g: T => A, name: String): Expression[A] = self.andThen(ExpressionLike(_.map(v => g(v)), name))
 
     def andFlatMap[A](g: T => Option[A]): Expression[A] = self.andThen(_.flatMap(v => g(v)))
 
-    def andFlatMap[A](g: T => Option[A], name: String): Expression[A] = self.andThen(NamedFunction1(_.flatMap(v => g(v)), name))
+    def andFlatMap[A](g: T => Option[A], name: String): Expression[A] = self.andThen(ExpressionLike(_.flatMap(v => g(v)), name))
 
     def typed[A](implicit ev: ClassTag[A]) = this.andFlatMap[A](
       {
@@ -93,18 +94,18 @@ package object dsl {
     def ~+(name: Symbol) = into(name)
 
     //these will convert Expression to a common function
-    def getOrElse[B >: T](value: =>B = defaultVal): NamedFunction1[PageRow, B] = self.andThen(
-      NamedFunction1(_.getOrElse(value), s"getOrElse($value)")
+    def getOrElse[B >: T](value: =>B = defaultVal): ExpressionLike[PageRow, B] = self.andThen(
+      ExpressionLike(_.getOrElse(value), s"getOrElse($value)")
     )
 
-    def orNull[B >: T]: NamedFunction1[PageRow, B] = self.andThen(
-      NamedFunction1(_.getOrElse(null.asInstanceOf[B]), "orNull")
+    def orNull[B >: T]: ExpressionLike[PageRow, B] = self.andThen(
+      ExpressionLike(_.getOrElse(null.asInstanceOf[B]), "orNull")
     )
 
     def orDefault[B >: T]() = orElse(Some(defaultVal))
 
     def orElse[B >: T](valueOption: =>Option[B]): Expression[B] = self.andThen(
-      NamedFunction1(_.orElse(valueOption), s"orElse($valueOption)")
+      ExpressionLike(_.orElse(valueOption), s"orElse($valueOption)")
     )
 
     def orElse[B >: T](expr: Expression[B]): Expression[B] = new Expression[B] {
@@ -117,8 +118,8 @@ package object dsl {
       }
     }
 
-    def get: NamedFunction1[PageRow, T] = self.andThen(
-      NamedFunction1(_.get, s"get")
+    def get: ExpressionLike[PageRow, T] = self.andThen(
+      ExpressionLike(_.get, s"get")
     )
 
     def ->[B](another: Expression[B]): Expression[(T, B)] = new Expression[(T, B)] {
@@ -130,7 +131,7 @@ package object dsl {
       }
     }
 
-    def toSeqFunction: NamedFunction1[PageRow, Seq[T]] = self.andThen(_.toSeq)
+    def toSeqFunction: ExpressionLike[PageRow, Seq[T]] = self.andThen(_.toSeq)
     //  def defaultToHrefExpr = (self match {
     //    case expr: Expr[Unstructured] => expr.href
     //    case expr: Expr[Seq[Unstructured]] => expr.hrefs
@@ -314,7 +315,7 @@ package object dsl {
       s"flatMap($f)"
     )
 
-    def flatten: NamedFunction1[PageRow, Seq[T]] = self.andThen(_.toSeq.flatten)
+    def flatten: ExpressionLike[PageRow, Seq[T]] = self.andThen(_.toSeq.flatten)
   }
 
   implicit class StringExprView(self: Expression[String]) extends Serializable {

@@ -1,4 +1,4 @@
-package com.tribbloids.spookystuff.pipeline.transformer.dbpedia
+package com.tribbloids.spookystuff.pipeline.dbpedia
 
 import java.util.UUID
 
@@ -21,13 +21,13 @@ class LookupTransformer(
 
   final val QueryCol: Param[Symbol] = new Param[Symbol](this, "QueryCol", "query column name")
   final val ClassCol: Param[Symbol] = new Param[Symbol](this, "ClassCol", "class column name")
-  final val firstN: Param[Int] = new Param[Int](this, "firstN", "only take the first N response")
+  final val firstN: Param[Int] = new Param[Int](this, "firstN", "only take the first N responses")
   final val IndexCol: Param[Symbol] = new Param[Symbol](this, "IndexCol", "index of output")
   final val LabelCol: Param[Symbol] = new Param[Symbol](this, "LabelCol", "output Entity column name")
   final val UriCol: Param[Symbol] = new Param[Symbol](this, "UriCol", "output Uri column name")
 
   setExample(QueryCol -> 'q, ClassCol -> 'class, firstN -> 3, IndexCol -> 'index,LabelCol -> 'label, UriCol -> 'uri)
-  setDefault(LabelCol -> null, UriCol -> null)
+  setDefault(firstN -> Int.MaxValue, LabelCol -> null, UriCol -> null)
 
   override def exampleInput(spooky: SpookyContext): PageRowRDD = spooky.create(Seq(
     Map("q" ->"Barack Obama", "class" -> "person")

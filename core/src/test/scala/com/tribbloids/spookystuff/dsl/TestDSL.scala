@@ -3,7 +3,7 @@ package com.tribbloids.spookystuff.dsl
 import com.tribbloids.spookystuff.SpookyEnvSuite
 import com.tribbloids.spookystuff.actions.Wget
 import com.tribbloids.spookystuff.row.PageRow
-import com.tribbloids.spookystuff.expressions.NamedFunction1
+import com.tribbloids.spookystuff.expressions.ExpressionLike
 
 /**
  * Created by peng on 12/3/14.
@@ -39,7 +39,7 @@ class TestDSL extends SpookyEnvSuite {
     assert(fun.name === "abc.<function1>")
     assert(fun(row) === Some("Wikipedia"))
 
-    val fun2 = 'abc.andThen(NamedFunction1(_.map(_.toString),"after"))
+    val fun2 = 'abc.andThen(ExpressionLike(_.map(_.toString),"after"))
     assert(fun2.name === "abc.after")
     assert(fun(row) === Some("Wikipedia"))
   }

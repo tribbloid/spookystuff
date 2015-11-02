@@ -1,4 +1,4 @@
-package com.tribbloids.spookystuff.pipeline.transformer.google
+package com.tribbloids.spookystuff.pipeline.google
 
 import java.util.UUID
 

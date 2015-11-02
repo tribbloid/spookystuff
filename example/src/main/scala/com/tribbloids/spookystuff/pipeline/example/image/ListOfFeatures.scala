@@ -3,7 +3,7 @@ package com.tribbloids.spookystuff.pipeline.example.image
 import com.tribbloids.spookystuff.SpookyContext
 import com.tribbloids.spookystuff.dsl._
 import com.tribbloids.spookystuff.example.QueryCore
-import com.tribbloids.spookystuff.pipeline.transformer.google.ImageSearchTransformer
+import com.tribbloids.spookystuff.pipeline.google.ImageSearchTransformer
 import org.apache.spark.rdd.RDD
 
 /**

@@ -24,7 +24,7 @@ object DBPedia_Film extends QueryCore {
         Try(Wget(A"URI".text),2)
       )(
         A"Label".text ~ 'movie
-      ).join(S"a[rel^=dbo][href*=dbpedia]".distinctBy(_.href))(
+      ).join(S"a[rel^=dbo]".filter(_.href.exists(_.contains("dbpedia"))).distinctBy(_.href))(
         Try(Wget('A.href),2)
       )(
         S.uri ~ 'uri,

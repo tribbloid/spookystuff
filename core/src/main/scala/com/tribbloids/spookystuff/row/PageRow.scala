@@ -334,7 +334,6 @@ case class Squashed[T: ClassTag](
 
 object PageRow {
 
-
   def localExplore(
                     stage: ExploreStage,
                     spooky: SpookyContext
