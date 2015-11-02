@@ -17,7 +17,7 @@ class DynamicExprWrapper[+T](val self: Expression[T]) extends Serializable with 
         selfOption.map {
           selfValue =>
             val argValues: Seq[Any] = args.map {
-              case dynamic: DynamicExprWrapper[Any] => dynamic.self.apply(v1): Any
+              case dynamic: DynamicExprWrapper[Any] => dynamic.self.apply(v1).orNull: Any
               case arg @ _ => arg: Any
             }
             val argClasses = argValues.map(_.getClass)
