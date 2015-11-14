@@ -9,11 +9,11 @@ import org.apache.spark.ml.param.ParamMap
 /**
  * Created by peng on 31/10/15.
  */
-class TransformerChain(
-                        self: Seq[SpookyTransformer],
+class RemoteTransformerChain(
+                        self: Seq[RemoteTransformer],
                         override val uid: String =
-                        classOf[TransformerChain].getCanonicalName + "_" + UUID.randomUUID().toString
-                        ) extends SpookyTransformerLike {
+                        classOf[RemoteTransformerChain].getCanonicalName + "_" + UUID.randomUUID().toString
+                        ) extends RemoteTransformerLike {
 
   //this is mandatory for Params.defaultCopy()
   def this(uid: String) = this(Nil, uid)
@@ -23,14 +23,14 @@ class TransformerChain(
       transformer.transform(rdd)
   }
 
-  override def copy(extra: ParamMap): TransformerChain = new TransformerChain(
+  override def copy(extra: ParamMap): RemoteTransformerChain = new RemoteTransformerChain(
     self = this
       .self
       .map(_.copy(extra)),
     uid = this.uid
   )
 
-  def +> (another: SpookyTransformer): TransformerChain = new TransformerChain(
+  def +> (another: RemoteTransformer): RemoteTransformerChain = new RemoteTransformerChain(
     this.self :+ another,
     uid = this.uid
   )

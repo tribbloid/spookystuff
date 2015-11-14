@@ -3,14 +3,14 @@ package com.tribbloids.spookystuff.pipeline.google
 import java.util.UUID
 
 import com.tribbloids.spookystuff.actions._
-import com.tribbloids.spookystuff.pipeline.SpookyTransformer
+import com.tribbloids.spookystuff.pipeline.RemoteTransformer
 import com.tribbloids.spookystuff.sparkbinding.PageRowRDD
 import com.tribbloids.spookystuff.{SpookyContext, dsl}
 
 class ImageSearchTransformer(
                               override val uid: String =
                               classOf[ImageSearchTransformer].getCanonicalName + "_" + UUID.randomUUID().toString
-                              ) extends SpookyTransformer {
+                              ) extends RemoteTransformer {
 
   import dsl._
   import org.apache.spark.ml.param._

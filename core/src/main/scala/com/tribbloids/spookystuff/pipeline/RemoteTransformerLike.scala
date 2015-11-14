@@ -7,13 +7,13 @@ import org.apache.spark.ml.param.{ParamMap, Params}
 /**
  * Created by peng on 25/09/15.
  */
-private[pipeline] trait SpookyTransformerLike extends Params with Serializable {
+private[pipeline] trait RemoteTransformerLike extends Params with Serializable {
 
   def transform(dataset: PageRowRDD): PageRowRDD
 
-  def copy(extra: ParamMap): SpookyTransformerLike = this.defaultCopy(extra)
+  def copy(extra: ParamMap): RemoteTransformerLike = this.defaultCopy(extra)
 
-  def +> (another: SpookyTransformer): TransformerChain
+  def +> (another: RemoteTransformer): RemoteTransformerChain
 
   def test(spooky: SpookyContext): Unit
 }

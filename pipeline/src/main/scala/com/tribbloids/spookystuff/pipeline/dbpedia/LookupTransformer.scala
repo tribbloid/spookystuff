@@ -5,7 +5,7 @@ import java.util.UUID
 import com.tribbloids.spookystuff.actions.Wget
 import com.tribbloids.spookystuff.expressions.Expression
 import com.tribbloids.spookystuff.{SpookyContext, dsl}
-import com.tribbloids.spookystuff.pipeline.SpookyTransformer
+import com.tribbloids.spookystuff.pipeline.RemoteTransformer
 import com.tribbloids.spookystuff.sparkbinding.PageRowRDD
 
 /**
@@ -14,7 +14,7 @@ import com.tribbloids.spookystuff.sparkbinding.PageRowRDD
 class LookupTransformer(
                          override val uid: String =
                          classOf[LookupTransformer].getCanonicalName + "_" + UUID.randomUUID().toString
-                         ) extends SpookyTransformer {
+                         ) extends RemoteTransformer {
 
   import dsl._
   import org.apache.spark.ml.param._
