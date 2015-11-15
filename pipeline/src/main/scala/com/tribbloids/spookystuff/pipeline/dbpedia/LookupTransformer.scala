@@ -21,13 +21,13 @@ class LookupTransformer(
 
   final val QueryCol: Param[Symbol] = new Param[Symbol](this, "QueryCol", "query column name")
   final val ClassCol: Param[Symbol] = new Param[Symbol](this, "ClassCol", "class column name")
-  final val firstN: Param[Int] = new Param[Int](this, "firstN", "only take the first N responses")
+  final val FirstN: Param[Int] = new Param[Int](this, "FirstN", "only take the first N responses")
   final val IndexCol: Param[Symbol] = new Param[Symbol](this, "IndexCol", "index of output")
   final val LabelCol: Param[Symbol] = new Param[Symbol](this, "LabelCol", "output Entity column name")
   final val UriCol: Param[Symbol] = new Param[Symbol](this, "UriCol", "output Uri column name")
 
-  setExample(QueryCol -> 'q, ClassCol -> 'class, firstN -> 3, IndexCol -> 'index,LabelCol -> 'label, UriCol -> 'uri)
-  setDefault(firstN -> Int.MaxValue, LabelCol -> null, UriCol -> null)
+  setExample(QueryCol -> 'q, ClassCol -> 'class, FirstN -> 3, IndexCol -> 'index,LabelCol -> 'label, UriCol -> 'uri)
+  setDefault(FirstN -> Int.MaxValue, LabelCol -> null, UriCol -> null)
 
   override def exampleInput(spooky: SpookyContext): PageRowRDD = spooky.create(Seq(
     Map("q" ->"Barack Obama", "class" -> "person")
@@ -40,7 +40,7 @@ class LookupTransformer(
 
     dataset.fetch(
       Wget(uri)
-    ).flatSelect(S"Result".slice(0, getOrDefault(firstN)), ordinalKey = getOrDefault(IndexCol))(
+    ).flatSelect(S"Result".slice(0, getOrDefault(FirstN)), ordinalKey = getOrDefault(IndexCol))(
       A"Label".text ~ getOrDefault(LabelCol),
       A"URI".text ~ getOrDefault(UriCol)
     )
