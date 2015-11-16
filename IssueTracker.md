@@ -285,4 +285,9 @@ OAuth can't handle malformed URL, should kick in after URL is canonized ........
 
 wayback support: read history data from cache and wayback public database ..................only cache, need tests
 
-rewrite expression system using scala reflection API +
+rewrite expression system using scala reflection API + ...........................................................done
+
+in pipeline mode, how to automate the test that depends on API/OAuth Key, while prevent the key from being compromised?
+
+
+

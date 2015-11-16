@@ -12,6 +12,7 @@
         <scala.binary.version>2.10</scala.binary.version>
         <hadoop.version>2.6.0</hadoop.version>
         <spark.version>1.4.1</spark.version>
+        <spark.binary.version>1.4.1</spark.binary.version>
         <PermGen>512m</PermGen>
         <MaxPermGen>2g</MaxPermGen>
         <failsafe.version>2.18</failsafe.version>
@@ -19,9 +20,10 @@
 
     <profiles>
         <profile>
-            <id>spark-1.3.1</id>
+            <id>spark-1.3</id>
             <properties>
                 <spark.version>1.3.1</spark.version>
+                <spark.binary.version>1.3</spark.binary.version>
             </properties>
             <build>
                 <plugins>
@@ -39,16 +41,17 @@
         </profile>
 
         <profile>
-            <id>spark-1.4.1</id>
+            <id>spark-1.4</id>
             <activation>
                 <activeByDefault>true</activeByDefault>
             </activation>
         </profile>
 
         <profile>
-            <id>spark-1.5.1</id>
+            <id>spark-1.5</id>
             <properties>
-                <spark.version>1.5.1</spark.version>
+                <spark.version>1.5.2</spark.version>
+                <spark.binary.version>1.5</spark.binary.version>
             </properties>
         </profile>
 

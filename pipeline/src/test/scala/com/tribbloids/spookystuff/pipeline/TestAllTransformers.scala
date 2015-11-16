@@ -1,7 +1,5 @@
 package com.tribbloids.spookystuff.pipeline
 
-import com.tribbloids.spookystuff.pipeline.mymemory.TranslationTransformer
-
 /**
   * Created by peng on 27/10/15.
   */
@@ -12,7 +10,8 @@ class TestAllTransformers extends SpookyEnvSuite {
     new google.WebSearchTransformer(),
     new dbpedia.LookupTransformer(),
     new dbpedia.RelationTransformer(),
-    new TranslationTransformer()
+    new mymemory.TranslationTransformer(),
+    new alchemyapi.GetKeywordsTransformer()
   )
 
   for (transformer <- transformers) {

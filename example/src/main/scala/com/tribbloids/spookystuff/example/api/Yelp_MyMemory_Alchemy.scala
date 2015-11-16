@@ -1,5 +1,6 @@
 package com.tribbloids.spookystuff.example.api
 
+import com.tribbloids.spookystuff.pages.{Unstructured, Elements}
 import org.apache.tika.language.LanguageIdentifier
 import com.tribbloids.spookystuff.actions._
 import com.tribbloids.spookystuff.example.QueryCore
@@ -10,8 +11,8 @@ import com.tribbloids.spookystuff.{SpookyContext, dsl}
 import scala.language.postfixOps
 
 /**
- * Created by peng on 29/07/15.
- */
+  * Created by peng on 29/07/15.
+  */
 object Yelp_MyMemory_Alchemy extends QueryCore {
 
   import dsl._
@@ -72,21 +73,21 @@ object Yelp_MyMemory_Alchemy extends QueryCore {
       .wget(
         x"http://api.mymemory.translated.net/get?q=${nonEnglish('excerpt)}!&langpair=${'lang}|en&de=$email"
       ).select(
-        (S \ "responseData" \ "translatedText" text).orElse('excerpt) ~ 'translated
-      )
+      (S \ "responseData" \ "translatedText" text).orElse('excerpt) ~ 'translated
+    )
       .wget(
         x"http://access.alchemyapi.com/calls/text/TextGetRankedKeywords?apikey=$alchemyKey&text=${'translated}" +
           "&keywordExtractMode=strict&sentiment=1&outputMode=json&knowledgeGraph=0"
       ).select(
-        //   S.code ~ 'code
-        (S \ "keywords" -> 'translated).andMap{
-          tuple =>
-            "%html " + tuple._1.foldLeft(tuple._2.toString){
-              (str, e) =>
-                annotate(str, (e \ "text").text.get, (e \ "relevance").text.getOrElse("0").toDouble, (e \ "sentiment" \ "score").text.getOrElse("0").toDouble)
-            }
-        } ~ 'annotated
-      ).remove('q, 'city, 'lang, 'translated)
+      //   S.code ~ 'code
+      (S \ "keywords" -> 'translated).andMap{
+        (tuple: (Elements[Unstructured], Any)) =>
+          "%html " + tuple._1.foldLeft(tuple._2.toString){
+            (str, e) =>
+              annotate(str, (e \ "text").text.get, (e \ "relevance").text.getOrElse("0").toDouble, (e \ "sentiment" \ "score").text.getOrElse("0").toDouble)
+          }
+      } ~ 'annotated
+    ).remove('q, 'city, 'lang, 'translated)
       .toDF()
   }
 }
