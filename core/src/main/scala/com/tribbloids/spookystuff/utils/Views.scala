@@ -8,9 +8,9 @@ import org.apache.spark.{Partitioner, SparkContext}
 import scala.reflect.ClassTag
 
 /**
- * Created by peng on 11/7/14.
- * implicit conversions in this package are used for development only
- */
+  * Created by peng on 11/7/14.
+  * implicit conversions in this package are used for development only
+  */
 object Views {
 
   val SPARK_JOB_DESCRIPTION = "spark.job.description"
@@ -33,30 +33,93 @@ object Views {
     }
   }
 
-  //  implicit class RDDView[A](val self: A)(implicit ev1: A => RDD[_]) {
+  implicit class RDDView[T](val self: RDD[T]) {
 
-  //    def persistDuring[T](newLevel: StorageLevel, blocking: Boolean = true)(fn: => T): T =
-  //      if (self.getStorageLevel == StorageLevel.NONE){
-  //        self.persist(newLevel)
-  //        val result = fn
-  //        self.unpersist(blocking)
-  //        result
-  //      }
-  //      else {
-  //        val result = fn
-  //        self.unpersist(blocking)
-  //        result
-  //      }
+    def multiPassMap[U: ClassTag](f: T => Option[U]): RDD[U] = {
 
-  //  def checkpointNow(): Unit = {
-  //    persistDuring(StorageLevel.MEMORY_ONLY) {
-  //      self.checkpoint()
-  //      self.foreach(_ =>)
-  //      self
-  //    }
-  //    Unit
-  //  }
-  //  }
+      multiPassFlatMap(f.andThen(v => v.map(Traversable(_))))
+    }
+
+    //if the function returns None for it will be retried as many times as it takes to get rid of them.
+    //core problem is optimization: how to SPILL properly and efficiently?
+    //TODO: this is the first implementation, simple but may not the most efficient
+    def multiPassFlatMap[U: ClassTag](f: T => Option[TraversableOnce[U]]): RDD[U] = {
+
+      val counter = self.sparkContext.accumulator(0, "unprocessed data")
+      var halfDone: RDD[Either[T, TraversableOnce[U]]] = self.map(v => Left(v))
+
+      while(true) {
+        counter.setValue(0)
+
+        val updated: RDD[Either[T, TraversableOnce[U]]] = halfDone.map {
+          case Left(src) =>
+            f(src) match {
+              case Some(res) => Right(res)
+              case None =>
+                counter += 1
+                Left(src)
+            }
+          case Right(res) => Right(res)
+        }
+
+        updated.persist().count()
+        halfDone.unpersist()
+
+        if (counter.value == 0) return updated.flatMap(_.right.get)
+
+        halfDone = updated
+      }
+      sys.error("impossible")
+
+//      self.mapPartitions{
+//        itr =>
+//          var intermediateResult: Iterator[Either[T, TraversableOnce[U]]] = itr.map(v => Left(v))
+//
+//          var unfinished = true
+//          while (unfinished) {
+//
+//            var counter = 0
+//            val updated: Iterator[Either[T, TraversableOnce[U]]] = intermediateResult.map {
+//              case Left(src) =>
+//                f(src) match {
+//                  case Some(res) => Right(res)
+//                  case None =>
+//                    counter = counter + 1
+//                    Left(src)
+//                }
+//              case Right(res) => Right(res)
+//            }
+//            intermediateResult = updated
+//
+//            if (counter == 0) unfinished = false
+//          }
+//
+//          intermediateResult.flatMap(_.right.get)
+//      }
+    }
+
+    //    def persistDuring[T](newLevel: StorageLevel, blocking: Boolean = true)(fn: => T): T =
+    //      if (self.getStorageLevel == StorageLevel.NONE){
+    //        self.persist(newLevel)
+    //        val result = fn
+    //        self.unpersist(blocking)
+    //        result
+    //      }
+    //      else {
+    //        val result = fn
+    //        self.unpersist(blocking)
+    //        result
+    //      }
+
+    //  def checkpointNow(): Unit = {
+    //    persistDuring(StorageLevel.MEMORY_ONLY) {
+    //      self.checkpoint()
+    //      self.foreach(_ =>)
+    //      self
+    //    }
+    //    Unit
+    //  }
+  }
 
   implicit class PairRDDView[K: ClassTag, V: ClassTag](val self: RDD[(K, V)]) {
 
@@ -98,7 +161,7 @@ object Views {
     def unionByKey(
                     other: RDD[(K, V)])(
                     innerReducer: (V, V) => V
-                    ): RDD[(K, V)] = {
+                  ): RDD[(K, V)] = {
 
       val cogrouped = self.cogroup(other)
 
@@ -112,7 +175,7 @@ object Views {
     def intersectionByKey(
                            other: RDD[(K, V)])(
                            innerReducer: (V, V) => V
-                           ): RDD[(K, V)] = {
+                         ): RDD[(K, V)] = {
 
       val cogrouped = self.cogroup(other)
 
@@ -165,7 +228,7 @@ object Views {
                  rows: RDD[PageRow],
                  seedFilter: Iterable[PageRow] => Option[PageRow] = v => v.headOption,
                  partitionerOption: Option[Partitioner] = None
-                 ): WebCacheRDD = {
+               ): WebCacheRDD = {
 
       val dryRun_RowRDD = rows.keyBy(_.dryrun)
       val cogrouped = partitionerOption match {
@@ -233,7 +296,7 @@ object Views {
 
     def flattenKey(
                     key: K
-                    ): Seq[Map[K,_]] = {
+                  ): Seq[Map[K,_]] = {
 
       val valueOption = m1.get(key)
 
