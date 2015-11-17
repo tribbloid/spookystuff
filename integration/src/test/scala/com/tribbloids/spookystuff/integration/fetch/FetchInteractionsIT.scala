@@ -19,7 +19,7 @@ class FetchInteractionsIT extends IntegrationSuite{
         Visit("http://www.wikipedia.org")
           +> TextInput("input#searchInput","深度学习")
           +> DropDownSelect("select#searchLanguage","zh")
-          +> Submit("input.formBtn")
+          +> Submit("button.formBtn")
       ).persist()
 
     val pageRows = RDD.collect()
@@ -41,7 +41,7 @@ class FetchInteractionsIT extends IntegrationSuite{
         Visit("http://www.wikipedia.org")
           +> TextInput("input#searchInput","深度学习")
           +> DropDownSelect("select#searchLanguage","zh")
-          +> Submit("input.formBtn")
+          +> Submit("button.formBtn")
           +> Snapshot().as('b),
         joinType = Append
       )

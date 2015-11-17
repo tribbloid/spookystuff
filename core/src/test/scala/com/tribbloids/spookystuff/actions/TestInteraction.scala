@@ -27,7 +27,7 @@ class TestInteraction extends SpookyEnvSuite {
     val builder = new DriverSession(spooky)
     Visit("http://www.wikipedia.org")(builder)
     TextInput("input#searchInput","Deep learning")(builder)
-    Submit("input.formBtn")(builder)
+    Submit("button.formBtn")(builder)
     val page = Snapshot()(builder).toList.head.asInstanceOf[Page]
     //    val url = builder.getUrl
 

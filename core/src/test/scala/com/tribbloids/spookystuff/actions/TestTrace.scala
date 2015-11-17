@@ -20,7 +20,7 @@ class TestTrace extends SpookyEnvSuite {
         WaitFor("input#searchInput").in(40.seconds) ::
         Snapshot().as('A) ::
         TextInput("input#searchInput","Deep learning") ::
-        Submit("input.formBtn") ::
+        Submit("button.formBtn") ::
         Snapshot().as('B) :: Nil
     ).fetch(spooky)
 
@@ -35,7 +35,7 @@ class TestTrace extends SpookyEnvSuite {
     assert(res1.uri contains "//www.wikipedia.org")
     assert(res1.name === "A")
 
-    val id2 = Visit("http://www.wikipedia.org") :: WaitFor("input#searchInput") :: TextInput("input#searchInput", "Deep learning") :: Submit("input.formBtn") :: Snapshot().as('D) :: Nil
+    val id2 = Visit("http://www.wikipedia.org") :: WaitFor("input#searchInput") :: TextInput("input#searchInput", "Deep learning") :: Submit("button.formBtn") :: Snapshot().as('D) :: Nil
     assert(res2.uid.backtrace === id2)
     assert(res2.code.get.split('\n').map(_.trim).mkString.contains("<title>Deep learning - Wikipedia, the free encyclopedia</title>"))
     assert(res2.uri contains "//en.wikipedia.org/wiki/Deep_learning")
