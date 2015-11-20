@@ -7,21 +7,21 @@ import org.slf4j.LoggerFactory
 /**
  * Created by peng on 26/07/15.
  */
-trait ExportFilter extends ((Page, Session) => Page) with Serializable {
+trait DocumentFilter extends ((Page, Session) => Page) with Serializable {
 
   override def toString() = this.getClass.getSimpleName.replace("$","")
 }
 
-object ExportFilters {
+object DocumentFilter {
 
-  case object PassAll extends ExportFilter {
+  case object PassAll extends DocumentFilter {
 
     override def apply(result: Page, session: Session): Page = {
       result
     }
   }
-  
-  case object MustHaveTitle extends ExportFilter {
+
+  case object MustHaveTitle extends DocumentFilter {
 
     override def apply(result: Page, session: Session): Page = {
       if (result.mimeType.contains("html")){

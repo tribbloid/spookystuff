@@ -4,14 +4,14 @@ import java.net.{InetSocketAddress, URI}
 import java.util.Date
 import javax.net.ssl.SSLContext
 
-import com.tribbloids.spookystuff.dsl.ExportFilter
+import com.tribbloids.spookystuff.dsl.DocumentFilter
 import com.tribbloids.spookystuff.row.PageRow
 import com.tribbloids.spookystuff.expressions.{Expression, Literal}
 import com.tribbloids.spookystuff.http._
 import com.tribbloids.spookystuff.pages._
 import com.tribbloids.spookystuff.session.Session
 import com.tribbloids.spookystuff.utils.{HDFSResolver, LocalResolver, Utils}
-import com.tribbloids.spookystuff.{SpookyContext, Const, ExportFilterException, QueryException}
+import com.tribbloids.spookystuff.{SpookyContext, Const, DocumentFilterException, QueryException}
 import org.apache.commons.io.IOUtils
 import org.apache.http.client.config.RequestConfig
 import org.apache.http.client.methods.{HttpGet, HttpUriRequest}
@@ -33,7 +33,7 @@ import org.openqa.selenium.{OutputType, TakesScreenshot}
 
 abstract class Export extends Named with Wayback{
 
-  def filter: ExportFilter
+  def filter: DocumentFilter
 
   final override def outputNames = Set(this.name)
 
@@ -56,7 +56,7 @@ abstract class Export extends Named with Wayback{
               message += "\nSnapshot: " +this.errorDump(message, page, session.spooky)
             }
 
-            throw new ExportFilterException(message, e)
+            throw new DocumentFilterException(message, e)
         }
       case other: PageLike =>
         other
@@ -107,7 +107,7 @@ trait WaybackSupport {
  * always export as UTF8 charset
  */
 case class Snapshot(
-                     override val filter: ExportFilter = Const.defaultDocumentFilter,
+                     override val filter: DocumentFilter = Const.defaultDocumentFilter,
                      contentType: String = null
                      ) extends Export with WaybackSupport{
 
@@ -144,7 +144,7 @@ case class Snapshot(
 object DefaultSnapshot extends Snapshot()
 
 case class Screenshot(
-                       override val filter: ExportFilter = Const.defaultImageFilter
+                       override val filter: DocumentFilter = Const.defaultImageFilter
                        ) extends Export with WaybackSupport {
 
   override def doExeNoName(pb: Session): Seq[Page] = {
@@ -180,7 +180,7 @@ object DefaultScreenshot extends Screenshot()
  */
 case class Wget(
                  uri: Expression[Any],
-                 override val filter: ExportFilter = Const.defaultDocumentFilter,
+                 override val filter: DocumentFilter = Const.defaultDocumentFilter,
                  contentType: String = null
                  ) extends Export with Driverless with Timed with WaybackSupport {
 
@@ -420,7 +420,7 @@ case class Wget(
 
 case class OAuthV2(self: Wget) extends Export with Driverless {
 
-  override def filter: ExportFilter = self.filter
+  override def filter: DocumentFilter = self.filter
 
   override def wayback: Expression[Long] = self.wayback
 

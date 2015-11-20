@@ -116,7 +116,7 @@ case class TraceView(
       spooky.metrics.fetchFromCacheFailure += 1
 
       if (!spooky.conf.remote) throw new RemoteDisabledException(
-        "Resource is not cached and not allowed to be fetched remotely, " +
+        "Resource is not cached and not enabled to be fetched remotely, " +
           "the later can be enabled by setting SpookyContext.conf.remote=true"
       )
 

@@ -34,7 +34,7 @@ class RemoteDisabledException(
 
 }
 
-class ExportFilterException(
+class DocumentFilterException(
                              override val message: String = "",
                              override val cause: Throwable = null
                              ) extends ActionException(message, cause) {

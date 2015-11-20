@@ -2,7 +2,7 @@ package com.tribbloids.spookystuff
 
 import org.apache.tika.detect.DefaultDetector
 import org.json4s.DefaultFormats
-import com.tribbloids.spookystuff.dsl.ExportFilters
+import com.tribbloids.spookystuff.dsl.DocumentFilter
 
 /**
  * Created by peng on 04/06/14.
@@ -42,8 +42,8 @@ object Const {
 
   val mimeDetector = new DefaultDetector()
 
-  val defaultDocumentFilter = ExportFilters.MustHaveTitle
-  val defaultImageFilter = ExportFilters.PassAll
+  val defaultDocumentFilter = DocumentFilter.MustHaveTitle
+  val defaultImageFilter = DocumentFilter.PassAll
 
   val exploreStageSize = 100
 }

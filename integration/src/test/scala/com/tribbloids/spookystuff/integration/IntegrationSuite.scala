@@ -65,8 +65,8 @@ abstract class IntegrationSuite extends FunSuite with BeforeAndAfterAll {
   }
 
   lazy val drivers = Seq(
-    phantomJS,
-    htmlUnit
+    phantomJS
+//    htmlUnit
   )
 
   lazy val optimizers = Seq(
