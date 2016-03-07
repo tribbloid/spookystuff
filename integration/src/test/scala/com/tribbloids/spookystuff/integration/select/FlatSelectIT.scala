@@ -6,8 +6,8 @@ import com.tribbloids.spookystuff.dsl._
 import com.tribbloids.spookystuff.integration.IntegrationSuite
 
 /**
- * Created by peng on 11/26/14.
- */
+  * Created by peng on 11/26/14.
+  */
 class FlatSelectIT extends IntegrationSuite {
 
   override lazy val drivers = Seq(
@@ -16,16 +16,18 @@ class FlatSelectIT extends IntegrationSuite {
 
   override def doMain(spooky: SpookyContext) {
 
-    val result = spooky
+    val raw = spooky
       .fetch(
         Wget("http://www.wikipedia.org/")
       )
-      .flatSelect(S"div.central-featured-lang")(
+      .flatExtract(S"div.central-featured-lang")(
         'A.attr("lang"),
         A"a".href,
         A"a em".text,
         'A.uri
       )
+
+    val result = raw
       .toDF(sort = true)
 
     assert(

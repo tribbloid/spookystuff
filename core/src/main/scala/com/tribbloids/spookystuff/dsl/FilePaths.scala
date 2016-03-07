@@ -1,16 +1,19 @@
 package com.tribbloids.spookystuff.dsl
 
+import java.util.UUID
+
 import com.tribbloids.spookystuff.actions.Trace
-import com.tribbloids.spookystuff.expressions.CacheFilePath
+import com.tribbloids.spookystuff.expressions._
+import com.tribbloids.spookystuff.pages.Page
 import com.tribbloids.spookystuff.utils.Utils
 
 /**
  * Created by peng on 9/12/14.
  */
 
-object CacheFilePaths{
+object FilePaths{
 
-  case object Flat extends CacheFilePath[String] {
+  case object Flat extends ByTrace[String] {
 
     override def apply(trace: Trace): String = {
 
@@ -31,7 +34,7 @@ object CacheFilePaths{
     }
   }
 
-  case object Hierarchical extends CacheFilePath[String] {
+  case object Hierarchical extends ByTrace[String] {
 
     override def apply(trace: Trace): String = {
 
@@ -50,5 +53,16 @@ object CacheFilePaths{
 
       Utils.canonizeUrn(actionConcat + hash)
     }
+  }
+
+  //only from Page
+  case class UUIDName(encoder: ByTrace[Any]) extends ByPage[String] {
+    override def apply(page: Page): String =
+      Utils.uriConcat(encoder(page.uid.backtrace).toString, UUID.randomUUID().toString)
+  }
+
+  case class TimeStampName(encoder: ByTrace[Any]) extends ByPage[String] {
+    override def apply(page: Page): String =
+      Utils.uriConcat(encoder(page.uid.backtrace).toString, Utils.canonizeFileName(page.timestamp.toString))
   }
 }

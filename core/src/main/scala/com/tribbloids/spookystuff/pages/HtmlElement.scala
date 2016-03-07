@@ -51,7 +51,7 @@ object TikaHtmlElement {
 
 //TODO: rename to HTMLXMLElement
 class HtmlElement private (
-                            @transient _parsed: Element,
+                            @transient val _parsed: Element,
                             val html: String,
                             val tag: Option[String],
                             override val uri: String

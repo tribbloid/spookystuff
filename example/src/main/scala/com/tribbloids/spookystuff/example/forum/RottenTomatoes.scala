@@ -24,7 +24,7 @@ object RottenTomatoes extends QueryCore {
       )
       .wgetJoin(S"div#contentReviews h3 a") //go to review page, e.g. http://www.rottentomatoes.com/m/guardians_of_the_galaxy/reviews/
       .wgetExplore(S"div.scroller a.right", depthKey = 'page) // grab all pages by using right arrow button
-      .flatSelect(S"div#reviews div.media_block")(
+      .flatExtract(S"div#reviews div.media_block")(
         A"div.criticinfo strong a".text ~ 'critic_name,
         A"div.criticinfo em.subtle".text ~ 'critic_org,
         A"div.reviewsnippet p".text ~ 'critic_review,

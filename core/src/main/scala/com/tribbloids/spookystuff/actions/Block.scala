@@ -2,10 +2,11 @@ package com.tribbloids.spookystuff.actions
 
 import org.apache.spark.TaskContext
 import org.slf4j.LoggerFactory
-import com.tribbloids.spookystuff.expressions.Expression
-import com.tribbloids.spookystuff.{SpookyContext, TryException, dsl, Const}
+import com.tribbloids.spookystuff.expressions.{Expression, Literal}
+import com.tribbloids.spookystuff._
+import com.tribbloids.spookystuff.http.HttpUtils
 import com.tribbloids.spookystuff.row.PageRow
-import com.tribbloids.spookystuff.pages.{NoPage, Page, Fetched}
+import com.tribbloids.spookystuff.pages.{Fetched, NoPage, Page}
 import com.tribbloids.spookystuff.session.Session
 import com.tribbloids.spookystuff.utils.Utils.retry
 
@@ -13,15 +14,15 @@ import scala.collection.mutable.ArrayBuffer
 import scala.concurrent.duration.Duration
 
 /**
- * Only for complex workflow control,
- * each defines a nested/non-linear subroutine that may or may not be executed
- * once or multiple times depending on situations.
- */
-abstract class Block(override val self: Trace) extends Actions(self) with Named with Wayback {
+  * Only for complex workflow control,
+  * each defines a nested/non-linear subroutine that may or may not be executed
+  * once or multiple times depending on situations.
+  */
+abstract class Block(override val children: Trace) extends Actions(children) with Named with Wayback {
 
   //  assert(self.nonEmpty)
 
-  override def wayback: Expression[Long] = self.flatMap {
+  override def wayback: Expression[Long] = children.flatMap {
     case w: Wayback => Some(w)
     case _ => None
   }.lastOption.map {
@@ -31,7 +32,7 @@ abstract class Block(override val self: Trace) extends Actions(self) with Named 
   override def as(name: Symbol) = {
     super.as(name)
 
-    self.foreach{
+    children.foreach{
       case n: Named => n.as(name)
       case _ =>
     }
@@ -41,7 +42,7 @@ abstract class Block(override val self: Trace) extends Actions(self) with Named 
 
   def cacheEmptyOutput: Boolean = true
 
-  override def needDriver = self.map(_.needDriver).reduce(_ || _)
+  override def needDriver = children.map(_.needDriver).reduce(_ || _)
 
   final override def doExe(session: Session): Seq[Fetched] = {
 
@@ -68,19 +69,19 @@ object Try {
              trace: Set[Trace],
              retries: Int = Const.clusterRetries,
              cacheError: Boolean = false
-             ): Try = {
+           ): Try = {
 
-    assert(trace.size == 1)
+    assert(trace.size <= 1)
 
-    Try(trace.head)(retries, cacheError)
+    Try(trace.headOption.getOrElse(Nil))(retries, cacheError)
   }
 }
 
 final case class Try(
-                      override val self: Trace)(
+                      override val children: Trace)(
                       retries: Int,
                       override val cacheEmptyOutput: Boolean
-                      ) extends Block(self) {
+                    ) extends Block(children) {
 
   override def trunk = Some(Try(this.trunkSeq)(retries, cacheEmptyOutput).asInstanceOf[this.type])
 
@@ -91,7 +92,7 @@ final case class Try(
     val pages = new ArrayBuffer[Page]()
 
     try {
-      for (action <- self) {
+      for (action <- children) {
         pages ++= action.exe(session).flatMap{
           case page: Page => Some(page)
           case noPage: NoPage => None
@@ -106,7 +107,7 @@ final case class Try(
           throw new TryException(
             s"Retrying cluster-wise on ${e.getClass.getSimpleName}... $timesLeft time(s) left\n" +
               "(if Spark job failed because of this, please increase your spark.task.maxFailures)" +
-              this.getActionExceptionMessage(session),
+              this.handleSessionException(session),
             e
           )
         }
@@ -120,7 +121,7 @@ final case class Try(
   override def doInterpolate(pageRow: PageRow, spooky: SpookyContext): Option[this.type] ={
     val seq = this.doInterpolateSeq(pageRow, spooky)
     if (seq.isEmpty) None
-    else Some(this.copy(self = seq)(this.retries, this.cacheEmptyOutput).asInstanceOf[this.type])
+    else Some(this.copy(children = seq)(this.retries, this.cacheEmptyOutput).asInstanceOf[this.type])
   }
 }
 
@@ -130,19 +131,19 @@ object TryLocally {
              trace: Set[Trace],
              retries: Int = Const.clusterRetries,
              cacheError: Boolean = false
-             ): TryLocally = {
+           ): TryLocally = {
 
-    assert(trace.size == 1)
+    assert(trace.size <= 1)
 
-    TryLocally(trace.head)(retries, cacheError)
+    TryLocally(trace.headOption.getOrElse(Nil))(retries, cacheError)
   }
 }
 
 final case class TryLocally(
-                             override val self: Trace)(
+                             override val children: Trace)(
                              retries: Int,
                              override val cacheEmptyOutput: Boolean
-                             ) extends Block(self) {
+                           ) extends Block(children) {
 
   override def trunk = Some(TryLocally(this.trunkSeq)(retries, cacheEmptyOutput).asInstanceOf[this.type])
 
@@ -151,7 +152,7 @@ final case class TryLocally(
     val pages = new ArrayBuffer[Page]()
 
     try {
-      for (action <- self) {
+      for (action <- children) {
         pages ++= action.exe(session).flatMap{
           case page: Page => Some(page)
           case noPage: NoPage => None
@@ -163,7 +164,7 @@ final case class TryLocally(
         retry[Seq[Page]](retries)({
           val pages = new ArrayBuffer[Page]()
 
-          for (action <- self) {
+          for (action <- children) {
             pages ++= action.exe(session).flatMap {
               case page: Page => Some(page)
               case noPage: NoPage => None
@@ -179,7 +180,7 @@ final case class TryLocally(
   override def doInterpolate(pageRow: PageRow, spooky: SpookyContext): Option[this.type] ={
     val seq = this.doInterpolateSeq(pageRow, spooky)
     if (seq.isEmpty) None
-    else Some(this.copy(self = seq)(this.retries, this.cacheEmptyOutput).asInstanceOf[this.type])
+    else Some(this.copy(children = seq)(this.retries, this.cacheEmptyOutput).asInstanceOf[this.type])
   }
 }
 
@@ -189,7 +190,7 @@ object Loop {
   def apply(
              trace: Set[Trace],
              limit: Int = Const.maxLoop
-             ): Loop = {
+           ): Loop = {
     assert(trace.size == 1)
 
     Loop(trace.head, limit) //TODO: should persist rule of Cartesian join
@@ -197,20 +198,20 @@ object Loop {
 }
 
 /**
- * Contains several sub-actions that are iterated for multiple times
- * Will iterate until max iteration is reached or execution is impossible (sub-action throws an exception)
+  * Contains several sub-actions that are iterated for multiple times
+  * Will iterate until max iteration is reached or execution is impossible (sub-action throws an exception)
   *
   * @param limit max iteration, default to Const.fetchLimit
- * @param self a list of actions being iterated through
- */
+  * @param children a list of actions being iterated through
+  */
 final case class Loop(
-                       override val self: Trace,
+                       override val children: Trace,
                        limit: Int
-                       ) extends Block(self) {
+                     ) extends Block(children) {
 
   assert(limit>0)
 
-  override def trunk = Some(this.copy(self = this.trunkSeq).asInstanceOf[this.type])
+  override def trunk = Some(this.copy(children = this.trunkSeq).asInstanceOf[this.type])
 
   override def doExeNoUID(session: Session): Seq[Page] = {
 
@@ -218,8 +219,7 @@ final case class Loop(
 
     try {
       for (i <- 0 until limit) {
-
-        for (action <- self) {
+        for (action <- children) {
           pages ++= action.exe(session).flatMap{
             case page: Page => Some(page)
             case noPage: NoPage => None
@@ -238,7 +238,7 @@ final case class Loop(
   override def doInterpolate(pageRow: PageRow, spooky: SpookyContext): Option[this.type] ={
     val seq = this.doInterpolateSeq(pageRow, spooky)
     if (seq.isEmpty) None
-    else Some(this.copy(self = seq).asInstanceOf[this.type])
+    else Some(this.copy(children = seq).asInstanceOf[this.type])
   }
 }
 
@@ -252,7 +252,7 @@ object LoadMore {
              selector: String,
              limit: Int = Const.maxLoop,
              delay: Duration = Const.interactionDelayMin
-             ): Loop =
+           ): Loop =
     Loop(
       Click(selector, delay = delay),
       limit
@@ -267,7 +267,7 @@ object Paginate {
              selector: String,
              limit: Int = Const.maxLoop,
              delay: Duration = Const.interactionDelayMin
-             ): Loop = {
+           ): Loop = {
     Loop(
       Snapshot()
         +> Click(selector, delay = delay),
@@ -276,11 +276,31 @@ object Paginate {
   }
 }
 
+object If {
+
+  def apply(
+             condition: Page => Boolean,
+             ifTrue: Set[Trace] = Set(),
+             ifFalse: Set[Trace] = Set()
+           ): If = {
+
+
+    assert(ifTrue.size <= 1)
+    assert(ifFalse.size <= 1)
+
+    If(
+      condition,
+      ifTrue.headOption.getOrElse(Nil),
+      ifFalse.headOption.getOrElse(Nil)
+    ) //TODO: should persist rule of Cartesian join
+  }
+}
+
 final case class If(
                      condition: Page => Boolean,
-                     ifTrue: Trace = Nil,
-                     ifFalse: Trace = Nil
-                     ) extends Block(ifTrue ++ ifFalse) {
+                     ifTrue: Trace,
+                     ifFalse: Trace
+                   ) extends Block(ifTrue ++ ifFalse) {
 
   override def trunk = Some(this.copy(ifTrue = ifTrue.flatMap(_.trunk), ifFalse = ifFalse.flatMap(_.trunk)).asInstanceOf[this.type])
 
@@ -314,5 +334,62 @@ final case class If(
     val ifFalseInterpolated = Actions.doInterppolateSeq(ifFalse, pageRow, spooky)
     val result = this.copy(ifTrue = ifTrueInterpolated, ifFalse = ifFalseInterpolated).asInstanceOf[this.type]
     Some(result)
+  }
+}
+
+case class OAuthV2(self: Wget) extends Block(List(self)) with Driverless {
+
+  def rewrite(session: Session): Wget = {
+
+    val keys = session.spooky.conf.oAuthKeysFactory.apply()
+    if (keys == null) {
+      throw new QueryException("need to set SpookyConf.oAuthKeys first")
+    }
+    val effectiveWget: Wget = self.uriOption match {
+      case Some(uri) =>
+        val signed = HttpUtils.OauthV2(uri.toString, keys.consumerKey, keys.consumerSecret, keys.token, keys.tokenSecret)
+        self.copy(uri = Literal(signed))
+      case None =>
+        self
+    }
+    effectiveWget
+  }
+
+  //  override def doExeNoName(session: Session): Seq[Fetched] = {
+  //    val effectiveWget = this.rewrite(session)
+  //
+  //    effectiveWget.doExeNoName(session).map{
+  //      case noPage: NoPage => noPage.copy(trace = List(this))
+  //      case page: Page => page.copy(uid = PageUID(List(this),this))
+  //    }
+  //  }
+
+  override def trunk = Some(this)
+
+  override def doInterpolate(pageRow: PageRow, context: SpookyContext): Option[this.type] =
+    self.interpolate(pageRow, context: SpookyContext).map {
+      v => this.copy(self = v.asInstanceOf[Wget]).asInstanceOf[this.type]
+    }
+
+  override def doExeNoUID(session: Session): Seq[Page] = {
+    val effectiveWget = this.rewrite(session)
+
+    effectiveWget
+      .exe(session)
+      .collect {
+        case v: Page => v
+      }
+  }
+}
+
+final case class AndThen(self: Action, f: Seq[Fetched] => Seq[Fetched]) extends Block(List(self)) {
+
+  override def trunk = Some(this)
+
+  override def doExeNoUID(session: Session): Seq[Page] = {
+    f(self.exe(session))
+      .collect {
+        case v: Page => v
+      }
   }
 }

@@ -14,14 +14,14 @@ class TestOAuth extends TestWget {
   override def wget(uri: String) = {
     val action: OAuthV2 = OAuthV2(Wget(uri))
     val session = new NoDriverSession(spooky)
-    val effective = action.effectiveWget(session)
+    val effective = action.rewrite(session)
     assert(effective.uri !== uri)
     action
   }
 
   override def setUp() = {
     super.setUp()
-    spooky.conf.oAuthKeys = () => OAuthKeys(
+    spooky.conf.oAuthKeysFactory = () => OAuthKeys(
       "consumerKey",
       "consumerSecret",
       "token",

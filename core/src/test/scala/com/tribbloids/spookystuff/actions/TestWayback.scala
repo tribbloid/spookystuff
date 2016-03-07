@@ -48,7 +48,7 @@ class TestWayback extends SpookyEnvSuite {
     val dates: Seq[Long] = (0 to 2).toSeq.map {
       i =>
         val pages = (Delay(5.seconds)
-          +> Visit("http://www.wikipedia.org")).autoSnapshot.head.fetch(spooky) //5s is long enough
+          +> Visit("http://www.wikipedia.org")).correct.head.fetch(spooky) //5s is long enough
         assert(pages.size == 1)
         pages.head.timestamp.getTime
     }

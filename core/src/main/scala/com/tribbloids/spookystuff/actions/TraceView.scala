@@ -14,8 +14,8 @@ import scala.reflect.ClassTag
  * Created by peng on 10/25/14.
  */
 case class TraceView(
-                 override val self: Trace
-                 ) extends Actions(self) { //remember trace is not a block! its the super container that cannot be wrapped
+                 override val children: Trace
+                 ) extends Actions(children) { //remember trace is not a block! its the super container that cannot be wrapped
 
   //always has output (Sometimes Empty) to handle left join
   override def doInterpolate(pr: PageRow, spooky: SpookyContext): Option[this.type] = {
@@ -28,7 +28,7 @@ case class TraceView(
 
     val results = new ArrayBuffer[Fetched]()
 
-    this.self.foreach {
+    this.children.foreach {
       action =>
         val result = action.apply(session)
         session.backtrace ++= action.trunk
@@ -57,12 +57,12 @@ case class TraceView(
   lazy val dryrun: DryRun = {
     val result: ArrayBuffer[Trace] = ArrayBuffer()
 
-    for (i <- self.indices) {
-      val selfi = self(i)
+    for (i <- children.indices) {
+      val selfi = children(i)
       if (selfi.hasOutput){
         val backtrace: List[Action] = selfi match {
           case dl: Driverless => selfi :: Nil
-          case _ => self.slice(0, i).flatMap(_.trunk) :+ selfi
+          case _ => children.slice(0, i).flatMap(_.trunk) :+ selfi
         }
         result += backtrace
       }
@@ -71,10 +71,12 @@ case class TraceView(
     result.toList
   }
 
+  //if Trace has no output, automatically append Snapshot
   //invoke before interpolation!
-  def autoSnapshot: Trace = {
-    if (this.hasOutput && self.nonEmpty) self
-    else self :+ Snapshot() //Don't use singleton, otherwise will flush timestamp and name
+  def correct: Trace = {
+    if (children.isEmpty) children
+    else if (children.last.hasOutput) children
+    else children :+ Snapshot() //Don't use singleton, otherwise will flush timestamp and name
   }
 
   def fetch(spooky: SpookyContext): Seq[Fetched] = {
@@ -104,7 +106,7 @@ case class TraceView(
 
       val results = pagesFromCache.flatten
       spooky.metrics.pagesFetchedFromCache += results.count(_.isInstanceOf[Page])
-      this.self.foreach{
+      this.children.foreach{
         action =>
           LoggerFactory.getLogger(this.getClass).info(s"(cached)+> ${action.toString}")
       }
@@ -120,7 +122,7 @@ case class TraceView(
           "the later can be enabled by setting SpookyContext.conf.remote=true"
       )
 
-      val session = if (self.count(_.needDriver) == 0) new NoDriverSession(spooky)
+      val session = if (children.count(_.needDriver) == 0) new NoDriverSession(spooky)
       else new DriverSession(spooky)
       try {
         val result = this.apply(session)
@@ -180,9 +182,9 @@ final case class TraceSetView(self: Set[Trace]) {
 
   def ||(other: TraversableOnce[Trace]): Set[Trace] = self ++ other
 
-  def autoSnapshot: Set[Trace] = self.map(_.autoSnapshot)
+  def correct: Set[Trace] = self.map(_.correct)
 
-  def interpolate(row: PageRow, context: SpookyContext): Set[Trace] = self.flatMap(_.interpolate(row, context: SpookyContext).map(_.self))
+  def interpolate(row: PageRow, context: SpookyContext): Set[Trace] = self.flatMap(_.interpolate(row, context: SpookyContext).map(_.children))
 
   def outputNames: Set[String] = self.map(_.outputNames).reduce(_ ++ _)
 }

@@ -1,4 +1,4 @@
-package com.tribbloids.spookystuff.sparkbinding
+package com.tribbloids.spookystuff.execution
 
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.DataFrame

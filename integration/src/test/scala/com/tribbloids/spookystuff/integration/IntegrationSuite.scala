@@ -1,6 +1,6 @@
 package com.tribbloids.spookystuff.integration
 
-import java.util.{Date, Properties}
+import java.util.Date
 
 import com.tribbloids.spookystuff.dsl._
 import com.tribbloids.spookystuff.utils.{TestHelper, Utils}
@@ -11,9 +11,6 @@ import org.scalatest.{BeforeAndAfterAll, FunSuite}
 
 import scala.concurrent.duration
 
-/**
- * Created by peng on 12/2/14.
- */
 abstract class IntegrationSuite extends FunSuite with BeforeAndAfterAll {
 
   @transient var sc: SparkContext = _
@@ -40,28 +37,11 @@ abstract class IntegrationSuite extends FunSuite with BeforeAndAfterAll {
     super.afterAll()
   }
 
-  lazy val roots = {
+  lazy val roots: Seq[String] = {
 
     val local = Seq(TestHelper.tempPath + "spooky-integration/")
 
-    try {
-      val prop = new Properties()
-
-      prop.load(ClassLoader.getSystemResourceAsStream("rootkey.csv"))
-      val AWSAccessKeyId = prop.getProperty("AWSAccessKeyId")
-      val AWSSecretKey = prop.getProperty("AWSSecretKey")
-      val S3Path = prop.getProperty("S3Path")
-
-      System.setProperty("fs.s3.awsAccessKeyId", AWSAccessKeyId)
-      System.setProperty("fs.s3.awsSecretAccessKey", AWSSecretKey)
-
-      println("Test on AWS S3 with credentials provided by rootkey.csv")
-      local :+ S3Path
-    }
-    catch {
-      case e: Throwable =>
-        local
-    }
+    local ++ TestHelper.S3Path
   }
 
   lazy val drivers = Seq(
@@ -70,9 +50,9 @@ abstract class IntegrationSuite extends FunSuite with BeforeAndAfterAll {
   )
 
   lazy val optimizers = Seq(
-    Narrow,
-    Wide,
-    Wide_RDDWebCache
+    FetchOptimizers.Narrow,
+    FetchOptimizers.Wide,
+    FetchOptimizers.WebCacheAware
   )
 
   import duration._
@@ -81,15 +61,15 @@ abstract class IntegrationSuite extends FunSuite with BeforeAndAfterAll {
   for (root <- roots) {
     for (driver <- drivers) {
       for (optimizer <- optimizers) {
-        test(s"$root, $driver, $optimizer") {
+        test(s"$optimizer/$driver/$root") {
           lazy val env = new SpookyContext(
             sql,
             new SpookyConf(
               new DirConf(root = root),
               driverFactory = driver,
-              defaultQueryOptimizer = optimizer,
+              defaultFetchOptimizer = optimizer,
               shareMetrics = true,
-              checkpointInterval = 2,
+//              checkpointInterval = 2,
               remoteResourceTimeout = 10.seconds
             )
           )
@@ -100,13 +80,13 @@ abstract class IntegrationSuite extends FunSuite with BeforeAndAfterAll {
     }
   }
 
-  //TODO: for local-cluster mode, some of these metrics may have higher than expected results because
+  //TODO: for local-cluster mode, some of these metrics may have higher than expected results because.
   def assertBeforeCache(spooky: SpookyContext): Unit = {
     val metrics = spooky.metrics
     println(metrics.toJSON)
 
     val pageFetched = metrics.pagesFetched.value
-    assert(pageFetched === numFetchedPages(spooky.conf.defaultQueryOptimizer))
+    assert(pageFetched === numFetchedPages(spooky.conf.defaultFetchOptimizer))
     assert(metrics.pagesFetchedFromRemote.value === numPagesDistinct)
     assert(metrics.pagesFetchedFromCache.value === pageFetched - numPagesDistinct)
     assert(metrics.sessionInitialized.value === numSessions)
@@ -120,7 +100,7 @@ abstract class IntegrationSuite extends FunSuite with BeforeAndAfterAll {
     println(metrics.toJSON)
 
     val pageFetched = metrics.pagesFetched.value
-    assert(pageFetched === numFetchedPages(spooky.conf.defaultQueryOptimizer))
+    assert(pageFetched === numFetchedPages(spooky.conf.defaultFetchOptimizer))
     assert(metrics.pagesFetchedFromRemote.value === 0)
     assert(metrics.pagesFetchedFromCache.value === pageFetched)
     assert(metrics.sessionInitialized.value === 0)
@@ -133,7 +113,7 @@ abstract class IntegrationSuite extends FunSuite with BeforeAndAfterAll {
 
   private val retry = 2
 
-  protected def doTest(spooky: SpookyContext): Unit ={
+  protected def doTest(spooky: SpookyContext): Unit = {
 
     doTestBeforeCache(spooky)
 
@@ -159,9 +139,9 @@ abstract class IntegrationSuite extends FunSuite with BeforeAndAfterAll {
 
   def doMain(spooky: SpookyContext): Unit
 
-  def numFetchedPages: QueryOptimizer => Int
+  def numFetchedPages: FetchOptimizer => Int
 
-  def numPagesDistinct: Int = numFetchedPages(Wide_RDDWebCache)
+  def numPagesDistinct: Int = numFetchedPages(FetchOptimizers.WebCacheAware) //TODO: fix this!
 
   def numSessions: Int = numPagesDistinct
 

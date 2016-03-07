@@ -8,7 +8,7 @@
 // * Created by peng on 12/10/14.
 //TODO: this will be enabled after hidden key integration
 // */
-//class NullOrdinalAndDepthKeysIT extends IntegrationSuite {
+//class NullOrdinalAnddepthFieldsIT extends IntegrationSuite {
 //
 //  override lazy val drivers = Seq(
 //    null
@@ -20,13 +20,13 @@
 //      .fetch(
 //        Wget("http://webscraper.io/test-sites/e-commerce/static")
 //      )
-//      .join($"div.sidebar-nav a", ordinalKey = null)(
+//      .join($"div.sidebar-nav a", ordinalField = null)(
 //        Wget('A.href),
 //        joinType = LeftOuter
 //      )(
 //        'A.text ~ 'category
 //      )
-//      .join($"a.subcategory-link", ordinalKey = null)(
+//      .join($"a.subcategory-link", ordinalField = null)(
 //        Wget('A.href),
 //        joinType = LeftOuter
 //      )(
@@ -35,7 +35,7 @@
 //      .select($"h1".text ~ 'header)
 //
 //    val result = joined
-//      .explore($"ul.pagination a", depthKey = null, ordinalKey = null)(
+//      .explore($"ul.pagination a", depthField = null, ordinalField = null)(
 //        Wget('A.href)
 //      )(
 //        'A.text as 'page

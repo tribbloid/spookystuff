@@ -1,19 +1,42 @@
 package com.tribbloids.spookystuff.utils
 
 import java.io.File
+import java.util.Properties
 
 import org.apache.commons.io.FileUtils
 import org.apache.spark.SparkConf
 import org.slf4j.LoggerFactory
 
-/**
- * Created by peng on 18/10/15.
- */
 object TestHelper {
 
   val processors: Int = Runtime.getRuntime.availableProcessors()
 
-  //if SPARK_PATH is detected, use local-cluster simulation mode
+  val tempPath = System.getProperty("user.dir") + "/temp/"
+
+  val prop = new Properties()
+  try {
+    prop.load(ClassLoader.getSystemResourceAsStream("rootkey.csv"))
+  }
+  catch {
+    case e: Throwable =>
+      println("rootkey.csv is missing")
+  }
+
+  val S3Path = Option(prop.getProperty("S3Path"))
+  if (S3Path.isEmpty) println("Test on AWS S3 with credentials provided by rootkey.csv")
+
+  val AWSAccessKeyId = Option(prop.getProperty("AWSAccessKeyId"))
+  val AWSSecretKey = Option(prop.getProperty("AWSSecretKey"))
+  AWSAccessKeyId.foreach{
+    System.setProperty("fs.s3.awsAccessKeyId", _) //TODO: useless here? set in conf directly?
+  }
+  AWSSecretKey.foreach{
+    System.setProperty("fs.s3.awsSecretAccessKey", _)
+  }
+
+  val clusterSize = Option(prop.getProperty("ClusterSize")).map(_.toInt)
+
+  //if SPARK_PATH & ClusterSize in rootkey.csv is detected, use local-cluster simulation mode
   //otherwise use local mode
   val testSparkConf: SparkConf = {
 
@@ -23,15 +46,17 @@ object TestHelper {
       .set("spark.kryo.registrator", "com.tribbloids.spookystuff.SpookyRegistrator")
       .set("spark.kryoserializer.buffer.max", "512m")
 
-    val sparkHome = System.getenv("SPARK_HOME") //TODO: add more condition to force local mode?
-    if (sparkHome == null) {
-//      if (true) {
-      LoggerFactory.getLogger(this.getClass).info("initialization Spark Context in local mode")
-      conf.setMaster(s"local[$processors,4]")
+    val sparkHome = System.getenv("SPARK_HOME")
+    if (sparkHome == null || clusterSize.isEmpty) {
+      val masterStr = s"local[$processors,4]"
+      LoggerFactory.getLogger(this.getClass).info("initializing SparkContext in local mode:" + masterStr)
+      conf.setMaster(masterStr)
     }
     else {
-      println("initialization Spark Context in local-cluster simulation mode")
-      conf.setMaster(s"local-cluster[1,$processors,1024]")
+      val size = clusterSize.get
+      val masterStr = s"local-cluster[$size,${processors/size},1024]"
+      println(s"initializing SparkContext in local-cluster simulation mode:" + masterStr)
+      conf.setMaster(masterStr) //TODO: more than 1 nodes may cause some counters to have higher readings
     }
 
     //this is the only way to conduct local-cluster simulation
@@ -57,8 +82,6 @@ object TestHelper {
 
     conf
   }
-
-  val tempPath = System.getProperty("user.dir") + "/temp/"
 
   def clearTempDir(): Unit = {
     val file = new File(tempPath) //TODO: clean up S3 as well

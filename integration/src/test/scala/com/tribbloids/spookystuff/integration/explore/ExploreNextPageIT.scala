@@ -6,8 +6,8 @@ import com.tribbloids.spookystuff.dsl._
 import com.tribbloids.spookystuff.integration.IntegrationSuite
 
 /**
- * Created by peng on 12/10/14.
- */
+  * Created by peng on 12/10/14.
+  */
 class ExploreNextPageIT extends IntegrationSuite {
 
   override lazy val drivers = Seq(
@@ -20,12 +20,13 @@ class ExploreNextPageIT extends IntegrationSuite {
       .fetch(
         Wget("http://webscraper.io/test-sites/e-commerce/static/computers/tablets")
       )
-      .explore(S"ul.pagination a[rel=next]", depthKey = 'page, ordinalKey = 'index)(
-        Wget('A.href)
+      .explore(S"ul.pagination a[rel=next]", ordinalField = 'index)(
+        Wget('A.href),
+        depthField = 'page
       )(
-        'A.text ~ 'button_text
+        'A.text ~ 'button_text,
+        S.uri ~ 'uri
       )
-      .select(S.uri ~ 'uri)
       .toDF(sort = true)
 
     assert(
@@ -36,7 +37,7 @@ class ExploreNextPageIT extends IntegrationSuite {
           "uri" :: Nil
     )
 
-    val formatted = result.toJSON.collect().mkString("\n")
+    val formatted = result.toJSON.collect().toSeq
     assert(
       formatted ===
         """
@@ -44,7 +45,7 @@ class ExploreNextPageIT extends IntegrationSuite {
           |{"page":1,"index":[0],"button_text":"»","uri":"http://webscraper.io/test-sites/e-commerce/static/computers/tablets/2"}
           |{"page":2,"index":[0,0],"button_text":"»","uri":"http://webscraper.io/test-sites/e-commerce/static/computers/tablets/3"}
           |{"page":3,"index":[0,0,0],"button_text":"»","uri":"http://webscraper.io/test-sites/e-commerce/static/computers/tablets/4"}
-        """.stripMargin.trim
+        """.stripMargin.trim.split('\n').toSeq
     )
   }
 

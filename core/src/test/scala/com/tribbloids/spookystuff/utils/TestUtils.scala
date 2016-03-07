@@ -1,7 +1,7 @@
 package com.tribbloids.spookystuff.utils
 
+import com.tribbloids.spookystuff.row.{Field, DataRow}
 import org.scalatest.FunSuite
-import com.tribbloids.spookystuff.row.{KeyLike, PageRow, Key}
 
 import scala.collection.immutable.ListMap
 
@@ -15,20 +15,16 @@ class TestUtils extends FunSuite {
     assert(url === "http/abc.com/re/k2/si")
   }
 
-  test("interpolate") {
-    val someMap = ListMap[KeyLike, Any](Key("abc") -> 1, Key("def") -> 2.2)
-    val result = PageRow(someMap).replaceInto("rpk'{abc}aek'{def}")
-    assert(result === Some("rpk1aek2.2"))
+  test("asArray[Int]") {
+    assert(Utils.asArray[Int](2).toSeq == Seq(2))
+    assert(Utils.asArray[Int](Seq(1,2,3).iterator).toSeq == Seq(1,2,3))
+    assert(Utils.asArray[Int](Seq(1, 2.2, "b")).toSeq == Seq(1))
   }
 
-  test("interpolate returns None when key not found") {
 
-    val someMap = ListMap[KeyLike, Any](Key("abc") -> 1, Key("rpk") -> 2.2)
-    val result = PageRow(someMap).replaceInto("rpk'{abc}aek'{def}")
-    assert(result === None)
+  test("asIterable[Int]") {
+    assert(Utils.asIterable[Int](2) == Iterable(2))
+    assert(Utils.asIterable[Int](Seq(1,2,3).iterator).toSeq == Iterable(1,2,3))
+    assert(Utils.asIterable[Int](Seq(1, 2.2, "b")).toSeq == Iterable(1))
   }
-
-  test("formatNullString") {assert (PageRow(ListMap()).replaceInto(null) === None)}
-
-  test("formatEmptyString") {assert (PageRow(ListMap()).replaceInto("") === Some(""))}
 }

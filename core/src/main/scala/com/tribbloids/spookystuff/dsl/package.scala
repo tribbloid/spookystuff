@@ -2,31 +2,34 @@ package com.tribbloids.spookystuff
 
 import java.util.Date
 
-import org.apache.spark.rdd.RDD
-import org.apache.spark.sql.DataFrame
 import com.tribbloids.spookystuff.actions._
-import com.tribbloids.spookystuff.row.PageRow
+import com.tribbloids.spookystuff.execution.DataFrameView
+import com.tribbloids.spookystuff.expressions.ExpressionLike._
 import com.tribbloids.spookystuff.expressions._
 import com.tribbloids.spookystuff.pages.{Elements, Page, PageUID, Unstructured}
-import com.tribbloids.spookystuff.sparkbinding.{DataFrameView, PageRowRDD, StringRDDView}
+import com.tribbloids.spookystuff.rdd.PageRowRDD
+import com.tribbloids.spookystuff.row.{Field, PageRow, SquashedPageRow}
 import com.tribbloids.spookystuff.utils.Default
+import org.apache.spark.rdd.RDD
+import org.apache.spark.sql.DataFrame
 
-import scala.collection.immutable.ListSet
+import scala.collection.immutable.{ListMap, ListSet}
 import scala.collection.{GenTraversableOnce, IterableLike}
 import scala.language.implicitConversions
 import scala.reflect.ClassTag
 
-/**
- * Created by peng on 9/18/14.
- */
 package object dsl {
 
   //  type SerializableCookie = Cookie with Serializable
 
-  implicit def PageRowRDDToSelf(wrapper: PageRowRDD): RDD[PageRow] = wrapper.selfRDD
+  implicit def PageRowRDDToRDD(wrapper: PageRowRDD): RDD[SquashedPageRow] = wrapper.rdd
 
   implicit def spookyContextToPageRowRDD(spooky: SpookyContext): PageRowRDD =
-    new PageRowRDD(spooky.sqlContext.sparkContext.parallelize(Seq(PageRow())), spooky = spooky.getContextForNewInput)
+    new PageRowRDD(
+      spooky.sqlContext.sparkContext.parallelize(Seq(SquashedPageRow.singleEmpty)),
+      schema = ListSet(),
+      spooky = spooky.getSpookyForInput
+    )
 
   implicit def traceView(trace: Trace): TraceView = new TraceView(trace)
 
@@ -60,11 +63,15 @@ package object dsl {
   }
   def `S_*` = GetAllPagesExpr
 
+  def G = GroupIndexExpr
+
   def A(selector: String): FindAllExpr = 'A.findAll(selector)
   def A(selector: String, i: Int): Expression[Unstructured] = {
     val expr = 'A.findAll(selector)
     new IterableLikeExprView(expr).get(i)
   }
+
+  implicit def symbolToField(symbol: Symbol): Field = Option(symbol).map(v => Field(v.name)).orNull
 
   def dynamic[T](expr: Expression[T]) = new DynamicExprWrapper(expr)
 
@@ -85,13 +92,13 @@ package object dsl {
         case res: A => Some(res)
         case _ => None
       }: T => Option[A],
-      s"filterByType[${ev.toString()}}]"
+      s"typed[${ev.toString()}}]"
     )
 
     def toStr = this.andMap(_.toString)
 
-    def into(name: Symbol): Expression[Traversable[T]] = new InsertIntoExpr[T](name.name, self)
-    def ~+(name: Symbol) = into(name)
+    def into(field: Field): Expression[Traversable[T]] = AppendExpr[T](field, self)
+    def ~+(field: Field) = into(field)
 
     //these will convert Expression to a common function
     def getOrElse[B >: T](value: =>B = defaultVal): ExpressionLike[PageRow, B] = self.andThen(
@@ -110,7 +117,7 @@ package object dsl {
 
     def orElse[B >: T](expr: Expression[B]): Expression[B] = new Expression[B] {
 
-      override val name: String = s"$self.orElse($expr)"
+      override val field = self.field.copy(name = s"$self.orElse($expr)")
 
       override def apply(row: PageRow): Option[B] = {
         val selfValue = self(row)
@@ -123,7 +130,7 @@ package object dsl {
     )
 
     def ->[B](another: Expression[B]): Expression[(T, B)] = new Expression[(T, B)] {
-      override val name: String = s"$self.->($another)"
+      override val field = self.field.copy(name = s"$self.->($another)")
 
       override def apply(row: PageRow): Option[(T, B)] = {
         if (self(row).isEmpty || another(row).isEmpty) None
@@ -217,7 +224,7 @@ package object dsl {
 
     def timestamp: Expression[Date] = self.andMap(_.timestamp, "timestamp")
 
-    def saved: Expression[ListSet[String]] = self.andMap(_.saved, "saved")
+    def saved: Expression[Set[String]] = self.andMap(_.saved.toSet, "saved")
 
     def mimeType: Expression[String] = self.andMap(_.mimeType, "mimeType")
 
@@ -361,7 +368,24 @@ package object dsl {
       new ReplaceKeyExpr(str)
   }
 
-  implicit def stringRDDToItsView(rdd: RDD[String]): StringRDDView = new StringRDDView(rdd)
+  implicit class StringRDDView(val self: RDD[String]) {
+
+    //csv has to be headerless, there is no better solution as header will be shuffled to nowhere
+    def csvToMap(headerRow: String, splitter: String = ","): RDD[Map[String,String]] = {
+      val headers = headerRow.split(splitter)
+
+      //cannot handle when a row is identical to headerline, but whatever
+      self.map {
+        str => {
+          val values = str.split(splitter)
+
+          ListMap(headers.zip(values): _*)
+        }
+      }
+    }
+
+    def tsvToMap(headerRow: String) = csvToMap(headerRow,"\t")
+  }
 
   implicit def dataFrameToItsView(rdd: DataFrame): DataFrameView = new DataFrameView(rdd)
 

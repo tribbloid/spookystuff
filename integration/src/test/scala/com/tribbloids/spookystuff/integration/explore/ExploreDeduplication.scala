@@ -17,7 +17,7 @@
 //      .wgetExplore(
 //        S"""a[rel^=dbo][href*=dbpedia],a[rev^=dbo][href*=dbpedia]""".hrefs.distinct.slice(0,9),
 //        failSafe = 2,
-//        depthKey = 'depth,
+//        depthField = 'depth,
 //        maxDepth = 2
 ////        select = S.uri ~ 'name
 //      )

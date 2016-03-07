@@ -1,12 +1,10 @@
 package com.tribbloids.spookystuff
 
+import com.tribbloids.spookystuff.row.Field
 import org.apache.tika.detect.DefaultDetector
 import org.json4s.DefaultFormats
-import com.tribbloids.spookystuff.dsl.DocumentFilter
+import com.tribbloids.spookystuff.dsl.DocumentFilters
 
-/**
- * Created by peng on 04/06/14.
- */
 object Const {
 
   import scala.concurrent.duration._
@@ -34,16 +32,19 @@ object Const {
 
   val defaultInputKey = "_"
   val keyDelimiter = "'"
-  val onlyPageWildcard = "S"
-  val allPagesWildcard = "S_*"
-  val defaultJoinKey = "A"
+  val onlyPageExtractor = "S"
+  val allPagesExtractor = "S_*"
+
+  val groupIndexExtractor = "G"
+
+  val defaultJoinField = Field("A", isWeak = true)
 
   val jsonFormats = DefaultFormats
 
   val mimeDetector = new DefaultDetector()
 
-  val defaultDocumentFilter = DocumentFilter.MustHaveTitle
-  val defaultImageFilter = DocumentFilter.PassAll
+  val defaultDocumentFilter = DocumentFilters.MustHaveTitle
+  val defaultImageFilter = DocumentFilters.Status2XX
 
   val exploreStageSize = 100
 }

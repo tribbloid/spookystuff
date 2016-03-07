@@ -2,24 +2,27 @@ package com.tribbloids.spookystuff.dsl
 
 import com.tribbloids.spookystuff.SpookyEnvSuite
 import com.tribbloids.spookystuff.actions.Wget
-import com.tribbloids.spookystuff.row.PageRow
 import com.tribbloids.spookystuff.expressions.ExpressionLike
+import com.tribbloids.spookystuff.pages.PageLike
+import com.tribbloids.spookystuff.row.{DataRow, Field, SquashedPageRow}
 
 /**
- * Created by peng on 12/3/14.
- */
+*  Created by peng on 12/3/14.
+*/
 class TestDSL extends SpookyEnvSuite {
 
-  lazy val page = (
+//  import com.tribbloids.spookystuff.dsl._
+
+  lazy val pages = (
     Wget("http://www.wikipedia.org/") ~ 'page  :: Nil
   ).fetch(spooky).toArray
 
-  lazy val row = PageRow(pageLikes = page)
-    .select(
+  lazy val row = SquashedPageRow(dataRows = Array(DataRow()), fetchedOpt = Some(pages))
+    .extract(
       S"title".head.text ~ 'abc,
       S"title".head ~ 'def
     )
-    .head
+      .unsquash.head
 
   test("symbol as Expr"){
     assert('abc.apply(row) === Some("Wikipedia"))
@@ -39,7 +42,7 @@ class TestDSL extends SpookyEnvSuite {
     assert(fun.name === "abc.<function1>")
     assert(fun(row) === Some("Wikipedia"))
 
-    val fun2 = 'abc.andThen(ExpressionLike(_.map(_.toString),"after"))
+    val fun2 = 'abc.andThen(ExpressionLike(_.map(_.toString), 'after))
     assert(fun2.name === "abc.after")
     assert(fun(row) === Some("Wikipedia"))
   }
@@ -65,14 +68,14 @@ class TestDSL extends SpookyEnvSuite {
   }
 
   test("double quotes in selector by attribute should work") {
-    val page = (
+    val pages = (
       Wget("http://www.wikipedia.org/") :: Nil
       ).fetch(spooky).toArray
-    val row = PageRow(pageLikes = page)
-      .select(S"""a[href*="wikipedia"]""".href ~ 'uri)
-      .head
+    val row = SquashedPageRow(Array(DataRow()), fetchedOpt = Some(pages))
+      .extract(S"""a[href*="wikipedia"]""".href ~ 'uri)
+      .unsquash.head
 
-    assert(row.get("uri").nonEmpty)
+    assert(row._1.get(Field("uri")).nonEmpty)
   }
 
   test("uri"){

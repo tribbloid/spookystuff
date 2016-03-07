@@ -6,9 +6,11 @@ import com.tribbloids.spookystuff.dsl._
 import com.tribbloids.spookystuff.integration.IntegrationSuite
 
 /**
- * Created by peng on 11/26/14.
- */
+  * Created by peng on 11/26/14.
+  */
 class FetchPaginationIT extends IntegrationSuite {
+
+  import com.tribbloids.spookystuff.utils.Views._
 
   override lazy val drivers = Seq(
     phantomJS //TODO: HtmlUnit does not support Backbone.js
@@ -23,47 +25,41 @@ class FetchPaginationIT extends IntegrationSuite {
           +> Loop (
           ClickNext("button.btn","1"::Nil)
             +> Snapshot().as('b)
-        ),
-        flattenPagesPattern = null
-      ).persist()
+        )
+      )
+      .persist()
 
-    val pageRows = RDD.collect()
+    val pageRows = RDD.unsquashedRDD.collect()
 
     val finishTime = System.currentTimeMillis()
-    assert(pageRows.length === 1)
-    assert(pageRows(0).pages.length === 3)
-    assert(pageRows(0).pages(0).name === "a")
-    assert(pageRows(0).pages(1).name === "b")
-    assert(pageRows(0).pages(2).name === "b")
+    assert(pageRows.length === 2) //TODO: adapt to new default grouping: ab b
+    assert(pageRows(0).pages.map(_.name) === Seq("a", "b"))
+    assert(pageRows(1).pages.map(_.name) === Seq("b"))
     val pageTime = pageRows(0).pages.head.timestamp.getTime
     assert(pageTime < finishTime)
-    assert(pageTime > finishTime-60000) //long enough even after the second time it is retrieved from s3 cache
+    assert(pageTime > finishTime-60000) //long enough even after the second time it is retrieved from DFS cache
 
-    Thread.sleep(10000) //this delay is necessary to circumvent eventual consistency of HDFS-based cache
+    Thread.sleep(10000) //this delay is necessary to circumvent eventual consistency of DFS cache
 
-    val RDDAppended = RDD
+    val RDD2 = RDD
       .fetch(
         Visit("http://webscraper.io/test-sites/e-commerce/ajax/computers/laptops")
           +> Snapshot().as('c)
           +> Loop (
           ClickNext("button.btn","1"::Nil)
             +> Snapshot().as('d)
-        ),
-        joinType = Append,
-        flattenPagesPattern = null
+        )
       )
 
-    val appendedRows = RDDAppended.collect()
+    val pageRows2 = RDD2.unsquashedRDD.collect()
 
-    assert(appendedRows.length === 1)
-    assert(appendedRows(0).pages.length === 6)
-    assert(appendedRows(0).pages(3).name === "c")
-    assert(appendedRows(0).pages(4).name === "d")
-    assert(appendedRows(0).pages(5).name === "d")
+    assert(pageRows2.length === 2)
+    assert(pageRows2(0).pages.map(_.name) === Seq("c", "d"))
+    assert(pageRows2(1).pages.map(_.name) === Seq("d"))
   }
 
   override def numFetchedPages = {
-    case Wide_RDDWebCache => 3
+//    case FetchOptimizers.WebCacheAware => 3
     case _ => 6
   }
 

@@ -4,9 +4,6 @@ import com.tribbloids.spookystuff.actions.{Snapshot, Visit}
 import com.tribbloids.spookystuff.session.DriverSession
 import com.tribbloids.spookystuff.{SpookyEnvSuite, dsl}
 
-/**
- * Created by peng on 10/17/14.
- */
 class TestPageFromBrowser extends SpookyEnvSuite {
 
   import dsl._
@@ -15,7 +12,7 @@ class TestPageFromBrowser extends SpookyEnvSuite {
     val emptyPage: Page = {
       val pb = new DriverSession(spooky)
 
-      Snapshot(DocumentFilter.PassAll).doExe(pb).toList.head.asInstanceOf[Page]
+      Snapshot(DocumentFilters.Status2XX).exe(pb).toList.head.asInstanceOf[Page]
     }
 
     assert (emptyPage.findAll("div.dummy").attrs("href").isEmpty)

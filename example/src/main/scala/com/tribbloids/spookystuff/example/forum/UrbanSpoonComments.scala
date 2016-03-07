@@ -35,7 +35,7 @@ object UrbanSpoonComments extends QueryCore {
           +> Click("ul.PostTabs li.active a")
           +> WaitFor("div.tab-pane.active li.review")
       )
-      .flatSelect(S"div.tab-pane.active li.review", ordinalKey = 'row)(
+      .flatExtract(S"div.tab-pane.active li.review", ordinalKey = 'row)(
         x"${A"li.comment div.title".text}: ${A"li.comment div.body".text}" ~ 'comment,
         A"time.posted-on".text ~ 'date_status,
         A"div.details > div.aside".text ~ 'stars,

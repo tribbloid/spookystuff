@@ -2,9 +2,8 @@ package com.tribbloids.spookystuff.pipeline.dbpedia
 
 import java.util.UUID
 
-import com.tribbloids.spookystuff.actions.Wget
 import com.tribbloids.spookystuff.pipeline.RemoteTransformer
-import com.tribbloids.spookystuff.sparkbinding.PageRowRDD
+import com.tribbloids.spookystuff.rdd.PageRowRDD
 import com.tribbloids.spookystuff.{SpookyContext, dsl}
 
 /**
@@ -35,10 +34,12 @@ class RelationTransformer(
 
   override def transform(dataset: PageRowRDD): PageRowRDD = {
 
-    dataset
+    val r = dataset
       .wget(
         getOrDefault(InputURICol)
       )
+
+    r
       .wgetExplore(
         S"a".distinctBy(_.href)
           .filter{

@@ -25,7 +25,7 @@ class TestPages extends SpookyEnvSuite {
 
     assert(loadedPages.length === 1)
     assert(page.head.content === loadedPages.head.content)
-    assert(page.head.copy(content = null) === loadedPages.head.copy(content = null))
+    assert(page.head === loadedPages.head)
   }
 
   test ("local cache") {
@@ -38,7 +38,7 @@ class TestPages extends SpookyEnvSuite {
     val page2 = PageUtils.autoRestore(newTrace, spooky).map(_.asInstanceOf[Page])
 
     assert(page2.size === 1)
-    assert(page2.head.copy(content = null) === page.head.copy(content = null))
+    assert(page2.head === page.head)
     assert(page2.head.code === page2.head.code)
     assert(page2.head.name === "new")
 
@@ -50,7 +50,7 @@ class TestPages extends SpookyEnvSuite {
     spooky.conf.pageExpireAfter = 30.days
 
     assert(page2.size === 1)
-    assert(page2.head.copy(content = null) === page.head.copy(content = null))
+    assert(page2.head === page.head)
     assert(page2.head.code === page2.head.code)
   }
 
@@ -64,8 +64,8 @@ class TestPages extends SpookyEnvSuite {
     val page2 = PageUtils.autoRestore(newTrace, spooky).map(_.asInstanceOf[Page])
 
     assert(page2.size === 1)
-    assert(page2.head.copy(content = null) === wgetPage.head.copy(content = null))
-    assert(page2.head.code === page2.head.code)
+    assert(page2.head === wgetPage.head)
+//    assert(page2.head.code === page2.head.code)
     assert(page2.head.name === "newWget")
 
     Thread.sleep(2000)
@@ -76,8 +76,8 @@ class TestPages extends SpookyEnvSuite {
     spooky.conf.pageExpireAfter = 30.days
 
     assert(page2.size === 1)
-    assert(page2.head.copy(content = null) === wgetPage.head.copy(content = null))
-    assert(page2.head.code === page2.head.code)
+    assert(page2.head === wgetPage.head)
+//    assert(page2.head.code === page2.head.code)
   }
 
 //  test ("s3 cache") {
@@ -92,7 +92,7 @@ class TestPages extends SpookyEnvSuite {
 //    val page2 = Pages.autoRestoreLatest(newTrace, spooky)
 //
 //    assert(page2.size === 1)
-//    assert(page2.head.copy(content = null) === page.head.copy(content = null))
+//    assert(page2.head === page.head)
 //    assert(page2.head.markup === page2.head.markup)
 //    assert(page2.head.name === "new")
 //
@@ -104,7 +104,7 @@ class TestPages extends SpookyEnvSuite {
 //    spooky.pageExpireAfter = 30.days
 //
 //    assert(page2.size === 1)
-//    assert(page2.head.copy(content = null) === page.head.copy(content = null))
+//    assert(page2.head === page.head)
 //    assert(page2.head.markup === page2.head.markup)
 //  }
 

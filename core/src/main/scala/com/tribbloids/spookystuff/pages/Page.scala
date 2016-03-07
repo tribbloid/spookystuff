@@ -1,24 +1,19 @@
 package com.tribbloids.spookystuff.pages
 
 import java.io._
-import java.util.Date
-
-import org.apache.commons.csv.CSVFormat
-import org.apache.tika.mime.MimeTypes
-
-//TODO: change to sql.Date
-import java.util.UUID
+import java.util.{Date, UUID}
 
 import com.tribbloids.spookystuff._
 import com.tribbloids.spookystuff.actions._
-import com.tribbloids.spookystuff.utils.Utils
+import com.tribbloids.spookystuff.utils.{IdentifierMixin, Utils}
+import org.apache.commons.csv.CSVFormat
 import org.apache.hadoop.fs.Path
+import org.apache.http.StatusLine
 import org.apache.http.entity.ContentType
 import org.apache.tika.io.TikaInputStream
 import org.apache.tika.metadata.{Metadata, TikaMetadataKeys}
+import org.apache.tika.mime.MimeTypes
 import org.mozilla.universalchardet.UniversalDetector
-
-import scala.collection.immutable.ListSet
 
 /**
   * Created by peng on 04/06/14.
@@ -36,24 +31,30 @@ case class PageUID(
 }
 
 trait PageLike {
-  val uid: PageUID
-  val cacheable: Boolean
+  def uid: PageUID
+  def cacheable: Boolean
+
+  def name = Option(this.uid.output).map(_.name).orNull
 }
 
-case class Unfetched(
-                      val uid: PageUID
-                    ) extends PageLike {
-
-  val cacheable: Boolean = false
-}
+//case class Unfetched(
+//                      trace: Trace
+//                    ) extends PageLike {
+//
+//  def cacheable: Boolean = false
+//
+//  @transient override lazy val uid: PageUID = PageUID(trace, null, 0, 1)
+//}
 
 trait Fetched extends PageLike {
-  val timestamp: Date
+  def timestamp: Date
 
   def laterThan(v2: Fetched): Boolean = this.timestamp after v2.timestamp
 
   def laterOf(v2: Fetched): Fetched = if (laterThan(v2)) this
   else v2
+
+//  def revertToUnfetched: Unfetched = Unfetched(uid.backtrace)
 }
 
 //Merely a placeholder when a Block returns nothing
@@ -63,8 +64,27 @@ case class NoPage(
                    override val cacheable: Boolean = true
                  ) extends Serializable with Fetched {
 
-  override val uid: PageUID = PageUID(trace, null, 0, 1)
+  @transient override lazy val uid: PageUID = PageUID(trace, null, 0, 1)
 }
+
+class ErrorWithPage(
+                     delegate: Page,
+                     override val message: String = "",
+                     override val cause: Throwable = null
+                   ) extends ActionException with Fetched {
+
+  override def timestamp: Date = delegate.timestamp
+
+  override def uid: PageUID = delegate.uid
+
+  override def cacheable: Boolean = delegate.cacheable
+}
+
+class DocumentFilterError(
+                           delegate: Page,
+                           override val message: String = "",
+                           override val cause: Throwable = null
+                         ) extends ErrorWithPage(delegate, message, cause)
 
 object Page {
 
@@ -85,15 +105,16 @@ case class Page(
 
                  //                 cookie: Seq[SerializableCookie] = Nil,
                  override val timestamp: Date = new Date(System.currentTimeMillis()),
-                 var saved: ListSet[String] = ListSet(),
+                 saved: scala.collection.mutable.Set[String] = scala.collection.mutable.Set(),
                  override val cacheable: Boolean = true,
-                 @transient val _properties: Map[String, Any] = null
+                 httpStatus: Option[StatusLine] = None,
+                 @transient _properties: Map[String, Any] = null //for customizing parsing
                )
-  extends Unstructured with Fetched {
-
-  def name = this.uid.output.name
+  extends Unstructured with Fetched with IdentifierMixin {
 
   def properties: Map[String, Any] = Option(_properties).getOrElse(Map())
+
+  lazy val _id = (uid, uri, declaredContentType, timestamp, httpStatus.toString)
 
   private def detectCharset(contentType: ContentType): String = {
     val charsetD = new UniversalDetector(null)
@@ -231,7 +252,7 @@ case class Page(
         fos.close()
       }
 
-      saved = saved + fullPath.toString
+      saved += fullPath.toString
     }
   }
 
@@ -239,7 +260,7 @@ case class Page(
                 spooky: SpookyContext,
                 overwrite: Boolean = false
               ): Unit = this.save(
-    spooky.conf.dirs.autoSave :: spooky.conf.autoSavePath(this).toString :: Nil
+    spooky.conf.dirs.autoSave :: spooky.conf.autoSaveFilePath(this).toString :: Nil
   )(spooky)
 
   //TODO: merge into cascade retries
@@ -253,7 +274,7 @@ case class Page(
     }
 
     this.save(
-      root :: spooky.conf.errorDumpPath(this).toString :: Nil
+      root :: spooky.conf.errorDumpFilePath(this).toString :: Nil
     )(spooky)
   }
 
@@ -267,11 +288,11 @@ case class Page(
     }
 
     this.save(
-      root :: spooky.conf.errorDumpPath(this).toString :: Nil
+      root :: spooky.conf.errorDumpFilePath(this).toString :: Nil
     )(spooky)
   }
 
-  def set(tuples: Tuple2[String, Any]*): Page = this.copy(
+  def set(tuples: (String, Any)*): Page = this.copy(
     _properties = this.properties ++ Map(tuples: _*)
   )
 }

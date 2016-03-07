@@ -6,8 +6,8 @@ import com.tribbloids.spookystuff.dsl._
 import com.tribbloids.spookystuff.integration.IntegrationSuite
 
 /**
- * Created by peng on 12/10/14.
- */
+  * Created by peng on 12/10/14.
+  */
 class JoinAndExplorePagesIT extends IntegrationSuite {
 
   override lazy val drivers = Seq(
@@ -20,27 +20,29 @@ class JoinAndExplorePagesIT extends IntegrationSuite {
       .fetch(
         Wget("http://webscraper.io/test-sites/e-commerce/static")
       )
-      .join(S"div.sidebar-nav a", ordinalKey = 'i1)(
-        Wget('A.href),
-        joinType = LeftOuter
-      )(
+      .join(S"div.sidebar-nav a", LeftOuter, ordinalField = 'i1)(
+        Wget('A.href)
+      )
+      .extract(
         'A.text ~ 'category
       )
-      .join(S"a.subcategory-link", ordinalKey = 'i2)(
-        Wget('A.href),
-        joinType = LeftOuter
-      )(
-        'A.text ~ 'subcategory
+      .join(S"a.subcategory-link", LeftOuter, ordinalField = 'i2)(
+        Wget('A.href)
       )
-      .select(S"h1".text ~ 'header)
+      .extract(
+        'A.text ~ 'subcategory,
+        S"h1".text ~ 'header
+      )
 
     val result = joined
-      .explore(S"ul.pagination a", depthKey = 'depth, ordinalKey = 'i3)(
-        Wget('A.href)
+      .removeWeaks()
+      .explore(S"ul.pagination a", ordinalField = 'i3)(
+        Wget('A.href),
+        depthField = 'depth
       )(
-        'A.text as 'page
+        'A.text as 'page,
+        S.uri ~ 'uri
       )
-      .select(S.uri ~ 'uri)
       .toDF(sort = true)
       .persist()
 
@@ -57,7 +59,7 @@ class JoinAndExplorePagesIT extends IntegrationSuite {
           "uri" :: Nil
     )
 
-    val formatted = result.toJSON.collect().mkString("\n")
+    val formatted = result.toJSON.collect().toSeq
     assert(
       formatted ===
         """
@@ -74,12 +76,12 @@ class JoinAndExplorePagesIT extends IntegrationSuite {
           |{"i1":[2],"category":"Phones","i2":[0],"subcategory":"Touch","header":"Phones / Touch","depth":0,"uri":"http://webscraper.io/test-sites/e-commerce/static/phones/touch"}
           |{"i1":[2],"category":"Phones","i2":[0],"subcategory":"Touch","header":"Phones / Touch","depth":1,"i3":[0],"page":"2","uri":"http://webscraper.io/test-sites/e-commerce/static/phones/touch/2"}
           |{"i1":[2],"category":"Phones","i2":[0],"subcategory":"Touch","header":"Phones / Touch","depth":2,"i3":[0,0],"page":"«","uri":"http://webscraper.io/test-sites/e-commerce/static/phones/touch/1"}
-        """.stripMargin.trim
+        """.stripMargin.trim.split('\n').toSeq
     )
   }
 
   override def numFetchedPages = {
-    case Wide_RDDWebCache => 15
+//    case FetchOptimizers.WebCacheAware => 15
     case _ => 16
   }
 

@@ -48,7 +48,6 @@ case object LocalResolver extends PathResolver {
 
 case class HDFSResolver(conf: Configuration) extends PathResolver {
 
-  //TODO: support retry
   def input[T](pathStr: String)(f: InputStream => T): T = Utils.retry(3){
     val path = new Path(pathStr)
     val fs = path.getFileSystem(conf)

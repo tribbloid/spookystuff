@@ -42,7 +42,7 @@ object Yelp_MyMemory_Alchemy extends QueryCore {
     import spooky.dsl._
     import sql.implicits._
 
-    spooky.conf.oAuthKeys = () => OAuthKeys(
+    spooky.conf.oAuthKeysFactory = () => OAuthKeys(
       "zfiG0XPsYgSAQ7iSXL6D5g",
       "MkMaVzoOL_s-00y0Agd5V9ZAEaU",
       "KV7SgT34ZxJ5n2m5FgiXetdTBgnKOpge",

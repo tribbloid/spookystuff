@@ -2,13 +2,15 @@ package com.tribbloids.spookystuff
 
 import com.tribbloids.spookystuff.dsl.DriverFactories
 import com.tribbloids.spookystuff.dsl.DriverFactories.PhantomJS
-import com.tribbloids.spookystuff.row.{Key, KeyLike, PageRow}
-import com.tribbloids.spookystuff.sparkbinding.{DataFrameView, PageRowRDD}
+import com.tribbloids.spookystuff.execution.DataFrameView
+import com.tribbloids.spookystuff.rdd.PageRowRDD
+import com.tribbloids.spookystuff.row._
 import com.tribbloids.spookystuff.utils.{Utils, Views}
 import org.apache.hadoop.conf.Configuration
 import org.apache.spark._
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.{DataFrame, SQLContext}
+import org.apache.spark.storage.StorageLevel
 import org.slf4j.LoggerFactory
 
 import scala.collection.immutable.{ListMap, ListSet}
@@ -19,14 +21,14 @@ case class SpookyContext private (
                                    @transient sqlContext: SQLContext, //can't be used on executors
                                    @transient private var _effectiveConf: SpookyConf, //can only be used on executors after broadcast
                                    var metrics: Metrics //accumulators cannot be broadcasted,
-                                   ) {
+                                 ) {
 
   val browsersExist = deployPhantomJS()
 
   def this(
             sqlContext: SQLContext,
             spookyConf: SpookyConf = new SpookyConf()
-            ) {
+          ) {
     this(sqlContext, spookyConf.importFrom(sqlContext.sparkContext), new Metrics())
   }
 
@@ -51,16 +53,21 @@ case class SpookyContext private (
 
   def conf_=(conf: SpookyConf): Unit = {
     _effectiveConf = conf.importFrom(sqlContext.sparkContext)
-    broadcast()
+    rebroadcast()
   }
 
-  def broadcast(): Unit ={
+  def rebroadcast(): Unit ={
     broadcastedEffectiveConf.destroy()
     broadcastedEffectiveConf = sqlContext.sparkContext.broadcast(_effectiveConf)
   }
 
-  val broadcastedHadoopConf = if (sqlContext!=null) sqlContext.sparkContext.broadcast(new SerializableWritable(this.sqlContext.sparkContext.hadoopConfiguration))
-  else null
+  val broadcastedHadoopConf =
+    if (sqlContext!=null) {
+      sqlContext.sparkContext.broadcast(
+        new SerializableWritable(this.sqlContext.sparkContext.hadoopConfiguration)
+      )
+    }
+    else null
 
   def hadoopConf: Configuration = broadcastedHadoopConf.value.value
 
@@ -70,9 +77,10 @@ case class SpookyContext private (
     this
   }
 
-  def getContextForNewInput = if (conf.shareMetrics) this
+  def getSpookyForInput = if (conf.shareMetrics) this
   else this.copy(metrics = new Metrics())
 
+  //TODO: move to DriverFactory.initializeDeploy
   private def deployPhantomJS(): Boolean = {
     val sc = sqlContext.sparkContext
     val phantomJSUrlOption = DriverFactories.PhantomJS.pathOptionFromEnv
@@ -104,15 +112,19 @@ case class SpookyContext private (
   object dsl extends Serializable {
 
     implicit def dataFrameToPageRowRDD(df: DataFrame): PageRowRDD = {
-      val self = new DataFrameView(df).toMapRDD.map {
+      val self: RDD[SquashedPageRow] = new DataFrameView(df).toMapRDD.map {
         map =>
-          PageRow(
+          SquashedPageRow(
             Option(ListMap(map.toSeq: _*))
               .getOrElse(ListMap())
-              .map(tuple => (Key(tuple._1), tuple._2))
+              .map(tuple => (Field(tuple._1), tuple._2))
           )
       }
-      new PageRowRDD(self, keys = ListSet(df.schema.fieldNames: _*).map(Key(_)), spooky = getContextForNewInput)
+      new PageRowRDD(
+        self,
+        schema = ListSet(df.schema.fieldNames: _*).map(Field(_)),
+        spooky = getSpookyForInput
+      )
     }
 
     //every input or noInput will generate a new metrics
@@ -134,19 +146,37 @@ case class SpookyContext private (
           val dataFrame = sqlContext.jsonRDD(jsonRDD)
           val self = canonRdd.map(
             map =>
-              PageRow(ListMap(map.map(tuple => (Key(tuple._1),tuple._2)).toSeq: _*), Array())
+              SquashedPageRow(ListMap(map.map(tuple => (Field(tuple._1),tuple._2)).toSeq: _*))
           )
-          new PageRowRDD(self, keys = ListSet(dataFrame.schema.fieldNames: _*).map(Key(_)), spooky = getContextForNewInput)
+          new PageRowRDD(
+            self,
+            schema = ListSet(dataFrame.schema.fieldNames: _*).map(Field(_)),
+            spooky = getSpookyForInput
+          )
         case _ =>
           val self = rdd.map{
             str =>
-              var cells = ListMap[KeyLike,Any]()
-              if (str!=null) cells = cells + (Key("_") -> str)
+              var cells = ListMap[Field,Any]()
+              if (str!=null) cells = cells + (Field("_") -> str)
 
-              PageRow(cells)
+              SquashedPageRow(cells)
           }
-          new PageRowRDD(self, keys = ListSet(Key("_")), spooky = getContextForNewInput)
+          new PageRowRDD(
+            self,
+            schema = ListSet(Field("_")),
+            spooky = getSpookyForInput
+          )
       }
     }
+  }
+
+  def createBeaconRDD[K: ClassTag,V: ClassTag](
+                                                ref: RDD[_],
+                                                partitionerFactory: RDD[_] => Partitioner = conf.defaultPartitionerFactory
+                                              ): RDD[(K,V)] = {
+    sparkContext
+      .emptyRDD[(K,V)]
+      .partitionBy(partitionerFactory(ref))
+      .persist(StorageLevel.MEMORY_ONLY)
   }
 }

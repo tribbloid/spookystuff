@@ -1,11 +1,10 @@
 package com.tribbloids.spookystuff
 
-import com.tribbloids.spookystuff.pages.Unstructured
-import org.apache.spark.sql.SQLContext
-import org.apache.spark.{SparkEnv, SparkConf, SparkContext}
-import org.scalatest.{Retries, BeforeAndAfter, BeforeAndAfterAll, FunSuite}
 import com.tribbloids.spookystuff.dsl.{DriverFactories, DriverFactory}
 import com.tribbloids.spookystuff.utils.{TestHelper, Utils}
+import org.apache.spark.sql.SQLContext
+import org.apache.spark.{SparkConf, SparkContext}
+import org.scalatest.{BeforeAndAfter, BeforeAndAfterAll, FunSuite, Retries}
 
 /**
  * Created by peng on 11/30/14.
@@ -32,11 +31,11 @@ abstract class SpookyEnvSuite extends FunSuite with BeforeAndAfter with BeforeAn
 
     sql = new SQLContext(sc)
 
-    val sConf = new SpookyConf(
+    val spookyConf = new SpookyConf(
       driverFactory = driverFactory
     )
 
-    spooky = new SpookyContext(sql, sConf)
+    spooky = new SpookyContext(sql, spookyConf)
 
     super.beforeAll()
   }
@@ -65,4 +64,7 @@ abstract class SpookyEnvSuite extends FunSuite with BeforeAndAfter with BeforeAn
       )
     )
   }
+
+  final val STATIC_WIKIPEDIA_URI = "http://tribbloid.github.io/spookystuff/test/Wikipedia.html"
+  final val REAL_WIKIPEDIA_URI = "http://www.wikipedia.org"
 }

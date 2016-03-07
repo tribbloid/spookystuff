@@ -31,7 +31,7 @@ object Yelp extends QueryCore {
         Wget('_)
       )
       .wgetExplore(S"a.page-option.prev-next:contains(→)", depthKey = 'page, maxDepth = 10, optimizer = Narrow)
-      .flatSelect(S"div.review", ordinalKey = 'row) (
+      .flatExtract(S"div.review", ordinalKey = 'row) (
         A"p.review_comment".text ~ 'comment,
         A"div.review-content span.rating-qualifier".text ~ 'date_status,
         A"div.biz-rating div div.rating-very-large meta".attr("content") ~ 'stars,

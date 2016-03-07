@@ -1,7 +1,7 @@
 package com.tribbloids.spookystuff.pipeline
 
 import com.tribbloids.spookystuff.SpookyContext
-import com.tribbloids.spookystuff.sparkbinding.PageRowRDD
+import com.tribbloids.spookystuff.rdd.PageRowRDD
 import org.apache.spark.ml.param.{ParamMap, Params}
 
 /**

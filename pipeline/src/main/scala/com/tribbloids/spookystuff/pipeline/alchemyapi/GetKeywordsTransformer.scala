@@ -2,9 +2,9 @@ package com.tribbloids.spookystuff.pipeline.alchemyapi
 
 import java.util.UUID
 
-import com.tribbloids.spookystuff.{SpookyContext, dsl}
 import com.tribbloids.spookystuff.pipeline.RemoteTransformer
-import com.tribbloids.spookystuff.sparkbinding.PageRowRDD
+import com.tribbloids.spookystuff.rdd.PageRowRDD
+import com.tribbloids.spookystuff.{SpookyContext, dsl}
 
 import scala.language.postfixOps
 
@@ -12,9 +12,9 @@ import scala.language.postfixOps
   * Created by peng on 15/11/15.
   */
 class GetKeywordsTransformer(
-                                    override val uid: String =
-                                    classOf[GetKeywordsTransformer].getCanonicalName + "_" + UUID.randomUUID().toString
-                                  ) extends RemoteTransformer {
+                              override val uid: String =
+                              classOf[GetKeywordsTransformer].getCanonicalName + "_" + UUID.randomUUID().toString
+                            ) extends RemoteTransformer {
 
   import dsl._
   import org.apache.spark.ml.param._
@@ -55,10 +55,10 @@ class GetKeywordsTransformer(
         x"http://access.alchemyapi.com/calls/text/TextGetRankedKeywords?apikey=${getOrDefault(APIKey)}&text=${getOrDefault(InputCol)}" +
           s"&keywordExtractMode=$mode&sentiment=$sentiment&outputMode=json&knowledgeGraph=0"
       )
-    .flatExtract(S \ "keywords")(
-      ('A \ "text" text) ~ getOrDefault(KeywordCol),
-      ('A \ "relevance" text) ~ getOrDefault(RelevanceCol),
-      ('A \ "sentiment" \ "score" text) ~ getOrDefault(SentimentCol)
-    )
+      .flatExtract(S \ "keywords")(
+        ('A \ "text" text) ~ getOrDefault(KeywordCol),
+        ('A \ "relevance" text) ~ getOrDefault(RelevanceCol),
+        ('A \ "sentiment" \ "score" text) ~ getOrDefault(SentimentCol)
+      )
   }
 }

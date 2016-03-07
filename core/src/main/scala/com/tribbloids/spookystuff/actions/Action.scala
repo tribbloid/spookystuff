@@ -13,10 +13,6 @@ import com.tribbloids.spookystuff.{SpookyContext, ActionException, Const}
 import scala.concurrent.duration.Duration
 
 /**
- * Created by peng on 04/06/14.
- */
-
-/**
  * These are the same actions a human would do to get to the data page,
  * their order of execution is identical to that they are defined.
  * Many supports **Cell Interpolation**: you can embed cell reference in their constructor
@@ -25,6 +21,8 @@ import scala.concurrent.duration.Duration
  * extends Product to make sure all subclasses are case classes
  */
 trait Action extends ActionLike {
+
+  override def children: Seq[Action] = Seq()
 
   private var timeElapsed: Long = -1 //only set once
 
@@ -39,7 +37,7 @@ trait Action extends ActionLike {
     catch {
       case e: Throwable =>
 
-        val message: String = getActionExceptionMessage(session)
+        val message: String = handleSessionException(session)
 
         val ex = e match {
           case ae: ActionException => ae
@@ -54,7 +52,7 @@ trait Action extends ActionLike {
     results
   }
 
-  def getActionExceptionMessage(session: Session): String = {
+  protected def handleSessionException(session: Session): String = {
     var message: String = "\n{"
 
     message += session.backtrace.map {
@@ -67,7 +65,6 @@ trait Action extends ActionLike {
     val errorDump: Boolean = session.spooky.conf.errorDump
     val errorDumpScreenshot: Boolean = session.spooky.conf.errorScreenshot
 
-    //TODO: this should be handled by implementations of action.
     session match {
       case d: DriverSession =>
         if (errorDump) {
@@ -83,7 +80,7 @@ trait Action extends ActionLike {
     message+"\n}"
   }
 
-  def errorDump(message: String, rawPage: Page, spooky: SpookyContext): String = {
+  protected def errorDump(message: String, rawPage: Page, spooky: SpookyContext): String = {
 
     val backtrace = if (rawPage.uid.backtrace.lastOption.exists(_ eq this)) rawPage.uid.backtrace
     else rawPage.uid.backtrace :+ this
@@ -91,7 +88,7 @@ trait Action extends ActionLike {
     val page = rawPage.copy(uid = uid)
     try {
       page.errorDump(spooky)
-      "snapshot saved to: " + page.saved
+      "saved to: " + page.saved.last
     }
     catch {
       case e: Throwable =>
@@ -122,7 +119,9 @@ trait Action extends ActionLike {
     }
   }
 
-  def doExe(session: Session): Seq[Fetched]
+  protected def doExe(session: Session): Seq[Fetched]
+
+  def andThen(f: Seq[Fetched] => Seq[Fetched]): Action = AndThen(this, f)
 
   override def injectFrom(same: ActionLike): Unit = {
     super.injectFrom(same)
