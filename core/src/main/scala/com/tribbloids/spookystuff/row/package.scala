@@ -1,32 +1,23 @@
 package com.tribbloids.spookystuff
 
-import com.tribbloids.spookystuff.actions._
-import com.tribbloids.spookystuff.pages.PageUID
+import com.tribbloids.spookystuff.pages.Fetched
 import org.apache.spark.rdd.RDD
-
-import scala.collection.immutable.ListMap
 
 /**
  * Created by peng on 2/21/15.
  */
 package object row {
 
-  type SortKey = Key with SortKeyMixin
+  type PageRow = (DataRow, Seq[Fetched])
 
-  type OrdinalKey = Key with OrdinalKeyMixin
+  type SquashedRowRDD = RDD[SquashedPageRow]
 
-  type DepthKey = Key with DepthKeyMixin
+  type Sampler[T] = Iterable[(T, Int)] => Iterable[(T, Int)] //with index
 
-  type HiddenKey = Key with HiddenKeyMixin
+  type RowReducer = (Iterable[DataRow], Iterable[DataRow]) => Iterable[DataRow]
 
-  type DataRow =  ListMap[KeyLike, Any]
+  type RowOrdering = Ordering[Iterable[DataRow]]
 
-  type SegID = Long
-  type RowUID = (Seq[PageUID], SegID)
-
-  type SquashedRow = Squashed[PageRow]
-
-  type WebCacheRow = (DryRun, SquashedRow)
-
-  type WebCacheRDD = RDD[WebCacheRow]
+  // f(open, visited) => open
+  type RowEliminator = (Iterable[DataRow], Iterable[DataRow]) => Iterable[DataRow]
 }

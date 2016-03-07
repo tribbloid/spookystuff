@@ -17,7 +17,7 @@ object FoodPoco extends QueryCore {
         Wget("http://cd.food.poco.cn/restaurant/res_search.php?sp_id=107001&reslocateID=101022001&reslocateID1=&reslocateID2=&seatxt=%BB%F0%B9%F8&%CC%E1%BD%BB=%CB%D1+%CB%F7")
       )
       .wgetExplore(S"div.pag a[title=下一页]", depthKey = 'page)
-      .flatSelect(S("div.page_content"))(
+      .flatExtract(S("div.page_content"))(
         A("h2 a").text ~ 'name,
         A("div.pa_text").text ~ 'info,
         A("div.page_aq").text ~ 'avg_price_per_capita,
@@ -31,7 +31,7 @@ object FoodPoco extends QueryCore {
         "comment" ~ 'type,
         S.uri ~ 'uri
       )
-      .flatSelect(S("div#food_comment_list ul.text_con"), ordinalKey = 'commentRow)(
+      .flatExtract(S("div#food_comment_list ul.text_con"), ordinalKey = 'commentRow)(
         A("div#res_cmts_content").text ~ 'comment,
         A("li.ph_text p img").attrs("alt").mkString("|") ~ 'user_ratings,
         A("li.ph_tag p").text ~ 'user,
@@ -44,7 +44,7 @@ object FoodPoco extends QueryCore {
         "review" ~ 'type,
         S.uri ~ 'uri
       )
-      .flatSelect(S("li.text"), ordinalKey = 'commentRow)(
+      .flatExtract(S("li.text"), ordinalKey = 'commentRow)(
         A("div.title a").text ~ 'title,
         A("p.lh18").text ~ 'comment,
         A("p.lh20 a").text ~ 'user,

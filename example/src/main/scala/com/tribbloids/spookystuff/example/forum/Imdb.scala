@@ -16,7 +16,7 @@ object Imdb extends QueryCore {
       .fetch(
         Wget("http://www.imdb.com/chart")
       )
-      .flatSelect(S("div#boxoffice tbody tr"))(
+      .flatExtract(S("div#boxoffice tbody tr"))(
         A"tr td.titleColumn".ownText.replaceAll("\"","").trim ~ 'rank,
         A"tr td.titleColumn a".text ~ 'name,
         A("tr td.titleColumn span").text ~ 'year,
@@ -32,7 +32,7 @@ object Imdb extends QueryCore {
       )
       .wgetJoin(S("div#maindetails_quicklinks a:contains(Reviews)")) //go to review pages, e.g. http://www.imdb.com/title/tt2015381/reviews?ref_=tt_urv
       .wgetExplore(S"div#tn15content a:has(img[alt~=Next])", depthKey = 'page, optimizer = Narrow) //grab all pages by using the right arrow button.
-      .flatSelect(S("div#tn15content div:has(h2)"))(
+      .flatExtract(S("div#tn15content div:has(h2)"))(
         A("img[alt]").attr("alt") ~ 'review_rating,
         A("h2").text ~ 'review_title,
         A("small").text ~ 'review_meta

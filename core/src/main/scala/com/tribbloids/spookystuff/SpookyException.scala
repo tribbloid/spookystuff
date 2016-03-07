@@ -34,13 +34,6 @@ class RemoteDisabledException(
 
 }
 
-class DocumentFilterException(
-                             override val message: String = "",
-                             override val cause: Throwable = null
-                             ) extends ActionException(message, cause) {
-
-}
-
 class DFSReadException(
                         override val message: String = "",
                         override val cause: Throwable = null

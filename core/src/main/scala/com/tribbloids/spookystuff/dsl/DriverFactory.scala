@@ -107,7 +107,7 @@ object DriverFactories {
 
       result.setCapability(PhantomJSDriverService.PHANTOMJS_PAGE_SETTINGS_PREFIX+"resourceTimeout", spooky.conf.remoteResourceTimeout.toMillis)
 
-      val userAgent = spooky.conf.userAgent
+      val userAgent = spooky.conf.userAgentFactory
       if (userAgent != null) result.setCapability(PhantomJSDriverService.PHANTOMJS_PAGE_SETTINGS_PREFIX + "userAgent", userAgent)
 
       val proxy = spooky.conf.proxy()
@@ -138,7 +138,7 @@ object DriverFactories {
     def newCap(capabilities: Capabilities, spooky: SpookyContext): DesiredCapabilities = {
       val result = new DesiredCapabilities(baseCaps)
 
-      val userAgent = spooky.conf.userAgent
+      val userAgent = spooky.conf.userAgentFactory
       //TODO: this is useless, need custom BrowserVersion
       //see http://stackoverflow.com/questions/12853715/setting-user-agent-for-htmlunitdriver-selenium
       if (userAgent != null) result.setCapability(PhantomJSDriverService.PHANTOMJS_PAGE_SETTINGS_PREFIX + "userAgent", userAgent)

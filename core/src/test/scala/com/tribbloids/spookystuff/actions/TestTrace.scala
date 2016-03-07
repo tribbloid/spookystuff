@@ -3,46 +3,13 @@ package com.tribbloids.spookystuff.actions
 import com.tribbloids.spookystuff.SpookyEnvSuite
 import com.tribbloids.spookystuff.pages.Page
 
-/**
- * Created by peng on 05/06/14.
- */
-
-//TODO: this need some serious reorganization
 class TestTrace extends SpookyEnvSuite {
 
   import com.tribbloids.spookystuff.dsl._
 
   import scala.concurrent.duration._
 
-  test("resolve") {
-    val results = (
-      Visit("http://www.wikipedia.org") ::
-        WaitFor("input#searchInput").in(40.seconds) ::
-        Snapshot().as('A) ::
-        TextInput("input#searchInput","Deep learning") ::
-        Submit("button.formBtn") ::
-        Snapshot().as('B) :: Nil
-    ).fetch(spooky)
-
-    val resultsList = results
-    assert(resultsList.length === 2)
-    val res1 = resultsList.head.asInstanceOf[Page]
-    val res2 = resultsList(1).asInstanceOf[Page]
-
-    val id1 = Visit("http://www.wikipedia.org") :: WaitFor("input#searchInput") :: Snapshot().as('C) :: Nil
-    assert(res1.uid.backtrace === id1)
-    assert(res1.code.get.split('\n').map(_.trim).mkString.contains("<title>Wikipedia</title>"))
-    assert(res1.uri contains "//www.wikipedia.org")
-    assert(res1.name === "A")
-
-    val id2 = Visit("http://www.wikipedia.org") :: WaitFor("input#searchInput") :: TextInput("input#searchInput", "Deep learning") :: Submit("button.formBtn") :: Snapshot().as('D) :: Nil
-    assert(res2.uid.backtrace === id2)
-    assert(res2.code.get.split('\n').map(_.trim).mkString.contains("<title>Deep learning - Wikipedia, the free encyclopedia</title>"))
-    assert(res2.uri contains "//en.wikipedia.org/wiki/Deep_learning")
-    assert(res2.name === "B")
-  }
-
-  test("inject") {
+  test("inject output names") {
 
     val t1 = (
       Visit("http://webscraper.io/test-sites/e-commerce/ajax/computers/laptops")
@@ -52,7 +19,7 @@ class TestTrace extends SpookyEnvSuite {
           +> Delay(2.seconds)
           +> Snapshot() ~'b
       ):: Nil
-    )
+      )
 
     val t2 = (
       Visit("http://webscraper.io/test-sites/e-commerce/ajax/computers/laptops")
@@ -62,7 +29,7 @@ class TestTrace extends SpookyEnvSuite {
           +> Delay(2.seconds)
           +> Snapshot() ~'d
       ):: Nil
-    )
+      )
 
     t1.injectFrom(t2.asInstanceOf[t1.type ])
 
@@ -78,5 +45,66 @@ class TestTrace extends SpookyEnvSuite {
     val dry2 = (Delay(10.seconds) +> OAuthV2(Wget("http://dum.my"))).head.dryrun
     assert(dry2.size == 1)
     assert(dry2.head == Seq(OAuthV2(Wget("http://dum.my"))))
+  }
+
+  test("Trace.correct should not modify empty Trace") {
+
+    assert(TraceView(List[Action]()).correct == List[Action]())
+  }
+
+  test("Trace.correct should append Snapshot to non-empty Trace that doesn't end with Export OR Block") {
+
+    val trace = List(
+      Visit("dummy"),
+      Snapshot() ~ 'A,
+      Click("dummy")
+    )
+
+    assert(trace.correct == trace :+ Snapshot())
+  }
+
+  test("Trace.correct should append Snapshot to non-empty Trace that has no output") {
+
+    val trace = List(
+      Visit("dummy"),
+      Snapshot() ~ 'A,
+      Loop(
+        TextInput("dummy", 'dummy) +>
+          Click("dummy")
+      )
+    )
+
+    assert(trace.correct == trace :+ Snapshot())
+  }
+
+  test("TraceView.toString should have identations of TreeNode") {
+    import com.tribbloids.spookystuff.dsl._
+
+    val traces: Set[Trace] = (
+      Visit(STATIC_WIKIPEDIA_URI)
+        +> Click("dummy")
+        +> Snapshot()
+        +> Loop(
+        Click("next")
+          +> TextInput("box", "something")
+          +> Snapshot()
+          +> If(
+          {v: Page => v.uri startsWith "http" },
+          Click("o1")
+            +> TextInput("box1", "something1")
+            +> Snapshot(),
+          Click("o2")
+            +> TextInput("box2", "something2")
+            +> Snapshot()
+        )
+      )
+      )
+
+    traces.foreach{
+      trace =>
+        val view = TraceView(trace)
+        println(view.toString)
+        assert(view.toString contains "\n")
+    }
   }
 }

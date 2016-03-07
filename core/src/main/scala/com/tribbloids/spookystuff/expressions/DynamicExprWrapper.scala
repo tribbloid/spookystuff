@@ -37,6 +37,6 @@ class DynamicExprWrapper[+T](val self: Expression[T]) extends Serializable with 
     val argStr = argNames.mkString(",")
     val resultName = self.name + "." + methodName + "(" + argStr + ")"
 
-    ExpressionLike(resultFn, resultName)
+    ExpressionLike(resultFn, self.field.copy(name = resultName))
   }
 }

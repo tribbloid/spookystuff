@@ -1,13 +1,30 @@
 package com.tribbloids.spookystuff
 
 import com.tribbloids.spookystuff.actions._
-import com.tribbloids.spookystuff.row.Key
-import dsl._
+import com.tribbloids.spookystuff.dsl._
+import com.tribbloids.spookystuff.row.Field
 
-/**
- * Created by peng on 3/29/15.
- */
 class TestSpookyContext extends SpookyEnvSuite{
+
+  test("SpookyContext should be Serializable") {
+
+    val spooky = this.spooky
+    val src = spooky.sqlContext.sparkContext.parallelize(1 to 10)
+
+    val res = src.map {
+      v => spooky.hashCode() + v
+    }.reduce(_ + _)
+  }
+
+  test("SpookyContext.dsl should be Serializable") {
+
+    val spooky = this.spooky
+    val src = spooky.sqlContext.sparkContext.parallelize(1 to 10)
+
+    val res = src.map {
+      v => spooky.dsl.hashCode() + v
+    }.reduce(_ + _)
+  }
 
   test("derived instances of a SpookyContext should have the same configuration") {
 
@@ -44,14 +61,15 @@ class TestSpookyContext extends SpookyEnvSuite{
 
     val rdd1 = spooky
       .fetch(
-        Wget("http://www.wikipedia.org")
+        Wget(STATIC_WIKIPEDIA_URI)
       )
     rdd1.count()
 
     val rdd2 = spooky
       .fetch(
-        Wget("http://en.wikipedia.org")
+        Wget(STATIC_WIKIPEDIA_URI)
       )
+      
     rdd2.count()
 
     assert(rdd1.spooky.metrics !== rdd2.spooky.metrics)
@@ -84,8 +102,8 @@ class TestSpookyContext extends SpookyEnvSuite{
     val spooky = this.spooky
     val rows = spooky.create(Seq("a", "b"))
 
-    val data = rows.collect().map(_.dataRow).toList
-    assert(data == List(Map(Key("_") -> "a"), Map(Key("_") -> "b")))
+    val data = rows.collect().flatMap(_.dataRows).map(_.values).toList
+    assert(data == List(Map(Field("_") -> "a"), Map(Field("_") -> "b")))
   }
 
   test("can create PageRow from map[String, String]") {
@@ -93,8 +111,8 @@ class TestSpookyContext extends SpookyEnvSuite{
     val spooky = this.spooky
     val rows = spooky.create(Seq(Map("1" -> "a"), Map("2" -> "b")))
 
-    val data = rows.collect().map(_.dataRow).toList
-    assert(data == List(Map(Key("1") -> "a"), Map(Key("2") -> "b")))
+    val data = rows.collect().flatMap(_.dataRows).map(_.values).toList
+    assert(data == List(Map(Field("1") -> "a"), Map(Field("2") -> "b")))
   }
 
   test("can create PageRow from map[Symbol, String]") {
@@ -102,8 +120,8 @@ class TestSpookyContext extends SpookyEnvSuite{
     val spooky = this.spooky
     val rows = spooky.create(Seq(Map('a1 -> "a"), Map('a2 -> "b")))
 
-    val data = rows.collect().map(_.dataRow).toList
-    assert(data == List(Map(Key("a1") -> "a"), Map(Key("a2") -> "b")))
+    val data = rows.collect().flatMap(_.dataRows).map(_.values).toList
+    assert(data == List(Map(Field("a1") -> "a"), Map(Field("a2") -> "b")))
   }
 
   test("can create PageRow from map[Int, String]") {
@@ -111,8 +129,8 @@ class TestSpookyContext extends SpookyEnvSuite{
     val spooky = this.spooky
     val rows = spooky.create(Seq(Map(1 -> "a"), Map(2 -> "b")))
 
-    val data = rows.collect().map(_.dataRow).toList
-    assert(data == List(Map(Key("1") -> "a"), Map(Key("2") -> "b")))
+    val data = rows.collect().flatMap(_.dataRows).map(_.values).toList
+    assert(data == List(Map(Field("1") -> "a"), Map(Field("2") -> "b")))
   }
 
   test("default SpookyContext should have default dir configs") {

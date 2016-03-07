@@ -3,9 +3,10 @@ package com.tribbloids.spookystuff
 import java.util.Date
 
 import com.tribbloids.spookystuff.dsl._
-import com.tribbloids.spookystuff.expressions.{CacheFilePath, PageFilePath}
-import com.tribbloids.spookystuff.session.OAuthKeys
-import org.apache.spark.{SparkContext, SparkConf}
+import com.tribbloids.spookystuff.expressions.{ByTrace, ByPage}
+import com.tribbloids.spookystuff.row.Sampler
+import com.tribbloids.spookystuff.session.{OAuthKeys, ProxySetting}
+import org.apache.spark.{Partitioner, SparkConf, SparkContext}
 import org.apache.spark.rdd.RDD
 import org.apache.spark.storage.StorageLevel
 
@@ -16,7 +17,7 @@ object SpookyConf {
   private def getDefault(
                           property: String,
                           backup: String = null
-                          )(implicit conf: SparkConf): String = {
+                        )(implicit conf: SparkConf): String = {
     val env = property.replace('.','_').toUpperCase
 
     conf.getOption(property)
@@ -31,23 +32,23 @@ object SpookyConf {
 }
 
 /**
- * Created by peng on 12/06/14.
- * will be shipped to workers
- */
-//TODO: is var in serialized closure unstable for Spark production environment? consider changing to ConcurrentHashMap or merge with SparkConf
+  * Created by peng on 12/06/14.
+  * will be shipped to workers
+  */
+//TODO: is var in serialized closure unstable for Spark production environment? consider changing to ConcurrentHashMap
 class SpookyConf (
                    val dirs: DirConf = new DirConf(),
 
                    var shareMetrics: Boolean = false, //TODO: not necessary
 
-                   //TODO: 3 of the following functions can be changed to Expressions
                    var driverFactory: DriverFactory = DriverFactories.PhantomJS(),
 
-                   var proxy: ProxyFactory = ProxyFactories.NoProxy,
+                   var proxy: () => ProxySetting = ProxyFactories.NoProxy,
                    //                   var userAgent: ()=> String = () => null,
-                   var userAgent: ()=> String = () => "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/37.0.2062.120 Safari/537.36",
-                   var headers: ()=> Map[String, String] = () => Map(),
-                   var oAuthKeys: () => OAuthKeys = () => null,
+                   var userAgentFactory: () => String =
+                   () => "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/37.0.2062.120 Safari/537.36",
+                   var headersFactory: () => Map[String, String] = () => Map(),
+                   var oAuthKeysFactory: () => OAuthKeys = () => null,
 
                    val browserResolution: (Int, Int) = (1920, 1080),
 
@@ -61,33 +62,34 @@ class SpookyConf (
                    var pageExpireAfter: Duration = 7.day,
                    var pageNotExpiredSince: Option[Date] = None,
 
-                   var cachePath: CacheFilePath[String] = CacheFilePaths.Hierarchical,
-                   var autoSavePath: PageFilePath[String] = PageFilePaths.UUIDName(CacheFilePaths.Hierarchical),
-                   var errorDumpPath: PageFilePath[String] = PageFilePaths.UUIDName(CacheFilePaths.Hierarchical),
+                   var cacheFilePath: ByTrace[String] = FilePaths.Hierarchical,
+                   var autoSaveFilePath: ByPage[String] = FilePaths.UUIDName(FilePaths.Hierarchical),
+                   var errorDumpFilePath: ByPage[String] = FilePaths.UUIDName(FilePaths.Hierarchical),
 
-                   var defaultParallelism: RDD[_] => Int = Parallelism.PerCore(8),
+                   var defaultPartitionerFactory: RDD[_] => Partitioner = PartitionerFactories.SameParallelism,
 
                    var remoteResourceTimeout: Duration = 60.seconds,
                    var DFSTimeout: Duration = 40.seconds,
 
                    var failOnDFSError: Boolean = false,
 
-                   val defaultJoinType: JoinType = LeftOuter,
+                   val defaultJoinType: JoinType = Inner,
 
-                   //default max number of elements scraped from a page, set to Int.MaxValue to allow unlimited fetch
-                   var maxJoinOrdinal: Int = Int.MaxValue,
-                   var maxExploreDepth: Int = Int.MaxValue,
+                   var defaultFlattenSampler: Sampler[Any] = identity,
+                   var defaultJoinSampler: Sampler[Any] = identity, //join takes remote actions and cost much more than flatten.
+                   var defaultExploreRange: Range = 0 until Int.MaxValue,
 
-                   var defaultQueryOptimizer: QueryOptimizer = Wide,
+                   var defaultFetchOptimizer: FetchOptimizer = FetchOptimizers.Wide,
+                   var defaultExploreAlgorithm: ExploreAlgorithm = ExploreAlgorithms.ShortestPath,
 
-                   var checkpointInterval: Int = 100,
+                   var checkpointInterval: Int = -1, //disabled if <=0
 
-                   //TODO: if encounter too many out of memory error, change to MEMORY_AND_DISK_SER
+                   //if encounter too many out of memory error, change to MEMORY_AND_DISK_SER
                    var defaultStorageLevel: StorageLevel = StorageLevel.MEMORY_ONLY,
 
                    var alwaysDownloadBrowserRemotely: Boolean = false //mostly for testing
 
-                   ) extends Serializable {
+                 ) extends Serializable {
 
   def importFrom(sparkContext: SparkContext): SpookyConf = importFrom(sparkContext.getConf)
 
@@ -99,6 +101,7 @@ class SpookyConf (
     val localRoot = Option(this.dirs.root).getOrElse(SpookyConf.getDefault("spooky.dirs.root.local", "temp"))
     //    def localRoot_/(subdir: String) = Utils.uriSlash(root) + subdir
 
+    //TODO: use Java reflection to generalize system property/variable override rules
     val dirs = new DirConf(
       root,
       localRoot,
@@ -119,9 +122,9 @@ class SpookyConf (
       this.driverFactory,
       this.proxy,
       //                   var userAgent: ()=> String = () => null,
-      this.userAgent,
-      this.headers,
-      this.oAuthKeys,
+      this.userAgentFactory,
+      this.headersFactory,
+      this.oAuthKeysFactory,
 
       this.browserResolution,
 
@@ -135,11 +138,11 @@ class SpookyConf (
       this.pageExpireAfter,
       this.pageNotExpiredSince,
 
-      this.cachePath,
-      this.autoSavePath,
-      this.errorDumpPath,
+      this.cacheFilePath,
+      this.autoSaveFilePath,
+      this.errorDumpFilePath,
 
-      this.defaultParallelism,
+      this.defaultPartitionerFactory,
 
       this.remoteResourceTimeout,
       this.DFSTimeout,
@@ -149,14 +152,19 @@ class SpookyConf (
       this.defaultJoinType,
 
       //default max number of elements scraped from a page, set to Int.MaxValue to allow unlimited fetch
-      this.maxJoinOrdinal,
-      this.maxExploreDepth,
+      this.defaultFlattenSampler,
+      this.defaultJoinSampler,
 
-      this.defaultQueryOptimizer,
+      this.defaultExploreRange,
+
+      this.defaultFetchOptimizer,
+      this.defaultExploreAlgorithm,
 
       this.checkpointInterval,
 
-      this.defaultStorageLevel
+      this.defaultStorageLevel,
+
+      this.alwaysDownloadBrowserRemotely
     )
   }
 

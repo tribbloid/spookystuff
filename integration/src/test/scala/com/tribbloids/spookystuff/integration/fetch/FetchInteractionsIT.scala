@@ -3,63 +3,70 @@ package com.tribbloids.spookystuff.integration.fetch
 import java.net.URLEncoder
 
 import com.tribbloids.spookystuff.SpookyContext
-import com.tribbloids.spookystuff.actions._
+import com.tribbloids.spookystuff.actions.{DropDownSelect, Submit, TextInput, _}
 import com.tribbloids.spookystuff.dsl._
 import com.tribbloids.spookystuff.integration.IntegrationSuite
 
 /**
- * Created by peng on 12/14/14.
- */
+  * Created by peng on 12/14/14.
+  */
 class FetchInteractionsIT extends IntegrationSuite{
+
+  import com.tribbloids.spookystuff.utils.Views._
 
   override def doMain(spooky: SpookyContext): Unit = {
 
+    val chain = (
+      Visit("http://www.wikipedia.org")
+        +> TextInput("input#searchInput","深度学习")
+        +> DropDownSelect("select#searchLanguage","zh")
+        +> Submit("button.pure-button")
+      )
+
+
     val RDD = spooky
       .fetch(
-        Visit("http://www.wikipedia.org")
-          +> TextInput("input#searchInput","深度学习")
-          +> DropDownSelect("select#searchLanguage","zh")
-          +> Submit("button.formBtn")
-      ).persist()
+        chain
+      )
+      .persist()
 
-    val pageRows = RDD.collect()
+    val pageRows = RDD.unsquashedRDD.collect()
 
     val finishTime = System.currentTimeMillis()
     assert(pageRows.length === 1)
-    assert(pageRows(0).pages.length === 1)
-    val uri = pageRows(0).pages(0).uri
+    assert(pageRows(0).pages.size === 1)
+    val uri = pageRows(0).pages.head.uri
     assert((uri endsWith "zh.wikipedia.org/wiki/深度学习") || (uri endsWith "zh.wikipedia.org/wiki/"+URLEncoder.encode("深度学习", "UTF-8")))
-    assert(pageRows(0).pages(0).name === "Snapshot(MustHaveTitle,null)")
-    val pageTime = pageRows(0).pages.head.timestamp.getTime
+    assert(pageRows(0).pages.head.name === Snapshot(DocumentFilters.MustHaveTitle).toString)
+    val pageTime = pageRows(0).pageLikes.head.timestamp.getTime
     assert(pageTime < finishTime)
     assert(pageTime > finishTime-120000) //long enough even after the second time it is retrieved from s3 cache
 
     Thread.sleep(10000) //this delay is necessary to circumvent eventual consistency of HDFS-based cache
 
-    val RDDAppended = RDD
+    val RDD2 = RDD
       .fetch(
-        Visit("http://www.wikipedia.org")
-          +> TextInput("input#searchInput","深度学习")
-          +> DropDownSelect("select#searchLanguage","zh")
-          +> Submit("button.formBtn")
-          +> Snapshot().as('b),
-        joinType = Append
+        chain
+          +> Snapshot() ~ 'b
       )
 
-    val appendedRows = RDDAppended.collect()
+    val unionRDD = RDD.union(RDD2)
+    val unionRows = unionRDD.unsquashedRDD.collect()
 
-    assert(appendedRows.length === 2)
-    assert(appendedRows(0).pages(0).copy(timestamp = null, content = null, saved = null)
-      === appendedRows(1).pages(0).copy(timestamp = null, content = null, saved = null))
+    assert(unionRows.length === 2)
+    assert(
+      unionRows(0).pages.head.copy(timestamp = null, content = null, saved = null)
+        === unionRows(1).pages.head.copy(timestamp = null, content = null, saved = null)
+    )
 
-    assert(appendedRows(0).pages(0).timestamp === appendedRows(1).pages(0).timestamp)
-    assert(appendedRows(0).pages(0).content === appendedRows(1).pages.apply(0).content)
-    assert(appendedRows(0).pages(0).name === "Snapshot(MustHaveTitle,null)")
-    assert(appendedRows(1).pages(0).name === "b")
+    assert(unionRows(0).pages.head.timestamp === unionRows(1).pages.head.timestamp)
+    assert(unionRows(0).pages.head.content === unionRows(1).pages.head.content)
+    assert(unionRows(0).pages.head.name === Snapshot(DocumentFilters.MustHaveTitle).toString)
+    assert(unionRows(1).pages.head.name === "b")
   }
 
   override def numFetchedPages ={
-    case Wide_RDDWebCache => 1
+//    case WebCacheAware => 1
     case _ => 2
   }
 }

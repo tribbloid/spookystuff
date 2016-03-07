@@ -24,7 +24,7 @@
 //      )
 //
 //    val result = base
-//      .explore($"div.sidebar-nav a", depthKey = 'depth, ordinalKey = 'i1)(
+//      .explore($"div.sidebar-nav a", depthField = 'depth, ordinalField = 'i1)(
 //        Visit('A.href)
 //          +> Loop(
 //          Click("a.btn") :: Delay(2.seconds) :: Nil

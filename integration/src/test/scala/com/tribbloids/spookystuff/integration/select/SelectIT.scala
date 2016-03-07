@@ -7,9 +7,6 @@ import com.tribbloids.spookystuff.dsl._
 import com.tribbloids.spookystuff.integration.IntegrationSuite
 import com.tribbloids.spookystuff.{QueryException, SpookyContext}
 
-/**
- * Created by peng on 11/26/14.
- */
 class SelectIT extends IntegrationSuite {
 
   override def doMain(spooky: SpookyContext) {

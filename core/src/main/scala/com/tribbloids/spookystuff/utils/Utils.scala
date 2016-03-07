@@ -11,14 +11,12 @@ import scala.concurrent.duration._
 import scala.concurrent.{Await, Future}
 import scala.language.implicitConversions
 import scala.reflect.ClassTag
-import scala.util.{Failure, Random, Success, Try}
 import scala.xml.PrettyPrinter
 
-/**
- * Created by peng on 06/08/14.
- */
 object Utils {
 
+  import Views._
+  import scala.reflect.runtime.universe._
 
   val xmlPrinter = new PrettyPrinter(Int.MaxValue, 2)
 //  val logger = LoggerFactory.getLogger(this.getClass)
@@ -26,15 +24,15 @@ object Utils {
   // Returning T, throwing the exception on failure
   @annotation.tailrec
   def retry[T](n: Int)(fn: => T): T = {
-    Try { fn } match {
-      case Success(x) =>
+    util.Try { fn } match {
+      case util.Success(x) =>
         x
-      case Failure(e) if n > 1 =>
+      case util.Failure(e) if n > 1 =>
         val logger = LoggerFactory.getLogger(this.getClass)
         logger.warn(s"Retrying locally on ${e.getClass.getSimpleName}... ${n-1} time(s) left")
         logger.info("\t\\-->", e)
         retry(n - 1)(fn)
-      case Failure(e) =>
+      case util.Failure(e) =>
         throw e
     }
   }
@@ -47,7 +45,7 @@ object Utils {
 
   //  def retryWithDeadline[T](n: Int, t: Duration)(fn: => T): T = retry(n){withDeadline(t){fn}}
 
-  @transient lazy val random = new Random()
+  @transient lazy val random = new util.Random()
 
   def uriConcat(parts: String*): String = {
     var result = ""
@@ -160,11 +158,25 @@ These special characters are often called "metacharacters".
     else Serialization.write(obj)(Const.jsonFormats)
   }
 
-  def encapsulateAsIterable(obj: Any): Iterable[Any] = obj match {
-    case v: TraversableOnce[_] => v.toIterable
-    case v: Array[_] => v
-    case v: Any => Iterable(v)
-    case _ => Nil
+  //TODO: move to class & try @Specialized?
+  def asArray[T <: Any : ClassTag](obj: Any): Array[T] = {
+
+    obj match {
+      case v: TraversableOnce[Any] => v.toArray.filterByType[T]
+      case v: Array[T] => v.filterByType[T]
+      case v: T => Array[T](v)
+      case _ => Array[T]()
+    }
+  }
+
+  def asIterable[T <: Any : ClassTag](obj: Any): Iterable[T] = {
+
+    obj match {
+      case v: TraversableOnce[Any] => v.toIterable.filterByType[T].get
+      case v: Array[T] => v.filterByType[T].toIterable
+      case v: T => Iterable[T](v)
+      case _ => Iterable[T]()
+    }
   }
 
   def validateLocalPath(path: String): Option[String] = {
@@ -184,4 +196,32 @@ These special characters are often called "metacharacters".
     assert(element.hashCode() == element2.hashCode())
     assert(element.toString == element2.toString)
   }
+
+  //TODO: need test
+  def javaUnbox(boxed: Any): Any = {
+    boxed match {
+      case n: java.lang.Byte =>
+        n.byteValue()
+      case n: java.lang.Short =>
+        n.shortValue()
+      case n: Character =>
+        n.charValue()
+      case n: Integer =>
+        n.intValue()
+      case n: java.lang.Long =>
+        n.longValue()
+      case n: java.lang.Float =>
+        n.floatValue()
+      case n: java.lang.Double =>
+        n.doubleValue()
+      case n: java.lang.Boolean =>
+        n.booleanValue()
+      case o @_ =>
+        o
+    }
+  }
+
+  def classAccessors[T: TypeTag]: List[MethodSymbol] = typeOf[T].members.collect {
+    case m: MethodSymbol if m.isCaseAccessor => m
+  }.toList
 }

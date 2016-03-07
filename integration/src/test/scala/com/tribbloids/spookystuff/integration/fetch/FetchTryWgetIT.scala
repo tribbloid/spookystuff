@@ -18,6 +18,7 @@ class FetchTryWgetIT extends UncacheableIntegrationSuite {
   override def doMain(spooky: SpookyContext) {
 
     import spooky.dsl._
+    import com.tribbloids.spookystuff.utils.Views._
 
     val RDD = sc.parallelize(Seq("http://malformed uri"))
       .fetch(
@@ -26,7 +27,7 @@ class FetchTryWgetIT extends UncacheableIntegrationSuite {
       .select(S.code ~ 'page)
       .persist()
     //
-    assert(RDD.first().getOnlyPage.isEmpty)
+    assert(RDD.unsquashedRDD.first().getOnlyPage.isEmpty)
 
     val pageRows = RDD.toStringRDD('page).collect()
     assert(pageRows sameElements Array(null))

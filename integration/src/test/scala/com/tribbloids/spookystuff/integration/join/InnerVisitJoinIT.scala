@@ -1,14 +1,11 @@
 package com.tribbloids.spookystuff.integration.join
 
 import com.tribbloids.spookystuff.SpookyContext
-import com.tribbloids.spookystuff.actions.{Action, Wget, Visit}
+import com.tribbloids.spookystuff.actions.{Action, Visit}
 import com.tribbloids.spookystuff.dsl._
 import com.tribbloids.spookystuff.expressions.Expression
 import com.tribbloids.spookystuff.integration.IntegrationSuite
 
-/**
- * Created by peng on 12/5/14.
- */
 class InnerVisitJoinIT extends IntegrationSuite {
 
   override lazy val drivers = Seq(
@@ -25,21 +22,21 @@ class InnerVisitJoinIT extends IntegrationSuite {
       )
 
     val joined = base
-      .join(S"div.sidebar-nav a", ordinalKey = 'i1)(
-        getPage('A.href),
-        joinType = Inner,
-        flattenPagesOrdinalKey = 'page
-      )(
+      .join(S"div.sidebar-nav a", Inner, ordinalField = 'i1)(
+        getPage('A.href)
+      )
+      .extract(
+        G ~+ 'page,
         'A.text ~ 'category
       )
-      .join(S"a.subcategory-link", ordinalKey = 'i2)(
-        getPage('A.href),
-        joinType = Inner
-      )(
+      .join(S"a.subcategory-link", Inner, ordinalField = 'i2)(
+        getPage('A.href)
+      )
+      .extract(
         'A.text ~ 'subcategory
       )
-      .select(S"h1".text ~ 'header)
-      .flatSelect(S"notexist", ordinalKey = 'notexist_key)( //this is added to ensure that temporary joinKey in KV store won't be used.
+      .extract(S"h1".text ~ 'header)
+      .flatSelect(S"notexist", ordinalField = 'notexist_key)( //this is added to ensure that temporary joinKey in KV store won't be used.
         'A.attr("class") ~ 'notexist_class
       )
 
@@ -71,7 +68,7 @@ class InnerVisitJoinIT extends IntegrationSuite {
   }
 
   override def numFetchedPages = {
-    case Wide_RDDWebCache => 6
+//    case FetchOptimizers.WebCacheAware => 6
     case _ => 7
   }
 }

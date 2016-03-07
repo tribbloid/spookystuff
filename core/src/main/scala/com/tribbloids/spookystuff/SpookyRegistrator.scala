@@ -5,8 +5,8 @@ import java.util.concurrent.TimeUnit
 
 import com.esotericsoftware.kryo.Kryo
 import com.tribbloids.spookystuff.dsl._
-import com.tribbloids.spookystuff.row.{ExploreStage, PageRow}
 import com.tribbloids.spookystuff.pages._
+import com.tribbloids.spookystuff.row.PageRow
 import org.apache.spark.SerializableWritable
 import org.apache.spark.serializer.KryoRegistrator
 
@@ -31,7 +31,7 @@ class SpookyRegistrator extends KryoRegistrator {
       classOf[JsonElement],
       classOf[Page],
 //      classOf[UnknownElement],
-      classOf[ExploreStage],
+//      classOf[ExploreStage],
 
       //used by broadcast & accumulator
       classOf[SpookyConf],
@@ -46,9 +46,8 @@ class SpookyRegistrator extends KryoRegistrator {
       //parameters
       classOf[FiniteDuration],
       classOf[TimeUnit],
-      PageFilePaths.getClass,
-      CacheFilePaths.getClass,
-      Parallelism.getClass,
+      FilePaths.getClass,
+      PartitionerFactories.getClass,
       ProxyFactories.getClass
     )
     array.foreach(kryo.register)

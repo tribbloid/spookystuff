@@ -1,7 +1,6 @@
 package com.tribbloids.spookystuff.pipeline
 
-import com.tribbloids.spookystuff.row.DepthKey
-import com.tribbloids.spookystuff.sparkbinding.PageRowRDD
+import com.tribbloids.spookystuff.rdd.PageRowRDD
 import com.tribbloids.spookystuff.{PipelineException, SpookyContext}
 import org.apache.spark.ml.param.{Param, ParamMap, ParamPair}
 import org.slf4j.LoggerFactory
@@ -121,27 +120,26 @@ trait RemoteTransformer extends RemoteTransformerLike with Dynamic {
     }
 
     val result: PageRowRDD = this.transform(this.exampleInput(spooky)).persist()
-    val keys = result.keySeq
+    val keys = result.fields
 
     result.toDF(sort = true).show()
 
     keys.foreach{
       key =>
-        val distinct = result.flatMap(_.get(key)).distinct()
+        val distinct = result.flatMap(_.dataRows.map(_.get(key))).distinct()
         val values = distinct.take(2)
         assert(values.length >= 1)
-        key match {
-          case depthKey: DepthKey =>
-            depthKey.maxOption.foreach {
-              expectedMax =>
-                assert(expectedMax == distinct.map(_.asInstanceOf[Int]).max())
+        if (key.isDepth) {
+          key.depthRangeOption.foreach {
+              range =>
+                assert(range.max == distinct.map(_.asInstanceOf[Int]).max())
+                assert(range.min == distinct.map(_.asInstanceOf[Int]).min())
             }
-          case _ =>
         }
         LoggerFactory.getLogger(this.getClass).info(s"column '${key.name} has passed the test")
         result.unpersist()
     }
 
-    assert(result.toObjectRDD(S_*).flatMap(v => v).count() >= 1)
+    assert(result.toObjectRDD(S_*).flatMap(identity).count() >= 1)
   }
 }

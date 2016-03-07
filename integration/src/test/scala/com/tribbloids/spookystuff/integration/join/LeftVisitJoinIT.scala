@@ -25,20 +25,20 @@ class LeftVisitJoinIT extends IntegrationSuite {
       )
 
     val joined = base
-      .join(S"div.sidebar-nav a", ordinalKey = 'i1)(
-        getPage('A.href),
-        joinType = LeftOuter
-      )(
+      .join(S"div.sidebar-nav a", LeftOuter, ordinalField = 'i1)(
+        getPage('A.href)
+      )
+      .extract(
         'A.text ~ 'category
       )
-      .join(S"a.subcategory-link", ordinalKey = 'i2)(
-        getPage('A.href),
-        joinType = LeftOuter
-      )(
+      .join(S"a.subcategory-link", LeftOuter, ordinalField = 'i2)(
+        getPage('A.href)
+      )
+      .extract(
         'A.text ~ 'subcategory
       )
       .select(S"h1".text ~ 'header)
-      .flatSelect(S"notexist", ordinalKey = 'notexist_key)( //this is added to ensure that temporary joinKey in KV store won't be used.
+      .flatSelect(S"notexist", ordinalField = 'notexist_key)( //this is added to ensure that temporary joinKey in KV store won't be used.
         'A.attr("class") ~ 'notexist_class
       )
 
@@ -57,7 +57,7 @@ class LeftVisitJoinIT extends IntegrationSuite {
           Nil
     )
 
-    val formatted = df.toJSON.collect().mkString("\n")
+    val formatted = df.toJSON.collect().toSeq
     assert(
       formatted ===
         """
@@ -65,12 +65,12 @@ class LeftVisitJoinIT extends IntegrationSuite {
           |{"i1":[1],"category":"Computers","i2":[0],"subcategory":"Laptops","header":"Computers / Laptops"}
           |{"i1":[1],"category":"Computers","i2":[1],"subcategory":"Tablets","header":"Computers / Tablets"}
           |{"i1":[2],"category":"Phones","i2":[0],"subcategory":"Touch","header":"Phones / Touch"}
-        """.stripMargin.trim
+        """.stripMargin.trim.split('\n').toSeq
     )
   }
 
   override def numFetchedPages = {
-    case Wide_RDDWebCache => 6
+//    case FetchOptimizers.WebCacheAware => 6
     case _ => 7
   }
 }

@@ -5,7 +5,7 @@ import java.util.{Date, UUID}
 import com.tribbloids.spookystuff._
 import com.tribbloids.spookystuff.actions.{Trace, Wayback}
 import com.tribbloids.spookystuff.expressions.Literal
-import com.tribbloids.spookystuff.utils.{HDFSResolver, Serializable, Utils}
+import com.tribbloids.spookystuff.utils.{HDFSResolver, Utils}
 import org.apache.commons.io.IOUtils
 import org.apache.hadoop.fs.{FileStatus, Path}
 import org.apache.spark.SparkEnv
@@ -13,9 +13,6 @@ import org.slf4j.LoggerFactory
 
 import scala.concurrent.duration.Duration.Infinite
 
-/**
- * Created by peng on 11/27/14.
- */
 object PageUtils {
 
   def dfsRead[T](message: String, pathStr: String, spooky: SpookyContext)(f: => T): T = {
@@ -67,6 +64,8 @@ object PageUtils {
       result
     }
 
+  final val vid = 91252374923L
+
   //unlike save, this will store all information in an unreadable, serialized, probably compressed file
   //always overwrite! use the same serializer as Spark
   private def cache[T](
@@ -83,7 +82,9 @@ object PageUtils {
           val serOut = ser.serializeStream(fos)
 
           try {
-            serOut.writeObject[Seq[T]](Serializable[Seq[T]](pageLikes, 91252374923L))
+            serOut.writeObject[Seq[T]](
+              pageLikes.asInstanceOf[Seq[T] @SerialVersionUID(vid) with Serializable]
+            )
           }
           finally {
             serOut.close()
@@ -119,7 +120,7 @@ object PageUtils {
 
     val pathStr = Utils.uriConcat(
       spooky.conf.dirs.cache,
-      spooky.conf.cachePath(effectivePageLikes.head.uid.backtrace).toString,
+      spooky.conf.cacheFilePath(effectivePageLikes.head.uid.backtrace).toString,
       UUID.randomUUID().toString
     )
 
@@ -182,7 +183,7 @@ object PageUtils {
 
     val pathStr = Utils.uriConcat(
       spooky.conf.dirs.cache,
-      spooky.conf.cachePath(backtrace).toString
+      spooky.conf.cacheFilePath(backtrace).toString
     )
 
     val waybackOption = backtrace.last match {

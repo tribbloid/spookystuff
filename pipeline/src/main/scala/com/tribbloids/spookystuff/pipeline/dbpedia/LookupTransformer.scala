@@ -4,9 +4,9 @@ import java.util.UUID
 
 import com.tribbloids.spookystuff.actions.Wget
 import com.tribbloids.spookystuff.expressions.Expression
-import com.tribbloids.spookystuff.{SpookyContext, dsl}
 import com.tribbloids.spookystuff.pipeline.RemoteTransformer
-import com.tribbloids.spookystuff.sparkbinding.PageRowRDD
+import com.tribbloids.spookystuff.rdd.PageRowRDD
+import com.tribbloids.spookystuff.{SpookyContext, dsl}
 
 /**
  * Created by peng on 31/10/15.
@@ -40,7 +40,7 @@ class LookupTransformer(
 
     dataset.fetch(
       Wget(uri)
-    ).flatSelect(S"Result".slice(0, getOrDefault(FirstN)), ordinalKey = getOrDefault(IndexCol))(
+    ).flatSelect(S"Result".slice(0, getOrDefault(FirstN)), ordinalField = getOrDefault(IndexCol))(
       A"Label".text ~ getOrDefault(LabelCol),
       A"URI".text ~ getOrDefault(UriCol)
     )

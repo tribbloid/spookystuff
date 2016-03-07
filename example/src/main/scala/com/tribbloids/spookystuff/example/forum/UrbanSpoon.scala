@@ -38,7 +38,7 @@ object UrbanSpoon extends QueryCore {
       //      .extract(
       //        "count" -> (_.text1("li.active span.count"))
       //      )
-      .flatSelect(S"div.tab-pane.active li.review", ordinalKey = 'row)(
+      .flatExtract(S"div.tab-pane.active li.review", ordinalKey = 'row)(
         A"div.body".text ~ 'comment,
         A"time.posted-on".text ~ 'date_status,
         A"div.details > div.aside".text ~ 'stars,

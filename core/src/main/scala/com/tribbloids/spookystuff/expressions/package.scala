@@ -14,9 +14,7 @@ package object expressions {
 
   type Expression[+R] = ExpressionLike[PageRow, Option[R]]
 
-  type ForceExpression[+R] = ForceExpressionLike[PageRow, Option[R]]
+  type ByPage[+R] = (Page => R)
 
-  type PageFilePath[+R] = (Page => R)
-
-  type CacheFilePath[+R] = (Trace => R)
+  type ByTrace[+R] = (Trace => R)
 }

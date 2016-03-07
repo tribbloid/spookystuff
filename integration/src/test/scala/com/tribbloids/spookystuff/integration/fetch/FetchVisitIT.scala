@@ -5,54 +5,56 @@ import com.tribbloids.spookystuff.actions._
 import com.tribbloids.spookystuff.dsl._
 import com.tribbloids.spookystuff.integration.IntegrationSuite
 
-/**
- * Created by peng on 11/26/14.
- */
 class FetchVisitIT extends IntegrationSuite {
+
+  import com.tribbloids.spookystuff.utils.Views._
 
   override def doMain(spooky: SpookyContext) {
 
     val RDD = spooky
       .fetch(
         Visit("http://www.wikipedia.org/")
-      ).persist()
+      )
+      .persist()
 
-    val pageRows = RDD.collect()
+    val pageRows = RDD.unsquashedRDD.collect()
 
     val finishTime = System.currentTimeMillis()
     assert(pageRows.length === 1)
     assert(pageRows(0).pages.length === 1)
-    assert(pageRows(0).pages.apply(0).uri contains "://www.wikipedia.org/")
-    assert(pageRows(0).pages.apply(0).name === "Snapshot(MustHaveTitle,null)")
+    assert(pageRows(0).pages.head.uri contains "://www.wikipedia.org/")
+    assert(pageRows(0).pages.head.name === Snapshot(DocumentFilters.MustHaveTitle).toString)
     val pageTime = pageRows(0).pages.head.timestamp.getTime
     assert(pageTime < finishTime)
     assert(pageTime > finishTime-60000) //long enough even after the second time it is retrieved from s3 cache
 
-    val RDDAppended = RDD
+    val RDD2 = RDD
       .fetch(
-        Visit("http://www.wikipedia.org/") +> Snapshot() ~ 'b,
-        joinType = Append
-      ).persist()
+        Visit("http://www.wikipedia.org/") +> Snapshot() ~ 'b
+      )
 
-    val appendedRows = RDDAppended.collect()
+      .persist()
 
-    assert(appendedRows.length === 2)
-    assert(appendedRows(0).pages(0).copy(timestamp = null, content = null, saved = null)
-      === appendedRows(1).pages(0).copy(timestamp = null, content = null, saved = null))
+    val unionRDD = RDD.union(RDD2)
+    val unionRows = unionRDD.unsquashedRDD.collect()
 
-    assert(appendedRows(0).pages(0).timestamp === appendedRows(1).pages(0).timestamp)
-    assert(appendedRows(0).pages(0).content === appendedRows(1).pages.apply(0).content)
-    assert(appendedRows(0).getOnlyPage.get.content === appendedRows(1).pages.apply(0).content)
-    assert(appendedRows(0).getOnlyPage.get.name === "Snapshot(MustHaveTitle,null)")
-    assert(appendedRows(1).getOnlyPage.get.name === "b")
+    assert(unionRows.length === 2)
+    assert(unionRows(0).pages.head.copy(timestamp = null, content = null, saved = null)
+      === unionRows(1).pages.head.copy(timestamp = null, content = null, saved = null))
+
+    assert(unionRows(0).pages.head.timestamp === unionRows(1).pages.head.timestamp)
+    assert(unionRows(0).pages.head.content === unionRows(1).pages.head.content)
+    assert(unionRows(0).getOnlyPage.get.content === unionRows(1).pages.head.content)
+    assert(unionRows(0).getOnlyPage.get.name === Snapshot(DocumentFilters.MustHaveTitle).toString)
+    assert(unionRows(1).getOnlyPage.get.name === "b")
 
     //this is to ensure that an invalid expression (with None interpolation result) won't cause loss of information
-    val RDDfetchNone = RDDAppended
+    val RDDfetchNone = unionRDD
       .fetch(
         Visit('noSuchField) +> Snapshot() ~ 'c
       )
 
-    val fetchNoneRows = RDDfetchNone.collect()
+    val fetchNoneRows = RDDfetchNone.unsquashedRDD.collect()
 
     assert(fetchNoneRows.length === 2)
     assert(fetchNoneRows(0).pages.length === 0)
@@ -60,7 +62,7 @@ class FetchVisitIT extends IntegrationSuite {
   }
 
   override def numFetchedPages = {
-    case Wide_RDDWebCache => 1
+//    case FetchOptimizers.WebCacheAware => 1
     case _ => 2
   }
 }

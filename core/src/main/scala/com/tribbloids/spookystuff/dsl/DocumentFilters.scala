@@ -1,29 +1,36 @@
 package com.tribbloids.spookystuff.dsl
 
+import com.tribbloids.spookystuff.actions.DocumentFilter
 import com.tribbloids.spookystuff.pages.Page
 import com.tribbloids.spookystuff.session.Session
+import com.tribbloids.spookystuff.utils.PrettyToStringMixin
 import org.slf4j.LoggerFactory
 
-/**
- * Created by peng on 26/07/15.
- */
-trait DocumentFilter extends ((Page, Session) => Page) with Serializable {
+//TODO: support chaining & extends ExpressionLike/TreeNode
+trait AbstractDocumentFilter extends DocumentFilter with PrettyToStringMixin {
 
-  override def toString() = this.getClass.getSimpleName.replace("$","")
+  def assertStatusCode(page: Page){
+    page.httpStatus.foreach {
+      v =>
+        assert(v.getStatusCode.toString.startsWith("2"), v.toString)
+    }
+  }
 }
 
-object DocumentFilter {
+object DocumentFilters {
 
-  case object PassAll extends DocumentFilter {
+  case object Status2XX extends AbstractDocumentFilter {
 
     override def apply(result: Page, session: Session): Page = {
+      assertStatusCode(result)
       result
     }
   }
 
-  case object MustHaveTitle extends DocumentFilter {
+  case object MustHaveTitle extends AbstractDocumentFilter {
 
     override def apply(result: Page, session: Session): Page = {
+      assertStatusCode(result)
       if (result.mimeType.contains("html")){
         assert(result.\("html").\("title").text.getOrElse("").nonEmpty, s"Html Page @ ${result.uri} has no title")
         LoggerFactory.getLogger(this.getClass).info(s"Html Page @ ${result.uri} has no title:\n${result.code}")

@@ -1,37 +1,49 @@
 package com.tribbloids.spookystuff.expressions
 
+import com.tribbloids.spookystuff.row.Field
+
+import scala.language.implicitConversions
+
 /**
  * Created by peng on 11/28/14.
  */
 object ExpressionLike {
 
-  def apply[T, R](f: T => R, _name: String): ExpressionLike[T, R] =
+  def apply[T, R](f: T => R, _field: Field): ExpressionLike[T, R] =
     new ExpressionLike[T, R] {
 
-      override val name = _name
+      override val field = _field
 
       override def apply(v1: T): R = f(v1)
     }
 
-  def apply[T, R](f: T => R): ExpressionLike[T, R] = this.apply(f, ""+f.hashCode())
+//  def apply[T, R](f: T => R, name: String): ExpressionLike[T, R] = apply(f, Field(name))
+
+  def apply[T, R](f: T => R): ExpressionLike[T, R] = this.apply(f, Field(""+f.hashCode()))
+
+  implicit def strToField(str: String): Field = Field(str)
 
   //  def apply[T, R](f: T => R): NamedFunction1[T, R] = apply(f.toString(), f)
 }
 
 trait ExpressionLike[-T, +R] extends (T => R) with Serializable {
 
-  val name: String
+  val field: Field
 
-  final def as(name: Symbol): Alias[T, R] = Alias(this, Option(name).map(_.name).orNull)
+  final def name: String = field.name
 
-  final def as_!(name: Symbol): Alias[T, R] = Alias.forced(this, Option(name).map(_.name).orNull)
+  //if field==null will revert alias
+  final def as(field: Field): ExpressionLike[T, R] = Alias(this, Option(field))
+  final def ~(field: Field) = as(field)
+
+  final def as_!(field: Field): ExpressionLike[T, R] = Alias.apply(this, Option(field).map(_.!))
+  final def ~!(field: Field) = as_!(field)
+
+  final def as_*(field: Field): ExpressionLike[T, R] = Alias.apply(this, Option(field).map(_.*))
+  final def ~*(field: Field) = as_*(field)
 
   //will not rename an already-named Alias.
-  def defaultAs(name: Symbol): Alias[T, R] = as(name)
-
-  final def ~(name: Symbol) = as(name)
-
-  final def ~!(name: Symbol) = as_!(name)
+  def defaultAs(field: Field): ExpressionLike[T, R] = as(field)
 
   @annotation.unspecialized override def compose[A](g: A => T): ExpressionLike[A, R] = {
     val gName = g match {
@@ -41,10 +53,9 @@ trait ExpressionLike[-T, +R] extends (T => R) with Serializable {
 
     ExpressionLike(
       v1 => ExpressionLike.this.apply(g(v1)),
-      gName + "." + ExpressionLike.this.name
+      this.field.copy(name = gName + "." + ExpressionLike.this.name)
     )
   }
-
 
   @annotation.unspecialized override def andThen[A](g: R => A): ExpressionLike[T, A] = {
     val gName = g match {
@@ -54,76 +65,44 @@ trait ExpressionLike[-T, +R] extends (T => R) with Serializable {
 
     ExpressionLike(
       v1 => g(ExpressionLike.this.apply(v1)),
-      ExpressionLike.this.name + "." + gName
+      this.field.copy(name = ExpressionLike.this.name + "." + gName)
     )
   }
 
   override def toString(): String = name
-
-  //TODO: experimental, not sure if its in conflict of implicit conversion.
-//  def applyDynamic(methodName: String)(args: Any*): ExpressionLike[T, Any] = {
-//
-//    val resultFn: (T => Any) = {
-//      v1 =>
-//        val selfValue = this.apply(v1)
-//        val argValues: Seq[Any] = args.map {
-//          case ee: Function[T,_] => ee.apply(v1)
-//          case arg @ _ => arg
-//        }
-//        val argClasses = argValues.map(_.getClass)
-//        val selfClass = selfValue.getClass
-//
-//        val func = selfClass.getMethod(methodName, argClasses: _*)
-//
-////        func.getReturnType
-//        func.invoke(selfValue, argValues.map(_.asInstanceOf[Object]): _*)
-//    }
-//
-//    val argNames = args map {
-//      case ee: ExpressionLike[T, _] => ee.name
-//      case arg @ _ => "" + arg
-//    }
-//
-//    val argStr = argNames.mkString(",")
-//    val resultName = ExpressionLike.this.name + "." + methodName + "(" + argStr + ")"
-//
-//    ExpressionLike(resultFn, resultName)
-//  }
 }
 
 object Alias {
 
-  def apply[T, R](src: ExpressionLike[T, R], name: String): Alias[T, R] = {
+  def apply[T, R](src: ExpressionLike[T, R], fieldOpt: Option[Field]): ExpressionLike[T, R] = {
 
-    val self: ExpressionLike[T, R] = getSelf(src)
+    val unwrapped: ExpressionLike[T, R] = unwrap(src)
 
-    new Alias(self, name)
+    fieldOpt match {
+      case Some(field) => new Alias(unwrapped, field)
+      case None => unwrapped
+    }
   }
 
-  def getSelf[R, T](src: ExpressionLike[T, R]): ExpressionLike[T, R] = {
+  def unwrap[R, T](src: ExpressionLike[T, R]): ExpressionLike[T, R] = {
     val self: ExpressionLike[T, R] = src match {
       case a: Alias[T, R] => a.self
       case _ => src
     }
     self
   }
-
-  def forced[T, R](src: ExpressionLike[T, R], name: String): Alias[T, R] = {
-
-    val self: ExpressionLike[T, R] = getSelf(src)
-
-    new Alias(self, name) with ForceExpressionLike[T, R]
-  }
 }
 
-class Alias[-T, +R] private(val self: ExpressionLike[T, R], override val name: String) extends ExpressionLike[T, R] {
+class Alias[-T, +R](
+                             val self: ExpressionLike[T, R],
+                             override val field: Field
+                           ) extends ExpressionLike[T, R] {
+
+  assert(field != null)
 
   override def apply(v1: T): R = self(v1)
 
-  override def defaultAs(name: Symbol): Alias[T, R] = this
+  override def defaultAs(field: Field): Alias[T, R] = this
 
   override def toString() = self.toString + " ~ '" + name
 }
-
-//subclasses bypass "already exist" check
-trait ForceExpressionLike[-T, +R] extends ExpressionLike[T, R]

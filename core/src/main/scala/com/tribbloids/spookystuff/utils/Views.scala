@@ -1,11 +1,15 @@
 package com.tribbloids.spookystuff.utils
 
-import com.tribbloids.spookystuff.actions.DryRun
-import com.tribbloids.spookystuff.row.{PageRow, RowUID, Squashed, WebCacheRDD}
-import org.apache.spark.rdd.RDD
+import com.tribbloids.spookystuff.actions.{Action, _}
+import com.tribbloids.spookystuff.dsl.{FetchOptimizer, FetchOptimizers}
+import com.tribbloids.spookystuff.execution.Open_Visited
+import com.tribbloids.spookystuff.row._
 import org.apache.spark.{Partitioner, SparkContext}
+import org.apache.spark.rdd.RDD
 
-import scala.language.implicitConversions
+import scala.collection.{Map, TraversableLike}
+import scala.collection.generic.CanBuildFrom
+import scala.language.{higherKinds, implicitConversions}
 import scala.reflect.ClassTag
 
 /**
@@ -14,11 +18,15 @@ import scala.reflect.ClassTag
   */
 object Views {
 
+  import scala.reflect.runtime.universe._
+
   val SPARK_JOB_DESCRIPTION = "spark.job.description"
   val SPARK_JOB_GROUP_ID = "spark.jobGroup.id"
   val SPARK_JOB_INTERRUPT_ON_CANCEL = "spark.job.interruptOnCancel"
   val RDD_SCOPE_KEY = "spark.rdd.scope"
   val RDD_SCOPE_NO_OVERRIDE_KEY = "spark.rdd.scope.noOverride"
+
+  implicit def pageRowToView(self: PageRow): PageRowView = PageRowView(self)
 
   implicit class SparkContextView(val self: SparkContext) {
 
@@ -35,6 +43,11 @@ object Views {
   }
 
   implicit class RDDView[T](val self: RDD[T]) {
+
+    def named = {
+      val stackTraceElements: Array[StackTraceElement] = Thread.currentThread().getStackTrace
+      stackTraceElements
+    }
 
     def multiPassMap[U: ClassTag](f: T => Option[U]): RDD[U] = {
 
@@ -72,31 +85,31 @@ object Views {
       }
       sys.error("impossible")
 
-//      self.mapPartitions{
-//        itr =>
-//          var intermediateResult: Iterator[Either[T, TraversableOnce[U]]] = itr.map(v => Left(v))
-//
-//          var unfinished = true
-//          while (unfinished) {
-//
-//            var counter = 0
-//            val updated: Iterator[Either[T, TraversableOnce[U]]] = intermediateResult.map {
-//              case Left(src) =>
-//                f(src) match {
-//                  case Some(res) => Right(res)
-//                  case None =>
-//                    counter = counter + 1
-//                    Left(src)
-//                }
-//              case Right(res) => Right(res)
-//            }
-//            intermediateResult = updated
-//
-//            if (counter == 0) unfinished = false
-//          }
-//
-//          intermediateResult.flatMap(_.right.get)
-//      }
+      //      self.mapPartitions{
+      //        itr =>
+      //          var intermediateResult: Iterator[Either[T, TraversableOnce[U]]] = itr.map(v => Left(v))
+      //
+      //          var unfinished = true
+      //          while (unfinished) {
+      //
+      //            var counter = 0
+      //            val updated: Iterator[Either[T, TraversableOnce[U]]] = intermediateResult.map {
+      //              case Left(src) =>
+      //                f(src) match {
+      //                  case Some(res) => Right(res)
+      //                  case None =>
+      //                    counter = counter + 1
+      //                    Left(src)
+      //                }
+      //              case Right(res) => Right(res)
+      //            }
+      //            intermediateResult = updated
+      //
+      //            if (counter == 0) unfinished = false
+      //          }
+      //
+      //          intermediateResult.flatMap(_.right.get)
+      //      }
     }
 
     //    def persistDuring[T](newLevel: StorageLevel, blocking: Boolean = true)(fn: => T): T =
@@ -192,85 +205,56 @@ object Views {
           }
       }
     }
-  }
 
-  implicit class WebCacheRDDView(self: WebCacheRDD) {
+    def groupByKey_narrow(): RDD[(K, Iterable[V])] = {
 
-    import RDD._
-
-    def discardDataRows: WebCacheRDD = {
-
-      self.mapValues {
-        _.copy(rows = Array())
+      self.mapPartitions{
+        itr =>
+          itr
+            .toTraversable
+            .groupBy(_._1)
+            .map(v => v._1 -> v._2.map(_._2).toIterable)
+            .iterator
+      }
+    }
+    def reduceByKey_narrow(
+                            reducer: (V, V) => V
+                          ): RDD[(K, V)] = {
+      self.mapPartitions{
+        itr =>
+          itr
+            .toTraversable
+            .groupBy(_._1)
+            .map(v => v._1 -> v._2.map(_._2).reduce(reducer))
+            .iterator
       }
     }
 
-    def getRows: RDD[PageRow] = {
+    def groupByKey_beacon[T](
+                              beaconRDD: RDD[(K, T)]
+                            ): RDD[(K, Iterable[V])] = {
 
-      val updated = self.flatMap {
-        _._2.rows
+      val cogrouped = self.cogroup(beaconRDD, beaconRDD.partitioner.get)
+      cogrouped.mapValues {
+        tuple =>
+          tuple._1
       }
-
-      updated
     }
 
-    /*
-     this add rows into WebCacheRDD using the following rules:
-     WebCacheRDD use dryrun as the only index,
-     any PageRow RDD with S having the same dryrun sequence will be cogrouped into the same WebCacheRow
-     each WebCacheRow must have a unique dryrun, otherwise its defective
-     if >1 new PageRow's dryrun doesn't exist in the WebCacheRow,
-     they are deduplicated to ensure that 2 rows in the same segment won't have the identical pages
-     if the dryrun already exists,
-     rows in the same segment with identical pages are removed first.
-     Then deduplicated.
-    */
-    def putRows(
-                 rows: RDD[PageRow],
-                 seedFilter: Iterable[PageRow] => Option[PageRow] = v => v.headOption,
-                 partitionerOption: Option[Partitioner] = None
-               ): WebCacheRDD = {
+    def reduceByKey_beacon[T](
+                               reducer: (V, V) => V,
+                               beaconRDD: RDD[(K, T)]
+                             ): RDD[(K, V)] = {
 
-      val dryRun_RowRDD = rows.keyBy(_.dryrun)
-      val cogrouped = partitionerOption match {
-        case Some(partitioner) => self.cogroup(dryRun_RowRDD, partitioner)
-        case None => self.cogroup(dryRun_RowRDD)
+      val cogrouped = self.cogroup(beaconRDD, beaconRDD.partitioner.get)
+      cogrouped.mapValues {
+        tuple =>
+          tuple._1.reduce(reducer)
       }
-      val result = cogrouped.map {
-        (triplet: (DryRun, (Iterable[Squashed[PageRow]], Iterable[PageRow]))) =>
-          val tuple: (Iterable[Squashed[PageRow]], Iterable[PageRow]) = triplet._2
-          //          assert(tuple._1.size <= 1)
-          val squashedRowOption = tuple._1.headOption //can only be 0 or 1
-        val newRows = tuple._2
-
-          squashedRowOption match {
-            case None =>
-
-              val seedRows = newRows
-                .groupBy(_.uid)
-                .flatMap(tuple => seedFilter(tuple._2))
-
-              val newPageLikes = seedRows.head.pageLikes //all newRows should have identical pageLikes (if using wide optimizer)
-
-              val newCached = triplet._1 -> Squashed(pageLikes = newPageLikes, rows = seedRows.toArray)
-              newCached
-            case Some(squashedRow) =>
-
-              val existingRowUIDs: Array[RowUID] = squashedRow.rows.map(_.uid)
-              val seedRows = newRows
-                .filterNot(row => existingRowUIDs.contains(row.uid))
-                .groupBy(_.uid)
-                .flatMap(tuple => seedFilter(tuple._2))
-
-              val newCached = triplet._1 -> squashedRow.copy(rows = squashedRow.rows ++ seedRows)
-              newCached
-          }
-      }
-      result
     }
   }
 
-  implicit class MapView[K, V](m1: Map[K,V]) {
+  implicit class MapView[K, V](m1: scala.collection.Map[K,V]) {
 
     def getTyped[T: ClassTag](key: K): Option[T] = m1.get(key) match {
 
@@ -282,37 +266,29 @@ object Views {
       case _ => None
     }
 
-    //  def merge(m2: Map[K,_], strategy: MergeStrategy): Map[K,_] = {
-    //    val halfMerged = m2.map{
-    //      kv => {
-    //        m1.get(kv._1) match {
-    //          case None => kv
-    //          case Some(v) => (kv._1, strategy.f(v, kv._2))
-    //        }
-    //      }
-    //    }
-    //
-    //    m1 ++ halfMerged
-    //  }
+    def flattenByKey(
+                      key: K,
+                      sampler: Sampler[Any]
+                    ): Seq[(Map[K, Any], Int)] = {
 
-    def flattenKey(
-                    key: K
-                  ): Seq[Map[K,_]] = {
+      val valueOption: Option[V] = m1.get(key)
 
-      val valueOption = m1.get(key)
-
-      val values: Iterable[_] = valueOption.toSeq.flatMap(Utils.encapsulateAsIterable)
+      val values: Iterable[(Any, Int)] = valueOption.toIterable.flatMap(Utils.asIterable[Any]).zipWithIndex
+      val sampled = sampler(values)
 
       val cleaned = m1 - key
-      val result = values.toSeq.map(value => cleaned + (key-> value))
+      val result = sampled.toSeq.map(
+        tuple =>
+          (cleaned + (key -> tuple._1)) -> tuple._2
+      )
 
       result
     }
 
-    def canonizeKeysToColumnNames: Map[String,V] = m1.map(
+    def canonizeKeysToColumnNames: scala.collection.Map[String,V] = m1.map(
       tuple =>{
-        val keyName = tuple._1 match {
-          case symbol: Symbol =>
+        val keyName: String = tuple._1 match {
+          case symbol: scala.Symbol =>
             symbol.name
           case _ =>
             tuple._1.toString
@@ -322,5 +298,64 @@ object Views {
     )
   }
 
-//  implicit def unwrapLazy[T](v: Lazy[T]): T = v.value
+  implicit class TraversableLikeView[A, Repr](self: TraversableLike[A, Repr]) {
+
+    def filterByType[B: ClassTag] = new FilterByType[B]
+
+    class FilterByType[B: ClassTag] {
+
+      def get[That](implicit bf: CanBuildFrom[Repr, B, That]): That = {
+        val result = self.flatMap{
+          v =>
+            val unboxed = Utils.javaUnbox(v)
+            unboxed match {
+              case x: B => Some(x)
+              case _ => None
+            }
+        }(bf)
+        result
+      }
+    }
+  }
+
+  implicit class ArrayView[A](self: Array[A]) {
+
+    def filterByType[B <: A: ClassTag]: Array[B] = self.collect{
+      case tt: B => tt
+    }.toArray
+  }
+
+  //  implicit class TraversableOnceView[A, Coll[A] <: TraversableOnce[A], Raw](self: Raw)(implicit cast: Raw => Coll[A]) {
+  //
+  //    def filterByType[B: ClassTag]: Coll[B] = {
+  //      val result = cast(self).flatMap{
+  //        case tt: B => Some(tt)
+  //        case _ => None
+  //      }
+  //      result.to[Coll[B]]
+  //    }
+  //  }
+
+  //  implicit class ArrayView[A](self: Array[A]) {
+  //
+  //    def filterByType[B <: A: ClassTag]: Array[B] = {
+  //      val result: Array[B] = self.flatMap{
+  //        case tt: B => Some(tt)
+  //        case _ => None
+  //      }
+  //      result
+  //    }
+  //  }
+
+  //  implicit class TraversableLikeView[+A, +Repr, Raw](self: Raw)(implicit cast: Raw => TraversableLike[A,Repr]) {
+  //
+  //    def filterByType[B] = {
+  //      val v = cast(self)
+  //      val result = v.flatMap{
+  //        case tt: B => Some(tt)
+  //        case _ => None
+  //      }
+  //      result
+  //    }
+  //  }
 }

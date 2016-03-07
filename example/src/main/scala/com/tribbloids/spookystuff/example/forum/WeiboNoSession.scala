@@ -36,7 +36,7 @@ object WeiboNoSession extends QueryCore {
         A"div.search_feed dl.feed_list".size ~ 'count,
         A"p.code_tit".text ~ 'CAPCHAS
       )
-      .flatSelect(S"div.search_feed dl.feed_list", ordinalKey = 'item)(
+      .flatExtract(S"div.search_feed dl.feed_list", ordinalKey = 'item)(
         "成都银行" ~ 'name,
         A"p > em".text ~ 'text,
         "weibo" ~ 'forum,

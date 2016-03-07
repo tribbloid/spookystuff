@@ -4,10 +4,8 @@ import com.tribbloids.spookystuff.SpookyContext
 import com.tribbloids.spookystuff.actions._
 import com.tribbloids.spookystuff.dsl._
 import com.tribbloids.spookystuff.integration.IntegrationSuite
+import org.apache.spark.HashPartitioner
 
-/**
- * Created by peng on 12/10/14.
- */
 class ExplorePagesIT extends IntegrationSuite {
 
   override lazy val drivers = Seq(
@@ -16,16 +14,19 @@ class ExplorePagesIT extends IntegrationSuite {
 
   override def doMain(spooky: SpookyContext): Unit = {
 
+//    spooky.conf.defaultPartitionerFactory = {v => new HashPartitioner(1)}
+
     val result = spooky
       .fetch(
         Wget("http://webscraper.io/test-sites/e-commerce/static/computers/tablets")
       )
-      .explore(S"ul.pagination a", depthKey = 'depth, ordinalKey = 'index)(
-        Wget('A.href)
+      .explore(S"ul.pagination a", ordinalField = 'index)(
+        Wget('A.href),
+        depthField = 'depth
       )(
-        'A.text ~ 'page
+        'A.text ~ 'page,
+        S.uri ~ 'uri
       )
-      .select(S.uri ~ 'uri)
       .toDF(sort = true)
 
     assert(
@@ -36,7 +37,7 @@ class ExplorePagesIT extends IntegrationSuite {
           "uri" :: Nil
     )
 
-    val formatted = result.toJSON.collect().mkString("\n")
+    val formatted = result.toJSON.collect().toSeq
     assert(
       formatted ===
         """
@@ -45,7 +46,7 @@ class ExplorePagesIT extends IntegrationSuite {
           |{"depth":1,"index":[1],"page":"3","uri":"http://webscraper.io/test-sites/e-commerce/static/computers/tablets/3"}
           |{"depth":1,"index":[2],"page":"4","uri":"http://webscraper.io/test-sites/e-commerce/static/computers/tablets/4"}
           |{"depth":2,"index":[0,0],"page":"«","uri":"http://webscraper.io/test-sites/e-commerce/static/computers/tablets/1"}
-        """.stripMargin.trim
+        """.stripMargin.trim.split('\n').toSeq
     )
   }
 

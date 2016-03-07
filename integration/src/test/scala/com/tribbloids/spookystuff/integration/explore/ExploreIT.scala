@@ -6,8 +6,8 @@ import com.tribbloids.spookystuff.dsl._
 import com.tribbloids.spookystuff.integration.IntegrationSuite
 
 /**
- * Created by peng on 12/5/14.
- */
+  * Created by peng on 12/5/14.
+  */
 class ExploreIT extends IntegrationSuite {
 
   override lazy val drivers = Seq(
@@ -22,41 +22,41 @@ class ExploreIT extends IntegrationSuite {
       )
 
     val explored = base
-      .explore(S"div.sidebar-nav a", depthKey = 'depth, ordinalKey = 'index)(
+      .explore(S"div.sidebar-nav a", ordinalField = 'index)(
         Wget('A.href),
-        flattenPagesOrdinalKey = 'page
+        depthField = 'depth
       )(
-        'A.text ~ 'category
+        'A.text ~ 'category,
+        S"h1".text ~ 'header
       )
-      .select(S"h1".text ~ 'header)
-      .flatSelect(S"notexist", ordinalKey = 'notexist_key)( //this is added to ensure that temporary joinKey in KV store won't be used.
-        'A.attr("class") ~ 'notexist_class
-      )
+      //TODO: add back!
+//      .flatSelect(S"notexist", ordinalField = 'notexist_key)( //this is added to ensure that temporary joinKey in KV store won't be used.
+//        'A.attr("class") ~ 'notexist_class
+//      )
       .toDF(sort = true)
 
     assert(
       explored.schema.fieldNames ===
         "depth" ::
           "index" ::
-          "page" ::
           "category" ::
           "header" ::
-          "notexist_key" ::
-          "notexist_class" ::
+//          "notexist_key" ::
+//          "notexist_class" ::
           Nil
     )
 
-    val formatted = explored.toJSON.collect().mkString("\n")
+    val formatted = explored.toJSON.collect().toSeq
     assert(
       formatted ===
         """
           |{"depth":0,"header":"E-commerce training site"}
-          |{"depth":1,"index":[1],"page":[0],"category":"Computers","header":"Computers category"}
-          |{"depth":1,"index":[2],"page":[0],"category":"Phones","header":"Phones category"}
-          |{"depth":2,"index":[1,2],"page":[0,0],"category":"Laptops","header":"Computers / Laptops"}
-          |{"depth":2,"index":[1,3],"page":[0,0],"category":"Tablets","header":"Computers / Tablets"}
-          |{"depth":2,"index":[2,3],"page":[0,0],"category":"Touch","header":"Phones / Touch"}
-        """.stripMargin.trim
+          |{"depth":1,"index":[1],"category":"Computers","header":"Computers category"}
+          |{"depth":1,"index":[2],"category":"Phones","header":"Phones category"}
+          |{"depth":2,"index":[1,2],"category":"Laptops","header":"Computers / Laptops"}
+          |{"depth":2,"index":[1,3],"category":"Tablets","header":"Computers / Tablets"}
+          |{"depth":2,"index":[2,3],"category":"Touch","header":"Phones / Touch"}
+        """.stripMargin.trim.split('\n').toSeq
     )
   }
 

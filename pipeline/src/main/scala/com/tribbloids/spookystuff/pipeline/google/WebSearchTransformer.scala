@@ -5,7 +5,7 @@ import java.util.UUID
 import com.tribbloids.spookystuff.actions._
 import com.tribbloids.spookystuff.http.HttpUtils
 import com.tribbloids.spookystuff.pipeline.RemoteTransformer
-import com.tribbloids.spookystuff.sparkbinding.PageRowRDD
+import com.tribbloids.spookystuff.execution.AbstractExecutionPlan
 import com.tribbloids.spookystuff.{SpookyContext, dsl}
 
 class WebSearchTransformer(
@@ -18,6 +18,7 @@ class WebSearchTransformer(
 
   /**
    * Param for input column name.
+ *
    * @group param
    */
   final val InputCol: Param[Symbol] = new Param[Symbol](this, "InputCol", "input column name")
@@ -29,9 +30,9 @@ class WebSearchTransformer(
   setDefault(MaxPages -> 0, PageNumCol -> null, IndexCol -> null, UriCol -> null)
   setExample(InputCol -> '_, MaxPages -> 2, PageNumCol -> 'page, IndexCol -> 'index, UriCol -> 'uri)
 
-  override def exampleInput(spooky: SpookyContext): PageRowRDD = spooky.create(Seq("Giant Robot"))
+  override def exampleInput(spooky: SpookyContext): AbstractExecutionPlan = spooky.create(Seq("Giant Robot"))
 
-  override def transform(dataset: PageRowRDD): PageRowRDD = {
+  override def transform(dataset: AbstractExecutionPlan): AbstractExecutionPlan = {
 
     dataset.fetch(
       Visit("http://www.google.com/") +>

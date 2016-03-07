@@ -6,10 +6,9 @@ import com.tribbloids.spookystuff.dsl._
 import com.tribbloids.spookystuff.integration.IntegrationSuite
 import com.tribbloids.spookystuff.pages.PageUtils
 
-/**
- * Created by peng on 11/26/14.
- */
 class FetchWgetAndSaveIT extends IntegrationSuite {
+
+  import com.tribbloids.spookystuff.utils.Views._
 
   override lazy val drivers = Seq(
     null
@@ -27,7 +26,7 @@ class FetchWgetAndSaveIT extends IntegrationSuite {
       .select(S.saved ~ 'saved_path)
       .persist()
 
-    val savedPageRows = RDD.collect()
+    val savedPageRows = RDD.unsquashedRDD.collect()
 
     val finishTime = System.currentTimeMillis()
     assert(savedPageRows.length === 1)
@@ -38,7 +37,10 @@ class FetchWgetAndSaveIT extends IntegrationSuite {
 
     val content = savedPageRows(0).pages.head.content
 
-    assert(savedPageRows(0).get("saved_path").get.asInstanceOf[Iterable[Any]].last === s"file:${System.getProperty("user.dir")}/temp/spooky-integration/save/Wikipedia.png")
+    assert(
+      savedPageRows(0).dataRow.get('saved_path).get.asInstanceOf[Iterable[Any]].toSeq contains
+        s"file:${System.getProperty("user.dir")}/temp/spooky-integration/save/Wikipedia.png"
+    )
 
     val loadedContent = PageUtils.load(s"file://${System.getProperty("user.dir")}/temp/spooky-integration/save/Wikipedia.png")(spooky)
 
@@ -46,25 +48,25 @@ class FetchWgetAndSaveIT extends IntegrationSuite {
 
     Thread.sleep(10000) //this delay is necessary to circumvent eventual consistency of HDFS-based cache
 
-    val RDDAppended = RDD
+    val RDD2 = RDD
       .fetch(
-        Wget("http://upload.wikimedia.org/wikipedia/en/thumb/8/80/Wikipedia-logo-v2.svg/220px-Wikipedia-logo-v2.svg.png").as('b),
-        joinType = Append
+        Wget("http://upload.wikimedia.org/wikipedia/en/thumb/8/80/Wikipedia-logo-v2.svg/220px-Wikipedia-logo-v2.svg.png").as('b)
       )
 
-    val appendedRows = RDDAppended.collect()
+    val unionRDD = RDD.union(RDD2)
+    val unionRows = unionRDD.unsquashedRDD.collect()
 
-    assert(appendedRows.length === 2)
-    assert(appendedRows(0).pages.apply(0).copy(timestamp = null, content = null, saved = null) === appendedRows(1).pages.apply(0).copy(timestamp = null, content = null, saved = null))
+    assert(unionRows.length === 2)
+    assert(unionRows(0).pages.head.copy(timestamp = null, content = null, saved = null) === unionRows(1).pages.head.copy(timestamp = null, content = null, saved = null))
 
-    assert(appendedRows(0).pages(0).timestamp === appendedRows(1).pages(0).timestamp)
-    assert(appendedRows(0).pages(0).content === appendedRows(1).pages.apply(0).content)
-    assert(appendedRows(0).pages.apply(0).content === appendedRows(1).pages.apply(0).content)
-    assert(appendedRows(1).pages.apply(0).name === "b")
+    assert(unionRows(0).pages.head.timestamp === unionRows(1).pages.head.timestamp)
+    assert(unionRows(0).pages.head.content === unionRows(1).pages.head.content)
+    assert(unionRows(0).pages.head.content === unionRows(1).pages.head.content)
+    assert(unionRows(1).pages.head.name === "b")
   }
 
   override def numFetchedPages = {
-    case Wide_RDDWebCache => 1
+//    case FetchOptimizers.WebCacheAware => 1
     case _ => 2
   }
 

@@ -6,9 +6,9 @@ import com.tribbloids.spookystuff.dsl._
 import com.tribbloids.spookystuff.integration.IntegrationSuite
 
 /**
-* Created by peng on 11/26/14.
-*/
-class FlatSelectHierarchyIT extends IntegrationSuite {
+  * Created by peng on 11/26/14.
+  */
+class ChainedFlatSelectIT extends IntegrationSuite {
 
   override lazy val drivers = Seq(
     null
@@ -16,17 +16,21 @@ class FlatSelectHierarchyIT extends IntegrationSuite {
 
   override def doMain(spooky: SpookyContext) {
 
-    val result = spooky
+    val r1 = spooky
       .fetch(
         Wget("http://webscraper.io/test-sites/e-commerce/allinone") //this site is unstable, need to revise
       )
-      .flatSelect(S"div.thumbnail", ordinalKey = 'i1)(
+      .flatExtract(S"div.thumbnail", ordinalField = 'i1)(
         A"p".attr("class") ~ 'p_class
       )
-      .flatSelect(A"h4", ordinalKey = 'i2)(
+
+    val r2 = r1
+      .flatExtract(A"h4", ordinalField = 'i2)(
         'A.attr("class") ~ 'h4_class
       )
-      .flatSelect(S"notexist", ordinalKey = 'notexist_key)( //this is added to ensure that temporary joinKey in KV store won't be used.
+
+    val result = r2
+      .flatExtract(S"notexist", ordinalField = 'notexist_key)( //this is added to ensure that temporary joinKey in KV store won't be used.
         'A.attr("class") ~ 'notexist_class
       )
       .toDF(sort = true)
@@ -42,7 +46,7 @@ class FlatSelectHierarchyIT extends IntegrationSuite {
           Nil
     )
 
-    val formatted = result.toJSON.collect().mkString("\n")
+    val formatted = result.toJSON.collect().toSeq
     assert(
       formatted ===
         """
@@ -52,7 +56,7 @@ class FlatSelectHierarchyIT extends IntegrationSuite {
           |{"i1":[1],"p_class":"description","i2":[1]}
           |{"i1":[2],"p_class":"description","i2":[0],"h4_class":"pull-right price"}
           |{"i1":[2],"p_class":"description","i2":[1]}
-        """.stripMargin.trim
+        """.stripMargin.trim.split('\n').toSeq
     )
   }
 

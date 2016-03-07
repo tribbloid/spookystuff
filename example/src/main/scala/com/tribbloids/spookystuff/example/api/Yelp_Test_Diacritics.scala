@@ -32,7 +32,7 @@ object Yelp_Test_Diacritics extends QueryCore {
       .fetch(
         Wget(sign(x"http://api.yelp.com/v2/business/${'_}"))
       )
-      .flatSelect(S \ "reviews")(
+      .flatExtract(S \ "reviews")(
         ('A \ "rating" text) ~ 'rating,
         ('A \ "excerpt" text) ~ 'excerpt
       )

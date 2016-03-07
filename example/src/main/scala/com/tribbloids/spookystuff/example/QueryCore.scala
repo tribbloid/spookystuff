@@ -3,7 +3,7 @@ package com.tribbloids.spookystuff.example
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.DataFrame
 import com.tribbloids.spookystuff.SpookyContext
-import com.tribbloids.spookystuff.sparkbinding.PageRowRDD
+import com.tribbloids.spookystuff.execution.AbstractExecutionPlan
 
 trait QueryCore extends LocalSpookyCore {
 
@@ -24,9 +24,9 @@ trait QueryCore extends LocalSpookyCore {
         schemaRdd.printSchema()
         println(schemaRdd.schema.fieldNames.mkString("[","\t","]"))
         array
-      case pageRowRDD: PageRowRDD =>
-        val array = pageRowRDD.selfRDD.persist().takeSample(withReplacement = false, num = 100)
-        println(pageRowRDD.keySeq)
+      case pageRowRDD: AbstractExecutionPlan =>
+        val array = pageRowRDD.rdd.persist().takeSample(withReplacement = false, num = 100)
+        println(pageRowRDD.fieldSeq)
         array
       case rdd: RDD[_] =>
         rdd.persist().takeSample(withReplacement = false, num = 100)

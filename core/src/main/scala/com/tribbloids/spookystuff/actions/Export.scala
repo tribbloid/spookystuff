@@ -5,16 +5,15 @@ import java.net.{InetSocketAddress, URI}
 import java.util.Date
 import javax.net.ssl.SSLContext
 
-import com.tribbloids.spookystuff.dsl.DocumentFilter
 import com.tribbloids.spookystuff.expressions.{Expression, Literal}
 import com.tribbloids.spookystuff.http._
 import com.tribbloids.spookystuff.pages._
 import com.tribbloids.spookystuff.row.PageRow
 import com.tribbloids.spookystuff.session.Session
 import com.tribbloids.spookystuff.utils.{HDFSResolver, Utils}
-import com.tribbloids.spookystuff.{Const, DocumentFilterException, QueryException, SpookyContext}
+import com.tribbloids.spookystuff.{Const, SpookyContext}
 import org.apache.commons.io.IOUtils
-import org.apache.hadoop.fs.{FileSystem, FileStatus, Path}
+import org.apache.hadoop.fs.{FileStatus, FileSystem, Path}
 import org.apache.http.client.config.RequestConfig
 import org.apache.http.client.methods.{HttpGet, HttpUriRequest}
 import org.apache.http.client.protocol.HttpClientContext
@@ -33,7 +32,7 @@ import scala.xml._
   * Export a page from the browser or http client
   * the page an be anything including HTML/XML file, image, PDF file or JSON string.
   */
-abstract class Export extends Named with Wayback{
+trait Export extends Named with Wayback{
 
   def filter: DocumentFilter
 
@@ -41,7 +40,7 @@ abstract class Export extends Named with Wayback{
 
   final override def trunk = None //have not impact to driver
 
-  final def doExe(session: Session) = {
+  protected final def doExe(session: Session): Seq[Fetched] = {
     val results = doExeNoName(session)
     results.map{
       case page: Page =>
@@ -51,21 +50,21 @@ abstract class Export extends Named with Wayback{
         catch {
           case e: Throwable =>
             var message = "\n\n+>" + this.toString
-
+            message += "\n" +e.getMessage
             val errorDump = session.spooky.conf.errorDump
 
             if (errorDump) {
               message += "\nSnapshot: " +this.errorDump(message, page, session.spooky)
             }
 
-            throw new DocumentFilterException(message, e)
+            throw new DocumentFilterError(page, message, e)
         }
       case other: Fetched =>
         other
     }
   }
 
-  def doExeNoName(session: Session): Seq[Fetched]
+  protected def doExeNoName(session: Session): Seq[Fetched]
 }
 
 trait WaybackSupport {
@@ -110,7 +109,6 @@ trait WaybackSupport {
   */
 case class Snapshot(
                      override val filter: DocumentFilter = Const.defaultDocumentFilter
-//                     contentType: String = null
                    ) extends Export with WaybackSupport{
 
   // all other fields are empty
@@ -133,7 +131,7 @@ case class Snapshot(
       //      serializableCookies
     )
 
-//    if (contentType != null) Seq(page.copy(declaredContentType = Some(contentType)))
+    //    if (contentType != null) Seq(page.copy(declaredContentType = Some(contentType)))
     Seq(page)
   }
 
@@ -184,7 +182,6 @@ object DefaultScreenshot extends Screenshot()
 case class Wget(
                  uri: Expression[Any],
                  override val filter: DocumentFilter = Const.defaultDocumentFilter
-//                 contentType: String = null
                ) extends Export with Driverless with Timed with WaybackSupport {
 
   lazy val uriOption: Option[URI] = {
@@ -205,47 +202,47 @@ case class Wget(
             getHttp(uriURI, session)
           case "ftp" =>
             getFtp(uriURI, session)
-//          case "file" =>
-//            getLocal(uriURI, session)
+          //          case "file" =>
+          //            getLocal(uriURI, session)
           case _ =>
             getHDFS(uriURI, session)
         }
-//        if (this.contentType != null) result.map{
-//          case page: Page => page.copy(declaredContentType = Some(this.contentType))
-//          case others: Fetched => others
-//        }
+        //        if (this.contentType != null) result.map{
+        //          case page: Page => page.copy(declaredContentType = Some(this.contentType))
+        //          case others: Fetched => others
+        //        }
         result
     }
   }
 
   //DEFINITELY NOT CACHEABLE
-//  def getLocal(uri: URI, session: Session): Seq[Fetched] = {
-//
-//    val pathStr = uri.toString.replaceFirst("file://","")
-//
-//    val content = try {
-//      LocalResolver.input(pathStr) {
-//        fis =>
-//          IOUtils.toByteArray(fis)
-//      }
-//    }
-//    catch {
-//      case e: Throwable =>
-//        return Seq(
-//          NoPage(List(this), cacheable = false)
-//        )
-//    }
-//
-//    val result = new Page(
-//      PageUID(List(this), this),
-//      uri.toString,
-//      None,
-//      content,
-//      cacheable = false
-//    )
-//
-//    Seq(result)
-//  }
+  //  def getLocal(uri: URI, session: Session): Seq[Fetched] = {
+  //
+  //    val pathStr = uri.toString.replaceFirst("file://","")
+  //
+  //    val content = try {
+  //      LocalResolver.input(pathStr) {
+  //        fis =>
+  //          IOUtils.toByteArray(fis)
+  //      }
+  //    }
+  //    catch {
+  //      case e: Throwable =>
+  //        return Seq(
+  //          NoPage(List(this), cacheable = false)
+  //        )
+  //    }
+  //
+  //    val result = new Page(
+  //      PageUID(List(this), this),
+  //      uri.toString,
+  //      None,
+  //      content,
+  //      cacheable = false
+  //    )
+  //
+  //    Seq(result)
+  //  }
 
   def getHDFS(uri: URI, session: Session): Seq[Fetched] = {
     val spooky = session.spooky
@@ -360,8 +357,8 @@ case class Wget(
   def getHttp(uri: URI, session: Session): Seq[Fetched] = {
 
     val proxy = session.spooky.conf.proxy()
-    val userAgent = session.spooky.conf.userAgent()
-    val headers = session.spooky.conf.headers()
+    val userAgent = session.spooky.conf.userAgentFactory()
+    val headers = session.spooky.conf.headersFactory()
     val timeoutMs = this.timeout(session).toMillis.toInt
 
     val requestConfig = {
@@ -444,6 +441,7 @@ case class Wget(
         }
 
         val entity = response.getEntity
+        val httpStatus: StatusLine = response.getStatusLine
 
         val stream = entity.getContent
         val result = try {
@@ -454,15 +452,13 @@ case class Wget(
             PageUID(List(this), this),
             currentUrl,
             Some(contentType),
-            content
+            content,
+            httpStatus = Some(httpStatus)
           )
         }
         finally {
           stream.close()
         }
-
-        val httpStatus: StatusLine = response.getStatusLine
-        assert(httpStatus.getStatusCode.toString.startsWith("2"), httpStatus.toString + "\n" + result.code)
 
         Seq(result)
       }
@@ -473,7 +469,7 @@ case class Wget(
     catch {
       case e: ClientProtocolException =>
         val cause = e.getCause
-        if (cause.isInstanceOf[RedirectException]) Seq(NoPage((session.backtrace :+ this).toList))
+        if (cause.isInstanceOf[RedirectException]) Seq(NoPage((session.backtrace :+ this).toList)) //TODO: is it a reasonable exception?
         else throw e
       case e: Throwable =>
         throw e
@@ -481,7 +477,7 @@ case class Wget(
   }
 
   override def doInterpolate(pageRow: PageRow, spooky: SpookyContext): Option[this.type] = {
-    val first = this.uri(pageRow).flatMap(Utils.encapsulateAsIterable(_).headOption)
+    val first = this.uri(pageRow).flatMap(Utils.asArray[Any](_).headOption)
 
     val uriStr: Option[String] = first.flatMap {
       case element: Unstructured => element.href
@@ -494,41 +490,5 @@ case class Wget(
       str =>
         this.copy(uri = new Literal(str)).interpolateWayback(pageRow).map(_.asInstanceOf[this.type])
     )
-  }
-}
-
-case class OAuthV2(self: Wget) extends Export with Driverless {
-
-  override def filter: DocumentFilter = self.filter
-
-  override def wayback: Expression[Long] = self.wayback
-
-  def effectiveWget(session: Session): Wget = {
-
-    val keys = session.spooky.conf.oAuthKeys.apply()
-    if (keys == null) {
-      throw new QueryException("need to set SpookyConf.oAuthKeys first")
-    }
-    val effectiveWget: Wget = self.uriOption match {
-      case Some(uri) =>
-        val signed = HttpUtils.OauthV2(uri.toString, keys.consumerKey, keys.consumerSecret, keys.token, keys.tokenSecret)
-        self.copy(uri = Literal(signed))
-      case None =>
-        self
-    }
-    effectiveWget
-  }
-
-  override def doExeNoName(session: Session): Seq[Fetched] = {
-    val effectiveWget = this.effectiveWget(session)
-
-    effectiveWget.doExeNoName(session).map{
-      case noPage: NoPage => noPage.copy(trace = List(this))
-      case page: Page => page.copy(uid = PageUID(List(this),this))
-    }
-  }
-
-  override def doInterpolate(pageRow: PageRow, context: SpookyContext): Option[this.type] = self.interpolate(pageRow, context: SpookyContext).map {
-    v => this.copy(self = v.asInstanceOf[Wget]).asInstanceOf[this.type]
   }
 }
