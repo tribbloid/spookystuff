@@ -58,12 +58,12 @@ abstract class Export extends Named with Wayback{
 
             throw new DocumentFilterException(message, e)
         }
-      case other: PageLike =>
+      case other: Fetched =>
         other
     }
   }
 
-  def doExeNoName(session: Session): Seq[PageLike]
+  def doExeNoName(session: Session): Seq[Fetched]
 }
 
 trait WaybackSupport {
@@ -176,7 +176,8 @@ object DefaultScreenshot extends Screenshot()
  * http client is much faster than browser, also load much less resources
  * recommended for most static pages.
  * actions for more complex http/restful API call will be added per request.
- * @param uri support cell interpolation
+  *
+  * @param uri support cell interpolation
  */
 case class Wget(
                  uri: Expression[Any],
@@ -192,7 +193,7 @@ case class Wget(
 
   //  def effectiveURIString = uriOption.map(_.toString)
 
-  override def doExeNoName(session: Session): Seq[PageLike] = {
+  override def doExeNoName(session: Session): Seq[Fetched] = {
 
     uriOption match {
       case None => Nil
@@ -209,14 +210,14 @@ case class Wget(
         }
         if (this.contentType != null) result.map{
           case page: Page => page.copy(declaredContentType = Some(this.contentType))
-          case others: PageLike => others
+          case others: Fetched => others
         }
         else result
     }
   }
 
   //DEFINITELY NOT CACHED
-  def getLocal(uri: URI, session: Session): Seq[PageLike] = {
+  def getLocal(uri: URI, session: Session): Seq[Fetched] = {
 
     val pathStr = uri.toString.replaceFirst("file://","")
 
@@ -237,7 +238,7 @@ case class Wget(
   }
 
   //not cached
-  def getHDFS(uri: URI, session: Session): Seq[PageLike] = {
+  def getHDFS(uri: URI, session: Session): Seq[Fetched] = {
     val content = HDFSResolver(session.spooky.hadoopConf).input(uri.toString) {
       fis =>
         IOUtils.toByteArray(fis)
@@ -254,7 +255,7 @@ case class Wget(
     Seq(result)
   }
 
-  def getFtp(uri: URI, session: Session): Seq[PageLike] = {
+  def getFtp(uri: URI, session: Session): Seq[Fetched] = {
 
     val timeoutMs = this.timeout(session).toMillis.toInt
 
@@ -278,7 +279,7 @@ case class Wget(
     Seq(result)
   }
 
-  def getHttp(uri: URI, session: Session): Seq[PageLike] = {
+  def getHttp(uri: URI, session: Session): Seq[Fetched] = {
 
     val proxy = session.spooky.conf.proxy()
     val userAgent = session.spooky.conf.userAgent()
@@ -440,7 +441,7 @@ case class OAuthV2(self: Wget) extends Export with Driverless {
     effectiveWget
   }
 
-  override def doExeNoName(session: Session): Seq[PageLike] = {
+  override def doExeNoName(session: Session): Seq[Fetched] = {
     val effectiveWget = this.effectiveWget(session)
 
     effectiveWget.doExeNoName(session).map{

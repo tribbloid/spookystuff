@@ -52,6 +52,8 @@ trait Unstructured extends Serializable {
   def ownText: Option[String]
 
   def boilerPipe: Option[String]
+
+  def breadcrumb: Option[Seq[String]]
 }
 
 

@@ -86,4 +86,5 @@ with SeqLike[T, Elements[T]] {
 
   override protected[this] def newBuilder = Elements.newBuilder[T]
 
+  override def breadcrumb: Option[Seq[String]] = self.head.breadcrumb
 }

@@ -20,7 +20,7 @@ import scala.util.Random
 case class PageRow(
                     //ListMap may be slower but has tighter serialization size
                     dataRow: DataRow = ListMap(), //TODO: also carry PageUID & property type (Vertex/Edge) for GraphX
-                    pageLikes: Array[PageLike] = Array(), // discarded after new page coming in
+                    pageLikes: Array[Fetched] = Array(), // discarded after new page coming in
                     segmentID: SegID = Random.nextLong() //keep flattened rows together //unique for an entire context.
                     ) {
 
@@ -196,7 +196,7 @@ case class PageRow(
     }
   }
 
-  def putPages(others: Seq[PageLike], joinType: JoinType): Option[PageRow] = {
+  def putPages(others: Seq[Fetched], joinType: JoinType): Option[PageRow] = {
     joinType match {
       case Inner =>
         if (others.isEmpty) None
@@ -265,7 +265,7 @@ case class PageRow(
     }
 
     if (contentRows.isEmpty) {
-      Iterable(this.copy(pageLikes = this.noPages.map(_.asInstanceOf[PageLike])))
+      Iterable(this.copy(pageLikes = this.noPages.map(_.asInstanceOf[Fetched])))
     }
     else {
 
@@ -321,7 +321,7 @@ case class PageRow(
  Lookup table is shared between all PageRowRDD from a SpookyContext, but deep exploration sink won't only be used locally.
  */
 case class Squashed[T: ClassTag](
-                                  pageLikes: Array[PageLike],
+                                  pageLikes: Array[Fetched],
                                   rows: Array[T] = Array() // data, segment, batchID to distinguish aggregated Rows from the same explore(), discarded upon consolidation
                                   ) {
 

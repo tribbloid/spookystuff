@@ -9,4 +9,5 @@ class TestPageFromFile extends TestPageFromHttp {
   override def jsonUrl = this.getClass.getClassLoader.getResource("site/tribbloid.json").getPath
   override def pngUrl = this.getClass.getClassLoader.getResource("site/logo11w.png").getPath
   override def pdfUrl = this.getClass.getClassLoader.getResource("site/Test.pdf").getPath
+  def xmlUrl = this.getClass.getClassLoader.getResource("site/pom.xml").getPath
 }

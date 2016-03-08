@@ -2,7 +2,7 @@ package com.tribbloids.spookystuff.actions
 
 import org.slf4j.LoggerFactory
 import com.tribbloids.spookystuff.row.PageRow
-import com.tribbloids.spookystuff.pages.{Page, PageLike, PageUtils}
+import com.tribbloids.spookystuff.pages.{Page, Fetched, PageUtils}
 import com.tribbloids.spookystuff.session.{DriverSession, NoDriverSession, Session}
 import com.tribbloids.spookystuff.utils.Utils
 import com.tribbloids.spookystuff.{RemoteDisabledException, dsl, Const, SpookyContext}
@@ -24,9 +24,9 @@ case class TraceView(
     Some(new TraceView(seq).asInstanceOf[this.type])
   }
 
-  override def apply(session: Session): Seq[PageLike] = {
+  override def apply(session: Session): Seq[Fetched] = {
 
-    val results = new ArrayBuffer[PageLike]()
+    val results = new ArrayBuffer[Fetched]()
 
     this.self.foreach {
       action =>
@@ -77,7 +77,7 @@ case class TraceView(
     else self :+ Snapshot() //Don't use singleton, otherwise will flush timestamp and name
   }
 
-  def fetch(spooky: SpookyContext): Seq[PageLike] = {
+  def fetch(spooky: SpookyContext): Seq[Fetched] = {
 
     val results = Utils.retry (Const.remoteResourceLocalRetries){
       fetchOnce(spooky)
@@ -88,7 +88,7 @@ case class TraceView(
     results
   }
 
-  def fetchOnce(spooky: SpookyContext): Seq[PageLike] = {
+  def fetchOnce(spooky: SpookyContext): Seq[Fetched] = {
 
     if (!this.hasOutput) return Nil
 

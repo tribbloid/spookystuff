@@ -5,7 +5,7 @@ import org.slf4j.LoggerFactory
 import com.tribbloids.spookystuff.expressions.Expression
 import com.tribbloids.spookystuff.{SpookyContext, TryException, dsl, Const}
 import com.tribbloids.spookystuff.row.PageRow
-import com.tribbloids.spookystuff.pages.{NoPage, Page, PageLike}
+import com.tribbloids.spookystuff.pages.{NoPage, Page, Fetched}
 import com.tribbloids.spookystuff.session.Session
 import com.tribbloids.spookystuff.utils.Utils.retry
 
@@ -43,7 +43,7 @@ abstract class Block(override val self: Trace) extends Actions(self) with Named 
 
   override def needDriver = self.map(_.needDriver).reduce(_ || _)
 
-  final override def doExe(session: Session): Seq[PageLike] = {
+  final override def doExe(session: Session): Seq[Fetched] = {
 
     val pages = this.doExeNoUID(session)
 
@@ -199,7 +199,8 @@ object Loop {
 /**
  * Contains several sub-actions that are iterated for multiple times
  * Will iterate until max iteration is reached or execution is impossible (sub-action throws an exception)
- * @param limit max iteration, default to Const.fetchLimit
+  *
+  * @param limit max iteration, default to Const.fetchLimit
  * @param self a list of actions being iterated through
  */
 final case class Loop(

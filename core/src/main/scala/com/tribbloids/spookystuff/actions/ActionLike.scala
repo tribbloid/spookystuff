@@ -3,7 +3,7 @@ package com.tribbloids.spookystuff.actions
 import com.mchange.v2.c3p0.util.TestUtils
 import com.tribbloids.spookystuff.SpookyContext
 import com.tribbloids.spookystuff.row.PageRow
-import com.tribbloids.spookystuff.pages.PageLike
+import com.tribbloids.spookystuff.pages.Fetched
 import com.tribbloids.spookystuff.session.Session
 import com.tribbloids.spookystuff.utils.Utils
 
@@ -35,5 +35,5 @@ trait ActionLike extends Serializable {
   //the minimal equivalent action that can be put into backtrace
   def trunk: Option[this.type]
 
-  def apply(session: Session): Seq[PageLike]
+  def apply(session: Session): Seq[Fetched]
 }

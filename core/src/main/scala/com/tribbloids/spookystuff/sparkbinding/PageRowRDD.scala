@@ -4,7 +4,7 @@ import com.tribbloids.spookystuff._
 import com.tribbloids.spookystuff.actions._
 import com.tribbloids.spookystuff.dsl._
 import com.tribbloids.spookystuff.expressions._
-import com.tribbloids.spookystuff.pages.{Page, PageLike, Unstructured}
+import com.tribbloids.spookystuff.pages.{Page, Fetched, Unstructured}
 import com.tribbloids.spookystuff.row._
 import com.tribbloids.spookystuff.utils._
 import org.apache.spark.rdd.{RDD, UnionRDD}
@@ -234,7 +234,8 @@ class PageRowRDD private (
    * save each page to a designated directory
    * this is an action that will be triggered immediately
    * support many file systems including but not limited to HDFS, S3 and local HDD
-   * @param overwrite if a file with the same name already exist:
+    *
+    * @param overwrite if a file with the same name already exist:
    *                  true: overwrite it
    *                  false: append an unique suffix to the new file name
    * @return the same RDD[Page] with file paths carried as metadata
@@ -502,7 +503,7 @@ class PageRowRDD private (
                   val sameBacktrace = dryrun.find(_ == pageLike.uid.backtrace).get
                   pageLike.uid.backtrace.injectFrom(sameBacktrace)
               }
-              val pageLikes: Array[PageLike] = uniqueCachedSquashedRow.pageLikes
+              val pageLikes: Array[Fetched] = uniqueCachedSquashedRow.pageLikes
               val fetchedRows = rows.flatMap(_.putPages(pageLikes, joinType))
 
               val existingSegIDs = uniqueCachedSquashedRow.rows.map(_.segmentID).toSet
@@ -552,7 +553,8 @@ class PageRowRDD private (
   /**
    * results in a new set of Pages by crawling links on old pages
    * old pages that doesn't contain the link will be ignored
-   * @param maxOrdinal only the first n links will be used, default to Const.fetchLimit
+    *
+    * @param maxOrdinal only the first n links will be used, default to Const.fetchLimit
    * @return RDD[Page]
    */
   def visitJoin(
@@ -587,7 +589,8 @@ class PageRowRDD private (
   /**
    * same as join, but avoid launching a browser by using direct http GET (wget) to download new pages
    * much faster and less stressful to both crawling and target server(s)
-   * @param maxOrdinal only the first n links will be used, default to Const.fetchLimit
+    *
+    * @param maxOrdinal only the first n links will be used, default to Const.fetchLimit
    * @return RDD[Page]
    */
   def wgetJoin(

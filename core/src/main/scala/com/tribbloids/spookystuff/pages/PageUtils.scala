@@ -111,7 +111,7 @@ object PageUtils {
     }
 
   def autoCache(
-                 pageLikes: Seq[PageLike],
+                 pageLikes: Seq[Fetched],
                  spooky: SpookyContext
                  ): Unit = {
     val effectivePageLikes = pageLikes.filter(_.cacheable)
@@ -133,7 +133,7 @@ object PageUtils {
                              dirPath: Path,
                              earliestModificationTime: Long,
                              latestModificationTime: Long
-                             )(spooky: SpookyContext): Seq[PageLike] = {
+                             )(spooky: SpookyContext): Seq[Fetched] = {
 
     val latestStatus: Option[FileStatus] = dfsRead("get latest version", dirPath.toString, spooky) {
 
@@ -153,7 +153,7 @@ object PageUtils {
 
     latestStatus match {
       case Some(status) =>
-        val results = restore[PageLike](status.getPath.toString)(spooky)
+        val results = restore[Fetched](status.getPath.toString)(spooky)
 
         if (results == null) {
           LoggerFactory.getLogger(this.getClass).warn("Cached content is corrputed")
@@ -176,7 +176,7 @@ object PageUtils {
   def autoRestore(
                    backtrace: Trace,
                    spooky: SpookyContext
-                   ): Seq[PageLike] = {
+                   ): Seq[Fetched] = {
 
     import dsl._
 

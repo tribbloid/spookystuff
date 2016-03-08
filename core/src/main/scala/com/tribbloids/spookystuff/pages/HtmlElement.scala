@@ -8,6 +8,8 @@ import org.apache.tika.sax.ToXMLContentHandler
 import org.jsoup.nodes.Element
 import org.jsoup.{Jsoup, select}
 
+import scala.collection.JavaConverters
+
 /**
  * Created by peng on 11/30/14.
  */
@@ -16,6 +18,13 @@ object HtmlElement {
   def apply(html: String, uri: String): HtmlElement = new HtmlElement(null, html, None, uri)
 
   def apply(content: Array[Byte], charSet: String, uri: String): HtmlElement = apply(new String(content, charSet), uri)
+
+  def breadcrumb(e: Element): Seq[String] = {
+
+    import JavaConverters._
+
+    e.parents().asScala.map(_.tagName()).reverse.toSeq :+ e.tagName()
+  }
 }
 
 object TikaHtmlElement {
@@ -155,4 +164,6 @@ class HtmlElement private (
   }
 
   override def toString: String = html
+
+  override def breadcrumb: Option[Seq[String]] = Some(HtmlElement.breadcrumb(this.parsed))
 }

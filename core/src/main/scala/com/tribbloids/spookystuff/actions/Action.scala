@@ -4,7 +4,7 @@ import org.openqa.selenium.TakesScreenshot
 import org.openqa.selenium.support.ui.{ExpectedConditions, WebDriverWait}
 import org.slf4j.LoggerFactory
 import com.tribbloids.spookystuff.expressions._
-import com.tribbloids.spookystuff.pages.{Page, PageLike}
+import com.tribbloids.spookystuff.pages.{Page, Fetched}
 import com.tribbloids.spookystuff.selenium.BySizzleCssSelector
 import com.tribbloids.spookystuff.session.{NoDriverSession, DriverSession, Session}
 import com.tribbloids.spookystuff.utils.Utils
@@ -31,7 +31,7 @@ trait Action extends ActionLike {
   //  val optional: Boolean
 
   //this should handle autoSave, cache and errorDump
-  def apply(session: Session): Seq[PageLike] = {
+  def apply(session: Session): Seq[Fetched] = {
 
     val results = try {
       exe(session)
@@ -106,7 +106,7 @@ trait Action extends ActionLike {
     }
   }
 
-  def exe(session: Session): Seq[PageLike] = {
+  def exe(session: Session): Seq[Fetched] = {
 
     this match { //temporarily disabled as we assume that DFS is the culprit for causing deadlock
       case tt: Timed =>
@@ -122,7 +122,7 @@ trait Action extends ActionLike {
     }
   }
 
-  def doExe(session: Session): Seq[PageLike]
+  def doExe(session: Session): Seq[Fetched]
 
   override def injectFrom(same: ActionLike): Unit = {
     super.injectFrom(same)

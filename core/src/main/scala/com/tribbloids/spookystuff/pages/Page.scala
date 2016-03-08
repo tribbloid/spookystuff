@@ -36,12 +36,22 @@ case class PageUID(
 
 trait PageLike {
   val uid: PageUID
-  val timestamp: Date
   val cacheable: Boolean
+}
 
-  def laterThan(v2: PageLike): Boolean = this.timestamp after v2.timestamp
+case class Unfetched(
+                      val uid: PageUID
+                    ) extends PageLike {
 
-  def laterOf(v2: PageLike): PageLike = if (laterThan(v2)) this
+  val cacheable: Boolean = false
+}
+
+trait Fetched extends PageLike {
+  val timestamp: Date
+
+  def laterThan(v2: Fetched): Boolean = this.timestamp after v2.timestamp
+
+  def laterOf(v2: Fetched): Fetched = if (laterThan(v2)) this
   else v2
 }
 
@@ -50,7 +60,7 @@ case class NoPage(
                    trace: Trace,
                    override val timestamp: Date = new Date(System.currentTimeMillis()),
                    override val cacheable: Boolean = true
-                   ) extends Serializable with PageLike {
+                   ) extends Serializable with Fetched {
 
   override val uid: PageUID = PageUID(trace, null, 0, 1)
 }
@@ -69,7 +79,7 @@ case class Page(
                  var saved: ListSet[String] = ListSet(),
                  override val cacheable: Boolean = true
                  )
-  extends Unstructured with PageLike {
+  extends Unstructured with Fetched {
 
   def name = this.uid.output.name
 
@@ -238,4 +248,6 @@ case class Page(
       root :: spooky.conf.errorDumpPath(this).toString :: Nil
     )(spooky)
   }
+
+  override def breadcrumb: Option[Seq[String]] = root.breadcrumb
 }

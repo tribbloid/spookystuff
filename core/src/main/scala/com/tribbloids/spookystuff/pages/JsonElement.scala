@@ -1,7 +1,7 @@
 package com.tribbloids.spookystuff.pages
 
 import org.json4s.jackson.JsonMethods
-import org.json4s.{JArray, JField}
+import org.json4s.{JValue, JArray, JField}
 
 /**
  * Created by peng on 11/30/14.
@@ -9,7 +9,7 @@ import org.json4s.{JArray, JField}
 object JsonElement {
 
   def apply(jsonStr: String, tag: String, uri: String): Unstructured = {
-    val parsed = JsonMethods.parse(jsonStr)
+    val parsed: JValue = JsonMethods.parse(jsonStr)
     parsed match {
       case array: JArray =>
         val res = array.arr.map {
@@ -132,4 +132,6 @@ class JsonElement private (
   override def boilerPipe: Option[String] = None //TODO: unsupported, does it make sense
 
   override def toString: String = code.get
+
+  override def breadcrumb: Option[Seq[String]] = ???
 }
