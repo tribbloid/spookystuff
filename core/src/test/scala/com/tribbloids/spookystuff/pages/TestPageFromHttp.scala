@@ -174,10 +174,10 @@ class TestPageFromHttp extends SpookyEnvSuite {
 
     val resultsList = results.toArray
     assert(resultsList.length === 1)
-    val page = resultsList(0).asInstanceOf[Page].set("csvFormat" -> CSVFormat.newFormat('\t'))
+    val page = resultsList(0).asInstanceOf[Page].set("csvFormat" -> CSVFormat.newFormat('\t').withQuote('"').withHeader())
 
     assert(page.mimeType == "text/csv")
-    assert(Set("iso-8859-1", "utf-8") contains page.charset.map(_.toLowerCase).get)
+    assert(Set("iso-8859-1", "utf-8") contains page.charset.map(_.toLowerCase).get) //the file is just using ASCII chars
     assert(page.findAll("title").texts.isEmpty)
 
     assert(page.findAll("Name").size == 14)
