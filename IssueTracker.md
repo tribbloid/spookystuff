@@ -289,5 +289,8 @@ rewrite expression system using scala reflection API + .........................
 
 in pipeline mode, how to automate the test that depends on API/OAuth Key, while prevent the key from being compromised?
 
+improve directory XML formatting
 
+merge MIME typecast into Page's API, and configure parsing of csv into it
 
+merge into trunk/engine branch

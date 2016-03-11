@@ -5,6 +5,7 @@ import com.tribbloids.spookystuff.row.{PageRow, RowUID, Squashed, WebCacheRDD}
 import org.apache.spark.rdd.RDD
 import org.apache.spark.{Partitioner, SparkContext}
 
+import scala.language.implicitConversions
 import scala.reflect.ClassTag
 
 /**
@@ -321,4 +322,5 @@ object Views {
     )
   }
 
+//  implicit def unwrapLazy[T](v: Lazy[T]): T = v.value
 }

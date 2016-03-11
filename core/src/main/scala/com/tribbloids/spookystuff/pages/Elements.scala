@@ -88,3 +88,5 @@ with SeqLike[T, Elements[T]] {
 
   override def breadcrumb: Option[Seq[String]] = self.head.breadcrumb
 }
+
+class EmptyElements[+T <: Unstructured] extends Elements(List[T]())

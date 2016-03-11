@@ -49,6 +49,7 @@ object TikaHtmlElement {
   }
 }
 
+//TODO: rename to HTMLXMLElement
 class HtmlElement private (
                             @transient _parsed: Element,
                             val html: String,

@@ -43,8 +43,10 @@ trait Unstructured extends Serializable {
 
   def attr(attr: String, noEmpty: Boolean = true): Option[String]
 
+  // TODO: resolve by "@_href" dynamic function
   def href: Option[String]
 
+  // TODO: resolve by "@_src" dynamic function
   def src: Option[String]
 
   def text: Option[String]

@@ -13,6 +13,7 @@ abstract class PathResolver {
 }
 
 case object LocalResolver extends PathResolver {
+
   override def input[T](pathStr: String)(f: (InputStream) => T): T = {
     val fis = new FileInputStream(pathStr)
 

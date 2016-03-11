@@ -12,12 +12,15 @@ import scala.concurrent.{Await, Future}
 import scala.language.implicitConversions
 import scala.reflect.ClassTag
 import scala.util.{Failure, Random, Success, Try}
+import scala.xml.PrettyPrinter
 
 /**
  * Created by peng on 06/08/14.
  */
 object Utils {
 
+
+  val xmlPrinter = new PrettyPrinter(Int.MaxValue, 2)
 //  val logger = LoggerFactory.getLogger(this.getClass)
 
   // Returning T, throwing the exception on failure

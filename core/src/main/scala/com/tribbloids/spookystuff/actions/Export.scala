@@ -1,18 +1,20 @@
 package com.tribbloids.spookystuff.actions
 
+import java.lang.reflect.InvocationTargetException
 import java.net.{InetSocketAddress, URI}
 import java.util.Date
 import javax.net.ssl.SSLContext
 
 import com.tribbloids.spookystuff.dsl.DocumentFilter
-import com.tribbloids.spookystuff.row.PageRow
 import com.tribbloids.spookystuff.expressions.{Expression, Literal}
 import com.tribbloids.spookystuff.http._
 import com.tribbloids.spookystuff.pages._
+import com.tribbloids.spookystuff.row.PageRow
 import com.tribbloids.spookystuff.session.Session
-import com.tribbloids.spookystuff.utils.{HDFSResolver, LocalResolver, Utils}
-import com.tribbloids.spookystuff.{SpookyContext, Const, DocumentFilterException, QueryException}
+import com.tribbloids.spookystuff.utils.{HDFSResolver, Utils}
+import com.tribbloids.spookystuff.{Const, DocumentFilterException, QueryException, SpookyContext}
 import org.apache.commons.io.IOUtils
+import org.apache.hadoop.fs.{FileSystem, FileStatus, Path}
 import org.apache.http.client.config.RequestConfig
 import org.apache.http.client.methods.{HttpGet, HttpUriRequest}
 import org.apache.http.client.protocol.HttpClientContext
@@ -25,12 +27,12 @@ import org.apache.http.protocol.HttpCoreContext
 import org.apache.http.{HttpHost, StatusLine}
 import org.openqa.selenium.{OutputType, TakesScreenshot}
 
+import scala.xml._
+
 /**
- * Export a page from the browser or http client
- * the page an be anything including HTML/XML file, image, PDF file or JSON string.
- */
-
-
+  * Export a page from the browser or http client
+  * the page an be anything including HTML/XML file, image, PDF file or JSON string.
+  */
 abstract class Export extends Named with Wayback{
 
   def filter: DocumentFilter
@@ -101,15 +103,15 @@ trait WaybackSupport {
 }
 
 /**
- * Export the current page from the browser
- * interact with the browser to load the target page first
- * only for html page, please use wget for images and pdf files
- * always export as UTF8 charset
- */
+  * Export the current page from the browser
+  * interact with the browser to load the target page first
+  * only for html page, please use wget for images and pdf files
+  * always export as UTF8 charset
+  */
 case class Snapshot(
-                     override val filter: DocumentFilter = Const.defaultDocumentFilter,
-                     contentType: String = null
-                     ) extends Export with WaybackSupport{
+                     override val filter: DocumentFilter = Const.defaultDocumentFilter
+//                     contentType: String = null
+                   ) extends Export with WaybackSupport{
 
   // all other fields are empty
   override def doExeNoName(pb: Session): Seq[Page] = {
@@ -131,8 +133,8 @@ case class Snapshot(
       //      serializableCookies
     )
 
-    if (contentType != null) Seq(page.copy(declaredContentType = Some(contentType)))
-    else Seq(page)
+//    if (contentType != null) Seq(page.copy(declaredContentType = Some(contentType)))
+    Seq(page)
   }
 
   override def doInterpolate(pageRow: PageRow, spooky: SpookyContext) = {
@@ -145,7 +147,7 @@ object DefaultSnapshot extends Snapshot()
 
 case class Screenshot(
                        override val filter: DocumentFilter = Const.defaultImageFilter
-                       ) extends Export with WaybackSupport {
+                     ) extends Export with WaybackSupport {
 
   override def doExeNoName(pb: Session): Seq[Page] = {
 
@@ -172,18 +174,18 @@ case class Screenshot(
 object DefaultScreenshot extends Screenshot()
 
 /**
- * use an http GET to fetch a remote resource deonted by url
- * http client is much faster than browser, also load much less resources
- * recommended for most static pages.
- * actions for more complex http/restful API call will be added per request.
+  * use an http GET to fetch a remote resource deonted by url
+  * http client is much faster than browser, also load much less resources
+  * recommended for most static pages.
+  * actions for more complex http/restful API call will be added per request.
   *
   * @param uri support cell interpolation
- */
+  */
 case class Wget(
                  uri: Expression[Any],
-                 override val filter: DocumentFilter = Const.defaultDocumentFilter,
-                 contentType: String = null
-                 ) extends Export with Driverless with Timed with WaybackSupport {
+                 override val filter: DocumentFilter = Const.defaultDocumentFilter
+//                 contentType: String = null
+               ) extends Export with Driverless with Timed with WaybackSupport {
 
   lazy val uriOption: Option[URI] = {
     val uriStr = uri.asInstanceOf[Literal[String]].value.trim()
@@ -203,50 +205,126 @@ case class Wget(
             getHttp(uriURI, session)
           case "ftp" =>
             getFtp(uriURI, session)
-          case "file" =>
-            getLocal(uriURI, session)
+//          case "file" =>
+//            getLocal(uriURI, session)
           case _ =>
             getHDFS(uriURI, session)
         }
-        if (this.contentType != null) result.map{
-          case page: Page => page.copy(declaredContentType = Some(this.contentType))
-          case others: Fetched => others
-        }
-        else result
+//        if (this.contentType != null) result.map{
+//          case page: Page => page.copy(declaredContentType = Some(this.contentType))
+//          case others: Fetched => others
+//        }
+        result
     }
   }
 
-  //DEFINITELY NOT CACHED
-  def getLocal(uri: URI, session: Session): Seq[Fetched] = {
+  //DEFINITELY NOT CACHEABLE
+//  def getLocal(uri: URI, session: Session): Seq[Fetched] = {
+//
+//    val pathStr = uri.toString.replaceFirst("file://","")
+//
+//    val content = try {
+//      LocalResolver.input(pathStr) {
+//        fis =>
+//          IOUtils.toByteArray(fis)
+//      }
+//    }
+//    catch {
+//      case e: Throwable =>
+//        return Seq(
+//          NoPage(List(this), cacheable = false)
+//        )
+//    }
+//
+//    val result = new Page(
+//      PageUID(List(this), this),
+//      uri.toString,
+//      None,
+//      content,
+//      cacheable = false
+//    )
+//
+//    Seq(result)
+//  }
 
-    val pathStr = uri.toString.replaceFirst("file://","")
-
-    val content = LocalResolver.input(pathStr) {
-      fis =>
-        IOUtils.toByteArray(fis)
-    }
-
-    val result = new Page(
-      PageUID(List(this), this),
-      uri.toString,
-      None,
-      content,
-      cacheable = false
-    )
-
-    Seq(result)
-  }
-
-  //not cached
   def getHDFS(uri: URI, session: Session): Seq[Fetched] = {
-    val content = HDFSResolver(session.spooky.hadoopConf).input(uri.toString) {
-      fis =>
-        IOUtils.toByteArray(fis)
+    val spooky = session.spooky
+    val path = new Path(uri.toString)
+
+    val fs = path.getFileSystem(spooky.hadoopConf)
+
+    if (fs.exists(path)) {
+      val result: Seq[Fetched] = if (fs.getFileStatus(path).isDirectory) {
+        this.getHDFSDirectory(path, fs)
+      }
+      else {
+        this.getHDFSFile(path, session)
+      }
+      result
     }
+    else
+      Seq(NoPage(List(this), cacheable = false))
+  }
+
+  def getHDFSDirectory(path: Path, fs: FileSystem): Seq[Fetched] = {
+    val statuses = fs.listStatus(path)
+    val xmls: Array[Elem] = statuses.map {
+      (status: FileStatus) =>
+        //use reflection for all getter & boolean getter
+        //TODO: move to utility
+        val methods = status.getClass.getMethods
+        val getters = methods.filter {
+          m =>
+            m.getName.startsWith("get") && (m.getParameterCount == 0)
+        }
+          .map(v => v.getName.stripPrefix("get") -> v)
+        val booleanGetters = methods.filter {
+          m =>
+            m.getName.startsWith("is") && (m.getParameterCount == 0)
+        }
+          .map(v => v.getName -> v)
+        val validMethods = getters ++ booleanGetters
+        val kvs = validMethods.flatMap {
+          tuple =>
+            try {
+              tuple._2.setAccessible(true)
+              Some(tuple._1 -> tuple._2.invoke(status))
+            }
+            catch {
+              case e: InvocationTargetException =>
+                None
+            }
+        }
+        val nodes = kvs.map {
+          kv =>
+            Elem(null, kv._1, Null, TopScope, true, Text("" + kv._2))
+        }
+        <file>{NodeSeq.fromSeq(nodes)}</file>
+    }
+    val xml = <directory>{NodeSeq.fromSeq(xmls)}</directory>
+    val xmlStr = Utils.xmlPrinter.format(xml)
+
+    val result: Seq[Fetched] = Seq(new Page(
+      PageUID(List(this), this),
+      path.toString,
+      Some("inode/directory; charset=UTF-8"),
+      xmlStr.getBytes("utf-8"),
+      cacheable = false
+    ))
+    result
+  }
+
+  //not cacheable
+  def getHDFSFile(path: Path, session: Session): Seq[Fetched] = {
+    val content =
+      HDFSResolver(session.spooky.hadoopConf).input(path.toString) {
+        fis =>
+          IOUtils.toByteArray(fis)
+      }
 
     val result = new Page(
       PageUID(List(this), this),
-      uri.toString,
+      path.toString,
       None,
       content,
       cacheable = false
@@ -434,7 +512,7 @@ case class OAuthV2(self: Wget) extends Export with Driverless {
     val effectiveWget: Wget = self.uriOption match {
       case Some(uri) =>
         val signed = HttpUtils.OauthV2(uri.toString, keys.consumerKey, keys.consumerSecret, keys.token, keys.tokenSecret)
-        self.copy(uri = Literal(signed), contentType = self.contentType)
+        self.copy(uri = Literal(signed))
       case None =>
         self
     }

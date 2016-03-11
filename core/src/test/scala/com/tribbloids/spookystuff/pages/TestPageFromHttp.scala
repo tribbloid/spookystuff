@@ -2,6 +2,7 @@ package com.tribbloids.spookystuff.pages
 
 import com.tribbloids.spookystuff.actions.Wget
 import com.tribbloids.spookystuff.{SpookyEnvSuite, dsl}
+import org.apache.commons.csv.CSVFormat
 
 /**
  * Created by peng on 10/17/14.
@@ -10,12 +11,14 @@ class TestPageFromHttp extends SpookyEnvSuite {
 
   import dsl._
 
-  def htmlUrl = "http://www.wikipedia.org"
+  def htmlUrl = "http://tribbloid.github.io/spookystuff/test/Wikipedia.html"
   def jsonUrl = "http://tribbloid.github.io/spookystuff/test/tribbloid.json"
   //TODO: add this after fetch can semi-auto-detect content-type
   def jsonUrlIncorrectContentType = "https://raw.githubusercontent.com/tribbloid/spookystuff/master/core/src/test/resources/site/tribbloid.json"
   def pngUrl = "https://www.google.ca/images/srpr/logo11w.png"
   def pdfUrl = "http://stlab.adobe.com/wiki/images/d/d3/Test.pdf"
+  def xmlUrl = "http://tribbloid.github.io/spookystuff/test/pom.xml"
+  def csvUrl = "http://tribbloid.github.io/spookystuff/test/table.csv"
 
   test("wget html, save and load") {
 
@@ -136,5 +139,55 @@ class TestPageFromHttp extends SpookyEnvSuite {
     assert(second(0).attr("class").get.contains("lang"))
     assert(second(1).attr("class").get.contains("lang"))
     assert(second(2).attr("class").get.contains("lang"))
+  }
+
+  test("wget xml, save and load") {
+
+    val results = (
+      Wget(xmlUrl) :: Nil
+      ).fetch(spooky)
+
+    val resultsList = results.toArray
+    assert(resultsList.length === 1)
+    val page = resultsList(0).asInstanceOf[Page]
+
+    assert(page.mimeType == "application/xml")
+    assert(page.charset.map(_.toLowerCase).get == "utf-8")
+    assert(page.findAll("title").texts.isEmpty)
+
+    assert(page.findAll("profiles > profile").size == 5)
+
+//        page.findAll("*").flatMap(_.breadcrumb).map(_.mkString("/")).distinct.foreach(println)
+
+    page.autoSave(spooky,overwrite = true)
+
+    val loadedContent = PageUtils.load(page.saved.head)(spooky)
+
+    assert(loadedContent === page.content)
+  }
+
+  test("wget csv, save and load") {
+
+    val results = (
+      Wget(csvUrl) :: Nil
+      ).fetch(spooky)
+
+    val resultsList = results.toArray
+    assert(resultsList.length === 1)
+    val page = resultsList(0).asInstanceOf[Page].set("csvFormat" -> CSVFormat.newFormat('\t'))
+
+    assert(page.mimeType == "text/csv")
+    assert(Set("iso-8859-1", "utf-8") contains page.charset.map(_.toLowerCase).get)
+    assert(page.findAll("title").texts.isEmpty)
+
+    assert(page.findAll("Name").size == 14)
+
+    //    page.findAll("*").flatMap(_.breadcrumb).map(_.mkString("/")).distinct.foreach(println)
+
+    page.autoSave(spooky,overwrite = true)
+
+    val loadedContent = PageUtils.load(page.saved.head)(spooky)
+
+    assert(loadedContent === page.content)
   }
 }

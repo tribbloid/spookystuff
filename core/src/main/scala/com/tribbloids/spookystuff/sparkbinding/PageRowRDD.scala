@@ -76,6 +76,7 @@ class PageRowRDD private (
 
   def sparkContext = this.selfRDD.sparkContext
 
+  //TODO: use reflection to change to (K->V, ...) format
   def setConf(f: SpookyConf => Unit): PageRowRDD = {
     f(this.spooky.conf)
     this
@@ -96,7 +97,6 @@ class PageRowRDD private (
     val result = grouped.map {
       (dryrun_rows: (List[Trace], Iterable[PageRow])) =>
         val newRows = dryrun_rows._2
-
 
         val seedRows = newRows
           .groupBy(_.uid)

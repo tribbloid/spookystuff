@@ -56,6 +56,11 @@
             <artifactId>signpost-core</artifactId>
             <version>1.2.1.2</version>
         </dependency>
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-csv</artifactId>
+            <version>1.2</version>
+        </dependency>
         <!--<dependency>-->
         <!--<groupId>com.ui4j</groupId>-->
         <!--<artifactId>ui4j-all</artifactId>-->

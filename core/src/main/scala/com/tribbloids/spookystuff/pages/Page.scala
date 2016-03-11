@@ -3,6 +3,7 @@ package com.tribbloids.spookystuff.pages
 import java.io._
 import java.util.Date
 
+import org.apache.commons.csv.CSVFormat
 import org.apache.tika.mime.MimeTypes
 
 //TODO: change to sql.Date
@@ -20,8 +21,8 @@ import org.mozilla.universalchardet.UniversalDetector
 import scala.collection.immutable.ListSet
 
 /**
- * Created by peng on 04/06/14.
- */
+  * Created by peng on 04/06/14.
+  */
 //use to genterate a lookup key for each page so
 @SerialVersionUID(612503421395L)
 case class PageUID(
@@ -30,7 +31,7 @@ case class PageUID(
                     //                    sessionStartTime: Long,
                     blockIndex: Int = 0,
                     blockSize: Int = 1 //number of pages in a block output,
-                    ) {
+                  ) {
 
 }
 
@@ -60,9 +61,17 @@ case class NoPage(
                    trace: Trace,
                    override val timestamp: Date = new Date(System.currentTimeMillis()),
                    override val cacheable: Boolean = true
-                   ) extends Serializable with Fetched {
+                 ) extends Serializable with Fetched {
 
   override val uid: PageUID = PageUID(trace, null, 0, 1)
+}
+
+object Page {
+
+  val CONTENT_TYPE = "contentType"
+  val CSV_FORMAT = "csvFormat"
+
+  val defaultCSVFormat = CSVFormat.DEFAULT
 }
 
 //keep small, will be passed around by Spark
@@ -77,13 +86,16 @@ case class Page(
                  //                 cookie: Seq[SerializableCookie] = Nil,
                  override val timestamp: Date = new Date(System.currentTimeMillis()),
                  var saved: ListSet[String] = ListSet(),
-                 override val cacheable: Boolean = true
-                 )
+                 override val cacheable: Boolean = true,
+                 @transient val _properties: Map[String, Any] = null
+               )
   extends Unstructured with Fetched {
 
   def name = this.uid.output.name
 
-  private def detectCharset(result: ContentType): String = {
+  def properties: Map[String, Any] = Option(_properties).getOrElse(Map())
+
+  private def detectCharset(contentType: ContentType): String = {
     val charsetD = new UniversalDetector(null)
     val ss = 4096
 
@@ -97,22 +109,24 @@ case class Page(
     val detected = charsetD.getDetectedCharset
 
     if (detected == null) {
-      if (result.getMimeType.contains("text")) Const.defaultTextCharset
-      else if (result.getMimeType.contains("application")) Const.defaultApplicationCharset
+      if (contentType.getMimeType.contains("text")) Const.defaultTextCharset
+      else if (contentType.getMimeType.contains("application")) Const.defaultApplicationCharset
       else Const.defaultApplicationCharset
     }
     else detected
   }
 
-  @transient lazy val parsedContentType: ContentType = declaredContentType match {
+  @transient lazy val parsedContentType: ContentType = properties
+    .get(Page.CONTENT_TYPE)
+    .map("" + _)
+    .orElse(declaredContentType) match {
     case Some(str) =>
-      val result = ContentType.parse(str)
-      if (result.getCharset == null) {
+      val ct = ContentType.parse(str)
+      if (ct.getCharset == null) {
 
-
-        result.withCharset(detectCharset(result))
+        ct.withCharset(detectCharset(ct))
       }
-      else result
+      else ct
     case None =>
       val metadata = new Metadata()
       val slash: Int = uri.lastIndexOf('/')
@@ -137,35 +151,40 @@ case class Page(
       }
   }
 
-  def contentType = parsedContentType.toString
-
-  def mimeType: String = parsedContentType.getMimeType
-  def charset: Option[Selector] = Option(parsedContentType.getCharset).map(_.name())
-  def tikaMime = MimeTypes.getDefaultMimeTypes.forName(mimeType)
-  def exts: Array[String] = tikaMime.getExtensions.toArray(Array[String]()).map{
-    str =>
-      if (str.startsWith(".")) str.splitAt(1)._2
-      else str
-  }
-  def defaultExt: Option[String] = exts.headOption
-
   //TODO: use reflection to find any element implementation that can resolve supplied MIME type
   @transient lazy val root: Unstructured = {
     val effectiveCharset = charset.orNull
 
-    if (mimeType.contains("html")) {
-      HtmlElement(content, effectiveCharset, uri) //not serialize, parsing is faster
-    }
-    else if (mimeType.contains("xml")) {
+    if (mimeType.contains("html") || mimeType.contains("xml") || mimeType.contains("directory")) {
       HtmlElement(content, effectiveCharset, uri) //not serialize, parsing is faster
     }
     else if (mimeType.contains("json")) {
       JsonElement(content, effectiveCharset, uri) //not serialize, parsing is faster
     }
+    else if (mimeType.contains("csv")) {
+      val csvFormat = this.properties.get(Page.CSV_FORMAT).map{
+        _.asInstanceOf[CSVFormat]
+      }
+        .getOrElse(Page.defaultCSVFormat)
+
+      CSVElement(content, effectiveCharset, uri, csvFormat) //not serialize, parsing is faster
+    }
     else {
       TikaHtmlElement(content, effectiveCharset, mimeType, uri)
     }
   }
+  def charset: Option[Selector] = Option(parsedContentType.getCharset).map(_.name())
+  def mimeType: String = parsedContentType.getMimeType
+
+  def contentType = parsedContentType.toString
+
+  def tikaMimeType = MimeTypes.getDefaultMimeTypes.forName(mimeType)
+  def exts: Array[String] = tikaMimeType.getExtensions.toArray(Array[String]()).map{
+    str =>
+      if (str.startsWith(".")) str.splitAt(1)._2
+      else str
+  }
+  def defaultExt: Option[String] = exts.headOption
 
   override def findAll(selector: String) = root.findAll(selector)
   override def findAllWithSiblings(start: String, range: Range) = root.findAllWithSiblings(start, range)
@@ -179,13 +198,14 @@ case class Page(
   override def text: Option[String] = root.text
   override def ownText: Option[String] = root.ownText
   override def boilerPipe: Option[String] = root.boilerPipe
+  override def breadcrumb: Option[Seq[String]] = root.breadcrumb
   //---------------------------------------------------------------------------------------------------
 
   //this will lose information as charset encoding will be different
   def save(
             pathParts: Seq[String],
             overwrite: Boolean = false
-            )(spooky: SpookyContext): Unit = {
+          )(spooky: SpookyContext): Unit = {
 
     val path = Utils.uriConcat(pathParts: _*)
 
@@ -217,14 +237,15 @@ case class Page(
   def autoSave(
                 spooky: SpookyContext,
                 overwrite: Boolean = false
-                ): Unit = this.save(
+              ): Unit = this.save(
     spooky.conf.dirs.autoSave :: spooky.conf.autoSavePath(this).toString :: Nil
   )(spooky)
 
+  //TODO: merge into cascade retries
   def errorDump(
                  spooky: SpookyContext,
                  overwrite: Boolean = false
-                 ): Unit = {
+               ): Unit = {
     val root = this.uid.output match {
       case ss: Screenshot => spooky.conf.dirs.errorScreenshot
       case _ => spooky.conf.dirs.errorDump
@@ -238,7 +259,7 @@ case class Page(
   def errorDumpLocally(
                         spooky: SpookyContext,
                         overwrite: Boolean = false
-                        ): Unit = {
+                      ): Unit = {
     val root = this.uid.output match {
       case ss: Screenshot => spooky.conf.dirs.errorScreenshotLocal
       case _ => spooky.conf.dirs.errorDumpLocal
@@ -249,5 +270,7 @@ case class Page(
     )(spooky)
   }
 
-  override def breadcrumb: Option[Seq[String]] = root.breadcrumb
+  def set(tuples: Tuple2[String, Any]*): Page = this.copy(
+    _properties = this.properties ++ Map(tuples: _*)
+  )
 }
