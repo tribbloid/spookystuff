@@ -23,7 +23,7 @@ object HtmlElement {
 
     import JavaConverters._
 
-    e.parents().asScala.map(_.tagName()).reverse.toSeq :+ e.tagName()
+    e.parents().asScala.map(_.tagName()).reverse :+ e.tagName()
   }
 }
 
@@ -140,6 +140,14 @@ class HtmlElement private (
   override def formattedCode: Option[String] = {
     parsed.ownerDocument().outputSettings().prettyPrint(true)
     Some(parsed.outerHtml())
+  }
+
+  override def allAttr: Option[Map[String, String]] = {
+    val result = Map(parsed.attributes().toSeq.map{
+      attr =>
+        attr.getKey -> attr.getValue
+    }: _*)
+    Some(result)
   }
 
   override def attr(attr: String, noEmpty: Boolean = true): Option[String] = {

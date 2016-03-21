@@ -100,6 +100,15 @@ class JsonElement private (
 
   override def formattedCode: Option[String] = Some(JsonMethods.pretty(field._2))
 
+  override def allAttr: Option[Map[String, String]] = {
+    val filtered = field._2.filterField{
+      field =>
+        field._1.startsWith("@")
+    }
+    val result = Map(filtered.map(v => v._1.stripPrefix("@") -> JsonMethods.compact(v._2)): _*)
+    Some(result)
+  }
+
   override def attr(attr: String, noEmpty: Boolean = true): Option[String] = {
 
     val foundOption = field._2.findField{

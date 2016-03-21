@@ -64,6 +64,7 @@ case class SpookyContext private (
 
   def hadoopConf: Configuration = broadcastedHadoopConf.value.value
 
+  //TODO: use reflection to zero, and change var to val
   def zeroMetrics(): SpookyContext ={
     metrics = new Metrics()
     this

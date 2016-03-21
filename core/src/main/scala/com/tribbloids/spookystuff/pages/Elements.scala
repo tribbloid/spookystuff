@@ -40,6 +40,8 @@ with SeqLike[T, Elements[T]] {
 
   def formattedCodes: Seq[String] = self.flatMap(_.formattedCode)
 
+  def allAttrs: Seq[Map[String, String]] = self.flatMap(_.allAttr)
+
   def attrs(attr: String, noEmpty: Boolean = true): Seq[String] = self.flatMap(_.attr(attr, noEmpty))
 
   def hrefs = self.flatMap(_.href)
@@ -71,6 +73,8 @@ with SeqLike[T, Elements[T]] {
   override def ownText: Option[String] = ownTexts.headOption
 
   override def boilerPipe: Option[String] = boilerPipes.headOption
+
+  override def allAttr: Option[Map[String, String]] = allAttrs.headOption
 
   override def attr(attr: String, noEmpty: Boolean): Option[String] = attrs(attr, noEmpty).headOption
 

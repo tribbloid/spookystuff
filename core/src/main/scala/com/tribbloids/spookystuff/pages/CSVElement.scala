@@ -99,6 +99,8 @@ class CSVElement(
 
   override def code: Option[String] = text
 
+  override def allAttr: Option[Map[String, String]] = Some(Map())
+
   override def attr(attr: String, noEmpty: Boolean): Option[String] = ownText
 }
 
@@ -131,6 +133,8 @@ class CsvDatum(
   override def code: Option[String] = ownText
 
   override def childrenWithSiblings(selector: Selector, range: Range): Elements[Siblings[Unstructured]] = new EmptyElements
+
+  override def allAttr: Option[Map[String, String]] = Some(Map())
 
   override def attr(attr: String, noEmpty: Boolean): Option[String] = ownText
 }

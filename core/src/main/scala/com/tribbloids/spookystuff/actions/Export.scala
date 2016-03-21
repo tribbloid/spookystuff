@@ -292,16 +292,26 @@ case class Wget(
             }
             catch {
               case e: InvocationTargetException =>
+//                println(e.getCause.getMessage)
                 None
             }
         }
-        val nodes = kvs.map {
+        val nodeName = status.getPath.getName
+        val attributes: Array[Attribute] = kvs.map(
           kv =>
-            Elem(null, kv._1, Null, TopScope, true, Text("" + kv._2))
+            Attribute(null, kv._1, ""+kv._2, Null)
+        )
+
+        val node = if (status.isFile) <file>{nodeName}</file>
+        else if (status.isDirectory) <directory>{nodeName}</directory>
+        else if (status.isSymlink) <symlink>{nodeName}</symlink>
+        else <subnode>{nodeName}</subnode>
+
+        attributes.foldLeft(node) {
+          (v1, v2) =>v1 % v2
         }
-        <file>{NodeSeq.fromSeq(nodes)}</file>
     }
-    val xml = <directory>{NodeSeq.fromSeq(xmls)}</directory>
+    val xml = <root>{NodeSeq.fromSeq(xmls)}</root>
     val xmlStr = Utils.xmlPrinter.format(xml)
 
     val result: Seq[Fetched] = Seq(new Page(

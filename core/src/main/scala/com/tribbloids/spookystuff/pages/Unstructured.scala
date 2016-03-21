@@ -41,14 +41,6 @@ trait Unstructured extends Serializable {
 
   def formattedCode: Option[String]
 
-  def attr(attr: String, noEmpty: Boolean = true): Option[String]
-
-  // TODO: resolve by "@_href" dynamic function
-  def href: Option[String]
-
-  // TODO: resolve by "@_src" dynamic function
-  def src: Option[String]
-
   def text: Option[String]
 
   def ownText: Option[String]
@@ -56,9 +48,14 @@ trait Unstructured extends Serializable {
   def boilerPipe: Option[String]
 
   def breadcrumb: Option[Seq[String]]
+
+  def allAttr: Option[Map[String, String]]
+
+  def attr(attr: String, noEmpty: Boolean = true): Option[String]
+
+  // TODO: resolve by "@_href" dynamic function
+  def href: Option[String]
+
+  // TODO: resolve by "@_src" dynamic function
+  def src: Option[String]
 }
-
-
-
-
-

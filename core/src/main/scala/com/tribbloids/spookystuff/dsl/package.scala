@@ -171,7 +171,11 @@ package object dsl {
 
     def ownText: Expression[String] = self.andFlatMap(_.ownText, "ownText")
 
-    def attr(attrKey: String, noEmpty: Boolean = true): Expression[String] = self.andFlatMap(_.attr(attrKey, noEmpty), s"attr($attrKey,$noEmpty)")
+    def allAttr: Expression[Map[String, String]] =
+      self.andFlatMap(_.allAttr, s"allAttr")
+
+    def attr(attrKey: String, noEmpty: Boolean = true): Expression[String] =
+      self.andFlatMap(_.attr(attrKey, noEmpty), s"attr($attrKey,$noEmpty)")
 
     def href = self.andFlatMap(_.href, s"href")
 
@@ -190,7 +194,11 @@ package object dsl {
 
     def ownTexts: Expression[Seq[String]] = self.andMap(_.ownTexts, "ownTexts")
 
-    def attrs(attrKey: String, noEmpty: Boolean = true): Expression[Seq[String]] = self.andMap(_.attrs(attrKey, noEmpty), s"attrs($attrKey,$noEmpty)")
+    def allAttrs: Expression[Seq[Map[String, String]]] =
+      self.andMap(_.allAttrs, s"allAttrs")
+
+    def attrs(attrKey: String, noEmpty: Boolean = true): Expression[Seq[String]] =
+      self.andMap(_.attrs(attrKey, noEmpty), s"attrs($attrKey,$noEmpty)")
 
     def hrefs = self.andMap(_.hrefs, s"hrefs")
 
