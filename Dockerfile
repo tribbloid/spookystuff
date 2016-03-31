@@ -145,8 +145,8 @@ RUN mkdir $ZEPPELIN_HOME/run
 
 ### NOTEBOOK ###
 
-RUN mkdir /notebook
-ADD notebook/tutorial /notebook/tutorial
+# RUN mkdir /notebook
+# ADD notebook/tutorial /notebook/tutorial
 
 # Don't add interpreter.json @see https://github.com/datalayer/datalayer-docker/issues/1
 # COPY ./resources/interpreter.json $ZEPPELIN_HOME/conf/interpreter.json
@@ -158,8 +158,8 @@ ADD notebook/tutorial /notebook/tutorial
 
 ### HADOOP ###
 
-RUN mkdir -p /etc/hadoop/conf
-ADD resources/hadoop /etc/hadoop/conf
+# RUN mkdir -p /etc/hadoop/conf
+# ADD resources/hadoop /etc/hadoop/conf
 
 ### CLEAN ###
 
