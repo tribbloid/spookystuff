@@ -4,8 +4,10 @@ import java.util.UUID
 
 import com.tribbloids.spookystuff.expressions.Expression
 import com.tribbloids.spookystuff.pipeline.RemoteTransformer
-import com.tribbloids.spookystuff.execution.AbstractExecutionPlan
+import com.tribbloids.spookystuff.rdd.PageRowRDD
 import com.tribbloids.spookystuff.{SpookyContext, dsl}
+
+import scala.language.postfixOps
 
 /**
   * Created by peng on 15/11/15.
@@ -25,11 +27,11 @@ class TranslationTransformer(
 
   setExample(QueryCol -> '_, LangPair -> "en|fr", OutputCol -> 'output)
 
-  override def exampleInput(spooky: SpookyContext): AbstractExecutionPlan = spooky.create(Seq(
+  override def exampleInput(spooky: SpookyContext): PageRowRDD = spooky.create(Seq(
     Map("_" -> "Hello!")
   ))
 
-  override def transform(dataset: AbstractExecutionPlan): AbstractExecutionPlan = {
+  override def transform(dataset: PageRowRDD): PageRowRDD = {
 
     dataset
       .wget(x"http://api.mymemory.translated.net/get?q=${getOrDefault(QueryCol)}!&langpair=${getOrDefault(LangPair)}")
