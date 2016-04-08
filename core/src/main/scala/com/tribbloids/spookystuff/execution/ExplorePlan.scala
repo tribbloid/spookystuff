@@ -1,5 +1,6 @@
 package com.tribbloids.spookystuff.execution
 
+import com.tribbloids.spookystuff.QueryException
 import com.tribbloids.spookystuff.actions._
 import com.tribbloids.spookystuff.caching.ExploreSharedVisitedCache
 import com.tribbloids.spookystuff.dsl.{FetchOptimizer, FetchOptimizers, JoinType}
@@ -30,7 +31,15 @@ case class ExplorePlan(
 
                       ) extends AbstractExecutionPlan(
   child,
-  Some(child.fieldSet ++ Option(algorithmImpl.depthField) ++ Option(algorithmImpl.ordinalField) ++ algorithmImpl.extracts.map(_.field))
+  {
+    val extractFields = algorithmImpl.extracts.map(_.field)
+    val newFields = extractFields ++ Option(algorithmImpl.depthField) ++ Option(algorithmImpl.ordinalField)
+    newFields.groupBy(identity).foreach{
+      v =>
+        if (v._2.size > 1) throw new QueryException(s"Field ${v._1.name} already exist")
+    }
+    Some(child.fieldSet ++ Option(algorithmImpl.depthField) ++ Option(algorithmImpl.ordinalField) ++ extractFields)
+  }
 ) with CreateOrInheritBeaconRDDPlan {
   //TODO: detect in-plan field conflict!
 

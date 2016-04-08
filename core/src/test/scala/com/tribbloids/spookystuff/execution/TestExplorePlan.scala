@@ -2,7 +2,7 @@ package com.tribbloids.spookystuff.execution
 
 import com.tribbloids.spookystuff.actions.Wget
 import com.tribbloids.spookystuff.utils.Utils
-import com.tribbloids.spookystuff.{SpookyEnvSuite, dsl}
+import com.tribbloids.spookystuff.{QueryException, SpookyEnvSuite, dsl}
 import org.apache.spark.HashPartitioner
 
 /**
@@ -95,5 +95,20 @@ class TestExplorePlan extends SpookyEnvSuite {
       .toDF(sort = true)
 
     df.show(truncate = false)
+  }
+
+  test("ExplorePlan will throw an exception if OrdinalField == DepthField") {
+    val rdd1 = spooky
+      .fetch{
+        Wget(STATIC_WIKIPEDIA_URI)
+      }
+
+    intercept[QueryException] {
+      rdd1
+        .explore(S"root directory".attr("path"), ordinalField = 'dummy)(
+          Wget('A),
+          depthField = 'dummy
+        )()
+    }
   }
 }

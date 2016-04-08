@@ -1,5 +1,6 @@
 package com.tribbloids.spookystuff.execution
 
+import com.tribbloids.spookystuff.QueryException
 import com.tribbloids.spookystuff.expressions._
 import com.tribbloids.spookystuff.row._
 
@@ -18,6 +19,10 @@ case class ExtractPlan(
     val putFields: Seq[Field] = exprs.map {
       expr =>
         expr.field
+    }
+    putFields.groupBy(identity).foreach{
+      v =>
+        if (v._2.size > 1) throw new QueryException(s"Field ${v._1.name} already exist")
     }
 
     Some(child.fieldSet ++ putFields)
