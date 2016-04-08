@@ -1,6 +1,5 @@
 package com.tribbloids.spookystuff.integration.select
 
-import com.tribbloids.spookystuff.SpookyContext
 import com.tribbloids.spookystuff.actions._
 import com.tribbloids.spookystuff.dsl._
 import com.tribbloids.spookystuff.integration.IntegrationSuite
@@ -14,7 +13,7 @@ class ChainedFlatSelectIT extends IntegrationSuite {
     null
   )
 
-  override def doMain(spooky: SpookyContext) {
+  override def doMain() {
 
     val r1 = spooky
       .fetch(
@@ -60,7 +59,7 @@ class ChainedFlatSelectIT extends IntegrationSuite {
     )
   }
 
-  override def numFetchedPages = _ => 1
+  override def numPages= 1
 
   override def numDrivers = 0
 }

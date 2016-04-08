@@ -6,7 +6,7 @@ import com.tribbloids.spookystuff.execution.{ExplorePlan, FetchPlan, _}
 import com.tribbloids.spookystuff.expressions.{GetExpr, _}
 import com.tribbloids.spookystuff.pages.Page
 import com.tribbloids.spookystuff.row.{Field, _}
-import com.tribbloids.spookystuff.utils.{Utils, Views}
+import com.tribbloids.spookystuff.utils.{Utils, Implicits}
 import com.tribbloids.spookystuff.{Const, SpookyConf, SpookyContext}
 import org.apache.spark.Partitioner
 import org.apache.spark.rdd.RDD
@@ -35,7 +35,7 @@ case class PageRowRDD(
                        plan: AbstractExecutionPlan
                      ) extends PageRowRDDAPI {
 
-  import Views._
+  import Implicits._
   import scala.Ordering.Implicits._
   import plan.CacheQueueView
 

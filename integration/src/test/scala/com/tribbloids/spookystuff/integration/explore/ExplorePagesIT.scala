@@ -1,10 +1,8 @@
 package com.tribbloids.spookystuff.integration.explore
 
-import com.tribbloids.spookystuff.SpookyContext
 import com.tribbloids.spookystuff.actions._
 import com.tribbloids.spookystuff.dsl._
 import com.tribbloids.spookystuff.integration.IntegrationSuite
-import org.apache.spark.HashPartitioner
 
 class ExplorePagesIT extends IntegrationSuite {
 
@@ -12,7 +10,7 @@ class ExplorePagesIT extends IntegrationSuite {
     null
   )
 
-  override def doMain(spooky: SpookyContext): Unit = {
+  override def doMain(): Unit = {
 
 //    spooky.conf.defaultPartitionerFactory = {v => new HashPartitioner(1)}
 
@@ -50,7 +48,9 @@ class ExplorePagesIT extends IntegrationSuite {
     )
   }
 
-  override def numFetchedPages = _ => 5
+  override def numPages= 5
 
   override def numDrivers = 0
+
+  override val error = 0 to 2
 }

@@ -9,7 +9,7 @@ import scala.collection.immutable.ListMap
 import scala.collection.{IterableLike, TraversableOnce}
 import scala.reflect.ClassTag
 
-import com.tribbloids.spookystuff.utils.Views._
+import com.tribbloids.spookystuff.utils.Implicits._
 
 //just a simple wrapper for T, this is the only way to execute a action
 //this is the only serializable Expression that can be shipped remotely

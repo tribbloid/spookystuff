@@ -100,7 +100,7 @@ case class Field(
     builder append s"'$name"
     if (conflictResolving == Field.Overwrite) builder append " !"
     if (isWeak) builder append " *"
-    if (isOrdinal) builder append " *"
+    if (isOrdinal) builder append " #"
     depthRangeOption.foreach(range => builder append s" [${range.head}...${range.last}]")
     builder.result()
   }

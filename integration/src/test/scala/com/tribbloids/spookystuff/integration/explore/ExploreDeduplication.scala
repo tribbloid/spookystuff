@@ -12,7 +12,7 @@
 //    null
 //  )
 //
-//  override def doMain(spooky: SpookyContext): Unit = {
+//  override def doMain(): Unit = {
 //    val uris = spooky.wget("http://dbpedia.org/page/Rob_Ford")
 //      .wgetExplore(
 //        S"""a[rel^=dbo][href*=dbpedia],a[rev^=dbo][href*=dbpedia]""".hrefs.distinct.slice(0,9),
@@ -29,5 +29,5 @@
 //
 //  }
 //
-//  override def numPages: (QueryOptimizer) => Int = _ => 10
+//  override val numPages: Measure: (QueryOptimizer) => Int = _ => 10
 //}

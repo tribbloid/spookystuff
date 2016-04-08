@@ -33,7 +33,7 @@ case class ExplorePlan(
   Some(child.fieldSet ++ Option(algorithmImpl.depthField) ++ Option(algorithmImpl.ordinalField) ++ algorithmImpl.extracts.map(_.field))
 ) with CreateOrInheritBeaconRDDPlan {
 
-  import com.tribbloids.spookystuff.utils.Views._
+  import com.tribbloids.spookystuff.utils.Implicits._
 
   override def doExecute(): SquashedRowRDD = {
     assert(algorithmImpl.depthField != null)

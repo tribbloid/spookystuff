@@ -1,6 +1,5 @@
 package com.tribbloids.spookystuff.integration.fetch
 
-import com.tribbloids.spookystuff.SpookyContext
 import com.tribbloids.spookystuff.actions._
 import com.tribbloids.spookystuff.dsl._
 import com.tribbloids.spookystuff.integration.IntegrationSuite
@@ -10,13 +9,13 @@ import com.tribbloids.spookystuff.integration.IntegrationSuite
   */
 class FetchPaginationIT extends IntegrationSuite {
 
-  import com.tribbloids.spookystuff.utils.Views._
+  import com.tribbloids.spookystuff.utils.Implicits._
 
   override lazy val drivers = Seq(
     phantomJS //TODO: HtmlUnit does not support Backbone.js
   )
 
-  override def doMain(spooky: SpookyContext) {
+  override def doMain() {
 
     val RDD = spooky
       .fetch(
@@ -58,9 +57,9 @@ class FetchPaginationIT extends IntegrationSuite {
     assert(pageRows2(1).pages.map(_.name) === Seq("d"))
   }
 
-  override def numFetchedPages = {
+  override def numPages= spooky.conf.defaultFetchOptimizer match {
 //    case FetchOptimizers.WebCacheAware => 3
-    case _ => 6
+    case _ => 3
   }
 
   override def numSessions = 1

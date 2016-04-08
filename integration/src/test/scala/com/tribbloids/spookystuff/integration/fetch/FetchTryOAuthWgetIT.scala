@@ -1,6 +1,5 @@
 package com.tribbloids.spookystuff.integration.fetch
 
-import com.tribbloids.spookystuff.SpookyContext
 import com.tribbloids.spookystuff.actions._
 import com.tribbloids.spookystuff.dsl._
 import com.tribbloids.spookystuff.integration.UncacheableIntegrationSuite
@@ -15,10 +14,11 @@ class FetchTryOAuthWgetIT extends UncacheableIntegrationSuite {
     null
   )
 
-  override def doMain(spooky: SpookyContext) {
+  override def doMain() {
 
+    val spooky = this.spooky
+    import com.tribbloids.spookystuff.utils.Implicits._
     import spooky.dsl._
-    import com.tribbloids.spookystuff.utils.Views._
 
     val RDD = sc.parallelize(Seq("http://malformed uri"))
       .fetch(
@@ -42,7 +42,7 @@ class FetchTryOAuthWgetIT extends UncacheableIntegrationSuite {
     }
   }
 
-  override def numFetchedPages = {_ => 0}
+  override def numPages= 0
 
   override def numSessions = 1 //TODO: should be 6, why local retry and cluster-wise retry doesn't count?
 

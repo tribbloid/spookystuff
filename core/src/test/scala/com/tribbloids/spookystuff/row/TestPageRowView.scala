@@ -11,7 +11,7 @@ import scala.language.implicitConversions
 class TestPageRowView extends SpookyEnvSuite {
 
   import dsl._
-  import com.tribbloids.spookystuff.utils.Views._
+  import com.tribbloids.spookystuff.utils.Implicits._
 
   test("get page") {
     val pages = (

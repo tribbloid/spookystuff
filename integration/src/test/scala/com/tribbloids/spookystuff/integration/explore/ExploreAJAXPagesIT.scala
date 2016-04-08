@@ -1,6 +1,5 @@
 package com.tribbloids.spookystuff.integration.explore
 
-import com.tribbloids.spookystuff.SpookyContext
 import com.tribbloids.spookystuff.actions._
 import com.tribbloids.spookystuff.integration.IntegrationSuite
 
@@ -17,7 +16,7 @@ class ExploreAJAXPagesIT extends IntegrationSuite {
     phantomJS //TODO: HtmlUnit does not support Backbone.js
   )
 
-  override def doMain(spooky: SpookyContext): Unit = {
+  override def doMain(): Unit = {
 
     val snapshotAllPages = (
       Snapshot()
@@ -82,5 +81,5 @@ class ExploreAJAXPagesIT extends IntegrationSuite {
 
   override def numSessions =  6
 
-  override def numFetchedPages = _ => 12
+  override def numPages = 12
 }

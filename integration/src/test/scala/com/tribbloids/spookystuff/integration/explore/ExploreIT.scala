@@ -1,6 +1,5 @@
 package com.tribbloids.spookystuff.integration.explore
 
-import com.tribbloids.spookystuff.SpookyContext
 import com.tribbloids.spookystuff.actions.Wget
 import com.tribbloids.spookystuff.dsl._
 import com.tribbloids.spookystuff.integration.IntegrationSuite
@@ -14,7 +13,7 @@ class ExploreIT extends IntegrationSuite {
     phantomJS //TODO: HtmlUnit does not support Backbone.js
   )
 
-  override def doMain(spooky: SpookyContext): Unit = {
+  override def doMain(): Unit = {
 
     val base = spooky
       .fetch(
@@ -27,12 +26,12 @@ class ExploreIT extends IntegrationSuite {
         depthField = 'depth
       )(
         'A.text ~ 'category,
-        S"h1".text ~ 'header
+        S"h1".text ~ 'header,
+        S"notexist" ~ 'A.*
       )
-      //TODO: add back!
-//      .flatSelect(S"notexist", ordinalField = 'notexist_key)( //this is added to ensure that temporary joinKey in KV store won't be used.
-//        'A.attr("class") ~ 'notexist_class
-//      )
+      .flatSelect('A, ordinalField = 'notexist_key)( //this is added to ensure that temporary joinKey in KV store won't be used.
+        'A.attr("class") ~ 'notexist_class
+      )
       .toDF(sort = true)
 
     assert(
@@ -41,8 +40,8 @@ class ExploreIT extends IntegrationSuite {
           "index" ::
           "category" ::
           "header" ::
-//          "notexist_key" ::
-//          "notexist_class" ::
+          "notexist_key" ::
+          "notexist_class" ::
           Nil
     )
 
@@ -60,7 +59,7 @@ class ExploreIT extends IntegrationSuite {
     )
   }
 
-  override def numFetchedPages = _ => 6
+  override def numPages = 6
 
   override def numDrivers = 0
 }

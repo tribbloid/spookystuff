@@ -3,7 +3,7 @@ package com.tribbloids.spookystuff.dsl
 import com.tribbloids.spookystuff.SpookyEnvSuite
 import com.tribbloids.spookystuff.actions.Wget
 import com.tribbloids.spookystuff.expressions.ExpressionLike
-import com.tribbloids.spookystuff.pages.PageLike
+import com.tribbloids.spookystuff.rdd.PageRowRDD
 import com.tribbloids.spookystuff.row.{DataRow, Field, SquashedPageRow}
 
 /**
@@ -88,5 +88,15 @@ class TestDSL extends SpookyEnvSuite {
     val expr = x"static ${'notexist}"
     assert(expr.apply(row).isEmpty)
     assert(expr.orElse(" ").apply(row).get == " ")
+  }
+
+  test("SpookyContext can be cast to a blank PageRowRDD with empty schema") {
+    val rdd = spooky: PageRowRDD
+    assert(rdd.fields.isEmpty)
+    assert(rdd.count() == 1)
+
+    val plan = rdd.plan
+    assert(plan.rdd() == spooky.blankSelfRDD)
+    assert(plan.spooky != spooky) //configs should be deep copied
   }
 }

@@ -2,7 +2,6 @@ package com.tribbloids.spookystuff.integration.fetch
 
 import java.net.URLEncoder
 
-import com.tribbloids.spookystuff.SpookyContext
 import com.tribbloids.spookystuff.actions.{DropDownSelect, Submit, TextInput, _}
 import com.tribbloids.spookystuff.dsl._
 import com.tribbloids.spookystuff.integration.IntegrationSuite
@@ -12,9 +11,9 @@ import com.tribbloids.spookystuff.integration.IntegrationSuite
   */
 class FetchInteractionsIT extends IntegrationSuite{
 
-  import com.tribbloids.spookystuff.utils.Views._
+  import com.tribbloids.spookystuff.utils.Implicits._
 
-  override def doMain(spooky: SpookyContext): Unit = {
+  override def doMain(): Unit = {
 
     val chain = (
       Visit("http://www.wikipedia.org")
@@ -65,8 +64,8 @@ class FetchInteractionsIT extends IntegrationSuite{
     assert(unionRows(1).pages.head.name === "b")
   }
 
-  override def numFetchedPages ={
+  override def numPages= spooky.conf.defaultFetchOptimizer match {
 //    case WebCacheAware => 1
-    case _ => 2
+    case _ => 1
   }
 }

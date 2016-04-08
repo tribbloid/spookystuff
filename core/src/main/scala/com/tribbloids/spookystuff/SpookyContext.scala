@@ -1,11 +1,10 @@
 package com.tribbloids.spookystuff
 
-import com.tribbloids.spookystuff.dsl.DriverFactories
+import com.tribbloids.spookystuff.dsl.{DataFrameView, DriverFactories}
 import com.tribbloids.spookystuff.dsl.DriverFactories.PhantomJS
-import com.tribbloids.spookystuff.execution.DataFrameView
 import com.tribbloids.spookystuff.rdd.PageRowRDD
 import com.tribbloids.spookystuff.row._
-import com.tribbloids.spookystuff.utils.{Utils, Views}
+import com.tribbloids.spookystuff.utils.{Implicits, Utils}
 import org.apache.hadoop.conf.Configuration
 import org.apache.spark._
 import org.apache.spark.rdd.RDD
@@ -106,8 +105,30 @@ case class SpookyContext private (
   def create(df: DataFrame): PageRowRDD = this.dsl.dataFrameToPageRowRDD(df)
   def create[T: ClassTag](rdd: RDD[T]): PageRowRDD = this.dsl.rddToPageRowRDD(rdd)
 
-  def create[T: ClassTag](seq: TraversableOnce[T]): PageRowRDD = this.dsl.rddToPageRowRDD(this.sqlContext.sparkContext.parallelize(seq.toSeq))
-  def create[T: ClassTag](seq: TraversableOnce[T], numSlices: Int): PageRowRDD = this.dsl.rddToPageRowRDD(this.sqlContext.sparkContext.parallelize(seq.toSeq, numSlices))
+  def create[T: ClassTag](
+                           seq: TraversableOnce[T]
+                         ): PageRowRDD =
+    this.dsl.rddToPageRowRDD(this.sqlContext.sparkContext.parallelize(seq.toSeq))
+
+  def create[T: ClassTag](
+                           seq: TraversableOnce[T],
+                           numSlices: Int
+                         ): PageRowRDD =
+    this.dsl.rddToPageRowRDD(this.sqlContext.sparkContext.parallelize(seq.toSeq, numSlices))
+
+  lazy val blankSelfRDD = sparkContext.parallelize(Seq(SquashedPageRow.blank))
+
+  def blankPageRowRDD = this.create(blankSelfRDD)
+
+  def createBeaconRDD[K: ClassTag,V: ClassTag](
+                                                ref: RDD[_],
+                                                partitionerFactory: RDD[_] => Partitioner = conf.defaultPartitionerFactory
+                                              ): RDD[(K,V)] = {
+    sparkContext
+      .emptyRDD[(K,V)]
+      .partitionBy(partitionerFactory(ref))
+      .persist(StorageLevel.MEMORY_ONLY)
+  }
 
   object dsl extends Serializable {
 
@@ -129,8 +150,7 @@ case class SpookyContext private (
 
     //every input or noInput will generate a new metrics
     implicit def rddToPageRowRDD[T: ClassTag](rdd: RDD[T]): PageRowRDD = {
-      import Views._
-
+      import Implicits._
       import scala.reflect._
 
       rdd match {
@@ -153,6 +173,13 @@ case class SpookyContext private (
             schema = ListSet(dataFrame.schema.fieldNames: _*).map(Field(_)),
             spooky = getSpookyForInput
           )
+        case _ if classOf[SquashedPageRow] == classTag[T].runtimeClass =>
+          val self = rdd.asInstanceOf[RDD[SquashedPageRow]]
+          new PageRowRDD(
+            self,
+            schema = ListSet[Field](),
+            spooky = getSpookyForInput
+          )
         case _ =>
           val self = rdd.map{
             str =>
@@ -168,15 +195,5 @@ case class SpookyContext private (
           )
       }
     }
-  }
-
-  def createBeaconRDD[K: ClassTag,V: ClassTag](
-                                                ref: RDD[_],
-                                                partitionerFactory: RDD[_] => Partitioner = conf.defaultPartitionerFactory
-                                              ): RDD[(K,V)] = {
-    sparkContext
-      .emptyRDD[(K,V)]
-      .partitionBy(partitionerFactory(ref))
-      .persist(StorageLevel.MEMORY_ONLY)
   }
 }

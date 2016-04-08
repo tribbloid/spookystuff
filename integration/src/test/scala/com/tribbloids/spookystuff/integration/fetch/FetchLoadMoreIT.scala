@@ -10,7 +10,7 @@
 //* Created by peng on 12/10/14.
 //*/
 //class LoadMoreIT extends IntegrationSuite {
-//  override def doMain(spooky: SpookyContext): Unit = {
+//  override def doMain(): Unit = {
 //
 //    import spooky.dsl._
 //
@@ -41,5 +41,5 @@
 //    assert(rows(0).getInt(0) === 21)
 //  }
 //
-//  override def numPages: Int = 1
+//  override val numPages: Measure: Int = 1
 //}

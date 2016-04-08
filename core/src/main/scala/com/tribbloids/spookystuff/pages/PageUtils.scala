@@ -173,7 +173,7 @@ object PageUtils {
     }
   }
 
-  //TODO: return option
+  //TODO: return Seq[Option]
   def autoRestore(
                    backtrace: Trace,
                    spooky: SpookyContext

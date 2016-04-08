@@ -38,7 +38,7 @@ case class FetchPlan(
                     ) extends AbstractExecutionPlan(child) with CreateOrInheritBeaconRDDPlan {
 
   import com.tribbloids.spookystuff.dsl._
-  import com.tribbloids.spookystuff.utils.Views._
+  import com.tribbloids.spookystuff.utils.Implicits._
 
   override def doExecute(): SquashedRowRDD = {
 

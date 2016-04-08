@@ -3,33 +3,31 @@ package com.tribbloids.spookystuff
 import java.util.Date
 
 import com.tribbloids.spookystuff.actions._
-import com.tribbloids.spookystuff.execution.DataFrameView
 import com.tribbloids.spookystuff.expressions.ExpressionLike._
 import com.tribbloids.spookystuff.expressions._
 import com.tribbloids.spookystuff.pages.{Elements, Page, PageUID, Unstructured}
 import com.tribbloids.spookystuff.rdd.PageRowRDD
 import com.tribbloids.spookystuff.row.{Field, PageRow, SquashedPageRow}
-import com.tribbloids.spookystuff.utils.Default
+import com.tribbloids.spookystuff.utils.{Default, Utils}
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.DataFrame
 
-import scala.collection.immutable.{ListMap, ListSet}
+import scala.collection.immutable.ListMap
 import scala.collection.{GenTraversableOnce, IterableLike}
 import scala.language.implicitConversions
 import scala.reflect.ClassTag
 
 package object dsl {
-
   //  type SerializableCookie = Cookie with Serializable
 
   implicit def PageRowRDDToRDD(wrapper: PageRowRDD): RDD[SquashedPageRow] = wrapper.rdd
 
-  implicit def spookyContextToPageRowRDD(spooky: SpookyContext): PageRowRDD =
-    new PageRowRDD(
-      spooky.sqlContext.sparkContext.parallelize(Seq(SquashedPageRow.singleEmpty)),
-      schema = ListSet(),
-      spooky = spooky.getSpookyForInput
-    )
+  implicit def spookyContextToPageRowRDD(spooky: SpookyContext): PageRowRDD = spooky.blankPageRowRDD
+//    new PageRowRDD(
+//      spooky.sqlContext.sparkContext.parallelize(Seq(SquashedPageRow.empty1)),
+//      schema = ListSet(),
+//      spooky = spooky.getSpookyForInput
+//    )
 
   implicit def traceView(trace: Trace): TraceView = new TraceView(trace)
 
@@ -87,10 +85,10 @@ package object dsl {
 
     def andFlatMap[A](g: T => Option[A], name: String): Expression[A] = self.andThen(ExpressionLike(_.flatMap(v => g(v)), name))
 
+    //TODO: extract subroutine and use it to avoid obj creation overhead
     def typed[A](implicit ev: ClassTag[A]) = this.andFlatMap[A](
       {
-        case res: A => Some(res)
-        case _ => None
+        Utils.typedOrNone[A]
       }: T => Option[A],
       s"typed[${ev.toString()}}]"
     )
@@ -256,7 +254,7 @@ package object dsl {
         if (realIdx>=iterable.size || realIdx<0) None
         else Some(iterable.toSeq.apply(realIdx))
     },
-    s"get($i)")
+      s"get($i)")
 
     def size: Expression[Int] = self.andMap(_.size, "size")
 
@@ -387,7 +385,18 @@ package object dsl {
     def tsvToMap(headerRow: String) = csvToMap(headerRow,"\t")
   }
 
-  implicit def dataFrameToItsView(rdd: DataFrame): DataFrameView = new DataFrameView(rdd)
+  implicit class DataFrameView(val self: DataFrame) {
+
+    def toMapRDD: RDD[Map[String,Any]] = {
+      val headers = self.schema.fieldNames
+
+      val result: RDD[Map[String,Any]] = self.map{
+        row => ListMap(headers.zip(row.toSeq): _*)
+      }
+
+      result
+    }
+  }
 
   implicit class StrContextHelper(val strC: StringContext) extends Serializable {
 

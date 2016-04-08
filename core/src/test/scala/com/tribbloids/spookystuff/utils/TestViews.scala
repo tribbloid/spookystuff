@@ -9,7 +9,7 @@ import scala.util.Random
   */
 class TestViews extends SpookyEnvSuite {
 
-  import Views._
+  import Implicits._
 
   test("multiPassFlatMap should yield same result as flatMap") {
 

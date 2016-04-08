@@ -2,14 +2,14 @@ package com.tribbloids.spookystuff.integration.select
 
 import java.text.SimpleDateFormat
 
+import com.tribbloids.spookystuff.QueryException
 import com.tribbloids.spookystuff.actions._
 import com.tribbloids.spookystuff.dsl._
 import com.tribbloids.spookystuff.integration.IntegrationSuite
-import com.tribbloids.spookystuff.{QueryException, SpookyContext}
 
 class SelectIT extends IntegrationSuite {
 
-  override def doMain(spooky: SpookyContext) {
+  override def doMain() {
 
     val pageRowRDD = spooky
       .fetch(
@@ -81,5 +81,5 @@ class SelectIT extends IntegrationSuite {
     assert(titles === Seq("The Free Encyclopedia", "English"))
   }
 
-  override def numFetchedPages = _ => 1
+  override def numPages= 1
 }

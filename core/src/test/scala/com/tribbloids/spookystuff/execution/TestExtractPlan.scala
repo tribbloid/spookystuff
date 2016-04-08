@@ -1,6 +1,5 @@
 package com.tribbloids.spookystuff.execution
 
-import com.tribbloids.spookystuff.actions.Wget
 import com.tribbloids.spookystuff.{SpookyEnvSuite, dsl}
 
 /**

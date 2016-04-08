@@ -1,6 +1,5 @@
 package com.tribbloids.spookystuff.integration.explore
 
-import com.tribbloids.spookystuff.SpookyContext
 import com.tribbloids.spookystuff.actions._
 import com.tribbloids.spookystuff.dsl._
 import com.tribbloids.spookystuff.integration.IntegrationSuite
@@ -14,7 +13,7 @@ class ExploreNextPageIT extends IntegrationSuite {
     null
   )
 
-  override def doMain(spooky: SpookyContext): Unit = {
+  override def doMain(): Unit = {
 
     val result = spooky
       .fetch(
@@ -49,7 +48,7 @@ class ExploreNextPageIT extends IntegrationSuite {
     )
   }
 
-  override def numFetchedPages = _ => 4
+  override def numPages = 4
 
   override def numDrivers = 0
 }

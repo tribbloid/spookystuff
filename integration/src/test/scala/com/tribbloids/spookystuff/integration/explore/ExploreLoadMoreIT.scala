@@ -11,7 +11,7 @@
 //* Created by peng on 12/10/14.
 //*/
 //class ExploreLoadMoreIT extends IntegrationSuite {
-//  override def doMain(spooky: SpookyContext): Unit = {
+//  override def doMain(): Unit = {
 //    import spooky.dsl._
 //
 //    val base = noInput
@@ -50,9 +50,9 @@
 //    assert(rows.size === 6)
 //  }
 //
-//  override def numSessions = 6
+//  override def numSessions: Measure = 6
 //
-//  override def numPages: Int = 6
+//  override val numPages: Measure: Int = 6
 //
 //  override def numDrivers = 6
 //}

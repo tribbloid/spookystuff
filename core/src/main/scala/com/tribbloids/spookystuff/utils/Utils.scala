@@ -15,7 +15,7 @@ import scala.xml.PrettyPrinter
 
 object Utils {
 
-  import Views._
+  import Implicits._
   import scala.reflect.runtime.universe._
 
   val xmlPrinter = new PrettyPrinter(Int.MaxValue, 2)
@@ -158,14 +158,25 @@ These special characters are often called "metacharacters".
     else Serialization.write(obj)(Const.jsonFormats)
   }
 
+  def typedOrNone[B: ClassTag](v: Any): Option[B] = {
+    val array = try {
+      Array[B](v.asInstanceOf[B])
+    }
+    catch {
+      case e: Throwable =>
+        Array[B]()
+    }
+    array.headOption
+  }
+
   //TODO: move to class & try @Specialized?
   def asArray[T <: Any : ClassTag](obj: Any): Array[T] = {
 
     obj match {
       case v: TraversableOnce[Any] => v.toArray.filterByType[T]
       case v: Array[T] => v.filterByType[T]
-      case v: T => Array[T](v)
-      case _ => Array[T]()
+      case _ =>
+        Array[Any](obj).filterByType[T]
     }
   }
 
@@ -174,8 +185,8 @@ These special characters are often called "metacharacters".
     obj match {
       case v: TraversableOnce[Any] => v.toIterable.filterByType[T].get
       case v: Array[T] => v.filterByType[T].toIterable
-      case v: T => Iterable[T](v)
-      case _ => Iterable[T]()
+      case _ =>
+        Iterable[Any](obj).filterByType[T].get
     }
   }
 

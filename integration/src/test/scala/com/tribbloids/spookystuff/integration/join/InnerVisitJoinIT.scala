@@ -1,6 +1,5 @@
 package com.tribbloids.spookystuff.integration.join
 
-import com.tribbloids.spookystuff.SpookyContext
 import com.tribbloids.spookystuff.actions.{Action, Visit}
 import com.tribbloids.spookystuff.dsl._
 import com.tribbloids.spookystuff.expressions.Expression
@@ -14,7 +13,7 @@ class InnerVisitJoinIT extends IntegrationSuite {
 
   def getPage(uri: Expression[String]): Action = Visit(uri)
 
-  override def doMain(spooky: SpookyContext): Unit = {
+  override def doMain(): Unit = {
 
     val base = spooky
       .fetch(
@@ -67,9 +66,9 @@ class InnerVisitJoinIT extends IntegrationSuite {
     )
   }
 
-  override def numFetchedPages = {
+  override def numPages= spooky.conf.defaultFetchOptimizer match {
 //    case FetchOptimizers.WebCacheAware => 6
-    case _ => 7
+    case _ => 6
   }
 }
 

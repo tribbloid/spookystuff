@@ -14,7 +14,7 @@
 //    null
 //  )
 //
-//  override def doMain(spooky: SpookyContext): Unit = {
+//  override def doMain(): Unit = {
 //
 //    val joined = spooky
 //      .fetch(
@@ -74,7 +74,7 @@
 //    )
 //  }
 //
-//  override def numPages = {
+//  override def numPages= {
 //    case Wide_WebCachedRDD => 15
 //    case _ => 16
 //  }

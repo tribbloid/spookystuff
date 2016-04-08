@@ -3,7 +3,7 @@ package com.tribbloids.spookystuff.row
 import java.util.UUID
 
 import com.tribbloids.spookystuff.Const
-import com.tribbloids.spookystuff.utils.{Utils, Views}
+import com.tribbloids.spookystuff.utils.{Utils, Implicits}
 
 import scala.collection.Map
 import scala.reflect.ClassTag
@@ -20,7 +20,7 @@ case class DataRow(
                     freeze: Boolean = false //if set to true PageRow.extract won't insert anything into it, used in merge/replace join
                   ) {
 
-  import Views._
+  import Implicits._
 
   def updated(k: Field, v: Any) = this.copy(values = values.updated(k, v))
 
@@ -38,11 +38,9 @@ case class DataRow(
   //TempKey precedes ordinary Key
   //TODO: in scala 2.10.x, T cannot <: AnyVal otherwise will run into https://issues.scala-lang.org/browse/SI-6967
   def getTyped[T <: Any : ClassTag](field: Field): Option[T] = {
-    val res = values.get(field).flatMap {
-      case v: T => Some(v)
-      case _ => None
+    values.get(field).flatMap {
+      Utils.typedOrNone[T]
     }
-    res
   }
 
   def getInt(field: Field): Option[Int] = getTyped[Int](field)
@@ -55,7 +53,7 @@ case class DataRow(
     .map(tuple => tuple._1.name -> tuple._2)
 
   def toJSON: String = {
-    import Views._
+    import Implicits._
 
     Utils.toJson(this.toMap.canonizeKeysToColumnNames)
   }

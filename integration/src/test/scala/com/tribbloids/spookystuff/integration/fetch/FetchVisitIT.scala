@@ -1,15 +1,14 @@
 package com.tribbloids.spookystuff.integration.fetch
 
-import com.tribbloids.spookystuff.SpookyContext
 import com.tribbloids.spookystuff.actions._
 import com.tribbloids.spookystuff.dsl._
 import com.tribbloids.spookystuff.integration.IntegrationSuite
 
 class FetchVisitIT extends IntegrationSuite {
 
-  import com.tribbloids.spookystuff.utils.Views._
+  import com.tribbloids.spookystuff.utils.Implicits._
 
-  override def doMain(spooky: SpookyContext) {
+  override def doMain() {
 
     val RDD = spooky
       .fetch(
@@ -61,8 +60,8 @@ class FetchVisitIT extends IntegrationSuite {
     assert(fetchNoneRows(1).pages.length === 0)
   }
 
-  override def numFetchedPages = {
+  override def numPages= spooky.conf.defaultFetchOptimizer match {
 //    case FetchOptimizers.WebCacheAware => 1
-    case _ => 2
+    case _ => 1
   }
 }

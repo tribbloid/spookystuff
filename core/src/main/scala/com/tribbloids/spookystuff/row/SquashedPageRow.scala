@@ -15,7 +15,7 @@ object SquashedPageRow {
     dataRows = Array(DataRow(data))
   )
 
-  def singleEmpty: SquashedPageRow = SquashedPageRow(Array(DataRow()))
+  lazy val blank: SquashedPageRow = SquashedPageRow(Array(DataRow()))
 }
 
 /**
@@ -32,7 +32,7 @@ case class SquashedPageRow(
                             fetchedOpt: Option[Array[Fetched]] = None // discarded after new page coming in
                           ) {
 
-  import com.tribbloids.spookystuff.utils.Views._
+  import com.tribbloids.spookystuff.utils.Implicits._
   import dsl._
 
   def isFetched: Boolean = fetchedOpt.nonEmpty

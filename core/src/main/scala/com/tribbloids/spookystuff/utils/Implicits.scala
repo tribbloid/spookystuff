@@ -1,14 +1,11 @@
 package com.tribbloids.spookystuff.utils
 
-import com.tribbloids.spookystuff.actions.{Action, _}
-import com.tribbloids.spookystuff.dsl.{FetchOptimizer, FetchOptimizers}
-import com.tribbloids.spookystuff.execution.Open_Visited
 import com.tribbloids.spookystuff.row._
-import org.apache.spark.{Partitioner, SparkContext}
+import org.apache.spark.SparkContext
 import org.apache.spark.rdd.RDD
 
-import scala.collection.{Map, TraversableLike}
 import scala.collection.generic.CanBuildFrom
+import scala.collection.{Map, TraversableLike}
 import scala.language.{higherKinds, implicitConversions}
 import scala.reflect.ClassTag
 
@@ -16,9 +13,7 @@ import scala.reflect.ClassTag
   * Created by peng on 11/7/14.
   * implicit conversions in this package are used for development only
   */
-object Views {
-
-  import scala.reflect.runtime.universe._
+object Implicits {
 
   val SPARK_JOB_DESCRIPTION = "spark.job.description"
   val SPARK_JOB_GROUP_ID = "spark.jobGroup.id"
@@ -48,6 +43,8 @@ object Views {
       val stackTraceElements: Array[StackTraceElement] = Thread.currentThread().getStackTrace
       stackTraceElements
     }
+
+    def collectPerPartition: Array[List[T]] = self.mapPartitions(v => Iterator(v.toList)).collect()
 
     def multiPassMap[U: ClassTag](f: T => Option[U]): RDD[U] = {
 
@@ -307,11 +304,7 @@ object Views {
       def get[That](implicit bf: CanBuildFrom[Repr, B, That]): That = {
         val result = self.flatMap{
           v =>
-            val unboxed = Utils.javaUnbox(v)
-            unboxed match {
-              case x: B => Some(x)
-              case _ => None
-            }
+            Utils.typedOrNone[B](v)
         }(bf)
         result
       }
@@ -320,9 +313,12 @@ object Views {
 
   implicit class ArrayView[A](self: Array[A]) {
 
-    def filterByType[B <: A: ClassTag]: Array[B] = self.collect{
-      case tt: B => tt
-    }.toArray
+    def filterByType[B <: A: ClassTag]: Array[B] = {
+      self.flatMap{
+        v =>
+          Utils.typedOrNone[B](v)
+      }.toArray
+    }
   }
 
   //  implicit class TraversableOnceView[A, Coll[A] <: TraversableOnce[A], Raw](self: Raw)(implicit cast: Raw => Coll[A]) {
