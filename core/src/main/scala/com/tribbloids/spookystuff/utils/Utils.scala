@@ -1,6 +1,7 @@
 package com.tribbloids.spookystuff.utils
 
-import java.io.File
+import java.io.{File, InputStream}
+import java.net.URL
 
 import com.tribbloids.spookystuff.Const
 import org.apache.spark.SparkEnv
@@ -235,4 +236,11 @@ These special characters are often called "metacharacters".
   def classAccessors[T: TypeTag]: List[MethodSymbol] = typeOf[T].members.collect {
     case m: MethodSymbol if m.isCaseAccessor => m
   }.toList
+
+  def getCPResource(str: String): Option[URL] =
+    Option(ClassLoader.getSystemClassLoader.getResource(str.stripSuffix("/")))
+
+  def getCPResourceAsStream(str: String): Option[InputStream] =
+    Option(ClassLoader.getSystemClassLoader.getResourceAsStream(str.stripSuffix("/")))
+
 }

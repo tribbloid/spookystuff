@@ -1,6 +1,7 @@
 package com.tribbloids.spookystuff.execution
 
 import com.tribbloids.spookystuff.actions.Wget
+import com.tribbloids.spookystuff.utils.Utils
 import com.tribbloids.spookystuff.{SpookyEnvSuite, dsl}
 import org.apache.spark.HashPartitioner
 
@@ -73,5 +74,26 @@ class TestExplorePlan extends SpookyEnvSuite {
 
     assert(rdd2.plan.localityBeaconRDDOpt.get.partitioner.get eq partitioner)
     assert(rdd2.plan.localityBeaconRDDOpt.get eq beaconRDD)
+  }
+
+  test("ExplorePlan should work recursively on directory") {
+
+    val resourcePath = Utils.getCPResource("dir").get.getPath
+
+    val df = spooky.create(Seq(resourcePath.toString))
+      .fetch{
+        Wget('_)
+      }
+      .explore(S"root directory".attr("path"))(
+        Wget('A)
+      )()
+      .flatExtract(S"root file")(
+        'A.ownText ~ 'leaf,
+        'A.attr("path") ~ 'fullPath,
+        'A.allAttr ~ 'metadata
+      )
+      .toDF(sort = true)
+
+    df.show(truncate = false)
   }
 }

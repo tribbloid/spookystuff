@@ -441,7 +441,7 @@ case class PageRowRDD(
         val resolvedField = field.resolveConflict(plan.fieldSet)
         resolvedField.copy(depthRangeOption = Some(range))
       case None =>
-        Field(resolvedExpr.field.name + "_ordinal", isWeak = true, depthRangeOption = Some(range))
+        Field(resolvedExpr.field.name + "_depth", isWeak = true, depthRangeOption = Some(range))
     }
 
     val algorithmImpl = exploreAlgorithm.getImpl(effectiveDepthField, effectiveOrdinalField, resolvedExtracts)

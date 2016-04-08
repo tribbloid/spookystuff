@@ -32,6 +32,7 @@ case class ExplorePlan(
   child,
   Some(child.fieldSet ++ Option(algorithmImpl.depthField) ++ Option(algorithmImpl.ordinalField) ++ algorithmImpl.extracts.map(_.field))
 ) with CreateOrInheritBeaconRDDPlan {
+  //TODO: detect in-plan field conflict!
 
   import com.tribbloids.spookystuff.utils.Implicits._
 
@@ -82,7 +83,7 @@ case class ExplorePlan(
 
     val partitioner0 = partitionerFactory(state0RDD)
     //this will use globalReducer, same thing will happen to later states, eliminator however will only be used inside ExploreStateView.execute()
-    val reducedState0RDD: RDD[(Trace, Open_Visited)] = optimizedReduce(state0RDD, combinedReducer, partitioner0)
+    val reducedState0RDD: RDD[(Trace, Open_Visited)] = preFetchReduce(state0RDD, combinedReducer, partitioner0)
 
     val openSetSize = spooky.sparkContext.accumulator(0)
     var i = 1
@@ -117,7 +118,7 @@ case class ExplorePlan(
       val partitioner_+ = partitionerFactory(stateRDD_+)
       //this will use globalReducer, same thing will happen to later states, eliminator however will only be used inside ExploreStateView.execute()
 
-      val reducedStateRDD_+ : RDD[(Trace, Open_Visited)] = optimizedReduce(stateRDD_+, combinedReducer, partitioner_+)
+      val reducedStateRDD_+ : RDD[(Trace, Open_Visited)] = preFetchReduce(stateRDD_+, combinedReducer, partitioner_+)
 
       cacheQueue.persist(reducedStateRDD_+, spooky.conf.defaultStorageLevel)
       if (checkpointInterval >0 && i % checkpointInterval == 0) {
@@ -151,7 +152,7 @@ case class ExplorePlan(
     result
   }
 
-  def optimizedReduce(
+  def preFetchReduce(
                        state0RDD: RDD[(Trace, Open_Visited)],
                        reducer: (Open_Visited, Open_Visited) => Open_Visited,
                        partitioner0: Partitioner
