@@ -160,6 +160,7 @@ case class TraceView(
 //(all other special characters)
 //now using immutable pattern to increase maintainability
 //put all narrow transformation closures here
+//TODO: this list is incomplete, some operators, e.g. # are missing
 final case class TraceSetView(self: Set[Trace]) {
 
   import dsl._

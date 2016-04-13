@@ -9,7 +9,7 @@ import org.apache.spark.sql.catalyst.trees.TreeNode
 /**
  * Created by peng on 11/7/14.
  */
-trait ActionLike extends TreeNode[ActionLike] with Serializable {
+abstract class ActionLike extends TreeNode[ActionLike] with Serializable {
 
   final def interpolate(pr: PageRow, context: SpookyContext): Option[this.type] = {
     val option = this.doInterpolate(pr, context)
