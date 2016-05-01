@@ -42,9 +42,9 @@ ENV ZEPPELIN_CONF_DIR        $ZEPPELIN_HOME/conf
 ENV ZEPPELIN_NOTEBOOK_DIR    $ZEPPELIN_HOME/notebook
 ENV ZEPPELIN_PORT            8080
 ENV SCALA_BINARY_VERSION     2.10
-ENV SCALA_VERSION            $SCALA_BINARY_VERSION.4
+ENV SCALA_VERSION            $SCALA_BINARY_VERSION.5
 ENV SPARK_PROFILE            1.6
-ENV SPARK_VERSION            1.6.0
+ENV SPARK_VERSION            1.6.1
 ENV HADOOP_PROFILE           2.6
 ENV HADOOP_VERSION           2.7.1
 
@@ -71,7 +71,7 @@ RUN easy_install py4j pandas pattern pandasql sympy
 
 ### MAVEN ###
 
-ENV MAVEN_VERSION 3.3.1
+ENV MAVEN_VERSION 3.3.9
 ENV MAVEN_HOME /opt/apache-maven-$MAVEN_VERSION
 ENV PATH $PATH:$MAVEN_HOME/bin
 RUN curl -sL http://archive.apache.org/dist/maven/maven-3/$MAVEN_VERSION/binaries/apache-maven-$MAVEN_VERSION-bin.tar.gz \
