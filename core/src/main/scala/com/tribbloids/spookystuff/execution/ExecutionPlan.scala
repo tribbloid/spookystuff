@@ -13,12 +13,12 @@ import scala.collection.mutable.ArrayBuffer
 import scala.language.implicitConversions
 
 //right now it vaguely resembles SparkPlan in catalyst
-abstract class AbstractExecutionPlan(
-                                      val children: Seq[AbstractExecutionPlan],
-                                      val fieldSet: ListSet[Field],
-                                      val spooky: SpookyContext,
-                                      val cacheQueue: ArrayBuffer[RDD[_]]
-                                    ) extends TreeNode[AbstractExecutionPlan] with NOTSerializableMixin {
+abstract class ExecutionPlan(
+                              val children: Seq[ExecutionPlan],
+                              val schema: ListSet[Field],
+                              val spooky: SpookyContext,
+                              val cacheQueue: ArrayBuffer[RDD[_]]
+                                    ) extends TreeNode[ExecutionPlan] with NOTSerializableMixin {
 
   def firstChildOpt = children.headOption
 
@@ -76,37 +76,37 @@ abstract class AbstractExecutionPlan(
     .flatMap(v => v.unsquash)
 
   def this(
-            child: AbstractExecutionPlan,
+            child: ExecutionPlan,
             schemaOpt: Option[ListSet[Field]]
           ) = this(
 
     Seq(child),
-    schemaOpt.getOrElse(child.fieldSet),
+    schemaOpt.getOrElse(child.schema),
     child.spooky,
     child.cacheQueue
   )
-  def this(child: AbstractExecutionPlan) = this(child, None)
+  def this(child: ExecutionPlan) = this(child, None)
 
   def this(
-            children: Seq[AbstractExecutionPlan],
+            children: Seq[ExecutionPlan],
             schemaOpt: Option[ListSet[Field]] = None
           ) = this(
 
     children,
-    schemaOpt.getOrElse(children.map(_.fieldSet).reduce(_ ++ _)),
+    schemaOpt.getOrElse(children.map(_.schema).reduce(_ ++ _)),
     children.head.spooky,
     children.map(_.cacheQueue).reduce(_ ++ _)
   )
-  def this(children: Seq[AbstractExecutionPlan]) = this(children, None)
+  def this(children: Seq[ExecutionPlan]) = this(children, None)
 
-  @transient def fieldSeq: Seq[Field] = this.fieldSet.toSeq.reverse
+  @transient def fieldSeq: Seq[Field] = this.schema.toSeq.reverse
   @transient def sortIndexFieldSeq: Seq[Field] = fieldSeq.filter(_.isSortIndex)
 
   implicit class CacheQueueView(val self: ArrayBuffer[RDD[_]]) {
 
     def persist[T](
                     rdd: RDD[T],
-                    storageLevel: StorageLevel = AbstractExecutionPlan.this.spooky.conf.defaultStorageLevel
+                    storageLevel: StorageLevel = ExecutionPlan.this.spooky.conf.defaultStorageLevel
                   ): RDD[T] = {
       if (rdd.getStorageLevel == StorageLevel.NONE) {
         self += rdd.persist(storageLevel)
@@ -137,6 +137,6 @@ abstract class AbstractExecutionPlan(
   }
 
   //TODO: move to PageRowRDD
-  def agg(exprs: Seq[(PageRow => Any)], reducer: RowReducer): AbstractExecutionPlan = AggPlan(this, exprs, reducer)
-  def distinctBy(exprs: (PageRow => Any)*): AbstractExecutionPlan = AggPlan(this, exprs, (v1, v2) => v1)
+  def agg(exprs: Seq[(PageRow => Any)], reducer: RowReducer): ExecutionPlan = AggPlan(this, exprs, reducer)
+  def distinctBy(exprs: (PageRow => Any)*): ExecutionPlan = AggPlan(this, exprs, (v1, v2) => v1)
 }

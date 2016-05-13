@@ -6,11 +6,11 @@ import com.tribbloids.spookystuff.row.{Field, SquashedRowRDD}
   * Created by peng on 27/03/16.
   */
 case class RemovePlan(
-                       child: AbstractExecutionPlan,
+                       child: ExecutionPlan,
                        fields: Seq[Field]
-                     ) extends AbstractExecutionPlan(
+                     ) extends ExecutionPlan(
   child,
-  schemaOpt = Some(child.fieldSet -- fields)
+  schemaOpt = Some(child.schema -- fields)
 ) {
 
   override def doExecute(): SquashedRowRDD = {

@@ -11,9 +11,9 @@ import com.tribbloids.spookystuff.row._
   * @return new PageRowRDD
   */
 case class ExtractPlan(
-                        child: AbstractExecutionPlan,
+                        child: ExecutionPlan,
                         exprs: Seq[Expression[Any]]
-                      ) extends AbstractExecutionPlan(
+                      ) extends ExecutionPlan(
   child,
   schemaOpt = {
     val putFields: Seq[Field] = exprs.map {
@@ -25,7 +25,7 @@ case class ExtractPlan(
         if (v._2.size > 1) throw new QueryException(s"Field ${v._1.name} already exist")
     }
 
-    Some(child.fieldSet ++ putFields)
+    Some(child.schema ++ putFields)
   }) {
 
   override def doExecute(): SquashedRowRDD = {

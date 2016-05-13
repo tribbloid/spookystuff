@@ -6,10 +6,10 @@ import com.tribbloids.spookystuff.row._
   * discard pages
   */
 case class AggPlan(
-                    child: AbstractExecutionPlan,
+                    child: ExecutionPlan,
                     exprs: Seq[(PageRow => Any)],
                     reducer: RowReducer
-                  ) extends AbstractExecutionPlan(child) {
+                  ) extends ExecutionPlan(child) {
 
   override def doExecute(): SquashedRowRDD = {
     val keyedRDD = super.unsquashedRDD

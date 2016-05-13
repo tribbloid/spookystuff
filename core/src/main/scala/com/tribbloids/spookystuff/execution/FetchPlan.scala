@@ -6,7 +6,7 @@ import com.tribbloids.spookystuff.row.{DataRow, SquashedPageRow, SquashedRowRDD}
 import org.apache.spark.Partitioner
 import org.apache.spark.rdd.RDD
 
-trait CreateOrInheritBeaconRDDPlan extends AbstractExecutionPlan {
+trait CreateOrInheritBeaconRDDPlan extends ExecutionPlan {
 
   def fetchOptimizer: FetchOptimizer
   def partitionerFactory: RDD[_] => Partitioner
@@ -31,11 +31,11 @@ trait CreateOrInheritBeaconRDDPlan extends AbstractExecutionPlan {
   * Created by peng on 27/03/16.
   */
 case class FetchPlan(
-                      child: AbstractExecutionPlan,
+                      child: ExecutionPlan,
                       traces: Set[Trace],
                       partitionerFactory: RDD[_] => Partitioner,
                       fetchOptimizer: FetchOptimizer
-                    ) extends AbstractExecutionPlan(child) with CreateOrInheritBeaconRDDPlan {
+                    ) extends ExecutionPlan(child) with CreateOrInheritBeaconRDDPlan {
 
   import com.tribbloids.spookystuff.dsl._
   import com.tribbloids.spookystuff.utils.Implicits._

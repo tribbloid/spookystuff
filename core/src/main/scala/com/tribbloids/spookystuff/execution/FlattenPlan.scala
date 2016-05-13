@@ -4,14 +4,14 @@ import com.tribbloids.spookystuff.row._
 
 //TODO: add options to flatten pages
 case class FlattenPlan(
-                        child: AbstractExecutionPlan,
+                        child: ExecutionPlan,
                         flattenField: Field,
                         ordinalField: Field,
                         sampler: Sampler[Any],
                         isLeft: Boolean
-                              ) extends AbstractExecutionPlan(
+                              ) extends ExecutionPlan(
   child,
-  schemaOpt = Some(child.fieldSet ++ Option(ordinalField))
+  schemaOpt = Some(child.schema ++ Option(ordinalField))
 ) {
 
   override def doExecute(): SquashedRowRDD = {

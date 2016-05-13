@@ -30,9 +30,9 @@ import scala.collection.Map
   * CAUTION: naming convention:
   * all function ended with _! will be executed immediately, others will yield a logical plan that can be optimized & lazily executed
   */
-//TODO: rename to SpookyRDD?
+//TODO: rename?
 case class PageRowRDD(
-                       plan: AbstractExecutionPlan
+                       plan: ExecutionPlan
                      ) extends PageRowRDDAPI {
 
   import Implicits._
@@ -44,9 +44,9 @@ case class PageRowRDD(
             schema: ListSet[Field],
             spooky: SpookyContext,
             webCacheBeaconRDDOpt: Option[RDD[(Trace, DataRow)]] = None,
-            cacheMgr: ArrayBuffer[RDD[_]] = ArrayBuffer()
+            cacheQueue: ArrayBuffer[RDD[_]] = ArrayBuffer()
           ) =
-    this(RDDPlan(sourceRDD, schema, spooky, webCacheBeaconRDDOpt, cacheMgr))
+    this(RDDPlan(sourceRDD, schema, spooky, webCacheBeaconRDDOpt, cacheQueue))
 
   //TODO: use reflection for more clear API
   def setConf(f: SpookyConf => Unit): this.type = {
@@ -278,6 +278,10 @@ case class PageRowRDD(
                   isLeft: Boolean = true
                 )(exprs: Expression[Any]*) = flatExtract(expr, isLeft, ordinalField, sampler)(exprs: _*)
 
+  //TODO: test
+  def agg(exprs: Seq[(PageRow => Any)], reducer: RowReducer): PageRowRDD = this.copy(AggPlan(plan, exprs, reducer))
+  def distinctBy(exprs: (PageRow => Any)*): PageRowRDD = agg(exprs, (v1, v2) => v1)
+
   // Always left
   def fetch(
              traces: Set[Trace],
@@ -426,7 +430,7 @@ case class PageRowRDD(
                //apply immediately after depth selection, this include depth0
              ): PageRowRDD = {
 
-    val resolvedExpr = Field.resolveConflict(plan, expr defaultAs Const.defaultJoinField)
+    val resolvedExpr = (expr defaultAs Const.defaultJoinField).resolveConflict(plan)
     val resolvedExtracts = Field.batchResolveConflict(plan, extracts)
 
     val effectiveOrdinalField = Option(ordinalField) match {
@@ -438,7 +442,7 @@ case class PageRowRDD(
 
     val effectiveDepthField = Option(depthField) match {
       case Some(field) =>
-        val resolvedField = field.resolveConflict(plan.fieldSet)
+        val resolvedField = field.resolveConflict(plan.schema)
         resolvedField.copy(depthRangeOption = Some(range))
       case None =>
         Field(resolvedExpr.field.name + "_depth", isWeak = true, depthRangeOption = Some(range))

@@ -3,7 +3,7 @@ package com.tribbloids.spookystuff.utils
 import java.io.NotSerializableException
 
 /**
-  * Any subclass in the closure cleaned by Spark ClosureCleaner should trigger a runtime error.
+  * Any subclass in the closure cleaned by Spark ClosureCleaner will trigger a runtime error.
   */
 trait NOTSerializableMixin extends Serializable {
 

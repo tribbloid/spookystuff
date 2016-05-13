@@ -1,7 +1,7 @@
 package com.tribbloids.spookystuff.row
 
 import com.tribbloids.spookystuff.QueryException
-import com.tribbloids.spookystuff.execution.AbstractExecutionPlan
+import com.tribbloids.spookystuff.execution.ExecutionPlan
 import com.tribbloids.spookystuff.expressions._
 import com.tribbloids.spookystuff.utils.IdentifierMixin
 
@@ -23,22 +23,14 @@ object Field {
   case object Overwrite extends ConflictResolving
 
   def batchResolveConflict(
-                            child: AbstractExecutionPlan,
+                            child: ExecutionPlan,
                             exprs: Seq[Expression[Any]]
                           ): Seq[Expression[Any]] = {
     val resolvedExprs = exprs.map {
       expr =>
-        resolveConflict(child, expr)
+        expr.resolveConflict(child)
     }
     resolvedExprs
-  }
-
-  def resolveConflict(
-                       child: AbstractExecutionPlan,
-                       expr: Expression[Any]
-                     ): Expression[Any] = {
-    val resolvedField = expr.field.resolveConflict(child.fieldSet)
-    expr ~ resolvedField
   }
 }
 

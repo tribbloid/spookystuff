@@ -1,6 +1,6 @@
 package com.tribbloids.spookystuff.rdd
 
-import com.tribbloids.spookystuff.execution.AbstractExecutionPlan
+import com.tribbloids.spookystuff.execution.ExecutionPlan
 import com.tribbloids.spookystuff.row.{SquashedPageRow, SquashedRowRDD}
 import org.apache.spark.rdd.{RDD, UnionRDD}
 import org.apache.spark.storage.StorageLevel
@@ -8,11 +8,11 @@ import org.apache.spark.storage.StorageLevel
 import scala.language.implicitConversions
 
 case class CoalescePlan(
-                         child: AbstractExecutionPlan,
+                         child: ExecutionPlan,
                          numPartitions: RDD[_] => Int,
                          shuffle: Boolean = false,
                          ord: Ordering[SquashedPageRow] = null
-                       ) extends AbstractExecutionPlan(child) {
+                       ) extends ExecutionPlan(child) {
 
   def doExecute(): SquashedRowRDD = {
     val childRDD = child.rdd()
@@ -22,8 +22,8 @@ case class CoalescePlan(
 }
 
 case class UnionPlan(
-                      override val children: Seq[AbstractExecutionPlan]
-                    ) extends AbstractExecutionPlan(children) {
+                      override val children: Seq[ExecutionPlan]
+                    ) extends ExecutionPlan(children) {
 
   def doExecute(): SquashedRowRDD = {
     new UnionRDD(

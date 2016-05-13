@@ -1,5 +1,6 @@
 package com.tribbloids.spookystuff.expressions
 
+import com.tribbloids.spookystuff.execution.ExecutionPlan
 import com.tribbloids.spookystuff.row.Field
 
 import scala.language.implicitConversions
@@ -70,6 +71,13 @@ trait ExpressionLike[-T, +R] extends (T => R) with Serializable {
   }
 
   override def toString(): String = name
+
+  final def resolveConflict(
+                             child: ExecutionPlan
+                           ): ExpressionLike[T, R] = {
+    val resolvedField = this.field.resolveConflict(child.schema)
+    this ~ resolvedField
+  }
 }
 
 object Alias {

@@ -13,7 +13,7 @@ import scala.util.Random
 
 //TODO: test if lazy execution works on it.
 case class ExplorePlan(
-                        child: AbstractExecutionPlan,
+                        child: ExecutionPlan,
 
                         expr: Expression[Any],
                         sampler: Sampler[Any],
@@ -29,7 +29,7 @@ case class ExplorePlan(
                         //TODO: test if proceed to next batch works
                         checkpointInterval: Int // set to Int.MaxValue to disable checkpointing,
 
-                      ) extends AbstractExecutionPlan(
+                      ) extends ExecutionPlan(
   child,
   {
     val extractFields = algorithmImpl.extracts.map(_.field)
@@ -38,7 +38,7 @@ case class ExplorePlan(
       v =>
         if (v._2.size > 1) throw new QueryException(s"Field ${v._1.name} already exist")
     }
-    Some(child.fieldSet ++ Option(algorithmImpl.depthField) ++ Option(algorithmImpl.ordinalField) ++ extractFields)
+    Some(child.schema ++ Option(algorithmImpl.depthField) ++ Option(algorithmImpl.ordinalField) ++ extractFields)
   }
 ) with CreateOrInheritBeaconRDDPlan {
   //TODO: detect in-plan field conflict!
