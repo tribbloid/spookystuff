@@ -3,10 +3,10 @@ package com.tribbloids.spookystuff.row
 import com.tribbloids.spookystuff.QueryException
 import com.tribbloids.spookystuff.utils.IdentifierMixin
 import org.apache.spark.sql.catalyst.ScalaReflection
-import org.apache.spark.sql.types.{DataType, Metadata, StructField}
+import org.apache.spark.sql.catalyst.ScalaReflection.universe._
+import org.apache.spark.sql.types.{Metadata, StructField}
 
 import scala.language.implicitConversions
-import scala.reflect.runtime.universe.TypeTag
 
 //abstract class ExpressionTransformer {
 //}
@@ -45,7 +45,8 @@ case class Field(
                   isOrdinal: Boolean = false, //represents ordinal index in flatten/explore
                   depthRangeOpt: Option[Range] = None, //represents depth in explore
 
-                  dataTypeOpt: Option[DataType] = None,
+                //TODO: make no longer optional?
+                  typeTagOpt: Option[TypeTag[_]] = None,
                   metadata: Metadata = Metadata.empty
                 ) extends IdentifierMixin {
 
@@ -90,11 +91,18 @@ case class Field(
     builder.result()
   }
 
-  def addType[RT: TypeTag] = this.copy(
-    dataTypeOpt = Some(ScalaReflection.schemaFor[RT].dataType)
+  def addType[RT: TypeTag](): Field = this.copy(
+    typeTagOpt = Some(typeTag[RT])
   )
 
-  def structField = {
+  lazy val dataTypeOpt = {
+    this.typeTagOpt.map{
+      typeTag =>
+        ScalaReflection.schemaFor(typeTag).dataType
+    }
+  }
+
+  @transient lazy val structField = {
     val dataType = dataTypeOpt.get // throw an exception when not typed
     StructField(
       name,
@@ -103,10 +111,4 @@ case class Field(
       metadata
     )
   }
-  //  override def transform[T](expr: Expression[T]): Expression[T] = {
-  //
-  //    val unwrapped = Alias.unwrap(expr)
-  //
-  //    new Alias[PageRow, Option[T]](unwrapped, this)
-  //  }
 }

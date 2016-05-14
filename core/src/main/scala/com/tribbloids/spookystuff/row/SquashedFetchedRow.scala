@@ -3,7 +3,7 @@ package com.tribbloids.spookystuff.row
 import java.util.UUID
 
 import com.tribbloids.spookystuff.actions.Trace
-import com.tribbloids.spookystuff.expressions.{Expression, NamedExpr}
+import com.tribbloids.spookystuff.expressions.{Extraction, NamedExtr}
 import com.tribbloids.spookystuff.doc.Fetched
 import com.tribbloids.spookystuff.{SpookyContext, dsl}
 
@@ -112,7 +112,7 @@ case class SquashedFetchedRow(
   //TODO: special optimization for Expression that only use pages
   //TODO: test redundant unchanged row elimination mechanism
   private def _extract(
-                        exprs: Seq[NamedExpr[Any]],
+                        exprs: Seq[NamedExtr[Any]],
                         filterEmpty: Boolean = true,
                         distinct: Boolean = true
                         //set to true to ensure that repeated use of an alias (e.g. A for defaultJoinKey) always evict existing values to avoid data corruption
@@ -167,7 +167,7 @@ case class SquashedFetchedRow(
     this.copy(dataRows = allUpdatedDataRows)
   }
 
-  def extract(exprs: Expression[Any]*) = _extract(exprs.map(_.asInstanceOf[NamedExpr[Any]]))
+  def extract(exprs: Extraction[Any]*) = _extract(exprs.map(_.asInstanceOf[NamedExtr[Any]]))
 
   def remove(fields: Field*) = this.copy(
     dataRows = dataRows.map(_.--(fields))

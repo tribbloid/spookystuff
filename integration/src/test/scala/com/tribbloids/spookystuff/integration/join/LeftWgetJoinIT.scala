@@ -1,7 +1,7 @@
 package com.tribbloids.spookystuff.integration.join
 
 import com.tribbloids.spookystuff.actions.Wget
-import com.tribbloids.spookystuff.expressions.Expression
+import com.tribbloids.spookystuff.expressions.Extraction
 
 /**
  * Created by peng on 25/10/15.
@@ -12,7 +12,7 @@ class LeftWgetJoinIT extends LeftVisitJoinIT {
     null
   )
 
-  override def getPage(uri: Expression[String]) = Wget(uri)
+  override def getPage(uri: Extraction[String]) = Wget(uri)
 
   override def numDrivers = 0
 }

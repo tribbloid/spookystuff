@@ -1,7 +1,7 @@
 package com.tribbloids.spookystuff.caching
 
 import com.tribbloids.spookystuff.actions.Trace
-import com.tribbloids.spookystuff.execution.ExploreLocalExecutor
+import com.tribbloids.spookystuff.execution.ExploreShard
 import com.tribbloids.spookystuff.row.{DataRow, RowReducer}
 
 /**
@@ -14,7 +14,7 @@ object ExploreSharedVisitedCache {
 
   val committed: MapCache[(Trace, Long), Iterable[DataRow]] = new MapCache()
 
-  private val _onGoings: ConcurrentMap[Long, ConcurrentSet[ExploreLocalExecutor]] = ConcurrentMap() //jobID -> running ExploreStateView
+  private val _onGoings: ConcurrentMap[Long, ConcurrentSet[ExploreShard]] = ConcurrentMap() //jobID -> running ExploreStateView
   def onGoings = _onGoings.asScala
 
   def onGoing(jobID: Long) = {
@@ -22,7 +22,7 @@ object ExploreSharedVisitedCache {
       onGoings
         .getOrElse(
           jobID, {
-            val v = ConcurrentSet[ExploreLocalExecutor]()
+            val v = ConcurrentSet[ExploreShard]()
             onGoings.put(jobID, v)
             v
           }
@@ -62,11 +62,11 @@ object ExploreSharedVisitedCache {
     }
   }
 
-  def register(v: ExploreLocalExecutor): Unit = {
+  def register(v: ExploreShard): Unit = {
     onGoing(v.executionID) += v
   }
 
-  def deregister(v: ExploreLocalExecutor): Unit = {
+  def deregister(v: ExploreShard): Unit = {
     onGoing(v.executionID) -= v
   }
 
@@ -92,7 +92,7 @@ object ExploreSharedVisitedCache {
 
   def getAll(key: (Trace, Long)): Set[Iterable[DataRow]] = {
     val onGoingVs = onGoing(key._2)
-      .toSet[ExploreLocalExecutor]
+      .toSet[ExploreShard]
       .flatMap {
         _.visited.get(key._1)
       }

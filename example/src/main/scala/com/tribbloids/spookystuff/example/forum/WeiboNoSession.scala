@@ -7,7 +7,7 @@ import com.tribbloids.spookystuff.SpookyContext
 import com.tribbloids.spookystuff.actions._
 import com.tribbloids.spookystuff.dsl._
 import com.tribbloids.spookystuff.example.QueryCore
-import com.tribbloids.spookystuff.expressions.Expression
+import com.tribbloids.spookystuff.expressions.Extraction
 
 /**
  * Created by peng on 8/28/14.

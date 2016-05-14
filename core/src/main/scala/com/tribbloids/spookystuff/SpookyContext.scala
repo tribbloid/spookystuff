@@ -118,7 +118,7 @@ case class SpookyContext private (
 
   lazy val blankSelfRDD = sparkContext.parallelize(Seq(SquashedFetchedRow.blank))
 
-  def blankPageRowRDD = this.create(blankSelfRDD)
+  def blankFetchedDataset = this.create(blankSelfRDD)
 
   def createBeaconRDD[K: ClassTag,V: ClassTag](
                                                 ref: RDD[_],

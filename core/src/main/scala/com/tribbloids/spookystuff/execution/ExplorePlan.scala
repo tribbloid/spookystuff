@@ -15,7 +15,7 @@ import scala.util.Random
 case class ExplorePlan(
                         child: ExecutionPlan,
 
-                        expr: NamedExpr[Any],
+                        expr: NamedExtr[Any],
                         sampler: Sampler[Any],
                         joinType: JoinType,
 
@@ -106,7 +106,7 @@ case class ExplorePlan(
 
       val stateRDD_+ : RDD[(Trace, Open_Visited)] = stateRDD.mapPartitions {
         itr =>
-          val state = new ExploreLocalExecutor(itr, execID)
+          val state = new ExploreShard(itr, execID)
           val state_+ = state.execute(
             expr,
             sampler,

@@ -1,7 +1,7 @@
 package com.tribbloids.spookystuff.expressions
 
 import com.tribbloids.spookystuff.row.Field
-import com.tribbloids.spookystuff.utils.Utils
+import com.tribbloids.spookystuff.utils.{PrettyToStringMixin, Utils}
 
 import scala.language.implicitConversions
 import scala.reflect.ClassTag
@@ -11,30 +11,25 @@ object ExpressionLike {
 
   implicit def fn2GenExpression[T, R](self: T => R): ExpressionLike[T, R] = {
     self match {
+      case e: ExpressionLike[T, R] =>
+        e
       case pf: PartialFunction[T, R] =>
-        new UnaryExpressionLike(pf)
+        new PartialExpressionLike(pf)
       case _ =>
-        new UnaryExpressionLike(PartialFunction(self))
+        new PartialExpressionLike(PartialFunction(self))
     }
-  }
-
-  def apply[T, R](self: T => R, fieldOpt: Option[Field]): ExpressionLike[T, R] = {
-
-    fn2GenExpression(self)._as(fieldOpt)
   }
 }
 
-trait ExpressionLike[T, +R] extends PartialFunction[T, R] with Serializable with DynamicExpressionMixin[T, R] {
-
-  def name: String = this.toString()
+//doesn't carry a classTag, to add any function that use classTag, please add to dsl.ExprView
+trait ExpressionLike[T, +R] extends PartialFunction[T, R] with PrettyToStringMixin with DynamicExpressionMixin[T, R] {
 
   lazy val unboxed: PartialFunction[T, R] = this
 
-  //TODO: add type to field
   def _as(fieldOpt: Option[Field]): ExpressionLike[T, R] = {
 
     fieldOpt match {
-      case Some(field) => new GenAlias[T, R](unboxed, field)
+      case Some(field) => new AliasLike[T, R](unboxed, field)
       case None => unboxed
     }
   }
@@ -52,32 +47,17 @@ trait ExpressionLike[T, +R] extends PartialFunction[T, R] with Serializable with
   def defaultAs(field: Field): ExpressionLike[T, R] = as(field)
 
   //alas, default impls are not serializable
-  override def andThen[A](g: R => A): ExpressionLike[T, A] = new AndThenExpressionLike[T, R, A](this.unboxed, PartialFunction(g))
+  override def andThen[A](g: R => A): ExpressionLike[T, A] = new AndThenExpressionLike[T, R, A](this, g)
 
-  def andOptional[A](g: R => Option[A]): ExpressionLike[T, A] = new UnliftExpressionLike[T, A] {
-
-    override def liftApply(v1: T): Option[A] = ExpressionLike.this.lift(v1).flatMap(g)
-  }
+  def andOptional[A](g: R => Option[A]): ExpressionLike[T, A] = new AndThenExpressionLike[T, R, A](this, OptionalExpressionLike(g))
 
   //TODO: extract subroutine and use it to avoid obj creation overhead
-  def typed[A](implicit ev: ClassTag[A]) = andOptional[A]{
+  def typed[A](implicit ev: ClassTag[A]): ExpressionLike[T, A] = andOptional[A]{
     Utils.typedOrNone[A]
   }
 }
 
-class UnaryExpressionLike[T, +R](val child: PartialFunction[T, R]) extends ExpressionLike[T, R] {
-
-  override lazy val unboxed: PartialFunction[T, R] = child
-
-  override final def apply(v1: T): R = child(v1)
-  override final def isDefinedAt(x: T): Boolean = child.isDefinedAt(x)
-
-  override def applyOrElse[A1 <: T, B1 >: R](x: A1, default: A1 => B1): B1 = child.applyOrElse(x, default)
-
-  override def lift = child.lift
-}
-
-trait UnliftExpressionLike[T, +R] extends AbstractPartialFunction[T, R] with ExpressionLike[T, R] {
+trait UnliftedExpressionLike[T, +R] extends AbstractPartialFunction[T, R] with ExpressionLike[T, R] {
 
   def liftApply(v1: T): Option[R]
 
@@ -91,12 +71,29 @@ trait UnliftExpressionLike[T, +R] extends AbstractPartialFunction[T, R] with Exp
   override final def lift = liftApply
 }
 
-class AndThenExpressionLike[A, B, +C](
-                                       val pf: PartialFunction[A, B],
-                                       val k: PartialFunction[B, C]
-                                     ) extends UnliftExpressionLike[A, C] {
+case class PartialExpressionLike[T, +R](delegate: PartialFunction[T, R]) extends ExpressionLike[T, R] {
 
-  override def liftApply(v1: A): Option[C] = pf.lift.apply(v1).flatMap(k.lift)
+  override lazy val unboxed: PartialFunction[T, R] = delegate
+
+  override final def apply(v1: T): R = delegate(v1)
+  override final def isDefinedAt(x: T): Boolean = delegate.isDefinedAt(x)
+
+  override def applyOrElse[A1 <: T, B1 >: R](x: A1, default: A1 => B1): B1 = delegate.applyOrElse(x, default)
+
+  override def lift = delegate.lift
+}
+
+case class OptionalExpressionLike[T, +R](delegate: T => Option[R]) extends UnliftedExpressionLike[T, R] {
+
+  override def liftApply(v1: T): Option[R] = delegate(v1)
+}
+
+case class AndThenExpressionLike[A, B, +C](
+                                            pf: ExpressionLike[A, B],
+                                            g: ExpressionLike[B, C]
+                                          ) extends UnliftedExpressionLike[A, C] {
+
+  override def liftApply(v1: A): Option[C] = pf.lift.apply(v1).flatMap(g.lift)
 }
 
 trait NamedExpressionLike[T, +R] extends ExpressionLike[T, R] {
@@ -104,14 +101,16 @@ trait NamedExpressionLike[T, +R] extends ExpressionLike[T, R] {
 
   assert(field != null)
 
-  override def name = field.name
+  def name = field.name
+
+  override def toString = field.name
 
   override def defaultAs(field: Field) = this
 }
 
-class GenAlias[T, +R](
-                       override val child: PartialFunction[T, R],
+class AliasLike[T, +R](
+                       override val delegate: PartialFunction[T, R],
                        val field: Field
-                      ) extends UnaryExpressionLike[T, R](child) with NamedExpressionLike[T, R] {
+                     ) extends PartialExpressionLike[T, R](delegate) with NamedExpressionLike[T, R] {
 
 }

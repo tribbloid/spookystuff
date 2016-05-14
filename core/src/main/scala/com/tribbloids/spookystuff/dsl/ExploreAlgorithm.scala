@@ -12,7 +12,7 @@ sealed trait ExploreAlgorithm {
   def getImpl(
                depthField: Field,
                ordinalField: Field,
-               extracts: Seq[NamedExpr[Any]]
+               extracts: Seq[NamedExtr[Any]]
              ): ExploreAlgorithmImpl
 }
 object ExploreAlgorithms {
@@ -21,7 +21,7 @@ object ExploreAlgorithms {
     override def getImpl(
                           depthField: Field,
                           ordinalField: Field,
-                          extracts: Seq[NamedExpr[Any]]
+                          extracts: Seq[NamedExtr[Any]]
                         ): ExploreAlgorithmImpl = ShortestPathImpl(depthField, ordinalField, extracts)
   }
 }

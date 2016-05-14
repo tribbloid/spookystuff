@@ -3,7 +3,7 @@ package com.tribbloids.spookystuff
 import java.util.Date
 
 import com.tribbloids.spookystuff.dsl._
-import com.tribbloids.spookystuff.expressions.{ByTrace, ByPage}
+import com.tribbloids.spookystuff.expressions.{ByTrace, ByDoc}
 import com.tribbloids.spookystuff.row.Sampler
 import com.tribbloids.spookystuff.session.{OAuthKeys, ProxySetting}
 import org.apache.spark.{Partitioner, SparkConf, SparkContext}
@@ -63,8 +63,8 @@ class SpookyConf (
                    var pageNotExpiredSince: Option[Date] = None,
 
                    var cacheFilePath: ByTrace[String] = FilePaths.Hierarchical,
-                   var autoSaveFilePath: ByPage[String] = FilePaths.UUIDName(FilePaths.Hierarchical),
-                   var errorDumpFilePath: ByPage[String] = FilePaths.UUIDName(FilePaths.Hierarchical),
+                   var autoSaveFilePath: ByDoc[String] = FilePaths.UUIDName(FilePaths.Hierarchical),
+                   var errorDumpFilePath: ByDoc[String] = FilePaths.UUIDName(FilePaths.Hierarchical),
 
                    var defaultPartitionerFactory: RDD[_] => Partitioner = PartitionerFactories.SameParallelism,
 

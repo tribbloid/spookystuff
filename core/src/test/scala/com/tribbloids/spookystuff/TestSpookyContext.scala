@@ -102,7 +102,7 @@ class TestSpookyContext extends SpookyEnvSuite{
     val spooky = this.spooky
     val rows = spooky.create(Seq("a", "b"))
 
-    val data = rows.collect().flatMap(_.dataRows).map(_.values).toList
+    val data = rows.collect().flatMap(_.dataRows).map(_.data).toList
     assert(data == List(Map(Field("_") -> "a"), Map(Field("_") -> "b")))
   }
 
@@ -111,7 +111,7 @@ class TestSpookyContext extends SpookyEnvSuite{
     val spooky = this.spooky
     val rows = spooky.create(Seq(Map("1" -> "a"), Map("2" -> "b")))
 
-    val data = rows.collect().flatMap(_.dataRows).map(_.values).toList
+    val data = rows.collect().flatMap(_.dataRows).map(_.data).toList
     assert(data == List(Map(Field("1") -> "a"), Map(Field("2") -> "b")))
   }
 
@@ -120,7 +120,7 @@ class TestSpookyContext extends SpookyEnvSuite{
     val spooky = this.spooky
     val rows = spooky.create(Seq(Map('a1 -> "a"), Map('a2 -> "b")))
 
-    val data = rows.collect().flatMap(_.dataRows).map(_.values).toList
+    val data = rows.collect().flatMap(_.dataRows).map(_.data).toList
     assert(data == List(Map(Field("a1") -> "a"), Map(Field("a2") -> "b")))
   }
 
@@ -129,7 +129,7 @@ class TestSpookyContext extends SpookyEnvSuite{
     val spooky = this.spooky
     val rows = spooky.create(Seq(Map(1 -> "a"), Map(2 -> "b")))
 
-    val data = rows.collect().flatMap(_.dataRows).map(_.values).toList
+    val data = rows.collect().flatMap(_.dataRows).map(_.data).toList
     assert(data == List(Map(Field("1") -> "a"), Map(Field("2") -> "b")))
   }
 

@@ -14,7 +14,7 @@ class LeftVisitJoinIT extends IntegrationSuite {
     phantomJS //TODO: HtmlUnit does not support Backbone.js
   )
 
-  def getPage(uri: Expression[String]): Action = Visit(uri)
+  def getPage(uri: Extraction[String]): Action = Visit(uri)
 
   override def doMain(): Unit = {
 

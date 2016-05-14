@@ -2,7 +2,7 @@ package com.tribbloids.spookystuff.pipeline.mymemory
 
 import java.util.UUID
 
-import com.tribbloids.spookystuff.expressions.Expression
+import com.tribbloids.spookystuff.expressions.Extraction
 import com.tribbloids.spookystuff.pipeline.RemoteTransformer
 import com.tribbloids.spookystuff.rdd.FetchedDataset
 import com.tribbloids.spookystuff.{SpookyContext, dsl}
@@ -22,7 +22,7 @@ class TranslationTransformer(
   import org.apache.spark.ml.param._
 
   final val QueryCol: Param[Symbol] = new Param(this, "QueryCol", "Original Text Column")
-  final val LangPair: Param[Expression[Any]] = new Param(this, "LangPair", "Source and language pair, separated by the | symbol. Use ISO standard names or RFC3066")
+  final val LangPair: Param[Extraction[Any]] = new Param(this, "LangPair", "Source and language pair, separated by the | symbol. Use ISO standard names or RFC3066")
   final val OutputCol: Param[Symbol] = new Param(this, "OutputCol", "Translated Text Column")
 
   setExample(QueryCol -> '_, LangPair -> "en|fr", OutputCol -> 'output)

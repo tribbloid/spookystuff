@@ -16,13 +16,13 @@ abstract class ExploreAlgorithmImpl {
   def eliminator: RowEliminator
 
   //TODO: this should contains any chain of extract, flatten, or map-ish execution plan
-  def extracts: Seq[NamedExpr[Any]]
+  def extracts: Seq[NamedExtr[Any]]
 }
 
 case class ShortestPathImpl(
                              depthField: Field,
                              ordinalField: Field,
-                             extracts: Seq[NamedExpr[Any]]
+                             extracts: Seq[NamedExtr[Any]]
                            ) extends ExploreAlgorithmImpl {
 
   import scala.Ordering.Implicits._

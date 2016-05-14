@@ -14,7 +14,7 @@ import scala.reflect.ClassTag
 //TODO: change to wrap DataFrame Row?
 //TODO: also carry PageUID & property type (Vertex/Edge) for GraphX
 case class DataRow(
-                    values: Map[Field, Any] = Map(),
+                    data: Map[Field, Any] = Map(),
                     groupID: Option[UUID] = None,
                     groupIndex: Int = 0, //set to 0...n for each page group after SquashedPageRow.semiUnsquash/unsquash
                     freeze: Boolean = false //if set to true PageRow.extract won't insert anything into it, used in merge/replace join
@@ -22,32 +22,32 @@ case class DataRow(
 
   import Implicits._
 
-  def updated(k: Field, v: Any) = this.copy(values = values.updated(k, v))
+  def updated(k: Field, v: Any) = this.copy(data = data.updated(k, v))
 
-  def ++(m: Iterable[(Field, Any)]) = this.copy(values = values ++ m)
+  def ++(m: Iterable[(Field, Any)]) = this.copy(data = data ++ m)
 
-  def --(m: Iterable[Field]) = this.copy(values = values -- m)
+  def --(m: Iterable[Field]) = this.copy(data = data -- m)
 
   def nameToField(name: String): Option[Field] = {
-    Some(Field(name, isWeak = true)).filter(values.contains)
+    Some(Field(name, isWeak = true)).filter(data.contains)
       .orElse {
-        Some(Field(name, isWeak = false)).filter(values.contains)
+        Some(Field(name, isWeak = false)).filter(data.contains)
       }
   }
 
   //TempKey precedes ordinary Key
   //TODO: in scala 2.10.x, T cannot <: AnyVal otherwise will run into https://issues.scala-lang.org/browse/SI-6967
   def getTyped[T <: Any : ClassTag](field: Field): Option[T] = {
-    values.get(field).flatMap {
+    data.get(field).flatMap {
       Utils.typedOrNone[T]
     }
   }
 
   def getInt(field: Field): Option[Int] = getTyped[Int](field)
 
-  def get(field: Field): Option[Any] = values.get(field)
+  def get(field: Field): Option[Any] = data.get(field)
 
-  def toMap: Map[String, Any] = values
+  def toMap: Map[String, Any] = data
     .filterKeys(!_.suppressOutput)
     .map(identity)
     .map(tuple => tuple._1.name -> tuple._2)
@@ -73,13 +73,13 @@ case class DataRow(
                sampler: Sampler[Any]
              ): Seq[DataRow] = {
 
-    val newValues_Indices: Seq[(Map[Field, Any], Int)] = values.flattenByKey(field, sampler)
+    val newValues_Indices: Seq[(Map[Field, Any], Int)] = data.flattenByKey(field, sampler)
 
     if (left && newValues_Indices.isEmpty) {
-      Seq(this.copy(values = values - field)) //you don't lose the remainder of a row because an element is empty
+      Seq(this.copy(data = data - field)) //you don't lose the remainder of a row because an element is empty
     }
     else {
-      val result: Seq[(DataRow, Int)] = newValues_Indices.map(tuple => this.copy(values = tuple._1) -> tuple._2)
+      val result: Seq[(DataRow, Int)] = newValues_Indices.map(tuple => this.copy(data = tuple._1) -> tuple._2)
 
       Option(ordinalField) match {
         case None => result.map(_._1)
@@ -89,11 +89,11 @@ case class DataRow(
               val existingOpt: Option[Iterable[Any]] = tuple._1.get(_field).map{v => Utils.asIterable[Any](v)}
               val values = existingOpt match {
                 case None =>
-                  tuple._1.values.updated(_field, Array(tuple._2))
+                  tuple._1.data.updated(_field, Array(tuple._2))
                 case Some(existing) =>
-                  tuple._1.values.updated(_field, (existing ++ Iterable(tuple._2)).toArray)
+                  tuple._1.data.updated(_field, (existing ++ Iterable(tuple._2)).toArray)
               }
-              tuple._1.copy(values = values)
+              tuple._1.copy(data = values)
           }
           newValues
       }
@@ -101,15 +101,15 @@ case class DataRow(
   }
 
   def clearWeakValues: DataRow = {
-    val tempFields = this.values.keys.filter(_.isWeak == true)
-    this.values -- tempFields
+    val tempFields = this.data.keys.filter(_.isWeak == true)
+    this.data -- tempFields
     this
   }
 
   //T cannot <: AnyVal otherwise will run into https://issues.scala-lang.org/browse/SI-6967
   //getIntIterable cannot use it for the same reason
   def getTypedArray[T <: Any: ClassTag](field: Field): Option[Array[T]] = {
-    val res = values.get(field).map {
+    val res = data.get(field).map {
       v => Utils.asArray[T](v)
     }
     res
@@ -118,7 +118,7 @@ case class DataRow(
   def getIntArray(field: Field): Option[Array[Int]] = getTypedArray[Int](field)
 
   def getTypedIterable[T <: Any: ClassTag](field: Field): Option[Iterable[T]] = {
-    val res = values.get(field).map {
+    val res = data.get(field).map {
       v => Utils.asIterable[T](v)
     }
     res
@@ -150,5 +150,5 @@ case class DataRow(
     Some(result)
   }
 
-  override def toString: String = values.toString()
+  override def toString: String = data.toString()
 }

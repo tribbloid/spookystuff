@@ -56,12 +56,12 @@ object FilePaths{
   }
 
   //only from Page
-  case class UUIDName(encoder: ByTrace[Any]) extends ByPage[String] {
+  case class UUIDName(encoder: ByTrace[Any]) extends ByDoc[String] {
     override def apply(page: Doc): String =
       Utils.uriConcat(encoder(page.uid.backtrace).toString, UUID.randomUUID().toString)
   }
 
-  case class TimeStampName(encoder: ByTrace[Any]) extends ByPage[String] {
+  case class TimeStampName(encoder: ByTrace[Any]) extends ByDoc[String] {
     override def apply(page: Doc): String =
       Utils.uriConcat(encoder(page.uid.backtrace).toString, Utils.canonizeFileName(page.timestamp.toString))
   }

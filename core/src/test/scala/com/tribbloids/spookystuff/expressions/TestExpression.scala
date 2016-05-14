@@ -19,7 +19,7 @@ class TestExpression extends FunSuite {
 
     assert(dynamic('K1).isDefinedAt(pageRow))
     assert(dynamic('K1).apply(pageRow) == "a,b,c")
-    val afterDynamic: Expression[Any] = dynamic('K1).split(",")
+    val afterDynamic: Extraction[Any] = dynamic('K1).split(",")
     val afterDynamicValue = afterDynamic.apply(pageRow)
     assert(afterDynamicValue.asInstanceOf[Array[String]].toSeq == "a,b,c".split(",").toSeq)
   }
@@ -27,7 +27,7 @@ class TestExpression extends FunSuite {
   test("Dynamic functions should be applicable on expressions") {
     val dataRow = DataRow(ListMap(Field("K1") -> "a,b,c", Field("K2") -> ","))
     val pageRow = dataRow -> Seq[Fetched]()
-    val afterDynamic: Expression[Any] = dynamic('K1).split(dynamic('K2))
+    val afterDynamic: Extraction[Any] = dynamic('K1).split(dynamic('K2))
     val afterDynamicValue = afterDynamic.apply(pageRow)
     assert(afterDynamicValue.asInstanceOf[Array[String]].toSeq == "a,b,c".split(",").toSeq)
   }

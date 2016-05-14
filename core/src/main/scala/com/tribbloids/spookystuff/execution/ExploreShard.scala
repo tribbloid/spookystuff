@@ -16,7 +16,7 @@ case class Open_Visited(
 /**
   * NOT serializable: expected to be constructed on Executors
   */
-class ExploreLocalExecutor(
+class ExploreShard(
                         val itr: Iterator[(Trace, Open_Visited)],
                         val executionID: Long
                       ) extends NOTSerializableMixin {
@@ -50,7 +50,7 @@ class ExploreLocalExecutor(
   }
 
   protected def executeOnce(
-                             expr: NamedExpr[Any],
+                             expr: NamedExtr[Any],
                              sampler: Sampler[Any],
                              joinType: JoinType,
 
@@ -120,7 +120,7 @@ class ExploreLocalExecutor(
   }
 
   def execute(
-               expr: NamedExpr[Any],
+               expr: NamedExtr[Any],
                sampler: Sampler[Any],
                joinType: JoinType,
 

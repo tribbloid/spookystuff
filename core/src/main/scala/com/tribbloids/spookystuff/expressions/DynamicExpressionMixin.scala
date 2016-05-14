@@ -2,15 +2,15 @@ package com.tribbloids.spookystuff.expressions
 
 import scala.language.dynamics
 
-object DynamicExpressionMixin {
+object DynamicExpressionLike {
 
   def combineDynamically[T, R](
-                             v1: T,
-                             lifted: T => Option[R],
-                             methodName: String
-                           )(
-                             args: Any*
-                           ): Option[Any] = {
+                                v1: T,
+                                lifted: T => Option[R],
+                                methodName: String
+                              )(
+                                args: Any*
+                              ): Option[Any] = {
 
     val selfOption: Option[R] = lifted.apply(v1)
     selfOption.map {
@@ -32,19 +32,20 @@ object DynamicExpressionMixin {
   }
 }
 
+case class DynamicExpressionLike[T](
+                                     base: ExpressionLike[T, _],
+                                     methodName: String,
+                                     args: Seq[Any]
+                                   ) extends UnliftedExpressionLike[T, Any] {
+
+  override def liftApply(v1: T): Option[Any] =
+    DynamicExpressionLike.combineDynamically(v1, base.lift, methodName)(args: _*)
+}
+
 //extra functions
 trait DynamicExpressionMixin[T, +R] extends Dynamic {
   selfType: ExpressionLike[T, R] =>
 
-  def applyDynamic(methodName: String)(args: Any*): ExpressionLike[T, Any] = {
-
-    val lifted: T => Option[Any] = {
-      v1 =>
-        DynamicExpressionMixin.combineDynamically(v1, this.lift, methodName)(args: _*)
-    }
-
-    new UnliftExpressionLike[T, Any] {
-      override def liftApply(v1: T): Option[Any] = lifted(v1)
-    }
-  }
+  def applyDynamic(methodName: String)(args: Any*): ExpressionLike[T, Any] =
+    DynamicExpressionLike(this, methodName, args)
 }

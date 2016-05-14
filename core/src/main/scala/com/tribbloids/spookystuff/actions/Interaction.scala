@@ -7,7 +7,7 @@ import org.openqa.selenium.{By, JavascriptExecutor, WebDriver}
 import com.tribbloids.spookystuff.{SpookyContext, Const}
 import com.tribbloids.spookystuff.actions.WaitForDocumentReady._
 import com.tribbloids.spookystuff.row.FetchedRow
-import com.tribbloids.spookystuff.expressions.{Expression, Literal}
+import com.tribbloids.spookystuff.expressions.{Extraction, Literal}
 import com.tribbloids.spookystuff.doc.{Doc, Unstructured}
 import com.tribbloids.spookystuff.session.Session
 import com.tribbloids.spookystuff.utils.Utils
@@ -68,7 +68,7 @@ object DocumentReadyCondition extends ExpectedCondition[Boolean] {
  * @param uri support cell interpolation
  */
 case class Visit(
-                  uri: Expression[Any],
+                  uri: Extraction[Any],
                   override val delay: Duration = Const.interactionDelayMin,
                   override val blocking: Boolean = Const.interactionBlock
                   ) extends Interaction(delay, blocking) with Timed {
@@ -282,7 +282,7 @@ case class Submit(
  */
 case class TextInput(
                       selector: String,
-                      text: Expression[Any],
+                      text: Extraction[Any],
                       override val delay: Duration = Const.interactionDelayMin,
                       override val blocking: Boolean = Const.interactionBlock
                       ) extends Interaction(delay, blocking) with Timed {
@@ -319,7 +319,7 @@ case class TextInput(
  */
 case class DropDownSelect(
                            selector: String,
-                           value: Expression[Any],
+                           value: Extraction[Any],
                            override val delay: Duration = Const.interactionDelayMin,
                            override val blocking: Boolean = Const.interactionBlock
                            ) extends Interaction(delay, blocking) with Timed {
@@ -371,7 +371,7 @@ case class SwitchToFrame(selector: String)extends Interaction(null, false) with 
  * @param selector selector of the element this script is executed against, if null, against the entire page
  */
 case class ExeScript(
-                      script: Expression[Any],
+                      script: Extraction[Any],
                       selector: String = null,
                       override val delay: Duration = Const.interactionDelayMin,
                       override val blocking: Boolean = Const.interactionBlock

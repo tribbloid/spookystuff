@@ -5,7 +5,7 @@ import java.net.{InetSocketAddress, URI}
 import java.util.Date
 import javax.net.ssl.SSLContext
 
-import com.tribbloids.spookystuff.expressions.{Expression, Literal}
+import com.tribbloids.spookystuff.expressions.{Extraction, Literal}
 import com.tribbloids.spookystuff.http._
 import com.tribbloids.spookystuff.doc._
 import com.tribbloids.spookystuff.row.FetchedRow
@@ -70,16 +70,16 @@ trait Export extends Named with Wayback{
 trait WaybackSupport {
   self: Wayback =>
 
-  var wayback: Expression[Long] = null
+  var wayback: Extraction[Long] = null
 
-  def waybackTo(date: Expression[Date]): this.type = {
+  def waybackTo(date: Extraction[Date]): this.type = {
     this.wayback = date.andThen(_.getTime)
     this
   }
 
   def waybackTo(date: Date): this.type = this.waybackTo(Literal(date))
 
-  def waybackToTimeMillis(time: Expression[Long]): this.type = {
+  def waybackToTimeMillis(time: Extraction[Long]): this.type = {
     this.wayback = time
     this
   }
@@ -178,7 +178,7 @@ object DefaultScreenshot extends Screenshot()
   * @param uri support cell interpolation
   */
 case class Wget(
-                 uri: Expression[Any],
+                 uri: Extraction[Any],
                  override val filter: DocFilter = Const.defaultDocumentFilter
                ) extends Export with Driverless with Timed with WaybackSupport {
 

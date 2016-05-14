@@ -206,5 +206,5 @@ trait Driverless extends Action {
 
 trait Wayback extends Action {
 
-  def wayback: Expression[Long]
+  def wayback: Extraction[Long]
 }

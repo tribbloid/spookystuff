@@ -158,7 +158,7 @@ abstract class ExecutionPlan(
     }
     val result = expr ~ resolvedField
     fieldBuffer += resolvedField
-    result.asInstanceOf[GenAlias[T, R]]
+    result.asInstanceOf[AliasLike[T, R]]
   }
 
   def batchResolveAlias[T, R](

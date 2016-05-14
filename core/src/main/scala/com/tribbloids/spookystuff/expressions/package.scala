@@ -11,12 +11,12 @@ package object expressions {
 
 //  private type ExpressionLike[T, +R] = T => R
 //
-  type Expression[+R] = ExpressionLike[FetchedRow, R]
-  type NamedExpr[+R] = NamedExpressionLike[FetchedRow, R]
+  type Extraction[+R] = ExpressionLike[FetchedRow, R]
+  type NamedExtr[+R] = NamedExpressionLike[FetchedRow, R]
 
-  type LiftedExpression[+R] = UnliftExpressionLike[FetchedRow, R]
+  type UnliftedExtr[+R] = UnliftedExpressionLike[FetchedRow, R]
 
-  type ByPage[+R] = (Doc => R)
+  type ByDoc[+R] = (Doc => R)
 
   type ByTrace[+R] = (Trace => R)
 }

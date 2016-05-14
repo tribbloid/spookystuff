@@ -2,7 +2,7 @@ package com.tribbloids.spookystuff.actions
 
 import org.apache.spark.TaskContext
 import org.slf4j.LoggerFactory
-import com.tribbloids.spookystuff.expressions.{Expression, Literal}
+import com.tribbloids.spookystuff.expressions.{Extraction, Literal}
 import com.tribbloids.spookystuff._
 import com.tribbloids.spookystuff.http.HttpUtils
 import com.tribbloids.spookystuff.row.FetchedRow
@@ -22,7 +22,7 @@ abstract class Block(override val children: Trace) extends Actions(children) wit
 
   //  assert(self.nonEmpty)
 
-  override def wayback: Expression[Long] = children.flatMap {
+  override def wayback: Extraction[Long] = children.flatMap {
     case w: Wayback => Some(w)
     case _ => None
   }.lastOption.map {

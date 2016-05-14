@@ -12,7 +12,7 @@ import com.tribbloids.spookystuff.row._
   */
 case class ExtractPlan(
                         child: ExecutionPlan,
-                        exprs: Seq[NamedExpr[Any]]
+                        exprs: Seq[NamedExtr[Any]]
                       ) extends ExecutionPlan(
   child,
   schemaOpt = {
