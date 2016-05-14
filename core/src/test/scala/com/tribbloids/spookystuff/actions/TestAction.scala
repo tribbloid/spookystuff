@@ -20,6 +20,7 @@ class TestAction extends SpookyEnvSuite {
 
     assert(rewritten === Visit(Literal("http://www.dummy.com")))
     assert(rewritten.timeout(null) === randomTimeout)
+    assert(FilePaths.Hierarchical.apply(rewritten :: Nil) contains "/www.dummy.com")
   }
 
   test("interpolate should not change name") {
@@ -30,5 +31,6 @@ class TestAction extends SpookyEnvSuite {
 
     assert(rewritten === Wget(Literal("http://www.dummy.com")))
     assert(rewritten.name === "dummy_name")
+    assert(FilePaths.Hierarchical.apply(rewritten :: Nil) contains "/www.dummy.com")
   }
 }
