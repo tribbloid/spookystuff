@@ -5,8 +5,8 @@ import org.slf4j.LoggerFactory
 import com.tribbloids.spookystuff.expressions.{Expression, Literal}
 import com.tribbloids.spookystuff._
 import com.tribbloids.spookystuff.http.HttpUtils
-import com.tribbloids.spookystuff.row.PageRow
-import com.tribbloids.spookystuff.pages.{Fetched, NoPage, Page}
+import com.tribbloids.spookystuff.row.FetchedRow
+import com.tribbloids.spookystuff.doc.{Fetched, NoDoc, Doc}
 import com.tribbloids.spookystuff.session.Session
 import com.tribbloids.spookystuff.utils.Utils.retry
 
@@ -56,11 +56,11 @@ abstract class Block(override val children: Trace) extends Actions(children) wit
         page.copy(uid = page.uid.copy(backtrace = backtrace, blockIndex = tuple._2, blockSize = pages.size))
       }
     }
-    if (result.isEmpty && this.hasOutput) Seq(NoPage(backtrace, cacheable = this.cacheEmptyOutput))
+    if (result.isEmpty && this.hasOutput) Seq(NoDoc(backtrace, cacheable = this.cacheEmptyOutput))
     else result
   }
 
-  def doExeNoUID(session: Session): Seq[Page]
+  def doExeNoUID(session: Session): Seq[Doc]
 }
 
 object Try {
@@ -85,17 +85,17 @@ final case class Try(
 
   override def trunk = Some(Try(this.trunkSeq)(retries, cacheEmptyOutput).asInstanceOf[this.type])
 
-  override def doExeNoUID(session: Session): Seq[Page] = {
+  override def doExeNoUID(session: Session): Seq[Doc] = {
 
     val taskContext = TaskContext.get()
 
-    val pages = new ArrayBuffer[Page]()
+    val pages = new ArrayBuffer[Doc]()
 
     try {
       for (action <- children) {
         pages ++= action.exe(session).flatMap{
-          case page: Page => Some(page)
-          case noPage: NoPage => None
+          case page: Doc => Some(page)
+          case noPage: NoDoc => None
         }
       }
     }
@@ -118,7 +118,7 @@ final case class Try(
     pages
   }
 
-  override def doInterpolate(pageRow: PageRow, spooky: SpookyContext): Option[this.type] ={
+  override def doInterpolate(pageRow: FetchedRow, spooky: SpookyContext): Option[this.type] ={
     val seq = this.doInterpolateSeq(pageRow, spooky)
     if (seq.isEmpty) None
     else Some(this.copy(children = seq)(this.retries, this.cacheEmptyOutput).asInstanceOf[this.type])
@@ -147,27 +147,27 @@ final case class TryLocally(
 
   override def trunk = Some(TryLocally(this.trunkSeq)(retries, cacheEmptyOutput).asInstanceOf[this.type])
 
-  override def doExeNoUID(session: Session): Seq[Page] = {
+  override def doExeNoUID(session: Session): Seq[Doc] = {
 
-    val pages = new ArrayBuffer[Page]()
+    val pages = new ArrayBuffer[Doc]()
 
     try {
       for (action <- children) {
         pages ++= action.exe(session).flatMap{
-          case page: Page => Some(page)
-          case noPage: NoPage => None
+          case page: Doc => Some(page)
+          case noPage: NoDoc => None
         }
       }
     }
     catch {
       case e: Throwable =>
-        retry[Seq[Page]](retries)({
-          val pages = new ArrayBuffer[Page]()
+        retry[Seq[Doc]](retries)({
+          val pages = new ArrayBuffer[Doc]()
 
           for (action <- children) {
             pages ++= action.exe(session).flatMap {
-              case page: Page => Some(page)
-              case noPage: NoPage => None
+              case page: Doc => Some(page)
+              case noPage: NoDoc => None
             }
           }
           pages
@@ -177,7 +177,7 @@ final case class TryLocally(
     pages
   }
 
-  override def doInterpolate(pageRow: PageRow, spooky: SpookyContext): Option[this.type] ={
+  override def doInterpolate(pageRow: FetchedRow, spooky: SpookyContext): Option[this.type] ={
     val seq = this.doInterpolateSeq(pageRow, spooky)
     if (seq.isEmpty) None
     else Some(this.copy(children = seq)(this.retries, this.cacheEmptyOutput).asInstanceOf[this.type])
@@ -213,16 +213,16 @@ final case class Loop(
 
   override def trunk = Some(this.copy(children = this.trunkSeq).asInstanceOf[this.type])
 
-  override def doExeNoUID(session: Session): Seq[Page] = {
+  override def doExeNoUID(session: Session): Seq[Doc] = {
 
-    val pages = new ArrayBuffer[Page]()
+    val pages = new ArrayBuffer[Doc]()
 
     try {
       for (i <- 0 until limit) {
         for (action <- children) {
           pages ++= action.exe(session).flatMap{
-            case page: Page => Some(page)
-            case noPage: NoPage => None
+            case page: Doc => Some(page)
+            case noPage: NoDoc => None
           }
         }
       }
@@ -235,7 +235,7 @@ final case class Loop(
     pages
   }
 
-  override def doInterpolate(pageRow: PageRow, spooky: SpookyContext): Option[this.type] ={
+  override def doInterpolate(pageRow: FetchedRow, spooky: SpookyContext): Option[this.type] ={
     val seq = this.doInterpolateSeq(pageRow, spooky)
     if (seq.isEmpty) None
     else Some(this.copy(children = seq).asInstanceOf[this.type])
@@ -279,7 +279,7 @@ object Paginate {
 object If {
 
   def apply(
-             condition: Page => Boolean,
+             condition: Doc => Boolean,
              ifTrue: Set[Trace] = Set(),
              ifFalse: Set[Trace] = Set()
            ): If = {
@@ -297,31 +297,31 @@ object If {
 }
 
 final case class If(
-                     condition: Page => Boolean,
+                     condition: Doc => Boolean,
                      ifTrue: Trace,
                      ifFalse: Trace
                    ) extends Block(ifTrue ++ ifFalse) {
 
   override def trunk = Some(this.copy(ifTrue = ifTrue.flatMap(_.trunk), ifFalse = ifFalse.flatMap(_.trunk)).asInstanceOf[this.type])
 
-  override def doExeNoUID(session: Session): Seq[Page] = {
+  override def doExeNoUID(session: Session): Seq[Doc] = {
 
-    val current = DefaultSnapshot.exe(session).head.asInstanceOf[Page]
+    val current = DefaultSnapshot.exe(session).head.asInstanceOf[Doc]
 
-    val pages = new ArrayBuffer[Page]()
+    val pages = new ArrayBuffer[Doc]()
     if (condition(current)) {
       for (action <- ifTrue) {
         pages ++= action.exe(session).flatMap{
-          case page: Page => Some(page)
-          case noPage: NoPage => None
+          case page: Doc => Some(page)
+          case noPage: NoDoc => None
         }
       }
     }
     else {
       for (action <- ifFalse) {
         pages ++= action.exe(session).flatMap{
-          case page: Page => Some(page)
-          case noPage: NoPage => None
+          case page: Doc => Some(page)
+          case noPage: NoDoc => None
         }
       }
     }
@@ -329,7 +329,7 @@ final case class If(
     pages
   }
 
-  override def doInterpolate(pageRow: PageRow, spooky: SpookyContext): Option[this.type] ={
+  override def doInterpolate(pageRow: FetchedRow, spooky: SpookyContext): Option[this.type] ={
     val ifTrueInterpolated = Actions.doInterppolateSeq(ifTrue, pageRow, spooky)
     val ifFalseInterpolated = Actions.doInterppolateSeq(ifFalse, pageRow, spooky)
     val result = this.copy(ifTrue = ifTrueInterpolated, ifFalse = ifFalseInterpolated).asInstanceOf[this.type]
@@ -366,18 +366,18 @@ case class OAuthV2(self: Wget) extends Block(List(self)) with Driverless {
 
   override def trunk = Some(this)
 
-  override def doInterpolate(pageRow: PageRow, context: SpookyContext): Option[this.type] =
+  override def doInterpolate(pageRow: FetchedRow, context: SpookyContext): Option[this.type] =
     self.interpolate(pageRow, context: SpookyContext).map {
       v => this.copy(self = v.asInstanceOf[Wget]).asInstanceOf[this.type]
     }
 
-  override def doExeNoUID(session: Session): Seq[Page] = {
+  override def doExeNoUID(session: Session): Seq[Doc] = {
     val effectiveWget = this.rewrite(session)
 
     effectiveWget
       .exe(session)
       .collect {
-        case v: Page => v
+        case v: Doc => v
       }
   }
 }
@@ -386,10 +386,10 @@ final case class AndThen(self: Action, f: Seq[Fetched] => Seq[Fetched]) extends 
 
   override def trunk = Some(this)
 
-  override def doExeNoUID(session: Session): Seq[Page] = {
+  override def doExeNoUID(session: Session): Seq[Doc] = {
     f(self.exe(session))
       .collect {
-        case v: Page => v
+        case v: Doc => v
       }
   }
 }

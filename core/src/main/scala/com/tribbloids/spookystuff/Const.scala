@@ -3,7 +3,7 @@ package com.tribbloids.spookystuff
 import com.tribbloids.spookystuff.row.Field
 import org.apache.tika.detect.DefaultDetector
 import org.json4s.DefaultFormats
-import com.tribbloids.spookystuff.dsl.DocumentFilters
+import com.tribbloids.spookystuff.dsl.DocFilters
 
 object Const {
 
@@ -43,8 +43,8 @@ object Const {
 
   val mimeDetector = new DefaultDetector()
 
-  val defaultDocumentFilter = DocumentFilters.MustHaveTitle
-  val defaultImageFilter = DocumentFilters.Status2XX
+  val defaultDocumentFilter = DocFilters.MustHaveTitle
+  val defaultImageFilter = DocFilters.AllowStatusCode2XX
 
   val exploreStageSize = 100
 }

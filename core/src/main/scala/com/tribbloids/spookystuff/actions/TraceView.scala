@@ -1,8 +1,8 @@
 package com.tribbloids.spookystuff.actions
 
 import org.slf4j.LoggerFactory
-import com.tribbloids.spookystuff.row.PageRow
-import com.tribbloids.spookystuff.pages.{Page, Fetched, PageUtils}
+import com.tribbloids.spookystuff.row.FetchedRow
+import com.tribbloids.spookystuff.doc.{Doc, Fetched, PageUtils}
 import com.tribbloids.spookystuff.session.{DriverSession, NoDriverSession, Session}
 import com.tribbloids.spookystuff.utils.Utils
 import com.tribbloids.spookystuff.{RemoteDisabledException, dsl, Const, SpookyContext}
@@ -18,7 +18,7 @@ case class TraceView(
                  ) extends Actions(children) { //remember trace is not a block! its the super container that cannot be wrapped
 
   //always has output (Sometimes Empty) to handle left join
-  override def doInterpolate(pr: PageRow, spooky: SpookyContext): Option[this.type] = {
+  override def doInterpolate(pr: FetchedRow, spooky: SpookyContext): Option[this.type] = {
     val seq = this.doInterpolateSeq(pr, spooky)
 
     Some(new TraceView(seq).asInstanceOf[this.type])
@@ -36,12 +36,12 @@ case class TraceView(
         if (action.hasOutput) {
 
           results ++= result
-          session.spooky.metrics.pagesFetchedFromRemote += result.count(_.isInstanceOf[Page])
+          session.spooky.metrics.pagesFetchedFromRemote += result.count(_.isInstanceOf[Doc])
 
           val spooky = session.spooky
 
           if (spooky.conf.autoSave) result.foreach{
-            case page: Page => page.autoSave(spooky)
+            case page: Doc => page.autoSave(spooky)
             case _ =>
           }
           if (spooky.conf.cacheWrite) PageUtils.autoCache(result, spooky)
@@ -84,7 +84,7 @@ case class TraceView(
     val results = Utils.retry (Const.remoteResourceLocalRetries){
       fetchOnce(spooky)
     }
-    val numPages = results.count(_.isInstanceOf[Page])
+    val numPages = results.count(_.isInstanceOf[Doc])
     spooky.metrics.pagesFetched += numPages
 
     results
@@ -105,7 +105,7 @@ case class TraceView(
       spooky.metrics.fetchFromCacheSuccess += 1
 
       val results = pagesFromCache.flatten
-      spooky.metrics.pagesFetchedFromCache += results.count(_.isInstanceOf[Page])
+      spooky.metrics.pagesFetchedFromCache += results.count(_.isInstanceOf[Doc])
       this.children.foreach{
         action =>
           LoggerFactory.getLogger(this.getClass).info(s"(cached)+> ${action.toString}")
@@ -185,7 +185,7 @@ final case class TraceSetView(self: Set[Trace]) {
 
   def correct: Set[Trace] = self.map(_.correct)
 
-  def interpolate(row: PageRow, context: SpookyContext): Set[Trace] = self.flatMap(_.interpolate(row, context: SpookyContext).map(_.children))
+  def interpolate(row: FetchedRow, context: SpookyContext): Set[Trace] = self.flatMap(_.interpolate(row, context: SpookyContext).map(_.children))
 
   def outputNames: Set[String] = self.map(_.outputNames).reduce(_ ++ _)
 }

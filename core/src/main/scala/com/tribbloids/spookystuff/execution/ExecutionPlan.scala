@@ -31,15 +31,15 @@ abstract class ExecutionPlan(
 
   lazy val localityBeaconRDDOpt = defaultLocalityBeaconRDDOpt
 
-  def doExecute(): SquashedRowRDD
+  def doExecute(): SquashedFetchedRDD
 
-  final def execute(): SquashedRowRDD = {
+  final def execute(): SquashedFetchedRDD = {
 
     this.doExecute()
   }
 
   var storageLevel: StorageLevel = StorageLevel.NONE
-  var cachedRDD_fetchedOpt: Option[(SquashedRowRDD, Boolean)] = None
+  var cachedRDD_fetchedOpt: Option[(SquashedFetchedRDD, Boolean)] = None
 
   def isCached = cachedRDD_fetchedOpt.nonEmpty
   def isFetched = cachedRDD_fetchedOpt.exists(_._2)
@@ -47,7 +47,7 @@ abstract class ExecutionPlan(
   //  final def rdd: SquashedRowRDD = rdd(false)
 
   //support lazy evaluation.
-  final def rdd(fetch: Boolean = false): SquashedRowRDD = {
+  final def rdd(fetch: Boolean = false): SquashedFetchedRDD = {
     cachedRDD_fetchedOpt match {
       case Some((cached, true)) =>
         cached
@@ -74,7 +74,7 @@ abstract class ExecutionPlan(
     }
   }
 
-  def unsquashedRDD: RDD[PageRow] = rdd(true)
+  def unsquashedRDD: RDD[FetchedRow] = rdd(true)
     .flatMap(v => v.unsquash)
 
   def this(

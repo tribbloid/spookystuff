@@ -2,7 +2,7 @@ package com.tribbloids.spookystuff
 
 import com.tribbloids.spookystuff.dsl.DriverFactories
 import com.tribbloids.spookystuff.dsl.DriverFactories.PhantomJS
-import com.tribbloids.spookystuff.rdd.PageRowRDD
+import com.tribbloids.spookystuff.rdd.FetchedDataset
 import com.tribbloids.spookystuff.row._
 import com.tribbloids.spookystuff.utils.{Implicits, Utils}
 import org.apache.hadoop.conf.Configuration
@@ -102,21 +102,21 @@ case class SpookyContext private (
     true
   }
 
-  def create(df: DataFrame): PageRowRDD = this.dsl.dataFrameToPageRowRDD(df)
-  def create[T: ClassTag](rdd: RDD[T]): PageRowRDD = this.dsl.rddToPageRowRDD(rdd)
+  def create(df: DataFrame): FetchedDataset = this.dsl.dataFrameToPageRowRDD(df)
+  def create[T: ClassTag](rdd: RDD[T]): FetchedDataset = this.dsl.rddToPageRowRDD(rdd)
 
   def create[T: ClassTag](
                            seq: TraversableOnce[T]
-                         ): PageRowRDD =
+                         ): FetchedDataset =
     this.dsl.rddToPageRowRDD(this.sqlContext.sparkContext.parallelize(seq.toSeq))
 
   def create[T: ClassTag](
                            seq: TraversableOnce[T],
                            numSlices: Int
-                         ): PageRowRDD =
+                         ): FetchedDataset =
     this.dsl.rddToPageRowRDD(this.sqlContext.sparkContext.parallelize(seq.toSeq, numSlices))
 
-  lazy val blankSelfRDD = sparkContext.parallelize(Seq(SquashedPageRow.blank))
+  lazy val blankSelfRDD = sparkContext.parallelize(Seq(SquashedFetchedRow.blank))
 
   def blankPageRowRDD = this.create(blankSelfRDD)
 
@@ -134,16 +134,16 @@ case class SpookyContext private (
 
     import com.tribbloids.spookystuff.utils.Implicits._
 
-    implicit def dataFrameToPageRowRDD(df: DataFrame): PageRowRDD = {
-      val self: RDD[SquashedPageRow] = new DataFrameView(df).toMapRDD.map {
+    implicit def dataFrameToPageRowRDD(df: DataFrame): FetchedDataset = {
+      val self: RDD[SquashedFetchedRow] = new DataFrameView(df).toMapRDD.map {
         map =>
-          SquashedPageRow(
+          SquashedFetchedRow(
             Option(ListMap(map.toSeq: _*))
               .getOrElse(ListMap())
               .map(tuple => (Field(tuple._1), tuple._2))
           )
       }
-      new PageRowRDD(
+      new FetchedDataset(
         self,
         schema = ListSet(df.schema.fieldNames: _*).map(Field(_)),
         spooky = getSpookyForInput
@@ -151,7 +151,7 @@ case class SpookyContext private (
     }
 
     //every input or noInput will generate a new metrics
-    implicit def rddToPageRowRDD[T: ClassTag](rdd: RDD[T]): PageRowRDD = {
+    implicit def rddToPageRowRDD[T: ClassTag](rdd: RDD[T]): FetchedDataset = {
       import Implicits._
       import scala.reflect._
 
@@ -168,16 +168,16 @@ case class SpookyContext private (
           val dataFrame = sqlContext.jsonRDD(jsonRDD)
           val self = canonRdd.map(
             map =>
-              SquashedPageRow(ListMap(map.map(tuple => (Field(tuple._1),tuple._2)).toSeq: _*))
+              SquashedFetchedRow(ListMap(map.map(tuple => (Field(tuple._1),tuple._2)).toSeq: _*))
           )
-          new PageRowRDD(
+          new FetchedDataset(
             self,
             schema = ListSet(dataFrame.schema.fieldNames: _*).map(Field(_)),
             spooky = getSpookyForInput
           )
-        case _ if classOf[SquashedPageRow] == classTag[T].runtimeClass =>
-          val self = rdd.asInstanceOf[RDD[SquashedPageRow]]
-          new PageRowRDD(
+        case _ if classOf[SquashedFetchedRow] == classTag[T].runtimeClass =>
+          val self = rdd.asInstanceOf[RDD[SquashedFetchedRow]]
+          new FetchedDataset(
             self,
             schema = ListSet[Field](),
             spooky = getSpookyForInput
@@ -188,9 +188,9 @@ case class SpookyContext private (
               var cells = ListMap[Field,Any]()
               if (str!=null) cells = cells + (Field("_") -> str)
 
-              SquashedPageRow(cells)
+              SquashedFetchedRow(cells)
           }
-          new PageRowRDD(
+          new FetchedDataset(
             self,
             schema = ListSet(Field("_")),
             spooky = getSpookyForInput

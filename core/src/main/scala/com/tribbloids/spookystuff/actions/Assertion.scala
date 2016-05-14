@@ -1,6 +1,6 @@
 package com.tribbloids.spookystuff.actions
 
-import com.tribbloids.spookystuff.pages.Page
+import com.tribbloids.spookystuff.doc.Doc
 import com.tribbloids.spookystuff.session.Session
 
 /**
@@ -12,7 +12,7 @@ abstract class Assertion extends Action {
 
   final override def trunk = None //can't be omitted
 
-  final override def doExe(session: Session): Seq[Page] = {
+  final override def doExe(session: Session): Seq[Doc] = {
 
     exeWithoutPage(session: Session)
 
@@ -22,9 +22,9 @@ abstract class Assertion extends Action {
   def exeWithoutPage(session: Session): Unit
 }
 
-case class Assert(condition: Page => Boolean) extends Assertion {
+case class Assert(condition: Doc => Boolean) extends Assertion {
   override def exeWithoutPage(session: Session): Unit = {
-    val page = DefaultSnapshot.apply(session).head.asInstanceOf[Page]
+    val page = DefaultSnapshot.apply(session).head.asInstanceOf[Doc]
 
     assert(condition(page))
   }

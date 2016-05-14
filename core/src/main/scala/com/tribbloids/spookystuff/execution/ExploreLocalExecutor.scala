@@ -60,7 +60,7 @@ class ExploreLocalExecutor(
                              algorithmImpl: ExploreAlgorithmImpl,
                              spooky: SpookyContext
                            )(
-                             rowFn: SquashedPageRow => SquashedPageRow
+                             rowFn: SquashedFetchedRow => SquashedFetchedRow
                              //apply immediately after depth selection, this include depth0
                              //should include flatten & extract
                            ): Unit = {
@@ -85,7 +85,7 @@ class ExploreLocalExecutor(
     }
 
     if (bestOpenAfterElimination._2.nonEmpty) {
-      val bestRow_- = SquashedPageRow(bestOpen._2.toArray, bestOpen._1).fetch(spooky)
+      val bestRow_- = SquashedFetchedRow(bestOpen._2.toArray, bestOpen._1).fetch(spooky)
 
       val bestRow = rowFn.apply(
         bestRow_-
@@ -130,7 +130,7 @@ class ExploreLocalExecutor(
                algorithmImpl: ExploreAlgorithmImpl,
                spooky: SpookyContext
              )(
-               rowFn: SquashedPageRow => SquashedPageRow
+               rowFn: SquashedFetchedRow => SquashedFetchedRow
                //apply immediately after depth selection, this include depth0
                //should include flatten & extract
              ): Iterator[(Trace, Open_Visited)] = {

@@ -1,6 +1,6 @@
 package com.tribbloids.spookystuff
 
-import com.tribbloids.spookystuff.pages.Fetched
+import com.tribbloids.spookystuff.doc.Fetched
 import org.apache.spark.rdd.RDD
 
 /**
@@ -8,9 +8,9 @@ import org.apache.spark.rdd.RDD
  */
 package object row {
 
-  type PageRow = (DataRow, Seq[Fetched])
+  type FetchedRow = (DataRow, Seq[Fetched])
 
-  type SquashedRowRDD = RDD[SquashedPageRow]
+  type SquashedFetchedRDD = RDD[SquashedFetchedRow]
 
   type Sampler[T] = Iterable[(T, Int)] => Iterable[(T, Int)] //with index
 

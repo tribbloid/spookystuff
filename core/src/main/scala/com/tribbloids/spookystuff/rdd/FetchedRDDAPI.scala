@@ -1,7 +1,7 @@
 package com.tribbloids.spookystuff.rdd
 
 import com.tribbloids.spookystuff.execution.ExecutionPlan
-import com.tribbloids.spookystuff.row.{SquashedPageRow, SquashedRowRDD}
+import com.tribbloids.spookystuff.row.{SquashedFetchedRow, SquashedFetchedRDD}
 import org.apache.spark.rdd.{RDD, UnionRDD}
 import org.apache.spark.storage.StorageLevel
 
@@ -11,10 +11,10 @@ case class CoalescePlan(
                          child: ExecutionPlan,
                          numPartitions: RDD[_] => Int,
                          shuffle: Boolean = false,
-                         ord: Ordering[SquashedPageRow] = null
+                         ord: Ordering[SquashedFetchedRow] = null
                        ) extends ExecutionPlan(child) {
 
-  def doExecute(): SquashedRowRDD = {
+  def doExecute(): SquashedFetchedRDD = {
     val childRDD = child.rdd()
     val n = numPartitions(childRDD)
     childRDD.coalesce(n, shuffle)(ord)
@@ -25,7 +25,7 @@ case class UnionPlan(
                       override val children: Seq[ExecutionPlan]
                     ) extends ExecutionPlan(children) {
 
-  def doExecute(): SquashedRowRDD = {
+  def doExecute(): SquashedFetchedRDD = {
     new UnionRDD(
       spooky.sparkContext,
       children.map(_.rdd())
@@ -36,8 +36,8 @@ case class UnionPlan(
 /**
   * Created by peng on 2/12/15.
   */
-trait PageRowRDDAPI {
-  self: PageRowRDD =>
+trait FetchedRDDAPI {
+  self: FetchedDataset =>
 
   //  def filter(f: SquashedPageRow => Boolean): PageRowRDD = selfRDD.filter(f)
   //
@@ -50,8 +50,8 @@ trait PageRowRDDAPI {
                  numPartitions: RDD[_] => Int = {v => v.getNumPartitions},
                  shuffle: Boolean = false
                )(
-                 implicit ord: Ordering[SquashedPageRow] = null
-               ): PageRowRDD = this.copy(
+                 implicit ord: Ordering[SquashedFetchedRow] = null
+               ): FetchedDataset = this.copy(
     CoalescePlan(plan, numPartitions, shuffle, ord)
   )
 
@@ -59,8 +59,8 @@ trait PageRowRDDAPI {
                 numPartitions: Int,
                 shuffle: Boolean = false
               )(
-                implicit ord: Ordering[SquashedPageRow] = null
-              ): PageRowRDD = {
+                implicit ord: Ordering[SquashedFetchedRow] = null
+              ): FetchedDataset = {
 
     _coalesce({v => numPartitions}, shuffle)(ord)
   }
@@ -68,8 +68,8 @@ trait PageRowRDDAPI {
   def repartition(
                    numPartitions: Int
                  )(
-                   implicit ord: Ordering[SquashedPageRow] = null
-                 ): PageRowRDD = {
+                   implicit ord: Ordering[SquashedFetchedRow] = null
+                 ): FetchedDataset = {
 
     coalesce(numPartitions, shuffle = true)(ord)
   }
@@ -79,11 +79,11 @@ trait PageRowRDDAPI {
   //             seed: Long = Utils.random.nextLong()): PageRowRDD =
   //    selfRDD.sample(withReplacement, fraction, seed)
 
-  def union(other: PageRowRDD*): PageRowRDD = this.copy(
+  def union(other: FetchedDataset*): FetchedDataset = this.copy(
     UnionPlan(Seq(plan) ++ other.map(_.plan))
   )
 
-  def ++(other: PageRowRDD): PageRowRDD = this.union(other)
+  def ++(other: FetchedDataset): FetchedDataset = this.union(other)
 
   //  def sortBy[K](
   //                 f: (PageRow) => K,

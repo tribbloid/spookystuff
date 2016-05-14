@@ -1,15 +1,15 @@
 package com.tribbloids.spookystuff.dsl
 
-import com.tribbloids.spookystuff.actions.DocumentFilter
-import com.tribbloids.spookystuff.pages.Page
+import com.tribbloids.spookystuff.actions.DocFilter
+import com.tribbloids.spookystuff.doc.Doc
 import com.tribbloids.spookystuff.session.Session
 import com.tribbloids.spookystuff.utils.PrettyToStringMixin
 import org.slf4j.LoggerFactory
 
 //TODO: support chaining & extends ExpressionLike/TreeNode
-trait AbstractDocumentFilter extends DocumentFilter with PrettyToStringMixin {
+trait AbstractDocFilter extends DocFilter with PrettyToStringMixin {
 
-  def assertStatusCode(page: Page){
+  def assertStatusCode(page: Doc){
     page.httpStatus.foreach {
       v =>
         assert(v.getStatusCode.toString.startsWith("2"), v.toString)
@@ -17,19 +17,19 @@ trait AbstractDocumentFilter extends DocumentFilter with PrettyToStringMixin {
   }
 }
 
-object DocumentFilters {
+object DocFilters {
 
-  case object Status2XX extends AbstractDocumentFilter {
+  case object AllowStatusCode2XX extends AbstractDocFilter {
 
-    override def apply(result: Page, session: Session): Page = {
+    override def apply(result: Doc, session: Session): Doc = {
       assertStatusCode(result)
       result
     }
   }
 
-  case object MustHaveTitle extends AbstractDocumentFilter {
+  case object MustHaveTitle extends AbstractDocFilter {
 
-    override def apply(result: Page, session: Session): Page = {
+    override def apply(result: Doc, session: Session): Doc = {
       assertStatusCode(result)
       if (result.mimeType.contains("html")){
         assert(result.\("html").\("title").text.getOrElse("").nonEmpty, s"Html Page @ ${result.uri} has no title")

@@ -5,8 +5,8 @@ import java.util.concurrent.TimeUnit
 
 import com.esotericsoftware.kryo.Kryo
 import com.tribbloids.spookystuff.dsl._
-import com.tribbloids.spookystuff.pages._
-import com.tribbloids.spookystuff.row.PageRow
+import com.tribbloids.spookystuff.doc._
+import com.tribbloids.spookystuff.row.FetchedRow
 import org.apache.spark.SerializableWritable
 import org.apache.spark.serializer.KryoRegistrator
 
@@ -22,14 +22,14 @@ class SpookyRegistrator extends KryoRegistrator {
   override def registerClasses(kryo: Kryo): Unit = {
     val array: Array[Class[_]] = Array(
       //used by PageRow
-      classOf[PageRow],
+      classOf[FetchedRow],
       classOf[ListMap[_,_]],
       classOf[UUID],
       classOf[Elements[_]],
       classOf[Siblings[_]],
       classOf[HtmlElement],
       classOf[JsonElement],
-      classOf[Page],
+      classOf[Doc],
 //      classOf[UnknownElement],
 //      classOf[ExploreStage],
 

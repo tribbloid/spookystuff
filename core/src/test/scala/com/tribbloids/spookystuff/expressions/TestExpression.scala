@@ -1,6 +1,6 @@
 package com.tribbloids.spookystuff.expressions
 
-import com.tribbloids.spookystuff.pages.Fetched
+import com.tribbloids.spookystuff.doc.Fetched
 import com.tribbloids.spookystuff.row.{DataRow, Field}
 import org.scalatest.FunSuite
 

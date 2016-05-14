@@ -2,7 +2,7 @@ package com.tribbloids.spookystuff.execution
 
 import com.tribbloids.spookystuff.SpookyContext
 import com.tribbloids.spookystuff.actions._
-import com.tribbloids.spookystuff.row.{DataRow, Field, SquashedRowRDD}
+import com.tribbloids.spookystuff.row.{DataRow, Field, SquashedFetchedRDD}
 import org.apache.spark.rdd.RDD
 
 import scala.collection.immutable.ListSet
@@ -12,7 +12,7 @@ import scala.collection.mutable.ArrayBuffer
   * Basic Plan with no children, isExecuted always= true
   */
 case class RDDPlan(
-                    sourceRDD: SquashedRowRDD,
+                    sourceRDD: SquashedFetchedRDD,
                     override val schema: ListSet[Field],
                     override val spooky: SpookyContext,
                     localityBeaconRDD: Option[RDD[(Trace, DataRow)]] = None,
@@ -21,5 +21,5 @@ case class RDDPlan(
 
   override lazy val localityBeaconRDDOpt = localityBeaconRDD
 
-  override def doExecute(): SquashedRowRDD = sourceRDD
+  override def doExecute(): SquashedFetchedRDD = sourceRDD
 }

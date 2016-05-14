@@ -4,9 +4,9 @@ import java.util.Date
 
 import com.tribbloids.spookystuff.actions._
 import com.tribbloids.spookystuff.expressions._
-import com.tribbloids.spookystuff.pages.{Elements, Page, PageUID, Unstructured}
-import com.tribbloids.spookystuff.rdd.PageRowRDD
-import com.tribbloids.spookystuff.row.{Field, PageRow, SquashedPageRow}
+import com.tribbloids.spookystuff.doc.{Elements, Doc, PageUID, Unstructured}
+import com.tribbloids.spookystuff.rdd.FetchedDataset
+import com.tribbloids.spookystuff.row.{Field, FetchedRow, SquashedFetchedRow}
 import com.tribbloids.spookystuff.utils.Default
 import org.apache.spark.rdd.RDD
 
@@ -18,9 +18,9 @@ import scala.reflect.ClassTag
 package object dsl {
   //  type SerializableCookie = Cookie with Serializable
 
-  implicit def PageRowRDDToRDD(wrapper: PageRowRDD): RDD[SquashedPageRow] = wrapper.rdd
+  implicit def PageRowRDDToRDD(wrapper: FetchedDataset): RDD[SquashedFetchedRow] = wrapper.rdd
 
-  implicit def spookyContextToPageRowRDD(spooky: SpookyContext): PageRowRDD = spooky.blankPageRowRDD
+  implicit def spookyContextToPageRowRDD(spooky: SpookyContext): FetchedDataset = spooky.blankPageRowRDD
   //    new PageRowRDD(
   //      spooky.sqlContext.sparkContext.parallelize(Seq(SquashedPageRow.empty1)),
   //      schema = ListSet(),
@@ -78,17 +78,17 @@ package object dsl {
     def into(field: Field) = AppendExpr[T](field, self)
     def ~+(field: Field) = into(field)
 
-    def orNull[B >: T]: Expression[B] = self.orElse[PageRow, B] {
+    def orNull[B >: T]: Expression[B] = self.orElse[FetchedRow, B] {
       case _ => null.asInstanceOf[B]
     }
 
-    def orDefault[B >: T]: Expression[B] = self.orElse[PageRow, B] {
+    def orDefault[B >: T]: Expression[B] = self.orElse[FetchedRow, B] {
       case _ => defaultVal: B
     }
 
     def ->[B](another: Expression[B]): Expression[(T, B)] = {
       val lifted = {
-        row: PageRow =>
+        row: FetchedRow =>
           if (!self.isDefinedAt(row) || !another.isDefinedAt(row)) None
           else Some(self(row) -> another(row))
       }
@@ -158,7 +158,7 @@ package object dsl {
     def boilerPipes = self.andThen(_.boilerPipes)
   }
 
-  implicit class PageExprView(self: Expression[Page]) extends Serializable {
+  implicit class PageExprView(self: Expression[Doc]) extends Serializable {
 
     def uid: Expression[PageUID] = self.andThen(_.uid)
 

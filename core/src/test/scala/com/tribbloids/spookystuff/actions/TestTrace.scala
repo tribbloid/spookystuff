@@ -1,7 +1,7 @@
 package com.tribbloids.spookystuff.actions
 
 import com.tribbloids.spookystuff.SpookyEnvSuite
-import com.tribbloids.spookystuff.pages.Page
+import com.tribbloids.spookystuff.doc.Doc
 
 class TestTrace extends SpookyEnvSuite {
 
@@ -89,7 +89,7 @@ class TestTrace extends SpookyEnvSuite {
           +> TextInput("box", "something")
           +> Snapshot()
           +> If(
-          {v: Page => v.uri startsWith "http" },
+          {v: Doc => v.uri startsWith "http" },
           Click("o1")
             +> TextInput("box1", "something1")
             +> Snapshot(),

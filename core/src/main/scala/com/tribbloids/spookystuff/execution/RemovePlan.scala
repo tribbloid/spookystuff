@@ -1,6 +1,6 @@
 package com.tribbloids.spookystuff.execution
 
-import com.tribbloids.spookystuff.row.{Field, SquashedRowRDD}
+import com.tribbloids.spookystuff.row.{Field, SquashedFetchedRDD}
 
 /**
   * Created by peng on 27/03/16.
@@ -13,7 +13,7 @@ case class RemovePlan(
   schemaOpt = Some(child.schema -- fields)
 ) {
 
-  override def doExecute(): SquashedRowRDD = {
+  override def doExecute(): SquashedFetchedRDD = {
     child.rdd().map(_.remove(fields: _*))
   }
 }

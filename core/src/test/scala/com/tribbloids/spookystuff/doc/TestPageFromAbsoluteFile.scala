@@ -1,4 +1,4 @@
-package com.tribbloids.spookystuff.pages
+package com.tribbloids.spookystuff.doc
 
 import com.tribbloids.spookystuff.actions.Wget
 import com.tribbloids.spookystuff.dsl

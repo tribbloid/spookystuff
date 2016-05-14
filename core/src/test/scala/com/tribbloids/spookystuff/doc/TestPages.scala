@@ -1,4 +1,4 @@
-package com.tribbloids.spookystuff.pages
+package com.tribbloids.spookystuff.doc
 
 import com.tribbloids.spookystuff.SpookyEnvSuite
 import com.tribbloids.spookystuff.actions.{Snapshot, Visit, Wget}
@@ -11,8 +11,8 @@ import scala.concurrent.duration._
  */
 class TestPages extends SpookyEnvSuite {
 
-  lazy val page = (Visit("http://en.wikipedia.org")::Snapshot().as('old)::Nil).fetch(spooky).map(_.asInstanceOf[Page])
-  lazy val wgetPage = (Wget("http://en.wikipedia.org").as('oldWget)::Nil).fetch(spooky).map(_.asInstanceOf[Page])
+  lazy val page = (Visit("http://en.wikipedia.org")::Snapshot().as('old)::Nil).fetch(spooky).map(_.asInstanceOf[Doc])
+  lazy val wgetPage = (Wget("http://en.wikipedia.org").as('oldWget)::Nil).fetch(spooky).map(_.asInstanceOf[Doc])
 
   test("cache and restore") {
     spooky.conf.pageExpireAfter = 2.seconds
@@ -21,7 +21,7 @@ class TestPages extends SpookyEnvSuite {
 
     PageUtils.autoCache(page, spooky)
 
-    val loadedPages = PageUtils.autoRestore(page.head.uid.backtrace,spooky).map(_.asInstanceOf[Page])
+    val loadedPages = PageUtils.autoRestore(page.head.uid.backtrace,spooky).map(_.asInstanceOf[Doc])
 
     assert(loadedPages.length === 1)
     assert(page.head.content === loadedPages.head.content)
@@ -35,7 +35,7 @@ class TestPages extends SpookyEnvSuite {
 
     val newTrace = Visit("http://en.wikipedia.org") :: Snapshot().as('new) :: Nil
 
-    val page2 = PageUtils.autoRestore(newTrace, spooky).map(_.asInstanceOf[Page])
+    val page2 = PageUtils.autoRestore(newTrace, spooky).map(_.asInstanceOf[Doc])
 
     assert(page2.size === 1)
     assert(page2.head === page.head)
@@ -61,7 +61,7 @@ class TestPages extends SpookyEnvSuite {
 
     val newTrace = Wget("http://en.wikipedia.org").as('newWget) :: Nil
 
-    val page2 = PageUtils.autoRestore(newTrace, spooky).map(_.asInstanceOf[Page])
+    val page2 = PageUtils.autoRestore(newTrace, spooky).map(_.asInstanceOf[Doc])
 
     assert(page2.size === 1)
     assert(page2.head === wgetPage.head)

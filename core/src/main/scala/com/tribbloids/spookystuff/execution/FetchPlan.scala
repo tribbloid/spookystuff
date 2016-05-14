@@ -2,7 +2,7 @@ package com.tribbloids.spookystuff.execution
 
 import com.tribbloids.spookystuff.actions._
 import com.tribbloids.spookystuff.dsl.{FetchOptimizer, FetchOptimizers}
-import com.tribbloids.spookystuff.row.{DataRow, SquashedPageRow, SquashedRowRDD}
+import com.tribbloids.spookystuff.row.{DataRow, SquashedFetchedRow, SquashedFetchedRDD}
 import org.apache.spark.Partitioner
 import org.apache.spark.rdd.RDD
 
@@ -40,7 +40,7 @@ case class FetchPlan(
   import com.tribbloids.spookystuff.dsl._
   import com.tribbloids.spookystuff.utils.Implicits._
 
-  override def doExecute(): SquashedRowRDD = {
+  override def doExecute(): SquashedFetchedRDD = {
 
     val trace_DataRowRDD: RDD[(Trace, DataRow)] = child.rdd()
       .flatMap {
@@ -62,7 +62,7 @@ case class FetchPlan(
     grouped
       .map {
         tuple =>
-          SquashedPageRow(tuple._2.toArray, tuple._1) // actual fetch can only be triggered by extract or savePages
+          SquashedFetchedRow(tuple._2.toArray, tuple._1) // actual fetch can only be triggered by extract or savePages
       }
   }
 }

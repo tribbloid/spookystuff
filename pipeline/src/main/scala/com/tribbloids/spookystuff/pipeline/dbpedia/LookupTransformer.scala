@@ -5,7 +5,7 @@ import java.util.UUID
 import com.tribbloids.spookystuff.actions.Wget
 import com.tribbloids.spookystuff.expressions.Expression
 import com.tribbloids.spookystuff.pipeline.RemoteTransformer
-import com.tribbloids.spookystuff.rdd.PageRowRDD
+import com.tribbloids.spookystuff.rdd.FetchedDataset
 import com.tribbloids.spookystuff.{SpookyContext, dsl}
 
 /**
@@ -29,11 +29,11 @@ class LookupTransformer(
   setExample(QueryCol -> 'q, ClassCol -> 'class, FirstN -> 3, IndexCol -> 'index,LabelCol -> 'label, UriCol -> 'uri)
   setDefault(FirstN -> Int.MaxValue, LabelCol -> null, UriCol -> null)
 
-  override def exampleInput(spooky: SpookyContext): PageRowRDD = spooky.create(Seq(
+  override def exampleInput(spooky: SpookyContext): FetchedDataset = spooky.create(Seq(
     Map("q" ->"Barack Obama", "class" -> "person")
   ))
 
-  override def transform(dataset: PageRowRDD): PageRowRDD = {
+  override def transform(dataset: FetchedDataset): FetchedDataset = {
 
     var uri: Expression[String] = x"http://lookup.dbpedia.org/api/search/KeywordSearch?QueryString=${getOrDefault(QueryCol)}"
     if (getOrDefault(ClassCol) != null) uri = uri + x"&QueryClass=${getOrDefault(ClassCol)}"

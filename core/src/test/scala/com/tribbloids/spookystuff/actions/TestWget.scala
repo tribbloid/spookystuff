@@ -1,7 +1,7 @@
 package com.tribbloids.spookystuff.actions
 
 import com.tribbloids.spookystuff.SpookyEnvSuite
-import com.tribbloids.spookystuff.pages.Page
+import com.tribbloids.spookystuff.doc.Doc
 import org.scalatest.tags.Retryable
 
 import scala.concurrent.duration
@@ -21,7 +21,7 @@ class TestWget extends SpookyEnvSuite {
       wget("http://www.whatsmyuseragent.com/") :: Nil
       ).fetch(spooky)
 
-    results.head.asInstanceOf[Page].findAll("h3.info").texts.head
+    results.head.asInstanceOf[Doc].findAll("h3.info").texts.head
   }
 
   //TODO: find a test site for http!
@@ -51,7 +51,7 @@ class TestWget extends SpookyEnvSuite {
         wget("https://www.astrill.com/what-is-my-ip-address.php") :: Nil
         ).fetch(spooky)
 
-      results.head.asInstanceOf[Page].findAll("h1").texts.head
+      results.head.asInstanceOf[Doc].findAll("h1").texts.head
     }
 
     assert(newIP !== null)
@@ -93,7 +93,7 @@ class TestWget extends SpookyEnvSuite {
         wget("https://www.astrill.com/what-is-my-ip-address.php") :: Nil
         ).fetch(spooky)
 
-      results.head.asInstanceOf[Page].findAll("h1").texts.head
+      results.head.asInstanceOf[Doc].findAll("h1").texts.head
     }
 
     val noProxyIP2 = {
@@ -103,7 +103,7 @@ class TestWget extends SpookyEnvSuite {
         wget("https://www.astrill.com/what-is-my-ip-address.php") :: Nil
         ).fetch(spooky)
 
-      results.head.asInstanceOf[Page].findAll("h1").texts.head
+      results.head.asInstanceOf[Doc].findAll("h1").texts.head
     }
 
     assert(newIP !== noProxyIP2)
@@ -118,7 +118,7 @@ class TestWget extends SpookyEnvSuite {
       ).fetch(spooky)
 
     assert(results.size === 1)
-    results.head.asInstanceOf[Page]
+    results.head.asInstanceOf[Doc]
   }
 
 //  test("wget should encode malformed url 2") {

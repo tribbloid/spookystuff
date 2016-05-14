@@ -1,4 +1,4 @@
-package com.tribbloids.spookystuff.pages
+package com.tribbloids.spookystuff.doc
 
 import java.io._
 import java.util.{Date, UUID}
@@ -54,24 +54,24 @@ trait Fetched extends PageLike {
   def laterOf(v2: Fetched): Fetched = if (laterThan(v2)) this
   else v2
 
-//  def revertToUnfetched: Unfetched = Unfetched(uid.backtrace)
+  //  def revertToUnfetched: Unfetched = Unfetched(uid.backtrace)
 }
 
 //Merely a placeholder when a Block returns nothing
-case class NoPage(
-                   trace: Trace,
-                   override val timestamp: Date = new Date(System.currentTimeMillis()),
-                   override val cacheable: Boolean = true
-                 ) extends Serializable with Fetched {
+case class NoDoc(
+                  trace: Trace,
+                  override val timestamp: Date = new Date(System.currentTimeMillis()),
+                  override val cacheable: Boolean = true
+                ) extends Serializable with Fetched {
 
   @transient override lazy val uid: PageUID = PageUID(trace, null, 0, 1)
 }
 
-class ErrorWithPage(
-                     delegate: Page,
-                     override val message: String = "",
-                     override val cause: Throwable = null
-                   ) extends ActionException with Fetched {
+class ErrorWithDoc(
+                    delegate: Doc,
+                    override val message: String = "",
+                    override val cause: Throwable = null
+                  ) extends ActionException with Fetched {
 
   override def timestamp: Date = delegate.timestamp
 
@@ -80,13 +80,13 @@ class ErrorWithPage(
   override def cacheable: Boolean = delegate.cacheable
 }
 
-class DocumentFilterError(
-                           delegate: Page,
-                           override val message: String = "",
-                           override val cause: Throwable = null
-                         ) extends ErrorWithPage(delegate, message, cause)
+class DocFilterError(
+                      delegate: Doc,
+                      override val message: String = "",
+                      override val cause: Throwable = null
+                    ) extends ErrorWithDoc(delegate, message, cause)
 
-object Page {
+object Doc {
 
   val CONTENT_TYPE = "contentType"
   val CSV_FORMAT = "csvFormat"
@@ -96,21 +96,20 @@ object Page {
 
 //keep small, will be passed around by Spark
 @SerialVersionUID(94865098324L)
-case class Page(
-                 override val uid: PageUID,
+case class Doc(
+                override val uid: PageUID,
 
-                 override val uri: String, //redirected
-                 declaredContentType: Option[String],
-                 content: Array[Byte],
+                override val uri: String, //redirected
+                declaredContentType: Option[String],
+                content: Array[Byte],
 
-                 //                 cookie: Seq[SerializableCookie] = Nil,
-                 override val timestamp: Date = new Date(System.currentTimeMillis()),
-                 saved: scala.collection.mutable.Set[String] = scala.collection.mutable.Set(),
-                 override val cacheable: Boolean = true,
-                 httpStatus: Option[StatusLine] = None,
-                 @transient _properties: Map[String, Any] = null //for customizing parsing
-               )
-  extends Unstructured with Fetched with IdentifierMixin {
+                //                 cookie: Seq[SerializableCookie] = Nil,
+                override val timestamp: Date = new Date(System.currentTimeMillis()),
+                saved: scala.collection.mutable.Set[String] = scala.collection.mutable.Set(),
+                override val cacheable: Boolean = true,
+                httpStatus: Option[StatusLine] = None,
+                @transient _properties: Map[String, Any] = null //for customizing parsing
+              ) extends Unstructured with Fetched with IdentifierMixin {
 
   def properties: Map[String, Any] = Option(_properties).getOrElse(Map())
 
@@ -138,7 +137,7 @@ case class Page(
   }
 
   @transient lazy val parsedContentType: ContentType = properties
-    .get(Page.CONTENT_TYPE)
+    .get(Doc.CONTENT_TYPE)
     .map("" + _)
     .orElse(declaredContentType) match {
     case Some(str) =>
@@ -183,10 +182,10 @@ case class Page(
       JsonElement(content, effectiveCharset, uri) //not serialize, parsing is faster
     }
     else if (mimeType.contains("csv")) {
-      val csvFormat = this.properties.get(Page.CSV_FORMAT).map{
+      val csvFormat = this.properties.get(Doc.CSV_FORMAT).map{
         _.asInstanceOf[CSVFormat]
       }
-        .getOrElse(Page.defaultCSVFormat)
+        .getOrElse(Doc.defaultCSVFormat)
 
       CSVElement(content, effectiveCharset, uri, csvFormat) //not serialize, parsing is faster
     }
@@ -292,7 +291,7 @@ case class Page(
     )(spooky)
   }
 
-  def set(tuples: (String, Any)*): Page = this.copy(
+  def set(tuples: (String, Any)*): Doc = this.copy(
     _properties = this.properties ++ Map(tuples: _*)
   )
 }

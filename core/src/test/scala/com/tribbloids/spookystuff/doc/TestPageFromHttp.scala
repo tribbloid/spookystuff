@@ -1,4 +1,4 @@
-package com.tribbloids.spookystuff.pages
+package com.tribbloids.spookystuff.doc
 
 import com.tribbloids.spookystuff.actions.Wget
 import com.tribbloids.spookystuff.{SpookyEnvSuite, dsl}
@@ -28,7 +28,7 @@ class TestPageFromHttp extends SpookyEnvSuite {
 
     val resultsList = results.toArray
     assert(resultsList.length === 1)
-    val page = resultsList(0).asInstanceOf[Page]
+    val page = resultsList(0).asInstanceOf[Doc]
 
     assert(page.mimeType == "text/html")
     assert(page.charset.map(_.toLowerCase).get == "utf-8")
@@ -49,7 +49,7 @@ class TestPageFromHttp extends SpookyEnvSuite {
 
     val resultsList = results.toArray
     assert(resultsList.length === 1)
-    val page = resultsList(0).asInstanceOf[Page]
+    val page = resultsList(0).asInstanceOf[Doc]
 
     assert(page.mimeType == "application/json")
     assert(page.charset.map(_.toLowerCase).get == "utf-8")
@@ -74,7 +74,7 @@ class TestPageFromHttp extends SpookyEnvSuite {
 
     val resultsList = results.toArray
     assert(resultsList.length === 1)
-    val page = resultsList(0).asInstanceOf[Page]
+    val page = resultsList(0).asInstanceOf[Doc]
 
     assert(page.mimeType == "image/png")
     assert(page.charset.map(_.toLowerCase).get == "utf-8")
@@ -95,7 +95,7 @@ class TestPageFromHttp extends SpookyEnvSuite {
 
     val resultsList = results.toArray
     assert(resultsList.length === 1)
-    val page = resultsList(0).asInstanceOf[Page]
+    val page = resultsList(0).asInstanceOf[Doc]
 
     assert(page.mimeType == "application/pdf")
     assert(page.charset.map(_.toLowerCase).get == "utf-8")
@@ -111,7 +111,7 @@ class TestPageFromHttp extends SpookyEnvSuite {
   test("childrenWithSiblings") {
     val page = (
       Wget(htmlUrl) :: Nil
-      ).fetch(spooky).head.asInstanceOf[Page]
+      ).fetch(spooky).head.asInstanceOf[Doc]
 
     val ranges = page.findAllWithSiblings("a.link-box em", -2 to 1)
     assert(ranges.size === 10)
@@ -126,7 +126,7 @@ class TestPageFromHttp extends SpookyEnvSuite {
   test("childrenWithSiblings with overlapping elimiation") {
     val page = (
       Wget(htmlUrl) :: Nil
-      ).fetch(spooky).head.asInstanceOf[Page]
+      ).fetch(spooky).head.asInstanceOf[Doc]
 
     val ranges = page.findAllWithSiblings("div.central-featured-lang[lang^=e]", -2 to 2)
     assert(ranges.size === 2)
@@ -149,7 +149,7 @@ class TestPageFromHttp extends SpookyEnvSuite {
 
     val resultsList = results.toArray
     assert(resultsList.length === 1)
-    val page = resultsList(0).asInstanceOf[Page]
+    val page = resultsList(0).asInstanceOf[Doc]
 
     assert(page.mimeType == "application/xml")
     assert(page.charset.map(_.toLowerCase).get == "utf-8")
@@ -174,7 +174,7 @@ class TestPageFromHttp extends SpookyEnvSuite {
 
     val resultsList = results.toArray
     assert(resultsList.length === 1)
-    val page = resultsList(0).asInstanceOf[Page].set("csvFormat" -> CSVFormat.newFormat('\t').withQuote('"').withHeader())
+    val page = resultsList(0).asInstanceOf[Doc].set("csvFormat" -> CSVFormat.newFormat('\t').withQuote('"').withHeader())
 
     assert(page.mimeType == "text/csv")
     assert(Set("iso-8859-1", "utf-8") contains page.charset.map(_.toLowerCase).get) //the file is just using ASCII chars

@@ -14,7 +14,7 @@ case class FlattenPlan(
   schemaOpt = Some(child.schema ++ Option(ordinalField))
 ) {
 
-  override def doExecute(): SquashedRowRDD = {
+  override def doExecute(): SquashedFetchedRDD = {
     child
       .rdd()
       .map(_.flattenData(flattenField, ordinalField, isLeft, sampler))

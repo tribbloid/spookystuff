@@ -4,7 +4,7 @@ import java.util.UUID
 
 import com.tribbloids.spookystuff.expressions.Expression
 import com.tribbloids.spookystuff.pipeline.RemoteTransformer
-import com.tribbloids.spookystuff.rdd.PageRowRDD
+import com.tribbloids.spookystuff.rdd.FetchedDataset
 import com.tribbloids.spookystuff.{SpookyContext, dsl}
 
 import scala.language.postfixOps
@@ -27,11 +27,11 @@ class TranslationTransformer(
 
   setExample(QueryCol -> '_, LangPair -> "en|fr", OutputCol -> 'output)
 
-  override def exampleInput(spooky: SpookyContext): PageRowRDD = spooky.create(Seq(
+  override def exampleInput(spooky: SpookyContext): FetchedDataset = spooky.create(Seq(
     Map("_" -> "Hello!")
   ))
 
-  override def transform(dataset: PageRowRDD): PageRowRDD = {
+  override def transform(dataset: FetchedDataset): FetchedDataset = {
 
     dataset
       .wget(x"http://api.mymemory.translated.net/get?q=${getOrDefault(QueryCol)}!&langpair=${getOrDefault(LangPair)}")

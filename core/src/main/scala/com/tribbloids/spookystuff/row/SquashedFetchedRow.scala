@@ -4,18 +4,18 @@ import java.util.UUID
 
 import com.tribbloids.spookystuff.actions.Trace
 import com.tribbloids.spookystuff.expressions.{Expression, NamedExpr}
-import com.tribbloids.spookystuff.pages.Fetched
+import com.tribbloids.spookystuff.doc.Fetched
 import com.tribbloids.spookystuff.{SpookyContext, dsl}
 
 import scala.collection.mutable.ArrayBuffer
 
-object SquashedPageRow {
+object SquashedFetchedRow {
 
-  def apply(data: Map[Field, Any]): SquashedPageRow = SquashedPageRow(
+  def apply(data: Map[Field, Any]): SquashedFetchedRow = SquashedFetchedRow(
     dataRows = Array(DataRow(data))
   )
 
-  lazy val blank: SquashedPageRow = SquashedPageRow(Array(DataRow()))
+  lazy val blank: SquashedFetchedRow = SquashedFetchedRow(Array(DataRow()))
 }
 
 /**
@@ -26,7 +26,7 @@ object SquashedPageRow {
   * this is due to the fact that 90% of time is spent on fetching. < 5% on parsing & extraction.
   * WARNING: comparing to 0.3.x support for different join types has been discarded, costs too much memory.
   */
-case class SquashedPageRow(
+case class SquashedFetchedRow(
                             dataRows: Array[DataRow] = Array(),
                             trace: Trace = Nil,
                             fetchedOpt: Option[Array[Fetched]] = None // discarded after new page coming in
@@ -38,7 +38,7 @@ case class SquashedPageRow(
   def isFetched: Boolean = fetchedOpt.nonEmpty
   def fetched = fetchedOpt.getOrElse(Array())
 
-  def fetch(spooky: SpookyContext): SquashedPageRow = {
+  def fetch(spooky: SpookyContext): SquashedFetchedRow = {
     if (isFetched) this
     else {
       val fetched = trace.fetch(spooky).toArray
@@ -50,7 +50,7 @@ case class SquashedPageRow(
 
   def toJSONs = dataRows.map(_.toJSON)
 
-  def ++ (another: SquashedPageRow) = {
+  def ++ (another: SquashedFetchedRow) = {
     this.copy(dataRows = this.dataRows ++ another.dataRows)
   }
 
@@ -77,7 +77,7 @@ case class SquashedPageRow(
   def groupedFetched: Array[Seq[Fetched]] = groupedFetchedOption.getOrElse(defaultGroupedFetched)
 
   //outer: dataRows, inner: grouped pages
-  def semiUnsquash: Array[Array[PageRow]] = dataRows.map{
+  def semiUnsquash: Array[Array[FetchedRow]] = dataRows.map{
     dataRow =>
       val groupID = UUID.randomUUID()
       groupedFetched.zipWithIndex.map {
@@ -90,14 +90,14 @@ case class SquashedPageRow(
   }
 
   // cartisian product
-  def unsquash: Array[PageRow] = semiUnsquash.flatten
+  def unsquash: Array[FetchedRow] = semiUnsquash.flatten
 
   def flattenData(
                    field: Field,
                    ordinalKey: Field,
                    left: Boolean,
                    sampler: Sampler[Any]
-                 ): SquashedPageRow = {
+                 ): SquashedFetchedRow = {
 
     this.copy(dataRows = this.dataRows.flatMap(_.flatten(field, ordinalKey, left, sampler)))
   }
@@ -116,7 +116,7 @@ case class SquashedPageRow(
                         filterEmpty: Boolean = true,
                         distinct: Boolean = true
                         //set to true to ensure that repeated use of an alias (e.g. A for defaultJoinKey) always evict existing values to avoid data corruption
-                      ): SquashedPageRow = {
+                      ): SquashedFetchedRow = {
 
     val allUpdatedDataRows: Array[DataRow] = semiUnsquash.flatMap {
       PageRows => //each element contains a different page group, CAUTION: not all of them are used: page group that yield no new datum will be removed, if all groups yield no new datum at least 1 row is preserved

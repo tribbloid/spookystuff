@@ -1,6 +1,6 @@
 package com.tribbloids.spookystuff.pipeline
 
-import com.tribbloids.spookystuff.rdd.PageRowRDD
+import com.tribbloids.spookystuff.rdd.FetchedDataset
 import com.tribbloids.spookystuff.{PipelineException, SpookyContext}
 import org.apache.spark.ml.param.{Param, ParamMap, ParamPair}
 import org.slf4j.LoggerFactory
@@ -84,7 +84,7 @@ trait RemoteTransformer extends RemoteTransformerLike with Dynamic {
   //example value of parameters used for testing
   val exampleParamMap: ParamMap = ParamMap.empty
 
-  def exampleInput(spooky: SpookyContext): PageRowRDD = spooky
+  def exampleInput(spooky: SpookyContext): FetchedDataset = spooky
 
   protected final def setExample(paramPairs: ParamPair[_]*): this.type = {
     paramPairs.foreach { p =>
@@ -119,7 +119,7 @@ trait RemoteTransformer extends RemoteTransformerLike with Dynamic {
         this.set(pair)
     }
 
-    val result: PageRowRDD = this.transform(this.exampleInput(spooky)).persist()
+    val result: FetchedDataset = this.transform(this.exampleInput(spooky)).persist()
     val keys = result.fields
 
     result.toDF(sort = true).show()

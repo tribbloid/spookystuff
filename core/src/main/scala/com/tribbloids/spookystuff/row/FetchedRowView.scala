@@ -1,14 +1,14 @@
 package com.tribbloids.spookystuff.row
 
 import com.tribbloids.spookystuff.actions._
-import com.tribbloids.spookystuff.pages._
+import com.tribbloids.spookystuff.doc._
 
-object PageRow {
+object FetchedRow {
 
   def apply(
              dataRow: DataRow = DataRow(),
              pageLikes: Seq[Fetched] = Seq()
-           ): PageRow = dataRow -> pageLikes
+           ): FetchedRow = dataRow -> pageLikes
 
 }
 
@@ -16,37 +16,37 @@ object PageRow {
   * abstracted data structure where expression can be resolved.
   * not the main data structure in execution plan, SquashedPageRow is
   */
-case class PageRowView(
-                        self: PageRow
-                      ) {
+case class FetchedRowView(
+                           self: FetchedRow
+                         ) {
 
   def dataRow: DataRow = self._1
   def pageLikes: Seq[Fetched] = self._2.toSeq
 
   //TODO: trace implementation is not accurate: the last backtrace has all previous exports removed
-  def squash = SquashedPageRow(
+  def squash = SquashedFetchedRow(
     Array(dataRow),
     fetchedOpt = Some(pageLikes.toArray)
   )
 
-  def pages: Seq[Page] = pageLikes.flatMap {
-    case page: Page => Some(page)
+  def pages: Seq[Doc] = pageLikes.flatMap {
+    case page: Doc => Some(page)
     case _ => None
   }
 
-  def noPages: Seq[NoPage] = pageLikes.flatMap {
-    case noPage: NoPage => Some(noPage)
+  def noPages: Seq[NoDoc] = pageLikes.flatMap {
+    case noPage: NoDoc => Some(noPage)
     case _ => None
   }
 
-  def getOnlyPage: Option[Page] = {
+  def getOnlyPage: Option[Doc] = {
     val pages = this.pages
 
     if (pages.size > 1) throw new UnsupportedOperationException("Ambiguous key referring to multiple pages")
     else pages.headOption
   }
 
-  def getPage(keyStr: String): Option[Page] = {
+  def getPage(keyStr: String): Option[Doc] = {
 
     //    if (keyStr == Const.onlyPageWildcard) return getOnlyPage
 

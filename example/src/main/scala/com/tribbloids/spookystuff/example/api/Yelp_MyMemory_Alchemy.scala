@@ -1,6 +1,6 @@
 package com.tribbloids.spookystuff.example.api
 
-import com.tribbloids.spookystuff.pages.{Unstructured, Elements}
+import com.tribbloids.spookystuff.doc.{Unstructured, Elements}
 import org.apache.tika.language.LanguageIdentifier
 import com.tribbloids.spookystuff.actions._
 import com.tribbloids.spookystuff.example.QueryCore

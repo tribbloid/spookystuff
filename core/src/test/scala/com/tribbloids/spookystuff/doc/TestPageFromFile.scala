@@ -1,4 +1,4 @@
-package com.tribbloids.spookystuff.pages
+package com.tribbloids.spookystuff.doc
 
 import com.tribbloids.spookystuff.actions.Wget
 import com.tribbloids.spookystuff.dsl
@@ -26,7 +26,7 @@ class TestPageFromFile extends TestPageFromHttp {
 
     val resultsList = results.toArray
     assert(resultsList.length === 1)
-    val page = resultsList(0).asInstanceOf[Page]
+    val page = resultsList(0).asInstanceOf[Doc]
 
     page.code.foreach(println)
 

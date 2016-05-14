@@ -2,8 +2,8 @@ package com.tribbloids.spookystuff.dsl
 
 import com.tribbloids.spookystuff.SpookyEnvSuite
 import com.tribbloids.spookystuff.actions.Wget
-import com.tribbloids.spookystuff.rdd.PageRowRDD
-import com.tribbloids.spookystuff.row.{DataRow, Field, PageRow, SquashedPageRow}
+import com.tribbloids.spookystuff.rdd.FetchedDataset
+import com.tribbloids.spookystuff.row.{DataRow, Field, FetchedRow, SquashedFetchedRow}
 
 /**
 *  Created by peng on 12/3/14.
@@ -16,7 +16,7 @@ class TestDSL extends SpookyEnvSuite {
     Wget("http://www.wikipedia.org/") ~ 'page  :: Nil
   ).fetch(spooky).toArray
 
-  lazy val row = SquashedPageRow(dataRows = Array(DataRow()), fetchedOpt = Some(pages))
+  lazy val row = SquashedFetchedRow(dataRows = Array(DataRow()), fetchedOpt = Some(pages))
     .extract(
       S"title".head.text ~ 'abc,
       S"title".head ~ 'def
@@ -52,7 +52,7 @@ class TestDSL extends SpookyEnvSuite {
     val pages = (
       Wget("http://www.wikipedia.org/") :: Nil
       ).fetch(spooky).toArray
-    val row = SquashedPageRow(Array(DataRow()), fetchedOpt = Some(pages))
+    val row = SquashedFetchedRow(Array(DataRow()), fetchedOpt = Some(pages))
       .extract(S"""a[href*="wikipedia"]""".href ~ 'uri)
       .unsquash.head
 
@@ -68,11 +68,11 @@ class TestDSL extends SpookyEnvSuite {
   test("string interpolation") {
     val expr = x"static ${'notexist}"
     assert(expr.lift.apply(row).isEmpty)
-    assert(expr.orElse[PageRow, String]{case _ => " "}.apply(row) == " ")
+    assert(expr.orElse[FetchedRow, String]{case _ => " "}.apply(row) == " ")
   }
 
   test("SpookyContext can be cast to a blank PageRowRDD with empty schema") {
-    val rdd = spooky: PageRowRDD
+    val rdd = spooky: FetchedDataset
     assert(rdd.fields.isEmpty)
     assert(rdd.count() == 1)
 

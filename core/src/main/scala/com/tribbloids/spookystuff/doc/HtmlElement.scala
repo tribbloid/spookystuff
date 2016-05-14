@@ -1,4 +1,4 @@
-package com.tribbloids.spookystuff.pages
+package com.tribbloids.spookystuff.doc
 
 import de.l3s.boilerpipe.extractors.ArticleExtractor
 import org.apache.tika.io.TikaInputStream

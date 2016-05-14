@@ -5,7 +5,7 @@ import com.tribbloids.spookystuff.actions._
 import com.tribbloids.spookystuff.caching.ExploreSharedVisitedCache
 import com.tribbloids.spookystuff.dsl.{FetchOptimizer, FetchOptimizers, JoinType}
 import com.tribbloids.spookystuff.expressions._
-import com.tribbloids.spookystuff.row.{SquashedPageRow, _}
+import com.tribbloids.spookystuff.row.{SquashedFetchedRow, _}
 import org.apache.spark.Partitioner
 import org.apache.spark.rdd.RDD
 
@@ -45,7 +45,7 @@ case class ExplorePlan(
 
   import com.tribbloids.spookystuff.utils.Implicits._
 
-  override def doExecute(): SquashedRowRDD = {
+  override def doExecute(): SquashedFetchedRDD = {
     assert(algorithmImpl.depthField != null)
 
     val execID = Random.nextLong()
@@ -53,8 +53,8 @@ case class ExplorePlan(
     if (spooky.sparkContext.getCheckpointDir.isEmpty && checkpointInterval > 0)
       spooky.sparkContext.setCheckpointDir(spooky.conf.dirs.checkpoint)
 
-    val rowFn: SquashedPageRow => SquashedPageRow = {
-      row: SquashedPageRow =>
+    val rowFn: SquashedFetchedRow => SquashedFetchedRow = {
+      row: SquashedFetchedRow =>
         row.extract(algorithmImpl.extracts: _*)
     }
 
@@ -154,7 +154,7 @@ case class ExplorePlan(
 
           visitedOpt.map {
             visited =>
-              SquashedPageRow(visited, v._1)
+              SquashedFetchedRow(visited, v._1)
           }
       }
 

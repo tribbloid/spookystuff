@@ -1,4 +1,4 @@
-package com.tribbloids.spookystuff.pages
+package com.tribbloids.spookystuff.doc
 
 import org.json4s.jackson.JsonMethods
 import org.json4s.{JValue, JArray, JField}

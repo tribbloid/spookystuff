@@ -4,7 +4,7 @@ import com.tribbloids.spookystuff.actions.{Snapshot, Try, Visit, Wget, _}
 import com.tribbloids.spookystuff.dsl.{ExploreAlgorithm, FetchOptimizer, JoinType, _}
 import com.tribbloids.spookystuff.execution.{ExplorePlan, FetchPlan, _}
 import com.tribbloids.spookystuff.expressions.{GetExpr, _}
-import com.tribbloids.spookystuff.pages.Page
+import com.tribbloids.spookystuff.doc.Doc
 import com.tribbloids.spookystuff.row.{Field, _}
 import com.tribbloids.spookystuff.utils.{Utils, Implicits}
 import com.tribbloids.spookystuff.{Const, SpookyConf, SpookyContext}
@@ -31,16 +31,16 @@ import scala.collection.Map
   * all function ended with _! will be executed immediately, others will yield a logical plan that can be optimized & lazily executed
   */
 //TODO: rename?
-case class PageRowRDD(
+case class FetchedDataset(
                        plan: ExecutionPlan
-                     ) extends PageRowRDDAPI {
+                     ) extends FetchedRDDAPI {
 
   import Implicits._
   import scala.Ordering.Implicits._
   import plan.CacheQueueView
 
   def this(
-            sourceRDD: SquashedRowRDD,
+            sourceRDD: SquashedFetchedRDD,
             schema: ListSet[Field],
             spooky: SpookyContext,
             webCacheBeaconRDDOpt: Option[RDD[(Trace, DataRow)]] = None,
@@ -64,7 +64,7 @@ case class PageRowRDD(
     plan.rdd(true)
   }
 
-  def unsquashedRDD: RDD[PageRow] = this.rdd.flatMap(_.unsquash)
+  def unsquashedRDD: RDD[FetchedRow] = this.rdd.flatMap(_.unsquash)
 
   def spooky = plan.spooky
   def fields = plan.fieldSeq
@@ -131,17 +131,17 @@ case class PageRowRDD(
   def toStringRDD(
                    expr: Expression[Any],
                    default: String = null
-                 ): RDD[String] = unsquashedRDD.map(v => expr.toStr.applyOrElse[PageRow, String](v, _ => default))
+                 ): RDD[String] = unsquashedRDD.map(v => expr.toStr.applyOrElse[FetchedRow, String](v, _ => default))
 
   def toObjectRDD[T: ClassTag](
                                 expr: Expression[T],
                                 default: T = null
-                              ): RDD[T] = unsquashedRDD.map(v => expr.applyOrElse[PageRow, T](v, _ => default))
+                              ): RDD[T] = unsquashedRDD.map(v => expr.applyOrElse[FetchedRow, T](v, _ => default))
 
   def toTypedRDD[T: ClassTag](
                                expr: Expression[Any],
                                default: T = null
-                             ): RDD[T] = unsquashedRDD.map(v => expr.typed[T].applyOrElse[PageRow, T](v, _ => default))
+                             ): RDD[T] = unsquashedRDD.map(v => expr.typed[T].applyOrElse[FetchedRow, T](v, _ => default))
 
   def toPairRDD[T1: ClassTag, T2: ClassTag](first: Expression[T1], second: Expression[T2]): RDD[(T1,T2)] = unsquashedRDD
     .map{
@@ -165,7 +165,7 @@ case class PageRowRDD(
   def savePages(
                  path: Expression[Any],
                  extension: Expression[Any] = null,
-                 pageExpr: Expression[Page] = S,
+                 pageExpr: Expression[Doc] = S,
                  overwrite: Boolean = false
                ): this.type = {
 
@@ -199,7 +199,7 @@ case class PageRowRDD(
     this
   }
 
-  def extract(exprs: Expression[Any]*): PageRowRDD = {
+  def extract(exprs: Expression[Any]*): FetchedDataset = {
 
     val resolvedExprs = plan.batchResolveAlias(exprs)
 
@@ -210,9 +210,9 @@ case class PageRowRDD(
 
   def select(exprs: Expression[Any]*) = extract(exprs: _*)
 
-  def remove(fields: Field*): PageRowRDD = this.copy(RemovePlan(plan, fields))
+  def remove(fields: Field*): FetchedDataset = this.copy(RemovePlan(plan, fields))
 
-  def removeWeaks(): PageRowRDD = this.remove(fields.filter(_.isWeak): _*)
+  def removeWeaks(): FetchedDataset = this.remove(fields.filter(_.isWeak): _*)
 
   /**
     * extract expressions before the block and scrape all temporary KV after
@@ -246,7 +246,7 @@ case class PageRowRDD(
                isLeft: Boolean = true,
                ordinalField: Field = null,
                sampler: Sampler[Any] = spooky.conf.defaultFlattenSampler
-             ): PageRowRDD = {
+             ): FetchedDataset = {
 
     val extracted = if  (expr.isInstanceOf[GetExpr]) this
     else this.extract(expr)
@@ -276,7 +276,7 @@ case class PageRowRDD(
                    isLeft: Boolean = true,
                    ordinalField: Field = null,
                    sampler: Sampler[Any] = spooky.conf.defaultFlattenSampler
-                 )(exprs: Expression[Any]*): PageRowRDD = {
+                 )(exprs: Expression[Any]*): FetchedDataset = {
     this
       .flatten(expr defaultAs Const.defaultJoinField, isLeft, ordinalField, sampler)
       .extract(exprs: _*)
@@ -290,24 +290,24 @@ case class PageRowRDD(
                 )(exprs: Expression[Any]*) = flatExtract(expr, isLeft, ordinalField, sampler)(exprs: _*)
 
   //TODO: test
-  def agg(exprs: Seq[(PageRow => Any)], reducer: RowReducer): PageRowRDD = this.copy(AggPlan(plan, exprs, reducer))
-  def distinctBy(exprs: (PageRow => Any)*): PageRowRDD = agg(exprs, (v1, v2) => v1)
+  def agg(exprs: Seq[(FetchedRow => Any)], reducer: RowReducer): FetchedDataset = this.copy(AggPlan(plan, exprs, reducer))
+  def distinctBy(exprs: (FetchedRow => Any)*): FetchedDataset = agg(exprs, (v1, v2) => v1)
 
   // Always left
   def fetch(
              traces: Set[Trace],
              partitionerFactory: RDD[_] => Partitioner = spooky.conf.defaultPartitionerFactory,
              fetchOptimizer: FetchOptimizer = spooky.conf.defaultFetchOptimizer
-           ): PageRowRDD = this.copy(FetchPlan(plan, traces.correct, partitionerFactory, fetchOptimizer))
+           ): FetchedDataset = this.copy(FetchPlan(plan, traces.correct, partitionerFactory, fetchOptimizer))
 
   //shorthand of fetch
   def visit(
              expr: Expression[Any],
-             filter: DocumentFilter = Const.defaultDocumentFilter,
+             filter: DocFilter = Const.defaultDocumentFilter,
              failSafe: Int = -1,
              partitionerFactory: RDD[_] => Partitioner = spooky.conf.defaultPartitionerFactory,
              fetchOptimizer: FetchOptimizer = spooky.conf.defaultFetchOptimizer
-           ): PageRowRDD = {
+           ): FetchedDataset = {
 
     var trace: Set[Trace] =  (
       Visit(expr)
@@ -325,11 +325,11 @@ case class PageRowRDD(
   //shorthand of fetch
   def wget(
             expr: Expression[Any],
-            filter: DocumentFilter = Const.defaultDocumentFilter,
+            filter: DocFilter = Const.defaultDocumentFilter,
             failSafe: Int = -1,
             partitionerFactory: RDD[_] => Partitioner = spooky.conf.defaultPartitionerFactory,
             fetchOptimizer: FetchOptimizer = spooky.conf.defaultFetchOptimizer
-          ): PageRowRDD = {
+          ): FetchedDataset = {
 
     var trace: Set[Trace] =  Wget(expr, filter)
 
@@ -351,7 +351,7 @@ case class PageRowRDD(
             traces: Set[Trace],
             partitionerFactory: RDD[_] => Partitioner = spooky.conf.defaultPartitionerFactory,
             fetchOptimizer: FetchOptimizer = spooky.conf.defaultFetchOptimizer
-          ): PageRowRDD = {
+          ): FetchedDataset = {
 
     val flat = this
       .flatten(expr defaultAs Const.defaultJoinField, joinType.isLeft, ordinalField, sampler)
@@ -370,11 +370,11 @@ case class PageRowRDD(
                  joinType: JoinType = spooky.conf.defaultJoinType,
                  ordinalField: Field = null, //left & idempotent parameters are missing as they are always set to true
                  sampler: Sampler[Any] = spooky.conf.defaultJoinSampler,
-                 filter: DocumentFilter = Const.defaultDocumentFilter,
+                 filter: DocFilter = Const.defaultDocumentFilter,
                  failSafe: Int = -1,
                  partitionerFactory: RDD[_] => Partitioner = spooky.conf.defaultPartitionerFactory,
                  fetchOptimizer: FetchOptimizer = spooky.conf.defaultFetchOptimizer
-               ): PageRowRDD = {
+               ): FetchedDataset = {
 
     var trace = (
       Visit(new GetExpr(Const.defaultJoinField))
@@ -402,11 +402,11 @@ case class PageRowRDD(
                 joinType: JoinType = spooky.conf.defaultJoinType,
                 ordinalField: Field = null, //left & idempotent parameters are missing as they are always set to true
                 sampler: Sampler[Any] = spooky.conf.defaultJoinSampler,
-                filter: DocumentFilter = Const.defaultDocumentFilter,
+                filter: DocFilter = Const.defaultDocumentFilter,
                 failSafe: Int = -1,
                 partitionerFactory: RDD[_] => Partitioner = spooky.conf.defaultPartitionerFactory,
                 fetchOptimizer: FetchOptimizer = spooky.conf.defaultFetchOptimizer
-              ): PageRowRDD = {
+              ): FetchedDataset = {
 
     var trace: Set[Trace] = Wget(new GetExpr(Const.defaultJoinField), filter)
     if (failSafe > 0) {
@@ -439,7 +439,7 @@ case class PageRowRDD(
              )(
                extracts: Expression[Any]*
                //apply immediately after depth selection, this include depth0
-             ): PageRowRDD = {
+             ): FetchedDataset = {
 
     val resolvedExpr = plan.resolveAlias(expr defaultAs Const.defaultJoinField)
     val resolvedExtracts = plan.batchResolveAlias(extracts)
@@ -475,7 +475,7 @@ case class PageRowRDD(
                     ordinalField: Field = null,
                     sampler: Sampler[Any] = spooky.conf.defaultJoinSampler,
 
-                    filter: DocumentFilter = Const.defaultDocumentFilter,
+                    filter: DocFilter = Const.defaultDocumentFilter,
 
                     failSafe: Int = -1,
                     partitionerFactory: RDD[_] => Partitioner = spooky.conf.defaultPartitionerFactory,
@@ -489,7 +489,7 @@ case class PageRowRDD(
 
                     select: Expression[Any] = null,
                     selects: Traversable[Expression[Any]] = Seq()
-                  ): PageRowRDD = {
+                  ): FetchedDataset = {
 
     var trace: Set[Trace] =  (
       Visit(new GetExpr(Const.defaultJoinField))
@@ -511,7 +511,7 @@ case class PageRowRDD(
                    joinType: JoinType = spooky.conf.defaultJoinType,
                    ordinalField: Field = null,
                    sampler: Sampler[Any] = spooky.conf.defaultJoinSampler,
-                   filter: DocumentFilter = Const.defaultDocumentFilter,
+                   filter: DocFilter = Const.defaultDocumentFilter,
 
                    failSafe: Int = -1,
                    partitionerFactory: RDD[_] => Partitioner = spooky.conf.defaultPartitionerFactory,
@@ -525,7 +525,7 @@ case class PageRowRDD(
 
                    select: Expression[Any] = null,
                    selects: Traversable[Expression[Any]] = Seq()
-                 ): PageRowRDD = {
+                 ): FetchedDataset = {
 
     var trace: Set[Trace] =  Wget(new GetExpr(Const.defaultJoinField), filter)
     if (failSafe > 0) trace = Try(trace, failSafe)

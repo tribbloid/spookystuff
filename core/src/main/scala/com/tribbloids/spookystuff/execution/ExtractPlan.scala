@@ -28,7 +28,7 @@ case class ExtractPlan(
     Some(child.schema ++ putFields)
   }) {
 
-  override def doExecute(): SquashedRowRDD = {
+  override def doExecute(): SquashedFetchedRDD = {
 
     child
       .rdd(true)

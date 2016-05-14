@@ -1,7 +1,7 @@
 package com.tribbloids.spookystuff.pipeline
 
 import com.tribbloids.spookystuff.SpookyContext
-import com.tribbloids.spookystuff.rdd.PageRowRDD
+import com.tribbloids.spookystuff.rdd.FetchedDataset
 import org.apache.spark.ml.param.{ParamMap, Params}
 
 /**
@@ -9,7 +9,7 @@ import org.apache.spark.ml.param.{ParamMap, Params}
  */
 private[pipeline] trait RemoteTransformerLike extends Params with Serializable {
 
-  def transform(dataset: PageRowRDD): PageRowRDD
+  def transform(dataset: FetchedDataset): FetchedDataset
 
   def copy(extra: ParamMap): RemoteTransformerLike = this.defaultCopy(extra)
 

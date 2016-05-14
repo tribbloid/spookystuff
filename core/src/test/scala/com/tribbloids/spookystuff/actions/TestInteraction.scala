@@ -1,7 +1,7 @@
 package com.tribbloids.spookystuff.actions
 
 import com.tribbloids.spookystuff.SpookyEnvSuite
-import com.tribbloids.spookystuff.pages.Page
+import com.tribbloids.spookystuff.doc.Doc
 import com.tribbloids.spookystuff.session.DriverSession
 
 class TestInteraction extends SpookyEnvSuite {
@@ -12,7 +12,7 @@ class TestInteraction extends SpookyEnvSuite {
   test("visit and snapshot") {
     val builder = new DriverSession(spooky)
     Visit("http://en.wikipedia.org")(builder)
-    val page = Snapshot()(builder).toList.head.asInstanceOf[Page]
+    val page = Snapshot()(builder).toList.head.asInstanceOf[Doc]
 
     //    assert(page.code.get.startsWith("<!DOCTYPE html>")) //not applicable to HtmlUnit
     assert(page.code.get.split('\n').map(_.trim).mkString.contains("<title>Wikipedia, the free encyclopedia</title>"))
@@ -32,8 +32,8 @@ class TestInteraction extends SpookyEnvSuite {
 
     val resultsList = results
     assert(resultsList.length === 2)
-    val res1 = resultsList.head.asInstanceOf[Page]
-    val res2 = resultsList(1).asInstanceOf[Page]
+    val res1 = resultsList.head.asInstanceOf[Doc]
+    val res2 = resultsList(1).asInstanceOf[Doc]
 
     val id1 = Visit("http://www.wikipedia.org") ::
       WaitFor("input#searchInput") ::
@@ -62,7 +62,7 @@ class TestInteraction extends SpookyEnvSuite {
         Snapshot() :: Nil
       ).fetch(spooky)
 
-    val code = results.head.asInstanceOf[Page].code.get.split('\n').map(_.trim).mkString
+    val code = results.head.asInstanceOf[Doc].code.get.split('\n').map(_.trim).mkString
     assert(code.contains("<title>Wikipedia</title>"))
   }
 

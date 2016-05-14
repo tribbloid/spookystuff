@@ -7,8 +7,8 @@ import javax.net.ssl.SSLContext
 
 import com.tribbloids.spookystuff.expressions.{Expression, Literal}
 import com.tribbloids.spookystuff.http._
-import com.tribbloids.spookystuff.pages._
-import com.tribbloids.spookystuff.row.PageRow
+import com.tribbloids.spookystuff.doc._
+import com.tribbloids.spookystuff.row.FetchedRow
 import com.tribbloids.spookystuff.session.Session
 import com.tribbloids.spookystuff.utils.{HDFSResolver, Utils}
 import com.tribbloids.spookystuff.{Const, SpookyContext}
@@ -34,7 +34,7 @@ import scala.xml._
   */
 trait Export extends Named with Wayback{
 
-  def filter: DocumentFilter
+  def filter: DocFilter
 
   final override def outputNames = Set(this.name)
 
@@ -43,7 +43,7 @@ trait Export extends Named with Wayback{
   protected final def doExe(session: Session): Seq[Fetched] = {
     val results = doExeNoName(session)
     results.map{
-      case page: Page =>
+      case page: Doc =>
         try {
           filter.apply(page, session)
         }
@@ -57,7 +57,7 @@ trait Export extends Named with Wayback{
               message += "\nSnapshot: " +this.errorDump(message, page, session.spooky)
             }
 
-            throw new DocumentFilterError(page, message, e)
+            throw new DocFilterError(page, message, e)
         }
       case other: Fetched =>
         other
@@ -86,7 +86,7 @@ trait WaybackSupport {
 
   def waybackToTimeMillis(date: Long): this.type = this.waybackToTimeMillis(Literal(date))
 
-  protected def interpolateWayback(pageRow: PageRow): Option[this.type] = {
+  protected def interpolateWayback(pageRow: FetchedRow): Option[this.type] = {
     if (this.wayback == null) Some(this)
     else {
       val valueOpt = this.wayback.lift(pageRow)
@@ -106,11 +106,11 @@ trait WaybackSupport {
   * always export as UTF8 charset
   */
 case class Snapshot(
-                     override val filter: DocumentFilter = Const.defaultDocumentFilter
+                     override val filter: DocFilter = Const.defaultDocumentFilter
                    ) extends Export with WaybackSupport{
 
   // all other fields are empty
-  override def doExeNoName(pb: Session): Seq[Page] = {
+  override def doExeNoName(pb: Session): Seq[Doc] = {
 
     //    import scala.collection.JavaConversions._
 
@@ -121,7 +121,7 @@ case class Snapshot(
     //      serializableCookies += cookie.asInstanceOf[SerializableCookie]
     //    }
 
-    val page = new Page(
+    val page = new Doc(
       PageUID((pb.backtrace :+ this).toList, this),
       pb.driver.getCurrentUrl,
       Some("text/html; charset=UTF-8"),
@@ -133,7 +133,7 @@ case class Snapshot(
     Seq(page)
   }
 
-  override def doInterpolate(pageRow: PageRow, spooky: SpookyContext) = {
+  override def doInterpolate(pageRow: FetchedRow, spooky: SpookyContext) = {
     this.copy().asInstanceOf[this.type].interpolateWayback(pageRow)
   }
 }
@@ -142,17 +142,17 @@ case class Snapshot(
 object DefaultSnapshot extends Snapshot()
 
 case class Screenshot(
-                       override val filter: DocumentFilter = Const.defaultImageFilter
+                       override val filter: DocFilter = Const.defaultImageFilter
                      ) extends Export with WaybackSupport {
 
-  override def doExeNoName(pb: Session): Seq[Page] = {
+  override def doExeNoName(pb: Session): Seq[Doc] = {
 
     val content = pb.driver match {
       case ts: TakesScreenshot => ts.getScreenshotAs(OutputType.BYTES)
       case _ => throw new UnsupportedOperationException("driver doesn't support snapshot")
     }
 
-    val page = new Page(
+    val page = new Doc(
       PageUID((pb.backtrace :+ this).toList, this),
       pb.driver.getCurrentUrl,
       Some("image/png"),
@@ -162,7 +162,7 @@ case class Screenshot(
     Seq(page)
   }
 
-  override def doInterpolate(pageRow: PageRow, spooky: SpookyContext) = {
+  override def doInterpolate(pageRow: FetchedRow, spooky: SpookyContext) = {
     this.copy().asInstanceOf[this.type].interpolateWayback(pageRow)
   }
 }
@@ -179,7 +179,7 @@ object DefaultScreenshot extends Screenshot()
   */
 case class Wget(
                  uri: Expression[Any],
-                 override val filter: DocumentFilter = Const.defaultDocumentFilter
+                 override val filter: DocFilter = Const.defaultDocumentFilter
                ) extends Export with Driverless with Timed with WaybackSupport {
 
   lazy val uriOption: Option[URI] = {
@@ -258,7 +258,7 @@ case class Wget(
       result
     }
     else
-      Seq(NoPage(List(this), cacheable = false))
+      Seq(NoDoc(List(this), cacheable = false))
   }
 
   def getHDFSDirectory(path: Path, fs: FileSystem): Seq[Fetched] = {
@@ -309,7 +309,7 @@ case class Wget(
     val xml = <root>{NodeSeq.fromSeq(xmls)}</root>
     val xmlStr = Utils.xmlPrinter.format(xml)
 
-    val result: Seq[Fetched] = Seq(new Page(
+    val result: Seq[Fetched] = Seq(new Doc(
       PageUID(List(this), this),
       path.toString,
       Some("inode/directory; charset=UTF-8"),
@@ -327,7 +327,7 @@ case class Wget(
           IOUtils.toByteArray(fis)
       }
 
-    val result = new Page(
+    val result = new Doc(
       PageUID(List(this), this),
       path.toString,
       None,
@@ -352,7 +352,7 @@ case class Wget(
 
     val content = IOUtils.toByteArray ( stream )
 
-    val result = new Page(
+    val result = new Doc(
       PageUID(List(this), this),
       uri.toString,
       None,
@@ -456,7 +456,7 @@ case class Wget(
           val content = IOUtils.toByteArray ( stream )
           val contentType = entity.getContentType.getValue
 
-          new Page(
+          new Doc(
             PageUID(List(this), this),
             currentUrl,
             Some(contentType),
@@ -477,14 +477,14 @@ case class Wget(
     catch {
       case e: ClientProtocolException =>
         val cause = e.getCause
-        if (cause.isInstanceOf[RedirectException]) Seq(NoPage((session.backtrace :+ this).toList)) //TODO: is it a reasonable exception?
+        if (cause.isInstanceOf[RedirectException]) Seq(NoDoc((session.backtrace :+ this).toList)) //TODO: is it a reasonable exception?
         else throw e
       case e: Throwable =>
         throw e
     }
   }
 
-  override def doInterpolate(pageRow: PageRow, spooky: SpookyContext): Option[this.type] = {
+  override def doInterpolate(pageRow: FetchedRow, spooky: SpookyContext): Option[this.type] = {
     val first = this.uri.lift(pageRow).flatMap(Utils.asArray[Any](_).headOption)
 
     val uriStr: Option[String] = first.flatMap {

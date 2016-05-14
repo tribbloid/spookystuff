@@ -3,7 +3,7 @@ package com.tribbloids.spookystuff.pipeline
 import java.util.UUID
 
 import com.tribbloids.spookystuff.SpookyContext
-import com.tribbloids.spookystuff.rdd.PageRowRDD
+import com.tribbloids.spookystuff.rdd.FetchedDataset
 import org.apache.spark.ml.param.ParamMap
 
 /**
@@ -18,7 +18,7 @@ class RemoteTransformerChain(
   //this is mandatory for Params.defaultCopy()
   def this(uid: String) = this(Nil, uid)
 
-  override def transform(dataset: PageRowRDD): PageRowRDD = self.foldLeft(dataset) {
+  override def transform(dataset: FetchedDataset): FetchedDataset = self.foldLeft(dataset) {
     (rdd, transformer) =>
       transformer.transform(rdd)
   }

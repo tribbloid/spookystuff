@@ -22,7 +22,7 @@ class FetchVisitIT extends IntegrationSuite {
     assert(pageRows.length === 1)
     assert(pageRows(0).pages.length === 1)
     assert(pageRows(0).pages.head.uri contains "://www.wikipedia.org/")
-    assert(pageRows(0).pages.head.name === Snapshot(DocumentFilters.MustHaveTitle).toString)
+    assert(pageRows(0).pages.head.name === Snapshot(DocFilters.MustHaveTitle).toString)
     val pageTime = pageRows(0).pages.head.timestamp.getTime
     assert(pageTime < finishTime)
     assert(pageTime > finishTime-60000) //long enough even after the second time it is retrieved from s3 cache
@@ -44,7 +44,7 @@ class FetchVisitIT extends IntegrationSuite {
     assert(unionRows(0).pages.head.timestamp === unionRows(1).pages.head.timestamp)
     assert(unionRows(0).pages.head.content === unionRows(1).pages.head.content)
     assert(unionRows(0).getOnlyPage.get.content === unionRows(1).pages.head.content)
-    assert(unionRows(0).getOnlyPage.get.name === Snapshot(DocumentFilters.MustHaveTitle).toString)
+    assert(unionRows(0).getOnlyPage.get.name === Snapshot(DocFilters.MustHaveTitle).toString)
     assert(unionRows(1).getOnlyPage.get.name === "b")
 
     //this is to ensure that an invalid expression (with None interpolation result) won't cause loss of information

@@ -1,4 +1,4 @@
-package com.tribbloids.spookystuff.pages
+package com.tribbloids.spookystuff.doc
 
 import com.tribbloids.spookystuff.actions.{Snapshot, Visit}
 import com.tribbloids.spookystuff.session.DriverSession
@@ -9,10 +9,10 @@ class TestPageFromBrowser extends SpookyEnvSuite {
   import dsl._
 
   test("empty page") {
-    val emptyPage: Page = {
+    val emptyPage: Doc = {
       val pb = new DriverSession(spooky)
 
-      Snapshot(DocumentFilters.Status2XX).exe(pb).toList.head.asInstanceOf[Page]
+      Snapshot(DocFilters.AllowStatusCode2XX).exe(pb).toList.head.asInstanceOf[Doc]
     }
 
     assert (emptyPage.findAll("div.dummy").attrs("href").isEmpty)
@@ -29,7 +29,7 @@ class TestPageFromBrowser extends SpookyEnvSuite {
 
     val resultsList = results.toArray
     assert(resultsList.length === 1)
-    val page = resultsList(0).asInstanceOf[Page]
+    val page = resultsList(0).asInstanceOf[Doc]
 
     page.autoSave(spooky, overwrite = true)
 

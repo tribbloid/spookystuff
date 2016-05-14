@@ -1,7 +1,7 @@
 package com.tribbloids.spookystuff.actions
 
 import com.tribbloids.spookystuff.expressions._
-import com.tribbloids.spookystuff.pages.{Fetched, Page}
+import com.tribbloids.spookystuff.doc.{Fetched, Doc}
 import com.tribbloids.spookystuff.selenium.BySizzleCssSelector
 import com.tribbloids.spookystuff.session.{DriverSession, NoDriverSession, Session}
 import com.tribbloids.spookystuff.utils.Utils
@@ -68,11 +68,11 @@ trait Action extends ActionLike {
     session match {
       case d: DriverSession =>
         if (errorDump) {
-          val rawPage = DefaultSnapshot.exe(session).head.asInstanceOf[Page]
+          val rawPage = DefaultSnapshot.exe(session).head.asInstanceOf[Doc]
           message += "\nSnapshot: " + this.errorDump(message, rawPage, session.spooky)
         }
         if (errorDumpScreenshot && session.driver.isInstanceOf[TakesScreenshot]) {
-          val rawPage = DefaultScreenshot.exe(session).toList.head.asInstanceOf[Page]
+          val rawPage = DefaultScreenshot.exe(session).toList.head.asInstanceOf[Doc]
           message += "\nScreenshot: " + this.errorDump(message, rawPage, session.spooky)
         }
       case d: NoDriverSession =>
@@ -80,7 +80,7 @@ trait Action extends ActionLike {
     message+"\n}"
   }
 
-  protected def errorDump(message: String, rawPage: Page, spooky: SpookyContext): String = {
+  protected def errorDump(message: String, rawPage: Doc, spooky: SpookyContext): String = {
 
     val backtrace = if (rawPage.uid.backtrace.lastOption.exists(_ eq this)) rawPage.uid.backtrace
     else rawPage.uid.backtrace :+ this

@@ -3,7 +3,7 @@ package com.tribbloids.spookystuff.pipeline.dbpedia
 import java.util.UUID
 
 import com.tribbloids.spookystuff.pipeline.RemoteTransformer
-import com.tribbloids.spookystuff.rdd.PageRowRDD
+import com.tribbloids.spookystuff.rdd.FetchedDataset
 import com.tribbloids.spookystuff.{SpookyContext, dsl}
 
 /**
@@ -28,11 +28,11 @@ class RelationTransformer(
   setExample(InputURICol -> '_, Relation -> ".*appointer", ReverseRelation -> ".*appointer", depth -> (0 to 2), DepthCol -> 'depth, OutputURICol -> 'uri, FirstN -> 3)
   setDefault(depth -> (0 to 1), DepthCol -> null, OutputURICol -> null, FirstN -> Int.MaxValue)
 
-  override def exampleInput(spooky: SpookyContext): PageRowRDD = spooky.create(Seq(
+  override def exampleInput(spooky: SpookyContext): FetchedDataset = spooky.create(Seq(
     Map("_" ->"http://dbpedia.org/page/Barack_Obama")
   ))
 
-  override def transform(dataset: PageRowRDD): PageRowRDD = {
+  override def transform(dataset: FetchedDataset): FetchedDataset = {
 
     val r = dataset
       .wget(

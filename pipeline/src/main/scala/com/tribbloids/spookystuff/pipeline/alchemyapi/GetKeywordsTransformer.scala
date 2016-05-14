@@ -3,7 +3,7 @@ package com.tribbloids.spookystuff.pipeline.alchemyapi
 import java.util.UUID
 
 import com.tribbloids.spookystuff.pipeline.RemoteTransformer
-import com.tribbloids.spookystuff.rdd.PageRowRDD
+import com.tribbloids.spookystuff.rdd.FetchedDataset
 import com.tribbloids.spookystuff.{SpookyContext, dsl}
 
 import scala.language.postfixOps
@@ -39,11 +39,11 @@ class GetKeywordsTransformer(
     SentimentCol -> 'sentiment
   )
 
-  override def exampleInput(spooky: SpookyContext): PageRowRDD = spooky.create(Seq(
+  override def exampleInput(spooky: SpookyContext): FetchedDataset = spooky.create(Seq(
     Map("_" -> "AlchemyAPI has raised $2 million to extend the capabilities of its deep learning technology that applies artificial intelligence to read and understand web pages, text documents, emails, tweets, and other forms of content. Access Venture Partners led the Series A round, which the company will use to ramp up its sales and marketing, make hires and launch new services.")
   ))
 
-  override def transform(dataset: PageRowRDD): PageRowRDD = {
+  override def transform(dataset: FetchedDataset): FetchedDataset = {
     val mode: String = if (getOrDefault(StrictExtractionOnly)) "strict"
     else "normal"
 

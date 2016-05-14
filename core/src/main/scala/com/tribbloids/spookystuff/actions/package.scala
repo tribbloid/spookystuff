@@ -1,6 +1,6 @@
 package com.tribbloids.spookystuff
 
-import com.tribbloids.spookystuff.pages.Page
+import com.tribbloids.spookystuff.doc.Doc
 import com.tribbloids.spookystuff.session.Session
 
 /**
@@ -12,5 +12,5 @@ package object actions {
 
   type DryRun = List[Trace]
 
-  type DocumentFilter = ((Page, Session) => Page)
+  type DocFilter = ((Doc, Session) => Doc)
 }

@@ -4,7 +4,7 @@ import java.util.UUID
 
 import com.tribbloids.spookystuff.actions.Trace
 import com.tribbloids.spookystuff.expressions._
-import com.tribbloids.spookystuff.pages.Page
+import com.tribbloids.spookystuff.doc.Doc
 import com.tribbloids.spookystuff.utils.Utils
 
 /**
@@ -57,12 +57,12 @@ object FilePaths{
 
   //only from Page
   case class UUIDName(encoder: ByTrace[Any]) extends ByPage[String] {
-    override def apply(page: Page): String =
+    override def apply(page: Doc): String =
       Utils.uriConcat(encoder(page.uid.backtrace).toString, UUID.randomUUID().toString)
   }
 
   case class TimeStampName(encoder: ByTrace[Any]) extends ByPage[String] {
-    override def apply(page: Page): String =
+    override def apply(page: Doc): String =
       Utils.uriConcat(encoder(page.uid.backtrace).toString, Utils.canonizeFileName(page.timestamp.toString))
   }
 }

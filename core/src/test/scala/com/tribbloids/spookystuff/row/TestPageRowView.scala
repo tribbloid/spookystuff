@@ -17,7 +17,7 @@ class TestPageRowView extends SpookyEnvSuite {
     val pages = (
       Wget(STATIC_WIKIPEDIA_URI) :: Nil
       ).fetch(spooky)
-    val row = PageRow(pageLikes = pages)
+    val row = FetchedRow(pageLikes = pages)
 
     val page1 = row.getOnlyPage
     assert(page1.get === pages.head)
@@ -31,7 +31,7 @@ class TestPageRowView extends SpookyEnvSuite {
     val pages = (
       (Wget(STATIC_WIKIPEDIA_URI) as 'pp) :: Nil
       ).fetch(spooky)
-    val row = PageRow(pageLikes = pages)
+    val row = FetchedRow(pageLikes = pages)
       .squash
       .extract(
         S("h1.central-textlogo img").head as 'e1,

@@ -6,9 +6,9 @@ import org.openqa.selenium.support.ui.{ExpectedCondition, ExpectedConditions, Se
 import org.openqa.selenium.{By, JavascriptExecutor, WebDriver}
 import com.tribbloids.spookystuff.{SpookyContext, Const}
 import com.tribbloids.spookystuff.actions.WaitForDocumentReady._
-import com.tribbloids.spookystuff.row.PageRow
+import com.tribbloids.spookystuff.row.FetchedRow
 import com.tribbloids.spookystuff.expressions.{Expression, Literal}
-import com.tribbloids.spookystuff.pages.{Page, Unstructured}
+import com.tribbloids.spookystuff.doc.{Doc, Unstructured}
 import com.tribbloids.spookystuff.session.Session
 import com.tribbloids.spookystuff.utils.Utils
 
@@ -30,7 +30,7 @@ abstract class Interaction(
 
   final override def trunk = Some(this) //can't be ommitted
 
-  final override def doExe(session: Session): Seq[Page] = {
+  final override def doExe(session: Session): Seq[Doc] = {
 
     exeWithoutPage(session: Session)
 
@@ -64,6 +64,7 @@ object DocumentReadyCondition extends ExpectedCondition[Boolean] {
 
 /**
  * Type into browser's url bar and click "goto"
+ *
  * @param uri support cell interpolation
  */
 case class Visit(
@@ -81,7 +82,7 @@ case class Visit(
 //    }
   }
 
-  override def doInterpolate(pageRow: PageRow, spooky: SpookyContext): Option[this.type] = {
+  override def doInterpolate(pageRow: FetchedRow, spooky: SpookyContext): Option[this.type] = {
     val first = this.uri.lift(pageRow).flatMap(Utils.asArray[Any](_).headOption)
 
     val uriStr: Option[String] = first.flatMap {
@@ -100,6 +101,7 @@ case class Visit(
 
 /**
  * Wait for some time
+ *
  * @param delay seconds to be wait for
  */
 case class Delay(
@@ -113,6 +115,7 @@ case class Delay(
 
 /**
  * Wait for some random time, add some unpredictability
+ *
  * @param delay seconds to be wait for
  */
 case class RandomDelay(
@@ -129,6 +132,7 @@ case class RandomDelay(
 
 /**
  * Wait until at least one particular element appears, otherwise throws an exception
+ *
  * @param selector css selector of the element
  *              after which it will throw an exception!
  */
@@ -177,6 +181,7 @@ case object WaitForDocumentReady extends Interaction(null, true) with Timed {
 
 /**
  * Click an element with your mouse pointer.
+ *
  * @param selector css selector of the element, only the first element will be affected
  */
 case class Click(
@@ -193,6 +198,7 @@ case class Click(
 
 /**
  * Click an element with your mouse pointer.
+ *
  * @param selector css selector of the element, only the first element will be affected
  */
 case class ClickNext(
@@ -223,7 +229,7 @@ case class ClickNext(
     throw new SeleniumException("all elements has been clicked before")
   }
 
-  override def doInterpolate(pageRow: PageRow, spooky: SpookyContext): Option[this.type] =
+  override def doInterpolate(pageRow: FetchedRow, spooky: SpookyContext): Option[this.type] =
     Some(this.copy().asInstanceOf[this.type])
 }
 
@@ -252,6 +258,7 @@ case class ClickNext(
 
 /**
  * Submit a form, wait until new content returned by the submission has finished loading
+ *
  * @param selector css selector of the element, only the first element will be affected
  */
 case class Submit(
@@ -269,6 +276,7 @@ case class Submit(
 
 /**
  * Type into a textbox
+ *
  * @param selector css selector of the textbox, only the first element will be affected
  * @param text support cell interpolation
  */
@@ -285,7 +293,7 @@ case class TextInput(
     element.sendKeys(text.asInstanceOf[Literal[String]].value)
   }
 
-  override def doInterpolate(pageRow: PageRow, spooky: SpookyContext): Option[this.type] = {
+  override def doInterpolate(pageRow: FetchedRow, spooky: SpookyContext): Option[this.type] = {
 
     val first = this.text.lift(pageRow).flatMap(Utils.asArray[Any](_).headOption)
 
@@ -305,6 +313,7 @@ case class TextInput(
 
 /**
  * Select an item from a drop down list
+ *
  * @param selector css selector of the drop down list, only the first element will be affected
  * @param value support cell interpolation
  */
@@ -322,7 +331,7 @@ case class DropDownSelect(
     select.selectByValue(value.asInstanceOf[Literal[String]].value)
   }
 
-  override def doInterpolate(pageRow: PageRow, spooky: SpookyContext): Option[this.type] = {
+  override def doInterpolate(pageRow: FetchedRow, spooky: SpookyContext): Option[this.type] = {
     val first = this.value.lift(pageRow).flatMap(Utils.asArray[Any](_).headOption)
 
     val valueStr: Option[String] = first.flatMap {
@@ -343,6 +352,7 @@ case class DropDownSelect(
  * Request browser to change focus to a frame/iframe embedded in the global page,
  * after which only elements inside the focused frame/iframe can be selected.
  * Can be used multiple times to switch focus back and forth
+ *
  * @param selector css selector of the frame/iframe, only the first element will be affected
  */
 case class SwitchToFrame(selector: String)extends Interaction(null, false) with Timed {
@@ -356,6 +366,7 @@ case class SwitchToFrame(selector: String)extends Interaction(null, false) with 
 
 /**
  * Execute a javascript snippet
+ *
  * @param script support cell interpolation
  * @param selector selector of the element this script is executed against, if null, against the entire page
  */
@@ -380,7 +391,7 @@ case class ExeScript(
     }
   }
 
-  override def doInterpolate(pageRow: PageRow, spooky: SpookyContext): Option[this.type] = {
+  override def doInterpolate(pageRow: FetchedRow, spooky: SpookyContext): Option[this.type] = {
     val first = this.script.lift(pageRow).flatMap(Utils.asArray[Any](_).headOption)
 
     val scriptStr: Option[String] = first.flatMap {

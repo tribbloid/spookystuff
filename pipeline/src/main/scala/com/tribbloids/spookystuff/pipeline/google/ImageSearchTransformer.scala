@@ -4,7 +4,7 @@ import java.util.UUID
 
 import com.tribbloids.spookystuff.actions._
 import com.tribbloids.spookystuff.pipeline.RemoteTransformer
-import com.tribbloids.spookystuff.rdd.PageRowRDD
+import com.tribbloids.spookystuff.rdd.FetchedDataset
 import com.tribbloids.spookystuff.{SpookyContext, dsl}
 
 class ImageSearchTransformer(
@@ -27,9 +27,9 @@ class ImageSearchTransformer(
   setDefault(ImageUrisCol -> null)
   setExample(InputCol -> '_, ImageUrisCol -> 'uris)
 
-  override def exampleInput(spooky: SpookyContext): PageRowRDD = spooky.create(Seq("Giant Robot"))
+  override def exampleInput(spooky: SpookyContext): FetchedDataset = spooky.create(Seq("Giant Robot"))
 
-  override def transform(dataset: PageRowRDD): PageRowRDD = {
+  override def transform(dataset: FetchedDataset): FetchedDataset = {
 
     dataset.fetch(
       Visit("http://images.google.com/")
