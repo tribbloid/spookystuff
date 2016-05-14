@@ -15,7 +15,7 @@ import scala.util.Random
 case class ExplorePlan(
                         child: ExecutionPlan,
 
-                        expr: Expression[Any],
+                        expr: NamedExpr[Any],
                         sampler: Sampler[Any],
                         joinType: JoinType,
 

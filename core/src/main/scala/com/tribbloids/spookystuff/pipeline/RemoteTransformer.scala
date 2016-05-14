@@ -130,7 +130,7 @@ trait RemoteTransformer extends RemoteTransformerLike with Dynamic {
         val values = distinct.take(2)
         assert(values.length >= 1)
         if (key.isDepth) {
-          key.depthRangeOption.foreach {
+          key.depthRangeOpt.foreach {
               range =>
                 assert(range.max == distinct.map(_.asInstanceOf[Int]).max())
                 assert(range.min == distinct.map(_.asInstanceOf[Int]).min())

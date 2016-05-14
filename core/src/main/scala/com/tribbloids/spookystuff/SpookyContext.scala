@@ -1,6 +1,6 @@
 package com.tribbloids.spookystuff
 
-import com.tribbloids.spookystuff.dsl.{DataFrameView, DriverFactories}
+import com.tribbloids.spookystuff.dsl.DriverFactories
 import com.tribbloids.spookystuff.dsl.DriverFactories.PhantomJS
 import com.tribbloids.spookystuff.rdd.PageRowRDD
 import com.tribbloids.spookystuff.row._
@@ -131,6 +131,8 @@ case class SpookyContext private (
   }
 
   object dsl extends Serializable {
+
+    import com.tribbloids.spookystuff.utils.Implicits._
 
     implicit def dataFrameToPageRowRDD(df: DataFrame): PageRowRDD = {
       val self: RDD[SquashedPageRow] = new DataFrameView(df).toMapRDD.map {

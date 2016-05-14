@@ -128,11 +128,20 @@ case class PageRowRDD(
       result
     }
 
-  def toStringRDD(expr: Expression[Any]): RDD[String] = unsquashedRDD.map(expr.toStr.orNull)
+  def toStringRDD(
+                   expr: Expression[Any],
+                   default: String = null
+                 ): RDD[String] = unsquashedRDD.map(v => expr.toStr.applyOrElse[PageRow, String](v, _ => default))
 
-  def toObjectRDD[T: ClassTag](expr: Expression[T]): RDD[T] = unsquashedRDD.map(expr.orNull)
+  def toObjectRDD[T: ClassTag](
+                                expr: Expression[T],
+                                default: T = null
+                              ): RDD[T] = unsquashedRDD.map(v => expr.applyOrElse[PageRow, T](v, _ => default))
 
-  def toTypedRDD[T: ClassTag](expr: Expression[Any]): RDD[T] = unsquashedRDD.map(expr.typed[T].orNull)
+  def toTypedRDD[T: ClassTag](
+                               expr: Expression[Any],
+                               default: T = null
+                             ): RDD[T] = unsquashedRDD.map(v => expr.typed[T].applyOrElse[PageRow, T](v, _ => default))
 
   def toPairRDD[T1: ClassTag, T2: ClassTag](first: Expression[T1], second: Expression[T2]): RDD[(T1,T2)] = unsquashedRDD
     .map{
@@ -167,19 +176,19 @@ case class PageRowRDD(
       squashedPageRow =>
         squashedPageRow.unsquash.foreach{
           pageRow =>
-            var pathStr: Option[String] = path(pageRow).map(_.toString).map {
+            var pathStr: Option[String] = path.lift(pageRow).map(_.toString).map {
               str =>
                 val splitted = str.split(":")
                 if (splitted.size <= 2) str
                 else splitted.head + ":" + splitted.slice(1, Int.MaxValue).mkString("%3A") //colon in file paths are reserved for protocol definition
             }
 
-            val extOption = effectiveExt(pageRow)
+            val extOption = effectiveExt.lift(pageRow)
             if (extOption.nonEmpty) pathStr = pathStr.map(_ + "." + extOption.get.toString)
 
             pathStr.foreach {
               str =>
-                val page = pageExpr(pageRow)
+                val page = pageExpr.lift(pageRow)
 
                 spooky.metrics.pagesSaved += 1
 
@@ -192,7 +201,7 @@ case class PageRowRDD(
 
   def extract(exprs: Expression[Any]*): PageRowRDD = {
 
-    val resolvedExprs = Field.batchResolveConflict(plan, exprs)
+    val resolvedExprs = plan.batchResolveAlias(exprs)
 
     this.copy(
       ExtractPlan(plan, resolvedExprs)
@@ -208,29 +217,29 @@ case class PageRowRDD(
   /**
     * extract expressions before the block and scrape all temporary KV after
     */
-  def _extractTempDuring(exprs: Expression[Any]*)(f: PageRowRDD => PageRowRDD): PageRowRDD = {
-
-    val tempFields = exprs.map(_.field).filter(_.isWeak)
-
-    val result = f(this)
-
-    result.remove(tempFields: _*)
-  }
-
-  def _extractInvisibleDuring(exprs: Expression[Any]*)(f: PageRowRDD => PageRowRDD): PageRowRDD = {
-
-    val internalFields = exprs.map(_.field).filter(_.isInvisible)
-
-    val result = f(this)
-    val updateExpr = internalFields.map {
-      field =>
-        new GetExpr(field) ~! field.copy(isInvisible = false)
-    }
-
-    result
-      .extract(updateExpr: _*)
-      .remove(internalFields: _*)
-  }
+//  def _extractTempDuring(exprs: Expression[Any]*)(f: PageRowRDD => PageRowRDD): PageRowRDD = {
+//
+//    val tempFields = exprs.map(_.field).filter(_.isWeak)
+//
+//    val result = f(this)
+//
+//    result.remove(tempFields: _*)
+//  }
+//
+//  def _extractInvisibleDuring(exprs: Expression[Any]*)(f: PageRowRDD => PageRowRDD): PageRowRDD = {
+//
+//    val internalFields = exprs.map(_.field).filter(_.isInvisible)
+//
+//    val result = f(this)
+//    val updateExpr = internalFields.map {
+//      field =>
+//        new GetExpr(field) ~! field.copy(isInvisible = false)
+//    }
+//
+//    result
+//      .extract(updateExpr: _*)
+//      .remove(internalFields: _*)
+//  }
 
   def flatten(
                expr: Expression[Any],
@@ -239,18 +248,20 @@ case class PageRowRDD(
                sampler: Sampler[Any] = spooky.conf.defaultFlattenSampler
              ): PageRowRDD = {
 
-    val ext = if  (expr.isInstanceOf[GetExpr]) this
+    val extracted = if  (expr.isInstanceOf[GetExpr]) this
     else this.extract(expr)
+
+    val resolvedExpr = extracted.plan.resolveAlias(expr)
 
     val effectiveOrdinalField = Option(ordinalField) match {
       case Some(ff) =>
         ff.copy(isOrdinal = true)
       case None =>
-        Field(expr.field.name + "_ordinal", isWeak = true, isOrdinal = true)
+        Field(resolvedExpr.field.name + "_ordinal", isWeak = true, isOrdinal = true)
     }
 
     this.copy(
-      FlattenPlan(ext.plan, expr.field, effectiveOrdinalField, sampler, isLeft)
+      FlattenPlan(extracted.plan, resolvedExpr.field, effectiveOrdinalField, sampler, isLeft)
     )
   }
 
@@ -430,8 +441,8 @@ case class PageRowRDD(
                //apply immediately after depth selection, this include depth0
              ): PageRowRDD = {
 
-    val resolvedExpr = (expr defaultAs Const.defaultJoinField).resolveConflict(plan)
-    val resolvedExtracts = Field.batchResolveConflict(plan, extracts)
+    val resolvedExpr = plan.resolveAlias(expr defaultAs Const.defaultJoinField)
+    val resolvedExtracts = plan.batchResolveAlias(extracts)
 
     val effectiveOrdinalField = Option(ordinalField) match {
       case Some(ff) =>
@@ -443,9 +454,9 @@ case class PageRowRDD(
     val effectiveDepthField = Option(depthField) match {
       case Some(field) =>
         val resolvedField = field.resolveConflict(plan.schema)
-        resolvedField.copy(depthRangeOption = Some(range))
+        resolvedField.copy(depthRangeOpt = Some(range))
       case None =>
-        Field(resolvedExpr.field.name + "_depth", isWeak = true, depthRangeOption = Some(range))
+        Field(resolvedExpr.field.name + "_depth", isWeak = true, depthRangeOpt = Some(range))
     }
 
     val algorithmImpl = exploreAlgorithm.getImpl(effectiveDepthField, effectiveOrdinalField, resolvedExtracts)

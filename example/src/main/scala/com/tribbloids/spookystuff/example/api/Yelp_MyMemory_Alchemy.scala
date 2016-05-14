@@ -17,7 +17,7 @@ object Yelp_MyMemory_Alchemy extends QueryCore {
 
   import dsl._
 
-  def nonEnglish(src: Expression[Any]): Expression[String] = src.andFlatMap{
+  def nonEnglish(src: Expression[Any]): Expression[String] = src.andOptional{
     str =>
       val identifier = new LanguageIdentifier(str.toString)
       if (identifier.getLanguage == "en") None

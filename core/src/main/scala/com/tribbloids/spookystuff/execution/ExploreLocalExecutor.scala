@@ -22,6 +22,7 @@ class ExploreLocalExecutor(
                       ) extends NOTSerializableMixin {
 
   import dsl._
+
   import scala.collection.JavaConverters._
 
   val _open: ConcurrentMap[Trace, Iterable[DataRow]] = ConcurrentMap()
@@ -49,7 +50,7 @@ class ExploreLocalExecutor(
   }
 
   protected def executeOnce(
-                             expr: Expression[Any],
+                             expr: NamedExpr[Any],
                              sampler: Sampler[Any],
                              joinType: JoinType,
 
@@ -88,7 +89,7 @@ class ExploreLocalExecutor(
 
       val bestRow = rowFn.apply(
         bestRow_-
-          .extract(new GetExpr(depthKey).typed[Int].andMap(_ + 1) ~! depthKey)
+          .extract(new GetExpr(depthKey).typed[Int].andThen(_ + 1) ~! depthKey)
       )
       val bestDataRowsInRange = bestRow.dataRows.filter {
         dataRow =>
@@ -119,7 +120,7 @@ class ExploreLocalExecutor(
   }
 
   def execute(
-               expr: Expression[Any],
+               expr: NamedExpr[Any],
                sampler: Sampler[Any],
                joinType: JoinType,
 

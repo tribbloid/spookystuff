@@ -2,6 +2,7 @@ package com.tribbloids.spookystuff.execution
 
 import com.tribbloids.spookystuff._
 import com.tribbloids.spookystuff.actions._
+import com.tribbloids.spookystuff.expressions._
 import com.tribbloids.spookystuff.row._
 import com.tribbloids.spookystuff.utils.NOTSerializableMixin
 import org.apache.spark.rdd.RDD
@@ -13,12 +14,13 @@ import scala.collection.mutable.ArrayBuffer
 import scala.language.implicitConversions
 
 //right now it vaguely resembles SparkPlan in catalyst
+//TODO: may subclass SparkPlan in the future to generate DataFrame directly, but not so fast
 abstract class ExecutionPlan(
                               val children: Seq[ExecutionPlan],
                               val schema: ListSet[Field],
                               val spooky: SpookyContext,
                               val cacheQueue: ArrayBuffer[RDD[_]]
-                                    ) extends TreeNode[ExecutionPlan] with NOTSerializableMixin {
+                            ) extends TreeNode[ExecutionPlan] with NOTSerializableMixin {
 
   def firstChildOpt = children.headOption
 
@@ -136,7 +138,42 @@ abstract class ExecutionPlan(
     }
   }
 
+  final def resolveAlias[T, R](
+                                expr: ExpressionLike[T, R],
+                                fieldBuffer: ArrayBuffer[Field] = ArrayBuffer.empty
+                              ): NamedExpressionLike[T, R] = {
+
+    val resolvedField = expr match {
+      case a: NamedExpressionLike[_, _] =>
+        val resolvedField = a.field.resolveConflict(this.schema)
+        resolvedField
+      case _ =>
+        val fields = this.schema ++ fieldBuffer
+        val names = fields.map(_.name)
+        val i = (1 to Int.MaxValue).find(
+          i =>
+            !names.contains("_c" + i)
+        ).get
+        Field("_c" + i)
+    }
+    val result = expr ~ resolvedField
+    fieldBuffer += resolvedField
+    result.asInstanceOf[GenAlias[T, R]]
+  }
+
+  def batchResolveAlias[T, R](
+                               exprs: Seq[ExpressionLike[T, R]]
+                             ): Seq[NamedExpressionLike[T, R]] = {
+    val buffer = ArrayBuffer.empty[Field]
+
+    val resolvedExprs = exprs.map {
+      expr =>
+        this.resolveAlias(expr, buffer)
+    }
+    resolvedExprs
+  }
+
   //TODO: move to PageRowRDD
-  def agg(exprs: Seq[(PageRow => Any)], reducer: RowReducer): ExecutionPlan = AggPlan(this, exprs, reducer)
-  def distinctBy(exprs: (PageRow => Any)*): ExecutionPlan = AggPlan(this, exprs, (v1, v2) => v1)
+  //  def agg(exprs: Seq[(PageRow => Any)], reducer: RowReducer): ExecutionPlan = AggPlan(this, exprs, reducer)
+  //  def distinctBy(exprs: (PageRow => Any)*): ExecutionPlan = AggPlan(this, exprs, (v1, v2) => v1)
 }

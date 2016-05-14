@@ -31,8 +31,8 @@ class SelectIT extends IntegrationSuite {
 
     assert(
       df.schema.fieldNames ===
-        "S_uri" ::
-          "S_timestamp" ::
+        "_c1" ::
+          "_c2" ::
           "title" ::
           "langs" ::
           "expanded" :: Nil
@@ -69,8 +69,8 @@ class SelectIT extends IntegrationSuite {
 
     assert(
       RDD2.schema.fieldNames ===
-        "S_uri" ::
-          "S_timestamp" ::
+        "_c1" ::
+          "_c2" ::
           "title" ::
           "langs" ::
           "expanded" :: Nil

@@ -3,14 +3,12 @@ package com.tribbloids.spookystuff
 import java.util.Date
 
 import com.tribbloids.spookystuff.actions._
-import com.tribbloids.spookystuff.expressions.ExpressionLike._
 import com.tribbloids.spookystuff.expressions._
 import com.tribbloids.spookystuff.pages.{Elements, Page, PageUID, Unstructured}
 import com.tribbloids.spookystuff.rdd.PageRowRDD
 import com.tribbloids.spookystuff.row.{Field, PageRow, SquashedPageRow}
-import com.tribbloids.spookystuff.utils.{Default, Utils}
+import com.tribbloids.spookystuff.utils.Default
 import org.apache.spark.rdd.RDD
-import org.apache.spark.sql.DataFrame
 
 import scala.collection.immutable.ListMap
 import scala.collection.{GenTraversableOnce, IterableLike}
@@ -23,11 +21,11 @@ package object dsl {
   implicit def PageRowRDDToRDD(wrapper: PageRowRDD): RDD[SquashedPageRow] = wrapper.rdd
 
   implicit def spookyContextToPageRowRDD(spooky: SpookyContext): PageRowRDD = spooky.blankPageRowRDD
-//    new PageRowRDD(
-//      spooky.sqlContext.sparkContext.parallelize(Seq(SquashedPageRow.empty1)),
-//      schema = ListSet(),
-//      spooky = spooky.getSpookyForInput
-//    )
+  //    new PageRowRDD(
+  //      spooky.sqlContext.sparkContext.parallelize(Seq(SquashedPageRow.empty1)),
+  //      schema = ListSet(),
+  //      spooky = spooky.getSpookyForInput
+  //    )
 
   implicit def traceView(trace: Trace): TraceView = new TraceView(trace)
 
@@ -71,90 +69,38 @@ package object dsl {
 
   implicit def symbolToField(symbol: Symbol): Field = Option(symbol).map(v => Field(v.name)).orNull
 
-  def dynamic[T](expr: Expression[T]) = new DynamicExprWrapper(expr)
-
   implicit class ExprView[+T: ClassTag](self: Expression[T]) extends Serializable {
 
     private def defaultVal: T = Default.value[T]
 
-    def andMap[A](g: T => A): Expression[A] = self.andThen(_.map(v => g(v)))
+    def toStr = self.andThen(_.toString)
 
-    def andMap[A](g: T => A, name: String): Expression[A] = self.andThen(ExpressionLike(_.map(v => g(v)), name))
-
-    def andFlatMap[A](g: T => Option[A]): Expression[A] = self.andThen(_.flatMap(v => g(v)))
-
-    def andFlatMap[A](g: T => Option[A], name: String): Expression[A] = self.andThen(ExpressionLike(_.flatMap(v => g(v)), name))
-
-    //TODO: extract subroutine and use it to avoid obj creation overhead
-    def typed[A](implicit ev: ClassTag[A]) = this.andFlatMap[A](
-      {
-        Utils.typedOrNone[A]
-      }: T => Option[A],
-      s"typed[${ev.toString()}}]"
-    )
-
-    def toStr = this.andMap(_.toString)
-
-    def into(field: Field): Expression[Traversable[T]] = AppendExpr[T](field, self)
+    def into(field: Field) = AppendExpr[T](field, self)
     def ~+(field: Field) = into(field)
 
-    //these will convert Expression to a common function
-    def getOrElse[B >: T](value: =>B = defaultVal): ExpressionLike[PageRow, B] = self.andThen(
-      ExpressionLike(_.getOrElse(value), s"getOrElse($value)")
-    )
-
-    def orNull[B >: T]: ExpressionLike[PageRow, B] = self.andThen(
-      ExpressionLike(_.getOrElse(null.asInstanceOf[B]), "orNull")
-    )
-
-    def orDefault[B >: T]() = orElse(Some(defaultVal))
-
-    def orElse[B >: T](valueOption: =>Option[B]): Expression[B] = self.andThen(
-      ExpressionLike(_.orElse(valueOption), s"orElse($valueOption)")
-    )
-
-    def orElse[B >: T](expr: Expression[B]): Expression[B] = new Expression[B] {
-
-      override val field = self.field.copy(name = s"$self.orElse($expr)")
-
-      override def apply(row: PageRow): Option[B] = {
-        val selfValue = self(row)
-        selfValue.orElse{ expr(row) }
-      }
+    def orNull[B >: T]: Expression[B] = self.orElse[PageRow, B] {
+      case _ => null.asInstanceOf[B]
     }
 
-    def get: ExpressionLike[PageRow, T] = self.andThen(
-      ExpressionLike(_.get, s"get")
-    )
-
-    def ->[B](another: Expression[B]): Expression[(T, B)] = new Expression[(T, B)] {
-      override val field = self.field.copy(name = s"$self.->($another)")
-
-      override def apply(row: PageRow): Option[(T, B)] = {
-        if (self(row).isEmpty || another(row).isEmpty) None
-        else Some(self(row).get -> another(row).get)
-      }
+    def orDefault[B >: T]: Expression[B] = self.orElse[PageRow, B] {
+      case _ => defaultVal: B
     }
 
-    def toSeqFunction: ExpressionLike[PageRow, Seq[T]] = self.andThen(_.toSeq)
-    //  def defaultToHrefExpr = (self match {
-    //    case expr: Expr[Unstructured] => expr.href
-    //    case expr: Expr[Seq[Unstructured]] => expr.hrefs
-    //    case _ => self
-    //  }) > Symbol(Const.joinExprKey)
-
-    //  def defaultToTextExpr = (this match {
-    //    case expr: Expr[Unstructured] => expr.text
-    //    case expr: Expr[Seq[Unstructured]] => expr.texts
-    //    case _ => this
-    //  }) as Symbol(Const.joinExprKey)
+    def ->[B](another: Expression[B]): Expression[(T, B)] = {
+      val lifted = {
+        row: PageRow =>
+          if (!self.isDefinedAt(row) || !another.isDefinedAt(row)) None
+          else Some(self(row) -> another(row))
+      }
+      Function.unlift(lifted)
+    }
   }
 
   implicit def exprToExprView[Repr](expr: Repr)(implicit f: Repr => Expression[Any]): ExprView[Any] = f(expr)
 
   implicit class UnstructuredExprView(self: Expression[Unstructured]) extends Serializable {
 
-    def uri: Expression[String] = self.andMap(_.uri, "uri")
+    def uri: Expression[String] = self.andThen(_.uri)
 
     def findFirst(selector: String): FindFirstExpr = new FindFirstExpr(selector, self)
 
@@ -168,69 +114,69 @@ package object dsl {
 
     def \(selector: String) = children(selector)
 
-    def text: Expression[String] = self.andFlatMap(_.text, "text")
+    def text: Expression[String] = self.andOptional(_.text)
 
-    def code = self.andFlatMap(_.code, "code")
+    def code = self.andOptional(_.code)
 
-    def formattedCode = self.andFlatMap(_.formattedCode, "code")
+    def formattedCode = self.andOptional(_.formattedCode)
 
-    def ownText: Expression[String] = self.andFlatMap(_.ownText, "ownText")
+    def ownText: Expression[String] = self.andOptional(_.ownText)
 
     def allAttr: Expression[Map[String, String]] =
-      self.andFlatMap(_.allAttr, s"allAttr")
+      self.andOptional(_.allAttr)
 
     def attr(attrKey: String, noEmpty: Boolean = true): Expression[String] =
-      self.andFlatMap(_.attr(attrKey, noEmpty), s"attr($attrKey,$noEmpty)")
+      self.andOptional(_.attr(attrKey, noEmpty))
 
-    def href = self.andFlatMap(_.href, s"href")
+    def href = self.andOptional(_.href)
 
-    def src = self.andFlatMap(_.src, s"src")
+    def src = self.andOptional(_.src)
 
-    def boilerPipe = self.andFlatMap(_.boilerPipe, "boilerPipe")
+    def boilerPipe = self.andOptional(_.boilerPipe)
   }
 
   implicit class ElementsExprView(self: Expression[Elements[_]]) extends Serializable {
 
-    def uris: Expression[Seq[String]] = self.andMap(_.uris, "uris")
+    def uris: Expression[Seq[String]] = self.andThen(_.uris)
 
-    def texts: Expression[Seq[String]] = self.andMap(_.texts, "texts")
+    def texts: Expression[Seq[String]] = self.andThen(_.texts)
 
-    def codes: Expression[Seq[String]] = self.andMap(_.codes, "text")
+    def codes: Expression[Seq[String]] = self.andThen(_.codes)
 
-    def ownTexts: Expression[Seq[String]] = self.andMap(_.ownTexts, "ownTexts")
+    def ownTexts: Expression[Seq[String]] = self.andThen(_.ownTexts)
 
     def allAttrs: Expression[Seq[Map[String, String]]] =
-      self.andMap(_.allAttrs, s"allAttrs")
+      self.andThen(_.allAttrs)
 
     def attrs(attrKey: String, noEmpty: Boolean = true): Expression[Seq[String]] =
-      self.andMap(_.attrs(attrKey, noEmpty), s"attrs($attrKey,$noEmpty)")
+      self.andThen(_.attrs(attrKey, noEmpty))
 
-    def hrefs = self.andMap(_.hrefs, s"hrefs")
+    def hrefs = self.andThen(_.hrefs)
 
-    def srcs = self.andMap(_.srcs, s"srcs")
+    def srcs = self.andThen(_.srcs)
 
-    def boilerPipes = self.andMap(_.boilerPipes, "text")
+    def boilerPipes = self.andThen(_.boilerPipes)
   }
 
   implicit class PageExprView(self: Expression[Page]) extends Serializable {
 
-    def uid: Expression[PageUID] = self.andMap(_.uid, "uid")
+    def uid: Expression[PageUID] = self.andThen(_.uid)
 
-    def contentType: Expression[String] = self.andMap(_.contentType, "contentType")
+    def contentType: Expression[String] = self.andThen(_.contentType)
 
-    def content: Expression[Seq[Byte]] = self.andMap(_.content.toSeq, "content")
+    def content: Expression[Seq[Byte]] = self.andThen(_.content.toSeq)
 
-    def timestamp: Expression[Date] = self.andMap(_.timestamp, "timestamp")
+    def timestamp: Expression[Date] = self.andThen(_.timestamp)
 
-    def saved: Expression[Set[String]] = self.andMap(_.saved.toSet, "saved")
+    def saved: Expression[Set[String]] = self.andThen(_.saved.toSet)
 
-    def mimeType: Expression[String] = self.andMap(_.mimeType, "mimeType")
+    def mimeType: Expression[String] = self.andThen(_.mimeType)
 
-    def charSet: Expression[String] = self.andFlatMap(_.charset, "charSet")
+    def charSet: Expression[String] = self.andOptional(_.charset)
 
-    def exts: Expression[Seq[String]] = self.andMap(_.exts.toSeq, "extensions")
+    def exts: Expression[Seq[String]] = self.andThen(_.exts.toSeq)
 
-    def defaultExt: Expression[String] = self.andFlatMap(_.defaultExt, "defaultExt")
+    def defaultExt: Expression[String] = self.andOptional(_.defaultExt)
   }
 
   //  implicit class PageTraversableOnceExprView(self: Expression[TraversableOnce[Page]]) extends Serializable {
@@ -242,29 +188,28 @@ package object dsl {
 
   implicit class IterableLikeExprView[T: ClassTag, Repr](self: Expression[IterableLike[T, Repr]]) extends Serializable {
 
-    def head: Expression[T] = self.andFlatMap(_.headOption, "head")
+    def head: Expression[T] = self.andOptional(_.headOption)
 
-    def last: Expression[T] = self.andFlatMap(_.lastOption, "last")
+    def last: Expression[T] = self.andOptional(_.lastOption)
 
-    def get(i: Int): Expression[T] = self.andFlatMap({
+    def get(i: Int): Expression[T] = self.andOptional({
       iterable =>
         val realIdx = if (i >= 0) i
         else iterable.size - i
 
         if (realIdx>=iterable.size || realIdx<0) None
         else Some(iterable.toSeq.apply(realIdx))
-    },
-      s"get($i)")
+    })
 
-    def size: Expression[Int] = self.andMap(_.size, "size")
+    def size: Expression[Int] = self.andThen(_.size)
 
-    def isEmpty: Expression[Boolean] = self.andMap(_.isEmpty, "isEmpty")
+    def isEmpty: Expression[Boolean] = self.andThen(_.isEmpty)
 
-    def nonEmpty: Expression[Boolean] = self.andMap(_.nonEmpty, "nonEmpty")
+    def nonEmpty: Expression[Boolean] = self.andThen(_.nonEmpty)
 
-    def mkString(sep: String = ""): Expression[String] = self.andMap(_.mkString(sep), s"mkString($sep)")
+    def mkString(sep: String = ""): Expression[String] = self.andThen(_.mkString(sep))
 
-    def mkString(start: String, sep: String, end: String): Expression[String] = self.andMap(_.mkString(start, sep, end), s"mkString($sep)")
+    def mkString(start: String, sep: String, end: String): Expression[String] = self.andThen(_.mkString(start, sep, end))
 
     //TODO: Why IterableExprView.filter cannot be applied on ZippedExpr? is the scala compiler malfunctioning?
     def zipWithKeys(keys: Expression[Any]): ZippedExpr[Any, T] =
@@ -273,37 +218,26 @@ package object dsl {
     def zipWithValues(values: Expression[Any]): ZippedExpr[T, Any] =
       new ZippedExpr[T,Any](self, values.typed[IterableLike[_,_]])
 
-    def groupBy[K](f: T => K): Expression[Map[K, Repr]] = self.andMap (
-      v => v.groupBy(f),
-      s"groupBy($f)"
+    def groupBy[K](f: T => K): Expression[Map[K, Repr]] = self.andThen (
+      v => v.groupBy(f)
     )
 
-    def slice(from: Int = Int.MinValue, until: Int = Int.MaxValue): Expression[Repr] = self.andMap (
-      v => v.slice(from, until),
-      s"slice($from,$until)"
+    def slice(from: Int = Int.MinValue, until: Int = Int.MaxValue): Expression[Repr] = self.andThen (
+      v => v.slice(from, until)
     )
 
-    def filter(f: T => Boolean): Expression[Repr] = self.andMap(_.filter(f), s"filter($f)")
+    def filter(f: T => Boolean): Expression[Repr] = self.andThen(_.filter(f))
 
-    def distinct: Expression[Seq[T]] = self.andMap(_.toSeq.distinct, "distinct")
+    def distinct: Expression[Seq[T]] = self.andThen(_.toSeq.distinct)
 
-    def distinctBy[K](f: T => K): Expression[Iterable[T]] = this.groupBy(f).andMap(
+    def distinctBy[K](f: T => K): Expression[Iterable[T]] = this.groupBy(f).andThen(
       v =>
         v.values.flatMap{
           case repr: Traversable[T] => repr.headOption
           case repr: T => Some(repr)
           case _ => None
-        },
-      s"distinctBy($f)"
+        }
     )
-
-    //TODO: handle exception
-    //  def only: Expr[T] =
-    //    expr.andThen(NamedFunction1("only", _.map{
-    //      seq =>
-    //        assert(seq.size == 1)
-    //        seq.head
-    //    }))
 
     //TODO: these will cause unserializable exception, fix it!
     //    def map[B, That](f: T => B)(implicit bf: CanBuildFrom[Repr, B, That]): Expression[That] = self.andMap (
@@ -318,30 +252,29 @@ package object dsl {
     //      s"flatMap($f)"
     //    )
 
-    def map[B](f: T => B): Expression[Seq[B]] = self.andMap (
-      v => v.toSeq.map(f),
-      s"map($f)"
+    def map[B](f: T => B): Expression[Seq[B]] = self.andThen (
+      v => v.toSeq.map(f)
     )
 
-    def flatMap[B](f: T => GenTraversableOnce[B]): Expression[Seq[B]] = self.andMap (
-      v => v.toSeq.flatMap(f),
-      s"flatMap($f)"
+    def flatMap[B](f: T => GenTraversableOnce[B]): Expression[Seq[B]] = self.andThen (
+      v => v.toSeq.flatMap(f)
     )
-
-    def flatten: ExpressionLike[PageRow, Seq[T]] = self.andThen(_.toSeq.flatten)
   }
 
   implicit class StringExprView(self: Expression[String]) extends Serializable {
 
     def replaceAll(regex: String, replacement: String): Expression[String] =
-      self.andMap(_.replaceAll(regex, replacement), s"replaceAll($regex,$replacement)")
+      self.andThen(_.replaceAll(regex, replacement))
 
-    def trim: Expression[String] = self.andMap(_.trim, "trim")
+    def trim: Expression[String] = self.andThen(_.trim)
 
     def +(another: Expression[Any]): Expression[String] = x"$self$another"
   }
 
   //--------------------------------------------------
+
+  //TODO: clean it up
+  def dynamic[T](expr: Expression[T]): Expression[T] = expr
 
   implicit def symbolToExpr(symbol: Symbol): GetExpr =
     new GetExpr(symbol.name)
@@ -366,6 +299,8 @@ package object dsl {
       new ReplaceKeyExpr(str)
   }
 
+  implicit def fn2GenExpression[T, R](self: T => R): ExpressionLike[T, R] = ExpressionLike.fn2GenExpression(self)
+
   implicit class StringRDDView(val self: RDD[String]) {
 
     //csv has to be headerless, there is no better solution as header will be shuffled to nowhere
@@ -385,22 +320,22 @@ package object dsl {
     def tsvToMap(headerRow: String) = csvToMap(headerRow,"\t")
   }
 
-  implicit class DataFrameView(val self: DataFrame) {
-
-    def toMapRDD: RDD[Map[String,Any]] = {
-      val headers = self.schema.fieldNames
-
-      val result: RDD[Map[String,Any]] = self.map{
-        row => ListMap(headers.zip(row.toSeq): _*)
-      }
-
-      result
-    }
-  }
+  //  implicit class DataFrameView(val self: DataFrame) {
+  //
+  //    def toMapRDD: RDD[Map[String,Any]] = {
+  //      val headers = self.schema.fieldNames
+  //
+  //      val result: RDD[Map[String,Any]] = self.map{
+  //        row => ListMap(headers.zip(row.toSeq): _*)
+  //      }
+  //
+  //      result
+  //    }
+  //  }
 
   implicit class StrContextHelper(val strC: StringContext) extends Serializable {
 
-    def x(fs: (PageRow => Option[Any])*) = new InterpolateExpr(strC.parts, fs)
+    def x(fs: (Expression[Any])*) = new InterpolateExpr(strC.parts, fs)
 
     def CSS() = GetOnlyPageExpr.findAll(strC.s())
     def S() = CSS()
@@ -409,5 +344,6 @@ package object dsl {
     def S_*() = CSS_*()
 
     def A() = 'A.findAll(strC.s())
+
   }
 }

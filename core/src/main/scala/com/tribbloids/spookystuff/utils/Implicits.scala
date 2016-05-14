@@ -3,8 +3,10 @@ package com.tribbloids.spookystuff.utils
 import com.tribbloids.spookystuff.row._
 import org.apache.spark.SparkContext
 import org.apache.spark.rdd.RDD
+import org.apache.spark.sql.DataFrame
 
 import scala.collection.generic.CanBuildFrom
+import scala.collection.immutable.ListMap
 import scala.collection.{Map, TraversableLike}
 import scala.language.{higherKinds, implicitConversions}
 import scala.reflect.ClassTag
@@ -318,6 +320,19 @@ object Implicits {
         v =>
           Utils.typedOrNone[B](v)
       }.toArray
+    }
+  }
+
+  implicit class DataFrameView(val self: DataFrame) {
+
+    def toMapRDD: RDD[Map[String,Any]] = {
+      val headers = self.schema.fieldNames
+
+      val result: RDD[Map[String,Any]] = self.map{
+        row => ListMap(headers.zip(row.toSeq): _*)
+      }
+
+      result
     }
   }
 

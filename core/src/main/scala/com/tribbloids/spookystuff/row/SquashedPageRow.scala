@@ -3,7 +3,7 @@ package com.tribbloids.spookystuff.row
 import java.util.UUID
 
 import com.tribbloids.spookystuff.actions.Trace
-import com.tribbloids.spookystuff.expressions.Expression
+import com.tribbloids.spookystuff.expressions.{Expression, NamedExpr}
 import com.tribbloids.spookystuff.pages.Fetched
 import com.tribbloids.spookystuff.{SpookyContext, dsl}
 
@@ -112,7 +112,7 @@ case class SquashedPageRow(
   //TODO: special optimization for Expression that only use pages
   //TODO: test redundant unchanged row elimination mechanism
   private def _extract(
-                        exprs: Seq[Expression[Any]],
+                        exprs: Seq[NamedExpr[Any]],
                         filterEmpty: Boolean = true,
                         distinct: Boolean = true
                         //set to true to ensure that repeated use of an alias (e.g. A for defaultJoinKey) always evict existing values to avoid data corruption
@@ -127,7 +127,7 @@ case class SquashedPageRow(
               expr =>
                 val resolving = expr.field.conflictResolving
                 val k = expr.field
-                val vOpt = expr.apply(pageRow)
+                val vOpt = expr.lift.apply(pageRow)
                 resolving match {
                   case Field.Remove => Some(k -> vOpt)
                   case _ => vOpt.map(v => k -> Some(v))
@@ -167,7 +167,7 @@ case class SquashedPageRow(
     this.copy(dataRows = allUpdatedDataRows)
   }
 
-  def extract(exprs: Expression[Any]*) = _extract(exprs)
+  def extract(exprs: Expression[Any]*) = _extract(exprs.map(_.asInstanceOf[NamedExpr[Any]]))
 
   def remove(fields: Field*) = this.copy(
     dataRows = dataRows.map(_.--(fields))

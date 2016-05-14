@@ -24,7 +24,7 @@ object Yelp_Test_Diacritics extends QueryCore {
     val token = "KV7SgT34ZxJ5n2m5FgiXetdTBgnKOpge"
     val tokenSecret = "xfudMw9Xf3S3GBosQfPI-XY6K8w"
 
-    def sign(url: Expression[String]): Expression[String] = url.andMap(
+    def sign(url: Expression[String]): Expression[String] = url.andThen(
       HttpUtils.OauthV2(_, consumerKey, consumerSecret, token, tokenSecret)
     )
 

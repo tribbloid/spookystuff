@@ -1,14 +1,15 @@
 package com.tribbloids.spookystuff.row
 
 import com.tribbloids.spookystuff.QueryException
-import com.tribbloids.spookystuff.execution.ExecutionPlan
-import com.tribbloids.spookystuff.expressions._
 import com.tribbloids.spookystuff.utils.IdentifierMixin
+import org.apache.spark.sql.catalyst.ScalaReflection
+import org.apache.spark.sql.types.{DataType, Metadata, StructField}
 
-import scala.collection.mutable
+import scala.language.implicitConversions
+import scala.reflect.runtime.universe.TypeTag
 
-abstract class ExpressionTransformer {
-}
+//abstract class ExpressionTransformer {
+//}
 
 object Field {
 
@@ -22,16 +23,7 @@ object Field {
   case object Remove extends ConflictResolving
   case object Overwrite extends ConflictResolving
 
-  def batchResolveConflict(
-                            child: ExecutionPlan,
-                            exprs: Seq[Expression[Any]]
-                          ): Seq[Expression[Any]] = {
-    val resolvedExprs = exprs.map {
-      expr =>
-        expr.resolveConflict(child)
-    }
-    resolvedExprs
-  }
+  implicit def str2Field(str: String): Field = Field(str)
 }
 
 /**
@@ -40,21 +32,22 @@ object Field {
   */
 case class Field(
                   name: String,
+
                   isWeak: Boolean = false,
-                  // weak field can be referred by common expressions, but has lower priority
+                  // weak field can be referred by common extractions, but has lower priority
                   // weak field is removed when conflict resolving with an identical field
                   isInvisible: Boolean = false,
-                  // invisible field cannot be referred by common expressions
+                  // invisible field cannot be referred by common extractions
                   // declare it to ensure that its value won't interfere with downstream execution.
                   isReserved: Boolean = false,
 
                   conflictResolving: Field.ConflictResolving = Field.Error,
                   isOrdinal: Boolean = false, //represents ordinal index in flatten/explore
-                  depthRangeOption: Option[Range] = None, //represents depth in explore
+                  depthRangeOpt: Option[Range] = None, //represents depth in explore
 
-                  metadata: mutable.Map[String, String] = mutable.Map()
-                  //                  @transient modifierOpt: Option[Expression[Any] => Expression[Any]] = None, //cast to
-                ) extends ExpressionTransformer with IdentifierMixin {
+                  dataTypeOpt: Option[DataType] = None,
+                  metadata: Metadata = Metadata.empty
+                ) extends IdentifierMixin {
 
   lazy val _id = (name, isWeak, isInvisible, isReserved)
 
@@ -62,7 +55,7 @@ case class Field(
   def * = this.copy(isWeak = true)
   def `#` = this.copy(isOrdinal = true)
 
-  def isDepth = depthRangeOption.nonEmpty
+  def isDepth = depthRangeOpt.nonEmpty
 
   def isSortIndex: Boolean = isOrdinal || isDepth
 
@@ -93,10 +86,23 @@ case class Field(
     if (conflictResolving == Field.Overwrite) builder append " !"
     if (isWeak) builder append " *"
     if (isOrdinal) builder append " #"
-    depthRangeOption.foreach(range => builder append s" [${range.head}...${range.last}]")
+    depthRangeOpt.foreach(range => builder append s" [${range.head}...${range.last}]")
     builder.result()
   }
 
+  def addType[RT: TypeTag] = this.copy(
+    dataTypeOpt = Some(ScalaReflection.schemaFor[RT].dataType)
+  )
+
+  def structField = {
+    val dataType = dataTypeOpt.get // throw an exception when not typed
+    StructField(
+      name,
+      dataType,
+      nullable = true,
+      metadata
+    )
+  }
   //  override def transform[T](expr: Expression[T]): Expression[T] = {
   //
   //    val unwrapped = Alias.unwrap(expr)

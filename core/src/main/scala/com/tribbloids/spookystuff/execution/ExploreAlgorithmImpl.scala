@@ -8,7 +8,7 @@ abstract class ExploreAlgorithmImpl {
   def depthField: Field
   def ordinalField: Field
 
-  def range = depthField.depthRangeOption.get
+  def range = depthField.depthRangeOpt.get
 
   def openReducer: RowReducer
   def visitedReducer: RowReducer //precede eliminator
@@ -16,13 +16,13 @@ abstract class ExploreAlgorithmImpl {
   def eliminator: RowEliminator
 
   //TODO: this should contains any chain of extract, flatten, or map-ish execution plan
-  def extracts: Seq[Expression[Any]]
+  def extracts: Seq[NamedExpr[Any]]
 }
 
 case class ShortestPathImpl(
                              depthField: Field,
                              ordinalField: Field,
-                             extracts: Seq[Expression[Any]]
+                             extracts: Seq[NamedExpr[Any]]
                            ) extends ExploreAlgorithmImpl {
 
   import scala.Ordering.Implicits._

@@ -2,16 +2,15 @@ package com.tribbloids.spookystuff.dsl
 
 import com.tribbloids.spookystuff.SpookyEnvSuite
 import com.tribbloids.spookystuff.actions.Wget
-import com.tribbloids.spookystuff.expressions.ExpressionLike
 import com.tribbloids.spookystuff.rdd.PageRowRDD
-import com.tribbloids.spookystuff.row.{DataRow, Field, SquashedPageRow}
+import com.tribbloids.spookystuff.row.{DataRow, Field, PageRow, SquashedPageRow}
 
 /**
 *  Created by peng on 12/3/14.
 */
 class TestDSL extends SpookyEnvSuite {
 
-//  import com.tribbloids.spookystuff.dsl._
+  import com.tribbloids.spookystuff.dsl._
 
   lazy val pages = (
     Wget("http://www.wikipedia.org/") ~ 'page  :: Nil
@@ -25,7 +24,7 @@ class TestDSL extends SpookyEnvSuite {
       .unsquash.head
 
   test("symbol as Expr"){
-    assert('abc.apply(row) === Some("Wikipedia"))
+    assert('abc.apply(row) === "Wikipedia")
   }
 
   test("defaultAs should not rename an Alias") {
@@ -38,33 +37,15 @@ class TestDSL extends SpookyEnvSuite {
   }
 
   test("andThen"){
-    val fun = 'abc.andThen(_.map(_.toString))
-    assert(fun.name === "abc.<function1>")
-    assert(fun(row) === Some("Wikipedia"))
-
-    val fun2 = 'abc.andThen(ExpressionLike(_.map(_.toString), 'after))
-    assert(fun2.name === "abc.after")
-    assert(fun(row) === Some("Wikipedia"))
+    val fun = 'abc.andThen(_.toString)
+    assert(fun.name === "<function1>")
+    assert(fun(row) === "Wikipedia")
   }
 
-  test("andMap"){
-    val fun = 'abc.andMap(_.toString)
-    assert(fun.name === "abc.<function1>")
-    assert(fun(row) === Some("Wikipedia"))
-
-    val fun2 = 'abc.andMap(_.toString, "after")
-    assert(fun2.name === "abc.after")
-    assert(fun(row) === Some("Wikipedia"))
-  }
-
-  test("andFlatMap"){
-    val fun = 'abc.andFlatMap(_.toString.headOption)
-    assert(fun.name === "abc.<function1>")
-    assert(fun(row) === Some('W'))
-
-    val fun2 = 'abc.andFlatMap(_.toString.headOption, "after")
-    assert(fun2.name === "abc.after")
-    assert(fun(row) === Some('W'))
+  test("andUnlift"){
+    val fun = 'abc.andOptional(_.toString.headOption)
+    assert(fun.name === "<function1>")
+    assert(fun(row) === 'W')
   }
 
   test("double quotes in selector by attribute should work") {
@@ -79,15 +60,15 @@ class TestDSL extends SpookyEnvSuite {
   }
 
   test("uri"){
-    assert(S.uri.apply(row).get contains "://www.wikipedia.org/")
-    assert('page.uri.apply(row).get contains "://www.wikipedia.org/")
-    assert('def.uri.apply(row).get contains "://www.wikipedia.org/")
+    assert(S.uri.apply(row) contains "://www.wikipedia.org/")
+    assert('page.uri.apply(row) contains "://www.wikipedia.org/")
+    assert('def.uri.apply(row) contains "://www.wikipedia.org/")
   }
 
   test("string interpolation") {
     val expr = x"static ${'notexist}"
-    assert(expr.apply(row).isEmpty)
-    assert(expr.orElse(" ").apply(row).get == " ")
+    assert(expr.lift.apply(row).isEmpty)
+    assert(expr.orElse[PageRow, String]{case _ => " "}.apply(row) == " ")
   }
 
   test("SpookyContext can be cast to a blank PageRowRDD with empty schema") {

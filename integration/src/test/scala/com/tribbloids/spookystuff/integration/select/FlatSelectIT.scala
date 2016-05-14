@@ -31,10 +31,10 @@ class FlatSelectIT extends IntegrationSuite {
 
     assert(
       result.schema.fieldNames ===
-        "A_attr(lang,true)" ::
-          "A_findAll(a)_href" ::
-          "A_findAll(a em)_text" ::
-          "A_uri" :: Nil
+        "_c1" ::
+          "_c2" ::
+          "_c3" ::
+          "_c4" :: Nil
     )
 
     val rows = result.collect()

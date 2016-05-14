@@ -40,7 +40,7 @@ class TestPageRowRDD extends SpookyEnvSuite {
           Wget("http://www.wikipedia.org/")
         )
         .extract(
-          S.andFlatMap{
+          S.andOptional{
             page =>
               acc += 1
               page.saved.headOption
@@ -59,7 +59,7 @@ class TestPageRowRDD extends SpookyEnvSuite {
           Wget("http://www.wikipedia.org/")
         )
         .extract(
-          S.andFlatMap{
+          S.andOptional{
             page =>
               acc += 1
               page.saved.headOption
@@ -78,7 +78,7 @@ class TestPageRowRDD extends SpookyEnvSuite {
           Wget("http://www.wikipedia.org/")
         )
         .select(
-          S.andFlatMap{
+          S.andOptional{
             page =>
               acc += 1
               page.saved.headOption

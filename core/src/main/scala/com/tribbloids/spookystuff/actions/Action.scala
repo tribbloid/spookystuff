@@ -1,14 +1,14 @@
 package com.tribbloids.spookystuff.actions
 
+import com.tribbloids.spookystuff.expressions._
+import com.tribbloids.spookystuff.pages.{Fetched, Page}
+import com.tribbloids.spookystuff.selenium.BySizzleCssSelector
+import com.tribbloids.spookystuff.session.{DriverSession, NoDriverSession, Session}
+import com.tribbloids.spookystuff.utils.Utils
+import com.tribbloids.spookystuff.{ActionException, Const, SpookyContext}
 import org.openqa.selenium.TakesScreenshot
 import org.openqa.selenium.support.ui.{ExpectedConditions, WebDriverWait}
 import org.slf4j.LoggerFactory
-import com.tribbloids.spookystuff.expressions._
-import com.tribbloids.spookystuff.pages.{Page, Fetched}
-import com.tribbloids.spookystuff.selenium.BySizzleCssSelector
-import com.tribbloids.spookystuff.session.{NoDriverSession, DriverSession, Session}
-import com.tribbloids.spookystuff.utils.Utils
-import com.tribbloids.spookystuff.{SpookyContext, ActionException, Const}
 
 import scala.concurrent.duration.Duration
 

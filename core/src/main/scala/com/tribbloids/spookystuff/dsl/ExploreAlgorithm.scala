@@ -1,7 +1,7 @@
 package com.tribbloids.spookystuff.dsl
 
 import com.tribbloids.spookystuff.execution.{ExploreAlgorithmImpl, ShortestPathImpl}
-import com.tribbloids.spookystuff.expressions.Expression
+import com.tribbloids.spookystuff.expressions._
 import com.tribbloids.spookystuff.row._
 
 /**
@@ -12,7 +12,7 @@ sealed trait ExploreAlgorithm {
   def getImpl(
                depthField: Field,
                ordinalField: Field,
-               extracts: Seq[Expression[Any]]
+               extracts: Seq[NamedExpr[Any]]
              ): ExploreAlgorithmImpl
 }
 object ExploreAlgorithms {
@@ -21,7 +21,7 @@ object ExploreAlgorithms {
     override def getImpl(
                           depthField: Field,
                           ordinalField: Field,
-                          extracts: Seq[Expression[Any]]
+                          extracts: Seq[NamedExpr[Any]]
                         ): ExploreAlgorithmImpl = ShortestPathImpl(depthField, ordinalField, extracts)
   }
 }

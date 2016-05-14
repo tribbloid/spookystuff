@@ -70,12 +70,10 @@ trait Export extends Named with Wayback{
 trait WaybackSupport {
   self: Wayback =>
 
-  import com.tribbloids.spookystuff.dsl._
-
   var wayback: Expression[Long] = null
 
   def waybackTo(date: Expression[Date]): this.type = {
-    this.wayback = date.andMap(_.getTime)
+    this.wayback = date.andThen(_.getTime)
     this
   }
 
@@ -91,7 +89,7 @@ trait WaybackSupport {
   protected def interpolateWayback(pageRow: PageRow): Option[this.type] = {
     if (this.wayback == null) Some(this)
     else {
-      val valueOpt = this.wayback(pageRow)
+      val valueOpt = this.wayback.lift(pageRow)
       valueOpt.map{
         v =>
           this.wayback = Literal(v)
@@ -487,7 +485,7 @@ case class Wget(
   }
 
   override def doInterpolate(pageRow: PageRow, spooky: SpookyContext): Option[this.type] = {
-    val first = this.uri(pageRow).flatMap(Utils.asArray[Any](_).headOption)
+    val first = this.uri.lift(pageRow).flatMap(Utils.asArray[Any](_).headOption)
 
     val uriStr: Option[String] = first.flatMap {
       case element: Unstructured => element.href

@@ -35,7 +35,7 @@ class TestPageRowView extends SpookyEnvSuite {
       .squash
       .extract(
         S("h1.central-textlogo img").head as 'e1,
-        'pp.findAll("label")
+        'pp.findAll("label") as 'lang
       )
       .unsquash.head
 
@@ -45,7 +45,7 @@ class TestPageRowView extends SpookyEnvSuite {
     val e1 = row.getUnstructured('e1)
     assert(e1.get.attr("title").get === "Wikipedia")
 
-    val e2 = row.getUnstructured(Symbol("pp.findAll(label)"))
+    val e2 = row.getUnstructured('lang)
     assert(e2.get.text.get contains "language")
   }
 }
