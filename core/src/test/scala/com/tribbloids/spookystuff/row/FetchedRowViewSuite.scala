@@ -8,7 +8,7 @@ import scala.language.implicitConversions
 /**
   * Created by peng on 12/3/14.
   */
-class TestPageRowView extends SpookyEnvSuite {
+class FetchedRowViewSuite extends SpookyEnvSuite {
 
   import dsl._
   import com.tribbloids.spookystuff.utils.Implicits._

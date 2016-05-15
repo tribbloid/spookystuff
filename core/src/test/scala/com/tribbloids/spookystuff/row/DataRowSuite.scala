@@ -5,7 +5,7 @@ import com.tribbloids.spookystuff.SpookyEnvSuite
 /**
   * Created by peng on 30/03/16.
   */
-class TestDataRow extends SpookyEnvSuite {
+class DataRowSuite extends SpookyEnvSuite {
 
   import com.tribbloids.spookystuff.dsl._
 

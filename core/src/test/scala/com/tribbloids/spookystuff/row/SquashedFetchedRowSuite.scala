@@ -7,7 +7,7 @@ import com.tribbloids.spookystuff.doc.Fetched
 /**
   * Created by peng on 05/04/16.
   */
-class TestSquashedPageRow extends SpookyEnvSuite {
+class SquashedFetchedRowSuite extends SpookyEnvSuite {
 
   import com.tribbloids.spookystuff.dsl._
 

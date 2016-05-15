@@ -6,7 +6,7 @@ import com.tribbloids.spookystuff.{SpookyEnvSuite, dsl}
 /**
   * Created by peng on 5/10/15.
   */
-class TestPageRowRDD extends SpookyEnvSuite {
+class FetchedDatasetSuite extends SpookyEnvSuite {
 
   import dsl._
 
