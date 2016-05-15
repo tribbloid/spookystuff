@@ -61,7 +61,7 @@ case class ExplorePlan(
     val state0RDD: RDD[(Trace, Open_Visited)] = child.rdd(true)
       .flatMap {
         row0 =>
-          val depth0 = rowFn.apply(row0.extract(Literal(0) ~ algorithmImpl.depthField))
+          val depth0 = rowFn.apply(row0.extract(Literal(0) named algorithmImpl.depthField))
           val visited0 = if (algorithmImpl.range.contains(0)) {
             //extract on selfRDD, add into visited set.
             Some(depth0.trace -> Open_Visited(visited = Some(depth0.dataRows)))

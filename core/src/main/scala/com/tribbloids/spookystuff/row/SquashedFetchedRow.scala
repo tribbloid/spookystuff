@@ -3,8 +3,8 @@ package com.tribbloids.spookystuff.row
 import java.util.UUID
 
 import com.tribbloids.spookystuff.actions.Trace
-import com.tribbloids.spookystuff.expressions.{Extraction, NamedExtr}
 import com.tribbloids.spookystuff.doc.Fetched
+import com.tribbloids.spookystuff.expressions.NamedExtr
 import com.tribbloids.spookystuff.{SpookyContext, dsl}
 
 import scala.collection.mutable.ArrayBuffer
@@ -27,10 +27,10 @@ object SquashedFetchedRow {
   * WARNING: comparing to 0.3.x support for different join types has been discarded, costs too much memory.
   */
 case class SquashedFetchedRow(
-                            dataRows: Array[DataRow] = Array(),
-                            trace: Trace = Nil,
-                            fetchedOpt: Option[Array[Fetched]] = None // discarded after new page coming in
-                          ) {
+                               dataRows: Array[DataRow] = Array(),
+                               trace: Trace = Nil,
+                               fetchedOpt: Option[Array[Fetched]] = None // discarded after new page coming in
+                             ) {
 
   import com.tribbloids.spookystuff.utils.Implicits._
   import dsl._
@@ -167,7 +167,7 @@ case class SquashedFetchedRow(
     this.copy(dataRows = allUpdatedDataRows)
   }
 
-  def extract(exprs: Extraction[Any]*) = _extract(exprs.map(_.asInstanceOf[NamedExtr[Any]]))
+  def extract(exprs: NamedExtr[Any]*) = _extract(exprs)
 
   def remove(fields: Field*) = this.copy(
     dataRows = dataRows.map(_.--(fields))

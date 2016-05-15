@@ -34,14 +34,22 @@ trait ExpressionLike[T, +R] extends PartialFunction[T, R] with PrettyToStringMix
     }
   }
 
-  final def as(field: Field): ExpressionLike[T, R] = _as(Option(field))
+  final def as(field: Field) = _as(Option(field))
   final def ~(field: Field) = as(field)
 
-  final def as_!(field: Field): ExpressionLike[T, R] = _as(Option(field).map(_.!))
+  final def as_!(field: Field) = _as(Option(field).map(_.!))
   final def ~!(field: Field) = as_!(field)
 
-  final def as_*(field: Field): ExpressionLike[T, R] = _as(Option(field).map(_.*))
+  final def as_*(field: Field) = _as(Option(field).map(_.*))
   final def ~*(field: Field) = as_*(field)
+
+  def _named(field: Field): AliasLike[T, R] = new AliasLike[T, R](unboxed, field)
+
+  final def named(field: Field) = _named(field)
+
+  final def named_!(field: Field) = _named(field.!)
+
+  final def named_*(field: Field) = _named(field.*)
 
   //will not rename an already-named Alias.
   def defaultAs(field: Field): ExpressionLike[T, R] = as(field)

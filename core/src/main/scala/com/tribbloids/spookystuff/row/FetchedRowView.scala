@@ -21,7 +21,7 @@ case class FetchedRowView(
                          ) {
 
   def dataRow: DataRow = self._1
-  def pageLikes: Seq[Fetched] = self._2.toSeq
+  def pageLikes: Seq[Fetched] = self._2
 
   //TODO: trace implementation is not accurate: the last backtrace has all previous exports removed
   def squash = SquashedFetchedRow(

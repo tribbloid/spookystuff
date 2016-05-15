@@ -3,10 +3,10 @@ package com.tribbloids.spookystuff
 import java.util.Date
 
 import com.tribbloids.spookystuff.actions._
+import com.tribbloids.spookystuff.doc.{Doc, Elements, PageUID, Unstructured}
 import com.tribbloids.spookystuff.expressions._
-import com.tribbloids.spookystuff.doc.{Elements, Doc, PageUID, Unstructured}
 import com.tribbloids.spookystuff.rdd.FetchedDataset
-import com.tribbloids.spookystuff.row.{Field, FetchedRow, SquashedFetchedRow}
+import com.tribbloids.spookystuff.row.{FetchedRow, Field, SquashedFetchedRDD}
 import com.tribbloids.spookystuff.utils.Default
 import org.apache.spark.rdd.RDD
 
@@ -18,7 +18,7 @@ import scala.reflect.ClassTag
 package object dsl {
   //  type SerializableCookie = Cookie with Serializable
 
-  implicit def PageRowRDDToRDD(wrapper: FetchedDataset): RDD[SquashedFetchedRow] = wrapper.rdd
+  implicit def PageRowRDDToRDD(wrapper: FetchedDataset): SquashedFetchedRDD = wrapper.rdd
 
   implicit def spookyContextToPageRowRDD(spooky: SpookyContext): FetchedDataset = spooky.blankFetchedDataset
 

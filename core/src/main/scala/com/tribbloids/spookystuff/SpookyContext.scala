@@ -135,7 +135,7 @@ case class SpookyContext private (
     import com.tribbloids.spookystuff.utils.Implicits._
 
     implicit def dataFrameToPageRowRDD(df: DataFrame): FetchedDataset = {
-      val self: RDD[SquashedFetchedRow] = new DataFrameView(df).toMapRDD.map {
+      val self: SquashedFetchedRDD = new DataFrameView(df).toMapRDD.map {
         map =>
           SquashedFetchedRow(
             Option(ListMap(map.toSeq: _*))
@@ -176,7 +176,7 @@ case class SpookyContext private (
             spooky = getSpookyForInput
           )
         case _ if classOf[SquashedFetchedRow] == classTag[T].runtimeClass =>
-          val self = rdd.asInstanceOf[RDD[SquashedFetchedRow]]
+          val self = rdd.asInstanceOf[SquashedFetchedRDD]
           new FetchedDataset(
             self,
             schema = ListSet[Field](),

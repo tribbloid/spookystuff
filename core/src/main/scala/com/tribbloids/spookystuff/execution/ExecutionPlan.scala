@@ -143,10 +143,10 @@ abstract class ExecutionPlan(
                                 fieldBuffer: ArrayBuffer[Field] = ArrayBuffer.empty
                               ): NamedExpressionLike[T, R] = {
 
-    val resolvedField = expr match {
+    val result = expr match {
       case a: NamedExpressionLike[_, _] =>
         val resolvedField = a.field.resolveConflict(this.schema)
-        resolvedField
+        expr named resolvedField
       case _ =>
         val fields = this.schema ++ fieldBuffer
         val names = fields.map(_.name)
@@ -154,11 +154,10 @@ abstract class ExecutionPlan(
           i =>
             !names.contains("_c" + i)
         ).get
-        Field("_c" + i)
+        expr named Field("_c" + i)
     }
-    val result = expr ~ resolvedField
-    fieldBuffer += resolvedField
-    result.asInstanceOf[AliasLike[T, R]]
+    fieldBuffer += result.name
+    result
   }
 
   def batchResolveAlias[T, R](

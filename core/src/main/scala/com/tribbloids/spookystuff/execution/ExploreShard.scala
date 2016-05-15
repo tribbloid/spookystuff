@@ -89,7 +89,7 @@ class ExploreShard(
 
       val bestRow = rowFn.apply(
         bestRow_-
-          .extract(new GetExpr(depthKey).typed[Int].andThen(_ + 1) ~! depthKey)
+          .extract(new GetExpr(depthKey).typed[Int].andThen(_ + 1) named_! depthKey)
       )
       val bestDataRowsInRange = bestRow.dataRows.filter {
         dataRow =>

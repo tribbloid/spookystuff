@@ -34,8 +34,8 @@ class FetchedRowViewSuite extends SpookyEnvSuite {
     val row = FetchedRow(pageLikes = pages)
       .squash
       .extract(
-        S("h1.central-textlogo img").head as 'e1,
-        'pp.findAll("label") as 'lang
+        S("h1.central-textlogo img").head named 'e1,
+        'pp.findAll("label") named 'lang
       )
       .unsquash.head
 

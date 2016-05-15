@@ -18,8 +18,8 @@ class TestDSL extends SpookyEnvSuite {
 
   lazy val row = SquashedFetchedRow(dataRows = Array(DataRow()), fetchedOpt = Some(pages))
     .extract(
-      S"title".head.text ~ 'abc,
-      S"title".head ~ 'def
+      S"title".head.text named 'abc,
+      S"title".head named 'def
     )
       .unsquash.head
 
@@ -53,7 +53,7 @@ class TestDSL extends SpookyEnvSuite {
       Wget("http://www.wikipedia.org/") :: Nil
       ).fetch(spooky).toArray
     val row = SquashedFetchedRow(Array(DataRow()), fetchedOpt = Some(pages))
-      .extract(S"""a[href*="wikipedia"]""".href ~ 'uri)
+      .extract(S"""a[href*="wikipedia"]""".href named 'uri)
       .unsquash.head
 
     assert(row._1.get(Field("uri")).nonEmpty)
