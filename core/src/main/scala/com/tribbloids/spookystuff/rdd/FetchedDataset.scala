@@ -109,7 +109,7 @@ case class FetchedDataset(
       val jsonRDD = this.toJSON(sort)
       plan.cacheQueue.persist(jsonRDD)
 
-      val schemaRDD = spooky.sqlContext.jsonRDD(jsonRDD)
+      val schemaRDD = spooky.sqlContext.read.json(jsonRDD)
 
       val columns: Seq[Column] = fields
         .filter(key => !key.isWeak)
@@ -248,20 +248,23 @@ case class FetchedDataset(
                sampler: Sampler[Any] = spooky.conf.defaultFlattenSampler
              ): FetchedDataset = {
 
-    val resolvedExpr = this.plan.resolveAlias(expr)
-
-    val extracted = if  (resolvedExpr.isInstanceOf[GetExpr]) this
-    else this.extract(resolvedExpr)
+    val (field, extracted) = expr match {
+      case GetExpr(ff) =>
+        ff.! -> this
+      case _ =>
+        val resolvedExpr = plan.resolveAlias(expr)
+        resolvedExpr.field -> this.extract(resolvedExpr)
+    }
 
     val effectiveOrdinalField = Option(ordinalField) match {
       case Some(ff) =>
         ff.copy(isOrdinal = true)
       case None =>
-        Field(resolvedExpr.field.name + "_ordinal", isWeak = true, isOrdinal = true)
+        Field(field.name + "_ordinal", isWeak = true, isOrdinal = true)
     }
 
     this.copy(
-      FlattenPlan(extracted.plan, resolvedExpr.field, effectiveOrdinalField, sampler, isLeft)
+      FlattenPlan(extracted.plan, field, effectiveOrdinalField, sampler, isLeft)
     )
   }
 

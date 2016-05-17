@@ -287,8 +287,8 @@ object Implicits {
     def canonizeKeysToColumnNames: scala.collection.Map[String,V] = m1.map(
       tuple =>{
         val keyName: String = tuple._1 match {
-          case symbol: scala.Symbol =>
-            symbol.name
+//          case symbol: scala.Symbol =>
+//            symbol.name
           case _ =>
             tuple._1.toString
         }

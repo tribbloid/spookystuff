@@ -17,7 +17,16 @@ class TestFlattenPlan extends SpookyEnvSuite {
       .flatten('_1 ~ 'B)
       .toMapRDD(true)
 
-    rdd1.collect().mkString("\n").shouldBe()
+    rdd1.collect().mkString("\n").shouldBe(
+      """
+        |Map(_1 -> WrappedArray(1, 2, 3), _2 -> null, B -> 1)
+        |Map(_1 -> WrappedArray(4, 5, 6), _2 -> WrappedArray(b, c, d), B -> 4)
+        |Map(_1 -> WrappedArray(1, 2, 3), _2 -> null, B -> 2)
+        |Map(_1 -> WrappedArray(4, 5, 6), _2 -> WrappedArray(b, c, d), B -> 5)
+        |Map(_1 -> WrappedArray(1, 2, 3), _2 -> null, B -> 3)
+        |Map(_1 -> WrappedArray(4, 5, 6), _2 -> WrappedArray(b, c, d), B -> 6)
+      """.stripMargin
+    )
   }
 
   test("FlattenPlan should work on collection if overwriting defaultJoinField") {
@@ -25,7 +34,33 @@ class TestFlattenPlan extends SpookyEnvSuite {
       .flatten('_1 ~ 'A)
       .toMapRDD(true)
 
-    rdd1.collect().mkString("\n").shouldBe()
+    rdd1.collect().mkString("\n").shouldBe(
+      """
+        |Map(_1 -> WrappedArray(1, 2, 3), _2 -> null, A -> 1)
+        |Map(_1 -> WrappedArray(4, 5, 6), _2 -> WrappedArray(b, c, d), A -> 4)
+        |Map(_1 -> WrappedArray(1, 2, 3), _2 -> null, A -> 2)
+        |Map(_1 -> WrappedArray(4, 5, 6), _2 -> WrappedArray(b, c, d), A -> 5)
+        |Map(_1 -> WrappedArray(1, 2, 3), _2 -> null, A -> 3)
+        |Map(_1 -> WrappedArray(4, 5, 6), _2 -> WrappedArray(b, c, d), A -> 6)
+      """.stripMargin
+    )
+  }
+
+  test("FlattenPlan should work on collection if not manually set alias") {
+    val rdd1 = src
+      .flatten('_1)
+      .toMapRDD(true)
+
+    rdd1.collect().mkString("\n").shouldBe(
+      """
+        |Map(_2 -> null, _1 -> 1)
+        |Map(_2 -> WrappedArray(b, c, d), _1 -> 4)
+        |Map(_2 -> null, _1 -> 2)
+        |Map(_2 -> WrappedArray(b, c, d), _1 -> 5)
+        |Map(_2 -> null, _1 -> 3)
+        |Map(_2 -> WrappedArray(b, c, d), _1 -> 6)
+      """.stripMargin
+    )
   }
 
   test("FlattenPlan should work on partial collection") {
@@ -33,7 +68,14 @@ class TestFlattenPlan extends SpookyEnvSuite {
       .flatten('_2 ~ 'A)
       .toMapRDD(true)
 
-    rdd1.collect().mkString("\n").shouldBe()
+    rdd1.collect().mkString("\n").shouldBe(
+      """
+        |Map(_1 -> WrappedArray(1, 2, 3), _2 -> null, A -> null)
+        |Map(_1 -> WrappedArray(4, 5, 6), _2 -> WrappedArray(b, c, d), A -> b)
+        |Map(_1 -> WrappedArray(4, 5, 6), _2 -> WrappedArray(b, c, d), A -> c)
+        |Map(_1 -> WrappedArray(4, 5, 6), _2 -> WrappedArray(b, c, d), A -> d)
+      """.stripMargin
+    )
   }
 
   test("flatExtract is equivalent to flatten + extract") {
@@ -41,36 +83,67 @@ class TestFlattenPlan extends SpookyEnvSuite {
       .flatExtract('_2 ~ 'A)(
         'A ~ 'dummy
       )
-      .toMapRDD(true)
 
     val rdd2 = src
       .flatten('_2 ~ 'A)
       .extract(
         'A ~ 'dummy
       )
-      .toMapRDD(true)
 
-    rdd1.collect().mkString("\n").shouldBe(
-      rdd2.collect().mkString("\n")
+    rdd1.toMapRDD(true).collect().mkString("\n").shouldBe(
+      rdd2.toMapRDD(true).collect().mkString("\n")
+    )
+    rdd1.toDF(sort = true).collect().mkString("\n").shouldBe(
+      rdd2.toDF(sort = true).collect().mkString("\n")
     )
   }
 
   test("flatExtract is equivalent to flatten + extract if not manually set join key") {
     val rdd1 = src
-      .flatExtract('_2 ~ 'A)(
+      .flatExtract('_2)(
         'A ~ 'dummy
       )
-      .toMapRDD(true)
 
     val rdd2 = src
-      .flatten('_2 ~ 'A)
+      .flatten('_2 ~ 'A.*)
       .extract(
         'A ~ 'dummy
       )
-      .toMapRDD(true)
 
-    rdd1.collect().mkString("\n").shouldBe(
-      rdd2.collect().mkString("\n")
+    rdd1.toMapRDD(true).collect().mkString("\n").shouldBe(
+      rdd2.toMapRDD(true).collect().mkString("\n")
+    )
+    rdd1.toDF(sort = true).collect().mkString("\n").shouldBe(
+      rdd2.toDF(sort = true).collect().mkString("\n")
     )
   }
+
+//  test("describe ACF") {
+//    val doc =
+//
+//    val df = doc.extract(
+//      S"dataAsset" ~ 'asset,
+//      x"${S"hierarchyOwner > organization".text}/${S"hierarchyOwner > businessUnit".text}/${S"hierarchyOwner > group".text}" ~ 'alias
+//    )
+//      .extract(
+//        'asset.typed[Elements[Unstructured]].andThen {
+//          vv =>
+//            val seq: Seq[(String, (String, String))] = vv.map{
+//              v =>
+//                (v\"assetCode" text).get ->
+//                  ((v\"assetName" text).get -> (v\"parentAssetCode" text).get)
+//            }
+//
+//            val map: Map[String, (String, String)] = Map(seq: _*)
+//            expandAssetNames(map)
+//        } ~ 'code_path
+//      )
+//      .remove('asset)
+//      .flatten('code_path)
+//      .extract(
+//        'code_path.typed[(String, String)].andThen(_._1) as 'code,
+//        'code_path.typed[(String, String)].andThen(_._2) as 'path
+//      )
+//      .toDF(sort = true)
+//  }
 }

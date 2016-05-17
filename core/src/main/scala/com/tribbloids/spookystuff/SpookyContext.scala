@@ -165,7 +165,7 @@ case class SpookyContext private (
             map =>
               Utils.toJson(map)
           )
-          val dataFrame = sqlContext.jsonRDD(jsonRDD)
+          val dataFrame = sqlContext.read.json(jsonRDD)
           val self = canonRdd.map(
             map =>
               SquashedFetchedRow(ListMap(map.map(tuple => (Field(tuple._1),tuple._2)).toSeq: _*))
