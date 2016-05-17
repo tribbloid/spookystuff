@@ -81,7 +81,7 @@ class TestTrace extends SpookyEnvSuite {
     import com.tribbloids.spookystuff.dsl._
 
     val traces: Set[Trace] = (
-      Visit(STATIC_WIKIPEDIA_URI)
+      Visit(HTML_URL)
         +> Click("dummy")
         +> Snapshot()
         +> Loop(

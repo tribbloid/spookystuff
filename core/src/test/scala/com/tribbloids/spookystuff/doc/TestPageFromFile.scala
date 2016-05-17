@@ -2,20 +2,9 @@ package com.tribbloids.spookystuff.doc
 
 import com.tribbloids.spookystuff.actions.Wget
 import com.tribbloids.spookystuff.dsl
+import com.tribbloids.spookystuff.tests.PathDocsMixin
 
-/**
- * Created by peng on 27/07/15.
- */
-class TestPageFromFile extends TestPageFromHttp {
-
-  override def htmlUrl = this.getClass.getClassLoader.getResource("site/Wikipedia.html").getPath
-  override def jsonUrl = this.getClass.getClassLoader.getResource("site/tribbloid.json").getPath
-  override def pngUrl = this.getClass.getClassLoader.getResource("site/logo11w.png").getPath
-  override def pdfUrl = this.getClass.getClassLoader.getResource("site/Test.pdf").getPath
-  override def xmlUrl = this.getClass.getClassLoader.getResource("site/pom.xml").getPath
-  override def csvUrl = this.getClass.getClassLoader.getResource("site/table.csv").getPath
-
-  def dirUrl = this.getClass.getClassLoader.getResource("site").getPath
+class TestPageFromFile extends TestPageFromHttp with PathDocsMixin {
 
   import dsl._
 

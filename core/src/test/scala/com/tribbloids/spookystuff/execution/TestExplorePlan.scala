@@ -41,7 +41,7 @@ class TestExplorePlan extends SpookyEnvSuite {
 
     val rdd1 = src
       .explore('dummy)(
-        Wget(STATIC_WIKIPEDIA_URI),
+        Wget(HTML_URL),
         fetchOptimizer = FetchOptimizers.WebCacheAware,
         partitionerFactory = {v => partitioner}
       )()
@@ -57,7 +57,7 @@ class TestExplorePlan extends SpookyEnvSuite {
     val rdd1 = spooky
       .extract("abc" ~ 'dummy)
       .explore('dummy)(
-        Wget(STATIC_WIKIPEDIA_URI),
+        Wget(HTML_URL),
         fetchOptimizer = FetchOptimizers.WebCacheAware,
         partitionerFactory = {v => partitioner}
       )()
@@ -67,7 +67,7 @@ class TestExplorePlan extends SpookyEnvSuite {
 
     val rdd2 = rdd1
       .explore('dummy)(
-        Wget(STATIC_WIKIPEDIA_URI),
+        Wget(HTML_URL),
         fetchOptimizer = FetchOptimizers.WebCacheAware,
         partitionerFactory = {v => partitioner2}
       )()
@@ -100,7 +100,7 @@ class TestExplorePlan extends SpookyEnvSuite {
   test("ExplorePlan will throw an exception if OrdinalField == DepthField") {
     val rdd1 = spooky
       .fetch{
-        Wget(STATIC_WIKIPEDIA_URI)
+        Wget(HTML_URL)
       }
 
     intercept[QueryException] {

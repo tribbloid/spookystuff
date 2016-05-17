@@ -12,7 +12,7 @@ import scala.collection.mutable.ArrayBuffer
 object SquashedFetchedRow {
 
   def apply(data: Map[Field, Any]): SquashedFetchedRow = SquashedFetchedRow(
-    dataRows = Array(DataRow(data))
+    dataRows = Array(DataRow(data.mapValues(_.asInstanceOf[Object])))
   )
 
   lazy val blank: SquashedFetchedRow = SquashedFetchedRow(Array(DataRow()))

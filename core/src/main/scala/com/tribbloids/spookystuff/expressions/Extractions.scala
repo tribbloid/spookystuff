@@ -54,45 +54,52 @@ case class GetPageExpr(field: Field) extends UnliftedExtr[Doc] {
   def liftApply(v1: FetchedRow): Option[Doc] = v1.getPage(field.name)
 }
 
-case class FindFirstExpr(selector: String, param: Extraction[Unstructured]) extends UnliftedExtr[Unstructured] {
+trait SelectExpr[+T <: Unstructured] extends UnliftedExtr[Elements[T]] {
 
-  def liftApply(v1: FetchedRow): Option[Unstructured] = param.lift(v1).flatMap(_.findFirst(selector))
+  def expand(range: Range): Expand = Expand(range, this)
+}
 
-  case class expand(range: Range) extends UnliftedExtr[Siblings[Unstructured]] {
+case class FindAllExpr(selector: String, arg: Extraction[Unstructured]) extends SelectExpr[Unstructured] {
 
-    def liftApply(v1: FetchedRow) = param.lift(v1).flatMap(_.findFirstWithSiblings(selector, range))
+  def liftApply(v1: FetchedRow): Option[Elements[Unstructured]] = arg.lift(v1).map(_.findAll(selector))
+
+}
+case class ChildrenExpr(selector: String, arg: Extraction[Unstructured]) extends SelectExpr[Unstructured] {
+
+  def liftApply(v1: FetchedRow): Option[Elements[Unstructured]] = arg.lift(v1).map(_.children(selector))
+}
+case class Expand(range: Range, select: SelectExpr[Unstructured]) extends SelectExpr[Siblings[Unstructured]] {
+
+  override def liftApply(v1: (DataRow, Seq[Fetched])): Option[Elements[Siblings[Unstructured]]] = {
+    select match {
+      case FindAllExpr(selector, arg) =>
+        arg.lift(v1).map(_.findAllWithSiblings(selector, range))
+      case ChildrenExpr(selector, arg) =>
+        arg.lift(v1).map(_.childrenWithSiblings(selector, range))
+//      case Expand(_, delegate) =>
+//        Expand(range, delegate).liftApply(v1)
+    }
   }
 }
 
-case class FindAllExpr(selector: String, param: Extraction[Unstructured]) extends UnliftedExtr[Elements[Unstructured]] {
-
-  def liftApply(v1: FetchedRow): Option[Elements[Unstructured]] = param.lift(v1).map(_.findAll(selector))
-
-  case class expand(range: Range) extends UnliftedExtr[Elements[Siblings[Unstructured]]] {
-
-    def liftApply(v1: FetchedRow) = param.lift(v1).map(_.findAllWithSiblings(selector, range))
-  }
-}
-
-case class ChildExpr(selector: String, param: Extraction[Unstructured]) extends UnliftedExtr[Unstructured] {
-
-  def liftApply(v1: FetchedRow): Option[Unstructured] = param.lift(v1).flatMap(_.child(selector))
-
-  case class expand(range: Range) extends UnliftedExtr[Siblings[Unstructured]] {
-
-    def liftApply(v1: FetchedRow) = param.lift(v1).flatMap(_.childWithSiblings(selector, range))
-  }
-}
-
-case class ChildrenExpr(selector: String, param: Extraction[Unstructured]) extends UnliftedExtr[Elements[Unstructured]] {
-
-  def liftApply(v1: FetchedRow): Option[Elements[Unstructured]] = param.lift(v1).map(_.children(selector))
-
-  case class expand(range: Range) extends UnliftedExtr[Elements[Siblings[Unstructured]]] {
-
-    def liftApply(v1: FetchedRow) = param.lift(v1).map(_.childrenWithSiblings(selector, range))
-  }
-}
+//case class FindFirstExpr(selector: String, arg: Extraction[Unstructured]) extends UnliftedExtr[Unstructured] {
+//
+//  def liftApply(v1: FetchedRow): Option[Unstructured] = arg.lift(v1).flatMap(_.findFirst(selector))
+//
+//  case class expand(range: Range) extends UnliftedExtr[Siblings[Unstructured]] {
+//
+//    def liftApply(v1: FetchedRow) = arg.lift(v1).flatMap(_.findFirstWithSiblings(selector, range))
+//  }
+//}
+//case class ChildExpr(selector: String, arg: Extraction[Unstructured]) extends UnliftedExtr[Unstructured] {
+//
+//  def liftApply(v1: FetchedRow): Option[Unstructured] = arg.lift(v1).flatMap(_.child(selector))
+//
+//  case class expand(range: Range) extends UnliftedExtr[Siblings[Unstructured]] {
+//
+//    def liftApply(v1: FetchedRow) = arg.lift(v1).flatMap(_.childWithSiblings(selector, range))
+//  }
+//}
 
 case class GetSeqExpr(field: Field) extends UnliftedExtr[Seq[Any]] {
 
@@ -135,12 +142,12 @@ case class InterpolateExpr(parts: Seq[String], fs: Seq[Extraction[Any]]) extends
   }
 }
 
-case class ZippedExpr[T1,+T2](param1: Extraction[IterableLike[T1, _]], param2: Extraction[IterableLike[T2, _]]) extends UnliftedExtr[Map[T1, T2]] {
+case class ZippedExpr[T1,+T2](arg1: Extraction[IterableLike[T1, _]], arg2: Extraction[IterableLike[T2, _]]) extends UnliftedExtr[Map[T1, T2]] {
 
   def liftApply(v1: FetchedRow): Option[Map[T1, T2]] = {
 
-    val z1Option = param1.lift(v1)
-    val z2Option = param2.lift(v1)
+    val z1Option = arg1.lift(v1)
+    val z2Option = arg2.lift(v1)
 
     if (z1Option.isEmpty || z2Option.isEmpty) return None
 

@@ -100,17 +100,13 @@ package object dsl {
 
     def uri: Extraction[String] = self.andThen(_.uri)
 
-    def findFirst(selector: String): FindFirstExpr = new FindFirstExpr(selector, self)
-
     def findAll(selector: String): FindAllExpr = new FindAllExpr(selector, self)
-
     def \\(selector: String) = findAll(selector)
-
-    def child(selector: String): ChildExpr = new ChildExpr(selector, self)
+    def findFirst(selector: String) = findAll(selector).head
 
     def children(selector: String): ChildrenExpr = new ChildrenExpr(selector, self)
-
     def \(selector: String) = children(selector)
+    def child(selector: String) = children(selector).head
 
     def text: Extraction[String] = self.andOptional(_.text)
 

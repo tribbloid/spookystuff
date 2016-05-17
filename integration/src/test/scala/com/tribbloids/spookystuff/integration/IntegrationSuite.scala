@@ -3,7 +3,8 @@ package com.tribbloids.spookystuff.integration
 import java.util.Date
 
 import com.tribbloids.spookystuff.dsl._
-import com.tribbloids.spookystuff.utils.{TestHelper, Utils}
+import com.tribbloids.spookystuff.tests.TestHelper
+import com.tribbloids.spookystuff.utils.Utils
 import com.tribbloids.spookystuff.{DirConf, SpookyConf, SpookyContext}
 import org.apache.spark.SparkContext
 import org.apache.spark.sql.SQLContext

@@ -4,9 +4,9 @@ import com.tribbloids.spookystuff.SpookyEnvSuite
 import org.apache.spark.SparkException
 
 case class Whatever(str: String)
-case class WhateverAgain(str: String) extends TestNotSerializableMixin
+case class WhateverAgain(str: String) extends NOTSerializableMixinSuite
 
-class TestNotSerializableMixin extends SpookyEnvSuite {
+class NOTSerializableMixinSuite extends SpookyEnvSuite {
 
   test("case class is serializable") {
     val whatever = new Whatever("abc")

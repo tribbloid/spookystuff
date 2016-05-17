@@ -32,8 +32,8 @@ import scala.collection.Map
   */
 //TODO: rename?
 case class FetchedDataset(
-                       plan: ExecutionPlan
-                     ) extends FetchedRDDAPI {
+                           plan: ExecutionPlan
+                         ) extends FetchedRDDAPI {
 
   import Implicits._
   import scala.Ordering.Implicits._
@@ -217,29 +217,29 @@ case class FetchedDataset(
   /**
     * extract expressions before the block and scrape all temporary KV after
     */
-//  def _extractTempDuring(exprs: Expression[Any]*)(f: PageRowRDD => PageRowRDD): PageRowRDD = {
-//
-//    val tempFields = exprs.map(_.field).filter(_.isWeak)
-//
-//    val result = f(this)
-//
-//    result.remove(tempFields: _*)
-//  }
-//
-//  def _extractInvisibleDuring(exprs: Expression[Any]*)(f: PageRowRDD => PageRowRDD): PageRowRDD = {
-//
-//    val internalFields = exprs.map(_.field).filter(_.isInvisible)
-//
-//    val result = f(this)
-//    val updateExpr = internalFields.map {
-//      field =>
-//        new GetExpr(field) ~! field.copy(isInvisible = false)
-//    }
-//
-//    result
-//      .extract(updateExpr: _*)
-//      .remove(internalFields: _*)
-//  }
+  //  def _extractTempDuring(exprs: Expression[Any]*)(f: PageRowRDD => PageRowRDD): PageRowRDD = {
+  //
+  //    val tempFields = exprs.map(_.field).filter(_.isWeak)
+  //
+  //    val result = f(this)
+  //
+  //    result.remove(tempFields: _*)
+  //  }
+  //
+  //  def _extractInvisibleDuring(exprs: Expression[Any]*)(f: PageRowRDD => PageRowRDD): PageRowRDD = {
+  //
+  //    val internalFields = exprs.map(_.field).filter(_.isInvisible)
+  //
+  //    val result = f(this)
+  //    val updateExpr = internalFields.map {
+  //      field =>
+  //        new GetExpr(field) ~! field.copy(isInvisible = false)
+  //    }
+  //
+  //    result
+  //      .extract(updateExpr: _*)
+  //      .remove(internalFields: _*)
+  //  }
 
   def flatten(
                expr: Extraction[Any],
@@ -248,10 +248,10 @@ case class FetchedDataset(
                sampler: Sampler[Any] = spooky.conf.defaultFlattenSampler
              ): FetchedDataset = {
 
-    val extracted = if  (expr.isInstanceOf[GetExpr]) this
-    else this.extract(expr)
+    val resolvedExpr = this.plan.resolveAlias(expr)
 
-    val resolvedExpr = extracted.plan.resolveAlias(expr)
+    val extracted = if  (resolvedExpr.isInstanceOf[GetExpr]) this
+    else this.extract(resolvedExpr)
 
     val effectiveOrdinalField = Option(ordinalField) match {
       case Some(ff) =>

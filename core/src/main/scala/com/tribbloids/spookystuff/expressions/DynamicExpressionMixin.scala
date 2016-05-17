@@ -4,6 +4,7 @@ import scala.language.dynamics
 
 object DynamicExpressionLike {
 
+  //TODO: add ClassTag
   def combineDynamically[T, R](
                                 v1: T,
                                 lifted: T => Option[R],

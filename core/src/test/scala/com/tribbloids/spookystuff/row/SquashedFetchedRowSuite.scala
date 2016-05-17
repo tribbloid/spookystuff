@@ -1,8 +1,9 @@
 package com.tribbloids.spookystuff.row
 
 import com.tribbloids.spookystuff.SpookyEnvSuite
-import com.tribbloids.spookystuff.actions.{Snapshot, Visit}
+import com.tribbloids.spookystuff.actions.{ActionLike, Snapshot, Trace, Visit}
 import com.tribbloids.spookystuff.doc.Fetched
+import org.apache.spark.sql.catalyst.ScalaReflection
 
 /**
   * Created by peng on 05/04/16.
@@ -19,7 +20,7 @@ class SquashedFetchedRowSuite extends SpookyEnvSuite {
 
   test("['a 'b 'a 'b].grouping yields ['a 'b] ['a 'b]") {
     val trace = List(
-      Visit(STATIC_WIKIPEDIA_URI),
+      Visit(HTML_URL),
       Snapshot() ~ 'a,
       Snapshot() ~ 'b,
       Snapshot() ~ 'a,
@@ -35,4 +36,10 @@ class SquashedFetchedRowSuite extends SpookyEnvSuite {
 
     assert(groupedNames == Seq("ab", "ab"))
   }
+
+  //TODO: enable
+//  test("Trace has a schema encoder") {
+//    val schema = ScalaReflection.schemaFor[Seq[ActionLike]]
+//    println(schema)
+//  }
 }

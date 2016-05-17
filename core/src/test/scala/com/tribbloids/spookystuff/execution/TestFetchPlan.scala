@@ -15,7 +15,7 @@ class TestFetchPlan extends SpookyEnvSuite {
 
     val rdd1 = spooky
       .fetch(
-        Wget(STATIC_WIKIPEDIA_URI)
+        Wget(HTML_URL)
       )
 
     println(rdd1.plan.toString)
@@ -25,7 +25,7 @@ class TestFetchPlan extends SpookyEnvSuite {
 
     val rdd1 = spooky
       .fetch(
-        Wget(STATIC_WIKIPEDIA_URI)
+        Wget(HTML_URL)
       )
     rdd1.dataRDD.count()
 
@@ -36,7 +36,7 @@ class TestFetchPlan extends SpookyEnvSuite {
 
     val rdd1 = spooky
       .fetch(
-        Wget(STATIC_WIKIPEDIA_URI)
+        Wget(HTML_URL)
       )
 
     rdd1.count()
@@ -55,7 +55,7 @@ class TestFetchPlan extends SpookyEnvSuite {
 
     val rdd1 = src
       .fetch(
-        Wget(STATIC_WIKIPEDIA_URI),
+        Wget(HTML_URL),
         fetchOptimizer = FetchOptimizers.WebCacheAware,
         partitionerFactory = {v => partitioner}
       )
@@ -71,7 +71,7 @@ class TestFetchPlan extends SpookyEnvSuite {
     val rdd1 = spooky
       .extract("abc" ~ 'dummy)
       .fetch(
-        Wget(STATIC_WIKIPEDIA_URI),
+        Wget(HTML_URL),
         fetchOptimizer = FetchOptimizers.WebCacheAware,
         partitionerFactory = {v => partitioner}
       )
@@ -81,7 +81,7 @@ class TestFetchPlan extends SpookyEnvSuite {
 
     val rdd2 = rdd1
       .fetch(
-        Wget(STATIC_WIKIPEDIA_URI),
+        Wget(HTML_URL),
         fetchOptimizer = FetchOptimizers.WebCacheAware,
         partitionerFactory = {v => partitioner2}
       )

@@ -1,7 +1,8 @@
 package com.tribbloids.spookystuff
 
 import com.tribbloids.spookystuff.dsl.{DriverFactories, DriverFactory}
-import com.tribbloids.spookystuff.utils.{TestHelper, Utils}
+import com.tribbloids.spookystuff.tests.{RemoteDocsMixin, TestHelper}
+import com.tribbloids.spookystuff.utils.Utils
 import org.apache.spark.sql.SQLContext
 import org.apache.spark.{SparkConf, SparkContext}
 import org.scalatest.{BeforeAndAfter, BeforeAndAfterAll, FunSuite, Retries}
@@ -9,7 +10,7 @@ import org.scalatest.{BeforeAndAfter, BeforeAndAfterAll, FunSuite, Retries}
 /**
  * Created by peng on 11/30/14.
  */
-abstract class SpookyEnvSuite extends FunSuite with BeforeAndAfter with BeforeAndAfterAll with Retries {
+abstract class SpookyEnvSuite extends FunSuite with BeforeAndAfter with BeforeAndAfterAll with Retries with RemoteDocsMixin {
 
   var sc: SparkContext = _
   var sql: SQLContext = _
@@ -64,7 +65,4 @@ abstract class SpookyEnvSuite extends FunSuite with BeforeAndAfter with BeforeAn
       )
     )
   }
-
-  final val STATIC_WIKIPEDIA_URI = "http://tribbloid.github.io/spookystuff/test/Wikipedia.html"
-  final val REAL_WIKIPEDIA_URI = "http://www.wikipedia.org"
 }

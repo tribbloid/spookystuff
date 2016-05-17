@@ -5,11 +5,12 @@ import com.tribbloids.spookystuff.doc.Fetched
 import com.tribbloids.spookystuff.row.FetchedRow
 import com.tribbloids.spookystuff.session.Session
 import org.apache.spark.sql.catalyst.trees.TreeNode
+import org.apache.spark.sql.types.{DataType, UserDefinedType}
 
 /**
  * Created by peng on 11/7/14.
  */
-abstract class ActionLike extends TreeNode[ActionLike] with Serializable {
+abstract class ActionLike extends TreeNode[ActionLike] with Product with Serializable {
 
   final def interpolate(pr: FetchedRow, context: SpookyContext): Option[this.type] = {
     val option = this.doInterpolate(pr, context)
@@ -35,4 +36,14 @@ abstract class ActionLike extends TreeNode[ActionLike] with Serializable {
   def trunk: Option[this.type]
 
   def apply(session: Session): Seq[Fetched]
+}
+
+class ActionLikeUDT extends UserDefinedType[ActionLike] {
+  override def sqlType: DataType = ???
+
+  override def serialize(obj: Any): Any = ???
+
+  override def userClass: Class[ActionLike] = classOf[ActionLike]
+
+  override def deserialize(datum: Any): ActionLike = ???
 }

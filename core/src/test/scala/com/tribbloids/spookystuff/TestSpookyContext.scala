@@ -61,13 +61,13 @@ class TestSpookyContext extends SpookyEnvSuite{
 
     val rdd1 = spooky
       .fetch(
-        Wget(STATIC_WIKIPEDIA_URI)
+        Wget(HTML_URL)
       )
     rdd1.count()
 
     val rdd2 = spooky
       .fetch(
-        Wget(STATIC_WIKIPEDIA_URI)
+        Wget(HTML_URL)
       )
       
     rdd2.count()

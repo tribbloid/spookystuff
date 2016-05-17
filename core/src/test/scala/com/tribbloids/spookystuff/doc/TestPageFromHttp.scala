@@ -4,26 +4,14 @@ import com.tribbloids.spookystuff.actions.Wget
 import com.tribbloids.spookystuff.{SpookyEnvSuite, dsl}
 import org.apache.commons.csv.CSVFormat
 
-/**
- * Created by peng on 10/17/14.
- */
 class TestPageFromHttp extends SpookyEnvSuite {
 
   import dsl._
 
-  def htmlUrl = "http://tribbloid.github.io/spookystuff/test/Wikipedia.html"
-  def jsonUrl = "http://tribbloid.github.io/spookystuff/test/tribbloid.json"
-  //TODO: add this after fetch can semi-auto-detect content-type
-  def jsonUrlIncorrectContentType = "https://raw.githubusercontent.com/tribbloid/spookystuff/master/core/src/test/resources/site/tribbloid.json"
-  def pngUrl = "https://www.google.ca/images/srpr/logo11w.png"
-  def pdfUrl = "http://stlab.adobe.com/wiki/images/d/d3/Test.pdf"
-  def xmlUrl = "http://tribbloid.github.io/spookystuff/test/pom.xml"
-  def csvUrl = "http://tribbloid.github.io/spookystuff/test/table.csv"
-
   test("wget html, save and load") {
 
     val results = (
-      Wget(htmlUrl) :: Nil
+      Wget(HTML_URL) :: Nil
     ).fetch(spooky)
 
     val resultsList = results.toArray
@@ -44,7 +32,7 @@ class TestPageFromHttp extends SpookyEnvSuite {
   test("wget json, save and load") {
 
     val results = (
-      Wget(jsonUrl) :: Nil
+      Wget(JSON_URL) :: Nil
       ).fetch(spooky)
 
     val resultsList = results.toArray
@@ -69,7 +57,7 @@ class TestPageFromHttp extends SpookyEnvSuite {
   test("wget image, save and load") {
 
     val results = (
-      Wget(pngUrl) :: Nil
+      Wget(PNG_URL) :: Nil
     ).fetch(spooky)
 
     val resultsList = results.toArray
@@ -90,7 +78,7 @@ class TestPageFromHttp extends SpookyEnvSuite {
   test("wget pdf, save and load") {
 
     val results = (
-      Wget(pdfUrl) :: Nil
+      Wget(PDF_URL) :: Nil
     ).fetch(spooky)
 
     val resultsList = results.toArray
@@ -110,7 +98,7 @@ class TestPageFromHttp extends SpookyEnvSuite {
 
   test("childrenWithSiblings") {
     val page = (
-      Wget(htmlUrl) :: Nil
+      Wget(HTML_URL) :: Nil
       ).fetch(spooky).head.asInstanceOf[Doc]
 
     val ranges = page.findAllWithSiblings("a.link-box em", -2 to 1)
@@ -125,7 +113,7 @@ class TestPageFromHttp extends SpookyEnvSuite {
 
   test("childrenWithSiblings with overlapping elimiation") {
     val page = (
-      Wget(htmlUrl) :: Nil
+      Wget(HTML_URL) :: Nil
       ).fetch(spooky).head.asInstanceOf[Doc]
 
     val ranges = page.findAllWithSiblings("div.central-featured-lang[lang^=e]", -2 to 2)
@@ -144,7 +132,7 @@ class TestPageFromHttp extends SpookyEnvSuite {
   test("wget xml, save and load") {
 
     val results = (
-      Wget(xmlUrl) :: Nil
+      Wget(XML_URL) :: Nil
       ).fetch(spooky)
 
     val resultsList = results.toArray
@@ -169,7 +157,7 @@ class TestPageFromHttp extends SpookyEnvSuite {
   test("wget csv, save and load") {
 
     val results = (
-      Wget(csvUrl) :: Nil
+      Wget(CSV_URL) :: Nil
       ).fetch(spooky)
 
     val resultsList = results.toArray

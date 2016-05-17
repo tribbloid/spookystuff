@@ -1,4 +1,4 @@
-package com.tribbloids.spookystuff.utils
+package com.tribbloids.spookystuff.tests
 
 import java.io.File
 import java.util.Properties
@@ -9,24 +9,24 @@ import org.slf4j.LoggerFactory
 
 object TestHelper {
 
-  val processors: Int = Runtime.getRuntime.availableProcessors()
+  val numProcessors: Int = Runtime.getRuntime.availableProcessors()
 
   val tempPath = System.getProperty("user.dir") + "/temp/"
 
-  val prop = new Properties()
+  val props = new Properties()
   try {
-    prop.load(ClassLoader.getSystemResourceAsStream("rootkey.csv"))
+    props.load(ClassLoader.getSystemResourceAsStream("rootkey.csv"))
   }
   catch {
     case e: Throwable =>
       println("rootkey.csv is missing")
   }
 
-  val S3Path = Option(prop.getProperty("S3Path"))
+  val S3Path = Option(props.getProperty("S3Path"))
   if (S3Path.isEmpty) println("Test on AWS S3 with credentials provided by rootkey.csv")
 
-  val AWSAccessKeyId = Option(prop.getProperty("AWSAccessKeyId"))
-  val AWSSecretKey = Option(prop.getProperty("AWSSecretKey"))
+  val AWSAccessKeyId = Option(props.getProperty("AWSAccessKeyId"))
+  val AWSSecretKey = Option(props.getProperty("AWSSecretKey"))
   AWSAccessKeyId.foreach{
     System.setProperty("fs.s3.awsAccessKeyId", _) //TODO: useless here? set in conf directly?
   }
@@ -34,7 +34,7 @@ object TestHelper {
     System.setProperty("fs.s3.awsSecretAccessKey", _)
   }
 
-  val clusterSize = Option(prop.getProperty("ClusterSize")).map(_.toInt)
+  val clusterSize = Option(props.getProperty("ClusterSize")).map(_.toInt)
 
   //if SPARK_PATH & ClusterSize in rootkey.csv is detected, use local-cluster simulation mode
   //otherwise use local mode
@@ -48,13 +48,13 @@ object TestHelper {
 
     val sparkHome = System.getenv("SPARK_HOME")
     if (sparkHome == null || clusterSize.isEmpty) {
-      val masterStr = s"local[$processors,4]"
+      val masterStr = s"local[$numProcessors,4]"
       LoggerFactory.getLogger(this.getClass).info("initializing SparkContext in local mode:" + masterStr)
       conf.setMaster(masterStr)
     }
     else {
       val size = clusterSize.get
-      val masterStr = s"local-cluster[$size,${processors/size},1024]"
+      val masterStr = s"local-cluster[$size,${numProcessors/size},1024]"
       println(s"initializing SparkContext in local-cluster simulation mode:" + masterStr)
       conf.setMaster(masterStr) //TODO: more than 1 nodes may cause some counters to have higher readings
     }

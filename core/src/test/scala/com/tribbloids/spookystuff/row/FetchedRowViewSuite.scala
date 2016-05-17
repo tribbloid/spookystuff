@@ -15,21 +15,21 @@ class FetchedRowViewSuite extends SpookyEnvSuite {
 
   test("get page") {
     val pages = (
-      Wget(STATIC_WIKIPEDIA_URI) :: Nil
+      Wget(HTML_URL) :: Nil
       ).fetch(spooky)
     val row = FetchedRow(pageLikes = pages)
 
     val page1 = row.getOnlyPage
     assert(page1.get === pages.head)
 
-    println(Wget(STATIC_WIKIPEDIA_URI).toString())
-    val page2 = row.getPage(Wget(STATIC_WIKIPEDIA_URI).toString())
+    println(Wget(HTML_URL).toString())
+    val page2 = row.getPage(Wget(HTML_URL).toString())
     assert(page2.get === pages.head)
   }
 
   test("get unstructured") {
     val pages = (
-      (Wget(STATIC_WIKIPEDIA_URI) as 'pp) :: Nil
+      (Wget(HTML_URL) as 'pp) :: Nil
       ).fetch(spooky)
     val row = FetchedRow(pageLikes = pages)
       .squash
