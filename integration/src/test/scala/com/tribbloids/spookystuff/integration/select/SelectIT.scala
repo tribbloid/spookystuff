@@ -11,22 +11,22 @@ class SelectIT extends IntegrationSuite {
 
   override def doMain() {
 
-    val pageRowRDD = spooky
+    val set = spooky
       .fetch(
-        Visit("http://www.wikipedia.org/")
+        Visit(HTML_URL)
       )
       .select(
         S.uri,
         S.timestamp,
-//        S"div.central-featured-lang".head ~ 'element,
-//        S"div.central-featured-lang" ~ 'elements,
+        //        S"div.central-featured-lang".head ~ 'element,
+        //        S"div.central-featured-lang" ~ 'elements,
         S"div.central-featured-lang em".text ~ 'title,
         S"div.central-featured-lang strong".texts ~ 'langs,
         S"a.link-box em".expand(-2 to 1).texts ~ 'expanded
       )
       .persist()
 
-      val df = pageRowRDD
+    val df = set
       .toDF(sort = true)
 
     assert(
@@ -42,7 +42,7 @@ class SelectIT extends IntegrationSuite {
     val finishTime = System.currentTimeMillis()
     assert(rows.length === 1)
     assert(rows.head.size === 5)
-    assert(rows.head.getString(0) contains "://www.wikipedia.org/")
+    assert(rows.head.getString(0) contains "spookystuff/test/Wikipedia.html")
     val parsedTime = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'").parse(rows.head.getString(1)).getTime
     assert(parsedTime < finishTime +2000) //due to round-off error
     assert(parsedTime > finishTime-60000) //long enough even after the second time it is retrieved from the cache
@@ -56,28 +56,31 @@ class SelectIT extends IntegrationSuite {
     assert(expanded.head === "English The Free Encyclopedia")
 
     intercept[QueryException] {
-      pageRowRDD.select(
+      set.select(
         S"div.central-featured-lang strong".text ~ 'title
       )
     }
 
-    val RDD2 = pageRowRDD
+    val rdd2 = set
       .select(
         S"div.central-featured-lang strong".text ~+ 'title
       )
+
+    val df2 = rdd2
       .toDF(sort = true)
 
     assert(
-      RDD2.schema.fieldNames ===
+      df2.schema.fieldNames ===
         "_c1" ::
           "_c2" ::
           "title" ::
           "langs" ::
-          "expanded" :: Nil
+          "expanded" ::
+          Nil
     )
 
-    val rows2 = RDD2.collect()
-    val titles = rows2.head(2).asInstanceOf[Iterable[String]]
+    val rows2 = df2.collect()
+    val titles = rows2.head.getAs[Iterable[String]]("title")
     assert(titles === Seq("The Free Encyclopedia", "English"))
   }
 

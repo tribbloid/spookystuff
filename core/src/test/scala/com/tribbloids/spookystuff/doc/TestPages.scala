@@ -15,13 +15,13 @@ class TestPages extends SpookyEnvSuite {
   lazy val wgetPage = (Wget("http://en.wikipedia.org").as('oldWget)::Nil).fetch(spooky).map(_.asInstanceOf[Doc])
 
   test("cache and restore") {
-    spooky.conf.pageExpireAfter = 2.seconds
+    spooky.conf.docsLifeSpan = 2.seconds
 
-    assert(page.head.uid === PageUID(Visit("http://en.wikipedia.org") :: Snapshot().as('U) :: Nil, Snapshot()))
+    assert(page.head.uid === DocUID(Visit("http://en.wikipedia.org") :: Snapshot().as('U) :: Nil, Snapshot()))
 
-    PageUtils.autoCache(page, spooky)
+    DocUtils.autoCache(page, spooky)
 
-    val loadedPages = PageUtils.autoRestore(page.head.uid.backtrace,spooky).map(_.asInstanceOf[Doc])
+    val loadedPages = DocUtils.autoRestore(page.head.uid.backtrace,spooky).map(_.asInstanceOf[Doc])
 
     assert(loadedPages.length === 1)
     assert(page.head.content === loadedPages.head.content)
@@ -29,13 +29,13 @@ class TestPages extends SpookyEnvSuite {
   }
 
   test ("local cache") {
-    spooky.conf.pageExpireAfter = 5.seconds
+    spooky.conf.docsLifeSpan = 5.seconds
 
-    PageUtils.autoCache(page, spooky)
+    DocUtils.autoCache(page, spooky)
 
     val newTrace = Visit("http://en.wikipedia.org") :: Snapshot().as('new) :: Nil
 
-    val page2 = PageUtils.autoRestore(newTrace, spooky).map(_.asInstanceOf[Doc])
+    val page2 = DocUtils.autoRestore(newTrace, spooky).map(_.asInstanceOf[Doc])
 
     assert(page2.size === 1)
     assert(page2.head === page.head)
@@ -44,10 +44,10 @@ class TestPages extends SpookyEnvSuite {
 
     Thread.sleep(5000)
 
-    val page3 = PageUtils.autoRestore(page.head.uid.backtrace, spooky)
+    val page3 = DocUtils.autoRestore(page.head.uid.backtrace, spooky)
     assert(page3 === null)
 
-    spooky.conf.pageExpireAfter = 30.days
+    spooky.conf.docsLifeSpan = 30.days
 
     assert(page2.size === 1)
     assert(page2.head === page.head)
@@ -55,13 +55,13 @@ class TestPages extends SpookyEnvSuite {
   }
 
   test ("wget local cache") {
-    spooky.conf.pageExpireAfter = 2.seconds
+    spooky.conf.docsLifeSpan = 2.seconds
 
-    PageUtils.autoCache(wgetPage, spooky)
+    DocUtils.autoCache(wgetPage, spooky)
 
     val newTrace = Wget("http://en.wikipedia.org").as('newWget) :: Nil
 
-    val page2 = PageUtils.autoRestore(newTrace, spooky).map(_.asInstanceOf[Doc])
+    val page2 = DocUtils.autoRestore(newTrace, spooky).map(_.asInstanceOf[Doc])
 
     assert(page2.size === 1)
     assert(page2.head === wgetPage.head)
@@ -70,10 +70,10 @@ class TestPages extends SpookyEnvSuite {
 
     Thread.sleep(2000)
 
-    val page3 = PageUtils.autoRestore(wgetPage.head.uid.backtrace, spooky)
+    val page3 = DocUtils.autoRestore(wgetPage.head.uid.backtrace, spooky)
     assert(page3 === null)
 
-    spooky.conf.pageExpireAfter = 30.days
+    spooky.conf.docsLifeSpan = 30.days
 
     assert(page2.size === 1)
     assert(page2.head === wgetPage.head)

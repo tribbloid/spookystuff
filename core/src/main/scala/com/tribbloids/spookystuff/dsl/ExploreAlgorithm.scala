@@ -1,31 +1,123 @@
 package com.tribbloids.spookystuff.dsl
 
-import com.tribbloids.spookystuff.execution.{ExploreAlgorithmImpl, ShortestPathImpl}
-import com.tribbloids.spookystuff.extractors._
+import com.tribbloids.spookystuff.actions._
+import com.tribbloids.spookystuff.dsl.ExploreAlgorithms.ExploreImpl
+import com.tribbloids.spookystuff.execution.{ExploreParams, SchemaContext}
 import com.tribbloids.spookystuff.row._
 
-/**
-  * Created by peng on 1/27/15.
-  */
 sealed trait ExploreAlgorithm {
 
   def getImpl(
-               depthField: Field,
-               ordinalField: Field,
-               extracts: Seq[NamedExtr[Any]]
-             ): ExploreAlgorithmImpl
+               params: ExploreParams,
+               schema: SchemaContext
+             ): ExploreImpl
 }
+
 object ExploreAlgorithms {
+
+  trait ExploreImpl {
+
+    val params: ExploreParams
+    val schema: SchemaContext
+
+    val openReducer: RowReducer
+    val visitedReducer: RowReducer //precede eliminator
+    val ordering: RowOrdering
+    val eliminator: RowEliminator
+
+    final lazy val pairOrdering = ordering.on {
+      v: (Trace, Iterable[DataRow]) => v._2
+    }
+  }
+
   case object ShortestPath extends ExploreAlgorithm {
 
     override def getImpl(
-                          depthField: Field,
-                          ordinalField: Field,
-                          extracts: Seq[NamedExtr[Any]]
-                        ): ExploreAlgorithmImpl = ShortestPathImpl(depthField, ordinalField, extracts)
+                          params: ExploreParams,
+                          schema: SchemaContext
+                        ) = Impl(params, schema)
+
+    case class Impl(
+                     override val params: ExploreParams,
+                     schema: SchemaContext
+                   ) extends ExploreImpl {
+
+      import params._
+
+      import scala.Ordering.Implicits._
+
+      override val openReducer: RowReducer = {
+        (v1, v2) =>
+          (v1 ++ v2)
+            .groupBy(_.groupID)
+            .values
+            .minBy(_.head.sortIndex(Seq(depthField, ordinalField)))
+      }
+
+      override val visitedReducer: RowReducer = {
+        (v1, v2) =>
+          (v1 ++ v2)
+            .groupBy(_.groupID)
+            .values
+            .minBy(_.head.sortIndex(Seq(depthField, ordinalField)))
+      }
+
+      override val ordering: RowOrdering = Ordering.by {
+        v: Iterable[DataRow] =>
+          assert(v.size == 1)
+          v.head.getInt(depthField)
+      }
+
+      override val eliminator: RowEliminator = {
+        (v1, v2) =>
+          val visitedDepth = v2.head.getInt(depthField)
+          v1.filter {
+            row =>
+              row.getInt(depthField) < visitedDepth
+          }
+      }
+    }
   }
+
+  //move reduce of openSet to elimination, should have identical result
+  //case class ShortestPathImpl2(
+  //                              depthField: IndexedField,
+  //                              ordinalField: IndexedField,
+  //                              extracts: Seq[Expression[Any]]
+  //                            ) extends ExploreAlgorithmImpl {
+  //
+  //  import scala.Ordering.Implicits._
+  //
+  //  override def openReducer: RowReducer = {
+  //    _ ++ _
+  //  }
+  //
+  //  override def visitedReducer: RowReducer = {
+  //    (v1, v2) =>
+  //      Array((v1 ++ v2).minBy(_.sortIndex(Seq(depthField, ordinalField))))
+  //  }
+  //
+  //  override def ordering: RowOrdering = Ordering.by{
+  //    v: Iterable[DataRow] =>
+  //      assert(v.size == 1)
+  //      v.head.getInt(depthField).get
+  //  }
+  //
+  //  override def eliminator: RowEliminator = {
+  //    (v1, v2) =>
+  //      assert(v2.size == 1)
+  //      val visitedDepth = v2.head.getInt(depthField).get
+  //      val filtered = v1.filter {
+  //        row =>
+  //          row.getInt(depthField).get < visitedDepth
+  //      }
+  //      if (filtered.isEmpty) filtered
+  //      else Some(filtered.minBy(_.sortIndex(Seq(depthField, ordinalField))))
+  //  }
+  //}
 }
 
+//TODO: finish these
 //case object AllSimplePath extends ExploreOptimizer
 
 //case object AllPath extends ExploreOptimizer {

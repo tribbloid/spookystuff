@@ -1,21 +1,31 @@
 package com.tribbloids.spookystuff.execution
 
-import com.tribbloids.spookystuff.QueryException
-import com.tribbloids.spookystuff.actions._
+import com.tribbloids.spookystuff.actions.Trace
 import com.tribbloids.spookystuff.caching.ExploreSharedVisitedCache
-import com.tribbloids.spookystuff.dsl.{FetchOptimizer, FetchOptimizers, JoinType}
+import com.tribbloids.spookystuff.dsl.{ExploreAlgorithm, FetchOptimizer, FetchOptimizers, JoinType}
 import com.tribbloids.spookystuff.extractors._
 import com.tribbloids.spookystuff.row.{SquashedFetchedRow, _}
 import org.apache.spark.Partitioner
 import org.apache.spark.rdd.RDD
+import org.apache.spark.sql.types.IntegerType
 
 import scala.util.Random
 
-//TODO: test if lazy execution works on it.
-case class ExplorePlan(
-                        child: ExecutionPlan,
+case class ExploreParams(
+                          depthField: Field, //can be null
+                          ordinalField: Field, //can be null
+                          range: Range,
+                          extracts: Seq[Extractor[Any]]
+                        ) {
 
-                        expr: NamedExtr[Any],
+}
+
+//TODO: test if lazy execution works on it.
+//TODO: what's the relationship between graph explore and drone explore in Prometheus?
+case class ExplorePlan(
+                        override val child: ExecutionPlan,
+
+                        on: Alias[FetchedRow, Any],
                         sampler: Sampler[Any],
                         joinType: JoinType,
 
@@ -23,30 +33,70 @@ case class ExplorePlan(
                         partitionerFactory: RDD[_] => Partitioner,
                         fetchOptimizer: FetchOptimizer,
 
-                        algorithmImpl: ExploreAlgorithmImpl,
+                        params: ExploreParams,
+                        exploreAlgorithm: ExploreAlgorithm,
                         miniBatch: Int,
                         //TODO: stopping condition can be more than this,
                         //TODO: test if proceed to next batch works
                         checkpointInterval: Int // set to Int.MaxValue to disable checkpointing,
+                      ) extends UnaryPlan(child) with InjectBeaconRDDPlan {
 
-                      ) extends ExecutionPlan(
-  child,
-  {
-    val extractFields = algorithmImpl.extracts.map(_.field)
-    val newFields = extractFields ++ Option(algorithmImpl.depthField) ++ Option(algorithmImpl.ordinalField)
-    newFields.groupBy(identity).foreach{
-      v =>
-        if (v._2.size > 1) throw new QueryException(s"Field ${v._1.name} already exist")
+  val resolver = child.schema.newResolver
+
+  val _on: Resolved[Any] = resolver.resolve(on).head
+  val _params: ExploreParams = {
+
+    val effectiveDepthField = {
+      Option(params.depthField) match {
+        case Some(field) =>
+          field
+        case None =>
+          Field(_on.field.name + "_depth", isWeak = true)
+      }
     }
-    Some(child.fields ++ Option(algorithmImpl.depthField) ++ Option(algorithmImpl.ordinalField) ++ extractFields)
-  }
-) with CreateOrInheritBeaconRDDPlan {
-  //TODO: detect in-plan field conflict!
+      .copy(depthRangeOpt = Some(params.range))
 
-  import com.tribbloids.spookystuff.utils.Implicits._
+    val effectiveOrdinalField = Option(params.ordinalField) match {
+      case Some(ff) =>
+        ff.copy(isOrdinal = true)
+      case None =>
+        Field(_on.field.name + "_ordinal", isWeak = true, isOrdinal = true)
+    }
+
+    params.copy(
+      ordinalField = effectiveOrdinalField,
+      depthField = effectiveDepthField
+    )
+  }
+
+  val depth_0: Resolved[Int] = resolver.resolve(Literal(0) withAlias _params.depthField).head
+  val depth_++ : Resolved[Int] = resolver.resolve(
+    GetExpr(_params.depthField).typed[Int].andFn(_ + 1) withAlias _params.depthField.!
+  ).head
+  val _ordinal: TypedField = resolver.resolveTyped(TypedField(_params.ordinalField, IntegerType)).head
+  val _extracts: Seq[Resolved[Any]] = resolver.resolve(_params.extracts: _*)
+
+  override val schema: SchemaContext = resolver.build
+
+//  {
+//    val extractFields = _extracts.map(_.field)
+//    val newFields = extractFields ++ Option(params.depthField) ++ Option(params.ordinalField)
+//    newFields.groupBy(identity).foreach{
+//      v =>
+//        if (v._2.size > 1) throw new QueryException(s"Field ${v._1.name} already exist")
+//    }
+//    child.schema ++#
+//      Option(params.depthField) ++#
+//      Option(params.ordinalField) ++
+//      _extracts.map(_.typedField)
+//  }
+
+  val impl = exploreAlgorithm.getImpl(_params, this.schema)
+
+  import com.tribbloids.spookystuff.utils.ImplicitUtils._
 
   override def doExecute(): SquashedFetchedRDD = {
-    assert(algorithmImpl.depthField != null)
+    assert(_params.depthField != null)
 
     val execID = Random.nextLong()
 
@@ -55,24 +105,25 @@ case class ExplorePlan(
 
     val rowFn: SquashedFetchedRow => SquashedFetchedRow = {
       row: SquashedFetchedRow =>
-        row.extract(algorithmImpl.extracts: _*)
+        row.extract(_extracts: _*)
     }
 
-    val state0RDD: RDD[(Trace, Open_Visited)] = child.rdd(true)
+    val state0RDD: RDD[(Trace, Open_Visited)] = child.rdd()
       .flatMap {
         row0 =>
-          val depth0 = rowFn.apply(row0.extract(Literal(0) named algorithmImpl.depthField))
-          val visited0 = if (algorithmImpl.range.contains(0)) {
+          val row0WithDepth = row0.extract(depth_0)
+          val depth0 = rowFn.apply(row0WithDepth)
+          val visited0 = if (_params.range.contains(0)) {
             //extract on selfRDD, add into visited set.
-            Some(depth0.trace -> Open_Visited(visited = Some(depth0.dataRows)))
+            Some(depth0.lazyDocs.trace -> Open_Visited(visited = Some(depth0.dataRows)))
           }
           else {
             None
           }
 
           val open0 = depth0
-            .extract(expr)
-            .flattenData(expr.field, algorithmImpl.ordinalField, joinType.isLeft, sampler)
+            .extract(_on)
+            .flattenData(_on.field, _params.ordinalField, joinType.isLeft, sampler)
             .interpolate(traces, spooky)
             .map {
               t =>
@@ -82,11 +133,12 @@ case class ExplorePlan(
           open0 ++ visited0
       }
 
+
     val combinedReducer: (Open_Visited, Open_Visited) => Open_Visited = {
       (v1, v2) =>
         Open_Visited (
-          open = (v1.open ++ v2.open).map(_.toIterable).reduceOption(algorithmImpl.openReducer).map(_.toArray),
-          visited = (v1.visited ++ v2.visited).map(_.toIterable).reduceOption(algorithmImpl.visitedReducer).map(_.toArray)
+          open = (v1.open ++ v2.open).map(_.toIterable).reduceOption(impl.openReducer).map(_.toArray),
+          visited = (v1.visited ++ v2.visited).map(_.toIterable).reduceOption(impl.visitedReducer).map(_.toArray)
         )
     }
 
@@ -108,14 +160,15 @@ case class ExplorePlan(
         itr =>
           val state = new ExploreShard(itr, execID)
           val state_+ = state.execute(
-            expr,
+            _on,
             sampler,
             joinType,
 
             traces
           )(
             miniBatch,
-            algorithmImpl,
+            impl,
+            depth_++,
             spooky
           )(
             rowFn
@@ -154,7 +207,7 @@ case class ExplorePlan(
 
           visitedOpt.map {
             visited =>
-              SquashedFetchedRow(visited, v._1)
+              SquashedFetchedRow(visited, LazyDocs(actions = v._1.toArray))
           }
       }
 
@@ -162,17 +215,17 @@ case class ExplorePlan(
   }
 
   def preFetchReduce(
-                       state0RDD: RDD[(Trace, Open_Visited)],
-                       reducer: (Open_Visited, Open_Visited) => Open_Visited,
-                       partitioner0: Partitioner
-                     ): RDD[(List[Action], Open_Visited)] = {
+                      state0RDD: RDD[(Trace, Open_Visited)],
+                      reducer: (Open_Visited, Open_Visited) => Open_Visited,
+                      partitioner0: Partitioner
+                    ): RDD[(Trace, Open_Visited)] = {
     fetchOptimizer match {
       case FetchOptimizers.Narrow =>
         state0RDD.reduceByKey_narrow(reducer)
       case FetchOptimizers.Wide =>
         state0RDD.reduceByKey(partitioner0, reducer)
       case FetchOptimizers.WebCacheAware =>
-        state0RDD.reduceByKey_beacon(reducer, localityBeaconRDDOpt.get)
+        state0RDD.reduceByKey_beacon(reducer, beaconRDDOpt.get)
       case _ => throw new NotImplementedError(s"${fetchOptimizer.getClass.getSimpleName} optimizer is not supported")
     }
   }

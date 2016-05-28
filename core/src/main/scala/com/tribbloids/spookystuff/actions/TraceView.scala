@@ -2,10 +2,11 @@ package com.tribbloids.spookystuff.actions
 
 import org.slf4j.LoggerFactory
 import com.tribbloids.spookystuff.row.FetchedRow
-import com.tribbloids.spookystuff.doc.{Doc, Fetched, PageUtils}
+import com.tribbloids.spookystuff.doc.{Doc, DocUtils, Fetched}
+import com.tribbloids.spookystuff.execution.SchemaContext
 import com.tribbloids.spookystuff.session.{DriverSession, NoDriverSession, Session}
 import com.tribbloids.spookystuff.utils.Utils
-import com.tribbloids.spookystuff.{RemoteDisabledException, dsl, Const, SpookyContext}
+import com.tribbloids.spookystuff.{Const, RemoteDisabledException, SpookyContext, dsl}
 
 import scala.collection.mutable.ArrayBuffer
 import scala.reflect.ClassTag
@@ -15,8 +16,8 @@ case class TraceView(
                     ) extends Actions(children) { //remember trace is not a block! its the super container that cannot be wrapped
 
   //always has output (Sometimes Empty) to handle left join
-  override def doInterpolate(pr: FetchedRow, spooky: SpookyContext): Option[this.type] = {
-    val seq = this.doInterpolateSeq(pr, spooky)
+  override def doInterpolate(pr: FetchedRow, schema: SchemaContext): Option[this.type] = {
+    val seq = this.doInterpolateSeq(pr, schema)
 
     Some(new TraceView(seq).asInstanceOf[this.type])
   }
@@ -41,7 +42,7 @@ case class TraceView(
             case page: Doc => page.autoSave(spooky)
             case _ =>
           }
-          if (spooky.conf.cacheWrite) PageUtils.autoCache(result, spooky)
+          if (spooky.conf.cacheWrite) DocUtils.autoCache(result, spooky)
         }
         else {
           assert(result.isEmpty)
@@ -57,7 +58,7 @@ case class TraceView(
     for (i <- children.indices) {
       val selfi = children(i)
       if (selfi.hasOutput){
-        val backtrace: List[Action] = selfi match {
+        val backtrace: Trace = selfi match {
           case dl: Driverless => selfi :: Nil
           case _ => children.slice(0, i).flatMap(_.trunk) :+ selfi
         }
@@ -94,7 +95,7 @@ case class TraceView(
     val pagesFromCache = if (!spooky.conf.cacheRead) Seq(null)
     else dryrun.map(
       dry =>
-        PageUtils.autoRestore(dry, spooky)
+        DocUtils.autoRestore(dry, spooky)
     )
 
     if (!pagesFromCache.contains(null)){
@@ -182,7 +183,8 @@ final case class TraceSetView(self: Set[Trace]) {
 
   def correct: Set[Trace] = self.map(_.correct)
 
-  def interpolate(row: FetchedRow, context: SpookyContext): Set[Trace] = self.flatMap(_.interpolate(row, context: SpookyContext).map(_.children))
+  def interpolate(row: FetchedRow, schema: SchemaContext): Set[Trace] =
+    self.flatMap(_.interpolate(row, schema: SchemaContext).map(_.children))
 
   def outputNames: Set[String] = self.map(_.outputNames).reduce(_ ++ _)
 }

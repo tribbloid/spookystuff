@@ -21,7 +21,7 @@ class TestWget extends SpookyEnvSuite {
       wget("http://www.whatsmyuseragent.com/") :: Nil
       ).fetch(spooky)
 
-    results.head.asInstanceOf[Doc].findAll("h3.info").texts.head
+    results.head.asInstanceOf[Doc].findAll("div.info-box span").texts.head
   }
 
   //TODO: find a test site for http!

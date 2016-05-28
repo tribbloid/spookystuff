@@ -1,160 +1,135 @@
 package com.tribbloids.spookystuff.extractors
 
 import com.tribbloids.spookystuff.doc._
-import com.tribbloids.spookystuff.row.{DataRow, Field, FetchedRow}
-import com.tribbloids.spookystuff.utils.Implicits._
+import com.tribbloids.spookystuff.execution.SchemaContext
+import com.tribbloids.spookystuff.extractors.GenExtractor.{AndThen, Leaf, Static}
+import com.tribbloids.spookystuff.row._
 import com.tribbloids.spookystuff.utils.Utils
+import org.apache.spark.sql.TypeUtils
+import org.apache.spark.sql.types._
 
+import scala.collection.TraversableOnce
 import scala.collection.immutable.ListMap
-import scala.collection.{IterableLike, TraversableOnce}
 import scala.reflect.ClassTag
 
-//just a simple wrapper for T, this is the only way to execute a action
-//this is the only serializable LiftedExpression that can be shipped remotely
-final case class Literal[+T: ClassTag](value: T) extends Extractor[T] {
 
-  override def isDefinedAt(x: (DataRow, Seq[Fetched])): Boolean = true
+object Extractors {
 
-  override def apply(v1: (DataRow, Seq[Fetched])): T = value
-
-  override def toString = "'" + value.toString + "'"
-}
-
-case object NullLiteral extends Extractor[Null]{
-
-  override def isDefinedAt(x: (DataRow, Seq[Fetched])): Boolean = false
-
-  override def apply(v1: (DataRow, Seq[Fetched])): Null = throw new MatchError("impossible")
-}
-
-case class GetExpr(field: Field) extends UnliftedExtr[Any] {
-
-  def liftApply(v1: FetchedRow): Option[Any] = {
-
-    v1.dataRow.get(field)
-      .orElse(v1.dataRow.get(field.copy(isWeak = true)))
+  def GroupIndexExpr = GenExtractor.fromFn{
+    (v1: FR) => v1.dataRow.groupIndex
   }
-}
 
-case object GroupIndexExpr extends UnliftedExtr[Int] {
-
-  def liftApply(v1: FetchedRow): Option[Int] = Some(v1.dataRow.groupIndex)
-}
-
-case class GetUnstructuredExpr(field: Field) extends UnliftedExtr[Unstructured] {
-
-  def liftApply(v1: FetchedRow): Option[Unstructured] = {
-    v1.getUnstructured(field)
-      .orElse(v1.getUnstructured(field.copy(isWeak = true)))
+  def GetUnstructuredExpr(field: Field) = GenExtractor.fromOptionFn {
+    (v1: FR) =>
+      v1.getUnstructured(field)
+        .orElse(v1.getUnstructured(field.copy(isWeak = true)))
   }
-}
 
-case class GetPageExpr(field: Field) extends UnliftedExtr[Doc] {
+  def GetPageExpr(field: Field) = GenExtractor.fromOptionFn {
+    (v1: FR) => v1.getPage(field.name)
+  }
+  def GetOnlyPageExpr = GenExtractor.fromOptionFn {
+    (v1: FR) => v1.getOnlyPage
+  }
+  def GetAllPagesExpr = GenExtractor.fromFn {
+    (v1: FR) => new Elements(v1.pages.toList)
+  }
 
-  def liftApply(v1: FetchedRow): Option[Doc] = v1.getPage(field.name)
-}
+  case class FindAllMeta(arg: Extractor[Unstructured], selector: String)
+  def FindAllExpr(arg: Extractor[Unstructured], selector: String) = arg.andFn(
+    {
+      v1: Unstructured => v1.findAll(selector)
+    },
+    Some(FindAllMeta(arg, selector))
+  )
 
-trait SelectExpr[+T <: Unstructured] extends UnliftedExtr[Elements[T]] {
+  case class ChildrenMeta(arg: Extractor[Unstructured], selector: String)
+  def ChildrenExpr(arg: Extractor[Unstructured], selector: String) = arg.andFn(
+    {
+      v1 => v1.children(selector)
+    },
+    Some(ChildrenMeta(arg, selector))
+  )
 
-  def expand(range: Range): Expand = Expand(range, this)
-}
-
-case class FindAllExpr(selector: String, arg: Extractor[Unstructured]) extends SelectExpr[Unstructured] {
-
-  def liftApply(v1: FetchedRow): Option[Elements[Unstructured]] = arg.lift(v1).map(_.findAll(selector))
-
-}
-case class ChildrenExpr(selector: String, arg: Extractor[Unstructured]) extends SelectExpr[Unstructured] {
-
-  def liftApply(v1: FetchedRow): Option[Elements[Unstructured]] = arg.lift(v1).map(_.children(selector))
-}
-case class Expand(range: Range, select: SelectExpr[Unstructured]) extends SelectExpr[Siblings[Unstructured]] {
-
-  override def liftApply(v1: (DataRow, Seq[Fetched])): Option[Elements[Siblings[Unstructured]]] = {
-    select match {
-      case FindAllExpr(selector, arg) =>
-        arg.lift(v1).map(_.findAllWithSiblings(selector, range))
-      case ChildrenExpr(selector, arg) =>
-        arg.lift(v1).map(_.childrenWithSiblings(selector, range))
-//      case Expand(_, delegate) =>
-//        Expand(range, delegate).liftApply(v1)
+  def ExpandExpr(arg: Extractor[Unstructured], range: Range) = {
+    arg match {
+      case AndThen(_,_,Some(FindAllMeta(argg, selector))) =>
+        argg.andFn(_.findAllWithSiblings(selector, range))
+      case AndThen(_,_,Some(ChildrenMeta(argg, selector))) =>
+        argg.andFn(_.childrenWithSiblings(selector, range))
+      case _ =>
+        throw new UnsupportedOperationException("expression does not support expand")
     }
   }
-}
 
-//case class FindFirstExpr(selector: String, arg: Extraction[Unstructured]) extends UnliftedExtr[Unstructured] {
-//
-//  def liftApply(v1: FetchedRow): Option[Unstructured] = arg.lift(v1).flatMap(_.findFirst(selector))
-//
-//  case class expand(range: Range) extends UnliftedExtr[Siblings[Unstructured]] {
-//
-//    def liftApply(v1: FetchedRow) = arg.lift(v1).flatMap(_.findFirstWithSiblings(selector, range))
-//  }
-//}
-//case class ChildExpr(selector: String, arg: Extraction[Unstructured]) extends UnliftedExtr[Unstructured] {
-//
-//  def liftApply(v1: FetchedRow): Option[Unstructured] = arg.lift(v1).flatMap(_.child(selector))
-//
-//  case class expand(range: Range) extends UnliftedExtr[Siblings[Unstructured]] {
-//
-//    def liftApply(v1: FetchedRow) = arg.lift(v1).flatMap(_.childWithSiblings(selector, range))
-//  }
-//}
-
-case class GetSeqExpr(field: Field) extends UnliftedExtr[Seq[Any]] {
-
-  def liftApply(v1: FetchedRow): Option[Seq[Any]] = v1.dataRow.get(field).flatMap {
-    case v: TraversableOnce[Any] => Some(v.toSeq)
-    case v: Array[Any] => Some(v)
-    case _ => None
+  def ReplaceKeyExpr(str: String) = GenExtractor.fromOptionFn {
+    (v1: FR) =>
+      v1.dataRow.replaceInto(str)
   }
 }
 
-case object GetOnlyPageExpr extends UnliftedExtr[Doc] {
 
-  def liftApply(v1: FetchedRow): Option[Doc] = v1.getOnlyPage
-}
+object Literal {
 
-case object GetAllPagesExpr extends UnliftedExtr[Elements[Doc]] {
-
-  def liftApply(v1: FetchedRow): Option[Elements[Doc]] = Some(new Elements(v1.pages.toList))
-}
-
-case class ReplaceKeyExpr(str: String) extends UnliftedExtr[String] {
-
-  def liftApply(v1: FetchedRow): Option[String] = v1.dataRow.replaceInto(str)
-}
-
-case class InterpolateExpr(parts: Seq[String], fs: Seq[Extractor[Any]]) extends UnliftedExtr[String] {
-
-  if (parts.length != fs.length + 1)
-    throw new IllegalArgumentException("wrong number of arguments for interpolated string")
-
-  def liftApply(v1: FetchedRow): Option[String] = {
-
-    val iParts = parts.map(v1.dataRow.replaceInto(_))
-    val iFs = fs.map(_.lift.apply(v1))
-
-    val result = if (iParts.contains(None) || iFs.contains(None)) None
-    else Some(iParts.zip(iFs).map(tpl => tpl._1.get + tpl._2.get).mkString + iParts.last.get)
-
-    result
+  def apply[T: TypeTag](v: T): Literal[T] = {
+    val dataType = TypeUtils.catalystTypeOrDefault[T]()
+    Literal[T](v, dataType)
   }
 }
+//just a simple wrapper for T, this is the only way to execute a action
+//this is the only serializable LiftedExpression that can be shipped remotely
+final case class Literal[+T](value: T, dataType: DataType) extends Static[FR, T] {
 
-case class ZippedExpr[T1,+T2](arg1: Extractor[IterableLike[T1, _]], arg2: Extractor[IterableLike[T2, _]]) extends UnliftedExtr[Map[T1, T2]] {
+  override def toString = "'" + value.toString + "'" //TODO: remove single quotes?
+  override val self: PartialFunction[FR, T] = Raw({ _: FR => value})
+}
 
-  def liftApply(v1: FetchedRow): Option[Map[T1, T2]] = {
+case object NullLiteral extends Static[FR, Null]{
 
-    val z1Option = arg1.lift(v1)
-    val z2Option = arg2.lift(v1)
+  override val self: PartialFunction[FR, Null] = PartialFunction.empty[FR, Null]
+  override val dataType: DataType = NullType
+}
 
-    if (z1Option.isEmpty || z2Option.isEmpty) return None
+case class GetExpr(field: Field) extends Leaf[FR, Any] {
 
-    val map: ListMap[T1, T2] = ListMap(z1Option.get.toSeq.zip(z2Option.get.toSeq): _*)
-
-    Some(map)
+  override def applyType(tt: DataType): DataType = tt match {
+    case schema: SchemaContext =>
+      schema
+        .typedFor(field)
+        .orElse{
+          schema.typedFor(field.*)
+        }
+        .map(_.dataType)
+        .getOrElse(NullType)
   }
+
+  override def resolve(tt: DataType): PartialFunction[FR, Any] = Unlift(
+    v =>
+      v.dataRow.orWeak(field)
+  )
+
+  def GetSeqExpr: GenExtractor[FR, Seq[Any]] = this.andOptionTyped[Any, Seq[Any]](
+    {
+      case v: TraversableOnce[Any] => Some(v.toSeq)
+      case v: Array[Any] => Some(v.toSeq)
+      case _ => None
+    },
+    {
+      case v: ArrayType => v
+    }
+  )
+
+  def AsSeqExpr: GenExtractor[FR, Seq[Any]] = this.andOptionTyped[Any, Seq[Any]](
+    {
+      case v: TraversableOnce[Any] => Some(v.toSeq)
+      case v: Array[Any] => Some(v.toSeq)
+      case v@ _ => Some(Seq(v))
+    },
+    {
+      case v: ArrayType => v
+      case v: DataType => ArrayType(v, containsNull = true)
+    }
+  )
 }
 
 object AppendExpr {
@@ -162,29 +137,95 @@ object AppendExpr {
   def create[T: ClassTag](
                            field: Field,
                            expr: Extractor[T]
-                         ): AppendExpr[T] = {
+                         ): Alias[FR, Seq[T]] = {
 
-    val effectiveField = field.!
-
-    new AppendExpr[T](effectiveField, expr)
+    AppendExpr[T](GetExpr(field), expr).withAlias(field.!)
   }
 }
 
 case class AppendExpr[+T: ClassTag] private(
-                                             override val field: Field,
+                                             get: GetExpr,
                                              expr: Extractor[T]
-                                           ) extends NamedExtr[Seq[T]] {
+                                           ) extends Extractor[Seq[T]] {
 
-  override def isDefinedAt(x: (DataRow, Seq[Fetched])): Boolean = true
+  override def applyType(tt: DataType): DataType = {
+    val newType = expr.applyType(tt)
 
-  override def apply(v1: (DataRow, Seq[Fetched])): Seq[T] = {
+    ArrayType(newType, containsNull = true)
+  }
 
-    val lastOption = expr.lift(v1)
-    val oldOption = v1.dataRow.get(field)
+  override def resolve(tt: DataType): PartialFunction[FR, Seq[T]] = {
+    val getSeqResolved = get.AsSeqExpr.resolve(tt).lift
+    val exprResolved = expr.resolve(tt).lift
 
-    oldOption.toSeq.flatMap{
-      old =>
-        Utils.asIterable(old)
-    } ++ lastOption
+    PartialFunction({
+      v1: FR =>
+        val lastOption = exprResolved.apply(v1)
+        val oldOption = getSeqResolved.apply(v1)
+
+        oldOption.toSeq.flatMap{
+          old =>
+            Utils.asIterable[T](old)
+        } ++ lastOption
+    })
+  }
+
+  override def children: Seq[GenExtractor[_, _]] = Seq(get, expr)
+}
+
+case class InterpolateExpr(parts: Seq[String], children: Seq[Extractor[Any]]) extends Extractor[String] {
+
+  override def applyType(tt: DataType): DataType = StringType
+
+  override def resolve(tt: DataType): PartialFunction[FR, String] = {
+    val rs = children.map(_.resolve(tt).lift)
+
+    Unlift({
+      row =>
+        val iParts = parts.map(row.dataRow.replaceInto(_))
+
+        val vs = rs.map(_.apply(row))
+        val result = if (iParts.contains(None) || vs.contains(None)) None
+        else Some(iParts.zip(vs).map(tpl => tpl._1.get + tpl._2.get).mkString + iParts.last.get)
+
+        result
+    })
+  }
+}
+
+//TODO: delegate to And_->
+case class ZippedExpr[T1,+T2](
+                               arg1: Extractor[Iterable[T1]],
+                               arg2: Extractor[Iterable[T2]]
+                             )
+  extends Extractor[Map[T1, T2]] {
+
+  override val children: Seq[GenExtractor[FR, _]] = Seq(arg1, arg2)
+
+  override def applyType(tt: DataType): DataType = {
+    (arg1.applyType(tt), arg2.applyType(tt)) match {
+      case (ArrayType(in1, _), ArrayType(in2, _)) =>
+        MapType(in1, in2)
+    }
+  }
+
+  override def resolve(tt: DataType): PartialFunction[FR, Map[T1, T2]] = {
+    val r1 = arg1.resolve(tt).lift
+    val r2 = arg2.resolve(tt).lift
+
+    Unlift({
+      row =>
+        val z1Option = r1.apply(row)
+        val z2Option = r2.apply(row)
+
+        if (z1Option.isEmpty || z2Option.isEmpty) None
+        else {
+          val map: ListMap[T1, T2] = ListMap(z1Option.get.toSeq.zip(
+            z2Option.get.toSeq
+          ): _*)
+
+          Some(map)
+        }
+    })
   }
 }

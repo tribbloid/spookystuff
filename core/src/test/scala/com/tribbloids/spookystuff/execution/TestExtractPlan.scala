@@ -16,12 +16,12 @@ class TestExtractPlan extends SpookyEnvSuite {
 
     val extracted = src
       .extract(
-        '_1.typed[Int].andOptional{
+        '_1.typed[Int].andOptionFn{
           v =>
             if (v > 1) Some("" + v)
             else None
         },
-        '_2.typed[String].andOptional{
+        '_2.typed[String].andOptionFn{
           v =>
             if (v.length < 5) Some(v.charAt(0).toInt)
             else None
@@ -40,11 +40,11 @@ class TestExtractPlan extends SpookyEnvSuite {
 
     val extracted = src
       .extract{
-        '_1.typed[Int].andOptional{
+        '_1.typed[Int].andOptionFn{
           v =>
             if (v > 1) Some("" + v)
             else None
-        } ~! '_2
+        } ~ '_2.!
       }
 
     println(extracted.plan.toString)
@@ -58,11 +58,11 @@ class TestExtractPlan extends SpookyEnvSuite {
   test("ExtractPlan can overwrite old values using ~! operator") {
     val extracted = src
       .extract{
-        '_1.typed[Int].andOptional{
+        '_1.typed[Int].andOptionFn{
           v =>
             if (v > 1) Some("" + v)
             else None
-        } ~! '_2
+        } ~ '_2.!
       }
       .toMapRDD()
       .collect()
@@ -73,7 +73,7 @@ class TestExtractPlan extends SpookyEnvSuite {
   test("ExtractPlan can append on old values using ~+ operator") {
     val extracted = src
       .extract{
-        '_1.typed[Int].andOptional{
+        '_1.typed[Int].andOptionFn{
           v =>
             if (v > 1) Some("" + v)
             else None
@@ -86,12 +86,12 @@ class TestExtractPlan extends SpookyEnvSuite {
   }
 
   test("In ExtractPlan, weak values are cleaned in case of a conflict") {
-    val extracted = src
+    val set = src
       .extract{
         '_2 ~ '_3.*
       }
       .extract{
-        '_1.typed[Int].andOptional{
+        '_1.typed[Int].andOptionFn{
           v =>
             if (v > 1) Some("" + v)
             else None
@@ -100,6 +100,7 @@ class TestExtractPlan extends SpookyEnvSuite {
       .extract(
         '_3 ~ '_3 //force output
       )
+    val extracted = set
       .toMapRDD()
       .collect()
 
@@ -112,11 +113,11 @@ class TestExtractPlan extends SpookyEnvSuite {
         '_2 ~ '_3.*
       }
       .extract{
-        '_1.typed[Int].andOptional{
+        '_1.typed[Int].andOptionFn{
           v =>
             if (v > 1) Some("" + v)
             else None
-        } ~! '_3.*
+        } ~ '_3.*.!
       }
       .extract(
         '_3 ~ '_3

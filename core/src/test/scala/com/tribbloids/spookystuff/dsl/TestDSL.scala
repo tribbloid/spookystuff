@@ -2,8 +2,9 @@ package com.tribbloids.spookystuff.dsl
 
 import com.tribbloids.spookystuff.SpookyEnvSuite
 import com.tribbloids.spookystuff.actions.Wget
+import com.tribbloids.spookystuff.extractors.Alias
 import com.tribbloids.spookystuff.rdd.FetchedDataset
-import com.tribbloids.spookystuff.row.{DataRow, Field, FetchedRow, SquashedFetchedRow}
+import com.tribbloids.spookystuff.row.{DataRow, FetchedRow, Field, SquashedFetchedRow}
 
 /**
 *  Created by peng on 12/3/14.
@@ -14,36 +15,36 @@ class TestDSL extends SpookyEnvSuite {
 
   lazy val pages = (
     Wget("http://www.wikipedia.org/") ~ 'page  :: Nil
-  ).fetch(spooky).toArray
+  ).fetch(spooky)
 
-  lazy val row = SquashedFetchedRow(dataRows = Array(DataRow()), _fetched = pages)
+  lazy val row = SquashedFetchedRow.withDocs(dataRows = Array(DataRow()), docs = pages)
     .extract(
-      S"title".head.text named 'abc,
-      S"title".head named 'def
+      S"title".head.text withAlias 'abc,
+      S"title".head withAlias 'def
     )
       .unsquash.head
 
   test("symbol as Expr"){
-    assert('abc.apply(row) === "Wikipedia")
+    assert('abc.resolve(schema).apply(row) === "Wikipedia")
   }
 
   test("defaultAs should not rename an Alias") {
     val renamed = 'abc as 'name1
-    assert(renamed.toString == "name1")
+    assert(renamed.asInstanceOf[Alias[_,_]].field.name == "name1")
     val renamed2 = renamed as 'name2
-    assert(renamed2.toString == "name2")
-    val notRenamed = renamed defaultAs 'name2
-    assert(notRenamed.toString == "name1")
+    assert(renamed2.asInstanceOf[Alias[_,_]].field.name  == "name2")
+    val notRenamed = renamed withAliasIfMissing  'name2
+    assert(notRenamed.field.name  == "name1")
   }
 
   test("andThen"){
-    val fun = 'abc.andThen(_.toString)
+    val fun = 'abc.andFn(_.toString).resolve(schema)
 //    assert(fun.toString === "<function1>")
     assert(fun(row) === "Wikipedia")
   }
 
   test("andUnlift"){
-    val fun = 'abc.andOptional(_.toString.headOption)
+    val fun = 'abc.andOptionFn(_.toString.headOption).resolve(schema)
 //    assert(fun.toString === "<function1>")
     assert(fun(row) === 'W')
   }
@@ -52,11 +53,11 @@ class TestDSL extends SpookyEnvSuite {
     val pages = (
       Wget("http://www.wikipedia.org/") :: Nil
       ).fetch(spooky).toArray
-    val row = SquashedFetchedRow(Array(DataRow()), _fetched = pages)
-      .extract(S"""a[href*="wikipedia"]""".href named 'uri)
+    val row = SquashedFetchedRow.withDocs(Array(DataRow()), docs = pages)
+      .extract(S"""a[href*="wikipedia"]""".href withAlias 'uri)
       .unsquash.head
 
-    assert(row._1.get(Field("uri")).nonEmpty)
+    assert(row.dataRow.get(Field("uri")).nonEmpty)
   }
 
   test("uri"){
@@ -66,7 +67,7 @@ class TestDSL extends SpookyEnvSuite {
   }
 
   test("string interpolation") {
-    val expr = x"static ${'notexist}"
+    val expr = x"static ${'notexist}".resolve(schema)
     assert(expr.lift.apply(row).isEmpty)
     assert(expr.orElse[FetchedRow, String]{case _ => " "}.apply(row) == " ")
   }

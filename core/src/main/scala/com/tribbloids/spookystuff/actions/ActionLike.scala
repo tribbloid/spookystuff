@@ -1,15 +1,16 @@
 package com.tribbloids.spookystuff.actions
 
-import com.tribbloids.spookystuff.SpookyContext
 import com.tribbloids.spookystuff.doc.Fetched
+import com.tribbloids.spookystuff.execution.SchemaContext
 import com.tribbloids.spookystuff.row.FetchedRow
 import com.tribbloids.spookystuff.session.Session
 import org.apache.spark.sql.catalyst.trees.TreeNode
 
 abstract class ActionLike extends TreeNode[ActionLike] with Product with Serializable {
 
-  final def interpolate(pr: FetchedRow, context: SpookyContext): Option[this.type] = {
-    val option = this.doInterpolate(pr, context)
+  //TODO: this step should be broken into 2 stages for better efficiency, f1 =(schema on driver)=> f2 =(row on executor)=> a
+  final def interpolate(pr: FetchedRow, schema: SchemaContext): Option[this.type] = {
+    val option = this.doInterpolate(pr, schema)
     option.foreach{
       action =>
         action.injectFrom(this)
@@ -17,7 +18,7 @@ abstract class ActionLike extends TreeNode[ActionLike] with Product with Seriali
     option
   }
 
-  def doInterpolate(pageRow: FetchedRow, context: SpookyContext): Option[this.type] = Some(this)
+  def doInterpolate(pageRow: FetchedRow, schema: SchemaContext): Option[this.type] = Some(this)
 
   def injectFrom(same: ActionLike): Unit = {} //TODO: change to immutable pattern to avoid one Trace being used twice with different names
 

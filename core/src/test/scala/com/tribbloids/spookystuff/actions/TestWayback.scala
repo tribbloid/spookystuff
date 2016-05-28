@@ -15,7 +15,7 @@ class TestWayback extends SpookyEnvSuite {
 
   test("Wget.waybackTo should work on cache") {
     spooky.conf.cacheWrite = true
-    spooky.conf.pageNotExpiredSince = Some(new Date())
+    spooky.conf.IgnoreDocsCreatedBefore = Some(new Date())
 
     val dates: Seq[Long] = (0 to 2).toSeq.map {
       i =>
@@ -43,7 +43,7 @@ class TestWayback extends SpookyEnvSuite {
 
   test("Snapshot.waybackTo should work on cache") {
     spooky.conf.cacheWrite = true
-    spooky.conf.pageNotExpiredSince = Some(new Date())
+    spooky.conf.IgnoreDocsCreatedBefore = Some(new Date())
 
     val dates: Seq[Long] = (0 to 2).toSeq.map {
       i =>
@@ -74,7 +74,7 @@ class TestWayback extends SpookyEnvSuite {
 
   test("Screenshot.waybackTo should work on cache") {
     spooky.conf.cacheWrite = true
-    spooky.conf.pageNotExpiredSince = Some(new Date())
+    spooky.conf.IgnoreDocsCreatedBefore = Some(new Date())
 
     val dates: Seq[Long] = (0 to 2).toSeq.map {
       i =>

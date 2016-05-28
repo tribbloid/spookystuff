@@ -15,7 +15,7 @@ import scala.reflect.ClassTag
   * Created by peng on 11/7/14.
   * implicit conversions in this package are used for development only
   */
-object Implicits {
+object ImplicitUtils {
 
   val SPARK_JOB_DESCRIPTION = "spark.job.description"
   val SPARK_JOB_GROUP_ID = "spark.jobGroup.id"
@@ -23,7 +23,7 @@ object Implicits {
   val RDD_SCOPE_KEY = "spark.rdd.scope"
   val RDD_SCOPE_NO_OVERRIDE_KEY = "spark.rdd.scope.noOverride"
 
-  implicit def pageRowToView(self: FetchedRow): FetchedRowView = FetchedRowView(self)
+//  implicit def pageRowToView(self: FetchedRow): FetchedRowView = FetchedRowView(self)
 
   implicit class SparkContextView(val self: SparkContext) {
 
@@ -40,11 +40,6 @@ object Implicits {
   }
 
   implicit class RDDView[T](val self: RDD[T]) {
-
-    def named = {
-      val stackTraceElements: Array[StackTraceElement] = Thread.currentThread().getStackTrace
-      stackTraceElements
-    }
 
     def collectPerPartition: Array[List[T]] = self.mapPartitions(v => Iterator(v.toList)).collect()
 
@@ -299,7 +294,7 @@ object Implicits {
 
   implicit class TraversableLikeView[A, Repr](self: TraversableLike[A, Repr]) {
 
-    def filterByType[B: ClassTag] = new FilterByType[B]
+    def filterByType[B: ClassTag]: FilterByType[B] = new FilterByType[B]
 
     class FilterByType[B: ClassTag] {
 
@@ -316,23 +311,49 @@ object Implicits {
   implicit class ArrayView[A](self: Array[A]) {
 
     def filterByType[B <: A: ClassTag]: Array[B] = {
-      self.flatMap{
+      self.flatMap {
         v =>
           Utils.typedOrNone[B](v)
-      }.toArray
+      }
+    }
+
+    def flattenByIndex(
+                      i: Int,
+                      sampler: Sampler[Any]
+                    ): Seq[(Array[Any], Int)]  = {
+
+      val valueOption: Option[A] = if (self.indices contains i) Some(self.apply(i))
+      else None
+
+      val values: Iterable[(Any, Int)] = valueOption.toIterable.flatMap(Utils.asIterable[Any]).zipWithIndex
+      val sampled = sampler(values)
+
+      val result: Seq[(Array[Any], Int)] = sampled.toSeq.map{
+        tuple =>
+          val updated = self.updated(i, tuple._1)
+          updated -> tuple._2
+      }
+
+      result
     }
   }
 
   implicit class DataFrameView(val self: DataFrame) {
 
-    def toMapRDD: RDD[Map[String,Any]] = {
+    def toMapRDD(keepNull: Boolean = false): RDD[Map[String,Any]] = {
       val headers = self.schema.fieldNames
 
       val result: RDD[Map[String,Any]] = self.map{
         row => ListMap(headers.zip(row.toSeq): _*)
       }
 
-      result
+      val filtered = if (keepNull) result
+      else result.map {
+        map =>
+          map.filter(_._2 != null)
+      }
+
+      filtered
     }
   }
 

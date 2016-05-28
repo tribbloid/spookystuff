@@ -1,7 +1,6 @@
 package com.tribbloids.spookystuff.utils
 
-import com.tribbloids.spookystuff.actions.Action
-import com.tribbloids.spookystuff.doc.{Fetched, Unstructured}
+import com.tribbloids.spookystuff.extractors.TypeTag
 import org.apache.spark.sql.types.{DataType, UserDefinedType}
 
 import scala.reflect.ClassTag
@@ -10,9 +9,14 @@ import scala.reflect.ClassTag
   * Makeshift UDT that serialize object directly, very memory-inefficient.
   * DOES NOT support toJSON
   */
-class AnyUDT[T <: Serializable: ClassTag] extends UserDefinedType[T] {
+class AnyUDT[T <: Serializable](@transient implicit val ttg: TypeTag[T]) extends UserDefinedType[T] with IdentifierMixin {
 
-  override def sqlType: DataType = this.getClass.getConstructor().newInstance()
+  import org.apache.spark.sql.TypeUtils.Implicits._
+
+  implicit def ctg: ClassTag[T] = ttg.toClassTag
+
+//  override def sqlType: DataType = this.getClass.getConstructor().newInstance()
+  override def sqlType: DataType = this
 
   override def serialize(obj: Any): Any = obj
 
@@ -20,11 +24,8 @@ class AnyUDT[T <: Serializable: ClassTag] extends UserDefinedType[T] {
     case a: T => a
   }
 
-  override def userClass: Class[T] = implicitly[ClassTag[T]].runtimeClass.asInstanceOf[Class[T]]
+  override def userClass: Class[T] = ttg.toClass
+
+  // see [SPARK-8647], this achieves the needed constant hash code without constant no.
+  override def _id: Any = ttg.toClass.getCanonicalName
 }
-
-class ActionUDT extends AnyUDT[Action]
-
-class UnstructuredUDT extends AnyUDT[Unstructured]
-
-class FetchedUDT extends AnyUDT[Fetched]

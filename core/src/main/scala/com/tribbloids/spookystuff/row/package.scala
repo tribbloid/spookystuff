@@ -1,14 +1,14 @@
 package com.tribbloids.spookystuff
 
-import com.tribbloids.spookystuff.doc.Fetched
 import org.apache.spark.rdd.RDD
 
-/**
- * Created by peng on 2/21/15.
- */
 package object row {
 
-  type FetchedRow = (DataRow, Seq[Fetched])
+  type Data = Map[Field, Any]
+
+  implicit val Data = Map
+
+//  type FetchedRow = (DataRow, Seq[Fetched]) //TODO: change to SQL Row
 
   type SquashedFetchedRDD = RDD[SquashedFetchedRow]
 
@@ -20,4 +20,7 @@ package object row {
 
   // f(open, visited) => open
   type RowEliminator = (Iterable[DataRow], Iterable[DataRow]) => Iterable[DataRow]
+
+  // In every execution plan, the schema: Map(Field -> DataType) has to be created on construction, which enables every Field to be cast into TypedField or IndexedField
+  type IndexedField = (TypedField, Int)
 }

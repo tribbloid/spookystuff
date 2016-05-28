@@ -9,7 +9,7 @@ import scala.util.Random
   */
 class TestImplicits extends SpookyEnvSuite {
 
-  import Implicits._
+  import ImplicitUtils._
 
   test("multiPassFlatMap should yield same result as flatMap") {
 
@@ -59,20 +59,20 @@ class TestImplicits extends SpookyEnvSuite {
     assert(Array(1, 2.2, "a").filterByType[String].toSeq == Seq("a"))
   }
 
-  test("1") {
-    println(Seq("abc", "def", 3, 4, 2.3).filterByType[String].get)
-    println(Seq("abc", "def", 3, 4, 2.3).filterByType[Integer].get)
-    println(Seq("abc", "def", 3, 4, 2.3).filterByType[Int].get)
-    println(Seq("abc", "def", 3, 4, 2.3).filterByType[java.lang.Double].get)
-    println(Seq("abc", "def", 3, 4, 2.3).filterByType[Double].get)
-
-    //    val res2: Array[String] = Array("abc", "def").filterByType[String].get
-    //    println(res2)
-
-    println(Set("abc", "def", 3, 4, 2.3).filterByType[String].get)
-    println(Set("abc", "def", 3, 4, 2.3).filterByType[Integer].get)
-    println(Set("abc", "def", 3, 4, 2.3).filterByType[Int].get)
-    println(Seq("abc", "def", 3, 4, 2.3).filterByType[java.lang.Double].get)
-    println(Seq("abc", "def", 3, 4, 2.3).filterByType[Double].get)
-  }
+//  test("1") {
+//    println(Seq("abc", "def", 3, 4, 2.3).filterByType[String].get)
+//    println(Seq("abc", "def", 3, 4, 2.3).filterByType[Integer].get)
+//    println(Seq("abc", "def", 3, 4, 2.3).filterByType[Int].get)
+//    println(Seq("abc", "def", 3, 4, 2.3).filterByType[java.lang.Double].get)
+//    println(Seq("abc", "def", 3, 4, 2.3).filterByType[Double].get)
+//
+//    //    val res2: Array[String] = Array("abc", "def").filterByType[String].get
+//    //    println(res2)
+//
+//    println(Set("abc", "def", 3, 4, 2.3).filterByType[String].get)
+//    println(Set("abc", "def", 3, 4, 2.3).filterByType[Integer].get)
+//    println(Set("abc", "def", 3, 4, 2.3).filterByType[Int].get)
+//    println(Seq("abc", "def", 3, 4, 2.3).filterByType[java.lang.Double].get)
+//    println(Seq("abc", "def", 3, 4, 2.3).filterByType[Double].get)
+//  }
 }

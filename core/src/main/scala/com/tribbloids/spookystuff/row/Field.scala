@@ -1,23 +1,26 @@
 package com.tribbloids.spookystuff.row
 
 import com.tribbloids.spookystuff.QueryException
+import com.tribbloids.spookystuff.row.Field.ConflictResolving
 import com.tribbloids.spookystuff.utils.IdentifierMixin
+import org.apache.spark.sql.types.{DataType, Metadata, StructField}
 
 import scala.language.implicitConversions
 
-//abstract class ExpressionTransformer {
-//}
-
 object Field {
 
-  //  implicit def stringToReservedField(str: String) = Field(name = str, isReserved = true)
-  //
-  //  final val GROUPED_PAGE_FIELD = "S"
-  //  final val GROUPED
-
+  /**
+    * define whether to evict old values that has identical field name in previous table
+    */
   sealed abstract class ConflictResolving extends Serializable
+
+  // Fail fast
   case object Error extends ConflictResolving
+
+  // Always evict old value
   case object Remove extends ConflictResolving
+
+  // Only evict old value if the new value is not NULL.
   case object Overwrite extends ConflictResolving
 
   implicit def str2Field(str: String): Field = Field(str)
@@ -40,9 +43,9 @@ case class Field(
 
                   conflictResolving: Field.ConflictResolving = Field.Error,
                   isOrdinal: Boolean = false, //represents ordinal index in flatten/explore
-                  depthRangeOpt: Option[Range] = None //represents depth in explore
+                  depthRangeOpt: Option[Range] = None, //represents depth in explore
 
-                //TODO: make no longer optional?
+                  isSelectedOverride: Option[Boolean] = None
                 ) extends IdentifierMixin {
 
   lazy val _id = (name, isWeak, isInvisible, isReserved)
@@ -55,25 +58,17 @@ case class Field(
 
   def isSortIndex: Boolean = isOrdinal || isDepth
 
-  def suppressOutput = isWeak || isInvisible
+  def isSelected = isSelectedOverride.getOrElse(!(isWeak || isInvisible))
 
-  def resolveConflict(existing: Field): Field = {
+  def effectiveConflictResolving(existing: Field): ConflictResolving = {
+
+    assert(this == existing)
 
     val effectiveCR = if (this.conflictResolving == Field.Overwrite) Field.Overwrite
     else if (existing.isWeak) Field.Remove
-    else throw new QueryException(s"Field ${existing.name} already exist") //fail early
+    else throw new QueryException(s"Field '${existing.name}' already exist") //fail early
 
-    this.copy(conflictResolving = effectiveCR)
-  }
-
-  def resolveConflict(existings: Set[Field]): Field = {
-
-    val existingOpt = existings.find(_ == this)
-    existingOpt.map {
-      existing =>
-        this.resolveConflict(existing)
-    }
-      .getOrElse(this)
+    effectiveCR
   }
 
   override def toString = {
@@ -85,25 +80,17 @@ case class Field(
     depthRangeOpt.foreach(range => builder append s" [${range.head}...${range.last}]")
     builder.result()
   }
+}
 
-//  def addType[RT: TypeTag](): Field = this.copy(
-//    typeTagOpt = Some(typeTag[RT])
-//  )
-//
-//  lazy val dataTypeOpt = {
-//    this.typeTagOpt.map{
-//      typeTag =>
-//        ScalaReflection.schemaFor(typeTag).dataType
-//    }
-//  }
-//
-//  @transient lazy val structField = {
-//    val dataType = dataTypeOpt.get // throw an exception when not typed
-//    StructField(
-//      name,
-//      dataType,
-//      nullable = true,
-//      metadata
-//    )
-//  }
+//used to convert SquashedFetchedRow to DF
+case class TypedField(
+                       self: Field,
+                       dataType: DataType,
+                       metaData: Metadata = Metadata.empty
+                     ) {
+
+  def toStructField: StructField = StructField(
+    self.name,
+    dataType
+  )
 }

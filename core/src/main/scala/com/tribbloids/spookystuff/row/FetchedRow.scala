@@ -1,14 +1,25 @@
 package com.tribbloids.spookystuff.row
 
+import com.tribbloids.spookystuff.SpookyContext
 import com.tribbloids.spookystuff.actions._
 import com.tribbloids.spookystuff.doc._
+import org.apache.spark.sql.Row
+
+trait ProductRow extends Row with Product {
+
+  override def length: Int = this.productArity
+
+  override def get(i: Int): Any = this.productElement(i)
+
+  override def copy(): ProductRow = this //TODO: problems?
+}
 
 object FetchedRow {
 
-  def apply(
-             dataRow: DataRow = DataRow(),
-             pageLikes: Seq[Fetched] = Seq()
-           ): FetchedRow = dataRow -> pageLikes
+  //  def apply(
+  //             dataRow: DataRow = DataRow(),
+  //             pageLikes: Seq[Fetched] = Seq()
+  //           ): FetchedRow = dataRow -> pageLikes
 
 }
 
@@ -16,25 +27,25 @@ object FetchedRow {
   * abstracted data structure where expression can be resolved.
   * not the main data structure in execution plan, SquashedPageRow is
   */
-case class FetchedRowView(
-                           self: FetchedRow
-                         ) {
-
-  def dataRow: DataRow = self._1
-  def pageLikes: Seq[Fetched] = self._2
+case class FetchedRow(
+                       dataRow: DataRow = DataRow(),
+                       fetched: Seq[Fetched] = Seq()
+                     ) extends ProductRow {
 
   //TODO: trace implementation is not accurate: the last backtrace has all previous exports removed
-  def squash = SquashedFetchedRow(
+  def squash(spooky: SpookyContext): SquashedFetchedRow = SquashedFetchedRow(
     Array(dataRow),
-    _fetched = pageLikes.toArray
+    LazyDocs(
+      docs= fetched
+    )
   )
 
-  def pages: Seq[Doc] = pageLikes.flatMap {
+  def pages: Seq[Doc] = fetched.flatMap {
     case page: Doc => Some(page)
     case _ => None
   }
 
-  def noPages: Seq[NoDoc] = pageLikes.flatMap {
+  def noPages: Seq[NoDoc] = fetched.flatMap {
     case noPage: NoDoc => Some(noPage)
     case _ => None
   }
@@ -65,6 +76,5 @@ case class FetchedRowView(
     else page.orElse(value)
   }
 
-  @transient lazy val dryrun: DryRun = pageLikes.toList.map(_.uid.backtrace).distinct
-
+  @transient lazy val dryrun: DryRun = fetched.toList.map(_.uid.backtrace).distinct
 }

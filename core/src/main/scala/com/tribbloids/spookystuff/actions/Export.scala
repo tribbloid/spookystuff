@@ -5,13 +5,14 @@ import java.net.{InetSocketAddress, URI}
 import java.util.Date
 import javax.net.ssl.SSLContext
 
+import com.tribbloids.spookystuff.Const
+import com.tribbloids.spookystuff.doc._
+import com.tribbloids.spookystuff.execution.SchemaContext
 import com.tribbloids.spookystuff.extractors.{Extractor, Literal}
 import com.tribbloids.spookystuff.http._
-import com.tribbloids.spookystuff.doc._
 import com.tribbloids.spookystuff.row.FetchedRow
 import com.tribbloids.spookystuff.session.Session
 import com.tribbloids.spookystuff.utils.{HDFSResolver, Utils}
-import com.tribbloids.spookystuff.{Const, SpookyContext}
 import org.apache.commons.io.IOUtils
 import org.apache.hadoop.fs.{FileStatus, FileSystem, Path}
 import org.apache.http.client.config.RequestConfig
@@ -73,7 +74,7 @@ trait WaybackSupport {
   var wayback: Extractor[Long] = null
 
   def waybackTo(date: Extractor[Date]): this.type = {
-    this.wayback = date.andThen(_.getTime)
+    this.wayback = date.andFn(_.getTime)
     this
   }
 
@@ -86,10 +87,10 @@ trait WaybackSupport {
 
   def waybackToTimeMillis(date: Long): this.type = this.waybackToTimeMillis(Literal(date))
 
-  protected def interpolateWayback(pageRow: FetchedRow): Option[this.type] = {
+  protected def interpolateWayback(pageRow: FetchedRow, schema: SchemaContext): Option[this.type] = {
     if (this.wayback == null) Some(this)
     else {
-      val valueOpt = this.wayback.lift(pageRow)
+      val valueOpt = this.wayback.resolve(schema).lift(pageRow)
       valueOpt.map{
         v =>
           this.wayback = Literal(v)
@@ -122,7 +123,7 @@ case class Snapshot(
     //    }
 
     val page = new Doc(
-      PageUID((pb.backtrace :+ this).toList, this),
+      DocUID((pb.backtrace :+ this).toList, this),
       pb.driver.getCurrentUrl,
       Some("text/html; charset=UTF-8"),
       pb.driver.getPageSource.getBytes("UTF8")
@@ -133,8 +134,8 @@ case class Snapshot(
     Seq(page)
   }
 
-  override def doInterpolate(pageRow: FetchedRow, spooky: SpookyContext) = {
-    this.copy().asInstanceOf[this.type].interpolateWayback(pageRow)
+  override def doInterpolate(pageRow: FetchedRow, schema: SchemaContext) = {
+    this.copy().asInstanceOf[this.type].interpolateWayback(pageRow, schema)
   }
 }
 
@@ -153,7 +154,7 @@ case class Screenshot(
     }
 
     val page = new Doc(
-      PageUID((pb.backtrace :+ this).toList, this),
+      DocUID((pb.backtrace :+ this).toList, this),
       pb.driver.getCurrentUrl,
       Some("image/png"),
       content
@@ -162,8 +163,8 @@ case class Screenshot(
     Seq(page)
   }
 
-  override def doInterpolate(pageRow: FetchedRow, spooky: SpookyContext) = {
-    this.copy().asInstanceOf[this.type].interpolateWayback(pageRow)
+  override def doInterpolate(pageRow: FetchedRow, schema: SchemaContext) = {
+    this.copy().asInstanceOf[this.type].interpolateWayback(pageRow, schema)
   }
 }
 
@@ -310,7 +311,7 @@ case class Wget(
     val xmlStr = Utils.xmlPrinter.format(xml)
 
     val result: Seq[Fetched] = Seq(new Doc(
-      PageUID(List(this), this),
+      DocUID(List(this), this),
       path.toString,
       Some("inode/directory; charset=UTF-8"),
       xmlStr.getBytes("utf-8"),
@@ -328,7 +329,7 @@ case class Wget(
       }
 
     val result = new Doc(
-      PageUID(List(this), this),
+      DocUID(List(this), this),
       path.toString,
       None,
       content,
@@ -353,7 +354,7 @@ case class Wget(
     val content = IOUtils.toByteArray ( stream )
 
     val result = new Doc(
-      PageUID(List(this), this),
+      DocUID(List(this), this),
       uri.toString,
       None,
       content
@@ -457,7 +458,7 @@ case class Wget(
           val contentType = entity.getContentType.getValue
 
           new Doc(
-            PageUID(List(this), this),
+            DocUID(List(this), this),
             currentUrl,
             Some(contentType),
             content,
@@ -484,8 +485,8 @@ case class Wget(
     }
   }
 
-  override def doInterpolate(pageRow: FetchedRow, spooky: SpookyContext): Option[this.type] = {
-    val first = this.uri.lift(pageRow).flatMap(Utils.asArray[Any](_).headOption)
+  override def doInterpolate(pageRow: FetchedRow, schema: SchemaContext): Option[this.type] = {
+    val first = this.uri.resolve(schema).lift(pageRow).flatMap(Utils.asArray[Any](_).headOption)
 
     val uriStr: Option[String] = first.flatMap {
       case element: Unstructured => element.href
@@ -496,7 +497,7 @@ case class Wget(
 
     uriStr.flatMap(
       str =>
-        this.copy(uri = new Literal(str)).interpolateWayback(pageRow).map(_.asInstanceOf[this.type])
+        this.copy(uri = Literal(str)).interpolateWayback(pageRow, schema).map(_.asInstanceOf[this.type])
     )
   }
 }

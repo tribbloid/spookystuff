@@ -25,7 +25,7 @@ class TestPageFromFile extends TestPageFromHttp with PathDocsMixin {
 
     page.autoSave(spooky,overwrite = true)
 
-    val loadedContent = PageUtils.load(page.saved.head)(spooky)
+    val loadedContent = DocUtils.load(page.saved.head)(spooky)
 
     assert(loadedContent === page.content)
   }

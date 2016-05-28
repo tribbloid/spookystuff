@@ -3,20 +3,22 @@ package com.tribbloids.spookystuff
 import java.util.Date
 
 import com.tribbloids.spookystuff.actions._
-import com.tribbloids.spookystuff.doc.{Doc, Elements, PageUID, Unstructured}
+import com.tribbloids.spookystuff.doc.{Doc, DocUID, Elements, Unstructured}
+import com.tribbloids.spookystuff.extractors.GenExtractor.And_->
 import com.tribbloids.spookystuff.extractors._
 import com.tribbloids.spookystuff.rdd.FetchedDataset
-import com.tribbloids.spookystuff.row.{FetchedRow, Field, SquashedFetchedRDD}
+import com.tribbloids.spookystuff.row.{Field, SquashedFetchedRDD}
 import com.tribbloids.spookystuff.utils.Default
 import org.apache.spark.rdd.RDD
+import org.apache.spark.sql.TypeUtils
+import org.apache.spark.sql.types._
 
+import scala.collection.GenTraversableOnce
 import scala.collection.immutable.ListMap
-import scala.collection.{GenTraversableOnce, IterableLike}
 import scala.language.implicitConversions
 import scala.reflect.ClassTag
 
 package object dsl {
-  //  type SerializableCookie = Cookie with Serializable
 
   implicit def PageRowRDDToRDD(wrapper: FetchedDataset): SquashedFetchedRDD = wrapper.rdd
 
@@ -41,216 +43,218 @@ package object dsl {
   //'abc.S("div#a1").attr("src"): first "src" attribute of an unstructured field that match the selector
   //'abc.S("div#a1").attrs("src"): first "src" attribute of an unstructured field that match the selector
 
-  def S(selector: String): FindAllExpr = GetOnlyPageExpr.findAll(selector)
-  def S(selector: String, i: Int): Extractor[Unstructured] = {
-    val expr = GetOnlyPageExpr.findAll(selector)
-    new IterableLikeExprView(expr).get(i)
-  }
-  def S = GetOnlyPageExpr
-  def S_*(selector: String): FindAllExpr = GetAllPagesExpr.findAll(selector)
-  def S_*(selector: String, i: Int): Extractor[Unstructured] = {
-    val expr = GetAllPagesExpr.findAll(selector)
-    new IterableLikeExprView(expr).get(i)
-  }
-  def `S_*` = GetAllPagesExpr
+  import Extractors._
+
+  def S: GenExtractor[FR, Doc] = GetOnlyPageExpr
+  def S(selector: String): GenExtractor[FR, Elements[Unstructured]] = S.findAll(selector)
+  //  def S(selector: String, i: Int): Extractor[Unstructured] = {
+  //    val expr = this.S(selector)
+  //    new IterableExprView(expr).get(i)
+  //  }
+  def `S_*`: GenExtractor[FR, Elements[Doc]] = GetAllPagesExpr
+  def S_*(selector: String): GenExtractor[FR, Elements[Unstructured]] = `S_*`.findAll(selector)
+  //  def S_*(selector: String, i: Int): Extractor[Unstructured] = {
+  //    val expr = GetAllPagesExpr.findAll(selector)
+  //    new IterableExprView(expr).get(i)
+  //  }
 
   def G = GroupIndexExpr
 
-  def A(selector: String): FindAllExpr = 'A.findAll(selector)
+  def A(selector: String) = 'A.findAll(selector)
   def A(selector: String, i: Int): Extractor[Unstructured] = {
     val expr = 'A.findAll(selector)
-    new IterableLikeExprView(expr).get(i)
+    new IterableExprView(expr).get(i)
   }
 
   implicit def symbolToField(symbol: Symbol): Field = Option(symbol).map(v => Field(v.name)).orNull
 
-  // Unlike ExpressionLike, this wrapper is classTagged.
-  implicit class ExprView[+R: ClassTag](self: Extractor[R]) extends Serializable {
-
-    import self._
+  // TODO: merge into GenExtraction?
+  implicit class ExprView[R: ClassTag](self: Extractor[R]) extends Serializable {
 
     private def defaultVal: R = Default.value[R]
-
-    def toStr = andThen(_.toString)
 
     def into(field: Field) = AppendExpr.create[R](field, self)
     def ~+(field: Field) = into(field)
 
-    def orNull[B >: R]: Extractor[B] = orElse[FetchedRow, B] {
-      case _ => null.asInstanceOf[B]
-    }
+    def ->[R2](g: Extractor[R2]) = And_->(self, g)
+    //    def orNull[B >: R]: Extractor[B] = orElse[FetchedRow, B] {
+    //      case _ => null.asInstanceOf[B]
+    //    }
+    //    def orDefault[B >: R]: Extractor[B] = orElse[FetchedRow, B] {
+    //      case _ => defaultVal: B
+    //    }
 
-    def orDefault[B >: R]: Extractor[B] = orElse[FetchedRow, B] {
-      case _ => defaultVal: B
-    }
-
-    def ->[B](another: Extractor[B]): Extractor[(R, B)] = {
-      val lifted = {
-        row: FetchedRow =>
-          if (!isDefinedAt(row) || !another.isDefinedAt(row)) None
-          else Some(apply(row) -> another(row))
-      }
-      Function.unlift(lifted)
-    }
+    //    def orNull: Extractor[R] = orElse[FetchedRow, R] {
+    //      case _ => null.asInstanceOf[R]
+    //    }
+    //    def orDefault: Extractor[R] = orElse[FetchedRow, R] {
+    //      case _ => defaultVal: R
+    //    }
   }
 
   implicit def exprToExprView[Repr](expr: Repr)(implicit f: Repr => Extractor[Any]): ExprView[Any] = f(expr)
 
   implicit class UnstructuredExprView(self: Extractor[Unstructured]) extends Serializable {
 
-    def uri: Extractor[String] = self.andThen(_.uri)
+    def uri: Extractor[String] = self.andFn(_.uri)
 
-    def findAll(selector: String): FindAllExpr = new FindAllExpr(selector, self)
+    def findAll(selector: String) = FindAllExpr(self, selector)
     def \\(selector: String) = findAll(selector)
     def findFirst(selector: String) = findAll(selector).head
 
-    def children(selector: String): ChildrenExpr = new ChildrenExpr(selector, self)
+    def children(selector: String) = ChildrenExpr(self, selector)
     def \(selector: String) = children(selector)
     def child(selector: String) = children(selector).head
 
-    def text: Extractor[String] = self.andOptional(_.text)
+    def text: Extractor[String] = self.andOptionFn(_.text)
 
-    def code = self.andOptional(_.code)
+    def code = self.andOptionFn(_.code)
 
-    def formattedCode = self.andOptional(_.formattedCode)
+    def formattedCode = self.andOptionFn(_.formattedCode)
 
-    def ownText: Extractor[String] = self.andOptional(_.ownText)
+    def ownText: Extractor[String] = self.andOptionFn(_.ownText)
 
     def allAttr: Extractor[Map[String, String]] =
-      self.andOptional(_.allAttr)
+      self.andOptionFn(_.allAttr)
 
     def attr(attrKey: String, noEmpty: Boolean = true): Extractor[String] =
-      self.andOptional(_.attr(attrKey, noEmpty))
+      self.andOptionFn(_.attr(attrKey, noEmpty))
 
-    def href = self.andOptional(_.href)
+    def href = self.andOptionFn(_.href)
 
-    def src = self.andOptional(_.src)
+    def src = self.andOptionFn(_.src)
 
-    def boilerPipe = self.andOptional(_.boilerPipe)
+    def boilerPipe = self.andOptionFn(_.boilerPipe)
+
+    def expand(range: Range) = ExpandExpr(self, range)
   }
 
   implicit class ElementsExprView(self: Extractor[Elements[_]]) extends Serializable {
 
-    def uris: Extractor[Seq[String]] = self.andThen(_.uris)
+    def uris: Extractor[Seq[String]] = self.andFn(_.uris)
 
-    def texts: Extractor[Seq[String]] = self.andThen(_.texts)
+    def texts: Extractor[Seq[String]] = self.andFn(_.texts)
 
-    def codes: Extractor[Seq[String]] = self.andThen(_.codes)
+    def codes: Extractor[Seq[String]] = self.andFn(_.codes)
 
-    def ownTexts: Extractor[Seq[String]] = self.andThen(_.ownTexts)
+    def ownTexts: Extractor[Seq[String]] = self.andFn(_.ownTexts)
 
     def allAttrs: Extractor[Seq[Map[String, String]]] =
-      self.andThen(_.allAttrs)
+      self.andFn(_.allAttrs)
 
     def attrs(attrKey: String, noEmpty: Boolean = true): Extractor[Seq[String]] =
-      self.andThen(_.attrs(attrKey, noEmpty))
+      self.andFn(_.attrs(attrKey, noEmpty))
 
-    def hrefs = self.andThen(_.hrefs)
+    def hrefs = self.andFn(_.hrefs)
 
-    def srcs = self.andThen(_.srcs)
+    def srcs = self.andFn(_.srcs)
 
-    def boilerPipes = self.andThen(_.boilerPipes)
+    def boilerPipes = self.andFn(_.boilerPipes)
   }
 
   implicit class PageExprView(self: Extractor[Doc]) extends Serializable {
 
-    def uid: Extractor[PageUID] = self.andThen(_.uid)
+    def uid: Extractor[DocUID] = self.andFn(_.uid)
 
-    def contentType: Extractor[String] = self.andThen(_.contentType)
+    def contentType: Extractor[String] = self.andFn(_.contentType)
 
-    def content: Extractor[Seq[Byte]] = self.andThen(_.content.toSeq)
+    def content: Extractor[Seq[Byte]] = self.andFn(_.content.toSeq)
 
-    def timestamp: Extractor[Date] = self.andThen(_.timestamp)
+    def timestamp: Extractor[Date] = self.andFn(_.timestamp)
 
-    def saved: Extractor[Set[String]] = self.andThen(_.saved.toSet)
+    def saved: Extractor[Set[String]] = self.andFn(_.saved.toSet)
 
-    def mimeType: Extractor[String] = self.andThen(_.mimeType)
+    def mimeType: Extractor[String] = self.andFn(_.mimeType)
 
-    def charSet: Extractor[String] = self.andOptional(_.charset)
+    def charSet: Extractor[String] = self.andOptionFn(_.charset)
 
-    def exts: Extractor[Seq[String]] = self.andThen(_.exts.toSeq)
+    def fileExtensions: Extractor[Seq[String]] = self.andFn(_.fileExtensions.toSeq)
 
-    def defaultExt: Extractor[String] = self.andOptional(_.defaultExt)
+    def defaultFileExtension: Extractor[String] = self.andOptionFn(_.defaultFileExtension)
   }
 
-  //  implicit class PageTraversableOnceExprView(self: Expression[TraversableOnce[Page]]) extends Serializable {
-  //
-  //    def timestamps: Expression[Seq[Date]] = self.andMap(_.toSeq.map(_.timestamp), "timestamps")
-  //
-  //    def saveds: Expression[Seq[ListSet[String]]] = self.andMap(_.toSeq.map(_.saved), "saveds")
-  //  }
+  implicit class IterableExprView[T: ClassTag](self: Extractor[Iterable[T]]) extends Serializable {
 
-  implicit class IterableLikeExprView[T: ClassTag, Repr](self: Extractor[IterableLike[T, Repr]]) extends Serializable {
+    val unboxType: DataType => DataType = {
+      case ArrayType(boxed, _) => boxed
+    }
 
-    def head: Extractor[T] = self.andOptional(_.headOption)
+    //    def andSelfType[R <: Iterable[T]](f: Iterable[T] => Option[R]) = self.andOptionFnTyped[R, Iterable[T]](
+    //      f, {
+    //        t => t
+    //      }
+    //    )
+    //
+    //    def andUnboxedType(f: Iterable[T] => Option[T]) = self.andOptionFnTyped[T, Iterable[T]](
+    //      f, {
+    //        case ArrayType(boxed, _) => boxed
+    //      }
+    //    )
 
-    def last: Extractor[T] = self.andOptional(_.lastOption)
+    def head: Extractor[T] = self.andOptionTyped((v: Iterable[T]) => v.headOption, unboxType)
 
-    def get(i: Int): Extractor[T] = self.andOptional({
-      iterable =>
+    def last: Extractor[T] = self.andOptionTyped((v: Iterable[T]) => v.lastOption, unboxType)
+
+    def get(i: Int): Extractor[T] = self.andOptionTyped({
+      (v: Iterable[T]) =>
         val realIdx = if (i >= 0) i
-        else iterable.size - i
+        else v.size - i
 
-        if (realIdx>=iterable.size || realIdx<0) None
-        else Some(iterable.toSeq.apply(realIdx))
-    })
+        if (realIdx>=v.size || realIdx<0) None
+        else Some(v.toSeq.apply(realIdx))
+    }, unboxType)
 
-    def size: Extractor[Int] = self.andThen(_.size)
+    def size: Extractor[Int] = self.andFn(_.size)
 
-    def isEmpty: Extractor[Boolean] = self.andThen(_.isEmpty)
+    def isEmpty: Extractor[Boolean] = self.andFn(_.isEmpty)
 
-    def nonEmpty: Extractor[Boolean] = self.andThen(_.nonEmpty)
+    def nonEmpty: Extractor[Boolean] = self.andFn(_.nonEmpty)
 
-    def mkString(sep: String = ""): Extractor[String] = self.andThen(_.mkString(sep))
+    def mkString(sep: String = ""): Extractor[String] = self.andFn(_.mkString(sep))
 
-    def mkString(start: String, sep: String, end: String): Extractor[String] = self.andThen(_.mkString(start, sep, end))
+    def mkString(start: String, sep: String, end: String): Extractor[String] = self.andFn(_.mkString(start, sep, end))
 
     //TODO: Why IterableExprView.filter cannot be applied on ZippedExpr? is the scala compiler malfunctioning?
     def zipWithKeys(keys: Extractor[Any]): ZippedExpr[Any, T] =
-      new ZippedExpr[Any,T](keys.typed[IterableLike[_,_]], self)
+      new ZippedExpr[Any,T](keys.typed[Iterable[_]], self)
 
     def zipWithValues(values: Extractor[Any]): ZippedExpr[T, Any] =
-      new ZippedExpr[T,Any](self, values.typed[IterableLike[_,_]])
+      new ZippedExpr[T,Any](self, values.typed[Iterable[_]])
 
-    def groupBy[K](f: T => K): Extractor[Map[K, Repr]] = self.andThen (
-      v => v.groupBy(f)
+    def groupByFn[K](f: T => K): (Iterable[T]) => Map[K, Iterable[T]] = (v: Iterable[T]) => v.groupBy(f)
+
+    def groupBy[K: TypeTag](f: T => K): Extractor[Map[K, Iterable[T]]] = self.andTyped (
+      groupByFn(f),
+      {
+        t =>
+          MapType(TypeUtils.catalystTypeOrDefault[K](), t)
+      }
     )
 
-    def slice(from: Int = Int.MinValue, until: Int = Int.MaxValue): Extractor[Repr] = self.andThen (
-      v => v.slice(from, until)
+    def slice(from: Int = Int.MinValue, until: Int = Int.MaxValue): Extractor[Iterable[T]] = self.andOptionTyped (
+      (v: Iterable[T]) => Some(v.slice(from, until)), identity
     )
 
-    def filter(f: T => Boolean): Extractor[Repr] = self.andThen(_.filter(f))
+    def filter(f: T => Boolean): Extractor[Iterable[T]] = self.andOptionTyped ((v: Iterable[T]) => Some(v.filter(f)), identity)
 
-    def distinct: Extractor[Seq[T]] = self.andThen(_.toSeq.distinct)
+    def distinct: Extractor[Seq[T]] = self.andOptionTyped ((v: Iterable[T]) => Some(v.toSeq.distinct), identity)
 
-    def distinctBy[K](f: T => K): Extractor[Iterable[T]] = this.groupBy(f).andThen(
-      v =>
-        v.values.flatMap{
-          case repr: Traversable[T] => repr.headOption
-          case repr: T => Some(repr)
-          case _ => None
-        }
+    def distinctBy[K: TypeTag](f: T => K): Extractor[Iterable[T]] = self.andTyped (
+      groupByFn(f).andThen(
+        v =>
+          v.values.flatMap{
+            case repr: Traversable[T] => repr.headOption
+            case _ => None //TODO: what's the point of this? removed
+          }
+      ),
+      identity
     )
 
-    //TODO: these will cause unserializable exception, fix it!
-    //    def map[B, That](f: T => B)(implicit bf: CanBuildFrom[Repr, B, That]): Expression[That] = self.andMap (
-    //      v => {
-    //        val vv: IterableLike[T, Repr] = v
-    //        vv.map[B, That](f)(Serializable(bf))
-    //      },
-    //      s"map($f)"
-    //    )
-    //    def flatMap[B, That](f: T => GenTraversableOnce[B])(implicit bf: CanBuildFrom[Repr, B, That]): Expression[That] = self.andMap (
-    //      v => v.flatMap[B, That](f)(Serializable(bf)),
-    //      s"flatMap($f)"
-    //    )
-
-    def map[B](f: T => B): Extractor[Seq[B]] = self.andThen (
+    def map[B: TypeTag](f: T => B): Extractor[Seq[B]] = self.andFn (
       v => v.toSeq.map(f)
     )
 
-    def flatMap[B](f: T => GenTraversableOnce[B]): Extractor[Seq[B]] = self.andThen (
+    def flatMap[B: TypeTag](f: T => GenTraversableOnce[B]): Extractor[Seq[B]] = self.andFn (
       v => v.toSeq.flatMap(f)
     )
   }
@@ -258,9 +262,9 @@ package object dsl {
   implicit class StringExprView(self: Extractor[String]) extends Serializable {
 
     def replaceAll(regex: String, replacement: String): Extractor[String] =
-      self.andThen(_.replaceAll(regex, replacement))
+      self.andFn(_.replaceAll(regex, replacement))
 
-    def trim: Extractor[String] = self.andThen(_.trim)
+    def trim: Extractor[String] = self.andFn(_.trim)
 
     def +(another: Extractor[Any]): Extractor[String] = x"$self$another"
   }
@@ -274,13 +278,13 @@ package object dsl {
     new GetExpr(symbol.name)
 
   implicit def symbolToUnstructuredExprView(symbol: Symbol): UnstructuredExprView =
-    new GetUnstructuredExpr(symbol.name)
+    GetUnstructuredExpr(symbol.name)
 
   implicit def symbolToPageExprView(symbol: Symbol): PageExprView =
-    new GetPageExpr(symbol.name)
+    GetPageExpr(symbol.name)
 
-  implicit def symbolToIterableLikeExprView(symbol: Symbol): IterableLikeExprView[Any, Seq[Any]] =
-    new GetSeqExpr(symbol.name)
+  implicit def symbolToIterableLikeExprView(symbol: Symbol): IterableExprView[Any] =
+    GetExpr(symbol.name).GetSeqExpr
 
   implicit def stringToExpr(str: String): Extractor[String] = {
 
@@ -288,12 +292,10 @@ package object dsl {
     val regex = (delimiter+"\\{[^\\{\\}\r\n]*\\}").r
 
     if (regex.findFirstIn(str).isEmpty)
-      new Literal[String](str)
+      Literal[String](str)
     else
-      new ReplaceKeyExpr(str)
+      ReplaceKeyExpr(str)
   }
-
-  implicit def fn2GenExpression[T, R](self: T => R): GenExtractor[T, R] = GenExtractor.fn2GenExtractor(self)
 
   implicit class StringRDDView(val self: RDD[String]) {
 

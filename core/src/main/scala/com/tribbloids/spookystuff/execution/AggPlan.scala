@@ -6,10 +6,10 @@ import com.tribbloids.spookystuff.row._
   * discard pages
   */
 case class AggPlan(
-                    child: ExecutionPlan,
+                    override val child: ExecutionPlan,
                     exprs: Seq[(FetchedRow => Any)],
                     reducer: RowReducer
-                  ) extends ExecutionPlan(child) {
+                  ) extends UnaryPlan(child) {
 
   override def doExecute(): SquashedFetchedRDD = {
     val keyedRDD = super.unsquashedRDD
@@ -17,7 +17,7 @@ case class AggPlan(
         row =>
           exprs.map(expr => expr.apply(row))
       }
-      .mapValues(v => Iterable(v._1))
+      .mapValues(v => Iterable(v.dataRow))
 
     keyedRDD
       .reduceByKey(reducer)

@@ -1,13 +1,17 @@
 package com.tribbloids.spookystuff.actions
 
 import com.tribbloids.spookystuff.SpookyEnvSuite
-import com.tribbloids.spookystuff.doc.Doc
+import com.tribbloids.spookystuff.doc.{Doc, Fetched}
 import com.tribbloids.spookystuff.session.Session
-import org.apache.spark.sql.Row
+import com.tribbloids.spookystuff.tests.TestMixin
 import org.apache.spark.sql.catalyst.ScalaReflection
-import org.apache.spark.sql.catalyst.expressions.GenericRow
 
-class TestTrace extends SpookyEnvSuite {
+case class User(
+                 name: String,
+                 properties: Array[Tuple2[Int, Int]]
+               )
+
+class TestTrace extends SpookyEnvSuite with TestMixin {
 
   import com.tribbloids.spookystuff.dsl._
 
@@ -112,12 +116,6 @@ class TestTrace extends SpookyEnvSuite {
     }
   }
 
-  //TODO: enable
-//  test("Trace has a datatype") {
-//    val schema = ScalaReflection.schemaFor[Trace]
-//    println(schema)
-//  }
-
   test("Click.toJSON should work") {
     val action = Click("o1")
     val json = action.toJSON
@@ -127,61 +125,61 @@ class TestTrace extends SpookyEnvSuite {
   test("Loop.toJSON should work") {
     val action = Loop(
       Click("o1")
-      +> Snapshot()
+        +> Snapshot()
     )
     val json = action.toJSON
     println(json)
   }
 
-  test("Action.toJSON should work") {
-    val actions = Loop(
-      Click("next")
-        +> TextInput("box", "something")
-        +> Snapshot()
-        +> If(
-        { (v: Doc, _: Session) => v.uri startsWith "http" },
-        Click("o1")
-          +> TextInput("box1", "something1")
-          +> Snapshot(),
-        Click("o2")
-          +> TextInput("box2", "something2")
-          +> Snapshot()
-      ))
-
-    val jsons = actions.map(
-      v =>
-        v.toJSON
-    )
-
-    jsons.foreach(println)
-  }
-
-//  test("Trace has a Dataset Encoder") {
-//    val trace =(
-//      Visit(HTML_URL)
-//        +> Click("dummy")
+//  test("Action.toJSON should work") {
+//    val actions = Loop(
+//      Click("next")
+//        +> TextInput("box", "something")
 //        +> Snapshot()
-//        +> Loop(
-//        Click("next")
-//          +> TextInput("box", "something")
+//        +> If(
+//        { (v: Doc, _: Session) => v.uri startsWith "http" },
+//        Click("o1")
+//          +> TextInput("box1", "something1")
+//          +> Snapshot(),
+//        Click("o2")
+//          +> TextInput("box2", "something2")
 //          +> Snapshot()
-//          +> If(
-//          {v: Doc => v.uri startsWith "http" },
-//          Click("o1")
-//            +> TextInput("box1", "something1")
-//            +> Snapshot(),
-//          Click("o2")
-//            +> TextInput("box2", "something2")
-//            +> Snapshot()
-//        ))
-//      )
+//      ))
 //
-//    val df = sql.read.json(sc.parallelize(trace.toSeq.map(_.toJSON)))
+//    val jsons = actions.map(
+//      v =>
+//        v.toJSON
+//    )
 //
-//    implicit val encoder = Encoders.kryo[TraceView]
-//
-//    val ds = df.as[TraceView]
-//
-//    ds.collect().foreach(println)
+//    jsons.foreach(println)
 //  }
+
+  //  test("Trace has a Dataset Encoder") {
+  //    val trace =(
+  //      Visit(HTML_URL)
+  //        +> Click("dummy")
+  //        +> Snapshot()
+  //        +> Loop(
+  //        Click("next")
+  //          +> TextInput("box", "something")
+  //          +> Snapshot()
+  //          +> If(
+  //          {v: Doc => v.uri startsWith "http" },
+  //          Click("o1")
+  //            +> TextInput("box1", "something1")
+  //            +> Snapshot(),
+  //          Click("o2")
+  //            +> TextInput("box2", "something2")
+  //            +> Snapshot()
+  //        ))
+  //      )
+  //
+  //    val df = sql.read.json(sc.parallelize(trace.toSeq.map(_.toJSON)))
+  //
+  //    implicit val encoder = Encoders.kryo[TraceView]
+  //
+  //    val ds = df.as[TraceView]
+  //
+  //    ds.collect().foreach(println)
+  //  }
 }

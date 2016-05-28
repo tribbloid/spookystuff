@@ -1,18 +1,18 @@
 package com.tribbloids.spookystuff.rdd
 
-import com.tribbloids.spookystuff.execution.ExecutionPlan
-import com.tribbloids.spookystuff.row.{SquashedFetchedRow, SquashedFetchedRDD}
+import com.tribbloids.spookystuff.execution.{ExecutionPlan, UnaryPlan}
+import com.tribbloids.spookystuff.row.{SquashedFetchedRDD, SquashedFetchedRow}
 import org.apache.spark.rdd.{RDD, UnionRDD}
 import org.apache.spark.storage.StorageLevel
 
 import scala.language.implicitConversions
 
 case class CoalescePlan(
-                         child: ExecutionPlan,
+                         override val child: ExecutionPlan,
                          numPartitions: RDD[_] => Int,
                          shuffle: Boolean = false,
                          ord: Ordering[SquashedFetchedRow] = null
-                       ) extends ExecutionPlan(child) {
+                       ) extends UnaryPlan(child) {
 
   def doExecute(): SquashedFetchedRDD = {
     val childRDD = child.rdd()
@@ -122,8 +122,8 @@ trait FetchedRDDAPI {
 
   def unpersist(blocking: Boolean = true): this.type = {
     this.storageLevel = StorageLevel.NONE
-    this.plan.cachedRDD_fetchedOpt.foreach(_._1.unpersist(blocking))
-    this.plan.cachedRDD_fetchedOpt = None
+    this.plan.cachedRDD.foreach(_.unpersist(blocking))
+    this.plan.cachedRDD = None
     this
   }
 

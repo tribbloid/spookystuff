@@ -3,30 +3,36 @@ package com.tribbloids.spookystuff.row
 import java.util.UUID
 
 import com.tribbloids.spookystuff.Const
-import com.tribbloids.spookystuff.utils.{Utils, Implicits}
+import com.tribbloids.spookystuff.utils.{ImplicitUtils, Utils}
 
-import scala.collection.Map
 import scala.reflect.ClassTag
 
 /**
-  * makeshift data container that is persisted through different stages of execution plan
+  * data container that is persisted through different stages of execution plan.
+  * has no schema information, user are required to refer to schema from driver and use the index number to access element.
+  * schema |x| field => index => value
   */
 //TODO: change to wrap DataFrame Row/InternalRow?
 //TODO: also carry PageUID & property type (Vertex/Edge) for GraphX
 case class DataRow(
-                    data: Map[Field, Any] = Map(),
+                    data: Data = Data.empty,
                     groupID: Option[UUID] = None,
                     groupIndex: Int = 0, //set to 0...n for each page group after SquashedPageRow.semiUnsquash/unsquash
                     freeze: Boolean = false //if set to true PageRow.extract won't insert anything into it, used in merge/replace join
-                  ) {
+                  ) extends ProductRow {
 
-  import Implicits._
+  import ImplicitUtils._
 
-  def updated(k: Field, v: Any) = this.copy(data = data.updated(k, v))
+  def copyWithArgs(
+                    data: Data = this.data,
+                    groupID: Option[UUID] = this.groupID,
+                    groupIndex: Int = this.groupIndex, //set to 0...n for each page group after SquashedPageRow.semiUnsquash/unsquash
+                    freeze: Boolean = this.freeze //if set to true PageRow.extract won't insert anything into it, used in merge/replace join
+                  ) = new DataRow(data, groupID, groupIndex, freeze)
 
-  def ++(m: Iterable[(Field, Any)]): DataRow = this.copy(data = data ++ m)
+  def ++(m: Iterable[(Field, Any)]): DataRow = this.copyWithArgs(data = data ++ m)
 
-  def --(m: Iterable[Field]): DataRow = this.copy(data = data -- m)
+  def --(m: Iterable[Field]): DataRow = this.copyWithArgs(data = data -- m)
 
   def nameToField(name: String): Option[Field] = {
     Some(Field(name, isWeak = true)).filter(data.contains)
@@ -35,23 +41,28 @@ case class DataRow(
       }
   }
 
-  def getTyped[T <: Any : ClassTag](field: Field): Option[T] = {
+  def getTyped[T <: Any: ClassTag](field: Field): Option[T] = {
     data.get(field).flatMap {
       Utils.typedOrNone[T]
     }
   }
+  def orWeakTyped[T <: Any: ClassTag](field: Field): Option[T] = {
+    getTyped[T](field)
+      .orElse(getTyped[T](field.*))
+  }
+
+  def get(field: Field): Option[Any] = getTyped[Any](field)
+  def orWeak(field: Field): Option[Any] = orWeakTyped[Any](field)
 
   def getInt(field: Field): Option[Int] = getTyped[Int](field)
 
-  def get(field: Field): Option[Any] = data.get(field)
-
   def toMap: Map[String, Any] = data
-    .filterKeys(!_.suppressOutput)
+    .filterKeys(_.isSelected)
     .map(identity)
     .map(tuple => tuple._1.name -> tuple._2)
 
   def toJSON: String = {
-    import Implicits._
+    import ImplicitUtils._
 
     Utils.toJson(this.toMap.canonizeKeysToColumnNames)
   }
@@ -71,13 +82,13 @@ case class DataRow(
                sampler: Sampler[Any]
              ): Seq[DataRow] = {
 
-    val newValues_Indices: Seq[(Map[Field, Any], Int)] = data.flattenByKey(field, sampler)
+    val newValues_Indices = data.flattenByKey(field, sampler)
 
     if (left && newValues_Indices.isEmpty) {
-      Seq(this.copy(data = data - field)) //you don't lose the remainder of a row because an element is empty
+      Seq(this.copyWithArgs(data = data - field)) //you don't lose the remainder of a row because an element is empty
     }
     else {
-      val result: Seq[(DataRow, Int)] = newValues_Indices.map(tuple => this.copy(data = tuple._1) -> tuple._2)
+      val result: Seq[(DataRow, Int)] = newValues_Indices.map(tuple => this.copyWithArgs(data = tuple._1.toMap) -> tuple._2)
 
       Option(ordinalField) match {
         case None => result.map(_._1)
@@ -91,7 +102,7 @@ case class DataRow(
                 case Some(existing) =>
                   tuple._1.data.updated(_field, (existing ++ Iterable(tuple._2)).toArray)
               }
-              tuple._1.copy(data = values)
+              tuple._1.copyWithArgs(data = values)
           }
           newValues
       }
@@ -113,6 +124,8 @@ case class DataRow(
     res
   }
   def getArray(field: Field): Option[Array[Any]] = getTypedArray[Any](field)
+
+  //TODO: cleanup getters after this line, they are useless
   def getIntArray(field: Field): Option[Array[Int]] = getTypedArray[Int](field)
 
   def getTypedIterable[T <: Any: ClassTag](field: Field): Option[Iterable[T]] = {
@@ -148,5 +161,5 @@ case class DataRow(
     Some(result)
   }
 
-  override def toString: String = data.toString()
+  //  override def toString: String = data.toString()
 }

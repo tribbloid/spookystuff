@@ -41,7 +41,7 @@ trait DynamicParamsMixin extends Params with Dynamic {
 
   protected def Param[T: ClassTag](
                                     name: String = {
-                                      val bp = Utils.breakpoint().apply(2)
+                                      val bp = Utils.getBreakpointInfo().apply(2)
                                       assert(!bp.isNativeMethod) //can only use default value in def & lazy val blocks
                                       bp.getMethodName
                                     },
@@ -59,7 +59,7 @@ trait DynamicParamsMixin extends Params with Dynamic {
   //TODO: need debugging
   protected def SerializingParam[T: ClassTag](
                                                name: String = {
-                                                 val bp = Utils.breakpoint().apply(2)
+                                                 val bp = Utils.getBreakpointInfo().apply(2)
                                                  assert(!bp.isNativeMethod) //can only use default value in def & lazy val blocks
                                                  bp.getMethodName
                                                },

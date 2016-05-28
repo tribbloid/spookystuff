@@ -3,7 +3,7 @@ package com.tribbloids.spookystuff.integration
 import java.util.Date
 
 import com.tribbloids.spookystuff.dsl._
-import com.tribbloids.spookystuff.tests.TestHelper
+import com.tribbloids.spookystuff.tests.{RemoteDocsMixin, TestHelper}
 import com.tribbloids.spookystuff.utils.Utils
 import com.tribbloids.spookystuff.{DirConf, SpookyConf, SpookyContext}
 import org.apache.spark.SparkContext
@@ -13,20 +13,18 @@ import org.scalatest.{BeforeAndAfterAll, FunSuite}
 import scala.concurrent.duration
 import scala.language.implicitConversions
 
-abstract class IntegrationSuite extends FunSuite with BeforeAndAfterAll {
+abstract class IntegrationSuite extends FunSuite with BeforeAndAfterAll with RemoteDocsMixin {
 
-  @transient var sc: SparkContext = _
-  @transient var sql: SQLContext = _
+  def sc: SparkContext = TestHelper.TestSpark
+  def sql: SQLContext = TestHelper.TestSQL
+
   var spooky: SpookyContext = _
 
   val phantomJS = DriverFactories.PhantomJS()
   val htmlUnit = DriverFactories.HtmlUnit()
 
   override def beforeAll() {
-    val conf = TestHelper.TestSparkConf.setAppName("integration")
-
-    sc = new SparkContext(conf)
-    sql = new SQLContext(sc)
+    TestHelper.TestSparkConf.setAppName("integration")
 
     super.beforeAll()
   }
@@ -133,7 +131,7 @@ abstract class IntegrationSuite extends FunSuite with BeforeAndAfterAll {
 
   protected def doTestBeforeCache(): Unit = {
     Utils.retry(retry) {
-      spooky.conf.pageNotExpiredSince = Some(new Date(System.currentTimeMillis()))
+      spooky.conf.IgnoreDocsCreatedBefore = Some(new Date(System.currentTimeMillis()))
       spooky.zeroMetrics()
       doMain()
       assertBeforeCache()

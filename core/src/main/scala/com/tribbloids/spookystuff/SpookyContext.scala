@@ -2,17 +2,18 @@ package com.tribbloids.spookystuff
 
 import com.tribbloids.spookystuff.dsl.DriverFactories
 import com.tribbloids.spookystuff.dsl.DriverFactories.PhantomJS
+import com.tribbloids.spookystuff.extractors.TypeTag
 import com.tribbloids.spookystuff.rdd.FetchedDataset
 import com.tribbloids.spookystuff.row._
-import com.tribbloids.spookystuff.utils.{Implicits, Utils}
+import com.tribbloids.spookystuff.utils.Utils
 import org.apache.hadoop.conf.Configuration
 import org.apache.spark._
 import org.apache.spark.rdd.RDD
-import org.apache.spark.sql.{DataFrame, SQLContext}
+import org.apache.spark.sql.{DataFrame, SQLContext, TypeUtils}
 import org.apache.spark.storage.StorageLevel
 import org.slf4j.LoggerFactory
 
-import scala.collection.immutable.{ListMap, ListSet}
+import scala.collection.immutable.ListMap
 import scala.language.implicitConversions
 import scala.reflect.ClassTag
 
@@ -21,8 +22,6 @@ case class SpookyContext private (
                                    @transient private var _effectiveConf: SpookyConf, //can only be used on executors after broadcast
                                    var metrics: Metrics //accumulators cannot be broadcasted,
                                  ) {
-
-  val browsersExist = deployPhantomJS()
 
   def this(
             sqlContext: SQLContext,
@@ -43,6 +42,7 @@ case class SpookyContext private (
     this(new SparkContext(conf))
   }
 
+  val browsersExist = deployPhantomJS()
   def sparkContext = this.sqlContext.sparkContext
 
   @volatile var broadcastedEffectiveConf = sqlContext.sparkContext.broadcast(_effectiveConf)
@@ -103,18 +103,26 @@ case class SpookyContext private (
   }
 
   def create(df: DataFrame): FetchedDataset = this.dsl.dataFrameToPageRowRDD(df)
-  def create[T: ClassTag](rdd: RDD[T]): FetchedDataset = this.dsl.rddToPageRowRDD(rdd)
+  def create[T: TypeTag](rdd: RDD[T]): FetchedDataset = this.dsl.rddToPageRowRDD(rdd)
 
-  def create[T: ClassTag](
-                           seq: TraversableOnce[T]
-                         ): FetchedDataset =
+  import TypeUtils.Implicits._
+
+  def create[T: TypeTag](
+                          seq: TraversableOnce[T]
+                        ): FetchedDataset = {
+
+    implicit val ctg = implicitly[TypeTag[T]].toClassTag
     this.dsl.rddToPageRowRDD(this.sqlContext.sparkContext.parallelize(seq.toSeq))
+  }
 
-  def create[T: ClassTag](
-                           seq: TraversableOnce[T],
-                           numSlices: Int
-                         ): FetchedDataset =
+  def create[T: TypeTag](
+                          seq: TraversableOnce[T],
+                          numSlices: Int
+                        ): FetchedDataset = {
+
+    implicit val ctg = implicitly[TypeTag[T]].toClassTag
     this.dsl.rddToPageRowRDD(this.sqlContext.sparkContext.parallelize(seq.toSeq, numSlices))
+  }
 
   lazy val blankSelfRDD = sparkContext.parallelize(Seq(SquashedFetchedRow.blank))
 
@@ -132,31 +140,39 @@ case class SpookyContext private (
 
   object dsl extends Serializable {
 
-    import com.tribbloids.spookystuff.utils.Implicits._
+    import com.tribbloids.spookystuff.utils.ImplicitUtils._
 
     implicit def dataFrameToPageRowRDD(df: DataFrame): FetchedDataset = {
-      val self: SquashedFetchedRDD = new DataFrameView(df).toMapRDD.map {
-        map =>
-          SquashedFetchedRow(
-            Option(ListMap(map.toSeq: _*))
-              .getOrElse(ListMap())
-              .map(tuple => (Field(tuple._1), tuple._2))
-          )
+      val self: SquashedFetchedRDD = new DataFrameView(df)
+        .toMapRDD(false)
+        .map {
+          map =>
+            SquashedFetchedRow(
+              Option(ListMap(map.toSeq: _*))
+                .getOrElse(ListMap())
+                .map(tuple => (Field(tuple._1), tuple._2))
+            )
+        }
+      val fields = df.schema.fields.map {
+        sf =>
+          Field(sf.name) -> sf.dataType
       }
       new FetchedDataset(
         self,
-        schema = ListSet(df.schema.fieldNames: _*).map(Field(_)),
+        fieldMap = ListMap(fields: _*),
         spooky = getSpookyForInput
       )
     }
 
     //every input or noInput will generate a new metrics
-    implicit def rddToPageRowRDD[T: ClassTag](rdd: RDD[T]): FetchedDataset = {
-      import Implicits._
-      import scala.reflect._
+    implicit def rddToPageRowRDD[T: TypeTag](rdd: RDD[T]): FetchedDataset = {
+
+      val ttg = implicitly[TypeTag[T]]
 
       rdd match {
-        case _ if classOf[Map[_,_]].isAssignableFrom(classTag[T].runtimeClass) => //use classOf everywhere?
+        // RDD[Map] => JSON => DF => ..
+        case _ if ttg.tpe <:< TypeUtils.typeOf[Map[_,_]] =>
+          //        classOf[Map[_,_]].isAssignableFrom(classTag[T].runtimeClass) => //use classOf everywhere?
           val canonRdd = rdd.map(
             map =>map.asInstanceOf[Map[_,_]].canonizeKeysToColumnNames
           )
@@ -166,22 +182,20 @@ case class SpookyContext private (
               Utils.toJson(map)
           )
           val dataFrame = sqlContext.read.json(jsonRDD)
-          val self = canonRdd.map(
-            map =>
-              SquashedFetchedRow(ListMap(map.map(tuple => (Field(tuple._1),tuple._2)).toSeq: _*))
-          )
-          new FetchedDataset(
-            self,
-            schema = ListSet(dataFrame.schema.fieldNames: _*).map(Field(_)),
-            spooky = getSpookyForInput
-          )
-        case _ if classOf[SquashedFetchedRow] == classTag[T].runtimeClass =>
+          dataFrameToPageRowRDD(dataFrame)
+
+        // RDD[SquashedFetchedRow] => ..
+        //discard schema
+        case _ if ttg.tpe <:< TypeUtils.typeOf[SquashedFetchedRow] =>
+          //        case _ if classOf[SquashedFetchedRow] == classTag[T].runtimeClass =>
           val self = rdd.asInstanceOf[SquashedFetchedRDD]
           new FetchedDataset(
             self,
-            schema = ListSet[Field](),
+            fieldMap = ListMap(),
             spooky = getSpookyForInput
           )
+
+        // RDD[T] => RDD('_ -> T) => ...
         case _ =>
           val self = rdd.map{
             str =>
@@ -192,7 +206,7 @@ case class SpookyContext private (
           }
           new FetchedDataset(
             self,
-            schema = ListSet(Field("_")),
+            fieldMap = ListMap(Field("_") -> TypeUtils.catalystTypeOrDefault()(ttg)),
             spooky = getSpookyForInput
           )
       }

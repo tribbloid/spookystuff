@@ -2,7 +2,7 @@ package com.tribbloids.spookystuff.actions
 
 import com.tribbloids.spookystuff.dsl._
 import com.tribbloids.spookystuff.extractors.Literal
-import com.tribbloids.spookystuff.row.{DataRow, Field}
+import com.tribbloids.spookystuff.row.{DataRow, FetchedRow, Field}
 import com.tribbloids.spookystuff.{Const, SpookyEnvSuite}
 import org.apache.spark.rdd.RDD
 
@@ -20,7 +20,7 @@ class TestAction extends SpookyEnvSuite {
     val randomTimeout = Random.nextInt().seconds
     val action = Visit(Const.keyDelimiter+"{~}").in(randomTimeout)
 
-    val rewritten = action.interpolate(DataRow(data = ListMap(Field("~") -> "http://www.dummy.com")) -> Seq(), spooky).get
+    val rewritten = action.interpolate(FetchedRow(DataRow(data = ListMap(Field("~") -> "http://www.dummy.com")), Seq()), schema).get
 
     assert(rewritten === Visit(Literal("http://www.dummy.com")))
     assert(rewritten.timeout(null) === randomTimeout)
@@ -31,7 +31,7 @@ class TestAction extends SpookyEnvSuite {
 
     val action = Wget("'{~}").as('dummy_name)
 
-    val rewritten = action.interpolate(DataRow(data = ListMap(Field("~") -> "http://www.dummy.com")) -> Seq(), spooky).get
+    val rewritten = action.interpolate(FetchedRow(DataRow(data = ListMap(Field("~") -> "http://www.dummy.com")), Seq()), schema).get
 
     assert(rewritten === Wget(Literal("http://www.dummy.com")))
     assert(rewritten.name === "dummy_name")

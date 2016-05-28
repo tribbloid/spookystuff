@@ -32,14 +32,14 @@ class TestFetchPlan extends SpookyEnvSuite {
     assert(rdd1.spooky.metrics.pagesFetched.value === 0)
   }
 
-  test("FetchPlan + ExtractPlan will do the fetch") {
+  test("FetchPlan + rdd() will do the fetch") {
 
     val rdd1 = spooky
       .fetch(
         Wget(HTML_URL)
       )
 
-    rdd1.count()
+    rdd1.unsquashedRDD.count()
 
     assert(rdd1.spooky.metrics.pagesFetched.value === 1)
   }
@@ -51,7 +51,7 @@ class TestFetchPlan extends SpookyEnvSuite {
     val src = spooky
       .extract("abc" ~ 'dummy)
 
-    assert(src.plan.localityBeaconRDDOpt.isEmpty)
+    assert(src.plan.beaconRDDOpt.isEmpty)
 
     val rdd1 = src
       .fetch(
@@ -60,7 +60,7 @@ class TestFetchPlan extends SpookyEnvSuite {
         partitionerFactory = {v => partitioner}
       )
 
-    assert(rdd1.plan.localityBeaconRDDOpt.get.partitioner.get eq partitioner)
+    assert(rdd1.plan.beaconRDDOpt.get.partitioner.get eq partitioner)
   }
 
 
@@ -76,8 +76,8 @@ class TestFetchPlan extends SpookyEnvSuite {
         partitionerFactory = {v => partitioner}
       )
 
-    assert(rdd1.plan.localityBeaconRDDOpt.get.partitioner.get eq partitioner)
-    val beaconRDD = rdd1.plan.localityBeaconRDDOpt.get
+    assert(rdd1.plan.beaconRDDOpt.get.partitioner.get eq partitioner)
+    val beaconRDD = rdd1.plan.beaconRDDOpt.get
 
     val rdd2 = rdd1
       .fetch(
@@ -86,7 +86,7 @@ class TestFetchPlan extends SpookyEnvSuite {
         partitionerFactory = {v => partitioner2}
       )
 
-    assert(rdd2.plan.localityBeaconRDDOpt.get.partitioner.get eq partitioner)
-    assert(rdd2.plan.localityBeaconRDDOpt.get eq beaconRDD)
+    assert(rdd2.plan.beaconRDDOpt.get.partitioner.get eq partitioner)
+    assert(rdd2.plan.beaconRDDOpt.get eq beaconRDD)
   }
 }

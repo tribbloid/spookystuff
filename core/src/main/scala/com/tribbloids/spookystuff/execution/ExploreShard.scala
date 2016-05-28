@@ -2,10 +2,13 @@ package com.tribbloids.spookystuff.execution
 
 import com.tribbloids.spookystuff.actions.Trace
 import com.tribbloids.spookystuff.caching.{ConcurrentMap, ExploreSharedVisitedCache}
-import com.tribbloids.spookystuff.extractors._
+import com.tribbloids.spookystuff.dsl.ExploreAlgorithms.ExploreImpl
+import com.tribbloids.spookystuff.extractors.Resolved
 import com.tribbloids.spookystuff.row._
 import com.tribbloids.spookystuff.utils.NOTSerializableMixin
 import com.tribbloids.spookystuff.{SpookyContext, dsl}
+
+import scala.language.implicitConversions
 
 // use Array to minimize serialization footage
 case class Open_Visited(
@@ -17,19 +20,18 @@ case class Open_Visited(
   * NOT serializable: expected to be constructed on Executors
   */
 class ExploreShard(
-                        val itr: Iterator[(Trace, Open_Visited)],
-                        val executionID: Long
-                      ) extends NOTSerializableMixin {
+                    val itr: Iterator[(Trace, Open_Visited)],
+                    val executionID: Long
+                  ) extends NOTSerializableMixin {
 
   import dsl._
 
-  import scala.collection.JavaConverters._
-
-  val _open: ConcurrentMap[Trace, Iterable[DataRow]] = ConcurrentMap()
-  def open = _open.asScala
-  //  val openVs = mutable.SortedSet[(Trace, Array[DataRow])] = mutable.SortedSet() //TODO: add fast sort implementation
+  //TODO: add fast sort implementation
+  val _open: ConcurrentMap[Trace, Iterable[DataRow]] = ConcurrentMap() //TODO: Change to ConcurrentMap[Trace, Array[DataRow]]
+  def open = _open
+  //  val openVs = mutable.SortedSet[(Trace, Array[DataRow])] = mutable.SortedSet()
   val _visited: ConcurrentMap[Trace, Iterable[DataRow]] = ConcurrentMap()
-  def visited = _visited.asScala
+  def visited = _visited
 
   itr.foreach{
     tuple =>
@@ -50,14 +52,14 @@ class ExploreShard(
   }
 
   protected def executeOnce(
-                             expr: NamedExtr[Any],
+                             resolved: Resolved[Any],
                              sampler: Sampler[Any],
                              joinType: JoinType,
 
                              traces: Set[Trace]
                            )(
-                             depthKey: Field,
-                             algorithmImpl: ExploreAlgorithmImpl,
+                             impl: ExploreImpl,
+                             `depth_++`: Resolved[Int],
                              spooky: SpookyContext
                            )(
                              rowFn: SquashedFetchedRow => SquashedFetchedRow
@@ -65,12 +67,12 @@ class ExploreShard(
                              //should include flatten & extract
                            ): Unit = {
 
-    import algorithmImpl._
+    import impl._
+    import params._
 
-    val pairOrdering = ordering.on {
-      v: (Trace, Iterable[DataRow]) => v._2
-    }
-    val bestOpen: (Trace, Iterable[DataRow]) = open.min(pairOrdering) //TODO: expensive! pre-sort first
+    implicit def wSpooky(row: SquashedFetchedRow): SquashedFetchedRow#W = new row.W(schema)
+
+    val bestOpen: (Trace, Iterable[DataRow]) = open.min(pairOrdering) //TODO: expensive! use pre-sorted collection
 
     open -= bestOpen._1
 
@@ -85,15 +87,15 @@ class ExploreShard(
     }
 
     if (bestOpenAfterElimination._2.nonEmpty) {
-      val bestRow_- = SquashedFetchedRow(bestOpen._2.toArray, bestOpen._1).loadDocs(spooky)
+      val bestRow_- = SquashedFetchedRow(bestOpen._2.toArray, LazyDocs(bestOpen._1.toArray))
 
       val bestRow = rowFn.apply(
         bestRow_-
-          .extract(new GetExpr(depthKey).typed[Int].andThen(_ + 1) named_! depthKey)
+            .extract(depth_++)
       )
       val bestDataRowsInRange = bestRow.dataRows.filter {
         dataRow =>
-          range.contains(dataRow.getInt(depthKey).get)
+          range.contains(dataRow.getInt(depth_++.field).get)
       }
 
       this.commitIntoVisited(bestOpen._1, bestDataRowsInRange, visitedReducer)
@@ -101,13 +103,13 @@ class ExploreShard(
       val bestNonFringeRow = bestRow.copy(
         dataRows = bestRow.dataRows.filter{
           dataRow =>
-            dataRow.getInt(depthKey).get < range.max
+            dataRow.getInt(depth_++.field).get < range.max
         }
       )
 
       val opens_+ : Array[(Trace, DataRow)] = bestNonFringeRow
-        .extract(expr)
-        .flattenData(expr.field, ordinalField, joinType.isLeft, sampler)
+        .extract(resolved)
+        .flattenData(resolved.field, ordinalField, joinType.isLeft, sampler)
         .interpolate(traces, spooky)
       opens_+.foreach {
         open_+ =>
@@ -120,14 +122,15 @@ class ExploreShard(
   }
 
   def execute(
-               expr: NamedExtr[Any],
+               resolved: Resolved[Any],
                sampler: Sampler[Any],
                joinType: JoinType,
 
                traces: Set[Trace]
              )(
                maxItr: Int,
-               algorithmImpl: ExploreAlgorithmImpl,
+               impl: ExploreImpl,
+               `depth_++`: Resolved[Int],
                spooky: SpookyContext
              )(
                rowFn: SquashedFetchedRow => SquashedFetchedRow
@@ -144,12 +147,12 @@ class ExploreShard(
         .map(t => t._1 -> Open_Visited(visited = Some(t._2.toArray)))
 
       val toBeCommitted = this.visited
-          .map {
-            tuple =>
-              (tuple._1 -> executionID) -> tuple._2
-          }
+        .map {
+          tuple =>
+            (tuple._1 -> executionID) -> tuple._2
+        }
 
-      ExploreSharedVisitedCache.commit(toBeCommitted, algorithmImpl.visitedReducer)
+      ExploreSharedVisitedCache.commit(toBeCommitted, impl.visitedReducer)
 
       this.finalize()
 
@@ -158,7 +161,7 @@ class ExploreShard(
 
     for (i <- 0 to maxItr) {
       if (open.isEmpty) return finish()
-      executeOnce(expr, sampler, joinType, traces)(algorithmImpl.depthField, algorithmImpl, spooky)(rowFn)
+      executeOnce(resolved, sampler, joinType, traces)(impl, `depth_++`, spooky)(rowFn)
     }
 
     finish()

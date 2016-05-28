@@ -1,9 +1,7 @@
 package com.tribbloids.spookystuff.row
 
 import com.tribbloids.spookystuff.SpookyEnvSuite
-import com.tribbloids.spookystuff.actions.{ActionLike, Snapshot, Trace, Visit}
-import com.tribbloids.spookystuff.doc.Fetched
-import org.apache.spark.sql.catalyst.ScalaReflection
+import com.tribbloids.spookystuff.actions.{Snapshot, Visit}
 
 /**
   * Created by peng on 05/04/16.
@@ -13,7 +11,7 @@ class SquashedFetchedRowSuite extends SpookyEnvSuite {
   import com.tribbloids.spookystuff.dsl._
 
   test("Array[Page]().grouping yields at least 1 group") {
-    val row = SquashedFetchedRow(_fetched = Array[Fetched]())
+    val row = SquashedFetchedRow()
     val grouped = row.defaultGroupedFetched.toSeq
     assert(grouped == Seq(Seq()))
   }
@@ -26,7 +24,7 @@ class SquashedFetchedRowSuite extends SpookyEnvSuite {
       Snapshot() ~ 'a,
       Snapshot() ~ 'b
     )
-    val row = SquashedFetchedRow(_fetched = trace.fetch(spooky).toArray)
+    val row = SquashedFetchedRow.withDocs(docs = trace.fetch(spooky))
     val grouped = row.defaultGroupedFetched.toSeq
     val groupedNames = grouped.map {
       _.map {

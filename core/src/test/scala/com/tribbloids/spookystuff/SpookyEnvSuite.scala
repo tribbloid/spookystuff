@@ -1,20 +1,42 @@
 package com.tribbloids.spookystuff
 
 import com.tribbloids.spookystuff.dsl.{DriverFactories, DriverFactory}
+import com.tribbloids.spookystuff.execution.SchemaContext
+import com.tribbloids.spookystuff.extractors.{Alias, GenExtractor, GenResolved}
+import com.tribbloids.spookystuff.row.{SquashedFetchedRow, TypedField}
 import com.tribbloids.spookystuff.tests.{RemoteDocsMixin, TestHelper}
 import com.tribbloids.spookystuff.utils.Utils
+import org.apache.spark.SparkContext
 import org.apache.spark.sql.SQLContext
-import org.apache.spark.{SparkConf, SparkContext}
 import org.scalatest.{BeforeAndAfter, BeforeAndAfterAll, FunSuite, Retries}
 
-/**
- * Created by peng on 11/30/14.
- */
-abstract class SpookyEnvSuite extends FunSuite with BeforeAndAfter with BeforeAndAfterAll with Retries with RemoteDocsMixin {
+import scala.language.implicitConversions
+
+abstract class SpookyEnvSuite
+  extends FunSuite
+    with BeforeAndAfter
+    with BeforeAndAfterAll
+    with Retries
+    with RemoteDocsMixin {
 
   def sc: SparkContext = TestHelper.TestSpark
   def sql: SQLContext = TestHelper.TestSQL
-  var spooky: SpookyContext = _
+  lazy val spookyConf = new SpookyConf(
+    driverFactory = driverFactory
+  )
+  lazy val spooky = new SpookyContext(sql, spookyConf)
+  lazy val schema = SchemaContext(spooky)
+
+  implicit def wSpooky(row: SquashedFetchedRow): SquashedFetchedRow#W = new row.W(schema)
+  implicit def extractor2Resolved[T, R](extractor: Alias[T, R]): GenResolved[T, R] = GenResolved(
+    extractor.resolve(schema),
+    TypedField(
+      extractor.field,
+      extractor.applyType(schema)
+    )
+  )
+
+  implicit def extractor2Function[T, R](extractor: GenExtractor[T, R]): PartialFunction[T, R] = extractor.resolve(schema)
 
   lazy val driverFactory: DriverFactory = DriverFactories.PhantomJS(loadImages = true)
 
@@ -27,11 +49,7 @@ abstract class SpookyEnvSuite extends FunSuite with BeforeAndAfter with BeforeAn
 
   override def beforeAll() {
 
-    val spookyConf = new SpookyConf(
-      driverFactory = driverFactory
-    )
-
-    spooky = new SpookyContext(sql, spookyConf)
+    val conf = TestHelper.TestSparkConf.setAppName("test")
 
     super.beforeAll()
   }

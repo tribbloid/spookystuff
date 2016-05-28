@@ -2,19 +2,19 @@ package com.tribbloids.spookystuff.execution
 
 import com.tribbloids.spookystuff.actions._
 import com.tribbloids.spookystuff.dsl.{FetchOptimizer, FetchOptimizers}
-import com.tribbloids.spookystuff.row.{DataRow, SquashedFetchedRow, SquashedFetchedRDD}
+import com.tribbloids.spookystuff.row.{DataRow, SquashedFetchedRDD, SquashedFetchedRow, LazyDocs}
 import org.apache.spark.Partitioner
 import org.apache.spark.rdd.RDD
 
-trait CreateOrInheritBeaconRDDPlan extends ExecutionPlan {
+trait InjectBeaconRDDPlan extends ExecutionPlan {
 
   def fetchOptimizer: FetchOptimizer
   def partitionerFactory: RDD[_] => Partitioner
 
-  abstract override lazy val localityBeaconRDDOpt: Option[RDD[(Trace, DataRow)]] = {
+  abstract override lazy val beaconRDDOpt: Option[RDD[(Trace, DataRow)]] = {
     fetchOptimizer match {
       case FetchOptimizers.WebCacheAware =>
-        val inherited = super.defaultLocalityBeaconRDDOpt
+        val inherited = super.defaultBeaconRDDOpt
         inherited.orElse{
           this.firstChildOpt.map {
             child =>
@@ -22,7 +22,7 @@ trait CreateOrInheritBeaconRDDPlan extends ExecutionPlan {
           }
         }
       case _ =>
-        super.defaultLocalityBeaconRDDOpt
+        super.defaultBeaconRDDOpt
     }
   }
 }
@@ -31,14 +31,14 @@ trait CreateOrInheritBeaconRDDPlan extends ExecutionPlan {
   * Created by peng on 27/03/16.
   */
 case class FetchPlan(
-                      child: ExecutionPlan,
+                      override val child: ExecutionPlan,
                       traces: Set[Trace],
                       partitionerFactory: RDD[_] => Partitioner,
                       fetchOptimizer: FetchOptimizer
-                    ) extends ExecutionPlan(child) with CreateOrInheritBeaconRDDPlan {
+                    ) extends UnaryPlan(child) with InjectBeaconRDDPlan {
 
   import com.tribbloids.spookystuff.dsl._
-  import com.tribbloids.spookystuff.utils.Implicits._
+  import com.tribbloids.spookystuff.utils.ImplicitUtils._
 
   override def doExecute(): SquashedFetchedRDD = {
 
@@ -55,14 +55,14 @@ case class FetchPlan(
         case FetchOptimizers.Wide =>
           trace_DataRowRDD.groupByKey(partitioner)
         case FetchOptimizers.WebCacheAware =>
-          trace_DataRowRDD.groupByKey_beacon(localityBeaconRDDOpt.get)
+          trace_DataRowRDD.groupByKey_beacon(beaconRDDOpt.get)
         case _ => throw new NotImplementedError(s"${fetchOptimizer.getClass.getSimpleName} optimizer is not supported")
       }
 
     grouped
       .map {
         tuple =>
-          SquashedFetchedRow(tuple._2.toArray, tuple._1) // actual fetch can only be triggered by extract or savePages
+          SquashedFetchedRow(tuple._2.toArray, LazyDocs(tuple._1.toArray)) // actual fetch can only be triggered by extract or savePages
       }
   }
 }

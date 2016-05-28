@@ -4,7 +4,7 @@ import com.tribbloids.spookystuff.actions._
 import com.tribbloids.spookystuff.dsl._
 import com.tribbloids.spookystuff.row.Field
 
-class TestSpookyContext extends SpookyEnvSuite{
+class SpookyContextSuite extends SpookyEnvSuite{
 
   test("SpookyContext should be Serializable") {
 
@@ -63,14 +63,14 @@ class TestSpookyContext extends SpookyEnvSuite{
       .fetch(
         Wget(HTML_URL)
       )
-    rdd1.count()
+    rdd1.unsquashedRDD.count()
 
     val rdd2 = spooky
       .fetch(
         Wget(HTML_URL)
       )
       
-    rdd2.count()
+    rdd2.unsquashedRDD.count()
 
     assert(rdd1.spooky.metrics !== rdd2.spooky.metrics)
     assert(rdd1.spooky.metrics.pagesFetched.value === 1)

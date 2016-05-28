@@ -3,6 +3,8 @@ package com.tribbloids.spookystuff
 import com.tribbloids.spookystuff.doc.Doc
 import com.tribbloids.spookystuff.session.Session
 
+import scala.language.implicitConversions
+
 /**
  * Created by peng on 3/26/15.
  */

@@ -26,7 +26,7 @@ trait QueryCore extends LocalSpookyCore {
         array
       case pageRowRDD: ExecutionPlan =>
         val array = pageRowRDD.rdd.persist().takeSample(withReplacement = false, num = 100)
-        println(pageRowRDD.fieldSeq)
+        println(pageRowRDD.fields)
         array
       case rdd: RDD[_] =>
         rdd.persist().takeSample(withReplacement = false, num = 100)

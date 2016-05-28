@@ -37,7 +37,7 @@ class TestExplorePlan extends SpookyEnvSuite {
     val src = spooky
       .extract("abc" ~ 'dummy)
 
-    assert(src.plan.localityBeaconRDDOpt.isEmpty)
+    assert(src.plan.beaconRDDOpt.isEmpty)
 
     val rdd1 = src
       .explore('dummy)(
@@ -46,7 +46,7 @@ class TestExplorePlan extends SpookyEnvSuite {
         partitionerFactory = {v => partitioner}
       )()
 
-    assert(rdd1.plan.localityBeaconRDDOpt.get.partitioner.get eq partitioner)
+    assert(rdd1.plan.beaconRDDOpt.get.partitioner.get eq partitioner)
   }
 
 
@@ -62,8 +62,8 @@ class TestExplorePlan extends SpookyEnvSuite {
         partitionerFactory = {v => partitioner}
       )()
 
-    assert(rdd1.plan.localityBeaconRDDOpt.get.partitioner.get eq partitioner)
-    val beaconRDD = rdd1.plan.localityBeaconRDDOpt.get
+    assert(rdd1.plan.beaconRDDOpt.get.partitioner.get eq partitioner)
+    val beaconRDD = rdd1.plan.beaconRDDOpt.get
 
     val rdd2 = rdd1
       .explore('dummy)(
@@ -72,8 +72,8 @@ class TestExplorePlan extends SpookyEnvSuite {
         partitionerFactory = {v => partitioner2}
       )()
 
-    assert(rdd2.plan.localityBeaconRDDOpt.get.partitioner.get eq partitioner)
-    assert(rdd2.plan.localityBeaconRDDOpt.get eq beaconRDD)
+    assert(rdd2.plan.beaconRDDOpt.get.partitioner.get eq partitioner)
+    assert(rdd2.plan.beaconRDDOpt.get eq beaconRDD)
   }
 
   test("ExplorePlan should work recursively on directory") {

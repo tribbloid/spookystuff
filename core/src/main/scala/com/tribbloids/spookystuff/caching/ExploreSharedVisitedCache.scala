@@ -10,14 +10,12 @@ import com.tribbloids.spookystuff.row.{DataRow, RowReducer}
   */
 object ExploreSharedVisitedCache {
 
-  import scala.collection.JavaConverters._
-
-  val committed: MapCache[(Trace, Long), Iterable[DataRow]] = new MapCache()
+  val committedRows: MapCache[(Trace, Long), Iterable[DataRow]] = MapCache()
 
   private val _onGoings: ConcurrentMap[Long, ConcurrentSet[ExploreShard]] = ConcurrentMap() //jobID -> running ExploreStateView
-  def onGoings = _onGoings.asScala
+  def onGoings = _onGoings
 
-  def onGoing(jobID: Long) = {
+  def onGoing(jobID: Long): ConcurrentSet[ExploreShard] = {
     onGoings.synchronized{
       onGoings
         .getOrElse(
@@ -27,7 +25,6 @@ object ExploreSharedVisitedCache {
             v
           }
         )
-        .asScala
     }
   }
 
@@ -44,9 +41,9 @@ object ExploreSharedVisitedCache {
                        reducer: RowReducer
                      ): Unit = {
 
-    val oldVs = committed.get(key)
+    val oldVs = committedRows.get(key)
     val newVs = (Seq(value) ++ oldVs).reduce(reducer)
-    committed.put(key, newVs)
+    committedRows.put(key, newVs)
   }
 
   def commit(
@@ -54,7 +51,7 @@ object ExploreSharedVisitedCache {
               reducer: RowReducer
             ): Unit = {
 
-    committed.synchronized{
+    committedRows.synchronized{
       kvs.foreach{
         kv =>
           commit1(kv._1, kv._2, reducer)
@@ -91,12 +88,15 @@ object ExploreSharedVisitedCache {
   }
 
   def getAll(key: (Trace, Long)): Set[Iterable[DataRow]] = {
-    val onGoingVs = onGoing(key._2)
+    val onGoing = this.onGoing(key._2)
       .toSet[ExploreShard]
+
+    val onGoingVs = onGoing
       .flatMap {
-        _.visited.get(key._1)
+        v =>
+          v.visited.get(key._1)
       }
 
-    onGoingVs ++ committed.get(key)
+    onGoingVs ++ committedRows.get(key)
   }
 }

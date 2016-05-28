@@ -3,13 +3,14 @@ package com.tribbloids.spookystuff
 import java.util.Date
 
 import com.tribbloids.spookystuff.dsl._
-import com.tribbloids.spookystuff.extractors.{ByTrace, ByDoc}
+import com.tribbloids.spookystuff.extractors.{ByDoc, ByTrace}
 import com.tribbloids.spookystuff.row.Sampler
 import com.tribbloids.spookystuff.session.{OAuthKeys, ProxySetting}
 import org.apache.spark.{Partitioner, SparkConf, SparkContext}
 import org.apache.spark.rdd.RDD
 import org.apache.spark.storage.StorageLevel
 
+import scala.concurrent.duration.Duration.Infinite
 import scala.concurrent.duration._
 
 object SpookyConf {
@@ -59,8 +60,8 @@ class SpookyConf (
                    var errorDump: Boolean = true,
                    var errorScreenshot: Boolean = true,
 
-                   var pageExpireAfter: Duration = 7.day,
-                   var pageNotExpiredSince: Option[Date] = None,
+                   var docsLifeSpan: Duration = 7.day,
+                   var IgnoreDocsCreatedBefore: Option[Date] = None,
 
                    var cacheFilePath: ByTrace[String] = FilePaths.Hierarchical,
                    var autoSaveFilePath: ByDoc[String] = FilePaths.UUIDName(FilePaths.Hierarchical),
@@ -135,8 +136,8 @@ class SpookyConf (
       this.errorDump,
       this.errorScreenshot,
 
-      this.pageExpireAfter,
-      this.pageNotExpiredSince,
+      this.docsLifeSpan,
+      this.IgnoreDocsCreatedBefore,
 
       this.cacheFilePath,
       this.autoSaveFilePath,
@@ -166,6 +167,21 @@ class SpookyConf (
 
       this.alwaysDownloadBrowserRemotely
     )
+  }
+
+  def getEarliestDocCreationTime(nowMillis: Long = System.currentTimeMillis()): Long = {
+
+    val earliestTimeFromDuration = docsLifeSpan match {
+      case inf: Infinite => Long.MinValue
+      case d =>
+        nowMillis - d.toMillis
+    }
+    IgnoreDocsCreatedBefore match {
+      case Some(expire) =>
+        Math.max(expire.getTime, earliestTimeFromDuration)
+      case None =>
+        earliestTimeFromDuration
+    }
   }
 
   //  def toJSON: String = {

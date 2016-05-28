@@ -11,13 +11,12 @@ import scala.language.implicitConversions
 class FetchedRowViewSuite extends SpookyEnvSuite {
 
   import dsl._
-  import com.tribbloids.spookystuff.utils.Implicits._
 
   test("get page") {
     val pages = (
       Wget(HTML_URL) :: Nil
       ).fetch(spooky)
-    val row = FetchedRow(pageLikes = pages)
+    val row = FetchedRow(fetched = pages)
 
     val page1 = row.getOnlyPage
     assert(page1.get === pages.head)
@@ -31,11 +30,11 @@ class FetchedRowViewSuite extends SpookyEnvSuite {
     val pages = (
       (Wget(HTML_URL) as 'pp) :: Nil
       ).fetch(spooky)
-    val row = FetchedRow(pageLikes = pages)
-      .squash
+    val row = FetchedRow(fetched = pages)
+      .squash(spooky)
       .extract(
-        S("h1.central-textlogo img").head named 'e1,
-        'pp.findAll("label") named 'lang
+        S("h1.central-textlogo img").head withAlias 'e1,
+        'pp.findAll("label") withAlias 'lang
       )
       .unsquash.head
 

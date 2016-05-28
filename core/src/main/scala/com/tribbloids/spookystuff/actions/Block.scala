@@ -6,7 +6,8 @@ import com.tribbloids.spookystuff.extractors.{Extractor, Literal}
 import com.tribbloids.spookystuff._
 import com.tribbloids.spookystuff.http.HttpUtils
 import com.tribbloids.spookystuff.row.FetchedRow
-import com.tribbloids.spookystuff.doc.{Fetched, NoDoc, Doc}
+import com.tribbloids.spookystuff.doc.{Doc, Fetched, NoDoc}
+import com.tribbloids.spookystuff.execution.SchemaContext
 import com.tribbloids.spookystuff.session.Session
 import com.tribbloids.spookystuff.utils.Utils.retry
 
@@ -73,7 +74,7 @@ object Try {
 
     assert(trace.size <= 1)
 
-    Try(trace.headOption.getOrElse(Nil))(retries, cacheError)
+    Try(trace.headOption.getOrElse(Actions.empty))(retries, cacheError)
   }
 }
 
@@ -119,8 +120,8 @@ final case class Try(
     pages
   }
 
-  override def doInterpolate(pageRow: FetchedRow, spooky: SpookyContext): Option[this.type] ={
-    val seq = this.doInterpolateSeq(pageRow, spooky)
+  override def doInterpolate(pageRow: FetchedRow, schema: SchemaContext): Option[this.type] ={
+    val seq = this.doInterpolateSeq(pageRow, schema)
     if (seq.isEmpty) None
     else Some(this.copy(children = seq)(this.retries, this.cacheEmptyOutput).asInstanceOf[this.type])
   }
@@ -136,7 +137,7 @@ object TryLocally {
 
     assert(trace.size <= 1)
 
-    TryLocally(trace.headOption.getOrElse(Nil))(retries, cacheError)
+    TryLocally(trace.headOption.getOrElse(Actions.empty))(retries, cacheError)
   }
 }
 
@@ -179,8 +180,8 @@ final case class TryLocally(
     pages
   }
 
-  override def doInterpolate(pageRow: FetchedRow, spooky: SpookyContext): Option[this.type] ={
-    val seq = this.doInterpolateSeq(pageRow, spooky)
+  override def doInterpolate(pageRow: FetchedRow, schema: SchemaContext): Option[this.type] ={
+    val seq = this.doInterpolateSeq(pageRow, schema)
     if (seq.isEmpty) None
     else Some(this.copy(children = seq)(this.retries, this.cacheEmptyOutput).asInstanceOf[this.type])
   }
@@ -237,8 +238,8 @@ final case class Loop(
     pages
   }
 
-  override def doInterpolate(pageRow: FetchedRow, spooky: SpookyContext): Option[this.type] ={
-    val seq = this.doInterpolateSeq(pageRow, spooky)
+  override def doInterpolate(pageRow: FetchedRow, schema: SchemaContext): Option[this.type] ={
+    val seq = this.doInterpolateSeq(pageRow, schema)
     if (seq.isEmpty) None
     else Some(this.copy(children = seq).asInstanceOf[this.type])
   }
@@ -291,8 +292,8 @@ object If {
 
     If(
       condition,
-      ifTrue.headOption.getOrElse(Nil),
-      ifFalse.headOption.getOrElse(Nil)
+      ifTrue.headOption.getOrElse(Actions.empty),
+      ifFalse.headOption.getOrElse(Actions.empty)
     ) //TODO: should persist rule of Cartesian join & yield Set[Loop]
   }
 }
@@ -330,9 +331,9 @@ final case class If(
     pages
   }
 
-  override def doInterpolate(pageRow: FetchedRow, spooky: SpookyContext): Option[this.type] ={
-    val ifTrueInterpolated = Actions.doInterppolateSeq(ifTrue, pageRow, spooky)
-    val ifFalseInterpolated = Actions.doInterppolateSeq(ifFalse, pageRow, spooky)
+  override def doInterpolate(pageRow: FetchedRow, schema: SchemaContext): Option[this.type] ={
+    val ifTrueInterpolated = Actions.doInterppolateSeq(ifTrue, pageRow, schema)
+    val ifFalseInterpolated = Actions.doInterppolateSeq(ifFalse, pageRow, schema)
     val result = this.copy(ifTrue = ifTrueInterpolated, ifFalse = ifFalseInterpolated).asInstanceOf[this.type]
     Some(result)
   }
@@ -367,8 +368,8 @@ case class OAuthV2(self: Wget) extends Block(List(self)) with Driverless {
 
   override def trunk = Some(this)
 
-  override def doInterpolate(pageRow: FetchedRow, context: SpookyContext): Option[this.type] =
-    self.interpolate(pageRow, context: SpookyContext).map {
+  override def doInterpolate(pageRow: FetchedRow, schema: SchemaContext): Option[this.type] =
+    self.interpolate(pageRow, schema).map {
       v => this.copy(self = v.asInstanceOf[Wget]).asInstanceOf[this.type]
     }
 

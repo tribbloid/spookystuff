@@ -4,8 +4,9 @@ import com.tribbloids.spookystuff.SpookyContext
 import com.tribbloids.spookystuff.actions._
 import com.tribbloids.spookystuff.row.{DataRow, Field, SquashedFetchedRDD}
 import org.apache.spark.rdd.RDD
+import org.apache.spark.sql.types.DataType
 
-import scala.collection.immutable.ListSet
+import scala.collection.immutable.ListMap
 import scala.collection.mutable.ArrayBuffer
 
 /**
@@ -13,13 +14,13 @@ import scala.collection.mutable.ArrayBuffer
   */
 case class RDDPlan(
                     sourceRDD: SquashedFetchedRDD,
-                    override val fields: ListSet[Field],
+                    override val schema: SchemaContext,
                     override val spooky: SpookyContext,
-                    localityBeaconRDD: Option[RDD[(Trace, DataRow)]] = None,
+                    beaconRDD: Option[RDD[(Trace, DataRow)]] = None,
                     override val cacheQueue: ArrayBuffer[RDD[_]] = ArrayBuffer()
-                  ) extends ExecutionPlan(Seq(), fields, spooky, cacheQueue) {
+                  ) extends ExecutionPlan(Seq(), spooky, cacheQueue) {
 
-  override lazy val localityBeaconRDDOpt = localityBeaconRDD
+  override lazy val beaconRDDOpt = beaconRDD
 
   override def doExecute(): SquashedFetchedRDD = sourceRDD
 }

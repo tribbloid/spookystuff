@@ -1,5 +1,10 @@
 package com.tribbloids.spookystuff.tests
 
+import org.apache.spark.SparkEnv
+import org.apache.spark.serializer.{JavaSerializer, KryoSerializer, Serializer}
+
+import scala.reflect.ClassTag
+
 /**
   * Created by peng on 17/05/16.
   */
@@ -11,12 +16,13 @@ trait TestMixin {
     def shouldBe(gd: String = null): Unit = {
       val a = str.split("\n").toList.filterNot(_.replaceAllLiterally(" ","").isEmpty)
         .map(v => ("|" + v).trim.stripPrefix("|"))
-      println("================================[ORIGINAL]=================================")
-      println(a.mkString("\n"))
+
+      def originalStr = "================================[ORIGINAL]=================================\n" +
+        a.mkString("\n") + "\n"
 
       Option(gd) match {
         case None =>
-
+          println(originalStr)
         case Some(_gd) =>
           val b = _gd.split("\n").toList.filterNot(_.replaceAllLiterally(" ","").isEmpty)
             .map(v => ("|" + v).trim.stripPrefix("|"))
@@ -27,11 +33,39 @@ trait TestMixin {
           assert(
             a == b,
             {
+              println(originalStr)
               "\n==============================[GROUND TRUTH]===============================\n" +
                 b.mkString("\n") + "\n"
             }
           )
       }
+    }
+  }
+
+  def assertSerializable[T <: AnyRef: ClassTag](
+                                                 element: T,
+                                                 serializers: Seq[Serializer] = {
+                                                   val conf = SparkEnv.get.conf
+                                                   Seq(
+                                                     new JavaSerializer(conf),
+                                                     new KryoSerializer(conf)
+                                                   )
+                                                 },
+                                                 condition: (T, T) => Unit = {
+                                                   (v1: T, v2: T) =>
+                                                     assert((v1: T) == (v2: T))
+                                                 }
+                                               ): Unit = {
+
+    serializers.foreach{
+      ser =>
+        val serInstance = ser.newInstance()
+        val serElement = serInstance.serialize(element)
+        val element2 = serInstance.deserialize[T](serElement)
+        assert(!element.eq(element2))
+        condition (element, element2)
+        //    assert(element.hashCode() == element2.hashCode())
+        assert(element.toString == element2.toString)
     }
   }
 }

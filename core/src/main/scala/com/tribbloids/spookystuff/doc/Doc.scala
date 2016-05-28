@@ -4,7 +4,7 @@ import java.util.{Date, UUID}
 
 import com.tribbloids.spookystuff._
 import com.tribbloids.spookystuff.actions._
-import com.tribbloids.spookystuff.utils.{FetchedUDT, IdentifierMixin, Utils}
+import com.tribbloids.spookystuff.utils.{AnyUDT, IdentifierMixin, Utils}
 import org.apache.commons.csv.CSVFormat
 import org.apache.hadoop.fs.Path
 import org.apache.http.StatusLine
@@ -20,7 +20,7 @@ import org.mozilla.universalchardet.UniversalDetector
   */
 //use to genterate a lookup key for each page so
 @SerialVersionUID(612503421395L)
-case class PageUID(
+case class DocUID(
                     backtrace: Trace,
                     output: Export,
                     //                    sessionStartTime: Long,
@@ -30,24 +30,16 @@ case class PageUID(
 
 }
 
-trait PageLike extends Serializable {
-  def uid: PageUID
+class FetchedUDT extends AnyUDT[Fetched]
+
+@SQLUserDefinedType(udt = classOf[FetchedUDT])
+trait Fetched extends Serializable {
+
+  def uid: DocUID
   def cacheable: Boolean
 
   def name = Option(this.uid.output).map(_.name).orNull
-}
 
-//case class Unfetched(
-//                      trace: Trace
-//                    ) extends PageLike {
-//
-//  def cacheable: Boolean = false
-//
-//  @transient override lazy val uid: PageUID = PageUID(trace, null, 0, 1)
-//}
-
-@SQLUserDefinedType(udt = classOf[FetchedUDT])
-trait Fetched extends PageLike {
   def timestamp: Date
 
   def laterThan(v2: Fetched): Boolean = this.timestamp after v2.timestamp
@@ -65,18 +57,18 @@ case class NoDoc(
                   override val cacheable: Boolean = true
                 ) extends Serializable with Fetched {
 
-  @transient override lazy val uid: PageUID = PageUID(trace, null, 0, 1)
+  @transient override lazy val uid: DocUID = DocUID(trace, null, 0, 1)
 }
 
 case class ErrorWithDoc(
-                    delegate: Doc,
-                    override val message: String = "",
-                    override val cause: Throwable = null
-                  ) extends ActionException with Fetched {
+                         delegate: Doc,
+                         override val message: String = "",
+                         override val cause: Throwable = null
+                       ) extends ActionException with Fetched {
 
   override def timestamp: Date = delegate.timestamp
 
-  override def uid: PageUID = delegate.uid
+  override def uid: DocUID = delegate.uid
 
   override def cacheable: Boolean = delegate.cacheable
 }
@@ -98,19 +90,19 @@ object Doc {
 //keep small, will be passed around by Spark
 @SerialVersionUID(94865098324L)
 case class Doc(
-           override val uid: PageUID,
+                override val uid: DocUID,
 
-           override val uri: String, //redirected
-           declaredContentType: Option[String],
-           content: Array[Byte],
+                override val uri: String, //redirected
+                declaredContentType: Option[String],
+                content: Array[Byte],
 
-           //                 cookie: Seq[SerializableCookie] = Nil,
-           override val timestamp: Date = new Date(System.currentTimeMillis()),
-           saved: scala.collection.mutable.Set[String] = scala.collection.mutable.Set(),
-           override val cacheable: Boolean = true,
-           httpStatus: Option[StatusLine] = None,
-           @transient _properties: Map[String, Any] = null //for customizing parsing
-         ) extends Unstructured with Fetched with IdentifierMixin {
+                //                 cookie: Seq[SerializableCookie] = Nil,
+                override val timestamp: Date = new Date(System.currentTimeMillis()),
+                saved: scala.collection.mutable.Set[String] = scala.collection.mutable.Set(),
+                override val cacheable: Boolean = true,
+                httpStatus: Option[StatusLine] = None,
+                @transient _properties: Map[String, Any] = null //for customizing parsing
+              ) extends Unstructured with Fetched with IdentifierMixin {
 
   def properties: Map[String, Any] = Option(_properties).getOrElse(Map())
 
@@ -200,12 +192,12 @@ case class Doc(
   def contentType = parsedContentType.toString
 
   def tikaMimeType = MimeTypes.getDefaultMimeTypes.forName(mimeType)
-  def exts: Array[String] = tikaMimeType.getExtensions.toArray(Array[String]()).map{
+  def fileExtensions: Array[String] = tikaMimeType.getExtensions.toArray(Array[String]()).map{
     str =>
       if (str.startsWith(".")) str.splitAt(1)._2
       else str
   }
-  def defaultExt: Option[String] = exts.headOption
+  def defaultFileExtension: Option[String] = fileExtensions.headOption
 
   override def findAll(selector: String) = root.findAll(selector)
   override def findAllWithSiblings(start: String, range: Range) = root.findAllWithSiblings(start, range)
@@ -231,7 +223,7 @@ case class Doc(
 
     val path = Utils.uriConcat(pathParts: _*)
 
-    PageUtils.dfsWrite("save", path, spooky) {
+    DocUtils.dfsWrite("save", path, spooky) {
 
       val fullPath = new Path(path)
       val fs = fullPath.getFileSystem(spooky.hadoopConf)

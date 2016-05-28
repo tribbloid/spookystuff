@@ -11,7 +11,7 @@ import com.tribbloids.spookystuff.integration.IntegrationSuite
   */
 class FetchInteractionsIT extends IntegrationSuite{
 
-  import com.tribbloids.spookystuff.utils.Implicits._
+  import com.tribbloids.spookystuff.utils.ImplicitUtils._
 
   override def doMain(): Unit = {
 
@@ -37,7 +37,7 @@ class FetchInteractionsIT extends IntegrationSuite{
     val uri = pageRows(0).pages.head.uri
     assert((uri endsWith "zh.wikipedia.org/wiki/深度学习") || (uri endsWith "zh.wikipedia.org/wiki/"+URLEncoder.encode("深度学习", "UTF-8")))
     assert(pageRows(0).pages.head.name === Snapshot(DocFilters.MustHaveTitle).toString)
-    val pageTime = pageRows(0).pageLikes.head.timestamp.getTime
+    val pageTime = pageRows(0).fetched.head.timestamp.getTime
     assert(pageTime < finishTime)
     assert(pageTime > finishTime-120000) //long enough even after the second time it is retrieved from s3 cache
 

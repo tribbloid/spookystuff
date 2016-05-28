@@ -17,11 +17,11 @@ import scala.xml.PrettyPrinter
 
 object Utils {
 
-  import Implicits._
+  import ImplicitUtils._
   import ScalaReflection.universe._
 
   val xmlPrinter = new PrettyPrinter(Int.MaxValue, 2)
-//  val logger = LoggerFactory.getLogger(this.getClass)
+  //  val logger = LoggerFactory.getLogger(this.getClass)
 
   // Returning T, throwing the exception on failure
   @annotation.tailrec
@@ -185,10 +185,10 @@ These special characters are often called "metacharacters".
   def asIterable[T <: Any : ClassTag](obj: Any): Iterable[T] = {
 
     obj match {
-      case v: TraversableOnce[Any] => v.toIterable.filterByType[T].get
+      case v: TraversableOnce[Any] => v.toArray.filterByType[T]
       case v: Array[T] => v.filterByType[T].toIterable
       case _ =>
-        Iterable[Any](obj).filterByType[T].get
+        Array[Any](obj).filterByType[T]
     }
   }
 
@@ -199,18 +199,7 @@ These special characters are often called "metacharacters".
     else None
   }
 
-  def assureSerializable[T <: AnyRef: ClassTag](element: T): Unit = {
-
-    val ser = SparkEnv.get.serializer.newInstance()
-    val serElement = ser.serialize(element)
-    val element2 = ser.deserialize[T](serElement)
-    assert(!element.eq(element2))
-    assert (element == element2)
-    assert(element.hashCode() == element2.hashCode())
-    assert(element.toString == element2.toString)
-  }
-
-  //TODO: need test
+  //TODO: need test, or its already superceded by try catch?
   def javaUnbox(boxed: Any): Any = {
     boxed match {
       case n: java.lang.Byte =>
@@ -247,11 +236,11 @@ These special characters are often called "metacharacters".
   private lazy val LZYCOMPUTE = "$lzycompute"
   private lazy val INIT = "<init>"
 
-  def breakpoint(
-                  filterInitializer: Boolean = true,
-                  filterLazyRelay: Boolean = true,
-                  filterDefaultRelay: Boolean = true
-                ): Array[StackTraceElement] = {
+  def getBreakpointInfo(
+                         filterInitializer: Boolean = true,
+                         filterLazyRelay: Boolean = true,
+                         filterDefaultRelay: Boolean = true
+                       ): Array[StackTraceElement] = {
     val stackTraceElements: Array[StackTraceElement] = Thread.currentThread().getStackTrace
     var effectiveElements = stackTraceElements
 
@@ -261,4 +250,6 @@ These special characters are often called "metacharacters".
     effectiveElements
       .slice(2, Int.MaxValue)
   }
+
+  def implicitTypeTag[T](implicit ttg: TypeTag[T]) = ttg
 }

@@ -5,6 +5,7 @@ import java.util.Properties
 import org.apache.spark.sql.SQLContext
 import org.apache.spark.{SparkConf, SparkContext}
 import com.tribbloids.spookystuff.SpookyContext
+import com.tribbloids.spookystuff.dsl.Samplers
 
 /**
  * Created by peng on 22/06/14.
@@ -32,7 +33,7 @@ trait LocalSpookyCore {
     new SQLContext(sc)
   }
 
-  def maxJoinOrdinal = 3
+  def sampler = Samplers.FirstN(3)
   def maxExploreDepth = 2
   var maxInputSize = 3
 
@@ -55,8 +56,8 @@ trait LocalSpookyCore {
     )
       .getOrElse(p.getProperty("spooky.preview.mode"))
     if (preview == "preview") {
-      spooky.conf.maxJoinOrdinal = maxJoinOrdinal
-      spooky.conf.maxExploreDepth = maxExploreDepth
+      spooky.conf.defaultJoinSampler = sampler
+      spooky.conf.defaultExploreRange = 0 to maxExploreDepth
     }
     else {
       this.maxInputSize = Int.MaxValue

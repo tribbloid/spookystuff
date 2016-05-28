@@ -1,24 +1,26 @@
 package com.tribbloids.spookystuff.rdd
 
 import com.tribbloids.spookystuff.actions.{Snapshot, Try, Visit, Wget, _}
+import com.tribbloids.spookystuff.doc.Doc
 import com.tribbloids.spookystuff.dsl.{ExploreAlgorithm, FetchOptimizer, JoinType, _}
 import com.tribbloids.spookystuff.execution.{ExplorePlan, FetchPlan, _}
 import com.tribbloids.spookystuff.extractors.{GetExpr, _}
-import com.tribbloids.spookystuff.doc.Doc
 import com.tribbloids.spookystuff.row.{Field, _}
-import com.tribbloids.spookystuff.utils.{Utils, Implicits}
+import com.tribbloids.spookystuff.utils.{ImplicitUtils, Utils}
 import com.tribbloids.spookystuff.{Const, SpookyConf, SpookyContext}
 import org.apache.spark.Partitioner
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.catalyst.analysis.UnresolvedAttribute
-import org.apache.spark.sql.catalyst.expressions.Alias
+import org.apache.spark.sql.catalyst.expressions
+import org.apache.spark.sql.types.DataType
 import org.apache.spark.sql.{Column, DataFrame}
 import org.apache.spark.storage.StorageLevel
 
-import scala.collection.immutable.ListSet
-import scala.collection.mutable.ArrayBuffer
-import scala.reflect.ClassTag
 import scala.collection.Map
+import scala.collection.immutable.ListMap
+import scala.collection.mutable.ArrayBuffer
+import scala.language.implicitConversions
+import scala.reflect.ClassTag
 
 /**
   * Created by peng on 28/03/16.
@@ -35,18 +37,21 @@ case class FetchedDataset(
                            plan: ExecutionPlan
                          ) extends FetchedRDDAPI {
 
-  import Implicits._
-  import scala.Ordering.Implicits._
+  import ImplicitUtils._
   import plan.CacheQueueView
+
+  import scala.Ordering.Implicits._
+
+  implicit def plan2Dataset(plan: ExecutionPlan): FetchedDataset = FetchedDataset(plan)
 
   def this(
             sourceRDD: SquashedFetchedRDD,
-            schema: ListSet[Field],
+            fieldMap: ListMap[Field, DataType],
             spooky: SpookyContext,
             webCacheBeaconRDDOpt: Option[RDD[(Trace, DataRow)]] = None,
             cacheQueue: ArrayBuffer[RDD[_]] = ArrayBuffer()
           ) =
-    this(RDDPlan(sourceRDD, schema, spooky, webCacheBeaconRDDOpt, cacheQueue))
+    this(RDDPlan(sourceRDD, SchemaContext(spooky, fieldMap), spooky, webCacheBeaconRDDOpt, cacheQueue))
 
   //TODO: use reflection for more clear API
   def setConf(f: SpookyConf => Unit): this.type = {
@@ -61,13 +66,14 @@ case class FetchedDataset(
 
   def rdd = {
     this.spooky.rebroadcast()
-    plan.rdd(true)
+    plan.rdd()
   }
 
-  def unsquashedRDD: RDD[FetchedRow] = this.rdd.flatMap(_.unsquash)
+  def unsquashedRDD: RDD[FetchedRow] = this.rdd.flatMap(v => new v.W(schema).unsquash)
 
   def spooky = plan.spooky
-  def fields = plan.fieldSeq
+  def schema = plan.schema
+  def fields = schema.fields
 
   def dataRDD: RDD[DataRow] = {
 
@@ -78,18 +84,18 @@ case class FetchedDataset(
   }
   def dataRDDSorted: RDD[DataRow] = {
 
-    val sortIndexFieldsSeq: Seq[Field] = plan.sortIndexFieldSeq
+    val sortIndices: List[Field] = plan.allSortIndices.map(_._1.self)
 
     val dataRDD = this.dataRDD
     plan.cacheQueue.persist(dataRDD)
 
-    val result = dataRDD.sortBy{_.sortIndex(sortIndexFieldsSeq)} //sort usually takes 2 passes
-    result.name = "sort"
+    val sorted = dataRDD.sortBy{_.sortIndex(sortIndices)} //sort usually takes 2 passes
+    sorted.name = "sort"
 
-    result.foreachPartition{_ =>} //force execution
+    sorted.foreachPartition{_ =>} //force execution
     plan.cacheQueue.unpersist(dataRDD, blocking = false)
 
-    result
+    sorted
   }
   def toMapRDD(sort: Boolean = false): RDD[Map[String, Any]] = sparkContext.withJob(s"toMapRDD(sort=$sort)"){
 
@@ -103,6 +109,7 @@ case class FetchedDataset(
     else dataRDDSorted.map(_.toJSON)
   }
 
+  //TODO: rewrite using schema
   def toDF(sort: Boolean = false, tableName: String = null): DataFrame =
     sparkContext.withJob(s"toDF(sort=$sort, name=$tableName)") {
 
@@ -117,7 +124,7 @@ case class FetchedDataset(
           key =>
             val name = Utils.canonizeColumnName(key.name)
             if (schemaRDD.schema.fieldNames.contains(name)) new Column(UnresolvedAttribute(name))
-            else new Column(Alias(org.apache.spark.sql.catalyst.expressions.Literal(null), name)())
+            else new Column(expressions.Alias(org.apache.spark.sql.catalyst.expressions.Literal(null), name)())
         }
 
       val result = schemaRDD.select(columns: _*)
@@ -128,28 +135,41 @@ case class FetchedDataset(
       result
     }
 
+  def newResolver = schema.newResolver
+
   def toStringRDD(
-                   expr: Extractor[Any],
+                   ex: Extractor[Any],
                    default: String = null
-                 ): RDD[String] = unsquashedRDD.map(v => expr.toStr.applyOrElse[FetchedRow, String](v, _ => default))
+                 ): RDD[String] = {
+
+    val _ex = newResolver.resolve(ex.toStr).head
+
+    unsquashedRDD.map (
+      v =>
+        _ex.applyOrElse[FetchedRow, String](v, _ => default)
+    )
+  }
 
   def toObjectRDD[T: ClassTag](
-                                expr: Extractor[T],
+                                ex: Extractor[T],
                                 default: T = null
-                              ): RDD[T] = unsquashedRDD.map(v => expr.applyOrElse[FetchedRow, T](v, _ => default))
+                              ): RDD[T] = {
 
-  def toTypedRDD[T: ClassTag](
-                               expr: Extractor[Any],
-                               default: T = null
-                             ): RDD[T] = unsquashedRDD.map(v => expr.typed[T].applyOrElse[FetchedRow, T](v, _ => default))
+    val _ex = newResolver.resolve(ex).head
 
-  def toPairRDD[T1: ClassTag, T2: ClassTag](first: Extractor[T1], second: Extractor[T2]): RDD[(T1,T2)] = unsquashedRDD
-    .map{
-      row =>
-        val t1: T1 = first.orNull.apply(row)
-        val t2: T2 = second.orNull.apply(row)
-        t1 -> t2
-    }
+    unsquashedRDD.map(v => _ex.applyOrElse[FetchedRow, T](v, _ => default))
+  }
+
+  //  def toPairRDD[T1: ClassTag, T2: ClassTag](
+  //                                             first: Extractor[T1],
+  //                                             second: Extractor[T2]
+  //                                           ): RDD[(T1,T2)] = unsquashedRDD
+  //    .map {
+  //      row =>
+  //        val t1 = first.orNull.apply(row)
+  //        val t2 = second.orNull.apply(row)
+  //        t1 -> t2
+  //    }
 
   /**
     * save each page to a designated directory
@@ -165,52 +185,57 @@ case class FetchedDataset(
   def savePages(
                  path: Extractor[Any],
                  extension: Extractor[Any] = null,
-                 pageExpr: Extractor[Doc] = S,
+                 page: Extractor[Doc] = S,
                  overwrite: Boolean = false
                ): this.type = {
 
-    val effectiveExt = Option(extension).getOrElse(pageExpr.defaultExt)
+    val effectiveExt = Option(extension).getOrElse(page.defaultFileExtension)
+
+    val _ext = newResolver.resolve(effectiveExt).head
+    val _path = newResolver.resolve(path).head
+    val _pageExpr = newResolver.resolve(page).head
 
     //Execute immediately
     rdd.foreach {
       squashedPageRow =>
-        squashedPageRow.unsquash.foreach{
-          pageRow =>
-            var pathStr: Option[String] = path.lift(pageRow).map(_.toString).map {
-              str =>
-                val splitted = str.split(":")
-                if (splitted.size <= 2) str
-                else splitted.head + ":" + splitted.slice(1, Int.MaxValue).mkString("%3A") //colon in file paths are reserved for protocol definition
-            }
+        val w = new squashedPageRow
+        .W(schema)
 
-            val extOption = effectiveExt.lift(pageRow)
-            if (extOption.nonEmpty) pathStr = pathStr.map(_ + "." + extOption.get.toString)
+        w
+          .unsquash
+          .foreach{
+            pageRow =>
+              var pathStr: Option[String] = _path.lift(pageRow).map(_.toString).map {
+                str =>
+                  val splitted = str.split(":")
+                  if (splitted.size <= 2) str
+                  else splitted.head + ":" + splitted.slice(1, Int.MaxValue).mkString("%3A") //colon in file paths are reserved for protocol definition
+              }
 
-            pathStr.foreach {
-              str =>
-                val page = pageExpr.lift(pageRow)
+              val extOption = _ext.lift(pageRow)
+              if (extOption.nonEmpty) pathStr = pathStr.map(_ + "." + extOption.get.toString)
 
-                spooky.metrics.pagesSaved += 1
+              pathStr.foreach {
+                str =>
+                  val page = _pageExpr.lift(pageRow)
 
-                page.foreach(_.save(Seq(str), overwrite)(spooky))
-            }
-        }
+                  spooky.metrics.pagesSaved += 1
+
+                  page.foreach(_.save(Seq(str), overwrite)(spooky))
+              }
+          }
     }
     this
   }
 
-  def extract(exprs: Extractor[Any]*): FetchedDataset = {
+  def extract(exs: Extractor[Any]*): FetchedDataset = {
 
-    val resolvedExprs = plan.batchResolveAlias(exprs)
-
-    this.copy(
-      ExtractPlan(plan, resolvedExprs)
-    )
+      ExtractPlan(plan, exs)
   }
 
   def select(exprs: Extractor[Any]*) = extract(exprs: _*)
 
-  def remove(fields: Field*): FetchedDataset = this.copy(RemovePlan(plan, fields))
+  def remove(fields: Field*): FetchedDataset = RemovePlan(plan, fields)
 
   def removeWeaks(): FetchedDataset = this.remove(fields.filter(_.isWeak): _*)
 
@@ -242,30 +267,22 @@ case class FetchedDataset(
   //  }
 
   def flatten(
-               expr: Extractor[Any],
+               ex: Extractor[Any],
                isLeft: Boolean = true,
                ordinalField: Field = null,
                sampler: Sampler[Any] = spooky.conf.defaultFlattenSampler
              ): FetchedDataset = {
 
-    val (field, extracted) = expr match {
+    val (on, extracted) = ex match {
       case GetExpr(ff) =>
         ff.! -> this
       case _ =>
-        val resolvedExpr = plan.resolveAlias(expr)
-        resolvedExpr.field -> this.extract(resolvedExpr)
+        val effectiveEx = ex.withJoinFieldIfMissing
+        val ff = effectiveEx.field
+        ff.! -> this.extract(ex)
     }
 
-    val effectiveOrdinalField = Option(ordinalField) match {
-      case Some(ff) =>
-        ff.copy(isOrdinal = true)
-      case None =>
-        Field(field.name + "_ordinal", isWeak = true, isOrdinal = true)
-    }
-
-    this.copy(
-      FlattenPlan(extracted.plan, field, effectiveOrdinalField, sampler, isLeft)
-    )
+    FlattenPlan(extracted.plan, on, ordinalField, sampler, isLeft)
   }
 
   //  /**
@@ -275,25 +292,25 @@ case class FetchedDataset(
   //   * @return RDD[Page], each page will generate several shards
   //   */
   def flatExtract(
-                   expr: Extractor[Any], //TODO: used to be Iterable[Unstructured], any tradeoff?
+                   on: Extractor[Any], //TODO: used to be Iterable[Unstructured], any tradeoff?
                    isLeft: Boolean = true,
                    ordinalField: Field = null,
                    sampler: Sampler[Any] = spooky.conf.defaultFlattenSampler
                  )(exprs: Extractor[Any]*): FetchedDataset = {
     this
-      .flatten(expr defaultAs Const.defaultJoinField, isLeft, ordinalField, sampler)
+      .flatten(on.withJoinFieldIfMissing, isLeft, ordinalField, sampler)
       .extract(exprs: _*)
   }
 
   def flatSelect(
-                  expr: Extractor[Any], //TODO: used to be Iterable[Unstructured], any tradeoff?
+                  on: Extractor[Any], //TODO: used to be Iterable[Unstructured], any tradeoff?
                   ordinalField: Field = null,
                   sampler: Sampler[Any] = spooky.conf.defaultFlattenSampler,
                   isLeft: Boolean = true
-                )(exprs: Extractor[Any]*) = flatExtract(expr, isLeft, ordinalField, sampler)(exprs: _*)
+                )(exprs: Extractor[Any]*) = flatExtract(on, isLeft, ordinalField, sampler)(exprs: _*)
 
   //TODO: test
-  def agg(exprs: Seq[(FetchedRow => Any)], reducer: RowReducer): FetchedDataset = this.copy(AggPlan(plan, exprs, reducer))
+  def agg(exprs: Seq[(FetchedRow => Any)], reducer: RowReducer): FetchedDataset = AggPlan(plan, exprs, reducer)
   def distinctBy(exprs: (FetchedRow => Any)*): FetchedDataset = agg(exprs, (v1, v2) => v1)
 
   // Always left
@@ -301,11 +318,11 @@ case class FetchedDataset(
              traces: Set[Trace],
              partitionerFactory: RDD[_] => Partitioner = spooky.conf.defaultPartitionerFactory,
              fetchOptimizer: FetchOptimizer = spooky.conf.defaultFetchOptimizer
-           ): FetchedDataset = this.copy(FetchPlan(plan, traces.correct, partitionerFactory, fetchOptimizer))
+           ): FetchedDataset = FetchPlan(plan, traces.correct, partitionerFactory, fetchOptimizer)
 
   //shorthand of fetch
   def visit(
-             expr: Extractor[Any],
+             ex: Extractor[Any],
              filter: DocFilter = Const.defaultDocumentFilter,
              failSafe: Int = -1,
              partitionerFactory: RDD[_] => Partitioner = spooky.conf.defaultPartitionerFactory,
@@ -313,7 +330,7 @@ case class FetchedDataset(
            ): FetchedDataset = {
 
     var trace: Set[Trace] =  (
-      Visit(expr)
+      Visit(ex)
         +> Snapshot(filter)
       )
     if (failSafe > 0) trace = Try(trace, failSafe)
@@ -327,14 +344,14 @@ case class FetchedDataset(
 
   //shorthand of fetch
   def wget(
-            expr: Extractor[Any],
+            ex: Extractor[Any],
             filter: DocFilter = Const.defaultDocumentFilter,
             failSafe: Int = -1,
             partitionerFactory: RDD[_] => Partitioner = spooky.conf.defaultPartitionerFactory,
             fetchOptimizer: FetchOptimizer = spooky.conf.defaultFetchOptimizer
           ): FetchedDataset = {
 
-    var trace: Set[Trace] =  Wget(expr, filter)
+    var trace: Set[Trace] =  Wget(ex, filter)
 
     if (failSafe > 0) trace = Try(trace, failSafe)
 
@@ -346,7 +363,7 @@ case class FetchedDataset(
   }
 
   def join(
-            expr: Extractor[Any], //name is discarded
+            on: Extractor[Any], //name is discarded
             joinType: JoinType = spooky.conf.defaultJoinType,
             ordinalField: Field = null, //left & idempotent parameters are missing as they are always set to true
             sampler: Sampler[Any] = spooky.conf.defaultJoinSampler
@@ -357,7 +374,7 @@ case class FetchedDataset(
           ): FetchedDataset = {
 
     val flat = this
-      .flatten(expr defaultAs Const.defaultJoinField, joinType.isLeft, ordinalField, sampler)
+      .flatten(on.withJoinFieldIfMissing, joinType.isLeft, ordinalField, sampler)
 
     flat.fetch(traces, partitionerFactory, fetchOptimizer)
   }
@@ -369,7 +386,7 @@ case class FetchedDataset(
     * @return RDD[Page]
     */
   def visitJoin(
-                 expr: Extractor[Any],
+                 on: Extractor[Any],
                  joinType: JoinType = spooky.conf.defaultJoinType,
                  ordinalField: Field = null, //left & idempotent parameters are missing as they are always set to true
                  sampler: Sampler[Any] = spooky.conf.defaultJoinSampler,
@@ -387,7 +404,7 @@ case class FetchedDataset(
       trace = Try(trace, failSafe)
     }
 
-    this.join(expr, joinType, ordinalField, sampler)(
+    this.join(on, joinType, ordinalField, sampler)(
       trace,
       partitionerFactory,
       fetchOptimizer = fetchOptimizer
@@ -401,7 +418,7 @@ case class FetchedDataset(
     * @return RDD[Page]
     */
   def wgetJoin(
-                expr: Extractor[Any],
+                on: Extractor[Any],
                 joinType: JoinType = spooky.conf.defaultJoinType,
                 ordinalField: Field = null, //left & idempotent parameters are missing as they are always set to true
                 sampler: Sampler[Any] = spooky.conf.defaultJoinSampler,
@@ -416,7 +433,7 @@ case class FetchedDataset(
       trace = Try(trace, failSafe)
     }
 
-    this.join(expr, joinType, ordinalField, sampler)(
+    this.join(on, joinType, ordinalField, sampler)(
       trace,
       partitionerFactory,
       fetchOptimizer = fetchOptimizer
@@ -425,8 +442,8 @@ case class FetchedDataset(
 
   //TODO: how to unify this with join?
   def explore(
-               expr: Extractor[Any],
-               joinType: JoinType = spooky.conf.defaultJoinType, //TODO: should be hardcoded to Inner, but whatever...
+               on: Extractor[Any],
+               joinType: JoinType = spooky.conf.defaultJoinType,
                ordinalField: Field = null,
                sampler: Sampler[Any] = spooky.conf.defaultJoinSampler
              )(
@@ -444,36 +461,16 @@ case class FetchedDataset(
                //apply immediately after depth selection, this include depth0
              ): FetchedDataset = {
 
-    val resolvedExpr = plan.resolveAlias(expr defaultAs Const.defaultJoinField)
-    val resolvedExtracts = plan.batchResolveAlias(extracts)
+    val params = ExploreParams(depthField, ordinalField, range, extracts)
 
-    val effectiveOrdinalField = Option(ordinalField) match {
-      case Some(ff) =>
-        ff.copy(isOrdinal = true)
-      case None =>
-        Field(resolvedExpr.field.name + "_ordinal", isWeak = true, isOrdinal = true)
-    }
-
-    val effectiveDepthField = Option(depthField) match {
-      case Some(field) =>
-        val resolvedField = field.resolveConflict(plan.fields)
-        resolvedField.copy(depthRangeOpt = Some(range))
-      case None =>
-        Field(resolvedExpr.field.name + "_depth", isWeak = true, depthRangeOpt = Some(range))
-    }
-
-    val algorithmImpl = exploreAlgorithm.getImpl(effectiveDepthField, effectiveOrdinalField, resolvedExtracts)
-
-    this.copy(
-      ExplorePlan(plan, resolvedExpr, sampler, joinType,
-        traces.correct, partitionerFactory, fetchOptimizer,
-        algorithmImpl, miniBatch, checkpointInterval
-      )
+    ExplorePlan(plan, on.withJoinFieldIfMissing, sampler, joinType,
+      traces.correct, partitionerFactory, fetchOptimizer,
+      params, exploreAlgorithm, miniBatch, checkpointInterval
     )
   }
 
   def visitExplore(
-                    expr: Extractor[Any],
+                    ex: Extractor[Any],
                     joinType: JoinType = spooky.conf.defaultJoinType,
                     ordinalField: Field = null,
                     sampler: Sampler[Any] = spooky.conf.defaultJoinSampler,
@@ -500,7 +497,7 @@ case class FetchedDataset(
       )
     if (failSafe > 0) trace = Try(trace, failSafe)
 
-    explore(expr, joinType, ordinalField, sampler)(
+    explore(ex, joinType, ordinalField, sampler)(
       trace, partitionerFactory, fetchOptimizer,
 
       depthField, range, exploreAlgorithm, miniBatch, checkpointInterval
@@ -510,7 +507,7 @@ case class FetchedDataset(
   }
 
   def wgetExplore(
-                   expr: Extractor[Any],
+                   ex: Extractor[Any],
                    joinType: JoinType = spooky.conf.defaultJoinType,
                    ordinalField: Field = null,
                    sampler: Sampler[Any] = spooky.conf.defaultJoinSampler,
@@ -533,7 +530,7 @@ case class FetchedDataset(
     var trace: Set[Trace] =  Wget(new GetExpr(Const.defaultJoinField), filter)
     if (failSafe > 0) trace = Try(trace, failSafe)
 
-    explore(expr, joinType, ordinalField, sampler)(
+    explore(ex, joinType, ordinalField, sampler)(
       trace, partitionerFactory, fetchOptimizer,
 
       depthField, range, exploreAlgorithm, miniBatch, checkpointInterval

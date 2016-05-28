@@ -17,7 +17,7 @@ class FetchTryWgetIT extends UncacheableIntegrationSuite {
   override def doMain() {
 
     val spooky = this.spooky
-    import com.tribbloids.spookystuff.utils.Implicits._
+    import com.tribbloids.spookystuff.utils.ImplicitUtils._
     import spooky.dsl._
 
     val RDD = sc.parallelize(Seq("http://malformed uri"))

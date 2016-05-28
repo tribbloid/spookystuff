@@ -11,9 +11,7 @@ import org.apache.hadoop.fs.{FileStatus, Path}
 import org.apache.spark.SparkEnv
 import org.slf4j.LoggerFactory
 
-import scala.concurrent.duration.Duration.Infinite
-
-object PageUtils {
+object DocUtils {
 
   def dfsRead[T](message: String, pathStr: String, spooky: SpookyContext)(f: => T): T = {
     try {
@@ -64,7 +62,7 @@ object PageUtils {
       result
     }
 
-  final val vid = 91252374923L
+  final val cacheVID = 91252374923L
 
   //unlike save, this will store all information in an unreadable, serialized, probably compressed file
   //always overwrite! use the same serializer as Spark
@@ -83,7 +81,7 @@ object PageUtils {
 
           try {
             serOut.writeObject[Seq[T]](
-              pageLikes.asInstanceOf[Seq[T] @SerialVersionUID(vid) with Serializable]
+              pageLikes.asInstanceOf[Seq[T] @SerialVersionUID(cacheVID) with Serializable]
             )
           }
           finally {
@@ -173,7 +171,7 @@ object PageUtils {
     }
   }
 
-  //TODO: return Seq[Option]
+  //TODO: return Option[Seq]
   def autoRestore(
                    backtrace: Trace,
                    spooky: SpookyContext
@@ -191,7 +189,7 @@ object PageUtils {
         Option(w.wayback).map{
           expr =>
             val result = expr.asInstanceOf[Literal[Long]].value
-            spooky.conf.pageNotExpiredSince match {
+            spooky.conf.IgnoreDocsCreatedBefore match {
               case Some(date) =>
                 assert(result > date.getTime, "SpookyConf.pageNotExpiredSince cannot be set to later than wayback date")
               case None =>
@@ -202,20 +200,12 @@ object PageUtils {
         None
     }
 
-    val earliestTimeFromDuration = spooky.conf.pageExpireAfter match {
-      case inf: Infinite => Long.MinValue
-      case d =>
-        waybackOption match {
-          case Some(wayback) => wayback - d.toMillis
-          case None => System.currentTimeMillis() - d.toMillis
-        }
+    val nowMillis = waybackOption match {
+      case Some(wayback) => wayback
+      case None => System.currentTimeMillis()
     }
-    val earliestTime = spooky.conf.pageNotExpiredSince match {
-      case Some(expire) =>
-        Math.max(expire.getTime, earliestTimeFromDuration)
-      case None =>
-        earliestTimeFromDuration
-    }
+
+    val earliestTime = spooky.conf.getEarliestDocCreationTime(nowMillis)
 
     val latestTime = waybackOption.getOrElse(Long.MaxValue)
 

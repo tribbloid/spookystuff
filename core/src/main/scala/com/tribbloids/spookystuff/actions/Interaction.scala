@@ -1,16 +1,17 @@
 package com.tribbloids.spookystuff.actions
 
 import com.thoughtworks.selenium.SeleniumException
+import com.tribbloids.spookystuff.Const
+import com.tribbloids.spookystuff.actions.WaitForDocumentReady._
+import com.tribbloids.spookystuff.doc.{Doc, Unstructured}
+import com.tribbloids.spookystuff.execution.SchemaContext
+import com.tribbloids.spookystuff.extractors.{Extractor, Literal}
+import com.tribbloids.spookystuff.row.FetchedRow
+import com.tribbloids.spookystuff.session.Session
+import com.tribbloids.spookystuff.utils.Utils
 import org.openqa.selenium.interactions.{Actions => SeleniumActions}
 import org.openqa.selenium.support.ui.{ExpectedCondition, ExpectedConditions, Select}
 import org.openqa.selenium.{By, JavascriptExecutor, WebDriver}
-import com.tribbloids.spookystuff.{SpookyContext, Const}
-import com.tribbloids.spookystuff.actions.WaitForDocumentReady._
-import com.tribbloids.spookystuff.row.FetchedRow
-import com.tribbloids.spookystuff.extractors.{Extractor, Literal}
-import com.tribbloids.spookystuff.doc.{Doc, Unstructured}
-import com.tribbloids.spookystuff.session.Session
-import com.tribbloids.spookystuff.utils.Utils
 
 import scala.collection.mutable
 import scala.concurrent.duration.Duration
@@ -82,8 +83,8 @@ case class Visit(
     //    }
   }
 
-  override def doInterpolate(pageRow: FetchedRow, spooky: SpookyContext): Option[this.type] = {
-    val first = this.uri.lift(pageRow).flatMap(Utils.asArray[Any](_).headOption)
+  override def doInterpolate(pageRow: FetchedRow, schema: SchemaContext): Option[this.type] = {
+    val first = this.uri.resolve(schema).lift(pageRow).flatMap(Utils.asArray[Any](_).headOption)
 
     val uriStr: Option[String] = first.flatMap {
       case element: Unstructured => element.href
@@ -94,7 +95,7 @@ case class Visit(
 
     uriStr.map(
       str =>
-        this.copy(uri = new Literal(str)).asInstanceOf[this.type]
+        this.copy(uri = Literal(str)).asInstanceOf[this.type]
     )
   }
 }
@@ -230,7 +231,7 @@ case class ClickNext(
     throw new SeleniumException("all elements has been clicked before")
   }
 
-  override def doInterpolate(pageRow: FetchedRow, spooky: SpookyContext): Option[this.type] =
+  override def doInterpolate(pageRow: FetchedRow, schema: SchemaContext): Option[this.type] =
     Some(this.copy().asInstanceOf[this.type])
 }
 
@@ -294,9 +295,9 @@ case class TextInput(
     element.sendKeys(text.asInstanceOf[Literal[String]].value)
   }
 
-  override def doInterpolate(pageRow: FetchedRow, spooky: SpookyContext): Option[this.type] = {
+  override def doInterpolate(pageRow: FetchedRow, schema: SchemaContext): Option[this.type] = {
 
-    val first = this.text.lift(pageRow).flatMap(Utils.asArray[Any](_).headOption)
+    val first = this.text.resolve(schema).lift(pageRow).flatMap(Utils.asArray[Any](_).headOption)
 
     val textStr: Option[String] = first.flatMap {
       case element: Unstructured => element.text
@@ -307,7 +308,7 @@ case class TextInput(
 
     textStr.map(
       str =>
-        this.copy(text = new Literal(str)).asInstanceOf[this.type]
+        this.copy(text = Literal(str)).asInstanceOf[this.type]
     )
   }
 }
@@ -332,8 +333,8 @@ case class DropDownSelect(
     select.selectByValue(value.asInstanceOf[Literal[String]].value)
   }
 
-  override def doInterpolate(pageRow: FetchedRow, spooky: SpookyContext): Option[this.type] = {
-    val first = this.value.lift(pageRow).flatMap(Utils.asArray[Any](_).headOption)
+  override def doInterpolate(pageRow: FetchedRow, schema: SchemaContext): Option[this.type] = {
+    val first = this.value.resolve(schema).lift(pageRow).flatMap(Utils.asArray[Any](_).headOption)
 
     val valueStr: Option[String] = first.flatMap {
       case element: Unstructured => element.attr("value")
@@ -344,7 +345,7 @@ case class DropDownSelect(
 
     valueStr.map(
       str =>
-        this.copy(value = new Literal(str)).asInstanceOf[this.type]
+        this.copy(value = Literal(str)).asInstanceOf[this.type]
     )
   }
 }
@@ -393,8 +394,8 @@ case class ExeScript(
     }
   }
 
-  override def doInterpolate(pageRow: FetchedRow, spooky: SpookyContext): Option[this.type] = {
-    val first = this.script.lift(pageRow).flatMap(Utils.asArray[Any](_).headOption)
+  override def doInterpolate(pageRow: FetchedRow, schema: SchemaContext): Option[this.type] = {
+    val first = this.script.resolve(schema).lift(pageRow).flatMap(Utils.asArray[Any](_).headOption)
 
     val scriptStr: Option[String] = first.flatMap {
       case element: Unstructured => element.text
@@ -405,7 +406,7 @@ case class ExeScript(
 
     scriptStr.map(
       str =>
-        this.copy(script = new Literal(str)).asInstanceOf[this.type]
+        this.copy(script = Literal(str)).asInstanceOf[this.type]
     )
   }
 }

@@ -1,7 +1,9 @@
 package com.tribbloids.spookystuff.doc
 
-import com.tribbloids.spookystuff.utils.UnstructuredUDT
+import com.tribbloids.spookystuff.utils.AnyUDT
 import org.apache.spark.sql.types.SQLUserDefinedType
+
+class UnstructuredUDT extends AnyUDT[Unstructured]
 
 @SQLUserDefinedType(udt = classOf[UnstructuredUDT])
 trait Unstructured extends Serializable {

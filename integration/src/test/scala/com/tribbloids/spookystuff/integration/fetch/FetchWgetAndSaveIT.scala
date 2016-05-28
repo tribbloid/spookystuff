@@ -3,11 +3,11 @@ package com.tribbloids.spookystuff.integration.fetch
 import com.tribbloids.spookystuff.actions._
 import com.tribbloids.spookystuff.dsl._
 import com.tribbloids.spookystuff.integration.IntegrationSuite
-import com.tribbloids.spookystuff.doc.PageUtils
+import com.tribbloids.spookystuff.doc.DocUtils
 
 class FetchWgetAndSaveIT extends IntegrationSuite {
 
-  import com.tribbloids.spookystuff.utils.Implicits._
+  import com.tribbloids.spookystuff.utils.ImplicitUtils._
 
   override lazy val drivers = Seq(
     null
@@ -41,7 +41,7 @@ class FetchWgetAndSaveIT extends IntegrationSuite {
         s"file:${System.getProperty("user.dir")}/temp/spooky-integration/save/Wikipedia.png"
     )
 
-    val loadedContent = PageUtils.load(s"file://${System.getProperty("user.dir")}/temp/spooky-integration/save/Wikipedia.png")(spooky)
+    val loadedContent = DocUtils.load(s"file://${System.getProperty("user.dir")}/temp/spooky-integration/save/Wikipedia.png")(spooky)
 
     assert(loadedContent === content)
 
