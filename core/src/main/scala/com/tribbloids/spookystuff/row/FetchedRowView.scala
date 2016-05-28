@@ -26,7 +26,7 @@ case class FetchedRowView(
   //TODO: trace implementation is not accurate: the last backtrace has all previous exports removed
   def squash = SquashedFetchedRow(
     Array(dataRow),
-    fetchedOpt = Some(pageLikes.toArray)
+    _fetched = pageLikes.toArray
   )
 
   def pages: Seq[Doc] = pageLikes.flatMap {

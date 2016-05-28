@@ -4,7 +4,7 @@ import com.tribbloids.spookystuff.doc.{Unstructured, Elements}
 import org.apache.tika.language.LanguageIdentifier
 import com.tribbloids.spookystuff.actions._
 import com.tribbloids.spookystuff.example.QueryCore
-import com.tribbloids.spookystuff.expressions.Extraction
+import com.tribbloids.spookystuff.extractors.Extractor
 import com.tribbloids.spookystuff.session.OAuthKeys
 import com.tribbloids.spookystuff.{SpookyContext, dsl}
 
@@ -17,7 +17,7 @@ object Yelp_MyMemory_Alchemy extends QueryCore {
 
   import dsl._
 
-  def nonEnglish(src: Extraction[Any]): Extraction[String] = src.andOptional{
+  def nonEnglish(src: Extractor[Any]): Extractor[String] = src.andOptional{
     str =>
       val identifier = new LanguageIdentifier(str.toString)
       if (identifier.getLanguage == "en") None

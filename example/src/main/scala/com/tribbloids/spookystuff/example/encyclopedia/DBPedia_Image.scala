@@ -41,7 +41,7 @@ object DBPedia_Image extends QueryCore {
     imgs.wgetJoin(S"div#search img".src, maxOrdinal = 1)
       .persist()
       .savePages(
-        x"file://${System.getProperty("user.dir")}/temp/spooky-example/$appName/${str}_$cls/level_${'depth}_${'name.andThen(v => v.toString.replaceAll("[^\\w]","_"))}"
+        x"file://${System.getProperty("user.dir")}/temp/spooky-example/$appName/${str}_$cls/level_${'depth}_${'name.andThen1(v => v.toString.replaceAll("[^\\w]","_"))}"
       ).select(
       S.saved ~ 'path
     ).toDF()

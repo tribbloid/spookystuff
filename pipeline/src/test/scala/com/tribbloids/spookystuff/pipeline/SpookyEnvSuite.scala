@@ -27,7 +27,7 @@ abstract class SpookyEnvSuite extends FunSuite with BeforeAndAfter with BeforeAn
   }
 
   override def beforeAll() {
-    val conf: SparkConf = TestHelper.testSparkConf.setAppName("pipeline-unit")
+    val conf: SparkConf = TestHelper.TestSparkConf.setAppName("pipeline-unit")
 
     sc = new SparkContext(conf)
 

@@ -3,7 +3,7 @@ package com.tribbloids.spookystuff
 import java.util.Date
 
 import com.tribbloids.spookystuff.dsl._
-import com.tribbloids.spookystuff.expressions.{ByTrace, ByDoc}
+import com.tribbloids.spookystuff.extractors.{ByTrace, ByDoc}
 import com.tribbloids.spookystuff.row.Sampler
 import com.tribbloids.spookystuff.session.{OAuthKeys, ProxySetting}
 import org.apache.spark.{Partitioner, SparkConf, SparkContext}

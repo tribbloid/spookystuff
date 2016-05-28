@@ -4,7 +4,8 @@ import java.io.File
 import java.util.Properties
 
 import org.apache.commons.io.FileUtils
-import org.apache.spark.SparkConf
+import org.apache.spark.sql.SQLContext
+import org.apache.spark.{SparkConf, SparkContext}
 import org.slf4j.LoggerFactory
 
 object TestHelper {
@@ -38,7 +39,7 @@ object TestHelper {
 
   //if SPARK_PATH & ClusterSize in rootkey.csv is detected, use local-cluster simulation mode
   //otherwise use local mode
-  val testSparkConf: SparkConf = {
+  val TestSparkConf: SparkConf = {
 
     //always use KryoSerializer, it is less stable than Native Serializer
     val conf: SparkConf = new SparkConf()
@@ -80,8 +81,12 @@ object TestHelper {
         conf.set("spark.hadoop.fs.s3a.awsSecretAccessKey", v)
     }
 
+    conf.setAppName("Test")
     conf
   }
+
+  def TestSpark = SparkContext.getOrCreate(TestSparkConf)
+  def TestSQL = SQLContext.getOrCreate(TestSpark)
 
   def clearTempDir(): Unit = {
     val file = new File(tempPath) //TODO: clean up S3 as well

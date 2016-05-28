@@ -2,9 +2,6 @@ package com.tribbloids.spookystuff.row
 
 import com.tribbloids.spookystuff.QueryException
 import com.tribbloids.spookystuff.utils.IdentifierMixin
-import org.apache.spark.sql.catalyst.ScalaReflection
-import org.apache.spark.sql.catalyst.ScalaReflection.universe._
-import org.apache.spark.sql.types.{Metadata, StructField}
 
 import scala.language.implicitConversions
 
@@ -43,11 +40,9 @@ case class Field(
 
                   conflictResolving: Field.ConflictResolving = Field.Error,
                   isOrdinal: Boolean = false, //represents ordinal index in flatten/explore
-                  depthRangeOpt: Option[Range] = None, //represents depth in explore
+                  depthRangeOpt: Option[Range] = None //represents depth in explore
 
                 //TODO: make no longer optional?
-                  typeTagOpt: Option[TypeTag[_]] = None,
-                  metadata: Metadata = Metadata.empty
                 ) extends IdentifierMixin {
 
   lazy val _id = (name, isWeak, isInvisible, isReserved)
@@ -91,24 +86,24 @@ case class Field(
     builder.result()
   }
 
-  def addType[RT: TypeTag](): Field = this.copy(
-    typeTagOpt = Some(typeTag[RT])
-  )
-
-  lazy val dataTypeOpt = {
-    this.typeTagOpt.map{
-      typeTag =>
-        ScalaReflection.schemaFor(typeTag).dataType
-    }
-  }
-
-  @transient lazy val structField = {
-    val dataType = dataTypeOpt.get // throw an exception when not typed
-    StructField(
-      name,
-      dataType,
-      nullable = true,
-      metadata
-    )
-  }
+//  def addType[RT: TypeTag](): Field = this.copy(
+//    typeTagOpt = Some(typeTag[RT])
+//  )
+//
+//  lazy val dataTypeOpt = {
+//    this.typeTagOpt.map{
+//      typeTag =>
+//        ScalaReflection.schemaFor(typeTag).dataType
+//    }
+//  }
+//
+//  @transient lazy val structField = {
+//    val dataType = dataTypeOpt.get // throw an exception when not typed
+//    StructField(
+//      name,
+//      dataType,
+//      nullable = true,
+//      metadata
+//    )
+//  }
 }

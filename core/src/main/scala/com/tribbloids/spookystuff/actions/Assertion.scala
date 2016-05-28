@@ -22,10 +22,10 @@ abstract class Assertion extends Action {
   def exeWithoutPage(session: Session): Unit
 }
 
-case class Assert(condition: Doc => Boolean) extends Assertion {
+case class Assert(condition: DocCondition) extends Assertion {
   override def exeWithoutPage(session: Session): Unit = {
     val page = DefaultSnapshot.apply(session).head.asInstanceOf[Doc]
 
-    assert(condition(page))
+    assert(condition(page, session))
   }
 }

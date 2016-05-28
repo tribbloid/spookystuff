@@ -7,7 +7,7 @@ import org.openqa.selenium.{By, JavascriptExecutor, WebDriver}
 import com.tribbloids.spookystuff.{SpookyContext, Const}
 import com.tribbloids.spookystuff.actions.WaitForDocumentReady._
 import com.tribbloids.spookystuff.row.FetchedRow
-import com.tribbloids.spookystuff.expressions.{Extraction, Literal}
+import com.tribbloids.spookystuff.extractors.{Extractor, Literal}
 import com.tribbloids.spookystuff.doc.{Doc, Unstructured}
 import com.tribbloids.spookystuff.session.Session
 import com.tribbloids.spookystuff.utils.Utils
@@ -16,15 +16,15 @@ import scala.collection.mutable
 import scala.concurrent.duration.Duration
 
 /**
- * Interact with the browser (e.g. click a button or type into a search box) to reach the data page.
- * these will be logged into target page's backtrace.
- * failed interactive will trigger an error dump by snapshot.
- * has an option to be delayed to
- */
+  * Interact with the browser (e.g. click a button or type into a search box) to reach the data page.
+  * these will be logged into target page's backtrace.
+  * failed interactive will trigger an error dump by snapshot.
+  * has an option to be delayed to
+  */
 abstract class Interaction(
                             val delay: Duration,
                             val blocking: Boolean
-                            ) extends Action {
+                          ) extends Action {
 
   final override def outputNames = Set()
 
@@ -63,23 +63,23 @@ object DocumentReadyCondition extends ExpectedCondition[Boolean] {
 }
 
 /**
- * Type into browser's url bar and click "goto"
- *
- * @param uri support cell interpolation
- */
+  * Type into browser's url bar and click "goto"
+  *
+  * @param uri support cell interpolation
+  */
 case class Visit(
-                  uri: Extraction[Any],
+                  uri: Extractor[Any],
                   override val delay: Duration = Const.interactionDelayMin,
                   override val blocking: Boolean = Const.interactionBlock
-                  ) extends Interaction(delay, blocking) with Timed {
+                ) extends Interaction(delay, blocking) with Timed {
 
   override def exeWithoutPage(session: Session) {
     session.driver.get(uri.asInstanceOf[Literal[String]].value)
 
-//    if (hasTitle) {
-//      val wait = new WebDriverWait(session.driver, timeout(session).toSeconds)
-//      wait.until(ExpectedConditions.not(ExpectedConditions.titleIs("")))
-//    }
+    //    if (hasTitle) {
+    //      val wait = new WebDriverWait(session.driver, timeout(session).toSeconds)
+    //      wait.until(ExpectedConditions.not(ExpectedConditions.titleIs("")))
+    //    }
   }
 
   override def doInterpolate(pageRow: FetchedRow, spooky: SpookyContext): Option[this.type] = {
@@ -100,13 +100,13 @@ case class Visit(
 }
 
 /**
- * Wait for some time
- *
- * @param delay seconds to be wait for
- */
+  * Wait for some time
+  *
+  * @param delay seconds to be wait for
+  */
 case class Delay(
                   override val delay: Duration = Const.interactionDelayMin
-                  ) extends Interaction(delay, false) with Driverless {
+                ) extends Interaction(delay, false) with Driverless {
 
   override def exeWithoutPage(session: Session): Unit = {
     //do nothing
@@ -114,29 +114,29 @@ case class Delay(
 }
 
 /**
- * Wait for some random time, add some unpredictability
- *
- * @param delay seconds to be wait for
- */
+  * Wait for some random time, add some unpredictability
+  *
+  * @param delay seconds to be wait for
+  */
 case class RandomDelay(
                         override val delay: Duration = Const.interactionDelayMin,
-                        max: Duration = Const.interactionDelayMax
-                        ) extends Interaction(delay, false) with Driverless {
+                        maxDelay: Duration = Const.interactionDelayMax
+                      ) extends Interaction(delay, false) with Driverless {
 
-  assert(max >= delay)
+  assert(maxDelay >= delay)
 
   override def exeWithoutPage(session: Session) {
-    Thread.sleep(Utils.random.nextInt((max - delay).toMillis.toInt) )
+    Thread.sleep(Utils.random.nextInt((maxDelay - delay).toMillis.toInt) )
   }
 }
 
 /**
- * Wait until at least one particular element appears, otherwise throws an exception
- *
- * @param selector css selector of the element
- *              after which it will throw an exception!
- */
-case class WaitFor(selector: String) extends Interaction(null, false) with Timed {
+  * Wait until at least one particular element appears, otherwise throws an exception
+  *
+  * @param selector css selector of the element
+  *              after which it will throw an exception!
+  */
+case class WaitFor(selector: Selector) extends Interaction(null, false) with Timed {
 
   override def exeWithoutPage(session: Session) {
     this.getElement(selector, session)
@@ -180,15 +180,15 @@ case object WaitForDocumentReady extends Interaction(null, true) with Timed {
 //}
 
 /**
- * Click an element with your mouse pointer.
- *
- * @param selector css selector of the element, only the first element will be affected
- */
+  * Click an element with your mouse pointer.
+  *
+  * @param selector css selector of the element, only the first element will be affected
+  */
 case class Click(
-                  selector: String,
+                  selector: Selector,
                   override val delay: Duration = Const.interactionDelayMin,
                   override val blocking: Boolean = Const.interactionBlock
-                  ) extends Interaction(delay, blocking) with Timed {
+                ) extends Interaction(delay, blocking) with Timed {
   override def exeWithoutPage(session: Session) {
     val element = this.getClickableElement(selector, session)
 
@@ -197,16 +197,17 @@ case class Click(
 }
 
 /**
- * Click an element with your mouse pointer.
- *
- * @param selector css selector of the element, only the first element will be affected
- */
+  * Click an element with your mouse pointer.
+  *
+  * @param selector css selector of the element, only the first element will be affected
+  */
 case class ClickNext(
-                      selector: String,
+                      selector: Selector,
                       exclude: Seq[String],
+                      //TODO: remove this, and supercede with Selector
                       override val delay: Duration = Const.interactionDelayMin,
                       override val blocking: Boolean = Const.interactionBlock
-                      ) extends Interaction(delay, blocking) with Timed {
+                    ) extends Interaction(delay, blocking) with Timed {
 
   val clicked: mutable.HashSet[String] = mutable.HashSet(exclude: _*)
 
@@ -238,7 +239,7 @@ case class ClickNext(
 // * @param selector css selector of the element, only the first element will be affected
 // */
 //case class ClickAll(
-//                     selector: String
+//                     selector: Selector
 //                     )extends Interaction with Timed {
 //
 //  override def exeWithoutPage(session: Session) {
@@ -257,15 +258,15 @@ case class ClickNext(
 //}
 
 /**
- * Submit a form, wait until new content returned by the submission has finished loading
- *
- * @param selector css selector of the element, only the first element will be affected
- */
+  * Submit a form, wait until new content returned by the submission has finished loading
+  *
+  * @param selector css selector of the element, only the first element will be affected
+  */
 case class Submit(
-                   selector: String,
+                   selector: Selector,
                    override val delay: Duration = Const.interactionDelayMin,
                    override val blocking: Boolean = Const.interactionBlock
-                   ) extends Interaction(delay, blocking) with Timed {
+                 ) extends Interaction(delay, blocking) with Timed {
   override def exeWithoutPage(session: Session) {
 
     val element = this.getElement(selector, session)
@@ -275,17 +276,17 @@ case class Submit(
 }
 
 /**
- * Type into a textbox
- *
- * @param selector css selector of the textbox, only the first element will be affected
- * @param text support cell interpolation
- */
+  * Type into a textbox
+  *
+  * @param selector css selector of the textbox, only the first element will be affected
+  * @param text support cell interpolation
+  */
 case class TextInput(
-                      selector: String,
-                      text: Extraction[Any],
+                      selector: Selector,
+                      text: Extractor[Any],
                       override val delay: Duration = Const.interactionDelayMin,
                       override val blocking: Boolean = Const.interactionBlock
-                      ) extends Interaction(delay, blocking) with Timed {
+                    ) extends Interaction(delay, blocking) with Timed {
   override def exeWithoutPage(session: Session) {
 
     val element = this.getElement(selector, session)
@@ -312,17 +313,17 @@ case class TextInput(
 }
 
 /**
- * Select an item from a drop down list
- *
- * @param selector css selector of the drop down list, only the first element will be affected
- * @param value support cell interpolation
- */
+  * Select an item from a drop down list
+  *
+  * @param selector css selector of the drop down list, only the first element will be affected
+  * @param value support cell interpolation
+  */
 case class DropDownSelect(
-                           selector: String,
-                           value: Extraction[Any],
+                           selector: Selector,
+                           value: Extractor[Any],
                            override val delay: Duration = Const.interactionDelayMin,
                            override val blocking: Boolean = Const.interactionBlock
-                           ) extends Interaction(delay, blocking) with Timed {
+                         ) extends Interaction(delay, blocking) with Timed {
   override def exeWithoutPage(session: Session) {
 
     val element = this.getElement(selector, session)
@@ -349,13 +350,14 @@ case class DropDownSelect(
 }
 
 /**
- * Request browser to change focus to a frame/iframe embedded in the global page,
- * after which only elements inside the focused frame/iframe can be selected.
- * Can be used multiple times to switch focus back and forth
- *
- * @param selector css selector of the frame/iframe, only the first element will be affected
- */
-case class SwitchToFrame(selector: String)extends Interaction(null, false) with Timed {
+  * Request browser to change focus to a frame/iframe embedded in the global page,
+  * after which only elements inside the focused frame/iframe can be selected.
+  * Can be used multiple times to switch focus back and forth
+  *
+  * @param selector css selector of the frame/iframe, only the first element will be affected
+  */
+//TODO: not possible to switch back, need a better abstraction
+case class SwitchToFrame(selector: Selector)extends Interaction(null, false) with Timed {
   override def exeWithoutPage(session: Session) {
 
     val element = this.getElement(selector, session)
@@ -365,17 +367,17 @@ case class SwitchToFrame(selector: String)extends Interaction(null, false) with 
 }
 
 /**
- * Execute a javascript snippet
- *
- * @param script support cell interpolation
- * @param selector selector of the element this script is executed against, if null, against the entire page
- */
+  * Execute a javascript snippet
+  *
+  * @param script support cell interpolation
+  * @param selector selector of the element this script is executed against, if null, against the entire page
+  */
 case class ExeScript(
-                      script: Extraction[Any],
-                      selector: String = null,
+                      script: Extractor[String],
+                      selector: Selector = null,
                       override val delay: Duration = Const.interactionDelayMin,
                       override val blocking: Boolean = Const.interactionBlock
-                      ) extends Interaction(delay, blocking) with Timed {
+                    ) extends Interaction(delay, blocking) with Timed {
   override def exeWithoutPage(session: Session) {
 
     val element = if (selector == null) None
@@ -409,18 +411,18 @@ case class ExeScript(
 }
 
 /**
- *
- * @param selector selector of the slide bar
- * @param percentage distance and direction of moving of the slider handle, positive number is up/right, negative number is down/left
- * @param handleSelector selector of the slider
- */
+  *
+  * @param selector selector of the slide bar
+  * @param percentage distance and direction of moving of the slider handle, positive number is up/right, negative number is down/left
+  * @param handleSelector selector of the slider
+  */
 case class DragSlider(
-                       selector: String,
+                       selector: Selector,
                        percentage: Double,
-                       handleSelector: String = "*",
+                       handleSelector: Selector = "*",
                        override val delay: Duration = Const.interactionDelayMin,
                        override val blocking: Boolean = Const.interactionBlock
-                       ) extends Interaction(delay, blocking) with Timed {
+                     ) extends Interaction(delay, blocking) with Timed {
 
   override def exeWithoutPage(session: Session): Unit = {
 

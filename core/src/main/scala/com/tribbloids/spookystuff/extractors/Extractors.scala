@@ -1,4 +1,4 @@
-package com.tribbloids.spookystuff.expressions
+package com.tribbloids.spookystuff.extractors
 
 import com.tribbloids.spookystuff.doc._
 import com.tribbloids.spookystuff.row.{DataRow, Field, FetchedRow}
@@ -11,7 +11,7 @@ import scala.reflect.ClassTag
 
 //just a simple wrapper for T, this is the only way to execute a action
 //this is the only serializable LiftedExpression that can be shipped remotely
-final case class Literal[+T: ClassTag](value: T) extends Extraction[T] {
+final case class Literal[+T: ClassTag](value: T) extends Extractor[T] {
 
   override def isDefinedAt(x: (DataRow, Seq[Fetched])): Boolean = true
 
@@ -20,7 +20,7 @@ final case class Literal[+T: ClassTag](value: T) extends Extraction[T] {
   override def toString = "'" + value.toString + "'"
 }
 
-case object NullLiteral extends Extraction[Null]{
+case object NullLiteral extends Extractor[Null]{
 
   override def isDefinedAt(x: (DataRow, Seq[Fetched])): Boolean = false
 
@@ -59,12 +59,12 @@ trait SelectExpr[+T <: Unstructured] extends UnliftedExtr[Elements[T]] {
   def expand(range: Range): Expand = Expand(range, this)
 }
 
-case class FindAllExpr(selector: String, arg: Extraction[Unstructured]) extends SelectExpr[Unstructured] {
+case class FindAllExpr(selector: String, arg: Extractor[Unstructured]) extends SelectExpr[Unstructured] {
 
   def liftApply(v1: FetchedRow): Option[Elements[Unstructured]] = arg.lift(v1).map(_.findAll(selector))
 
 }
-case class ChildrenExpr(selector: String, arg: Extraction[Unstructured]) extends SelectExpr[Unstructured] {
+case class ChildrenExpr(selector: String, arg: Extractor[Unstructured]) extends SelectExpr[Unstructured] {
 
   def liftApply(v1: FetchedRow): Option[Elements[Unstructured]] = arg.lift(v1).map(_.children(selector))
 }
@@ -125,7 +125,7 @@ case class ReplaceKeyExpr(str: String) extends UnliftedExtr[String] {
   def liftApply(v1: FetchedRow): Option[String] = v1.dataRow.replaceInto(str)
 }
 
-case class InterpolateExpr(parts: Seq[String], fs: Seq[Extraction[Any]]) extends UnliftedExtr[String] {
+case class InterpolateExpr(parts: Seq[String], fs: Seq[Extractor[Any]]) extends UnliftedExtr[String] {
 
   if (parts.length != fs.length + 1)
     throw new IllegalArgumentException("wrong number of arguments for interpolated string")
@@ -142,7 +142,7 @@ case class InterpolateExpr(parts: Seq[String], fs: Seq[Extraction[Any]]) extends
   }
 }
 
-case class ZippedExpr[T1,+T2](arg1: Extraction[IterableLike[T1, _]], arg2: Extraction[IterableLike[T2, _]]) extends UnliftedExtr[Map[T1, T2]] {
+case class ZippedExpr[T1,+T2](arg1: Extractor[IterableLike[T1, _]], arg2: Extractor[IterableLike[T2, _]]) extends UnliftedExtr[Map[T1, T2]] {
 
   def liftApply(v1: FetchedRow): Option[Map[T1, T2]] = {
 
@@ -161,7 +161,7 @@ object AppendExpr {
 
   def create[T: ClassTag](
                            field: Field,
-                           expr: Extraction[T]
+                           expr: Extractor[T]
                          ): AppendExpr[T] = {
 
     val effectiveField = field.!
@@ -172,7 +172,7 @@ object AppendExpr {
 
 case class AppendExpr[+T: ClassTag] private(
                                              override val field: Field,
-                                             expr: Extraction[T]
+                                             expr: Extractor[T]
                                            ) extends NamedExtr[Seq[T]] {
 
   override def isDefinedAt(x: (DataRow, Seq[Fetched])): Boolean = true

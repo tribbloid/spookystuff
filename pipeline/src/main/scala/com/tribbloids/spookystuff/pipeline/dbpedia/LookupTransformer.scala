@@ -3,7 +3,7 @@ package com.tribbloids.spookystuff.pipeline.dbpedia
 import java.util.UUID
 
 import com.tribbloids.spookystuff.actions.Wget
-import com.tribbloids.spookystuff.expressions.Extraction
+import com.tribbloids.spookystuff.extractors.Extractor
 import com.tribbloids.spookystuff.pipeline.RemoteTransformer
 import com.tribbloids.spookystuff.rdd.FetchedDataset
 import com.tribbloids.spookystuff.{SpookyContext, dsl}
@@ -35,7 +35,7 @@ class LookupTransformer(
 
   override def transform(dataset: FetchedDataset): FetchedDataset = {
 
-    var uri: Extraction[String] = x"http://lookup.dbpedia.org/api/search/KeywordSearch?QueryString=${getOrDefault(QueryCol)}"
+    var uri: Extractor[String] = x"http://lookup.dbpedia.org/api/search/KeywordSearch?QueryString=${getOrDefault(QueryCol)}"
     if (getOrDefault(ClassCol) != null) uri = uri + x"&QueryClass=${getOrDefault(ClassCol)}"
 
     dataset.fetch(

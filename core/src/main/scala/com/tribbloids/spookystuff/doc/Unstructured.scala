@@ -1,8 +1,9 @@
 package com.tribbloids.spookystuff.doc
 
-/**
- * Created by peng on 11/27/14.
- */
+import com.tribbloids.spookystuff.utils.UnstructuredUDT
+import org.apache.spark.sql.types.SQLUserDefinedType
+
+@SQLUserDefinedType(udt = classOf[UnstructuredUDT])
 trait Unstructured extends Serializable {
 
   def uri: String

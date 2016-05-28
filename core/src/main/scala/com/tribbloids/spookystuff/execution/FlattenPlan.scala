@@ -11,7 +11,7 @@ case class FlattenPlan(
                         isLeft: Boolean
                               ) extends ExecutionPlan(
   child,
-  schemaOpt = Some(child.schema ++ Option(ordinalField))
+  schemaOpt = Some(child.fields ++ Option(ordinalField))
 ) {
 
   override def doExecute(): SquashedFetchedRDD = {

@@ -23,7 +23,7 @@ abstract class IntegrationSuite extends FunSuite with BeforeAndAfterAll {
   val htmlUnit = DriverFactories.HtmlUnit()
 
   override def beforeAll() {
-    val conf = TestHelper.testSparkConf.setAppName("integration")
+    val conf = TestHelper.TestSparkConf.setAppName("integration")
 
     sc = new SparkContext(conf)
     sql = new SQLContext(sc)

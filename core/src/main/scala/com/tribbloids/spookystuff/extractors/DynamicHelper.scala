@@ -1,10 +1,10 @@
-package com.tribbloids.spookystuff.expressions
+package com.tribbloids.spookystuff.extractors
 
 import scala.language.dynamics
 
-object DynamicExpressionLike {
+object DynamicGenExtractor {
 
-  //TODO: add ClassTag
+  //TODO: type erasure! add ClassTag
   def combineDynamically[T, R](
                                 v1: T,
                                 lifted: T => Option[R],
@@ -17,7 +17,8 @@ object DynamicExpressionLike {
     selfOption.map {
       selfValue =>
         val argValues: Seq[Any] = args.map {
-          case expr: ExpressionLike[T, Any] =>
+
+          case expr: GenExtractor[T, Any] =>
             val result = expr.lift.apply(v1)
             if (result.isEmpty) return None
             else result.get
@@ -33,20 +34,20 @@ object DynamicExpressionLike {
   }
 }
 
-case class DynamicExpressionLike[T](
-                                     base: ExpressionLike[T, _],
-                                     methodName: String,
-                                     args: Seq[Any]
-                                   ) extends UnliftedExpressionLike[T, Any] {
+case class DynamicGenExtractor[T](
+                                   base: GenExtractor[T, _],
+                                   methodName: String,
+                                   args: Seq[Any]
+                                   ) extends UnliftedGenExtractor[T, Any] {
 
   override def liftApply(v1: T): Option[Any] =
-    DynamicExpressionLike.combineDynamically(v1, base.lift, methodName)(args: _*)
+    DynamicGenExtractor.combineDynamically(v1, base.lift, methodName)(args: _*)
 }
 
 //extra functions
-trait DynamicExpressionMixin[T, +R] extends Dynamic {
-  selfType: ExpressionLike[T, R] =>
+trait DynamicHelper[T, +R] extends Dynamic {
+  selfType: GenExtractor[T, R] =>
 
-  def applyDynamic(methodName: String)(args: Any*): ExpressionLike[T, Any] =
-    DynamicExpressionLike(this, methodName, args)
+  def applyDynamic(methodName: String)(args: Any*): GenExtractor[T, Any] =
+    DynamicGenExtractor(this, methodName, args)
 }

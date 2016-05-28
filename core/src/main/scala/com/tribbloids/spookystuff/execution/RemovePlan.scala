@@ -7,13 +7,13 @@ import com.tribbloids.spookystuff.row.{Field, SquashedFetchedRDD}
   */
 case class RemovePlan(
                        child: ExecutionPlan,
-                       fields: Seq[Field]
+                       toBeRemoved: Seq[Field]
                      ) extends ExecutionPlan(
   child,
-  schemaOpt = Some(child.schema -- fields)
+  schemaOpt = Some(child.fields -- toBeRemoved)
 ) {
 
   override def doExecute(): SquashedFetchedRDD = {
-    child.rdd().map(_.remove(fields: _*))
+    child.rdd().map(_.remove(toBeRemoved: _*))
   }
 }

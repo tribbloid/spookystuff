@@ -11,7 +11,7 @@ import scala.reflect.ClassTag
 /**
   * makeshift data container that is persisted through different stages of execution plan
   */
-//TODO: change to wrap DataFrame Row?
+//TODO: change to wrap DataFrame Row/InternalRow?
 //TODO: also carry PageUID & property type (Vertex/Edge) for GraphX
 case class DataRow(
                     data: Map[Field, Any] = Map(),
@@ -24,9 +24,9 @@ case class DataRow(
 
   def updated(k: Field, v: Any) = this.copy(data = data.updated(k, v))
 
-  def ++(m: Iterable[(Field, Any)]) = this.copy(data = data ++ m)
+  def ++(m: Iterable[(Field, Any)]): DataRow = this.copy(data = data ++ m)
 
-  def --(m: Iterable[Field]) = this.copy(data = data -- m)
+  def --(m: Iterable[Field]): DataRow = this.copy(data = data -- m)
 
   def nameToField(name: String): Option[Field] = {
     Some(Field(name, isWeak = true)).filter(data.contains)
@@ -35,8 +35,6 @@ case class DataRow(
       }
   }
 
-  //TempKey precedes ordinary Key
-  //TODO: in scala 2.10.x, T cannot <: AnyVal otherwise will run into https://issues.scala-lang.org/browse/SI-6967
   def getTyped[T <: Any : ClassTag](field: Field): Option[T] = {
     data.get(field).flatMap {
       Utils.typedOrNone[T]

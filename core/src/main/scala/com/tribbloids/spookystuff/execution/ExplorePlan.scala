@@ -4,7 +4,7 @@ import com.tribbloids.spookystuff.QueryException
 import com.tribbloids.spookystuff.actions._
 import com.tribbloids.spookystuff.caching.ExploreSharedVisitedCache
 import com.tribbloids.spookystuff.dsl.{FetchOptimizer, FetchOptimizers, JoinType}
-import com.tribbloids.spookystuff.expressions._
+import com.tribbloids.spookystuff.extractors._
 import com.tribbloids.spookystuff.row.{SquashedFetchedRow, _}
 import org.apache.spark.Partitioner
 import org.apache.spark.rdd.RDD
@@ -38,7 +38,7 @@ case class ExplorePlan(
       v =>
         if (v._2.size > 1) throw new QueryException(s"Field ${v._1.name} already exist")
     }
-    Some(child.schema ++ Option(algorithmImpl.depthField) ++ Option(algorithmImpl.ordinalField) ++ extractFields)
+    Some(child.fields ++ Option(algorithmImpl.depthField) ++ Option(algorithmImpl.ordinalField) ++ extractFields)
   }
 ) with CreateOrInheritBeaconRDDPlan {
   //TODO: detect in-plan field conflict!

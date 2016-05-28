@@ -2,7 +2,7 @@ package com.tribbloids.spookystuff.actions
 
 import org.apache.spark.TaskContext
 import org.slf4j.LoggerFactory
-import com.tribbloids.spookystuff.expressions.{Extraction, Literal}
+import com.tribbloids.spookystuff.extractors.{Extractor, Literal}
 import com.tribbloids.spookystuff._
 import com.tribbloids.spookystuff.http.HttpUtils
 import com.tribbloids.spookystuff.row.FetchedRow
@@ -22,7 +22,7 @@ abstract class Block(override val children: Trace) extends Actions(children) wit
 
   //  assert(self.nonEmpty)
 
-  override def wayback: Extraction[Long] = children.flatMap {
+  override def wayback: Extractor[Long] = children.flatMap {
     case w: Wayback => Some(w)
     case _ => None
   }.lastOption.map {
@@ -78,7 +78,8 @@ object Try {
 }
 
 final case class Try(
-                      override val children: Trace)(
+                      override val children: Trace
+                    )(
                       retries: Int,
                       override val cacheEmptyOutput: Boolean
                     ) extends Block(children) {
@@ -140,7 +141,8 @@ object TryLocally {
 }
 
 final case class TryLocally(
-                             override val children: Trace)(
+                             override val children: Trace
+                           )(
                              retries: Int,
                              override val cacheEmptyOutput: Boolean
                            ) extends Block(children) {
@@ -193,7 +195,7 @@ object Loop {
            ): Loop = {
     assert(trace.size == 1)
 
-    Loop(trace.head, limit) //TODO: should persist rule of Cartesian join
+    Loop(trace.head, limit) //TODO: should persist rule of Cartesian join & yield Set[Loop]
   }
 }
 
@@ -279,11 +281,10 @@ object Paginate {
 object If {
 
   def apply(
-             condition: Doc => Boolean,
+             condition: DocCondition,
              ifTrue: Set[Trace] = Set(),
              ifFalse: Set[Trace] = Set()
            ): If = {
-
 
     assert(ifTrue.size <= 1)
     assert(ifFalse.size <= 1)
@@ -292,12 +293,12 @@ object If {
       condition,
       ifTrue.headOption.getOrElse(Nil),
       ifFalse.headOption.getOrElse(Nil)
-    ) //TODO: should persist rule of Cartesian join
+    ) //TODO: should persist rule of Cartesian join & yield Set[Loop]
   }
 }
 
 final case class If(
-                     condition: Doc => Boolean,
+                     condition: DocCondition, //TODO: merge with Extraction[Boolean]
                      ifTrue: Trace,
                      ifFalse: Trace
                    ) extends Block(ifTrue ++ ifFalse) {
@@ -309,7 +310,7 @@ final case class If(
     val current = DefaultSnapshot.exe(session).head.asInstanceOf[Doc]
 
     val pages = new ArrayBuffer[Doc]()
-    if (condition(current)) {
+    if (condition(current, session)) {
       for (action <- ifTrue) {
         pages ++= action.exe(session).flatMap{
           case page: Doc => Some(page)

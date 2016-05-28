@@ -4,7 +4,7 @@ import java.util.{Date, UUID}
 
 import com.tribbloids.spookystuff._
 import com.tribbloids.spookystuff.actions.{Trace, Wayback}
-import com.tribbloids.spookystuff.expressions.Literal
+import com.tribbloids.spookystuff.extractors.Literal
 import com.tribbloids.spookystuff.utils.{HDFSResolver, Utils}
 import org.apache.commons.io.IOUtils
 import org.apache.hadoop.fs.{FileStatus, Path}

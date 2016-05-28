@@ -2,7 +2,7 @@ package com.tribbloids.spookystuff.execution
 
 import com.tribbloids.spookystuff.actions.Trace
 import com.tribbloids.spookystuff.caching.{ConcurrentMap, ExploreSharedVisitedCache}
-import com.tribbloids.spookystuff.expressions._
+import com.tribbloids.spookystuff.extractors._
 import com.tribbloids.spookystuff.row._
 import com.tribbloids.spookystuff.utils.NOTSerializableMixin
 import com.tribbloids.spookystuff.{SpookyContext, dsl}
@@ -85,7 +85,7 @@ class ExploreShard(
     }
 
     if (bestOpenAfterElimination._2.nonEmpty) {
-      val bestRow_- = SquashedFetchedRow(bestOpen._2.toArray, bestOpen._1).fetch(spooky)
+      val bestRow_- = SquashedFetchedRow(bestOpen._2.toArray, bestOpen._1).loadDocs(spooky)
 
       val bestRow = rowFn.apply(
         bestRow_-

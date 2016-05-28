@@ -13,7 +13,7 @@ class SquashedFetchedRowSuite extends SpookyEnvSuite {
   import com.tribbloids.spookystuff.dsl._
 
   test("Array[Page]().grouping yields at least 1 group") {
-    val row = SquashedFetchedRow(fetchedOpt = Some(Array[Fetched]()))
+    val row = SquashedFetchedRow(_fetched = Array[Fetched]())
     val grouped = row.defaultGroupedFetched.toSeq
     assert(grouped == Seq(Seq()))
   }
@@ -26,7 +26,7 @@ class SquashedFetchedRowSuite extends SpookyEnvSuite {
       Snapshot() ~ 'a,
       Snapshot() ~ 'b
     )
-    val row = SquashedFetchedRow(fetchedOpt = Some(trace.fetch(spooky).toArray))
+    val row = SquashedFetchedRow(_fetched = trace.fetch(spooky).toArray)
     val grouped = row.defaultGroupedFetched.toSeq
     val groupedNames = grouped.map {
       _.map {
@@ -36,10 +36,4 @@ class SquashedFetchedRowSuite extends SpookyEnvSuite {
 
     assert(groupedNames == Seq("ab", "ab"))
   }
-
-  //TODO: enable
-//  test("Trace has a schema encoder") {
-//    val schema = ScalaReflection.schemaFor[Seq[ActionLike]]
-//    println(schema)
-//  }
 }

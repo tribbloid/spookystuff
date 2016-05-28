@@ -12,8 +12,8 @@ import org.scalatest.{BeforeAndAfter, BeforeAndAfterAll, FunSuite, Retries}
  */
 abstract class SpookyEnvSuite extends FunSuite with BeforeAndAfter with BeforeAndAfterAll with Retries with RemoteDocsMixin {
 
-  var sc: SparkContext = _
-  var sql: SQLContext = _
+  def sc: SparkContext = TestHelper.TestSpark
+  def sql: SQLContext = TestHelper.TestSQL
   var spooky: SpookyContext = _
 
   lazy val driverFactory: DriverFactory = DriverFactories.PhantomJS(loadImages = true)
@@ -26,11 +26,6 @@ abstract class SpookyEnvSuite extends FunSuite with BeforeAndAfter with BeforeAn
   }
 
   override def beforeAll() {
-    val conf: SparkConf = TestHelper.testSparkConf.setAppName("unit")
-
-    sc = new SparkContext(conf)
-
-    sql = new SQLContext(sc)
 
     val spookyConf = new SpookyConf(
       driverFactory = driverFactory

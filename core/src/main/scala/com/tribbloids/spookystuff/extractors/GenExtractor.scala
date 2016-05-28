@@ -1,32 +1,39 @@
-package com.tribbloids.spookystuff.expressions
+package com.tribbloids.spookystuff.extractors
+
+import java.beans.Transient
 
 import com.tribbloids.spookystuff.row.Field
 import com.tribbloids.spookystuff.utils.{PrettyToStringMixin, Utils}
+import org.apache.spark.sql.catalyst.ScalaReflection
 
 import scala.language.implicitConversions
 import scala.reflect.ClassTag
 import scala.runtime.AbstractPartialFunction
 
-object ExpressionLike {
+import ScalaReflection.universe.TypeTag
 
-  implicit def fn2GenExpression[T, R](self: T => R): ExpressionLike[T, R] = {
+object GenExtractor {
+
+  implicit def fn2GenExtractor[T, R](self: T => R): GenExtractor[T, R] = {
+
     self match {
-      case e: ExpressionLike[T, R] =>
+      case e: GenExtractor[T, R] =>
         e
       case pf: PartialFunction[T, R] =>
-        new PartialExpressionLike(pf)
+        new PartialGenExtractor(pf)
       case _ =>
-        new PartialExpressionLike(PartialFunction(self))
+        new PartialGenExtractor(PartialFunction(self))
     }
   }
 }
 
 //doesn't carry a classTag, to add any function that use classTag, please add to dsl.ExprView
-trait ExpressionLike[T, +R] extends PartialFunction[T, R] with PrettyToStringMixin with DynamicExpressionMixin[T, R] {
+//TODO: convert to TreeNode?
+trait GenExtractor[T, +R] extends PartialFunction[T, R] with PrettyToStringMixin with DynamicHelper[T, R] {
 
   lazy val unboxed: PartialFunction[T, R] = this
 
-  def _as(fieldOpt: Option[Field]): ExpressionLike[T, R] = {
+  def _as(fieldOpt: Option[Field]): GenExtractor[T, R] = {
 
     fieldOpt match {
       case Some(field) => new AliasLike[T, R](unboxed, field)
@@ -52,20 +59,20 @@ trait ExpressionLike[T, +R] extends PartialFunction[T, R] with PrettyToStringMix
   final def named_*(field: Field) = _named(field.*)
 
   //will not rename an already-named Alias.
-  def defaultAs(field: Field): ExpressionLike[T, R] = as(field)
+  def defaultAs(field: Field): GenExtractor[T, R] = as(field)
 
   //alas, default impls are not serializable
-  override def andThen[A](g: R => A): ExpressionLike[T, A] = new AndThenExpressionLike[T, R, A](this, g)
+  override def andThen[A](g: R => A): GenExtractor[T, A] = new AndThenGenExtractor[T, R, A](this, g)
 
-  def andOptional[A](g: R => Option[A]): ExpressionLike[T, A] = new AndThenExpressionLike[T, R, A](this, OptionalExpressionLike(g))
+  def andOptional[A](g: R => Option[A]): GenExtractor[T, A] = new AndThenGenExtractor[T, R, A](this, OptionalGenExtractor(g))
 
   //TODO: extract subroutine and use it to avoid obj creation overhead
-  def typed[A](implicit ev: ClassTag[A]): ExpressionLike[T, A] = andOptional[A]{
+  def typed[A](implicit ev: ClassTag[A]): GenExtractor[T, A] = andOptional[A]{
     Utils.typedOrNone[A]
   }
 }
 
-trait UnliftedExpressionLike[T, +R] extends AbstractPartialFunction[T, R] with ExpressionLike[T, R] {
+trait UnliftedGenExtractor[T, +R] extends AbstractPartialFunction[T, R] with GenExtractor[T, R] {
 
   def liftApply(v1: T): Option[R]
 
@@ -79,7 +86,7 @@ trait UnliftedExpressionLike[T, +R] extends AbstractPartialFunction[T, R] with E
   override final def lift = liftApply
 }
 
-case class PartialExpressionLike[T, +R](delegate: PartialFunction[T, R]) extends ExpressionLike[T, R] {
+case class PartialGenExtractor[T, +R](delegate: PartialFunction[T, R]) extends GenExtractor[T, R] {
 
   override lazy val unboxed: PartialFunction[T, R] = delegate
 
@@ -91,20 +98,20 @@ case class PartialExpressionLike[T, +R](delegate: PartialFunction[T, R]) extends
   override def lift = delegate.lift
 }
 
-case class OptionalExpressionLike[T, +R](delegate: T => Option[R]) extends UnliftedExpressionLike[T, R] {
+case class OptionalGenExtractor[T, +R](delegate: T => Option[R]) extends UnliftedGenExtractor[T, R] {
 
   override def liftApply(v1: T): Option[R] = delegate(v1)
 }
 
-case class AndThenExpressionLike[A, B, +C](
-                                            pf: ExpressionLike[A, B],
-                                            g: ExpressionLike[B, C]
-                                          ) extends UnliftedExpressionLike[A, C] {
+case class AndThenGenExtractor[A, B, +C](
+                                          pf: GenExtractor[A, B],
+                                          g: GenExtractor[B, C]
+                                          ) extends UnliftedGenExtractor[A, C] {
 
   override def liftApply(v1: A): Option[C] = pf.lift.apply(v1).flatMap(g.lift)
 }
 
-trait NamedExpressionLike[T, +R] extends ExpressionLike[T, R] {
+trait NamedGenExtractor[T, +R] extends GenExtractor[T, R] {
   def field: Field
 
   assert(field != null)
@@ -119,6 +126,6 @@ trait NamedExpressionLike[T, +R] extends ExpressionLike[T, R] {
 class AliasLike[T, +R](
                        override val delegate: PartialFunction[T, R],
                        val field: Field
-                     ) extends PartialExpressionLike[T, R](delegate) with NamedExpressionLike[T, R] {
+                     ) extends PartialGenExtractor[T, R](delegate) with NamedGenExtractor[T, R] {
 
 }

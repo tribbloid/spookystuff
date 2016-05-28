@@ -5,6 +5,7 @@ import java.net.URL
 
 import com.tribbloids.spookystuff.Const
 import org.apache.spark.SparkEnv
+import org.apache.spark.sql.catalyst.ScalaReflection
 import org.slf4j.LoggerFactory
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -17,7 +18,7 @@ import scala.xml.PrettyPrinter
 object Utils {
 
   import Implicits._
-  import scala.reflect.runtime.universe._
+  import ScalaReflection.universe._
 
   val xmlPrinter = new PrettyPrinter(Int.MaxValue, 2)
 //  val logger = LoggerFactory.getLogger(this.getClass)
@@ -233,7 +234,7 @@ These special characters are often called "metacharacters".
     }
   }
 
-  def classAccessors[T: TypeTag]: List[MethodSymbol] = typeOf[T].members.collect {
+  def caseAccessors[T: TypeTag]: List[MethodSymbol] = typeOf[T].members.collect {
     case m: MethodSymbol if m.isCaseAccessor => m
   }.toList
 
@@ -243,4 +244,21 @@ These special characters are often called "metacharacters".
   def getCPResourceAsStream(str: String): Option[InputStream] =
     Option(ClassLoader.getSystemClassLoader.getResourceAsStream(str.stripSuffix("/")))
 
+  private lazy val LZYCOMPUTE = "$lzycompute"
+  private lazy val INIT = "<init>"
+
+  def breakpoint(
+                  filterInitializer: Boolean = true,
+                  filterLazyRelay: Boolean = true,
+                  filterDefaultRelay: Boolean = true
+                ): Array[StackTraceElement] = {
+    val stackTraceElements: Array[StackTraceElement] = Thread.currentThread().getStackTrace
+    var effectiveElements = stackTraceElements
+
+    if (filterInitializer) effectiveElements = effectiveElements.filter(v => !(v.getMethodName == INIT))
+    if (filterLazyRelay) effectiveElements = effectiveElements.filter(v => !v.getMethodName.endsWith(LZYCOMPUTE))
+
+    effectiveElements
+      .slice(2, Int.MaxValue)
+  }
 }

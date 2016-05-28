@@ -13,11 +13,11 @@ import scala.collection.mutable.ArrayBuffer
   */
 case class RDDPlan(
                     sourceRDD: SquashedFetchedRDD,
-                    override val schema: ListSet[Field],
+                    override val fields: ListSet[Field],
                     override val spooky: SpookyContext,
                     localityBeaconRDD: Option[RDD[(Trace, DataRow)]] = None,
                     override val cacheQueue: ArrayBuffer[RDD[_]] = ArrayBuffer()
-                  ) extends ExecutionPlan(Seq(), schema, spooky, cacheQueue) {
+                  ) extends ExecutionPlan(Seq(), fields, spooky, cacheQueue) {
 
   override lazy val localityBeaconRDDOpt = localityBeaconRDD
 

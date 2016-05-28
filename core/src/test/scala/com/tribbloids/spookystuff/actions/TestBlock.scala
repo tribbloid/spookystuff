@@ -3,11 +3,8 @@ package com.tribbloids.spookystuff.actions
 import java.util.Date
 
 import com.tribbloids.spookystuff.SpookyEnvSuite
-import com.tribbloids.spookystuff.expressions.Literal
+import com.tribbloids.spookystuff.extractors.Literal
 
-/**
- * Created by peng on 08/09/15.
- */
 class TestBlock extends SpookyEnvSuite {
 
   import com.tribbloids.spookystuff.dsl._

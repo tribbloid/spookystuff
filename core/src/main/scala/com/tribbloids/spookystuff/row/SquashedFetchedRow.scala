@@ -4,7 +4,7 @@ import java.util.UUID
 
 import com.tribbloids.spookystuff.actions.Trace
 import com.tribbloids.spookystuff.doc.Fetched
-import com.tribbloids.spookystuff.expressions.NamedExtr
+import com.tribbloids.spookystuff.extractors.NamedExtr
 import com.tribbloids.spookystuff.{SpookyContext, dsl}
 
 import scala.collection.mutable.ArrayBuffer
@@ -29,21 +29,21 @@ object SquashedFetchedRow {
 case class SquashedFetchedRow(
                                dataRows: Array[DataRow] = Array(),
                                trace: Trace = Nil,
-                               fetchedOpt: Option[Array[Fetched]] = None // discarded after new page coming in
+                               @transient var _fetched: Array[Fetched] = null // discarded after new page coming in
                              ) {
 
   import com.tribbloids.spookystuff.utils.Implicits._
   import dsl._
 
+  def fetchedOpt = Option(_fetched)
   def isFetched: Boolean = fetchedOpt.nonEmpty
   def fetched = fetchedOpt.getOrElse(Array())
 
-  def fetch(spooky: SpookyContext): SquashedFetchedRow = {
-    if (isFetched) this
-    else {
-      val fetched = trace.fetch(spooky).toArray
-      this.copy(fetchedOpt = Some(fetched))
+  def loadDocs(spooky: SpookyContext): this.type = {
+    if (!isFetched) {
+      _fetched = trace.fetch(spooky).toArray
     }
+    this
   }
 
   def toMaps = dataRows.map(_.toMap)

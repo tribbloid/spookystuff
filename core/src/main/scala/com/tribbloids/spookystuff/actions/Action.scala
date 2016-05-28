@@ -1,11 +1,12 @@
 package com.tribbloids.spookystuff.actions
 
-import com.tribbloids.spookystuff.expressions._
-import com.tribbloids.spookystuff.doc.{Fetched, Doc}
+import com.tribbloids.spookystuff.extractors._
+import com.tribbloids.spookystuff.doc.{Doc, Fetched}
 import com.tribbloids.spookystuff.selenium.BySizzleCssSelector
 import com.tribbloids.spookystuff.session.{DriverSession, NoDriverSession, Session}
-import com.tribbloids.spookystuff.utils.Utils
+import com.tribbloids.spookystuff.utils.{ActionUDT, AnyUDT, Utils}
 import com.tribbloids.spookystuff.{ActionException, Const, SpookyContext}
+import org.apache.spark.sql.types.SQLUserDefinedType
 import org.openqa.selenium.TakesScreenshot
 import org.openqa.selenium.support.ui.{ExpectedConditions, WebDriverWait}
 import org.slf4j.LoggerFactory
@@ -20,6 +21,8 @@ import scala.concurrent.duration.Duration
  * This is used almost exclusively in typing into an url bar or textbox, but it's flexible enough to be used anywhere.
  * extends Product to make sure all subclasses are case classes
  */
+//TODO: merging with Selector[Seq[Fetched]]?
+@SQLUserDefinedType(udt = classOf[ActionUDT])
 trait Action extends ActionLike {
 
   override def children: Seq[Action] = Seq()
@@ -206,5 +209,5 @@ trait Driverless extends Action {
 
 trait Wayback extends Action {
 
-  def wayback: Extraction[Long]
+  def wayback: Extractor[Long]
 }

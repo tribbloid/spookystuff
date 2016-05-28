@@ -5,11 +5,7 @@ import com.tribbloids.spookystuff.doc.Fetched
 import com.tribbloids.spookystuff.row.FetchedRow
 import com.tribbloids.spookystuff.session.Session
 import org.apache.spark.sql.catalyst.trees.TreeNode
-import org.apache.spark.sql.types.{DataType, UserDefinedType}
 
-/**
- * Created by peng on 11/7/14.
- */
 abstract class ActionLike extends TreeNode[ActionLike] with Product with Serializable {
 
   final def interpolate(pr: FetchedRow, context: SpookyContext): Option[this.type] = {
@@ -38,12 +34,32 @@ abstract class ActionLike extends TreeNode[ActionLike] with Product with Seriali
   def apply(session: Session): Seq[Fetched]
 }
 
-class ActionLikeUDT extends UserDefinedType[ActionLike] {
-  override def sqlType: DataType = ???
-
-  override def serialize(obj: Any): Any = ???
-
-  override def userClass: Class[ActionLike] = classOf[ActionLike]
-
-  override def deserialize(datum: Any): ActionLike = ???
-}
+//object ActionLikeRelay extends SimpleStructRelay[ActionLike] {
+//
+//  //this class assumes that all extractions has been cast into literals
+//  case class Repr(
+//                   className: String,
+//                   uri: Option[String],
+//                   selector: Option[Selector], //TODO: switch to Doc => Unstructured
+//                   delay: Option[Duration],
+//                   blocking: Option[Boolean],
+//                   maxDelay: Option[Duration],
+//                   text: Option[String],
+//                   value: Option[String],
+//                   script: Option[String],
+//                   handleSelector: Option[Selector],
+//                   DocFilter: Option[DocFilter],
+//                   self: Option[Repr],
+//                   children: Option[Seq[Repr]],
+//                   retries: Option[Int],
+//                   limit: Option[Int],
+//                   cacheError: Option[Boolean],
+//                   cacheEmptyOutput: Option[Boolean],
+//                   condition: Option[DocCondition],
+//                   ifTrue: Option[Seq[Repr]],
+//                   ifFalse: Option[Seq[Repr]]
+//                 ) extends StructRepr[ActionLike] {
+//
+//    override def toSelf: ActionLike = ???
+//  }
+//}

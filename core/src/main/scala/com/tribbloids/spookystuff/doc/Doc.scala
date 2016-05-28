@@ -1,15 +1,15 @@
 package com.tribbloids.spookystuff.doc
 
-import java.io._
 import java.util.{Date, UUID}
 
 import com.tribbloids.spookystuff._
 import com.tribbloids.spookystuff.actions._
-import com.tribbloids.spookystuff.utils.{IdentifierMixin, Utils}
+import com.tribbloids.spookystuff.utils.{FetchedUDT, IdentifierMixin, Utils}
 import org.apache.commons.csv.CSVFormat
 import org.apache.hadoop.fs.Path
 import org.apache.http.StatusLine
 import org.apache.http.entity.ContentType
+import org.apache.spark.sql.types.SQLUserDefinedType
 import org.apache.tika.io.TikaInputStream
 import org.apache.tika.metadata.{Metadata, TikaMetadataKeys}
 import org.apache.tika.mime.MimeTypes
@@ -30,7 +30,7 @@ case class PageUID(
 
 }
 
-trait PageLike {
+trait PageLike extends Serializable {
   def uid: PageUID
   def cacheable: Boolean
 
@@ -46,6 +46,7 @@ trait PageLike {
 //  @transient override lazy val uid: PageUID = PageUID(trace, null, 0, 1)
 //}
 
+@SQLUserDefinedType(udt = classOf[FetchedUDT])
 trait Fetched extends PageLike {
   def timestamp: Date
 
@@ -67,7 +68,7 @@ case class NoDoc(
   @transient override lazy val uid: PageUID = PageUID(trace, null, 0, 1)
 }
 
-class ErrorWithDoc(
+case class ErrorWithDoc(
                     delegate: Doc,
                     override val message: String = "",
                     override val cause: Throwable = null
@@ -97,19 +98,19 @@ object Doc {
 //keep small, will be passed around by Spark
 @SerialVersionUID(94865098324L)
 case class Doc(
-                override val uid: PageUID,
+           override val uid: PageUID,
 
-                override val uri: String, //redirected
-                declaredContentType: Option[String],
-                content: Array[Byte],
+           override val uri: String, //redirected
+           declaredContentType: Option[String],
+           content: Array[Byte],
 
-                //                 cookie: Seq[SerializableCookie] = Nil,
-                override val timestamp: Date = new Date(System.currentTimeMillis()),
-                saved: scala.collection.mutable.Set[String] = scala.collection.mutable.Set(),
-                override val cacheable: Boolean = true,
-                httpStatus: Option[StatusLine] = None,
-                @transient _properties: Map[String, Any] = null //for customizing parsing
-              ) extends Unstructured with Fetched with IdentifierMixin {
+           //                 cookie: Seq[SerializableCookie] = Nil,
+           override val timestamp: Date = new Date(System.currentTimeMillis()),
+           saved: scala.collection.mutable.Set[String] = scala.collection.mutable.Set(),
+           override val cacheable: Boolean = true,
+           httpStatus: Option[StatusLine] = None,
+           @transient _properties: Map[String, Any] = null //for customizing parsing
+         ) extends Unstructured with Fetched with IdentifierMixin {
 
   def properties: Map[String, Any] = Option(_properties).getOrElse(Map())
 

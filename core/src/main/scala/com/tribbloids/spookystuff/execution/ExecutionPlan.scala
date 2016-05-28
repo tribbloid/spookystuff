@@ -2,7 +2,7 @@ package com.tribbloids.spookystuff.execution
 
 import com.tribbloids.spookystuff._
 import com.tribbloids.spookystuff.actions._
-import com.tribbloids.spookystuff.expressions._
+import com.tribbloids.spookystuff.extractors._
 import com.tribbloids.spookystuff.row._
 import com.tribbloids.spookystuff.utils.NOTSerializableMixin
 import org.apache.spark.rdd.RDD
@@ -17,7 +17,7 @@ import scala.language.implicitConversions
 //TODO: may subclass SparkPlan in the future to generate DataFrame directly, but not so fast
 abstract class ExecutionPlan(
                               val children: Seq[ExecutionPlan],
-                              val schema: ListSet[Field],
+                              val fields: ListSet[Field],
                               val spooky: SpookyContext,
                               val cacheQueue: ArrayBuffer[RDD[_]]
                             ) extends TreeNode[ExecutionPlan] with NOTSerializableMixin {
@@ -54,7 +54,7 @@ abstract class ExecutionPlan(
       case Some((cached, false)) =>
         if (!fetch) cached
         else {
-          val result = cached.map(_.fetch(spooky))
+          val result = cached.map(_.loadDocs(spooky))
           if (storageLevel != StorageLevel.NONE) {
             cachedRDD_fetchedOpt = Some((result.persist(storageLevel), true))
           }
@@ -65,7 +65,7 @@ abstract class ExecutionPlan(
       case None =>
         val exe = execute()
         val result = if (!fetch) exe
-        else exe.map(_.fetch(spooky))
+        else exe.map(_.loadDocs(spooky))
 
         if (storageLevel != StorageLevel.NONE) {
           cachedRDD_fetchedOpt = Some(result.persist(storageLevel), fetch)
@@ -83,7 +83,7 @@ abstract class ExecutionPlan(
           ) = this(
 
     Seq(child),
-    schemaOpt.getOrElse(child.schema),
+    schemaOpt.getOrElse(child.fields),
     child.spooky,
     child.cacheQueue
   )
@@ -95,13 +95,13 @@ abstract class ExecutionPlan(
           ) = this(
 
     children,
-    schemaOpt.getOrElse(children.map(_.schema).reduce(_ ++ _)),
+    schemaOpt.getOrElse(children.map(_.fields).reduce(_ ++ _)),
     children.head.spooky,
     children.map(_.cacheQueue).reduce(_ ++ _)
   )
   def this(children: Seq[ExecutionPlan]) = this(children, None)
 
-  @transient def fieldSeq: Seq[Field] = this.schema.toSeq.reverse
+  @transient def fieldSeq: Seq[Field] = this.fields.toSeq.reverse
   @transient def sortIndexFieldSeq: Seq[Field] = fieldSeq.filter(_.isSortIndex)
 
   implicit class CacheQueueView(val self: ArrayBuffer[RDD[_]]) {
@@ -139,16 +139,16 @@ abstract class ExecutionPlan(
   }
 
   final def resolveAlias[T, R](
-                                expr: ExpressionLike[T, R],
+                                expr: GenExtractor[T, R],
                                 fieldBuffer: ArrayBuffer[Field] = ArrayBuffer.empty
-                              ): NamedExpressionLike[T, R] = {
+                              ): NamedGenExtractor[T, R] = {
 
     val result = expr match {
-      case a: NamedExpressionLike[_, _] =>
-        val resolvedField = a.field.resolveConflict(this.schema)
+      case a: NamedGenExtractor[_, _] =>
+        val resolvedField = a.field.resolveConflict(this.fields)
         expr named resolvedField
       case _ =>
-        val fields = this.schema ++ fieldBuffer
+        val fields = this.fields ++ fieldBuffer
         val names = fields.map(_.name)
         val i = (1 to Int.MaxValue).find(
           i =>
@@ -161,8 +161,8 @@ abstract class ExecutionPlan(
   }
 
   def batchResolveAlias[T, R](
-                               exprs: Seq[ExpressionLike[T, R]]
-                             ): Seq[NamedExpressionLike[T, R]] = {
+                               exprs: Seq[GenExtractor[T, R]]
+                             ): Seq[NamedGenExtractor[T, R]] = {
     val buffer = ArrayBuffer.empty[Field]
 
     val resolvedExprs = exprs.map {

@@ -1,6 +1,6 @@
 package com.tribbloids.spookystuff.execution
 
-import com.tribbloids.spookystuff.expressions._
+import com.tribbloids.spookystuff.extractors._
 import com.tribbloids.spookystuff.row.{DataRow, Field, _}
 
 abstract class ExploreAlgorithmImpl {

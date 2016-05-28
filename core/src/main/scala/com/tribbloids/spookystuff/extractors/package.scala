@@ -7,16 +7,15 @@ import com.tribbloids.spookystuff.row.FetchedRow
 /**
  * Created by peng on 12/2/14.
  */
-package object expressions {
+package object extractors {
 
 //  private type ExpressionLike[T, +R] = T => R
-//
-  type Extraction[+R] = ExpressionLike[FetchedRow, R]
-  type NamedExtr[+R] = NamedExpressionLike[FetchedRow, R]
 
-  type UnliftedExtr[+R] = UnliftedExpressionLike[FetchedRow, R]
+  type Extractor[+R] = GenExtractor[FetchedRow, R]
+  type NamedExtr[+R] = NamedGenExtractor[FetchedRow, R]
+
+  type UnliftedExtr[+R] = UnliftedGenExtractor[FetchedRow, R]
 
   type ByDoc[+R] = (Doc => R)
-
   type ByTrace[+R] = (Trace => R)
 }

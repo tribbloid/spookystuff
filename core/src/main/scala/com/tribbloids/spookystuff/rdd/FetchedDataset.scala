@@ -3,7 +3,7 @@ package com.tribbloids.spookystuff.rdd
 import com.tribbloids.spookystuff.actions.{Snapshot, Try, Visit, Wget, _}
 import com.tribbloids.spookystuff.dsl.{ExploreAlgorithm, FetchOptimizer, JoinType, _}
 import com.tribbloids.spookystuff.execution.{ExplorePlan, FetchPlan, _}
-import com.tribbloids.spookystuff.expressions.{GetExpr, _}
+import com.tribbloids.spookystuff.extractors.{GetExpr, _}
 import com.tribbloids.spookystuff.doc.Doc
 import com.tribbloids.spookystuff.row.{Field, _}
 import com.tribbloids.spookystuff.utils.{Utils, Implicits}
@@ -129,21 +129,21 @@ case class FetchedDataset(
     }
 
   def toStringRDD(
-                   expr: Extraction[Any],
+                   expr: Extractor[Any],
                    default: String = null
                  ): RDD[String] = unsquashedRDD.map(v => expr.toStr.applyOrElse[FetchedRow, String](v, _ => default))
 
   def toObjectRDD[T: ClassTag](
-                                expr: Extraction[T],
+                                expr: Extractor[T],
                                 default: T = null
                               ): RDD[T] = unsquashedRDD.map(v => expr.applyOrElse[FetchedRow, T](v, _ => default))
 
   def toTypedRDD[T: ClassTag](
-                               expr: Extraction[Any],
+                               expr: Extractor[Any],
                                default: T = null
                              ): RDD[T] = unsquashedRDD.map(v => expr.typed[T].applyOrElse[FetchedRow, T](v, _ => default))
 
-  def toPairRDD[T1: ClassTag, T2: ClassTag](first: Extraction[T1], second: Extraction[T2]): RDD[(T1,T2)] = unsquashedRDD
+  def toPairRDD[T1: ClassTag, T2: ClassTag](first: Extractor[T1], second: Extractor[T2]): RDD[(T1,T2)] = unsquashedRDD
     .map{
       row =>
         val t1: T1 = first.orNull.apply(row)
@@ -163,9 +163,9 @@ case class FetchedDataset(
     */
   //always use the same path pattern for filtered pages, if you want pages to be saved with different path, use multiple saveContent with different names
   def savePages(
-                 path: Extraction[Any],
-                 extension: Extraction[Any] = null,
-                 pageExpr: Extraction[Doc] = S,
+                 path: Extractor[Any],
+                 extension: Extractor[Any] = null,
+                 pageExpr: Extractor[Doc] = S,
                  overwrite: Boolean = false
                ): this.type = {
 
@@ -199,7 +199,7 @@ case class FetchedDataset(
     this
   }
 
-  def extract(exprs: Extraction[Any]*): FetchedDataset = {
+  def extract(exprs: Extractor[Any]*): FetchedDataset = {
 
     val resolvedExprs = plan.batchResolveAlias(exprs)
 
@@ -208,7 +208,7 @@ case class FetchedDataset(
     )
   }
 
-  def select(exprs: Extraction[Any]*) = extract(exprs: _*)
+  def select(exprs: Extractor[Any]*) = extract(exprs: _*)
 
   def remove(fields: Field*): FetchedDataset = this.copy(RemovePlan(plan, fields))
 
@@ -242,7 +242,7 @@ case class FetchedDataset(
   //  }
 
   def flatten(
-               expr: Extraction[Any],
+               expr: Extractor[Any],
                isLeft: Boolean = true,
                ordinalField: Field = null,
                sampler: Sampler[Any] = spooky.conf.defaultFlattenSampler
@@ -275,22 +275,22 @@ case class FetchedDataset(
   //   * @return RDD[Page], each page will generate several shards
   //   */
   def flatExtract(
-                   expr: Extraction[Any], //TODO: used to be Iterable[Unstructured], any tradeoff?
+                   expr: Extractor[Any], //TODO: used to be Iterable[Unstructured], any tradeoff?
                    isLeft: Boolean = true,
                    ordinalField: Field = null,
                    sampler: Sampler[Any] = spooky.conf.defaultFlattenSampler
-                 )(exprs: Extraction[Any]*): FetchedDataset = {
+                 )(exprs: Extractor[Any]*): FetchedDataset = {
     this
       .flatten(expr defaultAs Const.defaultJoinField, isLeft, ordinalField, sampler)
       .extract(exprs: _*)
   }
 
   def flatSelect(
-                  expr: Extraction[Any], //TODO: used to be Iterable[Unstructured], any tradeoff?
+                  expr: Extractor[Any], //TODO: used to be Iterable[Unstructured], any tradeoff?
                   ordinalField: Field = null,
                   sampler: Sampler[Any] = spooky.conf.defaultFlattenSampler,
                   isLeft: Boolean = true
-                )(exprs: Extraction[Any]*) = flatExtract(expr, isLeft, ordinalField, sampler)(exprs: _*)
+                )(exprs: Extractor[Any]*) = flatExtract(expr, isLeft, ordinalField, sampler)(exprs: _*)
 
   //TODO: test
   def agg(exprs: Seq[(FetchedRow => Any)], reducer: RowReducer): FetchedDataset = this.copy(AggPlan(plan, exprs, reducer))
@@ -305,7 +305,7 @@ case class FetchedDataset(
 
   //shorthand of fetch
   def visit(
-             expr: Extraction[Any],
+             expr: Extractor[Any],
              filter: DocFilter = Const.defaultDocumentFilter,
              failSafe: Int = -1,
              partitionerFactory: RDD[_] => Partitioner = spooky.conf.defaultPartitionerFactory,
@@ -327,7 +327,7 @@ case class FetchedDataset(
 
   //shorthand of fetch
   def wget(
-            expr: Extraction[Any],
+            expr: Extractor[Any],
             filter: DocFilter = Const.defaultDocumentFilter,
             failSafe: Int = -1,
             partitionerFactory: RDD[_] => Partitioner = spooky.conf.defaultPartitionerFactory,
@@ -346,7 +346,7 @@ case class FetchedDataset(
   }
 
   def join(
-            expr: Extraction[Any], //name is discarded
+            expr: Extractor[Any], //name is discarded
             joinType: JoinType = spooky.conf.defaultJoinType,
             ordinalField: Field = null, //left & idempotent parameters are missing as they are always set to true
             sampler: Sampler[Any] = spooky.conf.defaultJoinSampler
@@ -369,7 +369,7 @@ case class FetchedDataset(
     * @return RDD[Page]
     */
   def visitJoin(
-                 expr: Extraction[Any],
+                 expr: Extractor[Any],
                  joinType: JoinType = spooky.conf.defaultJoinType,
                  ordinalField: Field = null, //left & idempotent parameters are missing as they are always set to true
                  sampler: Sampler[Any] = spooky.conf.defaultJoinSampler,
@@ -401,7 +401,7 @@ case class FetchedDataset(
     * @return RDD[Page]
     */
   def wgetJoin(
-                expr: Extraction[Any],
+                expr: Extractor[Any],
                 joinType: JoinType = spooky.conf.defaultJoinType,
                 ordinalField: Field = null, //left & idempotent parameters are missing as they are always set to true
                 sampler: Sampler[Any] = spooky.conf.defaultJoinSampler,
@@ -425,7 +425,7 @@ case class FetchedDataset(
 
   //TODO: how to unify this with join?
   def explore(
-               expr: Extraction[Any],
+               expr: Extractor[Any],
                joinType: JoinType = spooky.conf.defaultJoinType, //TODO: should be hardcoded to Inner, but whatever...
                ordinalField: Field = null,
                sampler: Sampler[Any] = spooky.conf.defaultJoinSampler
@@ -440,7 +440,7 @@ case class FetchedDataset(
                miniBatch: Int = 500,
                checkpointInterval: Int = spooky.conf.checkpointInterval // set to Int.MaxValue to disable checkpointing,
              )(
-               extracts: Extraction[Any]*
+               extracts: Extractor[Any]*
                //apply immediately after depth selection, this include depth0
              ): FetchedDataset = {
 
@@ -456,7 +456,7 @@ case class FetchedDataset(
 
     val effectiveDepthField = Option(depthField) match {
       case Some(field) =>
-        val resolvedField = field.resolveConflict(plan.schema)
+        val resolvedField = field.resolveConflict(plan.fields)
         resolvedField.copy(depthRangeOpt = Some(range))
       case None =>
         Field(resolvedExpr.field.name + "_depth", isWeak = true, depthRangeOpt = Some(range))
@@ -473,7 +473,7 @@ case class FetchedDataset(
   }
 
   def visitExplore(
-                    expr: Extraction[Any],
+                    expr: Extractor[Any],
                     joinType: JoinType = spooky.conf.defaultJoinType,
                     ordinalField: Field = null,
                     sampler: Sampler[Any] = spooky.conf.defaultJoinSampler,
@@ -490,8 +490,8 @@ case class FetchedDataset(
                     miniBatch: Int = 500,
                     checkpointInterval: Int = spooky.conf.checkpointInterval, // set to Int.MaxValue to disable checkpointing,
 
-                    select: Extraction[Any] = null,
-                    selects: Traversable[Extraction[Any]] = Seq()
+                    select: Extractor[Any] = null,
+                    selects: Traversable[Extractor[Any]] = Seq()
                   ): FetchedDataset = {
 
     var trace: Set[Trace] =  (
@@ -510,7 +510,7 @@ case class FetchedDataset(
   }
 
   def wgetExplore(
-                   expr: Extraction[Any],
+                   expr: Extractor[Any],
                    joinType: JoinType = spooky.conf.defaultJoinType,
                    ordinalField: Field = null,
                    sampler: Sampler[Any] = spooky.conf.defaultJoinSampler,
@@ -526,8 +526,8 @@ case class FetchedDataset(
                    miniBatch: Int = 500,
                    checkpointInterval: Int = spooky.conf.checkpointInterval, // set to Int.MaxValue to disable checkpointing,
 
-                   select: Extraction[Any] = null,
-                   selects: Traversable[Extraction[Any]] = Seq()
+                   select: Extractor[Any] = null,
+                   selects: Traversable[Extractor[Any]] = Seq()
                  ): FetchedDataset = {
 
     var trace: Set[Trace] =  Wget(new GetExpr(Const.defaultJoinField), filter)

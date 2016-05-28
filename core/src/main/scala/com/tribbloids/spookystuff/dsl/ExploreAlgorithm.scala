@@ -1,7 +1,7 @@
 package com.tribbloids.spookystuff.dsl
 
 import com.tribbloids.spookystuff.execution.{ExploreAlgorithmImpl, ShortestPathImpl}
-import com.tribbloids.spookystuff.expressions._
+import com.tribbloids.spookystuff.extractors._
 import com.tribbloids.spookystuff.row._
 
 /**

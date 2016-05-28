@@ -3,8 +3,8 @@ package com.tribbloids.spookystuff.doc
 import scala.collection.{mutable, SeqLike}
 
 /**
- * Created by peng on 18/07/15.
- */
+  * Created by peng on 18/07/15.
+  */
 object Siblings {
 
   //  implicit def canBuildFrom[T <: Unstructured]: CanBuildFrom[Elements[Unstructured], T, Elements[T]] =
@@ -31,12 +31,12 @@ object Siblings {
 }
 
 class Siblings[+T <: Unstructured](
-                                    override val self: List[T],
-                                    val delimiter: String = " ",
-                                    val formattedDelimiter: String ="\n"
-                                  ) extends Elements[T](self)
-with Seq[T]
-with SeqLike[T, Siblings[T]] {
+                                         override val self: List[T],
+                                         val delimiter: String = " ",
+                                         val formattedDelimiter: String ="\n"
+                                       ) extends Elements[T](self)
+  with Seq[T]
+  with SeqLike[T, Siblings[T]] {
 
   override def text = if (texts.isEmpty) None
   else Some(texts.filter(_.nonEmpty).mkString(delimiter))

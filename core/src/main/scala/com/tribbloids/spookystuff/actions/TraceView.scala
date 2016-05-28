@@ -10,9 +10,6 @@ import com.tribbloids.spookystuff.{RemoteDisabledException, dsl, Const, SpookyCo
 import scala.collection.mutable.ArrayBuffer
 import scala.reflect.ClassTag
 
-/**
-  * Created by peng on 10/25/14.
-  */
 case class TraceView(
                       override val children: Trace
                     ) extends Actions(children) { //remember trace is not a block! its the super container that cannot be wrapped

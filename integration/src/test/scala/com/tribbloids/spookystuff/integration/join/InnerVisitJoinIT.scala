@@ -2,7 +2,7 @@ package com.tribbloids.spookystuff.integration.join
 
 import com.tribbloids.spookystuff.actions.{Action, Visit}
 import com.tribbloids.spookystuff.dsl._
-import com.tribbloids.spookystuff.expressions.Extraction
+import com.tribbloids.spookystuff.extractors.Extractor
 import com.tribbloids.spookystuff.integration.IntegrationSuite
 
 class InnerVisitJoinIT extends IntegrationSuite {
@@ -11,7 +11,7 @@ class InnerVisitJoinIT extends IntegrationSuite {
     phantomJS //TODO: HtmlUnit does not support Backbone.js
   )
 
-  def getPage(uri: Extraction[String]): Action = Visit(uri)
+  def getPage(uri: Extractor[String]): Action = Visit(uri)
 
   override def doMain(): Unit = {
 

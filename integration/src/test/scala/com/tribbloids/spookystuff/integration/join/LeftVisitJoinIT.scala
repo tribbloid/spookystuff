@@ -2,7 +2,7 @@ package com.tribbloids.spookystuff.integration.join
 
 import com.tribbloids.spookystuff.actions._
 import com.tribbloids.spookystuff.dsl._
-import com.tribbloids.spookystuff.expressions._
+import com.tribbloids.spookystuff.extractors._
 import com.tribbloids.spookystuff.integration.IntegrationSuite
 
 /**
@@ -14,7 +14,7 @@ class LeftVisitJoinIT extends IntegrationSuite {
     phantomJS //TODO: HtmlUnit does not support Backbone.js
   )
 
-  def getPage(uri: Extraction[String]): Action = Visit(uri)
+  def getPage(uri: Extractor[String]): Action = Visit(uri)
 
   override def doMain(): Unit = {
 

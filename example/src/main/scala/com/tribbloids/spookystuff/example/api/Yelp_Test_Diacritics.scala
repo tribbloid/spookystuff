@@ -2,7 +2,7 @@ package com.tribbloids.spookystuff.example.api
 
 import com.tribbloids.spookystuff.actions._
 import com.tribbloids.spookystuff.example.QueryCore
-import com.tribbloids.spookystuff.expressions.Extraction
+import com.tribbloids.spookystuff.extractors.Extractor
 import com.tribbloids.spookystuff.http.HttpUtils
 import com.tribbloids.spookystuff.{SpookyContext, dsl}
 
@@ -24,7 +24,7 @@ object Yelp_Test_Diacritics extends QueryCore {
     val token = "KV7SgT34ZxJ5n2m5FgiXetdTBgnKOpge"
     val tokenSecret = "xfudMw9Xf3S3GBosQfPI-XY6K8w"
 
-    def sign(url: Extraction[String]): Extraction[String] = url.andThen(
+    def sign(url: Extractor[String]): Extractor[String] = url.andThen1(
       HttpUtils.OauthV2(_, consumerKey, consumerSecret, token, tokenSecret)
     )
 

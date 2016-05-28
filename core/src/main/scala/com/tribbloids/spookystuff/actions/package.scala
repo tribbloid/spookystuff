@@ -12,5 +12,9 @@ package object actions {
 
   type DryRun = List[Trace]
 
-  type DocFilter = ((Doc, Session) => Doc)
+  type DocFilter = ((Doc, Session) => Doc) //TODO: merge with Selector[Doc]
+
+  type DocCondition = ((Doc, Session) => Boolean) //TODO: merge with Selector[Doc]
+
+  type Selector = String //TODO: change to Doc => Element or Extraction
 }
