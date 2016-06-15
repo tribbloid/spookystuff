@@ -23,7 +23,7 @@ class FetchVisitIT extends IntegrationSuite {
     assert(pageRows(0).pages.length === 1)
     assert(pageRows(0).pages.head.uri contains "://www.wikipedia.org/")
     assert(pageRows(0).pages.head.name === Snapshot(DocFilters.MustHaveTitle).toString)
-    val pageTime = pageRows(0).pages.head.timestamp.getTime
+    val pageTime = pageRows(0).pages.head.timeMillis.getTime
     assert(pageTime < finishTime)
     assert(pageTime > finishTime-60000) //long enough even after the second time it is retrieved from s3 cache
 
@@ -38,10 +38,10 @@ class FetchVisitIT extends IntegrationSuite {
     val unionRows = unionRDD.unsquashedRDD.collect()
 
     assert(unionRows.length === 2)
-    assert(unionRows(0).pages.head.copy(timestamp = null, content = null, saved = null)
-      === unionRows(1).pages.head.copy(timestamp = null, content = null, saved = null))
+    assert(unionRows(0).pages.head.copy(timeMillis = null, content = null, saved = null)
+      === unionRows(1).pages.head.copy(timeMillis = null, content = null, saved = null))
 
-    assert(unionRows(0).pages.head.timestamp === unionRows(1).pages.head.timestamp)
+    assert(unionRows(0).pages.head.timeMillis === unionRows(1).pages.head.timeMillis)
     assert(unionRows(0).pages.head.content === unionRows(1).pages.head.content)
     assert(unionRows(0).getOnlyPage.get.content === unionRows(1).pages.head.content)
     assert(unionRows(0).getOnlyPage.get.name === Snapshot(DocFilters.MustHaveTitle).toString)

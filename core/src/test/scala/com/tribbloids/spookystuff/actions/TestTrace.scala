@@ -1,10 +1,9 @@
 package com.tribbloids.spookystuff.actions
 
 import com.tribbloids.spookystuff.SpookyEnvSuite
-import com.tribbloids.spookystuff.doc.{Doc, Fetched}
+import com.tribbloids.spookystuff.doc.Doc
 import com.tribbloids.spookystuff.session.Session
 import com.tribbloids.spookystuff.tests.TestMixin
-import org.apache.spark.sql.catalyst.ScalaReflection
 
 case class User(
                  name: String,
@@ -17,7 +16,7 @@ class TestTrace extends SpookyEnvSuite with TestMixin {
 
   import scala.concurrent.duration._
 
-  test("inject output names") {
+  test("inject output names should change output doc names") {
 
     val t1 = (
       Visit("http://webscraper.io/test-sites/e-commerce/ajax/computers/laptops")
@@ -116,11 +115,39 @@ class TestTrace extends SpookyEnvSuite with TestMixin {
     }
   }
 
+//  test("Click.toString should work") {
+//    val action = Click("o1")
+//    val json = action.toString()
+//    println(json)
+//  }
+//
+//  test("Wget.toString should work") {
+//    val action = Wget("http://dummy.com")
+//    val json = action.toString()
+//    println(json)
+//  }
+//
+//  test("Loop.toString should work") {
+//    val action = Loop(
+//      Click("o1")
+//        +> Snapshot()
+//    )
+//    val json = action.toString()
+//    println(json)
+//  }
+
   test("Click.toJSON should work") {
     val action = Click("o1")
     val json = action.toJSON
     println(json)
   }
+
+  //TODO: enable these
+//  test("Wget.toJSON should work") {
+//    val action = Wget("http://dummy.com")
+//    val json = action.toJSON
+//    println(json)
+//  }
 
   test("Loop.toJSON should work") {
     val action = Loop(

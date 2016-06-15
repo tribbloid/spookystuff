@@ -390,4 +390,16 @@ object ImplicitUtils {
   //      result
   //    }
   //  }
+
+  implicit class StringView(str: String) {
+
+    lazy val slashed = pathSlash(str)
+
+    def :/(other: String): String = slashed + other
+
+    def pathSlash(part: String): String = {
+      if (part.endsWith(Utils.:/)) part
+      else part + Utils.:/
+    }
+  }
 }

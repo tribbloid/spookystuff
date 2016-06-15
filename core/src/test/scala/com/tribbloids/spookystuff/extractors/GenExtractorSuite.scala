@@ -2,12 +2,12 @@ package com.tribbloids.spookystuff.extractors
 
 import com.tribbloids.spookystuff.SpookyEnvSuite
 
-object ExtractorSuite {
+object GenExtractorSuite {
 
   var counter = 0
 
   val partialFn: scala.PartialFunction[String, Int] =
-    new AbstractPartialFunction[String, Int] {
+    new AbstractPartialFunction[String, Int] with Serializable {
 
       override def isDefinedAt(v: String): Boolean = {
         counter += 1
@@ -39,30 +39,10 @@ object ExtractorSuite {
   }
 }
 
-class ExtractorSuite extends SpookyEnvSuite {
+class GenExtractorSuite extends SpookyEnvSuite {
 
+  import GenExtractorSuite._
   import com.tribbloids.spookystuff.dsl._
-
-  //  test("Dynamic functions should be applicable on values") {
-  //    val dataRow = DataRow(ListMap(Field("K1") -> "a,b,c", Field("K2") -> 2))
-  //    val pageRow = FetchedRow(dataRow, Seq[Fetched]())
-  //
-  //    assert(dynamic('K1).isDefinedAt(pageRow))
-  //    assert(dynamic('K1).apply(pageRow) == "a,b,c")
-  //    val afterDynamic: Extractor[Any] = dynamic('K1).split(",")
-  //    val afterDynamicValue = afterDynamic.apply(pageRow)
-  //    assert(afterDynamicValue.asInstanceOf[Array[String]].toSeq == "a,b,c".split(",").toSeq)
-  //  }
-  //
-  //  test("Dynamic functions should be applicable on expressions") {
-  //    val dataRow = DataRow(ListMap(Field("K1") -> "a,b,c", Field("K2") -> ","))
-  //    val pageRow = dataRow -> Seq[Fetched]()
-  //    val afterDynamic: Extractor[Any] = dynamic('K1).split(dynamic('K2))
-  //    val afterDynamicValue = afterDynamic.apply(pageRow)
-  //    assert(afterDynamicValue.asInstanceOf[Array[String]].toSeq == "a,b,c".split(",").toSeq)
-  //  }
-
-  import ExtractorSuite._
 
   test("Some(partialFn) is serializable") {
     assertSerializable[Option[(String => Int)]](Some(partialFn), condition = (_,_) => {})

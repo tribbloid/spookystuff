@@ -116,7 +116,7 @@ object DocUtils {
     val effectivePageLikes = pageLikes.filter(_.cacheable)
     if (effectivePageLikes.isEmpty) return
 
-    val pathStr = Utils.uriConcat(
+    val pathStr = Utils.pathConcat(
       spooky.conf.dirs.cache,
       spooky.conf.cacheFilePath(effectivePageLikes.head.uid.backtrace).toString,
       UUID.randomUUID().toString
@@ -158,7 +158,7 @@ object DocUtils {
           LoggerFactory.getLogger(this.getClass).warn("Cached content is corrputed")
           null
         }
-        else if (results.head.timestamp.getTime >= earliestModificationTime) results
+        else if (results.head.timeMillis >= earliestModificationTime) results
         else {
           LoggerFactory.getLogger(this.getClass).info(s"All cached contents has become obsolete after ${new Date(earliestModificationTime).toString}:\n" +
             s"$dirPath")
@@ -179,7 +179,7 @@ object DocUtils {
 
     import dsl._
 
-    val pathStr = Utils.uriConcat(
+    val pathStr = Utils.pathConcat(
       spooky.conf.dirs.cache,
       spooky.conf.cacheFilePath(backtrace).toString
     )

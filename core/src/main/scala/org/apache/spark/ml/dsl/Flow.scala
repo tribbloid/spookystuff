@@ -487,7 +487,7 @@ trait FlowComponent extends MayHaveHeads with MayHaveTails {
   def timmoc(left: FlowComponent) = left.commit_<(this)
   def <-<(left: FlowComponent) = left.commit_<(this)
 
-  case class PrettyStepWrapper(
+  case class StepVisualWrapper(
                                 override val self: StepLike,
                                 showID: Boolean = true,
                                 showInputs: Boolean = true,
@@ -518,7 +518,7 @@ trait FlowComponent extends MayHaveHeads with MayHaveTails {
       }
     }
 
-    override def copy(self: StepLike): StepWrapperLike = PrettyStepWrapper(self, showID, showInputs, showOutput, showPrefix)
+    override def copy(self: StepLike): StepWrapperLike = StepVisualWrapper(self, showID, showInputs, showOutput, showPrefix)
   }
   //TODO: not optimized, children are repeatedly created when calling .path
   //TODO: use mapChildren to recursively get TreeNode[(Seq[String] -> Tree)] efficiently
@@ -597,7 +597,7 @@ trait FlowComponent extends MayHaveHeads with MayHaveTails {
 
   //this operation IS stateful & destructive, any other options?
   def propagateCols[T <: PipelineStage](compaction: PathCompaction): Unit = {
-    val ids_MultiPartNames = coll.mapValues(v => this.BackwardNode(PrettyStepWrapper(v)).mergedPath)
+    val ids_MultiPartNames = coll.mapValues(v => this.BackwardNode(StepVisualWrapper(v)).mergedPath)
 
     val lookup = compaction(ids_MultiPartNames.values.toSet)
     val compactNames = lookup.values.toSeq
@@ -847,7 +847,7 @@ trait FlowComponent extends MayHaveHeads with MayHaveTails {
                      ): String = {
     tails.map {
       tail =>
-        val prettyTail = PrettyStepWrapper(tail, showID, showInputs, showOutput, showPrefix)
+        val prettyTail = StepVisualWrapper(tail, showID, showInputs, showOutput, showPrefix)
         val treeNode = ForwardNode(prettyTail)
         treeNode.treeString
     }
@@ -863,7 +863,7 @@ trait FlowComponent extends MayHaveHeads with MayHaveTails {
                       ): String = {
     heads.map {
       head =>
-        val prettyHead = PrettyStepWrapper(head, showID, showInputs, showOutput, showPrefix)
+        val prettyHead = StepVisualWrapper(head, showID, showInputs, showOutput, showPrefix)
         val treeNode = BackwardNode(prettyHead)
         treeNode.treeString
     }
@@ -896,15 +896,15 @@ trait FlowComponent extends MayHaveHeads with MayHaveTails {
 
     val prettyColl = coll.mapValues {
       v =>
-        PrettyStepWrapper(v, showID, showInputs, showOutput, showPrefix)
+        StepVisualWrapper(v, showID, showInputs, showOutput, showPrefix)
     }
 
-    val vertices: Set[PrettyStepWrapper] = prettyColl.values.toSet
-    val edges: List[(PrettyStepWrapper, PrettyStepWrapper)] = prettyColl.values.toList.flatMap{
+    val vertices: Set[StepVisualWrapper] = prettyColl.values.toSet
+    val edges: List[(StepVisualWrapper, StepVisualWrapper)] = prettyColl.values.toList.flatMap{
       v =>
         v.self.usageIDs.map(prettyColl).map(vv => v -> vv)
     }
-    val graph: Graph[PrettyStepWrapper] = Graph[PrettyStepWrapper](vertices = vertices, edges = edges)
+    val graph: Graph[StepVisualWrapper] = Graph[StepVisualWrapper](vertices = vertices, edges = edges)
 
     val forwardStr = GraphLayout.renderGraph(graph, layoutPrefs = layoutPrefs)
     if (forward) forwardStr

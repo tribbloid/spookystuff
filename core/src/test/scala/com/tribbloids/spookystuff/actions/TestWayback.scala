@@ -21,7 +21,7 @@ class TestWayback extends SpookyEnvSuite {
       i =>
         val pages = (Delay(5.seconds) +> Wget("http://www.wikipedia.org")).head.fetch(spooky) //5s is long enough
         assert(pages.size == 1)
-        pages.head.timestamp.getTime
+        pages.head.timeMillis
     }
 
     spooky.conf.cacheRead = true
@@ -30,7 +30,7 @@ class TestWayback extends SpookyEnvSuite {
         +> Wget("http://www.wikipedia.org").waybackToTimeMillis(dates(1) + 2000)
       ).head.fetch(spooky)
     assert(cachedPages.size == 1)
-    assert(cachedPages.head.timestamp.getTime == dates(1))
+    assert(cachedPages.head.timeMillis == dates(1))
 
     spooky.conf.remote = false
 
@@ -50,7 +50,7 @@ class TestWayback extends SpookyEnvSuite {
         val pages = (Delay(5.seconds)
           +> Visit("http://www.wikipedia.org")).correct.head.fetch(spooky) //5s is long enough
         assert(pages.size == 1)
-        pages.head.timestamp.getTime
+        pages.head.timeMillis
     }
 
     spooky.conf.cacheRead = true
@@ -60,7 +60,7 @@ class TestWayback extends SpookyEnvSuite {
       +> Snapshot().waybackToTimeMillis(dates(1) + 2000)
       ).head.fetch(spooky)
     assert(cachedPages.size == 1)
-    assert(cachedPages.head.timestamp.getTime == dates(1))
+    assert(cachedPages.head.timeMillis == dates(1))
 
     spooky.conf.remote = false
 
@@ -82,7 +82,7 @@ class TestWayback extends SpookyEnvSuite {
           +> Visit("http://www.wikipedia.org")
           +> Screenshot()).head.fetch(spooky) //5s is long enough
         assert(pages.size == 1)
-        pages.head.timestamp.getTime
+        pages.head.timeMillis
     }
 
     spooky.conf.cacheRead = true
@@ -92,7 +92,7 @@ class TestWayback extends SpookyEnvSuite {
       +> Screenshot().waybackToTimeMillis(dates(1) + 2000)
       ).head.fetch(spooky)
     assert(cachedPages.size == 1)
-    assert(cachedPages.head.timestamp.getTime == dates(1))
+    assert(cachedPages.head.timeMillis == dates(1))
 
     spooky.conf.remote = false
 

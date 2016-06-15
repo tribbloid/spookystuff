@@ -3,12 +3,11 @@ package com.tribbloids.spookystuff
 import java.util.Date
 
 import com.tribbloids.spookystuff.dsl._
-import com.tribbloids.spookystuff.extractors.{ByDoc, ByTrace}
 import com.tribbloids.spookystuff.row.Sampler
 import com.tribbloids.spookystuff.session.{OAuthKeys, ProxySetting}
-import org.apache.spark.{Partitioner, SparkConf, SparkContext}
 import org.apache.spark.rdd.RDD
 import org.apache.spark.storage.StorageLevel
+import org.apache.spark.{Partitioner, SparkConf, SparkContext}
 
 import scala.concurrent.duration.Duration.Infinite
 import scala.concurrent.duration._

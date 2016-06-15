@@ -14,7 +14,7 @@ object InMemoryWebCache extends AbstractWebCache {
   def isObsolete(fetched: Fetched, spooky: SpookyContext): Boolean = {
     val earliestTime = spooky.conf.getEarliestDocCreationTime()
 
-    fetched.timestamp.getTime > earliestTime
+    fetched.timeMillis > earliestTime
   }
 
   def getImpl(k: Trace, spooky: SpookyContext): Option[Seq[Fetched]] = {

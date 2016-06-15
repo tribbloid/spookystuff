@@ -37,7 +37,7 @@ class FetchInteractionsIT extends IntegrationSuite{
     val uri = pageRows(0).pages.head.uri
     assert((uri endsWith "zh.wikipedia.org/wiki/深度学习") || (uri endsWith "zh.wikipedia.org/wiki/"+URLEncoder.encode("深度学习", "UTF-8")))
     assert(pageRows(0).pages.head.name === Snapshot(DocFilters.MustHaveTitle).toString)
-    val pageTime = pageRows(0).fetched.head.timestamp.getTime
+    val pageTime = pageRows(0).fetched.head.timeMillis.getTime
     assert(pageTime < finishTime)
     assert(pageTime > finishTime-120000) //long enough even after the second time it is retrieved from s3 cache
 
@@ -54,11 +54,11 @@ class FetchInteractionsIT extends IntegrationSuite{
 
     assert(unionRows.length === 2)
     assert(
-      unionRows(0).pages.head.copy(timestamp = null, content = null, saved = null)
-        === unionRows(1).pages.head.copy(timestamp = null, content = null, saved = null)
+      unionRows(0).pages.head.copy(timeMillis = null, content = null, saved = null)
+        === unionRows(1).pages.head.copy(timeMillis = null, content = null, saved = null)
     )
 
-    assert(unionRows(0).pages.head.timestamp === unionRows(1).pages.head.timestamp)
+    assert(unionRows(0).pages.head.timeMillis === unionRows(1).pages.head.timeMillis)
     assert(unionRows(0).pages.head.content === unionRows(1).pages.head.content)
     assert(unionRows(0).pages.head.name === Snapshot(DocFilters.MustHaveTitle).toString)
     assert(unionRows(1).pages.head.name === "b")

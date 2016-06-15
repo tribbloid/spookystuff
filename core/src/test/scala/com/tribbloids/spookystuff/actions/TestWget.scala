@@ -1,10 +1,18 @@
 package com.tribbloids.spookystuff.actions
 
+import java.sql.Timestamp
+
 import com.tribbloids.spookystuff.SpookyEnvSuite
 import com.tribbloids.spookystuff.doc.Doc
+import com.tribbloids.spookystuff.rdd.FetchedDataset
 import org.scalatest.tags.Retryable
 
 import scala.concurrent.duration
+
+object TestWget {
+
+  case class Sample(A: String, B: Timestamp)
+}
 
 @Retryable
 class TestWget extends SpookyEnvSuite {
@@ -110,32 +118,17 @@ class TestWget extends SpookyEnvSuite {
   }
 
   //TODO: add canonized URI check
-  test("wget should encode malformed url 1") {
+  test("wget should encode malformed url") {
     spooky.conf.proxy = ProxyFactories.NoProxy
 
     val results = (
-      wget("https://www.google.ca/?q=giant robot") :: Nil
+      wget("https://www.google.com/?q=giant robot") :: Nil
       ).fetch(spooky)
 
     assert(results.size === 1)
-    results.head.asInstanceOf[Doc]
+    val doc = results.head.asInstanceOf[Doc]
+    assert(doc.uri contains "?q=giant+robot")
   }
-
-//  test("wget should encode malformed url 2") {
-//    spooky.conf.proxy = ProxyFactories.NoProxy
-//    spooky.conf.userAgentFactory = () => "Wget/1.15 (linux-gnu)"
-//    spooky.conf.headersFactory= () => Map(
-//      "Accept" -> "*/*",
-//      "Connection" -> "Keep-Alive"
-//    )
-//
-//    val results = (
-//      wget("http://www.perkinelmer.ca/Catalog/Gallery.aspx?ID=Mass Spectrometry [GC/MS and ICP-MS]&PID=Gas Chromatography Mass Spectrometry Consumables&refineCat=Technology&N=172 139 78928 4293910906&TechNVal=4293910906") :: Nil
-//      ).fetch(spooky)
-//
-//    assert(results.size === 1)
-//    results.head.asInstanceOf[Page]
-//  }
 
   //TODO: find a new way to test it!
   //  test("wget should encode redirection to malformed url") {
@@ -201,5 +194,31 @@ class TestWget extends SpookyEnvSuite {
     val results = List(
       wget("https://www.canadacompany.ca/en/")
     ).fetch(spooky)
+  }
+
+  test("wget.interpolate should not overwrite each other") {
+    val wget = Wget(
+      'A
+    ) waybackTo 'B.typed[Timestamp]
+
+    val rows = 1 to 5 map {
+      i =>
+        TestWget.Sample("http://dummy.com" + i, new Timestamp(i * 100000))
+    }
+    require(rows.map(_.B.getTime).distinct.size == rows.size)
+
+    val df = sql.createDataFrame(sc.parallelize(rows))
+    val set: FetchedDataset = spooky.create(df)
+
+    require(set.toObjectRDD('B).collect().toSeq.map(_.asInstanceOf[Timestamp].getTime).distinct.size == rows.size)
+    val fetchedRows = set.unsquashedRDD.collect()
+
+    val interpolated = fetchedRows.map{
+      fr =>
+        wget.interpolate(fr, set.schema).get
+    }
+
+    assert(interpolated.distinct.length == rows.size)
+    assert(interpolated.map(_.wayback).distinct.length == rows.size)
   }
 }

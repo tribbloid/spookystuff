@@ -2,9 +2,6 @@ package com.tribbloids.spookystuff.actions
 
 import com.tribbloids.spookystuff.dsl.DriverFactories
 
-/**
- * Created by peng on 2/19/15.
- */
 class TestInteractionWithHtmlUnit extends TestInteraction {
 
   override lazy val driverFactory = DriverFactories.HtmlUnit()

@@ -87,10 +87,15 @@ trait WaybackSupport {
 
   def waybackToTimeMillis(date: Long): this.type = this.waybackToTimeMillis(Literal(date))
 
-  protected def interpolateWayback(pageRow: FetchedRow, schema: SchemaContext): Option[this.type] = {
-    if (this.wayback == null) Some(this)
+  //has to be used after copy
+  protected def injectWayback(
+                               wayback: Extractor[Long],
+                               pageRow: FetchedRow,
+                               schema: SchemaContext
+                             ): Option[this.type] = {
+    if (wayback == null) Some(this)
     else {
-      val valueOpt = this.wayback.resolve(schema).lift(pageRow)
+      val valueOpt = wayback.resolve(schema).lift(pageRow)
       valueOpt.map{
         v =>
           this.wayback = Literal(v)
@@ -135,7 +140,7 @@ case class Snapshot(
   }
 
   override def doInterpolate(pageRow: FetchedRow, schema: SchemaContext) = {
-    this.copy().asInstanceOf[this.type].interpolateWayback(pageRow, schema)
+    this.copy().asInstanceOf[this.type].injectWayback(this.wayback, pageRow, schema)
   }
 }
 
@@ -164,11 +169,24 @@ case class Screenshot(
   }
 
   override def doInterpolate(pageRow: FetchedRow, schema: SchemaContext) = {
-    this.copy().asInstanceOf[this.type].interpolateWayback(pageRow, schema)
+    this.copy().asInstanceOf[this.type].injectWayback(this.wayback, pageRow, schema)
   }
 }
 
 object DefaultScreenshot extends Screenshot()
+
+abstract class HttpCommand(
+                            uri: Extractor[Any]
+                          ) extends Export with Driverless with Timed with WaybackSupport {
+
+  lazy val uriOption: Option[URI] = {
+    val uriStr = uri.asInstanceOf[Literal[String]].value.trim()
+    if ( uriStr.isEmpty ) None
+    else Some(HttpUtils.uri(uriStr))
+  }
+
+
+}
 
 /**
   * use an http GET to fetch a remote resource deonted by url
@@ -181,15 +199,7 @@ object DefaultScreenshot extends Screenshot()
 case class Wget(
                  uri: Extractor[Any],
                  override val filter: DocFilter = Const.defaultDocumentFilter
-               ) extends Export with Driverless with Timed with WaybackSupport {
-
-  lazy val uriOption: Option[URI] = {
-    val uriStr = uri.asInstanceOf[Literal[String]].value.trim()
-    if ( uriStr.isEmpty ) None
-    else Some(HttpUtils.uri(uriStr))
-  }
-
-  //  def effectiveURIString = uriOption.map(_.toString)
+               ) extends HttpCommand(uri) {
 
   override def doExeNoName(session: Session): Seq[Fetched] = {
 
@@ -206,10 +216,6 @@ case class Wget(
           case _ =>
             getHDFS(uriURI, session)
         }
-        //        if (this.contentType != null) result.map{
-        //          case page: Page => page.copy(declaredContentType = Some(this.contentType))
-        //          case others: Fetched => others
-        //        }
         result
     }
   }
@@ -288,7 +294,7 @@ case class Wget(
             }
             catch {
               case e: InvocationTargetException =>
-//                println(e.getCause.getMessage)
+                //                println(e.getCause.getMessage)
                 None
             }
         }
@@ -494,10 +500,36 @@ case class Wget(
       case obj: Any => Option(obj.toString)
       case other => None
     }
+    val uriLit = uriStr.map(Literal(_))
 
-    uriStr.flatMap(
-      str =>
-        this.copy(uri = Literal(str)).interpolateWayback(pageRow, schema).map(_.asInstanceOf[this.type])
+    uriLit.flatMap(
+      lit =>
+        this.copy(uri = lit).asInstanceOf[this.type].injectWayback(this.wayback, pageRow, schema)
+    )
+  }
+}
+
+case class Wpost(
+                  uri: Extractor[Any],
+                  override val filter: DocFilter = Const.defaultDocumentFilter
+                ) extends HttpCommand(uri) {
+
+  override protected def doExeNoName(session: Session): Seq[Fetched] = ???
+
+  override def doInterpolate(pageRow: FetchedRow, schema: SchemaContext): Option[this.type] = {
+    val first = this.uri.resolve(schema).lift(pageRow).flatMap(Utils.asArray[Any](_).headOption)
+
+    val uriStr: Option[String] = first.flatMap {
+      case element: Unstructured => element.href
+      case str: String => Option(str)
+      case obj: Any => Option(obj.toString)
+      case other => None
+    }
+    val uriLit = uriStr.map(Literal(_))
+
+    uriLit.flatMap(
+      lit =>
+        this.copy(uri = lit).asInstanceOf[this.type].injectWayback(this.wayback, pageRow, schema)
     )
   }
 }

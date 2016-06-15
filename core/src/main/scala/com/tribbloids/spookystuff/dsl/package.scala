@@ -1,6 +1,6 @@
 package com.tribbloids.spookystuff
 
-import java.util.Date
+import java.sql.Timestamp
 
 import com.tribbloids.spookystuff.actions._
 import com.tribbloids.spookystuff.doc.{Doc, DocUID, Elements, Unstructured}
@@ -19,6 +19,9 @@ import scala.language.implicitConversions
 import scala.reflect.ClassTag
 
 package object dsl {
+
+  type ByDoc[+R] = (Doc => R)
+  type ByTrace[+R] = (Trace => R)
 
   implicit def PageRowRDDToRDD(wrapper: FetchedDataset): SquashedFetchedRDD = wrapper.rdd
 
@@ -160,7 +163,7 @@ package object dsl {
 
     def content: Extractor[Seq[Byte]] = self.andFn(_.content.toSeq)
 
-    def timestamp: Extractor[Date] = self.andFn(_.timestamp)
+    def timestamp: Extractor[Timestamp] = self.andFn(_.timestamp)
 
     def saved: Extractor[Set[String]] = self.andFn(_.saved.toSet)
 

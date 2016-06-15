@@ -1,7 +1,7 @@
 package org.apache.spark.ml.dsl.utils
 
 import org.json4s.jackson.Serialization
-import org.json4s.{DefaultFormats, Formats, Serializer}
+import org.json4s.{Formats, Serializer}
 
 import scala.xml.{NodeSeq, XML}
 

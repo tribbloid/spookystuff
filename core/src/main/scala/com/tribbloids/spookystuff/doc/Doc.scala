@@ -1,6 +1,7 @@
 package com.tribbloids.spookystuff.doc
 
-import java.util.{Date, UUID}
+import java.sql.{Date, Time, Timestamp}
+import java.util.UUID
 
 import com.tribbloids.spookystuff._
 import com.tribbloids.spookystuff.actions._
@@ -40,9 +41,13 @@ trait Fetched extends Serializable {
 
   def name = Option(this.uid.output).map(_.name).orNull
 
-  def timestamp: Date
+  def timeMillis: Long
 
-  def laterThan(v2: Fetched): Boolean = this.timestamp after v2.timestamp
+  lazy val date: Date = new Date(timeMillis)
+  lazy val time: Time = new Time(timeMillis)
+  lazy val timestamp: Timestamp = new Timestamp(timeMillis)
+
+  def laterThan(v2: Fetched): Boolean = this.timeMillis > v2.timeMillis
 
   def laterOf(v2: Fetched): Fetched = if (laterThan(v2)) this
   else v2
@@ -53,7 +58,7 @@ trait Fetched extends Serializable {
 //Merely a placeholder when a Block returns nothing
 case class NoDoc(
                   trace: Trace,
-                  override val timestamp: Date = new Date(System.currentTimeMillis()),
+                  override val timeMillis: Long = System.currentTimeMillis(),
                   override val cacheable: Boolean = true
                 ) extends Serializable with Fetched {
 
@@ -66,7 +71,7 @@ case class ErrorWithDoc(
                          override val cause: Throwable = null
                        ) extends ActionException with Fetched {
 
-  override def timestamp: Date = delegate.timestamp
+  override def timeMillis: Long = delegate.timeMillis
 
   override def uid: DocUID = delegate.uid
 
@@ -97,7 +102,7 @@ case class Doc(
                 content: Array[Byte],
 
                 //                 cookie: Seq[SerializableCookie] = Nil,
-                override val timestamp: Date = new Date(System.currentTimeMillis()),
+                override val timeMillis: Long = System.currentTimeMillis(),
                 saved: scala.collection.mutable.Set[String] = scala.collection.mutable.Set(),
                 override val cacheable: Boolean = true,
                 httpStatus: Option[StatusLine] = None,
@@ -106,7 +111,7 @@ case class Doc(
 
   def properties: Map[String, Any] = Option(_properties).getOrElse(Map())
 
-  lazy val _id = (uid, uri, declaredContentType, timestamp, httpStatus.toString)
+  lazy val _id = (uid, uri, declaredContentType, timeMillis, httpStatus.toString)
 
   private def detectCharset(contentType: ContentType): String = {
     val charsetD = new UniversalDetector(null)
@@ -221,7 +226,7 @@ case class Doc(
             overwrite: Boolean = false
           )(spooky: SpookyContext): Unit = {
 
-    val path = Utils.uriConcat(pathParts: _*)
+    val path = Utils.pathConcat(pathParts: _*)
 
     DocUtils.dfsWrite("save", path, spooky) {
 

@@ -4,7 +4,6 @@ import java.io.{File, InputStream}
 import java.net.URL
 
 import com.tribbloids.spookystuff.Const
-import org.apache.spark.SparkEnv
 import org.apache.spark.sql.catalyst.ScalaReflection
 import org.slf4j.LoggerFactory
 
@@ -22,6 +21,8 @@ object Utils {
 
   val xmlPrinter = new PrettyPrinter(Int.MaxValue, 2)
   //  val logger = LoggerFactory.getLogger(this.getClass)
+
+  val :/ = File.separator
 
   // Returning T, throwing the exception on failure
   @annotation.tailrec
@@ -49,18 +50,8 @@ object Utils {
 
   @transient lazy val random = new util.Random()
 
-  def uriConcat(parts: String*): String = {
-    var result = ""
-
-    for (part <- parts) {
-      result += uriSlash(part)
-    }
-    result.substring(0, result.length-1)
-  }
-
-  def uriSlash(part: String): String = {
-    if (part.endsWith("/")) part
-    else part+"/"
+  def pathConcat(parts: String*): String = {
+    parts.reduceOption(_ :/ _).getOrElse("")
   }
 
   /*
@@ -228,10 +219,10 @@ These special characters are often called "metacharacters".
   }.toList
 
   def getCPResource(str: String): Option[URL] =
-    Option(ClassLoader.getSystemClassLoader.getResource(str.stripSuffix("/")))
+    Option(ClassLoader.getSystemClassLoader.getResource(str.stripSuffix(Utils.:/)))
 
   def getCPResourceAsStream(str: String): Option[InputStream] =
-    Option(ClassLoader.getSystemClassLoader.getResourceAsStream(str.stripSuffix("/")))
+    Option(ClassLoader.getSystemClassLoader.getResourceAsStream(str.stripSuffix(Utils.:/)))
 
   private lazy val LZYCOMPUTE = "$lzycompute"
   private lazy val INIT = "<init>"
