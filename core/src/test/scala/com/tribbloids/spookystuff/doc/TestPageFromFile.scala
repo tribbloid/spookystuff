@@ -2,9 +2,9 @@ package com.tribbloids.spookystuff.doc
 
 import com.tribbloids.spookystuff.actions.Wget
 import com.tribbloids.spookystuff.dsl
-import com.tribbloids.spookystuff.tests.PathDocsMixin
+import com.tribbloids.spookystuff.tests.LocalPathDocsFixture
 
-class TestPageFromFile extends TestPageFromHttp with PathDocsMixin {
+class TestPageFromFile extends TestPageFromHttp with LocalPathDocsFixture {
 
   import dsl._
 

@@ -34,7 +34,7 @@ class FetchPaginationIT extends IntegrationSuite {
     assert(pageRows.length === 2) //TODO: adapt to new default grouping: ab b
     assert(pageRows(0).pages.map(_.name) === Seq("a", "b"))
     assert(pageRows(1).pages.map(_.name) === Seq("b"))
-    val pageTime = pageRows(0).pages.head.timeMillis.getTime
+    val pageTime = pageRows(0).pages.head.timeMillis
     assert(pageTime < finishTime)
     assert(pageTime > finishTime-60000) //long enough even after the second time it is retrieved from DFS cache
 

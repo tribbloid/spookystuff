@@ -30,7 +30,7 @@ class FetchWgetAndSaveIT extends IntegrationSuite {
     val finishTime = System.currentTimeMillis()
     assert(savedPageRows.length === 1)
     assert(savedPageRows(0).pages.length === 1)
-    val pageTime = savedPageRows(0).pages.head.timeMillis.getTime
+    val pageTime = savedPageRows(0).pages.head.timeMillis
     assert(pageTime < finishTime)
     assert(pageTime > finishTime-60000) //long enough even after the second time it is retrieved from s3 cache
 
@@ -56,7 +56,10 @@ class FetchWgetAndSaveIT extends IntegrationSuite {
     val unionRows = unionRDD.unsquashedRDD.collect()
 
     assert(unionRows.length === 2)
-    assert(unionRows(0).pages.head.copy(timeMillis = null, content = null, saved = null) === unionRows(1).pages.head.copy(timeMillis = null, content = null, saved = null))
+    assert(
+      unionRows(0).pages.head.copy(timeMillis = 0, content = null, saved = null) ===
+        unionRows(1).pages.head.copy(timeMillis = 0, content = null, saved = null)
+    )
 
     assert(unionRows(0).pages.head.timeMillis === unionRows(1).pages.head.timeMillis)
     assert(unionRows(0).pages.head.content === unionRows(1).pages.head.content)
@@ -65,7 +68,7 @@ class FetchWgetAndSaveIT extends IntegrationSuite {
   }
 
   override def numPages= spooky.conf.defaultFetchOptimizer match {
-//    case FetchOptimizers.WebCacheAware => 1
+    //    case FetchOptimizers.WebCacheAware => 1
     case _ => 1
   }
 

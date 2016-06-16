@@ -188,13 +188,13 @@ class TestWget extends SpookyEnvSuite {
   }
 
   //TODO: how to simulate a PKIX exception page?
-  test("wget should handle PKIX exception") {
-    spooky.conf.proxy = ProxyFactories.NoProxy
-
-    val results = List(
-      wget("https://www.canadacompany.ca/en/")
-    ).fetch(spooky)
-  }
+//  test("wget should handle PKIX exception") {
+//    spooky.conf.proxy = ProxyFactories.NoProxy
+//
+//    val results = List(
+//      wget("https://www.canadacompany.ca/en/")
+//    ).fetch(spooky)
+//  }
 
   test("wget.interpolate should not overwrite each other") {
     val wget = Wget(

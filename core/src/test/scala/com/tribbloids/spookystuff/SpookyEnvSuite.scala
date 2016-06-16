@@ -4,7 +4,7 @@ import com.tribbloids.spookystuff.dsl.{DriverFactories, DriverFactory}
 import com.tribbloids.spookystuff.execution.SchemaContext
 import com.tribbloids.spookystuff.extractors.{Alias, GenExtractor, GenResolved}
 import com.tribbloids.spookystuff.row.{SquashedFetchedRow, TypedField}
-import com.tribbloids.spookystuff.tests.{RemoteDocsMixin, TestHelper}
+import com.tribbloids.spookystuff.tests.{RemoteDocsFixture, TestHelper}
 import com.tribbloids.spookystuff.utils.Utils
 import org.apache.spark.SparkContext
 import org.apache.spark.sql.SQLContext
@@ -17,7 +17,7 @@ abstract class SpookyEnvSuite
     with BeforeAndAfter
     with BeforeAndAfterAll
     with Retries
-    with RemoteDocsMixin {
+    with RemoteDocsFixture {
 
   def sc: SparkContext = TestHelper.TestSpark
   def sql: SQLContext = TestHelper.TestSQL
@@ -49,26 +49,29 @@ abstract class SpookyEnvSuite
 
   override def beforeAll() {
 
-    val conf = TestHelper.TestSparkConf.setAppName("test")
+    TestHelper.TestSparkConf.setAppName("test")
 
     super.beforeAll()
   }
 
   override def afterAll() {
-    if (sc != null) {
-      sc.stop()
-    }
+//    if (sc != null) {
+//      sc.stop()
+//    }TODO: remove it: sc implementation no longer recreates
 
     TestHelper.clearTempDir()
     super.afterAll()
   }
 
   before{
-    setUp()
+    // bypass java.lang.NullPointerException at org.apache.spark.broadcast.TorrentBroadcast$.unpersist(TorrentBroadcast.scala:228)
+    // TODO: clean up after fix
+    Utils.retryExplicitly(50) {
+      setUp()
+    }
   }
 
   def setUp(): Unit = {
-
     spooky.conf = new SpookyConf(
       autoSave = true,
       cacheWrite = false,

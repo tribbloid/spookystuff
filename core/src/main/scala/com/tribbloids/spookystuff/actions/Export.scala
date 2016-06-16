@@ -1,7 +1,8 @@
 package com.tribbloids.spookystuff.actions
 
+import java.io.Closeable
 import java.lang.reflect.InvocationTargetException
-import java.net.{InetSocketAddress, URI}
+import java.net.{InetSocketAddress, URI, URLConnection}
 import java.util.Date
 import javax.net.ssl.SSLContext
 
@@ -11,20 +12,20 @@ import com.tribbloids.spookystuff.execution.SchemaContext
 import com.tribbloids.spookystuff.extractors.{Extractor, Literal}
 import com.tribbloids.spookystuff.http._
 import com.tribbloids.spookystuff.row.FetchedRow
-import com.tribbloids.spookystuff.session.Session
+import com.tribbloids.spookystuff.session.{ProxySetting, Session}
 import com.tribbloids.spookystuff.utils.{HDFSResolver, Utils}
 import org.apache.commons.io.IOUtils
 import org.apache.hadoop.fs.{FileStatus, FileSystem, Path}
 import org.apache.http.client.config.RequestConfig
-import org.apache.http.client.methods.{HttpGet, HttpUriRequest}
+import org.apache.http.client.methods.{HttpGet, HttpPost, HttpUriRequest}
 import org.apache.http.client.protocol.HttpClientContext
-import org.apache.http.client.{ClientProtocolException, RedirectException}
+import org.apache.http.client.{ClientProtocolException, HttpClient, RedirectException}
 import org.apache.http.config.RegistryBuilder
 import org.apache.http.conn.socket.ConnectionSocketFactory
-import org.apache.http.impl.client.HttpClients
+import org.apache.http.impl.client.{CloseableHttpClient, HttpClients}
 import org.apache.http.impl.conn.PoolingHttpClientConnectionManager
 import org.apache.http.protocol.HttpCoreContext
-import org.apache.http.{HttpHost, StatusLine}
+import org.apache.http.{HttpEntity, HttpHost, StatusLine}
 import org.openqa.selenium.{OutputType, TakesScreenshot}
 
 import scala.xml._
@@ -185,7 +186,158 @@ abstract class HttpCommand(
     else Some(HttpUtils.uri(uriStr))
   }
 
+  def resolveURI(pageRow: FetchedRow, schema: SchemaContext): Option[Literal[String]] = {
+    val first = this.uri.resolve(schema).lift(pageRow).flatMap(Utils.asArray[Any](_).headOption)
 
+    val uriStr: Option[String] = first.flatMap {
+      case element: Unstructured => element.href
+      case str: String => Option(str)
+      case obj: Any => Option(obj.toString)
+      case other => None
+    }
+    val uriLit = uriStr.map(Literal(_))
+    uriLit
+  }
+
+
+  def httpInvoke(
+                  httpClient: HttpClient,
+                  context: HttpClientContext,
+                  request: HttpUriRequest,
+                  cacheable: Boolean = true
+                ): Fetched with Product = {
+    try {
+      val response = httpClient.execute(request, context)
+      try {
+        val currentReq = context.getAttribute(HttpCoreContext.HTTP_REQUEST).asInstanceOf[HttpUriRequest]
+        val currentHost = context.getAttribute(HttpCoreContext.HTTP_TARGET_HOST).asInstanceOf[HttpHost]
+        val currentUrl = if (currentReq.getURI.isAbsolute) {
+          currentReq.getURI.toString
+        }
+        else {
+          currentHost.toURI + currentReq.getURI
+        }
+
+        val entity: HttpEntity = response.getEntity
+        val httpStatus: StatusLine = response.getStatusLine
+
+        val stream = entity.getContent
+        val result = try {
+          val content = IOUtils.toByteArray(stream)
+          val contentType = entity.getContentType.getValue
+
+          new Doc(
+            DocUID(List(this), this),
+            currentUrl,
+            Some(contentType),
+            content,
+            httpStatus = Some(httpStatus),
+            cacheable = cacheable
+          )
+        }
+        finally {
+          stream.close()
+        }
+
+        result
+      }
+      finally {
+        response match {
+          case v: Closeable => v.close()
+        }
+      }
+    }
+    catch {
+      case e: ClientProtocolException =>
+        val cause = e.getCause
+        if (cause.isInstanceOf[RedirectException]) NoDoc(List(this)) //TODO: is it a reasonable exception? don't think so
+        else throw e
+      case e: Throwable =>
+        throw e
+    }
+  }
+
+  def getHttpClient(session: Session): (CloseableHttpClient, HttpClientContext) = {
+    val proxy = session.spooky.conf.proxy()
+    val timeoutMs = this.timeout(session).toMillis.toInt
+
+    val requestConfig = {
+
+      var builder = RequestConfig.custom()
+        .setConnectTimeout(timeoutMs)
+        .setConnectionRequestTimeout(timeoutMs)
+        .setSocketTimeout(timeoutMs)
+        .setRedirectsEnabled(true)
+        .setCircularRedirectsAllowed(true)
+        .setRelativeRedirectsAllowed(true)
+        .setAuthenticationEnabled(false)
+      //        .setCookieSpec(CookieSpecs.BEST_MATCH)
+
+      if (proxy != null && !proxy.protocol.startsWith("socks")) builder = builder.setProxy(new HttpHost(proxy.addr, proxy.port, proxy.protocol))
+
+      val result = builder.build()
+      result
+    }
+
+    val sslContext: SSLContext = SSLContext.getInstance("SSL")
+    sslContext.init(null, Array(new InsecureTrustManager()), null)
+    val hostVerifier = new InsecureHostnameVerifier()
+
+    val httpClient = if (proxy != null && proxy.protocol.startsWith("socks")) {
+      val reg = RegistryBuilder.create[ConnectionSocketFactory]
+        .register("http", new SocksProxyConnectionSocketFactory())
+        .register("https", new SocksProxySSLConnectionSocketFactory(sslContext))
+        .build()
+      val cm = new PoolingHttpClientConnectionManager(reg)
+
+      val httpClient = HttpClients.custom
+        .setConnectionManager(cm)
+        .setDefaultRequestConfig(requestConfig)
+        .setRedirectStrategy(new ResilientRedirectStrategy())
+        .setSslcontext(sslContext)
+        .setHostnameVerifier(hostVerifier)
+        .build
+
+      httpClient
+    }
+    else {
+      val httpClient = HttpClients.custom
+        .setDefaultRequestConfig(requestConfig)
+        .setRedirectStrategy(new ResilientRedirectStrategy())
+        .setSslcontext(sslContext)
+        .setHostnameVerifier(hostVerifier)
+        .build()
+
+      httpClient
+    }
+
+    val context: HttpClientContext = getHttpContext(proxy)
+    (httpClient, context)
+  }
+
+  def getHttpContext(proxy: ProxySetting): HttpClientContext = {
+
+    val context: HttpClientContext = HttpClientContext.create
+
+    if (proxy != null && proxy.protocol.startsWith("socks")) {
+      val socksaddr: InetSocketAddress = new InetSocketAddress(proxy.addr, proxy.port)
+      context.setAttribute("socks.address", socksaddr)
+
+      context
+    }
+    context
+  }
+
+  def getURLConn(uri: URI, session: Session): URLConnection = {
+    val timeoutMs = this.timeout(session).toMillis.toInt
+
+    val uc = uri.toURL.openConnection()
+    uc.setConnectTimeout(timeoutMs)
+    uc.setReadTimeout(timeoutMs)
+
+    uc.connect()
+    uc
+  }
 }
 
 /**
@@ -214,9 +366,9 @@ case class Wget(
           //          case "file" =>
           //            getLocal(uriURI, session)
           case _ =>
-            getHDFS(uriURI, session)
+            readHDFS(uriURI, session)
         }
-        result
+        Seq(result)
     }
   }
 
@@ -246,29 +398,29 @@ case class Wget(
   //      cacheable = false
   //    )
   //
-  //    Seq(result)
+  //    result
   //  }
 
-  def getHDFS(uri: URI, session: Session): Seq[Fetched] = {
+  def readHDFS(uri: URI, session: Session): Fetched = {
     val spooky = session.spooky
     val path = new Path(uri.toString)
 
     val fs = path.getFileSystem(spooky.hadoopConf)
 
     if (fs.exists(path)) {
-      val result: Seq[Fetched] = if (fs.getFileStatus(path).isDirectory) {
-        this.getHDFSDirectory(path, fs)
+      val result: Fetched = if (fs.getFileStatus(path).isDirectory) {
+        this.readHDFSDirectory(path, fs)
       }
       else {
-        this.getHDFSFile(path, session)
+        this.readHDFSFile(path, session)
       }
       result
     }
     else
-      Seq(NoDoc(List(this), cacheable = false))
+      NoDoc(List(this), cacheable = false)
   }
 
-  def getHDFSDirectory(path: Path, fs: FileSystem): Seq[Fetched] = {
+  def readHDFSDirectory(path: Path, fs: FileSystem): Fetched = {
     val statuses = fs.listStatus(path)
     val xmls: Array[Elem] = statuses.map {
       (status: FileStatus) =>
@@ -316,18 +468,18 @@ case class Wget(
     val xml = <root>{NodeSeq.fromSeq(xmls)}</root>
     val xmlStr = Utils.xmlPrinter.format(xml)
 
-    val result: Seq[Fetched] = Seq(new Doc(
+    val result: Fetched = new Doc(
       DocUID(List(this), this),
       path.toString,
       Some("inode/directory; charset=UTF-8"),
       xmlStr.getBytes("utf-8"),
       cacheable = false
-    ))
+    )
     result
   }
 
   //not cacheable
-  def getHDFSFile(path: Path, session: Session): Seq[Fetched] = {
+  def readHDFSFile(path: Path, session: Session): Fetched = {
     val content =
       HDFSResolver(session.spooky.hadoopConf).input(path.toString) {
         fis =>
@@ -342,89 +494,38 @@ case class Wget(
       cacheable = false
     )
 
-    Seq(result)
+    result
   }
 
-  def getFtp(uri: URI, session: Session): Seq[Fetched] = {
+  def getFtp(uri: URI, session: Session): Fetched = {
 
-    val timeoutMs = this.timeout(session).toMillis.toInt
-
-    val uc = uri.toURL.openConnection()
-    uc.setConnectTimeout(timeoutMs)
-    uc.setReadTimeout(timeoutMs)
-
-    uc.connect()
-    uc.getInputStream
+    val uc: URLConnection = getURLConn(uri, session)
     val stream = uc.getInputStream
 
-    val content = IOUtils.toByteArray ( stream )
+    try {
 
-    val result = new Doc(
-      DocUID(List(this), this),
-      uri.toString,
-      None,
-      content
-    )
+      val content = IOUtils.toByteArray ( stream )
 
-    Seq(result)
-  }
+      val result = new Doc(
+        DocUID(List(this), this),
+        uri.toString,
+        None,
+        content
+      )
 
-  def getHttp(uri: URI, session: Session): Seq[Fetched] = {
-
-    val proxy = session.spooky.conf.proxy()
-    val userAgent = session.spooky.conf.userAgentFactory()
-    val headers = session.spooky.conf.headersFactory()
-    val timeoutMs = this.timeout(session).toMillis.toInt
-
-    val requestConfig = {
-
-      var builder = RequestConfig.custom()
-        .setConnectTimeout ( timeoutMs )
-        .setConnectionRequestTimeout ( timeoutMs )
-        .setSocketTimeout( timeoutMs )
-        .setRedirectsEnabled(true)
-        .setCircularRedirectsAllowed(true)
-        .setRelativeRedirectsAllowed(true)
-        .setAuthenticationEnabled(false)
-      //        .setCookieSpec(CookieSpecs.BEST_MATCH)
-
-      if (proxy!=null && !proxy.protocol.startsWith("socks")) builder=builder.setProxy(new HttpHost(proxy.addr, proxy.port, proxy.protocol))
-
-      val result = builder.build()
       result
     }
-
-    val sslContext: SSLContext = SSLContext.getInstance( "SSL" )
-    sslContext.init(null, Array(new InsecureTrustManager()), null)
-    val hostVerifier = new InsecureHostnameVerifier()
-
-    val httpClient = if (proxy !=null && proxy.protocol.startsWith("socks")) {
-      val reg = RegistryBuilder.create[ConnectionSocketFactory]
-        .register("http", new SocksProxyConnectionSocketFactory())
-        .register("https", new SocksProxySSLConnectionSocketFactory(sslContext))
-        .build()
-      val cm = new PoolingHttpClientConnectionManager(reg)
-
-      val httpClient = HttpClients.custom
-        .setConnectionManager(cm)
-        .setDefaultRequestConfig ( requestConfig )
-        .setRedirectStrategy(new ResilientRedirectStrategy())
-        .setSslcontext(sslContext)
-        .setHostnameVerifier(hostVerifier)
-        .build
-
-      httpClient
+    finally {
+      stream.close()
     }
-    else {
-      val httpClient = HttpClients.custom
-        .setDefaultRequestConfig ( requestConfig )
-        .setRedirectStrategy(new ResilientRedirectStrategy())
-        .setSslcontext(sslContext)
-        .setHostnameVerifier(hostVerifier)
-        .build()
+  }
 
-      httpClient
-    }
+  def getHttp(uri: URI, session: Session): Fetched = {
+
+    val (httpClient: CloseableHttpClient, context: HttpClientContext) = getHttpClient(session)
+
+    val userAgent = session.spooky.conf.userAgentFactory()
+    val headers = session.spooky.conf.headersFactory()
 
     val request = {
       val request = new HttpGet(uri)
@@ -436,71 +537,11 @@ case class Wget(
       request
     }
 
-    val context: HttpClientContext = if (proxy !=null && proxy.protocol.startsWith("socks")) {
-      val socksaddr: InetSocketAddress = new InetSocketAddress(proxy.addr, proxy.port)
-      val context: HttpClientContext = HttpClientContext.create
-      context.setAttribute("socks.address", socksaddr)
-
-      context
-    }
-    else HttpClientContext.create
-
-    try {
-      val response = httpClient.execute ( request, context )
-      try {
-        val currentReq = context.getAttribute(HttpCoreContext.HTTP_REQUEST).asInstanceOf[HttpUriRequest]
-        val currentHost = context.getAttribute(HttpCoreContext.HTTP_TARGET_HOST).asInstanceOf[HttpHost]
-        val currentUrl = if (currentReq.getURI.isAbsolute) {currentReq.getURI.toString}
-        else {
-          currentHost.toURI + currentReq.getURI
-        }
-
-        val entity = response.getEntity
-        val httpStatus: StatusLine = response.getStatusLine
-
-        val stream = entity.getContent
-        val result = try {
-          val content = IOUtils.toByteArray ( stream )
-          val contentType = entity.getContentType.getValue
-
-          new Doc(
-            DocUID(List(this), this),
-            currentUrl,
-            Some(contentType),
-            content,
-            httpStatus = Some(httpStatus)
-          )
-        }
-        finally {
-          stream.close()
-        }
-
-        Seq(result)
-      }
-      finally {
-        response.close()
-      }
-    }
-    catch {
-      case e: ClientProtocolException =>
-        val cause = e.getCause
-        if (cause.isInstanceOf[RedirectException]) Seq(NoDoc((session.backtrace :+ this).toList)) //TODO: is it a reasonable exception?
-        else throw e
-      case e: Throwable =>
-        throw e
-    }
+    httpInvoke(httpClient, context, request)
   }
 
   override def doInterpolate(pageRow: FetchedRow, schema: SchemaContext): Option[this.type] = {
-    val first = this.uri.resolve(schema).lift(pageRow).flatMap(Utils.asArray[Any](_).headOption)
-
-    val uriStr: Option[String] = first.flatMap {
-      case element: Unstructured => element.href
-      case str: String => Option(str)
-      case obj: Any => Option(obj.toString)
-      case other => None
-    }
-    val uriLit = uriStr.map(Literal(_))
+    val uriLit: Option[Literal[String]] = resolveURI(pageRow, schema)
 
     uriLit.flatMap(
       lit =>
@@ -512,24 +553,99 @@ case class Wget(
 case class Wpost(
                   uri: Extractor[Any],
                   override val filter: DocFilter = Const.defaultDocumentFilter
+                )(
+                  entity: HttpEntity // TODO: cannot be dumped or serialized
                 ) extends HttpCommand(uri) {
 
-  override protected def doExeNoName(session: Session): Seq[Fetched] = ???
+  // not cacheable
+  override def doExeNoName(session: Session): Seq[Fetched] = {
+
+    uriOption match {
+      case None => Nil
+      case Some(uriURI) =>
+        val result: Fetched = Option(uriURI.getScheme).getOrElse("file") match {
+          case "http" | "https" =>
+            postHttp(uriURI, session, entity)
+          case "ftp" =>
+            uploadFtp(uriURI, session, entity)
+          case _ =>
+            writeHDFS(uriURI, session, entity, overwrite = false)
+        }
+        Seq(result)
+    }
+  }
+
+  def postHttp(uri: URI, session: Session, entity: HttpEntity): Fetched = {
+
+    val (httpClient: CloseableHttpClient, context: HttpClientContext) = getHttpClient(session)
+
+    val userAgent = session.spooky.conf.userAgentFactory()
+    val headers = session.spooky.conf.headersFactory()
+
+    val request = {
+      val request = new HttpPost(uri)
+      if (userAgent != null) request.addHeader("User-Agent", userAgent)
+      for (pair <- headers) {
+        request.addHeader(pair._1, pair._2)
+      }
+      request.setEntity(entity)
+
+      request
+    }
+
+    httpInvoke(httpClient, context, request, cacheable = false)
+  }
+
+  def writeHDFS(uri: URI, session: Session, entity: HttpEntity, overwrite: Boolean = true): Fetched = {
+    val spooky = session.spooky
+    val path = new Path(uri.toString)
+
+    val result: Fetched = this.writeHDFSFile(path, session, entity, overwrite)
+    result
+  }
+
+  //not cacheable
+  def writeHDFSFile(path: Path, session: Session, entity: HttpEntity, overwrite: Boolean = true): Fetched = {
+    val content =
+      HDFSResolver(session.spooky.hadoopConf).output(path.toString, overwrite) {
+        fos =>
+          IOUtils.copyLarge(entity.getContent, fos) //Overkill?
+      }
+
+    val result = new NoDoc(
+      List(this),
+      cacheable = false
+    )
+    result
+  }
+
+  def uploadFtp(uri: URI, session: Session, entity: HttpEntity): Fetched = {
+
+    val uc: URLConnection = getURLConn(uri, session)
+    val stream = uc.getOutputStream
+
+    try {
+
+      IOUtils.copyLarge(entity.getContent, stream) //Overkill?
+
+      val result = new NoDoc(
+        List(this),
+        cacheable = false
+      )
+
+      result
+    }
+    finally {
+      stream.close()
+    }
+  }
 
   override def doInterpolate(pageRow: FetchedRow, schema: SchemaContext): Option[this.type] = {
-    val first = this.uri.resolve(schema).lift(pageRow).flatMap(Utils.asArray[Any](_).headOption)
-
-    val uriStr: Option[String] = first.flatMap {
-      case element: Unstructured => element.href
-      case str: String => Option(str)
-      case obj: Any => Option(obj.toString)
-      case other => None
-    }
-    val uriLit = uriStr.map(Literal(_))
+    val uriLit: Option[Literal[String]] = resolveURI(pageRow, schema)
 
     uriLit.flatMap(
       lit =>
-        this.copy(uri = lit).asInstanceOf[this.type].injectWayback(this.wayback, pageRow, schema)
+        this.copy(uri = lit)(entity).asInstanceOf[this.type].injectWayback(this.wayback, pageRow, schema)
     )
   }
 }

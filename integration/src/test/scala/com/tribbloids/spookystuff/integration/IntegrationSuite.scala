@@ -3,7 +3,7 @@ package com.tribbloids.spookystuff.integration
 import java.util.Date
 
 import com.tribbloids.spookystuff.dsl._
-import com.tribbloids.spookystuff.tests.{RemoteDocsMixin, TestHelper}
+import com.tribbloids.spookystuff.tests.{RemoteDocsFixture, TestHelper}
 import com.tribbloids.spookystuff.utils.Utils
 import com.tribbloids.spookystuff.{DirConf, SpookyConf, SpookyContext}
 import org.apache.spark.SparkContext
@@ -13,7 +13,7 @@ import org.scalatest.{BeforeAndAfterAll, FunSuite}
 import scala.concurrent.duration
 import scala.language.implicitConversions
 
-abstract class IntegrationSuite extends FunSuite with BeforeAndAfterAll with RemoteDocsMixin {
+abstract class IntegrationSuite extends FunSuite with BeforeAndAfterAll with RemoteDocsFixture {
 
   def sc: SparkContext = TestHelper.TestSpark
   def sql: SQLContext = TestHelper.TestSQL

@@ -3,7 +3,7 @@ package com.tribbloids.spookystuff.tests
 /**
   * Created by peng on 17/05/16.
   */
-trait LocalURIDocsMixin extends PathDocsMixin{
+trait LocalURIDocsFixture extends LocalPathDocsFixture{
 
   override def HTML_URL = "file://" + super.HTML_URL
   override def JSON_URL = "file://" + super.JSON_URL

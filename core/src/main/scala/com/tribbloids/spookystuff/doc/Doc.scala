@@ -220,7 +220,6 @@ case class Doc(
   override def breadcrumb: Option[Seq[String]] = root.breadcrumb
   //---------------------------------------------------------------------------------------------------
 
-  //this will lose information as charset encoding will be different
   def save(
             pathParts: Seq[String],
             overwrite: Boolean = false

@@ -3,7 +3,7 @@ package com.tribbloids.spookystuff.tests
 /**
   * Created by peng on 17/05/16.
   */
-trait RemoteDocsMixin extends TestMixin {
+trait RemoteDocsFixture extends TestMixin {
 
   def HTML_URL = "http://tribbloid.github.io/spookystuff/test/Wikipedia.html"
   def JSON_URL = "http://tribbloid.github.io/spookystuff/test/tribbloid.json"

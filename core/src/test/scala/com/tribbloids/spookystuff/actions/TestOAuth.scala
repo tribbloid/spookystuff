@@ -21,6 +21,7 @@ class TestOAuth extends TestWget {
 
   override def setUp() = {
     super.setUp()
+
     spooky.conf.oAuthKeysFactory = () => OAuthKeys(
       "consumerKey",
       "consumerSecret",

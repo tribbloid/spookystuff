@@ -56,7 +56,12 @@ case class SpookyContext private (
   }
 
   def rebroadcast(): Unit ={
-    broadcastedEffectiveConf.destroy()
+    try {
+      broadcastedEffectiveConf.destroy()
+    }
+    catch {
+      case e: Throwable =>
+    }
     broadcastedEffectiveConf = sqlContext.sparkContext.broadcast(_effectiveConf)
   }
 

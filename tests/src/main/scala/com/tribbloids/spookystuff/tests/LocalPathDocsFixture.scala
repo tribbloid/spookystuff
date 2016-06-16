@@ -3,7 +3,7 @@ package com.tribbloids.spookystuff.tests
 /**
   * Created by peng on 17/05/16.
   */
-trait PathDocsMixin extends RemoteDocsMixin{
+trait LocalPathDocsFixture extends RemoteDocsFixture{
 
   override def HTML_URL = this.getClass.getClassLoader.getResource("site/Wikipedia.html").getPath
   override def JSON_URL = this.getClass.getClassLoader.getResource("site/tribbloid.json").getPath
