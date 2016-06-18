@@ -49,14 +49,14 @@ abstract class StructRelay[T] {
   val format: Formats = Xml.defaultFormats ++ extraSer
 
   // the following Impl confines all subclasses to be objects
-  lazy val mf: Manifest[Repr] = {
+  lazy val mf: Manifest[this.Repr] = {
 
     val clazz = this.getClass
     val name = clazz.getName
     val modifiedName = name + "Repr"
     val reprClazz = Utils.classForName(modifiedName)
 
-    Manifest.classType(reprClazz)
+    Manifest.classType[this.Repr](reprClazz)
   }
 
   def fromJValue(jv: JValue): Repr = {

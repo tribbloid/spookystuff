@@ -19,7 +19,7 @@ import scala.reflect.ClassTag
 
 case class SpookyContext private (
                                    @transient sqlContext: SQLContext, //can't be used on executors
-                                   @transient private var _effectiveConf: SpookyConf, //can only be used on executors after broadcast
+                                   @transient private var _conf: SpookyConf, //can only be used on executors after broadcast
                                    var metrics: Metrics //accumulators cannot be broadcasted,
                                  ) {
 
@@ -45,13 +45,13 @@ case class SpookyContext private (
   val browsersExist = deployPhantomJS()
   def sparkContext = this.sqlContext.sparkContext
 
-  @volatile var broadcastedEffectiveConf = sqlContext.sparkContext.broadcast(_effectiveConf)
+  @volatile var broadcastedEffectiveConf = sqlContext.sparkContext.broadcast(_conf)
 
-  def conf = if (_effectiveConf == null) broadcastedEffectiveConf.value
-  else _effectiveConf
+  def conf = if (_conf == null) broadcastedEffectiveConf.value
+  else _conf
 
   def conf_=(conf: SpookyConf): Unit = {
-    _effectiveConf = conf.importFrom(sqlContext.sparkContext)
+    _conf = conf.importFrom(sqlContext.sparkContext)
     rebroadcast()
   }
 
@@ -62,7 +62,7 @@ case class SpookyContext private (
     catch {
       case e: Throwable =>
     }
-    broadcastedEffectiveConf = sqlContext.sparkContext.broadcast(_effectiveConf)
+    broadcastedEffectiveConf = sqlContext.sparkContext.broadcast(_conf)
   }
 
   val broadcastedHadoopConf =

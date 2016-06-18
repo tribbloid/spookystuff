@@ -117,7 +117,7 @@
 
         <dependency>
             <groupId>com.github.mdr</groupId>
-            <artifactId>ascii-graphs_${scala.binary.version}</artifactId>
+            <artifactId>ascii-graphs_${scala.fallback.version}</artifactId>
             <version>0.0.6</version>
         </dependency>
 

@@ -8,7 +8,7 @@ import org.apache.spark.sql.catalyst.trees.TreeNode
 
 abstract class ActionLike extends TreeNode[ActionLike] with Product with Serializable {
 
-  //TODO: this step should be broken into 2 stages for better efficiency, f1 =(schema on driver)=> f2 =(row on executor)=> a
+  //TODO: this step should be broken into 2 stages for better efficiency, f1 =(resolve on driver)=> f2 =(eval on executors)=> v
   final def interpolate(pr: FetchedRow, schema: SchemaContext): Option[this.type] = {
     val option = this.doInterpolate(pr, schema)
     option.foreach{

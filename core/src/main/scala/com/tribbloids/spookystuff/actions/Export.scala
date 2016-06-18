@@ -22,6 +22,7 @@ import org.apache.http.client.protocol.HttpClientContext
 import org.apache.http.client.{ClientProtocolException, HttpClient, RedirectException}
 import org.apache.http.config.RegistryBuilder
 import org.apache.http.conn.socket.ConnectionSocketFactory
+import org.apache.http.entity.StringEntity
 import org.apache.http.impl.client.{CloseableHttpClient, HttpClients}
 import org.apache.http.impl.conn.PoolingHttpClientConnectionManager
 import org.apache.http.protocol.HttpCoreContext
@@ -75,7 +76,7 @@ trait WaybackSupport {
   var wayback: Extractor[Long] = null
 
   def waybackTo(date: Extractor[Date]): this.type = {
-    this.wayback = date.andFn(_.getTime)
+    this.wayback = date.andThen(_.getTime)
     this
   }
 
@@ -117,7 +118,7 @@ case class Snapshot(
                    ) extends Export with WaybackSupport{
 
   // all other fields are empty
-  override def doExeNoName(pb: Session): Seq[Doc] = {
+  override protected def doExeNoName(pb: Session): Seq[Doc] = {
 
     //    import scala.collection.JavaConversions._
 
@@ -152,7 +153,7 @@ case class Screenshot(
                        override val filter: DocFilter = Const.defaultImageFilter
                      ) extends Export with WaybackSupport {
 
-  override def doExeNoName(pb: Session): Seq[Doc] = {
+  override protected def doExeNoName(pb: Session): Seq[Doc] = {
 
     val content = pb.driver match {
       case ts: TakesScreenshot => ts.getScreenshotAs(OutputType.BYTES)
@@ -294,8 +295,8 @@ abstract class HttpCommand(
         .setConnectionManager(cm)
         .setDefaultRequestConfig(requestConfig)
         .setRedirectStrategy(new ResilientRedirectStrategy())
-        .setSslcontext(sslContext)
-        .setHostnameVerifier(hostVerifier)
+        .setSSLContext(sslContext)
+        .setSSLHostnameVerifier(hostVerifier)
         .build
 
       httpClient
@@ -304,8 +305,8 @@ abstract class HttpCommand(
       val httpClient = HttpClients.custom
         .setDefaultRequestConfig(requestConfig)
         .setRedirectStrategy(new ResilientRedirectStrategy())
-        .setSslcontext(sslContext)
-        .setHostnameVerifier(hostVerifier)
+        .setSSLContext(sslContext)
+        .setSSLHostnameVerifier(hostVerifier)
         .build()
 
       httpClient
@@ -353,7 +354,7 @@ case class Wget(
                  override val filter: DocFilter = Const.defaultDocumentFilter
                ) extends HttpCommand(uri) {
 
-  override def doExeNoName(session: Session): Seq[Fetched] = {
+  override protected def doExeNoName(session: Session): Seq[Fetched] = {
 
     uriOption match {
       case None => Nil
@@ -550,15 +551,25 @@ case class Wget(
   }
 }
 
-case class Wpost(
-                  uri: Extractor[Any],
-                  override val filter: DocFilter = Const.defaultDocumentFilter
-                )(
-                  entity: HttpEntity // TODO: cannot be dumped or serialized
-                ) extends HttpCommand(uri) {
+object Wpost{
+
+  def apply(
+             uri: Extractor[Any],
+             filter: DocFilter = Const.defaultDocumentFilter,
+             entity: HttpEntity = new StringEntity("")
+           ): WpostImpl = WpostImpl(uri, filter)(entity)
+
+}
+
+case class WpostImpl private[actions](
+                          uri: Extractor[Any],
+                          override val filter: DocFilter
+                        )(
+                          entity: HttpEntity // TODO: cannot be dumped or serialized
+                        ) extends HttpCommand(uri) {
 
   // not cacheable
-  override def doExeNoName(session: Session): Seq[Fetched] = {
+  override protected def doExeNoName(session: Session): Seq[Fetched] = {
 
     uriOption match {
       case None => Nil
@@ -597,7 +608,6 @@ case class Wpost(
   }
 
   def writeHDFS(uri: URI, session: Session, entity: HttpEntity, overwrite: Boolean = true): Fetched = {
-    val spooky = session.spooky
     val path = new Path(uri.toString)
 
     val result: Fetched = this.writeHDFSFile(path, session, entity, overwrite)
@@ -606,15 +616,16 @@ case class Wpost(
 
   //not cacheable
   def writeHDFSFile(path: Path, session: Session, entity: HttpEntity, overwrite: Boolean = true): Fetched = {
-    val content =
-      HDFSResolver(session.spooky.hadoopConf).output(path.toString, overwrite) {
+    val size = HDFSResolver(session.spooky.hadoopConf)
+      .output(path.toString, overwrite) {
         fos =>
           IOUtils.copyLarge(entity.getContent, fos) //Overkill?
       }
 
     val result = new NoDoc(
       List(this),
-      cacheable = false
+      cacheable = false,
+      metadata = Map("byteUploaded" -> size)
     )
     result
   }
@@ -624,20 +635,19 @@ case class Wpost(
     val uc: URLConnection = getURLConn(uri, session)
     val stream = uc.getOutputStream
 
-    try {
-
+    val length = try {
       IOUtils.copyLarge(entity.getContent, stream) //Overkill?
-
-      val result = new NoDoc(
-        List(this),
-        cacheable = false
-      )
-
-      result
     }
     finally {
       stream.close()
     }
+
+    val result = new NoDoc(
+      List(this),
+      cacheable = false
+    )
+
+    result
   }
 
   override def doInterpolate(pageRow: FetchedRow, schema: SchemaContext): Option[this.type] = {

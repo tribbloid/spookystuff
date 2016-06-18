@@ -1,9 +1,10 @@
 package com.tribbloids.spookystuff.utils
 
 import java.io.{File, InputStream}
-import java.net.URL
+import java.net.{URL, URLClassLoader}
 
 import com.tribbloids.spookystuff.Const
+import org.apache.spark.ml.dsl.ReflectionUtils
 import org.apache.spark.sql.catalyst.ScalaReflection
 import org.slf4j.LoggerFactory
 
@@ -233,6 +234,22 @@ These special characters are often called "metacharacters".
 
   def getCPResource(str: String): Option[URL] =
     Option(ClassLoader.getSystemClassLoader.getResource(str.stripSuffix(Utils.:/)))
+
+  def addCPResource(urlStr: String): Unit = {
+
+    val url = scala.reflect.io.File(urlStr.stripSuffix("/")).toAbsolute.toURL
+
+    assert(url.toString.startsWith("file"))
+
+    ReflectionUtils.invoke(
+      classOf[URLClassLoader],
+      ClassLoader.getSystemClassLoader,
+      "addURL",
+      classOf[URL] -> url
+    )
+
+    assert(ClassLoader.getSystemClassLoader.asInstanceOf[URLClassLoader].getURLs.contains(url))
+  }
 
   def getCPResourceAsStream(str: String): Option[InputStream] =
     Option(ClassLoader.getSystemClassLoader.getResourceAsStream(str.stripSuffix(Utils.:/)))

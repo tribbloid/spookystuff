@@ -22,12 +22,12 @@ import org.mozilla.universalchardet.UniversalDetector
 //use to genterate a lookup key for each page so
 @SerialVersionUID(612503421395L)
 case class DocUID(
-                    backtrace: Trace,
-                    output: Export,
-                    //                    sessionStartTime: Long,
-                    blockIndex: Int = 0,
-                    blockSize: Int = 1 //number of pages in a block output,
-                  ) {
+                   backtrace: Trace,
+                   output: Export,
+                   //                    sessionStartTime: Long,
+                   blockIndex: Int = 0,
+                   blockSize: Int = 1 //number of pages in a block output,
+                 ) {
 
 }
 
@@ -52,6 +52,9 @@ trait Fetched extends Serializable {
   def laterOf(v2: Fetched): Fetched = if (laterThan(v2)) this
   else v2
 
+  def metadata: Map[String, Any]
+  final def effectiveMetadata: Map[String, Any] = Option(metadata).getOrElse(Map())
+
   //  def revertToUnfetched: Unfetched = Unfetched(uid.backtrace)
 }
 
@@ -59,30 +62,33 @@ trait Fetched extends Serializable {
 case class NoDoc(
                   trace: Trace,
                   override val timeMillis: Long = System.currentTimeMillis(),
-                  override val cacheable: Boolean = true
+                  override val cacheable: Boolean = true,
+                  @transient metadata: Map[String, Any] = null
                 ) extends Serializable with Fetched {
 
   @transient override lazy val uid: DocUID = DocUID(trace, null, 0, 1)
 }
 
-case class ErrorWithDoc(
-                         delegate: Doc,
-                         override val message: String = "",
-                         override val cause: Throwable = null
-                       ) extends ActionException with Fetched {
+case class DocError(
+                     delegate: Doc,
+                     override val message: String = "",
+                     override val cause: Throwable = null
+                   ) extends ActionException with Fetched {
 
   override def timeMillis: Long = delegate.timeMillis
 
   override def uid: DocUID = delegate.uid
 
   override def cacheable: Boolean = delegate.cacheable
+
+  override def metadata: Map[String, Any] = delegate.metadata
 }
 
 class DocFilterError(
                       delegate: Doc,
                       override val message: String = "",
                       override val cause: Throwable = null
-                    ) extends ErrorWithDoc(delegate, message, cause)
+                    ) extends DocError(delegate, message, cause)
 
 object Doc {
 
@@ -106,10 +112,8 @@ case class Doc(
                 saved: scala.collection.mutable.Set[String] = scala.collection.mutable.Set(),
                 override val cacheable: Boolean = true,
                 httpStatus: Option[StatusLine] = None,
-                @transient _properties: Map[String, Any] = null //for customizing parsing
+                @transient metadata: Map[String, Any] = null //for customizing parsing
               ) extends Unstructured with Fetched with IdentifierMixin {
-
-  def properties: Map[String, Any] = Option(_properties).getOrElse(Map())
 
   lazy val _id = (uid, uri, declaredContentType, timeMillis, httpStatus.toString)
 
@@ -134,7 +138,7 @@ case class Doc(
     else detected
   }
 
-  @transient lazy val parsedContentType: ContentType = properties
+  @transient lazy val parsedContentType: ContentType = effectiveMetadata
     .get(Doc.CONTENT_TYPE)
     .map("" + _)
     .orElse(declaredContentType) match {
@@ -180,7 +184,7 @@ case class Doc(
       JsonElement(content, effectiveCharset, uri) //not serialize, parsing is faster
     }
     else if (mimeType.contains("csv")) {
-      val csvFormat = this.properties.get(Doc.CSV_FORMAT).map{
+      val csvFormat = this.effectiveMetadata.get(Doc.CSV_FORMAT).map{
         _.asInstanceOf[CSVFormat]
       }
         .getOrElse(Doc.defaultCSVFormat)
@@ -289,6 +293,6 @@ case class Doc(
   }
 
   def set(tuples: (String, Any)*): Doc = this.copy(
-    _properties = this.properties ++ Map(tuples: _*)
+    metadata = this.effectiveMetadata ++ Map(tuples: _*)
   )
 }

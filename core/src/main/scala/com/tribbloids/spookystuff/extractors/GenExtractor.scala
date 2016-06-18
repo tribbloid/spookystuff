@@ -124,6 +124,9 @@ object GenExtractor {
     override def children: Seq[GenExtractor[_, _]] = Seq(arg1, arg2)
   }
 
+  case class TreeNodeView(self: GenExtractor[_,_]) extends TreeNode[TreeNodeView] {
+    override def children: Seq[TreeNodeView] = self.children.map(TreeNodeView)
+  }
 }
 
 // a special expression that can be applied on:
@@ -132,7 +135,11 @@ object GenExtractor {
 
 // a subclass wraps an expression and convert it into extractor, which converts all attribute reference children into data reference children and
 // (To be implemented) can be converted to an expression to be wrapped by other expressions
-trait GenExtractor[T, +R] extends TreeNode[GenExtractor[_,_]] with Serializable {
+trait GenExtractor[T, +R] extends Product with Serializable {
+
+  lazy val TreeNode: GenExtractor.TreeNodeView = GenExtractor.TreeNodeView(this)
+
+  def children: Seq[GenExtractor[_, _]]
 
   //resolve to a Spark SQL DataType according to an exeuction plan
   def applyType(tt: DataType): DataType
@@ -183,7 +190,7 @@ trait GenExtractor[T, +R] extends TreeNode[GenExtractor[_,_]] with Serializable 
 
   def andEx[R2>: R, A](g: GenExtractor[R2, A], meta: Option[Any] = None): GenExtractor[T, A] = AndThen[T, R2, A](this, g, meta)
 
-  def andFn[A: TypeTag](g: R => A, meta: Option[Any] = None): GenExtractor[T, A] = andEx(g, meta)
+  def andThen[A: TypeTag](g: R => A, meta: Option[Any] = None): GenExtractor[T, A] = andEx(g, meta)
 
   def andOptionFn[A: TypeTag](g: R => Option[A], meta: Option[Any] = None): GenExtractor[T, A] = andEx(GenExtractor.fromOptionFn(g), meta)
 
@@ -213,7 +220,7 @@ trait GenExtractor[T, +R] extends TreeNode[GenExtractor[_,_]] with Serializable 
     }
   }
 
-  def toStr = andFn(_.toString)
+  def toStr = andThen(_.toString)
 }
 
 trait Alias[T, +R] extends GenExtractor[T, R] {

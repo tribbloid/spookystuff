@@ -12,7 +12,6 @@ import scala.collection.TraversableOnce
 import scala.collection.immutable.ListMap
 import scala.reflect.ClassTag
 
-
 object Extractors {
 
   def GroupIndexExpr = GenExtractor.fromFn{
@@ -36,7 +35,7 @@ object Extractors {
   }
 
   case class FindAllMeta(arg: Extractor[Unstructured], selector: String)
-  def FindAllExpr(arg: Extractor[Unstructured], selector: String) = arg.andFn(
+  def FindAllExpr(arg: Extractor[Unstructured], selector: String) = arg.andThen(
     {
       v1: Unstructured => v1.findAll(selector)
     },
@@ -44,7 +43,7 @@ object Extractors {
   )
 
   case class ChildrenMeta(arg: Extractor[Unstructured], selector: String)
-  def ChildrenExpr(arg: Extractor[Unstructured], selector: String) = arg.andFn(
+  def ChildrenExpr(arg: Extractor[Unstructured], selector: String) = arg.andThen(
     {
       v1 => v1.children(selector)
     },
@@ -54,9 +53,9 @@ object Extractors {
   def ExpandExpr(arg: Extractor[Unstructured], range: Range) = {
     arg match {
       case AndThen(_,_,Some(FindAllMeta(argg, selector))) =>
-        argg.andFn(_.findAllWithSiblings(selector, range))
+        argg.andThen(_.findAllWithSiblings(selector, range))
       case AndThen(_,_,Some(ChildrenMeta(argg, selector))) =>
-        argg.andFn(_.childrenWithSiblings(selector, range))
+        argg.andThen(_.childrenWithSiblings(selector, range))
       case _ =>
         throw new UnsupportedOperationException("expression does not support expand")
     }

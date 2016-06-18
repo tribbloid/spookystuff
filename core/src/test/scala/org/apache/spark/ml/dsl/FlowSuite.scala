@@ -54,7 +54,7 @@ class FlowSuite extends AbstractFlowSuite {
     val part1 = (Flow('input)
       >-> new Tokenizer() -> TOKEN
       >-> stemming -> STEMMED
-      >-> (tf) -> TF
+      >-> tf -> TF
       >-> new IDF() -> FlowSuite.IDF
       >- STEMMED <>- TF >>> UDFTransformer(zipping) -> TF_ZIPPED)
 

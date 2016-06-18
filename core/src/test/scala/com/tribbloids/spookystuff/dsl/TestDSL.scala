@@ -11,8 +11,6 @@ import com.tribbloids.spookystuff.row.{DataRow, FetchedRow, Field, SquashedFetch
 */
 class TestDSL extends SpookyEnvSuite {
 
-  import com.tribbloids.spookystuff.dsl._
-
   lazy val pages = (
     Wget("http://www.wikipedia.org/") ~ 'page  :: Nil
   ).fetch(spooky)
@@ -38,7 +36,7 @@ class TestDSL extends SpookyEnvSuite {
   }
 
   test("andThen"){
-    val fun = 'abc.andFn(_.toString).resolve(schema)
+    val fun = 'abc.andThen(_.toString).resolve(schema)
 //    assert(fun.toString === "<function1>")
     assert(fun(row) === "Wikipedia")
   }

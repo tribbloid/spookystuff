@@ -99,7 +99,7 @@ package object dsl {
 
   implicit class UnstructuredExprView(self: Extractor[Unstructured]) extends Serializable {
 
-    def uri: Extractor[String] = self.andFn(_.uri)
+    def uri: Extractor[String] = self.andThen(_.uri)
 
     def findAll(selector: String) = FindAllExpr(self, selector)
     def \\(selector: String) = findAll(selector)
@@ -134,44 +134,44 @@ package object dsl {
 
   implicit class ElementsExprView(self: Extractor[Elements[_]]) extends Serializable {
 
-    def uris: Extractor[Seq[String]] = self.andFn(_.uris)
+    def uris: Extractor[Seq[String]] = self.andThen(_.uris)
 
-    def texts: Extractor[Seq[String]] = self.andFn(_.texts)
+    def texts: Extractor[Seq[String]] = self.andThen(_.texts)
 
-    def codes: Extractor[Seq[String]] = self.andFn(_.codes)
+    def codes: Extractor[Seq[String]] = self.andThen(_.codes)
 
-    def ownTexts: Extractor[Seq[String]] = self.andFn(_.ownTexts)
+    def ownTexts: Extractor[Seq[String]] = self.andThen(_.ownTexts)
 
     def allAttrs: Extractor[Seq[Map[String, String]]] =
-      self.andFn(_.allAttrs)
+      self.andThen(_.allAttrs)
 
     def attrs(attrKey: String, noEmpty: Boolean = true): Extractor[Seq[String]] =
-      self.andFn(_.attrs(attrKey, noEmpty))
+      self.andThen(_.attrs(attrKey, noEmpty))
 
-    def hrefs = self.andFn(_.hrefs)
+    def hrefs = self.andThen(_.hrefs)
 
-    def srcs = self.andFn(_.srcs)
+    def srcs = self.andThen(_.srcs)
 
-    def boilerPipes = self.andFn(_.boilerPipes)
+    def boilerPipes = self.andThen(_.boilerPipes)
   }
 
   implicit class PageExprView(self: Extractor[Doc]) extends Serializable {
 
-    def uid: Extractor[DocUID] = self.andFn(_.uid)
+    def uid: Extractor[DocUID] = self.andThen(_.uid)
 
-    def contentType: Extractor[String] = self.andFn(_.contentType)
+    def contentType: Extractor[String] = self.andThen(_.contentType)
 
-    def content: Extractor[Seq[Byte]] = self.andFn(_.content.toSeq)
+    def content: Extractor[Seq[Byte]] = self.andThen(_.content.toSeq)
 
-    def timestamp: Extractor[Timestamp] = self.andFn(_.timestamp)
+    def timestamp: Extractor[Timestamp] = self.andThen(_.timestamp)
 
-    def saved: Extractor[Set[String]] = self.andFn(_.saved.toSet)
+    def saved: Extractor[Set[String]] = self.andThen(_.saved.toSet)
 
-    def mimeType: Extractor[String] = self.andFn(_.mimeType)
+    def mimeType: Extractor[String] = self.andThen(_.mimeType)
 
     def charSet: Extractor[String] = self.andOptionFn(_.charset)
 
-    def fileExtensions: Extractor[Seq[String]] = self.andFn(_.fileExtensions.toSeq)
+    def fileExtensions: Extractor[Seq[String]] = self.andThen(_.fileExtensions.toSeq)
 
     def defaultFileExtension: Extractor[String] = self.andOptionFn(_.defaultFileExtension)
   }
@@ -207,15 +207,15 @@ package object dsl {
         else Some(v.toSeq.apply(realIdx))
     }, unboxType)
 
-    def size: Extractor[Int] = self.andFn(_.size)
+    def size: Extractor[Int] = self.andThen(_.size)
 
-    def isEmpty: Extractor[Boolean] = self.andFn(_.isEmpty)
+    def isEmpty: Extractor[Boolean] = self.andThen(_.isEmpty)
 
-    def nonEmpty: Extractor[Boolean] = self.andFn(_.nonEmpty)
+    def nonEmpty: Extractor[Boolean] = self.andThen(_.nonEmpty)
 
-    def mkString(sep: String = ""): Extractor[String] = self.andFn(_.mkString(sep))
+    def mkString(sep: String = ""): Extractor[String] = self.andThen(_.mkString(sep))
 
-    def mkString(start: String, sep: String, end: String): Extractor[String] = self.andFn(_.mkString(start, sep, end))
+    def mkString(start: String, sep: String, end: String): Extractor[String] = self.andThen(_.mkString(start, sep, end))
 
     //TODO: Why IterableExprView.filter cannot be applied on ZippedExpr? is the scala compiler malfunctioning?
     def zipWithKeys(keys: Extractor[Any]): ZippedExpr[Any, T] =
@@ -224,15 +224,21 @@ package object dsl {
     def zipWithValues(values: Extractor[Any]): ZippedExpr[T, Any] =
       new ZippedExpr[T,Any](self, values.typed[Iterable[_]])
 
-    def groupByFn[K](f: T => K): (Iterable[T]) => Map[K, Iterable[T]] = (v: Iterable[T]) => v.groupBy(f)
+    protected def groupByFn[K](f: T => K): (Iterable[T]) => Map[K, Iterable[T]] =
+      (v: Iterable[T]) => v.groupBy(f)
 
-    def groupBy[K: TypeTag](f: T => K): Extractor[Map[K, Iterable[T]]] = self.andTyped (
-      groupByFn(f),
-      {
-        t =>
-          MapType(TypeUtils.catalystTypeOrDefault[K](), t)
-      }
-    )
+    def groupBy[K: TypeTag](f: T => K): Extractor[Map[K, Iterable[T]]] = {
+
+      val keyType = TypeUtils.catalystTypeOrDefault[K]()
+
+      self.andTyped (
+        groupByFn(f),
+        {
+          t =>
+            MapType(keyType, t)
+        }
+      )
+    }
 
     def slice(from: Int = Int.MinValue, until: Int = Int.MaxValue): Extractor[Iterable[T]] = self.andOptionTyped (
       (v: Iterable[T]) => Some(v.slice(from, until)), identity
@@ -242,22 +248,25 @@ package object dsl {
 
     def distinct: Extractor[Seq[T]] = self.andOptionTyped ((v: Iterable[T]) => Some(v.toSeq.distinct), identity)
 
-    def distinctBy[K: TypeTag](f: T => K): Extractor[Iterable[T]] = self.andTyped (
-      groupByFn(f).andThen(
-        v =>
-          v.values.flatMap{
-            case repr: Traversable[T] => repr.headOption
-            case _ => None //TODO: what's the point of this? removed
-          }
-      ),
-      identity
-    )
+    def distinctBy[K](f: T => K): Extractor[Iterable[T]] = {
+      self.andTyped (
+        groupByFn(f)
+          .andThen(
+            v =>
+              v.values.flatMap{
+                case repr: Traversable[T] => repr.headOption
+                case _ => None //TODO: what's the point of this? removed
+              }
+          ),
+        identity
+      )
+    }
 
-    def map[B: TypeTag](f: T => B): Extractor[Seq[B]] = self.andFn (
+    def map[B: TypeTag](f: T => B): Extractor[Seq[B]] = self.andThen (
       v => v.toSeq.map(f)
     )
 
-    def flatMap[B: TypeTag](f: T => GenTraversableOnce[B]): Extractor[Seq[B]] = self.andFn (
+    def flatMap[B: TypeTag](f: T => GenTraversableOnce[B]): Extractor[Seq[B]] = self.andThen (
       v => v.toSeq.flatMap(f)
     )
   }
@@ -265,9 +274,9 @@ package object dsl {
   implicit class StringExprView(self: Extractor[String]) extends Serializable {
 
     def replaceAll(regex: String, replacement: String): Extractor[String] =
-      self.andFn(_.replaceAll(regex, replacement))
+      self.andThen(_.replaceAll(regex, replacement))
 
-    def trim: Extractor[String] = self.andFn(_.trim)
+    def trim: Extractor[String] = self.andThen(_.trim)
 
     def +(another: Extractor[Any]): Extractor[String] = x"$self$another"
   }
