@@ -7,15 +7,6 @@ sealed abstract class SchemaAdaptation
 
 object SchemaAdaptations {
 
-  def cartesianProduct[T](xss: List[Set[T]]): Set[List[T]] = xss match {
-    case Nil => Set(Nil)
-    case h :: t => for(
-      xh <- h;
-      xt <- cartesianProduct(t)
-    )
-      yield xh :: xt
-  }
-
   //disable schema validations ( e.g. Transformer.transformSchema)
   sealed trait TypeUnsafe extends SchemaAdaptation
 

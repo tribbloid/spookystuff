@@ -3,7 +3,7 @@ package org.apache.spark.sql
 import java.sql.{Date, Timestamp}
 
 import com.tribbloids.spookystuff.utils.AnyUDT
-import org.apache.spark.ml.dsl.SchemaAdaptations
+import org.apache.spark.ml.dsl.utils.FlowUtils
 import org.apache.spark.sql.catalyst.{CatalystTypeConverters, ScalaReflection}
 import org.apache.spark.sql.types._
 
@@ -131,7 +131,7 @@ object TypeUtils {
       case MapType(key, value, _) =>
         val keyTag = baseTypesFor(key)
         val valueTag = baseTypesFor(value)
-        val cartesian = SchemaAdaptations.cartesianProduct(List(keyTag, valueTag))
+        val cartesian = FlowUtils.cartesianProductSet(List(keyTag, valueTag))
 
         val pairs: Set[(TypeTag[_], TypeTag[_])] = cartesian.map {
           list =>

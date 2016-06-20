@@ -1,17 +1,19 @@
 package org.apache.spark.ml.dsl
 
+import org.apache.spark.ml.dsl.utils.FlowUtils
+
 /**
   * Created by peng on 09/05/16.
   */
 class SchemaAdaptationSuite extends AbstractFlowSuite {
 
   test("cartesianProduct should work on list") {
-    val before: List[Set[String]] = List(
-      Set("a", "b", "c"),
-      Set("1", "2", "3"),
-      Set("x", "y", "z")
+    val before: List[List[String]] = List(
+      List("a", "b", "c"),
+      List("1", "2", "3"),
+      List("x", "y", "z")
     )
-    val after = SchemaAdaptations.cartesianProduct(before).toList.sortBy(_.toString())
+    val after = FlowUtils.cartesianProductList(before)
 
     after.mkString("\n").shouldBe(
       """
@@ -48,7 +50,7 @@ class SchemaAdaptationSuite extends AbstractFlowSuite {
 
   test("cartesianProduct should work on empty list") {
     val before: List[Set[String]] = List()
-    val after = SchemaAdaptations.cartesianProduct(before).toList.sortBy(_.toString())
+    val after = FlowUtils.cartesianProductSet(before).toList.sortBy(_.toString())
 
     after.mkString("\n").shouldBe(
       """
@@ -63,7 +65,7 @@ class SchemaAdaptationSuite extends AbstractFlowSuite {
       Set("1", "2", "3"),
       Set()
     )
-    val after = SchemaAdaptations.cartesianProduct(before).toList.sortBy(_.toString())
+    val after = FlowUtils.cartesianProductSet(before).toList.sortBy(_.toString())
 
     after.mkString("\n").shouldBe("")
   }

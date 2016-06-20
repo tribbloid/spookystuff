@@ -4,7 +4,7 @@ import com.github.mdr.ascii.graph.Graph
 import com.github.mdr.ascii.layout.GraphLayout
 import com.github.mdr.ascii.layout.prefs.LayoutPrefsImpl
 import org.apache.spark.ml.Pipeline.SharedReadWrite
-import org.apache.spark.ml.dsl.utils.FlowRelay
+import org.apache.spark.ml.dsl.utils.{FlowRelay, FlowUtils}
 import org.apache.spark.ml.util._
 import org.apache.spark.ml.{Pipeline, PipelineModel, PipelineStage, Transformer}
 import org.apache.spark.sql.catalyst.expressions.NamedExpression
@@ -830,7 +830,7 @@ trait FlowComponent extends MayHaveHeads with MayHaveTails {
       }
       .toList
 
-    val cartesian = SchemaAdaptations.cartesianProduct(fields)
+    val cartesian = FlowUtils.cartesianProductSet(fields)
     val schemas = cartesian.map(v => new StructType(v.toArray))
     schemas.foreach{
       schema =>
