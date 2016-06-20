@@ -4,7 +4,7 @@ import java.sql.{Date, Timestamp}
 
 import com.tribbloids.spookystuff.utils.AnyUDT
 import org.apache.spark.ml.dsl.SchemaAdaptations
-import org.apache.spark.sql.catalyst.ScalaReflection
+import org.apache.spark.sql.catalyst.{CatalystTypeConverters, ScalaReflection}
 import org.apache.spark.sql.types._
 
 import scala.language.implicitConversions
@@ -24,15 +24,15 @@ object TypeUtils {
 
   //  type CanonicalArray[T] = Array[T]
   //  type CanonicalMap[A, B] = Map[A, B]
-  //
-  //  // If reflection is used to find function based on DataType, it may encounter typecast error due to type inconsistency
-  //  // (several Scala type corresponds to Catalyst DataType), in which case this should be used to pre-process the data to ensure
-  //  // that they are compatible.
-  //  // TODO: this implementation is slow, but barely works.
-  //  def toCanonicalType(v: Any, dataType: DataType): Any = {
-  //    val internal = CatalystTypeConverters.convertToCatalyst(v)
-  //    CatalystTypeConverters.convertToScala(internal, dataType)
-  //  }
+
+  // If reflection is used to find function based on DataType, it may encounter typecast error due to type inconsistency
+  // (several Scala type corresponds to Catalyst DataType), in which case this should be used to pre-process the data to ensure
+  // that they are compatible.
+  // TODO: this implementation is slow, but barely works.
+  def toCanonicalType(v: Any, dataType: DataType): Any = {
+    val internal = CatalystTypeConverters.convertToCatalyst(v)
+    CatalystTypeConverters.convertToScala(internal, dataType)
+  }
 
   def catalystTypeFor[T](implicit ttg: TypeTag[T]): Option[DataType] = {
     try {

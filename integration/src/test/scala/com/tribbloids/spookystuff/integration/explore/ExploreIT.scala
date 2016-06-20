@@ -34,15 +34,18 @@ class ExploreIT extends IntegrationSuite {
       )
       .toDF(sort = true)
 
-    assert(
-      explored.schema.fieldNames ===
-        "depth" ::
-          "index" ::
-          "category" ::
-          "header" ::
-          "notexist_key" ::
-          "notexist_class" ::
-          Nil
+    explored.schema.treeString.shouldBe(
+      """
+        |root
+        | |-- depth: integer (nullable = true)
+        | |-- index: array (nullable = true)
+        | |    |-- element: integer (containsNull = true)
+        | |-- category: string (nullable = true)
+        | |-- header: string (nullable = true)
+        | |-- notexist_key: array (nullable = true)
+        | |    |-- element: integer (containsNull = true)
+        | |-- notexist_class: string (nullable = true)
+      """.stripMargin
     )
 
     val formatted = explored.toJSON.collect().toSeq

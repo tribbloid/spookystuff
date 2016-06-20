@@ -13,7 +13,7 @@ import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.catalyst.analysis.UnresolvedAttribute
 import org.apache.spark.sql.catalyst.expressions
 import org.apache.spark.sql.types.DataType
-import org.apache.spark.sql.{Column, DataFrame}
+import org.apache.spark.sql.{Column, DataFrame, Row}
 import org.apache.spark.storage.StorageLevel
 
 import scala.collection.Map
@@ -99,18 +99,54 @@ case class FetchedDataset(
   }
   def toMapRDD(sort: Boolean = false): RDD[Map[String, Any]] = sparkContext.withJob(s"toMapRDD(sort=$sort)"){
 
-    if (!sort) dataRDD.map(_.toMap)
-    else dataRDDSorted.map(_.toMap)
+    {
+      if (!sort) dataRDD
+      else dataRDDSorted
+    }
+      .map(_.toMap)
   }
 
   def toJSON(sort: Boolean = false): RDD[String] = sparkContext.withJob(s"toJSON(sort=$sort)"){
 
-    if (!sort) dataRDD.map(_.toJSON)
-    else dataRDDSorted.map(_.toJSON)
+    {
+      if (!sort) dataRDD
+      else dataRDDSorted
+    }
+      .map(_.toJSON)
   }
 
-  //TODO: rewrite using schema
+  //TODO: take filter schema as parameter
+  protected def toRowRDD(sort: Boolean = false, fields: List[Field]): RDD[Row] = {
+
+    val dataRDD = if (!sort) this.dataRDD
+    else dataRDDSorted
+
+    dataRDD
+      .map {
+        v =>
+          val result = Row(fields.map(vv => v.data.get(vv).orNull): _*)
+          result
+      }
+  }
+
   def toDF(sort: Boolean = false, tableName: String = null): DataFrame =
+    sparkContext.withJob(s"toDF(sort=$sort, name=$tableName)") {
+
+      val filtered = schema.filterFields()
+
+      val structType = filtered.toStructType
+
+      val rowRDD = toRowRDD(sort, filtered.map.keys.toList)
+
+      val result = spooky.sqlContext.createDataFrame(rowRDD, structType)
+
+      if (tableName!=null) result.registerTempTable(tableName)
+
+      result
+    }
+
+  //TODO: cleanup, useful only in comparison
+  def toDFLegacy(sort: Boolean = false, tableName: String = null): DataFrame =
     sparkContext.withJob(s"toDF(sort=$sort, name=$tableName)") {
 
       val jsonRDD = this.toJSON(sort)
@@ -228,12 +264,12 @@ case class FetchedDataset(
     this
   }
 
-  def extract(exs: Extractor[Any]*): FetchedDataset = {
+  def extract[T](exs: (Extractor[T])*): FetchedDataset = {
 
-      ExtractPlan(plan, exs)
+    ExtractPlan[T](plan, exs)
   }
 
-  def select(exprs: Extractor[Any]*) = extract(exprs: _*)
+  def select(exprs: Extractor[_]*) = extract(exprs: _*)
 
   def remove(fields: Field*): FetchedDataset = RemovePlan(plan, fields)
 
@@ -275,11 +311,11 @@ case class FetchedDataset(
 
     val (on, extracted) = ex match {
       case GetExpr(ff) =>
-        ff.! -> this
+        ff -> this
       case _ =>
         val effectiveEx = ex.withJoinFieldIfMissing
         val ff = effectiveEx.field
-        ff.! -> this.extract(ex)
+        ff -> this.extract(ex)
     }
 
     FlattenPlan(extracted.plan, on, ordinalField, sampler, isLeft)

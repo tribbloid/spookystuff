@@ -6,8 +6,6 @@ import com.tribbloids.spookystuff.integration.IntegrationSuite
 
 class FetchVisitIT extends IntegrationSuite {
 
-  import com.tribbloids.spookystuff.utils.ImplicitUtils._
-
   override def doMain() {
 
     val RDD = spooky

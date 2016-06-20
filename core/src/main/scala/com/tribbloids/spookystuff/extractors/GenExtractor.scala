@@ -29,16 +29,17 @@ object GenExtractor {
   }
   def fromOptionFn[T, R: TypeTag](self: T => Option[R]): GenExtractor[T, R] = {
 
+    //this works under the assumption that Catalyst always converts Option[A] to the same DataType as A
     val dataType = TypeUtils.catalystTypeOrDefault[R]()
 
     fromOptionFn(self, dataType)
   }
 
   trait Leaf[T, +R] extends GenExtractor[T, R] {
-    override def children = Nil
+    override def _args = Nil
   }
   trait Unary[T, +R] extends GenExtractor[T, R] {
-    override def children = Seq(child)
+    override def _args = Seq(child)
     def child: GenExtractor[_,_]
   }
 
@@ -88,7 +89,7 @@ object GenExtractor {
     }
 
     //TODO: changing to Unary? Like Spark SQL Expression
-    override def children: Seq[GenExtractor[_, _]] = Seq(a, b)
+    override def _args: Seq[GenExtractor[_, _]] = Seq(a, b)
   }
 
   case class And_->[T, +R1, +R2](
@@ -121,11 +122,11 @@ object GenExtractor {
       })
     }
 
-    override def children: Seq[GenExtractor[_, _]] = Seq(arg1, arg2)
+    override def _args: Seq[GenExtractor[_, _]] = Seq(arg1, arg2)
   }
 
   case class TreeNodeView(self: GenExtractor[_,_]) extends TreeNode[TreeNodeView] {
-    override def children: Seq[TreeNodeView] = self.children.map(TreeNodeView)
+    override def children: Seq[TreeNodeView] = self._args.map(TreeNodeView)
   }
 }
 
@@ -139,19 +140,30 @@ trait GenExtractor[T, +R] extends Product with Serializable {
 
   lazy val TreeNode: GenExtractor.TreeNodeView = GenExtractor.TreeNodeView(this)
 
-  def children: Seq[GenExtractor[_, _]]
+  protected def _args: Seq[GenExtractor[_, _]]
 
   //resolve to a Spark SQL DataType according to an exeuction plan
   def applyType(tt: DataType): DataType
   def resolve(tt: DataType): PartialFunction[T, R]
 
-  def _as(fieldOpt: Option[Field]): GenExtractor[T, R] = {
+  def withAlias(field: Field): AliasImpl[T, R] = {
+    this match {
+      case v: Wrapper[T, R] => new AliasImpl[T, R](v.child, field)
+      case _ => new AliasImpl[T, R](this, field)
+    }
+  }
+  def withoutAlias: GenExtractor[T, R] = {
+    this match {
+      case v: Wrapper[T, R] => v.child
+      case _ => this
+    }
+  }
+
+  private def _as(fieldOpt: Option[Field]): GenExtractor[T, R] = {
 
     fieldOpt match {
-      case Some(field) =>
-        withAlias(field)
-      case None =>
-        withoutAlias
+      case Some(field) => withAlias(field)
+      case None => withoutAlias
     }
   }
 
@@ -162,19 +174,6 @@ trait GenExtractor[T, +R] extends Product with Serializable {
   //  final def as_*(field: Field) = _as(Option(field).map(_.*))
   //  final def ~*(field: Field) = as_*(field)
 
-  def withAlias(field: Field): AliasImpl[T, R] = {
-    this match {
-      case v: Wrapper[T, R] => new AliasImpl[T, R](v.child, field)
-      case _ => new AliasImpl[T, R](this, field)
-    }
-  }
-
-  def withoutAlias: GenExtractor[T, R] = {
-    this match {
-      case v: Wrapper[T, R] => v.child
-      case _ => this
-    }
-  }
   //  final def named_!(field: Field) = _named(field.!)
   //  final def named_*(field: Field) = _named(field.*)
 
@@ -190,9 +189,13 @@ trait GenExtractor[T, +R] extends Product with Serializable {
 
   def andEx[R2>: R, A](g: GenExtractor[R2, A], meta: Option[Any] = None): GenExtractor[T, A] = AndThen[T, R2, A](this, g, meta)
 
-  def andThen[A: TypeTag](g: R => A, meta: Option[Any] = None): GenExtractor[T, A] = andEx(g, meta)
+  def andThen[A: TypeTag](g: R => A, meta: Option[Any] = None): GenExtractor[T, A] = {
+    andEx(g, meta)
+  }
 
-  def andOptionFn[A: TypeTag](g: R => Option[A], meta: Option[Any] = None): GenExtractor[T, A] = andEx(GenExtractor.fromOptionFn(g), meta)
+  def andOptionFn[A: TypeTag](g: R => Option[A], meta: Option[Any] = None): GenExtractor[T, A] = {
+    andEx(GenExtractor.fromOptionFn(g), meta)
+  }
 
   def andTyped[R2 >: R, A](
                             g: R2 => A,

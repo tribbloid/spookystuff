@@ -36,7 +36,7 @@ class FetchedDatasetSuite extends SpookyEnvSuite {
 
     val set = spooky
       .fetch(
-        Wget("http://www.wikipedia.org/")
+        Wget(HTML_URL)
       )
       .map{
         v =>
@@ -57,7 +57,7 @@ class FetchedDatasetSuite extends SpookyEnvSuite {
 
     val set = spooky
       .fetch(
-        Wget("http://www.wikipedia.org/")
+        Wget(HTML_URL)
       )
       .extract(
         S.andOptionFn{
@@ -84,7 +84,7 @@ class FetchedDatasetSuite extends SpookyEnvSuite {
 
       val set = spooky
         .fetch(
-          Wget("http://www.wikipedia.org/")
+          Wget(HTML_URL)
         )
         .extract(
           S.andOptionFn{
@@ -96,7 +96,7 @@ class FetchedDatasetSuite extends SpookyEnvSuite {
       assert(acc.value == 0)
 
       val df = set.toDF(sort)
-//      assert(acc.value == 0)
+      //      assert(acc.value == 0)
 
       df.count()
       assert(acc.value == 1)
@@ -107,7 +107,7 @@ class FetchedDatasetSuite extends SpookyEnvSuite {
 
       val set = spooky
         .fetch(
-          Wget("http://www.wikipedia.org/")
+          Wget(HTML_URL)
         )
         .extract(
           S.andOptionFn{
@@ -119,7 +119,7 @@ class FetchedDatasetSuite extends SpookyEnvSuite {
       assert(acc.value == 0)
 
       val json = set.toJSON(sort)
-//      assert(acc.value == 0)
+      //      assert(acc.value == 0)
 
       json.count()
       assert(acc.value == 1)
@@ -130,7 +130,7 @@ class FetchedDatasetSuite extends SpookyEnvSuite {
 
       val set = spooky
         .fetch(
-          Wget("http://www.wikipedia.org/")
+          Wget(HTML_URL)
         )
         .select(
           S.andOptionFn{
@@ -142,10 +142,68 @@ class FetchedDatasetSuite extends SpookyEnvSuite {
       assert(acc.value == 0)
 
       val rdd = set.toMapRDD(sort)
-//      assert(acc.value == 0)
+      //      assert(acc.value == 0)
 
       rdd.count()
       assert(acc.value == 1)
     }
+  }
+
+  test("toDF can yield a DataFrame") {
+
+    val set = spooky
+      .fetch(
+        Wget(HTML_URL)
+      )
+      .select(
+        S.uri ~ 'uri,
+        S.children("h1").size ~ 'size,
+        S.timestamp ~ 'timestamp,
+        S.andOptionFn{
+          page =>
+            page.saved.headOption
+        } ~ 'saved
+      )
+    val df = set.toDF()
+
+    df.schema.treeString.shouldBe(
+      """
+        |root
+        | |-- uri: string (nullable = true)
+        | |-- size: integer (nullable = true)
+        | |-- timestamp: timestamp (nullable = true)
+        | |-- saved: string (nullable = true)
+      """.stripMargin
+    )
+
+    df.show(false)
+  }
+
+  test("toDF can yield a DataFrame excluding Fields with .isSelected = false") {
+
+    val set = spooky
+      .fetch(
+        Wget(HTML_URL)
+      )
+      .select(
+        S.uri ~ 'uri.*,
+        S.children("h1").size ~ 'size.*,
+        S.timestamp ~ 'timestamp,
+        S.andOptionFn{
+          page =>
+            page.saved.headOption
+        } ~ 'saved
+      )
+    val df = set.toDF()
+
+    df.schema.treeString.shouldBe(
+      """
+        |root
+        | |-- timestamp: timestamp (nullable = true)
+        | |-- saved: string (nullable = true)
+      """.stripMargin
+    )
+
+    df.show(false)
   }
 }

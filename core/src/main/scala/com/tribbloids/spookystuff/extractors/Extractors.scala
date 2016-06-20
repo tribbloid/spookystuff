@@ -100,6 +100,8 @@ case class GetExpr(field: Field) extends Leaf[FR, Any] {
         }
         .map(_.dataType)
         .getOrElse(NullType)
+    case _ =>
+      throw new UnsupportedOperationException("Can only resolve type against SchemaContext")
   }
 
   override def resolve(tt: DataType): PartialFunction[FR, Any] = Unlift(
@@ -138,7 +140,7 @@ object AppendExpr {
                            expr: Extractor[T]
                          ): Alias[FR, Seq[T]] = {
 
-    AppendExpr[T](GetExpr(field), expr).withAlias(field.!)
+    AppendExpr[T](GetExpr(field), expr).withAlias(field.!!)
   }
 }
 
@@ -169,15 +171,15 @@ case class AppendExpr[+T: ClassTag] private(
     })
   }
 
-  override def children: Seq[GenExtractor[_, _]] = Seq(get, expr)
+  override def _args: Seq[GenExtractor[_, _]] = Seq(get, expr)
 }
 
-case class InterpolateExpr(parts: Seq[String], children: Seq[Extractor[Any]]) extends Extractor[String] {
+case class InterpolateExpr(parts: Seq[String], _args: Seq[Extractor[Any]]) extends Extractor[String] {
 
   override def applyType(tt: DataType): DataType = StringType
 
   override def resolve(tt: DataType): PartialFunction[FR, String] = {
-    val rs = children.map(_.resolve(tt).lift)
+    val rs = _args.map(_.resolve(tt).lift)
 
     Unlift({
       row =>
@@ -199,7 +201,7 @@ case class ZippedExpr[T1,+T2](
                              )
   extends Extractor[Map[T1, T2]] {
 
-  override val children: Seq[GenExtractor[FR, _]] = Seq(arg1, arg2)
+  override val _args: Seq[GenExtractor[FR, _]] = Seq(arg1, arg2)
 
   override def applyType(tt: DataType): DataType = {
     (arg1.applyType(tt), arg2.applyType(tt)) match {

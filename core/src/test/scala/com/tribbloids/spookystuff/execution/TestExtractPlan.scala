@@ -27,16 +27,27 @@ class TestExtractPlan extends SpookyEnvSuite {
             else None
         }
       )
+      .persist()
 
-    println(extracted.plan.toString)
+    extracted.schema.toStructType.treeString.shouldBe(
+      """
+        |root
+        | |-- _1: integer (nullable = true)
+        | |-- _2: string (nullable = true)
+        | |-- _c1: string (nullable = true)
+        | |-- _c2: integer (nullable = true)
+      """.stripMargin
+    )
 
     assert(
       extracted.toMapRDD().collect().toSeq ==
         Seq(Map("_1" -> 1, "_2" -> "a", "_c2" -> 97), Map("_1" -> 2, "_2" -> "b", "_c1" -> "2", "_c2" -> 98))
     )
+
+    extracted.toDF().show(false)
   }
 
-  test("ExtractPlan.toString should work") {
+  test("ExtractPlan can overwrite old values using ! postfix") {
 
     val extracted = src
       .extract{
@@ -47,30 +58,37 @@ class TestExtractPlan extends SpookyEnvSuite {
         } ~ '_2.!
       }
 
-    println(extracted.plan.toString)
+    extracted.schema.toStructType.treeString.shouldBe(
+      """
+        |root
+        | |-- _1: integer (nullable = true)
+        | |-- _2: string (nullable = true)
+      """.stripMargin
+    )
 
     assert(
       extracted.toMapRDD().collect().toSeq ==
         Seq(Map("_1" -> 1, "_2" -> "a"), Map("_1" -> 2, "_2" -> "2"))
     )
+
+    extracted.toDF().show(false)
   }
 
-  test("ExtractPlan can overwrite old values using ~! operator") {
-    val extracted = src
-      .extract{
-        '_1.typed[Int].andOptionFn{
-          v =>
-            if (v > 1) Some("" + v)
-            else None
-        } ~ '_2.!
-      }
-      .toMapRDD()
-      .collect()
+  test("ExtractPlan cannot partially overwrite old values with the same field id but different DataType") {
 
-    assert(extracted.toSeq == Seq(Map("_1" -> 1, "_2" -> "a"), Map("_1" -> 2, "_2" -> "2")))
+    intercept[IllegalArgumentException]{
+      val extracted = src
+        .extract{
+          '_1.typed[Int].andOptionFn{
+            v =>
+              if (v > 1) Some(v)
+              else None
+          } ~ '_2.!
+        }
+    }
   }
 
-  test("ExtractPlan can append on old values using ~+ operator") {
+  test("ExtractPlan can append to old values using ~+ operator") {
     val extracted = src
       .extract{
         '_1.typed[Int].andOptionFn{
@@ -79,14 +97,47 @@ class TestExtractPlan extends SpookyEnvSuite {
             else None
         } ~+ '_2
       }
-      .toMapRDD()
-      .collect()
 
-    assert(extracted.toSeq == Seq(Map("_1" -> 1, "_2" -> Seq("a")), Map("_1" -> 2, "_2" -> Seq("b","2"))))
+    extracted.schema.toStructType.treeString.shouldBe(
+      """
+        |root
+        | |-- _1: integer (nullable = true)
+        | |-- _2: array (nullable = true)
+        | |    |-- element: string (containsNull = true)
+      """.stripMargin
+    )
+
+    assert(extracted.toMapRDD().collect().toSeq == Seq(Map("_1" -> 1, "_2" -> Seq("a")), Map("_1" -> 2, "_2" -> Seq("b","2"))))
+
+    extracted.toDF().show(false)
+  }
+
+  test("ExtractPlan can erase old values that has a different DataType using ~+ operator") {
+    val extracted = src
+      .extract{
+        '_1.typed[Int].andOptionFn{
+          v =>
+            if (v > 1) Some(v)
+            else None
+        } ~+ '_2
+      }
+
+    extracted.schema.toStructType.treeString.shouldBe(
+      """
+        |root
+        | |-- _1: integer (nullable = true)
+        | |-- _2: array (nullable = true)
+        | |    |-- element: integer (containsNull = true)
+      """.stripMargin
+    )
+
+    assert(extracted.toMapRDD().collect().toSeq == Seq(Map("_1" -> 1, "_2" -> Seq()), Map("_1" -> 2, "_2" -> Seq(2))))
+
+    extracted.toDF().show(false)
   }
 
   test("In ExtractPlan, weak values are cleaned in case of a conflict") {
-    val set = src
+    val extracted = src
       .extract{
         '_2 ~ '_3.*
       }
@@ -100,11 +151,20 @@ class TestExtractPlan extends SpookyEnvSuite {
       .extract(
         '_3 ~ '_3 //force output
       )
-    val extracted = set
-      .toMapRDD()
-      .collect()
 
-    assert(extracted.toSeq == Seq(Map("_1" -> 1, "_2" -> "a"), Map("_1" -> 2, "_2" -> "b", "_3" -> "2")))
+    extracted.schema.toStructType.treeString.shouldBe(
+      """
+        |root
+        | |-- _1: integer (nullable = true)
+        | |-- _2: string (nullable = true)
+        | |-- _3: string (nullable = true)
+        | |-- _3: string (nullable = true)
+      """.stripMargin
+    )
+
+    assert(extracted.toMapRDD().collect().toSeq == Seq(Map("_1" -> 1, "_2" -> "a"), Map("_1" -> 2, "_2" -> "b", "_3" -> "2")))
+
+    extracted.toDF().show(false)
   }
 
   test("In ExtractPlan, weak values are not cleaned if being overwritten using ~! operator") {
@@ -122,9 +182,19 @@ class TestExtractPlan extends SpookyEnvSuite {
       .extract(
         '_3 ~ '_3
       )
-      .toMapRDD()
-      .collect()
 
-    assert(extracted.toSeq == Seq(Map("_1" -> 1, "_2" -> "a", "_3" -> "a"), Map("_1" -> 2, "_2" -> "b", "_3" -> "2")))
+    extracted.schema.toStructType.treeString.shouldBe(
+      """
+        |root
+        | |-- _1: integer (nullable = true)
+        | |-- _2: string (nullable = true)
+        | |-- _3: string (nullable = true)
+        | |-- _3: string (nullable = true)
+      """.stripMargin
+    )
+
+    assert(extracted.toMapRDD().collect().toSeq == Seq(Map("_1" -> 1, "_2" -> "a", "_3" -> "a"), Map("_1" -> 2, "_2" -> "b", "_3" -> "2")))
+
+    extracted.toDF().show(false)
   }
 }

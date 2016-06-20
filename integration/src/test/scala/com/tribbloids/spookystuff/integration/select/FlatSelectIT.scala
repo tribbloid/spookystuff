@@ -29,12 +29,14 @@ class FlatSelectIT extends IntegrationSuite {
     val result = raw
       .toDF(sort = true)
 
-    assert(
-      result.schema.fieldNames ===
-        "_c1" ::
-          "_c2" ::
-          "_c3" ::
-          "_c4" :: Nil
+    result.schema.treeString.shouldBe(
+      """
+        |root
+        | |-- _c1: string (nullable = true)
+        | |-- _c2: string (nullable = true)
+        | |-- _c3: string (nullable = true)
+        | |-- _c4: string (nullable = true)
+      """.stripMargin
     )
 
     val rows = result.collect()

@@ -7,7 +7,7 @@ import com.tribbloids.spookystuff.extractors._
 import com.tribbloids.spookystuff.row.{SquashedFetchedRow, _}
 import org.apache.spark.Partitioner
 import org.apache.spark.rdd.RDD
-import org.apache.spark.sql.types.IntegerType
+import org.apache.spark.sql.types.{ArrayType, IntegerType}
 
 import scala.util.Random
 
@@ -71,9 +71,9 @@ case class ExplorePlan(
 
   val depth_0: Resolved[Int] = resolver.resolve(Literal(0) withAlias _params.depthField).head
   val depth_++ : Resolved[Int] = resolver.resolve(
-    GetExpr(_params.depthField).typed[Int].andThen(_ + 1) withAlias _params.depthField.!
+    GetExpr(_params.depthField).typed[Int].andThen(_ + 1) withAlias _params.depthField.!!
   ).head
-  val _ordinal: TypedField = resolver.resolveTyped(TypedField(_params.ordinalField, IntegerType)).head
+  val _ordinal: TypedField = resolver.resolveTyped(TypedField(_params.ordinalField, ArrayType(IntegerType))).head
   val _extracts: Seq[Resolved[Any]] = resolver.resolve(_params.extracts: _*)
 
   override val schema: SchemaContext = resolver.build

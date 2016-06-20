@@ -45,17 +45,22 @@ class JoinAndExplorePagesIT extends IntegrationSuite {
       .toDF(sort = true)
       .persist()
 
-    assert(
-      result.schema.fieldNames ===
-        "i1" ::
-          "category" ::
-          "i2" ::
-          "subcategory" ::
-          "header" ::
-          "depth" ::
-          "i3" ::
-          "page" ::
-          "uri" :: Nil
+    result.schema.treeString.shouldBe(
+"""
+  |root
+  | |-- i1: array (nullable = true)
+  | |    |-- element: integer (containsNull = true)
+  | |-- category: string (nullable = true)
+  | |-- i2: array (nullable = true)
+  | |    |-- element: integer (containsNull = true)
+  | |-- subcategory: string (nullable = true)
+  | |-- header: string (nullable = true)
+  | |-- depth: integer (nullable = true)
+  | |-- i3: array (nullable = true)
+  | |    |-- element: integer (containsNull = true)
+  | |-- page: string (nullable = true)
+  | |-- uri: string (nullable = true)
+""".stripMargin
     )
 
     val formatted = result.toJSON.collect().toSeq

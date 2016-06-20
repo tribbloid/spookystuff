@@ -34,15 +34,19 @@ class ChainedFlatSelectIT extends IntegrationSuite {
       )
       .toDF(sort = true)
 
-    assert(
-      result.schema.fieldNames ===
-        "i1" ::
-          "p_class" ::
-          "i2" ::
-          "h4_class" ::
-          "notexist_key" ::
-          "notexist_class" ::
-          Nil
+    result.schema.treeString.shouldBe(
+      """
+        |root
+        | |-- i1: array (nullable = true)
+        | |    |-- element: integer (containsNull = true)
+        | |-- p_class: string (nullable = true)
+        | |-- i2: array (nullable = true)
+        | |    |-- element: integer (containsNull = true)
+        | |-- h4_class: string (nullable = true)
+        | |-- notexist_key: array (nullable = true)
+        | |    |-- element: integer (containsNull = true)
+        | |-- notexist_class: string (nullable = true)
+      """.stripMargin
     )
 
     val formatted = result.toJSON.collect().toSeq

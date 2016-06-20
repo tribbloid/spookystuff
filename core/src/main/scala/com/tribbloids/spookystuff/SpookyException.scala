@@ -1,13 +1,13 @@
 package com.tribbloids.spookystuff
 
 /**
- * Created by peng on 9/11/14.
- * doesn't have to catch it every time
- */
+  * Created by peng on 9/11/14.
+  * doesn't have to catch it every time
+  */
 class SpookyException (
                         val message: String = "",
                         val cause: Throwable = null
-                        )
+                      )
   extends RuntimeException(message, cause) {
 
   override def getMessage: String = if (cause == null) this.message
@@ -17,7 +17,7 @@ class SpookyException (
 class ActionException(
                        override val message: String = "",
                        override val cause: Throwable = null
-                       ) extends SpookyException(message, cause) {
+                     ) extends SpookyException(message, cause) {
 
 }
 
@@ -25,39 +25,40 @@ class ActionException(
 class TryException(
                     override val message: String = "",
                     override val cause: Throwable = null
-                    ) extends ActionException(message, cause)
+                  ) extends ActionException(message, cause)
 
 class RemoteDisabledException(
                                override val message: String = "",
                                override val cause: Throwable = null
-                               ) extends SpookyException(message, cause) {
+                             ) extends SpookyException(message, cause) {
 
 }
 
 class DFSReadException(
                         override val message: String = "",
                         override val cause: Throwable = null
-                        ) extends SpookyException(message, cause)
+                      ) extends SpookyException(message, cause)
 
 class DFSWriteException(
                          override val message: String = "",
                          override val cause: Throwable = null
-                         ) extends SpookyException(message, cause)
+                       ) extends SpookyException(message, cause)
 
+//TODO: cause confusion! replace with IllegalArgumentException
 class QueryException(
                       override val message: String = "",
                       override val cause: Throwable = null
-                      ) extends SpookyException(message, cause)
+                    ) extends SpookyException(message, cause)
 
 class PipelineException(
-                      override val message: String = "",
-                      override val cause: Throwable = null
-                      ) extends SpookyException(message, cause)
+                         override val message: String = "",
+                         override val cause: Throwable = null
+                       ) extends SpookyException(message, cause)
 
 class BrowserDeploymentException(
                                   override val message: String = "",
                                   override val cause: Throwable = null
-                                  ) extends SpookyException(message, cause)
+                                ) extends SpookyException(message, cause)
 
 //class UnsupportedContentTypeException(
 //                                        override val message: String = "",

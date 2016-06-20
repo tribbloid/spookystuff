@@ -32,9 +32,14 @@ case class SchemaContext(
 
   override def asNullable = this
 
-  def toStructType(filter: Field => Boolean = _.isSelected): StructType = {
+  def filterFields(filter: Field => Boolean = _.isSelected): SchemaContext = {
+    this.copy(
+      map = ListMap(map.filterKeys(filter).toSeq: _*)
+    )
+  }
+
+  def toStructType: StructType = {
     val structFields = map
-      .filterKeys(filter)
       .toSeq
       .map {
         tuple =>
@@ -81,7 +86,9 @@ case class SchemaContext(
     def resolveTyped(typed: TypedField*) = {
       typed.map{
         t =>
-          val result = TypedField(resolveField(t.self), t.dataType)
+          val resolvedField = resolveField(t.self)
+          verifyFieldConsistency(resolvedField, t.dataType)
+          val result = TypedField(resolvedField, t.dataType)
           buffer += result.self -> result.dataType
           result
       }
@@ -106,6 +113,8 @@ case class SchemaContext(
       val resolved = alias.resolve(SchemaContext.this)
       val dataType = alias.applyType(SchemaContext.this)
 
+      verifyFieldConsistency(alias.field, dataType)
+
       buffer += alias.field -> dataType
       Resolved(
         resolved,
@@ -118,6 +127,18 @@ case class SchemaContext(
       exs.map {
         ex =>
           this._resolve(ex)
+      }
+    }
+  }
+
+  def verifyFieldConsistency(resolvedField: Field, t: DataType): Unit = {
+    if (resolvedField.conflictResolving == Field.Overwrite) {
+      SchemaContext.this.map.get(resolvedField).foreach {
+        existingType =>
+          require(
+            t == existingType,
+            s"partially overwriting field ${resolvedField.name} with different data type (old: $existingType, new: $t), set conflictResolving=Replace to fix it"
+          )
       }
     }
   }

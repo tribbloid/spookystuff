@@ -28,12 +28,15 @@ class ExploreNextPageIT extends IntegrationSuite {
       )
       .toDF(sort = true)
 
-    assert(
-      result.schema.fieldNames ===
-        "page" ::
-          "index" ::
-          "button_text" ::
-          "uri" :: Nil
+    result.schema.treeString.shouldBe(
+      """
+        |root
+        | |-- page: integer (nullable = true)
+        | |-- index: array (nullable = true)
+        | |    |-- element: integer (containsNull = true)
+        | |-- button_text: string (nullable = true)
+        | |-- uri: string (nullable = true)
+      """.stripMargin
     )
 
     val formatted = result.toJSON.collect().toSeq

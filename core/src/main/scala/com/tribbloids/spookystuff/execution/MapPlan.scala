@@ -2,7 +2,7 @@ package com.tribbloids.spookystuff.execution
 
 import com.tribbloids.spookystuff.extractors.{Extractor, GetExpr, Resolved}
 import com.tribbloids.spookystuff.row._
-import org.apache.spark.sql.types.IntegerType
+import org.apache.spark.sql.types.{ArrayType, DataType, IntegerType}
 
 trait MapPlan extends UnaryPlan {
 
@@ -22,14 +22,14 @@ trait MapPlan extends UnaryPlan {
   *
   * @return new PageRowRDD
   */
-case class ExtractPlan(
-                        override val child: ExecutionPlan,
-                        exs: Seq[Extractor[Any]]
-                      ) extends UnaryPlan(child) with MapPlan {
+case class ExtractPlan[+T](
+                            override val child: ExecutionPlan,
+                            exs: Seq[Extractor[T]]
+                          ) extends UnaryPlan(child) with MapPlan {
 
   val resolver = child.schema.newResolver
 
-  val _exs: Seq[Resolved[Any]] = resolver.resolve(exs: _*)
+  val _exs: Seq[Resolved[Any]] = resolver.resolve[T](exs: _*)
 
   override val schema = resolver.build
 
@@ -46,9 +46,12 @@ case class FlattenPlan(
 
   val resolver = child.schema.newResolver
 
-  val _on = {
-    val flattenType = GetExpr(onField).applyType(child.schema)
-    val tf = TypedField(onField.!, flattenType)
+  val _on: TypedField = {
+    val flattenType = GetExpr(onField).applyType(child.schema) match {
+      case ArrayType(boxed, _) => boxed
+      case v: DataType => v
+    }
+    val tf = TypedField(onField.!!, flattenType)
 
     resolver.resolveTyped(tf).head
   }
@@ -60,7 +63,7 @@ case class FlattenPlan(
       Field(_on.self.name + "_ordinal", isWeak = true, isOrdinal = true)
   }
 
-  val _ordinal: TypedField = resolver.resolveTyped(TypedField(effectiveOrdinalField, IntegerType)).head
+  val _ordinal: TypedField = resolver.resolveTyped(TypedField(effectiveOrdinalField, ArrayType(IntegerType))).head
 
   override val schema = resolver.build
 

@@ -17,9 +17,9 @@ object SquashedFetchedRow {
   )
 
   def withDocs(
-             dataRows: Array[DataRow] = Array(DataRow()),
-             docs: Seq[Fetched] = null
-           ): SquashedFetchedRow = SquashedFetchedRow(
+                dataRows: Array[DataRow] = Array(DataRow()),
+                docs: Seq[Fetched] = null
+              ): SquashedFetchedRow = SquashedFetchedRow(
     dataRows = dataRows,
     lazyDocs = LazyDocs(docs = docs)
   )
@@ -53,7 +53,9 @@ case class SquashedFetchedRow(
                    sampler: Sampler[Any]
                  ): SquashedFetchedRow = {
 
-    this.copy(dataRows = this.dataRows.flatMap(_.flatten(field, ordinalKey, left, sampler)))
+    this.copy(
+      dataRows = this.dataRows.flatMap(_.flatten(field, ordinalKey, left, sampler))
+    )
   }
 
   def remove(fields: Field*) = this.copy(
@@ -101,20 +103,19 @@ case class SquashedFetchedRow(
     // cartisian product
     def unsquash: Array[FetchedRow] = semiUnsquash.flatten
 
-    /*
- * yield 1 SquashedPageRow, however the size of dataRows may increase according to the following rules:
- * each dataRow yield >= 1 dataRows.
- * each dataRow yield <= {groupedFetched.size} dataRows.
- * if a groupedFetched doesn't yield any new data it is omitted
- * if 2 groupedFetched yield identical results only the first is preserved?
- */
+    /**
+      * yield 1 SquashedPageRow, but the size of dataRows may increase according to the following rules:
+      * each dataRow yield >= 1 dataRows.
+      * each dataRow yield <= {groupedFetched.size} dataRows.
+      * if a groupedFetched doesn't yield any new data it is omitted
+      * if 2 groupedFetched yield identical results only the first is preserved? TODO: need more test on this one
+      * handling of previous values with identical field id is determined by new Field.conflictResolving.
+      */
     //TODO: special optimization for Expression that only use pages
-    //TODO: test redundant unchanged row elimination mechanism
     private def _extract(
                           exs: Seq[Resolved[Any]],
                           filterEmpty: Boolean = true,
                           distinct: Boolean = true
-                          //set to true to ensure that repeated use of an alias (e.g. A for defaultJoinKey) always evict existing values to avoid data corruption
                         ): SquashedFetchedRow = {
 
       val allUpdatedDataRows: Array[DataRow] = semiUnsquash.flatMap {
@@ -128,7 +129,7 @@ case class SquashedFetchedRow(
                   val k = expr.field
                   val vOpt = expr.lift.apply(pageRow)
                   resolving match {
-                    case Field.Remove => Some(k -> vOpt)
+                    case Field.Replace => Some(k -> vOpt)
                     case _ => vOpt.map(v => k -> Some(v))
                   }
               }

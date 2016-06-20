@@ -1,7 +1,5 @@
 package com.tribbloids.spookystuff.integration.select
 
-import java.text.SimpleDateFormat
-
 import com.tribbloids.spookystuff.QueryException
 import com.tribbloids.spookystuff.actions._
 import com.tribbloids.spookystuff.dsl._
@@ -29,13 +27,17 @@ class SelectIT extends IntegrationSuite {
     val df = set
       .toDF(sort = true)
 
-    assert(
-      df.schema.fieldNames ===
-        "_c1" ::
-          "_c2" ::
-          "title" ::
-          "langs" ::
-          "expanded" :: Nil
+    df.schema.treeString.shouldBe(
+      """
+        |root
+        | |-- _c1: string (nullable = true)
+        | |-- _c2: timestamp (nullable = true)
+        | |-- title: string (nullable = true)
+        | |-- langs: array (nullable = true)
+        | |    |-- element: string (containsNull = true)
+        | |-- expanded: array (nullable = true)
+        | |    |-- element: string (containsNull = true)
+      """.stripMargin
     )
 
     val rows = df.collect()
@@ -43,7 +45,7 @@ class SelectIT extends IntegrationSuite {
     assert(rows.length === 1)
     assert(rows.head.size === 5)
     assert(rows.head.getString(0) contains "spookystuff/test/Wikipedia.html")
-    val parsedTime = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'").parse(rows.head.getString(1)).getTime
+    val parsedTime = rows.head.getTimestamp(1).getTime
     assert(parsedTime < finishTime +2000) //due to round-off error
     assert(parsedTime > finishTime-60000) //long enough even after the second time it is retrieved from the cache
     val title = rows.head.getString(2)
@@ -69,14 +71,8 @@ class SelectIT extends IntegrationSuite {
     val df2 = rdd2
       .toDF(sort = true)
 
-    assert(
-      df2.schema.fieldNames ===
-        "_c1" ::
-          "_c2" ::
-          "title" ::
-          "langs" ::
-          "expanded" ::
-          Nil
+    df2.schema.treeString.shouldBe(
+
     )
 
     val rows2 = df2.collect()

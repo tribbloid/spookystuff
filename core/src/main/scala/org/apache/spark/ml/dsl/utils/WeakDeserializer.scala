@@ -19,7 +19,7 @@ object StringToNumberDeserializer extends WeakDeserializer[Any] {
   override def deserialize(implicit format: Formats): PartialFunction[(TypeInfo, JValue), Any] = Function.unlift{
 
     case (TypeInfo(cc, _), JString(v)) =>
-      val unboxed = cc match {
+      val parsed = cc match {
         case java.lang.Byte.TYPE => v.toByte
         case java.lang.Short.TYPE => v.toShort
         case java.lang.Character.TYPE => v.toInt.toChar
@@ -31,7 +31,7 @@ object StringToNumberDeserializer extends WeakDeserializer[Any] {
         case _ => null
         //TODO: add boxed type
       }
-      Option(unboxed)
+      Option(parsed)
     case _ => None
   }
 }

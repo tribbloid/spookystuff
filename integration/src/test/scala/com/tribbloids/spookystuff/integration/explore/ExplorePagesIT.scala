@@ -12,7 +12,7 @@ class ExplorePagesIT extends IntegrationSuite {
 
   override def doMain(): Unit = {
 
-//    spooky.conf.defaultPartitionerFactory = {v => new HashPartitioner(1)}
+    //    spooky.conf.defaultPartitionerFactory = {v => new HashPartitioner(1)}
 
     val result = spooky
       .fetch(
@@ -27,12 +27,15 @@ class ExplorePagesIT extends IntegrationSuite {
       )
       .toDF(sort = true)
 
-    assert(
-      result.schema.fieldNames ===
-        "depth" ::
-          "index" ::
-          "page" ::
-          "uri" :: Nil
+    result.schema.treeString.shouldBe(
+      """
+        |root
+        | |-- depth: integer (nullable = true)
+        | |-- index: array (nullable = true)
+        | |    |-- element: integer (containsNull = true)
+        | |-- page: string (nullable = true)
+        | |-- uri: string (nullable = true)
+      """.stripMargin
     )
 
     val formatted = result.toJSON.collect().toSeq

@@ -18,7 +18,7 @@ object Field {
   case object Error extends ConflictResolving
 
   // Always evict old value
-  case object Remove extends ConflictResolving
+  case object Replace extends ConflictResolving
 
   // Only evict old value if the new value is not NULL.
   case object Overwrite extends ConflictResolving
@@ -51,6 +51,7 @@ case class Field(
   lazy val _id = (name, isWeak, isInvisible, isReserved)
 
   def ! = this.copy(conflictResolving = Field.Overwrite)
+  def !! = this.copy(conflictResolving = Field.Replace)
   def * = this.copy(isWeak = true)
   def `#` = this.copy(isOrdinal = true)
 
@@ -64,9 +65,15 @@ case class Field(
 
     assert(this == existing)
 
-    val effectiveCR = if (this.conflictResolving == Field.Overwrite) Field.Overwrite
-    else if (existing.isWeak) Field.Remove
-    else throw new QueryException(s"Field '${existing.name}' already exist") //fail early
+    val effectiveCR = this.conflictResolving match {
+      case Field.Overwrite =>
+        Field.Overwrite
+      case Field.Replace =>
+        Field.Replace
+      case _ =>
+        if (existing.isWeak) Field.Replace
+        else throw new QueryException(s"Field '${existing.name}' already exist") //fail early
+    }
 
     effectiveCR
   }

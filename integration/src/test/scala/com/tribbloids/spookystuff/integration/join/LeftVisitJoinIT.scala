@@ -6,8 +6,8 @@ import com.tribbloids.spookystuff.extractors._
 import com.tribbloids.spookystuff.integration.IntegrationSuite
 
 /**
- * Created by peng on 12/5/14.
- */
+  * Created by peng on 12/5/14.
+  */
 class LeftVisitJoinIT extends IntegrationSuite {
 
   override lazy val drivers = Seq(
@@ -44,16 +44,20 @@ class LeftVisitJoinIT extends IntegrationSuite {
     val df = joined
       .toDF(sort = true)
 
-    assert(
-      df.schema.fieldNames ===
-        "i1" ::
-          "category" ::
-          "i2" ::
-          "subcategory" ::
-          "header" ::
-          "notexist_key" ::
-          "notexist_class" ::
-          Nil
+    df.schema.treeString.shouldBe(
+      """
+        |root
+        | |-- i1: array (nullable = true)
+        | |    |-- element: integer (containsNull = true)
+        | |-- category: string (nullable = true)
+        | |-- i2: array (nullable = true)
+        | |    |-- element: integer (containsNull = true)
+        | |-- subcategory: string (nullable = true)
+        | |-- header: string (nullable = true)
+        | |-- notexist_key: array (nullable = true)
+        | |    |-- element: integer (containsNull = true)
+        | |-- notexist_class: string (nullable = true)
+      """.stripMargin
     )
 
     val formatted = df.toJSON.collect().toSeq
@@ -69,7 +73,7 @@ class LeftVisitJoinIT extends IntegrationSuite {
   }
 
   override def numPages= spooky.conf.defaultFetchOptimizer match {
-//    case FetchOptimizers.WebCacheAware => 6
+    //    case FetchOptimizers.WebCacheAware => 6
     case _ => 6
   }
 }
