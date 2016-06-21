@@ -71,9 +71,15 @@ case class NoDoc(
 
 case class DocError(
                      delegate: Doc,
-                     override val message: String = "",
+                     header: String = "",
                      override val cause: Throwable = null
-                   ) extends ActionException with Fetched {
+                   ) extends ActionException(
+  header + delegate.formattedCode.map(
+    "\n" + _
+  )
+    .getOrElse(""),
+  cause
+) with Fetched {
 
   override def timeMillis: Long = delegate.timeMillis
 
@@ -86,9 +92,9 @@ case class DocError(
 
 class DocFilterError(
                       delegate: Doc,
-                      override val message: String = "",
+                      override val header: String = "",
                       override val cause: Throwable = null
-                    ) extends DocError(delegate, message, cause)
+                    ) extends DocError(delegate, header, cause)
 
 object Doc {
 

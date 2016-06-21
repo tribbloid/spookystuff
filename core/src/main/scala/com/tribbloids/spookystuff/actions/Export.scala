@@ -46,21 +46,16 @@ trait Export extends Named with Wayback{
   protected final def doExe(session: Session): Seq[Fetched] = {
     val results = doExeNoName(session)
     results.map{
-      case page: Doc =>
+      case doc: Doc =>
         try {
-          filter.apply(page, session)
+          filter.apply(doc, session)
         }
         catch {
           case e: Throwable =>
-            var message = "\n\n+>" + this.toString
-            message += "\n" +e.getMessage
-            val errorDump = session.spooky.conf.errorDump
+            val message = getSessionExceptionString(session, Some(doc))
+            val wrapped = new DocFilterError(doc, message, e)
 
-            if (errorDump) {
-              message += "\nSnapshot: " +this.errorDump(message, page, session.spooky)
-            }
-
-            throw new DocFilterError(page, message, e)
+            throw wrapped
         }
       case other: Fetched =>
         other

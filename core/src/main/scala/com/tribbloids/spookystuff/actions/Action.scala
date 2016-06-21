@@ -16,13 +16,13 @@ import scala.concurrent.duration.Duration
 class ActionUDT extends AnyUDT[Action]
 
 /**
- * These are the same actions a human would do to get to the data page,
- * their order of execution is identical to that they are defined.
- * Many supports **Cell Interpolation**: you can embed cell reference in their constructor
- * by inserting keys enclosed by `'{}`, in execution they will be replaced with values they map to.
- * This is used almost exclusively in typing into an url bar or textbox, but it's flexible enough to be used anywhere.
- * extends Product to make sure all subclasses are case classes
- */
+  * These are the same actions a human would do to get to the data page,
+  * their order of execution is identical to that they are defined.
+  * Many supports **Cell Interpolation**: you can embed cell reference in their constructor
+  * by inserting keys enclosed by `'{}`, in execution they will be replaced with values they map to.
+  * This is used almost exclusively in typing into an url bar or textbox, but it's flexible enough to be used anywhere.
+  * extends Product to make sure all subclasses are case classes
+  */
 //TODO: merging with Selector[Seq[Fetched]]?
 @SQLUserDefinedType(udt = classOf[ActionUDT])
 trait Action extends ActionLike {
@@ -42,7 +42,7 @@ trait Action extends ActionLike {
     catch {
       case e: Throwable =>
 
-        val message: String = handleSessionException(session)
+        val message: String = getSessionExceptionString(session)
 
         val ex = e match {
           case ae: ActionException => ae
@@ -57,7 +57,11 @@ trait Action extends ActionLike {
     results
   }
 
-  protected def handleSessionException(session: Session): String = {
+  //execute errorDumps as side effects
+  protected def getSessionExceptionString(
+                                           session: Session,
+                                           docOpt: Option[Doc] = None
+                                         ): String = {
     var message: String = "\n{"
 
     message += session.backtrace.map {
@@ -65,10 +69,12 @@ trait Action extends ActionLike {
         "| " + action.toString
     }.mkString("\n")
 
-    message += "\n+>" + this.toString
+    message += "\n+> " + this.toString
 
     val errorDump: Boolean = session.spooky.conf.errorDump
     val errorDumpScreenshot: Boolean = session.spooky.conf.errorScreenshot
+
+    message += "}"
 
     session match {
       case d: DriverSession =>
@@ -81,8 +87,14 @@ trait Action extends ActionLike {
           message += "\nScreenshot: " + this.errorDump(message, rawPage, session.spooky)
         }
       case d: NoDriverSession =>
+        docOpt.foreach{
+          doc =>
+            if (errorDump) {
+              message += "\nSnapshot: " + this.errorDump(message, doc, session.spooky)
+            }
+        }
     }
-    message+"\n}"
+    message
   }
 
   protected def errorDump(message: String, rawPage: Doc, spooky: SpookyContext): String = {

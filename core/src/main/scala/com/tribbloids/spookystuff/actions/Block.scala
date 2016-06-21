@@ -109,7 +109,7 @@ final case class Try(
           throw new TryException(
             s"Retrying cluster-wise on ${e.getClass.getSimpleName}... $timesLeft time(s) left\n" +
               "(if Spark job failed because of this, please increase your spark.task.maxFailures)" +
-              this.handleSessionException(session),
+              this.getSessionExceptionString(session),
             e
           )
         }

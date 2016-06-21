@@ -20,4 +20,3 @@ object FlowUtils {
       yield xh :: xt
   }
 }
-

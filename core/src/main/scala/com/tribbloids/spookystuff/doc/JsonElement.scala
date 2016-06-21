@@ -1,15 +1,18 @@
 package com.tribbloids.spookystuff.doc
 
 import org.json4s.jackson.JsonMethods
-import org.json4s.{JValue, JArray, JField}
+import org.json4s.{JArray, JField, JValue}
 
-/**
- * Created by peng on 11/30/14.
- */
+import org.json4s._
+
 object JsonElement {
 
   def apply(jsonStr: String, tag: String, uri: String): Unstructured = {
-    val parsed: JValue = JsonMethods.parse(jsonStr)
+    val parsed: JValue = if (jsonStr.trim.isEmpty)
+      JNull
+    else {
+      JsonMethods.parse(jsonStr)
+    }
     parsed match {
       case array: JArray =>
         val res = array.arr.map {
@@ -29,8 +32,6 @@ class JsonElement private (
                             val field: JField,
                             override val uri: String
                             ) extends Unstructured {
-
-  import org.json4s._
 
   override def equals(obj: Any): Boolean = obj match {
     case other: JsonElement =>
