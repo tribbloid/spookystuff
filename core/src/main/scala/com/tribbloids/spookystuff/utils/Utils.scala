@@ -20,6 +20,8 @@ object Utils {
   import ImplicitUtils._
   import ScalaReflection.universe._
 
+  def numCores = Runtime.getRuntime.availableProcessors()
+
   val xmlPrinter = new PrettyPrinter(Int.MaxValue, 2)
   //  val logger = LoggerFactory.getLogger(this.getClass)
 

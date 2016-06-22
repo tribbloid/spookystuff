@@ -4,6 +4,7 @@ import java.util
 import java.util.Collections
 
 import com.google.common.collect.MapMaker
+import com.tribbloids.spookystuff.utils.Utils
 
 import scala.collection.mutable
 
@@ -15,14 +16,23 @@ package object caching {
   import scala.collection.JavaConverters._
 
   // not concurrent, discarded
-//  type MapCache[K, V] = mutable.WeakHashMap[K, V]
-//  def MapCache[K, V]() = new mutable.WeakHashMap[K, V]()
+  //  type MapCache[K, V] = mutable.WeakHashMap[K, V]
+  //  def MapCache[K, V]() = new mutable.WeakHashMap[K, V]()
 
   type ConcurrentCache[K, V] = scala.collection.concurrent.Map[K, V]
+
+  /**
+    * <p><b>Warning:</b> DO NOT use .weakKeys()!. Otherwise, the resulting map will use identity ({@code ==})
+    * comparison to determine equality of keys, which is a technical violation of the {@link Map}
+    * specification, and may not be what you expect.
+    *
+    * @throws IllegalStateException if the key strength was already set
+    * @see WeakReference
+    */
   def ConcurrentCache[K, V](): scala.collection.concurrent.Map[K, V] = {
     new MapMaker()
-      .concurrencyLevel(4)
-      .weakKeys()
+      .concurrencyLevel(Utils.numCores)
+      .softValues()
       .makeMap[K, V]()
       .asScala
   }
