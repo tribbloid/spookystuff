@@ -1,10 +1,13 @@
 package com.tribbloids.spookystuff.actions
 
-import com.tribbloids.spookystuff.doc.Fetched
+import com.tribbloids.spookystuff.{Const, RemoteDisabledException, SpookyContext}
+import com.tribbloids.spookystuff.doc.{Doc, DocUtils, Fetched}
 import com.tribbloids.spookystuff.execution.SchemaContext
 import com.tribbloids.spookystuff.row.FetchedRow
-import com.tribbloids.spookystuff.session.Session
+import com.tribbloids.spookystuff.session.{DriverSession, NoDriverSession, Session}
+import com.tribbloids.spookystuff.utils.Utils
 import org.apache.spark.sql.catalyst.trees.TreeNode
+import org.slf4j.LoggerFactory
 
 abstract class ActionLike extends TreeNode[ActionLike] with Product with Serializable {
 
@@ -33,6 +36,71 @@ abstract class ActionLike extends TreeNode[ActionLike] with Product with Seriali
   def trunk: Option[this.type]
 
   def apply(session: Session): Seq[Fetched]
+
+  def needDriver: Boolean = true
+
+  def fetch(spooky: SpookyContext): Seq[Fetched] = {
+
+    val results = Utils.retry (Const.remoteResourceLocalRetries){
+      fetchOnce(spooky)
+    }
+    val numPages = results.count(_.isInstanceOf[Doc])
+    spooky.metrics.pagesFetched += numPages
+
+    results
+  }
+
+  def dryrun: DryRun
+
+  def fetchOnce(spooky: SpookyContext): Seq[Fetched] = {
+
+    if (!this.hasOutput) return Nil
+
+    val pagesFromCache = if (!spooky.conf.cacheRead) Seq(null)
+    else dryrun.map(
+      dry =>
+        DocUtils.autoRestore(dry, spooky)
+    )
+
+    if (!pagesFromCache.contains(null)){
+
+      spooky.metrics.fetchFromCacheSuccess += 1
+
+      val results = pagesFromCache.flatten
+      spooky.metrics.pagesFetchedFromCache += results.count(_.isInstanceOf[Doc])
+      this.children.foreach{
+        action =>
+          LoggerFactory.getLogger(this.getClass).info(s"(cached)+> ${action.toString}")
+      }
+
+      results
+    }
+    else {
+
+      spooky.metrics.fetchFromCacheFailure += 1
+
+      if (!spooky.conf.remote) throw new RemoteDisabledException(
+        "Resource is not cached and not enabled to be fetched remotely, " +
+          "the later can be enabled by setting SpookyContext.conf.remote=true"
+      )
+
+      val session = if (!this.needDriver) new NoDriverSession(spooky)
+      else new DriverSession(spooky)
+      try {
+        val result = this.apply(session)
+        spooky.metrics.fetchFromRemoteSuccess += 1
+        result
+      }
+      catch {
+        case e: Throwable =>
+          spooky.metrics.fetchFromRemoteFailure += 1
+          throw e
+      }
+      finally {
+        session.close()
+      }
+    }
+  }
 }
 
 //object ActionLikeRelay extends SimpleStructRelay[ActionLike] {

@@ -10,7 +10,7 @@ import com.tribbloids.spookystuff.row.{DataRow, RowReducer}
   */
 object ExploreSharedVisitedCache {
 
-  val committedRows: MapCache[(Trace, Long), Iterable[DataRow]] = MapCache()
+  val committedRows: ConcurrentCache[(Trace, Long), Iterable[DataRow]] = ConcurrentCache()
 
   private val _onGoings: ConcurrentMap[Long, ConcurrentSet[ExploreShard]] = ConcurrentMap() //jobID -> running ExploreStateView
   def onGoings = _onGoings

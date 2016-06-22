@@ -1,12 +1,10 @@
 package com.tribbloids.spookystuff.actions
 
-import org.slf4j.LoggerFactory
-import com.tribbloids.spookystuff.row.FetchedRow
 import com.tribbloids.spookystuff.doc.{Doc, DocUtils, Fetched}
+import com.tribbloids.spookystuff.dsl
 import com.tribbloids.spookystuff.execution.SchemaContext
-import com.tribbloids.spookystuff.session.{DriverSession, NoDriverSession, Session}
-import com.tribbloids.spookystuff.utils.Utils
-import com.tribbloids.spookystuff.{Const, RemoteDisabledException, SpookyContext, dsl}
+import com.tribbloids.spookystuff.row.FetchedRow
+import com.tribbloids.spookystuff.session.Session
 
 import scala.collection.mutable.ArrayBuffer
 import scala.reflect.ClassTag
@@ -56,11 +54,11 @@ case class TraceView(
     val result: ArrayBuffer[Trace] = ArrayBuffer()
 
     for (i <- children.indices) {
-      val selfi = children(i)
-      if (selfi.hasOutput){
-        val backtrace: Trace = selfi match {
-          case dl: Driverless => selfi :: Nil
-          case _ => children.slice(0, i).flatMap(_.trunk) :+ selfi
+      val child = children(i)
+      if (child.hasOutput){
+        val backtrace: Trace = child match {
+          case dl: Driverless => child :: Nil
+          case _ => children.slice(0, i).flatMap(_.trunk) :+ child
         }
         result += backtrace
       }
@@ -75,67 +73,6 @@ case class TraceView(
     if (children.isEmpty) children
     else if (children.last.hasOutput) children
     else children :+ Snapshot() //Don't use singleton, otherwise will flush timestamp and name
-  }
-
-  def fetch(spooky: SpookyContext): Seq[Fetched] = {
-
-    val results = Utils.retry (Const.remoteResourceLocalRetries){
-      fetchOnce(spooky)
-    }
-    val numPages = results.count(_.isInstanceOf[Doc])
-    spooky.metrics.pagesFetched += numPages
-
-    results
-  }
-
-  def fetchOnce(spooky: SpookyContext): Seq[Fetched] = {
-
-    if (!this.hasOutput) return Nil
-
-    val pagesFromCache = if (!spooky.conf.cacheRead) Seq(null)
-    else dryrun.map(
-      dry =>
-        DocUtils.autoRestore(dry, spooky)
-    )
-
-    if (!pagesFromCache.contains(null)){
-
-      spooky.metrics.fetchFromCacheSuccess += 1
-
-      val results = pagesFromCache.flatten
-      spooky.metrics.pagesFetchedFromCache += results.count(_.isInstanceOf[Doc])
-      this.children.foreach{
-        action =>
-          LoggerFactory.getLogger(this.getClass).info(s"(cached)+> ${action.toString}")
-      }
-
-      results
-    }
-    else {
-
-      spooky.metrics.fetchFromCacheFailure += 1
-
-      if (!spooky.conf.remote) throw new RemoteDisabledException(
-        "Resource is not cached and not enabled to be fetched remotely, " +
-          "the later can be enabled by setting SpookyContext.conf.remote=true"
-      )
-
-      val session = if (children.count(_.needDriver) == 0) new NoDriverSession(spooky)
-      else new DriverSession(spooky)
-      try {
-        val result = this.apply(session)
-        spooky.metrics.fetchFromRemoteSuccess += 1
-        result
-      }
-      catch {
-        case e: Throwable =>
-          spooky.metrics.fetchFromRemoteFailure += 1
-          throw e
-      }
-      finally {
-        session.close()
-      }
-    }
   }
 
   //the minimal equivalent action that can be put into backtrace

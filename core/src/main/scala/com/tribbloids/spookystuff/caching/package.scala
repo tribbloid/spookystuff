@@ -18,8 +18,8 @@ package object caching {
 //  type MapCache[K, V] = mutable.WeakHashMap[K, V]
 //  def MapCache[K, V]() = new mutable.WeakHashMap[K, V]()
 
-  type MapCache[K, V] = scala.collection.concurrent.Map[K, V]
-  def MapCache[K, V](): scala.collection.concurrent.Map[K, V] = {
+  type ConcurrentCache[K, V] = scala.collection.concurrent.Map[K, V]
+  def ConcurrentCache[K, V](): scala.collection.concurrent.Map[K, V] = {
     new MapMaker()
       .concurrencyLevel(4)
       .weakKeys()
@@ -28,7 +28,7 @@ package object caching {
   }
 
   type ConcurrentMap[K, V] = scala.collection.concurrent.Map[K, V]
-  def ConcurrentMap[K, V](): MapCache[K, V] = {
+  def ConcurrentMap[K, V](): ConcurrentCache[K, V] = {
     new java.util.concurrent.ConcurrentHashMap[K, V]()
       .asScala
   }

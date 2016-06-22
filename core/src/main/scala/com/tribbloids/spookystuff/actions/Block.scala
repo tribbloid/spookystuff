@@ -43,8 +43,6 @@ abstract class Block(override val children: Trace) extends Actions(children) wit
 
   def cacheEmptyOutput: Boolean = true
 
-  override def needDriver = children.map(_.needDriver).reduce(_ || _)
-
   final override def doExe(session: Session): Seq[Fetched] = {
 
     val pages = this.doExeNoUID(session)

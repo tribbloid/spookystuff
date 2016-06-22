@@ -9,7 +9,7 @@ import com.tribbloids.spookystuff.doc.Fetched
   */
 object InMemoryWebCache extends AbstractWebCache {
 
-  val internal: MapCache[Trace, Seq[Fetched]] = MapCache()
+  val internal: ConcurrentCache[Trace, Seq[Fetched]] = ConcurrentCache()
 
   def isObsolete(fetched: Fetched, spooky: SpookyContext): Boolean = {
     val earliestTime = spooky.conf.getEarliestDocCreationTime()

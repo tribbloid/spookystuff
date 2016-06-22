@@ -31,7 +31,14 @@ trait Action extends ActionLike {
 
   private var timeElapsed: Long = -1 //only set once
 
-  //  val optional: Boolean
+  override def dryrun = {
+    if (hasOutput){
+      List(List(this))
+    }
+    else {
+      List()
+    }
+  }
 
   //this should handle autoSave, cache and errorDump
   def apply(session: Session): Seq[Fetched] = {
@@ -144,8 +151,6 @@ trait Action extends ActionLike {
     super.injectFrom(same)
     this.timeElapsed = same.asInstanceOf[Action].timeElapsed
   }
-
-  def needDriver: Boolean = true
 }
 
 trait Timed extends Action {
