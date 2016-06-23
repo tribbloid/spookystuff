@@ -6,7 +6,7 @@ import java.util.Base64
  * Created by peng on 4/5/15.
  */
 //TODO: change main datum to byte array
-case class Base64StringWrapper(str: String) {
+case class Base64Wrapper(str: String) {
 
   def this(blob: Array[Byte]) {
 
@@ -22,7 +22,7 @@ case class Base64StringWrapper(str: String) {
 //
 //  override def hashCode = str.hashCode
 
-  def map(f: String => String) = new Base64StringWrapper(f(this.str))
+  def map(f: String => String) = new Base64Wrapper(f(this.str))
 
   def asBase64Str = str
 

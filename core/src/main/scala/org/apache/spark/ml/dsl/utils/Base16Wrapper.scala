@@ -7,7 +7,7 @@ import javax.xml.bind.DatatypeConverter
  */
 //TODO: need test
 //TODO: change main datum to byte array
-case class Base16StringWrapper(str: String) {
+case class Base16Wrapper(str: String) {
 
   def this(blob: Array[Byte]) {
 
@@ -23,7 +23,7 @@ case class Base16StringWrapper(str: String) {
 //
 //  override def hashCode = str.hashCode
 
-  def map(f: String => String) = new Base16StringWrapper(f(this.str))
+  def map(f: String => String) = new Base16Wrapper(f(this.str))
 
   def asBase16Str = str
 

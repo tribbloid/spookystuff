@@ -4,7 +4,7 @@ import java.nio.ByteBuffer
 
 import org.apache.spark.SparkConf
 import org.apache.spark.annotation.DeveloperApi
-import org.apache.spark.ml.dsl.utils.Base64StringWrapper
+import org.apache.spark.ml.dsl.utils.Base64Wrapper
 import org.apache.spark.ml.param.{Param, ParamPair}
 import org.apache.spark.ml.util.Identifiable
 import org.apache.spark.serializer.JavaSerializer
@@ -50,7 +50,7 @@ class JavaSerializationParam[T: ClassTag](parent: String, name: String, doc: Str
     val ser = serializer.newInstance()
     val buffer: ByteBuffer = ser.serialize(serializableValue)
 
-    val str = new Base64StringWrapper(buffer.array()).asBase64Str
+    val str = new Base64Wrapper(buffer.array()).asBase64Str
 
     compact(render(JString(str)))
   }
@@ -59,7 +59,7 @@ class JavaSerializationParam[T: ClassTag](parent: String, name: String, doc: Str
     implicit val formats = DefaultFormats
 
     val str = parse(json).extract[String]
-    val bytes = new Base64StringWrapper(str.trim).asBytes
+    val bytes = new Base64Wrapper(str.trim).asBytes
 
     val ser = serializer.newInstance()
     val de = ser.deserialize[T](
