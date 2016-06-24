@@ -290,8 +290,8 @@ abstract class HttpCommand(
         .setConnectionManager(cm)
         .setDefaultRequestConfig(requestConfig)
         .setRedirectStrategy(new ResilientRedirectStrategy())
-        .setSSLContext(sslContext)
-        .setSSLHostnameVerifier(hostVerifier)
+        .setSslcontext(sslContext) //WARNING: keep until Spark get rid of httpclient 4.3
+        .setHostnameVerifier(hostVerifier) //WARNING: keep until Spark get rid of httpclient 4.3
         .build
 
       httpClient
@@ -300,8 +300,8 @@ abstract class HttpCommand(
       val httpClient = HttpClients.custom
         .setDefaultRequestConfig(requestConfig)
         .setRedirectStrategy(new ResilientRedirectStrategy())
-        .setSSLContext(sslContext)
-        .setSSLHostnameVerifier(hostVerifier)
+        .setSslcontext(sslContext) //WARNING: keep until Spark get rid of httpclient 4.3
+        .setHostnameVerifier(hostVerifier) //WARNING: keep until Spark get rid of httpclient 4.3
         .build()
 
       httpClient

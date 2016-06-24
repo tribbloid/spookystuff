@@ -84,7 +84,7 @@ trait StructRepr[T] extends Product with Serializable {
   def xmlRoot: String = "root"
 
   def extraSer: Seq[Serializer[_]] = Nil
-  final implicit val format: Formats = Xml.defaultFormats ++ extraSer
+  final implicit def format: Formats = Xml.defaultFormats ++ extraSer
 
   def jValue: JObject = Extraction.decompose(this).asInstanceOf[JObject]
   def compactJSON = compact(render(jValue))
