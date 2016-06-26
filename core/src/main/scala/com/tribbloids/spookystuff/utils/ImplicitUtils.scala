@@ -23,8 +23,6 @@ object ImplicitUtils {
   val RDD_SCOPE_KEY = "spark.rdd.scope"
   val RDD_SCOPE_NO_OVERRIDE_KEY = "spark.rdd.scope.noOverride"
 
-//  implicit def pageRowToView(self: FetchedRow): FetchedRowView = FetchedRowView(self)
-
   implicit class SparkContextView(val self: SparkContext) {
 
     def withJob[T](description: String)(fn: T): T = {

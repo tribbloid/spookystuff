@@ -20,7 +20,11 @@ object Utils {
   import ImplicitUtils._
   import ScalaReflection.universe._
 
-  def numCores = Runtime.getRuntime.availableProcessors()
+  def numCores = {
+    val result = Runtime.getRuntime.availableProcessors()
+    assert(result > 0)
+    result
+  }
 
   val xmlPrinter = new PrettyPrinter(Int.MaxValue, 2)
   //  val logger = LoggerFactory.getLogger(this.getClass)

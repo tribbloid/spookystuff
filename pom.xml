@@ -79,6 +79,14 @@
         </profile>
 
         <profile>
+            <id>spark-2.0</id>
+            <properties>
+                <spark.version>2.0.0-preview</spark.version>
+                <spark.binary.version>2.0</spark.binary.version>
+            </properties>
+        </profile>
+
+        <profile>
             <id>release-sign-artifacts</id>
             <build>
                 <plugins>

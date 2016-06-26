@@ -47,10 +47,10 @@ object GenExtractor {
     val dataType: DataType
     final def applyType(tt: DataType) = dataType
   }
-  trait StaticValue[T, +R] extends GenExtractor[T,R] with PartialFunctionWrapper[T, R]{
+  trait StaticPartialFunction[T, +R] extends GenExtractor[T,R] with PartialFunctionWrapper[T, R]{
     final def resolve(tt: DataType) = self
   }
-  trait Static[T, +R] extends StaticType[T,R] with StaticValue[T, R] with Leaf[T, R]
+  trait Static[T, +R] extends StaticType[T,R] with StaticPartialFunction[T, R] with Leaf[T, R]
 
   trait Wrapper[T, +R] extends Unary[T, R] {
 

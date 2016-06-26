@@ -1,6 +1,6 @@
 package com.tribbloids.spookystuff.execution
 
-import com.tribbloids.spookystuff.actions.Trace
+import com.tribbloids.spookystuff.actions.{Trace, TraceView}
 import com.tribbloids.spookystuff.caching.{ConcurrentMap, ExploreSharedVisitedCache}
 import com.tribbloids.spookystuff.dsl.ExploreAlgorithms.ExploreImpl
 import com.tribbloids.spookystuff.extractors.Resolved
@@ -70,7 +70,7 @@ class ExploreShard(
     import impl._
     import params._
 
-    implicit def wSpooky(row: SquashedFetchedRow): SquashedFetchedRow#W = new row.W(schema)
+    implicit def withSchema(row: SquashedFetchedRow): SquashedFetchedRow#WithSchema = new row.WithSchema(schema)
 
     val bestOpen: (Trace, Iterable[DataRow]) = open.min(pairOrdering) //TODO: expensive! use pre-sorted collection
 
@@ -87,7 +87,7 @@ class ExploreShard(
     }
 
     if (bestOpenAfterElimination._2.nonEmpty) {
-      val bestRow_- = SquashedFetchedRow(bestOpen._2.toArray, LazyDocs(bestOpen._1.toArray))
+      val bestRow_- = SquashedFetchedRow(bestOpen._2.toArray, TraceView(bestOpen._1))
 
       val bestRow = rowFn.apply(
         bestRow_-
@@ -110,7 +110,7 @@ class ExploreShard(
       val opens_+ : Array[(Trace, DataRow)] = bestNonFringeRow
         .extract(resolved)
         .flattenData(resolved.field, ordinalField, joinType.isLeft, sampler)
-        .interpolate(traces, spooky)
+        .interpolate(traces)
       opens_+.foreach {
         open_+ =>
           val trace_+ = open_+._1

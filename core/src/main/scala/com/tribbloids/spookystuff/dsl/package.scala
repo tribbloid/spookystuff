@@ -79,7 +79,7 @@ package object dsl {
     def into(field: Field) = AppendExpr.create[R](field, self)
     def ~+(field: Field) = into(field)
 
-    def ->[R2](g: Extractor[R2]) = And_->(self, g)
+    def -->[R2](g: Extractor[R2]) = And_->(self, g)
     //    def orNull[B >: R]: Extractor[B] = orElse[FetchedRow, B] {
     //      case _ => null.asInstanceOf[B]
     //    }

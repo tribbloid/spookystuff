@@ -1,6 +1,6 @@
 package com.tribbloids.spookystuff.execution
 
-import com.tribbloids.spookystuff.actions.Trace
+import com.tribbloids.spookystuff.actions.{Trace, TraceView}
 import com.tribbloids.spookystuff.caching.ExploreSharedVisitedCache
 import com.tribbloids.spookystuff.dsl.{ExploreAlgorithm, FetchOptimizer, FetchOptimizers, JoinType}
 import com.tribbloids.spookystuff.extractors._
@@ -78,18 +78,18 @@ case class ExplorePlan(
 
   override val schema: SchemaContext = resolver.build
 
-//  {
-//    val extractFields = _extracts.map(_.field)
-//    val newFields = extractFields ++ Option(params.depthField) ++ Option(params.ordinalField)
-//    newFields.groupBy(identity).foreach{
-//      v =>
-//        if (v._2.size > 1) throw new QueryException(s"Field ${v._1.name} already exist")
-//    }
-//    child.schema ++#
-//      Option(params.depthField) ++#
-//      Option(params.ordinalField) ++
-//      _extracts.map(_.typedField)
-//  }
+  //  {
+  //    val extractFields = _extracts.map(_.field)
+  //    val newFields = extractFields ++ Option(params.depthField) ++ Option(params.ordinalField)
+  //    newFields.groupBy(identity).foreach{
+  //      v =>
+  //        if (v._2.size > 1) throw new QueryException(s"Field ${v._1.name} already exist")
+  //    }
+  //    child.schema ++#
+  //      Option(params.depthField) ++#
+  //      Option(params.ordinalField) ++
+  //      _extracts.map(_.typedField)
+  //  }
 
   val impl = exploreAlgorithm.getImpl(_params, this.schema)
 
@@ -115,7 +115,7 @@ case class ExplorePlan(
           val depth0 = rowFn.apply(row0WithDepth)
           val visited0 = if (_params.range.contains(0)) {
             //extract on selfRDD, add into visited set.
-            Some(depth0.lazyDocs.trace -> Open_Visited(visited = Some(depth0.dataRows)))
+            Some(depth0.traceView.children -> Open_Visited(visited = Some(depth0.dataRows)))
           }
           else {
             None
@@ -124,7 +124,7 @@ case class ExplorePlan(
           val open0 = depth0
             .extract(_on)
             .flattenData(_on.field, _params.ordinalField, joinType.isLeft, sampler)
-            .interpolate(traces, spooky)
+            .interpolate(traces)
             .map {
               t =>
                 t._1 -> Open_Visited(open = Some(Array(t._2)))
@@ -207,7 +207,7 @@ case class ExplorePlan(
 
           visitedOpt.map {
             visited =>
-              SquashedFetchedRow(visited, LazyDocs(actions = v._1.toArray))
+              SquashedFetchedRow(visited, TraceView(children = v._1))
           }
       }
 

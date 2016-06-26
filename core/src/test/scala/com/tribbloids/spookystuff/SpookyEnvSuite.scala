@@ -27,7 +27,7 @@ abstract class SpookyEnvSuite
   lazy val spooky = new SpookyContext(sql, spookyConf)
   lazy val schema = SchemaContext(spooky)
 
-  implicit def wSpooky(row: SquashedFetchedRow): SquashedFetchedRow#W = new row.W(schema)
+  implicit def withSchema(row: SquashedFetchedRow): SquashedFetchedRow#WithSchema = new row.WithSchema(schema)
   implicit def extractor2Resolved[T, R](extractor: Alias[T, R]): GenResolved[T, R] = GenResolved(
     extractor.resolve(schema),
     TypedField(

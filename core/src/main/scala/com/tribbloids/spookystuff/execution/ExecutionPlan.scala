@@ -38,7 +38,7 @@ abstract class ExecutionPlan(
       .getOrElse(ListMap[Field, DataType]())
   )
 
-  implicit def wSpooky(row: SquashedFetchedRow): SquashedFetchedRow#W = new row.W(schema)
+  implicit def withSchema(row: SquashedFetchedRow): SquashedFetchedRow#WithSchema = new row.WithSchema(schema)
 
   def fieldMap: ListMap[Field, DataType] = schema.map
 
@@ -84,7 +84,7 @@ abstract class ExecutionPlan(
   }
 
   def unsquashedRDD: RDD[FetchedRow] = rdd()
-    .flatMap(v => new v.W(schema).unsquash)
+    .flatMap(v => new v.WithSchema(schema).unsquash)
 
   implicit class CacheQueueView(val self: ArrayBuffer[RDD[_]]) {
 

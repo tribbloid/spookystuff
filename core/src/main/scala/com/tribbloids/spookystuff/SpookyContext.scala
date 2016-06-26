@@ -5,7 +5,7 @@ import com.tribbloids.spookystuff.dsl.DriverFactories.PhantomJS
 import com.tribbloids.spookystuff.extractors.TypeTag
 import com.tribbloids.spookystuff.rdd.FetchedDataset
 import com.tribbloids.spookystuff.row._
-import com.tribbloids.spookystuff.utils.Utils
+import com.tribbloids.spookystuff.utils.{HDFSResolver, Utils}
 import org.apache.hadoop.conf.Configuration
 import org.apache.spark._
 import org.apache.spark.rdd.RDD
@@ -73,7 +73,8 @@ case class SpookyContext private (
     }
     else null
 
-  def hadoopConf: Configuration = broadcastedHadoopConf.value.value
+  @transient lazy val hadoopConf: Configuration = broadcastedHadoopConf.value.value
+  @transient lazy val resolver = HDFSResolver(hadoopConf)
 
   //TODO: use reflection to zero, and change var to val
   def zeroMetrics(): SpookyContext ={

@@ -69,7 +69,7 @@ case class FetchedDataset(
     plan.rdd()
   }
 
-  def unsquashedRDD: RDD[FetchedRow] = this.rdd.flatMap(v => new v.W(schema).unsquash)
+  def unsquashedRDD: RDD[FetchedRow] = this.rdd.flatMap(v => new v.WithSchema(schema).unsquash)
 
   def spooky = plan.spooky
   def schema = plan.schema
@@ -235,7 +235,7 @@ case class FetchedDataset(
     rdd.foreach {
       squashedPageRow =>
         val w = new squashedPageRow
-        .W(schema)
+        .WithSchema(schema)
 
         w
           .unsquash

@@ -2,11 +2,10 @@ package com.tribbloids.spookystuff.row
 
 import java.util.UUID
 
-import com.tribbloids.spookystuff.actions.{Actions, Trace}
+import com.tribbloids.spookystuff.actions.{Actions, Trace, TraceView}
 import com.tribbloids.spookystuff.doc.Fetched
 import com.tribbloids.spookystuff.execution.SchemaContext
 import com.tribbloids.spookystuff.extractors.Resolved
-import com.tribbloids.spookystuff.{SpookyContext, dsl}
 
 import scala.collection.mutable.ArrayBuffer
 
@@ -21,7 +20,7 @@ object SquashedFetchedRow {
                 docs: Seq[Fetched] = null
               ): SquashedFetchedRow = SquashedFetchedRow(
     dataRows = dataRows,
-    lazyDocs = LazyDocs(docs = docs)
+    traceView = TraceView(docs = docs)
   )
 
   lazy val blank: SquashedFetchedRow = SquashedFetchedRow(Array(DataRow()))
@@ -37,10 +36,8 @@ object SquashedFetchedRow {
   */
 case class SquashedFetchedRow(
                                dataRows: Array[DataRow] = Array(),
-                               lazyDocs: LazyDocs = LazyDocs() // TODO: change to Array to facilitate more join types
+                               traceView: TraceView = TraceView() // TODO: change to Array to facilitate more join types
                              ) {
-
-  import dsl._
 
   def ++ (another: SquashedFetchedRow) = {
     this.copy(dataRows = this.dataRows ++ another.dataRows)
@@ -62,16 +59,16 @@ case class SquashedFetchedRow(
     dataRows = dataRows.map(_.--(fields))
   )
 
-  class W(schema: SchemaContext) extends Serializable {
+  class WithSchema(schema: SchemaContext) extends Serializable {
 
-    val lazyDocs = new SquashedFetchedRow.this.lazyDocs.W(schema.spooky)
+    val withSpooky = new SquashedFetchedRow.this.traceView.WithSpooky(schema.spooky)
 
     // by default, make sure no pages with identical name can appear in the same group.
     // TODO: need tests!
     @transient lazy val defaultGroupedFetched: Array[Seq[Fetched]] = {
       val grandBuffer: ArrayBuffer[Seq[Fetched]] = ArrayBuffer()
       val buffer: ArrayBuffer[Fetched] = ArrayBuffer()
-      lazyDocs.get().foreach {
+      withSpooky.get.foreach {
         page =>
           if (buffer.exists(_.name == page.name)) {
             grandBuffer += buffer.toList
@@ -177,8 +174,7 @@ case class SquashedFetchedRow(
  * if 2 groupedFetched yield identical traces only the first is preserved?
  */
     def interpolate(
-                     effectiveTraces: Set[Trace],
-                     spooky: SpookyContext,
+                     traces: Set[Trace],
 
                      filterEmpty: Boolean = true,
                      distinct: Boolean = true
@@ -188,9 +184,10 @@ case class SquashedFetchedRow(
         rows => //each element contains a different page group, CAUTION: not all of them are used: page group that yield no new datum will be removed, if all groups yield no new datum at least 1 row is preserved
           val dataRows_traceOpts = rows.flatMap {
             row =>
-              effectiveTraces.map {
+              traces.map {
                 trace =>
-                  row.dataRow.clearWeakValues -> trace.interpolate(row, schema).map(_.children)
+                  val interpolated: Option[Trace] = TraceView(trace).interpolate(row, schema).map(_.children)
+                  row.dataRow -> interpolated
                 //always discard old pages & temporary data before repartition, unlike flatten
               }
           }

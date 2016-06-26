@@ -1,11 +1,12 @@
 package com.tribbloids.spookystuff.actions
 
-import com.tribbloids.spookystuff.{Const, RemoteDisabledException, SpookyContext}
-import com.tribbloids.spookystuff.doc.{Doc, DocUtils, Fetched}
+import com.tribbloids.spookystuff.caching.{DFSWebCache, InMemoryWebCache}
+import com.tribbloids.spookystuff.doc.{Doc, Fetched}
 import com.tribbloids.spookystuff.execution.SchemaContext
 import com.tribbloids.spookystuff.row.FetchedRow
 import com.tribbloids.spookystuff.session.{DriverSession, NoDriverSession, Session}
 import com.tribbloids.spookystuff.utils.Utils
+import com.tribbloids.spookystuff.{Const, RemoteDisabledException, SpookyContext}
 import org.apache.spark.sql.catalyst.trees.TreeNode
 import org.slf4j.LoggerFactory
 
@@ -59,7 +60,11 @@ abstract class ActionLike extends TreeNode[ActionLike] with Product with Seriali
     val pagesFromCache = if (!spooky.conf.cacheRead) Seq(null)
     else dryrun.map(
       dry =>
-        DocUtils.autoRestore(dry, spooky)
+        InMemoryWebCache.get(dry, spooky)
+          .orElse{
+            DFSWebCache.get(dry, spooky)
+          }
+          .orNull
     )
 
     if (!pagesFromCache.contains(null)){

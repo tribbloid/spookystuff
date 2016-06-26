@@ -109,11 +109,10 @@ case class DataRow(
     }
   }
 
-  def clearWeakValues: DataRow = {
-    val tempFields = this.data.keys.filter(_.isWeak == true)
-    this.data -- tempFields
-    this
-  }
+//  def withoutWeak: DataRow = {
+//    val tempFields = this.data.keys.filter(_.isWeak == true)
+//    this -- tempFields
+//  }
 
   //T cannot <: AnyVal otherwise will run into https://issues.scala-lang.org/browse/SI-6967
   //getIntIterable cannot use it for the same reason

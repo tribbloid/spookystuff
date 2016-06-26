@@ -5,13 +5,14 @@ import com.tribbloids.spookystuff.actions._
 import com.tribbloids.spookystuff.doc._
 import org.apache.spark.sql.Row
 
-trait ProductRow extends Row with Product {
+//TODO: extends Spark SQL Row
+trait ProductRow extends Product {
 
-  override def length: Int = this.productArity
-
-  override def get(i: Int): Any = this.productElement(i)
-
-  override def copy(): ProductRow = this //TODO: problems?
+//  override def length: Int = this.productArity
+//
+//  override def get(i: Int): Any = this.productElement(i)
+//
+//  override def copy(): ProductRow = this //TODO: problems?
 }
 
 object FetchedRow {
@@ -35,8 +36,8 @@ case class FetchedRow(
   //TODO: trace implementation is not accurate: the last backtrace has all previous exports removed
   def squash(spooky: SpookyContext): SquashedFetchedRow = SquashedFetchedRow(
     Array(dataRow),
-    LazyDocs(
-      docs= fetched
+    TraceView(
+      docs = fetched
     )
   )
 

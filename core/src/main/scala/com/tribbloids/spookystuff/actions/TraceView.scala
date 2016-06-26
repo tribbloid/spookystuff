@@ -1,16 +1,18 @@
 package com.tribbloids.spookystuff.actions
 
-import com.tribbloids.spookystuff.doc.{Doc, DocUtils, Fetched}
-import com.tribbloids.spookystuff.dsl
+import com.tribbloids.spookystuff.caching.{DFSWebCache, InMemoryWebCache}
+import com.tribbloids.spookystuff.doc.{Doc, Fetched}
 import com.tribbloids.spookystuff.execution.SchemaContext
 import com.tribbloids.spookystuff.row.FetchedRow
 import com.tribbloids.spookystuff.session.Session
+import com.tribbloids.spookystuff.{SpookyContext, dsl}
 
 import scala.collection.mutable.ArrayBuffer
 import scala.reflect.ClassTag
 
 case class TraceView(
-                      override val children: Trace
+                      override val children: Trace = Nil,
+                      @transient var docs: Seq[Fetched] = null //override, cannot be shuffled
                     ) extends Actions(children) { //remember trace is not a block! its the super container that cannot be wrapped
 
   //always has output (Sometimes Empty) to handle left join
@@ -26,24 +28,24 @@ case class TraceView(
 
     this.children.foreach {
       action =>
-        val result = action.apply(session)
+        val actionResult = action.apply(session)
         session.backtrace ++= action.trunk
 
         if (action.hasOutput) {
 
-          results ++= result
-          session.spooky.metrics.pagesFetchedFromRemote += result.count(_.isInstanceOf[Doc])
+          results ++= actionResult
+          session.spooky.metrics.pagesFetchedFromRemote += actionResult.count(_.isInstanceOf[Doc])
 
           val spooky = session.spooky
 
-          if (spooky.conf.autoSave) result.foreach{
+          if (spooky.conf.autoSave) actionResult.foreach{
             case page: Doc => page.autoSave(spooky)
             case _ =>
           }
-          if (spooky.conf.cacheWrite) DocUtils.autoCache(result, spooky)
+          if (spooky.conf.cacheWrite) DFSWebCache.put(session.backtrace.toList ,actionResult, spooky)
         }
         else {
-          assert(result.isEmpty)
+          assert(actionResult.isEmpty)
         }
     }
 
@@ -77,6 +79,28 @@ case class TraceView(
 
   //the minimal equivalent action that can be put into backtrace
   override def trunk = Some(new TraceView(this.trunkSeq).asInstanceOf[this.type])
+
+  class WithSpooky(spooky: SpookyContext) {
+
+    //fetched may yield very large documents and should only be loaded lazily and not shuffled or persisted (unless in-memory)
+    def get: Seq[Fetched] = {
+      Option(docs).getOrElse{
+        refresh
+      }
+    }
+
+    def refresh: Seq[Fetched] = {
+      val docs = TraceView.this.fetch(spooky)
+      if (docs.nonEmpty) put(docs)
+      docs
+    }
+
+    def put(docs: Seq[Fetched]): this.type = {
+      TraceView.this.docs = docs
+      InMemoryWebCache.putIfAbsent(TraceView.this.children, docs, spooky)
+      this
+    }
+  }
 }
 
 //The precedence of an inﬁx operator is determined by the operator’s ﬁrst character.
