@@ -1,7 +1,5 @@
 package com.tribbloids.spookystuff
 
-import com.tribbloids.spookystuff.actions.Trace
-import com.tribbloids.spookystuff.doc.Doc
 import com.tribbloids.spookystuff.row.FetchedRow
 import org.apache.spark.sql.catalyst.ScalaReflection
 
@@ -48,5 +46,5 @@ package object extractors {
 ////    abstract override def lift: Function1[T, R]
 //  }
 
-  abstract class AbstractPartialFunction[-T, +R] extends scala.runtime.AbstractPartialFunction[T, R] with PartialFunction[T, R]
+//  abstract class AbstractPartialFunction[-T, +R] extends scala.runtime.AbstractPartialFunction[T, R] with PartialFunction[T, R]
 }

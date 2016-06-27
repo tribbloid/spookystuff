@@ -12,6 +12,7 @@ import org.apache.spark.sql.types._
 class TypeUtilsSuite extends SpookyEnvSuite {
 
   import TypeUtils._
+  import ScalaReflection.universe
 
   //  test("java reflection can be used to get type of Array[String].headOption") {
   //
@@ -38,7 +39,7 @@ class TypeUtilsSuite extends SpookyEnvSuite {
       .filter(_.name.toString == "head")
       .head                           // Unsafely access it for now, use Option and map under normal conditions
 
-    val fnTp = fn.typeSignatureIn(ttg.tpe)
+    val fnTp: universe.Type = fn.typeSignatureIn(ttg.tpe)
 
     val clsTp = fnTp.typeSymbol.asClass
     val fnRetTp = fnTp.asInstanceOf[ScalaReflection.universe.NullaryMethodType].resultType

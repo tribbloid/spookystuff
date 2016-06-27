@@ -1,5 +1,7 @@
 package com.tribbloids.spookystuff.extractors
 
+import scala.runtime.AbstractPartialFunction
+
 /**
   * Created by peng on 13/06/16.
   */
@@ -18,14 +20,14 @@ case class Unlift[-T, +R](
   override final def lift: Function1[T, Option[R]] = liftFn
 }
 
-case class Raw[-T, +R](
-                        gen: T => R
+case class Partial[-T, +R](
+                        fn: T => R
                       ) extends PartialFunctionWrapper[T, R] {
 
-  val self: scala.PartialFunction[T, R] = gen match {
+  val self: scala.PartialFunction[T, R] = fn match {
     case pf: scala.PartialFunction[T, R] =>
       pf
     case _ =>
-      PartialFunction(gen)
+      PartialFunction(fn)
   }
 }

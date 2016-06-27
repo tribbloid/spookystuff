@@ -3,7 +3,7 @@ package com.tribbloids.spookystuff.extractors
 import com.tribbloids.spookystuff.Const
 import com.tribbloids.spookystuff.extractors.GenExtractor._
 import com.tribbloids.spookystuff.row.Field
-import com.tribbloids.spookystuff.utils.Utils
+import com.tribbloids.spookystuff.utils.{PrettyToStringMixin, Utils}
 import org.apache.spark.sql.TypeUtils
 import org.apache.spark.sql.catalyst.trees.TreeNode
 import org.apache.spark.sql.types.{DataType, StructField, StructType}
@@ -15,7 +15,7 @@ object GenExtractor {
   final val functionVID = -592849327L
 
   def fromFn[T, R](self: (T) => R, dataType: DataType): GenExtractor[T, R] = {
-    Elem(_ => Raw(self), _ => dataType)
+    Elem(_ => Partial(self), _ => dataType)
   }
   implicit def fromFn[T, R: TypeTag](self: T => R): GenExtractor[T, R] = {
 
@@ -45,9 +45,9 @@ object GenExtractor {
 
   trait StaticType[T, +R] extends GenExtractor[T,R] {
     val dataType: DataType
-    final def applyType(tt: DataType) = dataType
+    final def resolveType(tt: DataType) = dataType
   }
-  trait StaticPartialFunction[T, +R] extends GenExtractor[T,R] with PartialFunctionWrapper[T, R]{
+  trait StaticPartialFunction[T, +R] extends GenExtractor[T,R] with PartialFunctionWrapper[T, R] with PrettyToStringMixin{
     final def resolve(tt: DataType) = self
   }
   trait Static[T, +R] extends StaticType[T,R] with StaticPartialFunction[T, R] with Leaf[T, R]
@@ -56,17 +56,17 @@ object GenExtractor {
 
     def child: GenExtractor[T, R]
 
-    def applyType(dataType: DataType) = child.applyType(dataType)
+    def resolveType(dataType: DataType) = child.resolveType(dataType)
     def resolve(dataType: DataType) = child.resolve(dataType)
   }
 
   case class Elem[T, +R](
                           _resolve: DataType => PartialFunction[T, R],
-                          _applyType: DataType => DataType,
+                          _resolveType: DataType => DataType,
                           name: Option[String] = None
                         ) extends Leaf[T, R]{
     //resolve to a Spark SQL DataType according to an exeuction plan
-    override def applyType(tt: DataType): DataType = _applyType(tt)
+    override def resolveType(tt: DataType): DataType = _resolveType(tt)
 
     override def resolve(tt: DataType): PartialFunction[T, R] = _resolve(tt)
 
@@ -80,7 +80,7 @@ object GenExtractor {
                               ) extends GenExtractor[A, C] {
 
     //resolve to a Spark SQL DataType according to an exeuction plan
-    override def applyType(tt: DataType): DataType = b.applyType(a.applyType(tt))
+    override def resolveType(tt: DataType): DataType = b.resolveType(a.resolveType(tt))
 
     override def resolve(tt: DataType): PartialFunction[A, C] = {
       val af = a.resolve(tt)
@@ -97,9 +97,9 @@ object GenExtractor {
                                   arg2: GenExtractor[T, R2]
                                 ) extends GenExtractor[T, (R1, R2)] {
     //resolve to a Spark SQL DataType according to an exeuction plan
-    override def applyType(tt: DataType): DataType = {
-      val t1 = arg1.applyType(tt)
-      val t2 = arg2.applyType(tt)
+    override def resolveType(tt: DataType): DataType = {
+      val t1 = arg1.resolveType(tt)
+      val t2 = arg2.resolveType(tt)
 
       StructType(Seq(
         StructField("_1", t1),
@@ -143,7 +143,7 @@ trait GenExtractor[T, +R] extends Product with Serializable {
   protected def _args: Seq[GenExtractor[_, _]]
 
   //resolve to a Spark SQL DataType according to an exeuction plan
-  def applyType(tt: DataType): DataType
+  def resolveType(tt: DataType): DataType
   def resolve(tt: DataType): PartialFunction[T, R]
 
   def withAlias(field: Field): AliasImpl[T, R] = {
@@ -199,18 +199,18 @@ trait GenExtractor[T, +R] extends Product with Serializable {
 
   def andTyped[R2 >: R, A](
                             g: R2 => A,
-                            applyType: DataType => DataType,
+                            resolveType: DataType => DataType,
                             meta: Option[Any] = None
                           ) = andEx (
-    Elem[R2, A](_ => Raw(g), applyType),
+    Elem[R2, A](_ => Partial(g), resolveType),
     meta
   )
 
   def andOptionTyped[R2 >: R, A](
                                   g: R2 => Option[A],
-                                  applyType: DataType => DataType,
+                                  resolveType: DataType => DataType,
                                   meta: Option[Any] = None
-                                ) = andTyped(Unlift(g), applyType, meta)
+                                ) = andTyped(Unlift(g), resolveType, meta)
 
   import TypeUtils.Implicits._
 

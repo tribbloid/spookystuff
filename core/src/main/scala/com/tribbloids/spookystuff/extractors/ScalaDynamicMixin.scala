@@ -1,9 +1,11 @@
-//package com.tribbloids.spookystuff.extractors
-//
-//import org.apache.spark.sql.types.DataType
-//
-//import scala.language.dynamics
-//
+package com.tribbloids.spookystuff.extractors
+
+import org.apache.spark.ml.dsl.utils.FlowUtils
+import org.apache.spark.sql.TypeUtils
+import org.apache.spark.sql.types.DataType
+
+import scala.language.dynamics
+
 ////TODO: major revision! function should be pre-determined by
 //object ScalaDynamic {
 //
@@ -35,12 +37,45 @@
 //    Some(result)
 //  }
 //}
-//
-//case class ScalaDynamic[T, R](
-//                          base: GenExtractor[T, R],
-//                          methodName: String,
-//                          args: Seq[Any]
-//                        ) extends Unlift[T, Any] {
+
+case class ScalaDynamicExtractor[T](
+                                     base: GenExtractor[T, _],
+                                     methodName: String,
+                                     args: Seq[GenExtractor[T, _]]
+                                   ) extends GenExtractor[T, Any] {
+
+  import org.apache.spark.sql.TypeUtils.Implicits._
+
+  override protected def _args: Seq[GenExtractor[_, _]] = Seq(base) ++ args
+
+  def fnSymbol(tt: DataType) = {
+    val baseTypes = MixedType(base.resolveType(tt)).scalaTypes
+    val argsTypes = args.map {
+      arg =>
+        MixedType(arg.resolveType(tt)).scalaTypes
+    }
+
+    val cartesian = FlowUtils.cartesianProductSet(Seq(baseTypes) ++ argsTypes)
+//    cartesian.map {
+//      seq =>
+//        val baseType = seq.head
+//        val argsType = seq.slice(1, Int.MaxValue)
+//        val members: TypeUtils.universe.MemberScope = baseType
+//          .tpe
+//          .members
+//        members.toList.filterNot{
+//          (member: _root_.org.apache.spark.sql.TypeUtils.universe.Symbol) =>
+//          member
+//        }
+//    }
+
+  }
+
+  //resolve to a Spark SQL DataType according to an exeuction plan
+  override def resolveType(tt: DataType): DataType = ???
+
+  override def resolve(tt: DataType): PartialFunction[T, Any] = ???
+}
 //
 //  override def liftApply(v1: T): Option[Any] =
 //    ScalaDynamic.invokeDynamically[T, R](v1, base.lift, methodName)(args: _*)

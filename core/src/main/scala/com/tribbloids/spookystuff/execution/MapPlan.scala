@@ -47,7 +47,7 @@ case class FlattenPlan(
   val resolver = child.schema.newResolver
 
   val _on: TypedField = {
-    val flattenType = GetExpr(onField).applyType(child.schema) match {
+    val flattenType = GetExpr(onField).resolveType(child.schema) match {
       case ArrayType(boxed, _) => boxed
       case v: DataType => v
     }

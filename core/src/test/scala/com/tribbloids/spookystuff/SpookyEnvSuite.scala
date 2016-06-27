@@ -32,7 +32,7 @@ abstract class SpookyEnvSuite
     extractor.resolve(schema),
     TypedField(
       extractor.field,
-      extractor.applyType(schema)
+      extractor.resolveType(schema)
     )
   )
 

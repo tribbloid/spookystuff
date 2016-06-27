@@ -23,7 +23,7 @@ abstract class StructRelay[T] {
   final def toMLWriter(v: T) = toRepr(v).MLWriter
   final def toMLReader = MLReader
 
-  trait ToReprMixin {
+  trait SelfMixin {
     self: T =>
 
     final def toRepr: Repr = StructRelay.this.toRepr(self)

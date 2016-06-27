@@ -2,6 +2,8 @@ package com.tribbloids.spookystuff.extractors
 
 import com.tribbloids.spookystuff.SpookyEnvSuite
 
+import scala.runtime.AbstractPartialFunction
+
 object GenExtractorSuite {
 
   var counter = 0

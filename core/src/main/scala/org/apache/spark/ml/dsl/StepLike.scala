@@ -42,7 +42,7 @@ case class Step(
                  stage: NamedStage,
                  dependencyIDs: Seq[String] = Seq(),
                  usageIDs: Set[String] = Set.empty
-               ) extends StepLike with StepRelay.ToReprMixin {
+               ) extends StepLike with StepRelay.SelfMixin {
 
   {
     assert(this.id != PASSTHROUGH.id)

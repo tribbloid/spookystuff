@@ -111,7 +111,7 @@ case class SchemaContext(
           ex withAlias Field("_c" + i)
       }
       val resolved = alias.resolve(SchemaContext.this)
-      val dataType = alias.applyType(SchemaContext.this)
+      val dataType = alias.resolveType(SchemaContext.this)
 
       verifyFieldConsistency(alias.field, dataType)
 

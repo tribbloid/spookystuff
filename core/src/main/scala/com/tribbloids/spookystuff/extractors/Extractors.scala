@@ -80,7 +80,7 @@ object Literal {
 final case class Literal[+T](value: T, dataType: DataType) extends Static[FR, T] {
 
   override def toString = "'" + value.toString + "'" //TODO: remove single quotes?
-  override val self: PartialFunction[FR, T] = Raw({ _: FR => value})
+  override val self: PartialFunction[FR, T] = Partial({ _: FR => value})
 }
 
 case object NullLiteral extends Static[FR, Null]{
@@ -91,7 +91,7 @@ case object NullLiteral extends Static[FR, Null]{
 
 case class GetExpr(field: Field) extends Leaf[FR, Any] {
 
-  override def applyType(tt: DataType): DataType = tt match {
+  override def resolveType(tt: DataType): DataType = tt match {
     case schema: SchemaContext =>
       schema
         .typedFor(field)
@@ -149,8 +149,8 @@ case class AppendExpr[+T: ClassTag] private(
                                              expr: Extractor[T]
                                            ) extends Extractor[Seq[T]] {
 
-  override def applyType(tt: DataType): DataType = {
-    val newType = expr.applyType(tt)
+  override def resolveType(tt: DataType): DataType = {
+    val newType = expr.resolveType(tt)
 
     ArrayType(newType, containsNull = true)
   }
@@ -176,7 +176,7 @@ case class AppendExpr[+T: ClassTag] private(
 
 case class InterpolateExpr(parts: Seq[String], _args: Seq[Extractor[Any]]) extends Extractor[String] {
 
-  override def applyType(tt: DataType): DataType = StringType
+  override def resolveType(tt: DataType): DataType = StringType
 
   override def resolve(tt: DataType): PartialFunction[FR, String] = {
     val rs = _args.map(_.resolve(tt).lift)
@@ -203,8 +203,8 @@ case class ZippedExpr[T1,+T2](
 
   override val _args: Seq[GenExtractor[FR, _]] = Seq(arg1, arg2)
 
-  override def applyType(tt: DataType): DataType = {
-    (arg1.applyType(tt), arg2.applyType(tt)) match {
+  override def resolveType(tt: DataType): DataType = {
+    (arg1.resolveType(tt), arg2.resolveType(tt)) match {
       case (ArrayType(in1, _), ArrayType(in2, _)) =>
         MapType(in1, in2)
     }
