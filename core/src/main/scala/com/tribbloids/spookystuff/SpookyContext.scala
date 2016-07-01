@@ -25,9 +25,9 @@ case class SpookyContext private (
 
   def this(
             sqlContext: SQLContext,
-            spookyConf: SpookyConf = new SpookyConf()
+            conf: SpookyConf = new SpookyConf()
           ) {
-    this(sqlContext, spookyConf.importFrom(sqlContext.sparkContext), new Metrics())
+    this(sqlContext, conf.importFrom(sqlContext.sparkContext), new Metrics())
   }
 
   def this(sqlContext: SQLContext) {

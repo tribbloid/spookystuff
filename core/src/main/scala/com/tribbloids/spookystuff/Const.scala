@@ -17,10 +17,11 @@ object Const {
   //  val webClientOptions = new WebClientOptions
   //  webClientOptions.setUseInsecureSSL(true)
 
+  //TODO: move to SpookyConf as much as possible
   val sessionInitializationTimeout = 40.seconds
 
-  val localResourceLocalRetries = 3
-  val remoteResourceLocalRetries = 2
+  val localResourceLocalRetries = 3 //In-node/partition retries
+  val remoteResourceLocalRetries = 2 //In-node/partition retries
   val DFSLocalRetries = 2
   val clusterRetries = 3
 
