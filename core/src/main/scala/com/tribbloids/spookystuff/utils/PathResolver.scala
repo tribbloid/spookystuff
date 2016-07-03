@@ -146,7 +146,7 @@ case class HDFSResolver(
 
   def input[T](pathStr: String)(f: InputStream => T): T = Utils.retry(3){
     val path: Path = new Path(pathStr)
-    ensureAbsolute(path)
+//    ensureAbsolute(path)
 
     val fs = path.getFileSystem(configWrapper.value)
 
@@ -174,7 +174,7 @@ case class HDFSResolver(
 
   override def output[T](pathStr: String, overwrite: Boolean)(f: (OutputStream) => T): T = Utils.retry(3){
     val path = new Path(pathStr)
-    ensureAbsolute(path)
+//    ensureAbsolute(path)
 
     val fs = path.getFileSystem(configWrapper.value)
 
@@ -193,7 +193,7 @@ case class HDFSResolver(
   override def lockAccessDuring[T](pathStr: String)(f: (String) => T): T = {
 
     val path = new Path(pathStr)
-    ensureAbsolute(path)
+//    ensureAbsolute(path)
     val fs: hadoop.fs.FileSystem = path.getFileSystem(configWrapper.value)
 
     val lockedPath = new Path(pathStr + lockedSuffix)
