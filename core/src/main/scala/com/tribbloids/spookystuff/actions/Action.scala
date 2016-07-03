@@ -60,6 +60,7 @@ trait Action extends ActionLike {
     }
 
     this.timeElapsed = System.currentTimeMillis() - session.startTime
+    session.spooky.metrics.pagesFetchedFromRemote += results.count(_.isInstanceOf[Doc])
 
     results
   }

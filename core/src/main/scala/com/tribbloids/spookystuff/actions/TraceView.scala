@@ -34,7 +34,6 @@ case class TraceView(
         if (action.hasOutput) {
 
           results ++= actionResult
-          session.spooky.metrics.pagesFetchedFromRemote += actionResult.count(_.isInstanceOf[Doc])
 
           val spooky = session.spooky
 
