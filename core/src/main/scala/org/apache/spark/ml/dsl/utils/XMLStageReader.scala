@@ -23,7 +23,7 @@ class XMLStageReader[T <: Params](implicit val mf: Manifest[T]) extends DefaultP
 
   /**
     * Extract Params from metadata, and set them in the instance.
-    * This works if all Params implement [[org.apache.spark.ml.param.Param.jsonDecode()]].
+    * This works if all Params implement org.apache.spark.ml.param.Param.jsonDecode().
     */
   def getAndSetParams(instance: T, metadata: Metadata): Unit = {
     metadata.params match {

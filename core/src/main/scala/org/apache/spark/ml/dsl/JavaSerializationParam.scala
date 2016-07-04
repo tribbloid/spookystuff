@@ -20,7 +20,7 @@ object JavaSerializationParam {
 
 /**
   * :: DeveloperApi ::
-  * Specialized version of [[Param[Any]]] for Java.
+  * Specialized version of Param[Any] for Java.
   */
 @DeveloperApi
 class JavaSerializationParam[T: ClassTag](parent: String, name: String, doc: String, isValid: T => Boolean)
