@@ -3,7 +3,7 @@ package com.tribbloids.spookystuff
 import java.util
 import java.util.Collections
 
-import com.google.common.collect.MapMaker
+import com.google.common.cache.CacheBuilder
 import com.tribbloids.spookystuff.utils.Utils
 
 import scala.collection.mutable
@@ -29,11 +29,13 @@ package object caching {
     * @throws IllegalStateException if the key strength was already set
     * @see WeakReference
     */
-  def ConcurrentCache[K, V](): scala.collection.concurrent.Map[K, V] = {
-    new MapMaker()
+  def ConcurrentCache[K <: AnyRef, V <: AnyRef](): scala.collection.concurrent.Map[K, V] = {
+    CacheBuilder
+      .newBuilder()
       .concurrencyLevel(Utils.numCores)
       .softValues()
-      .makeMap[K, V]()
+      .build[K, V]()
+      .asMap()
       .asScala
   }
 
