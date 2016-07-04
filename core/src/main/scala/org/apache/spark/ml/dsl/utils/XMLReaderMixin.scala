@@ -5,6 +5,7 @@ import org.json4s.{Formats, Serializer}
 
 import scala.xml.{NodeSeq, XML}
 
+//TODO: merge into StructRelay
 trait XMLReaderMixin[T] {
 
   implicit def mf: Manifest[T]

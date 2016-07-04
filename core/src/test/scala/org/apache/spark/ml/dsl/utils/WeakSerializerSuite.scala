@@ -1,7 +1,6 @@
 package org.apache.spark.ml.dsl.utils
 
 import org.apache.spark.ml.dsl.AbstractFlowSuite
-import org.json4s.DefaultFormats
 
 object WeakSerializerSuite {
   case class StrStr(
@@ -37,7 +36,7 @@ object WeakSerializerSuite {
 
 class WeakSerializerSuite extends AbstractFlowSuite{
 
-  implicit val formats = DefaultFormats ++ Seq(StringToNumberDeserializer, ElementToArrayDeserializer)
+  implicit val formats = Xml.defaultFormats
 
   import WeakSerializerSuite._
   import org.json4s.Extraction._
@@ -121,5 +120,22 @@ class WeakSerializerSuite extends AbstractFlowSuite{
 
     val d2 = extract[StrIntSet](json)
     d2.toString.shouldBe("StrIntSet(a,Set(12))")
+  }
+
+  //TODO: doesn't work! how to circumvent?
+  test("empty string to Map") {
+    val d1 = ""
+    val json = decompose(d1)
+
+    val d2 = extract[Map[String, String]](json)
+    d2.toString.shouldBe("Map()")
+  }
+
+  test("empty string to Option[Map]") {
+    val d1 = ""
+    val json = decompose(d1)
+
+    val d2 = extract[Option[Map[String, String]]](json)
+    d2.toString.shouldBe("Some(Map())")
   }
 }

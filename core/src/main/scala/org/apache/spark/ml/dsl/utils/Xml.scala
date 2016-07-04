@@ -225,6 +225,7 @@ object Xml {
 
   val defaultFormats = DefaultFormats +
     StringToNumberDeserializer +
+    EmptyStringToEmptyObjectDeserializer +
     ElementToArrayDeserializer
 
   val defaultXMLPrinter = new scala.xml.PrettyPrinter(80, 2)
