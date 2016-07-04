@@ -1,8 +1,9 @@
 package com.tribbloids.spookystuff.extractors
 
-import org.apache.spark.ml.dsl.utils.FlowUtils
-import org.apache.spark.sql.TypeUtils
+import org.apache.spark.sql.catalyst.ScalaReflection
 import org.apache.spark.sql.types.DataType
+
+import ScalaReflection.universe._
 
 import scala.language.dynamics
 
@@ -41,34 +42,68 @@ import scala.language.dynamics
 case class ScalaDynamicExtractor[T](
                                      base: GenExtractor[T, _],
                                      methodName: String,
-                                     args: Seq[GenExtractor[T, _]]
+                                     argss: Seq[Seq[GenExtractor[T, _]]]
                                    ) extends GenExtractor[T, Any] {
 
-  import org.apache.spark.sql.TypeUtils.Implicits._
-
-  override protected def _args: Seq[GenExtractor[_, _]] = Seq(base) ++ args
+  override protected def _args: Seq[GenExtractor[_, _]] = Seq(base) ++ argss.flatten
 
   def fnSymbol(tt: DataType) = {
-    val baseTypes = MixedType(base.resolveType(tt)).scalaTypes
-    val argsTypes = args.map {
-      arg =>
-        MixedType(arg.resolveType(tt)).scalaTypes
+    val baseEvi = TypeEvidence(base.resolveType(tt))
+    val argsEvis = argss.map {
+      args =>
+        args.map {
+          arg =>
+            TypeEvidence(arg.resolveType(tt))
+        }
+    }
+    val baseParamss = getMethods(baseEvi)
+    //    val filtered
+  }
+
+  def getMethods(evi: TypeEvidence): List[MethodSymbol] = {
+    val baseType = evi.scalaTypeOpt.getOrElse {
+      throw new UnsupportedOperationException(s"base type $evi cannot be resolved")
     }
 
-    val cartesian = FlowUtils.cartesianProductSet(Seq(baseTypes) ++ argsTypes)
-//    cartesian.map {
-//      seq =>
-//        val baseType = seq.head
-//        val argsType = seq.slice(1, Int.MaxValue)
-//        val members: TypeUtils.universe.MemberScope = baseType
-//          .tpe
-//          .members
-//        members.toList.filterNot{
-//          (member: _root_.org.apache.spark.sql.TypeUtils.universe.Symbol) =>
-//          member
-//        }
-//    }
+    //Java reflection preferred as more battle tested?
+    val members = baseType
+      .tpe
+      .member(methodName: TermName)
+      .asTerm
+      .alternatives
+      .map(_.asMethod)
 
+    members
+  }
+
+  def getValidMethod(baseEvi: TypeEvidence, argEviss: List[List[TypeEvidence]]): Option[MethodSymbol] = {
+    val methods = getMethods(baseEvi)
+
+    val valid = methods.find {
+      method =>
+        val expectedTypess: List[List[Type]] = argEviss.map {
+          argEvis =>
+            argEvis.map {
+              argEvi =>
+                val ttg = argEvi.scalaTypeOpt.getOrElse {
+                  throw new UnsupportedOperationException(s"argument type $baseEvi cannot be resolved")
+                }
+                ttg.tpe
+            }
+        }
+
+        val paramss = method.paramss
+        val actualTypess: List[List[Type]] = paramss.map {
+          params =>
+            params.map {
+              param =>
+                param.typeSignature
+            }
+        }
+
+        expectedTypess == actualTypess
+    }
+    valid
   }
 
   //resolve to a Spark SQL DataType according to an exeuction plan

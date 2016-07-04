@@ -110,6 +110,10 @@ object TypeUtils {
     }
   }
 
+  def scalaTypeFor(dataType: DataType): Option[TypeTag[_]] = {
+    scalaTypesFor(dataType).headOption
+  }
+
   // used in ReflectionMixin to determine the exact function to:
   // 1. convert data from CatalystType to canonical Scala Type (and obtain its TypeTag)
   // 2. use the obtained TypeTag to get the specific function implementation and applies to the canonic Scala Type data.
