@@ -725,7 +725,7 @@ trait FlowComponent extends MayHaveHeads with MayHaveTails {
     }
 
     val result = new Pipeline()
-      .setStages(stageBuffer.toArray)
+      .setStages(stageBuffer.toArray[PipelineStage])
 
     effectiveAdaptation match {
       case _: SchemaAdaptations.IgnoreIrrelevant =>
