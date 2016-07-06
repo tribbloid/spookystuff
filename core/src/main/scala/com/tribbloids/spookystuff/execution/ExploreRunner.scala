@@ -1,7 +1,7 @@
 package com.tribbloids.spookystuff.execution
 
 import com.tribbloids.spookystuff.actions.{Trace, TraceView}
-import com.tribbloids.spookystuff.caching.{ConcurrentMap, ExploreSharedVisitedCache}
+import com.tribbloids.spookystuff.caching.{ConcurrentMap, ExploreRunnerCache}
 import com.tribbloids.spookystuff.dsl.ExploreAlgorithms.ExploreImpl
 import com.tribbloids.spookystuff.extractors.Resolved
 import com.tribbloids.spookystuff.row._
@@ -19,8 +19,8 @@ case class Open_Visited(
 /**
   * NOT serializable: expected to be constructed on Executors
   */
-class ExploreShard(
-                    val itr: Iterator[(Trace, Open_Visited)],
+class ExploreRunner(
+                    val itr: Iterator[(Trace, Open_Visited)], //TODO: change to TraceView
                     val executionID: Long
                   ) extends NOTSerializableMixin {
 
@@ -39,7 +39,7 @@ class ExploreShard(
       tuple._2.visited.map(v => visited += tuple._1 -> v)
   }
 
-  ExploreSharedVisitedCache.register(this)
+  ExploreRunnerCache.register(this)
 
   protected def commitIntoVisited(
                                    key: Trace,
@@ -76,7 +76,7 @@ class ExploreShard(
 
     open -= bestOpen._1
 
-    val existingVisitedOption = ExploreSharedVisitedCache.get(bestOpen._1 -> executionID, visitedReducer)
+    val existingVisitedOption = ExploreRunnerCache.get(bestOpen._1 -> executionID, visitedReducer)
 
     val bestOpenAfterElimination: (Trace, Iterable[DataRow]) = existingVisitedOption match {
       case Some(allVisited) =>
@@ -152,7 +152,7 @@ class ExploreShard(
             (tuple._1 -> executionID) -> tuple._2
         }
 
-      ExploreSharedVisitedCache.commit(toBeCommitted, impl.visitedReducer)
+      ExploreRunnerCache.commit(toBeCommitted, impl.visitedReducer)
 
       this.finalize()
 
@@ -168,6 +168,6 @@ class ExploreShard(
   }
 
   override def finalize(): Unit = {
-    ExploreSharedVisitedCache.deregister(this)
+    ExploreRunnerCache.deregister(this)
   }
 }

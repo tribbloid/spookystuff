@@ -1,7 +1,7 @@
 package com.tribbloids.spookystuff.execution
 
 import com.tribbloids.spookystuff.actions.{Trace, TraceView}
-import com.tribbloids.spookystuff.caching.ExploreSharedVisitedCache
+import com.tribbloids.spookystuff.caching.ExploreRunnerCache
 import com.tribbloids.spookystuff.dsl.{ExploreAlgorithm, FetchOptimizer, FetchOptimizers, JoinType}
 import com.tribbloids.spookystuff.extractors._
 import com.tribbloids.spookystuff.row.{SquashedFetchedRow, _}
@@ -158,7 +158,7 @@ case class ExplorePlan(
 
       val stateRDD_+ : RDD[(Trace, Open_Visited)] = stateRDD.mapPartitions {
         itr =>
-          val state = new ExploreShard(itr, execID)
+          val state = new ExploreRunner(itr, execID)
           val state_+ = state.execute(
             _on,
             sampler,
@@ -198,7 +198,7 @@ case class ExplorePlan(
     val result = stateRDD
       .mapPartitions{
         itr =>
-          ExploreSharedVisitedCache.finishJob(execID) //manual cleanup, one per node is enough, one per executor is not too much slower
+          ExploreRunnerCache.finishJob(execID) //manual cleanup, one per node is enough, one per executor is not too much slower
           itr
       }
       .flatMap {

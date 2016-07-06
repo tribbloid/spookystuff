@@ -1,26 +1,27 @@
 package com.tribbloids.spookystuff.caching
 
 import com.tribbloids.spookystuff.actions.Trace
-import com.tribbloids.spookystuff.execution.ExploreShard
+import com.tribbloids.spookystuff.execution.ExploreRunner
 import com.tribbloids.spookystuff.row.{DataRow, RowReducer}
 
 /**
   * Singleton, always in the JVM and shared by all executors on the same machine
   * This is a makeshift implementation, faster implementation will be based on Google Guava library
   */
-object ExploreSharedVisitedCache {
+object ExploreRunnerCache {
 
+  //TODO: change to TraceView
   val committedRows: ConcurrentCache[(Trace, Long), Iterable[DataRow]] = ConcurrentCache()
 
-  private val _onGoings: ConcurrentMap[Long, ConcurrentSet[ExploreShard]] = ConcurrentMap() //jobID -> running ExploreStateView
+  private val _onGoings: ConcurrentMap[Long, ConcurrentSet[ExploreRunner]] = ConcurrentMap() //jobID -> running ExploreStateView
   def onGoings = _onGoings
 
-  def onGoing(jobID: Long): ConcurrentSet[ExploreShard] = {
+  def onGoing(jobID: Long): ConcurrentSet[ExploreRunner] = {
     onGoings.synchronized{
       onGoings
         .getOrElse(
           jobID, {
-            val v = ConcurrentSet[ExploreShard]()
+            val v = ConcurrentSet[ExploreRunner]()
             onGoings.put(jobID, v)
             v
           }
@@ -59,11 +60,11 @@ object ExploreSharedVisitedCache {
     }
   }
 
-  def register(v: ExploreShard): Unit = {
+  def register(v: ExploreRunner): Unit = {
     onGoing(v.executionID) += v
   }
 
-  def deregister(v: ExploreShard): Unit = {
+  def deregister(v: ExploreRunner): Unit = {
     onGoing(v.executionID) -= v
   }
 
@@ -89,7 +90,7 @@ object ExploreSharedVisitedCache {
 
   def getAll(key: (Trace, Long)): Set[Iterable[DataRow]] = {
     val onGoing = this.onGoing(key._2)
-      .toSet[ExploreShard]
+      .toSet[ExploreRunner]
 
     val onGoingVs = onGoing
       .flatMap {
