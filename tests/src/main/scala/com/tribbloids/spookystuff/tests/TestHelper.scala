@@ -4,8 +4,9 @@ import java.io.File
 import java.util.Properties
 
 import org.apache.commons.io.FileUtils
+import org.apache.spark.serializer.KryoSerializer
 import org.apache.spark.sql.SQLContext
-import org.apache.spark.{SparkConf, SparkContext}
+import org.apache.spark.{SparkConf, SparkContext, SparkEnv, SparkException}
 import org.slf4j.LoggerFactory
 
 object TestHelper {
@@ -44,7 +45,7 @@ object TestHelper {
     //always use KryoSerializer, it is less stable than Native Serializer
     val conf: SparkConf = new SparkConf()
       .set("spark.serializer", "org.apache.spark.serializer.KryoSerializer")
-      .set("spark.kryo.registrator", "com.tribbloids.spookystuff.SpookyRegistrator")
+//      .set("spark.kryo.registrator", "com.tribbloids.spookystuff.SpookyRegistrator")Incomplete for the moment
       .set("spark.kryoserializer.buffer.max", "512m")
 
     val sparkHome = System.getenv("SPARK_HOME")
@@ -87,6 +88,31 @@ object TestHelper {
 
   def TestSpark = SparkContext.getOrCreate(TestSparkConf)
   def TestSQL = SQLContext.getOrCreate(TestSpark)
+
+  def assureKryoSerializer(sc: SparkContext): Unit = {
+    val ser = SparkEnv.get.serializer
+    require(ser.isInstanceOf[KryoSerializer])
+
+    val rdd = sc.parallelize(Seq(sc)).map {
+      v =>
+        v.startTime
+    }
+
+    try {
+      rdd.reduce(_ + _)
+      throw new AssertionError("should throw SparkException")
+    }
+    catch {
+      case e: SparkException =>
+        val ee = e
+        assert(
+          ee.getMessage.contains("com.esotericsoftware.kryo.KryoException"),
+          "should be triggered by KryoException, but the message doesn't indicate that:\n"+ ee.getMessage
+        )
+      case e: Throwable =>
+        throw new AssertionError(s"Expecting SparkException, but ${e.getClass.getSimpleName} was thrown", e)
+    }
+  }
 
   def clearTempDir(): Unit = {
     val file = new File(tempPath) //TODO: clean up S3 as well

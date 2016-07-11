@@ -1,11 +1,13 @@
 package com.tribbloids.spookystuff.extractors
 
+import java.lang.reflect.Method
+
 import org.apache.spark.sql.catalyst.ScalaReflection
 import org.apache.spark.sql.types.DataType
-
 import ScalaReflection.universe._
+import org.apache.spark.sql.TypeUtils
 
-import scala.language.dynamics
+import scala.language.{dynamics, implicitConversions}
 
 ////TODO: major revision! function should be pre-determined by
 //object ScalaDynamic {
@@ -42,45 +44,51 @@ import scala.language.dynamics
 case class ScalaDynamicExtractor[T](
                                      base: GenExtractor[T, _],
                                      methodName: String,
-                                     argss: Seq[Seq[GenExtractor[T, _]]]
+                                     argss: List[List[GenExtractor[T, _]]]
                                    ) extends GenExtractor[T, Any] {
+
+  import org.apache.spark.sql.TypeUtils._
+  import Implicits._
+
+  implicit def typeToEvidence(dataType: DataType): TypeEvidence = TypeEvidence(dataType)
 
   override protected def _args: Seq[GenExtractor[_, _]] = Seq(base) ++ argss.flatten
 
   def fnSymbol(tt: DataType) = {
-    val baseEvi = TypeEvidence(base.resolveType(tt))
-    val argsEvis = argss.map {
+    val baseEvi: TypeEvidence = base.resolveType(tt)
+    val argsEvis: Seq[Seq[TypeEvidence]] = argss.map {
       args =>
         args.map {
           arg =>
-            TypeEvidence(arg.resolveType(tt))
+            arg.resolveType(tt): TypeEvidence
         }
     }
-    val baseParamss = getMethods(baseEvi)
+    val baseParamss = _getAllMethods(baseEvi)
     //    val filtered
   }
 
-  def getMethods(evi: TypeEvidence): List[MethodSymbol] = {
-    val baseType = evi.scalaTypeOpt.getOrElse {
-      throw new UnsupportedOperationException(s"base type $evi cannot be resolved")
-    }
+  def _getAllMethods(evi: TypeEvidence): List[MethodSymbol] = {
+    val tpe = evi.scalaType.tpe
+
+    val symbol = tpe.typeSymbol
 
     //Java reflection preferred as more battle tested?
-    val members = baseType
-      .tpe
-      .member(methodName: TermName)
-      .asTerm
-      .alternatives
-      .map(_.asMethod)
+    val members = tpe
+      .members.toList
+      .filter(_.name.decoded == methodName)
+      .map {
+        v =>
+          v.asMethod
+      }
 
     members
   }
 
-  def getValidMethod(baseEvi: TypeEvidence, argEviss: List[List[TypeEvidence]]): Option[MethodSymbol] = {
-    val methods = getMethods(baseEvi)
+  def getScalaReflectionMethod(baseEvi: TypeEvidence, argEviss: List[List[TypeEvidence]]): Option[MethodSymbol] = {
+    val methods = _getAllMethods(baseEvi)
 
-    val valid = methods.find {
-      method =>
+    val valid = methods.filter {
+      symbol =>
         val expectedTypess: List[List[Type]] = argEviss.map {
           argEvis =>
             argEvis.map {
@@ -92,24 +100,57 @@ case class ScalaDynamicExtractor[T](
             }
         }
 
-        val paramss = method.paramss
-        val actualTypess: List[List[Type]] = paramss.map {
-          params =>
-            params.map {
-              param =>
-                param.typeSignature
-            }
-        }
+        val paramTypess_returnType = TypeUtils.methodSymbolToParameter_Returntypes(symbol, baseEvi.scalaType.tpe)
+        val actualTypess: List[List[Type]] = paramTypess_returnType._1
 
         expectedTypess == actualTypess
     }
-    valid
+    assert(valid.size <= 1)
+    valid.headOption
   }
 
-  //resolve to a Spark SQL DataType according to an exeuction plan
-  override def resolveType(tt: DataType): DataType = ???
+  def getJavaReflectionMethods(baseEvi: TypeEvidence, argEviss: List[List[TypeEvidence]]): Method = {
+    val baseClz = baseEvi.scalaType.toClass
 
-  override def resolve(tt: DataType): PartialFunction[T, Any] = ???
+    assert(argEviss.size == 1, "currying for java method is not supported")
+    val argClzs = argEviss.flatten.map(
+      _.scalaType.toClass//.asInstanceOf[Class[_]]
+    )
+
+    val method = baseClz.getMethod(methodName, argClzs: _*)
+    method
+  }
+
+  //  def getFn(baseEvi: TypeEvidence, argEviss: List[List[TypeEvidence]]): Option[T => Any]  = {
+  //    val validMethod = getScalaReflectionMethod(baseEvi, argEviss)
+  //
+  //    val cm = rootMirror.reflectClass(baseEvi.scalaType.tpe.typeSymbol.asClass)
+  //    val mm =
+  //
+  //  }
+
+  //resolve to a Spark SQL DataType according to an exeuction plan
+  //TODO: test it immediately!
+  override def resolveType(tt: DataType): DataType = {
+    val baseEvi: TypeEvidence = TypeEvidence(base.resolveType(tt))
+    val argEvis = argss.map {
+      _.map {
+        v =>
+          v.resolveType(tt): TypeEvidence
+      }
+    }
+    val symbol = getScalaReflectionMethod(baseEvi, argEvis).get
+    val resultType = TypeUtils.methodSymbolToParameter_Returntypes(symbol, baseEvi.scalaType.tpe)._2
+    val resultTag = TypeUtils.typeToTypeTag(
+      resultType, baseEvi.scalaType.mirror
+    )
+    TypeEvidence(resultTag).catalystType
+  }
+
+  override def resolve(tt: DataType): PartialFunction[T, Any] = {
+
+    ???
+  }
 }
 //
 //  override def liftApply(v1: T): Option[Any] =

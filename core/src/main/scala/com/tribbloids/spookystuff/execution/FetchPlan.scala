@@ -37,9 +37,6 @@ case class FetchPlan(
                       fetchOptimizer: FetchOptimizer
                     ) extends UnaryPlan(child) with InjectBeaconRDDPlan {
 
-  import com.tribbloids.spookystuff.dsl._
-  import com.tribbloids.spookystuff.utils.ImplicitUtils._
-
   override def doExecute(): SquashedFetchedRDD = {
 
     val trace_DataRowRDD: RDD[(Trace, DataRow)] = child.rdd()
@@ -48,16 +45,8 @@ case class FetchPlan(
       }
 
     val partitioner = partitionerFactory(trace_DataRowRDD)
-    val grouped: RDD[(Trace, Iterable[DataRow])] =
-      fetchOptimizer match {
-        case FetchOptimizers.Narrow =>
-          trace_DataRowRDD.groupByKey_narrow()
-        case FetchOptimizers.Wide =>
-          trace_DataRowRDD.groupByKey(partitioner)
-        case FetchOptimizers.WebCacheAware =>
-          trace_DataRowRDD.groupByKey_beacon(beaconRDDOpt.get)
-        case _ => throw new NotImplementedError(s"${fetchOptimizer.getClass.getSimpleName} optimizer is not supported")
-      }
+    val gp = fetchOptimizer.getGenPartitioner(partitioner)
+    val grouped = gp.groupByKey(trace_DataRowRDD, beaconRDDOpt)
 
     grouped
       .map {

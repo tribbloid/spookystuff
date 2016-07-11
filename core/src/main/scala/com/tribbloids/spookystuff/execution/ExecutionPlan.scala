@@ -46,7 +46,7 @@ abstract class ExecutionPlan(
 
   def firstChildOpt = children.headOption
 
-  //beconRDD is always empty, with fixed partitioning, cogroup with it to maximize In-Memory WebCache hitting chance
+  //beconRDD is always empty, with fixed partitioning, cogroup with it to maximize Local Cache hitting chance
   //by default, inherit from the first child
   protected final def defaultBeaconRDDOpt: Option[RDD[(Trace, DataRow)]] =
     firstChildOpt.flatMap(_.beaconRDDOpt)

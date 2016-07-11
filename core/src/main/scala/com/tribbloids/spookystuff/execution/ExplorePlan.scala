@@ -2,7 +2,7 @@ package com.tribbloids.spookystuff.execution
 
 import com.tribbloids.spookystuff.actions.{Trace, TraceView}
 import com.tribbloids.spookystuff.caching.ExploreRunnerCache
-import com.tribbloids.spookystuff.dsl.{ExploreAlgorithm, FetchOptimizer, FetchOptimizers, JoinType}
+import com.tribbloids.spookystuff.dsl.{ExploreAlgorithm, FetchOptimizer, JoinType}
 import com.tribbloids.spookystuff.extractors._
 import com.tribbloids.spookystuff.row.{SquashedFetchedRow, _}
 import org.apache.spark.Partitioner
@@ -92,8 +92,6 @@ case class ExplorePlan(
   //  }
 
   val impl = exploreAlgorithm.getImpl(_params, this.schema)
-
-  import com.tribbloids.spookystuff.utils.ImplicitUtils._
 
   override def doExecute(): SquashedFetchedRDD = {
     assert(_params.depthField != null)
@@ -219,14 +217,7 @@ case class ExplorePlan(
                       reducer: (Open_Visited, Open_Visited) => Open_Visited,
                       partitioner0: Partitioner
                     ): RDD[(Trace, Open_Visited)] = {
-    fetchOptimizer match {
-      case FetchOptimizers.Narrow =>
-        state0RDD.reduceByKey_narrow(reducer)
-      case FetchOptimizers.Wide =>
-        state0RDD.reduceByKey(partitioner0, reducer)
-      case FetchOptimizers.WebCacheAware =>
-        state0RDD.reduceByKey_beacon(reducer, beaconRDDOpt.get)
-      case _ => throw new NotImplementedError(s"${fetchOptimizer.getClass.getSimpleName} optimizer is not supported")
-    }
+    val gp = fetchOptimizer.getGenPartitioner(partitioner0)
+    gp.reduceByKey(state0RDD, reducer, beaconRDDOpt)
   }
 }

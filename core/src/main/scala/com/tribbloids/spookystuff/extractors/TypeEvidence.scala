@@ -26,11 +26,14 @@ case class TypeEvidence(
 
   def scalaTypeOpt: Option[TypeTag[_]] = {
     val effective: Option[TypeTag[_]] = _scalaTypeOpt
-      .map(v => Option(v))
-      .getOrElse{
+      .orElse{
         val default = TypeUtils.scalaTypeFor(catalystType)
         default
       }
     effective
+  }
+
+  def scalaType = scalaTypeOpt.getOrElse {
+    throw new UnsupportedOperationException(s"base type $this cannot be resolved")
   }
 }

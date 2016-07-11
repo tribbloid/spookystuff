@@ -198,40 +198,41 @@ object ImplicitUtils {
       }
     }
 
-    def groupByKey_narrow(): RDD[(K, Iterable[V])] = {
-
-      self.mapPartitions{
-        itr =>
-          itr
-            .toTraversable
-            .groupBy(_._1)
-            .map(v => v._1 -> v._2.map(_._2).toIterable)
-            .iterator
-      }
-    }
-    def reduceByKey_narrow(
-                            reducer: (V, V) => V
-                          ): RDD[(K, V)] = {
-      self.mapPartitions{
-        itr =>
-          itr
-            .toTraversable
-            .groupBy(_._1)
-            .map(v => v._1 -> v._2.map(_._2).reduce(reducer))
-            .iterator
-      }
-    }
-
-    def groupByKey_beacon[T](
-                              beaconRDD: RDD[(K, T)]
-                            ): RDD[(K, Iterable[V])] = {
-
-      val cogrouped = self.cogroup(beaconRDD, beaconRDD.partitioner.get)
-      cogrouped.mapValues {
-        tuple =>
-          tuple._1
-      }
-    }
+    //TODO: remove, delegated to GenPartitioner
+//    def groupByKey_narrow(): RDD[(K, Iterable[V])] = {
+//
+//      self.mapPartitions{
+//        itr =>
+//          itr
+//            .toTraversable
+//            .groupBy(_._1)
+//            .map(v => v._1 -> v._2.map(_._2).toIterable)
+//            .iterator
+//      }
+//    }
+//    def reduceByKey_narrow(
+//                            reducer: (V, V) => V
+//                          ): RDD[(K, V)] = {
+//      self.mapPartitions{
+//        itr =>
+//          itr
+//            .toTraversable
+//            .groupBy(_._1)
+//            .map(v => v._1 -> v._2.map(_._2).reduce(reducer))
+//            .iterator
+//      }
+//    }
+//
+//    def groupByKey_beacon[T](
+//                              beaconRDD: RDD[(K, T)]
+//                            ): RDD[(K, Iterable[V])] = {
+//
+//      val cogrouped = self.cogroup(beaconRDD, beaconRDD.partitioner.get)
+//      cogrouped.mapValues {
+//        tuple =>
+//          tuple._1
+//      }
+//    }
 
     def reduceByKey_beacon[T](
                                reducer: (V, V) => V,

@@ -15,8 +15,7 @@ import scala.reflect.ClassTag
   */
 object TypeUtils {
 
-  import ScalaReflection.universe
-  import universe.TypeTag
+  import ScalaReflection.universe._
 
   def typeTag[T: TypeTag] = ScalaReflection.universe.typeTag[T]
   def typeOf[T: TypeTag] = ScalaReflection.universe.typeOf[T]
@@ -112,6 +111,39 @@ object TypeUtils {
 
   def scalaTypeFor(dataType: DataType): Option[TypeTag[_]] = {
     scalaTypesFor(dataType).headOption
+  }
+
+  def methodSymbolToParameter_Returntypes(symbol: MethodSymbol, impl: Type) = {
+
+    val signature = symbol.typeSignatureIn(impl)
+    val result = methodSignatureToParameter_ReturnTypes(signature)
+    result
+  }
+
+  private def methodSignatureToParameter_ReturnTypes(tpe: Type): (List[List[Type]], Type) = {
+    tpe match {
+      case n: NullaryMethodType =>
+        Nil -> n.resultType
+      case m: MethodType =>
+        val paramTypes: List[Type] = m.params.map(_.typeSignatureIn(tpe))
+        val downstream = methodSignatureToParameter_ReturnTypes(m.resultType)
+        downstream.copy(_1 = List(paramTypes) ++ methodSignatureToParameter_ReturnTypes(m.resultType)._1)
+      case _ =>
+        Nil -> tpe
+    }
+  }
+
+  //TODO: TypeCreator is not in Developer's API and usage is not recommended
+  def typeToTypeTag[T](
+                        tpe: Type,
+                        mirror: reflect.api.Mirror[reflect.runtime.universe.type]
+                      ): TypeTag[T] = {
+    TypeTag(mirror, new reflect.api.TypeCreator {
+      def apply[U <: reflect.api.Universe with Singleton](m: reflect.api.Mirror[U]) = {
+        assert(m eq mirror, s"TypeTag[$tpe] defined in $mirror cannot be migrated to $m.")
+        tpe.asInstanceOf[U#Type]
+      }
+    })
   }
 
   // used in ReflectionMixin to determine the exact function to:
