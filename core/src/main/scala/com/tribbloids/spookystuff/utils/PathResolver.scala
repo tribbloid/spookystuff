@@ -27,6 +27,8 @@ abstract class PathResolver extends Serializable {
 
   def toAbsolute(pathStr: String): String
 
+  final def isAbsolute(pathStr: String) = toAbsolute(pathStr) == pathStr
+
   def resourceOrAbsolute(pathStr: String): String = {
     val resourcePath = Utils.getCPResource(pathStr.stripPrefix("/")).map(_.getPath).getOrElse(pathStr)
 
@@ -156,7 +158,7 @@ case class HDFSResolver(
       val lockedPath = new Path(pathStr + lockedSuffix)
 
       //wait for 15 seconds in total
-      Utils.retry(5) {
+      Utils.retry(10) {
         assert(!fs.exists(lockedPath), s"File $pathStr is locked by another executor or thread")
         //        Thread.sleep(3*1000)
       }
