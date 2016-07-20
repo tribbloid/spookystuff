@@ -30,5 +30,11 @@
             <version>${spark.version}</version>
             <scope>provided</scope>
         </dependency>
+        <!--<dependency>-->
+            <!--<groupId>org.scalacheck</groupId>-->
+            <!--<artifactId>scalacheck_${scala.binary.version}</artifactId>-->
+            <!--<version>1.13.2</version>-->
+            <!--<scope>test</scope>-->
+        <!--</dependency>-->
     </dependencies>
 </project>

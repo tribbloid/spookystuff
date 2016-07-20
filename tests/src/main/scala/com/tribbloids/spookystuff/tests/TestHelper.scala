@@ -45,7 +45,7 @@ object TestHelper {
     //always use KryoSerializer, it is less stable than Native Serializer
     val conf: SparkConf = new SparkConf()
       .set("spark.serializer", "org.apache.spark.serializer.KryoSerializer")
-//      .set("spark.kryo.registrator", "com.tribbloids.spookystuff.SpookyRegistrator")Incomplete for the moment
+      //      .set("spark.kryo.registrator", "com.tribbloids.spookystuff.SpookyRegistrator")Incomplete for the moment
       .set("spark.kryoserializer.buffer.max", "512m")
 
     val sparkHome = System.getenv("SPARK_HOME")
@@ -118,5 +118,12 @@ object TestHelper {
     val file = new File(tempPath) //TODO: clean up S3 as well
 
     FileUtils.deleteDirectory(file)
+  }
+
+  def timer[T](fn: => T): (T, Long) = {
+    val startTime = System.currentTimeMillis()
+    val result = fn
+    val endTime = System.currentTimeMillis()
+    (result, endTime - startTime)
   }
 }

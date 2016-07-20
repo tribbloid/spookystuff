@@ -68,4 +68,8 @@ trait TestMixin {
         assert(element.toString == element2.toString)
     }
   }
+
+  def printSplitter(name: String) = {
+    println(s"======================================= $name ===================================")
+  }
 }
