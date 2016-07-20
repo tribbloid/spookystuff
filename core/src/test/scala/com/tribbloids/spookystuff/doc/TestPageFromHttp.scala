@@ -121,10 +121,10 @@ class TestPageFromHttp extends SpookyEnvSuite {
     val first = ranges.head
     val second = ranges.last
     assert(first.size === 2)
-    assert(first(0).attr("class").get === "central-featured-logo")
+    assert(first.head.attr("class").get === "central-featured-logo")
     assert(first(1).attr("lang").get === "en")
     assert(second.size === 3)
-    assert(second(0).attr("class").get.contains("lang"))
+    assert(second.head.attr("class").get.contains("lang"))
     assert(second(1).attr("class").get.contains("lang"))
     assert(second(2).attr("class").get.contains("lang"))
   }

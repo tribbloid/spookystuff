@@ -25,7 +25,7 @@ package object dsl {
 
   implicit def PageRowRDDToRDD(wrapper: FetchedDataset): SquashedFetchedRDD = wrapper.rdd
 
-  implicit def spookyContextToPageRowRDD(spooky: SpookyContext): FetchedDataset = spooky.blankFetchedDataset
+  implicit def spookyContextToPageRowRDD(spooky: SpookyContext): FetchedDataset = spooky.createBlank
 
   implicit def traceView(trace: Trace): TraceView = new TraceView(trace)
 
@@ -229,7 +229,7 @@ package object dsl {
 
     def groupBy[K: TypeTag](f: T => K): Extractor[Map[K, Iterable[T]]] = {
 
-      val keyType = TypeUtils.catalystTypeOrDefault[K]()
+      val keyType = TypeUtils.catalystTypeFor[K]
 
       self.andTyped (
         groupByFn(f),

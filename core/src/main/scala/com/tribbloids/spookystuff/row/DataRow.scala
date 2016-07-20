@@ -37,7 +37,7 @@ case class DataRow(
   def nameToField(name: String): Option[Field] = {
     Some(Field(name, isWeak = true)).filter(data.contains)
       .orElse {
-        Some(Field(name, isWeak = false)).filter(data.contains)
+        Some(Field(name)).filter(data.contains)
       }
   }
 

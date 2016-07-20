@@ -1,16 +1,13 @@
 package com.tribbloids.spookystuff.utils
 
-import com.tribbloids.spookystuff.row.{Field, DataRow}
 import org.scalatest.FunSuite
-
-import scala.collection.immutable.ListMap
 
 /**
  * Created by peng on 11/1/14.
  */
-class TestUtils extends FunSuite {
+class UtilsSuite extends FunSuite {
 
-  test("Clean ?:$&#"){
+  test("canonizeUrn should clean ?:$&#"){
     val url = Utils.canonizeUrn("http://abc.com?re#k2$si")
     assert(url === "http/abc.com/re/k2/si")
   }

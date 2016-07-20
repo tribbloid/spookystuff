@@ -5,7 +5,7 @@ import java.util.UUID
 
 import com.tribbloids.spookystuff._
 import com.tribbloids.spookystuff.actions._
-import com.tribbloids.spookystuff.utils.{AnyUDT, IdentifierMixin, Utils}
+import com.tribbloids.spookystuff.utils.{TaggedUDT, IdentifierMixin, Utils}
 import org.apache.commons.csv.CSVFormat
 import org.apache.hadoop.fs.Path
 import org.apache.http.StatusLine
@@ -31,8 +31,9 @@ case class DocUID(
 
 }
 
-class FetchedUDT extends AnyUDT[Fetched]
+class FetchedUDT extends TaggedUDT[Fetched]
 
+//keep small, will be passed around by Spark
 @SQLUserDefinedType(udt = classOf[FetchedUDT])
 trait Fetched extends Serializable {
 
@@ -104,8 +105,11 @@ object Doc {
   val defaultCSVFormat = CSVFormat.DEFAULT
 }
 
-//keep small, will be passed around by Spark
+
+class DocUDT extends TaggedUDT[Doc]
+
 @SerialVersionUID(94865098324L)
+@SQLUserDefinedType(udt = classOf[DocUDT])
 case class Doc(
                 override val uid: DocUID,
 

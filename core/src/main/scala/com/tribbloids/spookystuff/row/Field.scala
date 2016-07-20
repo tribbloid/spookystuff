@@ -70,7 +70,7 @@ case class Field(
         Field.Overwrite
       case Field.Replace =>
         Field.Replace
-      case _ =>
+      case _ => //Field.Error
         if (existing.isWeak) Field.Replace
         else throw new QueryException(s"Field '${existing.name}' already exist") //fail early
     }

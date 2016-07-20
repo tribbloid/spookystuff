@@ -1,54 +1,69 @@
 package com.tribbloids.spookystuff.extractors
 
-import com.tribbloids.spookystuff.extractors.ScalaReflectionSuite.Example
 import com.tribbloids.spookystuff.tests.TestMixin
+import com.tribbloids.spookystuff.utils.TaggedUDT
 import org.apache.spark.sql.TypeUtils
 import org.apache.spark.sql.catalyst.ScalaReflection.universe._
+import org.apache.spark.sql.types.{IntegerType, SQLUserDefinedType, StringType}
 import org.scalatest.FunSuite
 
-object ScalaReflectionSuite {
+//object ScalaReflectionSuite {
 
-  class GenericExample[T](
-                           val a: String,
-                           val b: T
-                         ) {
+class GenericExample[T](
+                         val a: String,
+                         val b: T
+                       ) extends Serializable {
 
-    lazy val c = a + b
+  lazy val c = a + b
 
-    def fn: T = b
-    def fn(i: T) = "" + b + i
+  def fn: T = b
+  def fn(i: T) = "" + b + i
+  def fn(x: T)(y: T, z: T) = "" + b + x + y + z
 
-    def fn(x: T)(y: T, z: T) = "" + b + x + y + z
-
-    def withDefaultParam(
-                          a: T,
-                          b: String = "b"
-                        ) = "" + a + b
-
-    def *=>(k: T): String = "" + k
+  def fnOpt(x: T): Option[T] = {
+    if (b == x) Some(x)
+    else None
+  }
+  def fnOptOpt(x: Option[T]): Option[T] = {
+    if (Option(b) == x) x
+    else None
   }
 
-  case class Example(
-                      override val a: String,
-                      override val b: Int
-                    ) extends GenericExample[Int](a, b)
+  def fnDefault(
+                 a: T,
+                 b: String = "b"
+               ) = "" + a + b
+
+  def *=>(k: T): String = "" + k
 }
+
+class ExampleUDT extends TaggedUDT[Example]
+@SQLUserDefinedType(udt = classOf[ExampleUDT])
+class Example(
+               override val a: String = "dummy",
+               override val b: Int = 1
+             ) extends GenericExample[Int](a, b)
+
+class Example2(
+                override val a: String = "dummy",
+                override val b: Option[Int] = Some(1)
+              ) extends GenericExample[Option[Int]](a, b)
+//}
 
 class ScalaReflectionSuite extends FunSuite with TestMixin {
 
-  lazy val ex: Literal[_] = Literal(Example("dummy", 1))
-  //  val evi = TypeEvidence(ex.dataType)
-  lazy val evi = TypeEvidence(typeTag[Example])
+  lazy val ex: Literal[_] = Literal(new Example())
+  lazy val exampleEvi = TypeEvidence(typeTag[Example])
 
-  test("getMethods should work on overloaded function") {
+  test("getMethodsByName should work on overloaded function") {
 
     val dynamic = ScalaDynamicExtractor(
       ex,
       "fn",
-      Nil
+      None
     )
 
-    val paramss = dynamic._getAllMethods(evi).map(_.paramss)
+    val paramss = dynamic.getMethodsByName(exampleEvi).map(_.paramss)
 
     paramss.mkString("\n").shouldBe (
       """
@@ -58,8 +73,8 @@ class ScalaReflectionSuite extends FunSuite with TestMixin {
       """.stripMargin
     )
 
-    val returnTypes = dynamic._getAllMethods(evi).map{
-      TypeUtils.methodSymbolToParameter_Returntypes(_, evi.scalaType.tpe)
+    val returnTypes = dynamic.getMethodsByName(exampleEvi).map{
+      TypeUtils.getParameter_ReturnTypes(_, exampleEvi.baseScalaType.tpe)
     }
     returnTypes.mkString("\n").shouldBe (
       """
@@ -70,22 +85,22 @@ class ScalaReflectionSuite extends FunSuite with TestMixin {
     )
   }
 
-  test("getMethods should work on case constructor parameter") {
+  test("getMethodsByName should work on case constructor parameter") {
 
     val dynamic = ScalaDynamicExtractor (
       ex,
       "a",
-      Nil
+      None
     )
 
-    val paramss = dynamic._getAllMethods(evi).map(_.paramss)
+    val paramss = dynamic.getMethodsByName(exampleEvi).map(_.paramss)
 
     paramss.mkString("\n").shouldBe(
       "List()"
     )
 
-    val returnTypes = dynamic._getAllMethods(evi).map{
-      TypeUtils.methodSymbolToParameter_Returntypes(_, evi.scalaType.tpe)
+    val returnTypes = dynamic.getMethodsByName(exampleEvi).map{
+      TypeUtils.getParameter_ReturnTypes(_, exampleEvi.baseScalaType.tpe)
     }
     returnTypes.mkString("\n").shouldBe (
       """
@@ -94,22 +109,22 @@ class ScalaReflectionSuite extends FunSuite with TestMixin {
     )
   }
 
-  test("getMethods should work on lazy val property") {
+  test("getMethodsByName should work on lazy val property") {
 
     val dynamic = ScalaDynamicExtractor(
       ex,
       "c",
-      Nil
+      None
     )
 
-    val paramss = dynamic._getAllMethods(evi).map(_.paramss)
+    val paramss = dynamic.getMethodsByName(exampleEvi).map(_.paramss)
 
     paramss.mkString("\n").shouldBe(
       "List()"
     )
 
-    val returnTypes = dynamic._getAllMethods(evi).map{
-      TypeUtils.methodSymbolToParameter_Returntypes(_, evi.scalaType.tpe)
+    val returnTypes = dynamic.getMethodsByName(exampleEvi).map{
+      TypeUtils.getParameter_ReturnTypes(_, exampleEvi.baseScalaType.tpe)
     }
     returnTypes.mkString("\n").shouldBe (
       """
@@ -118,22 +133,22 @@ class ScalaReflectionSuite extends FunSuite with TestMixin {
     )
   }
 
-  test("getMethods should work on function with default parameters") {
+  test("getMethodsByName should work on function with default parameters") {
 
     val dynamic = ScalaDynamicExtractor(
       ex,
-      "withDefaultParam",
-      Nil
+      "fnDefault",
+      None
     )
 
-    val paramss = dynamic._getAllMethods(evi).map(_.paramss)
+    val paramss = dynamic.getMethodsByName(exampleEvi).map(_.paramss)
 
     paramss.mkString("\n").shouldBe(
       "List(List(value a, value b))"
     )
 
-    val returnTypes = dynamic._getAllMethods(evi).map{
-      TypeUtils.methodSymbolToParameter_Returntypes(_, evi.scalaType.tpe)
+    val returnTypes = dynamic.getMethodsByName(exampleEvi).map{
+      TypeUtils.getParameter_ReturnTypes(_, exampleEvi.baseScalaType.tpe)
     }
     returnTypes.mkString("\n").shouldBe (
       """
@@ -142,22 +157,22 @@ class ScalaReflectionSuite extends FunSuite with TestMixin {
     )
   }
 
-  test("getMethods should work on operator") {
+  test("getMethodsByName should work on operator") {
 
     val dynamic = ScalaDynamicExtractor(
       ex,
       "*=>",
-      Nil
+      None
     )
 
-    val paramss = dynamic._getAllMethods(evi).map(_.paramss)
+    val paramss = dynamic.getMethodsByName(exampleEvi).map(_.paramss)
 
     paramss.mkString("\n").shouldBe(
       "List(List(value k))"
     )
 
-    val returnTypes = dynamic._getAllMethods(evi).map{
-      TypeUtils.methodSymbolToParameter_Returntypes(_, evi.scalaType.tpe)
+    val returnTypes = dynamic.getMethodsByName(exampleEvi).map{
+      TypeUtils.getParameter_ReturnTypes(_, exampleEvi.baseScalaType.tpe)
     }
     returnTypes.mkString("\n").shouldBe (
       """
@@ -166,30 +181,155 @@ class ScalaReflectionSuite extends FunSuite with TestMixin {
     )
   }
 
-  test("getScalaReflectionMethod should work on overloaded function") {
+  test("getMethodByScala should work on overloaded function") {
     val dynamic = ScalaDynamicExtractor(
       ex,
       "fn",
-      Nil
+      None
     )
 
-    val paramss = dynamic.getScalaReflectionMethod(evi, List(List(TypeEvidence(typeTag[Int])))).map(_.paramss)
+    val paramss = dynamic.getMethodByScala(exampleEvi, Some(List(TypeEvidence(IntegerType)))).paramss
 
-    paramss.toSeq.mkString("\n").shouldBe(
+    paramss.toString.shouldBe(
       "List(List(value i))"
     )
   }
 
-  test("getScalaReflectionMethod should return None if parameter Type is incorrect") {
+  test("getMethodByJava should work on overloaded function") {
     val dynamic = ScalaDynamicExtractor(
       ex,
       "fn",
-      Nil
+      None
     )
 
-    val paramss = dynamic.getScalaReflectionMethod(evi, List(List(TypeEvidence(typeTag[String])))).map(_.paramss)
+    val paramss = dynamic.getMethodByJava(exampleEvi, Some(List(TypeEvidence(IntegerType))))
+      .getParameters.map(_.getType).mkString("|")
 
-    assert(paramss.isEmpty)
+    paramss.shouldBe(
+      "class java.lang.Object"
+    )
+  }
+
+  test("getMethodByScala should work on function with option output") {
+    val dynamic = ScalaDynamicExtractor(
+      ex,
+      "fnOpt",
+      None
+    )
+
+    val paramss = dynamic.getMethodByScala(exampleEvi, Some(List(TypeEvidence(IntegerType)))).paramss
+
+    paramss.toString.shouldBe(
+      "List(List(value x))"
+    )
+  }
+
+  test("getMethodByJava should work on function with option output") {
+    val dynamic = ScalaDynamicExtractor(
+      ex,
+      "fnOpt",
+      None
+    )
+
+    val paramss = dynamic.getMethodByJava(exampleEvi, Some(List(TypeEvidence(IntegerType))))
+      .getParameters.map(_.getType).mkString("|")
+
+    paramss.shouldBe(
+      "class java.lang.Object"
+    )
+  }
+
+  ignore("getMethodByScala should work on function with option parameter") {
+    val dynamic = ScalaDynamicExtractor(
+      ex,
+      "fnOptOpt",
+      None
+    )
+
+    val paramss = dynamic.getMethodByScala(exampleEvi, Some(List(TypeEvidence(IntegerType)))).paramss
+
+    paramss.toString.shouldBe(
+      "List(List(value x))"
+    )
+  }
+
+  ignore("getMethodByJava should work on function with option parameter") {
+    val dynamic = ScalaDynamicExtractor(
+      ex,
+      "fnOptOpt",
+      None
+    )
+
+    val paramss = dynamic.getMethodByJava(exampleEvi, Some(List(TypeEvidence(IntegerType))))
+      .getParameters.map(_.getType).mkString("|")
+
+    paramss.shouldBe(
+      "class scala.Option"
+    )
+  }
+
+  test("getMethodByScala should throw error if parameter Type is incorrect") {
+    val dynamic = ScalaDynamicExtractor(
+      ex,
+      "fn",
+      None
+    )
+
+    intercept[UnsupportedOperationException] {
+      val paramss = dynamic.getMethodByScala(exampleEvi, Some(List(TypeEvidence(StringType))))
+    }
+  }
+
+  //TODO: this doesn't matter as its only used after scala reflection-based method, but should be fixed in the future
+  ignore("getMethodByJava should return None if parameter Type is incorrect") {
+    val dynamic = ScalaDynamicExtractor(
+      ex,
+      "fn",
+      None
+    )
+
+    intercept[UnsupportedOperationException] {
+      val paramss = dynamic.getMethodByJava(exampleEvi, Some(List(TypeEvidence(StringType))))
+    }
+  }
+
+  test("getMethodByScala should work on operator") {
+
+    val dynamic = ScalaDynamicExtractor(
+      ex,
+      "*=>",
+      None
+    )
+
+    val method = dynamic.getMethodByScala(exampleEvi, Some(List(TypeEvidence(IntegerType))))
+    val paramss = method.paramss
+
+    paramss.toString.shouldBe(
+      "List(List(value k))"
+    )
+
+    val returnType = TypeUtils.getParameter_ReturnTypes(method, exampleEvi.baseScalaType.tpe)
+    returnType.toString.shouldBe (
+      """
+        |(List(List(Int)),String)
+      """.stripMargin
+    )
+  }
+
+  test("getMethodByJava should work on operator") {
+
+    val dynamic = ScalaDynamicExtractor(
+      ex,
+      "*=>",
+      None
+    )
+
+    val method = dynamic.getMethodByJava(exampleEvi, Some(List(TypeEvidence(IntegerType))))
+    val types = method.getParameters.map(_.getType).mkString("|")
+
+    types.toString.shouldBe(
+      "class java.lang.Object"
+    )
   }
 
   //  test("resolveType should work on ")
@@ -216,9 +356,7 @@ class ScalaReflectionSuite extends FunSuite with TestMixin {
 
 class ScalaReflectionSuite_Generic extends ScalaReflectionSuite {
 
-  import ScalaReflectionSuite._
-
   override lazy val ex = Literal(new GenericExample[Int]("dummy", 1))
   //  val evi = TypeEvidence(ex.dataType)
-  override lazy val evi = TypeEvidence(typeTag[GenericExample[Int]])
+  override lazy val exampleEvi = TypeEvidence(typeTag[GenericExample[Int]])
 }

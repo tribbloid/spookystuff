@@ -3,7 +3,7 @@ package com.tribbloids.spookystuff.extractors
 import com.tribbloids.spookystuff.Const
 import com.tribbloids.spookystuff.extractors.GenExtractor._
 import com.tribbloids.spookystuff.row.Field
-import com.tribbloids.spookystuff.utils.{PrettyToStringMixin, Utils}
+import com.tribbloids.spookystuff.utils.Utils
 import org.apache.spark.sql.TypeUtils
 import org.apache.spark.sql.catalyst.trees.TreeNode
 import org.apache.spark.sql.types.{DataType, StructField, StructType}
@@ -19,7 +19,7 @@ object GenExtractor {
   }
   implicit def fromFn[T, R: TypeTag](self: T => R): GenExtractor[T, R] = {
 
-    val dataType = TypeUtils.catalystTypeOrDefault[R]()
+    val dataType = TypeUtils.catalystTypeFor[R]
 
     fromFn(self, dataType)
   }
@@ -30,7 +30,7 @@ object GenExtractor {
   def fromOptionFn[T, R: TypeTag](self: T => Option[R]): GenExtractor[T, R] = {
 
     //this works under the assumption that Catalyst always converts Option[A] to the same DataType as A
-    val dataType = TypeUtils.catalystTypeOrDefault[R]()
+    val dataType = TypeUtils.catalystTypeFor[R]
 
     fromOptionFn(self, dataType)
   }
@@ -43,11 +43,12 @@ object GenExtractor {
     def child: GenExtractor[_,_]
   }
 
+  //TODO: possibility to merge into Spark Resolved expression?
   trait StaticType[T, +R] extends GenExtractor[T,R] {
     val dataType: DataType
     final def resolveType(tt: DataType) = dataType
   }
-  trait StaticPartialFunction[T, +R] extends GenExtractor[T,R] with PartialFunctionWrapper[T, R] with PrettyToStringMixin{
+  trait StaticPartialFunction[T, +R] extends GenExtractor[T,R] with PartialFunctionWrapper[T, R] {
     final def resolve(tt: DataType) = self
   }
   trait Static[T, +R] extends StaticType[T,R] with StaticPartialFunction[T, R] with Leaf[T, R]
@@ -136,7 +137,7 @@ object GenExtractor {
 
 // a subclass wraps an expression and convert it into extractor, which converts all attribute reference children into data reference children and
 // (To be implemented) can be converted to an expression to be wrapped by other expressions
-trait GenExtractor[T, +R] extends Product with Serializable {
+trait GenExtractor[T, +R] extends Serializable {
 
   lazy val TreeNode: GenExtractor.TreeNodeView = GenExtractor.TreeNodeView(this)
 

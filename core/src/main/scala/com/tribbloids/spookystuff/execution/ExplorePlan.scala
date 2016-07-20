@@ -135,14 +135,14 @@ case class ExplorePlan(
     val combinedReducer: (Open_Visited, Open_Visited) => Open_Visited = {
       (v1, v2) =>
         Open_Visited (
-          open = (v1.open ++ v2.open).map(_.toIterable).reduceOption(impl.openReducer).map(_.toArray),
-          visited = (v1.visited ++ v2.visited).map(_.toIterable).reduceOption(impl.visitedReducer).map(_.toArray)
+          open = (v1.open ++ v2.open).map(_.toIterable).reduceOption(impl.openReducerBetweenBatches).map(_.toArray),
+          visited = (v1.visited ++ v2.visited).map(_.toIterable).reduceOption(impl.visitedReducerBetweenBatches).map(_.toArray)
         )
     }
 
     val partitioner0 = partitionerFactory(state0RDD)
     //this will use globalReducer, same thing will happen to later states, eliminator however will only be used inside ExploreStateView.execute()
-    val reducedState0RDD: RDD[(Trace, Open_Visited)] = preFetchReduce(state0RDD, combinedReducer, partitioner0)
+    val reducedState0RDD: RDD[(Trace, Open_Visited)] = betweenEpochReduce(state0RDD, combinedReducer, partitioner0)
 
     val openSetSize = spooky.sparkContext.accumulator(0)
     var i = 1
@@ -178,7 +178,7 @@ case class ExplorePlan(
       val partitioner_+ = partitionerFactory(stateRDD_+)
       //this will use globalReducer, same thing will happen to later states, eliminator however will only be used inside ExploreStateView.execute()
 
-      val reducedStateRDD_+ : RDD[(Trace, Open_Visited)] = preFetchReduce(stateRDD_+, combinedReducer, partitioner_+)
+      val reducedStateRDD_+ : RDD[(Trace, Open_Visited)] = betweenEpochReduce(stateRDD_+, combinedReducer, partitioner_+)
 
       cacheQueue.persist(reducedStateRDD_+, spooky.conf.defaultStorageLevel)
       if (checkpointInterval >0 && i % checkpointInterval == 0) {
@@ -212,7 +212,7 @@ case class ExplorePlan(
     result
   }
 
-  def preFetchReduce(
+  def betweenEpochReduce(
                       state0RDD: RDD[(Trace, Open_Visited)],
                       reducer: (Open_Visited, Open_Visited) => Open_Visited,
                       partitioner0: Partitioner

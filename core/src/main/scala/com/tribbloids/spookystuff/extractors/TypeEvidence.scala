@@ -4,9 +4,11 @@ import org.apache.spark.sql.TypeUtils
 import org.apache.spark.sql.types.DataType
 
 /**
-  * Created by peng on 25/06/16.
+  * Persisted between
   */
 object TypeEvidence {
+
+  import TypeUtils.Implicits._
 
   def apply(catalystType: DataType): TypeEvidence = TypeEvidence(
     catalystType,
@@ -14,26 +16,35 @@ object TypeEvidence {
   )
 
   def apply(scalaType: TypeTag[_]): TypeEvidence = TypeEvidence(
-    TypeUtils.catalystTypeOrDefault()(scalaType),
+    TypeUtils.catalystTypeFor(scalaType),
     Some(scalaType)
   )
+
+  def fromInstance(obj: Any): TypeEvidence = {
+    val clazz = obj.getClass
+    apply(clazz.toTypeTag)
+  }
 }
 
 case class TypeEvidence(
                          catalystType: DataType,
-                         _scalaTypeOpt: Option[TypeTag[_]]
+                         declaredScalaTypeOpt: Option[TypeTag[_]]
                        ) {
 
-  def scalaTypeOpt: Option[TypeTag[_]] = {
-    val effective: Option[TypeTag[_]] = _scalaTypeOpt
-      .orElse{
-        val default = TypeUtils.scalaTypeFor(catalystType)
-        default
-      }
-    effective
+  //TODO: declared as private for being too complex, will be enabled later
+  private def scalaTypes: Seq[TypeTag[_]] = {
+    val opt = declaredScalaTypeOpt.map(v => Seq(v))
+    opt match {
+      case Some(ss) => ss
+      case None =>
+        TypeUtils.scalaTypesFor(catalystType)
+    }
   }
 
-  def scalaType = scalaTypeOpt.getOrElse {
-    throw new UnsupportedOperationException(s"base type $this cannot be resolved")
+  def baseScalaType: TypeTag[_] = {
+    declaredScalaTypeOpt
+      .getOrElse {
+        TypeUtils.baseScalaTypeFor(catalystType)
+      }
   }
 }

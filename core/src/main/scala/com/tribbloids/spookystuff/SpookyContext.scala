@@ -132,7 +132,7 @@ case class SpookyContext private (
 
   lazy val blankSelfRDD = sparkContext.parallelize(Seq(SquashedFetchedRow.blank))
 
-  def blankFetchedDataset = this.create(blankSelfRDD)
+  def createBlank = this.create(blankSelfRDD)
 
   def createBeaconRDD[K: ClassTag,V: ClassTag](
                                                 ref: RDD[_],
@@ -212,7 +212,7 @@ case class SpookyContext private (
           }
           new FetchedDataset(
             self,
-            fieldMap = ListMap(Field("_") -> TypeUtils.catalystTypeOrDefault()(ttg)),
+            fieldMap = ListMap(Field("_") -> TypeUtils.catalystTypeFor(ttg)),
             spooky = getSpookyForInput
           )
       }

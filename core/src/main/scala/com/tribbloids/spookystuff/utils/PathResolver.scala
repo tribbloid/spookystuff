@@ -27,7 +27,9 @@ abstract class PathResolver extends Serializable {
 
   def toAbsolute(pathStr: String): String
 
-  final def isAbsolute(pathStr: String) = toAbsolute(pathStr) == pathStr
+  final def isAbsolute(pathStr: String) = {
+    toAbsolute(pathStr) == pathStr
+  }
 
   def resourceOrAbsolute(pathStr: String): String = {
     val resourcePath = Utils.getCPResource(pathStr.stripPrefix("/")).map(_.getPath).getOrElse(pathStr)

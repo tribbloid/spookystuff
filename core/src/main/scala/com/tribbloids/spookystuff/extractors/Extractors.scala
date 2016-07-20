@@ -67,26 +67,37 @@ object Extractors {
   }
 }
 
-
 object Literal {
 
   def apply[T: TypeTag](v: T): Literal[T] = {
-    val dataType = TypeUtils.catalystTypeOrDefault[T]()
-    Literal[T](v, dataType)
+    val dataType = TypeUtils.catalystTypeFor[T]
+    Literal[T](Option(v), dataType)
   }
+
+  val NULL: Literal[Null] = apply(null)
 }
+
+class GenLiteral[T, +R](val valueOpt: Option[R], val dataType: DataType) extends Static[T, R] {
+
+  def value: R = valueOpt.getOrElse(
+    throw new UnsupportedOperationException("NULL Literal")
+  )
+
+  override def toString = valueOpt.map(
+    v =>
+      "'" + v + "'" //TODO: remove single quotes?
+  )
+    .getOrElse("NULL")
+
+  override val self: PartialFunction[T, R] = Unlift({ _: T => valueOpt})
+}
+
 //just a simple wrapper for T, this is the only way to execute a action
 //this is the only serializable LiftedExpression that can be shipped remotely
-final case class Literal[+T](value: T, dataType: DataType) extends Static[FR, T] {
-
-  override def toString = "'" + value.toString + "'" //TODO: remove single quotes?
-  override val self: PartialFunction[FR, T] = Partial({ _: FR => value})
-}
-
-case object NullLiteral extends Static[FR, Null]{
-
-  override val self: PartialFunction[FR, Null] = PartialFunction.empty[FR, Null]
-  override val dataType: DataType = NullType
+final case class Literal[+T](
+                              override val valueOpt: Option[T],
+                              override val dataType: DataType
+                            ) extends GenLiteral[FR, T](valueOpt, dataType) {
 }
 
 case class GetExpr(field: Field) extends Leaf[FR, Any] {

@@ -4,7 +4,7 @@ import com.tribbloids.spookystuff.doc.{Doc, Fetched}
 import com.tribbloids.spookystuff.extractors._
 import com.tribbloids.spookystuff.selenium.BySizzleCssSelector
 import com.tribbloids.spookystuff.session.{DriverSession, NoDriverSession, Session}
-import com.tribbloids.spookystuff.utils.{AnyUDT, Utils}
+import com.tribbloids.spookystuff.utils.{TaggedUDT, Utils}
 import com.tribbloids.spookystuff.{ActionException, Const, SpookyContext}
 import org.apache.spark.sql.types.SQLUserDefinedType
 import org.openqa.selenium.TakesScreenshot
@@ -13,7 +13,7 @@ import org.slf4j.LoggerFactory
 
 import scala.concurrent.duration.Duration
 
-class ActionUDT extends AnyUDT[Action]
+class ActionUDT extends TaggedUDT[Action]
 
 /**
   * These are the same actions a human would do to get to the data page,
@@ -31,7 +31,7 @@ trait Action extends ActionLike {
 
   private var timeElapsed: Long = -1 //only set once
 
-  override def dryrun = {
+  override def dryrun: List[List[Action]] = {
     if (hasOutput){
       List(List(this))
     }

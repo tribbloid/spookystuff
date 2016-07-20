@@ -20,9 +20,28 @@ object ExploreAlgorithms {
     val params: ExploreParams
     val schema: SchemaContext
 
+    /**
+      *
+      */
     val openReducer: RowReducer
+
+    def openReducerBetweenBatches: RowReducer = openReducer
+
+    /**
+      *
+      */
     val visitedReducer: RowReducer //precede eliminator
+
+    def visitedReducerBetweenBatches: RowReducer = visitedReducer
+
+    /**
+      *
+      */
     val ordering: RowOrdering
+
+    /**
+      *
+      */
     val eliminator: RowEliminator
 
     final lazy val pairOrdering = ordering.on {

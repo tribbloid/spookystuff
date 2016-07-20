@@ -62,10 +62,11 @@ class TypeUtilsSuite extends SpookyEnvSuite {
     IntegerType -> typeTag[Int],
     DoubleType -> typeTag[Double],
     ArrayType(DoubleType, containsNull = false) -> typeTag[Array[Double]],
-//    ArrayType(DoubleType, containsNull = true) -> typeTag[Array[Option[Double]]],
+    //    ArrayType(DoubleType, containsNull = true) -> typeTag[Array[Option[Double]]],
     ArrayType(StringType, containsNull = true) -> typeTag[Array[String]],
+    //    ArrayType(StringType, containsNull = true) -> typeTag[Array[(String, Int)]],
 
-//    tupleSchema -> typeTag[(Int, String)], //TODO: urge spark team to fix the bug and re-enable it
+    //    tupleSchema -> typeTag[(Int, String)], //TODO: urge spark team to fix the bug and re-enable it
     new ActionUDT -> typeTag[Action]
   )
 
@@ -74,7 +75,7 @@ class TypeUtilsSuite extends SpookyEnvSuite {
   typePairs.foreach{
     pair =>
       test(s"scalaType (${pair._2.tpe}) => catalystType (${pair._1})") {
-        val converted = TypeUtils.catalystTypeFor(pair._2)
+        val converted = TypeUtils.catalystTypeOptFor(pair._2)
         println(converted)
         assert(converted == Some(pair._1))
       }
@@ -83,6 +84,22 @@ class TypeUtilsSuite extends SpookyEnvSuite {
         val converted = TypeUtils.scalaTypesFor(pair._1)
         println(converted)
         assert(converted.map(_.toClass) contains pair._2.toClass)
+      }
+  }
+
+  val oneWayPairs: Seq[(TypeTag[_], DataType)] = Seq(
+    typeTag[Array[(String, Int)]] -> ArrayType(StructType(Seq(StructField("_1", StringType), StructField("_2", IntegerType, nullable = false))), containsNull = true),
+    typeTag[Seq[(String, Int)]] -> ArrayType(StructType(Seq(StructField("_1", StringType), StructField("_2", IntegerType, nullable = false))), containsNull = true)
+//    typeTag[Set[(String, Int)]] -> ArrayType(StructType(Seq(StructField("_1", StringType), StructField("_2", IntegerType, nullable = false))), containsNull = true),
+//    typeTag[Iterable[(String, Int)]] -> ArrayType(StructType(Seq(StructField("_1", StringType), StructField("_2", IntegerType, nullable = false))), containsNull = true)
+  )
+
+  oneWayPairs.foreach{
+    pair =>
+      test(s"scalaType (${pair._1.tpe}) => catalystType (${pair._2})") {
+        val converted = TypeUtils.catalystTypeOptFor(pair._1)
+        println(converted)
+        assert(converted == Some(pair._2))
       }
   }
 }

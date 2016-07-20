@@ -8,11 +8,11 @@ import org.apache.spark.sql.types.{DataType, StructField, StructType}
 import scala.collection.immutable.ListMap
 import scala.language.implicitConversions
 
+//this is a special StructType that carries more metadata
 case class SchemaContext(
                           spooky: SpookyContext,
                           map: ListMap[Field, DataType] = ListMap.empty
-                        )
-  extends DataType {
+                        ) extends DataType {
 
   override def defaultSize: Int = 0
 
