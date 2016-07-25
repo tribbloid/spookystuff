@@ -3,10 +3,10 @@ package com.tribbloids.spookystuff.extractors
 import com.tribbloids.spookystuff.Const
 import com.tribbloids.spookystuff.extractors.GenExtractor._
 import com.tribbloids.spookystuff.row.Field
-import com.tribbloids.spookystuff.utils.Utils
-import org.apache.spark.sql.TypeUtils
+import com.tribbloids.spookystuff.utils.ImplicitUtils._
+import com.tribbloids.spookystuff.utils.{SpookyUtils, UnreifiedScalaType}
+import org.apache.spark.sql.catalyst.ScalaReflection.universe._
 import org.apache.spark.sql.catalyst.trees.TreeNode
-import org.apache.spark.sql.types.{DataType, StructField, StructType}
 
 import scala.language.implicitConversions
 
@@ -19,9 +19,7 @@ object GenExtractor {
   }
   implicit def fromFn[T, R: TypeTag](self: T => R): GenExtractor[T, R] = {
 
-    val dataType = TypeUtils.catalystTypeFor[R]
-
-    fromFn(self, dataType)
+    fromFn(self, UnreifiedScalaType.apply[R])
   }
 
   def fromOptionFn[T, R](self: (T) => Option[R], dataType: DataType): GenExtractor[T, R] = {
@@ -29,10 +27,7 @@ object GenExtractor {
   }
   def fromOptionFn[T, R: TypeTag](self: T => Option[R]): GenExtractor[T, R] = {
 
-    //this works under the assumption that Catalyst always converts Option[A] to the same DataType as A
-    val dataType = TypeUtils.catalystTypeFor[R]
-
-    fromOptionFn(self, dataType)
+    fromOptionFn(self, UnreifiedScalaType.apply[R])
   }
 
   trait Leaf[T, +R] extends GenExtractor[T, R] {
@@ -67,7 +62,7 @@ object GenExtractor {
                           name: Option[String] = None
                         ) extends Leaf[T, R]{
     //resolve to a Spark SQL DataType according to an exeuction plan
-    override def resolveType(tt: DataType): DataType = _resolveType(tt)
+    override def resolveType(tt: DataType) = _resolveType(tt)
 
     override def resolve(tt: DataType): PartialFunction[T, R] = _resolve(tt)
 
@@ -81,7 +76,7 @@ object GenExtractor {
                               ) extends GenExtractor[A, C] {
 
     //resolve to a Spark SQL DataType according to an exeuction plan
-    override def resolveType(tt: DataType): DataType = b.resolveType(a.resolveType(tt))
+    override def resolveType(tt: DataType) = b.resolveType(a.resolveType(tt))
 
     override def resolve(tt: DataType): PartialFunction[A, C] = {
       val af = a.resolve(tt)
@@ -102,10 +97,14 @@ object GenExtractor {
       val t1 = arg1.resolveType(tt)
       val t2 = arg2.resolveType(tt)
 
-      StructType(Seq(
-        StructField("_1", t1),
-        StructField("_2", t2)
-      ))
+      val ttg = (t1.scalaType, t2.scalaType) match {
+        case (ttg1: TypeTag[a], ttg2: TypeTag[b]) =>
+          implicit val t1 = ttg1
+          implicit val t2 = ttg2
+          typeTag[Tuple2[a, b]]
+      }
+
+      UnreifiedScalaType(ttg)
     }
 
     override def resolve(tt: DataType): PartialFunction[T, (R1, R2)] = {
@@ -137,6 +136,7 @@ object GenExtractor {
 
 // a subclass wraps an expression and convert it into extractor, which converts all attribute reference children into data reference children and
 // (To be implemented) can be converted to an expression to be wrapped by other expressions
+//TODO: merge with Extractor
 trait GenExtractor[T, +R] extends Serializable {
 
   lazy val TreeNode: GenExtractor.TreeNodeView = GenExtractor.TreeNodeView(this)
@@ -213,14 +213,12 @@ trait GenExtractor[T, +R] extends Serializable {
                                   meta: Option[Any] = None
                                 ) = andTyped(Unlift(g), resolveType, meta)
 
-  import TypeUtils.Implicits._
-
   //TODO: extract subroutine and use it to avoid obj creation overhead
   def typed[A: TypeTag]: GenExtractor[T, A] = {
     implicit val ctg = implicitly[TypeTag[A]].toClassTag
 
     andOptionFn[A]{
-      Utils.typedOrNone[A]
+      SpookyUtils.typedOrNone[A]
     }
   }
 

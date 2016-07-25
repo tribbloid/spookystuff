@@ -12,7 +12,7 @@ import scala.util.matching.Regex
   */
 abstract class AbstractFlowSuite extends FunSuite with TestMixin {
 
-  implicit class StringView(str: String) extends super.StringView(str){
+  implicit class StringView(str: String) extends super.TestStringView(str){
 
     def shouldBeCompacted(gd: String = null): Unit = {
       val compactedGD = Option(gd).map(compactGroundTruth).orNull

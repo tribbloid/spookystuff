@@ -1,7 +1,7 @@
 package com.tribbloids.spookystuff.execution
 
 import com.tribbloids.spookystuff.actions.Wget
-import com.tribbloids.spookystuff.utils.Utils
+import com.tribbloids.spookystuff.utils.SpookyUtils
 import com.tribbloids.spookystuff.{QueryException, SpookyEnvSuite, dsl}
 import org.apache.spark.HashPartitioner
 
@@ -78,7 +78,7 @@ class TestExplorePlan extends SpookyEnvSuite {
 
   test("ExplorePlan should work recursively on directory") {
 
-    val resourcePath = Utils.getCPResource("dir").get.getPath
+    val resourcePath = SpookyUtils.getCPResource("dir").get.getPath
 
     val df = spooky.create(Seq(resourcePath.toString))
       .fetch{

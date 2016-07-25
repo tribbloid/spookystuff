@@ -1,9 +1,13 @@
 package com.tribbloids.spookystuff.utils
 
+import java.sql.{Date, Timestamp}
+
 import com.tribbloids.spookystuff.row._
 import org.apache.spark.SparkContext
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.DataFrame
+import org.apache.spark.sql.catalyst.ScalaReflection
+import org.apache.spark.sql.types._
 
 import scala.collection.generic.CanBuildFrom
 import scala.collection.immutable.ListMap
@@ -266,7 +270,7 @@ object ImplicitUtils {
 
       val valueOption: Option[V] = m1.get(key)
 
-      val values: Iterable[(Any, Int)] = valueOption.toIterable.flatMap(Utils.asIterable[Any]).zipWithIndex
+      val values: Iterable[(Any, Int)] = valueOption.toIterable.flatMap(SpookyUtils.asIterable[Any]).zipWithIndex
       val sampled = sampler(values)
 
       val cleaned = m1 - key
@@ -286,7 +290,7 @@ object ImplicitUtils {
           case _ =>
             tuple._1.toString
         }
-        (Utils.canonizeColumnName(keyName), tuple._2)
+        (SpookyUtils.canonizeColumnName(keyName), tuple._2)
       }
     )
   }
@@ -300,7 +304,7 @@ object ImplicitUtils {
       def get[That](implicit bf: CanBuildFrom[Repr, B, That]): That = {
         val result = self.flatMap{
           v =>
-            Utils.typedOrNone[B](v)
+            SpookyUtils.typedOrNone[B](v)
         }(bf)
         result
       }
@@ -312,7 +316,7 @@ object ImplicitUtils {
     def filterByType[B <: A: ClassTag]: Array[B] = {
       self.flatMap {
         v =>
-          Utils.typedOrNone[B](v)
+          SpookyUtils.typedOrNone[B](v)
       }
     }
 
@@ -324,7 +328,7 @@ object ImplicitUtils {
       val valueOption: Option[A] = if (self.indices contains i) Some(self.apply(i))
       else None
 
-      val values: Iterable[(Any, Int)] = valueOption.toIterable.flatMap(Utils.asIterable[Any]).zipWithIndex
+      val values: Iterable[(Any, Int)] = valueOption.toIterable.flatMap(SpookyUtils.asIterable[Any]).zipWithIndex
       val sampled = sampler(values)
 
       val result: Seq[(Array[Any], Int)] = sampled.toSeq.map{
@@ -397,8 +401,190 @@ object ImplicitUtils {
     def :/(other: String): String = slashed + other
 
     def pathSlash(part: String): String = {
-      if (part.endsWith(Utils.:/)) part
-      else part + Utils.:/
+      if (part.endsWith(SpookyUtils.:/)) part
+      else part + SpookyUtils.:/
+    }
+  }
+
+  import ScalaReflection.universe._
+
+  lazy val atomicExamples: Seq[(Any, TypeTag[_])] = {
+
+    implicit def pairFor[T: TypeTag](v: T): (T, TypeTag[T]) = {
+      v -> TypeUtils.instanceToTypeTag[T](v)
+    }
+
+    val result = Seq[(Any, TypeTag[_])](
+      Array(0: Byte),
+      false,
+      new Date(0),
+      new Timestamp(0),
+      0.0,
+      0: Float,
+      0: Byte,
+      0: Int,
+      0L,
+      0: Short,
+      "a"
+    )
+    result
+  }
+
+  lazy val atomicTypePairs: Seq[(DataType, TypeTag[_])] = atomicExamples.map {
+    v =>
+      v._2.catalystType -> v._2
+  }
+
+  lazy val atomicTypeMap: Map[DataType, TypeTag[_]] = {
+    Map(atomicTypePairs: _*)
+  }
+
+  implicit class DataTypeView(tt: DataType) {
+
+    // CatalystType => ScalaType
+    // used in ReflectionMixin to determine the exact function to:
+    // 1. convert data from CatalystType to canonical Scala Type (and obtain its TypeTag)
+    // 2. use the obtained TypeTag to get the specific function implementation and applies to the canonic Scala Type data.
+    // 3. get the output TypeTag of the function, use it to generate the output DataType of the new Extraction.
+    def scalaTypeOpt: Option[TypeTag[_]] = {
+
+      tt match {
+        case NullType =>
+          Some(TypeTag.Null)
+        case st: ScalaType =>
+          Some(st.ttg)
+        case t if atomicTypeMap.contains(t) =>
+          atomicTypeMap.get(t)
+        case ArrayType(inner, _) =>
+          val innerTagOpt = inner.scalaTypeOpt
+          innerTagOpt.map {
+            case at: TypeTag[a] =>
+              implicit val att = at
+              typeTag[Array[a]]
+          }
+        case MapType(key, value, _) =>
+          val keyTag = key.scalaTypeOpt
+          val valueTag = value.scalaTypeOpt
+          val pairs = (keyTag, valueTag) match {
+            case (Some(kt), Some(vt)) => Some(kt -> vt)
+            case _ => None
+          }
+
+          pairs.map {
+            pair =>
+              (pair._1, pair._2) match {
+                case (ttg1: TypeTag[a], ttg2: TypeTag[b]) =>
+                  implicit val t1 = ttg1
+                  implicit val t2 = ttg2
+                  typeTag[Map[a, b]]
+              }
+          }
+        case _ =>
+          None
+      }
+    }
+
+    def scalaType: TypeTag[_] = {
+      scalaTypeOpt.getOrElse {
+        throw new UnsupportedOperationException(s"cannot convert Catalyst type $tt to Scala type")
+      }
+    }
+
+    //  def scalaTypes: Seq[TypeTag[_]] = {
+    //    val baseOpt = baseScalaTypeOptFor(tt)
+    //
+    //    tt match {
+    //      case t if atomicTypeMap.contains(t) =>
+    //        baseOpt.toSeq.flatMap {selfOrOption}
+    //      case udt: ScalaUDT[_] =>
+    //        baseOpt.toSeq.flatMap {selfOrOption}
+    //      case _ =>
+    //        baseOpt.toSeq
+    //    }
+    //  }
+
+    def reify = UnreifiedScalaType.reify(tt)
+
+    def unboxArray: DataType = {
+      tt match {
+        case ArrayType(boxed, _) =>
+          boxed
+        case udt: ScalaType if udt.catalystType.isInstanceOf[ArrayType] =>
+          udt.catalystType.asInstanceOf[ArrayType].elementType
+        case _ =>
+          throw new UnsupportedOperationException(s"cannot unbox type $tt, its not an array")
+      }
+    }
+
+    def filterArray: Option[DataType] = {
+      tt match {
+        case vv: ArrayType =>
+          Some(vv)
+        case udt: ScalaType if udt.catalystType.isInstanceOf[ArrayType] =>
+          Some(udt)
+        case _ =>
+          None
+      }
+    }
+
+    def asArray: DataType = {
+      filterArray.getOrElse{
+        ArrayType(tt)
+      }
+    }
+
+    def ensureArray: DataType = {
+      filterArray.getOrElse{
+        throw new UnsupportedOperationException(s"Type $tt is not an Array")
+      }
+    }
+
+    def =~= (another: DataType): Boolean = {
+      (tt eq another) ||
+        (tt == another) ||
+        (tt.reify == another.reify)
+    }
+  }
+
+  implicit class TypeTagView[T](ttg: TypeTag[T]) {
+
+    def catalystTypeOpt: Option[DataType] = {
+      TypeUtils.catalystTypeOptFor(ttg)
+    }
+
+    def catalystType: DataType = {
+      TypeUtils.catalystTypeFor(ttg)
+    }
+
+    def toClassTag: ClassTag[T] = ClassTag(_clz)
+
+    def toClass: Class[T] = _clz.asInstanceOf[Class[T]]
+
+    //FIXME: cannot handle Array[_]
+    private def _clz: ScalaReflection.universe.RuntimeClass = ttg.mirror.runtimeClass(ttg.tpe)
+  }
+
+
+  implicit class ClassTagViews[T](self: ClassTag[T]) {
+
+    //  def toTypeTag: TypeTag[T] = TypeTag.apply()
+
+    def toClass: Class[T] = self.runtimeClass.asInstanceOf[Class[T]]
+  }
+
+  implicit class ClassView[T](self: Class[T]) {
+
+    val m = runtimeMirror(self.getClassLoader)
+
+    def toType: Type = {
+
+      val classSymbol = m.staticClass(self.getCanonicalName)
+      val tpe = classSymbol.selfType
+      tpe
+    }
+
+    def toTypeTag: TypeTag[T] = {
+      TypeUtils.createTypeTag(toType, m)
     }
   }
 }

@@ -4,7 +4,7 @@ import java.util.Date
 
 import com.tribbloids.spookystuff.dsl._
 import com.tribbloids.spookystuff.tests.{RemoteDocsFixture, TestHelper}
-import com.tribbloids.spookystuff.utils.Utils
+import com.tribbloids.spookystuff.utils.SpookyUtils
 import com.tribbloids.spookystuff.{DirConf, SpookyConf, SpookyContext}
 import org.apache.spark.SparkContext
 import org.apache.spark.sql.SQLContext
@@ -122,7 +122,7 @@ abstract class IntegrationSuite extends FunSuite with BeforeAndAfterAll with Rem
   }
 
   protected def doTestAfterCache(): Unit = {
-    Utils.retry(retry) {
+    SpookyUtils.retry(retry) {
       spooky.zeroMetrics()
       doMain()
       assertAfterCache()
@@ -130,7 +130,7 @@ abstract class IntegrationSuite extends FunSuite with BeforeAndAfterAll with Rem
   }
 
   protected def doTestBeforeCache(): Unit = {
-    Utils.retry(retry) {
+    SpookyUtils.retry(retry) {
       spooky.conf.IgnoreDocsCreatedBefore = Some(new Date(System.currentTimeMillis()))
       spooky.zeroMetrics()
       doMain()

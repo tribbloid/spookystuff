@@ -2,14 +2,13 @@ package com.tribbloids.spookystuff
 
 import com.tribbloids.spookystuff.dsl.DriverFactories
 import com.tribbloids.spookystuff.dsl.DriverFactories.PhantomJS
-import com.tribbloids.spookystuff.extractors.TypeTag
 import com.tribbloids.spookystuff.rdd.FetchedDataset
 import com.tribbloids.spookystuff.row._
-import com.tribbloids.spookystuff.utils.{HDFSResolver, Utils}
+import com.tribbloids.spookystuff.utils.{HDFSResolver, SpookyUtils}
 import org.apache.hadoop.conf.Configuration
 import org.apache.spark._
 import org.apache.spark.rdd.RDD
-import org.apache.spark.sql.{DataFrame, SQLContext, TypeUtils}
+import org.apache.spark.sql.{DataFrame, SQLContext}
 import org.apache.spark.storage.StorageLevel
 import org.slf4j.LoggerFactory
 
@@ -41,6 +40,9 @@ case class SpookyContext private (
   def this(conf: SparkConf) {
     this(new SparkContext(conf))
   }
+
+  import com.tribbloids.spookystuff.utils.ImplicitUtils._
+  import org.apache.spark.sql.catalyst.ScalaReflection.universe._
 
   val browsersExist = deployPhantomJS()
   def sparkContext = this.sqlContext.sparkContext
@@ -111,8 +113,6 @@ case class SpookyContext private (
   def create(df: DataFrame): FetchedDataset = this.dsl.dataFrameToPageRowRDD(df)
   def create[T: TypeTag](rdd: RDD[T]): FetchedDataset = this.dsl.rddToPageRowRDD(rdd)
 
-  import TypeUtils.Implicits._
-
   def create[T: TypeTag](
                           seq: TraversableOnce[T]
                         ): FetchedDataset = {
@@ -177,7 +177,7 @@ case class SpookyContext private (
 
       rdd match {
         // RDD[Map] => JSON => DF => ..
-        case _ if ttg.tpe <:< TypeUtils.typeOf[Map[_,_]] =>
+        case _ if ttg.tpe <:< typeOf[Map[_,_]] =>
           //        classOf[Map[_,_]].isAssignableFrom(classTag[T].runtimeClass) => //use classOf everywhere?
           val canonRdd = rdd.map(
             map =>map.asInstanceOf[Map[_,_]].canonizeKeysToColumnNames
@@ -185,14 +185,14 @@ case class SpookyContext private (
 
           val jsonRDD = canonRdd.map(
             map =>
-              Utils.toJson(map)
+              SpookyUtils.toJson(map)
           )
           val dataFrame = sqlContext.read.json(jsonRDD)
           dataFrameToPageRowRDD(dataFrame)
 
         // RDD[SquashedFetchedRow] => ..
         //discard schema
-        case _ if ttg.tpe <:< TypeUtils.typeOf[SquashedFetchedRow] =>
+        case _ if ttg.tpe <:< typeOf[SquashedFetchedRow] =>
           //        case _ if classOf[SquashedFetchedRow] == classTag[T].runtimeClass =>
           val self = rdd.asInstanceOf[SquashedFetchedRDD]
           new FetchedDataset(
@@ -212,7 +212,7 @@ case class SpookyContext private (
           }
           new FetchedDataset(
             self,
-            fieldMap = ListMap(Field("_") -> TypeUtils.catalystTypeFor(ttg)),
+            fieldMap = ListMap(Field("_") -> ttg.catalystType),
             spooky = getSpookyForInput
           )
       }

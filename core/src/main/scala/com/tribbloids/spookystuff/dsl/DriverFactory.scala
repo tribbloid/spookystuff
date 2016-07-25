@@ -18,7 +18,7 @@ package com.tribbloids.spookystuff.dsl
 import com.gargoylesoftware.htmlunit.BrowserVersion
 import com.tribbloids.spookystuff.SpookyContext
 import com.tribbloids.spookystuff.session.{CleanWebDriver, CleanWebDriverMixin, ProxySetting}
-import com.tribbloids.spookystuff.utils.Utils
+import com.tribbloids.spookystuff.utils.SpookyUtils
 import org.apache.spark.SparkFiles
 import org.openqa.selenium.htmlunit.HtmlUnitDriver
 import org.openqa.selenium.phantomjs.{PhantomJSDriver, PhantomJSDriverService}
@@ -45,14 +45,14 @@ object DriverFactories {
 
     val remotePhantomJSURL = "https://s3-us-west-1.amazonaws.com/spooky-bin/phantomjs-linux/phantomjs"
 
-    def pathOptionFromEnv = Utils.validateLocalPath(System.getenv("PHANTOMJS_PATH"))
-      .orElse(Utils.validateLocalPath(System.getProperty("phantomjs.binary.path")))
+    def pathOptionFromEnv = SpookyUtils.validateLocalPath(System.getenv("PHANTOMJS_PATH"))
+      .orElse(SpookyUtils.validateLocalPath(System.getProperty("phantomjs.binary.path")))
 
     def pathFromMaster(nameFromMaster: String) = Option(nameFromMaster).map(SparkFiles.get).orNull
 
     def path(path: String, nameFromMaster: String): String = pathOptionFromEnv
       .orElse{
-        Utils.validateLocalPath(path)
+        SpookyUtils.validateLocalPath(path)
       }
       .getOrElse{
         LoggerFactory.getLogger(this.getClass).info("$PHANTOMJS_PATH does not exist, downloading from master")

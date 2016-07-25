@@ -43,7 +43,7 @@ case class ExplorePlan(
 
   val resolver = child.schema.newResolver
 
-  val _on: Resolved[Any] = resolver.resolve(on).head
+  val _on: Resolved[Any] = resolver.include(on).head
   val _params: ExploreParams = {
 
     val effectiveDepthField = {
@@ -69,14 +69,14 @@ case class ExplorePlan(
     )
   }
 
-  val depth_0: Resolved[Int] = resolver.resolve(Literal(0) withAlias _params.depthField).head
-  val depth_++ : Resolved[Int] = resolver.resolve(
+  val depth_0: Resolved[Int] = resolver.include(Literal(0) withAlias _params.depthField).head
+  val depth_++ : Resolved[Int] = resolver.include(
     GetExpr(_params.depthField).typed[Int].andThen(_ + 1) withAlias _params.depthField.!!
   ).head
-  val _ordinal: TypedField = resolver.resolveTyped(TypedField(_params.ordinalField, ArrayType(IntegerType))).head
-  val _extracts: Seq[Resolved[Any]] = resolver.resolve(_params.extracts: _*)
+  val _ordinal: TypedField = resolver.includeTyped(TypedField(_params.ordinalField, ArrayType(IntegerType))).head
+  val _extracts: Seq[Resolved[Any]] = resolver.include(_params.extracts: _*)
 
-  override val schema: SchemaContext = resolver.build
+  override val schema: DataRowSchema = resolver.build
 
   //  {
   //    val extractFields = _extracts.map(_.field)

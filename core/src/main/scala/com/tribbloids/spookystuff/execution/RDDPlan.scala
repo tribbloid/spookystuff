@@ -2,7 +2,7 @@ package com.tribbloids.spookystuff.execution
 
 import com.tribbloids.spookystuff.SpookyContext
 import com.tribbloids.spookystuff.actions._
-import com.tribbloids.spookystuff.row.{DataRow, Field, SquashedFetchedRDD}
+import com.tribbloids.spookystuff.row.{DataRow, Field, DataRowSchema, SquashedFetchedRDD}
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.types.DataType
 
@@ -14,7 +14,7 @@ import scala.collection.mutable.ArrayBuffer
   */
 case class RDDPlan(
                     sourceRDD: SquashedFetchedRDD,
-                    override val schema: SchemaContext,
+                    override val schema: DataRowSchema,
                     override val spooky: SpookyContext,
                     beaconRDD: Option[RDD[(Trace, DataRow)]] = None,
                     override val cacheQueue: ArrayBuffer[RDD[_]] = ArrayBuffer()

@@ -47,11 +47,11 @@ class GenExtractorSuite extends SpookyEnvSuite {
   import com.tribbloids.spookystuff.dsl._
 
   test("Some(partialFn) is serializable") {
-    assertSerializable[Option[(String => Int)]](Some(partialFn), condition = (_,_) => {})
+    assureSerializable[Option[(String => Int)]](Some(partialFn), condition = (_, _) => {})
   }
 
   test("Some(optionFn) is serializable") {
-    assertSerializable[Option[(String => Option[Int])]](Some(optionFn), condition = (_,_) => {})
+    assureSerializable[Option[(String => Option[Int])]](Some(optionFn), condition = (_, _) => {})
   }
 
   val tuples: Seq[(GenExtractor[String, Int], String)] = Seq(
@@ -66,9 +66,9 @@ class GenExtractorSuite extends SpookyEnvSuite {
       val extractor = tuple._1
       val str = tuple._2
       test(s"$str and all its resolved functions are serializable") {
-        assertSerializable[GenExtractor[String, Int]](extractor, condition = (_,_) => {})
-        assertSerializable[PartialFunction[String, Int]](extractor.resolve(schema), condition = (_, _) => {})
-        assertSerializable[Function1[String, Option[Int]]](extractor.resolve(schema).lift, condition = (_, _) => {})
+        assureSerializable[GenExtractor[String, Int]](extractor, condition = (_, _) => {})
+        assureSerializable[PartialFunction[String, Int]](extractor.resolve(schema), condition = (_, _) => {})
+        assureSerializable[Function1[String, Option[Int]]](extractor.resolve(schema).lift, condition = (_, _) => {})
       }
 
       test(s"$str.apply won't execute twice") {

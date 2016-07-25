@@ -7,7 +7,7 @@ import scala.util.Random
 /**
   * Created by peng on 16/11/15.
   */
-class TestImplicits extends SpookyEnvSuite {
+class ImplicitUtilsSuite extends SpookyEnvSuite {
 
   import ImplicitUtils._
 

@@ -10,7 +10,7 @@ import scala.reflect.ClassTag
   */
 trait TestMixin {
 
-  implicit class StringView(str: String) {
+  implicit class TestStringView(str: String) {
 
     //TODO: use reflection to figure out test name and annotate
     def shouldBe(gd: String = null): Unit = {
@@ -42,7 +42,7 @@ trait TestMixin {
     }
   }
 
-  def assertSerializable[T <: AnyRef: ClassTag](
+  def assureSerializable[T <: AnyRef: ClassTag](
                                                  element: T,
                                                  serializers: Seq[Serializer] = {
                                                    val conf = SparkEnv.get.conf
@@ -62,7 +62,7 @@ trait TestMixin {
         val serInstance = ser.newInstance()
         val serElement = serInstance.serialize(element)
         val element2 = serInstance.deserialize[T](serElement)
-        assert(!element.eq(element2))
+//        assert(!element.eq(element2))
         condition (element, element2)
         //    assert(element.hashCode() == element2.hashCode())
         assert(element.toString == element2.toString)

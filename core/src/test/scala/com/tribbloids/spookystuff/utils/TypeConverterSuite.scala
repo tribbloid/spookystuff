@@ -1,29 +1,17 @@
-package org.apache.spark.sql
+package com.tribbloids.spookystuff.utils
 
 import com.tribbloids.spookystuff.SpookyEnvSuite
 import com.tribbloids.spookystuff.actions.{Action, ActionUDT}
-import com.tribbloids.spookystuff.extractors._
 import org.apache.spark.sql.catalyst.ScalaReflection
 import org.apache.spark.sql.types._
 
 /**
   * Created by peng on 08/06/16.
   */
-class TypeUtilsSuite extends SpookyEnvSuite {
+class TypeConverterSuite extends SpookyEnvSuite {
 
-  import TypeUtils._
-  import ScalaReflection.universe
-
-  //  test("java reflection can be used to get type of Array[String].headOption") {
-  //
-  //    val arry: Seq[String] = Seq("abc", "def")
-  //    println(arry.head)
-  //    val clz = arry.getClass
-  //    val fn = clz.getMethod("head")
-  //    val fnTp = fn.getReturnType
-  //
-  //    println(fnTp)
-  //  }
+  import ScalaReflection.universe._
+  import ImplicitUtils._
 
   /**
     * please keep this test to quickly identify any potential problems caused by changes in scala reflection API in the future
@@ -32,14 +20,14 @@ class TypeUtilsSuite extends SpookyEnvSuite {
 
     val arr: Seq[String] = Seq("abc", "def")
     val cls = arr.head.getClass
-    val ttg: TypeTag[Seq[String]] = TypeUtils.getTypeTag(arr)
+    val ttg: TypeTag[Seq[String]] = TypeUtils.instanceToTypeTag(arr)
     val fns = ttg.tpe
       .members
     val fn = fns
       .filter(_.name.toString == "head")
       .head                           // Unsafely access it for now, use Option and map under normal conditions
 
-    val fnTp: universe.Type = fn.typeSignatureIn(ttg.tpe)
+    val fnTp: Type = fn.typeSignatureIn(ttg.tpe)
 
     val clsTp = fnTp.typeSymbol.asClass
     val fnRetTp = fnTp.asInstanceOf[ScalaReflection.universe.NullaryMethodType].resultType
@@ -70,20 +58,18 @@ class TypeUtilsSuite extends SpookyEnvSuite {
     new ActionUDT -> typeTag[Action]
   )
 
-  import TypeUtils.Implicits._
-
   typePairs.foreach{
     pair =>
       test(s"scalaType (${pair._2.tpe}) => catalystType (${pair._1})") {
-        val converted = TypeUtils.catalystTypeOptFor(pair._2)
+        val converted = pair._2.catalystTypeOpt
         println(converted)
         assert(converted == Some(pair._1))
       }
 
       test(s"catalystType (${pair._1}) => scalaType (${pair._2.tpe})") {
-        val converted = TypeUtils.scalaTypesFor(pair._1)
+        val converted = pair._1.scalaTypeOpt
         println(converted)
-        assert(converted.map(_.toClass) contains pair._2.toClass)
+        assert(converted.map(_.toClass) == Some(pair._2.toClass))
       }
   }
 
@@ -97,7 +83,7 @@ class TypeUtilsSuite extends SpookyEnvSuite {
   oneWayPairs.foreach{
     pair =>
       test(s"scalaType (${pair._1.tpe}) => catalystType (${pair._2})") {
-        val converted = TypeUtils.catalystTypeOptFor(pair._1)
+        val converted = pair._1.catalystTypeOpt
         println(converted)
         assert(converted == Some(pair._2))
       }

@@ -1,9 +1,7 @@
 package com.tribbloids.spookystuff.extractors
 
 import com.tribbloids.spookystuff.tests.TestMixin
-import com.tribbloids.spookystuff.utils.TaggedUDT
-import org.apache.spark.sql.TypeUtils
-import org.apache.spark.sql.catalyst.ScalaReflection.universe._
+import com.tribbloids.spookystuff.utils.{ScalaUDT, TypeUtils, UnreifiedScalaType}
 import org.apache.spark.sql.types.{IntegerType, SQLUserDefinedType, StringType}
 import org.scalatest.FunSuite
 
@@ -37,7 +35,7 @@ class GenericExample[T](
   def *=>(k: T): String = "" + k
 }
 
-class ExampleUDT extends TaggedUDT[Example]
+class ExampleUDT extends ScalaUDT[Example]
 @SQLUserDefinedType(udt = classOf[ExampleUDT])
 class Example(
                override val a: String = "dummy",
@@ -52,8 +50,10 @@ class Example2(
 
 class ScalaReflectionSuite extends FunSuite with TestMixin {
 
+  import com.tribbloids.spookystuff.utils.ImplicitUtils.DataTypeView
+
   lazy val ex: Literal[_] = Literal(new Example())
-  lazy val exampleEvi = TypeEvidence(typeTag[Example])
+  lazy val exType: DataType = UnreifiedScalaType.apply[Example]
 
   test("getMethodsByName should work on overloaded function") {
 
@@ -63,7 +63,7 @@ class ScalaReflectionSuite extends FunSuite with TestMixin {
       None
     )
 
-    val paramss = dynamic.getMethodsByName(exampleEvi).map(_.paramss)
+    val paramss = dynamic.getMethodsByName(exType).map(_.paramss)
 
     paramss.mkString("\n").shouldBe (
       """
@@ -73,8 +73,8 @@ class ScalaReflectionSuite extends FunSuite with TestMixin {
       """.stripMargin
     )
 
-    val returnTypes = dynamic.getMethodsByName(exampleEvi).map{
-      TypeUtils.getParameter_ReturnTypes(_, exampleEvi.baseScalaType.tpe)
+    val returnTypes = dynamic.getMethodsByName(exType).map{
+      TypeUtils.getParameter_ReturnTypes(_, exType.scalaType.tpe)
     }
     returnTypes.mkString("\n").shouldBe (
       """
@@ -93,14 +93,14 @@ class ScalaReflectionSuite extends FunSuite with TestMixin {
       None
     )
 
-    val paramss = dynamic.getMethodsByName(exampleEvi).map(_.paramss)
+    val paramss = dynamic.getMethodsByName(exType).map(_.paramss)
 
     paramss.mkString("\n").shouldBe(
       "List()"
     )
 
-    val returnTypes = dynamic.getMethodsByName(exampleEvi).map{
-      TypeUtils.getParameter_ReturnTypes(_, exampleEvi.baseScalaType.tpe)
+    val returnTypes = dynamic.getMethodsByName(exType).map{
+      TypeUtils.getParameter_ReturnTypes(_, exType.scalaType.tpe)
     }
     returnTypes.mkString("\n").shouldBe (
       """
@@ -117,14 +117,14 @@ class ScalaReflectionSuite extends FunSuite with TestMixin {
       None
     )
 
-    val paramss = dynamic.getMethodsByName(exampleEvi).map(_.paramss)
+    val paramss = dynamic.getMethodsByName(exType).map(_.paramss)
 
     paramss.mkString("\n").shouldBe(
       "List()"
     )
 
-    val returnTypes = dynamic.getMethodsByName(exampleEvi).map{
-      TypeUtils.getParameter_ReturnTypes(_, exampleEvi.baseScalaType.tpe)
+    val returnTypes = dynamic.getMethodsByName(exType).map{
+      TypeUtils.getParameter_ReturnTypes(_, exType.scalaType.tpe)
     }
     returnTypes.mkString("\n").shouldBe (
       """
@@ -141,14 +141,14 @@ class ScalaReflectionSuite extends FunSuite with TestMixin {
       None
     )
 
-    val paramss = dynamic.getMethodsByName(exampleEvi).map(_.paramss)
+    val paramss = dynamic.getMethodsByName(exType).map(_.paramss)
 
     paramss.mkString("\n").shouldBe(
       "List(List(value a, value b))"
     )
 
-    val returnTypes = dynamic.getMethodsByName(exampleEvi).map{
-      TypeUtils.getParameter_ReturnTypes(_, exampleEvi.baseScalaType.tpe)
+    val returnTypes = dynamic.getMethodsByName(exType).map{
+      TypeUtils.getParameter_ReturnTypes(_, exType.scalaType.tpe)
     }
     returnTypes.mkString("\n").shouldBe (
       """
@@ -165,14 +165,14 @@ class ScalaReflectionSuite extends FunSuite with TestMixin {
       None
     )
 
-    val paramss = dynamic.getMethodsByName(exampleEvi).map(_.paramss)
+    val paramss = dynamic.getMethodsByName(exType).map(_.paramss)
 
     paramss.mkString("\n").shouldBe(
       "List(List(value k))"
     )
 
-    val returnTypes = dynamic.getMethodsByName(exampleEvi).map{
-      TypeUtils.getParameter_ReturnTypes(_, exampleEvi.baseScalaType.tpe)
+    val returnTypes = dynamic.getMethodsByName(exType).map{
+      TypeUtils.getParameter_ReturnTypes(_, exType.scalaType.tpe)
     }
     returnTypes.mkString("\n").shouldBe (
       """
@@ -188,7 +188,7 @@ class ScalaReflectionSuite extends FunSuite with TestMixin {
       None
     )
 
-    val paramss = dynamic.getMethodByScala(exampleEvi, Some(List(TypeEvidence(IntegerType)))).paramss
+    val paramss = dynamic.getMethodByScala(exType, Some(List(IntegerType))).paramss
 
     paramss.toString.shouldBe(
       "List(List(value i))"
@@ -202,7 +202,7 @@ class ScalaReflectionSuite extends FunSuite with TestMixin {
       None
     )
 
-    val paramss = dynamic.getMethodByJava(exampleEvi, Some(List(TypeEvidence(IntegerType))))
+    val paramss = dynamic.getMethodByJava(exType, Some(List(IntegerType)))
       .getParameters.map(_.getType).mkString("|")
 
     paramss.shouldBe(
@@ -217,7 +217,7 @@ class ScalaReflectionSuite extends FunSuite with TestMixin {
       None
     )
 
-    val paramss = dynamic.getMethodByScala(exampleEvi, Some(List(TypeEvidence(IntegerType)))).paramss
+    val paramss = dynamic.getMethodByScala(exType, Some(List(IntegerType))).paramss
 
     paramss.toString.shouldBe(
       "List(List(value x))"
@@ -231,7 +231,7 @@ class ScalaReflectionSuite extends FunSuite with TestMixin {
       None
     )
 
-    val paramss = dynamic.getMethodByJava(exampleEvi, Some(List(TypeEvidence(IntegerType))))
+    val paramss = dynamic.getMethodByJava(exType, Some(List(IntegerType)))
       .getParameters.map(_.getType).mkString("|")
 
     paramss.shouldBe(
@@ -246,7 +246,7 @@ class ScalaReflectionSuite extends FunSuite with TestMixin {
       None
     )
 
-    val paramss = dynamic.getMethodByScala(exampleEvi, Some(List(TypeEvidence(IntegerType)))).paramss
+    val paramss = dynamic.getMethodByScala(exType, Some(List(IntegerType))).paramss
 
     paramss.toString.shouldBe(
       "List(List(value x))"
@@ -260,7 +260,7 @@ class ScalaReflectionSuite extends FunSuite with TestMixin {
       None
     )
 
-    val paramss = dynamic.getMethodByJava(exampleEvi, Some(List(TypeEvidence(IntegerType))))
+    val paramss = dynamic.getMethodByJava(exType, Some(List(IntegerType)))
       .getParameters.map(_.getType).mkString("|")
 
     paramss.shouldBe(
@@ -276,7 +276,7 @@ class ScalaReflectionSuite extends FunSuite with TestMixin {
     )
 
     intercept[UnsupportedOperationException] {
-      val paramss = dynamic.getMethodByScala(exampleEvi, Some(List(TypeEvidence(StringType))))
+      val paramss = dynamic.getMethodByScala(exType, Some(List(StringType)))
     }
   }
 
@@ -289,7 +289,7 @@ class ScalaReflectionSuite extends FunSuite with TestMixin {
     )
 
     intercept[UnsupportedOperationException] {
-      val paramss = dynamic.getMethodByJava(exampleEvi, Some(List(TypeEvidence(StringType))))
+      val paramss = dynamic.getMethodByJava(exType, Some(List(StringType)))
     }
   }
 
@@ -301,14 +301,14 @@ class ScalaReflectionSuite extends FunSuite with TestMixin {
       None
     )
 
-    val method = dynamic.getMethodByScala(exampleEvi, Some(List(TypeEvidence(IntegerType))))
+    val method = dynamic.getMethodByScala(exType, Some(List(IntegerType)))
     val paramss = method.paramss
 
     paramss.toString.shouldBe(
       "List(List(value k))"
     )
 
-    val returnType = TypeUtils.getParameter_ReturnTypes(method, exampleEvi.baseScalaType.tpe)
+    val returnType = TypeUtils.getParameter_ReturnTypes(method, exType.scalaType.tpe)
     returnType.toString.shouldBe (
       """
         |(List(List(Int)),String)
@@ -324,7 +324,7 @@ class ScalaReflectionSuite extends FunSuite with TestMixin {
       None
     )
 
-    val method = dynamic.getMethodByJava(exampleEvi, Some(List(TypeEvidence(IntegerType))))
+    val method = dynamic.getMethodByJava(exType, Some(List(IntegerType)))
     val types = method.getParameters.map(_.getType).mkString("|")
 
     types.toString.shouldBe(
@@ -357,6 +357,6 @@ class ScalaReflectionSuite extends FunSuite with TestMixin {
 class ScalaReflectionSuite_Generic extends ScalaReflectionSuite {
 
   override lazy val ex = Literal(new GenericExample[Int]("dummy", 1))
-  //  val evi = TypeEvidence(ex.dataType)
-  override lazy val exampleEvi = TypeEvidence(typeTag[GenericExample[Int]])
+  //  val evi = (ex.dataType)
+  override lazy val exType = UnreifiedScalaType.apply[GenericExample[Int]]
 }

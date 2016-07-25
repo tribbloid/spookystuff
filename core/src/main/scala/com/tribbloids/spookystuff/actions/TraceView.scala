@@ -2,8 +2,7 @@ package com.tribbloids.spookystuff.actions
 
 import com.tribbloids.spookystuff.caching.{DFSWebCache, InMemoryWebCache}
 import com.tribbloids.spookystuff.doc.{Doc, Fetched}
-import com.tribbloids.spookystuff.execution.SchemaContext
-import com.tribbloids.spookystuff.row.FetchedRow
+import com.tribbloids.spookystuff.row.{FetchedRow, DataRowSchema}
 import com.tribbloids.spookystuff.session.Session
 import com.tribbloids.spookystuff.{SpookyContext, dsl}
 
@@ -16,7 +15,7 @@ case class TraceView(
                     ) extends Actions(children) { //remember trace is not a block! its the super container that cannot be wrapped
 
   //always has output (Sometimes Empty) to handle left join
-  override def doInterpolate(pr: FetchedRow, schema: SchemaContext): Option[this.type] = {
+  override def doInterpolate(pr: FetchedRow, schema: DataRowSchema): Option[this.type] = {
     val seq = this.doInterpolateSeq(pr, schema)
 
     Some(new TraceView(seq).asInstanceOf[this.type])
@@ -143,8 +142,8 @@ final case class TraceSetView(self: Set[Trace]) {
 
   def correct: Set[Trace] = self.map(_.correct)
 
-  def interpolate(row: FetchedRow, schema: SchemaContext): Set[Trace] =
-    self.flatMap(_.interpolate(row, schema: SchemaContext).map(_.children))
+  def interpolate(row: FetchedRow, schema: DataRowSchema): Set[Trace] =
+    self.flatMap(_.interpolate(row, schema: DataRowSchema).map(_.children))
 
   def outputNames: Set[String] = self.map(_.outputNames).reduce(_ ++ _)
 }

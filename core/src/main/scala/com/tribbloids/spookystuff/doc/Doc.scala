@@ -5,7 +5,7 @@ import java.util.UUID
 
 import com.tribbloids.spookystuff._
 import com.tribbloids.spookystuff.actions._
-import com.tribbloids.spookystuff.utils.{TaggedUDT, IdentifierMixin, Utils}
+import com.tribbloids.spookystuff.utils.{IDMixin, ScalaUDT, SpookyUtils}
 import org.apache.commons.csv.CSVFormat
 import org.apache.hadoop.fs.Path
 import org.apache.http.StatusLine
@@ -31,7 +31,7 @@ case class DocUID(
 
 }
 
-class FetchedUDT extends TaggedUDT[Fetched]
+class FetchedUDT extends ScalaUDT[Fetched]
 
 //keep small, will be passed around by Spark
 @SQLUserDefinedType(udt = classOf[FetchedUDT])
@@ -106,7 +106,7 @@ object Doc {
 }
 
 
-class DocUDT extends TaggedUDT[Doc]
+class DocUDT extends ScalaUDT[Doc]
 
 @SerialVersionUID(94865098324L)
 @SQLUserDefinedType(udt = classOf[DocUDT])
@@ -123,7 +123,7 @@ case class Doc(
                 override val cacheable: Boolean = true,
                 httpStatus: Option[StatusLine] = None,
                 @transient metadata: Map[String, Any] = null //for customizing parsing
-              ) extends Unstructured with Fetched with IdentifierMixin {
+              ) extends Unstructured with Fetched with IDMixin {
 
   lazy val _id = (uid, uri, declaredContentType, timeMillis, httpStatus.toString)
 
@@ -239,7 +239,7 @@ case class Doc(
             overwrite: Boolean = false
           )(spooky: SpookyContext): Unit = {
 
-    val path = Utils.pathConcat(pathParts: _*)
+    val path = SpookyUtils.pathConcat(pathParts: _*)
 
     DocUtils.dfsWrite("save", path, spooky) {
 

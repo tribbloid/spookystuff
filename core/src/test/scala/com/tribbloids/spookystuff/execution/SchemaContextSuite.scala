@@ -2,6 +2,7 @@ package com.tribbloids.spookystuff.execution
 
 import com.tribbloids.spookystuff.SpookyEnvSuite
 import com.tribbloids.spookystuff.extractors.Literal
+import com.tribbloids.spookystuff.row.DataRowSchema
 
 /**
   * Created by peng on 14/06/16.
@@ -12,10 +13,10 @@ class SchemaContextSuite extends SpookyEnvSuite{
 
   test("Resolver should not scramble sequence of fields") {
 
-    val schema0 = SchemaContext(spooky)
+    val schema0 = DataRowSchema(spooky)
     val resolver0 = schema0.newResolver
     resolver0
-      .resolve(
+      .include(
         "literal1" ~ 'a,
         Literal(0) ~ 'b
       )
@@ -26,7 +27,7 @@ class SchemaContextSuite extends SpookyEnvSuite{
     )
     val resolver1 = schema1.newResolver
     resolver1
-      .resolve(
+      .include(
         'a ~ 'c,
         Literal(0.0) ~ 'd
       )

@@ -35,6 +35,7 @@ class ScalaDynamicExtractorSuite extends SpookyEnvSuite {
   //  }
 
   import com.tribbloids.spookystuff.dsl._
+  import com.tribbloids.spookystuff.utils.ImplicitUtils._
   val doc = Wget(HTML_URL).fetch(spooky).head
 
   test("can resolve type of Fetched.timestamp") {
@@ -47,7 +48,7 @@ class ScalaDynamicExtractorSuite extends SpookyEnvSuite {
       None
     )
 
-    assert(dynamic.resolveType(null) == TimestampType)
+    assert(dynamic.resolveType(null) =~= TimestampType)
   }
 
   test("can resolve type of Doc.uri") {
@@ -58,7 +59,7 @@ class ScalaDynamicExtractorSuite extends SpookyEnvSuite {
       None
     )
 
-    assert(dynamic.resolveType(null) == StringType)
+    assert(dynamic.resolveType(null) =~= StringType)
   }
 
   test("can resolve type of Doc.code") {
@@ -69,7 +70,7 @@ class ScalaDynamicExtractorSuite extends SpookyEnvSuite {
       None
     )
 
-    assert(dynamic.resolveType(null) == StringType)
+    assert(dynamic.resolveType(null) =~= StringType)
   }
 
   //useless at the moment
@@ -86,7 +87,7 @@ class ScalaDynamicExtractorSuite extends SpookyEnvSuite {
       None
     )
 
-    assert(dynamic.resolveType(null) == ArrayType(ArrayType(new ActionUDT())))
+    assert(dynamic.resolveType(null) =~= ArrayType(ArrayType(new ActionUDT())))
   }
 
   test("can resolve function of String.startsWith(String) using Scala") {
@@ -166,7 +167,7 @@ class ScalaDynamicExtractorSuite extends SpookyEnvSuite {
       Some(List[GetExpr]('B))
     )
 
-    assert(dynamic.resolveType(schema) == StringType)
+    assert(dynamic.resolveType(schema) =~= StringType)
     val resolved = dynamic.resolve(schema)
     assert(resolved.lift.apply(rows(0)) == Some("12"))
     assert(resolved.lift.apply(rows(1)) == Some("11"))
@@ -182,7 +183,7 @@ class ScalaDynamicExtractorSuite extends SpookyEnvSuite {
       Some(List[GetExpr]('B))
     )
 
-    assert(dynamic.resolveType(schema) == IntegerType)
+    assert(dynamic.resolveType(schema) =~= IntegerType)
     val resolved = dynamic.resolve(schema)
     assert(resolved.lift.apply(rows(0)).isEmpty)
     assert(resolved.lift.apply(rows(1)) == Some(1))
@@ -197,7 +198,7 @@ class ScalaDynamicExtractorSuite extends SpookyEnvSuite {
       Some(List[GetExpr]('C))
     )
 
-    assert(dynamic.resolveType(schema) == BooleanType)
+    assert(dynamic.resolveType(schema) =~= BooleanType)
     val resolved = dynamic.resolve(schema)
     assert(resolved.lift.apply(rows(0)) == Some(true))
     assert(resolved.lift.apply(rows(1)) == Some(true))
@@ -212,7 +213,7 @@ class ScalaDynamicExtractorSuite extends SpookyEnvSuite {
       None
     )
 
-    assert(dynamic.resolveType(schema) == IntegerType)
+    assert(dynamic.resolveType(schema) =~= IntegerType)
     val resolved = dynamic.resolve(schema)
     assert(resolved.lift.apply(rows(0)) == Some(5))
   }

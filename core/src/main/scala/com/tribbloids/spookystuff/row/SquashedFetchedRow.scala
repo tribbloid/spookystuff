@@ -4,7 +4,6 @@ import java.util.UUID
 
 import com.tribbloids.spookystuff.actions.{Actions, Trace, TraceView}
 import com.tribbloids.spookystuff.doc.Fetched
-import com.tribbloids.spookystuff.execution.SchemaContext
 import com.tribbloids.spookystuff.extractors.Resolved
 
 import scala.collection.mutable.ArrayBuffer
@@ -59,7 +58,7 @@ case class SquashedFetchedRow(
     dataRows = dataRows.map(_.--(fields))
   )
 
-  class WithSchema(schema: SchemaContext) extends Serializable {
+  class WithSchema(schema: DataRowSchema) extends Serializable {
 
     val withSpooky = new SquashedFetchedRow.this.traceView.WithSpooky(schema.spooky)
 

@@ -29,7 +29,7 @@ case class ExtractPlan[+T](
 
   val resolver = child.schema.newResolver
 
-  val _exs: Seq[Resolved[Any]] = resolver.resolve[T](exs: _*)
+  val _exs: Seq[Resolved[Any]] = resolver.include[T](exs: _*)
 
   override val schema = resolver.build
 
@@ -53,7 +53,7 @@ case class FlattenPlan(
     }
     val tf = TypedField(onField.!!, flattenType)
 
-    resolver.resolveTyped(tf).head
+    resolver.includeTyped(tf).head
   }
 
   val effectiveOrdinalField = Option(ordinalField) match {
@@ -63,7 +63,7 @@ case class FlattenPlan(
       Field(_on.self.name + "_ordinal", isWeak = true, isOrdinal = true)
   }
 
-  val _ordinal: TypedField = resolver.resolveTyped(TypedField(effectiveOrdinalField, ArrayType(IntegerType))).head
+  val _ordinal: TypedField = resolver.includeTyped(TypedField(effectiveOrdinalField, ArrayType(IntegerType))).head
 
   override val schema = resolver.build
 

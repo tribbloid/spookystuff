@@ -1,11 +1,10 @@
 package com.tribbloids.spookystuff
 
 import com.tribbloids.spookystuff.dsl.{DriverFactories, DriverFactory}
-import com.tribbloids.spookystuff.execution.SchemaContext
 import com.tribbloids.spookystuff.extractors.{Alias, GenExtractor, GenResolved}
-import com.tribbloids.spookystuff.row.{SquashedFetchedRow, TypedField}
+import com.tribbloids.spookystuff.row.{DataRowSchema, SquashedFetchedRow, TypedField}
 import com.tribbloids.spookystuff.tests.{RemoteDocsFixture, TestHelper}
-import com.tribbloids.spookystuff.utils.Utils
+import com.tribbloids.spookystuff.utils.SpookyUtils
 import org.apache.spark.SparkContext
 import org.apache.spark.sql.SQLContext
 import org.scalatest.{BeforeAndAfter, BeforeAndAfterAll, FunSuite, Retries}
@@ -25,7 +24,7 @@ abstract class SpookyEnvSuite
     driverFactory = driverFactory
   )
   lazy val spooky = new SpookyContext(sql, spookyConf)
-  lazy val schema = SchemaContext(spooky)
+  lazy val schema = DataRowSchema(spooky)
 
   implicit def withSchema(row: SquashedFetchedRow): SquashedFetchedRow#WithSchema = new row.WithSchema(schema)
   implicit def extractor2Resolved[T, R](extractor: Alias[T, R]): GenResolved[T, R] = GenResolved(
@@ -42,7 +41,7 @@ abstract class SpookyEnvSuite
 
   override def withFixture(test: NoArgTest) = {
     if (isRetryable(test))
-      Utils.retry(4) { super.withFixture(test) }
+      SpookyUtils.retry(4) { super.withFixture(test) }
     else
       super.withFixture(test)
   }
@@ -66,7 +65,7 @@ abstract class SpookyEnvSuite
   before{
     // bypass java.lang.NullPointerException at org.apache.spark.broadcast.TorrentBroadcast$.unpersist(TorrentBroadcast.scala:228)
     // TODO: clean up after fix
-    Utils.retryExplicitly(50) {
+    SpookyUtils.retryExplicitly(50) {
       setUp()
     }
   }

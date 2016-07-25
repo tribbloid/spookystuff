@@ -8,12 +8,11 @@ import javax.net.ssl.SSLContext
 
 import com.tribbloids.spookystuff.Const
 import com.tribbloids.spookystuff.doc._
-import com.tribbloids.spookystuff.execution.SchemaContext
 import com.tribbloids.spookystuff.extractors.{Extractor, Literal}
 import com.tribbloids.spookystuff.http._
-import com.tribbloids.spookystuff.row.FetchedRow
+import com.tribbloids.spookystuff.row.{FetchedRow, DataRowSchema}
 import com.tribbloids.spookystuff.session.{ProxySetting, Session}
-import com.tribbloids.spookystuff.utils.{HDFSResolver, Utils}
+import com.tribbloids.spookystuff.utils.{HDFSResolver, SpookyUtils}
 import org.apache.commons.io.IOUtils
 import org.apache.hadoop.fs.{FileStatus, FileSystem, Path}
 import org.apache.http.client.config.RequestConfig
@@ -68,7 +67,7 @@ trait Export extends Named with Wayback{
 trait WaybackSupport {
   self: Wayback =>
 
-  var wayback: Extractor[Long] = null
+  var wayback: Extractor[Long] = _
 
   def waybackTo(date: Extractor[Date]): this.type = {
     this.wayback = date.andThen(_.getTime)
@@ -88,7 +87,7 @@ trait WaybackSupport {
   protected def injectWayback(
                                wayback: Extractor[Long],
                                pageRow: FetchedRow,
-                               schema: SchemaContext
+                               schema: DataRowSchema
                              ): Option[this.type] = {
     if (wayback == null) Some(this)
     else {
@@ -136,7 +135,7 @@ case class Snapshot(
     Seq(page)
   }
 
-  override def doInterpolate(pageRow: FetchedRow, schema: SchemaContext) = {
+  override def doInterpolate(pageRow: FetchedRow, schema: DataRowSchema) = {
     this.copy().asInstanceOf[this.type].injectWayback(this.wayback, pageRow, schema)
   }
 }
@@ -165,7 +164,7 @@ case class Screenshot(
     Seq(page)
   }
 
-  override def doInterpolate(pageRow: FetchedRow, schema: SchemaContext) = {
+  override def doInterpolate(pageRow: FetchedRow, schema: DataRowSchema) = {
     this.copy().asInstanceOf[this.type].injectWayback(this.wayback, pageRow, schema)
   }
 }
@@ -182,8 +181,8 @@ abstract class HttpCommand(
     else Some(HttpUtils.uri(uriStr))
   }
 
-  def resolveURI(pageRow: FetchedRow, schema: SchemaContext): Option[Literal[String]] = {
-    val first = this.uri.resolve(schema).lift(pageRow).flatMap(Utils.asArray[Any](_).headOption)
+  def resolveURI(pageRow: FetchedRow, schema: DataRowSchema): Option[Literal[String]] = {
+    val first = this.uri.resolve(schema).lift(pageRow).flatMap(SpookyUtils.asArray[Any](_).headOption)
 
     val uriStr: Option[String] = first.flatMap {
       case element: Unstructured => element.href
@@ -462,7 +461,7 @@ case class Wget(
         }
     }
     val xml = <root>{NodeSeq.fromSeq(xmls)}</root>
-    val xmlStr = Utils.xmlPrinter.format(xml)
+    val xmlStr = SpookyUtils.xmlPrinter.format(xml)
 
     val result: Fetched = new Doc(
       DocUID(List(this), this),
@@ -536,7 +535,7 @@ case class Wget(
     httpInvoke(httpClient, context, request)
   }
 
-  override def doInterpolate(pageRow: FetchedRow, schema: SchemaContext): Option[this.type] = {
+  override def doInterpolate(pageRow: FetchedRow, schema: DataRowSchema): Option[this.type] = {
     val uriLit: Option[Literal[String]] = resolveURI(pageRow, schema)
 
     uriLit.flatMap(
@@ -645,7 +644,7 @@ case class WpostImpl private[actions](
     result
   }
 
-  override def doInterpolate(pageRow: FetchedRow, schema: SchemaContext): Option[this.type] = {
+  override def doInterpolate(pageRow: FetchedRow, schema: DataRowSchema): Option[this.type] = {
     val uriLit: Option[Literal[String]] = resolveURI(pageRow, schema)
 
     uriLit.flatMap(

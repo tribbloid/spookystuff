@@ -6,7 +6,7 @@ import com.tribbloids.spookystuff.dsl.{ExploreAlgorithm, FetchOptimizer, JoinTyp
 import com.tribbloids.spookystuff.execution.{ExplorePlan, FetchPlan, _}
 import com.tribbloids.spookystuff.extractors.{GetExpr, _}
 import com.tribbloids.spookystuff.row.{Field, _}
-import com.tribbloids.spookystuff.utils.{ImplicitUtils, Utils}
+import com.tribbloids.spookystuff.utils.{ImplicitUtils, SpookyUtils}
 import com.tribbloids.spookystuff.{Const, SpookyConf, SpookyContext}
 import org.apache.spark.Partitioner
 import org.apache.spark.rdd.RDD
@@ -51,7 +51,7 @@ case class FetchedDataset(
             webCacheBeaconRDDOpt: Option[RDD[(Trace, DataRow)]] = None,
             cacheQueue: ArrayBuffer[RDD[_]] = ArrayBuffer()
           ) =
-    this(RDDPlan(sourceRDD, SchemaContext(spooky, fieldMap), spooky, webCacheBeaconRDDOpt, cacheQueue))
+    this(RDDPlan(sourceRDD, DataRowSchema(spooky, fieldMap), spooky, webCacheBeaconRDDOpt, cacheQueue))
 
   //TODO: use reflection for more clear API
   def setConf(f: SpookyConf => Unit): this.type = {
@@ -158,7 +158,7 @@ case class FetchedDataset(
         .filter(key => !key.isWeak)
         .map {
           key =>
-            val name = Utils.canonizeColumnName(key.name)
+            val name = SpookyUtils.canonizeColumnName(key.name)
             if (schemaRDD.schema.fieldNames.contains(name)) new Column(UnresolvedAttribute(name))
             else new Column(expressions.Alias(org.apache.spark.sql.catalyst.expressions.Literal(null), name)())
         }
@@ -178,7 +178,7 @@ case class FetchedDataset(
                    default: String = null
                  ): RDD[String] = {
 
-    val _ex = newResolver.resolve(ex.toStr).head
+    val _ex = newResolver.include(ex.toStr).head
 
     unsquashedRDD.map (
       v =>
@@ -191,7 +191,7 @@ case class FetchedDataset(
                                 default: T = null
                               ): RDD[T] = {
 
-    val _ex = newResolver.resolve(ex).head
+    val _ex = newResolver.include(ex).head
 
     unsquashedRDD.map(v => _ex.applyOrElse[FetchedRow, T](v, _ => default))
   }
@@ -227,9 +227,9 @@ case class FetchedDataset(
 
     val effectiveExt = Option(extension).getOrElse(page.defaultFileExtension)
 
-    val _ext = newResolver.resolve(effectiveExt).head
-    val _path = newResolver.resolve(path).head
-    val _pageExpr = newResolver.resolve(page).head
+    val _ext = newResolver.include(effectiveExt).head
+    val _path = newResolver.include(path).head
+    val _pageExpr = newResolver.include(page).head
 
     //Execute immediately
     rdd.foreach {

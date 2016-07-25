@@ -1,7 +1,6 @@
 package com.tribbloids.spookystuff
 
 import com.tribbloids.spookystuff.row.FetchedRow
-import org.apache.spark.sql.catalyst.ScalaReflection
 
 import scala.language.implicitConversions
 
@@ -10,7 +9,9 @@ import scala.language.implicitConversions
   */
 package object extractors {
 
-  type TypeTag[T] = ScalaReflection.universe.TypeTag[T]
+//  type TypeTag[T] = ScalaReflection.universe.TypeTag[T]
+
+  type DataType = org.apache.spark.sql.types.DataType
 
   type FR = FetchedRow
 

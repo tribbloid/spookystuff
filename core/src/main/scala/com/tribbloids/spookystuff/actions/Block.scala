@@ -5,11 +5,10 @@ import org.slf4j.LoggerFactory
 import com.tribbloids.spookystuff.extractors.{Extractor, Literal}
 import com.tribbloids.spookystuff._
 import com.tribbloids.spookystuff.http.HttpUtils
-import com.tribbloids.spookystuff.row.FetchedRow
+import com.tribbloids.spookystuff.row.{FetchedRow, DataRowSchema}
 import com.tribbloids.spookystuff.doc.{Doc, Fetched, NoDoc}
-import com.tribbloids.spookystuff.execution.SchemaContext
 import com.tribbloids.spookystuff.session.Session
-import com.tribbloids.spookystuff.utils.Utils.retry
+import com.tribbloids.spookystuff.utils.SpookyUtils.retry
 
 import scala.collection.mutable.ArrayBuffer
 import scala.concurrent.duration.Duration
@@ -118,7 +117,7 @@ final case class Try(
     pages
   }
 
-  override def doInterpolate(pageRow: FetchedRow, schema: SchemaContext): Option[this.type] ={
+  override def doInterpolate(pageRow: FetchedRow, schema: DataRowSchema): Option[this.type] ={
     val seq = this.doInterpolateSeq(pageRow, schema)
     if (seq.isEmpty) None
     else Some(this.copy(children = seq)(this.retries, this.cacheEmptyOutput).asInstanceOf[this.type])
@@ -178,7 +177,7 @@ final case class TryLocally(
     pages
   }
 
-  override def doInterpolate(pageRow: FetchedRow, schema: SchemaContext): Option[this.type] ={
+  override def doInterpolate(pageRow: FetchedRow, schema: DataRowSchema): Option[this.type] ={
     val seq = this.doInterpolateSeq(pageRow, schema)
     if (seq.isEmpty) None
     else Some(this.copy(children = seq)(this.retries, this.cacheEmptyOutput).asInstanceOf[this.type])
@@ -236,7 +235,7 @@ final case class Loop(
     pages
   }
 
-  override def doInterpolate(pageRow: FetchedRow, schema: SchemaContext): Option[this.type] ={
+  override def doInterpolate(pageRow: FetchedRow, schema: DataRowSchema): Option[this.type] ={
     val seq = this.doInterpolateSeq(pageRow, schema)
     if (seq.isEmpty) None
     else Some(this.copy(children = seq).asInstanceOf[this.type])
@@ -329,7 +328,7 @@ final case class If(
     pages
   }
 
-  override def doInterpolate(pageRow: FetchedRow, schema: SchemaContext): Option[this.type] ={
+  override def doInterpolate(pageRow: FetchedRow, schema: DataRowSchema): Option[this.type] ={
     val ifTrueInterpolated = Actions.doInterppolateSeq(ifTrue, pageRow, schema)
     val ifFalseInterpolated = Actions.doInterppolateSeq(ifFalse, pageRow, schema)
     val result = this.copy(ifTrue = ifTrueInterpolated, ifFalse = ifFalseInterpolated).asInstanceOf[this.type]
@@ -366,7 +365,7 @@ case class OAuthV2(self: Wget) extends Block(List(self)) with Driverless {
 
   override def trunk = Some(this)
 
-  override def doInterpolate(pageRow: FetchedRow, schema: SchemaContext): Option[this.type] =
+  override def doInterpolate(pageRow: FetchedRow, schema: DataRowSchema): Option[this.type] =
     self.interpolate(pageRow, schema).map {
       v => this.copy(self = v.asInstanceOf[Wget]).asInstanceOf[this.type]
     }

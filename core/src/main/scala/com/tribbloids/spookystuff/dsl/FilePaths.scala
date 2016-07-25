@@ -4,7 +4,7 @@ import java.util.UUID
 
 import com.tribbloids.spookystuff.actions.Trace
 import com.tribbloids.spookystuff.doc.Doc
-import com.tribbloids.spookystuff.utils.Utils
+import com.tribbloids.spookystuff.utils.SpookyUtils
 
 object FilePaths{
 
@@ -35,7 +35,7 @@ object FilePaths{
 
       val hash = "-"+trace.hashCode
 
-      Utils.canonizeFileName(actionConcat + hash)
+      SpookyUtils.canonizeFileName(actionConcat + hash)
     }
   }
 
@@ -56,18 +56,18 @@ object FilePaths{
 
       val hash = "-"+trace.hashCode
 
-      Utils.canonizeUrn(actionConcat + hash)
+      SpookyUtils.canonizeUrn(actionConcat + hash)
     }
   }
 
   //only from Page
   case class UUIDName(encoder: ByTrace[Any]) extends ByDoc[String] {
     override def apply(page: Doc): String =
-      Utils.pathConcat(encoder(page.uid.backtrace).toString, UUID.randomUUID().toString)
+      SpookyUtils.pathConcat(encoder(page.uid.backtrace).toString, UUID.randomUUID().toString)
   }
 
   case class TimeStampName(encoder: ByTrace[Any]) extends ByDoc[String] {
     override def apply(page: Doc): String =
-      Utils.pathConcat(encoder(page.uid.backtrace).toString, Utils.canonizeFileName(page.timeMillis.toString))
+      SpookyUtils.pathConcat(encoder(page.uid.backtrace).toString, SpookyUtils.canonizeFileName(page.timeMillis.toString))
   }
 }

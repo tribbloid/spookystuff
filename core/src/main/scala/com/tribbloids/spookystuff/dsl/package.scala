@@ -8,9 +8,8 @@ import com.tribbloids.spookystuff.extractors.GenExtractor.And_->
 import com.tribbloids.spookystuff.extractors._
 import com.tribbloids.spookystuff.rdd.FetchedDataset
 import com.tribbloids.spookystuff.row.{Field, SquashedFetchedRDD}
-import com.tribbloids.spookystuff.utils.Default
+import com.tribbloids.spookystuff.utils.{Default, UnreifiedScalaType}
 import org.apache.spark.rdd.RDD
-import org.apache.spark.sql.TypeUtils
 import org.apache.spark.sql.types._
 
 import scala.collection.GenTraversableOnce
@@ -19,6 +18,9 @@ import scala.language.implicitConversions
 import scala.reflect.ClassTag
 
 package object dsl {
+
+  import com.tribbloids.spookystuff.utils.ImplicitUtils._
+  import org.apache.spark.sql.catalyst.ScalaReflection.universe.TypeTag
 
   type ByDoc[+R] = (Doc => R)
   type ByTrace[+R] = (Trace => R)
@@ -178,10 +180,6 @@ package object dsl {
 
   implicit class IterableExprView[T: ClassTag](self: Extractor[Iterable[T]]) extends Serializable {
 
-    val unboxType: DataType => DataType = {
-      case ArrayType(boxed, _) => boxed
-    }
-
     //    def andSelfType[R <: Iterable[T]](f: Iterable[T] => Option[R]) = self.andOptionFnTyped[R, Iterable[T]](
     //      f, {
     //        t => t
@@ -194,9 +192,9 @@ package object dsl {
     //      }
     //    )
 
-    def head: Extractor[T] = self.andOptionTyped((v: Iterable[T]) => v.headOption, unboxType)
+    def head: Extractor[T] = self.andOptionTyped((v: Iterable[T]) => v.headOption, _.unboxArray)
 
-    def last: Extractor[T] = self.andOptionTyped((v: Iterable[T]) => v.lastOption, unboxType)
+    def last: Extractor[T] = self.andOptionTyped((v: Iterable[T]) => v.lastOption, _.unboxArray)
 
     def get(i: Int): Extractor[T] = self.andOptionTyped({
       (v: Iterable[T]) =>
@@ -205,7 +203,7 @@ package object dsl {
 
         if (realIdx>=v.size || realIdx<0) None
         else Some(v.toSeq.apply(realIdx))
-    }, unboxType)
+    }, _.unboxArray)
 
     def size: Extractor[Int] = self.andThen(_.size)
 
@@ -224,15 +222,15 @@ package object dsl {
     def zipWithValues(values: Extractor[Any]): ZippedExpr[T, Any] =
       new ZippedExpr[T,Any](self, values.typed[Iterable[_]])
 
-    protected def groupByFn[K](f: T => K): (Iterable[T]) => Map[K, Iterable[T]] =
-      (v: Iterable[T]) => v.groupBy(f)
+    protected def groupByImpl[K](f: T => K): (Iterable[T]) => Map[K, Seq[T]] =
+      (v: Iterable[T]) => v.groupBy(f).mapValues(_.toSeq)
 
-    def groupBy[K: TypeTag](f: T => K): Extractor[Map[K, Iterable[T]]] = {
+    def groupBy[K: TypeTag](f: T => K): Extractor[Map[K, Seq[T]]] = {
 
-      val keyType = TypeUtils.catalystTypeFor[K]
+      val keyType = UnreifiedScalaType.apply[K]
 
       self.andTyped (
-        groupByFn(f),
+        groupByImpl(f),
         {
           t =>
             MapType(keyType, t)
@@ -250,7 +248,7 @@ package object dsl {
 
     def distinctBy[K](f: T => K): Extractor[Iterable[T]] = {
       self.andTyped (
-        groupByFn(f)
+        groupByImpl(f)
           .andThen(
             v =>
               v.values.flatMap{

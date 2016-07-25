@@ -4,7 +4,7 @@ import java.util
 import java.util.Collections
 
 import com.google.common.cache.CacheBuilder
-import com.tribbloids.spookystuff.utils.Utils
+import com.tribbloids.spookystuff.utils.SpookyUtils
 
 import scala.collection.mutable
 
@@ -32,7 +32,7 @@ package object caching {
   def ConcurrentCache[K <: AnyRef, V <: AnyRef](): scala.collection.concurrent.Map[K, V] = {
     CacheBuilder
       .newBuilder()
-      .concurrencyLevel(Utils.numCores)
+      .concurrencyLevel(SpookyUtils.numCores)
       .softValues()
       .build[K, V]()
       .asMap()

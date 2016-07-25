@@ -1,6 +1,6 @@
 package com.tribbloids.spookystuff
 
-import com.tribbloids.spookystuff.utils.Utils
+import com.tribbloids.spookystuff.utils.SpookyUtils
 import org.apache.spark.{Accumulable, AccumulatorParam, Accumulator}
 
 import scala.collection.immutable.ListMap
@@ -47,7 +47,7 @@ case class Metrics(
 
     val map = ListMap(toTuples: _*)
 
-    Utils.toJson(map, beautiful = true)
+    SpookyUtils.toJson(map, beautiful = true)
   }
 
   //this is necessary as direct JSON serialization on accumulator only yields meaningless string

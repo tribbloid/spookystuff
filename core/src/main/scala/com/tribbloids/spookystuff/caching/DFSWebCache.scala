@@ -5,7 +5,7 @@ import java.util.UUID
 import com.tribbloids.spookystuff.SpookyContext
 import com.tribbloids.spookystuff.actions.Trace
 import com.tribbloids.spookystuff.doc.{DocUtils, Fetched}
-import com.tribbloids.spookystuff.utils.Utils
+import com.tribbloids.spookystuff.utils.SpookyUtils
 import org.apache.hadoop.fs.Path
 
 /**
@@ -16,7 +16,7 @@ object DFSWebCache extends AbstractWebCache {
 
   def getImpl(k: Trace, spooky: SpookyContext): Option[Seq[Fetched]] = {
 
-    val pathStr = Utils.pathConcat(
+    val pathStr = SpookyUtils.pathConcat(
       spooky.conf.dirs.cache,
       spooky.conf.cacheFilePath(k).toString
     )
@@ -34,7 +34,7 @@ object DFSWebCache extends AbstractWebCache {
 
   def putImpl(k: Trace, v: Seq[Fetched], spooky: SpookyContext): this.type = {
 
-    val pathStr = Utils.pathConcat(
+    val pathStr = SpookyUtils.pathConcat(
       spooky.conf.dirs.cache,
       spooky.conf.cacheFilePath(v.head.uid.backtrace).toString,
       UUID.randomUUID().toString

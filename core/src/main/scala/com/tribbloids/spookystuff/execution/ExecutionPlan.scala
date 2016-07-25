@@ -31,7 +31,7 @@ abstract class ExecutionPlan(
   )
 
   //Cannot be lazy, always defined on construction
-  val schema: SchemaContext = SchemaContext(
+  val schema: DataRowSchema = DataRowSchema(
     spooky,
     map = children.map(_.schema.map)
       .reduceOption(_ ++ _)

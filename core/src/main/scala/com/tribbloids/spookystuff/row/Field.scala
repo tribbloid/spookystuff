@@ -2,7 +2,7 @@ package com.tribbloids.spookystuff.row
 
 import com.tribbloids.spookystuff.QueryException
 import com.tribbloids.spookystuff.row.Field.ConflictResolving
-import com.tribbloids.spookystuff.utils.IdentifierMixin
+import com.tribbloids.spookystuff.utils.IDMixin
 import org.apache.spark.sql.types.{DataType, Metadata, StructField}
 
 import scala.language.implicitConversions
@@ -46,7 +46,7 @@ case class Field(
                   depthRangeOpt: Option[Range] = None, //represents depth in explore
 
                   isSelectedOverride: Option[Boolean] = None
-                ) extends IdentifierMixin {
+                ) extends IDMixin {
 
   lazy val _id = (name, isWeak, isInvisible, isReserved)
 

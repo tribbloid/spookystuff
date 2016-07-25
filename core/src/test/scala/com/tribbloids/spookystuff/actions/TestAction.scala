@@ -1,8 +1,9 @@
 package com.tribbloids.spookystuff.actions
 
 import com.tribbloids.spookystuff.dsl._
-import com.tribbloids.spookystuff.extractors.Literal
+import com.tribbloids.spookystuff.extractors.{Example, Literal}
 import com.tribbloids.spookystuff.row.{DataRow, FetchedRow, Field}
+import com.tribbloids.spookystuff.utils.UnreifiedScalaType
 import com.tribbloids.spookystuff.{Const, SpookyEnvSuite}
 import org.apache.spark.rdd.RDD
 
@@ -22,6 +23,10 @@ class TestAction extends SpookyEnvSuite {
 
     val rewritten = action.interpolate(FetchedRow(DataRow(data = ListMap(Field("~") -> "http://www.dummy.com")), Seq()), schema).get
 
+    val a = (rewritten.uri.asInstanceOf[Literal[String]].dataType.asInstanceOf[UnreifiedScalaType].ttg.tpe.normalize)
+    val b = (Literal("http://www.dummy.com").dataType.asInstanceOf[UnreifiedScalaType].ttg.tpe.normalize)
+    val c = (Literal(new Example()).dataType.asInstanceOf[UnreifiedScalaType].ttg.tpe.normalize)
+
     assert(rewritten === Visit(Literal("http://www.dummy.com")))
     assert(rewritten.timeout(null) === randomTimeout)
     assert(FilePaths.Hierarchical.apply(rewritten :: Nil) contains "/www.dummy.com")
@@ -32,6 +37,8 @@ class TestAction extends SpookyEnvSuite {
     val action = Wget("'{~}").as('dummy_name)
 
     val rewritten = action.interpolate(FetchedRow(DataRow(data = ListMap(Field("~") -> "http://www.dummy.com")), Seq()), schema).get
+
+    val a = Literal("http://www.dummy.com")
 
     assert(rewritten === Wget(Literal("http://www.dummy.com")))
     assert(rewritten.name === "dummy_name")

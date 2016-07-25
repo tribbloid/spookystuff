@@ -32,7 +32,7 @@ abstract class PathResolver extends Serializable {
   }
 
   def resourceOrAbsolute(pathStr: String): String = {
-    val resourcePath = Utils.getCPResource(pathStr.stripPrefix("/")).map(_.getPath).getOrElse(pathStr)
+    val resourcePath = SpookyUtils.getCPResource(pathStr.stripPrefix("/")).map(_.getPath).getOrElse(pathStr)
 
     val result = this.toAbsolute(resourcePath)
     result
@@ -57,7 +57,7 @@ object LocalResolver extends PathResolver {
       val lockedFile = new File(lockedPath)
 
       //wait for 15 seconds in total
-      Utils.retry(5) {
+      SpookyUtils.retry(5) {
         assert(!lockedFile.exists(), s"File $pathStr is locked by another executor or thread")
         //        Thread.sleep(3*1000)
       }
@@ -104,7 +104,7 @@ object LocalResolver extends PathResolver {
     val lockedPath = pathStr + lockedSuffix
     val lockedFile = new File(lockedPath)
 
-    Utils.retry(5) {
+    SpookyUtils.retry(5) {
       assert(!lockedFile.exists(), s"File $pathStr is locked by another executor or thread")
       //        Thread.sleep(3*1000)
     }
@@ -148,7 +148,7 @@ case class HDFSResolver(
     assert(path.isAbsolute, s"BAD DESIGN: ${path.toString} is not an absolute path")
   }
 
-  def input[T](pathStr: String)(f: InputStream => T): T = Utils.retry(3){
+  def input[T](pathStr: String)(f: InputStream => T): T = SpookyUtils.retry(3){
     val path: Path = new Path(pathStr)
 //    ensureAbsolute(path)
 
@@ -160,7 +160,7 @@ case class HDFSResolver(
       val lockedPath = new Path(pathStr + lockedSuffix)
 
       //wait for 15 seconds in total
-      Utils.retry(10) {
+      SpookyUtils.retry(10) {
         assert(!fs.exists(lockedPath), s"File $pathStr is locked by another executor or thread")
         //        Thread.sleep(3*1000)
       }
@@ -176,7 +176,7 @@ case class HDFSResolver(
     }
   }
 
-  override def output[T](pathStr: String, overwrite: Boolean)(f: (OutputStream) => T): T = Utils.retry(3){
+  override def output[T](pathStr: String, overwrite: Boolean)(f: (OutputStream) => T): T = SpookyUtils.retry(3){
     val path = new Path(pathStr)
 //    ensureAbsolute(path)
 
@@ -202,7 +202,7 @@ case class HDFSResolver(
 
     val lockedPath = new Path(pathStr + lockedSuffix)
 
-    Utils.retry(5) {
+    SpookyUtils.retry(5) {
       assert(!fs.exists(lockedPath), s"File $pathStr is locked by another executor or thread")
     }
 

@@ -3,7 +3,7 @@ package com.tribbloids.spookystuff.row
 import java.util.UUID
 
 import com.tribbloids.spookystuff.Const
-import com.tribbloids.spookystuff.utils.{ImplicitUtils, Utils}
+import com.tribbloids.spookystuff.utils.{ImplicitUtils, SpookyUtils}
 
 import scala.reflect.ClassTag
 
@@ -43,7 +43,7 @@ case class DataRow(
 
   def getTyped[T <: Any: ClassTag](field: Field): Option[T] = {
     data.get(field).flatMap {
-      Utils.typedOrNone[T]
+      SpookyUtils.typedOrNone[T]
     }
   }
   def orWeakTyped[T <: Any: ClassTag](field: Field): Option[T] = {
@@ -64,7 +64,7 @@ case class DataRow(
   def toJSON: String = {
     import ImplicitUtils._
 
-    Utils.toJson(this.toMap.canonizeKeysToColumnNames)
+    SpookyUtils.toJson(this.toMap.canonizeKeysToColumnNames)
   }
 
   def sortIndex(fields: Seq[Field]): Seq[Option[Iterable[Int]]] = {
@@ -95,7 +95,7 @@ case class DataRow(
         case Some(_field) =>
           val newValues: Seq[DataRow] = result.map {
             tuple =>
-              val existingOpt: Option[Iterable[Any]] = tuple._1.get(_field).map{v => Utils.asIterable[Any](v)}
+              val existingOpt: Option[Iterable[Any]] = tuple._1.get(_field).map{v => SpookyUtils.asIterable[Any](v)}
               val values = existingOpt match {
                 case None =>
                   tuple._1.data.updated(_field, Array(tuple._2))
@@ -118,7 +118,7 @@ case class DataRow(
   //getIntIterable cannot use it for the same reason
   def getTypedArray[T <: Any: ClassTag](field: Field): Option[Array[T]] = {
     val res = data.get(field).map {
-      v => Utils.asArray[T](v)
+      v => SpookyUtils.asArray[T](v)
     }
     res
   }
@@ -129,7 +129,7 @@ case class DataRow(
 
   def getTypedIterable[T <: Any: ClassTag](field: Field): Option[Iterable[T]] = {
     val res = data.get(field).map {
-      v => Utils.asIterable[T](v)
+      v => SpookyUtils.asIterable[T](v)
     }
     res
   }

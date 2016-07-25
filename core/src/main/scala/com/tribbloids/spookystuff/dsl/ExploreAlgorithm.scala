@@ -2,14 +2,14 @@ package com.tribbloids.spookystuff.dsl
 
 import com.tribbloids.spookystuff.actions._
 import com.tribbloids.spookystuff.dsl.ExploreAlgorithms.ExploreImpl
-import com.tribbloids.spookystuff.execution.{ExploreParams, SchemaContext}
+import com.tribbloids.spookystuff.execution.ExploreParams
 import com.tribbloids.spookystuff.row._
 
 sealed trait ExploreAlgorithm {
 
   def getImpl(
                params: ExploreParams,
-               schema: SchemaContext
+               schema: DataRowSchema
              ): ExploreImpl
 }
 
@@ -18,7 +18,7 @@ object ExploreAlgorithms {
   trait ExploreImpl {
 
     val params: ExploreParams
-    val schema: SchemaContext
+    val schema: DataRowSchema
 
     /**
       *
@@ -53,12 +53,12 @@ object ExploreAlgorithms {
 
     override def getImpl(
                           params: ExploreParams,
-                          schema: SchemaContext
+                          schema: DataRowSchema
                         ) = Impl(params, schema)
 
     case class Impl(
                      override val params: ExploreParams,
-                     schema: SchemaContext
+                     schema: DataRowSchema
                    ) extends ExploreImpl {
 
       import params._

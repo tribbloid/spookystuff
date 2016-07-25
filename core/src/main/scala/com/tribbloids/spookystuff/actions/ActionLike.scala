@@ -2,10 +2,9 @@ package com.tribbloids.spookystuff.actions
 
 import com.tribbloids.spookystuff.caching.{DFSWebCache, InMemoryWebCache}
 import com.tribbloids.spookystuff.doc.{Doc, Fetched}
-import com.tribbloids.spookystuff.execution.SchemaContext
-import com.tribbloids.spookystuff.row.FetchedRow
+import com.tribbloids.spookystuff.row.{FetchedRow, DataRowSchema}
 import com.tribbloids.spookystuff.session.{DriverSession, NoDriverSession, Session}
-import com.tribbloids.spookystuff.utils.Utils
+import com.tribbloids.spookystuff.utils.SpookyUtils
 import com.tribbloids.spookystuff.{Const, RemoteDisabledException, SpookyContext}
 import org.apache.spark.sql.catalyst.trees.TreeNode
 import org.slf4j.LoggerFactory
@@ -13,7 +12,7 @@ import org.slf4j.LoggerFactory
 abstract class ActionLike extends TreeNode[ActionLike] with Product with Serializable {
 
   //TODO: this step should be broken into 2 stages for better efficiency, f1 =(resolve on driver)=> f2 =(eval on executors)=> v
-  final def interpolate(pr: FetchedRow, schema: SchemaContext): Option[this.type] = {
+  final def interpolate(pr: FetchedRow, schema: DataRowSchema): Option[this.type] = {
     val option = this.doInterpolate(pr, schema)
     option.foreach{
       action =>
@@ -22,7 +21,7 @@ abstract class ActionLike extends TreeNode[ActionLike] with Product with Seriali
     option
   }
 
-  def doInterpolate(pageRow: FetchedRow, schema: SchemaContext): Option[this.type] = Some(this)
+  def doInterpolate(pageRow: FetchedRow, schema: DataRowSchema): Option[this.type] = Some(this)
 
   def injectFrom(same: ActionLike): Unit = {} //TODO: change to immutable pattern to avoid one Trace being used twice with different names
 
@@ -42,7 +41,7 @@ abstract class ActionLike extends TreeNode[ActionLike] with Product with Seriali
 
   def fetch(spooky: SpookyContext): Seq[Fetched] = {
 
-    val results = Utils.retry (Const.remoteResourceLocalRetries){
+    val results = SpookyUtils.retry (Const.remoteResourceLocalRetries){
       fetchOnce(spooky)
     }
     val numPages = results.count(_.isInstanceOf[Doc])

@@ -1,20 +1,22 @@
-package com.tribbloids.spookystuff.execution
+package com.tribbloids.spookystuff.row
 
 import com.tribbloids.spookystuff._
+import com.tribbloids.spookystuff.execution._
 import com.tribbloids.spookystuff.extractors._
-import com.tribbloids.spookystuff.row._
+import com.tribbloids.spookystuff.utils.ScalaUDT
 import org.apache.spark.sql.types.{DataType, StructField, StructType}
 
 import scala.collection.immutable.ListMap
 import scala.language.implicitConversions
 
 //this is a special StructType that carries more metadata
-case class SchemaContext(
+//TODO: override sqlType, serialize & deserialize to compress into InternalRow
+case class DataRowSchema(
                           spooky: SpookyContext,
                           map: ListMap[Field, DataType] = ListMap.empty
-                        ) extends DataType {
+                        ) extends ScalaUDT[DataRow] {
 
-  override def defaultSize: Int = 0
+  import com.tribbloids.spookystuff.utils.ImplicitUtils._
 
   final def fields: List[Field] = map.keys.toList
   final def typedFields: List[TypedField] = map.iterator.toList.map(tuple => TypedField(tuple._1, tuple._2))
@@ -30,9 +32,7 @@ case class SchemaContext(
     indexedFields.find(_._1.self == field)
   } //TODO: not efficient
 
-  override def asNullable = this
-
-  def filterFields(filter: Field => Boolean = _.isSelected): SchemaContext = {
+  def filterFields(filter: Field => Boolean = _.isSelected): DataRowSchema = {
     this.copy(
       map = ListMap(map.filterKeys(filter).toSeq: _*)
     )
@@ -45,14 +45,14 @@ case class SchemaContext(
         tuple =>
           StructField(
             tuple._1.name,
-            tuple._2
+            tuple._2.reify
           )
       }
 
     StructType(structFields)
   }
 
-  def -- (field: Iterable[Field]): SchemaContext = this.copy(
+  def -- (field: Iterable[Field]): DataRowSchema = this.copy(
     map = map -- field
   )
 
@@ -61,10 +61,10 @@ case class SchemaContext(
   class Resolver extends Serializable {
 
     val buffer: LinkedMap[Field, DataType] = LinkedMap()
-    buffer ++= SchemaContext.this.map.toSeq
+    buffer ++= DataRowSchema.this.map.toSeq
     //    val lookup: mutable.HashMap[Extractor[_], Resolved[_]] = mutable.HashMap()
 
-    def build: SchemaContext = SchemaContext.this.copy(map = ListMap(buffer.toSeq: _*))
+    def build: DataRowSchema = DataRowSchema.this.copy(map = ListMap(buffer.toSeq: _*))
 
     private def resolveField(field: Field): Field = {
 
@@ -83,18 +83,18 @@ case class SchemaContext(
       revised
     }
 
-    def resolveTyped(typed: TypedField*) = {
+    def includeTyped(typed: TypedField*) = {
       typed.map{
         t =>
           val resolvedField = resolveField(t.self)
-          verifyFieldConsistency(resolvedField, t.dataType)
+          mergeType(resolvedField, t.dataType)
           val result = TypedField(resolvedField, t.dataType)
           buffer += result.self -> result.dataType
           result
       }
     }
 
-    private def _resolve[R](
+    private def _include[R](
                              ex: Extractor[R]
                            ): Resolved[R] = {
 
@@ -110,45 +110,51 @@ case class SchemaContext(
           ).get
           ex withAlias Field("_c" + i)
       }
-      val resolved = alias.resolve(SchemaContext.this)
-      val dataType = alias.resolveType(SchemaContext.this)
+      val resolved = alias.resolve(DataRowSchema.this)
+      val dataType = alias.resolveType(DataRowSchema.this)
 
-      verifyFieldConsistency(alias.field, dataType)
+      val mergedType = mergeType(alias.field, dataType)
 
-      buffer += alias.field -> dataType
+      buffer += alias.field -> mergedType
       Resolved(
         resolved,
-        TypedField(alias.field, dataType)
+        TypedField(alias.field, mergedType)
       )
     }
 
-    def resolve[R](exs: Extractor[R]*): Seq[Resolved[R]] = {
+    def include[R](exs: Extractor[R]*): Seq[Resolved[R]] = {
 
       exs.map {
         ex =>
-          this._resolve(ex)
+          this._include(ex)
       }
     }
   }
 
-  def verifyFieldConsistency(resolvedField: Field, t: DataType): Unit = {
-    if (resolvedField.conflictResolving == Field.Overwrite) {
-      SchemaContext.this.map.get(resolvedField).foreach {
-        existingType =>
-          require(
-            t == existingType,
-            s"partially overwriting field ${resolvedField.name} with different data type (old: $existingType, new: $t), set conflictResolving=Replace to fix it"
-          )
-      }
+  def mergeType(resolvedField: Field, dataType: DataType): DataType = {
+
+    val existingTypeOpt = DataRowSchema.this.map.get(resolvedField)
+
+    (existingTypeOpt, resolvedField.conflictResolving) match {
+      case (Some(existingType), Field.Overwrite) =>
+        if (dataType == existingType) dataType
+        else if (dataType.reify == existingType.reify) dataType.reify
+        else throw new IllegalArgumentException(
+          s"""
+             |Overwriting field ${resolvedField.name} with inconsistent type:
+             |old: $existingType
+             |new: $dataType
+             |set conflictResolving=Replace to fix it
+             """.stripMargin
+        )
+      case _ =>
+        dataType
     }
   }
 
   //use it after Row-based data representation
-  object Lookup {
-    implicit def fieldToTyped(field: Field): TypedField = SchemaContext.this.typedFor(field).get
-    implicit def fieldToIndexed(field: Field): IndexedField = SchemaContext.this.indexedFor(field).get
+  object ImplicitLookup {
+    implicit def fieldToTyped(field: Field): TypedField = DataRowSchema.this.typedFor(field).get
+    implicit def fieldToIndexed(field: Field): IndexedField = DataRowSchema.this.indexedFor(field).get
   }
 }
-
-
-

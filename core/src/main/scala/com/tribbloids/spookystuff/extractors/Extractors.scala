@@ -1,16 +1,16 @@
 package com.tribbloids.spookystuff.extractors
 
 import com.tribbloids.spookystuff.doc._
-import com.tribbloids.spookystuff.execution.SchemaContext
-import com.tribbloids.spookystuff.extractors.GenExtractor.{AndThen, Leaf, Static}
-import com.tribbloids.spookystuff.row._
-import com.tribbloids.spookystuff.utils.Utils
-import org.apache.spark.sql.TypeUtils
+import com.tribbloids.spookystuff.extractors.GenExtractor.{AndThen, Leaf, Static, StaticType}
+import com.tribbloids.spookystuff.row.{DataRowSchema, _}
+import com.tribbloids.spookystuff.utils.{SpookyUtils, UnreifiedScalaType}
+import org.apache.spark.sql.catalyst.ScalaReflection.universe._
 import org.apache.spark.sql.types._
 
 import scala.collection.TraversableOnce
 import scala.collection.immutable.ListMap
 import scala.reflect.ClassTag
+import com.tribbloids.spookystuff.utils.ImplicitUtils._
 
 object Extractors {
 
@@ -70,11 +70,10 @@ object Extractors {
 object Literal {
 
   def apply[T: TypeTag](v: T): Literal[T] = {
-    val dataType = TypeUtils.catalystTypeFor[T]
-    Literal[T](Option(v), dataType)
+    Literal[T](Option(v), UnreifiedScalaType.apply[T])
   }
 
-  val NULL: Literal[Null] = apply(null)
+  lazy val NULL: Literal[Null] = Literal(null)
 }
 
 class GenLiteral[T, +R](val valueOpt: Option[R], val dataType: DataType) extends Static[T, R] {
@@ -85,7 +84,8 @@ class GenLiteral[T, +R](val valueOpt: Option[R], val dataType: DataType) extends
 
   override def toString = valueOpt.map(
     v =>
-      "'" + v + "'" //TODO: remove single quotes?
+      //      "'" + v + "':" + dataType //TODO: remove single quotes? Add Type? Use JSON str?
+      "'" + v + "'" //TODO: remove single quotes? Add Type? Use JSON str?
   )
     .getOrElse("NULL")
 
@@ -103,7 +103,7 @@ final case class Literal[+T](
 case class GetExpr(field: Field) extends Leaf[FR, Any] {
 
   override def resolveType(tt: DataType): DataType = tt match {
-    case schema: SchemaContext =>
+    case schema: DataRowSchema =>
       schema
         .typedFor(field)
         .orElse{
@@ -127,7 +127,7 @@ case class GetExpr(field: Field) extends Leaf[FR, Any] {
       case _ => None
     },
     {
-      case v: ArrayType => v
+      _.ensureArray
     }
   )
 
@@ -138,8 +138,7 @@ case class GetExpr(field: Field) extends Leaf[FR, Any] {
       case v@ _ => Some(Seq(v))
     },
     {
-      case v: ArrayType => v
-      case v: DataType => ArrayType(v, containsNull = true)
+      _.asArray
     }
   )
 }
@@ -161,9 +160,9 @@ case class AppendExpr[+T: ClassTag] private(
                                            ) extends Extractor[Seq[T]] {
 
   override def resolveType(tt: DataType): DataType = {
-    val newType = expr.resolveType(tt)
+    val existingType = expr.resolveType(tt)
 
-    ArrayType(newType, containsNull = true)
+    existingType.asArray
   }
 
   override def resolve(tt: DataType): PartialFunction[FR, Seq[T]] = {
@@ -177,7 +176,7 @@ case class AppendExpr[+T: ClassTag] private(
 
         oldOption.toSeq.flatMap{
           old =>
-            Utils.asIterable[T](old)
+            SpookyUtils.asIterable[T](old)
         } ++ lastOption
     })
   }
@@ -185,9 +184,7 @@ case class AppendExpr[+T: ClassTag] private(
   override def _args: Seq[GenExtractor[_, _]] = Seq(get, expr)
 }
 
-case class InterpolateExpr(parts: Seq[String], _args: Seq[Extractor[Any]]) extends Extractor[String] {
-
-  override def resolveType(tt: DataType): DataType = StringType
+case class InterpolateExpr(parts: Seq[String], _args: Seq[Extractor[Any]]) extends Extractor[String] with StaticType[FR, String] {
 
   override def resolve(tt: DataType): PartialFunction[FR, String] = {
     val rs = _args.map(_.resolve(tt).lift)
@@ -203,6 +200,8 @@ case class InterpolateExpr(parts: Seq[String], _args: Seq[Extractor[Any]]) exten
         result
     })
   }
+
+  override val dataType: DataType = StringType
 }
 
 //TODO: delegate to And_->

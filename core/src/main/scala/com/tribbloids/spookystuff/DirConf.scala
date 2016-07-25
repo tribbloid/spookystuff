@@ -1,6 +1,6 @@
 package com.tribbloids.spookystuff
 
-import com.tribbloids.spookystuff.utils.Utils
+import com.tribbloids.spookystuff.utils.SpookyUtils
 
 /**
  * Created by peng on 2/2/15.
@@ -40,6 +40,6 @@ class DirConf(
 
   def toJSON: String = {
 
-    Utils.toJson(this, beautiful = true)
+    SpookyUtils.toJson(this, beautiful = true)
   }
 }

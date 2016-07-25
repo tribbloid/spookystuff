@@ -1,7 +1,7 @@
 package org.apache.spark.ml.dsl
 
 import com.tribbloids.spookystuff.PipelineException
-import com.tribbloids.spookystuff.utils.Utils
+import com.tribbloids.spookystuff.utils.SpookyUtils
 import org.apache.spark.ml.param.{Param, Params}
 
 import scala.language.{dynamics, implicitConversions}
@@ -41,7 +41,7 @@ trait DynamicParamsMixin extends Params with Dynamic {
 
   protected def Param[T: ClassTag](
                                     name: String = {
-                                      val bp = Utils.getBreakpointInfo().apply(2)
+                                      val bp = SpookyUtils.getBreakpointInfo().apply(2)
                                       assert(!bp.isNativeMethod) //can only use default value in def & lazy val blocks
                                       bp.getMethodName
                                     },
@@ -59,7 +59,7 @@ trait DynamicParamsMixin extends Params with Dynamic {
   //TODO: need debugging
   protected def SerializingParam[T: ClassTag](
                                                name: String = {
-                                                 val bp = Utils.getBreakpointInfo().apply(2)
+                                                 val bp = SpookyUtils.getBreakpointInfo().apply(2)
                                                  assert(!bp.isNativeMethod) //can only use default value in def & lazy val blocks
                                                  bp.getMethodName
                                                },

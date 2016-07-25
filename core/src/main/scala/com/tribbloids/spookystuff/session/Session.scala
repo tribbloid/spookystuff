@@ -8,7 +8,7 @@ import org.openqa.selenium.remote.SessionNotFoundException
 import org.slf4j.LoggerFactory
 import com.tribbloids.spookystuff.{Const, SpookyContext}
 import com.tribbloids.spookystuff.actions._
-import com.tribbloids.spookystuff.utils.Utils
+import com.tribbloids.spookystuff.utils.SpookyUtils
 
 import scala.collection.mutable.ArrayBuffer
 
@@ -46,8 +46,8 @@ abstract class Session(val spooky: SpookyContext) {
 
 class DriverSession(override val spooky: SpookyContext) extends Session(spooky){
 
-  override val driver: CleanWebDriver = Utils.retry(Const.localResourceLocalRetries){
-    Utils.withDeadline(Const.sessionInitializationTimeout){
+  override val driver: CleanWebDriver = SpookyUtils.retry(Const.localResourceLocalRetries){
+    SpookyUtils.withDeadline(Const.sessionInitializationTimeout){
       var successful = false
       val driver = spooky.conf.driverFactory.newInstance(null, spooky)
       spooky.metrics.driverInitialized += 1

@@ -4,11 +4,10 @@ import com.thoughtworks.selenium.SeleniumException
 import com.tribbloids.spookystuff.Const
 import com.tribbloids.spookystuff.actions.WaitForDocumentReady._
 import com.tribbloids.spookystuff.doc.{Doc, Unstructured}
-import com.tribbloids.spookystuff.execution.SchemaContext
 import com.tribbloids.spookystuff.extractors.{Extractor, Literal}
-import com.tribbloids.spookystuff.row.FetchedRow
+import com.tribbloids.spookystuff.row.{FetchedRow, DataRowSchema}
 import com.tribbloids.spookystuff.session.Session
-import com.tribbloids.spookystuff.utils.Utils
+import com.tribbloids.spookystuff.utils.SpookyUtils
 import org.openqa.selenium.interactions.{Actions => SeleniumActions}
 import org.openqa.selenium.support.ui.{ExpectedCondition, ExpectedConditions, Select}
 import org.openqa.selenium.{By, JavascriptExecutor, WebDriver}
@@ -83,8 +82,8 @@ case class Visit(
     //    }
   }
 
-  override def doInterpolate(pageRow: FetchedRow, schema: SchemaContext): Option[this.type] = {
-    val first = this.uri.resolve(schema).lift(pageRow).flatMap(Utils.asArray[Any](_).headOption)
+  override def doInterpolate(pageRow: FetchedRow, schema: DataRowSchema): Option[this.type] = {
+    val first = this.uri.resolve(schema).lift(pageRow).flatMap(SpookyUtils.asArray[Any](_).headOption)
 
     val uriStr: Option[String] = first.flatMap {
       case element: Unstructured => element.href
@@ -127,7 +126,7 @@ case class RandomDelay(
   assert(maxDelay >= delay)
 
   override def exeWithoutPage(session: Session) {
-    Thread.sleep(Utils.random.nextInt((maxDelay - delay).toMillis.toInt) )
+    Thread.sleep(SpookyUtils.random.nextInt((maxDelay - delay).toMillis.toInt) )
   }
 }
 
@@ -231,7 +230,7 @@ case class ClickNext(
     throw new SeleniumException("all elements has been clicked before")
   }
 
-  override def doInterpolate(pageRow: FetchedRow, schema: SchemaContext): Option[this.type] =
+  override def doInterpolate(pageRow: FetchedRow, schema: DataRowSchema): Option[this.type] =
     Some(this.copy().asInstanceOf[this.type])
 }
 
@@ -295,9 +294,9 @@ case class TextInput(
     element.sendKeys(text.asInstanceOf[Literal[String]].value)
   }
 
-  override def doInterpolate(pageRow: FetchedRow, schema: SchemaContext): Option[this.type] = {
+  override def doInterpolate(pageRow: FetchedRow, schema: DataRowSchema): Option[this.type] = {
 
-    val first = this.text.resolve(schema).lift(pageRow).flatMap(Utils.asArray[Any](_).headOption)
+    val first = this.text.resolve(schema).lift(pageRow).flatMap(SpookyUtils.asArray[Any](_).headOption)
 
     val textStr: Option[String] = first.flatMap {
       case element: Unstructured => element.text
@@ -333,8 +332,8 @@ case class DropDownSelect(
     select.selectByValue(value.asInstanceOf[Literal[String]].value)
   }
 
-  override def doInterpolate(pageRow: FetchedRow, schema: SchemaContext): Option[this.type] = {
-    val first = this.value.resolve(schema).lift(pageRow).flatMap(Utils.asArray[Any](_).headOption)
+  override def doInterpolate(pageRow: FetchedRow, schema: DataRowSchema): Option[this.type] = {
+    val first = this.value.resolve(schema).lift(pageRow).flatMap(SpookyUtils.asArray[Any](_).headOption)
 
     val valueStr: Option[String] = first.flatMap {
       case element: Unstructured => element.attr("value")
@@ -394,8 +393,8 @@ case class ExeScript(
     }
   }
 
-  override def doInterpolate(pageRow: FetchedRow, schema: SchemaContext): Option[this.type] = {
-    val first = this.script.resolve(schema).lift(pageRow).flatMap(Utils.asArray[Any](_).headOption)
+  override def doInterpolate(pageRow: FetchedRow, schema: DataRowSchema): Option[this.type] = {
+    val first = this.script.resolve(schema).lift(pageRow).flatMap(SpookyUtils.asArray[Any](_).headOption)
 
     val scriptStr: Option[String] = first.flatMap {
       case element: Unstructured => element.text

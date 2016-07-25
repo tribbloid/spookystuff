@@ -2,11 +2,9 @@ package com.tribbloids.spookystuff.extractors
 
 import java.lang.reflect.Method
 
-import org.apache.spark.sql.catalyst.ScalaReflection
-import org.apache.spark.sql.types.DataType
-import ScalaReflection.universe._
+import com.tribbloids.spookystuff.utils.{TypeUtils, UnreifiedScalaType}
 import org.apache.spark.ml.dsl.utils.FlowUtils
-import org.apache.spark.sql.TypeUtils
+import org.apache.spark.sql.catalyst.ScalaReflection.universe._
 
 import scala.language.{dynamics, implicitConversions}
 
@@ -51,16 +49,13 @@ case class ScalaDynamicExtractor[T](
                                      argsOpt: Option[List[GenExtractor[T, _]]]
                                    ) extends GenExtractor[T, Any] {
 
-  import org.apache.spark.sql.TypeUtils._
-  import Implicits._
-
-  implicit def typeToEvidence(dataType: DataType): TypeEvidence = TypeEvidence(dataType)
+  import com.tribbloids.spookystuff.utils.ImplicitUtils._
 
   //only used to show TreeNode
   override protected def _args: Seq[GenExtractor[_, _]] = Seq(base) ++ argsOpt.toList.flatten
 
-  def getMethodsByName(evi: TypeEvidence): List[MethodSymbol] = {
-    val tpe = evi.baseScalaType.tpe
+  def getMethodsByName(evi: DataType): List[MethodSymbol] = {
+    val tpe = evi.scalaType.tpe
 
     //Java reflection preferred as more battle tested?
     val allMembers = tpe
@@ -76,12 +71,12 @@ case class ScalaDynamicExtractor[T](
     members
   }
 
-  def getExpectedTypeCombinations(argEvisOpt: Option[List[TypeEvidence]]): Seq[Option[List[Type]]] = {
+  def getExpectedTypeCombinations(argEvisOpt: Option[List[DataType]]): Seq[Option[List[Type]]] = {
     val expectedTypeList: Seq[Option[List[Type]]] = argEvisOpt match {
       case Some(argEvis) =>
         val eviss = argEvis.map {
           v =>
-            List(v.baseScalaType.tpe)
+            List(v.scalaType.tpe)
         }
         val cartesian = FlowUtils.cartesianProductList(eviss)
         cartesian.map(
@@ -95,7 +90,7 @@ case class ScalaDynamicExtractor[T](
 
   //2 cases: argEvisOpt = None: call by .name
   // argEvisOpt = Some(List()) call by .name()
-  def getMethodByScala(baseEvi: TypeEvidence, argEvisOpt: Option[List[TypeEvidence]]): MethodSymbol = {
+  def getMethodByScala(baseEvi: DataType, argEvisOpt: Option[List[DataType]]): MethodSymbol = {
     val methods = getMethodsByName(baseEvi)
 
     val expectedTypeCombinations: Seq[Option[List[Type]]] =
@@ -104,7 +99,7 @@ case class ScalaDynamicExtractor[T](
     val valid = methods.flatMap {
       method =>
         val paramTypess_returnType: (List[List[Type]], Type) = {
-          TypeUtils.getParameter_ReturnTypes(method, baseEvi.baseScalaType.tpe)
+          TypeUtils.getParameter_ReturnTypes(method, baseEvi.scalaType.tpe)
         }
         val actualTypess: List[List[Type]] = paramTypess_returnType._1
         val firstTypeOpt = actualTypess.headOption
@@ -127,7 +122,7 @@ case class ScalaDynamicExtractor[T](
               "(" + t.mkString(", ") + ")"
           }
             .getOrElse("")
-          s"method ${baseEvi.baseScalaType.tpe}.$methodName$argsStr does not exist"
+          s"method ${baseEvi.scalaType.tpe}.$methodName$argsStr does not exist"
       }
       throw new UnsupportedOperationException(
         errorStrs.mkString("\n")
@@ -139,15 +134,15 @@ case class ScalaDynamicExtractor[T](
     * due to type erasure, the java-based type validation in this function is much looser.
     * Should always validate by getMethodByScala to fail fast
     */
-  def getMethodByJava(baseEvi: TypeEvidence, argEvisOpt: Option[List[TypeEvidence]]): Method = {
+  def getMethodByJava(baseEvi: DataType, argEvisOpt: Option[List[DataType]]): Method = {
 
-    val baseClz = baseEvi.baseScalaType.toClass
+    val baseClz = baseEvi.scalaType.toClass
 
     val expectedClasssList: Seq[Option[List[Class[_]]]] = argEvisOpt match {
       case Some(argEvis) =>
         val eviss: List[List[Class[_]]] = argEvis.map {
           v =>
-            List(v.baseScalaType.toClass) :+ classOf[Object]
+            List(v.scalaType.toClass) :+ classOf[Object]
         }
         val cartesian = FlowUtils.cartesianProductList(eviss)
         cartesian.map(
@@ -186,47 +181,38 @@ case class ScalaDynamicExtractor[T](
     }
   }
 
-  //  def getFn(baseEvi: TypeEvidence, argEviss: List[List[TypeEvidence]]): Option[T => Any]  = {
-  //    val validMethod = getScalaReflectionMethod(baseEvi, argEviss)
-  //
-  //    val cm = rootMirror.reflectClass(baseEvi.scalaType.tpe.typeSymbol.asClass)
-  //    val mm =
-  //
-  //  }
-
   //resolve to a Spark SQL DataType according to an exeuction plan
   override def resolveType(tt: DataType): DataType = {
-    val resultTag: _root_.org.apache.spark.sql.catalyst.ScalaReflection.universe.TypeTag[Any] = _resolveTypeTag(tt)
+    val tag: TypeTag[Any] = _resolveTypeTag(tt)
 
-    TypeEvidence(resultTag).catalystType
+    UnreifiedScalaType(tag)
   }
 
-  private def _resolveTypeTag(tt: DataType): ScalaReflection.universe.TypeTag[Any] = {
+  private def _resolveTypeTag(tt: DataType): TypeTag[Any] = {
     //TODO: merge
-    val baseEvi: TypeEvidence = TypeEvidence(base.resolveType(tt))
+    val baseEvi: DataType = base.resolveType(tt)
     val argEvis = argsOpt.map {
       _.map {
         v =>
-          v.resolveType(tt): TypeEvidence
+          v.resolveType(tt): DataType
       }
     }
     val scalaMethod = getMethodByScala(baseEvi, argEvis)
-    val (_, resultType) = TypeUtils.getParameter_ReturnTypes(scalaMethod, baseEvi.baseScalaType.tpe)
-    val resultTag = TypeUtils.typeToTypeTag[Any](resultType, baseEvi.baseScalaType.mirror)
+    val (_, resultType) = TypeUtils.getParameter_ReturnTypes(scalaMethod, baseEvi.scalaType.tpe)
+    val resultTag = TypeUtils.createTypeTag[Any](resultType, baseEvi.scalaType.mirror)
     resultTag
   }
 
   override def resolve(tt: DataType): PartialFunction[T, Any] = {
-    val evi = _resolveTypeTag(tt)
-    val resolvedOpt = resolveUsingJava(tt)
+    val resolvedFn = resolveUsingScala(tt)
 
-    val lifted = if (evi.tpe <:< typeOf[Option[Any]]) {
-      resolvedOpt.andThen(
+    val lifted = if (_resolveTypeTag(tt).tpe <:< typeOf[Option[Any]]) {
+      resolvedFn.andThen(
         v =>
           v.asInstanceOf[Option[Option[Any]]].flatten
       )
     }
-    else resolvedOpt
+    else resolvedFn
 
     Unlift(lifted)
   }
@@ -235,11 +221,11 @@ case class ScalaDynamicExtractor[T](
     * will not be used due to bad performance
     */
   def resolveUsingScala(tt: DataType): T => Option[Any] = {
-    val baseEvi: TypeEvidence = TypeEvidence(base.resolveType(tt))
+    val baseEvi: DataType = base.resolveType(tt)
     val argEvis = argsOpt.map {
       _.map {
         v =>
-          v.resolveType(tt): TypeEvidence
+          v.resolveType(tt): DataType
       }
     }
 
@@ -249,19 +235,21 @@ case class ScalaDynamicExtractor[T](
     )
 
     val scalaMethod = getMethodByScala(baseEvi, argEvis)
-    val baseMirror = baseEvi.baseScalaType.mirror
+    val baseMirror = baseEvi.scalaType.mirror
     val result = {
       vv: T =>
         val baseOpt = baseLift.apply(vv)
-        val argOpts = argLifts.map(
-          _.map(_.apply(vv))
-        )
+        val argOpts = argLifts
           .getOrElse(Nil)
-        baseOpt.map {
-          baseVal =>
-            val instanceMirror = baseMirror.reflect(baseVal)
-            val methodMirror = instanceMirror.reflectMethod(scalaMethod)
-            methodMirror.apply(argOpts.map(_.get): _*)
+          .map(_.apply(vv))
+        if (argOpts.contains(None)) None
+        else {
+          baseOpt.map {
+            baseVal =>
+              val instanceMirror = baseMirror.reflect(baseVal)
+              val methodMirror = instanceMirror.reflectMethod(scalaMethod)
+              methodMirror.apply(argOpts.map(_.get): _*)
+          }
         }
     }
     result
@@ -273,41 +261,15 @@ case class ScalaDynamicExtractor[T](
     * extend to handle None case in the future
     */
   def resolveUsingJava(tt: DataType): T => Option[Any] = {
-    val baseEvi: TypeEvidence = TypeEvidence(base.resolveType(tt))
+    val baseEvi: DataType = base.resolveType(tt)
     val baseLift: (T) => Option[Any] = base.resolve(tt).lift
 
-    val argEvisOpt: Option[List[TypeEvidence]] = argsOpt.map {
+    val argEvisOpt: Option[List[DataType]] = argsOpt.map {
       _.map {
         v =>
-          v.resolveType(tt): TypeEvidence
+          v.resolveType(tt): DataType
       }
     }
-    //    val scalaMethod = this.getMethodByScala(baseEvi, argEvisOpt)
-    //    val argLifts: List[(T) => Option[Any]] = argsOpt.map {
-    //      args =>
-    //        val argTypeEvis = argTypeEvisOpt.get
-    //        val baseArgTypes = argTypeEvis.map(_.baseScalaType.tpe)
-    //        val (argTypess, resultType) =
-    //          TypeUtils.getParameter_ReturnTypes(scalaMethod, baseEvi.baseScalaType.tpe)
-    //
-    //        val argTypes = argTypess.head
-    //
-    //        val needLifting = argTypeEvis.zip(argTypes).map {
-    //          tuple =>
-    //            assert(tuple._1.scalaTypes.contains(tuple._2))
-    //
-    //            if (tuple._1.baseScalaType.tpe == tuple._2)
-    //            else
-    //        }
-    //
-    //        args.map(_.resolve(tt).lift)
-    //
-    //
-    //    }
-    //      .getOrElse(Nil)
-    //
-    //    val (argTypess, resultType) = TypeUtils.methodSymbolToParameter_ReturnTypes(scalaMethod, baseEvi.baseScalaType.tpe)
-
     val argLifts: List[(T) => Option[Any]] = argsOpt.map {
       _.map {
         v =>
@@ -318,7 +280,6 @@ case class ScalaDynamicExtractor[T](
 
     val javaMethod = this.getMethodByJava(baseEvi, argEvisOpt)
 
-    //TODO: clean up this: useless
     val javaArgTypes = javaMethod.getParameterTypes
     val zipped = argLifts.zip(javaArgTypes)
     val effectiveArgs: List[(T) => Any] = zipped.map {
@@ -371,9 +332,9 @@ trait ScalaDynamicMixin[T, +R] extends Dynamic {
     val argExs: Seq[GenExtractor[T, Any]] = args.toSeq.map {
       case ex: GenExtractor[T, Any] =>
         ex
-      case v@_ =>
-        val dt = TypeEvidence.fromInstance(v).catalystType
-        new GenLiteral[T, Any](Option(v), dt)
+      case v@ _ =>
+        val tt = UnreifiedScalaType.fromInstance(v)
+        new GenLiteral[T, Any](Option(v), tt)
     }
 
     ScalaDynamicExtractor(this, methodName, Some(argExs.toList))

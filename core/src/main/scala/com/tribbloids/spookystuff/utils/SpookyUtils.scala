@@ -15,7 +15,7 @@ import scala.language.implicitConversions
 import scala.reflect.ClassTag
 import scala.xml.PrettyPrinter
 
-object Utils {
+object SpookyUtils {
 
   import ImplicitUtils._
   import ScalaReflection.universe._
@@ -240,7 +240,7 @@ These special characters are often called "metacharacters".
   }.toList
 
   def getCPResource(str: String): Option[URL] =
-    Option(ClassLoader.getSystemClassLoader.getResource(str.stripSuffix(Utils.:/)))
+    Option(ClassLoader.getSystemClassLoader.getResource(str.stripSuffix(SpookyUtils.:/)))
 
   def addCPResource(urlStr: String): Unit = {
 
@@ -259,7 +259,7 @@ These special characters are often called "metacharacters".
   }
 
   def getCPResourceAsStream(str: String): Option[InputStream] =
-    Option(ClassLoader.getSystemClassLoader.getResourceAsStream(str.stripSuffix(Utils.:/)))
+    Option(ClassLoader.getSystemClassLoader.getResourceAsStream(str.stripSuffix(SpookyUtils.:/)))
 
   private lazy val LZYCOMPUTE = "$lzycompute"
   private lazy val INIT = "<init>"
@@ -278,6 +278,4 @@ These special characters are often called "metacharacters".
     effectiveElements
       .slice(2, Int.MaxValue)
   }
-
-  def implicitTypeTag[T](implicit ttg: TypeTag[T]) = ttg
 }

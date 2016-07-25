@@ -3,7 +3,7 @@ package com.tribbloids.spookystuff.doc
 import java.util.Date
 
 import com.tribbloids.spookystuff._
-import com.tribbloids.spookystuff.utils.Utils
+import com.tribbloids.spookystuff.utils.SpookyUtils
 import org.apache.commons.io.IOUtils
 import org.apache.hadoop.fs.{FileStatus, Path}
 import org.apache.spark.SparkEnv
@@ -13,8 +13,8 @@ object DocUtils {
 
   def dfsRead[T](message: String, pathStr: String, spooky: SpookyContext)(f: => T): T = {
     try {
-      val result = Utils.retry(Const.DFSLocalRetries) {
-        Utils.withDeadline(spooky.conf.DFSTimeout) {f}
+      val result = SpookyUtils.retry(Const.DFSLocalRetries) {
+        SpookyUtils.withDeadline(spooky.conf.DFSTimeout) {f}
       }
       spooky.metrics.DFSReadSuccess += 1
       result
@@ -35,8 +35,8 @@ object DocUtils {
   //always fail on retry depletion and timeout
   def dfsWrite[T](message: String, pathStr: String, spooky: SpookyContext)(f: => T): T = {
     try {
-      val result = Utils.retry(Const.DFSLocalRetries) {
-        Utils.withDeadline(spooky.conf.DFSTimeout) {f}
+      val result = SpookyUtils.retry(Const.DFSLocalRetries) {
+        SpookyUtils.withDeadline(spooky.conf.DFSTimeout) {f}
       }
       spooky.metrics.DFSWriteSuccess += 1
       result
