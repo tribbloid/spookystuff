@@ -137,7 +137,7 @@ object GenExtractor {
 // a subclass wraps an expression and convert it into extractor, which converts all attribute reference children into data reference children and
 // (To be implemented) can be converted to an expression to be wrapped by other expressions
 //TODO: merge with Extractor
-trait GenExtractor[T, +R] extends Serializable {
+trait GenExtractor[T, +R] extends ScalaDynamicMixin[T, R] with Serializable {
 
   lazy val TreeNode: GenExtractor.TreeNodeView = GenExtractor.TreeNodeView(this)
 

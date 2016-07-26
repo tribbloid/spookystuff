@@ -94,6 +94,7 @@ class GenLiteral[T, +R](val valueOpt: Option[R], val dataType: DataType) extends
 
 //just a simple wrapper for T, this is the only way to execute a action
 //this is the only serializable LiftedExpression that can be shipped remotely
+//TODO: not quite compatible with product2String, e.g.: /WpostImpl/Literal/Some/http/172.17.0.2/5000/registrar/(unreified)_String/MustHaveTitle/
 final case class Literal[+T](
                               override val valueOpt: Option[T],
                               override val dataType: DataType
