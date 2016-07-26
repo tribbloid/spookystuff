@@ -140,6 +140,7 @@
         <module>tests</module>
         <module>core</module>
         <module>integration</module>
+        <module>mav</module>
         <!--<module>pipeline</module>-->
         <!--<module>example</module>-->
         <!--<module>assembly</module>-->
