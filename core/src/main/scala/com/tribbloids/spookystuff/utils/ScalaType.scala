@@ -93,7 +93,6 @@ object UnreifiedScalaType {
   }
 }
 
-
 /**
   *  A Scala TypeTag-based UDT, by default it doesn't compress object
   *  ideally it should compress object into InternalRow.

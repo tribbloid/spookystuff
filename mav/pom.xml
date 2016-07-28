@@ -11,6 +11,9 @@
 
     <artifactId>spookystuff-mav</artifactId>
 
+    <!--premature optimization is the ultimate evil-->
+    <!--just get in the air first!-->
+
     <dependencies>
         <dependency>
             <groupId>com.tribbloids.spookystuff</groupId>
