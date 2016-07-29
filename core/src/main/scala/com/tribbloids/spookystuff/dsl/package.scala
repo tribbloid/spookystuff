@@ -192,9 +192,9 @@ package object dsl {
     //      }
     //    )
 
-    def head: Extractor[T] = self.andOptionTyped((v: Iterable[T]) => v.headOption, _.unboxArray)
+    def head: Extractor[T] = self.andOptionTyped((v: Iterable[T]) => v.headOption, _.unboxArrayOrMap)
 
-    def last: Extractor[T] = self.andOptionTyped((v: Iterable[T]) => v.lastOption, _.unboxArray)
+    def last: Extractor[T] = self.andOptionTyped((v: Iterable[T]) => v.lastOption, _.unboxArrayOrMap)
 
     def get(i: Int): Extractor[T] = self.andOptionTyped({
       (v: Iterable[T]) =>
@@ -203,7 +203,7 @@ package object dsl {
 
         if (realIdx>=v.size || realIdx<0) None
         else Some(v.toSeq.apply(realIdx))
-    }, _.unboxArray)
+    }, _.unboxArrayOrMap)
 
     def size: Extractor[Int] = self.andThen(_.size)
 

@@ -203,40 +203,40 @@ object ImplicitUtils {
     }
 
     //TODO: remove, delegated to GenPartitioner
-//    def groupByKey_narrow(): RDD[(K, Iterable[V])] = {
-//
-//      self.mapPartitions{
-//        itr =>
-//          itr
-//            .toTraversable
-//            .groupBy(_._1)
-//            .map(v => v._1 -> v._2.map(_._2).toIterable)
-//            .iterator
-//      }
-//    }
-//    def reduceByKey_narrow(
-//                            reducer: (V, V) => V
-//                          ): RDD[(K, V)] = {
-//      self.mapPartitions{
-//        itr =>
-//          itr
-//            .toTraversable
-//            .groupBy(_._1)
-//            .map(v => v._1 -> v._2.map(_._2).reduce(reducer))
-//            .iterator
-//      }
-//    }
-//
-//    def groupByKey_beacon[T](
-//                              beaconRDD: RDD[(K, T)]
-//                            ): RDD[(K, Iterable[V])] = {
-//
-//      val cogrouped = self.cogroup(beaconRDD, beaconRDD.partitioner.get)
-//      cogrouped.mapValues {
-//        tuple =>
-//          tuple._1
-//      }
-//    }
+    //    def groupByKey_narrow(): RDD[(K, Iterable[V])] = {
+    //
+    //      self.mapPartitions{
+    //        itr =>
+    //          itr
+    //            .toTraversable
+    //            .groupBy(_._1)
+    //            .map(v => v._1 -> v._2.map(_._2).toIterable)
+    //            .iterator
+    //      }
+    //    }
+    //    def reduceByKey_narrow(
+    //                            reducer: (V, V) => V
+    //                          ): RDD[(K, V)] = {
+    //      self.mapPartitions{
+    //        itr =>
+    //          itr
+    //            .toTraversable
+    //            .groupBy(_._1)
+    //            .map(v => v._1 -> v._2.map(_._2).reduce(reducer))
+    //            .iterator
+    //      }
+    //    }
+    //
+    //    def groupByKey_beacon[T](
+    //                              beaconRDD: RDD[(K, T)]
+    //                            ): RDD[(K, Iterable[V])] = {
+    //
+    //      val cogrouped = self.cogroup(beaconRDD, beaconRDD.partitioner.get)
+    //      cogrouped.mapValues {
+    //        tuple =>
+    //          tuple._1
+    //      }
+    //    }
 
     def reduceByKey_beacon[T](
                                reducer: (V, V) => V,
@@ -321,9 +321,9 @@ object ImplicitUtils {
     }
 
     def flattenByIndex(
-                      i: Int,
-                      sampler: Sampler[Any]
-                    ): Seq[(Array[Any], Int)]  = {
+                        i: Int,
+                        sampler: Sampler[Any]
+                      ): Seq[(Array[Any], Int)]  = {
 
       val valueOption: Option[A] = if (self.indices contains i) Some(self.apply(i))
       else None
@@ -490,41 +490,37 @@ object ImplicitUtils {
       }
     }
 
-    //  def scalaTypes: Seq[TypeTag[_]] = {
-    //    val baseOpt = baseScalaTypeOptFor(tt)
-    //
-    //    tt match {
-    //      case t if atomicTypeMap.contains(t) =>
-    //        baseOpt.toSeq.flatMap {selfOrOption}
-    //      case udt: ScalaUDT[_] =>
-    //        baseOpt.toSeq.flatMap {selfOrOption}
-    //      case _ =>
-    //        baseOpt.toSeq
-    //    }
-    //  }
-
     def reify = UnreifiedScalaType.reify(tt)
 
-    def unboxArray: DataType = {
+    def unboxArrayOrMap: DataType = {
+      tt._unboxArrayOrMapOpt
+        .orElse(
+          tt.reify._unboxArrayOrMapOpt
+        )
+        .getOrElse(
+          throw new UnsupportedOperationException(s"Type $tt is not an Array")
+        )
+    }
+
+    private[utils] def _unboxArrayOrMapOpt: Option[DataType] = {
       tt match {
         case ArrayType(boxed, _) =>
-          boxed
-        case udt: ScalaType if udt.catalystType.isInstanceOf[ArrayType] =>
-          udt.catalystType.asInstanceOf[ArrayType].elementType
+          Some(boxed)
+        case MapType(keyType, valueType, valueContainsNull) =>
+          Some(StructType(Array(
+            StructField("_1", keyType),
+            StructField("_2", valueType, valueContainsNull)
+          )))
         case _ =>
-          throw new UnsupportedOperationException(s"cannot unbox type $tt, its not an array")
+          None
       }
     }
 
     def filterArray: Option[DataType] = {
-      tt match {
-        case vv: ArrayType =>
-          Some(vv)
-        case udt: ScalaType if udt.catalystType.isInstanceOf[ArrayType] =>
-          Some(udt)
-        case _ =>
-          None
-      }
+      if (tt.reify.isInstanceOf[ArrayType])
+        Some(tt)
+      else
+        None
     }
 
     def asArray: DataType = {

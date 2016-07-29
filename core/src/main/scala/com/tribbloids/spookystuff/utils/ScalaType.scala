@@ -71,7 +71,6 @@ object UnreifiedScalaType {
     apply(clazz.toTypeTag)
   }
 
-
   def reify(tt: DataType): DataType = {
     tt match {
       case udt: UnreifiedScalaType => udt.reify

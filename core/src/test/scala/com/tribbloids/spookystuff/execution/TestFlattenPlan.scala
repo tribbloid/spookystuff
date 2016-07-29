@@ -1,6 +1,9 @@
 package com.tribbloids.spookystuff.execution
 
 import com.tribbloids.spookystuff.SpookyEnvSuite
+import com.tribbloids.spookystuff.extractors.Literal
+import com.tribbloids.spookystuff.utils.UnreifiedScalaType
+import org.apache.spark.sql.types.{IntegerType, StringType, StructField, StructType}
 
 /**
   * Created by peng on 17/05/16.
@@ -78,6 +81,73 @@ class TestFlattenPlan extends SpookyEnvSuite {
     )
   }
 
+  test("FlattenPlan should work on extracted array") {
+    val extracted = src.wget(
+      HTML_URL
+    )
+      .extract(
+        Literal(Array("a"->1, "b"->2)) ~ 'Array
+      )
+
+    assert(extracted.schema.typedFor('Array).get.dataType == UnreifiedScalaType.apply[Array[Tuple2[String, Int]]])
+
+    val flattened = extracted
+      .flatten(
+        'Array
+      )
+
+//    assert(flattened.schema.typedFor('Array).get.dataType == UnreifiedScalaType.apply[Tuple2[String, Int]])
+    assert(flattened.schema.typedFor('Array).get.dataType == StructType(Array(
+      StructField("_1",StringType,true),
+      StructField("_2",IntegerType,false)
+    )))
+  }
+
+  test("FlattenPlan should work on extracted Seq") {
+    val extracted = src.wget(
+      HTML_URL
+    )
+      .extract(
+        Literal(Seq("a"->1, "b"->2)) ~ 'Array
+      )
+
+    assert(extracted.schema.typedFor('Array).get.dataType == UnreifiedScalaType.apply[Seq[Tuple2[String, Int]]])
+
+    val flattened = extracted
+      .flatten(
+        'Array
+      )
+
+//    assert(flattened.schema.typedFor('Array).get.dataType == UnreifiedScalaType.apply[Tuple2[String, Int]])
+    assert(flattened.schema.typedFor('Array).get.dataType == StructType(Array(
+      StructField("_1",StringType,true),
+      StructField("_2",IntegerType,false)
+    )))
+  }
+
+
+  test("FlattenPlan should work on extracted List") {
+    val extracted = src.wget(
+      HTML_URL
+    )
+      .extract(
+        Literal(List("a"->1, "b"->2)) ~ 'Array
+      )
+
+    assert(extracted.schema.typedFor('Array).get.dataType == UnreifiedScalaType.apply[List[Tuple2[String, Int]]])
+
+    val flattened = extracted
+      .flatten(
+        'Array
+      )
+
+//    assert(flattened.schema.typedFor('Array).get.dataType == UnreifiedScalaType.apply[Tuple2[String, Int]])
+    assert(flattened.schema.typedFor('Array).get.dataType == StructType(Array(
+      StructField("_1",StringType,true),
+      StructField("_2",IntegerType,false)
+    )))
+  }
+
   test("flatExtract is equivalent to flatten + extract") {
     val rdd1 = src
       .flatExtract('_2 ~ 'A)(
@@ -118,32 +188,32 @@ class TestFlattenPlan extends SpookyEnvSuite {
     )
   }
 
-//  test("describe ACF") {
-//    val doc =
-//
-//    val df = doc.extract(
-//      S"dataAsset" ~ 'asset,
-//      x"${S"hierarchyOwner > organization".text}/${S"hierarchyOwner > businessUnit".text}/${S"hierarchyOwner > group".text}" ~ 'alias
-//    )
-//      .extract(
-//        'asset.typed[Elements[Unstructured]].andThen {
-//          vv =>
-//            val seq: Seq[(String, (String, String))] = vv.map{
-//              v =>
-//                (v\"assetCode" text).get ->
-//                  ((v\"assetName" text).get -> (v\"parentAssetCode" text).get)
-//            }
-//
-//            val map: Map[String, (String, String)] = Map(seq: _*)
-//            expandAssetNames(map)
-//        } ~ 'code_path
-//      )
-//      .remove('asset)
-//      .flatten('code_path)
-//      .extract(
-//        'code_path.typed[(String, String)].andThen(_._1) as 'code,
-//        'code_path.typed[(String, String)].andThen(_._2) as 'path
-//      )
-//      .toDF(sort = true)
-//  }
+  //  test("describe ACF") {
+  //    val doc =
+  //
+  //    val df = doc.extract(
+  //      S"dataAsset" ~ 'asset,
+  //      x"${S"hierarchyOwner > organization".text}/${S"hierarchyOwner > businessUnit".text}/${S"hierarchyOwner > group".text}" ~ 'alias
+  //    )
+  //      .extract(
+  //        'asset.typed[Elements[Unstructured]].andThen {
+  //          vv =>
+  //            val seq: Seq[(String, (String, String))] = vv.map{
+  //              v =>
+  //                (v\"assetCode" text).get ->
+  //                  ((v\"assetName" text).get -> (v\"parentAssetCode" text).get)
+  //            }
+  //
+  //            val map: Map[String, (String, String)] = Map(seq: _*)
+  //            expandAssetNames(map)
+  //        } ~ 'code_path
+  //      )
+  //      .remove('asset)
+  //      .flatten('code_path)
+  //      .extract(
+  //        'code_path.typed[(String, String)].andThen(_._1) as 'code,
+  //        'code_path.typed[(String, String)].andThen(_._2) as 'path
+  //      )
+  //      .toDF(sort = true)
+  //  }
 }

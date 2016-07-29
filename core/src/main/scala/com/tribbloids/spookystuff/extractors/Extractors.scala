@@ -206,6 +206,7 @@ case class InterpolateExpr(parts: Seq[String], _args: Seq[Extractor[Any]]) exten
 }
 
 //TODO: delegate to And_->
+//TODO: need tests
 case class ZippedExpr[T1,+T2](
                                arg1: Extractor[Iterable[T1]],
                                arg2: Extractor[Iterable[T2]]
@@ -215,10 +216,10 @@ case class ZippedExpr[T1,+T2](
   override val _args: Seq[GenExtractor[FR, _]] = Seq(arg1, arg2)
 
   override def resolveType(tt: DataType): DataType = {
-    (arg1.resolveType(tt), arg2.resolveType(tt)) match {
-      case (ArrayType(in1, _), ArrayType(in2, _)) =>
-        MapType(in1, in2)
-    }
+    val t1 = arg1.resolveType(tt).unboxArrayOrMap
+    val t2 = arg2.resolveType(tt).unboxArrayOrMap
+
+    MapType(t1, t2)
   }
 
   override def resolve(tt: DataType): PartialFunction[FR, Map[T1, T2]] = {

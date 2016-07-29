@@ -2,7 +2,7 @@ package com.tribbloids.spookystuff.execution
 
 import com.tribbloids.spookystuff.extractors.{Extractor, GetExpr, Resolved}
 import com.tribbloids.spookystuff.row._
-import org.apache.spark.sql.types.{ArrayType, DataType, IntegerType}
+import org.apache.spark.sql.types.{ArrayType, IntegerType}
 
 trait MapPlan extends UnaryPlan {
 
@@ -44,13 +44,12 @@ case class FlattenPlan(
                         isLeft: Boolean
                       ) extends UnaryPlan(child) with MapPlan {
 
+  import com.tribbloids.spookystuff.utils.ImplicitUtils._
+
   val resolver = child.schema.newResolver
 
   val _on: TypedField = {
-    val flattenType = GetExpr(onField).resolveType(child.schema) match {
-      case ArrayType(boxed, _) => boxed
-      case v: DataType => v
-    }
+    val flattenType = GetExpr(onField).resolveType(child.schema).unboxArrayOrMap
     val tf = TypedField(onField.!!, flattenType)
 
     resolver.includeTyped(tf).head
