@@ -67,7 +67,7 @@ abstract class IntegrationSuite extends FunSuite with BeforeAndAfterAll with Rem
             sql,
             new SpookyConf(
               new DirConf(root = root),
-              driverFactory = driver,
+              webDriverFactory = driver,
               defaultFetchOptimizer = optimizer,
               shareMetrics = true,
               remoteResourceTimeout = 10.seconds

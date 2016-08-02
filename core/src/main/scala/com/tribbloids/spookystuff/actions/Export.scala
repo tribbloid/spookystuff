@@ -125,9 +125,9 @@ case class Snapshot(
 
     val page = new Doc(
       DocUID((pb.backtrace :+ this).toList, this),
-      pb.driver.getCurrentUrl,
+      pb.webDriver.getCurrentUrl,
       Some("text/html; charset=UTF-8"),
-      pb.driver.getPageSource.getBytes("UTF8")
+      pb.webDriver.getPageSource.getBytes("UTF8")
       //      serializableCookies
     )
 
@@ -149,14 +149,14 @@ case class Screenshot(
 
   override protected def doExeNoName(pb: Session): Seq[Doc] = {
 
-    val content = pb.driver match {
+    val content = pb.webDriver match {
       case ts: TakesScreenshot => ts.getScreenshotAs(OutputType.BYTES)
       case _ => throw new UnsupportedOperationException("driver doesn't support snapshot")
     }
 
     val page = new Doc(
       DocUID((pb.backtrace :+ this).toList, this),
-      pb.driver.getCurrentUrl,
+      pb.webDriver.getCurrentUrl,
       Some("image/png"),
       content
     )

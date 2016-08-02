@@ -19,7 +19,7 @@ trait CleanWebDriverMixin {
     catch {
       case e: SessionNotFoundException => //already cleaned before
       case e: Throwable =>
-        LoggerFactory.getLogger(this.getClass).warn("!!!!!FAIL TO CLEANE UP DRIVER!!!!!"+e)
+        LoggerFactory.getLogger(this.getClass).warn("!!!!! FAIL TO CLEANE UP DRIVER !!!!!"+e)
     }
     finally {
       super.finalize()

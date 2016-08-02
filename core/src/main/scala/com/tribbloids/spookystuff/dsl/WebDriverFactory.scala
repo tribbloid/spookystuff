@@ -28,15 +28,19 @@ import org.openqa.selenium.{Capabilities, Platform, Proxy}
 import org.slf4j.LoggerFactory
 
 //TODO: switch to DriverPool! Tor cannot handle too many connection request.
-sealed abstract class DriverFactory extends Serializable{
+sealed abstract class WebDriverFactory extends Serializable{
 
-  final def newInstance(capabilities: Capabilities, spooky: SpookyContext): CleanWebDriver = {
-    val result = _newInstance(capabilities, spooky)
-
-    result
-  }
+  def get(spooky: SpookyContext): CleanWebDriver =
+    _newInstance(null, spooky)
 
   def _newInstance(capabilities: Capabilities, spooky: SpookyContext): CleanWebDriver
+
+  def reclaim(webDriver: CleanWebDriver, spooky: SpookyContext): Unit = {
+
+    webDriver.close()
+    webDriver.quit()
+    spooky.metrics.driverReclaimed += 1
+  }
 }
 
 object DriverFactories {
@@ -76,7 +80,7 @@ object DriverFactories {
                         fileNameFromMaster: String = PhantomJS.fileName,
                         ignoreSysEnv: Boolean = false
                         )
-    extends DriverFactory {
+    extends WebDriverFactory {
 
     @transient lazy val exePath = {
       val effectivePath = if (!ignoreSysEnv) PhantomJS.path(path, fileNameFromMaster)
@@ -131,7 +135,7 @@ object DriverFactories {
 
   case class HtmlUnit(
                        browser: BrowserVersion = BrowserVersion.getDefault
-                       ) extends DriverFactory {
+                       ) extends WebDriverFactory {
 
     val baseCaps = new DesiredCapabilities(BrowserType.HTMLUNIT, "", Platform.ANY)
 

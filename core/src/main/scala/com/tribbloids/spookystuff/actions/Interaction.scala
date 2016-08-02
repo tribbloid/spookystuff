@@ -74,7 +74,7 @@ case class Visit(
                 ) extends Interaction(delay, blocking) with Timed {
 
   override def exeWithoutPage(session: Session) {
-    session.driver.get(uri.asInstanceOf[Literal[String]].value)
+    session.webDriver.get(uri.asInstanceOf[Literal[String]].value)
 
     //    if (hasTitle) {
     //      val wait = new WebDriverWait(session.driver, timeout(session).toSeconds)
@@ -362,7 +362,7 @@ case class SwitchToFrame(selector: Selector)extends Interaction(null, false) wit
 
     val element = this.getElement(selector, session)
 
-    session.driver.switchTo().frame(element)
+    session.webDriver.switchTo().frame(element)
   }
 }
 
@@ -387,7 +387,7 @@ case class ExeScript(
     }
 
     val scriptStr = script.asInstanceOf[Literal[String]].value
-    session.driver match {
+    session.webDriver match {
       case d: JavascriptExecutor => d.executeScript(scriptStr, element.toArray: _*)
       case _ => throw new UnsupportedOperationException("this web browser driver is not supported")
     }
@@ -434,19 +434,19 @@ case class DragSlider(
     val height = dim.getHeight
     val width = dim.getWidth
 
-    new SeleniumActions(session.driver).clickAndHold(handle).perform()
+    new SeleniumActions(session.webDriver).clickAndHold(handle).perform()
 
     Thread.sleep(1000)
 
-    new SeleniumActions(session.driver).moveByOffset(1, 0).perform()
+    new SeleniumActions(session.webDriver).moveByOffset(1, 0).perform()
 
     Thread.sleep(1000)
 
-    if (width > height) new SeleniumActions(session.driver).moveByOffset((width * percentage).asInstanceOf[Int], 0).perform()
-    else new SeleniumActions(session.driver).moveByOffset(0, (height * percentage).asInstanceOf[Int]).perform()
+    if (width > height) new SeleniumActions(session.webDriver).moveByOffset((width * percentage).asInstanceOf[Int], 0).perform()
+    else new SeleniumActions(session.webDriver).moveByOffset(0, (height * percentage).asInstanceOf[Int]).perform()
 
     Thread.sleep(1000)
 
-    new SeleniumActions(session.driver).release().perform()
+    new SeleniumActions(session.webDriver).release().perform()
   }
 }

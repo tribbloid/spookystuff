@@ -20,7 +20,7 @@ abstract class Session(val spooky: SpookyContext) {
   val startTime: Long = new Date().getTime
   val backtrace: ArrayBuffer[Action] = ArrayBuffer()
 
-  val driver: CleanWebDriver
+  val webDriver: CleanWebDriver
 
   def close(): Unit = {
     spooky.metrics.sessionReclaimed += 1
@@ -34,7 +34,7 @@ abstract class Session(val spooky: SpookyContext) {
     catch {
       case e: SessionNotFoundException => //already cleaned before
       case e: Throwable =>
-        LoggerFactory.getLogger(this.getClass).warn("!!!!!FAIL TO CLEAN UP SESSION!!!!!" + e)
+        LoggerFactory.getLogger(this.getClass).warn("!!!!! FAIL TO CLEAN UP SESSION !!!!!" + e)
     }
     finally {
       super.finalize()
@@ -46,10 +46,10 @@ abstract class Session(val spooky: SpookyContext) {
 
 class DriverSession(override val spooky: SpookyContext) extends Session(spooky){
 
-  override val driver: CleanWebDriver = SpookyUtils.retry(Const.localResourceLocalRetries){
+  override val webDriver: CleanWebDriver = SpookyUtils.retry(Const.localResourceLocalRetries){
     SpookyUtils.withDeadline(Const.sessionInitializationTimeout){
       var successful = false
-      val driver = spooky.conf.driverFactory.newInstance(null, spooky)
+      val driver = spooky.conf.webDriverFactory.get(spooky)
       spooky.metrics.driverInitialized += 1
       try {
         driver.manage().timeouts()
@@ -74,15 +74,15 @@ class DriverSession(override val spooky: SpookyContext) extends Session(spooky){
     }
   }
 
+//  override val pythonDriver: SocketDriver
+
   override def close(): Unit = {
-    driver.close()
-    driver.quit()
-    spooky.metrics.driverReclaimed += 1
+    spooky.conf.webDriverFactory.reclaim(webDriver, spooky)
     super.close()
   }
 }
 
 class NoDriverSession(override val spooky: SpookyContext) extends Session(spooky) {
 
-  override val driver: CleanWebDriver = null
+  override val webDriver: CleanWebDriver = null
 }

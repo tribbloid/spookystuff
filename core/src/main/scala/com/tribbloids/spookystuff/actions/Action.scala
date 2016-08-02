@@ -90,7 +90,7 @@ trait Action extends ActionLike {
           val rawPage = DefaultSnapshot.exe(session).head.asInstanceOf[Doc]
           message += "\nSnapshot: " + this.errorDump(message, rawPage, session.spooky)
         }
-        if (errorDumpScreenshot && session.driver.isInstanceOf[TakesScreenshot]) {
+        if (errorDumpScreenshot && session.webDriver.isInstanceOf[TakesScreenshot]) {
           val rawPage = DefaultScreenshot.exe(session).toList.head.asInstanceOf[Doc]
           message += "\nScreenshot: " + this.errorDump(message, rawPage, session.spooky)
         }
@@ -174,7 +174,7 @@ trait Timed extends Action {
     timeout(session) + Const.hardTerminateOverhead
   }
 
-  def driverWait(session: Session) = new WebDriverWait(session.driver, this.timeout(session).toSeconds)
+  def driverWait(session: Session) = new WebDriverWait(session.webDriver, this.timeout(session).toSeconds)
 
   def getClickableElement(selector: String, session: Session) = {
 
