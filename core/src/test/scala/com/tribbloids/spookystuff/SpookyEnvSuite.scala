@@ -65,7 +65,7 @@ abstract class SpookyEnvSuite
   before{
     // bypass java.lang.NullPointerException at org.apache.spark.broadcast.TorrentBroadcast$.unpersist(TorrentBroadcast.scala:228)
     // TODO: clean up after fix
-    SpookyUtils.retryExplicitly(50) {
+    SpookyUtils.retry(50) {
       setUp()
     }
   }
