@@ -1,16 +1,18 @@
-#sudo: false  #### cannot be enabled due to tor installation
 language: java
+
+sudo: false
+
 jdk:
-#  - oraclejdk7
-  - oraclejdk8
+  - oraclejdk7
 
 env:
-  - SPARK_VERSION="1.3"
+#  - SPARK_VERSION="1.3"
   - SPARK_VERSION="1.4"
   - SPARK_VERSION="1.5"
+  - SPARK_VERSION="1.6"
 
 before_install:
-  - "sudo apt-get install -y tor"
+#  - "sudo apt-get install -y tor"
 
 install:
   - mvn install -q -DskipTests=true -B -q -Pall-inclusive-examples -Pdist -Pspark-${SPARK_VERSION} ${EXTRA}
