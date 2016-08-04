@@ -424,12 +424,12 @@ case class Wget(
         val methods = status.getClass.getMethods
         val getters = methods.filter {
           m =>
-            m.getName.startsWith("get") && (m.getParameterCount == 0)
+            m.getName.startsWith("get") && (m.getParameterTypes.length == 0)
         }
           .map(v => v.getName.stripPrefix("get") -> v)
         val booleanGetters = methods.filter {
           m =>
-            m.getName.startsWith("is") && (m.getParameterCount == 0)
+            m.getName.startsWith("is") && (m.getParameterTypes.length == 0)
         }
           .map(v => v.getName -> v)
         val validMethods = getters ++ booleanGetters
