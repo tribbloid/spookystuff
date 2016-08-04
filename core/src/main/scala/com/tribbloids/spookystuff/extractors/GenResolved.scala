@@ -2,7 +2,6 @@ package com.tribbloids.spookystuff.extractors
 
 import com.tribbloids.spookystuff.extractors.GenExtractor.Static
 import com.tribbloids.spookystuff.row.TypedField
-import org.apache.spark.sql.types.DataType
 ;
 
 case class GenResolved[T, +R](

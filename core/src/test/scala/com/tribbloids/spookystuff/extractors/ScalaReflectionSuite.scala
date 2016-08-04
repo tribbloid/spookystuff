@@ -203,7 +203,8 @@ class ScalaReflectionSuite extends FunSuite with TestMixin {
     )
 
     val paramss = dynamic.getMethodByJava(exType, Some(List(IntegerType)))
-      .getParameters.map(_.getType).mkString("|")
+      .getParameterTypes
+      .mkString("|")
 
     paramss.shouldBe(
       "class java.lang.Object"
@@ -232,7 +233,7 @@ class ScalaReflectionSuite extends FunSuite with TestMixin {
     )
 
     val paramss = dynamic.getMethodByJava(exType, Some(List(IntegerType)))
-      .getParameters.map(_.getType).mkString("|")
+      .getParameterTypes.mkString("|")
 
     paramss.shouldBe(
       "class java.lang.Object"
@@ -261,7 +262,7 @@ class ScalaReflectionSuite extends FunSuite with TestMixin {
     )
 
     val paramss = dynamic.getMethodByJava(exType, Some(List(IntegerType)))
-      .getParameters.map(_.getType).mkString("|")
+      .getParameterTypes.mkString("|")
 
     paramss.shouldBe(
       "class scala.Option"
@@ -325,7 +326,7 @@ class ScalaReflectionSuite extends FunSuite with TestMixin {
     )
 
     val method = dynamic.getMethodByJava(exType, Some(List(IntegerType)))
-    val types = method.getParameters.map(_.getType).mkString("|")
+    val types = method.getParameterTypes.mkString("|")
 
     types.toString.shouldBe(
       "class java.lang.Object"
