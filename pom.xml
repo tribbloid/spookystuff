@@ -13,13 +13,26 @@
         <scala.fallback.version>2.10</scala.fallback.version>
         <hadoop.version>2.6.0</hadoop.version>
         <spark.version>1.6.2</spark.version>
-        <spark.binary.version>1.4.1</spark.binary.version>
+        <spark.binary.version>1.6</spark.binary.version>
         <PermGen>512m</PermGen>
         <MaxPermGen>2g</MaxPermGen>
         <failsafe.version>2.18</failsafe.version>
     </properties>
 
     <profiles>
+        <profile>
+            <id>java7</id>
+            <properties>
+                <java.version>1.7</java.version>
+            </properties>
+        </profile>
+        <profile>
+            <id>java8</id>
+            <activation>
+                <activeByDefault>true</activeByDefault>
+            </activation>
+        </profile>
+
         <profile>
             <id>scala-2.10</id>
             <activation>
@@ -59,7 +72,7 @@
             <id>spark-1.4</id>
             <properties>
                 <spark.version>1.4.1</spark.version>
-                <spark.binary.version>1.5</spark.binary.version>
+                <spark.binary.version>1.4</spark.binary.version>
             </properties>
         </profile>
 
@@ -239,8 +252,8 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
                 <configuration>
-                    <source>1.8</source>
-                    <target>1.8</target>
+                    <source>${java.version}</source>
+                    <target>${java.version}</target>
                 </configuration>
             </plugin>
 
