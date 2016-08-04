@@ -14,8 +14,6 @@ object PythonProcessSuite {
       xs.foreach{
         x =>
           val r = proc.sendAndGetResult(s"print($x + 1)")
-          println("-------------------------------------------------------------------")
-          println(r)
           assert (r.replace(">>> ","").trim == (x + 1).toString)
       }
     }
