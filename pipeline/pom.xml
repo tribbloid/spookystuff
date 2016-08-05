@@ -19,7 +19,7 @@
         </dependency>
         <dependency>
             <groupId>com.tribbloids.spookystuff</groupId>
-            <artifactId>spookystuff-tests</artifactId>
+            <artifactId>spookystuff-testutils</artifactId>
             <version>${project.version}</version>
             <scope>test</scope>
         </dependency>

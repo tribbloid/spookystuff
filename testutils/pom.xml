@@ -9,7 +9,7 @@
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>spookystuff-tests</artifactId>
+    <artifactId>spookystuff-testutils</artifactId>
 
     <dependencies>
         <dependency>

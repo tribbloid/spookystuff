@@ -8,6 +8,7 @@ import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.DataFrame
 import org.apache.spark.sql.catalyst.ScalaReflection
 import org.apache.spark.sql.types._
+import org.slf4j.LoggerFactory
 
 import scala.collection.generic.CanBuildFrom
 import scala.collection.immutable.ListMap
@@ -536,9 +537,20 @@ object ImplicitUtils {
     }
 
     def =~= (another: DataType): Boolean = {
-      (tt eq another) ||
+      val result = (tt eq another) ||
         (tt == another) ||
         (tt.reify == another.reify)
+
+      if (!result) {
+        LoggerFactory.getLogger(this.getClass).warn(
+          s"""
+            |Type not equal:
+            |LEFT:  $tt -> ${tt.reify}
+            |RIGHT: $another -> ${another.reify}
+          """.stripMargin
+        )
+      }
+      result
     }
   }
 

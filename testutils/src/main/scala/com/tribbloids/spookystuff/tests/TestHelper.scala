@@ -126,4 +126,12 @@ object TestHelper {
     val endTime = System.currentTimeMillis()
     (result, endTime - startTime)
   }
+
+//  def unpackFileInJar(path: String): String ={
+//    val file = new File("newname.ext");
+//    if (!file.exists()) {
+//      InputStream link = (getClass().getResourceAsStream("/path/resources/filename.ext"));
+//      Files.copy(link, file.getAbsoluteFile().toPath());
+//    }
+//  }
 }

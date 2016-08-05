@@ -1,3 +1,3 @@
 #!/usr/bin/env bash
 
-MAVEN_OPTS="-Xmx3g -XX:MaxPermSize=512M -XX:ReservedCodeCacheSize=512m" mvn clean install
+MAVEN_OPTS="-Xmx4g -XX:MaxPermSize=4g -XX:ReservedCodeCacheSize=512m" mvn clean install

@@ -150,7 +150,7 @@
     </scm>
 
     <modules>
-        <module>tests</module>
+        <module>testutils</module>
         <module>core</module>
         <module>integration</module>
         <module>mav</module>
