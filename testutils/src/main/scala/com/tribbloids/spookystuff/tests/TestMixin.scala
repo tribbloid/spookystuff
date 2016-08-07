@@ -1,5 +1,7 @@
 package com.tribbloids.spookystuff.tests
 
+import java.net.URLEncoder
+
 import org.apache.spark.SparkEnv
 import org.apache.spark.serializer.{JavaSerializer, KryoSerializer, Serializer}
 
@@ -39,6 +41,10 @@ trait TestMixin {
             }
           )
       }
+    }
+
+    def uriContains(contains: String): Boolean = {
+      str.contains(contains) && str.contains(URLEncoder.encode(contains,"UTF-8"))
     }
   }
 

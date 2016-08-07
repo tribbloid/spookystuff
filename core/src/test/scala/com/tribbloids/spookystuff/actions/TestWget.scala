@@ -129,7 +129,7 @@ class TestWget extends SpookyEnvSuite {
 
     assert(results.size === 1)
     val doc = results.head.asInstanceOf[Doc]
-    assert(doc.uri contains "?q=giant+robot")
+    assert(doc.uri uriContains "?q=giant+robot")
   }
 
   //TODO: find a new way to test it!
