@@ -35,9 +35,9 @@ case class ExplorePlan(
 
                         params: ExploreParams,
                         exploreAlgorithm: ExploreAlgorithm,
-                        miniBatch: Int,
+                        iterationsPerEpoch: Int,
                         //TODO: stopping condition can be more than this,
-                        //TODO: test if proceed to next batch works
+                        //TODO: test if proceed to next epoch works
                         checkpointInterval: Int // set to Int.MaxValue to disable checkpointing,
                       ) extends UnaryPlan(child) with InjectBeaconRDDPlan {
 
@@ -135,8 +135,8 @@ case class ExplorePlan(
     val combinedReducer: (Open_Visited, Open_Visited) => Open_Visited = {
       (v1, v2) =>
         Open_Visited (
-          open = (v1.open ++ v2.open).map(_.toIterable).reduceOption(impl.openReducerBetweenBatches).map(_.toArray),
-          visited = (v1.visited ++ v2.visited).map(_.toIterable).reduceOption(impl.visitedReducerBetweenBatches).map(_.toArray)
+          open = (v1.open ++ v2.open).map(_.toIterable).reduceOption(impl.openReducerBetweenEpochs).map(_.toArray),
+          visited = (v1.visited ++ v2.visited).map(_.toIterable).reduceOption(impl.visitedReducerBetweenEpochs).map(_.toArray)
         )
     }
 
@@ -164,7 +164,7 @@ case class ExplorePlan(
 
             traces
           )(
-            miniBatch,
+            iterationsPerEpoch,
             impl,
             depth_++,
             spooky

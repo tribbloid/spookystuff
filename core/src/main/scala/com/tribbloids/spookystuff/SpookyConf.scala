@@ -46,8 +46,9 @@ class SpookyConf (
                    var proxy: () => ProxySetting = ProxyFactories.NoProxy,
                    //                   var userAgent: ()=> String = () => null,
                    //TODO: merge into headersFactory
-                   var userAgentFactory: () => String =
-                   () => "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/37.0.2062.120 Safari/537.36",
+                   var userAgentFactory: () => String = {
+                     () => "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/37.0.2062.120 Safari/537.36"
+                   },
                    var headersFactory: () => Map[String, String] = () => Map(),
                    var oAuthKeysFactory: () => OAuthKeys = () => null,
 
@@ -83,6 +84,7 @@ class SpookyConf (
                    var defaultFetchOptimizer: FetchOptimizer = FetchOptimizers.Wide,
                    var defaultExploreAlgorithm: ExploreAlgorithm = ExploreAlgorithms.ShortestPath,
 
+                   var iterationsPerEpoch: Int = 500,
                    var checkpointInterval: Int = -1, //disabled if <=0
 
                    //if encounter too many out of memory error, change to MEMORY_AND_DISK_SER
@@ -161,6 +163,7 @@ class SpookyConf (
       this.defaultFetchOptimizer,
       this.defaultExploreAlgorithm,
 
+      this.iterationsPerEpoch,
       this.checkpointInterval,
 
       this.defaultStorageLevel,

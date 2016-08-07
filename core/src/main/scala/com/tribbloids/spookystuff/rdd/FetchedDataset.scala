@@ -32,7 +32,6 @@ import scala.reflect.ClassTag
   * CAUTION: naming convention:
   * all function ended with _! will be executed immediately, others will yield a logical plan that can be optimized & lazily executed
   */
-//TODO: rename?
 case class FetchedDataset(
                            plan: ExecutionPlan
                          ) extends FetchedRDDAPI {
@@ -492,7 +491,7 @@ case class FetchedDataset(
                depthField: Field = null,
                range: Range = spooky.conf.defaultExploreRange,
                exploreAlgorithm: ExploreAlgorithm = spooky.conf.defaultExploreAlgorithm,
-               miniBatch: Int = 500,
+               iterationsPerEpoch: Int = spooky.conf.iterationsPerEpoch,
                checkpointInterval: Int = spooky.conf.checkpointInterval // set to Int.MaxValue to disable checkpointing,
              )(
                extracts: Extractor[Any]*
@@ -503,7 +502,7 @@ case class FetchedDataset(
 
     ExplorePlan(plan, on.withJoinFieldIfMissing, sampler, joinType,
       traces.correct, partitionerFactory, fetchOptimizer,
-      params, exploreAlgorithm, miniBatch, checkpointInterval
+      params, exploreAlgorithm, iterationsPerEpoch, checkpointInterval
     )
   }
 

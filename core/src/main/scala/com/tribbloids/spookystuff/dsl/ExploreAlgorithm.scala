@@ -25,14 +25,14 @@ object ExploreAlgorithms {
       */
     val openReducer: RowReducer
 
-    def openReducerBetweenBatches: RowReducer = openReducer
+    def openReducerBetweenEpochs: RowReducer = openReducer
 
     /**
       *
       */
     val visitedReducer: RowReducer //precede eliminator
 
-    def visitedReducerBetweenBatches: RowReducer = visitedReducer
+    def visitedReducerBetweenEpochs: RowReducer = visitedReducer
 
     /**
       *
