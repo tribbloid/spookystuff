@@ -1,5 +1,7 @@
 package com.tribbloids.spookystuff.integration.fetch
 
+import java.net.URLEncoder
+
 import com.tribbloids.spookystuff.actions.{DropDownSelect, Submit, TextInput, _}
 import com.tribbloids.spookystuff.dsl._
 import com.tribbloids.spookystuff.integration.IntegrationSuite
@@ -31,7 +33,7 @@ class FetchInteractionsIT extends IntegrationSuite{
     assert(pageRows.length === 1)
     assert(pageRows(0).pages.size === 1)
     val uri = pageRows(0).pages.head.uri
-    uri assertUriContains "zh.wikipedia.org/wiki/深度学习"
+    assert((uri endsWith "zh.wikipedia.org/wiki/深度学习") || (uri endsWith "zh.wikipedia.org/wiki/"+URLEncoder.encode("深度学习", "UTF-8")))
     assert(pageRows(0).pages.head.name === Snapshot(DocFilters.MustHaveTitle).toString)
     val pageTime = pageRows(0).fetched.head.timeMillis
     assert(pageTime < finishTime)

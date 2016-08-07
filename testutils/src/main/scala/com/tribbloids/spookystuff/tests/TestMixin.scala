@@ -43,20 +43,20 @@ trait TestMixin {
       }
     }
 
-    def uriContains(contains: String): Boolean = {
-      str.contains(contains) &&
-        str.contains(URLEncoder.encode(contains,"UTF-8"))
-    }
-
-    def assertUriContains(contains: String): Unit = {
-      assert(
-        str.contains(contains) &&
-        str.contains(URLEncoder.encode(contains,"UTF-8")),
-        s"$str doesn't contain either:" +
-          s"$contains OR" +
-          s"${URLEncoder.encode(contains,"UTF-8")}"
-      )
-    }
+//    def uriContains(contains: String): Boolean = {
+//      str.contains(contains) &&
+//        str.contains(URLEncoder.encode(contains,"UTF-8"))
+//    }
+//
+//    def assertUriContains(contains: String): Unit = {
+//      assert(
+//        str.contains(contains) &&
+//        str.contains(URLEncoder.encode(contains,"UTF-8")),
+//        s"$str doesn't contain either:\n" +
+//          s"$contains OR\n" +
+//          s"${URLEncoder.encode(contains,"UTF-8")}"
+//      )
+//    }
   }
 
   def assureSerializable[T <: AnyRef: ClassTag](
