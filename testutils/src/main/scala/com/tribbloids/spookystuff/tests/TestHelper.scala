@@ -127,14 +127,18 @@ object TestHelper {
     (result, endTime - startTime)
   }
 
-  val tmpResourceRootPath = tempPath + "resource/"
+  val unpackedResourceRootPath = "target/resources/"
   def unpackResourceIfNotExist(resource: String): String = {
     val path = getClass.getClassLoader.getResource(resource)
 
-    val fileOpt = Option(org.apache.commons.io.FileUtils.toFile(path))
-      .orElse{
+    val fileOpt = {
+      val file = FileUtils.toFile(path)
+      if (file != null && file.exists()) Some(file)
+      else None
+    }
+      .orElse {
         // avoid repeated unpacking of file.
-        val file = org.apache.commons.io.FileUtils.getFile(tmpResourceRootPath + resource)
+        val file = new File(unpackedResourceRootPath + resource)
         if (file.exists()) Some(file)
         else None
       }
@@ -145,20 +149,27 @@ object TestHelper {
       case None =>
         val srcURL= getClass.getClassLoader.getResource(resource)
 
-        val targetFile = new File(tmpResourceRootPath + resource)
+        val targetFile = new File(unpackedResourceRootPath + resource)
+        println(targetFile.getAbsolutePath)
 
         //        println("rsrc:" + resource)
         //        println("from:" + srcURL)
         //        println("to:  " + targetFile.getPath)
 
-//        try {
-          FileUtils.copyURLToFile(srcURL, targetFile)
-//        }
-//        catch {
-//          case e: NullPointerException => //do nothing
-//        }
+        //        try {
+        FileUtils.copyURLToFile(srcURL, targetFile)
+        //        }
+        //        catch {
+        //          case e: NullPointerException => //do nothing
+        //        }
 
-        targetFile.getAbsolutePath
+        for (i <- 0 to 50) {
+          val targetFile = new File(unpackedResourceRootPath + resource)
+          if (targetFile.exists()) return targetFile.getAbsolutePath
+          println("file writing not finished ...")
+          Thread.sleep(2000)
+        }
+        sys.error("file writing failed")
     }
   }
 }

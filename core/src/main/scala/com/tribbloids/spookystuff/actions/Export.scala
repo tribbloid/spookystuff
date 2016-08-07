@@ -412,7 +412,7 @@ case class Wget(
       result
     }
     else
-      throw new FileNotFoundException(s"${uri} is not a file or directory ")
+      throw new FileNotFoundException(s"$uri is not a file or directory ")
   }
 
   def readHDFSDirectory(path: Path, fs: FileSystem): Fetched = {

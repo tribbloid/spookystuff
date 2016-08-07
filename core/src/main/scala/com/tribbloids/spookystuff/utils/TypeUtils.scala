@@ -2,7 +2,6 @@ package com.tribbloids.spookystuff.utils
 
 import org.apache.spark.sql.catalyst.ScalaReflection
 import org.apache.spark.sql.types._
-import org.slf4j.LoggerFactory
 
 import scala.language.implicitConversions
 
@@ -28,9 +27,9 @@ object TypeUtils {
     }
     catch {
       case e: Throwable =>
-        LoggerFactory.getLogger(this.getClass).warn(
-          s"cannot convert Scala type $ttg to Catalyst type:\n" + e.getLocalizedMessage
-        )
+//        LoggerFactory.getLogger(this.getClass).warn(
+//          s"cannot convert Scala type $ttg to Catalyst type:\n" + e.getLocalizedMessage
+//        )
         None
     }
   }

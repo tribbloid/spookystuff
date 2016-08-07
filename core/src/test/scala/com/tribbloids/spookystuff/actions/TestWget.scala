@@ -35,22 +35,22 @@ class TestWget extends SpookyEnvSuite {
   }
 
   //TODO: find a test site for http!
-//  test("use TOR socks5 proxy for http wget") {
-//
-//    val newIP = {
-//      spooky.conf.proxy = ProxyFactories.Tor
-//
-//      val results = (
-//        wget("http://www.whatsmyuseragent.com/") :: Nil
-//        ).fetch(spooky)
-//
-//      results.head.asInstanceOf[Page].findAll("h3.info").texts.head
-//    }
-//
-//    assert(newIP !== null)
-//    assert(newIP !== "")
-//    assert(newIP !== noProxyIP)
-//  }
+  //  test("use TOR socks5 proxy for http wget") {
+  //
+  //    val newIP = {
+  //      spooky.conf.proxy = ProxyFactories.Tor
+  //
+  //      val results = (
+  //        wget("http://www.whatsmyuseragent.com/") :: Nil
+  //        ).fetch(spooky)
+  //
+  //      results.head.asInstanceOf[Page].findAll("h3.info").texts.head
+  //    }
+  //
+  //    assert(newIP !== null)
+  //    assert(newIP !== "")
+  //    assert(newIP !== noProxyIP)
+  //  }
 
   test("use TOR socks5 proxy for https wget", Tag(classOf[Tor].getCanonicalName)) {
 
@@ -59,7 +59,8 @@ class TestWget extends SpookyEnvSuite {
 
       val results = (
         wget("https://www.astrill.com/what-is-my-ip-address.php") :: Nil
-        ).fetch(spooky)
+        )
+        .fetch(spooky)
 
       results.head.asInstanceOf[Doc].findAll("h1").texts.head
     }
@@ -69,30 +70,30 @@ class TestWget extends SpookyEnvSuite {
     assert(newIP !== noProxyIP)
   }
 
-//  test("revert proxy setting for http wget") {
-//
-//    val newIP = {
-//      spooky.conf.proxy = ProxyFactories.Tor
-//
-//      val results = (
-//        wget("http://www.whatsmyuseragent.com/") :: Nil
-//        ).fetch(spooky)
-//      Actions
-//      results.head.asInstanceOf[Page].findAll("h3.info").texts.head
-//    }
-//
-//    val noProxyIP2 = {
-//      spooky.conf.proxy = ProxyFactories.NoProxy
-//
-//      val results = (
-//        wget("http://www.whatsmyuseragent.com/") :: Nil
-//        ).fetch(spooky)
-//
-//      results.head.asInstanceOf[Page].findAll("h3.info").texts.head
-//    }
-//
-//    assert(newIP !== noProxyIP2)
-//  }
+  //  test("revert proxy setting for http wget") {
+  //
+  //    val newIP = {
+  //      spooky.conf.proxy = ProxyFactories.Tor
+  //
+  //      val results = (
+  //        wget("http://www.whatsmyuseragent.com/") :: Nil
+  //        ).fetch(spooky)
+  //      Actions
+  //      results.head.asInstanceOf[Page].findAll("h3.info").texts.head
+  //    }
+  //
+  //    val noProxyIP2 = {
+  //      spooky.conf.proxy = ProxyFactories.NoProxy
+  //
+  //      val results = (
+  //        wget("http://www.whatsmyuseragent.com/") :: Nil
+  //        ).fetch(spooky)
+  //
+  //      results.head.asInstanceOf[Page].findAll("h3.info").texts.head
+  //    }
+  //
+  //    assert(newIP !== noProxyIP2)
+  //  }
 
   test("revert from TOR socks5 proxy for https wget", Tag(classOf[Tor].getCanonicalName)) {
 
@@ -190,13 +191,13 @@ class TestWget extends SpookyEnvSuite {
   }
 
   //TODO: how to simulate a PKIX exception page?
-//  test("wget should handle PKIX exception") {
-//    spooky.conf.proxy = ProxyFactories.NoProxy
-//
-//    val results = List(
-//      wget("https://www.canadacompany.ca/en/")
-//    ).fetch(spooky)
-//  }
+  //  test("wget should handle PKIX exception") {
+  //    spooky.conf.proxy = ProxyFactories.NoProxy
+  //
+  //    val results = List(
+  //      wget("https://www.canadacompany.ca/en/")
+  //    ).fetch(spooky)
+  //  }
 
   test("wget.interpolate should not overwrite each other") {
     val wget = Wget(
