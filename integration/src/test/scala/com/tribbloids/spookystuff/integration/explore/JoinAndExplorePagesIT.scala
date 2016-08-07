@@ -88,5 +88,5 @@ class JoinAndExplorePagesIT extends IntegrationSuite {
 
   override def numDrivers = 0
 
-  override val error = 0 to 3
+  override val error = 0 to 4
 }
