@@ -136,13 +136,13 @@ case class ScalaDynamicExtractor[T](
     */
   def getMethodByJava(baseEvi: DataType, argEvisOpt: Option[List[DataType]]): Method = {
 
-    val baseClz = baseEvi.scalaType.toClass
+    val baseClz = baseEvi.scalaType.clazz
 
     val expectedClasssList: Seq[Option[List[Class[_]]]] = argEvisOpt match {
       case Some(argEvis) =>
         val eviss: List[List[Class[_]]] = argEvis.map {
           v =>
-            List(v.scalaType.toClass) :+ classOf[Object]
+            List(v.scalaType.clazz) :+ classOf[Object]
         }
         val cartesian = FlowUtils.cartesianProductList(eviss)
         cartesian.map(

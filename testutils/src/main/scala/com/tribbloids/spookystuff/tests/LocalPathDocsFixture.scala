@@ -1,16 +1,25 @@
 package com.tribbloids.spookystuff.tests
 
-/**
-  * Created by peng on 17/05/16.
-  */
-trait LocalPathDocsFixture extends RemoteDocsFixture{
+trait LocalPathDocsFixture extends RemoteDocsFixture {
 
-  override def HTML_URL = this.getClass.getClassLoader.getResource("site/Wikipedia.html").getPath
-  override def JSON_URL = this.getClass.getClassLoader.getResource("site/tribbloid.json").getPath
-  override def PNG_URL = this.getClass.getClassLoader.getResource("site/logo11w.png").getPath
-  override def PDF_URL = this.getClass.getClassLoader.getResource("site/Test.pdf").getPath
-  override def XML_URL = this.getClass.getClassLoader.getResource("site/pom.xml").getPath
-  override def CSV_URL = this.getClass.getClassLoader.getResource("site/table.csv").getPath
+  def unpack(resource: String): String = {
+    TestHelper.unpackResourceIfNotExist(resource)
+  }
 
-  def dirUrl = this.getClass.getClassLoader.getResource("site").getPath
+  val _HTML_URL = unpack("site/Wikipedia.html")
+  val _JSON_URL = unpack("site/tribbloid.json")
+  val _PNG_URL =  unpack("site/logo11w.png")
+  val _PDF_URL = unpack("site/Test.pdf")
+  val _XML_URL = unpack("site/pom.xml")
+  val _CSV_URL = unpack("site/table.csv")
+  val _DIR_URL = unpack("site")
+
+  override def HTML_URL = _HTML_URL
+  override def JSON_URL = _JSON_URL
+  override def PNG_URL =  _PNG_URL
+  override def PDF_URL = _PDF_URL
+  override def XML_URL = _XML_URL
+  override def CSV_URL = _CSV_URL
+
+  def DIR_URL = _DIR_URL
 }

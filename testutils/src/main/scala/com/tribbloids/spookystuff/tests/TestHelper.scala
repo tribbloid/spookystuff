@@ -127,11 +127,38 @@ object TestHelper {
     (result, endTime - startTime)
   }
 
-//  def unpackFileInJar(path: String): String ={
-//    val file = new File("newname.ext");
-//    if (!file.exists()) {
-//      InputStream link = (getClass().getResourceAsStream("/path/resources/filename.ext"));
-//      Files.copy(link, file.getAbsoluteFile().toPath());
-//    }
-//  }
+  val tmpResourceRootPath = tempPath + "resource/"
+  def unpackResourceIfNotExist(resource: String): String = {
+    val path = getClass.getClassLoader.getResource(resource)
+
+    val fileOpt = Option(org.apache.commons.io.FileUtils.toFile(path))
+      .orElse{
+        // avoid repeated unpacking of file.
+        val file = org.apache.commons.io.FileUtils.getFile(tmpResourceRootPath + resource)
+        if (file.exists()) Some(file)
+        else None
+      }
+
+    fileOpt match {
+      case Some(file) =>
+        file.getAbsolutePath
+      case None =>
+        val srcURL= getClass.getClassLoader.getResource(resource)
+
+        val targetFile = new File(tmpResourceRootPath + resource)
+
+        //        println("rsrc:" + resource)
+        //        println("from:" + srcURL)
+        //        println("to:  " + targetFile.getPath)
+
+        try {
+          FileUtils.copyURLToFile(srcURL, targetFile)
+        }
+        catch {
+          case e: NullPointerException => //do nothing
+        }
+
+        targetFile.getAbsolutePath
+    }
+  }
 }

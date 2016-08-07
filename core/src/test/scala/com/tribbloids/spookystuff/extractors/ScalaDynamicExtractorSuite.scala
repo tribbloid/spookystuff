@@ -26,7 +26,7 @@ class ScalaDynamicExtractorSuite extends SpookyEnvSuite {
       None
     )
 
-    assert(dynamic.resolveType(null) =~= TimestampType)
+    dynamic.resolveType(null) =~=! TimestampType
     val fn = dynamic.resolve(null)
     assert(fn.apply(null) == result)
 
@@ -42,7 +42,7 @@ class ScalaDynamicExtractorSuite extends SpookyEnvSuite {
       None
     )
 
-    assert(dynamic.resolveType(null) =~= StringType)
+    dynamic.resolveType(null) =~=! StringType
     val fn = dynamic.resolve(null)
     assert(fn.apply(null) == result)
   }
@@ -57,7 +57,7 @@ class ScalaDynamicExtractorSuite extends SpookyEnvSuite {
       None
     )
 
-    assert(dynamic.resolveType(null) =~= StringType)
+    dynamic.resolveType(null) =~=! StringType
     val fn = dynamic.resolve(null)
     val dynamicResult = fn.apply(null)
     assert(dynamicResult == result)
@@ -77,7 +77,7 @@ class ScalaDynamicExtractorSuite extends SpookyEnvSuite {
       None
     )
 
-    assert(dynamic.resolveType(null) =~= ArrayType(ArrayType(new ActionUDT())))
+    dynamic.resolveType(null) =~=! ArrayType(ArrayType(new ActionUDT()))
     val fn = dynamic.resolve(null)
     assert(fn.apply(null) == result)
   }
@@ -136,7 +136,7 @@ class ScalaDynamicExtractorSuite extends SpookyEnvSuite {
       Some(List[GetExpr]('B))
     )
 
-    assert(dynamic.resolveType(schema) =~= StringType)
+    dynamic.resolveType(schema) =~=! StringType
     val fn = dynamic.resolve(schema)
     assert(fn.lift.apply(rows(0)) == Some("12"))
     assert(fn.lift.apply(rows(1)) == Some("11"))
@@ -152,7 +152,7 @@ class ScalaDynamicExtractorSuite extends SpookyEnvSuite {
       Some(List[GetExpr]('B))
     )
 
-    assert(dynamic.resolveType(schema) =~= IntegerType)
+    dynamic.resolveType(schema) =~=! IntegerType
     val fn = dynamic.resolve(schema)
     assert(fn.lift.apply(rows(0)).isEmpty)
     assert(fn.lift.apply(rows(1)) == Some(1))
@@ -167,7 +167,7 @@ class ScalaDynamicExtractorSuite extends SpookyEnvSuite {
       Some(List[GetExpr]('C))
     )
 
-    assert(dynamic.resolveType(schema) =~= BooleanType)
+    dynamic.resolveType(schema) =~=! BooleanType
     val fn = dynamic.resolve(schema)
     assert(fn.lift.apply(rows(0)) == Some(true))
     assert(fn.lift.apply(rows(1)) == Some(true))
@@ -182,7 +182,7 @@ class ScalaDynamicExtractorSuite extends SpookyEnvSuite {
       None
     )
 
-    assert(dynamic.resolveType(schema) =~= IntegerType)
+    dynamic.resolveType(schema) =~=! IntegerType
     val fn = dynamic.resolve(schema)
     assert(fn.lift.apply(null) == Some(5))
   }
@@ -194,7 +194,7 @@ class ScalaDynamicExtractorSuite extends SpookyEnvSuite {
       None
     )
 
-    assert(dynamic.resolveType(null) =~= StringType)
+    dynamic.resolveType(null) =~=! StringType
     val fn = dynamic.resolve(schema)
     assert(fn.lift.apply(null) == Some("a"))
   }
@@ -206,7 +206,7 @@ class ScalaDynamicExtractorSuite extends SpookyEnvSuite {
       None
     )
 
-    assert(dynamic.resolveType(null) =~= StringType)
+    dynamic.resolveType(null) =~=! StringType
     val fn = dynamic.resolve(schema)
     assert(fn.lift.apply(null) == Some("a"))
   }

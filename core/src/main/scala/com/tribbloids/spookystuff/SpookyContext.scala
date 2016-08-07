@@ -117,7 +117,7 @@ case class SpookyContext private (
                           seq: TraversableOnce[T]
                         ): FetchedDataset = {
 
-    implicit val ctg = implicitly[TypeTag[T]].toClassTag
+    implicit val ctg = implicitly[TypeTag[T]].classTag
     this.dsl.rddToPageRowRDD(this.sqlContext.sparkContext.parallelize(seq.toSeq))
   }
 
@@ -126,7 +126,7 @@ case class SpookyContext private (
                           numSlices: Int
                         ): FetchedDataset = {
 
-    implicit val ctg = implicitly[TypeTag[T]].toClassTag
+    implicit val ctg = implicitly[TypeTag[T]].classTag
     this.dsl.rddToPageRowRDD(this.sqlContext.sparkContext.parallelize(seq.toSeq, numSlices))
   }
 

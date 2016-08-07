@@ -10,7 +10,7 @@ class TestPageFromFile extends TestPageFromHttp with LocalPathDocsFixture {
 
   test("wget dir, save and load") {
     val results = (
-      Wget(dirUrl) :: Nil
+      Wget(DIR_URL) :: Nil
       ).fetch(spooky)
 
     val resultsList = results.toArray

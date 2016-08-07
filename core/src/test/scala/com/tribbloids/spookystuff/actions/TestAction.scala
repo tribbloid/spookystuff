@@ -23,9 +23,9 @@ class TestAction extends SpookyEnvSuite {
 
     val rewritten = action.interpolate(FetchedRow(DataRow(data = ListMap(Field("~") -> "http://www.dummy.com")), Seq()), schema).get
 
-    val a = (rewritten.uri.asInstanceOf[Literal[String]].dataType.asInstanceOf[UnreifiedScalaType].ttg.tpe.normalize)
-    val b = (Literal("http://www.dummy.com").dataType.asInstanceOf[UnreifiedScalaType].ttg.tpe.normalize)
-    val c = (Literal(new Example()).dataType.asInstanceOf[UnreifiedScalaType].ttg.tpe.normalize)
+    val a = rewritten.uri.asInstanceOf[Literal[String]].dataType.asInstanceOf[UnreifiedScalaType].ttg.tpe.normalize
+    val b = Literal("http://www.dummy.com").dataType.asInstanceOf[UnreifiedScalaType].ttg.tpe.normalize
+    val c = Literal(new Example()).dataType.asInstanceOf[UnreifiedScalaType].ttg.tpe.normalize
 
     assert(rewritten === Visit(Literal("http://www.dummy.com")))
     assert(rewritten.timeout(null) === randomTimeout)

@@ -20,7 +20,7 @@ class TypeConverterSuite extends SpookyEnvSuite {
 
     val arr: Seq[String] = Seq("abc", "def")
     val cls = arr.head.getClass
-    val ttg: TypeTag[Seq[String]] = TypeUtils.instanceToTypeTag(arr)
+    val ttg: TypeTag[Seq[String]] = TypeUtils.getTypeTag(arr)
     val fns = ttg.tpe
       .members
     val fn = fns
@@ -69,7 +69,7 @@ class TypeConverterSuite extends SpookyEnvSuite {
       test(s"catalystType (${pair._1}) => scalaType (${pair._2.tpe})") {
         val converted = pair._1.scalaTypeOpt
         println(converted)
-        assert(converted.map(_.toClass) == Some(pair._2.toClass))
+        assert(converted.map(_.clazz) == Some(pair._2.clazz))
       }
   }
 

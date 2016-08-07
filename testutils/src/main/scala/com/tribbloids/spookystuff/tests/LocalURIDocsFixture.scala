@@ -11,5 +11,5 @@ trait LocalURIDocsFixture extends LocalPathDocsFixture{
   override def PDF_URL = "file://" + super.PDF_URL
   override def XML_URL = "file://" + super.XML_URL
   override def CSV_URL = "file://" + super.CSV_URL
-  override def dirUrl = "file://" + super.dirUrl
+  override def DIR_URL = "file://" + super.DIR_URL
 }

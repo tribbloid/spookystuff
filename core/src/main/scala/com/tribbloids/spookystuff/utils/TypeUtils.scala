@@ -2,6 +2,7 @@ package com.tribbloids.spookystuff.utils
 
 import org.apache.spark.sql.catalyst.ScalaReflection
 import org.apache.spark.sql.types._
+import org.slf4j.LoggerFactory
 
 import scala.language.implicitConversions
 
@@ -18,26 +19,28 @@ object TypeUtils {
   //    CatalystTypeConverters.convertToScala(internal, dataType)
   //  }
 
-  def instanceToTypeTag[T: TypeTag](a: T) = implicitly[TypeTag[T]]
+  def getTypeTag[T: TypeTag](a: T) = implicitly[TypeTag[T]]
 
   def catalystTypeOptFor[T](implicit ttg: TypeTag[T]): Option[DataType] = {
-    ttg match {
-      case TypeTag.Null =>
-        Some(NullType)
-      case _ =>
-        try {
-          val t = ScalaReflection.schemaFor[T](ttg).dataType
-          Some(t)
-        }
-        catch {
-          case e: Throwable => None
-        }
+    try {
+      val result = catalystTypeFor[T](ttg)
+      Some(result)
+    }
+    catch {
+      case e: Throwable =>
+        LoggerFactory.getLogger(this.getClass).warn(
+          s"cannot convert Scala type $ttg to Catalyst type:\n" + e.getLocalizedMessage
+        )
+        None
     }
   }
 
   def catalystTypeFor[T](implicit ttg: TypeTag[T]): DataType = {
-    catalystTypeOptFor(ttg).getOrElse{
-      throw new UnsupportedOperationException(s"cannot convert Scala type ${ttg.tpe} to Catalyst type")
+    ttg match {
+      case TypeTag.Null =>
+        NullType
+      case _ =>
+        ScalaReflection.schemaFor[T](ttg).dataType
     }
   }
 
@@ -98,11 +101,15 @@ object TypeUtils {
                         tpe: Type,
                         mirror: reflect.api.Mirror[reflect.runtime.universe.type]
                       ): TypeTag[T] = {
-    TypeTag(mirror, new reflect.api.TypeCreator {
-      def apply[U <: reflect.api.Universe with Singleton](m: reflect.api.Mirror[U]) = {
-        assert(m eq mirror, s"TypeTag[$tpe] defined in $mirror cannot be migrated to $m.")
-        tpe.asInstanceOf[U#Type]
+
+    TypeTag(
+      mirror,
+      new reflect.api.TypeCreator {
+        def apply[U <: reflect.api.Universe with Singleton](m: reflect.api.Mirror[U]) = {
+//          assert(m eq mirror, s"TypeTag[$tpe] defined in $mirror cannot be migrated to $m.")
+          tpe.asInstanceOf[U#Type]
+        }
       }
-    })
+    )
   }
 }

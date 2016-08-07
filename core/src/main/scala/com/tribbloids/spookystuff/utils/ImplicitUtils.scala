@@ -412,7 +412,7 @@ object ImplicitUtils {
   lazy val atomicExamples: Seq[(Any, TypeTag[_])] = {
 
     implicit def pairFor[T: TypeTag](v: T): (T, TypeTag[T]) = {
-      v -> TypeUtils.instanceToTypeTag[T](v)
+      v -> TypeUtils.getTypeTag[T](v)
     }
 
     val result = Seq[(Any, TypeTag[_])](
@@ -491,7 +491,11 @@ object ImplicitUtils {
       }
     }
 
-    def reify = UnreifiedScalaType.reify(tt)
+    def reify = {
+
+      val result = UnreifiedScalaType.reify(tt)
+      result
+    }
 
     def unboxArrayOrMap: DataType = {
       tt._unboxArrayOrMapOpt
@@ -541,16 +545,19 @@ object ImplicitUtils {
         (tt == another) ||
         (tt.reify == another.reify)
 
-      if (!result) {
-        LoggerFactory.getLogger(this.getClass).warn(
-          s"""
-            |Type not equal:
-            |LEFT:  $tt -> ${tt.reify}
-            |RIGHT: $another -> ${another.reify}
-          """.stripMargin
-        )
-      }
       result
+    }
+
+    def =~=!(another: DataType): Unit = {
+      val result = =~= (another)
+      assert (
+        result,
+        s"""
+           |Type not equal:
+           |LEFT:  $tt -> ${tt.reify}
+           |RIGHT: $another -> ${another.reify}
+          """.stripMargin
+      )
     }
   }
 
@@ -564,20 +571,22 @@ object ImplicitUtils {
       TypeUtils.catalystTypeFor(ttg)
     }
 
-    def toClassTag: ClassTag[T] = ClassTag(_clz)
+    def classTag: ClassTag[T] = ClassTag(_clz)
 
-    def toClass: Class[T] = _clz.asInstanceOf[Class[T]]
+    def clazz: Class[T] = _clz.asInstanceOf[Class[T]]
 
     //FIXME: cannot handle Array[_]
-    private def _clz: ScalaReflection.universe.RuntimeClass = ttg.mirror.runtimeClass(ttg.tpe)
+    private def _clz: ScalaReflection.universe.RuntimeClass = {
+      val tpe = ttg.tpe
+      ttg.mirror.runtimeClass(tpe)
+    }
   }
-
 
   implicit class ClassTagViews[T](self: ClassTag[T]) {
 
     //  def toTypeTag: TypeTag[T] = TypeTag.apply()
 
-    def toClass: Class[T] = self.runtimeClass.asInstanceOf[Class[T]]
+    def clazz: Class[T] = self.runtimeClass.asInstanceOf[Class[T]]
   }
 
   implicit class ClassView[T](self: Class[T]) {

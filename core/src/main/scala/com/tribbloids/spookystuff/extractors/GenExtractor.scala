@@ -215,7 +215,7 @@ trait GenExtractor[T, +R] extends ScalaDynamicMixin[T, R] with Serializable {
 
   //TODO: extract subroutine and use it to avoid obj creation overhead
   def typed[A: TypeTag]: GenExtractor[T, A] = {
-    implicit val ctg = implicitly[TypeTag[A]].toClassTag
+    implicit val ctg = implicitly[TypeTag[A]].classTag
 
     andOptionFn[A]{
       SpookyUtils.typedOrNone[A]
