@@ -84,7 +84,7 @@ class SpookyConf (
                    var defaultFetchOptimizer: FetchOptimizer = FetchOptimizers.Wide,
                    var defaultExploreAlgorithm: ExploreAlgorithm = ExploreAlgorithms.ShortestPath,
 
-                   var iterationsPerEpoch: Int = 500,
+                   var epochSize: Int = 500,
                    var checkpointInterval: Int = -1, //disabled if <=0
 
                    //if encounter too many out of memory error, change to MEMORY_AND_DISK_SER
@@ -163,7 +163,7 @@ class SpookyConf (
       this.defaultFetchOptimizer,
       this.defaultExploreAlgorithm,
 
-      this.iterationsPerEpoch,
+      this.epochSize,
       this.checkpointInterval,
 
       this.defaultStorageLevel,

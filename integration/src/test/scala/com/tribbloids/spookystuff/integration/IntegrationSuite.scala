@@ -69,6 +69,7 @@ abstract class IntegrationSuite extends FunSuite with BeforeAndAfterAll with Rem
               new DirConf(root = root),
               webDriverFactory = driver,
               defaultFetchOptimizer = optimizer,
+              epochSize = 2,
               shareMetrics = true,
               remoteResourceTimeout = 10.seconds
             )

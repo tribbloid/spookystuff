@@ -491,7 +491,7 @@ case class FetchedDataset(
                depthField: Field = null,
                range: Range = spooky.conf.defaultExploreRange,
                exploreAlgorithm: ExploreAlgorithm = spooky.conf.defaultExploreAlgorithm,
-               iterationsPerEpoch: Int = spooky.conf.iterationsPerEpoch,
+               epochSize: Int = spooky.conf.epochSize,
                checkpointInterval: Int = spooky.conf.checkpointInterval // set to Int.MaxValue to disable checkpointing,
              )(
                extracts: Extractor[Any]*
@@ -502,7 +502,7 @@ case class FetchedDataset(
 
     ExplorePlan(plan, on.withJoinFieldIfMissing, sampler, joinType,
       traces.correct, partitionerFactory, fetchOptimizer,
-      params, exploreAlgorithm, iterationsPerEpoch, checkpointInterval
+      params, exploreAlgorithm, epochSize, checkpointInterval
     )
   }
 
