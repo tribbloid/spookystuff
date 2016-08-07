@@ -14,9 +14,8 @@ class TestPageFromHttp extends SpookyEnvSuite {
       Wget(HTML_URL) :: Nil
     ).fetch(spooky)
 
-    val resultsList = results.toArray
-    assert(resultsList.length === 1)
-    val page = resultsList(0).asInstanceOf[Doc]
+    assert(results.length === 1)
+    val page = results.head.asInstanceOf[Doc]
 
     assert(page.mimeType == "text/html")
     assert(page.charset.map(_.toLowerCase).get == "utf-8")
@@ -35,9 +34,8 @@ class TestPageFromHttp extends SpookyEnvSuite {
       Wget(JSON_URL) :: Nil
       ).fetch(spooky)
 
-    val resultsList = results.toArray
-    assert(resultsList.length === 1)
-    val page = resultsList(0).asInstanceOf[Doc]
+    assert(results.length === 1)
+    val page = results.head.asInstanceOf[Doc]
 
     assert(page.mimeType == "application/json")
     assert(page.charset.map(_.toLowerCase).get == "utf-8")
@@ -60,9 +58,8 @@ class TestPageFromHttp extends SpookyEnvSuite {
       Wget(PNG_URL) :: Nil
     ).fetch(spooky)
 
-    val resultsList = results.toArray
-    assert(resultsList.length === 1)
-    val page = resultsList(0).asInstanceOf[Doc]
+    assert(results.length === 1)
+    val page = results.head.asInstanceOf[Doc]
 
     assert(page.mimeType == "image/png")
     assert(page.charset.map(_.toLowerCase).get == "utf-8")
@@ -81,9 +78,8 @@ class TestPageFromHttp extends SpookyEnvSuite {
       Wget(PDF_URL) :: Nil
     ).fetch(spooky)
 
-    val resultsList = results.toArray
-    assert(resultsList.length === 1)
-    val page = resultsList(0).asInstanceOf[Doc]
+    assert(results.length === 1)
+    val page = results.head.asInstanceOf[Doc]
 
     assert(page.mimeType == "application/pdf")
     assert(page.charset.map(_.toLowerCase).get == "utf-8")
@@ -135,9 +131,8 @@ class TestPageFromHttp extends SpookyEnvSuite {
       Wget(XML_URL) :: Nil
       ).fetch(spooky)
 
-    val resultsList = results.toArray
-    assert(resultsList.length === 1)
-    val page = resultsList(0).asInstanceOf[Doc]
+    assert(results.length === 1)
+    val page = results.head.asInstanceOf[Doc]
 
     assert(page.mimeType == "application/xml")
     assert(page.charset.map(_.toLowerCase).get == "utf-8")
@@ -160,9 +155,8 @@ class TestPageFromHttp extends SpookyEnvSuite {
       Wget(CSV_URL) :: Nil
       ).fetch(spooky)
 
-    val resultsList = results.toArray
-    assert(resultsList.length === 1)
-    val page = resultsList(0).asInstanceOf[Doc].set("csvFormat" -> CSVFormat.newFormat('\t').withQuote('"').withHeader())
+    assert(results.length === 1)
+    val page = results.head.asInstanceOf[Doc].set("csvFormat" -> CSVFormat.newFormat('\t').withQuote('"').withHeader())
 
     assert(page.mimeType == "text/csv")
     assert(Set("iso-8859-1", "utf-8") contains page.charset.map(_.toLowerCase).get) //the file is just using ASCII chars

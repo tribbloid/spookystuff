@@ -1,6 +1,6 @@
 package com.tribbloids.spookystuff.actions
 
-import java.io.Closeable
+import java.io.{Closeable, FileNotFoundException}
 import java.lang.reflect.InvocationTargetException
 import java.net.{InetSocketAddress, URI, URLConnection}
 import java.util.Date
@@ -10,7 +10,7 @@ import com.tribbloids.spookystuff.Const
 import com.tribbloids.spookystuff.doc._
 import com.tribbloids.spookystuff.extractors.{Extractor, Literal}
 import com.tribbloids.spookystuff.http._
-import com.tribbloids.spookystuff.row.{FetchedRow, DataRowSchema}
+import com.tribbloids.spookystuff.row.{DataRowSchema, FetchedRow}
 import com.tribbloids.spookystuff.session.{ProxySetting, Session}
 import com.tribbloids.spookystuff.utils.{HDFSResolver, SpookyUtils}
 import org.apache.commons.io.IOUtils
@@ -242,14 +242,14 @@ abstract class HttpCommand(
         }
       }
     }
-    catch {
-      case e: ClientProtocolException =>
-        val cause = e.getCause
-        if (cause.isInstanceOf[RedirectException]) NoDoc(List(this)) //TODO: is it a reasonable exception? don't think so
-        else throw e
-      case e: Throwable =>
-        throw e
-    }
+//    catch {
+//      case e: ClientProtocolException =>
+//        val cause = e.getCause
+//        if (cause.isInstanceOf[RedirectException]) NoDoc(List(this)) //TODO: is it a reasonable exception? don't think so
+//        else throw e
+//      case e: Throwable =>
+//        throw e
+//    }
   }
 
   def getHttpClient(session: Session): (CloseableHttpClient, HttpClientContext) = {
@@ -412,7 +412,7 @@ case class Wget(
       result
     }
     else
-      NoDoc(List(this), cacheable = false)
+      throw new FileNotFoundException(s"${uri} is not a file or directory ")
   }
 
   def readHDFSDirectory(path: Path, fs: FileSystem): Fetched = {
