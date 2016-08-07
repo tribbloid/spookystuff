@@ -151,12 +151,12 @@ object TestHelper {
         //        println("from:" + srcURL)
         //        println("to:  " + targetFile.getPath)
 
-        try {
+//        try {
           FileUtils.copyURLToFile(srcURL, targetFile)
-        }
-        catch {
-          case e: NullPointerException => //do nothing
-        }
+//        }
+//        catch {
+//          case e: NullPointerException => //do nothing
+//        }
 
         targetFile.getAbsolutePath
     }

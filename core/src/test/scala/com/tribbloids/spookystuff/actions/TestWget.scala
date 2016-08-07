@@ -5,6 +5,8 @@ import java.sql.Timestamp
 import com.tribbloids.spookystuff.SpookyEnvSuite
 import com.tribbloids.spookystuff.doc.Doc
 import com.tribbloids.spookystuff.rdd.FetchedDataset
+import com.tribbloids.spookystuff.tests.Tor
+import org.scalatest.Tag
 import org.scalatest.tags.Retryable
 
 import scala.concurrent.duration
@@ -50,7 +52,7 @@ class TestWget extends SpookyEnvSuite {
 //    assert(newIP !== noProxyIP)
 //  }
 
-  test("use TOR socks5 proxy for https wget") {
+  test("use TOR socks5 proxy for https wget", Tag(classOf[Tor].getCanonicalName)) {
 
     val newIP = {
       spooky.conf.proxy = ProxyFactories.Tor
@@ -92,7 +94,7 @@ class TestWget extends SpookyEnvSuite {
 //    assert(newIP !== noProxyIP2)
 //  }
 
-  test("revert proxy setting for https wget") {
+  test("revert from TOR socks5 proxy for https wget", Tag(classOf[Tor].getCanonicalName)) {
 
     val newIP = {
       spooky.conf.proxy = ProxyFactories.Tor
