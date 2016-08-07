@@ -2,8 +2,9 @@ package com.tribbloids.spookystuff.actions
 
 import com.tribbloids.spookystuff.caching.{DFSWebCache, InMemoryWebCache}
 import com.tribbloids.spookystuff.doc.{Doc, Fetched}
-import com.tribbloids.spookystuff.row.{FetchedRow, DataRowSchema}
+import com.tribbloids.spookystuff.row.{DataRowSchema, FetchedRow}
 import com.tribbloids.spookystuff.session.Session
+import com.tribbloids.spookystuff.utils.IDMixin
 import com.tribbloids.spookystuff.{SpookyContext, dsl}
 
 import scala.collection.mutable.ArrayBuffer
@@ -12,7 +13,7 @@ import scala.reflect.ClassTag
 case class TraceView(
                       override val children: Trace = Nil,
                       @transient var docs: Seq[Fetched] = null //override, cannot be shuffled
-                    ) extends Actions(children) { //remember trace is not a block! its the super container that cannot be wrapped
+                    ) extends Actions(children) with IDMixin { //remember trace is not a block! its the super container that cannot be wrapped
 
   //always has output (Sometimes Empty) to handle left join
   override def doInterpolate(pr: FetchedRow, schema: DataRowSchema): Option[this.type] = {
@@ -89,7 +90,7 @@ case class TraceView(
 
     def refresh: Seq[Fetched] = {
       val docs = TraceView.this.fetch(spooky)
-      if (docs.nonEmpty) put(docs)
+      put(docs)
       docs
     }
 
@@ -99,6 +100,8 @@ case class TraceView(
       this
     }
   }
+
+  override def _id: Any = children
 }
 
 //The precedence of an inﬁx operator is determined by the operator’s ﬁrst character.

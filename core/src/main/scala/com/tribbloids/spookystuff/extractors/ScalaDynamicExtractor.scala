@@ -330,7 +330,7 @@ trait ScalaDynamicMixin[T, +R] extends Dynamic {
   def applyDynamic(methodName: String)(args: Any*): GenExtractor[T, Any] = {
 
     val argExs: Seq[GenExtractor[T, Any]] = args.toSeq.map {
-      case ex: GenExtractor[_, Any] =>
+      case ex: GenExtractor[_, _] =>
         ex.asInstanceOf[GenExtractor[T, Any]]
       case v@ _ =>
         val tt = UnreifiedScalaType.fromInstance(v)

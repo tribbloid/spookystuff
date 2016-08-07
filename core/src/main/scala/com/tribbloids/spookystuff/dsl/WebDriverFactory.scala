@@ -79,7 +79,7 @@ object DriverFactories {
                         loadImages: Boolean = false,
                         fileNameFromMaster: String = PhantomJS.fileName,
                         ignoreSysEnv: Boolean = false
-                        )
+                      )
     extends WebDriverFactory {
 
     @transient lazy val exePath = {
@@ -135,7 +135,7 @@ object DriverFactories {
 
   case class HtmlUnit(
                        browser: BrowserVersion = BrowserVersion.getDefault
-                       ) extends WebDriverFactory {
+                     ) extends WebDriverFactory {
 
     val baseCaps = new DesiredCapabilities(BrowserType.HTMLUNIT, "", Platform.ANY)
 

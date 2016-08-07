@@ -11,14 +11,14 @@ trait InjectBeaconRDDPlan extends ExecutionPlan {
   def fetchOptimizer: FetchOptimizer
   def partitionerFactory: RDD[_] => Partitioner
 
-  abstract override lazy val beaconRDDOpt: Option[RDD[(Trace, DataRow)]] = {
+  abstract override lazy val beaconRDDOpt: Option[RDD[(TraceView, DataRow)]] = {
     fetchOptimizer match {
       case FetchOptimizers.WebCacheAware =>
         val inherited = super.defaultBeaconRDDOpt
         inherited.orElse{
           this.firstChildOpt.map {
             child =>
-              spooky.createBeaconRDD[Trace, DataRow](child.rdd(), partitionerFactory)
+              spooky.createBeaconRDD[TraceView, DataRow](child.rdd(), partitionerFactory)
           }
         }
       case _ =>
@@ -39,7 +39,7 @@ case class FetchPlan(
 
   override def doExecute(): SquashedFetchedRDD = {
 
-    val trace_DataRowRDD: RDD[(Trace, DataRow)] = child.rdd()
+    val trace_DataRowRDD: RDD[(TraceView, DataRow)] = child.rdd()
       .flatMap {
         _.interpolate(traces)
       }
@@ -51,7 +51,7 @@ case class FetchPlan(
     grouped
       .map {
         tuple =>
-          SquashedFetchedRow(tuple._2.toArray, TraceView(tuple._1)) // actual fetch can only be triggered by extract or savePages
+          SquashedFetchedRow(tuple._2.toArray, tuple._1) // actual fetch can only be triggered by extract or savePages
       }
   }
 }

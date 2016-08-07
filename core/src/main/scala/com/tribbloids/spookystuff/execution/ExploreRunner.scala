@@ -20,18 +20,17 @@ case class Open_Visited(
   * NOT serializable: expected to be constructed on Executors
   */
 class ExploreRunner(
-                    val itr: Iterator[(Trace, Open_Visited)], //TODO: change to TraceView
-                    val executionID: Long
-                  ) extends NOTSerializableMixin {
+                     val itr: Iterator[(TraceView, Open_Visited)], //TODO: change to TraceViewView
+                     val executionID: Long
+                   ) extends NOTSerializableMixin {
 
   import dsl._
 
   //TODO: add fast sort implementation
-  val _open: ConcurrentMap[Trace, Iterable[DataRow]] = ConcurrentMap() //TODO: Change to ConcurrentMap[Trace, Array[DataRow]]
-  def open = _open
-  //  val openVs = mutable.SortedSet[(Trace, Array[DataRow])] = mutable.SortedSet()
-  val _visited: ConcurrentMap[Trace, Iterable[DataRow]] = ConcurrentMap()
-  def visited = _visited
+  val open: ConcurrentMap[TraceView, Iterable[DataRow]] = ConcurrentMap() //TODO: Change to ConcurrentMap[TraceView, Array[DataRow]]
+
+  //  val openVs = mutable.SortedSet[(TraceView, Array[DataRow])] = mutable.SortedSet()
+  val visited: ConcurrentMap[TraceView, Iterable[DataRow]] = ConcurrentMap()
 
   itr.foreach{
     tuple =>
@@ -42,7 +41,7 @@ class ExploreRunner(
   ExploreRunnerCache.register(this)
 
   protected def commitIntoVisited(
-                                   key: Trace,
+                                   key: TraceView,
                                    value: Iterable[DataRow],
                                    reducer: RowReducer
                                  ): Unit = {
@@ -56,7 +55,7 @@ class ExploreRunner(
                              sampler: Sampler[Any],
                              joinType: JoinType,
 
-                             traces: Set[Trace]
+                             trace: Set[Trace]
                            )(
                              impl: ExploreImpl,
                              `depth_++`: Resolved[Int],
@@ -72,13 +71,13 @@ class ExploreRunner(
 
     implicit def withSchema(row: SquashedFetchedRow): SquashedFetchedRow#WithSchema = new row.WithSchema(schema)
 
-    val bestOpen: (Trace, Iterable[DataRow]) = open.min(pairOrdering) //TODO: expensive! use pre-sorted collection
+    val bestOpen: (TraceView, Iterable[DataRow]) = open.min(pairOrdering) //TODO: expensive! use pre-sorted collection
 
     open -= bestOpen._1
 
     val existingVisitedOption = ExploreRunnerCache.get(bestOpen._1 -> executionID, visitedReducer)
 
-    val bestOpenAfterElimination: (Trace, Iterable[DataRow]) = existingVisitedOption match {
+    val bestOpenAfterElimination: (TraceView, Iterable[DataRow]) = existingVisitedOption match {
       case Some(allVisited) =>
         val dataRowsAfterElimination = eliminator(bestOpen._2, allVisited)
         bestOpen.copy(_2 = dataRowsAfterElimination)
@@ -87,11 +86,11 @@ class ExploreRunner(
     }
 
     if (bestOpenAfterElimination._2.nonEmpty) {
-      val bestRow_- = SquashedFetchedRow(bestOpen._2.toArray, TraceView(bestOpen._1))
+      val bestRow_- = SquashedFetchedRow(bestOpen._2.toArray, bestOpen._1)
 
       val bestRow = rowFn.apply(
         bestRow_-
-            .extract(depth_++)
+          .extract(depth_++)
       )
       val bestDataRowsInRange = bestRow.dataRows.filter {
         dataRow =>
@@ -107,16 +106,20 @@ class ExploreRunner(
         }
       )
 
-      val opens_+ : Array[(Trace, DataRow)] = bestNonFringeRow
+      val opens_+ : Array[(TraceView, DataRow)] = bestNonFringeRow
         .extract(resolved)
         .flattenData(resolved.field, ordinalField, joinType.isLeft, sampler)
-        .interpolate(traces)
+        .interpolate(trace)
+        .map {
+          tuple =>
+            tuple._1 -> tuple._2
+        }
       opens_+.foreach {
         open_+ =>
-          val trace_+ = open_+._1
-          val oldDataRows: Iterable[DataRow] = open.getOrElse(trace_+, Nil)
+          val TraceView_+ = open_+._1
+          val oldDataRows: Iterable[DataRow] = open.getOrElse(TraceView_+, Nil)
           val newDataRows = openReducer(Array(open_+._2), oldDataRows).toArray
-          open += trace_+ -> newDataRows
+          open += TraceView_+ -> newDataRows
       }
     }
   }
@@ -136,11 +139,11 @@ class ExploreRunner(
                rowFn: SquashedFetchedRow => SquashedFetchedRow
                //apply immediately after depth selection, this include depth0
                //should include flatten & extract
-             ): Iterator[(Trace, Open_Visited)] = {
+             ): Iterator[(TraceView, Open_Visited)] = {
 
     // export openSet and visitedSet: they DO NOT need to be cogrouped: Spark shuffle will do it anyway.
     // a big problem here is whether each weakly referenced DataRow in the cache can be exported multiple times. Does this mess with the reducer?
-    def finish(): Iterator[(Trace, Open_Visited)] = {
+    def finish(): Iterator[(TraceView, Open_Visited)] = {
       val open = this.open
         .map(t => t._1 -> Open_Visited(open = Some(t._2.toArray)))
       val visited = this.visited

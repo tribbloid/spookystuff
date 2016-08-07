@@ -48,10 +48,12 @@ case class FetchedDataset(
             sourceRDD: SquashedFetchedRDD,
             fieldMap: ListMap[Field, DataType],
             spooky: SpookyContext,
-            webCacheBeaconRDDOpt: Option[RDD[(Trace, DataRow)]] = None,
+            beaconRDDOpt: Option[RDD[(TraceView, DataRow)]] = None,
             cacheQueue: ArrayBuffer[RDD[_]] = ArrayBuffer()
-          ) =
-    this(RDDPlan(sourceRDD, DataRowSchema(spooky, fieldMap), spooky, webCacheBeaconRDDOpt, cacheQueue))
+          ) = {
+
+    this(RDDPlan(sourceRDD, DataRowSchema(spooky, fieldMap), spooky, beaconRDDOpt, cacheQueue))
+  }
 
   //TODO: use reflection for more clear API
   def setConf(f: SpookyConf => Unit): this.type = {

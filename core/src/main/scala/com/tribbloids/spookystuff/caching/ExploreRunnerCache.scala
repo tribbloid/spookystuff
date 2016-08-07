@@ -1,6 +1,6 @@
 package com.tribbloids.spookystuff.caching
 
-import com.tribbloids.spookystuff.actions.Trace
+import com.tribbloids.spookystuff.actions.TraceView
 import com.tribbloids.spookystuff.execution.ExploreRunner
 import com.tribbloids.spookystuff.row.{DataRow, RowReducer}
 
@@ -10,13 +10,13 @@ import com.tribbloids.spookystuff.row.{DataRow, RowReducer}
   */
 object ExploreRunnerCache {
 
-  //TODO: change to TraceView
-  val committedRows: ConcurrentCache[(Trace, Long), Iterable[DataRow]] = ConcurrentCache()
+  // Long is the jobID that segments DataRows from different jobs
+  val committedVisited: ConcurrentCache[(TraceView, Long), Iterable[DataRow]] = ConcurrentCache()
 
   private val _onGoings: ConcurrentMap[Long, ConcurrentSet[ExploreRunner]] = ConcurrentMap() //jobID -> running ExploreStateView
   def onGoings = _onGoings
 
-  def onGoing(jobID: Long): ConcurrentSet[ExploreRunner] = {
+  def getOnGoingRunners(jobID: Long): ConcurrentSet[ExploreRunner] = {
     onGoings.synchronized{
       onGoings
         .getOrElse(
@@ -37,22 +37,22 @@ object ExploreRunnerCache {
 
   //TODO: relax synchronized check to accelerate
   private def commit1(
-                       key: (Trace, Long),
+                       key: (TraceView, Long),
                        value: Iterable[DataRow],
                        reducer: RowReducer
                      ): Unit = {
 
-    val oldVs = committedRows.get(key)
+    val oldVs = committedVisited.get(key)
     val newVs = (Seq(value) ++ oldVs).reduce(reducer)
-    committedRows.put(key, newVs)
+    committedVisited.put(key, newVs)
   }
 
   def commit(
-              kvs: Iterable[((Trace, Long), Iterable[DataRow])],
+              kvs: Iterable[((TraceView, Long), Iterable[DataRow])],
               reducer: RowReducer
             ): Unit = {
 
-    committedRows.synchronized{
+    committedVisited.synchronized{
       kvs.foreach{
         kv =>
           commit1(kv._1, kv._2, reducer)
@@ -61,15 +61,15 @@ object ExploreRunnerCache {
   }
 
   def register(v: ExploreRunner): Unit = {
-    onGoing(v.executionID) += v
+    getOnGoingRunners(v.executionID) += v
   }
 
   def deregister(v: ExploreRunner): Unit = {
-    onGoing(v.executionID) -= v
+    getOnGoingRunners(v.executionID) -= v
   }
 
   //  def replaceInto(
-  //                   key: (Trace, Long),
+  //                   key: (TraceView, Long),
   //                   values: Array[DataRow]
   //                 ): this.type = {
   //    this.synchronized{
@@ -80,7 +80,7 @@ object ExploreRunnerCache {
   //  }
 
   def get(
-           key: (Trace, Long),
+           key: (TraceView, Long),
            reducer: RowReducer
          ): Option[Array[DataRow]] = {
 
@@ -88,8 +88,8 @@ object ExploreRunnerCache {
       .reduceOption(reducer).map(_.toArray)
   }
 
-  def getAll(key: (Trace, Long)): Set[Iterable[DataRow]] = {
-    val onGoing = this.onGoing(key._2)
+  def getAll(key: (TraceView, Long)): Set[Iterable[DataRow]] = {
+    val onGoing = this.getOnGoingRunners(key._2)
       .toSet[ExploreRunner]
 
     val onGoingVs = onGoing
@@ -98,6 +98,6 @@ object ExploreRunnerCache {
           v.visited.get(key._1)
       }
 
-    onGoingVs ++ committedRows.get(key)
+    onGoingVs ++ committedVisited.get(key)
   }
 }

@@ -166,18 +166,18 @@ case class SquashedFetchedRow(
     def extract(ex: Resolved[Any]*) = _extract(ex)
 
     /*
- * same as extract + toTuple
- * each dataRow yield >= {effectiveTraces.size} traces.
- * each dataRow yield <= {groupedFetched.size * effectiveTraces.size} traces.
- * if a groupedFetched doesn't yield any trace it is omitted
- * if 2 groupedFetched yield identical traces only the first is preserved?
- */
+     * same as extract + toTuple
+     * each dataRow yield >= {effectiveTraces.size} traces.
+     * each dataRow yield <= {groupedFetched.size * effectiveTraces.size} traces.
+     * if a groupedFetched doesn't yield any trace it is omitted
+     * if 2 groupedFetched yield identical traces only the first is preserved?
+     */
     def interpolate(
                      traces: Set[Trace],
 
                      filterEmpty: Boolean = true,
                      distinct: Boolean = true
-                   ): Array[(Trace, DataRow)] = {
+                   ): Array[(TraceView, DataRow)] = {
 
       val dataRows_traceOpts = semiUnsquash.flatMap {
         rows => //each element contains a different page group, CAUTION: not all of them are used: page group that yield no new datum will be removed, if all groups yield no new datum at least 1 row is preserved
@@ -206,7 +206,7 @@ case class SquashedFetchedRow(
 
       dataRows_traceOpts.map {
         v =>
-          v._2.getOrElse(Actions.empty) -> v._1
+          TraceView(v._2.getOrElse(Actions.empty)) -> v._1
       }
     }
   }

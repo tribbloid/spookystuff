@@ -1,7 +1,7 @@
 package com.tribbloids.spookystuff.execution
 
 import com.tribbloids.spookystuff._
-import com.tribbloids.spookystuff.actions.Trace
+import com.tribbloids.spookystuff.actions.TraceView
 import com.tribbloids.spookystuff.row._
 import com.tribbloids.spookystuff.utils.NOTSerializableMixin
 import org.apache.spark.rdd.RDD
@@ -48,10 +48,10 @@ abstract class ExecutionPlan(
 
   //beconRDD is always empty, with fixed partitioning, cogroup with it to maximize Local Cache hitting chance
   //by default, inherit from the first child
-  protected final def defaultBeaconRDDOpt: Option[RDD[(Trace, DataRow)]] =
+  protected final def defaultBeaconRDDOpt =
     firstChildOpt.flatMap(_.beaconRDDOpt)
 
-  lazy val beaconRDDOpt = defaultBeaconRDDOpt
+  lazy val beaconRDDOpt: Option[RDD[(TraceView, DataRow)]] = defaultBeaconRDDOpt
 
   def doExecute(): SquashedFetchedRDD
 

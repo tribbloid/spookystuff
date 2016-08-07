@@ -39,14 +39,14 @@ object ExploreAlgorithms {
       */
     val ordering: RowOrdering
 
+    final lazy val pairOrdering = ordering.on {
+      v: (TraceView, Iterable[DataRow]) => v._2
+    }
+
     /**
       *
       */
     val eliminator: RowEliminator
-
-    final lazy val pairOrdering = ordering.on {
-      v: (Trace, Iterable[DataRow]) => v._2
-    }
   }
 
   case object ShortestPath extends ExploreAlgorithm {

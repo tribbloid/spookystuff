@@ -16,7 +16,7 @@ case class RDDPlan(
                     sourceRDD: SquashedFetchedRDD,
                     override val schema: DataRowSchema,
                     override val spooky: SpookyContext,
-                    beaconRDD: Option[RDD[(Trace, DataRow)]] = None,
+                    beaconRDD: Option[RDD[(TraceView, DataRow)]] = None,
                     override val cacheQueue: ArrayBuffer[RDD[_]] = ArrayBuffer()
                   ) extends ExecutionPlan(Seq(), spooky, cacheQueue) {
 
