@@ -44,7 +44,18 @@ trait TestMixin {
     }
 
     def uriContains(contains: String): Boolean = {
-      str.contains(contains) && str.contains(URLEncoder.encode(contains,"UTF-8"))
+      str.contains(contains) &&
+        str.contains(URLEncoder.encode(contains,"UTF-8"))
+    }
+
+    def assertUriContains(contains: String): Unit = {
+      assert(
+        str.contains(contains) &&
+        str.contains(URLEncoder.encode(contains,"UTF-8")),
+        s"$str doesn't contain either:" +
+          s"$contains OR" +
+          s"${URLEncoder.encode(contains,"UTF-8")}"
+      )
     }
   }
 
@@ -68,7 +79,7 @@ trait TestMixin {
         val serInstance = ser.newInstance()
         val serElement = serInstance.serialize(element)
         val element2 = serInstance.deserialize[T](serElement)
-//        assert(!element.eq(element2))
+        //        assert(!element.eq(element2))
         condition (element, element2)
         //    assert(element.hashCode() == element2.hashCode())
         assert(element.toString == element2.toString)

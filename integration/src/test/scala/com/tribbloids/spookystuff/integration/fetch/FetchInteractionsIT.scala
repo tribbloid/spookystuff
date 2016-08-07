@@ -31,7 +31,7 @@ class FetchInteractionsIT extends IntegrationSuite{
     assert(pageRows.length === 1)
     assert(pageRows(0).pages.size === 1)
     val uri = pageRows(0).pages.head.uri
-    assert(uri uriContains "zh.wikipedia.org/wiki/深度学习")
+    uri assertUriContains "zh.wikipedia.org/wiki/深度学习"
     assert(pageRows(0).pages.head.name === Snapshot(DocFilters.MustHaveTitle).toString)
     val pageTime = pageRows(0).fetched.head.timeMillis
     assert(pageTime < finishTime)
