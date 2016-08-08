@@ -1,6 +1,6 @@
 package com.tribbloids.spookystuff
 
-import com.tribbloids.spookystuff.dsl.{DriverFactories, WebDriverFactory}
+import com.tribbloids.spookystuff.dsl.{WebDriverFactories, WebDriverFactory}
 import com.tribbloids.spookystuff.extractors.{Alias, GenExtractor, GenResolved}
 import com.tribbloids.spookystuff.row.{DataRowSchema, SquashedFetchedRow, TypedField}
 import com.tribbloids.spookystuff.tests.{RemoteDocsFixture, TestHelper}
@@ -37,7 +37,7 @@ abstract class SpookyEnvSuite
 
   implicit def extractor2Function[T, R](extractor: GenExtractor[T, R]): PartialFunction[T, R] = extractor.resolve(schema)
 
-  lazy val driverFactory: WebDriverFactory = DriverFactories.PhantomJS(loadImages = true)
+  lazy val driverFactory: WebDriverFactory = WebDriverFactories.PhantomJS(loadImages = true)
 
   override def withFixture(test: NoArgTest) = {
     if (isRetryable(test))

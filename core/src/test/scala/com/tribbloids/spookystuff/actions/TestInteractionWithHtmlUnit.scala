@@ -1,10 +1,10 @@
 package com.tribbloids.spookystuff.actions
 
-import com.tribbloids.spookystuff.dsl.DriverFactories
+import com.tribbloids.spookystuff.dsl.WebDriverFactories
 
 class TestInteractionWithHtmlUnit extends TestInteraction {
 
-  override lazy val driverFactory = DriverFactories.HtmlUnit()
+  override lazy val driverFactory = WebDriverFactories.HtmlUnit()
 
   //TODO: current phantomjs is buggy and cannot handle these two, which is why they are here
   //TODO: current HtmlUnit is buggy and cannot handle these two

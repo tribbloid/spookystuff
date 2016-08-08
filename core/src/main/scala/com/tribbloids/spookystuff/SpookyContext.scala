@@ -1,7 +1,7 @@
 package com.tribbloids.spookystuff
 
-import com.tribbloids.spookystuff.dsl.DriverFactories
-import com.tribbloids.spookystuff.dsl.DriverFactories.PhantomJS
+import com.tribbloids.spookystuff.dsl.WebDriverFactories
+import com.tribbloids.spookystuff.dsl.WebDriverFactories.PhantomJS
 import com.tribbloids.spookystuff.rdd.FetchedDataset
 import com.tribbloids.spookystuff.row._
 import com.tribbloids.spookystuff.utils.{HDFSResolver, SpookyUtils}
@@ -90,7 +90,7 @@ case class SpookyContext private (
   //TODO: move to DriverFactory.initializeDeploy
   private def deployPhantomJS(): Boolean = {
     val sc = sqlContext.sparkContext
-    val phantomJSUrlOption = DriverFactories.PhantomJS.pathOptionFromEnv
+    val phantomJSUrlOption = WebDriverFactories.PhantomJS.pathOptionFromEnv
 
     val effectiveURL = if (phantomJSUrlOption.isEmpty || conf.alwaysDownloadBrowserRemotely) PhantomJS.remotePhantomJSURL
     else phantomJSUrlOption.get

@@ -41,7 +41,7 @@ class SpookyConf (
 
                    var shareMetrics: Boolean = false, //TODO: not necessary
 
-                   var webDriverFactory: WebDriverFactory = DriverFactories.PhantomJS(),
+                   var webDriverFactory: WebDriverFactory = WebDriverFactories.PhantomJS(),
 
                    var proxy: () => ProxySetting = ProxyFactories.NoProxy,
                    //                   var userAgent: ()=> String = () => null,

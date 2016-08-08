@@ -62,7 +62,6 @@ object ExploreAlgorithms {
                    ) extends ExploreImpl {
 
       import params._
-
       import scala.Ordering.Implicits._
 
       override val openReducer: RowReducer = {

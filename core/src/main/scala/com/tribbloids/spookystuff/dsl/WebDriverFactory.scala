@@ -43,7 +43,7 @@ sealed abstract class WebDriverFactory extends Serializable{
   }
 }
 
-object DriverFactories {
+object WebDriverFactories {
 
   object PhantomJS {
 

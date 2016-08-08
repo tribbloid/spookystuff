@@ -92,7 +92,7 @@ final case class Try(
 
     try {
       for (action <- children) {
-        pages ++= action.exe(session).flatMap{
+        pages ++= action.exe(session).flatMap {
           case page: Doc => Some(page)
           case noPage: NoDoc => None
         }

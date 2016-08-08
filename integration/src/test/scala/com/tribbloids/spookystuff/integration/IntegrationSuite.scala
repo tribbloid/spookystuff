@@ -12,6 +12,7 @@ import org.scalatest.{BeforeAndAfterAll, FunSuite}
 
 import scala.concurrent.duration
 import scala.language.implicitConversions
+import scala.util.Random
 
 abstract class IntegrationSuite extends FunSuite with BeforeAndAfterAll with RemoteDocsFixture {
 
@@ -20,8 +21,8 @@ abstract class IntegrationSuite extends FunSuite with BeforeAndAfterAll with Rem
 
   var spooky: SpookyContext = _
 
-  val phantomJS = DriverFactories.PhantomJS()
-  val htmlUnit = DriverFactories.HtmlUnit()
+  val phantomJS = WebDriverFactories.PhantomJS()
+  val htmlUnit = WebDriverFactories.HtmlUnit()
 
   override def beforeAll() {
     TestHelper.TestSparkConf.setAppName("integration")
@@ -69,7 +70,7 @@ abstract class IntegrationSuite extends FunSuite with BeforeAndAfterAll with Rem
               new DirConf(root = root),
               webDriverFactory = driver,
               defaultFetchOptimizer = optimizer,
-              epochSize = 2,
+              epochSize = 1 + Random.nextInt(4),
               shareMetrics = true,
               remoteResourceTimeout = 10.seconds
             )

@@ -75,7 +75,9 @@ class ExploreRunner(
 
     open -= bestOpen._1
 
-    val existingVisitedOption = ExploreRunnerCache.get(bestOpen._1 -> executionID, visitedReducer)
+    val existingVisitedOption: Option[Array[DataRow]] = {
+      ExploreRunnerCache.get(bestOpen._1 -> executionID, visitedReducer)
+    }
 
     val bestOpenAfterElimination: (TraceView, Iterable[DataRow]) = existingVisitedOption match {
       case Some(allVisited) =>
