@@ -172,7 +172,7 @@
         <module>mav</module>
         <!--<module>pipeline</module>-->
         <!--<module>example</module>-->
-        <!--<module>assembly</module>-->
+        <module>assembly</module>
     </modules>
 
     <dependencies>
@@ -219,6 +219,7 @@
                             <goal>testCompile</goal>
                         </goals>
                     </execution>
+                    <!--required for publishing to maven central-->
                     <execution>
                         <id>eclipse-add-source</id>
                         <goals>
