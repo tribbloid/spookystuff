@@ -357,7 +357,7 @@ case class DropDownSelect(
   * @param selector css selector of the frame/iframe, only the first element will be affected
   */
 //TODO: not possible to switch back, need a better abstraction
-case class SwitchToFrame(selector: Selector)extends Interaction(null, false) with Timed {
+case class ToFrame(selector: Selector)extends Interaction(null, false) with Timed {
   override def exeWithoutPage(session: Session) {
 
     val element = this.getElement(selector, session)

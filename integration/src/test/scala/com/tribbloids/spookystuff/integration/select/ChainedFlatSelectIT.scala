@@ -9,7 +9,7 @@ import com.tribbloids.spookystuff.integration.IntegrationSuite
   */
 class ChainedFlatSelectIT extends IntegrationSuite {
 
-  override lazy val drivers = Seq(
+  override lazy val driverFactories = Seq(
     null
   )
 

@@ -30,6 +30,8 @@ object SpookyConf {
       backup
     }
   }
+
+  final val DEFAULT_WEBDRIVER_FACTORY = DriverFactories.PhantomJS().pooled
 }
 
 /**
@@ -42,10 +44,10 @@ class SpookyConf (
 
                    var shareMetrics: Boolean = false, //TODO: not necessary
 
-                   var webDriverFactory: Factory[WebDriver] = WebDriverFactories.PhantomJS(),
+                   var webDriverFactory: DriverFactory[WebDriver] = SpookyConf.DEFAULT_WEBDRIVER_FACTORY,
 
                    var proxy: () => ProxySetting = ProxyFactories.NoProxy,
-                   //                   var userAgent: ()=> String = () => null,
+
                    //TODO: merge into headersFactory
                    var userAgentFactory: () => String = {
                      () => "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/37.0.2062.120 Safari/537.36"

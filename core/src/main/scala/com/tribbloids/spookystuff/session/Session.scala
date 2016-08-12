@@ -15,11 +15,11 @@ import scala.collection.mutable.ArrayBuffer
 abstract class Session(val spooky: SpookyContext) {
 
   spooky.metrics.sessionInitialized += 1
-//  println("++++SESSION CREATED++++")
+  //  println("++++SESSION CREATED++++")
   val startTime: Long = new Date().getTime
   val backtrace: ArrayBuffer[Action] = ArrayBuffer()
 
-  val webDriver: CleanWebDriver
+  val webDriver: WebDriver
 
   def close(): Unit = {
     spooky.metrics.sessionReclaimed += 1
@@ -44,8 +44,8 @@ abstract class Session(val spooky: SpookyContext) {
 }
 
 class DriverSession(
-                     override val spooky: SpookyContext,
-                     actionLike: ActionLike
+                     override val spooky: SpookyContext
+                     //                     actionLike: ActionLike //Enable this if per row DriverFactory is used
                    ) extends Session(spooky){
 
   override val webDriver: WebDriver = SpookyUtils.retry(Const.localResourceLocalRetries){
@@ -53,34 +53,35 @@ class DriverSession(
     SpookyUtils.withDeadline(Const.sessionInitializationTimeout){
       var successful = false
       val driver = spooky.conf.webDriverFactory.get(this)
-      spooky.metrics.driverInitialized += 1
-      try {
-        driver.manage().timeouts()
-          .implicitlyWait(spooky.conf.remoteResourceTimeout.toSeconds, TimeUnit.SECONDS)
-          .pageLoadTimeout(spooky.conf.remoteResourceTimeout.toSeconds, TimeUnit.SECONDS)
-          .setScriptTimeout(spooky.conf.remoteResourceTimeout.toSeconds, TimeUnit.SECONDS)
+      spooky.metrics.driverGet += 1
+      //      try {
+      driver.manage().timeouts()
+        .implicitlyWait(spooky.conf.remoteResourceTimeout.toSeconds, TimeUnit.SECONDS)
+        .pageLoadTimeout(spooky.conf.remoteResourceTimeout.toSeconds, TimeUnit.SECONDS)
+        .setScriptTimeout(spooky.conf.remoteResourceTimeout.toSeconds, TimeUnit.SECONDS)
 
-        val resolution = spooky.conf.browserResolution
-        if (resolution != null) driver.manage().window().setSize(new Dimension(resolution._1, resolution._2))
+      val resolution = spooky.conf.browserResolution
+      if (resolution != null) driver.manage().window().setSize(new Dimension(resolution._1, resolution._2))
 
-        successful = true
+      successful = true
 
-        driver
-      }
-      finally {
-        if (!successful){
-          driver.close()
-          driver.quit()
-          spooky.metrics.driverReclaimed += 1
-        }
-      }
+      driver
+      //      }            //TODO: these are no longer required, if a driver is get for multiple times the previous one will be automatically scuttled
+      //      finally {
+      //        if (!successful){
+      //          driver.close()
+      //          driver.quit()
+      //          spooky.metrics.driverReleased += 1
+      //        }
+      //      }
     }
   }
 
-//  override val pythonDriver: SocketDriver
+  //  override val pythonDriver: SocketDriver
 
   override def close(): Unit = {
     spooky.conf.webDriverFactory.release(this)
+    spooky.metrics.driverReleased += 1
     super.close()
   }
 }

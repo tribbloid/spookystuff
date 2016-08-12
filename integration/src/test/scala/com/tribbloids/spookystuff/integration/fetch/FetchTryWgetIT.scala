@@ -10,7 +10,7 @@ import org.apache.spark.SparkException
  */
 class FetchTryWgetIT extends UncacheableIntegrationSuite {
 
-  override lazy val drivers = Seq(
+  override lazy val driverFactories = Seq(
     null
   )
 

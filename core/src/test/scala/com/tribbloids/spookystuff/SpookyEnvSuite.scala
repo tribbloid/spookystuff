@@ -1,12 +1,13 @@
 package com.tribbloids.spookystuff
 
-import com.tribbloids.spookystuff.dsl.{WebDriverFactories, WebDriverFactory}
+import com.tribbloids.spookystuff.dsl.DriverFactory
 import com.tribbloids.spookystuff.extractors.{Alias, GenExtractor, GenResolved}
 import com.tribbloids.spookystuff.row.{DataRowSchema, SquashedFetchedRow, TypedField}
 import com.tribbloids.spookystuff.tests.{RemoteDocsFixture, TestHelper}
 import com.tribbloids.spookystuff.utils.SpookyUtils
 import org.apache.spark.SparkContext
 import org.apache.spark.sql.SQLContext
+import org.openqa.selenium.WebDriver
 import org.scalatest.{BeforeAndAfter, BeforeAndAfterAll, FunSuite, Retries}
 
 import scala.language.implicitConversions
@@ -37,7 +38,7 @@ abstract class SpookyEnvSuite
 
   implicit def extractor2Function[T, R](extractor: GenExtractor[T, R]): PartialFunction[T, R] = extractor.resolve(schema)
 
-  lazy val driverFactory: WebDriverFactory = WebDriverFactories.PhantomJS(loadImages = true)
+  lazy val driverFactory: DriverFactory[WebDriver] = SpookyConf.DEFAULT_WEBDRIVER_FACTORY
 
   override def withFixture(test: NoArgTest) = {
     if (isRetryable(test))

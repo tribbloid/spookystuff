@@ -29,20 +29,10 @@ import org.openqa.selenium.{Capabilities, Platform, Proxy, WebDriver}
 import org.slf4j.LoggerFactory
 
 //local to TaskID, if not exist, local to ThreadID
-//for every new worker created, add a taskCompletion listener that salvage it.
-abstract class Factory[T] extends Serializable {
+//for every new driver created, add a taskCompletion listener that salvage it.
+abstract class DriverFactory[T] extends Serializable {
 
-  def getTaskOrThreadID: Either[Long, Long] = {
-    try {
-      Left(TaskContext.get().taskAttemptId())
-    }
-    catch {
-      case e: Throwable =>
-        Right(Thread.currentThread().getId)
-    }
-  }
-
-  // If get is called again before the previous worker is released, the old worker is destroyed to create a new one.
+  // If get is called again before the previous driver is released, the old driver is destroyed to create a new one.
   // this is to facilitate multiple retries
   def get(session: Session): T
   def release(session: Session): Unit
@@ -50,53 +40,138 @@ abstract class Factory[T] extends Serializable {
   //all tasks are cleaned at the end of the
 }
 
-abstract class PerSessionFactory[T] extends Factory[T] {
+abstract class WebDriverFactory extends DriverFactories.Transient[WebDriver]{
 
-  val pool: ConcurrentMap[Session, T] = ConcurrentMap()
+  override def destroy(driver: WebDriver): Unit = {
 
-  // at the end of
-  val taskPool: ConcurrentMap[Long, T] = ConcurrentMap()
-
-  def get(session: Session): T = {
-    release(session)
-    val worker = create(session)
-    pool += session -> worker
-    worker
+    driver.close()
+    driver.quit()
   }
 
-  def create(session: Session): T
+  override def reset(driver: WebDriver): WebDriver = {
+    driver.get("")
+    driver
+  }
+}
 
-  def release(session: Session): Unit = {
-    val existingOpt = pool.get(session)
-    existingOpt.foreach {
-      worker =>
-        destroy(worker)
-        session.spooky.metrics.driverReclaimed += 1
+object DriverFactories {
+
+  sealed abstract class Transient[T] extends DriverFactory[T] {
+
+    @transient lazy val map: ConcurrentMap[Session, T] = ConcurrentMap()
+
+    // at the end of
+    // val taskPool: ConcurrentMap[Long, T] = ConcurrentMap()
+
+    def get(session: Session): T = {
+      release(session)
+      val driver = create(session)
+      map += session -> driver
+      driver
     }
+
+    def create(session: Session): T
+
+    def reset(driver: T): T
+
+    def release(session: Session): Unit = {
+      val existingOpt = map.get(session)
+      existingOpt.foreach {
+        driver =>
+          destroy(driver)
+      }
+    }
+
+    def destroy(driver: T): Unit
+
+    final def pooled = Pooled(this)
   }
 
-  def destroy(worker: T): Unit
-}
+  case class DriverInUse[T](
+                             var driver: T,
+                             var inUse: Boolean
+                           )
 
-case class PerTaskFactory[T](
-                              delegate: PerSessionFactory[T]
-                            ) extends Factory[T] {
+  /**
+    * delegate create & destroy to PerSessionFactory
+    * first get() create a driver as usual
+    * calling get() without release() reboot the driver
+    * first release() return driver to the pool to be used by the same Spark Task
+    * call any function with a new Spark Task ID will add a cleanup TaskCompletionListener to the Task that destroy all drivers
+    */
+  case class Pooled[T](
+                         delegate: Transient[T]
+                       ) extends DriverFactory[T] {
 
-  val pool: ConcurrentMap[Long, T] = ConcurrentMap()
+    @transient lazy val pool: ConcurrentMap[Either[Long, Long], DriverInUse[T]] = ConcurrentMap()
 
-  override def get(session: Session): T = ???
+    def taskOrThreadID: Either[Long, Long] = {
+      Option(TaskContext.get())
+        .map{
+          v =>
+            Left(v.taskAttemptId())
+        }
+        .getOrElse{
+          Right(Thread.currentThread().getId)
+        }
+    }
 
-  override def release(session: Session): Unit = ???
-}
+    def registerListener(): Unit = {
+      val taskOrThreadID: Either[Long, Long] = this.taskOrThreadID
+      if (!pool.contains(taskOrThreadID)) {
+        Option(TaskContext.get())
+          .foreach{
+            v =>
+              v.addTaskCompletionListener {
+                tc =>
+                  val opt = pool.remove(Left(tc.taskAttemptId()))
+                  opt.foreach {
+                    tuple =>
+                      delegate.destroy(tuple.driver)
+                  }
+              }
+          }
+      }
+    }
 
-object WebDriverFactories {
+    override def get(session: Session): T = {
+      registerListener()
 
-  abstract class WebDriverFactory extends PerSessionFactory[WebDriver]{
+      val taskOrThreadID = this.taskOrThreadID
+      val opt = pool.get(taskOrThreadID)
+      opt
+        .map {
+          tuple =>
+            if (!tuple.inUse) {
+              tuple.inUse = true
+              delegate.reset(tuple.driver)
+            }
+            else {
+              // destroy old and create new
+              delegate.destroy(tuple.driver)
+              val fresh = delegate.create(session)
+              tuple.driver = fresh
+              fresh
+            }
+        }
+        .getOrElse {
+          //create new
+          val fresh = delegate.create(session)
+          pool.put(taskOrThreadID, DriverInUse(fresh, inUse = true))
+          fresh
+        }
+    }
 
-    override def destroy(worker: WebDriver): Unit = {
+    override def release(session: Session): Unit = {
+      registerListener()
 
-      worker.close()
-      worker.quit()
+      val taskOrThreadID = this.taskOrThreadID
+      val opt = pool.get(taskOrThreadID)
+      opt.foreach{
+        tuple =>
+          if (tuple.inUse)
+            tuple.inUse = false
+      }
     }
   }
 
@@ -161,10 +236,13 @@ object WebDriverFactories {
 
     //    baseCaps.setCapability(PhantomJSDriverService.PHANTOMJS_PAGE_SETTINGS_PREFIX+"resourceTimeout", Const.resourceTimeout*1000)
 
-    def newCap(capabilities: Capabilities, spooky: SpookyContext): DesiredCapabilities = {
+    def newCap(spooky: SpookyContext, extra: Option[Capabilities] = None): DesiredCapabilities = {
       val result = new DesiredCapabilities(baseCaps)
 
-      result.setCapability(PhantomJSDriverService.PHANTOMJS_PAGE_SETTINGS_PREFIX + "resourceTimeout", spooky.conf.remoteResourceTimeout.toMillis)
+      result.setCapability (
+        PhantomJSDriverService.PHANTOMJS_PAGE_SETTINGS_PREFIX + "resourceTimeout",
+        spooky.conf.remoteResourceTimeout.toMillis
+      )
 
       val userAgent = spooky.conf.userAgentFactory
       if (userAgent != null) result.setCapability(PhantomJSDriverService.PHANTOMJS_PAGE_SETTINGS_PREFIX + "userAgent", userAgent)
@@ -177,14 +255,13 @@ object WebDriverFactories {
           Array("--proxy=" + proxy.addr + ":" + proxy.port, "--proxy-type=" + proxy.protocol)
         )
 
-      result.merge(capabilities)
+      result.merge(extra.orNull)
     }
 
     //called from executors
     override def create(session: Session): CleanWebDriver = {
 
-
-      new PhantomJSDriver(newCap(null, session.spooky)) with CleanWebDriverMixin
+      new PhantomJSDriver(newCap(session.spooky)) with CleanWebDriverMixin
     }
   }
 

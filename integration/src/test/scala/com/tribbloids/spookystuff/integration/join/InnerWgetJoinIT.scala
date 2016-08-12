@@ -8,7 +8,7 @@ import com.tribbloids.spookystuff.extractors.Extractor
  */
 class InnerWgetJoinIT extends InnerVisitJoinIT {
 
-  override lazy val drivers = Seq(
+  override lazy val driverFactories = Seq(
     null
   )
 

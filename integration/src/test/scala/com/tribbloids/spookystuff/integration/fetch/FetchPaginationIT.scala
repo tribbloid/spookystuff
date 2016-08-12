@@ -11,7 +11,7 @@ class FetchPaginationIT extends IntegrationSuite {
 
   import com.tribbloids.spookystuff.utils.ImplicitUtils._
 
-  override lazy val drivers = Seq(
+  override lazy val driverFactories = Seq(
     phantomJS //TODO: HtmlUnit does not support Backbone.js
   )
 

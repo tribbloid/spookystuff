@@ -19,7 +19,7 @@ class TestAction extends SpookyEnvSuite {
     import scala.concurrent.duration._
 
     val randomTimeout = Random.nextInt().seconds
-    val action = Visit(Const.keyDelimiter+"{~}").in(randomTimeout)
+    val action = Wget(Const.keyDelimiter+"{~}").in(randomTimeout)
 
     val rewritten = action.interpolate(FetchedRow(DataRow(data = ListMap(Field("~") -> "http://www.dummy.com")), Seq()), schema).get
 
@@ -27,7 +27,7 @@ class TestAction extends SpookyEnvSuite {
     val b = Literal("http://www.dummy.com").dataType.asInstanceOf[UnreifiedScalaType].ttg.tpe.normalize
     val c = Literal(new Example()).dataType.asInstanceOf[UnreifiedScalaType].ttg.tpe.normalize
 
-    assert(rewritten === Visit(Literal("http://www.dummy.com")))
+    assert(rewritten === Wget(Literal("http://www.dummy.com")))
     assert(rewritten.timeout(null) === randomTimeout)
     assert(FilePaths.Hierarchical.apply(rewritten :: Nil) contains "/www.dummy.com")
   }

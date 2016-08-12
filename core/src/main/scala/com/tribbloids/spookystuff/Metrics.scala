@@ -17,8 +17,8 @@ object Metrics {
 }
 
 case class Metrics(
-                    driverInitialized: Accumulator[Int] = Metrics.accumulator(0, "driverInitialized"),
-                    driverReclaimed: Accumulator[Int] = Metrics.accumulator(0, "driverReclaimed"),
+                    driverGet: Accumulator[Int] = Metrics.accumulator(0, "driverInitialized"),
+                    driverReleased: Accumulator[Int] = Metrics.accumulator(0, "driverReclaimed"),
 
                     sessionInitialized: Accumulator[Int] = Metrics.accumulator(0, "sessionInitialized"),
                     sessionReclaimed: Accumulator[Int] = Metrics.accumulator(0, "sessionReclaimed"),

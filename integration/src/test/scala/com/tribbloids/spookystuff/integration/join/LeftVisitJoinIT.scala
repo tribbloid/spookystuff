@@ -10,7 +10,7 @@ import com.tribbloids.spookystuff.integration.IntegrationSuite
   */
 class LeftVisitJoinIT extends IntegrationSuite {
 
-  override lazy val drivers = Seq(
+  override lazy val driverFactories = Seq(
     phantomJS //TODO: HtmlUnit does not support Backbone.js
   )
 

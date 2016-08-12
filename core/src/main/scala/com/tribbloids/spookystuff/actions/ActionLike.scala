@@ -89,7 +89,7 @@ abstract class ActionLike extends TreeNode[ActionLike] with Product with Seriali
       )
 
       val session = if (!this.needDriver) new NoDriverSession(spooky)
-      else new DriverSession(spooky, this)
+      else new DriverSession(spooky)
       try {
         val result = this.apply(session)
         spooky.metrics.fetchFromRemoteSuccess += 1

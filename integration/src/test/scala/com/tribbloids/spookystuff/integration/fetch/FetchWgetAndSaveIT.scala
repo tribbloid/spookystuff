@@ -9,7 +9,7 @@ class FetchWgetAndSaveIT extends IntegrationSuite {
 
   import com.tribbloids.spookystuff.utils.ImplicitUtils._
 
-  override lazy val drivers = Seq(
+  override lazy val driverFactories = Seq(
     null
   )
 

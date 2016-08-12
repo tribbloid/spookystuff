@@ -99,22 +99,6 @@
             </properties>
         </profile>
 
-        <!--<profile>-->
-            <!--<id>tor</id>-->
-            <!--<build>-->
-                <!--<plugins>-->
-                    <!--<plugin>-->
-                        <!--<groupId>org.scalatest</groupId>-->
-                        <!--<artifactId>scalatest-maven-plugin</artifactId>-->
-                        <!--<version>1.0</version>-->
-                        <!--<configuration>-->
-                            <!--<tagsToExclude>com.tribbloids.spookystuff.tests.Tor</tagsToExclude>-->
-                        <!--</configuration>-->
-                    <!--</plugin>-->
-                <!--</plugins>-->
-            <!--</build>-->
-        <!--</profile>-->
-
         <profile>
             <id>release-sign-artifacts</id>
             <build>

@@ -21,8 +21,8 @@ abstract class IntegrationSuite extends FunSuite with BeforeAndAfterAll with Rem
 
   var spooky: SpookyContext = _
 
-  val phantomJS = WebDriverFactories.PhantomJS()
-  val htmlUnit = WebDriverFactories.HtmlUnit()
+  val phantomJS = DriverFactories.PhantomJS()
+  val htmlUnit = DriverFactories.HtmlUnit()
 
   override def beforeAll() {
     TestHelper.TestSparkConf.setAppName("integration")
@@ -46,8 +46,9 @@ abstract class IntegrationSuite extends FunSuite with BeforeAndAfterAll with Rem
     local ++ TestHelper.S3Path
   }
 
-  lazy val drivers = Seq(
-    phantomJS
+  lazy val driverFactories = Seq(
+    phantomJS,
+    phantomJS.pooled
     //    htmlUnit
   )
 
@@ -61,7 +62,7 @@ abstract class IntegrationSuite extends FunSuite with BeforeAndAfterAll with Rem
 
   // testing matrix
   for (root <- roots) {
-    for (driver <- drivers) {
+    for (driver <- driverFactories) {
       for (optimizer <- optimizers) {
         test(s"$optimizer/$driver/$root") {
           spooky = new SpookyContext(
@@ -94,8 +95,8 @@ abstract class IntegrationSuite extends FunSuite with BeforeAndAfterAll with Rem
     assert(metrics.pagesFetchedFromCache.value === pagesFetched - numPages_actual)
     assert(metrics.sessionInitialized.value === numSessions)
     assert(metrics.sessionReclaimed.value >= metrics.sessionInitialized.value)
-    assert(metrics.driverInitialized.value === numDrivers)
-    assert(metrics.driverReclaimed.value >= metrics.driverInitialized.value)
+    assert(metrics.driverGet.value === numDrivers)
+    assert(metrics.driverReleased.value >= metrics.driverGet.value)
   }
 
   def assertAfterCache(): Unit = {
@@ -108,9 +109,9 @@ abstract class IntegrationSuite extends FunSuite with BeforeAndAfterAll with Rem
     assert(metrics.pagesFetchedFromCache.value === pagesFetched)
     assert(metrics.sessionInitialized.value === 0)
     assert(metrics.sessionReclaimed.value >= metrics.sessionInitialized.value)
-    assert(metrics.driverInitialized.value === 0)
-    assert(metrics.driverReclaimed.value >= metrics.driverInitialized.value)
-//    assert(metrics.DFSReadSuccess.value > 0) //TODO: enable this after more detailed control over 2 caches.
+    assert(metrics.driverGet.value === 0)
+    assert(metrics.driverReleased.value >= metrics.driverGet.value)
+    //    assert(metrics.DFSReadSuccess.value > 0) //TODO: enable this after more detailed control over 2 caches.
     assert(metrics.DFSReadFailure.value === 0)
   }
 
