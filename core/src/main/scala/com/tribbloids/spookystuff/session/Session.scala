@@ -3,12 +3,11 @@ package com.tribbloids.spookystuff.session
 import java.util.Date
 import java.util.concurrent.TimeUnit
 
-import org.openqa.selenium.Dimension
-import org.openqa.selenium.remote.SessionNotFoundException
-import org.slf4j.LoggerFactory
-import com.tribbloids.spookystuff.{Const, SpookyContext}
 import com.tribbloids.spookystuff.actions._
 import com.tribbloids.spookystuff.utils.SpookyUtils
+import com.tribbloids.spookystuff.{Const, SpookyContext}
+import org.openqa.selenium.{Dimension, NoSuchSessionException, WebDriver}
+import org.slf4j.LoggerFactory
 
 import scala.collection.mutable.ArrayBuffer
 
@@ -32,7 +31,7 @@ abstract class Session(val spooky: SpookyContext) {
       LoggerFactory.getLogger(this.getClass).info("Session is finalized by GC")
     }
     catch {
-      case e: SessionNotFoundException => //already cleaned before
+      case e: NoSuchSessionException => //already cleaned before
       case e: Throwable =>
         LoggerFactory.getLogger(this.getClass).warn("!!!!! FAIL TO CLEAN UP SESSION !!!!!" + e)
     }
@@ -44,12 +43,16 @@ abstract class Session(val spooky: SpookyContext) {
   }
 }
 
-class DriverSession(override val spooky: SpookyContext) extends Session(spooky){
+class DriverSession(
+                     override val spooky: SpookyContext,
+                     actionLike: ActionLike
+                   ) extends Session(spooky){
 
-  override val webDriver: CleanWebDriver = SpookyUtils.retry(Const.localResourceLocalRetries){
+  override val webDriver: WebDriver = SpookyUtils.retry(Const.localResourceLocalRetries){
+
     SpookyUtils.withDeadline(Const.sessionInitializationTimeout){
       var successful = false
-      val driver = spooky.conf.webDriverFactory.get(spooky)
+      val driver = spooky.conf.webDriverFactory.get(this)
       spooky.metrics.driverInitialized += 1
       try {
         driver.manage().timeouts()
@@ -77,12 +80,12 @@ class DriverSession(override val spooky: SpookyContext) extends Session(spooky){
 //  override val pythonDriver: SocketDriver
 
   override def close(): Unit = {
-    spooky.conf.webDriverFactory.reclaim(webDriver, spooky)
+    spooky.conf.webDriverFactory.release(this)
     super.close()
   }
 }
 
 class NoDriverSession(override val spooky: SpookyContext) extends Session(spooky) {
 
-  override val webDriver: CleanWebDriver = null
+  override val webDriver: WebDriver = null
 }

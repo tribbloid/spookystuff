@@ -8,6 +8,7 @@ import com.tribbloids.spookystuff.session.{OAuthKeys, ProxySetting}
 import org.apache.spark.rdd.RDD
 import org.apache.spark.storage.StorageLevel
 import org.apache.spark.{Partitioner, SparkConf, SparkContext}
+import org.openqa.selenium.WebDriver
 
 import scala.concurrent.duration.Duration.Infinite
 import scala.concurrent.duration._
@@ -41,7 +42,7 @@ class SpookyConf (
 
                    var shareMetrics: Boolean = false, //TODO: not necessary
 
-                   var webDriverFactory: WebDriverFactory = WebDriverFactories.PhantomJS(),
+                   var webDriverFactory: Factory[WebDriver] = WebDriverFactories.PhantomJS(),
 
                    var proxy: () => ProxySetting = ProxyFactories.NoProxy,
                    //                   var userAgent: ()=> String = () => null,

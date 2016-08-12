@@ -1,28 +1,40 @@
 package com.tribbloids.spookystuff.session
 
-import org.openqa.selenium.WebDriver
-import org.openqa.selenium.remote.SessionNotFoundException
+import org.openqa.selenium.{NoSuchSessionException, WebDriver}
 import org.slf4j.LoggerFactory
 
 /**
- * Created by peng on 11/5/14.
+ *
  */
+object Clean {
 
-trait CleanWebDriverMixin {
-  this: WebDriver =>
+}
+
+trait Clean {
+
+  def clean(): Unit
 
   override def finalize(): Unit = {
     try {
-      this.close()
-      this.quit()
+      clean()
     }
     catch {
-      case e: SessionNotFoundException => //already cleaned before
+      case e: NoSuchSessionException => //already cleaned before
       case e: Throwable =>
         LoggerFactory.getLogger(this.getClass).warn("!!!!! FAIL TO CLEANE UP DRIVER !!!!!"+e)
     }
     finally {
       super.finalize()
     }
+  }
+}
+
+
+trait CleanWebDriverMixin extends Clean {
+  this: WebDriver =>
+
+  def clean(): Unit = {
+    this.close()
+    this.quit()
   }
 }

@@ -17,33 +17,88 @@ package com.tribbloids.spookystuff.dsl
 
 import com.gargoylesoftware.htmlunit.BrowserVersion
 import com.tribbloids.spookystuff.SpookyContext
-import com.tribbloids.spookystuff.session.{CleanWebDriver, CleanWebDriverMixin, ProxySetting}
+import com.tribbloids.spookystuff.caching._
+import com.tribbloids.spookystuff.session.{CleanWebDriver, CleanWebDriverMixin, ProxySetting, Session}
 import com.tribbloids.spookystuff.utils.SpookyUtils
-import org.apache.spark.SparkFiles
+import org.apache.spark.{SparkFiles, TaskContext}
 import org.openqa.selenium.htmlunit.HtmlUnitDriver
 import org.openqa.selenium.phantomjs.{PhantomJSDriver, PhantomJSDriverService}
 import org.openqa.selenium.remote.CapabilityType._
 import org.openqa.selenium.remote.{BrowserType, CapabilityType, DesiredCapabilities}
-import org.openqa.selenium.{Capabilities, Platform, Proxy}
+import org.openqa.selenium.{Capabilities, Platform, Proxy, WebDriver}
 import org.slf4j.LoggerFactory
 
-//TODO: switch to DriverPool! Tor cannot handle too many connection request.
-sealed abstract class WebDriverFactory extends Serializable{
+//local to TaskID, if not exist, local to ThreadID
+//for every new worker created, add a taskCompletion listener that salvage it.
+abstract class Factory[T] extends Serializable {
 
-  def get(spooky: SpookyContext): CleanWebDriver =
-    _newInstance(null, spooky)
-
-  def _newInstance(capabilities: Capabilities, spooky: SpookyContext): CleanWebDriver
-
-  def reclaim(webDriver: CleanWebDriver, spooky: SpookyContext): Unit = {
-
-    webDriver.close()
-    webDriver.quit()
-    spooky.metrics.driverReclaimed += 1
+  def getTaskOrThreadID: Either[Long, Long] = {
+    try {
+      Left(TaskContext.get().taskAttemptId())
+    }
+    catch {
+      case e: Throwable =>
+        Right(Thread.currentThread().getId)
+    }
   }
+
+  // If get is called again before the previous worker is released, the old worker is destroyed to create a new one.
+  // this is to facilitate multiple retries
+  def get(session: Session): T
+  def release(session: Session): Unit
+
+  //all tasks are cleaned at the end of the
+}
+
+abstract class PerSessionFactory[T] extends Factory[T] {
+
+  val pool: ConcurrentMap[Session, T] = ConcurrentMap()
+
+  // at the end of
+  val taskPool: ConcurrentMap[Long, T] = ConcurrentMap()
+
+  def get(session: Session): T = {
+    release(session)
+    val worker = create(session)
+    pool += session -> worker
+    worker
+  }
+
+  def create(session: Session): T
+
+  def release(session: Session): Unit = {
+    val existingOpt = pool.get(session)
+    existingOpt.foreach {
+      worker =>
+        destroy(worker)
+        session.spooky.metrics.driverReclaimed += 1
+    }
+  }
+
+  def destroy(worker: T): Unit
+}
+
+case class PerTaskFactory[T](
+                              delegate: PerSessionFactory[T]
+                            ) extends Factory[T] {
+
+  val pool: ConcurrentMap[Long, T] = ConcurrentMap()
+
+  override def get(session: Session): T = ???
+
+  override def release(session: Session): Unit = ???
 }
 
 object WebDriverFactories {
+
+  abstract class WebDriverFactory extends PerSessionFactory[WebDriver]{
+
+    override def destroy(worker: WebDriver): Unit = {
+
+      worker.close()
+      worker.quit()
+    }
+  }
 
   object PhantomJS {
 
@@ -55,18 +110,18 @@ object WebDriverFactories {
     def pathFromMaster(nameFromMaster: String) = Option(nameFromMaster).map(SparkFiles.get).orNull
 
     def path(path: String, nameFromMaster: String): String = pathOptionFromEnv
-      .orElse{
+      .orElse {
         SpookyUtils.validateLocalPath(path)
       }
-      .getOrElse{
+      .getOrElse {
         LoggerFactory.getLogger(this.getClass).info("$PHANTOMJS_PATH does not exist, downloading from master")
         pathFromMaster(nameFromMaster)
       }
 
     //only accessable from driver
-    @transient def fileName = pathOptionFromEnv.flatMap{
+    @transient def fileName = pathOptionFromEnv.flatMap {
       _.split("/").lastOption
-    }.getOrElse{
+    }.getOrElse {
       remoteFileName
     }
 
@@ -109,7 +164,7 @@ object WebDriverFactories {
     def newCap(capabilities: Capabilities, spooky: SpookyContext): DesiredCapabilities = {
       val result = new DesiredCapabilities(baseCaps)
 
-      result.setCapability(PhantomJSDriverService.PHANTOMJS_PAGE_SETTINGS_PREFIX+"resourceTimeout", spooky.conf.remoteResourceTimeout.toMillis)
+      result.setCapability(PhantomJSDriverService.PHANTOMJS_PAGE_SETTINGS_PREFIX + "resourceTimeout", spooky.conf.remoteResourceTimeout.toMillis)
 
       val userAgent = spooky.conf.userAgentFactory
       if (userAgent != null) result.setCapability(PhantomJSDriverService.PHANTOMJS_PAGE_SETTINGS_PREFIX + "userAgent", userAgent)
@@ -119,17 +174,17 @@ object WebDriverFactories {
       if (proxy != null)
         result.setCapability(
           PhantomJSDriverService.PHANTOMJS_CLI_ARGS,
-          Array("--proxy=" + proxy.addr+":"+proxy.port, "--proxy-type=" + proxy.protocol)
+          Array("--proxy=" + proxy.addr + ":" + proxy.port, "--proxy-type=" + proxy.protocol)
         )
 
       result.merge(capabilities)
     }
 
     //called from executors
-    override def _newInstance(capabilities: Capabilities, spooky: SpookyContext): CleanWebDriver = {
+    override def create(session: Session): CleanWebDriver = {
 
 
-      new PhantomJSDriver(newCap(capabilities, spooky)) with CleanWebDriverMixin
+      new PhantomJSDriver(newCap(null, session.spooky)) with CleanWebDriverMixin
     }
   }
 
@@ -156,9 +211,9 @@ object WebDriverFactories {
       result.merge(capabilities)
     }
 
-    override def _newInstance(capabilities: Capabilities, spooky: SpookyContext): CleanWebDriver = {
+    override def create(session: Session): CleanWebDriver = {
 
-      val cap = newCap(capabilities, spooky)
+      val cap = newCap(null, session.spooky)
       val driver = new HtmlUnitDriver(browser) with CleanWebDriverMixin
       driver.setJavascriptEnabled(true)
       driver.setProxySettings(Proxy.extractFrom(cap))
@@ -187,5 +242,4 @@ object WebDriverFactories {
   //    }
   //  }
   //}
-
 }
