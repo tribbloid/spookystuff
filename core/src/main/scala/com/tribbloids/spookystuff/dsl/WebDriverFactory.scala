@@ -28,6 +28,8 @@ import org.openqa.selenium.remote.{BrowserType, CapabilityType, DesiredCapabilit
 import org.openqa.selenium.{Capabilities, Platform, Proxy, WebDriver}
 import org.slf4j.LoggerFactory
 
+import scala.collection.mutable
+
 //local to TaskID, if not exist, local to ThreadID
 //for every new driver created, add a taskCompletion listener that salvage it.
 abstract class DriverFactory[T] extends Serializable {
@@ -40,15 +42,14 @@ abstract class DriverFactory[T] extends Serializable {
   //all tasks are cleaned at the end of the
 }
 
-abstract class WebDriverFactory extends DriverFactories.Transient[WebDriver]{
+abstract class WebDriverFactory extends DriverFactories.Transient[CleanWebDriver]{
 
-  override def destroy(driver: WebDriver): Unit = {
+  override def _destroy(driver: CleanWebDriver): Unit = {
 
-    driver.close()
-    driver.quit()
+    driver.finalize()
   }
 
-  override def reset(driver: WebDriver): WebDriver = {
+  override def reset(driver: CleanWebDriver): CleanWebDriver = {
     driver.get("")
     driver
   }
@@ -60,8 +61,7 @@ object DriverFactories {
 
     @transient lazy val map: ConcurrentMap[Session, T] = ConcurrentMap()
 
-    // at the end of
-    // val taskPool: ConcurrentMap[Long, T] = ConcurrentMap()
+    @transient lazy val cleanUpCache: ConcurrentMap[Long, mutable.Set[T]] = ConcurrentMap()
 
     def get(session: Session): T = {
       release(session)
@@ -70,7 +70,42 @@ object DriverFactories {
       driver
     }
 
-    def create(session: Session): T
+    def registerListener(v: TaskContext): Unit = {
+      if (!cleanUpCache.contains(v.taskAttemptId())) {
+        v.addTaskCompletionListener {
+          listenerFn
+        }
+      }
+    }
+
+    val listenerFn: (TaskContext) => Unit = {
+      tc =>
+        val buffer = cleanUpCache
+          .remove(tc.taskAttemptId())
+          .getOrElse(mutable.Set.empty)
+        buffer.foreach {
+          driver =>
+            destroy(driver, Some(tc))
+        }
+    }
+
+    final def create(session: Session): T = {
+      val created = _create(session)
+      session.tcOpt.foreach {
+        tc =>
+          registerListener(tc)
+          val buffer = cleanUpCache
+            .getOrElseUpdate(
+              tc.taskAttemptId(),
+              mutable.Set.empty
+            )
+          buffer += created
+      }
+
+      created
+    }
+
+    def _create(session: Session): T
 
     def reset(driver: T): T
 
@@ -78,11 +113,24 @@ object DriverFactories {
       val existingOpt = map.get(session)
       existingOpt.foreach {
         driver =>
-          destroy(driver)
+          destroy(driver, session.tcOpt)
       }
     }
 
-    def destroy(driver: T): Unit
+    final def destroy(driver: T, tcOpt: Option[TaskContext]): Unit = {
+      _destroy(driver)
+
+      tcOpt.foreach {
+        tc =>
+          cleanUpCache.get(tc.taskAttemptId())
+            .foreach {
+              buffer =>
+                buffer -= driver
+            }
+      }
+    }
+
+    def _destroy(driver: T): Unit
 
     final def pooled = Pooled(this)
   }
@@ -100,12 +148,12 @@ object DriverFactories {
     * call any function with a new Spark Task ID will add a cleanup TaskCompletionListener to the Task that destroy all drivers
     */
   case class Pooled[T](
-                         delegate: Transient[T]
-                       ) extends DriverFactory[T] {
+                        delegate: Transient[T]
+                      ) extends DriverFactory[T] {
 
     @transient lazy val pool: ConcurrentMap[Either[Long, Long], DriverInUse[T]] = ConcurrentMap()
 
-    def taskOrThreadID: Either[Long, Long] = {
+    def taskOrThreadID(tcOpt: Option[TaskContext]): Either[Long, Long] = {
       Option(TaskContext.get())
         .map{
           v =>
@@ -116,28 +164,9 @@ object DriverFactories {
         }
     }
 
-    def registerListener(): Unit = {
-      val taskOrThreadID: Either[Long, Long] = this.taskOrThreadID
-      if (!pool.contains(taskOrThreadID)) {
-        Option(TaskContext.get())
-          .foreach{
-            v =>
-              v.addTaskCompletionListener {
-                tc =>
-                  val opt = pool.remove(Left(tc.taskAttemptId()))
-                  opt.foreach {
-                    tuple =>
-                      delegate.destroy(tuple.driver)
-                  }
-              }
-          }
-      }
-    }
-
     override def get(session: Session): T = {
-      registerListener()
 
-      val taskOrThreadID = this.taskOrThreadID
+      val taskOrThreadID = this.taskOrThreadID(session.tcOpt)
       val opt = pool.get(taskOrThreadID)
       opt
         .map {
@@ -148,7 +177,7 @@ object DriverFactories {
             }
             else {
               // destroy old and create new
-              delegate.destroy(tuple.driver)
+              delegate.destroy(tuple.driver, session.tcOpt)
               val fresh = delegate.create(session)
               tuple.driver = fresh
               fresh
@@ -163,9 +192,8 @@ object DriverFactories {
     }
 
     override def release(session: Session): Unit = {
-      registerListener()
 
-      val taskOrThreadID = this.taskOrThreadID
+      val taskOrThreadID = this.taskOrThreadID(session.tcOpt)
       val opt = pool.get(taskOrThreadID)
       opt.foreach{
         tuple =>
@@ -209,8 +237,7 @@ object DriverFactories {
                         loadImages: Boolean = false,
                         fileNameFromMaster: String = PhantomJS.fileName,
                         ignoreSysEnv: Boolean = false
-                      )
-    extends WebDriverFactory {
+                      ) extends WebDriverFactory {
 
     @transient lazy val exePath = {
       val effectivePath = if (!ignoreSysEnv) PhantomJS.path(path, fileNameFromMaster)
@@ -259,7 +286,7 @@ object DriverFactories {
     }
 
     //called from executors
-    override def create(session: Session): CleanWebDriver = {
+    override def _create(session: Session): CleanWebDriver = {
 
       new PhantomJSDriver(newCap(session.spooky)) with CleanWebDriverMixin
     }
@@ -288,7 +315,7 @@ object DriverFactories {
       result.merge(capabilities)
     }
 
-    override def create(session: Session): CleanWebDriver = {
+    override def _create(session: Session): CleanWebDriver = {
 
       val cap = newCap(null, session.spooky)
       val driver = new HtmlUnitDriver(browser) with CleanWebDriverMixin

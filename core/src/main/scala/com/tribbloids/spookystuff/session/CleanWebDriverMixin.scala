@@ -21,7 +21,7 @@ trait Clean {
     catch {
       case e: NoSuchSessionException => //already cleaned before
       case e: Throwable =>
-        LoggerFactory.getLogger(this.getClass).warn("!!!!! FAIL TO CLEANE UP DRIVER !!!!!"+e)
+        LoggerFactory.getLogger(this.getClass).warn(s"!!!!! FAIL TO CLEAN UP ${this.getClass.getSimpleName} !!!!!"+e)
     }
     finally {
       super.finalize()

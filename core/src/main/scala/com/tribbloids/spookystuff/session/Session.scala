@@ -6,6 +6,7 @@ import java.util.concurrent.TimeUnit
 import com.tribbloids.spookystuff.actions._
 import com.tribbloids.spookystuff.utils.SpookyUtils
 import com.tribbloids.spookystuff.{Const, SpookyContext}
+import org.apache.spark.TaskContext
 import org.openqa.selenium.{Dimension, NoSuchSessionException, WebDriver}
 import org.slf4j.LoggerFactory
 
@@ -20,6 +21,9 @@ abstract class Session(val spooky: SpookyContext) {
   val backtrace: ArrayBuffer[Action] = ArrayBuffer()
 
   val webDriver: WebDriver
+
+  //TaskContext is unreachable in withDeadline or other new threads
+  val tcOpt: Option[TaskContext] = Option(TaskContext.get()) //TODO: move to constructor
 
   def close(): Unit = {
     spooky.metrics.sessionReclaimed += 1

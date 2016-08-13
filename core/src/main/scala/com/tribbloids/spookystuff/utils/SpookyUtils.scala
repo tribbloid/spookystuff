@@ -4,6 +4,7 @@ import java.io.{File, InputStream}
 import java.net.{URL, URLClassLoader}
 
 import com.tribbloids.spookystuff.Const
+import org.apache.spark.TaskContext
 import org.apache.spark.ml.dsl.ReflectionUtils
 import org.apache.spark.sql.catalyst.ScalaReflection
 import org.slf4j.LoggerFactory
@@ -62,7 +63,9 @@ object SpookyUtils {
   }
 
   def withDeadline[T](n: Duration)(fn: => T): T = {
-    val future = Future { fn }
+    val future = Future {
+      fn
+    }
 
     Await.result(future, n)
   }
