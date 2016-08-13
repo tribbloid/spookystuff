@@ -3,7 +3,7 @@ package com.tribbloids.spookystuff.actions
 import com.tribbloids.spookystuff.doc.{Doc, Fetched}
 import com.tribbloids.spookystuff.extractors._
 import com.tribbloids.spookystuff.selenium.BySizzleCssSelector
-import com.tribbloids.spookystuff.session.{DriverSession, NoDriverSession, Session}
+import com.tribbloids.spookystuff.session.{DriverSession, Session}
 import com.tribbloids.spookystuff.utils.{ScalaUDT, SpookyUtils}
 import com.tribbloids.spookystuff.{ActionException, Const, SpookyContext}
 import org.apache.spark.sql.types.SQLUserDefinedType
@@ -41,7 +41,7 @@ trait Action extends ActionLike {
   }
 
   //this should handle autoSave, cache and errorDump
-  def apply(session: Session): Seq[Fetched] = {
+  override def apply(session: Session): Seq[Fetched] = {
 
     val results = try {
       exe(session)
@@ -86,20 +86,23 @@ trait Action extends ActionLike {
 
     session match {
       case d: DriverSession =>
-        if (errorDump) {
-          val rawPage = DefaultSnapshot.exe(session).head.asInstanceOf[Doc]
-          message += "\nSnapshot: " + this.errorDump(message, rawPage, session.spooky)
+        if (d.webDriverOpt.isEmpty) {
+          if (errorDump) {
+            val rawPage = DefaultSnapshot.exe(session).head.asInstanceOf[Doc]
+            message += "\nSnapshot: " + this.errorDump(message, rawPage, session.spooky)
+          }
+          if (errorDumpScreenshot && session.webDriver.isInstanceOf[TakesScreenshot]) {
+            val rawPage = DefaultScreenshot.exe(session).toList.head.asInstanceOf[Doc]
+            message += "\nScreenshot: " + this.errorDump(message, rawPage, session.spooky)
+          }
         }
-        if (errorDumpScreenshot && session.webDriver.isInstanceOf[TakesScreenshot]) {
-          val rawPage = DefaultScreenshot.exe(session).toList.head.asInstanceOf[Doc]
-          message += "\nScreenshot: " + this.errorDump(message, rawPage, session.spooky)
-        }
-      case d: NoDriverSession =>
-        docOpt.foreach{
-          doc =>
-            if (errorDump) {
-              message += "\nSnapshot: " + this.errorDump(message, doc, session.spooky)
-            }
+        else {
+          docOpt.foreach {
+            doc =>
+              if (errorDump) {
+                message += "\nSnapshot: " + this.errorDump(message, doc, session.spooky)
+              }
+          }
         }
     }
     message
@@ -134,13 +137,17 @@ trait Action extends ActionLike {
       case tt: Timed =>
         LoggerFactory.getLogger(this.getClass).info(s"+> ${this.toString} in ${tt.timeout(session)}")
 
-        SpookyUtils.withDeadline(tt.hardTerminateTimeout(session)) {
-          doExe(session)
-        }
+        session.asInstanceOf[DriverSession].initializeWebDriverIfMissing(
+          SpookyUtils.withDeadline(tt.hardTerminateTimeout(session)) {
+            doExe(session)
+          }
+        )
       case _ =>
         LoggerFactory.getLogger(this.getClass).info(s"+> ${this.toString}")
 
-        doExe(session)
+        session.asInstanceOf[DriverSession].initializeWebDriverIfMissing(
+          doExe(session)
+        )
     }
   }
 

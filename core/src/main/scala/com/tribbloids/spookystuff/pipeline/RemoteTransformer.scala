@@ -1,7 +1,7 @@
 package com.tribbloids.spookystuff.pipeline
 
 import com.tribbloids.spookystuff.rdd.FetchedDataset
-import com.tribbloids.spookystuff.{PipelineException, SpookyContext}
+import com.tribbloids.spookystuff.SpookyContext
 import org.apache.spark.ml.param.{Param, ParamMap, ParamPair}
 import org.slf4j.LoggerFactory
 
@@ -32,13 +32,13 @@ trait RemoteTransformer extends RemoteTransformerLike with Dynamic {
         case Some(field) =>
           set(field.asInstanceOf[Param[Any]], arg)
         case None =>
-          throw new PipelineException(s"parameter $fieldName doesn't exist")
+          throw new IllegalArgumentException(s"parameter $fieldName doesn't exist")
         //          dynamicParams.put(fieldName, arg)
       }
 
       this
     }
-    else throw new PipelineException(s"function $methodName doesn't exist")
+    else throw new IllegalArgumentException(s"function $methodName doesn't exist")
   }
 
   /*

@@ -2,10 +2,10 @@ package com.tribbloids.spookystuff.actions
 
 import com.tribbloids.spookystuff.caching.{DFSWebCache, InMemoryWebCache}
 import com.tribbloids.spookystuff.doc.{Doc, Fetched}
-import com.tribbloids.spookystuff.row.{FetchedRow, DataRowSchema}
-import com.tribbloids.spookystuff.session.{DriverSession, NoDriverSession, Session}
+import com.tribbloids.spookystuff.row.{DataRowSchema, FetchedRow}
+import com.tribbloids.spookystuff.session.{DriverSession, Session}
 import com.tribbloids.spookystuff.utils.SpookyUtils
-import com.tribbloids.spookystuff.{Const, RemoteDisabledException, SpookyContext}
+import com.tribbloids.spookystuff.{Const, QueryException, SpookyContext}
 import org.apache.spark.sql.catalyst.trees.TreeNode
 import org.slf4j.LoggerFactory
 
@@ -83,13 +83,13 @@ abstract class ActionLike extends TreeNode[ActionLike] with Product with Seriali
 
       spooky.metrics.fetchFromCacheFailure += 1
 
-      if (!spooky.conf.remote) throw new RemoteDisabledException(
-        "Resource is not cached and not enabled to be fetched remotely, " +
+      if (!spooky.conf.remote) throw new QueryException(
+        "Resource is not cached and not allowed to be fetched remotely, " +
           "the later can be enabled by setting SpookyContext.conf.remote=true"
       )
 
-      val session = if (!this.needDriver) new NoDriverSession(spooky)
-      else new DriverSession(spooky)
+      val session = new DriverSession(spooky)
+
       try {
         val result = this.apply(session)
         spooky.metrics.fetchFromRemoteSuccess += 1

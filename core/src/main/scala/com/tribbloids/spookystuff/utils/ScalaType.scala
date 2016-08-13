@@ -3,7 +3,6 @@ package com.tribbloids.spookystuff.utils
 import com.tribbloids.spookystuff.utils.ImplicitUtils._
 import org.apache.spark.sql.catalyst.ScalaReflection.universe._
 import org.apache.spark.sql.types._
-import org.slf4j.LoggerFactory
 
 import scala.reflect.ClassTag
 

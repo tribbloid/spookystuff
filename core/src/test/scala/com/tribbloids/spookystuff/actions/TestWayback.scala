@@ -2,7 +2,7 @@ package com.tribbloids.spookystuff.actions
 
 import java.util.Date
 
-import com.tribbloids.spookystuff.{RemoteDisabledException, SpookyEnvSuite}
+import com.tribbloids.spookystuff.{QueryException, SpookyEnvSuite}
 
 /**
  * Created by peng on 08/09/15.
@@ -34,7 +34,7 @@ class TestWayback extends SpookyEnvSuite {
 
     spooky.conf.remote = false
 
-    intercept[RemoteDisabledException] {
+    intercept[QueryException] {
       (Delay(5.seconds)
         +> Wget("http://www.wikipedia.org").waybackToTimeMillis(dates.head - 2000)
         ).head.fetch(spooky)
@@ -64,7 +64,7 @@ class TestWayback extends SpookyEnvSuite {
 
     spooky.conf.remote = false
 
-    intercept[RemoteDisabledException] {
+    intercept[QueryException] {
       (Delay(5.seconds)
         +> Visit("http://www.wikipedia.org")
         +> Snapshot().waybackToTimeMillis(dates.head - 2000)
@@ -96,7 +96,7 @@ class TestWayback extends SpookyEnvSuite {
 
     spooky.conf.remote = false
 
-    intercept[RemoteDisabledException] {
+    intercept[QueryException] {
       (Delay(5.seconds)
         +> Visit("http://www.wikipedia.org")
         +> Screenshot().waybackToTimeMillis(dates.head - 2000)

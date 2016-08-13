@@ -5,7 +5,7 @@ import java.util.concurrent.TimeUnit
 
 import com.tribbloids.spookystuff.actions._
 import com.tribbloids.spookystuff.utils.SpookyUtils
-import com.tribbloids.spookystuff.{Const, SpookyContext}
+import com.tribbloids.spookystuff.{Const, SpookyContext, SpookyException}
 import org.apache.spark.TaskContext
 import org.openqa.selenium.{Dimension, NoSuchSessionException, WebDriver}
 import org.slf4j.LoggerFactory
@@ -16,11 +16,10 @@ import scala.collection.mutable.ArrayBuffer
 abstract class Session(val spooky: SpookyContext) {
 
   spooky.metrics.sessionInitialized += 1
-  //  println("++++SESSION CREATED++++")
   val startTime: Long = new Date().getTime
   val backtrace: ArrayBuffer[Action] = ArrayBuffer()
 
-  val webDriver: WebDriver
+  def webDriver: WebDriver
 
   //TaskContext is unreachable in withDeadline or other new threads
   val tcOpt: Option[TaskContext] = Option(TaskContext.get()) //TODO: move to constructor
@@ -47,50 +46,69 @@ abstract class Session(val spooky: SpookyContext) {
   }
 }
 
+object NoWebDriverException extends SpookyException("INTERNAL ERROR: should initialize driver automatically")
+object NoPythonException extends SpookyException("INTERNAL ERROR: should initialize driver automatically")
+
 class DriverSession(
                      override val spooky: SpookyContext
-                     //                     actionLike: ActionLike //Enable this if per row DriverFactory is used
                    ) extends Session(spooky){
 
-  override val webDriver: WebDriver = SpookyUtils.retry(Const.localResourceLocalRetries){
+  var webDriverOpt: Option[WebDriver] = None
+  def webDriver = webDriverOpt.getOrElse{
+    throw NoWebDriverException
+  }
 
-    SpookyUtils.withDeadline(Const.sessionInitializationTimeout){
-      var successful = false
-      val driver = spooky.conf.webDriverFactory.get(this)
-      spooky.metrics.driverGet += 1
-      //      try {
-      driver.manage().timeouts()
-        .implicitlyWait(spooky.conf.remoteResourceTimeout.toSeconds, TimeUnit.SECONDS)
-        .pageLoadTimeout(spooky.conf.remoteResourceTimeout.toSeconds, TimeUnit.SECONDS)
-        .setScriptTimeout(spooky.conf.remoteResourceTimeout.toSeconds, TimeUnit.SECONDS)
+  def initializeWebDriver(): Unit = {
+    SpookyUtils.retry(Const.localResourceLocalRetries) {
 
-      val resolution = spooky.conf.browserResolution
-      if (resolution != null) driver.manage().window().setSize(new Dimension(resolution._1, resolution._2))
+      SpookyUtils.withDeadline(Const.sessionInitializationTimeout) {
+        var successful = false
+        val driver = spooky.conf.webDriverFactory.get(this)
+        spooky.metrics.driverDispatched += 1
+        //      try {
+        driver.manage().timeouts()
+          .implicitlyWait(spooky.conf.remoteResourceTimeout.toSeconds, TimeUnit.SECONDS)
+          .pageLoadTimeout(spooky.conf.remoteResourceTimeout.toSeconds, TimeUnit.SECONDS)
+          .setScriptTimeout(spooky.conf.remoteResourceTimeout.toSeconds, TimeUnit.SECONDS)
 
-      successful = true
+        val resolution = spooky.conf.browserResolution
+        if (resolution != null) driver.manage().window().setSize(new Dimension(resolution._1, resolution._2))
 
-      driver
-      //      }            //TODO: these are no longer required, if a driver is get for multiple times the previous one will be automatically scuttled
-      //      finally {
-      //        if (!successful){
-      //          driver.close()
-      //          driver.quit()
-      //          spooky.metrics.driverReleased += 1
-      //        }
-      //      }
+        successful = true
+
+        webDriverOpt = Some(driver)
+        //      }            //TODO: these are no longer required, if a driver is get for multiple times the previous one will be automatically scuttled
+        //      finally {
+        //        if (!successful){
+        //          driver.close()
+        //          driver.quit()
+        //          spooky.metrics.driverReleased += 1
+        //        }
+        //      }
+      }
+    }
+  }
+
+  def initializeWebDriverIfMissing[T](f: => T): T = {
+    try {
+      f
+    }
+    catch {
+      case NoWebDriverException =>
+        LoggerFactory.getLogger(this.getClass).info("Initialization WebDriver ...")
+        initializeWebDriver()
+        f
     }
   }
 
   //  override val pythonDriver: SocketDriver
 
   override def close(): Unit = {
-    spooky.conf.webDriverFactory.release(this)
-    spooky.metrics.driverReleased += 1
     super.close()
+    Option(spooky.conf.webDriverFactory).foreach{
+      factory =>
+        factory.release(this)
+        spooky.metrics.driverReleased += 1
+    }
   }
-}
-
-class NoDriverSession(override val spooky: SpookyContext) extends Session(spooky) {
-
-  override val webDriver: WebDriver = null
 }

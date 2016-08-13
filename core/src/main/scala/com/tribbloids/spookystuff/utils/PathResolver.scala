@@ -4,6 +4,7 @@ import java.io._
 import java.nio.ByteBuffer
 import java.nio.file.FileAlreadyExistsException
 
+import com.tribbloids.spookystuff.Const
 import org.apache.hadoop
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.{FSDataInputStream, FSDataOutputStream, Path}
@@ -57,7 +58,7 @@ object LocalResolver extends PathResolver {
       val lockedFile = new File(lockedPath)
 
       //wait for 15 seconds in total
-      SpookyUtils.retry(5) {
+      SpookyUtils.retry(Const.DFSBlockedAccessRetries) {
         assert(!lockedFile.exists(), s"File $pathStr is locked by another executor or thread")
         //        Thread.sleep(3*1000)
       }
@@ -104,7 +105,7 @@ object LocalResolver extends PathResolver {
     val lockedPath = pathStr + lockedSuffix
     val lockedFile = new File(lockedPath)
 
-    SpookyUtils.retry(5) {
+    SpookyUtils.retry(Const.DFSBlockedAccessRetries) {
       assert(!lockedFile.exists(), s"File $pathStr is locked by another executor or thread")
       //        Thread.sleep(3*1000)
     }
@@ -148,7 +149,8 @@ case class HDFSResolver(
     assert(path.isAbsolute, s"BAD DESIGN: ${path.toString} is not an absolute path")
   }
 
-  def input[T](pathStr: String)(f: InputStream => T): T = SpookyUtils.retry(3){
+  //SpookyUtils.retry(Const.DFSLocalRetries)
+  def input[T](pathStr: String)(f: InputStream => T): T = {
     val path: Path = new Path(pathStr)
 //    ensureAbsolute(path)
 
@@ -160,7 +162,7 @@ case class HDFSResolver(
       val lockedPath = new Path(pathStr + lockedSuffix)
 
       //wait for 15 seconds in total
-      SpookyUtils.retry(10) {
+      SpookyUtils.retry(Const.DFSBlockedAccessRetries) {
         assert(!fs.exists(lockedPath), s"File $pathStr is locked by another executor or thread")
         //        Thread.sleep(3*1000)
       }
@@ -202,7 +204,7 @@ case class HDFSResolver(
 
     val lockedPath = new Path(pathStr + lockedSuffix)
 
-    SpookyUtils.retry(5) {
+    SpookyUtils.retry(Const.DFSBlockedAccessRetries) {
       assert(!fs.exists(lockedPath), s"File $pathStr is locked by another executor or thread")
     }
 

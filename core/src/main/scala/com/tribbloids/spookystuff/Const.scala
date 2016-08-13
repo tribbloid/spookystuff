@@ -23,6 +23,7 @@ object Const {
   val localResourceLocalRetries = 3 //In-node/partition retries
   val remoteResourceLocalRetries = 2 //In-node/partition retries
   val DFSLocalRetries = 2
+  val DFSBlockedAccessRetries = 10
   val clusterRetries = 3
 
   val interactionDelayMax: Duration = 60.seconds

@@ -1,4 +1,4 @@
-package com.tribbloids.spookystuff.utils
+package com.tribbloids.spookystuff.session
 
 /**
   * Created by peng on 01/08/16.

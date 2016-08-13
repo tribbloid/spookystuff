@@ -103,7 +103,7 @@ final case class Try(
         val logger = LoggerFactory.getLogger(this.getClass)
         val timesLeft = retries - taskContext.attemptNumber()
         if (timesLeft > 0) {
-          throw new TryException(
+          throw new RetryingException(
             s"Retrying cluster-wise on ${e.getClass.getSimpleName}... $timesLeft time(s) left\n" +
               "(if Spark job failed because of this, please increase your spark.task.maxFailures)" +
               this.getSessionExceptionString(session),

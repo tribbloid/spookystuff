@@ -89,14 +89,14 @@ abstract class IntegrationSuite extends FunSuite with BeforeAndAfterAll with Rem
     println(metrics.toJSON)
 
     val pagesFetched = metrics.pagesFetched.value
-    numPages_actual = metrics.pagesFetchedFromRemote.value
+    numPages_distinct = metrics.pagesFetchedFromRemote.value
     assert(pagesFetched >= numPages)
-    assert(error contains numPages_actual - numPages)
-    assert(metrics.pagesFetchedFromCache.value === pagesFetched - numPages_actual)
+    assert(error contains numPages_distinct - numPages)
+    assert(metrics.pagesFetchedFromCache.value === pagesFetched - numPages_distinct)
     assert(metrics.sessionInitialized.value === numSessions)
     assert(metrics.sessionReclaimed.value >= metrics.sessionInitialized.value)
-    assert(metrics.driverGet.value === numDrivers)
-    assert(metrics.driverReleased.value >= metrics.driverGet.value)
+    assert(metrics.driverDispatched.value === numDrivers)
+    assert(metrics.driverReleased.value >= metrics.driverDispatched.value)
   }
 
   def assertAfterCache(): Unit = {
@@ -109,8 +109,8 @@ abstract class IntegrationSuite extends FunSuite with BeforeAndAfterAll with Rem
     assert(metrics.pagesFetchedFromCache.value === pagesFetched)
     assert(metrics.sessionInitialized.value === 0)
     assert(metrics.sessionReclaimed.value >= metrics.sessionInitialized.value)
-    assert(metrics.driverGet.value === 0)
-    assert(metrics.driverReleased.value >= metrics.driverGet.value)
+    assert(metrics.driverDispatched.value === 0)
+    assert(metrics.driverReleased.value >= metrics.driverDispatched.value)
     //    assert(metrics.DFSReadSuccess.value > 0) //TODO: enable this after more detailed control over 2 caches.
     assert(metrics.DFSReadFailure.value === 0)
   }
@@ -144,8 +144,8 @@ abstract class IntegrationSuite extends FunSuite with BeforeAndAfterAll with Rem
   def doMain(): Unit
 
   def numPages: Int
-  var numPages_actual: Int = _
-  def numSessions: Int = numPages_actual
+  var numPages_distinct: Int = _
+  def numSessions: Int = numPages_distinct
   def numDrivers: Int = numSessions
 
   def error: Range = 0 to 0

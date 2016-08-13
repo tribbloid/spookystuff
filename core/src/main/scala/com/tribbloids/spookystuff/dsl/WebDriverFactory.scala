@@ -25,7 +25,7 @@ import org.openqa.selenium.htmlunit.HtmlUnitDriver
 import org.openqa.selenium.phantomjs.{PhantomJSDriver, PhantomJSDriverService}
 import org.openqa.selenium.remote.CapabilityType._
 import org.openqa.selenium.remote.{BrowserType, CapabilityType, DesiredCapabilities}
-import org.openqa.selenium.{Capabilities, Platform, Proxy, WebDriver}
+import org.openqa.selenium.{Capabilities, Platform, Proxy}
 import org.slf4j.LoggerFactory
 
 import scala.collection.mutable
@@ -71,6 +71,7 @@ object DriverFactories {
     }
 
     def registerListener(v: TaskContext): Unit = {
+
       if (!cleanUpCache.contains(v.taskAttemptId())) {
         v.addTaskCompletionListener {
           listenerFn

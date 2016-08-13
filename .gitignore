@@ -40,4 +40,4 @@ temp
 foo
 
 #aws key
-**/rootkey.csv
+# **/rootkey.csv

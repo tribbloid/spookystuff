@@ -1,6 +1,5 @@
 package org.apache.spark.ml.dsl
 
-import com.tribbloids.spookystuff.PipelineException
 import com.tribbloids.spookystuff.utils.SpookyUtils
 import org.apache.spark.ml.param.{Param, Params}
 
@@ -30,13 +29,13 @@ trait DynamicParamsMixin extends Params with Dynamic {
         case Some(field) =>
           set(field.asInstanceOf[Param[Any]], arg)
         case None =>
-          throw new PipelineException(s"parameter $fieldName doesn't exist")
+          throw new IllegalArgumentException(s"parameter $fieldName doesn't exist")
         //          dynamicParams.put(fieldName, arg)
       }
 
       this
     }
-    else throw new PipelineException(s"function $methodName doesn't exist")
+    else throw new IllegalArgumentException(s"function $methodName doesn't exist")
   }
 
   protected def Param[T: ClassTag](

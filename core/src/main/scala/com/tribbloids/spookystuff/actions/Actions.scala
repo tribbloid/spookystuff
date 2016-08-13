@@ -33,7 +33,7 @@ object Actions {
     val seq = self.map(_.doInterpolate(pr, schema))
 
     if (seq.contains(None)) Nil
-    else seq.flatMap(option => option)
+    else seq.flatten
   }
 
   def empty = Nil

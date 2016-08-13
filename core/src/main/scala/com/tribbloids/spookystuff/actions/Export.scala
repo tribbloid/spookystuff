@@ -190,10 +190,9 @@ abstract class HttpCommand(
       case obj: Any => Option(obj.toString)
       case other => None
     }
-    val uriLit = uriStr.map(Literal(_))
+    val uriLit = uriStr.map(Literal[String])
     uriLit
   }
-
 
   def httpInvoke(
                   httpClient: HttpClient,

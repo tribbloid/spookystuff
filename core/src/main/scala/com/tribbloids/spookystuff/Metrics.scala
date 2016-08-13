@@ -1,10 +1,9 @@
 package com.tribbloids.spookystuff
 
 import com.tribbloids.spookystuff.utils.SpookyUtils
-import org.apache.spark.{Accumulable, AccumulatorParam, Accumulator}
+import org.apache.spark.{Accumulator, AccumulatorParam}
 
 import scala.collection.immutable.ListMap
-import scala.collection.mutable.ArrayBuffer
 
 /**
  * Created by peng on 03/10/15.
@@ -17,8 +16,8 @@ object Metrics {
 }
 
 case class Metrics(
-                    driverGet: Accumulator[Int] = Metrics.accumulator(0, "driverInitialized"),
-                    driverReleased: Accumulator[Int] = Metrics.accumulator(0, "driverReclaimed"),
+                    driverDispatched: Accumulator[Int] = Metrics.accumulator(0, "driverDispatched"),
+                    driverReleased: Accumulator[Int] = Metrics.accumulator(0, "driverReleased"),
 
                     sessionInitialized: Accumulator[Int] = Metrics.accumulator(0, "sessionInitialized"),
                     sessionReclaimed: Accumulator[Int] = Metrics.accumulator(0, "sessionReclaimed"),

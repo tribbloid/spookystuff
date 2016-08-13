@@ -1,7 +1,7 @@
 package com.tribbloids.spookystuff.actions
 
+import com.tribbloids.spookystuff.session.{DriverSession, OAuthKeys}
 import org.scalatest.tags.Retryable
-import com.tribbloids.spookystuff.session.{NoDriverSession, OAuthKeys}
 
 /**
  * Adding OAuth parameters should not affect results of other queries
@@ -13,7 +13,7 @@ class TestOAuth extends TestWget {
 
   override def wget(uri: String) = {
     val action: OAuthV2 = OAuthV2(Wget(uri))
-    val session = new NoDriverSession(spooky)
+    val session = new DriverSession(spooky)
     val effective = action.rewrite(session)
     assert(effective.uri !== uri)
     action
