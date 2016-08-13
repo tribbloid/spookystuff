@@ -137,7 +137,7 @@ trait Action extends ActionLike {
       case tt: Timed =>
         LoggerFactory.getLogger(this.getClass).info(s"+> ${this.toString} in ${tt.timeout(session)}")
 
-        session.asInstanceOf[DriverSession].initializeWebDriverIfMissing(
+        session.asInstanceOf[DriverSession].initializeDriverIfMissing(
           SpookyUtils.withDeadline(tt.hardTerminateTimeout(session)) {
             doExe(session)
           }
@@ -145,7 +145,7 @@ trait Action extends ActionLike {
       case _ =>
         LoggerFactory.getLogger(this.getClass).info(s"+> ${this.toString}")
 
-        session.asInstanceOf[DriverSession].initializeWebDriverIfMissing(
+        session.asInstanceOf[DriverSession].initializeDriverIfMissing(
           doExe(session)
         )
     }

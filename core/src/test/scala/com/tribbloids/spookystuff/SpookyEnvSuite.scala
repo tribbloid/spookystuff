@@ -57,7 +57,7 @@ abstract class SpookyEnvSuite
   override def afterAll() {
 //    if (sc != null) {
 //      sc.stop()
-//    }TODO: remove it: sc implementation no longer recreates
+//    }//TODO: remove it: sc implementation no longer recreates
 
     TestHelper.clearTempDir()
     super.afterAll()

@@ -20,6 +20,11 @@ class ActionException(
 
 }
 
+class PythonException(
+                       override val message: String = "",
+                       override val cause: Throwable = null
+                     ) extends SpookyException(message, cause)
+
 class RetryingException(
                          override val message: String = "",
                          override val cause: Throwable = null

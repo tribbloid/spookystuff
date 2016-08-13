@@ -4,7 +4,7 @@ import java.util.Date
 
 import com.tribbloids.spookystuff.dsl._
 import com.tribbloids.spookystuff.row.Sampler
-import com.tribbloids.spookystuff.session.{OAuthKeys, ProxySetting}
+import com.tribbloids.spookystuff.session.{OAuthKeys, ProxySetting, PythonDriver}
 import org.apache.spark.rdd.RDD
 import org.apache.spark.storage.StorageLevel
 import org.apache.spark.{Partitioner, SparkConf, SparkContext}
@@ -32,6 +32,7 @@ object SpookyConf {
   }
 
   final val DEFAULT_WEBDRIVER_FACTORY = DriverFactories.PhantomJS().pooled
+  final val DEFAULT_PYTHONDRIVER_FACTORY = DriverFactories.Python().pooled
 }
 
 /**
@@ -45,6 +46,7 @@ class SpookyConf (
                    var shareMetrics: Boolean = false, //TODO: not necessary
 
                    var webDriverFactory: DriverFactory[WebDriver] = SpookyConf.DEFAULT_WEBDRIVER_FACTORY,
+                   var pythonDriverFactory: DriverFactory[PythonDriver] = SpookyConf.DEFAULT_PYTHONDRIVER_FACTORY,
 
                    var proxy: () => ProxySetting = ProxyFactories.NoProxy,
 
@@ -126,6 +128,7 @@ class SpookyConf (
       this.shareMetrics,
 
       this.webDriverFactory,
+      this.pythonDriverFactory,
       this.proxy,
       //                   var userAgent: ()=> String = () => null,
       this.userAgentFactory,

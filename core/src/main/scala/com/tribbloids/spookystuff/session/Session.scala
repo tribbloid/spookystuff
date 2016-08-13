@@ -12,7 +12,6 @@ import org.slf4j.LoggerFactory
 
 import scala.collection.mutable.ArrayBuffer
 
-//TODO: this should be minimized and delegated to resource pool
 abstract class Session(val spooky: SpookyContext) {
 
   spooky.metrics.sessionInitialized += 1
@@ -47,7 +46,7 @@ abstract class Session(val spooky: SpookyContext) {
 }
 
 object NoWebDriverException extends SpookyException("INTERNAL ERROR: should initialize driver automatically")
-object NoPythonException extends SpookyException("INTERNAL ERROR: should initialize driver automatically")
+object NoPythonDriverException extends SpookyException("INTERNAL ERROR: should initialize driver automatically")
 
 class DriverSession(
                      override val spooky: SpookyContext
@@ -62,9 +61,8 @@ class DriverSession(
     SpookyUtils.retry(Const.localResourceLocalRetries) {
 
       SpookyUtils.withDeadline(Const.sessionInitializationTimeout) {
-        var successful = false
         val driver = spooky.conf.webDriverFactory.get(this)
-        spooky.metrics.driverDispatched += 1
+        spooky.metrics.webDriverDispatched += 1
         //      try {
         driver.manage().timeouts()
           .implicitlyWait(spooky.conf.remoteResourceTimeout.toSeconds, TimeUnit.SECONDS)
@@ -73,8 +71,6 @@ class DriverSession(
 
         val resolution = spooky.conf.browserResolution
         if (resolution != null) driver.manage().window().setSize(new Dimension(resolution._1, resolution._2))
-
-        successful = true
 
         webDriverOpt = Some(driver)
         //      }            //TODO: these are no longer required, if a driver is get for multiple times the previous one will be automatically scuttled
@@ -89,7 +85,25 @@ class DriverSession(
     }
   }
 
-  def initializeWebDriverIfMissing[T](f: => T): T = {
+  var pythonDriverOpt: Option[PythonDriver] = None
+  def pythonDriver = pythonDriverOpt.getOrElse{
+    throw NoPythonDriverException
+  }
+
+  def initializePythonDriver(): Unit = {
+    SpookyUtils.retry(Const.localResourceLocalRetries) {
+
+      SpookyUtils.withDeadline(Const.sessionInitializationTimeout) {
+        val driver = spooky.conf.pythonDriverFactory.get(this)
+        spooky.metrics.pythonDriverDispatched += 1
+
+        this.pythonDriverOpt = Some(driver)
+      }
+    }
+  }
+
+  // can only initialize one driver, an action is less likely to use multiple drivers
+  def initializeDriverIfMissing[T](f: => T): T = {
     try {
       f
     }
@@ -98,17 +112,24 @@ class DriverSession(
         LoggerFactory.getLogger(this.getClass).info("Initialization WebDriver ...")
         initializeWebDriver()
         f
+      case NoPythonDriverException =>
+        LoggerFactory.getLogger(this.getClass).info("Initialization PythonDriver ...")
+        initializePythonDriver()
+        f
     }
   }
-
-  //  override val pythonDriver: SocketDriver
 
   override def close(): Unit = {
     super.close()
     Option(spooky.conf.webDriverFactory).foreach{
       factory =>
         factory.release(this)
-        spooky.metrics.driverReleased += 1
+        spooky.metrics.webDriverReleased += 1
+    }
+    Option(spooky.conf.pythonDriverFactory).foreach{
+      factory =>
+        factory.release(this)
+        spooky.metrics.pythonDriverReleased += 1
     }
   }
 }

@@ -18,7 +18,7 @@ package com.tribbloids.spookystuff.dsl
 import com.gargoylesoftware.htmlunit.BrowserVersion
 import com.tribbloids.spookystuff.SpookyContext
 import com.tribbloids.spookystuff.caching._
-import com.tribbloids.spookystuff.session.{CleanWebDriver, CleanWebDriverMixin, ProxySetting, Session}
+import com.tribbloids.spookystuff.session._
 import com.tribbloids.spookystuff.utils.SpookyUtils
 import org.apache.spark.{SparkFiles, TaskContext}
 import org.openqa.selenium.htmlunit.HtmlUnitDriver
@@ -51,6 +51,18 @@ abstract class WebDriverFactory extends DriverFactories.Transient[CleanWebDriver
 
   override def reset(driver: CleanWebDriver): CleanWebDriver = {
     driver.get("")
+    driver
+  }
+}
+
+abstract class PythonDriverFactory extends DriverFactories.Transient[PythonDriver]{
+
+  override def _destroy(driver: PythonDriver): Unit = {
+
+    driver.finalize()
+  }
+
+  override def reset(driver: PythonDriver): PythonDriver = {
     driver
   }
 }
@@ -111,7 +123,7 @@ object DriverFactories {
     def reset(driver: T): T
 
     def release(session: Session): Unit = {
-      val existingOpt = map.get(session)
+      val existingOpt = map.remove(session)
       existingOpt.foreach {
         driver =>
           destroy(driver, session.tcOpt)
@@ -347,4 +359,13 @@ object DriverFactories {
   //    }
   //  }
   //}
+
+  case class Python(
+                     path: String = "python"
+                   ) extends PythonDriverFactory {
+
+    override def _create(session: Session): PythonDriver = {
+      PythonDriver(path)
+    }
+  }
 }

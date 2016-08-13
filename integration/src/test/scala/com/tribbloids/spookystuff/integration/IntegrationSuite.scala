@@ -95,8 +95,8 @@ abstract class IntegrationSuite extends FunSuite with BeforeAndAfterAll with Rem
     assert(metrics.pagesFetchedFromCache.value === pagesFetched - numPages_distinct)
     assert(metrics.sessionInitialized.value === numSessions)
     assert(metrics.sessionReclaimed.value >= metrics.sessionInitialized.value)
-    assert(metrics.driverDispatched.value === numDrivers)
-    assert(metrics.driverReleased.value >= metrics.driverDispatched.value)
+    assert(metrics.webDriverDispatched.value === numDrivers)
+    assert(metrics.webDriverReleased.value >= metrics.webDriverDispatched.value)
   }
 
   def assertAfterCache(): Unit = {
@@ -109,8 +109,8 @@ abstract class IntegrationSuite extends FunSuite with BeforeAndAfterAll with Rem
     assert(metrics.pagesFetchedFromCache.value === pagesFetched)
     assert(metrics.sessionInitialized.value === 0)
     assert(metrics.sessionReclaimed.value >= metrics.sessionInitialized.value)
-    assert(metrics.driverDispatched.value === 0)
-    assert(metrics.driverReleased.value >= metrics.driverDispatched.value)
+    assert(metrics.webDriverDispatched.value === 0)
+    assert(metrics.webDriverReleased.value >= metrics.webDriverDispatched.value)
     //    assert(metrics.DFSReadSuccess.value > 0) //TODO: enable this after more detailed control over 2 caches.
     assert(metrics.DFSReadFailure.value === 0)
   }

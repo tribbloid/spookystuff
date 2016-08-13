@@ -15,9 +15,13 @@ object Metrics {
   }
 }
 
+//TODO: change to multi-level
 case class Metrics(
-                    driverDispatched: Accumulator[Int] = Metrics.accumulator(0, "driverDispatched"),
-                    driverReleased: Accumulator[Int] = Metrics.accumulator(0, "driverReleased"),
+                    webDriverDispatched: Accumulator[Int] = Metrics.accumulator(0, "webDriverDispatched"),
+                    webDriverReleased: Accumulator[Int] = Metrics.accumulator(0, "webDriverReleased"),
+
+                    pythonDriverDispatched: Accumulator[Int] = Metrics.accumulator(0, "pythonDriverDispatched"),
+                    pythonDriverReleased: Accumulator[Int] = Metrics.accumulator(0, "pythonDriverReleased"),
 
                     sessionInitialized: Accumulator[Int] = Metrics.accumulator(0, "sessionInitialized"),
                     sessionReclaimed: Accumulator[Int] = Metrics.accumulator(0, "sessionReclaimed"),
