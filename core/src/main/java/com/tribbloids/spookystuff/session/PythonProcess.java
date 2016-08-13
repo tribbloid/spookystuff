@@ -15,7 +15,7 @@
 * limitations under the License.
 */
 
-package com.tribbloids.spookystuff.utils;
+package com.tribbloids.spookystuff.session;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

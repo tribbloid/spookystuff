@@ -1,6 +1,7 @@
-package com.tribbloids.spookystuff.utils
+package com.tribbloids.spookystuff.session
 
 import com.tribbloids.spookystuff.SpookyEnvSuite
+import com.tribbloids.spookystuff.utils.PythonProcess
 
 /**
   * Created by peng on 01/08/16.
