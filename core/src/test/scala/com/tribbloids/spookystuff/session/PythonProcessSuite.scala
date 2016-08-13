@@ -1,7 +1,6 @@
 package com.tribbloids.spookystuff.session
 
 import com.tribbloids.spookystuff.SpookyEnvSuite
-import com.tribbloids.spookystuff.utils.PythonProcess
 
 /**
   * Created by peng on 01/08/16.
@@ -31,7 +30,8 @@ class PythonProcessSuite extends SpookyEnvSuite {
   }
 
   test("should work in multiple threads") {
-    val rdd = sc.parallelize(1 to 1000)
+    val rdd = sc.parallelize(1 to 100)
+    assert(rdd.getNumPartitions > 1)
     rdd.foreachPartition{
       it =>
         val seq = it.toSeq
