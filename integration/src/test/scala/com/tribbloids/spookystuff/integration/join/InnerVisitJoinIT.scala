@@ -7,9 +7,9 @@ import com.tribbloids.spookystuff.integration.IntegrationSuite
 
 class InnerVisitJoinIT extends IntegrationSuite {
 
-  override lazy val driverFactories = Seq(
-    phantomJS //TODO: HtmlUnit does not support Backbone.js
-  )
+//  override lazy val driverFactories = Seq(
+//    phantomJS //TODO: HtmlUnit does not support Backbone.js
+//  )
 
   def getPage(uri: Extractor[String]): Action = Visit(uri)
 

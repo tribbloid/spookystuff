@@ -12,9 +12,9 @@ class ExploreAJAXPagesIT extends IntegrationSuite {
 
   import com.tribbloids.spookystuff.dsl._
 
-  override lazy val driverFactories = Seq(
-    phantomJS //TODO: HtmlUnit does not support Backbone.js
-  )
+//  override lazy val driverFactories = Seq(
+//    phantomJS //TODO: HtmlUnit does not support Backbone.js
+//  )
 
   override def doMain(): Unit = {
 
