@@ -32,7 +32,7 @@ import scala.collection.mutable
 
 //local to TaskID, if not exist, local to ThreadID
 //for every new driver created, add a taskCompletion listener that salvage it.
-abstract class DriverFactory[T] extends Serializable {
+abstract class DriverFactory[+T] extends Serializable {
 
   // If get is called again before the previous driver is released, the old driver is destroyed to create a new one.
   // this is to facilitate multiple retries
