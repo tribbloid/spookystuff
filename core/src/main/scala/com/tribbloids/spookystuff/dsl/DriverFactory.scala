@@ -148,10 +148,10 @@ object DriverFactories {
     final def pooled = Pooled(this)
   }
 
-  case class DriverInUse[T](
-                             var driver: T,
-                             var inUse: Boolean
-                           )
+  case class DriverInPool[T](
+                              var driver: T,
+                              var busy: Boolean
+                            )
 
   /**
     * delegate create & destroy to PerSessionFactory
@@ -164,7 +164,7 @@ object DriverFactories {
                         delegate: Transient[T]
                       ) extends DriverFactory[T] {
 
-    @transient lazy val pool: ConcurrentMap[Either[Long, Long], DriverInUse[T]] = ConcurrentMap()
+    @transient lazy val pool: ConcurrentMap[Either[Long, Long], DriverInPool[T]] = ConcurrentMap()
 
     def taskOrThreadID(tcOpt: Option[TaskContext]): Either[Long, Long] = {
       Option(TaskContext.get())
@@ -184,8 +184,8 @@ object DriverFactories {
       opt
         .map {
           tuple =>
-            if (!tuple.inUse) {
-              tuple.inUse = true
+            if (!tuple.busy) {
+              tuple.busy = true
               delegate.reset(tuple.driver)
             }
             else {
@@ -199,7 +199,7 @@ object DriverFactories {
         .getOrElse {
           //create new
           val fresh = delegate.create(session)
-          pool.put(taskOrThreadID, DriverInUse(fresh, inUse = true))
+          pool.put(taskOrThreadID, DriverInPool(fresh, busy = true))
           fresh
         }
     }
@@ -210,8 +210,8 @@ object DriverFactories {
       val opt = pool.get(taskOrThreadID)
       opt.foreach{
         tuple =>
-          if (tuple.inUse)
-            tuple.inUse = false
+          if (tuple.busy)
+            tuple.busy = false
       }
     }
   }

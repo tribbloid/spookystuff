@@ -26,7 +26,7 @@ setup(
     ],
     license='apache',
     packages=[
-        'mav', 'mav.test'
+        'mav.python', 'mav.python.test'
     ],
     ext_modules=[]
 )

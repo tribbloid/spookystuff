@@ -48,25 +48,17 @@ object TestHelper {
       //      .set("spark.kryo.registrator", "com.tribbloids.spookystuff.SpookyRegistrator")Incomplete for the moment
       .set("spark.kryoserializer.buffer.max", "512m")
 
-    val sparkHome = System.getenv("SPARK_HOME")
-    if (sparkHome == null || clusterSize.isEmpty) {
-      val masterStr = s"local[$numProcessors,4]"
-      LoggerFactory.getLogger(this.getClass).info("initializing SparkContext in local mode:" + masterStr)
-      conf.setMaster(masterStr)
-    }
-    else {
-      val size = clusterSize.get
-      val masterStr = s"local-cluster[$size,${numProcessors/size},1024]"
-      println(s"initializing SparkContext in local-cluster simulation mode:" + masterStr)
-      conf.setMaster(masterStr) //TODO: more than 1 nodes may cause some counters to have higher readings
-    }
+    val (sparkHomeOpt, masterStr) = sparkHome_MasterStr
+
+    conf.setMaster(masterStr) //TODO: more than 1 nodes may cause some counters to have higher readings
 
     //this is the only way to conduct local-cluster simulation
-    if (conf.get("spark.master").contains("cluster")) {
-      conf
-        .setSparkHome(sparkHome)
-        .set("spark.driver.extraClassPath", sys.props("java.class.path"))
-        .set("spark.executor.extraClassPath", sys.props("java.class.path"))
+    sparkHomeOpt.foreach {
+      sparkHome =>
+        conf
+          .setSparkHome(sparkHome)
+          .set("spark.driver.extraClassPath", sys.props("java.class.path"))
+          .set("spark.executor.extraClassPath", sys.props("java.class.path"))
     }
 
     Option(System.getProperty("fs.s3.awsAccessKeyId")).foreach {
@@ -86,19 +78,34 @@ object TestHelper {
     conf
   }
 
+  def sparkHome_MasterStr: (Option[String], String) = {
+    val sparkHome = System.getenv("SPARK_HOME")
+    if (sparkHome == null || clusterSize.isEmpty) {
+      val masterStr = s"local[$numProcessors,4]"
+      LoggerFactory.getLogger(this.getClass).info("initializing SparkContext in local mode:" + masterStr)
+      (None, masterStr)
+    }
+    else {
+      val size = clusterSize.get
+      val masterStr = s"local-cluster[$size,${numProcessors / size},1024]"
+      println(s"initializing SparkContext in local-cluster simulation mode:" + masterStr)
+      (Some(sparkHome), masterStr)
+    }
+  }
+
   def TestSpark = {
     val sc = SparkContext.getOrCreate(TestSparkConf)
     //TODO: Remote RPC client disassociated. Likely due to containers exceeding thresholds, or network issues. Check driver logs for WARN messages.
     //TODO: Cannot call methods on a stopped SparkContext. Disabled before solution is found
-//    Runtime.getRuntime.addShutdownHook(
-//      new Thread {
-//        override def run() = {
-//          println("=============== Stopping Spark Context ==============")
-//          sc.stop()
-//          println("=============== Test Spark Context has stopped ==============")
-//        }
-//      }
-//    )
+    //    Runtime.getRuntime.addShutdownHook(
+    //      new Thread {
+    //        override def run() = {
+    //          println("=============== Stopping Spark Context ==============")
+    //          sc.stop()
+    //          println("=============== Test Spark Context has stopped ==============")
+    //        }
+    //      }
+    //    )
     sc
   }
   def TestSQL = SQLContext.getOrCreate(TestSpark)

@@ -27,6 +27,7 @@
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-assembly-plugin</artifactId>
+                        <version>2.6</version>
                         <executions>
                             <execution>
                                 <id>dist</id>
@@ -50,6 +51,7 @@
 
     <dependencies>
 
+        <!--TODO: remove this dependency: useless-->
         <dependency>
             <groupId>org.apache.spark</groupId>
             <artifactId>spark-repl_${scala.binary.version}</artifactId>
