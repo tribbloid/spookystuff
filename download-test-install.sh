@@ -9,6 +9,6 @@ SPARK_DIR_NAME="$SPARK_NAME"-bin-hadoop2.4
 wget -nc http://mirror.csclub.uwaterloo.ca/apache/spark/"$SPARK_NAME"/"$SPARK_DIR_NAME".tgz
 tar -xvzf "$SPARK_DIR_NAME".tgz
 
-SPARK_HOME="$FWDIR"/"$SPARK_DIR_NAME"
+export SPARK_HOME="$FWDIR"/"$SPARK_DIR_NAME"
 
 ./test-install.sh

@@ -82,7 +82,7 @@ object TestHelper {
     val sparkHome = System.getenv("SPARK_HOME")
     if (sparkHome == null || clusterSize.isEmpty) {
       val masterStr = s"local[$numProcessors,4]"
-      LoggerFactory.getLogger(this.getClass).info("initializing SparkContext in local mode:" + masterStr)
+      println("initializing SparkContext in local mode:" + masterStr)
       (None, masterStr)
     }
     else {
