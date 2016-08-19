@@ -7,7 +7,7 @@ SPARK_DIR_NAME="$SPARK_NAME"-bin-hadoop2.4
 
 # Download Spark
 wget -nc http://mirror.csclub.uwaterloo.ca/apache/spark/"$SPARK_NAME"/"$SPARK_DIR_NAME".tgz
-tar -xvzf "$SPARK_DIR_NAME".tgz
+tar -xzf "$SPARK_DIR_NAME".tgz
 
 export SPARK_HOME="$FWDIR"/"$SPARK_DIR_NAME"
 
