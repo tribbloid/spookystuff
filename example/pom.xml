@@ -23,7 +23,7 @@
         <profile>
             <id>all-inclusive-examples</id>
             <properties>
-                <dependencies.scope>compile</dependencies.scope>
+                <spark.scope>compile</spark.scope>
             </properties>
         </profile>
     </profiles>
@@ -33,31 +33,31 @@
             <groupId>com.tribbloids.spookystuff</groupId>
             <artifactId>spookystuff-core</artifactId>
             <version>${project.version}</version>
-            <scope>${dependencies.scope}</scope>
+            <scope>${spark.scope}</scope>
         </dependency>
         <dependency>
             <groupId>com.tribbloids.spookystuff</groupId>
             <artifactId>spookystuff-pipeline</artifactId>
             <version>${project.version}</version>
-            <scope>${dependencies.scope}</scope>
+            <scope>${spark.scope}</scope>
         </dependency>
         <dependency>
             <groupId>org.apache.spark</groupId>
             <artifactId>spark-core_${scala.binary.version}</artifactId>
             <version>${spark.version}</version>
-            <scope>${dependencies.scope}</scope>
+            <scope>${spark.scope}</scope>
         </dependency>
         <dependency>
             <groupId>org.apache.spark</groupId>
             <artifactId>spark-sql_${scala.binary.version}</artifactId>
             <version>${spark.version}</version>
-            <scope>${dependencies.scope}</scope>
+            <scope>${spark.scope}</scope>
         </dependency>
         <dependency>
             <groupId>org.apache.spark</groupId>
             <artifactId>spark-mllib_${scala.binary.version}</artifactId>
             <version>${spark.version}</version>
-            <scope>${dependencies.scope}</scope>
+            <scope>${spark.scope}</scope>
         </dependency>
         <dependency>
             <groupId>cc.factorie</groupId>
