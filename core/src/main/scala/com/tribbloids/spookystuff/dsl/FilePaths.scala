@@ -4,18 +4,24 @@ import java.util.UUID
 
 import com.tribbloids.spookystuff.actions.Trace
 import com.tribbloids.spookystuff.doc.Doc
+import com.tribbloids.spookystuff.extractors.Literal
 import com.tribbloids.spookystuff.utils.SpookyUtils
 
 object FilePaths{
 
   def product2String(x: Product): String = {
-    x.productIterator
-        .map {
-          case vv: Product => product2String(vv)
-          case vv@ _ => "" + vv
-        }
+    x match {
+      case v: Literal[_, _] => v.toString
+      case _ =>
 
-      .mkString(x.productPrefix + "/", "/", "/")
+        x.productIterator
+          .map {
+            case vv: Product => product2String(vv)
+            case vv@ _ => "" + vv
+          }
+
+          .mkString(x.productPrefix + "/", "/", "/")
+    }
   }
 
   case object Flat extends ByTrace[String] {
