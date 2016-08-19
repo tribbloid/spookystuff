@@ -334,7 +334,7 @@ trait ScalaDynamicMixin[T, +R] extends Dynamic {
         ex.asInstanceOf[GenExtractor[T, Any]]
       case v@ _ =>
         val tt = UnreifiedScalaType.fromInstance(v)
-        new GenLiteral[T, Any](Option(v), tt)
+        new Literal[T, Any](Option(v), tt)
     }
 
     ScalaDynamicExtractor(this, methodName, Some(argExs.toList))

@@ -65,27 +65,27 @@ object DocUtils {
   //unlike save, this will store all information in an unreadable, serialized, probably compressed file
   //always overwrite! use the same serializer as Spark
   def cache[T](
-                        pageLikes: Seq[T],
-                        pathStr: String,
-                        overwrite: Boolean = true
-                        )(spooky: SpookyContext): Unit =
-    dfsWrite("cache", pathStr, spooky) {
+                pageLikes: Seq[T],
+                pathStr: String,
+                overwrite: Boolean = true
+              )(spooky: SpookyContext): Unit =
+  dfsWrite("cache", pathStr, spooky) {
 
-      spooky.resolver.output(pathStr, overwrite) {
-        fos =>
-          val ser = SparkEnv.get.serializer.newInstance()
-          val serOut = ser.serializeStream(fos)
+    spooky.resolver.output(pathStr, overwrite) {
+      fos =>
+        val ser = SparkEnv.get.serializer.newInstance()
+        val serOut = ser.serializeStream(fos)
 
-          try {
-            serOut.writeObject[Seq[T]](
-              pageLikes.asInstanceOf[Seq[T] @SerialVersionUID(cacheVID) with Serializable]
-            )
-          }
-          finally {
-            serOut.close()
-          }
-      }
+        try {
+          serOut.writeObject[Seq[T]](
+            pageLikes.asInstanceOf[Seq[T] @SerialVersionUID(cacheVID) with Serializable]
+          )
+        }
+        finally {
+          serOut.close()
+        }
     }
+  }
 
   private def restore[T](pathStr: String)(spooky: SpookyContext): Seq[T] =
     dfsRead("restore", pathStr, spooky) {
@@ -106,30 +106,30 @@ object DocUtils {
       result
     }
 
-//  def autoCache(
-//                 pageLikes: Seq[Fetched],
-//                 spooky: SpookyContext
-//                 ): Unit = {
-//    val effectivePageLikes = pageLikes.filter(_.cacheable)
-//    if (effectivePageLikes.isEmpty) return
-//
-//    val pathStr = Utils.pathConcat(
-//      spooky.conf.dirs.cache,
-//      spooky.conf.cacheFilePath(effectivePageLikes.head.uid.backtrace).toString,
-//      UUID.randomUUID().toString
-//    )
-//
-//    cache(effectivePageLikes, pathStr)(spooky)
-//  }
+  //  def autoCache(
+  //                 pageLikes: Seq[Fetched],
+  //                 spooky: SpookyContext
+  //                 ): Unit = {
+  //    val effectivePageLikes = pageLikes.filter(_.cacheable)
+  //    if (effectivePageLikes.isEmpty) return
+  //
+  //    val pathStr = Utils.pathConcat(
+  //      spooky.conf.dirs.cache,
+  //      spooky.conf.cacheFilePath(effectivePageLikes.head.uid.backtrace).toString,
+  //      UUID.randomUUID().toString
+  //    )
+  //
+  //    cache(effectivePageLikes, pathStr)(spooky)
+  //  }
 
   //restore latest in a directory
   //returns: Nil => has backtrace dir but contains no page
   //returns null => no backtrace dir
   def restoreLatest(
-                             dirPath: Path,
-                             earliestModificationTime: Long,
-                             latestModificationTime: Long
-                             )(spooky: SpookyContext): Seq[Fetched] = {
+                     dirPath: Path,
+                     earliestModificationTime: Long,
+                     latestModificationTime: Long
+                   )(spooky: SpookyContext): Seq[Fetched] = {
 
     val latestStatus: Option[FileStatus] = dfsRead("get latest version", dirPath.toString, spooky) {
 
@@ -170,54 +170,54 @@ object DocUtils {
 
   //TODO: return Option[Seq]
   //TODO: move into caching
-//  def autoRestore(
-//                   backtrace: Trace,
-//                   spooky: SpookyContext
-//                   ): Seq[Fetched] = {
-//
-//    import dsl._
-//
-//    val pathStr = Utils.pathConcat(
-//      spooky.conf.dirs.cache,
-//      spooky.conf.cacheFilePath(backtrace).toString
-//    )
-//
-//    val waybackOption = backtrace.last match {
-//      case w: Wayback =>
-//        Option(w.wayback).map{
-//          expr =>
-//            val result = expr.asInstanceOf[Literal[Long]].value
-//            spooky.conf.IgnoreDocsCreatedBefore match {
-//              case Some(date) =>
-//                assert(result > date.getTime, "SpookyConf.pageNotExpiredSince cannot be set to later than wayback date")
-//              case None =>
-//            }
-//            result
-//        }
-//      case _ =>
-//        None
-//    }
-//
-//    val nowMillis = waybackOption match {
-//      case Some(wayback) => wayback
-//      case None => System.currentTimeMillis()
-//    }
-//
-//    val earliestTime = spooky.conf.getEarliestDocCreationTime(nowMillis)
-//
-//    val latestTime = waybackOption.getOrElse(Long.MaxValue)
-//
-//    val pages = restoreLatest(
-//      new Path(pathStr),
-//      earliestTime,
-//      latestTime
-//    )(spooky)
-//
-//    if (pages != null) for (page <- pages) {
-//      val pageBacktrace: Trace = page.uid.backtrace
-//
-//      pageBacktrace.injectFrom(backtrace) //this is to allow actions in backtrace to have different name than those cached
-//    }
-//    pages
-//  }
+  //  def autoRestore(
+  //                   backtrace: Trace,
+  //                   spooky: SpookyContext
+  //                   ): Seq[Fetched] = {
+  //
+  //    import dsl._
+  //
+  //    val pathStr = Utils.pathConcat(
+  //      spooky.conf.dirs.cache,
+  //      spooky.conf.cacheFilePath(backtrace).toString
+  //    )
+  //
+  //    val waybackOption = backtrace.last match {
+  //      case w: Wayback =>
+  //        Option(w.wayback).map{
+  //          expr =>
+  //            val result = expr.asInstanceOf[Literal[Long]].value
+  //            spooky.conf.IgnoreDocsCreatedBefore match {
+  //              case Some(date) =>
+  //                assert(result > date.getTime, "SpookyConf.pageNotExpiredSince cannot be set to later than wayback date")
+  //              case None =>
+  //            }
+  //            result
+  //        }
+  //      case _ =>
+  //        None
+  //    }
+  //
+  //    val nowMillis = waybackOption match {
+  //      case Some(wayback) => wayback
+  //      case None => System.currentTimeMillis()
+  //    }
+  //
+  //    val earliestTime = spooky.conf.getEarliestDocCreationTime(nowMillis)
+  //
+  //    val latestTime = waybackOption.getOrElse(Long.MaxValue)
+  //
+  //    val pages = restoreLatest(
+  //      new Path(pathStr),
+  //      earliestTime,
+  //      latestTime
+  //    )(spooky)
+  //
+  //    if (pages != null) for (page <- pages) {
+  //      val pageBacktrace: Trace = page.uid.backtrace
+  //
+  //      pageBacktrace.injectFrom(backtrace) //this is to allow actions in backtrace to have different name than those cached
+  //    }
+  //    pages
+  //  }
 }

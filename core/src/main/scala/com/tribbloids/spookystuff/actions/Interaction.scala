@@ -4,8 +4,8 @@ import com.thoughtworks.selenium.SeleniumException
 import com.tribbloids.spookystuff.Const
 import com.tribbloids.spookystuff.actions.WaitForDocumentReady._
 import com.tribbloids.spookystuff.doc.{Doc, Unstructured}
-import com.tribbloids.spookystuff.extractors.{Extractor, Literal}
-import com.tribbloids.spookystuff.row.{FetchedRow, DataRowSchema}
+import com.tribbloids.spookystuff.extractors.{Extractor, FR, Literal}
+import com.tribbloids.spookystuff.row.{DataRowSchema, FetchedRow}
 import com.tribbloids.spookystuff.session.Session
 import com.tribbloids.spookystuff.utils.SpookyUtils
 import org.openqa.selenium.interactions.{Actions => SeleniumActions}
@@ -74,7 +74,7 @@ case class Visit(
                 ) extends Interaction(delay, blocking) with Timed {
 
   override def exeWithoutPage(session: Session) {
-    session.webDriver.get(uri.asInstanceOf[Literal[String]].value)
+    session.webDriver.get(uri.asInstanceOf[Literal[FR, String]].value)
 
     //    if (hasTitle) {
     //      val wait = new WebDriverWait(session.driver, timeout(session).toSeconds)
@@ -94,7 +94,7 @@ case class Visit(
 
     uriStr.map(
       str =>
-        this.copy(uri = Literal(str)).asInstanceOf[this.type]
+        this.copy(uri = Literal.erase(str)).asInstanceOf[this.type]
     )
   }
 }
@@ -291,7 +291,7 @@ case class TextInput(
 
     val element = this.getElement(selector, session)
 
-    element.sendKeys(text.asInstanceOf[Literal[String]].value)
+    element.sendKeys(text.asInstanceOf[Literal[FR, String]].value)
   }
 
   override def doInterpolate(pageRow: FetchedRow, schema: DataRowSchema): Option[this.type] = {
@@ -307,7 +307,7 @@ case class TextInput(
 
     textStr.map(
       str =>
-        this.copy(text = Literal(str)).asInstanceOf[this.type]
+        this.copy(text = Literal.erase(str)).asInstanceOf[this.type]
     )
   }
 }
@@ -329,7 +329,7 @@ case class DropDownSelect(
     val element = this.getElement(selector, session)
 
     val select = new Select(element)
-    select.selectByValue(value.asInstanceOf[Literal[String]].value)
+    select.selectByValue(value.asInstanceOf[Literal[FR, String]].value)
   }
 
   override def doInterpolate(pageRow: FetchedRow, schema: DataRowSchema): Option[this.type] = {
@@ -344,7 +344,7 @@ case class DropDownSelect(
 
     valueStr.map(
       str =>
-        this.copy(value = Literal(str)).asInstanceOf[this.type]
+        this.copy(value = Literal.erase(str)).asInstanceOf[this.type]
     )
   }
 }
@@ -386,7 +386,7 @@ case class ExeScript(
       Some(element)
     }
 
-    val scriptStr = script.asInstanceOf[Literal[String]].value
+    val scriptStr = script.asInstanceOf[Literal[FR, String]].value
     session.webDriver match {
       case d: JavascriptExecutor => d.executeScript(scriptStr, element.toArray: _*)
       case _ => throw new UnsupportedOperationException("this web browser driver is not supported")
@@ -405,7 +405,7 @@ case class ExeScript(
 
     scriptStr.map(
       str =>
-        this.copy(script = Literal(str)).asInstanceOf[this.type]
+        this.copy(script = Literal.erase(str)).asInstanceOf[this.type]
     )
   }
 }

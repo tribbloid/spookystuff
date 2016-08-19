@@ -4,12 +4,12 @@ import com.tribbloids.spookystuff.caching.{DFSWebCache, InMemoryWebCache}
 import com.tribbloids.spookystuff.doc.{Doc, Fetched}
 import com.tribbloids.spookystuff.row.{DataRowSchema, FetchedRow}
 import com.tribbloids.spookystuff.session.{DriverSession, Session}
-import com.tribbloids.spookystuff.utils.SpookyUtils
+import com.tribbloids.spookystuff.utils.{Ser, SpookyUtils}
 import com.tribbloids.spookystuff.{Const, QueryException, SpookyContext}
 import org.apache.spark.sql.catalyst.trees.TreeNode
 import org.slf4j.LoggerFactory
 
-abstract class ActionLike extends TreeNode[ActionLike] with Product with Serializable {
+abstract class ActionLike extends TreeNode[ActionLike] with Product with Ser {
 
   //TODO: this step should be broken into 2 stages for better efficiency, f1 =(resolve on driver)=> f2 =(eval on executors)=> v
   final def interpolate(pr: FetchedRow, schema: DataRowSchema): Option[this.type] = {

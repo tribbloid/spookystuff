@@ -52,7 +52,7 @@ class ScalaReflectionSuite extends FunSuite with TestMixin {
 
   import com.tribbloids.spookystuff.utils.ImplicitUtils.DataTypeView
 
-  lazy val exLit: Literal[_] = Literal(new Example())
+  lazy val exLit: TypedLiteral[_] = Literal(new Example())
   lazy val exType: DataType = UnreifiedScalaType.apply[Example]
 
   test("getMethodsByName should work on overloaded function") {

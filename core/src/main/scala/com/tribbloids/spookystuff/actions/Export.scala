@@ -8,7 +8,7 @@ import javax.net.ssl.SSLContext
 
 import com.tribbloids.spookystuff.Const
 import com.tribbloids.spookystuff.doc._
-import com.tribbloids.spookystuff.extractors.{Extractor, Literal}
+import com.tribbloids.spookystuff.extractors.{Extractor, FR, Literal}
 import com.tribbloids.spookystuff.http._
 import com.tribbloids.spookystuff.row.{DataRowSchema, FetchedRow}
 import com.tribbloids.spookystuff.session.{ProxySetting, Session}
@@ -94,7 +94,7 @@ trait WaybackSupport {
       val valueOpt = wayback.resolve(schema).lift(pageRow)
       valueOpt.map{
         v =>
-          this.wayback = Literal(v)
+          this.wayback = Literal.erase(v)
           this
       }
     }
@@ -176,12 +176,12 @@ abstract class HttpCommand(
                           ) extends Export with Driverless with Timed with WaybackSupport {
 
   lazy val uriOption: Option[URI] = {
-    val uriStr = uri.asInstanceOf[Literal[String]].value.trim()
+    val uriStr = uri.asInstanceOf[Literal[FR, String]].value.trim()
     if ( uriStr.isEmpty ) None
     else Some(HttpUtils.uri(uriStr))
   }
 
-  def resolveURI(pageRow: FetchedRow, schema: DataRowSchema): Option[Literal[String]] = {
+  def resolveURI(pageRow: FetchedRow, schema: DataRowSchema): Option[Literal[FR, String]] = {
     val first = this.uri.resolve(schema).lift(pageRow).flatMap(SpookyUtils.asArray[Any](_).headOption) //TODO: no need to resolve array output?
 
     val uriStr: Option[String] = first.flatMap {
@@ -535,7 +535,7 @@ case class Wget(
   }
 
   override def doInterpolate(pageRow: FetchedRow, schema: DataRowSchema): Option[this.type] = {
-    val uriLit: Option[Literal[String]] = resolveURI(pageRow, schema)
+    val uriLit: Option[Literal[FR, String]] = resolveURI(pageRow, schema)
 
     uriLit.flatMap(
       lit =>
@@ -644,7 +644,7 @@ case class WpostImpl private[actions](
   }
 
   override def doInterpolate(pageRow: FetchedRow, schema: DataRowSchema): Option[this.type] = {
-    val uriLit: Option[Literal[String]] = resolveURI(pageRow, schema)
+    val uriLit: Option[Literal[FR, String]] = resolveURI(pageRow, schema)
 
     uriLit.flatMap(
       lit =>

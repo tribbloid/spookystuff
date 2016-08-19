@@ -15,7 +15,7 @@ import scala.reflect.ClassTag
 
 object JavaSerializationParam {
 
-  final val vid = -47597349821L
+  final val VID = -47597349821L
 }
 
 /**
@@ -45,7 +45,7 @@ class JavaSerializationParam[T: ClassTag](parent: String, name: String, doc: Str
 
   override def jsonEncode(value: T): String = {
 
-    val serializableValue = value.asInstanceOf[T @SerialVersionUID(JavaSerializationParam.vid) with Serializable]
+    val serializableValue = value.asInstanceOf[T @SerialVersionUID(JavaSerializationParam.VID) with Serializable]
 
     val ser = serializer.newInstance()
     val buffer: ByteBuffer = ser.serialize(serializableValue)

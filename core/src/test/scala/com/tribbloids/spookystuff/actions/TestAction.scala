@@ -1,7 +1,7 @@
 package com.tribbloids.spookystuff.actions
 
 import com.tribbloids.spookystuff.dsl._
-import com.tribbloids.spookystuff.extractors.{Example, Literal}
+import com.tribbloids.spookystuff.extractors.{Example, FR, Literal}
 import com.tribbloids.spookystuff.row.{DataRow, FetchedRow, Field}
 import com.tribbloids.spookystuff.utils.UnreifiedScalaType
 import com.tribbloids.spookystuff.{Const, SpookyEnvSuite}
@@ -23,7 +23,7 @@ class TestAction extends SpookyEnvSuite {
 
     val rewritten = action.interpolate(FetchedRow(DataRow(data = ListMap(Field("~") -> "http://www.dummy.com")), Seq()), schema).get
 
-    val a = rewritten.uri.asInstanceOf[Literal[String]].dataType.asInstanceOf[UnreifiedScalaType].ttg.tpe.normalize
+    val a = rewritten.uri.asInstanceOf[Literal[FR, String]].dataType.asInstanceOf[UnreifiedScalaType].ttg.tpe.normalize
     val b = Literal("http://www.dummy.com").dataType.asInstanceOf[UnreifiedScalaType].ttg.tpe.normalize
     val c = Literal(new Example()).dataType.asInstanceOf[UnreifiedScalaType].ttg.tpe.normalize
 

@@ -5,7 +5,7 @@ import org.slf4j.LoggerFactory
 import com.tribbloids.spookystuff.extractors.{Extractor, Literal}
 import com.tribbloids.spookystuff._
 import com.tribbloids.spookystuff.http.HttpUtils
-import com.tribbloids.spookystuff.row.{FetchedRow, DataRowSchema}
+import com.tribbloids.spookystuff.row.{DataRowSchema, FetchedRow}
 import com.tribbloids.spookystuff.doc.{Doc, Fetched, NoDoc}
 import com.tribbloids.spookystuff.session.Session
 import com.tribbloids.spookystuff.utils.SpookyUtils.retry
@@ -347,7 +347,7 @@ case class OAuthV2(self: Wget) extends Block(List(self)) with Driverless {
     val effectiveWget: Wget = self.uriOption match {
       case Some(uri) =>
         val signed = HttpUtils.OauthV2(uri.toString, keys.consumerKey, keys.consumerSecret, keys.token, keys.tokenSecret)
-        self.copy(uri = Literal(signed))
+        self.copy(uri = Literal.erase(signed))
       case None =>
         self
     }

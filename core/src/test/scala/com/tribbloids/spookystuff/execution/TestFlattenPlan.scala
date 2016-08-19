@@ -98,8 +98,8 @@ class TestFlattenPlan extends SpookyEnvSuite {
 
 //    assert(flattened.schema.typedFor('Array).get.dataType == UnreifiedScalaType.apply[Tuple2[String, Int]])
     assert(flattened.schema.typedFor('Array).get.dataType == StructType(Array(
-      StructField("_1",StringType,true),
-      StructField("_2",IntegerType,false)
+      StructField("_1",StringType,nullable = true),
+      StructField("_2",IntegerType,nullable = false)
     )))
   }
 
@@ -120,8 +120,8 @@ class TestFlattenPlan extends SpookyEnvSuite {
 
 //    assert(flattened.schema.typedFor('Array).get.dataType == UnreifiedScalaType.apply[Tuple2[String, Int]])
     assert(flattened.schema.typedFor('Array).get.dataType == StructType(Array(
-      StructField("_1",StringType,true),
-      StructField("_2",IntegerType,false)
+      StructField("_1",StringType,nullable = true),
+      StructField("_2",IntegerType,nullable = false)
     )))
   }
 
@@ -143,8 +143,8 @@ class TestFlattenPlan extends SpookyEnvSuite {
 
 //    assert(flattened.schema.typedFor('Array).get.dataType == UnreifiedScalaType.apply[Tuple2[String, Int]])
     assert(flattened.schema.typedFor('Array).get.dataType == StructType(Array(
-      StructField("_1",StringType,true),
-      StructField("_2",IntegerType,false)
+      StructField("_1",StringType,nullable = true),
+      StructField("_2",IntegerType,nullable = false)
     )))
   }
 

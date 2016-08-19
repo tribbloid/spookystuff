@@ -3,7 +3,7 @@ package com.tribbloids.spookystuff.caching
 import com.tribbloids.spookystuff.{SpookyContext, dsl}
 import com.tribbloids.spookystuff.actions._
 import com.tribbloids.spookystuff.doc.Fetched
-import com.tribbloids.spookystuff.extractors.Literal
+import com.tribbloids.spookystuff.extractors.{FR, Literal}
 
 /**
   * Created by peng on 07/06/16.
@@ -59,7 +59,7 @@ trait AbstractWebCache {
       case w: Wayback =>
         Option(w.wayback).map {
           expr =>
-            val result = expr.asInstanceOf[Literal[Long]].value
+            val result = expr.asInstanceOf[Literal[FR, Long]].value
             spooky.conf.IgnoreDocsCreatedBefore match {
               case Some(date) =>
                 assert(result > date.getTime, "SpookyConf.pageNotExpiredSince cannot be set to later than wayback date")

@@ -224,4 +224,11 @@ class TestWget extends SpookyEnvSuite {
     assert(interpolated.distinct.length == rows.size)
     assert(interpolated.map(_.wayback).distinct.length == rows.size)
   }
+
+  ignore("wget.serialVersionUID should be fixed") {
+    val wget: Action = this.wget(HTML_URL)
+    val a = wget.getClass.getMethods.map(_.getName)
+    val b = wget.getClass.getDeclaredMethods.map(_.getName)
+    assert(wget.getClass.getMethod("serialVersionID").invoke(null) == 1L)
+  }
 }

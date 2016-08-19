@@ -69,17 +69,21 @@ object Extractors {
 
 object Literal {
 
-  def apply[T: TypeTag](v: T): Literal[T] = {
-    Literal[T](Option(v), UnreifiedScalaType.apply[T])
+  def apply[T: TypeTag](v: T): TypedLiteral[T] = {
+    TypedLiteral[T](Option(v), UnreifiedScalaType.apply[T])
   }
 
-  lazy val NULL: Literal[Null] = Literal(null)
+  def erase[T](v: T): ErasedLiteral[T] = {
+    ErasedLiteral[T](Option(v))
+  }
+
+  lazy val NULL: ErasedLiteral[Null] = ErasedLiteral(null)
 }
 
-class GenLiteral[T, +R](val valueOpt: Option[R], val dataType: DataType) extends Static[T, R] {
+class Literal[T, +R](val valueOpt: Option[R], val dataType: DataType) extends Static[T, R] {
 
   def value: R = valueOpt.getOrElse(
-    throw new UnsupportedOperationException("NULL Literal")
+    throw new UnsupportedOperationException("NULL value")
   )
 
   override def toString = valueOpt.map(
@@ -95,10 +99,16 @@ class GenLiteral[T, +R](val valueOpt: Option[R], val dataType: DataType) extends
 //just a simple wrapper for T, this is the only way to execute a action
 //this is the only serializable LiftedExpression that can be shipped remotely
 //TODO: not quite compatible with product2String, e.g.: /WpostImpl/Literal/Some/http/172.17.0.2/5000/registrar/(unreified)_String/MustHaveTitle/
-final case class Literal[+T](
-                              override val valueOpt: Option[T],
-                              override val dataType: DataType
-                            ) extends GenLiteral[FR, T](valueOpt, dataType) {
+sealed case class TypedLiteral[+T] (
+                                   override val valueOpt: Option[T],
+                                   override val dataType: DataType
+                                 ) extends Literal[FR, T](valueOpt, dataType) {
+}
+
+sealed case class ErasedLiteral[+T] (
+                                    override val valueOpt: Option[T]
+                                  ) extends Literal[FR, T](valueOpt, NullType) {
+
 }
 
 case class GetExpr(field: Field) extends Leaf[FR, Any] {
