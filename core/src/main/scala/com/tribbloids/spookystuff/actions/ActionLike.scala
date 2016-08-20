@@ -9,6 +9,7 @@ import com.tribbloids.spookystuff.{Const, QueryException, SpookyContext}
 import org.apache.spark.sql.catalyst.trees.TreeNode
 import org.slf4j.LoggerFactory
 
+@SerialVersionUID(8566489926281786854L)
 abstract class ActionLike extends TreeNode[ActionLike] with Product with Serializable {
 
   //TODO: this step should be broken into 2 stages for better efficiency, f1 =(resolve on driver)=> f2 =(eval on executors)=> v

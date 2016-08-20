@@ -171,6 +171,7 @@ case class Screenshot(
 
 object DefaultScreenshot extends Screenshot()
 
+@SerialVersionUID(7344992460754628988L)
 abstract class HttpMethod(
                             uri: Extractor[Any]
                           ) extends Export with Driverless with Timed with WaybackSupport {
@@ -342,7 +343,7 @@ abstract class HttpMethod(
   *
   * @param uri support cell interpolation
   */
-@SerialVersionUID(9259238L)
+@SerialVersionUID(-8687280136721213696L)
 case class Wget(
                  uri: Extractor[Any],
                  override val filter: DocFilter = Const.defaultDocumentFilter
@@ -555,6 +556,7 @@ object Wpost{
 
 }
 
+@SerialVersionUID(2416628905154681500L)
 case class WpostImpl private[actions](
                           uri: Extractor[Any],
                           override val filter: DocFilter

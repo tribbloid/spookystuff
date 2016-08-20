@@ -336,6 +336,7 @@ final case class If(
   }
 }
 
+@SerialVersionUID(8623719358582480968L)
 case class OAuthV2(self: Wget) extends Block(List(self)) with Driverless {
 
   def rewrite(session: Session): Wget = {

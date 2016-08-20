@@ -21,6 +21,7 @@ import scala.concurrent.duration.Duration
   * failed interactive will trigger an error dump by snapshot.
   * has an option to be delayed to
   */
+@SerialVersionUID(-6784287573066896999L)
 abstract class Interaction(
                             val delay: Duration,
                             val blocking: Boolean
@@ -104,6 +105,7 @@ case class Visit(
   *
   * @param delay seconds to be wait for
   */
+@SerialVersionUID(-4852391414869985193L)
 case class Delay(
                   override val delay: Duration = Const.interactionDelayMin
                 ) extends Interaction(delay, false) with Driverless {
@@ -118,6 +120,7 @@ case class Delay(
   *
   * @param delay seconds to be wait for
   */
+@SerialVersionUID(2291926240766143181L)
 case class RandomDelay(
                         override val delay: Duration = Const.interactionDelayMin,
                         maxDelay: Duration = Const.interactionDelayMax
