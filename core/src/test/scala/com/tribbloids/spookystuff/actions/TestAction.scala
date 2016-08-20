@@ -23,11 +23,11 @@ class TestAction extends SpookyEnvSuite {
 
     val rewritten = action.interpolate(FetchedRow(DataRow(data = ListMap(Field("~") -> "http://www.dummy.com")), Seq()), schema).get
 
-    val a = rewritten.uri.asInstanceOf[Literal[FR, String]].dataType.asInstanceOf[UnreifiedScalaType].ttg.tpe.normalize
-    val b = Literal("http://www.dummy.com").dataType.asInstanceOf[UnreifiedScalaType].ttg.tpe.normalize
-    val c = Literal(new Example()).dataType.asInstanceOf[UnreifiedScalaType].ttg.tpe.normalize
+//    val a = rewritten.uri.asInstanceOf[Literal[FR, String]].dataType.asInstanceOf[UnreifiedScalaType].ttg.tpe.normalize
+//    val b = Literal("http://www.dummy.com").dataType.asInstanceOf[UnreifiedScalaType].ttg.tpe.normalize
+//    val c = Literal(new Example()).dataType.asInstanceOf[UnreifiedScalaType].ttg.tpe.normalize
 
-    assert(rewritten === Wget(Literal("http://www.dummy.com")))
+    assert(rewritten === Wget(Literal.erase("http://www.dummy.com")))
     assert(rewritten.timeout(null) === randomTimeout)
     assert(FilePaths.Hierarchical.apply(rewritten :: Nil) contains "/www.dummy.com")
   }
@@ -38,9 +38,7 @@ class TestAction extends SpookyEnvSuite {
 
     val rewritten = action.interpolate(FetchedRow(DataRow(data = ListMap(Field("~") -> "http://www.dummy.com")), Seq()), schema).get
 
-    val a = Literal("http://www.dummy.com")
-
-    assert(rewritten === Wget(Literal("http://www.dummy.com")))
+    assert(rewritten === Wget(Literal.erase("http://www.dummy.com")))
     assert(rewritten.name === "dummy_name")
     assert(FilePaths.Hierarchical.apply(rewritten :: Nil) contains "/www.dummy.com")
   }

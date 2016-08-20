@@ -15,10 +15,10 @@ import com.tribbloids.spookystuff.session.{ProxySetting, Session}
 import com.tribbloids.spookystuff.utils.{HDFSResolver, SpookyUtils}
 import org.apache.commons.io.IOUtils
 import org.apache.hadoop.fs.{FileStatus, FileSystem, Path}
+import org.apache.http.client.HttpClient
 import org.apache.http.client.config.RequestConfig
 import org.apache.http.client.methods.{HttpGet, HttpPost, HttpUriRequest}
 import org.apache.http.client.protocol.HttpClientContext
-import org.apache.http.client.{ClientProtocolException, HttpClient, RedirectException}
 import org.apache.http.config.RegistryBuilder
 import org.apache.http.conn.socket.ConnectionSocketFactory
 import org.apache.http.entity.StringEntity
@@ -171,12 +171,11 @@ case class Screenshot(
 
 object DefaultScreenshot extends Screenshot()
 
-@SerialVersionUID(1L) //TODO: cleanup after Ser is fully tested
-abstract class HttpCommand(
+abstract class HttpMethod(
                             uri: Extractor[Any]
                           ) extends Export with Driverless with Timed with WaybackSupport {
 
-  lazy val uriOption: Option[URI] = {
+  @transient lazy val uriOption: Option[URI] = {
     val uriStr = uri.asInstanceOf[Literal[FR, String]].value.trim()
     if ( uriStr.isEmpty ) None
     else Some(HttpUtils.uri(uriStr))
@@ -191,7 +190,7 @@ abstract class HttpCommand(
       case obj: Any => Option(obj.toString)
       case other => None
     }
-    val uriLit = uriStr.map(Literal[String])
+    val uriLit = uriStr.map(Literal.erase[String])
     uriLit
   }
 
@@ -343,10 +342,11 @@ abstract class HttpCommand(
   *
   * @param uri support cell interpolation
   */
+@SerialVersionUID(9259238L)
 case class Wget(
                  uri: Extractor[Any],
                  override val filter: DocFilter = Const.defaultDocumentFilter
-               ) extends HttpCommand(uri) {
+               ) extends HttpMethod(uri) {
 
   override protected def doExeNoName(session: Session): Seq[Fetched] = {
 
@@ -560,7 +560,7 @@ case class WpostImpl private[actions](
                           override val filter: DocFilter
                         )(
                           entity: HttpEntity // TODO: cannot be dumped or serialized
-                        ) extends HttpCommand(uri) {
+                        ) extends HttpMethod(uri) {
 
   // not cacheable
   override protected def doExeNoName(session: Session): Seq[Fetched] = {

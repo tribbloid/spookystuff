@@ -281,4 +281,19 @@ These special characters are often called "metacharacters".
     effectiveElements
       .slice(2, Int.MaxValue)
   }
+
+  def longHash(string: String): Long = {
+    var h: Long = 1125899906842597L // prime
+    val len: Int = string.length
+    var i: Int = 0
+    while (i < len) {
+      {
+        h = 31 * h + string.charAt(i)
+      }
+      {
+        i += 1; i - 1
+      }
+    }
+    h
+  }
 }
