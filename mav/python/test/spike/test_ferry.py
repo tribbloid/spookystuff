@@ -1,11 +1,11 @@
 from __future__ import print_function
 import time
 from dronekit import connect, VehicleMode, LocationGlobalRelative
-from dronekit.test import with_sitl
+from python.test import with_sitl, with_sitl_udp, with_sitl_multi
 from nose.tools import assert_equals
 
 
-@with_sitl
+@with_sitl_multi
 def test_ferry(connpath):
     vehicle = connect(connpath, wait_ready=True)
 
@@ -31,7 +31,7 @@ def test_ferry(connpath):
         vehicle.mode = VehicleMode("GUIDED")
         i = 60
         while vehicle.mode.name != 'GUIDED' and i > 0:
-            # print " Waiting for guided %s seconds..." % (i,)
+            print(" Waiting for guided %s seconds..." % (i,))
             time.sleep(1)
             i = i - 1
         assert_equals(vehicle.mode.name, 'GUIDED')
@@ -40,7 +40,7 @@ def test_ferry(connpath):
         vehicle.armed = True
         i = 60
         while not vehicle.armed and vehicle.mode.name == 'GUIDED' and i > 0:
-            # print " Waiting for arming %s seconds..." % (i,)
+            print(" Waiting for arming %s seconds..." % (i,))
             time.sleep(1)
             i = i - 1
         assert_equals(vehicle.armed, True)
@@ -52,34 +52,34 @@ def test_ferry(connpath):
         # processing the goto (otherwise the command after
         # Vehicle.simple_takeoff will execute immediately).
         while True:
-            # print " Altitude: ", vehicle.location.alt
+            print(" Altitude: ", vehicle.location.global_relative_frame.alt)
             # Test for altitude just below target, in case of undershoot.
-            if vehicle.location.global_frame.alt >= aTargetAltitude * 0.95:
-                # print "Reached target altitude"
+            if vehicle.location.global_relative_frame.alt >= aTargetAltitude * 0.95:
+                print("Reached target altitude")
                 break
 
             assert_equals(vehicle.mode.name, 'GUIDED')
             time.sleep(1)
 
-    arm_and_takeoff(10)
+    arm_and_takeoff(20)
 
     point1 = LocationGlobalRelative(-35.361354, 149.165218, 20)
-    point2 = LocationGlobalRelative(-35.363244, 149.168801, 20)
+    point2 = LocationGlobalRelative(-36.363244, 149.168801, 100)
 
     for i in range(1, 10000):
         print("Going to first point...")
         vehicle.simple_goto(point1)
 
         # sleep so we can see the change in map
-        time.sleep(3)
+        time.sleep(30)
 
         print("Going to second point...")
         vehicle.simple_goto(point2)
 
         # sleep so we can see the change in map
-        time.sleep(3)
+        time.sleep(30)
 
-        # print "Returning to Launch"
-        vehicle.mode = VehicleMode("RTL")
+    print("Returning to Launch")
+    vehicle.mode = VehicleMode("RTL")
 
     vehicle.close()

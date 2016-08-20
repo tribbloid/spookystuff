@@ -171,6 +171,7 @@ case class Screenshot(
 
 object DefaultScreenshot extends Screenshot()
 
+@SerialVersionUID(1L) //TODO: cleanup after Ser is fully tested
 abstract class HttpCommand(
                             uri: Extractor[Any]
                           ) extends Export with Driverless with Timed with WaybackSupport {

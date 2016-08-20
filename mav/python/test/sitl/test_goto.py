@@ -9,7 +9,7 @@ Full documentation is provided at http://python.dronekit.io/examples/simple_goto
 
 import time
 from dronekit import connect, VehicleMode, LocationGlobalRelative
-from dronekit.test import with_sitl
+from python.test import with_sitl
 from nose.tools import assert_equals
 
 

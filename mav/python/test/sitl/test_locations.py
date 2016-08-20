@@ -1,6 +1,6 @@
 import time
 from dronekit import connect, VehicleMode, LocationGlobal
-from dronekit.test import with_sitl, wait_for
+from python.test import with_sitl, wait_for
 from nose.tools import assert_equals, assert_not_equals
 
 

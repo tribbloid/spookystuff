@@ -1,7 +1,7 @@
 import time
 
 from dronekit import VehicleMode, connect
-from dronekit.test import with_sitl
+from python.test import with_sitl
 from nose.tools import assert_false, assert_true
 
 

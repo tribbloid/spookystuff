@@ -2,7 +2,7 @@ import time
 import math
 from dronekit import connect
 from dronekit.mavlink import MAVConnection
-from dronekit.test import with_sitl
+from python.test import with_sitl
 from nose.tools import assert_not_equals, assert_equals
 
 

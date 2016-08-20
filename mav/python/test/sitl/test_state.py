@@ -3,7 +3,7 @@ import sys
 import os
 import socket
 from dronekit import connect, VehicleMode, SystemStatus
-from dronekit.test import with_sitl
+from python.test import with_sitl
 from nose.tools import assert_equals
 
 

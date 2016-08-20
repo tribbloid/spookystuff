@@ -41,3 +41,6 @@ foo
 
 #aws key
 # **/rootkey.csv
+
+#mavproxy test log
+mav/test.*
