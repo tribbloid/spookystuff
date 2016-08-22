@@ -13,7 +13,7 @@ import org.apache.spark.{SerializableWritable, SparkConf}
 
 /*
  * to make it resilient to asynchronous read/write, let output rename the file, write it, and rename back,
- * and let input wait for file name's reversion if its renamed by another node
+ * and let input wait for file name's reversion if its renamed by another node.
  *
  * also, can ONLY resolve ABSOLUTE path! since its instances cannot be guaranteed to be in the same JVM,
  * this is the only way to guarantee that files are not affected by their respective working directory.
@@ -152,7 +152,7 @@ case class HDFSResolver(
   //SpookyUtils.retry(Const.DFSLocalRetries)
   def input[T](pathStr: String)(f: InputStream => T): T = {
     val path: Path = new Path(pathStr)
-//    ensureAbsolute(path)
+    //    ensureAbsolute(path)
 
     val fs = path.getFileSystem(configWrapper.value)
 
@@ -180,7 +180,7 @@ case class HDFSResolver(
 
   override def output[T](pathStr: String, overwrite: Boolean)(f: (OutputStream) => T): T = SpookyUtils.retry(3){
     val path = new Path(pathStr)
-//    ensureAbsolute(path)
+    //    ensureAbsolute(path)
 
     val fs = path.getFileSystem(configWrapper.value)
 
@@ -199,7 +199,7 @@ case class HDFSResolver(
   override def lockAccessDuring[T](pathStr: String)(f: (String) => T): T = {
 
     val path = new Path(pathStr)
-//    ensureAbsolute(path)
+    //    ensureAbsolute(path)
     val fs: hadoop.fs.FileSystem = path.getFileSystem(configWrapper.value)
 
     val lockedPath = new Path(pathStr + lockedSuffix)
@@ -208,15 +208,23 @@ case class HDFSResolver(
       assert(!fs.exists(lockedPath), s"File $pathStr is locked by another executor or thread")
     }
 
-    if (fs.exists(path)) fs.rename(path, lockedPath)
+    val fileExists = fs.exists(path)
+    if (fileExists) {
+      fs.rename(path, lockedPath)
+      SpookyUtils.retry(Const.DFSBlockedAccessRetries) {
+        assert(fs.exists(lockedPath), s"Renaming of $pathStr is incomplete")
+      }
+    }
 
     try {
       val result = f(lockedPath.toString)
       result
     }
     finally {
-      fs.rename(lockedPath, path)
-      fs.delete(lockedPath, true)
+      if (fileExists) {
+        fs.rename(lockedPath, path)
+        fs.delete(lockedPath, true)
+      }
     }
   }
 
