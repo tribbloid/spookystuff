@@ -44,12 +44,14 @@ object LocalResolver extends PathResolver {
 
   val lockedSuffix: String = ".locked"
 
-  def ensureAbsolute(file: File) = assert(file.isAbsolute, s"BAD DESIGN: ${file.getPath} is not an absolute path")
+  def ensureAbsolute(file: File) = {
+    assert(file.isAbsolute, s"BAD DESIGN: ${file.getPath} is not an absolute path")
+  }
 
   override def input[T](pathStr: String)(f: (InputStream) => T): T = {
 
     val file = new File(pathStr)
-    ensureAbsolute(file)
+//    ensureAbsolute(file)
 
     if (!pathStr.endsWith(lockedSuffix)) {
       //wait for its locked file to finish its locked session
@@ -77,7 +79,7 @@ object LocalResolver extends PathResolver {
   override def output[T](pathStr: String, overwrite: Boolean)(f: (OutputStream) => T): T = {
 
     val file = new File(pathStr)
-    ensureAbsolute(file)
+//    ensureAbsolute(file)
 
     if (file.exists() && !overwrite) throw new FileAlreadyExistsException(s"$pathStr already exists")
     else if (!file.exists()) {
@@ -100,7 +102,7 @@ object LocalResolver extends PathResolver {
   override def lockAccessDuring[T](pathStr: String)(f: (String) => T): T = {
 
     val file = new File(pathStr)
-    ensureAbsolute(file)
+//    ensureAbsolute(file)
 
     val lockedPath = pathStr + lockedSuffix
     val lockedFile = new File(lockedPath)

@@ -67,6 +67,7 @@ object SpookyUtils {
       fn
     }
 
+    //TODO: this doesn't terminate the future upon timeout exception! need a better pattern.
     Await.result(future, n)
   }
 
