@@ -12,7 +12,7 @@ import com.tribbloids.spookystuff.row.{DataRow, FetchedRow, Field, SquashedFetch
 class TestDSL extends SpookyEnvSuite {
 
   lazy val pages = (
-    Wget("http://www.wikipedia.org/") ~ 'page  :: Nil
+    Wget(HTML_URL) ~ 'page  :: Nil
   ).fetch(spooky)
 
   lazy val row = SquashedFetchedRow.withDocs(dataRows = Array(DataRow()), docs = pages)
@@ -49,7 +49,7 @@ class TestDSL extends SpookyEnvSuite {
 
   test("double quotes in selector by attribute should work") {
     val pages = (
-      Wget("http://www.wikipedia.org/") :: Nil
+      Wget(HTML_URL) :: Nil
       ).fetch(spooky).toArray
     val row = SquashedFetchedRow.withDocs(Array(DataRow()), docs = pages)
       .extract(S"""a[href*="wikipedia"]""".href withAlias 'uri)
@@ -59,9 +59,9 @@ class TestDSL extends SpookyEnvSuite {
   }
 
   test("uri"){
-    assert(S.uri.apply(row) contains "://www.wikipedia.org/")
-    assert('page.uri.apply(row) contains "://www.wikipedia.org/")
-    assert('def.uri.apply(row) contains "://www.wikipedia.org/")
+    assert(S.uri.apply(row) contains HTML_URL)
+    assert('page.uri.apply(row) contains HTML_URL)
+    assert('def.uri.apply(row) contains HTML_URL)
   }
 
   test("string interpolation") {

@@ -63,7 +63,7 @@ trait TestMixin {
 
       expected.foreach {
         tuple =>
-          val actual = map(tuple._1)
+          val actual = map.getOrElse(tuple._1, throw new AssertionError(s"${tuple._1} doesn't exist in map"))
           assert(actual == tuple._2, s"${tuple._1} mismatch: expected ${tuple._2} =/= actual $actual")
       }
     }
