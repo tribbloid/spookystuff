@@ -6,8 +6,8 @@ import org.apache.spark.{Accumulator, AccumulatorParam}
 import scala.collection.immutable.ListMap
 
 /**
- * Created by peng on 03/10/15.
- */
+  * Created by peng on 03/10/15.
+  */
 object Metrics {
 
   private def accumulator[T](initialValue: T, name: String)(implicit param: AccumulatorParam[T]) = {
@@ -44,7 +44,7 @@ case class Metrics(
                     fetchFromRemoteFailure: Accumulator[Int] = Metrics.accumulator(0, "fetchFromRemoteFailure"),
 
                     pagesSaved: Accumulator[Int] = Metrics.accumulator(0, "pagesSaved")
-                    ) {
+                  ) {
 
   def toJSON: String = {
 

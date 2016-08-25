@@ -1,7 +1,5 @@
 package com.tribbloids.spookystuff.tests
 
-import java.net.URLEncoder
-
 import org.apache.spark.SparkEnv
 import org.apache.spark.serializer.{JavaSerializer, KryoSerializer, Serializer}
 
@@ -57,6 +55,23 @@ trait TestMixin {
 //          s"${URLEncoder.encode(contains,"UTF-8")}"
 //      )
 //    }
+  }
+
+  implicit class TestMapView[K, V](map: scala.collection.Map[K, V]) {
+
+    def shouldBe(expected: scala.collection.Map[K, V]): Unit = {
+
+      expected.foreach {
+        tuple =>
+          val actual = map(tuple._1)
+          assert(actual == tuple._2, s"${tuple._1} mismatch: expected ${tuple._2} =/= actual $actual")
+      }
+    }
+
+
+    def shouldBe(expected: (K, V)*): Unit = {
+      this.shouldBe(Map(expected: _*))
+    }
   }
 
   def assureSerializable[T <: AnyRef: ClassTag](
