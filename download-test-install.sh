@@ -12,4 +12,4 @@ tar -xzf "$SPARK_DIR_NAME".tgz
 export SPARK_HOME="$CRDIR"/"$SPARK_DIR_NAME"
 echo $SPARK_HOME
 
-./test-install.sh
+exec test-install.sh
