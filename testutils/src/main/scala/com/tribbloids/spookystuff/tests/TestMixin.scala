@@ -59,15 +59,25 @@ trait TestMixin {
 
   implicit class TestMapView[K, V](map: scala.collection.Map[K, V]) {
 
+    assert(map != null)
+
     def shouldBe(expected: scala.collection.Map[K, V]): Unit = {
 
-      expected.foreach {
+      val messages = expected.toSeq.flatMap {
         tuple =>
-          val actual = map.getOrElse(tuple._1, throw new AssertionError(s"${tuple._1} doesn't exist in map"))
-          assert(actual == tuple._2, s"${tuple._1} mismatch: expected ${tuple._2} =/= actual $actual")
+          val messageOpt = map.get(tuple._1) match {
+            case None =>
+              Some(s"${tuple._1} doesn't exist in map")
+            case Some(v) =>
+              if (v == tuple._2) None
+              else Some(s"${tuple._1} mismatch: expected ${tuple._2} =/= actual $v")
+          }
+          messageOpt
       }
-    }
 
+      if (messages.nonEmpty)
+        throw new AssertionError("Assertion failure: {\n" + messages.mkString("\n") + "\n}")
+    }
 
     def shouldBe(expected: (K, V)*): Unit = {
       this.shouldBe(Map(expected: _*))
