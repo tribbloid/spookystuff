@@ -1,6 +1,6 @@
 package com.tribbloids.spookystuff.session
 
-import com.tribbloids.spookystuff.{PythonException, SpookyEnvSuite}
+import com.tribbloids.spookystuff.{PythonException, SpookyEnvFixture}
 
 /**
   * Created by peng on 01/08/16.
@@ -30,7 +30,7 @@ object PythonDriverSuite {
   }
 }
 
-class PythonDriverSuite extends SpookyEnvSuite {
+class PythonDriverSuite extends SpookyEnvFixture {
 
   test("sendAndGetResult should work in single thread") {
     PythonDriverSuite.send1PlusX(1 to 100)

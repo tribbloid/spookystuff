@@ -1,6 +1,6 @@
 package com.tribbloids.spookystuff.caching
 
-import com.tribbloids.spookystuff.SpookyEnvSuite
+import com.tribbloids.spookystuff.SpookyEnvFixture
 import com.tribbloids.spookystuff.actions.{Snapshot, Visit, Wget}
 import com.tribbloids.spookystuff.doc.{Doc, DocUID}
 import com.tribbloids.spookystuff.dsl._
@@ -10,7 +10,7 @@ import scala.concurrent.duration._
 /**
  * Created by peng on 10/17/14.
  */
-class TestInMemoryWebCache extends SpookyEnvSuite {
+class TestInMemoryWebCache extends SpookyEnvFixture {
 
   lazy val cache: AbstractWebCache = InMemoryWebCache
 

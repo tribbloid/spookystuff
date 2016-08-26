@@ -1,6 +1,6 @@
 package com.tribbloids.spookystuff.utils
 
-import com.tribbloids.spookystuff.SpookyEnvSuite
+import com.tribbloids.spookystuff.SpookyEnvFixture
 import com.tribbloids.spookystuff.actions.{Action, ActionUDT}
 import org.apache.spark.sql.catalyst.ScalaReflection
 import org.apache.spark.sql.types._
@@ -8,7 +8,7 @@ import org.apache.spark.sql.types._
 /**
   * Created by peng on 08/06/16.
   */
-class TypeConverterSuite extends SpookyEnvSuite {
+class TypeConverterSuite extends SpookyEnvFixture {
 
   import ScalaReflection.universe._
   import ImplicitUtils._

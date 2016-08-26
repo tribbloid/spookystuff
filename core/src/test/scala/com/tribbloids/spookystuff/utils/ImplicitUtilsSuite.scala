@@ -1,13 +1,13 @@
 package com.tribbloids.spookystuff.utils
 
-import com.tribbloids.spookystuff.SpookyEnvSuite
+import com.tribbloids.spookystuff.SpookyEnvFixture
 
 import scala.util.Random
 
 /**
   * Created by peng on 16/11/15.
   */
-class ImplicitUtilsSuite extends SpookyEnvSuite {
+class ImplicitUtilsSuite extends SpookyEnvFixture {
 
   import ImplicitUtils._
 

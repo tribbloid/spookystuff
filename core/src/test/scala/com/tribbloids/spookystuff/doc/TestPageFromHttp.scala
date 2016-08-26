@@ -1,10 +1,10 @@
 package com.tribbloids.spookystuff.doc
 
 import com.tribbloids.spookystuff.actions.Wget
-import com.tribbloids.spookystuff.{SpookyEnvSuite, dsl}
+import com.tribbloids.spookystuff.{SpookyEnvFixture, dsl}
 import org.apache.commons.csv.CSVFormat
 
-class TestPageFromHttp extends SpookyEnvSuite {
+class TestPageFromHttp extends SpookyEnvFixture {
 
   import dsl._
 

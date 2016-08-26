@@ -12,7 +12,7 @@ import org.scalatest.{BeforeAndAfter, BeforeAndAfterAll, FunSuite, Retries}
 
 import scala.language.implicitConversions
 
-abstract class SpookyEnvSuite
+abstract class SpookyEnvFixture
   extends FunSuite
     with BeforeAndAfter
     with BeforeAndAfterAll

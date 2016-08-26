@@ -1,14 +1,14 @@
 package com.tribbloids.spookystuff.doc
 
 import org.apache.spark.SparkEnv
-import com.tribbloids.spookystuff.SpookyEnvSuite
+import com.tribbloids.spookystuff.SpookyEnvFixture
 import com.tribbloids.spookystuff.actions._
 import com.tribbloids.spookystuff.dsl
 
 /**
  * Created by peng on 11/30/14.
  */
-class TestUnstructured extends SpookyEnvSuite {
+class TestUnstructured extends SpookyEnvFixture {
 
   import dsl._
 

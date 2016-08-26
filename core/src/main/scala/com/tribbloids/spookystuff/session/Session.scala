@@ -7,10 +7,27 @@ import com.tribbloids.spookystuff.actions._
 import com.tribbloids.spookystuff.utils.SpookyUtils
 import com.tribbloids.spookystuff.{Const, SpookyContext, SpookyException}
 import org.apache.spark.TaskContext
+import org.apache.spark.ml.dsl.utils.{StructRelay, StructRepr}
 import org.openqa.selenium.{Dimension, NoSuchSessionException, WebDriver}
 import org.slf4j.LoggerFactory
 
 import scala.collection.mutable.ArrayBuffer
+
+case object SessionRelay extends StructRelay[Session] {
+
+  case class Repr(
+                   startTime: Long,
+                   backtrace: Seq[Action],
+                   TaskContext: Map[String, Int]
+                 ) extends StructRepr[Session] {
+
+    override def toSelf: Session = ???
+  }
+
+  override def toRepr(v: Session): Repr = {
+    ???
+  }
+}
 
 abstract class Session(val spooky: SpookyContext) {
 

@@ -1,12 +1,12 @@
 package com.tribbloids.spookystuff.utils
 
-import com.tribbloids.spookystuff.SpookyEnvSuite
+import com.tribbloids.spookystuff.SpookyEnvFixture
 import org.apache.spark.SparkException
 
 case class Whatever(str: String)
 case class WhateverAgain(str: String) extends NOTSerializableMixinSuite
 
-class NOTSerializableMixinSuite extends SpookyEnvSuite {
+class NOTSerializableMixinSuite extends SpookyEnvFixture {
 
   test("case class is serializable") {
     val whatever = new Whatever("abc")

@@ -1,6 +1,6 @@
 package com.tribbloids.spookystuff.utils
 
-import com.tribbloids.spookystuff.SpookyEnvSuite
+import com.tribbloids.spookystuff.SpookyEnvFixture
 import com.tribbloids.spookystuff.actions.Action
 import com.tribbloids.spookystuff.doc.{Doc, Fetched, Unstructured}
 import com.tribbloids.spookystuff.tests.TestMixin
@@ -9,7 +9,7 @@ import org.apache.spark.sql.types.DataType
 /**
   * Created by peng on 28/05/16.
   */
-class ScalaUDTSuite extends SpookyEnvSuite with TestMixin {
+class ScalaUDTSuite extends SpookyEnvFixture with TestMixin {
 
   import ImplicitUtils._
   import org.apache.spark.sql.catalyst.ScalaReflection.universe._

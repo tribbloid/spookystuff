@@ -1,13 +1,13 @@
 package com.tribbloids.spookystuff.execution
 
-import com.tribbloids.spookystuff.SpookyEnvSuite
+import com.tribbloids.spookystuff.SpookyEnvFixture
 import com.tribbloids.spookystuff.extractors.Literal
 import com.tribbloids.spookystuff.row.DataRowSchema
 
 /**
   * Created by peng on 14/06/16.
   */
-class SchemaContextSuite extends SpookyEnvSuite{
+class SchemaContextSuite extends SpookyEnvFixture{
 
   import com.tribbloids.spookystuff.dsl._
 

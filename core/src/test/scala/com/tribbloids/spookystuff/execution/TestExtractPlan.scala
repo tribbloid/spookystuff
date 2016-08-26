@@ -1,11 +1,11 @@
 package com.tribbloids.spookystuff.execution
 
-import com.tribbloids.spookystuff.{SpookyEnvSuite, dsl}
+import com.tribbloids.spookystuff.{SpookyEnvFixture, dsl}
 
 /**
   * Created by peng on 02/04/16.
   */
-class TestExtractPlan extends SpookyEnvSuite {
+class TestExtractPlan extends SpookyEnvFixture {
 
   import dsl._
 

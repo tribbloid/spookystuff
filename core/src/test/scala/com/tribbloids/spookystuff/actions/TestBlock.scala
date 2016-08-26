@@ -2,11 +2,11 @@ package com.tribbloids.spookystuff.actions
 
 import java.util.Date
 
-import com.tribbloids.spookystuff.SpookyEnvSuite
+import com.tribbloids.spookystuff.SpookyEnvFixture
 import com.tribbloids.spookystuff.extractors.Literal
 import com.tribbloids.spookystuff.session.DriverSession
 
-class TestBlock extends SpookyEnvSuite {
+class TestBlock extends SpookyEnvFixture {
 
   import com.tribbloids.spookystuff.dsl._
 

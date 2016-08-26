@@ -4,14 +4,14 @@ import com.tribbloids.spookystuff.dsl._
 import com.tribbloids.spookystuff.extractors.{Example, FR, Literal}
 import com.tribbloids.spookystuff.row.{DataRow, FetchedRow, Field}
 import com.tribbloids.spookystuff.utils.UnreifiedScalaType
-import com.tribbloids.spookystuff.{Const, SpookyEnvSuite}
+import com.tribbloids.spookystuff.{Const, SpookyEnvFixture}
 import org.apache.spark.rdd.RDD
 
 import scala.collection.immutable.ListMap
 import scala.concurrent.duration
 import scala.util.Random
 
-class TestAction extends SpookyEnvSuite {
+class TestAction extends SpookyEnvFixture {
 
   import duration._
 

@@ -1,12 +1,12 @@
 package com.tribbloids.spookystuff.row
 
-import com.tribbloids.spookystuff.SpookyEnvSuite
+import com.tribbloids.spookystuff.SpookyEnvFixture
 import com.tribbloids.spookystuff.actions.{Snapshot, Visit}
 
 /**
   * Created by peng on 05/04/16.
   */
-class SquashedFetchedRowSuite extends SpookyEnvSuite {
+class SquashedFetchedRowSuite extends SpookyEnvFixture {
 
   import com.tribbloids.spookystuff.dsl._
 

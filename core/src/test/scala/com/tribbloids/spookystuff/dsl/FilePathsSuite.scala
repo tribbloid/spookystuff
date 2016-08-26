@@ -1,9 +1,9 @@
 package com.tribbloids.spookystuff.dsl
 
 import com.tribbloids.spookystuff.actions._
-import com.tribbloids.spookystuff.{SpookyEnvSuite, dsl}
+import com.tribbloids.spookystuff.{SpookyEnvFixture, dsl}
 
-class FilePathsSuite extends SpookyEnvSuite{
+class FilePathsSuite extends SpookyEnvFixture{
 
   import dsl._
   import scala.concurrent.duration._

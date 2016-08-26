@@ -3,13 +3,13 @@ package com.tribbloids.spookystuff.execution
 import com.tribbloids.spookystuff.actions.Wget
 import com.tribbloids.spookystuff.tests.LocalPathDocsFixture
 import com.tribbloids.spookystuff.utils.SpookyUtils
-import com.tribbloids.spookystuff.{QueryException, SpookyEnvSuite, dsl}
+import com.tribbloids.spookystuff.{QueryException, SpookyEnvFixture, dsl}
 import org.apache.spark.HashPartitioner
 
 /**
   * Created by peng on 05/04/16.
   */
-class TestExplorePlan extends SpookyEnvSuite with LocalPathDocsFixture {
+class TestExplorePlan extends SpookyEnvFixture with LocalPathDocsFixture {
 
   import dsl._
 

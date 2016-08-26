@@ -1,6 +1,6 @@
 package com.tribbloids.spookystuff.extractors
 
-import com.tribbloids.spookystuff.SpookyEnvSuite
+import com.tribbloids.spookystuff.SpookyEnvFixture
 
 import scala.runtime.AbstractPartialFunction
 
@@ -41,7 +41,7 @@ object GenExtractorSuite {
   }
 }
 
-class GenExtractorSuite extends SpookyEnvSuite {
+class GenExtractorSuite extends SpookyEnvFixture {
 
   import GenExtractorSuite._
   import com.tribbloids.spookystuff.dsl._

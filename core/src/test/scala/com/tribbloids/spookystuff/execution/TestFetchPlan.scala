@@ -1,13 +1,13 @@
 package com.tribbloids.spookystuff.execution
 
 import com.tribbloids.spookystuff.actions.Wget
-import com.tribbloids.spookystuff.{SpookyEnvSuite, dsl}
+import com.tribbloids.spookystuff.{SpookyEnvFixture, dsl}
 import org.apache.spark.HashPartitioner
 
 /**
   * Created by peng on 02/04/16.
   */
-class TestFetchPlan extends SpookyEnvSuite {
+class TestFetchPlan extends SpookyEnvFixture {
 
   import dsl._
 

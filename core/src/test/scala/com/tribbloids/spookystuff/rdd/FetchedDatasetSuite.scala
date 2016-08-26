@@ -1,12 +1,12 @@
 package com.tribbloids.spookystuff.rdd
 
 import com.tribbloids.spookystuff.actions._
-import com.tribbloids.spookystuff.{SpookyEnvSuite, dsl}
+import com.tribbloids.spookystuff.{SpookyEnvFixture, dsl}
 
 /**
   * Created by peng on 5/10/15.
   */
-class FetchedDatasetSuite extends SpookyEnvSuite {
+class FetchedDatasetSuite extends SpookyEnvFixture {
 
   import dsl._
 

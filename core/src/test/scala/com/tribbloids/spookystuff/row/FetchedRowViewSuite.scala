@@ -1,14 +1,14 @@
 package com.tribbloids.spookystuff.row
 
 import com.tribbloids.spookystuff.actions.Wget
-import com.tribbloids.spookystuff.{SpookyEnvSuite, dsl}
+import com.tribbloids.spookystuff.{SpookyEnvFixture, dsl}
 
 import scala.language.implicitConversions
 
 /**
   * Created by peng on 12/3/14.
   */
-class FetchedRowViewSuite extends SpookyEnvSuite {
+class FetchedRowViewSuite extends SpookyEnvFixture {
 
   import dsl._
 

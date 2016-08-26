@@ -4,7 +4,7 @@ import com.tribbloids.spookystuff.actions._
 import com.tribbloids.spookystuff.dsl._
 import com.tribbloids.spookystuff.row.Field
 
-class SpookyContextSuite extends SpookyEnvSuite{
+class SpookyContextSuite extends SpookyEnvFixture{
 
   test("SpookyContext should be Serializable") {
 

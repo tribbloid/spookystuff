@@ -1,6 +1,6 @@
 package com.tribbloids.spookystuff.execution
 
-import com.tribbloids.spookystuff.SpookyEnvSuite
+import com.tribbloids.spookystuff.SpookyEnvFixture
 import com.tribbloids.spookystuff.extractors.Literal
 import com.tribbloids.spookystuff.utils.UnreifiedScalaType
 import org.apache.spark.sql.types.{IntegerType, StringType, StructField, StructType}
@@ -8,7 +8,7 @@ import org.apache.spark.sql.types.{IntegerType, StringType, StructField, StructT
 /**
   * Created by peng on 17/05/16.
   */
-class TestFlattenPlan extends SpookyEnvSuite {
+class TestFlattenPlan extends SpookyEnvFixture {
 
   import com.tribbloids.spookystuff.dsl._
 

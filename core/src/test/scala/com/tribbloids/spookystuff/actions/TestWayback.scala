@@ -2,12 +2,12 @@ package com.tribbloids.spookystuff.actions
 
 import java.util.Date
 
-import com.tribbloids.spookystuff.{QueryException, SpookyEnvSuite}
+import com.tribbloids.spookystuff.{QueryException, SpookyEnvFixture}
 
 /**
  * Created by peng on 08/09/15.
  */
-class TestWayback extends SpookyEnvSuite {
+class TestWayback extends SpookyEnvFixture {
 
   import com.tribbloids.spookystuff.dsl._
 

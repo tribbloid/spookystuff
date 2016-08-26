@@ -2,9 +2,9 @@ package com.tribbloids.spookystuff.doc
 
 import com.tribbloids.spookystuff.actions.{Snapshot, Visit}
 import com.tribbloids.spookystuff.session.DriverSession
-import com.tribbloids.spookystuff.{SpookyEnvSuite, dsl}
+import com.tribbloids.spookystuff.{SpookyEnvFixture, dsl}
 
-class TestPageFromBrowser extends SpookyEnvSuite {
+class TestPageFromBrowser extends SpookyEnvFixture {
 
   import dsl._
 

@@ -1,6 +1,6 @@
 package com.tribbloids.spookystuff.extractors
 
-import com.tribbloids.spookystuff.SpookyEnvSuite
+import com.tribbloids.spookystuff.SpookyEnvFixture
 import com.tribbloids.spookystuff.actions.{Action, ActionUDT, Wget}
 import com.tribbloids.spookystuff.doc.Doc
 import com.tribbloids.spookystuff.tests.TestHelper
@@ -10,7 +10,7 @@ import org.apache.spark.sql.types._
   * Created by peng on 09/07/16.
   */
 
-class ScalaDynamicExtractorSuite extends SpookyEnvSuite {
+class ScalaDynamicExtractorSuite extends SpookyEnvFixture {
 
   import com.tribbloids.spookystuff.dsl._
   import com.tribbloids.spookystuff.utils.ImplicitUtils._

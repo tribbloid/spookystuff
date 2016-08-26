@@ -2,7 +2,7 @@ package com.tribbloids.spookystuff.actions
 
 import java.sql.Timestamp
 
-import com.tribbloids.spookystuff.SpookyEnvSuite
+import com.tribbloids.spookystuff.SpookyEnvFixture
 import com.tribbloids.spookystuff.doc.Doc
 import com.tribbloids.spookystuff.rdd.FetchedDataset
 import com.tribbloids.spookystuff.tests.Tor
@@ -17,7 +17,7 @@ object TestWget {
 }
 
 @Retryable
-class TestWget extends SpookyEnvSuite {
+class TestWget extends SpookyEnvFixture {
 
   import com.tribbloids.spookystuff.dsl._
 
