@@ -4,6 +4,7 @@ import java.util.Date
 
 import com.tribbloids.spookystuff.SpookyEnvSuite
 import com.tribbloids.spookystuff.extractors.Literal
+import com.tribbloids.spookystuff.session.DriverSession
 
 class TestBlock extends SpookyEnvSuite {
 
@@ -17,7 +18,13 @@ class TestBlock extends SpookyEnvSuite {
       Delay(10.seconds) +> Wget("ftp://www.dummy.co")
     )
 
-    assert(!loop.needDriver)
+    val session = new DriverSession(
+      this.spooky
+    )
+    loop.exe(session)
+
+    assert(session.webDriverOpt.isEmpty)
+//    assert(!loop.needDriver)
   }
 
   test("try without export won't need driver") {
@@ -27,7 +34,12 @@ class TestBlock extends SpookyEnvSuite {
       Delay(10.seconds) +> Wget("ftp://www.dummy.org")
     )
 
-    assert(!tryy.needDriver)
+    val session = new DriverSession(
+      this.spooky
+    )
+    tryy.exe(session)
+
+    assert(session.webDriverOpt.isEmpty)
   }
 
   test("Try(Wget) can failsafe on malformed uri") {

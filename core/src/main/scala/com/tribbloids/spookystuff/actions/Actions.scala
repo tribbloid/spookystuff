@@ -23,8 +23,6 @@ abstract class Actions(override val children: Trace) extends ActionLike {
       tuple._1.injectFrom(tuple._2.asInstanceOf[tuple._1.type ]) //recursive
     }
   }
-
-  override def needDriver = children.map(_.needDriver).reduce(_ || _)
 }
 
 object Actions {

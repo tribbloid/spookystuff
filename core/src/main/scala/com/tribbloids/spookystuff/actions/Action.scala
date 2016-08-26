@@ -230,8 +230,6 @@ trait Named extends Action {
 }
 
 trait Driverless extends Action {
-
-  override def needDriver = false
 }
 
 trait Wayback extends Action {

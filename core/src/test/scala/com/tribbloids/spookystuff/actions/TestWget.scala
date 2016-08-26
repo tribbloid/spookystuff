@@ -57,12 +57,7 @@ class TestWget extends SpookyEnvSuite {
     val newIP = {
       spooky.conf.proxy = ProxyFactories.Tor
 
-      val results = (
-        wget("https://www.astrill.com/what-is-my-ip-address.php") :: Nil
-        )
-        .fetch(spooky)
-
-      results.head.asInstanceOf[Doc].findAll("h1").texts.head
+      getIP
     }
 
     assert(newIP !== null)
@@ -95,26 +90,27 @@ class TestWget extends SpookyEnvSuite {
   //    assert(newIP !== noProxyIP2)
   //  }
 
+  def getIP: String = {
+    val results = (
+      wget(IP_URL) :: Nil
+      )
+      .fetch(spooky)
+
+    results.head.asInstanceOf[Doc].code.get
+  }
+
   test("revert from TOR socks5 proxy for https wget", Tag(classOf[Tor].getCanonicalName)) {
 
     val newIP = {
       spooky.conf.proxy = ProxyFactories.Tor
 
-      val results = (
-        wget("https://www.astrill.com/what-is-my-ip-address.php") :: Nil
-        ).fetch(spooky)
-
-      results.head.asInstanceOf[Doc].findAll("h1").texts.head
+      getIP
     }
 
     val noProxyIP2 = {
       spooky.conf.proxy = ProxyFactories.NoProxy
 
-      val results = (
-        wget("https://www.astrill.com/what-is-my-ip-address.php") :: Nil
-        ).fetch(spooky)
-
-      results.head.asInstanceOf[Doc].findAll("h1").texts.head
+      getIP
     }
 
     assert(newIP !== noProxyIP2)

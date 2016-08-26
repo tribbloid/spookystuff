@@ -12,7 +12,7 @@ import scala.util.{Failure, Success, Try}
 //case class PythonException(
 //
 //                          ) extends SpookyException()
-
+//TODO: not reusing Python worker for spark, is it not optimal?
 case class PythonDriver(
                          binPath: String
                        ) extends PythonProcess(binPath) with Clean {

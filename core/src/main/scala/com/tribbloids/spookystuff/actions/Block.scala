@@ -1,14 +1,13 @@
 package com.tribbloids.spookystuff.actions
 
-import org.apache.spark.TaskContext
-import org.slf4j.LoggerFactory
-import com.tribbloids.spookystuff.extractors.{Extractor, Literal}
 import com.tribbloids.spookystuff._
+import com.tribbloids.spookystuff.doc.{Doc, Fetched, NoDoc}
+import com.tribbloids.spookystuff.extractors.{Extractor, Literal}
 import com.tribbloids.spookystuff.http.HttpUtils
 import com.tribbloids.spookystuff.row.{DataRowSchema, FetchedRow}
-import com.tribbloids.spookystuff.doc.{Doc, Fetched, NoDoc}
 import com.tribbloids.spookystuff.session.Session
 import com.tribbloids.spookystuff.utils.SpookyUtils.retry
+import org.slf4j.LoggerFactory
 
 import scala.collection.mutable.ArrayBuffer
 import scala.concurrent.duration.Duration
@@ -86,8 +85,6 @@ final case class Try(
 
   override def doExeNoUID(session: Session): Seq[Doc] = {
 
-    val taskContext = TaskContext.get()
-
     val pages = new ArrayBuffer[Doc]()
 
     try {
@@ -101,7 +98,8 @@ final case class Try(
     catch {
       case e: Throwable =>
         val logger = LoggerFactory.getLogger(this.getClass)
-        val timesLeft = retries - taskContext.attemptNumber()
+        //avoid endless retry if tcOpt is missing
+        val timesLeft = retries - session.tcOpt.map(_.attemptNumber()).getOrElse(Int.MaxValue)
         if (timesLeft > 0) {
           throw new RetryingException(
             s"Retrying cluster-wise on ${e.getClass.getSimpleName}... $timesLeft time(s) left\n" +

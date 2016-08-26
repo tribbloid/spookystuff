@@ -13,4 +13,6 @@ trait RemoteDocsFixture extends TestMixin {
   def PDF_URL = "http://stlab.adobe.com/wiki/images/d/d3/Test.pdf"
   def XML_URL = "http://tribbloid.github.io/spookystuff/test/pom.xml"
   def CSV_URL = "http://tribbloid.github.io/spookystuff/test/table.csv"
+
+  def IP_URL = "https://api.ipify.org/"
 }

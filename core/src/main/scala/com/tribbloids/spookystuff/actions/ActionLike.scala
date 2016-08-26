@@ -38,8 +38,6 @@ abstract class ActionLike extends TreeNode[ActionLike] with Product with Seriali
 
   def apply(session: Session): Seq[Fetched]
 
-  def needDriver: Boolean = true
-
   def fetch(spooky: SpookyContext): Seq[Fetched] = {
 
     val results = SpookyUtils.retry (Const.remoteResourceLocalRetries){
