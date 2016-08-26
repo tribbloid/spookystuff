@@ -7,6 +7,7 @@ import com.tribbloids.spookystuff.Const
 import org.apache.spark.TaskContext
 import org.apache.spark.ml.dsl.ReflectionUtils
 import org.apache.spark.sql.catalyst.ScalaReflection
+import org.json4s.Formats
 import org.slf4j.LoggerFactory
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -168,12 +169,12 @@ These special characters are often called "metacharacters".
     name.replaceAllLiterally(".", "_")
   }
 
-  def toJson(obj: AnyRef, beautiful: Boolean = false): String = {
+  def toJSON(obj: AnyRef, pretty: Boolean = false, formats: Formats = Const.jsonFormats): String = {
 
     import org.json4s.jackson.Serialization
 
-    if (beautiful) Serialization.writePretty(obj)(Const.jsonFormats)
-    else Serialization.write(obj)(Const.jsonFormats)
+    if (pretty) Serialization.writePretty(obj)(formats)
+    else Serialization.write(obj)(formats)
   }
 
   def typedOrNone[B: ClassTag](v: Any): Option[B] = {

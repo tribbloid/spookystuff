@@ -64,7 +64,7 @@ case class DataRow(
   def toJSON: String = {
     import ImplicitUtils._
 
-    SpookyUtils.toJson(this.toMap.canonizeKeysToColumnNames)
+    SpookyUtils.toJSON(this.toMap.canonizeKeysToColumnNames)
   }
 
   def sortIndex(fields: Seq[Field]): Seq[Option[Iterable[Int]]] = {

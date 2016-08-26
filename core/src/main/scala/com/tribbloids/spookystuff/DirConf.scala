@@ -40,6 +40,6 @@ class DirConf(
 
   def toJSON: String = {
 
-    SpookyUtils.toJson(this, beautiful = true)
+    SpookyUtils.toJSON(this, pretty = true)
   }
 }

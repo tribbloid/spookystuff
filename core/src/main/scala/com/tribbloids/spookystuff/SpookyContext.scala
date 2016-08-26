@@ -185,7 +185,7 @@ case class SpookyContext private (
 
           val jsonRDD = canonRdd.map(
             map =>
-              SpookyUtils.toJson(map)
+              SpookyUtils.toJSON(map)
           )
           val dataFrame = sqlContext.read.json(jsonRDD)
           dataFrameToPageRowRDD(dataFrame)

@@ -50,7 +50,7 @@ case class Metrics(
 
     val map = ListMap(toTuples: _*)
 
-    SpookyUtils.toJson(map, beautiful = true)
+    SpookyUtils.toJSON(map, pretty = true)
   }
 
   //this is necessary as direct JSON serialization on accumulator only yields meaningless string

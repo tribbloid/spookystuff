@@ -1,6 +1,6 @@
 package com.tribbloids.spookystuff.mav
 
-import com.tribbloids.spookystuff.actions.{Action, Interaction}
+import com.tribbloids.spookystuff.actions.Interaction
 import com.tribbloids.spookystuff.session.Session
 
 import scala.concurrent.duration.Duration
@@ -19,12 +19,17 @@ case class GlobalLocation(
 
 }
 
+abstract class DroneInteraction extends Interaction
 
-case class MovePath(
-                     from: WayPoint,
-                     to: WayPoint,
-                     override val delay: Duration
-                   ) extends Interaction(delay, true) {
+case class Move(
+                 from: WayPoint,
+                 to: WayPoint,
+                 override val delay: Duration
+               ) extends DroneInteraction {
 
-  override def exeWithoutPage(session: Session): Unit = ???
+  override def exeNoOutput(session: Session): Unit = {
+
+    val python = session.pythonDriver
+    val result = python.interpret("spookystuff.mav")
+  }
 }

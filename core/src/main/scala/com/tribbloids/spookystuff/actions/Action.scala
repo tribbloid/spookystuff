@@ -177,29 +177,30 @@ trait Timed extends Action {
     base
   }
 
+  //TODO: this causes downloading large files to fail, need a better mechanism
   def hardTerminateTimeout(session: Session): Duration = {
     timeout(session) + Const.hardTerminateOverhead
   }
 
-  def driverWait(session: Session) = new WebDriverWait(session.webDriver, this.timeout(session).toSeconds)
+  def webDriverWait(session: Session): WebDriverWait = new WebDriverWait(session.webDriver, this.timeout(session).toSeconds)
 
   def getClickableElement(selector: String, session: Session) = {
 
-    val elements = driverWait(session).until(ExpectedConditions.elementToBeClickable(new BySizzleCssSelector(selector)))
+    val elements = webDriverWait(session).until(ExpectedConditions.elementToBeClickable(new BySizzleCssSelector(selector)))
 
     elements
   }
 
   def getElement(selector: String, session: Session) = {
 
-    val elements = driverWait(session).until(ExpectedConditions.presenceOfElementLocated(new BySizzleCssSelector(selector)))
+    val elements = webDriverWait(session).until(ExpectedConditions.presenceOfElementLocated(new BySizzleCssSelector(selector)))
 
     elements
   }
 
   def getElements(selector: String, session: Session) = {
 
-    val elements = driverWait(session).until(ExpectedConditions.presenceOfAllElementsLocatedBy(new BySizzleCssSelector(selector)))
+    val elements = webDriverWait(session).until(ExpectedConditions.presenceOfAllElementsLocatedBy(new BySizzleCssSelector(selector)))
 
     elements
   }

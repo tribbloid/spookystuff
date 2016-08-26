@@ -19,6 +19,7 @@ abstract class Session(val spooky: SpookyContext) {
   val backtrace: ArrayBuffer[Action] = ArrayBuffer()
 
   def webDriver: WebDriver
+  def pythonDriver: PythonDriver
 
   //TaskContext is unreachable in withDeadline or other new threads
   val tcOpt: Option[TaskContext] = Option(TaskContext.get()) //TODO: move to constructor
