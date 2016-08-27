@@ -7,7 +7,7 @@ import org.json4s.jackson.JsonMethods._
 import org.json4s.{Extraction, Formats, JObject, JValue, Serializer}
 
 import scala.language.implicitConversions
-import scala.xml.{Elem, NodeSeq, SAXParseException, XML}
+import scala.xml.{Elem, NodeSeq, XML}
 
 //mixin to allow converting to  a simple case class and back
 //used to delegate ser/de tasks (from/to xml, json & dataset encoded type) to the case class with a fixed schema
@@ -72,13 +72,14 @@ abstract class StructRelay[T] {
     fromJValue(jv.children.head)
   }
   def fromXML(xml: String): Repr = {
-    val ns = try {
+    val ns =
+//      try {
       XML.loadString(xml)
-    }
-    catch {
-      case e: SAXParseException =>
-        XML.loadString("<root>" + xml + "</root>")
-    }
+//    }
+//    catch {
+//      case e: SAXParseException =>
+//        XML.loadString("<root>" + xml + "</root>")
+//    }
 
     fromNodeSeq(ns)
   }
@@ -86,7 +87,7 @@ abstract class StructRelay[T] {
 
 trait Struct extends Product with Serializable {
 
-//  import org.json4s.JsonDSL._
+  import org.json4s.JsonDSL._
 
   implicit def formats: Formats = Xml.defaultFormats
 
@@ -102,7 +103,7 @@ trait Struct extends Product with Serializable {
     else compactJSON
   }
 
-  def toXMLNode = Xml.toXml(jValue)
+  def toXMLNode = Xml.toXml(this.getClass.getSimpleName -> jValue)
   def compactXML = toXMLNode.toString()
   def prettyXML = Xml.defaultXMLPrinter.formatNodes(toXMLNode)
   def toXMLStr(pretty: Boolean = true): String = {
