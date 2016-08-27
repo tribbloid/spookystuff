@@ -41,8 +41,6 @@ object Const {
 
   val defaultJoinField = Field("A", isWeak = true)
 
-  val jsonFormats = DefaultFormats
-
   val mimeDetector = new DefaultDetector()
 
   val defaultDocumentFilter = DocFilters.MustHaveTitle

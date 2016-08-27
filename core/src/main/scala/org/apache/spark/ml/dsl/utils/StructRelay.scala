@@ -1,6 +1,5 @@
 package org.apache.spark.ml.dsl.utils
 
-import com.tribbloids.spookystuff.utils.HDFSResolver
 import org.apache.spark.ml.param.{ParamMap, Params}
 import org.apache.spark.ml.util._
 import org.apache.spark.util.Utils
@@ -8,12 +7,14 @@ import org.json4s.jackson.JsonMethods._
 import org.json4s.{Extraction, Formats, JObject, JValue, Serializer}
 
 import scala.language.implicitConversions
-import scala.xml.{NodeSeq, XML}
+import scala.xml.{Elem, NodeSeq, SAXParseException, XML}
 
 //mixin to allow converting to  a simple case class and back
 //used to delegate ser/de tasks (from/to xml, json & dataset encoded type) to the case class with a fixed schema
 //all subclasses must be objects otherwise Spark SQL can't find schema for Repr
 abstract class StructRelay[T] {
+
+  final def XML_ROOT: String = "root"
 
   //has to be a case class
   type Repr <: StructRepr[T]
@@ -33,7 +34,7 @@ abstract class StructRelay[T] {
 
     def outer = StructRelay.this
 
-    @org.apache.spark.annotation.Since("1.6.0")
+    //TODO: need impl
     override def load(path: String): T = {
       //      val metadata = DefaultParamsReader.loadMetadata(path, sc)
       //      val cls = Utils.classForName(metadata.className)
@@ -45,8 +46,8 @@ abstract class StructRelay[T] {
     }
   }
 
-  def extraSer: Seq[Serializer[_]] = Nil
-  val format: Formats = Xml.defaultFormats ++ extraSer
+  def extraJSONSerializers: Seq[Serializer[_]] = Nil
+  val format: Formats = Xml.defaultFormats ++ extraJSONSerializers
 
   // the following Impl confines all subclasses to be objects
   lazy val mf: Manifest[this.Repr] = {
@@ -71,50 +72,62 @@ abstract class StructRelay[T] {
     fromJValue(jv.children.head)
   }
   def fromXML(xml: String): Repr = {
-    val ns = XML.loadString(xml)
+    val ns = try {
+      XML.loadString(xml)
+    }
+    catch {
+      case e: SAXParseException =>
+        XML.loadString("<root>" + xml + "</root>")
+    }
 
     fromNodeSeq(ns)
   }
 }
 
-trait StructRepr[T] extends Product with Serializable {
+trait Struct extends Product with Serializable {
 
-  def toSelf: T
+//  import org.json4s.JsonDSL._
 
-  def xmlRoot: String = "root"
+  implicit def formats: Formats = Xml.defaultFormats
 
-  def extraSer: Seq[Serializer[_]] = Nil
-  final implicit def format: Formats = Xml.defaultFormats ++ extraSer
+  implicit def nodeSeqToElem(xml: NodeSeq): Elem = {
+    XML.loadString(xml.toString())
+  }
 
   def jValue: JObject = Extraction.decompose(this).asInstanceOf[JObject]
   def compactJSON = compact(render(jValue))
   def prettyJSON = pretty(render(jValue))
+  def toJSON(pretty: Boolean = true): String = {
+    if (true) prettyJSON
+    else compactJSON
+  }
 
-  import org.json4s.JsonDSL._
-
-  def xmlNode = Xml.toXml(xmlRoot -> jValue)
-  def compactXML = xmlNode.toString()
-  def prettyXML = Xml.defaultXMLPrinter.formatNodes(xmlNode)
+  def toXMLNode = Xml.toXml(jValue)
+  def compactXML = toXMLNode.toString()
+  def prettyXML = Xml.defaultXMLPrinter.formatNodes(toXMLNode)
+  def toXMLStr(pretty: Boolean = true): String = {
+    if (true) prettyXML
+    else compactXML
+  }
 
   case object MLWriter extends MLWriter {
 
-    def outer = StructRepr.this
+    def outer = Struct.this
 
-    def saveJSON(path: String): Unit = {
-      val resolver = HDFSResolver(sc.hadoopConfiguration)
+//    def saveJSON(path: String): Unit = {
+//      val resolver = HDFSResolver(sc.hadoopConfiguration)
+//
+//      resolver.output(path, overwrite = true){
+//        os =>
+//          os.write(StructRepr.this.prettyJSON.getBytes("UTF-8"))
+//      }
+//    }
 
-      resolver.output(path, overwrite = true){
-        os =>
-          os.write(StructRepr.this.prettyJSON.getBytes("UTF-8"))
-      }
-    }
-
-    @org.apache.spark.annotation.Since("1.6.0") override protected
-    def saveImpl(path: String): Unit = {
+    override protected def saveImpl(path: String): Unit = {
 
       val instance = new StructParams()
 
-      DefaultParamsWriter.saveMetadata(instance, path, sc, extraMetadata = Some(StructRepr.this.jValue))
+      DefaultParamsWriter.saveMetadata(instance, path, sc, extraMetadata = Some(Struct.this.jValue))
 
       // Save stages
       //    val stagesDir = new Path(path, "stages").toString
@@ -122,14 +135,17 @@ trait StructRepr[T] extends Product with Serializable {
       //      stage.write.save(getStagePath(stage.uid, idx, stages.length, stagesDir))
       //    }
     }
-
-
   }
 
   class StructParams(
-                      val uid: String = Identifiable.randomUID(StructRepr.this.getClass.getSimpleName)
+                      val uid: String = Identifiable.randomUID(Struct.this.getClass.getSimpleName)
                     ) extends Params {
 
     override def copy(extra: ParamMap): Params = this.defaultCopy(extra)
   }
+}
+
+trait StructRepr[T] extends Struct {
+
+  def toSelf: T
 }

@@ -54,7 +54,7 @@ object FlowRelay extends StructRelay[Flow] {
                    headIDs: HeadIDs
                  ) extends StructRepr[Flow]{
 
-    override def xmlRoot = "flow"
+//    override def XML_ROOT = "flow" //TODO: cleanup?
 
     implicit def stepsToView(steps: StepMap[String, StepLike]): StepMapView = new StepMapView(steps)
 

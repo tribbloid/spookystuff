@@ -17,7 +17,7 @@ abstract class PythonInteraction extends Interaction {
     val python = session.pythonDriver
     val result = python.interpret(
       s"""
-         |${this.getClass.getCanonicalName}('${this.toJSON}')
+         |${this.getClass.getCanonicalName}('${this.toJSON}', '')
        """.trim.stripMargin
     )
   }
@@ -30,7 +30,4 @@ case class Move(
                  from: GlobalLocation,
                  to: GlobalLocation,
                  override val delay: Duration = null
-               ) extends PythonInteraction {
-
-
-}
+               ) extends PythonInteraction
