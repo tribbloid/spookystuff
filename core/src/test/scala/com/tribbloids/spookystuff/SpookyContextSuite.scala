@@ -34,8 +34,8 @@ class SpookyContextSuite extends SpookyEnvFixture{
     val rdd2 = spooky.create(Seq("dummy"))
     assert(!(rdd2.spooky eq spooky))
 
-    val conf1 = spooky.conf.dirs.toJSON
-    val conf2 = rdd2.spooky.conf.dirs.toJSON
+    val conf1 = spooky.conf.dirs.prettyJSON
+    val conf2 = rdd2.spooky.conf.dirs.prettyJSON
     assert(conf1 == conf2)
   }
 
@@ -49,8 +49,8 @@ class SpookyContextSuite extends SpookyEnvFixture{
     val rdd2 = spooky.create(Seq("dummy"))
     assert(!(rdd2.spooky eq spooky))
 
-    val conf1 = spooky.conf.dirs.toJSON
-    val conf2 = rdd2.spooky.conf.dirs.toJSON
+    val conf1 = spooky.conf.dirs.prettyJSON
+    val conf2 = rdd2.spooky.conf.dirs.prettyJSON
     assert(conf1 == conf2)
   }
 
@@ -94,7 +94,7 @@ class SpookyContextSuite extends SpookyEnvFixture{
       )
     rdd2.count()
 
-    assert(rdd1.spooky.metrics.toJSON === rdd2.spooky.metrics.toJSON)
+    assert(rdd1.spooky.metrics.toJSON() === rdd2.spooky.metrics.toJSON())
   }
 
   test("can create PageRow from String") {
@@ -138,7 +138,7 @@ class SpookyContextSuite extends SpookyEnvFixture{
     val context = new SpookyContext(this.sql)
 
     val dirs = context.conf.dirs
-    val json = dirs.toJSON
+    val json = dirs.prettyJSON
     println(json)
 
     import dirs._
@@ -151,7 +151,7 @@ class SpookyContextSuite extends SpookyEnvFixture{
     val context = new SpookyContext(this.sql, conf)
 
     val dirs = context.conf.dirs
-    val json = dirs.toJSON
+    val json = dirs.prettyJSON
     println(json)
 
     import dirs._
@@ -164,7 +164,7 @@ class SpookyContextSuite extends SpookyEnvFixture{
     val context = new SpookyContext(this.sql, conf)
 
     val dirs = context.conf.dirs
-    val json = dirs.toJSON
+    val json = dirs.prettyJSON
     println(json)
 
     import dirs._

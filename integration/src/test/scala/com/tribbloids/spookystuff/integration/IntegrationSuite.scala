@@ -3,15 +3,14 @@ package com.tribbloids.spookystuff.integration
 import java.util.Date
 
 import com.tribbloids.spookystuff.dsl._
-import com.tribbloids.spookystuff.tests.{RemoteDocsFixture, TestHelper}
+import com.tribbloids.spookystuff.testutils.{RemoteDocsFixture, TestHelper}
 import com.tribbloids.spookystuff.utils.SpookyUtils
-import com.tribbloids.spookystuff.{DirConf, SpookyConf, SpookyContext}
+import com.tribbloids.spookystuff.{DirConf, Metrics, SpookyConf, SpookyContext}
 import org.apache.spark.SparkContext
 import org.apache.spark.sql.SQLContext
 import org.scalatest.{BeforeAndAfterAll, FunSuite}
 
 import scala.concurrent.duration
-import scala.language.implicitConversions
 import scala.util.Random
 
 abstract class IntegrationSuite extends FunSuite with BeforeAndAfterAll with RemoteDocsFixture {
@@ -85,8 +84,9 @@ abstract class IntegrationSuite extends FunSuite with BeforeAndAfterAll with Rem
 
   //TODO: for local-cluster mode, some of these metrics may have higher than expected results because.
   def assertBeforeCache(): Unit = {
-    val metrics = spooky.metrics
-    println(metrics.toJSON)
+    val metrics: Metrics = spooky.metrics
+    val metricsJSON: String = metrics.toJSON() //TODO: this will trigger a compiler bug in scala 2.10.6, need to fix it!
+    println(metricsJSON)
 
     val pagesFetched = metrics.pagesFetched.value
     numPages_distinct = metrics.pagesFetchedFromRemote.value
@@ -100,8 +100,9 @@ abstract class IntegrationSuite extends FunSuite with BeforeAndAfterAll with Rem
   }
 
   def assertAfterCache(): Unit = {
-    val metrics = spooky.metrics
-    println(metrics.toJSON)
+    val metrics: Metrics = spooky.metrics
+    val metricsJSON: String = metrics.toJSON()
+    println(metricsJSON)
 
     val pagesFetched = metrics.pagesFetched.value
     assert(pagesFetched >= numPages)

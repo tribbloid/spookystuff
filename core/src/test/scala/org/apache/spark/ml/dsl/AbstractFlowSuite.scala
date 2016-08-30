@@ -1,6 +1,6 @@
 package org.apache.spark.ml.dsl
 
-import com.tribbloids.spookystuff.tests.TestMixin
+import com.tribbloids.spookystuff.testutils.TestMixin
 import org.apache.spark.ml.PipelineStage
 import org.apache.spark.ml.param.shared.{HasInputCol, HasInputCols, HasOutputCol}
 import org.scalatest.FunSuite

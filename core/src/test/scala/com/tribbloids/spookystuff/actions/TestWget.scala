@@ -5,7 +5,7 @@ import java.sql.Timestamp
 import com.tribbloids.spookystuff.SpookyEnvFixture
 import com.tribbloids.spookystuff.doc.Doc
 import com.tribbloids.spookystuff.rdd.FetchedDataset
-import com.tribbloids.spookystuff.tests.Tor
+import com.tribbloids.spookystuff.testutils.Tor
 import org.scalatest.Tag
 import org.scalatest.tags.Retryable
 

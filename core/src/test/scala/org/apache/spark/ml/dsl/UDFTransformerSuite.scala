@@ -1,6 +1,6 @@
 package org.apache.spark.ml.dsl
 
-import com.tribbloids.spookystuff.tests.{TestHelper, TestMixin}
+import com.tribbloids.spookystuff.testutils.{TestHelper, TestMixin}
 import org.apache.spark.ml.feature.Tokenizer
 import org.apache.spark.sql.functions._
 import org.scalatest.FunSuite

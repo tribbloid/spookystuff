@@ -7,25 +7,39 @@ import com.tribbloids.spookystuff.actions._
 import com.tribbloids.spookystuff.utils.SpookyUtils
 import com.tribbloids.spookystuff.{Const, SpookyContext, SpookyException}
 import org.apache.spark.TaskContext
-import org.apache.spark.ml.dsl.utils.{StructRelay, StructRepr}
+import org.apache.spark.ml.dsl.utils.{Message, MessageRelay}
 import org.openqa.selenium.{Dimension, NoSuchSessionException, WebDriver}
 import org.slf4j.LoggerFactory
 
 import scala.collection.mutable.ArrayBuffer
 
-case object SessionRelay extends StructRelay[Session] {
+case object SessionRelay extends MessageRelay[Session] {
 
-  case class Repr(
-                   startTime: Long,
-                   backtrace: Seq[Action],
-                   TaskContext: Map[String, Int]
-                 ) extends StructRepr[Session] {
+  case class M(
+                startTime: Long,
+                backtrace: Seq[Action],
+                TaskContext: Option[TaskContextRelay.M]
+              ) extends Message
 
-    override def toSelf: Session = ???
+  override def toMessage(v: Session): M = {
+    M(
+      v.startTime,
+      v.backtrace,
+      v.tcOpt.map (tc => TaskContextRelay.toMessage(tc))
+    )
   }
+}
 
-  override def toRepr(v: Session): Repr = {
-    ???
+case object TaskContextRelay extends MessageRelay[TaskContext] {
+
+  case class M(
+                attemptNumber: Int
+              ) extends Message
+
+  override def toMessage(v: TaskContext): M = {
+    M(
+      v.attemptNumber()
+    )
   }
 }
 

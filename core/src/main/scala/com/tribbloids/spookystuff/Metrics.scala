@@ -1,9 +1,10 @@
 package com.tribbloids.spookystuff
 
-import com.tribbloids.spookystuff.utils.SpookyUtils
+import org.apache.spark.ml.dsl.utils.Message
 import org.apache.spark.{Accumulator, AccumulatorParam}
 
 import scala.collection.immutable.ListMap
+import scala.collection.mutable.ArrayBuffer
 
 /**
   * Created by peng on 03/10/15.
@@ -13,6 +14,44 @@ object Metrics {
   private def accumulator[T](initialValue: T, name: String)(implicit param: AccumulatorParam[T]) = {
     new Accumulator(initialValue, param, Some(name))
   }
+}
+
+abstract class AbstractMetrics extends Message {
+
+  //this is necessary as direct JSON serialization on accumulator only yields meaningless string
+  def toTuples: List[(String, Any)] = {
+    this.productIterator.toList.flatMap {
+      case acc: Accumulator[_] =>
+        acc.name.flatMap {
+          v =>
+            acc.value match {
+              case i: Any => Some(v -> i)
+              case _ => None
+            }
+        }
+      case _ =>
+        None
+    }.toList
+  }
+
+  def toMap: ListMap[String, Any] = {
+    ListMap(toTuples: _*)
+  }
+
+  //Only allowed on Master
+  def clear(): Unit = {
+
+    this.productIterator.toList.foreach {
+      case acc: Accumulator[_] =>
+        if (acc.value.isInstanceOf[Int])
+          acc.asInstanceOf[Accumulator[Int]].setValue(0)
+      case _ =>
+    }
+  }
+
+  override def formatted: ListMap[String, Any] = toMap
+
+  val children: ArrayBuffer[AbstractMetrics] = ArrayBuffer()
 }
 
 //TODO: change to multi-level
@@ -44,20 +83,5 @@ case class Metrics(
                     fetchFromRemoteFailure: Accumulator[Int] = Metrics.accumulator(0, "fetchFromRemoteFailure"),
 
                     pagesSaved: Accumulator[Int] = Metrics.accumulator(0, "pagesSaved")
-                  ) {
-
-  def toJSON: String = {
-
-    val map = ListMap(toTuples: _*)
-
-    SpookyUtils.toJSON(map, pretty = true)
-  }
-
-  //this is necessary as direct JSON serialization on accumulator only yields meaningless string
-  def toTuples: Seq[(String, Any)] = {
-    this.productIterator.flatMap {
-      case acc: Accumulator[_] => acc.name.map(_ -> acc.value)
-      case _ => None
-    }.toSeq
-  }
+                  ) extends AbstractMetrics {
 }

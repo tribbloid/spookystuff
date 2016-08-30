@@ -19,7 +19,7 @@ case class DataRow(
                     groupID: Option[UUID] = None,
                     groupIndex: Int = 0, //set to 0...n for each page group after SquashedPageRow.semiUnsquash/unsquash
                     freeze: Boolean = false //if set to true PageRow.extract won't insert anything into it, used in merge/replace join
-                  ) extends ProductRow {
+                  ) extends SpookyRow {
 
   import ImplicitUtils._
 
@@ -61,11 +61,7 @@ case class DataRow(
     .map(identity)
     .map(tuple => tuple._1.name -> tuple._2)
 
-  def toJSON: String = {
-    import ImplicitUtils._
-
-    SpookyUtils.toJSON(this.toMap.canonizeKeysToColumnNames)
-  }
+  override def formatted = toMap
 
   def sortIndex(fields: Seq[Field]): Seq[Option[Iterable[Int]]] = {
     val result = fields.map(key => this.getIntIterable(key))

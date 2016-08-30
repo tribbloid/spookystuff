@@ -1,4 +1,4 @@
-package com.tribbloids.spookystuff.tests
+package com.tribbloids.spookystuff.testutils
 
 /**
   * Created by peng on 17/05/16.

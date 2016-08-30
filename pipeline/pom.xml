@@ -18,18 +18,6 @@
             <version>${project.version}</version>
         </dependency>
         <dependency>
-            <groupId>com.tribbloids.spookystuff</groupId>
-            <artifactId>spookystuff-testutils</artifactId>
-            <version>${project.version}</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.spark</groupId>
-            <artifactId>spark-mllib_${scala.binary.version}</artifactId>
-            <version>${spark.version}</version>
-            <scope>provided</scope>
-        </dependency>
-        <dependency>
             <groupId>org.clapper</groupId>
             <artifactId>classutil_2.10</artifactId>
             <version>1.0.6</version>

@@ -1,7 +1,7 @@
 package org.apache.spark.ml.dsl
 
-import com.tribbloids.spookystuff.tests.TestHelper
-import org.apache.spark.ml.dsl.utils.Xml
+import com.tribbloids.spookystuff.testutils.TestHelper
+import org.apache.spark.ml.dsl.utils.{FlowRelay, MessageRelay, Xml}
 import org.apache.spark.ml.feature._
 import org.apache.spark.ml.{Pipeline, PipelineModel}
 import org.apache.spark.mllib.feature
@@ -437,7 +437,7 @@ class FlowSuite extends AbstractFlowSuite {
 
     prettyJSON.shouldBe()
 
-    val flow2 = Flow.read.outer.fromJSON(prettyJSON).toSelf
+    val flow2 = FlowRelay.fromJSON(prettyJSON).toObject
 
     println(flow2.show(asciiArt = true))
 
@@ -467,7 +467,7 @@ class FlowSuite extends AbstractFlowSuite {
 
     prettyXML.shouldBe()
 
-    val flow2 = Flow.read.outer.fromXML(prettyXML).toSelf
+    val flow2 = FlowRelay.fromXML(prettyXML).toObject
 
     println(flow2.show(asciiArt = true))
 

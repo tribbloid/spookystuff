@@ -11,9 +11,9 @@ import org.json4s.jackson.JsonMethods._
 import scala.language.implicitConversions
 import scala.util.Try
 
-object FlowRelay extends StructRelay[Flow] {
+object FlowRelay extends MessageRelay[Flow] {
 
-  override def toRepr(flow: Flow): Repr = {
+  override def toMessage(flow: Flow): M = {
 
     val steps: Seq[Step] = flow.coll.values.collect {
       case st: Step => st
@@ -26,17 +26,17 @@ object FlowRelay extends StructRelay[Flow] {
     val rightWrappers = flow.rightTails.map(SimpleStepWrapper)
     val rightTrees = rightWrappers.map(flow.ForwardNode)
 
-    this.Repr(
+    this.M(
       Declaration(
-        steps.map(_.toRepr)
+        steps.map(_.toMessage)
       ),
       Seq(
         GraphRepr(
-          leftTrees.map(_.toRepr),
+          leftTrees.map(_.toMessage),
           `@direction` = Some(FORWARD_LEFT)
         ),
         GraphRepr(
-          rightTrees.map(_.toRepr),
+          rightTrees.map(_.toMessage),
           `@direction` = Some(FORWARD_RIGHT)
         )
       ),
@@ -48,24 +48,22 @@ object FlowRelay extends StructRelay[Flow] {
   def FORWARD_LEFT: String = "forwardLeft"
 
 
-  case class Repr(
-                   declarations: Declaration,
-                   flowLines: Seq[GraphRepr],
-                   headIDs: HeadIDs
-                 ) extends StructRepr[Flow]{
-
-//    override def XML_ROOT = "flow" //TODO: cleanup?
+  case class M(
+                declarations: Declaration,
+                flowLines: Seq[GraphRepr],
+                headIDs: HeadIDs
+              ) extends MessageRepr[Flow]{
 
     implicit def stepsToView(steps: StepMap[String, StepLike]): StepMapView = new StepMapView(steps)
 
-    override def toSelf: Flow = {
+    override def toObject: Flow = {
 
-      val steps = declarations.stage.map(_.toSelf)
+      val steps = declarations.stage.map(_.toObject)
       var buffer: StepMap[String, StepLike] = StepMap(steps.map(v => v.id -> v): _*)
 
-      def treeNodeReprToLink(repr: StepTreeNodeRelay.Repr): Unit = {
+      def treeNodeReprToLink(repr: StepTreeNodeRelay.M): Unit = {
         if (! buffer.contains(repr.id)) {
-          buffer = buffer.updated(repr.id, Source(repr.id, repr.dataTypes.map(_.toSelf)))
+          buffer = buffer.updated(repr.id, Source(repr.id, repr.dataTypes.map(_.toObject)))
         }
         val children = repr.stage
         buffer = buffer.connectAll(Seq(repr.id), children.map(_.id))
@@ -92,11 +90,11 @@ object FlowRelay extends StructRelay[Flow] {
   }
 
   case class Declaration(
-                          stage: Seq[StepRelay.Repr]
+                          stage: Seq[StepRelay.M]
                         )
 
   case class GraphRepr(
-                        flowLine: Seq[StepTreeNodeRelay.Repr],
+                        flowLine: Seq[StepTreeNodeRelay.M],
                         `@direction`: Option[String] = None
                       )
 
@@ -105,11 +103,11 @@ object FlowRelay extends StructRelay[Flow] {
                      )
 }
 
-object StepRelay extends StructRelay[Step] {
+object StepRelay extends MessageRelay[Step] {
 
   val paramMap: Option[JValue]  = None
 
-  override def toRepr(v: Step): Repr = {
+  override def toMessage(v: Step): M = {
     import org.json4s.JsonDSL._
     import v._
 
@@ -124,7 +122,7 @@ object StepRelay extends StructRelay[Step] {
       )
     )
 
-    Repr(
+    M(
       id,
       stage.name,
       stage.tags,
@@ -136,17 +134,17 @@ object StepRelay extends StructRelay[Step] {
   }
 
 
-  case class Repr(
-                   id: String,
-                   name: String,
-                   tag: Set[String],
-                   forceOutput: Option[String],
-                   implementation: String,
-                   uid: Option[String] = None,
-                   params: Option[JValue] = None
-                 ) extends StructRepr[Step] {
+  case class M(
+                id: String,
+                name: String,
+                tag: Set[String],
+                forceOutput: Option[String],
+                implementation: String,
+                uid: Option[String] = None,
+                params: Option[JValue] = None
+              ) extends MessageRepr[Step] {
 
-    override lazy val toSelf: Step = {
+    override lazy val toObject: Step = {
 
       val cls = Utils.classForName(implementation)
       val instance = cls.getConstructor(classOf[String]).newInstance(uid.toSeq: _*).asInstanceOf[PipelineStage]
@@ -206,37 +204,37 @@ object StepRelay extends StructRelay[Step] {
   }
 }
 
-object StepTreeNodeRelay extends StructRelay[StepTreeNode[_]] {
+object StepTreeNodeRelay extends MessageRelay[StepTreeNode[_]] {
 
-  override def toRepr(v: StepTreeNode[_]): Repr = {
+  override def toMessage(v: StepTreeNode[_]): M = {
     val base = v.self match {
       case source: Source =>
-        Repr(
+        M(
           source.id,
           dataTypes = source.dataTypes
-            .map(DataTypeRelay.toRepr)
+            .map(DataTypeRelay.toMessage)
         )
       case _ =>
-        Repr(v.self.id)
+        M(v.self.id)
     }
     base.copy(
-      stage = v.children.map(this.toRepr)
+      stage = v.children.map(this.toMessage)
     )
   }
 
 
-  case class Repr(
-                   id: String,
-                   dataTypes: Set[DataTypeRelay.Repr] = Set.empty,
-                   stage: Seq[Repr] = Nil
-                 ) extends StructRepr[StepTreeNode[_]] {
-    override def toSelf: StepTreeNode[_] = ???
+  case class M(
+                id: String,
+                dataTypes: Set[DataTypeRelay.M] = Set.empty,
+                stage: Seq[M] = Nil
+              ) extends MessageRepr[StepTreeNode[_]] {
+    override def toObject: StepTreeNode[_] = ???
   }
 
 
 }
 
-object DataTypeRelay extends StructRelay[DataType] {
+object DataTypeRelay extends MessageRelay[DataType] {
 
   def toJsonAST(dataType: DataType): JValue = {
     ReflectionUtils.invoke(classOf[DataType], dataType, "jsonValue").asInstanceOf[JValue]
@@ -247,14 +245,14 @@ object DataTypeRelay extends StructRelay[DataType] {
   }
 
 
-  override def toRepr(v: DataType): Repr = Repr(
+  override def toMessage(v: DataType): M = M(
     toJsonAST(v)
   )
 
-  case class Repr (
-                    dataType: JValue
-                  ) extends StructRepr[DataType] {
+  case class M(
+                dataType: JValue
+              ) extends MessageRepr[DataType] {
 
-    override def toSelf: DataType = fromJsonAST(dataType)
+    override def toObject: DataType = fromJsonAST(dataType)
   }
 }

@@ -2,7 +2,7 @@ package com.tribbloids.spookystuff.doc
 
 import com.tribbloids.spookystuff.actions.Wget
 import com.tribbloids.spookystuff.dsl
-import com.tribbloids.spookystuff.tests.LocalPathDocsFixture
+import com.tribbloids.spookystuff.testutils.LocalPathDocsFixture
 
 class TestPageFromFile extends TestPageFromHttp with LocalPathDocsFixture {
 

@@ -19,4 +19,34 @@ object FlowUtils {
     )
       yield xh :: xt
   }
+
+//  def jValue(obj: Any)(implicit formats: Formats = DefaultFormats): JValue = Extraction.decompose(obj)
+//  def compactJSON(obj: Any)(implicit formats: Formats = DefaultFormats) = compact(render(jValue(obj)))
+//  def prettyJSON(obj: Any)(implicit formats: Formats = DefaultFormats) = pretty(render(jValue(obj)))
+//
+//  def toJSON(obj: Any, pretty: Boolean = false)(implicit formats: Formats = DefaultFormats): String = {
+//    if (pretty) compactJSON(obj)
+//    else prettyJSON(obj)
+//  }
+
+  private lazy val LZYCOMPUTE = "$lzycompute"
+  private lazy val INIT = "<init>"
+
+  def getBreakpointInfo(
+                         filterInitializer: Boolean = true,
+                         filterLazyRelay: Boolean = true,
+                         filterDefaultRelay: Boolean = true
+                       ): Array[StackTraceElement] = {
+    val stackTraceElements: Array[StackTraceElement] = Thread.currentThread().getStackTrace
+    var effectiveElements = stackTraceElements
+
+    if (filterInitializer) effectiveElements = effectiveElements.filter(v => !(v.getMethodName == INIT))
+    if (filterLazyRelay) effectiveElements = effectiveElements.filter(v => !v.getMethodName.endsWith(LZYCOMPUTE))
+
+    effectiveElements
+      .slice(2, Int.MaxValue)
+  }
+
+  def liftCamelCase(str: String) = str.head.toUpper.toString + str.substring(1)
+  def toCamelCase(str: String) = str.head.toLower.toString + str.substring(1)
 }

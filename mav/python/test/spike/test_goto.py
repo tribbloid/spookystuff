@@ -64,21 +64,13 @@ def test_ferry(connpath):
 
     arm_and_takeoff(20)
 
-    point1 = LocationGlobalRelative(-35.361354, 149.165218, 20)
-    point2 = LocationGlobalRelative(-36.363244, 149.168801, 100)
+    point1 = LocationGlobalRelative(90, 0, 20)
 
-    for i in range(1, 10000):
-        print("Going to first point...")
-        vehicle.simple_goto(point1)
+    print("Going to first point...")
+    vehicle.simple_goto(point1)
 
-        # sleep so we can see the change in map
-        time.sleep(30)
-
-        print("Going to second point...")
-        vehicle.simple_goto(point2)
-
-        # sleep so we can see the change in map
-        time.sleep(30)
+    # sleep so we can see the change in map
+    time.sleep(3000000)
 
     print("Returning to Launch")
     vehicle.mode = VehicleMode("RTL")

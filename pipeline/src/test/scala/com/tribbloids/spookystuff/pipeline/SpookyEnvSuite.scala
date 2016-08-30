@@ -2,7 +2,7 @@ package com.tribbloids.spookystuff.pipeline
 
 import com.tribbloids.spookystuff.{DirConf, SpookyConf, SpookyContext}
 import com.tribbloids.spookystuff.dsl.{DriverFactories, DriverFactory}
-import com.tribbloids.spookystuff.tests.TestHelper
+import com.tribbloids.spookystuff.testutils.TestHelper
 import com.tribbloids.spookystuff.utils.Utils
 import org.apache.spark.sql.SQLContext
 import org.apache.spark.{SparkConf, SparkContext}

@@ -173,8 +173,8 @@ object DefaultScreenshot extends Screenshot()
 
 @SerialVersionUID(7344992460754628988L)
 abstract class HttpMethod(
-                            uri: Extractor[Any]
-                          ) extends Export with Driverless with Timed with WaybackSupport {
+                           uri: Extractor[Any]
+                         ) extends Export with Driverless with Timed with WaybackSupport {
 
   @transient lazy val uriOption: Option[URI] = {
     val uriStr = uri.asInstanceOf[Literal[FR, String]].value.trim()
@@ -201,55 +201,53 @@ abstract class HttpMethod(
                   request: HttpUriRequest,
                   cacheable: Boolean = true
                 ): Fetched with Product = {
+    val response = httpClient.execute(request, context)
     try {
-      val response = httpClient.execute(request, context)
-      try {
-        val currentReq = context.getAttribute(HttpCoreContext.HTTP_REQUEST).asInstanceOf[HttpUriRequest]
-        val currentHost = context.getAttribute(HttpCoreContext.HTTP_TARGET_HOST).asInstanceOf[HttpHost]
-        val currentUrl = if (currentReq.getURI.isAbsolute) {
-          currentReq.getURI.toString
-        }
-        else {
-          currentHost.toURI + currentReq.getURI
-        }
+      val currentReq = context.getAttribute(HttpCoreContext.HTTP_REQUEST).asInstanceOf[HttpUriRequest]
+      val currentHost = context.getAttribute(HttpCoreContext.HTTP_TARGET_HOST).asInstanceOf[HttpHost]
+      val currentUrl = if (currentReq.getURI.isAbsolute) {
+        currentReq.getURI.toString
+      }
+      else {
+        currentHost.toURI + currentReq.getURI
+      }
 
-        val entity: HttpEntity = response.getEntity
-        val httpStatus: StatusLine = response.getStatusLine
+      val entity: HttpEntity = response.getEntity
+      val httpStatus: StatusLine = response.getStatusLine
 
-        val stream = entity.getContent
-        val result = try {
-          val content = IOUtils.toByteArray(stream)
-          val contentType = entity.getContentType.getValue
+      val stream = entity.getContent
+      val result = try {
+        val content = IOUtils.toByteArray(stream)
+        val contentType = entity.getContentType.getValue
 
-          new Doc(
-            DocUID(List(this), this),
-            currentUrl,
-            Some(contentType),
-            content,
-            httpStatus = Some(httpStatus),
-            cacheable = cacheable
-          )
-        }
-        finally {
-          stream.close()
-        }
-
-        result
+        new Doc(
+          DocUID(List(this), this),
+          currentUrl,
+          Some(contentType),
+          content,
+          httpStatus = Some(httpStatus),
+          cacheable = cacheable
+        )
       }
       finally {
-        response match {
-          case v: Closeable => v.close()
-        }
+        stream.close()
+      }
+
+      result
+    }
+    finally {
+      response match {
+        case v: Closeable => v.close()
       }
     }
-//    catch {
-//      case e: ClientProtocolException =>
-//        val cause = e.getCause
-//        if (cause.isInstanceOf[RedirectException]) NoDoc(List(this)) //TODO: is it a reasonable exception? don't think so
-//        else throw e
-//      case e: Throwable =>
-//        throw e
-//    }
+    //    catch {
+    //      case e: ClientProtocolException =>
+    //        val cause = e.getCause
+    //        if (cause.isInstanceOf[RedirectException]) NoDoc(List(this)) //TODO: is it a reasonable exception? don't think so
+    //        else throw e
+    //      case e: Throwable =>
+    //        throw e
+    //    }
   }
 
   def getHttpClient(session: Session): (CloseableHttpClient, HttpClientContext) = {
@@ -558,11 +556,11 @@ object Wpost{
 
 @SerialVersionUID(2416628905154681500L)
 case class WpostImpl private[actions](
-                          uri: Extractor[Any],
-                          override val filter: DocFilter
-                        )(
-                          entity: HttpEntity // TODO: cannot be dumped or serialized
-                        ) extends HttpMethod(uri) {
+                                       uri: Extractor[Any],
+                                       override val filter: DocFilter
+                                     )(
+                                       entity: HttpEntity // TODO: cannot be dumped or serialized
+                                     ) extends HttpMethod(uri) {
 
   // not cacheable
   override protected def doExeNoName(session: Session): Seq[Fetched] = {

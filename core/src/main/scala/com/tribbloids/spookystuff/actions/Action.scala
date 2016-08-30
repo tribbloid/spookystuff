@@ -133,7 +133,7 @@ trait Action extends ActionLike {
 
   protected[actions] def exe(session: Session): Seq[Fetched] = {
 
-    this match { //temporarily disabled as we assume that DFS is the culprit for causing deadlock
+    this match {
       case tt: Timed =>
         LoggerFactory.getLogger(this.getClass).info(s"+> ${this.toString} in ${tt.timeout(session)}")
 

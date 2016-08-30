@@ -78,6 +78,7 @@ object FetchOptimizers {
         rdd.groupByKey(partitioner)
       }
 
+      //this is faster and saves more memory
       override def reduceByKey[K: ClassTag, V: ClassTag, W](
                                                              rdd: RDD[(K, V)],
                                                              reducer: (V, V) => V,

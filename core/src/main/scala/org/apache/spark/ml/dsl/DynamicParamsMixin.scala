@@ -1,6 +1,6 @@
 package org.apache.spark.ml.dsl
 
-import com.tribbloids.spookystuff.utils.SpookyUtils
+import org.apache.spark.ml.dsl.utils.FlowUtils
 import org.apache.spark.ml.param.{Param, Params}
 
 import scala.language.{dynamics, implicitConversions}
@@ -13,8 +13,6 @@ trait DynamicParamsMixin extends Params with Dynamic {
 
   implicit protected def unwrap[T](v: Param[T]): T = this.getOrDefault(v)
 
-  def liftCamelcase(str: String) = str.head.toUpper.toString + str.substring(1)
-
   def applyDynamic(methodName: String)(args: Any*): this.type = {
 
     if (methodName.startsWith("set")) {
@@ -23,7 +21,7 @@ trait DynamicParamsMixin extends Params with Dynamic {
 
       val fieldName = methodName.stripPrefix("set")
       val expectedName = methodName.stripPrefix("set")
-      val fieldOption = this.params.find(v => (v.name == expectedName) || (liftCamelcase(v.name) == expectedName))
+      val fieldOption = this.params.find(v => (v.name == expectedName) || (FlowUtils.liftCamelCase(v.name) == expectedName))
 
       fieldOption match {
         case Some(field) =>
@@ -40,7 +38,7 @@ trait DynamicParamsMixin extends Params with Dynamic {
 
   protected def Param[T: ClassTag](
                                     name: String = {
-                                      val bp = SpookyUtils.getBreakpointInfo().apply(2)
+                                      val bp = FlowUtils.getBreakpointInfo().apply(2)
                                       assert(!bp.isNativeMethod) //can only use default value in def & lazy val blocks
                                       bp.getMethodName
                                     },
@@ -58,7 +56,7 @@ trait DynamicParamsMixin extends Params with Dynamic {
   //TODO: need debugging
   protected def SerializingParam[T: ClassTag](
                                                name: String = {
-                                                 val bp = SpookyUtils.getBreakpointInfo().apply(2)
+                                                 val bp = FlowUtils.getBreakpointInfo().apply(2)
                                                  assert(!bp.isNativeMethod) //can only use default value in def & lazy val blocks
                                                  bp.getMethodName
                                                },

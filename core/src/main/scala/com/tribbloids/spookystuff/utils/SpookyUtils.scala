@@ -167,14 +167,6 @@ These special characters are often called "metacharacters".
     name.replaceAllLiterally(".", "_")
   }
 
-  def toJSON(obj: AnyRef, pretty: Boolean = false, formats: Formats = DefaultFormats): String = {
-
-    import org.json4s.jackson.Serialization
-
-    if (pretty) Serialization.writePretty(obj)(formats)
-    else Serialization.write(obj)(formats)
-  }
-
   def typedOrNone[B: ClassTag](v: Any): Option[B] = {
     val array = try {
       Array[B](v.asInstanceOf[B])
@@ -263,24 +255,6 @@ These special characters are often called "metacharacters".
 
   def getCPResourceAsStream(str: String): Option[InputStream] =
     Option(ClassLoader.getSystemClassLoader.getResourceAsStream(str.stripSuffix(SpookyUtils.:/)))
-
-  private lazy val LZYCOMPUTE = "$lzycompute"
-  private lazy val INIT = "<init>"
-
-  def getBreakpointInfo(
-                         filterInitializer: Boolean = true,
-                         filterLazyRelay: Boolean = true,
-                         filterDefaultRelay: Boolean = true
-                       ): Array[StackTraceElement] = {
-    val stackTraceElements: Array[StackTraceElement] = Thread.currentThread().getStackTrace
-    var effectiveElements = stackTraceElements
-
-    if (filterInitializer) effectiveElements = effectiveElements.filter(v => !(v.getMethodName == INIT))
-    if (filterLazyRelay) effectiveElements = effectiveElements.filter(v => !v.getMethodName.endsWith(LZYCOMPUTE))
-
-    effectiveElements
-      .slice(2, Int.MaxValue)
-  }
 
   def longHash(string: String): Long = {
     var h: Long = 1125899906842597L // prime

@@ -3,7 +3,7 @@ package com.tribbloids.spookystuff.actions
 import com.tribbloids.spookystuff.SpookyEnvFixture
 import com.tribbloids.spookystuff.doc.Doc
 import com.tribbloids.spookystuff.session.{DriverSession, Session}
-import com.tribbloids.spookystuff.tests.TestMixin
+import com.tribbloids.spookystuff.testutils.TestMixin
 import org.openqa.selenium.WebDriver
 
 class TestTrace_PhantomJS extends SpookyEnvFixture with TestMixin {

@@ -1,21 +1,22 @@
 package com.tribbloids.spookystuff
 
 import com.tribbloids.spookystuff.utils.SpookyUtils
+import org.apache.spark.ml.dsl.utils.Message
 
 /**
- * Created by peng on 2/2/15.
- */
-class DirConf(
-               var root: String = null,//ystem.getProperty("spooky.dirs.root"),
-               var localRoot: String = null,
-               var _autoSave: String = null,//System.getProperty("spooky.dirs.autosave"),
-               var _cache: String = null,//System.getProperty("spooky.dirs.cache"),
-               var _errorDump: String = null,//System.getProperty("spooky.dirs.errordump"),
-               var _errorScreenshot: String = null,//System.getProperty("spooky.dirs.errorscreenshot"),
-               var _checkpoint: String = null,//System.getProperty("spooky.dirs.checkpoint"),
-               var _errorDumpLocal: String = null,//System.getProperty("spooky.dirs.errordump.local"),
-               var _errorScreenshotLocal: String = null//System.getProperty("spooky.dirs.errorscreenshot.local")
-               ) extends Serializable {
+  * Created by peng on 2/2/15.
+  */
+case class DirConf(
+                    var root: String = null,//ystem.getProperty("spooky.dirs.root"),
+                    var localRoot: String = null,
+                    var _autoSave: String = null,//System.getProperty("spooky.dirs.autosave"),
+                    var _cache: String = null,//System.getProperty("spooky.dirs.cache"),
+                    var _errorDump: String = null,//System.getProperty("spooky.dirs.errordump"),
+                    var _errorScreenshot: String = null,//System.getProperty("spooky.dirs.errorscreenshot"),
+                    var _checkpoint: String = null,//System.getProperty("spooky.dirs.checkpoint"),
+                    var _errorDumpLocal: String = null,//System.getProperty("spooky.dirs.errordump.local"),
+                    var _errorScreenshotLocal: String = null//System.getProperty("spooky.dirs.errorscreenshot.local")
+                  ) extends Message {
 
   import com.tribbloids.spookystuff.utils.ImplicitUtils._
 
@@ -37,9 +38,4 @@ class DirConf(
   def checkpoint: String = Option(_autoSave).getOrElse(root_/("checkpoint"))
   def errorDumpLocal: String = Option(_autoSave).getOrElse(localRoot_/("errorDump"))
   def errorScreenshotLocal: String = Option(_autoSave).getOrElse(localRoot_/("errorScreenshot"))
-
-  def toJSON: String = {
-
-    SpookyUtils.toJSON(this, pretty = true)
-  }
 }

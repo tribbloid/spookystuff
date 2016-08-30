@@ -1,6 +1,8 @@
 package com.tribbloids.spookystuff.mav
 
 import com.tribbloids.spookystuff.SpookyEnvFixture
+import com.tribbloids.spookystuff.mav.actions.GlobalLocation
+import com.tribbloids.spookystuff.mav.actions.Move
 
 /**
   * Created by peng on 26/08/16.

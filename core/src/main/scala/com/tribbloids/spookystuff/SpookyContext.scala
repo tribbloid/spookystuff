@@ -4,9 +4,10 @@ import com.tribbloids.spookystuff.dsl.DriverFactories
 import com.tribbloids.spookystuff.dsl.DriverFactories.PhantomJS
 import com.tribbloids.spookystuff.rdd.FetchedDataset
 import com.tribbloids.spookystuff.row._
-import com.tribbloids.spookystuff.utils.{HDFSResolver, SpookyUtils}
+import com.tribbloids.spookystuff.utils.HDFSResolver
 import org.apache.hadoop.conf.Configuration
 import org.apache.spark._
+import org.apache.spark.ml.dsl.utils.MessageWrapper
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.{DataFrame, SQLContext}
 import org.apache.spark.storage.StorageLevel
@@ -19,7 +20,7 @@ import scala.reflect.ClassTag
 case class SpookyContext private (
                                    @transient sqlContext: SQLContext, //can't be used on executors
                                    @transient private var _conf: SpookyConf, //can only be used on executors after broadcast
-                                   var metrics: Metrics //accumulators cannot be broadcasted,
+                                   metrics: Metrics //accumulators cannot be broadcasted,
                                  ) {
 
   def this(
@@ -80,12 +81,14 @@ case class SpookyContext private (
 
   //TODO: use reflection to zero, and change var to val
   def zeroMetrics(): SpookyContext ={
-    metrics = new Metrics()
+    metrics.clear()
     this
   }
 
-  def getSpookyForInput = if (conf.shareMetrics) this
-  else this.copy(metrics = new Metrics())
+  def getSpookyForRDD = {
+    if (conf.shareMetrics) this
+    else this.copy(metrics = new Metrics())
+  }
 
   //TODO: move to DriverFactory.initializeDeploy
   private def deployPhantomJS(): Boolean = {
@@ -166,7 +169,7 @@ case class SpookyContext private (
       new FetchedDataset(
         self,
         fieldMap = ListMap(fields: _*),
-        spooky = getSpookyForInput
+        spooky = getSpookyForRDD
       )
     }
 
@@ -185,7 +188,7 @@ case class SpookyContext private (
 
           val jsonRDD = canonRdd.map(
             map =>
-              SpookyUtils.toJSON(map)
+              MessageWrapper(map).compactJSON()
           )
           val dataFrame = sqlContext.read.json(jsonRDD)
           dataFrameToPageRowRDD(dataFrame)
@@ -198,7 +201,7 @@ case class SpookyContext private (
           new FetchedDataset(
             self,
             fieldMap = ListMap(),
-            spooky = getSpookyForInput
+            spooky = getSpookyForRDD
           )
 
         // RDD[T] => RDD('_ -> T) => ...
@@ -213,7 +216,7 @@ case class SpookyContext private (
           new FetchedDataset(
             self,
             fieldMap = ListMap(Field("_") -> ttg.catalystType),
-            spooky = getSpookyForInput
+            spooky = getSpookyForRDD
           )
       }
     }

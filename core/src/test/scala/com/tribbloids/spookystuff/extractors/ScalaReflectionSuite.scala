@@ -1,6 +1,6 @@
 package com.tribbloids.spookystuff.extractors
 
-import com.tribbloids.spookystuff.tests.TestMixin
+import com.tribbloids.spookystuff.testutils.TestMixin
 import com.tribbloids.spookystuff.utils.{ScalaUDT, TypeUtils, UnreifiedScalaType}
 import org.apache.spark.sql.types.{IntegerType, SQLUserDefinedType, StringType}
 import org.scalatest.FunSuite

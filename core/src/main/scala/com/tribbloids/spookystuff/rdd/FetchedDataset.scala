@@ -113,7 +113,7 @@ case class FetchedDataset(
       if (!sort) dataRDD
       else dataRDDSorted
     }
-      .map(_.toJSON)
+      .map(_.compactJSON)
   }
 
   //TODO: take filter schema as parameter

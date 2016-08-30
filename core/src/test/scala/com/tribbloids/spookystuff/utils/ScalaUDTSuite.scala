@@ -3,7 +3,7 @@ package com.tribbloids.spookystuff.utils
 import com.tribbloids.spookystuff.SpookyEnvFixture
 import com.tribbloids.spookystuff.actions.Action
 import com.tribbloids.spookystuff.doc.{Doc, Fetched, Unstructured}
-import com.tribbloids.spookystuff.tests.TestMixin
+import com.tribbloids.spookystuff.testutils.TestMixin
 import org.apache.spark.sql.types.DataType
 
 /**

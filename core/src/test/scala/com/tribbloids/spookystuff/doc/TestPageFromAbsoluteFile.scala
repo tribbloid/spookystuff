@@ -1,6 +1,6 @@
 package com.tribbloids.spookystuff.doc
 
-import com.tribbloids.spookystuff.tests.LocalURIDocsFixture
+import com.tribbloids.spookystuff.testutils.LocalURIDocsFixture
 
 /**
  * Created by peng on 13/08/15.

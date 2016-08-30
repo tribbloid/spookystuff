@@ -1,41 +1,83 @@
 from __future__ import print_function
 import os
+import tempfile
+
 import sys
+from dronekit import connect
 
 from dronekit_sitl import SITL
-# from dronekit_sitl.pysim import util
 from nose.tools import assert_equals, with_setup
 import time
 
-sitl = None
-mavproxy = None
-sitl_args = ['-I0', '--model', 'quad', '--home=-35.363261,149.165230,584,353']
+sitls = []
+mavproxies = []
+sitl_args = ['--model', 'quad', '--home=-35.363261,149.165230,584,353']
 
 if 'SITL_SPEEDUP' in os.environ:
     sitl_args += ['--speedup', str(os.environ['SITL_SPEEDUP'])]
 if 'SITL_RATE' in os.environ:
     sitl_args += ['-r', str(os.environ['SITL_RATE'])]
 
-def setup_sitl():
-    global sitl
+def tcp_master(instance):
+    return 'tcp:127.0.0.1:' + str(5760 + instance*10)
+
+def setup_sitl(instance=0):
+    global sitls
+    args = sitl_args + ['-I' + str(instance)]
     sitl = SITL()
     sitl.download('copter', '3.3')
-    sitl.launch(sitl_args, await_ready=True, restart=True)
 
-def setup_sitl_mavproxy(atype='copter', options=None):
-    global mavproxy
-    setup_sitl()
+    wd = tempfile.mkdtemp()
+    print("instance ", instance, ": APM working directory: ", wd)
+    sitl.launch(args, await_ready=True, restart=True, wd=wd)
+
+    connString = tcp_master(instance)
+    v = connect(connString, wait_ready=True)
+
+    sysid = instance + 1
+    v.parameters.set('SYSID_THISMAV', sysid, wait_ready=True)
+    print("instance ", instance, ": connect to ", connString, " and set SYSID_THISMAV to ", sysid)
+    time.sleep(3)
+    v.close()
+    # time.sleep(20)
+    sitl.stop()
+    #
+    # time.sleep(20)
+    sitl.launch(args, await_ready=True, restart=True, wd=wd, use_saved_data=True)
+
+    v = connect(connString, wait_ready=True)
+    # time.sleep(20)
+
+    # This fn actually rate limits itself to every 2s.
+    # Just retry with persistence to get our first param stream.
+    v._master.param_fetch_all()
+    v.wait_ready()
+
+    params = v._params_map
+    actualSYSID = params['SYSID_THISMAV']
+    print("SYSID_THISMAV = ", actualSYSID)
+    assert actualSYSID == sysid
+    v.close()
+
+    sitls.append(sitl)
+
+def setup_sitl_mavproxy(atype='quad', options=None, instance=0):
+    global mavproxies
+    setup_sitl(instance)
 
     time.sleep(2)
-    mavproxy = start_MAVProxy_SIL(atype=atype, options=options)
+    # out = '127.0.0.1:' + str(14550 + instance*10)
+    out = '127.0.0.1:' + str(14550)
+    mavproxy = start_MAVProxy_SIL(atype=atype + str(instance), master=tcp_master(instance), out=out, options=options)
+    mavproxies.append(mavproxy)
 
-def start_MAVProxy_SIL(atype, aircraft=None, setup=False, master='tcp:127.0.0.1:5760',
+def start_MAVProxy_SIL(atype, aircraft=None, setup=False, master='tcp:127.0.0.1:5760', out='127.0.0.1:14550',
                        options=None, logfile=sys.stdout):
     '''launch mavproxy connected to a SIL instance'''
     import pexpect
     global close_list
     MAVPROXY = os.getenv('MAVPROXY_CMD', 'mavproxy.py')
-    cmd = MAVPROXY + ' --master=%s --out=127.0.0.1:14550' % master
+    cmd = MAVPROXY + ' --master=%s' % master + ' --out=%s' % out
     if setup:
         cmd += ' --setup'
     if aircraft is None:
@@ -48,32 +90,15 @@ def start_MAVProxy_SIL(atype, aircraft=None, setup=False, master='tcp:127.0.0.1:
     return ret
 
 def teardown_sitl():
-    global sitl, mavproxy
-    if mavproxy is not None:
-        # mavproxy.sendline ('set requireexit True')
-        # mavproxy.sendline ('exit')
-        # time.sleep(3)
-        # print('exit: exitstatus=', mavproxy.exitstatus, " signalstatus=", mavproxy.signalstatus)
 
-        os.killpg(mavproxy.pid, 2)
+    global sitls, mavproxies
+    for m in mavproxies :
+        os.killpg(m.pid, 2)
+    mavproxies = []
 
-        # mavproxy.close(True)
-        # time.sleep(3)
-        # print('close: exitstatus=', mavproxy.exitstatus, " signalstatus=", mavproxy.signalstatus)
-        #
-        # # if not mavproxy.terminated:
-        # mavproxy.terminate(True)
-        # time.sleep(3)
-        # print('terminate: exitstatus=', mavproxy.exitstatus, " signalstatus=", mavproxy.signalstatus)
-        # # if not mavproxy.terminated:
-        # mavproxy.kill(9)
-        # time.sleep(3)
-        # print('kill: exitstatus=', mavproxy.exitstatus, " signalstatus=", mavproxy.signalstatus)
-        # print('pid: ', mavproxy.pid)
-
-        mavproxy=None
-
-    sitl.stop()
+    for sitl in sitls :
+        sitl.stop()
+    sitls = []
 
 def with_sitl(fn):
 
@@ -85,16 +110,6 @@ def with_sitl(fn):
         udp = fn('127.0.0.1:14550', *args, **kargs)
         assert_equals(tcp, udp)
         return tcp
-
-    # @with_setup(setup_sitl, teardown_sitl)
-    # def test_tcp(*args, **kargs):
-    #     tcp = fn('tcp:127.0.0.1:5760', *args, **kargs)
-    #     return tcp
-    #
-    # @with_setup(setup_sitl_mavproxy, teardown_sitl)
-    # def test_udp(*args, **kargs):
-    #     udp = fn('127.0.0.1:14550', *args, **kargs)
-    #     return udp
 
     test.__name__ = fn.__name__
     return test
@@ -119,7 +134,7 @@ def with_sitl_udp(fn):
     test_udp.__name__ = fn.__name__
     return test_udp
 
-def with_sitl_multi(fn):
+def with_sitl_3way(fn):
 
     @with_setup(setup_sitl_mavproxy(options='--out=127.0.0.1:10092'), teardown_sitl)
     def test_udp(*args, **kargs):

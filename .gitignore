@@ -43,4 +43,4 @@ foo
 # **/rootkey.csv
 
 #mavproxy test log
-mav/test.*
+**/logs

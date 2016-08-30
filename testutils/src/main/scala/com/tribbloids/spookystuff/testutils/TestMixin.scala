@@ -1,4 +1,4 @@
-package com.tribbloids.spookystuff.tests
+package com.tribbloids.spookystuff.testutils
 
 import org.apache.spark.SparkEnv
 import org.apache.spark.serializer.{JavaSerializer, KryoSerializer, Serializer}

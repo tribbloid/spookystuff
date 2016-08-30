@@ -3,10 +3,10 @@ package com.tribbloids.spookystuff.row
 import com.tribbloids.spookystuff.SpookyContext
 import com.tribbloids.spookystuff.actions._
 import com.tribbloids.spookystuff.doc._
-import org.apache.spark.sql.Row
+import org.apache.spark.ml.dsl.utils.Message
 
 //TODO: extends Spark SQL Row
-trait ProductRow extends Product {
+trait SpookyRow extends Message {
 
 //  override def length: Int = this.productArity
 //
@@ -31,7 +31,7 @@ object FetchedRow {
 case class FetchedRow(
                        dataRow: DataRow = DataRow(),
                        fetched: Seq[Fetched] = Seq()
-                     ) extends ProductRow {
+                     ) extends SpookyRow {
 
   //TODO: trace implementation is not accurate: the last backtrace has all previous exports removed
   def squash(spooky: SpookyContext): SquashedFetchedRow = SquashedFetchedRow(
