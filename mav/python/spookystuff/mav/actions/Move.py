@@ -9,7 +9,7 @@ class DroneAction(object): # TODO: stub
     def __init__(self, actionJSON):
         None
 
-class Move(object):
+class Move(DroneAction):
 
     move = None
 

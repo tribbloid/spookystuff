@@ -79,7 +79,6 @@ case class SpookyContext private (
   @transient lazy val hadoopConf: Configuration = broadcastedHadoopConf.value.value
   @transient lazy val resolver = HDFSResolver(hadoopConf)
 
-  //TODO: use reflection to zero, and change var to val
   def zeroMetrics(): SpookyContext ={
     metrics.clear()
     this
