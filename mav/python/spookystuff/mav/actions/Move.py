@@ -4,18 +4,13 @@ import time
 from dronekit import connect, VehicleMode, LocationGlobalRelative
 from nose.tools import assert_equals
 
-class DroneAction(object): # TODO: stub
+class Move(object):
 
-    def __init__(self, actionJSON):
-        None
-
-class Move(DroneAction):
-
-    move = None
+    this = None
 
     def __init__(self, actionJSON):
         # type: (str, str) -> object
-        self.move = json.loads(actionJSON)
+        self.this = json.loads(actionJSON)
 
     def exe(sessionJSON):
         # type: (str) -> object

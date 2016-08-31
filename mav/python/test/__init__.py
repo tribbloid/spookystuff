@@ -27,39 +27,31 @@ def setup_sitl(instance=0):
     sitl = SITL()
     sitl.download('copter', '3.3')
 
-    wd = tempfile.mkdtemp()
-    print("instance ", instance, ": APM working directory: ", wd)
-    sitl.launch(args, await_ready=True, restart=True, wd=wd)
+    sitl.launch(args, await_ready=True, restart=True)
 
-    connString = tcp_master(instance)
+    key = 'SYSID_THISMAV'
+    value = instance + 1
+
+    setParamAndRelaunch(sitl, args, tcp_master(instance), key, value)
+
+    sitls.append(sitl)
+
+def setParamAndRelaunch(sitl, args, connString, key, value):
+
+    wd = sitl.wd
     v = connect(connString, wait_ready=True)
-
-    sysid = instance + 1
-    v.parameters.set('SYSID_THISMAV', sysid, wait_ready=True)
-    print("instance ", instance, ": connect to ", connString, " and set SYSID_THISMAV to ", sysid)
-    time.sleep(3)
+    v.parameters.set(key, value, wait_ready=True)
     v.close()
-    # time.sleep(20)
     sitl.stop()
-    #
-    # time.sleep(20)
     sitl.launch(args, await_ready=True, restart=True, wd=wd, use_saved_data=True)
-
     v = connect(connString, wait_ready=True)
-    # time.sleep(20)
-
     # This fn actually rate limits itself to every 2s.
     # Just retry with persistence to get our first param stream.
     v._master.param_fetch_all()
     v.wait_ready()
-
-    params = v._params_map
-    actualSYSID = params['SYSID_THISMAV']
-    print("SYSID_THISMAV = ", actualSYSID)
-    assert actualSYSID == sysid
+    actualValue = v._params_map[key]
+    assert actualValue == value
     v.close()
-
-    sitls.append(sitl)
 
 def setup_sitl_mavproxy(atype='quad', options=None, instance=0):
     global mavproxies

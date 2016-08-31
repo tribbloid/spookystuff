@@ -2,13 +2,11 @@ package com.tribbloids.spookystuff.actions
 
 import com.thoughtworks.selenium.SeleniumException
 import com.tribbloids.spookystuff.Const
-import com.tribbloids.spookystuff.doc.{Doc, Fetched, Unstructured}
-import com.tribbloids.spookystuff.extractors.{Extractor, FR, GenExtractor, Literal}
+import com.tribbloids.spookystuff.doc.{Doc, Unstructured}
+import com.tribbloids.spookystuff.extractors.{Extractor, FR, Literal}
 import com.tribbloids.spookystuff.row.{DataRowSchema, FetchedRow}
-import com.tribbloids.spookystuff.session.{Session, SessionRelay}
+import com.tribbloids.spookystuff.session.Session
 import com.tribbloids.spookystuff.utils.SpookyUtils
-import org.apache.spark.ml.dsl.utils.{FlowUtils, MessageWrapper}
-import org.apache.spark.mllib.api.python
 import org.openqa.selenium.interactions.{Actions => SeleniumActions}
 import org.openqa.selenium.support.ui.{ExpectedCondition, ExpectedConditions, Select}
 import org.openqa.selenium.{By, JavascriptExecutor, WebDriver}
@@ -16,7 +14,6 @@ import org.openqa.selenium.{By, JavascriptExecutor, WebDriver}
 import scala.collection.mutable
 import scala.concurrent.duration.Duration
 import scala.language.dynamics
-import scala.util.Random
 
 trait Interaction extends Action {
 
@@ -62,80 +59,6 @@ abstract class WebInteraction(
 
     Nil
   }
-}
-
-@SerialVersionUID(-6784287573066896999L)
-abstract class PythonAction extends Action {
-
-  //TODO: how to clean up variable? Should I prefer a stateless/functional design?
-  val varPrefix = FlowUtils.toCamelCase(this.getClass.getSimpleName)
-  val varName = varPrefix + Random.nextLong()
-
-  //can only be overriden by lazy val
-  def constructPython(session: Session): String = {
-    // java & python have different namespace convention.
-    val pyClassName = this.getClass.getCanonicalName.stripPrefix("com.tribbloids.")
-    val result = session.pythonDriver.interpret(
-      s"""
-         |$varName = $pyClassName('${this.toJSON}')
-           """.trim.stripMargin
-    )
-    varName
-  }
-
-  def destructPython(session: Session): Unit = {
-    val result = session.pythonDriver.interpret(
-      s"""
-         |del $varName
-           """.trim.stripMargin
-    )
-    Unit
-  }
-
-  case class Py(session: Session) extends Dynamic {
-
-    def applyDynamic(methodName: String)(args: Any*): Seq[String] = {
-      val argJSONs = args.map {
-        v =>
-          MessageWrapper(v).compactJSON()
-      }
-      val result = session.pythonDriver.interpret(
-        //self & session JSON is always the first & second params.
-        s"""
-           |$varName.$methodName(${SessionRelay.toMessage(session).compactJSON}, ${this})
-           """.trim.stripMargin
-      )
-
-      result
-    }
-  }
-
-  /**
-    * must have exactly the same class/function under the same package imported in python that takes 2 JSON strings
-    * 1 for action, 1 for session
-    */
-  override def exe(session: Session): Seq[Fetched] = {
-
-    constructPython(session)
-
-    try {
-      super.exe(session)
-    }
-    finally {
-      destructPython(session)
-    }
-  }
-
-  //  override def doExe(session: Session): Seq[String] = {
-  //
-  //    val python = session.pythonDriver
-  //    val result = python.interpret(
-  //      s"""
-  //         |${this.getClass.getCanonicalName}('${this.toJSON}').exe('${SessionRelay.toMessage(session).toJSON(false)}')
-  //       """.trim.stripMargin
-  //    )
-  //
-  //  }
 }
 
 object DocumentReadyCondition extends ExpectedCondition[Boolean] {

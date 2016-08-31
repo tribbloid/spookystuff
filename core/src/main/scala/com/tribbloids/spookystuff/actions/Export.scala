@@ -34,7 +34,7 @@ import scala.xml._
   * Export a page from the browser or http client
   * the page an be anything including HTML/XML file, image, PDF file or JSON string.
   */
-trait Export extends Named with Wayback{
+trait Export extends Named {
 
   def filter: DocFilter
 
@@ -64,8 +64,13 @@ trait Export extends Named with Wayback{
   protected def doExeNoName(session: Session): Seq[Fetched]
 }
 
-trait WaybackSupport {
-  self: Wayback =>
+
+trait Wayback extends Action {
+
+  def wayback: Extractor[Long]
+}
+
+trait WaybackSupport extends Wayback {
 
   var wayback: Extractor[Long] = _
 

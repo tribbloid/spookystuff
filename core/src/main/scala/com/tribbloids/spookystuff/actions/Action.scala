@@ -232,8 +232,3 @@ trait Named extends Action {
 
 trait Driverless extends Action {
 }
-
-trait Wayback extends Action {
-
-  def wayback: Extractor[Long]
-}
