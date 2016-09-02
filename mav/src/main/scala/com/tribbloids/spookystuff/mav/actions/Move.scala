@@ -12,7 +12,7 @@ case class Move(
                  from: GlobalLocation,
                  to: GlobalLocation,
                  override val delay: Duration = null
-               ) extends PyAction with Interaction {
+               ) extends Interaction with PyAction {
 
   override def exeNoOutput(session: Session): Unit = {
     this.Py(session).exe()

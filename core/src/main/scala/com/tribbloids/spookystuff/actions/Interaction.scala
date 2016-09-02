@@ -15,7 +15,8 @@ import scala.collection.mutable
 import scala.concurrent.duration.Duration
 import scala.language.dynamics
 
-trait Interaction extends Action {
+@SerialVersionUID(-98257039403274083L)
+abstract class Interaction extends Action {
 
   def delay: Duration
 

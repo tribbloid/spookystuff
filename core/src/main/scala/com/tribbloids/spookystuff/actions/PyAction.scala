@@ -2,7 +2,7 @@
 package com.tribbloids.spookystuff.actions
 
 import com.tribbloids.spookystuff.doc.Fetched
-import com.tribbloids.spookystuff.session.{Session, SessionRelay}
+import com.tribbloids.spookystuff.session.{DriverSession, Session, SessionRelay}
 import org.apache.spark.ml.dsl.utils.{FlowUtils, MessageWrapper}
 import org.openqa.selenium.interactions.{Actions => SeleniumActions}
 
@@ -61,6 +61,11 @@ trait PyAction extends Action {
     */
   override def exe(session: Session): Seq[Fetched] = {
 
+    session match {
+      case d: DriverSession =>
+        d.initializePythonDriverIfMissing()
+      case _ =>
+    }
     constructPython(session)
 
     try {

@@ -4,8 +4,6 @@ import java.util.regex.{Matcher, Pattern}
 
 import com.tribbloids.spookystuff.PythonException
 
-import scala.util.{Failure, Success, Try}
-
 /**
   * Created by peng on 01/08/16.
   */
@@ -15,11 +13,18 @@ import scala.util.{Failure, Success, Try}
 //TODO: not reusing Python worker for spark, is it not optimal?
 case class PythonDriver(
                          binPath: String
-                       ) extends PythonProcess(binPath) with Clean {
+                       ) extends PythonProcess(binPath) with Cleanable {
 
-  //  def
+  //open lazily
+  @transient lazy val opened: Unit = this.open()
+
   override def clean(): Unit = {
-    this.close()
+    try {
+      this.close()
+    }
+    catch {
+      case e: NullPointerException =>
+    }
   }
 
   private val errorInLastLine: Pattern = Pattern.compile(".*(Error|Exception): .*$")
@@ -36,11 +41,26 @@ case class PythonDriver(
     errorMatcher.find
   }
 
+  final def PROMPT = ">>> "
+
+  def removeLeading_>>>(str: String): String = {
+    val trimmed = str.trim
+    if (trimmed.startsWith(PROMPT)) {
+      val removed = trimmed.stripPrefix(PROMPT)
+      removeLeading_>>>(removed)
+    }
+    else {
+      trimmed
+    }
+  }
+
   def interpret(code: String): Array[String] = {
+    this.opened
     val output = this.sendAndGetResult(code)
-    val rows: Array[String] = output.split("\n")
+    val rows: Array[String] = output
+      .split("\n")
       .map(
-        _.stripPrefix(">>>").trim
+        removeLeading_>>>
       )
 
     if (pythonErrorIn(output)) {

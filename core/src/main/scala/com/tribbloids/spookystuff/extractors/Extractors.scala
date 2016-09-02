@@ -11,6 +11,7 @@ import scala.collection.TraversableOnce
 import scala.collection.immutable.ListMap
 import scala.reflect.ClassTag
 import com.tribbloids.spookystuff.utils.ImplicitUtils._
+import org.apache.spark.ml.dsl.utils.MessageWrapper
 
 object Extractors {
 
@@ -86,12 +87,19 @@ class Literal[T, +R](val valueOpt: Option[R], val dataType: DataType) extends St
     throw new UnsupportedOperationException("NULL value")
   )
 
-  override def toString = valueOpt.map(
-    v =>
-      //      "'" + v + "':" + dataType //TODO: remove single quotes? Add Type? Use JSON str?
-      "'" + v + "'" //TODO: remove single quotes? Add Type? Use JSON str?
-  )
+  override lazy val toString = valueOpt
+    .map {
+      v =>
+        MessageWrapper(v).toJSON(pretty = false)
+    }
     .getOrElse("NULL")
+
+  //  override def toString = valueOpt.map(
+  //    v =>
+  //      //      "'" + v + "':" + dataType //TODO: remove single quotes? Add Type? Use JSON str?
+  //      "'" + v + "'" //TODO: remove single quotes? Add Type? Use JSON str?
+  //  )
+  //    .getOrElse("NULL")
 
   override val self: PartialFunction[T, R] = Unlift({ _: T => valueOpt})
 }
@@ -100,14 +108,14 @@ class Literal[T, +R](val valueOpt: Option[R], val dataType: DataType) extends St
 //this is the only serializable LiftedExpression that can be shipped remotely
 //TODO: not quite compatible with product2String, e.g.: /WpostImpl/Literal/Some/http/172.17.0.2/5000/registrar/(unreified)_String/MustHaveTitle/
 sealed case class TypedLiteral[+T] (
-                                   override val valueOpt: Option[T],
-                                   override val dataType: DataType
-                                 ) extends Literal[FR, T](valueOpt, dataType) {
+                                     override val valueOpt: Option[T],
+                                     override val dataType: DataType
+                                   ) extends Literal[FR, T](valueOpt, dataType) {
 }
 
 sealed case class ErasedLiteral[+T] (
-                                    override val valueOpt: Option[T]
-                                  ) extends Literal[FR, T](valueOpt, NullType) {
+                                      override val valueOpt: Option[T]
+                                    ) extends Literal[FR, T](valueOpt, NullType) {
 
 }
 

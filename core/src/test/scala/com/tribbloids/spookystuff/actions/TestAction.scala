@@ -1,14 +1,16 @@
 package com.tribbloids.spookystuff.actions
 
+import com.tribbloids.spookystuff.doc.Fetched
 import com.tribbloids.spookystuff.dsl._
-import com.tribbloids.spookystuff.extractors.{Example, FR, Literal}
+import com.tribbloids.spookystuff.extractors.Literal
 import com.tribbloids.spookystuff.row.{DataRow, FetchedRow, Field}
-import com.tribbloids.spookystuff.utils.UnreifiedScalaType
-import com.tribbloids.spookystuff.{Const, SpookyEnvFixture}
+import com.tribbloids.spookystuff.session.Session
+import com.tribbloids.spookystuff.{ActionException, Const, SpookyEnvFixture}
 import org.apache.spark.rdd.RDD
 
 import scala.collection.immutable.ListMap
 import scala.concurrent.duration
+import scala.concurrent.duration.Duration
 import scala.util.Random
 
 class TestAction extends SpookyEnvFixture {
@@ -51,6 +53,7 @@ class TestAction extends SpookyEnvFixture {
     )
   )
 
+  //TODO: finish assertion
   exampleActionList.foreach{
     a =>
       test(s"${a.getClass.getSimpleName} has an UDT") {
@@ -62,5 +65,44 @@ class TestAction extends SpookyEnvFixture {
 
 //        df.toJSON.collect().foreach(println)
       }
+  }
+
+  test("a session without webDriver initialized won't trigger errorDump") {
+    try {
+      ErrorExport.fetch(spooky)
+      sys.error("impossible")
+    }
+    catch {
+      case e: ActionException =>
+        assert(!e.getMessage.contains("Snapshot"))
+        assert(!e.getMessage.contains("Screenshot"))
+    }
+  }
+
+  test("errorDump should not be blocked by DocFilter") {
+    try {
+      ErrorWebExport.fetch(spooky)
+      sys.error("impossible")
+    }
+    catch {
+      case e: ActionException =>
+        assert(e.getMessage.contains("Snapshot"))
+        assert(e.getMessage.contains("Screenshot"))
+    }
+  }
+}
+
+case object ErrorExport extends Export {
+
+  override def doExeNoName(session: Session): Seq[Fetched] = {
+    sys.error("error")
+  }
+}
+
+case object ErrorWebExport extends Export {
+
+  override def doExeNoName(session: Session): Seq[Fetched] = {
+    val driver = session.webDriver
+    sys.error("error")
   }
 }

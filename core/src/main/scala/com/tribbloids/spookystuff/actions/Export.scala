@@ -8,6 +8,7 @@ import javax.net.ssl.SSLContext
 
 import com.tribbloids.spookystuff.Const
 import com.tribbloids.spookystuff.doc._
+import com.tribbloids.spookystuff.dsl.DocFilters
 import com.tribbloids.spookystuff.extractors.{Extractor, FR, Literal}
 import com.tribbloids.spookystuff.http._
 import com.tribbloids.spookystuff.row.{DataRowSchema, FetchedRow}
@@ -34,15 +35,15 @@ import scala.xml._
   * Export a page from the browser or http client
   * the page an be anything including HTML/XML file, image, PDF file or JSON string.
   */
-trait Export extends Named {
+abstract class Export extends Named {
 
-  def filter: DocFilter
+  def filter: DocFilter = DocFilters.Bypass
 
   final override def outputNames = Set(this.name)
 
   final override def trunk = None //have not impact to driver
 
-  protected final def doExe(session: Session): Seq[Fetched] = {
+  final def doExe(session: Session): Seq[Fetched] = {
     val results = doExeNoName(session)
     results.map{
       case doc: Doc =>
@@ -61,7 +62,7 @@ trait Export extends Named {
     }
   }
 
-  protected def doExeNoName(session: Session): Seq[Fetched]
+  def doExeNoName(session: Session): Seq[Fetched]
 }
 
 
@@ -117,7 +118,7 @@ case class Snapshot(
                    ) extends Export with WaybackSupport{
 
   // all other fields are empty
-  override protected def doExeNoName(pb: Session): Seq[Doc] = {
+  override def doExeNoName(pb: Session): Seq[Doc] = {
 
     //    import scala.collection.JavaConversions._
 
@@ -146,13 +147,13 @@ case class Snapshot(
 }
 
 //this is used to save GC when invoked by anothor component
-object DefaultSnapshot extends Snapshot()
+object QuickSnapshot extends Snapshot(DocFilters.Bypass)
 
 case class Screenshot(
                        override val filter: DocFilter = Const.defaultImageFilter
                      ) extends Export with WaybackSupport {
 
-  override protected def doExeNoName(pb: Session): Seq[Doc] = {
+  override def doExeNoName(pb: Session): Seq[Doc] = {
 
     val content = pb.webDriver match {
       case ts: TakesScreenshot => ts.getScreenshotAs(OutputType.BYTES)
@@ -174,7 +175,7 @@ case class Screenshot(
   }
 }
 
-object DefaultScreenshot extends Screenshot()
+object DefaultScreenshot extends Screenshot(DocFilters.Bypass)
 
 @SerialVersionUID(7344992460754628988L)
 abstract class HttpMethod(
@@ -352,7 +353,7 @@ case class Wget(
                  override val filter: DocFilter = Const.defaultDocumentFilter
                ) extends HttpMethod(uri) {
 
-  override protected def doExeNoName(session: Session): Seq[Fetched] = {
+  override def doExeNoName(session: Session): Seq[Fetched] = {
 
     uriOption match {
       case None => Nil
@@ -568,7 +569,7 @@ case class WpostImpl private[actions](
                                      ) extends HttpMethod(uri) {
 
   // not cacheable
-  override protected def doExeNoName(session: Session): Seq[Fetched] = {
+  override def doExeNoName(session: Session): Seq[Fetched] = {
 
     uriOption match {
       case None => Nil

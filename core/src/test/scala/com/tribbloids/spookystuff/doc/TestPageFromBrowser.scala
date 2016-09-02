@@ -12,7 +12,7 @@ class TestPageFromBrowser extends SpookyEnvFixture {
     val emptyPage: Doc = {
       val session = new DriverSession(spooky)
 
-      Snapshot(DocFilters.AllowStatusCode2XX).apply(session).toList.head.asInstanceOf[Doc]
+      Snapshot(DocFilters.AcceptStatusCode2XX).apply(session).toList.head.asInstanceOf[Doc]
     }
 
     assert (emptyPage.findAll("div.dummy").attrs("href").isEmpty)

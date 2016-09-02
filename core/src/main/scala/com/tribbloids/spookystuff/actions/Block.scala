@@ -303,7 +303,7 @@ final case class If(
 
   override def doExeNoUID(session: Session): Seq[Doc] = {
 
-    val current = DefaultSnapshot.exe(session).head.asInstanceOf[Doc]
+    val current = QuickSnapshot.exe(session).head.asInstanceOf[Doc]
 
     val pages = new ArrayBuffer[Doc]()
     if (condition(current, session)) {

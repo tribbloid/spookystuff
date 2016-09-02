@@ -86,9 +86,9 @@ trait Action extends ActionLike {
 
     session match {
       case d: DriverSession =>
-        if (d.webDriverOpt.isEmpty) {
+        if (d.webDriverOpt.nonEmpty) {
           if (errorDump) {
-            val rawPage = DefaultSnapshot.exe(session).head.asInstanceOf[Doc]
+            val rawPage = QuickSnapshot.exe(session).head.asInstanceOf[Doc]
             message += "\nSnapshot: " + this.errorDump(message, rawPage, session.spooky)
           }
           if (errorDumpScreenshot && session.webDriver.isInstanceOf[TakesScreenshot]) {
@@ -151,7 +151,7 @@ trait Action extends ActionLike {
     }
   }
 
-  protected def doExe(session: Session): Seq[Fetched]
+  def doExe(session: Session): Seq[Fetched]
 
   def andThen(f: Seq[Fetched] => Seq[Fetched]): Action = AndThen(this, f)
 

@@ -44,7 +44,7 @@ object Const {
   val mimeDetector = new DefaultDetector()
 
   val defaultDocumentFilter = DocFilters.MustHaveTitle
-  val defaultImageFilter = DocFilters.AllowStatusCode2XX
+  val defaultImageFilter = DocFilters.AcceptStatusCode2XX
 
   val exploreStageSize = 100
 }

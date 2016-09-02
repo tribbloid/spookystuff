@@ -54,7 +54,6 @@ trait Fetched extends Serializable {
   else v2
 
   def metadata: Map[String, Any]
-  final def effectiveMetadata: Map[String, Any] = Option(metadata).getOrElse(Map())
 
   //  def revertToUnfetched: Unfetched = Unfetched(uid.backtrace)
 }
@@ -64,7 +63,7 @@ case class NoDoc(
                   trace: Trace,
                   override val timeMillis: Long = System.currentTimeMillis(),
                   override val cacheable: Boolean = true,
-                  @transient metadata: Map[String, Any] = null
+                  metadata: Map[String, Any] = Map.empty
                 ) extends Serializable with Fetched {
 
   @transient override lazy val uid: DocUID = DocUID(trace, null, 0, 1)
@@ -122,7 +121,7 @@ case class Doc(
                 saved: scala.collection.mutable.Set[String] = scala.collection.mutable.Set(),
                 override val cacheable: Boolean = true,
                 httpStatus: Option[StatusLine] = None,
-                @transient metadata: Map[String, Any] = null //for customizing parsing
+                metadata: Map[String, Any] = Map.empty //for customizing parsing
               ) extends Unstructured with Fetched with IDMixin {
 
   lazy val _id = (uid, uri, declaredContentType, timeMillis, httpStatus.toString)
@@ -148,39 +147,42 @@ case class Doc(
     else detected
   }
 
-  @transient lazy val parsedContentType: ContentType = effectiveMetadata
-    .get(Doc.CONTENT_TYPE)
-    .map("" + _)
-    .orElse(declaredContentType) match {
-    case Some(str) =>
-      val ct = ContentType.parse(str)
-      if (ct.getCharset == null) {
+  @transient lazy val parsedContentType: ContentType = {
+    val strOpt = metadata
+      .get(Doc.CONTENT_TYPE)
+      .map("" + _)
+      .orElse(declaredContentType)
+    strOpt match {
+      case Some(str) =>
+        val ct = ContentType.parse(str)
+        if (ct.getCharset == null) {
 
-        ct.withCharset(detectCharset(ct))
-      }
-      else ct
-    case None =>
-      val metadata = new Metadata()
-      val slash: Int = uri.lastIndexOf('/')
-      metadata.set(TikaMetadataKeys.RESOURCE_NAME_KEY, uri.substring(slash + 1))
-      val stream = TikaInputStream.get(content, metadata)
-      try {
-        val mediaType = Const.mimeDetector.detect(stream, metadata)
-        //        val mimeType = mediaType.getBaseType.toString
-        //        val charset = new CharsetDetector().getString(content, null)
-        //        ContentType.create(mimeType, charset)
-
-        val str = mediaType.toString
-        val result = ContentType.parse(str)
-        if (result.getCharset == null) {
-
-          result.withCharset(detectCharset(result))
+          ct.withCharset(detectCharset(ct))
         }
-        else result
-      }
-      finally {
-        stream.close()
-      }
+        else ct
+      case None =>
+        val metadata = new Metadata()
+        val slash: Int = uri.lastIndexOf('/')
+        metadata.set(TikaMetadataKeys.RESOURCE_NAME_KEY, uri.substring(slash + 1))
+        val stream = TikaInputStream.get(content, metadata)
+        try {
+          val mediaType = Const.mimeDetector.detect(stream, metadata)
+          //        val mimeType = mediaType.getBaseType.toString
+          //        val charset = new CharsetDetector().getString(content, null)
+          //        ContentType.create(mimeType, charset)
+
+          val str = mediaType.toString
+          val result = ContentType.parse(str)
+          if (result.getCharset == null) {
+
+            result.withCharset(detectCharset(result))
+          }
+          else result
+        }
+        finally {
+          stream.close()
+        }
+    }
   }
 
   //TODO: use reflection to find any element implementation that can resolve supplied MIME type
@@ -194,7 +196,7 @@ case class Doc(
       JsonElement(content, effectiveCharset, uri) //not serialize, parsing is faster
     }
     else if (mimeType.contains("csv")) {
-      val csvFormat = this.effectiveMetadata.get(Doc.CSV_FORMAT).map{
+      val csvFormat = this.metadata.get(Doc.CSV_FORMAT).map{
         _.asInstanceOf[CSVFormat]
       }
         .getOrElse(Doc.defaultCSVFormat)
@@ -303,6 +305,6 @@ case class Doc(
   }
 
   def set(tuples: (String, Any)*): Doc = this.copy(
-    metadata = this.effectiveMetadata ++ Map(tuples: _*)
+    metadata = this.metadata ++ Map(tuples: _*)
   )
 }

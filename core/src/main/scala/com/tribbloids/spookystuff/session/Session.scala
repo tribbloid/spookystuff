@@ -89,7 +89,8 @@ class DriverSession(
     throw NoWebDriverException
   }
 
-  def initializeWebDriver(): Unit = {
+  def initializeWebDriverIfMissing(): Unit = {
+    if (webDriverOpt.nonEmpty) return
     SpookyUtils.retry(Const.localResourceLocalRetries) {
 
       SpookyUtils.withDeadline(Const.sessionInitializationTimeout) {
@@ -122,7 +123,8 @@ class DriverSession(
     throw NoPythonDriverException
   }
 
-  def initializePythonDriver(): Unit = {
+  def initializePythonDriverIfMissing(): Unit = {
+    if (pythonDriverOpt.nonEmpty) return
     SpookyUtils.retry(Const.localResourceLocalRetries) {
 
       SpookyUtils.withDeadline(Const.sessionInitializationTimeout) {
@@ -134,7 +136,7 @@ class DriverSession(
     }
   }
 
-  // can only initialize one driver, an action is less likely to use multiple drivers
+  // TODO: can only initialize one driver, an action is less likely to use multiple drivers
   def initializeDriverIfMissing[T](f: => T): T = {
     try {
       f
@@ -142,11 +144,11 @@ class DriverSession(
     catch {
       case NoWebDriverException =>
         LoggerFactory.getLogger(this.getClass).info("Initialization WebDriver ...")
-        initializeWebDriver()
+        initializeWebDriverIfMissing()
         f
       case NoPythonDriverException =>
         LoggerFactory.getLogger(this.getClass).info("Initialization PythonDriver ...")
-        initializePythonDriver()
+        initializePythonDriverIfMissing()
         f
     }
   }

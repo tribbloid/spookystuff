@@ -19,7 +19,14 @@ trait AbstractDocFilter extends DocFilter with PrettyToStringMixin {
 
 object DocFilters {
 
-  case object AllowStatusCode2XX extends AbstractDocFilter {
+  case object Bypass extends AbstractDocFilter {
+
+    override def apply(result: Doc, session: Session): Doc = {
+      result
+    }
+  }
+
+  case object AcceptStatusCode2XX extends AbstractDocFilter {
 
     override def apply(result: Doc, session: Session): Doc = {
       assertStatusCode(result)

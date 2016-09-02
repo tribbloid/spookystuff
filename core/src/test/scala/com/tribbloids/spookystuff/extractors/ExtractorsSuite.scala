@@ -9,6 +9,6 @@ class ExtractorsSuite extends SpookyEnvFixture {
 
   test("Literal has the correct toString form") {
     val str = Literal("lit").toString
-    assert(str == "'lit'")
+    assert(str == "\"lit\"")
   }
 }

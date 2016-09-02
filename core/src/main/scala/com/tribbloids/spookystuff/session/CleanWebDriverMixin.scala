@@ -6,11 +6,11 @@ import org.slf4j.LoggerFactory
 /**
  *
  */
-object Clean {
+object Cleanable {
 
 }
 
-trait Clean {
+trait Cleanable {
 
   def clean(): Unit
 
@@ -30,7 +30,7 @@ trait Clean {
 }
 
 
-trait CleanWebDriverMixin extends Clean {
+trait CleanWebDriverMixin extends Cleanable {
   this: WebDriver =>
 
   def clean(): Unit = {

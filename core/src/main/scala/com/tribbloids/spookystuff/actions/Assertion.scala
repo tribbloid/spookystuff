@@ -26,7 +26,7 @@ abstract class Assertion extends Action {
 @SerialVersionUID(-5210711420423079523L)
 case class Assert(condition: DocCondition) extends Assertion {
   override def exeNoOutput(session: Session): Unit = {
-    val page = DefaultSnapshot.apply(session).head.asInstanceOf[Doc]
+    val page = QuickSnapshot.apply(session).head.asInstanceOf[Doc]
 
     assert(condition(page, session))
   }

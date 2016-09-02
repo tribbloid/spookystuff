@@ -17,8 +17,8 @@ object PythonDriverSuite {
 
   def runIterable[T, R](xs: Iterable[T])(f: (T, PythonDriver) => R): Iterable[R] = {
     val proc = new PythonDriver("python")
+    proc.open()
     try {
-      proc.open()
       val result = xs.map{
         f(_, proc)
       }
@@ -58,8 +58,10 @@ class PythonDriverSuite extends SpookyEnvFixture {
 
     PythonDriverSuite.runIterable(1 to 10) {
       (i, proc) =>
-        val result = proc.interpret(s"print($i + 1)")
-        assert(result.length == 1)
+        val result = proc.interpret(s"print($i * $i)").mkString("\n")
+        result.shouldBe(
+          "" + i*i
+        )
     }
   }
 
