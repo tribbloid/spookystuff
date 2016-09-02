@@ -5,7 +5,6 @@ import java.net.{URL, URLClassLoader}
 
 import org.apache.spark.ml.dsl.ReflectionUtils
 import org.apache.spark.sql.catalyst.ScalaReflection
-import org.json4s.{DefaultFormats, Formats}
 import org.slf4j.LoggerFactory
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -269,5 +268,15 @@ These special characters are often called "metacharacters".
       }
     }
     h
+  }
+
+  @scala.annotation.tailrec
+  def unboxException[T <: Throwable: ClassTag](e: Throwable): Throwable = {
+    e match {
+      case ee: T =>
+        unboxException[T](ee.getCause)
+      case _ =>
+        e
+    }
   }
 }

@@ -2,7 +2,7 @@ package com.tribbloids.spookystuff.utils
 
 import java.io._
 import java.nio.file.FileAlreadyExistsException
-import java.security.PrivilegedAction
+import java.security.{PrivilegedAction, PrivilegedActionException}
 
 import com.tribbloids.spookystuff.Const
 import org.apache.hadoop
@@ -158,12 +158,19 @@ case class HDFSResolver(
       case None =>
         f
       case Some(ugi) =>
-        ugi.doAs {
-          new PrivilegedAction[T] {
-            override def run(): T = {
-              f
+        try {
+          ugi.doAs {
+            new PrivilegedAction[T] {
+              override def run(): T = {
+                f
+              }
             }
           }
+        }
+        catch {
+          case e: Throwable =>
+            // UGI.doAs wraps any exception in PrivilegedActionException, should be unwrapped and thrown
+            throw SpookyUtils.unboxException[PrivilegedActionException](e)
         }
     }
   }
