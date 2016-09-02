@@ -1,15 +1,14 @@
 package com.tribbloids.spookystuff.utils
 
 import java.io._
-import java.nio.ByteBuffer
 import java.nio.file.FileAlreadyExistsException
+import java.security.PrivilegedAction
 
 import com.tribbloids.spookystuff.Const
 import org.apache.hadoop
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.{FSDataInputStream, FSDataOutputStream, Path}
-import org.apache.spark.serializer.JavaSerializer
-import org.apache.spark.{SerializableWritable, SparkConf}
+import org.apache.hadoop.security.UserGroupInformation
 
 /*
  * to make it resilient to asynchronous read/write, let output rename the file, write it, and rename back,
@@ -51,7 +50,7 @@ object LocalResolver extends PathResolver {
   override def input[T](pathStr: String)(f: (InputStream) => T): T = {
 
     val file = new File(pathStr)
-//    ensureAbsolute(file)
+    //    ensureAbsolute(file)
 
     if (!pathStr.endsWith(lockedSuffix)) {
       //wait for its locked file to finish its locked session
@@ -79,7 +78,7 @@ object LocalResolver extends PathResolver {
   override def output[T](pathStr: String, overwrite: Boolean)(f: (OutputStream) => T): T = {
 
     val file = new File(pathStr)
-//    ensureAbsolute(file)
+    //    ensureAbsolute(file)
 
     if (file.exists() && !overwrite) throw new FileAlreadyExistsException(s"$pathStr already exists")
     else if (!file.exists()) {
@@ -102,7 +101,7 @@ object LocalResolver extends PathResolver {
   override def lockAccessDuring[T](pathStr: String)(f: (String) => T): T = {
 
     val file = new File(pathStr)
-//    ensureAbsolute(file)
+    //    ensureAbsolute(file)
 
     val lockedPath = pathStr + lockedSuffix
     val lockedFile = new File(lockedPath)
@@ -130,33 +129,50 @@ object LocalResolver extends PathResolver {
 }
 
 case class HDFSResolver(
-                         @transient hadoopConf: Configuration
+                         @transient hadoopConf: Configuration,
+                         @transient ugiOverride: Option[UserGroupInformation] = None
                        ) extends PathResolver {
 
   def lockedSuffix: String = ".locked"
 
-  @transient lazy val ser = new JavaSerializer(new SparkConf()).newInstance()
+  val confBinary = new BinaryWritable(hadoopConf)
+  val ugiWrapperOpt = ugiOverride.map(new SerializableUGIWrapper(_))
 
-  //TODO: the following are necessary to bypass SPARK-7708, try to remove in the future
-  @transient lazy val configWrapper: SerializableWritable[Configuration] = if (hadoopConf != null)
-    new SerializableWritable[Configuration](hadoopConf)
-  else
-    ser.deserialize[SerializableWritable[Configuration]](ByteBuffer.wrap(configWrapperSerialized))
+  def getHadoopConf: Configuration = {
+    confBinary.value
+  }
+  def getUGIOverride: Option[UserGroupInformation] = ugiWrapperOpt.map{
+    _.value
+  }
 
-  val configWrapperSerialized: Array[Byte] = ser.serialize(configWrapper).array()
 
-  override def toString = s"${this.getClass.getSimpleName}($configWrapper)"
+  override def toString = s"${this.getClass.getSimpleName}($getHadoopConf, $getUGIOverride)"
 
-  def ensureAbsolute(path: Path) = {
+
+  def ensureAbsolute(path: Path): Unit = {
     assert(path.isAbsolute, s"BAD DESIGN: ${path.toString} is not an absolute path")
   }
 
-  //SpookyUtils.retry(Const.DFSLocalRetries)
-  def input[T](pathStr: String)(f: InputStream => T): T = {
+  def doAsUGI[T](f: =>T): T = {
+    getUGIOverride match {
+      case None =>
+        f
+      case Some(ugi) =>
+        ugi.doAs {
+          new PrivilegedAction[T] {
+            override def run(): T = {
+              f
+            }
+          }
+        }
+    }
+  }
+
+  def input[T](pathStr: String)(f: InputStream => T): T = doAsUGI{
     val path: Path = new Path(pathStr)
     //    ensureAbsolute(path)
 
-    val fs = path.getFileSystem(configWrapper.value)
+    val fs = path.getFileSystem(getHadoopConf)
 
     if (!pathStr.endsWith(lockedSuffix)) {
       //wait for its locked file to finish its locked session
@@ -180,11 +196,10 @@ case class HDFSResolver(
     }
   }
 
-  override def output[T](pathStr: String, overwrite: Boolean)(f: (OutputStream) => T): T = SpookyUtils.retry(3){
+  override def output[T](pathStr: String, overwrite: Boolean)(f: (OutputStream) => T): T = doAsUGI{
     val path = new Path(pathStr)
-    //    ensureAbsolute(path)
 
-    val fs = path.getFileSystem(configWrapper.value)
+    val fs = path.getFileSystem(getHadoopConf)
 
     val fos: FSDataOutputStream = fs.create(path, overwrite)
 
@@ -198,11 +213,11 @@ case class HDFSResolver(
     }
   }
 
-  override def lockAccessDuring[T](pathStr: String)(f: (String) => T): T = {
+  override def lockAccessDuring[T](pathStr: String)(f: (String) => T): T = doAsUGI{
 
     val path = new Path(pathStr)
     //    ensureAbsolute(path)
-    val fs: hadoop.fs.FileSystem = path.getFileSystem(configWrapper.value)
+    val fs: hadoop.fs.FileSystem = path.getFileSystem(getHadoopConf)
 
     val lockedPath = new Path(pathStr + lockedSuffix)
 
@@ -230,7 +245,7 @@ case class HDFSResolver(
     }
   }
 
-  override def toAbsolute(pathStr: String): String = {
+  override def toAbsolute(pathStr: String): String = doAsUGI{
     val path = new Path(pathStr)
 
     if (path.isAbsolute) {
@@ -240,7 +255,7 @@ case class HDFSResolver(
         path.toString
     }
     else {
-      val fs = path.getFileSystem(configWrapper.value)
+      val fs = path.getFileSystem(getHadoopConf)
       try {
         val root = fs.getWorkingDirectory.toString.stripSuffix("/")
         root +"/" +pathStr

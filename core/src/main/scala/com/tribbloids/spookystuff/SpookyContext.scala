@@ -7,6 +7,7 @@ import com.tribbloids.spookystuff.row._
 import com.tribbloids.spookystuff.utils.HDFSResolver
 import org.apache.hadoop.conf.Configuration
 import org.apache.spark._
+import org.apache.spark.broadcast.Broadcast
 import org.apache.spark.ml.dsl.utils.MessageWrapper
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.{DataFrame, SQLContext}
@@ -68,7 +69,7 @@ case class SpookyContext private (
     broadcastedEffectiveConf = sqlContext.sparkContext.broadcast(_conf)
   }
 
-  val broadcastedHadoopConf =
+  val broadcastedHadoopConf: Broadcast[SerializableWritable[Configuration]] =
     if (sqlContext!=null) {
       sqlContext.sparkContext.broadcast(
         new SerializableWritable(this.sqlContext.sparkContext.hadoopConfiguration)
