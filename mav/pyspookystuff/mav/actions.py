@@ -6,19 +6,20 @@ class DummyPyAction(object):
 
     def __init__(self, jsonStr):
         # type: (object) -> object
-        self.this = json.loads(jsonStr)
+        self.this = json.loads(jsonStr)[0]
 
     def dummy(self, jsonStr):
         map = json.loads(jsonStr)
-        return json.dump(self.this + map)
+        merged = dict(list(self.this.items()) + list(map.items()))
+        print(json.dumps(merged))
 
 class Move(object):
 
     this = None
 
-    def __init__(self, actionJSON):
+    def __init__(self, jsonStr):
         # type: (str, str) -> object
-        self.this = json.loads(actionJSON)
+        self.this = json.loads(jsonStr)[0]
 
     def exe(sessionJSON):
         # type: (str) -> object

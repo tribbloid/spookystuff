@@ -189,11 +189,12 @@ case class Doc(
   @transient lazy val root: Unstructured = {
     val effectiveCharset = charset.orNull
 
+    val contentStr = new String(content, effectiveCharset)
     if (mimeType.contains("html") || mimeType.contains("xml") || mimeType.contains("directory")) {
-      HtmlElement(content, effectiveCharset, uri) //not serialize, parsing is faster
+      HtmlElement(contentStr, uri) //not serialize, parsing is faster
     }
     else if (mimeType.contains("json")) {
-      JsonElement(content, effectiveCharset, uri) //not serialize, parsing is faster
+      JsonElement(contentStr, null, uri) //not serialize, parsing is faster
     }
     else if (mimeType.contains("csv")) {
       val csvFormat = this.metadata.get(Doc.CSV_FORMAT).map{
@@ -201,10 +202,13 @@ case class Doc(
       }
         .getOrElse(Doc.defaultCSVFormat)
 
-      CSVElement(content, effectiveCharset, uri, csvFormat) //not serialize, parsing is faster
+      CSVElement.apply(contentStr, uri, csvFormat) //not serialize, parsing is faster
+    }
+    else if (mimeType.contains("plain")) {
+      PlainElement(contentStr, uri) //not serialize, parsing is faster
     }
     else {
-      TikaHtmlElement(content, effectiveCharset, mimeType, uri)
+      TikaMetadataXMLElement(content, effectiveCharset, mimeType, uri)
     }
   }
   def charset: Option[Selector] = Option(parsedContentType.getCharset).map(_.name())

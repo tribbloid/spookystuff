@@ -2,36 +2,49 @@
 package com.tribbloids.spookystuff.actions
 
 import com.tribbloids.spookystuff.doc.Fetched
-import com.tribbloids.spookystuff.session.{DriverSession, Session, SessionRelay}
+import com.tribbloids.spookystuff.session.{DriverSession, Session}
 import org.apache.spark.ml.dsl.utils.{FlowUtils, MessageWrapper}
 
 import scala.language.dynamics
 import scala.util.Random
 
+object PyAction {
+
+  final val QQQ = "\"\"\""
+}
+
 trait PyAction extends Action {
 
   //TODO: how to clean up variable? Should I prefer a stateless/functional design?
   val varPrefix = FlowUtils.toCamelCase(this.getClass.getSimpleName)
-  val varName = varPrefix + Random.nextLong()
+  val varName = varPrefix + Math.abs(Random.nextLong())
 
   //can only be overriden by lazy val
   //Python class must have a constructor that takes json format of its Scala class
   def constructPython(session: Session): String = {
     // java & python have different namespace convention.
-    val pyClassName = "pyspookystuff" + this.getClass.getCanonicalName.stripPrefix("com.tribbloids.spookystuff")
-    val result = session.pythonDriver.interpret(
-      s"""
-         |$varName = $pyClassName('${this.toJSON}')
-           """.trim.stripMargin
+    val pyFullName = Seq("pyspookystuff") ++
+      this.getClass.getCanonicalName
+        .stripPrefix("com.tribbloids.spookystuff")
+        .split('.')
+        .filter(_.nonEmpty)
+    val pyPackage = pyFullName.slice(0, pyFullName.length -1).mkString(".")
+    val pyClass = pyFullName.last
+    val lines = Seq(
+      s"from $pyPackage import $pyClass",
+      s"$varName = $pyClass (",
+      PyAction.QQQ,
+      this.prettyJson,
+      PyAction.QQQ,
+      ")"
     )
+    val result = session.pythonDriver.interpret(lines.mkString("\n"))
     varName
   }
 
   def destructPython(session: Session): Unit = {
-    val result = session.pythonDriver.interpret(
-      s"""
-         |del $varName
-           """.trim.stripMargin
+    session.pythonDriver.interpret(
+      s"del $varName"
     )
     Unit
   }
@@ -39,16 +52,22 @@ trait PyAction extends Action {
   case class Py(session: Session) extends Dynamic {
 
     def applyDynamic(methodName: String)(args: Any*): Seq[String] = {
-      val argJSONs = args.map {
+      val argJSONs: Seq[String] = args.map {
         v =>
-          MessageWrapper(v).compactJSON()
+          val json = MessageWrapper(v).prettyJSON()
+          Seq(
+            PyAction.QQQ,
+            json,
+            PyAction.QQQ
+          )
+            .mkString("\n")
       }
-      val result = session.pythonDriver.interpret(
-        //self & session JSON is always the first & second params.
-        s"""
-           |$varName.$methodName(${SessionRelay.toMessage(session).compactJSON}, ${this})
-           """.trim.stripMargin
+      val lines = Seq(
+        s"$varName.$methodName (",
+        argJSONs.mkString(",\n"),
+        ")"
       )
+      val result = session.pythonDriver.interpret(lines.mkString("\n"))
 
       result
     }

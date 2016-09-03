@@ -77,7 +77,7 @@ abstract class SpookyEnvFixture
         cacheWrite = false,
         cacheRead = false,
         dirs = new DirConf(
-          root = TestHelper.tempPath + "spooky-unit/"
+          root = TestHelper.TEMP_PATH + "spooky-unit/"
         )
       )
     }

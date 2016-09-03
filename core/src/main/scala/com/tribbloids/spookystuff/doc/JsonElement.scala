@@ -24,8 +24,6 @@ object JsonElement {
         new JsonElement(tag -> parsed, uri)
     }
   }
-
-  def apply(content: Array[Byte], charSet: String, uri: String): Unstructured = apply(new String(content, charSet), null, uri)
 }
 
 class JsonElement private (

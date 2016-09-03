@@ -1,12 +1,18 @@
 package com.tribbloids.spookystuff.session
 
+import java.io.File
 import java.util.regex.{Matcher, Pattern}
 
 import com.tribbloids.spookystuff.PythonException
+import com.tribbloids.spookystuff.utils.SpookyUtils
+import org.apache.commons.io.FileUtils
 
 object PythonDriver {
 
-  final val DEFAULT_TEMP_PATH = "temp/python"
+  final val DEFAULT_TEMP_PATH = System.getProperty("user.dir") + "/temp/pythonpath/pyspookystuff"
+  final val RESOURCE_PATH = "com/tribbloids/pyspookystuff"
+
+  final val errorInLastLine: Pattern = Pattern.compile(".*(Error|Exception): .*$")
 }
 
 /**
@@ -18,15 +24,26 @@ case class PythonDriver(
                          tempPath: String = PythonDriver.DEFAULT_TEMP_PATH // extract pyspookystuff from resources temporarily on workers
                        ) extends PythonProcess(binPath) with CleanMixin {
   {
-    // copy
+    val resource = SpookyUtils.getCPResource(PythonDriver.RESOURCE_PATH).get.toURI
+    val src = new File(resource)
+
+    FileUtils.copyDirectory(src, new File(tempPath))
+
     this.open()
+
+    // TODO: add setup modules from pyPI
+
+    this.interpret(
+      s"""
+         |import sys
+         |sys.path.append('$tempPath')
+       """.stripMargin
+    )
   }
 
   override def clean(): Unit = {
     this.close()
   }
-
-  private val errorInLastLine: Pattern = Pattern.compile(".*(Error|Exception): .*$")
 
   /**
     * Checks if there is a syntax error or an exception
@@ -36,21 +53,14 @@ case class PythonDriver(
     * @return true if syntax error or exception has happened
     */
   private def pythonErrorIn(output: String): Boolean = {
-    val errorMatcher: Matcher = errorInLastLine.matcher(output)
+    val errorMatcher: Matcher = PythonDriver.errorInLastLine.matcher(output)
     errorMatcher.find
   }
 
-  final def PROMPT = ">>> "
+  final def PROMPT = "^(>>>|\\.\\.\\.| )+"
 
-  def removeLeading_>>>(str: String): String = {
-    val trimmed = str.trim
-    if (trimmed.startsWith(PROMPT)) {
-      val removed = trimmed.stripPrefix(PROMPT)
-      removeLeading_>>>(removed)
-    }
-    else {
-      trimmed
-    }
+  def removePrompts(str: String): String = {
+    str.trim.replaceAll(PROMPT, "")
   }
 
   def interpret(code: String): Array[String] = {
@@ -58,12 +68,16 @@ case class PythonDriver(
     val rows: Array[String] = output
       .split("\n")
       .map(
-        removeLeading_>>>
+        removePrompts
       )
 
     if (pythonErrorIn(output)) {
       val ee = new PythonException(
-        rows.mkString("\n")
+        "Error interpreting" +
+          "\n>>>\n" +
+          code +
+          "\n---\n" +
+          rows.mkString("\n")
       )
       throw ee
     }

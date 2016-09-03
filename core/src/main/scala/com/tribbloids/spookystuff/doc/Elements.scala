@@ -28,6 +28,8 @@ object Elements {
 
     override def clear(): Unit = buffer.clear()
   }
+
+  def empty[T <: Unstructured] = new EmptyElements[T]()
 }
 
 class Elements[+T <: Unstructured](val self: List[T]) extends Unstructured

@@ -40,7 +40,7 @@ abstract class IntegrationSuite extends FunSuite with BeforeAndAfterAll with Rem
 
   lazy val roots: Seq[String] = {
 
-    val local = Seq(TestHelper.tempPath + "spooky-integration/")
+    val local = Seq(TestHelper.TEMP_PATH + "spooky-integration/")
 
     local ++ TestHelper.S3Path
   }

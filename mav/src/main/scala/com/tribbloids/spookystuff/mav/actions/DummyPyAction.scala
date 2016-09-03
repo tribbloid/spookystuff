@@ -15,14 +15,14 @@ case class DummyPyAction(
                         ) extends Export with PyAction {
 
   override def doExeNoName(session: Session): Seq[Fetched] = {
-    val result = Py(session).exe(
+    val result = Py(session).dummy(
       Map("b" -> 2, "c" -> 3)
     )
     val doc = new Doc(
-      DocUID(List(this), this),
-      "dummy",
-      Some(ContentType.TEXT_PLAIN.getMimeType),
-      result.mkString("\n").getBytes("UTF-8")
+      uid = DocUID(List(this), this),
+      uri = "dummy",
+      declaredContentType = Some(ContentType.TEXT_PLAIN.toString),
+      content = result.mkString("\n").getBytes("UTF-8")
     )
     Seq(doc)
   }

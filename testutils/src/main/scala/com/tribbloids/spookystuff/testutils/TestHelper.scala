@@ -13,7 +13,7 @@ object TestHelper {
 
   val numProcessors: Int = Runtime.getRuntime.availableProcessors()
 
-  val tempPath = System.getProperty("user.dir") + "/temp/"
+  val TEMP_PATH = System.getProperty("user.dir") + "/temp/"
 
   val props = new Properties()
   try {
@@ -136,7 +136,7 @@ object TestHelper {
   }
 
   def clearTempDir(): Unit = {
-    val file = new File(tempPath) //TODO: clean up S3 as well
+    val file = new File(TEMP_PATH) //TODO: clean up S3 as well
 
     FileUtils.deleteDirectory(file)
   }

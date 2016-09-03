@@ -2,15 +2,6 @@ package com.tribbloids.spookystuff.doc
 
 import org.apache.commons.csv.{CSVFormat, CSVParser}
 
-object CSVElement {
-
-  def apply(content: Array[Byte], charSet: String, uri: String, cSVFormat: CSVFormat): CSVElement = new CSVElement(
-    new String(content, charSet),
-    uri,
-    cSVFormat
-  )
-}
-
 /**
   * equivalent to the following xml:
   * <splitter>
@@ -27,11 +18,11 @@ object CSVElement {
   *   ...
   * </splitter>
   */
-class CSVElement(
-                  val _text: String,
-                  override val uri: String,
-                  val csvFormat: CSVFormat
-                ) extends Unstructured {
+case class CSVElement(
+                       _text: String,
+                       override val uri: String,
+                       csvFormat: CSVFormat
+                     ) extends Unstructured {
 
   import scala.collection.JavaConverters._
 
@@ -50,7 +41,7 @@ class CSVElement(
         record =>
           val datum = record.get(selector)
 
-          new CsvDatum(uri, datum, selector)
+          new CsvCell(uri, datum, selector)
       }
       new Elements(
         data
@@ -70,7 +61,7 @@ class CSVElement(
             siblingHeaders.map {
               h =>
                 val datum = record.get(h)
-                new CsvDatum(uri, datum, selector)
+                new CsvCell(uri, datum, selector)
             },
             delimiter,
             delimiter
@@ -104,11 +95,11 @@ class CSVElement(
   override def attr(attr: String, noEmpty: Boolean): Option[String] = ownText
 }
 
-class CsvDatum(
-                override val uri: String,
-                val _ownText: String,
-                val header: String
-              ) extends Unstructured {
+class CsvCell(
+               override val uri: String,
+               val _ownText: String,
+               val header: String
+             ) extends Unstructured {
 
   override def findAll(selector: Selector): Elements[Unstructured] = new EmptyElements
 

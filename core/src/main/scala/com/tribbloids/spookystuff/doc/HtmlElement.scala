@@ -11,13 +11,11 @@ import org.jsoup.{Jsoup, select}
 import scala.collection.JavaConverters
 
 /**
- * Created by peng on 11/30/14.
- */
+  * Created by peng on 11/30/14.
+  */
 object HtmlElement {
 
   def apply(html: String, uri: String): HtmlElement = new HtmlElement(null, html, None, uri)
-
-  def apply(content: Array[Byte], charSet: String, uri: String): HtmlElement = apply(new String(content, charSet), uri)
 
   def breadcrumb(e: Element): Seq[String] = {
 
@@ -27,7 +25,7 @@ object HtmlElement {
   }
 }
 
-object TikaHtmlElement {
+object TikaMetadataXMLElement {
 
   def apply(content: Array[Byte], charSet: String, mimeType: String, uri: String): HtmlElement = {
 
@@ -35,11 +33,11 @@ object TikaHtmlElement {
 
     val metadata = new Metadata()
     val stream = TikaInputStream.get(content, metadata)
-    metadata.set(HttpHeaders.CONTENT_ENCODING, charSet)
-    metadata.set(HttpHeaders.CONTENT_TYPE, mimeType)
-    val parser = new AutoDetectParser()
-    val context = new ParseContext()
     val html = try {
+      metadata.set(HttpHeaders.CONTENT_ENCODING, charSet)
+      metadata.set(HttpHeaders.CONTENT_TYPE, mimeType)
+      val parser = new AutoDetectParser()
+      val context = new ParseContext()
       parser.parse(stream, handler, metadata, context)
       handler.toString
     } finally {
@@ -54,17 +52,17 @@ class HtmlElement private (
                             val html: String,
                             val tag: Option[String],
                             override val uri: String
-                            ) extends Unstructured {
+                          ) extends Unstructured {
 
   //constructor for HtmlElement returned by .children()
   private def this(_parsed: Element) = this(
-  _parsed,
-  {
-    _parsed.ownerDocument().outputSettings().prettyPrint(false)
-    _parsed.outerHtml()
-  },
-  Some(_parsed.tagName()),
-  _parsed.baseUri()
+    _parsed,
+    {
+      _parsed.ownerDocument().outputSettings().prettyPrint(false)
+      _parsed.outerHtml()
+    },
+    Some(_parsed.tagName()),
+    _parsed.baseUri()
   )
 
   override def equals(obj: Any): Boolean = obj match {

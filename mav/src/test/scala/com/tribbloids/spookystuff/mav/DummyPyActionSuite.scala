@@ -1,6 +1,7 @@
 package com.tribbloids.spookystuff.mav
 
 import com.tribbloids.spookystuff.SpookyEnvFixture
+import com.tribbloids.spookystuff.doc.Doc
 import com.tribbloids.spookystuff.mav.actions.DummyPyAction
 
 /**
@@ -13,8 +14,10 @@ class DummyPyActionSuite extends SpookyEnvFixture {
   test("can execute on driver") {
 
     val doc = action.fetch(spooky)
-    doc.map{_.toString}.mkString("\n").shouldBe(
-
+    doc.flatMap(_.asInstanceOf[Doc].code).mkString("\n").shouldBe(
+      """
+        |{"a": 1, "c": 3, "b": 2, "num-children": 0, "class": "com.tribbloids.spookystuff.mav.actions.DummyPyAction"}
+      """.trim.stripMargin
     )
   }
 
