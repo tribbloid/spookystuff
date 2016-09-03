@@ -45,8 +45,8 @@ case class SpookyContext private (
 
   def isOnDriver: Boolean = sqlContext != null
   if (isOnDriver) {
-    conf.webDriverFactory.deploy(this)
-    conf.pythonDriverFactory.deploy(this)
+    Option(conf.webDriverFactory).foreach(_.deploy(this))
+    Option(conf.pythonDriverFactory).foreach(_.deploy(this))
   }
 
   def sparkContext = this.sqlContext.sparkContext
