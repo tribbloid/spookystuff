@@ -47,7 +47,7 @@ abstract class IntegrationSuite extends FunSuite with BeforeAndAfterAll with Rem
 
   lazy val driverFactories = Seq(
     phantomJS,
-    phantomJS.pooled
+    phantomJS.pooling
     //    htmlUnit
   )
 

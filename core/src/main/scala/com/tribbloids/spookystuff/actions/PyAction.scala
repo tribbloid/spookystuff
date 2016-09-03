@@ -4,7 +4,6 @@ package com.tribbloids.spookystuff.actions
 import com.tribbloids.spookystuff.doc.Fetched
 import com.tribbloids.spookystuff.session.{DriverSession, Session, SessionRelay}
 import org.apache.spark.ml.dsl.utils.{FlowUtils, MessageWrapper}
-import org.openqa.selenium.interactions.{Actions => SeleniumActions}
 
 import scala.language.dynamics
 import scala.util.Random
@@ -19,7 +18,7 @@ trait PyAction extends Action {
   //Python class must have a constructor that takes json format of its Scala class
   def constructPython(session: Session): String = {
     // java & python have different namespace convention.
-    val pyClassName = this.getClass.getCanonicalName.stripPrefix("com.tribbloids.")
+    val pyClassName = "pyspookystuff" + this.getClass.getCanonicalName.stripPrefix("com.tribbloids.spookystuff")
     val result = session.pythonDriver.interpret(
       s"""
          |$varName = $pyClassName('${this.toJSON}')

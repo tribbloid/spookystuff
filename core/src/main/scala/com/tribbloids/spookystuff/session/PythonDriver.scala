@@ -13,18 +13,11 @@ import com.tribbloids.spookystuff.PythonException
 //TODO: not reusing Python worker for spark, is it not optimal?
 case class PythonDriver(
                          binPath: String
-                       ) extends PythonProcess(binPath) with Cleanable {
-
-  //open lazily
-  @transient lazy val opened: Unit = this.open()
+                       ) extends PythonProcess(binPath) with CleanMixin {
+  this.open()
 
   override def clean(): Unit = {
-    try {
-      this.close()
-    }
-    catch {
-      case e: NullPointerException =>
-    }
+    this.close()
   }
 
   private val errorInLastLine: Pattern = Pattern.compile(".*(Error|Exception): .*$")
@@ -55,7 +48,6 @@ case class PythonDriver(
   }
 
   def interpret(code: String): Array[String] = {
-    this.opened
     val output = this.sendAndGetResult(code)
     val rows: Array[String] = output
       .split("\n")

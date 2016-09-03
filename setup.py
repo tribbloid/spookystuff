@@ -26,7 +26,7 @@ setup(
     ],
     license='apache',
     packages=[
-        'drone.python', 'drone.python.test'
+        'mav.pyspookystuff'
     ],
     ext_modules=[]
 )

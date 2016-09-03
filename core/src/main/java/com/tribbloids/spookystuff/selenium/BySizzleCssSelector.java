@@ -62,7 +62,7 @@ public class BySizzleCssSelector extends By implements Serializable {
   protected synchronized void injectSizzle(JavascriptExecutor context) {
     if (sizzleSource == null) {
       try {
-        sizzleSource = IOUtils.toString(this.getClass().getResource("/javascript/sizzle.js"));
+        sizzleSource = IOUtils.toString(this.getClass().getResource("/com/tribbloids/spookystuff/sizzle.js"));
       } catch (Throwable e) {
         throw new RuntimeException("Cannot load sizzle.js from classpath", e);
       }

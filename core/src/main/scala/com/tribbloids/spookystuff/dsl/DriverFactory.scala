@@ -15,12 +15,17 @@ limitations under the License.
  */
 package com.tribbloids.spookystuff.dsl
 
+import java.io.File
+import java.nio.file.{Files, StandardCopyOption}
+
 import com.gargoylesoftware.htmlunit.BrowserVersion
-import com.tribbloids.spookystuff.SpookyContext
 import com.tribbloids.spookystuff.caching._
 import com.tribbloids.spookystuff.dsl.DriverFactories.Pooling
 import com.tribbloids.spookystuff.session._
 import com.tribbloids.spookystuff.utils.SpookyUtils
+import com.tribbloids.spookystuff.{SpookyConf, SpookyContext, SpookyException}
+import org.apache.commons.io.FileUtils
+import org.apache.spark.rdd.RDD
 import org.apache.spark.{SparkFiles, TaskContext}
 import org.openqa.selenium.htmlunit.HtmlUnitDriver
 import org.openqa.selenium.phantomjs.{PhantomJSDriver, PhantomJSDriverService}
@@ -37,12 +42,15 @@ import scala.collection.mutable
 // if from the same session release the existing one immediately.
 // if from a different session but same taskAttempt wait for the old one to be released.
 // in any case it should ensure 1 taskAttempt only has 1 active driver
+//TODO: delay Future-based waiting control until asynchonous Action exe is implemented. Right now it works just fine
 abstract class DriverFactory[+T] extends Serializable {
 
   // If get is called again before the previous driver is released, the old driver is destroyed to create a new one.
   // this is to facilitate multiple retries
   def get(session: Session): T
   def release(session: Session): Unit
+
+  def deploy(spooky: SpookyContext): Unit = {}
 }
 
 sealed abstract class Transient[T] extends DriverFactory[T] {
@@ -79,7 +87,7 @@ sealed abstract class Transient[T] extends DriverFactory[T] {
   }
 
   final def create(session: Session): T = {
-    val created = _create(session)
+    val created = _createImpl(session)
     session.tcOpt.foreach {
       tc =>
         addTaskCompletionListener(tc)
@@ -94,9 +102,9 @@ sealed abstract class Transient[T] extends DriverFactory[T] {
     created
   }
 
-  def _create(session: Session): T
+  def _createImpl(session: Session): T
 
-  def reset(driver: T): T
+  def factoryReset(driver: T): T
 
   def release(session: Session): Unit = {
     val existingOpt = sessionToDriver.remove(session)
@@ -107,7 +115,7 @@ sealed abstract class Transient[T] extends DriverFactory[T] {
   }
 
   final def destroy(driver: T, tcOpt: Option[TaskContext]): Unit = {
-    _destroy(driver)
+    _destroyImpl(driver)
 
     tcOpt.foreach {
       tc =>
@@ -119,19 +127,19 @@ sealed abstract class Transient[T] extends DriverFactory[T] {
     }
   }
 
-  def _destroy(driver: T): Unit
+  def _destroyImpl(driver: T): Unit
 
-  final def pooled = Pooling(this)
+  final def pooling = Pooling(this)
 }
 
 abstract class WebDriverFactory extends Transient[CleanWebDriver]{
 
-  override def _destroy(driver: CleanWebDriver): Unit = {
+  override def _destroyImpl(driver: CleanWebDriver): Unit = {
 
     driver.finalize()
   }
 
-  override def reset(driver: CleanWebDriver): CleanWebDriver = {
+  override def factoryReset(driver: CleanWebDriver): CleanWebDriver = {
     driver.get("")
     driver
   }
@@ -139,15 +147,18 @@ abstract class WebDriverFactory extends Transient[CleanWebDriver]{
 
 abstract class PythonDriverFactory extends Transient[PythonDriver]{
 
-  override def _destroy(driver: PythonDriver): Unit = {
+  override def _destroyImpl(driver: PythonDriver): Unit = {
 
     driver.finalize()
   }
 
-  override def reset(driver: PythonDriver): PythonDriver = {
+  override def factoryReset(driver: PythonDriver): PythonDriver = {
     driver
   }
 }
+
+// TODO: migrate deployment script from context to here
+object DriverNotDeployedException extends SpookyException("INTERNAL: driver should be automatically deployed")
 
 object DriverFactories {
 
@@ -190,7 +201,7 @@ object DriverFactories {
           tuple =>
             if (!tuple.busy) {
               tuple.busy = true
-              delegate.reset(tuple.driver)
+              delegate.factoryReset(tuple.driver)
             }
             else {
               // destroy old and create new
@@ -218,50 +229,117 @@ object DriverFactories {
             tuple.busy = false
       }
     }
+
+    override def deploy(spooky: SpookyContext): Unit = delegate.deploy(spooky)
   }
 
   object PhantomJS {
 
-    val remotePhantomJSURL = "https://s3-us-west-1.amazonaws.com/spooky-bin/phantomjs-linux/phantomjs"
+    import com.tribbloids.spookystuff.utils.ImplicitUtils._
 
-    def pathOptionFromEnv = SpookyUtils.validateLocalPath(System.getenv("PHANTOMJS_PATH"))
-      .orElse(SpookyUtils.validateLocalPath(System.getProperty("phantomjs.binary.path")))
+    final val HTTP_RESOURCE_URI = "https://s3-us-west-1.amazonaws.com/spooky-bin/phantomjs-linux/phantomjs"
 
-    def pathFromMaster(nameFromMaster: String) = Option(nameFromMaster).map(SparkFiles.get).orNull
+    final def uri2fileName(path: String) = path.split("/").last
 
-    def path(path: String, nameFromMaster: String): String = pathOptionFromEnv
-      .orElse {
-        SpookyUtils.validateLocalPath(path)
-      }
-      .getOrElse {
-        LoggerFactory.getLogger(this.getClass).info("$PHANTOMJS_PATH does not exist, downloading from master")
-        pathFromMaster(nameFromMaster)
-      }
+    final def DEFAULT_PATH = System.getProperty("user.home") :/ ".spookystuff/phantomjs"
 
-    //only accessable from driver
-    @transient def fileName = pathOptionFromEnv.flatMap {
-      _.split("/").lastOption
-    }.getOrElse {
-      remoteFileName
+    def path: SpookyContext => String = {
+      _ =>
+        SpookyConf.getDefault("phantomjs.path", DEFAULT_PATH)
     }
 
-    @transient def remoteFileName =
-      remotePhantomJSURL.split("/").last
+    def asynchCopyIfNotExist(src: String, dst: String): Unit = this.synchronized {
+      val srcFile = new File(src)
+      val dstFile = new File(dst)
+      if (!dstFile.exists()) {
+        dstFile.getParentFile.mkdirs()
+        Files.copy(
+          srcFile.toPath,
+          dstFile.toPath,
+          StandardCopyOption.COPY_ATTRIBUTES,
+          StandardCopyOption.REPLACE_EXISTING
+        )
+      }
+    }
+
+    def asynchDelete(dst: String): Unit = this.synchronized {
+      val dstFile = new File(dst)
+      FileUtils.forceDelete(dstFile)
+    }
   }
 
   case class PhantomJS(
-                        path: String = PhantomJS.pathOptionFromEnv.orNull,
+                        path: SpookyContext => String = PhantomJS.path,
                         loadImages: Boolean = false,
-                        fileNameFromMaster: String = PhantomJS.fileName,
-                        ignoreSysEnv: Boolean = false
+                        redeploy: Boolean = false
                       ) extends WebDriverFactory {
 
-    @transient lazy val exePath = {
-      val effectivePath = if (!ignoreSysEnv) PhantomJS.path(path, fileNameFromMaster)
-      else PhantomJS.pathFromMaster(fileNameFromMaster)
+    import com.tribbloids.spookystuff.utils.ImplicitUtils._
 
-      assert(effectivePath != null, "INTERNAL ERROR: PhantomJS has null path")
-      effectivePath
+    /**
+      * can only used on driver
+      */
+    override def deploy(spooky: SpookyContext): Unit = {
+      if ((!isDeployedOnWorkers(spooky)) || redeploy) {
+
+        val pathOptOnDriver = SpookyUtils.validateLocalPath(path(spooky))
+        val isDeployedOnDriver: Boolean = pathOptOnDriver.nonEmpty
+
+        val uri = if (!isDeployedOnDriver) {
+          // add binary from internet
+          val uri = PhantomJS.HTTP_RESOURCE_URI
+          LoggerFactory.getLogger(this.getClass).info(s"Downloading PhantomJS from Internet ($uri)")
+          uri
+        }
+        else {
+          // add binary from driver
+          val uri = pathOptOnDriver.get
+          LoggerFactory.getLogger(this.getClass).info(s"Downloading PhantomJS from Driver ($uri)")
+          uri
+        }
+
+        val sc = spooky.sqlContext.sparkContext
+        sc.addFile(uri)
+        val fileName = PhantomJS.uri2fileName(uri)
+
+        //deploy
+        if (redeploy) {
+          sc.exePerCore {
+            val dstStr = path(spooky)
+            PhantomJS.asynchDelete(dstStr)
+          }
+            .count()
+        }
+
+        sc.exePerCore {
+          val srcStr = SparkFiles.get(fileName)
+          val dstStr = path(spooky)
+          PhantomJS.asynchCopyIfNotExist(srcStr, dstStr)
+        }
+          .count()
+        LoggerFactory.getLogger(this.getClass).info(s"Finished deploying PhantomJS from $uri")
+      }
+      else {
+        // no need to deploy
+        LoggerFactory.getLogger(this.getClass).info(s"PhantomJS already exists, no need to deploy")
+      }
+
+      assert(isDeployedOnWorkers(spooky))
+    }
+
+    def isDeployedOnWorkers(spooky: SpookyContext): Boolean = {
+      val isDeployedOnWorkers: Boolean = {
+
+        val sc = spooky.sqlContext.sparkContext
+        val pathRDD: RDD[Option[String]] = sc.exePerCore {
+          val pathOpt = SpookyUtils.validateLocalPath(path(spooky))
+          pathOpt
+        }
+        pathRDD
+          .map(_.nonEmpty)
+          .reduce(_ && _)
+      }
+      isDeployedOnWorkers
     }
 
     @transient lazy val baseCaps = {
@@ -273,7 +351,6 @@ object DriverFactories {
       baseCaps.setCapability(TAKES_SCREENSHOT, true)
       baseCaps.setCapability(ACCEPT_SSL_CERTS, true)
       baseCaps.setCapability(SUPPORTS_ALERTS, true)
-      baseCaps.setCapability(PhantomJSDriverService.PHANTOMJS_EXECUTABLE_PATH_PROPERTY, exePath)
       baseCaps.setCapability(PhantomJSDriverService.PHANTOMJS_PAGE_SETTINGS_PREFIX + "loadImages", loadImages)
       baseCaps
     }
@@ -281,29 +358,30 @@ object DriverFactories {
     //    baseCaps.setCapability(PhantomJSDriverService.PHANTOMJS_PAGE_SETTINGS_PREFIX+"resourceTimeout", Const.resourceTimeout*1000)
 
     def newCap(spooky: SpookyContext, extra: Option[Capabilities] = None): DesiredCapabilities = {
-      val result = new DesiredCapabilities(baseCaps)
+      val pathStr = path(spooky)
 
-      result.setCapability (
+      baseCaps.setCapability(PhantomJSDriverService.PHANTOMJS_EXECUTABLE_PATH_PROPERTY, pathStr)
+      baseCaps.setCapability (
         PhantomJSDriverService.PHANTOMJS_PAGE_SETTINGS_PREFIX + "resourceTimeout",
         spooky.conf.remoteResourceTimeout.toMillis
       )
 
       val userAgent = spooky.conf.userAgentFactory
-      if (userAgent != null) result.setCapability(PhantomJSDriverService.PHANTOMJS_PAGE_SETTINGS_PREFIX + "userAgent", userAgent)
+      if (userAgent != null) baseCaps.setCapability(PhantomJSDriverService.PHANTOMJS_PAGE_SETTINGS_PREFIX + "userAgent", userAgent)
 
       val proxy = spooky.conf.proxy()
 
       if (proxy != null)
-        result.setCapability(
+        baseCaps.setCapability(
           PhantomJSDriverService.PHANTOMJS_CLI_ARGS,
           Array("--proxy=" + proxy.addr + ":" + proxy.port, "--proxy-type=" + proxy.protocol)
         )
 
-      result.merge(extra.orNull)
+      baseCaps.merge(extra.orNull)
     }
 
     //called from executors
-    override def _create(session: Session): CleanWebDriver = {
+    override def _createImpl(session: Session): CleanWebDriver = {
 
       new PhantomJSDriver(newCap(session.spooky)) with CleanWebDriverMixin
     }
@@ -332,7 +410,7 @@ object DriverFactories {
       result.merge(capabilities)
     }
 
-    override def _create(session: Session): CleanWebDriver = {
+    override def _createImpl(session: Session): CleanWebDriver = {
 
       val cap = newCap(null, session.spooky)
       val driver = new HtmlUnitDriver(browser) with CleanWebDriverMixin
@@ -368,7 +446,7 @@ object DriverFactories {
                      path: String = "python"
                    ) extends PythonDriverFactory {
 
-    override def _create(session: Session): PythonDriver = {
+    override def _createImpl(session: Session): PythonDriver = {
       PythonDriver(path)
     }
   }

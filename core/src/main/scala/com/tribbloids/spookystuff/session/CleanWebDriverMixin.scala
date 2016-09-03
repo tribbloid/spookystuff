@@ -4,13 +4,13 @@ import org.openqa.selenium.{NoSuchSessionException, WebDriver}
 import org.slf4j.LoggerFactory
 
 /**
- *
- */
-object Cleanable {
+  *
+  */
+object CleanMixin {
 
 }
 
-trait Cleanable {
+trait CleanMixin {
 
   def clean(): Unit
 
@@ -30,7 +30,7 @@ trait Cleanable {
 }
 
 
-trait CleanWebDriverMixin extends Cleanable {
+trait CleanWebDriverMixin extends CleanMixin {
   this: WebDriver =>
 
   def clean(): Unit = {

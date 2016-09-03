@@ -153,8 +153,8 @@
         <module>testutils</module>
         <module>core</module>
         <module>integration</module>
-        <module>mav</module>
         <!--<module>pipeline</module>-->
+        <module>mav</module>
         <!--<module>example</module>-->
         <module>assembly</module>
     </modules>
@@ -209,6 +209,15 @@
     <build>
         <outputDirectory>target/scala/classes</outputDirectory>
         <testOutputDirectory>target/scala/test-classes</testOutputDirectory>
+
+        <!--add python into fat jar that are shipped to all workers-->
+        <resources>
+            <resource>
+                <directory>pyspookystuff</directory>
+                <targetPath>com/tribbloids/pyspookystuff</targetPath>
+            </resource>
+        </resources>
+
         <plugins>
             <plugin>
                 <groupId>net.alchim31.maven</groupId>

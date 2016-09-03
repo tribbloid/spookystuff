@@ -217,7 +217,7 @@ package object dsl {
 
     //TODO: Why IterableExprView.filter cannot be applied on ZippedExpr? is the scala compiler malfunctioning?
     def zipWithKeys(keys: Extractor[Any]): ZippedExpr[Any, T] =
-      new ZippedExpr[Any,T](keys.typed[Iterable[_]], self)
+    new ZippedExpr[Any,T](keys.typed[Iterable[_]], self)
 
     def zipWithValues(values: Extractor[Any]): ZippedExpr[T, Any] =
       new ZippedExpr[T,Any](self, values.typed[Iterable[_]])

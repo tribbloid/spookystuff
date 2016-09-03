@@ -15,24 +15,32 @@ import scala.concurrent.duration._
 
 object SpookyConf {
 
-  private def getDefault(
-                          property: String,
-                          backup: String = null
-                        )(implicit conf: SparkConf): String = {
+  /**
+    * spark config >> system property >> system environment >> default
+    */
+  def getDefault(
+                  property: String,
+                  default: String = null
+                )(implicit conf: SparkConf = null): String = {
     val env = property.replace('.','_').toUpperCase
 
-    conf.getOption(property)
+    Option(conf)
+      .flatMap(
+        _.getOption(property)
+      )
       .orElse{
         Option(System.getProperty(property))
-      }.orElse{
-      Option(System.getenv(env))
-    }.getOrElse{
-      backup
-    }
+      }
+      .orElse{
+        Option(System.getenv(env))
+      }
+      .getOrElse{
+        default
+      }
   }
 
-  final val DEFAULT_WEBDRIVER_FACTORY = DriverFactories.PhantomJS().pooled
-  final val DEFAULT_PYTHONDRIVER_FACTORY = DriverFactories.Python().pooled
+  final val DEFAULT_WEBDRIVER_FACTORY = DriverFactories.PhantomJS().pooling
+  final val DEFAULT_PYTHONDRIVER_FACTORY = DriverFactories.Python().pooling
 }
 
 /**
@@ -93,10 +101,7 @@ class SpookyConf (
                    var checkpointInterval: Int = -1, //disabled if <=0
 
                    //if encounter too many out of memory error, change to MEMORY_AND_DISK_SER
-                   var defaultStorageLevel: StorageLevel = StorageLevel.MEMORY_ONLY,
-
-                   var alwaysDownloadBrowserRemotely: Boolean = false //mostly for testing
-
+                   var defaultStorageLevel: StorageLevel = StorageLevel.MEMORY_ONLY
                  ) extends Serializable {
 
   def importFrom(sparkContext: SparkContext): SpookyConf = importFrom(sparkContext.getConf)
@@ -104,10 +109,8 @@ class SpookyConf (
   def importFrom(implicit sparkConf: SparkConf): SpookyConf = {
 
     val root = Option(this.dirs.root).getOrElse(SpookyConf.getDefault("spooky.dirs.root", "temp"))
-    //    def root_/(subdir: String) = Utils.uriSlash(root) + subdir
 
     val localRoot = Option(this.dirs.root).getOrElse(SpookyConf.getDefault("spooky.dirs.root.local", "temp"))
-    //    def localRoot_/(subdir: String) = Utils.uriSlash(root) + subdir
 
     //TODO: use Java reflection to generalize system property/variable override rules
     val dirs = new DirConf(
@@ -172,9 +175,7 @@ class SpookyConf (
       this.epochSize,
       this.checkpointInterval,
 
-      this.defaultStorageLevel,
-
-      this.alwaysDownloadBrowserRemotely
+      this.defaultStorageLevel
     )
   }
 

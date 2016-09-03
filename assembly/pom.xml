@@ -68,6 +68,11 @@
             <!--<artifactId>spookystuff-pipeline</artifactId>-->
             <!--<version>${project.version}</version>-->
         <!--</dependency>-->
+        <dependency>
+            <groupId>com.tribbloids.spookystuff</groupId>
+            <artifactId>spookystuff-mav</artifactId>
+            <version>${project.version}</version>
+        </dependency>
     </dependencies>
 
     <build>

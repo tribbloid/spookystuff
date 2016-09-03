@@ -8,7 +8,6 @@ import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.DataFrame
 import org.apache.spark.sql.catalyst.ScalaReflection
 import org.apache.spark.sql.types._
-import org.slf4j.LoggerFactory
 
 import scala.collection.generic.CanBuildFrom
 import scala.collection.immutable.ListMap
@@ -40,6 +39,16 @@ object ImplicitUtils {
       self.setJobGroup(null,oldDescription)
       result
     }
+
+    def exePerCore[T: ClassTag](f: => T): RDD[T] = {
+      self.parallelize(1 to self.defaultParallelism * 4)
+        .mapPartitions(
+          itr =>
+            Iterator(f)
+        )
+    }
+
+    def exePerWorker[T](f: () => T): RDD[T] = ???
   }
 
   implicit class RDDView[T](val self: RDD[T]) {
