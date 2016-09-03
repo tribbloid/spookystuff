@@ -4,17 +4,23 @@ import java.util.regex.{Matcher, Pattern}
 
 import com.tribbloids.spookystuff.PythonException
 
+object PythonDriver {
+
+  final val DEFAULT_TEMP_PATH = "temp/python"
+}
+
 /**
   * Created by peng on 01/08/16.
   */
-//case class PythonException(
-//
-//                          ) extends SpookyException()
 //TODO: not reusing Python worker for spark, is it not optimal?
 case class PythonDriver(
-                         binPath: String
+                         binPath: String,
+                         tempPath: String = PythonDriver.DEFAULT_TEMP_PATH // extract pyspookystuff from resources temporarily on workers
                        ) extends PythonProcess(binPath) with CleanMixin {
-  this.open()
+  {
+    // copy
+    this.open()
+  }
 
   override def clean(): Unit = {
     this.close()

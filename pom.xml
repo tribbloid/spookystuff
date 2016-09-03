@@ -213,6 +213,9 @@
         <!--add python into fat jar that are shipped to all workers-->
         <resources>
             <resource>
+                <directory>src/main/resources</directory>
+            </resource>
+            <resource>
                 <directory>pyspookystuff</directory>
                 <targetPath>com/tribbloids/pyspookystuff</targetPath>
             </resource>

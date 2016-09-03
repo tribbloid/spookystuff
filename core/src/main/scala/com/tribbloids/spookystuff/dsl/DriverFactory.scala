@@ -157,7 +157,7 @@ abstract class PythonDriverFactory extends Transient[PythonDriver]{
   }
 }
 
-// TODO: migrate deployment script from context to here
+//TODO: deploy lazily/as failover
 object DriverNotDeployedException extends SpookyException("INTERNAL: driver should be automatically deployed")
 
 object DriverFactories {
@@ -233,9 +233,9 @@ object DriverFactories {
     override def deploy(spooky: SpookyContext): Unit = delegate.deploy(spooky)
   }
 
-  object PhantomJS {
+  import com.tribbloids.spookystuff.utils.ImplicitUtils._
 
-    import com.tribbloids.spookystuff.utils.ImplicitUtils._
+  object PhantomJS {
 
     final val HTTP_RESOURCE_URI = "https://s3-us-west-1.amazonaws.com/spooky-bin/phantomjs-linux/phantomjs"
 
@@ -273,8 +273,6 @@ object DriverFactories {
                         loadImages: Boolean = false,
                         redeploy: Boolean = false
                       ) extends WebDriverFactory {
-
-    import com.tribbloids.spookystuff.utils.ImplicitUtils._
 
     /**
       * can only used on driver

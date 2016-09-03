@@ -19,7 +19,6 @@ def test_both():
 
 # def set_sysid(v, instance):
 
-
 def ferry(path1, path2):
     vehicle1 = connect(path1, wait_ready=True)
     vehicle2 = connect(path2, wait_ready=True)
