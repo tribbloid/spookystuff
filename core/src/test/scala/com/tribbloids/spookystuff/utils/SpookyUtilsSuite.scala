@@ -1,5 +1,8 @@
 package com.tribbloids.spookystuff.utils
 
+import java.io.File
+
+import com.tribbloids.spookystuff.testutils.TestHelper
 import org.scalatest.FunSuite
 
 /**
@@ -27,15 +30,17 @@ class SpookyUtilsSuite extends FunSuite {
 
   test("copyResourceToDirectory can extract a dependency's package in a jar") {
     val src = SpookyUtils.getCPResource("org/apache/log4j/xml").get
-    val dst = "temp/log4j"
+    val dst = TestHelper.TEMP_PATH + "/log4j"
     SpookyUtils.extractResource(src, dst)
-    null
+    val dir = new File(dst)
+    assert(dir.list().nonEmpty)
   }
 
   test("copyResourceToDirectory can extract a package in file system") {
     val src = SpookyUtils.getCPResource("com/tribbloids/spookystuff/utils").get
-    val dst = "temp/utils"
+    val dst = "temp/utils/"
     SpookyUtils.extractResource(src, dst)
-    null
+    val dir = new File(dst)
+    assert(dir.list().nonEmpty)
   }
 }

@@ -48,7 +48,8 @@ class CopyDirectory extends SimpleFileVisitor<Path> {
     try {
       System.out.println("Copying " + source.relativize(directory));
       Files.copy(directory, targetDirectory, options);
-    } catch (FileAlreadyExistsException e) {
+    }
+    catch (FileAlreadyExistsException | DirectoryNotEmptyException e) {
       if (!Files.isDirectory(targetDirectory)) {
         throw e;
       }
