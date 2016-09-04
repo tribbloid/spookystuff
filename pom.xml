@@ -150,7 +150,6 @@
     </scm>
 
     <modules>
-        <module>testutils</module>
         <module>core</module>
         <module>integration</module>
         <!--<module>pipeline</module>-->
@@ -302,7 +301,7 @@
                 <artifactId>scalatest-maven-plugin</artifactId>
                 <version>1.0</version>
                 <configuration>
-                    <tagsToExclude>com.tribbloids.spookystuff.testutils.Tor</tagsToExclude>
+                    <tagsToExclude>Tor</tagsToExclude>
                 </configuration>
                 <executions>
                     <execution>

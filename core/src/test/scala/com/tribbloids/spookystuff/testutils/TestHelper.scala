@@ -7,13 +7,13 @@ import org.apache.commons.io.FileUtils
 import org.apache.spark.serializer.KryoSerializer
 import org.apache.spark.sql.SQLContext
 import org.apache.spark.{SparkConf, SparkContext, SparkEnv, SparkException}
-import org.slf4j.LoggerFactory
 
 object TestHelper {
 
   val numProcessors: Int = Runtime.getRuntime.availableProcessors()
 
   val TEMP_PATH = System.getProperty("user.dir") + "/temp/"
+  val TARGET_PATH = System.getProperty("user.dir") + "/target/"
 
   val props = new Properties()
   try {
@@ -146,51 +146,5 @@ object TestHelper {
     val result = fn
     val endTime = System.currentTimeMillis()
     (result, endTime - startTime)
-  }
-
-  val unpackedResourceRootPath = "target/resources/"
-  def unpackResourceIfNotExist(resource: String): String = {
-    val path = getClass.getClassLoader.getResource(resource)
-
-    val fileOpt = {
-      val file = FileUtils.toFile(path)
-      if (file != null && file.exists()) Some(file)
-      else None
-    }
-      .orElse {
-        // avoid repeated unpacking of file.
-        val file = new File(unpackedResourceRootPath + resource)
-        if (file.exists()) Some(file)
-        else None
-      }
-
-    fileOpt match {
-      case Some(file) =>
-        file.getAbsolutePath
-      case None =>
-        val srcURL= getClass.getClassLoader.getResource(resource)
-
-        val targetFile = new File(unpackedResourceRootPath + resource)
-        println(targetFile.getAbsolutePath)
-
-        //        println("rsrc:" + resource)
-        //        println("from:" + srcURL)
-        //        println("to:  " + targetFile.getPath)
-
-        //        try {
-        FileUtils.copyURLToFile(srcURL, targetFile)
-        //        }
-        //        catch {
-        //          case e: NullPointerException => //do nothing
-        //        }
-
-        for (i <- 0 to 50) {
-          val targetFile = new File(unpackedResourceRootPath + resource)
-          if (targetFile.exists()) return targetFile.getAbsolutePath
-          println("file writing not finished ...")
-          Thread.sleep(2000)
-        }
-        sys.error("file writing failed")
-    }
   }
 }

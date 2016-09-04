@@ -1,16 +1,14 @@
 package com.tribbloids.spookystuff.session
 
-import java.io.File
 import java.util.regex.{Matcher, Pattern}
 
 import com.tribbloids.spookystuff.PythonException
 import com.tribbloids.spookystuff.utils.SpookyUtils
-import org.apache.commons.io.FileUtils
 
 object PythonDriver {
 
-  final val DEFAULT_TEMP_PATH = System.getProperty("user.dir") + "/temp/pythonpath/pyspookystuff"
-  final val RESOURCE_PATH = "com/tribbloids/pyspookystuff"
+  final val DEFAULT_TEMP_PATH = System.getProperty("user.dir") + "/temp/pyspookystuff"
+  final val RESOURCE_NAME = "com/tribbloids/pyspookystuff"
 
   final val errorInLastLine: Pattern = Pattern.compile(".*(Error|Exception): .*$")
 }
@@ -24,10 +22,11 @@ case class PythonDriver(
                          tempPath: String = PythonDriver.DEFAULT_TEMP_PATH // extract pyspookystuff from resources temporarily on workers
                        ) extends PythonProcess(binPath) with CleanMixin {
   {
-    val resource = SpookyUtils.getCPResource(PythonDriver.RESOURCE_PATH).get.toURI
-    val src = new File(resource)
-
-    FileUtils.copyDirectory(src, new File(tempPath))
+    val resourceOpt = SpookyUtils.getCPResource(PythonDriver.RESOURCE_NAME)
+    resourceOpt.foreach {
+      resource =>
+        SpookyUtils.extractResource(resource, tempPath)
+    }
 
     this.open()
 

@@ -12,13 +12,6 @@
     <artifactId>spookystuff-core</artifactId>
 
     <dependencies>
-        <dependency>
-            <groupId>com.tribbloids.spookystuff</groupId>
-            <artifactId>spookystuff-testutils</artifactId>
-            <version>${project.version}</version>
-            <scope>test</scope>
-        </dependency>
-
         <!--<dependency>-->
         <!--<groupId>com.github.detro</groupId>-->
         <!--<artifactId>phantomjsdriver</artifactId>-->
@@ -126,6 +119,21 @@
                         <id>attach-javadoc</id>
                         <goals>
                             <goal>jar</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <!-- Generate test jar too -->
+            <!--from http://stackoverflow.com/questions/15816805/in-a-multi-module-project-can-a-maven-module-access-transitive-test-scoped-depe-->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-jar-plugin</artifactId>
+                <version>3.0.2</version>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>test-jar</goal>
                         </goals>
                     </execution>
                 </executions>

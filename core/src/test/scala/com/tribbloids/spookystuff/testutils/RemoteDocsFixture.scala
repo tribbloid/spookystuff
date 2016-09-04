@@ -15,4 +15,5 @@ trait RemoteDocsFixture extends TestMixin {
   def CSV_URL = "http://tribbloid.github.io/spookystuff/test/table.csv"
 
   def IP_URL = "https://api.ipify.org/"
+  def USERAGENT_URL = "http://www.whatsmyuseragent.com/"
 }

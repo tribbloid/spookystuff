@@ -1,8 +1,11 @@
 package com.tribbloids.spookystuff.utils
 
 import java.io.{File, InputStream}
-import java.net.{URL, URLClassLoader}
+import java.net._
+import java.nio.file._
+import java.util.zip.ZipInputStream
 
+import org.apache.commons.io.FileUtils
 import org.apache.spark.ml.dsl.ReflectionUtils
 import org.apache.spark.sql.catalyst.ScalaReflection
 import org.slf4j.LoggerFactory
@@ -28,7 +31,7 @@ object SpookyUtils {
   val xmlPrinter = new PrettyPrinter(Int.MaxValue, 2)
   //  val logger = LoggerFactory.getLogger(this.getClass)
 
-  val :/ = File.separator
+  val \\\ = File.separator
 
   // Returning T, throwing the exception on failure
   @annotation.tailrec
@@ -234,7 +237,9 @@ These special characters are often called "metacharacters".
   }.toList
 
   def getCPResource(str: String): Option[URL] =
-    Option(ClassLoader.getSystemClassLoader.getResource(str.stripSuffix(SpookyUtils.:/)))
+    Option(ClassLoader.getSystemClassLoader.getResource(str.stripSuffix(SpookyUtils.\\\)))
+  def getCPResourceAsStream(str: String): Option[InputStream] =
+    Option(ClassLoader.getSystemClassLoader.getResourceAsStream(str.stripSuffix(SpookyUtils.\\\)))
 
   def addCPResource(urlStr: String): Unit = {
 
@@ -252,8 +257,46 @@ These special characters are often called "metacharacters".
     assert(ClassLoader.getSystemClassLoader.asInstanceOf[URLClassLoader].getURLs.contains(url))
   }
 
-  def getCPResourceAsStream(str: String): Option[InputStream] =
-    Option(ClassLoader.getSystemClassLoader.getResourceAsStream(str.stripSuffix(SpookyUtils.:/)))
+//  def nioStdCopy(srcPath: Path, dstFile: File): Any = {
+//    if (!dstFile.exists()) {
+//      dstFile.getParentFile.mkdirs()
+//      Files.copy(
+//        srcPath,
+//        dstFile.toPath,
+//        StandardCopyOption.COPY_ATTRIBUTES,
+//        StandardCopyOption.REPLACE_EXISTING
+//      )
+//    }
+//  }
+
+  def universalCopy(srcPath: Path, dstPath: Path): Any = {
+
+    Files.walkFileTree(srcPath, java.util.EnumSet.of(FileVisitOption.FOLLOW_LINKS),
+      Integer.MAX_VALUE, new CopyDirectory(srcPath, dstPath))
+  }
+
+  def extractResource(resource: URL, dst: String): Unit = {
+
+    resource.getProtocol match {
+      case "jar" =>
+        val fullPath = resource.toString
+        val splitted = fullPath.split('!')
+        assert(splitted.length == 2)
+        val jarPath = splitted.head
+        val innerPathStr = splitted.last
+
+        val zip = new ZipInputStream(resource.openStream())
+
+        val fs = FileSystems.newFileSystem(new URI(fullPath), new java.util.HashMap[String, String]())
+        val srcPath = fs.getPath(innerPathStr)
+
+        universalCopy(srcPath, new File(dst).toPath)
+      case _ =>
+        val src = new File(resource.toURI)
+        FileUtils.copyDirectory(src, new File(dst))
+    }
+  }
+
 
   def longHash(string: String): Long = {
     var h: Long = 1125899906842597L // prime

@@ -23,15 +23,10 @@ class TestWget extends SpookyEnvFixture {
 
   def wget(uri: String): Action = Wget(uri)
 
-  lazy val noProxyIP = {
+  lazy val noProxyIP: String = {
     spooky.conf.proxy = ProxyFactories.NoProxy
 
-    val results = (
-      //TODO: may not be stable, alternatives are http://www.whatsmyua.com/ and http://user-agent.me/
-      wget("http://www.whatsmyuseragent.com/") :: Nil
-      ).fetch(spooky)
-
-    results.head.asInstanceOf[Doc].findAll("div.info-box span").texts.head
+    getIP
   }
 
   //TODO: find a test site for http!
@@ -41,7 +36,7 @@ class TestWget extends SpookyEnvFixture {
   //      spooky.conf.proxy = ProxyFactories.Tor
   //
   //      val results = (
-  //        wget("http://www.whatsmyuseragent.com/") :: Nil
+  //        wget(USERAGENT_URL) :: Nil
   //        ).fetch(spooky)
   //
   //      results.head.asInstanceOf[Page].findAll("h3.info").texts.head
@@ -71,7 +66,7 @@ class TestWget extends SpookyEnvFixture {
   //      spooky.conf.proxy = ProxyFactories.Tor
   //
   //      val results = (
-  //        wget("http://www.whatsmyuseragent.com/") :: Nil
+  //        wget(USERAGENT_URL) :: Nil
   //        ).fetch(spooky)
   //      Actions
   //      results.head.asInstanceOf[Page].findAll("h3.info").texts.head
@@ -81,7 +76,7 @@ class TestWget extends SpookyEnvFixture {
   //      spooky.conf.proxy = ProxyFactories.NoProxy
   //
   //      val results = (
-  //        wget("http://www.whatsmyuseragent.com/") :: Nil
+  //        wget(USERAGENT_URL) :: Nil
   //        ).fetch(spooky)
   //
   //      results.head.asInstanceOf[Page].findAll("h3.info").texts.head

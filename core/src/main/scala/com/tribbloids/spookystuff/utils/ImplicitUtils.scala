@@ -411,8 +411,8 @@ object ImplicitUtils {
     def :/(other: String): String = slashed + other
 
     def pathSlash(part: String): String = {
-      if (part.endsWith(SpookyUtils.:/)) part
-      else part + SpookyUtils.:/
+      if (part.endsWith(SpookyUtils.\\\)) part
+      else part + SpookyUtils.\\\
     }
   }
 

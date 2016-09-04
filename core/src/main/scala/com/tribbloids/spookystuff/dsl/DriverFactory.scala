@@ -16,7 +16,6 @@ limitations under the License.
 package com.tribbloids.spookystuff.dsl
 
 import java.io.File
-import java.nio.file.{Files, StandardCopyOption}
 
 import com.gargoylesoftware.htmlunit.BrowserVersion
 import com.tribbloids.spookystuff.caching._
@@ -252,13 +251,7 @@ object DriverFactories {
       val srcFile = new File(src)
       val dstFile = new File(dst)
       if (!dstFile.exists()) {
-        dstFile.getParentFile.mkdirs()
-        Files.copy(
-          srcFile.toPath,
-          dstFile.toPath,
-          StandardCopyOption.COPY_ATTRIBUTES,
-          StandardCopyOption.REPLACE_EXISTING
-        )
+        SpookyUtils.universalCopy(srcFile.toPath, dstFile.toPath)
       }
     }
 
