@@ -41,7 +41,7 @@ import scala.collection.mutable
 // if from the same session release the existing one immediately.
 // if from a different session but same taskAttempt wait for the old one to be released.
 // in any case it should ensure 1 taskAttempt only has 1 active driver
-//TODO: delay Future-based waiting control until asynchonous Action exe is implemented. Right now it works just fine
+//TODO: delay Future-based waiting control until asynchronous Action exe is implemented. Right now it works just fine
 abstract class DriverFactory[+T] extends Serializable {
 
   // If get is called again before the previous driver is released, the old driver is destroyed to create a new one.
