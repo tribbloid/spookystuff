@@ -5,7 +5,7 @@ import com.tribbloids.spookystuff.utils.SpookyUtils
 trait LocalPathDocsFixture extends RemoteDocsFixture {
 
   //TODO: this should be within TEMP_PATH, however current temp directory cleanup is broken and may results in resources extracted in new suite being deleted by previous suite
-  final val TESTUTILS_TEMP_PATH = TestHelper.TARGET_PATH + "resources/testutils/"
+  final val TESTUTILS_TEMP_PATH = TestHelper.TARGET_PATH + "resources/testutils"
   final val RESOURCE_NAME = "testutils"
 
   {
