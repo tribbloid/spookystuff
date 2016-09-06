@@ -3,9 +3,9 @@ package com.tribbloids.spookystuff.integration.join
 import com.tribbloids.spookystuff.actions.{Action, Visit}
 import com.tribbloids.spookystuff.dsl._
 import com.tribbloids.spookystuff.extractors.Extractor
-import com.tribbloids.spookystuff.integration.IntegrationSuite
+import com.tribbloids.spookystuff.integration.IntegrationFixture
 
-class InnerVisitJoinIT extends IntegrationSuite {
+class InnerVisitJoinIT extends IntegrationFixture {
 
 //  override lazy val driverFactories = Seq(
 //    phantomJS //TODO: HtmlUnit does not support Backbone.js

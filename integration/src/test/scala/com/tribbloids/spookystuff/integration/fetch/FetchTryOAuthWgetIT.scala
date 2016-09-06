@@ -2,13 +2,13 @@ package com.tribbloids.spookystuff.integration.fetch
 
 import com.tribbloids.spookystuff.actions._
 import com.tribbloids.spookystuff.dsl._
-import com.tribbloids.spookystuff.integration.UncacheableIntegrationSuite
+import com.tribbloids.spookystuff.integration.UncacheableIntegrationFixture
 import org.apache.spark.SparkException
 
 /**
  * Created by peng on 11/26/14.
  */
-class FetchTryOAuthWgetIT extends UncacheableIntegrationSuite {
+class FetchTryOAuthWgetIT extends UncacheableIntegrationFixture {
 
   override lazy val driverFactories = Seq(
     null

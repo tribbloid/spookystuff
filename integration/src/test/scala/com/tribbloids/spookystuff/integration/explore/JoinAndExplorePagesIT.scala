@@ -2,12 +2,12 @@ package com.tribbloids.spookystuff.integration.explore
 
 import com.tribbloids.spookystuff.actions._
 import com.tribbloids.spookystuff.dsl._
-import com.tribbloids.spookystuff.integration.IntegrationSuite
+import com.tribbloids.spookystuff.integration.IntegrationFixture
 
 /**
   * Created by peng on 12/10/14.
   */
-class JoinAndExplorePagesIT extends IntegrationSuite {
+class JoinAndExplorePagesIT extends IntegrationFixture {
 
   override lazy val driverFactories = Seq(
     null

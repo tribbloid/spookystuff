@@ -2,12 +2,12 @@ package com.tribbloids.spookystuff.integration.fetch
 
 import com.tribbloids.spookystuff.actions._
 import com.tribbloids.spookystuff.dsl._
-import com.tribbloids.spookystuff.integration.IntegrationSuite
+import com.tribbloids.spookystuff.integration.IntegrationFixture
 
 /**
   * Created by peng on 11/26/14.
   */
-class FetchPaginationIT extends IntegrationSuite {
+class FetchPaginationIT extends IntegrationFixture {
 
   import com.tribbloids.spookystuff.utils.ImplicitUtils._
 

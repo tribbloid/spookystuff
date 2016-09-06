@@ -3,9 +3,9 @@ package com.tribbloids.spookystuff.integration.select
 import com.tribbloids.spookystuff.QueryException
 import com.tribbloids.spookystuff.actions._
 import com.tribbloids.spookystuff.dsl._
-import com.tribbloids.spookystuff.integration.IntegrationSuite
+import com.tribbloids.spookystuff.integration.IntegrationFixture
 
-class SelectIT extends IntegrationSuite {
+class SelectIT extends IntegrationFixture {
 
   override def doMain() {
 

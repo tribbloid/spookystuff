@@ -4,12 +4,12 @@ import java.net.URLEncoder
 
 import com.tribbloids.spookystuff.actions.{DropDownSelect, Submit, TextInput, _}
 import com.tribbloids.spookystuff.dsl._
-import com.tribbloids.spookystuff.integration.IntegrationSuite
+import com.tribbloids.spookystuff.integration.IntegrationFixture
 
 /**
   * Created by peng on 12/14/14.
   */
-class FetchInteractionsIT extends IntegrationSuite{
+class FetchInteractionsIT extends IntegrationFixture{
 
   override def doMain(): Unit = {
 

@@ -13,7 +13,7 @@ import org.scalatest.{BeforeAndAfterAll, FunSuite}
 import scala.concurrent.duration
 import scala.util.Random
 
-abstract class IntegrationSuite extends FunSuite with BeforeAndAfterAll with RemoteDocsFixture {
+abstract class IntegrationFixture extends FunSuite with BeforeAndAfterAll with RemoteDocsFixture {
 
   def sc: SparkContext = TestHelper.TestSpark
   def sql: SQLContext = TestHelper.TestSQL
@@ -67,7 +67,11 @@ abstract class IntegrationSuite extends FunSuite with BeforeAndAfterAll with Rem
           spooky = new SpookyContext(
             sql,
             new SpookyConf(
-              new DirConf(root = root),
+              components = Map(
+                "dirs" -> new DirConf(
+                  root = root
+                )
+              ),
               webDriverFactory = driver,
               defaultFetchOptimizer = optimizer,
               epochSize = 1 + Random.nextInt(4),
@@ -152,7 +156,7 @@ abstract class IntegrationSuite extends FunSuite with BeforeAndAfterAll with Rem
   def error: Range = 0 to 0
 }
 
-abstract class UncacheableIntegrationSuite extends IntegrationSuite {
+abstract class UncacheableIntegrationFixture extends IntegrationFixture {
 
   override protected def doTest(): Unit ={
 

@@ -3,12 +3,12 @@ package com.tribbloids.spookystuff.integration.join
 import com.tribbloids.spookystuff.actions._
 import com.tribbloids.spookystuff.dsl._
 import com.tribbloids.spookystuff.extractors._
-import com.tribbloids.spookystuff.integration.IntegrationSuite
+import com.tribbloids.spookystuff.integration.IntegrationFixture
 
 /**
   * Created by peng on 12/5/14.
   */
-class LeftVisitJoinIT extends IntegrationSuite {
+class LeftVisitJoinIT extends IntegrationFixture {
 
   def getPage(uri: Extractor[String]): Action = Visit(uri)
 
