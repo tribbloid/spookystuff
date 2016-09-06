@@ -7,10 +7,11 @@ class DummyPyAction(object):
     def __init__(self, jsonStr):
         # type: (object) -> object
         self.this = json.loads(jsonStr)[0]
+        # raise Exception(self.this)
 
     def dummy(self, jsonStr):
         map = json.loads(jsonStr)
-        merged = dict(list(self.this.items()) + list(map.items()))
+        merged = int(self.this['a']['value']) + int(map['b'])
         print(json.dumps(merged))
 
 class Move(object):

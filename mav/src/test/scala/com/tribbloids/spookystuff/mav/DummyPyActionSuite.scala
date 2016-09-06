@@ -14,11 +14,7 @@ class DummyPyActionSuite extends SpookyEnvFixture {
   test("can execute on driver") {
 
     val doc = action.fetch(spooky)
-    doc.flatMap(_.asInstanceOf[Doc].code).mkString("\n").shouldBe(
-      """
-        |{"a": 1, "c": 3, "b": 2, "num-children": 0, "class": "com.tribbloids.spookystuff.mav.actions.DummyPyAction"}
-      """.trim.stripMargin
-    )
+    doc.flatMap(_.asInstanceOf[Doc].code).mkString("\n").shouldBe("3")
   }
 
   test("can execute on workers") {

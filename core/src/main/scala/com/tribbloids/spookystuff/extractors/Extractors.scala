@@ -70,22 +70,21 @@ object Extractors {
 
 object Literal {
 
-  def apply[T: TypeTag](v: T): TypedLiteral[T] = {
-    TypedLiteral[T](Option(v), UnreifiedScalaType.apply[T])
+  def apply[T: TypeTag](v: T): Literal[FR, T] = {
+    apply[FR, T](v, UnreifiedScalaType.apply[T])
   }
 
-  def erase[T](v: T): ErasedLiteral[T] = {
-    ErasedLiteral[T](Option(v))
+  def erase[T](v: T): Literal[FR, T] = {
+    apply[FR, T](v, NullType)
   }
 
-  lazy val NULL: ErasedLiteral[Null] = ErasedLiteral(null)
+  lazy val NULL: Literal[FR, Null] = erase(null)
 }
 
-class Literal[T, +R](val valueOpt: Option[R], val dataType: DataType) extends Static[T, R] {
+//TODO: not quite compatible with product2String, e.g.: /WpostImpl/Literal/Some/http/172.17.0.2/5000/registrar/(unreified)_String/MustHaveTitle/
+case class Literal[T, +R](value: R, dataType: DataType) extends Static[T, R] {
 
-  def value: R = valueOpt.getOrElse(
-    throw new UnsupportedOperationException("NULL value")
-  )
+  def valueOpt: Option[R] = Option(value)
 
   override lazy val toString = valueOpt
     .map {
@@ -102,21 +101,6 @@ class Literal[T, +R](val valueOpt: Option[R], val dataType: DataType) extends St
   //    .getOrElse("NULL")
 
   override val self: PartialFunction[T, R] = Unlift({ _: T => valueOpt})
-}
-
-//just a simple wrapper for T, this is the only way to execute a action
-//this is the only serializable LiftedExpression that can be shipped remotely
-//TODO: not quite compatible with product2String, e.g.: /WpostImpl/Literal/Some/http/172.17.0.2/5000/registrar/(unreified)_String/MustHaveTitle/
-sealed case class TypedLiteral[+T] (
-                                     override val valueOpt: Option[T],
-                                     override val dataType: DataType
-                                   ) extends Literal[FR, T](valueOpt, dataType) {
-}
-
-sealed case class ErasedLiteral[+T] (
-                                      override val valueOpt: Option[T]
-                                    ) extends Literal[FR, T](valueOpt, NullType) {
-
 }
 
 case class GetExpr(field: Field) extends Leaf[FR, Any] {

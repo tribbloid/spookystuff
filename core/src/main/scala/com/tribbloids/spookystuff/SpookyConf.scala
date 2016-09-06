@@ -5,6 +5,7 @@ import java.util.Date
 import com.tribbloids.spookystuff.dsl._
 import com.tribbloids.spookystuff.row.Sampler
 import com.tribbloids.spookystuff.session.{OAuthKeys, ProxySetting, PythonDriver}
+import org.apache.spark.ml.dsl.utils.Message
 import org.apache.spark.rdd.RDD
 import org.apache.spark.storage.StorageLevel
 import org.apache.spark.{Partitioner, SparkConf, SparkContext}
@@ -12,6 +13,16 @@ import org.openqa.selenium.WebDriver
 
 import scala.concurrent.duration.Duration.Infinite
 import scala.concurrent.duration._
+
+trait AbstractConf extends Message {
+
+  val name: String
+
+  val propertyName = Seq("spooky", name).mkString("")
+
+  // TODO: use reflection to automate
+  def importFrom(implicit sparkConf: SparkConf): AbstractConf
+}
 
 object SpookyConf {
 
@@ -49,7 +60,7 @@ object SpookyConf {
   */
 //TODO: is var in serialized closure unstable for Spark production environment? consider changing to ConcurrentHashMap
 class SpookyConf (
-                   val dirs: DirConf = new DirConf(),
+                   val components: Map[String, AbstractConf] = Map("dirs" -> new DirConf()),
 
                    var shareMetrics: Boolean = false, //TODO: not necessary
 
@@ -104,29 +115,14 @@ class SpookyConf (
                    var defaultStorageLevel: StorageLevel = StorageLevel.MEMORY_ONLY
                  ) extends Serializable {
 
+  def dirs = this.components("dirs").asInstanceOf[DirConf]
+
   def importFrom(sparkContext: SparkContext): SpookyConf = importFrom(sparkContext.getConf)
 
   def importFrom(implicit sparkConf: SparkConf): SpookyConf = {
 
-    val root = Option(this.dirs.root).getOrElse(SpookyConf.getDefault("spooky.dirs.root", "temp"))
-
-    val localRoot = Option(this.dirs.root).getOrElse(SpookyConf.getDefault("spooky.dirs.root.local", "temp"))
-
-    //TODO: use Java reflection to generalize system property/variable override rules
-    val dirs = new DirConf(
-      root,
-      localRoot,
-      Option(this.dirs._autoSave).getOrElse(SpookyConf.getDefault("spooky.dirs.autosave")),
-      Option(this.dirs._cache).getOrElse(SpookyConf.getDefault("spooky.dirs.cache")),
-      Option(this.dirs._errorDump).getOrElse(SpookyConf.getDefault("spooky.dirs.error.dump")),
-      Option(this.dirs._errorScreenshot).getOrElse(SpookyConf.getDefault("spooky.dirs.error.screenshot")),
-      Option(this.dirs._checkpoint).getOrElse(SpookyConf.getDefault("spooky.dirs.checkpoint")),
-      Option(this.dirs._errorDumpLocal).getOrElse(SpookyConf.getDefault("spooky.dirs.error.dump.local")),
-      Option(this.dirs._errorScreenshotLocal).getOrElse(SpookyConf.getDefault("spooky.dirs.error.screenshot.local"))
-    )
-
     new SpookyConf(
-      dirs,
+      this.components.mapValues(_.importFrom(sparkConf)),
 
       this.shareMetrics,
 

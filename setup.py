@@ -1,8 +1,7 @@
-from setuptools import setup, Extension
-import platform
+from setuptools import setup
+version = '0.4.0'
 
-version = '0.4.0-SNAPSHOT'
-
+# todo: this is so redundant: I don't need to release my python code (its all in the jar), why do i keep it?
 setup(
     name='spookystuff',
     zip_safe=True,

@@ -1,7 +1,5 @@
 package com.tribbloids.spookystuff
-
-import com.tribbloids.spookystuff.utils.SpookyUtils
-import org.apache.spark.ml.dsl.utils.Message
+import org.apache.spark.SparkConf
 
 /**
   * Created by peng on 2/2/15.
@@ -16,7 +14,7 @@ case class DirConf(
                     var _checkpoint: String = null,//System.getProperty("spooky.dirs.checkpoint"),
                     var _errorDumpLocal: String = null,//System.getProperty("spooky.dirs.errordump.local"),
                     var _errorScreenshotLocal: String = null//System.getProperty("spooky.dirs.errorscreenshot.local")
-                  ) extends Message {
+                  ) extends AbstractConf {
 
   import com.tribbloids.spookystuff.utils.ImplicitUtils._
 
@@ -38,4 +36,22 @@ case class DirConf(
   def checkpoint: String = Option(_autoSave).getOrElse(root_/("checkpoint"))
   def errorDumpLocal: String = Option(_autoSave).getOrElse(localRoot_/("errorDump"))
   def errorScreenshotLocal: String = Option(_autoSave).getOrElse(localRoot_/("errorScreenshot"))
+
+  // TODO: use reflection to automate
+  override def importFrom(implicit sparkConf: SparkConf): DirConf = {
+    
+    new DirConf(
+      Option(root).getOrElse(SpookyConf.getDefault("spooky.dirs.root", "temp")),
+      Option(root).getOrElse(SpookyConf.getDefault("spooky.dirs.root.local", "temp")),
+      Option(_autoSave).getOrElse(SpookyConf.getDefault("spooky.dirs.autosave")),
+      Option(_cache).getOrElse(SpookyConf.getDefault("spooky.dirs.cache")),
+      Option(_errorDump).getOrElse(SpookyConf.getDefault("spooky.dirs.error.dump")),
+      Option(_errorScreenshot).getOrElse(SpookyConf.getDefault("spooky.dirs.error.screenshot")),
+      Option(_checkpoint).getOrElse(SpookyConf.getDefault("spooky.dirs.checkpoint")),
+      Option(_errorDumpLocal).getOrElse(SpookyConf.getDefault("spooky.dirs.error.dump.local")),
+      Option(_errorScreenshotLocal).getOrElse(SpookyConf.getDefault("spooky.dirs.error.screenshot.local"))
+    )
+  }
+
+  override val name: String = "dirs"
 }

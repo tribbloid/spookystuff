@@ -55,9 +55,9 @@ abstract class SpookyEnvFixture
   }
 
   override def afterAll() {
-//    if (sc != null) {
-//      sc.stop()
-//    }//TODO: remove it: sc implementation no longer recreates
+    //    if (sc != null) {
+    //      sc.stop()
+    //    }//TODO: remove it: sc implementation no longer recreates
 
     TestHelper.clearTempDir()
     super.afterAll()
@@ -76,8 +76,10 @@ abstract class SpookyEnvFixture
       autoSave = true,
       cacheWrite = false,
       cacheRead = false,
-      dirs = new DirConf(
-        root = TestHelper.TEMP_PATH + "spooky-unit"
+      components = Map(
+        "dirs" -> new DirConf(
+          root = TestHelper.TEMP_PATH + "spooky-unit"
+        )
       )
     )
   }

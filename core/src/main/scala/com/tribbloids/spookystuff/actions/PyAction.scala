@@ -34,7 +34,7 @@ trait PyAction extends Action {
       s"from $pyPackage import $pyClass",
       s"$varName = $pyClass (",
       PyAction.QQQ,
-      this.prettyJson,
+      this.toJSON,
       PyAction.QQQ,
       ")"
     )
@@ -54,7 +54,7 @@ trait PyAction extends Action {
     def applyDynamic(methodName: String)(args: Any*): Seq[String] = {
       val argJSONs: Seq[String] = args.map {
         v =>
-          val json = MessageWrapper(v).prettyJSON()
+          val json = MessageWrapper(v).toJSON()
           Seq(
             PyAction.QQQ,
             json,

@@ -1,6 +1,6 @@
 package com.tribbloids.spookystuff.session
 
-import java.util.regex.{Matcher, Pattern}
+import java.util.regex.Pattern
 
 import com.tribbloids.spookystuff.PythonException
 import com.tribbloids.spookystuff.utils.SpookyUtils
@@ -9,8 +9,8 @@ object PythonDriver {
 
   final val DEFAULT_TEMP_PATH = System.getProperty("user.dir") + "/temp/pyspookystuff/"
   final val RESOURCE_NAME = "com/tribbloids/pyspookystuff"
-
-  final val errorInLastLine: Pattern = Pattern.compile(".*(Error|Exception): .*$")
+//
+  final val errorInLastLine: Pattern = Pattern.compile(".*(Error|Exception):.*$")
 }
 
 /**
@@ -48,12 +48,30 @@ case class PythonDriver(
     * Checks if there is a syntax error or an exception
     * From Zeppelin PythonInterpreter
     *
-    * @param output Python interpreter output
     * @return true if syntax error or exception has happened
     */
-  private def pythonErrorIn(output: String): Boolean = {
-    val errorMatcher: Matcher = PythonDriver.errorInLastLine.matcher(output)
-    errorMatcher.find
+  private def pythonErrorIn(lines: Seq[String]): Boolean = {
+
+    val indexed = lines.zipWithIndex
+    val tracebackRows: Seq[Int] = indexed.filter(_._1.startsWith("Traceback ")).map(_._2)
+    val errorRows: Seq[Int] = indexed.filter{
+      v =>
+        val matcher = PythonDriver.errorInLastLine.matcher(v._1)
+        matcher.find
+    }.map(_._2)
+
+    if (tracebackRows.nonEmpty && errorRows.nonEmpty) true
+    else false
+
+//    tracebackRows.foreach {
+//      row =>
+//        val errorRowOpt = errorRows.find(_ > row)
+//        errorRowOpt.foreach {
+//          errorRow =>
+//            val tracebackDetails = lines.slice(row +1, errorRow)
+//            if (tracebackDetails.forall(_.startsWith(""))
+//        }
+//    }
   }
 
   final def PROMPT = "^(>>>|\\.\\.\\.| )+"
@@ -70,7 +88,7 @@ case class PythonDriver(
         removePrompts
       )
 
-    if (pythonErrorIn(output)) {
+    if (pythonErrorIn(rows)) {
       val ee = new PythonException(
         "Error interpreting" +
           "\n>>>\n" +

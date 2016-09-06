@@ -1,5 +1,6 @@
 package com.tribbloids.spookystuff.session
 
+import com.tribbloids.spookystuff.actions.PyAction
 import com.tribbloids.spookystuff.{PythonException, SpookyEnvFixture}
 
 /**
@@ -65,13 +66,36 @@ class PythonDriverSuite extends SpookyEnvFixture {
     }
   }
 
-  test("interpret should throw an exception if interpretation triggers an error") {
+  test("interpret should throw an exception if interpreter raises an error") {
 
     PythonDriverSuite.runIterable(1 to 10) {
       (i, proc) =>
         intercept[PythonException]{
           proc.interpret(s"print($i / 0)")
         }
+    }
+  }
+
+
+  test("interpret should throw an exception if interpreter raises a multi-line error") {
+
+    PythonDriverSuite.runIterable(1 to 10) {
+      (i, proc) =>
+//        intercept[PythonException]{
+          val result = proc.interpret(
+            s"""
+              |raise Exception(
+              |${PyAction.QQQ}
+              |abc
+              |def
+              |ghi
+              |jkl
+              |${PyAction.QQQ}
+              |)
+            """.stripMargin
+          )
+//        }
+        result.foreach(println)
     }
   }
 }
