@@ -81,21 +81,20 @@ class PythonDriverSuite extends SpookyEnvFixture {
 
     PythonDriverSuite.runIterable(1 to 10) {
       (i, proc) =>
-//        intercept[PythonException]{
+        intercept[PythonException]{
           val result = proc.interpret(
             s"""
-              |raise Exception(
-              |${PyAction.QQQ}
-              |abc
-              |def
-              |ghi
-              |jkl
-              |${PyAction.QQQ}
-              |)
+               |raise Exception(
+               |${PyAction.QQQ}
+               |abc
+               |def
+               |ghi
+               |jkl
+               |${PyAction.QQQ}
+               |)
             """.stripMargin
           )
-//        }
-        result.foreach(println)
+        }
     }
   }
 }
