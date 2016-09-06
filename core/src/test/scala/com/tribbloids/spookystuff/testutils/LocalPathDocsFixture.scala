@@ -6,7 +6,7 @@ object LocalPathDocsFixture {
 
   //TODO: this should be within TEMP_PATH, however current temp directory cleanup is broken and may results in resources extracted in new suite being deleted by previous suite
   final val TESTUTILS_TEMP_PATH = TestHelper.TARGET_PATH + "resources/testutils/"
-  final val RESOURCE_NAME = "testutils"
+  final val RESOURCE_NAME = "testutils/"
 
   // run once per test TODO: or clean up at shutdown hook
   lazy val testResource = {
