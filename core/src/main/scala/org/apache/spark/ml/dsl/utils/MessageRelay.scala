@@ -151,7 +151,9 @@ abstract class MessageRelay[Obj] {
   }
 }
 
-class MessageReader[Obj](implicit override val mf: Manifest[Obj]) extends MessageRelay[Obj] {
+class MessageReader[Obj](
+                          implicit override val mf: Manifest[Obj]
+                        ) extends MessageRelay[Obj] {
   type M = Obj
 
   override implicit val formats: Formats = Xml.defaultFormats +

@@ -19,12 +19,23 @@ class ActionUDT extends ScalaUDT[Action]
 
 object ActionRelay extends MessageRelay[Action] {
 
+  def convert(elements: Traversable[_]): Traversable[Any] = elements
+    .map {
+      case v: HasRelay => v.toMessage
+      case (k, v: HasRelay) => k -> v.toMessage
+      case v: Traversable[_] => convert(v)
+      case v => v
+    }
+
   //avoid using scala reflections on worker as they are thread unsafe, use JSON4s that is more battle tested
   override def toMessage(value: Action): M = {
     val className = value.getClass.getCanonicalName
     val fields = ScalaReflection.getConstructorParameters(value.getClass).map(_._1)
-    val elements = value.productIterator.toSeq
-    val map = Map(fields zip elements: _*)
+    val elements = value
+      .productIterator
+      .toSeq
+
+    val map = Map(fields zip convert(elements).toSeq: _*)
     M(
       className,
       map
