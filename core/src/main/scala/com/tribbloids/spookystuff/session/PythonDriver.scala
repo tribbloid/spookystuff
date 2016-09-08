@@ -25,7 +25,10 @@ case class PythonDriver(
     val resourceOpt = SpookyUtils.getCPResource(PythonDriver.RESOURCE_NAME)
     resourceOpt.foreach {
       resource =>
-        SpookyUtils.extractResource(resource, tempPath)
+        SpookyUtils.asynchIfNotExist(tempPath){
+
+          SpookyUtils.extractResource(resource, tempPath)
+        }
     }
 
     this.open()

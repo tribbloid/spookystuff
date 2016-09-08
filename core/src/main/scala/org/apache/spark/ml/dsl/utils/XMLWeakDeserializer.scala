@@ -6,17 +6,14 @@ import org.json4s._
 import org.json4s.jackson.JsonMethods._
 import org.json4s.reflect.{TypeInfo, _}
 
-abstract class WeakDeserializer[T: Manifest] extends Serializer[T] {
-
-  //  final val tpe = implicitly[Manifest[T]]
-  //  final val clazz = tpe.runtimeClass
+abstract class XMLWeakDeserializer[T: Manifest] extends Serializer[T] {
 
   // cannot serialize
   override def serialize(implicit format: Formats): PartialFunction[Any, JValue] = PartialFunction.empty
 }
 
 // <tag>12</tag> => tag: 12
-object StringToNumberDeserializer extends WeakDeserializer[Any] {
+object StringToNumberDeserializer extends XMLWeakDeserializer[Any] {
 
   override def deserialize(implicit format: Formats): PartialFunction[(TypeInfo, JValue), Any] = Function.unlift{
 
@@ -39,7 +36,7 @@ object StringToNumberDeserializer extends WeakDeserializer[Any] {
 }
 
 // <tag/> => tag: {}
-object EmptyStringToEmptyObjectDeserializer extends WeakDeserializer[Any] {
+object EmptyStringToEmptyObjectDeserializer extends XMLWeakDeserializer[Any] {
 
   override def deserialize(implicit format: Formats): PartialFunction[(TypeInfo, JValue), Any] = Function.unlift{
 
@@ -58,7 +55,7 @@ object EmptyStringToEmptyObjectDeserializer extends WeakDeserializer[Any] {
 
 // <tag>12</tag> => tag: [12]
 // <tag>abc</tag> => tag: ["abc"]
-object ElementToArrayDeserializer extends WeakDeserializer[Any] {
+object ElementToArrayDeserializer extends XMLWeakDeserializer[Any] {
 
   val listClass = classOf[List[_]]
   val seqClass = classOf[Seq[_]]

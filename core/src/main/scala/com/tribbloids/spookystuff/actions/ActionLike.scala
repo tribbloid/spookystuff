@@ -9,8 +9,24 @@ import com.tribbloids.spookystuff.{Const, QueryException, SpookyContext}
 import org.apache.spark.sql.catalyst.trees.TreeNode
 import org.slf4j.LoggerFactory
 
+object ActionLike {
+
+  case class TreeNodeView(
+                           actionLike: ActionLike
+                         ) extends TreeNode[TreeNodeView] {
+
+    override def children: Seq[TreeNodeView] = actionLike.children.map {
+      TreeNodeView
+    }
+  }
+}
+
 @SerialVersionUID(8566489926281786854L)
-abstract class ActionLike extends TreeNode[ActionLike] with Product with Serializable {
+abstract class ActionLike extends Product with Serializable {
+
+  def children: Trace
+
+  lazy val TreeNode: ActionLike.TreeNodeView = ActionLike.TreeNodeView(this)
 
   //TODO: this step should be broken into 2 stages for better efficiency, f1 =(resolve on driver)=> f2 =(eval on executors)=> v
   final def interpolate(pr: FetchedRow, schema: DataRowSchema): Option[this.type] = {
@@ -22,6 +38,7 @@ abstract class ActionLike extends TreeNode[ActionLike] with Product with Seriali
     option
   }
 
+  //TODO: use reflection to simplify
   def doInterpolate(pageRow: FetchedRow, schema: DataRowSchema): Option[this.type] = Some(this)
 
   def injectFrom(same: ActionLike): Unit = {} //TODO: change to immutable pattern to avoid one Trace being used twice with different names

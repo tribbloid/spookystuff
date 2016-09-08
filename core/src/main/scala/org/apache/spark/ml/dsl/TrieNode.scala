@@ -44,6 +44,7 @@ object TrieNode {
   }
 }
 
+@Deprecated //TODO: delete, useless
 case class TrieNode[K, V](
                             key: Seq[K],
                             value: V,

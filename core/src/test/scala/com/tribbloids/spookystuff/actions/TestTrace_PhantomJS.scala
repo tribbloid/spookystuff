@@ -82,7 +82,7 @@ class TestTrace_PhantomJS extends SpookyEnvFixture with TestMixin {
     assert(trace.correct == trace :+ Snapshot())
   }
 
-  test("TraceView.toString should have identations of TreeNode") {
+  test("TraceView.TreeNode.toString should have indentations of TreeNode") {
     import com.tribbloids.spookystuff.dsl._
 
     val traces: Set[Trace] = (
@@ -107,9 +107,9 @@ class TestTrace_PhantomJS extends SpookyEnvFixture with TestMixin {
 
     traces.foreach{
       trace =>
-        val view = TraceView(trace)
-        println(view.toString)
-        assert(view.toString contains "\n")
+        val str = TraceView(trace).TreeNode.toString
+        println(str)
+        assert(str contains "\n")
     }
   }
 
@@ -136,7 +136,7 @@ class TestTrace_PhantomJS extends SpookyEnvFixture with TestMixin {
 
   test("Click.toJSON should work") {
     val action = Click("o1")
-    val json = action.toJSON
+    val json = action.toMessage.toJSON()
     println(json)
   }
 
@@ -152,7 +152,7 @@ class TestTrace_PhantomJS extends SpookyEnvFixture with TestMixin {
       Click("o1")
         +> Snapshot()
     )
-    val json = action.toJSON
+    val json = action.toMessage.toJSON()
     println(json)
   }
 

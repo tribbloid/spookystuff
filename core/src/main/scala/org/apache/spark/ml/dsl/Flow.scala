@@ -1075,7 +1075,7 @@ case class Flow(
                  rightTailIDs: Seq[String],
                  headIDs: Seq[String],
                  fromIDsOpt: Option[Seq[String]] = None //overrriden by using "from" function
-               ) extends FlowComponent with MLWritable with FlowRelay.ObjectMixin {
+               ) extends FlowComponent with MLWritable with FlowRelay.HasRelay {
 
   override def fromIDs = fromIDsOpt.getOrElse(headIDs)
 

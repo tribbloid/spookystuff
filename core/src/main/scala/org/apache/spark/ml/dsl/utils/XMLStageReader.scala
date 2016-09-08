@@ -5,12 +5,40 @@ import org.apache.spark.ml.util.DefaultParamsReader.Metadata
 import org.apache.spark.ml.util.{DefaultParamsReader, MLReadable, MLReader}
 import org.apache.spark.util.Utils
 import org.json4s.JsonAST.JObject
+import org.json4s.{Formats, Serializer}
 import org.json4s.jackson.JsonMethods._
+import org.json4s.jackson.Serialization
 
-/**
-  * Created by peng on 16/05/16.
-  */
-class XMLStageReader[T <: Params](implicit val mf: Manifest[T]) extends DefaultParamsReader[T] with XMLReaderMixin[T] {
+import scala.xml.{NodeSeq, XML}
+
+//TODO: merge into StructRelay
+trait XMLReaderMixin[T] {
+
+  implicit def mf: Manifest[T]
+
+  def extraSer: Seq[Serializer[_]] = Nil
+
+  implicit def format: Formats = Xml.defaultFormats
+
+  def fromJson(json: String): T = {
+    Serialization.read[T](json)
+  }
+
+  def fromXml(xml: NodeSeq): T = {
+    val json = Xml.toJson(xml)
+
+    json.extract[T]
+  }
+
+  def fromXmlStr(xmlStr: String): T = {
+    val xml = XML.loadString(xmlStr)
+
+    fromXml(xml)
+  }
+}
+
+
+class XMLStageReader[T <: Params](implicit val mf: Manifest[T]) extends MLReader[T] with XMLReaderMixin[T] {
 
   override def load(path: String): T = {
     val metadata = DefaultParamsReader.loadMetadata(path, sc)

@@ -274,7 +274,17 @@ These special characters are often called "metacharacters".
     Files.walkFileTree(srcPath, java.util.EnumSet.of(FileVisitOption.FOLLOW_LINKS),
       Integer.MAX_VALUE, new CopyDirectory(srcPath, dstPath))
   }
+  def asynchIfNotExist[T](dst: String)(f: =>T): Option[T] = this.synchronized {
+    val dstFile = new File(dst)
+    if (!dstFile.exists()) {
+      Some(f)
+    }
+    else {
+      None
+    }
+  }
 
+  //TODO: this is not tested on workers
   def extractResource(resource: URL, dst: String): Unit = {
 
     resource.getProtocol match {
@@ -293,7 +303,7 @@ These special characters are often called "metacharacters".
         universalCopy(srcPath, new File(dst).toPath)
       case _ =>
         val src = new File(resource.toURI)
-        FileUtils.copyDirectory(src, new File(dst))
+        universalCopy(src.toPath, new File(dst).toPath)
     }
   }
 

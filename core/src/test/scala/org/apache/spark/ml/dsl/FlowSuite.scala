@@ -433,7 +433,7 @@ class FlowSuite extends AbstractFlowSuite {
       )
       .from(STEMMED) <>- FlowSuite.IDF >>> UDFTransformer(zipping) -> 'idf_zipped
 
-    val prettyJSON = flow.write.outer.prettyJSON
+    val prettyJSON = flow.write.message.prettyJSON
 
     prettyJSON.shouldBe()
 
@@ -458,12 +458,12 @@ class FlowSuite extends AbstractFlowSuite {
 
     import org.json4s.JsonDSL._
 
-    val jValue: JValue = "root" -> flow.write.outer.jValue
+    val jValue: JValue = "root" -> flow.write.message.jValue
     val jValue2 = Xml.toJson(Xml.toXml(jValue))
 
 //    pretty(jValue).shouldBe(pretty(jValue2))
 
-    val prettyXML = flow.write.outer.prettyXML
+    val prettyXML = flow.write.message.prettyXML
 
     prettyXML.shouldBe()
 

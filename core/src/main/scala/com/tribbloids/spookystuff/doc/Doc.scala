@@ -34,6 +34,7 @@ case class DocUID(
 class FetchedUDT extends ScalaUDT[Fetched]
 
 //keep small, will be passed around by Spark
+//TODO: subclass Unstructured to save Message definition
 @SQLUserDefinedType(udt = classOf[FetchedUDT])
 trait Fetched extends Serializable {
 

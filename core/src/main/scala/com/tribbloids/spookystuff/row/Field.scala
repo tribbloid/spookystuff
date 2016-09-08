@@ -56,7 +56,6 @@ case class Field(
   def `#` = this.copy(isOrdinal = true)
 
   def isDepth = depthRangeOpt.nonEmpty
-
   def isSortIndex: Boolean = isOrdinal || isDepth
 
   def isSelected = isSelectedOverride.getOrElse(!(isWeak || isInvisible))

@@ -3,7 +3,7 @@ package com.tribbloids.spookystuff.actions
 
 import com.tribbloids.spookystuff.doc.Fetched
 import com.tribbloids.spookystuff.session.{DriverSession, Session}
-import org.apache.spark.ml.dsl.utils.{FlowUtils, MessageWrapper}
+import org.apache.spark.ml.dsl.utils.{FlowUtils, MessageView}
 
 import scala.language.dynamics
 import scala.util.Random
@@ -30,11 +30,12 @@ trait PyAction extends Action {
         .filter(_.nonEmpty)
     val pyPackage = pyFullName.slice(0, pyFullName.length -1).mkString(".")
     val pyClass = pyFullName.last
+    val json = this.toMessage.toJSON()
     val lines = Seq(
       s"from $pyPackage import $pyClass",
       s"$varName = $pyClass (",
       PyAction.QQQ,
-      this.toJSON,
+      json,
       PyAction.QQQ,
       ")"
     )
@@ -54,7 +55,7 @@ trait PyAction extends Action {
     def applyDynamic(methodName: String)(args: Any*): Seq[String] = {
       val argJSONs: Seq[String] = args.map {
         v =>
-          val json = MessageWrapper(v).toJSON()
+          val json = MessageView(v).toJSON()
           Seq(
             PyAction.QQQ,
             json,

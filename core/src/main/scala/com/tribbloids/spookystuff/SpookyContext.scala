@@ -6,7 +6,7 @@ import com.tribbloids.spookystuff.utils.HDFSResolver
 import org.apache.hadoop.conf.Configuration
 import org.apache.spark._
 import org.apache.spark.broadcast.Broadcast
-import org.apache.spark.ml.dsl.utils.MessageWrapper
+import org.apache.spark.ml.dsl.utils.MessageView
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.{DataFrame, SQLContext}
 import org.apache.spark.storage.StorageLevel
@@ -167,7 +167,7 @@ case class SpookyContext private (
 
           val jsonRDD = canonRdd.map(
             map =>
-              MessageWrapper(map).compactJSON()
+              MessageView(map).compactJSON()
           )
           val dataFrame = sqlContext.read.json(jsonRDD)
           dataFrameToPageRowRDD(dataFrame)

@@ -28,15 +28,15 @@ object FlowRelay extends MessageRelay[Flow] {
 
     this.M(
       Declaration(
-        steps.map(_.toMessage)
+        steps.map(_.toMessageValue)
       ),
       Seq(
         GraphRepr(
-          leftTrees.map(_.toMessage),
+          leftTrees.map(_.toMessageValue),
           `@direction` = Some(FORWARD_LEFT)
         ),
         GraphRepr(
-          rightTrees.map(_.toMessage),
+          rightTrees.map(_.toMessageValue),
           `@direction` = Some(FORWARD_RIGHT)
         )
       ),
@@ -161,6 +161,7 @@ object StepRelay extends MessageRelay[Step] {
       Step(stage)
     }
 
+    //TODO: can we merge this into MessageRelay?
     def getAndSetParams(instance: Params, params: JValue): Unit = {
       implicit val format = Xml.defaultFormats
       params match {

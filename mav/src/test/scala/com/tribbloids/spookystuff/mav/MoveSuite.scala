@@ -14,6 +14,6 @@ class MoveSuite extends SpookyEnvFixture {
 
     val move = Move(wp1, wp2)
 
-    println(move.prettyJson)
+    println(move.toMessage.prettyJSON())
   }
 }

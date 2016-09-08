@@ -28,7 +28,7 @@ case class UDFTransformer(
     with DefaultParamsWritable
     with DynamicParamsMixin {
 
-  lazy val UDF = SerializingParam[UserDefinedFunction]()
+  lazy val UDF = GenericParam[UserDefinedFunction]()
 
   import org.apache.spark.sql.functions._
 

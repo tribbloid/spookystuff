@@ -247,14 +247,6 @@ object DriverFactories {
         SpookyConf.getDefault("phantomjs.path", DEFAULT_PATH)
     }
 
-    def asynchCopyIfNotExist(src: String, dst: String): Unit = this.synchronized {
-      val srcFile = new File(src)
-      val dstFile = new File(dst)
-      if (!dstFile.exists()) {
-        SpookyUtils.universalCopy(srcFile.toPath, dstFile.toPath)
-      }
-    }
-
     def asynchDelete(dst: String): Unit = this.synchronized {
       val dstFile = new File(dst)
       FileUtils.forceDelete(dstFile)
@@ -305,7 +297,11 @@ object DriverFactories {
         sc.exePerCore {
           val srcStr = SparkFiles.get(fileName)
           val dstStr = path(spooky)
-          PhantomJS.asynchCopyIfNotExist(srcStr, dstStr)
+          SpookyUtils.asynchIfNotExist(dstStr) {
+            val srcFile = new File(srcStr)
+            val dstFile = new File(dstStr)
+            SpookyUtils.universalCopy(srcFile.toPath, dstFile.toPath)
+          }
         }
           .count()
         LoggerFactory.getLogger(this.getClass).info(s"Finished deploying PhantomJS from $uri")

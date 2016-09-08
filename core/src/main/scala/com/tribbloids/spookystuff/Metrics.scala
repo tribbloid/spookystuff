@@ -16,7 +16,7 @@ object Metrics {
   }
 }
 
-abstract class AbstractMetrics extends Message {
+abstract class AbstractMetrics extends Message with Product {
 
   //this is necessary as direct JSON serialization on accumulator only yields meaningless string
   def toTuples: List[(String, Any)] = {
@@ -49,7 +49,7 @@ abstract class AbstractMetrics extends Message {
     }
   }
 
-  override def formatted: ListMap[String, Any] = toMap
+  override def value: ListMap[String, Any] = toMap
 
   val children: ArrayBuffer[AbstractMetrics] = ArrayBuffer()
 }

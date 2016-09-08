@@ -1,39 +1,92 @@
 package org.apache.spark.ml.dsl.utils
 
+import org.apache.spark.annotation.DeveloperApi
 import org.apache.spark.ml.param.{ParamMap, Params}
 import org.apache.spark.ml.util._
+import org.apache.spark.sql.types.{DataType, UserDefinedType}
 import org.apache.spark.util.Utils
+import org.json4s._
 import org.json4s.jackson.JsonMethods._
-import org.json4s.{Extraction, Formats, JValue}
 
 import scala.language.implicitConversions
+import scala.util.Try
 import scala.xml.{NodeSeq, XML}
 
 //mixin to allow converting to  a simple case class and back
 //used to delegate ser/de tasks (from/to xml, json & dataset encoded type) to the case class with a fixed schema
 //all subclasses must be objects otherwise Spark SQL can't find schema for Repr
-abstract class MessageRelay[T] {
+abstract class MessageRelay[Obj] {
 
-  //has to be a case class
-  type M <: Message
+  implicit val formats: Formats = Xml.defaultFormats
 
-  def toMessage(v: T): M
+  type M
 
-  final def toMLWriter(v: T) = toMessage(v).MLWriter
-  final def toMLReader = MLReader
+  implicit def mf: Manifest[this.M] = intrinsicManifestTry.get
 
-  trait ObjectMixin {
-    self: T =>
+  //TODO: it only works if impl of MessageRelay is an object
+  final val intrinsicManifestTry: Try[Manifest[this.M]] = Try{
 
-    final def toMessage: M = MessageRelay.this.toMessage(self)
+    val clazz = this.getClass
+    val name = clazz.getName
+    val modifiedName = name + "M"
+    val reprClazz = Utils.classForName(modifiedName)
+
+    Manifest.classType[this.M](reprClazz)
   }
 
-  case object MLReader extends MLReader[T] {
+  def _fromJValue[T: Manifest](jv: JValue): T = {
+
+    Extraction.extract[T](jv)
+  }
+  def _fromJSON[T: Manifest](json: String): T = _fromJValue[T](parse(json))
+
+  def _fromXMLNode[T: Manifest](ns: NodeSeq): T = {
+    val jv = Xml.toJson(ns)
+
+    _fromJValue[T](jv.children.head)
+  }
+  def _fromXML[T: Manifest](xml: String): T = {
+    val ns = XML.loadString(xml)
+
+    _fromXMLNode[T](ns)
+  }
+
+  def fromJValue(jv: JValue): M = _fromJValue[M](jv)
+  def fromJSON(json: String): M = _fromJSON[M](json)
+
+  def fromXMLNode(ns: NodeSeq): M = _fromXMLNode[M](ns)
+  def fromXML(xml: String): M = _fromXML[M](xml)
+
+  def toMessage(v: Obj): Message
+  final def toMessageValue(v: Obj): MessageRelay.this.M = toMessage(v).value.asInstanceOf[MessageRelay.this.M]
+
+  final def toMLWriter(v: Obj) = toMessage(v).MLWriter
+
+  trait HasRelay {
+    self: Obj =>
+
+    final def toMessage: Message = MessageRelay.this.toMessage(self)
+    final def toMessageValue: MessageRelay.this.M = toMessage.value.asInstanceOf[MessageRelay.this.M]
+  }
+
+  class UDT extends UserDefinedType[Obj] {
+
+    override def sqlType: DataType = ???
+
+    override def serialize(obj: Any): Any = ???
+
+    override def deserialize(datum: Any): Obj = ???
+
+    override def userClass: Class[Obj] = ???
+  }
+
+  final def toMLReader: MLReader[Obj] = MLReader
+  case object MLReader extends MLReader[Obj] {
 
     def outer = MessageRelay.this
 
     //TODO: need impl
-    override def load(path: String): T = {
+    override def load(path: String): Obj = {
       //      val metadata = DefaultParamsReader.loadMetadata(path, sc)
       //      val cls = Utils.classForName(metadata.className)
       //      val instance =
@@ -44,49 +97,81 @@ abstract class MessageRelay[T] {
     }
   }
 
-  val xmlFormat: Formats = Xml.defaultFormats
+  def Param(
+             parent: String,
+             name: String,
+             doc: String,
+             isValid: Obj => Boolean,
+             // serializer = SparkEnv.get.serializer
+             formats: Formats = Xml.defaultFormats
+           ): Param = new Param(parent, name, doc, isValid, formats)
 
-  // the following Impl confines all subclasses to be objects
-  //TODO: it only works if impl of MessageRelay is an object
-  lazy val mf: Manifest[this.M] = {
+  def Param(parent: String, name: String, doc: String): Param =
+    Param(parent, name, doc, (_: Obj) => true)
 
-    val clazz = this.getClass
-    val name = clazz.getName
-    val modifiedName = name + "M"
-    val reprClazz = Utils.classForName(modifiedName)
+  def Param(parent: Identifiable, name: String, doc: String, isValid: Obj => Boolean): Param =
+    Param(parent.uid, name, doc, isValid)
 
-    Manifest.classType[this.M](reprClazz)
-  }
+  def Param(parent: Identifiable, name: String, doc: String): Param =
+    Param(parent.uid, name, doc)
+  /**
+    * :: DeveloperApi ::
+    * ML Param only supports string & vectors, this class extends support to all objects
+    */
+  @DeveloperApi
+  class Param(
+               parent: String,
+               name: String,
+               doc: String,
+               isValid: Obj => Boolean,
+               // serializer = SparkEnv.get.serializer
+               formats: Formats
+             ) extends org.apache.spark.ml.param.Param[Obj](parent, name, doc, isValid) {
 
-  def fromJValue(jv: JValue): M = {
 
-    Extraction.extract[M](jv)(xmlFormat, mf)
-  }
-  def fromJSON(json: String): M = fromJValue(parse(json))
+    /** Creates a param pair with the given value (for Java). */
+    //    override def w(value: M): ParamPair[M] = super.w(value)
 
-  def fromNodeSeq(ns: NodeSeq): M = {
-    val jv = Xml.toJson(ns)
+    override def jsonEncode(value: Obj): String = {
 
-    fromJValue(jv.children.head)
-  }
-  def fromXML(xml: String): M = {
-    val ns = XML.loadString(xml)
+      toMessage(value)
+        .compactJSON(MessageRelay.this.formats)
+    }
 
-    fromNodeSeq(ns)
+    override def jsonDecode(json: String): Obj = {
+
+      val message: M = MessageRelay.this.fromJSON(json)
+      message match {
+        case v: MessageRepr[_] =>
+          v.toObject.asInstanceOf[Obj]
+        case _ =>
+          throw new UnsupportedOperationException("jsonDecode is not implemented")
+      }
+    }
   }
 }
 
-trait Message extends Product with Serializable {
+class MessageReader[Obj](implicit override val mf: Manifest[Obj]) extends MessageRelay[Obj] {
+  type M = Obj
+
+  override implicit val formats: Formats = Xml.defaultFormats +
+    DurationJSONSerializer +
+    FallbackJSONSerializer
+
+  override def toMessage(v: Obj) = new MessageRepr[Obj] {
+//    override type M = Obj
+    override def toObject: Obj = v
+  }
+}
+
+trait Message extends Serializable {
+
+  def value: Any = this
+  def formats: Formats = Xml.defaultFormats
 
   import org.json4s.JsonDSL._
 
-  //  implicit def nodeSeqToElem(xml: NodeSeq): Elem = {
-  //    XML.loadString(xml.toString())
-  //  }
-
-  def formatted: Any = this
-
-  def jValue(implicit formats: Formats = formats): JValue = Extraction.decompose(formatted)
+  def jValue(implicit formats: Formats = formats): JValue = Extraction.decompose(value)
   def compactJSON(implicit formats: Formats = formats): String = compact(render(jValue))
   def prettyJSON(implicit formats: Formats = formats): String = pretty(render(jValue))
   def toJSON(pretty: Boolean = true)(implicit formats: Formats = formats): String = {
@@ -94,9 +179,7 @@ trait Message extends Product with Serializable {
     else compactJSON(formats)
   }
 
-  def formats: Formats = Xml.defaultFormats
-
-  def toXMLNode(implicit formats: Formats = formats): NodeSeq = Xml.toXml(formatted.getClass.getSimpleName -> jValue)
+  def toXMLNode(implicit formats: Formats = formats): NodeSeq = Xml.toXml(value.getClass.getSimpleName -> jValue)
   def compactXML(implicit formats: Formats = formats): String = toXMLNode.toString()
   def prettyXML(implicit formats: Formats = formats): String = Xml.defaultXMLPrinter.formatNodes(toXMLNode)
   def toXMLStr(pretty: Boolean = true)(implicit formats: Formats = formats): String = {
@@ -106,7 +189,7 @@ trait Message extends Product with Serializable {
 
   case object MLWriter extends MLWriter with Serializable {
 
-    def outer = Message.this
+    def message = Message.this
 
     //    def saveJSON(path: String): Unit = {
     //      val resolver = HDFSResolver(sc.hadoopConfiguration)
@@ -131,19 +214,20 @@ trait Message extends Product with Serializable {
     }
   }
 }
+trait MessageRepr[T] extends Message {
+
+  def toObject: T
+}
+case class MessageView[MM](
+                            override val value: MM,
+                            override val formats: Formats = Xml.defaultFormats
+                          ) extends Message {
+
+}
 
 class MessageParams(
                      val uid: String
                    ) extends Params {
 
   override def copy(extra: ParamMap): Params = this.defaultCopy(extra)
-}
-
-case class MessageWrapper(
-                           override val formatted: Any
-                         ) extends Message
-
-trait MessageRepr[T] extends Message {
-
-  def toObject: T
 }

@@ -3,6 +3,7 @@ package com.tribbloids.spookystuff.mav.actions
 import com.tribbloids.spookystuff.actions.{Export, PyAction}
 import com.tribbloids.spookystuff.doc.{Doc, DocUID, Fetched}
 import com.tribbloids.spookystuff.extractors.{Extractor, Literal}
+import com.tribbloids.spookystuff.row.{DataRowSchema, FetchedRow}
 import com.tribbloids.spookystuff.session.Session
 import org.apache.http.entity.ContentType
 
@@ -25,5 +26,16 @@ case class DummyPyAction(
       content = result.mkString("\n").getBytes("UTF-8")
     )
     Seq(doc)
+  }
+
+  override def doInterpolate(pageRow: FetchedRow, schema: DataRowSchema) = {
+
+    a.resolve(schema)
+      .lift
+      .apply(pageRow)
+      .map(
+        v =>
+          this.copy(a = Literal.erase(v)).asInstanceOf[this.type]
+      )
   }
 }

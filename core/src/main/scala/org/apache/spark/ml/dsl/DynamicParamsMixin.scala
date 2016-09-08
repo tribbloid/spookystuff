@@ -1,6 +1,6 @@
 package org.apache.spark.ml.dsl
 
-import org.apache.spark.ml.dsl.utils.FlowUtils
+import org.apache.spark.ml.dsl.utils.{FlowUtils, MessageReader}
 import org.apache.spark.ml.param.{Param, Params}
 
 import scala.language.{dynamics, implicitConversions}
@@ -53,18 +53,17 @@ trait DynamicParamsMixin extends Params with Dynamic {
     result
   }
 
-  //TODO: need debugging
-  protected def SerializingParam[T: ClassTag](
-                                               name: String = {
-                                                 val bp = FlowUtils.getBreakpointInfo().apply(2)
-                                                 assert(!bp.isNativeMethod) //can only use default value in def & lazy val blocks
-                                                 bp.getMethodName
-                                               },
-                                               doc: String = "Pending ...",
-                                               default: T = null
-                                             ): Param[T] = {
+  protected def GenericParam[T: Manifest](
+                                           name: String = {
+                                             val bp = FlowUtils.getBreakpointInfo().apply(2)
+                                             assert(!bp.isNativeMethod) //can only use default value in def & lazy val blocks
+                                             bp.getMethodName
+                                           },
+                                           doc: String = "Pending ...",
+                                           default: T = null
+                                         ): Param[T] = {
 
-    val result = new JavaSerializationParam[T](this, name, doc)
+    val result = new MessageReader[T].Param(this, name, doc)
 
     Option(default).foreach(v => this.setDefault(result, v))
 

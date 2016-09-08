@@ -11,7 +11,7 @@ import scala.collection.TraversableOnce
 import scala.collection.immutable.ListMap
 import scala.reflect.ClassTag
 import com.tribbloids.spookystuff.utils.ImplicitUtils._
-import org.apache.spark.ml.dsl.utils.MessageWrapper
+import org.apache.spark.ml.dsl.utils.MessageView
 
 object Extractors {
 
@@ -89,7 +89,7 @@ case class Literal[T, +R](value: R, dataType: DataType) extends Static[T, R] {
   override lazy val toString = valueOpt
     .map {
       v =>
-        MessageWrapper(v).toJSON(pretty = false)
+        MessageView(v).toJSON(pretty = false)
     }
     .getOrElse("NULL")
 

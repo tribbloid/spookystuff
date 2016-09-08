@@ -2,7 +2,7 @@ package org.apache.spark.ml.dsl.utils
 
 import org.apache.spark.ml.dsl.AbstractFlowSuite
 
-object WeakSerializerSuite {
+object XMLWeakDeserializerSuite {
   case class StrStr(
                      a: String,
                      b: String
@@ -34,11 +34,11 @@ object WeakSerializerSuite {
                       )
 }
 
-class WeakSerializerSuite extends AbstractFlowSuite{
+class XMLWeakDeserializerSuite extends AbstractFlowSuite{
 
   implicit val formats = Xml.defaultFormats
 
-  import WeakSerializerSuite._
+  import XMLWeakDeserializerSuite._
   import org.json4s.Extraction._
 
   test("int to String") {

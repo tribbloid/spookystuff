@@ -64,7 +64,7 @@ abstract class WebInteraction(
 
 object DocumentReadyCondition extends ExpectedCondition[Boolean] {
 
-  val script = "return document.readyState"
+  final def script = "return document.readyState"
 
   override def apply(input: WebDriver): Boolean = {
 
@@ -226,7 +226,7 @@ case class ClickNext(
                       override val blocking: Boolean = Const.interactionBlock
                     ) extends WebInteraction(delay, blocking) {
 
-  val clicked: mutable.HashSet[String] = mutable.HashSet(exclude: _*)
+  @transient lazy val clicked: mutable.HashSet[String] = mutable.HashSet(exclude: _*)
 
   override def exeNoOutput(session: Session) {
 

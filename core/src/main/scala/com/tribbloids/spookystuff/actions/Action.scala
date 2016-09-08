@@ -1,12 +1,14 @@
 package com.tribbloids.spookystuff.actions
 
 import com.tribbloids.spookystuff.doc.{Doc, Fetched}
-import com.tribbloids.spookystuff.extractors._
 import com.tribbloids.spookystuff.selenium.BySizzleCssSelector
 import com.tribbloids.spookystuff.session.{DriverSession, Session}
 import com.tribbloids.spookystuff.utils.{ScalaUDT, SpookyUtils}
 import com.tribbloids.spookystuff.{ActionException, Const, SpookyContext}
+import org.apache.spark.ml.dsl.utils._
+import org.apache.spark.sql.catalyst.ScalaReflection
 import org.apache.spark.sql.types.SQLUserDefinedType
+import org.json4s.Formats
 import org.openqa.selenium.TakesScreenshot
 import org.openqa.selenium.support.ui.{ExpectedConditions, WebDriverWait}
 import org.slf4j.LoggerFactory
@@ -14,6 +16,32 @@ import org.slf4j.LoggerFactory
 import scala.concurrent.duration.Duration
 
 class ActionUDT extends ScalaUDT[Action]
+
+object ActionRelay extends MessageRelay[Action] {
+
+  //avoid using scala reflections on worker as they are thread unsafe, use JSON4s that is more battle tested
+  override def toMessage(value: Action): M = {
+    val className = value.getClass.getCanonicalName
+    val fields = ScalaReflection.getConstructorParameters(value.getClass).map(_._1)
+    val elements = value.productIterator.toSeq
+    val map = Map(fields zip elements: _*)
+    M(
+      className,
+      map
+    )
+  }
+
+  override val formats: Formats = Xml.defaultFormats + DurationJSONSerializer// + FallbackJSONSerializer
+
+  //TODO: change to MessageRepr to allow 2-way conversions.
+  case class M(
+                className: String,
+                params: Map[String, Any]
+              ) extends Message {
+
+    override def formats: Formats = ActionRelay.this.formats
+  }
+}
 
 /**
   * These are the same actions a human would do to get to the data page,
@@ -23,13 +51,13 @@ class ActionUDT extends ScalaUDT[Action]
   * This is used almost exclusively in typing into an url bar or textbox, but it's flexible enough to be used anywhere.
   * extends Product to make sure all subclasses are case classes
   */
-//TODO: merging with Selector[Seq[Fetched]]?
+//TODO: merging with Extractor[Seq[Fetched]]?
 @SQLUserDefinedType(udt = classOf[ActionUDT])
-trait Action extends ActionLike {
+trait Action extends ActionLike with ActionRelay.HasRelay{
 
-  override def children: Seq[Action] = Seq()
+  override def children: Trace = Nil
 
-  private var timeElapsed: Long = -1 //only set once
+  var timeElapsed: Long = -1 //only set once
 
   override def dryrun: List[List[Action]] = {
     if (hasOutput){
@@ -163,7 +191,7 @@ trait Action extends ActionLike {
 
 trait Timed extends Action {
 
-  private var _timeout: Duration = _
+  var _timeout: Duration = _
 
   def in(deadline: Duration): this.type = {
     this._timeout = deadline
