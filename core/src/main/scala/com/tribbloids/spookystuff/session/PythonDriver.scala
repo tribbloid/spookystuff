@@ -7,9 +7,10 @@ import com.tribbloids.spookystuff.utils.SpookyUtils
 
 object PythonDriver {
 
-  final val DEFAULT_TEMP_PATH = System.getProperty("user.dir") + "/temp/pyspookystuff/"
-  final val RESOURCE_NAME = "com/tribbloids/pyspookystuff"
-//
+  final val DEFAULT_PYTHON_PATH = System.getProperty("user.dir") + "/temp"
+  final val MODULE_NAME = "pyspookystuff"
+  final val RESOURCE_NAME = "com/tribbloids/" + MODULE_NAME
+
   final val errorInLastLine: Pattern = Pattern.compile(".*(Error|Exception):.*$")
 }
 
@@ -18,27 +19,32 @@ object PythonDriver {
   */
 //TODO: not reusing Python worker for spark, is it not optimal?
 case class PythonDriver(
-                         binPath: String,
-                         tempPath: String = PythonDriver.DEFAULT_TEMP_PATH // extract pyspookystuff from resources temporarily on workers
-                       ) extends PythonProcess(binPath) with CleanMixin {
+                         executable: String,
+                         pythonPath: String = PythonDriver.DEFAULT_PYTHON_PATH // extract pyspookystuff from resources temporarily on workers
+                       ) extends PythonProcess(executable) with CleanMixin {
+
+  import com.tribbloids.spookystuff.utils.ImplicitUtils._
+
+  @transient final val modulePath = pythonPath :/ PythonDriver.MODULE_NAME
+
   {
     val resourceOpt = SpookyUtils.getCPResource(PythonDriver.RESOURCE_NAME)
     resourceOpt.foreach {
       resource =>
-        SpookyUtils.asynchIfNotExist(tempPath){
+        SpookyUtils.asynchIfNotExist(modulePath){
 
-          SpookyUtils.extractResource(resource, tempPath)
+          SpookyUtils.extractResource(resource, modulePath)
         }
     }
 
     this.open()
 
-    // TODO: add setup modules from pyPI
+    // TODO: add setup modules using pip
 
     this.interpret(
       s"""
          |import sys
-         |sys.path.append('$tempPath')
+         |sys.path.append('$pythonPath')
        """.stripMargin
     )
   }
@@ -77,10 +83,10 @@ case class PythonDriver(
 //    }
   }
 
-  final def PROMPT = "^(>>>|\\.\\.\\.| )+"
+  final def PROMPTS = "^(>>>|\\.\\.\\.| )+"
 
   def removePrompts(str: String): String = {
-    str.trim.replaceAll(PROMPT, "")
+    str.trim.replaceAll(PROMPTS, "")
   }
 
   def interpret(code: String): Array[String] = {

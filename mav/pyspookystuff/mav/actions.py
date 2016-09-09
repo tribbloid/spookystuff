@@ -1,5 +1,7 @@
 import json
 
+from dronekit import LocationGlobalRelative
+
 
 class DummyPyAction(object):
     this = None
@@ -7,23 +9,22 @@ class DummyPyAction(object):
     def __init__(self, jsonStr):
         # type: (object) -> object
         self.this = json.loads(jsonStr)
-        # raise Exception(self.this)
 
     def dummy(self, jsonStr):
-        map = json.loads(jsonStr)
-        merged = int(self.this['params']['a']['value']) + int(map['b'])
+        args = json.loads(jsonStr)
+        merged = int(self.this['params']['a']['value']) + int(args['b'])
         print(json.dumps(merged))
 
-class Move(object):
 
+class Move(object):
     this = None
 
     def __init__(self, jsonStr):
         # type: (str, str) -> object
         self.this = json.loads(jsonStr)
 
-    def exe(sessionJSON):
-        # type: (str) -> object
+    def moveTo(self, point):
+        # type: (LocationGlobalRelative) -> object
         session = json.loads(sessionJSON)
 
         session

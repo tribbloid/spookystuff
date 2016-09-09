@@ -14,6 +14,7 @@ trait CleanMixin {
 
   def clean(): Unit
 
+  //  TODO: Runtime.getRuntime.addShutdownHook()
   override def finalize(): Unit = {
     try {
       clean()

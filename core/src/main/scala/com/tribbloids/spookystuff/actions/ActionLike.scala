@@ -50,6 +50,8 @@ abstract class ActionLike extends Product with Serializable {
 
   def outputNames: Set[String]
 
+  def dryrun: DryRun
+
   //the minimal equivalent action that can be put into backtrace
   def trunk: Option[this.type]
 
@@ -65,8 +67,6 @@ abstract class ActionLike extends Product with Serializable {
 
     results
   }
-
-  def dryrun: DryRun
 
   def fetchOnce(spooky: SpookyContext): Seq[Fetched] = {
 

@@ -30,7 +30,7 @@ trait PyAction extends Action {
         .filter(_.nonEmpty)
     val pyPackage = pyFullName.slice(0, pyFullName.length -1).mkString(".")
     val pyClass = pyFullName.last
-    val json = this.toMessage.toJSON()
+    val json = this.toMessage.prettyJSON()
     val lines = Seq(
       s"from $pyPackage import $pyClass",
       s"$varName = $pyClass (",
@@ -55,7 +55,7 @@ trait PyAction extends Action {
     def applyDynamic(methodName: String)(args: Any*): Seq[String] = {
       val argJSONs: Seq[String] = args.map {
         v =>
-          val json = MessageView(v).toJSON()
+          val json = MessageView(v).prettyJSON()
           Seq(
             PyAction.QQQ,
             json,

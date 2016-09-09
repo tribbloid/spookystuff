@@ -25,7 +25,7 @@ case object SessionRelay extends MessageRelay[Session] {
     M(
       v.startTime,
       v.backtrace,
-      v.tcOpt.map (tc => TaskContextRelay.toMessage(tc))
+      v.taskContextOpt.map (tc => TaskContextRelay.toMessage(tc))
     )
   }
 }
@@ -43,7 +43,7 @@ case object TaskContextRelay extends MessageRelay[TaskContext] {
   }
 }
 
-abstract class Session(val spooky: SpookyContext) {
+abstract class Session(val spooky: SpookyContext) extends CleanMixin {
 
   spooky.metrics.sessionInitialized += 1
   val startTime: Long = new Date().getTime
@@ -53,27 +53,15 @@ abstract class Session(val spooky: SpookyContext) {
   def pythonDriver: PythonDriver
 
   //TaskContext is unreachable in withDeadline or other new threads
-  val tcOpt: Option[TaskContext] = Option(TaskContext.get()) //TODO: move to constructor
+  val taskContextOpt: Option[TaskContext] = Option(TaskContext.get()) //TODO: move to constructor
 
   def close(): Unit = {
     spooky.metrics.sessionReclaimed += 1
   }
 
-  override def finalize(): Unit = {
-    try {
-      this.close()
-      LoggerFactory.getLogger(this.getClass).info("Session is finalized by GC")
-    }
-    catch {
-      case e: NoSuchSessionException => //already cleaned before
-      case e: Throwable =>
-        LoggerFactory.getLogger(this.getClass).warn("!!!!! FAIL TO CLEAN UP SESSION !!!!!" + e)
-    }
-    finally {
-      super.finalize()
-    }
-
-    //  TODO: Runtime.getRuntime.addShutdownHook()
+  override def clean(): Unit = {
+    this.close()
+    LoggerFactory.getLogger(this.getClass).info("Session is finalized by GC")
   }
 }
 
@@ -84,7 +72,8 @@ class DriverSession(
                      override val spooky: SpookyContext
                    ) extends Session(spooky){
 
-  var webDriverOpt: Option[WebDriver] = None
+  @volatile var webDriverOpt: Option[WebDriver] = None
+  //throwing error instead of lazy creation is required for restarting timer
   def webDriver = webDriverOpt.getOrElse{
     throw NoWebDriverException
   }
@@ -118,7 +107,8 @@ class DriverSession(
     }
   }
 
-  var pythonDriverOpt: Option[PythonDriver] = None
+  @volatile var pythonDriverOpt: Option[PythonDriver] = None
+  //throwing error instead of lazy creation is required for restarting timer
   def pythonDriver = pythonDriverOpt.getOrElse{
     throw NoPythonDriverException
   }

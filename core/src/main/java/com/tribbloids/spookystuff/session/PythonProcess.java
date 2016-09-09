@@ -17,6 +17,7 @@
 
 package com.tribbloids.spookystuff.session;
 
+import com.tribbloids.spookystuff.PythonException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -88,6 +89,7 @@ public class PythonProcess {
     }
   }
 
+  // TODO: modified from Zeppelin code to catch stream output before being closed unexpectedly
   public String sendAndGetResult(String cmd) throws IOException {
 
     writer.write(cmd + "\n\n");
@@ -96,16 +98,28 @@ public class PythonProcess {
 
     String output = "";
     String line;
-    while (!(line = reader.readLine()).contains("*!?flush reader!?*")) {
-      logger.debug("Read line from python shell : " + line);
-      if (line.equals("...")) {
-        logger.warn("Syntax error ! ");
-        output += "Syntax error ! ";
-        break;
+    try {
+      while (!(line = reader.readLine()).contains("*!?flush reader!?*")) {
+        logger.debug("Read line from python shell : " + line);
+        if (line.equals("...")) {
+          logger.warn("Syntax error ! ");
+          output += "Syntax error ! ";
+          break;
+        }
+        output += "\r" + line + "\n";
       }
-      output += "\r" + line + "\n";
+      return output;
     }
-    return output;
+    catch(Exception e) {
+      throw new PythonException(
+        "Error interpreting" +
+          "\n>>>\n" +
+          cmd +
+          "\n---\n" +
+          output,
+        e
+      );
+    }
   }
 
   //only use reflection to find UNIXProcess.pid.

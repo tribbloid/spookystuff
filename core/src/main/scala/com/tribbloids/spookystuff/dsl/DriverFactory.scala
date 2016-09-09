@@ -87,7 +87,7 @@ sealed abstract class Transient[T] extends DriverFactory[T] {
 
   final def create(session: Session): T = {
     val created = _createImpl(session)
-    session.tcOpt.foreach {
+    session.taskContextOpt.foreach {
       tc =>
         addTaskCompletionListener(tc)
         val buffer = taskCleanUpCache
@@ -109,7 +109,7 @@ sealed abstract class Transient[T] extends DriverFactory[T] {
     val existingOpt = sessionToDriver.remove(session)
     existingOpt.foreach {
       driver =>
-        destroy(driver, session.tcOpt)
+        destroy(driver, session.taskContextOpt)
     }
   }
 
@@ -161,10 +161,10 @@ object DriverNotDeployedException extends SpookyException("INTERNAL: driver shou
 
 object DriverFactories {
 
-  case class DriverInPool[T](
-                              var driver: T,
-                              var busy: Boolean
-                            )
+  class DriverInPool[T](
+                         @volatile var driver: T,
+                         @volatile var busy: Boolean
+                       )
 
   /**
     * delegate create & destroy to PerSessionFactory
@@ -181,7 +181,7 @@ object DriverFactories {
     @transient lazy val pool: ConcurrentMap[Either[Long, Long], DriverInPool[T]] = ConcurrentMap()
 
     def taskOrThreadID(tcOpt: Option[TaskContext]): Either[Long, Long] = {
-      Option(TaskContext.get())
+      tcOpt
         .map{
           v =>
             Left(v.taskAttemptId())
@@ -193,7 +193,7 @@ object DriverFactories {
 
     override def get(session: Session): T = {
 
-      val taskOrThreadID = this.taskOrThreadID(session.tcOpt)
+      val taskOrThreadID = this.taskOrThreadID(session.taskContextOpt)
       val opt = pool.get(taskOrThreadID)
       opt
         .map {
@@ -204,7 +204,7 @@ object DriverFactories {
             }
             else {
               // destroy old and create new
-              delegate.destroy(tuple.driver, session.tcOpt)
+              delegate.destroy(tuple.driver, session.taskContextOpt)
               val fresh = delegate.create(session)
               tuple.driver = fresh
               fresh
@@ -213,19 +213,18 @@ object DriverFactories {
         .getOrElse {
           //create new
           val fresh = delegate.create(session)
-          pool.put(taskOrThreadID, DriverInPool(fresh, busy = true))
+          pool.put(taskOrThreadID, new DriverInPool(fresh, busy = true))
           fresh
         }
     }
 
     override def release(session: Session): Unit = {
 
-      val taskOrThreadID = this.taskOrThreadID(session.tcOpt)
+      val taskOrThreadID = this.taskOrThreadID(session.taskContextOpt)
       val opt = pool.get(taskOrThreadID)
       opt.foreach{
         tuple =>
-          if (tuple.busy)
-            tuple.busy = false
+          tuple.busy = false
       }
     }
 
@@ -242,7 +241,7 @@ object DriverFactories {
 
     final def DEFAULT_PATH = System.getProperty("user.home") :/ ".spookystuff/phantomjs"
 
-    def path: SpookyContext => String = {
+    def defaultGetPath: SpookyContext => String = {
       _ =>
         SpookyConf.getDefault("phantomjs.path", DEFAULT_PATH)
     }
@@ -254,7 +253,7 @@ object DriverFactories {
   }
 
   case class PhantomJS(
-                        path: SpookyContext => String = PhantomJS.path,
+                        getPath: SpookyContext => String = PhantomJS.defaultGetPath,
                         loadImages: Boolean = false,
                         redeploy: Boolean = false
                       ) extends WebDriverFactory {
@@ -265,7 +264,7 @@ object DriverFactories {
     override def deploy(spooky: SpookyContext): Unit = {
       if ((!isDeployedOnWorkers(spooky)) || redeploy) {
 
-        val pathOptOnDriver = SpookyUtils.validateLocalPath(path(spooky))
+        val pathOptOnDriver = SpookyUtils.validateLocalPath(getPath(spooky))
         val isDeployedOnDriver: Boolean = pathOptOnDriver.nonEmpty
 
         val uri = if (!isDeployedOnDriver) {
@@ -288,7 +287,7 @@ object DriverFactories {
         //deploy
         if (redeploy) {
           sc.exePerCore {
-            val dstStr = path(spooky)
+            val dstStr = getPath(spooky)
             PhantomJS.asynchDelete(dstStr)
           }
             .count()
@@ -296,7 +295,7 @@ object DriverFactories {
 
         sc.exePerCore {
           val srcStr = SparkFiles.get(fileName)
-          val dstStr = path(spooky)
+          val dstStr = getPath(spooky)
           SpookyUtils.asynchIfNotExist(dstStr) {
             val srcFile = new File(srcStr)
             val dstFile = new File(dstStr)
@@ -319,7 +318,7 @@ object DriverFactories {
 
         val sc = spooky.sqlContext.sparkContext
         val pathRDD: RDD[Option[String]] = sc.exePerCore {
-          val pathOpt = SpookyUtils.validateLocalPath(path(spooky))
+          val pathOpt = SpookyUtils.validateLocalPath(getPath(spooky))
           pathOpt
         }
         pathRDD
@@ -345,7 +344,7 @@ object DriverFactories {
     //    baseCaps.setCapability(PhantomJSDriverService.PHANTOMJS_PAGE_SETTINGS_PREFIX+"resourceTimeout", Const.resourceTimeout*1000)
 
     def newCap(spooky: SpookyContext, extra: Option[Capabilities] = None): DesiredCapabilities = {
-      val pathStr = path(spooky)
+      val pathStr = getPath(spooky)
 
       baseCaps.setCapability(PhantomJSDriverService.PHANTOMJS_EXECUTABLE_PATH_PROPERTY, pathStr)
       baseCaps.setCapability (
@@ -354,7 +353,9 @@ object DriverFactories {
       )
 
       val userAgent = spooky.conf.userAgentFactory
-      if (userAgent != null) baseCaps.setCapability(PhantomJSDriverService.PHANTOMJS_PAGE_SETTINGS_PREFIX + "userAgent", userAgent)
+      if (userAgent != null) {
+        baseCaps.setCapability(PhantomJSDriverService.PHANTOMJS_PAGE_SETTINGS_PREFIX + "userAgent", userAgent)
+      }
 
       val proxy = spooky.conf.proxy()
 
@@ -430,11 +431,12 @@ object DriverFactories {
   //}
 
   case class Python(
-                     path: String = "python"
+                     getExecutable: SpookyContext => String = _ => "python"
                    ) extends PythonDriverFactory {
 
     override def _createImpl(session: Session): PythonDriver = {
-      PythonDriver(path)
+      val exeStr = getExecutable(session.spooky)
+      PythonDriver(exeStr)
     }
   }
 }
