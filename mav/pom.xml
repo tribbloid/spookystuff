@@ -47,10 +47,10 @@
                             <executable>pip</executable>
                             <workingDirectory>${project.basedir}</workingDirectory>
                             <arguments>
-                                <argument>download</argument>
+                                <argument>install</argument>
                                 <argument>-r</argument>
                                 <argument>requirements.txt</argument>
-                                <argument>--dest</argument>
+                                <argument>--download</argument>
                                 <argument>lib_managed/python</argument>
                             </arguments>
                         </configuration>

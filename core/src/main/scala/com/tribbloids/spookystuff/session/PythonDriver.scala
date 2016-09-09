@@ -7,9 +7,11 @@ import com.tribbloids.spookystuff.utils.SpookyUtils
 
 object PythonDriver {
 
-  final val DEFAULT_PYTHON_PATH = System.getProperty("user.dir") + "/temp/python"
+  import com.tribbloids.spookystuff.utils.ImplicitUtils._
+
+  final val DEFAULT_PYTHON_PATH = System.getProperty("user.home") :/ ".spookystuff/pythonpath"
   final val MODULE_NAME = "pyspookystuff"
-  final val MODULE_RESOURCE = "com/tribbloids/" + MODULE_NAME
+  final val MODULE_RESOURCE = "com/tribbloids/" :/ MODULE_NAME
   final val PYTHON_LIB_RESOURCE = "com/tribbloids/spookystuff/lib/python"
 
   final val errorInLastLine: Pattern = Pattern.compile(".*(Error|Exception):.*$")
