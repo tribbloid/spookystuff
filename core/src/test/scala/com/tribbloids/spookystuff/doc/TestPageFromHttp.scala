@@ -1,6 +1,7 @@
 package com.tribbloids.spookystuff.doc
 
 import com.tribbloids.spookystuff.actions.Wget
+import com.tribbloids.spookystuff.utils.SpookyUtils
 import com.tribbloids.spookystuff.{SpookyEnvFixture, dsl}
 import org.apache.commons.csv.CSVFormat
 
@@ -10,9 +11,7 @@ class TestPageFromHttp extends SpookyEnvFixture {
 
   test("wget html, save and load") {
 
-    val results = (
-      Wget(HTML_URL) :: Nil
-    ).fetch(spooky)
+    val results = SpookyUtils.retry(5){Wget(HTML_URL).fetch(spooky)}
 
     assert(results.length === 1)
     val page = results.head.asInstanceOf[Doc]
@@ -30,9 +29,7 @@ class TestPageFromHttp extends SpookyEnvFixture {
 
   test("wget json, save and load") {
 
-    val results = (
-      Wget(JSON_URL) :: Nil
-      ).fetch(spooky)
+    val results = Wget(JSON_URL).fetch(spooky)
 
     assert(results.length === 1)
     val page = results.head.asInstanceOf[Doc]
@@ -54,9 +51,7 @@ class TestPageFromHttp extends SpookyEnvFixture {
 
   test("wget image, save and load") {
 
-    val results = (
-      Wget(PNG_URL) :: Nil
-    ).fetch(spooky)
+    val results = Wget(PNG_URL).fetch(spooky)
 
     assert(results.length === 1)
     val page = results.head.asInstanceOf[Doc]
@@ -74,9 +69,7 @@ class TestPageFromHttp extends SpookyEnvFixture {
 
   test("wget pdf, save and load") {
 
-    val results = (
-      Wget(PDF_URL) :: Nil
-    ).fetch(spooky)
+    val results = Wget(PDF_URL).fetch(spooky)
 
     assert(results.length === 1)
     val page = results.head.asInstanceOf[Doc]
@@ -93,9 +86,7 @@ class TestPageFromHttp extends SpookyEnvFixture {
   }
 
   test("childrenWithSiblings") {
-    val page = (
-      Wget(HTML_URL) :: Nil
-      ).fetch(spooky).head.asInstanceOf[Doc]
+    val page = SpookyUtils.retry(5){Wget(HTML_URL).fetch(spooky)}.head.asInstanceOf[Doc]
 
     val ranges = page.findAllWithSiblings("a.link-box em", -2 to 1)
     assert(ranges.size === 10)
@@ -108,9 +99,7 @@ class TestPageFromHttp extends SpookyEnvFixture {
   }
 
   test("childrenWithSiblings with overlapping elimiation") {
-    val page = (
-      Wget(HTML_URL) :: Nil
-      ).fetch(spooky).head.asInstanceOf[Doc]
+    val page = SpookyUtils.retry(5){Wget(HTML_URL).fetch(spooky)}.head.asInstanceOf[Doc]
 
     val ranges = page.findAllWithSiblings("div.central-featured-lang[lang^=e]", -2 to 2)
     assert(ranges.size === 2)
@@ -127,9 +116,7 @@ class TestPageFromHttp extends SpookyEnvFixture {
 
   test("wget xml, save and load") {
 
-    val results = (
-      Wget(XML_URL) :: Nil
-      ).fetch(spooky)
+    val results = Wget(XML_URL).fetch(spooky)
 
     assert(results.length === 1)
     val page = results.head.asInstanceOf[Doc]
@@ -151,9 +138,7 @@ class TestPageFromHttp extends SpookyEnvFixture {
 
   test("wget csv, save and load") {
 
-    val results = (
-      Wget(CSV_URL) :: Nil
-      ).fetch(spooky)
+    val results = Wget(CSV_URL).fetch(spooky)
 
     assert(results.length === 1)
     val page = results.head.asInstanceOf[Doc].set("csvFormat" -> CSVFormat.newFormat('\t').withQuote('"').withHeader())

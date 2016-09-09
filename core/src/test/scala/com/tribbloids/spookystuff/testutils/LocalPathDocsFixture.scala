@@ -5,11 +5,11 @@ import com.tribbloids.spookystuff.utils.SpookyUtils
 object LocalPathDocsFixture {
 
   //TODO: this should be within TEMP_PATH, however current temp directory cleanup is broken and may results in resources extracted in new suite being deleted by previous suite
-  final val TESTUTILS_TEMP_PATH = TestHelper.TARGET_PATH + "resources/testutils/"
+  final val TESTUTILS_TEMP_PATH = TestHelper.TARGET_PATH + "generated-resources/testutils/"
   final val RESOURCE_NAME = "testutils/"
 
   // run once per test TODO: or clean up at shutdown hook
-  lazy val testResource = {
+  lazy val testResources: Unit = {
     val resourceOpt = SpookyUtils.getCPResource(RESOURCE_NAME)
     resourceOpt.foreach {
       resource =>
@@ -22,7 +22,7 @@ object LocalPathDocsFixture {
 
 trait LocalPathDocsFixture extends RemoteDocsFixture {
 
-  LocalPathDocsFixture.testResource
+  LocalPathDocsFixture.testResources
 
   def unpacked(resource: String): String = {
     LocalPathDocsFixture.TESTUTILS_TEMP_PATH + resource.stripPrefix(LocalPathDocsFixture.RESOURCE_NAME)
