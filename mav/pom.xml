@@ -46,12 +46,13 @@
                         <configuration>
                             <executable>pip</executable>
                             <workingDirectory>${project.basedir}</workingDirectory>
+                            <!--codeship doesn't have pip download, should run pip upgrade on codeship and change to pip download-->
                             <arguments>
-                                <argument>install</argument>
+                                <argument>download</argument>
                                 <argument>-r</argument>
                                 <argument>requirements.txt</argument>
-                                <argument>--download</argument>
-                                <argument>lib_managed/python</argument>
+                                <argument>--dest</argument>
+                                <argument>${project.basedir}/lib_managed/python</argument>
                             </arguments>
                         </configuration>
                     </execution>
