@@ -7,11 +7,38 @@ import com.tribbloids.spookystuff.utils.SpookyUtils
 
 object PythonDriver {
 
-  final val DEFAULT_PYTHON_PATH = System.getProperty("user.dir") + "/temp"
+  final val DEFAULT_PYTHON_PATH = System.getProperty("user.dir") + "/temp/python"
   final val MODULE_NAME = "pyspookystuff"
-  final val RESOURCE_NAME = "com/tribbloids/" + MODULE_NAME
+  final val MODULE_RESOURCE = "com/tribbloids/" + MODULE_NAME
+  final val PYTHON_LIB_RESOURCE = "com/tribbloids/spookystuff/lib/python"
 
   final val errorInLastLine: Pattern = Pattern.compile(".*(Error|Exception):.*$")
+
+  import com.tribbloids.spookystuff.utils.ImplicitUtils._
+
+  lazy val deploy: String = {
+    val pythonPath: String = PythonDriver.DEFAULT_PYTHON_PATH // extract pyspookystuff from resources temporarily on workers
+    val modulePath = pythonPath :/ PythonDriver.MODULE_NAME
+
+    val libResourceOpt = SpookyUtils.getCPResource(PythonDriver.PYTHON_LIB_RESOURCE)
+    libResourceOpt.foreach {
+      resource =>
+        //        SpookyUtils.asynchIfNotExist(pythonPath){
+
+        SpookyUtils.extractResource(resource, pythonPath)
+      //        }
+    }
+
+    val moduleResourceOpt = SpookyUtils.getCPResource(PythonDriver.MODULE_RESOURCE)
+    moduleResourceOpt.foreach {
+      resource =>
+        //        SpookyUtils.asynchIfNotExist(modulePath){
+
+        SpookyUtils.extractResource(resource, modulePath)
+      //        }
+    }
+    pythonPath
+  }
 }
 
 /**
@@ -19,23 +46,11 @@ object PythonDriver {
   */
 //TODO: not reusing Python worker for spark, is it not optimal?
 case class PythonDriver(
-                         executable: String,
-                         pythonPath: String = PythonDriver.DEFAULT_PYTHON_PATH // extract pyspookystuff from resources temporarily on workers
+                         executable: String
                        ) extends PythonProcess(executable) with CleanMixin {
 
-  import com.tribbloids.spookystuff.utils.ImplicitUtils._
-
-  @transient final val modulePath = pythonPath :/ PythonDriver.MODULE_NAME
-
   {
-    val resourceOpt = SpookyUtils.getCPResource(PythonDriver.RESOURCE_NAME)
-    resourceOpt.foreach {
-      resource =>
-        SpookyUtils.asynchIfNotExist(modulePath){
-
-          SpookyUtils.extractResource(resource, modulePath)
-        }
-    }
+    val pythonPath = PythonDriver.deploy
 
     this.open()
 
@@ -72,15 +87,15 @@ case class PythonDriver(
     if (tracebackRows.nonEmpty && errorRows.nonEmpty) true
     else false
 
-//    tracebackRows.foreach {
-//      row =>
-//        val errorRowOpt = errorRows.find(_ > row)
-//        errorRowOpt.foreach {
-//          errorRow =>
-//            val tracebackDetails = lines.slice(row +1, errorRow)
-//            if (tracebackDetails.forall(_.startsWith(""))
-//        }
-//    }
+    //    tracebackRows.foreach {
+    //      row =>
+    //        val errorRowOpt = errorRows.find(_ > row)
+    //        errorRowOpt.foreach {
+    //          errorRow =>
+    //            val tracebackDetails = lines.slice(row +1, errorRow)
+    //            if (tracebackDetails.forall(_.startsWith(""))
+    //        }
+    //    }
   }
 
   final def PROMPTS = "^(>>>|\\.\\.\\.| )+"

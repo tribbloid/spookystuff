@@ -39,7 +39,9 @@ object TypeUtils {
       case TypeTag.Null =>
         NullType
       case _ =>
-        ScalaReflection.schemaFor[T](ttg).dataType
+        ScalaReflection.synchronized {
+          ScalaReflection.schemaFor[T](ttg).dataType
+        }
     }
   }
 

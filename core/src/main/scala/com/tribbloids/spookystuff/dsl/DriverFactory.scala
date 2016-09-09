@@ -296,9 +296,9 @@ object DriverFactories {
         sc.exePerCore {
           val srcStr = SparkFiles.get(fileName)
           val dstStr = getPath(spooky)
+          val srcFile = new File(srcStr)
+          val dstFile = new File(dstStr)
           SpookyUtils.asynchIfNotExist(dstStr) {
-            val srcFile = new File(srcStr)
-            val dstFile = new File(dstStr)
             SpookyUtils.universalCopy(srcFile.toPath, dstFile.toPath)
           }
         }

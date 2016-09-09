@@ -1,0 +1,2 @@
+dronekit>=2.9
+dronekit-sitl>=3.2

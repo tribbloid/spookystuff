@@ -218,6 +218,11 @@
                 <directory>pyspookystuff</directory>
                 <targetPath>com/tribbloids/pyspookystuff</targetPath>
             </resource>
+
+            <resource>
+                <directory>lib_managed</directory>
+                <targetPath>com/tribbloids/spookystuff/lib</targetPath>
+            </resource>
         </resources>
 
         <plugins>
