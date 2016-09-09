@@ -110,7 +110,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-shade-plugin</artifactId>
-                <version>2.4</version>
+                <version>2.4.3</version>
                 <configuration>
                     <outputFile>${project.build.directory}/${assembly.jar.dir}/${assembly.jar.basename}</outputFile>
                     <filters>
