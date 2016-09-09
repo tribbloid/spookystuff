@@ -40,7 +40,8 @@ object EmptyStringToEmptyObjectDeserializer extends XMLWeakDeserializer[Any] {
 
   override def deserialize(implicit format: Formats): PartialFunction[(TypeInfo, JValue), Any] = Function.unlift{
 
-    case (ti@ TypeInfo(cc, _), JString("")) if !cc.isAssignableFrom(classOf[String]) =>
+    case (ti@ TypeInfo(cc, _), JString(str))
+      if !cc.isAssignableFrom(classOf[String]) && str.trim.isEmpty =>
       try {
         Some(extract(JObject(), ti)(format))
       }

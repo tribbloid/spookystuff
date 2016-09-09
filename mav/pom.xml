@@ -48,11 +48,14 @@
                             <workingDirectory>${project.basedir}</workingDirectory>
                             <!--codeship doesn't have pip download, should run pip upgrade on codeship and change to pip download-->
                             <arguments>
-                                <argument>download</argument>
+                                <argument>install</argument>
                                 <argument>-r</argument>
                                 <argument>requirements.txt</argument>
-                                <argument>--dest</argument>
+                                <argument>--ignore-installed</argument>
+                                <!--no double quotes! automatically escaped-->
+                                <argument>--target</argument>
                                 <argument>${project.basedir}/lib_managed/python</argument>
+                                <!--<argument>&#45;&#45;install-option=&#45;&#45;home=${project.basedir}/lib_managed/python</argument>-->
                             </arguments>
                         </configuration>
                     </execution>
