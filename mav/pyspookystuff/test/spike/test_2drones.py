@@ -1,8 +1,6 @@
 from __future__ import print_function
 
-import time
-from dronekit import connect, VehicleMode, LocationGlobalRelative
-from nose.tools import assert_equals
+from dronekit import VehicleMode, LocationGlobalRelative
 
 from pyspookystuff.test import *
 
@@ -13,7 +11,7 @@ def test_both():
 
     ferry('127.0.0.1:10092', '127.0.0.1:10102')
 
-    teardown_sitl()
+    teardownAll()
 
     return
 
