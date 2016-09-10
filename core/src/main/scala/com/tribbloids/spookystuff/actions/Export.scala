@@ -407,17 +407,17 @@ case class Wget(
 
     val fs = path.getFileSystem(spooky.hadoopConf)
 
-    if (fs.exists(path)) {
-      val result: Fetched = if (fs.getFileStatus(path).isDirectory) {
-        this.readHDFSDirectory(path, fs)
-      }
-      else {
-        this.readHDFSFile(path, session)
-      }
-      result
+    //    if (fs.exists(path)) {
+    val result: Fetched = if (fs.getFileStatus(path).isDirectory) {
+      this.readHDFSDirectory(path, fs)
     }
-    else
-      throw new FileNotFoundException(s"$uri is not a file or directory ")
+    else {
+      this.readHDFSFile(path, session)
+    }
+    result
+    //    }
+    //    else
+    //      throw new FileNotFoundException(s"$uri is not a file or directory ")
   }
 
   def readHDFSDirectory(path: Path, fs: FileSystem): Fetched = {

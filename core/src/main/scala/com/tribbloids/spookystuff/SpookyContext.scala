@@ -17,7 +17,7 @@ import scala.reflect.ClassTag
 
 case class SpookyContext private (
                                    @transient sqlContext: SQLContext, //can't be used on executors
-                                   @transient private var _conf: SpookyConf, //can only be used on executors after broadcast
+                                   @transient private var spookyConf: SpookyConf, //can only be used on executors after broadcast
                                    metrics: Metrics //accumulators cannot be broadcasted,
                                  ) {
 
@@ -51,36 +51,37 @@ case class SpookyContext private (
 
   def sparkContext = this.sqlContext.sparkContext
 
-  @volatile var broadcastedEffectiveConf = sqlContext.sparkContext.broadcast(_conf)
+  @volatile var broadcastedSpookyConf: Broadcast[SpookyConf] = {
+    sqlContext.sparkContext.broadcast(spookyConf)
+  }
 
-  def conf = if (_conf == null) broadcastedEffectiveConf.value
-  else _conf
+  def conf = if (spookyConf == null) broadcastedSpookyConf.value
+  else spookyConf
 
   def conf_=(conf: SpookyConf): Unit = {
-    _conf = conf.importFrom(sqlContext.sparkContext)
+    spookyConf = conf.importFrom(sqlContext.sparkContext)
     rebroadcast()
   }
 
+  //TODO: make it similar to broadcastedEffectiveConf
+  val broadcastedHadoopConf: Broadcast[SerializableWritable[Configuration]] = {
+    sqlContext.sparkContext.broadcast(
+      new SerializableWritable(this.sqlContext.sparkContext.hadoopConfiguration)
+    )
+  }
+
+  def hadoopConf: Configuration = broadcastedHadoopConf.value.value
+  def resolver = HDFSResolver(hadoopConf)
+
   def rebroadcast(): Unit ={
     try {
-      broadcastedEffectiveConf.destroy()
+      broadcastedSpookyConf.destroy()
     }
     catch {
       case e: Throwable =>
     }
-    broadcastedEffectiveConf = sqlContext.sparkContext.broadcast(_conf)
+    broadcastedSpookyConf = sqlContext.sparkContext.broadcast(spookyConf)
   }
-
-  val broadcastedHadoopConf: Broadcast[SerializableWritable[Configuration]] =
-    if (sqlContext!=null) {
-      sqlContext.sparkContext.broadcast(
-        new SerializableWritable(this.sqlContext.sparkContext.hadoopConfiguration)
-      )
-    }
-    else null
-
-  @transient lazy val hadoopConf: Configuration = broadcastedHadoopConf.value.value
-  @transient lazy val resolver = HDFSResolver(hadoopConf)
 
   def zeroMetrics(): SpookyContext ={
     metrics.clear()
