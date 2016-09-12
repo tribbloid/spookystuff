@@ -47,7 +47,8 @@ abstract class MessageRelay[Obj] {
   }
   def _fromXML[T: Manifest](xml: String): T = {
     val bomRemoved = xml.replaceAll("[^\\x20-\\x7e]", "").trim //remove BOM (byte order mark)
-    val ns = XML.loadString(bomRemoved)
+    val prologRemoved = bomRemoved.replaceFirst("[^<]*(?=<)","")
+    val ns = XML.loadString(prologRemoved)
 
     _fromXMLNode[T](ns)
   }

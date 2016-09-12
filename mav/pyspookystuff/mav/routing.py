@@ -1,3 +1,4 @@
+import ctypes
 import json
 import os
 import random
@@ -6,7 +7,7 @@ import multiprocessing
 import dronekit
 from datetime import datetime
 
-import mav
+from pyspookystuff import mav
 
 
 # pool = dict([])
@@ -51,7 +52,9 @@ import mav
 
 
 class Instance(object):
-    (all, used, missing) = multiprocessing.Array('s', 10)  # type: multiprocessing.Array
+    all = multiprocessing.Array(ctypes.c_char_p, 10)  # type: multiprocessing.Array
+    used = multiprocessing.Array(ctypes.c_char_p, 10)  # type: multiprocessing.Array
+    missing = multiprocessing.Array(ctypes.c_char_p, 10)  # type: multiprocessing.Array
 
     # will be tried by daemon if not in usedConnStr
     # won't be tried by nobody
@@ -74,7 +77,7 @@ class Instance(object):
         return result
 
 
-usedPort = multiprocessing.Array('i', 10)  # type: multiprocessing.Array
+usedPort = multiprocessing.Array(ctypes.c_long, 10)  # type: multiprocessing.Array
 
 
 # won't be used as new proxy port

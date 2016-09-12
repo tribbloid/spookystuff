@@ -2,7 +2,7 @@ import json
 
 from dronekit import LocationGlobalRelative
 
-from mav.routing import Binding, Instance
+from pyspookystuff.mav.routing import Binding, Instance
 
 
 class DummyPyAction(object):

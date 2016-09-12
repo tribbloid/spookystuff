@@ -100,10 +100,10 @@ case class PythonDriver(
     //    }
   }
 
-  final def PROMPTS = "^(>>>|\\.\\.\\.| )+"
+  final def PROMPTS = "^(>>> |\\.\\.\\. )+"
 
   def removePrompts(str: String): String = {
-    str.trim.replaceAll(PROMPTS, "")
+    str.stripPrefix("\r").replaceAll(PROMPTS, "")
   }
 
   def interpret(code: String): Array[String] = {
@@ -114,11 +114,12 @@ case class PythonDriver(
         removePrompts
       )
 
+    val indentedCode = code.split('\n').map(">>> " + _).mkString("\n")
+
     if (pythonErrorIn(rows)) {
       val ee = new PythonException(
-        "Error interpreting" +
-          "\n>>>\n" +
-          code +
+        "Error interpreting\n" +
+          indentedCode +
           "\n---\n" +
           rows.mkString("\n")
       )
