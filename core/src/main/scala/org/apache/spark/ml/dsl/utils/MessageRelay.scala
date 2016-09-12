@@ -163,10 +163,12 @@ class MessageReader[Obj](
     FallbackJSONSerializer
 
   override def toMessage(v: Obj) = new MessageRepr[Obj] {
-//    override type M = Obj
+    //    override type M = Obj
     override def toObject: Obj = v
   }
 }
+
+object GenericMessageReader extends MessageReader[Any]
 
 trait Message extends Serializable {
 
