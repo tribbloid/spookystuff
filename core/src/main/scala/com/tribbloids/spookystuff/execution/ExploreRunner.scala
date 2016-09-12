@@ -20,8 +20,7 @@ case class Open_Visited(
   * NOT serializable: expected to be constructed on Executors
   */
 class ExploreRunner(
-                     val itr: Iterator[(TraceView, Open_Visited)], //TODO: change to TraceViewView
-                     val executionID: Long
+                     val itr: Iterator[(TraceView, Open_Visited)] //TODO: change to TraceViewView
                    ) extends NOTSerializableMixin {
 
   import dsl._
@@ -32,13 +31,13 @@ class ExploreRunner(
   //  val openVs = mutable.SortedSet[(TraceView, Array[DataRow])] = mutable.SortedSet()
   val visited: ConcurrentMap[TraceView, Iterable[DataRow]] = ConcurrentMap()
 
+  @volatile var fetchingInProgressOpt: Option[TraceView] = None
+
   itr.foreach{
     tuple =>
       tuple._2.open.map(v => open += tuple._1 -> v)
       tuple._2.visited.map(v => visited += tuple._1 -> v)
   }
-
-  ExploreRunnerCache.register(this)
 
   protected def commitIntoVisited(
                                    key: TraceView,
@@ -71,23 +70,25 @@ class ExploreRunner(
 
     implicit def withSchema(row: SquashedFetchedRow): SquashedFetchedRow#WithSchema = new row.WithSchema(schema)
 
-    val bestOpen: (TraceView, Iterable[DataRow]) = open.min(pairOrdering) //TODO: expensive! use pre-sorted collection
+    val bestOpenBeforeElimination: (TraceView, Iterable[DataRow]) = open.min(ordering) //TODO: expensive! use pre-sorted collection
 
-    open -= bestOpen._1
+    open -= bestOpenBeforeElimination._1
 
     val existingVisitedOption: Option[Array[DataRow]] = {
-      ExploreRunnerCache.get(bestOpen._1 -> executionID, visitedReducer)
+      ExploreRunnerCache.get(bestOpenBeforeElimination._1 -> executionID, visitedReducer)
     }
 
-    val bestOpenAfterElimination: (TraceView, Iterable[DataRow]) = existingVisitedOption match {
+    val bestOpen: (TraceView, Iterable[DataRow]) = existingVisitedOption match {
       case Some(allVisited) =>
-        val dataRowsAfterElimination = eliminator(bestOpen._2, allVisited)
-        bestOpen.copy(_2 = dataRowsAfterElimination)
+        val dataRowsAfterElimination = eliminator(bestOpenBeforeElimination._2, allVisited)
+        bestOpenBeforeElimination.copy(_2 = dataRowsAfterElimination)
       case None =>
-        bestOpen
+        bestOpenBeforeElimination
     }
 
-    if (bestOpenAfterElimination._2.nonEmpty) {
+    if (bestOpen._2.nonEmpty) {
+      this.fetchingInProgressOpt = Some(bestOpen._1)
+
       val bestRow_- = SquashedFetchedRow(bestOpen._2.toArray, bestOpen._1)
 
       val bestRow = rowFn.apply(
@@ -108,7 +109,7 @@ class ExploreRunner(
         }
       )
 
-      val opens_+ : Array[(TraceView, DataRow)] = bestNonFringeRow
+      val newOpens : Array[(TraceView, DataRow)] = bestNonFringeRow
         .extract(resolved)
         .flattenData(resolved.field, ordinalField, joinType.isLeft, sampler)
         .interpolate(trace)
@@ -116,13 +117,14 @@ class ExploreRunner(
           tuple =>
             tuple._1 -> tuple._2
         }
-      opens_+.foreach {
-        open_+ =>
-          val TraceView_+ = open_+._1
+      newOpens.foreach {
+        newOpen =>
+          val TraceView_+ = newOpen._1
           val oldDataRows: Iterable[DataRow] = open.getOrElse(TraceView_+, Nil)
-          val newDataRows = openReducer(Array(open_+._2), oldDataRows).toArray
+          val newDataRows = openReducer(Array(newOpen._2), oldDataRows).toArray
           open += TraceView_+ -> newDataRows
       }
+      this.fetchingInProgressOpt = None
     }
   }
 
@@ -141,10 +143,13 @@ class ExploreRunner(
                rowFn: SquashedFetchedRow => SquashedFetchedRow
                //apply immediately after depth selection, this include depth0
                //should include flatten & extract
-             ): Iterator[(TraceView, Open_Visited)] = {
+             ): Iterator[(TraceView, Open_Visited)] = try {
+
+    ExploreRunnerCache.register(this, impl.params.executionID)
 
     // export openSet and visitedSet: they DO NOT need to be cogrouped: Spark shuffle will do it anyway.
-    // a big problem here is whether each weakly referenced DataRow in the cache can be exported multiple times. Does this mess with the reducer?
+    // a big problem here is whether each weakly referenced DataRow in the cache can be exported multiple times.
+    // Does this mess with the reducer?
     def finish(): Iterator[(TraceView, Open_Visited)] = {
       val open = this.open
         .map(t => t._1 -> Open_Visited(open = Some(t._2.toArray)))
@@ -154,7 +159,7 @@ class ExploreRunner(
       val toBeCommitted = this.visited
         .map {
           tuple =>
-            (tuple._1 -> executionID) -> tuple._2
+            (tuple._1 -> impl.params.executionID) -> tuple._2
         }
 
       ExploreRunnerCache.commit(toBeCommitted, impl.visitedReducer)
@@ -171,8 +176,7 @@ class ExploreRunner(
 
     finish()
   }
-
-  override def finalize(): Unit = {
-    ExploreRunnerCache.deregister(this)
+  finally {
+    ExploreRunnerCache.deregister(this, impl.params.executionID)
   }
 }

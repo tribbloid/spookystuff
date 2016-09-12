@@ -15,7 +15,8 @@ case class ExploreParams(
                           depthField: Field, //can be null
                           ordinalField: Field, //can be null
                           range: Range,
-                          extracts: Seq[Extractor[Any]]
+                          extracts: Seq[Extractor[Any]],
+                          executionID: Long = Random.nextLong()
                         ) {
 
 }
@@ -96,8 +97,6 @@ case class ExplorePlan(
   override def doExecute(): SquashedFetchedRDD = {
     assert(_params.depthField != null)
 
-    val execID = Random.nextLong()
-
     if (spooky.sparkContext.getCheckpointDir.isEmpty && checkpointInterval > 0)
       spooky.sparkContext.setCheckpointDir(spooky.conf.dirs.checkpoint)
 
@@ -156,7 +155,7 @@ case class ExplorePlan(
 
       val stateRDD_+ : RDD[(TraceView, Open_Visited)] = stateRDD.mapPartitions {
         itr =>
-          val state = new ExploreRunner(itr, execID)
+          val state = new ExploreRunner(itr)
           val state_+ = state.execute(
             _on,
             sampler,
@@ -196,7 +195,7 @@ case class ExplorePlan(
     val result = stateRDD
       .mapPartitions{
         itr =>
-          ExploreRunnerCache.finishJob(execID) //manual cleanup, one per node is enough, one per executor is not too much slower
+          ExploreRunnerCache.finishExploreExecutions(params.executionID) //manual cleanup, one per node is enough, one per executor is not too much slower
           itr
       }
       .flatMap {

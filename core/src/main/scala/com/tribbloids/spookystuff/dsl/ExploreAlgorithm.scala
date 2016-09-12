@@ -1,6 +1,7 @@
 package com.tribbloids.spookystuff.dsl
 
 import com.tribbloids.spookystuff.actions._
+import com.tribbloids.spookystuff.caching.ExploreRunnerCache
 import com.tribbloids.spookystuff.dsl.ExploreAlgorithms.ExploreImpl
 import com.tribbloids.spookystuff.execution.ExploreParams
 import com.tribbloids.spookystuff.row._
@@ -38,10 +39,6 @@ object ExploreAlgorithms {
       *
       */
     val ordering: RowOrdering
-
-    final lazy val pairOrdering = ordering.on {
-      v: (TraceView, Iterable[DataRow]) => v._2
-    }
 
     /**
       *
@@ -81,9 +78,20 @@ object ExploreAlgorithms {
       }
 
       override val ordering: RowOrdering = Ordering.by {
-        v: Iterable[DataRow] =>
-          assert(v.size == 1)
-          v.head.getInt(depthField)
+        tuple: (TraceView, Iterable[DataRow]) =>
+          val inProgress = ExploreRunnerCache
+            .getOnGoingRunners(params.executionID)
+            .flatMap(_.fetchingInProgressOpt)
+
+          if (inProgress contains tuple._1) {
+            Int.MaxValue
+          }
+          else {
+            val v = tuple._2
+            //          assert(v.size == 1)
+            v.head.getInt(depthField)
+              .getOrElse(Int.MaxValue)
+          }
       }
 
       override val eliminator: RowEliminator = {

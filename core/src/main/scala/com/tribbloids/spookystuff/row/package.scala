@@ -1,5 +1,6 @@
 package com.tribbloids.spookystuff
 
+import com.tribbloids.spookystuff.actions.TraceView
 import org.apache.spark.rdd.RDD
 
 package object row {
@@ -16,7 +17,7 @@ package object row {
 
   type RowReducer = (Iterable[DataRow], Iterable[DataRow]) => Iterable[DataRow]
 
-  type RowOrdering = Ordering[Iterable[DataRow]]
+  type RowOrdering = Ordering[(TraceView, Iterable[DataRow])]
 
   // f(open, visited) => open
   type RowEliminator = (Iterable[DataRow], Iterable[DataRow]) => Iterable[DataRow]

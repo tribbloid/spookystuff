@@ -10,28 +10,27 @@ import com.tribbloids.spookystuff.row.{DataRow, RowReducer}
   */
 object ExploreRunnerCache {
 
-  // Long is the jobID that segments DataRows from different jobs
+  // Long is the exeID that segments DataRows from different jobs
   val committedVisited: ConcurrentCache[(TraceView, Long), Iterable[DataRow]] = ConcurrentCache()
 
-  private val _onGoings: ConcurrentMap[Long, ConcurrentSet[ExploreRunner]] = ConcurrentMap() //jobID -> running ExploreStateView
-  def onGoings = _onGoings
+  val onGoings: ConcurrentMap[Long, ConcurrentSet[ExploreRunner]] = ConcurrentMap() //executionID -> running ExploreStateView
 
-  def getOnGoingRunners(jobID: Long): ConcurrentSet[ExploreRunner] = {
+  def getOnGoingRunners(exeID: Long): ConcurrentSet[ExploreRunner] = {
     onGoings.synchronized{
       onGoings
         .getOrElse(
-          jobID, {
+          exeID, {
             val v = ConcurrentSet[ExploreRunner]()
-            onGoings.put(jobID, v)
+            onGoings.put(exeID, v)
             v
           }
         )
     }
   }
 
-  def finishJob(jobID: Long): Unit = {
+  def finishExploreExecutions(exeID: Long): Unit = {
     onGoings.synchronized{
-      onGoings -= jobID
+      onGoings -= exeID
     }
   }
 
@@ -60,12 +59,12 @@ object ExploreRunnerCache {
     }
   }
 
-  def register(v: ExploreRunner): Unit = {
-    getOnGoingRunners(v.executionID) += v
+  def register(v: ExploreRunner, exeID: Long): Unit = {
+    getOnGoingRunners(exeID) += v
   }
 
-  def deregister(v: ExploreRunner): Unit = {
-    getOnGoingRunners(v.executionID) -= v
+  def deregister(v: ExploreRunner, exeID: Long): Unit = {
+    getOnGoingRunners(exeID) -= v
   }
 
   //  def replaceInto(
