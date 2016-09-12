@@ -2,7 +2,7 @@ import time
 import math
 from dronekit import connect
 from dronekit.mavlink import MAVConnection
-from pyspookystuff.test import with_sitl
+from pyspookystuff.mav_test import with_sitl
 from nose.tools import assert_not_equals, assert_equals
 
 

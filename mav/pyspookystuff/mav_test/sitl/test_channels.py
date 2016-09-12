@@ -1,7 +1,7 @@
 from pymavlink import mavutil
 import time
 from dronekit import connect, VehicleMode, LocationGlobal
-from pyspookystuff.test import with_sitl
+from pyspookystuff.mav_test import with_sitl
 from nose.tools import assert_equals, assert_not_equals
 
 

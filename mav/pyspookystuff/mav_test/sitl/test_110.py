@@ -2,7 +2,7 @@ import time
 import sys
 import os
 from dronekit import connect, VehicleMode
-from pyspookystuff.test import with_sitl, wait_for
+from pyspookystuff.mav_test import with_sitl, wait_for
 from nose.tools import assert_equals
 
 

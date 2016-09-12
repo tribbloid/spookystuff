@@ -2,6 +2,8 @@ import json
 
 from dronekit import LocationGlobalRelative
 
+from mav.routing import Binding, Instance
+
 
 class DummyPyAction(object):
     this = None
@@ -23,8 +25,17 @@ class Move(object):
         # type: (str, str) -> object
         self.this = json.loads(jsonStr)
 
+    def prepare(self, conf):
+
+        _jInstances = conf['instances']
+        instances = map(lambda x: Instance(x), _jInstances)
+        self.binding = Binding.getOrCreate(
+            instances,
+            conf['proxyFactory']
+        )
+
+
+
     def moveTo(self, point):
         # type: (LocationGlobalRelative) -> object
-        session = json.loads(sessionJSON)
-
-        session
+        self.binding

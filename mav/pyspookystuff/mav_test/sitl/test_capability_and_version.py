@@ -1,7 +1,7 @@
 import time
 
 from dronekit import VehicleMode, connect
-from pyspookystuff.test import with_sitl
+from pyspookystuff.mav_test import with_sitl
 from nose.tools import assert_false, assert_true
 
 

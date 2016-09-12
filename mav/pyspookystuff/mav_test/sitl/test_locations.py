@@ -1,6 +1,6 @@
 import time
 from dronekit import connect, VehicleMode, LocationGlobal
-from pyspookystuff.test import with_sitl, wait_for
+from pyspookystuff.mav_test import with_sitl, wait_for
 from nose.tools import assert_equals, assert_not_equals
 
 

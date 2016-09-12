@@ -1,38 +1,22 @@
 from __future__ import print_function
 
-from dronekit import VehicleMode, LocationGlobalRelative
+import time
+from dronekit import connect, VehicleMode, LocationGlobalRelative
+from nose.tools import assert_equals
 
-from pyspookystuff.test import *
+from pyspookystuff.mav_test import with_sitl_3way
 
-def test_both():
-
-    setup_sitl_mavproxy(options='--out=127.0.0.1:10092', instance=1)
-    setup_sitl_mavproxy(options='--out=127.0.0.1:10102', instance=0)
-
-    ferry('127.0.0.1:10092', '127.0.0.1:10102')
-
-    teardownAll()
-
-    return
-
-# def set_sysid(v, instance):
-
-def ferry(path1, path2):
-    vehicle1 = connect(path1, wait_ready=True)
-    vehicle2 = connect(path2, wait_ready=True)
+@with_sitl_3way
+def test_ferry(connpath):
+    vehicle = connect(connpath, wait_ready=True)
 
     # NOTE these are *very inappropriate settings*
     # to make on a real vehicle. They are leveraged
     # exclusively for simulation. Take heed!!!
-    vehicle1.parameters['FS_GCS_ENABLE'] = 0
-    vehicle1.parameters['FS_EKF_THRESH'] = 100
+    vehicle.parameters['FS_GCS_ENABLE'] = 0
+    vehicle.parameters['FS_EKF_THRESH'] = 100
 
-    vehicle2.parameters['FS_GCS_ENABLE'] = 0
-    vehicle2.parameters['FS_EKF_THRESH'] = 100
-
-    print("Allowing time for parameter write")
-
-    def arm_and_takeoff(vehicle, targetAltitude):
+    def arm_and_takeoff(targetAltitude):
         """
         Arms vehicle and fly to aTargetAltitude.
         """
@@ -78,22 +62,25 @@ def ferry(path1, path2):
             assert_equals(vehicle.mode.name, 'GUIDED')
             time.sleep(1)
 
-    arm_and_takeoff(vehicle1, 20)
-    arm_and_takeoff(vehicle2, 20)
+    arm_and_takeoff(20)
 
-    point1 = LocationGlobalRelative(90, 0, 20)
-    point2 = LocationGlobalRelative(-90, 0, 20)
+    point1 = LocationGlobalRelative(-35.361354, 149.165218, 20)
+    point2 = LocationGlobalRelative(-36.363244, 149.168801, 100)
 
-    print("Going to first point...")
-    vehicle1.simple_goto(point1)
+    for i in range(1, 10000):
+        print("Going to first point...")
+        vehicle.simple_goto(point1)
 
-    print("Going to first point...")
-    vehicle2.simple_goto(point2)
+        # sleep so we can see the change in map
+        time.sleep(30)
 
-    # sleep so we can see the change in map
-    time.sleep(3000000)
+        print("Going to second point...")
+        vehicle.simple_goto(point2)
+
+        # sleep so we can see the change in map
+        time.sleep(30)
 
     print("Returning to Launch")
-    vehicle1.mode = VehicleMode("RTL")
+    vehicle.mode = VehicleMode("RTL")
 
-    vehicle1.close()
+    vehicle.close()

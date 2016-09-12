@@ -1,20 +1,13 @@
-"""
-simple_goto.py: GUIDED mode "simple goto" example (Copter Only)
-
-The example demonstrates how to arm and takeoff in Copter and how to navigate to 
-points using Vehicle.simple_goto.
-
-Full documentation is provided at http://python.dronekit.io/examples/simple_goto.html
-"""
+from __future__ import print_function
 
 import time
 from dronekit import connect, VehicleMode, LocationGlobalRelative
-from pyspookystuff.test import with_sitl
 from nose.tools import assert_equals
 
+from pyspookystuff.mav_test import with_sitl_3way
 
-@with_sitl
-def test_goto(connpath):
+@with_sitl_3way
+def test_ferry(connpath):
     vehicle = connect(connpath, wait_ready=True)
 
     # NOTE these are *very inappropriate settings*
@@ -23,7 +16,7 @@ def test_goto(connpath):
     vehicle.parameters['FS_GCS_ENABLE'] = 0
     vehicle.parameters['FS_EKF_THRESH'] = 100
 
-    def arm_and_takeoff(aTargetAltitude):
+    def arm_and_takeoff(targetAltitude):
         """
         Arms vehicle and fly to aTargetAltitude.
         """
@@ -39,7 +32,7 @@ def test_goto(connpath):
         vehicle.mode = VehicleMode("GUIDED")
         i = 60
         while vehicle.mode.name != 'GUIDED' and i > 0:
-            # print " Waiting for guided %s seconds..." % (i,)
+            print(" Waiting for guided %s seconds..." % (i,))
             time.sleep(1)
             i = i - 1
         assert_equals(vehicle.mode.name, 'GUIDED')
@@ -48,44 +41,38 @@ def test_goto(connpath):
         vehicle.armed = True
         i = 60
         while not vehicle.armed and vehicle.mode.name == 'GUIDED' and i > 0:
-            # print " Waiting for arming %s seconds..." % (i,)
+            print(" Waiting for arming %s seconds..." % (i,))
             time.sleep(1)
             i = i - 1
         assert_equals(vehicle.armed, True)
 
         # Take off to target altitude
-        vehicle.simple_takeoff(aTargetAltitude)
+        vehicle.simple_takeoff(targetAltitude)
 
         # Wait until the vehicle reaches a safe height before
         # processing the goto (otherwise the command after
         # Vehicle.simple_takeoff will execute immediately).
         while True:
-            # print " Altitude: ", vehicle.location.alt
+            print(" Altitude: ", vehicle.location.global_relative_frame.alt)
             # Test for altitude just below target, in case of undershoot.
-            if vehicle.location.global_frame.alt >= aTargetAltitude * 0.95:
-                # print "Reached target altitude"
+            if vehicle.location.global_relative_frame.alt >= targetAltitude * 0.95:
+                print("Reached target altitude")
                 break
 
             assert_equals(vehicle.mode.name, 'GUIDED')
             time.sleep(1)
 
-    arm_and_takeoff(10)
+    arm_and_takeoff(20)
 
-    # print "Going to first point..."
-    point1 = LocationGlobalRelative(-35.361354, 149.165218, 20)
+    point1 = LocationGlobalRelative(90, 0, 20)
+
+    print("Going to first point...")
     vehicle.simple_goto(point1)
 
     # sleep so we can see the change in map
-    time.sleep(3)
+    time.sleep(3000000)
 
-    # print "Going to second point..."
-    point2 = LocationGlobalRelative(-35.363244, 149.168801, 20)
-    vehicle.simple_goto(point2)
-
-    # sleep so we can see the change in map
-    time.sleep(3)
-
-    # print "Returning to Launch"
+    print("Returning to Launch")
     vehicle.mode = VehicleMode("RTL")
 
     vehicle.close()

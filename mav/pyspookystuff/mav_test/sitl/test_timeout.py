@@ -3,7 +3,7 @@ import sys
 import os
 import socket
 from dronekit import connect, VehicleMode
-from pyspookystuff.test import with_sitl
+from pyspookystuff.mav_test import with_sitl
 from nose.tools import assert_equals
 
 

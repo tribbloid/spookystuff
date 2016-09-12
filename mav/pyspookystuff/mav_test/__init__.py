@@ -8,24 +8,24 @@ from pyspookystuff.mav import *
 
 
 def setup_sitl_mavproxy(atype='quad', options=None, instance=0):
-    setupSITL(instance)
+    sitlUp(instance)
 
     # time.sleep(2)
     # out = '127.0.0.1:' + str(14550 + instance*10)
     out = '127.0.0.1:' + str(14550)
-    setupMAVProxy(atype=atype + str(instance), master=tcp_master(instance), outs={out}, options=options)
+    proxyUp(aircraft=atype + str(instance), master=tcp_master(instance), outs={out}, options=options)
 
 
 def teardownAll():
-    teardownMAVProxy()
-    teardownSITL()
+    proxyDown()
+    sitlDown()
 
 def with_sitl(fn):
 
-    @with_setup(setupSITL, teardownSITL)
+    @with_setup(sitlUp, sitlDown)
     def test(*args, **kargs):
         tcp = fn('tcp:127.0.0.1:5760', *args, **kargs)
-        teardownSITL()
+        sitlDown()
         setup_sitl_mavproxy()
         udp = fn('127.0.0.1:14550', *args, **kargs)
         assert_equals(tcp, udp)
@@ -36,7 +36,7 @@ def with_sitl(fn):
 
 def with_sitl_tcp(fn):
 
-    @with_setup(setupSITL, teardownSITL)
+    @with_setup(sitlUp, sitlDown)
     def test_tcp(*args, **kargs):
         tcp = fn('tcp:127.0.0.1:5760', *args, **kargs)
         return tcp
@@ -46,7 +46,7 @@ def with_sitl_tcp(fn):
 
 def with_sitl_udp(fn):
 
-    @with_setup(setup_sitl_mavproxy, teardownSITL)
+    @with_setup(setup_sitl_mavproxy, sitlDown)
     def test_udp(*args, **kargs):
         udp = fn('127.0.0.1:14550', *args, **kargs)
         return udp
@@ -56,7 +56,7 @@ def with_sitl_udp(fn):
 
 def with_sitl_3way(fn):
 
-    @with_setup(setup_sitl_mavproxy(options='--out=127.0.0.1:10092'), teardownSITL)
+    @with_setup(setup_sitl_mavproxy(options='--out=127.0.0.1:10092'), sitlDown)
     def test_udp(*args, **kargs):
         udp = fn('127.0.0.1:10092', *args, **kargs)
         return udp
