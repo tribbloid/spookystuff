@@ -102,15 +102,15 @@ object ElementToArrayDeserializer extends XMLWeakDeserializer[Any] {
       case e: Exception =>
 
         val strs = Seq(
-          "================================EXTRACT INNER ERROR================================",
+          "======= EXTRACT INNER ERROR ======",
           pretty(render(jv)),
           firstTypeArg(ti)
         ) ++
-          Seq("------------------------customSerializers------------------------") ++
+          Seq("------ customSerializers ------") ++
           format.customSerializers ++
-          Seq("------------------------fieldSerializers------------------------") ++
+          Seq("------ fieldSerializers -------") ++
           format.fieldSerializers ++
-          Seq("------------------------primitives------------------------") ++
+          Seq("--------- primitives ----------") ++
           format.primitives
         throw MappingException(
           strs.mkString("\n"),
