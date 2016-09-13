@@ -356,7 +356,7 @@ object ImplicitUtils {
     def toMapRDD(keepNull: Boolean = false): RDD[Map[String,Any]] = {
       val headers = self.schema.fieldNames
 
-      val result: RDD[Map[String,Any]] = self.map{
+      val result: RDD[Map[String,Any]] = self.rdd.map{
         row => ListMap(headers.zip(row.toSeq): _*)
       }
 

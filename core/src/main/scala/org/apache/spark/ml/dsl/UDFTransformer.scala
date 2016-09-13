@@ -6,7 +6,8 @@ import org.apache.spark.ml.param.ParamMap
 import org.apache.spark.ml.param.shared.{HasInputCols, HasOutputCol}
 import org.apache.spark.ml.util.{DefaultParamsReadable, DefaultParamsWritable, Identifiable}
 import org.apache.spark.sql.types.{StructField, StructType}
-import org.apache.spark.sql.{DataFrame, UserDefinedFunction}
+import org.apache.spark.sql.DataFrame
+import org.apache.spark.sql.UserDefinedFunction
 
 object UDFTransformer extends DefaultParamsReadable[UDFTransformer] {
 

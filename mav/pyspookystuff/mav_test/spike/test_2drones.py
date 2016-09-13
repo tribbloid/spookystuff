@@ -32,54 +32,8 @@ def ferry(path1, path2):
 
     print("Allowing time for parameter write")
 
-    def arm_and_takeoff(vehicle, targetAltitude):
-        """
-        Arms vehicle and fly to aTargetAltitude.
-        """
-
-        # Don't let the user try to fly autopilot is booting
-        i = 60
-        while not vehicle.is_armable and i > 0:
-            time.sleep(1)
-            i = i - 1
-        assert_equals(vehicle.is_armable, True)
-
-        # Copter should arm in GUIDED mode
-        vehicle.mode = VehicleMode("GUIDED")
-        i = 60
-        while vehicle.mode.name != 'GUIDED' and i > 0:
-            print(" Waiting for guided %s seconds..." % (i,))
-            time.sleep(1)
-            i = i - 1
-        assert_equals(vehicle.mode.name, 'GUIDED')
-
-        # Arm copter.
-        vehicle.armed = True
-        i = 60
-        while not vehicle.armed and vehicle.mode.name == 'GUIDED' and i > 0:
-            print(" Waiting for arming %s seconds..." % (i,))
-            time.sleep(1)
-            i = i - 1
-        assert_equals(vehicle.armed, True)
-
-        # Take off to target altitude
-        vehicle.simple_takeoff(targetAltitude)
-
-        # Wait until the vehicle reaches a safe height before
-        # processing the goto (otherwise the command after
-        # Vehicle.simple_takeoff will execute immediately).
-        while True:
-            print(" Altitude: ", vehicle.location.global_relative_frame.alt)
-            # Test for altitude just below target, in case of undershoot.
-            if vehicle.location.global_relative_frame.alt >= targetAltitude * 0.95:
-                print("Reached target altitude")
-                break
-
-            assert_equals(vehicle.mode.name, 'GUIDED')
-            time.sleep(1)
-
-    arm_and_takeoff(vehicle1, 20)
-    arm_and_takeoff(vehicle2, 20)
+    arm_and_takeoff(20, vehicle1)
+    arm_and_takeoff(20, vehicle2)
 
     point1 = LocationGlobalRelative(90, 0, 20)
     point2 = LocationGlobalRelative(-90, 0, 20)

@@ -1,7 +1,7 @@
 package com.tribbloids.spookystuff
 
 import org.apache.spark.ml.dsl.utils.Message
-import org.apache.spark.{Accumulator, AccumulatorParam}
+import org.apache.spark.{Accumulator, AccumulatorParam, SparkContext}
 
 import scala.collection.immutable.ListMap
 import scala.collection.mutable.ArrayBuffer
@@ -11,8 +11,13 @@ import scala.collection.mutable.ArrayBuffer
   */
 object Metrics {
 
-  private def accumulator[T](initialValue: T, name: String)(implicit param: AccumulatorParam[T]) = {
-    new Accumulator(initialValue, param, Some(name))
+  def accumulator[T](
+                      initialValue: T,
+                      name: String,
+                      scOpt: Option[SparkContext] = None
+                    )(implicit param: AccumulatorParam[T]): Accumulator[T] = {
+    val sc = scOpt.getOrElse(SparkContext.getOrCreate())
+    sc.accumulator(initialValue, name)
   }
 }
 

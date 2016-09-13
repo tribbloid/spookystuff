@@ -3,7 +3,8 @@ from __future__ import print_function
 import os
 
 import sys
-from dronekit import connect
+import time
+from dronekit import connect, VehicleMode
 from dronekit_sitl import SITL
 
 from pyspookystuff import PyspookyException
@@ -27,10 +28,6 @@ class DronePoolDepletedException(PyspookyException):
 
 class PortDepletedException(PyspookyException):
     pass
-
-
-
-
 
 def proxyUp(aircraft, setup=False, master='tcp:127.0.0.1:5760', outs={'127.0.0.1:14550'},
             options=None, logfile=sys.stdout):
@@ -154,3 +151,46 @@ def sitlDown():
     for sitl in sitls :
         sitl.stop()
     sitls = []
+
+
+def arm_and_takeoff(targetAltitude, vehicle):
+    """
+    Arms vehicle and fly to aTargetAltitude.
+    """
+
+    # Don't let the user try to fly when autopilot is booting
+    i = 60
+    while not vehicle.is_armable and i > 0:
+        time.sleep(1)
+        i = i - 1
+
+    # Copter should arm in GUIDED mode
+    vehicle.mode = VehicleMode("GUIDED")
+    i = 60
+    while vehicle.mode.name != 'GUIDED' and i > 0:
+        print(" Waiting for guided %s seconds..." % (i,))
+        time.sleep(1)
+        i = i - 1
+
+    # Arm copter.
+    vehicle.armed = True
+    i = 60
+    while not vehicle.armed and vehicle.mode.name == 'GUIDED' and i > 0:
+        print(" Waiting for arming %s seconds..." % (i,))
+        time.sleep(1)
+        i = i - 1
+
+    # Take off to target altitude
+    vehicle.simple_takeoff(targetAltitude)
+
+    # Wait until the vehicle reaches a safe height before
+    # processing the goto (otherwise the command after
+    # Vehicle.simple_takeoff will execute immediately).
+    while True:
+        print(" Altitude: ", vehicle.location.global_relative_frame.alt)
+        # Test for altitude just below target, in case of undershoot.
+        if vehicle.location.global_relative_frame.alt >= targetAltitude * 0.95:
+            print("Reached target altitude")
+            break
+
+        time.sleep(1)
