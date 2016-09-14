@@ -177,15 +177,15 @@ trait Message extends Serializable {
 
   import org.json4s.JsonDSL._
 
-  def jValue(implicit formats: Formats = formats): JValue = Extraction.decompose(value)
-  def compactJSON(implicit formats: Formats = formats): String = compact(render(jValue))
-  def prettyJSON(implicit formats: Formats = formats): String = pretty(render(jValue))
+  def toJValue(implicit formats: Formats = formats): JValue = Extraction.decompose(value)
+  def compactJSON(implicit formats: Formats = formats): String = compact(render(toJValue))
+  def prettyJSON(implicit formats: Formats = formats): String = pretty(render(toJValue))
   def toJSON(pretty: Boolean = true)(implicit formats: Formats = formats): String = {
     if (pretty) prettyJSON(formats)
     else compactJSON(formats)
   }
 
-  def toXMLNode(implicit formats: Formats = formats): NodeSeq = Xml.toXml(value.getClass.getSimpleName -> jValue)
+  def toXMLNode(implicit formats: Formats = formats): NodeSeq = Xml.toXml(value.getClass.getSimpleName -> toJValue)
   def compactXML(implicit formats: Formats = formats): String = toXMLNode.toString()
   def prettyXML(implicit formats: Formats = formats): String = Xml.defaultXMLPrinter.formatNodes(toXMLNode)
   def toXMLStr(pretty: Boolean = true)(implicit formats: Formats = formats): String = {
@@ -210,7 +210,7 @@ trait Message extends Serializable {
 
       val instance = new MessageParams(Identifiable.randomUID(Message.this.getClass.getSimpleName))
 
-      DefaultParamsWriter.saveMetadata(instance, path, sc, extraMetadata = Some("metadata" -> Message.this.jValue))
+      DefaultParamsWriter.saveMetadata(instance, path, sc, extraMetadata = Some("metadata" -> Message.this.toJValue))
 
       // Save stages
       //    val stagesDir = new Path(path, "stages").toString

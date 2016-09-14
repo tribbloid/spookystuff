@@ -458,7 +458,7 @@ class FlowSuite extends AbstractFlowSuite {
 
     import org.json4s.JsonDSL._
 
-    val jValue: JValue = "root" -> flow.write.message.jValue
+    val jValue: JValue = "root" -> flow.write.message.toJValue
     val jValue2 = Xml.toJson(Xml.toXml(jValue))
 
 //    pretty(jValue).shouldBe(pretty(jValue2))

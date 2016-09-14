@@ -9,8 +9,8 @@ object XMLWeakDeserializerSuite {
                    )
 
   case class StrInt(
-                     a: String,
-                     b: Int
+                     a: String = "A",
+                     b: Int = 2
                    )
 
   case class StrDbl(
@@ -32,6 +32,10 @@ object XMLWeakDeserializerSuite {
                         a: String,
                         b: Set[Int]
                       )
+
+  case class OptInt(
+                     a: Option[Int]
+                   )
 }
 
 class XMLWeakDeserializerSuite extends AbstractFlowSuite{
@@ -122,14 +126,13 @@ class XMLWeakDeserializerSuite extends AbstractFlowSuite{
     d2.toString.shouldBe("StrIntSet(a,Set(12))")
   }
 
-  //TODO: doesn't work! how to circumvent?
-//  test("empty string to Map") {
-//    val d1 = ""
-//    val json = decompose(d1)
-//
-//    val d2 = extract[Map[String, String]](json)
-//    d2.toString.shouldBe("Map()")
-//  }
+  test("empty string to Object") {
+    val d1 = ""
+    val json = decompose(d1)
+
+    val d2 = extract[OptInt](json)
+    d2.toString.shouldBe("OptInt(None)")
+  }
 
   test("empty string to Option[Map]") {
     val d1 = ""
@@ -137,5 +140,21 @@ class XMLWeakDeserializerSuite extends AbstractFlowSuite{
 
     val d2 = extract[Option[Map[String, String]]](json)
     d2.toString.shouldBe("Some(Map())")
+  }
+
+  test("missing member to default constructor value") {
+    val d1 = StrIntSeq("a", Nil)
+    val json = decompose(d1)
+
+    val d2 = extract[StrInt](json)
+    d2.toString.shouldBe("StrInt(a,2)")
+  }
+
+  test("empty string to default constructor value") {
+    val d1 = ""
+    val json = decompose(d1)
+
+    val d2 = extract[StrInt](json)
+    d2.toString.shouldBe("StrInt(A,2)")
   }
 }
