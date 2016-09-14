@@ -22,7 +22,7 @@ object SpookyUtils {
   import SpookyViews._
 
   def /:/(parts: String*): String = {
-    parts.flatMap(v => Option(v)).reduceLeft(:/(_) + _)
+    parts.flatMap(v => Option(v)).reduceLeftOption(:/(_) + _).orNull
   }
   def :/(part: String): String = {
     if (part.endsWith("/")) part
@@ -30,7 +30,7 @@ object SpookyUtils {
   }
 
   def \\\(parts: String*): String = {
-    parts.flatMap(v => Option(v)).reduceLeft(:\(_) + _)
+    parts.flatMap(v => Option(v)).reduceLeftOption(:\(_) + _).orNull
   }
   def :\(part: String): String = {
     if (part.endsWith(File.separator)) part
