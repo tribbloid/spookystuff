@@ -231,7 +231,7 @@ object DriverFactories {
     override def deploy(spooky: SpookyContext): Unit = delegate.deploy(spooky)
   }
 
-  import com.tribbloids.spookystuff.utils.ImplicitUtils._
+  import com.tribbloids.spookystuff.utils.SpookyViews._
 
   object PhantomJS {
 
@@ -239,7 +239,7 @@ object DriverFactories {
 
     final def uri2fileName(path: String) = path.split("/").last
 
-    final def DEFAULT_PATH = System.getProperty("user.home") :/ ".spookystuff/phantomjs"
+    final def DEFAULT_PATH = System.getProperty("user.home") \\ ".spookystuff" \\ "phantomjs"
 
     def defaultGetPath: SpookyContext => String = {
       _ =>

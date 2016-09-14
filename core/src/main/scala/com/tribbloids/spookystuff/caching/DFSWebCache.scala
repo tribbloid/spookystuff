@@ -16,7 +16,7 @@ object DFSWebCache extends AbstractWebCache {
 
   def getImpl(k: Trace, spooky: SpookyContext): Option[Seq[Fetched]] = {
 
-    val pathStr = SpookyUtils.pathConcat(
+    val pathStr = SpookyUtils.\\\(
       spooky.conf.dirs.cache,
       spooky.conf.cacheFilePath(k).toString
     )
@@ -34,7 +34,7 @@ object DFSWebCache extends AbstractWebCache {
 
   def putImpl(k: Trace, v: Seq[Fetched], spooky: SpookyContext): this.type = {
 
-    val pathStr = SpookyUtils.pathConcat(
+    val pathStr = SpookyUtils.\\\(
       spooky.conf.dirs.cache,
       spooky.conf.cacheFilePath(v.head.uid.backtrace).toString,
       UUID.randomUUID().toString

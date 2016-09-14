@@ -69,11 +69,11 @@ object FilePaths{
   //only from Page
   case class UUIDName(encoder: ByTrace[Any]) extends ByDoc[String] {
     override def apply(page: Doc): String =
-      SpookyUtils.pathConcat(encoder(page.uid.backtrace).toString, UUID.randomUUID().toString)
+      SpookyUtils.\\\(encoder(page.uid.backtrace).toString, UUID.randomUUID().toString)
   }
 
   case class TimeStampName(encoder: ByTrace[Any]) extends ByDoc[String] {
     override def apply(page: Doc): String =
-      SpookyUtils.pathConcat(encoder(page.uid.backtrace).toString, SpookyUtils.canonizeFileName(page.timeMillis.toString))
+      SpookyUtils.\\\(encoder(page.uid.backtrace).toString, SpookyUtils.canonizeFileName(page.timeMillis.toString))
   }
 }

@@ -49,7 +49,7 @@ case class ScalaDynamicExtractor[T](
                                      argsOpt: Option[List[GenExtractor[T, _]]]
                                    ) extends GenExtractor[T, Any] {
 
-  import com.tribbloids.spookystuff.utils.ImplicitUtils._
+  import com.tribbloids.spookystuff.utils.SpookyViews._
 
   //only used to show TreeNode
   override protected def _args: Seq[GenExtractor[_, _]] = Seq(base) ++ argsOpt.toList.flatten

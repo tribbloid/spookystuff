@@ -11,7 +11,7 @@ import org.apache.spark.sql.types._
 class TypeConverterSuite extends SpookyEnvFixture {
 
   import ScalaReflection.universe._
-  import ImplicitUtils._
+  import SpookyViews._
 
   /**
     * please keep this test to quickly identify any potential problems caused by changes in scala reflection API in the future

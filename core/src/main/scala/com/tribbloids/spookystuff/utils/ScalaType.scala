@@ -1,6 +1,6 @@
 package com.tribbloids.spookystuff.utils
 
-import com.tribbloids.spookystuff.utils.ImplicitUtils._
+import com.tribbloids.spookystuff.utils.SpookyViews._
 import org.apache.spark.sql.catalyst.ScalaReflection.universe._
 import org.apache.spark.sql.types._
 

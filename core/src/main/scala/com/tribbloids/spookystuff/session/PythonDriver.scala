@@ -7,16 +7,16 @@ import com.tribbloids.spookystuff.utils.SpookyUtils
 
 object PythonDriver {
 
-  import com.tribbloids.spookystuff.utils.ImplicitUtils._
+  import com.tribbloids.spookystuff.utils.SpookyViews._
 
-  final val DEFAULT_PYTHON_PATH = System.getProperty("user.home") :/ ".spookystuff/pythonpath"
+  final val DEFAULT_PYTHON_PATH = System.getProperty("user.home") \\ ".spookystuff" \\ "pythonpath"
   final val MODULE_NAME = "pyspookystuff"
   final val MODULE_RESOURCE = "com/tribbloids/" :/ MODULE_NAME
   final val PYTHON_LIB_RESOURCE = "com/tribbloids/spookystuff/lib/python"
 
   final val errorInLastLine: Pattern = Pattern.compile(".*(Error|Exception):.*$")
 
-  import com.tribbloids.spookystuff.utils.ImplicitUtils._
+  import com.tribbloids.spookystuff.utils.SpookyViews._
 
   lazy val deploy: String = {
     val pythonPath: String = PythonDriver.DEFAULT_PYTHON_PATH // extract pyspookystuff from resources temporarily on workers

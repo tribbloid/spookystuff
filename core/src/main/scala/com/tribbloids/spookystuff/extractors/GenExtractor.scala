@@ -3,7 +3,7 @@ package com.tribbloids.spookystuff.extractors
 import com.tribbloids.spookystuff.Const
 import com.tribbloids.spookystuff.extractors.GenExtractor._
 import com.tribbloids.spookystuff.row.Field
-import com.tribbloids.spookystuff.utils.ImplicitUtils._
+import com.tribbloids.spookystuff.utils.SpookyViews._
 import com.tribbloids.spookystuff.utils.{SpookyUtils, UnreifiedScalaType}
 import org.apache.spark.sql.catalyst.ScalaReflection.universe._
 import org.apache.spark.sql.catalyst.trees.TreeNode

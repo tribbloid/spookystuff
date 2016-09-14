@@ -51,7 +51,7 @@ class Example(
 
 class ScalaReflectionSuite extends FunSuite with TestMixin {
 
-  import com.tribbloids.spookystuff.utils.ImplicitUtils.DataTypeView
+  import com.tribbloids.spookystuff.utils.SpookyViews.DataTypeView
 
   lazy val exLit: Literal[FetchedRow, _] = Literal(new Example())
   lazy val exType: DataType = UnreifiedScalaType.apply[Example]

@@ -10,7 +10,7 @@ import org.apache.spark.sql.types._
 import scala.collection.TraversableOnce
 import scala.collection.immutable.ListMap
 import scala.reflect.ClassTag
-import com.tribbloids.spookystuff.utils.ImplicitUtils._
+import com.tribbloids.spookystuff.utils.SpookyViews._
 import org.apache.spark.ml.dsl.utils.MessageView
 
 object Extractors {

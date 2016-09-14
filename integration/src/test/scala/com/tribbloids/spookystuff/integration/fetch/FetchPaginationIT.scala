@@ -9,7 +9,7 @@ import com.tribbloids.spookystuff.integration.IntegrationFixture
   */
 class FetchPaginationIT extends IntegrationFixture {
 
-  import com.tribbloids.spookystuff.utils.ImplicitUtils._
+  import com.tribbloids.spookystuff.utils.SpookyViews._
 
 //  override lazy val driverFactories = Seq(
 //    phantomJS //TODO: HtmlUnit does not support Backbone.js

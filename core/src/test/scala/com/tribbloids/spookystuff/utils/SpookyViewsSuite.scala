@@ -7,9 +7,9 @@ import scala.util.Random
 /**
   * Created by peng on 16/11/15.
   */
-class ImplicitUtilsSuite extends SpookyEnvFixture {
+class SpookyViewsSuite extends SpookyEnvFixture {
 
-  import ImplicitUtils._
+  import SpookyViews._
 
   test("multiPassFlatMap should yield same result as flatMap") {
 
@@ -57,6 +57,17 @@ class ImplicitUtilsSuite extends SpookyEnvFixture {
     assert(Array(1, 2.2, "a").filterByType[Double].toSeq == Seq(2.2))
     assert(Array(1, 2.2, "a").filterByType[java.lang.Double].toSeq == Seq(2.2: java.lang.Double))
     assert(Array(1, 2.2, "a").filterByType[String].toSeq == Seq("a"))
+  }
+
+  val nullStr = null: String
+  test(":/ can handle null component") {
+
+    assert(nullStr :/ nullStr :/ "abc" :/ null :/ null == "abc")
+  }
+
+  test("\\\\ can handle null component") {
+
+    assert(nullStr \\ nullStr \\ "abc" \\ null \\ null == "abc")
   }
 
 //  test("1") {

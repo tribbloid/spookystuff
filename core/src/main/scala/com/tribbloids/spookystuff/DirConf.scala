@@ -16,10 +16,10 @@ case class DirConf(
                     var _errorScreenshotLocal: String = null//System.getProperty("spooky.dirs.errorscreenshot.local")
                   ) extends AbstractConf {
 
-  import com.tribbloids.spookystuff.utils.ImplicitUtils._
+  import com.tribbloids.spookystuff.utils.SpookyViews._
 
-  def root_/(subdir: String): String = Option(root).map(_ :/ subdir).orNull
-  def localRoot_/(subdir: String) = Option(root).map(_ :/ subdir).orNull
+  def root_\(subdir: String): String = Option(root).map(_ \\ subdir).orNull
+  def localRoot_\(subdir: String) = Option(root).map(_ \\ subdir).orNull
 
   def autoSave_=(v: String): Unit = _autoSave = v
   def cache_=(v: String): Unit = _cache = v
@@ -29,13 +29,13 @@ case class DirConf(
   def errorDumpLocal_=(v: String): Unit = _errorDumpLocal = v
   def errorScreenshotLocal_=(v: String): Unit = _errorScreenshotLocal = v
 
-  def autoSave: String = Option(_autoSave).getOrElse(root_/("autosave"))
-  def cache: String = Option(_autoSave).getOrElse(root_/("cache"))
-  def errorDump: String = Option(_autoSave).getOrElse(root_/("errorDump"))
-  def errorScreenshot: String = Option(_autoSave).getOrElse(root_/("errorScreenshot"))
-  def checkpoint: String = Option(_autoSave).getOrElse(root_/("checkpoint"))
-  def errorDumpLocal: String = Option(_autoSave).getOrElse(localRoot_/("errorDump"))
-  def errorScreenshotLocal: String = Option(_autoSave).getOrElse(localRoot_/("errorScreenshot"))
+  def autoSave: String = Option(_autoSave).getOrElse(root_\("autosave"))
+  def cache: String = Option(_autoSave).getOrElse(root_\("cache"))
+  def errorDump: String = Option(_autoSave).getOrElse(root_\("errorDump"))
+  def errorScreenshot: String = Option(_autoSave).getOrElse(root_\("errorScreenshot"))
+  def checkpoint: String = Option(_autoSave).getOrElse(root_\("checkpoint"))
+  def errorDumpLocal: String = Option(_autoSave).getOrElse(localRoot_\("errorDump"))
+  def errorScreenshotLocal: String = Option(_autoSave).getOrElse(localRoot_\("errorScreenshot"))
 
   // TODO: use reflection to automate
   override def importFrom(implicit sparkConf: SparkConf): DirConf = {

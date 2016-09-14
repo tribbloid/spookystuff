@@ -3,7 +3,7 @@ package com.tribbloids.spookystuff.row
 import java.util.UUID
 
 import com.tribbloids.spookystuff.Const
-import com.tribbloids.spookystuff.utils.{ImplicitUtils, SpookyUtils}
+import com.tribbloids.spookystuff.utils.{SpookyViews, SpookyUtils}
 
 import scala.reflect.ClassTag
 
@@ -21,7 +21,7 @@ case class DataRow(
                     freeze: Boolean = false //if set to true PageRow.extract won't insert anything into it, used in merge/replace join
                   ) extends SpookyRow {
 
-  import ImplicitUtils._
+  import SpookyViews._
 
   def copyWithArgs(
                     data: Data = this.data,

@@ -7,7 +7,7 @@ import com.tribbloids.spookystuff.doc.DocUtils
 
 class FetchWgetAndSaveIT extends IntegrationFixture {
 
-  import com.tribbloids.spookystuff.utils.ImplicitUtils._
+  import com.tribbloids.spookystuff.utils.SpookyViews._
 
   override lazy val driverFactories = Seq(
     null

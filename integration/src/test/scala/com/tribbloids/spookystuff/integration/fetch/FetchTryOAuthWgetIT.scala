@@ -17,7 +17,7 @@ class FetchTryOAuthWgetIT extends UncacheableIntegrationFixture {
   override def doMain() {
 
     val spooky = this.spooky
-    import com.tribbloids.spookystuff.utils.ImplicitUtils._
+    import com.tribbloids.spookystuff.utils.SpookyViews._
     import spooky.dsl._
 
     val RDD = sc.parallelize(Seq("http://malformed uri"))

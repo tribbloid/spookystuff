@@ -5,7 +5,6 @@ import java.net._
 import java.nio.file._
 import java.util.zip.ZipInputStream
 
-import org.apache.commons.io.FileUtils
 import org.apache.spark.ml.dsl.ReflectionUtils
 import org.apache.spark.sql.catalyst.ScalaReflection
 import org.slf4j.LoggerFactory
@@ -19,8 +18,24 @@ import scala.xml.PrettyPrinter
 
 object SpookyUtils {
 
-  import ImplicitUtils._
   import ScalaReflection.universe._
+  import SpookyViews._
+
+  def /:/(parts: String*): String = {
+    parts.flatMap(v => Option(v)).reduceLeft(:/(_) + _)
+  }
+  def :/(part: String): String = {
+    if (part.endsWith("/")) part
+    else part+"/"
+  }
+
+  def \\\(parts: String*): String = {
+    parts.flatMap(v => Option(v)).reduceLeft(:\(_) + _)
+  }
+  def :\(part: String): String = {
+    if (part.endsWith(File.separator)) part
+    else part+File.separator
+  }
 
   def numCores = {
     val result = Runtime.getRuntime.availableProcessors()
@@ -30,8 +45,6 @@ object SpookyUtils {
 
   val xmlPrinter = new PrettyPrinter(Int.MaxValue, 2)
   //  val logger = LoggerFactory.getLogger(this.getClass)
-
-  val \\\ = File.separator
 
   // Returning T, throwing the exception on failure
   @annotation.tailrec
@@ -75,10 +88,6 @@ object SpookyUtils {
   //  def retryWithDeadline[T](n: Int, t: Duration)(fn: => T): T = retry(n){withDeadline(t){fn}}
 
   @transient lazy val random = new util.Random()
-
-  def pathConcat(parts: String*): String = {
-    parts.reduceOption(_ :/ _).getOrElse("")
-  }
 
   /*
 For Amazon S3:
@@ -237,9 +246,9 @@ These special characters are often called "metacharacters".
   }.toList
 
   def getCPResource(str: String): Option[URL] =
-    Option(ClassLoader.getSystemClassLoader.getResource(str.stripSuffix(SpookyUtils.\\\)))
+    Option(ClassLoader.getSystemClassLoader.getResource(str.stripSuffix(File.separator)))
   def getCPResourceAsStream(str: String): Option[InputStream] =
-    Option(ClassLoader.getSystemClassLoader.getResourceAsStream(str.stripSuffix(SpookyUtils.\\\)))
+    Option(ClassLoader.getSystemClassLoader.getResourceAsStream(str.stripSuffix(File.separator)))
 
   def addCPResource(urlStr: String): Unit = {
 

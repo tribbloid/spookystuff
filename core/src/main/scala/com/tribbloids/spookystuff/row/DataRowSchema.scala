@@ -16,7 +16,7 @@ case class DataRowSchema(
                           map: ListMap[Field, DataType] = ListMap.empty
                         ) extends ScalaUDT[DataRow] {
 
-  import com.tribbloids.spookystuff.utils.ImplicitUtils._
+  import com.tribbloids.spookystuff.utils.SpookyViews._
 
   final def fields: List[Field] = map.keys.toList
   final def typedFields: List[TypedField] = map.iterator.toList.map(tuple => TypedField(tuple._1, tuple._2))

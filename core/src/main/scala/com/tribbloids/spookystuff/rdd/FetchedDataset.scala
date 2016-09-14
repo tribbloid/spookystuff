@@ -6,7 +6,7 @@ import com.tribbloids.spookystuff.dsl.{ExploreAlgorithm, FetchOptimizer, JoinTyp
 import com.tribbloids.spookystuff.execution.{ExplorePlan, FetchPlan, _}
 import com.tribbloids.spookystuff.extractors.{GetExpr, _}
 import com.tribbloids.spookystuff.row.{Field, _}
-import com.tribbloids.spookystuff.utils.{ImplicitUtils, SpookyUtils}
+import com.tribbloids.spookystuff.utils.{SpookyViews, SpookyUtils}
 import com.tribbloids.spookystuff.{Const, SpookyConf, SpookyContext}
 import org.apache.spark.Partitioner
 import org.apache.spark.rdd.RDD
@@ -36,7 +36,7 @@ case class FetchedDataset(
                            plan: ExecutionPlan
                          ) extends FetchedRDDAPI {
 
-  import ImplicitUtils._
+  import SpookyViews._
   import plan.CacheQueueView
 
   import scala.Ordering.Implicits._

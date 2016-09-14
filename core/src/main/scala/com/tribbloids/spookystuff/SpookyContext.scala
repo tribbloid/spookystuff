@@ -40,7 +40,7 @@ case class SpookyContext private (
     this(new SparkContext(conf))
   }
 
-  import com.tribbloids.spookystuff.utils.ImplicitUtils._
+  import com.tribbloids.spookystuff.utils.SpookyViews._
   import org.apache.spark.sql.catalyst.ScalaReflection.universe._
 
   def isOnDriver: Boolean = sqlContext != null
@@ -129,7 +129,7 @@ case class SpookyContext private (
 
   object dsl extends Serializable {
 
-    import com.tribbloids.spookystuff.utils.ImplicitUtils._
+    import com.tribbloids.spookystuff.utils.SpookyViews._
 
     implicit def dataFrameToPageRowRDD(df: DataFrame): FetchedDataset = {
       val self: SquashedFetchedRDD = new DataFrameView(df)

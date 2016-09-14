@@ -246,7 +246,7 @@ case class Doc(
             overwrite: Boolean = false
           )(spooky: SpookyContext): Unit = {
 
-    val path = SpookyUtils.pathConcat(pathParts: _*)
+    val path = SpookyUtils.\\\(pathParts: _*)
 
     DocUtils.dfsWrite("save", path, spooky) {
 

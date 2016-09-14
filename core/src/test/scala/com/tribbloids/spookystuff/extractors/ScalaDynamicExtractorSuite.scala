@@ -13,7 +13,7 @@ import org.apache.spark.sql.types._
 class ScalaDynamicExtractorSuite extends SpookyEnvFixture {
 
   import com.tribbloids.spookystuff.dsl._
-  import com.tribbloids.spookystuff.utils.ImplicitUtils._
+  import com.tribbloids.spookystuff.utils.SpookyViews._
   val doc = Wget(HTML_URL).fetch(spooky).head
 
   test("can resolve Fetched.timestamp") {

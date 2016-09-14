@@ -11,7 +11,7 @@ import org.apache.spark.sql.types.DataType
   */
 class ScalaUDTSuite extends SpookyEnvFixture with TestMixin {
 
-  import ImplicitUtils._
+  import SpookyViews._
   import org.apache.spark.sql.catalyst.ScalaReflection.universe._
 
   def getAndTestReifiedType[T: TypeTag]: DataType = {

@@ -19,7 +19,7 @@ import scala.reflect.ClassTag
   * Created by peng on 11/7/14.
   * implicit conversions in this package are used for development only
   */
-object ImplicitUtils {
+object SpookyViews {
 
   val SPARK_JOB_DESCRIPTION = "spark.job.description"
   val SPARK_JOB_GROUP_ID = "spark.jobGroup.id"
@@ -406,14 +406,8 @@ object ImplicitUtils {
 
   implicit class StringView(str: String) {
 
-    lazy val slashed = pathSlash(str)
-
-    def :/(other: String): String = slashed + other
-
-    def pathSlash(part: String): String = {
-      if (part.endsWith(SpookyUtils.\\\)) part
-      else part + SpookyUtils.\\\
-    }
+    def :/(other: String): String = SpookyUtils./:/(str, other)
+    def \\(other: String): String = SpookyUtils.\\\(str, other)
   }
 
   import ScalaReflection.universe._
