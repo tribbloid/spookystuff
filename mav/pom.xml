@@ -51,6 +51,7 @@
                                 <argument>install</argument>
                                 <argument>-r</argument>
                                 <argument>requirements.txt</argument>
+                                <argument>--upgrade</argument>
                                 <argument>--force-reinstall</argument>
                                 <argument>--ignore-installed</argument>
                                 <!--no double quotes! automatically escaped-->
