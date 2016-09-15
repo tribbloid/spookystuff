@@ -17,14 +17,14 @@ trait TestMixin {
       val a = str.split("\n").toList.filterNot(_.replaceAllLiterally(" ","").isEmpty)
         .map(v => ("|" + v).trim.stripPrefix("|"))
 
-      def originalStr = "================================[ORIGINAL]=================================\n" +
+      def originalStr = "================================ [ACTUAL] =================================\n" +
         a.mkString("\n") + "\n"
 
       Option(gd) match {
         case None =>
           println(originalStr)
         case Some(_gd) =>
-          val b = _gd.split("\n").toList.filterNot(_.replaceAllLiterally(" ","").isEmpty)
+          val b = _gd.trim.stripMargin.split("\n").toList.filterNot(_.replaceAllLiterally(" ","").isEmpty)
             .map(v => ("|" + v).trim.stripPrefix("|"))
           //          val patch = DiffUtils.diff(a, b)
           //          val unified = DiffUtils.generateUnifiedDiff("Output", "GroundTruth", a, patch, 1)
@@ -34,27 +34,61 @@ trait TestMixin {
             a == b,
             {
               println(originalStr)
-              "\n==============================[GROUND TRUTH]===============================\n" +
+              "\n=============================== [EXPECTED] ================================\n" +
                 b.mkString("\n") + "\n"
             }
           )
       }
     }
 
-//    def uriContains(contains: String): Boolean = {
-//      str.contains(contains) &&
-//        str.contains(URLEncoder.encode(contains,"UTF-8"))
-//    }
-//
-//    def assertUriContains(contains: String): Unit = {
-//      assert(
-//        str.contains(contains) &&
-//        str.contains(URLEncoder.encode(contains,"UTF-8")),
-//        s"$str doesn't contain either:\n" +
-//          s"$contains OR\n" +
-//          s"${URLEncoder.encode(contains,"UTF-8")}"
-//      )
-//    }
+    def shouldBeLike(gd: String = null): Unit = {
+      val a = str.split("\n").toList.filterNot(_.replaceAllLiterally(" ","").isEmpty)
+        .map(v => ("|" + v).trim.stripPrefix("|"))
+
+      def originalStr = "================================ [ACTUAL] =================================\n" +
+        a.mkString("\n") + "\n"
+
+      Option(gd) match {
+        case None =>
+          println(originalStr)
+        case Some(_gd) =>
+          val b = _gd.trim.stripMargin.split("\n").toList.filterNot(_.replaceAllLiterally(" ","").isEmpty)
+            .map(v => ("|" + v).trim.stripPrefix("|"))
+
+          a.zip(b).foreach {
+            tuple =>
+              val fixes = tuple._2.split(" [\\.]{6,} ", 2)
+              def errStr = {
+                println(originalStr)
+                "\n=============================== [EXPECTED] ================================\n" +
+                  b.mkString("\n") + "\n"
+              }
+              assert(
+                tuple._1.startsWith(fixes.head),
+                errStr
+              )
+              assert(
+                tuple._1.endsWith(fixes.last),
+                errStr
+              )
+          }
+      }
+    }
+
+    //    def uriContains(contains: String): Boolean = {
+    //      str.contains(contains) &&
+    //        str.contains(URLEncoder.encode(contains,"UTF-8"))
+    //    }
+    //
+    //    def assertUriContains(contains: String): Unit = {
+    //      assert(
+    //        str.contains(contains) &&
+    //        str.contains(URLEncoder.encode(contains,"UTF-8")),
+    //        s"$str doesn't contain either:\n" +
+    //          s"$contains OR\n" +
+    //          s"${URLEncoder.encode(contains,"UTF-8")}"
+    //      )
+    //    }
   }
 
   implicit class TestMapView[K, V](map: scala.collection.Map[K, V]) {
