@@ -24,7 +24,7 @@ trait TestMixin {
         case None =>
           println(originalStr)
         case Some(_gd) =>
-          val b = _gd.trim.stripMargin.split("\n").toList.filterNot(_.replaceAllLiterally(" ","").isEmpty)
+          val b = _gd.split("\n").toList.filterNot(_.replaceAllLiterally(" ","").isEmpty)
             .map(v => ("|" + v).trim.stripPrefix("|"))
           //          val patch = DiffUtils.diff(a, b)
           //          val unified = DiffUtils.generateUnifiedDiff("Output", "GroundTruth", a, patch, 1)
@@ -52,7 +52,7 @@ trait TestMixin {
         case None =>
           println(originalStr)
         case Some(_gd) =>
-          val b = _gd.trim.stripMargin.split("\n").toList.filterNot(_.replaceAllLiterally(" ","").isEmpty)
+          val b = _gd.split("\n").toList.filterNot(_.replaceAllLiterally(" ","").isEmpty)
             .map(v => ("|" + v).trim.stripPrefix("|"))
 
           a.zip(b).foreach {
