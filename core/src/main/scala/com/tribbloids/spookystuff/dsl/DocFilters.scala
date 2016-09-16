@@ -39,8 +39,15 @@ object DocFilters {
     override def apply(result: Doc, session: Session): Doc = {
       assertStatusCode(result)
       if (result.mimeType.contains("html")){
-        assert(result.\("html").\("title").text.getOrElse("").nonEmpty, s"Html Page @ ${result.uri} has no title")
-        LoggerFactory.getLogger(this.getClass).info(s"Html Page @ ${result.uri} has no title:\n${result.code}")
+        assert(
+          result.\("html").\("title").text.getOrElse("").nonEmpty,
+          s"Html Page @ ${result.uri} has no title" +
+            result.code.map {
+              code =>
+                ":\n" + code.slice(0,500)
+            }
+              .getOrElse("")
+        )
       }
       result
     }

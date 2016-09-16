@@ -572,12 +572,13 @@ case class WpostImpl private[actions](
     val txt = entity match {
       case v: StringEntity =>
         val text = v.toString + "\n" + IOUtils.toString(v.getContent)
-        text.split("\n")
-          .map(
-            v =>
-              "\t" + v
-          )
-          .mkString("\n")
+        text
+//          .split("\n")
+//          .map(
+//            v =>
+//              "\t" + v
+//          )
+//          .mkString("\n")
       case _ => entity.toString
     }
     txt + "\n"
