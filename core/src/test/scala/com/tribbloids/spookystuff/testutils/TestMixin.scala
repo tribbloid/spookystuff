@@ -12,10 +12,14 @@ trait TestMixin {
 
   implicit class TestStringView(str: String) {
 
+    import Ordering.Implicits._
+
     //TODO: use reflection to figure out test name and annotate
-    def shouldBe(gd: String = null): Unit = {
-      val a = str.split("\n").toList.filterNot(_.replaceAllLiterally(" ","").isEmpty)
+    def shouldBe(gd: String = null, sort: Boolean = false): Unit = {
+      val aRaw: List[String] = str.split("\n").toList.filterNot(_.replaceAllLiterally(" ","").isEmpty)
         .map(v => ("|" + v).trim.stripPrefix("|"))
+      val a = if (sort) aRaw.sorted
+      else aRaw
 
       def originalStr = "================================ [ACTUAL] =================================\n" +
         a.mkString("\n") + "\n"
@@ -24,8 +28,10 @@ trait TestMixin {
         case None =>
           println(originalStr)
         case Some(_gd) =>
-          val b = _gd.split("\n").toList.filterNot(_.replaceAllLiterally(" ","").isEmpty)
+          val bRaw = _gd.split("\n").toList.filterNot(_.replaceAllLiterally(" ","").isEmpty)
             .map(v => ("|" + v).trim.stripPrefix("|"))
+          val b = if (sort) bRaw.sorted
+          else bRaw
           //          val patch = DiffUtils.diff(a, b)
           //          val unified = DiffUtils.generateUnifiedDiff("Output", "GroundTruth", a, patch, 1)
           //
@@ -40,10 +46,13 @@ trait TestMixin {
           )
       }
     }
+    def rowsShouldBe(gd: String = null) = shouldBe(gd, sort = true)
 
-    def shouldBeLike(gd: String = null): Unit = {
-      val a = str.split("\n").toList.filterNot(_.replaceAllLiterally(" ","").isEmpty)
+    def shouldBeLike(gd: String = null, sort: Boolean = false): Unit = {
+      val aRaw: List[String] = str.split("\n").toList.filterNot(_.replaceAllLiterally(" ","").isEmpty)
         .map(v => ("|" + v).trim.stripPrefix("|"))
+      val a = if (sort) aRaw.sorted
+      else aRaw
 
       def originalStr = "================================ [ACTUAL] =================================\n" +
         a.mkString("\n") + "\n"
@@ -52,8 +61,10 @@ trait TestMixin {
         case None =>
           println(originalStr)
         case Some(_gd) =>
-          val b = _gd.split("\n").toList.filterNot(_.replaceAllLiterally(" ","").isEmpty)
+          val bRaw = _gd.split("\n").toList.filterNot(_.replaceAllLiterally(" ","").isEmpty)
             .map(v => ("|" + v).trim.stripPrefix("|"))
+          val b = if (sort) bRaw.sorted
+          else bRaw
 
           a.zip(b).foreach {
             tuple =>
@@ -74,6 +85,8 @@ trait TestMixin {
           }
       }
     }
+
+    def rowsShouldBeLike(gd: String = null) = shouldBeLike(gd, sort = true)
 
     //    def uriContains(contains: String): Boolean = {
     //      str.contains(contains) &&

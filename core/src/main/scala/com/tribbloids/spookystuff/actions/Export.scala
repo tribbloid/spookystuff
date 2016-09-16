@@ -1,6 +1,6 @@
 package com.tribbloids.spookystuff.actions
 
-import java.io.{Closeable, FileNotFoundException}
+import java.io.Closeable
 import java.lang.reflect.InvocationTargetException
 import java.net.{InetSocketAddress, URI, URLConnection}
 import java.util.Date
@@ -565,8 +565,23 @@ case class WpostImpl private[actions](
                                        uri: Extractor[Any],
                                        override val filter: DocFilter
                                      )(
-                                       entity: HttpEntity // TODO: cannot be dumped or serialized
+                                       entity: HttpEntity // TODO: cannot be dumped or serialized, fix it!
                                      ) extends HttpMethod(uri) {
+
+  override def extraToString = {
+    val txt = entity match {
+      case v: StringEntity =>
+        val text = v.toString + "\n" + IOUtils.toString(v.getContent)
+        text.split("\n")
+          .map(
+            v =>
+              "\t" + v
+          )
+          .mkString("\n")
+      case _ => entity.toString
+    }
+    txt + "\n"
+  }
 
   // not cacheable
   override def doExeNoName(session: Session): Seq[Fetched] = {

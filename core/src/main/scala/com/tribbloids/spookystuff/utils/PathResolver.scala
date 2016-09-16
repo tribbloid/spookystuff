@@ -2,7 +2,7 @@ package com.tribbloids.spookystuff.utils
 
 import java.io._
 import java.nio.file.FileAlreadyExistsException
-import java.security.{PrivilegedAction, PrivilegedActionException}
+import java.security.PrivilegedActionException
 
 import com.tribbloids.spookystuff.Const
 import org.apache.hadoop
@@ -133,6 +133,8 @@ case class HDFSResolver(
                          @transient ugiOverride: Option[UserGroupInformation] = None
                        ) extends PathResolver {
 
+  import SpookyViews.FunctionToPrivilegedAction
+
   def lockedSuffix: String = ".locked"
 
   val confBinary = new BinaryWritable(hadoopConf)
@@ -160,11 +162,7 @@ case class HDFSResolver(
       case Some(ugi) =>
         try {
           ugi.doAs {
-            new PrivilegedAction[T] {
-              override def run(): T = {
-                f
-              }
-            }
+            f
           }
         }
         catch {

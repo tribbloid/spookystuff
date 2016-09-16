@@ -3,11 +3,11 @@ package com.tribbloids.spookystuff.dsl
 import com.tribbloids.spookystuff.actions.DocFilter
 import com.tribbloids.spookystuff.doc.Doc
 import com.tribbloids.spookystuff.session.Session
-import com.tribbloids.spookystuff.utils.PrettyToStringMixin
+import com.tribbloids.spookystuff.utils.PrettyProduct
 import org.slf4j.LoggerFactory
 
 //TODO: support chaining & extends ExpressionLike/TreeNode
-trait AbstractDocFilter extends DocFilter with PrettyToStringMixin {
+trait AbstractDocFilter extends DocFilter with PrettyProduct {
 
   def assertStatusCode(page: Doc){
     page.httpStatus.foreach {

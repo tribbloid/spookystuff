@@ -1,5 +1,6 @@
 package com.tribbloids.spookystuff.utils
 
+import java.security.PrivilegedAction
 import java.sql.{Date, Timestamp}
 
 import com.tribbloids.spookystuff.row._
@@ -26,6 +27,12 @@ object SpookyViews {
   val SPARK_JOB_INTERRUPT_ON_CANCEL = "spark.job.interruptOnCancel"
   val RDD_SCOPE_KEY = "spark.rdd.scope"
   val RDD_SCOPE_NO_OVERRIDE_KEY = "spark.rdd.scope.noOverride"
+
+  implicit class FunctionToPrivilegedAction[T](f: => T) extends PrivilegedAction[T] {
+    override def run(): T = {
+      f
+    }
+  }
 
   implicit class SparkContextView(val self: SparkContext) {
 
