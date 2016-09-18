@@ -7,7 +7,7 @@ import com.tribbloids.spookystuff.utils.PrettyProduct
 import org.slf4j.LoggerFactory
 
 //TODO: support chaining & extends ExpressionLike/TreeNode
-trait AbstractDocFilter extends DocFilter with PrettyProduct {
+trait AbstractDocFilter extends DocFilter {
 
   def assertStatusCode(page: Doc){
     page.httpStatus.foreach {

@@ -7,7 +7,9 @@ import scala.runtime.ScalaRunTime
   */
 trait PrettyProduct extends Product {
 
-  abstract override def toString = ScalaRunTime._toString(this) + Option(extraToString).map("\n" + _).getOrElse("")
+  abstract override def toString = ScalaRunTime._toString(this)
+
+  def toStringVerbose = ScalaRunTime._toString(this) + Option(extraToString).map("\n" + _).getOrElse("")
 
   def extraToString: String = null
 }

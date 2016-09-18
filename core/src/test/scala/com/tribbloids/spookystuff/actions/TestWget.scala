@@ -5,7 +5,7 @@ import java.sql.Timestamp
 import com.tribbloids.spookystuff.SpookyEnvFixture
 import com.tribbloids.spookystuff.doc.Doc
 import com.tribbloids.spookystuff.rdd.FetchedDataset
-import com.tribbloids.spookystuff.testutils.Tor
+import com.tribbloids.spookystuff.testutils.LocalOnly
 import org.scalatest.Tag
 import org.scalatest.tags.Retryable
 
@@ -47,7 +47,7 @@ class TestWget extends SpookyEnvFixture {
   //    assert(newIP !== noProxyIP)
   //  }
 
-  test("use TOR socks5 proxy for https wget", Tag(classOf[Tor].getCanonicalName)) {
+  test("use TOR socks5 proxy for https wget", Tag(classOf[LocalOnly].getCanonicalName)) {
 
     val newIP = {
       spooky.conf.proxy = ProxyFactories.Tor
@@ -94,7 +94,7 @@ class TestWget extends SpookyEnvFixture {
     results.head.asInstanceOf[Doc].code.get
   }
 
-  test("revert from TOR socks5 proxy for https wget", Tag(classOf[Tor].getCanonicalName)) {
+  test("revert from TOR socks5 proxy for https wget", Tag(classOf[LocalOnly].getCanonicalName)) {
 
     val newIP = {
       spooky.conf.proxy = ProxyFactories.Tor

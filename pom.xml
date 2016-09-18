@@ -306,7 +306,8 @@
                 <artifactId>scalatest-maven-plugin</artifactId>
                 <version>1.0</version>
                 <configuration>
-                    <tagsToExclude>com.tribbloids.spookystuff.testutils.Tor</tagsToExclude>
+                    <tagsToExclude>com.tribbloids.spookystuff.testutils.Unstable</tagsToExclude>
+                    <tagsToExclude>com.tribbloids.spookystuff.testutils.LocalOnly</tagsToExclude>
                 </configuration>
                 <executions>
                     <execution>

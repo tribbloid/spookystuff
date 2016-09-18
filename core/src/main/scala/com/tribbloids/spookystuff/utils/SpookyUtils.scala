@@ -5,7 +5,9 @@ import java.net._
 import java.nio.file._
 import java.util.zip.ZipInputStream
 
+import com.tribbloids.spookystuff.utils.NoRetry.BypassRetryException
 import org.apache.spark.ml.dsl.ReflectionUtils
+import org.apache.spark.ml.dsl.utils.FlowUtils
 import org.apache.spark.sql.catalyst.ScalaReflection
 import org.slf4j.LoggerFactory
 
@@ -44,7 +46,6 @@ object SpookyUtils {
   }
 
   val xmlPrinter = new PrettyPrinter(Int.MaxValue, 2)
-  //  val logger = LoggerFactory.getLogger(this.getClass)
 
   // Returning T, throwing the exception on failure
   @annotation.tailrec
@@ -52,37 +53,66 @@ object SpookyUtils {
     util.Try { fn } match {
       case util.Success(x) =>
         x
+      case util.Failure(BypassRetryException(e)) => throw e
       case util.Failure(e) if n > 1 =>
         val logger = LoggerFactory.getLogger(this.getClass)
         logger.warn(s"Retrying locally on ${e.getClass.getSimpleName}... ${n-1} time(s) left")
-        logger.info("\t\\-->", e)
+        logger.debug("\t\\-->", e)
         retry(n - 1)(fn)
       case util.Failure(e) =>
         throw e
     }
   }
 
-  @annotation.tailrec
-  def retryExplicitly[T](n: Int)(fn: => T): T = {
-    util.Try { fn } match {
-      case util.Success(x) =>
-        x
-      case util.Failure(e) if n > 1 =>
-        println(s"Retrying locally on ${e.getClass.getSimpleName}... ${n-1} time(s) left")
-        println("\t\\-->", e)
-        retryExplicitly(n - 1)(fn)
-      case util.Failure(e) =>
-        throw e
-    }
-  }
+  //  @annotation.tailrec
+  //  def retryExplicitly[T](n: Int)(fn: => T): T = {
+  //    util.Try { fn } match {
+  //      case util.Success(x) =>
+  //        x
+  //      case util.Failure(e) if n > 1 =>
+  //        println(s"Retrying locally on ${e.getClass.getSimpleName}... ${n-1} time(s) left")
+  //        println("\t\\-->", e)
+  //        retryExplicitly(n - 1)(fn)
+  //      case util.Failure(e) =>
+  //        throw e
+  //    }
+  //  }
 
-  def withDeadline[T](n: Duration)(fn: => T): T = {
+  def withDeadline[T](
+                       n: Duration,
+                       heartbeat: Option[Duration] = Some(10.seconds)
+//                       name: String = FlowUtils.getBreakpointInfo().apply(2).getMethodName
+                       //TODO: default name not working for inner function
+                     )(fn: => T): T = {
     val future = Future {
       fn
     }
 
-    //TODO: this doesn't terminate the future upon timeout exception! need a better pattern.
-    Await.result(future, n)
+    @volatile var completed = false
+    try {
+      heartbeat.foreach {
+        hb =>
+          val printer = Future {
+            val current = System.currentTimeMillis()
+            while(!completed) {
+              Thread.sleep(hb.toMillis)
+              val elapsed = (System.currentTimeMillis() - current).millis
+              val left = n.minus(elapsed)
+              assert(left.toMillis > 0, "INTERNAL ERROR: heartbeat not terminated")
+              LoggerFactory.getLogger(this.getClass).info(
+                s"T-${left.toSeconds}s"
+              )
+            }
+          }
+      }
+
+      //TODO: this doesn't terminate the future upon timeout exception! need a better pattern.
+      val result = Await.result(future, n)
+      result
+    }
+    finally {
+      completed = true
+    }
   }
 
   //  def retryWithDeadline[T](n: Int, t: Duration)(fn: => T): T = retry(n){withDeadline(t){fn}}
@@ -266,17 +296,17 @@ These special characters are often called "metacharacters".
     assert(ClassLoader.getSystemClassLoader.asInstanceOf[URLClassLoader].getURLs.contains(url))
   }
 
-//  def nioStdCopy(srcPath: Path, dstFile: File): Any = {
-//    if (!dstFile.exists()) {
-//      dstFile.getParentFile.mkdirs()
-//      Files.copy(
-//        srcPath,
-//        dstFile.toPath,
-//        StandardCopyOption.COPY_ATTRIBUTES,
-//        StandardCopyOption.REPLACE_EXISTING
-//      )
-//    }
-//  }
+  //  def nioStdCopy(srcPath: Path, dstFile: File): Any = {
+  //    if (!dstFile.exists()) {
+  //      dstFile.getParentFile.mkdirs()
+  //      Files.copy(
+  //        srcPath,
+  //        dstFile.toPath,
+  //        StandardCopyOption.COPY_ATTRIBUTES,
+  //        StandardCopyOption.REPLACE_EXISTING
+  //      )
+  //    }
+  //  }
 
   def universalCopy(srcPath: Path, dstPath: Path): Any = {
 

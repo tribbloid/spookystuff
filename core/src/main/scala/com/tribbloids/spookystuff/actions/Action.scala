@@ -119,7 +119,7 @@ trait Action extends ActionLike with ActionRelay.HasRelay{
         "| " + action.toString
     }.mkString("\n")
 
-    message += "\n+> " + this.toString
+    message += "\n+> " + this.toStringVerbose
 
     val errorDump: Boolean = session.spooky.conf.errorDump
     val errorDumpScreenshot: Boolean = session.spooky.conf.errorScreenshot
