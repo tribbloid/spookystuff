@@ -568,7 +568,7 @@ case class WpostImpl private[actions](
                                        entity: HttpEntity // TODO: cannot be dumped or serialized, fix it!
                                      ) extends HttpMethod(uri) {
 
-  override def extraToString = {
+  override def verbose = {
     val txt = entity match {
       case v: StringEntity =>
         val text = v.toString + "\n" + IOUtils.toString(v.getContent)

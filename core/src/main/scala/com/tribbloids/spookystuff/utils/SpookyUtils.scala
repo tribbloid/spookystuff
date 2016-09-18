@@ -7,7 +7,6 @@ import java.util.zip.ZipInputStream
 
 import com.tribbloids.spookystuff.utils.NoRetry.BypassRetryException
 import org.apache.spark.ml.dsl.ReflectionUtils
-import org.apache.spark.ml.dsl.utils.FlowUtils
 import org.apache.spark.sql.catalyst.ScalaReflection
 import org.slf4j.LoggerFactory
 

@@ -1,5 +1,7 @@
 package com.tribbloids.spookystuff.dsl
 
+import java.io.File
+import java.nio.file.Files
 import java.util.UUID
 
 import com.tribbloids.spookystuff.actions.Trace
@@ -9,26 +11,11 @@ import com.tribbloids.spookystuff.utils.SpookyUtils
 
 object FilePaths{
 
-  def product2String(x: Product): String = {
-    x match {
-      case v: Literal[_, _] => v.toString
-      case _ =>
-
-        x.productIterator
-          .map {
-            case vv: Product => product2String(vv)
-            case vv@ _ => "" + vv
-          }
-
-          .mkString(x.productPrefix + "/", "/", "/")
-    }
-  }
-
   case object Flat extends ByTrace[String] {
 
     override def apply(trace: Trace): String = {
 
-      val actionStrs = trace.map(product2String)
+      val actionStrs = trace.map(_.toString_\\\)
 
       val actionConcat = if (actionStrs.size > 4) {
         val oneTwoThree = actionStrs.slice(0,3)
@@ -49,16 +36,16 @@ object FilePaths{
 
     override def apply(trace: Trace): String = {
 
-      val actionStrs = trace.map(product2String)
+      val actionStrs = trace.map(_.toString_\\\)
 
       val actionConcat = if (actionStrs.size > 4) {
         val oneTwoThree = actionStrs.slice(0,3)
         val last = actionStrs.last
-        val omitted = "/" + (trace.length-4) + "more"+"/"
+        val omitted = File.separator + (trace.length-4) + "more"+ File.separator
 
-        oneTwoThree.mkString("/")+omitted+last
+        SpookyUtils.\\\(oneTwoThree: _*) + omitted + last
       }
-      else actionStrs.mkString("/")
+      else SpookyUtils.\\\(actionStrs: _*)
 
       val hash = "-"+trace.hashCode
 
