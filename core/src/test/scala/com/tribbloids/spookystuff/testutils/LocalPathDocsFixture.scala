@@ -11,7 +11,7 @@ object LocalPathDocsFixture {
   final val TESTUTILS_TEMP_PATH = TestHelper.TARGET_PATH + "generated-resources/testutils/"
   final val RESOURCE_NAME = "testutils/"
 
-  // run once per test TODO: or clean up at shutdown hook
+  // run once and for all TODO: or clean up at shutdown hook
   lazy val testResources: Unit = {
     val resourceOpt = SpookyUtils.getCPResource(RESOURCE_NAME)
     resourceOpt.foreach {
@@ -33,7 +33,7 @@ object LocalPathDocsFixture {
   }
 
   def unpackedURL(resource: String): URL = {
-    new URL(unpacked(resource))
+    new URL("file://" + unpacked(resource)) //TODO: change to File(..).getURL?
   }
 }
 
