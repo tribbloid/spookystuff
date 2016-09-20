@@ -26,89 +26,53 @@ class TestWget extends SpookyEnvFixture {
   lazy val noProxyIP: String = {
     spooky.conf.proxy = ProxyFactories.NoProxy
 
-    getIP
+    getIP()
   }
 
-  //TODO: find a test site for http!
-  //  test("use TOR socks5 proxy for http wget") {
-  //
-  //    val newIP = {
-  //      spooky.conf.proxy = ProxyFactories.Tor
-  //
-  //      val results = (
-  //        wget(USERAGENT_URL) :: Nil
-  //        ).fetch(spooky)
-  //
-  //      results.head.asInstanceOf[Page].findAll("h3.info").texts.head
-  //    }
-  //
-  //    assert(newIP !== null)
-  //    assert(newIP !== "")
-  //    assert(newIP !== noProxyIP)
-  //  }
+  Seq(
+    "http" -> HTTP_IP_URL,
+    "https" -> HTTPS_IP_URL
+  )
+    .foreach {
+      tuple =>
+        test(s"use TOR socks5 proxy for ${tuple._1} wget", Tag(classOf[LocalOnly].getCanonicalName)) {
 
-  test("use TOR socks5 proxy for https wget", Tag(classOf[LocalOnly].getCanonicalName)) {
+          val newIP = {
+            spooky.conf.proxy = ProxyFactories.Tor
 
-    val newIP = {
-      spooky.conf.proxy = ProxyFactories.Tor
+            getIP(tuple._2)
+          }
 
-      getIP
+          assert(newIP !== null)
+          assert(newIP !== "")
+          assert(newIP !== noProxyIP)
+        }
+
+        test(s"revert from TOR socks5 proxy for ${tuple._1} wget", Tag(classOf[LocalOnly].getCanonicalName)) {
+
+          val newIP = {
+            spooky.conf.proxy = ProxyFactories.Tor
+
+            getIP(tuple._2)
+          }
+
+          val noProxyIP2 = {
+            spooky.conf.proxy = ProxyFactories.NoProxy
+
+            getIP(tuple._2)
+          }
+
+          assert(newIP !== noProxyIP2)
+        }
     }
 
-    assert(newIP !== null)
-    assert(newIP !== "")
-    assert(newIP !== noProxyIP)
-  }
-
-  //  test("revert proxy setting for http wget") {
-  //
-  //    val newIP = {
-  //      spooky.conf.proxy = ProxyFactories.Tor
-  //
-  //      val results = (
-  //        wget(USERAGENT_URL) :: Nil
-  //        ).fetch(spooky)
-  //      Actions
-  //      results.head.asInstanceOf[Page].findAll("h3.info").texts.head
-  //    }
-  //
-  //    val noProxyIP2 = {
-  //      spooky.conf.proxy = ProxyFactories.NoProxy
-  //
-  //      val results = (
-  //        wget(USERAGENT_URL) :: Nil
-  //        ).fetch(spooky)
-  //
-  //      results.head.asInstanceOf[Page].findAll("h3.info").texts.head
-  //    }
-  //
-  //    assert(newIP !== noProxyIP2)
-  //  }
-
-  def getIP: String = {
+  def getIP(url: String = HTTP_IP_URL): String = {
     val results = (
-      wget(IP_URL) :: Nil
+      wget(HTTPS_IP_URL) :: Nil
       )
       .fetch(spooky)
 
     results.head.asInstanceOf[Doc].code.get
-  }
-
-  test("revert from TOR socks5 proxy for https wget", Tag(classOf[LocalOnly].getCanonicalName)) {
-
-    val newIP = {
-      spooky.conf.proxy = ProxyFactories.Tor
-
-      getIP
-    }
-
-    val noProxyIP2 = {
-      spooky.conf.proxy = ProxyFactories.NoProxy
-
-      getIP
-    }
-
-    assert(newIP !== noProxyIP2)
   }
 
   //TODO: add canonized URI check

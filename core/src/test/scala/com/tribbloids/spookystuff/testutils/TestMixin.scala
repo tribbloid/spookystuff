@@ -12,8 +12,6 @@ trait TestMixin {
 
   implicit class TestStringView(str: String) {
 
-    import Ordering.Implicits._
-
     //TODO: use reflection to figure out test name and annotate
     def shouldBe(gd: String = null, sort: Boolean = false): Unit = {
       val aRaw: List[String] = str.split("\n").toList.filterNot(_.replaceAllLiterally(" ","").isEmpty)

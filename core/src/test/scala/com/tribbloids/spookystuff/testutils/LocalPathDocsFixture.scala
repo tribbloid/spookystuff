@@ -1,5 +1,8 @@
 package com.tribbloids.spookystuff.testutils
 
+import java.net.URL
+import java.nio.file.{Path, Paths}
+
 import com.tribbloids.spookystuff.utils.SpookyUtils
 
 object LocalPathDocsFixture {
@@ -18,15 +21,25 @@ object LocalPathDocsFixture {
         )
     }
   }
+
+  def unpacked(resource: String): String = {
+    testResources
+
+    LocalPathDocsFixture.TESTUTILS_TEMP_PATH + resource.stripPrefix(LocalPathDocsFixture.RESOURCE_NAME)
+  }
+
+  def unpackedPath(resource: String): Path = {
+    Paths.get(unpacked(resource))
+  }
+
+  def unpackedURL(resource: String): URL = {
+    new URL(unpacked(resource))
+  }
 }
 
 trait LocalPathDocsFixture extends RemoteDocsFixture {
 
-  LocalPathDocsFixture.testResources
-
-  def unpacked(resource: String): String = {
-    LocalPathDocsFixture.TESTUTILS_TEMP_PATH + resource.stripPrefix(LocalPathDocsFixture.RESOURCE_NAME)
-  }
+  import LocalPathDocsFixture._
 
   override def HTML_URL = unpacked("testutils/files/Wikipedia.html")
   override def JSON_URL = unpacked("testutils/files/tribbloid.json")

@@ -307,7 +307,7 @@ object DriverFactories {
       }
       else {
         // no need to deploy
-        LoggerFactory.getLogger(this.getClass).info(s"PhantomJS already exists, no need to deploy")
+        LoggerFactory.getLogger(this.getClass).debug(s"PhantomJS already exists, no need to deploy")
       }
 
       assert(isDeployedOnWorkers(spooky))
