@@ -31,7 +31,6 @@ from pyspookystuff import mav
 #     # not mode.
 #     Idle, Active, Missing, Grounded = range(4)
 #
-#
 # class IInfo(object):
 #     """values of pool, status=Idle when initialized, if connection fail status=Missing, after which it
 #     will only be connected by poll daemon
