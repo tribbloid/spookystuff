@@ -2,13 +2,14 @@ package com.tribbloids.spookystuff.testutils
 
 import org.apache.spark.SparkEnv
 import org.apache.spark.serializer.{JavaSerializer, KryoSerializer, Serializer}
+import org.scalatest.FunSuite
 
 import scala.reflect.ClassTag
 
 /**
   * Created by peng on 17/05/16.
   */
-trait TestMixin {
+trait TestMixin extends FunSuite {
 
   implicit class TestStringView(str: String) {
 
@@ -159,4 +160,16 @@ trait TestMixin {
   def printSplitter(name: String) = {
     println(s"======================================= $name ===================================")
   }
+
+//  override def intercept[T <: AnyRef](f: => Any)(implicit manifest: Manifest[T]): T = {
+//    super.intercept{
+//      try f
+//      catch {
+//        case e: Throwable =>
+//          println("Attempt to intercept:")
+//          e.printStackTrace()
+//          throw e
+//      }
+//    }
+//  }
 }

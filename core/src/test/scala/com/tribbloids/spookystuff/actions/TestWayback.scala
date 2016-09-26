@@ -5,8 +5,9 @@ import java.util.Date
 import com.tribbloids.spookystuff.{QueryException, SpookyEnvFixture}
 
 /**
- * Created by peng on 08/09/15.
- */
+  * Created by peng on 08/09/15.
+  */
+//TODO: test independently for each cache type (after switch for different cache is implemented)
 class TestWayback extends SpookyEnvFixture {
 
   import com.tribbloids.spookystuff.dsl._
@@ -15,11 +16,12 @@ class TestWayback extends SpookyEnvFixture {
 
   test("Wget.waybackTo should work on cache") {
     spooky.conf.cacheWrite = true
-    spooky.conf.IgnoreDocsCreatedBefore = Some(new Date())
+    spooky.conf.IgnoreCachedDocsBefore = Some(new Date())
 
-    val dates: Seq[Long] = (0 to 2).toSeq.map {
+    val dates: Seq[Long] = (0 to 2).map {
       i =>
-        val pages = (Delay(5.seconds) +> Wget("http://www.wikipedia.org")).head.fetch(spooky) //5s is long enough
+        val pages = (Delay(5.seconds) +> Wget("http://www.wikipedia.org")
+          ).head.fetch(spooky) //5s is long enough
         assert(pages.size == 1)
         pages.head.timeMillis
     }
@@ -27,7 +29,7 @@ class TestWayback extends SpookyEnvFixture {
     spooky.conf.cacheRead = true
 
     val cachedPages = (Delay(5.seconds)
-        +> Wget("http://www.wikipedia.org").waybackToTimeMillis(dates(1) + 2000)
+      +> Wget("http://www.wikipedia.org").waybackToTimeMillis(dates(1) + 2000)
       ).head.fetch(spooky)
     assert(cachedPages.size == 1)
     assert(cachedPages.head.timeMillis == dates(1))
@@ -43,12 +45,13 @@ class TestWayback extends SpookyEnvFixture {
 
   test("Snapshot.waybackTo should work on cache") {
     spooky.conf.cacheWrite = true
-    spooky.conf.IgnoreDocsCreatedBefore = Some(new Date())
+    spooky.conf.IgnoreCachedDocsBefore = Some(new Date())
 
-    val dates: Seq[Long] = (0 to 2).toSeq.map {
+    val dates: Seq[Long] = (0 to 2).map {
       i =>
         val pages = (Delay(5.seconds)
-          +> Visit("http://www.wikipedia.org")).correct.head.fetch(spooky) //5s is long enough
+          +> Visit("http://www.wikipedia.org")
+          ).correct.head.fetch(spooky) //5s is long enough
         assert(pages.size == 1)
         pages.head.timeMillis
     }
@@ -74,9 +77,9 @@ class TestWayback extends SpookyEnvFixture {
 
   test("Screenshot.waybackTo should work on cache") {
     spooky.conf.cacheWrite = true
-    spooky.conf.IgnoreDocsCreatedBefore = Some(new Date())
+    spooky.conf.IgnoreCachedDocsBefore = Some(new Date())
 
-    val dates: Seq[Long] = (0 to 2).toSeq.map {
+    val dates: Seq[Long] = (0 to 2).map {
       i =>
         val pages = (Delay(5.seconds)
           +> Visit("http://www.wikipedia.org")

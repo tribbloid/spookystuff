@@ -36,7 +36,7 @@ object DFSWebCache extends AbstractWebCache {
 
     val pathStr = SpookyUtils.\\\(
       spooky.conf.dirs.cache,
-      spooky.conf.cacheFilePath(v.head.uid.backtrace).toString,
+      spooky.conf.cacheFilePath(k).toString,
       UUID.randomUUID().toString
     )
 

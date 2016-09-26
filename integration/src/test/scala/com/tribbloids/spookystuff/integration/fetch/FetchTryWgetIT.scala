@@ -32,8 +32,9 @@ class FetchTryWgetIT extends UncacheableIntegrationFixture {
     val pageRows = RDD.toStringRDD('page).collect()
     assert(pageRows sameElements Array(null))
 
+    // max cluster-wise retries defaults to 4 times, smaller than 5 but bigger than 3
     intercept[SparkException]{
-      val RDD = sc.parallelize(Seq("http://malformed uri"))
+      sc.parallelize(Seq("http://malformed uri"))
         .fetch(
           Try(Wget('_),5)
         )
@@ -44,7 +45,7 @@ class FetchTryWgetIT extends UncacheableIntegrationFixture {
 
   override def numPages= 0
 
-  override def numSessions = 1 //TODO: should be 6, why local retry and cluster-wise retry doesn't count?
+  override def numSessions = 3 //TODO: should be 6, why local retry and cluster-wise retry doesn't count?
 
   override def numDrivers = 0
 }

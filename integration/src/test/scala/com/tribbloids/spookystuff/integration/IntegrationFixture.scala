@@ -139,7 +139,7 @@ abstract class IntegrationFixture extends FunSuite with BeforeAndAfterAll with R
 
   protected def doTestBeforeCache(): Unit = {
     SpookyUtils.retry(retry) {
-      spooky.conf.IgnoreDocsCreatedBefore = Some(new Date(System.currentTimeMillis()))
+      spooky.conf.IgnoreCachedDocsBefore = Some(new Date(System.currentTimeMillis()))
       spooky.zeroMetrics()
       doMain()
       assertBeforeCache()

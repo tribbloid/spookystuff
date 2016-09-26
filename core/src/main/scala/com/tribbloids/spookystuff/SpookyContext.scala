@@ -84,7 +84,7 @@ case class SpookyContext private (
   }
 
   def zeroMetrics(): SpookyContext ={
-    metrics.clear()
+    metrics.zero()
     this
   }
 

@@ -81,12 +81,12 @@ class SpookyConf (
                    var remote: Boolean = true, //if disabled won't use remote client at all
                    var autoSave: Boolean = true,
                    var cacheWrite: Boolean = true,
-                   var cacheRead: Boolean = true,
+                   var cacheRead: Boolean = true, //TODO: this enable both in-memory and DFS cache, should allow more control
                    var errorDump: Boolean = true,
                    var errorScreenshot: Boolean = true,
 
-                   var docsLifeSpan: Duration = 7.day,
-                   var IgnoreDocsCreatedBefore: Option[Date] = None,
+                   var cachedDocsLifeSpan: Duration = 7.day,
+                   var IgnoreCachedDocsBefore: Option[Date] = None,
 
                    var cacheFilePath: ByTrace[String] = FilePaths.Hierarchical,
                    var autoSaveFilePath: ByDoc[String] = FilePaths.UUIDName(FilePaths.Hierarchical),
@@ -143,8 +143,8 @@ class SpookyConf (
       this.errorDump,
       this.errorScreenshot,
 
-      this.docsLifeSpan,
-      this.IgnoreDocsCreatedBefore,
+      this.cachedDocsLifeSpan,
+      this.IgnoreCachedDocsBefore,
 
       this.cacheFilePath,
       this.autoSaveFilePath,
@@ -177,12 +177,12 @@ class SpookyConf (
 
   def getEarliestDocCreationTime(nowMillis: Long = System.currentTimeMillis()): Long = {
 
-    val earliestTimeFromDuration = docsLifeSpan match {
+    val earliestTimeFromDuration = cachedDocsLifeSpan match {
       case inf: Infinite => Long.MinValue
       case d =>
         nowMillis - d.toMillis
     }
-    IgnoreDocsCreatedBefore match {
+    IgnoreCachedDocsBefore match {
       case Some(expire) =>
         Math.max(expire.getTime, earliestTimeFromDuration)
       case None =>

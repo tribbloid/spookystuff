@@ -15,6 +15,8 @@ case class TraceView(
                       @transient var docs: Seq[Fetched] = null //override, cannot be shuffled
                     ) extends Actions(children) with IDMixin { //remember trace is not a block! its the super container that cannot be wrapped
 
+  def docsOpt = Option(docs)
+
   //always has output (Sometimes Empty) to handle left join
   override def doInterpolate(pr: FetchedRow, schema: DataRowSchema): Option[this.type] = {
     val seq = this.doInterpolateSeq(pr, schema)
@@ -41,7 +43,12 @@ case class TraceView(
             case page: Doc => page.autoSave(spooky)
             case _ =>
           }
-          if (spooky.conf.cacheWrite) DFSWebCache.put(session.backtrace.toList ,actionResult, spooky)
+          if (spooky.conf.cacheWrite) {
+            this.docs = docs
+            val effectiveBacktrace = actionResult.head.uid.backtrace
+            InMemoryWebCache.put(effectiveBacktrace, actionResult, spooky)
+            DFSWebCache.put(effectiveBacktrace ,actionResult, spooky)
+          }
         }
         else {
           assert(actionResult.isEmpty)
@@ -83,21 +90,14 @@ case class TraceView(
 
     //fetched may yield very large documents and should only be loaded lazily and not shuffled or persisted (unless in-memory)
     def get: Seq[Fetched] = {
-      Option(docs).getOrElse{
-        refresh
+      docsOpt.getOrElse{
+        fetch
       }
     }
 
-    def refresh: Seq[Fetched] = {
+    def fetch: Seq[Fetched] = {
       val docs = TraceView.this.fetch(spooky)
-      put(docs)
       docs
-    }
-
-    def put(docs: Seq[Fetched]): this.type = {
-      TraceView.this.docs = docs
-      InMemoryWebCache.putIfAbsent(TraceView.this.children, docs, spooky)
-      this
     }
   }
 

@@ -5,7 +5,7 @@ import java.net._
 import java.nio.file._
 import java.util.zip.ZipInputStream
 
-import com.tribbloids.spookystuff.utils.NoRetry.BypassRetryException
+import com.tribbloids.spookystuff.utils.NoRetry.NoRetryWrapper
 import org.apache.spark.ml.dsl.ReflectionUtils
 import org.apache.spark.sql.catalyst.ScalaReflection
 import org.slf4j.LoggerFactory
@@ -48,34 +48,21 @@ object SpookyUtils {
 
   // Returning T, throwing the exception on failure
   @annotation.tailrec
-  def retry[T](n: Int)(fn: => T): T = {
+  def retry[T](n: Int, interval: Long = 0)(fn: => T): T = {
     util.Try { fn } match {
       case util.Success(x) =>
         x
-      case util.Failure(BypassRetryException(e)) => throw e
+      case util.Failure(e: NoRetryWrapper) => throw e.getCause
       case util.Failure(e) if n > 1 =>
         val logger = LoggerFactory.getLogger(this.getClass)
-        logger.warn(s"Retrying locally on ${e.getClass.getSimpleName}... ${n-1} time(s) left")
+        logger.warn(s"Retrying locally on ${e.getClass.getSimpleName} in ${interval.toDouble/1000} second(s)... ${n-1} time(s) left")
         logger.debug("\t\\-->", e)
-        retry(n - 1)(fn)
+        Thread.sleep(interval)
+        retry(n - 1, interval)(fn)
       case util.Failure(e) =>
         throw e
     }
   }
-
-  //  @annotation.tailrec
-  //  def retryExplicitly[T](n: Int)(fn: => T): T = {
-  //    util.Try { fn } match {
-  //      case util.Success(x) =>
-  //        x
-  //      case util.Failure(e) if n > 1 =>
-  //        println(s"Retrying locally on ${e.getClass.getSimpleName}... ${n-1} time(s) left")
-  //        println("\t\\-->", e)
-  //        retryExplicitly(n - 1)(fn)
-  //      case util.Failure(e) =>
-  //        throw e
-  //    }
-  //  }
 
   def withDeadline[T](
                        n: Duration,

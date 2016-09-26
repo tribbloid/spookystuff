@@ -21,7 +21,7 @@ class TestInMemoryWebCache extends SpookyEnvFixture {
   lazy val wgetPage = wget.fetch(spooky).map(_.asInstanceOf[Doc])
 
   test("cache and restore") {
-    spooky.conf.docsLifeSpan = 2.seconds
+    spooky.conf.cachedDocsLifeSpan = 2.seconds
 
     assert(visitPage.head.uid === DocUID(Visit("http://en.wikipedia.org") :: Snapshot().as('U) :: Nil, Snapshot()))
 
@@ -35,7 +35,7 @@ class TestInMemoryWebCache extends SpookyEnvFixture {
   }
 
   test ("cache visit and restore with different name") {
-    spooky.conf.docsLifeSpan = 5.seconds
+    spooky.conf.cachedDocsLifeSpan = 5.seconds
 
     cache.put(visit, visitPage, spooky)
 
@@ -53,7 +53,7 @@ class TestInMemoryWebCache extends SpookyEnvFixture {
     val page3 = cache.get(visitPage.head.uid.backtrace, spooky).orNull
     assert(page3 === null)
 
-    spooky.conf.docsLifeSpan = 30.days
+    spooky.conf.cachedDocsLifeSpan = 30.days
 
     assert(page2.size === 1)
     assert(page2.head === visitPage.head)
@@ -61,7 +61,7 @@ class TestInMemoryWebCache extends SpookyEnvFixture {
   }
 
   test ("cache wget and restore with different name") {
-    spooky.conf.docsLifeSpan = 2.seconds
+    spooky.conf.cachedDocsLifeSpan = 2.seconds
 
     cache.put(wget, wgetPage, spooky)
 
@@ -79,7 +79,7 @@ class TestInMemoryWebCache extends SpookyEnvFixture {
     val page3 = cache.get(wgetPage.head.uid.backtrace, spooky).orNull
     assert(page3 === null)
 
-    spooky.conf.docsLifeSpan = 30.days
+    spooky.conf.cachedDocsLifeSpan = 30.days
 
     assert(page2.size === 1)
     assert(page2.head === wgetPage.head)

@@ -61,13 +61,13 @@ trait Fetched extends Serializable {
 
 //Merely a placeholder when a Block returns nothing
 case class NoDoc(
-                  trace: Trace,
+                  backtrace: Trace,
                   override val timeMillis: Long = System.currentTimeMillis(),
                   override val cacheable: Boolean = true,
                   metadata: Map[String, Any] = Map.empty
                 ) extends Serializable with Fetched {
 
-  @transient override lazy val uid: DocUID = DocUID(trace, null, 0, 1)
+  @transient override lazy val uid: DocUID = DocUID(backtrace, null, 0, 1)
 }
 
 case class DocError(

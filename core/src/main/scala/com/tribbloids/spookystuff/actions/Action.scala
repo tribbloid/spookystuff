@@ -177,7 +177,7 @@ trait Action extends ActionLike with ActionRelay.HasRelay{
 
     this match {
       case tt: Timed =>
-        LoggerFactory.getLogger(this.getClass).info(s"+> ${this.toString} in ${tt.timeout(session)}")
+        LoggerFactory.getLogger(this.getClass).info(s"+> ${this.toStringVerbose} in ${tt.timeout(session)}")
 
         session.asInstanceOf[DriverSession].initializeDriverIfMissing(
           SpookyUtils.withDeadline(tt.hardTerminateTimeout(session)) {

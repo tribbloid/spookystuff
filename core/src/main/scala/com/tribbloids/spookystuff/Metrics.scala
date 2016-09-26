@@ -36,7 +36,7 @@ abstract class AbstractMetrics extends Message with Product {
         }
       case _ =>
         None
-    }.toList
+    }
   }
 
   def toMap: ListMap[String, Any] = {
@@ -44,7 +44,7 @@ abstract class AbstractMetrics extends Message with Product {
   }
 
   //Only allowed on Master
-  def clear(): Unit = {
+  def zero(): Unit = {
 
     this.productIterator.toList.foreach {
       case acc: Accumulator[_] =>

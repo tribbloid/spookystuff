@@ -138,7 +138,7 @@ class Binding(object):
             if not (_json in Instance.all):
                 Instance.all.append(_json)
 
-        # _is = instances[:] TODO: this enforce priority among drones, is it necessary?
+        # _is = instances[:] TODO: this enforce priority among drones in the pool, is it necessary?
         # random.shuffle(_is)
 
         _proxyFactory = proxyFactory if (polling or proxyFactory.polling) else None

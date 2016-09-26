@@ -39,20 +39,20 @@ trait PrettyProduct extends Product {
 
   abstract override def toString = this.product2String()
 
-  def toStringVerbose = this.product2String(verbose = verbose)
+  def toStringVerbose = this.product2String(detail = detail)
 
   def toString_\\\ = this.product2String(File.separator, File.separator, File.separator)
   def toString_/:/ = this.product2String("/", "/", "/")
 
-  def verbose: String = ""
+  def detail: String = ""
 
   def product2String(
                       start: String = "(",
                       sep: String = ",",
                       end: String = ")",
-                      verbose: String = ""
+                      detail: String = ""
                     ) = {
 
-    PrettyProduct.product2String(this, start, sep, end, verbose)
+    PrettyProduct.product2String(this, start, sep, end, detail)
   }
 }
