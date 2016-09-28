@@ -223,10 +223,13 @@ object Xml {
   class XmlElem(name: String, value: String)
     extends Elem(null, name, xml.Null, TopScope, Text(value))
 
-  val defaultFormats = DefaultFormats +
+  def xmlFormats(base: Formats = DefaultFormats.lossless) = base +
     StringToNumberDeserializer +
     EmptyStringToEmptyObjectDeserializer +
-    ElementToArrayDeserializer
+    ElementToArrayDeserializer +
+    DurationJSONSerializer
+
+  def defaultFormats = xmlFormats()
 
   val defaultXMLPrinter = new scala.xml.PrettyPrinter(80, 2)
 }

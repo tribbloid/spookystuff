@@ -189,7 +189,8 @@ abstract class HttpMethod(
   }
 
   def resolveURI(pageRow: FetchedRow, schema: DataRowSchema): Option[Literal[FR, String]] = {
-    val first = this.uri.resolve(schema).lift(pageRow).flatMap(SpookyUtils.asArray[Any](_).headOption) //TODO: no need to resolve array output?
+    val first = this.uri.resolve(schema).lift(pageRow).flatMap(SpookyUtils.asArray[Any](_).headOption)
+    //TODO: no need to resolve array output?
 
     val uriStr: Option[String] = first.flatMap {
       case element: Unstructured => element.href

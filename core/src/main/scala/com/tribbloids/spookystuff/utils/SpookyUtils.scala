@@ -67,9 +67,10 @@ object SpookyUtils {
   def withDeadline[T](
                        n: Duration,
                        heartbeat: Option[Duration] = Some(10.seconds)
-//                       name: String = FlowUtils.getBreakpointInfo().apply(2).getMethodName
+                       //                       name: String = FlowUtils.getBreakpointInfo().apply(2).getMethodName
                        //TODO: default name not working for inner function
                      )(fn: => T): T = {
+
     val future = Future {
       fn
     }
@@ -86,7 +87,7 @@ object SpookyUtils {
               val left = n.minus(elapsed)
               assert(left.toMillis > 0, "INTERNAL ERROR: heartbeat not terminated")
               LoggerFactory.getLogger(this.getClass).info(
-                s"T-${left.toSeconds}s"
+                s"T - ${left.toMillis.toDouble/1000} second(s)"
               )
             }
           }
