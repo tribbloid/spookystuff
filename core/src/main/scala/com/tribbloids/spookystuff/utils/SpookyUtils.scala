@@ -321,8 +321,6 @@ These special characters are often called "metacharacters".
         val jarPath = splitted.head
         val innerPathStr = splitted.last
 
-        val zip = new ZipInputStream(resource.openStream())
-
         val fs = FileSystems.newFileSystem(new URI(fullPath), new java.util.HashMap[String, String]())
         val srcPath = fs.getPath(innerPathStr)
 

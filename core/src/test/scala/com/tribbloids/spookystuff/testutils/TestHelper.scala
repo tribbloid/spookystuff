@@ -36,7 +36,7 @@ object TestHelper {
     System.setProperty("fs.s3.awsSecretAccessKey", _)
   }
 
-  val clusterSize = Option(props.getProperty("ClusterSize")).map(_.toInt)
+  val clusterSizeOpt: Option[Int] = Option(props.getProperty("ClusterSize")).map(_.toInt)
 
   //if SPARK_PATH & ClusterSize in rootkey.csv is detected, use local-cluster simulation mode
   //otherwise use local mode
@@ -48,18 +48,7 @@ object TestHelper {
       //      .set("spark.kryo.registrator", "com.tribbloids.spookystuff.SpookyRegistrator")Incomplete for the moment
       .set("spark.kryoserializer.buffer.max", "512m")
 
-    val (sparkHomeOpt, masterStr) = sparkHome_MasterStr
-
-    conf.setMaster(masterStr) //TODO: more than 1 nodes may cause some counters to have higher readings
-
-    //this is the only way to conduct local-cluster simulation
-    sparkHomeOpt.foreach {
-      sparkHome =>
-        conf
-          .setSparkHome(sparkHome)
-          .set("spark.driver.extraClassPath", sys.props("java.class.path"))
-          .set("spark.executor.extraClassPath", sys.props("java.class.path"))
-    }
+    conf.setAll(coreSettings)
 
     Option(System.getProperty("fs.s3.awsAccessKeyId")).foreach {
       v =>
@@ -78,18 +67,33 @@ object TestHelper {
     conf
   }
 
-  def sparkHome_MasterStr: (Option[String], String) = {
+  final val EXECUTOR_MEMORY = 2048
+
+  /**
+    *
+    * @return local mode: None -> local[n, 4]
+    *         cluster simulation mode: Some(SPARK_HOME) -> local-cluster[m,n, mem]
+    */
+  lazy val coreSettings: Map[String, String] = {
     val sparkHome = System.getenv("SPARK_HOME")
-    if (sparkHome == null || clusterSize.isEmpty) {
+    if (sparkHome == null || clusterSizeOpt.isEmpty) {
       val masterStr = s"local[$numProcessors,4]"
       println("initializing SparkContext in local mode:" + masterStr)
-      (None, masterStr)
+      Map(
+        "spark.master" -> masterStr
+      )
     }
     else {
-      val size = clusterSize.get
-      val masterStr = s"local-cluster[$size,${numProcessors / size},1024]"
+      val size = clusterSizeOpt.get
+      val masterStr = s"local-cluster[$size,${numProcessors / size},${EXECUTOR_MEMORY + 512}]"
       println(s"initializing SparkContext in local-cluster simulation mode:" + masterStr)
-      (Some(sparkHome), masterStr)
+      Map(
+        "spark.master" -> masterStr,
+        "spark.home" -> sparkHome,
+        "spark.executor.memory" -> (EXECUTOR_MEMORY + "m"),
+        "spark.driver.extraClassPath" -> sys.props("java.class.path"),
+        "spark.executor.extraClassPath" -> sys.props("java.class.path")
+      )
     }
   }
 
