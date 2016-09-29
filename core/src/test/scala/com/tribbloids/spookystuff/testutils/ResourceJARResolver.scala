@@ -16,7 +16,7 @@ case class ResourceJARResolver(rootPath: String) {
   final val RESOURCE_NAME = rootPath + File.separator
 
   // run once and for all TODO: or clean up at shutdown hook
-  lazy val testResources: Unit = {
+  val testResources: Unit = {
     val resourceOpt = SpookyUtils.getCPResource(RESOURCE_NAME)
     resourceOpt.foreach {
       resource =>
@@ -24,10 +24,10 @@ case class ResourceJARResolver(rootPath: String) {
           resource, TESTUTILS_TEMP_PATH
         )
     }
+    Thread.sleep(5000) //for eventual consistency
   }
 
   def unpacked(resource: String): String = {
-    testResources
 
     TESTUTILS_TEMP_PATH + resource.stripPrefix(RESOURCE_NAME)
   }
