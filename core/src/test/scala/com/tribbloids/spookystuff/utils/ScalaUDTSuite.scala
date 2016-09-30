@@ -16,11 +16,11 @@ class ScalaUDTSuite extends SpookyEnvFixture with TestMixin {
 
   def getAndTestReifiedType[T: TypeTag]: DataType = {
     val unreified = UnreifiedScalaType.apply[T]
-    assureSerializable(unreified)
+    assertSerializable(unreified)
 
     val reified = TypeUtils.catalystTypeFor[T]
     assert(reified == unreified.reify)
-    assureSerializable(reified)
+    assertSerializable(reified)
     reified
   }
 

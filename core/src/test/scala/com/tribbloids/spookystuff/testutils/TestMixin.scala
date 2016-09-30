@@ -130,7 +130,7 @@ trait TestMixin extends FunSuite {
     }
   }
 
-  def assureSerializable[T <: AnyRef: ClassTag](
+  def assertSerializable[T <: AnyRef: ClassTag](
                                                  element: T,
                                                  serializers: Seq[Serializer] = {
                                                    val conf = SparkEnv.get.conf
@@ -142,6 +142,7 @@ trait TestMixin extends FunSuite {
                                                  condition: (T, T) => Unit = {
                                                    (v1: T, v2: T) =>
                                                      assert((v1: T) == (v2: T))
+                                                     assert(v1.toString == v2.toString)
                                                  }
                                                ): Unit = {
 
@@ -153,7 +154,7 @@ trait TestMixin extends FunSuite {
         //        assert(!element.eq(element2))
         condition (element, element2)
         //    assert(element.hashCode() == element2.hashCode())
-        assert(element.toString == element2.toString)
+//        assert(element.toString == element2.toString)
     }
   }
 

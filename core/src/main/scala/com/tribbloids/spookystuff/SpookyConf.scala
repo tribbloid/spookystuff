@@ -122,7 +122,7 @@ class SpookyConf (
   def importFrom(implicit sparkConf: SparkConf): SpookyConf = {
 
     new SpookyConf(
-      this.components.mapValues(_.importFrom(sparkConf)),
+      this.components.mapValues(_.importFrom(sparkConf)).map(identity),
 
       this.shareMetrics,
 

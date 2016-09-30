@@ -16,7 +16,9 @@ object Instance {
 }
 
 case class Instance(
-                     connectionString: String,
+                     //remember, one drone can have several telemetry endpoints: 1 primary and several backups (e.g. text message-based)
+                     //TODO: implement backup mechanism
+                     endpoints: Seq[String],
                      vehicleType: Option[String] = None
                    )
 

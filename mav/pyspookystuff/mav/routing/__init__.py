@@ -1,11 +1,9 @@
 import ctypes
 import json
-import os
-import random
 import multiprocessing
+import os
 
 import dronekit
-from datetime import datetime
 
 from pyspookystuff import mav
 
@@ -49,14 +47,16 @@ from pyspookystuff import mav
 #         self.lastUpdated = datetime.now()
 #         self.lastError = None
 
-
+# bean project
 class Instance(object):
+    # static variables shared by all processes
     all = multiprocessing.Array(ctypes.c_char_p, 10)  # type: multiprocessing.Array
-    used = multiprocessing.Array(ctypes.c_char_p, 10)  # type: multiprocessing.Array
-    missing = multiprocessing.Array(ctypes.c_char_p, 10)  # type: multiprocessing.Array
+    # will be tried by daemon if not in used
 
-    # will be tried by daemon if not in usedConnStr
+    used = multiprocessing.Array(ctypes.c_char_p, 10)  # type: multiprocessing.Array
     # won't be tried by nobody
+
+    unreachable = multiprocessing.Array(ctypes.c_char_p, 10)  # type: multiprocessing.Array
     # won't be tried by executor, daemon will still try it and if successful, will remove it from the list
     # in all these arrays json strings of Instances are stored. This is the only way to discover duplicity
 
@@ -64,22 +64,20 @@ class Instance(object):
         # type: (str) -> None
         self.json = _json
         _dict = json.loads(_json)
-        self.endpoint = _dict['connectionString']
-        self.vClass = _dict['vehicleClass']
+        self.endpoints = _dict['endpoints']
+        self.vehicleClass = _dict['vehicleClass']
 
     def isNotUsed(self):
         result = not (self.json in self.used)
         return result
 
     def isAvailable(self):
-        result = not (self.json in self.used + self.missing)
+        result = not (self.json in self.used + self.unreachable)
         return result
 
 
 usedPort = multiprocessing.Array(ctypes.c_long, 10)  # type: multiprocessing.Array
 
-
-# won't be used as new proxy port
 
 class ProxyFactory(object):
     def __init__(self, _json):
@@ -168,7 +166,7 @@ class Binding(object):
                     return binding
 
                 except Exception as ee:
-                    Instance.missing.append(ii.json)
+                    Instance.unreachable.append(ii.json)
 
                 finally:
                     if proxy: proxy.close()
@@ -178,7 +176,7 @@ class Binding(object):
             "dispatched:\n" +
             json.dumps(Instance.used) + "\n" +
             "unreachable:\n" +
-            json.dumps(Instance.missing)
+            json.dumps(Instance.unreachable)
         )
 
     def __init__(self, instance, proxy, vehicle):
