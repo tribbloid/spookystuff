@@ -210,13 +210,13 @@ class TestTrace_PhantomJS extends SpookyEnvFixture with TestMixin {
 
   test("visit and snapshot") {
     val builder = new DriverSession(spooky)
-    Visit("http://en.wikipedia.org")(builder)
+    Visit("http://www.wikipedia.org")(builder)
     val page = Snapshot()(builder).toList.head.asInstanceOf[Doc]
 
     //    assert(page.code.get.startsWith("<!DOCTYPE html>")) //not applicable to HtmlUnit
-    assert(page.code.get.split('\n').map(_.trim).mkString.contains("<title>Wikipedia, the free encyclopedia</title>"))
+    assert(page.code.get.split('\n').map(_.trim).mkString.contains("<title>Wikipedia</title>"))
 
-    assert(page.uri contains "//en.wikipedia.org/wiki/Main_Page")
+    assert(page.uri contains "//www.wikipedia.org/")
   }
 
   test("visit, input submit and snapshot") {
