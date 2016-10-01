@@ -28,7 +28,7 @@ Powered by
 ![Apache Tika](http://tika.apache.org/tika.png)
 ![Apache Maven](https://maven.apache.org/images/maven-logo-black-on-white.png)
 ![PhantomJS](http://phantomjs.org/img/phantomjs-logo.png)
-![MAVLink](http://qgroundcontrol.org/_media/mavlink/mavlink-logo.png?w=400&tok=fef87b)
+![MAVLink](https://www.dronecode.org/sites/dronecode/files/pages/images/logo_mavlink.png)
 
 License
 -----------
