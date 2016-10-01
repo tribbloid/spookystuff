@@ -1,6 +1,6 @@
 from __future__ import print_function
 
-from dronekit import VehicleMode, LocationGlobalRelative
+from dronekit import LocationGlobalRelative
 
 from pyspookystuff.mav_test import *
 
@@ -14,8 +14,6 @@ def test_both():
     teardownAll()
 
     return
-
-# def set_sysid(v, instance):
 
 def ferry(path1, path2):
     vehicle1 = connect(path1, wait_ready=True)

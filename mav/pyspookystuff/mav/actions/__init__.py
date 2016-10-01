@@ -1,30 +1,30 @@
 import json
 
-from dronekit import LocationGlobalRelative
+from dronekit import LocationGlobalRelative, LocationGlobal
 
-from pyspookystuff.mav import arm_and_takeoff
+from pyspookystuff.mav import assureInTheAir
 from pyspookystuff.mav.routing import Binding, Instance
 
 
 class PyAction(object):
 
-    def __init__(self, _json):
+    def __init__(self, thisStr):
         # type: (object) -> object
-        self.this = json.loads(_json)
+        self.this = json.loads(thisStr)
         self.binding = None
 
 
 class DummyPyAction(PyAction):
 
-    def dummy(self, jsonStr):
-        args = json.loads(jsonStr)
+    def dummy(self, argStr):
+        args = json.loads(argStr)
         merged = int(self.this['params']['a']['value']) + int(args['b'])
-        print(json.dumps(merged))
+        return json.dumps(merged)
 
 
 class DroneAction(PyAction):
 
-    def prepareMAV(self, mavConf):
+    def assureInTheAir(self, mavConf): # mavConf is always a dict
         if not self.binding:
             _instances = mavConf['instances']
             instances = map(lambda x: Instance(x), _instances)
@@ -35,15 +35,39 @@ class DroneAction(PyAction):
                 mavConf['proxyFactory']
             )
 
-        # how do you know if its in the ground
-        inTheAir = self.binding.vehicle.is_armable
+        assureInTheAir(mavConf['takeOffAltitude'], self.binding.vehicle)
 
-        if not self.binding.vehicle:
-            arm_and_takeoff(mavConf['takeOffAltitude'], self.binding.vehicle)
+    def before(self, mavConfStr):
+        pass
+
+    def bulk(self, mavConfStr):
+        pass
+
+    def after(self, mavConfStr):
+        pass
+
+
+def toLocation(dict):
+    location = dict['globalLocation']
+    lat = location['lat']
+    lon = location['lon']
+    alt = location['alt']
+
+    if location['relative']:
+        return LocationGlobalRelative(lat, lon, alt)
+    else:
+        return LocationGlobal(lat, lon, alt)
 
 
 class Move(DroneAction):
 
-    def goTo(self, point):
-        # type: (LocationGlobalRelative) -> None
-        self.binding.vehicle.goto(point)
+    def before(self, mavConfStr):
+        mavConf = json.loads(mavConfStr)
+        assureInTheAir(mavConf)
+
+        frm = toLocation(self.this['from'])
+        self.binding.vehicle.simple_goto(frm)
+
+    def bulk(self, mavConfStr):
+        to = toLocation(self.this['to'])
+        self.binding.vehicle.simple_goto(to)

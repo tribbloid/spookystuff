@@ -1,5 +1,6 @@
 from __future__ import print_function
 
+import logging
 import os
 
 import sys
@@ -153,17 +154,51 @@ def sitlDown():
     sitls = []
 
 
-def arm_and_takeoff(targetAltitude, vehicle):
-    """
-    Arms vehicle and fly to aTargetAltitude.
-    """
+def assureInTheAir(targetAlt, vehicle):
+    alt = vehicle.location.global_relative_frame.alt
+    if alt > targetAlt:
+        logging.info("already in the air")
+    else:
+        armIfNot(vehicle)
+        blockingTakeoff(targetAlt, vehicle)
 
-    blockingArm(vehicle)# Take off to target altitude
-    blockingTakeoff(targetAltitude, vehicle)
+
+arm_and_takeoff = assureInTheAir
+
+
+def armIfNot(vehicle):
+    if not vehicle.armed:
+        blockingArm(vehicle)
+
+
+def blockingArm(vehicle):
+    # Don't let the user try to fly when autopilot is booting
+    i = 60
+    while not vehicle.is_armable and i > 0:
+        time.sleep(1)
+        i -= 1
+
+    # Copter should arm in GUIDED mode
+    vehicle.mode = VehicleMode("GUIDED")
+    i = 60
+    while vehicle.mode.name != 'GUIDED' and i > 0:
+        print(" Waiting for guided %s seconds..." % (i,))
+        time.sleep(1)
+        i -= 1
+
+    # Arm copter.
+    vehicle.armed = True
+    i = 60
+    while not vehicle.armed and vehicle.mode.name == 'GUIDED' and i > 0:
+        print(" Waiting for arming %s seconds..." % (i,))
+        time.sleep(1)
+        i -= 1
 
 
 def blockingTakeoff(targetAltitude, vehicle):
+
     vehicle.simple_takeoff(targetAltitude)
+
     # Wait until the vehicle reaches a safe height before
     # processing the goto (otherwise the command after
     # Vehicle.simple_takeoff will execute immediately).
@@ -175,27 +210,3 @@ def blockingTakeoff(targetAltitude, vehicle):
             break
 
         time.sleep(1)
-
-
-def blockingArm(vehicle):
-    # Don't let the user try to fly when autopilot is booting
-    i = 60
-    while not vehicle.is_armable and i > 0:
-        time.sleep(1)
-        i = i - 1
-
-    # Copter should arm in GUIDED mode
-    vehicle.mode = VehicleMode("GUIDED")
-    i = 60
-    while vehicle.mode.name != 'GUIDED' and i > 0:
-        print(" Waiting for guided %s seconds..." % (i,))
-        time.sleep(1)
-        i = i - 1
-
-    # Arm copter.
-    vehicle.armed = True
-    i = 60
-    while not vehicle.armed and vehicle.mode.name == 'GUIDED' and i > 0:
-        print(" Waiting for arming %s seconds..." % (i,))
-        time.sleep(1)
-        i = i - 1

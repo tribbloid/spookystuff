@@ -125,8 +125,22 @@ case class PythonDriver(
       )
       throw ee
     }
-    else {
-      rows
-    }
+
+    rows
+  }
+
+  def exe(code: String, varName: String = "result"): (Seq[String], String) = {
+    val _code =
+      s"""
+        |$code
+        |print('*!?execution result!?*')
+        |print($varName)
+      """.stripMargin
+
+    val rows = interpret(_code).toSeq
+    val splitterI = rows.zipWithIndex.find(_._1 == "*!?execution result!?*").get._2
+    val splitted = rows.splitAt(splitterI)
+
+    splitted._1 -> splitted._2.slice(1, Int.MaxValue).mkString("\n")
   }
 }

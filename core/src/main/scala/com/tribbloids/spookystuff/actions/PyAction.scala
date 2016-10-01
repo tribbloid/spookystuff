@@ -39,7 +39,7 @@ trait PyAction extends Action {
       PyAction.QQQ,
       ")"
     )
-    val result = session.pythonDriver.interpret(lines.mkString("\n"))
+    session.pythonDriver.interpret(lines.mkString("\n"))
     varName
   }
 
@@ -52,7 +52,7 @@ trait PyAction extends Action {
 
   case class Py(session: Session) extends Dynamic {
 
-    def applyDynamic(methodName: String)(args: Any*): Seq[String] = {
+    def applyDynamic(methodName: String)(args: Any*): String = {
       val argJSONs: Seq[String] = args.map {
         v =>
           val json = MessageView(v).prettyJSON()
@@ -64,11 +64,11 @@ trait PyAction extends Action {
             .mkString("\n")
       }
       val lines = Seq(
-        s"$varName.$methodName (",
+        s"result = $varName.$methodName (",
         argJSONs.mkString(",\n"),
         ")"
       )
-      val result = session.pythonDriver.interpret(lines.mkString("\n"))
+      val result = session.pythonDriver.exe(lines.mkString("\n"))._2
 
       result
     }
