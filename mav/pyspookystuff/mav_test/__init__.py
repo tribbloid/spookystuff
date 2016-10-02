@@ -2,41 +2,32 @@ from __future__ import print_function
 
 import time
 from nose import with_setup
-from nose.tools import assert_equals
 
-from pyspookystuff.mav import *
-
-
-def setup_sitl_mavproxy(atype='quad', options=None, instance=0):
-    sitlUp(instance)
-
-    # time.sleep(2)
-    # out = '127.0.0.1:' + str(14550 + instance*10)
-    out = '127.0.0.1:' + str(14550)
-    proxyUp(aircraft=atype + str(instance), master=tcp_master(instance), outs={out}, options=options)
+from pyspookystuff.mav.routing import Proxy
+from pyspookystuff.mav.simulation import APMSim
 
 
-def teardownAll():
-    proxyDown()
-    sitlDown()
+def sitlUp():
+    APMSim.create()
 
-def with_sitl(fn):
 
-    @with_setup(sitlUp, sitlDown)
-    def test(*args, **kargs):
-        tcp = fn('tcp:127.0.0.1:5760', *args, **kargs)
-        sitlDown()
-        setup_sitl_mavproxy()
-        udp = fn('127.0.0.1:14550', *args, **kargs)
-        assert_equals(tcp, udp)
-        return tcp
+def sitlClean():
+    APMSim.clean()
 
-    test.__name__ = fn.__name__
-    return test
+
+def sitlProxyUp(atype='quad', outs=list()):
+    sim = APMSim.create()
+    Proxy(sim.connStr, atype + str(sim.index), 14550, outs)
+
+
+def sitlProxyClean():
+    Proxy.clean()
+    APMSim.clean()
+
 
 def with_sitl_tcp(fn):
 
-    @with_setup(sitlUp, sitlDown)
+    @with_setup(sitlUp, sitlClean)
     def test_tcp(*args, **kargs):
         tcp = fn('tcp:127.0.0.1:5760', *args, **kargs)
         return tcp
@@ -44,9 +35,10 @@ def with_sitl_tcp(fn):
     test_tcp.__name__ = fn.__name__
     return test_tcp
 
+
 def with_sitl_udp(fn):
 
-    @with_setup(setup_sitl_mavproxy, sitlDown)
+    @with_setup(sitlProxyUp, sitlProxyClean)
     def test_udp(*args, **kargs):
         udp = fn('127.0.0.1:14550', *args, **kargs)
         return udp
@@ -54,15 +46,17 @@ def with_sitl_udp(fn):
     test_udp.__name__ = fn.__name__
     return test_udp
 
+
 def with_sitl_3way(fn):
 
-    @with_setup(setup_sitl_mavproxy(options='--out=127.0.0.1:10092'), sitlDown)
+    @with_setup(sitlProxyUp(outs='127.0.0.1:10092'), sitlClean)
     def test_udp(*args, **kargs):
         udp = fn('127.0.0.1:10092', *args, **kargs)
         return udp
 
     test_udp.__name__ = fn.__name__
     return test_udp
+
 
 def wait_for(condition, time_max):
     time_start = time.time()

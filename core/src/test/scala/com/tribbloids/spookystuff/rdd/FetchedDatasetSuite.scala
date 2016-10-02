@@ -68,7 +68,7 @@ class FetchedDatasetSuite extends SpookyEnvFixture {
       )
     assert(acc.value == 0)
 
-    val rdd = set.rdd
+    val rdd = set.squashedRDD
     assert(acc.value == 0)
 
     rdd.count()

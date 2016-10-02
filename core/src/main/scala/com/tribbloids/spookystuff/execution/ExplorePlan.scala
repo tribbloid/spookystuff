@@ -72,7 +72,7 @@ case class ExplorePlan(
 
   val depth_0: Resolved[Int] = resolver.include(Literal(0) withAlias _params.depthField).head
   val depth_++ : Resolved[Int] = resolver.include(
-    GetExpr(_params.depthField).typed[Int].andThen(_ + 1) withAlias _params.depthField.!!
+    GetExpr(_params.depthField).typed[Int].andFn(_ + 1) withAlias _params.depthField.!!
   ).head
   val _ordinal: TypedField = resolver.includeTyped(TypedField(_params.ordinalField, ArrayType(IntegerType))).head
   val _extracts: Seq[Resolved[Any]] = resolver.include(_params.extracts: _*)

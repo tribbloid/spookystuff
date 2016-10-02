@@ -3,7 +3,7 @@ import json
 from dronekit import LocationGlobalRelative, LocationGlobal
 
 from pyspookystuff.mav import assureInTheAir
-from pyspookystuff.mav.routing import Binding, Instance
+from pyspookystuff.mav.routing import Binding, instance
 
 
 class PyAction(object):
@@ -27,7 +27,7 @@ class DroneAction(PyAction):
     def assureInTheAir(self, mavConf): # mavConf is always a dict
         if not self.binding:
             _instances = mavConf['instances']
-            instances = map(lambda x: Instance(x), _instances)
+            instances = map(lambda x: instance(x), _instances)
 
             # if a binding is already created for this process it will be reused.
             self.binding = Binding.getOrCreate(

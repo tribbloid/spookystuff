@@ -36,7 +36,16 @@ object TestHelper {
     System.setProperty("fs.s3.awsSecretAccessKey", _)
   }
 
-  val clusterSizeOpt: Option[Int] = Option(props.getProperty("ClusterSize")).map(_.toInt)
+  def sparkHome = System.getenv("SPARK_HOME")
+
+  val clusterSizeOpt: Option[Int] = {
+    Option(sparkHome).flatMap {
+      h =>
+        Option(props.getProperty("ClusterSize")).map(_.toInt)
+    }
+  }
+
+  def clusterSize = clusterSizeOpt.getOrElse(1)
 
   //if SPARK_PATH & ClusterSize in rootkey.csv is detected, use local-cluster simulation mode
   //otherwise use local mode
@@ -75,8 +84,7 @@ object TestHelper {
     *         cluster simulation mode: Some(SPARK_HOME) -> local-cluster[m,n, mem]
     */
   lazy val coreSettings: Map[String, String] = {
-    val sparkHome = System.getenv("SPARK_HOME")
-    if (sparkHome == null || clusterSizeOpt.isEmpty) {
+    if (clusterSizeOpt.isEmpty) {
       val masterStr = s"local[$numProcessors,4]"
       println("initializing SparkContext in local mode:" + masterStr)
       Map(

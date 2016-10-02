@@ -76,7 +76,7 @@ trait WaybackSupport extends Wayback {
   var wayback: Extractor[Long] = _
 
   def waybackTo(date: Extractor[Date]): this.type = {
-    this.wayback = date.andThen(_.getTime)
+    this.wayback = date.andFn(_.getTime)
     this
   }
 

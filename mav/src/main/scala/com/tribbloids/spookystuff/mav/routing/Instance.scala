@@ -6,10 +6,21 @@ package com.tribbloids.spookystuff.mav.routing
 
 object Instance {
 
-  def getForAPMSITL(n: Int): Seq[Instance] = {
-    ???
+  def sitlI2Port(i: Int): Int = {
+    val port = 5760 + i * 10
+    port
   }
 
+  def getForAPMSITL(n: Int): Seq[Instance] = {
+    val is = 0 until n
+    is.map {
+      i =>
+        val port: Int = sitlI2Port(i)
+        val endpointTCP = "tcp://localhost:" + port
+        Instance(Seq(endpointTCP), None)
+    }
+  }
+  
   def getForPX4SITL(n: Int): Seq[Instance] = {
     ???
   }

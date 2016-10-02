@@ -78,31 +78,32 @@ class DriverSession(
     throw NoWebDriverException
   }
 
-  def initializeWebDriverIfMissing(): Unit = {
-    if (webDriverOpt.nonEmpty) return
-    SpookyUtils.retry(Const.localResourceLocalRetries) {
+  def getOrCreateWebDriver: WebDriver = {
+    webDriverOpt.getOrElse {
+      SpookyUtils.retry(Const.localResourceLocalRetries) {
+        SpookyUtils.withDeadline(Const.sessionInitializationTimeout) {
+          val driver = spooky.conf.webDriverFactory.get(this)
+          spooky.metrics.webDriverDispatched += 1
+          //      try {
+          driver.manage().timeouts()
+            .implicitlyWait(spooky.conf.remoteResourceTimeout.toSeconds, TimeUnit.SECONDS)
+            .pageLoadTimeout(spooky.conf.remoteResourceTimeout.toSeconds, TimeUnit.SECONDS)
+            .setScriptTimeout(spooky.conf.remoteResourceTimeout.toSeconds, TimeUnit.SECONDS)
 
-      SpookyUtils.withDeadline(Const.sessionInitializationTimeout) {
-        val driver = spooky.conf.webDriverFactory.get(this)
-        spooky.metrics.webDriverDispatched += 1
-        //      try {
-        driver.manage().timeouts()
-          .implicitlyWait(spooky.conf.remoteResourceTimeout.toSeconds, TimeUnit.SECONDS)
-          .pageLoadTimeout(spooky.conf.remoteResourceTimeout.toSeconds, TimeUnit.SECONDS)
-          .setScriptTimeout(spooky.conf.remoteResourceTimeout.toSeconds, TimeUnit.SECONDS)
+          val resolution = spooky.conf.browserResolution
+          if (resolution != null) driver.manage().window().setSize(new Dimension(resolution._1, resolution._2))
 
-        val resolution = spooky.conf.browserResolution
-        if (resolution != null) driver.manage().window().setSize(new Dimension(resolution._1, resolution._2))
-
-        webDriverOpt = Some(driver)
-        //      }            //TODO: these are no longer required, if a driver is get for multiple times the previous one will be automatically scuttled
-        //      finally {
-        //        if (!successful){
-        //          driver.close()
-        //          driver.quit()
-        //          spooky.metrics.driverReleased += 1
-        //        }
-        //      }
+          webDriverOpt = Some(driver)
+          //      }            //TODO: these are no longer required, if a driver is get for multiple times the previous one will be automatically scuttled
+          //      finally {
+          //        if (!successful){
+          //          driver.close()
+          //          driver.quit()
+          //          spooky.metrics.driverReleased += 1
+          //        }
+          //      }
+          driver
+        }
       }
     }
   }
@@ -113,15 +114,17 @@ class DriverSession(
     throw NoPythonDriverException
   }
 
-  def initializePythonDriverIfMissing(): Unit = {
-    if (pythonDriverOpt.nonEmpty) return
-    SpookyUtils.retry(Const.localResourceLocalRetries) {
+  def getOrCreatePythonDriver: PythonDriver = {
+    pythonDriverOpt.getOrElse {
+      SpookyUtils.retry(Const.localResourceLocalRetries) {
 
-      SpookyUtils.withDeadline(Const.sessionInitializationTimeout) {
-        val driver = spooky.conf.pythonDriverFactory.get(this)
-        spooky.metrics.pythonDriverDispatched += 1
+        SpookyUtils.withDeadline(Const.sessionInitializationTimeout) {
+          val driver = spooky.conf.pythonDriverFactory.get(this)
+          spooky.metrics.pythonDriverDispatched += 1
 
-        this.pythonDriverOpt = Some(driver)
+          this.pythonDriverOpt = Some(driver)
+          driver
+        }
       }
     }
   }
@@ -134,11 +137,11 @@ class DriverSession(
     catch {
       case NoWebDriverException =>
         LoggerFactory.getLogger(this.getClass).info("Initialization WebDriver ...")
-        initializeWebDriverIfMissing()
+        getOrCreateWebDriver
         f
       case NoPythonDriverException =>
         LoggerFactory.getLogger(this.getClass).info("Initialization PythonDriver ...")
-        initializePythonDriverIfMissing()
+        getOrCreatePythonDriver
         f
     }
   }

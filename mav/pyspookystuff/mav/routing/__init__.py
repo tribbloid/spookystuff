@@ -1,9 +1,8 @@
-import ctypes
 import json
-import multiprocessing
 import os
 
 import dronekit
+import sys
 
 from pyspookystuff import mav
 
@@ -48,15 +47,19 @@ from pyspookystuff import mav
 #         self.lastError = None
 
 # bean project
+# not consistent with other resource allocation mechanism.
 class Instance(object):
     # static variables shared by all processes
-    all = multiprocessing.Array(ctypes.c_char_p, 10)  # type: multiprocessing.Array
+    # all = multiprocessing.Array(ctypes.c_char_p, 10)  # type: multiprocessing.Array
+    all = mav.manager.list()
     # will be tried by daemon if not in used
 
-    used = multiprocessing.Array(ctypes.c_char_p, 10)  # type: multiprocessing.Array
+    # used = multiprocessing.Array(ctypes.c_char_p, 10)  # type: multiprocessing.Array
+    used = mav.manager.list()
     # won't be tried by nobody
 
-    unreachable = multiprocessing.Array(ctypes.c_char_p, 10)  # type: multiprocessing.Array
+    # unreachable = multiprocessing.Array(ctypes.c_char_p, 10)  # type: multiprocessing.Array
+    unreachable = mav.manager.list()
     # won't be tried by executor, daemon will still try it and if successful, will remove it from the list
     # in all these arrays json strings of Instances are stored. This is the only way to discover duplicity
 
@@ -67,6 +70,9 @@ class Instance(object):
         self.endpoints = _dict['endpoints']
         self.vehicleClass = _dict['vehicleClass']
 
+    def connStr(self):
+        return self.endpoints[0]
+
     def isNotUsed(self):
         result = not (self.json in self.used)
         return result
@@ -76,10 +82,10 @@ class Instance(object):
         return result
 
 
-usedPort = multiprocessing.Array(ctypes.c_long, 10)  # type: multiprocessing.Array
-
-
 class ProxyFactory(object):
+    usedPort = mav.manager.list()
+    # usedPort = multiprocessing.Array(ctypes.c_long, 10, lock=True)  # type: multiprocessing.Array
+
     def __init__(self, _json):
         _dict = json.loads(_json)
         self.ports = _dict['ports']
@@ -87,29 +93,112 @@ class ProxyFactory(object):
         self.polling = _dict['polling']
         self.name = _dict['name']
 
-    def findPort(self):
-        for port in self.ports:
-            if not (port in usedPort): return port
-
-        raise mav.PortDepletedException("all ports for proxies are used")
+    def nextPort(self): # NOT static! don't move anywhere
+        port = mav.nextUnused(ProxyFactory.usedPort, self.ports)
+        return port
 
 
 class Proxy(object):
-    global usedPort
+    proxies = []
 
-    def __init__(self, instance, name, port, outs):
+    @staticmethod
+    def _up(aircraft, setup=False, master='tcp:127.0.0.1:5760', outs={'127.0.0.1:14550'},
+           options=None, logfile=sys.stdout):
+        """
+        launch mavproxy connected to a SIL instance
+        mavproxy.py -h
+        Usage: mavproxy.py [options]
+
+        Options:
+          -h, --help            show this help message and exit
+          --master=DEVICE[,BAUD]
+                                MAVLink master port and optional baud rate
+          --out=DEVICE[,BAUD]   MAVLink output port and optional baud rate
+          --baudrate=BAUDRATE   default serial baud rate
+          --sitl=SITL           SITL output port
+          --streamrate=STREAMRATE
+                                MAVLink stream rate
+          --source-system=SOURCE_SYSTEM
+                                MAVLink source system for this GCS
+          --source-component=SOURCE_COMPONENT
+                                MAVLink source component for this GCS
+          --target-system=TARGET_SYSTEM
+                                MAVLink target master system
+          --target-component=TARGET_COMPONENT
+                                MAVLink target master component
+          --logfile=LOGFILE     MAVLink master logfile
+          -a, --append-log      Append to log files
+          --quadcopter          use quadcopter controls
+          --setup               start in setup mode
+          --nodtr               disable DTR drop on close
+          --show-errors         show MAVLink error packets
+          --speech              use text to speech
+          --aircraft=AIRCRAFT   aircraft name
+          --cmd=CMD             initial commands
+          --console             use GUI console
+          --map                 load map module
+          --load-module=LOAD_MODULE
+                                Load the specified module. Can be used multiple times,
+                                or with a comma separated list
+          --mav09               Use MAVLink protocol 0.9
+          --mav20               Use MAVLink protocol 2.0
+          --auto-protocol       Auto detect MAVLink protocol version
+          --nowait              don't wait for HEARTBEAT on startup
+          -c, --continue        continue logs
+          --dialect=DIALECT     MAVLink dialect
+          --rtscts              enable hardware RTS/CTS flow control
+          --moddebug=MODDEBUG   module debug level
+          --mission=MISSION     mission name
+          --daemon              run in daemon mode, do not start interactive shell
+          --profile             run the Yappi python profiler
+          --state-basedir=STATE_BASEDIR
+                                base directory for logs and aircraft directories
+          --version             version information
+          --default-modules=DEFAULT_MODULES
+                                default module list
+        """
+        import pexpect
+        MAVPROXY = os.getenv('MAVPROXY_CMD', 'mavproxy.py')
+        cmd = MAVPROXY + ' --master=%s' % master
+        for out in outs:
+            cmd += ' --out=%s' % out
+        if setup:
+            cmd += ' --setup'
+        cmd += ' --aircraft=%s' % aircraft
+        if options is not None:
+            cmd += ' ' + options
+        ret = pexpect.spawn(cmd, logfile=logfile, timeout=60)
+        ret.delaybeforesend = 0
+        return ret
+
+    @staticmethod
+    def clean():
+
+        for m in Proxy.proxies :
+            m.close()
+        proxies = []
+
+    def __init__(self, connStr, name, port, outs):
+
+        # primary out, always localhost
         self.port = port
-        self.outs = outs
-        self.name = name
-        self.endpoint = 'localhost:' + str(port)
 
-        effectiveOuts = self.outs + [self.endpoint]
-        self.spawn = mav.proxyUp(aircraft=self.name, master=instance.connStr, outs=effectiveOuts)
-        usedPort.append(self.port)
+        # auxiliary outs
+        self.outs = outs
+
+        # affect dir of log files
+        self.name = name
+
+        effectiveOuts = self.outs + [self.endpoint()]
+        self.spawn = Proxy._up(aircraft=self.name, master=connStr, outs=effectiveOuts)
+        Proxy.proxies.append(self)
+
+    def endpoint(self):
+        return 'localhost:' + str(self.port)
 
     def close(self):
         os.killpg(self.spawn.pid, 2)
-        usedPort.remove(self.port)
+        ProxyFactory.usedPort.remove(self.port)
         # TODO: cleanup variables to fail early?
 
 
@@ -139,7 +228,7 @@ class Binding(object):
         # _is = instances[:] TODO: this enforce priority among drones in the pool, is it necessary?
         # random.shuffle(_is)
 
-        _proxyFactory = proxyFactory if (polling or proxyFactory.polling) else None
+        proxyF = proxyFactory if (polling or proxyFactory.polling) else None
 
         # iterate ONCE until a vehicle can be created
         # otherwise RAISE ERROR IMMEDIATELY! action will retry it locally and spark will retry it cluster-wise.
@@ -147,16 +236,17 @@ class Binding(object):
         for ii in instances:
             if ii.isAvailable():
                 proxy = None
+                port = proxyF.nextPort()
                 try:
                     endpoint = ii.connStr
-                    if _proxyFactory:
+                    if proxyF:
                         proxy = Proxy(
                             ii,
-                            _proxyFactory.findPort(),
-                            _proxyFactory.gcsMapping,
-                            _proxyFactory.name
+                            port,
+                            proxyF.gcsMapping,
+                            proxyF.name
                         )
-                        endpoint = proxy.endpoint
+                        endpoint = proxy.endpoint()
 
                     vehicle = dronekit.connect(
                         ip=endpoint,
@@ -166,7 +256,9 @@ class Binding(object):
                     return binding
 
                 except Exception as ee:
+                    proxyF.usedPort.remove(port)
                     Instance.unreachable.append(ii.json)
+                    raise ee
 
                 finally:
                     if proxy: proxy.close()

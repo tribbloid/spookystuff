@@ -1,12 +1,11 @@
-package com.tribbloids.spookystuff.mav
+package com.tribbloids.spookystuff.mav.actions
 
-import com.tribbloids.spookystuff.SpookyEnvFixture
-import com.tribbloids.spookystuff.mav.actions.{GlobalLocation, Move, WayPoint}
+import com.tribbloids.spookystuff.mav.MavFixture
 
 /**
   * Created by peng on 26/08/16.
   */
-class MoveSuite extends SpookyEnvFixture {
+class MoveSuite extends MavFixture {
 
   test("Move should support toJson") {
     val wp1 = WayPoint(Some(GlobalLocation(0,0,0)))

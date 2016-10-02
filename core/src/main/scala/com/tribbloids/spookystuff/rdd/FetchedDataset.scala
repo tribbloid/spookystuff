@@ -65,12 +65,14 @@ case class FetchedDataset(
   def storageLevel_=(lv: StorageLevel) = {plan.storageLevel = lv}
   def isCached = plan.isCached
 
-  def rdd = {
+  def squashedRDD = {
     this.spooky.rebroadcast()
     plan.rdd()
   }
 
-  def unsquashedRDD: RDD[FetchedRow] = this.rdd.flatMap(v => new v.WithSchema(schema).unsquash)
+  def rdd = unsquashedRDD
+
+  def unsquashedRDD: RDD[FetchedRow] = this.squashedRDD.flatMap(v => new v.WithSchema(schema).unsquash)
 
   def spooky = plan.spooky
   def schema = plan.schema
@@ -99,7 +101,6 @@ case class FetchedDataset(
     sorted
   }
   def toMapRDD(sort: Boolean = false): RDD[Map[String, Any]] = sparkContext.withJob(s"toMapRDD(sort=$sort)"){
-
     {
       if (!sort) dataRDD
       else dataRDDSorted
@@ -233,7 +234,7 @@ case class FetchedDataset(
     val _pageExpr = newResolver.include(page).head
 
     //Execute immediately
-    rdd.foreach {
+    squashedRDD.foreach {
       squashedPageRow =>
         val w = new squashedPageRow
         .WithSchema(schema)

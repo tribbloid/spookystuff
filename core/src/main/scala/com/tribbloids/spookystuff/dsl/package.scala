@@ -7,7 +7,7 @@ import com.tribbloids.spookystuff.doc.{Doc, DocUID, Elements, Unstructured}
 import com.tribbloids.spookystuff.extractors.GenExtractor.And_->
 import com.tribbloids.spookystuff.extractors._
 import com.tribbloids.spookystuff.rdd.FetchedDataset
-import com.tribbloids.spookystuff.row.{Field, SquashedFetchedRDD}
+import com.tribbloids.spookystuff.row.{FetchedRow, Field}
 import com.tribbloids.spookystuff.utils.{Default, UnreifiedScalaType}
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.types._
@@ -25,9 +25,9 @@ package object dsl {
   type ByDoc[+R] = (Doc => R)
   type ByTrace[+R] = (Trace => R)
 
-  implicit def PageRowRDDToRDD(wrapper: FetchedDataset): SquashedFetchedRDD = wrapper.rdd
+  implicit def FDToRDD(self: FetchedDataset): RDD[FetchedRow] = self.rdd
 
-  implicit def spookyContextToPageRowRDD(spooky: SpookyContext): FetchedDataset = spooky.createBlank
+  implicit def spookyContextToFD(spooky: SpookyContext): FetchedDataset = spooky.createBlank
 
   implicit def traceView(trace: Trace): TraceView = new TraceView(trace)
 
@@ -101,7 +101,7 @@ package object dsl {
 
   implicit class UnstructuredExprView(self: Extractor[Unstructured]) extends Serializable {
 
-    def uri: Extractor[String] = self.andThen(_.uri)
+    def uri: Extractor[String] = self.andFn(_.uri)
 
     def findAll(selector: String) = FindAllExpr(self, selector)
     def \\(selector: String) = findAll(selector)
@@ -136,44 +136,44 @@ package object dsl {
 
   implicit class ElementsExprView(self: Extractor[Elements[_]]) extends Serializable {
 
-    def uris: Extractor[Seq[String]] = self.andThen(_.uris)
+    def uris: Extractor[Seq[String]] = self.andFn(_.uris)
 
-    def texts: Extractor[Seq[String]] = self.andThen(_.texts)
+    def texts: Extractor[Seq[String]] = self.andFn(_.texts)
 
-    def codes: Extractor[Seq[String]] = self.andThen(_.codes)
+    def codes: Extractor[Seq[String]] = self.andFn(_.codes)
 
-    def ownTexts: Extractor[Seq[String]] = self.andThen(_.ownTexts)
+    def ownTexts: Extractor[Seq[String]] = self.andFn(_.ownTexts)
 
     def allAttrs: Extractor[Seq[Map[String, String]]] =
-      self.andThen(_.allAttrs)
+      self.andFn(_.allAttrs)
 
     def attrs(attrKey: String, noEmpty: Boolean = true): Extractor[Seq[String]] =
-      self.andThen(_.attrs(attrKey, noEmpty))
+      self.andFn(_.attrs(attrKey, noEmpty))
 
-    def hrefs = self.andThen(_.hrefs)
+    def hrefs = self.andFn(_.hrefs)
 
-    def srcs = self.andThen(_.srcs)
+    def srcs = self.andFn(_.srcs)
 
-    def boilerPipes = self.andThen(_.boilerPipes)
+    def boilerPipes = self.andFn(_.boilerPipes)
   }
 
   implicit class PageExprView(self: Extractor[Doc]) extends Serializable {
 
-    def uid: Extractor[DocUID] = self.andThen(_.uid)
+    def uid: Extractor[DocUID] = self.andFn(_.uid)
 
-    def contentType: Extractor[String] = self.andThen(_.contentType)
+    def contentType: Extractor[String] = self.andFn(_.contentType)
 
-    def content: Extractor[Seq[Byte]] = self.andThen(_.content.toSeq)
+    def content: Extractor[Seq[Byte]] = self.andFn(_.content.toSeq)
 
-    def timestamp: Extractor[Timestamp] = self.andThen(_.timestamp)
+    def timestamp: Extractor[Timestamp] = self.andFn(_.timestamp)
 
-    def saved: Extractor[Set[String]] = self.andThen(_.saved.toSet)
+    def saved: Extractor[Set[String]] = self.andFn(_.saved.toSet)
 
-    def mimeType: Extractor[String] = self.andThen(_.mimeType)
+    def mimeType: Extractor[String] = self.andFn(_.mimeType)
 
     def charSet: Extractor[String] = self.andOptionFn(_.charset)
 
-    def fileExtensions: Extractor[Seq[String]] = self.andThen(_.fileExtensions.toSeq)
+    def fileExtensions: Extractor[Seq[String]] = self.andFn(_.fileExtensions.toSeq)
 
     def defaultFileExtension: Extractor[String] = self.andOptionFn(_.defaultFileExtension)
   }
@@ -205,15 +205,15 @@ package object dsl {
         else Some(v.toSeq.apply(realIdx))
     }, _.unboxArrayOrMap)
 
-    def size: Extractor[Int] = self.andThen(_.size)
+    def size: Extractor[Int] = self.andFn(_.size)
 
-    def isEmpty: Extractor[Boolean] = self.andThen(_.isEmpty)
+    def isEmpty: Extractor[Boolean] = self.andFn(_.isEmpty)
 
-    def nonEmpty: Extractor[Boolean] = self.andThen(_.nonEmpty)
+    def nonEmpty: Extractor[Boolean] = self.andFn(_.nonEmpty)
 
-    def mkString(sep: String = ""): Extractor[String] = self.andThen(_.mkString(sep))
+    def mkString(sep: String = ""): Extractor[String] = self.andFn(_.mkString(sep))
 
-    def mkString(start: String, sep: String, end: String): Extractor[String] = self.andThen(_.mkString(start, sep, end))
+    def mkString(start: String, sep: String, end: String): Extractor[String] = self.andFn(_.mkString(start, sep, end))
 
     //TODO: Why IterableExprView.filter cannot be applied on ZippedExpr? is the scala compiler malfunctioning?
     def zipWithKeys(keys: Extractor[Any]): ZippedExpr[Any, T] =
@@ -260,11 +260,11 @@ package object dsl {
       )
     }
 
-    def map[B: TypeTag](f: T => B): Extractor[Seq[B]] = self.andThen (
+    def map[B: TypeTag](f: T => B): Extractor[Seq[B]] = self.andFn (
       v => v.toSeq.map(f)
     )
 
-    def flatMap[B: TypeTag](f: T => GenTraversableOnce[B]): Extractor[Seq[B]] = self.andThen (
+    def flatMap[B: TypeTag](f: T => GenTraversableOnce[B]): Extractor[Seq[B]] = self.andFn (
       v => v.toSeq.flatMap(f)
     )
   }
@@ -272,9 +272,9 @@ package object dsl {
   implicit class StringExprView(self: Extractor[String]) extends Serializable {
 
     def replaceAll(regex: String, replacement: String): Extractor[String] =
-      self.andThen(_.replaceAll(regex, replacement))
+      self.andFn(_.replaceAll(regex, replacement))
 
-    def trim: Extractor[String] = self.andThen(_.trim)
+    def trim: Extractor[String] = self.andFn(_.trim)
 
     def +(another: Extractor[Any]): Extractor[String] = x"$self$another"
   }

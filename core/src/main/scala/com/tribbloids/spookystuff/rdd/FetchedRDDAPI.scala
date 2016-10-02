@@ -129,14 +129,14 @@ trait FetchedRDDAPI {
 
   //In contrast, checkpoint is action-like that will doExecute() immediately.
   def checkpoint(): Unit = {
-    rdd.checkpoint()
+    squashedRDD.checkpoint()
   }
 
   def isCheckpointed: Boolean = {
-    rdd.isCheckpointed
+    squashedRDD.isCheckpointed
   }
 
   def getCheckpointFile: Option[String] = {
-    rdd.getCheckpointFile
+    squashedRDD.getCheckpointFile
   }
 }

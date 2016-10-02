@@ -1,6 +1,7 @@
 package com.tribbloids.spookystuff.utils
 
 import com.tribbloids.spookystuff.SpookyEnvFixture
+import com.tribbloids.spookystuff.testutils.TestHelper
 
 import scala.util.Random
 
@@ -68,6 +69,20 @@ class SpookyViewsSuite extends SpookyEnvFixture {
   test("\\\\ can handle null component") {
 
     assert(nullStr \\ nullStr \\ "abc" \\ null \\ null == "abc")
+  }
+
+  test("foreachExecutor will run properly") {
+    val result = sc.mapPerExecutor {
+      1
+    }
+    assert(result.count() == sc.defaultParallelism)
+  }
+
+  test("foreachNode will run properly") {
+    val result = sc.mapPerNode {
+      1
+    }
+    assert(result.count() == TestHelper.clusterSize)
   }
 
 //  test("1") {

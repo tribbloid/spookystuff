@@ -68,9 +68,9 @@ trait PyAction extends Action {
         argJSONs.mkString(",\n"),
         ")"
       )
-      val result = session.pythonDriver.exe(lines.mkString("\n"))._2
+      val result = session.pythonDriver.call(lines.mkString("\n"))._2
 
-      result
+      result.getOrElse("Nil")
     }
   }
 
@@ -82,7 +82,7 @@ trait PyAction extends Action {
 
     session match {
       case d: DriverSession =>
-        d.initializePythonDriverIfMissing()
+        d.getOrCreatePythonDriver
       case _ =>
     }
     constructPython(session)

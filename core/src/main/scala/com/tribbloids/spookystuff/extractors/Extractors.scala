@@ -36,7 +36,7 @@ object Extractors {
   }
 
   case class FindAllMeta(arg: Extractor[Unstructured], selector: String)
-  def FindAllExpr(arg: Extractor[Unstructured], selector: String) = arg.andThen(
+  def FindAllExpr(arg: Extractor[Unstructured], selector: String) = arg.andFn(
     {
       v1: Unstructured => v1.findAll(selector)
     },
@@ -44,7 +44,7 @@ object Extractors {
   )
 
   case class ChildrenMeta(arg: Extractor[Unstructured], selector: String)
-  def ChildrenExpr(arg: Extractor[Unstructured], selector: String) = arg.andThen(
+  def ChildrenExpr(arg: Extractor[Unstructured], selector: String) = arg.andFn(
     {
       v1 => v1.children(selector)
     },
@@ -54,9 +54,9 @@ object Extractors {
   def ExpandExpr(arg: Extractor[Unstructured], range: Range) = {
     arg match {
       case AndThen(_,_,Some(FindAllMeta(argg, selector))) =>
-        argg.andThen(_.findAllWithSiblings(selector, range))
+        argg.andFn(_.findAllWithSiblings(selector, range))
       case AndThen(_,_,Some(ChildrenMeta(argg, selector))) =>
-        argg.andThen(_.childrenWithSiblings(selector, range))
+        argg.andFn(_.childrenWithSiblings(selector, range))
       case _ =>
         throw new UnsupportedOperationException("expression does not support expand")
     }

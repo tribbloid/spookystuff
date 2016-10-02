@@ -1,19 +1,21 @@
 from __future__ import print_function
 
-from dronekit import LocationGlobalRelative
+import time
+from dronekit import LocationGlobalRelative, connect, VehicleMode
 
-from pyspookystuff.mav_test import *
+from pyspookystuff.mav import assureInTheAir
+from pyspookystuff.mav_test import sitlProxyUp, sitlProxyClean
+
 
 def test_both():
 
-    setup_sitl_mavproxy(options='--out=127.0.0.1:10092', instance=1)
-    setup_sitl_mavproxy(options='--out=127.0.0.1:10102', instance=0)
+    sitlProxyUp(outs=['127.0.0.1:10092'])
+    sitlProxyUp(outs=['127.0.0.1:10102'])
 
     ferry('127.0.0.1:10092', '127.0.0.1:10102')
 
-    teardownAll()
+    sitlProxyClean()
 
-    return
 
 def ferry(path1, path2):
     vehicle1 = connect(path1, wait_ready=True)
@@ -30,8 +32,8 @@ def ferry(path1, path2):
 
     print("Allowing time for parameter write")
 
-    arm_and_takeoff(20, vehicle1)
-    arm_and_takeoff(20, vehicle2)
+    assureInTheAir(20, vehicle1)
+    assureInTheAir(20, vehicle2)
 
     point1 = LocationGlobalRelative(90, 0, 20)
     point2 = LocationGlobalRelative(-90, 0, 20)

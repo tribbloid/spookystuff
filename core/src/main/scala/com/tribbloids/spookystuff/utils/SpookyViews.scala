@@ -3,12 +3,13 @@ package com.tribbloids.spookystuff.utils
 import java.security.PrivilegedAction
 import java.sql.{Date, Timestamp}
 
+import com.tribbloids.spookystuff.caching.ConcurrentMap
 import com.tribbloids.spookystuff.row._
-import org.apache.spark.SparkContext
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.DataFrame
 import org.apache.spark.sql.catalyst.ScalaReflection
 import org.apache.spark.sql.types._
+import org.apache.spark.{SparkContext, SparkEnv, TaskContext}
 
 import scala.collection.generic.CanBuildFrom
 import scala.collection.immutable.ListMap
@@ -34,6 +35,9 @@ object SpookyViews {
     }
   }
 
+  // stageID -> isExecuted
+  val foreachNodeMark: ConcurrentMap[Long, Boolean] = ConcurrentMap()
+
   implicit class SparkContextView(val self: SparkContext) {
 
     def withJob[T](description: String)(fn: T): T = {
@@ -47,15 +51,43 @@ object SpookyViews {
       result
     }
 
-    def exePerCore[T: ClassTag](f: => T): RDD[T] = {
-      self.parallelize(1 to self.defaultParallelism * 4)
-        .mapPartitions(
-          itr =>
-            Iterator(f)
-        )
-    }
+    def mapPerExecutor[T: ClassTag](f: => T): RDD[T] = {
+      val alreadyRunExecutorID: ConcurrentMap[String, Unit] = ConcurrentMap()
 
-    def exePerWorker[T](f: () => T): RDD[T] = ???
+      self.parallelize(1 to self.defaultParallelism * 4)
+        //TODO: this assumes that default partitioner distribute evenly, need testing for noncanonical case!
+        .mapPartitions {
+        itr =>
+          val id = SparkEnv.get.executorId
+          if (!alreadyRunExecutorID.contains(id)) {
+            alreadyRunExecutorID += id -> Unit
+            Iterator(f)
+          }
+          else {
+            Iterator.empty
+          }
+      }
+    }
+    def foreachExecutor[T: ClassTag](f: => T) = mapPerExecutor(f).collect()
+
+    def mapPerNode[T: ClassTag](f: => T): RDD[T] = {
+      self.parallelize(1 to self.defaultParallelism * 4) //this assumes that default partitioner distribute evenly
+        .mapPartitions {
+        itr =>
+          val stageID = TaskContext.get.stageId()
+          foreachNodeMark.synchronized {
+            val alreadyRun = foreachNodeMark.getOrElseUpdate(stageID, false)
+            if (!alreadyRun) {
+              foreachNodeMark.put(stageID, true)
+              Iterator(f)
+            }
+            else {
+              Iterator.empty
+            }
+          }
+      }
+    }
+    def foreachNode[T: ClassTag](f: => T) = mapPerNode(f).collect()
   }
 
   implicit class RDDView[T](val self: RDD[T]) {

@@ -129,18 +129,26 @@ case class PythonDriver(
     rows
   }
 
-  def exe(code: String, varName: String = "result"): (Seq[String], String) = {
+  def call(code: String, varName: String = "result"): (Seq[String], Option[String]) = {
     val _code =
       s"""
+        |$varName = None
+        |
         |$code
+        |
         |print('*!?execution result!?*')
-        |print($varName)
+        |if $varName: print($varName)
+        |else: print('*!?no returned value!?*')
       """.stripMargin
 
     val rows = interpret(_code).toSeq
     val splitterI = rows.zipWithIndex.find(_._1 == "*!?execution result!?*").get._2
     val splitted = rows.splitAt(splitterI)
 
-    splitted._1 -> splitted._2.slice(1, Int.MaxValue).mkString("\n")
+    val _result = splitted._2.slice(1, Int.MaxValue).mkString("\n")
+    val resultOpt = if (_result == "*!?no returned value!?*") None
+    else Some(_result)
+
+    splitted._1 -> resultOpt
   }
 }

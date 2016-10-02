@@ -190,7 +190,7 @@ trait GenExtractor[T, +R] extends ScalaDynamicMixin[T, R] with Serializable {
 
   def andEx[R2>: R, A](g: GenExtractor[R2, A], meta: Option[Any] = None): GenExtractor[T, A] = AndThen[T, R2, A](this, g, meta)
 
-  def andThen[A: TypeTag](g: R => A, meta: Option[Any] = None): GenExtractor[T, A] = {
+  def andFn[A: TypeTag](g: R => A, meta: Option[Any] = None): GenExtractor[T, A] = {
     andEx(g, meta)
   }
 
@@ -222,7 +222,7 @@ trait GenExtractor[T, +R] extends ScalaDynamicMixin[T, R] with Serializable {
     }
   }
 
-  def toStr = andThen(_.toString)
+  def toStr = andFn(_.toString)
 }
 
 trait Alias[T, +R] extends GenExtractor[T, R] {

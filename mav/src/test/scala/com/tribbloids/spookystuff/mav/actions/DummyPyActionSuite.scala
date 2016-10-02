@@ -1,8 +1,7 @@
-package com.tribbloids.spookystuff.mav
+package com.tribbloids.spookystuff.mav.actions
 
 import com.tribbloids.spookystuff.SpookyEnvFixture
 import com.tribbloids.spookystuff.doc.Doc
-import com.tribbloids.spookystuff.mav.actions.DummyPyAction
 
 /**
   * Created by peng on 01/09/16.
