@@ -4,7 +4,7 @@ import time
 from nose import with_setup
 
 from pyspookystuff.mav.routing import Proxy
-from pyspookystuff.mav.simulation import APMSim
+from pyspookystuff.mav.sim import APMSim
 
 
 def sitlUp():

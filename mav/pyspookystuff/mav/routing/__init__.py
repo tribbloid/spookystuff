@@ -60,6 +60,7 @@ class Instance(object):
 
     # unreachable = multiprocessing.Array(ctypes.c_char_p, 10)  # type: multiprocessing.Array
     unreachable = mav.manager.list()
+
     # won't be tried by executor, daemon will still try it and if successful, will remove it from the list
     # in all these arrays json strings of Instances are stored. This is the only way to discover duplicity
 
@@ -83,8 +84,6 @@ class Instance(object):
 
 
 class ProxyFactory(object):
-    usedPort = mav.manager.list()
-    # usedPort = multiprocessing.Array(ctypes.c_long, 10, lock=True)  # type: multiprocessing.Array
 
     def __init__(self, _json):
         _dict = json.loads(_json)
@@ -93,17 +92,34 @@ class ProxyFactory(object):
         self.polling = _dict['polling']
         self.name = _dict['name']
 
-    def nextPort(self): # NOT static! don't move anywhere
-        port = mav.nextUnused(ProxyFactory.usedPort, self.ports)
+    def nextPort(self):  # NOT static! don't move anywhere
+        port = mav.nextUnused(Proxy.usedPort, self.ports)
         return port
+
+    def nextProxy(self, connStr):
+        port = self.nextPort()
+        try:
+            proxy = Proxy(
+                connStr,
+                port,
+                self.gcsMapping,
+                self.name
+            )
+            return proxy
+        except Exception as ee:
+            if port in Proxy.usedPort:
+                Proxy.usedPort.remove(port)
+            raise ee
 
 
 class Proxy(object):
-    proxies = []
+    existing = []
+    usedPort = mav.manager.list()
+    # usedPort = multiprocessing.Array(ctypes.c_long, 10, lock=True)  # type: multiprocessing.Array
 
     @staticmethod
     def _up(aircraft, setup=False, master='tcp:127.0.0.1:5760', outs={'127.0.0.1:14550'},
-           options=None, logfile=sys.stdout):
+            options=None, logfile=sys.stdout):
         """
         launch mavproxy connected to a SIL instance
         mavproxy.py -h
@@ -174,9 +190,9 @@ class Proxy(object):
     @staticmethod
     def clean():
 
-        for m in Proxy.proxies :
+        for m in Proxy.existing:
             m.close()
-        proxies = []
+        Proxy.existing = []
 
     def __init__(self, connStr, name, port, outs):
 
@@ -189,22 +205,24 @@ class Proxy(object):
         # affect dir of log files
         self.name = name
 
-        effectiveOuts = self.outs + [self.endpoint()]
+        effectiveOuts = self.outs + [self.endpoint]
         self.spawn = Proxy._up(aircraft=self.name, master=connStr, outs=effectiveOuts)
-        Proxy.proxies.append(self)
+        Proxy.existing.append(self)
 
+    @property
     def endpoint(self):
         return 'localhost:' + str(self.port)
 
     def close(self):
         os.killpg(self.spawn.pid, 2)
-        ProxyFactory.usedPort.remove(self.port)
+        if self.port in Proxy.usedPort:
+            Proxy.usedPort.remove(self.port)
         # TODO: cleanup variables to fail early?
 
 
 # if all instances are not available, sleep for x seconds and retry.
 class Binding(object):
-    # local to process
+    # local to process, 1 process can only have 1 binding.
     existing = None  # type: Binding
 
     @staticmethod
@@ -236,16 +254,11 @@ class Binding(object):
         for ii in instances:
             if ii.isAvailable():
                 proxy = None
-                port = proxyF.nextPort()
+                vehicle = None
                 try:
                     endpoint = ii.connStr
                     if proxyF:
-                        proxy = Proxy(
-                            ii,
-                            port,
-                            proxyF.gcsMapping,
-                            proxyF.name
-                        )
+                        proxy = proxyF.nextProxy(ii.connStr)
                         endpoint = proxy.endpoint()
 
                     vehicle = dronekit.connect(
@@ -256,12 +269,12 @@ class Binding(object):
                     return binding
 
                 except Exception as ee:
-                    proxyF.usedPort.remove(port)
                     Instance.unreachable.append(ii.json)
+                    if proxy:
+                        proxy.close()
+                    if vehicle:
+                        vehicle.close()
                     raise ee
-
-                finally:
-                    if proxy: proxy.close()
 
         raise mav.DronePoolDepletedException(
             "All drones are dispatched or unreachable:\n" +

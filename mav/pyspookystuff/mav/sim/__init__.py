@@ -1,10 +1,9 @@
 # Not part of the routing as its marginally useful outside testing.
-import ctypes
-import multiprocessing
 import os
 
 from dronekit import connect
 from dronekit_sitl import SITL
+
 from pyspookystuff import mav
 
 # these are process-local and won't be shared by Spark workers
@@ -22,17 +21,17 @@ def tcp_master(instance):
 
 
 class APMSim(object):
-    sitls = []
-    usedIndex = mav.manager.list()
+    existing = []
+    usedINum = mav.manager.list()
 
     @staticmethod
-    def nextIndex():
-        port = mav.nextUnused(APMSim.usedIndex, range(0, 254))
+    def nextINum():
+        port = mav.nextUnused(APMSim.usedINum, range(0, 254))
         return port
 
     def __init__(self, index):
 
-        self.index = index
+        self.iNum = index
         self.args = sitl_args + ['-I' + str(index)]
         self.sitl = SITL()
         self.sitl.download('copter', '3.3')
@@ -42,16 +41,16 @@ class APMSim(object):
 
         self.setParamAndRelaunch('SYSID_THISMAV', index + 1)
 
-        APMSim.sitls.append(self)
+        APMSim.existing.append(self)
 
     @staticmethod
     def create():
-        index = APMSim.nextIndex()
+        index = APMSim.nextINum()
         try:
             result = APMSim(index)
             return result
         except Exception as ee:
-            APMSim.usedIndex.remove(index)
+            APMSim.usedINum.remove(index)
             raise ee
 
     def setParamAndRelaunch(self, key, value):
@@ -71,14 +70,15 @@ class APMSim(object):
         assert actualValue == value
         v.close()
 
-    def stop(self):
+    def close(self):
 
         self.sitl.stop()
-        sitls.remove(self)
+        APMSim.usedINum.remove(self.iNum)
+        APMSim.existing.remove(self)
 
     @staticmethod
     def clean():
 
-        for sitl in APMSim.sitls :
+        for sitl in APMSim.existing:
             sitl.stop()
-        sitls = []
+        APMSim.existing = []
