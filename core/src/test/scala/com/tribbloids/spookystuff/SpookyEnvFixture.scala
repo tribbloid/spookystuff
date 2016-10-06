@@ -21,10 +21,18 @@ abstract class SpookyEnvFixture
 
   def sc: SparkContext = TestHelper.TestSpark
   def sql: SQLContext = TestHelper.TestSQL
+
   lazy val spookyConf = new SpookyConf(
     webDriverFactory = driverFactory
   )
-  lazy val spooky = new SpookyContext(sql, spookyConf)
+
+  var _spooky: SpookyContext = _
+  def spooky = Option(_spooky).getOrElse {
+    val result = new SpookyContext(sql, spookyConf)
+    _spooky = result
+    result
+  }
+
   lazy val schema = DataRowSchema(spooky)
 
   implicit def withSchema(row: SquashedFetchedRow): SquashedFetchedRow#WithSchema = new row.WithSchema(schema)

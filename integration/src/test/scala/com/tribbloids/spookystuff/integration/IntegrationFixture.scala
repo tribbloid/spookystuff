@@ -5,7 +5,7 @@ import java.util.Date
 import com.tribbloids.spookystuff.dsl._
 import com.tribbloids.spookystuff.testutils.{RemoteDocsFixture, TestHelper}
 import com.tribbloids.spookystuff.utils.SpookyUtils
-import com.tribbloids.spookystuff.{DirConf, Metrics, SpookyConf, SpookyContext}
+import com.tribbloids.spookystuff._
 import org.apache.spark.SparkContext
 import org.apache.spark.sql.SQLContext
 import org.scalatest.{BeforeAndAfterAll, FunSuite}
@@ -13,30 +13,10 @@ import org.scalatest.{BeforeAndAfterAll, FunSuite}
 import scala.concurrent.duration
 import scala.util.Random
 
-abstract class IntegrationFixture extends FunSuite with BeforeAndAfterAll with RemoteDocsFixture {
-
-  def sc: SparkContext = TestHelper.TestSpark
-  def sql: SQLContext = TestHelper.TestSQL
-
-  var spooky: SpookyContext = _
+abstract class IntegrationFixture extends SpookyEnvFixture with BeforeAndAfterAll with RemoteDocsFixture {
 
   val phantomJS = DriverFactories.PhantomJS()
   val htmlUnit = DriverFactories.HtmlUnit()
-
-  override def beforeAll() {
-    TestHelper.TestSparkConf.setAppName("integration")
-
-    super.beforeAll()
-  }
-
-  override def afterAll() {
-    if (sc != null) {
-      sc.stop()
-    }
-
-    TestHelper.clearTempDir()
-    super.afterAll()
-  }
 
   lazy val roots: Seq[String] = {
 
@@ -64,7 +44,7 @@ abstract class IntegrationFixture extends FunSuite with BeforeAndAfterAll with R
     for (driver <- driverFactories) {
       for (optimizer <- optimizers) {
         test(s"$optimizer/$driver/$root") {
-          spooky = new SpookyContext(
+          _spooky = new SpookyContext(
             sql,
             new SpookyConf(
               components = Map(
