@@ -210,7 +210,7 @@
         <outputDirectory>target/scala/classes</outputDirectory>
         <testOutputDirectory>target/scala/test-classes</testOutputDirectory>
 
-        <!--add python into fat jar that are shipped to all workers-->
+        <!--add python into fat jar that are shipped to all workers TODO: merge with build-helper-maven-plugin?-->
         <resources>
             <resource>
                 <directory>src/main/resources</directory>
@@ -228,21 +228,42 @@
 
         <plugins>
             <plugin>
-                <groupId>net.alchim31.maven</groupId>
-                <artifactId>scala-maven-plugin</artifactId>
-                <version>3.2.2</version>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>build-helper-maven-plugin</artifactId>
                 <executions>
-
                     <execution>
-                        <id>add-source</id>
+                        <id>add-scala-source</id>
                         <phase>generate-sources</phase>
                         <goals>
                             <goal>add-source</goal>
                         </goals>
                         <configuration>
-                            <sourceDir>${project.basedir}/shims/spark${spark.binary.version}-shim</sourceDir>
+                            <sources>
+                                <source>${project.basedir}/shims/spark${spark.binary.version}-shim/main/scala</source>
+                            </sources>
                         </configuration>
                     </execution>
+                    <execution>
+                        <id>add-scala-test-sources</id>
+                        <phase>generate-test-sources</phase>
+                        <goals>
+                            <goal>add-test-source</goal>
+                        </goals>
+                        <configuration>
+                            <sources>
+                                <source>${project.basedir}/shims/spark${spark.binary.version}-shim/test/scala</source>
+                            </sources>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <plugin>
+                <groupId>net.alchim31.maven</groupId>
+                <artifactId>scala-maven-plugin</artifactId>
+                <version>3.2.2</version>
+                <executions>
+
                     <execution>
                         <id>scala-compile-first</id>
                         <phase>process-resources</phase>

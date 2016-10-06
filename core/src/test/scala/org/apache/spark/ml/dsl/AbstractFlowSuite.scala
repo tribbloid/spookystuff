@@ -4,7 +4,9 @@ import com.tribbloids.spookystuff.testutils.TestMixin
 import org.apache.spark.ml.PipelineStage
 import org.apache.spark.ml.param.shared.{HasInputCol, HasInputCols, HasOutputCol}
 import org.scalatest.FunSuite
+import org.scalatest.exceptions.TestFailedException
 
+import scala.util.Try
 import scala.util.matching.Regex
 
 /**
@@ -14,9 +16,20 @@ abstract class AbstractFlowSuite extends FunSuite with TestMixin {
 
   implicit class StringView(str: String) extends super.TestStringView(str){
 
-    def shouldBeCompacted(gd: String = null): Unit = {
-      val compactedGD = Option(gd).map(compactGroundTruth).orNull
-      this.shouldBe(compactedGD)
+    def treeNodeShouldBe(groundTruth: String = null): Unit = {
+      val compactedGT = Option(groundTruth).map(compactGroundTruth).orNull
+      Try {
+        this.shouldBe(compactedGT)
+      }
+        .recover {
+          case e@ (_: TestFailedException | _: AssertionError) =>
+            val correctedGT = compactedGT
+              .replaceAll("+- ", " ")
+              .replaceAll(":- ", " ")
+              .replaceAll(":  ", " ")
+            //this is for Spark 1.5
+            this.shouldBe(correctedGT)
+        }
     }
   }
 

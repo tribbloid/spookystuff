@@ -19,7 +19,7 @@ class CommitSuite extends AbstractFlowSuite {
         >>> new Tokenizer()
       )
 
-    flow.show(showID = false, compactionOpt = compactionOpt).shouldBeCompacted(
+    flow.show(showID = false, compactionOpt = compactionOpt).treeNodeShouldBe(
       """
         |\ left >
         |> ForwardNode (TAIL>) [input]
@@ -37,7 +37,7 @@ class CommitSuite extends AbstractFlowSuite {
     val input: FlowComponent = 'input
     val flow = input >-> new VectorAssembler() <-< input
 
-    flow.show(showID = false, forward = false, compactionOpt = compactionOpt).shouldBeCompacted(
+    flow.show(showID = false, forward = false, compactionOpt = compactionOpt).treeNodeShouldBe(
       """
         |< BackwardNode (HEAD) [input,input] > VectorAssembler > [input$VectorAssembler]
         |:- < BackwardNode (TAIL) [input]
@@ -49,25 +49,25 @@ class CommitSuite extends AbstractFlowSuite {
   test("A commit_> B commit_> Source is associative") {
     val flow1 = 'input >-> new Tokenizer() >-> 'dummy // resolve to rebase then union
     val flow2 = 'input >-> (new Tokenizer() >-> 'dummy) // resolve to union then rebase
-    flow1.show(showID = false, compactionOpt = compactionOpt).shouldBeCompacted(flow2.show(showID = false, compactionOpt = compactionOpt))
+    flow1.show(showID = false, compactionOpt = compactionOpt).treeNodeShouldBe(flow2.show(showID = false, compactionOpt = compactionOpt))
   }
 
   test("A commit_< B commit_< Source is associative") {
     val flow1 = 'dummy <-< new Tokenizer() <-< 'input
     val flow2 = 'dummy <-< (new Tokenizer() <-< 'input)
-    flow1.show(showID = false, compactionOpt = compactionOpt).shouldBeCompacted(flow2.show(showID = false, compactionOpt = compactionOpt))
+    flow1.show(showID = false, compactionOpt = compactionOpt).treeNodeShouldBe(flow2.show(showID = false, compactionOpt = compactionOpt))
   }
 
   test("A commit_> B commit_> detached Stage is associative") {
     val flow1 = 'input >-> new Tokenizer() >-> new NGram() // resolve to rebase then union
     val flow2 = 'input >-> (new Tokenizer() >-> new NGram() ) // resolve to union then rebase
-    flow1.show(showID = false, compactionOpt = compactionOpt).shouldBeCompacted(flow2.show(showID = false, compactionOpt = compactionOpt))
+    flow1.show(showID = false, compactionOpt = compactionOpt).treeNodeShouldBe(flow2.show(showID = false, compactionOpt = compactionOpt))
   }
 
   test("A commit_< B commit_< detached Stage is associative") {
     val flow1 = new NGram()  <-< new Tokenizer() <-< 'input
     val flow2 = new NGram()  <-< (new Tokenizer() <-< 'input)
-    flow1.show(showID = false, compactionOpt = compactionOpt).shouldBeCompacted(flow2.show(showID = false, compactionOpt = compactionOpt))
+    flow1.show(showID = false, compactionOpt = compactionOpt).treeNodeShouldBe(flow2.show(showID = false, compactionOpt = compactionOpt))
   }
 
   test("commit_> Stage is cast to rebase") {
@@ -83,7 +83,7 @@ class CommitSuite extends AbstractFlowSuite {
         >-> new NGram()
       )
 
-    flow.show(showID = false, compactionOpt = compactionOpt).shouldBeCompacted(
+    flow.show(showID = false, compactionOpt = compactionOpt).treeNodeShouldBe(
       """
         |\ left >
         |> ForwardNode (TAIL>) [input]
@@ -111,7 +111,7 @@ class CommitSuite extends AbstractFlowSuite {
         .from("Tokenizer").and("StopWordsRemover")
       )
 
-    flow.show(showID = false, compactionOpt = compactionOpt).shouldBeCompacted(
+    flow.show(showID = false, compactionOpt = compactionOpt).treeNodeShouldBe(
       """
         |\ left >
         |> ForwardNode (HEAD)(TAIL>) [input$Tokenizer$StopWordsRemover] > NGram > [input$Tokenizer$StopWordsRemover$NGram]
@@ -130,7 +130,7 @@ class CommitSuite extends AbstractFlowSuite {
 
   test("commit_> Source is cast to union") {
     val flow = 'input >-> new Tokenizer() >-> 'dummy
-    flow.show(showID = false, compactionOpt = compactionOpt).shouldBeCompacted(
+    flow.show(showID = false, compactionOpt = compactionOpt).treeNodeShouldBe(
       """
         |\ left >
         |> ForwardNode (TAIL>) [input]
@@ -145,7 +145,7 @@ class CommitSuite extends AbstractFlowSuite {
 
   test("commit_< Source is cast to union") {
     val flow = 'dummy <-< new Tokenizer() <-< 'input
-    flow.show(showID = false, compactionOpt = compactionOpt).shouldBeCompacted(
+    flow.show(showID = false, compactionOpt = compactionOpt).treeNodeShouldBe(
       """
         |\ left >
         |> ForwardNode (HEAD)(TAIL>) [input] > Tokenizer > [input$Tokenizer]

@@ -27,7 +27,7 @@ class RebaseSuite extends AbstractFlowSuite {
         >=> new VectorAssembler()
       )
 
-    flow.show(showID = false, compactionOpt = compactionOpt).shouldBeCompacted(
+    flow.show(showID = false, compactionOpt = compactionOpt).treeNodeShouldBe(
       """
         |\ left >
         |> ForwardNode (TAIL>) [input1]
@@ -47,7 +47,7 @@ class RebaseSuite extends AbstractFlowSuite {
         <=< ('input1 U 'input2)
       )
 
-    flow.show(showID = false, compactionOpt = compactionOpt).shouldBeCompacted(
+    flow.show(showID = false, compactionOpt = compactionOpt).treeNodeShouldBe(
       """
         |\ left >
         |> ForwardNode (HEAD)(TAIL>) [input2] > VectorAssembler > [input2$VectorAssembler]
@@ -72,7 +72,7 @@ class RebaseSuite extends AbstractFlowSuite {
         >=> new NGram()
       )
 
-    flow.show(showID = false, compactionOpt = compactionOpt).shouldBeCompacted(
+    flow.show(showID = false, compactionOpt = compactionOpt).treeNodeShouldBe(
       """
         |\ left >
         |> ForwardNode (TAIL>) [input]
@@ -98,7 +98,7 @@ class RebaseSuite extends AbstractFlowSuite {
         .from("Tokenizer").and("StopWordsRemover")
       )
 
-    flow.show(showID = false, compactionOpt = compactionOpt).shouldBeCompacted(
+    flow.show(showID = false, compactionOpt = compactionOpt).treeNodeShouldBe(
       """
         |\ left >
         |> ForwardNode (HEAD)(TAIL>) [input$Tokenizer$StopWordsRemover] > NGram > [input$Tokenizer$StopWordsRemover$NGram]
@@ -125,7 +125,7 @@ class RebaseSuite extends AbstractFlowSuite {
         >=> new HashingTF()
       )
 
-    flow.show(showID = false, compactionOpt = compactionOpt).shouldBeCompacted(
+    flow.show(showID = false, compactionOpt = compactionOpt).treeNodeShouldBe(
       """
         |\ left >
         |> ForwardNode (TAIL>) [input]
@@ -155,7 +155,7 @@ class RebaseSuite extends AbstractFlowSuite {
         .from("Tokenizer").and("StopWordsRemover")
       )
 
-    flow.show(showID = false, compactionOpt = compactionOpt).shouldBeCompacted(
+    flow.show(showID = false, compactionOpt = compactionOpt).treeNodeShouldBe(
       """
         |\ left >
         |> ForwardNode (HEAD)(TAIL>) [input$Tokenizer$StopWordsRemover$NGram] > HashingTF > [input$Tokenizer$StopWordsRemover$NGram$HashingTF]
@@ -181,7 +181,7 @@ class RebaseSuite extends AbstractFlowSuite {
         >=> down
       )
 
-    flow.show(showID = false, compactionOpt = compactionOpt, forward = false).shouldBeCompacted(
+    flow.show(showID = false, compactionOpt = compactionOpt, forward = false).treeNodeShouldBe(
       """
         |< BackwardNode (HEAD) [dummy,dummy,input] > VectorAssembler > [VectorAssembler]
         |:- < BackwardNode (<TAIL) [dummy]
@@ -200,7 +200,7 @@ class RebaseSuite extends AbstractFlowSuite {
       down <=<
         'input
 
-    flow.show(showID = false, compactionOpt = compactionOpt, forward = false).shouldBeCompacted(
+    flow.show(showID = false, compactionOpt = compactionOpt, forward = false).treeNodeShouldBe(
       """
         |< BackwardNode (HEAD) [dummy,dummy,input] > VectorAssembler > [VectorAssembler]
         |:- < BackwardNode (TAIL>) [dummy]

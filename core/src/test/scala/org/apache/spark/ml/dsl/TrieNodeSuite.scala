@@ -23,7 +23,7 @@ class TrieNodeSuite extends AbstractFlowSuite {
 
     val trie = TrieNode.build(map)
 
-    trie.toString().shouldBe(
+    trie.toString().treeNodeShouldBe(
       """
         |TrieNode None, 0
         |:- TrieNode [A], Some(A), 1
@@ -39,7 +39,7 @@ class TrieNodeSuite extends AbstractFlowSuite {
       """.stripMargin
     )
 
-    trie.compact.rebuildDepth().toString().shouldBe(
+    trie.compact.rebuildDepth().toString().treeNodeShouldBe(
       """
         |TrieNode None, 0
         |:- TrieNode [A,B,C,D], Some(ABCD), 1
@@ -70,7 +70,7 @@ class TrieNodeSuite extends AbstractFlowSuite {
 
     val trie = TrieNode.build(map)
 
-    trie.toString().shouldBe(
+    trie.toString().treeNodeShouldBe(
       """
         |TrieNode None, 0
         |:- TrieNode [A], Some(A), 1
@@ -86,8 +86,20 @@ class TrieNodeSuite extends AbstractFlowSuite {
       """.stripMargin
     )
 
-    trie.pruneUp.rebuildDepth().toString().shouldBe(
-
+    trie.pruneUp.rebuildDepth().toString().treeNodeShouldBe(
+      """
+        |TrieNode None, 0
+        | TrieNode [A], Some(A), 1
+        |  TrieNode [A], Some(AB), 2
+        |   TrieNode [A], Some(ABC), 3
+        |    TrieNode [A], Some(ABCD), 4
+        |     TrieNode [A,F], Some(ABCDF), 5
+        |     TrieNode [A,E], Some(ABCDE), 5
+        | TrieNode [1], Some(1), 1
+        |  TrieNode [1], Some(12), 2
+        |   TrieNode [1,4], Some(124), 3
+        |   TrieNode [1,3], Some(123), 3
+      """.stripMargin
     )
   }
 
