@@ -11,7 +11,6 @@
         <scala.version>2.10.6</scala.version>
         <scala.binary.version>2.10</scala.binary.version>
         <scala.fallback.version>2.10</scala.fallback.version>
-        <hadoop.version>2.6.0</hadoop.version>
         <spark.version>1.6.2</spark.version>
         <spark.binary.version>1.6</spark.binary.version>
         <PermGen>512m</PermGen>
@@ -89,6 +88,8 @@
             <activation>
                 <activeByDefault>true</activeByDefault>
             </activation>
+            <properties>
+            </properties>
         </profile>
 
         <profile>
@@ -231,6 +232,17 @@
                 <artifactId>scala-maven-plugin</artifactId>
                 <version>3.2.2</version>
                 <executions>
+
+                    <execution>
+                        <id>add-source</id>
+                        <phase>generate-sources</phase>
+                        <goals>
+                            <goal>add-source</goal>
+                        </goals>
+                        <configuration>
+                            <sourceDir>${project.basedir}/shims/spark${spark.binary.version}-shim</sourceDir>
+                        </configuration>
+                    </execution>
                     <execution>
                         <id>scala-compile-first</id>
                         <phase>process-resources</phase>

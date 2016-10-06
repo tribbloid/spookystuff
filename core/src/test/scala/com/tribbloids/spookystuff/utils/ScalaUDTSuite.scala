@@ -47,6 +47,8 @@ class ScalaUDTSuite extends SpookyEnvFixture with TestMixin {
   test("Action has a datatype") {
 
     val reified = getAndTestReifiedType[Action]
+
+    val typeName = reified.typeName
     reified.toString.shouldBe(
       """
         |action

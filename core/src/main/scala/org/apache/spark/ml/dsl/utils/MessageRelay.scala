@@ -62,8 +62,6 @@ abstract class MessageRelay[Obj] {
   def toMessage(v: Obj): Message
   final def toMessageValue(v: Obj): MessageRelay.this.M = toMessage(v).value.asInstanceOf[MessageRelay.this.M]
 
-  final def toMLWriter(v: Obj) = toMessage(v).MLWriter
-
   trait HasRelay {
     self: Obj =>
 
@@ -80,23 +78,6 @@ abstract class MessageRelay[Obj] {
     override def deserialize(datum: Any): Obj = ???
 
     override def userClass: Class[Obj] = ???
-  }
-
-  final def toMLReader: MLReader[Obj] = MLReader
-  case object MLReader extends MLReader[Obj] {
-
-    def outer = MessageRelay.this
-
-    //TODO: need impl
-    override def load(path: String): Obj = {
-      //      val metadata = DefaultParamsReader.loadMetadata(path, sc)
-      //      val cls = Utils.classForName(metadata.className)
-      //      val instance =
-      //        cls.getConstructor(classOf[String]).newInstance(metadata.uid).asInstanceOf[Params]
-      //      DefaultParamsReader.getAndSetParams(instance, metadata)
-      //      instance.asInstanceOf[T]
-      ???
-    }
   }
 
   def Param(
@@ -134,13 +115,13 @@ abstract class MessageRelay[Obj] {
     /** Creates a param pair with the given value (for Java). */
     //    override def w(value: M): ParamPair[M] = super.w(value)
 
-    override def jsonEncode(value: Obj): String = {
+    def jsonEncode(value: Obj): String = {
 
       toMessage(value)
         .compactJSON(MessageRelay.this.formats)
     }
 
-    override def jsonDecode(json: String): Obj = {
+    def jsonDecode(json: String): Obj = {
 
       val message: M = MessageRelay.this.fromJSON(json)
       message match {
@@ -191,33 +172,6 @@ trait Message extends Serializable {
   def toXMLStr(pretty: Boolean = true)(implicit formats: Formats = formats): String = {
     if (pretty) prettyXML
     else compactXML
-  }
-
-  case object MLWriter extends MLWriter with Serializable {
-
-    def message = Message.this
-
-    //    def saveJSON(path: String): Unit = {
-    //      val resolver = HDFSResolver(sc.hadoopConfiguration)
-    //
-    //      resolver.output(path, overwrite = true){
-    //        os =>
-    //          os.write(StructRepr.this.prettyJSON.getBytes("UTF-8"))
-    //      }
-    //    }
-
-    override protected def saveImpl(path: String): Unit = {
-
-      val instance = new MessageParams(Identifiable.randomUID(Message.this.getClass.getSimpleName))
-
-      DefaultParamsWriter.saveMetadata(instance, path, sc, extraMetadata = Some("metadata" -> Message.this.toJValue))
-
-      // Save stages
-      //    val stagesDir = new Path(path, "stages").toString
-      //    stages.zipWithIndex.foreach { case (stage: MLWritable, idx: Int) =>
-      //      stage.write.save(getStagePath(stage.uid, idx, stages.length, stagesDir))
-      //    }
-    }
   }
 }
 trait MessageRepr[T] extends Message {

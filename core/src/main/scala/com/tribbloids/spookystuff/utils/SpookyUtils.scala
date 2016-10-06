@@ -8,6 +8,7 @@ import java.util.zip.ZipInputStream
 import com.tribbloids.spookystuff.utils.NoRetry.NoRetryWrapper
 import org.apache.spark.ml.dsl.ReflectionUtils
 import org.apache.spark.sql.catalyst.ScalaReflection
+import org.apache.spark.sql.catalyst.ScalaReflection._
 import org.slf4j.LoggerFactory
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -258,9 +259,49 @@ These special characters are often called "metacharacters".
     }
   }
 
-  def caseAccessors[T: TypeTag]: List[MethodSymbol] = typeOf[T].members.collect {
-    case m: MethodSymbol if m.isCaseAccessor => m
-  }.toList
+  object Reflection {
+    def getCaseAccessorSymbols[T: TypeTag]: List[MethodSymbol] = typeOf[T].members.collect {
+      case m: MethodSymbol if m.isCaseAccessor => m
+    }
+      .toList
+
+    def getCaseAccessorParameters[T: TypeTag]: List[(String, Type)] = {
+      getCaseAccessorSymbols[T].map {
+        ss =>
+          ss.name.decoded -> ss.typeSignature
+      }
+    }
+
+    //the following are copied from Spark ScalaReflection
+    def getConstructorParameters(cls: Class[_]): Seq[(String, Type)] = {
+      val m = runtimeMirror(cls.getClassLoader)
+      val classSymbol = m.staticClass(cls.getName)
+      val t = classSymbol.selfType
+      getConstructorParameters(t)
+    }
+
+    def getConstructorParameters(tpe: Type): Seq[(String, Type)] = {
+      val formalTypeArgs = tpe.typeSymbol.asClass.typeParams
+      val TypeRef(_, _, actualTypeArgs) = tpe
+      val constructorSymbol = tpe.member(nme.CONSTRUCTOR)
+      val params = if (constructorSymbol.isMethod) {
+        constructorSymbol.asMethod.paramss
+      } else {
+        // Find the primary constructor, and use its parameter ordering.
+        val primaryConstructorSymbol: Option[Symbol] = constructorSymbol.asTerm.alternatives.find(
+          s => s.isMethod && s.asMethod.isPrimaryConstructor)
+        if (primaryConstructorSymbol.isEmpty) {
+          sys.error("Internal SQL error: Product object did not have a primary constructor.")
+        } else {
+          primaryConstructorSymbol.get.asMethod.paramss
+        }
+      }
+
+      params.flatten.map { p =>
+        p.name.toString -> p.typeSignature.substituteTypes(formalTypeArgs, actualTypeArgs)
+      }
+    }
+  }
 
   def getCPResource(str: String): Option[URL] =
     Option(ClassLoader.getSystemClassLoader.getResource(str.stripSuffix(File.separator)))

@@ -15,6 +15,8 @@ case class AbstractNamedStage[+T <: PipelineStage](
                                                     _id: String = "" + Random.nextLong() //TODO: multiple Stages with same uid can't be used together?
                                                   ) {
 
+  import org.apache.spark.ml.shim.ShimViews._
+
   //create a new PipelineStage that doesn't share the same parameter
   def replicate: AbstractNamedStage[T] = {
     val result = this.copy(
@@ -33,13 +35,11 @@ case class AbstractNamedStage[+T <: PipelineStage](
       None
   }
   def hasOutputs = stage match {
-    case s: HasOutputCol => true
+    case s: HasOutputCol => true //TODO: do we really need this? implementation is inconsistent
     case _ => false
   }
-  def setOutput(v: String) = stage match {
-    case s: HasOutputCol =>
-      s.set(s.outputCol, v)
-    case _ =>
+  def setOutput(v: String) = {
+    stage.trySetOutputCol(v)
   }
 
   def inputs: Seq[String] = stage match {
@@ -56,14 +56,7 @@ case class AbstractNamedStage[+T <: PipelineStage](
   //  }
   def setInputs(v: Seq[String]) = {
     if (v.nonEmpty) { //otherwise it can be assumed that the input of this stage is already set.
-      stage match {
-        case s: HasInputCol =>
-          require(v.size == 1, s"${s.getClass.getSimpleName} can only have 1 inputCol")
-          s.set(s.inputCol, v.head)
-        case ss: HasInputCols =>
-          ss.set(ss.inputCols, v.toArray)
-        case _ =>
-      }
+      stage.trySetInputCols(v)
     }
     this
   }

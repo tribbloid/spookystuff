@@ -31,7 +31,7 @@ object ActionRelay extends MessageRelay[Action] {
   override def toMessage(value: Action): M = {
     val className = value.getClass.getCanonicalName
     val fields = ScalaReflection.synchronized{
-      ScalaReflection.getConstructorParameters(value.getClass)
+      SpookyUtils.Reflection.getConstructorParameters(value.getClass)
     }
       .map(_._1)
     val elements = value

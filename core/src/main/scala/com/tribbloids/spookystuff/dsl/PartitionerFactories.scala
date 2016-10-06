@@ -18,7 +18,7 @@ object PartitionerFactories {
   case object SameParallelism extends (RDD[_] => Partitioner) {
 
     override def apply(rdd: RDD[_]): Partitioner = {
-      new HashPartitioner(rdd.getNumPartitions)
+      new HashPartitioner(rdd.partitions.length)
     }
   }
 }

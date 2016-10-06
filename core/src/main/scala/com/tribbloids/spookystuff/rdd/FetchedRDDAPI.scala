@@ -47,7 +47,7 @@ trait FetchedRDDAPI {
   //    selfRDD.distinct(numPartitions)(ord)
 
   protected def _coalesce(
-                 numPartitions: RDD[_] => Int = {v => v.getNumPartitions},
+                 numPartitions: RDD[_] => Int = {v => v.partitions.length},
                  shuffle: Boolean = false
                )(
                  implicit ord: Ordering[SquashedFetchedRow] = null

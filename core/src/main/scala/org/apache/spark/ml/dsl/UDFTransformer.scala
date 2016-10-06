@@ -1,10 +1,10 @@
 package org.apache.spark.ml.dsl
 
 import org.apache.spark.annotation.DeveloperApi
-import org.apache.spark.ml.Transformer
+import org.apache.spark.ml.{DefaultParamsReadable, DefaultParamsWritable, Transformer}
 import org.apache.spark.ml.param.ParamMap
 import org.apache.spark.ml.param.shared.{HasInputCols, HasOutputCol}
-import org.apache.spark.ml.util.{DefaultParamsReadable, DefaultParamsWritable, Identifiable}
+import org.apache.spark.ml.util.Identifiable
 import org.apache.spark.sql.types.{StructField, StructType}
 import org.apache.spark.sql.DataFrame
 import org.apache.spark.sql.UserDefinedFunction

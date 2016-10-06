@@ -39,7 +39,7 @@ class PythonDriverSuite extends SpookyEnvFixture {
 
   test("sendAndGetResult should work in multiple threads") {
     val rdd = sc.parallelize(1 to 100)
-    assert(rdd.getNumPartitions > 1)
+    assert(rdd.partitions.length > 1)
     rdd.foreachPartition{
       it =>
         val seq = it.toSeq

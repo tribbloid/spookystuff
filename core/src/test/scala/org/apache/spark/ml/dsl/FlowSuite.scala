@@ -1,23 +1,20 @@
 package org.apache.spark.ml.dsl
 
 import com.tribbloids.spookystuff.testutils.TestHelper
-import org.apache.spark.ml.dsl.utils.{FlowRelay, MessageRelay, Xml}
 import org.apache.spark.ml.feature._
-import org.apache.spark.ml.{Pipeline, PipelineModel}
 import org.apache.spark.mllib.feature
 import org.apache.spark.mllib.linalg.{Vector => MLVector}
 import org.apache.spark.sql.UserDefinedFunction
 import org.apache.spark.sql.functions._
-import org.json4s.JValue
 
 object FlowSuite {
 
-  private val TOKEN: String = "token"
-  private val STEMMED: String = "stemmed"
-  private val TF: String = "tf"
-  private val IDF: String = "idf"
-  private val TF_ZIPPED: String = "tf_zipped"
-  private val IDF_ZIPPED: String = "idf_zipped"
+  val TOKEN: String = "token"
+  val STEMMED: String = "stemmed"
+  val TF: String = "tf"
+  val IDF: String = "idf"
+  val TF_ZIPPED: String = "tf_zipped"
+  val IDF_ZIPPED: String = "idf_zipped"
 
   val stemming = new StopWordsRemover()
   val tf = new HashingTF()
@@ -28,6 +25,8 @@ object FlowSuite {
       v1s.map(v => v -> v2(tfing.indexOf(v)))
   }
 }
+
+
 
 class FlowSuite extends AbstractFlowSuite {
 
@@ -77,25 +76,6 @@ class FlowSuite extends AbstractFlowSuite {
         |(UDFTransformer,stemmed|idf,idf_zipped)
       """.stripMargin
     )
-  }
-
-  val pipelinePath = "temp/pipeline/pipeline"
-
-  test("Pipeline can be saved and loaded") {
-    val flow = (Flow('input)
-      >-> new Tokenizer() -> TOKEN
-      >-> stemming -> STEMMED
-      >-> tf -> TF
-      >-> new IDF() -> FlowSuite.IDF
-      >- STEMMED <>- TF >>> UDFTransformer(zipping) -> TF_ZIPPED)
-      .from(STEMMED) <>- FlowSuite.IDF >>> UDFTransformer(zipping) -> IDF_ZIPPED
-
-    val pipeline = flow.build()
-
-    pipeline.write.overwrite().save(pipelinePath)
-    val pipeline2 = Pipeline.read.load(pipelinePath)
-
-    pipeline.toString().shouldBe(pipeline2.toString())
   }
 
   test("Pipeline can be visualized as ASCII art") {
@@ -225,20 +205,6 @@ class FlowSuite extends AbstractFlowSuite {
     transformed.show(false)
   }
 
-  test("PipelineModel can be saved and loaded") {
-    val model = (
-      Flow('input)
-        >-> new Tokenizer() -> TOKEN
-        >-> stemming -> STEMMED
-        >-> tf -> TF
-        >- STEMMED <>- TF >>> UDFTransformer(zipping) -> TF_ZIPPED
-      ).buildModel()
-
-    model.write.overwrite().save(pipelinePath)
-    val model2 = PipelineModel.read.load(pipelinePath)
-
-    model.toString().shouldBe(model2.toString())
-  }
 
   val validPart = (
     Flow('input)
@@ -418,61 +384,6 @@ class FlowSuite extends AbstractFlowSuite {
           dfEvidence = training,
           adaptation = SchemaAdaptations.IgnoreIrrelevant_ValidateSchema
         )
-    )
-  }
-
-  test("Flow can be serialized into JSON and back") {
-
-    val flow = (
-      Flow('input.string)
-        >-> new Tokenizer() -> 'token
-        >-> stemming -> 'stemmed
-        >-> tf -> 'tf
-        >-> new IDF() -> 'idf
-        >- "stemmed" <>- "tf" >>> UDFTransformer(zipping) -> 'tf_zipped
-      )
-      .from(STEMMED) <>- FlowSuite.IDF >>> UDFTransformer(zipping) -> 'idf_zipped
-
-    val prettyJSON = flow.write.message.prettyJSON
-
-    prettyJSON.shouldBe()
-
-    val flow2 = FlowRelay.fromJSON(prettyJSON).toObject
-
-    println(flow2.show(asciiArt = true))
-
-    flow.show().shouldBe(
-      flow2.show()
-    )
-  }
-
-  test("Flow can be serialized into XML and back") {
-
-    val flow = (
-      Flow('input.string)
-        >-> new Tokenizer() -> 'token
-        >-> stemming -> 'stemmed
-        >-> tf -> 'tf
-        >- "stemmed" <>- "tf" >>> UDFTransformer(zipping) -> 'tf_zipped
-      )
-
-    import org.json4s.JsonDSL._
-
-    val jValue: JValue = "root" -> flow.write.message.toJValue
-    val jValue2 = Xml.toJson(Xml.toXml(jValue))
-
-//    pretty(jValue).shouldBe(pretty(jValue2))
-
-    val prettyXML = flow.write.message.prettyXML
-
-    prettyXML.shouldBe()
-
-    val flow2 = FlowRelay.fromXML(prettyXML).toObject
-
-    println(flow2.show(asciiArt = true))
-
-    flow.show().shouldBe(
-      flow2.show()
     )
   }
 }

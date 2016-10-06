@@ -59,14 +59,14 @@ class CommitSuite extends AbstractFlowSuite {
   }
 
   test("A commit_> B commit_> detached Stage is associative") {
-    val flow1 = 'input >-> new Tokenizer() >-> new SQLTransformer("SELECT") // resolve to rebase then union
-    val flow2 = 'input >-> (new Tokenizer() >-> new SQLTransformer("SELECT") ) // resolve to union then rebase
+    val flow1 = 'input >-> new Tokenizer() >-> new NGram() // resolve to rebase then union
+    val flow2 = 'input >-> (new Tokenizer() >-> new NGram() ) // resolve to union then rebase
     flow1.show(showID = false, compactionOpt = compactionOpt).shouldBeCompacted(flow2.show(showID = false, compactionOpt = compactionOpt))
   }
 
   test("A commit_< B commit_< detached Stage is associative") {
-    val flow1 = new SQLTransformer("SELECT")  <-< new Tokenizer() <-< 'input
-    val flow2 = new SQLTransformer("SELECT")  <-< (new Tokenizer() <-< 'input)
+    val flow1 = new NGram()  <-< new Tokenizer() <-< 'input
+    val flow2 = new NGram()  <-< (new Tokenizer() <-< 'input)
     flow1.show(showID = false, compactionOpt = compactionOpt).shouldBeCompacted(flow2.show(showID = false, compactionOpt = compactionOpt))
   }
 
@@ -80,7 +80,7 @@ class CommitSuite extends AbstractFlowSuite {
         )
         .from("Tokenizer").and("StopWordsRemover")
         >-> new NGram()
-        >-> new SQLTransformer("SELECT")
+        >-> new NGram()
       )
 
     flow.show(showID = false, compactionOpt = compactionOpt).shouldBeCompacted(
@@ -103,7 +103,7 @@ class CommitSuite extends AbstractFlowSuite {
   test("commit_< Stage is cast to rebase") {
 
     val flow = (
-      new SQLTransformer("select ...")
+      new NGram()
         <-< new NGram()
         <-< (
         new StopWordsRemover() <-< new Tokenizer() <-< 'input

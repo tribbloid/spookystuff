@@ -1,6 +1,5 @@
 package org.apache.spark.ml.dsl
 
-import org.apache.spark.ml.dsl.utils.StepRelay
 import org.apache.spark.sql.ColumnName
 import org.apache.spark.sql.types.DataType
 
@@ -42,7 +41,7 @@ case class Step(
                  stage: NamedStage,
                  dependencyIDs: Seq[String] = Seq(),
                  usageIDs: Set[String] = Set.empty
-               ) extends StepLike with StepRelay.HasRelay {
+               ) extends StepLike {
 
   {
     assert(this.id != PASSTHROUGH.id)

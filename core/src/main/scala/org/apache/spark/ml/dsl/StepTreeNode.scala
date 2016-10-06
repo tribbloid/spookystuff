@@ -1,9 +1,8 @@
 package org.apache.spark.ml.dsl
 
-import org.apache.spark.ml.dsl.utils.StepTreeNodeRelay
 import org.apache.spark.sql.catalyst.trees.TreeNode
 
-trait StepTreeNode[BaseType <: StepTreeNode[BaseType]] extends TreeNode[StepTreeNode[BaseType]] with StepTreeNodeRelay.HasRelay {
+trait StepTreeNode[BaseType <: StepTreeNode[BaseType]] extends TreeNode[StepTreeNode[BaseType]] {
 
   val self: StepLike
 

@@ -24,6 +24,9 @@ trait ScalaType extends DataType with Serializable with IDMixin {
     "" + ttg.clazz + "/" + catalystTypeOrSelf
   }
 
+  //backported
+  override val typeName = this.getClass.getSimpleName.stripSuffix("$").stripSuffix("Type").stripSuffix("UDT").toLowerCase
+
   override def toString = typeName
 }
 
@@ -47,10 +50,8 @@ class UnreifiedScalaType(@transient val ttg: TypeTag[_]) extends ScalaType with 
 object UnreifiedScalaType {
 
   def apply[T](implicit ttg: TypeTag[T]): DataType = {
-    ttg match {
-      case TypeTag.Null => NullType
-      case _ => new UnreifiedScalaType(ttg)
-    }
+    if (ttg == TypeTag.Null) NullType
+    else new UnreifiedScalaType(ttg)
   }
 
   def fromInstance[T](obj: T): DataType = {

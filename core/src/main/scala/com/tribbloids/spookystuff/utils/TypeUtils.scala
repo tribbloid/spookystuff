@@ -27,21 +27,20 @@ object TypeUtils {
     }
     catch {
       case e: Throwable =>
-//        LoggerFactory.getLogger(this.getClass).warn(
-//          s"cannot convert Scala type $ttg to Catalyst type:\n" + e.getLocalizedMessage
-//        )
+        //        LoggerFactory.getLogger(this.getClass).warn(
+        //          s"cannot convert Scala type $ttg to Catalyst type:\n" + e.getLocalizedMessage
+        //        )
         None
     }
   }
 
   def catalystTypeFor[T](implicit ttg: TypeTag[T]): DataType = {
-    ttg match {
-      case TypeTag.Null =>
-        NullType
-      case _ =>
-        ScalaReflection.synchronized {
-          ScalaReflection.schemaFor[T](ttg).dataType
-        }
+
+    if (ttg == TypeTag.Null) NullType
+    else {
+      ScalaReflection.synchronized {
+        ScalaReflection.schemaFor[T](ttg).dataType
+      }
     }
   }
 
@@ -107,7 +106,7 @@ object TypeUtils {
       mirror,
       new reflect.api.TypeCreator {
         def apply[U <: reflect.api.Universe with Singleton](m: reflect.api.Mirror[U]) = {
-//          assert(m eq mirror, s"TypeTag[$tpe] defined in $mirror cannot be migrated to $m.")
+          //          assert(m eq mirror, s"TypeTag[$tpe] defined in $mirror cannot be migrated to $m.")
           tpe.asInstanceOf[U#Type]
         }
       }
