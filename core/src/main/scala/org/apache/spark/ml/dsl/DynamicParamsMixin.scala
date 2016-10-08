@@ -63,7 +63,7 @@ trait DynamicParamsMixin extends Params with Dynamic {
                                            default: T = null
                                          ): Param[T] = {
 
-    val result = new MessageReader[T].Param(this, name, doc)
+    val result = new MessageReader[T]().Param(this, name, doc)
 
     Option(default).foreach(v => this.setDefault(result, v))
 

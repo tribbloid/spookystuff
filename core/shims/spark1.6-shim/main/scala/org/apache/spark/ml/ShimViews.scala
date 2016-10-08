@@ -1,4 +1,4 @@
-package org.apache.spark.ml.shim
+package org.apache.spark.ml
 
 import org.apache.spark.ml.param.Params
 import org.apache.spark.ml.param.shared.{HasInputCol, HasInputCols, HasOutputCol}
@@ -8,7 +8,7 @@ import scala.language.implicitConversions
 object ShimViews {
 
   implicit class ParamsView(params: Params) {
-    def trySetInputCols(v: Seq[Any]): Params = {
+    def trySetInputCols(v: Seq[String]): Params = {
       params match {
         case s: HasInputCol =>
           require(v.size == 1, s"${s.getClass.getSimpleName} can only have 1 inputCol")
@@ -20,7 +20,7 @@ object ShimViews {
       }
     }
 
-    def trySetOutputCol(v: Any): Params = {
+    def trySetOutputCol(v: String): Params = {
       params match {
         case s: HasOutputCol =>
           s.set(s.outputCol, v)
@@ -29,5 +29,4 @@ object ShimViews {
       }
     }
   }
-
 }

@@ -10,7 +10,7 @@ class MessageRelaySuite extends AbstractFlowSuite {
   test("SerializingParam[Function1] should work") {
     val fn = {k: Int => 2*k}
     val reader = new MessageReader[Int => Int]
-    val param: reader.Param = reader.Param("id", "name", "")
+    val param = reader.Param("id", "name", "")
 
     val json = param.jsonEncode(fn)
     println(json)

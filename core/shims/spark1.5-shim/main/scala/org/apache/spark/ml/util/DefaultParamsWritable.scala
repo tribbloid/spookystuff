@@ -1,4 +1,4 @@
-package org.apache.spark.ml
+package org.apache.spark.ml.util
 
 /**
   * Created by peng on 05/10/16.

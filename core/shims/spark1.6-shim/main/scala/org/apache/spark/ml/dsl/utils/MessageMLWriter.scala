@@ -1,6 +1,9 @@
-package org.apache.spark.ml.shim;
+package org.apache.spark.ml.dsl.utils
 
-case class MessageWriter(message: Message) extends MLWriter with Serializable {
+import org.apache.spark.ml.util.{DefaultParamsWriter, Identifiable, MLWriter}
+import org.json4s.JsonAST.JObject
+
+case class MessageMLWriter(message: Message) extends MLWriter with Serializable {
 
   //    def saveJSON(path: String): Unit = {
   //      val resolver = HDFSResolver(sc.hadoopConfiguration)
@@ -13,9 +16,9 @@ case class MessageWriter(message: Message) extends MLWriter with Serializable {
 
   override protected def saveImpl(path: String): Unit = {
 
-    val instance = new MessageParams(Identifiable.randomUID(Message.this.getClass.getSimpleName))
+    val instance = new MessageParams(Identifiable.randomUID(message.getClass.getSimpleName))
 
-    DefaultParamsWriter.saveMetadata(instance, path, sc, extraMetadata = Some("metadata" -> Message.this.toJValue))
+    DefaultParamsWriter.saveMetadata(instance, path, sc, extraMetadata = Some(JObject("metadata" -> message.toJValue)))
 
     // Save stages
     //    val stagesDir = new Path(path, "stages").toString

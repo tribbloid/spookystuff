@@ -60,6 +60,8 @@ def nextINum():
     return APMSim.create().iNum
 
 def test_APMSim_create_Is_process_safe():
+    global pool
+
     iNums = pool.map(
         nextINum,
         [1,2,3]

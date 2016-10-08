@@ -1,9 +1,7 @@
-package org.apache.spark.ml.shim
+package org.apache.spark.ml
 
 import org.apache.spark.ml.param.{Param, Params}
 import org.apache.spark.ml.param.shared.{HasInputCol, HasInputCols, HasOutputCol}
-
-import scala.language.implicitConversions
 
 object ShimViews {
 
@@ -35,4 +33,3 @@ object ShimViews {
     }
   }
 }
-

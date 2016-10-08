@@ -1,4 +1,4 @@
-package org.apache.spark.ml
+package org.apache.spark.ml.util
 
 import org.apache.spark.ml.dsl.utils.UnsupportedBySpark
 

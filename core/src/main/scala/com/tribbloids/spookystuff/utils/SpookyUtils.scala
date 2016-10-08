@@ -265,7 +265,7 @@ These special characters are often called "metacharacters".
     }
       .toList
 
-    def getCaseAccessorParameters[T: TypeTag]: List[(String, Type)] = {
+    def getCaseAccessorNames[T: TypeTag]: List[(String, Type)] = {
       getCaseAccessorSymbols[T].map {
         ss =>
           ss.name.decoded -> ss.typeSignature

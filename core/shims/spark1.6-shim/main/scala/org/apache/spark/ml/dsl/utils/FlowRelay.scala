@@ -28,15 +28,15 @@ object FlowRelay extends MessageRelay[Flow] {
 
     this.M(
       Declaration(
-        steps.map(_.toMessageValue)
+        steps.map(StepRelay.toMessageValue)
       ),
       Seq(
         GraphRepr(
-          leftTrees.map(_.toMessageValue),
+          leftTrees.map(StepTreeNodeRelay.toMessageValue),
           `@direction` = Some(FORWARD_LEFT)
         ),
         GraphRepr(
-          rightTrees.map(_.toMessageValue),
+          rightTrees.map(StepTreeNodeRelay.toMessageValue),
           `@direction` = Some(FORWARD_RIGHT)
         )
       ),
@@ -231,8 +231,6 @@ object StepTreeNodeRelay extends MessageRelay[StepTreeNode[_]] {
               ) extends MessageRepr[StepTreeNode[_]] {
     override def toObject: StepTreeNode[_] = ???
   }
-
-
 }
 
 object DataTypeRelay extends MessageRelay[DataType] {

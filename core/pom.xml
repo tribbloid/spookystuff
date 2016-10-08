@@ -137,6 +137,9 @@
                         </goals>
                     </execution>
                 </executions>
+                <!--<configuration>-->
+                    <!--<classifier>${project.classifier}</classifier>-->
+                <!--</configuration>-->
             </plugin>
         </plugins>
     </build>

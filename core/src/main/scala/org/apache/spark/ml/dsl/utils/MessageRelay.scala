@@ -1,6 +1,5 @@
 package org.apache.spark.ml.dsl.utils
 
-import org.apache.spark.annotation.DeveloperApi
 import org.apache.spark.ml.param.{ParamMap, Params}
 import org.apache.spark.ml.util._
 import org.apache.spark.sql.types.{DataType, UserDefinedType}
@@ -87,52 +86,19 @@ abstract class MessageRelay[Obj] {
              isValid: Obj => Boolean,
              // serializer = SparkEnv.get.serializer
              formats: Formats = Xml.defaultFormats
-           ): Param = new Param(parent, name, doc, isValid, formats)
+           ): MessageRelayParam[Obj] = new MessageRelayParam(this, parent, name, doc, isValid, formats)
 
-  def Param(parent: String, name: String, doc: String): Param =
+  def Param(parent: String, name: String, doc: String): MessageRelayParam[Obj] =
     Param(parent, name, doc, (_: Obj) => true)
 
-  def Param(parent: Identifiable, name: String, doc: String, isValid: Obj => Boolean): Param =
+  def Param(parent: Identifiable, name: String, doc: String, isValid: Obj => Boolean): MessageRelayParam[Obj] =
     Param(parent.uid, name, doc, isValid)
 
-  def Param(parent: Identifiable, name: String, doc: String): Param =
+  def Param(parent: Identifiable, name: String, doc: String): MessageRelayParam[Obj] =
     Param(parent.uid, name, doc)
-  /**
-    * :: DeveloperApi ::
-    * ML Param only supports string & vectors, this class extends support to all objects
-    */
-  @DeveloperApi
-  class Param(
-               parent: String,
-               name: String,
-               doc: String,
-               isValid: Obj => Boolean,
-               // serializer = SparkEnv.get.serializer
-               formats: Formats
-             ) extends org.apache.spark.ml.param.Param[Obj](parent, name, doc, isValid) {
-
-
-    /** Creates a param pair with the given value (for Java). */
-    //    override def w(value: M): ParamPair[M] = super.w(value)
-
-    def jsonEncode(value: Obj): String = {
-
-      toMessage(value)
-        .compactJSON(MessageRelay.this.formats)
-    }
-
-    def jsonDecode(json: String): Obj = {
-
-      val message: M = MessageRelay.this.fromJSON(json)
-      message match {
-        case v: MessageRepr[_] =>
-          v.toObject.asInstanceOf[Obj]
-        case _ =>
-          throw new UnsupportedOperationException("jsonDecode is not implemented")
-      }
-    }
-  }
 }
+
+
 
 class MessageReader[Obj](
                           implicit override val mf: Manifest[Obj]

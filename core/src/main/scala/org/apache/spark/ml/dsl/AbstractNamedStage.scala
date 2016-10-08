@@ -15,7 +15,7 @@ case class AbstractNamedStage[+T <: PipelineStage](
                                                     _id: String = "" + Random.nextLong() //TODO: multiple Stages with same uid can't be used together?
                                                   ) {
 
-  import org.apache.spark.ml.shim.ShimViews._
+  import org.apache.spark.ml.ShimViews._
 
   //create a new PipelineStage that doesn't share the same parameter
   def replicate: AbstractNamedStage[T] = {

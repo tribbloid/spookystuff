@@ -20,7 +20,7 @@ class TestWayback extends SpookyEnvFixture {
 
     val dates: Seq[Long] = (0 to 2).map {
       i =>
-        val pages = (Delay(5.seconds) +> Wget("http://www.wikipedia.org")
+        val pages = (Delay(10.seconds) +> Wget("http://www.wikipedia.org")
           ).head.fetch(spooky) //5s is long enough
         assert(pages.size == 1)
         pages.head.timeMillis
@@ -28,7 +28,7 @@ class TestWayback extends SpookyEnvFixture {
 
     spooky.conf.cacheRead = true
 
-    val cachedPages = (Delay(5.seconds)
+    val cachedPages = (Delay(10.seconds)
       +> Wget("http://www.wikipedia.org").waybackToTimeMillis(dates(1) + 2000)
       ).head.fetch(spooky)
     assert(cachedPages.size == 1)
@@ -37,7 +37,7 @@ class TestWayback extends SpookyEnvFixture {
     spooky.conf.remote = false
 
     intercept[QueryException] {
-      (Delay(5.seconds)
+      (Delay(10.seconds)
         +> Wget("http://www.wikipedia.org").waybackToTimeMillis(dates.head - 2000)
         ).head.fetch(spooky)
     }
@@ -49,7 +49,7 @@ class TestWayback extends SpookyEnvFixture {
 
     val dates: Seq[Long] = (0 to 2).map {
       i =>
-        val pages = (Delay(5.seconds)
+        val pages = (Delay(10.seconds)
           +> Visit("http://www.wikipedia.org")
           ).correct.head.fetch(spooky) //5s is long enough
         assert(pages.size == 1)
@@ -58,7 +58,7 @@ class TestWayback extends SpookyEnvFixture {
 
     spooky.conf.cacheRead = true
 
-    val cachedPages = (Delay(5.seconds)
+    val cachedPages = (Delay(10.seconds)
       +> Visit("http://www.wikipedia.org")
       +> Snapshot().waybackToTimeMillis(dates(1) + 2000)
       ).head.fetch(spooky)
@@ -68,7 +68,7 @@ class TestWayback extends SpookyEnvFixture {
     spooky.conf.remote = false
 
     intercept[QueryException] {
-      (Delay(5.seconds)
+      (Delay(10.seconds)
         +> Visit("http://www.wikipedia.org")
         +> Snapshot().waybackToTimeMillis(dates.head - 2000)
         ).head.fetch(spooky)
@@ -81,7 +81,7 @@ class TestWayback extends SpookyEnvFixture {
 
     val dates: Seq[Long] = (0 to 2).map {
       i =>
-        val pages = (Delay(5.seconds)
+        val pages = (Delay(10.seconds)
           +> Visit("http://www.wikipedia.org")
           +> Screenshot()).head.fetch(spooky) //5s is long enough
         assert(pages.size == 1)
@@ -90,7 +90,7 @@ class TestWayback extends SpookyEnvFixture {
 
     spooky.conf.cacheRead = true
 
-    val cachedPages = (Delay(5.seconds)
+    val cachedPages = (Delay(10.seconds)
       +> Visit("http://www.wikipedia.org")
       +> Screenshot().waybackToTimeMillis(dates(1) + 2000)
       ).head.fetch(spooky)
@@ -100,7 +100,7 @@ class TestWayback extends SpookyEnvFixture {
     spooky.conf.remote = false
 
     intercept[QueryException] {
-      (Delay(5.seconds)
+      (Delay(10.seconds)
         +> Visit("http://www.wikipedia.org")
         +> Screenshot().waybackToTimeMillis(dates.head - 2000)
         ).head.fetch(spooky)
