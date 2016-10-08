@@ -1,6 +1,5 @@
-from lib2to3.fixer_util import p1
-
 import multiprocessing
+
 import time
 from dronekit import connect, LocationGlobalRelative
 
@@ -60,7 +59,7 @@ def nextINum():
     return APMSim.create().iNum
 
 def test_APMSim_create_Is_process_safe():
-    global pool
+    global pool, nextINum
 
     iNums = pool.map(
         nextINum,

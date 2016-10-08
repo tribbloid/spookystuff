@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 CRDIR="$(cd "`dirname "$0"`"; pwd)"
-SPARK_NAME="${SPARK:-spark-1.6.2}"
+SPARK_NAME="${SPARK:-spark-1.5.2}"
 
 SPARK_DIR_NAME="$SPARK_NAME"-bin-hadoop2.4
 
@@ -12,4 +12,4 @@ tar -xzf "$SPARK_DIR_NAME".tgz
 export SPARK_HOME="$CRDIR"/"$SPARK_DIR_NAME"
 echo $SPARK_HOME
 
-exec ./test-install.sh
+exec ./test-install.sh -Pspark-1.5
