@@ -9,10 +9,10 @@ from pyspookystuff import mav
 
 
 # pool = dict([])
-# instance: dict -> InstancInfo
+# endpoint: dict -> InstancInfo
 # used by daemon to poll, new element is inserted by Binding creation.
 
-# clusterActiveInstances = [] merged into pool
+# clusterActiveEndpoints = [] merged into pool
 # won't be polled as they are bind to other workers.
 # CAUTION! this shouldn't contain any non-unique connStr, e.g. tcp:localhost:xxx, serial:xxx
 
@@ -49,7 +49,7 @@ from pyspookystuff import mav
 
 # bean project
 # not consistent with other resource allocation mechanism.
-class Instance(object):
+class Endpoint(object):
     # static variables shared by all processes
     # all = multiprocessing.Array(ctypes.c_char_p, 10)  # type: multiprocessing.Array
     all = mav.manager.list()
@@ -63,31 +63,33 @@ class Instance(object):
     unreachable = mav.manager.list()
 
     # won't be tried by executor, daemon will still try it and if successful, will remove it from the list
-    # in all these arrays json strings of Instances are stored. This is the only way to discover duplicity
+    # in all these arrays json strings of Endpoints are stored. This is the only way to discover duplicity
 
     # TODO: use scala reflection to have a unified interface.
     @staticmethod
     def fromJSON(_json):
-        # type: (str) -> Instance
+        # type: (str) -> Endpoint
         _dict = json.loads(_json)
-        Instance(_dict['endpoints'], _dict['vehicleClass'])
+        Endpoint(_dict['uris'], _dict['vehicleClass'])
 
     # TODO: use **local() to reduce boilerplate copies
-    def __init__(self, endpoints, vehicleClass):
-        self.endpoints = endpoints
+    def __init__(self, uris, vehicleClass):
+        self.uris = uris
         self.vehicleClass = vehicleClass
 
     @property
     def connStr(self):
-        return self.endpoints[0]
+        return self.uris[0]
 
     @staticmethod
     def nextUnused():
-        mav.nextUnused(Instance.used, Instance.all)
+        # type: () -> Endpoint
+        mav.nextUnused(Endpoint.used, Endpoint.all)
 
     @staticmethod
     def nextImmediatelyAvailable():
-        mav.nextUnused(Instance.used, Instance.all, Instance.unreachable)
+        # type: () -> Endpoint
+        mav.nextUnused(Endpoint.used, Endpoint.all, Endpoint.unreachable)
 
 
 class ProxyFactory(object):
@@ -132,7 +134,7 @@ class ProxyFactory(object):
                     outs
                 )
                 return proxy
-            except Exception as ee:
+            except Exception:
                 if port in Proxy.usedPort:
                     Proxy.usedPort.remove(port)
                 raise
@@ -149,7 +151,7 @@ class Proxy(object):
     def _up(aircraft, setup=False, master='tcp:127.0.0.1:5760', outs={'127.0.0.1:14550'},
             options=None, logfile=sys.stdout):
         """
-        launch mavproxy connected to a SIL instance
+        launch mavproxy connected to a SIL endpoint
         mavproxy.py -h
         Usage: mavproxy.py [options]
 
@@ -233,12 +235,12 @@ class Proxy(object):
         # affect dir of log files
         self.name = name
 
-        effectiveOuts = self.outs + [self.endpoint]
+        effectiveOuts = self.outs + [self.uri]
         self.spawn = Proxy._up(aircraft=self.name, master=connStr, outs=effectiveOuts)
         Proxy.existing.append(self)
 
     @property
-    def endpoint(self):
+    def uri(self):
         return 'localhost:' + str(self.port)
 
     def close(self):
@@ -248,79 +250,64 @@ class Proxy(object):
             # TODO: cleanup variables to fail early?
 
 
-# if all instances are not available, sleep for x seconds and retry.
-class Binding(object):
-    # local to process, 1 process can only have 1 binding.
-    existing = None  # type: Binding
+# if all endpoints are not available, sleep for x seconds and retry.
+class Connection(object):
+    # process local, 1 process can only have 1 binding.
+    existing = None  # type: Connection
 
     @staticmethod
-    def getOrCreate(instances, proxyFactory, polling=False):
-        # type: (list[Instance], ProxyFactory, bool) -> Binding
-        if not Binding.existing:
-            existing = Binding.create(instances, proxyFactory, polling)
-        return Binding.existing
+    def getOrCreate(endpoints, proxyFactory, polling=False):
+        # type: (list[Endpoint], ProxyFactory, bool) -> Connection
+        if not Connection.existing:
+            existing = Connection.create(endpoints, proxyFactory, polling)
+        return Connection.existing
 
     @staticmethod
-    def create(instances, proxyFactory, polling=False):
-        # type: (list[Instance], ProxyFactory, bool) -> Binding
+    def create(endpoints, proxyFactory, polling=False):
+        # type: (list[Endpoint], ProxyFactory, bool) -> Connection
 
-        # insert if not exist
-        for ii in instances:
-            _json = ii.json
-            if not (_json in Instance.all):
-                Instance.all.append(_json)
+        # insert if not exist TODO: need process safety
+        for endpoint in endpoints:
+            if not (endpoint in Endpoint.all):
+                Endpoint.all.append(endpoint)
 
-        # _is = instances[:] TODO: this enforce priority among drones in the pool, is it necessary?
-        # random.shuffle(_is)
-
-        proxyF = proxyFactory if (polling or proxyFactory.polling) else None
+        factory = proxyFactory if (polling or proxyFactory.polling) else None
 
         # iterate ONCE until a vehicle can be created
         # otherwise RAISE ERROR IMMEDIATELY! action will retry it locally and spark will retry it cluster-wise.
         # special polling-based GenPartitioner should be used to minimize error rate.
-        for ii in instances:
-            if ii.isAvailable():
-                proxy = None
-                vehicle = None
-                try:
-                    endpoint = ii.connStr
-                    if proxyF:
-                        proxy = proxyF.nextProxy(ii.connStr)
-                        endpoint = proxy.endpoint()
+        endpoint = Endpoint.nextImmediatelyAvailable()
+        proxy = None
+        vehicle = None
+        try:
+            uri = endpoint.connStr
+            if factory:
+                proxy = factory.nextProxy(endpoint.connStr)
+                uri = proxy.uri()
 
-                    vehicle = dronekit.connect(
-                        ip=endpoint,
-                        wait_ready=True
-                    )
-                    binding = Binding(ii, proxy, vehicle)
-                    return binding
+            vehicle = dronekit.connect(
+                ip=uri,
+                wait_ready=True
+            )
+            binding = Connection(endpoint, proxy, vehicle)
+            return binding
 
-                except Exception as ee:
-                    Instance.unreachable.append(ii.json)
-                    if proxy:
-                        proxy.close()
-                    if vehicle:
-                        vehicle.close()
-                    raise
+        except Exception:
+            Endpoint.unreachable.append(endpoint)
+            Endpoint.used.remove(endpoint)
+            if proxy:
+                proxy.close()
+            if vehicle:
+                vehicle.close()
+            raise
 
-        raise mav.DronePoolDepletedException(
-            "All drones are dispatched or unreachable:\n" +
-            "dispatched:\n" +
-            json.dumps(Instance.used) + "\n" +
-            "unreachable:\n" +
-            json.dumps(Instance.unreachable)
-        )
-
-    def __init__(self, instance, proxy, vehicle):
-        # type: (Instance, Proxy, dronekit.Vehicle) -> None
-        self.instance = instance
+    def __init__(self, endpoint, proxy, vehicle):
+        # type: (Endpoint, Proxy, dronekit.Vehicle) -> None
+        self.endpoint = endpoint
         self.proxy = proxy
         self.vehicle = vehicle
 
-        Instance.used.append(instance.json)
-
     def close(self):
+        Endpoint.used.remove(self.endpoint)
         self.vehicle.close()
         self.proxy.close()
-
-        Instance.used.remove(self.instance.json)

@@ -31,6 +31,15 @@ def nextUnused(existing, candidates, blacklist=list()):
     lock.release()
     os.error("Depleted: running dry!")
 
+    # TODO: customize error info
+    # raise mav.DronePoolDepletedException(
+    #     "All drones are dispatched or unreachable:\n" +
+    #     "dispatched:\n" +
+    #     json.dumps(Endpoint.used) + "\n" +
+    #     "unreachable:\n" +
+    #     json.dumps(Endpoint.unreachable)
+    # )
+
 
 class DronePoolDepletedException(PyspookyException):
     pass

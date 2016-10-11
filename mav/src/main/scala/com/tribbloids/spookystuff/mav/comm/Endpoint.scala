@@ -1,35 +1,35 @@
-package com.tribbloids.spookystuff.mav.routing
+package com.tribbloids.spookystuff.mav.comm
 
 /**
   * Created by peng on 10/09/16.
   */
 
-object Instance {
+object Endpoint {
 
-  def sitlI2Port(i: Int): Int = {
+  def iNum2Port(i: Int): Int = {
     val port = 5760 + i * 10
     port
   }
 
-  def getForAPMSITL(n: Int): Seq[Instance] = {
+  def getForAPMSim(n: Int): Seq[Endpoint] = {
     val is = 0 until n
     is.map {
       i =>
-        val port: Int = sitlI2Port(i)
+        val port: Int = iNum2Port(i)
         val endpointTCP = "tcp://localhost:" + port
-        Instance(Seq(endpointTCP), None)
+        Endpoint(Seq(endpointTCP), None)
     }
   }
-  
-  def getForPX4SITL(n: Int): Seq[Instance] = {
+
+  def getForPX4Sim(n: Int): Seq[Endpoint] = {
     ???
   }
 }
 
-case class Instance(
+case class Endpoint(
                      //remember, one drone can have several telemetry endpoints: 1 primary and several backups (e.g. text message-based)
                      //TODO: implement backup mechanism
-                     endpoints: Seq[String],
+                     uris: Seq[String],
                      vehicleType: Option[String] = None
                    )
 

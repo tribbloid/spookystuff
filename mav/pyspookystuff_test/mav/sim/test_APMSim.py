@@ -6,7 +6,7 @@ import time
 from dronekit import connect, LocationGlobalRelative
 
 from pyspookystuff.mav import assureInTheAir
-from pyspookystuff.mav.routing import ProxyFactory
+from pyspookystuff.mav.comm import ProxyFactory
 from pyspookystuff.mav.sim import APMSim
 
 
@@ -21,7 +21,7 @@ def _simMove(point, proxyFactory=None):
     proxy = None
     if proxyFactory:
         proxy = proxyFactory.nextProxy(sim.connStr)
-        endpoint = proxy.endpoint
+        endpoint = proxy.uri
 
     vehicle = connect(endpoint, wait_ready=True)
 

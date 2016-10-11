@@ -3,7 +3,7 @@ from __future__ import print_function
 import time
 from nose import with_setup
 
-from pyspookystuff.mav.routing import Proxy
+from pyspookystuff.mav.comm import Proxy
 from pyspookystuff.mav.sim import APMSim
 
 
