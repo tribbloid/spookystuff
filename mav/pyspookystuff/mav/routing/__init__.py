@@ -2,6 +2,7 @@ import json
 import os
 
 import dronekit
+import re
 import sys
 
 from pyspookystuff import mav
@@ -64,52 +65,79 @@ class Instance(object):
     # won't be tried by executor, daemon will still try it and if successful, will remove it from the list
     # in all these arrays json strings of Instances are stored. This is the only way to discover duplicity
 
-    def __init__(self, _json):
-        # type: (str) -> None
-        self.json = _json
+    # TODO: use scala reflection to have a unified interface.
+    @staticmethod
+    def fromJSON(_json):
+        # type: (str) -> Instance
         _dict = json.loads(_json)
-        self.endpoints = _dict['endpoints']
-        self.vehicleClass = _dict['vehicleClass']
+        Instance(_dict['endpoints'], _dict['vehicleClass'])
 
+    # TODO: use **local() to reduce boilerplate copies
+    def __init__(self, endpoints, vehicleClass):
+        self.endpoints = endpoints
+        self.vehicleClass = vehicleClass
+
+    @property
     def connStr(self):
         return self.endpoints[0]
 
-    def isNotUsed(self):
-        result = not (self.json in self.used)
-        return result
+    @staticmethod
+    def nextUnused():
+        mav.nextUnused(Instance.used, Instance.all)
 
-    def isAvailable(self):
-        result = not (self.json in self.used + self.unreachable)
-        return result
+    @staticmethod
+    def nextImmediatelyAvailable():
+        mav.nextUnused(Instance.used, Instance.all, Instance.unreachable)
 
 
 class ProxyFactory(object):
 
-    def __init__(self, _json):
+    @staticmethod
+    def fromJSON(_json):
         _dict = json.loads(_json)
-        self.ports = _dict['ports']
-        self.gcsMapping = _dict['gcsMapping']
-        self.polling = _dict['polling']
-        self.name = _dict['name']
+        ProxyFactory(_dict['ports'], _dict['gcsMapping'], _dict['polling'])
+
+    def __init__(self, ports=range(12014,12108), gcsMapping=None, polling=False):
+        # type: (list, dict, boolean) -> None
+        if gcsMapping is None:
+            gcsMapping = {'.*': ['127.0.0.1:14550']}
+
+        self.ports = ports
+        self.gcsMapping = gcsMapping
+        self.polling = polling
 
     def nextPort(self):  # NOT static! don't move anywhere
         port = mav.nextUnused(Proxy.usedPort, self.ports)
         return port
 
-    def nextProxy(self, connStr):
+    def nextProxy(self, connStr, vType=None):
         port = self.nextPort()
-        try:
-            proxy = Proxy(
-                connStr,
-                port,
-                self.gcsMapping,
-                self.name
-            )
-            return proxy
-        except Exception as ee:
-            if port in Proxy.usedPort:
-                Proxy.usedPort.remove(port)
-            raise ee
+        outs = None
+
+        for k in self.gcsMapping:
+            if re.match(k, connStr):
+                outs = self.gcsMapping[k]
+
+        if not vType:
+            name = connStr
+        else:
+            name = vType + ":" + connStr
+
+        if outs:
+            try:
+                proxy = Proxy(
+                    connStr,
+                    name,
+                    port,
+                    outs
+                )
+                return proxy
+            except Exception as ee:
+                if port in Proxy.usedPort:
+                    Proxy.usedPort.remove(port)
+                raise
+        else:
+            return None
 
 
 class Proxy(object):
@@ -217,7 +245,7 @@ class Proxy(object):
         os.killpg(self.spawn.pid, 2)
         if self.port in Proxy.usedPort:
             Proxy.usedPort.remove(self.port)
-        # TODO: cleanup variables to fail early?
+            # TODO: cleanup variables to fail early?
 
 
 # if all instances are not available, sleep for x seconds and retry.
@@ -228,10 +256,9 @@ class Binding(object):
     @staticmethod
     def getOrCreate(instances, proxyFactory, polling=False):
         # type: (list[Instance], ProxyFactory, bool) -> Binding
-        global existing
-        if not existing:
+        if not Binding.existing:
             existing = Binding.create(instances, proxyFactory, polling)
-        return existing
+        return Binding.existing
 
     @staticmethod
     def create(instances, proxyFactory, polling=False):
@@ -274,7 +301,7 @@ class Binding(object):
                         proxy.close()
                     if vehicle:
                         vehicle.close()
-                    raise ee
+                    raise
 
         raise mav.DronePoolDepletedException(
             "All drones are dispatched or unreachable:\n" +

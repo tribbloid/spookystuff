@@ -13,12 +13,17 @@ from pyspookystuff import PyspookyException
 manager = Manager()
 
 
+lock = Lock()
+
+
 # existing has to be thread safe
-def nextUnused(existing, candidates):
-    lock = Lock()
+def nextUnused(existing, candidates, blacklist=list()):
+    global lock
+
     lock.acquire()
+    combined = existing + blacklist
     for i in candidates:
-        if i not in existing:
+        if i not in combined:
             existing.append(i)
             lock.release()
             return i

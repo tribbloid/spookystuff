@@ -38,6 +38,7 @@ case class ProxyFactory(
                          //primary localhost out port number -> list of URLs for multicast
                          //the first one used by DK, others nobody cares
                          ports: Seq[Int] = 12014 to 12108,
-                         gcsMapping: Map[String, Seq[String]] = Map(), //connection URL pattern => GCS URLs
+                         gcsMapping: Map[String, Seq[String]] = Map(),
+                         //connection string (RegEx?) pattern => GCS URLs
                          polling: Boolean = false
                        )

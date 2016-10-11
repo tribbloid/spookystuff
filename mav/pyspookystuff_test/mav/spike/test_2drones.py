@@ -4,7 +4,7 @@ import time
 from dronekit import LocationGlobalRelative, connect, VehicleMode
 
 from pyspookystuff.mav import assureInTheAir
-from pyspookystuff.mav_test import sitlProxyUp, sitlProxyClean
+from pyspookystuff_test.mav import sitlProxyUp, sitlProxyClean
 
 
 def test_both():

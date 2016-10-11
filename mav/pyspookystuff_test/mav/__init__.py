@@ -49,7 +49,7 @@ def with_sitl_udp(fn):
 
 def with_sitl_3way(fn):
 
-    @with_setup(sitlProxyUp(outs='127.0.0.1:10092'), sitlClean)
+    @with_setup(sitlProxyUp(outs=['127.0.0.1:10092']), sitlClean)
     def test_udp(*args, **kargs):
         udp = fn('127.0.0.1:10092', *args, **kargs)
         return udp

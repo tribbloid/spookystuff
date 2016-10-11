@@ -22,14 +22,15 @@ def tcp_master(instance):
 
 class APMSim(object):
     existing = []
-    usedINum = mav.manager.list()
+    usedINums = mav.manager.list()
 
     @staticmethod
     def nextINum():
-        port = mav.nextUnused(APMSim.usedINum, range(0, 254))
+        port = mav.nextUnused(APMSim.usedINums, range(0, 254))
         return port
 
     def __init__(self, index):
+        # type: (int) -> None
 
         self.iNum = index
         self.args = sitl_args + ['-I' + str(index)]
@@ -50,7 +51,7 @@ class APMSim(object):
             result = APMSim(index)
             return result
         except Exception as ee:
-            APMSim.usedINum.remove(index)
+            APMSim.usedINums.remove(index)
             raise ee
 
     def setParamAndRelaunch(self, key, value):
@@ -73,7 +74,7 @@ class APMSim(object):
     def close(self):
 
         self.sitl.stop()
-        APMSim.usedINum.remove(self.iNum)
+        APMSim.usedINums.remove(self.iNum)
         APMSim.existing.remove(self)
 
     @staticmethod
