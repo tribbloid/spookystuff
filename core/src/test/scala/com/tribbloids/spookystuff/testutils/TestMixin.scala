@@ -14,7 +14,12 @@ trait TestMixin extends FunSuite {
   implicit class TestStringView(str: String) {
 
     //TODO: use reflection to figure out test name and annotate
-    def shouldBe(gd: String = null, sort: Boolean = false, ignoreCase: Boolean = false): Unit = {
+    def shouldBe(
+                  gd: String = null,
+                  sort: Boolean = false,
+                  ignoreCase: Boolean = false,
+                  superSet: Boolean = false
+                ): Unit = {
       var a: List[String] = str.split("\n").toList.filterNot(_.replaceAllLiterally(" ","").isEmpty)
         .map(v => ("|" + v).trim.stripPrefix("|"))
       if (sort) a = a.sorted
@@ -31,18 +36,24 @@ trait TestMixin extends FunSuite {
             .map(v => ("|" + v).trim.stripPrefix("|"))
           if (sort) b = b.sorted
           if (ignoreCase) b = b.map(_.toLowerCase)
-          assert(
-            a == b,
-            {
-              println(originalStr)
-              "\n=============================== [EXPECTED] ================================\n" +
-                b.mkString("\n") + "\n"
-            }
-          )
+          if (superSet) {
+            assert(
+              a.intersect(b).nonEmpty,
+              comparisonStr(originalStr _, b)
+            )
+          }
+          else {
+            assert(
+              a == b,
+              comparisonStr(originalStr _, b)
+            )
+          }
       }
     }
 
-    def rowsShouldBe(gd: String = null) = shouldBe(gd, sort = true)
+    def rowsShouldBe(
+                      gd: String = null
+                    ) = shouldBe(gd, sort = true)
 
     def shouldBeLike(gd: String = null, sort: Boolean = false): Unit = {
       val aRaw: List[String] = str.split("\n").toList.filterNot(_.replaceAllLiterally(" ","").isEmpty)
@@ -65,18 +76,13 @@ trait TestMixin extends FunSuite {
           a.zip(b).foreach {
             tuple =>
               val fixes = tuple._2.split(" [\\.]{6,} ", 2)
-              def errStr = {
-                println(originalStr)
-                "\n=============================== [EXPECTED] ================================\n" +
-                  b.mkString("\n") + "\n"
-              }
               assert(
                 tuple._1.startsWith(fixes.head),
-                errStr
+                comparisonStr(originalStr _, b)
               )
               assert(
                 tuple._1.endsWith(fixes.last),
-                errStr
+                comparisonStr(originalStr _, b)
               )
           }
       }
@@ -98,6 +104,14 @@ trait TestMixin extends FunSuite {
     //          s"${URLEncoder.encode(contains,"UTF-8")}"
     //      )
     //    }
+  }
+
+  def comparisonStr(originalStr: () => String, b: List[String]): String = {
+
+    println(originalStr())
+    "\n=============================== [EXPECTED] ================================\n" +
+      b.mkString("\n") + "\n"
+
   }
 
   implicit class TestMapView[K, V](map: scala.collection.Map[K, V]) {

@@ -3,12 +3,10 @@ package com.tribbloids.spookystuff.utils
 import java.io.{File, InputStream}
 import java.net._
 import java.nio.file._
-import java.util.zip.ZipInputStream
 
 import com.tribbloids.spookystuff.utils.NoRetry.NoRetryWrapper
 import org.apache.spark.ml.dsl.ReflectionUtils
 import org.apache.spark.sql.catalyst.ScalaReflection
-import org.apache.spark.sql.catalyst.ScalaReflection._
 import org.slf4j.LoggerFactory
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -23,21 +21,19 @@ object SpookyUtils {
   import ScalaReflection.universe._
   import SpookyViews._
 
-  def /:/(parts: String*): String = {
-    parts.flatMap(v => Option(v)).reduceLeftOption(:/(_) + _).orNull
+  def qualifiedName(separator: String)(parts: String*) = {
+    parts.flatMap(v => Option(v)).reduceLeftOption(addSuffix(separator, _) + _).orNull
   }
-  def :/(part: String): String = {
-    if (part.endsWith("/")) part
-    else part+"/"
+  def addSuffix(suffix: String, part: String) = {
+    if (part.endsWith(suffix)) part
+    else part+suffix
   }
 
-  def \\\(parts: String*): String = {
-    parts.flatMap(v => Option(v)).reduceLeftOption(:\(_) + _).orNull
-  }
-  def :\(part: String): String = {
-    if (part.endsWith(File.separator)) part
-    else part+File.separator
-  }
+  def /:/(parts: String*): String = qualifiedName("/")(parts: _*)
+  def :/(part: String): String = addSuffix("/", part)
+
+  def \\\(parts: String*): String = qualifiedName(File.separator)(parts: _*)
+  def :\(part: String): String = addSuffix(File.separator, part)
 
   def numCores = {
     val result = Runtime.getRuntime.availableProcessors()

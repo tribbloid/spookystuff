@@ -49,4 +49,9 @@ object FlowUtils {
 
   def liftCamelCase(str: String) = str.head.toUpper.toString + str.substring(1)
   def toCamelCase(str: String) = str.head.toLower.toString + str.substring(1)
+
+  class ThreadLocal[A](init: => A) extends java.lang.ThreadLocal[A] with (() => A) {
+    override def initialValue = init
+    def apply = get
+  }
 }

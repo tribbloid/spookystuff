@@ -9,7 +9,7 @@ import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.DataFrame
 import org.apache.spark.sql.catalyst.ScalaReflection
 import org.apache.spark.sql.types._
-import org.apache.spark.{SparkContext, SparkEnv, TaskContext}
+import org.apache.spark.{Partitioner, SparkContext, SparkEnv, TaskContext}
 
 import scala.collection.generic.CanBuildFrom
 import scala.collection.immutable.ListMap
@@ -344,7 +344,7 @@ object SpookyViews {
     )
   }
 
-  implicit class TraversableLikeView[A, Repr](self: TraversableLike[A, Repr]) {
+  implicit class TraversableLikeView[A, Repr](self: TraversableLike[A, Repr])(implicit ctg: ClassTag[A]) {
 
     def filterByType[B: ClassTag]: FilterByType[B] = new FilterByType[B]
 
@@ -356,6 +356,28 @@ object SpookyViews {
             SpookyUtils.typedOrNone[B](v)
         }(bf)
         result
+      }
+    }
+
+    def mapToRDD[B: ClassTag](sc: SparkContext, local: Boolean = false, sliceOpt: Option[Int] = None)(
+      f: A => B
+    ): RDD[B] = {
+      if (local) {
+        sc.parallelize(
+          self.toSeq.map(
+            f
+          ),
+          sliceOpt.getOrElse(sc.defaultParallelism)
+        )
+      }
+      else {
+        sc.parallelize(
+          self.toSeq,
+          sliceOpt.getOrElse(sc.defaultParallelism)
+        )
+          .map(
+            f
+          )
       }
     }
   }

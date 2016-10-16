@@ -16,7 +16,12 @@
 
 package org.apache.spark.ml.dsl.utils
 
+import java.text.{ParseException, SimpleDateFormat}
+import java.util.Date
+
 import org.json4s._
+
+import scala.util.Try
 
 /** Functions to convert between JSON and XML.
   */
@@ -223,7 +228,32 @@ object Xml {
   class XmlElem(name: String, value: String)
     extends Elem(null, name, xml.Null, TopScope, Text(value))
 
-  def xmlFormats(base: Formats = DefaultFormats.lossless) = base +
+  val baseDataFormatsFactory = new FlowUtils.ThreadLocal(
+    Seq(
+      new java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS"),
+      new java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss"),
+      new java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm")
+    )
+  )
+
+  val baseFormat = new DefaultFormats {
+    override val dateFormat: DateFormat = new DateFormat {
+      def parse(s: String) = dateFormats.flatMap {
+        format =>
+          Try {
+            Some(format.parse(s))
+          }
+            .toOption
+      }
+        .head
+
+      def format(d: Date) = dateFormats.head.format(d)
+    }
+
+    def dateFormats = baseDataFormatsFactory()
+  }
+
+  def xmlFormats(base: Formats = baseFormat) = base +
     StringToNumberDeserializer +
     EmptyStringToEmptyObjectDeserializer +
     ElementToArrayDeserializer +
@@ -231,5 +261,8 @@ object Xml {
 
   def defaultFormats = xmlFormats()
 
+
   val defaultXMLPrinter = new scala.xml.PrettyPrinter(80, 2)
 }
+
+class CompoundDateFormat() extends SimpleDateFormat("abc")
