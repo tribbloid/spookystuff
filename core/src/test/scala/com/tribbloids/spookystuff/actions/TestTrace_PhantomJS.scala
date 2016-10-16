@@ -248,7 +248,7 @@ class TestTrace_PhantomJS extends SpookyEnvFixture with TestMixin {
       Submit("button.pure-button") ::
       Snapshot().as('D) :: Nil
     assert(res2.uid.backtrace === id2)
-    assert(res2.code.get.split('\n').map(_.trim).mkString.contains("<title>Deep learning - Wikipedia, the free encyclopedia</title>"))
+    assert(res2.code.get.split('\n').map(_.trim).mkString.contains("<title>Deep learning"))
     assert(res2.uri contains "//en.wikipedia.org/wiki/Deep_learning")
     assert(res2.name === "B")
   }
