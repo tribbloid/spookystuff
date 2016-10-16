@@ -14,11 +14,11 @@ trait TestMixin extends FunSuite {
   implicit class TestStringView(str: String) {
 
     //TODO: use reflection to figure out test name and annotate
-    def shouldBe(gd: String = null, sort: Boolean = false): Unit = {
-      val aRaw: List[String] = str.split("\n").toList.filterNot(_.replaceAllLiterally(" ","").isEmpty)
+    def shouldBe(gd: String = null, sort: Boolean = false, ignoreCase: Boolean = false): Unit = {
+      var a: List[String] = str.split("\n").toList.filterNot(_.replaceAllLiterally(" ","").isEmpty)
         .map(v => ("|" + v).trim.stripPrefix("|"))
-      val a = if (sort) aRaw.sorted
-      else aRaw
+      if (sort) a = a.sorted
+      if (ignoreCase) a = a.map(_.toLowerCase)
 
       def originalStr = "================================ [ACTUAL] =================================\n" +
         a.mkString("\n") + "\n"
@@ -27,14 +27,10 @@ trait TestMixin extends FunSuite {
         case None =>
           println(originalStr)
         case Some(_gd) =>
-          val bRaw = _gd.split("\n").toList.filterNot(_.replaceAllLiterally(" ","").isEmpty)
+          var b = _gd.split("\n").toList.filterNot(_.replaceAllLiterally(" ","").isEmpty)
             .map(v => ("|" + v).trim.stripPrefix("|"))
-          val b = if (sort) bRaw.sorted
-          else bRaw
-          //          val patch = DiffUtils.diff(a, b)
-          //          val unified = DiffUtils.generateUnifiedDiff("Output", "GroundTruth", a, patch, 1)
-          //
-          //          unified.asScala.foreach(println)
+          if (sort) b = b.sorted
+          if (ignoreCase) b = b.map(_.toLowerCase)
           assert(
             a == b,
             {
@@ -45,6 +41,7 @@ trait TestMixin extends FunSuite {
           )
       }
     }
+
     def rowsShouldBe(gd: String = null) = shouldBe(gd, sort = true)
 
     def shouldBeLike(gd: String = null, sort: Boolean = false): Unit = {

@@ -14,7 +14,7 @@
     <properties>
         <assembly.jar.dir>scala-${scala.binary.version}</assembly.jar.dir>
         <assembly.jar.basename>${project.artifactId}-${project.version}-${project.classifier}.jar</assembly.jar.basename>
-        <example.jar.basename>${parent.artifactId}-example-${project.version}-${project.classifier}.jar</example.jar.basename>
+        <example.jar.basename>${project.parent.artifactId}-example-${project.version}-${project.classifier}.jar</example.jar.basename>
     </properties>
 
     <profiles>

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
 
-cd ..
+FWDIR="$(cd "`dirname "$0"`"/..; pwd)"
 
-MAVEN_OPTS="-Xmx4g -XX:MaxPermSize=4g -XX:ReservedCodeCacheSize=512m" mvn clean install -Pdist "$@"
+MAVEN_OPTS="-Xmx4g -XX:MaxPermSize=4g -XX:ReservedCodeCacheSize=512m" mvn clean install -Pdist "$@" -f "$FWDIR"

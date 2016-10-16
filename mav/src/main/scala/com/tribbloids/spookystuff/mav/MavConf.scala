@@ -1,7 +1,7 @@
 package com.tribbloids.spookystuff.mav
 
 import com.tribbloids.spookystuff.AbstractConf
-import com.tribbloids.spookystuff.mav.comm.{EndPoint$, ProxyFactory}
+import com.tribbloids.spookystuff.mav.comm.{Endpoint, ProxyFactory}
 import org.apache.spark.SparkConf
 
 object MavConf {
@@ -19,7 +19,7 @@ case class MavConf(
                     // connection list is configed by user and shared by all executors
                     // blacklist is node specific and determined by GenPartitioner
                     // routing now becomes part of Connection?
-                    var instances: Seq[EndPoint],
+                    var instances: Seq[Endpoint],
                     var proxies: Option[ProxyFactory],
                     var takeOffAltitude: Double = 20 // in meters
                   ) extends AbstractConf {

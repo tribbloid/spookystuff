@@ -1,6 +1,5 @@
 #!/usr/bin/env bash
-#should deploy both classifiers
 
-cd ..
+FWDIR="$(cd "`dirname "$0"`"/..; pwd)"
 
-mvn clean deploy -DskipTests=true -Prelease-sign-artifacts -Ppipeline -Dgpg.passphrase=****** "$@"
+mvn clean deploy -DskipTests=true -Prelease-sign-artifacts -Ppipeline -Dgpg.passphrase=****** "$@" -f "$FWDIR"

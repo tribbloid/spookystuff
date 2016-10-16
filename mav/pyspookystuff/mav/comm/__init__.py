@@ -5,8 +5,8 @@ import dronekit
 import re
 import sys
 
+from pyspookystuff.mav import utils
 from pyspookystuff import mav
-
 
 # pool = dict([])
 # endpoint: dict -> InstancInfo
@@ -73,23 +73,24 @@ class Endpoint(object):
         Endpoint(_dict['uris'], _dict['vehicleClass'])
 
     # TODO: use **local() to reduce boilerplate copies
-    def __init__(self, uris, vehicleClass):
+    def __init__(self, uris, vehicleClass=None):
         self.uris = uris
         self.vehicleClass = vehicleClass
 
     @property
-    def connStr(self):
+    def _connStrNoInit(self):
         return self.uris[0]
 
     @staticmethod
     def nextUnused():
         # type: () -> Endpoint
-        mav.nextUnused(Endpoint.used, Endpoint.all)
+        utils.nextUnused(Endpoint.used, Endpoint.all)
 
     @staticmethod
-    def nextImmediatelyAvailable():
+    def nextImmediatelyAvailable(all):
         # type: () -> Endpoint
-        mav.nextUnused(Endpoint.used, Endpoint.all, Endpoint.unreachable)
+
+        utils.nextUnused(Endpoint.used, all, Endpoint.unreachable)
 
 
 class ProxyFactory(object):
@@ -109,7 +110,7 @@ class ProxyFactory(object):
         self.polling = polling
 
     def nextPort(self):  # NOT static! don't move anywhere
-        port = mav.nextUnused(Proxy.usedPort, self.ports)
+        port = utils.nextUnused(Proxy.usedPort, self.ports)
         return port
 
     def nextProxy(self, connStr, vType=None):
@@ -143,7 +144,6 @@ class ProxyFactory(object):
 
 
 class Proxy(object):
-    existing = []
     usedPort = mav.manager.list()
     # usedPort = multiprocessing.Array(ctypes.c_long, 10, lock=True)  # type: multiprocessing.Array
 
@@ -217,13 +217,6 @@ class Proxy(object):
         ret.delaybeforesend = 0
         return ret
 
-    @staticmethod
-    def clean():
-
-        for m in Proxy.existing:
-            m.close()
-        Proxy.existing = []
-
     def __init__(self, connStr, name, port, outs):
 
         # primary out, always localhost
@@ -237,7 +230,6 @@ class Proxy(object):
 
         effectiveOuts = self.outs + [self.uri]
         self.spawn = Proxy._up(aircraft=self.name, master=connStr, outs=effectiveOuts)
-        Proxy.existing.append(self)
 
     @property
     def uri(self):
@@ -257,7 +249,7 @@ class Connection(object):
 
     @staticmethod
     def getOrCreate(endpoints, proxyFactory, polling=False):
-        # type: (list[Endpoint], ProxyFactory, bool) -> Connection
+        # type: (list, ProxyFactory, bool) -> Connection
         if not Connection.existing:
             existing = Connection.create(endpoints, proxyFactory, polling)
         return Connection.existing
@@ -266,23 +258,18 @@ class Connection(object):
     def create(endpoints, proxyFactory, polling=False):
         # type: (list[Endpoint], ProxyFactory, bool) -> Connection
 
-        # insert if not exist TODO: need process safety
-        for endpoint in endpoints:
-            if not (endpoint in Endpoint.all):
-                Endpoint.all.append(endpoint)
-
         factory = proxyFactory if (polling or proxyFactory.polling) else None
 
         # iterate ONCE until a vehicle can be created
         # otherwise RAISE ERROR IMMEDIATELY! action will retry it locally and spark will retry it cluster-wise.
         # special polling-based GenPartitioner should be used to minimize error rate.
-        endpoint = Endpoint.nextImmediatelyAvailable()
+        endpoint = Endpoint.nextImmediatelyAvailable(endpoints)
         proxy = None
         vehicle = None
         try:
-            uri = endpoint.connStr
+            uri = endpoint._connStrNoInit
             if factory:
-                proxy = factory.nextProxy(endpoint.connStr)
+                proxy = factory.nextProxy(endpoint._connStrNoInit)
                 uri = proxy.uri()
 
             vehicle = dronekit.connect(

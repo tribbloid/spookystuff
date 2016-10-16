@@ -226,7 +226,7 @@ case class HDFSResolver(
 
     val lockedPath = new Path(pathStr + lockedSuffix)
 
-    SpookyUtils.retry(Const.DFSBlockedAccessRetries) {
+    SpookyUtils.retry(Const.DFSBlockedAccessRetries, 1000) {
       assert(
         !fs.exists(lockedPath),
         {
@@ -240,7 +240,7 @@ case class HDFSResolver(
     if (fileExists) {
       fs.rename(path, lockedPath)
       SpookyUtils.retry(Const.DFSBlockedAccessRetries) {
-        assert(fs.exists(lockedPath), s"Renaming of $pathStr is incomplete")
+        assert(fs.exists(lockedPath), s"Locking of $pathStr cannot be persisted")
       }
     }
 

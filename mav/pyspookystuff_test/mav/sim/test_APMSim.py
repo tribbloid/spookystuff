@@ -1,146 +1,124 @@
-import multiprocessing
-import random
-from unittest import TestCase
+from __future__ import print_function
+
+import pickle
+import traceback
 
 import time
 from dronekit import connect, LocationGlobalRelative
 
-from pyspookystuff.mav import assureInTheAir
 from pyspookystuff.mav.comm import ProxyFactory
-from pyspookystuff.mav.sim import APMSim
+from pyspookystuff.mav.sim import APMSim, usedINums
+from pyspookystuff_test.mav import move100m, numCores, APMSimFixture, randomLocations, APMSimContext
 
 
-# should move 1 drone, 2 drones on different multiprocessing.Processes.
-def _simMove(point, proxyFactory=None):
-    # type: (LocationGlobal, ProxyFactory) -> double, double
-    # always move 100m.
-
-    sim = APMSim.create()
-    endpoint = sim.connStr
-
-    proxy = None
-    if proxyFactory:
-        proxy = proxyFactory.nextProxy(sim.connStr)
-        endpoint = proxy.uri
-
-    vehicle = connect(endpoint, wait_ready=True)
-
-    # NOTE these are *very inappropriate settings*
-    # to make on a real vehicle. They are leveraged
-    # exclusively for simulation. Take heed!!!
-    vehicle.parameters['FS_GCS_ENABLE'] = 0
-    vehicle.parameters['FS_EKF_THRESH'] = 100
-
-    print("Allowing time for parameter write")
-
-    assureInTheAir(20, vehicle)
-
-    print("Going to point...")
-    vehicle.simple_goto(point)
-
-    def distSq():
-        north = vehicle.location.local_frame.north
-        east = vehicle.location.local_frame.east
-        return north * north + east * east
-
-    while distSq() <= 10000:  # 100m
-        print("moving ... " + str(vehicle.location.local_frame.north) + "m")
-        time.sleep(1)
-
-    if proxy:
-        proxy.close()
-
-    sim.close()
-    return vehicle.location.local_frame.north, vehicle.location.local_frame.east
-
-
-def simMove(p):
-    # type: (object) -> object
-    return _simMove(p)
-
-
-def simMoveProxy(p):
-    return _simMove(p, defaultProxyFactory)
-
-
-def nextINum(i):
+def getINum(i):
     iNum = APMSim.nextINum()
     time.sleep(5)
-    APMSim.usedINums.remove(iNum)
+    usedINums.remove(iNum)
     return iNum
 
 
-def nextSim(i):
+def getSim(i):
     sim = APMSim.create()
-    # try:
-    iNum = sim.iNum
-    time.sleep(5)
-    # finally: TODO: revert
-    sim.close()
-    return iNum
+    try:
+        iNum = sim.iNum
+        time.sleep(5)
+        return iNum
+    finally:
+        sim.close()
 
+class ProcessSafety(APMSimFixture):
 
-numCores = multiprocessing.cpu_count()
-
-
-class ProcessSafety(TestCase):
-    global numCores
-
-    def __init__(self, *args, **kwargs):
-        self.pool = multiprocessing.Pool()
-        super(ProcessSafety, self).__init__(*args, **kwargs)
+    @staticmethod
+    def test_canBePickled():
+        sim = getSim(0)
+        print(pickle.dumps(sim))
 
     def test_nextINum(self):
-        iNums = self.pool.map(
-            nextINum,
+        iNums = self.processPool.map(
+            getINum,
             range(0, numCores)
         )
 
         assert sorted(iNums) == range(0, numCores), iNums
 
     def test_APMSim_create(self):
-        iNums = self.pool.map(
-            nextSim,
+        iNums = self.processPool.map(
+            getSim,
             range(0, numCores)
         )
 
         assert sorted(iNums) == range(0, numCores), iNums
 
+    def test_randomLocations(self):
+        result = randomLocations()
+        coordinate = map(
+            lambda v: (v.lat, v.lon),
+            result
+        )
+        print(coordinate)
+        assert(len(set(coordinate)) != len(coordinate), (len(set(coordinate)), len(coordinate)))
 
 defaultProxyFactory = ProxyFactory()
 
+def _move(point, proxyFactory=None):
+    try:
+        with APMSimContext() as sim:
+            # type: (LocationGlobal, ProxyFactory) -> double, double
+            # always move 100m.g
 
-class NoProxy(TestCase):
-    global numCores
+            # sim = APMSim.create()
+            uri = sim.connStr
+            print("Connecting to ... ", uri)
+
+            proxy = None
+            try:
+
+                if proxyFactory:
+                    proxy = proxyFactory.nextProxy(uri)
+                    uri = proxy.uri
+
+                vehicle = connect(uri, wait_ready=True)
+
+                move100m(point, vehicle)
+
+            finally:
+                if proxy:
+                    proxy.close()
+
+            return vehicle.location.local_frame.north, vehicle.location.local_frame.east
+    except:
+        traceback.print_exc()
+        raise
+
+def simMove(tuple):
+        return _move(tuple)
+class NoProxy(APMSimFixture):
 
     def __init__(self, *args, **kwargs):
-        self.pool = multiprocessing.Pool()
         super(NoProxy, self).__init__(*args, **kwargs)
         self.simMove = simMove
 
-    def test_move1drone(self):
+    def test_move1Drone(self):
         position = self.simMove(LocationGlobalRelative(-34.363261, 149.165230, 20))
         print(position)
 
-    def test_moveNdrones(self):
-        points = map(
-            lambda i: LocationGlobalRelative(random.uniform(-90, 90), random.uniform(-180, 180), 20),
-            range(0, numCores)
-        )
+    def test_moveNDrones(self):
 
-        positions = self.pool.map(
+        positions = self.processPool.map(
             self.simMove,
-            points
+            randomLocations()
         )
         print(positions)
         assert len(set(positions)) == len(positions)
 
 
+def simMoveProxy(tuple):
+        return _move(tuple, defaultProxyFactory)
 class WithProxy(NoProxy):
 
     def __init__(self, *args, **kwargs):
-        self.pool = multiprocessing.Pool()
-        super(NoProxy, self).__init__(*args, **kwargs)
+        super(WithProxy, self).__init__(*args, **kwargs)
         self.simMove = simMoveProxy
 
         # simMove = simMoveProxy

@@ -1,48 +1,18 @@
 from __future__ import print_function
 
 import logging
-import os
+from multiprocessing import Manager
 
 import time
 from dronekit import VehicleMode
-from multiprocessing import Lock, Manager
-
-from pyspookystuff import PyspookyException
-
 
 manager = Manager()
 
-
-lock = Lock()
-
-
 # existing has to be thread safe
-def nextUnused(existing, candidates, blacklist=list()):
-    global lock
-
-    lock.acquire()
-    combined = existing + blacklist
-    for i in candidates:
-        if i not in combined:
-            existing.append(i)
-            lock.release()
-            return i
-
-    lock.release()
-    os.error("Depleted: running dry!")
-
-    # TODO: customize error info
-    # raise mav.DronePoolDepletedException(
-    #     "All drones are dispatched or unreachable:\n" +
-    #     "dispatched:\n" +
-    #     json.dumps(Endpoint.used) + "\n" +
-    #     "unreachable:\n" +
-    #     json.dumps(Endpoint.unreachable)
-    # )
 
 
-class DronePoolDepletedException(PyspookyException):
-    pass
+# class DronePoolDepletedException(PyspookyException):
+#     pass
 
 
 def assureInTheAir(targetAlt, vehicle):

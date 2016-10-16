@@ -1,3 +1,5 @@
 dronekit >= 2.9
 dronekit-sitl >= 3.2
 MAVProxy >= 1.5.2
+lazy >= 1.2
+papy >= 1.0.8
