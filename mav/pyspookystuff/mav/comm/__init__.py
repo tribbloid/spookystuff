@@ -5,8 +5,7 @@ import dronekit
 import re
 import sys
 
-from pyspookystuff.mav import utils
-from pyspookystuff import mav
+from pyspookystuff.mav import utils, mpManager
 
 # pool = dict([])
 # endpoint: dict -> InstancInfo
@@ -47,20 +46,21 @@ from pyspookystuff import mav
 #         self.lastUpdated = datetime.now()
 #         self.lastError = None
 
+# static variables shared by all processes
+# all = multiprocessing.Array(ctypes.c_char_p, 10)  # type: multiprocessing.Array
+allEndpoints = mpManager.list()
+# will be tried by daemon if not in used
+
+# used = multiprocessing.Array(ctypes.c_char_p, 10)  # type: multiprocessing.Array
+usedEndpoints = mpManager.list()
+# won't be tried by nobody
+
+# unreachable = multiprocessing.Array(ctypes.c_char_p, 10)  # type: multiprocessing.Array
+unreachableEndpoints = mpManager.list()
+
 # bean project
 # not consistent with other resource allocation mechanism.
 class Endpoint(object):
-    # static variables shared by all processes
-    # all = multiprocessing.Array(ctypes.c_char_p, 10)  # type: multiprocessing.Array
-    all = mav.manager.list()
-    # will be tried by daemon if not in used
-
-    # used = multiprocessing.Array(ctypes.c_char_p, 10)  # type: multiprocessing.Array
-    used = mav.manager.list()
-    # won't be tried by nobody
-
-    # unreachable = multiprocessing.Array(ctypes.c_char_p, 10)  # type: multiprocessing.Array
-    unreachable = mav.manager.list()
 
     # won't be tried by executor, daemon will still try it and if successful, will remove it from the list
     # in all these arrays json strings of Endpoints are stored. This is the only way to discover duplicity
@@ -84,13 +84,13 @@ class Endpoint(object):
     @staticmethod
     def nextUnused():
         # type: () -> Endpoint
-        utils.nextUnused(Endpoint.used, Endpoint.all)
+        utils.nextUnused(usedEndpoints, allEndpoints)
 
     @staticmethod
     def nextImmediatelyAvailable(all):
         # type: () -> Endpoint
 
-        utils.nextUnused(Endpoint.used, all, Endpoint.unreachable)
+        utils.nextUnused(usedEndpoints, all, unreachableEndpoints)
 
 
 class ProxyFactory(object):
@@ -144,7 +144,7 @@ class ProxyFactory(object):
 
 
 class Proxy(object):
-    usedPort = mav.manager.list()
+    usedPort = mpManager.list()
     # usedPort = multiprocessing.Array(ctypes.c_long, 10, lock=True)  # type: multiprocessing.Array
 
     @staticmethod
@@ -258,7 +258,10 @@ class Connection(object):
     def create(endpoints, proxyFactory, polling=False):
         # type: (list[Endpoint], ProxyFactory, bool) -> Connection
 
-        factory = proxyFactory if (polling or proxyFactory.polling) else None
+        factory = None
+        if proxyFactory:
+            if polling or proxyFactory.polling:
+                factory = proxyFactory
 
         # iterate ONCE until a vehicle can be created
         # otherwise RAISE ERROR IMMEDIATELY! action will retry it locally and spark will retry it cluster-wise.
@@ -280,8 +283,8 @@ class Connection(object):
             return binding
 
         except Exception:
-            Endpoint.unreachable.append(endpoint)
-            Endpoint.used.remove(endpoint)
+            unreachableEndpoints.append(endpoint)
+            usedEndpoints.remove(endpoint)
             if proxy:
                 proxy.close()
             if vehicle:
@@ -295,6 +298,6 @@ class Connection(object):
         self.vehicle = vehicle
 
     def close(self):
-        Endpoint.used.remove(self.endpoint)
+        usedEndpoints.remove(self.endpoint)
         self.vehicle.close()
         self.proxy.close()

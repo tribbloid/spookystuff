@@ -1,18 +1,19 @@
 from __future__ import print_function
 
 import logging
-from multiprocessing import Manager
+import multiprocessing
 
 import time
-from dronekit import VehicleMode
+import dronekit
 
-manager = Manager()
 
 # existing has to be thread safe
 
 
 # class DronePoolDepletedException(PyspookyException):
 #     pass
+
+mpManager = multiprocessing.Manager()
 
 
 def assureInTheAir(targetAlt, vehicle):
@@ -37,7 +38,7 @@ def blockingArm(vehicle):
         i -= 1
 
     # Copter should arm in GUIDED mode
-    vehicle.mode = VehicleMode("GUIDED")
+    vehicle.mode = dronekit.VehicleMode("GUIDED")
     i = 60
     while vehicle.mode.name != 'GUIDED' and i > 0:
         print(" Waiting for guided %s seconds..." % (i,))

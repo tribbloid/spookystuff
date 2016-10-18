@@ -23,7 +23,7 @@ def tcp_master(instance):
     return 'tcp:127.0.0.1:' + str(5760 + instance*10)
 
 
-usedINums = mav.manager.list()
+usedINums = mav.mpManager.list()
 class APMSim(object):
     global usedINums
 

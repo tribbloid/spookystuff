@@ -1,50 +1,33 @@
-import unittest
+import traceback
 
-from dronekit import LocationGlobalRelative
+from pyspookystuff.mav.comm import Connection, ProxyFactory
+from pyspookystuff_test.mav import moveOut, APMSimContext, AbstractIT, endpoints
 
-from pyspookystuff.mav.comm import Connection, Endpoint
-from pyspookystuff.mav.sim import APMSim
-from pyspookystuff_test.mav import move100m, numCores
+defaultProxyFactory = ProxyFactory()
 
+def _move(point, proxyFactory=None):
 
-# launch sim in same thread, control them from different thread
-class NoProxy(unittest.TestCase):
+    with APMSimContext():
+        # type: (LocationGlobal, ProxyFactory) -> double, double
+        # always move 100m.g
 
-    def setUp(self):
-        self.sims = map(
-            lambda i: APMSim(i),
-            NoProxy.iis
-        )
-
-    def tearDown(self):
-        self.sims = map(
-            lambda sim: sim.close(),
-            self.sims
-        )
-
-    endpoints = map(
-        lambda i: Endpoint("tcp:localhost:" + str(5760 + i * 10)),
-        iis
-    )
-    factory = None
-
-    def test_1Connection(self):
-
-        point = LocationGlobalRelative(0, 0, 20)
         conn = Connection.getOrCreate(
-            self.endpoints,
-            self.factory
+            endpoints,
+            proxyFactory
         )
 
         vehicle = conn.vehicle
 
-        move100m(point, vehicle)
+        moveOut(point, vehicle)
 
         return vehicle.location.local_frame.north, vehicle.location.local_frame.east
 
-    # def test_NConnection(self):
-    #     self.assertEqual(True, False)
+def move_NoProxy(tuple):
+    return _move(tuple)
+def move_Proxy(tuple):
+    return _move(tuple, defaultProxyFactory)
+class SimpleMoveIT(AbstractIT):
 
-
-class WithProxy(NoProxy):
-    pass
+    @staticmethod
+    def getFns():
+        return [move_NoProxy, move_Proxy]

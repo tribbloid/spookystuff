@@ -4,11 +4,11 @@ import pickle
 import traceback
 
 import time
-from dronekit import connect, LocationGlobalRelative
+from dronekit import connect
 
 from pyspookystuff.mav.comm import ProxyFactory
 from pyspookystuff.mav.sim import APMSim, usedINums
-from pyspookystuff_test.mav import move100m, numCores, APMSimFixture, randomLocations, APMSimContext
+from pyspookystuff_test.mav import moveOut, numCores, APMSimFixture, APMSimContext, AbstractIT
 
 
 def getINum(i):
@@ -27,14 +27,14 @@ def getSim(i):
     finally:
         sim.close()
 
-class ProcessSafety(APMSimFixture):
+class Suite(APMSimFixture):
 
     @staticmethod
     def test_canBePickled():
         sim = getSim(0)
         print(pickle.dumps(sim))
 
-    def test_nextINum(self):
+    def test_nextINumIsProcessSafe(self):
         iNums = self.processPool.map(
             getINum,
             range(0, numCores)
@@ -42,7 +42,7 @@ class ProcessSafety(APMSimFixture):
 
         assert sorted(iNums) == range(0, numCores), iNums
 
-    def test_APMSim_create(self):
+    def test_createIsProcessSafe(self):
         iNums = self.processPool.map(
             getSim,
             range(0, numCores)
@@ -50,8 +50,9 @@ class ProcessSafety(APMSimFixture):
 
         assert sorted(iNums) == range(0, numCores), iNums
 
-    def test_randomLocations(self):
-        result = randomLocations()
+    @staticmethod
+    def test_randomLocations():
+        result = Suite.randomLocations()
         coordinate = map(
             lambda v: (v.lat, v.lon),
             result
@@ -62,68 +63,38 @@ class ProcessSafety(APMSimFixture):
 defaultProxyFactory = ProxyFactory()
 
 def _move(point, proxyFactory=None):
-    try:
-        with APMSimContext() as sim:
-            # type: (LocationGlobal, ProxyFactory) -> double, double
-            # always move 100m.g
 
-            # sim = APMSim.create()
-            uri = sim.connStr
-            print("Connecting to ... ", uri)
+    with APMSimContext() as sim:
+        # type: (LocationGlobal, ProxyFactory) -> double, double
+        # always move 100m.g
 
-            proxy = None
-            try:
+        # sim = APMSim.create()
+        uri = sim.connStr
+        print("Connecting to ... ", uri)
 
-                if proxyFactory:
-                    proxy = proxyFactory.nextProxy(uri)
-                    uri = proxy.uri
+        proxy = None
+        try:
 
-                vehicle = connect(uri, wait_ready=True)
+            if proxyFactory:
+                proxy = proxyFactory.nextProxy(uri)
+                uri = proxy.uri
 
-                move100m(point, vehicle)
+            vehicle = connect(uri, wait_ready=True)
 
-            finally:
-                if proxy:
-                    proxy.close()
+            moveOut(point, vehicle)
 
-            return vehicle.location.local_frame.north, vehicle.location.local_frame.east
-    except:
-        traceback.print_exc()
-        raise
+        finally:
+            if proxy:
+                proxy.close()
 
-def simMove(tuple):
-        return _move(tuple)
-class NoProxy(APMSimFixture):
+        return vehicle.location.local_frame.north, vehicle.location.local_frame.east
 
-    def __init__(self, *args, **kwargs):
-        super(NoProxy, self).__init__(*args, **kwargs)
-        self.simMove = simMove
+def move_NoProxy(tuple):
+    return _move(tuple)
+def move_Proxy(tuple):
+    return _move(tuple, defaultProxyFactory)
+class SimpleMoveIT(AbstractIT):
 
-    def test_move1Drone(self):
-        position = self.simMove(LocationGlobalRelative(-34.363261, 149.165230, 20))
-        print(position)
-
-    def test_moveNDrones(self):
-
-        positions = self.processPool.map(
-            self.simMove,
-            randomLocations()
-        )
-        print(positions)
-        assert len(set(positions)) == len(positions)
-
-
-def simMoveProxy(tuple):
-        return _move(tuple, defaultProxyFactory)
-class WithProxy(NoProxy):
-
-    def __init__(self, *args, **kwargs):
-        super(WithProxy, self).__init__(*args, **kwargs)
-        self.simMove = simMoveProxy
-
-        # simMove = simMoveProxy
-
-        # def simMove(self, p):
-        #     global defaultProxyFactory
-        #
-        #     _simMove(p, defaultProxyFactory)
+    @staticmethod
+    def getFns():
+        return [move_NoProxy, move_Proxy]

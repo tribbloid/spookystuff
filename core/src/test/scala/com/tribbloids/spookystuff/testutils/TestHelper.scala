@@ -3,6 +3,7 @@ package com.tribbloids.spookystuff.testutils
 import java.io.File
 import java.util.Properties
 
+import com.tribbloids.spookystuff.utils.SpookyUtils
 import org.apache.commons.io.FileUtils
 import org.apache.spark.serializer.KryoSerializer
 import org.apache.spark.sql.SQLContext
@@ -12,8 +13,8 @@ object TestHelper {
 
   val numProcessors: Int = Runtime.getRuntime.availableProcessors()
 
-  val TEMP_PATH = System.getProperty("user.dir") + "/temp/"
-  val TARGET_PATH = System.getProperty("user.dir") + "/target/"
+  val TEMP_PATH = SpookyUtils.\\\(System.getProperty("user.dir"), "temp")
+  val TARGET_PATH = SpookyUtils.\\\(System.getProperty("user.dir"), "target")
 
   val props = new Properties()
   try {
