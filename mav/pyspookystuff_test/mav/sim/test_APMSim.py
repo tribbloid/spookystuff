@@ -1,7 +1,7 @@
 from __future__ import print_function
 
 import pickle
-import traceback
+import unittest
 
 import time
 from dronekit import connect
@@ -98,3 +98,6 @@ class SimpleMoveIT(AbstractIT):
     @staticmethod
     def getFns():
         return [move_NoProxy, move_Proxy]
+
+if __name__ == '__main__':
+    unittest.main()

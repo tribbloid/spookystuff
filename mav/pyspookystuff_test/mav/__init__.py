@@ -109,13 +109,13 @@ class AbstractIT(APMSimFixture):
             position = fn(LocationGlobalRelative(-34.363261, 149.165230, 20))
             print(position)
 
-    def test_moveN(self):
-        fns = self.getFns()
-        for fn in fns:
-            print("### test_moveN: SUBTEST ### [> ", fn.__name__)
-            positions = self.processPool.map(
-                fn,
-                self.randomLocations()
-            )
-            print(positions)
-            assert len(set(positions)) == len(positions)
+    # def test_moveN(self):
+    #     fns = self.getFns()
+    #     for fn in fns:
+    #         print("### test_moveN: SUBTEST ### [> ", fn.__name__)
+    #         positions = self.processPool.map(
+    #             fn,
+    #             self.randomLocations()
+    #         )
+    #         print(positions)
+    #         assert len(set(positions)) == len(positions)

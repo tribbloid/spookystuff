@@ -13,7 +13,7 @@
         <scala.fallback.version>2.10</scala.fallback.version>
         <spark.version>1.6.2</spark.version>
         <spark.binary.version>1.6</spark.binary.version>
-        <project.classifier>spark${spark.binary.version}</project.classifier>
+        <spark.classifier>spark${spark.binary.version}</spark.classifier>
         <PermGen>512m</PermGen>
         <MaxPermGen>2g</MaxPermGen>
         <failsafe.version>2.18</failsafe.version>
@@ -241,7 +241,7 @@
                         </goals>
                         <configuration>
                             <sources>
-                                <source>${project.basedir}/shims/spark${spark.binary.version}-shim/main/scala</source>
+                                <source>${project.basedir}/shims/${spark.classifier}-shim/main/scala</source>
                             </sources>
                         </configuration>
                     </execution>
@@ -253,7 +253,7 @@
                         </goals>
                         <configuration>
                             <sources>
-                                <source>${project.basedir}/shims/spark${spark.binary.version}-shim/test/scala</source>
+                                <source>${project.basedir}/shims/${spark.classifier}-shim/test/scala</source>
                             </sources>
                         </configuration>
                     </execution>

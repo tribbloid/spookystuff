@@ -1,4 +1,4 @@
-import traceback
+import unittest
 
 from pyspookystuff.mav.comm import Connection, ProxyFactory
 from pyspookystuff_test.mav import moveOut, APMSimContext, AbstractIT, endpoints
@@ -31,3 +31,6 @@ class SimpleMoveIT(AbstractIT):
     @staticmethod
     def getFns():
         return [move_NoProxy, move_Proxy]
+
+if __name__ == '__main__':
+    unittest.main()

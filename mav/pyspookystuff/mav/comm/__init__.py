@@ -1,11 +1,14 @@
 import json
+import multiprocessing
 import os
 
 import dronekit
 import re
 import sys
 
-from pyspookystuff.mav import utils, mpManager
+print(sys.path)
+
+from pyspookystuff.mav import utils
 
 # pool = dict([])
 # endpoint: dict -> InstancInfo
@@ -46,18 +49,6 @@ from pyspookystuff.mav import utils, mpManager
 #         self.lastUpdated = datetime.now()
 #         self.lastError = None
 
-# static variables shared by all processes
-# all = multiprocessing.Array(ctypes.c_char_p, 10)  # type: multiprocessing.Array
-allEndpoints = mpManager.list()
-# will be tried by daemon if not in used
-
-# used = multiprocessing.Array(ctypes.c_char_p, 10)  # type: multiprocessing.Array
-usedEndpoints = mpManager.list()
-# won't be tried by nobody
-
-# unreachable = multiprocessing.Array(ctypes.c_char_p, 10)  # type: multiprocessing.Array
-unreachableEndpoints = mpManager.list()
-
 # bean project
 # not consistent with other resource allocation mechanism.
 class Endpoint(object):
@@ -89,8 +80,22 @@ class Endpoint(object):
     @staticmethod
     def nextImmediatelyAvailable(all):
         # type: () -> Endpoint
-
         utils.nextUnused(usedEndpoints, all, unreachableEndpoints)
+
+
+mpManager = multiprocessing.Manager()
+
+# static variables shared by all processes
+# all = multiprocessing.Array(ctypes.c_char_p, 10)  # type: multiprocessing.Array
+allEndpoints = mpManager.list()
+# will be tried by daemon if not in used
+
+# used = multiprocessing.Array(ctypes.c_char_p, 10)  # type: multiprocessing.Array
+usedEndpoints = mpManager.list()
+# won't be tried by nobody
+
+# unreachable = multiprocessing.Array(ctypes.c_char_p, 10)  # type: multiprocessing.Array
+unreachableEndpoints = mpManager.list()
 
 
 class ProxyFactory(object):
@@ -251,7 +256,7 @@ class Connection(object):
     def getOrCreate(endpoints, proxyFactory, polling=False):
         # type: (list, ProxyFactory, bool) -> Connection
         if not Connection.existing:
-            existing = Connection.create(endpoints, proxyFactory, polling)
+            Connection.existing = Connection.create(endpoints, proxyFactory, polling)
         return Connection.existing
 
     @staticmethod

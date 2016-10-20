@@ -6,9 +6,7 @@ import multiprocessing
 import time
 import dronekit
 
-
 # existing has to be thread safe
-
 
 # class DronePoolDepletedException(PyspookyException):
 #     pass
