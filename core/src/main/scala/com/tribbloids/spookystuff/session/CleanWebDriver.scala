@@ -59,9 +59,10 @@ object AutoCleanable {
       cleanup(TaskOrThread(Left(tc)))
   }
 
-  def getShutdownHook(thread: Thread): () => Unit = {
-    () =>
+  def getShutdownHook(thread: Thread) = new Thread {
+    override def run() = {
       cleanup(TaskOrThread(Right(thread)))
+    }
   }
 
   def addListener(v: TaskOrThread): Unit = {
@@ -69,7 +70,9 @@ object AutoCleanable {
       case Left(tc) =>
         tc.addTaskCompletionListener(taskCleanupListener)
       case Right(th) =>
-      //TODO: add shutdownHook!
+        Runtime.getRuntime.addShutdownHook(
+          getShutdownHook(th)
+        )
     }
   }
 }

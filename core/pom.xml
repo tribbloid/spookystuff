@@ -90,14 +90,6 @@
             <version>0.0.6</version>
         </dependency>
 
-        <!--for driver leakage detection-->
-        <dependency>
-            <groupId>org.jprocesses</groupId>
-            <artifactId>jProcesses</artifactId>
-            <version>1.6.2</version>
-            <scope>test</scope>
-        </dependency>
-
     </dependencies>
 
     <build>

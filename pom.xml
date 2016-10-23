@@ -173,6 +173,13 @@
             <version>2.2.4</version>
             <scope>test</scope>
         </dependency>
+        <!--for driver leakage detection-->
+        <dependency>
+            <groupId>org.jprocesses</groupId>
+            <artifactId>jProcesses</artifactId>
+            <version>1.6.2</version>
+            <scope>test</scope>
+        </dependency>
         <!--<dependency>-->
         <!--<groupId>org.scalacheck</groupId>-->
         <!--<artifactId>scalacheck_${scala.binary.version}</artifactId>-->

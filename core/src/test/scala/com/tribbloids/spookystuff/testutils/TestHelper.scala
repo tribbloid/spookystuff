@@ -106,22 +106,21 @@ object TestHelper {
     }
   }
 
-  def TestSpark = {
+  lazy val TestSpark = {
     val sc = SparkContext.getOrCreate(TestSparkConf)
     //TODO: Remote RPC client disassociated. Likely due to containers exceeding thresholds, or network issues. Check driver logs for WARN messages.
-    //TODO: Cannot call methods on a stopped SparkContext. Disabled before solution is found
-    //    Runtime.getRuntime.addShutdownHook(
-    //      new Thread {
-    //        override def run() = {
-    //          println("=============== Stopping Spark Context ==============")
-    //          sc.stop()
-    //          println("=============== Test Spark Context has stopped ==============")
-    //        }
-    //      }
-    //    )
+    Runtime.getRuntime.addShutdownHook(
+      new Thread {
+        override def run() = {
+          println("=============== Stopping Test Spark Context ==============")
+          sc.stop()
+          println("=============== Test Spark Context has stopped ==============")
+        }
+      }
+    )
     sc
   }
-  def TestSQL = SQLContext.getOrCreate(TestSpark)
+  lazy val TestSQL = SQLContext.getOrCreate(TestSpark)
 
   def assureKryoSerializer(sc: SparkContext): Unit = {
     val ser = SparkEnv.get.serializer
