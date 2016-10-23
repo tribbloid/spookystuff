@@ -5,6 +5,7 @@ import java.net._
 import java.nio.file._
 
 import com.tribbloids.spookystuff.utils.NoRetry.NoRetryWrapper
+import org.apache.spark.TaskContext
 import org.apache.spark.ml.dsl.ReflectionUtils
 import org.apache.spark.sql.catalyst.ScalaReflection
 import org.slf4j.LoggerFactory

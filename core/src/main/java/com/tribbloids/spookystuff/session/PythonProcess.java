@@ -112,11 +112,8 @@ public class PythonProcess {
     }
     catch(Exception e) {
       throw new PythonException(
-        "Error interpreting" +
-          "\n>>>\n" +
-          cmd +
-          "\n---\n" +
-          output,
+        cmd,
+        output,
         e
       );
     }

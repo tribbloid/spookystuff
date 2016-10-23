@@ -3,14 +3,67 @@ package com.tribbloids.spookystuff
 import com.tribbloids.spookystuff.dsl.DriverFactory
 import com.tribbloids.spookystuff.extractors.{Alias, GenExtractor, GenResolved}
 import com.tribbloids.spookystuff.row.{DataRowSchema, SquashedFetchedRow, TypedField}
+import com.tribbloids.spookystuff.session.{AutoCleanable, CleanWebDriver}
 import com.tribbloids.spookystuff.testutils.{RemoteDocsFixture, TestHelper}
-import com.tribbloids.spookystuff.utils.SpookyUtils
+import com.tribbloids.spookystuff.utils.{MultiCauses, SpookyUtils}
 import org.apache.spark.SparkContext
 import org.apache.spark.sql.SQLContext
-import org.openqa.selenium.WebDriver
+import org.jutils.jprocesses.JProcesses
 import org.scalatest.{BeforeAndAfter, BeforeAndAfterAll, FunSuite, Retries}
 
 import scala.language.implicitConversions
+import scala.util.Try
+
+object SpookyEnvFixture {
+//  def cleanDriverInstances(): Unit = {
+//    CleanMixin.unclean.foreach {
+//      tuple =>
+//        tuple._2.foreach (_.finalize())
+//        assert(tuple._2.isEmpty)
+//    }
+//  }
+
+  def shouldBeClean(spooky: SpookyContext): Unit = {
+    driverInstancesShouldBeClean(spooky)
+    driverProcessShouldBeClean()
+  }
+
+  def driverInstancesShouldBeClean(spooky: SpookyContext): Unit = {
+    AutoCleanable.cleanupLocally() //nobody cares about local leakage
+
+    AutoCleanable.uncleaned.foreach {
+      tuple =>
+        val nonLocalDrivers = tuple._2
+        assert(
+          nonLocalDrivers.isEmpty,
+          s": ${tuple._1} is unclean! ${nonLocalDrivers.size} left:\n" + nonLocalDrivers.mkString("\n")
+        )
+    }
+  }
+
+  /**
+    * slow
+    */
+  def driverProcessShouldBeClean(): Unit = {
+    import scala.collection.JavaConverters._
+
+    val processes = JProcesses.getProcessList()
+      .asScala
+
+    val phantomJSProcesses = processes.filter(_.getName == "phantomjs")
+    val pythonProcesses = processes.filter(_.getName == "python")
+    MultiCauses.&&&(Seq(
+      Try{assert(
+        phantomJSProcesses.isEmpty,
+        s"${phantomJSProcesses.size} PhantomJS processes left:\n" + phantomJSProcesses.mkString("\n")
+      )},
+      Try{assert(
+        pythonProcesses.isEmpty,
+        s"${pythonProcesses.size} Python processes left:\n" + pythonProcesses.mkString("\n")
+      )}
+    ))
+  }
+}
 
 abstract class SpookyEnvFixture
   extends FunSuite
@@ -18,6 +71,8 @@ abstract class SpookyEnvFixture
     with BeforeAndAfterAll
     with Retries
     with RemoteDocsFixture {
+
+  val startTime = System.currentTimeMillis()
 
   def sc: SparkContext = TestHelper.TestSpark
   def sql: SQLContext = TestHelper.TestSQL
@@ -46,7 +101,7 @@ abstract class SpookyEnvFixture
 
   implicit def extractor2Function[T, R](extractor: GenExtractor[T, R]): PartialFunction[T, R] = extractor.resolve(schema)
 
-  lazy val driverFactory: DriverFactory[WebDriver] = SpookyConf.DEFAULT_WEBDRIVER_FACTORY
+  lazy val driverFactory: DriverFactory[CleanWebDriver] = SpookyConf.TEST_WEBDRIVER_FACTORY
 
   override def withFixture(test: NoArgTest) = {
     if (isRetryable(test))
@@ -54,6 +109,8 @@ abstract class SpookyEnvFixture
     else
       super.withFixture(test)
   }
+
+  import com.tribbloids.spookystuff.utils.SpookyViews.SparkContextView
 
   override def beforeAll() {
 
@@ -63,11 +120,13 @@ abstract class SpookyEnvFixture
   }
 
   override def afterAll() {
-    //    if (sc != null) {
-    //      sc.stop()
-    //    }//TODO: remove it: sc implementation no longer recreates
 
+    val spooky = this.spooky
     TestHelper.clearTempDir()
+    SpookyEnvFixture.shouldBeClean(spooky)
+    sc.foreachNode {
+      SpookyEnvFixture.shouldBeClean(spooky)
+    }
     super.afterAll()
   }
 
@@ -79,16 +138,30 @@ abstract class SpookyEnvFixture
     }
   }
 
+  after{
+    tearDown()
+  }
+
   def setUp(): Unit = {
+//    SpookyEnvFixture.cleanDriverInstances()
     spooky.conf = new SpookyConf(
       autoSave = true,
       cacheWrite = false,
       cacheRead = false,
       components = Map(
         "dirs" -> new DirConf(
-          root = TestHelper.TEMP_PATH + "spooky-unit"
+          root = SpookyUtils.\\\(TestHelper.TEMP_PATH, "spooky-unit")
         )
       )
     )
+
+  }
+
+  def tearDown(): Unit = {
+    val spooky = this.spooky
+    SpookyEnvFixture.driverInstancesShouldBeClean(spooky)
+    sc.foreachNode {
+      SpookyEnvFixture.driverInstancesShouldBeClean(spooky)
+    }
   }
 }

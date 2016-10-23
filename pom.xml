@@ -208,8 +208,8 @@
     </dependencies>
 
     <build>
-        <outputDirectory>target/scala/classes</outputDirectory>
-        <testOutputDirectory>target/scala/test-classes</testOutputDirectory>
+        <!--<outputDirectory>target/classes</outputDirectory>-->
+        <!--<testOutputDirectory>target/test-classes</testOutputDirectory>-->
 
         <!--add python into fat jar that are shipped to all workers TODO: merge with build-helper-maven-plugin?-->
         <resources>
@@ -217,15 +217,23 @@
                 <directory>src/main/resources</directory>
             </resource>
             <resource>
-                <directory>pyspookystuff</directory>
-                <targetPath>com/tribbloids/pyspookystuff</targetPath>
+                <directory>src/main/python</directory>
+                <targetPath>com/tribbloids</targetPath>
             </resource>
-
-            <resource>
-                <directory>lib_managed</directory>
-                <targetPath>com/tribbloids/spookystuff/lib</targetPath>
-            </resource>
+            <!--<resource>-->
+                <!--<directory>lib_managed</directory>-->
+                <!--<targetPath>com/tribbloids/spookystuff/lib</targetPath>-->
+            <!--</resource>-->
         </resources>
+        <testResources>
+            <testResource>
+                <directory>src/test/resources</directory>
+            </testResource>
+            <testResource>
+                <directory>src/test/python</directory>
+                <targetPath>com/tribbloids</targetPath>
+            </testResource>
+        </testResources>
 
         <plugins>
             <plugin>

@@ -25,7 +25,7 @@ object MavFixture {
 
   def sitlUp(session: DriverSession, i: Int = nextI): Int = {
     //    val port = Instance.sitlI2Port(i)
-    session.getOrCreatePythonDriver.call(
+    session.getOrCreatePythonDriver.execute(
       s"""
          |from pyspookystuff.mav import sitlUp
          |
@@ -36,7 +36,7 @@ object MavFixture {
   }
 
   def sitlClean(session: DriverSession): Unit = {
-    session.getOrCreatePythonDriver.call(
+    session.getOrCreatePythonDriver.execute(
       s"""
          |from pyspookystuff.mav import sitlClean
          |
@@ -46,7 +46,7 @@ object MavFixture {
   }
 }
 
-class MavFixture extends SpookyEnvFixture {
+abstract class MavFixture extends SpookyEnvFixture {
 
   import com.tribbloids.spookystuff.utils.SpookyViews._
 

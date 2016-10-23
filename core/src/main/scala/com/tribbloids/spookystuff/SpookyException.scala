@@ -21,9 +21,20 @@ class ActionException(
 }
 
 class PythonException(
-                       override val message: String = "",
+                      code: String,
+                      output: String,
                        override val cause: Throwable = null
-                     ) extends SpookyException(message, cause)
+                     ) extends SpookyException(
+  {
+    s"""
+       |Error interpreting:
+       |$code
+       |---------------------------------------
+       |$output
+     """.stripMargin
+  },
+  cause
+)
 
 class RetryingException(
                          override val message: String = "",

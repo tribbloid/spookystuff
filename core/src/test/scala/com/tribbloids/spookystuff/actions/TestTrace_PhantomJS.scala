@@ -2,9 +2,8 @@ package com.tribbloids.spookystuff.actions
 
 import com.tribbloids.spookystuff.SpookyEnvFixture
 import com.tribbloids.spookystuff.doc.Doc
-import com.tribbloids.spookystuff.session.{DriverSession, Session}
+import com.tribbloids.spookystuff.session.{CleanWebDriver, DriverSession, Session}
 import com.tribbloids.spookystuff.testutils.TestMixin
-import org.openqa.selenium.WebDriver
 
 class TestTrace_PhantomJS extends SpookyEnvFixture with TestMixin {
 
@@ -12,7 +11,7 @@ class TestTrace_PhantomJS extends SpookyEnvFixture with TestMixin {
 
   import scala.concurrent.duration._
 
-  override lazy val driverFactory: DriverFactory[WebDriver] = DriverFactories.PhantomJS(loadImages = true)
+  override lazy val driverFactory: DriverFactory[CleanWebDriver] = DriverFactories.PhantomJS()
 
   test("inject output names should change output doc names") {
 

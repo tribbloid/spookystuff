@@ -8,7 +8,7 @@ import com.tribbloids.spookystuff.utils.SpookyUtils
 import com.tribbloids.spookystuff.{Const, SpookyContext, SpookyException}
 import org.apache.spark.TaskContext
 import org.apache.spark.ml.dsl.utils.{Message, MessageRelay}
-import org.openqa.selenium.{Dimension, NoSuchSessionException, WebDriver}
+import org.openqa.selenium.Dimension
 import org.slf4j.LoggerFactory
 
 import scala.collection.mutable.ArrayBuffer
@@ -43,25 +43,20 @@ case object TaskContextRelay extends MessageRelay[TaskContext] {
   }
 }
 
-abstract class Session(val spooky: SpookyContext) extends CleanMixin {
+abstract class Session(val spooky: SpookyContext) extends AutoCleanable {
 
   spooky.metrics.sessionInitialized += 1
   val startTime: Long = new Date().getTime
   val backtrace: ArrayBuffer[Action] = ArrayBuffer()
 
-  def webDriver: WebDriver
+  def webDriver: CleanWebDriver
   def pythonDriver: PythonDriver
 
-  //TaskContext is unreachable in withDeadline or other new threads
-  val taskContextOpt: Option[TaskContext] = Option(TaskContext.get()) //TODO: move to constructor
+  val taskContextOpt: Option[TaskContext] = taskOrThread.self.left.toOption
+  val taskOrThreadID = taskOrThread.id
 
-  def close(): Unit = {
+  override def _clean(): Unit = {
     spooky.metrics.sessionReclaimed += 1
-  }
-
-  override def clean(): Unit = {
-    this.close()
-    LoggerFactory.getLogger(this.getClass).info("Session is finalized by GC")
   }
 }
 
@@ -72,13 +67,13 @@ class DriverSession(
                      override val spooky: SpookyContext
                    ) extends Session(spooky){
 
-  @volatile var webDriverOpt: Option[WebDriver] = None
+  @volatile var webDriverOpt: Option[CleanWebDriver] = None
   //throwing error instead of lazy creation is required for restarting timer
   def webDriver = webDriverOpt.getOrElse{
     throw NoWebDriverException
   }
 
-  def getOrCreateWebDriver: WebDriver = {
+  def getOrCreateWebDriver: CleanWebDriver = {
     webDriverOpt.getOrElse {
       SpookyUtils.retry(Const.localResourceLocalRetries) {
         SpookyUtils.withDeadline(Const.sessionInitializationTimeout) {
@@ -146,8 +141,7 @@ class DriverSession(
     }
   }
 
-  override def close(): Unit = {
-    super.close()
+  override def _clean(): Unit = {
     Option(spooky.conf.webDriverFactory).foreach{
       factory =>
         factory.release(this)
@@ -158,5 +152,6 @@ class DriverSession(
         factory.release(this)
         spooky.metrics.pythonDriverReleased += 1
     }
+    super._clean()
   }
 }

@@ -155,9 +155,9 @@ case class Screenshot(
 
   override def doExeNoName(pb: Session): Seq[Doc] = {
 
-    val content = pb.webDriver match {
+    val content = pb.webDriver.self match {
       case ts: TakesScreenshot => ts.getScreenshotAs(OutputType.BYTES)
-      case _ => throw new UnsupportedOperationException("driver doesn't support snapshot")
+      case _ => throw new UnsupportedOperationException("driver doesn't support screenshot")
     }
 
     val page = new Doc(

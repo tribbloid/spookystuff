@@ -8,7 +8,7 @@ import com.tribbloids.spookystuff.{PythonException, SpookyEnvFixture}
   */
 object PythonDriverSuite {
 
-  def send1PlusX(xs: Seq[Int]): Unit = {
+  def onePlusX(xs: Seq[Int]): Unit = {
     runIterable(xs) {
       (i, proc) =>
         val r = proc.sendAndGetResult(s"print($i + 1)")
@@ -17,8 +17,8 @@ object PythonDriverSuite {
   }
 
   def runIterable[T, R](xs: Iterable[T])(f: (T, PythonDriver) => R): Iterable[R] = {
-    val proc = new PythonDriver("python")
-    proc.open()
+    val proc = new PythonDriver("python", taskOrThread = TaskOrThread())
+    proc.open
     try {
       val result = xs.map{
         f(_, proc)
@@ -26,7 +26,7 @@ object PythonDriverSuite {
       result
     }
     finally {
-      proc.close()
+      proc.finalize()
     }
   }
 }
@@ -34,7 +34,7 @@ object PythonDriverSuite {
 class PythonDriverSuite extends SpookyEnvFixture {
 
   test("sendAndGetResult should work in single thread") {
-    PythonDriverSuite.send1PlusX(1 to 100)
+    PythonDriverSuite.onePlusX(1 to 100)
   }
 
   test("sendAndGetResult should work in multiple threads") {
@@ -43,7 +43,7 @@ class PythonDriverSuite extends SpookyEnvFixture {
     rdd.foreachPartition{
       it =>
         val seq = it.toSeq
-        PythonDriverSuite.send1PlusX(seq)
+        PythonDriverSuite.onePlusX(seq)
     }
   }
 
@@ -76,7 +76,6 @@ class PythonDriverSuite extends SpookyEnvFixture {
     }
   }
 
-
   test("interpret should throw an exception if interpreter raises a multi-line error") {
 
     PythonDriverSuite.runIterable(1 to 10) {
@@ -102,7 +101,7 @@ class PythonDriverSuite extends SpookyEnvFixture {
 
     PythonDriverSuite.runIterable(1 to 10) {
       (i, proc) =>
-        val r = proc.call(s"print($i / 1)")
+        val r = proc.execute(s"print($i / 1)")
         assert(r._1.mkString("\n") == i.toString)
         assert(r._2.isEmpty)
     }

@@ -4,6 +4,7 @@ import java.util.regex.Pattern
 
 import com.tribbloids.spookystuff.PythonException
 import com.tribbloids.spookystuff.utils.SpookyUtils
+import org.slf4j.LoggerFactory
 
 object PythonDriver {
 
@@ -41,6 +42,14 @@ object PythonDriver {
     }
     pythonPath
   }
+
+  def NO_RETURN_VALUE: String = {
+    "*!?no returned value!?*"
+  }
+
+  def EXECUTION_RESULT: String = {
+    "*!?execution result!?*"
+  }
 }
 
 /**
@@ -48,26 +57,42 @@ object PythonDriver {
   */
 //TODO: not reusing Python worker for spark, is it not optimal?
 case class PythonDriver(
-                         executable: String
-                       ) extends PythonProcess(executable) with CleanMixin {
+                         executable: String,
+                         autoImports: String =
+                         """
+                           |import sys
+                           |import os
+                           |import json
+                         """.trim.stripMargin,
+                         override val taskOrThread: TaskOrThread
+                       ) extends PythonProcess(executable) with AutoCleanable {
 
   {
     val pythonPath = PythonDriver.deploy
 
-    this.open()
-
-    // TODO: add setup modules using pip
+    this.open
 
     this.interpret(
       s"""
-         |import sys
+         |$autoImports
          |sys.path.append('$pythonPath')
        """.stripMargin
     )
   }
 
-  override def clean(): Unit = {
-    this.close()
+  import PythonDriver._
+
+  //avoid reopening!
+  override lazy val open = super.open()
+
+  override def _clean(): Unit = {
+    try {
+      this.close()
+    }
+    catch {
+      case e: Throwable =>
+        this.interrupt()
+    }
   }
 
   /**
@@ -82,7 +107,7 @@ case class PythonDriver(
     val tracebackRows: Seq[Int] = indexed.filter(_._1.startsWith("Traceback ")).map(_._2)
     val errorRows: Seq[Int] = indexed.filter{
       v =>
-        val matcher = PythonDriver.errorInLastLine.matcher(v._1)
+        val matcher = errorInLastLine.matcher(v._1)
         matcher.find
     }.map(_._2)
 
@@ -107,6 +132,10 @@ case class PythonDriver(
   }
 
   def interpret(code: String): Array[String] = {
+    val indentedCode = code.split('\n').filter(_.nonEmpty).map(">>> " + _).mkString("\n")
+
+    LoggerFactory.getLogger(this.getClass).debug("============== PYTHON INPUT ===============\n" + indentedCode)
+
     val output = this.sendAndGetResult(code)
     val rows: Array[String] = output
       .split("\n")
@@ -114,14 +143,14 @@ case class PythonDriver(
         removePrompts
       )
 
-    val indentedCode = code.split('\n').map(">>> " + _).mkString("\n")
+    if (rows.exists(_.nonEmpty)) {
+      LoggerFactory.getLogger(this.getClass).info("============== PYTHON OUTPUT ===============\n" + rows.mkString("\n"))
+    }
 
     if (pythonErrorIn(rows)) {
       val ee = new PythonException(
-        "Error interpreting\n" +
-          indentedCode +
-          "\n---\n" +
-          rows.mkString("\n")
+        indentedCode,
+        rows.mkString("\n")
       )
       throw ee
     }
@@ -129,24 +158,24 @@ case class PythonDriver(
     rows
   }
 
-  def call(code: String, varName: String = "result"): (Seq[String], Option[String]) = {
+  def execute(code: String, resultVar: String = "result"): (Seq[String], Option[String]) = {
     val _code =
       s"""
-        |$varName = None
-        |
+         |$resultVar = None
+         |
         |$code
-        |
-        |print('*!?execution result!?*')
-        |if $varName: print($varName)
-        |else: print('*!?no returned value!?*')
+         |
+        |print('$EXECUTION_RESULT')
+         |if $resultVar: print($resultVar)
+         |else: print('$NO_RETURN_VALUE')
       """.stripMargin
 
     val rows = interpret(_code).toSeq
-    val splitterI = rows.zipWithIndex.find(_._1 == "*!?execution result!?*").get._2
+    val splitterI = rows.zipWithIndex.find(_._1 == EXECUTION_RESULT).get._2
     val splitted = rows.splitAt(splitterI)
 
     val _result = splitted._2.slice(1, Int.MaxValue).mkString("\n")
-    val resultOpt = if (_result == "*!?no returned value!?*") None
+    val resultOpt = if (_result == NO_RETURN_VALUE) None
     else Some(_result)
 
     splitted._1 -> resultOpt

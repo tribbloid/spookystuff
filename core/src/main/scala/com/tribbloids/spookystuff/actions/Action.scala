@@ -9,7 +9,6 @@ import org.apache.spark.ml.dsl.utils._
 import org.apache.spark.sql.catalyst.ScalaReflection
 import org.apache.spark.sql.types.SQLUserDefinedType
 import org.json4s.Formats
-import org.openqa.selenium.TakesScreenshot
 import org.openqa.selenium.support.ui.{ExpectedConditions, WebDriverWait}
 import org.slf4j.LoggerFactory
 
@@ -133,9 +132,15 @@ trait Action extends ActionLike with ActionRelay.HasRelay{
             val rawPage = QuickSnapshot.exe(session).head.asInstanceOf[Doc]
             message += "\nSnapshot: " + this.errorDump(message, rawPage, session.spooky)
           }
-          if (errorDumpScreenshot && session.webDriver.isInstanceOf[TakesScreenshot]) {
-            val rawPage = DefaultScreenshot.exe(session).toList.head.asInstanceOf[Doc]
-            message += "\nScreenshot: " + this.errorDump(message, rawPage, session.spooky)
+          if (errorDumpScreenshot) {
+            try {
+              val rawPage = DefaultScreenshot.exe(session).toList.head.asInstanceOf[Doc]
+              message += "\nScreenshot: " + this.errorDump(message, rawPage, session.spooky)
+            }
+            catch {
+              case e: Throwable =>
+                LoggerFactory.getLogger(this.getClass).error("Cannot take screenshot on ActionError:", e)
+            }
           }
         }
         else {

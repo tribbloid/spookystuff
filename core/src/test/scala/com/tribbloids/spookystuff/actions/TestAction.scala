@@ -79,7 +79,7 @@ class TestAction extends SpookyEnvFixture {
     }
   }
 
-  test("errorDump should not be blocked by DocFilter") {
+  test("a session with webDriver initialized will trigger errorDump, which should not be blocked by DocFilter") {
     try {
       ErrorWebExport.fetch(spooky)
       sys.error("impossible")
@@ -102,7 +102,7 @@ case object ErrorExport extends Export {
 case object ErrorWebExport extends Export {
 
   override def doExeNoName(session: Session): Seq[Fetched] = {
-    val driver = session.webDriver
+    session.webDriver
     sys.error("error")
   }
 }

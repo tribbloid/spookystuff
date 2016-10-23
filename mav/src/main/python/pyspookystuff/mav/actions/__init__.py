@@ -3,39 +3,33 @@ import json
 from dronekit import LocationGlobalRelative, LocationGlobal
 
 from pyspookystuff.mav import assureInTheAir
-from pyspookystuff.mav.comm import Connection, Endpoint
+from pyspookystuff.mav.comm import Connection, Endpoint, ProxyFactory
 
 
 class PyAction(object):
 
-    def __init__(self, thisStr):
-        # type: (object) -> object
-        self.this = json.loads(thisStr)
-        self.binding = None
-
+    def __init__(self, params, className=None):
+        self.params = params
 
 class DummyPyAction(PyAction):
 
-    def dummy(self, argStr):
-        args = json.loads(argStr)
-        merged = int(self.this['params']['a']['value']) + int(args['b'])
+    def dummy(self, b, c):
+        print("DEBUG", self.params['a']['value'], b, c)
+        merged = int(self.params['a']['value']) * int(b) * int(c)
         return json.dumps(merged)
 
 
 class DroneAction(PyAction):
 
-    def assureInTheAir(self, mavConf): # mavConf is always a dict
+    def assureInTheAir(self, _endpoints, _proxyFactory, takeOffAltitude):
         if not self.binding:
-            _instances = mavConf['instances']
-            instances = map(lambda x: Endpoint(x), _instances)
+            instances = map(lambda v: Endpoint(**v), _endpoints)
+            proxyFactory = ProxyFactory(**_proxyFactory)
 
             # if a binding is already created for this process it will be reused.
-            self.binding = Connection.getOrCreate(
-                instances,
-                mavConf['proxyFactory']
-            )
+            self.binding = Connection.getOrCreate(instances, proxyFactory)
 
-        assureInTheAir(mavConf['takeOffAltitude'], self.binding.vehicle)
+        assureInTheAir(takeOffAltitude, self.binding.vehicle)
 
     def before(self, mavConfStr):
         pass

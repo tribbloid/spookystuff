@@ -2,13 +2,11 @@ package com.tribbloids.spookystuff.integration
 
 import java.util.Date
 
+import com.tribbloids.spookystuff._
 import com.tribbloids.spookystuff.dsl._
 import com.tribbloids.spookystuff.testutils.{RemoteDocsFixture, TestHelper}
 import com.tribbloids.spookystuff.utils.SpookyUtils
-import com.tribbloids.spookystuff._
-import org.apache.spark.SparkContext
-import org.apache.spark.sql.SQLContext
-import org.scalatest.{BeforeAndAfterAll, FunSuite}
+import org.scalatest.BeforeAndAfterAll
 
 import scala.concurrent.duration
 import scala.util.Random
@@ -20,7 +18,7 @@ abstract class IntegrationFixture extends SpookyEnvFixture with BeforeAndAfterAl
 
   lazy val roots: Seq[String] = {
 
-    val local = Seq(TestHelper.TEMP_PATH + "spooky-integration/")
+    val local = Seq(SpookyUtils.\\\(TestHelper.TEMP_PATH, "spooky-integration"))
 
     local ++ TestHelper.S3Path
   }

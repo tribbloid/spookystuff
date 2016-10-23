@@ -19,7 +19,6 @@ import java.io.File
 
 import com.gargoylesoftware.htmlunit.BrowserVersion
 import com.tribbloids.spookystuff.caching._
-import com.tribbloids.spookystuff.dsl.DriverFactories.Pooling
 import com.tribbloids.spookystuff.session._
 import com.tribbloids.spookystuff.utils.SpookyUtils
 import com.tribbloids.spookystuff.{SpookyConf, SpookyContext, SpookyException}
@@ -33,8 +32,6 @@ import org.openqa.selenium.remote.{BrowserType, CapabilityType, DesiredCapabilit
 import org.openqa.selenium.{Capabilities, Platform, Proxy}
 import org.slf4j.LoggerFactory
 
-import scala.collection.mutable
-
 //local to TaskID, if not exist, local to ThreadID
 //for every new driver created, add a taskCompletion listener that salvage it.
 //TODO: get(session) should have 2 impl:
@@ -42,71 +39,58 @@ import scala.collection.mutable
 // if from a different session but same taskAttempt wait for the old one to be released.
 // in any case it should ensure 1 taskAttempt only has 1 active driver
 //TODO: delay Future-based waiting control until asynchronous Action exe is implemented. Right now it works just fine
-abstract class DriverFactory[+T] extends Serializable {
+abstract sealed class DriverFactory[+T] extends Serializable {
 
   // If get is called again before the previous driver is released, the old driver is destroyed to create a new one.
   // this is to facilitate multiple retries
   def get(session: Session): T
   def release(session: Session): Unit
 
-  def deploy(spooky: SpookyContext): Unit = {}
+  final def deploy(spooky: SpookyContext): Unit = {
+    try {
+      _deploy(spooky)
+    }
+    catch {
+      case e: Throwable =>
+        throw DriverNotDeployedException(
+          s"${this.getClass.getSimpleName} cannot find resource for deployment, " +
+            s"please provide Internet Connection or deploy manually",
+          e
+        )
+    }
+  }
+  protected[dsl] def _deploy(spooky: SpookyContext): Unit = {}
 }
 
-sealed abstract class Transient[T] extends DriverFactory[T] {
+/**
+  * session local
+  * @tparam T AutoCleanable preferred
+  */
+abstract sealed class TransientFactory[T] extends DriverFactory[T] {
 
   // session -> driver
-  @transient lazy val sessionToDriver: ConcurrentMap[Session, T] = ConcurrentMap()
-  // taskAttemptID -> Set[driver]
-  @transient lazy val taskCleanUpCache: ConcurrentMap[Long, mutable.Set[T]] = ConcurrentMap()
+  // cleanup: this has no effect whatsoever
+  @transient lazy val sessionLocals: ConcurrentMap[Session, T] = ConcurrentMap()
 
   def get(session: Session): T = {
     release(session)
     val driver = create(session)
-    sessionToDriver += session -> driver
+    sessionLocals += session -> driver
     driver
-  }
-
-  def addTaskCompletionListener(v: TaskContext): Unit = {
-    if (!taskCleanUpCache.contains(v.taskAttemptId())) {
-      v.addTaskCompletionListener {
-        listenerFn
-      }
-    }
-  }
-
-  val listenerFn: (TaskContext) => Unit = {
-    tc =>
-      val buffer = taskCleanUpCache
-        .remove(tc.taskAttemptId())
-        .getOrElse(mutable.Set.empty)
-      buffer.foreach {
-        driver =>
-          destroy(driver, Some(tc))
-      }
   }
 
   final def create(session: Session): T = {
     val created = _createImpl(session)
-    session.taskContextOpt.foreach {
-      tc =>
-        addTaskCompletionListener(tc)
-        val buffer = taskCleanUpCache
-          .getOrElseUpdate(
-            tc.taskAttemptId(),
-            mutable.Set.empty
-          )
-        buffer += created
-    }
 
     created
   }
 
   def _createImpl(session: Session): T
 
-  def factoryReset(driver: T): T
+  def factoryReset(driver: T): Unit
 
   def release(session: Session): Unit = {
-    val existingOpt = sessionToDriver.remove(session)
+    val existingOpt = sessionLocals.remove(session)
     existingOpt.foreach {
       driver =>
         destroy(driver, session.taskContextOpt)
@@ -114,122 +98,127 @@ sealed abstract class Transient[T] extends DriverFactory[T] {
   }
 
   final def destroy(driver: T, tcOpt: Option[TaskContext]): Unit = {
-    _destroyImpl(driver)
-
-    tcOpt.foreach {
-      tc =>
-        taskCleanUpCache.get(tc.taskAttemptId())
-          .foreach {
-            buffer =>
-              buffer -= driver
-          }
+    driver match {
+      case v: AutoCleanable => v.finalize()
+      case _ =>
     }
   }
 
-  def _destroyImpl(driver: T): Unit
-
-  final def pooling = Pooling(this)
+  final lazy val pooling = PoolingFactory(this)
 }
 
-abstract class WebDriverFactory extends Transient[CleanWebDriver]{
+/**
+  * delegate create & destroy to PerSessionFactory
+  * first get() create a driver as usual
+  * calling get() without release() reboot the driver
+  * first release() return driver to the pool to be used by the same Spark Task
+  * call any function with a new Spark Task ID will add a cleanup TaskCompletionListener to the Task that destroy all drivers
+  */
+case class PoolingFactory[T](
+                              delegate: TransientFactory[T]
+                            ) extends DriverFactory[T] {
 
-  override def _destroyImpl(driver: CleanWebDriver): Unit = {
+  import DriverFactories.DriverStatus
 
-    driver.finalize()
+  //taskOrThreadID -> (driver, busy)
+  @transient lazy val taskOrThreadLocals: ConcurrentMap[TaskOrThread, DriverStatus[T]] = ConcurrentMap()
+
+  //  override def _clean(): Unit = {
+  //    pool.values.foreach {
+  //      _.driver match {
+  //        case d: AutoCleanable =>
+  //          d.finalize()
+  //        case _ =>
+  //      }
+  //    }
+  //  }
+
+  override def get(session: Session): T = {
+
+    val opt = taskOrThreadLocals.get(session.taskOrThread)
+
+    def refreshDriver: T = {
+      val fresh = delegate.create(session)
+      taskOrThreadLocals.put(session.taskOrThread, new DriverStatus(fresh, isBusy = true))
+      fresh
+    }
+
+    opt
+      .map {
+        tuple =>
+          if (!tuple.isBusy) {
+            try{
+              delegate.factoryReset(tuple.driver)
+              tuple.isBusy = true
+              tuple.driver
+            }
+            catch {
+              case e: Throwable =>
+                delegate.destroy(tuple.driver, session.taskContextOpt)
+                refreshDriver
+            }
+          }
+          else {
+            // TODO: should wait until its no longer busy, instead of destroying it.
+            delegate.destroy(tuple.driver, session.taskContextOpt)
+            refreshDriver
+          }
+      }
+      .getOrElse {
+        refreshDriver
+      }
   }
 
-  override def factoryReset(driver: CleanWebDriver): CleanWebDriver = {
-    driver.get("")
-    driver
+  override def release(session: Session): Unit = {
+
+    val opt = taskOrThreadLocals.get(session.taskOrThread)
+    opt.foreach{
+      tuple =>
+        tuple.isBusy = false
+    }
+  }
+
+  override def _deploy(spooky: SpookyContext): Unit = delegate._deploy(spooky)
+}
+
+abstract sealed class WebDriverFactory extends TransientFactory[CleanWebDriver]{
+
+  override def factoryReset(driver: CleanWebDriver): Unit = {
+    driver.get("about:blank")
   }
 }
 
-abstract class PythonDriverFactory extends Transient[PythonDriver]{
+abstract sealed class PythonDriverFactory extends TransientFactory[PythonDriver]{
 
-  override def _destroyImpl(driver: PythonDriver): Unit = {
-
-    driver.finalize()
-  }
-
-  override def factoryReset(driver: PythonDriver): PythonDriver = {
-    driver
+  override def factoryReset(driver: PythonDriver): Unit = {
   }
 }
 
 //TODO: deploy lazily/as failover
-object DriverNotDeployedException extends SpookyException("INTERNAL: driver should be automatically deployed")
+case class DriverNotDeployedException(
+                                       override val message: String,
+                                       override val cause: Throwable
+                                     ) extends SpookyException(
+  message, cause
+)
 
 object DriverFactories {
 
-  class DriverInPool[T](
-                         @volatile var driver: T,
-                         @volatile var busy: Boolean
+  //  def taskOrThreadID(tcOpt: Option[TaskContext]): Either[Long, Long] = {
+  //    tcOpt
+  //      .map{
+  //        v =>
+  //          Left(v.taskAttemptId())
+  //      }
+  //      .getOrElse{
+  //        Right(Thread.currentThread().getId)
+  //      }
+  //  }
+
+  class DriverStatus[T](
+                         val driver: T,
+                         @volatile var isBusy: Boolean
                        )
-
-  /**
-    * delegate create & destroy to PerSessionFactory
-    * first get() create a driver as usual
-    * calling get() without release() reboot the driver
-    * first release() return driver to the pool to be used by the same Spark Task
-    * call any function with a new Spark Task ID will add a cleanup TaskCompletionListener to the Task that destroy all drivers
-    */
-  case class Pooling[T](
-                         delegate: Transient[T]
-                       ) extends DriverFactory[T] {
-
-    //taskOrThreadID -> (driver, busy)
-    @transient lazy val pool: ConcurrentMap[Either[Long, Long], DriverInPool[T]] = ConcurrentMap()
-
-    def taskOrThreadID(tcOpt: Option[TaskContext]): Either[Long, Long] = {
-      tcOpt
-        .map{
-          v =>
-            Left(v.taskAttemptId())
-        }
-        .getOrElse{
-          Right(Thread.currentThread().getId)
-        }
-    }
-
-    override def get(session: Session): T = {
-
-      val taskOrThreadID = this.taskOrThreadID(session.taskContextOpt)
-      val opt = pool.get(taskOrThreadID)
-      opt
-        .map {
-          tuple =>
-            if (!tuple.busy) {
-              tuple.busy = true
-              delegate.factoryReset(tuple.driver)
-            }
-            else {
-              // destroy old and create new
-              delegate.destroy(tuple.driver, session.taskContextOpt)
-              val fresh = delegate.create(session)
-              tuple.driver = fresh
-              fresh
-            }
-        }
-        .getOrElse {
-          //create new
-          val fresh = delegate.create(session)
-          pool.put(taskOrThreadID, new DriverInPool(fresh, busy = true))
-          fresh
-        }
-    }
-
-    override def release(session: Session): Unit = {
-
-      val taskOrThreadID = this.taskOrThreadID(session.taskContextOpt)
-      val opt = pool.get(taskOrThreadID)
-      opt.foreach{
-        tuple =>
-          tuple.busy = false
-      }
-    }
-
-    override def deploy(spooky: SpookyContext): Unit = delegate.deploy(spooky)
-  }
 
   import com.tribbloids.spookystuff.utils.SpookyViews._
 
@@ -261,7 +250,7 @@ object DriverFactories {
     /**
       * can only used on driver
       */
-    override def deploy(spooky: SpookyContext): Unit = {
+    override def _deploy(spooky: SpookyContext): Unit = {
       if ((!isDeployedOnWorkers(spooky)) || redeploy) {
 
         val pathOptOnDriver = SpookyUtils.validateLocalPath(getPath(spooky))
@@ -370,8 +359,10 @@ object DriverFactories {
 
     //called from executors
     override def _createImpl(session: Session): CleanWebDriver = {
-
-      new PhantomJSDriver(newCap(session.spooky)) with CleanWebDriverMixin
+      CleanWebDriver(
+        new PhantomJSDriver(newCap(session.spooky)),
+        session.taskOrThread
+      )
     }
   }
 
@@ -401,9 +392,13 @@ object DriverFactories {
     override def _createImpl(session: Session): CleanWebDriver = {
 
       val cap = newCap(null, session.spooky)
-      val driver = new HtmlUnitDriver(browser) with CleanWebDriverMixin
-      driver.setJavascriptEnabled(true)
-      driver.setProxySettings(Proxy.extractFrom(cap))
+      val self = new HtmlUnitDriver(browser)
+      self.setJavascriptEnabled(true)
+      self.setProxySettings(Proxy.extractFrom(cap))
+      val driver = CleanWebDriver(
+        self,
+        session.taskOrThread
+      )
 
       driver
     }
@@ -436,7 +431,7 @@ object DriverFactories {
 
     override def _createImpl(session: Session): PythonDriver = {
       val exeStr = getExecutable(session.spooky)
-      PythonDriver(exeStr)
+      new PythonDriver(exeStr, taskOrThread = session.taskOrThread)
     }
   }
 }

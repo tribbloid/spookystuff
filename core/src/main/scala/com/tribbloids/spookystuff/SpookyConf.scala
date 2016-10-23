@@ -4,12 +4,11 @@ import java.util.Date
 
 import com.tribbloids.spookystuff.dsl._
 import com.tribbloids.spookystuff.row.Sampler
-import com.tribbloids.spookystuff.session.{OAuthKeys, ProxySetting, PythonDriver}
+import com.tribbloids.spookystuff.session._
 import org.apache.spark.ml.dsl.utils.Message
 import org.apache.spark.rdd.RDD
 import org.apache.spark.storage.StorageLevel
 import org.apache.spark.{Partitioner, SparkConf, SparkContext}
-import org.openqa.selenium.WebDriver
 
 import scala.concurrent.duration.Duration.Infinite
 import scala.concurrent.duration._
@@ -51,6 +50,11 @@ object SpookyConf {
   }
 
   final val DEFAULT_WEBDRIVER_FACTORY = DriverFactories.PhantomJS().pooling
+
+  /**
+    * otherwise driver cannot do screenshot
+    */
+  final val TEST_WEBDRIVER_FACTORY = DriverFactories.PhantomJS(loadImages = true).pooling
   final val DEFAULT_PYTHONDRIVER_FACTORY = DriverFactories.Python().pooling
 }
 
@@ -64,7 +68,7 @@ class SpookyConf (
 
                    var shareMetrics: Boolean = false, //TODO: not necessary
 
-                   var webDriverFactory: DriverFactory[WebDriver] = SpookyConf.DEFAULT_WEBDRIVER_FACTORY,
+                   var webDriverFactory: DriverFactory[CleanWebDriver] = SpookyConf.DEFAULT_WEBDRIVER_FACTORY,
                    var pythonDriverFactory: DriverFactory[PythonDriver] = SpookyConf.DEFAULT_PYTHONDRIVER_FACTORY,
 
                    var proxy: () => ProxySetting = ProxyFactories.NoProxy,
@@ -188,6 +192,14 @@ class SpookyConf (
       case None =>
         earliestTimeFromDuration
     }
+  }
+
+  def driverFactories: Seq[DriverFactory[AutoCleanable]] = {
+    Seq(
+      webDriverFactory,
+      pythonDriverFactory
+    )
+      .flatMap(v => Option(v))
   }
 
   //  def toJSON: String = {

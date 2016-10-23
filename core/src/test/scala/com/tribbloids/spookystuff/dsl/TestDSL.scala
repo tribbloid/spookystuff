@@ -35,7 +35,7 @@ class TestDSL extends SpookyEnvFixture {
     assert(notRenamed.field.name  == "name1")
   }
 
-  test("andThen"){
+  test("andFn"){
     val fun = 'abc.andFn(_.toString).resolve(schema)
 //    assert(fun.toString === "<function1>")
     assert(fun(row) === "Wikipedia")

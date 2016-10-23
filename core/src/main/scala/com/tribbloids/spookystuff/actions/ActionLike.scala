@@ -83,7 +83,6 @@ abstract class ActionLike extends PrettyProduct with Serializable {
     )
 
     if (!pagesFromCache.contains(null)){
-
       spooky.metrics.fetchFromCacheSuccess += 1
 
       val results = pagesFromCache.flatten
@@ -96,7 +95,6 @@ abstract class ActionLike extends PrettyProduct with Serializable {
       results
     }
     else {
-
       spooky.metrics.fetchFromCacheFailure += 1
 
       if (!spooky.conf.remote) throw new QueryException(
@@ -117,7 +115,7 @@ abstract class ActionLike extends PrettyProduct with Serializable {
           throw e
       }
       finally {
-        session.close()
+        session.finalize()
       }
     }
   }

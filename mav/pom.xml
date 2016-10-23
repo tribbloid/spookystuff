@@ -54,11 +54,9 @@
                                 <argument>--upgrade</argument>
                                 <argument>--force-reinstall</argument>
                                 <argument>--ignore-installed</argument>
-                                <!--no double quotes! automatically escaped-->
                                 <argument>--target</argument>
-                                <argument>${project.basedir}/lib_managed/python</argument>
-                                <!--<argument>&#45;&#45;install-option=&#45;&#45;home=${project.basedir}/lib_managed/python</argument>-->
-                            </arguments>
+                                <argument>${project.build.directory}/classes/com/tribbloids/spookystuff/lib/python</argument>
+                           </arguments>
                         </configuration>
                     </execution>
                 </executions>

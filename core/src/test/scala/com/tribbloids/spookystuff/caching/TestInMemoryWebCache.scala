@@ -35,7 +35,7 @@ class TestInMemoryWebCache extends SpookyEnvFixture {
   }
 
   test ("cache visit and restore with different name") {
-    spooky.conf.cachedDocsLifeSpan = 5.seconds
+    spooky.conf.cachedDocsLifeSpan = 10.seconds
 
     cache.put(visit, visitPage, spooky)
 
@@ -48,7 +48,7 @@ class TestInMemoryWebCache extends SpookyEnvFixture {
     assert(page2.head.code === page2.head.code)
     assert(page2.head.name === "new")
 
-    Thread.sleep(5000)
+    Thread.sleep(10000)
 
     val page3 = cache.get(visitPage.head.uid.backtrace, spooky).orNull
     assert(page3 === null)

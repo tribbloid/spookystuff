@@ -2,7 +2,7 @@ package com.tribbloids.spookystuff
 
 import com.tribbloids.spookystuff.rdd.FetchedDataset
 import com.tribbloids.spookystuff.row._
-import com.tribbloids.spookystuff.utils.HDFSResolver
+import com.tribbloids.spookystuff.utils.{HDFSResolver, MultiCauses}
 import org.apache.hadoop.conf.Configuration
 import org.apache.spark._
 import org.apache.spark.broadcast.Broadcast
@@ -10,6 +10,7 @@ import org.apache.spark.ml.dsl.utils.MessageView
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.{DataFrame, SQLContext}
 import org.apache.spark.storage.StorageLevel
+import org.slf4j.LoggerFactory
 
 import scala.collection.immutable.ListMap
 import scala.language.implicitConversions
@@ -45,8 +46,24 @@ case class SpookyContext private (
 
   def isOnDriver: Boolean = sqlContext != null
   if (isOnDriver) {
-    Option(conf.webDriverFactory).foreach(_.deploy(this))
-    Option(conf.pythonDriverFactory).foreach(_.deploy(this))
+    try {
+      deployDrivers()
+    }
+    catch {
+      case e: Throwable =>
+        LoggerFactory.getLogger(this.getClass).error("Driver deployment fail on SpookyContext initialization", e)
+    }
+  }
+
+  def deployDrivers(): Unit = {
+    val trials = conf.driverFactories
+      .map {
+        v =>
+          scala.util.Try {
+            v.deploy(this)
+          }
+      }
+    MultiCauses.&&&(trials)
   }
 
   def sparkContext = this.sqlContext.sparkContext
