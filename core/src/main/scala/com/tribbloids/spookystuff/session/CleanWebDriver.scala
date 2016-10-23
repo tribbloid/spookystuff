@@ -105,6 +105,7 @@ trait AutoCleanable {
   }
 
   localUncleaned += this
+  LoggerFactory.getLogger(this.getClass).info(s"Creating ${this.getClass.getSimpleName}")
 
   final def clean(): Unit = {
     _clean()

@@ -17,7 +17,7 @@ case class DummyPyAction(
 
   override def doExeNoName(session: Session): Seq[Fetched] = {
     val result = Py(session).dummy(2, 3)
-    val result2 = Py(session).dummy(b = 2, c = 3)
+    val result2 = Py(session).dummy(b = 3, c = 2)
     assert(result == result2)
     val doc = new Doc(
       uid = DocUID(List(this), this),

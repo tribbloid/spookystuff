@@ -2,7 +2,7 @@
 package com.tribbloids.spookystuff.actions
 
 import com.tribbloids.spookystuff.doc.Fetched
-import com.tribbloids.spookystuff.session.{DriverSession, Session}
+import com.tribbloids.spookystuff.session.Session
 import org.apache.spark.ml.dsl.utils.{FlowUtils, Message, MessageView}
 import org.json4s.JsonAST.{JArray, JObject}
 
@@ -61,7 +61,7 @@ trait PyAction extends Action {
 
   //can only be overriden by lazy val
   //Python class must have a constructor that takes json format of its Scala class
-  def constructPython(session: Session): String = {
+  def constructPythonInstance(session: Session): String = {
     // java & python have different namespace convention.
     val pyFullName = Seq("pyspookystuff") ++
       this.getClass.getCanonicalName
@@ -79,13 +79,14 @@ trait PyAction extends Action {
          |)
       """.stripMargin
 
-    session.pythonDriver.interpret(code)
+    session.pythonDriver.interpret(code, Some(session))
     varName
   }
 
-  def destructPython(session: Session): Unit = {
+  def destructPythonInstance(session: Session): Unit = {
     session.pythonDriver.interpret(
-      s"del $varName"
+      s"del $varName",
+      Some(session)
     )
     Unit
   }
@@ -100,7 +101,7 @@ trait PyAction extends Action {
            |${marshaller.obj2Args(args)}
            |)
         """.stripMargin
-      val result = session.pythonDriver.execute(code)._2
+      val result = session.pythonDriver.execute(code, sessionOpt = Some(session))._2
 
       result.getOrElse("Nil")
     }
@@ -113,7 +114,7 @@ trait PyAction extends Action {
            |${marshaller.obj2Args(Map(args: _*))}
            |)
         """.stripMargin
-      val result = session.pythonDriver.execute(code)._2
+      val result = session.pythonDriver.execute(code, sessionOpt = Some(session))._2
 
       result.getOrElse("Nil")
     }
@@ -123,20 +124,15 @@ trait PyAction extends Action {
     * must have exactly the same class/function under the same package imported in python that takes 2 JSON strings
     * 1 for action, 1 for session
     */
-  override def exe(session: Session): Seq[Fetched] = {
-
-    session match {
-      case d: DriverSession =>
-        d.getOrCreatePythonDriver
-      case _ =>
-    }
-    constructPython(session)
-
-    try {
-      super.exe(session)
-    }
-    finally {
-      destructPython(session)
+  final override def exe(session: Session): Seq[Fetched] = {
+    withLazyDrivers(session){
+      constructPythonInstance(session)
+      try {
+        doExe(session)
+      }
+      finally {
+        destructPythonInstance(session)
+      }
     }
   }
 }

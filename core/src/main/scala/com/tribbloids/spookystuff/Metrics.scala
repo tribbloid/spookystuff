@@ -67,6 +67,9 @@ case class Metrics(
                     pythonDriverDispatched: Accumulator[Int] = Metrics.accumulator(0, "pythonDriverDispatched"),
                     pythonDriverReleased: Accumulator[Int] = Metrics.accumulator(0, "pythonDriverReleased"),
 
+                    pythonInterpretationSuccess: Accumulator[Int] = Metrics.accumulator(0, "pythonInterpretationSuccess"),
+                    pythonInterpretationError: Accumulator[Int] = Metrics.accumulator(0, "pythonInterpretationSuccess"),
+
                     sessionInitialized: Accumulator[Int] = Metrics.accumulator(0, "sessionInitialized"),
                     sessionReclaimed: Accumulator[Int] = Metrics.accumulator(0, "sessionReclaimed"),
 

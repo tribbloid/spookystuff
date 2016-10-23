@@ -73,7 +73,7 @@ class DriverSession(
     throw NoWebDriverException
   }
 
-  def getOrCreateWebDriver: CleanWebDriver = {
+  lazy val getOrCreateWebDriver: CleanWebDriver = {
     webDriverOpt.getOrElse {
       SpookyUtils.retry(Const.localResourceLocalRetries) {
         SpookyUtils.withDeadline(Const.sessionInitializationTimeout) {
@@ -109,7 +109,7 @@ class DriverSession(
     throw NoPythonDriverException
   }
 
-  def getOrCreatePythonDriver: PythonDriver = {
+  lazy val getOrCreatePythonDriver: PythonDriver = {
     pythonDriverOpt.getOrElse {
       SpookyUtils.retry(Const.localResourceLocalRetries) {
 

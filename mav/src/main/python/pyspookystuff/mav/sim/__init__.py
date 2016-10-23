@@ -1,13 +1,11 @@
 # Not part of the routing as its marginally useful outside testing.
 from __future__ import print_function
+
 import os
 
 from dronekit import connect
 from dronekit_sitl import SITL
 from lazy import lazy
-
-from pyspookystuff.mav import utils
-from pyspookystuff import mav
 
 # these are process-local and won't be shared by Spark workers
 
@@ -22,24 +20,7 @@ if 'SITL_RATE' in os.environ:
 def tcp_master(instance):
     return 'tcp:127.0.0.1:' + str(5760 + instance*10)
 
-usedINums = mav.mpManager.list()
 class APMSim(object):
-    global usedINums
-
-    @staticmethod
-    def nextINum():
-        port = mav.utils.nextUnused(usedINums, range(0, 254))
-        return port
-
-    @staticmethod
-    def create():
-        index = APMSim.nextINum()
-        try:
-            result = APMSim(index)
-            return result
-        except Exception as ee:
-            usedINums.remove(index)
-            raise
 
     def __init__(self, iNum):
         # DO NOT USE! .create() is more stable
@@ -84,11 +65,6 @@ class APMSim(object):
             self._sitl.stop()
         else:
             print("APM SITL not initialized, do not clean")
-
-        try:
-            usedINums.remove(self.iNum)
-        except ValueError:
-            pass
 
     def __del__(self):
         self.close()

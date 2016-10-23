@@ -6,6 +6,8 @@ import com.tribbloids.spookystuff.PythonException
 import com.tribbloids.spookystuff.utils.SpookyUtils
 import org.slf4j.LoggerFactory
 
+import scala.util.Try
+
 object PythonDriver {
 
   import com.tribbloids.spookystuff.utils.SpookyViews._
@@ -26,10 +28,7 @@ object PythonDriver {
     val libResourceOpt = SpookyUtils.getCPResource(PythonDriver.PYTHON_LIB_RESOURCE)
     libResourceOpt.foreach {
       resource =>
-        //        SpookyUtils.asynchIfNotExist(pythonPath){
-
         SpookyUtils.extractResource(resource, pythonPath)
-      //        }
     }
 
     val moduleResourceOpt = SpookyUtils.getCPResource(PythonDriver.MODULE_RESOURCE)
@@ -76,23 +75,31 @@ case class PythonDriver(
       s"""
          |$autoImports
          |sys.path.append('$pythonPath')
-       """.stripMargin
+       """.stripMargin,
+      None
     )
   }
 
   import PythonDriver._
 
   //avoid reopening!
-  override lazy val open = super.open()
+  override lazy val open: Unit = {
+    super.open()
+  }
 
   override def _clean(): Unit = {
-    try {
-      this.close()
+    Try {
+      SpookyUtils.retry(10, 1000) {
+        if (process.isAlive) {
+          this.interpret("exit()")
+          assert(!process.isAlive)
+        }
+      }
     }
-    catch {
-      case e: Throwable =>
-        this.interrupt()
-    }
+      .orElse(
+        Try(this.close())
+      )
+      .getOrElse(this.interrupt())
   }
 
   /**
@@ -131,23 +138,39 @@ case class PythonDriver(
     str.stripPrefix("\r").replaceAll(PROMPTS, "")
   }
 
-  def interpret(code: String): Array[String] = {
+  def interpret(code: String, sessionOpt: Option[Session] = None): Array[String] = {
     val indentedCode = code.split('\n').filter(_.nonEmpty).map(">>> " + _).mkString("\n")
 
-    LoggerFactory.getLogger(this.getClass).debug("============== PYTHON INPUT ===============\n" + indentedCode)
+    LoggerFactory.getLogger(this.getClass).info("============== PYTHON INPUT ===============\n" + indentedCode)
 
-    val output = this.sendAndGetResult(code)
-    val rows: Array[String] = output
-      .split("\n")
-      .map(
-        removePrompts
-      )
+    val rows = try {
+      val output = this.sendAndGetResult(code)
+      output
+        .split("\n")
+        .map(
+          removePrompts
+        )
+    }
+    catch {
+      case e: Throwable =>
+        sessionOpt.foreach(
+          _.spooky.metrics.pythonInterpretationError += 1
+        )
+        throw e
+    }
+
 
     if (rows.exists(_.nonEmpty)) {
-      LoggerFactory.getLogger(this.getClass).info("============== PYTHON OUTPUT ===============\n" + rows.mkString("\n"))
+      LoggerFactory.getLogger(this.getClass).info(" PYTHON OUTPUT ===============\n" + rows.mkString("\n"))
+    }
+    else {
+      LoggerFactory.getLogger(this.getClass).info(" PYTHON [NO OUTPUT] ===============\n" + rows.mkString("\n"))
     }
 
     if (pythonErrorIn(rows)) {
+      sessionOpt.foreach(
+        _.spooky.metrics.pythonInterpretationError += 1
+      )
       val ee = new PythonException(
         indentedCode,
         rows.mkString("\n")
@@ -155,10 +178,13 @@ case class PythonDriver(
       throw ee
     }
 
+    sessionOpt.foreach(
+      _.spooky.metrics.pythonInterpretationSuccess += 1
+    )
     rows
   }
 
-  def execute(code: String, resultVar: String = "result"): (Seq[String], Option[String]) = {
+  def execute(code: String, resultVar: String = "result", sessionOpt: Option[Session] = None): (Seq[String], Option[String]) = {
     val _code =
       s"""
          |$resultVar = None
@@ -170,7 +196,7 @@ case class PythonDriver(
          |else: print('$NO_RETURN_VALUE')
       """.stripMargin
 
-    val rows = interpret(_code).toSeq
+    val rows = interpret(_code, sessionOpt).toSeq
     val splitterI = rows.zipWithIndex.find(_._1 == EXECUTION_RESULT).get._2
     val splitted = rows.splitAt(splitterI)
 

@@ -18,7 +18,6 @@ object PythonDriverSuite {
 
   def runIterable[T, R](xs: Iterable[T])(f: (T, PythonDriver) => R): Iterable[R] = {
     val proc = new PythonDriver("python", taskOrThread = TaskOrThread())
-    proc.open
     try {
       val result = xs.map{
         f(_, proc)

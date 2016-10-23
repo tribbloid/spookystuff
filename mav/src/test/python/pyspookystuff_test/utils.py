@@ -1,8 +1,15 @@
+
 import os
 
-from multiprocessing import Lock
+import multiprocessing
 
-lock = Lock()
+# CAUTION: avoid using ANY multiprocessing component in production code!
+# process safety relies on Linux subprocess inheritance,
+# which doesn't exist on Windows or if process is created by PythonDriver
+# this causes erratic conflicts and should be eliminated AT ALL COST!
+mpManager = multiprocessing.Manager()
+
+lock = multiprocessing.Lock()
 
 def nextUnused(existing, candidates, blacklist=list()):
     global lock
@@ -27,11 +34,11 @@ def nextUnused(existing, candidates, blacklist=list()):
     #     json.dumps(Endpoint.unreachable)
     # )
 
-#
-# class LazyWrapper(object):
-#
-#     def __init__(self, fn):
-#         self.fn = fn
-#
-#     def get(self):
-#         self.fn()
+    #
+    # class LazyWrapper(object):
+    #
+    #     def __init__(self, fn):
+    #         self.fn = fn
+    #
+    #     def get(self):
+    #         self.fn()

@@ -96,18 +96,18 @@ class APMSimFixture(TestCase):
         return points
 
 
-class AbstractIT(APMSimFixture):
+class ParallelCase(APMSimFixture):
 
     @staticmethod
-    def getFns():
+    def testFunctions():
         return []
 
     def test_move1(self):
-        fns = self.getFns()
+        fns = self.testFunctions()
         for fn in fns:
             print("### test_move1: SUBTEST ### [> ", fn.__name__)
-            position = fn(LocationGlobalRelative(-34.363261, 149.165230, 20))
-            print(position)
+            result = fn(0)
+            print(result)
 
     # def test_moveN(self):
     #     fns = self.getFns()
@@ -118,4 +118,9 @@ class AbstractIT(APMSimFixture):
     #             self.randomLocations()
     #         )
     #         print(positions)
+
+
     #         assert len(set(positions)) == len(positions)
+
+class AbstractIT(ParallelCase, APMSimFixture):
+    pass

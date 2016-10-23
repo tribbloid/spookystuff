@@ -1,18 +1,9 @@
 from __future__ import print_function
 
 import logging
-import multiprocessing
-
 import time
+
 import dronekit
-
-# existing has to be thread safe
-
-# class DronePoolDepletedException(PyspookyException):
-#     pass
-
-mpManager = multiprocessing.Manager()
-
 
 def assureInTheAir(targetAlt, vehicle):
     alt = vehicle.location.global_relative_frame.alt

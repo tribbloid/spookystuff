@@ -7,25 +7,48 @@ import time
 from dronekit import connect
 
 from pyspookystuff.mav.comm import ProxyFactory
-from pyspookystuff.mav.sim import APMSim, usedINums
+from pyspookystuff.mav.sim import APMSim
+from pyspookystuff_test import utils
 from pyspookystuff_test.mav import moveOut, numCores, APMSimFixture, APMSimContext, AbstractIT
 
+usedINums = utils.mpManager.list()
+
+def nextINum():
+    port = utils.nextUnused(usedINums, range(0, 254))
+    return port
+
+def create():
+    index = nextINum()
+    try:
+        result = APMSim(index)
+        return result
+    except Exception as ee:
+        usedINums.remove(index)
+        raise
+
+def close(sim):
+    # type: (APMSIm) -> None
+    sim.close()
+    try:
+        usedINums.remove(sim.iNum)
+    except ValueError:
+        pass
 
 def getINum(i):
-    iNum = APMSim.nextINum()
+    iNum = nextINum()
     time.sleep(5)
     usedINums.remove(iNum)
     return iNum
 
 
 def getSim(i):
-    sim = APMSim.create()
+    sim = create()
     try:
         iNum = sim.iNum
         time.sleep(5)
         return iNum
     finally:
-        sim.close()
+        close(sim)
 
 class Suite(APMSimFixture):
 
@@ -89,14 +112,14 @@ def _move(point, proxyFactory=None):
 
         return vehicle.location.local_frame.north, vehicle.location.local_frame.east
 
-def move_NoProxy(tuple):
-    return _move(tuple)
-def move_Proxy(tuple):
-    return _move(tuple, defaultProxyFactory)
+def move_NoProxy(tt):
+    return _move(tt)
+def move_Proxy(tt):
+    return _move(tt, defaultProxyFactory)
 class SimpleMoveIT(AbstractIT):
 
     @staticmethod
-    def getFns():
+    def testFunctions():
         return [move_NoProxy, move_Proxy]
 
 if __name__ == '__main__':

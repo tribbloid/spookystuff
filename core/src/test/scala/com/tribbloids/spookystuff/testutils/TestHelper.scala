@@ -109,11 +109,17 @@ object TestHelper {
   lazy val TestSpark = {
     val sc = SparkContext.getOrCreate(TestSparkConf)
     //TODO: Remote RPC client disassociated. Likely due to containers exceeding thresholds, or network issues. Check driver logs for WARN messages.
+    //java.lang.IllegalStateException: Shutdown hooks cannot be modified during shutdown
     Runtime.getRuntime.addShutdownHook(
       new Thread {
         override def run() = {
           println("=============== Stopping Test Spark Context ==============")
-          sc.stop()
+          try {
+            sc.stop()
+          }
+          catch {
+            case e: Throwable =>
+          }
           println("=============== Test Spark Context has stopped ==============")
         }
       }

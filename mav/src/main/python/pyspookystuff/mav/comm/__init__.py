@@ -6,9 +6,9 @@ import dronekit
 import re
 import sys
 
-print(sys.path)
+from pyspookystuff import utils
 
-from pyspookystuff.mav import utils
+print(sys.path)
 
 # pool = dict([])
 # endpoint: dict -> InstancInfo
@@ -72,15 +72,15 @@ class Endpoint(object):
     def _connStrNoInit(self):
         return self.uris[0]
 
-    @staticmethod
-    def nextUnused():
-        # type: () -> Endpoint
-        utils.nextUnused(usedEndpoints, allEndpoints)
-
-    @staticmethod
-    def nextImmediatelyAvailable(all):
-        # type: () -> Endpoint
-        utils.nextUnused(usedEndpoints, all, unreachableEndpoints)
+    # @staticmethod
+    # def nextUnused():
+    #     # type: () -> Endpoint
+    #     utils.nextUnused(usedEndpoints, allEndpoints)
+    #
+    # @staticmethod
+    # def nextImmediatelyAvailable(all):
+    #     # type: () -> Endpoint
+    #     utils.nextUnused(usedEndpoints, all, unreachableEndpoints)
 
 
 mpManager = multiprocessing.Manager()

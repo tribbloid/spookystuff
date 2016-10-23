@@ -29,7 +29,7 @@ def move_Proxy(tuple):
 class SimpleMoveIT(AbstractIT):
 
     @staticmethod
-    def getFns():
+    def testFunctions():
         return [move_NoProxy, move_Proxy]
 
 if __name__ == '__main__':
