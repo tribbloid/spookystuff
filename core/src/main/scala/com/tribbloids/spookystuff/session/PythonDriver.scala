@@ -17,7 +17,8 @@ object PythonDriver {
   final val MODULE_RESOURCE = "com/tribbloids/" :/ MODULE_NAME
   final val PYTHON_LIB_RESOURCE = "com/tribbloids/spookystuff/lib/python"
 
-  final val errorInLastLine: Pattern = Pattern.compile(".*(Error|Exception):.*$")
+  final val errorPattern: Pattern = Pattern.compile(".*(Error|Exception):.*$")
+  final val syntaxErrorPattern: Pattern = Pattern.compile(".*(SyntaxError):.*$")
 
   import com.tribbloids.spookystuff.utils.SpookyViews._
 
@@ -59,9 +60,9 @@ case class PythonDriver(
                          executable: String,
                          autoImports: String =
                          """
-                           |import sys
                            |import os
                            |import json
+                           |import pyspookystuff
                          """.trim.stripMargin,
                          override val taskOrThread: TaskOrThread
                        ) extends PythonProcess(executable) with AutoCleanable {
@@ -73,8 +74,9 @@ case class PythonDriver(
 
     this.interpret(
       s"""
-         |$autoImports
+         |import sys
          |sys.path.append('$pythonPath')
+         |$autoImports
        """.stripMargin,
       None
     )
@@ -114,11 +116,16 @@ case class PythonDriver(
     val tracebackRows: Seq[Int] = indexed.filter(_._1.startsWith("Traceback ")).map(_._2)
     val errorRows: Seq[Int] = indexed.filter{
       v =>
-        val matcher = errorInLastLine.matcher(v._1)
+        val matcher = errorPattern.matcher(v._1)
+        matcher.find
+    }.map(_._2)
+    val syntaxErrorRow: Seq[Int] = indexed.filter{
+      v =>
+        val matcher = syntaxErrorPattern.matcher(v._1)
         matcher.find
     }.map(_._2)
 
-    if (tracebackRows.nonEmpty && errorRows.nonEmpty) true
+    if ((tracebackRows.nonEmpty && errorRows.nonEmpty) || syntaxErrorRow.nonEmpty) true
     else false
 
     //    tracebackRows.foreach {

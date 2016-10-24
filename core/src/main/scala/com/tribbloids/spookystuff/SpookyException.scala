@@ -21,8 +21,8 @@ class ActionException(
 }
 
 class PythonException(
-                      code: String,
-                      output: String,
+                       code: String,
+                       output: String,
                        override val cause: Throwable = null
                      ) extends SpookyException(
   {

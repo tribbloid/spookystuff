@@ -4,7 +4,7 @@ import com.tribbloids.spookystuff.caching.{DFSWebCache, InMemoryWebCache}
 import com.tribbloids.spookystuff.doc.{Doc, Fetched}
 import com.tribbloids.spookystuff.row.{DataRowSchema, FetchedRow}
 import com.tribbloids.spookystuff.session.{DriverSession, Session}
-import com.tribbloids.spookystuff.utils.{PrettyProduct, SpookyUtils}
+import com.tribbloids.spookystuff.utils.{DetailedProduct, PrettyProduct, SpookyUtils}
 import com.tribbloids.spookystuff.{Const, QueryException, SpookyContext}
 import org.apache.spark.sql.catalyst.trees.TreeNode
 import org.slf4j.LoggerFactory
@@ -22,7 +22,7 @@ object ActionLike {
 }
 
 @SerialVersionUID(8566489926281786854L)
-abstract class ActionLike extends PrettyProduct with Serializable {
+abstract class ActionLike extends DetailedProduct with Serializable {
 
   def children: Trace
 

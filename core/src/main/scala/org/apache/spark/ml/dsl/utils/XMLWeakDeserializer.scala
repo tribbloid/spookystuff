@@ -101,10 +101,12 @@ object ElementToArrayDeserializer extends XMLWeakDeserializer[Any] {
     catch {
       case e: Exception =>
 
-        val strs = Seq(
-          "======= EXTRACT INNER ERROR ======",
-          pretty(render(jv)),
-          firstTypeArg(ti)
+        val details = Seq(
+          ">>> Extract JSON >>>",
+          pretty(render(jv))
+        ) ++
+        Seq(
+          ">>> First Type : " + firstTypeArg(ti)
         ) ++
           Seq("------ customSerializers ------") ++
           format.customSerializers ++
@@ -112,10 +114,14 @@ object ElementToArrayDeserializer extends XMLWeakDeserializer[Any] {
           format.fieldSerializers ++
           Seq("--------- primitives ----------") ++
           format.primitives
-        throw MappingException(
-          strs.mkString("\n"),
+        throw new MappingException(
+          "",
           e
-        )
+        ) with Detail {
+          override def detail: String = details.mkString("\n")
+
+          override def toString = toStringVerbose
+        }
     }
   }
 

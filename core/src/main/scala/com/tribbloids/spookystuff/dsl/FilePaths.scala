@@ -1,12 +1,10 @@
 package com.tribbloids.spookystuff.dsl
 
 import java.io.File
-import java.nio.file.Files
 import java.util.UUID
 
 import com.tribbloids.spookystuff.actions.Trace
 import com.tribbloids.spookystuff.doc.Doc
-import com.tribbloids.spookystuff.extractors.Literal
 import com.tribbloids.spookystuff.utils.SpookyUtils
 
 object FilePaths{

@@ -61,11 +61,10 @@ abstract class MessageRelay[Obj] {
   def toMessage(v: Obj): Message
   final def toMessageValue(v: Obj): MessageRelay.this.M = toMessage(v).value.asInstanceOf[MessageRelay.this.M]
 
-  trait HasRelay {
+  trait HasRelay extends HasMessage {
     self: Obj =>
 
     final def toMessage: Message = MessageRelay.this.toMessage(self)
-    final def toMessageValue: MessageRelay.this.M = toMessage.value.asInstanceOf[MessageRelay.this.M]
   }
 
   class UDT extends UserDefinedType[Obj] {
@@ -98,8 +97,11 @@ abstract class MessageRelay[Obj] {
     Param(parent.uid, name, doc)
 }
 
-
-
+/**
+  * a simple MessageRelay that use object directly as Message
+  * @param mf
+  * @tparam Obj
+  */
 class MessageReader[Obj](
                           implicit override val mf: Manifest[Obj]
                         ) extends MessageRelay[Obj] {
@@ -117,7 +119,15 @@ class MessageReader[Obj](
 
 object GenericMessageReader extends MessageReader[Any]
 
-trait Message extends Serializable {
+trait HasMessage extends Serializable {
+
+  def toMessage: Message
+  def toMessageValue: Any = toMessage.value
+}
+
+trait Message extends HasMessage {
+
+  def toMessage = this
 
   def value: Any = this
   def formats: Formats = Xml.defaultFormats
