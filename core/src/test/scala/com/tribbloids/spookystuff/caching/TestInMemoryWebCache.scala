@@ -4,26 +4,27 @@ import com.tribbloids.spookystuff.SpookyEnvFixture
 import com.tribbloids.spookystuff.actions.{Snapshot, Visit, Wget}
 import com.tribbloids.spookystuff.doc.{Doc, DocUID}
 import com.tribbloids.spookystuff.dsl._
+import com.tribbloids.spookystuff.testutils.LocalPathDocsFixture
 
 import scala.concurrent.duration._
 
 /**
  * Created by peng on 10/17/14.
  */
-class TestInMemoryWebCache extends SpookyEnvFixture {
+class TestInMemoryWebCache extends SpookyEnvFixture with LocalPathDocsFixture {
 
   lazy val cache: AbstractWebCache = InMemoryWebCache
 
-  val visit = Visit("http://en.wikipedia.org")::Snapshot().as('old)::Nil
-  lazy val visitPage = visit.fetch(spooky).map(_.asInstanceOf[Doc])
+  val visit = Visit(HTML_URL)::Snapshot().as('old)::Nil
+  lazy val visitPage = visit.fetch(spooky).map(_.asInstanceOf[Doc].copy(cacheable = true))
 
-  val wget = Wget("http://en.wikipedia.org").as('oldWget)::Nil
-  lazy val wgetPage = wget.fetch(spooky).map(_.asInstanceOf[Doc])
+  val wget = Wget(HTML_URL).as('oldWget)::Nil
+  lazy val wgetPage = wget.fetch(spooky).map(_.asInstanceOf[Doc].copy(cacheable = true))
 
   test("cache and restore") {
-    spooky.conf.cachedDocsLifeSpan = 2.seconds
+    spooky.conf.cachedDocsLifeSpan = 10.seconds
 
-    assert(visitPage.head.uid === DocUID(Visit("http://en.wikipedia.org") :: Snapshot().as('U) :: Nil, Snapshot()))
+    assert(visitPage.head.uid === DocUID(Visit(HTML_URL) :: Snapshot().as('U) :: Nil, Snapshot()))
 
     cache.put(visit, visitPage, spooky)
 
@@ -39,7 +40,7 @@ class TestInMemoryWebCache extends SpookyEnvFixture {
 
     cache.put(visit, visitPage, spooky)
 
-    val newTrace = Visit("http://en.wikipedia.org") :: Snapshot().as('new) :: Nil
+    val newTrace = Visit(HTML_URL) :: Snapshot().as('new) :: Nil
 
     val page2 = cache.get(newTrace, spooky).get.map(_.asInstanceOf[Doc])
 
@@ -61,11 +62,11 @@ class TestInMemoryWebCache extends SpookyEnvFixture {
   }
 
   test ("cache wget and restore with different name") {
-    spooky.conf.cachedDocsLifeSpan = 2.seconds
+    spooky.conf.cachedDocsLifeSpan = 10.seconds
 
     cache.put(wget, wgetPage, spooky)
 
-    val newTrace = Wget("http://en.wikipedia.org").as('newWget) :: Nil
+    val newTrace = Wget(HTML_URL).as('newWget) :: Nil
 
     val page2 = cache.get(newTrace, spooky).get.map(_.asInstanceOf[Doc])
 
@@ -74,7 +75,7 @@ class TestInMemoryWebCache extends SpookyEnvFixture {
 //    assert(page2.head.code === page2.head.code)
     assert(page2.head.name === "newWget")
 
-    Thread.sleep(2000)
+    Thread.sleep(10000)
 
     val page3 = cache.get(wgetPage.head.uid.backtrace, spooky).orNull
     assert(page3 === null)
@@ -94,7 +95,7 @@ class TestInMemoryWebCache extends SpookyEnvFixture {
 //
 //    Pages.autoCache(page, page.head.uid.backtrace, spooky)
 //
-//    val newTrace = Trace(Visit("http://en.wikipedia.org")::Snapshot().as('new)::Nil)
+//    val newTrace = Trace(Visit(HTML_URL)::Snapshot().as('new)::Nil)
 //
 //    val page2 = Pages.autoRestoreLatest(newTrace, spooky)
 //
