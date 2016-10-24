@@ -62,7 +62,6 @@ case class PythonDriver(
                          """
                            |import os
                            |import json
-                           |import pyspookystuff
                          """.trim.stripMargin,
                          override val taskOrThread: TaskOrThread
                        ) extends PythonProcess(executable) with AutoCleanable {
