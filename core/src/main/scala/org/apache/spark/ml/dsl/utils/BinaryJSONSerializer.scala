@@ -18,19 +18,26 @@ abstract class BinaryJSONSerializer(
 
   val VID = -47597349821L
 
-  def deserialize(implicit format: Formats): PartialFunction[(TypeInfo, JValue), Any] = {
+  def deserialize(implicit format: Formats): PartialFunction[(TypeInfo, JValue), Any] = Function.unlift{
 
     case (ti, JString(str)) =>
-      val bytes = new Base64Wrapper(str.trim).asBytes
+      try {
+        val bytes = new Base64Wrapper(str.trim).asBytes
 
-      val ser = sparkSerializer.newInstance()
+        val ser = sparkSerializer.newInstance()
 
-      implicit val ctg = ClassTag(ti.clazz)
-      val de = ser.deserialize[Any](
-        ByteBuffer.wrap(bytes)
-      )
-
-      de
+        implicit val ctg = ClassTag(ti.clazz)
+        val de = ser.deserialize[Any](
+          ByteBuffer.wrap(bytes)
+        )
+        Some(de)
+      }
+      catch {
+        case e: Exception =>
+          None
+      }
+    case _ =>
+      None
   }
 
   def serialize(implicit format: Formats): PartialFunction[Any, JValue] = {

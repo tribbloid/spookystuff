@@ -259,7 +259,7 @@ object Xml {
     ElementToArrayDeserializer +
     DurationJSONSerializer
 
-  def defaultFormats = xmlFormats()
+  lazy val defaultFormats = xmlFormats()
 
 
   val defaultXMLPrinter = new scala.xml.PrettyPrinter(80, 2)

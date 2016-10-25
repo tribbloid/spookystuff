@@ -44,8 +44,6 @@ object ActionRelay extends MessageRelay[Action] {
     )
   }
 
-  override val formats: Formats = Xml.defaultFormats + DurationJSONSerializer// + FallbackJSONSerializer
-
   //TODO: change to MessageRepr to allow 2-way conversions.
   case class M(
                 className: String,

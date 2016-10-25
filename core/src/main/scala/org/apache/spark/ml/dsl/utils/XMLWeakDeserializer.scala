@@ -3,13 +3,42 @@ package org.apache.spark.ml.dsl.utils
 import org.json4s.Extraction._
 import org.json4s.JsonAST.JString
 import org.json4s._
-import org.json4s.jackson.JsonMethods._
 import org.json4s.reflect.{TypeInfo, _}
 
 abstract class XMLWeakDeserializer[T: Manifest] extends Serializer[T] {
 
   // cannot serialize
   override def serialize(implicit format: Formats): PartialFunction[Any, JValue] = PartialFunction.empty
+
+  def exceptionMetadata(
+                         jValue: JValue,
+                         typeInfo: TypeInfo,
+                         formats: Formats
+                       ) = JSONExceptionMetadata(
+    Some(jValue),
+    Some(typeInfo.toString),
+    SerDeMetadata(
+      Some(this.getClass.getName),
+      formats.primitives.toSeq.map(_.toString),
+      Map(formats.fieldSerializers.map(v => v._1.getName -> v._2.toString): _*),
+      formats.customSerializers.map(_.toString)
+    )
+  )
+
+  def wrapException[T](ti: TypeInfo, jv: JValue, format: Formats)(fn: => T): T = {
+    try{
+      fn
+    }
+    catch {
+      case e: Exception =>
+        val metadata = exceptionMetadata(jv, ti, format)
+        throw new DetailedJSONException(
+          "=========== [METADATA] ============",
+          e,
+          metadata
+        )
+    }
+  }
 }
 
 // <tag>12</tag> => tag: 12
@@ -17,7 +46,7 @@ object StringToNumberDeserializer extends XMLWeakDeserializer[Any] {
 
   override def deserialize(implicit format: Formats): PartialFunction[(TypeInfo, JValue), Any] = Function.unlift{
 
-    case (TypeInfo(cc, _), JString(v)) =>
+    case (ti@ TypeInfo(cc, _), JString(v)) =>
       val parsed = cc match {
         case java.lang.Byte.TYPE => v.toByte
         case java.lang.Short.TYPE => v.toShort
@@ -40,14 +69,10 @@ object EmptyStringToEmptyObjectDeserializer extends XMLWeakDeserializer[Any] {
 
   override def deserialize(implicit format: Formats): PartialFunction[(TypeInfo, JValue), Any] = Function.unlift{
 
-    case (ti@ TypeInfo(cc, _), JString(str))
+    case (ti@ TypeInfo(cc, _), jv@ JString(str))
       if !cc.isAssignableFrom(classOf[String]) && str.trim.isEmpty =>
-      try {
+      wrapException(ti, jv, format) {
         Some(extract(JObject(), ti)(format))
-      }
-      catch {
-        case e: Throwable =>
-          None
       }
 
     case _ => None
@@ -65,18 +90,18 @@ object ElementToArrayDeserializer extends XMLWeakDeserializer[Any] {
 
   override def deserialize(implicit format: Formats): PartialFunction[(TypeInfo, JValue), Any] = {
 
-    case (ti@ TypeInfo(this.listClass | this.seqClass, _), jv) if !jv.isInstanceOf[JArray] =>
+    case (ti@TypeInfo(this.listClass | this.seqClass, _), jv) if !jv.isInstanceOf[JArray] =>
       extractInner(ti, jv, format).toList
 
-    case (ti@ TypeInfo(this.setClass, _), jv) if !jv.isInstanceOf[JArray] =>
+    case (ti@TypeInfo(this.setClass, _), jv) if !jv.isInstanceOf[JArray] =>
       extractInner(ti, jv, format).toSet
 
-    case (ti@ TypeInfo(this.arrayListClass, _), jv) if !jv.isInstanceOf[JArray] =>
+    case (ti@TypeInfo(this.arrayListClass, _), jv) if !jv.isInstanceOf[JArray] =>
       import scala.collection.JavaConverters._
 
       new java.util.ArrayList[Any](extractInner(ti, jv, format).toList.asJava)
 
-    case (ti@ TypeInfo(cc, _), jv) if !jv.isInstanceOf[JArray] && cc.isArray =>
+    case (ti@TypeInfo(cc, _), jv) if !jv.isInstanceOf[JArray] && cc.isArray =>
       val a = extractInner(ti, jv, format).toArray
       mkTypedArray(a, firstTypeArg(ti))
   }
@@ -87,41 +112,17 @@ object ElementToArrayDeserializer extends XMLWeakDeserializer[Any] {
     a.foldLeft((newArray(typeArg.erasure, a.length), 0)) { (tuple, e) => {
       java.lang.reflect.Array.set(tuple._1, tuple._2, e)
       (tuple._1, tuple._2 + 1)
-    }}._1
+    }
+    }._1
   }
 
   def extractInner(ti: TypeInfo, jv: JValue, format: Formats): Option[Any] = {
-    try {
+    wrapException(ti, jv, format) {
       val result = jv match {
         case JNothing => None
         case _ => Some(extract(jv, firstTypeArg(ti))(format))
       }
       result
-    }
-    catch {
-      case e: Exception =>
-
-        val details = Seq(
-          ">>> Extract JSON >>>",
-          pretty(render(jv))
-        ) ++
-        Seq(
-          ">>> First Type : " + firstTypeArg(ti)
-        ) ++
-          Seq("------ customSerializers ------") ++
-          format.customSerializers ++
-          Seq("------ fieldSerializers -------") ++
-          format.fieldSerializers ++
-          Seq("--------- primitives ----------") ++
-          format.primitives
-        throw new MappingException(
-          "",
-          e
-        ) with Detail {
-          override def detail: String = details.mkString("\n")
-
-          override def toString = toStringVerbose
-        }
     }
   }
 
@@ -131,3 +132,28 @@ object ElementToArrayDeserializer extends XMLWeakDeserializer[Any] {
     firstTypeArg
   }
 }
+
+case class JSONExceptionMetadata(
+                                  jValue: Option[JValue] = None,
+                                  typeInfo: Option[String] = None,
+                                  serDe: SerDeMetadata
+                                ) extends Message
+
+case class SerDeMetadata(
+                          reporting: Option[String] = None,
+                          primitives: Seq[String] = Nil,
+                          field: Map[String, String] = Map.empty,
+                          custom: Seq[String] = Nil
+                        )
+
+class DetailedJSONException(
+                             msg: String,
+                             e: Exception,
+                             metadata: JSONExceptionMetadata
+                           ) extends MappingException(msg, e) with Detail {
+
+  override def toString = toStringVerbose
+
+  override def detail = metadata.toJSON(pretty = true)
+}
+

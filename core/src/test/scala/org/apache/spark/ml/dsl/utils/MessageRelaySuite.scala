@@ -3,11 +3,23 @@ package org.apache.spark.ml.dsl.utils
 import java.util.Date
 
 import org.apache.spark.ml.dsl.AbstractFlowSuite
+import org.json4s.MappingException
 
 /**
   * Created by peng on 06/05/16.
   */
 case class TimeWrapper(time: Date)
+
+case class Users(user: Seq[User]) {
+}
+
+case class User(
+                 name: String,
+                 roles: Option[Roles] = None
+               )
+
+case class Roles(role: Seq[String]) {
+}
 
 class MessageRelaySuite extends AbstractFlowSuite {
 
@@ -23,13 +35,15 @@ class MessageRelaySuite extends AbstractFlowSuite {
   }
 
   test("can convert generated timestamp") {
-    val date = TimeWrapper(new Date())
+    val date = new Date()
+    val obj = TimeWrapper(new Date())
 
-    val xmlStr = MessageView(date).toXMLStr(pretty = false)
+    val xmlStr = MessageView(obj).toXMLStr(pretty = false)
     println(xmlStr)
 
     val reader = new MessageReader[TimeWrapper]()
     val v = reader.fromXML(xmlStr)
+    v.toString.shouldBe(s"TimeWrapper($date)")
   }
 
   test("can convert lossless timestamp") {
@@ -39,7 +53,7 @@ class MessageRelaySuite extends AbstractFlowSuite {
 
     val reader = new MessageReader[TimeWrapper]()
     val v = reader.fromXML(xmlStr)
-    println(v)
+    v.toString.shouldBe("TimeWrapper(Thu Sep 08 15:00:00 EDT 2016)")
   }
 
   test("can convert less accurate timestamp") {
@@ -49,7 +63,7 @@ class MessageRelaySuite extends AbstractFlowSuite {
 
     val reader = new MessageReader[TimeWrapper]()
     val v = reader.fromXML(xmlStr)
-    println(v)
+    v.toString.shouldBe("TimeWrapper(Thu Sep 08 15:00:00 EDT 2016)")
   }
 
   test("can convert even less accurate timestamp") {
@@ -59,6 +73,76 @@ class MessageRelaySuite extends AbstractFlowSuite {
 
     val reader = new MessageReader[TimeWrapper]()
     val v = reader.fromXML(xmlStr)
-    println(v)
+    v.toString.shouldBe("TimeWrapper(Thu Sep 08 15:00:00 EDT 2016)")
+  }
+
+  test("reading an object with missing value & default value should fail early") {
+
+    val xmlStr = s"<node><roles><role>DC</role></roles></node>"
+
+    val reader = new MessageReader[User]()
+    intercept[MappingException] {
+      val v = reader.fromXML(xmlStr)
+    }
+  }
+
+  test("reading an array with misplaced value & default value should fail early") {
+
+    val xmlStr =
+      s"""
+         |<users>
+         |<user>user1@domain.com<roles><role>DC</role></roles></user>
+         |<user>user2@domain.com<roles><role>DC</role></roles></user>
+         |</users>
+       """.stripMargin
+
+    val reader = new MessageReader[Users]()
+    intercept[MappingException] {
+      val v = reader.fromXML(xmlStr)
+    }
+  }
+
+  test("reading an array with missing value & default value should fail early") {
+
+    val xmlStr =
+      s"""
+         |<users>
+         |<user><roles><role>DC</role></roles></user>
+         |<user><roles><role>DC</role></roles></user>
+         |</users>
+       """.stripMargin
+
+    val reader = new MessageReader[Users]()
+    intercept[MappingException] {
+      val v = reader.fromXML(xmlStr)
+    }
+  }
+
+  test("reading an object from a converted string should work") {
+
+    val xmlStr = MessageView(User(name = "30")).toXMLStr(pretty = false)
+    print(xmlStr)
+
+    val reader = new MessageReader[User]()
+    val v = reader.fromXML(xmlStr)
+    v.toString.shouldBe("User(30,None)")
+  }
+
+  test("reading an object with provided value should work") {
+
+    val xmlStr = s"<node><name>string</name><roles><role>DC</role></roles></node>"
+
+    val reader = new MessageReader[User]()
+    val v = reader.fromXML(xmlStr)
+    v.toString.shouldBe("User(string,Some(Roles(List(DC))))")
+  }
+
+  test("reading an object with default value should work") {
+
+    val xmlStr = s"<node><name>string</name></node>"
+
+    val reader = new MessageReader[User]()
+    val v = reader.fromXML(xmlStr)
+    v.toString.shouldBe("User(string,None)")
   }
 }
