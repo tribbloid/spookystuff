@@ -258,6 +258,7 @@ object Xml {
     EmptyStringToEmptyObjectDeserializer +
     ElementToArrayDeserializer +
     DurationJSONSerializer
+//    FallbackJSONSerializer
 
   lazy val defaultFormats = xmlFormats()
 

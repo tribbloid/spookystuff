@@ -4,6 +4,7 @@ import org.json4s.Extraction._
 import org.json4s.JsonAST.JString
 import org.json4s._
 import org.json4s.reflect.{TypeInfo, _}
+import org.slf4j.LoggerFactory
 
 abstract class XMLWeakDeserializer[T: Manifest] extends Serializer[T] {
 
@@ -25,7 +26,7 @@ abstract class XMLWeakDeserializer[T: Manifest] extends Serializer[T] {
     )
   )
 
-  def wrapException[T](ti: TypeInfo, jv: JValue, format: Formats)(fn: => T): T = {
+  def wrapException[A](ti: TypeInfo, jv: JValue, format: Formats)(fn: => A): A = {
     try{
       fn
     }
@@ -39,12 +40,25 @@ abstract class XMLWeakDeserializer[T: Manifest] extends Serializer[T] {
         )
     }
   }
+
+  override final def deserialize(implicit format: Formats): PartialFunction[(TypeInfo, JValue), T] = {
+    val result: ((TypeInfo, JValue)) => Option[T] = {
+      case (ti, jv) =>
+        LoggerFactory.getLogger(this.getClass).info(
+          s"JSON === [${this.getClass.getSimpleName}] ==> Object"
+        )
+        _deserialize(format).lift.apply(ti -> jv)
+    }
+    Function.unlift(result)
+  }
+
+  def _deserialize(implicit format: Formats): PartialFunction[(TypeInfo, JValue), T]
 }
 
 // <tag>12</tag> => tag: 12
 object StringToNumberDeserializer extends XMLWeakDeserializer[Any] {
 
-  override def deserialize(implicit format: Formats): PartialFunction[(TypeInfo, JValue), Any] = Function.unlift{
+  override def _deserialize(implicit format: Formats): PartialFunction[(TypeInfo, JValue), Any] = Function.unlift{
 
     case (ti@ TypeInfo(cc, _), JString(v)) =>
       val parsed = cc match {
@@ -67,7 +81,7 @@ object StringToNumberDeserializer extends XMLWeakDeserializer[Any] {
 // <tag/> => tag: {}
 object EmptyStringToEmptyObjectDeserializer extends XMLWeakDeserializer[Any] {
 
-  override def deserialize(implicit format: Formats): PartialFunction[(TypeInfo, JValue), Any] = Function.unlift{
+  override def _deserialize(implicit format: Formats): PartialFunction[(TypeInfo, JValue), Any] = Function.unlift{
 
     case (ti@ TypeInfo(cc, _), jv@ JString(str))
       if !cc.isAssignableFrom(classOf[String]) && str.trim.isEmpty =>
@@ -88,7 +102,7 @@ object ElementToArrayDeserializer extends XMLWeakDeserializer[Any] {
   val setClass = classOf[Set[_]]
   val arrayListClass = classOf[java.util.ArrayList[_]]
 
-  override def deserialize(implicit format: Formats): PartialFunction[(TypeInfo, JValue), Any] = {
+  override def _deserialize(implicit format: Formats): PartialFunction[(TypeInfo, JValue), Any] = {
 
     case (ti@TypeInfo(this.listClass | this.seqClass, _), jv) if !jv.isInstanceOf[JArray] =>
       extractInner(ti, jv, format).toList

@@ -54,7 +54,7 @@ abstract class AbstractMetrics extends Message with Product {
     }
   }
 
-  override def value: ListMap[String, Any] = toMap
+  override val value: ListMap[String, Any] = toMap
 
   val children: ArrayBuffer[AbstractMetrics] = ArrayBuffer()
 }

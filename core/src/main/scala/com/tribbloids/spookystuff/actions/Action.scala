@@ -18,6 +18,8 @@ class ActionUDT extends ScalaUDT[Action]
 
 object ActionRelay extends MessageRelay[Action] {
 
+//  override implicit def formats: Formats = Xml.defaultFormats + FallbackJSONSerializer
+
   def convert(elements: Traversable[_]): Traversable[Any] = elements
     .map {
       case v: HasRelay => v.toMessage

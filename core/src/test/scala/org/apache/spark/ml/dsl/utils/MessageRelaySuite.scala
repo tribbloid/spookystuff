@@ -10,8 +10,9 @@ import org.json4s.MappingException
   */
 case class TimeWrapper(time: Date)
 
-case class Users(user: Seq[User]) {
-}
+case class UsersWrapper(a: String, users: Users)
+
+case class Users(user: Seq[User])
 
 case class User(
                  name: String,
@@ -21,11 +22,18 @@ case class User(
 case class Roles(role: Seq[String]) {
 }
 
+object TimeRelay extends MessageRelay[Date] {
+
+  override def toMessage(v: Date): Message = M(v.getTime)
+
+  case class M(millis: Long) extends Message
+}
+
 class MessageRelaySuite extends AbstractFlowSuite {
 
   test("SerializingParam[Function1] should work") {
     val fn = {k: Int => 2*k}
-    val reader = new MessageReader[Int => Int]
+    val reader = new MessageReader[Int => Int]()
     val param = reader.Param("id", "name", "")
 
     val json = param.jsonEncode(fn)
@@ -34,9 +42,10 @@ class MessageRelaySuite extends AbstractFlowSuite {
     assert(fn2(2) == 4)
   }
 
+  val date = new Date()
+
   test("can convert generated timestamp") {
-    val date = new Date()
-    val obj = TimeWrapper(new Date())
+    val obj = TimeWrapper(date)
 
     val xmlStr = MessageView(obj).toXMLStr(pretty = false)
     println(xmlStr)
@@ -102,6 +111,25 @@ class MessageRelaySuite extends AbstractFlowSuite {
     }
   }
 
+  test("reading a wrapped array with misplaced value & default value should fail early") {
+
+    val xmlStr =
+      s"""
+         |<node>
+         |<a>name</a>
+         |<users>
+         |<user>user1@domain.com<roles><role>DC</role></roles></user>
+         |<user>user2@domain.com<roles><role>DC</role></roles></user>
+         |</users>
+         |</node>
+       """.stripMargin
+
+    val reader = new MessageReader[UsersWrapper]()
+    intercept[MappingException] {
+      val v = reader.fromXML(xmlStr)
+    }
+  }
+
   test("reading an array with missing value & default value should fail early") {
 
     val xmlStr =
@@ -144,5 +172,20 @@ class MessageRelaySuite extends AbstractFlowSuite {
     val reader = new MessageReader[User]()
     val v = reader.fromXML(xmlStr)
     v.toString.shouldBe("User(string,None)")
+  }
+
+  test("TimeRelay should work for json") {
+
+    val jsonStr = TimeRelay.toMessage(date).toJSON(pretty = true)
+    jsonStr.shouldBe(
+      s"""
+        |{
+        |  "millis" : ${date.getTime}
+        |}
+      """.stripMargin
+    )
+
+    val date2 = TimeRelay.fromJSON(jsonStr).millis
+    assert (date2 == date.getTime)
   }
 }

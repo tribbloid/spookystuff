@@ -16,9 +16,7 @@ import scala.xml.{NodeSeq, XML}
 //all subclasses must be objects otherwise Spark SQL can't find schema for Repr
 abstract class MessageRelay[Obj] {
 
-  implicit lazy val formats: Formats = Xml.defaultFormats +
-    DurationJSONSerializer +
-    FallbackJSONSerializer
+  implicit def formats: Formats = Xml.defaultFormats + FallbackJSONSerializer
 
   type M
 
@@ -66,6 +64,8 @@ abstract class MessageRelay[Obj] {
   trait HasRelay extends HasMessage {
     self: Obj =>
 
+    override def formats = MessageRelay.this.formats
+
     final def toMessage: Message = MessageRelay.this.toMessage(self)
   }
 
@@ -86,7 +86,7 @@ abstract class MessageRelay[Obj] {
              doc: String,
              isValid: Obj => Boolean,
              // serializer = SparkEnv.get.serializer
-             formats: Formats = Xml.defaultFormats
+             formats: Formats = MessageRelay.this.formats
            ): MessageRelayParam[Obj] = new MessageRelayParam(this, parent, name, doc, isValid, formats)
 
   def Param(parent: String, name: String, doc: String): MessageRelayParam[Obj] =
@@ -109,16 +109,14 @@ class MessageReader[Obj](
                         ) extends MessageRelay[Obj] {
   type M = Obj
 
-
-  override def toMessage(v: Obj) = new MessageRepr[Obj] {
-    //    override type M = Obj
-    override def toObject: Obj = v
-  }
+  override def toMessage(v: Obj) = new SelfView[Obj](v, MessageReader.this.formats)
 }
 
 object GenericMessageReader extends MessageReader[Any]
 
 trait HasMessage extends Serializable {
+
+  def formats: Formats = Xml.defaultFormats
 
   def toMessage: Message
   def toMessageValue: Any = toMessage.value
@@ -129,7 +127,6 @@ trait Message extends HasMessage {
   def toMessage = this
 
   def value: Any = this
-  def formats: Formats = Xml.defaultFormats
 
   import org.json4s.JsonDSL._
 
@@ -153,11 +150,20 @@ trait MessageRepr[T] extends Message {
 
   def toObject: T
 }
+
 case class MessageView[MM](
                             override val value: MM,
                             override val formats: Formats = Xml.defaultFormats
                           ) extends Message {
 
+}
+
+
+class SelfView[T](
+                   override val value: T,
+                   override val formats: Formats = Xml.defaultFormats
+                 ) extends MessageView[T](value, formats) with  MessageRepr[T] {
+  override def toObject: T = value
 }
 
 class MessageParams(

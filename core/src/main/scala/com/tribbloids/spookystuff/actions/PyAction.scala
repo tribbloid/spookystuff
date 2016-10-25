@@ -101,34 +101,36 @@ trait PyObject extends HasMessage {
   val varPrefix = FlowUtils.toCamelCase(this.getClass.getSimpleName)
   val varName = varPrefix + Math.abs(Random.nextLong())
 
-  //Python class must have a constructor that takes json format of its Scala class
-  def constructPythonInstance(session: Session): String = {
-
-    val py = converter.scala2py(this)
-    val code =
-      s"""
-         |${py._1}
-         |$varName = ${py._2}
-       """.trim.stripMargin
-
-    session.pythonDriver.interpret(code, Some(session))
-    varName
-  }
-
-  def finalizePythonInstance(session: Session): Unit = {
-    session.pythonDriver.interpret(
-      s"del $varName",
-      Some(session)
-    )
-    Unit
-  }
-
   //  object Py {
   //
   //    val
   //  }
 
   case class Py(session: Session) extends Dynamic {
+
+    //Python class must have a constructor that takes json format of its Scala class
+    def construct(): String = {
+
+      val py = converter.scala2py(PyObject.this)
+      val code =
+        s"""
+           |${py._1}
+           |$varName = ${py._2}
+       """.trim.stripMargin
+
+      session.pythonDriver.interpret(code, Some(session))
+      varName
+    }
+
+    lazy val constructed = construct()
+
+    override def finalize(): Unit = {
+      session.pythonDriver.interpret(
+        s"del $varName",
+        Some(session)
+      )
+      Unit
+    }
 
     def applyDynamic(methodName: String)(args: Any*): String = {
 
@@ -169,13 +171,14 @@ trait PyAction extends Action with PyObject {
     * 1 for action, 1 for session
     */
   final override def exe(session: Session): Seq[Fetched] = {
+    val py = this.Py(session)
     withLazyDrivers(session){
-      constructPythonInstance(session)
+      py.construct()
       try {
         doExe(session)
       }
       finally {
-        finalizePythonInstance(session)
+        py.finalize()
       }
     }
   }
