@@ -14,6 +14,7 @@ import scala.reflect.ClassTag
   */
 //TODO: change to wrap DataFrame Row/InternalRow?
 //TODO: also carry PageUID & property type (Vertex/Edge) for GraphX
+@SerialVersionUID(6534469387269426194L)
 case class DataRow(
                     data: Data = Data.empty,
                     groupID: Option[UUID] = None,
