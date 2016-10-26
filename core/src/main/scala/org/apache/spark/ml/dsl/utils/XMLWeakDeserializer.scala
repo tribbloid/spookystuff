@@ -44,7 +44,7 @@ abstract class XMLWeakDeserializer[T: Manifest] extends Serializer[T] {
   override final def deserialize(implicit format: Formats): PartialFunction[(TypeInfo, JValue), T] = {
     val result: ((TypeInfo, JValue)) => Option[T] = {
       case (ti, jv) =>
-        LoggerFactory.getLogger(this.getClass).info(
+        LoggerFactory.getLogger(this.getClass).debug(
           s"JSON === [${this.getClass.getSimpleName}] ==> Object"
         )
         _deserialize(format).lift.apply(ti -> jv)
