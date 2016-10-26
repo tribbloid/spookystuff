@@ -5,9 +5,8 @@ import java.util.Date
 import org.apache.spark.ml.dsl.AbstractFlowSuite
 import org.json4s.MappingException
 
-/**
-  * Created by peng on 06/05/16.
-  */
+
+
 case class TimeWrapper(time: Date)
 
 case class UsersWrapper(a: String, users: Users)
@@ -31,7 +30,8 @@ object TimeRelay extends MessageRelay[Date] {
 
 class MessageRelaySuite extends AbstractFlowSuite {
 
-  test("SerializingParam[Function1] should work") {
+  //TODO: disabled before FallbackSerializer is really put to use
+  ignore("SerializingParam[Function1] should work") {
     val fn = {k: Int => 2*k}
     val reader = new MessageReader[Int => Int]()
     val param = reader.Param("id", "name", "")
@@ -44,35 +44,37 @@ class MessageRelaySuite extends AbstractFlowSuite {
 
   val date = new Date()
 
-  test("can convert generated timestamp") {
+  test("can read generated timestamp") {
     val obj = TimeWrapper(date)
 
     val xmlStr = MessageView(obj).toXMLStr(pretty = false)
-    println(xmlStr)
+    xmlStr.shouldBeLike(
+      s"<TimeWrapper><time> ...... </time></TimeWrapper>"
+    )
 
     val reader = new MessageReader[TimeWrapper]()
     val v = reader.fromXML(xmlStr)
     v.toString.shouldBe(s"TimeWrapper($date)")
   }
 
-  test("can convert lossless timestamp") {
+  test("can read lossless timestamp") {
     val str = "2016-09-08T15:00:00.0Z"
     val xmlStr = s"<TimeWrapper><time>$str</time></TimeWrapper>"
     println(xmlStr)
 
     val reader = new MessageReader[TimeWrapper]()
     val v = reader.fromXML(xmlStr)
-    v.toString.shouldBe("TimeWrapper(Thu Sep 08 15:00:00 EDT 2016)")
+    v.toString.shouldBeLike("TimeWrapper(Thu Sep 08 15:00:00 ...... )")
   }
 
-  test("can convert less accurate timestamp") {
+  test("can read less accurate timestamp") {
     val str = "2016-09-08T15:00:00Z"
     val xmlStr = s"<TimeWrapper><time>$str</time></TimeWrapper>"
     println(xmlStr)
 
     val reader = new MessageReader[TimeWrapper]()
     val v = reader.fromXML(xmlStr)
-    v.toString.shouldBe("TimeWrapper(Thu Sep 08 15:00:00 EDT 2016)")
+    v.toString.shouldBeLike("TimeWrapper(Thu Sep 08 15:00:00 ...... )")
   }
 
   test("can convert even less accurate timestamp") {
@@ -82,7 +84,7 @@ class MessageRelaySuite extends AbstractFlowSuite {
 
     val reader = new MessageReader[TimeWrapper]()
     val v = reader.fromXML(xmlStr)
-    v.toString.shouldBe("TimeWrapper(Thu Sep 08 15:00:00 EDT 2016)")
+    v.toString.shouldBeLike("TimeWrapper(Thu Sep 08 15:00:00 ...... )")
   }
 
   test("reading an object with missing value & default value should fail early") {
@@ -91,7 +93,7 @@ class MessageRelaySuite extends AbstractFlowSuite {
 
     val reader = new MessageReader[User]()
     intercept[MappingException] {
-      val v = reader.fromXML(xmlStr)
+      reader.fromXML(xmlStr)
     }
   }
 
@@ -107,7 +109,7 @@ class MessageRelaySuite extends AbstractFlowSuite {
 
     val reader = new MessageReader[Users]()
     intercept[MappingException] {
-      val v = reader.fromXML(xmlStr)
+      reader.fromXML(xmlStr)
     }
   }
 
@@ -126,7 +128,7 @@ class MessageRelaySuite extends AbstractFlowSuite {
 
     val reader = new MessageReader[UsersWrapper]()
     intercept[MappingException] {
-      val v = reader.fromXML(xmlStr)
+      reader.fromXML(xmlStr)
     }
   }
 
@@ -142,14 +144,16 @@ class MessageRelaySuite extends AbstractFlowSuite {
 
     val reader = new MessageReader[Users]()
     intercept[MappingException] {
-      val v = reader.fromXML(xmlStr)
+      reader.fromXML(xmlStr)
     }
   }
 
   test("reading an object from a converted string should work") {
 
     val xmlStr = MessageView(User(name = "30")).toXMLStr(pretty = false)
-    print(xmlStr)
+    xmlStr.shouldBe(
+      "<User><name>30</name></User>"
+    )
 
     val reader = new MessageReader[User]()
     val v = reader.fromXML(xmlStr)
@@ -179,9 +183,9 @@ class MessageRelaySuite extends AbstractFlowSuite {
     val jsonStr = TimeRelay.toMessage(date).toJSON(pretty = true)
     jsonStr.shouldBe(
       s"""
-        |{
-        |  "millis" : ${date.getTime}
-        |}
+         |{
+         |  "millis" : ${date.getTime}
+         |}
       """.stripMargin
     )
 

@@ -106,12 +106,11 @@ trait TestMixin extends FunSuite {
     //    }
   }
 
-  def comparisonStr(originalStr: () => String, b: List[String]): String = {
-
-    println(originalStr())
-    "\n=============================== [EXPECTED] ================================\n" +
-      b.mkString("\n") + "\n"
-
+  def comparisonStr(originalStr: () => String, b: List[String]): () => String = {
+    () =>
+      println(originalStr())
+      "\n=============================== [EXPECTED] ================================\n" +
+        b.mkString("\n") + "\n"
   }
 
   implicit class TestMapView[K, V](map: scala.collection.Map[K, V]) {
@@ -164,8 +163,8 @@ trait TestMixin extends FunSuite {
         val element2 = serInstance.deserialize[T](serElement)
         //        assert(!element.eq(element2))
         condition (element, element2)
-        //    assert(element.hashCode() == element2.hashCode())
-//        assert(element.toString == element2.toString)
+      //    assert(element.hashCode() == element2.hashCode())
+      //        assert(element.toString == element2.toString)
     }
   }
 
@@ -173,15 +172,15 @@ trait TestMixin extends FunSuite {
     println(s"======================================= $name ===================================")
   }
 
-//  override def intercept[T <: AnyRef](f: => Any)(implicit manifest: Manifest[T]): T = {
-//    super.intercept{
-//      try f
-//      catch {
-//        case e: Throwable =>
-//          println("Attempt to intercept:")
-//          e.printStackTrace()
-//          throw e
-//      }
-//    }
-//  }
+  //  override def intercept[T <: AnyRef](f: => Any)(implicit manifest: Manifest[T]): T = {
+  //    super.intercept{
+  //      try f
+  //      catch {
+  //        case e: Throwable =>
+  //          println("Attempt to intercept:")
+  //          e.printStackTrace()
+  //          throw e
+  //      }
+  //    }
+  //  }
 }

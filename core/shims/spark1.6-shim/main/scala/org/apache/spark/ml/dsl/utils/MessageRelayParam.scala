@@ -11,15 +11,13 @@ import scala.language.implicitConversions
   */
 @DeveloperApi
 class MessageRelayParam[Obj](
-                  outer: MessageRelay[Obj],
-                  parent: String,
-                  name: String,
-                  doc: String,
-                  isValid: Obj => Boolean,
-                  // serializer = SparkEnv.get.serializer
-                  formats: Formats
-                ) extends org.apache.spark.ml.param.Param[Obj](parent, name, doc, isValid) {
-
+                              outer: MessageRelay[Obj],
+                              parent: String,
+                              name: String,
+                              doc: String,
+                              isValid: Obj => Boolean,
+                              formats: Formats
+                            ) extends org.apache.spark.ml.param.Param[Obj](parent, name, doc, isValid) {
 
   /** Creates a param pair with the given value (for Java). */
   //    override def w(value: M): ParamPair[M] = super.w(value)
@@ -32,12 +30,22 @@ class MessageRelayParam[Obj](
 
   override def jsonDecode(json: String): Obj = {
 
-    val message: outer.M = outer.fromJSON(json)
-    message match {
+    implicit val mf: Manifest[outer.M] = outer.mf
+
+    val messageV: outer.M = outer.fromJSON(json)
+    messageV match {
       case v: MessageRepr[_] =>
         v.toObject.asInstanceOf[Obj]
       case _ =>
-        throw new UnsupportedOperationException("jsonDecode is not implemented")
+        //TODO: this is hacking, is there a more rigorous impl?
+        if (outer.isInstanceOf[MessageReader[Obj]]) {
+          messageV.asInstanceOf[Obj]
+        }
+        else {
+          throw new UnsupportedOperationException(
+            s"jsonDecode is not implemented in ${outer.getClass.getName}[${outer.mf.runtimeClass.getName}]"
+          )
+        }
     }
   }
 }

@@ -16,7 +16,7 @@ import scala.xml.{NodeSeq, XML}
 //all subclasses must be objects otherwise Spark SQL can't find schema for Repr
 abstract class MessageRelay[Obj] {
 
-  implicit def formats: Formats = Xml.defaultFormats + FallbackJSONSerializer
+  implicit def formats: Formats = Xml.defaultFormats
 
   type M
 
@@ -109,7 +109,7 @@ class MessageReader[Obj](
                         ) extends MessageRelay[Obj] {
   type M = Obj
 
-  override def toMessage(v: Obj) = new SelfView[Obj](v, MessageReader.this.formats)
+  override def toMessage(v: Obj) = new MessageView[Obj](v, MessageReader.this.formats)
 }
 
 object GenericMessageReader extends MessageReader[Any]
@@ -146,24 +146,16 @@ trait Message extends HasMessage {
     else compactXML
   }
 }
-trait MessageRepr[T] extends Message {
 
-  def toObject: T
+trait MessageRepr[Obj] extends Message {
+
+  def toObject: Obj
 }
 
-case class MessageView[MM](
-                            override val value: MM,
-                            override val formats: Formats = Xml.defaultFormats
-                          ) extends Message {
-
-}
-
-
-class SelfView[T](
-                   override val value: T,
-                   override val formats: Formats = Xml.defaultFormats
-                 ) extends MessageView[T](value, formats) with  MessageRepr[T] {
-  override def toObject: T = value
+case class MessageView[M](
+                           override val value: M,
+                           override val formats: Formats = Xml.defaultFormats
+                         ) extends Message {
 }
 
 class MessageParams(
