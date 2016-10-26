@@ -11,11 +11,11 @@ import scala.reflect.ClassTag
 
 // fallback mechanism that works for any java object
 abstract class FallbackSerializer(
-                                     sparkSerializer: org.apache.spark.serializer.Serializer = { //TODO: kryo is better
-                                     val conf = new SparkConf()
-                                       new JavaSerializer(conf)
-                                     }
-                                   ) extends Serializer[Any] {
+                                   sparkSerializer: org.apache.spark.serializer.Serializer = { //TODO: kryo is better
+                                   val conf = new SparkConf()
+                                     new JavaSerializer(conf)
+                                   }
+                                 ) extends Serializer[Any] {
 
   val VID = -47597349821L
 
@@ -51,25 +51,25 @@ abstract class FallbackSerializer(
         LoggerFactory.getLogger(this.getClass).info(
           s"Object === [${this.getClass.getSimpleName}] ==> JSON"
         )
-//        try {
-//          val result = Extraction.decompose(v)(format)
-//          Some(result)
-//        }
-//        catch {
-//          case e: MappingException =>
-            try {
-              val ser = sparkSerializer.newInstance()
-              val buffer: ByteBuffer = ser.serialize(v)
+        //        try {
+        //          val result = Extraction.decompose(v)(format)
+        //          Some(result)
+        //        }
+        //        catch {
+        //          case e: MappingException =>
+        try {
+          val ser = sparkSerializer.newInstance()
+          val buffer: ByteBuffer = ser.serialize(v)
 
-              val str = new Base64Wrapper(buffer.array()).asBase64Str
+          val str = new Base64Wrapper(buffer.array()).asBase64Str
 
-              Some(JString(str))
-            }
-            catch {
-              case e: Throwable =>
-                None
-            }
-//        }
+          Some(JString(str))
+        }
+        catch {
+          case e: Throwable =>
+            None
+        }
+      //        }
 
       case _ =>
         None

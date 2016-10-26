@@ -21,7 +21,8 @@ object Metrics {
   }
 }
 
-abstract class AbstractMetrics extends Message with Product {
+@SerialVersionUID(-32509237409L)
+abstract class AbstractMetrics extends Message with Product with Serializable {
 
   //this is necessary as direct JSON serialization on accumulator only yields meaningless string
   def toTuples: List[(String, Any)] = {
@@ -60,6 +61,7 @@ abstract class AbstractMetrics extends Message with Product {
 }
 
 //TODO: change to multi-level
+@SerialVersionUID(64065023841293L)
 case class Metrics(
                     webDriverDispatched: Accumulator[Int] = Metrics.accumulator(0, "webDriverDispatched"),
                     webDriverReleased: Accumulator[Int] = Metrics.accumulator(0, "webDriverReleased"),

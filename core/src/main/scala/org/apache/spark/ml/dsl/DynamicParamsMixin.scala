@@ -1,6 +1,6 @@
 package org.apache.spark.ml.dsl
 
-import org.apache.spark.ml.dsl.utils.{FlowUtils, MessageReader}
+import org.apache.spark.ml.dsl.utils.{FallbackJSONSerializer, FlowUtils, MessageReader}
 import org.apache.spark.ml.param.{Param, Params}
 
 import scala.language.{dynamics, implicitConversions}
@@ -63,7 +63,12 @@ trait DynamicParamsMixin extends Params with Dynamic {
                                            default: T = null
                                          ): Param[T] = {
 
-    val result = new MessageReader[T]().Param(this, name, doc)
+    val reader = new MessageReader[T](){
+
+      override def formats = super.formats + FallbackJSONSerializer
+    }
+
+    val result = reader.Param(this, name, doc)
 
     Option(default).foreach(v => this.setDefault(result, v))
 

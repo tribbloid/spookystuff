@@ -4,7 +4,7 @@ import com.tribbloids.spookystuff.caching.{DFSWebCache, InMemoryWebCache}
 import com.tribbloids.spookystuff.doc.{Doc, Fetched}
 import com.tribbloids.spookystuff.row.{DataRowSchema, FetchedRow}
 import com.tribbloids.spookystuff.session.{DriverSession, Session}
-import com.tribbloids.spookystuff.utils.{DetailedProduct, PrettyProduct, SpookyUtils}
+import com.tribbloids.spookystuff.utils.{DetailedProduct, SpookyUtils}
 import com.tribbloids.spookystuff.{Const, QueryException, SpookyContext}
 import org.apache.spark.sql.catalyst.trees.TreeNode
 import org.slf4j.LoggerFactory

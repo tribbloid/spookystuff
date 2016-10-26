@@ -106,11 +106,13 @@ trait TestMixin extends FunSuite {
     //    }
   }
 
-  def comparisonStr(originalStr: () => String, b: List[String]): () => String = {
-    () =>
+  def comparisonStr(originalStr: () => String, b: List[String]): AnyRef = new AnyRef {
+
+    override def toString() = {
       println(originalStr())
       "\n=============================== [EXPECTED] ================================\n" +
         b.mkString("\n") + "\n"
+    }
   }
 
   implicit class TestMapView[K, V](map: scala.collection.Map[K, V]) {

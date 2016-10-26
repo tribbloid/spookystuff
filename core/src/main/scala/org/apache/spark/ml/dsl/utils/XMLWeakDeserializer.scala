@@ -34,7 +34,7 @@ abstract class XMLWeakDeserializer[T: Manifest] extends Serializer[T] {
       case e: Exception =>
         val metadata = exceptionMetadata(jv, ti, format)
         throw new DetailedJSONException(
-          "=========== [METADATA] ============",
+          "=========== [METADATA] ============\n" + e.getMessage,
           e,
           metadata
         )
