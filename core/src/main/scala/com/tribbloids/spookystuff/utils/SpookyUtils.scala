@@ -5,7 +5,6 @@ import java.net._
 import java.nio.file._
 
 import com.tribbloids.spookystuff.utils.NoRetry.NoRetryWrapper
-import org.apache.spark.TaskContext
 import org.apache.spark.ml.dsl.ReflectionUtils
 import org.apache.spark.sql.catalyst.ScalaReflection
 import org.slf4j.LoggerFactory
@@ -393,5 +392,23 @@ These special characters are often called "metacharacters".
       case _ =>
         e
     }
+  }
+
+  def stringInterpolate(str: String, delimiter: String)(
+    replace: String => String
+  ): String = {
+
+    if (str.isEmpty) return str
+
+    val regex = (delimiter+"\\{[^\\{\\}\r\n]*\\}").r
+
+    val result = regex.replaceAllIn(str,m => {
+      val original = m.group(0)
+      val key = original.substring(2, original.length - 1)
+
+      val replacement = replace(key)
+      replacement
+    })
+    result
   }
 }

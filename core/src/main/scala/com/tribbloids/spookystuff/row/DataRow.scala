@@ -3,9 +3,10 @@ package com.tribbloids.spookystuff.row
 import java.util.UUID
 
 import com.tribbloids.spookystuff.Const
-import com.tribbloids.spookystuff.utils.{SpookyViews, SpookyUtils}
+import com.tribbloids.spookystuff.utils.{SpookyUtils, SpookyViews}
 
 import scala.reflect.ClassTag
+import scala.util.Try
 
 /**
   * data container that is persisted through different stages of execution plan.
@@ -52,7 +53,7 @@ case class DataRow(
       .orElse(getTyped[T](field.*))
   }
 
-  def get(field: Field): Option[Any] = getTyped[Any](field)
+  def get(field: Field): Option[Any] = data.get(field)
   def orWeak(field: Field): Option[Any] = orWeakTyped[Any](field)
 
   def getInt(field: Field): Option[Int] = getTyped[Int](field)
@@ -106,10 +107,10 @@ case class DataRow(
     }
   }
 
-//  def withoutWeak: DataRow = {
-//    val tempFields = this.data.keys.filter(_.isWeak == true)
-//    this -- tempFields
-//  }
+  //  def withoutWeak: DataRow = {
+  //    val tempFields = this.data.keys.filter(_.isWeak == true)
+  //    this -- tempFields
+  //  }
 
   //T cannot <: AnyVal otherwise will run into https://issues.scala-lang.org/browse/SI-6967
   //getIntIterable cannot use it for the same reason
@@ -139,22 +140,14 @@ case class DataRow(
                    delimiter: String = Const.keyDelimiter
                  ): Option[String] = {
 
-    if (str == null) return None
-    if (str.isEmpty) return Some(str)
-
-    val regex = (delimiter+"\\{[^\\{\\}\r\n]*\\}").r
-
-    val result = regex.replaceAllIn(str,m => {
-      val original = m.group(0)
-      val key = original.substring(2, original.length-1)
-      val field = Field(key)
-      this.get(field) match {
-        case Some(v) => v.toString
-        case None => return None
+    Try {
+      SpookyUtils.stringInterpolate(str, delimiter){
+        key =>
+          val field = Field(key)
+          "" + this.get(field).get
       }
-    })
-
-    Some(result)
+    }
+      .toOption
   }
 
   //  override def toString: String = data.toString()
