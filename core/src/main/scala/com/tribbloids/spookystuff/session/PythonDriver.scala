@@ -2,7 +2,7 @@ package com.tribbloids.spookystuff.session
 
 import java.util.regex.Pattern
 
-import com.tribbloids.spookystuff.PythonException
+import com.tribbloids.spookystuff.{PythonException, SpookyContext}
 import com.tribbloids.spookystuff.utils.SpookyUtils
 import org.slf4j.LoggerFactory
 
@@ -57,7 +57,7 @@ object PythonDriver {
   */
 //TODO: not reusing Python worker for spark, is it not optimal?
 case class PythonDriver(
-                         executable: String,
+                         executable: String = "python",
                          autoImports: String =
                          """
                            |import os
@@ -113,12 +113,12 @@ case class PythonDriver(
 
     val indexed = lines.zipWithIndex
     val tracebackRows: Seq[Int] = indexed.filter(_._1.startsWith("Traceback ")).map(_._2)
-    val errorRows: Seq[Int] = indexed.filter{
+    val errorRows: Seq[Int] = indexed.filter {
       v =>
         val matcher = errorPattern.matcher(v._1)
         matcher.find
     }.map(_._2)
-    val syntaxErrorRow: Seq[Int] = indexed.filter{
+    val syntaxErrorRow: Seq[Int] = indexed.filter {
       v =>
         val matcher = syntaxErrorPattern.matcher(v._1)
         matcher.find
@@ -144,10 +144,10 @@ case class PythonDriver(
     str.stripPrefix("\r").replaceAll(PROMPTS, "")
   }
 
-  def interpret(code: String, sessionOpt: Option[Session] = None): Array[String] = {
+  def interpret(code: String, spookyOpt: Option[SpookyContext] = None): Array[String] = {
     val indentedCode = code.split('\n').filter(_.nonEmpty).map(">>> " + _).mkString("\n")
 
-    LoggerFactory.getLogger(this.getClass).info("============== PYTHON INPUT ===============\n" + indentedCode)
+    LoggerFactory.getLogger(this.getClass).info(">>> PYTHON INPUT ===============\n" + indentedCode)
 
     val rows = try {
       val output = this.sendAndGetResult(code)
@@ -159,23 +159,23 @@ case class PythonDriver(
     }
     catch {
       case e: Throwable =>
-        sessionOpt.foreach(
-          _.spooky.metrics.pythonInterpretationError += 1
+        spookyOpt.foreach(
+          _.metrics.pythonInterpretationError += 1
         )
         throw e
     }
 
 
     if (rows.exists(_.nonEmpty)) {
-      LoggerFactory.getLogger(this.getClass).info(" PYTHON OUTPUT ===============\n" + rows.mkString("\n"))
+      LoggerFactory.getLogger(this.getClass).info("$$$ PYTHON OUTPUT ===============\n" + rows.mkString("\n"))
     }
     else {
-      LoggerFactory.getLogger(this.getClass).info(" PYTHON [NO OUTPUT] ===============\n" + rows.mkString("\n"))
+      LoggerFactory.getLogger(this.getClass).info("$$$ PYTHON [NO OUTPUT] ===============\n" + rows.mkString("\n"))
     }
 
     if (pythonErrorIn(rows)) {
-      sessionOpt.foreach(
-        _.spooky.metrics.pythonInterpretationError += 1
+      spookyOpt.foreach(
+        _.metrics.pythonInterpretationError += 1
       )
       val ee = new PythonException(
         indentedCode,
@@ -184,32 +184,44 @@ case class PythonDriver(
       throw ee
     }
 
-    sessionOpt.foreach(
-      _.spooky.metrics.pythonInterpretationSuccess += 1
+    spookyOpt.foreach(
+      _.metrics.pythonInterpretationSuccess += 1
     )
     rows
   }
 
-  def execute(code: String, resultVar: String = "result", sessionOpt: Option[Session] = None): (Seq[String], Option[String]) = {
-    val _code =
-      s"""
-         |$resultVar = None
-         |
-        |$code
-         |
-        |print('$EXECUTION_RESULT')
-         |if $resultVar: print($resultVar)
-         |else: print('$NO_RETURN_VALUE')
-      """.stripMargin
+  def execute(
+               code: String,
+               resultVarOpt: Option[String] = None,
+               spookyOpt: Option[SpookyContext] = None
+             ): (Seq[String], Option[String]) = {
+    resultVarOpt match {
+      case None =>
+        val _code =
+          s"""
+             |$code
+          """.trim.stripMargin
+        val rows = interpret(_code, spookyOpt)
+        rows.toSeq -> None
+      case Some(resultVar) =>
+        val _code =
+          s"""
+             |$resultVar = None
+             |$code
+             |print('$EXECUTION_RESULT')
+             |if $resultVar: print($resultVar)
+             |else: print('$NO_RETURN_VALUE')
+          """.trim.stripMargin
+        val rows = interpret(_code, spookyOpt).toSeq
+        val splitterIndex = rows.zipWithIndex.find(_._1 == EXECUTION_RESULT).get._2
+        val split = rows.splitAt(splitterIndex)
 
-    val rows = interpret(_code, sessionOpt).toSeq
-    val splitterI = rows.zipWithIndex.find(_._1 == EXECUTION_RESULT).get._2
-    val splitted = rows.splitAt(splitterI)
+        val _result = split._2.slice(1, Int.MaxValue).mkString("\n")
+        val resultOpt = if (_result == NO_RETURN_VALUE) None
+        else Some(_result)
 
-    val _result = splitted._2.slice(1, Int.MaxValue).mkString("\n")
-    val resultOpt = if (_result == NO_RETURN_VALUE) None
-    else Some(_result)
-
-    splitted._1 -> resultOpt
+        split._1 -> resultOpt
+    }
   }
 }
+

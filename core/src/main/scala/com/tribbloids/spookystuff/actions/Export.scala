@@ -35,6 +35,7 @@ import scala.xml._
   * Export a page from the browser or http client
   * the page an be anything including HTML/XML file, image, PDF file or JSON string.
   */
+@SerialVersionUID(564570120183654L)
 abstract class Export extends Named {
 
   def filter: DocFilter = DocFilters.Bypass

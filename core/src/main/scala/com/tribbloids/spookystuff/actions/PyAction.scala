@@ -2,7 +2,8 @@
 package com.tribbloids.spookystuff.actions
 
 import com.tribbloids.spookystuff.doc.Fetched
-import com.tribbloids.spookystuff.session.Session
+import com.tribbloids.spookystuff.session.{Cleanable, DriverSession, PythonDriver, Session}
+import com.tribbloids.spookystuff.{SpookyContext, caching}
 import org.apache.spark.ml.dsl.utils._
 
 import scala.language.dynamics
@@ -82,9 +83,63 @@ object PyConverter {
   }
 }
 
-//this assumes that a Python class is always defined under pyspookystuff.
-trait PyObject extends HasMessage {
+/**
+  * bind to a session
+  * may be necessary to register with PythonDriver shutdown listener
+  */
+trait PyBinding extends Dynamic {
 
+  def driver: PythonDriver
+  def spookyOpt: Option[SpookyContext]
+
+  def prefix: String
+
+  def converter = PyConverter.JSON
+
+  def getTempName = "var" + Math.abs(Random.nextLong())
+
+  def applyDynamic(methodName: String)(args: Any*): Option[String] = {
+
+    pyApply(methodName)(converter.args2py(args))
+  }
+
+  def pyApply(methodName: String)(py: (String, String)): Option[String] = {
+
+    val tempName = getTempName
+    val code =
+      s"""
+         |${py._1}
+         |$tempName=$prefix$methodName(
+         |${py._2}
+         |)
+      """.trim.stripMargin
+    val result = driver.execute(code, Some(tempName), spookyOpt = spookyOpt)._2
+
+    result
+  }
+
+  def applyDynamicNamed(methodName: String)(kwargs: (String, Any)*): Option[String] = {
+
+    pyApply(methodName)(converter.kwargs2py(kwargs))
+  }
+}
+
+case class RootBinding(
+                        override val driver: PythonDriver,
+                        override val spookyOpt: Option[SpookyContext]
+                      ) extends PyBinding {
+
+  override def prefix: String = ""
+}
+
+/**
+  * NOT thread safe!
+  */
+trait PyObject extends HasMessage with Cleanable {
+
+  /**
+    * assumes that a Python class is always defined under pyspookystuff.
+    */
   val pyClassNames: Array[String] = (
     "py" +
       this.getClass.getCanonicalName
@@ -97,20 +152,46 @@ trait PyObject extends HasMessage {
 
   def converter = PyConverter.JSON
 
-  //TODO: how to clean up variable? Should I prefer a stateless/functional design?
   val varPrefix = FlowUtils.toCamelCase(this.getClass.getSimpleName)
-  val varName = varPrefix + Math.abs(Random.nextLong())
 
-  //  object Py {
-  //
-  //    val
-  //  }
+  @transient lazy val allBindings: caching.ConcurrentMap[PythonDriver, Binding] = caching.ConcurrentMap()
 
-  case class Py(session: Session) extends Dynamic {
+  def Py(session: Session): Binding = {
+    session.asInstanceOf[DriverSession].initializeDriverIfMissing {
+      allBindings.getOrElse(
+        session.pythonDriver,
+        Binding(session.pythonDriver, Some(session.spooky))
+      )
+    }
+  }
+
+  protected def _clean() = {
+    allBindings.values.foreach {
+      _.finalize()
+    }
+  }
+
+  case class Binding(
+                      override val driver: PythonDriver,
+                      override val spookyOpt: Option[SpookyContext]
+                    ) extends PyBinding with Cleanable {
+
+    allBindings += driver -> this
+
+    @transient var varNameOpt: Option[String] = None
+
+    //lazy construction
+    def varName: String = varNameOpt.getOrElse {
+      val varName = _init()
+      varName
+    }
+
+    def prefix = varName + "."
 
     //Python class must have a constructor that takes json format of its Scala class
-    def construct(): String = {
+    protected def _init(): String = {
 
+      val varName = varPrefix + "_" + System.identityHashCode(this)
       val py = converter.scala2py(PyObject.this)
       val code =
         s"""
@@ -118,48 +199,28 @@ trait PyObject extends HasMessage {
            |$varName = ${py._2}
        """.trim.stripMargin
 
-      session.pythonDriver.interpret(code, Some(session))
+      driver.interpret(code, spookyOpt)
+      this.varNameOpt = Some(varName)
       varName
     }
 
-    lazy val constructed = construct()
+    //TODO: register interpreter shutdown hook listener?
+    protected override def _clean(): Unit = {
+      varNameOpt.foreach {
+        vn =>
+          driver.interpret(
+            s"del $vn",
+            spookyOpt
+          )
+          this.varNameOpt = None
+      }
 
-    override def finalize(): Unit = {
-      session.pythonDriver.interpret(
-        s"del $varName",
-        Some(session)
-      )
-      Unit
-    }
-
-    def applyDynamic(methodName: String)(args: Any*): String = {
-
-      val py = converter.args2py(args)
-      val code =
-        s"""
-           |${py._1}
-           |result = $varName.$methodName(
-           |${py._2}
-           |)
-      """.trim.stripMargin
-      val result = session.pythonDriver.execute(code, sessionOpt = Some(session))._2
-
-      result.getOrElse("Nil")
-    }
-
-    def applyDynamicNamed(methodName: String)(kwargs: (String, Any)*): String = {
-
-      val py = converter.kwargs2py(kwargs)
-      val code =
-        s"""
-           |${py._1}
-           |result = $varName.$methodName(
-           |${py._2}
-           |)
-      """.stripMargin
-      val result = session.pythonDriver.execute(code, sessionOpt = Some(session))._2
-
-      result.getOrElse("Nil")
+      PyObject.this.allBindings.get(this.driver)
+        .foreach {
+          v =>
+            if (v == this)
+              PyObject.this.allBindings - this.driver
+        }
     }
   }
 }
@@ -171,14 +232,12 @@ trait PyAction extends Action with PyObject {
     * 1 for action, 1 for session
     */
   final override def exe(session: Session): Seq[Fetched] = {
-    val py = this.Py(session)
     withLazyDrivers(session){
-      py.construct()
       try {
         doExe(session)
       }
       finally {
-        py.finalize()
+        this.Py(session).finalize()
       }
     }
   }

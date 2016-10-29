@@ -1,7 +1,7 @@
 package com.tribbloids.spookystuff.mav.actions
 
 import com.tribbloids.spookystuff.SpookyEnvFixture
-import com.tribbloids.spookystuff.mav.MavFixture
+import com.tribbloids.spookystuff.mav.APMSimFixture$
 
 /**
   * Created by peng on 26/08/16.

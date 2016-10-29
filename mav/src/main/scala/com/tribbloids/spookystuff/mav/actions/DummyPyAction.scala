@@ -23,7 +23,7 @@ case class DummyPyAction(
       uid = DocUID(List(this), this),
       uri = "dummy",
       declaredContentType = Some(ContentType.TEXT_PLAIN.toString),
-      content = result.getBytes("UTF-8")
+      content = result.get.getBytes("UTF-8")
     )
     Seq(doc)
   }

@@ -15,13 +15,13 @@ import scala.language.implicitConversions
 import scala.util.Try
 
 object SpookyEnvFixture {
-//  def cleanDriverInstances(): Unit = {
-//    CleanMixin.unclean.foreach {
-//      tuple =>
-//        tuple._2.foreach (_.finalize())
-//        assert(tuple._2.isEmpty)
-//    }
-//  }
+  //  def cleanDriverInstances(): Unit = {
+  //    CleanMixin.unclean.foreach {
+  //      tuple =>
+  //        tuple._2.foreach (_.finalize())
+  //        assert(tuple._2.isEmpty)
+  //    }
+  //  }
 
   def shouldBeClean(spooky: SpookyContext): Unit = {
     driverInstancesShouldBeClean(spooky)
@@ -52,16 +52,14 @@ object SpookyEnvFixture {
 
     val phantomJSProcesses = processes.filter(_.getName == "phantomjs")
     val pythonProcesses = processes.filter(_.getName == "python")
-    MultiCauses.&&&(Seq(
-      Try{assert(
-        phantomJSProcesses.isEmpty,
-        s"${phantomJSProcesses.size} PhantomJS processes left:\n" + phantomJSProcesses.mkString("\n")
-      )},
-      Try{assert(
-        pythonProcesses.isEmpty,
-        s"${pythonProcesses.size} Python processes left:\n" + pythonProcesses.mkString("\n")
-      )}
-    ))
+    assert(
+      phantomJSProcesses.isEmpty,
+      s"${phantomJSProcesses.size} PhantomJS processes left:\n" + phantomJSProcesses.mkString("\n")
+    )
+    assert(
+      pythonProcesses.isEmpty,
+      s"${pythonProcesses.size} Python processes left:\n" + pythonProcesses.mkString("\n")
+    )
   }
 }
 
@@ -114,7 +112,7 @@ abstract class SpookyEnvFixture
 
   override def beforeAll() {
 
-    TestHelper.TestSparkConf.setAppName("test")
+    TestHelper.TestSparkConf.setAppName("test-" + this.getClass.getSimpleName )
 
     super.beforeAll()
   }
@@ -143,7 +141,7 @@ abstract class SpookyEnvFixture
   }
 
   def setUp(): Unit = {
-//    SpookyEnvFixture.cleanDriverInstances()
+    //    SpookyEnvFixture.cleanDriverInstances()
     spooky.conf = new SpookyConf(
       autoSave = true,
       cacheWrite = false,

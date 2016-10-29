@@ -2,7 +2,6 @@ package com.tribbloids.spookystuff.mav.actions
 
 import com.tribbloids.spookystuff.SpookyEnvFixture
 import com.tribbloids.spookystuff.doc.Doc
-import org.jutils.jprocesses.JProcesses
 
 /**
   * Created by peng on 01/09/16.
@@ -15,8 +14,6 @@ class DummyPyActionSuite extends SpookyEnvFixture {
 
     val doc = action.fetch(spooky)
     doc.flatMap(_.asInstanceOf[Doc].code).mkString("\n").shouldBe("6")
-
-    import scala.collection.JavaConverters._
 
     //1 construct, 2 function calls, 1 destruct
     assert(spooky.metrics.pythonInterpretationSuccess.value == 4)
