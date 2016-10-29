@@ -2,8 +2,8 @@ package com.tribbloids.spookystuff.session
 
 import java.util.regex.Pattern
 
-import com.tribbloids.spookystuff.{PythonException, SpookyContext}
 import com.tribbloids.spookystuff.utils.SpookyUtils
+import com.tribbloids.spookystuff.{PyException, PyInterpreterException, SpookyContext}
 import org.slf4j.LoggerFactory
 
 import scala.util.Try
@@ -63,7 +63,7 @@ case class PythonDriver(
                            |import os
                            |import json
                          """.trim.stripMargin,
-                         override val taskOrThread: TaskOrThread
+                         override val taskOrThread: TaskThreadInfo = TaskThreadInfo()
                        ) extends PythonProcess(executable) with AutoCleanable {
 
   {
@@ -92,7 +92,13 @@ case class PythonDriver(
     Try {
       SpookyUtils.retry(10, 1000) {
         if (process.isAlive) {
-          this.interpret("exit()")
+          try {
+            this.interpret("exit()")
+          }
+          catch {
+            case e: PyException =>
+          }
+          Thread.sleep(1000)
           assert(!process.isAlive)
         }
       }
@@ -177,7 +183,7 @@ case class PythonDriver(
       spookyOpt.foreach(
         _.metrics.pythonInterpretationError += 1
       )
-      val ee = new PythonException(
+      val ee = new PyInterpreterException(
         indentedCode,
         rows.mkString("\n")
       )

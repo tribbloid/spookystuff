@@ -5,7 +5,7 @@ import com.tribbloids.spookystuff.caching.{ConcurrentMap, ExploreRunnerCache}
 import com.tribbloids.spookystuff.dsl.ExploreAlgorithms.ExploreImpl
 import com.tribbloids.spookystuff.extractors.Resolved
 import com.tribbloids.spookystuff.row._
-import com.tribbloids.spookystuff.utils.NOTSerializableMixin
+import com.tribbloids.spookystuff.utils.NOTSerializable
 import com.tribbloids.spookystuff.{SpookyContext, dsl}
 
 import scala.language.implicitConversions
@@ -21,7 +21,7 @@ case class Open_Visited(
   */
 class ExploreRunner(
                      val itr: Iterator[(TraceView, Open_Visited)] //TODO: change to TraceViewView
-                   ) extends NOTSerializableMixin {
+                   ) extends NOTSerializable {
 
   import dsl._
 

@@ -27,7 +27,7 @@ class TestDriverFactory extends SpookyEnvFixture with LocalPathDocsFixture {
       val session = new DriverSession(spooky)
       val driver = ff.get(session)
       ff.asInstanceOf[TransientFactory[Any]].factoryReset(driver.asInstanceOf[Any])
-      ff.asInstanceOf[TransientFactory[Any]].destroy(driver, session.taskContextOpt)
+      ff.asInstanceOf[TransientFactory[Any]].destroy(driver, session.taskOpt)
     }
   }
 

@@ -93,7 +93,7 @@ abstract sealed class TransientFactory[T] extends DriverFactory[T] {
     val existingOpt = sessionLocals.remove(session)
     existingOpt.foreach {
       driver =>
-        destroy(driver, session.taskContextOpt)
+        destroy(driver, session.taskOpt)
     }
   }
 
@@ -121,7 +121,7 @@ case class PoolingFactory[T](
   import DriverFactories.DriverStatus
 
   //taskOrThreadID -> (driver, busy)
-  @transient lazy val taskOrThreadLocals: ConcurrentMap[TaskOrThread, DriverStatus[T]] = ConcurrentMap()
+  @transient lazy val taskOrThreadLocals: ConcurrentMap[TaskThreadInfo, DriverStatus[T]] = ConcurrentMap()
 
   //  override def _clean(): Unit = {
   //    pool.values.foreach {
@@ -154,13 +154,13 @@ case class PoolingFactory[T](
             }
             catch {
               case e: Throwable =>
-                delegate.destroy(tuple.driver, session.taskContextOpt)
+                delegate.destroy(tuple.driver, session.taskOpt)
                 refreshDriver
             }
           }
           else {
             // TODO: should wait until its no longer busy, instead of destroying it.
-            delegate.destroy(tuple.driver, session.taskContextOpt)
+            delegate.destroy(tuple.driver, session.taskOpt)
             refreshDriver
           }
       }

@@ -1,10 +1,9 @@
 import json
-import multiprocessing
 import os
-
-import dronekit
 import re
 import sys
+
+import dronekit
 
 from pyspookystuff import utils
 
@@ -56,46 +55,28 @@ class Endpoint(object):
     # won't be tried by executor, daemon will still try it and if successful, will remove it from the list
     # in all these arrays json strings of Endpoints are stored. This is the only way to discover duplicity
 
-    # TODO: use scala reflection to have a unified interface.
-    @staticmethod
-    def fromJSON(_json):
-        # type: (str) -> Endpoint
-        _dict = json.loads(_json)
-        Endpoint(_dict['uris'], _dict['vehicleClass'])
-
     # TODO: use **local() to reduce boilerplate copies
     def __init__(self, uris, vehicleClass=None):
         self.uris = uris
         self.vehicleClass = vehicleClass
 
     @property
-    def _connStrNoInit(self):
+    def _connStr(self):
         return self.uris[0]
 
-    # @staticmethod
-    # def nextUnused():
-    #     # type: () -> Endpoint
-    #     utils.nextUnused(usedEndpoints, allEndpoints)
-    #
-    # @staticmethod
-    # def nextImmediatelyAvailable(all):
-    #     # type: () -> Endpoint
-    #     utils.nextUnused(usedEndpoints, all, unreachableEndpoints)
-
-
-mpManager = multiprocessing.Manager()
-
-# static variables shared by all processes
-# all = multiprocessing.Array(ctypes.c_char_p, 10)  # type: multiprocessing.Array
-allEndpoints = mpManager.list()
-# will be tried by daemon if not in used
-
-# used = multiprocessing.Array(ctypes.c_char_p, 10)  # type: multiprocessing.Array
-usedEndpoints = mpManager.list()
-# won't be tried by nobody
-
-# unreachable = multiprocessing.Array(ctypes.c_char_p, 10)  # type: multiprocessing.Array
-unreachableEndpoints = mpManager.list()
+# mpManager = multiprocessing.Manager()
+#
+# # static variables shared by all processes
+# # all = multiprocessing.Array(ctypes.c_char_p, 10)  # type: multiprocessing.Array
+# allEndpoints = mpManager.list()
+# # will be tried by daemon if not in used
+#
+# # used = multiprocessing.Array(ctypes.c_char_p, 10)  # type: multiprocessing.Array
+# usedEndpoints = mpManager.list()
+# # won't be tried by nobody
+#
+# # unreachable = multiprocessing.Array(ctypes.c_char_p, 10)  # type: multiprocessing.Array
+# unreachableEndpoints = mpManager.list()
 
 
 class ProxyFactory(object):
@@ -275,9 +256,9 @@ class Connection(object):
         proxy = None
         vehicle = None
         try:
-            uri = endpoint._connStrNoInit
+            uri = endpoint._connStr
             if factory:
-                proxy = factory.nextProxy(endpoint._connStrNoInit)
+                proxy = factory.nextProxy(endpoint._connStr)
                 uri = proxy.uri()
 
             vehicle = dronekit.connect(

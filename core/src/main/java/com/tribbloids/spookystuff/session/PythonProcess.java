@@ -17,7 +17,7 @@
 
 package com.tribbloids.spookystuff.session;
 
-import com.tribbloids.spookystuff.PythonException;
+import com.tribbloids.spookystuff.PyException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -111,7 +111,7 @@ public class PythonProcess {
       return output;
     }
     catch(Exception e) {
-      throw new PythonException(
+      throw new PyException(
         cmd,
         output,
         e

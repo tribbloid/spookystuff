@@ -12,7 +12,11 @@ import com.tribbloids.spookystuff.utils.SpookyUtils
 case class ResourceJARResolver(rootPath: String) {
 
   //TODO: this should be within TEMP_PATH, however current temp directory cleanup is broken and may results in resources extracted in new suite being deleted by previous suite
-  final val TESTUTILS_TEMP_PATH = SpookyUtils.:\(SpookyUtils.\\\(TestHelper.TARGET_PATH, "generated-resources", rootPath))
+  final val UNPACK_RESOURCE_PATH = SpookyUtils.:\(SpookyUtils.\\\(
+    TestHelper.UNPACK_RESOURCE_PATH,
+    "generated-resources",
+    rootPath
+  ))
   final val RESOURCE_NAME = rootPath + File.separator
 
   // run once and for all TODO: or clean up at shutdown hook
@@ -21,7 +25,7 @@ case class ResourceJARResolver(rootPath: String) {
     resourceOpt.foreach {
       resource =>
         SpookyUtils.extractResource(
-          resource, TESTUTILS_TEMP_PATH
+          resource, UNPACK_RESOURCE_PATH
         )
     }
     Thread.sleep(5000) //for eventual consistency
@@ -29,7 +33,7 @@ case class ResourceJARResolver(rootPath: String) {
 
   def unpacked(resource: String): String = {
 
-    TESTUTILS_TEMP_PATH + resource.stripPrefix(RESOURCE_NAME)
+    UNPACK_RESOURCE_PATH + resource.stripPrefix(RESOURCE_NAME)
   }
 
   def unpackedPath(resource: String): Path = {

@@ -1,7 +1,7 @@
 package com.tribbloids.spookystuff.session
 
 import com.tribbloids.spookystuff.actions.PyConverter
-import com.tribbloids.spookystuff.{PythonException, SpookyEnvFixture}
+import com.tribbloids.spookystuff.{PyInterpreterException, SpookyEnvFixture}
 
 /**
   * Created by peng on 01/08/16.
@@ -17,7 +17,7 @@ object PythonDriverSuite {
   }
 
   def runIterable[T, R](xs: Iterable[T])(f: (T, PythonDriver) => R): Iterable[R] = {
-    val proc = new PythonDriver("python", taskOrThread = TaskOrThread())
+    val proc = new PythonDriver("python", taskOrThread = TaskThreadInfo())
     try {
       val result = xs.map{
         f(_, proc)
@@ -69,7 +69,7 @@ class PythonDriverSuite extends SpookyEnvFixture {
 
     PythonDriverSuite.runIterable(1 to 10) {
       (i, proc) =>
-        intercept[PythonException]{
+        intercept[PyInterpreterException]{
           proc.interpret(s"print($i / 0)")
         }
     }
@@ -79,7 +79,7 @@ class PythonDriverSuite extends SpookyEnvFixture {
 
     PythonDriverSuite.runIterable(1 to 10) {
       (i, proc) =>
-        intercept[PythonException]{
+        intercept[PyInterpreterException]{
           proc.interpret(
             s"""
                |raise Exception(
@@ -100,7 +100,7 @@ class PythonDriverSuite extends SpookyEnvFixture {
 
     PythonDriverSuite.runIterable(1 to 10) {
       (i, proc) =>
-        intercept[PythonException]{
+        intercept[PyInterpreterException]{
           proc.interpret(
             s"""
                |dummyPyAction4196844262929992980=List(py, s, p, o, o, k, y, s, t, u, f, f, ., m, a, v, ., a, c, t, i, o, n, s, ., D, u, m, m, y, P, y, A, c, t, i, o, n)(**(json.loads(

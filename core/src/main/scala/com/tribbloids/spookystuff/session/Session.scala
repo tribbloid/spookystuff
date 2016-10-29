@@ -4,7 +4,7 @@ import java.util.Date
 import java.util.concurrent.TimeUnit
 
 import com.tribbloids.spookystuff.actions._
-import com.tribbloids.spookystuff.utils.SpookyUtils
+import com.tribbloids.spookystuff.utils.{NOTSerializable, SpookyUtils}
 import com.tribbloids.spookystuff.{Const, SpookyContext, SpookyException}
 import org.apache.spark.TaskContext
 import org.apache.spark.ml.dsl.utils.{Message, MessageRelay}
@@ -25,7 +25,7 @@ case object SessionRelay extends MessageRelay[Session] {
     M(
       v.startTime,
       v.backtrace,
-      v.taskContextOpt.map (tc => TaskContextRelay.toMessage(tc))
+      v.taskOpt.map (tc => TaskContextRelay.toMessage(tc))
     )
   }
 }
@@ -43,7 +43,7 @@ case object TaskContextRelay extends MessageRelay[TaskContext] {
   }
 }
 
-abstract class Session(val spooky: SpookyContext) extends AutoCleanable {
+abstract class Session(val spooky: SpookyContext) extends AutoCleanable with NOTSerializable {
 
   spooky.metrics.sessionInitialized += 1
   val startTime: Long = new Date().getTime
@@ -52,7 +52,7 @@ abstract class Session(val spooky: SpookyContext) extends AutoCleanable {
   def webDriver: CleanWebDriver
   def pythonDriver: PythonDriver
 
-  val taskContextOpt: Option[TaskContext] = taskOrThread.self.left.toOption
+  val taskOpt: Option[TaskContext] = taskOrThread.toEither.left.toOption
   val taskOrThreadID = taskOrThread.id
 
   override def _clean(): Unit = {
@@ -64,7 +64,8 @@ object NoWebDriverException extends SpookyException("INTERNAL ERROR: should init
 object NoPythonDriverException extends SpookyException("INTERNAL ERROR: should initialize driver automatically")
 
 class DriverSession(
-                     override val spooky: SpookyContext
+                     override val spooky: SpookyContext,
+                     override val taskOrThread: TaskThreadInfo = TaskThreadInfo()
                    ) extends Session(spooky){
 
   @volatile var webDriverOpt: Option[CleanWebDriver] = None
@@ -131,11 +132,9 @@ class DriverSession(
     }
     catch {
       case NoWebDriverException =>
-        LoggerFactory.getLogger(this.getClass).info("Initialization WebDriver ...")
         getOrCreateWebDriver
         f
       case NoPythonDriverException =>
-        LoggerFactory.getLogger(this.getClass).info("Initialization PythonDriver ...")
         getOrCreatePythonDriver
         f
     }

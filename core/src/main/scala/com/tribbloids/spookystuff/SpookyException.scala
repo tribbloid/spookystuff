@@ -20,7 +20,7 @@ class ActionException(
 
 }
 
-class PythonException(
+class PyException(
                        code: String,
                        output: String,
                        override val cause: Throwable = null
@@ -35,6 +35,11 @@ class PythonException(
   },
   cause
 )
+
+class PyInterpreterException(
+                              code: String,
+                              output: String
+                            ) extends PyException(code, output, null)
 
 class RetryingException(
                          override val message: String = "",

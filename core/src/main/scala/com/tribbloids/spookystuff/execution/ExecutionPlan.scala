@@ -3,7 +3,7 @@ package com.tribbloids.spookystuff.execution
 import com.tribbloids.spookystuff._
 import com.tribbloids.spookystuff.actions.TraceView
 import com.tribbloids.spookystuff.row._
-import com.tribbloids.spookystuff.utils.NOTSerializableMixin
+import com.tribbloids.spookystuff.utils.NOTSerializable
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.catalyst.trees.TreeNode
 import org.apache.spark.sql.types.DataType
@@ -19,7 +19,7 @@ abstract class ExecutionPlan(
                               val children: Seq[ExecutionPlan],
                               val spooky: SpookyContext,
                               val cacheQueue: ArrayBuffer[RDD[_]]
-                            ) extends TreeNode[ExecutionPlan] with NOTSerializableMixin {
+                            ) extends TreeNode[ExecutionPlan] with NOTSerializable {
 
   def this(
             children: Seq[ExecutionPlan]

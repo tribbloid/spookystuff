@@ -96,7 +96,7 @@ trait PyBinding extends Dynamic {
 
   def converter = PyConverter.JSON
 
-  def getTempName = "var" + Math.abs(Random.nextLong())
+  def getTempVarName = "var" + Math.abs(Random.nextLong())
 
   def applyDynamic(methodName: String)(args: Any*): Option[String] = {
 
@@ -105,15 +105,15 @@ trait PyBinding extends Dynamic {
 
   def pyApply(methodName: String)(py: (String, String)): Option[String] = {
 
-    val tempName = getTempName
+    val tempVarName = getTempVarName
     val code =
       s"""
          |${py._1}
-         |$tempName=$prefix$methodName(
+         |$tempVarName=$prefix$methodName(
          |${py._2}
          |)
       """.trim.stripMargin
-    val result = driver.execute(code, Some(tempName), spookyOpt = spookyOpt)._2
+    val result = driver.execute(code, Some(tempVarName), spookyOpt = spookyOpt)._2
 
     result
   }
@@ -154,20 +154,21 @@ trait PyObject extends HasMessage with Cleanable {
 
   val varPrefix = FlowUtils.toCamelCase(this.getClass.getSimpleName)
 
-  @transient lazy val allBindings: caching.ConcurrentMap[PythonDriver, Binding] = caching.ConcurrentMap()
+  @transient lazy val driverToBindings: caching.ConcurrentMap[PythonDriver, Binding] = caching.ConcurrentMap()
+  def bindings = driverToBindings.values.toList
 
-  def Py(session: Session): Binding = {
-    session.asInstanceOf[DriverSession].initializeDriverIfMissing {
-      allBindings.getOrElse(
-        session.pythonDriver,
-        Binding(session.pythonDriver, Some(session.spooky))
-      )
+  protected def _clean() = {
+    bindings.foreach {
+      _.finalize()
     }
   }
 
-  protected def _clean() = {
-    allBindings.values.foreach {
-      _.finalize()
+  def Py(session: Session): Binding = {
+    session.asInstanceOf[DriverSession].initializeDriverIfMissing {
+      driverToBindings.getOrElse(
+        session.pythonDriver,
+        Binding(session.pythonDriver, Some(session.spooky))
+      )
     }
   }
 
@@ -176,7 +177,7 @@ trait PyObject extends HasMessage with Cleanable {
                       override val spookyOpt: Option[SpookyContext]
                     ) extends PyBinding with Cleanable {
 
-    allBindings += driver -> this
+    driverToBindings += driver -> this
 
     @transient var varNameOpt: Option[String] = None
 
@@ -215,11 +216,11 @@ trait PyObject extends HasMessage with Cleanable {
           this.varNameOpt = None
       }
 
-      PyObject.this.allBindings.get(this.driver)
+      PyObject.this.driverToBindings.get(this.driver)
         .foreach {
           v =>
             if (v == this)
-              PyObject.this.allBindings - this.driver
+              PyObject.this.driverToBindings - this.driver
         }
     }
   }

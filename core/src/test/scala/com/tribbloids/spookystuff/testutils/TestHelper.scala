@@ -14,7 +14,7 @@ object TestHelper {
   val numProcessors: Int = Runtime.getRuntime.availableProcessors()
 
   val TEMP_PATH = SpookyUtils.\\\(System.getProperty("user.dir"), "temp")
-  val TARGET_PATH = SpookyUtils.\\\(System.getProperty("user.dir"), "target")
+  val UNPACK_RESOURCE_PATH = SpookyUtils.\\\(System.getProperty("java.io.tmpdir"), "spookystuff", "resources")
 
   val props = new Properties()
   try {

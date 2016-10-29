@@ -3,16 +3,15 @@ package com.tribbloids.spookystuff
 import com.tribbloids.spookystuff.dsl.DriverFactory
 import com.tribbloids.spookystuff.extractors.{Alias, GenExtractor, GenResolved}
 import com.tribbloids.spookystuff.row.{DataRowSchema, SquashedFetchedRow, TypedField}
-import com.tribbloids.spookystuff.session.{AutoCleanable, CleanWebDriver}
+import com.tribbloids.spookystuff.session.{AutoCleanable, CleanWebDriver, TaskInfo}
 import com.tribbloids.spookystuff.testutils.{RemoteDocsFixture, TestHelper}
-import com.tribbloids.spookystuff.utils.{MultiCauses, SpookyUtils}
+import com.tribbloids.spookystuff.utils.SpookyUtils
 import org.apache.spark.SparkContext
 import org.apache.spark.sql.SQLContext
 import org.jutils.jprocesses.JProcesses
 import org.scalatest.{BeforeAndAfter, BeforeAndAfterAll, FunSuite, Retries}
 
 import scala.language.implicitConversions
-import scala.util.Try
 
 object SpookyEnvFixture {
   //  def cleanDriverInstances(): Unit = {
@@ -23,43 +22,51 @@ object SpookyEnvFixture {
   //    }
   //  }
 
-  def shouldBeClean(spooky: SpookyContext): Unit = {
+  def shouldBeClean(
+                     spooky: SpookyContext,
+                     pNames: Seq[String]
+                   ): Unit = {
     driverInstancesShouldBeClean(spooky)
-    driverProcessShouldBeClean()
+    driverProcessShouldBeClean(pNames)
   }
 
   def driverInstancesShouldBeClean(spooky: SpookyContext): Unit = {
     AutoCleanable.cleanupLocally() //nobody cares about local leakage
 
-    AutoCleanable.uncleaned.foreach {
-      tuple =>
-        val nonLocalDrivers = tuple._2
-        assert(
-          nonLocalDrivers.isEmpty,
-          s": ${tuple._1} is unclean! ${nonLocalDrivers.size} left:\n" + nonLocalDrivers.mkString("\n")
-        )
-    }
+    AutoCleanable.uncleaned
+      .foreach {
+        tuple =>
+          val nonLocalDrivers = tuple._2
+            .filter{
+              v =>
+                v.taskOrThread.isInstanceOf[TaskInfo]
+            }
+          assert(
+            nonLocalDrivers.isEmpty,
+            s": ${tuple._1} is unclean! ${nonLocalDrivers.size} left:\n" + nonLocalDrivers.mkString("\n")
+          )
+      }
   }
 
   /**
     * slow
     */
-  def driverProcessShouldBeClean(): Unit = {
+  def driverProcessShouldBeClean(
+                                  pNames: Seq[String]
+                                ): Unit = {
     import scala.collection.JavaConverters._
 
     val processes = JProcesses.getProcessList()
       .asScala
 
-    val phantomJSProcesses = processes.filter(_.getName == "phantomjs")
-    val pythonProcesses = processes.filter(_.getName == "python")
-    assert(
-      phantomJSProcesses.isEmpty,
-      s"${phantomJSProcesses.size} PhantomJS processes left:\n" + phantomJSProcesses.mkString("\n")
-    )
-    assert(
-      pythonProcesses.isEmpty,
-      s"${pythonProcesses.size} Python processes left:\n" + pythonProcesses.mkString("\n")
-    )
+    pNames.foreach {
+      name =>
+        val matchedProcess = processes.filter(_.getName == name)
+        assert(
+          matchedProcess.isEmpty,
+          s"${matchedProcess.size} $name process(es) left:\n" + matchedProcess.mkString("\n")
+        )
+    }
   }
 }
 
@@ -112,18 +119,21 @@ abstract class SpookyEnvFixture
 
   override def beforeAll() {
 
-    TestHelper.TestSparkConf.setAppName("test-" + this.getClass.getSimpleName )
+    TestHelper.TestSparkConf.setAppName("Test:" + this.getClass.getSimpleName )
 
     super.beforeAll()
   }
 
+  val pNames = Seq("phantomjs", "python")
+
   override def afterAll() {
 
     val spooky = this.spooky
+    val pNames = this.pNames
     TestHelper.clearTempDir()
-    SpookyEnvFixture.shouldBeClean(spooky)
+    SpookyEnvFixture.shouldBeClean(spooky, pNames)
     sc.foreachNode {
-      SpookyEnvFixture.shouldBeClean(spooky)
+      SpookyEnvFixture.shouldBeClean(spooky, pNames)
     }
     super.afterAll()
   }

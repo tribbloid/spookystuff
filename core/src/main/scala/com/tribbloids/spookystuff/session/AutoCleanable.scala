@@ -10,8 +10,11 @@ import scala.language.implicitConversions
 
 trait Cleanable {
 
+  @volatile var isCleaned: Boolean = false
+
   protected def clean(): Unit = {
     _clean()
+    isCleaned = true
     LoggerFactory.getLogger(this.getClass).info(s"Cleaned up ${this.getClass.getSimpleName}")
   }
 
@@ -24,8 +27,9 @@ trait Cleanable {
     catch {
       case e: NoSuchSessionException => //already cleaned before
       case e: Throwable =>
+        val ee = e
         LoggerFactory.getLogger(this.getClass).warn(
-          s"!!!!! FAIL TO CLEAN UP ${this.getClass.getSimpleName} !!!!!"+e
+          s"!!! FAIL TO CLEAN UP ${this.getClass.getName} !!!"+e
         )
     }
     finally {
@@ -42,7 +46,7 @@ trait Cleanable {
   */
 trait AutoCleanable extends Cleanable {
 
-  final val taskOrThreadOnCreation: TaskOrThread = TaskOrThread()
+  final val taskOrThreadOnCreation: TaskThreadInfo = TaskThreadInfo()
 
   /**
     * taskOrThreadOnCreation is incorrect in withDeadline or threads not created by Spark
@@ -72,34 +76,34 @@ trait AutoCleanable extends Cleanable {
 
 object AutoCleanable {
 
-  lazy val uncleaned: ConcurrentMap[TaskOrThread, ConcurrentSet[AutoCleanable]] = ConcurrentMap()
+  lazy val uncleaned: ConcurrentMap[TaskThreadInfo, ConcurrentSet[AutoCleanable]] = ConcurrentMap()
 
-  def cleanup(tot: TaskOrThread) = {
-    val set = uncleaned.getOrElse(tot, mutable.Set.empty)
+  def cleanup(tt: TaskThreadInfo) = {
+    val set = uncleaned.getOrElse(tt, mutable.Set.empty)
     val copy = set.toSeq
     copy.foreach {
       instance =>
         instance.finalize()
     }
   }
-  def cleanupLocally() = cleanup(TaskOrThread())
+  def cleanupLocally() = cleanup(TaskThreadInfo())
 
   val taskCleanupListener: (TaskContext) => Unit = {
     tc =>
-      cleanup(TaskOrThread(Left(tc)))
+      cleanup(TaskInfo(tc))
   }
 
   def getShutdownHook(thread: Thread) = new Thread {
     override def run() = {
-      cleanup(TaskOrThread(Right(thread)))
+      cleanup(ThreadInfo(thread))
     }
   }
 
-  def addListener(v: TaskOrThread): Unit = {
-    v.self match {
-      case Left(tc) =>
+  def addListener(v: TaskThreadInfo): Unit = {
+    v match {
+      case TaskInfo(tc) =>
         tc.addTaskCompletionListener(taskCleanupListener)
-      case Right(th) =>
+      case ThreadInfo(th) =>
         Runtime.getRuntime.addShutdownHook(
           getShutdownHook(th)
         )

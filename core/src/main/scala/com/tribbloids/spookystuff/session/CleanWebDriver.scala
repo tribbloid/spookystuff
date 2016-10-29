@@ -6,35 +6,39 @@ import org.openqa.selenium.WebDriver
 
 import scala.language.implicitConversions
 
-object TaskOrThread {
+object TaskThreadInfo {
 
   /**
     * remember not to use in a withDeadline/Future block!
     * @return
     */
-  def apply(): TaskOrThread = {
-    val self = Option(TaskContext.get()).map {
+  def apply(): TaskThreadInfo = {
+    val result = Option(TaskContext.get()).map {
       v =>
-        Left(v)
+        TaskInfo(v)
     }
       .getOrElse {
-        Right(Thread.currentThread())
+        thread
       }
-    TaskOrThread(self)
+    result
+  }
+
+  def thread: TaskThreadInfo = {
+    ThreadInfo(java.lang.Thread.currentThread())
   }
 }
 
-// should be treated as the same thing, to allow local or remote cleanup.
-case class TaskOrThread(
-                         self: Either[TaskContext, Thread]
-                       ) extends IDMixin {
-
-  val _id: Either[Long, Long] = self match {
-    case Left(v) => Left(v.taskAttemptId())
-    case Right(v) => Right(v.getId)
-  }
-
+abstract class TaskThreadInfo extends IDMixin {
   def id = _id
+  def toEither: Either[TaskContext, java.lang.Thread]
+}
+case class TaskInfo(self: TaskContext) extends TaskThreadInfo {
+  override def _id: Any = Left(self.taskAttemptId())
+  def toEither = Left(self)
+}
+case class ThreadInfo(self: java.lang.Thread) extends TaskThreadInfo {
+  override def _id: Any = Right(self.getId)
+  def toEither = Right(self)
 }
 
 object CleanWebDriver {
@@ -44,7 +48,7 @@ object CleanWebDriver {
 
 case class CleanWebDriver(
                            self: WebDriver,
-                           override val taskOrThread: TaskOrThread
+                           override val taskOrThread: TaskThreadInfo = TaskThreadInfo()
                          ) extends AutoCleanable {
 
   def _clean(): Unit = {
