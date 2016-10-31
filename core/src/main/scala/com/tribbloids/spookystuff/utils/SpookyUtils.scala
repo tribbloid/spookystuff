@@ -14,6 +14,7 @@ import scala.concurrent.duration._
 import scala.concurrent.{Await, Future}
 import scala.language.implicitConversions
 import scala.reflect.ClassTag
+import scala.util.Random
 import scala.xml.PrettyPrinter
 
 object SpookyUtils {
@@ -255,17 +256,43 @@ These special characters are often called "metacharacters".
     }
   }
 
+  //TODO: simply by using a common relay that different type representation can be cast into
   object Reflection {
-    def getCaseAccessorSymbols[T: TypeTag]: List[MethodSymbol] = typeOf[T].members.collect {
-      case m: MethodSymbol if m.isCaseAccessor => m
+
+    def getCaseAccessorSymbols(cls: Class[_]): List[MethodSymbol] = {
+      val m = runtimeMirror(cls.getClassLoader)
+      val classSymbol = m.staticClass(cls.getName)
+      val t = classSymbol.selfType
+      getCaseAccessorSymbols(t)
     }
-      .toList
+
+    def getCaseAccessorSymbols(tpe: Type): List[MethodSymbol] = {
+      tpe.members.collect {
+        case m: MethodSymbol if m.isCaseAccessor => m
+      }
+        .toList
+    }
+
+    def getCaseAccessorSymbols[T: TypeTag]: List[MethodSymbol] = {
+      typeOf[T].members.collect {
+        case m: MethodSymbol if m.isCaseAccessor => m
+      }
+        .toList
+    }
 
     def getCaseAccessorNames[T: TypeTag]: List[(String, Type)] = {
       getCaseAccessorSymbols[T].map {
         ss =>
           ss.name.decoded -> ss.typeSignature
       }
+    }
+
+    def getCaseAccessorMap(v: Product): Map[String, Any] = {
+      val ks = getCaseAccessorSymbols(v.getClass)
+        .map(_.name.decoded)
+      val vs = v.productIterator.toSeq
+      assert (ks.size == vs.size)
+      Map(ks.zip(vs): _*)
     }
 
     //the following are copied from Spark ScalaReflection
@@ -393,6 +420,8 @@ These special characters are often called "metacharacters".
         e
     }
   }
+
+  def randomSuffix = Math.abs(Random.nextLong())
 
   def stringInterpolate(str: String, delimiter: String)(
     replace: String => String

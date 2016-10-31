@@ -1,4 +1,3 @@
-import json
 import os
 import re
 import sys
@@ -7,49 +6,9 @@ import dronekit
 
 from pyspookystuff import utils
 
-print(sys.path)
 
-# pool = dict([])
-# endpoint: dict -> InstancInfo
-# used by daemon to poll, new element is inserted by Binding creation.
+# print(sys.path)
 
-# clusterActiveEndpoints = [] merged into pool
-# won't be polled as they are bind to other workers.
-# CAUTION! this shouldn't contain any non-unique connStr, e.g. tcp:localhost:xxx, serial:xxx
-
-
-# all created bindings, each thread can have max 1 binding at a time and
-# is destroyed once the vehicle is lost or returned to the pool.
-# Non-active bindings are not allowed as they take precious proxy ports
-
-# lastUpdates = [] merged into pool
-# updated by both binding process and daemon at the same time
-# memorize last telemetric data of each vehicle
-
-# class IStatus:
-#     # not mode.
-#     Idle, Active, Missing, Grounded = range(4)
-#
-# class IInfo(object):
-#     """values of pool, status=Idle when initialized, if connection fail status=Missing, after which it
-#     will only be connected by poll daemon
-#     """
-#     # connStr = ""
-#     # def isGlobal(self):
-#     #     # type: () -> object
-#     #     # TODO: are your sure?
-#     #     if self.connStr.startswith("serial"): return False
-#     #     else: return True
-#
-#     # vehicleClass = None
-#
-#     def __init__(self):
-#         self.status = IStatus.Idle
-#         self.lastUpdated = datetime.now()
-#         self.lastError = None
-
-# bean project
-# not consistent with other resource allocation mechanism.
 class Endpoint(object):
 
     # won't be tried by executor, daemon will still try it and if successful, will remove it from the list
@@ -64,27 +23,8 @@ class Endpoint(object):
     def _connStr(self):
         return self.uris[0]
 
-# mpManager = multiprocessing.Manager()
-#
-# # static variables shared by all processes
-# # all = multiprocessing.Array(ctypes.c_char_p, 10)  # type: multiprocessing.Array
-# allEndpoints = mpManager.list()
-# # will be tried by daemon if not in used
-#
-# # used = multiprocessing.Array(ctypes.c_char_p, 10)  # type: multiprocessing.Array
-# usedEndpoints = mpManager.list()
-# # won't be tried by nobody
-#
-# # unreachable = multiprocessing.Array(ctypes.c_char_p, 10)  # type: multiprocessing.Array
-# unreachableEndpoints = mpManager.list()
-
 
 class ProxyFactory(object):
-
-    @staticmethod
-    def fromJSON(_json):
-        _dict = json.loads(_json)
-        ProxyFactory(_dict['ports'], _dict['gcsMapping'], _dict['polling'])
 
     def __init__(self, ports=range(12014,12108), gcsMapping=None, polling=False):
         # type: (list, dict, boolean) -> None
@@ -130,8 +70,6 @@ class ProxyFactory(object):
 
 
 class Proxy(object):
-    usedPort = mpManager.list()
-    # usedPort = multiprocessing.Array(ctypes.c_long, 10, lock=True)  # type: multiprocessing.Array
 
     @staticmethod
     def _up(aircraft, setup=False, master='tcp:127.0.0.1:5760', outs={'127.0.0.1:14550'},
@@ -230,7 +168,7 @@ class Proxy(object):
 
 # if all endpoints are not available, sleep for x seconds and retry.
 class Connection(object):
-    # process local, 1 process can only have 1 binding.
+    # process local
     existing = None  # type: Connection
 
     @staticmethod

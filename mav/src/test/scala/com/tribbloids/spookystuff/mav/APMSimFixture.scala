@@ -13,8 +13,7 @@ object SimFixture {
 
   def launch(session: Session): APMSim = {
     val sim = APMSim.next
-    val py = sim.Py(session)
-    py.varName
+    sim.sessionPy(session)
     sim
   }
 }
@@ -25,15 +24,21 @@ abstract class APMSimFixture extends SpookyEnvFixture {
 
   override val pNames = Seq("phantomjs", "python", "apm")
 
+  var endpoints: Seq[String] = Nil
+
   override def beforeAll(): Unit = {
     super.beforeAll()
     val spooky = this.spooky
-    sc.foreachExecutor {
+    val connStrs = sc.mapPerExecutor {
       //NOT cleaned by TaskCompletionListener
       val session = new DriverSession(spooky, TaskThreadInfo.thread)
       val sim = SimFixture.launch(session)
       SimFixture.allSims += sim
+      sim.sessionPy(session).connStr.toStringOpt
     }
+      .flatMap(v => v)
+      .collect()
+    this.endpoints = connStrs
   }
 
   override def afterAll(): Unit = {
@@ -71,5 +76,10 @@ class APMSimSuite extends APMSimFixture {
     println(s"iNums: ${iNums.mkString(", ")}")
     assert(iNums.nonEmpty)
     assert(iNums.size == iNums.distinct.size)
+
+    println(s"connStrs:\n${this.endpoints.mkString("\n")}")
+    assert(endpoints.nonEmpty)
+    assert(endpoints.size == endpoints.distinct.size)
+    assert(endpoints.size == iNums.size)
   }
 }

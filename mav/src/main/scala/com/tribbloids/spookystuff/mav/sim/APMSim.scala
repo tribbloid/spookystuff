@@ -1,7 +1,6 @@
 package com.tribbloids.spookystuff.mav.sim
 
-import com.tribbloids.spookystuff.actions.PyObject
-import org.apache.spark.ml.dsl.utils.Message
+import com.tribbloids.spookystuff.actions.CaseInstanceRef
 import com.tribbloids.spookystuff.caching
 
 /**
@@ -26,7 +25,7 @@ object APMSim {
 
 case class APMSim private (
                             iNum: Int
-                          ) extends PyObject with Message {
+                          ) extends CaseInstanceRef {
 
   APMSim.existing += this
 

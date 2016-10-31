@@ -13,7 +13,9 @@ trait Cleanable {
   @volatile var isCleaned: Boolean = false
 
   protected def clean(): Unit = {
-    _clean()
+    if (!isCleaned){
+      _clean()
+    }
     isCleaned = true
     LoggerFactory.getLogger(this.getClass).info(s"Cleaned up ${this.getClass.getSimpleName}")
   }

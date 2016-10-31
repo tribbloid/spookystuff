@@ -151,9 +151,9 @@ case class PythonDriver(
   }
 
   def interpret(code: String, spookyOpt: Option[SpookyContext] = None): Array[String] = {
-    val indentedCode = code.split('\n').filter(_.nonEmpty).map(">>> " + _).mkString("\n")
+    val indentedCode = code.split('\n').filter(_.nonEmpty).map("\t" + _).mkString("\n")
 
-    LoggerFactory.getLogger(this.getClass).info(">>> PYTHON INPUT ===============\n" + indentedCode)
+    LoggerFactory.getLogger(this.getClass).info(s">>> PYTHON-${this.taskOrThread.id} INPUT ===============\n" + indentedCode)
 
     val rows = try {
       val output = this.sendAndGetResult(code)
@@ -173,10 +173,10 @@ case class PythonDriver(
 
 
     if (rows.exists(_.nonEmpty)) {
-      LoggerFactory.getLogger(this.getClass).info("$$$ PYTHON OUTPUT ===============\n" + rows.mkString("\n"))
+      LoggerFactory.getLogger(this.getClass).info(s"$$$$$$ PYTHON-${this.taskOrThread.id} OUTPUT ===============\n" + rows.mkString("\n"))
     }
     else {
-      LoggerFactory.getLogger(this.getClass).info("$$$ PYTHON [NO OUTPUT] ===============\n" + rows.mkString("\n"))
+      LoggerFactory.getLogger(this.getClass).info(s"$$$$$$ PYTHON-${this.taskOrThread.id} [NO OUTPUT] ===============\n" + rows.mkString("\n"))
     }
 
     if (pythonErrorIn(rows)) {
@@ -196,11 +196,11 @@ case class PythonDriver(
     rows
   }
 
-  def execute(
-               code: String,
-               resultVarOpt: Option[String] = None,
-               spookyOpt: Option[SpookyContext] = None
-             ): (Seq[String], Option[String]) = {
+  def call(
+            code: String,
+            resultVarOpt: Option[String] = None,
+            spookyOpt: Option[SpookyContext] = None
+          ): (Seq[String], Option[String]) = {
     resultVarOpt match {
       case None =>
         val _code =
@@ -212,11 +212,15 @@ case class PythonDriver(
       case Some(resultVar) =>
         val _code =
           s"""
-             |$resultVar = None
+             |$resultVar=None
              |$code
              |print('$EXECUTION_RESULT')
-             |if $resultVar: print($resultVar)
-             |else: print('$NO_RETURN_VALUE')
+             |if $resultVar:
+             |    print($resultVar)
+             |else:
+             |    print('$NO_RETURN_VALUE')
+             |
+             |del($resultVar)
           """.trim.stripMargin
         val rows = interpret(_code, spookyOpt).toSeq
         val splitterIndex = rows.zipWithIndex.find(_._1 == EXECUTION_RESULT).get._2

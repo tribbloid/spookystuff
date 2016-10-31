@@ -17,6 +17,6 @@ case class Move(
                ) extends Interaction with PyAction {
 
   override def exeNoOutput(session: Session): Unit = {
-    this.Py(session).exe()
+    this.sessionPy(session).exe()
   }
 }

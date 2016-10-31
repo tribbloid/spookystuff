@@ -16,7 +16,7 @@ class DummyPyActionSuite extends SpookyEnvFixture {
     doc.flatMap(_.asInstanceOf[Doc].code).mkString("\n").shouldBe("6")
 
     //1 construct, 2 function calls, 1 destruct
-    assert(spooky.metrics.pythonInterpretationSuccess.value == 4)
+    assert(spooky.metrics.pythonInterpretationSuccess.value == 3)
 
 //    val processes = JProcesses.getProcessList()
 //      .asScala
