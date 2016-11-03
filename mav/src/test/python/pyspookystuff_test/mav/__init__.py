@@ -23,26 +23,7 @@ numCores = multiprocessing.cpu_count()
 
 
 def moveOut(point, vehicle):
-    # NOTE these are *very inappropriate settings*
-    # to make on a real vehicle. They are leveraged
-    # exclusively for simulation. Take heed!!!
-    vehicle.parameters['FS_GCS_ENABLE'] = 0
-    vehicle.parameters['FS_EKF_THRESH'] = 100
-    print("Allowing time for parameter write")
-    assureInTheAir(20, vehicle)
-    print("Going to point...")
-    vehicle.simple_goto(point)
 
-    def getDistSq():
-        north = vehicle.location.local_frame.north
-        east = vehicle.location.local_frame.east
-        return north * north + east * east
-
-    distSq = getDistSq()
-    while distSq <= 400:  # 20m
-        print("moving ... " + str(sqrt(distSq)) + "m")
-        distSq = getDistSq()
-        time.sleep(1)
 
 
 class APMSimContext(object):

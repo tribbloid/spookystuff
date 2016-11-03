@@ -1,9 +1,9 @@
 package org.apache.spark.ml.dsl
 
-import com.tribbloids.spookystuff.testutils.TestMixin
+import com.tribbloids.spookystuff.testutils.{TestHelper, TestMixin}
 import org.apache.spark.ml.PipelineStage
 import org.apache.spark.ml.param.shared.{HasInputCol, HasInputCols, HasOutputCol}
-import org.scalatest.FunSuite
+import org.scalatest.{BeforeAndAfterAll, FunSuite}
 import org.scalatest.exceptions.TestFailedException
 
 import scala.util.Try
@@ -12,7 +12,7 @@ import scala.util.matching.Regex
 /**
   * Created by peng on 18/04/16.
   */
-abstract class AbstractFlowSuite extends FunSuite with TestMixin {
+abstract class AbstractFlowSuite extends FunSuite with BeforeAndAfterAll with TestMixin{
 
   implicit class StringView(str: String) extends super.TestStringView(str){
 
@@ -74,6 +74,12 @@ abstract class AbstractFlowSuite extends FunSuite with TestMixin {
         (className, input.toSeq.mkString("|"), output.toSeq.mkString("|"))
     }
     input_output
+  }
+
+  override def afterAll() {
+
+    TestHelper.clearTempDir()
+    super.afterAll()
   }
 }
 

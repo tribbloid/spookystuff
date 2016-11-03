@@ -31,9 +31,7 @@ object ActionRelay extends MessageRelay[Action] {
   //avoid using scala reflections on worker as they are thread unsafe, use JSON4s that is more battle tested
   override def toMessage(value: Action): M = {
     val className = value.getClass.getCanonicalName
-    val fields = ScalaReflection.synchronized{
-      SpookyUtils.Reflection.getConstructorParameters(value.getClass)
-    }
+    val fields = SpookyUtils.Reflection.getConstructorParameters(value.getClass)
       .map(_._1)
     val elements = value
       .productIterator

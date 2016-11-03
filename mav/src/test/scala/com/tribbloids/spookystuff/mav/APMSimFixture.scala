@@ -3,6 +3,7 @@ package com.tribbloids.spookystuff.mav
 import com.tribbloids.spookystuff.mav.sim.APMSim
 import com.tribbloids.spookystuff.session.{DriverSession, Session, TaskThreadInfo}
 import com.tribbloids.spookystuff.{SpookyEnvFixture, caching}
+import org.apache.spark.rdd.RDD
 
 /**
   * Created by peng on 01/10/16.
@@ -24,12 +25,13 @@ abstract class APMSimFixture extends SpookyEnvFixture {
 
   override val pNames = Seq("phantomjs", "python", "apm")
 
-  var endpoints: Seq[String] = Nil
+  var simConnStrRDD: RDD[String] = _
+  def simConnStrs = simConnStrRDD.collect().distinct
 
   override def beforeAll(): Unit = {
     super.beforeAll()
     val spooky = this.spooky
-    val connStrs = sc.mapPerExecutor {
+    val connStrRDD = sc.mapPerExecutor {
       //NOT cleaned by TaskCompletionListener
       val session = new DriverSession(spooky, TaskThreadInfo.thread)
       val sim = SimFixture.launch(session)
@@ -37,8 +39,10 @@ abstract class APMSimFixture extends SpookyEnvFixture {
       sim.sessionPy(session).connStr.toStringOpt
     }
       .flatMap(v => v)
-      .collect()
-    this.endpoints = connStrs
+      .persist()
+
+    connStrRDD.count()
+    this.simConnStrRDD = connStrRDD
   }
 
   override def afterAll(): Unit = {
@@ -77,9 +81,9 @@ class APMSimSuite extends APMSimFixture {
     assert(iNums.nonEmpty)
     assert(iNums.size == iNums.distinct.size)
 
-    println(s"connStrs:\n${this.endpoints.mkString("\n")}")
-    assert(endpoints.nonEmpty)
-    assert(endpoints.size == endpoints.distinct.size)
-    assert(endpoints.size == iNums.size)
+    println(s"connStrs:\n${this.simConnStrs.mkString("\n")}")
+    assert(simConnStrs.nonEmpty)
+    assert(simConnStrs.size == simConnStrs.distinct.size)
+    assert(simConnStrs.size == iNums.size)
   }
 }

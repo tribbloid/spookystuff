@@ -1,6 +1,6 @@
 package com.tribbloids.spookystuff.session
 
-import com.tribbloids.spookystuff.actions.PyConverter
+import com.tribbloids.spookystuff.session.python.{PyConverter, PythonDriver}
 import com.tribbloids.spookystuff.{PyInterpreterException, SpookyEnvFixture}
 
 /**
@@ -127,7 +127,7 @@ class PythonDriverSuite extends SpookyEnvFixture {
 
     PythonDriverSuite.runIterable(1 to 10) {
       (i, proc) =>
-        val r = proc.call(s"print($i / 1)")
+        val r = proc.eval(s"print($i / 1)")
         assert(r._1.mkString("\n") == i.toString)
         assert(r._2.isEmpty)
     }

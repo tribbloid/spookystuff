@@ -5,6 +5,7 @@ import java.util.Date
 import com.tribbloids.spookystuff.dsl._
 import com.tribbloids.spookystuff.row.Sampler
 import com.tribbloids.spookystuff.session._
+import com.tribbloids.spookystuff.session.python.PythonDriver
 import org.apache.spark.ml.dsl.utils.Message
 import org.apache.spark.rdd.RDD
 import org.apache.spark.storage.StorageLevel

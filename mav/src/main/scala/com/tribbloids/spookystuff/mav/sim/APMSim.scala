@@ -1,7 +1,7 @@
 package com.tribbloids.spookystuff.mav.sim
 
-import com.tribbloids.spookystuff.actions.CaseInstanceRef
 import com.tribbloids.spookystuff.caching
+import com.tribbloids.spookystuff.session.python.CaseInstanceRef
 
 /**
   * Created by peng on 27/10/16.

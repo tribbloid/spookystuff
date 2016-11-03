@@ -15,7 +15,7 @@
 * limitations under the License.
 */
 
-package com.tribbloids.spookystuff.session;
+package com.tribbloids.spookystuff.session.python;
 
 import com.tribbloids.spookystuff.PyException;
 import org.slf4j.Logger;

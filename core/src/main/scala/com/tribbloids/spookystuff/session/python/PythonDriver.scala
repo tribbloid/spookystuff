@@ -1,11 +1,13 @@
-package com.tribbloids.spookystuff.session
+package com.tribbloids.spookystuff.session.python
 
 import java.util.regex.Pattern
 
+import com.tribbloids.spookystuff.session.{AutoCleanable, TaskThreadInfo}
 import com.tribbloids.spookystuff.utils.SpookyUtils
 import com.tribbloids.spookystuff.{PyException, PyInterpreterException, SpookyContext}
 import org.slf4j.LoggerFactory
 
+import scala.collection.mutable.ArrayBuffer
 import scala.util.Try
 
 object PythonDriver {
@@ -150,7 +152,7 @@ case class PythonDriver(
     str.stripPrefix("\r").replaceAll(PROMPTS, "")
   }
 
-  def interpret(code: String, spookyOpt: Option[SpookyContext] = None): Array[String] = {
+  private def _interpret(code: String, spookyOpt: Option[SpookyContext] = None): Array[String] = {
     val indentedCode = code.split('\n').filter(_.nonEmpty).map("\t" + _).mkString("\n")
 
     LoggerFactory.getLogger(this.getClass).info(s">>> PYTHON-${this.taskOrThread.id} INPUT ===============\n" + indentedCode)
@@ -196,7 +198,11 @@ case class PythonDriver(
     rows
   }
 
-  def call(
+  def interpret(code: String, spookyOpt: Option[SpookyContext] = None): Array[String] = {
+    _interpret(lazyCode + "\n" + code, spookyOpt)
+  }
+
+  def eval(
             code: String,
             resultVarOpt: Option[String] = None,
             spookyOpt: Option[SpookyContext] = None
@@ -233,5 +239,15 @@ case class PythonDriver(
         split._1 -> resultOpt
     }
   }
-}
 
+  /**
+    * NOT thread safe
+    */
+  lazy val lazyCodes: ArrayBuffer[String] = ArrayBuffer.empty
+
+  def lazyCode = lazyCodes.mkString("\n")
+
+  def lazyInterpret(code: String, spookyOpt: Option[SpookyContext] = None): Unit = {
+    lazyCodes += code
+  }
+}

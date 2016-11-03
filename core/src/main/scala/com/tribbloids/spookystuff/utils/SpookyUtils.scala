@@ -257,53 +257,58 @@ These special characters are often called "metacharacters".
   }
 
   //TODO: simply by using a common relay that different type representation can be cast into
+  /**
+    * all implementation has to be synchronized and preferrably not executed concurrently to preserve efficiency.
+    */
   object Reflection {
 
-    def getCaseAccessorSymbols(cls: Class[_]): List[MethodSymbol] = {
+    def getCaseAccessorSymbols(cls: Class[_]): List[MethodSymbol] = this.synchronized{
       val m = runtimeMirror(cls.getClassLoader)
       val classSymbol = m.staticClass(cls.getName)
       val t = classSymbol.selfType
       getCaseAccessorSymbols(t)
     }
 
-    def getCaseAccessorSymbols(tpe: Type): List[MethodSymbol] = {
-      tpe.members.collect {
+    def getCaseAccessorSymbols(tpe: Type): List[MethodSymbol] = this.synchronized{
+      val accessors = tpe.members.collect {
         case m: MethodSymbol if m.isCaseAccessor => m
       }
+      accessors
         .toList
+        .reverse
     }
 
-    def getCaseAccessorSymbols[T: TypeTag]: List[MethodSymbol] = {
+    def getCaseAccessorSymbols[T: TypeTag]: List[MethodSymbol] = this.synchronized{
       typeOf[T].members.collect {
         case m: MethodSymbol if m.isCaseAccessor => m
       }
         .toList
     }
 
-    def getCaseAccessorNames[T: TypeTag]: List[(String, Type)] = {
+    def getCaseAccessorNames[T: TypeTag]: List[(String, Type)] = this.synchronized{
       getCaseAccessorSymbols[T].map {
         ss =>
           ss.name.decoded -> ss.typeSignature
       }
     }
 
-    def getCaseAccessorMap(v: Product): Map[String, Any] = {
+    def getCaseAccessorMap(v: Product): List[(String, Any)] = this.synchronized{
       val ks = getCaseAccessorSymbols(v.getClass)
         .map(_.name.decoded)
-      val vs = v.productIterator.toSeq
+      val vs = v.productIterator.toList
       assert (ks.size == vs.size)
-      Map(ks.zip(vs): _*)
+      ks.zip(vs)
     }
 
     //the following are copied from Spark ScalaReflection
-    def getConstructorParameters(cls: Class[_]): Seq[(String, Type)] = {
+    def getConstructorParameters(cls: Class[_]): Seq[(String, Type)] = this.synchronized{
       val m = runtimeMirror(cls.getClassLoader)
       val classSymbol = m.staticClass(cls.getName)
       val t = classSymbol.selfType
       getConstructorParameters(t)
     }
 
-    def getConstructorParameters(tpe: Type): Seq[(String, Type)] = {
+    def getConstructorParameters(tpe: Type): Seq[(String, Type)] = this.synchronized{
       val formalTypeArgs = tpe.typeSymbol.asClass.typeParams
       val TypeRef(_, _, actualTypeArgs) = tpe
       val constructorSymbol = tpe.member(nme.CONSTRUCTOR)

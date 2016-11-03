@@ -1,10 +1,10 @@
-package org.apache.spark.ml
+package org.apache.spark.ml.dsl
 
 import com.tribbloids.spookystuff.testutils.TestHelper
 import org.apache.spark.SparkContext
 import org.apache.spark.ml.dsl.utils.{FlowRelay, Xml}
-import org.apache.spark.ml.dsl.{AbstractFlowSuite, Flow, FlowComponent, UDFTransformer}
 import org.apache.spark.ml.feature._
+import org.apache.spark.ml.{Pipeline, PipelineModel}
 import org.json4s.JValue
 import org.json4s.JsonAST.JObject
 
@@ -18,7 +18,7 @@ class FlowReadWriteSuite extends AbstractFlowSuite {
   import org.apache.spark.ml.dsl.ReadWriteSupports._
 
   val pipelinePath = "temp/pipeline/pipeline"
-  val sc: SparkContext = TestHelper.TestSpark
+//  def sc: SparkContext = TestHelper.TestSpark
 
   test("Pipeline can be saved and loaded") {
     val flow = (Flow('input)

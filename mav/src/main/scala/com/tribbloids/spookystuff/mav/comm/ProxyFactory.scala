@@ -1,9 +1,13 @@
 package com.tribbloids.spookystuff.mav.comm
 
-import com.tribbloids.spookystuff.actions.CaseInstanceRef
+
+import com.tribbloids.spookystuff.session.python.CaseInstanceRef
+
+import scala.collection.mutable.ArrayBuffer
 
 object ProxyFactory {
 
+  val usedPorts: ArrayBuffer[Int] = ArrayBuffer.empty
 }
 
 /**
@@ -14,10 +18,26 @@ case class ProxyFactory(
                          //primary localhost out port number -> list of URLs for multicast
                          //the first one used by DK, others nobody cares
                          ports: Seq[Int] = 12014 to 12108,
-                         gcsMapping: Map[String, Seq[String]] = Map(),
+                         gcsMapping: Endpoint => Seq[String] = _ => Nil,
                          //connection string (RegEx?) pattern => GCS URLs
                          polling: Boolean = false
-                       )
+                       ) {
+
+  def next(endpoint: Endpoint): Proxy = {
+    ProxyFactory.synchronized {
+      val unusedPort = ports.find(v => !ProxyFactory.usedPorts.contains(v))
+        .get //TODO: orElse
+      val outs = gcsMapping(endpoint)
+      val result = Proxy(
+        endpoint.connStrs.head,
+        endpoint.name,
+        unusedPort,
+        outs
+      )
+      result
+    }
+  }
+}
 
 case class Proxy(
                   connStr: String,

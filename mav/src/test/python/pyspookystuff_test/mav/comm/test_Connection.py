@@ -1,6 +1,6 @@
 import unittest
 
-from pyspookystuff.mav.comm import Connection, ProxyFactory
+from pyspookystuff.mav.comm import MAVConnection, ProxyFactory
 from pyspookystuff_test.mav import moveOut, APMSimContext, AbstractIT, endpoints
 
 defaultProxyFactory = ProxyFactory()
@@ -11,7 +11,7 @@ def _move(point, proxyFactory=None):
         # type: (LocationGlobal, ProxyFactory) -> double, double
         # always move 100m.g
 
-        conn = Connection.getOrCreate(
+        conn = MAVConnection.getOrCreate(
             endpoints,
             proxyFactory
         )

@@ -3,7 +3,7 @@ import json
 from dronekit import LocationGlobalRelative, LocationGlobal
 
 from pyspookystuff.mav import assureInTheAir
-from pyspookystuff.mav.comm import Connection, Endpoint, ProxyFactory
+from pyspookystuff.mav.comm import MAVConnection, Endpoint
 
 
 class PyAction(object):
@@ -21,13 +21,12 @@ class DummyPyAction(PyAction):
 
 class DroneAction(PyAction):
 
-    def assureInTheAir(self, _endpoints, _proxyFactory, takeOffAltitude):
+    def assureInTheAir(self, _endpoints, proxy, takeOffAltitude):
         if not self.binding:
             instances = map(lambda v: Endpoint(**v), _endpoints)
-            proxyFactory = ProxyFactory(**_proxyFactory)
 
             # if a binding is already created for this process it will be reused.
-            self.binding = Connection.getOrCreate(instances, proxyFactory)
+            self.binding = MAVConnection.getOrCreate(instances, proxy)
 
         assureInTheAir(takeOffAltitude, self.binding.vehicle)
 

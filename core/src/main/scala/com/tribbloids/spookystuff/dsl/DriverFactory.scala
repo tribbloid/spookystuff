@@ -20,6 +20,7 @@ import java.io.File
 import com.gargoylesoftware.htmlunit.BrowserVersion
 import com.tribbloids.spookystuff.caching._
 import com.tribbloids.spookystuff.session._
+import com.tribbloids.spookystuff.session.python.PythonDriver
 import com.tribbloids.spookystuff.utils.SpookyUtils
 import com.tribbloids.spookystuff.{SpookyConf, SpookyContext, SpookyException}
 import org.apache.commons.io.FileUtils

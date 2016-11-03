@@ -87,10 +87,16 @@ abstract class SpookyEnvFixture
   )
 
   var _spooky: SpookyContext = _
-  def spooky = Option(_spooky).getOrElse {
-    val result = new SpookyContext(sql, spookyConf)
-    _spooky = result
-    result
+  def spooky = {
+    Option(_spooky)
+      .filterNot(_.sparkContext.isStopped)
+      .getOrElse {
+        assert(!sql.sparkContext.isStopped)
+        val result = new SpookyContext(sql, spookyConf)
+        assert(!result.sparkContext.isStopped)
+        _spooky = result
+        result
+      }
   }
 
   lazy val schema = DataRowSchema(spooky)
@@ -119,7 +125,7 @@ abstract class SpookyEnvFixture
 
   override def beforeAll() {
 
-    TestHelper.TestSparkConf.setAppName("Test:" + this.getClass.getSimpleName )
+    TestHelper.TestSparkConf.setAppName("Test:" + this.getClass.getSimpleName)
 
     super.beforeAll()
   }
@@ -141,7 +147,7 @@ abstract class SpookyEnvFixture
   before{
     // bypass java.lang.NullPointerException at org.apache.spark.broadcast.TorrentBroadcast$.unpersist(TorrentBroadcast.scala:228)
     // TODO: clean up after fix
-    SpookyUtils.retry(50) {
+    SpookyUtils.retry(10) {
       setUp()
     }
   }
@@ -151,6 +157,7 @@ abstract class SpookyEnvFixture
   }
 
   def setUp(): Unit = {
+    val spooky = this.spooky
     //    SpookyEnvFixture.cleanDriverInstances()
     spooky.conf = new SpookyConf(
       autoSave = true,
@@ -162,7 +169,6 @@ abstract class SpookyEnvFixture
         )
       )
     )
-
   }
 
   def tearDown(): Unit = {
