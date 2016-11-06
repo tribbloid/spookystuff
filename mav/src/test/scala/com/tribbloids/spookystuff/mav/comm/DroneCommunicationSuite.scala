@@ -129,6 +129,14 @@ class DroneCommunicationSuite extends APMSimFixture {
     tuple._1.close()
   }
 
+  test("move drones to different directions") {
+    val vehicles: Array[String] = testMove(_ => None)
+
+    vehicles.toSeq.foreach(
+      println
+    )
+  }
+
   test("move 1 drone with proxy") {
     val tuple = DroneCommunicationSuite.testMove1(
       this.spooky, v => Some(DroneCommunicationSuite.pf.next(v)),
@@ -136,14 +144,6 @@ class DroneCommunicationSuite extends APMSimFixture {
     )
     println(tuple._2)
     tuple._1.close()
-  }
-
-  test("move drones to different directions") {
-    val vehicles: Array[String] = testMove(_ => None)
-
-    vehicles.toSeq.foreach(
-      println
-    )
   }
 
   test("move drones to different directions with proxies") {

@@ -1,3 +1,7 @@
+from __future__ import print_function
+
+from pyspookystuff.utils import retry
+
 """
 Crash course on MAVProxy
 launch mavproxy connected to a SIL endpoint
@@ -85,19 +89,21 @@ class Proxy(object):
 
         self.spawn = None
 
-    def launch(self):
+    def start(self):
         if not self.pid:
-            spawn = Proxy._launch(
+            spawn = Proxy._start(
                 aircraft=self.name,
                 setup=False,
                 master=self.master,
                 outs=self.outs
             )
             self.pid = spawn.pid
+            # this makes spawn not transient to the scope of this function!
+            # this also makes Proxy not picklable! how to fix?
             self.spawn = spawn
 
     @staticmethod
-    def _launch(aircraft, setup, master, outs, options=None, logfile=sys.stdout):
+    def _start(aircraft, setup, master, outs, options=None, logfile=sys.stdout):
         import pexpect  # included by transitive dependency
         MAVPROXY = os.getenv('MAVPROXY_CMD', 'mavproxy.py')
         cmd = MAVPROXY + ' --master=%s' % master
@@ -108,13 +114,18 @@ class Proxy(object):
         cmd += ' --aircraft=%s' % aircraft
         if options is not None:
             cmd += ' ' + options
-        ret = pexpect.spawn(cmd, logfile=logfile, timeout=60)
-        ret.delaybeforesend = 0
-        return ret
+        # spawn daemon?
+        spawn = pexpect.spawn(cmd, logfile=logfile, timeout=60)
+        spawn.delaybeforesend = 0
+        return spawn
 
     def close(self):
         if self.pid:
-            os.killpg(self.pid, 2)
+            try:
+                os.killpg(self.pid, 2)
+            except OSError:
+                pass
+            self.pid = None
 
 
 # if all endpoints are not available, sleep for x seconds and retry.
@@ -138,9 +149,7 @@ class DroneCommunication(object):
         # vehicle = _retryConnect(self.endpoint.connStr)
 
         if self.proxy:
-            self.proxy.launch()
             self.uri = self.proxy.outs[0]
-
         else:
             self.uri = self.endpoint.connStr
 
@@ -149,8 +158,28 @@ class DroneCommunication(object):
     @property
     def vehicle(self):
         if not self._vehicle:
-            self._vehicle = _retryConnect(self.uri)
+            self._vehicle = self._tryConnectWithProxy()
         return self._vehicle
+
+    @retry(3, "create proxy")
+    def _tryConnectWithProxy(self):
+        try:
+            if self.proxy:
+                self.proxy.start()
+
+            time.sleep(1) # wait for proxy to initialize
+
+            @retry(3, "connect to drone")
+            def connect():
+                vehicle = dronekit.connect(
+                    self.uri,
+                    wait_ready=True
+                )
+                return vehicle
+            return connect()
+        except:
+            self.proxy.close()
+            raise
 
     def close(self):
         if self._vehicle:
@@ -196,19 +225,3 @@ class DroneCommunication(object):
 
 def randomLocation():
     return dronekit.LocationGlobalRelative(random.uniform(-90, 90), random.uniform(-180, 180), 20)
-
-def _retryConnect(uri, maxTrial=3):
-    for i in range(0, 100):
-        try:
-            print "Trial ", str(i), ": connecting to ", str(uri)
-            vehicle = dronekit.connect(
-                uri,
-                wait_ready=True
-            )
-            return vehicle
-        except dronekit.APIException as e:
-            print(e)
-            if i >= maxTrial:
-                raise
-            else:
-                continue

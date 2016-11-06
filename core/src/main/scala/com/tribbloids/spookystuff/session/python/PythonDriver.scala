@@ -73,23 +73,30 @@ class PythonDriver(
                     val autoImports: String =
                     """
                       |import os
-                      |import simplejson as json
                     """.trim.stripMargin,
                     override val taskOrThread: TaskOrThreadInfo = TaskOrThreadInfo()
                   ) extends PythonProcess(executable) with AutoCleanable {
+
+
+  /**
+    * NOT thread safe
+    */
+  lazy val historyCodes: ArrayBuffer[String] = ArrayBuffer.empty
+  lazy val pendingCodes: ArrayBuffer[String] = ArrayBuffer.empty
+  lazy val importedCodes: scala.collection.mutable.Set[String] = scala.collection.mutable.Set.empty
 
   {
     val pythonPath = PythonDriver.deploy
 
     this.open
 
-    this.interpret(
+    this.lazyImport(
       s"""
          |import sys
          |sys.path.append('$pythonPath')
          |$autoImports
-       """.stripMargin,
-      None
+       """.stripMargin
+        .split("\n")
     )
   }
 
@@ -99,12 +106,6 @@ class PythonDriver(
   override lazy val open: Unit = {
     super.open()
   }
-
-  /**
-    * NOT thread safe
-    */
-  lazy val historyCodes: ArrayBuffer[String] = ArrayBuffer.empty
-  lazy val lazyCodes: ArrayBuffer[String] = ArrayBuffer.empty
 
   override def _clean(): Unit = {
     Try {
@@ -234,11 +235,11 @@ class PythonDriver(
   }
 
   def interpret(code: String, spookyOpt: Option[SpookyContext] = None): Array[String] = {
-    def lazyCode = lazyCodes.mkString("\n")
+    def lazyCode = pendingCodes.mkString("\n")
     val allCode = lazyCode + "\n" + code
     val result = _interpret(allCode, spookyOpt)
     this.historyCodes += allCode
-    this.lazyCodes.clear()
+    this.pendingCodes.clear()
     result
   }
 
@@ -280,7 +281,19 @@ class PythonDriver(
     }
   }
 
-  def lazyInterpret(code: String, spookyOpt: Option[SpookyContext] = None): Unit = {
-    lazyCodes += code
+  def lazyInterpret(code: String): Unit = {
+    pendingCodes += code
+  }
+
+  def lazyImport(codes: Seq[String]): Unit = {
+    codes
+      .map(_.trim)
+      .foreach {
+        code =>
+          if (!importedCodes.contains(code)) {
+            lazyInterpret(code)
+            importedCodes += code
+          }
+      }
   }
 }

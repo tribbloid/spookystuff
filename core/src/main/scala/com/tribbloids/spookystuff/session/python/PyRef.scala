@@ -10,7 +10,9 @@ import scala.language.dynamics
 
 trait PyRef extends Cleanable {
 
-  def importOpt: Option[String] = None
+  def imports: Seq[String] = Seq(
+    "import simplejson as json"
+  )
 
   def createOpt: Option[String] = None
   def referenceOpt: Option[String] = None
@@ -92,18 +94,17 @@ trait PyRef extends Cleanable {
           dep._Py(driver, spookyOpt)
       }
 
+      driver.lazyImport(imports)
+
       val initOpt = createOpt.map {
         create =>
           (referenceOpt.toSeq ++ Seq(create)).mkString("=")
       }
 
-      val preprocessingCodes = importOpt.toSeq ++ initOpt.toSeq
-
-      if (preprocessingCodes.nonEmpty) {
-
-        val code = preprocessingCodes.mkString("\n")
-        if (lzy) driver.lazyInterpret(code)
-        else driver.interpret(code)
+      initOpt.foreach {
+        code =>
+          if (lzy) driver.lazyInterpret(code)
+          else driver.interpret(code)
       }
 
       PyRef.this.driverToBindings += driver -> this
@@ -203,7 +204,7 @@ case class DetachedRef(
 
 trait ObjectRef extends PyRef {
 
-  override def importOpt = Some(s"import $packageName")
+  override def imports = super.imports ++ Seq(s"import $packageName")
 
   override lazy val referenceOpt = Some(varNamePrefix + SpookyUtils.randomSuffix)
 }

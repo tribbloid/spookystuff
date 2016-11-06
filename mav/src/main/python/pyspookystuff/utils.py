@@ -22,3 +22,21 @@ def airDist(p1, p2):
     altDist = p2.alt - p1.alt
     result = sqrt(haversine*haversine + altDist*altDist)
     return result
+
+def retry(maxTrial=3, name=''):
+
+    def decorate(fn):
+        def retryFn(*args, **kargs):
+            for i in range(1, 100):
+                try:
+                    print(name, " trial ", str(i))
+
+                    result = fn(*args, **kargs)
+                    return result
+                except:
+                    if i >= maxTrial:
+                        raise
+                    else:
+                        continue
+        return retryFn
+    return decorate
