@@ -29,7 +29,7 @@ def retry(maxTrial=3, name=''):
 
     def decorate(fn):
         def retryFn(*args, **kargs):
-            for i in range(maxTrial, 0, -1):
+            for i in range(maxTrial, -1, -1):
                 try:
                     result = fn(*args, **kargs)
                     return result
