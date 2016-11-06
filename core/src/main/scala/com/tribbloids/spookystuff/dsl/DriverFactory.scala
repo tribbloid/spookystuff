@@ -122,7 +122,7 @@ case class PoolingFactory[T](
   import DriverFactories.DriverStatus
 
   //taskOrThreadID -> (driver, busy)
-  @transient lazy val taskOrThreadLocals: ConcurrentMap[TaskThreadInfo, DriverStatus[T]] = ConcurrentMap()
+  @transient lazy val taskOrThreadLocals: ConcurrentMap[TaskOrThreadInfo, DriverStatus[T]] = ConcurrentMap()
 
   //  override def _clean(): Unit = {
   //    pool.values.foreach {
@@ -360,7 +360,7 @@ object DriverFactories {
 
     //called from executors
     override def _createImpl(session: Session): CleanWebDriver = {
-      CleanWebDriver(
+      new CleanWebDriver(
         new PhantomJSDriver(newCap(session.spooky)),
         session.taskOrThread
       )
@@ -396,7 +396,7 @@ object DriverFactories {
       val self = new HtmlUnitDriver(browser)
       self.setJavascriptEnabled(true)
       self.setProxySettings(Proxy.extractFrom(cap))
-      val driver = CleanWebDriver(
+      val driver = new CleanWebDriver(
         self,
         session.taskOrThread
       )

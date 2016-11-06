@@ -1,7 +1,7 @@
 package com.tribbloids.spookystuff.mav
 
 import com.tribbloids.spookystuff.mav.sim.APMSim
-import com.tribbloids.spookystuff.session.{DriverSession, Session, TaskThreadInfo}
+import com.tribbloids.spookystuff.session.{DriverSession, Session, TaskOrThreadInfo}
 import com.tribbloids.spookystuff.{SpookyEnvFixture, caching}
 import org.apache.spark.rdd.RDD
 
@@ -14,7 +14,7 @@ object SimFixture {
 
   def launch(session: Session): APMSim = {
     val sim = APMSim.next
-    sim.sessionPy(session)
+    sim.Py(session)
     sim
   }
 }
@@ -26,17 +26,17 @@ abstract class APMSimFixture extends SpookyEnvFixture {
   override val pNames = Seq("phantomjs", "python", "apm")
 
   var simConnStrRDD: RDD[String] = _
-  def simConnStrs = simConnStrRDD.collect().distinct
+  def simConnStrs = simConnStrRDD.collect().toSeq.distinct
 
   override def beforeAll(): Unit = {
     super.beforeAll()
     val spooky = this.spooky
     val connStrRDD = sc.mapPerExecutor {
       //NOT cleaned by TaskCompletionListener
-      val session = new DriverSession(spooky, TaskThreadInfo.thread)
+      val session = new DriverSession(spooky, TaskOrThreadInfo.thread)
       val sim = SimFixture.launch(session)
       SimFixture.allSims += sim
-      sim.sessionPy(session).connStr.toStringOpt
+      sim.Py(session).connStr.valueOpt
     }
       .flatMap(v => v)
       .persist()

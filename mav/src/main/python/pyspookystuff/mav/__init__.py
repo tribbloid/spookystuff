@@ -20,6 +20,7 @@ def armIfNot(vehicle):
 
 
 def blockingArm(vehicle):
+    # type: (Vehicle) -> None
     # Don't let the user try to fly when autopilot is booting
     i = 60
     while not vehicle.is_armable and i > 0:
@@ -51,6 +52,7 @@ def blockingTakeoff(targetAltitude, vehicle):
     # processing the goto (otherwise the command after
     # Vehicle.simple_takeoff will execute immediately).
     while True:
+        noTimeout(vehicle)
         print(" Altitude: ", vehicle.location.global_relative_frame.alt)
         # Test for altitude just below target, in case of undershoot.
         if vehicle.location.global_relative_frame.alt >= targetAltitude * 0.95:
@@ -58,3 +60,7 @@ def blockingTakeoff(targetAltitude, vehicle):
             break
 
         time.sleep(1)
+
+
+def noTimeout(vehicle):
+    assert(vehicle.last_heartbeat < 10)

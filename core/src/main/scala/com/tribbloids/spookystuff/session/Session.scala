@@ -66,16 +66,17 @@ object NoPythonDriverException extends SpookyException("INTERNAL ERROR: should i
 
 class DriverSession(
                      override val spooky: SpookyContext,
-                     override val taskOrThread: TaskThreadInfo = TaskThreadInfo()
+                     override val taskOrThread: TaskOrThreadInfo = TaskOrThreadInfo()
                    ) extends Session(spooky){
 
-  @volatile var webDriverOpt: Option[CleanWebDriver] = None
+  @volatile private var _webDriverOpt: Option[CleanWebDriver] = None
+  def webDriverOpt = _webDriverOpt.filter(!_.isCleaned)
   //throwing error instead of lazy creation is required for restarting timer
   def webDriver = webDriverOpt.getOrElse{
     throw NoWebDriverException
   }
 
-  lazy val getOrCreateWebDriver: CleanWebDriver = {
+  def getOrCreateWebDriver: CleanWebDriver = {
     webDriverOpt.getOrElse {
       SpookyUtils.retry(Const.localResourceLocalRetries) {
         SpookyUtils.withDeadline(Const.sessionInitializationTimeout) {
@@ -90,7 +91,7 @@ class DriverSession(
           val resolution = spooky.conf.browserResolution
           if (resolution != null) driver.manage().window().setSize(new Dimension(resolution._1, resolution._2))
 
-          webDriverOpt = Some(driver)
+          _webDriverOpt = Some(driver)
           //      }            //TODO: these are no longer required, if a driver is get for multiple times the previous one will be automatically scuttled
           //      finally {
           //        if (!successful){
@@ -105,13 +106,14 @@ class DriverSession(
     }
   }
 
-  @volatile var pythonDriverOpt: Option[PythonDriver] = None
+  @volatile private var _pythonDriverOpt: Option[PythonDriver] = None
+  def pythonDriverOpt = _pythonDriverOpt.filter(!_.isCleaned)
   //throwing error instead of lazy creation is required for restarting timer
   def pythonDriver = pythonDriverOpt.getOrElse{
     throw NoPythonDriverException
   }
 
-  lazy val getOrCreatePythonDriver: PythonDriver = {
+  def getOrCreatePythonDriver: PythonDriver = {
     pythonDriverOpt.getOrElse {
       SpookyUtils.retry(Const.localResourceLocalRetries) {
 
@@ -119,25 +121,30 @@ class DriverSession(
           val driver = spooky.conf.pythonDriverFactory.get(this)
           spooky.metrics.pythonDriverDispatched += 1
 
-          this.pythonDriverOpt = Some(driver)
+          _pythonDriverOpt = Some(driver)
           driver
         }
       }
     }
   }
 
-  // TODO: can only initialize one driver, an action is less likely to use multiple drivers
-  def initializeDriverIfMissing[T](f: => T): T = {
+  def initializeDriverIfMissing[T](f: => T, n: Int = 3): T = {
     try {
+      assert(n >= 0)
       f
     }
     catch {
       case NoWebDriverException =>
+        LoggerFactory.getLogger(this.getClass).info(s"Web driver doesn't exist, creating ... $n times left")
         getOrCreateWebDriver
-        f
+        initializeDriverIfMissing(f, n - 1)
       case NoPythonDriverException =>
+        LoggerFactory.getLogger(this.getClass).info(s"Python driver doesn't exist, creating ... $n times left")
         getOrCreatePythonDriver
-        f
+        initializeDriverIfMissing(f, n - 1)
+      case e: Throwable =>
+        LoggerFactory.getLogger(this.getClass).error("UNKNOWN ERROR:", e)
+        throw e
     }
   }
 

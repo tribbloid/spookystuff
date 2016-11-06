@@ -366,11 +366,15 @@ These special characters are often called "metacharacters".
 
   def universalCopy(srcPath: Path, dstPath: Path): Any = {
 
-    Files.walkFileTree(srcPath, java.util.EnumSet.of(FileVisitOption.FOLLOW_LINKS),
-      Integer.MAX_VALUE, new CopyDirectory(srcPath, dstPath))
+    Files.walkFileTree (
+      srcPath,
+      java.util.EnumSet.of(FileVisitOption.FOLLOW_LINKS),
+      Integer.MAX_VALUE,
+      new CopyDirectory(srcPath, dstPath)
+    )
   }
   def asynchIfNotExist[T](dst: String)(f: =>T): Option[T] = this.synchronized {
-    val dstFile = new File(dst)
+    val dstFile = new File (dst)
     if (!dstFile.exists()) {
       Some(f)
     }
@@ -385,15 +389,18 @@ These special characters are often called "metacharacters".
     resource.getProtocol match {
       case "jar" =>
         val fullPath = resource.toString
-        val splitted = fullPath.split('!')
-        assert(splitted.length == 2)
-        val jarPath = splitted.head
-        val innerPathStr = splitted.last
+        val split = fullPath.split('!')
+        assert(split.length == 2)
+        val jarPath = split.head
+        val innerPathStr = split.last
 
-        val fs = FileSystems.newFileSystem(new URI(fullPath), new java.util.HashMap[String, String]())
-        val srcPath = fs.getPath(innerPathStr)
+        val fs = FileSystems.newFileSystem(new URI(jarPath), new java.util.HashMap[String, String]())
+        try {
+          val srcPath = fs.getPath(innerPathStr)
 
-        universalCopy(srcPath, new File(dst).toPath)
+          universalCopy(srcPath, new File(dst).toPath)
+        }
+        fs.close()
       case _ =>
         val src = new File(resource.toURI)
         universalCopy(src.toPath, new File(dst).toPath)

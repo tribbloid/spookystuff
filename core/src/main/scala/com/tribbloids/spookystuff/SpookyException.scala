@@ -21,13 +21,15 @@ class ActionException(
 }
 
 class PyException(
-                       code: String,
-                       output: String,
-                       override val cause: Throwable = null
-                     ) extends SpookyException(
+                   code: String,
+                   output: String,
+                   override val cause: Throwable = null,
+                   historyCodeOpt: Option[String] = None
+                 ) extends SpookyException(
   {
     s"""
-       |Error interpreting:
+       |${historyCodeOpt.map(v => "\t### History ###\n" + v).getOrElse("")}
+       |${"\t"}# Error interpreting:
        |$code
        |---------------------------------------
        |$output
@@ -38,8 +40,9 @@ class PyException(
 
 class PyInterpreterException(
                               code: String,
-                              output: String
-                            ) extends PyException(code, output, null)
+                              output: String,
+                              historyCodeOpt: Option[String] = None
+                            ) extends PyException(code, output, null, historyCodeOpt)
 
 class RetryingException(
                          override val message: String = "",

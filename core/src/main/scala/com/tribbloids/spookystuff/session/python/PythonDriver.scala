@@ -1,10 +1,12 @@
 package com.tribbloids.spookystuff.session.python
 
+import java.io.File
 import java.util.regex.Pattern
 
-import com.tribbloids.spookystuff.session.{AutoCleanable, TaskThreadInfo}
+import com.tribbloids.spookystuff.session.{AutoCleanable, TaskOrThreadInfo}
 import com.tribbloids.spookystuff.utils.SpookyUtils
 import com.tribbloids.spookystuff.{PyException, PyInterpreterException, SpookyContext}
+import org.apache.commons.io.FileUtils
 import org.slf4j.LoggerFactory
 
 import scala.collection.mutable.ArrayBuffer
@@ -24,9 +26,17 @@ object PythonDriver {
 
   import com.tribbloids.spookystuff.utils.SpookyViews._
 
+  /**
+    * DO NOT ATTEMPT TO SIMPLIFY IMPLEMENTATION!
+    * com.tribbloids.pyspookystuff exists in both /class & /test-class and any attempt to merge it
+    * with com.tribbloids.spookystuff.lib.python will results in test classes being retrieved.
+    */
   lazy val deploy: String = {
     val pythonPath: String = PythonDriver.DEFAULT_PYTHON_PATH // extract pyspookystuff from resources temporarily on workers
-    val modulePath = pythonPath :/ PythonDriver.MODULE_NAME
+    val modulePath = pythonPath \\ PythonDriver.MODULE_NAME
+
+    val pythonDir = new File(pythonPath)
+    FileUtils.deleteQuietly(pythonDir)
 
     val libResourceOpt = SpookyUtils.getCPResource(PythonDriver.PYTHON_LIB_RESOURCE)
     libResourceOpt.foreach {
@@ -58,15 +68,15 @@ object PythonDriver {
   * Created by peng on 01/08/16.
   */
 //TODO: not reusing Python worker for spark, is it not optimal?
-case class PythonDriver(
-                         executable: String = "python",
-                         autoImports: String =
-                         """
-                           |import os
-                           |import json
-                         """.trim.stripMargin,
-                         override val taskOrThread: TaskThreadInfo = TaskThreadInfo()
-                       ) extends PythonProcess(executable) with AutoCleanable {
+class PythonDriver(
+                    val executable: String = "python",
+                    val autoImports: String =
+                    """
+                      |import os
+                      |import simplejson as json
+                    """.trim.stripMargin,
+                    override val taskOrThread: TaskOrThreadInfo = TaskOrThreadInfo()
+                  ) extends PythonProcess(executable) with AutoCleanable {
 
   {
     val pythonPath = PythonDriver.deploy
@@ -89,6 +99,12 @@ case class PythonDriver(
   override lazy val open: Unit = {
     super.open()
   }
+
+  /**
+    * NOT thread safe
+    */
+  lazy val historyCodes: ArrayBuffer[String] = ArrayBuffer.empty
+  lazy val lazyCodes: ArrayBuffer[String] = ArrayBuffer.empty
 
   override def _clean(): Unit = {
     Try {
@@ -152,13 +168,26 @@ case class PythonDriver(
     str.stripPrefix("\r").replaceAll(PROMPTS, "")
   }
 
+  override def pyOutputLog(line: String) = {
+    val prompt = this.taskOrThread.toString
+    s"$prompt| $line"
+  }
+
   private def _interpret(code: String, spookyOpt: Option[SpookyContext] = None): Array[String] = {
     val indentedCode = code.split('\n').filter(_.nonEmpty).map("\t" + _).mkString("\n")
 
-    LoggerFactory.getLogger(this.getClass).info(s">>> PYTHON-${this.taskOrThread.id} INPUT ===============\n" + indentedCode)
+    LoggerFactory.getLogger(this.getClass).debug(s">>> ${this.taskOrThread.toString} INPUT >>>\n" + indentedCode)
 
+    val outputBuffer = ""
+    val historyCodeOpt = if (this.historyCodes.isEmpty) None
+    else {
+      val combined = "\n" + this.historyCodes.mkString("\n").stripPrefix("\n")
+      val indented = combined.split('\n').map(v => "\t" + v).mkString("\n")
+
+      Some(indented)
+    }
     val rows = try {
-      val output = this.sendAndGetResult(code)
+      val output = this.sendAndGetResult(code, outputBuffer)
       output
         .split("\n")
         .map(
@@ -170,16 +199,21 @@ case class PythonDriver(
         spookyOpt.foreach(
           _.metrics.pythonInterpretationError += 1
         )
-        throw e
+        val ee = new PyException(
+          indentedCode,
+          outputBuffer,
+          e,
+          historyCodeOpt
+        )
+        throw ee
     }
 
-
-    if (rows.exists(_.nonEmpty)) {
-      LoggerFactory.getLogger(this.getClass).info(s"$$$$$$ PYTHON-${this.taskOrThread.id} OUTPUT ===============\n" + rows.mkString("\n"))
-    }
-    else {
-      LoggerFactory.getLogger(this.getClass).info(s"$$$$$$ PYTHON-${this.taskOrThread.id} [NO OUTPUT] ===============\n" + rows.mkString("\n"))
-    }
+    //    if (rows.exists(_.nonEmpty)) {
+    //      LoggerFactory.getLogger(this.getClass).info(s"$$$$$$ PYTHON-${this.taskOrThread.id} OUTPUT ===============\n" + rows.mkString("\n"))
+    //    }
+    //    else {
+    //      LoggerFactory.getLogger(this.getClass).info(s"$$$$$$ PYTHON-${this.taskOrThread.id} [NO OUTPUT] ===============\n" + rows.mkString("\n"))
+    //    }
 
     if (pythonErrorIn(rows)) {
       spookyOpt.foreach(
@@ -187,7 +221,8 @@ case class PythonDriver(
       )
       val ee = new PyInterpreterException(
         indentedCode,
-        rows.mkString("\n")
+        rows.mkString("\n"),
+        historyCodeOpt
       )
       throw ee
     }
@@ -199,7 +234,12 @@ case class PythonDriver(
   }
 
   def interpret(code: String, spookyOpt: Option[SpookyContext] = None): Array[String] = {
-    _interpret(lazyCode + "\n" + code, spookyOpt)
+    def lazyCode = lazyCodes.mkString("\n")
+    val allCode = lazyCode + "\n" + code
+    val result = _interpret(allCode, spookyOpt)
+    this.historyCodes += allCode
+    this.lazyCodes.clear()
+    result
   }
 
   def eval(
@@ -239,13 +279,6 @@ case class PythonDriver(
         split._1 -> resultOpt
     }
   }
-
-  /**
-    * NOT thread safe
-    */
-  lazy val lazyCodes: ArrayBuffer[String] = ArrayBuffer.empty
-
-  def lazyCode = lazyCodes.mkString("\n")
 
   def lazyInterpret(code: String, spookyOpt: Option[SpookyContext] = None): Unit = {
     lazyCodes += code

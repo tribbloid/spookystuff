@@ -17,7 +17,6 @@
 
 package com.tribbloids.spookystuff.session.python;
 
-import com.tribbloids.spookystuff.PyException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -65,7 +64,7 @@ public class PythonProcess {
     }
 
     //santity check and drain version info
-    String firstRes = sendAndGetResult("print(1+1)");
+    String firstRes = sendAndGetResult("print(1+1)", null);
     String[] lines = firstRes.trim().split("\n");
     assert lines[0].startsWith("Python");
     assert lines[lines.length -1].endsWith("2");
@@ -89,34 +88,35 @@ public class PythonProcess {
     }
   }
 
-  // TODO: modified from Zeppelin code to catch stream output before being closed unexpectedly
   public String sendAndGetResult(String cmd) throws IOException {
+    return sendAndGetResult(cmd, null);
+  }
+
+  // TODO: modified from Zeppelin code to catch stream output before being closed unexpectedly
+  public String sendAndGetResult(String cmd, String output) throws IOException {
 
     writer.write(cmd + "\n\n");
     writer.write("print (\"*!?flush reader!?*\")\n\n");
     writer.flush();
 
-    String output = "";
+    if (output == null)
+    output = "";
     String line;
-    try {
-      while (!(line = reader.readLine()).contains("*!?flush reader!?*")) {
-        logger.debug("Read line from python shell : " + line);
-        if (line.equals("...")) {
-          logger.warn("Syntax error ! ");
-          output += "Syntax error ! ";
-          break;
-        }
-        output += "\r" + line + "\n";
+
+    while (!(line = reader.readLine()).contains("*!?flush reader!?*")) {
+      logger.info(pyOutputLog(line));
+      if (line.equals("...")) {
+        logger.warn("Syntax error ! ");
+        output += "Syntax error ! ";
+        break;
       }
-      return output;
+      output += "\r" + line + "\n";
     }
-    catch(Exception e) {
-      throw new PyException(
-        cmd,
-        output,
-        e
-      );
-    }
+    return output;
+  }
+
+  protected String pyOutputLog(String line) {
+    return "Read line from python shell : " + line;
   }
 
   //only use reflection to find UNIXProcess.pid.

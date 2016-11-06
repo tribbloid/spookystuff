@@ -5,7 +5,6 @@ import os
 
 from dronekit import connect
 from dronekit_sitl import SITL
-from lazy import lazy
 
 # these are process-local and won't be shared by Spark workers
 
@@ -18,7 +17,7 @@ if 'SITL_RATE' in os.environ:
 
 
 def tcp_master(instance):
-    return 'tcp:127.0.0.1:' + str(5760 + instance*10)
+    return 'tcp:localhost:' + str(5760 + instance*10)
 
 class APMSim(object):
 
@@ -32,15 +31,16 @@ class APMSim(object):
         self._sitl = sitl
         sitl.download('copter', '3.3')
         sitl.launch(self.args, await_ready=True, restart=True)
-        print("launching APM SITL .... PID=", str(sitl.p.pid))
+        print("launching APM SITL ... PID=", str(sitl.p.pid))
         self.setParamAndRelaunch('SYSID_THISMAV', self.iNum + 1)
 
     def _getConnStr(self):
         return tcp_master(self.iNum)
 
-    @lazy
+    @property
     def connStr(self):
-        return self._getConnStr()
+        result = self._getConnStr()
+        return result
 
     def setParamAndRelaunch(self, key, value):
 

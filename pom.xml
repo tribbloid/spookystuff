@@ -236,10 +236,10 @@
             <testResource>
                 <directory>src/test/resources</directory>
             </testResource>
-            <testResource>
-                <directory>src/test/python</directory>
-                <targetPath>com/tribbloids</targetPath>
-            </testResource>
+            <!--<testResource>-->
+                <!--<directory>src/test/python</directory>-->
+                <!--<targetPath>com/tribbloids</targetPath>-->
+            <!--</testResource>-->
         </testResources>
 
         <plugins>

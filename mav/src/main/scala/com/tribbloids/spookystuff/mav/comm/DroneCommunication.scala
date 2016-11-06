@@ -2,7 +2,7 @@ package com.tribbloids.spookystuff.mav.comm
 
 import com.tribbloids.spookystuff.session.python.{CaseInstanceRef, StaticRef}
 
-object MAVConnection extends StaticRef
+object DroneCommunication extends StaticRef
 
 /**
   * Created by peng on 29/10/16.
@@ -23,7 +23,7 @@ DaemonProcess   (can this be delayed to be implemented later? completely surrend
   but if not ...
     how to ensure that an interpreter can takeover and get the same vehicle?
   */
-case class MAVConnection(
-                          endpoint: Endpoint,
-                          proxy: Option[Proxy]
-                        ) extends CaseInstanceRef
+case class DroneCommunication(
+                               endpoint: Endpoint,
+                               proxy: Option[Proxy]
+                             ) extends CaseInstanceRef

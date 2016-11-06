@@ -18,6 +18,7 @@ trait PyConverter {
     }
   }
 
+  //won't take missing parameter
   def args2Ref(vs: Iterable[Any]): (Seq[PyRef], String) = {
     val pys = vs.map {
       v =>
@@ -26,20 +27,23 @@ trait PyConverter {
     val deps = pys.map(_._1).reduceOption(_ ++ _).getOrElse(Nil)
     val code =
       s"""
-         |(
-         |${pys.map(_._2).mkString(", ")}
-         |)
+         |(${pys.map(_._2).mkString(", ")})
          """.trim.stripMargin
     deps -> code
   }
 
+  //takes optional parameter, treat as missing if value of the option is None
   def kwargs2Ref(vs: Iterable[(String, Any)]): (Seq[PyRef], String) = {
     val pys = vs
-      .filter{
-        tuple =>
-          val v = tuple._2
-          (v != null) && (v != None)
-      }
+        .flatMap {
+          tuple =>
+            tuple._2 match {
+              case opt: Option[Any] =>
+                opt.map(v => tuple._1 -> v)
+              case _ =>
+                Some(tuple)
+            }
+        }
       .map {
         tuple =>
           val py = scala2ref(tuple._2)
@@ -49,9 +53,7 @@ trait PyConverter {
     val deps = pys.map(_._1).reduceOption(_ ++ _).getOrElse(Nil)
     val code =
       s"""
-         |(
-         |${pys.map(_._2).mkString(", ")}
-         |)
+         |(${pys.map(_._2).mkString(", ")})
          """.trim.stripMargin
     deps -> code
   }

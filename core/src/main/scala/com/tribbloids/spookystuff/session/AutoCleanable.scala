@@ -48,7 +48,7 @@ trait Cleanable {
   */
 trait AutoCleanable extends Cleanable {
 
-  final val taskOrThreadOnCreation: TaskThreadInfo = TaskThreadInfo()
+  final val taskOrThreadOnCreation: TaskOrThreadInfo = TaskOrThreadInfo()
 
   /**
     * taskOrThreadOnCreation is incorrect in withDeadline or threads not created by Spark
@@ -78,9 +78,9 @@ trait AutoCleanable extends Cleanable {
 
 object AutoCleanable {
 
-  lazy val uncleaned: ConcurrentMap[TaskThreadInfo, ConcurrentSet[AutoCleanable]] = ConcurrentMap()
+  lazy val uncleaned: ConcurrentMap[TaskOrThreadInfo, ConcurrentSet[AutoCleanable]] = ConcurrentMap()
 
-  def cleanup(tt: TaskThreadInfo) = {
+  def cleanup(tt: TaskOrThreadInfo) = {
     val set = uncleaned.getOrElse(tt, mutable.Set.empty)
     val copy = set.toSeq
     copy.foreach {
@@ -88,7 +88,7 @@ object AutoCleanable {
         instance.finalize()
     }
   }
-  def cleanupLocally() = cleanup(TaskThreadInfo())
+  def cleanupLocally() = cleanup(TaskOrThreadInfo())
 
   val taskCleanupListener: (TaskContext) => Unit = {
     tc =>
@@ -101,7 +101,7 @@ object AutoCleanable {
     }
   }
 
-  def addListener(v: TaskThreadInfo): Unit = {
+  def addListener(v: TaskOrThreadInfo): Unit = {
     v match {
       case TaskInfo(tc) =>
         tc.addTaskCompletionListener(taskCleanupListener)

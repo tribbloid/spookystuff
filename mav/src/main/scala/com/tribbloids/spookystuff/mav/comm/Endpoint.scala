@@ -29,6 +29,6 @@ case class Endpoint(
                      vehicleType: Option[String] = None
                    ) extends CaseInstanceRef {
 
-  val name: String = vehicleType.getOrElse("DRONE") + "@" + connStrs.head
+  val name: String = vehicleType.getOrElse("DRONE")// + "@" + connStrs.head
 
 }

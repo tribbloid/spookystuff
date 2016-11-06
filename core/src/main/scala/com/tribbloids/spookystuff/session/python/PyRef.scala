@@ -2,7 +2,7 @@
 package com.tribbloids.spookystuff.session.python
 
 import com.tribbloids.spookystuff.session._
-import com.tribbloids.spookystuff.utils.SpookyUtils
+import com.tribbloids.spookystuff.utils.{NOTSerializable, SpookyUtils}
 import com.tribbloids.spookystuff.{SpookyContext, caching}
 import org.apache.spark.ml.dsl.utils._
 
@@ -16,6 +16,8 @@ trait PyRef extends Cleanable {
   def referenceOpt: Option[String] = None
 
   def dependencies: Seq[PyRef] = Nil // has to be initialized before calling the constructor
+
+  def lzy: Boolean = true //set to false to enable immediate PyBinding initialization
 
   def converter: PyConverter = PyConverter.JSON
 
@@ -42,9 +44,15 @@ trait PyRef extends Cleanable {
   def varNamePrefix = FlowUtils.toCamelCase(simpleClassName)
   def packageName = pyClassNames.slice(0, pyClassNames.length - 1).mkString(".")
 
-  @transient lazy val driverToBindings: caching.ConcurrentMap[PythonDriver, PyBinding] = {
+  @transient lazy val _driverToBindings: caching.ConcurrentMap[PythonDriver, PyBinding] = {
     caching.ConcurrentMap()
   }
+  def driverToBindings = {
+    val badDrivers = _driverToBindings.keys.filter(_.isCleaned)
+    _driverToBindings --= badDrivers
+    _driverToBindings
+  }
+
   def bindings = driverToBindings.values.toList
 
   protected def _clean() = {
@@ -53,22 +61,19 @@ trait PyRef extends Cleanable {
     }
   }
 
-  def Py(
-          driver: PythonDriver,
-          spookyOpt: Option[SpookyContext] = None
-        ): PyBinding = {
+  def _Py(
+           driver: PythonDriver,
+           spookyOpt: Option[SpookyContext] = None
+         ): PyBinding = {
     driverToBindings.getOrElse(
       driver,
       PyBinding(driver, spookyOpt)
     )
   }
 
-  def sessionPy(session: Session): PyBinding = {
+  def Py(session: Session): PyBinding = {
     session.asInstanceOf[DriverSession].initializeDriverIfMissing {
-      driverToBindings.getOrElse(
-        session.pythonDriver,
-        PyBinding(session.pythonDriver, Some(session.spooky))
-      )
+      _Py(session.pythonDriver, Some(session.spooky))
     }
   }
 
@@ -79,12 +84,12 @@ trait PyRef extends Cleanable {
   case class PyBinding private[PyRef](
                                        driver: PythonDriver,
                                        spookyOpt: Option[SpookyContext]
-                                     ) extends Dynamic with Cleanable {
+                                     ) extends Dynamic with Cleanable with NOTSerializable {
 
     {
       dependencies.foreach {
         dep =>
-          dep.Py(driver, spookyOpt)
+          dep._Py(driver, spookyOpt)
       }
 
       val initOpt = createOpt.map {
@@ -97,7 +102,8 @@ trait PyRef extends Cleanable {
       if (preprocessingCodes.nonEmpty) {
 
         val code = preprocessingCodes.mkString("\n")
-        driver.lazyInterpret(code)
+        if (lzy) driver.lazyInterpret(code)
+        else driver.interpret(code)
       }
 
       PyRef.this.driverToBindings += driver -> this
@@ -106,15 +112,15 @@ trait PyRef extends Cleanable {
     val needCleanup = createOpt.nonEmpty && referenceOpt.nonEmpty
 
 
-//    def exe(code: String => String): Unit = {
-//      val cc = code(referenceOpt.getOrElse(""))
-//      driver.eval(
-//        cc
-//      )
-//
-//    }
+    //    def exe(code: String => String): Unit = {
+    //      val cc = code(referenceOpt.getOrElse(""))
+    //      driver.eval(
+    //        cc
+    //      )
+    //
+    //    }
 
-    def toStringOpt: Option[String] = {
+    def valueOpt: Option[String] = {
       referenceOpt.flatMap {
         ref =>
           val tempName = "_temp" + SpookyUtils.randomSuffix
@@ -129,6 +135,8 @@ trait PyRef extends Cleanable {
       }
     }
 
+    def value: String = valueOpt.getOrElse("[No Value]")
+
     def pyCallMethod(methodName: String)(py: (Seq[PyRef], String)): PyRef#PyBinding = {
 
       val refName = methodName + SpookyUtils.randomSuffix
@@ -140,15 +148,13 @@ trait PyRef extends Cleanable {
         dependencies = py._1,
         converter = converter
       )
-        .Py(
+        ._Py(
           driver,
           spookyOpt
         )
 
       result
     }
-
-    override def toString = toStringOpt.getOrElse("[No Value]")
 
     def selectDynamic(fieldName: String) = {
       pyCallMethod(fieldName)(Nil -> "")
@@ -165,7 +171,7 @@ trait PyRef extends Cleanable {
       if (needCleanup && !driver.isCleaned) {
         referenceOpt.foreach {
           varName =>
-            driver.lazyInterpret(
+            driver.interpret(
               s"del($varName)",
               spookyOpt
             )
@@ -189,7 +195,10 @@ case class DetachedRef(
                         override val referenceOpt: Option[String],
                         override val dependencies: Seq[PyRef],
                         override val converter: PyConverter
-                      ) extends PyRef
+                      ) extends PyRef {
+
+  override def lzy = false
+}
 
 
 trait ObjectRef extends PyRef {

@@ -18,30 +18,48 @@ case class ProxyFactory(
                          //primary localhost out port number -> list of URLs for multicast
                          //the first one used by DK, others nobody cares
                          ports: Seq[Int] = 12014 to 12108,
-                         gcsMapping: Endpoint => Seq[String] = _ => Nil,
+                        //this is the default port listened by QGCS
+                         gcsMapping: Endpoint => Seq[String] = _ => Seq("udp:localhost:14550"),
                          //connection string (RegEx?) pattern => GCS URLs
                          polling: Boolean = false
                        ) {
 
   def next(endpoint: Endpoint): Proxy = {
     ProxyFactory.synchronized {
-      val unusedPort = ports.find(v => !ProxyFactory.usedPorts.contains(v))
+      val port = ports.find(v => !ProxyFactory.usedPorts.contains(v))
         .get //TODO: orElse
       val outs = gcsMapping(endpoint)
       val result = Proxy(
         endpoint.connStrs.head,
         endpoint.name,
-        unusedPort,
+        port,
         outs
       )
+      ProxyFactory.usedPorts += port
       result
     }
   }
 }
 
+object Proxy {
+
+  def apply(
+             master: String,
+             name: String,
+             port: Int,
+             gcsOuts: Seq[String]
+           ): Proxy = {
+    val outs = Seq(s"udp:localhost:$port") ++ gcsOuts
+    Proxy(
+      master,
+      name,
+      outs
+    )
+  }
+}
+
 case class Proxy(
-                  connStr: String,
+                  master: String,
                   name: String,
-                  port: Int,
                   outs: Seq[String]
                 ) extends CaseInstanceRef
