@@ -1,3 +1,5 @@
+from __future__ import print_function
+
 from math import radians, cos, sin, asin, sqrt
 
 def haversineGroundDist(lon1, lat1, lon2, lat2):
@@ -27,16 +29,15 @@ def retry(maxTrial=3, name=''):
 
     def decorate(fn):
         def retryFn(*args, **kargs):
-            for i in range(1, 100):
+            for i in range(maxTrial, 0, -1):
                 try:
-                    print(name, " trial ", str(i))
-
                     result = fn(*args, **kargs)
                     return result
-                except:
-                    if i >= maxTrial:
+                except BaseException as e:
+                    if i <= 0:
                         raise
                     else:
+                        print("Retrying locally on", str(e), "...", str(i-1), "time(s) left")
                         continue
         return retryFn
     return decorate

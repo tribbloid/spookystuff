@@ -4,13 +4,31 @@ package com.tribbloids.spookystuff
   * Created by peng on 9/11/14.
   * doesn't have to catch it every time
   */
-class SpookyException (
-                        val message: String = "",
-                        val cause: Throwable = null
-                      ) extends RuntimeException(message, cause) {
+//TODO: merge with MultiCauses
+class TreeCauses(
+                  message: String = "",
+                  cause: Throwable = null
+                ) extends RuntimeException(message, cause) {
 
-  override def getMessage: String = if (cause == null) this.message
-  else s"${this.message}\nCaused by: ${this.getCause}"
+  override def getMessage: String = {
+    //    if (cause == null) {
+    messageStr
+    //    }
+    //    else {
+    //      s"$messageStr\nCaused by: ${this.getCause}"
+    //    }
+  }
+
+  def messageStr: String = {
+    this.message
+  }
+}
+
+class SpookyException(
+                       val message: String = "",
+                       val cause: Throwable = null
+                     ) extends TreeCauses(message, cause) {
+
 }
 
 class ActionException(
@@ -21,10 +39,10 @@ class ActionException(
 }
 
 class PyException(
-                   code: String,
-                   output: String,
+                   val code: String,
+                   val output: String,
                    override val cause: Throwable = null,
-                   historyCodeOpt: Option[String] = None
+                   val historyCodeOpt: Option[String] = None
                  ) extends SpookyException(
   {
     s"""

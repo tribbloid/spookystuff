@@ -7,6 +7,7 @@ from dronekit import connect
 from dronekit_sitl import SITL
 
 # these are process-local and won't be shared by Spark workers
+from pyspookystuff.utils import retry
 
 sitl_args = ['--model', 'quad', '--home=-35.363261,149.165230,584,353']
 
@@ -29,7 +30,12 @@ class APMSim(object):
         self.args = sitl_args + ['-I' + str(iNum)]
         sitl = SITL()
         self._sitl = sitl
-        sitl.download('copter', '3.3')
+
+        @retry(5)
+        def download():
+            sitl.download('copter', '3.3')
+
+        download()
         sitl.launch(self.args, await_ready=True, restart=True)
         print("launching APM SITL ... PID=", str(sitl.p.pid))
         self.setParamAndRelaunch('SYSID_THISMAV', self.iNum + 1)

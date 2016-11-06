@@ -168,8 +168,7 @@ class DroneCommunication(object):
                 self.proxy.start()
 
             time.sleep(1) # wait for proxy to initialize
-
-            @retry(3, "connect to drone")
+            @retry(2, "connect to drone")
             def connect():
                 vehicle = dronekit.connect(
                     self.uri,
@@ -214,7 +213,7 @@ class DroneCommunication(object):
             return north * north + east * east
 
         distSq = getDistSq()
-        while distSq <= 400:  # 20m
+        while distSq <= 10000:  # 20m
             noTimeout(vehicle)
             distSq = getDistSq()
             print("moving ... " + str(sqrt(distSq)) + "m")

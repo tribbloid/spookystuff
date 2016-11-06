@@ -73,6 +73,7 @@ class PythonDriver(
                     val autoImports: String =
                     """
                       |import os
+                      |from __future__ import print_function
                     """.trim.stripMargin,
                     override val taskOrThread: TaskOrThreadInfo = TaskOrThreadInfo()
                   ) extends PythonProcess(executable) with AutoCleanable {
@@ -179,7 +180,6 @@ class PythonDriver(
 
     LoggerFactory.getLogger(this.getClass).debug(s">>> ${this.taskOrThread.toString} INPUT >>>\n" + indentedCode)
 
-    val outputBuffer = ""
     val historyCodeOpt = if (this.historyCodes.isEmpty) None
     else {
       val combined = "\n" + this.historyCodes.mkString("\n").stripPrefix("\n")
@@ -188,7 +188,7 @@ class PythonDriver(
       Some(indented)
     }
     val rows = try {
-      val output = this.sendAndGetResult(code, outputBuffer)
+      val output = this.sendAndGetResult(code)
       output
         .split("\n")
         .map(
@@ -202,7 +202,7 @@ class PythonDriver(
         )
         val ee = new PyException(
           indentedCode,
-          outputBuffer,
+          this.outputBuffer,
           e,
           historyCodeOpt
         )

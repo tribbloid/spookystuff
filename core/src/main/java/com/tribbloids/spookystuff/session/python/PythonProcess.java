@@ -64,7 +64,7 @@ public class PythonProcess {
     }
 
     //santity check and drain version info
-    String firstRes = sendAndGetResult("print(1+1)", null);
+    String firstRes = sendAndGetResult("print(1+1)");
     String[] lines = firstRes.trim().split("\n");
     assert lines[0].startsWith("Python");
     assert lines[lines.length -1].endsWith("2");
@@ -88,31 +88,26 @@ public class PythonProcess {
     }
   }
 
+  volatile public String outputBuffer = "";
   public String sendAndGetResult(String cmd) throws IOException {
-    return sendAndGetResult(cmd, null);
-  }
-
-  // TODO: modified from Zeppelin code to catch stream output before being closed unexpectedly
-  public String sendAndGetResult(String cmd, String output) throws IOException {
 
     writer.write(cmd + "\n\n");
     writer.write("print (\"*!?flush reader!?*\")\n\n");
     writer.flush();
 
-    if (output == null)
-    output = "";
+    outputBuffer = "";
     String line;
 
     while (!(line = reader.readLine()).contains("*!?flush reader!?*")) {
       logger.info(pyOutputLog(line));
       if (line.equals("...")) {
         logger.warn("Syntax error ! ");
-        output += "Syntax error ! ";
+        outputBuffer += "Syntax error ! ";
         break;
       }
-      output += "\r" + line + "\n";
+      outputBuffer += "\r" + line + "\n"; //TODO: cause extra empty lines between outputs in Linux, fix it!
     }
-    return output;
+    return outputBuffer;
   }
 
   protected String pyOutputLog(String line) {

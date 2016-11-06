@@ -53,7 +53,9 @@ object SpookyUtils {
       case util.Failure(e: NoRetryWrapper) => throw e.getCause
       case util.Failure(e) if n > 1 =>
         val logger = LoggerFactory.getLogger(this.getClass)
-        logger.warn(s"Retrying locally on ${e.getClass.getSimpleName} in ${interval.toDouble/1000} second(s)... ${n-1} time(s) left")
+        logger.warn(
+          s"Retrying locally on ${e.getClass.getSimpleName} in ${interval.toDouble/1000} second(s)... ${n-1} time(s) left"
+        )
         logger.debug("\t\\-->", e)
         Thread.sleep(interval)
         retry(n - 1, interval)(fn)
