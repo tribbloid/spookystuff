@@ -15,8 +15,6 @@ aPMSim60043357380016504=pyspookystuff.mav.sim.APMSim(
 )
 
 
-
-
 # Error interpreting:
 import sys
 sys.path.append('/home/peng/.spookystuff/pythonpath')

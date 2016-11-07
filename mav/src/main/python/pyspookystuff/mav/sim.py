@@ -29,34 +29,41 @@ class APMSim(object):
         self.iNum = iNum
         self.args = sitl_args + ['-I' + str(iNum)]
         sitl = SITL()
-        self._sitl = sitl
+        self.sitl = sitl
 
         @retry(5)
         def download():
             sitl.download('copter', '3.3')
-
         download()
-        sitl.launch(self.args, await_ready=True, restart=True)
-        print("launching APM SITL ... PID=", str(sitl.p.pid))
-        self.setParamAndRelaunch('SYSID_THISMAV', self.iNum + 1)
+
+        @retry(5)
+        def launch():
+            try:
+                sitl.launch(self.args, await_ready=True, restart=True)
+                print("launching APM SITL ... PID=", str(sitl.p.pid))
+                self.setParamAndRelaunch('SYSID_THISMAV', self.iNum + 1)
+            except:
+                self.close()
+                raise
+
+        launch()
 
     def _getConnStr(self):
         return tcp_master(self.iNum)
 
     @property
     def connStr(self):
-        result = self._getConnStr()
-        return result
+        return self._getConnStr()
 
     def setParamAndRelaunch(self, key, value):
 
-        wd = self._sitl.wd
-        v = connect(self._getConnStr(), wait_ready=True) # if use connStr will trigger cyclic invocation
+        wd = self.sitl.wd  # path of the eeprom file
+        v = connect(self.connStr, wait_ready=True)
         v.parameters.set(key, value, wait_ready=True)
         v.close()
-        self._sitl.stop()
-        self._sitl.launch(self.args, await_ready=True, restart=True, wd=wd, use_saved_data=True)
-        v = connect(self._getConnStr(), wait_ready=True)
+        self.sitl.stop()
+        self.sitl.launch(self.args, await_ready=True, restart=True, wd=wd, use_saved_data=True)
+        v = connect(self.connStr, wait_ready=True)
         # This fn actually rate limits itself to every 2s.
         # Just retry with persistence to get our first param stream.
         v._master.param_fetch_all()
@@ -66,9 +73,12 @@ class APMSim(object):
         v.close()
 
     def close(self):
-        if self._sitl:
-            print("Cleaning up APM SITL PID=", str(self._sitl.p.pid))
-            self._sitl.stop()
+        if self.sitl:
+            print("Cleaning up APM SITL PID=", str(self.sitl.p.pid))
+            try:
+                self.sitl.stop()
+            except:
+                pass
         else:
             print("APM SITL not initialized, do not clean")
 
