@@ -10,26 +10,27 @@ import java.nio.file.attribute.BasicFileAttributes;
  * from:
  * http://www.java2s.com/Code/Java/JDK-7/CopyingadirectoryusingtheSimpleFileVisitorclass.htm
  */
-class CopyDirectory extends SimpleFileVisitor<Path> {
+class CopyDirectoryFileVisitor extends SimpleFileVisitor<Path> {
 
   private Path source;
   private Path target;
 
-  CopyOption[] options = {
-    StandardCopyOption.COPY_ATTRIBUTES,
-    StandardCopyOption.REPLACE_EXISTING
+  public CopyOption[] options = {
+          StandardCopyOption.COPY_ATTRIBUTES,
+          StandardCopyOption.REPLACE_EXISTING
   };
 
-  public CopyDirectory(Path source, Path target) {
+  public CopyDirectoryFileVisitor(Path source, Path target) {
     this.source = source;
     this.target = target;
   }
 
   @Override
   public FileVisitResult visitFile(Path file, BasicFileAttributes attributes)
-    throws IOException {
-    LoggerFactory.getLogger(this.getClass()).debug("Copying " + source.relativize(file));
-    Files.copy(file, getTransitive(file), options);
+          throws IOException {
+    Path dst = getTransitive(file);
+    LoggerFactory.getLogger(this.getClass()).info("Copying file " + file + " => " + dst);
+    Files.copy(file, dst, options);
     return FileVisitResult.CONTINUE;
   }
 
@@ -48,7 +49,9 @@ class CopyDirectory extends SimpleFileVisitor<Path> {
                                            BasicFileAttributes attributes) throws IOException {
     Path targetDirectory = getTransitive(directory);
     try {
-      LoggerFactory.getLogger(this.getClass()).debug("Copying " + source.relativize(directory));
+      LoggerFactory.getLogger(this.getClass()).info(
+              "Copying directory " + directory + " => " + targetDirectory
+      );
       Files.copy(directory, targetDirectory, options);
     }
     catch (FileAlreadyExistsException | DirectoryNotEmptyException e) {

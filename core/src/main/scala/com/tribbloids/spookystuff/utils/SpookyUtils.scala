@@ -372,7 +372,7 @@ These special characters are often called "metacharacters".
       srcPath,
       java.util.EnumSet.of(FileVisitOption.FOLLOW_LINKS),
       Integer.MAX_VALUE,
-      new CopyDirectory(srcPath, dstPath)
+      new CopyDirectoryFileVisitor(srcPath, dstPath)
     )
   }
   def asynchIfNotExist[T](dst: String)(f: =>T): Option[T] = this.synchronized {
@@ -402,7 +402,9 @@ These special characters are often called "metacharacters".
 
           universalCopy(srcPath, new File(dst).toPath)
         }
-        fs.close()
+        finally {
+          fs.close()
+        }
       case _ =>
         val src = new File(resource.toURI)
         universalCopy(src.toPath, new File(dst).toPath)
