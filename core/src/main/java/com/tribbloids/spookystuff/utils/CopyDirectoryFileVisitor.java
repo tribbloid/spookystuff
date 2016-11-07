@@ -32,7 +32,6 @@ class CopyDirectoryFileVisitor extends SimpleFileVisitor<Path> {
     Path dst = getTransitive(file);
     LoggerFactory.getLogger(this.getClass()).info("Copying file " + file + " => " + dst);
     SpookyUtils.blockingCopy(file, dst, options);
-    assert(Files.exists(dst)); //TODO: add retry
     return FileVisitResult.CONTINUE;
   }
 

@@ -5,6 +5,7 @@ import java.net._
 import java.nio.file.{Files, _}
 
 import com.tribbloids.spookystuff.utils.NoRetry.NoRetryWrapper
+import org.apache.commons.io.IOUtils
 import org.apache.spark.ml.dsl.ReflectionUtils
 import org.apache.spark.sql.catalyst.ScalaReflection
 import org.slf4j.LoggerFactory
@@ -357,7 +358,14 @@ These special characters are often called "metacharacters".
   def blockingCopy(file: Path, dst: Path, options: Array[CopyOption]): Unit ={
     retry(5, 1000){
       Files.copy(file, dst, options: _*)
-      assert(Files.exists(dst))
+
+      //assert(Files.exists(dst))
+      //NIO copy should use non-NIO for validation to eliminate stream caching
+      val dstContent = LocalResolver.input(dst.toString){
+        fis =>
+          IOUtils.toByteArray(fis)
+      }
+      assert(dstContent.nonEmpty)
     }
   }
 
