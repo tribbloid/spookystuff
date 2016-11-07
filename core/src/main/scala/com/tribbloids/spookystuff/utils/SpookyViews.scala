@@ -2,6 +2,7 @@ package com.tribbloids.spookystuff.utils
 
 import java.security.PrivilegedAction
 import java.sql.{Date, Timestamp}
+import java.util.regex.Pattern
 
 import com.tribbloids.spookystuff.caching.ConcurrentMap
 import com.tribbloids.spookystuff.row._
@@ -469,6 +470,27 @@ object SpookyViews {
 
     def :/(other: String): String = SpookyUtils./:/(str, other)
     def \\(other: String): String = SpookyUtils.\\\(str, other)
+
+    def interpolate(delimiter: String)(
+      replace: String => String
+    ): String = {
+
+      if (str.isEmpty) return str
+
+      val escaped = Pattern.quote(delimiter)
+      val regex = ("(?!" + escaped + ")" + escaped + "\\{[^\\{\\}\r\n]*\\}").r
+
+      val result = regex.replaceAllIn(
+        str,
+        m => {
+          val original = m.group(0)
+          val key = original.substring(2, original.length - 1)
+
+          val replacement = replace(key)
+          replacement
+        })
+      result
+    }
   }
 
   import ScalaReflection.universe._

@@ -85,6 +85,25 @@ class SpookyViewsSuite extends SpookyEnvFixture {
     assert(result.count() == TestHelper.clusterSize)
   }
 
+  test("interpolate should ignore string that contains delimiter without bracket") {
+
+    val original = "ORA$TEST"
+    val interpolated = original.interpolate("$"){
+      v =>
+        "Replaced"
+    }
+    assert(interpolated == original)
+  }
+
+  test("interpolate should allow delimiter to be escaped") {
+
+    val original = "ORA${TEST}"
+    val interpolated = original.interpolate("$"){
+      v =>
+        "Replaced"
+    }
+    assert(interpolated == original)
+  }
 //  test("1") {
 //    println(Seq("abc", "def", 3, 4, 2.3).filterByType[String].get)
 //    println(Seq("abc", "def", 3, 4, 2.3).filterByType[Integer].get)

@@ -445,22 +445,4 @@ These special characters are often called "metacharacters".
   }
 
   def randomSuffix = Math.abs(Random.nextLong())
-
-  def stringInterpolate(str: String, delimiter: String)(
-    replace: String => String
-  ): String = {
-
-    if (str.isEmpty) return str
-
-    val regex = (delimiter+"\\{[^\\{\\}\r\n]*\\}").r
-
-    val result = regex.replaceAllIn(str,m => {
-      val original = m.group(0)
-      val key = original.substring(2, original.length - 1)
-
-      val replacement = replace(key)
-      replacement
-    })
-    result
-  }
 }

@@ -141,7 +141,7 @@ case class DataRow(
                  ): Option[String] = {
 
     Try {
-      SpookyUtils.stringInterpolate(str, delimiter){
+      str.interpolate(delimiter){
         key =>
           val field = Field(key)
           "" + this.get(field).get

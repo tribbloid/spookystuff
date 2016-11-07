@@ -161,14 +161,14 @@ class DroneCommunication(object):
             self._vehicle = self._tryConnectWithProxy()
         return self._vehicle
 
-    @retry(3, "create proxy")
+    @retry(3)
     def _tryConnectWithProxy(self):
         try:
             if self.proxy:
                 self.proxy.start()
 
             time.sleep(1) # wait for proxy to initialize
-            @retry(2, "connect to drone")
+            @retry(2)
             def connect():
                 vehicle = dronekit.connect(
                     self.uri,

@@ -25,7 +25,7 @@ def airDist(p1, p2):
     result = sqrt(haversine*haversine + altDist*altDist)
     return result
 
-def retry(maxTrial=3, name=''):
+def retry(maxTrial=3):
 
     def decorate(fn):
         def retryFn(*args, **kargs):

@@ -122,6 +122,14 @@
                 </plugins>
             </build>
         </profile>
+
+        <profile>
+            <id>mav</id>
+            <modules>
+                <module>mav</module>
+                <module>assembly</module>
+            </modules>
+        </profile>
     </profiles>
 
     <groupId>com.tribbloids.spookystuff</groupId>
@@ -155,7 +163,6 @@
         <module>core</module>
         <module>integration</module>
         <!--<module>pipeline</module>-->
-        <module>mav</module>
         <!--<module>example</module>-->
         <module>assembly</module>
     </modules>
