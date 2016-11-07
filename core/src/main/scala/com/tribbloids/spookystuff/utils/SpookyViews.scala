@@ -477,8 +477,9 @@ object SpookyViews {
 
       if (str.isEmpty) return str
 
-      val escaped = Pattern.quote(delimiter)
-      val regex = ("(?!" + escaped + ")" + escaped + "\\{[^\\{\\}\r\n]*\\}").r
+      val specialChars = "(?=[]\\[+$&|!(){}^\"~*?:\\\\-])"
+      val escaped = delimiter.replaceAll(specialChars, "\\\\")
+      val regex = ("(?<!" + escaped + ")" + escaped + "\\{[^\\{\\}\r\n]*\\}").r
 
       val result = regex.replaceAllIn(
         str,

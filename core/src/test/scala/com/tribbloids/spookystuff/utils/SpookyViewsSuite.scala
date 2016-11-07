@@ -85,6 +85,26 @@ class SpookyViewsSuite extends SpookyEnvFixture {
     assert(result.count() == TestHelper.clusterSize)
   }
 
+  test("interpolate can use common character as delimiter") {
+
+    val original = "ORA'{TEST}"
+    val interpolated = original.interpolate("'"){
+      v =>
+        "Replaced"
+    }
+    assert(interpolated == "ORAReplaced")
+  }
+
+  test("interpolate can use special regex character as delimiter") {
+
+    val original = "ORA${TEST}"
+    val interpolated = original.interpolate("$"){
+      v =>
+        "Replaced"
+    }
+    assert(interpolated == "ORAReplaced")
+  }
+
   test("interpolate should ignore string that contains delimiter without bracket") {
 
     val original = "ORA$TEST"
@@ -97,13 +117,14 @@ class SpookyViewsSuite extends SpookyEnvFixture {
 
   test("interpolate should allow delimiter to be escaped") {
 
-    val original = "ORA${TEST}"
+    val original = "ORA$${TEST}"
     val interpolated = original.interpolate("$"){
       v =>
         "Replaced"
     }
     assert(interpolated == original)
   }
+
 //  test("1") {
 //    println(Seq("abc", "def", 3, 4, 2.3).filterByType[String].get)
 //    println(Seq("abc", "def", 3, 4, 2.3).filterByType[Integer].get)
