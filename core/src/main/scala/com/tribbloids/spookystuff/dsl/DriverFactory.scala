@@ -289,7 +289,7 @@ object DriverFactories {
           val srcFile = new File(srcStr)
           val dstFile = new File(dstStr)
           SpookyUtils.asynchIfNotExist(dstStr) {
-            SpookyUtils.universalCopy(srcFile.toPath, dstFile.toPath)
+            SpookyUtils.treeCopy(srcFile.toPath, dstFile.toPath)
           }
         }
           .count()

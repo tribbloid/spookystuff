@@ -2,7 +2,7 @@ package com.tribbloids.spookystuff.utils
 
 import java.io.{File, InputStream}
 import java.net._
-import java.nio.file._
+import java.nio.file.{Files, _}
 
 import com.tribbloids.spookystuff.utils.NoRetry.NoRetryWrapper
 import org.apache.spark.ml.dsl.ReflectionUtils
@@ -354,6 +354,13 @@ These special characters are often called "metacharacters".
     assert(ClassLoader.getSystemClassLoader.asInstanceOf[URLClassLoader].getURLs.contains(url))
   }
 
+  def blockingCopy(file: Path, dst: Path, options: Array[CopyOption]): Unit ={
+    retry(5, 1000){
+      Files.copy(file, dst, options: _*)
+      assert(Files.exists(dst))
+    }
+  }
+
   //  def nioStdCopy(srcPath: Path, dstFile: File): Any = {
   //    if (!dstFile.exists()) {
   //      dstFile.getParentFile.mkdirs()
@@ -366,7 +373,7 @@ These special characters are often called "metacharacters".
   //    }
   //  }
 
-  def universalCopy(srcPath: Path, dstPath: Path): Any = {
+  def treeCopy(srcPath: Path, dstPath: Path): Any = {
 
     Files.walkFileTree (
       srcPath,
@@ -400,14 +407,14 @@ These special characters are often called "metacharacters".
         try {
           val srcPath = fs.getPath(innerPathStr)
 
-          universalCopy(srcPath, new File(dst).toPath)
+          treeCopy(srcPath, new File(dst).toPath)
         }
         finally {
           fs.close()
         }
       case _ =>
         val src = new File(resource.toURI)
-        universalCopy(src.toPath, new File(dst).toPath)
+        treeCopy(src.toPath, new File(dst).toPath)
     }
   }
 

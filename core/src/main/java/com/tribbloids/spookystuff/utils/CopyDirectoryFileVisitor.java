@@ -18,6 +18,7 @@ class CopyDirectoryFileVisitor extends SimpleFileVisitor<Path> {
   public CopyOption[] options = {
           StandardCopyOption.COPY_ATTRIBUTES,
           StandardCopyOption.REPLACE_EXISTING
+//          StandardCopyOption.ATOMIC_MOVE
   };
 
   public CopyDirectoryFileVisitor(Path source, Path target) {
@@ -30,7 +31,8 @@ class CopyDirectoryFileVisitor extends SimpleFileVisitor<Path> {
           throws IOException {
     Path dst = getTransitive(file);
     LoggerFactory.getLogger(this.getClass()).info("Copying file " + file + " => " + dst);
-    Files.copy(file, dst, options);
+    SpookyUtils.blockingCopy(file, dst, options);
+    assert(Files.exists(dst)); //TODO: add retry
     return FileVisitResult.CONTINUE;
   }
 
@@ -52,7 +54,7 @@ class CopyDirectoryFileVisitor extends SimpleFileVisitor<Path> {
       LoggerFactory.getLogger(this.getClass()).info(
               "Copying directory " + directory + " => " + targetDirectory
       );
-      Files.copy(directory, targetDirectory, options);
+      Files.copy(directory, targetDirectory, options); //TODO: change to SpookyUtils.blockingCopy
     }
     catch (FileAlreadyExistsException | DirectoryNotEmptyException e) {
       if (!Files.isDirectory(targetDirectory)) {
