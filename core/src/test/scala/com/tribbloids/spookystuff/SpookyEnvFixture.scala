@@ -89,11 +89,9 @@ abstract class SpookyEnvFixture
   var _spooky: SpookyContext = _
   def spooky = {
     Option(_spooky)
-      .filterNot(_.sparkContext.isStopped)
+//      .filterNot(_.sparkContext.isStopped) TODO: not compatible with 1.5
       .getOrElse {
-        assert(!sql.sparkContext.isStopped)
         val result = new SpookyContext(sql, spookyConf)
-        assert(!result.sparkContext.isStopped)
         _spooky = result
         result
       }
