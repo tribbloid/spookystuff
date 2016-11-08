@@ -7,7 +7,12 @@ import javax.xml.bind.DatatypeConverter
   */
 abstract class EncodedStr {
 
-  def asBytes: Array[Byte]
+  def blob: Array[Byte]
+  def asBytes = blob
+
+  def asBase64Str = DatatypeConverter.printBase64Binary(blob)
+  def asBase16Str = DatatypeConverter.printHexBinary(blob)
+  def asUTF8Str = new String(blob, "UTF-8")
 
   def str: String
   override def toString = str
@@ -15,45 +20,35 @@ abstract class EncodedStr {
   def map(f: String => String): EncodedStr
 }
 
-case class Base64Wrapper(str: String) extends EncodedStr {
+case class Base64Wrapper(blob: Array[Byte]) extends EncodedStr {
 
-  def this(blob: Array[Byte]) {
+  def this(str: String) {
 
-    this(DatatypeConverter.printBase64Binary(blob))
+    this(DatatypeConverter.parseBase64Binary(str))
   }
 
+  override def str: String = asBase64Str
   def map(f: String => String) = new Base64Wrapper(f(this.str))
-
-  def asBase64Str = str
-
-  def asBytes = DatatypeConverter.parseBase64Binary(str)
 }
 
-//TODO: need test
-//TODO: change main datum to byte array
-case class Base16Wrapper(str: String) extends EncodedStr {
+case class Base16Wrapper(blob: Array[Byte]) extends EncodedStr {
 
-  def this(blob: Array[Byte]) {
+  def this(str: String) {
 
-    this(DatatypeConverter.printHexBinary(blob))
+    this(DatatypeConverter.parseHexBinary(str))
   }
 
+  override def str: String = asBase16Str
   def map(f: String => String) = new Base16Wrapper(f(this.str))
-
-  def asBase16Str = str
-
-  def asBytes = DatatypeConverter.parseHexBinary(str)
 }
 
-//TODO: why so many boilerplates?
-case class UTF8Wrapper(override val str: String) extends EncodedStr {
+case class UTF8Wrapper(blob: Array[Byte]) extends EncodedStr {
 
-  def this(blob: Array[Byte]) {
+  def this(str: String) {
 
-    this(new String(blob, "UTF-8"))
+    this(str.getBytes("UTF-8"))
   }
 
-  override def asBytes: Array[Byte] = str.getBytes("UTF-8")
-
+  override def str: String = asUTF8Str
   override def map(f: (String) => String): EncodedStr = new UTF8Wrapper(f(this.str))
 }

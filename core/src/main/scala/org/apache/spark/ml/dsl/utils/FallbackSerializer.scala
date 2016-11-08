@@ -26,7 +26,7 @@ abstract class FallbackSerializer(
           s"JSON === [${this.getClass.getSimpleName}] ==> Object"
         )
         try {
-          val bytes = new Base64Wrapper(str.trim).asBytes
+          val bytes = new Base64Wrapper(str.trim).blob
 
           val ser = sparkSerializer.newInstance()
 
