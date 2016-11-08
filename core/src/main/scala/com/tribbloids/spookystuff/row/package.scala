@@ -2,6 +2,7 @@ package com.tribbloids.spookystuff
 
 import com.tribbloids.spookystuff.actions.TraceView
 import org.apache.spark.rdd.RDD
+import org.apache.spark.sql.catalyst.expressions.GenericRowWithSchema
 
 package object row {
 
@@ -24,4 +25,6 @@ package object row {
 
   // In every execution plan, the schema: Map(Field -> DataType) has to be created on construction, which enables every Field to be cast into TypedField or IndexedField
   type IndexedField = (TypedField, Int)
+
+  type SchemaRow = GenericRowWithSchema
 }
