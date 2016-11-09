@@ -86,7 +86,7 @@ class TestAction extends SpookyEnvFixture {
     catch {
       case e: ActionException =>
         println(e)
-        assert(e.getMessage.contains("ErrorSnapshot/ErrorWebExport"))
+        assert(e.getMessage.contains("ErrorDump/ErrorWebExport"))
         assert(e.getMessage.contains("ErrorScreenshot/ErrorWebExport"))
     }
   }
@@ -104,7 +104,7 @@ class TestAction extends SpookyEnvFixture {
     catch {
       case e: ActionException =>
         println(e)
-        assert(e.getMessage.contains("Delay/1_second/ErrorSnapshot/ErrorWebExport"))
+        assert(e.getMessage.contains("Delay/1_second/ErrorDump/ErrorWebExport"))
         assert(e.getMessage.contains("Delay/1_second/ErrorScreenshot/ErrorWebExport"))
     }
   }
