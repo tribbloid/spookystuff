@@ -86,10 +86,23 @@ class TestAction extends SpookyEnvFixture {
     }
     catch {
       case e: ActionException =>
+        assert(e.getMessage.contains("ErrorWebExport"))
         assert(e.getMessage.contains("Snapshot"))
         assert(e.getMessage.contains("Screenshot"))
     }
   }
+
+//  test("a session with webDriver initialized will trigger errorDump, which should not be blocked by DocFilter") {
+//    try {
+//      ErrorWebExport.fetch(spooky)
+//      sys.error("impossible")
+//    }
+//    catch {
+//      case e: ActionException =>
+//        assert(e.getMessage.contains("Snapshot"))
+//        assert(e.getMessage.contains("Screenshot"))
+//    }
+//  }
 }
 
 case object ErrorExport extends Export {
