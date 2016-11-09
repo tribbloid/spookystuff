@@ -108,32 +108,29 @@ object TestHelper {
 
   lazy val TestSpark = {
     val sc = SparkContext.getOrCreate(TestSparkConf)
-    Runtime.getRuntime.addShutdownHook(
-      new Thread {
-        override def run() = {
-          println("=============== Stopping Test Spark Context ==============")
-          // Suppress the following log error when shutting down in local-cluster mode:
-          // Remote RPC client disassociated. Likely due to containers exceeding thresholds, or network issues.
-          // Check driver logs for WARN messages.
-          // java.lang.IllegalStateException: Shutdown hooks cannot be modified during shutdown
-          val logger = org.apache.log4j.Logger.getRootLogger
-          val oldLevel = logger.getLevel
-          logger.setLevel(org.apache.log4j.Level.toLevel("OFF"))
-          try {
-            sc.stop()
-          }
-          catch {
-            case e: Throwable =>
-              println(e)
-              e.printStackTrace()
-          }
-          finally {
-            logger.setLevel(oldLevel)
-          }
-          println("=============== Test Spark Context has stopped ==============")
-        }
-      }
-    )
+    sys.addShutdownHook {
+
+      println("=============== Stopping Test Spark Context ==============")
+      // Suppress the following log error when shutting down in local-cluster mode:
+      // Remote RPC client disassociated. Likely due to containers exceeding thresholds, or network issues.
+      // Check driver logs for WARN messages.
+      // java.lang.IllegalStateException: Shutdown hooks cannot be modified during shutdown
+      val logger = org.apache.log4j.Logger.getRootLogger
+//      val oldLevel = logger.getLevel
+      logger.setLevel(org.apache.log4j.Level.toLevel("OFF"))
+//      try {
+//        sc.stop()
+//      }
+//      catch {
+//        case e: Throwable =>
+//          println(e)
+//          e.printStackTrace()
+//      }
+//      finally {
+//        logger.setLevel(oldLevel)
+//      }
+//      println("=============== Test Spark Context has stopped ==============")
+    }
     sc
   }
   lazy val TestSQL = SQLContext.getOrCreate(TestSpark)
