@@ -10,7 +10,6 @@ import org.apache.spark.rdd.RDD
 
 import scala.collection.immutable.ListMap
 import scala.concurrent.duration
-import scala.concurrent.duration.Duration
 import scala.util.Random
 
 class TestAction extends SpookyEnvFixture {
@@ -25,9 +24,9 @@ class TestAction extends SpookyEnvFixture {
 
     val rewritten = action.interpolate(FetchedRow(DataRow(data = ListMap(Field("~") -> "http://www.dummy.com")), Seq()), schema).get
 
-//    val a = rewritten.uri.asInstanceOf[Literal[FR, String]].dataType.asInstanceOf[UnreifiedScalaType].ttg.tpe.normalize
-//    val b = Literal("http://www.dummy.com").dataType.asInstanceOf[UnreifiedScalaType].ttg.tpe.normalize
-//    val c = Literal(new Example()).dataType.asInstanceOf[UnreifiedScalaType].ttg.tpe.normalize
+    //    val a = rewritten.uri.asInstanceOf[Literal[FR, String]].dataType.asInstanceOf[UnreifiedScalaType].ttg.tpe.normalize
+    //    val b = Literal("http://www.dummy.com").dataType.asInstanceOf[UnreifiedScalaType].ttg.tpe.normalize
+    //    val c = Literal(new Example()).dataType.asInstanceOf[UnreifiedScalaType].ttg.tpe.normalize
 
     assert(rewritten === Wget(Literal.erase("http://www.dummy.com")))
     assert(rewritten.timeout(null) === randomTimeout)
@@ -63,7 +62,7 @@ class TestAction extends SpookyEnvFixture {
         df.show(false)
         df.printSchema()
 
-//        df.toJSON.collect().foreach(println)
+        //        df.toJSON.collect().foreach(println)
       }
   }
 
@@ -86,23 +85,29 @@ class TestAction extends SpookyEnvFixture {
     }
     catch {
       case e: ActionException =>
-        assert(e.getMessage.contains("ErrorWebExport"))
-        assert(e.getMessage.contains("Snapshot"))
-        assert(e.getMessage.contains("Screenshot"))
+        println(e)
+        assert(e.getMessage.contains("ErrorSnapshot/ErrorWebExport"))
+        assert(e.getMessage.contains("ErrorScreenshot/ErrorWebExport"))
     }
   }
 
-//  test("a session with webDriver initialized will trigger errorDump, which should not be blocked by DocFilter") {
-//    try {
-//      ErrorWebExport.fetch(spooky)
-//      sys.error("impossible")
-//    }
-//    catch {
-//      case e: ActionException =>
-//        assert(e.getMessage.contains("Snapshot"))
-//        assert(e.getMessage.contains("Screenshot"))
-//    }
-//  }
+  test("errorDump at the end of a series of actions should contains all backtraces") {
+    try {
+      (
+        Delay(1.seconds) +>
+          ErrorWebExport
+        )
+        .head
+        .fetch(spooky)
+      sys.error("impossible")
+    }
+    catch {
+      case e: ActionException =>
+        println(e)
+        assert(e.getMessage.contains("Delay/1_second/ErrorSnapshot/ErrorWebExport"))
+        assert(e.getMessage.contains("Delay/1_second/ErrorScreenshot/ErrorWebExport"))
+    }
+  }
 }
 
 case object ErrorExport extends Export {

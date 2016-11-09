@@ -149,6 +149,13 @@ case class Snapshot(
 
 //this is used to save GC when invoked by anothor component
 object QuickSnapshot extends Snapshot(DocFilters.Bypass)
+object ErrorDump extends Snapshot(DocFilters.Bypass) {
+  override def product2String(
+                               start: String = "(",
+                               sep: String = ",",
+                               end: String = ")"
+                             ): String = "[ErrorDump]"
+}
 
 case class Screenshot(
                        override val filter: DocFilter = Const.defaultImageFilter
@@ -176,7 +183,14 @@ case class Screenshot(
   }
 }
 
-object DefaultScreenshot extends Screenshot(DocFilters.Bypass)
+object QuickScreenshot extends Screenshot(DocFilters.Bypass)
+object ErrorScreenshot extends Snapshot(DocFilters.Bypass) {
+  override def product2String(
+                               start: String = "(",
+                               sep: String = ",",
+                               end: String = ")"
+                             ): String = "[ErrorScreenshot]"
+}
 
 @SerialVersionUID(7344992460754628988L)
 abstract class HttpMethod(
@@ -575,12 +589,12 @@ case class WpostImpl private[actions](
       case v: StringEntity =>
         val text = v.toString + "\n" + IOUtils.toString(v.getContent)
         text
-//          .split("\n")
-//          .map(
-//            v =>
-//              "\t" + v
-//          )
-//          .mkString("\n")
+      //          .split("\n")
+      //          .map(
+      //            v =>
+      //              "\t" + v
+      //          )
+      //          .mkString("\n")
       case _ => entity.toString
     }
     txt + "\n"

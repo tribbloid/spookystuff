@@ -6,7 +6,6 @@ import com.tribbloids.spookystuff.session.{DriverSession, Session}
 import com.tribbloids.spookystuff.utils.{ScalaUDT, SpookyUtils}
 import com.tribbloids.spookystuff.{ActionException, Const, SpookyContext}
 import org.apache.spark.ml.dsl.utils._
-import org.apache.spark.sql.catalyst.ScalaReflection
 import org.apache.spark.sql.types.SQLUserDefinedType
 import org.json4s.Formats
 import org.openqa.selenium.support.ui.{ExpectedConditions, WebDriverWait}
@@ -109,30 +108,32 @@ trait Action extends ActionLike with ActionRelay.HasRelay{
                                            session: Session,
                                            docOpt: Option[Doc] = None
                                          ): String = {
-    var message: String = "\n{"
+    var message: String = "\n{\n"
 
-    message += session.backtrace.map {
-      action =>
-        "| " + action.toString
-    }.mkString("\n")
-
-    message += "\n+> " + this.toStringVerbose
+    message += {
+      session.backtrace.map {
+        action =>
+          "| " + action.toString
+      } ++
+        Seq("+> " + this.toStringVerbose)
+    }
+      .mkString("\n")
 
     val errorDump: Boolean = session.spooky.conf.errorDump
     val errorDumpScreenshot: Boolean = session.spooky.conf.errorScreenshot
 
-    message += "}"
+    message += "\n}"
 
     session match {
       case d: DriverSession =>
         if (d.webDriverOpt.nonEmpty) {
           if (errorDump) {
-            val rawPage = QuickSnapshot.exe(session).head.asInstanceOf[Doc]
+            val rawPage = ErrorDump.exe(session).head.asInstanceOf[Doc]
             message += "\nSnapshot: " + this.errorDump(message, rawPage, session.spooky)
           }
           if (errorDumpScreenshot) {
             try {
-              val rawPage = DefaultScreenshot.exe(session).toList.head.asInstanceOf[Doc]
+              val rawPage = ErrorScreenshot.exe(session).toList.head.asInstanceOf[Doc]
               message += "\nScreenshot: " + this.errorDump(message, rawPage, session.spooky)
             }
             catch {
