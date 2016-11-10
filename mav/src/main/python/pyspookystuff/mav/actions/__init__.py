@@ -1,5 +1,51 @@
 import json
 
+'''
+crash course on APM & PX4 flight modes:
+APM:
+Stabilize
+Alt Hold
+Loiter
+RTL (Return-to-Launch)
+Auto
+Additional flight modes:
+
+Acro
+AutoTune
+Brake
+Circle
+Drift
+Guided (and Guided_NoGPS)
+Land
+PosHold
+Sport
+Throw
+Follow Me
+Simple and Super Simple
+Avoid_ADSB for ADS-B based avoidance of manned aircraft. Should not be set-up as a pilot selectable flight mode.
+
+PX4:
+
+MANUAL
+  Fixed wing aircraft/ rovers / boats:
+    MANUAL
+    STABILIZED
+
+  Multirotors:
+    ACRO
+    RATTITUDE
+    ANGLE
+
+ASSISTED
+  ALTCTL
+  POSCTL
+
+AUTO
+  AUTO_LOITER
+  AUTO_RTL
+  AUTO_MISSION
+'''
+
 from dronekit import LocationGlobalRelative, LocationGlobal
 
 from pyspookystuff.mav import assureInTheAir

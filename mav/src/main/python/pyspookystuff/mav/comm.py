@@ -157,6 +157,7 @@ class DroneCommunication(object):
 
     @property
     def vehicle(self):
+        # type: () -> dronekit.Vehicle
         if not self._vehicle:
             self._vehicle = self._tryConnectWithProxy()
         return self._vehicle
@@ -168,6 +169,7 @@ class DroneCommunication(object):
                 self.proxy.start()
 
             time.sleep(1) # wait for proxy to initialize
+
             @retry(2)
             def connect():
                 vehicle = dronekit.connect(
@@ -188,6 +190,7 @@ class DroneCommunication(object):
 
     # only for unit test.
     # takes no parameter, always move drone to a random point and yield a location after moving for 100m.
+    # then mark the location and instruct to attitude hold.
     def testMove(self):
         point = randomLocation()
         vehicle = self.vehicle
@@ -219,7 +222,10 @@ class DroneCommunication(object):
             print("moving ... " + str(sqrt(distSq)) + "m")
             time.sleep(1)
 
-        return vehicle.location.local_frame.north, vehicle.location.local_frame.east
+        last_location = vehicle.location
+        vehicle.simple_goto(last_location.global_relative_frame)
+
+        return last_location.local_frame.north, last_location.local_frame.east
 
 
 def randomLocation():

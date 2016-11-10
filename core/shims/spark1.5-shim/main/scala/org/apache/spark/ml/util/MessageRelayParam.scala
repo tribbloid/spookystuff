@@ -11,14 +11,14 @@ import scala.language.implicitConversions
   */
 @DeveloperApi
 class MessageRelayParam[Obj](
-                  outer: MessageRelay[Obj],
-                  parent: String,
-                  name: String,
-                  doc: String,
-                  isValid: Obj => Boolean,
-                  // serializer = SparkEnv.get.serializer
-                  formats: Formats
-                ) extends org.apache.spark.ml.param.Param[Obj](parent, name, doc, isValid) {
+                              outer: MessageRelay[Obj],
+                              parent: String,
+                              name: String,
+                              doc: String,
+                              isValid: Obj => Boolean,
+                              // serializer = SparkEnv.get.serializer
+                              formats: Formats
+                            ) extends org.apache.spark.ml.param.Param[Obj](parent, name, doc, isValid) {
 
 
   /** Creates a param pair with the given value (for Java). */

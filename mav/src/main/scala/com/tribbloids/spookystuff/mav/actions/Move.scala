@@ -14,9 +14,6 @@ case class Move(
                  from: WayPoint,
                  to: WayPoint,
                  override val delay: Duration = null
-               ) extends Interaction with PyAction {
+               ) extends DroneInteraction with PyAction {
 
-  override def exeNoOutput(session: Session): Unit = {
-    this.Py(session).exe()
-  }
 }
