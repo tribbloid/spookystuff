@@ -15,6 +15,7 @@ trait DroneInteraction extends Interaction {
     outbound(session)
   }
 
+  // when enclosed in an export, may behave differently.
   def inbound(session: Session): Unit = {}
 
   def engage(session: Session): Unit = {}

@@ -3,7 +3,7 @@ package com.tribbloids.spookystuff.session.python
 import java.io.File
 import java.util.regex.Pattern
 
-import com.tribbloids.spookystuff.session.{AutoCleanable, TaskOrThreadInfo}
+import com.tribbloids.spookystuff.session.{AutoCleanable, Lifespan}
 import com.tribbloids.spookystuff.utils.SpookyUtils
 import com.tribbloids.spookystuff.{PyException, PyInterpreterException, SpookyContext}
 import org.apache.commons.io.FileUtils
@@ -75,9 +75,8 @@ class PythonDriver(
                       |import os
                       |from __future__ import print_function
                     """.trim.stripMargin,
-                    override val taskOrThread: TaskOrThreadInfo = TaskOrThreadInfo()
+                    override val lifespan: Lifespan = Lifespan()
                   ) extends PythonProcess(executable) with AutoCleanable {
-
 
   /**
     * NOT thread safe
@@ -108,7 +107,7 @@ class PythonDriver(
     super.open()
   }
 
-  override def _clean(): Unit = {
+  override def _cleanImpl(): Unit = {
     Try {
       SpookyUtils.retry(10, 1000) {
         if (process.isAlive) {
@@ -171,14 +170,14 @@ class PythonDriver(
   }
 
   override def pyOutputLog(line: String) = {
-    val prompt = this.taskOrThread.toString
+    val prompt = this.lifespan.toString
     s"$prompt| $line"
   }
 
   private def _interpret(code: String, spookyOpt: Option[SpookyContext] = None): Array[String] = {
     val indentedCode = code.split('\n').filter(_.nonEmpty).map("\t" + _).mkString("\n")
 
-    LoggerFactory.getLogger(this.getClass).debug(s">>> ${this.taskOrThread.toString} INPUT >>>\n" + indentedCode)
+    LoggerFactory.getLogger(this.getClass).info(s">>> ${this.lifespan.toString} INPUT >>>\n" + indentedCode)
 
     val historyCodeOpt = if (this.historyCodes.isEmpty) None
     else {
@@ -187,6 +186,7 @@ class PythonDriver(
 
       Some(indented)
     }
+    //TODO: synchronize if interference happens
     val rows = try {
       val output = this.sendAndGetResult(code)
       output

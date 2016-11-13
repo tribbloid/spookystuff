@@ -2,7 +2,6 @@ package com.tribbloids.spookystuff.utils
 
 import java.security.PrivilegedAction
 import java.sql.{Date, Timestamp}
-import java.util.regex.Pattern
 
 import com.tribbloids.spookystuff.caching.ConcurrentMap
 import com.tribbloids.spookystuff.row._
@@ -10,7 +9,7 @@ import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.DataFrame
 import org.apache.spark.sql.catalyst.ScalaReflection
 import org.apache.spark.sql.types._
-import org.apache.spark.{Partitioner, SparkContext, SparkEnv, TaskContext}
+import org.apache.spark.{SparkContext, SparkEnv, TaskContext}
 
 import scala.collection.generic.CanBuildFrom
 import scala.collection.immutable.ListMap
@@ -69,7 +68,7 @@ object SpookyViews {
           }
       }
     }
-    def foreachExecutor[T: ClassTag](f: => T) = mapPerExecutor(f).collect()
+    def foreachExecutor[T: ClassTag](f: => T) = mapPerExecutor(f).count()
 
     def mapPerNode[T: ClassTag](f: => T): RDD[T] = {
       self.parallelize(1 to self.defaultParallelism * 4) //this assumes that default partitioner distribute evenly
@@ -88,7 +87,7 @@ object SpookyViews {
           }
       }
     }
-    def foreachNode[T: ClassTag](f: => T) = mapPerNode(f).collect()
+    def foreachNode[T: ClassTag](f: => T) = mapPerNode(f).count()
   }
 
   implicit class RDDView[T](val self: RDD[T]) {

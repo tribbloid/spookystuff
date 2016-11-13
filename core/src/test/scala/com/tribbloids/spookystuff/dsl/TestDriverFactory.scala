@@ -15,7 +15,7 @@ class TestDriverFactory extends SpookyEnvFixture with LocalPathDocsFixture {
     DriverFactories.Python()
   )
 
-  val poolingFactories: Seq[PoolingFactory[_]] = baseFactories
+  val poolingFactories: Seq[TaskLocalFactory[_]] = baseFactories
     .map(
       _.pooling
     )
@@ -25,7 +25,7 @@ class TestDriverFactory extends SpookyEnvFixture with LocalPathDocsFixture {
   for (ff <- baseFactories) {
     test(s"$ff can factoryReset()") {
       val session = new DriverSession(spooky)
-      val driver = ff.get(session)
+      val driver = ff.provision(session)
       ff.asInstanceOf[TransientFactory[Any]].factoryReset(driver.asInstanceOf[Any])
       ff.asInstanceOf[TransientFactory[Any]].destroy(driver, session.taskOpt)
     }
@@ -41,14 +41,14 @@ class TestDriverFactory extends SpookyEnvFixture with LocalPathDocsFixture {
     val session1 = new DriverSession(spooky)
     Visit(HTML_URL).apply(session1)
     val driver1 = session1.webDriver
-    session1.finalize()
+    session1.clean()
 
     val session2 = new DriverSession(spooky)
     Visit(HTML_URL).apply(session2)
     val driver2 = session2.webDriver
-    session2.finalize()
+    session2.clean()
 
     assert(driver1 eq driver2)
-    driver1.finalize()
+    driver1.clean()
   }
 }

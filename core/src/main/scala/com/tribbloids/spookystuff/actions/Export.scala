@@ -12,7 +12,7 @@ import com.tribbloids.spookystuff.dsl.DocFilters
 import com.tribbloids.spookystuff.extractors.{Extractor, FR, Literal}
 import com.tribbloids.spookystuff.http._
 import com.tribbloids.spookystuff.row.{DataRowSchema, FetchedRow}
-import com.tribbloids.spookystuff.session.{ProxySetting, Session}
+import com.tribbloids.spookystuff.session.{WebProxySetting, Session}
 import com.tribbloids.spookystuff.utils.{HDFSResolver, SpookyUtils}
 import org.apache.commons.io.IOUtils
 import org.apache.hadoop.fs.{FileStatus, FileSystem, Path}
@@ -330,7 +330,7 @@ abstract class HttpMethod(
     (httpClient, context)
   }
 
-  def getHttpContext(proxy: ProxySetting): HttpClientContext = {
+  def getHttpContext(proxy: WebProxySetting): HttpClientContext = {
 
     val context: HttpClientContext = HttpClientContext.create
 

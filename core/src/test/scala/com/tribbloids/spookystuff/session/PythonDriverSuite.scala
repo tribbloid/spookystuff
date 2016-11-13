@@ -17,7 +17,7 @@ object PythonDriverSuite {
   }
 
   def runIterable[T, R](xs: Iterable[T])(f: (T, PythonDriver) => R): Iterable[R] = {
-    val proc = new PythonDriver("python", taskOrThread = TaskOrThreadInfo())
+    val proc = new PythonDriver("python", lifespan = Lifespan())
     try {
       val result = xs.map{
         f(_, proc)
@@ -25,7 +25,7 @@ object PythonDriverSuite {
       result
     }
     finally {
-      proc.finalize()
+      proc.clean()
     }
   }
 }

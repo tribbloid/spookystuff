@@ -16,8 +16,8 @@ case class DummyPyAction(
                         ) extends Export with PyAction {
 
   override def doExeNoName(session: Session): Seq[Fetched] = {
-    val result = Py(session).dummy(2, 3).valueOpt
-    val result2 = Py(session).dummy(b = 3, c = 2).valueOpt
+    val result = Py(session).dummy(2, 3).strOpt
+    val result2 = Py(session).dummy(b = 3, c = 2).strOpt
     assert(result == result2)
     val doc = new Doc(
       uid = DocUID(List(this), this),

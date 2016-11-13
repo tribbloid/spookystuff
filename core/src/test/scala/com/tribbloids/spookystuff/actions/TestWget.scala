@@ -24,7 +24,7 @@ class TestWget extends SpookyEnvFixture {
   def wget(uri: String): Action = Wget(uri)
 
   lazy val noProxyIP: String = {
-    spooky.conf.proxy = ProxyFactories.NoProxy
+    spooky.conf.proxy = WebProxyFactories.NoProxy
 
     getIP()
   }
@@ -38,7 +38,7 @@ class TestWget extends SpookyEnvFixture {
         test(s"use TOR socks5 proxy for ${tuple._1} wget", Tag(classOf[LocalOnly].getCanonicalName)) {
 
           val newIP = {
-            spooky.conf.proxy = ProxyFactories.Tor
+            spooky.conf.proxy = WebProxyFactories.Tor
 
             getIP(tuple._2)
           }
@@ -51,13 +51,13 @@ class TestWget extends SpookyEnvFixture {
         test(s"revert from TOR socks5 proxy for ${tuple._1} wget", Tag(classOf[LocalOnly].getCanonicalName)) {
 
           val newIP = {
-            spooky.conf.proxy = ProxyFactories.Tor
+            spooky.conf.proxy = WebProxyFactories.Tor
 
             getIP(tuple._2)
           }
 
           val noProxyIP2 = {
-            spooky.conf.proxy = ProxyFactories.NoProxy
+            spooky.conf.proxy = WebProxyFactories.NoProxy
 
             getIP(tuple._2)
           }
@@ -77,7 +77,7 @@ class TestWget extends SpookyEnvFixture {
 
   //TODO: add canonized URI check
   test("wget should encode malformed url") {
-    spooky.conf.proxy = ProxyFactories.NoProxy
+    spooky.conf.proxy = WebProxyFactories.NoProxy
 
     val results = (
       wget("https://www.google.com/?q=giant robot") :: Nil
@@ -131,7 +131,7 @@ class TestWget extends SpookyEnvFixture {
   //  }
 
   test("output of wget should not include session's backtrace") {
-    spooky.conf.proxy = ProxyFactories.NoProxy
+    spooky.conf.proxy = WebProxyFactories.NoProxy
 
     import duration._
 

@@ -48,7 +48,7 @@ class SpookyRegistrator extends KryoRegistrator {
       classOf[TimeUnit],
       FilePaths.getClass,
       PartitionerFactories.getClass,
-      ProxyFactories.getClass
+      WebProxyFactories.getClass
     )
     array.foreach(kryo.register)
   }

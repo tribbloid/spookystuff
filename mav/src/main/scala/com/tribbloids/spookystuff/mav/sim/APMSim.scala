@@ -29,8 +29,8 @@ case class APMSim private (
 
   APMSim.existing += this
 
-  override def _clean() = {
-    super._clean()
+  override def _cleanImpl() = {
+    super._cleanImpl()
     APMSim.existing -= this
   }
 }

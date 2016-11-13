@@ -1,19 +1,17 @@
-package com.tribbloids.spookystuff.mav.comm
+package com.tribbloids.spookystuff.mav.telemetry
 
-import com.tribbloids.spookystuff.caching
 import com.tribbloids.spookystuff.session.python.CaseInstanceRef
 
 /**
   * Created by peng on 10/09/16.
   */
 object Endpoint {
-  val all: caching.ConcurrentSet[Endpoint] = caching.ConcurrentSet()
+//  val candidate: caching.ConcurrentSet[Endpoint] = caching.ConcurrentSet()
 
-  val used: caching.ConcurrentSet[Endpoint] = caching.ConcurrentSet()
+  //  Delegated to Link.existinga
+  //  val used: caching.ConcurrentSet[Endpoint] = caching.ConcurrentSet()
 
-  val unreachable: caching.ConcurrentSet[Endpoint] = caching.ConcurrentSet()
-
-
+  // won't be retried
 }
 
 /**
@@ -29,6 +27,5 @@ case class Endpoint(
                      vehicleType: Option[String] = None
                    ) extends CaseInstanceRef {
 
-  val name: String = vehicleType.getOrElse("DRONE")// + "@" + connStrs.head
-
+  def connStr = connStrs.head
 }

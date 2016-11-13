@@ -2,7 +2,7 @@ package com.tribbloids.spookystuff.testutils
 
 import org.apache.spark.SparkEnv
 import org.apache.spark.serializer.{JavaSerializer, KryoSerializer, Serializer}
-import org.scalatest.FunSuite
+import org.scalatest.{Assertion, FunSuite}
 
 import scala.reflect.ClassTag
 
@@ -11,7 +11,7 @@ import scala.reflect.ClassTag
   */
 trait TestMixin extends FunSuite {
 
-  implicit class TestStringView(str: String) {
+  @transient implicit class TestStringView(str: String) {
 
     //TODO: use reflection to figure out test name and annotate
     def shouldBe(
@@ -108,14 +108,14 @@ trait TestMixin extends FunSuite {
 
   def comparisonStr(originalStr: () => String, b: List[String]): AnyRef = new AnyRef {
 
-    override def toString() = {
+    override def toString = {
       println(originalStr())
       "\n=============================== [EXPECTED] ================================\n" +
         b.mkString("\n") + "\n"
     }
   }
 
-  implicit class TestMapView[K, V](map: scala.collection.Map[K, V]) {
+  @transient implicit class TestMapView[K, V](map: scala.collection.Map[K, V]) {
 
     assert(map != null)
 
@@ -151,23 +151,14 @@ trait TestMixin extends FunSuite {
                                                      new KryoSerializer(conf)
                                                    )
                                                  },
-                                                 condition: (T, T) => Unit = {
+                                                 condition: (T, T) => Any = {
                                                    (v1: T, v2: T) =>
                                                      assert((v1: T) == (v2: T))
                                                      assert(v1.toString == v2.toString)
                                                  }
                                                ): Unit = {
 
-    serializers.foreach{
-      ser =>
-        val serInstance = ser.newInstance()
-        val serElement = serInstance.serialize(element)
-        val element2 = serInstance.deserialize[T](serElement)
-        //        assert(!element.eq(element2))
-        condition (element, element2)
-      //    assert(element.hashCode() == element2.hashCode())
-      //        assert(element.toString == element2.toString)
-    }
+    AssertSerializable(element, serializers, condition)
   }
 
   def printSplitter(name: String) = {
@@ -185,4 +176,30 @@ trait TestMixin extends FunSuite {
   //      }
   //    }
   //  }
+}
+
+case class AssertSerializable[T <: AnyRef: ClassTag](
+                                                      element: T,
+                                                      serializers: Seq[Serializer] = {
+                                                        val conf = SparkEnv.get.conf
+                                                        Seq(
+                                                          new JavaSerializer(conf),
+                                                          new KryoSerializer(conf)
+                                                        )
+                                                      },
+                                                      condition: (T, T) => Any = {
+                                                        (v1: T, v2: T) =>
+                                                          assert((v1: T) == (v2: T))
+                                                          assert(v1.toString == v2.toString)
+                                                      }
+                                                    ) {
+
+  serializers.foreach{
+    ser =>
+      val serInstance = ser.newInstance()
+      val serElement = serInstance.serialize(element)
+      val element2 = serInstance.deserialize[T](serElement)
+//      assert(!element.eq(element2))
+      condition (element, element2)
+  }
 }

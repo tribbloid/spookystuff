@@ -10,26 +10,13 @@ import scala.language.dynamics
 
 trait PyRef extends Cleanable {
 
-  def imports: Seq[String] = Seq(
-    "import simplejson as json"
-  )
-
-  def createOpt: Option[String] = None
-  def referenceOpt: Option[String] = None
-
-  def dependencies: Seq[PyRef] = Nil // has to be initialized before calling the constructor
-
-  def lzy: Boolean = true //set to false to enable immediate PyBinding initialization
-
-  def converter: PyConverter = PyConverter.JSON
-
   // the following are only used by non-singleton subclasses
   def className = this.getClass.getCanonicalName
 
   /**
     * assumes that a Python class is always defined under pyspookystuff.
     */
-  lazy val pyClassNames: Seq[String] = {
+  lazy val pyClassNameParts: Seq[String] = {
     (
       "py" +
         className
@@ -41,25 +28,47 @@ trait PyRef extends Cleanable {
       .split('.')
   }
 
-  def pyClassName: String = pyClassNames.mkString(".")
-  def simpleClassName = pyClassNames.last
-  def varNamePrefix = FlowUtils.toCamelCase(simpleClassName)
-  def packageName = pyClassNames.slice(0, pyClassNames.length - 1).mkString(".")
-
   @transient lazy val _driverToBindings: caching.ConcurrentMap[PythonDriver, PyBinding] = {
     caching.ConcurrentMap()
   }
+
   def driverToBindings = {
-    val badDrivers = _driverToBindings.keys.filter(_.isCleaned)
-    _driverToBindings --= badDrivers
+    val deadDrivers = _driverToBindings.keys.filter(_.isCleaned)
+    _driverToBindings --= deadDrivers
     _driverToBindings
   }
 
   def bindings = driverToBindings.values.toList
 
-  protected def _clean() = {
+  def imports: Seq[String] = Seq(
+    "import simplejson as json"
+  )
+
+  def createOpt: Option[String] = None
+  def referenceOpt: Option[String] = None
+
+  // run on each driver
+  def deleteOpt: Option[String] = if (createOpt.nonEmpty) {
+    referenceOpt.map(v => s"del($v)")
+  }
+  else {
+    None
+  }
+
+  def dependencies: Seq[PyRef] = Nil // has to be initialized before calling the constructor
+
+  def lzy: Boolean = true //set to false to enable immediate PyBinding initialization
+
+  def converter: PyConverter = PyConverter.JSON
+
+  def pyClassName: String = pyClassNameParts.mkString(".")
+  def simpleClassName = pyClassNameParts.last
+  def varNamePrefix = FlowUtils.toCamelCase(simpleClassName)
+  def packageName = pyClassNameParts.slice(0, pyClassNameParts.length - 1).mkString(".")
+
+  protected def _cleanImpl() = {
     bindings.foreach {
-      _.finalize()
+      _.clean()
     }
   }
 
@@ -77,6 +86,22 @@ trait PyRef extends Cleanable {
     session.asInstanceOf[DriverSession].initializeDriverIfMissing {
       _Py(session.pythonDriver, Some(session.spooky))
     }
+  }
+
+  def scratch[T](fn: PyBinding => T): T = {
+    bindings.headOption
+      .map {
+        binding =>
+          fn(binding)
+      }
+      .getOrElse {
+        val driver = new PythonDriver()
+        val binding = _Py(driver)
+        val result = fn(binding)
+        binding.clean()
+        driver.clean()
+        result
+      }
   }
 
   /**
@@ -110,8 +135,6 @@ trait PyRef extends Cleanable {
       PyRef.this.driverToBindings += driver -> this
     }
 
-    val needCleanup = createOpt.nonEmpty && referenceOpt.nonEmpty
-
 
     //    def exe(code: String => String): Unit = {
     //      val cc = code(referenceOpt.getOrElse(""))
@@ -121,7 +144,7 @@ trait PyRef extends Cleanable {
     //
     //    }
 
-    def valueOpt: Option[String] = {
+    def strOpt: Option[String] = {
       referenceOpt.flatMap {
         ref =>
           val tempName = "_temp" + SpookyUtils.randomSuffix
@@ -135,8 +158,6 @@ trait PyRef extends Cleanable {
           result._2
       }
     }
-
-    def value: String = valueOpt.getOrElse("[No Value]")
 
     def pyCallMethod(methodName: String)(py: (Seq[PyRef], String)): PyRef#PyBinding = {
 
@@ -168,26 +189,38 @@ trait PyRef extends Cleanable {
     }
 
     //TODO: register interpreter shutdown hook listener?
-    override protected def _clean(): Unit = {
-      if (needCleanup && !driver.isCleaned) {
-        referenceOpt.foreach {
-          varName =>
-            driver.interpret(
-              s"del($varName)",
-              spookyOpt
-            )
-        }
+    /**
+      * chain to all bindings with active drivers
+      */
+    override protected def _cleanImpl(): Unit = {
+      deleteOpt.foreach {
+        code =>
+          driver.interpret(code, spookyOpt)
       }
 
-      driverToBindings.get(this.driver)
+      // remove from map
+      val d2b = driverToBindings
+      d2b.get(this.driver)
         .foreach {
           v =>
             if (v == this)
-              driverToBindings - this.driver
+              d2b - this.driver
         }
     }
   }
 }
+
+//trait BindOnce extends PyRef {
+//
+//}
+//
+//// can only be bind to one predefined driver
+//trait PreBinded extends PyRef {
+//
+//  def driver: PythonDriver
+//
+//  val Py = this._Py(driver)
+//}
 
 object RootRef extends PyRef
 
@@ -200,7 +233,6 @@ case class DetachedRef(
 
   override def lzy = false
 }
-
 
 trait ObjectRef extends PyRef {
 
@@ -233,18 +265,18 @@ trait InstanceRef extends ObjectRef {
     s"$className is a nested class, it cannot implement PyInstance"
   )
 
-  def constructorArgsPy: String
+  def pyConstructorArgs: String
 
   override lazy val createOpt = Some(
     s"""
-       |$pyClassName$constructorArgsPy
+       |$pyClassName$pyConstructorArgs
       """.trim.stripMargin
   )
 }
 
 trait MessageInstanceRef extends InstanceRef with HasMessage {
 
-  override lazy val constructorArgsPy: String = {
+  override lazy val pyConstructorArgs: String = {
     val converted = this.converter.scala2py(this.toMessage)._2
     val code =
       s"""
@@ -258,7 +290,7 @@ trait CaseInstanceRef extends InstanceRef with Product {
 
   def attrMap = SpookyUtils.Reflection.getCaseAccessorMap(this)
 
-  override lazy val (dependencies, constructorArgsPy) = {
+  override lazy val (dependencies, pyConstructorArgs) = {
 
     val tuple: (Seq[PyRef], String) = this.converter.kwargs2Ref(attrMap)
     tuple

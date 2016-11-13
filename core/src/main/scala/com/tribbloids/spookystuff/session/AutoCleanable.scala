@@ -7,31 +7,35 @@ import org.slf4j.LoggerFactory
 
 import scala.collection.mutable
 import scala.language.implicitConversions
+import scala.reflect.ClassTag
 
 trait Cleanable {
 
+  //each can only be cleaned once
   @volatile var isCleaned: Boolean = false
 
-  protected def clean(): Unit = {
+  protected def cleanImpl(): Unit = {
     if (!isCleaned){
-      _clean()
+      _cleanImpl()
     }
     isCleaned = true
     LoggerFactory.getLogger(this.getClass).info(s"Cleaned up ${this.getClass.getSimpleName}")
   }
 
-  protected def _clean(): Unit
+  protected def _cleanImpl(): Unit
 
-  override def finalize(): Unit = {
+  def clean() = finalize()
+
+  override protected def finalize(): Unit = {
     try {
-      clean()
+      cleanImpl()
     }
     catch {
       case e: NoSuchSessionException => //already cleaned before
       case e: Throwable =>
         val ee = e
         LoggerFactory.getLogger(this.getClass).warn(
-          s"!!! FAIL TO CLEAN UP ${this.getClass.getName} !!!"+e
+          s"!!! FAIL TO CLEAN UP ${this.getClass.getName} !!!" + e
         )
     }
     finally {
@@ -40,75 +44,139 @@ trait Cleanable {
   }
 }
 
+abstract class Lifespan {
+
+  protected def getID: Lifespan.ID
+
+  @transient lazy val _id = getID
+  _id //always getID on construction
+
+  def addCleanupHook(fn: () => Unit): Unit
+}
+
+class LifespanImpl extends Lifespan {
+
+  override def getID = Option(TaskContext.get()) match {
+    case Some(tc) =>
+      Lifespan.left(tc)
+    case None =>
+      Lifespan.right
+  }
+
+  override def toString = _id match {
+    case Left(v) => "Task-" + v
+    case Right(v) => "Thread-" + v
+  }
+
+  override def addCleanupHook(fn: () => Unit): Unit = {
+    _id match {
+      case Left(_) =>
+        TaskContext.get().addTaskCompletionListener {
+          tc =>
+            fn()
+        }
+      case Right(_) =>
+        sys.addShutdownHook {
+          fn()
+        }
+    }
+  }
+}
+
+object Lifespan {
+
+  type ID = Either[Long,Long]
+
+  def left(tc: TaskContext): Left[Long, Nothing] = {
+    Left(tc.taskAttemptId)
+  }
+
+  def right: Right[Nothing, Long] = {
+    Right(Thread.currentThread().getId)
+  }
+
+
+  //automatically generates depending on if
+  def apply(): Lifespan = Auto()
+
+  case class Auto() extends LifespanImpl
+
+  case class Task() extends LifespanImpl {
+
+    require(_id.isLeft, "Not inside any Spark Task")
+  }
+
+  case class JVM() extends LifespanImpl {
+
+    override def getID: ID = right
+  }
+}
+
 /**
   * This is a trait that unifies resource cleanup on both Spark Driver & Executors
   * instances created on Executors are cleaned by Spark TaskCompletionListener
   * instances created otherwise are cleaned by JVM shutdown hook
   * finalizer helps but is not always reliable
+  * can be serializable, but in which case implementation has to allow deserialized copy on a different machine to be cleanable as well.
   */
 trait AutoCleanable extends Cleanable {
 
-  final val taskOrThreadOnCreation: TaskOrThreadInfo = TaskOrThreadInfo()
+  {
+    if (!AutoCleanable.toBeCleaned.contains(lifespan._id)) {
+      lifespan.addCleanupHook {
+        () =>
+          AutoCleanable.cleanup(lifespan._id)
+      }
+    }
+    localUncleaned += this
+    LoggerFactory.getLogger(this.getClass).info(s"Creating ${this.getClass.getSimpleName}")
+  }
 
   /**
     * taskOrThreadOnCreation is incorrect in withDeadline or threads not created by Spark
     * Override this to correct such problem
     */
-  def taskOrThread = taskOrThreadOnCreation
+  def lifespan = Lifespan.apply()
 
   def localUncleaned: ConcurrentSet[AutoCleanable] = {
-
-    if (!AutoCleanable.uncleaned.contains(taskOrThread)) {
-      AutoCleanable.addListener(taskOrThread)
-    }
-    AutoCleanable.uncleaned.getOrElseUpdate(
-      taskOrThread,
+    AutoCleanable.toBeCleaned.getOrElseUpdate(
+      lifespan._id,
       ConcurrentSet()
     )
   }
 
-  override protected def clean(): Unit = {
-    super.clean()
+  override protected def cleanImpl(): Unit = {
+    super.cleanImpl()
     localUncleaned -= this
   }
-
-  localUncleaned += this
-  LoggerFactory.getLogger(this.getClass).info(s"Creating ${this.getClass.getSimpleName}")
 }
 
 object AutoCleanable {
 
-  lazy val uncleaned: ConcurrentMap[TaskOrThreadInfo, ConcurrentSet[AutoCleanable]] = ConcurrentMap()
+  val toBeCleaned: ConcurrentMap[Lifespan.ID, ConcurrentSet[AutoCleanable]] = ConcurrentMap()
 
-  def cleanup(tt: TaskOrThreadInfo) = {
-    val set = uncleaned.getOrElse(tt, mutable.Set.empty)
-    val copy = set.toSeq
-    copy.foreach {
-      instance =>
-        instance.finalize()
+  def cleanupTyped[T <: AutoCleanable : ClassTag](tt: Lifespan.ID) = {
+    val set = toBeCleaned.getOrElse(tt, mutable.Set.empty)
+    val filtered = set.toList
+      .collect {
+        case v: T => v
+      }
+    filtered
+      .foreach {
+        instance =>
+          instance.clean()
+      }
+    set --= filtered
+    if (set.isEmpty) toBeCleaned.remove(tt)
+  }
+
+  def cleanupAllTyped[T <: AutoCleanable: ClassTag]() = {
+    toBeCleaned.keys.toList.foreach {
+      tt =>
+        cleanupTyped[T](tt)
     }
   }
-  def cleanupLocally() = cleanup(TaskOrThreadInfo())
 
-  val taskCleanupListener: (TaskContext) => Unit = {
-    tc =>
-      cleanup(TaskInfo(tc))
-  }
-
-  def getShutdownHook(thread: Thread) = new Thread {
-    override def run() = {
-      cleanup(ThreadInfo(thread))
-    }
-  }
-
-  def addListener(v: TaskOrThreadInfo): Unit = {
-    v match {
-      case TaskInfo(tc) =>
-        tc.addTaskCompletionListener(taskCleanupListener)
-      case ThreadInfo(th) =>
-        Runtime.getRuntime.addShutdownHook(
-          getShutdownHook(th)
-        )
-    }
-  }
+  def cleanup(tt: Lifespan.ID) = cleanupTyped[AutoCleanable](tt)
+  def cleanupLocally() = cleanup(Lifespan.right)
 }

@@ -16,4 +16,7 @@ case class Move(
                  override val delay: Duration = null
                ) extends DroneInteraction with PyAction {
 
+  def inbound(): Unit = {
+
+  }
 }

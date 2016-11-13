@@ -19,7 +19,7 @@ trait PyAction extends Action with MessageInstanceRef {
         doExe(session)
       }
       finally {
-        this.Py(session).finalize()
+        this.Py(session).clean()
       }
     }
   }

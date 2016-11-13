@@ -12,8 +12,8 @@ class PathResolverSuite extends SpookyEnvFixture with LocalPathDocsFixture {
   val resolver = HDFSResolver(sc.hadoopConfiguration, Some(UserGroupInformation.createUserForTesting("dummy",Array.empty)))
 
   test("HDFSResolver can override login UGI") {
-    val user = resolver.lockAccessDuring(HTML_URL) {
-      str =>
+    val user = resolver.input(HTML_URL) {
+      is =>
         UserGroupInformation.getCurrentUser.getUserName
     }
     user.shouldBe("dummy")
@@ -25,8 +25,8 @@ class PathResolverSuite extends SpookyEnvFixture with LocalPathDocsFixture {
     val users = sc.parallelize(1 to (sc.defaultParallelism * 2))
       .mapPartitions {
         itr =>
-          val str = resolver.lockAccessDuring(HTML_URL) {
-            str =>
+          val str = resolver.input(HTML_URL) {
+            is =>
               UserGroupInformation.getCurrentUser.getUserName
           }
           Iterator(str)

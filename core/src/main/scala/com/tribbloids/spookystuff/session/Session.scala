@@ -53,10 +53,9 @@ abstract class Session(val spooky: SpookyContext) extends AutoCleanable with NOT
   def webDriver: CleanWebDriver
   def pythonDriver: PythonDriver
 
-  val taskOpt: Option[TaskContext] = taskOrThread.toEither.left.toOption
-  val taskOrThreadID = taskOrThread.id
+  val taskOpt: Option[TaskContext] = Option(TaskContext.get())
 
-  override def _clean(): Unit = {
+  override def _cleanImpl(): Unit = {
     spooky.metrics.sessionReclaimed += 1
   }
 }
@@ -66,7 +65,7 @@ object NoPythonDriverException extends SpookyException("INTERNAL ERROR: should i
 
 class DriverSession(
                      override val spooky: SpookyContext,
-                     override val taskOrThread: TaskOrThreadInfo = TaskOrThreadInfo()
+                     override val lifespan: Lifespan = Lifespan()
                    ) extends Session(spooky){
 
   @volatile private var _webDriverOpt: Option[CleanWebDriver] = None
@@ -76,11 +75,11 @@ class DriverSession(
     throw NoWebDriverException
   }
 
-  def getOrCreateWebDriver: CleanWebDriver = {
+  def getOrProvisionWebDriver: CleanWebDriver = {
     webDriverOpt.getOrElse {
       SpookyUtils.retry(Const.localResourceLocalRetries) {
         SpookyUtils.withDeadline(Const.sessionInitializationTimeout) {
-          val driver = spooky.conf.webDriverFactory.get(this)
+          val driver = spooky.conf.webDriverFactory.provision(this)
           spooky.metrics.webDriverDispatched += 1
           //      try {
           driver.manage().timeouts()
@@ -113,12 +112,12 @@ class DriverSession(
     throw NoPythonDriverException
   }
 
-  def getOrCreatePythonDriver: PythonDriver = {
+  def getOrProvisionPythonDriver: PythonDriver = {
     pythonDriverOpt.getOrElse {
       SpookyUtils.retry(Const.localResourceLocalRetries) {
 
         SpookyUtils.withDeadline(Const.sessionInitializationTimeout) {
-          val driver = spooky.conf.pythonDriverFactory.get(this)
+          val driver = spooky.conf.pythonDriverFactory.provision(this)
           spooky.metrics.pythonDriverDispatched += 1
 
           _pythonDriverOpt = Some(driver)
@@ -136,11 +135,11 @@ class DriverSession(
     catch {
       case NoWebDriverException =>
         LoggerFactory.getLogger(this.getClass).info(s"Web driver doesn't exist, creating ... $n time(s) left")
-        getOrCreateWebDriver
+        getOrProvisionWebDriver
         initializeDriverIfMissing(f, n - 1)
       case NoPythonDriverException =>
         LoggerFactory.getLogger(this.getClass).info(s"Python driver doesn't exist, creating ... $n time(s) left")
-        getOrCreatePythonDriver
+        getOrProvisionPythonDriver
         initializeDriverIfMissing(f, n - 1)
       case e: Throwable =>
         LoggerFactory.getLogger(this.getClass).error("UNKNOWN ERROR:", e)
@@ -148,7 +147,7 @@ class DriverSession(
     }
   }
 
-  override def _clean(): Unit = {
+  override def _cleanImpl(): Unit = {
     Option(spooky.conf.webDriverFactory).foreach{
       factory =>
         factory.release(this)
@@ -159,6 +158,6 @@ class DriverSession(
         factory.release(this)
         spooky.metrics.pythonDriverReleased += 1
     }
-    super._clean()
+    super._cleanImpl()
   }
 }

@@ -22,7 +22,7 @@ import com.tribbloids.spookystuff.caching._
 import com.tribbloids.spookystuff.session._
 import com.tribbloids.spookystuff.session.python.PythonDriver
 import com.tribbloids.spookystuff.utils.SpookyUtils
-import com.tribbloids.spookystuff.{SpookyConf, SpookyContext, SpookyException}
+import com.tribbloids.spookystuff.{SpookyConf, SpookyContext}
 import org.apache.commons.io.FileUtils
 import org.apache.spark.rdd.RDD
 import org.apache.spark.{SparkFiles, TaskContext}
@@ -44,7 +44,7 @@ abstract sealed class DriverFactory[+T] extends Serializable {
 
   // If get is called again before the previous driver is released, the old driver is destroyed to create a new one.
   // this is to facilitate multiple retries
-  def get(session: Session): T
+  def provision(session: Session): T
   def release(session: Session): Unit
 
   final def deploy(spooky: SpookyContext): Unit = {
@@ -53,7 +53,7 @@ abstract sealed class DriverFactory[+T] extends Serializable {
     }
     catch {
       case e: Throwable =>
-        throw DriverNotDeployedException(
+        throw new UnsupportedOperationException(
           s"${this.getClass.getSimpleName} cannot find resource for deployment, " +
             s"please provide Internet Connection or deploy manually",
           e
@@ -73,7 +73,7 @@ abstract sealed class TransientFactory[T] extends DriverFactory[T] {
   // cleanup: this has no effect whatsoever
   @transient lazy val sessionLocals: ConcurrentMap[Session, T] = ConcurrentMap()
 
-  def get(session: Session): T = {
+  def provision(session: Session): T = {
     release(session)
     val driver = create(session)
     sessionLocals += session -> driver
@@ -100,12 +100,12 @@ abstract sealed class TransientFactory[T] extends DriverFactory[T] {
 
   final def destroy(driver: T, tcOpt: Option[TaskContext]): Unit = {
     driver match {
-      case v: AutoCleanable => v.finalize()
+      case v: AutoCleanable => v.clean()
       case _ =>
     }
   }
 
-  final lazy val pooling = PoolingFactory(this)
+  final lazy val pooling = TaskLocalFactory(this)
 }
 
 /**
@@ -115,53 +115,41 @@ abstract sealed class TransientFactory[T] extends DriverFactory[T] {
   * first release() return driver to the pool to be used by the same Spark Task
   * call any function with a new Spark Task ID will add a cleanup TaskCompletionListener to the Task that destroy all drivers
   */
-case class PoolingFactory[T](
-                              delegate: TransientFactory[T]
-                            ) extends DriverFactory[T] {
-
-  import DriverFactories.DriverStatus
+case class TaskLocalFactory[T](
+                                delegate: TransientFactory[T]
+                              ) extends DriverFactory[T] {
 
   //taskOrThreadID -> (driver, busy)
-  @transient lazy val taskOrThreadLocals: ConcurrentMap[TaskOrThreadInfo, DriverStatus[T]] = ConcurrentMap()
+  @transient lazy val taskLocals: ConcurrentMap[Lifespan.ID, DriverStatus[T]] = ConcurrentMap()
 
-  //  override def _clean(): Unit = {
-  //    pool.values.foreach {
-  //      _.driver match {
-  //        case d: AutoCleanable =>
-  //          d.finalize()
-  //        case _ =>
-  //      }
-  //    }
-  //  }
+  override def provision(session: Session): T = {
 
-  override def get(session: Session): T = {
-
-    val opt = taskOrThreadLocals.get(session.taskOrThread)
+    val opt = taskLocals.get(session.lifespan._id)
 
     def refreshDriver: T = {
       val fresh = delegate.create(session)
-      taskOrThreadLocals.put(session.taskOrThread, new DriverStatus(fresh, isBusy = true))
+      taskLocals.put(session.lifespan._id, new DriverStatus(fresh))
       fresh
     }
 
     opt
       .map {
-        tuple =>
-          if (!tuple.isBusy) {
+        status =>
+          if (!status.isBusy) {
             try{
-              delegate.factoryReset(tuple.driver)
-              tuple.isBusy = true
-              tuple.driver
+              delegate.factoryReset(status.self)
+              status.isBusy = true
+              status.self
             }
             catch {
               case e: Throwable =>
-                delegate.destroy(tuple.driver, session.taskOpt)
+                delegate.destroy(status.self, session.taskOpt)
                 refreshDriver
             }
           }
           else {
             // TODO: should wait until its no longer busy, instead of destroying it.
-            delegate.destroy(tuple.driver, session.taskOpt)
+            delegate.destroy(status.self, session.taskOpt)
             refreshDriver
           }
       }
@@ -172,10 +160,10 @@ case class PoolingFactory[T](
 
   override def release(session: Session): Unit = {
 
-    val opt = taskOrThreadLocals.get(session.taskOrThread)
+    val opt = taskLocals.get(session.lifespan._id)
     opt.foreach{
-      tuple =>
-        tuple.isBusy = false
+      status =>
+        status.isBusy = false
     }
   }
 
@@ -195,14 +183,6 @@ abstract sealed class PythonDriverFactory extends TransientFactory[PythonDriver]
   }
 }
 
-//TODO: deploy lazily/as failover
-case class DriverNotDeployedException(
-                                       override val message: String,
-                                       override val cause: Throwable
-                                     ) extends SpookyException(
-  message, cause
-)
-
 object DriverFactories {
 
   //  def taskOrThreadID(tcOpt: Option[TaskContext]): Either[Long, Long] = {
@@ -215,11 +195,6 @@ object DriverFactories {
   //        Right(Thread.currentThread().getId)
   //      }
   //  }
-
-  class DriverStatus[T](
-                         val driver: T,
-                         @volatile var isBusy: Boolean
-                       )
 
   import com.tribbloids.spookystuff.utils.SpookyViews._
 
@@ -362,7 +337,7 @@ object DriverFactories {
     override def _createImpl(session: Session): CleanWebDriver = {
       new CleanWebDriver(
         new PhantomJSDriver(newCap(session.spooky)),
-        session.taskOrThread
+        session.lifespan
       )
     }
   }
@@ -381,7 +356,7 @@ object DriverFactories {
       //see http://stackoverflow.com/questions/12853715/setting-user-agent-for-htmlunitdriver-selenium
       if (userAgent != null) result.setCapability(PhantomJSDriverService.PHANTOMJS_PAGE_SETTINGS_PREFIX + "userAgent", userAgent)
 
-      val proxy: ProxySetting = spooky.conf.proxy()
+      val proxy: WebProxySetting = spooky.conf.proxy()
 
       if (proxy != null) {
         result.setCapability(PROXY, proxy.toSeleniumProxy)
@@ -398,7 +373,7 @@ object DriverFactories {
       self.setProxySettings(Proxy.extractFrom(cap))
       val driver = new CleanWebDriver(
         self,
-        session.taskOrThread
+        session.lifespan
       )
 
       driver
@@ -432,7 +407,7 @@ object DriverFactories {
 
     override def _createImpl(session: Session): PythonDriver = {
       val exeStr = getExecutable(session.spooky)
-      new PythonDriver(exeStr, taskOrThread = session.taskOrThread)
+      new PythonDriver(exeStr, lifespan = session.lifespan)
     }
   }
 }

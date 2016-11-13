@@ -49,7 +49,7 @@ AUTO
 from dronekit import LocationGlobalRelative, LocationGlobal
 
 from pyspookystuff.mav import assureInTheAir
-from pyspookystuff.mav.comm import DroneCommunication, Endpoint
+from pyspookystuff.mav.telemetry import Link, Endpoint
 
 
 class PyAction(object):
@@ -72,7 +72,7 @@ class DroneAction(PyAction):
             instances = map(lambda v: Endpoint(**v), _endpoints)
 
             # if a binding is already created for this process it will be reused.
-            self.binding = DroneCommunication.getOrCreate(instances, proxy)
+            self.binding = Link.getOrCreate(instances, proxy)
 
         assureInTheAir(takeOffAltitude, self.binding.vehicle)
 

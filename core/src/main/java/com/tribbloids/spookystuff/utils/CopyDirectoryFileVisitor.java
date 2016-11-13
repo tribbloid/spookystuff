@@ -30,7 +30,6 @@ class CopyDirectoryFileVisitor extends SimpleFileVisitor<Path> {
   public FileVisitResult visitFile(Path file, BasicFileAttributes attributes)
           throws IOException {
     Path dst = getTransitive(file);
-    LoggerFactory.getLogger(this.getClass()).info("Copying file " + file + " => " + dst);
     SpookyUtils.blockingCopy(file, dst, options);
     return FileVisitResult.CONTINUE;
   }
@@ -50,9 +49,6 @@ class CopyDirectoryFileVisitor extends SimpleFileVisitor<Path> {
                                            BasicFileAttributes attributes) throws IOException {
     Path targetDirectory = getTransitive(directory);
     try {
-      LoggerFactory.getLogger(this.getClass()).info(
-              "Copying directory " + directory + " => " + targetDirectory
-      );
       Files.copy(directory, targetDirectory, options); //TODO: change to SpookyUtils.blockingCopy
     }
     catch (FileAlreadyExistsException | DirectoryNotEmptyException e) {

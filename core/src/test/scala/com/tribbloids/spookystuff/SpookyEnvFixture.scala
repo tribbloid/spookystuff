@@ -3,7 +3,7 @@ package com.tribbloids.spookystuff
 import com.tribbloids.spookystuff.dsl.DriverFactory
 import com.tribbloids.spookystuff.extractors.{Alias, GenExtractor, GenResolved}
 import com.tribbloids.spookystuff.row.{DataRowSchema, SquashedFetchedRow, TypedField}
-import com.tribbloids.spookystuff.session.{AutoCleanable, CleanWebDriver, TaskInfo}
+import com.tribbloids.spookystuff.session.{AutoCleanable, CleanWebDriver, Lifespan}
 import com.tribbloids.spookystuff.testutils.{RemoteDocsFixture, TestHelper}
 import com.tribbloids.spookystuff.utils.SpookyUtils
 import org.apache.spark.SparkContext
@@ -31,15 +31,15 @@ object SpookyEnvFixture {
   }
 
   def driverInstancesShouldBeClean(spooky: SpookyContext): Unit = {
-    AutoCleanable.cleanupLocally() //nobody cares about local leakage
+    AutoCleanable.cleanupLocally() //nobody cares about leakage on driver
 
-    AutoCleanable.uncleaned
+    AutoCleanable.toBeCleaned
       .foreach {
         tuple =>
           val nonLocalDrivers = tuple._2
             .filter{
               v =>
-                v.taskOrThread.isInstanceOf[TaskInfo]
+                v.lifespan.isInstanceOf[Lifespan.Task]
             }
           assert(
             nonLocalDrivers.isEmpty,
@@ -71,33 +71,32 @@ object SpookyEnvFixture {
 }
 
 abstract class SpookyEnvFixture
-  extends FunSuite
+  extends RemoteDocsFixture
     with BeforeAndAfter
     with BeforeAndAfterAll
-    with Retries
-    with RemoteDocsFixture {
+    with Retries {
 
-  val startTime = System.currentTimeMillis()
+//  val startTime = System.currentTimeMillis()
 
   def sc: SparkContext = TestHelper.TestSpark
   def sql: SQLContext = TestHelper.TestSQL
 
-  lazy val spookyConf = new SpookyConf(
+  @transient lazy val spookyConf = new SpookyConf(
     webDriverFactory = driverFactory
   )
 
   var _spooky: SpookyContext = _
   def spooky = {
     Option(_spooky)
-//      .filterNot(_.sparkContext.isStopped) TODO: not compatible with 1.5
+      //      .filterNot(_.sparkContext.isStopped) TODO: not compatible with 1.5
       .getOrElse {
-        val result = new SpookyContext(sql, spookyConf)
-        _spooky = result
-        result
-      }
+      val result = new SpookyContext(sql, spookyConf)
+      _spooky = result
+      result
+    }
   }
 
-  lazy val schema = DataRowSchema(spooky)
+  def schema = DataRowSchema(spooky)
 
   implicit def withSchema(row: SquashedFetchedRow): SquashedFetchedRow#WithSchema = new row.WithSchema(schema)
   implicit def extractor2Resolved[T, R](extractor: Alias[T, R]): GenResolved[T, R] = GenResolved(

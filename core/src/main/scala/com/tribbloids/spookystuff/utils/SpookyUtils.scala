@@ -355,17 +355,20 @@ These special characters are often called "metacharacters".
     assert(ClassLoader.getSystemClassLoader.asInstanceOf[URLClassLoader].getURLs.contains(url))
   }
 
-  def blockingCopy(file: Path, dst: Path, options: Array[CopyOption]): Unit ={
+  def blockingCopy(src: Path, dst: Path, options: Array[CopyOption]): Unit ={
     retry(5, 1000){
-      Files.copy(file, dst, options: _*)
+      Files.copy(src, dst, options: _*)
 
       //assert(Files.exists(dst))
       //NIO copy should use non-NIO for validation to eliminate stream caching
+
       val dstContent = LocalResolver.input(dst.toString){
         fis =>
           IOUtils.toByteArray(fis)
       }
-      assert(dstContent.nonEmpty)
+      val pathsStr = src + " => " + dst
+//      assert(srcContent.length == dstContent.length, pathsStr + " copy failed")
+      LoggerFactory.getLogger(this.getClass).debug(pathsStr + s" ${dstContent.length} byte(s) copied")
     }
   }
 
@@ -425,7 +428,6 @@ These special characters are often called "metacharacters".
         treeCopy(src.toPath, new File(dst).toPath)
     }
   }
-
 
   def longHash(string: String): Long = {
     var h: Long = 1125899906842597L // prime

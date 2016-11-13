@@ -72,7 +72,7 @@ class SpookyConf (
                    var webDriverFactory: DriverFactory[CleanWebDriver] = SpookyConf.DEFAULT_WEBDRIVER_FACTORY,
                    var pythonDriverFactory: DriverFactory[PythonDriver] = SpookyConf.DEFAULT_PYTHONDRIVER_FACTORY,
 
-                   var proxy: () => ProxySetting = ProxyFactories.NoProxy,
+                   var proxy: () => WebProxySetting = WebProxyFactories.NoProxy,
 
                    //TODO: merge into headersFactory
                    var userAgentFactory: () => String = {
@@ -195,7 +195,7 @@ class SpookyConf (
     }
   }
 
-  def driverFactories: Seq[DriverFactory[AutoCleanable]] = {
+  def driverFactories: Seq[DriverFactory[_]] = {
     Seq(
       webDriverFactory,
       pythonDriverFactory

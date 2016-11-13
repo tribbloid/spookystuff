@@ -1,7 +1,8 @@
 package com.tribbloids.spookystuff.mav
 
 import com.tribbloids.spookystuff.mav.sim.APMSim
-import com.tribbloids.spookystuff.session.{DriverSession, Session, TaskOrThreadInfo}
+import com.tribbloids.spookystuff.mav.telemetry.Link
+import com.tribbloids.spookystuff.session.{AutoCleanable, DriverSession, Lifespan, Session}
 import com.tribbloids.spookystuff.{SpookyEnvFixture, caching}
 import org.apache.spark.rdd.RDD
 
@@ -28,16 +29,21 @@ abstract class APMSimFixture extends SpookyEnvFixture {
   var simConnStrRDD: RDD[String] = _
   def simConnStrs = simConnStrRDD.collect().toSeq.distinct
 
+  def numSims = sc.defaultParallelism
+
   override def beforeAll(): Unit = {
     super.beforeAll()
     val spooky = this.spooky
-    val connStrRDD = sc.mapPerExecutor {
-      //NOT cleaned by TaskCompletionListener
-      val session = new DriverSession(spooky, TaskOrThreadInfo.thread)
-      val sim = SimFixture.launch(session)
-      SimFixture.allSims += sim
-      sim.Py(session).connStr.valueOpt
-    }
+
+    val connStrRDD = sc.parallelize(1 to numSims)
+      .map {
+        i =>
+          //NOT cleaned by TaskCompletionListener
+          val session = new DriverSession(spooky, Lifespan.JVM())
+          val sim = SimFixture.launch(session)
+          SimFixture.allSims += sim
+          sim.Py(session).connStr.strOpt
+      }
       .flatMap(v => v)
       .persist()
 
@@ -47,19 +53,27 @@ abstract class APMSimFixture extends SpookyEnvFixture {
 
   override def afterAll(): Unit = {
     sc.foreachNode {
+      // in production Links will be cleaned up by shutdown hook, unfortunately test fixtures can't wait for that long.
+      AutoCleanable.cleanupAllTyped[Link]()
+      //TODO: run on each worker!
+
       val sims: Set[APMSim] = SimFixture.allSims.toSet
       val bindings = sims
         .flatMap(v => v.bindings)
 
       SimFixture.allSims.foreach {
         sim =>
-          sim.finalize()
+          sim.clean()
       }
-      bindings.foreach(_.driver.finalize())
+      bindings.foreach(_.driver.clean())
       SimFixture.allSims.clear()
     }
     super.afterAll()
   }
+}
+
+// TODO: implement! 1 SITL on drivers
+class APMSimSingletonSuite extends SpookyEnvFixture {
 }
 
 class APMSimSuite extends APMSimFixture {
