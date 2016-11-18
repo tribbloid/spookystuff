@@ -2,7 +2,7 @@ package com.tribbloids.spookystuff.testutils
 
 import org.apache.spark.SparkEnv
 import org.apache.spark.serializer.{JavaSerializer, KryoSerializer, Serializer}
-import org.scalatest.{Assertion, FunSuite}
+import org.scalatest.FunSuite
 
 import scala.reflect.ClassTag
 
