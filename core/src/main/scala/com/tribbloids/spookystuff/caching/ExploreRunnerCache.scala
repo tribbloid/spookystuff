@@ -67,17 +67,6 @@ object ExploreRunnerCache {
     getOnGoingRunners(exeID) -= v
   }
 
-  //  def replaceInto(
-  //                   key: (TraceView, Long),
-  //                   values: Array[DataRow]
-  //                 ): this.type = {
-  //    this.synchronized{
-  //      this.put(key, values)
-  //    }
-  //
-  //    this
-  //  }
-
   def get(
            key: (TraceView, Long),
            reducer: RowReducer

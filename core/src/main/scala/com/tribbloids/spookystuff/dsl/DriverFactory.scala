@@ -211,7 +211,7 @@ object DriverFactories {
         SpookyConf.getDefault("phantomjs.path", DEFAULT_PATH)
     }
 
-    def asynchDelete(dst: String): Unit = this.synchronized {
+    def syncDelete(dst: String): Unit = this.synchronized {
       val dstFile = new File(dst)
       FileUtils.forceDelete(dstFile)
     }
@@ -253,7 +253,7 @@ object DriverFactories {
         if (redeploy) {
           sc.mapPerExecutor {
             val dstStr = getPath(spooky)
-            PhantomJS.asynchDelete(dstStr)
+            PhantomJS.syncDelete(dstStr)
           }
             .count()
         }

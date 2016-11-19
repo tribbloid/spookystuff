@@ -75,7 +75,7 @@ trait TestMixin extends FunSuite {
 
           a.zip(b).foreach {
             tuple =>
-              val fixes = tuple._2.split(" [\\.]{6,} ", 2)
+              val fixes = tuple._2.split("[\\.]{6,}", 2)
               assert(
                 tuple._1.startsWith(fixes.head),
                 comparisonStr(originalStr _, b)

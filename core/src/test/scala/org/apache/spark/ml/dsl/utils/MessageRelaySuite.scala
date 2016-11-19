@@ -49,7 +49,7 @@ class MessageRelaySuite extends AbstractFlowSuite {
 
     val xmlStr = MessageView(obj).toXMLStr(pretty = false)
     xmlStr.shouldBeLike(
-      s"<TimeWrapper><time> ...... </time></TimeWrapper>"
+      s"<TimeWrapper><time>......</time></TimeWrapper>"
     )
 
     val reader = new MessageReader[TimeWrapper]()
@@ -64,7 +64,7 @@ class MessageRelaySuite extends AbstractFlowSuite {
 
     val reader = new MessageReader[TimeWrapper]()
     val v = reader.fromXML(xmlStr)
-    v.toString.shouldBeLike("TimeWrapper(Thu Sep 08 15:00:00 ...... )")
+    v.toString.shouldBeLike("TimeWrapper(Thu Sep 08 15:00:00......)")
   }
 
   test("can read less accurate timestamp") {
@@ -74,7 +74,7 @@ class MessageRelaySuite extends AbstractFlowSuite {
 
     val reader = new MessageReader[TimeWrapper]()
     val v = reader.fromXML(xmlStr)
-    v.toString.shouldBeLike("TimeWrapper(Thu Sep 08 15:00:00 ...... )")
+    v.toString.shouldBeLike("TimeWrapper(Thu Sep 08 15:00:00......)")
   }
 
   test("can convert even less accurate timestamp") {
@@ -84,7 +84,7 @@ class MessageRelaySuite extends AbstractFlowSuite {
 
     val reader = new MessageReader[TimeWrapper]()
     val v = reader.fromXML(xmlStr)
-    v.toString.shouldBeLike("TimeWrapper(Thu Sep 08 15:00:00 ...... )")
+    v.toString.shouldBeLike("TimeWrapper(Thu Sep 08 15:00:00......)")
   }
 
   test("reading an object with missing value & default value should fail early") {
