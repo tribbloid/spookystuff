@@ -3,14 +3,14 @@ package com.tribbloids.spookystuff.extractors
 import com.tribbloids.spookystuff.SpookyEnvFixture
 import com.tribbloids.spookystuff.actions.{Action, ActionUDT, Wget}
 import com.tribbloids.spookystuff.doc.Doc
-import com.tribbloids.spookystuff.testutils.TestHelper
+import com.tribbloids.spookystuff.testutils.{LocalPathDocsFixture, TestHelper}
 import org.apache.spark.sql.types._
 
 /**
   * Created by peng on 09/07/16.
   */
 
-class ScalaDynamicExtractorSuite extends SpookyEnvFixture {
+class ScalaDynamicExtractorSuite extends SpookyEnvFixture with LocalPathDocsFixture {
 
   import com.tribbloids.spookystuff.dsl._
   import com.tribbloids.spookystuff.utils.SpookyViews._
@@ -29,7 +29,6 @@ class ScalaDynamicExtractorSuite extends SpookyEnvFixture {
     dynamic.resolveType(null) =~=! TimestampType
     val fn = dynamic.resolve(null)
     assert(fn.apply(null) == result)
-
   }
 
   test("can resolve Doc.uri") {
