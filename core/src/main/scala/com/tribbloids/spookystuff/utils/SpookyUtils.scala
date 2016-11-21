@@ -7,7 +7,6 @@ import java.nio.file.{Files, _}
 import com.tribbloids.spookystuff.utils.NoRetry.NoRetryWrapper
 import org.apache.commons.io.IOUtils
 import org.apache.spark.ml.dsl.ReflectionUtils
-import org.apache.spark.sql.catalyst.ScalaReflection
 import org.slf4j.LoggerFactory
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -20,7 +19,6 @@ import scala.xml.PrettyPrinter
 
 object SpookyUtils {
 
-  import ScalaReflection.universe._
   import SpookyViews._
 
   def qualifiedName(separator: String)(parts: String*) = {
@@ -263,17 +261,12 @@ These special characters are often called "metacharacters".
   /**
     * all implementation has to be synchronized and preferrably not executed concurrently to preserve efficiency.
     */
-  object Reflection {
+  object Reflection extends ReflectionLock {
 
-    def getCaseAccessorSymbols(cls: Class[_]): List[MethodSymbol] = this.synchronized{
-      val m = runtimeMirror(cls.getClassLoader)
-      val classSymbol = m.staticClass(cls.getName)
-      val t = classSymbol.selfType
-      getCaseAccessorSymbols(t)
-    }
+    import org.apache.spark.sql.catalyst.ScalaReflection.universe._
 
-    def getCaseAccessorSymbols(tpe: Type): List[MethodSymbol] = this.synchronized{
-      val accessors = tpe.members.collect {
+    def getCaseAccessorSymbols(tt: ScalaType[_]): List[MethodSymbol] = locked{
+      val accessors = tt.asType.members.collect {
         case m: MethodSymbol if m.isCaseAccessor => m
       }
       accessors
@@ -281,40 +274,17 @@ These special characters are often called "metacharacters".
         .reverse
     }
 
-    def getCaseAccessorSymbols[T: TypeTag]: List[MethodSymbol] = this.synchronized{
-      typeOf[T].members.collect {
-        case m: MethodSymbol if m.isCaseAccessor => m
-      }
-        .toList
-    }
-
-    def getCaseAccessorNames[T: TypeTag]: List[(String, Type)] = this.synchronized{
-      getCaseAccessorSymbols[T].map {
+    def getCaseAccessorFields(tt: ScalaType[_]): List[(String, Type)] = {
+      getCaseAccessorSymbols(tt).map {
         ss =>
           ss.name.decoded -> ss.typeSignature
       }
     }
 
-    def getCaseAccessorMap(v: Product): List[(String, Any)] = this.synchronized{
-      val ks = getCaseAccessorSymbols(v.getClass)
-        .map(_.name.decoded)
-      val vs = v.productIterator.toList
-      assert (ks.size == vs.size)
-      ks.zip(vs)
-    }
-
-    //the following are copied from Spark ScalaReflection
-    def getConstructorParameters(cls: Class[_]): Seq[(String, Type)] = this.synchronized{
-      val m = runtimeMirror(cls.getClassLoader)
-      val classSymbol = m.staticClass(cls.getName)
-      val t = classSymbol.selfType
-      getConstructorParameters(t)
-    }
-
-    def getConstructorParameters(tpe: Type): Seq[(String, Type)] = this.synchronized{
-      val formalTypeArgs = tpe.typeSymbol.asClass.typeParams
-      val TypeRef(_, _, actualTypeArgs) = tpe
-      val constructorSymbol = tpe.member(nme.CONSTRUCTOR)
+    def getConstructorParameters(tt: ScalaType[_]): Seq[(String, Type)] = locked{
+      val formalTypeArgs = tt.asType.typeSymbol.asClass.typeParams
+      val TypeRef(_, _, actualTypeArgs) = tt.asType
+      val constructorSymbol = tt.asType.member(nme.CONSTRUCTOR)
       val params = if (constructorSymbol.isMethod) {
         constructorSymbol.asMethod.paramss
       } else {
@@ -331,6 +301,15 @@ These special characters are often called "metacharacters".
       params.flatten.map { p =>
         p.name.toString -> p.typeSignature.substituteTypes(formalTypeArgs, actualTypeArgs)
       }
+    }
+
+    def getCaseAccessorMap(v: Product): List[(String, Any)] = {
+      val tt = ScalaType.fromClass(v.getClass)
+      val ks = getCaseAccessorSymbols(tt)
+        .map(_.name.decoded)
+      val vs = v.productIterator.toList
+      assert (ks.size == vs.size)
+      ks.zip(vs)
     }
   }
 
@@ -367,22 +346,10 @@ These special characters are often called "metacharacters".
           IOUtils.toByteArray(fis)
       }
       val pathsStr = src + " => " + dst
-//      assert(srcContent.length == dstContent.length, pathsStr + " copy failed")
+      //      assert(srcContent.length == dstContent.length, pathsStr + " copy failed")
       LoggerFactory.getLogger(this.getClass).debug(pathsStr + s" ${dstContent.length} byte(s) copied")
     }
   }
-
-  //  def nioStdCopy(srcPath: Path, dstFile: File): Any = {
-  //    if (!dstFile.exists()) {
-  //      dstFile.getParentFile.mkdirs()
-  //      Files.copy(
-  //        srcPath,
-  //        dstFile.toPath,
-  //        StandardCopyOption.COPY_ATTRIBUTES,
-  //        StandardCopyOption.REPLACE_EXISTING
-  //      )
-  //    }
-  //  }
 
   def treeCopy(srcPath: Path, dstPath: Path): Any = {
 
@@ -393,7 +360,7 @@ These special characters are often called "metacharacters".
       new CopyDirectoryFileVisitor(srcPath, dstPath)
     )
   }
-  def asynchIfNotExist[T](dst: String)(f: =>T): Option[T] = this.synchronized {
+  def ifFileNotExist[T](dst: String)(f: =>T): Option[T] = this.synchronized {
     val dstFile = new File (dst)
     if (!dstFile.exists()) {
       Some(f)

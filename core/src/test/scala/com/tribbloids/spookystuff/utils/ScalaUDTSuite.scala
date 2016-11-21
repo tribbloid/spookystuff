@@ -11,14 +11,14 @@ import org.apache.spark.sql.types.DataType
   */
 class ScalaUDTSuite extends SpookyEnvFixture with TestMixin {
 
-  import SpookyViews._
+  import ScalaType._
   import org.apache.spark.sql.catalyst.ScalaReflection.universe._
 
   def getAndTestReifiedType[T: TypeTag]: DataType = {
     val unreified = UnreifiedScalaType.apply[T]
     assertSerializable(unreified)
 
-    val reified = TypeUtils.catalystTypeFor[T]
+    val reified = TypeUtils.tryCatalystTypeFor[T].get
     assert(reified == unreified.reify)
     assertSerializable(reified)
     reified

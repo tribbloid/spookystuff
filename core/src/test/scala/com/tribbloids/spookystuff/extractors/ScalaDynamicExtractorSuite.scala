@@ -13,20 +13,21 @@ import org.apache.spark.sql.types._
 class ScalaDynamicExtractorSuite extends SpookyEnvFixture with LocalPathDocsFixture {
 
   import com.tribbloids.spookystuff.dsl._
-  import com.tribbloids.spookystuff.utils.SpookyViews._
+  import com.tribbloids.spookystuff.utils.ScalaType._
+
   val doc = Wget(HTML_URL).fetch(spooky).head
 
   test("can resolve Fetched.timestamp") {
 
     val result = doc.timestamp
 
-    val dynamic = ScalaDynamicExtractor (
+    def dynamic = ScalaDynamicExtractor (
       Literal(doc),
       "timestamp",
       None
     )
 
-    dynamic.resolveType(null) =~=! TimestampType
+    dynamic.resolveType(null) should_=~= TimestampType
     val fn = dynamic.resolve(null)
     assert(fn.apply(null) == result)
   }
@@ -35,13 +36,13 @@ class ScalaDynamicExtractorSuite extends SpookyEnvFixture with LocalPathDocsFixt
 
     val result = doc.asInstanceOf[Doc].uri
 
-    val dynamic = ScalaDynamicExtractor (
+    def dynamic = ScalaDynamicExtractor (
       Literal(doc.asInstanceOf[Doc]),
       "uri",
       None
     )
 
-    dynamic.resolveType(null) =~=! StringType
+    dynamic.resolveType(null) should_=~= StringType
     val fn = dynamic.resolve(null)
     assert(fn.apply(null) == result)
   }
@@ -50,13 +51,13 @@ class ScalaDynamicExtractorSuite extends SpookyEnvFixture with LocalPathDocsFixt
 
     val result = doc.asInstanceOf[Doc].code.get
 
-    val dynamic = ScalaDynamicExtractor (
+    def dynamic = ScalaDynamicExtractor (
       Literal(doc.asInstanceOf[Doc]),
       "code",
       None
     )
 
-    dynamic.resolveType(null) =~=! StringType
+    dynamic.resolveType(null) should_=~= StringType
     val fn = dynamic.resolve(null)
     val dynamicResult = fn.apply(null)
     assert(dynamicResult == result)
@@ -70,149 +71,205 @@ class ScalaDynamicExtractorSuite extends SpookyEnvFixture with LocalPathDocsFixt
 
     val result = action.dryrun
 
-    val dynamic = ScalaDynamicExtractor (
+    def dynamic = ScalaDynamicExtractor (
       Literal[Action](action),
       "dryrun",
       None
     )
 
-    dynamic.resolveType(null) =~=! ArrayType(ArrayType(new ActionUDT()))
+    dynamic.resolveType(null) should_=~= ArrayType(ArrayType(new ActionUDT()))
     val fn = dynamic.resolve(null)
     assert(fn.apply(null) == result)
   }
 
-//  test("can resolve function of String.startsWith(String) using Scala") {
-//    {
-//      val dynamic = ScalaDynamicExtractor(
-//        Literal("abcde"),
-//        "startsWith",
-//        Option(List(Literal("abc")))
-//      )
-//
-//      val impl = dynamic.resolveUsingScala(null)
-//      val result = impl.apply(null).get
-//
-//      assert(result == true)
-//    }
-//    {
-//      val dynamic = ScalaDynamicExtractor(
-//        Literal("abcde"),
-//        "startsWith",
-//        Option(List(Literal("abd")))
-//      )
-//
-//      val impl = dynamic.resolveUsingScala(null)
-//      val result = impl.apply(null).get
-//
-//      assert(result == false)
-//    }
-//  }
+  //  test("can resolve function of String.startsWith(String) using Scala") {
+  //    {
+  //      def dynamic = ScalaDynamicExtractor(
+  //        Literal("abcde"),
+  //        "startsWith",
+  //        Option(List(Literal("abc")))
+  //      )
+  //
+  //      val impl = dynamic.resolveUsingScala(null)
+  //      val result = impl.apply(null).get
+  //
+  //      assert(result == true)
+  //    }
+  //    {
+  //      def dynamic = ScalaDynamicExtractor(
+  //        Literal("abcde"),
+  //        "startsWith",
+  //        Option(List(Literal("abd")))
+  //      )
+  //
+  //      val impl = dynamic.resolveUsingScala(null)
+  //      val result = impl.apply(null).get
+  //
+  //      assert(result == false)
+  //    }
+  //  }
 
   import com.tribbloids.spookystuff.dsl._
 
-  private val tuples: List[(Option[Example], Option[Int], String)] = List(
+  // deliberately stressful to ensure thread safety
+  //  val src = sc.parallelize(0 to 1023)
+  //    .map {
+  //      i =>
+  //        (
+  //          Some(new Example(Random.nextString(i), Random.nextInt())).filter(_.b >= 0),
+  //          Some(Random.nextInt()).filter(_ >= 0),
+  //          Random.nextString(i)
+  //          )
+  //    }
+
+  val src = List(
     (Some(new Example()), Some(2), "abc"),
     (Some(new Example()), Some(1), "abc"),
     (Some(new Example()), None, "abd"),
     (None, Some(2), "abe")
   )
-  val df = sql.createDataFrame(tuples).toDF("A", "B", "C")
+  val df = sql.createDataFrame(src).toDF("A", "B", "C")
   val ds = spooky
     .create(df)
     .fetch(
       Wget(HTML_URL)
     )
-  val rows = ds.unsquashedRDD.collect()
+
+  val rdd = ds.unsquashedRDD.persist()
+  val rows = rdd.take(10)
   override lazy val schema = ds.schema
 
   val getNullType = Literal[Null](null)
 
+  def verifyOnDriverAndWorkers(dynamic: ScalaDynamicExtractor[FR], staticFn: FR => Option[Any]): Unit = {
+
+    val dynamicFn: (FR) => Option[Any] = dynamic.resolve(schema).lift
+
+    {
+      rows.foreach {
+        row =>
+          val dd = dynamicFn.apply(row)
+          val ss = staticFn.apply(row)
+          Predef.assert(dd == ss, s"$dd != $ss")
+      }
+    }
+
+    {
+      rdd.foreach {
+        row =>
+          val dd = dynamicFn.apply(row)
+          val ss = staticFn.apply(row)
+          Predef.assert(dd == ss, s"$dd != $ss")
+      }
+    }
+  }
+
   test("can resolve a defined class method") {
 
-    val dynamic = ScalaDynamicExtractor(
+    def dynamic = ScalaDynamicExtractor(
       'A,
       "fn",
       Some(List[GetExpr]('B))
     )
+    val staticFn: (FR) => Option[Any] = {
+      fr =>
+        val dr = fr.dataRow
+        val result = for (
+          a <- dr.get('A);
+          b <- dr.get('B)
+        ) yield {
+          a.asInstanceOf[Example].fn(b.asInstanceOf[Int])
+        }
+        result
+    }
 
-    dynamic.resolveType(schema) =~=! StringType
-    val fn = dynamic.resolve(schema)
-    assert(fn.lift.apply(rows(0)) == Some("12"))
-    assert(fn.lift.apply(rows(1)) == Some("11"))
-    assert(fn.lift.apply(rows(2)).isEmpty)
-    assert(fn.lift.apply(rows(3)).isEmpty)
+    dynamic.resolveType(schema) should_=~= StringType
+    verifyOnDriverAndWorkers(dynamic, staticFn)
   }
 
-  test("can resolve a defined class method that has monad output") {
+  test("can resolve a defined class method that has option return type") {
 
-    val dynamic = ScalaDynamicExtractor(
+    def dynamic = ScalaDynamicExtractor(
       'A,
       "fnOpt",
       Some(List[GetExpr]('B))
     )
+    val staticFn: (FR) => Option[Any] = {
+      fr =>
+        val dr = fr.dataRow
+        val result = for (
+          a <- dr.get('A);
+          b <- dr.get('B)
+        ) yield {
+          a.asInstanceOf[Example].fnOpt(b.asInstanceOf[Int])
+        }
+        result.flatten
+    }
 
-    dynamic.resolveType(schema) =~=! IntegerType
-    val fn = dynamic.resolve(schema)
-    assert(fn.lift.apply(rows(0)).isEmpty)
-    assert(fn.lift.apply(rows(1)) == Some(1))
-    assert(fn.lift.apply(rows(2)).isEmpty)
-    assert(fn.lift.apply(rows(3)).isEmpty)
+    dynamic.resolveType(schema) should_=~= IntegerType
+    verifyOnDriverAndWorkers(dynamic, staticFn)
   }
 
-  test("can resolve String.startsWith(String)") {
-    val dynamic = ScalaDynamicExtractor(
+  test("can resolve String.concat(String)") {
+    def dynamic = ScalaDynamicExtractor(
       Literal("abcde"),
-      "startsWith",
+      "concat",
       Some(List[GetExpr]('C))
     )
+    val staticFn: (FR) => Option[Any] = {
+      fr =>
+        val dr = fr.dataRow
+        val result = for (
+          c <- dr.get('C)
+        ) yield {
+          "abcde" concat c.asInstanceOf[String]
+        }
+        result
+    }
 
-    dynamic.resolveType(schema) =~=! BooleanType
-    val fn = dynamic.resolve(schema)
-    assert(fn.lift.apply(rows(0)) == Some(true))
-    assert(fn.lift.apply(rows(1)) == Some(true))
-    assert(fn.lift.apply(rows(2)) == Some(false))
-    assert(fn.lift.apply(rows(3)) == Some(false))
+    dynamic.resolveType(schema) should_=~= StringType
+    verifyOnDriverAndWorkers(dynamic, staticFn)
   }
 
   test("can resolve Array[String].length") {
-    val dynamic = ScalaDynamicExtractor(
+    def dynamic = ScalaDynamicExtractor(
       Literal("a b c d e".split(" ")),
       "length",
       None
     )
 
-    dynamic.resolveType(schema) =~=! IntegerType
-    val fn = dynamic.resolve(schema)
-    assert(fn.lift.apply(null) == Some(5))
+    dynamic.resolveType(schema) should_=~= IntegerType
+    val dynamicFn = dynamic.resolve(schema).lift
+    assert(dynamicFn.apply(null) == Some(5))
   }
 
   test("can resolve type of List[String].head") {
-    val dynamic = ScalaDynamicExtractor(
+    def dynamic = ScalaDynamicExtractor(
       Literal("a b c d e".split(" ").toList),
       "head",
       None
     )
 
-    dynamic.resolveType(null) =~=! StringType
-    val fn = dynamic.resolve(schema)
-    assert(fn.lift.apply(null) == Some("a"))
+    dynamic.resolveType(null) should_=~= StringType
+    val dynamicFn = dynamic.resolve(schema).lift
+    assert(dynamicFn.apply(null) == Some("a"))
   }
 
   test("can resolve type of Seq[String].head") {
-    val dynamic = ScalaDynamicExtractor (
+    def dynamic = ScalaDynamicExtractor (
       Literal("a b c d e".split(" ").toSeq),
       "head",
       None
     )
 
-    dynamic.resolveType(null) =~=! StringType
-    val fn = dynamic.resolve(schema)
-    assert(fn.lift.apply(null) == Some("a"))
+    dynamic.resolveType(null) should_=~= StringType
+    val dynamicFn = dynamic.resolve(schema).lift
+    assert(dynamicFn.apply(null) == Some("a"))
   }
 
   //  test("can resolve function when base yields NULL") {
   //
-  //    val dynamic = ScalaDynamicExtractor(
+  //    def dynamic = ScalaDynamicExtractor(
   //      'A,
   //      "fn",
   //      Some(List[GetExpr]('B))
@@ -225,7 +282,7 @@ class ScalaDynamicExtractorSuite extends SpookyEnvFixture with LocalPathDocsFixt
   //
   //  test("can resolve function when arg yields NULL") {
   //
-  //    val dynamic = ScalaDynamicExtractor(
+  //    def dynamic = ScalaDynamicExtractor(
   //      'A,
   //      "fn",
   //      Some(List[GetExpr]('BNull))
@@ -239,7 +296,7 @@ class ScalaDynamicExtractorSuite extends SpookyEnvFixture with LocalPathDocsFixt
   //TODO: this will change in the future
   test("cannot resolve function when base type is NULL") {
 
-    val dynamic = ScalaDynamicExtractor(
+    def dynamic = ScalaDynamicExtractor(
       getNullType,
       "fn",
       Some(List[GetExpr]('B))
@@ -252,7 +309,7 @@ class ScalaDynamicExtractorSuite extends SpookyEnvFixture with LocalPathDocsFixt
 
   test("cannot resolve function when arg type is NULL") {
 
-    val dynamic = ScalaDynamicExtractor(
+    def dynamic = ScalaDynamicExtractor(
       'A,
       "fn",
       Some(List(getNullType))
@@ -265,7 +322,7 @@ class ScalaDynamicExtractorSuite extends SpookyEnvFixture with LocalPathDocsFixt
 
   //  test("can resolve function that takes monad parameter") {
   //
-  //    val dynamic = ScalaDynamicExtractor(
+  //    def dynamic = ScalaDynamicExtractor(
   //      'A,
   //      "fnOpt",
   //      Some(List[GetExpr]('ANull))
@@ -278,7 +335,7 @@ class ScalaDynamicExtractorSuite extends SpookyEnvFixture with LocalPathDocsFixt
   //
   //  test("can resolve function that takes monad arg that yields NULL") {
   //
-  //    val dynamic = ScalaDynamicExtractor(
+  //    def dynamic = ScalaDynamicExtractor(
   //      'A,
   //      "fnOpt",
   //      Some(List[GetExpr]('ANull))
@@ -291,7 +348,7 @@ class ScalaDynamicExtractorSuite extends SpookyEnvFixture with LocalPathDocsFixt
   //
   //  test("can resolve function that takes monad arg of which type is NULL") {
   //
-  //    val dynamic = ScalaDynamicExtractor(
+  //    def dynamic = ScalaDynamicExtractor(
   //      'A,
   //      "fnOpt",
   //      Some(List[GetExpr]('ANull))
@@ -305,7 +362,7 @@ class ScalaDynamicExtractorSuite extends SpookyEnvFixture with LocalPathDocsFixt
 
   test("can resolve function of String.startsWith(String) using Java") {
     {
-      val dynamic = ScalaDynamicExtractor(
+      def dynamic = ScalaDynamicExtractor(
         Literal("abcde"),
         "startsWith",
         Option(List(Literal("abc")))
@@ -317,7 +374,7 @@ class ScalaDynamicExtractorSuite extends SpookyEnvFixture with LocalPathDocsFixt
       assert(result == true)
     }
     {
-      val dynamic = ScalaDynamicExtractor(
+      def dynamic = ScalaDynamicExtractor(
         Literal("abcde"),
         "startsWith",
         Option(List(Literal("abd")))
@@ -335,7 +392,7 @@ class ScalaDynamicExtractorSuite extends SpookyEnvFixture with LocalPathDocsFixt
     val int2Str: GenExtractor[Int, String] = { i: Int => "" + i }
 
     val int2_10: GenExtractor[Int, String] = { i: Int => "10" }
-    val dynamic = ScalaDynamicExtractor[Int](
+    def dynamic = ScalaDynamicExtractor[Int](
       int2Str,
       "startsWith",
       Option(List(int2_10))
@@ -378,7 +435,7 @@ class ScalaDynamicExtractorSuite extends SpookyEnvFixture with LocalPathDocsFixt
   //    val int2Str: GenExtractor[Int, String] = { i: Int => "" + i }
   //
   //    val int2_10: GenExtractor[Int, String] = { i: Int => "10" }
-  //    val dynamic = ScalaDynamicExtractor[Int](
+  //    def dynamic = ScalaDynamicExtractor[Int](
   //      int2Str,
   //      "startsWith",
   //      Option(List(int2_10))

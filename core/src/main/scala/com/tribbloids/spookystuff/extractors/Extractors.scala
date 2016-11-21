@@ -4,13 +4,13 @@ import com.tribbloids.spookystuff.doc._
 import com.tribbloids.spookystuff.extractors.GenExtractor.{AndThen, Leaf, Static, StaticType}
 import com.tribbloids.spookystuff.row.{DataRowSchema, _}
 import com.tribbloids.spookystuff.utils.{SpookyUtils, UnreifiedScalaType}
-import org.apache.spark.sql.catalyst.ScalaReflection.universe._
+import org.apache.spark.sql.catalyst.ScalaReflection.universe.TypeTag
 import org.apache.spark.sql.types._
 
 import scala.collection.TraversableOnce
 import scala.collection.immutable.ListMap
 import scala.reflect.ClassTag
-import com.tribbloids.spookystuff.utils.SpookyViews._
+import com.tribbloids.spookystuff.utils.ScalaType._
 import org.apache.spark.ml.dsl.utils.MessageView
 
 object Extractors {

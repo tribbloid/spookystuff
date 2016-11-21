@@ -31,7 +31,7 @@ object SpookyEnvFixture {
   }
 
   def driverInstancesShouldBeClean(spooky: SpookyContext): Unit = {
-    AutoCleanable.cleanupLocally() //nobody cares about leakage on driver
+    AutoCleanable.cleanupNotInTask() //nobody cares about leakage on driver
 
     AutoCleanable.toBeCleaned
       .foreach {

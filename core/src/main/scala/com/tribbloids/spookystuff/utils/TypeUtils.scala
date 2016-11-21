@@ -5,7 +5,7 @@ import org.apache.spark.sql.types._
 
 import scala.language.implicitConversions
 
-object TypeUtils {
+object TypeUtils extends ReflectionLock {
 
   import ScalaReflection.universe._
 
@@ -20,25 +20,10 @@ object TypeUtils {
 
   def getTypeTag[T: TypeTag](a: T) = implicitly[TypeTag[T]]
 
-  def catalystTypeOptFor[T](implicit ttg: TypeTag[T]): Option[DataType] = {
-    try {
-      val result = catalystTypeFor[T](ttg)
-      Some(result)
-    }
-    catch {
-      case e: Throwable =>
-        //        LoggerFactory.getLogger(this.getClass).warn(
-        //          s"cannot convert Scala type $ttg to Catalyst type:\n" + e.getLocalizedMessage
-        //        )
-        None
-    }
-  }
-
-  def catalystTypeFor[T](implicit ttg: TypeTag[T]): DataType = {
-
-    if (ttg == TypeTag.Null) NullType
-    else {
-      ScalaReflection.synchronized {
+  def tryCatalystTypeFor[T](implicit ttg: TypeTag[T]): scala.util.Try[DataType] = locked {
+    scala.util.Try {
+      if (ttg == TypeTag.Null) NullType
+      else {
         ScalaReflection.schemaFor[T](ttg).dataType
       }
     }
@@ -48,7 +33,7 @@ object TypeUtils {
     * @param t if t is already an option won't yeild Option[ Option[_] ] again
     * @return
     */
-  private def selfOrOption(t: TypeTag[_]): Seq[TypeTag[_]] = {
+  private def selfAndOptionTypeIfNotAlready(t: TypeTag[_]): Seq[TypeTag[_]] = locked {
     t match {
       case at: TypeTag[a] =>
         if (at.tpe <:< typeOf[Option[_]]) Seq[TypeTag[_]](at)
@@ -59,14 +44,14 @@ object TypeUtils {
     }
   }
 
-  def getParameter_ReturnTypes(symbol: MethodSymbol, impl: Type) = {
+  def getParameter_ReturnTypes(symbol: MethodSymbol, impl: Type) = locked {
 
     val signature = symbol.typeSignatureIn(impl)
     val result = methodSignatureToParameter_ReturnTypes(signature)
     result
   }
 
-  private def methodSignatureToParameter_ReturnTypes(tpe: Type): (List[List[Type]], Type) = {
+  private def methodSignatureToParameter_ReturnTypes(tpe: Type): (List[List[Type]], Type) = locked {
     tpe match {
       case n: NullaryMethodType =>
         Nil -> n.resultType
@@ -79,7 +64,7 @@ object TypeUtils {
     }
   }
 
-  def fitIntoArgs(t1: Option[Seq[Type]], t2: Option[Seq[Type]]): Boolean = {
+  def fitIntoArgs(t1: Option[Seq[Type]], t2: Option[Seq[Type]]): Boolean = locked {
     (t1, t2) match {
       case (Some(tt1), Some(tt2)) =>
         if (tt1.size != tt2.size) false
@@ -100,9 +85,8 @@ object TypeUtils {
   def createTypeTag[T](
                         tpe: Type,
                         mirror: reflect.api.Mirror[reflect.runtime.universe.type]
-                      ): TypeTag[T] = {
-
-    TypeTag(
+                      ): TypeTag[T] = locked {
+    TypeTag.apply(
       mirror,
       new reflect.api.TypeCreator {
         def apply[U <: reflect.api.Universe with Singleton](m: reflect.api.Mirror[U]) = {

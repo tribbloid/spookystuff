@@ -60,28 +60,28 @@ abstract class Block(override val children: Trace) extends Actions(children) wit
   def doExeNoUID(session: Session): Seq[Doc]
 }
 
-object Try {
+object ClusterRetry {
 
   def apply(
              trace: Set[Trace],
              retries: Int = Const.clusterRetries,
              cacheError: Boolean = false
-           ): Try = {
+           ): ClusterRetry = {
 
     assert(trace.size <= 1)
 
-    Try(trace.headOption.getOrElse(Actions.empty))(retries, cacheError)
+    ClusterRetry(trace.headOption.getOrElse(Actions.empty))(retries, cacheError)
   }
 }
 
-final case class Try(
-                      override val children: Trace
-                    )(
-                      retries: Int,
-                      override val cacheEmptyOutput: Boolean
-                    ) extends Block(children) {
+final case class ClusterRetry(
+                               override val children: Trace
+                             )(
+                               retries: Int,
+                               override val cacheEmptyOutput: Boolean
+                             ) extends Block(children) {
 
-  override def trunk = Some(Try(this.trunkSeq)(retries, cacheEmptyOutput).asInstanceOf[this.type])
+  override def trunk = Some(ClusterRetry(this.trunkSeq)(retries, cacheEmptyOutput).asInstanceOf[this.type])
 
   override def doExeNoUID(session: Session): Seq[Doc] = {
 
@@ -122,28 +122,28 @@ final case class Try(
   }
 }
 
-object TryLocally {
+object LocalRetry {
 
   def apply(
              trace: Set[Trace],
              retries: Int = Const.clusterRetries,
              cacheError: Boolean = false
-           ): TryLocally = {
+           ): LocalRetry = {
 
     assert(trace.size <= 1)
 
-    TryLocally(trace.headOption.getOrElse(Actions.empty))(retries, cacheError)
+    LocalRetry(trace.headOption.getOrElse(Actions.empty))(retries, cacheError)
   }
 }
 
-final case class TryLocally(
+final case class LocalRetry(
                              override val children: Trace
                            )(
                              retries: Int,
                              override val cacheEmptyOutput: Boolean
                            ) extends Block(children) {
 
-  override def trunk = Some(TryLocally(this.trunkSeq)(retries, cacheEmptyOutput).asInstanceOf[this.type])
+  override def trunk = Some(LocalRetry(this.trunkSeq)(retries, cacheEmptyOutput).asInstanceOf[this.type])
 
   override def doExeNoUID(session: Session): Seq[Doc] = {
 

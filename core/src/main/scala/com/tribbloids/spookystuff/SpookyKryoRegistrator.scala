@@ -9,19 +9,18 @@ import com.tribbloids.spookystuff.doc._
 import com.tribbloids.spookystuff.row.FetchedRow
 import org.apache.spark.SerializableWritable
 import org.apache.spark.serializer.KryoRegistrator
+import org.apache.spark.sql.catalyst.ScalaReflection.universe.TypeTag
 
 import scala.collection.immutable.ListMap
 import scala.concurrent.duration.FiniteDuration
 
-/**
- * Created by peng on 4/22/15.
- */
 //TODO: not all classes are registered which renders this class useless
-class SpookyRegistrator extends KryoRegistrator {
+class SpookyKryoRegistrator extends KryoRegistrator {
 
   override def registerClasses(kryo: Kryo): Unit = {
     val array: Array[Class[_]] = Array(
       //used by PageRow
+      classOf[TypeTag[_]],
       classOf[FetchedRow],
       classOf[ListMap[_,_]],
       classOf[UUID],

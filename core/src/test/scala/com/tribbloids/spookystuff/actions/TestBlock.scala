@@ -30,7 +30,7 @@ class TestBlock extends SpookyEnvFixture {
   test("try without export won't need driver") {
     import scala.concurrent.duration._
 
-    val tryy = Try(
+    val tryy = ClusterRetry(
       Delay(10.seconds) +> Wget("ftp://www.dummy.org")
     )
 

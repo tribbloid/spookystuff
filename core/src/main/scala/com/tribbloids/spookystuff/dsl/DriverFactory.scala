@@ -263,7 +263,7 @@ object DriverFactories {
           val dstStr = getPath(spooky)
           val srcFile = new File(srcStr)
           val dstFile = new File(dstStr)
-          SpookyUtils.asynchIfNotExist(dstStr) {
+          SpookyUtils.ifFileNotExist(dstStr) {
             SpookyUtils.treeCopy(srcFile.toPath, dstFile.toPath)
           }
         }

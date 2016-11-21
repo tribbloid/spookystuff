@@ -138,7 +138,7 @@ case class HDFSResolver(
   def lockedSuffix: String = ".locked"
 
   val confBinary = new BinaryWritable(hadoopConf)
-  val ugiWrapperOpt = ugiOverride.map(new SerializableUGIWrapper(_))
+  val ugiWrapperOpt = ugiOverride.map(new SerializableUGI(_))
 
   def getHadoopConf: Configuration = {
     confBinary.value

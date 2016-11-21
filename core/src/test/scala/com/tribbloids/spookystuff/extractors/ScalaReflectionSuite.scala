@@ -2,73 +2,29 @@ package com.tribbloids.spookystuff.extractors
 
 import com.tribbloids.spookystuff.row.FetchedRow
 import com.tribbloids.spookystuff.testutils.TestMixin
-import com.tribbloids.spookystuff.utils.{ScalaUDT, TypeUtils, UnreifiedScalaType}
-import org.apache.spark.sql.types.{IntegerType, SQLUserDefinedType, StringType}
+import com.tribbloids.spookystuff.utils.{TypeUtils, UnreifiedScalaType}
+import org.apache.spark.sql.types.{IntegerType, StringType}
 import org.scalatest.FunSuite
 
 //object ScalaReflectionSuite {
 
-class GenericExample[T](
-                         val a: String,
-                         val b: T
-                       ) extends Serializable {
-
-  lazy val c = a + b
-
-  def fn: T = b
-  def fn(i: T) = "" + b + i
-  def fn(x: T)(y: T, z: T) = "" + b + x + y + z
-
-  def fnOpt(x: T): Option[T] = {
-    if (b == x) Some(x)
-    else None
-  }
-  def fnOptOpt(x: Option[T]): Option[T] = {
-    if (Option(b) == x) x
-    else None
-  }
-
-  def fnDefault(
-                 a: T,
-                 b: String = "b"
-               ) = "" + a + b
-
-  def *=>(k: T): String = "" + k
-}
-
-class ExampleUDT extends ScalaUDT[Example]
-@SQLUserDefinedType(udt = classOf[ExampleUDT])
-class Example(
-               override val a: String = "dummy",
-               override val b: Int = 1
-             ) extends GenericExample[Int](a, b)
-
-//class Example2(
-//                override val a: String = "dummy",
-//                override val b: Option[Int] = Some(1)
-//              ) extends GenericExample[Option[Int]](a, b)
-//}
-
 class ScalaReflectionSuite extends FunSuite with TestMixin {
 
-  import com.tribbloids.spookystuff.utils.SpookyViews.DataTypeView
+  import com.tribbloids.spookystuff.utils.ScalaType._
 
   lazy val exLit: Literal[FetchedRow, _] = Literal(new Example())
   lazy val exType: DataType = UnreifiedScalaType.apply[Example]
 
   test("getMethodsByName should work on overloaded function") {
 
-    val dynamic = ScalaDynamicExtractor(
-      exLit,
-      "fn",
-      None
+    val dynamic = ScalaDynamic(
+      "fn"
     )
 
     val paramss = dynamic.getMethodsByName(exType).map(_.paramss)
 
     paramss.mkString("\n").shouldBe (
       """
-        |List(List(value x), List(value y, value z))
         |List(List(value i))
         |List()
       """.stripMargin
@@ -79,7 +35,6 @@ class ScalaReflectionSuite extends FunSuite with TestMixin {
     }
     returnTypes.mkString("\n").shouldBe (
       """
-        |(List(List(Int), List(Int, Int)),String)
         |(List(List(Int)),String)
         |(List(),Int)
       """.stripMargin
@@ -88,13 +43,11 @@ class ScalaReflectionSuite extends FunSuite with TestMixin {
 
   test("getMethodsByName should work on case constructor parameter") {
 
-    val dynamic = ScalaDynamicExtractor (
-      exLit,
-      "a",
-      None
+    val dynamic = ScalaDynamic (
+      "a"
     )
 
-    val paramss = dynamic.getMethodsByName(exType).map(_.paramss)
+    val paramss = dynamic.getMethodsByName(exType).map(v => v.paramss)
 
     paramss.mkString("\n").shouldBe(
       "List()"
@@ -112,10 +65,8 @@ class ScalaReflectionSuite extends FunSuite with TestMixin {
 
   test("getMethodsByName should work on lazy val property") {
 
-    val dynamic = ScalaDynamicExtractor(
-      exLit,
-      "c",
-      None
+    val dynamic = ScalaDynamic(
+      "c"
     )
 
     val paramss = dynamic.getMethodsByName(exType).map(_.paramss)
@@ -136,10 +87,8 @@ class ScalaReflectionSuite extends FunSuite with TestMixin {
 
   test("getMethodsByName should work on function with default parameters") {
 
-    val dynamic = ScalaDynamicExtractor(
-      exLit,
-      "fnDefault",
-      None
+    val dynamic = ScalaDynamic(
+      "fnDefault"
     )
 
     val paramss = dynamic.getMethodsByName(exType).map(_.paramss)
@@ -160,10 +109,8 @@ class ScalaReflectionSuite extends FunSuite with TestMixin {
 
   test("getMethodsByName should work on operator") {
 
-    val dynamic = ScalaDynamicExtractor(
-      exLit,
-      "*=>",
-      None
+    val dynamic = ScalaDynamic(
+      "*=>"
     )
 
     val paramss = dynamic.getMethodsByName(exType).map(_.paramss)
@@ -183,10 +130,8 @@ class ScalaReflectionSuite extends FunSuite with TestMixin {
   }
 
   test("getMethodByScala should work on overloaded function") {
-    val dynamic = ScalaDynamicExtractor(
-      exLit,
-      "fn",
-      None
+    val dynamic = ScalaDynamic(
+      "fn"
     )
 
     val paramss = dynamic.getMethodByScala(exType, Some(List(IntegerType))).paramss
@@ -197,10 +142,8 @@ class ScalaReflectionSuite extends FunSuite with TestMixin {
   }
 
   test("getMethodByJava should work on overloaded function") {
-    val dynamic = ScalaDynamicExtractor(
-      exLit,
-      "fn",
-      None
+    val dynamic = ScalaDynamic(
+      "fn"
     )
 
     val paramss = dynamic.getMethodByJava(exType, Some(List(IntegerType)))
@@ -213,10 +156,8 @@ class ScalaReflectionSuite extends FunSuite with TestMixin {
   }
 
   test("getMethodByScala should work on function with option output") {
-    val dynamic = ScalaDynamicExtractor(
-      exLit,
-      "fnOpt",
-      None
+    val dynamic = ScalaDynamic(
+      "fnOpt"
     )
 
     val paramss = dynamic.getMethodByScala(exType, Some(List(IntegerType))).paramss
@@ -227,10 +168,8 @@ class ScalaReflectionSuite extends FunSuite with TestMixin {
   }
 
   test("getMethodByJava should work on function with option output") {
-    val dynamic = ScalaDynamicExtractor(
-      exLit,
-      "fnOpt",
-      None
+    val dynamic = ScalaDynamic(
+      "fnOpt"
     )
 
     val paramss = dynamic.getMethodByJava(exType, Some(List(IntegerType)))
@@ -242,10 +181,8 @@ class ScalaReflectionSuite extends FunSuite with TestMixin {
   }
 
   ignore("getMethodByScala should work on function with option parameter") {
-    val dynamic = ScalaDynamicExtractor(
-      exLit,
-      "fnOptOpt",
-      None
+    val dynamic = ScalaDynamic(
+      "fnOptOpt"
     )
 
     val paramss = dynamic.getMethodByScala(exType, Some(List(IntegerType))).paramss
@@ -256,10 +193,8 @@ class ScalaReflectionSuite extends FunSuite with TestMixin {
   }
 
   ignore("getMethodByJava should work on function with option parameter") {
-    val dynamic = ScalaDynamicExtractor(
-      exLit,
-      "fnOptOpt",
-      None
+    val dynamic = ScalaDynamic(
+      "fnOptOpt"
     )
 
     val paramss = dynamic.getMethodByJava(exType, Some(List(IntegerType)))
@@ -271,10 +206,8 @@ class ScalaReflectionSuite extends FunSuite with TestMixin {
   }
 
   test("getMethodByScala should throw error if parameter Type is incorrect") {
-    val dynamic = ScalaDynamicExtractor(
-      exLit,
-      "fn",
-      None
+    val dynamic = ScalaDynamic(
+      "fn"
     )
 
     intercept[UnsupportedOperationException] {
@@ -284,10 +217,8 @@ class ScalaReflectionSuite extends FunSuite with TestMixin {
 
   //TODO: this doesn't matter as its only used after scala reflection-based method, but should be fixed in the future
   ignore("getMethodByJava should return None if parameter Type is incorrect") {
-    val dynamic = ScalaDynamicExtractor(
-      exLit,
-      "fn",
-      None
+    val dynamic = ScalaDynamic(
+      "fn"
     )
 
     intercept[UnsupportedOperationException] {
@@ -297,10 +228,8 @@ class ScalaReflectionSuite extends FunSuite with TestMixin {
 
   test("getMethodByScala should work on operator") {
 
-    val dynamic = ScalaDynamicExtractor(
-      exLit,
-      "*=>",
-      None
+    val dynamic = ScalaDynamic(
+      "*=>"
     )
 
     val method = dynamic.getMethodByScala(exType, Some(List(IntegerType)))
@@ -320,10 +249,8 @@ class ScalaReflectionSuite extends FunSuite with TestMixin {
 
   test("getMethodByJava should work on operator") {
 
-    val dynamic = ScalaDynamicExtractor(
-      exLit,
-      "*=>",
-      None
+    val dynamic = ScalaDynamic(
+      "*=>"
     )
 
     val method = dynamic.getMethodByJava(exType, Some(List(IntegerType)))

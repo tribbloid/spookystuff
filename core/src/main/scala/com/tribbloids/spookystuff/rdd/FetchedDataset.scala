@@ -1,6 +1,6 @@
 package com.tribbloids.spookystuff.rdd
 
-import com.tribbloids.spookystuff.actions.{Snapshot, Try, Visit, Wget, _}
+import com.tribbloids.spookystuff.actions.{Snapshot, ClusterRetry$, Visit, Wget, _}
 import com.tribbloids.spookystuff.doc.Doc
 import com.tribbloids.spookystuff.dsl.{ExploreAlgorithm, FetchOptimizer, JoinType, _}
 import com.tribbloids.spookystuff.execution.{ExplorePlan, FetchPlan, _}
@@ -371,7 +371,7 @@ case class FetchedDataset(
       Visit(ex)
         +> Snapshot(filter)
       )
-    if (failSafe > 0) trace = Try(trace, failSafe)
+    if (failSafe > 0) trace = ClusterRetry(trace, failSafe)
 
     this.fetch(
       trace,
@@ -391,7 +391,7 @@ case class FetchedDataset(
 
     var trace: Set[Trace] =  Wget(ex, filter)
 
-    if (failSafe > 0) trace = Try(trace, failSafe)
+    if (failSafe > 0) trace = ClusterRetry(trace, failSafe)
 
     this.fetch(
       trace,
@@ -439,7 +439,7 @@ case class FetchedDataset(
         +> Snapshot(filter)
       )
     if (failSafe > 0) {
-      trace = Try(trace, failSafe)
+      trace = ClusterRetry(trace, failSafe)
     }
 
     this.join(on, joinType, ordinalField, sampler)(
@@ -468,7 +468,7 @@ case class FetchedDataset(
 
     var trace: Set[Trace] = Wget(new GetExpr(Const.defaultJoinField), filter)
     if (failSafe > 0) {
-      trace = Try(trace, failSafe)
+      trace = ClusterRetry(trace, failSafe)
     }
 
     this.join(on, joinType, ordinalField, sampler)(
@@ -533,7 +533,7 @@ case class FetchedDataset(
       Visit(new GetExpr(Const.defaultJoinField))
         +> Snapshot(filter)
       )
-    if (failSafe > 0) trace = Try(trace, failSafe)
+    if (failSafe > 0) trace = ClusterRetry(trace, failSafe)
 
     explore(ex, joinType, ordinalField, sampler)(
       trace, partitionerFactory, fetchOptimizer,
@@ -566,7 +566,7 @@ case class FetchedDataset(
                  ): FetchedDataset = {
 
     var trace: Set[Trace] =  Wget(new GetExpr(Const.defaultJoinField), filter)
-    if (failSafe > 0) trace = Try(trace, failSafe)
+    if (failSafe > 0) trace = ClusterRetry(trace, failSafe)
 
     explore(ex, joinType, ordinalField, sampler)(
       trace, partitionerFactory, fetchOptimizer,

@@ -8,10 +8,10 @@ import org.apache.spark.sql.types._
 /**
   * Created by peng on 08/06/16.
   */
-class TypeConverterSuite extends SpookyEnvFixture {
+class ScalaTypeSuite extends SpookyEnvFixture {
 
   import ScalaReflection.universe._
-  import SpookyViews._
+  import ScalaType._
 
   /**
     * please keep this test to quickly identify any potential problems caused by changes in scala reflection API in the future
@@ -61,7 +61,7 @@ class TypeConverterSuite extends SpookyEnvFixture {
   typePairs.foreach{
     pair =>
       test(s"scalaType (${pair._2.tpe}) => catalystType (${pair._1})") {
-        val converted = pair._2.catalystTypeOpt
+        val converted = pair._2.tryReify.toOption
         println(converted)
         assert(converted == Some(pair._1))
       }
@@ -69,7 +69,7 @@ class TypeConverterSuite extends SpookyEnvFixture {
       test(s"catalystType (${pair._1}) => scalaType (${pair._2.tpe})") {
         val converted = pair._1.scalaTypeOpt
         println(converted)
-        assert(converted.map(_.clazz) == Some(pair._2.clazz))
+        assert(converted.map(_.asClass) == Some(pair._2.asClass))
       }
   }
 
@@ -83,7 +83,7 @@ class TypeConverterSuite extends SpookyEnvFixture {
   oneWayPairs.foreach{
     pair =>
       test(s"scalaType (${pair._1.tpe}) => catalystType (${pair._2})") {
-        val converted = pair._1.catalystTypeOpt
+        val converted = pair._1.tryReify.toOption
         println(converted)
         assert(converted == Some(pair._2))
       }

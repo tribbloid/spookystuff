@@ -87,14 +87,13 @@ object Lifespan {
 
   type ID = Either[Long,Long]
 
-  def left(tc: TaskContext): Left[Long, Nothing] = {
+  def left(tc: TaskContext): Left[Long, Long] = {
     Left(tc.taskAttemptId)
   }
 
-  def right: Right[Nothing, Long] = {
+  def right: Right[Long, Long] = {
     Right(Thread.currentThread().getId)
   }
-
 
   //automatically generates depending on if
   def apply(): Lifespan = Auto()
@@ -178,5 +177,13 @@ object AutoCleanable {
   }
 
   def cleanup(tt: Lifespan.ID) = cleanupTyped[AutoCleanable](tt)
-  def cleanupLocally() = cleanup(Lifespan.right)
+  def cleanupNotInTask() = {
+    toBeCleaned
+      .keys
+      .filter(_.isRight)
+      .foreach {
+        tt =>
+          cleanup(tt)
+      }
+  }
 }

@@ -19,7 +19,7 @@ import scala.reflect.ClassTag
 
 package object dsl {
 
-  import com.tribbloids.spookystuff.utils.SpookyViews._
+  import com.tribbloids.spookystuff.utils.ScalaType._
   import org.apache.spark.sql.catalyst.ScalaReflection.universe.TypeTag
 
   type ByDoc[+R] = (Doc => R)

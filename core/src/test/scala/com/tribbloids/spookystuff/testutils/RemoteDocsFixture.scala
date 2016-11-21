@@ -9,8 +9,8 @@ trait RemoteDocsFixture extends TestMixin {
   def JSON_URL = "http://tribbloid.github.io/spookystuff/test/tribbloid.json"
   //TODO: add this after fetch can semi-auto-detect content-type
   //  def jsonUrlIncorrectContentType = "https://raw.githubusercontent.com/tribbloid/spookystuff/master/core/src/test/resources/site/tribbloid.json"
-  def PNG_URL = "https://www.google.ca/images/srpr/logo11w.png"
-  def PDF_URL = "http://stlab.adobe.com/wiki/images/d/d3/Test.pdf"
+  def PNG_URL = "http://tribbloid.github.io/spookystuff/test/logo11w.png"
+  def PDF_URL = "http://tribbloid.github.io/spookystuff/test/Test.pdf"
   def XML_URL = "http://tribbloid.github.io/spookystuff/test/pom.xml"
   def CSV_URL = "http://tribbloid.github.io/spookystuff/test/table.csv"
 

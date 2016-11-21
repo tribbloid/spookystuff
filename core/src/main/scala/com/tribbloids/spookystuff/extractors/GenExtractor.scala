@@ -3,14 +3,15 @@ package com.tribbloids.spookystuff.extractors
 import com.tribbloids.spookystuff.Const
 import com.tribbloids.spookystuff.extractors.GenExtractor._
 import com.tribbloids.spookystuff.row.Field
-import com.tribbloids.spookystuff.utils.SpookyViews._
-import com.tribbloids.spookystuff.utils.{SpookyUtils, UnreifiedScalaType}
-import org.apache.spark.sql.catalyst.ScalaReflection.universe._
+import com.tribbloids.spookystuff.utils.{ScalaType, SpookyUtils, UnreifiedScalaType}
+import org.apache.spark.sql.catalyst.ScalaReflection.universe.{TypeTag, typeTag}
 import org.apache.spark.sql.catalyst.trees.TreeNode
 
 import scala.language.implicitConversions
 
 object GenExtractor {
+
+  import com.tribbloids.spookystuff.utils.ScalaType._
 
   final val functionVID = -592849327L
 
@@ -93,7 +94,7 @@ object GenExtractor {
                                   arg2: GenExtractor[T, R2]
                                 ) extends GenExtractor[T, (R1, R2)] {
     //resolve to a Spark SQL DataType according to an exeuction plan
-    override def resolveType(tt: DataType): DataType = {
+    override def resolveType(tt: DataType): DataType = locked {
       val t1 = arg1.resolveType(tt)
       val t2 = arg2.resolveType(tt)
 
@@ -215,7 +216,7 @@ trait GenExtractor[T, +R] extends ScalaDynamicMixin[T, R] with Serializable {
 
   //TODO: extract subroutine and use it to avoid obj creation overhead
   def typed[A: TypeTag]: GenExtractor[T, A] = {
-    implicit val ctg = implicitly[TypeTag[A]].classTag
+    implicit val ctg = ScalaType.fromTypeTag[A].asClassTag
 
     andOptionFn[A]{
       SpookyUtils.typedOrNone[A]

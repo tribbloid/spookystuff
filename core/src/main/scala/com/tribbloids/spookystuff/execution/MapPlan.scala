@@ -44,7 +44,7 @@ case class FlattenPlan(
                         isLeft: Boolean
                       ) extends UnaryPlan(child) with MapPlan {
 
-  import com.tribbloids.spookystuff.utils.SpookyViews._
+  import com.tribbloids.spookystuff.utils.ScalaType._
 
   val resolver = child.schema.newResolver
 

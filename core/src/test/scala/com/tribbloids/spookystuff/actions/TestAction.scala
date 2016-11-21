@@ -47,7 +47,7 @@ class TestAction extends SpookyEnvFixture {
   val exampleActionList: List[Action] = List(
     Click("dummy"),
     Wget("'{~}").as('dummy_name),
-    Try(
+    ClusterRetry(
       Delay(10.seconds) +> Wget("ftp://www.dummy.org")
     )
   )

@@ -199,7 +199,7 @@ case class AssertSerializable[T <: AnyRef: ClassTag](
       val serInstance = ser.newInstance()
       val serElement = serInstance.serialize(element)
       val element2 = serInstance.deserialize[T](serElement)
-//      assert(!element.eq(element2))
+      //      assert(!element.eq(element2))
       condition (element, element2)
   }
 }

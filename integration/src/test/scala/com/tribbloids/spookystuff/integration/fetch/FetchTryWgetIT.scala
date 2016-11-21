@@ -21,7 +21,7 @@ class FetchTryWgetIT extends UncacheableIntegrationFixture {
 
     val RDD = sc.parallelize(Seq("http://malformed uri"))
       .fetch(
-        Try(Wget('_),3)
+        ClusterRetry(Wget('_),3)
       )
       .select(S.code ~ 'page)
       .persist()
@@ -35,7 +35,7 @@ class FetchTryWgetIT extends UncacheableIntegrationFixture {
     intercept[SparkException]{
       sc.parallelize(Seq("http://malformed uri"))
         .fetch(
-          Try(Wget('_),5)
+          ClusterRetry(Wget('_),5)
         )
         .select(S.code ~ 'page)
         .collect()

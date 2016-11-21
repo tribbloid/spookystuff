@@ -22,7 +22,7 @@ class FetchTryOAuthWgetIT extends UncacheableIntegrationFixture {
 
     val RDD = sc.parallelize(Seq("http://malformed uri"))
       .fetch(
-        Try(OAuthV2(Wget('_)),3)
+        ClusterRetry(OAuthV2(Wget('_)),3)
       )
       .select(S.code ~ 'page)
       .persist()
@@ -36,7 +36,7 @@ class FetchTryOAuthWgetIT extends UncacheableIntegrationFixture {
     intercept[SparkException]{
       sc.parallelize(Seq("http://malformed uri"))
         .fetch(
-          Try(OAuthV2(Wget('_)),5)
+          ClusterRetry(OAuthV2(Wget('_)),5)
         )
         .select(S.code ~ 'page)
         .collect()

@@ -2,60 +2,20 @@ package com.tribbloids.spookystuff.extractors
 
 import java.lang.reflect.Method
 
-import com.tribbloids.spookystuff.utils.{TypeUtils, UnreifiedScalaType}
+import com.tribbloids.spookystuff.utils.{ReflectionLock, TypeUtils, UnreifiedScalaType}
 import org.apache.spark.ml.dsl.utils.FlowUtils
 import org.apache.spark.sql.catalyst.ScalaReflection.universe._
 
 import scala.language.{dynamics, implicitConversions}
 
-////TODO: major revision! function should be pre-determined by
-//object ScalaDynamic {
-//
-//  //TODO: type erasure! add ClassTag
-//  def invokeDynamically[T, R](
-//                               v1: T,
-//                               lifted: T => Option[R],
-//                               methodName: String
-//                             )(
-//                               args: Any*
-//                             ): Option[Any] = {
-//
-//    val selfValue: R = lifted.apply(v1).getOrElse(return None)
-//
-//    val argValues: Seq[Any] = args.map {
-//
-//      case expr: GenExtractor[T, Any] =>
-//        val result = expr.lift.apply(v1)
-//        if (result.isEmpty) return None
-//        else result.get
-//      case v@_ => v
-//    }
-//
-//    val argClasses = argValues.map(_.getClass)
-//
-//    val func = selfValue.getClass.getMethod(methodName, argClasses: _*)
-//
-//    val result = func.invoke(selfValue, argValues.map(_.asInstanceOf[Object]): _*)
-//    Some(result)
-//  }
-//}
+case class ScalaDynamic(
+                         methodName: String
+                       ) extends ReflectionLock{
 
-//2 stages plan:
-// first, handle all ArgsOpt as Values
-// second, handle ArgsOpt that can be other GenExtractor[T, _]
-case class ScalaDynamicExtractor[T](
-                                     base: GenExtractor[T, _],
-                                     methodName: String,
-                                     argsOpt: Option[List[GenExtractor[T, _]]]
-                                   ) extends GenExtractor[T, Any] {
+  import com.tribbloids.spookystuff.utils.ScalaType._
 
-  import com.tribbloids.spookystuff.utils.SpookyViews._
-
-  //only used to show TreeNode
-  override protected def _args: Seq[GenExtractor[_, _]] = Seq(base) ++ argsOpt.toList.flatten
-
-  def getMethodsByName(evi: DataType): List[MethodSymbol] = {
-    val tpe = evi.scalaType.tpe
+  def getMethodsByName(dType: DataType): List[MethodSymbol] = locked {
+    val tpe = dType.scalaType.tpe
 
     //Java reflection preferred as more battle tested?
     val allMembers = tpe
@@ -71,14 +31,14 @@ case class ScalaDynamicExtractor[T](
     members
   }
 
-  def getExpectedTypeCombinations(argEvisOpt: Option[List[DataType]]): Seq[Option[List[Type]]] = {
-    val expectedTypeList: Seq[Option[List[Type]]] = argEvisOpt match {
-      case Some(argEvis) =>
-        val eviss = argEvis.map {
+  def getExpectedTypeCombinations(argDTypesOpt: Option[List[DataType]]): Seq[Option[List[Type]]] = locked {
+    val expectedTypeList: Seq[Option[List[Type]]] = argDTypesOpt match {
+      case Some(dTypes) =>
+        val tpess = dTypes.map {
           v =>
             List(v.scalaType.tpe)
         }
-        val cartesian = FlowUtils.cartesianProductList(eviss)
+        val cartesian = FlowUtils.cartesianProductList(tpess)
         cartesian.map(
           v => Some(v)
         )
@@ -88,18 +48,18 @@ case class ScalaDynamicExtractor[T](
     expectedTypeList
   }
 
-  //2 cases: argEvisOpt = None: call by .name
-  // argEvisOpt = Some(List()) call by .name()
-  def getMethodByScala(baseEvi: DataType, argEvisOpt: Option[List[DataType]]): MethodSymbol = {
-    val methods = getMethodsByName(baseEvi)
+  //2 cases: argDTypesOpt = None: call by .name
+  // argDTypesOpt = Some(List()) call by .name()
+  def getMethodByScala(baseDType: DataType, argDTypesOpt: Option[List[DataType]]): MethodSymbol = locked {
+    val methods = getMethodsByName(baseDType)
 
     val expectedTypeCombinations: Seq[Option[List[Type]]] =
-      getExpectedTypeCombinations(argEvisOpt)
+      getExpectedTypeCombinations(argDTypesOpt)
 
     val valid = methods.flatMap {
       method =>
         val paramTypess_returnType: (List[List[Type]], Type) = {
-          TypeUtils.getParameter_ReturnTypes(method, baseEvi.scalaType.tpe)
+          TypeUtils.getParameter_ReturnTypes(method, baseDType.scalaType.tpe)
         }
         val actualTypess: List[List[Type]] = paramTypess_returnType._1
         val firstTypeOpt = actualTypess.headOption
@@ -122,7 +82,7 @@ case class ScalaDynamicExtractor[T](
               "(" + t.mkString(", ") + ")"
           }
             .getOrElse("")
-          s"method ${baseEvi.scalaType.tpe}.$methodName$argsStr does not exist"
+          s"method ${baseDType.scalaType.tpe}.$methodName$argsStr does not exist"
       }
       throw new UnsupportedOperationException(
         errorStrs.mkString("\n")
@@ -134,17 +94,17 @@ case class ScalaDynamicExtractor[T](
     * due to type erasure, the java-based type validation in this function is much looser.
     * Should always validate by getMethodByScala to fail fast
     */
-  def getMethodByJava(baseEvi: DataType, argEvisOpt: Option[List[DataType]]): Method = {
+  def getMethodByJava(baseDType: DataType, argDTypesOpt: Option[List[DataType]]): Method = {
 
-    val baseClz = baseEvi.scalaType.clazz
+    val baseClz = baseDType.scalaType.asClass
 
-    val expectedClasssList: Seq[Option[List[Class[_]]]] = argEvisOpt match {
-      case Some(argEvis) =>
-        val eviss: List[List[Class[_]]] = argEvis.map {
+    val expectedClasssList: Seq[Option[List[Class[_]]]] = argDTypesOpt match {
+      case Some(argDTypes) =>
+        val classess: List[List[Class[_]]] = argDTypes.map {
           v =>
-            List(v.scalaType.clazz) :+ classOf[Object]
+            List(v.scalaType.asClass) :+ classOf[Object]
         }
-        val cartesian = FlowUtils.cartesianProductList(eviss)
+        val cartesian = FlowUtils.cartesianProductList(classess)
         cartesian.map(
           v => Some(v)
         )
@@ -180,30 +140,47 @@ case class ScalaDynamicExtractor[T](
       )
     }
   }
+}
+
+//2 stages plan:
+// first, handle all ArgsOpt as Values
+// second, handle ArgsOpt that can be other GenExtractor[T, _]
+case class ScalaDynamicExtractor[T](
+                                     base: GenExtractor[T, _],
+                                     methodName: String,
+                                     argsOpt: Option[List[GenExtractor[T, _]]]
+                                   ) extends GenExtractor[T, Any] {
+
+  import com.tribbloids.spookystuff.utils.ScalaType._
+
+  val dynamic = ScalaDynamic(methodName)
+
+  //only used to show TreeNode
+  override protected def _args: Seq[GenExtractor[_, _]] = Seq(base) ++ argsOpt.toList.flatten
 
   //resolve to a Spark SQL DataType according to an exeuction plan
-  override def resolveType(tt: DataType): DataType = {
+  override def resolveType(tt: DataType): DataType = locked {
     val tag: TypeTag[Any] = _resolveTypeTag(tt)
 
     UnreifiedScalaType(tag)
   }
 
-  private def _resolveTypeTag(tt: DataType): TypeTag[Any] = {
+  private def _resolveTypeTag(tt: DataType): TypeTag[Any] = locked {
     //TODO: merge
-    val baseEvi: DataType = base.resolveType(tt)
-    val argEvis = argsOpt.map {
+    val baseDType: DataType = base.resolveType(tt)
+    val argDTypes = argsOpt.map {
       _.map {
         v =>
           v.resolveType(tt): DataType
       }
     }
-    val scalaMethod = getMethodByScala(baseEvi, argEvis)
-    val (_, resultType) = TypeUtils.getParameter_ReturnTypes(scalaMethod, baseEvi.scalaType.tpe)
-    val resultTag = TypeUtils.createTypeTag[Any](resultType, baseEvi.scalaType.mirror)
+    val scalaMethod: MethodSymbol = dynamic.getMethodByScala(baseDType, argDTypes)
+    val (_, resultType) = TypeUtils.getParameter_ReturnTypes(scalaMethod, baseDType.scalaType.tpe)
+    val resultTag = TypeUtils.createTypeTag[Any](resultType, baseDType.scalaType.mirror)
     resultTag
   }
 
-  override def resolve(tt: DataType): PartialFunction[T, Any] = {
+  override def resolve(tt: DataType): PartialFunction[T, Any] = locked {
     val resolvedFn = resolveUsingScala(tt)
 
     val lifted = if (_resolveTypeTag(tt).tpe <:< typeOf[Option[Any]]) {
@@ -217,42 +194,19 @@ case class ScalaDynamicExtractor[T](
     Unlift(lifted)
   }
 
-  /**
-    * will not be used due to bad performance
-    */
-  def resolveUsingScala(tt: DataType): T => Option[Any] = {
-    val baseEvi: DataType = base.resolveType(tt)
-    val argEvis = argsOpt.map {
-      _.map {
-        v =>
-          v.resolveType(tt): DataType
-      }
-    }
+  def resolveUsingScala(tt: DataType): T => Option[Any] = locked {
 
     val baseLift: (T) => Option[Any] = base.resolve(tt).lift
     val argLifts: Option[List[(T) => Option[Any]]] = argsOpt.map(
       _.map(_.resolve(tt).lift)
     )
 
-    val scalaMethod = getMethodByScala(baseEvi, argEvis)
-    val baseMirror = baseEvi.scalaType.mirror
-    val result = {
-      vv: T =>
-        val baseOpt = baseLift.apply(vv)
-        val argOpts = argLifts
-          .getOrElse(Nil)
-          .map(_.apply(vv))
-        if (argOpts.contains(None)) None
-        else {
-          baseOpt.map {
-            baseVal =>
-              val instanceMirror = baseMirror.reflect(baseVal)
-              val methodMirror = instanceMirror.reflectMethod(scalaMethod)
-              methodMirror.apply(argOpts.map(_.get): _*)
-          }
-        }
-    }
-    result
+    ScalaResolvedFunction(
+      this,
+      tt,
+      baseLift,
+      argLifts
+    )
   }
 
   /**
@@ -261,10 +215,10 @@ case class ScalaDynamicExtractor[T](
     * extend to handle None case in the future
     */
   def resolveUsingJava(tt: DataType): T => Option[Any] = {
-    val baseEvi: DataType = base.resolveType(tt)
+    val baseDType: DataType = base.resolveType(tt)
     val baseLift: (T) => Option[Any] = base.resolve(tt).lift
 
-    val argEvisOpt: Option[List[DataType]] = argsOpt.map {
+    val argDTypesOpt: Option[List[DataType]] = argsOpt.map {
       _.map {
         v =>
           v.resolveType(tt): DataType
@@ -278,7 +232,7 @@ case class ScalaDynamicExtractor[T](
     }
       .getOrElse(Nil)
 
-    val javaMethod = this.getMethodByJava(baseEvi, argEvisOpt)
+    val javaMethod: Method = dynamic.getMethodByJava(baseDType, argDTypesOpt)
 
     val javaArgTypes = javaMethod.getParameterTypes
     val zipped = argLifts.zip(javaArgTypes)
@@ -315,11 +269,52 @@ case class ScalaDynamicExtractor[T](
   }
 }
 
+case class ScalaResolvedFunction[T](
+                                     extractor: ScalaDynamicExtractor[T],
+                                     tt: DataType,
+                                     baseLift: (T) => Option[Any],
+                                     argLifts: Option[List[(T) => Option[Any]]]
+                                   ) extends Function1[T, Option[Any]] {
+
+  @transient lazy val baseDType: DataType = extractor.base.resolveType(tt)
+  @transient lazy val argDTypes: Option[List[DataType]] = extractor.argsOpt.map {
+    _.map {
+      v =>
+        v.resolveType(tt): DataType
+    }
+  }
+
+  @transient lazy val mirrorFactory = new FlowUtils.ThreadLocal (
+    runtimeMirror(this.getClass.getClassLoader)
+  )
+
+  @transient lazy val scalaMethod: MethodSymbol = {
+    extractor.dynamic.getMethodByScala(baseDType, argDTypes)
+  }
+
+  override def apply(vv: T): Option[Any] = {
+    val baseOpt = baseLift.apply(vv)
+    val argOpts = argLifts
+      .getOrElse(Nil)
+      .map(_.apply(vv))
+    if (argOpts.contains(None)) None
+    else {
+      baseOpt.map {
+        baseVal =>
+          val baseMirror = mirrorFactory.get()
+          val instanceMirror: InstanceMirror = baseMirror.reflect(baseVal)
+          val methodMirror: MethodMirror = instanceMirror.reflectMethod(scalaMethod)
+          methodMirror.apply(argOpts.map(_.get): _*)
+      }
+    }
+  }
+}
+
 /**
   * this complex mixin enables many scala functions of Docs & Unstructured to be directly called on Extraction shortcuts.
   * supersedes many implementations
   */
-trait ScalaDynamicMixin[T, +R] extends Dynamic {
+trait ScalaDynamicMixin[T, +R] extends Dynamic with ReflectionLock {
   selfType: GenExtractor[T, R] =>
 
   def selectDynamic(methodName: String): GenExtractor[T, Any] = {

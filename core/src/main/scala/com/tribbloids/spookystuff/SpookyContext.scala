@@ -2,7 +2,7 @@ package com.tribbloids.spookystuff
 
 import com.tribbloids.spookystuff.rdd.FetchedDataset
 import com.tribbloids.spookystuff.row._
-import com.tribbloids.spookystuff.utils.{HDFSResolver, MultiCauses}
+import com.tribbloids.spookystuff.utils.{HDFSResolver, MultiCausesException, ScalaType}
 import org.apache.hadoop.conf.Configuration
 import org.apache.spark._
 import org.apache.spark.broadcast.Broadcast
@@ -41,7 +41,6 @@ case class SpookyContext private (
     this(new SparkContext(conf))
   }
 
-  import com.tribbloids.spookystuff.utils.SpookyViews._
   import org.apache.spark.sql.catalyst.ScalaReflection.universe._
 
   def isOnDriver: Boolean = sqlContext != null
@@ -63,7 +62,7 @@ case class SpookyContext private (
             v.deploy(this)
           }
       }
-    MultiCauses.&&&(trials)
+    MultiCausesException.&&&(trials)
   }
 
   def sparkContext = this.sqlContext.sparkContext
@@ -117,7 +116,7 @@ case class SpookyContext private (
                           seq: TraversableOnce[T]
                         ): FetchedDataset = {
 
-    implicit val ctg = implicitly[TypeTag[T]].classTag
+    implicit val ctg = ScalaType.fromTypeTag[T].asClassTag
     this.dsl.rddToPageRowRDD(this.sqlContext.sparkContext.parallelize(seq.toSeq))
   }
 
@@ -126,7 +125,7 @@ case class SpookyContext private (
                           numSlices: Int
                         ): FetchedDataset = {
 
-    implicit val ctg = implicitly[TypeTag[T]].classTag
+    implicit val ctg = ScalaType.fromTypeTag[T].asClassTag
     this.dsl.rddToPageRowRDD(this.sqlContext.sparkContext.parallelize(seq.toSeq, numSlices))
   }
 
@@ -212,7 +211,7 @@ case class SpookyContext private (
           }
           new FetchedDataset(
             self,
-            fieldMap = ListMap(Field("_") -> ttg.catalystType),
+            fieldMap = ListMap(Field("_") -> ScalaType.fromTypeTag(ttg).reifyOrError),
             spooky = getSpookyForRDD
           )
       }
