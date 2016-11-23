@@ -25,7 +25,7 @@ trait AbstractWebCache {
 
           pageBacktrace.injectFrom(similarTrace) //this is to allow actions in backtrace to have different name than those cached
           page.update(
-            uid = page.uid.copy()(name = page.uid.output.name)
+            uid = page.uid.copy()(name = Option(page.uid.output).map(_.name).orNull)
           )
         }
     }
