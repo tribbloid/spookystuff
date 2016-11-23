@@ -28,7 +28,7 @@ case class DocUID(
                    blockIndex: Int = 0,
                    blockSize: Int = 1
                  )(//number of pages in a block output,
-                   val name: String = Option(output).flatMap(_.nameOpt).orNull
+                   val name: String = Option(output).map(_.name).orNull
                  ) {
 
 }
@@ -130,7 +130,6 @@ case class Doc(
                 override val uri: String, //redirected
                 declaredContentType: Option[String],
                 content: Array[Byte],
-
                 //                 cookie: Seq[SerializableCookie] = Nil,
                 override val timeMillis: Long = System.currentTimeMillis(),
                 saved: scala.collection.mutable.Set[String] = scala.collection.mutable.Set(),

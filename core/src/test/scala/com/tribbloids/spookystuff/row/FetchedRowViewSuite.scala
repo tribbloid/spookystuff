@@ -1,6 +1,7 @@
 package com.tribbloids.spookystuff.row
 
 import com.tribbloids.spookystuff.actions.Wget
+import com.tribbloids.spookystuff.testutils.LocalPathDocsFixture
 import com.tribbloids.spookystuff.{SpookyEnvFixture, dsl}
 
 import scala.language.implicitConversions
@@ -8,7 +9,7 @@ import scala.language.implicitConversions
 /**
   * Created by peng on 12/3/14.
   */
-class FetchedRowViewSuite extends SpookyEnvFixture {
+class FetchedRowViewSuite extends SpookyEnvFixture with LocalPathDocsFixture {
 
   import dsl._
 
@@ -22,7 +23,8 @@ class FetchedRowViewSuite extends SpookyEnvFixture {
     assert(page1.get === pages.head)
 
     println(Wget(HTML_URL).toString())
-    val page2 = row.getPage(Wget(HTML_URL).toString())
+    val defaultName = Wget(HTML_URL).toString()
+    val page2 = row.getPage(defaultName)
     assert(page2.get === pages.head)
   }
 
