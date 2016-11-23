@@ -52,6 +52,8 @@ trait MultiCausesException extends Throwable {
 
   override def getMessage: String = treeNodeView.toString()
 
+  override def getCause: Throwable = causes.headOption.orNull
+
   def simpleMessage: String = "[MULTIPLE CAUSES]"
 }
 
