@@ -265,12 +265,13 @@ trait Timed extends Action {
 
 trait Named extends Action {
 
-  var name: String = this.toString
+  var nameOpt: Option[String] = None
+  def name = nameOpt.getOrElse(this.toString)
 
   def as(name: Symbol): this.type = {
     assert(name != null)
 
-    this.name = name.name
+    this.nameOpt = Some(name.name)
     this
   }
 
@@ -278,7 +279,7 @@ trait Named extends Action {
 
   override def injectFrom(same: ActionLike): Unit = {
     super.injectFrom(same)
-    this.name = same.asInstanceOf[Named].name
+    this.nameOpt = same.asInstanceOf[Named].nameOpt
   }
 }
 

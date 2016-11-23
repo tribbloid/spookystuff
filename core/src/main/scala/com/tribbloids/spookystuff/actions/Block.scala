@@ -50,10 +50,12 @@ abstract class Block(override val children: Trace) extends Actions(children) wit
       tuple => {
         val fetched = tuple._1
 
-        val updatedName = Option(this.name).getOrElse {
+        val updatedName = this.nameOpt.getOrElse {
           fetched.uid.name
         }
-        fetched.update(uid = fetched.uid.copy(backtrace = backtrace, blockIndex = tuple._2, blockSize = doc.size)(name = updatedName))
+        fetched.update(
+          uid = fetched.uid.copy(backtrace = backtrace, blockIndex = tuple._2, blockSize = doc.size)(name = updatedName)
+        )
       }
     }
     if (result.isEmpty && this.hasOutput) {

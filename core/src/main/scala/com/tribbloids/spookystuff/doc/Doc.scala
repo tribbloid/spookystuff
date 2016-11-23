@@ -28,7 +28,7 @@ case class DocUID(
                    blockIndex: Int = 0,
                    blockSize: Int = 1
                  )(//number of pages in a block output,
-                   val name: String = Option(output).map(_.name).orNull
+                   val name: String = Option(output).flatMap(_.nameOpt).orNull
                  ) {
 
 }
