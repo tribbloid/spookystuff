@@ -158,7 +158,7 @@ trait Action extends ActionLike with ActionRelay.HasRelay{
 
     val backtrace = if (rawPage.uid.backtrace.lastOption.exists(_ eq this)) rawPage.uid.backtrace
     else rawPage.uid.backtrace :+ this
-    val uid = rawPage.uid.copy(backtrace = backtrace)
+    val uid = rawPage.uid.copy(backtrace = backtrace)(name = null)
     val page = rawPage.copy(uid = uid)
     try {
       page.errorDump(spooky)
@@ -203,7 +203,7 @@ trait Action extends ActionLike with ActionRelay.HasRelay{
     }
   }
 
-  def doExe(session: Session): Seq[Fetched]
+  protected def doExe(session: Session): Seq[Fetched]
 
   def andThen(f: Seq[Fetched] => Seq[Fetched]): Action = AndThen(this, f)
 

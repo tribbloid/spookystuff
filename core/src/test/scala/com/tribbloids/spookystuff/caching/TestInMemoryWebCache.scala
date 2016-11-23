@@ -24,7 +24,7 @@ class TestInMemoryWebCache extends SpookyEnvFixture with LocalPathDocsFixture {
   test("cache and restore") {
     spooky.conf.cachedDocsLifeSpan = 10.seconds
 
-    assert(visitPage.head.uid === DocUID(Visit(HTML_URL) :: Snapshot().as('U) :: Nil, Snapshot()))
+    assert(visitPage.head.uid === DocUID(Visit(HTML_URL) :: Snapshot().as('U) :: Nil, Snapshot())())
 
     cache.put(visit, visitPage, spooky)
 

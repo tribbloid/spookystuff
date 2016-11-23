@@ -17,16 +17,19 @@ trait AbstractWebCache {
 
     val dryrun = k.dryrun
 
-    pagesOpt.foreach {
+    val result = pagesOpt.map {
       pages =>
-        for (page <- pages) {
+        for (page <- pages) yield {
           val pageBacktrace: Trace = page.uid.backtrace
-          val similarDryrun = dryrun.find(_ == pageBacktrace).get
+          val similarTrace = dryrun.find(_ == pageBacktrace).get
 
-          pageBacktrace.injectFrom(similarDryrun) //this is to allow actions in backtrace to have different name than those cached
+          pageBacktrace.injectFrom(similarTrace) //this is to allow actions in backtrace to have different name than those cached
+          page.update(
+            uid = page.uid.copy()(name = page.uid.output.name)
+          )
         }
     }
-    pagesOpt
+    result
   }
   def getImpl(k: Trace, spooky: SpookyContext): Option[Seq[Fetched]]
 

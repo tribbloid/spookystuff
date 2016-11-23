@@ -54,7 +54,7 @@ abstract class Export extends Named {
         catch {
           case e: Throwable =>
             val message = getSessionExceptionString(session, Some(doc))
-            val wrapped = new DocFilterError(doc, message, e)
+            val wrapped = new DocWithError(doc, message, e)
 
             throw wrapped
         }
@@ -67,7 +67,7 @@ abstract class Export extends Named {
 }
 
 
-trait Wayback extends Action {
+trait Wayback {
 
   def wayback: Extractor[Long]
 }
@@ -131,7 +131,7 @@ case class Snapshot(
     //    }
 
     val page = new Doc(
-      DocUID((pb.backtrace :+ this).toList, this),
+      DocUID((pb.backtrace :+ this).toList, this)(),
       pb.webDriver.getCurrentUrl,
       Some("text/html; charset=UTF-8"),
       pb.webDriver.getPageSource.getBytes("UTF8")
@@ -169,7 +169,7 @@ case class Screenshot(
     }
 
     val page = new Doc(
-      DocUID((pb.backtrace :+ this).toList, this),
+      DocUID((pb.backtrace :+ this).toList, this)(),
       pb.webDriver.getCurrentUrl,
       Some("image/png"),
       content
@@ -243,7 +243,7 @@ abstract class HttpMethod(
         val contentType = entity.getContentType.getValue
 
         new Doc(
-          DocUID(List(this), this),
+          DocUID(List(this), this)(),
           currentUrl,
           Some(contentType),
           content,
@@ -485,7 +485,7 @@ case class Wget(
     val xmlStr = SpookyUtils.xmlPrinter.format(xml)
 
     val result: Fetched = new Doc(
-      DocUID(List(this), this),
+      DocUID(List(this), this)(),
       path.toString,
       Some("inode/directory; charset=UTF-8"),
       xmlStr.getBytes("utf-8"),
@@ -503,7 +503,7 @@ case class Wget(
       }
 
     val result = new Doc(
-      DocUID(List(this), this),
+      DocUID(List(this), this)(),
       path.toString,
       None,
       content,
@@ -523,7 +523,7 @@ case class Wget(
       val content = IOUtils.toByteArray ( stream )
 
       val result = new Doc(
-        DocUID(List(this), this),
+        DocUID(List(this), this)(),
         uri.toString,
         None,
         content

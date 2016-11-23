@@ -26,7 +26,9 @@ case class DocUID(
                    output: Export,
                    //                    sessionStartTime: Long,
                    blockIndex: Int = 0,
-                   blockSize: Int = 1 //number of pages in a block output,
+                   blockSize: Int = 1
+                 )(//number of pages in a block output,
+                   val name: String = Option(output).map(_.name).orNull
                  ) {
 
 }
@@ -39,9 +41,14 @@ class FetchedUDT extends SimpleUDT[Fetched]
 trait Fetched extends Serializable {
 
   def uid: DocUID
+  def update(
+              uid: DocUID = this.uid,
+              cacheable: Boolean = this.cacheable
+            ): this.type
+
   def cacheable: Boolean
 
-  def name = Option(this.uid.output).map(_.name).orNull
+  def name = this.uid.name
 
   def timeMillis: Long
 
@@ -67,14 +74,19 @@ case class NoDoc(
                   metadata: Map[String, Any] = Map.empty
                 ) extends Serializable with Fetched {
 
-  @transient override lazy val uid: DocUID = DocUID(backtrace, null, 0, 1)
+  @transient override lazy val uid: DocUID = DocUID(backtrace, null, 0, 1)()
+
+  override def update(
+                       uid: DocUID = this.uid,
+                       cacheable: Boolean = this.cacheable
+                     ) = this.copy(backtrace = uid.backtrace, cacheable = cacheable).asInstanceOf[this.type ]
 }
 
-case class DocError(
-                     delegate: Doc,
-                     header: String = "",
-                     override val cause: Throwable = null
-                   ) extends ActionException(
+case class DocWithError(
+                         delegate: Doc,
+                         header: String = "",
+                         override val cause: Throwable = null
+                       ) extends ActionException(
   header + delegate.formattedCode.map(
     "\n" + _
   )
@@ -86,16 +98,18 @@ case class DocError(
 
   override def uid: DocUID = delegate.uid
 
+  override def update(
+                       uid: DocUID = this.uid,
+                       cacheable: Boolean = this.cacheable
+                     ) = {
+    this.copy(delegate = delegate.update(uid, cacheable)).asInstanceOf[this.type]
+  }
+
   override def cacheable: Boolean = delegate.cacheable
 
   override def metadata: Map[String, Any] = delegate.metadata
-}
 
-class DocFilterError(
-                      delegate: Doc,
-                      override val header: String = "",
-                      override val cause: Throwable = null
-                    ) extends DocError(delegate, header, cause)
+}
 
 object Doc {
 
@@ -126,6 +140,11 @@ case class Doc(
               ) extends Unstructured with Fetched with IDMixin {
 
   lazy val _id = (uid, uri, declaredContentType, timeMillis, httpStatus.toString)
+
+  override def update(
+                       uid: DocUID = this.uid,
+                       cacheable: Boolean = this.cacheable
+                     ): Doc.this.type = this.copy(uid = uid, cacheable = cacheable).asInstanceOf[this.type]
 
   private def detectCharset(contentType: ContentType): String = {
     val charsetD = new UniversalDetector(null)

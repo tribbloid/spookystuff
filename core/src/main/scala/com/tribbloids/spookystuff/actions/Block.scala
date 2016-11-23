@@ -28,36 +28,46 @@ abstract class Block(override val children: Trace) extends Actions(children) wit
     _.wayback
   }.orNull
 
-  override def as(name: Symbol) = {
-    super.as(name)
-
-    children.foreach{
-      case n: Named => n.as(name)
-      case _ =>
-    }
-
-    this
-  }
+  //  override def as(name: Symbol) = {
+  //    super.as(name)
+  //
+  //    children.foreach{
+  //      case n: Named => n.as(name)
+  //      case _ =>
+  //    }
+  //
+  //    this
+  //  }
 
   def cacheEmptyOutput: Boolean = true
 
   final override def doExe(session: Session): Seq[Fetched] = {
 
-    val pages = this.doExeNoUID(session)
+    val doc = this.doExeNoUID(session)
 
     val backtrace = (session.backtrace :+ this).toList
-    val result = pages.zipWithIndex.map {
+    val result = doc.zipWithIndex.map {
       tuple => {
-        val page = tuple._1
+        val fetched = tuple._1
 
-        page.copy(uid = page.uid.copy(backtrace = backtrace, blockIndex = tuple._2, blockSize = pages.size))
+        val updatedName = Option(this.name).getOrElse {
+          fetched.uid.name
+        }
+        fetched.update(uid = fetched.uid.copy(backtrace = backtrace, blockIndex = tuple._2, blockSize = doc.size)(name = updatedName))
       }
     }
-    if (result.isEmpty && this.hasOutput) Seq(NoDoc(backtrace, cacheable = this.cacheEmptyOutput))
-    else result
+    if (result.isEmpty && this.hasOutput) {
+      Seq(NoDoc(backtrace, cacheable = this.cacheEmptyOutput))
+    }
+    else if (result.count(_.isInstanceOf[Fetched]) == 0 && this.hasOutput) {
+      result.map(_.update(cacheable = false))
+    }
+    else {
+      result
+    }
   }
 
-  def doExeNoUID(session: Session): Seq[Doc]
+  def doExeNoUID(session: Session): Seq[Fetched]
 }
 
 object ClusterRetry {
@@ -83,16 +93,13 @@ final case class ClusterRetry(
 
   override def trunk = Some(ClusterRetry(this.trunkSeq)(retries, cacheEmptyOutput).asInstanceOf[this.type])
 
-  override def doExeNoUID(session: Session): Seq[Doc] = {
+  override def doExeNoUID(session: Session): Seq[Fetched] = {
 
-    val pages = new ArrayBuffer[Doc]()
+    val pages = new ArrayBuffer[Fetched]()
 
     try {
       for (action <- children) {
-        pages ++= action.exe(session).flatMap {
-          case page: Doc => Some(page)
-          case noPage: NoDoc => None
-        }
+        pages ++= action.exe(session)
       }
     }
     catch {
@@ -145,30 +152,24 @@ final case class LocalRetry(
 
   override def trunk = Some(LocalRetry(this.trunkSeq)(retries, cacheEmptyOutput).asInstanceOf[this.type])
 
-  override def doExeNoUID(session: Session): Seq[Doc] = {
+  override def doExeNoUID(session: Session): Seq[Fetched] = {
 
-    val pages = new ArrayBuffer[Doc]()
+    val pages = new ArrayBuffer[Fetched]()
 
     try {
       for (action <- children) {
-        pages ++= action.exe(session).flatMap{
-          case page: Doc => Some(page)
-          case noPage: NoDoc => None
-        }
+        pages ++= action.exe(session)
       }
     }
     catch {
       case e: Throwable =>
-        retry[Seq[Doc]](retries)({
-          val pages = new ArrayBuffer[Doc]()
+        retry[Seq[Fetched]](retries)({
+          val retriedPages = new ArrayBuffer[Fetched]()
 
           for (action <- children) {
-            pages ++= action.exe(session).flatMap {
-              case page: Doc => Some(page)
-              case noPage: NoDoc => None
-            }
+            retriedPages ++= action.exe(session)
           }
-          pages
+          retriedPages
         })
     }
 
@@ -211,17 +212,14 @@ final case class Loop(
 
   override def trunk = Some(this.copy(children = this.trunkSeq).asInstanceOf[this.type])
 
-  override def doExeNoUID(session: Session): Seq[Doc] = {
+  override def doExeNoUID(session: Session): Seq[Fetched] = {
 
-    val pages = new ArrayBuffer[Doc]()
+    val pages = new ArrayBuffer[Fetched]()
 
     try {
       for (i <- 0 until limit) {
         for (action <- children) {
-          pages ++= action.exe(session).flatMap{
-            case page: Doc => Some(page)
-            case noPage: NoDoc => None
-          }
+          pages ++= action.exe(session)
         }
       }
     }
@@ -301,25 +299,19 @@ final case class If(
 
   override def trunk = Some(this.copy(ifTrue = ifTrue.flatMap(_.trunk), ifFalse = ifFalse.flatMap(_.trunk)).asInstanceOf[this.type])
 
-  override def doExeNoUID(session: Session): Seq[Doc] = {
+  override def doExeNoUID(session: Session): Seq[Fetched] = {
 
     val current = QuickSnapshot.exe(session).head.asInstanceOf[Doc]
 
-    val pages = new ArrayBuffer[Doc]()
+    val pages = new ArrayBuffer[Fetched]()
     if (condition(current, session)) {
       for (action <- ifTrue) {
-        pages ++= action.exe(session).flatMap{
-          case page: Doc => Some(page)
-          case noPage: NoDoc => None
-        }
+        pages ++= action.exe(session)
       }
     }
     else {
       for (action <- ifFalse) {
-        pages ++= action.exe(session).flatMap{
-          case page: Doc => Some(page)
-          case noPage: NoDoc => None
-        }
+        pages ++= action.exe(session)
       }
     }
 
@@ -369,14 +361,11 @@ case class OAuthV2(self: Wget) extends Block(List(self)) with Driverless {
       v => this.copy(self = v.asInstanceOf[Wget]).asInstanceOf[this.type]
     }
 
-  override def doExeNoUID(session: Session): Seq[Doc] = {
+  override def doExeNoUID(session: Session): Seq[Fetched] = {
     val effectiveWget = this.rewrite(session)
 
     effectiveWget
       .exe(session)
-      .collect {
-        case v: Doc => v
-      }
   }
 }
 
@@ -384,10 +373,7 @@ final case class AndThen(self: Action, f: Seq[Fetched] => Seq[Fetched]) extends 
 
   override def trunk = Some(this)
 
-  override def doExeNoUID(session: Session): Seq[Doc] = {
+  override def doExeNoUID(session: Session): Seq[Fetched] = {
     f(self.exe(session))
-      .collect {
-        case v: Doc => v
-      }
   }
 }

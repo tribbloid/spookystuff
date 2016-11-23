@@ -43,7 +43,7 @@ abstract class ActionLike extends DetailedProduct with Serializable {
 
   def injectFrom(same: ActionLike): Unit = {} //TODO: change to immutable pattern to avoid one Trace being used twice with different names
 
-  final def injectTo(same: ActionLike): Unit = same.injectFrom(this)
+//  final def injectTo(same: ActionLike): Unit = same.injectFrom(this)
 
   //used to determine if snapshot needs to be appended or if possible to be executed lazily
   final def hasOutput: Boolean = outputNames.nonEmpty

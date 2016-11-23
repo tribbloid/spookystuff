@@ -20,7 +20,7 @@ case class DummyPyAction(
     val result2 = Py(session).dummy(b = 3, c = 2).strOpt
     assert(result == result2)
     val doc = new Doc(
-      uid = DocUID(List(this), this),
+      uid = DocUID(List(this), this)(),
       uri = "dummy",
       declaredContentType = Some(ContentType.TEXT_PLAIN.toString),
       content = result.get.getBytes("UTF-8")
