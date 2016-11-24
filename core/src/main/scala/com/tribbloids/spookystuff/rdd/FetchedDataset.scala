@@ -85,6 +85,7 @@ case class FetchedDataset(
       _.dataRows
     }
   }
+
   def dataRDDSorted: RDD[DataRow] = {
 
     val sortIndices: List[Field] = plan.allSortIndices.map(_._1.self)

@@ -2,7 +2,7 @@ package com.tribbloids.spookystuff
 
 import com.tribbloids.spookystuff.rdd.FetchedDataset
 import com.tribbloids.spookystuff.row._
-import com.tribbloids.spookystuff.utils.{HDFSResolver, MultiCausesException, ScalaType}
+import com.tribbloids.spookystuff.utils.{HDFSResolver, MultiCausesException, OnDriverOnly, ScalaType}
 import org.apache.hadoop.conf.Configuration
 import org.apache.spark._
 import org.apache.spark.broadcast.Broadcast
@@ -20,7 +20,7 @@ case class SpookyContext private (
                                    @transient sqlContext: SQLContext, //can't be used on executors
                                    @transient private var spookyConf: SpookyConf, //can only be used on executors after broadcast
                                    metrics: Metrics //accumulators cannot be broadcasted,
-                                 ) {
+                                 ) extends OnDriverOnly {
 
   def this(
             sqlContext: SQLContext,
@@ -41,10 +41,40 @@ case class SpookyContext private (
     this(new SparkContext(conf))
   }
 
+  {
+    rebroadcast()
+  }
+
   import org.apache.spark.sql.catalyst.ScalaReflection.universe._
 
-  def isOnDriver: Boolean = sqlContext != null
-  if (isOnDriver) {
+  def sparkContext = this.sqlContext.sparkContext
+
+  @volatile var broadcastedSpookyConf: Broadcast[SpookyConf] = _
+  def conf = {
+    if (spookyConf == null) broadcastedSpookyConf.value
+    else spookyConf
+  }
+  def conf_=(conf: SpookyConf): Unit = {
+    spookyConf = conf.importFrom(sqlContext.sparkContext)
+    rebroadcast()
+  }
+
+  @volatile var broadcastedHadoopConf: Broadcast[SerializableWritable[Configuration]] = _
+  def hadoopConf: Configuration = broadcastedHadoopConf.value.value
+
+  def resolver = HDFSResolver(hadoopConf)
+
+  def rebroadcast(): Unit = if (isOnDriver) {
+    scala.util.Try {
+      broadcastedSpookyConf.destroy()
+    }
+    scala.util.Try {
+      broadcastedHadoopConf.destroy()
+    }
+    broadcastedSpookyConf = sqlContext.sparkContext.broadcast(spookyConf)
+    broadcastedHadoopConf = sqlContext.sparkContext.broadcast(
+      new SerializableWritable(this.sqlContext.sparkContext.hadoopConfiguration)
+    )
     try {
       deployDrivers()
     }
@@ -65,39 +95,6 @@ case class SpookyContext private (
     MultiCausesException.&&&(trials)
   }
 
-  def sparkContext = this.sqlContext.sparkContext
-
-  @volatile var broadcastedSpookyConf: Broadcast[SpookyConf] = {
-    sqlContext.sparkContext.broadcast(spookyConf)
-  }
-
-  def conf = if (spookyConf == null) broadcastedSpookyConf.value
-  else spookyConf
-
-  def conf_=(conf: SpookyConf): Unit = {
-    spookyConf = conf.importFrom(sqlContext.sparkContext)
-    rebroadcast()
-  }
-
-  //TODO: make it similar to broadcastedEffectiveConf
-  val broadcastedHadoopConf: Broadcast[SerializableWritable[Configuration]] = {
-    sqlContext.sparkContext.broadcast(
-      new SerializableWritable(this.sqlContext.sparkContext.hadoopConfiguration)
-    )
-  }
-
-  def hadoopConf: Configuration = broadcastedHadoopConf.value.value
-  def resolver = HDFSResolver(hadoopConf)
-
-  def rebroadcast(): Unit ={
-    try {
-      broadcastedSpookyConf.destroy()
-    }
-    catch {
-      case e: Throwable =>
-    }
-    broadcastedSpookyConf = sqlContext.sparkContext.broadcast(spookyConf)
-  }
 
   def zeroMetrics(): SpookyContext ={
     metrics.zero()

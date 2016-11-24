@@ -1,5 +1,8 @@
 from __future__ import print_function
 
+import json
+import logging
+
 from pyspookystuff.utils import retry
 
 """
@@ -108,13 +111,15 @@ proxySpawn = None
 class MayNeedProxy(object):
 
     def __init__(self, proxy=None, proxyPID=None):
+        # type: (Proxy, int) -> None
         self.proxy = proxy
         self.proxyPID = proxyPID
 
     def _getProxyPID(self):
-        # type: () -> None
+        # type: () -> int
         global proxySpawn
-        if self.proxy and (not self.proxyPID):
+        if self.proxy and (not self.proxyPID): # set but not launched
+            logging.getLogger("Proxy").info("Spawning:", json.dumps(self.proxy, default=lambda c: c.__dict__))
             proxySpawn = _launchProxy(
                 aircraft=self.proxy.name,
                 setup=False,
@@ -125,6 +130,7 @@ class MayNeedProxy(object):
         return self.proxyPID
 
     def _killProxy(self):
+        # type: () -> None
         if self.proxyPID:
             try:
                 os.killpg(self.proxyPID, 2)
@@ -170,6 +176,7 @@ class Link(MayNeedProxy):
 
         @retry(Const.connectionRetry)
         def connect():
+            logging.getLogger("Drone").info("Connecting:", self.uri)
             vehicle = dronekit.connect(
                 self.uri,
                 wait_ready=True

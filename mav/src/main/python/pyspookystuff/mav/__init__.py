@@ -20,7 +20,7 @@ def armIfNot(vehicle):
 
 
 def blockingArm(vehicle):
-    # type: (Vehicle) -> None
+    # type: (dronekit.Vehicle) -> None
     # Don't let the user try to fly when autopilot is booting
     i = 60
     while not vehicle.is_armable and i > 0:

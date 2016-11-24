@@ -80,7 +80,8 @@ class APMSim(object):
             except:
                 pass
         else:
-            print("APM SITL not initialized, do not clean")
+            # print("APM SITL not initialized, do not clean")
+            pass
 
     def __del__(self):
         self.close()

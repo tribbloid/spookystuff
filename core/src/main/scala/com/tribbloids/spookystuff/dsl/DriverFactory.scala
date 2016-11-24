@@ -33,6 +33,8 @@ import org.openqa.selenium.remote.{BrowserType, CapabilityType, DesiredCapabilit
 import org.openqa.selenium.{Capabilities, Platform, Proxy}
 import org.slf4j.LoggerFactory
 
+import scala.util.Try
+
 //local to TaskID, if not exist, local to ThreadID
 //for every new driver created, add a taskCompletion listener that salvage it.
 //TODO: get(session) should have 2 impl:
@@ -47,20 +49,7 @@ abstract sealed class DriverFactory[+T] extends Serializable {
   def provision(session: Session): T
   def release(session: Session): Unit
 
-  final def deploy(spooky: SpookyContext): Unit = {
-    try {
-      _deploy(spooky)
-    }
-    catch {
-      case e: Throwable =>
-        throw new UnsupportedOperationException(
-          s"${this.getClass.getSimpleName} cannot find resource for deployment, " +
-            s"please provide Internet Connection or deploy manually",
-          e
-        )
-    }
-  }
-  protected[dsl] def _deploy(spooky: SpookyContext): Unit = {}
+  def deploy(spooky: SpookyContext): Unit = {}
 }
 
 /**
@@ -167,7 +156,7 @@ case class TaskLocalFactory[T](
     }
   }
 
-  override def _deploy(spooky: SpookyContext): Unit = delegate._deploy(spooky)
+  override def deploy(spooky: SpookyContext): Unit = delegate.deploy(spooky)
 }
 
 abstract sealed class WebDriverFactory extends TransientFactory[CleanWebDriver]{
@@ -218,29 +207,47 @@ object DriverFactories {
   }
 
   case class PhantomJS(
-                        getPath: SpookyContext => String = PhantomJS.defaultGetPath,
+                        getLocalURI: SpookyContext => String = PhantomJS.defaultGetPath,
+                        getRemoteURI: SpookyContext => String = _ => PhantomJS.HTTP_RESOURCE_URI,
                         loadImages: Boolean = false,
                         redeploy: Boolean = false
                       ) extends WebDriverFactory {
 
+    override def deploy(spooky: SpookyContext): Unit = {
+      try {
+        spooky.sparkContext.clearFiles()
+        _deploy(spooky)
+      }
+      catch {
+        case e: Throwable =>
+          spooky.sparkContext.clearFiles()
+          throw new UnsupportedOperationException(
+            s"${this.getClass.getSimpleName} cannot find resource for deployment, " +
+              s"please provide Internet Connection or deploy manually",
+            e
+          )
+      }
+    }
+
     /**
       * can only used on driver
       */
-    override def _deploy(spooky: SpookyContext): Unit = {
+    def _deploy(spooky: SpookyContext): Unit = {
       if ((!isDeployedOnWorkers(spooky)) || redeploy) {
 
-        val pathOptOnDriver = SpookyUtils.validateLocalPath(getPath(spooky))
-        val isDeployedOnDriver: Boolean = pathOptOnDriver.nonEmpty
+        val localURIOpt = SpookyUtils.validateLocalPath(getLocalURI(spooky))
 
-        val uri = if (!isDeployedOnDriver) {
+        val isDeployedLocally: Boolean = localURIOpt.nonEmpty
+
+        val uri = if (!isDeployedLocally) {
           // add binary from internet
-          val uri = PhantomJS.HTTP_RESOURCE_URI
+          val uri = getRemoteURI(spooky)
           LoggerFactory.getLogger(this.getClass).info(s"Downloading PhantomJS from Internet ($uri)")
           uri
         }
         else {
           // add binary from driver
-          val uri = pathOptOnDriver.get
+          val uri = localURIOpt.get
           LoggerFactory.getLogger(this.getClass).info(s"Downloading PhantomJS from Driver ($uri)")
           uri
         }
@@ -249,18 +256,19 @@ object DriverFactories {
         sc.addFile(uri)
         val fileName = PhantomJS.uri2fileName(uri)
 
-        //deploy
         if (redeploy) {
           sc.mapPerExecutor {
-            val dstStr = getPath(spooky)
-            PhantomJS.syncDelete(dstStr)
+            Try {
+              val dstStr = getLocalURI(spooky)
+              PhantomJS.syncDelete(dstStr)
+            }
           }
             .count()
         }
 
         sc.mapPerExecutor {
           val srcStr = SparkFiles.get(fileName)
-          val dstStr = getPath(spooky)
+          val dstStr = getLocalURI(spooky)
           val srcFile = new File(srcStr)
           val dstFile = new File(dstStr)
           SpookyUtils.ifFileNotExist(dstStr) {
@@ -283,7 +291,7 @@ object DriverFactories {
 
         val sc = spooky.sqlContext.sparkContext
         val pathRDD: RDD[Option[String]] = sc.mapPerExecutor {
-          val pathOpt = SpookyUtils.validateLocalPath(getPath(spooky))
+          val pathOpt = SpookyUtils.validateLocalPath(getLocalURI(spooky))
           pathOpt
         }
         pathRDD
@@ -309,7 +317,7 @@ object DriverFactories {
     //    baseCaps.setCapability(PhantomJSDriverService.PHANTOMJS_PAGE_SETTINGS_PREFIX+"resourceTimeout", Const.resourceTimeout*1000)
 
     def newCap(spooky: SpookyContext, extra: Option[Capabilities] = None): DesiredCapabilities = {
-      val pathStr = getPath(spooky)
+      val pathStr = getLocalURI(spooky)
 
       baseCaps.setCapability(PhantomJSDriverService.PHANTOMJS_EXECUTABLE_PATH_PROPERTY, pathStr)
       baseCaps.setCapability (

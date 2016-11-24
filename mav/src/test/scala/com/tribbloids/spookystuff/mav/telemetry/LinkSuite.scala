@@ -8,7 +8,7 @@ import com.tribbloids.spookystuff.session.DriverSession
   */
 class LinkSuite extends APMSimFixture {
 
-  test("Link.uri should be identical to endpoint if without proxy") {
+  test("Link.uri should = endpoint if without proxy") {
     val spooky = this.spooky
     val uris = simConnStrRDD.map {
       connStr =>
@@ -75,64 +75,7 @@ class LinkSuite extends APMSimFixture {
     )
   }
 
-  test("Link can be reused if requested in the same python driver") {
-    val spooky = this.spooky
-    val links = simConnStrRDD.map {
-      connStr =>
-        val endpoint = Endpoint(Seq(connStr))
-        val session = new DriverSession(spooky)
-        val link1 = Link.getOrCreate(
-          Seq(endpoint),
-          ProxyFactories.NoProxy,
-          session.getOrProvisionPythonDriver
-        )
-        link1.Py(session).uri.strOpt.foreach(println)
-        val link2 = Link.getOrCreate(
-          Seq(endpoint),
-          ProxyFactories.NoProxy,
-          session.getOrProvisionPythonDriver
-        )
-        link1 -> link2
-    }
-      .collect()
-    links.foreach {
-      tuple =>
-        assert(tuple._1 == tuple._2)
-    }
-  }
-
-  test("Link can be reused if previous python driver is cleaned") {
-    val spooky = this.spooky
-    val links1 = simConnStrRDD.map {
-      connStr =>
-        val endpoint = Endpoint(Seq(connStr))
-        val session = new DriverSession(spooky)
-        val link = Link.getOrCreate(
-          Seq(endpoint),
-          ProxyFactories.NoProxy,
-          session.getOrProvisionPythonDriver
-        )
-        link
-    }
-      .collect()
-
-    val links2 = simConnStrRDD.map {
-      connStr =>
-        val endpoint = Endpoint(Seq(connStr))
-        val session = new DriverSession(spooky)
-        val link = Link.getOrCreate(
-          Seq(endpoint),
-          ProxyFactories.NoProxy,
-          session.getOrProvisionPythonDriver
-        )
-        link
-    }
-      .collect()
-
-    assert(links1.toSet == links2.toSet)
-  }
-
-  test("Link.uri should be identical to first out of the proxy if provided") {
+  test("Link.uri should = first out of its proxy if created") {
 
     val spooky = this.spooky
     val uris = simConnStrRDD.map {
@@ -145,22 +88,80 @@ class LinkSuite extends APMSimFixture {
           proxyFactory,
           session.getOrProvisionPythonDriver
         )
-        val result = link.Py(session).uri.strOpt
-        result
+        val proxyOutFirst = link.proxy.get.outs.headOption
+        val uri = link.Py(session).uri.strOpt
+        proxyOutFirst -> uri
     }
       .collect()
-    uris.mkString("\n").shouldBe(
-      """
-        |Some(udp:localhost:12014)
-        |Some(udp:localhost:12015)
-        |Some(udp:localhost:12016)
-        |Some(udp:localhost:12017)
-        |Some(udp:localhost:12018)
-        |Some(udp:localhost:12019)
-        |Some(udp:localhost:12020)
-        |Some(udp:localhost:12021)
-      """.stripMargin,
-      sort = true
-    )
+    uris.foreach {
+      tuple =>
+        assert(tuple._1 == tuple._2)
+    }
+  }
+
+  val factories = Seq(
+//    ProxyFactories.NoProxy,
+//    ProxyFactories.Default()
+  )
+
+  factories.foreach {
+    factory =>
+
+      test("Link can be reused if provisioned in the same python driver") {
+        val spooky = this.spooky
+        val links = simConnStrRDD.map {
+          connStr =>
+            val endpoint = Endpoint(Seq(connStr))
+            val session = new DriverSession(spooky)
+            val link1 = Link.getOrCreate (
+              Seq(endpoint),
+              factory,
+              session.getOrProvisionPythonDriver
+            )
+            link1.Py(session).uri.strOpt.foreach(println)
+            val link2 = Link.getOrCreate (
+              Seq(endpoint),
+              factory,
+              session.getOrProvisionPythonDriver
+            )
+            link1 -> link2
+        }
+          .collect()
+        links.foreach {
+          tuple =>
+            assert(tuple._1 == tuple._2)
+        }
+      }
+
+      test("Link can be reused if previous python driver is cleaned") {
+        val spooky = this.spooky
+        val links1 = simConnStrRDD.map {
+          connStr =>
+            val endpoint = Endpoint(Seq(connStr))
+            val session = new DriverSession(spooky)
+            val link = Link.getOrCreate(
+              Seq(endpoint),
+              factory,
+              session.getOrProvisionPythonDriver
+            )
+            link
+        }
+          .collect()
+
+        val links2 = simConnStrRDD.map {
+          connStr =>
+            val endpoint = Endpoint(Seq(connStr))
+            val session = new DriverSession(spooky)
+            val link = Link.getOrCreate(
+              Seq(endpoint),
+              factory,
+              session.getOrProvisionPythonDriver
+            )
+            link
+        }
+          .collect()
+
+        assert(links1.toSet == links2.toSet)
+      }
   }
 }
