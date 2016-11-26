@@ -1,33 +1,35 @@
 package com.tribbloids.spookystuff
 
+import com.tribbloids.spookystuff.utils.TreeException
+
 /**
   * Created by peng on 9/11/14.
   * doesn't have to catch it every time
   */
-//TODO: merge with MultiCauses
-class TreeCauses(
-                  message: String = "",
-                  cause: Throwable = null
-                ) extends RuntimeException(message, cause) {
-
-  override def getMessage: String = {
-    //    if (cause == null) {
-    messageStr
-    //    }
-    //    else {
-    //      s"$messageStr\nCaused by: ${this.getCause}"
-    //    }
-  }
-
-  def messageStr: String = {
-    this.message
-  }
-}
+////TODO: merge with MultiCauses
+//class TreeCauses(
+//                  message: String = "",
+//                  cause: Throwable = null
+//                ) extends RuntimeException(message, cause) {
+//
+//  override def getMessage: String = {
+//    //    if (cause == null) {
+//    messageStr
+//    //    }
+//    //    else {
+//    //      s"$messageStr\nCaused by: ${this.getCause}"
+//    //    }
+//  }
+//
+//  def messageStr: String = {
+//    this.message
+//  }
+//}
 
 class SpookyException(
                        val message: String = "",
-                       val cause: Throwable = null
-                     ) extends TreeCauses(message, cause) {
+                       override val cause: Throwable = null
+                     ) extends TreeException.Unary(message, cause) {
 
 }
 

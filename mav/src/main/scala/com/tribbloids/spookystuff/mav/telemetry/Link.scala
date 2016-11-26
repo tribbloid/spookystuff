@@ -1,12 +1,12 @@
 package com.tribbloids.spookystuff.mav.telemetry
 
-import com.tribbloids.spookystuff.session.python.{CaseInstanceRef, PythonDriver}
+import com.tribbloids.spookystuff.session.python.{CaseInstanceRef, PythonDriver, StaticRef}
 import com.tribbloids.spookystuff.session.{AutoCleanable, Lifespan}
 import com.tribbloids.spookystuff.{SpookyContext, caching}
 
 import scala.collection.Map
 
-object Link {
+object Link extends StaticRef {
 
   // max 1 per task/thread.
   val driverLocal: caching.ConcurrentMap[PythonDriver, Link] = caching.ConcurrentMap()
@@ -65,15 +65,16 @@ object Link {
 
     idleOpt.map {
       tuple =>
-        if (tuple._1 != proxyFactory) {
+        val existingLink = tuple._2
+        if (!ProxyFactories.canCreate(proxyFactory, existingLink)) {
           //recreate
-          tuple._2.clean()
+          existingLink.tryClean()
           val endpoint = idleEndpointOpt.get
           val result = apply(endpoint, proxyFactory)
           result
         }
         else {
-          tuple._2
+          existingLink
         }
     }
   }
@@ -104,6 +105,9 @@ object Link {
     existing.put(result.endpoint.connStr, proxyFactory -> result)
     result
   }
+
+  // only set up to avoid malicious ser/de copy, in which a deep copy of Link is created with identical PID that will be killed twice by AutoCleaner
+  val allProxyPIDs: caching.ConcurrentSet[Int] = caching.ConcurrentSet()
 }
 
 /**
@@ -124,31 +128,41 @@ DaemonProcess   (can this be delayed to be implemented later? completely surrend
   */
 case class Link private(
                          endpoint: Endpoint,
-                         proxy: Option[Proxy],
-                         var proxyPID: Option[Int] = None //if set a value no proxy will be launched.
+                         proxyOpt: Option[Proxy],
+                         var proxyPIDOpt: Option[Int] = None //if set a value no proxy will be launched.
                        ) extends CaseInstanceRef with AutoCleanable {
 
-  //cleanup by shutdown hook
+  //hardcoded, always outlives Spark tasks and only cleanup by shutdown hook
+  //this is deliberate as user control through GCS should not be interrupted by task completion
   override def lifespan: Lifespan = Lifespan.JVM()
 
   //the first pid created in python is persisted
   //Automatically set its status in existing to 'NOT busy' at the end of this task.
-  override def _Py(driver: PythonDriver, spookyOpt: Option[SpookyContext]): PyBinding = this.synchronized{
+  override def _Py(driver: PythonDriver, spookyOpt: Option[SpookyContext]): PyBinding = this.synchronized {
+
     assert(this.driverToBindings.keys.forall(_ == driver), "One link cannot be binded to 2 Python process due to port conflict")
     val result = super._Py(driver, spookyOpt)
     Link.driverLocal.put(driver, this)
     val pidOpt = result.proxyPID.strOpt.map(_.toInt)
-    this.proxyPID = pidOpt
+    this.proxyPIDOpt = pidOpt
+    pidOpt.foreach(Link.allProxyPIDs += _)
     result
   }
 
-  override def _cleanImpl(): Unit = {
+  override def cleanImpl(): Unit = {
 
-    this.scratch {
-      py =>
-        py.terminate()
-    }
-    super._cleanImpl()
+    proxyOpt.foreach(_.tryClean())
+    proxyPIDOpt
+      .filter(Link.allProxyPIDs.contains)
+      .foreach {
+        pid =>
+          this.scratchDriver {
+            driver =>
+              Link._Py(driver).killProxy(pid)
+          }
+          Link.allProxyPIDs -= pid
+      }
+    super.cleanImpl()
   }
 
   // return true if its binding's python driver is not dead

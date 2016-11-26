@@ -1,3 +1,3 @@
 
-proxyRetry = 3
-connectionRetry = 2
+proxyRetries = 2
+connectionRetries = 1

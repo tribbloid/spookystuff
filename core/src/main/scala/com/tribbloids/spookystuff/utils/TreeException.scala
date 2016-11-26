@@ -1,16 +1,16 @@
 package com.tribbloids.spookystuff.utils
 
-import com.tribbloids.spookystuff.utils.MultiCausesException.TreeNodeView
+import com.tribbloids.spookystuff.utils.TreeException.TreeNodeView
 import org.apache.spark.sql.catalyst.trees.TreeNode
 
 import scala.util.{Failure, Try}
 
-object MultiCausesException {
+object TreeException {
 
   case class TreeNodeView(self: Throwable) extends TreeNode[TreeNodeView] {
     override def children: Seq[TreeNodeView] = {
       self match {
-        case v: MultiCausesException =>
+        case v: TreeException =>
           v.causes.map(TreeNodeView)
         case _ =>
           val eOpt = Option(self).flatMap(
@@ -23,15 +23,15 @@ object MultiCausesException {
 
     override def simpleString(): String = {
       self match {
-        case v: MultiCausesException =>
-          v.simpleMessage
+        case v: TreeException =>
+          v.nodeMessage
         case _ =>
           self.getClass.getName + ": " + self.getMessage
       }
     }
   }
 
-  def &&&[T](trials: Seq[Try[T]], agg: Seq[Throwable] => MultiCausesException = WithCauses): Seq[T] = {
+  def &&&[T](trials: Seq[Try[T]], agg: Seq[Throwable] => TreeException = es => new Node(causes = es)): Seq[T] = {
     val es = trials.collect{
       case Failure(e) => e
     }
@@ -42,9 +42,24 @@ object MultiCausesException {
       throw agg(es)
     }
   }
+
+  class Unary(
+               val nodeMessage: String = "",
+               val cause: Throwable = null
+             ) extends TreeException {
+
+    override def causes: Seq[Throwable] = Option(cause).toSeq
+  }
+
+  class Node(
+              val nodeMessage: String = "[CAUSED BY MULTIPLE EXCEPTIONS]",
+              override val causes: Seq[Throwable] = Nil
+            ) extends TreeException {
+
+  }
 }
 
-trait MultiCausesException extends Throwable {
+trait TreeException extends Throwable {
 
   def causes: Seq[Throwable] = Nil
 
@@ -54,7 +69,5 @@ trait MultiCausesException extends Throwable {
 
   override def getCause: Throwable = causes.headOption.orNull
 
-  def simpleMessage: String = "[MULTIPLE CAUSES]"
+  def nodeMessage: String
 }
-
-case class WithCauses(override val causes: Seq[Throwable] = Nil) extends MultiCausesException

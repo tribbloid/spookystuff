@@ -14,7 +14,7 @@ class CleanWebDriver(
                       override val lifespan: Lifespan = Lifespan()
                     ) extends AutoCleanable {
 
-  def _cleanImpl(): Unit = {
+  def cleanImpl(): Unit = {
     self.close()
     self.quit()
   }

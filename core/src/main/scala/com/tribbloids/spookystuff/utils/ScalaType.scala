@@ -13,6 +13,7 @@ import scala.reflect.ClassTag
   * interface that unifies TypeTag, ClassTag, Class & DataType
   */
 //TODO: change to ThreadLocal to bypass thread safety?
+//TODO: use scala type class: http://danielwestheide.com/blog/2013/02/06/the-neophytes-guide-to-scala-part-12-type-classes.html
 trait ScalaType[T] extends DataType with (() => TypeTag[T]) with ReflectionLock with Serializable with IDMixin {
 
   override def defaultSize: Int = 0

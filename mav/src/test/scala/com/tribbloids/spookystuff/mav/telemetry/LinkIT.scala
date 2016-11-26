@@ -32,11 +32,11 @@ object LinkIT{
 
 class LinkIT extends APMSimFixture {
 
-  val proxyFactory = ProxyFactories.Default()
+  val proxyFactory = ProxyFactories.ForkToGCS()
 
   test("move 1 drone") {
     val tuple = LinkIT.testMove1(
-      this.spooky, v => None,
+      this.spooky, ProxyFactories.NoProxy,
       this.simConnStrs.head
     )
     println(tuple._2)
@@ -44,7 +44,7 @@ class LinkIT extends APMSimFixture {
   }
 
   test("move drones to different directions") {
-    val vehicles: Array[String] = testMove(_ => None)
+    val vehicles: Array[String] = testMove(ProxyFactories.NoProxy)
 
     vehicles.toSeq.foreach(
       println

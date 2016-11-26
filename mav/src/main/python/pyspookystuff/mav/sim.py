@@ -74,9 +74,9 @@ class APMSim(object):
 
     def close(self):
         if self.sitl:
-            print("Cleaning up APM SITL PID=", str(self.sitl.p.pid))
             try:
                 self.sitl.stop()
+                print("Cleaned up APM SITL PID=", str(self.sitl.p.pid))
             except:
                 pass
         else:

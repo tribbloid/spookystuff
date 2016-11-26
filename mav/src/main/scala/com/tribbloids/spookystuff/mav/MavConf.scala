@@ -20,7 +20,7 @@ case class MavConf(
                     // blacklist is node specific and determined by GenPartitioner
                     // routing now becomes part of Connection?
                     var instances: Seq[Endpoint],
-                    var proxies: ProxyFactory = ProxyFactories.Default(),
+                    var proxies: ProxyFactory = ProxyFactories.ForkToGCS(),
                     var takeOffAltitude: Double = 20 // in meters
                   ) extends AbstractConf {
 

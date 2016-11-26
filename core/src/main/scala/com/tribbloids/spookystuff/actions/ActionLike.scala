@@ -115,7 +115,7 @@ abstract class ActionLike extends DetailedProduct with Serializable {
           throw e
       }
       finally {
-        session.clean()
+        session.tryClean()
       }
     }
   }

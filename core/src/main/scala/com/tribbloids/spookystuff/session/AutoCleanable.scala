@@ -1,41 +1,44 @@
 package com.tribbloids.spookystuff.session
 
 import com.tribbloids.spookystuff.caching._
+import com.tribbloids.spookystuff.utils.IDMixin
 import org.apache.spark.TaskContext
 import org.openqa.selenium.NoSuchSessionException
 import org.slf4j.LoggerFactory
 
 import scala.collection.mutable
 import scala.language.implicitConversions
-import scala.reflect.ClassTag
 
 trait Cleanable {
 
   //each can only be cleaned once
   @volatile var isCleaned: Boolean = false
 
-  protected def cleanImpl(): Unit = {
+  def logPrefix = ""
+
+  //synchronized to avoid double cleaning
+  protected def clean(): Unit = this.synchronized {
     if (!isCleaned){
-      _cleanImpl()
+      cleanImpl()
+      isCleaned = true
+      LoggerFactory.getLogger(this.getClass).info(s"$logPrefix Cleaned up")
     }
-    isCleaned = true
-    LoggerFactory.getLogger(this.getClass).info(s"Cleaned up ${this.getClass.getSimpleName}")
   }
 
-  protected def _cleanImpl(): Unit
+  protected def cleanImpl(): Unit
 
-  def clean() = finalize()
+  def tryClean() = finalize()
 
   override protected def finalize(): Unit = {
     try {
-      cleanImpl()
+      clean()
     }
     catch {
       case e: NoSuchSessionException => //already cleaned before
       case e: Throwable =>
         val ee = e
         LoggerFactory.getLogger(this.getClass).warn(
-          s"!!! FAIL TO CLEAN UP ${this.getClass.getName} !!!" + e
+          s"$logPrefix !!! FAIL TO CLEAN UP !!!\n" + ee
         )
     }
     finally {
@@ -44,23 +47,18 @@ trait Cleanable {
   }
 }
 
-abstract class Lifespan {
+class Lifespan extends IDMixin {
 
-  protected def getID: Lifespan.ID
+  type ID = Either[Long, Long]
 
-  @transient lazy val _id = getID
-  _id //always getID on construction
+  def isTask = _id.isLeft
+  def isThread = _id.isRight
 
-  def addCleanupHook(fn: () => Unit): Unit
-}
-
-class LifespanImpl extends Lifespan {
-
-  override def getID = Option(TaskContext.get()) match {
+  def getID: Either[Long, Long] = Option(TaskContext.get()) match {
     case Some(tc) =>
-      Lifespan.left(tc)
+      Lifespan.taskID(tc)
     case None =>
-      Lifespan.right
+      Lifespan.threadID
   }
 
   override def toString = _id match {
@@ -68,7 +66,11 @@ class LifespanImpl extends Lifespan {
     case Right(v) => "Thread-" + v
   }
 
-  override def addCleanupHook(fn: () => Unit): Unit = {
+
+  @transient lazy val _id = getID
+  _id //always getID on construction
+
+  def addCleanupHook(fn: () => Unit): Unit = {
     _id match {
       case Left(_) =>
         TaskContext.get().addTaskCompletionListener {
@@ -85,29 +87,27 @@ class LifespanImpl extends Lifespan {
 
 object Lifespan {
 
-  type ID = Either[Long,Long]
-
-  def left(tc: TaskContext): Left[Long, Long] = {
+  def taskID(tc: TaskContext): Left[Long, Long] = {
     Left(tc.taskAttemptId)
   }
 
-  def right: Right[Long, Long] = {
+  def threadID: Right[Long, Long] = {
     Right(Thread.currentThread().getId)
   }
 
   //automatically generates depending on if
   def apply(): Lifespan = Auto()
 
-  case class Auto() extends LifespanImpl
+  case class Auto() extends Lifespan
 
-  case class Task() extends LifespanImpl {
+  case class Task() extends Lifespan {
 
     require(_id.isLeft, "Not inside any Spark Task")
   }
 
-  case class JVM() extends LifespanImpl {
+  case class JVM() extends Lifespan {
 
-    override def getID: ID = right
+    override def getID: ID = threadID
   }
 }
 
@@ -121,7 +121,7 @@ object Lifespan {
 trait AutoCleanable extends Cleanable {
 
   {
-    if (!AutoCleanable.toBeCleaned.contains(lifespan._id)) {
+    if (!AutoCleanable.uncleaned.contains(lifespan._id)) {
       lifespan.addCleanupHook {
         () =>
           AutoCleanable.cleanup(lifespan._id)
@@ -137,53 +137,62 @@ trait AutoCleanable extends Cleanable {
     */
   def lifespan = Lifespan.apply()
 
+  override def logPrefix = {
+    s"${lifespan.toString}| ${super.logPrefix}"
+  }
+
   def localUncleaned: ConcurrentSet[AutoCleanable] = {
-    AutoCleanable.toBeCleaned.getOrElseUpdate(
+    AutoCleanable.uncleaned.getOrElseUpdate(
       lifespan._id,
       ConcurrentSet()
     )
   }
 
-  override protected def cleanImpl(): Unit = {
-    super.cleanImpl()
+  override protected def clean(): Unit = {
+    super.clean()
     localUncleaned -= this
   }
 }
 
 object AutoCleanable {
 
-  val toBeCleaned: ConcurrentMap[Lifespan.ID, ConcurrentSet[AutoCleanable]] = ConcurrentMap()
+  val uncleaned: ConcurrentMap[Lifespan#ID, ConcurrentSet[AutoCleanable]] = ConcurrentMap()
 
-  def cleanupTyped[T <: AutoCleanable : ClassTag](tt: Lifespan.ID) = {
-    val set = toBeCleaned.getOrElse(tt, mutable.Set.empty)
+  // cannot execute concurrent
+  def cleanup(tt: Lifespan#ID, condition: AutoCleanable => Boolean = _ => true) = {
+    val set = uncleaned.getOrElse(tt, mutable.Set.empty)
     val filtered = set.toList
-      .collect {
-        case v: T => v
-      }
+      .filter(condition)
     filtered
       .foreach {
         instance =>
-          instance.clean()
+          instance.tryClean()
       }
     set --= filtered
-    if (set.isEmpty) toBeCleaned.remove(tt)
+    if (set.isEmpty) uncleaned.remove(tt)
   }
 
-  def cleanupAllTyped[T <: AutoCleanable: ClassTag]() = {
-    toBeCleaned.keys.toList.foreach {
-      tt =>
-        cleanupTyped[T](tt)
-    }
-  }
+  def cleanupAll(
+                  condition: AutoCleanable => Boolean = _ => true
+                ) = {
 
-  def cleanup(tt: Lifespan.ID) = cleanupTyped[AutoCleanable](tt)
-  def cleanupNotInTask() = {
-    toBeCleaned
+    uncleaned
       .keys
-      .filter(_.isRight)
+//      .filter(kCondition)
       .foreach {
         tt =>
-          cleanup(tt)
+          cleanup(tt, condition)
       }
   }
+
+  //  def cleanup(tt: Lifespan.ID) = cleanupTyped[AutoCleanable](tt)
+  //  def cleanupNotInTask() = {
+  //    toBeCleaned
+  //      .keys
+  //      .filter(_.isRight)
+  //      .foreach {
+  //        tt =>
+  //          cleanup(tt)
+  //      }
+  //  }
 }

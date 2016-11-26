@@ -3,13 +3,14 @@ package com.tribbloids.spookystuff
 import com.tribbloids.spookystuff.dsl.DriverFactory
 import com.tribbloids.spookystuff.extractors.{Alias, GenExtractor, GenResolved}
 import com.tribbloids.spookystuff.row.{DataRowSchema, SquashedFetchedRow, TypedField}
+import com.tribbloids.spookystuff.session.python.PythonDriver
 import com.tribbloids.spookystuff.session.{AutoCleanable, CleanWebDriver, Lifespan}
 import com.tribbloids.spookystuff.testutils.{RemoteDocsFixture, TestHelper}
 import com.tribbloids.spookystuff.utils.SpookyUtils
 import org.apache.spark.SparkContext
 import org.apache.spark.sql.SQLContext
 import org.jutils.jprocesses.JProcesses
-import org.scalatest.{BeforeAndAfter, BeforeAndAfterAll, FunSuite, Retries}
+import org.scalatest.{BeforeAndAfter, BeforeAndAfterAll, Retries}
 
 import scala.language.implicitConversions
 
@@ -26,18 +27,19 @@ object SpookyEnvFixture {
                      spooky: SpookyContext,
                      pNames: Seq[String]
                    ): Unit = {
+
     driverInstancesShouldBeClean(spooky)
     driverProcessShouldBeClean(pNames)
   }
 
   def driverInstancesShouldBeClean(spooky: SpookyContext): Unit = {
-    AutoCleanable.cleanupNotInTask() //nobody cares about leakage on driver
 
-    AutoCleanable.toBeCleaned
+    AutoCleanable
+      .uncleaned
       .foreach {
         tuple =>
           val nonLocalDrivers = tuple._2
-            .filter{
+            .filter {
               v =>
                 v.lifespan.isInstanceOf[Lifespan.Task]
             }
@@ -54,6 +56,15 @@ object SpookyEnvFixture {
   def driverProcessShouldBeClean(
                                   pNames: Seq[String]
                                 ): Unit = {
+
+    //this is necessary as each suite won't automatically cleanup drivers NOT in task when finished
+    AutoCleanable.cleanupAll (
+      condition = {
+        case v if v.lifespan.isThread => true
+        case _ => false
+      }
+    )
+
     import scala.collection.JavaConverters._
 
     val processes = JProcesses.getProcessList()
@@ -76,7 +87,7 @@ abstract class SpookyEnvFixture
     with BeforeAndAfterAll
     with Retries {
 
-//  val startTime = System.currentTimeMillis()
+  //  val startTime = System.currentTimeMillis()
 
   def sc: SparkContext = TestHelper.TestSpark
   def sql: SQLContext = TestHelper.TestSQL

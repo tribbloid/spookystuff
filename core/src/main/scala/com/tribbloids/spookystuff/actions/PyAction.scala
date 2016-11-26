@@ -2,12 +2,12 @@ package com.tribbloids.spookystuff.actions
 
 import com.tribbloids.spookystuff.doc.Fetched
 import com.tribbloids.spookystuff.session.Session
-import com.tribbloids.spookystuff.session.python.MessageInstanceRef
+import com.tribbloids.spookystuff.session.python.JSONInstanceRef
 
 /**
   * Created by peng on 01/11/16.
   */
-trait PyAction extends Action with MessageInstanceRef {
+trait PyAction extends Action with JSONInstanceRef {
 
   /**
     * must have exactly the same class/function under the same package imported in python that takes 2 JSON strings
@@ -20,7 +20,7 @@ trait PyAction extends Action with MessageInstanceRef {
         doExe(session)
       }
       finally {
-        this.Py(session).clean()
+        this.Py(session).tryClean()
       }
     }
   }

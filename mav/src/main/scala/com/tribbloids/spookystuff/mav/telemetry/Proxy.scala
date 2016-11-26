@@ -7,23 +7,24 @@ import com.tribbloids.spookystuff.session.python.CaseInstanceRef
 
 object Proxy {
 
-  val usedPorts: caching.ConcurrentSet[Int] = caching.ConcurrentSet()
+  val existing: caching.ConcurrentSet[Proxy] = caching.ConcurrentSet()
 
   def apply(
              master: String,
-             port: Int,
-             gcsOuts: Seq[String]
+             outs: Seq[String]
            ): Proxy = {
 
-    val outs = Seq(s"udp:localhost:$port") ++ gcsOuts
     val result = Proxy(
       master,
       outs,
       "DRONE@" + master
     )
-    Proxy.usedPorts += port
     result
   }
+
+//  private def getPrimaryOut(port: Int) = {
+//    s"udp:localhost:$port"
+//  }
 }
 
 /**
@@ -37,4 +38,16 @@ case class Proxy(
                   outs: Seq[String], //first member is always used by DK.
                   name: String
                 ) extends CaseInstanceRef with Cleanable {
+
+  Proxy.existing += this
+
+  /**
+    * no duplication due to port conflicts!
+    */
+  def primaryOut: String = outs.head
+
+  override def cleanImpl(): Unit = {
+    super.cleanImpl()
+    Proxy.existing -= this
+  }
 }

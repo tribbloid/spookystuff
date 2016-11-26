@@ -89,7 +89,7 @@ abstract sealed class TransientFactory[T] extends DriverFactory[T] {
 
   final def destroy(driver: T, tcOpt: Option[TaskContext]): Unit = {
     driver match {
-      case v: AutoCleanable => v.clean()
+      case v: AutoCleanable => v.tryClean()
       case _ =>
     }
   }
@@ -109,7 +109,7 @@ case class TaskLocalFactory[T](
                               ) extends DriverFactory[T] {
 
   //taskOrThreadID -> (driver, busy)
-  @transient lazy val taskLocals: ConcurrentMap[Lifespan.ID, DriverStatus[T]] = ConcurrentMap()
+  @transient lazy val taskLocals: ConcurrentMap[Lifespan#ID, DriverStatus[T]] = ConcurrentMap()
 
   override def provision(session: Session): T = {
 

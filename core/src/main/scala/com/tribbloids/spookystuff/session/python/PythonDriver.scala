@@ -107,7 +107,7 @@ class PythonDriver(
     super.open()
   }
 
-  override def _cleanImpl(): Unit = {
+  override def cleanImpl(): Unit = {
     Try {
       SpookyUtils.retry(10, 1000) {
         if (process.isAlive) {
@@ -170,8 +170,7 @@ class PythonDriver(
   }
 
   override def pyOutputLog(line: String) = {
-    val prompt = this.lifespan.toString
-    s"$prompt| $line"
+    s"$logPrefix $line"
   }
 
   private def _interpret(code: String, spookyOpt: Option[SpookyContext] = None): Array[String] = {

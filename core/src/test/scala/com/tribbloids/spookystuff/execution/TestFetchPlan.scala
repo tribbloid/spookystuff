@@ -1,13 +1,14 @@
 package com.tribbloids.spookystuff.execution
 
 import com.tribbloids.spookystuff.actions.Wget
+import com.tribbloids.spookystuff.testutils.LocalPathDocsFixture
 import com.tribbloids.spookystuff.{SpookyEnvFixture, dsl}
 import org.apache.spark.HashPartitioner
 
 /**
   * Created by peng on 02/04/16.
   */
-class TestFetchPlan extends SpookyEnvFixture {
+class TestFetchPlan extends SpookyEnvFixture with LocalPathDocsFixture {
 
   import dsl._
 

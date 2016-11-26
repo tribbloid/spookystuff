@@ -41,14 +41,14 @@ class TestDriverFactory extends SpookyEnvFixture with LocalPathDocsFixture {
     val session1 = new DriverSession(spooky)
     Visit(HTML_URL).apply(session1)
     val driver1 = session1.webDriver
-    session1.clean()
+    session1.tryClean()
 
     val session2 = new DriverSession(spooky)
     Visit(HTML_URL).apply(session2)
     val driver2 = session2.webDriver
-    session2.clean()
+    session2.tryClean()
 
     assert(driver1 eq driver2)
-    driver1.clean()
+    driver1.tryClean()
   }
 }

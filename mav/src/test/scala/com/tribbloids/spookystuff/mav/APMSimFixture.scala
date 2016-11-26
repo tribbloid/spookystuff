@@ -29,13 +29,13 @@ abstract class APMSimFixture extends SpookyEnvFixture {
   var simConnStrRDD: RDD[String] = _
   def simConnStrs = simConnStrRDD.collect().toSeq.distinct
 
-  def numSims = sc.defaultParallelism
+  def parallelism: Int = sc.defaultParallelism
 
   override def beforeAll(): Unit = {
     super.beforeAll()
     val spooky = this.spooky
 
-    val connStrRDD = sc.parallelize(1 to numSims)
+    val connStrRDD = sc.parallelize(1 to parallelism)
       .map {
         i =>
           //NOT cleaned by TaskCompletionListener
@@ -54,7 +54,10 @@ abstract class APMSimFixture extends SpookyEnvFixture {
   override def afterAll(): Unit = {
     sc.foreachNode {
       // in production Links will be cleaned up by shutdown hook, unfortunately test fixtures can't wait for that long.
-      AutoCleanable.cleanupAllTyped[Link]()
+      AutoCleanable.cleanupAll {
+        case v: Link => true
+        case _ => false
+      }
       //TODO: run on each worker!
 
       val sims: Set[APMSim] = SimFixture.allSims.toSet
@@ -63,9 +66,9 @@ abstract class APMSimFixture extends SpookyEnvFixture {
 
       SimFixture.allSims.foreach {
         sim =>
-          sim.clean()
+          sim.tryClean()
       }
-      bindings.foreach(_.driver.clean())
+      bindings.foreach(_.driver.tryClean())
       SimFixture.allSims.clear()
     }
     super.afterAll()

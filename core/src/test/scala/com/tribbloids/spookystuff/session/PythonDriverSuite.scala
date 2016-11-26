@@ -25,7 +25,7 @@ object PythonDriverSuite {
       result
     }
     finally {
-      proc.clean()
+      proc.tryClean()
     }
   }
 }

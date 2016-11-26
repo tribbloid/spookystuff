@@ -2,7 +2,7 @@ package com.tribbloids.spookystuff
 
 import com.tribbloids.spookystuff.rdd.FetchedDataset
 import com.tribbloids.spookystuff.row._
-import com.tribbloids.spookystuff.utils.{HDFSResolver, MultiCausesException, OnDriverOnly, ScalaType}
+import com.tribbloids.spookystuff.utils.{HDFSResolver, TreeException, OnDriverOnly, ScalaType}
 import org.apache.hadoop.conf.Configuration
 import org.apache.spark._
 import org.apache.spark.broadcast.Broadcast
@@ -92,7 +92,7 @@ case class SpookyContext private (
             v.deploy(this)
           }
       }
-    MultiCausesException.&&&(trials)
+    TreeException.&&&(trials)
   }
 
 

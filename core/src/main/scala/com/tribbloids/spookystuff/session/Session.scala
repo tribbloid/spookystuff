@@ -55,7 +55,7 @@ abstract class Session(val spooky: SpookyContext) extends AutoCleanable with NOT
 
   val taskOpt: Option[TaskContext] = Option(TaskContext.get())
 
-  override def _cleanImpl(): Unit = {
+  override def cleanImpl(): Unit = {
     spooky.metrics.sessionReclaimed += 1
   }
 }
@@ -147,7 +147,7 @@ class DriverSession(
     }
   }
 
-  override def _cleanImpl(): Unit = {
+  override def cleanImpl(): Unit = {
     Option(spooky.conf.webDriverFactory).foreach{
       factory =>
         factory.release(this)
@@ -158,6 +158,6 @@ class DriverSession(
         factory.release(this)
         spooky.metrics.pythonDriverReleased += 1
     }
-    super._cleanImpl()
+    super.cleanImpl()
   }
 }

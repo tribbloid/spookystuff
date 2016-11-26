@@ -48,7 +48,8 @@ trait PyRef extends Cleanable {
   def referenceOpt: Option[String] = None
 
   // run on each driver
-  def deleteOpt: Option[String] = if (createOpt.nonEmpty) {
+  // TODO: DO NOT override this, use __del__() in python implementation as much as you can so it will be called by python interpreter shutdown hook
+  def delOpt: Option[String] = if (createOpt.nonEmpty) {
     referenceOpt.map(v => s"del($v)")
   }
   else {
@@ -66,9 +67,9 @@ trait PyRef extends Cleanable {
   def varNamePrefix = FlowUtils.toCamelCase(simpleClassName)
   def packageName = pyClassNameParts.slice(0, pyClassNameParts.length - 1).mkString(".")
 
-  protected def _cleanImpl() = {
+  protected def cleanImpl() = {
     bindings.foreach {
-      _.clean()
+      _.tryClean()
     }
   }
 
@@ -76,6 +77,7 @@ trait PyRef extends Cleanable {
            driver: PythonDriver,
            spookyOpt: Option[SpookyContext] = None
          ): PyBinding = {
+
     driverToBindings.getOrElse(
       driver,
       PyBinding(driver, spookyOpt)
@@ -88,18 +90,16 @@ trait PyRef extends Cleanable {
     }
   }
 
-  def scratch[T](fn: PyBinding => T): T = {
+  def scratchDriver[T](fn: PythonDriver => T): T = {
     bindings.headOption
       .map {
         binding =>
-          fn(binding)
+          fn(binding.driver)
       }
       .getOrElse {
         val driver = new PythonDriver()
-        val binding = _Py(driver)
-        val result = fn(binding)
-        binding.clean()
-        driver.clean()
+        val result = fn(driver)
+        driver.tryClean()
         result
       }
   }
@@ -192,10 +192,12 @@ trait PyRef extends Cleanable {
     /**
       * chain to all bindings with active drivers
       */
-    override protected def _cleanImpl(): Unit = {
-      deleteOpt.foreach {
-        code =>
-          driver.interpret(code, spookyOpt)
+    override protected def cleanImpl(): Unit = {
+      if (!driver.isCleaned) {
+        delOpt.foreach {
+          code =>
+            driver.interpret(code, spookyOpt)
+        }
       }
 
       // remove from map
@@ -249,6 +251,12 @@ trait StaticRef extends ObjectRef {
   )
 
   override lazy val pyClassName: String = super.pyClassName.stripSuffix("$")
+
+  override lazy val createOpt = None
+
+  override lazy val referenceOpt = Some(pyClassName)
+
+  override lazy val delOpt = None
 }
 
 /**
@@ -274,7 +282,7 @@ trait InstanceRef extends ObjectRef {
   )
 }
 
-trait MessageInstanceRef extends InstanceRef with HasMessage {
+trait JSONInstanceRef extends InstanceRef with HasMessage {
 
   override lazy val pyConstructorArgs: String = {
     val converted = this.converter.scala2py(this.toMessage)._2
