@@ -1,7 +1,7 @@
 package com.tribbloids.spookystuff.doc
 
 import com.tribbloids.spookystuff.actions.{Snapshot, Visit}
-import com.tribbloids.spookystuff.session.DriverSession
+import com.tribbloids.spookystuff.session.Session
 import com.tribbloids.spookystuff.{SpookyEnvFixture, dsl}
 
 class TestPageFromBrowser extends SpookyEnvFixture {
@@ -10,7 +10,7 @@ class TestPageFromBrowser extends SpookyEnvFixture {
 
   test("empty page") {
     val emptyPage: Doc = {
-      val session = new DriverSession(spooky)
+      val session = new Session(spooky)
 
       Snapshot(DocFilters.AcceptStatusCode2XX).apply(session).toList.head.asInstanceOf[Doc]
     }

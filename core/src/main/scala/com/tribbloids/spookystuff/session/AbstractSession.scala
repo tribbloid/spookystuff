@@ -14,7 +14,7 @@ import org.slf4j.LoggerFactory
 
 import scala.collection.mutable.ArrayBuffer
 
-case object SessionRelay extends MessageRelay[Session] {
+case object SessionRelay extends MessageRelay[AbstractSession] {
 
   case class M(
                 startTime: Long,
@@ -22,7 +22,7 @@ case object SessionRelay extends MessageRelay[Session] {
                 TaskContext: Option[TaskContextRelay.M]
               ) extends Message
 
-  override def toMessage(v: Session): M = {
+  override def toMessage(v: AbstractSession): M = {
     M(
       v.startTime,
       v.backtrace,
@@ -44,7 +44,9 @@ case object TaskContextRelay extends MessageRelay[TaskContext] {
   }
 }
 
-abstract class Session(val spooky: SpookyContext) extends AutoCleanable with NOTSerializable {
+abstract class AbstractSession(val spooky: SpookyContext) extends Cleanable with NOTSerializable {
+
+  def lifespan: Lifespan // session doesn't necessarily has to be autocleaned, it doesn't occupy any resource and can be more efficiently cleaned by GC
 
   spooky.metrics.sessionInitialized += 1
   val startTime: Long = new Date().getTime
@@ -63,10 +65,13 @@ abstract class Session(val spooky: SpookyContext) extends AutoCleanable with NOT
 object NoWebDriverException extends SpookyException("INTERNAL ERROR: should initialize driver automatically")
 object NoPythonDriverException extends SpookyException("INTERNAL ERROR: should initialize driver automatically")
 
-class DriverSession(
-                     override val spooky: SpookyContext,
-                     override val lifespan: Lifespan = Lifespan()
-                   ) extends Session(spooky){
+/**
+  * currently the only implementation
+  */
+class Session(
+               override val spooky: SpookyContext,
+               override val lifespan: Lifespan = new Lifespan.Auto()
+             ) extends AbstractSession(spooky){
 
   @volatile private var _webDriverOpt: Option[CleanWebDriver] = None
   def webDriverOpt = _webDriverOpt.filter(!_.isCleaned)
@@ -79,7 +84,7 @@ class DriverSession(
     webDriverOpt.getOrElse {
       SpookyUtils.retry(Const.localResourceLocalRetries) {
         SpookyUtils.withDeadline(Const.sessionInitializationTimeout) {
-          val driver = spooky.conf.webDriverFactory.provision(this)
+          val driver = spooky.conf.webDriverFactory.dispatch(this)
           spooky.metrics.webDriverDispatched += 1
           //      try {
           driver.manage().timeouts()
@@ -117,7 +122,7 @@ class DriverSession(
       SpookyUtils.retry(Const.localResourceLocalRetries) {
 
         SpookyUtils.withDeadline(Const.sessionInitializationTimeout) {
-          val driver = spooky.conf.pythonDriverFactory.provision(this)
+          val driver = spooky.conf.pythonDriverFactory.dispatch(this)
           spooky.metrics.pythonDriverDispatched += 1
 
           _pythonDriverOpt = Some(driver)

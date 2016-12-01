@@ -10,13 +10,19 @@ class DummyPyActionSuite extends SpookyEnvFixture {
 
   val action = DummyPyAction()
 
+  test("can be created on python") {
+    action.createOpt.get.shouldBe(
+
+    )
+  }
+
   test("can execute on driver") {
 
     val doc = action.fetch(spooky)
     doc.flatMap(_.asInstanceOf[Doc].code).mkString("\n").shouldBe("6")
 
     //assuming that lazy interpret is effective
-    assert(spooky.metrics.pythonInterpretationSuccess.value == 3)
+    assert(spooky.metrics.pythonInterpretationSuccess.value <= 3)
 
 //    val processes = JProcesses.getProcessList()
 //      .asScala

@@ -3,8 +3,9 @@ package com.tribbloids.spookystuff
 import com.tribbloids.spookystuff.actions._
 import com.tribbloids.spookystuff.dsl._
 import com.tribbloids.spookystuff.row.Field
+import com.tribbloids.spookystuff.testutils.LocalPathDocsFixture
 
-class SpookyContextSuite extends SpookyEnvFixture{
+class SpookyContextSuite extends SpookyEnvFixture with LocalPathDocsFixture{
 
   test("SpookyContext should be Serializable") {
 
@@ -84,13 +85,13 @@ class SpookyContextSuite extends SpookyEnvFixture{
 
     val rdd1 = spooky
       .fetch(
-        Wget("http://www.wikipedia.org")
+        Wget(HTML_URL)
       )
     rdd1.count()
 
     val rdd2 = spooky
       .fetch(
-        Wget("http://en.wikipedia.org")
+        Wget(HTML_URL)
       )
     rdd2.count()
 

@@ -1,33 +1,14 @@
 package com.tribbloids.spookystuff.mav.telemetry
 
+import scala.util.Random
+
 /**
   * Created by peng on 26/11/16.
   */
 object ProxyFactories {
 
-  def canCreate(factory: ProxyFactory, link: Link): Boolean = {
-
-    val dryRun = factory.apply(link.endpoint)
-    val actual = link.proxyOpt
-    val gcsOuts: Seq[Option[Seq[String]]] = Seq(
-      dryRun,
-      actual
-    )
-      .map {
-        proxyOpt =>
-          proxyOpt.map(_.outs.slice(1, Int.MaxValue))
-      }
-    val result = gcsOuts.distinct.size == 1
-    dryRun.foreach(_.tryClean())
-    result
-  }
-
   case object NoProxy extends ProxyFactory {
     def apply(endpoint: Endpoint) = None
-
-    //    override def unapply(link: Link): Boolean = {
-    //      link.proxy.isEmpty
-    //    }
   }
 
   case class ForkToGCS(
@@ -40,10 +21,17 @@ object ProxyFactories {
                         polling: Boolean = false
                       ) extends ProxyFactory {
 
+    //CAUTION: DO NOT select primary out sequentially!
+    // you can't distinguish vehicle failure and proxy failure, your best shot is to always use a random port for primary out
     def apply(endpoint: Endpoint): Option[Proxy] = {
       ForkToGCS.synchronized {
-        val primaryOut = primaryOuts.find(v => !Proxy.existing.flatMap(_.outs.headOption).contains(v))
-          .get //TODO: orElse
+        val existingPrimaryouts = Proxy.existing.map(identity).map(_.primaryOut)
+        val availableOut = primaryOuts.filter {
+          v =>
+            !existingPrimaryouts.contains(v)
+        }
+
+        val primaryOut = availableOut.apply(Random.nextInt(availableOut.size))
         val outs = gcsMapping(endpoint).toSeq
         val result = Proxy(
           endpoint.connStrs.head,

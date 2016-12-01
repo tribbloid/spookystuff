@@ -4,7 +4,7 @@ import java.util.Date
 
 import com.tribbloids.spookystuff.SpookyEnvFixture
 import com.tribbloids.spookystuff.extractors.Literal
-import com.tribbloids.spookystuff.session.DriverSession
+import com.tribbloids.spookystuff.session.Session
 
 class TestBlock extends SpookyEnvFixture {
 
@@ -18,7 +18,7 @@ class TestBlock extends SpookyEnvFixture {
       Delay(10.seconds) +> Wget("ftp://www.dummy.co")
     )
 
-    val session = new DriverSession(
+    val session = new Session(
       this.spooky
     )
     loop.exe(session)
@@ -34,7 +34,7 @@ class TestBlock extends SpookyEnvFixture {
       Delay(10.seconds) +> Wget("ftp://www.dummy.org")
     )
 
-    val session = new DriverSession(
+    val session = new Session(
       this.spooky
     )
     tryy.exe(session)

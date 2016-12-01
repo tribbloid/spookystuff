@@ -45,11 +45,7 @@ abstract class IntegrationFixture extends SpookyEnvFixture with BeforeAndAfterAl
           _spooky = new SpookyContext(
             sql,
             new SpookyConf(
-              components = Map(
-                "dirs" -> new DirConf(
-                  root = root
-                )
-              ),
+              components = envComponents,
               webDriverFactory = driver,
               defaultFetchOptimizer = optimizer,
               epochSize = 1 + Random.nextInt(4),
@@ -66,7 +62,7 @@ abstract class IntegrationFixture extends SpookyEnvFixture with BeforeAndAfterAl
 
   //TODO: for local-cluster mode, some of these metrics may have higher than expected results because.
   def assertBeforeCache(): Unit = {
-    val metrics: Metrics = spooky.metrics
+    val metrics: SpookyMetrics = spooky.metrics
     val metricsJSON: String = metrics.toJSON() //TODO: this will trigger a compiler bug in scala 2.10.6, need to fix it!
     println(metricsJSON)
 
@@ -82,7 +78,7 @@ abstract class IntegrationFixture extends SpookyEnvFixture with BeforeAndAfterAl
   }
 
   def assertAfterCache(): Unit = {
-    val metrics: Metrics = spooky.metrics
+    val metrics: SpookyMetrics = spooky.metrics
     val metricsJSON: String = metrics.toJSON()
     println(metricsJSON)
 

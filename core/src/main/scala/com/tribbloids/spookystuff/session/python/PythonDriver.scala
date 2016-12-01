@@ -3,7 +3,7 @@ package com.tribbloids.spookystuff.session.python
 import java.io.File
 import java.util.regex.Pattern
 
-import com.tribbloids.spookystuff.session.{AutoCleanable, Lifespan}
+import com.tribbloids.spookystuff.session.{Cleanable, Lifespan}
 import com.tribbloids.spookystuff.utils.SpookyUtils
 import com.tribbloids.spookystuff.{PyException, PyInterpreterException, SpookyContext}
 import org.apache.commons.io.FileUtils
@@ -75,15 +75,15 @@ class PythonDriver(
                       |import os
                       |from __future__ import print_function
                     """.trim.stripMargin,
-                    override val lifespan: Lifespan = Lifespan()
-                  ) extends PythonProcess(executable) with AutoCleanable {
+                    override val lifespan: Lifespan = new Lifespan.Auto()
+                  ) extends PythonProcess(executable) with Cleanable {
 
   /**
     * NOT thread safe
     */
-  lazy val historyCodes: ArrayBuffer[String] = ArrayBuffer.empty
-  lazy val pendingCodes: ArrayBuffer[String] = ArrayBuffer.empty
-  lazy val importedCodes: scala.collection.mutable.Set[String] = scala.collection.mutable.Set.empty
+  lazy val historyLines: ArrayBuffer[String] = ArrayBuffer.empty
+  lazy val pendingLines: ArrayBuffer[String] = ArrayBuffer.empty
+  lazy val importedLines: scala.collection.mutable.Set[String] = scala.collection.mutable.Set.empty
 
   {
     val pythonPath = PythonDriver.deploy
@@ -176,18 +176,20 @@ class PythonDriver(
   private def _interpret(code: String, spookyOpt: Option[SpookyContext] = None): Array[String] = {
     val indentedCode = code.split('\n').filter(_.nonEmpty).map("\t" + _).mkString("\n")
 
-    LoggerFactory.getLogger(this.getClass).info(s">>> ${this.lifespan.toString} INPUT >>>\n" + indentedCode)
+    LoggerFactory.getLogger(this.getClass).info(s">>> $logPrefix INPUT >>>\n" + indentedCode)
 
-    val historyCodeOpt = if (this.historyCodes.isEmpty) None
+    val historyCodeOpt = if (this.historyLines.isEmpty) None
     else {
-      val combined = "\n" + this.historyCodes.mkString("\n").stripPrefix("\n")
+      val combined = "\n" + this.historyLines.mkString("\n").stripPrefix("\n")
       val indented = combined.split('\n').map(v => "\t" + v).mkString("\n")
 
       Some(indented)
     }
-    //TODO: synchronize if interference happens
     val rows = try {
-      val output = this.sendAndGetResult(code)
+      // DO NOT DELETE! some Python Drivers are accessed by many threads (e.g. ProxyManager)
+      val output = this.synchronized {
+        this.sendAndGetResult(code)
+      }
       output
         .split("\n")
         .map(
@@ -233,12 +235,13 @@ class PythonDriver(
     rows
   }
 
-  def interpret(code: String, spookyOpt: Option[SpookyContext] = None): Array[String] = {
-    def lazyCode = pendingCodes.mkString("\n")
+  //TODO: due to unchecked use of thread-unsafe mutable objects (e.g. ArrayBuffer), all following APIs are rendered synchronized.
+  def interpret(code: String, spookyOpt: Option[SpookyContext] = None): Array[String] = this.synchronized{
+    def lazyCode = pendingLines.mkString("\n")
     val allCode = lazyCode + "\n" + code
     val result = _interpret(allCode, spookyOpt)
-    this.historyCodes += allCode
-    this.pendingCodes.clear()
+    this.historyLines += allCode
+    this.pendingLines.clear()
     result
   }
 
@@ -246,7 +249,7 @@ class PythonDriver(
             code: String,
             resultVarOpt: Option[String] = None,
             spookyOpt: Option[SpookyContext] = None
-          ): (Seq[String], Option[String]) = {
+          ): (Seq[String], Option[String]) = this.synchronized{
     resultVarOpt match {
       case None =>
         val _code =
@@ -280,18 +283,18 @@ class PythonDriver(
     }
   }
 
-  def lazyInterpret(code: String): Unit = {
-    pendingCodes += code
+  def lazyInterpret(code: String): Unit = this.synchronized{
+    pendingLines += code
   }
 
-  def lazyImport(codes: Seq[String]): Unit = {
+  def lazyImport(codes: Seq[String]): Unit = this.synchronized{
     codes
       .map(_.trim)
       .foreach {
         code =>
-          if (!importedCodes.contains(code)) {
+          if (!importedLines.contains(code)) {
             lazyInterpret(code)
-            importedCodes += code
+            importedLines += code
           }
       }
   }

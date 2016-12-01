@@ -1,24 +1,23 @@
 package com.tribbloids.spookystuff.mav
 
+import com.tribbloids.spookystuff.SpookyEnvFixture
 import com.tribbloids.spookystuff.mav.sim.APMSim
 import com.tribbloids.spookystuff.mav.telemetry.Link
-import com.tribbloids.spookystuff.session.{AutoCleanable, DriverSession, Lifespan, Session}
-import com.tribbloids.spookystuff.{SpookyEnvFixture, caching}
+import com.tribbloids.spookystuff.session.{Cleanable, Lifespan, Session}
 import org.apache.spark.rdd.RDD
+import org.slf4j.LoggerFactory
 
 /**
   * Created by peng on 01/10/16.
   */
-object SimFixture {
-
-  val allSims: caching.ConcurrentSet[APMSim] = caching.ConcurrentSet()
-
-  def launch(session: Session): APMSim = {
-    val sim = APMSim.next
-    sim.Py(session)
-    sim
-  }
-}
+//object SimFixture {
+//
+//  def launch(session: AbstractSession): APMSim = {
+//    val sim = APMSim.next
+//    sim.Py(session)
+//    sim
+//  }
+//}
 
 abstract class APMSimFixture extends SpookyEnvFixture {
 
@@ -31,53 +30,64 @@ abstract class APMSimFixture extends SpookyEnvFixture {
 
   def parallelism: Int = sc.defaultParallelism
 
+  override def setUp(): Unit = {
+    super.setUp()
+    this.spooky.conf.components.get[MAVConf]().connectionRetries = 1
+  }
+
   override def beforeAll(): Unit = {
+    cleanSweep()
+
     super.beforeAll()
     val spooky = this.spooky
+
+    val isEmpty = sc.mapPerComputer {
+      APMSim.existing.isEmpty
+    }
+    assert(isEmpty.forall(v => v))
 
     val connStrRDD = sc.parallelize(1 to parallelism)
       .map {
         i =>
           //NOT cleaned by TaskCompletionListener
-          val session = new DriverSession(spooky, Lifespan.JVM())
-          val sim = SimFixture.launch(session)
-          SimFixture.allSims += sim
+          val session = new Session(spooky, new Lifespan.JVM())
+          val sim = APMSim.next
           sim.Py(session).connStr.strOpt
       }
       .flatMap(v => v)
       .persist()
 
-    connStrRDD.count()
+    val info = connStrRDD.collect().mkString("\n")
+    LoggerFactory.getLogger(this.getClass).info(
+      s"""
+        |APM simulation(s) are up and running:
+        |$info
+      """.stripMargin
+    )
     this.simConnStrRDD = connStrRDD
   }
 
   override def afterAll(): Unit = {
-    sc.foreachNode {
-      // in production Links will be cleaned up by shutdown hook, unfortunately test fixtures can't wait for that long.
-      AutoCleanable.cleanupAll {
-        case v: Link => true
+    cleanSweep()
+    super.afterAll()
+  }
+
+  private def cleanSweep() = {
+    sc.foreachComputer {
+      // in production Links will be cleaned up by shutdown hook, unfortunately test suites can't wait for that long.
+
+      Cleanable.cleanSweepAll {
+        case v: Link => true // required as midair Links are only idled but never cleaned.
+        case v: APMSim => true
         case _ => false
       }
-      //TODO: run on each worker!
-
-      val sims: Set[APMSim] = SimFixture.allSims.toSet
-      val bindings = sims
-        .flatMap(v => v.bindings)
-
-      SimFixture.allSims.foreach {
-        sim =>
-          sim.tryClean()
-      }
-      bindings.foreach(_.driver.tryClean())
-      SimFixture.allSims.clear()
     }
-    super.afterAll()
   }
 }
 
 // TODO: implement! 1 SITL on drivers
-class APMSimSingletonSuite extends SpookyEnvFixture {
-}
+//class APMSimSingletonSuite extends SpookyEnvFixture {
+//}
 
 class APMSimSuite extends APMSimFixture {
 
@@ -87,8 +97,8 @@ class APMSimSuite extends APMSimFixture {
     * this test assumes that all test runs on a single machine, so all SITL instance number has to be different
     */
   test("should create many APM instances with different iNum") {
-    val iNums = sc.mapPerNode {
-      SimFixture.allSims.map(_.iNum)
+    val iNums = sc.mapPerWorker {
+      APMSim.existing.map(_.iNum)
     }
       .collect()
       .toSeq

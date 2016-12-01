@@ -5,4 +5,5 @@ package com.tribbloids.spookystuff.mav.telemetry
   */
 class LinkWithProxyIT extends LinkIT {
 
+  override lazy val proxyFactory = ProxyFactories.ForkToGCS()
 }

@@ -311,6 +311,15 @@ These special characters are often called "metacharacters".
       assert (ks.size == vs.size)
       ks.zip(vs)
     }
+
+//    def newCase[A]()(implicit t: ClassTag[A]): A = {
+//      val cm = rootMirror
+//      val clazz = cm classSymbol t.runtimeClass
+//      val modul = clazz.companionSymbol.asModule
+//      val im = cm reflect (cm reflectModule modul).instance
+//      ReflectionUtils.invokeStatic(clazz)
+//      defaut[A](im, "apply")
+//    }
   }
 
   def getCPResource(str: String): Option[URL] =

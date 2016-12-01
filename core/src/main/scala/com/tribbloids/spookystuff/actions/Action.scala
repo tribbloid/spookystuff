@@ -2,7 +2,7 @@ package com.tribbloids.spookystuff.actions
 
 import com.tribbloids.spookystuff.doc.{Doc, Fetched}
 import com.tribbloids.spookystuff.selenium.BySizzleCssSelector
-import com.tribbloids.spookystuff.session.{DriverSession, Session}
+import com.tribbloids.spookystuff.session.{Session, AbstractSession}
 import com.tribbloids.spookystuff.utils.{SimpleUDT, SpookyUtils}
 import com.tribbloids.spookystuff.{ActionException, Const, SpookyContext}
 import org.apache.spark.ml.dsl.utils._
@@ -17,29 +17,32 @@ class ActionUDT extends SimpleUDT[Action]
 
 object ActionRelay extends MessageRelay[Action] {
 
-//  override implicit def formats: Formats = Xml.defaultFormats + FallbackJSONSerializer
+  //  override implicit def formats: Formats = Xml.defaultFormats + FallbackJSONSerializer
 
-  def convert(elements: Traversable[_]): Traversable[Any] = elements
+  def batchConvert(elements: Traversable[_]): Traversable[Any] = elements
     .map {
-      case v: HasRelay => v.toMessage
-      case (k, v: HasRelay) => k -> v.toMessage
-      case v: Traversable[_] => convert(v)
+      v =>
+        convert(v)
+    }
+
+  private def convert(value: Any) = {
+    value match {
+      case v: HasMessage => v.toMessageValue
+      case (k, v: HasMessage) => k -> v.toMessageValue
+      case v: Traversable[_] => batchConvert(v)
       case v => v
     }
+  }
 
   //avoid using scala reflections on worker as they are thread unsafe, use JSON4s that is more battle tested
   override def toMessage(value: Action): M = {
     val className = value.getClass.getCanonicalName
-    val fields = SpookyUtils.Reflection.getConstructorParameters(value.getClass)
-      .map(_._1)
-    val elements = value
-      .productIterator
-      .toSeq
+    val map: Map[String, Any] = Map(SpookyUtils.Reflection.getCaseAccessorMap(value): _*)
+    val effectiveMap = map.mapValues {convert}
 
-    val map = Map(fields zip convert(elements).toSeq: _*)
     M(
       className,
-      map
+      effectiveMap
     )
   }
 
@@ -79,7 +82,7 @@ trait Action extends ActionLike with ActionRelay.HasRelay{
   }
 
   //this should handle autoSave, cache and errorDump
-  override def apply(session: Session): Seq[Fetched] = {
+  override def apply(session: AbstractSession): Seq[Fetched] = {
 
     val results = try {
       exe(session)
@@ -105,7 +108,7 @@ trait Action extends ActionLike with ActionRelay.HasRelay{
 
   //execute errorDumps as side effects
   protected def getSessionExceptionString(
-                                           session: Session,
+                                           session: AbstractSession,
                                            docOpt: Option[Doc] = None
                                          ): String = {
     var message: String = "\n{\n"
@@ -125,7 +128,7 @@ trait Action extends ActionLike with ActionRelay.HasRelay{
     message += "\n}"
 
     session match {
-      case d: DriverSession =>
+      case d: Session =>
         if (d.webDriverOpt.nonEmpty) {
           if (errorDump) {
             val rawPage = ErrorDump.exe(session).head.asInstanceOf[Doc]
@@ -177,13 +180,13 @@ trait Action extends ActionLike with ActionRelay.HasRelay{
     }
   }
 
-  protected[actions] def withLazyDrivers[T](session: Session)(f: => T) = {
+  protected[actions] def withLazyDrivers[T](session: AbstractSession)(f: => T) = {
 
     this match {
       case tt: Timed =>
         LoggerFactory.getLogger(this.getClass).info(s"+> ${this.toStringVerbose} in ${tt.timeout(session)}")
 
-        session.asInstanceOf[DriverSession].initializeDriverIfMissing(
+        session.asInstanceOf[Session].initializeDriverIfMissing(
           SpookyUtils.withDeadline(tt.hardTerminateTimeout(session)) {
             f
           }
@@ -191,19 +194,19 @@ trait Action extends ActionLike with ActionRelay.HasRelay{
       case _ =>
         LoggerFactory.getLogger(this.getClass).info(s"+> ${this.toString}")
 
-        session.asInstanceOf[DriverSession].initializeDriverIfMissing(
+        session.asInstanceOf[Session].initializeDriverIfMissing(
           f
         )
     }
   }
 
-  protected[actions] def exe(session: Session): Seq[Fetched] = {
+  protected[actions] def exe(session: AbstractSession): Seq[Fetched] = {
     withLazyDrivers(session){
       doExe(session)
     }
   }
 
-  protected def doExe(session: Session): Seq[Fetched]
+  protected def doExe(session: AbstractSession): Seq[Fetched]
 
   def andThen(f: Seq[Fetched] => Seq[Fetched]): Action = AndThen(this, f)
 
@@ -222,7 +225,7 @@ trait Timed extends Action {
     this
   }
 
-  def timeout(session: Session): Duration = {
+  def timeout(session: AbstractSession): Duration = {
     val base = if (this._timeout == null) session.spooky.conf.remoteResourceTimeout
     else this._timeout
 
@@ -230,27 +233,27 @@ trait Timed extends Action {
   }
 
   //TODO: this causes downloading large files to fail, need a better mechanism
-  def hardTerminateTimeout(session: Session): Duration = {
+  def hardTerminateTimeout(session: AbstractSession): Duration = {
     timeout(session) + Const.hardTerminateOverhead
   }
 
-  def webDriverWait(session: Session): WebDriverWait = new WebDriverWait(session.webDriver, this.timeout(session).toSeconds)
+  def webDriverWait(session: AbstractSession): WebDriverWait = new WebDriverWait(session.webDriver, this.timeout(session).toSeconds)
 
-  def getClickableElement(selector: String, session: Session) = {
+  def getClickableElement(selector: String, session: AbstractSession) = {
 
     val elements = webDriverWait(session).until(ExpectedConditions.elementToBeClickable(new BySizzleCssSelector(selector)))
 
     elements
   }
 
-  def getElement(selector: String, session: Session) = {
+  def getElement(selector: String, session: AbstractSession) = {
 
     val elements = webDriverWait(session).until(ExpectedConditions.presenceOfElementLocated(new BySizzleCssSelector(selector)))
 
     elements
   }
 
-  def getElements(selector: String, session: Session) = {
+  def getElements(selector: String, session: AbstractSession) = {
 
     val elements = webDriverWait(session).until(ExpectedConditions.presenceOfAllElementsLocatedBy(new BySizzleCssSelector(selector)))
 

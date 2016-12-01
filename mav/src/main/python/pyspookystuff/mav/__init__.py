@@ -5,13 +5,20 @@ import time
 
 import dronekit
 
+from pyspookystuff.mav import Const
+from pyspookystuff.utils import retry
+
+
+@retry(Const.armRetries)
 def assureInTheAir(targetAlt, vehicle):
-    alt = vehicle.location.global_relative_frame.alt
-    if alt > targetAlt:
+    alt = vehicle.location.global_relative_frame.alt + 1
+    if alt >= targetAlt:
         logging.info("already in the air")
     else:
         armIfNot(vehicle)
         blockingTakeoff(targetAlt, vehicle)
+    alt = vehicle.location.global_relative_frame.alt + 1
+    assert alt >= targetAlt
 
 
 def armIfNot(vehicle):
@@ -46,16 +53,20 @@ def blockingArm(vehicle):
 
 def blockingTakeoff(targetAltitude, vehicle):
 
-    vehicle.simple_takeoff(targetAltitude)
-
     # Wait until the vehicle reaches a safe height before
     # processing the goto (otherwise the command after
     # Vehicle.simple_takeoff will execute immediately).
     while True:
+        alt = vehicle.location.global_relative_frame.alt
+
+        if alt <= 0.1:
+            print("taking off from the ground ... ")
+            vehicle.simple_takeoff(targetAltitude)
+
         noTimeout(vehicle)
-        print(" Altitude: ", vehicle.location.global_relative_frame.alt)
+        print(" Altitude: ", alt)
         # Test for altitude just below target, in case of undershoot.
-        if vehicle.location.global_relative_frame.alt >= targetAltitude * 0.95:
+        if alt >= targetAltitude * 0.95:
             print("Reached target altitude")
             break
 

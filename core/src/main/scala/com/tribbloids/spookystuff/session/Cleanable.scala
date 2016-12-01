@@ -9,7 +9,7 @@ import org.slf4j.LoggerFactory
 import scala.collection.mutable
 import scala.language.implicitConversions
 
-trait Cleanable {
+sealed trait AbstractCleanable {
 
   //each can only be cleaned once
   @volatile var isCleaned: Boolean = false
@@ -17,21 +17,19 @@ trait Cleanable {
   def logPrefix = ""
 
   //synchronized to avoid double cleaning
-  protected def clean(): Unit = this.synchronized {
+  def clean(silent: Boolean = false): Unit = this.synchronized {
     if (!isCleaned){
       cleanImpl()
       isCleaned = true
-      LoggerFactory.getLogger(this.getClass).info(s"$logPrefix Cleaned up")
+      if (!silent) LoggerFactory.getLogger(this.getClass).info(s"$logPrefix Cleaned up")
     }
   }
 
   protected def cleanImpl(): Unit
 
-  def tryClean() = finalize()
-
-  override protected def finalize(): Unit = {
+  def tryClean(silent: Boolean = false): Unit = {
     try {
-      clean()
+      clean(silent)
     }
     catch {
       case e: NoSuchSessionException => //already cleaned before
@@ -45,9 +43,32 @@ trait Cleanable {
       super.finalize()
     }
   }
+
+  override protected def finalize() = tryClean(false)
 }
 
-class Lifespan extends IDMixin {
+class Lifespan extends IDMixin with Serializable {
+
+  {
+    _id //always getID on construction
+  }
+
+  def nameOpt: Option[String] = None
+  def name = nameOpt.getOrElse {
+    _id match {
+      case Left(v) => "Task-" + v
+      case Right(v) => "Thread-" + v
+    }
+  }
+
+  {
+    if (!Cleanable.uncleaned.contains(_id)) {
+      addCleanupHook {
+        () =>
+          Cleanable.cleanSweep(_id)
+      }
+    }
+  }
 
   type ID = Either[Long, Long]
 
@@ -61,14 +82,16 @@ class Lifespan extends IDMixin {
       Lifespan.threadID
   }
 
-  override def toString = _id match {
-    case Left(v) => "Task-" + v
-    case Right(v) => "Thread-" + v
+  @transient lazy val _id = {
+    getID
   }
 
+  def readObject(in: java.io.ObjectInputStream): Unit = {
+    in.defaultReadObject()
+    _id
+  }
 
-  @transient lazy val _id = getID
-  _id //always getID on construction
+  override def toString = name
 
   def addCleanupHook(fn: () => Unit): Unit = {
     _id match {
@@ -95,19 +118,29 @@ object Lifespan {
     Right(Thread.currentThread().getId)
   }
 
-  //automatically generates depending on if
-  def apply(): Lifespan = Auto()
+  //CAUTION: keep the empty constructor! Kryo deserializer use them to initialize object
+  case class Auto(override val nameOpt: Option[String]) extends Lifespan {
+    def this() = this(None)
+  }
 
-  case class Auto() extends Lifespan
-
-  case class Task() extends Lifespan {
+  case class Task(override val nameOpt: Option[String]) extends Lifespan {
+    def this() = this(None)
 
     require(_id.isLeft, "Not inside any Spark Task")
   }
 
-  case class JVM() extends Lifespan {
+  case class JVM(override val nameOpt: Option[String]) extends Lifespan {
+    def this() = this(None)
 
     override def getID: ID = threadID
+  }
+
+  case class Immortal(override val nameOpt: Option[String]) extends Lifespan {
+    def this() = this(None)
+
+    override def getID: ID = Right(-1)
+
+    override def addCleanupHook(fn: () => Unit): Unit = {}
   }
 }
 
@@ -118,16 +151,10 @@ object Lifespan {
   * finalizer helps but is not always reliable
   * can be serializable, but in which case implementation has to allow deserialized copy on a different machine to be cleanable as well.
   */
-trait AutoCleanable extends Cleanable {
+trait Cleanable extends AbstractCleanable {
 
   {
-    if (!AutoCleanable.uncleaned.contains(lifespan._id)) {
-      lifespan.addCleanupHook {
-        () =>
-          AutoCleanable.cleanup(lifespan._id)
-      }
-    }
-    localUncleaned += this
+    uncleanedInBatch += this
     LoggerFactory.getLogger(this.getClass).info(s"Creating ${this.getClass.getSimpleName}")
   }
 
@@ -135,31 +162,31 @@ trait AutoCleanable extends Cleanable {
     * taskOrThreadOnCreation is incorrect in withDeadline or threads not created by Spark
     * Override this to correct such problem
     */
-  def lifespan = Lifespan.apply()
+  def lifespan: Lifespan = new Lifespan.Immortal()
 
   override def logPrefix = {
     s"${lifespan.toString}| ${super.logPrefix}"
   }
 
-  def localUncleaned: ConcurrentSet[AutoCleanable] = {
-    AutoCleanable.uncleaned.getOrElseUpdate(
+  def uncleanedInBatch: ConcurrentSet[Cleanable] = {
+    Cleanable.uncleaned.getOrElseUpdate(
       lifespan._id,
       ConcurrentSet()
     )
   }
 
-  override protected def clean(): Unit = {
-    super.clean()
-    localUncleaned -= this
+  override def clean(silent: Boolean): Unit = {
+    super.clean(silent)
+    uncleanedInBatch -= this
   }
 }
 
-object AutoCleanable {
+object Cleanable {
 
-  val uncleaned: ConcurrentMap[Lifespan#ID, ConcurrentSet[AutoCleanable]] = ConcurrentMap()
+  val uncleaned: ConcurrentMap[Lifespan#ID, ConcurrentSet[Cleanable]] = ConcurrentMap()
 
   // cannot execute concurrent
-  def cleanup(tt: Lifespan#ID, condition: AutoCleanable => Boolean = _ => true) = {
+  def cleanSweep(tt: Lifespan#ID, condition: Cleanable => Boolean = _ => true) = {
     val set = uncleaned.getOrElse(tt, mutable.Set.empty)
     val filtered = set.toList
       .filter(condition)
@@ -172,17 +199,17 @@ object AutoCleanable {
     if (set.isEmpty) uncleaned.remove(tt)
   }
 
-  def cleanupAll(
-                  condition: AutoCleanable => Boolean = _ => true
-                ) = {
+  def cleanSweepAll(
+                     condition: Cleanable => Boolean = _ => true
+                   ) = {
 
     uncleaned
       .keys
-//      .filter(kCondition)
+      //      .filter(kCondition)
       .foreach {
-        tt =>
-          cleanup(tt, condition)
-      }
+      tt =>
+        cleanSweep(tt, condition)
+    }
   }
 
   //  def cleanup(tt: Lifespan.ID) = cleanupTyped[AutoCleanable](tt)

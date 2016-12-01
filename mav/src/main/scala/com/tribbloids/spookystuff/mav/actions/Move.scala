@@ -1,8 +1,5 @@
 package com.tribbloids.spookystuff.mav.actions
 
-import com.tribbloids.spookystuff.actions.{Interaction, PyAction}
-import com.tribbloids.spookystuff.session.Session
-
 import scala.concurrent.duration.Duration
 
 /**
@@ -14,7 +11,7 @@ case class Move(
                  from: WayPoint,
                  to: WayPoint,
                  override val delay: Duration = null
-               ) extends DroneInteraction with PyAction {
+               ) extends DroneInteraction {
 
   def inbound(): Unit = {
 

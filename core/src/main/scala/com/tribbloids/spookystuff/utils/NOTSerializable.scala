@@ -14,7 +14,11 @@ trait NOTSerializable extends Serializable with KryoSerializable{
   def readObject(in: java.io.ObjectInputStream): Unit = throw new NotSerializableException()
   def readObjectNoData(): Unit = throw new NotSerializableException()
 
-  //TODO: errors in Kryo are not final! need to inject it into output
-  override def write (kryo: Kryo, output: Output): Unit = throw new NotSerializableException()
-  override def read (kryo: Kryo, input: Input): Unit = throw new NotSerializableException()
+  override def write (kryo: Kryo, output: Output): Unit = {
+    throw new NotSerializableException()
+  }
+
+  override def read (kryo: Kryo, input: Input): Unit = {
+    throw new NotSerializableException()
+  }
 }

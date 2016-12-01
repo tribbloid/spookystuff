@@ -3,7 +3,7 @@ package com.tribbloids.spookystuff.actions
 import com.tribbloids.spookystuff.caching.{DFSWebCache, InMemoryWebCache}
 import com.tribbloids.spookystuff.doc.{Doc, Fetched}
 import com.tribbloids.spookystuff.row.{DataRowSchema, FetchedRow}
-import com.tribbloids.spookystuff.session.{DriverSession, Session}
+import com.tribbloids.spookystuff.session.{Session, AbstractSession}
 import com.tribbloids.spookystuff.utils.{DetailedProduct, SpookyUtils}
 import com.tribbloids.spookystuff.{Const, QueryException, SpookyContext}
 import org.apache.spark.sql.catalyst.trees.TreeNode
@@ -55,7 +55,7 @@ abstract class ActionLike extends DetailedProduct with Serializable {
   //the minimal equivalent action that can be put into backtrace
   def trunk: Option[this.type]
 
-  def apply(session: Session): Seq[Fetched]
+  def apply(session: AbstractSession): Seq[Fetched]
 
   def fetch(spooky: SpookyContext): Seq[Fetched] = {
 
@@ -72,8 +72,8 @@ abstract class ActionLike extends DetailedProduct with Serializable {
 
     if (!this.hasOutput) return Nil
 
-    val pagesFromCache = if (!spooky.conf.cacheRead) Seq(null)
-    else dryrun.map(
+    val pagesFromCache: Seq[Seq[Fetched]] = if (!spooky.conf.cacheRead) Seq(null)
+    else dryrun.map (
       dry =>
         InMemoryWebCache.get(dry, spooky)
           .orElse{
@@ -102,7 +102,7 @@ abstract class ActionLike extends DetailedProduct with Serializable {
           "the later can be enabled by setting SpookyContext.conf.remote=true"
       )
 
-      val session = new DriverSession(spooky)
+      val session = new Session(spooky)
 
       try {
         val result = this.apply(session)
@@ -115,7 +115,7 @@ abstract class ActionLike extends DetailedProduct with Serializable {
           throw e
       }
       finally {
-        session.tryClean()
+        session.clean()
       }
     }
   }

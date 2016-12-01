@@ -40,13 +40,14 @@ class APMSim(object):
         def launch():
             try:
                 sitl.launch(self.args, await_ready=True, restart=True)
-                print("launching APM SITL ... PID=", str(sitl.p.pid))
+                print("launching APM SITL ... PID =", str(sitl.p.pid))
                 self.setParamAndRelaunch('SYSID_THISMAV', self.iNum + 1)
             except:
                 self.close()
                 raise
 
         launch()
+        print("APM SITL on", self.connStr, "is up and running")
 
     def _getConnStr(self):
         return tcp_master(self.iNum)
@@ -76,7 +77,7 @@ class APMSim(object):
         if self.sitl:
             try:
                 self.sitl.stop()
-                print("Cleaned up APM SITL PID=", str(self.sitl.p.pid))
+                print("Cleaned up APM SITL PID =", str(self.sitl.p.pid))
             except:
                 pass
         else:

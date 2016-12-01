@@ -34,7 +34,7 @@ def retry(maxTrial=3):
                     result = fn(*args, **kargs)
                     return result
                 except BaseException as e:
-                    if i <= 0:
+                    if i <= 1:
                         raise
                     else:
                         print("Retrying locally on", str(e), "...", str(i-1), "time(s) left")

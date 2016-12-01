@@ -37,7 +37,7 @@ class SpookyKryoRegistrator extends KryoRegistrator {
       classOf[DirConf],
       classOf[SerializableWritable[_]],
       classOf[SpookyContext],
-      classOf[Metrics],
+      classOf[SpookyMetrics],
 
       //used by Expressions
       //      classOf[NamedFunction1]

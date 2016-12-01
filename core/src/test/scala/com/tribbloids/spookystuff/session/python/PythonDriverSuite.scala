@@ -1,6 +1,6 @@
-package com.tribbloids.spookystuff.session
+package com.tribbloids.spookystuff.session.python
 
-import com.tribbloids.spookystuff.session.python.{PyConverter, PythonDriver}
+import com.tribbloids.spookystuff.session.Lifespan
 import com.tribbloids.spookystuff.{PyInterpreterException, SpookyEnvFixture}
 
 /**
@@ -17,7 +17,7 @@ object PythonDriverSuite {
   }
 
   def runIterable[T, R](xs: Iterable[T])(f: (T, PythonDriver) => R): Iterable[R] = {
-    val proc = new PythonDriver("python", lifespan = Lifespan())
+    val proc = new PythonDriver("python", lifespan = new Lifespan.Auto())
     try {
       val result = xs.map{
         f(_, proc)

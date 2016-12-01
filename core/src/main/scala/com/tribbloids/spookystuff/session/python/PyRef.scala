@@ -84,8 +84,8 @@ trait PyRef extends Cleanable {
     )
   }
 
-  def Py(session: Session): PyBinding = {
-    session.asInstanceOf[DriverSession].initializeDriverIfMissing {
+  def Py(session: AbstractSession): PyBinding = {
+    session.asInstanceOf[Session].initializeDriverIfMissing {
       _Py(session.pythonDriver, Some(session.spooky))
     }
   }
@@ -103,6 +103,8 @@ trait PyRef extends Cleanable {
         result
       }
   }
+
+  def bindingCleaningHook(pyBinding: PyBinding): Unit = {}
 
   /**
     * bind to a session
@@ -134,15 +136,6 @@ trait PyRef extends Cleanable {
 
       PyRef.this.driverToBindings += driver -> this
     }
-
-
-    //    def exe(code: String => String): Unit = {
-    //      val cc = code(referenceOpt.getOrElse(""))
-    //      driver.eval(
-    //        cc
-    //      )
-    //
-    //    }
 
     def strOpt: Option[String] = {
       referenceOpt.flatMap {
@@ -188,7 +181,6 @@ trait PyRef extends Cleanable {
       pyCallMethod(methodName)(converter.kwargs2Ref(kwargs))
     }
 
-    //TODO: register interpreter shutdown hook listener?
     /**
       * chain to all bindings with active drivers
       */
@@ -200,31 +192,14 @@ trait PyRef extends Cleanable {
         }
       }
 
-      // remove from map
-      val d2b = driverToBindings
-      d2b.get(this.driver)
-        .foreach {
-          v =>
-            if (v == this)
-              d2b - this.driver
-        }
+      driverToBindings.remove(this.driver)
+
+      bindingCleaningHook(this)
     }
   }
 }
 
-//trait BindOnce extends PyRef {
-//
-//}
-//
-//// can only be bind to one predefined driver
-//trait PreBinded extends PyRef {
-//
-//  def driver: PythonDriver
-//
-//  val Py = this._Py(driver)
-//}
-
-object RootRef extends PyRef
+object ROOTRef extends PyRef
 
 case class DetachedRef(
                         override val createOpt: Option[String],
@@ -236,14 +211,14 @@ case class DetachedRef(
   override def lzy = false
 }
 
-trait ObjectRef extends PyRef {
+trait ClassRef extends PyRef {
 
   override def imports = super.imports ++ Seq(s"import $packageName")
 
   override lazy val referenceOpt = Some(varNamePrefix + SpookyUtils.randomSuffix)
 }
 
-trait StaticRef extends ObjectRef {
+trait StaticRef extends ClassRef {
 
   assert(
     className.endsWith("$"),
@@ -262,7 +237,7 @@ trait StaticRef extends ObjectRef {
 /**
   * NOT thread safe!
   */
-trait InstanceRef extends ObjectRef {
+trait InstanceRef extends ClassRef {
 
   assert(
     !className.contains("$"),
@@ -275,16 +250,17 @@ trait InstanceRef extends ObjectRef {
 
   def pyConstructorArgs: String
 
-  override lazy val createOpt = Some(
+  override def createOpt = Some(
     s"""
        |$pyClassName$pyConstructorArgs
       """.trim.stripMargin
   )
 }
 
+@Deprecated
 trait JSONInstanceRef extends InstanceRef with HasMessage {
 
-  override lazy val pyConstructorArgs: String = {
+  override def pyConstructorArgs: String = {
     val converted = this.converter.scala2py(this.toMessage)._2
     val code =
       s"""
@@ -298,9 +274,11 @@ trait CaseInstanceRef extends InstanceRef with Product {
 
   def attrMap = SpookyUtils.Reflection.getCaseAccessorMap(this)
 
-  override lazy val (dependencies, pyConstructorArgs) = {
+  override def dependencies = {
+    this.converter.kwargs2Ref(attrMap)._1
+  }
 
-    val tuple: (Seq[PyRef], String) = this.converter.kwargs2Ref(attrMap)
-    tuple
+  override def pyConstructorArgs = {
+    this.converter.kwargs2Ref(attrMap)._2
   }
 }

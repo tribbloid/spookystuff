@@ -79,7 +79,7 @@ class SpookyViewsSuite extends SpookyEnvFixture {
   }
 
   test("foreachNode will run properly") {
-    val result = sc.mapPerNode {
+    val result = sc.mapPerWorker {
       1
     }
     assert(result.count() == TestHelper.clusterSize)

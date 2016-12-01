@@ -1,10 +1,24 @@
 package com.tribbloids.spookystuff.mav.telemetry
 
+import com.tribbloids.spookystuff.mav.MAVConf
+import com.tribbloids.spookystuff.session.{AbstractSession, Session}
 import com.tribbloids.spookystuff.session.python.{CaseInstanceRef, PythonDriver, StaticRef}
-import com.tribbloids.spookystuff.session.{AutoCleanable, Lifespan}
+import com.tribbloids.spookystuff.utils.SpookyUtils
 import com.tribbloids.spookystuff.{SpookyContext, caching}
+import org.slf4j.LoggerFactory
 
 import scala.collection.Map
+
+case class Endpoint(
+                     // remember, one drone can have several telemetry
+                     // endpoints: 1 primary and several backups (e.g. text message-based)
+                     // TODO: implement telemetry backup mechanism
+                     connStrs: Seq[String],
+                     vehicleTypeOpt: Option[String] = None
+                   ) extends CaseInstanceRef {
+
+  def connStr = connStrs.head
+}
 
 object Link extends StaticRef {
 
@@ -16,12 +30,12 @@ object Link extends StaticRef {
   val existing: caching.ConcurrentMap[String, (ProxyFactory, Link)] = caching.ConcurrentMap()
 
   // won't be used to create any link before its status being recovered by ping daemon.
-  val unreachable: caching.ConcurrentSet[String] = caching.ConcurrentSet()
+  val blacklist: caching.ConcurrentSet[String] = caching.ConcurrentSet()
 
   //in the air but unused
   def idle: Map[String, (ProxyFactory, Link)] = existing.filter {
     tuple =>
-      !unreachable.contains(tuple._1) &&
+      !blacklist.contains(tuple._1) &&
         !tuple._2._2.isBusy
   }
 
@@ -38,22 +52,24 @@ object Link extends StaticRef {
   def getOrCreate(
                    candidates: Seq[Endpoint],
                    proxyFactory: ProxyFactory,
-                   driver: PythonDriver
+                   session: Session
                  ): Link = {
 
     driverLocal
-      .get(driver)
+      .get(session.getOrProvisionPythonDriver)
       .orElse {
-        getOrRefitIdle(candidates, proxyFactory)
+        getOrRefitIdle(candidates, proxyFactory)(Some(session.spooky))
       }
       .getOrElse {
-        val neo = create(candidates, proxyFactory)
+        val neo = create(candidates, proxyFactory)(Some(session.spooky))
         neo
       }
   }
 
-  // CAUTION: this will recreate the telemetry link if ProxyFactory is different.
-  def getOrRefitIdle(candidates: Seq[Endpoint], proxyFactory: ProxyFactory): Option[Link] = {
+  // CAUTION: this will refit the telemetry link if ProxyFactory is different.
+  def getOrRefitIdle(candidates: Seq[Endpoint], proxyFactory: ProxyFactory)(
+    implicit spookyOpt: Option[SpookyContext] = None
+  ): Option[Link] = {
     val idleEndpointOpt = candidates.find {
       endpoint =>
         idle.get(endpoint.connStr).nonEmpty
@@ -66,11 +82,11 @@ object Link extends StaticRef {
     idleOpt.map {
       tuple =>
         val existingLink = tuple._2
-        if (!ProxyFactories.canCreate(proxyFactory, existingLink)) {
+        if (!proxyFactory.canCreate(existingLink)) {
           //recreate
           existingLink.tryClean()
           val endpoint = idleEndpointOpt.get
-          val result = apply(endpoint, proxyFactory)
+          val result = fromFactory(endpoint, proxyFactory)
           result
         }
         else {
@@ -79,23 +95,35 @@ object Link extends StaticRef {
     }
   }
 
-  def create(candidates: Seq[Endpoint], proxyFactory: ProxyFactory): Link = {
+  def create(candidates: Seq[Endpoint], proxyFactory: ProxyFactory)(
+    implicit spookyOpt: Option[SpookyContext] = None
+  ): Link = {
     val endpoint = candidates.find {
       v =>
         !existing.contains(v.connStr) &&
-          !unreachable.contains(v.connStr)
+          !blacklist.contains(v.connStr)
     }
       .getOrElse(
-        throw new UnsupportedOperationException("reinforcement depleted :-<")
+        throw new UnsupportedOperationException(
+          "Reinforcement depleted :-<\n" +
+            candidates.map {
+              candidate =>
+                if (blacklist.contains(candidate.connStr)) s"\t${candidate.connStr} is unreachable"
+                else s"\t${candidate.connStr} is busy"
+            }
+              .mkString("\n")
+        )
       )
 
-    apply(endpoint, proxyFactory)
+    fromFactory(endpoint, proxyFactory)
   }
 
-  def apply(
-             endpoint: Endpoint,
-             proxyFactory: ProxyFactory
-           ): Link = {
+  def fromFactory(
+                   endpoint: Endpoint,
+                   proxyFactory: ProxyFactory
+                 )(
+                   implicit spookyOpt: Option[SpookyContext] = None
+                 ): Link = {
 
     val result = Link(
       endpoint,
@@ -107,7 +135,9 @@ object Link extends StaticRef {
   }
 
   // only set up to avoid malicious ser/de copy, in which a deep copy of Link is created with identical PID that will be killed twice by AutoCleaner
-  val allProxyPIDs: caching.ConcurrentSet[Int] = caching.ConcurrentSet()
+  //  val allProxyPIDs: caching.ConcurrentSet[Int] = caching.ConcurrentSet()
+
+  final val retries = 3
 }
 
 /**
@@ -126,43 +156,101 @@ DaemonProcess   (can this be delayed to be implemented later? completely surrend
   but if not ...
     how to ensure that an interpreter can takeover and get the same vehicle?
   */
-case class Link private(
-                         endpoint: Endpoint,
-                         proxyOpt: Option[Proxy],
-                         var proxyPIDOpt: Option[Int] = None //if set a value no proxy will be launched.
-                       ) extends CaseInstanceRef with AutoCleanable {
+case class Link private[telemetry](
+                                    endpoint: Endpoint,
+                                    proxyOpt: Option[Proxy]
+                                  )(
+                                    implicit val spookyOpt: Option[SpookyContext] = None
+                                  ) extends CaseInstanceRef {
 
-  //hardcoded, always outlives Spark tasks and only cleanup by shutdown hook
-  //this is deliberate as user control through GCS should not be interrupted by task completion
-  override def lifespan: Lifespan = Lifespan.JVM()
+  spookyOpt.foreach {
+    spooky =>
+      spooky.metrics.linkCreated += 1
+  }
 
-  //the first pid created in python is persisted
-  //Automatically set its status in existing to 'NOT busy' at the end of this task.
-  override def _Py(driver: PythonDriver, spookyOpt: Option[SpookyContext]): PyBinding = this.synchronized {
+  // TODO: why synchronized? remove it if too slow
+  override def Py(session: AbstractSession): PyBinding = this.synchronized {
+    val py = super.Py(session)
+    try {
+      assert(
+        this.driverToBindings.size <= 1,
+        "Another Python process is still alive, close that first to avoid port conflict"
+      )
 
-    assert(this.driverToBindings.keys.forall(_ == driver), "One link cannot be binded to 2 Python process due to port conflict")
-    val result = super._Py(driver, spookyOpt)
-    Link.driverLocal.put(driver, this)
-    val pidOpt = result.proxyPID.strOpt.map(_.toInt)
-    this.proxyPIDOpt = pidOpt
-    pidOpt.foreach(Link.allProxyPIDs += _)
-    result
+      val driver = session.pythonDriver
+      if (!Link.driverLocal.contains(driver)) {
+        Link.driverLocal.put(driver, this)
+        SessionView(session).start()
+      }
+
+      py
+    }
+    catch {
+      case e: Throwable =>
+        py.tryClean()
+        throw e
+    }
+  }
+
+  case class SessionView(session: AbstractSession) {
+
+    val binding = Py(session)
+
+    // will retry 6 times, try twice for Vehicle.connect() in python, if failed, will restart proxy and try again (3 times).
+    // after all attempts failed will add endpoint into blacklist.
+    def start(): String = {
+
+      try {
+        var needRestart = false
+        val retries = session.spooky.conf.components.get[MAVConf]().connectionRetries
+        SpookyUtils.retry(retries) {
+          proxyOpt.foreach {
+            proxy =>
+              if (needRestart) {
+                proxy.mgrPy.restart()
+              }
+              else {
+                proxy.mgrPy.start()
+                needRestart = true
+              }
+          }
+          val result = binding.start().strOpt.get
+          result
+        }
+      }
+      catch {
+        case e: Throwable =>
+          LoggerFactory.getLogger(this.getClass).error(s"${endpoint.connStr} is unreachable, adding to blacklist")
+
+          //TODO: enable after ping daemon is implemented
+          //            Link.blacklist += endpoint.connStr
+          throw e
+      }
+    }
   }
 
   override def cleanImpl(): Unit = {
 
     proxyOpt.foreach(_.tryClean())
-    proxyPIDOpt
-      .filter(Link.allProxyPIDs.contains)
-      .foreach {
-        pid =>
-          this.scratchDriver {
-            driver =>
-              Link._Py(driver).killProxy(pid)
-          }
-          Link.allProxyPIDs -= pid
-      }
+    //    proxyPIDOpt
+    //      .filter(Link.allProxyPIDs.contains)
+    //      .foreach {
+    //        pid =>
+    //          this.scratchDriver {
+    //            driver =>
+    //              Link._Py(driver).killProxy(pid)
+    //          }
+    //          Link.allProxyPIDs -= pid
+    //      }
     super.cleanImpl()
+    Link.existing -= this.endpoint.connStr
+  }
+
+  override def bindingCleaningHook(pyBinding: PyBinding): Unit = {
+    pyBinding.spookyOpt.foreach {
+      spooky =>
+      //        spooky.metrics.linkDestroyed += 1
+    }
   }
 
   // return true if its binding's python driver is not dead

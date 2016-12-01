@@ -6,22 +6,91 @@ import com.tribbloids.spookystuff.dsl._
 import com.tribbloids.spookystuff.row.Sampler
 import com.tribbloids.spookystuff.session._
 import com.tribbloids.spookystuff.session.python.PythonDriver
+import org.apache.spark.ml.dsl.ReflectionUtils
 import org.apache.spark.ml.dsl.utils.Message
 import org.apache.spark.rdd.RDD
 import org.apache.spark.storage.StorageLevel
 import org.apache.spark.{Partitioner, SparkConf, SparkContext}
 
+import scala.collection.mutable
 import scala.concurrent.duration.Duration.Infinite
 import scala.concurrent.duration._
+import scala.reflect.ClassTag
+import scala.util.Try
+
+object Components {
+
+  def apply[U](
+                vs: U*
+              ): Components[U] = {
+
+    Components[U](
+      mutable.Map(
+        vs.map {
+          v =>
+            v.getClass.getCanonicalName -> v
+        }: _*
+      )
+    )
+  }
+}
+
+case class Components[U] private(
+                                  self: mutable.Map[String, U]
+                                ) extends Iterable[U] {
+
+  def tryGetByName(
+                    className: String,
+                    fn: Any => Any = identity
+                  ): Try[U] = Try {
+    self
+      .getOrElse (
+        className,
+        {
+          val clazz = Class.forName(className)
+          val neo = ReflectionUtils.invokeStatic(clazz, "default")
+          val result = fn(neo).asInstanceOf[U]
+          self.put(className, result)
+          result
+        }
+      )
+  }
+
+  def get[T <: U: ClassTag](
+                             fn: Any => Any = identity
+                           ): T = {
+    val clazz = implicitly[ClassTag[T]].runtimeClass.asInstanceOf[Class[T]]
+    val className = clazz.getCanonicalName
+    tryGetByName(className, fn)
+      .map(_.asInstanceOf[T])
+      .get
+  }
+
+  def transform(f: U => U) = {
+
+    Components(self.values.map(f).toSeq: _*)
+  }
+
+  override def iterator: Iterator[U] = self.valuesIterator
+}
 
 trait AbstractConf extends Message {
 
-  val name: String
+  def components: Components[AbstractConf] = Components()
 
-  val propertyName = Seq("spooky", name).mkString("")
+  def importFrom(sparkContext: SparkContext): this.type = importFrom(sparkContext.getConf)
 
   // TODO: use reflection to automate
-  def importFrom(implicit sparkConf: SparkConf): AbstractConf
+  def importFrom(implicit sparkConf: SparkConf): this.type
+
+  //  def getAndImport[T <: AbstractConf: ClassTag](sparkConfOpt: Option[SparkConf]) = {
+  //    sparkConfOpt match {
+  //      case None =>
+  //        this.components.get[T]()
+  //      case Some(conf) =>
+  //        this.components.get[T](_.importFrom(conf).asInstanceOf[T])
+  //    }
+  //  }
 }
 
 object SpookyConf {
@@ -29,10 +98,10 @@ object SpookyConf {
   /**
     * spark config >> system property >> system environment >> default
     */
-  def getDefault(
-                  property: String,
-                  default: String = null
-                )(implicit conf: SparkConf = null): String = {
+  def getPropertyOrDefault(
+                            property: String,
+                            default: String = null
+                          )(implicit conf: SparkConf = null): String = {
     val env = property.replace('.','_').toUpperCase
 
     Option(conf)
@@ -65,7 +134,7 @@ object SpookyConf {
   */
 //TODO: is var in serialized closure unstable for Spark production environment? consider changing to ConcurrentHashMap
 class SpookyConf (
-                   val components: Map[String, AbstractConf] = Map("dirs" -> new DirConf()),
+                   override val components: Components[AbstractConf] = Components(),
 
                    var shareMetrics: Boolean = false, //TODO: not necessary
 
@@ -118,16 +187,24 @@ class SpookyConf (
 
                    //if encounter too many out of memory error, change to MEMORY_AND_DISK_SER
                    var defaultStorageLevel: StorageLevel = StorageLevel.MEMORY_ONLY
-                 ) extends Serializable {
+                 ) extends AbstractConf with Serializable {
 
-  def dirs = this.components("dirs").asInstanceOf[DirConf]
+  def dirs: DirConf = components.get[DirConf]()
 
-  def importFrom(sparkContext: SparkContext): SpookyConf = importFrom(sparkContext.getConf)
+  def importFrom(implicit sparkConf: SparkConf): this.type = {
 
-  def importFrom(implicit sparkConf: SparkConf): SpookyConf = {
+    //TODO: eliminate hardcoding! Use reflection to convert property names into class names
+    Seq(
+      classOf[DirConf].getCanonicalName,
+      "com.tribbloids.spookystuff.mav.MavConf"
+    )
+      .foreach {
+        name =>
+          this.components.tryGetByName(name)
+      }
 
     new SpookyConf(
-      this.components.mapValues(_.importFrom(sparkConf)).map(identity),
+      this.components.transform(_.importFrom(sparkConf)),
 
       this.shareMetrics,
 
@@ -178,6 +255,7 @@ class SpookyConf (
 
       this.defaultStorageLevel
     )
+      .asInstanceOf[this.type]
   }
 
   def getEarliestDocCreationTime(nowMillis: Long = System.currentTimeMillis()): Long = {
@@ -202,9 +280,4 @@ class SpookyConf (
     )
       .flatMap(v => Option(v))
   }
-
-  //  def toJSON: String = {
-  //
-  //    Utils.toJson(this, beautiful = true)
-  //  }
 }

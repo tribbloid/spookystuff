@@ -3,8 +3,7 @@ package com.tribbloids.spookystuff
 import com.tribbloids.spookystuff.dsl.DriverFactory
 import com.tribbloids.spookystuff.extractors.{Alias, GenExtractor, GenResolved}
 import com.tribbloids.spookystuff.row.{DataRowSchema, SquashedFetchedRow, TypedField}
-import com.tribbloids.spookystuff.session.python.PythonDriver
-import com.tribbloids.spookystuff.session.{AutoCleanable, CleanWebDriver, Lifespan}
+import com.tribbloids.spookystuff.session.{Cleanable, CleanWebDriver, Lifespan}
 import com.tribbloids.spookystuff.testutils.{RemoteDocsFixture, TestHelper}
 import com.tribbloids.spookystuff.utils.SpookyUtils
 import org.apache.spark.SparkContext
@@ -34,7 +33,7 @@ object SpookyEnvFixture {
 
   def driverInstancesShouldBeClean(spooky: SpookyContext): Unit = {
 
-    AutoCleanable
+    Cleanable
       .uncleaned
       .foreach {
         tuple =>
@@ -58,7 +57,7 @@ object SpookyEnvFixture {
                                 ): Unit = {
 
     //this is necessary as each suite won't automatically cleanup drivers NOT in task when finished
-    AutoCleanable.cleanupAll (
+    Cleanable.cleanSweepAll (
       condition = {
         case v if v.lifespan.isThread => true
         case _ => false
@@ -145,8 +144,7 @@ abstract class SpookyEnvFixture
     val spooky = this.spooky
     val pNames = this.pNames
     TestHelper.clearTempDir()
-    SpookyEnvFixture.shouldBeClean(spooky, pNames)
-    sc.foreachNode {
+    sc.foreachComputer {
       SpookyEnvFixture.shouldBeClean(spooky, pNames)
     }
     super.afterAll()
@@ -171,18 +169,22 @@ abstract class SpookyEnvFixture
       autoSave = true,
       cacheWrite = false,
       cacheRead = false,
-      components = Map(
-        "dirs" -> new DirConf(
-          root = SpookyUtils.\\\(TestHelper.TEMP_PATH, "spooky-unit")
-        )
+      components = envComponents
+    )
+    spooky.metrics.zero()
+  }
+
+  def envComponents: Components[AbstractConf] = {
+    Components(
+      new DirConf(
+        root = SpookyUtils.\\\(TestHelper.TEMP_PATH, "spooky-unit")
       )
     )
   }
 
   def tearDown(): Unit = {
     val spooky = this.spooky
-    SpookyEnvFixture.driverInstancesShouldBeClean(spooky)
-    sc.foreachNode {
+    sc.foreachComputer {
       SpookyEnvFixture.driverInstancesShouldBeClean(spooky)
     }
   }

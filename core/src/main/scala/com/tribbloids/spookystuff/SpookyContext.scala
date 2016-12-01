@@ -17,16 +17,16 @@ import scala.language.implicitConversions
 import scala.reflect.ClassTag
 
 case class SpookyContext private (
-                                   @transient sqlContext: SQLContext, //can't be used on executors
+                                   @transient sqlContext: SQLContext, //can't be used on executors, TODO: change to Option
                                    @transient private var spookyConf: SpookyConf, //can only be used on executors after broadcast
-                                   metrics: Metrics //accumulators cannot be broadcasted,
+                                   metrics: SpookyMetrics //accumulators cannot be broadcasted,
                                  ) extends OnDriverOnly {
 
   def this(
             sqlContext: SQLContext,
             conf: SpookyConf = new SpookyConf()
           ) {
-    this(sqlContext, conf.importFrom(sqlContext.sparkContext), new Metrics())
+    this(sqlContext, conf.importFrom(sqlContext.sparkContext), new SpookyMetrics())
   }
 
   def this(sqlContext: SQLContext) {
@@ -49,6 +49,7 @@ case class SpookyContext private (
 
   def sparkContext = this.sqlContext.sparkContext
 
+  //TODO: package auto broadcast after shipping behaviour as Minimalistic API
   @volatile var broadcastedSpookyConf: Broadcast[SpookyConf] = _
   def conf = {
     if (spookyConf == null) broadcastedSpookyConf.value
@@ -103,7 +104,7 @@ case class SpookyContext private (
 
   def getSpookyForRDD = {
     if (conf.shareMetrics) this
-    else this.copy(metrics = new Metrics())
+    else this.copy(metrics = new SpookyMetrics())
   }
 
   def create(df: DataFrame): FetchedDataset = this.dsl.dataFrameToPageRowRDD(df)

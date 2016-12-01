@@ -1,19 +1,16 @@
 from __future__ import print_function
 
-import json
 import logging
-
-from pyspookystuff.utils import retry
-
 import os
 import random
-import sys
-from math import sqrt
 
 import dronekit
+import sys
 import time
+from math import sqrt
 
 from pyspookystuff.mav import assureInTheAir, noTimeout, Const
+from pyspookystuff.utils import retry
 
 """
 Crash course on MAVProxy:
@@ -76,25 +73,96 @@ d = {'clientip': '192.168.0.1', 'user': 'fbloggs'}
 
 class Endpoint(object):
     # TODO: use **local() to reduce boilerplate copies
-    def __init__(self, connStrs, vehicleClass=None):
+    def __init__(self, connStrs, vehicleTypeOpt=None):
         self.connStrs = connStrs
-        self.vehicleClass = vehicleClass
+        self.vehicleType = vehicleTypeOpt
 
     @property
     def connStr(self):
         return self.connStrs[0]
 
+class Daemon(object):
 
-# how to handle interim daemon?
-class Proxy(object):
+    def start(self):
+        pass
+
+    def stop(self):
+        pass
+
+    def restart(self):
+        self.stop()
+        self.start()
+
+    def __del__(self):
+        self.stop()
+
+    def logPrint(self, *args):
+        print(self.fullName, args)
+
+    @property
+    def fullName(self):
+        return None
+
+
+class Proxy(Daemon):
+
     def __init__(self, master, name, outs=list()):
+        # type: (str, str, list[str]) -> None
+        super(Proxy, self).__init__()
         self.master = master
         self.name = name
         self.outs = outs
+        self.process = None
+
+    @property
+    def fullName(self):
+        return self.name + "@" + self.master + " > " + self.outs[0]
+
+    def start(self):
+        # type: () -> int
+
+        # self.logPrint("Proxy spawning:", json.dumps(self, default=lambda c: c.__dict__))
+        if not self.process:
+            p = spawnProxy(
+                aircraft=self.fullName,
+                setup=False,
+                master=self.master,
+                outs=self.outs
+            )
+            self.process = p
+
+            time.sleep(1) # wait for proxy to initialize
+            assert self.isAlive
+            self.logPrint("Proxy spawned: PID =", self.pid)
+        return self.pid
+
+    def stop(self):
+        if self.process:
+            Proxy.killPID(self.process.pid)
+            self.process = None
+
+    @staticmethod
+    def killPID(pid):
+        try:
+            os.killpg(pid, 2)
+            print("Proxy killed: PID =", pid)
+        except OSError:
+            pass
+
+    @property
+    def pid(self):
+        return self.process.pid
+
+    @property
+    def isAlive(self):
+        if self.process:
+            return self.process.isalive()
+        else:
+            return False
 
 
-def _launchProxy(aircraft, setup, master, outs, options=None, logfile=sys.stdout):
-    # type: (str, bool, str, list, str, str) -> pexpect.spawn
+def spawnProxy(aircraft, setup, master, outs, options='--daemon', logfile=sys.stdout):
+    # type: (str, bool, str, list, str, str) -> object
 
     import pexpect  # included by transitive dependency
     MAVPROXY = os.getenv('MAVPROXY_CMD', 'mavproxy.py')
@@ -106,71 +174,25 @@ def _launchProxy(aircraft, setup, master, outs, options=None, logfile=sys.stdout
     cmd += ' --aircraft=%s' % aircraft
     if options is not None:
         cmd += ' ' + options
-    # spawn daemon?
-    spawn = pexpect.spawn(cmd, logfile=logfile, timeout=60)
-    spawn.delaybeforesend = 0
-    return spawn
 
+    print(cmd)
 
-proxySpawn = None
-class MayNeedProxy(object):
+    p = pexpect.spawn(cmd, logfile=logfile, timeout=60, ignore_sighup=True)
+    p.delaybeforesend = 0
 
-    def __init__(self, proxyOpt=None, proxyPIDOpt=None):
-        # type: (Proxy, int) -> None
-        self.proxy = proxyOpt
-        self.proxyPID = proxyPIDOpt
-
-    def _getProxy(self):
-        # type: () -> int
-        global proxySpawn
-        if self.proxy and (not self.proxyPID): # set but not launched
-            print("Proxy spawning:", json.dumps(self.proxy, default=lambda c: c.__dict__))
-            proxySpawn = _launchProxy(
-                aircraft=self.proxy.name,
-                setup=False,
-                master=self.proxy.master,
-                outs=self.proxy.outs
-            )
-            time.sleep(1) # wait for proxy to initialize
-            assert(proxySpawn.isalive())
-            self.proxyPID = proxySpawn.pid
-        return self.proxyPID
-
-    def _killProxy(self):
-        # type: () -> None
-        if self.proxyPID:
-            try:
-                self.killProxy(self.proxyPID)
-            except OSError:
-                pass
-            self.proxyPID = None
-
-    @staticmethod
-    def killProxy(pid):
-        os.killpg(pid, 2)
-
-    # may refresh proxyUID, make sure scala object is synchronized every time its called
-    def _relaunchProxy(self):
-        self._killProxy()
-        self._getProxy()
+    return p
 
 
 # if all endpoints are not available, sleep for x seconds and retry.
-class Link(MayNeedProxy):
+class Link(Daemon):
     # process local
     # existing = None  # type: # DroneCommunication
 
-    # @staticmethod
-    # def getOrCreate(endpoint, proxy=None):
-    #     # type: (Endpoint, Proxy) -> DroneCommunication
-    #     if not DroneCommunication.existing:
-    #         DroneCommunication.existing = DroneCommunication(endpoint, proxy)
-    #     return DroneCommunication.existing
-
-    def __init__(self, endpoint, proxyOpt=None, proxyPIDOpt=None):
-        # type: (Endpoint, Proxy, int) -> None
-        super(Link, self).__init__(proxyOpt, proxyPIDOpt)
+    def __init__(self, endpoint, proxyOpt=None):
+        # type: (Endpoint, Proxy) -> None
+        super(Link, self).__init__()
         self.endpoint = endpoint
+        self.proxy = proxyOpt
 
         # test if the endpoint really exist, if not there is no point doing the rest of it.
         # vehicle = _retryConnect(self.endpoint.connStr)
@@ -180,42 +202,42 @@ class Link(MayNeedProxy):
         else:
             self.uri = self.endpoint.connStr
 
-        self.vehicle = self._connectWProxy()
+        self.vehicle = None
 
-    @retry(Const.proxyRetries)
-    def _connectWProxy(self):
+    @property
+    def fullName(self):
+        if self.proxy:
+            return self.proxy.fullName
+        else:
+            return "DRONE@" + self.endpoint.connStr
 
-        @retry(Const.connectionRetries)
-        def connect():
-            print("Drone connecting:", self.uri)
-            vehicle = dronekit.connect(
+    @property
+    def isConnect(self):
+        return not (self.vehicle == None)
+
+    @retry(Const.connectionRetries)
+    def start(self):
+        if not self.vehicle:
+            self.logPrint("Drone connecting:", self.uri)
+            self.vehicle = dronekit.connect(
                 self.uri,
                 wait_ready=True
             )
-            return vehicle
-
-        if self.proxy:
-            # type: () -> dronekit.Vehicle
-            try:
-                self._getProxy()
-                return connect()
-            except:
-                # proxy is broken and should be relaunched.
-                self._relaunchProxy()
-                raise
-        else:
-            return connect()
+            return self.vehicle
 
     # this doesn't terminate the proxy so GCS can still see it.
     # almost useless, once interpreter is killed the connection is gone.
-    def disconnect(self):
-        print("Drone disconnecting:", self.uri)
-        self.vehicle.close()
+    def stop(self):
+        if self.vehicle:
+            self.logPrint("Drone disconnecting:", self.uri)
+            self.vehicle.close()
+            self.vehicle = None
 
     # only for unit test.
     # takes no parameter, always move drone to a random point and yield a location after moving for 100m.
     # then mark the location and instruct to attitude hold.
-    def testMove(self):
+    def testMove(self, height=10, dist=30):
+        # type: (float, float) -> tuple[float, float]
         point = randomLocation()
         vehicle = self.vehicle
         # NOTE these are *very inappropriate settings*
@@ -224,26 +246,28 @@ class Link(MayNeedProxy):
         vehicle.parameters['FS_GCS_ENABLE'] = 0
         vehicle.parameters['FS_EKF_THRESH'] = 100
 
-        assureInTheAir(20, vehicle)
-        print("Going to point...")
-        vehicle.simple_goto(point)
+        assureInTheAir(height, vehicle)
 
         northRef = vehicle.location.local_frame.north
         eastRef = vehicle.location.local_frame.east
 
-        print("starting at " + str(northRef) + ":" + str(eastRef))
+        self.logPrint("starting at " + str(northRef) + ":" + str(eastRef))
 
         def getDistSq():
             north = vehicle.location.local_frame.north - northRef
             east = vehicle.location.local_frame.east - eastRef
-            print("current position " + str(north) + ":" + str(east))
+            self.logPrint("current position " + str(north) + ":" + str(east))
             return north * north + east * east
 
         distSq = getDistSq()
-        while distSq <= 10000:  # 20m
+        while distSq <= dist * dist:
+            if vehicle.airspeed <=0.1:
+                self.logPrint("Engaging thruster ...")
+                vehicle.simple_goto(point)
+
             noTimeout(vehicle)
             distSq = getDistSq()
-            print("moving ... " + str(sqrt(distSq)) + "m")
+            self.logPrint("moving ... " + str(sqrt(distSq)) + "m")
             time.sleep(1)
 
         last_location = vehicle.location
@@ -255,3 +279,4 @@ class Link(MayNeedProxy):
 
 def randomLocation():
     return dronekit.LocationGlobalRelative(random.uniform(-90, 90), random.uniform(-180, 180), 20)
+

@@ -1,14 +1,11 @@
 package com.tribbloids.spookystuff.utils
 
 import java.security.PrivilegedAction
-import java.sql.{Date, Timestamp}
 
 import com.tribbloids.spookystuff.caching.ConcurrentMap
 import com.tribbloids.spookystuff.row._
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.DataFrame
-import org.apache.spark.sql.catalyst.ScalaReflection
-import org.apache.spark.sql.types._
 import org.apache.spark.{SparkContext, SparkEnv, TaskContext}
 
 import scala.collection.generic.CanBuildFrom
@@ -70,7 +67,7 @@ object SpookyViews {
     }
     def foreachExecutor[T: ClassTag](f: => T) = mapPerExecutor(f).count()
 
-    def mapPerNode[T: ClassTag](f: => T): RDD[T] = {
+    def mapPerWorker[T: ClassTag](f: => T): RDD[T] = {
       self.parallelize(1 to self.defaultParallelism * 4) //this assumes that default partitioner distribute evenly
         .mapPartitions {
         itr =>
@@ -87,12 +84,24 @@ object SpookyViews {
           }
       }
     }
-    def foreachNode[T: ClassTag](f: => T) = mapPerNode(f).count()
+    def foreachWorker[T: ClassTag](f: => T): Long = mapPerWorker(f).count()
+
+    def mapPerComputer[T: ClassTag](f: => T): Seq[T] = {
+      Seq(f) ++ mapPerWorker(f).collect().toSeq
+    }
+
+    def foreachComputer[T: ClassTag](f: => T): Long = {
+      mapPerComputer(f).size
+    }
   }
 
   implicit class RDDView[T](val self: RDD[T]) {
 
-    def collectPerPartition: Array[List[T]] = self.mapPartitions(v => Iterator(v.toList)).collect()
+    def collectPerPartition: Array[List[T]] = self.mapPartitions(
+      v =>
+        Iterator(v.toList)
+    )
+      .collect()
 
     def multiPassMap[U: ClassTag](f: T => Option[U]): RDD[U] = {
 

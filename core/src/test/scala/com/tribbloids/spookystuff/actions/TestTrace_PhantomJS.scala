@@ -2,7 +2,7 @@ package com.tribbloids.spookystuff.actions
 
 import com.tribbloids.spookystuff.SpookyEnvFixture
 import com.tribbloids.spookystuff.doc.Doc
-import com.tribbloids.spookystuff.session.{CleanWebDriver, DriverSession, Session}
+import com.tribbloids.spookystuff.session.{CleanWebDriver, Session, AbstractSession}
 import com.tribbloids.spookystuff.testutils.TestMixin
 
 class TestTrace_PhantomJS extends SpookyEnvFixture with TestMixin {
@@ -93,7 +93,7 @@ class TestTrace_PhantomJS extends SpookyEnvFixture with TestMixin {
           +> TextInput("box", "something")
           +> Snapshot()
           +> If(
-          {(v: Doc, _: Session) => v.uri startsWith "http" },
+          {(v: Doc, _: AbstractSession) => v.uri startsWith "http" },
           Click("o1")
             +> TextInput("box1", "something1")
             +> Snapshot(),
@@ -112,39 +112,59 @@ class TestTrace_PhantomJS extends SpookyEnvFixture with TestMixin {
     }
   }
 
-//  test("Click.toString should work") {
-//    val action = Click("o1")
-//    val json = action.toString()
-//    println(json)
-//  }
-//
-//  test("Wget.toString should work") {
-//    val action = Wget("http://dummy.com")
-//    val json = action.toString()
-//    println(json)
-//  }
-//
-//  test("Loop.toString should work") {
-//    val action = Loop(
-//      Click("o1")
-//        +> Snapshot()
-//    )
-//    val json = action.toString()
-//    println(json)
-//  }
+  //  test("Click.toString should work") {
+  //    val action = Click("o1")
+  //    val json = action.toString()
+  //    println(json)
+  //  }
+  //
+  //  test("Wget.toString should work") {
+  //    val action = Wget("http://dummy.com")
+  //    val json = action.toString()
+  //    println(json)
+  //  }
+  //
+  //  test("Loop.toString should work") {
+  //    val action = Loop(
+  //      Click("o1")
+  //        +> Snapshot()
+  //    )
+  //    val json = action.toString()
+  //    println(json)
+  //  }
 
   test("Click.toJSON should work") {
     val action = Click("o1")
     val json = action.toMessage.toJSON()
-    println(json)
+    json.shouldBe(
+      """
+        |{
+        |  "className" : "com.tribbloids.spookystuff.actions.Click",
+        |  "params" : {
+        |    "selector" : "o1",
+        |    "delay" : "0 seconds",
+        |    "blocking" : true
+        |  }
+        |}
+      """.stripMargin
+    )
   }
 
-  //TODO: enable these
-//  test("Wget.toJSON should work") {
-//    val action = Wget("http://dummy.com")
-//    val json = action.toJSON
-//    println(json)
-//  }
+  test("Wget.toJSON should work") {
+    val action = Wget("http://dummy.com")
+    val json = action.toMessage.toJSON()
+    json.shouldBe(
+      """
+        |{
+        |  "className" : "com.tribbloids.spookystuff.actions.Wget",
+        |  "params" : {
+        |    "uri" : "http://dummy.com",
+        |    "filter" : { }
+        |  }
+        |}
+      """.stripMargin
+    )
+  }
 
   test("Loop.toJSON should work") {
     val action = Loop(
@@ -152,31 +172,54 @@ class TestTrace_PhantomJS extends SpookyEnvFixture with TestMixin {
         +> Snapshot()
     )
     val json = action.toMessage.toJSON()
-    println(json)
+    json.shouldBe(
+      """
+        |{
+        |  "className" : "com.tribbloids.spookystuff.actions.Loop",
+        |  "params" : {
+        |    "children" : [ {
+        |      "className" : "com.tribbloids.spookystuff.actions.Click",
+        |      "params" : {
+        |        "selector" : "o1",
+        |        "delay" : "0 seconds",
+        |        "blocking" : true
+        |      }
+        |    }, {
+        |      "className" : "com.tribbloids.spookystuff.actions.Snapshot",
+        |      "params" : {
+        |        "filter" : { }
+        |      }
+        |    } ],
+        |    "limit" : 2147483647
+        |  }
+        |}
+      """.stripMargin
+    )
   }
 
-//  test("Action.toJSON should work") {
-//    val actions = Loop(
-//      Click("next")
-//        +> TextInput("box", "something")
-//        +> Snapshot()
-//        +> If(
-//        { (v: Doc, _: Session) => v.uri startsWith "http" },
-//        Click("o1")
-//          +> TextInput("box1", "something1")
-//          +> Snapshot(),
-//        Click("o2")
-//          +> TextInput("box2", "something2")
-//          +> Snapshot()
-//      ))
-//
-//    val jsons = actions.map(
-//      v =>
-//        v.toJSON
-//    )
-//
-//    jsons.foreach(println)
-//  }
+  //TODO: enable these
+  //  test("Action.toJSON should work") {
+  //    val actions = Loop(
+  //      Click("next")
+  //        +> TextInput("box", "something")
+  //        +> Snapshot()
+  //        +> If(
+  //        { (v: Doc, _: Session) => v.uri startsWith "http" },
+  //        Click("o1")
+  //          +> TextInput("box1", "something1")
+  //          +> Snapshot(),
+  //        Click("o2")
+  //          +> TextInput("box2", "something2")
+  //          +> Snapshot()
+  //      ))
+  //
+  //    val jsons = actions.map(
+  //      v =>
+  //        v.toJSON
+  //    )
+  //
+  //    jsons.foreach(println)
+  //  }
 
   //  test("Trace has a Dataset Encoder") {
   //    val trace =(
@@ -208,7 +251,7 @@ class TestTrace_PhantomJS extends SpookyEnvFixture with TestMixin {
   //  }
 
   test("visit and snapshot") {
-    val builder = new DriverSession(spooky)
+    val builder = new Session(spooky)
     Visit("http://www.wikipedia.org")(builder)
     val page = Snapshot()(builder).toList.head.asInstanceOf[Doc]
 

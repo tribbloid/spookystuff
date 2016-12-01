@@ -15,7 +15,7 @@ class AutoCleanableSuite extends SpookyEnvFixture {
   test("Lifespan is serializable") {
 
     sc.foreachExecutor {
-      val lifespan = Lifespan.Task()
+      val lifespan = new Lifespan.Task()
 
       AssertSerializable(lifespan)
     }
@@ -26,13 +26,14 @@ class AutoCleanableSuite extends SpookyEnvFixture {
   test("Lifespan._id should be updated after being shipped to a different executor") {
 
     val rdd = sc.mapPerExecutor {
-      val lifespan = Lifespan.Task()
+      val lifespan = new Lifespan.Task()
       val oldID = lifespan._id.left.get
       lifespan -> oldID
     }
 
     val repartitioned = rdd
-        .partitionBy(new HashPartitioner(4))
+      .partitionBy(new HashPartitioner(4))
+    assert(repartitioned.getNumPartitions == 4)
 
     repartitioned
       .map {
@@ -48,17 +49,36 @@ class AutoCleanableSuite extends SpookyEnvFixture {
       }
   }
 
+  test("Lifespan._id should be updated after being shipped to driver") {
+
+    val rdd = sc.mapPerWorker {
+      val lifespan = new Lifespan.Auto()
+      val oldID = lifespan._id.left.get
+      lifespan -> oldID
+    }
+
+    val collected = rdd.collect()
+
+    collected
+      .foreach {
+        tuple =>
+          val v = tuple._1
+          Predef.assert (v._id.isRight)
+      }
+  }
+
   test("Lifespan._id should be updated after being shipped to a new thread created by a different executor") {
     import scala.concurrent.duration._
 
     val rdd = sc.mapPerExecutor {
-      val lifespan = Lifespan.Task()
+      val lifespan = new Lifespan.Task()
       val oldID = lifespan._id.left.get
       lifespan -> oldID
     }
 
     val repartitioned = rdd
       .partitionBy(new HashPartitioner(4))
+    assert(repartitioned.getNumPartitions == 4)
 
     repartitioned
       .map {

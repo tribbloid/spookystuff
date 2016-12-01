@@ -3,15 +3,15 @@ package com.tribbloids.spookystuff.extractors
 import com.tribbloids.spookystuff.doc._
 import com.tribbloids.spookystuff.extractors.GenExtractor.{AndThen, Leaf, Static, StaticType}
 import com.tribbloids.spookystuff.row.{DataRowSchema, _}
+import com.tribbloids.spookystuff.utils.ScalaType._
 import com.tribbloids.spookystuff.utils.{SpookyUtils, UnreifiedScalaType}
+import org.apache.spark.ml.dsl.utils.{Message, MessageView}
 import org.apache.spark.sql.catalyst.ScalaReflection.universe.TypeTag
 import org.apache.spark.sql.types._
 
 import scala.collection.TraversableOnce
 import scala.collection.immutable.ListMap
 import scala.reflect.ClassTag
-import com.tribbloids.spookystuff.utils.ScalaType._
-import org.apache.spark.ml.dsl.utils.MessageView
 
 object Extractors {
 
@@ -81,8 +81,8 @@ object Literal {
   lazy val NULL: Literal[FR, Null] = erase(null)
 }
 
-//TODO: not quite compatible with product2String, e.g.: /WpostImpl/Literal/Some/http/172.17.0.2/5000/registrar/(unreified)_String/MustHaveTitle/
-case class Literal[T, +R](value: R, dataType: DataType) extends Static[T, R] {
+//TODO: Message JSON conversion discard dataType info, is it wise?
+case class Literal[T, +R](override val value: R, dataType: DataType) extends Static[T, R] with Message {
 
   def valueOpt: Option[R] = Option(value)
 
@@ -92,13 +92,6 @@ case class Literal[T, +R](value: R, dataType: DataType) extends Static[T, R] {
         MessageView(v).toJSON(pretty = false)
     }
     .getOrElse("NULL")
-
-  //  override def toString = valueOpt.map(
-  //    v =>
-  //      //      "'" + v + "':" + dataType //TODO: remove single quotes? Add Type? Use JSON str?
-  //      "'" + v + "'" //TODO: remove single quotes? Add Type? Use JSON str?
-  //  )
-  //    .getOrElse("NULL")
 
   override val self: PartialFunction[T, R] = Unlift({ _: T => valueOpt})
 }
