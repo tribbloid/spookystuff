@@ -3,7 +3,7 @@ package com.tribbloids.spookystuff
 import com.tribbloids.spookystuff.dsl.DriverFactory
 import com.tribbloids.spookystuff.extractors.{Alias, GenExtractor, GenResolved}
 import com.tribbloids.spookystuff.row.{DataRowSchema, SquashedFetchedRow, TypedField}
-import com.tribbloids.spookystuff.session.{Cleanable, CleanWebDriver, Lifespan}
+import com.tribbloids.spookystuff.session.{CleanWebDriver, Cleanable, Lifespan}
 import com.tribbloids.spookystuff.testutils.{RemoteDocsFixture, TestHelper}
 import com.tribbloids.spookystuff.utils.SpookyUtils
 import org.apache.spark.SparkContext

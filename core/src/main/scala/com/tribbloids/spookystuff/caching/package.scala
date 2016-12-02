@@ -48,8 +48,9 @@ package object caching {
   type ConcurrentSet[V] = mutable.Set[V]
 
   //TODO: change to MapAsSet? not sure if its better
-  def ConcurrentSet[V](): mutable.Set[V] = {
-    Collections.synchronizedSet[V](new util.HashSet[V]())
-      .asScala
+  def ConcurrentSet[V](): mutable.SynchronizedSet[V] = {
+//    Collections.synchronizedSet[V](new util.HashSet[V]())
+//      .asScala
+    new mutable.HashSet[V]() with mutable.SynchronizedSet[V]
   }
 }

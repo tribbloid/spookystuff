@@ -15,8 +15,7 @@ def assureInTheAir(targetAlt, vehicle):
     if alt >= targetAlt:
         logging.info("already in the air")
     else:
-        armIfNot(vehicle)
-        blockingTakeoff(targetAlt, vehicle)
+        blockingArmAndTakeoff(targetAlt, vehicle)
     alt = vehicle.location.global_relative_frame.alt + 1
     assert alt >= targetAlt
 
@@ -51,7 +50,7 @@ def blockingArm(vehicle):
         i -= 1
 
 
-def blockingTakeoff(targetAltitude, vehicle):
+def blockingArmAndTakeoff(targetAltitude, vehicle):
 
     # Wait until the vehicle reaches a safe height before
     # processing the goto (otherwise the command after
@@ -60,6 +59,7 @@ def blockingTakeoff(targetAltitude, vehicle):
         alt = vehicle.location.global_relative_frame.alt
 
         if alt <= 0.1:
+            armIfNot(vehicle)
             print("taking off from the ground ... ")
             vehicle.simple_takeoff(targetAltitude)
 

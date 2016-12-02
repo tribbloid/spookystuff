@@ -1,6 +1,6 @@
 package com.tribbloids.spookystuff.mav.telemetry
 
-import com.tribbloids.spookystuff.mav.APMSimFixture
+import com.tribbloids.spookystuff.mav.sim.APMSimFixture
 import com.tribbloids.spookystuff.session.Session
 
 /**
@@ -169,7 +169,10 @@ class LinkSuite extends APMSimFixture {
         }
           .collect()
 
-        assert(links1.toSet == links2.toSet)
+        links1.mkString("\n").shouldBe(
+          links2.mkString("\n"),
+          sort = true
+        )
         assert(spooky.metrics.linkCreated.value == parallelism)
       }
   }

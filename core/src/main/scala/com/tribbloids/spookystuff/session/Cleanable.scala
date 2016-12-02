@@ -9,44 +9,6 @@ import org.slf4j.LoggerFactory
 import scala.collection.mutable
 import scala.language.implicitConversions
 
-sealed trait AbstractCleanable {
-
-  //each can only be cleaned once
-  @volatile var isCleaned: Boolean = false
-
-  def logPrefix = ""
-
-  //synchronized to avoid double cleaning
-  def clean(silent: Boolean = false): Unit = this.synchronized {
-    if (!isCleaned){
-      cleanImpl()
-      isCleaned = true
-      if (!silent) LoggerFactory.getLogger(this.getClass).info(s"$logPrefix Cleaned up")
-    }
-  }
-
-  protected def cleanImpl(): Unit
-
-  def tryClean(silent: Boolean = false): Unit = {
-    try {
-      clean(silent)
-    }
-    catch {
-      case e: NoSuchSessionException => //already cleaned before
-      case e: Throwable =>
-        val ee = e
-        LoggerFactory.getLogger(this.getClass).warn(
-          s"$logPrefix !!! FAIL TO CLEAN UP !!!\n" + ee
-        )
-    }
-    finally {
-      super.finalize()
-    }
-  }
-
-  override protected def finalize() = tryClean(false)
-}
-
 class Lifespan extends IDMixin with Serializable {
 
   {
@@ -144,6 +106,44 @@ object Lifespan {
   }
 }
 
+sealed trait AbstractCleanable {
+
+  //each can only be cleaned once
+  @volatile var isCleaned: Boolean = false
+
+  def logPrefix = ""
+
+  //synchronized to avoid double cleaning
+  def clean(silent: Boolean = false): Unit = this.synchronized {
+    if (!isCleaned){
+      cleanImpl()
+      isCleaned = true
+      if (!silent) LoggerFactory.getLogger(this.getClass).info(s"$logPrefix Cleaned up")
+    }
+  }
+
+  protected def cleanImpl(): Unit
+
+  def tryClean(silent: Boolean = false): Unit = {
+    try {
+      clean(silent)
+    }
+    catch {
+      case e: NoSuchSessionException => //already cleaned before
+      case e: Throwable =>
+        val ee = e
+        LoggerFactory.getLogger(this.getClass).warn(
+          s"$logPrefix !!! FAIL TO CLEAN UP !!!\n" + ee
+        )
+    }
+    finally {
+      super.finalize()
+    }
+  }
+
+  override protected def finalize() = tryClean(false)
+}
+
 /**
   * This is a trait that unifies resource cleanup on both Spark Driver & Executors
   * instances created on Executors are cleaned by Spark TaskCompletionListener
@@ -162,17 +162,24 @@ trait Cleanable extends AbstractCleanable {
     * taskOrThreadOnCreation is incorrect in withDeadline or threads not created by Spark
     * Override this to correct such problem
     */
-  def lifespan: Lifespan = new Lifespan.Immortal()
+  def lifespan: Lifespan = new Lifespan.JVM()
 
   override def logPrefix = {
     s"${lifespan.toString}| ${super.logPrefix}"
   }
 
-  def uncleanedInBatch: ConcurrentSet[Cleanable] = {
-    Cleanable.uncleaned.getOrElseUpdate(
-      lifespan._id,
-      ConcurrentSet()
-    )
+  @transient lazy val uncleanedInBatch: ConcurrentSet[Cleanable] = {
+    // This weird implementation is to mitigate thread-unsafe competition: 2 empty Set being inserted simultaneously
+    Cleanable.uncleaned
+      .getOrElseUpdate(
+        lifespan._id,
+        Cleanable.synchronized{
+          Cleanable.uncleaned.getOrElse(
+            lifespan._id,
+            ConcurrentSet()
+          )
+        }
+      )
   }
 
   override def clean(silent: Boolean): Unit = {
@@ -205,21 +212,9 @@ object Cleanable {
 
     uncleaned
       .keys
-      //      .filter(kCondition)
       .foreach {
-      tt =>
-        cleanSweep(tt, condition)
-    }
+        tt =>
+          cleanSweep(tt, condition)
+      }
   }
-
-  //  def cleanup(tt: Lifespan.ID) = cleanupTyped[AutoCleanable](tt)
-  //  def cleanupNotInTask() = {
-  //    toBeCleaned
-  //      .keys
-  //      .filter(_.isRight)
-  //      .foreach {
-  //        tt =>
-  //          cleanup(tt)
-  //      }
-  //  }
 }

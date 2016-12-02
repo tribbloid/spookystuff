@@ -1,7 +1,7 @@
 package com.tribbloids.spookystuff.mav.telemetry
 
 import com.tribbloids.spookystuff.SpookyContext
-import com.tribbloids.spookystuff.mav.APMSimFixture
+import com.tribbloids.spookystuff.mav.sim.APMSimFixture
 import com.tribbloids.spookystuff.session.Session
 
 /**

@@ -9,7 +9,7 @@ import org.apache.spark.serializer.KryoSerializer
 import org.apache.spark.sql.SQLContext
 import org.apache.spark.{SparkConf, SparkContext, SparkEnv, SparkException}
 
-object TestHelper {
+class TestHelper() {
 
   val numProcessors: Int = Runtime.getRuntime.availableProcessors()
 
@@ -39,7 +39,7 @@ object TestHelper {
 
   def sparkHome = System.getenv("SPARK_HOME")
 
-  val clusterSizeOpt: Option[Int] = {
+  lazy val clusterSizeOpt: Option[Int] = {
     Option(sparkHome).flatMap {
       h =>
         Option(props.getProperty("ClusterSize")).map(_.toInt)
@@ -116,20 +116,20 @@ object TestHelper {
       // Check driver logs for WARN messages.
       // java.lang.IllegalStateException: Shutdown hooks cannot be modified during shutdown
       val logger = org.apache.log4j.Logger.getRootLogger
-//      val oldLevel = logger.getLevel
+      //      val oldLevel = logger.getLevel
       logger.setLevel(org.apache.log4j.Level.toLevel("OFF"))
-//      try {
-//        sc.stop()
-//      }
-//      catch {
-//        case e: Throwable =>
-//          println(e)
-//          e.printStackTrace()
-//      }
-//      finally {
-//        logger.setLevel(oldLevel)
-//      }
-//      println("=============== Test Spark Context has stopped ==============")
+      //      try {
+      //        sc.stop()
+      //      }
+      //      catch {
+      //        case e: Throwable =>
+      //          println(e)
+      //          e.printStackTrace()
+      //      }
+      //      finally {
+      //        logger.setLevel(oldLevel)
+      //      }
+      //      println("=============== Test Spark Context has stopped ==============")
     }
     sc
   }
@@ -189,4 +189,11 @@ object TestHelper {
   //
   //    super.finalize()
   //  }
+}
+
+object TestHelper extends TestHelper()
+
+object SparkRunnerHelper extends TestHelper() {
+
+  override lazy val clusterSizeOpt: Option[Int] = Some(1)
 }

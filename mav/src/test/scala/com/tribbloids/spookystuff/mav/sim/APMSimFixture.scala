@@ -1,7 +1,7 @@
-package com.tribbloids.spookystuff.mav
+package com.tribbloids.spookystuff.mav.sim
 
 import com.tribbloids.spookystuff.SpookyEnvFixture
-import com.tribbloids.spookystuff.mav.sim.APMSim
+import com.tribbloids.spookystuff.mav.MAVConf
 import com.tribbloids.spookystuff.mav.telemetry.Link
 import com.tribbloids.spookystuff.session.{Cleanable, Lifespan, Session}
 import org.apache.spark.rdd.RDD
@@ -41,10 +41,8 @@ abstract class APMSimFixture extends SpookyEnvFixture {
     super.beforeAll()
     val spooky = this.spooky
 
-    val isEmpty = sc.mapPerComputer {
-      APMSim.existing.isEmpty
-    }
-    assert(isEmpty.forall(v => v))
+    val isEmpty = sc.mapPerComputer {APMSim.existing.isEmpty}
+    assert(!isEmpty.contains(false))
 
     val connStrRDD = sc.parallelize(1 to parallelism)
       .map {

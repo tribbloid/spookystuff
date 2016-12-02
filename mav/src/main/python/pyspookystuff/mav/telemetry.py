@@ -116,7 +116,7 @@ class Proxy(Daemon):
 
     @property
     def fullName(self):
-        return self.name + "@" + self.master + " > " + self.outs[0]
+        return self.name + "@" + self.master + ">" + self.outs[0]
 
     def start(self):
         # type: () -> int
@@ -161,7 +161,7 @@ class Proxy(Daemon):
             return False
 
 
-def spawnProxy(aircraft, setup, master, outs, options='--daemon', logfile=sys.stdout):
+def spawnProxy(aircraft, setup, master, outs, options='--daemon --cmd="module unload console"', logfile=sys.stdout):
     # type: (str, bool, str, list, str, str) -> object
 
     import pexpect  # included by transitive dependency
