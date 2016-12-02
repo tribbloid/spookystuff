@@ -33,7 +33,7 @@ class AutoCleanableSuite extends SpookyEnvFixture {
 
     val repartitioned = rdd
       .partitionBy(new HashPartitioner(4))
-    assert(repartitioned.getNumPartitions == 4)
+    assert(repartitioned.partitions.length == 4)
 
     repartitioned
       .map {
@@ -78,7 +78,7 @@ class AutoCleanableSuite extends SpookyEnvFixture {
 
     val repartitioned = rdd
       .partitionBy(new HashPartitioner(4))
-    assert(repartitioned.getNumPartitions == 4)
+    assert(repartitioned.partitions.length == 4)
 
     repartitioned
       .map {
