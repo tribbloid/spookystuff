@@ -113,11 +113,11 @@ case class TaskLocalFactory[T](
 
   override def dispatch(session: AbstractSession): T = {
 
-    val opt = taskLocals.get(session.lifespan._id)
+    val opt = taskLocals.get(session.driverLifespan._id)
 
     def refreshDriver: T = {
       val fresh = delegate.create(session)
-      taskLocals.put(session.lifespan._id, new DriverStatus(fresh))
+      taskLocals.put(session.driverLifespan._id, new DriverStatus(fresh))
       fresh
     }
 
@@ -149,7 +149,7 @@ case class TaskLocalFactory[T](
 
   override def release(session: AbstractSession): Unit = {
 
-    val opt = taskLocals.get(session.lifespan._id)
+    val opt = taskLocals.get(session.driverLifespan._id)
     opt.foreach{
       status =>
         status.isBusy = false
@@ -345,7 +345,7 @@ object DriverFactories {
     override def _createImpl(session: AbstractSession): CleanWebDriver = {
       new CleanWebDriver(
         new PhantomJSDriver(newCap(session.spooky)),
-        session.lifespan
+        session.driverLifespan
       )
     }
   }
@@ -381,7 +381,7 @@ object DriverFactories {
       self.setProxySettings(Proxy.extractFrom(cap))
       val driver = new CleanWebDriver(
         self,
-        session.lifespan
+        session.driverLifespan
       )
 
       driver
@@ -415,7 +415,7 @@ object DriverFactories {
 
     override def _createImpl(session: AbstractSession): PythonDriver = {
       val exeStr = getExecutable(session.spooky)
-      new PythonDriver(exeStr, lifespan = session.lifespan)
+      new PythonDriver(exeStr, lifespan = session.driverLifespan)
     }
   }
 }

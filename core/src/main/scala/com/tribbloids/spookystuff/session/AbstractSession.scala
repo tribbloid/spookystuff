@@ -46,14 +46,13 @@ case object TaskContextRelay extends MessageRelay[TaskContext] {
 
 abstract class AbstractSession(val spooky: SpookyContext) extends Cleanable with NOTSerializable {
 
-  def lifespan: Lifespan // session doesn't necessarily has to be autocleaned, it doesn't occupy any resource and can be more efficiently cleaned by GC
-
   spooky.metrics.sessionInitialized += 1
   val startTime: Long = new Date().getTime
   val backtrace: ArrayBuffer[Action] = ArrayBuffer()
 
   def webDriver: CleanWebDriver
   def pythonDriver: PythonDriver
+  def driverLifespan: Lifespan
 
   val taskOpt: Option[TaskContext] = Option(TaskContext.get())
 
@@ -70,7 +69,7 @@ object NoPythonDriverException extends SpookyException("INTERNAL ERROR: should i
   */
 class Session(
                override val spooky: SpookyContext,
-               override val lifespan: Lifespan = new Lifespan.Auto()
+               val driverLifespan: Lifespan = new Lifespan.Auto()
              ) extends AbstractSession(spooky){
 
   @volatile private var _webDriverOpt: Option[CleanWebDriver] = None

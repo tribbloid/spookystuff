@@ -14,9 +14,16 @@ class ProxyFactoriesSuite extends FunSuite {
     assert(factory.canCreate(link))
   }
 
-  test("NoProxy cannot create link with proxy") {
+  test("NoProxy can create link with proxy that has no GCS out") {
 
     val link = Link(Endpoint(Seq("dummy")), Some(Proxy("dummy", Seq("localhost:80"))))
+    val factory = ProxyFactories.NoProxy
+    assert(factory.canCreate(link))
+  }
+
+  test("NoProxy can create link with proxy that has 1 GCS outs") {
+
+    val link = Link(Endpoint(Seq("dummy")), Some(Proxy("dummy", Seq("localhost:80", "localhost:14550"))))
     val factory = ProxyFactories.NoProxy
     assert(!factory.canCreate(link))
   }

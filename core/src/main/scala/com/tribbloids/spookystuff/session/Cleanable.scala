@@ -108,6 +108,10 @@ object Lifespan {
 
 sealed trait AbstractCleanable {
 
+  final protected val defaultLifespan = new Lifespan.Immortal()
+
+  LoggerFactory.getLogger(this.getClass).info(s"$logPrefix Creating")
+
   //each can only be cleaned once
   @volatile var isCleaned: Boolean = false
 
@@ -153,16 +157,13 @@ sealed trait AbstractCleanable {
   */
 trait Cleanable extends AbstractCleanable {
 
-  {
-    uncleanedInBatch += this
-    LoggerFactory.getLogger(this.getClass).info(s"Creating ${this.getClass.getSimpleName}")
-  }
-
   /**
     * taskOrThreadOnCreation is incorrect in withDeadline or threads not created by Spark
     * Override this to correct such problem
     */
-  def lifespan: Lifespan = new Lifespan.JVM()
+  def lifespan: Lifespan = defaultLifespan
+
+  uncleanedInBatch += this
 
   override def logPrefix = {
     s"${lifespan.toString}| ${super.logPrefix}"

@@ -10,14 +10,17 @@ from pyspookystuff.utils import retry
 
 
 @retry(Const.armRetries)
-def assureInTheAir(targetAlt, vehicle):
-    alt = vehicle.location.global_relative_frame.alt + 1
-    if alt >= targetAlt:
+def assureInTheAir(vehicle, targetAlt, error=None):
+    # type: (dronekit.Vehicle, int) -> None
+    if not error:
+        error = min(targetAlt*0.05, 1)
+
+    altPlusError = vehicle.location.global_relative_frame.alt + error
+
+    if altPlusError >= targetAlt:
         logging.info("already in the air")
     else:
-        blockingArmAndTakeoff(targetAlt, vehicle)
-    alt = vehicle.location.global_relative_frame.alt + 1
-    assert alt >= targetAlt
+        blockingArmAndTakeoff(targetAlt, vehicle, error)
 
 
 def armIfNot(vehicle):
@@ -50,13 +53,14 @@ def blockingArm(vehicle):
         i -= 1
 
 
-def blockingArmAndTakeoff(targetAltitude, vehicle):
+def blockingArmAndTakeoff(targetAltitude, vehicle, error):
 
     # Wait until the vehicle reaches a safe height before
     # processing the goto (otherwise the command after
     # Vehicle.simple_takeoff will execute immediately).
     while True:
         alt = vehicle.location.global_relative_frame.alt
+        altPlusError = alt + error
 
         if alt <= 0.1:
             armIfNot(vehicle)
@@ -66,7 +70,7 @@ def blockingArmAndTakeoff(targetAltitude, vehicle):
         noTimeout(vehicle)
         print(" Altitude: ", alt)
         # Test for altitude just below target, in case of undershoot.
-        if alt >= targetAltitude * 0.95:
+        if altPlusError >= targetAltitude:
             print("Reached target altitude")
             break
 

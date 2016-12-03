@@ -160,8 +160,11 @@ class Proxy(Daemon):
         else:
             return False
 
+defaultOptions = '--daemon --default-modules="link" --cmd="module unload console"'
+# defaultOptions = '--daemon --cmd="module unload console"'
 
-def spawnProxy(aircraft, setup, master, outs, options='--daemon --cmd="module unload console"', logfile=sys.stdout):
+def spawnProxy(aircraft, setup, master, outs,
+               options=defaultOptions, logfile=sys.stdout):
     # type: (str, bool, str, list, str, str) -> object
 
     import pexpect  # included by transitive dependency
@@ -246,7 +249,7 @@ class Link(Daemon):
         vehicle.parameters['FS_GCS_ENABLE'] = 0
         vehicle.parameters['FS_EKF_THRESH'] = 100
 
-        assureInTheAir(height, vehicle)
+        assureInTheAir(vehicle, height)
 
         northRef = vehicle.location.local_frame.north
         eastRef = vehicle.location.local_frame.east

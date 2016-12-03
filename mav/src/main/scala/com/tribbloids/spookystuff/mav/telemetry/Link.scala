@@ -12,7 +12,7 @@ import scala.collection.Map
 case class Endpoint(
                      // remember, one drone can have several telemetry
                      // endpoints: 1 primary and several backups (e.g. text message-based)
-                     // TODO: implement telemetry backup mechanism
+                     // TODO: implement telemetry backup mechanism, can use MAVproxy's multiple master feature
                      connStrs: Seq[String],
                      vehicleTypeOpt: Option[String] = None
                    ) extends CaseInstanceRef {
@@ -55,12 +55,17 @@ object Link extends StaticRef {
                    session: Session
                  ): Link = {
 
+    val driver = session.getOrProvisionPythonDriver
     driverLocal
-      .get(session.getOrProvisionPythonDriver)
+      .get(driver)
       .orElse {
         getOrRefitIdle(candidates, proxyFactory)(Some(session.spooky))
       }
       .getOrElse {
+        LoggerFactory.getLogger(this.getClass).info({
+          if (existing.isEmpty) "No existing telemetry Link, creating new one"
+          else "All existing telemetry Link(s) are busy, creating new one"
+        })
         val neo = create(candidates, proxyFactory)(Some(session.spooky))
         neo
       }
@@ -70,6 +75,7 @@ object Link extends StaticRef {
   def getOrRefitIdle(candidates: Seq[Endpoint], proxyFactory: ProxyFactory)(
     implicit spookyOpt: Option[SpookyContext] = None
   ): Option[Link] = {
+    //TODO: change to collectFirst()?
     val idleEndpointOpt = candidates.find {
       endpoint =>
         idle.get(endpoint.connStr).nonEmpty
@@ -83,7 +89,6 @@ object Link extends StaticRef {
       tuple =>
         val existingLink = tuple._2
         if (!proxyFactory.canCreate(existingLink)) {
-          //recreate
           existingLink.tryClean()
           val endpoint = idleEndpointOpt.get
           val result = fromFactory(endpoint, proxyFactory)

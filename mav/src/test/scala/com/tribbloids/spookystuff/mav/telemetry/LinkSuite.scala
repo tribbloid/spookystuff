@@ -156,6 +156,8 @@ class LinkSuite extends APMSimFixture {
         }
           .collect()
 
+        Thread.sleep(2000) //Waiting for python drivers to terminate
+
         val links2 = simConnStrRDD.map {
           connStr =>
             val endpoint = Endpoint(Seq(connStr))

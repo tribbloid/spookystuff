@@ -34,5 +34,3 @@ case class APMSim private (
     APMSim.existing -= this
   }
 }
-
-
