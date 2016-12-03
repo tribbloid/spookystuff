@@ -111,6 +111,8 @@ class LinkSuite extends APMSimFixture {
         Link.existing.values.map(_._2).foreach {
           _.tryClean()
         }
+        Thread.sleep(2000) //Waiting for python drivers to terminate
+
         val spooky = this.spooky
         val links = simConnStrRDD.map {
           connStr =>
@@ -131,17 +133,19 @@ class LinkSuite extends APMSimFixture {
             result
         }
           .collect()
+        assert(spooky.metrics.linkCreated.value == parallelism)
         links.foreach {
           tuple =>
             assert(tuple._1 == tuple._2)
         }
-        assert(spooky.metrics.linkCreated.value == parallelism)
       }
 
       test(s"With ${factory.getClass.getSimpleName} proxy, idle Link (with no active Python driver) can be reused by anther Python driver") {
         Link.existing.values.map(_._2).foreach {
           _.tryClean()
         }
+        Thread.sleep(2000) //Waiting for python drivers to terminate
+
         val spooky = this.spooky
         val links1 = simConnStrRDD.map {
           connStr =>
@@ -157,6 +161,12 @@ class LinkSuite extends APMSimFixture {
           .collect()
 
         Thread.sleep(2000) //Waiting for python drivers to terminate
+        assert(spooky.metrics.linkCreated.value == parallelism)
+        val livingDrivers = Link.existing.values.toSeq.flatMap {
+          tuple =>
+            tuple._2.driverToBindings.keys
+        }
+        assert(livingDrivers.isEmpty)
 
         val links2 = simConnStrRDD.map {
           connStr =>
@@ -171,11 +181,11 @@ class LinkSuite extends APMSimFixture {
         }
           .collect()
 
+        assert(spooky.metrics.linkCreated.value == parallelism)
         links1.mkString("\n").shouldBe(
           links2.mkString("\n"),
           sort = true
         )
-        assert(spooky.metrics.linkCreated.value == parallelism)
       }
   }
 }
