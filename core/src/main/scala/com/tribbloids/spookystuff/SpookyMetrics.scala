@@ -99,7 +99,7 @@ case class SpookyMetrics(
 //                          proxyCreated: Accumulator[Int] = SpookyMetrics.accumulator(0, "mavProxyCreated"),
 //                          proxyDestroyed: Accumulator[Int] = SpookyMetrics.accumulator(0, "mavProxyCreated"),
 
-                          linkCreated: Accumulator[Int] = SpookyMetrics.accumulator(0, "linkCreated")
-//                          linkDestroyed: Accumulator[Int] = SpookyMetrics.accumulator(0, "mavProxyCreated") //TODO: use it!
+                          linkCreated: Accumulator[Int] = SpookyMetrics.accumulator(0, "linkCreated"),
+                          linkDestroyed: Accumulator[Int] = SpookyMetrics.accumulator(0, "linkDestroyed")
                         ) extends AbstractMetrics {
 }

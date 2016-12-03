@@ -1,13 +1,11 @@
 package com.tribbloids.spookystuff.mav.telemetry
 
 import com.tribbloids.spookystuff.mav.MAVConf
-import com.tribbloids.spookystuff.session.{AbstractSession, Session}
 import com.tribbloids.spookystuff.session.python.{CaseInstanceRef, PythonDriver, StaticRef}
+import com.tribbloids.spookystuff.session.{AbstractSession, LocalCleanable, Session}
 import com.tribbloids.spookystuff.utils.SpookyUtils
 import com.tribbloids.spookystuff.{SpookyContext, caching}
 import org.slf4j.LoggerFactory
-
-import scala.collection.Map
 
 case class Endpoint(
                      // remember, one drone can have several telemetry
@@ -27,17 +25,18 @@ object Link extends StaticRef {
 
   // connStr -> (link, isBusy)
   // only 1 allowed per connStr, how to enforce?
+  // TODO: change to Endpoint -> tuple mapping
   val existing: caching.ConcurrentMap[String, (ProxyFactory, Link)] = caching.ConcurrentMap()
 
   // won't be used to create any link before its status being recovered by ping daemon.
   val blacklist: caching.ConcurrentSet[String] = caching.ConcurrentSet()
 
   //in the air but unused
-  def idle: Map[String, (ProxyFactory, Link)] = existing.filter {
-    tuple =>
-      !blacklist.contains(tuple._1) &&
-        !tuple._2._2.isBusy
-  }
+  //  def idle: Map[String, (ProxyFactory, Link)] = existing.filter {
+  //    tuple =>
+  //      !blacklist.contains(tuple._1) &&
+  //        !tuple._2._2.isBusy
+  //  }
 
   /**
     * create a telemetry link based on the following order:
@@ -62,10 +61,6 @@ object Link extends StaticRef {
         getOrRefitIdle(candidates, proxyFactory)(Some(session.spooky))
       }
       .getOrElse {
-        LoggerFactory.getLogger(this.getClass).info({
-          if (existing.isEmpty) "No existing telemetry Link, creating new one"
-          else "All existing telemetry Link(s) are busy, creating new one"
-        })
         val neo = create(candidates, proxyFactory)(Some(session.spooky))
         neo
       }
@@ -75,28 +70,49 @@ object Link extends StaticRef {
   def getOrRefitIdle(candidates: Seq[Endpoint], proxyFactory: ProxyFactory)(
     implicit spookyOpt: Option[SpookyContext] = None
   ): Option[Link] = {
-    //TODO: change to collectFirst()?
-    val idleEndpointOpt = candidates.find {
-      endpoint =>
-        idle.get(endpoint.connStr).nonEmpty
-    }
-    val idleOpt = idleEndpointOpt.flatMap {
-      endpoint =>
-        idle.get(endpoint.connStr)
+
+    val existingLinks: Seq[Link] = candidates.collect {
+      Function.unlift {
+        endpoint =>
+          existing
+            .get(endpoint.connStr)
+            .map(_._2)
+      }
     }
 
-    idleOpt.map {
-      tuple =>
-        val existingLink = tuple._2
-        if (!proxyFactory.canCreate(existingLink)) {
-          existingLink.tryClean()
-          val endpoint = idleEndpointOpt.get
+    val idleLinkOpt = existingLinks
+      .filterNot {
+        link =>
+          link.isBusy
+      }
+      .headOption
+
+    idleLinkOpt match {
+      case Some(idleLink) =>
+        if (!proxyFactory.canCreate(idleLink)) {
+          idleLink.tryClean()
+          val endpoint = idleLink.endpoint
           val result = fromFactory(endpoint, proxyFactory)
-          result
+          Some(result)
         }
         else {
-          existingLink
+          Some(idleLink)
         }
+      case None =>
+        LoggerFactory.getLogger(this.getClass).info({
+          if (existingLinks.isEmpty) {
+            s"No existing telemetry Link for ${candidates.map(_.connStr).mkString("[", ", ", "]")}"
+          }
+          else {
+            existingLinks.map {
+              link =>
+                assert(link.isBusy)
+                s"${link.endpoint.connStr} is busy"
+            }
+              .mkString("\n")
+          }
+        })
+        None
     }
   }
 
@@ -166,7 +182,7 @@ case class Link private[telemetry](
                                     proxyOpt: Option[Proxy]
                                   )(
                                     implicit val spookyOpt: Option[SpookyContext] = None
-                                  ) extends CaseInstanceRef {
+                                  ) extends CaseInstanceRef with LocalCleanable {
 
   spookyOpt.foreach {
     spooky =>
@@ -237,29 +253,22 @@ case class Link private[telemetry](
   override def cleanImpl(): Unit = {
 
     proxyOpt.foreach(_.tryClean())
-    //    proxyPIDOpt
-    //      .filter(Link.allProxyPIDs.contains)
-    //      .foreach {
-    //        pid =>
-    //          this.scratchDriver {
-    //            driver =>
-    //              Link._Py(driver).killProxy(pid)
-    //          }
-    //          Link.allProxyPIDs -= pid
-    //      }
     super.cleanImpl()
     Link.existing -= this.endpoint.connStr
+    spookyOpt.foreach {
+      spooky =>
+        spooky.metrics.linkDestroyed += 1
+    }
   }
 
   override def bindingCleaningHook(pyBinding: PyBinding): Unit = {
     pyBinding.spookyOpt.foreach {
       spooky =>
-      //        spooky.metrics.linkDestroyed += 1
     }
   }
 
   // return true if its binding's python driver is not dead
   def isBusy: Boolean = {
-    this.bindings.nonEmpty
+    this.driverToBindings.nonEmpty
   }
 }

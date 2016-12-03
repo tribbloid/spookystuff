@@ -11,7 +11,7 @@ from pyspookystuff.utils import retry
 
 @retry(Const.armRetries)
 def assureInTheAir(vehicle, targetAlt, error=None):
-    # type: (dronekit.Vehicle, int) -> None
+    # type: (dronekit.Vehicle, float, float) -> None
     if not error:
         error = min(targetAlt*0.05, 1)
 

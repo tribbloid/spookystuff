@@ -5,7 +5,7 @@ import java.util.concurrent.TimeUnit
 
 import com.tribbloids.spookystuff.actions._
 import com.tribbloids.spookystuff.session.python.PythonDriver
-import com.tribbloids.spookystuff.utils.{NOTSerializable, SpookyUtils}
+import com.tribbloids.spookystuff.utils.SpookyUtils
 import com.tribbloids.spookystuff.{Const, SpookyContext, SpookyException}
 import org.apache.spark.TaskContext
 import org.apache.spark.ml.dsl.utils.{Message, MessageRelay}
@@ -44,7 +44,7 @@ case object TaskContextRelay extends MessageRelay[TaskContext] {
   }
 }
 
-abstract class AbstractSession(val spooky: SpookyContext) extends Cleanable with NOTSerializable {
+abstract class AbstractSession(val spooky: SpookyContext) extends LocalCleanable {
 
   spooky.metrics.sessionInitialized += 1
   val startTime: Long = new Date().getTime
@@ -66,6 +66,7 @@ object NoPythonDriverException extends SpookyException("INTERNAL ERROR: should i
 
 /**
   * currently the only implementation
+  * only manually cleaned at the end of Trace, so it's own lifespan is always immortal. But its drivers are not.
   */
 class Session(
                override val spooky: SpookyContext,

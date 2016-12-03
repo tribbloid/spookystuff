@@ -23,7 +23,6 @@ def tcp_master(instance):
 class APMSim(object):
 
     def __init__(self, iNum):
-        # DO NOT USE! .create() is more stable
         # type: (int) -> None
 
         self.iNum = iNum
@@ -42,6 +41,14 @@ class APMSim(object):
                 sitl.launch(self.args, await_ready=True, restart=True)
                 print("launching APM SITL ... PID =", str(sitl.p.pid))
                 self.setParamAndRelaunch('SYSID_THISMAV', self.iNum + 1)
+
+                @self.withVehicle()
+                def set(vehicle):
+                    # TODO: spookystuff should not set any parameter! move to SITL.
+                    vehicle.parameters['FS_GCS_ENABLE'] = 0
+                    vehicle.parameters['FS_EKF_THRESH'] = 100
+                set()
+
             except:
                 self.close()
                 raise
@@ -57,21 +64,36 @@ class APMSim(object):
         return self._getConnStr()
 
     def setParamAndRelaunch(self, key, value):
+        # type: (str, int) -> None
 
         wd = self.sitl.wd  # path of the eeprom file
-        v = connect(self.connStr, wait_ready=True)
-        v.parameters.set(key, value, wait_ready=True)
-        v.close()
+
+        @self.withVehicle()
+        def set(v):
+            v.parameters.set(key, value, wait_ready=True)
+        set()
+
         self.sitl.stop()
         self.sitl.launch(self.args, await_ready=True, restart=True, wd=wd, use_saved_data=True)
-        v = connect(self.connStr, wait_ready=True)
-        # This fn actually rate limits itself to every 2s.
-        # Just retry with persistence to get our first param stream.
-        v._master.param_fetch_all()
-        v.wait_ready()
-        actualValue = v._params_map[key]
-        assert actualValue == value
-        v.close()
+
+        @self.withVehicle()
+        def get(v):
+            v._master.param_fetch_all()
+            v.wait_ready()
+            actualValue = v._params_map[key]
+            assert actualValue == value
+        get()
+
+    def withVehicle(self):
+        def decorate(fn):
+            def fnM(*args, **kargs):
+                v = connect(self.connStr, wait_ready=True)
+                try:
+                    return fn(v, *args, **kargs)
+                finally:
+                    v.close()
+            return fnM
+        return decorate
 
     def close(self):
         if self.sitl:

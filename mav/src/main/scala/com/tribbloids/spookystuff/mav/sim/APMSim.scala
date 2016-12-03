@@ -1,6 +1,7 @@
 package com.tribbloids.spookystuff.mav.sim
 
 import com.tribbloids.spookystuff.caching
+import com.tribbloids.spookystuff.session.LocalCleanable
 import com.tribbloids.spookystuff.session.python.CaseInstanceRef
 
 /**
@@ -25,7 +26,7 @@ object APMSim {
 
 case class APMSim private (
                             iNum: Int
-                          ) extends CaseInstanceRef {
+                          ) extends CaseInstanceRef with LocalCleanable {
 
   APMSim.existing += this
 

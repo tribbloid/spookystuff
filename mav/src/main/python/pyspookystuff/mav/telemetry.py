@@ -160,7 +160,7 @@ class Proxy(Daemon):
         else:
             return False
 
-defaultOptions = '--daemon --default-modules="link" --cmd="module unload console"'
+defaultOptions = '--state-basedir=temp --daemon --default-modules="link" --cmd="module unload console"'
 # defaultOptions = '--daemon --cmd="module unload console"'
 
 def spawnProxy(aircraft, setup, master, outs,
@@ -246,8 +246,6 @@ class Link(Daemon):
         # NOTE these are *very inappropriate settings*
         # to make on a real vehicle. They are leveraged
         # exclusively for simulation. Take heed!!!
-        vehicle.parameters['FS_GCS_ENABLE'] = 0
-        vehicle.parameters['FS_EKF_THRESH'] = 100
 
         assureInTheAir(vehicle, height)
 

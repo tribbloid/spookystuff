@@ -1,5 +1,6 @@
 package com.tribbloids.spookystuff.session
 
+import com.tribbloids.spookystuff.utils.NOTSerializable
 import org.openqa.selenium.WebDriver
 
 import scala.language.implicitConversions
@@ -12,7 +13,7 @@ object CleanWebDriver {
 class CleanWebDriver(
                       val self: WebDriver,
                       override val lifespan: Lifespan = new Lifespan.Auto()
-                    ) extends Cleanable {
+                    ) extends LocalCleanable {
 
   def cleanImpl(): Unit = {
     self.close()

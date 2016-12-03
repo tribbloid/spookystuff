@@ -2,7 +2,7 @@ package com.tribbloids.spookystuff
 
 import com.tribbloids.spookystuff.rdd.FetchedDataset
 import com.tribbloids.spookystuff.row._
-import com.tribbloids.spookystuff.utils.{HDFSResolver, TreeException, OnDriverOnly, ScalaType}
+import com.tribbloids.spookystuff.utils.{HDFSResolver, TreeException, SerializationMarks, ScalaType}
 import org.apache.hadoop.conf.Configuration
 import org.apache.spark._
 import org.apache.spark.broadcast.Broadcast
@@ -20,7 +20,7 @@ case class SpookyContext private (
                                    @transient sqlContext: SQLContext, //can't be used on executors, TODO: change to Option
                                    @transient private var spookyConf: SpookyConf, //can only be used on executors after broadcast
                                    metrics: SpookyMetrics //accumulators cannot be broadcasted,
-                                 ) extends OnDriverOnly {
+                                 ) extends SerializationMarks {
 
   def this(
             sqlContext: SQLContext,
@@ -65,7 +65,7 @@ case class SpookyContext private (
 
   def resolver = HDFSResolver(hadoopConf)
 
-  def rebroadcast(): Unit = if (isOnDriver) {
+  def rebroadcast(): Unit = if (notShipped) {
     scala.util.Try {
       broadcastedSpookyConf.destroy()
     }

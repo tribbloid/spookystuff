@@ -1,7 +1,7 @@
 package com.tribbloids.spookystuff.session
 
 import com.tribbloids.spookystuff.caching._
-import com.tribbloids.spookystuff.utils.IDMixin
+import com.tribbloids.spookystuff.utils.{IDMixin, NOTSerializable}
 import org.apache.spark.TaskContext
 import org.openqa.selenium.NoSuchSessionException
 import org.slf4j.LoggerFactory
@@ -120,8 +120,8 @@ sealed trait AbstractCleanable {
   //synchronized to avoid double cleaning
   def clean(silent: Boolean = false): Unit = this.synchronized {
     if (!isCleaned){
-      cleanImpl()
       isCleaned = true
+      cleanImpl()
       if (!silent) LoggerFactory.getLogger(this.getClass).info(s"$logPrefix Cleaned up")
     }
   }
@@ -219,3 +219,5 @@ object Cleanable {
       }
   }
 }
+
+trait LocalCleanable extends Cleanable with NOTSerializable

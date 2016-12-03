@@ -1,14 +1,14 @@
 package com.tribbloids.spookystuff.mav.telemetry
 
 import com.tribbloids.spookystuff.mav.sim.APMSimFixture
-import com.tribbloids.spookystuff.session.Session
+import com.tribbloids.spookystuff.session.{Lifespan, Session}
 
 /**
   * Created by peng on 12/11/16.
   */
 class LinkSuite extends APMSimFixture {
 
-//  override def parallelism = 2
+  //  override def parallelism = 2
 
   test("Link.uri should = endpoint.connStr if without proxy") {
     val spooky = this.spooky
@@ -89,7 +89,7 @@ class LinkSuite extends APMSimFixture {
         )
         val firstOut = link.proxyOpt.get.outs.headOption
         val uri = link.Py(session).uri.strOpt
-//        link.tryClean()
+        //        link.tryClean()
         firstOut -> uri
     }
       .collect()
@@ -114,10 +114,10 @@ class LinkSuite extends APMSimFixture {
         Thread.sleep(2000) //Waiting for python drivers to terminate
 
         val spooky = this.spooky
-        val links = simConnStrRDD.map {
+        val linkStrs = simConnStrRDD.map {
           connStr =>
             val endpoint = Endpoint(Seq(connStr))
-            val session = new Session(spooky)
+            val session = new Session(spooky, new Lifespan.Task())
             val link1 = Link.getOrCreate (
               Seq(endpoint),
               factory,
@@ -129,12 +129,13 @@ class LinkSuite extends APMSimFixture {
               factory,
               session
             )
-            val result = link1 -> link2
+            val result = link1.toString -> link2.toString
             result
         }
           .collect()
         assert(spooky.metrics.linkCreated.value == parallelism)
-        links.foreach {
+        assert(spooky.metrics.linkDestroyed.value == 0)
+        linkStrs.foreach {
           tuple =>
             assert(tuple._1 == tuple._2)
         }
@@ -147,43 +148,46 @@ class LinkSuite extends APMSimFixture {
         Thread.sleep(2000) //Waiting for python drivers to terminate
 
         val spooky = this.spooky
-        val links1 = simConnStrRDD.map {
+        val linkStrs1 = simConnStrRDD.map {
           connStr =>
             val endpoint = Endpoint(Seq(connStr))
-            val session = new Session(spooky)
+            val session = new Session(spooky, new Lifespan.Task())
             val link = Link.getOrCreate(
               Seq(endpoint),
               factory,
               session
             )
-            link
+            link.toString
         }
           .collect()
 
         Thread.sleep(2000) //Waiting for python drivers to terminate
         assert(spooky.metrics.linkCreated.value == parallelism)
-        val livingDrivers = Link.existing.values.toSeq.flatMap {
+        assert(spooky.metrics.linkDestroyed.value == 0)
+        assert(Link.existing.size == parallelism)
+        val livingLinkDrivers = Link.existing.values.toSeq.flatMap {
           tuple =>
             tuple._2.driverToBindings.keys
         }
-        assert(livingDrivers.isEmpty)
+        assert(livingLinkDrivers.isEmpty)
 
-        val links2 = simConnStrRDD.map {
+        val linkStrs2 = simConnStrRDD.map {
           connStr =>
             val endpoint = Endpoint(Seq(connStr))
-            val session = new Session(spooky)
+            val session = new Session(spooky, new Lifespan.Task())
             val link = Link.getOrCreate (
               Seq(endpoint),
               factory,
               session
             )
-            link
+            link.toString
         }
           .collect()
 
         assert(spooky.metrics.linkCreated.value == parallelism)
-        links1.mkString("\n").shouldBe(
-          links2.mkString("\n"),
+        assert(spooky.metrics.linkDestroyed.value == 0)
+        linkStrs1.mkString("\n").shouldBe(
+          linkStrs2.mkString("\n"),
           sort = true
         )
       }

@@ -3,7 +3,7 @@ package com.tribbloids.spookystuff.session.python
 import java.io.File
 import java.util.regex.Pattern
 
-import com.tribbloids.spookystuff.session.{Cleanable, Lifespan}
+import com.tribbloids.spookystuff.session.{Lifespan, LocalCleanable}
 import com.tribbloids.spookystuff.utils.SpookyUtils
 import com.tribbloids.spookystuff.{PyException, PyInterpreterException, SpookyContext}
 import org.apache.commons.io.FileUtils
@@ -76,7 +76,7 @@ class PythonDriver(
                       |from __future__ import print_function
                     """.trim.stripMargin,
                     override val lifespan: Lifespan = new Lifespan.Auto()
-                  ) extends PythonProcess(executable) with Cleanable {
+                  ) extends PythonProcess(executable) with LocalCleanable {
 
   /**
     * NOT thread safe

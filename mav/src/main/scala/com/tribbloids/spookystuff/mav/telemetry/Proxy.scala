@@ -1,8 +1,9 @@
 package com.tribbloids.spookystuff.mav.telemetry
 
 import com.tribbloids.spookystuff.caching
-import com.tribbloids.spookystuff.session.Lifespan
+import com.tribbloids.spookystuff.session.{LocalCleanable, Lifespan}
 import com.tribbloids.spookystuff.session.python.{CaseInstanceRef, PythonDriver}
+import com.tribbloids.spookystuff.utils.NOTSerializable
 
 object Proxy {
 
@@ -42,7 +43,7 @@ case class Proxy(
                   master: String,
                   outs: Seq[String], //first member is always used by DK.
                   name: String = "DRONE"
-                ) extends CaseInstanceRef {
+                ) extends CaseInstanceRef with LocalCleanable {
 
   Proxy.existing += this
 

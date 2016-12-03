@@ -89,7 +89,7 @@ abstract sealed class TransientFactory[T] extends DriverFactory[T] {
 
   final def destroy(driver: T, tcOpt: Option[TaskContext]): Unit = {
     driver match {
-      case v: Cleanable => v.tryClean()
+      case v: LocalCleanable => v.tryClean()
       case _ =>
     }
   }

@@ -2,7 +2,7 @@
 package com.tribbloids.spookystuff.session.python
 
 import com.tribbloids.spookystuff.session._
-import com.tribbloids.spookystuff.utils.{NOTSerializable, SpookyUtils}
+import com.tribbloids.spookystuff.utils.SpookyUtils
 import com.tribbloids.spookystuff.{SpookyContext, caching}
 import org.apache.spark.ml.dsl.utils._
 
@@ -38,7 +38,7 @@ trait PyRef extends Cleanable {
     _driverToBindings
   }
 
-  def bindings = driverToBindings.values.toList
+  def bindings = driverToBindings.values
 
   def imports: Seq[String] = Seq(
     "import simplejson as json"
@@ -91,7 +91,8 @@ trait PyRef extends Cleanable {
   }
 
   def scratchDriver[T](fn: PythonDriver => T): T = {
-    bindings.headOption
+    bindings
+      .headOption
       .map {
         binding =>
           fn(binding.driver)
@@ -113,7 +114,7 @@ trait PyRef extends Cleanable {
   case class PyBinding private[PyRef](
                                        driver: PythonDriver,
                                        spookyOpt: Option[SpookyContext]
-                                     ) extends Dynamic with Cleanable with NOTSerializable {
+                                     ) extends Dynamic with LocalCleanable {
 
     {
       dependencies.foreach {
