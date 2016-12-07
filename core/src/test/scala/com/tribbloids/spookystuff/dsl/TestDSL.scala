@@ -5,11 +5,12 @@ import com.tribbloids.spookystuff.actions.Wget
 import com.tribbloids.spookystuff.extractors.Alias
 import com.tribbloids.spookystuff.rdd.FetchedDataset
 import com.tribbloids.spookystuff.row.{DataRow, FetchedRow, Field, SquashedFetchedRow}
+import com.tribbloids.spookystuff.testutils.LocalPathDocsFixture
 
 /**
 *  Created by peng on 12/3/14.
 */
-class TestDSL extends SpookyEnvFixture {
+class TestDSL extends SpookyEnvFixture with LocalPathDocsFixture {
 
   lazy val pages = (
     Wget(HTML_URL) ~ 'page  :: Nil
