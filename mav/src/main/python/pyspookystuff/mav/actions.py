@@ -46,11 +46,6 @@ AUTO
   AUTO_MISSION
 '''
 
-from dronekit import LocationGlobalRelative, LocationGlobal
-
-from pyspookystuff.mav import assureInTheAir
-from pyspookystuff.mav.telemetry import Link, Endpoint
-
 class DummyPyAction(object):
 
     def __init__(self, a):

@@ -8,45 +8,51 @@ import os
 import simplejson as json
 
 import pyspookystuff.mav.sim
+import pyspookystuff.mav.telemetry
+
 aPMSim60043357380016504=pyspookystuff.mav.sim.APMSim(
     iNum=json.loads(
         """
-        4
+        3
         """
     )
 )
 
-# Error interpreting:
+proxy=pyspookystuff.mav.telemetry.Proxy(
+    master="tcp:localhost:5790",
+    name="DRONE",
+    outs = ["udp:localhost:12015", "udp:localhost:14550"]
+)
+
+proxy.start()
+
+
+### History ###
+
 import sys
 sys.path.append('/home/peng/.spookystuff/pythonpath')
-import os
 import simplejson as json
 import pyspookystuff.mav.telemetry
-endpoint3641353257086284776=pyspookystuff.mav.telemetry.Endpoint(connStrs=json.loads(
+endpoint1441794875322176137=pyspookystuff.mav.telemetry.Endpoint(connStrs=json.loads(
     """
-    [ "tcp:localhost:5800" ]
-    """
-))
-proxy8080968396647159412=pyspookystuff.mav.telemetry.Proxy(master=json.loads(
-    """
-    "tcp:localhost:5800"
-    """
-), outs=json.loads(
-    """
-    [ "udp:localhost:12015", "udp:localhost:14550" ]
-    """
-), name=json.loads(
-    """
-    "DRONE@tcp:localhost:5800"
+    [ "udp:localhost:12015" ]
     """
 ))
-link4395604505930358814=pyspookystuff.mav.telemetry.Link(endpoint=endpoint3641353257086284776, proxyOpt=proxy8080968396647159412)
-proxyPID511134141563190063=link4395604505930358814.proxyPID
+link7452322945051954858=pyspookystuff.mav.telemetry.Link(endpoint=endpoint1441794875322176137)
+start6307625525549872737=link7452322945051954858.start()
 
-link4395604505930358814.testMove()
+_temp1798473547518563724=None
+_temp1798473547518563724=start6307625525549872737
+print('*!?execution result!?*')
+if _temp1798473547518563724:
+    print(_temp1798473547518563724)
+else:
+    print('*!?no returned value!?*')
 
-# link4395604505930358814.testMove()
+del(_temp1798473547518563724)
+# Error interpreting:
+link7452322945051954858.testMove()
 
-link4395604505930358814.stop()
+link7452322945051954858.testMove()
 
-# time.sleep(1000)
+link7452322945051954858.testMove()

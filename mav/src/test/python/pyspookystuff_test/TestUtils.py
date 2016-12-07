@@ -3,7 +3,7 @@ from __future__ import print_function
 import os
 from unittest import TestCase
 
-from pyspookystuff.utils import retry
+from pyspookystuff.mav.utils import retry
 
 
 class TestUtils(TestCase):

@@ -6,8 +6,7 @@ import os
 from dronekit import connect
 from dronekit_sitl import SITL
 
-# these are process-local and won't be shared by Spark workers
-from pyspookystuff.utils import retry
+from pyspookystuff.mav.utils import retry
 
 sitl_args = ['--model', 'quad', '--home=-35.363261,149.165230,584,353']
 

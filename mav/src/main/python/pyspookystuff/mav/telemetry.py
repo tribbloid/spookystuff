@@ -9,8 +9,8 @@ import sys
 import time
 from math import sqrt
 
-from pyspookystuff.mav import assureInTheAir, noTimeout, Const
-from pyspookystuff.utils import retry
+from pyspookystuff.mav import assureInTheAir, failOnTimeout, Const, move, utils
+from pyspookystuff.mav.utils import retry
 
 """
 Crash course on MAVProxy:
@@ -241,7 +241,8 @@ class Link(Daemon):
     # then mark the location and instruct to attitude hold.
     def testMove(self, height=10, dist=30):
         # type: (float, float) -> tuple[float, float]
-        point = randomLocation()
+        target = randomLocalLocation()
+
         vehicle = self.vehicle
         # NOTE these are *very inappropriate settings*
         # to make on a real vehicle. They are leveraged
@@ -249,35 +250,42 @@ class Link(Daemon):
 
         assureInTheAir(vehicle, height)
 
-        northRef = vehicle.location.local_frame.north
-        eastRef = vehicle.location.local_frame.east
+        move(vehicle, target)
 
-        self.logPrint("starting at " + str(northRef) + ":" + str(eastRef))
-
-        def getDistSq():
-            north = vehicle.location.local_frame.north - northRef
-            east = vehicle.location.local_frame.east - eastRef
-            self.logPrint("current position " + str(north) + ":" + str(east))
-            return north * north + east * east
-
-        distSq = getDistSq()
-        while distSq <= dist * dist:
-            if vehicle.airspeed <=0.1:
-                self.logPrint("Engaging thruster ...")
-                vehicle.simple_goto(point)
-
-            noTimeout(vehicle)
-            distSq = getDistSq()
-            self.logPrint("moving ... " + str(sqrt(distSq)) + "m")
-            time.sleep(1)
+        # northRef = vehicle.location.local_frame.north
+        # eastRef = vehicle.location.local_frame.east
+        #
+        # self.logPrint("starting at " + str(northRef) + ":" + str(eastRef))
+        #
+        # def getDistSq():
+        #     north = vehicle.location.local_frame.north - northRef
+        #     east = vehicle.location.local_frame.east - eastRef
+        #     self.logPrint("current position " + str(north) + ":" + str(east))
+        #     return north * north + east * east
+        #
+        # distSq = getDistSq()
+        # while distSq <= dist * dist:
+        #     if vehicle.airspeed <= 0.1:
+        #         self.logPrint("Engaging thruster ...")
+        #         vehicle.simple_goto(point)
+        #
+        #     failOnTimeout(vehicle)
+        #     distSq = getDistSq()
+        #     self.logPrint("moving ... " + str(sqrt(distSq)) + "m")
+        #     time.sleep(1)
 
         last_location = vehicle.location
         # TODO change mode: GUIDED -> POSITION_HOLD?
-        vehicle.simple_goto(last_location.global_relative_frame)
+        # move(vehicle, point)
+        # vehicle.simple_goto(last_location.global_relative_frame)
 
         return last_location.local_frame.north, last_location.local_frame.east
 
 
 def randomLocation():
     return dronekit.LocationGlobalRelative(random.uniform(-90, 90), random.uniform(-180, 180), 20)
+
+
+def randomLocalLocation():
+    return dronekit.LocationLocal(random.uniform(-30, 30), random.uniform(-30, 30), -20)
 

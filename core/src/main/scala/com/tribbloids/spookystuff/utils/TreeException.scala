@@ -52,7 +52,7 @@ object TreeException {
   }
 
   class Node(
-              val nodeMessage: String = "[CAUSED BY MULTIPLE EXCEPTIONS]",
+              val nodeMessage: String = "[CAUSED BY ONE OR MORE EXCEPTION(S)]",
               override val causes: Seq[Throwable] = Nil
             ) extends TreeException {
 
