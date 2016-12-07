@@ -162,6 +162,7 @@ trait Cleanable extends AbstractCleanable {
     * Override this to correct such problem
     */
   def lifespan: Lifespan = defaultLifespan
+  lifespan //initialize lazily
 
   uncleanedInBatch += this
 
