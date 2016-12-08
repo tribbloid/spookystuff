@@ -78,7 +78,7 @@ abstract class AbstractFlowSuite extends FunSuite with BeforeAndAfterAll with Te
 
   override def afterAll() {
 
-    TestHelper.clearTempDir()
+    TestHelper.clearTempDirs()
     super.afterAll()
   }
 }

@@ -143,7 +143,7 @@ abstract class SpookyEnvFixture
 
     val spooky = this.spooky
     val pNames = this.pNames
-    TestHelper.clearTempDir()
+    TestHelper.clearTempDirs()
     sc.foreachComputer {
       SpookyEnvFixture.shouldBeClean(spooky, pNames)
     }

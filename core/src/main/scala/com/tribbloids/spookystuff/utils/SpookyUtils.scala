@@ -432,5 +432,8 @@ These special characters are often called "metacharacters".
 
   def randomSuffix = Math.abs(Random.nextLong())
 
-  def randomChars: String = Random.nextString(100)
+  def randomChars: String = {
+    val len = Random.nextInt(128)
+    Random.nextString(len)
+  }
 }

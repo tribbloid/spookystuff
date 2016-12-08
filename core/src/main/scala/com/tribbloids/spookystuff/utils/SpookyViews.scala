@@ -33,7 +33,7 @@ object SpookyViews {
   }
 
   // stageID -> isExecuted
-  val foreachNodeMark: ConcurrentMap[Long, Boolean] = ConcurrentMap()
+  val perWorkerMark: ConcurrentMap[Long, Boolean] = ConcurrentMap()
 
   implicit class SparkContextView(val self: SparkContext) {
 
@@ -72,10 +72,10 @@ object SpookyViews {
         .mapPartitions {
         itr =>
           val stageID = TaskContext.get.stageId()
-          foreachNodeMark.synchronized {
-            val alreadyRun = foreachNodeMark.getOrElseUpdate(stageID, false)
+          perWorkerMark.synchronized {
+            val alreadyRun = perWorkerMark.getOrElseUpdate(stageID, false)
             if (!alreadyRun) {
-              foreachNodeMark.put(stageID, true)
+              perWorkerMark.put(stageID, true)
               Iterator(f)
             }
             else {

@@ -9,6 +9,8 @@ import org.apache.spark.serializer.KryoSerializer
 import org.apache.spark.sql.SQLContext
 import org.apache.spark.{SparkConf, SparkContext, SparkEnv, SparkException}
 
+import scala.util.Try
+
 class TestHelper() {
 
   val numProcessors: Int = Runtime.getRuntime.availableProcessors()
@@ -160,10 +162,17 @@ class TestHelper() {
     }
   }
 
-  def clearTempDir(): Unit = {
-    val file = new File(TEMP_PATH) //TODO: clean up S3 as well
-
-    FileUtils.deleteDirectory(file)
+  //TODO: clean up S3 as well
+  def clearTempDirs(paths: Seq[String] = Seq(TEMP_PATH)): Unit = {
+    paths.foreach {
+      path =>
+        Try {
+          val file = new File(path)
+          SpookyUtils.retry(3) {
+            FileUtils.deleteDirectory(file)
+          }
+        }
+    }
   }
 
   def timer[T](fn: => T): (T, Long) = {
