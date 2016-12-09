@@ -34,7 +34,7 @@ class VehicleFunctions(object):
             error = defaultError(targetAlt)
 
         alt = self.vehicle.location.global_relative_frame.alt
-        if abs(alt - targetAlt) <= error:
+        if (targetAlt - alt) <= error:
             logging.info("already airborne")
         else:
             self.armAndTakeoff(targetAlt, error)
@@ -86,26 +86,31 @@ class VehicleFunctions(object):
                 time.sleep(1)
                 i -= 1
 
-        while True:
-            alt = self.vehicle.location.global_relative_frame.alt
-            altPlusError = alt + error
+        def blockingTakeOff(vehicle):
+            while True:
+                alt = vehicle.location.global_relative_frame.alt
 
-            if alt <= 0.1:
-                armIfNot(self.vehicle)
-                print("taking off from the ground ... ")
-                self.vehicle.simple_takeoff(targetAlt)
+                if alt <= 0.1:
+                    armIfNot(vehicle)
+                    print("taking off from the ground ... ")
+                    vehicle.simple_takeoff(targetAlt)
 
-            # Test for altitude just below target, in case of undershoot.
-            if abs(alt - targetAlt) <= error:
-                print("Reached target altitude")
-                break
-            elif alt > targetAlt:
-                print("Lowering altitude")
-                self.move(LocationGlobalRelative(None, None, targetAlt))
+                # Test for altitude just below target, in case of undershoot.
+                if (targetAlt - alt) <= error:
+                    print("Reached target altitude")
+                    break
 
-            print(" Altitude: ", alt)
-            self.failOnTimeout()
-            time.sleep(1)
+                print(" Altitude: ", alt)
+                self.failOnTimeout()
+                time.sleep(1)
+
+        alt = self.vehicle.location.global_relative_frame.alt
+
+        blockingTakeOff(self.vehicle)
+        if (targetAlt - alt) > error:
+            self.move(LocationGlobalRelative(None, None, targetAlt))
+
+        print(" Altitude: ", alt)
 
     def homeLocation(self):
         if not self.vehicle.home_location:
