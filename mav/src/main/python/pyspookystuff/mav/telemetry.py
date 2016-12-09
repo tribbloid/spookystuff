@@ -7,9 +7,8 @@ import random
 import dronekit
 import sys
 import time
-from math import sqrt
 
-from pyspookystuff.mav import assureInTheAir, failOnTimeout, Const, move, utils
+from pyspookystuff.mav import Const, VehicleFunctions
 from pyspookystuff.mav.utils import retry
 
 """
@@ -187,13 +186,13 @@ def spawnProxy(aircraft, setup, master, outs,
 
 
 # if all endpoints are not available, sleep for x seconds and retry.
-class Link(Daemon):
+class Link(Daemon, VehicleFunctions):
     # process local
     # existing = None  # type: # DroneCommunication
 
     def __init__(self, endpoint, proxyOpt=None):
         # type: (Endpoint, Proxy) -> None
-        super(Link, self).__init__()
+        super(Link, self).__init__(None)
         self.endpoint = endpoint
         self.proxy = proxyOpt
 
@@ -204,8 +203,6 @@ class Link(Daemon):
             self.uri = self.proxy.outs[0]
         else:
             self.uri = self.endpoint.connStr
-
-        self.vehicle = None
 
     @property
     def fullName(self):
@@ -243,14 +240,13 @@ class Link(Daemon):
         # type: (float, float) -> tuple[float, float]
         target = randomLocalLocation()
 
-        vehicle = self.vehicle
         # NOTE these are *very inappropriate settings*
         # to make on a real vehicle. They are leveraged
         # exclusively for simulation. Take heed!!!
 
-        assureInTheAir(vehicle, height)
+        self.assureInTheAir(height)
 
-        move(vehicle, target)
+        self.move(target)
 
         # northRef = vehicle.location.local_frame.north
         # eastRef = vehicle.location.local_frame.east
@@ -274,7 +270,7 @@ class Link(Daemon):
         #     self.logPrint("moving ... " + str(sqrt(distSq)) + "m")
         #     time.sleep(1)
 
-        last_location = vehicle.location
+        last_location = self.vehicle.location
         # TODO change mode: GUIDED -> POSITION_HOLD?
         # move(vehicle, point)
         # vehicle.simple_goto(last_location.global_relative_frame)

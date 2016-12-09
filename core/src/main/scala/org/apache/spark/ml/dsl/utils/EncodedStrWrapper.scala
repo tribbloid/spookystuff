@@ -23,6 +23,7 @@ abstract class EncodedStrWrapper extends IDMixin {
   def map(f: String => String): EncodedStrWrapper
 }
 
+//TODO: this is defective as new Base64Wrapper("AM28t0").asBase64Str = "AM28", same problem may happen to other impl, need to fix properly!
 class Base64Wrapper(val blob: Array[Byte]) extends EncodedStrWrapper {
 
   def this(str: String) {
