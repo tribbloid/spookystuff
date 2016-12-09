@@ -29,11 +29,11 @@ def groundDistance(p1, p2):
 
 # TODO: INACCURATE! not considering curvature
 def airDistance(p1, p2):
-    # type: (LocationGlobal, LocationGlobal) -> float
+    # type: (LocationGlobal, LocationGlobal) -> (float, float, float)
     haversine = groundDistance(p1, p2)
     altDist = p2.alt - p1.alt
     result = sqrt(haversine*haversine + altDist*altDist)
-    return result
+    return result, haversine, abs(altDist)
 
 def retry(maxTrial=3):
 

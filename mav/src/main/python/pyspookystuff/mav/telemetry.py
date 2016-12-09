@@ -246,6 +246,7 @@ class Link(Daemon, VehicleFunctions):
 
         self.assureInTheAir(height)
 
+        self.localOrigin = self.vehicle.location.global_frame
         self.move(target)
 
         # northRef = vehicle.location.local_frame.north
@@ -279,9 +280,9 @@ class Link(Daemon, VehicleFunctions):
 
 
 def randomLocation():
-    return dronekit.LocationGlobalRelative(random.uniform(-90, 90), random.uniform(-180, 180), 20)
+    return dronekit.LocationGlobalRelative(random.uniform(-90, 90), random.uniform(-180, 180), 10)
 
 
 def randomLocalLocation():
-    return dronekit.LocationLocal(random.uniform(-30, 30), random.uniform(-30, 30), -20)
+    return dronekit.LocationLocal(random.uniform(-50, 50), random.uniform(-50, 50), -10)
 

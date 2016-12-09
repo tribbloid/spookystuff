@@ -14,24 +14,24 @@ class MAVException(Exception):
     pass
 
 
-def defaultError(alt=10000.0):
-    error = min(alt*0.05, 1)
+def stdError(dist=10000.0, maxError = 1.0):
+    error = min(dist * 0.05, maxError)
     return error
 
 
-# doesn't offer too much benefit
 class VehicleFunctions(object):
 
     def __init__(self, vehicle):
         # type: (Vehicle) -> None
         self.vehicle = vehicle
+        self.localOrigin = None
 
     # all the following are blocking API
     @retry(Const.armRetries)
     def assureInTheAir(self, targetAlt, error=None):
         # type: (float, float) -> None
         if not error:
-            error = defaultError(targetAlt)
+            error = stdError(targetAlt)
 
         alt = self.vehicle.location.global_relative_frame.alt
         if (targetAlt - alt) <= error:
@@ -100,19 +100,30 @@ class VehicleFunctions(object):
                     print("Reached target altitude")
                     break
 
-                print(" Altitude: ", alt)
+                print("Altitude =", alt)
                 self.failOnTimeout()
                 time.sleep(1)
 
-        alt = self.vehicle.location.global_relative_frame.alt
-
         blockingTakeOff(self.vehicle)
+        alt = self.vehicle.location.global_relative_frame.alt
         if (targetAlt - alt) > error:
             self.move(LocationGlobalRelative(None, None, targetAlt))
 
-        print(" Altitude: ", alt)
+        print("Vehicle is airborne, altitude =", self.vehicle.location.global_relative_frame.alt)
 
+    def getLocalOrigin(self):
+        # type: () -> LocationGlobal
+        if not self.localOrigin:
+            self.localOrigin = self.homeLocation
+        return self.localOrigin
+
+    @property
+    @retry()
     def homeLocation(self):
+        # type: () -> LocationGlobal
+        """
+        slow and may retry several times, use with caution
+        """
         if not self.vehicle.home_location:
             self.vehicle.commands.download()
             self.vehicle.commands.wait_ready()
@@ -132,19 +143,19 @@ class VehicleFunctions(object):
         :param targetLocation: can be LocationGlobal or LocationGlobalRelative.
             if any member==None will copy current vehicle's location into the missing part, feel free to set altitude along
         """
-        # TODO: support LocationLocal!
 
-        effectiveTL = targetLocation
+        effectiveTL = targetLocation # type: Union[LocationGlobal,LocationGlobalRelative]
 
         if isinstance(targetLocation, LocationLocal):
             north = targetLocation.north
             east = targetLocation.east
             down = targetLocation.down
-            hl = self.homeLocation()
+            hl = self.getLocalOrigin()
             effectiveTL = utils.get_location_metres(hl, north, east)
             effectiveTL.alt = hl.alt - down
 
-        def currentLocation():
+        def currentL():
+            # type: () -> Union[LocationGlobal,LocationGlobalRelative]
             if isinstance(targetLocation, LocationGlobal):
                 return self.vehicle.location.global_frame
             elif isinstance(targetLocation, LocationGlobalRelative):
@@ -155,29 +166,34 @@ class VehicleFunctions(object):
                 raise NotImplementedError("Only support Dronekit Locations (Global/GlobalRelative/Local)")
 
         if not effectiveTL.lat:
-            effectiveTL.lat = currentLocation().lat
+            effectiveTL.lat = currentL().lat
         if not effectiveTL.lon:
-            effectiveTL.lon = currentLocation().lon
+            effectiveTL.lon = currentL().lon
         if not effectiveTL.alt:
-            effectiveTL.alt = currentLocation().alt
+            effectiveTL.alt = currentL().alt
 
-        oldDistance = -1.0
+        oldDistance = None
 
         while True: # Stop action if we are no longer in guided mode.
-            distance=utils.airDistance(currentLocation(), effectiveTL)
-            if distance <= defaultError(): # Just below target, in case of undershoot.
-                print("Reached target")
-                break
+            distance, hori, vert=utils.airDistance(currentL(), effectiveTL)
+            print(
+                "Moving ... \tremaining distance:", str(distance) + "m",
+                "\thorizontal:", str(hori) + "m",
+                "\tvertical:", str(vert) + "m"
+            )
 
             if self.vehicle.mode.name=="GUIDED":
                 if oldDistance <= distance:
-                    self.vehicle.simple_goto(effectiveTL)
-                    print("Engaging thruster")
+                    if oldDistance is not None and oldDistance <= stdError(maxError= 2):
+                        print("Reached target")
+                        break
+                    else:
+                        self.vehicle.simple_goto(effectiveTL)
+                        print("Engaging thruster")
                 oldDistance = distance
-                print("Moving ... distance to target: ", str(distance) + "m")
             else:
-                print("relinquished control to manual")
-                oldDistance = -1.0
+                print("Control has been relinquished to manual")
+                oldDistance = None
 
             self.failOnTimeout()
             time.sleep(1)

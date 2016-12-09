@@ -3,6 +3,7 @@ package com.tribbloids.spookystuff.mav.telemetry
 import com.tribbloids.spookystuff.SpookyContext
 import com.tribbloids.spookystuff.mav.sim.APMSimFixture
 import com.tribbloids.spookystuff.session.Session
+import org.apache.spark.rdd.RDD
 
 /**
   * Created by peng on 31/10/16.
@@ -28,7 +29,7 @@ object LinkIT{
       .strOpt
       .get
 
-//    link.Py(session).disconnect()
+    //    link.Py(session).disconnect()
 
     location
   }
@@ -38,7 +39,7 @@ class LinkIT extends APMSimFixture {
 
   lazy val proxyFactory: ProxyFactory = ProxyFactories.NoProxy
 
-//  override def parallelism: Int = 2
+  //  override def parallelism: Int = 2
 
   test("move 1 drone") {
     val spooky = this.spooky
@@ -73,5 +74,29 @@ class LinkIT extends APMSimFixture {
       println
     )
     assert(spooky.metrics.linkCreated.value == parallelism - 1)
+  }
+
+  test("move drones to different directions several times") {
+    val spooky = this.spooky
+    val proxyFactory = this.proxyFactory
+    var locations: Array[String] = null
+
+    for (i <- 1 to 10) {
+      val rdd: RDD[String] = simConnStrRDD.map {
+        connStr =>
+          LinkIT.moveAndGetLocation(spooky, proxyFactory, connStr)
+      }
+
+      locations = {
+        val locations = rdd.collect()
+        assert(locations.distinct.length == locations.length)
+        locations
+      }
+    }
+
+    locations.toSeq.foreach(
+      println
+    )
+    assert(spooky.metrics.linkCreated.value == 0)
   }
 }
