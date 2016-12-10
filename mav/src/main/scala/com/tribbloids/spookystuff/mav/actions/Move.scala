@@ -1,8 +1,6 @@
 package com.tribbloids.spookystuff.mav.actions
 
 import com.tribbloids.spookystuff.extractors.{Extractor, FR, Literal}
-import com.tribbloids.spookystuff.mav.MAVConf
-import com.tribbloids.spookystuff.mav.telemetry.Link
 import com.tribbloids.spookystuff.row.{DataRowSchema, FetchedRow}
 import com.tribbloids.spookystuff.session.Session
 
@@ -17,34 +15,10 @@ case class Move(
                  from: Extractor[WayPoint],
                  to: Extractor[WayPoint],
                  override val delay: Duration = null
-               ) extends DroneInteraction {
-
-  def mavConf(session: Session): MAVConf = {
-    session.spooky.conf.components.get[MAVConf]()
-  }
-
-  def getLink(session: Session) = {
-    val mavConf = this.mavConf(session)
-    Link.getOrCreate(
-      mavConf.endpoints,
-      mavConf.proxyFactory,
-      session
-    )
-  }
+               ) extends MAVInteraction {
 
   lazy val fromV = from.asInstanceOf[Literal[FR, WayPoint]].value
   lazy val toV = to.asInstanceOf[Literal[FR, WayPoint]].value
-
-  override def inbound(session: Session): Unit = {
-    val linkPy = getLink(session).Py(session)
-    linkPy.assureClearanceAltitude(mavConf(session).takeOffAltitude)
-    linkPy.move(fromV)
-  }
-
-  override def conduct(session: Session): Unit = {
-    val linkPy = getLink(session).Py(session)
-    linkPy.move(toV)
-  }
 
   override def doInterpolate(pageRow: FetchedRow, schema: DataRowSchema): Option[this.type] = {
     val fromOpt = from.resolve(schema).lift.apply(pageRow)
@@ -59,5 +33,22 @@ case class Move(
       )
     }
     result.map(_.asInstanceOf[this.type])
+  }
+
+  override def getImpl(session: Session): MAVImpl = MoveImpl(this, session)
+}
+
+case class MoveImpl(
+                     self: Move,
+                     session: Session
+                   ) extends MAVImpl(session) {
+
+  override def inbound(): Unit = {
+    pyLink.assureClearanceAltitude(mavConf.takeOffAltitude)
+    pyLink.move(self.fromV)
+  }
+
+  override def conduct(): Unit = {
+    pyLink.move(self.toV)
   }
 }

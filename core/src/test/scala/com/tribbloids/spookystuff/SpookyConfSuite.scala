@@ -1,37 +1,47 @@
 package com.tribbloids.spookystuff
 
-import com.tribbloids.spookystuff.testutils.TestMixin
-import org.scalatest.FunSuite
+import org.apache.spark.SparkConf
+
+import scala.util.Random
 
 /**
   * Created by peng on 30/09/16.
   */
 class SpookyConfSuite extends SpookyEnvFixture {
 
-  val conf = new SpookyConf()
+  def conf = new SpookyConf()
   test("SpookyConf is serializable") {
 
     assertSerializable(
       conf,
       condition = {
         (v1: SpookyConf, v2: SpookyConf) =>
-          v1.components.mkString("\n").shouldBe (
-            v2.components.mkString("\n")
+          v1.submodules.mkString("\n").shouldBe (
+            v2.submodules.mkString("\n")
           )
       }
     )
   }
 
   test("SpookyConf.import is serializable") {
-    val imported = conf.importFrom(sc)
+    val imported = conf.importFrom(sc.getConf)
     assertSerializable(
       imported,
       condition = {
         (v1: SpookyConf, v2: SpookyConf) =>
-          v1.components.mkString("\n").shouldBe (
-            v2.components.mkString("\n")
+          v1.submodules.mkString("\n").shouldBe (
+            v2.submodules.mkString("\n")
           )
       }
     )
+  }
+
+  test("SpookyConf.import can read from SparkConf before any of its submodule is created") {
+    val sparkConf = new SparkConf()
+    val dummyV = "dummy" + Random.nextLong()
+    sparkConf.set("spooky.dirs.autosave", dummyV)
+    val imported = conf.importFrom(sparkConf)
+    val dirConf = imported.dirConf
+    assert(dirConf.autoSave == dummyV)
   }
 }

@@ -4,7 +4,7 @@ import com.tribbloids.spookystuff.doc.Fetched
 import com.tribbloids.spookystuff.dsl._
 import com.tribbloids.spookystuff.extractors.Literal
 import com.tribbloids.spookystuff.row.{DataRow, FetchedRow, Field}
-import com.tribbloids.spookystuff.session.AbstractSession
+import com.tribbloids.spookystuff.session.Session
 import com.tribbloids.spookystuff.{ActionException, Const, SpookyEnvFixture}
 import org.apache.spark.rdd.RDD
 
@@ -112,14 +112,14 @@ class TestAction extends SpookyEnvFixture {
 
 case object ErrorExport extends Export {
 
-  override def doExeNoName(session: AbstractSession): Seq[Fetched] = {
+  override def doExeNoName(session: Session): Seq[Fetched] = {
     sys.error("error")
   }
 }
 
 case object ErrorWebExport extends Export {
 
-  override def doExeNoName(session: AbstractSession): Seq[Fetched] = {
+  override def doExeNoName(session: Session): Seq[Fetched] = {
     session.webDriver
     sys.error("error")
   }

@@ -3,7 +3,7 @@ package com.tribbloids.spookystuff.actions
 import com.tribbloids.spookystuff.caching.{DFSWebCache, InMemoryWebCache}
 import com.tribbloids.spookystuff.doc.{Doc, Fetched}
 import com.tribbloids.spookystuff.row.{DataRowSchema, FetchedRow}
-import com.tribbloids.spookystuff.session.{Session, AbstractSession}
+import com.tribbloids.spookystuff.session.Session
 import com.tribbloids.spookystuff.utils.{DetailedProduct, SpookyUtils}
 import com.tribbloids.spookystuff.{Const, QueryException, SpookyContext}
 import org.apache.spark.sql.catalyst.trees.TreeNode
@@ -58,7 +58,7 @@ abstract class ActionLike extends DetailedProduct with Serializable {
   //the minimal equivalent action that can be put into backtrace
   def trunk: Option[this.type]
 
-  def apply(session: AbstractSession): Seq[Fetched]
+  def apply(session: Session): Seq[Fetched]
 
   def fetch(spooky: SpookyContext): Seq[Fetched] = {
 

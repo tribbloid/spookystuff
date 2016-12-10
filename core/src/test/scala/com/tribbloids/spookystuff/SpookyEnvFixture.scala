@@ -169,13 +169,13 @@ abstract class SpookyEnvFixture
       autoSave = true,
       cacheWrite = false,
       cacheRead = false,
-      components = envComponents
+      submodules = envComponents
     )
     spooky.metrics.zero()
   }
 
-  def envComponents: Components[AbstractConf] = {
-    Components(
+  def envComponents: Submodules[AbstractConf] = {
+    Submodules(
       new DirConf(
         root = SpookyUtils.\\\(TestHelper.TEMP_PATH, "spooky-unit")
       )

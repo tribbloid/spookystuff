@@ -35,8 +35,8 @@ class SpookyContextSuite extends SpookyEnvFixture with LocalPathDocsFixture{
     val rdd2 = spooky.create(Seq("dummy"))
     assert(!(rdd2.spooky eq spooky))
 
-    val conf1 = spooky.conf.dirs.prettyJSON
-    val conf2 = rdd2.spooky.conf.dirs.prettyJSON
+    val conf1 = spooky.conf.dirConf.prettyJSON
+    val conf2 = rdd2.spooky.conf.dirConf.prettyJSON
     assert(conf1 == conf2)
   }
 
@@ -44,14 +44,14 @@ class SpookyContextSuite extends SpookyEnvFixture with LocalPathDocsFixture{
 
     val spooky = this.spooky
     spooky.conf.shareMetrics = false
-    spooky.conf.dirs.root = "s3://root"
-    spooky.conf.dirs.cache = "hdfs://dummy"
+    spooky.conf.dirConf.root = "s3://root"
+    spooky.conf.dirConf.cache = "hdfs://dummy"
 
     val rdd2 = spooky.create(Seq("dummy"))
     assert(!(rdd2.spooky eq spooky))
 
-    val conf1 = spooky.conf.dirs.prettyJSON
-    val conf2 = rdd2.spooky.conf.dirs.prettyJSON
+    val conf1 = spooky.conf.dirConf.prettyJSON
+    val conf2 = rdd2.spooky.conf.dirConf.prettyJSON
     assert(conf1 == conf2)
   }
 
@@ -138,7 +138,7 @@ class SpookyContextSuite extends SpookyEnvFixture with LocalPathDocsFixture{
 
     val context = new SpookyContext(this.sql)
 
-    val dirs = context.conf.dirs
+    val dirs = context.conf.dirConf
     val json = dirs.prettyJSON
     println(json)
 
@@ -151,7 +151,7 @@ class SpookyContextSuite extends SpookyEnvFixture with LocalPathDocsFixture{
     val conf: SpookyConf = new SpookyConf(shareMetrics = false)
     val context = new SpookyContext(this.sql, conf)
 
-    val dirs = context.conf.dirs
+    val dirs = context.conf.dirConf
     val json = dirs.prettyJSON
     println(json)
 
@@ -164,7 +164,7 @@ class SpookyContextSuite extends SpookyEnvFixture with LocalPathDocsFixture{
     val conf: SpookyConf = new SpookyConf(shareMetrics = true)
     val context = new SpookyContext(this.sql, conf)
 
-    val dirs = context.conf.dirs
+    val dirs = context.conf.dirConf
     val json = dirs.prettyJSON
     println(json)
 

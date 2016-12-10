@@ -12,7 +12,7 @@ import com.tribbloids.spookystuff.dsl.DocFilters
 import com.tribbloids.spookystuff.extractors.{Extractor, FR, Literal}
 import com.tribbloids.spookystuff.http._
 import com.tribbloids.spookystuff.row.{DataRowSchema, FetchedRow}
-import com.tribbloids.spookystuff.session.{WebProxySetting, AbstractSession}
+import com.tribbloids.spookystuff.session.{WebProxySetting, Session}
 import com.tribbloids.spookystuff.utils.{HDFSResolver, SpookyUtils}
 import org.apache.commons.io.IOUtils
 import org.apache.hadoop.fs.{FileStatus, FileSystem, Path}
@@ -44,7 +44,7 @@ abstract class Export extends Named {
 
   final override def trunk = None //have not impact to driver
 
-  final def doExe(session: AbstractSession): Seq[Fetched] = {
+  final def doExe(session: Session): Seq[Fetched] = {
     val results = doExeNoName(session)
     results.map{
       case doc: Doc =>
@@ -63,7 +63,7 @@ abstract class Export extends Named {
     }
   }
 
-  def doExeNoName(session: AbstractSession): Seq[Fetched]
+  def doExeNoName(session: Session): Seq[Fetched]
 }
 
 
@@ -119,7 +119,7 @@ case class Snapshot(
                    ) extends Export with WaybackSupport{
 
   // all other fields are empty
-  override def doExeNoName(pb: AbstractSession): Seq[Doc] = {
+  override def doExeNoName(pb: Session): Seq[Doc] = {
 
     //    import scala.collection.JavaConversions._
 
@@ -161,7 +161,7 @@ case class Screenshot(
                        override val filter: DocFilter = Const.defaultImageFilter
                      ) extends Export with WaybackSupport {
 
-  override def doExeNoName(pb: AbstractSession): Seq[Doc] = {
+  override def doExeNoName(pb: Session): Seq[Doc] = {
 
     val content = pb.webDriver.self match {
       case ts: TakesScreenshot => ts.getScreenshotAs(OutputType.BYTES)
@@ -272,7 +272,7 @@ abstract class HttpMethod(
     //    }
   }
 
-  def getHttpClient(session: AbstractSession): (CloseableHttpClient, HttpClientContext) = {
+  def getHttpClient(session: Session): (CloseableHttpClient, HttpClientContext) = {
     val proxy = session.spooky.conf.proxy()
     val timeoutMs = this.timeout(session).toMillis.toInt
 
@@ -343,7 +343,7 @@ abstract class HttpMethod(
     context
   }
 
-  def getURLConn(uri: URI, session: AbstractSession): URLConnection = {
+  def getURLConn(uri: URI, session: Session): URLConnection = {
     val timeoutMs = this.timeout(session).toMillis.toInt
 
     val uc = uri.toURL.openConnection()
@@ -369,7 +369,7 @@ case class Wget(
                  override val filter: DocFilter = Const.defaultDocumentFilter
                ) extends HttpMethod(uri) {
 
-  override def doExeNoName(session: AbstractSession): Seq[Fetched] = {
+  override def doExeNoName(session: Session): Seq[Fetched] = {
 
     uriOption match {
       case None => Nil
@@ -417,7 +417,7 @@ case class Wget(
   //    result
   //  }
 
-  def readHDFS(uri: URI, session: AbstractSession): Fetched = {
+  def readHDFS(uri: URI, session: Session): Fetched = {
     val spooky = session.spooky
     val path = new Path(uri.toString)
 
@@ -495,7 +495,7 @@ case class Wget(
   }
 
   //not cacheable
-  def readHDFSFile(path: Path, session: AbstractSession): Fetched = {
+  def readHDFSFile(path: Path, session: Session): Fetched = {
     val content =
       HDFSResolver(session.spooky.hadoopConf).input(path.toString) {
         fis =>
@@ -513,7 +513,7 @@ case class Wget(
     result
   }
 
-  def getFtp(uri: URI, session: AbstractSession): Fetched = {
+  def getFtp(uri: URI, session: Session): Fetched = {
 
     val uc: URLConnection = getURLConn(uri, session)
     val stream = uc.getInputStream
@@ -536,7 +536,7 @@ case class Wget(
     }
   }
 
-  def getHttp(uri: URI, session: AbstractSession): Fetched = {
+  def getHttp(uri: URI, session: Session): Fetched = {
 
     val (httpClient: CloseableHttpClient, context: HttpClientContext) = getHttpClient(session)
 
@@ -601,7 +601,7 @@ case class WpostImpl private[actions](
   }
 
   // not cacheable
-  override def doExeNoName(session: AbstractSession): Seq[Fetched] = {
+  override def doExeNoName(session: Session): Seq[Fetched] = {
 
     uriOption match {
       case None => Nil
@@ -618,7 +618,7 @@ case class WpostImpl private[actions](
     }
   }
 
-  def postHttp(uri: URI, session: AbstractSession, entity: HttpEntity): Fetched = {
+  def postHttp(uri: URI, session: Session, entity: HttpEntity): Fetched = {
 
     val (httpClient: CloseableHttpClient, context: HttpClientContext) = getHttpClient(session)
 
@@ -639,7 +639,7 @@ case class WpostImpl private[actions](
     httpInvoke(httpClient, context, request, cacheable = false)
   }
 
-  def writeHDFS(uri: URI, session: AbstractSession, entity: HttpEntity, overwrite: Boolean = true): Fetched = {
+  def writeHDFS(uri: URI, session: Session, entity: HttpEntity, overwrite: Boolean = true): Fetched = {
     val path = new Path(uri.toString)
 
     val result: Fetched = this.writeHDFSFile(path, session, entity, overwrite)
@@ -647,7 +647,7 @@ case class WpostImpl private[actions](
   }
 
   //not cacheable
-  def writeHDFSFile(path: Path, session: AbstractSession, entity: HttpEntity, overwrite: Boolean = true): Fetched = {
+  def writeHDFSFile(path: Path, session: Session, entity: HttpEntity, overwrite: Boolean = true): Fetched = {
     val size = HDFSResolver(session.spooky.hadoopConf)
       .output(path.toString, overwrite) {
         fos =>
@@ -662,7 +662,7 @@ case class WpostImpl private[actions](
     result
   }
 
-  def uploadFtp(uri: URI, session: AbstractSession, entity: HttpEntity): Fetched = {
+  def uploadFtp(uri: URI, session: Session, entity: HttpEntity): Fetched = {
 
     val uc: URLConnection = getURLConn(uri, session)
     val stream = uc.getOutputStream

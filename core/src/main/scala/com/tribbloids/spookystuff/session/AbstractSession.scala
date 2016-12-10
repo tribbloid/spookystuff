@@ -14,7 +14,7 @@ import org.slf4j.LoggerFactory
 
 import scala.collection.mutable.ArrayBuffer
 
-case object SessionRelay extends MessageRelay[AbstractSession] {
+case object SessionRelay extends MessageRelay[Session] {
 
   case class M(
                 startTime: Long,
@@ -22,7 +22,7 @@ case object SessionRelay extends MessageRelay[AbstractSession] {
                 TaskContext: Option[TaskContextRelay.M]
               ) extends Message
 
-  override def toMessage(v: AbstractSession): M = {
+  override def toMessage(v: Session): M = {
     M(
       v.startTime,
       v.backtrace,
@@ -44,7 +44,7 @@ case object TaskContextRelay extends MessageRelay[TaskContext] {
   }
 }
 
-abstract class AbstractSession(val spooky: SpookyContext) extends LocalCleanable {
+sealed abstract class AbstractSession(val spooky: SpookyContext) extends LocalCleanable {
 
   spooky.metrics.sessionInitialized += 1
   val startTime: Long = new Date().getTime
@@ -65,7 +65,7 @@ object NoWebDriverException extends SpookyException("INTERNAL ERROR: should init
 object NoPythonDriverException extends SpookyException("INTERNAL ERROR: should initialize driver automatically")
 
 /**
-  * currently the only implementation
+  * the only implementation
   * only manually cleaned at the end of Trace, so it's own lifespan is always immortal. But its drivers are not.
   */
 class Session(

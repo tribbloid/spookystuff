@@ -5,7 +5,7 @@ import com.tribbloids.spookystuff.doc.{Doc, Fetched, NoDoc}
 import com.tribbloids.spookystuff.extractors.{Extractor, Literal}
 import com.tribbloids.spookystuff.http.HttpUtils
 import com.tribbloids.spookystuff.row.{DataRowSchema, FetchedRow}
-import com.tribbloids.spookystuff.session.AbstractSession
+import com.tribbloids.spookystuff.session.Session
 import com.tribbloids.spookystuff.utils.SpookyUtils.retry
 import org.slf4j.LoggerFactory
 
@@ -41,7 +41,7 @@ abstract class Block(override val children: Trace) extends Actions(children) wit
 
   def cacheEmptyOutput: Boolean = true
 
-  final override def doExe(session: AbstractSession): Seq[Fetched] = {
+  final override def doExe(session: Session): Seq[Fetched] = {
 
     val doc = this.doExeNoUID(session)
 
@@ -69,7 +69,7 @@ abstract class Block(override val children: Trace) extends Actions(children) wit
     }
   }
 
-  def doExeNoUID(session: AbstractSession): Seq[Fetched]
+  def doExeNoUID(session: Session): Seq[Fetched]
 }
 
 object ClusterRetry {
@@ -95,7 +95,7 @@ final case class ClusterRetry(
 
   override def trunk = Some(ClusterRetry(this.trunkSeq)(retries, cacheEmptyOutput).asInstanceOf[this.type])
 
-  override def doExeNoUID(session: AbstractSession): Seq[Fetched] = {
+  override def doExeNoUID(session: Session): Seq[Fetched] = {
 
     val pages = new ArrayBuffer[Fetched]()
 
@@ -154,7 +154,7 @@ final case class LocalRetry(
 
   override def trunk = Some(LocalRetry(this.trunkSeq)(retries, cacheEmptyOutput).asInstanceOf[this.type])
 
-  override def doExeNoUID(session: AbstractSession): Seq[Fetched] = {
+  override def doExeNoUID(session: Session): Seq[Fetched] = {
 
     val pages = new ArrayBuffer[Fetched]()
 
@@ -214,7 +214,7 @@ final case class Loop(
 
   override def trunk = Some(this.copy(children = this.trunkSeq).asInstanceOf[this.type])
 
-  override def doExeNoUID(session: AbstractSession): Seq[Fetched] = {
+  override def doExeNoUID(session: Session): Seq[Fetched] = {
 
     val pages = new ArrayBuffer[Fetched]()
 
@@ -301,7 +301,7 @@ final case class If(
 
   override def trunk = Some(this.copy(ifTrue = ifTrue.flatMap(_.trunk), ifFalse = ifFalse.flatMap(_.trunk)).asInstanceOf[this.type])
 
-  override def doExeNoUID(session: AbstractSession): Seq[Fetched] = {
+  override def doExeNoUID(session: Session): Seq[Fetched] = {
 
     val current = QuickSnapshot.exe(session).head.asInstanceOf[Doc]
 
@@ -331,7 +331,7 @@ final case class If(
 @SerialVersionUID(8623719358582480968L)
 case class OAuthV2(self: Wget) extends Block(List(self)) with Driverless {
 
-  def rewrite(session: AbstractSession): Wget = {
+  def rewrite(session: Session): Wget = {
 
     val keys = session.spooky.conf.oAuthKeysFactory.apply()
     if (keys == null) {
@@ -363,7 +363,7 @@ case class OAuthV2(self: Wget) extends Block(List(self)) with Driverless {
       v => this.copy(self = v.asInstanceOf[Wget]).asInstanceOf[this.type]
     }
 
-  override def doExeNoUID(session: AbstractSession): Seq[Fetched] = {
+  override def doExeNoUID(session: Session): Seq[Fetched] = {
     val effectiveWget = this.rewrite(session)
 
     effectiveWget
@@ -375,7 +375,7 @@ final case class AndThen(self: Action, f: Seq[Fetched] => Seq[Fetched]) extends 
 
   override def trunk = Some(this)
 
-  override def doExeNoUID(session: AbstractSession): Seq[Fetched] = {
+  override def doExeNoUID(session: Session): Seq[Fetched] = {
     f(self.exe(session))
   }
 }

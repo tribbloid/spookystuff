@@ -1,14 +1,14 @@
 package com.tribbloids.spookystuff.mav.actions
 
-import com.tribbloids.spookystuff.SpookyEnvFixture
 import com.tribbloids.spookystuff.extractors.Literal
+import com.tribbloids.spookystuff.mav.sim.APMSimFixture
 
 /**
   * Created by peng on 26/08/16.
   */
-class MoveSuite extends SpookyEnvFixture {
+class MoveSuite extends APMSimFixture {
 
-  test("Move should support toJson") {
+  test("Move.toJson should work") {
     val wp1 = Global(0,0,0)
     val wp2 = Global(20, 30, 50)
 
@@ -16,4 +16,6 @@ class MoveSuite extends SpookyEnvFixture {
 
     println(move.toMessage.prettyJSON())
   }
+
+//  test("Move can ")
 }

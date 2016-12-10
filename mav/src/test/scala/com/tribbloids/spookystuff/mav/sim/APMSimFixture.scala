@@ -32,7 +32,7 @@ abstract class APMSimFixture extends SpookyEnvFixture {
 
   override def setUp(): Unit = {
     super.setUp()
-    this.spooky.conf.components.get[MAVConf]().connectionRetries = 1
+    this.spooky.conf.submodules.get[MAVConf]().connectionRetries = 1
   }
 
   override def beforeAll(): Unit = {

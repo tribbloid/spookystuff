@@ -10,7 +10,7 @@ import org.apache.spark.ml.dsl.ReflectionUtils
 import org.apache.spark.ml.dsl.utils.Message
 import org.apache.spark.rdd.RDD
 import org.apache.spark.storage.StorageLevel
-import org.apache.spark.{Partitioner, SparkConf, SparkContext}
+import org.apache.spark.{Partitioner, SparkConf}
 
 import scala.collection.mutable
 import scala.concurrent.duration.Duration.Infinite
@@ -18,13 +18,13 @@ import scala.concurrent.duration._
 import scala.reflect.ClassTag
 import scala.util.Try
 
-object Components {
+object Submodules {
 
   def apply[U](
                 vs: U*
-              ): Components[U] = {
+              ): Submodules[U] = {
 
-    Components[U](
+    Submodules[U](
       mutable.Map(
         vs.map {
           v =>
@@ -35,7 +35,7 @@ object Components {
   }
 }
 
-case class Components[U] private(
+case class Submodules[U] private(
                                   self: mutable.Map[String, U]
                                 ) extends Iterable[U] {
 
@@ -48,8 +48,8 @@ case class Components[U] private(
         className,
         {
           val clazz = Class.forName(className)
-          val neo = ReflectionUtils.invokeStatic(clazz, "default")
-          val result = fn(neo).asInstanceOf[U]
+          val neo = ReflectionUtils.invokeStatic(clazz, "default") //TODO: change to apply?
+        val result = fn(neo).asInstanceOf[U]
           self.put(className, result)
           result
         }
@@ -68,17 +68,18 @@ case class Components[U] private(
 
   def transform(f: U => U) = {
 
-    Components(self.values.map(f).toSeq: _*)
+    Submodules(self.values.map(f).toSeq: _*)
   }
 
   override def iterator: Iterator[U] = self.valuesIterator
 }
 
+/**
+  * all subclasses have to define default() in their respective companion object.
+  */
 trait AbstractConf extends Message {
 
-  def components: Components[AbstractConf] = Components()
-
-  def importFrom(sparkContext: SparkContext): this.type = importFrom(sparkContext.getConf)
+  val submodules: Submodules[AbstractConf] = Submodules()
 
   // TODO: use reflection to automate
   def importFrom(implicit sparkConf: SparkConf): this.type
@@ -102,6 +103,7 @@ object SpookyConf {
                             property: String,
                             default: String = null
                           )(implicit conf: SparkConf = null): String = {
+
     val env = property.replace('.','_').toUpperCase
 
     Option(conf)
@@ -134,7 +136,7 @@ object SpookyConf {
   */
 //TODO: is var in serialized closure unstable for Spark production environment? consider changing to ConcurrentHashMap
 class SpookyConf (
-                   override val components: Components[AbstractConf] = Components(),
+                   override val submodules: Submodules[AbstractConf] = Submodules(),
 
                    var shareMetrics: Boolean = false, //TODO: not necessary
 
@@ -155,7 +157,7 @@ class SpookyConf (
                    var remote: Boolean = true, //if disabled won't use remote client at all
                    var autoSave: Boolean = true,
                    var cacheWrite: Boolean = true,
-                   var cacheRead: Boolean = true, //TODO: this enable both in-memory and DFS cache, should allow more control
+                   var cacheRead: Boolean = true, //TODO: this enable both in-memory and DFS cache, should allow more refined control
                    var errorDump: Boolean = true,
                    var errorScreenshot: Boolean = true,
 
@@ -189,22 +191,24 @@ class SpookyConf (
                    var defaultStorageLevel: StorageLevel = StorageLevel.MEMORY_ONLY
                  ) extends AbstractConf with Serializable {
 
-  def dirs: DirConf = components.get[DirConf]()
+  def dirConf: DirConf = submodules.get[DirConf]()
 
   def importFrom(implicit sparkConf: SparkConf): this.type = {
 
-    //TODO: eliminate hardcoding! Use reflection to convert property names into class names
+    //TODO: eliminate hardcoding! we have 2 options:
+    // 1. Use reflection: property name -> package name -> submodule class name
+    // 2. lazily loaded by constructor of Actions that use such submodule.
     Seq(
       classOf[DirConf].getCanonicalName,
       "com.tribbloids.spookystuff.mav.MavConf"
     )
       .foreach {
         name =>
-          this.components.tryGetByName(name)
+          this.submodules.tryGetByName(name)
       }
 
     new SpookyConf(
-      this.components.transform(_.importFrom(sparkConf)),
+      this.submodules.transform(_.importFrom(sparkConf)),
 
       this.shareMetrics,
 

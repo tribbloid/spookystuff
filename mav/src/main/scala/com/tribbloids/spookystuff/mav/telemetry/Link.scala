@@ -2,7 +2,7 @@ package com.tribbloids.spookystuff.mav.telemetry
 
 import com.tribbloids.spookystuff.mav.MAVConf
 import com.tribbloids.spookystuff.session.python.{CaseInstanceRef, PythonDriver, StaticRef}
-import com.tribbloids.spookystuff.session.{AbstractSession, LocalCleanable, Session}
+import com.tribbloids.spookystuff.session.{LocalCleanable, Session}
 import com.tribbloids.spookystuff.utils.SpookyUtils
 import com.tribbloids.spookystuff.{SpookyContext, caching}
 import org.slf4j.LoggerFactory
@@ -190,7 +190,7 @@ case class Link private[telemetry](
   }
 
   // TODO: why synchronized? remove it if too slow
-  override def Py(session: AbstractSession): PyBinding = this.synchronized {
+  override def Py(session: Session): PyBinding = this.synchronized {
     val py = super.Py(session)
     try {
       assert(
@@ -213,7 +213,7 @@ case class Link private[telemetry](
     }
   }
 
-  case class SessionView(session: AbstractSession) {
+  case class SessionView(session: Session) {
 
     val binding = Py(session)
 
@@ -223,7 +223,7 @@ case class Link private[telemetry](
 
       try {
         var needRestart = false
-        val retries = session.spooky.conf.components.get[MAVConf]().connectionRetries
+        val retries = session.spooky.conf.submodules.get[MAVConf]().connectionRetries
         SpookyUtils.retry(retries) {
           proxyOpt.foreach {
             proxy =>

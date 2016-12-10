@@ -26,7 +26,7 @@ case class SpookyContext private (
             sqlContext: SQLContext,
             conf: SpookyConf = new SpookyConf()
           ) {
-    this(sqlContext, conf.importFrom(sqlContext.sparkContext), new SpookyMetrics())
+    this(sqlContext, conf.importFrom(sqlContext.sparkContext.getConf), new SpookyMetrics())
   }
 
   def this(sqlContext: SQLContext) {
@@ -56,7 +56,7 @@ case class SpookyContext private (
     else spookyConf
   }
   def conf_=(conf: SpookyConf): Unit = {
-    spookyConf = conf.importFrom(sqlContext.sparkContext)
+    spookyConf = conf.importFrom(sqlContext.sparkContext.getConf)
     rebroadcast()
   }
 

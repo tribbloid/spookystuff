@@ -45,7 +45,7 @@ abstract class IntegrationFixture extends SpookyEnvFixture with BeforeAndAfterAl
           _spooky = new SpookyContext(
             sql,
             new SpookyConf(
-              components = envComponents,
+              submodules = envComponents,
               webDriverFactory = driver,
               defaultFetchOptimizer = optimizer,
               epochSize = 1 + Random.nextInt(4),

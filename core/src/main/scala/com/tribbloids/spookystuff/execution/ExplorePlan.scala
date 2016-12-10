@@ -98,7 +98,7 @@ case class ExplorePlan(
     assert(_params.depthField != null)
 
     if (spooky.sparkContext.getCheckpointDir.isEmpty && checkpointInterval > 0)
-      spooky.sparkContext.setCheckpointDir(spooky.conf.dirs.checkpoint)
+      spooky.sparkContext.setCheckpointDir(spooky.conf.dirConf.checkpoint)
 
     val rowFn: SquashedFetchedRow => SquashedFetchedRow = {
       row: SquashedFetchedRow =>

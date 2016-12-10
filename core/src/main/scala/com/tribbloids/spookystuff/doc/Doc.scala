@@ -295,7 +295,7 @@ case class Doc(
                 spooky: SpookyContext,
                 overwrite: Boolean = false
               ): Unit = this.save(
-    spooky.conf.dirs.autoSave :: spooky.conf.autoSaveFilePath(this).toString :: Nil
+    spooky.conf.dirConf.autoSave :: spooky.conf.autoSaveFilePath(this).toString :: Nil
   )(spooky)
 
   //TODO: merge into cascade retries
@@ -304,8 +304,8 @@ case class Doc(
                  overwrite: Boolean = false
                ): Unit = {
     val root = this.uid.output match {
-      case ss: Screenshot => spooky.conf.dirs.errorScreenshot
-      case _ => spooky.conf.dirs.errorDump
+      case ss: Screenshot => spooky.conf.dirConf.errorScreenshot
+      case _ => spooky.conf.dirConf.errorDump
     }
 
     this.save(
@@ -318,8 +318,8 @@ case class Doc(
                         overwrite: Boolean = false
                       ): Unit = {
     val root = this.uid.output match {
-      case ss: Screenshot => spooky.conf.dirs.errorScreenshotLocal
-      case _ => spooky.conf.dirs.errorDumpLocal
+      case ss: Screenshot => spooky.conf.dirConf.errorScreenshotLocal
+      case _ => spooky.conf.dirConf.errorDumpLocal
     }
 
     this.save(

@@ -2,7 +2,7 @@ package com.tribbloids.spookystuff.actions
 
 import com.tribbloids.spookystuff.doc.{Doc, Fetched}
 import com.tribbloids.spookystuff.selenium.BySizzleCssSelector
-import com.tribbloids.spookystuff.session.{Session, AbstractSession}
+import com.tribbloids.spookystuff.session.Session
 import com.tribbloids.spookystuff.utils.{SimpleUDT, SpookyUtils}
 import com.tribbloids.spookystuff.{ActionException, Const, SpookyContext}
 import org.apache.spark.ml.dsl.utils._
@@ -82,7 +82,7 @@ trait Action extends ActionLike with ActionRelay.HasRelay{
   }
 
   //this should handle autoSave, cache and errorDump
-  override def apply(session: AbstractSession): Seq[Fetched] = {
+  override def apply(session: Session): Seq[Fetched] = {
 
     val results = try {
       exe(session)
@@ -108,7 +108,7 @@ trait Action extends ActionLike with ActionRelay.HasRelay{
 
   //execute errorDumps as side effects
   protected def getSessionExceptionString(
-                                           session: AbstractSession,
+                                           session: Session,
                                            docOpt: Option[Doc] = None
                                          ): String = {
     var message: String = "\n{\n"
@@ -180,7 +180,7 @@ trait Action extends ActionLike with ActionRelay.HasRelay{
     }
   }
 
-  protected[actions] def withLazyDrivers[T](session: AbstractSession)(f: => T) = {
+  protected[actions] def withLazyDrivers[T](session: Session)(f: => T) = {
 
     this match {
       case tt: Timed =>
@@ -200,13 +200,13 @@ trait Action extends ActionLike with ActionRelay.HasRelay{
     }
   }
 
-  protected[actions] def exe(session: AbstractSession): Seq[Fetched] = {
+  protected[actions] def exe(session: Session): Seq[Fetched] = {
     withLazyDrivers(session){
       doExe(session)
     }
   }
 
-  protected def doExe(session: AbstractSession): Seq[Fetched]
+  protected def doExe(session: Session): Seq[Fetched]
 
   def andThen(f: Seq[Fetched] => Seq[Fetched]): Action = AndThen(this, f)
 
@@ -225,7 +225,7 @@ trait Timed extends Action {
     this
   }
 
-  def timeout(session: AbstractSession): Duration = {
+  def timeout(session: Session): Duration = {
     val base = if (this._timeout == null) session.spooky.conf.remoteResourceTimeout
     else this._timeout
 
@@ -233,27 +233,27 @@ trait Timed extends Action {
   }
 
   //TODO: this causes downloading large files to fail, need a better mechanism
-  def hardTerminateTimeout(session: AbstractSession): Duration = {
+  def hardTerminateTimeout(session: Session): Duration = {
     timeout(session) + Const.hardTerminateOverhead
   }
 
-  def webDriverWait(session: AbstractSession): WebDriverWait = new WebDriverWait(session.webDriver, this.timeout(session).toSeconds)
+  def webDriverWait(session: Session): WebDriverWait = new WebDriverWait(session.webDriver, this.timeout(session).toSeconds)
 
-  def getClickableElement(selector: String, session: AbstractSession) = {
+  def getClickableElement(selector: String, session: Session) = {
 
     val elements = webDriverWait(session).until(ExpectedConditions.elementToBeClickable(new BySizzleCssSelector(selector)))
 
     elements
   }
 
-  def getElement(selector: String, session: AbstractSession) = {
+  def getElement(selector: String, session: Session) = {
 
     val elements = webDriverWait(session).until(ExpectedConditions.presenceOfElementLocated(new BySizzleCssSelector(selector)))
 
     elements
   }
 
-  def getElements(selector: String, session: AbstractSession) = {
+  def getElements(selector: String, session: Session) = {
 
     val elements = webDriverWait(session).until(ExpectedConditions.presenceOfAllElementsLocatedBy(new BySizzleCssSelector(selector)))
 

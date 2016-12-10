@@ -46,8 +46,8 @@ abstract sealed class DriverFactory[+T] extends Serializable {
 
   // If get is called again before the previous driver is released, the old driver is destroyed to create a new one.
   // this is to facilitate multiple retries
-  def dispatch(session: AbstractSession): T
-  def release(session: AbstractSession): Unit
+  def dispatch(session: Session): T
+  def release(session: Session): Unit
 
   def deploy(spooky: SpookyContext): Unit = {}
 }
@@ -60,26 +60,26 @@ abstract sealed class TransientFactory[T] extends DriverFactory[T] {
 
   // session -> driver
   // cleanup: this has no effect whatsoever
-  @transient lazy val sessionLocals: ConcurrentMap[AbstractSession, T] = ConcurrentMap()
+  @transient lazy val sessionLocals: ConcurrentMap[Session, T] = ConcurrentMap()
 
-  def dispatch(session: AbstractSession): T = {
+  def dispatch(session: Session): T = {
     release(session)
     val driver = create(session)
     sessionLocals += session -> driver
     driver
   }
 
-  final def create(session: AbstractSession): T = {
+  final def create(session: Session): T = {
     val created = _createImpl(session)
 
     created
   }
 
-  def _createImpl(session: AbstractSession): T
+  def _createImpl(session: Session): T
 
   def factoryReset(driver: T): Unit
 
-  def release(session: AbstractSession): Unit = {
+  def release(session: Session): Unit = {
     val existingOpt = sessionLocals.remove(session)
     existingOpt.foreach {
       driver =>
@@ -111,7 +111,7 @@ case class TaskLocalFactory[T](
   //taskOrThreadID -> (driver, busy)
   @transient lazy val taskLocals: ConcurrentMap[Lifespan#ID, DriverStatus[T]] = ConcurrentMap()
 
-  override def dispatch(session: AbstractSession): T = {
+  override def dispatch(session: Session): T = {
 
     val opt = taskLocals.get(session.driverLifespan._id)
 
@@ -147,7 +147,7 @@ case class TaskLocalFactory[T](
       }
   }
 
-  override def release(session: AbstractSession): Unit = {
+  override def release(session: Session): Unit = {
 
     val opt = taskLocals.get(session.driverLifespan._id)
     opt.foreach{
@@ -342,7 +342,7 @@ object DriverFactories {
     }
 
     //called from executors
-    override def _createImpl(session: AbstractSession): CleanWebDriver = {
+    override def _createImpl(session: Session): CleanWebDriver = {
       new CleanWebDriver(
         new PhantomJSDriver(newCap(session.spooky)),
         session.driverLifespan
@@ -373,7 +373,7 @@ object DriverFactories {
       result.merge(capabilities)
     }
 
-    override def _createImpl(session: AbstractSession): CleanWebDriver = {
+    override def _createImpl(session: Session): CleanWebDriver = {
 
       val cap = newCap(null, session.spooky)
       val self = new HtmlUnitDriver(browser)
@@ -413,7 +413,7 @@ object DriverFactories {
                      getExecutable: SpookyContext => String = _ => "python"
                    ) extends PythonDriverFactory {
 
-    override def _createImpl(session: AbstractSession): PythonDriver = {
+    override def _createImpl(session: Session): PythonDriver = {
       val exeStr = getExecutable(session.spooky)
       new PythonDriver(exeStr, lifespan = session.driverLifespan)
     }

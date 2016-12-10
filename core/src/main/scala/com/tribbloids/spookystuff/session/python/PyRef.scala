@@ -84,7 +84,7 @@ trait PyRef extends Cleanable {
     )
   }
 
-  def Py(session: AbstractSession): PyBinding = {
+  def Py(session: Session): PyBinding = {
     session.asInstanceOf[Session].initializeDriverIfMissing {
       _Py(session.pythonDriver, Some(session.spooky))
     }

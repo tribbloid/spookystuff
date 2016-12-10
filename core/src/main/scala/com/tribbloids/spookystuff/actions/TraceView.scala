@@ -3,7 +3,7 @@ package com.tribbloids.spookystuff.actions
 import com.tribbloids.spookystuff.caching.{DFSWebCache, InMemoryWebCache}
 import com.tribbloids.spookystuff.doc.{Doc, Fetched}
 import com.tribbloids.spookystuff.row.{DataRowSchema, FetchedRow}
-import com.tribbloids.spookystuff.session.AbstractSession
+import com.tribbloids.spookystuff.session.Session
 import com.tribbloids.spookystuff.utils.IDMixin
 import com.tribbloids.spookystuff.{SpookyContext, dsl}
 
@@ -24,7 +24,7 @@ case class TraceView(
     Some(new TraceView(seq).asInstanceOf[this.type])
   }
 
-  override def apply(session: AbstractSession): Seq[Fetched] = {
+  override def apply(session: Session): Seq[Fetched] = {
 
     val results = new ArrayBuffer[Fetched]()
 
