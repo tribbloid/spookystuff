@@ -76,12 +76,12 @@ class LinkIT extends APMSimFixture {
     assert(spooky.metrics.linkCreated.value == parallelism - 1)
   }
 
-  test("move drones to different directions several times") {
+  test("move all drones N times") {
     val spooky = this.spooky
     val proxyFactory = this.proxyFactory
     var locations: Array[String] = null
 
-    for (i <- 1 to 10) {
+    for (i <- 1 to 5) {
       val rdd: RDD[String] = simConnStrRDD.map {
         connStr =>
           LinkIT.moveAndGetLocation(spooky, proxyFactory, connStr)

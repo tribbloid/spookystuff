@@ -1,5 +1,7 @@
 import json
 
+from dronekit import LocationGlobal, LocationGlobalRelative, LocationLocal
+
 '''
 crash course on APM & PX4 flight modes:
 APM:
@@ -57,48 +59,16 @@ class DummyPyAction(object):
         return json.dumps(merged)
 
 
-# class DroneAction(PyAction):
-#
-#     def assureInTheAir(self, _endpoints, proxy, takeOffAltitude):
-#         if not self.binding:
-#             instances = map(lambda v: Endpoint(**v), _endpoints)
-#
-#             # if a binding is already created for this process it will be reused.
-#             self.binding = Link.getOrCreate(instances, proxy)
-#
-#         assureInTheAir(takeOffAltitude, self.binding.vehicle)
-#
-#     def before(self, mavConfStr):
-#         pass
-#
-#     def bulk(self, mavConfStr):
-#         pass
-#
-#     def after(self, mavConfStr):
-#         pass
-#
-#
-# def toLocation(dict):
-#     location = dict['globalLocation']
-#     lat = location['lat']
-#     lon = location['lon']
-#     alt = location['alt']
-#
-#     if location['relative']:
-#         return LocationGlobalRelative(lat, lon, alt)
-#     else:
-#         return LocationGlobal(lat, lon, alt)
-#
-#
-# class Move(DroneAction):
-#
-#     def before(self, mavConfStr):
-#         mavConf = json.loads(mavConfStr)
-#         assureInTheAir(mavConf)
-#
-#         frm = toLocation(self.this['from'])
-#         self.binding.vehicle.simple_goto(frm)
-#
-#     def bulk(self, mavConfStr):
-#         to = toLocation(self.this['to'])
-#         self.binding.vehicle.simple_goto(to)
+class Global(LocationGlobal):
+    def __init__(self, lat, lon, alt=None):
+        super(Global, self).__init__(lat, lon, alt)
+
+
+class GlobalRelative(LocationGlobalRelative):
+    def __init__(self, lat, lon, alt=None):
+        super(GlobalRelative, self).__init__(lat, lon, alt)
+
+
+class Local(LocationLocal):
+    def __init__(self, north, east, down):
+        super(LocationLocal, self).__init__(north, east, down)

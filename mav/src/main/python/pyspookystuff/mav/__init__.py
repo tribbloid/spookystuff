@@ -28,18 +28,18 @@ class VehicleFunctions(object):
 
     # all the following are blocking API
     @retry(Const.armRetries)
-    def assureInTheAir(self, targetAlt, error=None):
+    def assureClearanceAltitude(self, minAlt, maxAlt=121.92, error=None): # max altitute capped to 400 ftp
         # type: (float, float) -> None
         if not error:
-            error = stdError(targetAlt)
+            error = stdError(minAlt)
 
         alt = self.vehicle.location.global_relative_frame.alt
-        if (targetAlt - alt) <= error:
+        if (minAlt - alt) <= error:
             logging.info("already airborne")
         else:
-            self.armAndTakeoff(targetAlt, error)
+            self.armAndLift(minAlt, maxAlt, error)
 
-    def armAndTakeoff(self, targetAlt, error):
+    def armAndLift(self, minAlt, maxAlt, error):
         # type: (float, float) -> None
         """
         from http://python.dronekit.io/develop/best_practice.html
@@ -86,17 +86,17 @@ class VehicleFunctions(object):
                 time.sleep(1)
                 i -= 1
 
-        def blockingTakeOff(vehicle):
+        def armAndTakeOff(vehicle):
             while True:
                 alt = vehicle.location.global_relative_frame.alt
 
                 if alt <= 0.1:
                     armIfNot(vehicle)
                     print("taking off from the ground ... ")
-                    vehicle.simple_takeoff(targetAlt)
+                    vehicle.simple_takeoff(minAlt)
 
                 # Test for altitude just below target, in case of undershoot.
-                if (targetAlt - alt) <= error:
+                if (minAlt - alt) <= error:
                     print("Reached target altitude")
                     break
 
@@ -104,10 +104,13 @@ class VehicleFunctions(object):
                 self.failOnTimeout()
                 time.sleep(1)
 
-        blockingTakeOff(self.vehicle)
+        armAndTakeOff(self.vehicle)
+
         alt = self.vehicle.location.global_relative_frame.alt
-        if (targetAlt - alt) > error:
-            self.move(LocationGlobalRelative(None, None, targetAlt))
+        if (minAlt - alt) > error:
+            self.move(LocationGlobalRelative(None, None, minAlt))
+        elif (alt - maxAlt) > error:
+            self.move(LocationGlobalRelative(None, None, maxAlt))
 
         print("Vehicle is airborne, altitude =", self.vehicle.location.global_relative_frame.alt)
 

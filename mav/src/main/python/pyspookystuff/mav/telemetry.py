@@ -244,37 +244,12 @@ class Link(Daemon, VehicleFunctions):
         # to make on a real vehicle. They are leveraged
         # exclusively for simulation. Take heed!!!
 
-        self.assureInTheAir(height)
+        self.assureClearanceAltitude(height)
 
         self.localOrigin = self.vehicle.location.global_frame
         self.move(target)
 
-        # northRef = vehicle.location.local_frame.north
-        # eastRef = vehicle.location.local_frame.east
-        #
-        # self.logPrint("starting at " + str(northRef) + ":" + str(eastRef))
-        #
-        # def getDistSq():
-        #     north = vehicle.location.local_frame.north - northRef
-        #     east = vehicle.location.local_frame.east - eastRef
-        #     self.logPrint("current position " + str(north) + ":" + str(east))
-        #     return north * north + east * east
-        #
-        # distSq = getDistSq()
-        # while distSq <= dist * dist:
-        #     if vehicle.airspeed <= 0.1:
-        #         self.logPrint("Engaging thruster ...")
-        #         vehicle.simple_goto(point)
-        #
-        #     failOnTimeout(vehicle)
-        #     distSq = getDistSq()
-        #     self.logPrint("moving ... " + str(sqrt(distSq)) + "m")
-        #     time.sleep(1)
-
         last_location = self.vehicle.location
-        # TODO change mode: GUIDED -> POSITION_HOLD?
-        # move(vehicle, point)
-        # vehicle.simple_goto(last_location.global_relative_frame)
 
         return last_location.local_frame.north, last_location.local_frame.east
 

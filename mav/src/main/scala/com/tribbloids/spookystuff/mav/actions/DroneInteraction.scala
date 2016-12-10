@@ -1,7 +1,7 @@
 package com.tribbloids.spookystuff.mav.actions
 
 import com.tribbloids.spookystuff.actions.{Action, Interaction}
-import com.tribbloids.spookystuff.session.AbstractSession
+import com.tribbloids.spookystuff.session.{AbstractSession, Session}
 
 trait DroneAction extends Action
 
@@ -12,15 +12,18 @@ trait DroneAction extends Action
 trait DroneInteraction extends Interaction with DroneAction {
 
   override def exeNoOutput(session: AbstractSession): Unit = {
-    inbound(session)
-    engage(session)
-    outbound(session)
+    val s = session.asInstanceOf[Session]
+    inbound(s)
+    conduct(s)
+    outbound(s)
   }
 
-  // when enclosed in an export, may behave differently.
-  def inbound(session: AbstractSession): Unit = {}
+  /**
+    * when enclosed in an export, may behave differently.
+    */
+  def inbound(session: Session): Unit = {}
 
-  def engage(session: AbstractSession): Unit = {}
+  def conduct(session: Session): Unit = {}
 
-  def outbound(session: AbstractSession): Unit = {}
+  def outbound(session: Session): Unit = {}
 }

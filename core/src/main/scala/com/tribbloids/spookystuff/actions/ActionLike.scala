@@ -39,6 +39,9 @@ abstract class ActionLike extends DetailedProduct with Serializable {
   }
 
   //TODO: use reflection to simplify
+  /**
+    * convert all extractor constructor parameters to Literal
+    */
   def doInterpolate(pageRow: FetchedRow, schema: DataRowSchema): Option[this.type] = Some(this)
 
   def injectFrom(same: ActionLike): Unit = {} //TODO: change to immutable pattern to avoid one Trace being used twice with different names
