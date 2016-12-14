@@ -58,9 +58,9 @@ class VehicleFunctions(object):
         # processing the goto (otherwise the command after
         # Vehicle.simple_takeoff will execute immediately).
 
-        def armIfNot(vehicle):
-            if not vehicle.armed:
-                arm(vehicle)
+        # def armIfNot(vehicle):
+        #     if not vehicle.armed:
+        #         arm(vehicle)
 
         def arm(vehicle):
             # type: (Vehicle) -> None
@@ -88,31 +88,36 @@ class VehicleFunctions(object):
 
         def armAndTakeOff(vehicle):
             while True:
-                alt = vehicle.location.global_relative_frame.alt
+                if vehicle.is_armable:
+                    arm(vehicle)
 
+                alt = vehicle.location.global_relative_frame.alt
                 if alt <= 0.1:
-                    armIfNot(vehicle)
                     print("taking off from the ground ... ")
                     vehicle.simple_takeoff(minAlt)
-
                 # Test for altitude just below target, in case of undershoot.
-                if (minAlt - alt) <= error:
+                elif (minAlt - alt) <= error:
                     print("Reached target altitude")
                     break
+                elif vehicle.airspeed <= error:
+                    print("already airborne")
+                    break
 
-                print("Altitude =", alt)
+                print("Taking off: altitude =", alt, ", minimumAltitude =", minAlt)
                 self.failOnTimeout()
                 time.sleep(1)
 
-        armAndTakeOff(self.vehicle)
-
         alt = self.vehicle.location.global_relative_frame.alt
+        if self.vehicle.is_armable or alt <= 0.1:
+            armAndTakeOff(self.vehicle)
+
         if (minAlt - alt) > error:
             self.move(LocationGlobalRelative(None, None, minAlt))
         elif (alt - maxAlt) > error:
             self.move(LocationGlobalRelative(None, None, maxAlt))
-
-        print("Vehicle is airborne, altitude =", self.vehicle.location.global_relative_frame.alt)
+        else:
+            print("Vehicle is airborne, altitude =", self.vehicle.location.global_relative_frame.alt)
+            return
 
     def getLocalOrigin(self):
         # type: () -> LocationGlobal

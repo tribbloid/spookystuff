@@ -1,55 +1,90 @@
 package com.tribbloids.spookystuff.mav.telemetry
 
 import com.tribbloids.spookystuff.mav.sim.APMSimFixture
-import com.tribbloids.spookystuff.session.{Lifespan, Session}
+import com.tribbloids.spookystuff.session.{Lifespan, NoPythonDriverException, Session}
+
+object LinkSuite {
+
+  def driverLifespan: Lifespan = new Lifespan.JVM()
+}
 
 /**
   * Created by peng on 12/11/16.
   */
 class LinkSuite extends APMSimFixture {
 
-  //  override def parallelism = 2
+  import LinkSuite._
+    import com.tribbloids.spookystuff.utils.SpookyViews._
 
-  test("Link.uri should = endpoint.connStr if without proxy") {
+  lazy val getEndpoints: String => Seq[Endpoint] = {
+    connStr =>
+      Seq(Endpoint(Seq(connStr)))
+  }
+
+  override def setUp(): Unit = {
+
+    super.setUp()
+    sc.foreachWorker(
+      Link.existing.foreach(_._2.driverToBindings.keys.foreach(_.tryClean()))
+    )
+  }
+
+  test("Link failed to be created won't exist in Link.sessionLocal & Link.existing") {
+    val session = new Session(spooky, driverLifespan)
+    // this will fail due to lack of Python Driver
+    intercept[NoPythonDriverException.type] {
+      Link.create(
+        Endpoint(Seq("dummy")),
+        ProxyFactories.NoProxy,
+        session
+      )
+        .Py(session)
+    }
+    assert(!Link.driverLocal.keys.toSet.contains(session))
+  }
+
+  test("If without Proxy, Link.uri should = endpoint.connStr") {
     val spooky = this.spooky
-    val uris = simConnStrRDD.map {
+    val proxyFactory = ProxyFactories.NoProxy
+    val getEndpoints = this.getEndpoints
+    val connStr_URIs = simConnStrRDD.map {
       connStr =>
-        val endpoint = Endpoint(Seq(connStr))
-        val session = new Session(spooky)
-        val link = Link.getOrCreate(
-          Seq(endpoint),
-          ProxyFactories.NoProxy,
+        val session = new Session(spooky, driverLifespan)
+        val link = Link.getOrInitialize(
+          getEndpoints(connStr),
+          proxyFactory,
           session
         )
 
-        val result = link.Py(session).uri.strOpt
-        result
+        link.endpoint.connStr -> link.Py(session).uri.strOpt.get
     }
       .collect()
+
     val expectedURIs = (0 until parallelism).map {
       i =>
         val port = i * 10 + 5760
         val uri = s"tcp:localhost:$port"
-        Some(uri)
+        uri -> uri
     }
 
-    uris.mkString("\n").shouldBe (
+    connStr_URIs.mkString("\n").shouldBe (
       expectedURIs.mkString("\n"),
       sort = true
     )
-    assert(uris.length == uris.distinct.length)
+    assert(connStr_URIs.length == connStr_URIs.distinct.length)
   }
 
   //  val defaultProxyFactory = ProxyFactories.Default()
-  test("each Link with Proxy should use a different primary out") {
+  test("each Proxy for Link should use a different primary out") {
     val spooky = this.spooky
     val proxyFactory = ProxyFactories.ForkToGCS()
+    val getEndpoints = this.getEndpoints
     val linkRDD = simConnStrRDD.map {
       connStr =>
         val endpoint = Endpoint(Seq(connStr))
-        val session = new Session(spooky)
-        val link = Link.getOrCreate(
-          Seq(endpoint),
+        val session = new Session(spooky, driverLifespan)
+        val link = Link.getOrInitialize(
+          getEndpoints(connStr),
           proxyFactory,
           session
         )
@@ -74,16 +109,16 @@ class LinkSuite extends APMSimFixture {
     assert(outs.distinct.length == parallelism)
   }
 
-  test("Link.uri with Proxy should = Proxy.primaryOut") {
+  test("If with Proxy, Link.uri should = Proxy.primaryOut") {
 
     val spooky = this.spooky
     val proxyFactory = ProxyFactories.ForkToGCS()
+    val getEndpoints = this.getEndpoints
     val uris = simConnStrRDD.map {
       connStr =>
-        val endpoint = Endpoint(Seq(connStr))
-        val session = new Session(spooky)
-        val link = Link.getOrCreate(
-          Seq(endpoint),
+        val session = new Session(spooky, driverLifespan)
+        val link = Link.getOrInitialize(
+          getEndpoints(connStr),
           proxyFactory,
           session
         )
@@ -106,26 +141,27 @@ class LinkSuite extends APMSimFixture {
 
   factories.foreach {
     factory =>
-
-      test(s"With ${factory.getClass.getSimpleName} proxy, Link created in the same python driver can be reused") {
-        Link.existing.values.map(_._2).foreach {
+      test(s"With proxyFactory=${factory.getClass.getSimpleName}," +
+        s" Link created in the same python driver can be reused") {
+        Link.existing.values.foreach {
           _.tryClean()
         }
         Thread.sleep(2000) //Waiting for python drivers to terminate
 
         val spooky = this.spooky
+        val getEndpoints = this.getEndpoints
         val linkStrs = simConnStrRDD.map {
           connStr =>
-            val endpoint = Endpoint(Seq(connStr))
-            val session = new Session(spooky, new Lifespan.Task())
-            val link1 = Link.getOrCreate (
-              Seq(endpoint),
+            val endpoints = getEndpoints(connStr)
+            val session = new Session(spooky, driverLifespan)
+            val link1 = Link.getOrInitialize (
+              endpoints,
               factory,
               session
             )
             link1.Py(session).uri.strOpt.foreach(println)
-            val link2 = Link.getOrCreate (
-              Seq(endpoint),
+            val link2 = Link.getOrInitialize (
+              endpoints,
               factory,
               session
             )
@@ -134,26 +170,27 @@ class LinkSuite extends APMSimFixture {
         }
           .collect()
         assert(spooky.metrics.linkCreated.value == parallelism)
-        assert(spooky.metrics.linkDestroyed.value == 0)
+//        assert(spooky.metrics.linkDestroyed.value == 0) // not testable, refit always destroy previous link
         linkStrs.foreach {
           tuple =>
             assert(tuple._1 == tuple._2)
         }
       }
 
-      test(s"With ${factory.getClass.getSimpleName} proxy, idle Link (with no active Python driver) can be reused by anther Python driver") {
-        Link.existing.values.map(_._2).foreach {
+      test(s"With proxyFactory=${factory.getClass.getSimpleName}," +
+        s" idle Link (with no active Python driver) can be refit for anther Python driver") {
+        Link.existing.values.foreach {
           _.tryClean()
         }
         Thread.sleep(2000) //Waiting for python drivers to terminate
 
         val spooky = this.spooky
+        val getEndpoints = this.getEndpoints
         val linkStrs1 = simConnStrRDD.map {
           connStr =>
-            val endpoint = Endpoint(Seq(connStr))
-            val session = new Session(spooky, new Lifespan.Task())
-            val link = Link.getOrCreate(
-              Seq(endpoint),
+            val session = new Session(spooky, driverLifespan)
+            val link = Link.getOrInitialize(
+              getEndpoints(connStr),
               factory,
               session
             )
@@ -161,22 +198,23 @@ class LinkSuite extends APMSimFixture {
         }
           .collect()
 
-        Thread.sleep(2000) //Waiting for python drivers to terminate
+        sc.foreachWorker(
+          Link.existing.foreach(_._2.driverToBindings.keys.foreach(_.tryClean()))
+        )
         assert(spooky.metrics.linkCreated.value == parallelism)
         assert(spooky.metrics.linkDestroyed.value == 0)
         assert(Link.existing.size == parallelism)
         val livingLinkDrivers = Link.existing.values.toSeq.flatMap {
-          tuple =>
-            tuple._2.driverToBindings.keys
+          link =>
+            link.driverToBindings.keys
         }
         assert(livingLinkDrivers.isEmpty)
 
         val linkStrs2 = simConnStrRDD.map {
           connStr =>
-            val endpoint = Endpoint(Seq(connStr))
-            val session = new Session(spooky, new Lifespan.Task())
-            val link = Link.getOrCreate (
-              Seq(endpoint),
+            val session = new Session(spooky, driverLifespan)
+            val link = Link.getOrInitialize(
+              getEndpoints(connStr),
               factory,
               session
             )
@@ -186,10 +224,18 @@ class LinkSuite extends APMSimFixture {
 
         assert(spooky.metrics.linkCreated.value == parallelism)
         assert(spooky.metrics.linkDestroyed.value == 0)
-        linkStrs1.mkString("\n").shouldBe(
+        linkStrs1.mkString("\n").shouldBe (
           linkStrs2.mkString("\n"),
           sort = true
         )
       }
+  }
+}
+
+class LinkSuite_Candidates extends LinkSuite {
+
+  override lazy val getEndpoints = {
+    val simEndpoints = this.simEndpoints
+    _: String => simEndpoints
   }
 }

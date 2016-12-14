@@ -13,7 +13,7 @@ import pyspookystuff.mav.telemetry
 aPMSim60043357380016504=pyspookystuff.mav.sim.APMSim(
     iNum=json.loads(
         """
-        3
+        1
         """
     )
 )
@@ -31,28 +31,24 @@ proxy.start()
 
 import sys
 sys.path.append('/home/peng/.spookystuff/pythonpath')
+import os
 import simplejson as json
 import pyspookystuff.mav.telemetry
-endpoint1441794875322176137=pyspookystuff.mav.telemetry.Endpoint(connStrs=json.loads(
+endpoint8044150411413521834=pyspookystuff.mav.telemetry.Endpoint(connStrs=json.loads(
     """
-    [ "udp:localhost:12015" ]
+    [ "tcp:localhost:5770" ]
     """
 ))
-link7452322945051954858=pyspookystuff.mav.telemetry.Link(endpoint=endpoint1441794875322176137)
-start6307625525549872737=link7452322945051954858.start()
+link488544169442936378=pyspookystuff.mav.telemetry.Link(endpoint=endpoint8044150411413521834)
+start2640234324586639149=link488544169442936378.start()
 
-_temp1798473547518563724=None
-_temp1798473547518563724=start6307625525549872737
+### Error interpreting: ###
+
+_temp300130972983225840=None
+_temp300130972983225840=start2640234324586639149
 print('*!?execution result!?*')
-if _temp1798473547518563724:
-    print(_temp1798473547518563724)
+if _temp300130972983225840:
+    print(_temp300130972983225840)
 else:
     print('*!?no returned value!?*')
-
-del(_temp1798473547518563724)
-# Error interpreting:
-link7452322945051954858.testMove()
-
-link7452322945051954858.testMove()
-
-link7452322945051954858.testMove()
+del(_temp300130972983225840)

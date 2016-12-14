@@ -1,10 +1,10 @@
 package com.tribbloids.spookystuff.mav.telemetry
 
-import com.tribbloids.spookystuff.mav.MAVConf
-import com.tribbloids.spookystuff.session.python.{CaseInstanceRef, PythonDriver, StaticRef}
+import com.tribbloids.spookystuff.{SpookyContext, caching}
+import com.tribbloids.spookystuff.mav.{MAVConf, ReinforcementDepletedException}
+import com.tribbloids.spookystuff.session.python._
 import com.tribbloids.spookystuff.session.{LocalCleanable, Session}
 import com.tribbloids.spookystuff.utils.SpookyUtils
-import com.tribbloids.spookystuff.{SpookyContext, caching}
 import org.slf4j.LoggerFactory
 
 case class Endpoint(
@@ -25,8 +25,8 @@ object Link extends StaticRef {
 
   // connStr -> (link, isBusy)
   // only 1 allowed per connStr, how to enforce?
-  // TODO: change to Endpoint -> tuple mapping
-  val existing: caching.ConcurrentMap[String, (ProxyFactory, Link)] = caching.ConcurrentMap()
+  // TODO: change to Endpoint -> tuple mapping?
+  val existing: caching.ConcurrentMap[String, Link] = caching.ConcurrentMap()
 
   // won't be used to create any link before its status being recovered by ping daemon.
   val blacklist: caching.ConcurrentSet[String] = caching.ConcurrentSet()
@@ -37,6 +37,16 @@ object Link extends StaticRef {
   //      !blacklist.contains(tuple._1) &&
   //        !tuple._2._2.isBusy
   //  }
+
+  def getOrInitialize(
+                       candidates: Seq[Endpoint],
+                       proxyFactory: ProxyFactory,
+                       session: Session
+                     ): Link = {
+    session.initializeDriverIfMissing {
+      getOrCreate(candidates, proxyFactory, session)
+    }
+  }
 
   /**
     * create a telemetry link based on the following order:
@@ -52,114 +62,141 @@ object Link extends StaticRef {
                    candidates: Seq[Endpoint],
                    proxyFactory: ProxyFactory,
                    session: Session
-                 ): Link = {
+                 ): Link = this.synchronized {
 
-    val driver = session.getOrProvisionPythonDriver
-    driverLocal
-      .get(driver)
+    val local = driverLocal
+      .get(session.pythonDriver)
+
+    local.foreach {
+      link =>
+        LoggerFactory.getLogger(this.getClass).info(
+          ""
+        )
+    }
+
+    val result = local
       .orElse {
-        getOrRefitIdle(candidates, proxyFactory)(Some(session.spooky))
+        refitIdle(candidates, proxyFactory, session)
       }
       .getOrElse {
-        val neo = create(candidates, proxyFactory)(Some(session.spooky))
-        neo
+        elect(candidates, proxyFactory, session)
       }
+    result
   }
 
-  // CAUTION: this will refit the telemetry link if ProxyFactory is different.
-  def getOrRefitIdle(candidates: Seq[Endpoint], proxyFactory: ProxyFactory)(
-    implicit spookyOpt: Option[SpookyContext] = None
-  ): Option[Link] = {
+  // CAUTION: this will refit the telemetry link with new Proxy and clean the old one if ProxyFactory is different.
+  def refitIdle(
+                 candidates: Seq[Endpoint],
+                 proxyFactory: ProxyFactory,
+                 session: Session
+               ): Option[Link] = this.synchronized {
 
-    val existingLinks: Seq[Link] = candidates.collect {
+    val existingCandidates: Seq[Link] = candidates.collect {
       Function.unlift {
         endpoint =>
-          existing
-            .get(endpoint.connStr)
-            .map(_._2)
+          existing.get(endpoint.connStr)
       }
     }
 
-    val idleLinkOpt = existingLinks
-      .filterNot {
-        link =>
-          link.isBusy
-      }
-      .headOption
+    val idleLinkOpt = existingCandidates.find {
+      link =>
+        link.isFinished
+    }
 
-    idleLinkOpt match {
+    val result = idleLinkOpt match {
       case Some(idleLink) =>
-        if (!proxyFactory.canCreate(idleLink)) {
+        val newLink = if (!proxyFactory.canCreate(idleLink)) {
           idleLink.tryClean()
-          val endpoint = idleLink.endpoint
-          val result = fromFactory(endpoint, proxyFactory)
-          Some(result)
+          // recreate proxy
+          val newProxyOpt = proxyFactory.apply(idleLink.endpoint)
+          idleLink.copy(proxyOpt = newProxyOpt)(session.spooky)
         }
         else {
-          Some(idleLink)
+          idleLink
         }
+        LoggerFactory.getLogger(this.getClass).info {
+          s"Refitting telemetry Link for ${newLink.endpoint.connStr}"
+        }
+        Some(newLink)
       case None =>
-        LoggerFactory.getLogger(this.getClass).info({
-          if (existingLinks.isEmpty) {
+        LoggerFactory.getLogger(this.getClass).info{
+          if (existingCandidates.isEmpty) {
             s"No existing telemetry Link for ${candidates.map(_.connStr).mkString("[", ", ", "]")}"
           }
           else {
-            existingLinks.map {
+            existingCandidates.map {
               link =>
-                assert(link.isBusy)
+                assert(!link.isFinished)
                 s"${link.endpoint.connStr} is busy"
             }
               .mkString("\n")
           }
-        })
+        }
         None
     }
+    result.foreach(_.Py(session))
+    result
   }
 
-  def create(candidates: Seq[Endpoint], proxyFactory: ProxyFactory)(
-    implicit spookyOpt: Option[SpookyContext] = None
-  ): Link = {
+  def elect(
+             candidates: Seq[Endpoint],
+             proxyFactory: ProxyFactory,
+             session: Session
+           ): Link = this.synchronized {
     val endpoint = candidates.find {
       v =>
         !existing.contains(v.connStr) &&
           !blacklist.contains(v.connStr)
     }
       .getOrElse(
-        throw new UnsupportedOperationException(
-          "Reinforcement depleted :-<\n" +
-            candidates.map {
-              candidate =>
-                if (blacklist.contains(candidate.connStr)) s"\t${candidate.connStr} is unreachable"
-                else s"\t${candidate.connStr} is busy"
-            }
-              .mkString("\n")
+        throw new ReinforcementDepletedException (
+          candidates.map {
+            candidate =>
+              if (blacklist.contains(candidate.connStr)) s"\t${candidate.connStr} is unreachable"
+              else s"\t${candidate.connStr} is busy"
+          }
+            .mkString("\n")
         )
       )
 
-    fromFactory(endpoint, proxyFactory)
+    create(endpoint, proxyFactory, session)
   }
 
-  def fromFactory(
-                   endpoint: Endpoint,
-                   proxyFactory: ProxyFactory
-                 )(
-                   implicit spookyOpt: Option[SpookyContext] = None
-                 ): Link = {
+  def create(
+              endpoint: Endpoint,
+              proxyFactory: ProxyFactory,
+              session: Session
+            ): Link = {
 
     val result = Link(
       endpoint,
       proxyFactory.apply(endpoint)
+    )(
+      session.spooky
     )
     //    driverLocals.put(taskThreadInfo, result)
-    existing.put(result.endpoint.connStr, proxyFactory -> result)
+    result.Py(session)
     result
   }
-
-  // only set up to avoid malicious ser/de copy, in which a deep copy of Link is created with identical PID that will be killed twice by AutoCleaner
-  //  val allProxyPIDs: caching.ConcurrentSet[Int] = caching.ConcurrentSet()
-
-  final val retries = 3
 }
+
+//TODO: move to PyRef
+//trait PreBindedRef extends PyRef {
+//
+//  def driver: PythonDriver
+//  def spookyOpt: Option[SpookyContext]
+//
+//  val PY = _Py(driver, spookyOpt)
+//
+//  // Keep synchronization as it can only be legally called once
+//  override def _Py(driver: PythonDriver, spookyOpt: Option[SpookyContext]): PyBinding = this.synchronized {
+//    assert(
+//      driver == this.driver,
+//      "Another Python process is still alive, close that first to avoid port conflict"
+//    )
+//    super._Py(driver, spookyOpt)
+//  }
+//}
 
 /**
 to keep a drone in the air, a python daemon process D has to be constantly running to
@@ -181,68 +218,92 @@ case class Link private[telemetry](
                                     endpoint: Endpoint,
                                     proxyOpt: Option[Proxy]
                                   )(
-                                    implicit val spookyOpt: Option[SpookyContext] = None
+                                    val spooky: SpookyContext
                                   ) extends CaseInstanceRef with LocalCleanable {
 
-  spookyOpt.foreach {
-    spooky =>
-      spooky.metrics.linkCreated += 1
+  {
+    val unfinished = Link.existing.values.filterNot(_.isFinished)
+    assert(!unfinished.map(_.endpoint.connStr).toSet.contains(this.endpoint.connStr),
+      s"endpoint ${this.endpoint.connStr} is already used")
+
+    this.proxyOpt.foreach {
+      proxy =>
+        assert(!unfinished.flatMap(_.proxyOpt).map(_.primaryOut).toSet.contains(proxy.primaryOut),
+          s"proxy ${proxy.primaryOut} is already used")
+    }
+    Link.existing.put(endpoint.connStr, this)
+    spooky.metrics.linkCreated += 1
   }
 
-  // TODO: why synchronized? remove it if too slow
-  override def Py(session: Session): PyBinding = this.synchronized {
-    val py = super.Py(session)
-    try {
-      assert(
-        this.driverToBindings.size <= 1,
-        "Another Python process is still alive, close that first to avoid port conflict"
+  override def _Py(driver: PythonDriver, spookyOpt: Option[SpookyContext]): LinkPyBinding = {
+    driverToBindings.get(driver)
+      .map(_.asInstanceOf[LinkPyBinding])
+      .getOrElse(
+        new LinkPyBinding(this, driver, spookyOpt)
       )
-
-      val driver = session.pythonDriver
-      if (!Link.driverLocal.contains(driver)) {
-        Link.driverLocal.put(driver, this)
-        SessionView(session).start()
-      }
-
-      py
-    }
-    catch {
-      case e: Throwable =>
-        py.tryClean()
-        throw e
-    }
   }
 
-  case class SessionView(session: Session) {
+  override def cleanImpl(): Unit = {
 
-    val binding = Py(session)
+    proxyOpt.foreach(_.tryClean())
+    super.cleanImpl()
+    Link.existing -= this.endpoint.connStr
 
+    spooky.metrics.linkDestroyed += 1
+  }
+
+  def isFinished: Boolean = {
+    driverToBindings.isEmpty
+  }
+}
+
+class LinkPyBinding(
+                     override val ref: Link,
+                     override val driver: PythonDriver,
+                     override val spookyOpt: Option[SpookyContext]
+                   ) extends PyBinding(ref, driver, spookyOpt) {
+
+  assert(Link.driverToBindings.keys.forall(_.isCleaned), "Link can only be bind to one driver")
+
+  Helpers.autoStart()
+  Link.driverLocal += driver -> ref
+
+  private object Helpers {
     // will retry 6 times, try twice for Vehicle.connect() in python, if failed, will restart proxy and try again (3 times).
-    // after all attempts failed will add endpoint into blacklist.
-    def start(): String = {
+    // after all attempts failed will add endpoint into blacklist and destroy proxy
+    def autoStart(): String = {
 
       try {
         var needRestart = false
-        val retries = session.spooky.conf.submodules.get[MAVConf]().connectionRetries
+        val retries = spookyOpt.map(
+          spooky =>
+            spooky.conf.submodules.get[MAVConf]().connectionRetries
+        ).getOrElse(1)
         SpookyUtils.retry(retries) {
-          proxyOpt.foreach {
+          needRestart = true
+          ref.proxyOpt.foreach {
             proxy =>
               if (needRestart) {
-                proxy.mgrPy.restart()
+                proxy.managerPy.restart()
               }
               else {
-                proxy.mgrPy.start()
-                needRestart = true
+                proxy.managerPy.start()
               }
           }
-          val result = binding.start().strOpt.get
+          val result = LinkPyBinding.this.start().strOpt.get
           result
         }
       }
       catch {
         case e: Throwable =>
-          LoggerFactory.getLogger(this.getClass).error(s"${endpoint.connStr} is unreachable, adding to blacklist")
+          ref.proxyOpt.foreach {
+            proxy =>
+              proxy.managerPy.stop()
+          }
 
+          LoggerFactory.getLogger(this.getClass).error(
+            s"${ref.endpoint.connStr} is unreachable, adding to blacklist"
+          )
           //TODO: enable after ping daemon is implemented
           //            Link.blacklist += endpoint.connStr
           throw e
@@ -252,23 +313,7 @@ case class Link private[telemetry](
 
   override def cleanImpl(): Unit = {
 
-    proxyOpt.foreach(_.tryClean())
     super.cleanImpl()
-    Link.existing -= this.endpoint.connStr
-    spookyOpt.foreach {
-      spooky =>
-        spooky.metrics.linkDestroyed += 1
-    }
-  }
-
-  override def bindingCleaningHook(pyBinding: PyBinding): Unit = {
-    pyBinding.spookyOpt.foreach {
-      spooky =>
-    }
-  }
-
-  // return true if its binding's python driver is not dead
-  def isBusy: Boolean = {
-    this.driverToBindings.nonEmpty
+    Link.driverLocal -= driver
   }
 }

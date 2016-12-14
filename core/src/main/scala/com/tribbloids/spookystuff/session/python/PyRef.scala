@@ -80,14 +80,12 @@ trait PyRef extends Cleanable {
 
     driverToBindings.getOrElse(
       driver,
-      PyBinding(driver, spookyOpt)
+      new PyBinding(this, driver, spookyOpt)
     )
   }
 
   def Py(session: Session): PyBinding = {
-    session.asInstanceOf[Session].initializeDriverIfMissing {
-      _Py(session.pythonDriver, Some(session.spooky))
-    }
+    _Py(session.pythonDriver, Some(session.spooky))
   }
 
   def scratchDriver[T](fn: PythonDriver => T): T = {
@@ -106,97 +104,100 @@ trait PyRef extends Cleanable {
   }
 
   def bindingCleaningHook(pyBinding: PyBinding): Unit = {}
+}
 
-  /**
-    * bind to a session
-    * may be necessary to register with PythonDriver shutdown listener
-    */
-  case class PyBinding private[PyRef](
-                                       driver: PythonDriver,
-                                       spookyOpt: Option[SpookyContext]
-                                     ) extends Dynamic with LocalCleanable {
+/**
+  * bind to a session
+  * may be necessary to register with PythonDriver shutdown listener
+  */
+class PyBinding (
+                  val ref: PyRef,
+                  val driver: PythonDriver,
+                  val spookyOpt: Option[SpookyContext]
+                ) extends Dynamic with LocalCleanable {
 
-    {
-      dependencies.foreach {
-        dep =>
-          dep._Py(driver, spookyOpt)
-      }
+  import ref._
 
-      driver.lazyImport(imports)
-
-      val initOpt = createOpt.map {
-        create =>
-          (referenceOpt.toSeq ++ Seq(create)).mkString("=")
-      }
-
-      initOpt.foreach {
-        code =>
-          if (lzy) driver.lazyInterpret(code)
-          else driver.interpret(code)
-      }
-
-      PyRef.this.driverToBindings += driver -> this
+  {
+    dependencies.foreach {
+      dep =>
+        dep._Py(driver, spookyOpt)
     }
 
-    def strOpt: Option[String] = {
-      referenceOpt.flatMap {
-        ref =>
-          val tempName = "_temp" + SpookyUtils.randomSuffix
-          val result = driver.eval(
-            s"""
-               |$tempName=$ref
+    driver.batchImport(imports)
+
+    val initOpt = createOpt.map {
+      create =>
+        (referenceOpt.toSeq ++ Seq(create)).mkString("=")
+    }
+
+    initOpt.foreach {
+      code =>
+        if (lzy) driver.lazyInterpret(code)
+        else driver.interpret(code)
+    }
+
+    ref.driverToBindings += driver -> this
+  }
+
+  def strOpt: Option[String] = {
+    referenceOpt.flatMap {
+      ref =>
+        val tempName = "_temp" + SpookyUtils.randomSuffix
+        val result = driver.eval(
+          s"""
+             |$tempName=$ref
             """.trim.stripMargin,
-            Some(tempName),
-            spookyOpt
-          )
-          result._2
-      }
-    }
-
-    def pyCallMethod(methodName: String)(py: (Seq[PyRef], String)): PyRef#PyBinding = {
-
-      val refName = methodName + SpookyUtils.randomSuffix
-      val callPrefix: String = referenceOpt.map(v => v + ".").getOrElse("")
-
-      val result = DetachedRef(
-        createOpt = Some(s"$callPrefix$methodName${py._2}"),
-        referenceOpt = Some(refName),
-        dependencies = py._1,
-        converter = converter
-      )
-        ._Py(
-          driver,
+          Some(tempName),
           spookyOpt
         )
+        result._2
+    }
+  }
 
-      result
-    }
+  def pyCallMethod(methodName: String)(py: (Seq[PyRef], String)): PyBinding = {
 
-    def selectDynamic(fieldName: String) = {
-      pyCallMethod(fieldName)(Nil -> "")
-    }
-    def applyDynamic(methodName: String)(args: Any*) = {
-      pyCallMethod(methodName)(converter.args2Ref(args))
-    }
-    def applyDynamicNamed(methodName: String)(kwargs: (String, Any)*) = {
-      pyCallMethod(methodName)(converter.kwargs2Ref(kwargs))
-    }
+    val refName = methodName + SpookyUtils.randomSuffix
+    val callPrefix: String = referenceOpt.map(v => v + ".").getOrElse("")
 
-    /**
-      * chain to all bindings with active drivers
-      */
-    override protected def cleanImpl(): Unit = {
-      if (!driver.isCleaned) {
-        delOpt.foreach {
-          code =>
-            driver.interpret(code, spookyOpt)
-        }
+    val result = DetachedRef(
+      createOpt = Some(s"$callPrefix$methodName${py._2}"),
+      referenceOpt = Some(refName),
+      dependencies = py._1,
+      converter = converter
+    )
+      ._Py(
+        driver,
+        spookyOpt
+      )
+
+    result
+  }
+
+  def selectDynamic(fieldName: String) = {
+    pyCallMethod(fieldName)(Nil -> "")
+  }
+  def applyDynamic(methodName: String)(args: Any*) = {
+    pyCallMethod(methodName)(converter.args2Ref(args))
+  }
+  def applyDynamicNamed(methodName: String)(kwargs: (String, Any)*) = {
+    pyCallMethod(methodName)(converter.kwargs2Ref(kwargs))
+  }
+
+  /**
+    * chain to all bindings with active drivers
+    */
+  override protected def cleanImpl(): Unit = {
+    if (!driver.isCleaned) {
+      delOpt.foreach {
+        code =>
+          driver.interpret(code, spookyOpt)
       }
-
-      driverToBindings.remove(this.driver)
-
-      bindingCleaningHook(this)
     }
+
+    driverToBindings.remove(this.driver)
+
+    bindingCleaningHook(this)
   }
 }
 

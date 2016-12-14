@@ -55,12 +55,42 @@ object PythonDriver {
     pythonPath
   }
 
-  def NO_RETURN_VALUE: String = {
-    "*!?no returned value!?*"
+  val NO_RETURN_VALUE: String =   "======== *!?no return value!?* ========"
+
+  val EXECUTION_RESULT: String =  "======== *!?execution result!?* ========"
+
+  val ERROR_INFO: String =        "======== *!?error info!?* ========"
+
+  /**
+    * Checks if there is a syntax error or an exception
+    * From Zeppelin PythonInterpreter
+    * HIGHLY VOLATILE: doesn't always work
+    */
+  def primitiveErrorIn(lines: Seq[String]): Boolean = {
+
+    val indexed = lines.zipWithIndex
+    val tracebackRows: Seq[Int] = indexed.filter(_._1.startsWith("Traceback ")).map(_._2)
+    val errorRows: Seq[Int] = indexed.filter {
+      v =>
+        val matcher = errorPattern.matcher(v._1)
+        matcher.find
+    }.map(_._2)
+
+    if ((tracebackRows.nonEmpty && errorRows.nonEmpty) || syntaxErrorIn(lines)) true
+    else false
   }
 
-  def EXECUTION_RESULT: String = {
-    "*!?execution result!?*"
+  def syntaxErrorIn(lines: Seq[String]): Boolean = {
+    val syntaxErrorLine = lines.filter {
+      v =>
+        val matcher = syntaxErrorPattern.matcher(v)
+        matcher.find
+    }
+    syntaxErrorLine.nonEmpty
+  }
+
+  def indent(code: String) = {
+    code.split('\n').filter(_.nonEmpty).map("\t" + _).mkString("\n")
   }
 }
 
@@ -85,12 +115,24 @@ class PythonDriver(
   lazy val pendingLines: ArrayBuffer[String] = ArrayBuffer.empty
   lazy val importedLines: scala.collection.mutable.Set[String] = scala.collection.mutable.Set.empty
 
+  import PythonDriver._
+
+  def historyCodeOpt = {
+    if (this.historyLines.isEmpty) None
+    else {
+      val combined = "\n" + this.historyLines.mkString("\n").stripPrefix("\n")
+      val indentedCode = indent(combined)
+
+      Some(indentedCode)
+    }
+  }
+
   {
     val pythonPath = PythonDriver.deploy
 
     this.open
 
-    this.lazyImport(
+    this.batchImport(
       s"""
          |import sys
          |sys.path.append('$pythonPath')
@@ -99,8 +141,6 @@ class PythonDriver(
         .split("\n")
     )
   }
-
-  import PythonDriver._
 
   //avoid reopening!
   override lazy val open: Unit = {
@@ -112,7 +152,7 @@ class PythonDriver(
       SpookyUtils.retry(10, 1000) {
         if (process.isAlive) {
           try {
-            this.interpret("exit()")
+            this._interpret("exit()")
           }
           catch {
             case e: PyException =>
@@ -128,41 +168,6 @@ class PythonDriver(
       .getOrElse(this.interrupt())
   }
 
-  /**
-    * Checks if there is a syntax error or an exception
-    * From Zeppelin PythonInterpreter
-    *
-    * @return true if syntax error or exception has happened
-    */
-  private def pythonErrorIn(lines: Seq[String]): Boolean = {
-
-    val indexed = lines.zipWithIndex
-    val tracebackRows: Seq[Int] = indexed.filter(_._1.startsWith("Traceback ")).map(_._2)
-    val errorRows: Seq[Int] = indexed.filter {
-      v =>
-        val matcher = errorPattern.matcher(v._1)
-        matcher.find
-    }.map(_._2)
-    val syntaxErrorRow: Seq[Int] = indexed.filter {
-      v =>
-        val matcher = syntaxErrorPattern.matcher(v._1)
-        matcher.find
-    }.map(_._2)
-
-    if ((tracebackRows.nonEmpty && errorRows.nonEmpty) || syntaxErrorRow.nonEmpty) true
-    else false
-
-    //    tracebackRows.foreach {
-    //      row =>
-    //        val errorRowOpt = errorRows.find(_ > row)
-    //        errorRowOpt.foreach {
-    //          errorRow =>
-    //            val tracebackDetails = lines.slice(row +1, errorRow)
-    //            if (tracebackDetails.forall(_.startsWith(""))
-    //        }
-    //    }
-  }
-
   final def PROMPTS = "^(>>> |\\.\\.\\. )+"
 
   def removePrompts(str: String): String = {
@@ -173,18 +178,11 @@ class PythonDriver(
     s"$logPrefix $line"
   }
 
-  private def _interpret(code: String, spookyOpt: Option[SpookyContext] = None): Array[String] = {
-    val indentedCode = code.split('\n').filter(_.nonEmpty).map("\t" + _).mkString("\n")
+  private def _interpret(code: String, spookyOpt: Option[SpookyContext] = None, detectError: Boolean = true): Array[String] = {
+    val indentedCode = indent(code)
 
     LoggerFactory.getLogger(this.getClass).info(s">>> $logPrefix INPUT >>>\n" + indentedCode)
 
-    val historyCodeOpt = if (this.historyLines.isEmpty) None
-    else {
-      val combined = "\n" + this.historyLines.mkString("\n").stripPrefix("\n")
-      val indented = combined.split('\n').map(v => "\t" + v).mkString("\n")
-
-      Some(indented)
-    }
     val rows = try {
       // DO NOT DELETE! some Python Drivers are accessed by many threads (e.g. ProxyManager)
       val output = this.synchronized {
@@ -217,7 +215,10 @@ class PythonDriver(
     //      LoggerFactory.getLogger(this.getClass).info(s"$$$$$$ PYTHON-${this.taskOrThread.id} [NO OUTPUT] ===============\n" + rows.mkString("\n"))
     //    }
 
-    if (pythonErrorIn(rows)) {
+    val hasError = if (detectError) primitiveErrorIn(rows)
+    else syntaxErrorIn(rows)
+
+    if (hasError) {
       spookyOpt.foreach(
         _.metrics.pythonInterpretationError += 1
       )
@@ -229,17 +230,49 @@ class PythonDriver(
       throw ee
     }
 
+    rows
+  }
+
+  private def _interpretCaptureError(code: String, spookyOpt: Option[SpookyContext] = None): Array[String] = {
+    val indentedCode = indent(code)
+    val codeTryExcept =
+      s"""
+         |try:
+         |$indentedCode
+         |except Exception as e:
+         |    print('$ERROR_INFO')
+         |    raise
+       """.stripMargin
+
+    val rows = _interpret(codeTryExcept, detectError = false)
+
+    val splitterIndexOpt = rows.zipWithIndex.find(_._1 == ERROR_INFO)
+    splitterIndexOpt match {
+      case None =>
+      case Some(i) =>
+        val split = rows.splitAt(i._2)
+        throw new PyInterpreterException(
+          indentedCode,
+          split._2.slice(1, Int.MaxValue).mkString("\n"),
+          historyCodeOpt
+        )
+    }
+
     spookyOpt.foreach(
       _.metrics.pythonInterpretationSuccess += 1
     )
+
     rows
   }
 
   //TODO: due to unchecked use of thread-unsafe mutable objects (e.g. ArrayBuffer), all following APIs are rendered synchronized.
-  def interpret(code: String, spookyOpt: Option[SpookyContext] = None): Array[String] = this.synchronized{
+  def interpret(
+                 code: String,
+                 spookyOpt: Option[SpookyContext] = None
+               ): Array[String] = this.synchronized{
     def lazyCode = pendingLines.mkString("\n")
     val allCode = lazyCode + "\n" + code
-    val result = _interpret(allCode, spookyOpt)
+    val result = _interpretCaptureError(allCode, spookyOpt)
     this.historyLines += allCode
     this.pendingLines.clear()
     result
@@ -287,15 +320,17 @@ class PythonDriver(
     pendingLines += code
   }
 
-  def lazyImport(codes: Seq[String]): Unit = this.synchronized{
+  def batchImport(codes: Seq[String]): Unit = this.synchronized{
+    val effectiveCodes = ArrayBuffer[String]()
     codes
       .map(_.trim)
       .foreach {
         code =>
           if (!importedLines.contains(code)) {
-            lazyInterpret(code)
+            effectiveCodes += code
             importedLines += code
           }
       }
+    this._interpret(effectiveCodes.mkString("\n"), None, detectError = true)
   }
 }

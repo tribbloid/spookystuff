@@ -49,9 +49,11 @@ class PyException(
   {
     s"""
        |${historyCodeOpt.map(v => "\t### History ###\n" + v).getOrElse("")}
-       |${"\t"}# Error interpreting:
+       |
+       |${"\t"}### Error interpreting: ###
+       |
        |$code
-       |---------------------------------------
+       |================== TRACEBACK / ERROR ==================
        |$output
      """.stripMargin
   },

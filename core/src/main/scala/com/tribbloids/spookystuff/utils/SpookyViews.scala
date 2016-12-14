@@ -483,7 +483,7 @@ object SpookyViews {
       replace: String => String
     ): String = {
 
-      if (str.isEmpty) return str
+      if (str == null || str.isEmpty) return str
 
       val specialChars = "(?=[]\\[+$&|!(){}^\"~*?:\\\\-])"
       val escaped = delimiter.replaceAll(specialChars, "\\\\")

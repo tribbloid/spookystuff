@@ -66,11 +66,12 @@ object NoPythonDriverException extends SpookyException("INTERNAL ERROR: should i
 
 /**
   * the only implementation
-  * only manually cleaned at the end of Trace, so it's own lifespan is always immortal. But its drivers are not.
+  * should be manually cleaned By ActionLike, so don't set lifespan unless absolutely necessary
   */
 class Session(
                override val spooky: SpookyContext,
-               val driverLifespan: Lifespan = new Lifespan.Auto()
+               val driverLifespan: Lifespan = new Lifespan.Auto(),
+               override val lifespan: Lifespan = new Lifespan.Immortal()
              ) extends AbstractSession(spooky){
 
   @volatile private var _webDriverOpt: Option[CleanWebDriver] = None

@@ -18,7 +18,7 @@ object LinkIT{
 
     val endpoint = Endpoint(Seq(connStr))
     val session = new Session(spooky)
-    val link = Link.getOrCreate(
+    val link = Link.getOrInitialize(
       Seq(endpoint),
       proxyFactory,
       session
@@ -81,7 +81,7 @@ class LinkIT extends APMSimFixture {
     val proxyFactory = this.proxyFactory
     var locations: Array[String] = null
 
-    for (i <- 1 to 5) {
+    for (i <- 1 to 3) {
       val rdd: RDD[String] = simConnStrRDD.map {
         connStr =>
           LinkIT.moveAndGetLocation(spooky, proxyFactory, connStr)
@@ -99,4 +99,9 @@ class LinkIT extends APMSimFixture {
     )
     assert(spooky.metrics.linkCreated.value == 0)
   }
+}
+
+class LinkWithProxyIT extends LinkIT {
+
+  override lazy val proxyFactory = ProxyFactories.ForkToGCS()
 }

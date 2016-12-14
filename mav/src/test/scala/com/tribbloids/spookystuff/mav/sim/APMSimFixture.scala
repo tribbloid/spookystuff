@@ -2,9 +2,11 @@ package com.tribbloids.spookystuff.mav.sim
 
 import com.tribbloids.spookystuff.SpookyEnvFixture
 import com.tribbloids.spookystuff.mav.MAVConf
-import com.tribbloids.spookystuff.mav.telemetry.Link
-import com.tribbloids.spookystuff.session.{Cleanable, Lifespan, Session}
+import com.tribbloids.spookystuff.mav.telemetry.{Endpoint, Link}
+import com.tribbloids.spookystuff.session.python.PythonDriver
+import com.tribbloids.spookystuff.session.{Cleanable, Lifespan}
 import org.apache.spark.rdd.RDD
+import org.jutils.jprocesses.JProcesses
 import org.slf4j.LoggerFactory
 
 /**
@@ -27,12 +29,16 @@ abstract class APMSimFixture extends SpookyEnvFixture {
 
   var simConnStrRDD: RDD[String] = _
   def simConnStrs = simConnStrRDD.collect().toSeq.distinct
+  def simEndpoints = simConnStrs.map(v => Endpoint(Seq(v)))
 
   def parallelism: Int = sc.defaultParallelism
+  //  def parallelism: Int = 3
 
   override def setUp(): Unit = {
     super.setUp()
-    this.spooky.conf.submodules.get[MAVConf]().connectionRetries = 1
+    val mavConf = this.spooky.conf.submodules.get[MAVConf]()
+    mavConf.connectionRetries = 1 // do not retry
+    mavConf.endpoints = simEndpoints
   }
 
   override def beforeAll(): Unit = {
@@ -48,9 +54,9 @@ abstract class APMSimFixture extends SpookyEnvFixture {
       .map {
         i =>
           //NOT cleaned by TaskCompletionListener
-          val session = new Session(spooky, new Lifespan.JVM())
+          val apmSimDriver = new PythonDriver(lifespan = Lifespan.JVM(nameOpt = Some(s"APMSim-$i")))
           val sim = APMSim.next
-          sim.Py(session).connStr.strOpt
+          sim._Py(apmSimDriver).connStr.strOpt
       }
       .flatMap(v => v)
       .persist()
@@ -58,8 +64,8 @@ abstract class APMSimFixture extends SpookyEnvFixture {
     val info = connStrRDD.collect().mkString("\n")
     LoggerFactory.getLogger(this.getClass).info(
       s"""
-        |APM simulation(s) are up and running:
-        |$info
+         |APM simulation(s) are up and running:
+         |$info
       """.stripMargin
     )
     this.simConnStrRDD = connStrRDD
@@ -110,5 +116,14 @@ class APMSimSuite extends APMSimFixture {
     assert(simConnStrs.nonEmpty)
     assert(simConnStrs.size == simConnStrs.distinct.size)
     assert(simConnStrs.size == iNums.size)
+
+    import scala.collection.JavaConverters._
+
+    val processes = JProcesses.getProcessList()
+      .asScala
+
+    //ensure all apm processes are running
+    val apmPs = processes.filter(_.getName == "apm")
+    assert(apmPs.size == parallelism)
   }
 }

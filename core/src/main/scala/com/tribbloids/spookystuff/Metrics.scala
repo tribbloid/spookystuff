@@ -101,5 +101,6 @@ case class SpookyMetrics(
 
                           linkCreated: Accumulator[Int] = Metrics.accumulator(0, "linkCreated"),
                           linkDestroyed: Accumulator[Int] = Metrics.accumulator(0, "linkDestroyed")
+//                          linkRefitted: Accumulator[Int] = Metrics.accumulator(0, "linkRefitted")
                         ) extends Metrics {
 }

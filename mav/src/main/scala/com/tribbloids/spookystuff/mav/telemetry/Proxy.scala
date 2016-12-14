@@ -1,9 +1,8 @@
 package com.tribbloids.spookystuff.mav.telemetry
 
 import com.tribbloids.spookystuff.caching
-import com.tribbloids.spookystuff.session.{LocalCleanable, Lifespan}
-import com.tribbloids.spookystuff.session.python.{CaseInstanceRef, PythonDriver}
-import com.tribbloids.spookystuff.utils.NOTSerializable
+import com.tribbloids.spookystuff.session.python.{CaseInstanceRef, PyBinding, PythonDriver}
+import com.tribbloids.spookystuff.session.{Lifespan, LocalCleanable}
 
 object Proxy {
 
@@ -21,13 +20,13 @@ object Proxy {
     * Spark PythonWorkerFactory says spawning child process is faster using Python?
     * If doesn't work please degrade to JVM based process spawning.
     */
-  private var _mgrDriverOpt: Option[PythonDriver] = None
+  private var _managerDriverOpt: Option[PythonDriver] = None
 
-  def mgrDriver = _mgrDriverOpt
+  def managerDriver = _managerDriverOpt
     .filterNot(_.isCleaned)
     .getOrElse {
       val v = new PythonDriver(lifespan = Lifespan.JVM(nameOpt = Some("ProxyManager")))
-      _mgrDriverOpt = Some(v)
+      _managerDriverOpt = Some(v)
       v
     }
 }
@@ -52,7 +51,7 @@ case class Proxy(
     */
   def primaryOut: String = outs.head
 
-  def mgrPy: PyBinding = this._Py(Proxy.mgrDriver)
+  lazy val managerPy: PyBinding = this._Py(Proxy.managerDriver)
 
   //  override def _Py(driver: PythonDriver, spookyOpt: Option[SpookyContext]): PyBinding = {
   //    throw new UnsupportedOperationException("NOT ALLOWED! use mgrPy instead")
@@ -63,10 +62,4 @@ case class Proxy(
     Proxy.existing -= this
   }
 
-  override def bindingCleaningHook(pyBinding: PyBinding): Unit = {
-    pyBinding.spookyOpt.foreach {
-      spooky =>
-      //        spooky.metrics.proxyDestroyed += 1
-    }
-  }
 }

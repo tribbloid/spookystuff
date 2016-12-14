@@ -119,27 +119,20 @@ case class Snapshot(
                    ) extends Export with WaybackSupport{
 
   // all other fields are empty
-  override def doExeNoName(pb: Session): Seq[Doc] = {
+  override def doExeNoName(session: Session): Seq[Doc] = {
 
-    //    import scala.collection.JavaConversions._
-
-    //    val cookies = pb.driver.manage().getCookies
-    //    val serializableCookies = ArrayBuffer[SerializableCookie]()
-    //
-    //    for (cookie <- cookies) {
-    //      serializableCookies += cookie.asInstanceOf[SerializableCookie]
-    //    }
-
-    val page = new Doc(
-      DocUID((pb.backtrace :+ this).toList, this)(),
-      pb.webDriver.getCurrentUrl,
-      Some("text/html; charset=UTF-8"),
-      pb.webDriver.getPageSource.getBytes("UTF8")
-      //      serializableCookies
-    )
-
+    val pageOpt = session.webDriverOpt.map {
+      webDriver =>
+        new Doc(
+          DocUID((session.backtrace :+ this).toList, this)(),
+          webDriver.getCurrentUrl,
+          Some("text/html; charset=UTF-8"),
+          webDriver.getPageSource.getBytes("UTF8")
+          //      serializableCookies
+        )
+    }
     //    if (contentType != null) Seq(page.copy(declaredContentType = Some(contentType)))
-    Seq(page)
+    pageOpt.map(v => Seq(v)).getOrElse(Nil)
   }
 
   override def doInterpolate(pageRow: FetchedRow, schema: DataRowSchema) = {
@@ -161,21 +154,25 @@ case class Screenshot(
                        override val filter: DocFilter = Const.defaultImageFilter
                      ) extends Export with WaybackSupport {
 
-  override def doExeNoName(pb: Session): Seq[Doc] = {
+  override def doExeNoName(session: Session): Seq[Doc] = {
 
-    val content = pb.webDriver.self match {
-      case ts: TakesScreenshot => ts.getScreenshotAs(OutputType.BYTES)
-      case _ => throw new UnsupportedOperationException("driver doesn't support screenshot")
+    val pageOpt = session.webDriverOpt.map {
+      webDriver =>
+        val content = webDriver.self match {
+          case ts: TakesScreenshot => ts.getScreenshotAs(OutputType.BYTES)
+          case _ => throw new UnsupportedOperationException("driver doesn't support screenshot")
+        }
+
+        val page = new Doc(
+          DocUID((session.backtrace :+ this).toList, this)(),
+          webDriver.getCurrentUrl,
+          Some("image/png"),
+          content
+        )
+        page
     }
 
-    val page = new Doc(
-      DocUID((pb.backtrace :+ this).toList, this)(),
-      pb.webDriver.getCurrentUrl,
-      Some("image/png"),
-      content
-    )
-
-    Seq(page)
+    pageOpt.map(v => Seq(v)).getOrElse(Nil)
   }
 
   override def doInterpolate(pageRow: FetchedRow, schema: DataRowSchema) = {

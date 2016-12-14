@@ -77,7 +77,7 @@ case class TraceView(
 
   //if Trace has no output, automatically append Snapshot
   //invoke before interpolation!
-  def correct: Trace = {
+  def autoSnapshot: Trace = {
     if (children.isEmpty) children
     else if (children.last.hasOutput) children
     else children :+ Snapshot() //Don't use singleton, otherwise will flush timestamp and name
@@ -143,7 +143,7 @@ final case class TraceSetView(self: Set[Trace]) {
 
   def ||(other: TraversableOnce[Trace]): Set[Trace] = self ++ other
 
-  def correct: Set[Trace] = self.map(_.correct)
+  def correct: Set[Trace] = self.map(_.autoSnapshot)
 
   def interpolate(row: FetchedRow, schema: DataRowSchema): Set[Trace] =
     self.flatMap(_.interpolate(row, schema: DataRowSchema).map(_.children))

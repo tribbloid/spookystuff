@@ -1,6 +1,6 @@
 import json
 
-from dronekit import LocationGlobal, LocationGlobalRelative, LocationLocal
+import dronekit
 
 '''
 crash course on APM & PX4 flight modes:
@@ -59,16 +59,16 @@ class DummyPyAction(object):
         return json.dumps(merged)
 
 
-class Global(LocationGlobal):
+class LocationGlobal(dronekit.LocationGlobal):
     def __init__(self, lat, lon, alt=None):
-        super(Global, self).__init__(lat, lon, alt)
+        super(LocationGlobal, self).__init__(lat, lon, alt)
 
 
-class GlobalRelative(LocationGlobalRelative):
+class LocationGlobalRelative(dronekit.LocationGlobalRelative):
     def __init__(self, lat, lon, alt=None):
-        super(GlobalRelative, self).__init__(lat, lon, alt)
+        super(LocationGlobalRelative, self).__init__(lat, lon, alt)
 
 
-class Local(LocationLocal):
+class LocationLocal(dronekit.LocationLocal):
     def __init__(self, north, east, down):
         super(LocationLocal, self).__init__(north, east, down)

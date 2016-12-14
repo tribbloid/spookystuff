@@ -96,7 +96,7 @@ class Daemon(object):
         self.stop()
 
     def logPrint(self, *args):
-        print(self.fullName, args)
+        print(self.fullName, *args)
 
     @property
     def fullName(self):
@@ -115,7 +115,7 @@ class Proxy(Daemon):
 
     @property
     def fullName(self):
-        return self.name + "@" + self.master + ">" + self.outs[0]
+        return self.name + "@" + self.master + " > " + self.outs[0]
 
     def start(self):
         # type: () -> int
@@ -159,7 +159,7 @@ class Proxy(Daemon):
         else:
             return False
 
-defaultOptions = '--state-basedir=temp --daemon --default-modules="link" --cmd="module unload console"'
+defaultOptions = '--state-basedir=temp --daemon --default-modules="link"'  # --cmd="module unload console"'
 # defaultOptions = '--daemon --cmd="module unload console"'
 
 def spawnProxy(aircraft, setup, master, outs,

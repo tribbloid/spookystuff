@@ -118,7 +118,7 @@ sealed trait AbstractCleanable {
   def logPrefix = ""
 
   //synchronized to avoid double cleaning
-  def clean(silent: Boolean = false): Unit = this.synchronized {
+  protected def clean(silent: Boolean = false): Unit = this.synchronized {
     if (!isCleaned){
       isCleaned = true
       cleanImpl()
