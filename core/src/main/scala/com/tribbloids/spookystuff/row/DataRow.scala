@@ -147,7 +147,6 @@ case class DataRow(
           "" + this.get(field).get
       }
     )
-      .flatten
   }
 
   //  override def toString: String = data.toString()
