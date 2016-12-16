@@ -140,13 +140,18 @@ case class DataRow(
                    delimiter: String = Const.keyDelimiter
                  ): Option[String] = {
 
-    Option(
-      str.interpolate(delimiter){
-        key =>
-          val field = Field(key)
-          "" + this.get(field).get
-      }
-    )
+    try {
+      Option(
+        str.interpolate(delimiter){
+          key =>
+            val field = Field(key)
+            "" + this.get(field).get
+        }
+      )
+    }
+    catch {
+      case e: NoSuchElementException => None
+    }
   }
 
   //  override def toString: String = data.toString()
