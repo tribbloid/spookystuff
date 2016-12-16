@@ -12,7 +12,7 @@ object LinkIT{
 
   def moveAndGetLocation(
                           spooky: SpookyContext,
-                          proxyFactory: ProxyFactory,
+                          proxyFactory: LinkFactory,
                           connStr: String
                         ): String = {
 
@@ -37,7 +37,7 @@ object LinkIT{
 
 class LinkIT extends APMSimFixture {
 
-  lazy val proxyFactory: ProxyFactory = ProxyFactories.NoProxy
+  lazy val proxyFactory: LinkFactory = LinkFactories.NoProxy
 
   //  override def parallelism: Int = 2
 
@@ -103,5 +103,5 @@ class LinkIT extends APMSimFixture {
 
 class LinkWithProxyIT extends LinkIT {
 
-  override lazy val proxyFactory = ProxyFactories.ForkToGCS()
+  override lazy val proxyFactory = LinkFactories.ForkToGCS()
 }

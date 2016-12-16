@@ -48,6 +48,10 @@ class TestHelper() {
     }
   }
 
+  lazy val maxFailures: Int = {
+    Option(props.getProperty("MaxFailures")).map(_.toInt).getOrElse(4)
+  }
+
   def clusterSize = clusterSizeOpt.getOrElse(1)
 
   //if SPARK_PATH & ClusterSize in rootkey.csv is detected, use local-cluster simulation mode
@@ -88,7 +92,7 @@ class TestHelper() {
     */
   lazy val coreSettings: Map[String, String] = {
     if (clusterSizeOpt.isEmpty) {
-      val masterStr = s"local[$numProcessors,4]"
+      val masterStr = s"local[$numProcessors,$maxFailures]"
       println("initializing SparkContext in local mode:" + masterStr)
       Map(
         "spark.master" -> masterStr
@@ -103,7 +107,8 @@ class TestHelper() {
         "spark.home" -> sparkHome,
         "spark.executor.memory" -> (EXECUTOR_MEMORY + "m"),
         "spark.driver.extraClassPath" -> sys.props("java.class.path"),
-        "spark.executor.extraClassPath" -> sys.props("java.class.path")
+        "spark.executor.extraClassPath" -> sys.props("java.class.path"),
+        "spark.task.maxFailures" -> maxFailures.toString
       )
     }
   }

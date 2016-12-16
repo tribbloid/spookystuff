@@ -1,3 +1,3 @@
 
-connectionRetries = 2
-armRetries = 2
+connectionRetries = 1
+armRetries = 1

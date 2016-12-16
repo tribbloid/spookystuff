@@ -41,15 +41,23 @@ object Proxy {
 case class Proxy(
                   master: String,
                   outs: Seq[String], //first member is always used by DK.
-                  name: String = "DRONE"
+                  name: String
                 ) extends CaseInstanceRef with LocalCleanable {
 
-  Proxy.existing += this
+  //  this.synchronized {
 
-  /**
-    * no duplication due to port conflicts!
-    */
-  def primaryOut: String = outs.head
+  //  val existing = Proxy.existing // remember to clean up the old one to create a new one
+
+  {
+    val condition = !Proxy.existing.exists(_.master == this.master)
+    assert(condition, s"master ${this.master} is already used")
+  }
+
+  //    assert(!existing.map(_.primaryOut).toSet.contains(this.primaryOut),
+  //      s"primaryOut ${this.primaryOut} is already used")
+
+  Proxy.existing += this
+  //  }
 
   lazy val managerPy: PyBinding = this._Py(Proxy.managerDriver)
 
@@ -57,9 +65,8 @@ case class Proxy(
   //    throw new UnsupportedOperationException("NOT ALLOWED! use mgrPy instead")
   //  }
 
-  override def cleanImpl(): Unit = {
+  override protected def cleanImpl(): Unit = {
     super.cleanImpl()
     Proxy.existing -= this
   }
-
 }

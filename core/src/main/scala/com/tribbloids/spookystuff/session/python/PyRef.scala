@@ -32,13 +32,13 @@ trait PyRef extends Cleanable {
     caching.ConcurrentMap()
   }
 
-  def driverToBindings = {
+  def validDriverToBindings = {
     val deadDrivers = _driverToBindings.keys.filter(_.isCleaned)
     _driverToBindings --= deadDrivers
     _driverToBindings
   }
 
-  def bindings = driverToBindings.values
+  def bindings = validDriverToBindings.values
 
   def imports: Seq[String] = Seq(
     "import simplejson as json"
@@ -78,7 +78,7 @@ trait PyRef extends Cleanable {
            spookyOpt: Option[SpookyContext] = None
          ): PyBinding = {
 
-    driverToBindings.getOrElse(
+    validDriverToBindings.getOrElse(
       driver,
       new PyBinding(this, driver, spookyOpt)
     )
@@ -88,20 +88,20 @@ trait PyRef extends Cleanable {
     _Py(session.pythonDriver, Some(session.spooky))
   }
 
-  def scratchDriver[T](fn: PythonDriver => T): T = {
-    bindings
-      .headOption
-      .map {
-        binding =>
-          fn(binding.driver)
-      }
-      .getOrElse {
-        val driver = new PythonDriver()
-        val result = fn(driver)
-        driver.tryClean()
-        result
-      }
-  }
+//  def scratchDriver[T](fn: PythonDriver => T): T = {
+//    bindings
+//      .headOption
+//      .map {
+//        binding =>
+//          fn(binding.driver)
+//      }
+//      .getOrElse {
+//        val driver = new PythonDriver()
+//        val result = fn(driver)
+//        driver.tryClean()
+//        result
+//      }
+//  }
 
   def bindingCleaningHook(pyBinding: PyBinding): Unit = {}
 }
@@ -137,7 +137,7 @@ class PyBinding (
         else driver.interpret(code)
     }
 
-    ref.driverToBindings += driver -> this
+    ref.validDriverToBindings += driver -> this
   }
 
   def strOpt: Option[String] = {
@@ -195,7 +195,7 @@ class PyBinding (
       }
     }
 
-    driverToBindings.remove(this.driver)
+    validDriverToBindings.remove(this.driver)
 
     bindingCleaningHook(this)
   }
@@ -284,3 +284,20 @@ trait CaseInstanceRef extends InstanceRef with Product {
     this.converter.kwargs2Ref(attrMap)._2
   }
 }
+
+//trait PreBindedRef extends PyRef {
+//
+//  def driver: PythonDriver
+//  def spookyOpt: Option[SpookyContext]
+//
+//  val PY = _Py(driver, spookyOpt)
+//
+//  // Keep synchronization as it can only be legally called once
+//  override def _Py(driver: PythonDriver, spookyOpt: Option[SpookyContext]): PyBinding = this.synchronized {
+//    assert(
+//      driver == this.driver,
+//      "Another Python process is still alive, close that first to avoid port conflict"
+//    )
+//    super._Py(driver, spookyOpt)
+//  }
+//}

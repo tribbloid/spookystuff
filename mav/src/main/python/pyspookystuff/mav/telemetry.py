@@ -100,12 +100,12 @@ class Daemon(object):
 
     @property
     def fullName(self):
-        return None
+        return ""
 
 
 class Proxy(Daemon):
 
-    def __init__(self, master, name, outs=list()):
+    def __init__(self, master, name, outs):
         # type: (str, str, list[str]) -> None
         super(Proxy, self).__init__()
         self.master = master
@@ -159,7 +159,7 @@ class Proxy(Daemon):
         else:
             return False
 
-defaultOptions = '--state-basedir=temp --daemon --default-modules="link"'  # --cmd="module unload console"'
+defaultOptions = '--state-basedir=temp --daemon --default-modules="link"' # --cmd="module unload console"'
 # defaultOptions = '--daemon --cmd="module unload console"'
 
 def spawnProxy(aircraft, setup, master, outs,
@@ -190,29 +190,23 @@ class Link(Daemon, VehicleFunctions):
     # process local
     # existing = None  # type: # DroneCommunication
 
-    def __init__(self, endpoint, proxyOpt=None):
-        # type: (Endpoint, Proxy) -> None
+    def __init__(self, endpoint, outs, name):
+        # type: (Endpoint, list[str], str) -> None
         super(Link, self).__init__(None)
         self.endpoint = endpoint
-        self.proxy = proxyOpt
+        self.outs = outs
+        self.name = name
 
         # test if the endpoint really exist, if not there is no point doing the rest of it.
         # vehicle = _retryConnect(self.endpoint.connStr)
 
-        if self.proxy:
-            self.uri = self.proxy.outs[0]
+        if len(self.outs) != 0:
+            self.uri = self.outs[0]
         else:
             self.uri = self.endpoint.connStr
 
     @property
-    def fullName(self):
-        if self.proxy:
-            return self.proxy.fullName
-        else:
-            return "DRONE@" + self.endpoint.connStr
-
-    @property
-    def isConnect(self):
+    def isConnected(self):
         return not (self.vehicle == None)
 
     @retry(Const.connectionRetries)
@@ -223,6 +217,8 @@ class Link(Daemon, VehicleFunctions):
                 self.uri,
                 wait_ready=True
             )
+            # self.vehicle.commands.download()  # get home_location asynchronously
+            # self.vehicle.wait_ready()
             return self.vehicle
 
     # this doesn't terminate the proxy so GCS can still see it.

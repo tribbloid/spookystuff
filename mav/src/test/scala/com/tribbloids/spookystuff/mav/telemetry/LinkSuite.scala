@@ -2,6 +2,7 @@ package com.tribbloids.spookystuff.mav.telemetry
 
 import com.tribbloids.spookystuff.mav.sim.APMSimFixture
 import com.tribbloids.spookystuff.session.{Lifespan, NoPythonDriverException, Session}
+import org.slf4j.LoggerFactory
 
 object LinkSuite {
 
@@ -14,7 +15,7 @@ object LinkSuite {
 class LinkSuite extends APMSimFixture {
 
   import LinkSuite._
-    import com.tribbloids.spookystuff.utils.SpookyViews._
+  import com.tribbloids.spookystuff.utils.SpookyViews._
 
   lazy val getEndpoints: String => Seq[Endpoint] = {
     connStr =>
@@ -24,20 +25,27 @@ class LinkSuite extends APMSimFixture {
   override def setUp(): Unit = {
 
     super.setUp()
-    sc.foreachWorker(
-      Link.existing.foreach(_._2.driverToBindings.keys.foreach(_.tryClean()))
-    )
+    mimicLinkPythonDriverTermination()
   }
 
-  test("Link failed to be created won't exist in Link.sessionLocal & Link.existing") {
+  private def mimicLinkPythonDriverTermination() = {
+    LoggerFactory.getLogger(this.getClass).info("======== Python Drivers Cleanup ========")
+    sc.foreachWorker(
+      Link.existing.values.foreach(_.link.validDriverToBindings.keys.foreach(_.tryClean()))
+    )
+    Thread.sleep(2000)
+  }
+
+  test("Link failed to be created won't exist in Link.driverLocal") {
     val session = new Session(spooky, driverLifespan)
     // this will fail due to lack of Python Driver
     intercept[NoPythonDriverException.type] {
       Link.create(
         Endpoint(Seq("dummy")),
-        ProxyFactories.NoProxy,
-        session
+        LinkFactories.NoProxy,
+        spooky
       )
+        .link
         .Py(session)
     }
     assert(!Link.driverLocal.keys.toSet.contains(session))
@@ -45,7 +53,7 @@ class LinkSuite extends APMSimFixture {
 
   test("If without Proxy, Link.uri should = endpoint.connStr") {
     val spooky = this.spooky
-    val proxyFactory = ProxyFactories.NoProxy
+    val proxyFactory = LinkFactories.NoProxy
     val getEndpoints = this.getEndpoints
     val connStr_URIs = simConnStrRDD.map {
       connStr =>
@@ -77,7 +85,7 @@ class LinkSuite extends APMSimFixture {
   //  val defaultProxyFactory = ProxyFactories.Default()
   test("each Proxy for Link should use a different primary out") {
     val spooky = this.spooky
-    val proxyFactory = ProxyFactories.ForkToGCS()
+    val proxyFactory = LinkFactories.ForkToGCS()
     val getEndpoints = this.getEndpoints
     val linkRDD = simConnStrRDD.map {
       connStr =>
@@ -112,7 +120,7 @@ class LinkSuite extends APMSimFixture {
   test("If with Proxy, Link.uri should = Proxy.primaryOut") {
 
     val spooky = this.spooky
-    val proxyFactory = ProxyFactories.ForkToGCS()
+    val proxyFactory = LinkFactories.ForkToGCS()
     val getEndpoints = this.getEndpoints
     val uris = simConnStrRDD.map {
       connStr =>
@@ -135,8 +143,8 @@ class LinkSuite extends APMSimFixture {
   }
 
   val factories = Seq(
-    ProxyFactories.NoProxy,
-    ProxyFactories.ForkToGCS()
+    LinkFactories.NoProxy,
+    LinkFactories.ForkToGCS()
   )
 
   factories.foreach {
@@ -170,7 +178,7 @@ class LinkSuite extends APMSimFixture {
         }
           .collect()
         assert(spooky.metrics.linkCreated.value == parallelism)
-//        assert(spooky.metrics.linkDestroyed.value == 0) // not testable, refit always destroy previous link
+        //        assert(spooky.metrics.linkDestroyed.value == 0) // not testable, refit always destroy previous link
         linkStrs.foreach {
           tuple =>
             assert(tuple._1 == tuple._2)
@@ -198,15 +206,15 @@ class LinkSuite extends APMSimFixture {
         }
           .collect()
 
-        sc.foreachWorker(
-          Link.existing.foreach(_._2.driverToBindings.keys.foreach(_.tryClean()))
-        )
+        mimicLinkPythonDriverTermination()
+
         assert(spooky.metrics.linkCreated.value == parallelism)
         assert(spooky.metrics.linkDestroyed.value == 0)
         assert(Link.existing.size == parallelism)
+
         val livingLinkDrivers = Link.existing.values.toSeq.flatMap {
           link =>
-            link.driverToBindings.keys
+            link.link.validDriverToBindings.keys
         }
         assert(livingLinkDrivers.isEmpty)
 

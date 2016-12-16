@@ -7,35 +7,37 @@ import org.slf4j.LoggerFactory
   */
 package object telemetry {
 
-  type ProxyFactory = (Endpoint => Option[Proxy])
+  type LinkFactory = (Endpoint => Link)
 
-  implicit class ProxyFactoryView(factory: ProxyFactory) {
+  //disabled, too complex
+  implicit class LinkFactoryView(factory: LinkFactory) {
 
     /**
       * return true only of factory generates a proxy that has identical GCS outs comparing to link.proxy
       */
-    def canCreate(link: Link): Boolean = {
+    def canCreate(link: LinkWithContext): Boolean = {
 
-      val dryRun = factory.apply(link.endpoint)
-      val actual = link.proxyOpt
-      val gcsOuts: Seq[Seq[String]] = Seq(
+      val dryRun = factory.apply(link.link.endpoint)
+      val actual = link.link
+      val links = Seq(
         dryRun,
         actual
       )
+      dryRun.dryrunClean()
+      val gcsOuts = links
         .map {
-          proxyOpt =>
-            proxyOpt.map(_.outs.slice(1, Int.MaxValue))
-              .getOrElse(Nil)
+          link =>
+            link.outs.slice(1, Int.MaxValue)
         }
+
       val result = gcsOuts.distinct.size == 1
-      dryRun.foreach(_.tryClean(true))
       if (!result) {
-        LoggerFactory.getLogger(this.getClass).info(
+        LoggerFactory.getLogger(this.getClass).info (
           s"""
-             |Can no longer use existing telemetry link for drone ${link.endpoint.connStr}:
+             |Can no longer use existing telemetry link for drone ${link.link.endpoint.connStr}:
              |output should be routed to GCS(s) ${gcsOuts.head.mkString("[",", ","]")}
              |but instead existing one routes it to ${gcsOuts.last.mkString("[",", ","]")}
-             """.stripMargin
+             """.trim.stripMargin
         )
       }
       result

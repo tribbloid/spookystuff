@@ -11,6 +11,7 @@ class TestPageFromBrowser extends SpookyEnvFixture {
   test("empty page") {
     val emptyPage: Doc = {
       val session = new Session(spooky)
+      session.getOrProvisionWebDriver
 
       Snapshot(DocFilters.AcceptStatusCode2XX).apply(session).toList.head.asInstanceOf[Doc]
     }

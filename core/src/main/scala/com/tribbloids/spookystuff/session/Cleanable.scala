@@ -100,7 +100,7 @@ object Lifespan {
   case class Immortal(override val nameOpt: Option[String]) extends Lifespan {
     def this() = this(None)
 
-    override def getID: ID = Right(-1)
+    override def getID: ID = Right(0)
 
     override def addCleanupHook(fn: () => Unit): Unit = {}
   }
@@ -115,10 +115,10 @@ sealed trait AbstractCleanable {
   //each can only be cleaned once
   @volatile var isCleaned: Boolean = false
 
-  def logPrefix = ""
+  def logPrefix: String
 
   //synchronized to avoid double cleaning
-  protected def clean(silent: Boolean = false): Unit = this.synchronized {
+  def clean(silent: Boolean = false): Unit = this.synchronized {
     if (!isCleaned){
       isCleaned = true
       cleanImpl()
@@ -167,7 +167,7 @@ trait Cleanable extends AbstractCleanable {
   uncleanedInBatch += this
 
   override def logPrefix = {
-    s"${lifespan.toString}| ${super.logPrefix}"
+    s"${lifespan.toString} \t| "
   }
 
   @transient lazy val uncleanedInBatch: ConcurrentSet[Cleanable] = {

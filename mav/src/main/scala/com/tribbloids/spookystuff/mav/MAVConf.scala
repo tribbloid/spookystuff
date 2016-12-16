@@ -1,7 +1,7 @@
 package com.tribbloids.spookystuff.mav
 
 import com.tribbloids.spookystuff.AbstractConf
-import com.tribbloids.spookystuff.mav.telemetry.{Endpoint, ProxyFactories, ProxyFactory}
+import com.tribbloids.spookystuff.mav.telemetry.{Endpoint, LinkFactories, LinkFactory}
 import org.apache.spark.SparkConf
 
 object MAVConf {
@@ -20,7 +20,7 @@ case class MAVConf(
                     // blacklist is node specific and determined by GenPartitioner
                     // routing now becomes part of Connection?
                     var endpoints: Seq[Endpoint] = Nil,
-                    var proxyFactory: ProxyFactory = ProxyFactories.ForkToGCS(),
+                    var proxyFactory: LinkFactory = LinkFactories.ForkToGCS(),
                     var connectionRetries: Int = 3,
                     var takeOffAltitude: Double = 20 // in meters
                   ) extends AbstractConf {

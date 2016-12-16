@@ -25,6 +25,7 @@ class VehicleFunctions(object):
         # type: (Vehicle) -> None
         self.vehicle = vehicle
         self.localOrigin = None
+        self._homeLocation = None
 
     # all the following are blocking API
     @retry(Const.armRetries)
@@ -87,28 +88,31 @@ class VehicleFunctions(object):
                 i -= 1
 
         def armAndTakeOff(vehicle):
+            previousAlt = None
             while True:
                 if vehicle.is_armable:
                     arm(vehicle)
 
                 alt = vehicle.location.global_relative_frame.alt
-                if alt <= 0.1:
+                if alt <= 1:
                     print("taking off from the ground ... ")
                     vehicle.simple_takeoff(minAlt)
                 # Test for altitude just below target, in case of undershoot.
                 elif (minAlt - alt) <= error:
                     print("Reached target altitude")
                     break
-                elif vehicle.airspeed <= error:
-                    print("already airborne")
-                    break
+                elif previousAlt:
+                    if alt <= previousAlt:
+                        print("already airborne")
+                        break
 
-                print("Taking off: altitude =", alt, ", minimumAltitude =", minAlt)
+                print("Taking off: altitude =", alt, "\tminimumAltitude =", minAlt)
+                previousAlt = alt
                 self.failOnTimeout()
                 time.sleep(1)
 
         alt = self.vehicle.location.global_relative_frame.alt
-        if self.vehicle.is_armable or alt <= 0.1:
+        if self.vehicle.is_armable or alt <= 1:
             armAndTakeOff(self.vehicle)
 
         if (minAlt - alt) > error:
@@ -132,10 +136,12 @@ class VehicleFunctions(object):
         """
         slow and may retry several times, use with caution
         """
-        if not self.vehicle.home_location:
-            self.vehicle.commands.download()
-            self.vehicle.commands.wait_ready()
-        return self.vehicle.home_location
+        if not self._homeLocation:
+            if not self.vehicle.home_location:
+                self.vehicle.commands.download()
+                self.vehicle.commands.wait_ready()
+            self._homeLocation = self.vehicle.home_location
+        return self._homeLocation
 
     def move(self, targetLocation):
         # type: (LocationGlobal) -> None
@@ -182,6 +188,7 @@ class VehicleFunctions(object):
 
         oldDistance = None
 
+        # self.getHomeLocation
         while True: # Stop action if we are no longer in guided mode.
             distance, hori, vert=utils.airDistance(currentL(), effectiveTL)
             print(
@@ -192,11 +199,12 @@ class VehicleFunctions(object):
 
             if self.vehicle.mode.name=="GUIDED":
                 if oldDistance <= distance:
+                    ## TODO: calculation of closest distance can be more refined
                     if oldDistance is not None and oldDistance <= stdError(maxError= 2):
                         print("Reached target")
                         break
                     else:
-                        self.vehicle.simple_goto(effectiveTL)
+                        self.simple_goto(effectiveTL)
                         print("Engaging thruster")
                 oldDistance = distance
             else:
@@ -206,8 +214,16 @@ class VehicleFunctions(object):
             self.failOnTimeout()
             time.sleep(1)
 
+    @retry()
+    def simple_goto(self, effectiveTL, airspeed=None, groundspeed=None):
+        # type: (LocationGlobal) -> None
+        """
+        vanilla simple_goto() may timeout, adding retry
+        """
+        self.vehicle.simple_goto(effectiveTL, airspeed, groundspeed)
+
     def failOnTimeout(self):
-        assert(self.vehicle.last_heartbeat < 10)
+        assert(self.vehicle.last_heartbeat < 30)
 
 
 

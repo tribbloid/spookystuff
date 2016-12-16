@@ -148,7 +148,6 @@ class Session(
         getOrProvisionPythonDriver
         initializeDriverIfMissing(f, n - 1)
       case e: Throwable =>
-        LoggerFactory.getLogger(this.getClass).error("UNKNOWN ERROR:", e)
         throw e
     }
   }

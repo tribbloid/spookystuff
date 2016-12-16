@@ -55,7 +55,7 @@ class PyException(
        |$code
        |================== TRACEBACK / ERROR ==================
        |$output
-     """.stripMargin
+     """.trim.stripMargin
   },
   cause
 )
