@@ -29,12 +29,12 @@ class FetchWgetAndSaveIT extends IntegrationFixture {
 
     val finishTime = System.currentTimeMillis()
     assert(savedPageRows.length === 1)
-    assert(savedPageRows(0).pages.length === 1)
-    val pageTime = savedPageRows(0).pages.head.timeMillis
+    assert(savedPageRows(0).docs.length === 1)
+    val pageTime = savedPageRows(0).docs.head.timeMillis
     assert(pageTime < finishTime)
     assert(pageTime > finishTime-60000) //long enough even after the second time it is retrieved from s3 cache
 
-    val content = savedPageRows(0).pages.head.content
+    val content = savedPageRows(0).docs.head.raw
 
     assert(
       savedPageRows(0).dataRow.get('saved_path).get.asInstanceOf[Iterable[Any]].toSeq contains
@@ -57,14 +57,14 @@ class FetchWgetAndSaveIT extends IntegrationFixture {
 
     assert(unionRows.length === 2)
     assert(
-      unionRows(0).pages.head.copy(timeMillis = 0, content = null, saved = null) ===
-        unionRows(1).pages.head.copy(timeMillis = 0, content = null, saved = null)
+      unionRows(0).docs.head.copy(timeMillis = 0, raw = null, saved = null) ===
+        unionRows(1).docs.head.copy(timeMillis = 0, raw = null, saved = null)
     )
 
-    assert(unionRows(0).pages.head.timeMillis === unionRows(1).pages.head.timeMillis)
-    assert(unionRows(0).pages.head.content === unionRows(1).pages.head.content)
-    assert(unionRows(0).pages.head.content === unionRows(1).pages.head.content)
-    assert(unionRows(1).pages.head.name === "b")
+    assert(unionRows(0).docs.head.timeMillis === unionRows(1).docs.head.timeMillis)
+    assert(unionRows(0).docs.head.raw === unionRows(1).docs.head.raw)
+    assert(unionRows(0).docs.head.raw === unionRows(1).docs.head.raw)
+    assert(unionRows(1).docs.head.name === "b")
   }
 
   override def numPages= spooky.conf.defaultFetchOptimizer match {

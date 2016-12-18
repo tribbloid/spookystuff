@@ -1,13 +1,13 @@
 package com.tribbloids.spookystuff.mav.telemetry
 
-import com.tribbloids.spookystuff.{SpookyContext, caching}
 import com.tribbloids.spookystuff.mav.{MAVConf, ReinforcementDepletedException}
 import com.tribbloids.spookystuff.session.python._
 import com.tribbloids.spookystuff.session.{LocalCleanable, Session}
 import com.tribbloids.spookystuff.utils.{SpookyUtils, TreeException}
+import com.tribbloids.spookystuff.{PyInterpreterException, SpookyContext, caching}
 import org.slf4j.LoggerFactory
 
-import scala.util.{Failure, Try}
+import scala.util.Try
 
 case class Endpoint(
                      // remember, one drone can have several telemetry
@@ -237,7 +237,7 @@ object Link extends StaticRef {
                   proxy.managerPy.start()
                 }
             }
-            val result = Binding.this.start().strOpt.get
+            val result = Binding.this.start().$repr.get
             result
           }
           finally {
@@ -246,16 +246,20 @@ object Link extends StaticRef {
         }
       }
       catch {
-        case e: Throwable =>
+        case e: PyInterpreterException => //this indicates a possible port conflict
           ref.proxyOpt.foreach(_.managerPy.stop())
           //TODO: enable after ping daemon
-          ref.detectConflict(Seq(e))
-          throw e
 
-        //        LoggerFactory.getLogger(this.getClass).error(
-        //          s"${ref.endpoint.connStr} is down, adding to blacklist"
-        //        )
-        //            Link.blacklist += endpoint.connStr
+          try {
+            ref.detectConflicts(Option(e.cause).toSeq)
+            throw e
+          }
+          catch {
+            case ee: TreeException =>
+              throw e.copy(
+                cause = ee
+              )
+          }
       }
     }
 
@@ -346,19 +350,21 @@ case class Link private[telemetry](
     !onHold && validDriverToBindings.isEmpty
   }
 
-  def detectConflict(causes: Seq[Throwable] = Nil): Unit = {
-    val c1 = Link.existing.get(endpoint.connStr).forall(_ eq this)
+  def detectConflicts(causes: Seq[Throwable] = Nil): Unit = {
+    val c1 = Link.existing.get(endpoint.connStr).forall(_.link eq this)
     val existing = Link.existing.values // remember to clean up the old one to create a new one
-    val c2 = existing.filter(_.link.endpoint.connStr == endpoint.connStr).forall(_ eq this)
-    val c3 = existing.filter(_.link.uri == uri).forall(_ eq this)
+    val c2 = existing.filter(_.link.endpoint.connStr == endpoint.connStr).forall(_.link eq this)
+    val c3 = existing.filter(_.link.uri == uri).forall(_.link eq this)
 
-    TreeException.&&&(
-      causes.map(v => Failure(v)) ++
+    val result = TreeException.&&&(
         Seq(
           Try(assert(c1, s"Conflict: endpoint (index) ${endpoint.connStr} is already used")),
           Try(assert(c2, s"Conflict: endpoint ${endpoint.connStr} is already used")),
           Try(assert(c3, s"Conflict: uri $uri is already used"))
-        ))
+        ),
+      extra = causes
+    )
+    result
   }
 
   var isDryrun = false
@@ -386,7 +392,7 @@ case class LinkWithContext(
                             factory: LinkFactory
                           ) extends LocalCleanable {
   try {
-    link.detectConflict()
+    link.detectConflicts()
 
     Link.existing += link.endpoint.connStr -> this
     spooky.metrics.linkCreated += 1

@@ -236,7 +236,7 @@ class PythonDriver(
       val ee = new PyInterpreterException(
         indentedCode,
         rows.mkString("\n"),
-        historyCodeOpt
+        historyCodeOpt = historyCodeOpt
       )
       throw ee
     }
@@ -265,7 +265,7 @@ class PythonDriver(
         throw new PyInterpreterException(
           indentedCode,
           split._2.slice(1, Int.MaxValue).mkString("\n"),
-          historyCodeOpt
+          historyCodeOpt = historyCodeOpt
         )
     }
 
@@ -289,6 +289,10 @@ class PythonDriver(
     result
   }
 
+  /**
+    *
+    * @return stdout strings -> print(resultVar)
+    */
   def eval(
             code: String,
             resultVarOpt: Option[String] = None,
@@ -325,6 +329,19 @@ class PythonDriver(
 
         split._1 -> resultOpt
     }
+  }
+
+
+  def evalExpr(expr: String, spookyOpt: Option[SpookyContext] = None): Option[String] = {
+    val tempName = "_temp" + SpookyUtils.randomSuffix
+    val result = eval(
+      s"""
+         |$tempName=$expr
+            """.trim.stripMargin,
+      Some(tempName),
+      spookyOpt
+    )
+    result._2
   }
 
   def lazyInterpret(code: String): Unit = this.synchronized{

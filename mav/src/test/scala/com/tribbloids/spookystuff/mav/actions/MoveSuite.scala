@@ -41,12 +41,29 @@ class MoveSuite extends APMSimFixture {
     val move = Move(Literal(wp1), Literal(wp2))
 
     move.toMessage.prettyJSON().shouldBe(
-
+      """{
+        |  "className" : "com.tribbloids.spookystuff.mav.actions.Move",
+        |  "params" : {
+        |    "from" : {
+        |      "lat" : 0.0,
+        |      "lon" : 0.0,
+        |      "alt" : 0.0
+        |    },
+        |    "to" : {
+        |      "lat" : 20.0,
+        |      "lon" : 30.0,
+        |      "alt" : 50.0
+        |    },
+        |    "delay" : null
+        |  }
+        |}
+      """.stripMargin
     )
   }
 
   //  override def parallelism: Int = 1
 
+  //TODO: add Mark result validations!
   test("Run 1 track per drone") {
 
     val tracks: Seq[(LocationLocal, LocationLocal)] = MoveSuite.generateTracks(
@@ -76,12 +93,15 @@ class MoveSuite extends APMSimFixture {
 
     val result = spooky.create(df)
       .fetch (
-        Move('_1, '_2),
+        Move('_1, '_2)
+          +> Mark(),
         fetchOptimizer = FetchOptimizers.Narrow // current fetchOptimizer is kaput, reverts everything to hash partitioner
       )
+      .toObjectRDD(S.formattedCode)
       .collect()
-  }
 
+    result.foreach(println)
+  }
 
   test("Run 2.5 track per drone") {
 
@@ -114,7 +134,8 @@ class MoveSuite extends APMSimFixture {
 
     val result = spooky.create(df)
       .fetch (
-        Move('_1, '_2),
+        Move('_1, '_2)
+          +> Mark(),
         fetchOptimizer = FetchOptimizers.Narrow // current fetchOptimizer is kaput, reverts everything to hash partitioner
       )
       .collect()

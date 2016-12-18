@@ -27,6 +27,6 @@ class TestPageFromFile extends TestPageFromHttp with LocalPathDocsFixture {
 
     val loadedContent = DocUtils.load(page.saved.head)(spooky)
 
-    assert(loadedContent === page.content)
+    assert(loadedContent === page.raw)
   }
 }

@@ -26,13 +26,13 @@ object Extractors {
   }
 
   def GetPageExpr(field: Field) = GenExtractor.fromOptionFn {
-    (v1: FR) => v1.getPage(field.name)
+    (v1: FR) => v1.getDoc(field.name)
   }
   def GetOnlyPageExpr = GenExtractor.fromOptionFn {
-    (v1: FR) => v1.getOnlyPage
+    (v1: FR) => v1.getOnlyDoc
   }
   def GetAllPagesExpr = GenExtractor.fromFn {
-    (v1: FR) => new Elements(v1.pages.toList)
+    (v1: FR) => new Elements(v1.docs.toList)
   }
 
   case class FindAllMeta(arg: Extractor[Unstructured], selector: String)

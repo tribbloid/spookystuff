@@ -60,11 +60,12 @@ class PyException(
   cause
 )
 
-class PyInterpreterException(
-                              code: String,
-                              output: String,
-                              historyCodeOpt: Option[String] = None
-                            ) extends PyException(code, output, null, historyCodeOpt)
+case class PyInterpreterException(
+                                   override val code: String,
+                                   override val output: String,
+                                   override val cause: Throwable = null,
+                                   override val historyCodeOpt: Option[String] = None
+                                 ) extends PyException(code, output, cause, historyCodeOpt)
 
 class RetryingException(
                          override val message: String = "",

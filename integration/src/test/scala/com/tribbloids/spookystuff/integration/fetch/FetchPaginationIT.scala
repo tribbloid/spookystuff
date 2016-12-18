@@ -32,9 +32,9 @@ class FetchPaginationIT extends IntegrationFixture {
 
     val finishTime = System.currentTimeMillis()
     assert(pageRows.length === 2) //TODO: adapt to new default grouping: ab b
-    assert(pageRows(0).pages.map(_.name) === Seq("a", "b"))
-    assert(pageRows(1).pages.map(_.name) === Seq("b"))
-    val pageTime = pageRows(0).pages.head.timeMillis
+    assert(pageRows(0).docs.map(_.name) === Seq("a", "b"))
+    assert(pageRows(1).docs.map(_.name) === Seq("b"))
+    val pageTime = pageRows(0).docs.head.timeMillis
     assert(pageTime < finishTime)
     assert(pageTime > finishTime-60000) //long enough even after the second time it is retrieved from DFS cache
 
@@ -53,8 +53,8 @@ class FetchPaginationIT extends IntegrationFixture {
     val pageRows2 = RDD2.unsquashedRDD.collect()
 
     assert(pageRows2.length === 2)
-    assert(pageRows2(0).pages.map(_.name) === Seq("c", "d"))
-    assert(pageRows2(1).pages.map(_.name) === Seq("d"))
+    assert(pageRows2(0).docs.map(_.name) === Seq("c", "d"))
+    assert(pageRows2(1).docs.map(_.name) === Seq("d"))
   }
 
   override def numPages= spooky.conf.defaultFetchOptimizer match {

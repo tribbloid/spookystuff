@@ -212,7 +212,7 @@ class VehicleFunctions(object):
     def reconnect(self):
         pass
 
-    @retry()
+    @retry(2)
     def simple_goto(self, effectiveTL, airspeed=None, groundspeed=None):
         # type: (LocationGlobal) -> None
         """

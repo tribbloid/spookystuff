@@ -24,7 +24,7 @@ class TestPageFromHttp extends SpookyEnvFixture {
 
     val loadedContent = DocUtils.load(page.saved.head)(spooky)
 
-    assert(loadedContent === page.content)
+    assert(loadedContent === page.raw)
   }
 
   test("wget json, save and load") {
@@ -46,7 +46,7 @@ class TestPageFromHttp extends SpookyEnvFixture {
 
     val loadedContent = DocUtils.load(page.saved.head)(spooky)
 
-    assert(loadedContent === page.content)
+    assert(loadedContent === page.raw)
   }
 
   test("wget image, save and load") {
@@ -64,7 +64,7 @@ class TestPageFromHttp extends SpookyEnvFixture {
 
     val loadedContent = DocUtils.load(page.saved.head)(spooky)
 
-    assert(loadedContent === page.content)
+    assert(loadedContent === page.raw)
   }
 
   test("wget pdf, save and load") {
@@ -82,7 +82,7 @@ class TestPageFromHttp extends SpookyEnvFixture {
 
     val loadedContent = DocUtils.load(page.saved.head)(spooky)
 
-    assert(loadedContent === page.content)
+    assert(loadedContent === page.raw)
   }
 
   test("childrenWithSiblings") {
@@ -133,7 +133,7 @@ class TestPageFromHttp extends SpookyEnvFixture {
 
     val loadedContent = DocUtils.load(page.saved.head)(spooky)
 
-    assert(loadedContent === page.content)
+    assert(loadedContent === page.raw)
   }
 
   test("wget csv, save and load") {
@@ -155,6 +155,6 @@ class TestPageFromHttp extends SpookyEnvFixture {
 
     val loadedContent = DocUtils.load(page.saved.head)(spooky)
 
-    assert(loadedContent === page.content)
+    assert(loadedContent === page.raw)
   }
 }

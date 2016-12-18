@@ -1,12 +1,48 @@
 package com.tribbloids.spookystuff.mav.actions
 
 import com.tribbloids.spookystuff.SpookyEnvFixture
-import com.tribbloids.spookystuff.doc.Doc
+import com.tribbloids.spookystuff.actions.Export
+import com.tribbloids.spookystuff.doc.{Doc, DocUID, Fetched}
+import com.tribbloids.spookystuff.extractors.{Extractor, Literal}
+import com.tribbloids.spookystuff.row.{DataRowSchema, FetchedRow}
+import com.tribbloids.spookystuff.session.Session
+import com.tribbloids.spookystuff.session.python.CaseInstanceRef
+import org.apache.http.entity.ContentType
 
 /**
-  * Created by peng on 01/09/16.
+  * Created by peng on 30/08/16.
   */
-class DummyPyActionSuite extends SpookyEnvFixture {
+@SerialVersionUID(-6784287573066896999L)
+case class DummyPyAction(
+                          a: Extractor[Int] = Literal(1)
+                        ) extends Export with CaseInstanceRef {
+
+  override def doExeNoName(session: Session): Seq[Fetched] = {
+    val repr1 = Py(session).dummy(2, 3).$repr
+    val repr2 = Py(session).dummy(b = 3, c = 2).$repr
+    assert(repr1 == repr2)
+    val doc = new Doc(
+      uid = DocUID(List(this), this)(),
+      uri = "dummy",
+      declaredContentType = Some(ContentType.TEXT_PLAIN.toString),
+      raw = repr1.get.getBytes("UTF-8")
+    )
+    Seq(doc)
+  }
+
+  override def doInterpolate(pageRow: FetchedRow, schema: DataRowSchema) = {
+
+    a.resolve(schema)
+      .lift
+      .apply(pageRow)
+      .map(
+        v =>
+          this.copy(a = Literal.erase(v)).asInstanceOf[this.type]
+      )
+  }
+}
+
+class PythonActionSuite extends SpookyEnvFixture {
 
   val action = DummyPyAction()
 

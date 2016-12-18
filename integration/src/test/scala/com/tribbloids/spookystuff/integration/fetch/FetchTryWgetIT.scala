@@ -26,7 +26,7 @@ class FetchTryWgetIT extends UncacheableIntegrationFixture {
       .select(S.code ~ 'page)
       .persist()
     //
-    assert(RDD.unsquashedRDD.first().getOnlyPage.isEmpty)
+    assert(RDD.unsquashedRDD.first().getOnlyDoc.isEmpty)
 
     val pageRows = RDD.toStringRDD('page).collect()
     assert(pageRows sameElements Array(null))

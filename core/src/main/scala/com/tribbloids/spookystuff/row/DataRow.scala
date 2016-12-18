@@ -6,7 +6,6 @@ import com.tribbloids.spookystuff.Const
 import com.tribbloids.spookystuff.utils.{SpookyUtils, SpookyViews}
 
 import scala.reflect.ClassTag
-import scala.util.Try
 
 /**
   * data container that is persisted through different stages of execution plan.

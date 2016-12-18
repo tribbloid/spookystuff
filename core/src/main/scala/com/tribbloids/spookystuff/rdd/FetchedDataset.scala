@@ -1,12 +1,12 @@
 package com.tribbloids.spookystuff.rdd
 
-import com.tribbloids.spookystuff.actions.{Snapshot, ClusterRetry$, Visit, Wget, _}
+import com.tribbloids.spookystuff.actions.{ClusterRetry, Snapshot, Visit, Wget, _}
 import com.tribbloids.spookystuff.doc.Doc
 import com.tribbloids.spookystuff.dsl.{ExploreAlgorithm, FetchOptimizer, JoinType, _}
 import com.tribbloids.spookystuff.execution.{ExplorePlan, FetchPlan, _}
 import com.tribbloids.spookystuff.extractors.{GetExpr, _}
 import com.tribbloids.spookystuff.row.{Field, _}
-import com.tribbloids.spookystuff.utils.{SpookyViews, SpookyUtils}
+import com.tribbloids.spookystuff.utils.{SpookyUtils, SpookyViews}
 import com.tribbloids.spookystuff.{Const, SpookyConf, SpookyContext}
 import org.apache.spark.Partitioner
 import org.apache.spark.rdd.RDD
@@ -21,6 +21,8 @@ import scala.collection.immutable.ListMap
 import scala.collection.mutable.ArrayBuffer
 import scala.language.implicitConversions
 import scala.reflect.ClassTag
+
+import scala.Ordering.Implicits._
 
 /**
   * Created by peng on 28/03/16.
@@ -38,8 +40,6 @@ case class FetchedDataset(
 
   import SpookyViews._
   import plan.CacheQueueView
-
-  import scala.Ordering.Implicits._
 
   implicit def plan2Dataset(plan: ExecutionPlan): FetchedDataset = FetchedDataset(plan)
 

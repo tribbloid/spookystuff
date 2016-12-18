@@ -152,6 +152,7 @@ trait MessageRepr[Obj] extends Message {
   def toObject: Obj
 }
 
+//TODO: remove type param, useless!
 case class MessageView[M](
                            override val value: M,
                            override val formats: Formats = Xml.defaultFormats

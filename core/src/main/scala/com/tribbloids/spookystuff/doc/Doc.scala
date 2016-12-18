@@ -129,13 +129,13 @@ case class Doc(
 
                 override val uri: String, //redirected
                 declaredContentType: Option[String],
-                content: Array[Byte],
+                raw: Array[Byte],
                 //                 cookie: Seq[SerializableCookie] = Nil,
                 override val timeMillis: Long = System.currentTimeMillis(),
                 saved: scala.collection.mutable.Set[String] = scala.collection.mutable.Set(),
                 override val cacheable: Boolean = true,
                 httpStatus: Option[StatusLine] = None,
-                metadata: Map[String, Any] = Map.empty //for customizing parsing
+                metadata: Map[String, Any] = Map.empty //for customizing parsing TODO: remove, delegate to CSVElement.
               ) extends Unstructured with Fetched with IDMixin {
 
   lazy val _id = (uid, uri, declaredContentType, timeMillis, httpStatus.toString)
@@ -149,9 +149,9 @@ case class Doc(
     val charsetD = new UniversalDetector(null)
     val ss = 4096
 
-    for (i <- 0.until(content.length, ss)) {
-      val length = Math.min(content.length - i, ss)
-      charsetD.handleData(content, i, length)
+    for (i <- 0.until(raw.length, ss)) {
+      val length = Math.min(raw.length - i, ss)
+      charsetD.handleData(raw, i, length)
       if (charsetD.isDone) return charsetD.getDetectedCharset
     }
 
@@ -183,7 +183,7 @@ case class Doc(
         val metadata = new Metadata()
         val slash: Int = uri.lastIndexOf('/')
         metadata.set(TikaMetadataKeys.RESOURCE_NAME_KEY, uri.substring(slash + 1))
-        val stream = TikaInputStream.get(content, metadata)
+        val stream = TikaInputStream.get(raw, metadata)
         try {
           val mediaType = Const.mimeDetector.detect(stream, metadata)
           //        val mimeType = mediaType.getBaseType.toString
@@ -208,7 +208,7 @@ case class Doc(
   @transient lazy val root: Unstructured = {
     val effectiveCharset = charset.orNull
 
-    val contentStr = new String(content, effectiveCharset)
+    val contentStr = new String(raw, effectiveCharset)
     if (mimeType.contains("html") || mimeType.contains("xml") || mimeType.contains("directory")) {
       HtmlElement(contentStr, uri) //not serialize, parsing is faster
     }
@@ -227,7 +227,7 @@ case class Doc(
       PlainElement(contentStr, uri) //not serialize, parsing is faster
     }
     else {
-      TikaMetadataXMLElement(content, effectiveCharset, mimeType, uri)
+      TikaMetadataXMLElement(raw, effectiveCharset, mimeType, uri)
     }
   }
   def charset: Option[Selector] = Option(parsedContentType.getCharset).map(_.name())
@@ -281,7 +281,7 @@ case class Doc(
       }
 
       try {
-        fos.write(content) //       remember that apache IOUtils is defective for DFS!
+        fos.write(raw) //       remember that apache IOUtils is defective for DFS!
       }
       finally {
         fos.close()

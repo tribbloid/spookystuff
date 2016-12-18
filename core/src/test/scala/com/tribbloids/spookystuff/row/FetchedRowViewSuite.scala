@@ -19,12 +19,12 @@ class FetchedRowViewSuite extends SpookyEnvFixture with LocalPathDocsFixture {
       ).fetch(spooky)
     val row = FetchedRow(fetched = pages)
 
-    val page1 = row.getOnlyPage
+    val page1 = row.getOnlyDoc
     assert(page1.get === pages.head)
 
     println(Wget(HTML_URL).toString())
     val defaultName = Wget(HTML_URL).toString()
-    val page2 = row.getPage(defaultName)
+    val page2 = row.getDoc(defaultName)
     assert(page2.get === pages.head)
   }
 

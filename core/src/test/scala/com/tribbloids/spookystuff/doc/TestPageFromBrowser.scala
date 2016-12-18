@@ -36,6 +36,6 @@ class TestPageFromBrowser extends SpookyEnvFixture {
 
     val loadedContent = DocUtils.load(page.saved.head)(spooky)
 
-    assert(loadedContent === page.content)
+    assert(loadedContent === page.raw)
   }
 }

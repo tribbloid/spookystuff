@@ -31,7 +31,11 @@ object TreeException {
     }
   }
 
-  def &&&[T](trials: Seq[Try[T]], agg: Seq[Throwable] => TreeException = es => new Node(causes = es)): Seq[T] = {
+  def &&&[T](
+              trials: Seq[Try[T]],
+              agg: Seq[Throwable] => TreeException = es => new Node(causes = es),
+              extra: Seq[Throwable] = Nil
+            ): Seq[T] = {
     val es = trials.collect{
       case Failure(e) => e
     }
@@ -39,7 +43,7 @@ object TreeException {
       trials.map(_.get)
     }
     else {
-      throw agg(es)
+      throw agg(extra.flatMap(v => Option(v)) ++ es)
     }
   }
 

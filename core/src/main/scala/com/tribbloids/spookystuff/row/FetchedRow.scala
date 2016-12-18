@@ -41,28 +41,28 @@ case class FetchedRow(
     )
   )
 
-  def pages: Seq[Doc] = fetched.flatMap {
+  def docs: Seq[Doc] = fetched.flatMap {
     case page: Doc => Some(page)
     case _ => None
   }
 
-  def noPages: Seq[NoDoc] = fetched.flatMap {
+  def noDocs: Seq[NoDoc] = fetched.flatMap {
     case noPage: NoDoc => Some(noPage)
     case _ => None
   }
 
-  def getOnlyPage: Option[Doc] = {
-    val pages = this.pages
+  def getOnlyDoc: Option[Doc] = {
+    val pages = this.docs
 
     if (pages.size > 1) throw new UnsupportedOperationException("Ambiguous key referring to multiple pages")
     else pages.headOption
   }
 
-  def getPage(keyStr: String): Option[Doc] = {
+  def getDoc(keyStr: String): Option[Doc] = {
 
     //    if (keyStr == Const.onlyPageWildcard) return getOnlyPage
 
-    val pages = this.pages.filter(_.name == keyStr)
+    val pages = this.docs.filter(_.name == keyStr)
 
     if (pages.size > 1) throw new UnsupportedOperationException("Ambiguous key referring to multiple pages")
     else pages.headOption
@@ -70,7 +70,7 @@ case class FetchedRow(
 
   def getUnstructured(field: Field): Option[Unstructured] = {
 
-    val page = getPage(field.name)
+    val page = getDoc(field.name)
     val value = dataRow.getTyped[Unstructured](field)
 
     if (page.nonEmpty && value.nonEmpty) throw new UnsupportedOperationException("Ambiguous key referring to both pages and data")

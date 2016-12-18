@@ -163,7 +163,7 @@ package object dsl {
 
     def contentType: Extractor[String] = self.andFn(_.contentType)
 
-    def content: Extractor[Seq[Byte]] = self.andFn(_.content.toSeq)
+    def content: Extractor[Seq[Byte]] = self.andFn(_.raw.toSeq)
 
     def timestamp: Extractor[Timestamp] = self.andFn(_.timestamp)
 

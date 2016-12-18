@@ -1,6 +1,8 @@
 package com.tribbloids.spookystuff.mav.telemetry
 
+import com.tribbloids.spookystuff.{PyInterpreterException, SpookyEnvFixture}
 import com.tribbloids.spookystuff.mav.sim.APMSimFixture
+import com.tribbloids.spookystuff.session.python.PythonDriver
 import com.tribbloids.spookystuff.session.{Lifespan, NoPythonDriverException, Session}
 import org.slf4j.LoggerFactory
 
@@ -12,6 +14,7 @@ object LinkSuite {
 /**
   * Created by peng on 12/11/16.
   */
+
 class LinkSuite extends APMSimFixture {
 
   import LinkSuite._
@@ -25,10 +28,10 @@ class LinkSuite extends APMSimFixture {
   override def setUp(): Unit = {
 
     super.setUp()
-    mimicLinkPythonDriverTermination()
+    mockLinkDriverTermination()
   }
 
-  private def mimicLinkPythonDriverTermination() = {
+  private def mockLinkDriverTermination() = {
     LoggerFactory.getLogger(this.getClass).info("======== Python Drivers Cleanup ========")
     sc.foreachWorker(
       Link.existing.values.foreach(_.link.validDriverToBindings.keys.foreach(_.tryClean()))
@@ -36,19 +39,75 @@ class LinkSuite extends APMSimFixture {
     Thread.sleep(2000)
   }
 
-  test("Link failed to be created won't exist in Link.driverLocal") {
+  test("Link can create PyBinding") {
+
     val session = new Session(spooky, driverLifespan)
+    val proxyFactory = LinkFactories.NoProxy
+    val link = Link.getOrInitialize(
+      getEndpoints(simConnStrs.head),
+      proxyFactory,
+      session
+    )
+
+    val py = link.Py(session)
+
+    val name = py.name.$repr.get
+    val endpoint = py.endpoint.$message.get.prettyJSON()
+
+    name.shouldBe(
+      "DRONE"
+    )
+    endpoint.shouldBe(
+      """
+        |{
+        |  "connStrs" : [ "tcp:localhost:5770" ],
+        |  "vehicleType" : null
+        |}
+      """.stripMargin
+    )
+  }
+
+  test("Link PyBinding failed to be created won't exist in Link.existing or driverLocal") {
+    val session = new Session(spooky)
+    val proxyFactory = LinkFactories.NoProxy
+
     // this will fail due to lack of Python Driver
     intercept[NoPythonDriverException.type] {
-      Link.create(
-        Endpoint(Seq("dummy")),
-        LinkFactories.NoProxy,
-        spooky
+      val link = Link.getOrCreate(
+        getEndpoints(simConnStrs.head),
+        proxyFactory,
+        session
       )
-        .link
         .Py(session)
     }
-    assert(!Link.driverLocal.keys.toSet.contains(session))
+    assert(Link.existing.isEmpty)
+    assert(Link.driverLocal.isEmpty)
+
+    // this will fail due to non-existing endpoint
+    intercept[PyInterpreterException] {
+      val link = Link.getOrInitialize(
+        Seq(Endpoint(Seq("dummy"))),
+        proxyFactory,
+        session
+      )
+        .Py(session)
+    }
+    assert(Link.existing.isEmpty)
+    assert(Link.driverLocal.isEmpty)
+  }
+
+  test("Link.detectConflicts won't trigger false alarm by itself") {
+    val session = new Session(spooky)
+    val proxyFactory = LinkFactories.NoProxy
+
+    val link = Link.elect(
+      getEndpoints(simConnStrs.head),
+      proxyFactory,
+      session
+    )
+      .link
+
+    link.detectConflicts()
   }
 
   test("If without Proxy, Link.uri should = endpoint.connStr") {
@@ -64,7 +123,7 @@ class LinkSuite extends APMSimFixture {
           session
         )
 
-        link.endpoint.connStr -> link.Py(session).uri.strOpt.get
+        link.endpoint.connStr -> link.Py(session).uri.$repr.get
     }
       .collect()
 
@@ -131,7 +190,7 @@ class LinkSuite extends APMSimFixture {
           session
         )
         val firstOut = link.proxyOpt.get.outs.headOption
-        val uri = link.Py(session).uri.strOpt
+        val uri = link.Py(session).uri.$repr
         //        link.tryClean()
         firstOut -> uri
     }
@@ -167,7 +226,7 @@ class LinkSuite extends APMSimFixture {
               factory,
               session
             )
-            link1.Py(session).uri.strOpt.foreach(println)
+            link1.Py(session).uri.$repr.foreach(println)
             val link2 = Link.getOrInitialize (
               endpoints,
               factory,
@@ -206,7 +265,7 @@ class LinkSuite extends APMSimFixture {
         }
           .collect()
 
-        mimicLinkPythonDriverTermination()
+        mockLinkDriverTermination()
 
         assert(spooky.metrics.linkCreated.value == parallelism)
         assert(spooky.metrics.linkDestroyed.value == 0)

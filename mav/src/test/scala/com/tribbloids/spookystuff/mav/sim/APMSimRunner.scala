@@ -23,7 +23,7 @@ object APMSimRunner {
           //NOT cleaned by TaskCompletionListener
           val session = new Session(spooky, new Lifespan.JVM())
           val sim = APMSim.next
-          sim.Py(session).connStr.strOpt
+          sim.Py(session).connStr.$repr
       }
       .flatMap(v => v)
       .persist()

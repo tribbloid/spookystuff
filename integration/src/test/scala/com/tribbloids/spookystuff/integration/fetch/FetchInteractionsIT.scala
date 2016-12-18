@@ -31,10 +31,10 @@ class FetchInteractionsIT extends IntegrationFixture{
 
     val finishTime = System.currentTimeMillis()
     assert(pageRows.length === 1)
-    assert(pageRows(0).pages.size === 1)
-    val uri = pageRows(0).pages.head.uri
+    assert(pageRows(0).docs.size === 1)
+    val uri = pageRows(0).docs.head.uri
     assert((uri endsWith "zh.wikipedia.org/wiki/深度学习") || (uri endsWith "zh.wikipedia.org/wiki/"+URLEncoder.encode("深度学习", "UTF-8")))
-    assert(pageRows(0).pages.head.name === Snapshot(DocFilters.MustHaveTitle).toString)
+    assert(pageRows(0).docs.head.name === Snapshot(DocFilters.MustHaveTitle).toString)
     val pageTime = pageRows(0).fetched.head.timeMillis
     assert(pageTime < finishTime)
     assert(pageTime > finishTime-120000) //long enough even after the second time it is retrieved from s3 cache
@@ -52,14 +52,14 @@ class FetchInteractionsIT extends IntegrationFixture{
 
     assert(unionRows.length === 2)
     assert(
-      unionRows(0).pages.head.copy(timeMillis = 0, content = null, saved = null)
-        === unionRows(1).pages.head.copy(timeMillis = 0, content = null, saved = null)
+      unionRows(0).docs.head.copy(timeMillis = 0, raw = null, saved = null)
+        === unionRows(1).docs.head.copy(timeMillis = 0, raw = null, saved = null)
     )
 
-    assert(unionRows(0).pages.head.timeMillis === unionRows(1).pages.head.timeMillis)
-    assert(unionRows(0).pages.head.content === unionRows(1).pages.head.content)
-    assert(unionRows(0).pages.head.name === Snapshot(DocFilters.MustHaveTitle).toString)
-    assert(unionRows(1).pages.head.name === "b")
+    assert(unionRows(0).docs.head.timeMillis === unionRows(1).docs.head.timeMillis)
+    assert(unionRows(0).docs.head.raw === unionRows(1).docs.head.raw)
+    assert(unionRows(0).docs.head.name === Snapshot(DocFilters.MustHaveTitle).toString)
+    assert(unionRows(1).docs.head.name === "b")
   }
 
   override def numPages= spooky.conf.defaultFetchOptimizer match {

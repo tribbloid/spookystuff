@@ -31,7 +31,7 @@ class TestInMemoryWebCache extends SpookyEnvFixture with LocalPathDocsFixture {
     val loadedPages = cache.get(visitPage.head.uid.backtrace,spooky).get.map(_.asInstanceOf[Doc])
 
     assert(loadedPages.length === 1)
-    assert(visitPage.head.content === loadedPages.head.content)
+    assert(visitPage.head.raw === loadedPages.head.raw)
     assert(visitPage.head === loadedPages.head)
   }
 

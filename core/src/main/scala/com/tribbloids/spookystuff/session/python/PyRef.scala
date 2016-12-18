@@ -5,6 +5,7 @@ import com.tribbloids.spookystuff.session._
 import com.tribbloids.spookystuff.utils.SpookyUtils
 import com.tribbloids.spookystuff.{SpookyContext, caching}
 import org.apache.spark.ml.dsl.utils._
+import org.json4s.jackson.JsonMethods._
 
 import scala.language.dynamics
 
@@ -88,20 +89,20 @@ trait PyRef extends Cleanable {
     _Py(session.pythonDriver, Some(session.spooky))
   }
 
-//  def scratchDriver[T](fn: PythonDriver => T): T = {
-//    bindings
-//      .headOption
-//      .map {
-//        binding =>
-//          fn(binding.driver)
-//      }
-//      .getOrElse {
-//        val driver = new PythonDriver()
-//        val result = fn(driver)
-//        driver.tryClean()
-//        result
-//      }
-//  }
+  //  def scratchDriver[T](fn: PythonDriver => T): T = {
+  //    bindings
+  //      .headOption
+  //      .map {
+  //        binding =>
+  //          fn(binding.driver)
+  //      }
+  //      .getOrElse {
+  //        val driver = new PythonDriver()
+  //        val result = fn(driver)
+  //        driver.tryClean()
+  //        result
+  //      }
+  //  }
 
   def bindingCleaningHook(pyBinding: PyBinding): Unit = {}
 }
@@ -140,18 +141,30 @@ class PyBinding (
     ref.validDriverToBindings += driver -> this
   }
 
-  def strOpt: Option[String] = {
+  //TODO: rename to something that is illegal in python syntax
+  def $repr: Option[String] = {
     referenceOpt.flatMap {
       ref =>
-        val tempName = "_temp" + SpookyUtils.randomSuffix
-        val result = driver.eval(
-          s"""
-             |$tempName=$ref
-            """.trim.stripMargin,
-          Some(tempName),
-          spookyOpt
-        )
-        result._2
+        driver.evalExpr(ref)
+    }
+  }
+
+  def $type: Option[String] = {
+    ???
+  }
+
+  // TODO: so far, doesn't support nested object
+  def $message: Option[Message] = {
+
+    referenceOpt.flatMap {
+      ref =>
+        //        val jsonOpt = driver.evalExpr(s"$ref.__dict__")
+        val jsonOpt = driver.evalExpr(s"json.dumps($ref.__dict__)")
+        jsonOpt.map {
+          json =>
+            val jValue = parse(json)
+            MessageView(jValue)
+        }
     }
   }
 

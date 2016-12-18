@@ -8,23 +8,9 @@ import com.tribbloids.spookystuff.session.Session
 trait MAVAction extends Action
 
 /**
-  * inbound -> engage -> outbound
-  *
+  * can only be constructed after Python Driver is initialized, otherwise throw NoPythonDriverException
   */
-trait MAVInteraction extends Interaction with MAVAction {
-
-  override def exeNoOutput(session: Session): Unit = {
-
-    val impl = getImpl(session)
-    impl.inbound()
-    impl.conduct()
-    impl.outbound()
-  }
-
-  def getImpl(session: Session): MAVImpl
-}
-
-abstract class MAVImpl(session: Session) {
+class MAVEXE(session: Session) {
 
   val mavConf: MAVConf = {
     session.spooky.conf.submodules.get[MAVConf]()
@@ -40,6 +26,10 @@ abstract class MAVImpl(session: Session) {
 
   val pyLink = link.Py(session)
 
+}
+
+class MAVInteractionEXE(session: Session) extends MAVEXE(session) {
+
   /**
     * when enclosed in an export, may behave differently.
     */
@@ -48,4 +38,21 @@ abstract class MAVImpl(session: Session) {
   def conduct(): Unit = {}
 
   def outbound(): Unit = {}
+}
+
+/**
+  * inbound -> engage -> outbound
+  *
+  */
+trait MAVInteraction extends Interaction with MAVAction {
+
+  override def exeNoOutput(session: Session): Unit = {
+
+    val impl = getImpl(session)
+    impl.inbound()
+    impl.conduct()
+    impl.outbound()
+  }
+
+  def getImpl(session: Session): MAVInteractionEXE
 }

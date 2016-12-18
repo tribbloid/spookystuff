@@ -26,7 +26,7 @@ object LinkIT{
 
     val location = link.Py(session)
       .testMove()
-      .strOpt
+      .$repr
       .get
 
     //    link.Py(session).disconnect()

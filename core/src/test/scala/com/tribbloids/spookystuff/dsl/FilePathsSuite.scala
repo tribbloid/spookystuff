@@ -18,7 +18,7 @@ class FilePathsSuite extends SpookyEnvFixture{
         Snapshot().as('A)
     )
     .unsquashedRDD
-    .map(_.pages)
+    .map(_.docs)
     .first().head
 
   val doc2 = spooky
@@ -28,7 +28,7 @@ class FilePathsSuite extends SpookyEnvFixture{
         Snapshot().as('A)
     )
     .unsquashedRDD
-    .map(_.pages)
+    .map(_.docs)
     .first().head
 
   val byTraces = Seq(
