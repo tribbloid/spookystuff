@@ -240,7 +240,7 @@ class LinkSuite extends APMSimFixture {
   }
 }
 
-class LinkSuite_Candidates extends LinkSuite {
+class LinkSuite_AllCandidates extends LinkSuite {
 
   override lazy val getEndpoints = {
     val simEndpoints = this.simEndpoints

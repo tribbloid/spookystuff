@@ -1,10 +1,13 @@
 from __future__ import print_function
 
+import os
+
 import math
 from dronekit import LocationGlobal, LocationGlobalRelative
 from math import radians, cos, sin, asin, sqrt
 
-earth_radius=6378137.0 #Radius of "spherical" earth
+earth_radius = 6378137.0  # Radius of "spherical" earth
+
 
 def _groundDistance(lon1, lat1, lon2, lat2):
     """
@@ -18,7 +21,7 @@ def _groundDistance(lon1, lat1, lon2, lat2):
     # haversine formula
     dlon = lon2 - lon1
     dlat = lat2 - lat1
-    a = sin(dlat/2)**2 + cos(lat1) * cos(lat2) * sin(dlon/2)**2
+    a = sin(dlat / 2) ** 2 + cos(lat1) * cos(lat2) * sin(dlon / 2) ** 2
     c = 2 * asin(sqrt(a))
     return c * earth_radius
 
@@ -32,11 +35,11 @@ def airDistance(p1, p2):
     # type: (LocationGlobal, LocationGlobal) -> (float, float, float)
     haversine = groundDistance(p1, p2)
     altDist = p2.alt - p1.alt
-    result = sqrt(haversine*haversine + altDist*altDist)
+    result = sqrt(haversine * haversine + altDist * altDist)
     return result, haversine, abs(altDist)
 
-def retry(maxTrial=3):
 
+def retry(maxTrial=3):
     def decorate(fn):
         def retryFn(*args, **kargs):
             for i in range(maxTrial, -1, -1):
@@ -47,9 +50,11 @@ def retry(maxTrial=3):
                     if i <= 1:
                         raise
                     else:
-                        print("Retrying locally on", str(e), "...", str(i-1), "time(s) left")
+                        print("Retrying locally on", str(e), "...", str(i - 1), "time(s) left")
                         continue
+
         return retryFn
+
     return decorate
 
 
@@ -69,43 +74,51 @@ def get_location_metres(original_location, dNorth, dEast):
     For more information see:
     http://gis.stackexchange.com/questions/2951/algorithm-for-offsetting-a-latitude-longitude-by-some-amount-of-meters
     """
-    #Coordinate offsets in radians
-    dLat = dNorth/earth_radius
-    dLon = dEast/(earth_radius*math.cos(math.pi*original_location.lat/180))
+    # Coordinate offsets in radians
+    dLat = dNorth / earth_radius
+    dLon = dEast / (earth_radius * math.cos(math.pi * original_location.lat / 180))
 
-    #New position in decimal degrees
-    newlat = original_location.lat + (dLat * 180/math.pi)
-    newlon = original_location.lon + (dLon * 180/math.pi)
+    # New position in decimal degrees
+    newlat = original_location.lat + (dLat * 180 / math.pi)
+    newlon = original_location.lon + (dLon * 180 / math.pi)
     if type(original_location) is LocationGlobal:
-        targetlocation=LocationGlobal(newlat, newlon,original_location.alt)
+        targetlocation = LocationGlobal(newlat, newlon, original_location.alt)
     elif type(original_location) is LocationGlobalRelative:
-        targetlocation=LocationGlobalRelative(newlat, newlon,original_location.alt)
+        targetlocation = LocationGlobalRelative(newlat, newlon, original_location.alt)
     else:
         raise Exception("Invalid Location object passed")
 
     return targetlocation
 
-# not accurate! should use ground dist
-# def get_distance_m(aLocation1, aLocation2):
-#     """
-#     Returns the ground distance in metres between two LocationGlobal objects.
-#
-#     This method is an approximation, and will not be accurate over large distances and close to the
-#     earth's poles. It comes from the ArduPilot test code:
-#     https://github.com/diydrones/ardupilot/blob/master/Tools/autotest/common.py
-#     """
-#     dlat = aLocation2.lat - aLocation1.lat
-#     dlong = aLocation2.lon - aLocation1.lon
-#     return math.sqrt((dlat*dlat) + (dlong*dlong)) * 1.113195e5
-#
-# def get_distance_m(aLocation1, aLocation2):
-#     """
-#     Returns the ground distance in metres between two LocationGlobal objects.
-#
-#     This method is an approximation, and will not be accurate over large distances and close to the
-#     earth's poles. It comes from the ArduPilot test code:
-#     https://github.com/diydrones/ardupilot/blob/master/Tools/autotest/common.py
-#     """
-#     dlat = aLocation2.lat - aLocation1.lat
-#     dlong = aLocation2.lon - aLocation1.lon
-#     return math.sqrt((dlat*dlat) + (dlong*dlong)) * 1.113195e5
+
+def waitFor(condition, duration):
+    for i in range(duration, 0, -1):
+        v = condition()
+        if v:
+            return
+    os.error("timeout waiting for " + str(condition))
+
+    # not accurate! should use ground dist
+    # def get_distance_m(aLocation1, aLocation2):
+    #     """
+    #     Returns the ground distance in metres between two LocationGlobal objects.
+    #
+    #     This method is an approximation, and will not be accurate over large distances and close to the
+    #     earth's poles. It comes from the ArduPilot test code:
+    #     https://github.com/diydrones/ardupilot/blob/master/Tools/autotest/common.py
+    #     """
+    #     dlat = aLocation2.lat - aLocation1.lat
+    #     dlong = aLocation2.lon - aLocation1.lon
+    #     return math.sqrt((dlat*dlat) + (dlong*dlong)) * 1.113195e5
+    #
+    # def get_distance_m(aLocation1, aLocation2):
+    #     """
+    #     Returns the ground distance in metres between two LocationGlobal objects.
+    #
+    #     This method is an approximation, and will not be accurate over large distances and close to the
+    #     earth's poles. It comes from the ArduPilot test code:
+    #     https://github.com/diydrones/ardupilot/blob/master/Tools/autotest/common.py
+    #     """
+    #     dlat = aLocation2.lat - aLocation1.lat
+    #     dlong = aLocation2.lon - aLocation1.lon
+    #     return math.sqrt((dlat*dlat) + (dlong*dlong)) * 1.113195e5

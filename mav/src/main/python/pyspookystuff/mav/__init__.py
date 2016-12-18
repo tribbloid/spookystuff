@@ -3,7 +3,7 @@ from __future__ import print_function
 import logging
 
 import time
-from dronekit import LocationGlobal, LocationGlobalRelative, LocationLocal
+from dronekit import LocationGlobal, LocationGlobalRelative, LocationLocal, APIException
 from dronekit import Vehicle, VehicleMode
 
 from pyspookystuff.mav import Const
@@ -59,33 +59,28 @@ class VehicleFunctions(object):
         # processing the goto (otherwise the command after
         # Vehicle.simple_takeoff will execute immediately).
 
-        # def armIfNot(vehicle):
-        #     if not vehicle.armed:
-        #         arm(vehicle)
-
         def arm(vehicle):
             # type: (Vehicle) -> None
             # Don't let the user try to fly when autopilot is booting
-            i = 60
-            while not vehicle.is_armable and i > 0:
-                time.sleep(1)
-                i -= 1
+
+            def notArmable():
+                return not vehicle.is_armable
+            utils.waitFor(notArmable, 60)
 
             # Copter should arm in GUIDED mode
+
             vehicle.mode = VehicleMode("GUIDED")
-            i = 60
-            while vehicle.mode.name != 'GUIDED' and i > 0:
-                print(" Waiting for guided %s seconds..." % (i,))
-                time.sleep(1)
-                i -= 1
+
+            def isGuided():
+                return vehicle.mode.name == 'GUIDED'
+            utils.waitFor(isGuided, 60)
 
             # Arm copter.
             vehicle.armed = True
-            i = 60
-            while not vehicle.armed and vehicle.mode.name == 'GUIDED' and i > 0:
-                print(" Waiting for arming %s seconds..." % (i,))
-                time.sleep(1)
-                i -= 1
+
+            def isArmed():
+                return vehicle.armed and vehicle.mode.name == 'GUIDED'
+            utils.waitFor(isArmed, 60)
 
         def armAndTakeOff(vehicle):
             previousAlt = None
@@ -199,7 +194,7 @@ class VehicleFunctions(object):
 
             if self.vehicle.mode.name=="GUIDED":
                 if oldDistance <= distance:
-                    ## TODO: calculation of closest distance can be more refined
+                    # TODO: calculation of closest distance can be more refined
                     if oldDistance is not None and oldDistance <= stdError(maxError= 2):
                         print("Reached target")
                         break
@@ -214,13 +209,19 @@ class VehicleFunctions(object):
             self.failOnTimeout()
             time.sleep(1)
 
+    def reconnect(self):
+        pass
+
     @retry()
     def simple_goto(self, effectiveTL, airspeed=None, groundspeed=None):
         # type: (LocationGlobal) -> None
         """
         vanilla simple_goto() may timeout, adding retry
         """
-        self.vehicle.simple_goto(effectiveTL, airspeed, groundspeed)
+        try:
+            self.vehicle.simple_goto(effectiveTL, airspeed, groundspeed)
+        except APIException as e:
+            self.reconnect()
 
     def failOnTimeout(self):
         assert(self.vehicle.last_heartbeat < 30)

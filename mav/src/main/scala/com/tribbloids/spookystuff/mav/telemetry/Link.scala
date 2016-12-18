@@ -171,11 +171,12 @@ object Link extends StaticRef {
            ): LinkWithContext = {
 
     val newLink = this.synchronized {
-      val endpoint = candidates.find {
+      val endpointOpt = candidates.find {
         v =>
           !existing.contains(v.connStr) &&
             !blacklist.contains(v.connStr)
       }
+      val endpoint = endpointOpt
         .getOrElse(
           throw new ReinforcementDepletedException(
             candidates.map {
@@ -360,6 +361,7 @@ case class Link private[telemetry](
         ))
   }
 
+  var isDryrun = false
   //finalizer may kick in and invoke it even if its in Link.existing
   override protected def cleanImpl(): Unit = {
 
@@ -368,21 +370,13 @@ case class Link private[telemetry](
     val existingOpt = Link.existing.get(this.endpoint.connStr)
     existingOpt.foreach {
       v =>
-        assert(v.link eq this, "THIS IS NOT A DRYRUN OBJECT! SO ITS CREATED ILLEGALLY!")
+        if (v.link eq this)
+          Link.existing -= this.endpoint.connStr
+        else {
+          if (!isDryrun) throw new AssertionError("THIS IS NOT A DRYRUN OBJECT! SO ITS CREATED ILLEGALLY!")
+        }
     }
-    Link.existing -= this.endpoint.connStr
     //otherwise its a zombie Link created by LinkFactories.canCreate
-  }
-
-  def dryrunClean(): Unit = {
-
-    super.cleanImpl()
-    Option(_proxyOpt).flatten.foreach(_.clean())
-    val existingOpt = Link.existing.get(this.endpoint.connStr)
-    existingOpt.foreach {
-      v =>
-        if (v.link eq this) Link.existing -= this.endpoint.connStr
-    }
   }
 }
 

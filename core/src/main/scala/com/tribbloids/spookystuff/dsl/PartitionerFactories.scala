@@ -21,4 +21,14 @@ object PartitionerFactories {
       new HashPartitioner(rdd.partitions.length)
     }
   }
+
+  case object SamePartitioner extends (RDD[_] => Partitioner) {
+
+    override def apply(rdd: RDD[_]): Partitioner = {
+
+      rdd.partitioner.getOrElse {
+        new HashPartitioner(rdd.partitions.length)
+      }
+    }
+  }
 }

@@ -3,7 +3,10 @@ package com.tribbloids.spookystuff.utils
 import java.io.File
 
 import com.tribbloids.spookystuff.testutils.TestHelper
+import org.apache.spark.TaskContext
 import org.scalatest.FunSuite
+
+import scala.concurrent.TimeoutException
 
 /**
  * Created by peng on 11/1/14.
@@ -42,5 +45,25 @@ class SpookyUtilsSuite extends FunSuite {
     SpookyUtils.extractResource(src, dst)
     val dir = new File(dst)
     assert(dir.list().nonEmpty)
+  }
+
+  test("withDeadline won't be affected by scala concurrency global ForkJoin thread pool") {
+
+    import SpookyViews.SparkContextView
+    import scala.concurrent.duration._
+
+    TestHelper.TestSpark.foreachExecutor {
+
+      println("partition-" + TaskContext.get().partitionId())
+      val (_, time) = TestHelper.timer {
+        TestHelper.intercept[TimeoutException] {
+          SpookyUtils.withDeadline(10.seconds, Some(1.second)) {
+            Thread.sleep(20000)
+          }
+        }
+      }
+
+      TestHelper.assert(time < 12000)
+    }
   }
 }

@@ -159,7 +159,7 @@ class Proxy(Daemon):
         else:
             return False
 
-defaultOptions = '--state-basedir=temp --daemon --default-modules="link"' # --cmd="module unload console"'
+defaultOptions = '--state-basedir=temp --daemon'  # --default-modules="link"'  # --cmd="module unload console"'
 # defaultOptions = '--daemon --cmd="module unload console"'
 
 def spawnProxy(aircraft, setup, master, outs,
@@ -248,6 +248,9 @@ class Link(Daemon, VehicleFunctions):
         last_location = self.vehicle.location
 
         return last_location.local_frame.north, last_location.local_frame.east
+
+    def reconnect(self):
+        self.restart()
 
 
 def randomLocation():

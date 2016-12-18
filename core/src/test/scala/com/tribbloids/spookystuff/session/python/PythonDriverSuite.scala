@@ -1,7 +1,13 @@
 package com.tribbloids.spookystuff.session.python
 
 import com.tribbloids.spookystuff.session.Lifespan
+import com.tribbloids.spookystuff.testutils.TestHelper
+import com.tribbloids.spookystuff.utils.SpookyUtils
 import com.tribbloids.spookystuff.{PyInterpreterException, SpookyEnvFixture}
+import org.slf4j.LoggerFactory
+
+import scala.concurrent.Future
+import scala.util.Try
 
 /**
   * Created by peng on 01/08/16.
@@ -17,7 +23,7 @@ object PythonDriverSuite {
   }
 
   def runIterable[T, R](xs: Iterable[T])(f: (T, PythonDriver) => R): Iterable[R] = {
-    val proc = new PythonDriver("python", lifespan = new Lifespan.Auto())
+    val proc = new PythonDriver("python", lifespan = new Lifespan.Auto(Some("testPython")))
     try {
       val result = xs.map{
         f(_, proc)
@@ -31,6 +37,9 @@ object PythonDriverSuite {
 }
 
 class PythonDriverSuite extends SpookyEnvFixture {
+
+  import scala.concurrent.duration._
+  import scala.concurrent.ExecutionContext.Implicits.global
 
   test("sendAndGetResult should work in single thread") {
     PythonDriverSuite.onePlusX(1 to 100)
@@ -130,6 +139,47 @@ class PythonDriverSuite extends SpookyEnvFixture {
         val r = proc.eval(s"print($i / 1)")
         assert(r._1.mkString("\n") == i.toString)
         assert(r._2.isEmpty)
+    }
+  }
+
+  test("SpookyUtils.withDeadline can interrupt python execution that blocks indefinitely") {
+
+    PythonDriverSuite.runIterable(1 to 3) {
+      (i, proc) =>
+        proc.batchImport(Seq("import time"))
+        val (_, time) = TestHelper.timer {
+          Try {SpookyUtils.withDeadline(5.seconds) {
+            proc.interpret(
+              s"""
+                 |for i in range(10, 1, -1):
+                 |  print("sleeping:", i, "second(s) left")
+                 |  time.sleep(1)
+             """.stripMargin)
+          }}
+        }
+        assert(time <= 6000)
+        println("============== SUCCESS!!!!!!!!!!! ==============")
+    }
+  }
+
+  test("clean() won't be blocked indefinitely by ongoing python execution") {
+
+    PythonDriverSuite.runIterable(1 to 3) {
+      (i, proc) =>
+        proc.batchImport(Seq("import time"))
+        val f = Future {
+          proc.interpret(
+            s"""
+               |for i in range(40, 1, -1):
+               |  print("sleeping:", i, "second(s) left")
+               |  time.sleep(1)
+             """.stripMargin)
+        }
+
+        LoggerFactory.getLogger(this.getClass).info("========= START CLEANING =========")
+        SpookyUtils.withDeadline(20.seconds, Some(1.second)) {
+          proc.clean()
+        }
     }
   }
 }

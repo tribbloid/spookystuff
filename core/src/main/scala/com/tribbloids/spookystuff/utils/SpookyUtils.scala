@@ -11,7 +11,7 @@ import org.slf4j.LoggerFactory
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._
-import scala.concurrent.{Await, Future}
+import scala.concurrent.{Await, Future, TimeoutException}
 import scala.language.implicitConversions
 import scala.reflect.ClassTag
 import scala.util.Random
@@ -93,8 +93,14 @@ object SpookyUtils {
       }
 
       //TODO: this doesn't terminate the future upon timeout exception! need a better pattern.
-      val result = Await.result(future, n)
-      result
+      try {
+        Await.result(future, n)
+      }
+      catch {
+        case e: TimeoutException =>
+          LoggerFactory.getLogger(this.getClass).info("TIMEOUT!!!!")
+          throw e
+      }
     }
     finally {
       completed = true

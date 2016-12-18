@@ -9,7 +9,8 @@ import org.apache.spark.serializer.KryoSerializer
 import org.apache.spark.sql.SQLContext
 import org.apache.spark.{SparkConf, SparkContext, SparkEnv, SparkException}
 
-import scala.util.Try
+import scala.reflect.ClassTag
+import scala.util.{Failure, Success, Try}
 
 class TestHelper() {
 
@@ -187,6 +188,22 @@ class TestHelper() {
     (result, endTime - startTime)
   }
 
+  def assert(fn: =>Boolean) = Predef.assert(fn)
+  def assert(fn: =>Boolean, message: =>Any) = Predef.assert(fn, message)
+  def intercept[EE <: Exception: ClassTag](fn: =>Any) = {
+    val trial = Try {
+      fn
+    }
+    val expectedErrorName = implicitly[ClassTag[EE]].runtimeClass.getSimpleName
+    trial match {
+      case Failure(e: EE) =>
+      case Failure(e) =>
+        throw new AssertionError(s"Expecting $expectedErrorName, but get ${e.getClass.getSimpleName}", e)
+      case Success(n) =>
+        throw new AssertionError(s"expecting $expectedErrorName, but no exception was thrown")
+    }
+  }
+
   //  override def finalize(): Unit = {
   //    if (testSparkCreated) {
   //      println("=============== Stopping Test Spark Context ==============")
@@ -209,5 +226,5 @@ object TestHelper extends TestHelper()
 
 object SparkRunnerHelper extends TestHelper() {
 
-  override lazy val clusterSizeOpt: Option[Int] = Some(1)
+  override lazy val clusterSizeOpt: Option[Int] = None
 }

@@ -108,6 +108,8 @@ class PythonDriver(
                     override val lifespan: Lifespan = new Lifespan.Auto()
                   ) extends PythonProcess(executable) with LocalCleanable {
 
+  import scala.concurrent.duration._
+
   /**
     * NOT thread safe
     */
@@ -149,13 +151,15 @@ class PythonDriver(
 
   override def cleanImpl(): Unit = {
     Try {
-      SpookyUtils.retry(10, 1000) {
+      SpookyUtils.retry(5) {
         if (process.isAlive) {
-          try {
-            this._interpret("exit()")
-          }
-          catch {
-            case e: PyException =>
+          SpookyUtils.withDeadline(3.seconds) {
+            try {
+              this._interpret("exit()")
+            }
+            catch {
+              case e: PyException =>
+            }
           }
           Thread.sleep(1000)
           assert(!process.isAlive)
@@ -199,13 +203,20 @@ class PythonDriver(
         spookyOpt.foreach(
           _.metrics.pythonInterpretationError += 1
         )
-        val ee = new PyException(
-          indentedCode,
-          this.outputBuffer,
-          e,
-          historyCodeOpt
-        )
-        throw ee
+        val cause = e
+        if (this.isCleaned) {
+          LoggerFactory.getLogger(this.getClass).info(s"ignoring ${cause.getClass.getSimpleName} as python process is cleaned")
+          return Array.empty[String]
+        }
+        else {
+          val ee = new PyException(
+            indentedCode,
+            this.outputBuffer,
+            cause,
+            historyCodeOpt
+          )
+          throw ee
+        }
     }
 
     //    if (rows.exists(_.nonEmpty)) {
@@ -331,6 +342,10 @@ class PythonDriver(
             importedLines += code
           }
       }
-    this._interpret(effectiveCodes.mkString("\n"), None, detectError = true)
+    this._interpret(
+      effectiveCodes.mkString("\n"),
+      None,
+      detectError = true
+    )
   }
 }

@@ -18,12 +18,13 @@ package object telemetry {
     def canCreate(link: LinkWithContext): Boolean = {
 
       val dryRun = factory.apply(link.link.endpoint)
+      dryRun.isDryrun = true
       val actual = link.link
       val links = Seq(
         dryRun,
         actual
       )
-      dryRun.dryrunClean()
+      dryRun.clean()
       val gcsOuts = links
         .map {
           link =>

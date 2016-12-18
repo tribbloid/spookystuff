@@ -31,6 +31,10 @@ case class LocationGlobalRelative(
 
 
 class LocationLocalUDT() extends SimpleUDT[LocationLocal]
+
+/**
+  * always use NED coordinate
+  */
 @SQLUserDefinedType(udt = classOf[LocationLocalUDT])
 @SerialVersionUID(4604257236921846832L)
 case class LocationLocal(

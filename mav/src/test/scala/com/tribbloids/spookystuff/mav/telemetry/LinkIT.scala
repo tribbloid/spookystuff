@@ -13,13 +13,13 @@ object LinkIT{
   def moveAndGetLocation(
                           spooky: SpookyContext,
                           proxyFactory: LinkFactory,
-                          connStr: String
+                          connStrs: Seq[String]
                         ): String = {
 
-    val endpoint = Endpoint(Seq(connStr))
+    val endpoints = connStrs.map(v => Endpoint(Seq(v)))
     val session = new Session(spooky)
     val link = Link.getOrInitialize(
-      Seq(endpoint),
+      endpoints,
       proxyFactory,
       session
     )
@@ -48,7 +48,7 @@ class LinkIT extends APMSimFixture {
       .map {
         connStr =>
           LinkIT.moveAndGetLocation(spooky,
-            proxyFactory, connStr)
+            proxyFactory, Seq(connStr))
       }
     val location = rdd.first()
 
@@ -59,9 +59,10 @@ class LinkIT extends APMSimFixture {
   test("move drones to different directions") {
     val spooky = this.spooky
     val proxyFactory = this.proxyFactory
+    val connStrs = this.simConnStrs
     val rdd = simConnStrRDD.map {
       connStr =>
-        LinkIT.moveAndGetLocation(spooky, proxyFactory, connStr)
+        LinkIT.moveAndGetLocation(spooky, proxyFactory, connStrs)
     }
       .persist()
     val locations: Array[String] = try {
@@ -80,11 +81,12 @@ class LinkIT extends APMSimFixture {
     val spooky = this.spooky
     val proxyFactory = this.proxyFactory
     var locations: Array[String] = null
+    val connStrs = this.simConnStrs
 
     for (i <- 1 to 3) {
       val rdd: RDD[String] = simConnStrRDD.map {
         connStr =>
-          LinkIT.moveAndGetLocation(spooky, proxyFactory, connStr)
+          LinkIT.moveAndGetLocation(spooky, proxyFactory, connStrs)
       }
 
       locations = {

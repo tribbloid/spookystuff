@@ -51,9 +51,9 @@ object SpookyViews {
     def mapPerExecutor[T: ClassTag](f: => T): RDD[T] = {
       val alreadyRunExecutorID: ConcurrentMap[String, Unit] = ConcurrentMap()
 
-      self.parallelize(1 to self.defaultParallelism * 4)
-        //TODO: this assumes that default partitioner distribute evenly, need testing for noncanonical case!
-        .mapPartitions {
+      val seed = self.parallelize(1 to self.defaultParallelism * 4, self.defaultParallelism)
+      assert(seed.partitions.length == self.defaultParallelism)
+      seed.mapPartitions {
         itr =>
           val id = SparkEnv.get.executorId
           if (!alreadyRunExecutorID.contains(id)) {
@@ -68,8 +68,10 @@ object SpookyViews {
     def foreachExecutor[T: ClassTag](f: => T) = mapPerExecutor(f).count()
 
     def mapPerWorker[T: ClassTag](f: => T): RDD[T] = {
-      self.parallelize(1 to self.defaultParallelism * 4) //this assumes that default partitioner distribute evenly
-        .mapPartitions {
+
+      val seed = self.parallelize(1 to self.defaultParallelism * 4, self.defaultParallelism)
+      assert(seed.partitions.length == self.defaultParallelism)
+      seed.mapPartitions {
         itr =>
           val stageID = TaskContext.get.stageId()
           perWorkerMark.synchronized {
@@ -86,6 +88,7 @@ object SpookyViews {
     }
     def foreachWorker[T: ClassTag](f: => T): Long = mapPerWorker(f).count()
 
+    //TODO: change to concurrent execution
     def mapPerComputer[T: ClassTag](f: => T): Seq[T] = {
       Seq(f) ++ mapPerWorker(f).collect().toSeq
     }
