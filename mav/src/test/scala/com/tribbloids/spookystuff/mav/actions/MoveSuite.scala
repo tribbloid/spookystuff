@@ -103,7 +103,7 @@ class MoveSuite extends APMSimFixture {
     result.foreach(println)
   }
 
-  test("Run 2.5 track per drone") {
+  ignore("Run 2.5 track per drone") { //TOOOO slow
 
     val tracks: Seq[(LocationLocal, LocationLocal)] = MoveSuite.generateTracks(
       (parallelism.toDouble * 2.5).toInt,

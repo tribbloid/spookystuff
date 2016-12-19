@@ -83,7 +83,7 @@ class LinkIT extends APMSimFixture {
     var locations: Array[String] = null
     val connStrs = this.simConnStrs
 
-    for (i <- 1 to 3) {
+    for (i <- 1 to 2) {
       val rdd: RDD[String] = simConnStrRDD.map {
         connStr =>
           LinkIT.moveAndGetLocation(spooky, proxyFactory, connStrs)

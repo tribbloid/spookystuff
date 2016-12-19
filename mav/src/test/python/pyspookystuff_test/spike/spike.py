@@ -28,21 +28,26 @@ proxy.start()
 
 
 try:
-    endpoint1703625946072222920=pyspookystuff.mav.telemetry.Endpoint(connStrs=json.loads(
+    endpoint6689066920223517022=pyspookystuff.mav.telemetry.Endpoint(connStrs=json.loads(
         """
-        [ "tcp:localhost:5760" ]
-        """
-    ))
-    link6964116197604848232=pyspookystuff.mav.telemetry.Link(endpoint=endpoint1703625946072222920, outs=json.loads(
-        """
-        [ "udp:localhost:12015", "udp:localhost:14550" ]
+        [ "tcp:localhost:5800" ]
         """
     ), name=json.loads(
         """
         "DRONE"
         """
     ))
-    start6788580466239706406=link6964116197604848232.start()
+    link4278034394758385026=pyspookystuff.mav.telemetry.Link(endpoint=endpoint6689066920223517022, outs=json.loads(
+        """
+        [ "udp:localhost:12068", "udp:localhost:14550" ]
+        """
+    ))
+    link1615522973475451768=pyspookystuff.mav.telemetry.Link(endpoint=endpoint6689066920223517022, outs=json.loads(
+        """
+        [ "udp:localhost:12033", "udp:localhost:14550" ]
+        """
+    ))
+    start9057863921842577795=link1615522973475451768.start()
 except Exception as e:
     print('======== *!?error info!?* ========')
     raise

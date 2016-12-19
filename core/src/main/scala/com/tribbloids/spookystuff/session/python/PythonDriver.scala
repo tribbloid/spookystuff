@@ -185,7 +185,7 @@ class PythonDriver(
   private def _interpret(code: String, spookyOpt: Option[SpookyContext] = None, detectError: Boolean = true): Array[String] = {
     val indentedCode = indent(code)
 
-    LoggerFactory.getLogger(this.getClass).info(s">>> $logPrefix INPUT >>>\n" + indentedCode)
+    LoggerFactory.getLogger(this.getClass).debug(s">>> $logPrefix INPUT >>>\n" + indentedCode)
 
     val rows = try {
       // DO NOT DELETE! some Python Drivers are accessed by many threads (e.g. ProxyManager)

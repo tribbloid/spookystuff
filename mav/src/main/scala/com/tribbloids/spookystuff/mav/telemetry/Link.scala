@@ -14,7 +14,8 @@ case class Endpoint(
                      // endpoints: 1 primary and several backups (e.g. text message-based)
                      // TODO: implement telemetry backup mechanism, can use MAVproxy's multiple master feature
                      connStrs: Seq[String],
-                     vehicleTypeOpt: Option[String] = None
+                     vehicleTypeOpt: Option[String] = None,
+                     name: String = "DRONE"
                    ) extends CaseInstanceRef {
 
   def connStr = connStrs.head
@@ -263,11 +264,16 @@ object Link extends StaticRef {
       }
     }
 
-    //  override def cleanImpl(): Unit = {
-    //
-    //    super.cleanImpl()
-    //    Link.driverLocal -= driver
-    //  }
+    override def cleanImpl(): Unit = {
+
+      super.cleanImpl()
+      val localOpt = Link.driverLocal.get(driver)
+      localOpt.foreach {
+        v =>
+          if (v eq this.ref)
+            Link.driverLocal -= driver
+      }
+    }
   }
 }
 
@@ -289,8 +295,7 @@ DaemonProcess   (can this be delayed to be implemented later? completely surrend
   */
 case class Link private[telemetry](
                                     endpoint: Endpoint,
-                                    outs: Seq[String],
-                                    name: String = "DRONE"
+                                    outs: Seq[String]
                                   ) extends CaseInstanceRef with LocalCleanable {
 
   //mnemonic
@@ -303,7 +308,7 @@ case class Link private[telemetry](
         val proxy = Proxy(
           endpoint.connStr,
           outs,
-          name
+          endpoint.name
         )
         Some(proxy)
       }
@@ -356,15 +361,14 @@ case class Link private[telemetry](
     val c2 = existing.filter(_.link.endpoint.connStr == endpoint.connStr).forall(_.link eq this)
     val c3 = existing.filter(_.link.uri == uri).forall(_.link eq this)
 
-    val result = TreeException.&&&(
-        Seq(
-          Try(assert(c1, s"Conflict: endpoint (index) ${endpoint.connStr} is already used")),
-          Try(assert(c2, s"Conflict: endpoint ${endpoint.connStr} is already used")),
-          Try(assert(c3, s"Conflict: uri $uri is already used"))
-        ),
+    TreeException.&&&(
+      Seq(
+        Try(assert(c1, s"Conflict: endpoint (index) ${endpoint.connStr} is already used")),
+        Try(assert(c2, s"Conflict: endpoint ${endpoint.connStr} is already used")),
+        Try(assert(c3, s"Conflict: uri $uri is already used"))
+      ),
       extra = causes
     )
-    result
   }
 
   var isDryrun = false

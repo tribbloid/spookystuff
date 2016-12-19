@@ -72,9 +72,10 @@ d = {'clientip': '192.168.0.1', 'user': 'fbloggs'}
 
 class Endpoint(object):
     # TODO: use **local() to reduce boilerplate copies
-    def __init__(self, connStrs, vehicleTypeOpt=None):
+    def __init__(self, connStrs, vehicleTypeOpt=None, name=""):
         self.connStrs = connStrs
         self.vehicleType = vehicleTypeOpt
+        self.name = name
 
     @property
     def connStr(self):
@@ -190,12 +191,11 @@ class Link(Daemon, VehicleFunctions):
     # process local
     # existing = None  # type: # DroneCommunication
 
-    def __init__(self, endpoint, outs, name):
+    def __init__(self, endpoint, outs):
         # type: (Endpoint, list[str], str) -> None
         super(Link, self).__init__(None)
         self.endpoint = endpoint
         self.outs = outs
-        self.name = name
 
         # test if the endpoint really exist, if not there is no point doing the rest of it.
         # vehicle = _retryConnect(self.endpoint.connStr)
