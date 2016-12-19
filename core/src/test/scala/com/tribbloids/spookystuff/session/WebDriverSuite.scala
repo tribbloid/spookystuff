@@ -15,27 +15,33 @@ class WebDriverSuite extends SpookyEnvFixture with LocalPathDocsFixture {
   test("PhantomJS DriverFactory can degrade gracefully if remote URI is unreachable") {
 
     this.spookyConf.webDriverFactory = DriverFactories.PhantomJS(
-      getLocalURI = _ => "/dummy/file",
+      getLocalURI = _ => "dummy/file",
       getRemoteURI = _ => "http://dummy.org",
       redeploy = true
     )
+    try {
 
-    spooky.conf = this.spookyConf
+      reloadSpooky
 
-    spooky
-      .create(1 to 2)
-      .fetch(
-        Wget(HTML_URL)
-      )
-      .count()
-
-    intercept[SparkException] {
       spooky
         .create(1 to 2)
         .fetch(
-          Visit(HTML_URL)
+          Wget(HTML_URL)
         )
         .count()
+
+      intercept[SparkException] {
+        spooky
+          .create(1 to 2)
+          .fetch(
+            Visit(HTML_URL)
+          )
+          .count()
+      }
+    }
+    finally {
+      this.spookyConf.webDriverFactory = DriverFactories.PhantomJS()
+      reloadSpooky
     }
   }
 }

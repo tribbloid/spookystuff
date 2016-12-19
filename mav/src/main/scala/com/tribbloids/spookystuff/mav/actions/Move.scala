@@ -42,9 +42,9 @@ case class Move(
                     ) extends GotoEXE(toV, session) {
 
     override def inbound(): Unit = {
-      LoggerFactory.getLogger(this.getClass).info(s"assureClearanceAltitude ${mavConf.takeOffAltitude}")
-      pyLink.assureClearanceAltitude(mavConf.takeOffAltitude)
-      LoggerFactory.getLogger(this.getClass).info(s"inbound .. $fromV")
+      LoggerFactory.getLogger(this.getClass).debug(s"assureClearanceAltitude ${mavConf.clearanceAltitude}")
+      pyLink.assureClearanceAltitude(mavConf.clearanceAltitude)
+      LoggerFactory.getLogger(this.getClass).debug(s"inbound .. $fromV")
       pyLink.move(fromV)
     }
   }

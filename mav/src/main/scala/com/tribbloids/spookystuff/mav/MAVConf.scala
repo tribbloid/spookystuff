@@ -22,7 +22,7 @@ case class MAVConf(
                     var endpoints: Seq[Endpoint] = Nil,
                     var proxyFactory: LinkFactory = LinkFactories.ForkToGCS(),
                     var connectionRetries: Int = 3,
-                    var takeOffAltitude: Double = 20 // in meters
+                    var clearanceAltitude: Double = 20 // in meters
                   ) extends AbstractConf {
 
   // TODO: use reflection to automate, or implement

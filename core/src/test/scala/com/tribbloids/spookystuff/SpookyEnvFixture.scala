@@ -100,10 +100,15 @@ abstract class SpookyEnvFixture
     Option(_spooky)
       //      .filterNot(_.sparkContext.isStopped) TODO: not compatible with 1.5
       .getOrElse {
-      val result = new SpookyContext(sql, spookyConf)
-      _spooky = result
+      val result: SpookyContext = reloadSpooky
       result
     }
+  }
+
+  def reloadSpooky: SpookyContext = {
+    val result = new SpookyContext(sql, spookyConf)
+    _spooky = result
+    result
   }
 
   def schema = DataRowSchema(spooky)
