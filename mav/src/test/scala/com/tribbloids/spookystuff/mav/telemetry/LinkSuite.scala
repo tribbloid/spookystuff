@@ -59,7 +59,8 @@ class LinkSuite extends APMSimFixture {
       s"""
          |{
          |  "connStrs" : [ "tcp:localhost:......" ],
-         |  "vehicleType" : null
+         |  "vehicleType" : null,
+         |  "name" : "DRONE"
          |}
       """.stripMargin
     )
