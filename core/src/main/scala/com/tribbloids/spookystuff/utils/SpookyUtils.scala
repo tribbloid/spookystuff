@@ -457,7 +457,12 @@ These special characters are often called "metacharacters".
   def getTaskLocationStr: String = {
     val bmID = SparkEnv.get.blockManager.blockManagerId
     val hostName = bmID.hostPort
-    val executorID = bmID.executorId
-    s"executor_${hostName}_$executorID"
+    if (org.apache.spark.SPARK_VERSION.startsWith("1.6")) {
+      val executorID = bmID.executorId
+      s"executor_${hostName}_$executorID"
+    }
+    else {
+      hostName
+    }
   }
 }
