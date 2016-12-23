@@ -10,6 +10,7 @@ import scala.language.implicitConversions
 @SerialVersionUID(-928750192836509428L)
 trait Location
 
+//TODO: UDT should not be used extensively, All MAVAction should convert Vectors/Name to Locations on interpolation
 class LocationGlobalUDT() extends SimpleUDT[LocationGlobal]
 @SQLUserDefinedType(udt = classOf[LocationGlobalUDT])
 @SerialVersionUID(56746829410409L)
@@ -21,6 +22,10 @@ case class LocationGlobal(
 
 
 class LocationGlobalRelativeUDT() extends SimpleUDT[LocationGlobalRelative]
+
+/**
+  * This is the de-facto standard of specifying location for all outbound commands
+  */
 @SQLUserDefinedType(udt = classOf[LocationGlobalRelativeUDT])
 @SerialVersionUID(-5039218743229730432L)
 case class LocationGlobalRelative(

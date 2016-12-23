@@ -5,6 +5,7 @@ import java.security.PrivilegedAction
 import com.tribbloids.spookystuff.caching.ConcurrentMap
 import com.tribbloids.spookystuff.row._
 import org.apache.spark.rdd.RDD
+import org.apache.spark.scheduler.TaskLocation
 import org.apache.spark.sql.DataFrame
 import org.apache.spark.{SparkContext, SparkEnv, TaskContext}
 
@@ -48,11 +49,28 @@ object SpookyViews {
       result
     }
 
+    /**
+      * guaranteed to have at least 1 datum on each executor thread. Better distribute evenly
+      */
+    private def seed = {
+      val pp = self.defaultParallelism
+      val seed = self.makeRDD(1 to pp, pp)
+        .map(i => i->i)
+        .sortByKey(numPartitions = pp)
+      //        .partitionBy(new HashPartitioner(self.defaultParallelism)) //TODO: should use RangePartitioner?
+      //        .persist()
+      //      seed.count()
+      //      val seed = self.makeRDD[Int]((1 to self.defaultParallelism).map(i => i -> Seq(i.toString)))
+      assert(
+        seed.partitions.length == pp,
+        s"seed doesn't have the right number of partitions: expected $pp, actual ${seed.partitions.length}"
+      )
+      seed
+    }
+
     def mapPerExecutor[T: ClassTag](f: => T): RDD[T] = {
       val alreadyRunExecutorID: ConcurrentMap[String, Unit] = ConcurrentMap()
 
-      val seed = self.parallelize(1 to self.defaultParallelism * 4, self.defaultParallelism)
-      assert(seed.partitions.length == self.defaultParallelism)
       seed.mapPartitions {
         itr =>
           val id = SparkEnv.get.executorId
@@ -69,8 +87,6 @@ object SpookyViews {
 
     def mapPerWorker[T: ClassTag](f: => T): RDD[T] = {
 
-      val seed = self.parallelize(1 to self.defaultParallelism * 4, self.defaultParallelism)
-      assert(seed.partitions.length == self.defaultParallelism)
       seed.mapPartitions {
         itr =>
           val stageID = TaskContext.get.stageId()
@@ -89,12 +105,30 @@ object SpookyViews {
     def foreachWorker[T: ClassTag](f: => T): Long = mapPerWorker(f).count()
 
     //TODO: change to concurrent execution
-    def mapPerComputer[T: ClassTag](f: => T): Seq[T] = {
-      Seq(f) ++ mapPerWorker(f).collect().toSeq
+    def mapPerComputer[T: ClassTag](f: => T): RDD[T] = {
+      val perWorker = mapPerWorker(f)
+      val v = f
+      self.makeRDD(Seq(v), 1).union(perWorker)
+    }
+    def foreachComputer[T: ClassTag](f: => T): Long = {
+      mapPerComputer(f).count()
     }
 
-    def foreachComputer[T: ClassTag](f: => T): Long = {
-      mapPerComputer(f).size
+    //TODO: change to concurrent execution
+    def mapPerCore[T: ClassTag](f: => T): RDD[T] = {
+      val perExec = mapPerExecutor(f)
+      val v = f
+      self.makeRDD(Seq(v), 1).union(perExec)
+    }
+    def foreachCore[T: ClassTag](f: => T): Long = {
+      mapPerCore(f).count()
+    }
+
+    def allTaskLocationStrs: Seq[String] = {
+      mapPerWorker {
+        SpookyUtils.getTaskLocationStr
+      }
+        .collect()
     }
   }
 

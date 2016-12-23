@@ -145,6 +145,10 @@ trait Message extends HasMessage {
     if (pretty) prettyXML
     else compactXML
   }
+
+  def cast[T: Manifest](implicit formats: Formats = formats) = {
+    GenericMessageReader._fromJValue[T](toJValue(formats))
+  }
 }
 
 trait MessageRepr[Obj] extends Message {

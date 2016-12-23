@@ -11,9 +11,9 @@ import scala.concurrent.duration._
 /**
  * Created by peng on 10/17/14.
  */
-class TestInMemoryWebCache extends SpookyEnvFixture with LocalPathDocsFixture {
+class TestInMemoryDocCache extends SpookyEnvFixture with LocalPathDocsFixture {
 
-  lazy val cache: AbstractWebCache = InMemoryWebCache
+  lazy val cache: AbstractDocCache = InMemoryDocCache
 
   val visit = Visit(HTML_URL)::Snapshot().as('old)::Nil
   lazy val visitPage = visit.fetch(spooky).map(_.asInstanceOf[Doc].copy(cacheable = true))

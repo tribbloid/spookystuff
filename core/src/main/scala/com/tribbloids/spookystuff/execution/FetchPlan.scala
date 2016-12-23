@@ -13,7 +13,7 @@ trait InjectBeaconRDDPlan extends ExecutionPlan {
 
   abstract override lazy val beaconRDDOpt: Option[RDD[(TraceView, DataRow)]] = {
     fetchOptimizer match {
-      case FetchOptimizers.WebCacheAware =>
+      case FetchOptimizers.DocCacheAware =>
         val inherited = super.defaultBeaconRDDOpt
         inherited.orElse{
           this.firstChildOpt.map {
@@ -45,7 +45,7 @@ case class FetchPlan(
       }
 
     val partitioner = partitionerFactory(trace_DataRowRDD)
-    val gp = fetchOptimizer.getGenPartitioner(partitioner)
+    val gp = fetchOptimizer.getImpl(partitioner)
     val grouped = gp.groupByKey(trace_DataRowRDD, beaconRDDOpt)
 
     grouped

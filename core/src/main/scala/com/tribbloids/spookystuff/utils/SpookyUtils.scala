@@ -6,6 +6,7 @@ import java.nio.file.{Files, _}
 
 import com.tribbloids.spookystuff.utils.NoRetry.NoRetryWrapper
 import org.apache.commons.io.IOUtils
+import org.apache.spark.SparkEnv
 import org.apache.spark.ml.dsl.ReflectionUtils
 import org.slf4j.LoggerFactory
 
@@ -318,14 +319,14 @@ These special characters are often called "metacharacters".
       ks.zip(vs)
     }
 
-//    def newCase[A]()(implicit t: ClassTag[A]): A = {
-//      val cm = rootMirror
-//      val clazz = cm classSymbol t.runtimeClass
-//      val modul = clazz.companionSymbol.asModule
-//      val im = cm reflect (cm reflectModule modul).instance
-//      ReflectionUtils.invokeStatic(clazz)
-//      defaut[A](im, "apply")
-//    }
+    //    def newCase[A]()(implicit t: ClassTag[A]): A = {
+    //      val cm = rootMirror
+    //      val clazz = cm classSymbol t.runtimeClass
+    //      val modul = clazz.companionSymbol.asModule
+    //      val im = cm reflect (cm reflectModule modul).instance
+    //      ReflectionUtils.invokeStatic(clazz)
+    //      defaut[A](im, "apply")
+    //    }
   }
 
   def getCPResource(str: String): Option[URL] =
@@ -441,5 +442,22 @@ These special characters are often called "metacharacters".
   def randomChars: String = {
     val len = Random.nextInt(128)
     Random.nextString(len)
+  }
+
+
+  /**
+    * From doc of org.apache.spark.scheduler.TaskLocation
+    * Create a TaskLocation from a string returned by getPreferredLocations.
+    * These strings have the form executor_[hostname]_[executorid], [hostname], or
+    * hdfs_cache_[hostname], depending on whether the location is cached.
+    * def apply(str: String): TaskLocation
+    * ...
+    * Not sure if it will change in future Spark releases
+    */
+  def getTaskLocationStr: String = {
+    val bmID = SparkEnv.get.blockManager.blockManagerId
+    val hostName = bmID.hostPort
+    val executorID = bmID.executorId
+    s"executor_${hostName}_$executorID"
   }
 }

@@ -1,6 +1,6 @@
 package com.tribbloids.spookystuff.dsl
 
-import com.tribbloids.spookystuff.dsl.FetchOptimizers.GenPartitioner
+import com.tribbloids.spookystuff.dsl.FetchOptimizers.GenPartitionerImpl
 import org.apache.spark.Partitioner
 import org.apache.spark.rdd.RDD
 
@@ -12,16 +12,16 @@ import scala.reflect.ClassTag
   */
 sealed trait FetchOptimizer {
 
-  def getGenPartitioner(
-                         partitioner: Partitioner
-                       ): GenPartitioner
+  def getImpl(
+               partitioner: Partitioner
+             ): GenPartitionerImpl
 }
 
 object FetchOptimizers {
 
   import RDD._
 
-  trait GenPartitioner {
+  trait GenPartitionerImpl {
 
     def groupByKey[K: ClassTag, V: ClassTag, W](
                                                  rdd: RDD[(K, V)],
@@ -45,9 +45,9 @@ object FetchOptimizers {
   //this won't merge identical traces and do lookup, only used in case each resolve may yield different result
   case object Narrow extends FetchOptimizer {
 
-    override def getGenPartitioner(partitioner: Partitioner): GenPartitioner = new GPImpl()
+    override def getImpl(partitioner: Partitioner): GenPartitionerImpl = new GPImpl()
 
-    class GPImpl extends GenPartitioner {
+    class GPImpl extends GenPartitionerImpl {
 
       override def groupByKey[K: ClassTag, V: ClassTag, W](
                                                             rdd: RDD[(K, V)],
@@ -67,9 +67,9 @@ object FetchOptimizers {
 
   case object Wide extends FetchOptimizer {
 
-    override def getGenPartitioner(partitioner: Partitioner): GenPartitioner = new GPImpl(partitioner)
+    override def getImpl(partitioner: Partitioner): GenPartitionerImpl = new GPImpl(partitioner)
 
-    class GPImpl(partitioner: Partitioner) extends GenPartitioner {
+    class GPImpl(partitioner: Partitioner) extends GenPartitionerImpl {
 
       override def groupByKey[K: ClassTag, V: ClassTag, W](
                                                             rdd: RDD[(K, V)],
@@ -91,11 +91,11 @@ object FetchOptimizers {
 
   //group identical ActionPlans, execute in parallel, and duplicate result pages to match their original contexts
   //reduce workload by avoiding repeated access to the same url caused by duplicated context or diamond links (A->B,A->C,B->D,C->D)
-  case object WebCacheAware extends FetchOptimizer {
+  case object DocCacheAware extends FetchOptimizer {
 
-    override def getGenPartitioner(partitioner: Partitioner): GenPartitioner = new GPImpl(partitioner)
+    override def getImpl(partitioner: Partitioner): GenPartitionerImpl = new GPImpl(partitioner)
 
-    class GPImpl(partitioner: Partitioner) extends GenPartitioner {
+    class GPImpl(partitioner: Partitioner) extends GenPartitionerImpl {
 
       override def groupByKey[K: ClassTag, V: ClassTag, W](
                                                             rdd: RDD[(K, V)],

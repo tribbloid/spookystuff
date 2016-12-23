@@ -119,9 +119,10 @@ class VehicleFunctions(object):
             return
 
     def getLocalOrigin(self):
-        # type: () -> LocationGlobal
+        # type: () -> LocationGlobalRelative
         if not self.localOrigin:
-            self.localOrigin = self.homeLocation
+            origin = self.homeLocation
+            self.localOrigin = LocationGlobalRelative(origin.lat, origin.lon, 0)
         return self.localOrigin
 
     @property
@@ -133,10 +134,17 @@ class VehicleFunctions(object):
         """
         if not self._homeLocation:
             if not self.vehicle.home_location:
-                self.vehicle.commands.download()
-                self.vehicle.commands.wait_ready()
+                self.commandsRefresh()
             self._homeLocation = self.vehicle.home_location
         return self._homeLocation
+
+    def setHomeLocation(self, v):
+        # type: (LocationGlobal) -> None
+        self._homeLocation = v
+
+    def commandsRefresh(self):
+        self.vehicle.commands.download()
+        self.vehicle.commands.wait_ready()
 
     def move(self, targetLocation):
         # type: (LocationGlobal) -> None
@@ -159,9 +167,9 @@ class VehicleFunctions(object):
             north = targetLocation.north
             east = targetLocation.east
             down = targetLocation.down
-            hl = self.getLocalOrigin()
-            effectiveTL = utils.get_location_metres(hl, north, east)
-            effectiveTL.alt = hl.alt - down
+            origin = self.getLocalOrigin()
+            effectiveTL = utils.get_location_metres(origin, north, east)
+            effectiveTL.alt = origin.alt - down
 
         def currentL():
             # type: () -> Union[LocationGlobal,LocationGlobalRelative]
@@ -170,7 +178,7 @@ class VehicleFunctions(object):
             elif isinstance(targetLocation, LocationGlobalRelative):
                 return self.vehicle.location.global_relative_frame
             elif isinstance(targetLocation, LocationLocal):
-                return self.vehicle.location.global_frame
+                return self.vehicle.location.global_relative_frame
             else:
                 raise NotImplementedError("Only support Dronekit Locations (Global/GlobalRelative/Local)")
 

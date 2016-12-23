@@ -43,7 +43,7 @@ class TestExplorePlan extends SpookyEnvFixture with LocalPathDocsFixture {
     val rdd1 = src
       .explore('dummy)(
         Wget(HTML_URL),
-        fetchOptimizer = FetchOptimizers.WebCacheAware,
+        fetchOptimizer = FetchOptimizers.DocCacheAware,
         partitionerFactory = {v => partitioner}
       )()
 
@@ -59,7 +59,7 @@ class TestExplorePlan extends SpookyEnvFixture with LocalPathDocsFixture {
       .extract("abc" ~ 'dummy)
       .explore('dummy)(
         Wget(HTML_URL),
-        fetchOptimizer = FetchOptimizers.WebCacheAware,
+        fetchOptimizer = FetchOptimizers.DocCacheAware,
         partitionerFactory = {v => partitioner}
       )()
 
@@ -69,7 +69,7 @@ class TestExplorePlan extends SpookyEnvFixture with LocalPathDocsFixture {
     val rdd2 = rdd1
       .explore('dummy)(
         Wget(HTML_URL),
-        fetchOptimizer = FetchOptimizers.WebCacheAware,
+        fetchOptimizer = FetchOptimizers.DocCacheAware,
         partitionerFactory = {v => partitioner2}
       )()
 

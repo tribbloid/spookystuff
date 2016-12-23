@@ -1,6 +1,6 @@
 package com.tribbloids.spookystuff.actions
 
-import com.tribbloids.spookystuff.caching.{DFSWebCache, InMemoryWebCache}
+import com.tribbloids.spookystuff.caching.{DFSDocCache, InMemoryDocCache}
 import com.tribbloids.spookystuff.doc.{Doc, Fetched}
 import com.tribbloids.spookystuff.row.{DataRowSchema, FetchedRow}
 import com.tribbloids.spookystuff.session.Session
@@ -46,8 +46,8 @@ case class TraceView(
           if (spooky.conf.cacheWrite) {
             this.docs = docs
             val effectiveBacktrace = actionResult.head.uid.backtrace
-            InMemoryWebCache.put(effectiveBacktrace, actionResult, spooky)
-            DFSWebCache.put(effectiveBacktrace ,actionResult, spooky)
+            InMemoryDocCache.put(effectiveBacktrace, actionResult, spooky)
+            DFSDocCache.put(effectiveBacktrace ,actionResult, spooky)
           }
         }
         else {

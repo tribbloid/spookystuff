@@ -8,7 +8,7 @@ import com.tribbloids.spookystuff.extractors.{FR, Literal}
 /**
   * Created by peng on 07/06/16.
   */
-trait AbstractWebCache {
+trait AbstractDocCache {
 
   import dsl._
 

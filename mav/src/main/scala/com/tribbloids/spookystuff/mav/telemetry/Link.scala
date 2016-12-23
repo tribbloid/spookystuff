@@ -1,5 +1,7 @@
 package com.tribbloids.spookystuff.mav.telemetry
 
+import com.tribbloids.spookystuff.mav.actions.{LocationBundle, LocationGlobal, LocationGlobalRelative, LocationLocal, Location}
+import com.tribbloids.spookystuff.mav.dsl.{LinkFactories, LinkFactory}
 import com.tribbloids.spookystuff.mav.{MAVConf, ReinforcementDepletedException}
 import com.tribbloids.spookystuff.session.python._
 import com.tribbloids.spookystuff.session.{LocalCleanable, Session}
@@ -28,11 +30,10 @@ object Link extends StaticRef {
 
   // connStr -> (link, isBusy)
   // only 1 allowed per connStr, how to enforce?
-  // TODO: change to Endpoint -> tuple mapping?
-  val existing: caching.ConcurrentMap[String, LinkWithContext] = caching.ConcurrentMap()
+  val existing: caching.ConcurrentMap[Endpoint, LinkWithContext] = caching.ConcurrentMap()
 
   // won't be used to create any link before its status being recovered by ping daemon.
-  val blacklist: caching.ConcurrentSet[String] = caching.ConcurrentSet()
+  val blacklist: caching.ConcurrentSet[Endpoint] = caching.ConcurrentSet()
 
   //in the air but unused
   //  def idle: Map[String, (ProxyFactory, Link)] = existing.filter {
@@ -44,10 +45,11 @@ object Link extends StaticRef {
   def getOrInitialize(
                        candidates: Seq[Endpoint],
                        factory: LinkFactory,
-                       session: Session
+                       session: Session,
+                       locationOpt: Option[Location] = None
                      ): Link = {
     session.initializeDriverIfMissing {
-      getOrCreate(candidates, factory, session)
+      getOrCreate(candidates, factory, session, locationOpt)
     }
   }
 
@@ -64,7 +66,8 @@ object Link extends StaticRef {
   def getOrCreate(
                    candidates: Seq[Endpoint],
                    factory: LinkFactory,
-                   session: Session
+                   session: Session,
+                   locationOpt: Option[Location] = None
                  ): Link = {
 
     val local = driverLocal
@@ -79,51 +82,53 @@ object Link extends StaticRef {
 
     val result = local
       .getOrElse {
-        SpookyUtils.retry(2) {
-          val newLink = refitIdle(candidates, factory, session).getOrElse {
-            elect(candidates, factory, session)
-          }
-          try {
-            newLink.link.Py(session)
-          }
-          catch {
-            case e: Throwable =>
-              newLink.clean()
-              throw e
-          }
-
-          newLink.link
+        val newLink = recommissionIdle(candidates, factory, session, locationOpt).getOrElse {
+          selectAndCreate(candidates, factory, session)
         }
+        try {
+          newLink.link.Py(session)
+        }
+        catch {
+          case e: Throwable =>
+            newLink.clean()
+            throw e
+        }
+
+        newLink.link
       }
     result
   }
 
   // CAUTION: this will refit the telemetry link with new Proxy and clean the old one if ProxyFactory is different.
-  def refitIdle(
-                 candidates: Seq[Endpoint],
-                 factory: LinkFactory,
-                 session: Session
-               ): Option[LinkWithContext] = {
+  def recommissionIdle(
+                        candidates: Seq[Endpoint],
+                        factory: LinkFactory,
+                        session: Session,
+                        locationOpt: Option[Location] = None
+                      ): Option[LinkWithContext] = {
 
     val result = this.synchronized {
       val existingCandidates: Seq[LinkWithContext] = candidates.collect {
         Function.unlift {
           endpoint =>
-            existing.get(endpoint.connStr)
+            existing.get(endpoint)
         }
       }
 
-      val idleLinkOpt = existingCandidates.find {
+      val idleLinks = existingCandidates.filter {
         link =>
           link.link.isIdle
       }
 
+      //TODO: find the closest one!
+      val idleLinkOpt = idleLinks.headOption
+
       idleLinkOpt match {
         case Some(idleLink) =>
-          val refittedLink = {
-            if (factory.canCreate(idleLink)) {
+          val recommissioned = {
+            if (LinkFactories.canCreate(factory, idleLink)) {
               LoggerFactory.getLogger(this.getClass).info {
-                s"Refitting telemetry Link for ${idleLink.link.endpoint.connStr} with old proxy"
+                s"Recommissioning telemetry Link for ${idleLink.link.endpoint.connStr} with old proxy"
               }
               idleLink.link.putOnHold()
               idleLink
@@ -133,7 +138,7 @@ object Link extends StaticRef {
               // recreate proxy
               val link = factory.apply(idleLink.link.endpoint).putOnHold()
               LoggerFactory.getLogger(this.getClass).info {
-                s"Refitting telemetry Link for ${link.endpoint.connStr} with new proxy"
+                s"Recommissioning telemetry Link for ${link.endpoint.connStr} with new proxy"
               }
               LinkWithContext(
                 link,
@@ -143,7 +148,7 @@ object Link extends StaticRef {
             }
           }
 
-          Some(refittedLink)
+          Some(recommissioned)
         case None =>
           LoggerFactory.getLogger(this.getClass).info{
             if (existingCandidates.isEmpty) {
@@ -165,24 +170,24 @@ object Link extends StaticRef {
     result
   }
 
-  def elect(
-             candidates: Seq[Endpoint],
-             factory: LinkFactory,
-             session: Session
-           ): LinkWithContext = {
+  def selectAndCreate(
+                       candidates: Seq[Endpoint],
+                       factory: LinkFactory,
+                       session: Session
+                     ): LinkWithContext = {
 
     val newLink = this.synchronized {
       val endpointOpt = candidates.find {
         v =>
-          !existing.contains(v.connStr) &&
-            !blacklist.contains(v.connStr)
+          !existing.contains(v) &&
+            !blacklist.contains(v)
       }
       val endpoint = endpointOpt
         .getOrElse(
           throw new ReinforcementDepletedException(
             candidates.map {
               candidate =>
-                if (blacklist.contains(candidate.connStr)) s"${candidate.connStr} is unreachable"
+                if (blacklist.contains(candidate)) s"${candidate.connStr} is unreachable"
                 else s"${candidate.connStr} is busy"
             }
               .mkString(", ")
@@ -214,15 +219,14 @@ object Link extends StaticRef {
                  override val spookyOpt: Option[SpookyContext]
                ) extends PyBinding(ref, driver, spookyOpt) {
 
-    Helper.autoStart()
+    $Helper.autoStart()
     Link.driverLocal += driver -> ref
 
-    private object Helper {
+    object $Helper {
       // will retry 6 times, try twice for Vehicle.connect() in python, if failed, will restart proxy and try again (3 times).
-      // after all attempts failed will add endpoint into blacklist and stop proxy
+      // after all attempts failed will stop proxy and add endpoint into blacklist.
       def autoStart(): String = try {
 
-        var needRestart = false
         val retries = spookyOpt.map(
           spooky =>
             spooky.conf.submodules.get[MAVConf]().connectionRetries
@@ -230,29 +234,26 @@ object Link extends StaticRef {
         SpookyUtils.retry(retries) {
           try {
             ref.proxyOpt.foreach {
-              proxy =>
-                if (needRestart) {
-                  proxy.managerPy.restart()
-                }
-                else {
-                  proxy.managerPy.start()
-                }
+              _.managerPy.start()
             }
             val result = Binding.this.start().$repr.get
             result
           }
-          finally {
-            needRestart = true
+          catch {
+            case e: Throwable =>
+              ref.proxyOpt.foreach {
+                _.managerPy.stop()
+              }
+              throw e
           }
         }
       }
       catch {
         case e: PyInterpreterException => //this indicates a possible port conflict
-          ref.proxyOpt.foreach(_.managerPy.stop())
           //TODO: enable after ping daemon
 
           try {
-            ref.detectConflicts(Option(e.cause).toSeq)
+            ref.detectPossibleConflicts(Option(e.cause).toSeq)
             throw e
           }
           catch {
@@ -261,6 +262,22 @@ object Link extends StaticRef {
                 cause = ee
               )
           }
+      }
+
+      def getLocations: LocationBundle = {
+
+        val locations = Binding.this.vehicle.location
+        val global = locations.global_frame.$message.get.cast[LocationGlobal]
+        val globalRelative = locations.global_relative_frame.$message.get.cast[LocationGlobalRelative]
+        val local = locations.local_frame.$message.get.cast[LocationLocal]
+
+        val result = LocationBundle(
+          global,
+          globalRelative,
+          local
+        )
+        ref.lastKnownLocations = result
+        result
       }
     }
 
@@ -293,14 +310,25 @@ DaemonProcess   (can this be delayed to be implemented later? completely surrend
   but if not ...
     how to ensure that an interpreter can takeover and get the same vehicle?
   */
-case class Link private[telemetry](
-                                    endpoint: Endpoint,
-                                    outs: Seq[String]
-                                  ) extends CaseInstanceRef with LocalCleanable {
+case class Link(
+                 endpoint: Endpoint,
+                 outs: Seq[String]
+               ) extends CaseInstanceRef with LocalCleanable {
+
+  /**
+    * set true to block being used by another thread before its driver is created
+    */
+  var onHold: Boolean = true
+  def putOnHold(): this.type = {
+    this.onHold = true
+    this
+  }
+  def isIdle: Boolean = {
+    !onHold && validDriverToBindings.isEmpty
+  }
 
   //mnemonic
   @volatile var _proxyOpt: Option[Proxy] = _
-
   def proxyOpt: Option[Proxy] = Option(_proxyOpt).getOrElse {
     this.synchronized {
       _proxyOpt = if (outs.isEmpty) None
@@ -315,6 +343,8 @@ case class Link private[telemetry](
       _proxyOpt
     }
   }
+
+  var lastKnownLocations: LocationBundle = _
 
   def wContext(
                 spooky: SpookyContext,
@@ -340,33 +370,31 @@ case class Link private[telemetry](
         result
       }
   }
-
-  /**
-    * set true to block being used by another thread before its driver is created
-    */
-  var onHold: Boolean = true
-
-  def putOnHold(): this.type = {
-    this.onHold = true
-    this
+  override def Py(session: Session): Link.Binding = {
+    _Py(session.pythonDriver, Some(session.spooky))
   }
 
-  def isIdle: Boolean = {
-    !onHold && validDriverToBindings.isEmpty
-  }
-
-  def detectConflicts(causes: Seq[Throwable] = Nil): Unit = {
-    val c1 = Link.existing.get(endpoint.connStr).forall(_.link eq this)
+  def detectPossibleConflicts(causes: Seq[Throwable] = Nil): Unit = {
+    val c1 = Link.existing.get(endpoint).forall(_.link eq this)
     val existing = Link.existing.values // remember to clean up the old one to create a new one
     val c2 = existing.filter(_.link.endpoint.connStr == endpoint.connStr).forall(_.link eq this)
     val c3 = existing.filter(_.link.uri == uri).forall(_.link eq this)
+
+    val connStrs: Map[String, Int] = Link.existing.values.flatMap(_.link.endpoint.connStrs)
+      .groupBy(identity)
+      .mapValues(_.size)
 
     TreeException.&&&(
       Seq(
         Try(assert(c1, s"Conflict: endpoint (index) ${endpoint.connStr} is already used")),
         Try(assert(c2, s"Conflict: endpoint ${endpoint.connStr} is already used")),
         Try(assert(c3, s"Conflict: uri $uri is already used"))
-      ),
+      ) ++
+        connStrs.map {
+          tuple =>
+            Try(assert(tuple._2 == 1, s"connection String ${tuple._1} is shared by ${tuple._2} endpoints"))
+        }
+          .toSeq,
       extra = causes
     )
   }
@@ -377,11 +405,11 @@ case class Link private[telemetry](
 
     super.cleanImpl()
     Option(_proxyOpt).flatten.foreach(_.clean())
-    val existingOpt = Link.existing.get(this.endpoint.connStr)
+    val existingOpt = Link.existing.get(this.endpoint)
     existingOpt.foreach {
       v =>
         if (v.link eq this)
-          Link.existing -= this.endpoint.connStr
+          Link.existing -= this.endpoint
         else {
           if (!isDryrun) throw new AssertionError("THIS IS NOT A DRYRUN OBJECT! SO ITS CREATED ILLEGALLY!")
         }
@@ -396,9 +424,9 @@ case class LinkWithContext(
                             factory: LinkFactory
                           ) extends LocalCleanable {
   try {
-    link.detectConflicts()
+    link.detectPossibleConflicts()
 
-    Link.existing += link.endpoint.connStr -> this
+    Link.existing += link.endpoint -> this
     spooky.metrics.linkCreated += 1
   }
   catch {

@@ -14,8 +14,6 @@ import scala.util.{Failure, Success, Try}
 
 class TestHelper() {
 
-  val numProcessors: Int = Runtime.getRuntime.availableProcessors()
-
   val TEMP_PATH = SpookyUtils.\\\(System.getProperty("user.dir"), "temp")
   val UNPACK_RESOURCE_PATH = SpookyUtils.\\\(System.getProperty("java.io.tmpdir"), "spookystuff", "resources")
 
@@ -42,18 +40,36 @@ class TestHelper() {
 
   def sparkHome = System.getenv("SPARK_HOME")
 
-  lazy val clusterSizeOpt: Option[Int] = {
+  val numCores: Int = Runtime.getRuntime.availableProcessors()
+
+  lazy val clusterSize_numCoresPerWorker_Opt: Option[(Int, Int)] = {
     Option(sparkHome).flatMap {
       h =>
-        Option(props.getProperty("ClusterSize")).map(_.toInt)
+        (
+          Option(props.getProperty("ClusterSize")).map(_.toInt),
+          Option(props.getProperty("NumCoresPerWorker")).map(_.toInt)
+        ) match {
+          case (None, None) =>
+            None
+          case (Some(v1), Some(v2)) =>
+            Some(v1 -> v2)
+          case (Some(v1), None) =>
+            Some(v1 -> Math.max(numCores / v1, 1))
+          case (None, Some(v2)) =>
+            Some(Math.max(numCores / v2, 1), v2)
+        }
     }
   }
 
-  lazy val maxFailures: Int = {
+  def clusterSizeOpt: Option[Int] = clusterSize_numCoresPerWorker_Opt.map(_._1)
+  def numCoresPerWorkerOpt: Option[Int] = clusterSize_numCoresPerWorker_Opt.map(_._2)
+
+  def maxFailures: Int = {
     Option(props.getProperty("MaxFailures")).map(_.toInt).getOrElse(4)
   }
 
-  def clusterSize = clusterSizeOpt.getOrElse(1)
+  def numWorkers = clusterSizeOpt.getOrElse(1)
+  def numComputers = clusterSizeOpt.map(_ + 1).getOrElse(1)
 
   //if SPARK_PATH & ClusterSize in rootkey.csv is detected, use local-cluster simulation mode
   //otherwise use local mode
@@ -92,16 +108,15 @@ class TestHelper() {
     *         cluster simulation mode: Some(SPARK_HOME) -> local-cluster[m,n, mem]
     */
   lazy val coreSettings: Map[String, String] = {
-    if (clusterSizeOpt.isEmpty) {
-      val masterStr = s"local[$numProcessors,$maxFailures]"
+    if (clusterSizeOpt.isEmpty || numCoresPerWorkerOpt.isEmpty) {
+      val masterStr = s"local[$numCores,$maxFailures]"
       println("initializing SparkContext in local mode:" + masterStr)
       Map(
         "spark.master" -> masterStr
       )
     }
     else {
-      val size = clusterSizeOpt.get
-      val masterStr = s"local-cluster[$size,${numProcessors / size},${EXECUTOR_MEMORY + 512}]"
+      val masterStr = s"local-cluster[${clusterSizeOpt.get},${numCoresPerWorkerOpt.get},${EXECUTOR_MEMORY + 512}]"
       println(s"initializing SparkContext in local-cluster simulation mode:" + masterStr)
       Map(
         "spark.master" -> masterStr,

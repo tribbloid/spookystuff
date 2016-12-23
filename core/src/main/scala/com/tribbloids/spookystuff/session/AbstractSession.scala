@@ -140,11 +140,11 @@ class Session(
     }
     catch {
       case NoWebDriverException =>
-        LoggerFactory.getLogger(this.getClass).info(s"Web driver doesn't exist, creating ... $n time(s) left")
+        LoggerFactory.getLogger(this.getClass).debug(s"Web driver doesn't exist, creating ... $n time(s) left")
         getOrProvisionWebDriver
         initializeDriverIfMissing(f, n - 1)
       case NoPythonDriverException =>
-        LoggerFactory.getLogger(this.getClass).info(s"Python driver doesn't exist, creating ... $n time(s) left")
+        LoggerFactory.getLogger(this.getClass).debug(s"Python driver doesn't exist, creating ... $n time(s) left")
         getOrProvisionPythonDriver
         initializeDriverIfMissing(f, n - 1)
       case e: Throwable =>

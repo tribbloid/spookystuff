@@ -1,59 +1,66 @@
-### DON'T DELETE, FIXTURES!
-
+import dronekit
+import pexpect
 import sys
 import time
+from dronekit_sitl import SITL
 
 sys.path.append('/home/peng/.spookystuff/pythonpath')
 import os
-import simplejson as json
 
-import pyspookystuff.mav.sim
-import pyspookystuff.mav.telemetry
+sitl_args = ['--model', 'quad', '--home=-35.363261,149.165230,584,353']
+if 'SITL_SPEEDUP' in os.environ:
+    sitl_args += ['--speedup', str(os.environ['SITL_SPEEDUP'])]
+if 'SITL_RATE' in os.environ:
+    sitl_args += ['-r', str(os.environ['SITL_RATE'])]
 
-aPMSim60043357380016504=pyspookystuff.mav.sim.APMSim(
-    iNum=json.loads(
-        """
-        0
-        """
+sitl = SITL()
+sitl.download('copter', '3.3')
+sitl.launch(sitl_args, await_ready=True, restart=True)
+
+for i in range(1, 20):
+    vehicle = dronekit.connect(
+        "tcp:localhost:5760",
+        wait_ready=True
     )
-)
+    vehicle.commands.download()
+    vehicle.commands.wait_ready()
+    vehicle.close()
 
-proxy=pyspookystuff.mav.telemetry.Proxy(
+def spawnProxy(aircraft, setup, master, outs,
+               options='', logfile=sys.stdout):
+    # type: (str, bool, str, list, str, str) -> object
+
+    MAVPROXY = os.getenv('MAVPROXY_CMD', 'mavproxy.py')
+    cmd = MAVPROXY + ' --master=%s' % master
+    for out in outs:
+        cmd += ' --out=%s' % out
+    if setup:
+        cmd += ' --setup'
+    cmd += ' --aircraft=%s' % aircraft
+    if options is not None:
+        cmd += ' ' + options
+
+    print(cmd)
+
+    p = pexpect.spawn(cmd, logfile=logfile, timeout=60, ignore_sighup=True)
+    p.delaybeforesend = 0
+
+    return p
+
+p = spawnProxy(
+    aircraft="DRONE",
+    setup=False,
     master="tcp:localhost:5760",
-    name="DRONE",
-    outs = ["udp:localhost:12015", "udp:localhost:14550"]
+    outs=["udp:localhost:12052"]
 )
 
-proxy.start()
+time.sleep(1) # wait for proxy to initialize
 
-
-try:
-    endpoint6689066920223517022=pyspookystuff.mav.telemetry.Endpoint(connStrs=json.loads(
-        """
-        [ "tcp:localhost:5800" ]
-        """
-    ), name=json.loads(
-        """
-        "DRONE"
-        """
-    ))
-    link4278034394758385026=pyspookystuff.mav.telemetry.Link(endpoint=endpoint6689066920223517022, outs=json.loads(
-        """
-        [ "udp:localhost:12068", "udp:localhost:14550" ]
-        """
-    ))
-    link1615522973475451768=pyspookystuff.mav.telemetry.Link(endpoint=endpoint6689066920223517022, outs=json.loads(
-        """
-        [ "udp:localhost:12033", "udp:localhost:14550" ]
-        """
-    ))
-    start9057863921842577795=link1615522973475451768.start()
-except Exception as e:
-    print('======== *!?error info!?* ========')
-    raise
-
-try:
-    testMove8942317931611326564=link6964116197604848232.testMove()
-except Exception as e:
-    print('======== *!?error info!?* ========')
-    raise
+for i in range(1, 20):
+    vehicle = dronekit.connect(
+        "udp:localhost:12052",
+        wait_ready=True
+    )
+    vehicle.commands.download()
+    vehicle.commands.wait_ready()
+    vehicle.close()

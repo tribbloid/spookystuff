@@ -242,7 +242,7 @@ class Link(Daemon, VehicleFunctions):
 
         self.assureClearanceAltitude(height)
 
-        self.localOrigin = self.vehicle.location.global_frame
+        # self.localOrigin = self.vehicle.location.global_relative_frame
         self.move(target)
 
         last_location = self.vehicle.location

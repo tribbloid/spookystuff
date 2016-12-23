@@ -214,9 +214,9 @@ case class ExplorePlan(
   def betweenEpochReduce(
                           stateRDD: RDD[(TraceView, Open_Visited)],
                           reducer: (Open_Visited, Open_Visited) => Open_Visited,
-                          partitioner0: Partitioner
+                          partitioner: Partitioner
                         ): RDD[(TraceView, Open_Visited)] = {
-    val gp = fetchOptimizer.getGenPartitioner(partitioner0)
+    val gp = fetchOptimizer.getImpl(partitioner)
     gp.reduceByKey(stateRDD, reducer, beaconRDDOpt)
   }
 }

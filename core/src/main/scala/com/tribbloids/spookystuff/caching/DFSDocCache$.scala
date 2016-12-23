@@ -12,7 +12,7 @@ import org.apache.hadoop.fs.Path
   * Backed by a WeakHashMap, the web cache temporarily store all trace -> Array[Page] until next GC.
   * Always enabled
   */
-object DFSWebCache extends AbstractWebCache {
+object DFSDocCache extends AbstractDocCache {
 
   def getImpl(k: Trace, spooky: SpookyContext): Option[Seq[Fetched]] = {
 

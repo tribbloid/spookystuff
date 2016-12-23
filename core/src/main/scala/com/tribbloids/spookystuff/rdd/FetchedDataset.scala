@@ -149,6 +149,7 @@ case class FetchedDataset(
     }
 
   //TODO: cleanup, useful only in comparison
+  @Deprecated
   def toDFLegacy(sort: Boolean = false, tableName: String = null): DataFrame =
     sparkContext.withJob(s"toDF(sort=$sort, name=$tableName)") {
 

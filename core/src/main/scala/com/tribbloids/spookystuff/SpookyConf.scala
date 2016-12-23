@@ -168,7 +168,7 @@ class SpookyConf (
                    var autoSaveFilePath: ByDoc[String] = FilePaths.UUIDName(FilePaths.Hierarchical),
                    var errorDumpFilePath: ByDoc[String] = FilePaths.UUIDName(FilePaths.Hierarchical),
 
-                   var defaultPartitionerFactory: RDD[_] => Partitioner = PartitionerFactories.SameParallelism,
+                   var defaultPartitionerFactory: RDD[_] => Partitioner = PartitionerFactories.SamePartitioner,
 
                    var remoteResourceTimeout: Duration = 60.seconds,
                    var DFSTimeout: Duration = 40.seconds,

@@ -1,6 +1,6 @@
 package com.tribbloids.spookystuff.actions
 
-import com.tribbloids.spookystuff.caching.{DFSWebCache, InMemoryWebCache}
+import com.tribbloids.spookystuff.caching.{DFSDocCache, InMemoryDocCache}
 import com.tribbloids.spookystuff.doc.{Doc, Fetched}
 import com.tribbloids.spookystuff.row.{DataRowSchema, FetchedRow}
 import com.tribbloids.spookystuff.session.Session
@@ -78,9 +78,9 @@ abstract class ActionLike extends DetailedProduct with Serializable {
     val pagesFromCache: Seq[Seq[Fetched]] = if (!spooky.conf.cacheRead) Seq(null)
     else dryrun.map (
       dry =>
-        InMemoryWebCache.get(dry, spooky)
+        InMemoryDocCache.get(dry, spooky)
           .orElse{
-            DFSWebCache.get(dry, spooky)
+            DFSDocCache.get(dry, spooky)
           }
           .orNull
     )

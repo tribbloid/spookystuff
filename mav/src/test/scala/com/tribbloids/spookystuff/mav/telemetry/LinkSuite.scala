@@ -1,6 +1,7 @@
 package com.tribbloids.spookystuff.mav.telemetry
 
 import com.tribbloids.spookystuff.PyInterpreterException
+import com.tribbloids.spookystuff.mav.dsl.LinkFactories
 import com.tribbloids.spookystuff.mav.sim.APMSimFixture
 import com.tribbloids.spookystuff.session.{Lifespan, NoPythonDriverException, Session}
 import org.slf4j.LoggerFactory
@@ -101,14 +102,14 @@ class LinkSuite extends APMSimFixture {
     val session = new Session(spooky)
     val proxyFactory = LinkFactories.NoProxy
 
-    val link = Link.elect(
+    val link = Link.selectAndCreate(
       getEndpoints(simConnStrs.head),
       proxyFactory,
       session
     )
       .link
 
-    link.detectConflicts()
+    link.detectPossibleConflicts()
   }
 
   test("If without Proxy, Link.uri should = endpoint.connStr") {

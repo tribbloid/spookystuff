@@ -32,7 +32,7 @@ abstract class IntegrationFixture extends SpookyEnvFixture with BeforeAndAfterAl
   lazy val optimizers = Seq(
     FetchOptimizers.Narrow,
     FetchOptimizers.Wide,
-    FetchOptimizers.WebCacheAware
+    FetchOptimizers.DocCacheAware
   )
 
   import duration._

@@ -1,6 +1,7 @@
 package com.tribbloids.spookystuff.mav.telemetry
 
 import com.tribbloids.spookystuff.SpookyEnvFixture
+import com.tribbloids.spookystuff.mav.dsl.LinkFactories
 
 /**
   * Created by peng on 30/11/16.
@@ -17,7 +18,7 @@ class LinkFactoriesSuite extends SpookyEnvFixture {
     Link.existing.values.foreach(_.tryClean())
     val factory = LinkFactories.NoProxy
     val link = Link(Endpoint(Seq("dummy")), Nil).wContext(spooky, factory)
-    assert(factory.canCreate(link))
+    assert(LinkFactories.canCreate(factory, link))
   }
 
   test("NoProxy can create link with proxy that has no GCS out") {
@@ -25,7 +26,7 @@ class LinkFactoriesSuite extends SpookyEnvFixture {
     Link.existing.values.foreach(_.tryClean())
     val factory = LinkFactories.NoProxy
     val link = Link(Endpoint(Seq("dummy")), Seq("localhost:80")).wContext(spooky, factory)
-    assert(factory.canCreate(link))
+    assert(LinkFactories.canCreate(factory, link))
   }
 
   test("NoProxy can create link with proxy that has 1 GCS outs") {
@@ -34,7 +35,7 @@ class LinkFactoriesSuite extends SpookyEnvFixture {
     val factory = LinkFactories.NoProxy
     val link = Link(Endpoint(Seq("dummy")), Seq("localhost:80", "localhost:14550"))
       .wContext(spooky, factory)
-    assert(!factory.canCreate(link))
+    assert(!LinkFactories.canCreate(factory, link))
   }
 
   test("ForkToGCS cannot create link without proxy") {
@@ -42,7 +43,7 @@ class LinkFactoriesSuite extends SpookyEnvFixture {
     Link.existing.values.foreach(_.tryClean())
     val factory = LinkFactories.ForkToGCS()
     val link = Link(Endpoint(Seq("dummy")), Nil).wContext(spooky, factory)
-    assert(!factory.canCreate(link))
+    assert(!LinkFactories.canCreate(factory, link))
   }
 
   test("ForkToGCS can create link with proxy that has identical GCS outs") {
@@ -51,7 +52,7 @@ class LinkFactoriesSuite extends SpookyEnvFixture {
     val factory = LinkFactories.ForkToGCS()
     val link = Link(Endpoint(Seq("dummy")), Seq("localhost:80", "udp:localhost:14550"))
       .wContext(spooky, factory)
-    assert(factory.canCreate(link))
+    assert(LinkFactories.canCreate(factory, link))
   }
 
   test("ForkToGCS cannot create link with proxy that has different GCS outs") {
@@ -59,6 +60,6 @@ class LinkFactoriesSuite extends SpookyEnvFixture {
     Link.existing.values.foreach(_.tryClean())
     val factory = LinkFactories.ForkToGCS()
     val link = Link(Endpoint(Seq("dummy")), Seq("localhost:80")).wContext(spooky, factory)
-    assert(!factory.canCreate(link))
+    assert(!LinkFactories.canCreate(factory, link))
   }
 }

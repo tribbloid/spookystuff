@@ -135,10 +135,16 @@ case class SpookyContext private (
                                                 ref: RDD[_],
                                                 partitionerFactory: RDD[_] => Partitioner = conf.defaultPartitionerFactory
                                               ): RDD[(K,V)] = {
+    createBeaconRDD(partitionerFactory(ref))
+  }
+
+  def createBeaconRDD[K: ClassTag,V: ClassTag](
+                                                partitioner: Partitioner
+                                              ): RDD[(K,V)] = {
     sparkContext
       .emptyRDD[(K,V)]
-      .partitionBy(partitionerFactory(ref))
-      .persist(StorageLevel.MEMORY_ONLY)
+      .partitionBy(partitioner)
+      .persist(StorageLevel.MEMORY_AND_DISK)
   }
 
   object dsl extends Serializable {

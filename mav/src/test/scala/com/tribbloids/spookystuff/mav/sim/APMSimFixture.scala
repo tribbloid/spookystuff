@@ -47,7 +47,7 @@ abstract class APMSimFixture extends SpookyEnvFixture {
     super.beforeAll()
     val spooky = this.spooky
 
-    val isEmpty = sc.mapPerComputer {APMSim.existing.isEmpty}
+    val isEmpty = sc.mapPerComputer {APMSim.existing.isEmpty}.collect()
     assert(!isEmpty.contains(false))
 
     val connStrRDD = sc.parallelize(1 to parallelism)

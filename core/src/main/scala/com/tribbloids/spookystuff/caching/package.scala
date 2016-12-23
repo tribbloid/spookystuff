@@ -1,8 +1,5 @@
 package com.tribbloids.spookystuff
 
-import java.util
-import java.util.Collections
-
 import com.google.common.cache.CacheBuilder
 import com.tribbloids.spookystuff.utils.SpookyUtils
 

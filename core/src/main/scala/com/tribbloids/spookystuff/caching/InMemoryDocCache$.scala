@@ -8,7 +8,7 @@ import com.tribbloids.spookystuff.doc.Fetched
   * Backed by a WeakHashMap, the web cache temporarily store all trace -> Array[Page] until next GC.
   * Always enabled
   */
-object InMemoryWebCache extends AbstractWebCache {
+object InMemoryDocCache extends AbstractDocCache {
 
   val internal: ConcurrentCache[Trace, Seq[Fetched]] = ConcurrentCache()
 

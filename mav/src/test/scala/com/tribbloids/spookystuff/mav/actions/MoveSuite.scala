@@ -64,10 +64,10 @@ class MoveSuite extends APMSimFixture {
   //  override def parallelism: Int = 1
 
   //TODO: add Mark result validations!
-  test("Run 1 track per drone") {
+  test("Run 1.5 track per drone") {
 
     val tracks: Seq[(LocationLocal, LocationLocal)] = MoveSuite.generateTracks(
-      parallelism,
+      (parallelism.toDouble * 1.5).toInt,
       LocationLocal(10, 10, -10),
       LocationLocal(100, 0, 0),
       LocationLocal(0, 20, -2)
@@ -78,18 +78,18 @@ class MoveSuite extends APMSimFixture {
 
     df.collect()
 
-    df.mapPartitions {
-      itr =>
-        val seq = itr.toList
-        Iterator(seq)
-    }
-      .collect()
-      .map{
-        seq =>
-          assert(seq.size == 1)
-          seq
-      }
-      .foreach(println)
+//    df.mapPartitions {
+//      itr =>
+//        val seq = itr.toList
+//        Iterator(seq)
+//    }
+//      .collect()
+//      .map{
+//        seq =>
+//          assert(seq.size == 1)
+//          seq
+//      }
+//      .foreach(println)
 
     val result = spooky.create(df)
       .fetch (
@@ -103,7 +103,8 @@ class MoveSuite extends APMSimFixture {
     result.foreach(println)
   }
 
-  ignore("Run 2.5 track per drone") { //TOOOO slow
+  //TODO: TOOOO slow and blocked by https://github.com/dronekit/dronekit-python/issues/688
+  ignore("Run 2.5 track per drone") {
 
     val tracks: Seq[(LocationLocal, LocationLocal)] = MoveSuite.generateTracks(
       (parallelism.toDouble * 2.5).toInt,

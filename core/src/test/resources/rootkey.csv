@@ -1,1 +1,2 @@
-ClusterSize=2
+#ClusterSize=2
+NumCoresPerWorker=2

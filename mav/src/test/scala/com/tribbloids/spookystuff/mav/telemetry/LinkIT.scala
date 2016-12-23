@@ -1,6 +1,7 @@
 package com.tribbloids.spookystuff.mav.telemetry
 
 import com.tribbloids.spookystuff.SpookyContext
+import com.tribbloids.spookystuff.mav.dsl.{LinkFactories, LinkFactory}
 import com.tribbloids.spookystuff.mav.sim.APMSimFixture
 import com.tribbloids.spookystuff.session.Session
 import org.apache.spark.rdd.RDD
@@ -50,7 +51,7 @@ class LinkIT extends APMSimFixture {
           LinkIT.moveAndGetLocation(spooky,
             proxyFactory, Seq(connStr))
       }
-    val location = rdd.first()
+    val location = rdd.collect().head
 
     println(location)
     assert(spooky.metrics.linkCreated.value == 1)
@@ -65,12 +66,8 @@ class LinkIT extends APMSimFixture {
         LinkIT.moveAndGetLocation(spooky, proxyFactory, connStrs)
     }
       .persist()
-    val locations: Array[String] = try {
-      val locations = rdd.collect()
-      assert(locations.distinct.length == locations.length)
-      locations
-    }
-
+    val locations = rdd.collect()
+    assert(locations.distinct.length == locations.length)
     locations.toSeq.foreach(
       println
     )

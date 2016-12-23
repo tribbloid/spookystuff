@@ -1,7 +1,8 @@
 package com.tribbloids.spookystuff.mav
 
 import com.tribbloids.spookystuff.AbstractConf
-import com.tribbloids.spookystuff.mav.telemetry.{Endpoint, LinkFactories, LinkFactory}
+import com.tribbloids.spookystuff.mav.dsl.{LinkFactories, LinkFactory}
+import com.tribbloids.spookystuff.mav.telemetry.Endpoint
 import org.apache.spark.SparkConf
 
 object MAVConf {

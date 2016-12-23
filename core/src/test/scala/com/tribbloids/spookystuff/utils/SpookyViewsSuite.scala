@@ -2,6 +2,7 @@ package com.tribbloids.spookystuff.utils
 
 import com.tribbloids.spookystuff.SpookyEnvFixture
 import com.tribbloids.spookystuff.testutils.TestHelper
+import org.apache.spark.{SparkEnv, TaskContext}
 
 import scala.util.Random
 
@@ -43,7 +44,7 @@ class SpookyViewsSuite extends SpookyEnvFixture {
     assert(Seq(1, 2.2, "a").filterByType[Double].get == Seq(2.2))
     assert(Seq(1, 2.2, "a").filterByType[java.lang.Double].get == Seq(2.2: java.lang.Double))
     assert(Seq(1, 2.2, "a").filterByType[String].get == Seq("a"))
-    
+
     assert(Set(1, 2.2, "a").filterByType[Int].get == Set(1))
     assert(Set(1, 2.2, "a").filterByType[java.lang.Integer].get == Set(1: java.lang.Integer))
     assert(Set(1, 2.2, "a").filterByType[Double].get == Set(2.2))
@@ -71,18 +72,75 @@ class SpookyViewsSuite extends SpookyEnvFixture {
     assert(nullStr \\ nullStr \\ "abc" \\ null \\ null == "abc")
   }
 
-  test("foreachExecutor will run properly") {
+  test("mapPerExecutor will run properly") {
     val result = sc.mapPerExecutor {
-      1
+      TestHelper.assert(!TaskContext.get().isRunningLocally())
+      SparkEnv.get.blockManager.blockManagerId ->
+        TaskContext.getPartitionId()
     }
-    assert(result.count() == sc.defaultParallelism)
+      .collect()
+    assert(result.length == sc.defaultParallelism, result.mkString("\n"))
+    assert(result.map(_._1).distinct.length == TestHelper.numWorkers, result.mkString("\n"))
+    assert(result.map(_._2).distinct.length == sc.defaultParallelism, result.mkString("\n"))
+    result.foreach(println)
   }
 
-  test("foreachNode will run properly") {
+  test("mapPerWorker will run properly") {
     val result = sc.mapPerWorker {
-      1
+      TestHelper.assert(!TaskContext.get().isRunningLocally())
+      SparkEnv.get.blockManager.blockManagerId ->
+        TaskContext.getPartitionId()
     }
-    assert(result.count() == TestHelper.clusterSize)
+      .collect()
+    assert(result.length == TestHelper.numWorkers, result.mkString("\n"))
+    assert(result.map(_._1).distinct.length == TestHelper.numWorkers, result.mkString("\n"))
+    assert(result.map(_._2).distinct.length == TestHelper.numWorkers, result.mkString("\n"))
+    result.foreach(println)
+  }
+
+  test("mapPerCore will run properly") {
+    val result = sc.mapPerCore {
+      SparkEnv.get.blockManager.blockManagerId ->
+        TaskContext.getPartitionId()
+    }
+      .collect()
+    assert(result.length == sc.defaultParallelism + 1, result.mkString("\n"))
+    assert(result.map(_._1).distinct.length == TestHelper.numComputers, result.mkString("\n"))
+    assert(result.map(_._2).distinct.length == sc.defaultParallelism + 1, result.mkString("\n"))
+    result.foreach(println)
+  }
+
+  test("mapPerComputer will run properly") {
+    val result = sc.mapPerComputer {
+      SparkEnv.get.blockManager.blockManagerId ->
+        TaskContext.getPartitionId()
+    }
+      .collect()
+    assert(result.length == TestHelper.numWorkers + 1, result.mkString("\n"))
+    assert(result.map(_._1).distinct.length == TestHelper.numComputers, result.mkString("\n"))
+    assert(result.map(_._2).distinct.length == TestHelper.numWorkers + 1, result.mkString("\n"))
+    result.foreach(println)
+  }
+
+  test("result of allTaskLocationStrs can be used as partition's preferred location") {
+
+    val tlStrs = sc.allTaskLocationStrs
+    tlStrs.foreach(println)
+    val length = tlStrs.size
+    val seq: Seq[((Int, String), Seq[String])] = (1 to 100).map {
+      i =>
+        val nodeName = tlStrs(Random.nextInt(length))
+        (i -> nodeName) -> Seq(nodeName)
+    }
+
+    val created = sc.makeRDD[(Int, String)](seq)
+    //TODO: this RDD is extremely partitioned, can we use coalesce to reduce it?
+    val conditions = created.map {
+      tuple =>
+        tuple._2 == SpookyUtils.getTaskLocationStr
+    }
+      .collect()
+    assert(conditions.count(identity) == 100)
   }
 
   test("interpolate can use common character as delimiter") {
@@ -125,20 +183,20 @@ class SpookyViewsSuite extends SpookyEnvFixture {
     assert(interpolated == original)
   }
 
-//  test("1") {
-//    println(Seq("abc", "def", 3, 4, 2.3).filterByType[String].get)
-//    println(Seq("abc", "def", 3, 4, 2.3).filterByType[Integer].get)
-//    println(Seq("abc", "def", 3, 4, 2.3).filterByType[Int].get)
-//    println(Seq("abc", "def", 3, 4, 2.3).filterByType[java.lang.Double].get)
-//    println(Seq("abc", "def", 3, 4, 2.3).filterByType[Double].get)
-//
-//    //    val res2: Array[String] = Array("abc", "def").filterByType[String].get
-//    //    println(res2)
-//
-//    println(Set("abc", "def", 3, 4, 2.3).filterByType[String].get)
-//    println(Set("abc", "def", 3, 4, 2.3).filterByType[Integer].get)
-//    println(Set("abc", "def", 3, 4, 2.3).filterByType[Int].get)
-//    println(Seq("abc", "def", 3, 4, 2.3).filterByType[java.lang.Double].get)
-//    println(Seq("abc", "def", 3, 4, 2.3).filterByType[Double].get)
-//  }
+  //  test("1") {
+  //    println(Seq("abc", "def", 3, 4, 2.3).filterByType[String].get)
+  //    println(Seq("abc", "def", 3, 4, 2.3).filterByType[Integer].get)
+  //    println(Seq("abc", "def", 3, 4, 2.3).filterByType[Int].get)
+  //    println(Seq("abc", "def", 3, 4, 2.3).filterByType[java.lang.Double].get)
+  //    println(Seq("abc", "def", 3, 4, 2.3).filterByType[Double].get)
+  //
+  //    //    val res2: Array[String] = Array("abc", "def").filterByType[String].get
+  //    //    println(res2)
+  //
+  //    println(Set("abc", "def", 3, 4, 2.3).filterByType[String].get)
+  //    println(Set("abc", "def", 3, 4, 2.3).filterByType[Integer].get)
+  //    println(Set("abc", "def", 3, 4, 2.3).filterByType[Int].get)
+  //    println(Seq("abc", "def", 3, 4, 2.3).filterByType[java.lang.Double].get)
+  //    println(Seq("abc", "def", 3, 4, 2.3).filterByType[Double].get)
+  //  }
 }
