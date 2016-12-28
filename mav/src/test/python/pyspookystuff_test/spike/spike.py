@@ -8,23 +8,23 @@ sys.path.append('/home/peng/.spookystuff/pythonpath')
 import os
 
 sitl_args = ['--model', 'quad', '--home=-35.363261,149.165230,584,353']
-if 'SITL_SPEEDUP' in os.environ:
-    sitl_args += ['--speedup', str(os.environ['SITL_SPEEDUP'])]
-if 'SITL_RATE' in os.environ:
-    sitl_args += ['-r', str(os.environ['SITL_RATE'])]
+# if 'SITL_SPEEDUP' in os.environ:
+#     sitl_args += ['--speedup', str(os.environ['SITL_SPEEDUP'])]
+# if 'SITL_RATE' in os.environ:
+#     sitl_args += ['-r', str(os.environ['SITL_RATE'])]
 
 sitl = SITL()
 sitl.download('copter', '3.3')
 sitl.launch(sitl_args, await_ready=True, restart=True)
 
-for i in range(1, 20):
-    vehicle = dronekit.connect(
-        "tcp:localhost:5760",
-        wait_ready=True
-    )
-    vehicle.commands.download()
-    vehicle.commands.wait_ready()
-    vehicle.close()
+# for i in range(1, 20):
+#     vehicle = dronekit.connect(
+#         "tcp:localhost:5760",
+#         wait_ready=True
+#     )
+#     vehicle.commands.download()
+#     vehicle.commands.wait_ready()
+#     vehicle.close()
 
 def spawnProxy(aircraft, setup, master, outs,
                options='', logfile=sys.stdout):
@@ -51,7 +51,7 @@ p = spawnProxy(
     aircraft="DRONE",
     setup=False,
     master="tcp:localhost:5760",
-    outs=["udp:localhost:12052"]
+    outs=["udp:localhost:12052", "udp:localhost:14550"]
 )
 
 time.sleep(1) # wait for proxy to initialize

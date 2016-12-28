@@ -12,4 +12,4 @@ tar -xzf "$SPARK_DIR_NAME".tgz
 export SPARK_HOME="$PWD"/"$SPARK_DIR_NAME"
 echo $SPARK_HOME
 
-exec "$CRDIR"/test-install.sh -Pspark-1.6 "$@"
+exec "$CRDIR"/test-install.sh -Pspark-1.6 -Pscala-2.11 "$@"
