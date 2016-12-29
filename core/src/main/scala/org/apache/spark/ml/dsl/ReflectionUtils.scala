@@ -17,7 +17,12 @@
 
 package org.apache.spark.ml.dsl
 
+import org.apache.spark.ml.dsl.utils.FlowUtils
+
 object ReflectionUtils {
+
+  import org.apache.spark.sql.catalyst.ScalaReflection.universe._
+
   def setSuperField(obj : Object, fieldName: String, fieldValue: Object) {
     setAncestorField(obj, 1, fieldName, fieldValue)
   }
@@ -55,4 +60,8 @@ object ReflectionUtils {
     method.setAccessible(true)
     method.invoke(obj, values: _*)
   }
+
+  lazy val mirrorFactory = new FlowUtils.ThreadLocal (
+    runtimeMirror(ClassLoader.getSystemClassLoader)
+  )
 }

@@ -3,6 +3,7 @@ package com.tribbloids.spookystuff.extractors
 import java.lang.reflect.Method
 
 import com.tribbloids.spookystuff.utils.{ReflectionLock, TypeUtils, UnreifiedScalaType}
+import org.apache.spark.ml.dsl.ReflectionUtils
 import org.apache.spark.ml.dsl.utils.FlowUtils
 import org.apache.spark.sql.catalyst.ScalaReflection.universe._
 
@@ -284,10 +285,6 @@ case class ScalaResolvedFunction[T](
     }
   }
 
-  @transient lazy val mirrorFactory = new FlowUtils.ThreadLocal (
-    runtimeMirror(this.getClass.getClassLoader)
-  )
-
   @transient lazy val scalaMethod: MethodSymbol = {
     extractor.dynamic.getMethodByScala(baseDType, argDTypes)
   }
@@ -301,7 +298,7 @@ case class ScalaResolvedFunction[T](
     else {
       baseOpt.map {
         baseVal =>
-          val baseMirror = mirrorFactory.get()
+          val baseMirror = ReflectionUtils.mirrorFactory.get()
           val instanceMirror: InstanceMirror = baseMirror.reflect(baseVal)
           val methodMirror: MethodMirror = instanceMirror.reflectMethod(scalaMethod)
           methodMirror.apply(argOpts.map(_.get): _*)

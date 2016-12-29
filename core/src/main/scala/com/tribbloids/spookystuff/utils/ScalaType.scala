@@ -2,6 +2,7 @@ package com.tribbloids.spookystuff.utils
 
 import java.sql.{Date, Timestamp}
 
+import org.apache.spark.ml.dsl.ReflectionUtils
 import org.apache.spark.sql.catalyst.ScalaReflection.universe._
 import org.apache.spark.sql.types._
 
@@ -85,9 +86,7 @@ object ScalaType {
       _class
     }
 
-    @transient protected lazy val mirror = locked {
-      runtimeMirror(asClass.getClassLoader)
-    }
+    def mirror = ReflectionUtils.mirrorFactory.get()
 
     @transient override lazy val asType = locked {
       val classSymbol = mirror.staticClass(_class.getCanonicalName)

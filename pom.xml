@@ -10,6 +10,7 @@
         <java.version>1.8</java.version>
         <scala.version>2.10.6</scala.version>
         <scala.binary.version>2.10</scala.binary.version>
+        <!--has to be used with <exclusions></exclusions>-->
         <scala.fallback.version>2.10</scala.fallback.version>
         <spark.version>1.6.3</spark.version>
         <spark.binary.version>1.6</spark.binary.version>
@@ -189,7 +190,7 @@
         </dependency>
         <!--<dependency>-->
         <!--<groupId>org.scalacheck</groupId>-->
-        <!--<artifactId>scalacheck_${scala.binary.version}</artifactId>-->
+        <!--<artifactId>scalacheck_${scala.binaryexclusions.version}</artifactId>-->
         <!--<version>1.13.2</version>-->
         <!--<scope>test</scope>-->
         <!--</dependency>-->
