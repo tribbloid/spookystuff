@@ -78,7 +78,7 @@ class FlowSuite extends AbstractFlowSuite {
     )
   }
 
-  test("Pipeline can be visualized as ASCII art") {
+  ignore("Pipeline can be visualized as ASCII art") {
     val flow = (
       Flow('input)
         >-> new Tokenizer() -> TOKEN
@@ -129,7 +129,7 @@ class FlowSuite extends AbstractFlowSuite {
     )
   }
 
-  test("Pipeline can be visualized as ASCII art backwards") {
+  ignore("Pipeline can be visualized as ASCII art backwards") {
     val flow = (
       Flow('input)
         >-> new Tokenizer() -> TOKEN

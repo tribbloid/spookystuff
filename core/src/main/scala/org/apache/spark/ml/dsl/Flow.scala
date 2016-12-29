@@ -892,26 +892,32 @@ trait FlowComponent extends MayHaveHeads with MayHaveTails {
                     showPrefix: Boolean
                   ): String = {
 
-    val prettyColl = coll.mapValues {
-      v =>
-        StepVisualWrapper(v, showID, showInputs, showOutput, showPrefix)
-    }
+    try {
+      // TODO: underlying library doesn't support scala 2.11, discard/replace!
+      val prettyColl = coll.mapValues {
+        v =>
+          StepVisualWrapper(v, showID, showInputs, showOutput, showPrefix)
+      }
 
-    val vertices: Set[StepVisualWrapper] = prettyColl.values.toSet
-    val edges: List[(StepVisualWrapper, StepVisualWrapper)] = prettyColl.values.toList.flatMap{
-      v =>
-        v.self.usageIDs.map(prettyColl).map(vv => v -> vv)
-    }
-    val graph: Graph[StepVisualWrapper] = Graph[StepVisualWrapper](vertices = vertices, edges = edges)
+      val vertices: Set[StepVisualWrapper] = prettyColl.values.toSet
+      val edges: List[(StepVisualWrapper, StepVisualWrapper)] = prettyColl.values.toList.flatMap{
+        v =>
+          v.self.usageIDs.map(prettyColl).map(vv => v -> vv)
+      }
+      val graph: Graph[StepVisualWrapper] = Graph[StepVisualWrapper](vertices = vertices, edges = edges)
 
-    val forwardStr = GraphLayout.renderGraph(graph, layoutPrefs = layoutPrefs)
-    if (forward) forwardStr
-    else {
-      forwardStr
-        .split('\n')
-        .reverse
-        .mkString("\n")
-        .map(flipChar)
+      val forwardStr = GraphLayout.renderGraph(graph, layoutPrefs = layoutPrefs)
+      if (forward) forwardStr
+      else {
+        forwardStr
+          .split('\n')
+          .reverse
+          .mkString("\n")
+          .map(flipChar)
+      }
+    }
+    catch {
+      case e: Throwable => "[Only supported on Scala 2.10]"
     }
   }
 
