@@ -89,7 +89,7 @@ class TestFlattenPlan extends SpookyEnvFixture {
         Literal(Array("a"->1, "b"->2)) ~ 'Array
       )
 
-    assert(extracted.schema.typedFor('Array).get.dataType == UnreifiedScalaType.apply[Array[Tuple2[String, Int]]])
+    assert(extracted.schema.typedFor('Array).get.dataType == UnreifiedScalaType.apply[Array[Tuple2[java.lang.String, Int]]])
 
     val flattened = extracted
       .flatten(
@@ -111,7 +111,7 @@ class TestFlattenPlan extends SpookyEnvFixture {
         Literal(Seq("a"->1, "b"->2)) ~ 'Array
       )
 
-    assert(extracted.schema.typedFor('Array).get.dataType == UnreifiedScalaType.apply[Seq[Tuple2[String, Int]]])
+    assert(extracted.schema.typedFor('Array).get.dataType == UnreifiedScalaType.apply[Seq[Tuple2[java.lang.String, Int]]])
 
     val flattened = extracted
       .flatten(
@@ -134,7 +134,7 @@ class TestFlattenPlan extends SpookyEnvFixture {
         Literal(List("a"->1, "b"->2)) ~ 'Array
       )
 
-    assert(extracted.schema.typedFor('Array).get.dataType == UnreifiedScalaType.apply[List[Tuple2[String, Int]]])
+    assert(extracted.schema.typedFor('Array).get.dataType == UnreifiedScalaType.apply[List[Tuple2[java.lang.String, Int]]])
 
     val flattened = extracted
       .flatten(

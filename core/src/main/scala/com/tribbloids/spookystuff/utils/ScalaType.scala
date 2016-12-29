@@ -59,7 +59,7 @@ trait ScalaType[T] extends DataType with (() => TypeTag[T]) with ReflectionLock 
   // see [SPARK-8647], this achieves the needed constant hash code without declaring singleton
   //TODO: this is not accurate due to type erasure, need a better way to handle both type erasure & type alias
   override val _id = {
-    "" + asClass + "/" + reifyOrSelf
+    "" + asClass + "/" + asTypeTag.tpe.toString
   }
 }
 
