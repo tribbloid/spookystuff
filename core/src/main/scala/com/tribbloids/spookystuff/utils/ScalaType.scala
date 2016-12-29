@@ -23,7 +23,7 @@ trait ScalaType[T] extends DataType with (() => TypeTag[T]) with ReflectionLock 
   override def toString = typeName
 
   @transient lazy val asTypeTag: TypeTag[T] = locked {
-    this()
+    apply()
   }
   @transient lazy val asType = locked {
     asTypeTag.tpe
