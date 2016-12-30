@@ -86,7 +86,10 @@ object ScalaType {
       _class
     }
 
-    def mirror = runtimeMirror(_class.getClassLoader)
+    private def mirror = {
+      val loader = _class.getClassLoader
+      runtimeMirror(loader)
+    }
 //    def mirror = ReflectionUtils.mirrorFactory.get()
 
     @transient override lazy val asType = locked {
