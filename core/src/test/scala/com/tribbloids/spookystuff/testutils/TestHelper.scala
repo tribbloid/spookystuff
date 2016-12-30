@@ -101,6 +101,11 @@ class TestHelper() {
   }
 
   final val EXECUTOR_MEMORY = 2048
+  def executorMemory = numCoresPerWorkerOpt.map {
+    n =>
+      Math.min(n*512, EXECUTOR_MEMORY)
+  }
+    .getOrElse(EXECUTOR_MEMORY)
 
   /**
     *
@@ -116,12 +121,12 @@ class TestHelper() {
       )
     }
     else {
-      val masterStr = s"local-cluster[${clusterSizeOpt.get},${numCoresPerWorkerOpt.get},${EXECUTOR_MEMORY + 512}]"
+      val masterStr = s"local-cluster[${clusterSizeOpt.get},${numCoresPerWorkerOpt.get},${executorMemory + 256}]"
       println(s"initializing SparkContext in local-cluster simulation mode:" + masterStr)
       Map(
         "spark.master" -> masterStr,
         "spark.home" -> sparkHome,
-        "spark.executor.memory" -> (EXECUTOR_MEMORY + "m"),
+        "spark.executor.memory" -> (executorMemory + "m"),
         "spark.driver.extraClassPath" -> sys.props("java.class.path"),
         "spark.executor.extraClassPath" -> sys.props("java.class.path"),
         "spark.task.maxFailures" -> maxFailures.toString
