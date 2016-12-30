@@ -29,7 +29,7 @@ import com.tribbloids.spookystuff.utils.TreeException
 class SpookyException(
                        val message: String = "",
                        override val cause: Throwable = null
-                     ) extends TreeException.Unary(message, cause) {
+                     ) extends TreeException.Node(message, cause) {
 
 }
 

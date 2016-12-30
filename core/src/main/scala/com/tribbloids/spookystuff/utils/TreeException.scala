@@ -33,7 +33,7 @@ object TreeException {
 
   def &&&[T](
               trials: Seq[Try[T]],
-              agg: Seq[Throwable] => TreeException = es => new Node(causes = es),
+              agg: Seq[Throwable] => TreeException = es => new MultiCauseWrapper(causes = es),
               extra: Seq[Throwable] = Nil
             ): Seq[T] = {
     val es = trials.collect{
@@ -47,19 +47,25 @@ object TreeException {
     }
   }
 
-  class Unary(
-               val nodeMessage: String = "",
-               val cause: Throwable = null
-             ) extends TreeException {
-
-    override def causes: Seq[Throwable] = Option(cause).toSeq
-  }
-
   class Node(
-              val nodeMessage: String = "[CAUSED BY ONE OR MORE EXCEPTION(S)]",
-              override val causes: Seq[Throwable] = Nil
+              val nodeMessage: String = "",
+              val cause: Throwable = null
             ) extends TreeException {
 
+    override def causes: Seq[Throwable] = {
+      cause match {
+        case MultiCauseWrapper(causes) => causes
+        case _ =>
+          Option(cause).toSeq
+      }
+    }
+  }
+
+  case class MultiCauseWrapper(
+                                override val causes: Seq[Throwable] = Nil
+                              ) extends TreeException {
+
+    val nodeMessage: String = "[CAUSED BY ONE OR MORE EXCEPTION(S)]"
   }
 }
 
