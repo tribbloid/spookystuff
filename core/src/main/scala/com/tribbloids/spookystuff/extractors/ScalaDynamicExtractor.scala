@@ -298,7 +298,8 @@ case class ScalaResolvedFunction[T](
     else {
       baseOpt.map {
         baseVal =>
-          val baseMirror = ReflectionUtils.mirrorFactory.get()
+          val baseMirror = runtimeMirror(vv.getClass.getClassLoader)
+//          val baseMirror = ReflectionUtils.mirrorFactory.get()
           val instanceMirror: InstanceMirror = baseMirror.reflect(baseVal)
           val methodMirror: MethodMirror = instanceMirror.reflectMethod(scalaMethod)
           methodMirror.apply(argOpts.map(_.get): _*)

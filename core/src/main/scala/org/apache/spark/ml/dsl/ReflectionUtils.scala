@@ -61,7 +61,8 @@ object ReflectionUtils {
     method.invoke(obj, values: _*)
   }
 
-  lazy val mirrorFactory = new FlowUtils.ThreadLocal (
-    runtimeMirror(ClassLoader.getSystemClassLoader)
-  )
+  //SystemClassloader is useless on workers.
+//  lazy val mirrorFactory = new FlowUtils.ThreadLocal (
+//    runtimeMirror(ClassLoader.getSystemClassLoader)
+//  )
 }

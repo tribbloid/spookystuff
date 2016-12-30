@@ -86,7 +86,8 @@ object ScalaType {
       _class
     }
 
-    def mirror = ReflectionUtils.mirrorFactory.get()
+    val mirror = runtimeMirror(_class.getClass.getClassLoader)
+//    def mirror = ReflectionUtils.mirrorFactory.get()
 
     @transient override lazy val asType = locked {
       val classSymbol = mirror.staticClass(_class.getCanonicalName)
