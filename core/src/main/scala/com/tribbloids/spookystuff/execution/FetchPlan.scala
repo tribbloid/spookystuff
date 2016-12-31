@@ -1,28 +1,20 @@
 package com.tribbloids.spookystuff.execution
 
 import com.tribbloids.spookystuff.actions._
-import com.tribbloids.spookystuff.dsl.{FetchOptimizer, FetchOptimizers}
-import com.tribbloids.spookystuff.row.{DataRow, SquashedFetchedRDD, SquashedFetchedRow}
-import org.apache.spark.Partitioner
+import com.tribbloids.spookystuff.dsl.GenPartitioner
+import com.tribbloids.spookystuff.row.{BeaconRDD, DataRow, SquashedFetchedRDD, SquashedFetchedRow}
 import org.apache.spark.rdd.RDD
 
 trait InjectBeaconRDDPlan extends ExecutionPlan {
 
-  def fetchOptimizer: FetchOptimizer
-  def partitionerFactory: RDD[_] => Partitioner
+  def genPartitioner: GenPartitioner
 
-  abstract override lazy val beaconRDDOpt: Option[RDD[(TraceView, DataRow)]] = {
-    fetchOptimizer match {
-      case FetchOptimizers.DocCacheAware =>
-        val inherited = super.defaultBeaconRDDOpt
-        inherited.orElse{
-          this.firstChildOpt.map {
-            child =>
-              spooky.createBeaconRDD[TraceView, DataRow](child.rdd(), partitionerFactory)
-          }
-        }
-      case _ =>
-        super.defaultBeaconRDDOpt
+  abstract override lazy val beaconRDDOpt: Option[BeaconRDD[TraceView]] = {
+    inheritedBeaconRDDOpt.orElse {
+      this.firstChildOpt.flatMap {
+        child =>
+          genPartitioner.getImpl.createBeaconRDD[TraceView](child.rdd())
+      }
     }
   }
 }
@@ -33,8 +25,7 @@ trait InjectBeaconRDDPlan extends ExecutionPlan {
 case class FetchPlan(
                       override val child: ExecutionPlan,
                       traces: Set[Trace],
-                      partitionerFactory: RDD[_] => Partitioner,
-                      fetchOptimizer: FetchOptimizer
+                      genPartitioner: GenPartitioner
                     ) extends UnaryPlan(child) with InjectBeaconRDDPlan {
 
   override def doExecute(): SquashedFetchedRDD = {
@@ -44,9 +35,9 @@ case class FetchPlan(
         _.interpolate(traces)
       }
 
-    val partitioner = partitionerFactory(trace_DataRowRDD)
-    val gp = fetchOptimizer.getImpl(partitioner)
-    val grouped = gp.groupByKey(trace_DataRowRDD, beaconRDDOpt)
+    val gpImpl = genPartitioner.getImpl
+    val beaconRDDOpt = this.beaconRDDOpt
+    val grouped = gpImpl.groupByKey(trace_DataRowRDD, beaconRDDOpt)
 
     grouped
       .map {

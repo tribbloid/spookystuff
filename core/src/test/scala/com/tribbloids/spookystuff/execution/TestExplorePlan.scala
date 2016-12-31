@@ -2,7 +2,6 @@ package com.tribbloids.spookystuff.execution
 
 import com.tribbloids.spookystuff.actions.Wget
 import com.tribbloids.spookystuff.testutils.LocalPathDocsFixture
-import com.tribbloids.spookystuff.utils.SpookyUtils
 import com.tribbloids.spookystuff.{QueryException, SpookyEnvFixture, dsl}
 import org.apache.spark.HashPartitioner
 
@@ -43,8 +42,7 @@ class TestExplorePlan extends SpookyEnvFixture with LocalPathDocsFixture {
     val rdd1 = src
       .explore('dummy)(
         Wget(HTML_URL),
-        fetchOptimizer = FetchOptimizers.DocCacheAware,
-        partitionerFactory = {v => partitioner}
+        genPartitioner = GenPartitioners.DocCacheAware(_ => partitioner)
       )()
 
     assert(rdd1.plan.beaconRDDOpt.get.partitioner.get eq partitioner)
@@ -59,8 +57,7 @@ class TestExplorePlan extends SpookyEnvFixture with LocalPathDocsFixture {
       .extract("abc" ~ 'dummy)
       .explore('dummy)(
         Wget(HTML_URL),
-        fetchOptimizer = FetchOptimizers.DocCacheAware,
-        partitionerFactory = {v => partitioner}
+        genPartitioner = GenPartitioners.DocCacheAware(_ => partitioner)
       )()
 
     assert(rdd1.plan.beaconRDDOpt.get.partitioner.get eq partitioner)
@@ -69,8 +66,7 @@ class TestExplorePlan extends SpookyEnvFixture with LocalPathDocsFixture {
     val rdd2 = rdd1
       .explore('dummy)(
         Wget(HTML_URL),
-        fetchOptimizer = FetchOptimizers.DocCacheAware,
-        partitionerFactory = {v => partitioner2}
+        genPartitioner = GenPartitioners.DocCacheAware(v => partitioner2)
       )()
 
     assert(rdd2.plan.beaconRDDOpt.get.partitioner.get eq partitioner)

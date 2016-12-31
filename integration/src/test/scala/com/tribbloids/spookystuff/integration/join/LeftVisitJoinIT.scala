@@ -68,7 +68,7 @@ class LeftVisitJoinIT extends IntegrationFixture {
     )
   }
 
-  override def numPages= spooky.conf.defaultFetchOptimizer match {
+  override def numPages= spooky.conf.defaultGenPartitioner match {
     //    case FetchOptimizers.WebCacheAware => 6
     case _ => 6
   }

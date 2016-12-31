@@ -14,9 +14,10 @@ class GenPartitionerSuite extends SpookyEnvFixture {
 
   test("DocCacheAware can co-partition 2 RDDs") {
     val numPartitions = Random.nextInt(80) + 9
-    val beacon = spooky.createBeaconRDD[Int, Int](new HashPartitioner(numPartitions))
+
+    val gp = GenPartitioners.DocCacheAware(_ => new HashPartitioner(numPartitions)).getImpl
+    val beaconOpt = gp.createBeaconRDD[Int](sc.emptyRDD[Int])
     //    val beacon = sc.makeRDD(1 to 1000, 1000).map(v => v -> v*v)
-    val gp = FetchOptimizers.DocCacheAware.getImpl(new HashPartitioner(numPartitions + 3))
 
     val tlStrs = sc.allTaskLocationStrs
     val size = tlStrs.length
@@ -52,8 +53,8 @@ class GenPartitionerSuite extends SpookyEnvFixture {
     assert(zipped1.length > zipped1.count(identity))
     assert(zipped1.count(identity) < 2)
 
-    val grouped1 = gp.groupByKey(ref1, Some(beacon)).flatMap(_._2)
-    val grouped2 = gp.groupByKey(ref2, Some(beacon)).flatMap(_._2)
+    val grouped1 = gp.groupByKey(ref1, beaconOpt).flatMap(_._2)
+    val grouped2 = gp.groupByKey(ref2, beaconOpt).flatMap(_._2)
 
     val zipped2RDD = grouped1.zipPartitions(grouped2)(
       (i1, i2) =>

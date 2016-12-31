@@ -95,7 +95,7 @@ class MoveSuite extends APMSimFixture {
       .fetch (
         Move('_1, '_2)
           +> Mark(),
-        fetchOptimizer = FetchOptimizers.Narrow // current fetchOptimizer is kaput, reverts everything to hash partitioner
+        genPartitioner = GenPartitioners.Narrow // current fetchOptimizer is kaput, reverts everything to hash partitioner
       )
       .toObjectRDD(S.formattedCode)
       .collect()
@@ -104,7 +104,7 @@ class MoveSuite extends APMSimFixture {
   }
 
   //TODO: TOOOO slow and blocked by https://github.com/dronekit/dronekit-python/issues/688
-  ignore("Run 2.5 track per drone") {
+  test("Run 2.5 track per drone") {
 
     val tracks: Seq[(LocationLocal, LocationLocal)] = MoveSuite.generateTracks(
       (parallelism.toDouble * 2.5).toInt,
@@ -137,7 +137,7 @@ class MoveSuite extends APMSimFixture {
       .fetch (
         Move('_1, '_2)
           +> Mark(),
-        fetchOptimizer = FetchOptimizers.Narrow // current fetchOptimizer is kaput, reverts everything to hash partitioner
+        genPartitioner = GenPartitioners.Narrow // current fetchOptimizer is kaput, reverts everything to hash partitioner
       )
       .collect()
   }

@@ -29,10 +29,10 @@ abstract class IntegrationFixture extends SpookyEnvFixture with BeforeAndAfterAl
     //    htmlUnit
   )
 
-  lazy val optimizers = Seq(
-    FetchOptimizers.Narrow,
-    FetchOptimizers.Wide,
-    FetchOptimizers.DocCacheAware
+  lazy val genPartitioners = Seq(
+    GenPartitioners.Narrow,
+    GenPartitioners.Wide(),
+    GenPartitioners.DocCacheAware()
   )
 
   import duration._
@@ -40,14 +40,14 @@ abstract class IntegrationFixture extends SpookyEnvFixture with BeforeAndAfterAl
   // testing matrix
   for (root <- roots) {
     for (driver <- driverFactories) {
-      for (optimizer <- optimizers) {
-        test(s"$optimizer/$driver/$root") {
+      for (gp <- genPartitioners) {
+        test(s"$gp/$driver/$root") {
           _spooky = new SpookyContext(
             sql,
             new SpookyConf(
               submodules = envComponents,
               webDriverFactory = driver,
-              defaultFetchOptimizer = optimizer,
+              defaultGenPartitioner = gp,
               epochSize = 1 + Random.nextInt(4),
               shareMetrics = true,
               remoteResourceTimeout = 10.seconds

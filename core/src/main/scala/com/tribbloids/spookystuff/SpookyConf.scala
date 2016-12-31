@@ -6,11 +6,10 @@ import com.tribbloids.spookystuff.dsl._
 import com.tribbloids.spookystuff.row.Sampler
 import com.tribbloids.spookystuff.session._
 import com.tribbloids.spookystuff.session.python.PythonDriver
+import org.apache.spark.SparkConf
 import org.apache.spark.ml.dsl.ReflectionUtils
 import org.apache.spark.ml.dsl.utils.Message
-import org.apache.spark.rdd.RDD
 import org.apache.spark.storage.StorageLevel
-import org.apache.spark.{Partitioner, SparkConf}
 
 import scala.collection.mutable
 import scala.concurrent.duration.Duration.Infinite
@@ -168,8 +167,6 @@ class SpookyConf (
                    var autoSaveFilePath: ByDoc[String] = FilePaths.UUIDName(FilePaths.Hierarchical),
                    var errorDumpFilePath: ByDoc[String] = FilePaths.UUIDName(FilePaths.Hierarchical),
 
-                   var defaultPartitionerFactory: RDD[_] => Partitioner = PartitionerFactories.SamePartitioner,
-
                    var remoteResourceTimeout: Duration = 60.seconds,
                    var DFSTimeout: Duration = 40.seconds,
 
@@ -181,7 +178,7 @@ class SpookyConf (
                    var defaultJoinSampler: Sampler[Any] = identity, //join takes remote actions and cost much more than flatten.
                    var defaultExploreRange: Range = 0 until Int.MaxValue,
 
-                   var defaultFetchOptimizer: FetchOptimizer = FetchOptimizers.Wide,
+                   var defaultGenPartitioner: GenPartitioner = GenPartitioners.Wide(),
                    var defaultExploreAlgorithm: ExploreAlgorithm = ExploreAlgorithms.ShortestPath,
 
                    var epochSize: Int = 500,
@@ -210,54 +207,52 @@ class SpookyConf (
     new SpookyConf(
       this.submodules.transform(_.importFrom(sparkConf)),
 
-      this.shareMetrics,
+      shareMetrics = this.shareMetrics,
 
-      this.webDriverFactory,
-      this.pythonDriverFactory,
-      this.proxy,
+      webDriverFactory = this.webDriverFactory,
+      pythonDriverFactory = this.pythonDriverFactory,
+      proxy = this.proxy,
       //                   var userAgent: ()=> String = () => null,
-      this.userAgentFactory,
-      this.headersFactory,
-      this.oAuthKeysFactory,
+      userAgentFactory = this.userAgentFactory,
+      headersFactory = this.headersFactory,
+      oAuthKeysFactory = this.oAuthKeysFactory,
 
-      this.browserResolution,
+      browserResolution = this.browserResolution,
 
-      this.remote,
-      this.autoSave,
-      this.cacheWrite,
-      this.cacheRead,
-      this.errorDump,
-      this.errorScreenshot,
+      remote = this.remote,
+      autoSave = this.autoSave,
+      cacheWrite = this.cacheWrite,
+      cacheRead = this.cacheRead,
+      errorDump = this.errorDump,
+      errorScreenshot = this.errorScreenshot,
 
-      this.cachedDocsLifeSpan,
-      this.IgnoreCachedDocsBefore,
+      cachedDocsLifeSpan = this.cachedDocsLifeSpan,
+      IgnoreCachedDocsBefore = this.IgnoreCachedDocsBefore,
 
-      this.cacheFilePath,
-      this.autoSaveFilePath,
-      this.errorDumpFilePath,
+      cacheFilePath = this.cacheFilePath,
+      autoSaveFilePath = this.autoSaveFilePath,
+      errorDumpFilePath = this.errorDumpFilePath,
 
-      this.defaultPartitionerFactory,
+      remoteResourceTimeout = this.remoteResourceTimeout,
+      DFSTimeout = this.DFSTimeout,
 
-      this.remoteResourceTimeout,
-      this.DFSTimeout,
+      failOnDFSError = this.failOnDFSError,
 
-      this.failOnDFSError,
-
-      this.defaultJoinType,
+      defaultJoinType = this.defaultJoinType,
 
       //default max number of elements scraped from a page, set to Int.MaxValue to allow unlimited fetch
-      this.defaultFlattenSampler,
-      this.defaultJoinSampler,
+      defaultFlattenSampler = this.defaultFlattenSampler,
+      defaultJoinSampler = this.defaultJoinSampler,
 
-      this.defaultExploreRange,
+      defaultExploreRange = this.defaultExploreRange,
 
-      this.defaultFetchOptimizer,
-      this.defaultExploreAlgorithm,
+      defaultGenPartitioner = this.defaultGenPartitioner,
+      defaultExploreAlgorithm = this.defaultExploreAlgorithm,
 
-      this.epochSize,
-      this.checkpointInterval,
+      epochSize = this.epochSize,
+      checkpointInterval = this.checkpointInterval,
 
-      this.defaultStorageLevel
+      defaultStorageLevel = this.defaultStorageLevel
     )
       .asInstanceOf[this.type]
   }

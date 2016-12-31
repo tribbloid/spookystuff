@@ -9,7 +9,6 @@ import org.apache.spark.broadcast.Broadcast
 import org.apache.spark.ml.dsl.utils.MessageView
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.{DataFrame, SQLContext}
-import org.apache.spark.storage.StorageLevel
 import org.slf4j.LoggerFactory
 
 import scala.collection.immutable.ListMap
@@ -130,22 +129,6 @@ case class SpookyContext private (
   lazy val blankSelfRDD = sparkContext.parallelize(Seq(SquashedFetchedRow.blank))
 
   def createBlank = this.create(blankSelfRDD)
-
-  def createBeaconRDD[K: ClassTag,V: ClassTag](
-                                                ref: RDD[_],
-                                                partitionerFactory: RDD[_] => Partitioner = conf.defaultPartitionerFactory
-                                              ): RDD[(K,V)] = {
-    createBeaconRDD(partitionerFactory(ref))
-  }
-
-  def createBeaconRDD[K: ClassTag,V: ClassTag](
-                                                partitioner: Partitioner
-                                              ): RDD[(K,V)] = {
-    sparkContext
-      .emptyRDD[(K,V)]
-      .partitionBy(partitioner)
-      .persist(StorageLevel.MEMORY_AND_DISK)
-  }
 
   object dsl extends Serializable {
 

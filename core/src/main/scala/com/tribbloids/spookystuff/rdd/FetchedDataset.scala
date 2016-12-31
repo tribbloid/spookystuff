@@ -2,13 +2,12 @@ package com.tribbloids.spookystuff.rdd
 
 import com.tribbloids.spookystuff.actions.{ClusterRetry, Snapshot, Visit, Wget, _}
 import com.tribbloids.spookystuff.doc.Doc
-import com.tribbloids.spookystuff.dsl.{ExploreAlgorithm, FetchOptimizer, JoinType, _}
+import com.tribbloids.spookystuff.dsl.{ExploreAlgorithm, GenPartitioner, JoinType, _}
 import com.tribbloids.spookystuff.execution.{ExplorePlan, FetchPlan, _}
 import com.tribbloids.spookystuff.extractors.{GetExpr, _}
 import com.tribbloids.spookystuff.row.{Field, _}
 import com.tribbloids.spookystuff.utils.{SpookyUtils, SpookyViews}
 import com.tribbloids.spookystuff.{Const, SpookyConf, SpookyContext}
-import org.apache.spark.Partitioner
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.catalyst.analysis.UnresolvedAttribute
 import org.apache.spark.sql.catalyst.expressions
@@ -21,8 +20,6 @@ import scala.collection.immutable.ListMap
 import scala.collection.mutable.ArrayBuffer
 import scala.language.implicitConversions
 import scala.reflect.ClassTag
-
-import scala.Ordering.Implicits._
 
 /**
   * Created by peng on 28/03/16.
@@ -40,6 +37,7 @@ case class FetchedDataset(
 
   import SpookyViews._
   import plan.CacheQueueView
+  import scala.Ordering.Implicits._ //DO NOT DELETE!
 
   implicit def plan2Dataset(plan: ExecutionPlan): FetchedDataset = FetchedDataset(plan)
 
@@ -47,7 +45,7 @@ case class FetchedDataset(
             sourceRDD: SquashedFetchedRDD,
             fieldMap: ListMap[Field, DataType],
             spooky: SpookyContext,
-            beaconRDDOpt: Option[RDD[(TraceView, DataRow)]] = None,
+            beaconRDDOpt: Option[BeaconRDD[TraceView]] = None,
             cacheQueue: ArrayBuffer[RDD[_]] = ArrayBuffer()
           ) = {
 
@@ -151,29 +149,29 @@ case class FetchedDataset(
   //TODO: cleanup, useful only in comparison
   @Deprecated
   def toDFLegacy(sort: Boolean = false, tableName: String = null): DataFrame =
-    sparkContext.withJob(s"toDF(sort=$sort, name=$tableName)") {
+  sparkContext.withJob(s"toDF(sort=$sort, name=$tableName)") {
 
-      val jsonRDD = this.toJSON(sort)
-      plan.cacheQueue.persist(jsonRDD)
+    val jsonRDD = this.toJSON(sort)
+    plan.cacheQueue.persist(jsonRDD)
 
-      val schemaRDD = spooky.sqlContext.read.json(jsonRDD)
+    val schemaRDD = spooky.sqlContext.read.json(jsonRDD)
 
-      val columns: Seq[Column] = fields
-        .filter(key => !key.isWeak)
-        .map {
-          key =>
-            val name = SpookyUtils.canonizeColumnName(key.name)
-            if (schemaRDD.schema.fieldNames.contains(name)) new Column(UnresolvedAttribute(name))
-            else new Column(expressions.Alias(org.apache.spark.sql.catalyst.expressions.Literal(null), name)())
-        }
+    val columns: Seq[Column] = fields
+      .filter(key => !key.isWeak)
+      .map {
+        key =>
+          val name = SpookyUtils.canonizeColumnName(key.name)
+          if (schemaRDD.schema.fieldNames.contains(name)) new Column(UnresolvedAttribute(name))
+          else new Column(expressions.Alias(org.apache.spark.sql.catalyst.expressions.Literal(null), name)())
+      }
 
-      val result = schemaRDD.select(columns: _*)
+    val result = schemaRDD.select(columns: _*)
 
-      if (tableName!=null) result.registerTempTable(tableName)
-      plan.cacheQueue.unpersistAll()
+    if (tableName!=null) result.registerTempTable(tableName)
+    plan.cacheQueue.unpersistAll()
 
-      result
-    }
+    result
+  }
 
   def newResolver = schema.newResolver
 
@@ -356,17 +354,15 @@ case class FetchedDataset(
   // Always left
   def fetch(
              traces: Set[Trace],
-             partitionerFactory: RDD[_] => Partitioner = spooky.conf.defaultPartitionerFactory,
-             fetchOptimizer: FetchOptimizer = spooky.conf.defaultFetchOptimizer
-           ): FetchedDataset = FetchPlan(plan, traces.correct, partitionerFactory, fetchOptimizer)
+             genPartitioner: GenPartitioner = spooky.conf.defaultGenPartitioner
+           ): FetchedDataset = FetchPlan(plan, traces.correct, genPartitioner)
 
   //shorthand of fetch
   def visit(
              ex: Extractor[Any],
              filter: DocFilter = Const.defaultDocumentFilter,
              failSafe: Int = -1,
-             partitionerFactory: RDD[_] => Partitioner = spooky.conf.defaultPartitionerFactory,
-             fetchOptimizer: FetchOptimizer = spooky.conf.defaultFetchOptimizer
+             genPartitioner: GenPartitioner = spooky.conf.defaultGenPartitioner
            ): FetchedDataset = {
 
     var trace: Set[Trace] =  (
@@ -377,8 +373,7 @@ case class FetchedDataset(
 
     this.fetch(
       trace,
-      partitionerFactory = partitionerFactory,
-      fetchOptimizer = fetchOptimizer
+      genPartitioner = genPartitioner
     )
   }
 
@@ -387,8 +382,7 @@ case class FetchedDataset(
             ex: Extractor[Any],
             filter: DocFilter = Const.defaultDocumentFilter,
             failSafe: Int = -1,
-            partitionerFactory: RDD[_] => Partitioner = spooky.conf.defaultPartitionerFactory,
-            fetchOptimizer: FetchOptimizer = spooky.conf.defaultFetchOptimizer
+            genPartitioner: GenPartitioner = spooky.conf.defaultGenPartitioner
           ): FetchedDataset = {
 
     var trace: Set[Trace] =  Wget(ex, filter)
@@ -397,8 +391,7 @@ case class FetchedDataset(
 
     this.fetch(
       trace,
-      partitionerFactory = partitionerFactory,
-      fetchOptimizer = fetchOptimizer
+      genPartitioner = genPartitioner
     )
   }
 
@@ -409,14 +402,13 @@ case class FetchedDataset(
             sampler: Sampler[Any] = spooky.conf.defaultJoinSampler
           )(
             traces: Set[Trace],
-            partitionerFactory: RDD[_] => Partitioner = spooky.conf.defaultPartitionerFactory,
-            fetchOptimizer: FetchOptimizer = spooky.conf.defaultFetchOptimizer
+            genPartitioner: GenPartitioner = spooky.conf.defaultGenPartitioner
           ): FetchedDataset = {
 
     val flat = this
       .flatten(on.withJoinFieldIfMissing, joinType.isLeft, ordinalField, sampler)
 
-    flat.fetch(traces, partitionerFactory, fetchOptimizer)
+    flat.fetch(traces, genPartitioner)
   }
 
   /**
@@ -432,8 +424,7 @@ case class FetchedDataset(
                  sampler: Sampler[Any] = spooky.conf.defaultJoinSampler,
                  filter: DocFilter = Const.defaultDocumentFilter,
                  failSafe: Int = -1,
-                 partitionerFactory: RDD[_] => Partitioner = spooky.conf.defaultPartitionerFactory,
-                 fetchOptimizer: FetchOptimizer = spooky.conf.defaultFetchOptimizer
+                 genPartitioner: GenPartitioner = spooky.conf.defaultGenPartitioner
                ): FetchedDataset = {
 
     var trace = (
@@ -446,8 +437,7 @@ case class FetchedDataset(
 
     this.join(on, joinType, ordinalField, sampler)(
       trace,
-      partitionerFactory,
-      fetchOptimizer = fetchOptimizer
+      genPartitioner = genPartitioner
     )
   }
 
@@ -464,8 +454,7 @@ case class FetchedDataset(
                 sampler: Sampler[Any] = spooky.conf.defaultJoinSampler,
                 filter: DocFilter = Const.defaultDocumentFilter,
                 failSafe: Int = -1,
-                partitionerFactory: RDD[_] => Partitioner = spooky.conf.defaultPartitionerFactory,
-                fetchOptimizer: FetchOptimizer = spooky.conf.defaultFetchOptimizer
+                genPartitioner: GenPartitioner = spooky.conf.defaultGenPartitioner
               ): FetchedDataset = {
 
     var trace: Set[Trace] = Wget(new GetExpr(Const.defaultJoinField), filter)
@@ -475,8 +464,7 @@ case class FetchedDataset(
 
     this.join(on, joinType, ordinalField, sampler)(
       trace,
-      partitionerFactory,
-      fetchOptimizer = fetchOptimizer
+      genPartitioner = genPartitioner
     )
   }
 
@@ -488,8 +476,7 @@ case class FetchedDataset(
                sampler: Sampler[Any] = spooky.conf.defaultJoinSampler
              )(
                traces: Set[Trace],
-               partitionerFactory: RDD[_] => Partitioner = spooky.conf.defaultPartitionerFactory,
-               fetchOptimizer: FetchOptimizer = spooky.conf.defaultFetchOptimizer,
+               genPartitioner: GenPartitioner = spooky.conf.defaultGenPartitioner,
 
                depthField: Field = null,
                range: Range = spooky.conf.defaultExploreRange,
@@ -504,7 +491,7 @@ case class FetchedDataset(
     val params = ExploreParams(depthField, ordinalField, range, extracts)
 
     ExplorePlan(plan, on.withJoinFieldIfMissing, sampler, joinType,
-      traces.correct, partitionerFactory, fetchOptimizer,
+      traces.correct, genPartitioner,
       params, exploreAlgorithm, epochSize, checkpointInterval
     )
   }
@@ -518,8 +505,7 @@ case class FetchedDataset(
                     filter: DocFilter = Const.defaultDocumentFilter,
 
                     failSafe: Int = -1,
-                    partitionerFactory: RDD[_] => Partitioner = spooky.conf.defaultPartitionerFactory,
-                    fetchOptimizer: FetchOptimizer = spooky.conf.defaultFetchOptimizer,
+                    genPartitioner: GenPartitioner = spooky.conf.defaultGenPartitioner,
 
                     depthField: Field = null,
                     range: Range = spooky.conf.defaultExploreRange,
@@ -538,7 +524,7 @@ case class FetchedDataset(
     if (failSafe > 0) trace = ClusterRetry(trace, failSafe)
 
     explore(ex, joinType, ordinalField, sampler)(
-      trace, partitionerFactory, fetchOptimizer,
+      trace, genPartitioner,
 
       depthField, range, exploreAlgorithm, miniBatch, checkpointInterval
     )(
@@ -554,8 +540,7 @@ case class FetchedDataset(
                    filter: DocFilter = Const.defaultDocumentFilter,
 
                    failSafe: Int = -1,
-                   partitionerFactory: RDD[_] => Partitioner = spooky.conf.defaultPartitionerFactory,
-                   fetchOptimizer: FetchOptimizer = spooky.conf.defaultFetchOptimizer,
+                   genPartitioner: GenPartitioner = spooky.conf.defaultGenPartitioner,
 
                    depthField: Field = null,
                    range: Range = spooky.conf.defaultExploreRange,
@@ -571,7 +556,7 @@ case class FetchedDataset(
     if (failSafe > 0) trace = ClusterRetry(trace, failSafe)
 
     explore(ex, joinType, ordinalField, sampler)(
-      trace, partitionerFactory, fetchOptimizer,
+      trace, genPartitioner,
 
       depthField, range, exploreAlgorithm, miniBatch, checkpointInterval
     )(

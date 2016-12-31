@@ -62,7 +62,7 @@ class FetchInteractionsIT extends IntegrationFixture{
     assert(unionRows(1).docs.head.name === "b")
   }
 
-  override def numPages= spooky.conf.defaultFetchOptimizer match {
+  override def numPages= spooky.conf.defaultGenPartitioner match {
 //    case WebCacheAware => 1
     case _ => 1
   }

@@ -2,10 +2,9 @@ package com.tribbloids.spookystuff.execution
 
 import com.tribbloids.spookystuff.actions.{Trace, TraceView}
 import com.tribbloids.spookystuff.caching.ExploreRunnerCache
-import com.tribbloids.spookystuff.dsl.{ExploreAlgorithm, FetchOptimizer, JoinType}
+import com.tribbloids.spookystuff.dsl.{ExploreAlgorithm, GenPartitioner, JoinType}
 import com.tribbloids.spookystuff.extractors._
 import com.tribbloids.spookystuff.row.{SquashedFetchedRow, _}
-import org.apache.spark.Partitioner
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.types.{ArrayType, IntegerType}
 
@@ -31,8 +30,7 @@ case class ExplorePlan(
                         joinType: JoinType,
 
                         traces: Set[Trace],
-                        partitionerFactory: RDD[_] => Partitioner,
-                        fetchOptimizer: FetchOptimizer,
+                        genPartitioner: GenPartitioner,
 
                         params: ExploreParams,
                         exploreAlgorithm: ExploreAlgorithm,
@@ -139,9 +137,8 @@ case class ExplorePlan(
         )
     }
 
-    val partitioner0 = partitionerFactory(state0RDD)
     //this will use globalReducer, same thing will happen to later states, eliminator however will only be used inside ExploreStateView.execute()
-    val reducedState0RDD: RDD[(TraceView, Open_Visited)] = betweenEpochReduce(state0RDD, combinedReducer, partitioner0)
+    val reducedState0RDD: RDD[(TraceView, Open_Visited)] = betweenEpochReduce(state0RDD, combinedReducer)
 
     val openSetSize = spooky.sparkContext.accumulator(0)
     var i = 1
@@ -174,10 +171,9 @@ case class ExplorePlan(
           state_+
       }
 
-      val partitioner_+ = partitionerFactory(stateRDD_+)
       //this will use globalReducer, same thing will happen to later states, eliminator however will only be used inside ExploreStateView.execute()
 
-      val reducedStateRDD_+ : RDD[(TraceView, Open_Visited)] = betweenEpochReduce(stateRDD_+, combinedReducer, partitioner_+)
+      val reducedStateRDD_+ : RDD[(TraceView, Open_Visited)] = betweenEpochReduce(stateRDD_+, combinedReducer)
 
       cacheQueue.persist(reducedStateRDD_+, spooky.conf.defaultStorageLevel)
       if (checkpointInterval >0 && i % checkpointInterval == 0) {
@@ -213,10 +209,10 @@ case class ExplorePlan(
 
   def betweenEpochReduce(
                           stateRDD: RDD[(TraceView, Open_Visited)],
-                          reducer: (Open_Visited, Open_Visited) => Open_Visited,
-                          partitioner: Partitioner
+                          reducer: (Open_Visited, Open_Visited) => Open_Visited
                         ): RDD[(TraceView, Open_Visited)] = {
-    val gp = fetchOptimizer.getImpl(partitioner)
-    gp.reduceByKey(stateRDD, reducer, beaconRDDOpt)
+    val gpImpl = genPartitioner.getImpl
+    val beaconRDDOpt = this.beaconRDDOpt
+    gpImpl.reduceByKey(stateRDD, reducer, beaconRDDOpt)
   }
 }

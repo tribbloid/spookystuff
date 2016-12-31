@@ -48,10 +48,10 @@ abstract class ExecutionPlan(
 
   //beconRDD is always empty, with fixed partitioning, cogroup with it to maximize Local Cache hitting chance
   //by default, inherit from the first child
-  protected final def defaultBeaconRDDOpt =
+  protected final def inheritedBeaconRDDOpt =
     firstChildOpt.flatMap(_.beaconRDDOpt)
 
-  lazy val beaconRDDOpt: Option[RDD[(TraceView, DataRow)]] = defaultBeaconRDDOpt
+  lazy val beaconRDDOpt: Option[BeaconRDD[TraceView]] = inheritedBeaconRDDOpt
 
   def doExecute(): SquashedFetchedRDD
 

@@ -6,13 +6,13 @@ import org.apache.spark.sql.catalyst.expressions.GenericRowWithSchema
 
 package object row {
 
-  type Data = Map[Field, Any]
+  type Data = Map[Field, Any] //TODO: change to SQL Row
 
   implicit val Data = Map
 
-//  type FetchedRow = (DataRow, Seq[Fetched]) //TODO: change to SQL Row
-
   type SquashedFetchedRDD = RDD[SquashedFetchedRow]
+
+  type BeaconRDD[K] = RDD[(K, Unit)]
 
   type Sampler[T] = Iterable[(T, Int)] => Iterable[(T, Int)] //with index
 

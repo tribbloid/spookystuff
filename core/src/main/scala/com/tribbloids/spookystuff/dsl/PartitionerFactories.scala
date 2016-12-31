@@ -6,7 +6,6 @@ import org.apache.spark.rdd.RDD
 /**
  * Created by peng on 5/14/15.
  */
-//TODO: merge PartitionerFactories and FetchOptimizer into GenPartitioner
 object PartitionerFactories {
 
   case class PerCore(n: Int) extends (RDD[_] => Partitioner) {
