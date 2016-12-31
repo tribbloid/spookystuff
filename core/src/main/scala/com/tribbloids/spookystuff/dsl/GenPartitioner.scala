@@ -12,7 +12,7 @@ import scala.reflect.ClassTag
 /**
   * Created by peng on 1/27/15.
   */
-sealed trait GenPartitioner {
+trait GenPartitioner {
 
   def getImpl: GenPartitionerImpl
 }

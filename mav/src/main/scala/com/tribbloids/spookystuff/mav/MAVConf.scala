@@ -8,6 +8,12 @@ import org.apache.spark.SparkConf
 object MAVConf {
 
   def default() = MAVConf()
+
+  final val DEFAULT_BAUDRATE = 57600
+//  final val DEFAULT_BAUDRATE = 10 // for testing only
+
+  final val LINK_SSID = 250
+  final val PROXY_SSID = 251
 }
 
 /**

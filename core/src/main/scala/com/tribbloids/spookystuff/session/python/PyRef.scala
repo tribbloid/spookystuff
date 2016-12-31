@@ -187,14 +187,25 @@ class PyBinding (
     result
   }
 
+  def dynamicFunctor(fn: () => PyBinding): PyBinding = fn()
+
   def selectDynamic(fieldName: String) = {
-    pyCallMethod(fieldName)(Nil -> "")
+    dynamicFunctor{
+      () =>
+        pyCallMethod(fieldName)(Nil -> "")
+    }
   }
   def applyDynamic(methodName: String)(args: Any*) = {
-    pyCallMethod(methodName)(converter.args2Ref(args))
+    dynamicFunctor {
+      () =>
+        pyCallMethod(methodName)(converter.args2Ref(args))
+    }
   }
   def applyDynamicNamed(methodName: String)(kwargs: (String, Any)*) = {
-    pyCallMethod(methodName)(converter.kwargs2Ref(kwargs))
+    dynamicFunctor {
+      () =>
+        pyCallMethod(methodName)(converter.kwargs2Ref(kwargs))
+    }
   }
 
   /**

@@ -2,7 +2,7 @@ package com.tribbloids.spookystuff
 
 import com.tribbloids.spookystuff.rdd.FetchedDataset
 import com.tribbloids.spookystuff.row._
-import com.tribbloids.spookystuff.utils.{HDFSResolver, TreeException, SerializationMarks, ScalaType}
+import com.tribbloids.spookystuff.utils.{HDFSResolver, ScalaType, SerializationMarks, TreeException}
 import org.apache.hadoop.conf.Configuration
 import org.apache.spark._
 import org.apache.spark.broadcast.Broadcast
@@ -13,7 +13,6 @@ import org.slf4j.LoggerFactory
 
 import scala.collection.immutable.ListMap
 import scala.language.implicitConversions
-import scala.reflect.ClassTag
 
 case class SpookyContext private (
                                    @transient sqlContext: SQLContext, //can't be used on executors, TODO: change to Option

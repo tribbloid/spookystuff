@@ -8,7 +8,20 @@ from dronekit_sitl import SITL
 
 from pyspookystuff.mav.utils import retry
 
-sitl_args = ['--model', 'quad', '--home=-35.363261,149.165230,584,353']
+"""
+crash course on APM 3.3 SITL
+Options:
+	--home HOME        set home location (lat,lng,alt,yaw)
+	--model MODEL      set simulation model
+	--wipe             wipe eeprom and dataflash
+	--rate RATE        set SITL framerate
+	--console          use console instead of TCP ports
+	--instance N       set instance of SITL (adds 10*instance to all port numbers)
+	--speedup SPEEDUP  set simulation speedup
+	--gimbal           enable simulated MAVLink gimbal
+	--autotest-dir DIR set directory for additional files
+"""
+sitl_args = ['--model', 'quad', '--gimbal']
 
 if 'SITL_SPEEDUP' in os.environ:
     sitl_args += ['--speedup', str(os.environ['SITL_SPEEDUP'])]
@@ -17,35 +30,41 @@ if 'SITL_RATE' in os.environ:
 
 
 def tcp_master(instance):
-    return 'tcp:localhost:' + str(5760 + instance*10)
+    return 'tcp:localhost:' + str(5760 + instance * 10)
+
 
 class APMSim(object):
+    def __init__(self, iNum, home, baudRate):
+        # type: (int, str, int) -> None
 
-    def __init__(self, iNum):
-        # type: (int) -> None
-
+        """
+        :param iNum: instance number, affect SITL system ID
+        :param home: (lat,lng,alt,yaw)
+        """
         self.iNum = iNum
-        self.args = sitl_args + ['-I' + str(iNum)]
+        self.baudRate = baudRate
+        self.args = sitl_args + ['--home=' + home] + ['-I' + str(iNum)] + ['--rate=' + str(baudRate)]
         sitl = SITL()
         self.sitl = sitl
 
         @retry(5)
         def download():
             sitl.download('copter', '3.3')
+
         download()
 
         @retry(5)
         def launch():
             try:
                 sitl.launch(self.args, await_ready=True, restart=True)
-                print("launching APM SITL ... PID =", str(sitl.p.pid))
+                print("launching APM SITL:", *(self.args + ["PID=" + str(sitl.p.pid)]))
                 self.setParamAndRelaunch('SYSID_THISMAV', self.iNum + 1)
 
                 @self.withVehicle()
                 def set(vehicle):
-                    # TODO: spookystuff should not set any parameter! move to SITL.
                     vehicle.parameters['FS_GCS_ENABLE'] = 0
                     vehicle.parameters['FS_EKF_THRESH'] = 100
+
                 set()
 
             except:
@@ -70,6 +89,7 @@ class APMSim(object):
         @self.withVehicle()
         def set(v):
             v.parameters.set(key, value, wait_ready=True)
+
         set()
 
         self.sitl.stop()
@@ -81,17 +101,20 @@ class APMSim(object):
             v.wait_ready()
             actualValue = v._params_map[key]
             assert actualValue == value
+
         get()
 
     def withVehicle(self):
         def decorate(fn):
             def fnM(*args, **kargs):
-                v = connect(self.connStr, wait_ready=True)
+                v = connect(self.connStr, wait_ready=True, baud=self.baudRate)
                 try:
                     return fn(v, *args, **kargs)
                 finally:
                     v.close()
+
             return fnM
+
         return decorate
 
     def close(self):

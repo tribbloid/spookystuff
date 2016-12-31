@@ -126,7 +126,6 @@ class VehicleFunctions(object):
         return self.localOrigin
 
     @property
-    @retry()
     def homeLocation(self):
         # type: () -> LocationGlobal
         """
@@ -142,6 +141,7 @@ class VehicleFunctions(object):
         # type: (LocationGlobal) -> None
         self._homeLocation = v
 
+    @retry()
     def commandsRefresh(self):
         self.vehicle.commands.download()
         self.vehicle.commands.wait_ready()
@@ -207,7 +207,7 @@ class VehicleFunctions(object):
                         print("Reached target")
                         break
                     else:
-                        self.simple_goto(effectiveTL)
+                        self.goto2x(effectiveTL)
                         print("Engaging thruster")
                 oldDistance = distance
             else:
@@ -218,21 +218,22 @@ class VehicleFunctions(object):
             time.sleep(1)
 
     def reconnect(self):
-        pass
+        raise NotImplementedError("INTERNAL: subclass incomplete")
 
-    @retry(2)
-    def simple_goto(self, effectiveTL, airspeed=None, groundspeed=None):
-        # type: (LocationGlobal) -> None
+    @retry(2)  # useless, won't fix it anyway, the only way to fix is through rebooting proxy
+    def goto4x(self, effectiveTL, airspeed=None, groundspeed=None):
         """
-        vanilla simple_goto() may timeout, adding retry
+        vanilla simple_goto() may timeout, adding 3 retry and 1 reconnect
         """
         try:
-            self.vehicle.simple_goto(effectiveTL, airspeed, groundspeed)
+            self.goto2x(effectiveTL, airspeed, groundspeed)
         except APIException as e:
             self.reconnect()
 
+    @retry(2)
+    def goto2x(self, effectiveTL, airspeed=None, groundspeed=None):
+        self.vehicle.simple_goto(effectiveTL, airspeed, groundspeed)
+
     def failOnTimeout(self):
         assert(self.vehicle.last_heartbeat < 30)
-
-
 

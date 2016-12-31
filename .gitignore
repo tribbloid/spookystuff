@@ -43,3 +43,6 @@ foo
 
 #syncthing
 .stfolder
+
+#spike
+**/spike*.*

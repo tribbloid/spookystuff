@@ -1,6 +1,7 @@
 package com.tribbloids.spookystuff.mav.telemetry
 
 import com.tribbloids.spookystuff.caching
+import com.tribbloids.spookystuff.mav.MAVConf
 import com.tribbloids.spookystuff.session.python.{CaseInstanceRef, PyBinding, PythonDriver}
 import com.tribbloids.spookystuff.session.{Lifespan, LocalCleanable}
 
@@ -41,6 +42,8 @@ object Proxy {
 case class Proxy(
                   master: String,
                   outs: Seq[String], //first member is always used by DK.
+                  baudRate: Int,
+                  ssid: Int = MAVConf.PROXY_SSID,
                   name: String
                 ) extends CaseInstanceRef with LocalCleanable {
 

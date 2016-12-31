@@ -15,8 +15,9 @@ case class Endpoint(
                      // remember, one drone can have several telemetry
                      // endpoints: 1 primary and several backups (e.g. text message-based)
                      // TODO: implement telemetry backup mechanism, can use MAVproxy's multiple master feature
-                     connStrs: Seq[String],
-                     vehicleTypeOpt: Option[String] = None,
+                     connStrs: Seq[String], // [protocol]:ip:port;[baudRate]
+                     baudRate: Int = MAVConf.DEFAULT_BAUDRATE,
+                     frame: Option[String] = None,
                      name: String = "DRONE"
                    ) extends CaseInstanceRef {
 
@@ -222,6 +223,19 @@ object Link extends StaticRef {
     $Helper.autoStart()
     Link.driverLocal += driver -> ref
 
+    override def dynamicFunctor(fn: () => PyBinding): PyBinding = {
+      try {
+        fn()
+      }
+      catch {
+        case e: Throwable =>
+          ref.proxyOpt.foreach {
+            _.managerPy.stop()
+          }
+          throw e
+      }
+    }
+
     object $Helper {
       // will retry 6 times, try twice for Vehicle.connect() in python, if failed, will restart proxy and try again (3 times).
       // after all attempts failed will stop proxy and add endpoint into blacklist.
@@ -232,20 +246,11 @@ object Link extends StaticRef {
             spooky.conf.submodules.get[MAVConf]().connectionRetries
         ).getOrElse(1)
         SpookyUtils.retry(retries) {
-          try {
-            ref.proxyOpt.foreach {
-              _.managerPy.start()
-            }
-            val result = Binding.this.start().$repr.get
-            result
+          ref.proxyOpt.foreach {
+            _.managerPy.start()
           }
-          catch {
-            case e: Throwable =>
-              ref.proxyOpt.foreach {
-                _.managerPy.stop()
-              }
-              throw e
-          }
+          val result = Binding.this.start().$repr.get
+          result
         }
       }
       catch {
@@ -312,7 +317,8 @@ DaemonProcess   (can this be delayed to be implemented later? completely surrend
   */
 case class Link(
                  endpoint: Endpoint,
-                 outs: Seq[String]
+                 outs: Seq[String],
+                 ssid: Int = MAVConf.LINK_SSID
                ) extends CaseInstanceRef with LocalCleanable {
 
   /**
@@ -336,7 +342,8 @@ case class Link(
         val proxy = Proxy(
           endpoint.connStr,
           outs,
-          endpoint.name
+          endpoint.baudRate,
+          name = endpoint.name
         )
         Some(proxy)
       }
@@ -386,7 +393,7 @@ case class Link(
 
     TreeException.&&&(
       Seq(
-        Try(assert(c1, s"Conflict: endpoint (index) ${endpoint.connStr} is already used")),
+        Try(assert(c1, s"Conflict: endpoint index ${endpoint.connStr} is already used")),
         Try(assert(c2, s"Conflict: endpoint ${endpoint.connStr} is already used")),
         Try(assert(c3, s"Conflict: uri $uri is already used"))
       ) ++

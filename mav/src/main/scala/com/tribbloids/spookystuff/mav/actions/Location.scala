@@ -23,9 +23,11 @@ case class LocationGlobal(
 
 class LocationGlobalRelativeUDT() extends SimpleUDT[LocationGlobalRelative]
 
+
 /**
   * This is the de-facto standard of specifying location for all outbound commands
   */
+//TODO: all locations should be converted to this format before distributed, otherwise the local reference of each drone will be different and causes massive confusion
 @SQLUserDefinedType(udt = classOf[LocationGlobalRelativeUDT])
 @SerialVersionUID(-5039218743229730432L)
 case class LocationGlobalRelative(
