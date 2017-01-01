@@ -16,7 +16,7 @@ class MAVEXE(session: Session) {
     session.spooky.conf.submodules.get[MAVConf]()
   }
 
-  val link = {
+  val link: Link = {
     Link.getOrCreate(
       mavConf.endpoints,
       mavConf.proxyFactory,
@@ -24,8 +24,7 @@ class MAVEXE(session: Session) {
     )
   }
 
-  val pyLink = link.Py(session)
-
+  def pyLink = link.Py(session)
 }
 
 class MAVInteractionEXE(session: Session) extends MAVEXE(session) {
@@ -48,11 +47,13 @@ trait MAVInteraction extends Interaction with MAVAction {
 
   override def exeNoOutput(session: Session): Unit = {
 
-    val impl = getImpl(session)
-    impl.inbound()
-    impl.conduct()
-    impl.outbound()
+    val exe = getExe(session)
+    exe.link.Py(session).withDaemons {
+      exe.inbound()
+      exe.conduct()
+      exe.outbound()
+    }
   }
 
-  def getImpl(session: Session): MAVInteractionEXE
+  def getExe(session: Session): MAVInteractionEXE
 }

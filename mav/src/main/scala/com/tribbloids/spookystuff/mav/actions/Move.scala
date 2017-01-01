@@ -35,7 +35,7 @@ case class Move(
     result.map(_.asInstanceOf[this.type])
   }
 
-  override def getImpl(session: Session) = MoveEXE(session)
+  override def getExe(session: Session) = MoveEXE(session)
 
   case class MoveEXE(
                       session: Session

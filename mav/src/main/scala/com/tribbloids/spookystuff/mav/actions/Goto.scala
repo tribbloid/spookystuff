@@ -33,7 +33,7 @@ case class Goto(
                  override val delay: Duration = null
                ) extends AbstractGoto {
 
-  override def getImpl(session: Session) = {
+  override def getExe(session: Session) = {
     new GotoEXE(toV, session)
   }
 

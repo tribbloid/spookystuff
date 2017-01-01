@@ -6,7 +6,9 @@ import os
 from unittest import TestCase
 
 import dronekit
+import time
 
+from pyspookystuff.mav import VehicleFunctions
 from pyspookystuff.mav.sim import APMSim
 from pyspookystuff.mav.telemetry import Proxy
 from pyspookystuff.mav.utils import retry
@@ -47,17 +49,51 @@ class TestAPMSim(TestCase):
                 vehicle.commands.download()
                 vehicle.commands.wait_ready()
             blockingDownload()
+
             vehicle.close()
 
-    def test_downloadWaypointCannotTimeout(self):
+    def getSim(self):
         sim = APMSim(0, "43.694195,-79.262262,136,353", TestAPMSim.dkBaud)
-        connStr = sim.connStr
+        return sim, sim.connStr
 
+    def test_downloadWaypointCannotTimeout(self):
+        sim, connStr = self.getSim()
         self.stressTestDownloadWP(connStr)
 
     def test_downloadWaypointThroughProxyCannotTimeout(self):
-        sim = APMSim(0, "43.694195,-79.262262,136,353", TestAPMSim.dkBaud)
-        proxy = Proxy(sim.connStr, ["udp:localhost:12052", "udp:localhost:14550"], TestAPMSim.dkBaud, 251, "DownloadWaypointTest")
+        sim, connStr = self.getSim()
+        proxy = Proxy(connStr, ["udp:localhost:12052", "udp:localhost:14550"], TestAPMSim.dkBaud, 251, "DownloadWaypointTest")
         proxy.start()
 
         self.stressTestDownloadWP("udp:localhost:12052")
+
+    def stressTestArm(self, connStr):
+        for i in range(1, 5):
+            vehicle = dronekit.connect(
+                connStr,
+                wait_ready=True,
+                source_system=TestAPMSim.dkSSID,
+                baud=TestAPMSim.dkBaud
+            )
+
+            VehicleFunctions.arm(vehicle)
+            assert not vehicle.is_armable
+            time.sleep(1)
+            vehicle.armed = False
+            vehicle.close()
+
+    def test_canArm(self):
+        sim, connStr = self.getSim()
+        self.stressTestArm(connStr)
+
+    def test_canArmThroughProxy(self):
+        sim, connStr = self.getSim()
+        proxy = Proxy(connStr, ["udp:localhost:12052", "udp:localhost:14550"], TestAPMSim.dkBaud, 251, "DownloadWaypointTest")
+        proxy.start()
+
+        self.stressTestArm("udp:localhost:12052")
+
+class TestSolo(TestAPMSim):
+
+    def getSim(self):
+        return None, "udp:10.1.1.10:14550"

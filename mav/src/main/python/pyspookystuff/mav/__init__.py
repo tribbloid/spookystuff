@@ -40,6 +40,28 @@ class VehicleFunctions(object):
         else:
             self.armAndLift(minAlt, maxAlt, error)
 
+    @staticmethod
+    def arm(vehicle):
+        # type: (Vehicle) -> None
+        # Don't let the user try to fly when autopilot is booting
+
+        def notArmable():
+            return not vehicle.is_armable
+        utils.waitFor(notArmable, 60)
+
+        # Copter should arm in GUIDED mode
+        vehicle.mode = VehicleMode("GUIDED")
+        def isGuided():
+            return vehicle.mode.name == 'GUIDED'
+        utils.waitFor(isGuided, 60)
+
+        # Arm copter.
+        vehicle.armed = True
+
+        def isArmed():
+            return vehicle.armed and vehicle.mode.name == 'GUIDED'
+        utils.waitFor(isArmed, 60)
+
     def armAndLift(self, minAlt, maxAlt, error):
         # type: (float, float) -> None
         """
@@ -59,34 +81,11 @@ class VehicleFunctions(object):
         # processing the goto (otherwise the command after
         # Vehicle.simple_takeoff will execute immediately).
 
-        def arm(vehicle):
-            # type: (Vehicle) -> None
-            # Don't let the user try to fly when autopilot is booting
-
-            def notArmable():
-                return not vehicle.is_armable
-            utils.waitFor(notArmable, 60)
-
-            # Copter should arm in GUIDED mode
-
-            vehicle.mode = VehicleMode("GUIDED")
-
-            def isGuided():
-                return vehicle.mode.name == 'GUIDED'
-            utils.waitFor(isGuided, 60)
-
-            # Arm copter.
-            vehicle.armed = True
-
-            def isArmed():
-                return vehicle.armed and vehicle.mode.name == 'GUIDED'
-            utils.waitFor(isArmed, 60)
-
         def armAndTakeOff(vehicle):
             previousAlt = None
             while True:
                 if vehicle.is_armable:
-                    arm(vehicle)
+                    VehicleFunctions.arm(vehicle)
 
                 alt = vehicle.location.global_relative_frame.alt
                 if alt <= 1:
@@ -220,7 +219,7 @@ class VehicleFunctions(object):
     def reconnect(self):
         raise NotImplementedError("INTERNAL: subclass incomplete")
 
-    @retry(2)  # useless, won't fix it anyway, the only way to fix is through rebooting proxy
+    @retry(1)  # useless, won't fix it anyway, the only way to fix is through rebooting proxy
     def goto4x(self, effectiveTL, airspeed=None, groundspeed=None):
         """
         vanilla simple_goto() may timeout, adding 3 retry and 1 reconnect
@@ -230,7 +229,7 @@ class VehicleFunctions(object):
         except APIException as e:
             self.reconnect()
 
-    @retry(2)
+    @retry(1)
     def goto2x(self, effectiveTL, airspeed=None, groundspeed=None):
         self.vehicle.simple_goto(effectiveTL, airspeed, groundspeed)
 

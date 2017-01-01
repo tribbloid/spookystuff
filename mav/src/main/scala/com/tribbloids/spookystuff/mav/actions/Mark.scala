@@ -20,7 +20,7 @@ case class Mark() extends Export with MAVAction {
 
     try {
       val exe = new MAVEXE(session)
-      val locations = exe.pyLink.$Helper.getLocations
+      val locations = exe.pyLink.getLocations
       val result = MarkOutput(locations)
       val jsonStr = MessageView(result).prettyJSON
 

@@ -214,80 +214,88 @@ object Link extends StaticRef {
     )
   }
 
-  class Binding(
-                 override val ref: Link,
-                 override val driver: PythonDriver,
-                 override val spookyOpt: Option[SpookyContext]
-               ) extends PyBinding(ref, driver, spookyOpt) {
+  class PyImpl(
+                override val ref: Link,
+                override val driver: PythonDriver,
+                override val spookyOpt: Option[SpookyContext]
+              ) extends PyBinding(ref, driver, spookyOpt) {
 
-    $Helper.autoStart()
+    autoStart()
     Link.driverLocal += driver -> ref
 
-    override def dynamicFunctor(fn: () => PyBinding): PyBinding = {
+    var isStarted: Boolean = false
+
+    def _startDaemons(): Unit = {
+      if (!isStarted) {
+        ref.proxyOpt.foreach {
+          _.managerPy.start()
+        }
+        PyImpl.this.start()
+      }
+      isStarted = true
+    }
+    def stopDaemons(): Unit = {
+      PyImpl.this.stop()
+      ref.proxyOpt.foreach {
+        _.managerPy.stop()
+      }
+      isStarted = false
+    }
+    def withDaemons[T](fn: =>T) = {
       try {
-        fn()
+        _startDaemons()
+        fn
       }
       catch {
         case e: Throwable =>
-          ref.proxyOpt.foreach {
-            _.managerPy.stop()
-          }
-          throw e
+          stopDaemons()
       }
     }
 
-    object $Helper {
-      // will retry 6 times, try twice for Vehicle.connect() in python, if failed, will restart proxy and try again (3 times).
-      // after all attempts failed will stop proxy and add endpoint into blacklist.
-      def autoStart(): String = try {
+    // will retry 6 times, try twice for Vehicle.connect() in python, if failed, will restart proxy and try again (3 times).
+    // after all attempts failed will stop proxy and add endpoint into blacklist.
+    def autoStart(): Unit = try {
+      val retries = spookyOpt.map(
+        spooky =>
+          spooky.conf.submodules.get[MAVConf]().connectionRetries
+      ).getOrElse(1)
+      SpookyUtils.retry(retries) {
+        withDaemons[Unit]()
+      }
+    }
+    catch {
+      case e: PyInterpreterException => //this indicates a possible port conflict
+        //TODO: enable after ping daemon
 
-        val retries = spookyOpt.map(
-          spooky =>
-            spooky.conf.submodules.get[MAVConf]().connectionRetries
-        ).getOrElse(1)
-        SpookyUtils.retry(retries) {
-          ref.proxyOpt.foreach {
-            _.managerPy.start()
-          }
-          val result = Binding.this.start().$repr.get
-          result
+        try {
+          ref.detectPossibleConflicts(Option(e.cause).toSeq)
+          throw e
         }
-      }
-      catch {
-        case e: PyInterpreterException => //this indicates a possible port conflict
-          //TODO: enable after ping daemon
+        catch {
+          case ee: TreeException =>
+            throw e.copy(
+              cause = ee
+            )
+        }
+    }
 
-          try {
-            ref.detectPossibleConflicts(Option(e.cause).toSeq)
-            throw e
-          }
-          catch {
-            case ee: TreeException =>
-              throw e.copy(
-                cause = ee
-              )
-          }
-      }
+    def getLocations: LocationBundle = {
 
-      def getLocations: LocationBundle = {
+      val locations = PyImpl.this.vehicle.location
+      val global = locations.global_frame.$message.get.cast[LocationGlobal]
+      val globalRelative = locations.global_relative_frame.$message.get.cast[LocationGlobalRelative]
+      val local = locations.local_frame.$message.get.cast[LocationLocal]
 
-        val locations = Binding.this.vehicle.location
-        val global = locations.global_frame.$message.get.cast[LocationGlobal]
-        val globalRelative = locations.global_relative_frame.$message.get.cast[LocationGlobalRelative]
-        val local = locations.local_frame.$message.get.cast[LocationLocal]
-
-        val result = LocationBundle(
-          global,
-          globalRelative,
-          local
-        )
-        ref.lastKnownLocations = result
-        result
-      }
+      val result = LocationBundle(
+        global,
+        globalRelative,
+        local
+      )
+      ref.lastKnownLocations = result
+      result
     }
 
     override def cleanImpl(): Unit = {
-
       super.cleanImpl()
       val localOpt = Link.driverLocal.get(driver)
       localOpt.foreach {
@@ -367,17 +375,17 @@ case class Link(
     */
   lazy val uri: String = outs.headOption.getOrElse(endpoint.connStr)
 
-  override def _Py(driver: PythonDriver, spookyOpt: Option[SpookyContext]): Link.Binding = {
+  override def _Py(driver: PythonDriver, spookyOpt: Option[SpookyContext]): Link.PyImpl = {
     validDriverToBindings.get(driver)
-      .map(_.asInstanceOf[Link.Binding])
+      .map(_.asInstanceOf[Link.PyImpl])
       .getOrElse {
         assert(Link.validDriverToBindings.isEmpty, "Link can only be bind to one driver")
-        val result = new Link.Binding(this, driver, spookyOpt)
+        val result = new Link.PyImpl(this, driver, spookyOpt)
         onHold = false
         result
       }
   }
-  override def Py(session: Session): Link.Binding = {
+  override def Py(session: Session): Link.PyImpl = {
     _Py(session.pythonDriver, Some(session.spooky))
   }
 
