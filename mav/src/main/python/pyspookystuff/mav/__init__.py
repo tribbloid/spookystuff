@@ -14,13 +14,12 @@ class MAVException(Exception):
     pass
 
 
-def stdError(dist=10000.0, maxError = 1.0):
+def stdError(dist=10000.0, maxError=1.0):
     error = min(dist * 0.05, maxError)
     return error
 
 
 class VehicleFunctions(object):
-
     def __init__(self, vehicle):
         # type: (Vehicle) -> None
         self.vehicle = vehicle
@@ -29,40 +28,61 @@ class VehicleFunctions(object):
 
     # all the following are blocking API
     @retry(Const.armRetries)
-    def assureClearanceAltitude(self, minAlt, maxAlt=121.92, error=None): # max altitute capped to 400 ftp
+    def assureClearanceAlt(self, minAlt, maxAlt=121.92, error=None):  # max altitute capped to 400 ftp
         # type: (float, float) -> None
         if not error:
             error = stdError(minAlt)
 
         alt = self.vehicle.location.global_relative_frame.alt
         if (minAlt - alt) <= error:
-            logging.info("already airborne")
+            logging.info("already reach clearance altitude")
         else:
-            self.armAndLift(minAlt, maxAlt, error)
+            self.getToClearanceAlt(minAlt, maxAlt, error)
 
     @staticmethod
-    def arm(vehicle):
-        # type: (Vehicle) -> None
+    def mode(vehicle, mode="GUIDED"):
+        # type: (Vehicle, str) -> None
+        # Copter should arm in GUIDED mode
+        def isMode(i):
+            if i % 3 == 0: vehicle.mode = VehicleMode(mode)
+            return vehicle.mode.name == mode
+
+        utils.waitFor(isMode, 60)
+
+    @staticmethod
+    def arm(vehicle, mode="GUIDED", preArmCheck=True):
+        # type: (Vehicle, str, bool) -> None
         # Don't let the user try to fly when autopilot is booting
 
-        def notArmable():
-            return not vehicle.is_armable
-        utils.waitFor(notArmable, 60)
+        if vehicle.armed: return
 
-        # Copter should arm in GUIDED mode
-        vehicle.mode = VehicleMode("GUIDED")
-        def isGuided():
-            return vehicle.mode.name == 'GUIDED'
-        utils.waitFor(isGuided, 60)
+        VehicleFunctions.mode(vehicle, mode)
+
+        if preArmCheck:
+            def isArmable(i):
+                return vehicle.is_armable
+
+            utils.waitFor(isArmable, 60)
 
         # Arm copter.
-        vehicle.armed = True
+        def isArmed(i):
+            if i % 3 == 0: vehicle.armed = True
+            return vehicle.armed and vehicle.mode.name == mode
 
-        def isArmed():
-            return vehicle.armed and vehicle.mode.name == 'GUIDED'
         utils.waitFor(isArmed, 60)
 
-    def armAndLift(self, minAlt, maxAlt, error):
+    @staticmethod
+    def unarm(vehicle):
+        # type: (Vehicle) -> None
+        if not vehicle.armed: return
+
+        def isUnarmed(i):
+            if i % 3 == 0: vehicle.armed = False
+            return vehicle.armed == False
+
+        utils.waitFor(isUnarmed, 60)
+
+    def getToClearanceAlt(self, minAlt, maxAlt, error):
         # type: (float, float) -> None
         """
         from http://python.dronekit.io/develop/best_practice.html
@@ -77,6 +97,7 @@ class VehicleFunctions(object):
         (e.g. we know Vehicle.is_armable is True before trying to arm, we know Vehicle.armed is True before we take off).
         It also makes debugging takeoff problems a lot easier.
         """
+
         # Wait until the vehicle reaches a safe height before
         # processing the goto (otherwise the command after
         # Vehicle.simple_takeoff will execute immediately).
@@ -84,8 +105,7 @@ class VehicleFunctions(object):
         def armAndTakeOff(vehicle):
             previousAlt = None
             while True:
-                if vehicle.is_armable:
-                    VehicleFunctions.arm(vehicle)
+                VehicleFunctions.arm(vehicle)
 
                 alt = vehicle.location.global_relative_frame.alt
                 if alt <= 1:
@@ -106,8 +126,7 @@ class VehicleFunctions(object):
                 time.sleep(1)
 
         alt = self.vehicle.location.global_relative_frame.alt
-        if self.vehicle.is_armable or alt <= 1:
-            armAndTakeOff(self.vehicle)
+        armAndTakeOff(self.vehicle)
 
         if (minAlt - alt) > error:
             self.move(LocationGlobalRelative(None, None, minAlt))
@@ -160,7 +179,7 @@ class VehicleFunctions(object):
             if any member==None will copy current vehicle's location into the missing part, feel free to set altitude along
         """
 
-        effectiveTL = targetLocation # type: Union[LocationGlobal,LocationGlobalRelative]
+        effectiveTL = targetLocation  # type: Union[LocationGlobal,LocationGlobalRelative]
 
         if isinstance(targetLocation, LocationLocal):
             north = targetLocation.north
@@ -191,18 +210,18 @@ class VehicleFunctions(object):
         oldDistance = None
 
         # self.getHomeLocation
-        while True: # Stop action if we are no longer in guided mode.
-            distance, hori, vert=utils.airDistance(currentL(), effectiveTL)
+        while True:  # Stop action if we are no longer in guided mode.
+            distance, hori, vert = utils.airDistance(currentL(), effectiveTL)
             print(
                 "Moving ... \tremaining distance:", str(distance) + "m",
                 "\thorizontal:", str(hori) + "m",
                 "\tvertical:", str(vert) + "m"
             )
 
-            if self.vehicle.mode.name=="GUIDED":
+            if self.vehicle.mode.name == "GUIDED":
                 if oldDistance <= distance:
                     # TODO: calculation of closest distance can be more refined
-                    if oldDistance is not None and oldDistance <= stdError(maxError= 2):
+                    if oldDistance is not None and oldDistance <= stdError(maxError=2):
                         print("Reached target")
                         break
                     else:
@@ -234,5 +253,4 @@ class VehicleFunctions(object):
         self.vehicle.simple_goto(effectiveTL, airspeed, groundspeed)
 
     def failOnTimeout(self):
-        assert(self.vehicle.last_heartbeat < 30)
-
+        assert (self.vehicle.last_heartbeat < 30)

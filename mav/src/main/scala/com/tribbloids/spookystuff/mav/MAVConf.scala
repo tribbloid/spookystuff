@@ -14,6 +14,8 @@ object MAVConf {
 
   final val LINK_SSID = 250
   final val PROXY_SSID = 251
+
+  final val EARTH_RADIUS = 6378137.0  // Radius of "spherical" earth
 }
 
 /**

@@ -1,6 +1,6 @@
 package com.tribbloids.spookystuff.mav.telemetry
 
-import com.tribbloids.spookystuff.mav.actions.{LocationBundle, LocationGlobal, LocationGlobalRelative, LocationLocal, Location}
+import com.tribbloids.spookystuff.mav.actions._
 import com.tribbloids.spookystuff.mav.dsl.{LinkFactories, LinkFactory}
 import com.tribbloids.spookystuff.mav.{MAVConf, ReinforcementDepletedException}
 import com.tribbloids.spookystuff.session.python._
@@ -249,6 +249,7 @@ object Link extends StaticRef {
       catch {
         case e: Throwable =>
           stopDaemons()
+          throw e
       }
     }
 
@@ -279,20 +280,20 @@ object Link extends StaticRef {
         }
     }
 
-    def getLocations: LocationBundle = {
+    def getCurrentLocation: LocationGlobal = {
 
       val locations = PyImpl.this.vehicle.location
-      val global = locations.global_frame.$message.get.cast[LocationGlobal]
-      val globalRelative = locations.global_relative_frame.$message.get.cast[LocationGlobalRelative]
-      val local = locations.local_frame.$message.get.cast[LocationLocal]
+      val global = locations.global_frame.$MSG.get.cast[LocationGlobal]
+//      val globalRelative = locations.global_relative_frame.$MSG.get.cast[LocationGlobalRelative]
+//      val local = locations.local_frame.$MSG.get.cast[LocationLocal]
 
-      val result = LocationBundle(
-        global,
-        globalRelative,
-        local
-      )
-      ref.lastKnownLocations = result
-      result
+//      val result = LocationBundle(
+//        global,
+//        globalRelative,
+//        local
+//      )
+      ref.current = Some(global)
+      global
     }
 
     override def cleanImpl(): Unit = {
@@ -359,7 +360,8 @@ case class Link(
     }
   }
 
-  var lastKnownLocations: LocationBundle = _
+  var home: Option[LocationGlobal] = None
+  var current: Option[LocationGlobal] = None
 
   def wContext(
                 spooky: SpookyContext,

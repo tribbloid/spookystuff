@@ -50,8 +50,8 @@ class LinkSuite extends APMSimFixture {
 
     val py = link.Py(session)
 
-    val name = py.endpoint.name.$repr.get
-    val endpoint = py.endpoint.$message.get.prettyJSON()
+    val name = py.endpoint.name.$STR.get
+    val endpoint = py.endpoint.$MSG.get.prettyJSON()
 
     name.shouldBe(
       "DRONE"
@@ -127,7 +127,7 @@ class LinkSuite extends APMSimFixture {
           session
         )
 
-        link.endpoint.connStr -> link.Py(session).uri.$repr.get
+        link.endpoint.connStr -> link.Py(session).uri.$STR.get
     }
       .collect()
 
@@ -194,7 +194,7 @@ class LinkSuite extends APMSimFixture {
           session
         )
         val firstOut = link.proxyOpt.get.outs.headOption
-        val uri = link.Py(session).uri.$repr
+        val uri = link.Py(session).uri.$STR
         //        link.tryClean()
         firstOut -> uri
     }
@@ -230,7 +230,7 @@ class LinkSuite extends APMSimFixture {
               factory,
               session
             )
-            link1.Py(session).uri.$repr.foreach(println)
+            link1.Py(session).uri.$STR.foreach(println)
             val link2 = Link.getOrInitialize (
               endpoints,
               factory,

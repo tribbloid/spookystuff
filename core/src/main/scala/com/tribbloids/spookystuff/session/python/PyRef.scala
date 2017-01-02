@@ -142,19 +142,19 @@ class PyBinding (
   }
 
   //TODO: rename to something that is illegal in python syntax
-  def $repr: Option[String] = {
+  def $STR: Option[String] = {
     referenceOpt.flatMap {
       ref =>
         driver.evalExpr(ref)
     }
   }
 
-  def $type: Option[String] = {
+  def $TYPE: Option[String] = {
     ???
   }
 
   // TODO: so far, doesn't support nested object
-  def $message: Option[Message] = {
+  def $MSG: Option[Message] = {
 
     referenceOpt.flatMap {
       ref =>

@@ -3,6 +3,7 @@ from __future__ import print_function
 import os
 
 import math
+import time
 from dronekit import LocationGlobal, LocationGlobalRelative
 from math import radians, cos, sin, asin, sqrt
 
@@ -91,12 +92,15 @@ def get_location_metres(original_location, dNorth, dEast):
     return targetlocation
 
 
-def waitFor(condition, duration):
-    for i in range(duration, 0, -1):
-        v = condition()
+def waitFor(condition, duration = 60):
+    for i in range(1, duration):
+        v = condition(i)
         if v:
             return
-    os.error("timeout waiting for " + str(condition))
+        time.sleep(1)
+        if i%10 == 0:
+            print("waiting for", str(condition), "\t|", i, "second(s)")
+    raise os.error("timeout waiting for " + str(condition))
 
     # not accurate! should use ground dist
     # def get_distance_m(aLocation1, aLocation2):

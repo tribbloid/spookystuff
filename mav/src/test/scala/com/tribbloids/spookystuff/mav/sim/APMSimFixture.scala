@@ -56,7 +56,7 @@ abstract class APMSimFixture extends SpookyEnvFixture {
           //NOT cleaned by TaskCompletionListener
           val apmSimDriver = new PythonDriver(lifespan = Lifespan.JVM(nameOpt = Some(s"APMSim-$i")))
           val sim = APMSim.next()
-          sim._Py(apmSimDriver).connStr.$repr
+          sim._Py(apmSimDriver).connStr.$STR
       }
       .flatMap(v => v)
       .persist()

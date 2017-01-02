@@ -18,8 +18,8 @@ case class DummyPyAction(
                         ) extends Export with CaseInstanceRef {
 
   override def doExeNoName(session: Session): Seq[Fetched] = {
-    val repr1 = Py(session).dummy(2, 3).$repr
-    val repr2 = Py(session).dummy(b = 3, c = 2).$repr
+    val repr1 = Py(session).dummy(2, 3).$STR
+    val repr2 = Py(session).dummy(b = 3, c = 2).$STR
     assert(repr1 == repr2)
     val doc = new Doc(
       uid = DocUID(List(this), this)(),

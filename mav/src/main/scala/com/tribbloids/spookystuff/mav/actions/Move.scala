@@ -43,7 +43,7 @@ case class Move(
 
     override def inbound(): Unit = {
       LoggerFactory.getLogger(this.getClass).debug(s"assureClearanceAltitude ${mavConf.clearanceAltitude}")
-      pyLink.assureClearanceAltitude(mavConf.clearanceAltitude)
+      pyLink.assureClearanceAlt(mavConf.clearanceAltitude)
       LoggerFactory.getLogger(this.getClass).debug(s"inbound .. $fromV")
       pyLink.move(fromV)
     }

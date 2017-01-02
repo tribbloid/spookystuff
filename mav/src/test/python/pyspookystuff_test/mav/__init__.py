@@ -32,68 +32,89 @@ class TestUtils(TestCase):
 
 
 class TestAPMSim(TestCase):
-    dkSSID = 250
-    dkBaud = 57600
+
+    @classmethod
+    def setUpClass(cls):
+        cls.dkSSID = 250
+        cls.dkBaud = 57600
+        cls.sim = None
+
+    def tearDown(self):
+        self.sim.close()
+        self.sim = None
 
     def stressTestDownloadWP(self, connStr):
-        for i in range(1, 12):
+        for i in range(1, 20):
+            print("stress test:", i, "time(s)")
             vehicle = dronekit.connect(
                 connStr,
                 wait_ready=True,
-                source_system=TestAPMSim.dkSSID,
-                baud=TestAPMSim.dkBaud
+                source_system=self.dkSSID,
+                baud=self.dkBaud
             )
 
-            @retry(2)
-            def blockingDownload():
-                vehicle.commands.download()
-                vehicle.commands.wait_ready()
-            blockingDownload()
 
-            vehicle.close()
+            try:
+                @retry(2)
+                def blockingDownload():
+                    vehicle.commands.download()
+                    vehicle.commands.wait_ready()
+                blockingDownload()
+            finally:
+                vehicle.close()
 
-    def getSim(self):
-        sim = APMSim(0, "43.694195,-79.262262,136,353", TestAPMSim.dkBaud)
-        return sim, sim.connStr
+    @property
+    def url(self):
+        if not self.sim:
+            self.sim = APMSim(0, "43.694195,-79.262262,136,353", self.dkBaud)
+        return self.sim.connStr
+
+    @property
+    def gcs(self):
+        return "udp:localhost:14560"
 
     def test_downloadWaypointCannotTimeout(self):
-        sim, connStr = self.getSim()
+        connStr = self.url
         self.stressTestDownloadWP(connStr)
 
     def test_downloadWaypointThroughProxyCannotTimeout(self):
-        sim, connStr = self.getSim()
-        proxy = Proxy(connStr, ["udp:localhost:12052", "udp:localhost:14550"], TestAPMSim.dkBaud, 251, "DownloadWaypointTest")
+        connStr = self.url
+        proxy = Proxy(connStr, ["udp:localhost:12052", self.gcs], self.dkBaud, 251, "DownloadWaypointTest")
         proxy.start()
 
         self.stressTestDownloadWP("udp:localhost:12052")
 
     def stressTestArm(self, connStr):
         for i in range(1, 5):
+            print("stress test:", i, "time(s)")
             vehicle = dronekit.connect(
                 connStr,
                 wait_ready=True,
-                source_system=TestAPMSim.dkSSID,
-                baud=TestAPMSim.dkBaud
+                source_system=self.dkSSID,
+                baud=self.dkBaud
             )
-
-            VehicleFunctions.arm(vehicle)
-            assert not vehicle.is_armable
-            time.sleep(1)
-            vehicle.armed = False
-            vehicle.close()
+            try:
+                VehicleFunctions.arm(vehicle, "ALT_HOLD", False)  # No GPS
+                assert(vehicle.armed is True)
+                VehicleFunctions.unarm(vehicle)
+                time.sleep(1)
+                assert(vehicle.armed is False)
+            finally:
+                vehicle.close()
 
     def test_canArm(self):
-        sim, connStr = self.getSim()
+        connStr = self.url
         self.stressTestArm(connStr)
 
     def test_canArmThroughProxy(self):
-        sim, connStr = self.getSim()
-        proxy = Proxy(connStr, ["udp:localhost:12052", "udp:localhost:14550"], TestAPMSim.dkBaud, 251, "DownloadWaypointTest")
+        connStr = self.url
+        proxy = Proxy(connStr, ["udp:localhost:12052", self.gcs], self.dkBaud, 251, "DownloadWaypointTest")
         proxy.start()
 
         self.stressTestArm("udp:localhost:12052")
 
 class TestSolo(TestAPMSim):
 
-    def getSim(self):
-        return None, "udp:10.1.1.10:14550"
+    @property
+    def url(self):
+        return "udpin:0.0.0.0:14550"

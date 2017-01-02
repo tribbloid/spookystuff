@@ -74,7 +74,7 @@ d = {'clientip': '192.168.0.1', 'user': 'fbloggs'}
 class Endpoint(object):
     # TODO: use **local() to reduce boilerplate copies
     def __init__(self, connStrs, baudRate, frame=None, name=""):
-        # type: (list[str], str, int, str) -> None
+        # type: (list[str], int, str, str) -> None
         self.connStrs = connStrs
         self.baudRate = baudRate
         self.frame = frame
@@ -244,9 +244,9 @@ class Link(Daemon, VehicleFunctions):
         # to make on a real vehicle. They are leveraged
         # exclusively for simulation. Take heed!!!
 
-        self.assureClearanceAltitude(height)
+        self.assureClearanceAlt(height)
 
-        # self.localOrigin = self.vehicle.location.global_relative_frame
+        self.localOrigin = self.vehicle.location.global_relative_frame
         self.move(target)
 
         last_location = self.vehicle.location

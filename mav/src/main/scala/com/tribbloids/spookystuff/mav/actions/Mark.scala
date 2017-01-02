@@ -5,7 +5,6 @@ import com.tribbloids.spookystuff.doc.{Doc, DocUID, Fetched}
 import com.tribbloids.spookystuff.session.{NoPythonDriverException, Session}
 import org.apache.http.entity.ContentType
 import org.apache.spark.ml.dsl.utils.MessageView
-import org.json4s.JsonAST.{JField, JObject}
 
 case class MarkOutput(
                        location: LocationBundle
@@ -20,23 +19,9 @@ case class Mark() extends Export with MAVAction {
 
     try {
       val exe = new MAVEXE(session)
-      val locations = exe.pyLink.getLocations
-      val result = MarkOutput(locations)
-      val jsonStr = MessageView(result).prettyJSON
-
-      //      val global = location.global_frame.$message.get.toJValue
-      //      val globalRelative = location.global_relative_frame.$message.get.toJValue
-      //      val local = location.local_frame.$message.get.toJValue
-      //
-      //      val jLocation = JObject(
-      //        JField("Global", global),
-      //        JField("GlobalRelative", globalRelative),
-      //        JField("Local", local)
-      //      )
-      //
-      //      val jMark = JObject(
-      //        JField("Location", jLocation)
-      //      )
+      val location = exe.pyLink.getCurrentLocation
+//      val result = MarkOutput(location)
+      val jsonStr = MessageView(location).prettyJSON
 
       Seq(new Doc(
         DocUID((session.backtrace :+ this).toList, this)(),
