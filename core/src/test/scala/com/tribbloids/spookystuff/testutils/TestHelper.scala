@@ -27,7 +27,7 @@ class TestHelper() {
   }
 
   val S3Path = Option(props.getProperty("S3Path"))
-  if (S3Path.isEmpty) println("Test on AWS S3 with credentials provided by rootkey.csv")
+  if (S3Path.isDefined) println("Test on AWS S3 with credentials provided by rootkey.csv")
 
   val AWSAccessKeyId = Option(props.getProperty("AWSAccessKeyId"))
   val AWSSecretKey = Option(props.getProperty("AWSSecretKey"))

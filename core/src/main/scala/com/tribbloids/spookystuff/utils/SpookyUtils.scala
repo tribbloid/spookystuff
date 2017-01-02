@@ -99,7 +99,7 @@ object SpookyUtils {
       }
       catch {
         case e: TimeoutException =>
-          LoggerFactory.getLogger(this.getClass).info("TIMEOUT!!!!")
+          LoggerFactory.getLogger(this.getClass).debug("TIMEOUT!!!!")
           throw e
       }
     }
