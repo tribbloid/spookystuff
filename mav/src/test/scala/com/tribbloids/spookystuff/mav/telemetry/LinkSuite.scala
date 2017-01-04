@@ -61,15 +61,21 @@ class LinkSuite extends APMSimFixture {
     session1.getOrProvisionPythonDriver
     val session2 = new Session(spooky, Lifespan.Custom(id = 2L))
     session2.getOrProvisionPythonDriver
-    val factory = LinkFactories.NoProxy
-    val link = Link.getOrCreate(
-      getEndpoints(simConnStrs.head),
-      factory,
-      session1
-    )
+    try {
+      val factory = LinkFactories.NoProxy
+      val link = Link.getOrCreate(
+        getEndpoints(simConnStrs.head),
+        factory,
+        session1
+      )
 
-    intercept[IllegalArgumentException] {
-      val py = link.Py(session2)
+      intercept[IllegalArgumentException] {
+        val py = link.Py(session2)
+      }
+    }
+    finally {
+      session1.clean() //VERY IMPORTANT! otherwise its Python driver will live forever and block DriverFactory's provisioning.
+      session2.clean()
     }
   }
 
