@@ -3,6 +3,7 @@ package com.tribbloids.spookystuff.mav.telemetry
 import com.tribbloids.spookystuff.PyInterpreterException
 import com.tribbloids.spookystuff.mav.dsl.LinkFactories
 import com.tribbloids.spookystuff.mav.sim.APMSimFixture
+import com.tribbloids.spookystuff.session.python.PythonDriver
 import com.tribbloids.spookystuff.session.{Lifespan, NoPythonDriverException, Session}
 import org.slf4j.LoggerFactory
 
@@ -16,9 +17,9 @@ class LinkSuite extends APMSimFixture {
   import LinkSuite._
   import com.tribbloids.spookystuff.utils.SpookyViews._
 
-  lazy val getEndpoints: String => Seq[Endpoint] = {
+  lazy val getEndpoints: String => Seq[Drone] = {
     connStr =>
-      Seq(Endpoint(Seq(connStr)))
+      Seq(Drone(Seq(connStr)))
   }
 
   override def setUp(): Unit = {
@@ -47,7 +48,6 @@ class LinkSuite extends APMSimFixture {
       factory,
       session
     )
-
     val py = link.Py(session)
 
     intercept[PyInterpreterException] {
@@ -57,25 +57,18 @@ class LinkSuite extends APMSimFixture {
 
   test("Link cannot create 2 Bindings") {
 
-    val session1 = new Session(spooky, Lifespan.Custom(id = 1L))
-    session1.getOrProvisionPythonDriver
-    val session2 = new Session(spooky, Lifespan.Custom(id = 2L))
-    session2.getOrProvisionPythonDriver
-    try {
-      val factory = LinkFactories.NoProxy
-      val link = Link.getOrCreate(
-        getEndpoints(simConnStrs.head),
-        factory,
-        session1
-      )
+    val session = new Session(spooky, driverLifespan)
+    val factory = LinkFactories.NoProxy
+    val link = Link.getOrInitialize(
+      getEndpoints(simConnStrs.head),
+      factory,
+      session
+    )
+    val py = link.Py(session)
 
-      intercept[IllegalArgumentException] {
-        val py = link.Py(session2)
-      }
-    }
-    finally {
-      session1.clean() //VERY IMPORTANT! otherwise its Python driver will live forever and block DriverFactory's provisioning.
-      session2.clean()
+    val newDriver = new PythonDriver(lifespan = driverLifespan)
+    intercept[IllegalArgumentException] {
+      val py = link._Py(newDriver)
     }
   }
 
@@ -100,7 +93,7 @@ class LinkSuite extends APMSimFixture {
     // this will fail due to non-existing endpoint
     intercept[PyInterpreterException] {
       val link = Link.getOrInitialize(
-        Seq(Endpoint(Seq("dummy"))),
+        Seq(Drone(Seq("dummy"))),
         factory,
         session
       )
@@ -137,7 +130,7 @@ class LinkSuite extends APMSimFixture {
           session
         )
 
-        link.endpoint.connStr -> link.primary.connStr
+        link.nativeEndpoint.connStr -> link.primaryEndpoint.connStr
     }
       .collect()
 
@@ -162,7 +155,7 @@ class LinkSuite extends APMSimFixture {
     val getEndpoints = this.getEndpoints
     val linkRDD = simConnStrRDD.map {
       connStr =>
-        val endpoint = Endpoint(Seq(connStr))
+        val endpoint = Drone(Seq(connStr))
         val session = new Session(spooky, driverLifespan)
         val link = Link.getOrInitialize(
           getEndpoints(connStr),
@@ -204,7 +197,7 @@ class LinkSuite extends APMSimFixture {
           session
         )
         val firstOut = link.proxyOpt.get.outs.head
-        val uri = link.primary.connStr
+        val uri = link.primaryEndpoint.connStr
         firstOut -> uri
     }
       .collect()

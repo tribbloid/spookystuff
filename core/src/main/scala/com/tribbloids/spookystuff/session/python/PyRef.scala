@@ -72,6 +72,10 @@ trait PyRef extends Cleanable {
   def packageName = pyClassNameParts.slice(0, pyClassNameParts.length - 1).mkString(".")
 
   protected def cleanImpl() = {
+    pyClean()
+  }
+
+  def pyClean() = {
     bindings.foreach {
       _.tryClean()
     }
@@ -112,6 +116,7 @@ class PyBinding (
   import ref._
 
   {
+    require(!ref.isCleaned, ref + " is cleaned, cannot create binding")
     dependencies.foreach {
       dep =>
         dep._Py(driver, spookyOpt)
@@ -304,4 +309,6 @@ trait SingletonRef extends PyRef {
     require(validDriverToBindings.isEmpty, "can only be bind to one driver")
     v
   }
+
+  def PY = validDriverToBindings.values.head
 }

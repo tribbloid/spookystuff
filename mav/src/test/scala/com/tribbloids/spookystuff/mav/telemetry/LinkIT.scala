@@ -21,7 +21,7 @@ object LinkIT{
                           connStrs: Seq[String]
                         ): String = {
 
-    val endpoints = connStrs.map(v => Endpoint(Seq(v)))
+    val endpoints = connStrs.map(v => Drone(Seq(v)))
     val session = new Session(spooky)
     val link = Link.getOrInitialize(
       endpoints,
@@ -29,7 +29,7 @@ object LinkIT{
       session
     )
 
-    val location = link.primary.Py(session)
+    val location = link.primaryEndpoint.Py(session)
       .testMove()
       .$STR
       .get
@@ -104,49 +104,49 @@ class LinkIT extends APMSimFixture {
 
 class LinkWithProxyIT extends LinkIT {
 
-  override lazy val factory = LinkFactories.ForkToGCS()
+  override lazy val factory = LinkFactories.ForkToGCS(
+    executorOutsSize = 2
+  )
 
-//  test("GCS takeover and relinquish control during flight") {
-//    import scala.concurrent.duration._
-//    import scala.concurrent.ExecutionContext.Implicits.global
-//
-//    val spooky = this.spooky
-//    val rdd = simConnStrRDD.map {
-//        connStr =>
-//          val endpoints = Seq(Endpoint(Seq(connStr)))
-//          val factory = LinkFactories.ForkToGCS(
-//            getGCSOuts = _ =>
-//              Set("udp:localhost:14550", "udp:localhost:14560")
-//          )
-//          val session = new Session(spooky)
-//          val link = Link.getOrInitialize( //refitting
-//            endpoints,
-//            factory,
-//            session
-//          )
-//          link.Py(session).assureClearanceAlt(20)
-//
-//          val newDriver = new PythonDriver()
-//          val sublink = link.sublink(2, 252)
-//          val subPy = sublink._Py(newDriver, Some(spooky))
-//
-//          val moved = Future {
-//            link.Py(session).testMove()
-//          }
-//          Thread.sleep(5000)
-//          println("BRAKE!!!!!!!!!!!!!!!")
-//          subPy.mode("BRAKE")
-//          TestHelper.assert(subPy.vehicle.mode.name.$STR.get == "BRAKE")
-//          subPy.mode("ALT_HOLD")
-//          TestHelper.assert(subPy.vehicle.mode.name.$STR.get == "ALT_HOLD")
-//          Thread.sleep(10000)
-//          subPy.mode("GUIDED")
-//          val position = Await.result(moved, 60.seconds).$STR.get
-//          println(position)
-//      }
-//    val location = rdd.collect().head
-//
-//    println(location)
-//    assert(spooky.metrics.linkCreated.value == 0)
-//  }
+  test("GCS takeover and relinquish control during flight") {
+    import scala.concurrent.duration._
+    import scala.concurrent.ExecutionContext.Implicits.global
+
+    val spooky = this.spooky
+    val factory = this.factory
+    val rdd = simConnStrRDD.map {
+        connStr =>
+          val drones = Seq(Drone(Seq(connStr)))
+          val session = new Session(spooky)
+          val link = Link.getOrInitialize( //refitting
+            drones,
+            factory,
+            session
+          )
+
+          val endpoint1 = link.primaryEndpoint
+          val endpoint2 = link.endpointsForExecutor.last
+          endpoint1.Py(session).assureClearanceAlt(20)
+          val driver2 = new PythonDriver()
+          val py2 = endpoint2._Py(driver2, Some(spooky))
+          py2.start()
+
+          val moved = Future {
+            endpoint1.Py(session).testMove()
+          }
+          Thread.sleep(5000)
+          py2.mode("BRAKE")
+          TestHelper.assert(py2.vehicle.mode.name.$STR.get == "BRAKE")
+          py2.mode("ALT_HOLD")
+          TestHelper.assert(py2.vehicle.mode.name.$STR.get == "ALT_HOLD")
+          Thread.sleep(10000)
+          py2.mode("GUIDED")
+          val position = Await.result(moved, 60.seconds).$STR.get
+          println(position)
+      }
+    val location = rdd.collect().head
+
+    println(location)
+    assert(spooky.metrics.linkCreated.value == 0)
+  }
 }

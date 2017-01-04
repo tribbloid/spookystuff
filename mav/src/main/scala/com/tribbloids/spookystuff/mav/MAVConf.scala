@@ -2,7 +2,7 @@ package com.tribbloids.spookystuff.mav
 
 import com.tribbloids.spookystuff.AbstractConf
 import com.tribbloids.spookystuff.mav.dsl.{LinkFactories, LinkFactory}
-import com.tribbloids.spookystuff.mav.telemetry.Endpoint
+import com.tribbloids.spookystuff.mav.telemetry.Drone
 import org.apache.spark.SparkConf
 
 object MAVConf {
@@ -31,8 +31,8 @@ case class MAVConf(
                     // connection list is configed by user and shared by all executors
                     // blacklist is node specific and determined by GenPartitioner
                     // routing now becomes part of Connection?
-                    var endpoints: Seq[Endpoint] = Nil,
-                    var proxyFactory: LinkFactory = LinkFactories.ForkToGCS(),
+                    var fleet: Seq[Drone] = Nil,
+                    var linkFactory: LinkFactory = LinkFactories.ForkToGCS(),
                     var connectionRetries: Int = MAVConf.CONNECTION_RETRIES,
                     var clearanceAltitude: Double = 20 // in meters
                   ) extends AbstractConf {

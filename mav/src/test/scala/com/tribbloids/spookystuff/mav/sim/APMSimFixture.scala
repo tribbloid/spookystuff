@@ -2,7 +2,7 @@ package com.tribbloids.spookystuff.mav.sim
 
 import com.tribbloids.spookystuff.SpookyEnvFixture
 import com.tribbloids.spookystuff.mav.MAVConf
-import com.tribbloids.spookystuff.mav.telemetry.{Endpoint, Link}
+import com.tribbloids.spookystuff.mav.telemetry.{Drone, Link}
 import com.tribbloids.spookystuff.session.python.PythonDriver
 import com.tribbloids.spookystuff.session.{Cleanable, Lifespan}
 import org.apache.spark.rdd.RDD
@@ -29,7 +29,7 @@ abstract class APMSimFixture extends SpookyEnvFixture {
 
   var simConnStrRDD: RDD[String] = _
   def simConnStrs = simConnStrRDD.collect().toSeq.distinct
-  def simEndpoints = simConnStrs.map(v => Endpoint(Seq(v)))
+  def simEndpoints = simConnStrs.map(v => Drone(Seq(v)))
 
   def parallelism: Int = sc.defaultParallelism
   //  def parallelism: Int = 3
@@ -38,7 +38,7 @@ abstract class APMSimFixture extends SpookyEnvFixture {
     super.setUp()
     val mavConf = this.spooky.conf.submodules.get[MAVConf]()
     mavConf.connectionRetries = 1 // do not retry
-    mavConf.endpoints = simEndpoints
+    mavConf.fleet = simEndpoints
   }
 
   override def beforeAll(): Unit = {

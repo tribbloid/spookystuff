@@ -44,7 +44,7 @@ case class DummyPyAction(
 
 class PythonActionSuite extends SpookyEnvFixture {
 
-  val action = DummyPyAction()
+  def action = DummyPyAction()
 
   test("can be created on python") {
     action.createOpt.get.shouldBe(

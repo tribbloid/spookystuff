@@ -97,10 +97,10 @@ object Lifespan {
     override def getID: ID = threadID
   }
 
-  case class Custom(id: Long = 0, override val nameOpt: Option[String] = None) extends Lifespan {
+  case class Custom(threadID: Long = 0, override val nameOpt: Option[String] = None) extends Lifespan {
     def this() = this(0, None)
 
-    override def getID: ID = Right(id)
+    override def getID: ID = Right(threadID)
 
     override def addCleanupHook(fn: () => Unit): Unit = {}
   }

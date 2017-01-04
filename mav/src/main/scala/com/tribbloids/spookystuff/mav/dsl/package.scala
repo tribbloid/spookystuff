@@ -1,6 +1,6 @@
 package com.tribbloids.spookystuff.mav
 
-import com.tribbloids.spookystuff.mav.telemetry.{Endpoint, Link, LinkWithContext}
+import com.tribbloids.spookystuff.mav.telemetry.{Drone, Link, LinkWithContext}
 import org.slf4j.LoggerFactory
 
 /**
@@ -8,5 +8,5 @@ import org.slf4j.LoggerFactory
   */
 package object dsl {
 
-  type LinkFactory = (Endpoint => Link)
+  type LinkFactory = (Drone => Link)
 }

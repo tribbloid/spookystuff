@@ -1,6 +1,6 @@
 package com.tribbloids.spookystuff.mav.actions
 
-import com.tribbloids.spookystuff.actions.{Action, Interaction}
+import com.tribbloids.spookystuff.actions.{Action, Interaction, Timed}
 import com.tribbloids.spookystuff.mav.MAVConf
 import com.tribbloids.spookystuff.mav.telemetry.Link
 import com.tribbloids.spookystuff.session.Session
@@ -18,13 +18,15 @@ class MAVEXE(session: Session) {
 
   val link: Link = {
     Link.getOrCreate(
-      mavConf.endpoints,
-      mavConf.proxyFactory,
+      mavConf.fleet,
+      mavConf.linkFactory,
       session
     )
   }
 
-  def pyLink = link.Py(session)
+  def endpoint = link.primaryEndpoint
+
+  def pyEndpoint = endpoint.Py(session)
 }
 
 class MAVInteractionEXE(session: Session) extends MAVEXE(session) {

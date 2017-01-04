@@ -61,10 +61,10 @@ class MoveSuite extends APMSimFixture {
     )
   }
 
-  test("Run 1.5 track per drone") {
+  test("Run 1 track per drone") {
 
     val tracks: Seq[(LocationLocal, LocationLocal)] = MoveSuite.generateTracks(
-      (parallelism.toDouble * 1.5).toInt,
+      (parallelism.toDouble * 1).toInt,
       LocationLocal(10, 10, -10),
       LocationLocal(100, 0, 0),
       LocationLocal(0, 20, -2)
@@ -87,10 +87,10 @@ class MoveSuite extends APMSimFixture {
     result.foreach(println)
   }
 
-  test("Run 2.5 track per drone") {
+  test("Run 1.5 track per drone") {
 
     val tracks: Seq[(LocationLocal, LocationLocal)] = MoveSuite.generateTracks(
-      (parallelism.toDouble * 2.5).toInt,
+      (parallelism.toDouble * 1.5).toInt,
       LocationLocal(10, 10, -10),
       LocationLocal(100, 0, 0),
       LocationLocal(0, 20, -2)

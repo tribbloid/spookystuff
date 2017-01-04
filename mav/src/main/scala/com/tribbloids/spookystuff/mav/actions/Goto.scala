@@ -24,7 +24,7 @@ class GotoEXE(
 
   override def conduct(): Unit = {
     LoggerFactory.getLogger(this.getClass).info(s"scanning .. $toV")
-    pyLink.move(toV)
+    pyEndpoint.move(toV)
   }
 }
 

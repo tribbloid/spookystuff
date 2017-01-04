@@ -75,7 +75,7 @@ d = {'clientip': '192.168.0.1', 'user': 'fbloggs'}
 
 class Daemon(object):
     def start(self):
-        print("starting", self.fullName)
+        print("starting", self.fullName, str(type(self)))
         try:
             self._start()
         except:
@@ -86,7 +86,7 @@ class Daemon(object):
         pass
 
     def stop(self):
-        print("stopping", self.fullName)
+        print("stopping", self.fullName, ":", str(type(self)))
         self._stop()
 
     def _stop(self):
@@ -114,11 +114,11 @@ def randomLocalLocation():
 
 class Endpoint(Daemon, VehicleFunctions):
     # TODO: use **local() to reduce boilerplate copies
-    def __init__(self, connStrs, baudRate, ssid, frame=None, name=""):
-        # type: (list[str], int, int, str, str) -> None
+    def __init__(self, connStr, baudRate, ssid, frame=None, name=""):
+        # type: (str, int, int, str, str) -> None
         super(Endpoint, self).__init__(None)
-        self.connStrs = connStrs
-        self.uri = connStrs[0]
+        self.connStr = connStr
+        self.uri = connStr
 
         self.baudRate = baudRate
         self.ssid = ssid
@@ -127,11 +127,7 @@ class Endpoint(Daemon, VehicleFunctions):
 
     @property
     def fullName(self):
-        return self.name + "@" + ','.join(self.connStrs)
-
-    @property
-    def connStr(self):
-        return self.connStrs[0]
+        return self.name + "@" + self.connStr
 
     @property
     def isConnected(self):
@@ -140,7 +136,6 @@ class Endpoint(Daemon, VehicleFunctions):
     @retry(Const.daemonStartRetries)
     def _start(self):
         if not self.vehicle:
-            self.logPrint("Drone connecting:", self.uri)
             self.vehicle = dronekit.connect(
                 self.uri,
                 wait_ready=True,
@@ -155,7 +150,6 @@ class Endpoint(Daemon, VehicleFunctions):
     # almost useless, once interpreter is killed the connection is gone.
     def _stop(self):
         if self.vehicle:
-            self.logPrint("Drone disconnecting:", self.uri)
             self.vehicle.close()
             self.vehicle = None
 
@@ -197,7 +191,7 @@ class Proxy(Daemon):
 
     @property
     def fullName(self):
-        return self.name + "@" + self.master + ">" + ','.join(self.outs)
+        return self.name + "@" + self.master + ">" + '/'.join(self.outs)
 
     # defaultOptions = '--daemon --cmd="module unload console"'
     def _spawnProxy(self, setup=False, options=defaultProxyOptions, logfile=sys.stdout):
@@ -240,14 +234,14 @@ class Proxy(Daemon):
             utils.waitFor(isAlive, 10)
 
             # ensure that proxy is usable, otherwise its garbage! TODO too slow
-            # vehicle = dronekit.connect(
-            #     self.outs[0],
-            #     wait_ready=True,
-            #     # source_system=self.ssid, TODO: how to handle this?
-            #     baud=self.baudRate
-            # )
-            # self.logPrint("Proxy spawned: PID =", self.pid)
-            # vehicle.close()
+            vehicle = dronekit.connect(
+                self.outs[0],
+                wait_ready=True,
+                # source_system=self.ssid, TODO: how to handle this?
+                baud=self.baudRate
+            )
+            self.logPrint("Proxy spawned: PID =", self.pid)
+            vehicle.close()
 
         return self.pid
 

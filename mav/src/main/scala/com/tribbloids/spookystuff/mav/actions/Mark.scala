@@ -19,13 +19,13 @@ case class Mark() extends Export with MAVAction {
 
     try {
       val exe = new MAVEXE(session)
-      val location = exe.pyLink.$Helpers.getCurrentLocation
+      val location = exe.link.getCurrentLocation
 //      val result = MarkOutput(location)
       val jsonStr = MessageView(location).prettyJSON
 
       Seq(new Doc(
         DocUID((session.backtrace :+ this).toList, this)(),
-        exe.link.endpoint.connStr,
+        exe.link.nativeEndpoint.connStr,
         Some(s"${ContentType.APPLICATION_JSON}; charset=UTF-8"),
         jsonStr.getBytes("UTF8")
       ))

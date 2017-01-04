@@ -17,7 +17,7 @@ class LinkFactoriesSuite extends SpookyEnvFixture {
 
     Link.existing.values.foreach(_.tryClean())
     val factory = LinkFactories.NoProxy
-    val link = Link(Endpoint(Seq("dummy")), Nil).wContext(spooky, factory)
+    val link = Link(Drone(Seq("dummy")), Nil).wContext(spooky, factory)
     assert(LinkFactories.canCreate(factory, link))
   }
 
@@ -25,7 +25,7 @@ class LinkFactoriesSuite extends SpookyEnvFixture {
 
     Link.existing.values.foreach(_.tryClean())
     val factory = LinkFactories.NoProxy
-    val link = Link(Endpoint(Seq("dummy")), Seq("localhost:80")).wContext(spooky, factory)
+    val link = Link(Drone(Seq("dummy")), Seq("localhost:80")).wContext(spooky, factory)
     assert(LinkFactories.canCreate(factory, link))
   }
 
@@ -33,7 +33,7 @@ class LinkFactoriesSuite extends SpookyEnvFixture {
 
     Link.existing.values.foreach(_.tryClean())
     val factory = LinkFactories.NoProxy
-    val link = Link(Endpoint(Seq("dummy")), Seq("localhost:80", "localhost:14550"))
+    val link = Link(Drone(Seq("dummy")), Seq("localhost:80"), Seq("localhost:14550"))
       .wContext(spooky, factory)
     assert(!LinkFactories.canCreate(factory, link))
   }
@@ -42,7 +42,7 @@ class LinkFactoriesSuite extends SpookyEnvFixture {
 
     Link.existing.values.foreach(_.tryClean())
     val factory = LinkFactories.ForkToGCS()
-    val link = Link(Endpoint(Seq("dummy")), Nil).wContext(spooky, factory)
+    val link = Link(Drone(Seq("dummy")), Nil).wContext(spooky, factory)
     assert(!LinkFactories.canCreate(factory, link))
   }
 
@@ -50,7 +50,7 @@ class LinkFactoriesSuite extends SpookyEnvFixture {
 
     Link.existing.values.foreach(_.tryClean())
     val factory = LinkFactories.ForkToGCS()
-    val link = Link(Endpoint(Seq("dummy")), Seq("localhost:80", "udp:localhost:14550"))
+    val link = Link(Drone(Seq("dummy")), Seq("localhost:80"), Seq("udp:localhost:14550"))
       .wContext(spooky, factory)
     assert(LinkFactories.canCreate(factory, link))
   }
@@ -59,7 +59,7 @@ class LinkFactoriesSuite extends SpookyEnvFixture {
 
     Link.existing.values.foreach(_.tryClean())
     val factory = LinkFactories.ForkToGCS()
-    val link = Link(Endpoint(Seq("dummy")), Seq("localhost:80")).wContext(spooky, factory)
+    val link = Link(Drone(Seq("dummy")), Seq("localhost:80")).wContext(spooky, factory)
     assert(!LinkFactories.canCreate(factory, link))
   }
 }
