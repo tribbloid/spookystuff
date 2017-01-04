@@ -20,7 +20,7 @@ case class Endpoint(
                      ssid: Int = MAVConf.EXECUTOR_SSID,
                      frame: Option[String] = None,
                      name: String = "DRONE"
-                   ) extends CaseInstanceRef with SingletonRef with LocalCleanable {
+                   ) extends CaseInstanceRef with SingletonRef {
 
   def connStr = connStrs.head
 }
@@ -275,7 +275,7 @@ object Link {
         )
           .getOrElse(MAVConf.CONNECTION_RETRIES)
         SpookyUtils.retry(retries) {
-          withDaemonsUp[Unit]()
+          withDaemonsUp(Unit)
         }
       }
       catch {

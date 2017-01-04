@@ -61,6 +61,9 @@ class TestHelper() {
     }
   }
 
+  //only used in local mode
+  lazy val maxLocalCores = Option(props.getProperty("maxLocalCores")).map(_.toInt)
+
   def clusterSizeOpt: Option[Int] = clusterSize_numCoresPerWorker_Opt.map(_._1)
   def numCoresPerWorkerOpt: Option[Int] = clusterSize_numCoresPerWorker_Opt.map(_._2)
 
@@ -114,7 +117,7 @@ class TestHelper() {
     */
   lazy val coreSettings: Map[String, String] = {
     if (clusterSizeOpt.isEmpty || numCoresPerWorkerOpt.isEmpty) {
-      val masterStr = s"local[$numCores,$maxFailures]"
+      val masterStr = s"local[${(Seq(numCores) ++ maxLocalCores.toSeq).min},$maxFailures]"
       println("initializing SparkContext in local mode:" + masterStr)
       Map(
         "spark.master" -> masterStr

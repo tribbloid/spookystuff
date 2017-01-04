@@ -24,19 +24,19 @@ object LinkFactories {
       actual
     )
     dryRun.clean()
-    val gcsOuts = links
+    val gcsOutss: Seq[Set[String]] = links
       .map {
         link =>
-          link.outs.slice(1, Int.MaxValue)
+          link.gcsOuts.toSet
       }
 
-    val result = gcsOuts.distinct.size == 1
+    val result = gcsOutss.distinct.size == 1
     if (!result) {
       LoggerFactory.getLogger(this.getClass).info (
         s"""
            |Can no longer use existing telemetry link for drone ${link.link.endpoint.connStr}:
-           |output should be routed to GCS(s) ${gcsOuts.head.mkString("[",", ","]")}
-           |but instead existing one routes it to ${gcsOuts.last.mkString("[",", ","]")}
+           |output should be routed to GCS(s) ${gcsOutss.head.mkString("[",", ","]")}
+           |but instead existing one routes it to ${gcsOutss.last.mkString("[",", ","]")}
              """.trim.stripMargin
       )
     }

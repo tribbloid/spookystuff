@@ -240,14 +240,14 @@ class Proxy(Daemon):
             utils.waitFor(isAlive, 10)
 
             # ensure that proxy is usable, otherwise its garbage! TODO too slow
-            vehicle = dronekit.connect(
-                self.outs[0],
-                wait_ready=True,
-                # source_system=self.ssid, TODO: how to handle this?
-                baud=self.baudRate
-            )
-            self.logPrint("Proxy spawned: PID =", self.pid)
-            vehicle.close()
+            # vehicle = dronekit.connect(
+            #     self.outs[0],
+            #     wait_ready=True,
+            #     # source_system=self.ssid, TODO: how to handle this?
+            #     baud=self.baudRate
+            # )
+            # self.logPrint("Proxy spawned: PID =", self.pid)
+            # vehicle.close()
 
         return self.pid
 
