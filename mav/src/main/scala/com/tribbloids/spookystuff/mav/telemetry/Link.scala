@@ -17,14 +17,15 @@ case class Endpoint(
                      // TODO: implement telemetry backup mechanism, can use MAVproxy's multiple master feature
                      connStrs: Seq[String], // [protocol]:ip:port;[baudRate]
                      baudRate: Int = MAVConf.DEFAULT_BAUDRATE,
+                     ssid: Int = MAVConf.EXECUTOR_SSID,
                      frame: Option[String] = None,
                      name: String = "DRONE"
-                   ) extends CaseInstanceRef {
+                   ) extends CaseInstanceRef with SingletonRef with LocalCleanable {
 
   def connStr = connStrs.head
 }
 
-object Link extends StaticRef {
+object Link {
 
   // max 1 per task/thread.
   val driverLocal: caching.ConcurrentMap[PythonDriver, Link] = caching.ConcurrentMap()
@@ -35,13 +36,6 @@ object Link extends StaticRef {
 
   // won't be used to create any link before its status being recovered by ping daemon.
   val blacklist: caching.ConcurrentSet[Endpoint] = caching.ConcurrentSet()
-
-  //in the air but unused
-  //  def idle: Map[String, (ProxyFactory, Link)] = existing.filter {
-  //    tuple =>
-  //      !blacklist.contains(tuple._1) &&
-  //        !tuple._2._2.isBusy
-  //  }
 
   def getOrInitialize(
                        candidates: Seq[Endpoint],
@@ -83,9 +77,10 @@ object Link extends StaticRef {
 
     val result = local
       .getOrElse {
-        val newLink = recommissionIdle(candidates, factory, session, locationOpt).getOrElse {
-          selectAndCreate(candidates, factory, session)
-        }
+        val newLink = recommissionIdle(candidates, factory, session, locationOpt)
+          .getOrElse {
+            selectAndCreate(candidates, factory, session)
+          }
         try {
           newLink.link.Py(session)
         }
@@ -131,13 +126,14 @@ object Link extends StaticRef {
               LoggerFactory.getLogger(this.getClass).info {
                 s"Recommissioning telemetry Link for ${idleLink.link.endpoint.connStr} with old proxy"
               }
-              idleLink.link.putOnHold()
+              idleLink.link.onHold = true
               idleLink
             }
             else {
               idleLink.clean()
               // recreate proxy
-              val link = factory.apply(idleLink.link.endpoint).putOnHold()
+              val link = factory.apply(idleLink.link.endpoint)
+              link.onHold = true
               LoggerFactory.getLogger(this.getClass).info {
                 s"Recommissioning telemetry Link for ${link.endpoint.connStr} with new proxy"
               }
@@ -153,7 +149,10 @@ object Link extends StaticRef {
         case None =>
           LoggerFactory.getLogger(this.getClass).info{
             if (existingCandidates.isEmpty) {
-              s"No existing telemetry Link for ${candidates.map(_.connStr).mkString("[", ", ", "]")}"
+              val msg = s"No existing telemetry Link for ${candidates.map(_.connStr).mkString("[", ", ", "]")}, existing links are:"
+              val hint = Link.existing.keys.toList.map(_.connStr)
+                .mkString("[", ", ", "]")
+              msg + "\n" + hint
             }
             else {
               existingCandidates.map {
@@ -206,7 +205,8 @@ object Link extends StaticRef {
               spooky: SpookyContext
             ): LinkWithContext = {
 
-    val link = factory.apply(endpoint).putOnHold()
+    val link = factory.apply(endpoint)
+    link.onHold = true
     LinkWithContext(
       link,
       spooky,
@@ -214,87 +214,14 @@ object Link extends StaticRef {
     )
   }
 
-  class PyImpl(
-                override val ref: Link,
-                override val driver: PythonDriver,
-                override val spookyOpt: Option[SpookyContext]
-              ) extends PyBinding(ref, driver, spookyOpt) {
+  class PyBindingImpl(
+                       override val ref: Link,
+                       override val driver: PythonDriver,
+                       override val spookyOpt: Option[SpookyContext]
+                     ) extends com.tribbloids.spookystuff.session.python.PyBinding(ref, driver, spookyOpt) {
 
-    autoStart()
+    $Helpers.autoStart()
     Link.driverLocal += driver -> ref
-
-    var isStarted: Boolean = false
-
-    def _startDaemons(): Unit = {
-      if (!isStarted) {
-        ref.proxyOpt.foreach {
-          _.managerPy.start()
-        }
-        PyImpl.this.start()
-      }
-      isStarted = true
-    }
-    def stopDaemons(): Unit = {
-      PyImpl.this.stop()
-      ref.proxyOpt.foreach {
-        _.managerPy.stop()
-      }
-      isStarted = false
-    }
-    def withDaemons[T](fn: =>T) = {
-      try {
-        _startDaemons()
-        fn
-      }
-      catch {
-        case e: Throwable =>
-          stopDaemons()
-          throw e
-      }
-    }
-
-    // will retry 6 times, try twice for Vehicle.connect() in python, if failed, will restart proxy and try again (3 times).
-    // after all attempts failed will stop proxy and add endpoint into blacklist.
-    def autoStart(): Unit = try {
-      val retries = spookyOpt.map(
-        spooky =>
-          spooky.conf.submodules.get[MAVConf]().connectionRetries
-      ).getOrElse(1)
-      SpookyUtils.retry(retries) {
-        withDaemons[Unit]()
-      }
-    }
-    catch {
-      case e: PyInterpreterException => //this indicates a possible port conflict
-        //TODO: enable after ping daemon
-
-        try {
-          ref.detectPossibleConflicts(Option(e.cause).toSeq)
-          throw e
-        }
-        catch {
-          case ee: TreeException =>
-            throw e.copy(
-              cause = ee
-            )
-        }
-    }
-
-    def getCurrentLocation: LocationGlobal = {
-
-      val locations = PyImpl.this.vehicle.location
-      val global = locations.global_frame.$MSG.get.cast[LocationGlobal]
-//      val globalRelative = locations.global_relative_frame.$MSG.get.cast[LocationGlobalRelative]
-//      val local = locations.local_frame.$MSG.get.cast[LocationLocal]
-
-//      val result = LocationBundle(
-//        global,
-//        globalRelative,
-//        local
-//      )
-      ref.current = Some(global)
-      global
-    }
 
     override def cleanImpl(): Unit = {
       super.cleanImpl()
@@ -303,6 +230,84 @@ object Link extends StaticRef {
         v =>
           if (v eq this.ref)
             Link.driverLocal -= driver
+      }
+    }
+
+    object $Helpers {
+      var isStarted: Boolean = false
+
+      def _startDaemons(): Unit = {
+        if (!isStarted) {
+          ref.proxyOpt.foreach {
+            _.managerPy.start()
+          }
+          ref.primary._Py(driver, spookyOpt).start()
+        }
+        isStarted = true
+      }
+
+      def stopDaemons(): Unit = {
+        ref.primary._Py(driver, spookyOpt).stop()
+        ref.proxyOpt.foreach {
+          _.managerPy.stop()
+        }
+        isStarted = false
+      }
+
+      def withDaemonsUp[T](fn: => T) = {
+        try {
+          _startDaemons()
+          fn
+        }
+        catch {
+          case e: Throwable =>
+            stopDaemons()
+            throw e
+        }
+      }
+
+      // will retry 6 times, try twice for Vehicle.connect() in python, if failed, will restart proxy and try again (3 times).
+      // after all attempts failed will stop proxy and add endpoint into blacklist.
+      def autoStart(): Unit = try {
+        val retries = spookyOpt.map(
+          spooky =>
+            spooky.conf.submodules.get[MAVConf]().connectionRetries
+        )
+          .getOrElse(MAVConf.CONNECTION_RETRIES)
+        SpookyUtils.retry(retries) {
+          withDaemonsUp[Unit]()
+        }
+      }
+      catch {
+        case e: PyInterpreterException => //this indicates a possible port conflict
+          //TODO: enable after ping daemon
+
+          try {
+            ref.detectPortConflicts(Option(e.cause).toSeq)
+          }
+          catch {
+            case ee: TreeException =>
+              throw e.copy(
+                cause = ee
+              )
+          }
+          throw e.copy(code = e.code + "\n\n\t### No port conflict detected ###")
+      }
+
+      def getCurrentLocation: LocationGlobal = {
+
+        val locations = ref.primary._Py(driver, spookyOpt).vehicle.location
+        val global = locations.global_frame.$MSG.get.cast[LocationGlobal]
+        //      val globalRelative = locations.global_relative_frame.$MSG.get.cast[LocationGlobalRelative]
+        //      val local = locations.local_frame.$MSG.get.cast[LocationLocal]
+
+        //      val result = LocationBundle(
+        //        global,
+        //        globalRelative,
+        //        local
+        //      )
+        ref._current = Some(global)
+        global
       }
     }
   }
@@ -324,26 +329,59 @@ DaemonProcess   (can this be delayed to be implemented later? completely surrend
   but if not ...
     how to ensure that an interpreter can takeover and get the same vehicle?
   */
+//TODO: this should be a dummy Instance that can be bind to a python driver but cannot be initialized.
 case class Link(
                  endpoint: Endpoint,
-                 outs: Seq[String],
-                 ssid: Int = MAVConf.LINK_SSID
-               ) extends CaseInstanceRef with LocalCleanable {
+                 executorOuts: Seq[String] = Nil, // cannot have duplicates
+                 gcsOuts: Seq[String] = Nil
+               ) extends NoneRef with SingletonRef with LocalCleanable {
+
+  if (executorOuts.isEmpty) assert(gcsOuts.isEmpty, "No endpoint for executor")
+
+  object URI {
+
+  }
+
+  val outs: Seq[String] = executorOuts ++ gcsOuts
+  val allURI = (endpoint.connStrs ++ outs).distinct
+
+  val endpointsForExecutor = if (executorOuts.isEmpty) {
+    Seq(endpoint)
+  }
+  else {
+    executorOuts.map {
+      out =>
+        endpoint.copy(
+          connStrs = Seq(out)
+        )
+    }
+  }
+  //always initialized in Python when created from companion object
+  val primary: Endpoint = endpointsForExecutor.head
+
+  val endpointsForGCS = {
+    gcsOuts.map {
+      out =>
+        endpoint.copy(
+          connStrs = Seq(out)
+        )
+    }
+  }
+
+  val allEndpoints: Seq[Endpoint] = (Seq(endpoint) ++ endpointsForExecutor ++ endpointsForGCS).distinct
+
+  override type Binding = Link.PyBindingImpl
 
   /**
     * set true to block being used by another thread before its driver is created
     */
-  var onHold: Boolean = true
-  def putOnHold(): this.type = {
-    this.onHold = true
-    this
-  }
+  @volatile var onHold: Boolean = true
   def isIdle: Boolean = {
-    !onHold && validDriverToBindings.isEmpty
+    !onHold && primary.validDriverToBindings.isEmpty
   }
 
   //mnemonic
-  @volatile var _proxyOpt: Option[Proxy] = _
+  @volatile private var _proxyOpt: Option[Proxy] = _
   def proxyOpt: Option[Proxy] = Option(_proxyOpt).getOrElse {
     this.synchronized {
       _proxyOpt = if (outs.isEmpty) None
@@ -361,7 +399,9 @@ case class Link(
   }
 
   var home: Option[LocationGlobal] = None
-  var current: Option[LocationGlobal] = None
+
+  var _current: Option[LocationGlobal] = None
+  def current = _current
 
   def wContext(
                 spooky: SpookyContext,
@@ -372,48 +412,49 @@ case class Link(
     factory
   )
 
-  /**
-    * no duplication due to port conflicts!
-    */
-  lazy val uri: String = outs.headOption.getOrElse(endpoint.connStr)
+  //  def sublink(index: Int, ssid: Int): Sublink = {
+  //    val result = new Sublink(this,index, ssid)
+  //    result.detectPortConflicts()
+  //    result
+  //  }
 
-  override def _Py(driver: PythonDriver, spookyOpt: Option[SpookyContext]): Link.PyImpl = {
-    validDriverToBindings.get(driver)
-      .map(_.asInstanceOf[Link.PyImpl])
-      .getOrElse {
-        assert(Link.validDriverToBindings.isEmpty, "Link can only be bind to one driver")
-        val result = new Link.PyImpl(this, driver, spookyOpt)
-        onHold = false
-        result
+  override protected def newPy(driver: PythonDriver, spookyOpt: Option[SpookyContext]): Link.PyBindingImpl = {
+    val result = new Link.PyBindingImpl(this, driver, spookyOpt)
+    onHold = false
+    result
+  }
+
+  def _distinctEndpoint: Boolean = true
+
+  def detectPortConflicts(causes: Seq[Throwable] = Nil): Unit = {
+    val existing = Link.existing.values.toList // remember to clean up the old one to create a new one
+    val s1 = if (_distinctEndpoint){
+      val notThis = existing.filterNot(_.link eq this)
+      val ss1 = Seq(
+        Try(assert(Link.existing.get(endpoint).forall(_.link eq this), s"Conflict: endpoint index ${endpoint.connStr} is already used")),
+        Try(assert(!notThis.exists(_.link.endpoint.connStr == endpoint.connStr), s"Conflict: endpoint ${endpoint.connStr} is already used"))
+      )
+      val allConnStrs: Map[String, Int] = existing.flatMap(_.link.endpoint.connStrs)
+        .groupBy(identity)
+        .mapValues(_.size)
+      val ss2 = allConnStrs.toSeq.map {
+        tuple =>
+          Try(assert(tuple._2 == 1, s"${tuple._2} endpoints has identical uri ${tuple._1}"))
       }
-  }
-  override def Py(session: Session): Link.PyImpl = {
-    _Py(session.pythonDriver, Some(session.spooky))
-  }
-
-  def detectPossibleConflicts(causes: Seq[Throwable] = Nil): Unit = {
-    val c1 = Link.existing.get(endpoint).forall(_.link eq this)
-    val existing = Link.existing.values // remember to clean up the old one to create a new one
-    val c2 = existing.filter(_.link.endpoint.connStr == endpoint.connStr).forall(_.link eq this)
-    val c3 = existing.filter(_.link.uri == uri).forall(_.link eq this)
-
-    val connStrs: Map[String, Int] = Link.existing.values.flatMap(_.link.endpoint.connStrs)
+      ss1 ++ ss2
+    }
+    else {
+      Nil
+    }
+    val allExecutorOuts: Map[String, Int] = existing.flatMap(_.link.executorOuts)
       .groupBy(identity)
       .mapValues(_.size)
+    val s = s1 ++ allExecutorOuts.toSeq.map {
+      tuple =>
+        Try(assert(tuple._2 == 1, s"${tuple._2} executor out has identical uri ${tuple._1}"))
+    }
 
-    TreeException.&&&(
-      Seq(
-        Try(assert(c1, s"Conflict: endpoint index ${endpoint.connStr} is already used")),
-        Try(assert(c2, s"Conflict: endpoint ${endpoint.connStr} is already used")),
-        Try(assert(c3, s"Conflict: uri $uri is already used"))
-      ) ++
-        connStrs.map {
-          tuple =>
-            Try(assert(tuple._2 == 1, s"connection String ${tuple._1} is shared by ${tuple._2} endpoints"))
-        }
-          .toSeq,
-      extra = causes
-    )
+    TreeException.&&&(s, extra = causes)
   }
 
   var isDryrun = false
@@ -421,7 +462,9 @@ case class Link(
   override protected def cleanImpl(): Unit = {
 
     super.cleanImpl()
+    allEndpoints.foreach(_.clean())
     Option(_proxyOpt).flatten.foreach(_.clean())
+    //TODO: move to LinkWithContext?
     val existingOpt = Link.existing.get(this.endpoint)
     existingOpt.foreach {
       v =>
@@ -435,13 +478,37 @@ case class Link(
   }
 }
 
+///**
+//  * Only used in test for GCS control mimic.
+//  */
+//class Sublink(
+//               parent: Link,
+//               index: Int,
+//               ssid: Int
+//             ) extends Link(
+//  parent.endpoint,
+//  {
+//    require(index >= 1)
+//    val primary = parent.outs(index)
+//    Seq(primary) ++ parent.outs.filterNot(_ == primary)
+//  },
+//  ssid
+//) {
+//
+//  override def _distinctEndpoint = false
+//
+//  override def className = classOf[Link].getCanonicalName
+//  override def proxyOpt: Option[Proxy] = parent.proxyOpt
+//  override def current: Option[LocationGlobal] = parent.current
+//}
+
 case class LinkWithContext(
                             link: Link,
                             spooky: SpookyContext,
                             factory: LinkFactory
                           ) extends LocalCleanable {
   try {
-    link.detectPossibleConflicts()
+    link.detectPortConflicts()
 
     Link.existing += link.endpoint -> this
     spooky.metrics.linkCreated += 1

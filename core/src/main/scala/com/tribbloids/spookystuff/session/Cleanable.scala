@@ -97,10 +97,10 @@ object Lifespan {
     override def getID: ID = threadID
   }
 
-  case class Immortal(override val nameOpt: Option[String]) extends Lifespan {
-    def this() = this(None)
+  case class Custom(id: Long = 0, override val nameOpt: Option[String] = None) extends Lifespan {
+    def this() = this(0, None)
 
-    override def getID: ID = Right(0)
+    override def getID: ID = Right(id)
 
     override def addCleanupHook(fn: () => Unit): Unit = {}
   }
@@ -108,16 +108,16 @@ object Lifespan {
 
 sealed trait AbstractCleanable {
 
-  final protected val defaultLifespan = new Lifespan.Immortal()
+  final protected val defaultLifespan = new Lifespan.JVM()
 
-  LoggerFactory.getLogger(this.getClass).info(s"$logPrefix Creating")
+  LoggerFactory.getLogger(this.getClass).debug(s"$logPrefix Creating")
 
   //each can only be cleaned once
   @volatile var isCleaned: Boolean = false
 
   def logPrefix: String
 
-//  private object CleanupLock
+  //  private object CleanupLock
   //avoid double cleaning, this lock is not shared with any other invocation, PARTICULARLY subclasses
   def clean(silent: Boolean = false): Unit = {
     if (!isCleaned){
@@ -195,11 +195,24 @@ object Cleanable {
 
   val uncleaned: ConcurrentMap[Lifespan#ID, ConcurrentSet[Cleanable]] = ConcurrentMap()
 
-  // cannot execute concurrent
-  def cleanSweep(tt: Lifespan#ID, condition: Cleanable => Boolean = _ => true) = {
+  def getByLifespan(tt: Lifespan#ID, condition: (Cleanable) => Boolean): (ConcurrentSet[Cleanable], List[Cleanable]) = {
     val set = uncleaned.getOrElse(tt, mutable.Set.empty)
     val filtered = set.toList
       .filter(condition)
+    (set, filtered)
+  }
+  def getAll(condition: (Cleanable) => Boolean): Seq[Cleanable] = {
+    uncleaned
+      .keys.toSeq
+      .flatMap {
+        tt =>
+          getByLifespan(tt, condition)._2
+      }
+  }
+
+  // cannot execute concurrent
+  def cleanSweep(tt: Lifespan#ID, condition: Cleanable => Boolean = _ => true) = {
+    val (set: ConcurrentSet[Cleanable], filtered: List[Cleanable]) = getByLifespan(tt, condition)
     filtered
       .foreach {
         instance =>

@@ -96,7 +96,7 @@ class APMSimSuite extends APMSimFixture {
   /**
     * this test assumes that all test runs on a single machine, so all SITL instance number has to be different
     */
-  test("should create many APM instances with different iNum") {
+  test("can create many APM instances with different iNum") {
     val iNums = sc.mapPerWorker {
       APMSim.existing.map(_.iNum)
     }
@@ -122,4 +122,6 @@ class APMSimSuite extends APMSimFixture {
     val apmPs = processes.filter(_.getName == "apm")
     assert(apmPs.size == parallelism)
   }
+
+//  test("APM instances created with")
 }

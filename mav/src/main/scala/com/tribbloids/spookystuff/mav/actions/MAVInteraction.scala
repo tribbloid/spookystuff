@@ -48,7 +48,7 @@ trait MAVInteraction extends Interaction with MAVAction {
   override def exeNoOutput(session: Session): Unit = {
 
     val exe = getExe(session)
-    exe.link.Py(session).withDaemons {
+    exe.link.Py(session).$Helpers.withDaemonsUp {
       exe.inbound()
       exe.conduct()
       exe.outbound()

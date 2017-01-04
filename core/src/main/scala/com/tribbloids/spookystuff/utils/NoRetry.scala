@@ -1,35 +1,36 @@
 package com.tribbloids.spookystuff.utils
 
-import com.tribbloids.spookystuff.utils.NoRetry.NoRetryWrapper
-
 import scala.util.{Failure, Success, Try}
 
 /**
   * Created by peng on 18/09/16.
   */
-case object NoRetry {
+class Bypassing {
 
-  object NoRetryWrapper {
+  object Wrapper {
 
     def apply(e: Throwable) = {
       e match {
-        case ee: NoRetryWrapper => ee
-        case _ => new NoRetryWrapper(e)
+        case ee: Wrapper => ee
+        case _ => new Wrapper(e)
       }
     }
   }
 
-  class NoRetryWrapper(cause: Throwable) extends RuntimeException("BYPASSING", cause)
+  class Wrapper(cause: Throwable) extends RuntimeException("Bypassing: " + this.getClass.getSimpleName, cause)
 
-  def apply[T](f: =>T): T ={
+  def mapException[T](f: =>T): T ={
     try {
       f
     }
     catch {
-      case e: Throwable => throw NoRetryWrapper(e)
+      case e: Throwable => throw Wrapper(e)
     }
   }
 }
+
+case object NoRetry extends Bypassing
+case object SilentRetry extends Bypassing
 
 object Retry {
 
@@ -45,8 +46,8 @@ class Retry[T](
   def map[T2](g: Try[T] => T2): Retry[T2] = {
 
     val effectiveG: (Try[T]) => T2 = {
-      case Failure(ee: NoRetryWrapper) =>
-        NoRetry {
+      case Failure(ee: NoRetry.Wrapper) =>
+        NoRetry.mapException {
           g(Failure[T](ee.getCause))
         }
       case v =>

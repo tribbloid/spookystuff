@@ -4,12 +4,13 @@ import java.io.File
 import java.util.regex.Pattern
 
 import com.tribbloids.spookystuff.session.{Lifespan, LocalCleanable}
-import com.tribbloids.spookystuff.utils.SpookyUtils
+import com.tribbloids.spookystuff.utils.{SilentRetry, SpookyUtils}
 import com.tribbloids.spookystuff.{PyException, PyInterpreterException, SpookyContext}
 import org.apache.commons.io.FileUtils
 import org.slf4j.LoggerFactory
 
 import scala.collection.mutable.ArrayBuffer
+import scala.concurrent.TimeoutException
 import scala.util.Try
 
 object PythonDriver {
@@ -152,7 +153,7 @@ class PythonDriver(
   override def cleanImpl(): Unit = {
     Try {
       SpookyUtils.retry(5) {
-        if (process.isAlive) {
+        try { if (process.isAlive) {
           SpookyUtils.withDeadline(3.seconds) {
             try {
               this._interpret("exit()")
@@ -163,6 +164,12 @@ class PythonDriver(
           }
           Thread.sleep(1000)
           assert(!process.isAlive)
+        }}
+        catch {
+          case e: TimeoutException =>
+            throw SilentRetry.Wrapper(e)
+          case e: Throwable =>
+            throw e
         }
       }
     }
@@ -205,7 +212,7 @@ class PythonDriver(
         )
         val cause = e
         if (this.isCleaned) {
-          LoggerFactory.getLogger(this.getClass).info(s"ignoring ${cause.getClass.getSimpleName} as python process is cleaned")
+          LoggerFactory.getLogger(this.getClass).debug(s"ignoring ${cause.getClass.getSimpleName} as python process is cleaned")
           return Array.empty[String]
         }
         else {

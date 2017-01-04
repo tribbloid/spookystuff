@@ -1,3 +1,3 @@
 
-connectionRetries = 1
-armRetries = 1
+daemonStartRetries = 2
+armRetries = 2

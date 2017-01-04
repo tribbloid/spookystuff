@@ -8,7 +8,7 @@ import org.apache.spark.{HashPartitioner, TaskContext}
 /**
   * Created by peng on 16/11/16.
   */
-class AutoCleanableSuite extends SpookyEnvFixture {
+class CleanableSuite extends SpookyEnvFixture {
 
   import com.tribbloids.spookystuff.utils.SpookyViews._
 

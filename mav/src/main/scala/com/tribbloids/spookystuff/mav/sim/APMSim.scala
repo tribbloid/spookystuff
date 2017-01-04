@@ -4,7 +4,7 @@ import com.tribbloids.spookystuff.caching
 import com.tribbloids.spookystuff.mav.MAVConf
 import com.tribbloids.spookystuff.mav.actions.LocationGlobal
 import com.tribbloids.spookystuff.session.LocalCleanable
-import com.tribbloids.spookystuff.session.python.CaseInstanceRef
+import com.tribbloids.spookystuff.session.python.{CaseInstanceRef, SingletonRef}
 
 import scala.util.Random
 
@@ -47,7 +47,7 @@ case class APMSim private (
                             iNum: Int,
                             home: String,
                             baudRate: Int = MAVConf.DEFAULT_BAUDRATE
-                          ) extends CaseInstanceRef with LocalCleanable {
+                          ) extends CaseInstanceRef with SingletonRef with LocalCleanable {
 
   APMSim.existing += this
 

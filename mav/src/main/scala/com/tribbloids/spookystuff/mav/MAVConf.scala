@@ -12,10 +12,13 @@ object MAVConf {
   final val DEFAULT_BAUDRATE = 57600
 //  final val DEFAULT_BAUDRATE = 9200 // for testing only
 
-  final val LINK_SSID = 250
+  final val EXECUTOR_SSID = 250
   final val PROXY_SSID = 251
+  final val GCS_SSID = 255
 
   final val EARTH_RADIUS = 6378137.0  // Radius of "spherical" earth
+
+  final val CONNECTION_RETRIES = 3
 }
 
 /**
@@ -30,7 +33,7 @@ case class MAVConf(
                     // routing now becomes part of Connection?
                     var endpoints: Seq[Endpoint] = Nil,
                     var proxyFactory: LinkFactory = LinkFactories.ForkToGCS(),
-                    var connectionRetries: Int = 3,
+                    var connectionRetries: Int = MAVConf.CONNECTION_RETRIES,
                     var clearanceAltitude: Double = 20 // in meters
                   ) extends AbstractConf {
 

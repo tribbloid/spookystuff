@@ -44,15 +44,16 @@ object LinkFactories {
   }
 
   case object NoProxy extends LinkFactory with PrettyProduct{
-    def apply(endpoint: Endpoint) = Link(endpoint, Nil)
+    def apply(endpoint: Endpoint) = Link(endpoint)
   }
 
   case class ForkToGCS(
                         //primary localhost out port number -> list of URLs for multicast
                         //the first one used by DK, others nobody cares
-                        uriCandidates: Seq[String] = (12014 to 12108).map(i => s"udp:localhost:$i"),
+                        getExecutorOuts: Seq[String] = (12014 to 12108).map(i => s"udp:localhost:$i"),
                         //this is the default port listened by QGCS
-                        gcsMapping: Endpoint => Set[String] = _ => Set("udp:localhost:14550")
+                        getGCSOuts: Endpoint => Set[String] = _ => Set("udp:localhost:14550"),
+                        executorOutsSize: Int = 1
                       ) extends LinkFactory with PrettyProduct {
 
     //CAUTION: DO NOT select primary out sequentially!
@@ -60,17 +61,20 @@ object LinkFactories {
     def apply(endpoint: Endpoint): Link = {
 
       LinkFactories.synchronized {
-        val existingURIs = Link.existing.values.toSeq.map(_.link.uri)
-        val availableURIs = uriCandidates.filter {
+        val existing4Exec: Seq[String] = Link.existing.values.toSeq
+          .flatMap(_.link.allURI)
+        val available4Exec = getExecutorOuts.filter {
           v =>
-            !existingURIs.contains(v)
+            !existing4Exec.contains(v)
         }
+        val shuffled = Random.shuffle(available4Exec)
 
-        val primaryOut = availableURIs.apply(Random.nextInt(availableURIs.size))
-        val outs = gcsMapping(endpoint).toSeq
+        val executorOuts = shuffled.slice(0, executorOutsSize)
+        val gcsOuts = getGCSOuts(endpoint).toSeq
         val result = Link(
           endpoint,
-          Seq(primaryOut) ++ outs
+          executorOuts,
+          gcsOuts
         )
         result
       }

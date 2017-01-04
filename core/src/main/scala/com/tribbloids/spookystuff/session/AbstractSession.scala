@@ -71,7 +71,7 @@ object NoPythonDriverException extends SpookyException("INTERNAL ERROR: should i
 class Session(
                override val spooky: SpookyContext,
                val driverLifespan: Lifespan = new Lifespan.Auto(),
-               override val lifespan: Lifespan = new Lifespan.Immortal()
+               override val lifespan: Lifespan = new Lifespan.JVM()
              ) extends AbstractSession(spooky){
 
   @volatile private var _webDriverOpt: Option[CleanWebDriver] = None

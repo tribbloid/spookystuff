@@ -8,11 +8,13 @@ import dronekit
 import sys
 import time
 
-from pyspookystuff.mav import Const, VehicleFunctions
+import math
+
+from pyspookystuff.mav import Const, VehicleFunctions, utils
 from pyspookystuff.mav.utils import retry
 
 """
-Crash course on MAVProxy:
+crash course on MAVProxy:
 launch mavproxy connected to a SIL endpoint
 mavproxy.py -h
 Usage: mavproxy.py [options]
@@ -71,25 +73,23 @@ logging.basicConfig(format=FORMAT)
 d = {'clientip': '192.168.0.1', 'user': 'fbloggs'}
 
 
-class Endpoint(object):
-    # TODO: use **local() to reduce boilerplate copies
-    def __init__(self, connStrs, baudRate, frame=None, name=""):
-        # type: (list[str], int, str, str) -> None
-        self.connStrs = connStrs
-        self.baudRate = baudRate
-        self.frame = frame
-        self.name = name
-
-    @property
-    def connStr(self):
-        return self.connStrs[0]
-
-
 class Daemon(object):
     def start(self):
+        print("starting", self.fullName)
+        try:
+            self._start()
+        except:
+            self.stop()
+            raise
+
+    def _start(self):
         pass
 
     def stop(self):
+        print("stopping", self.fullName)
+        self._stop()
+
+    def _stop(self):
         pass
 
     def restart(self):
@@ -107,119 +107,45 @@ class Daemon(object):
         return ""
 
 
-defaultProxyOptions = '--state-basedir=temp --daemon'  # --default-modules="link"'  # --cmd="module unload console"'
-class Proxy(Daemon):
-    def __init__(self, master, outs, baudRate, ssid, name):
-        # type: (str, list[str], int, int, str) -> None
-        super(Proxy, self).__init__()
-        self.master = master
-        self.outs = outs
+def randomLocalLocation():
+    dir = random.uniform(0,2*math.pi)
+    return dronekit.LocationLocal(50*math.cos(dir), 50*math.sin(dir), -10)
+
+
+class Endpoint(Daemon, VehicleFunctions):
+    # TODO: use **local() to reduce boilerplate copies
+    def __init__(self, connStrs, baudRate, ssid, frame=None, name=""):
+        # type: (list[str], int, int, str, str) -> None
+        super(Endpoint, self).__init__(None)
+        self.connStrs = connStrs
+        self.uri = connStrs[0]
+
         self.baudRate = baudRate
         self.ssid = ssid
+        self.frame = frame
         self.name = name
-        self.process = None
 
     @property
     def fullName(self):
-        return self.name + "@" + self.master + " > " + self.outs[0]
-
-    # defaultOptions = '--daemon --cmd="module unload console"'
-    def _spawnProxy(self, setup=False, options=defaultProxyOptions, logfile=sys.stdout):
-        # type: (bool, str, str) -> object
-
-        import pexpect  # included by transitive dependency
-        MAVPROXY = os.getenv('MAVPROXY_CMD', 'mavproxy.py')
-        cmd = MAVPROXY + ' --master=%s' % self.master
-        for out in self.outs:
-            cmd += ' --out=%s' % out
-        if setup:
-            cmd += ' --setup'
-        if self.baudRate:
-            cmd += ' --baudrate=%s' % self.baudRate
-        if self.ssid:
-            cmd += ' --source-system=%s' % self.ssid
-        cmd += ' --aircraft=%s' % self.name
-        if options is not None:
-            cmd += ' ' + options
-
-        print(cmd)
-
-        p = pexpect.spawn(cmd, logfile=logfile, timeout=60, ignore_sighup=True)
-        p.delaybeforesend = 0
-
-        return p
-
-    def start(self):
-        # type: () -> int
-
-        # self.logPrint("Proxy spawning:", json.dumps(self, default=lambda c: c.__dict__))
-        if not self.process:
-            p = self._spawnProxy()
-            self.process = p
-
-            time.sleep(1)  # wait for proxy to initialize
-            assert self.isAlive
-            self.logPrint("Proxy spawned: PID =", self.pid)
-        return self.pid
-
-    def stop(self):
-        if self.process:
-            Proxy.killPID(self.process.pid)
-            self.process = None
-
-    @staticmethod
-    def killPID(pid):
-        try:
-            os.killpg(pid, 2)
-            print("Proxy killed: PID =", pid)
-        except OSError:
-            pass
+        return self.name + "@" + ','.join(self.connStrs)
 
     @property
-    def pid(self):
-        return self.process.pid
-
-    @property
-    def isAlive(self):
-        if self.process:
-            return self.process.isalive()
-        else:
-            return False
-
-
-# if all endpoints are not available, sleep for x seconds and retry.
-class Link(Daemon, VehicleFunctions):
-    # process local
-    # existing = None  # type: # DroneCommunication
-
-    def __init__(self, endpoint, outs, ssid):
-        # type: (Endpoint, list[str], int) -> None
-        super(Link, self).__init__(None)
-        self.endpoint = endpoint
-        self.outs = outs
-        self.ssid = ssid
-
-        # test if the endpoint really exist, if not there is no point doing the rest of it.
-        # vehicle = _retryConnect(self.endpoint.connStr)
-
-        if len(self.outs) != 0:
-            self.uri = self.outs[0]
-        else:
-            self.uri = self.endpoint.connStr
+    def connStr(self):
+        return self.connStrs[0]
 
     @property
     def isConnected(self):
         return not (self.vehicle == None)
 
-    @retry(Const.connectionRetries)
-    def start(self):
+    @retry(Const.daemonStartRetries)
+    def _start(self):
         if not self.vehicle:
             self.logPrint("Drone connecting:", self.uri)
             self.vehicle = dronekit.connect(
                 self.uri,
                 wait_ready=True,
                 source_system=self.ssid,
-                baud=self.endpoint.baudRate
+                baud=self.baudRate
             )
             # self.vehicle.commands.download()  # get home_location asynchronously
             # self.vehicle.wait_ready()
@@ -227,7 +153,7 @@ class Link(Daemon, VehicleFunctions):
 
     # this doesn't terminate the proxy so GCS can still see it.
     # almost useless, once interpreter is killed the connection is gone.
-    def stop(self):
+    def _stop(self):
         if self.vehicle:
             self.logPrint("Drone disconnecting:", self.uri)
             self.vehicle.close()
@@ -257,9 +183,99 @@ class Link(Daemon, VehicleFunctions):
         self.restart()
 
 
-def randomLocation():
-    return dronekit.LocationGlobalRelative(random.uniform(-90, 90), random.uniform(-180, 180), 10)
+defaultProxyOptions = '--state-basedir=temp --daemon'  # --default-modules="link"'  # --cmd="module unload console"'
+class Proxy(Daemon):
+    def __init__(self, master, outs, baudRate, ssid, name):
+        # type: (str, list[str], int, int, str) -> None
+        super(Proxy, self).__init__()
+        self.master = master
+        self.outs = outs
+        self.baudRate = baudRate
+        self.ssid = ssid
+        self.name = name
+        self.process = None
 
+    @property
+    def fullName(self):
+        return self.name + "@" + self.master + ">" + ','.join(self.outs)
 
-def randomLocalLocation():
-    return dronekit.LocationLocal(random.uniform(-50, 50), random.uniform(-50, 50), -10)
+    # defaultOptions = '--daemon --cmd="module unload console"'
+    def _spawnProxy(self, setup=False, options=defaultProxyOptions, logfile=sys.stdout):
+        # type: (bool, str, str) -> object
+
+        import pexpect  # included by transitive dependency
+        MAVPROXY = os.getenv('MAVPROXY_CMD', 'mavproxy.py')
+        cmd = MAVPROXY + ' --master=%s' % self.master
+        for out in self.outs:
+            cmd += ' --out=%s' % out
+        if setup:
+            cmd += ' --setup'
+        if self.baudRate:
+            cmd += ' --baudrate=%s' % self.baudRate
+        if self.ssid:
+            cmd += ' --source-system=%s' % self.ssid
+        cmd += ' --aircraft=%s' % self.name
+        if options is not None:
+            cmd += ' ' + options
+
+        print(cmd)
+
+        p = pexpect.spawn(cmd, logfile=logfile, timeout=60, ignore_sighup=True)
+        p.delaybeforesend = 0
+
+        return p
+
+    @retry(Const.daemonStartRetries)
+    def _start(self):
+        # type: () -> int
+
+        if not self.process:
+            p = self._spawnProxy()
+            self.process = p
+
+            time.sleep(1)  # wait for process creation
+
+            def isAlive(i):
+                return self.isAlive
+            utils.waitFor(isAlive, 10)
+
+            # ensure that proxy is usable, otherwise its garbage! TODO too slow
+            vehicle = dronekit.connect(
+                self.outs[0],
+                wait_ready=True,
+                # source_system=self.ssid, TODO: how to handle this?
+                baud=self.baudRate
+            )
+            self.logPrint("Proxy spawned: PID =", self.pid)
+            vehicle.close()
+
+        return self.pid
+
+    def _stop(self):
+        if self.process:
+            Proxy.killPID(self.process.pid)
+
+            def isDead(i):
+                return not self.isAlive
+            utils.waitFor(isDead, 10)
+
+            self.process = None
+
+    @staticmethod
+    def killPID(pid):
+        try:
+            os.killpg(pid, 2)
+            print("Proxy killed: PID =", pid)
+        except OSError:
+            pass
+
+    @property
+    def pid(self):
+        return self.process.pid
+
+    @property
+    def isAlive(self):
+        if self.process:
+            return self.process.isalive()
+        else:
+            return False

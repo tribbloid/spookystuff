@@ -39,46 +39,45 @@ class VehicleFunctions(object):
         else:
             self.getToClearanceAlt(minAlt, maxAlt, error)
 
-    @staticmethod
-    def mode(vehicle, mode="GUIDED"):
+    def mode(self, mode="GUIDED"):
         # type: (Vehicle, str) -> None
         # Copter should arm in GUIDED mode
         def isMode(i):
-            if i % 3 == 0: vehicle.mode = VehicleMode(mode)
-            return vehicle.mode.name == mode
+            if i % 3 == 0:
+                print("Mode changing to", mode)
+                self.vehicle.mode = VehicleMode(mode)
+            return self.vehicle.mode.name == mode
 
         utils.waitFor(isMode, 60)
 
-    @staticmethod
-    def arm(vehicle, mode="GUIDED", preArmCheck=True):
+    def arm(self, mode="GUIDED", preArmCheck=True):
         # type: (Vehicle, str, bool) -> None
         # Don't let the user try to fly when autopilot is booting
 
-        if vehicle.armed: return
+        if self.vehicle.armed: return
 
-        VehicleFunctions.mode(vehicle, mode)
+        self.mode(mode)
 
         if preArmCheck:
             def isArmable(i):
-                return vehicle.is_armable
+                return self.vehicle.is_armable
 
             utils.waitFor(isArmable, 60)
 
         # Arm copter.
         def isArmed(i):
-            if i % 3 == 0: vehicle.armed = True
-            return vehicle.armed and vehicle.mode.name == mode
+            if i % 3 == 0: self.vehicle.armed = True
+            return self.vehicle.armed and self.vehicle.mode.name == mode
 
         utils.waitFor(isArmed, 60)
 
-    @staticmethod
-    def unarm(vehicle):
+    def unarm(self):
         # type: (Vehicle) -> None
-        if not vehicle.armed: return
+        if not self.vehicle.armed: return
 
         def isUnarmed(i):
-            if i % 3 == 0: vehicle.armed = False
-            return vehicle.armed == False
+            if i % 3 == 0: self.vehicle.armed = False
+            return self.vehicle.armed == False
 
         utils.waitFor(isUnarmed, 60)
 
@@ -102,15 +101,15 @@ class VehicleFunctions(object):
         # processing the goto (otherwise the command after
         # Vehicle.simple_takeoff will execute immediately).
 
-        def armAndTakeOff(vehicle):
+        def armAndTakeOff():
             previousAlt = None
             while True:
-                VehicleFunctions.arm(vehicle)
+                self.arm()
 
-                alt = vehicle.location.global_relative_frame.alt
+                alt = self.vehicle.location.global_relative_frame.alt
                 if alt <= 1:
                     print("taking off from the ground ... ")
-                    vehicle.simple_takeoff(minAlt)
+                    self.vehicle.simple_takeoff(minAlt)
                 # Test for altitude just below target, in case of undershoot.
                 elif (minAlt - alt) <= error:
                     print("Reached target altitude")
@@ -126,7 +125,7 @@ class VehicleFunctions(object):
                 time.sleep(1)
 
         alt = self.vehicle.location.global_relative_frame.alt
-        armAndTakeOff(self.vehicle)
+        armAndTakeOff()
 
         if (minAlt - alt) > error:
             self.move(LocationGlobalRelative(None, None, minAlt))

@@ -1,6 +1,7 @@
 
 package com.tribbloids.spookystuff.session.python
 
+import com.tribbloids.spookystuff.caching.ConcurrentMap
 import com.tribbloids.spookystuff.session._
 import com.tribbloids.spookystuff.utils.SpookyUtils
 import com.tribbloids.spookystuff.{SpookyContext, caching}
@@ -10,6 +11,8 @@ import org.json4s.jackson.JsonMethods._
 import scala.language.dynamics
 
 trait PyRef extends Cleanable {
+
+  type Binding <: PyBinding
 
   // the following are only used by non-singleton subclasses
   def className = this.getClass.getCanonicalName
@@ -33,13 +36,13 @@ trait PyRef extends Cleanable {
     caching.ConcurrentMap()
   }
 
-  def validDriverToBindings = {
+  def validDriverToBindings: ConcurrentMap[PythonDriver, PyBinding] = {
     val deadDrivers = _driverToBindings.keys.filter(_.isCleaned)
     _driverToBindings --= deadDrivers
     _driverToBindings
   }
-
-  def bindings = validDriverToBindings.values
+  // prevent concurrent modification error
+  def bindings: List[PyBinding] = validDriverToBindings.values.toList
 
   def imports: Seq[String] = Seq(
     "import simplejson as json"
@@ -59,11 +62,11 @@ trait PyRef extends Cleanable {
 
   def dependencies: Seq[PyRef] = Nil // has to be initialized before calling the constructor
 
-  def lzy: Boolean = true //set to false to enable immediate PyBinding initialization
+  def lzy: Boolean = true //set to false to enable immediate Binding initialization
 
   def converter: PyConverter = PyConverter.JSON
 
-  def pyClassName: String = pyClassNameParts.mkString(".")
+  def pyClassName: String = pyClassNameParts.mkString(".").stripSuffix("$")
   def simpleClassName = pyClassNameParts.last
   def varNamePrefix = FlowUtils.toCamelCase(simpleClassName)
   def packageName = pyClassNameParts.slice(0, pyClassNameParts.length - 1).mkString(".")
@@ -77,34 +80,23 @@ trait PyRef extends Cleanable {
   def _Py(
            driver: PythonDriver,
            spookyOpt: Option[SpookyContext] = None
-         ): PyBinding = {
+         ): Binding = {
 
     validDriverToBindings.getOrElse(
       driver,
-      new PyBinding(this, driver, spookyOpt)
+      newPyDecorator(newPy(driver, spookyOpt))
     )
+      .asInstanceOf[Binding]
   }
 
-  def Py(session: Session): PyBinding = {
+  protected def newPyDecorator(v: => PyBinding): PyBinding = v
+  protected def newPy(driver: PythonDriver, spookyOpt: Option[SpookyContext]): PyBinding = {
+    new PyBinding(this, driver, spookyOpt)
+  }
+
+  def Py(session: Session): Binding = {
     _Py(session.pythonDriver, Some(session.spooky))
   }
-
-  //  def scratchDriver[T](fn: PythonDriver => T): T = {
-  //    bindings
-  //      .headOption
-  //      .map {
-  //        binding =>
-  //          fn(binding.driver)
-  //      }
-  //      .getOrElse {
-  //        val driver = new PythonDriver()
-  //        val result = fn(driver)
-  //        driver.tryClean()
-  //        result
-  //      }
-  //  }
-
-  def bindingCleaningHook(pyBinding: PyBinding): Unit = {}
 }
 
 /**
@@ -168,7 +160,7 @@ class PyBinding (
     }
   }
 
-  def pyCallMethod(methodName: String)(py: (Seq[PyRef], String)): PyBinding = {
+  private def pyCallMethod(methodName: String)(py: (Seq[PyRef], String)): PyBinding = {
 
     val refName = methodName + SpookyUtils.randomSuffix
     val callPrefix: String = referenceOpt.map(v => v + ".").getOrElse("")
@@ -187,24 +179,21 @@ class PyBinding (
     result
   }
 
-  def dynamicFunctor(fn: () => PyBinding): PyBinding = fn()
+  protected def dynamicDecorator(fn: => PyBinding): PyBinding = fn
 
   def selectDynamic(fieldName: String) = {
-    dynamicFunctor{
-      () =>
-        pyCallMethod(fieldName)(Nil -> "")
+    dynamicDecorator{
+      pyCallMethod(fieldName)(Nil -> "")
     }
   }
   def applyDynamic(methodName: String)(args: Any*) = {
-    dynamicFunctor {
-      () =>
-        pyCallMethod(methodName)(converter.args2Ref(args))
+    dynamicDecorator {
+      pyCallMethod(methodName)(converter.args2Ref(args))
     }
   }
   def applyDynamicNamed(methodName: String)(kwargs: (String, Any)*) = {
-    dynamicFunctor {
-      () =>
-        pyCallMethod(methodName)(converter.kwargs2Ref(kwargs))
+    dynamicDecorator {
+      pyCallMethod(methodName)(converter.kwargs2Ref(kwargs))
     }
   }
 
@@ -220,12 +209,14 @@ class PyBinding (
     }
 
     validDriverToBindings.remove(this.driver)
-
-    bindingCleaningHook(this)
   }
 }
 
 object ROOTRef extends PyRef
+class NoneRef extends PyRef {
+  override final val referenceOpt = Some("None")
+  override final val delOpt = None
+}
 
 case class DetachedRef(
                         override val createOpt: Option[String],
@@ -250,8 +241,6 @@ trait StaticRef extends ClassRef {
     className.endsWith("$"),
     s"$className is not an object, only object can implement PyStatic"
   )
-
-  override lazy val pyClassName: String = super.pyClassName.stripSuffix("$")
 
   override lazy val createOpt = None
 
@@ -309,19 +298,10 @@ trait CaseInstanceRef extends InstanceRef with Product {
   }
 }
 
-//trait PreBindedRef extends PyRef {
-//
-//  def driver: PythonDriver
-//  def spookyOpt: Option[SpookyContext]
-//
-//  val PY = _Py(driver, spookyOpt)
-//
-//  // Keep synchronization as it can only be legally called once
-//  override def _Py(driver: PythonDriver, spookyOpt: Option[SpookyContext]): PyBinding = this.synchronized {
-//    assert(
-//      driver == this.driver,
-//      "Another Python process is still alive, close that first to avoid port conflict"
-//    )
-//    super._Py(driver, spookyOpt)
-//  }
-//}
+trait SingletonRef extends PyRef {
+
+  override protected def newPyDecorator(v: => PyBinding): PyBinding = {
+    require(validDriverToBindings.isEmpty, "can only be bind to one driver")
+    v
+  }
+}

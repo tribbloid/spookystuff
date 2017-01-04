@@ -4,7 +4,6 @@ import java.io.{File, InputStream}
 import java.net._
 import java.nio.file.{Files, _}
 
-import com.tribbloids.spookystuff.utils.NoRetry.NoRetryWrapper
 import org.apache.commons.io.IOUtils
 import org.apache.spark.SparkEnv
 import org.apache.spark.ml.dsl.ReflectionUtils
@@ -46,17 +45,19 @@ object SpookyUtils {
 
   // Returning T, throwing the exception on failure
   @annotation.tailrec
-  def retry[T](n: Int, interval: Long = 0)(fn: => T): T = {
+  def retry[T](n: Int, interval: Long = 0, silent: Boolean = false)(fn: => T): T = {
     util.Try { fn } match {
       case util.Success(x) =>
         x
-      case util.Failure(e: NoRetryWrapper) => throw e.getCause
+      case util.Failure(e: NoRetry.Wrapper) => throw e.getCause
       case util.Failure(e) if n > 1 =>
-        val logger = LoggerFactory.getLogger(this.getClass)
-        logger.warn(
-          s"Retrying locally on ${e.getClass.getSimpleName} in ${interval.toDouble/1000} second(s)... ${n-1} time(s) left"
-        )
-        logger.debug("\t\\-->", e)
+        if (!(silent || e.isInstanceOf[SilentRetry.Wrapper])) {
+          val logger = LoggerFactory.getLogger(this.getClass)
+          logger.warn(
+            s"Retrying locally on ${e.getClass.getSimpleName} in ${interval.toDouble/1000} second(s)... ${n-1} time(s) left"
+          )
+          logger.debug("\t\\-->", e)
+        }
         Thread.sleep(interval)
         retry(n - 1, interval)(fn)
       case util.Failure(e) =>
@@ -273,12 +274,22 @@ These special characters are often called "metacharacters".
     import org.apache.spark.sql.catalyst.ScalaReflection.universe._
 
     def getCaseAccessorSymbols(tt: ScalaType[_]): List[MethodSymbol] = locked{
-      val accessors = tt.asType.members.collect {
-        case m: MethodSymbol if m.isCaseAccessor => m
-      }
-      accessors
+      val accessors = tt.asType.members
         .toList
         .reverse
+        .flatMap(filterCaseAccessors)
+      accessors
+    }
+
+    def filterCaseAccessors(s: Symbol): Seq[MethodSymbol] = {
+      s match {
+        case m: MethodSymbol if m.isCaseAccessor =>
+          Seq(m)
+        case t: TermSymbol =>
+          t.allOverriddenSymbols.flatMap(filterCaseAccessors)
+        case _ =>
+          Nil
+      }
     }
 
     def getCaseAccessorFields(tt: ScalaType[_]): List[(String, Type)] = {
@@ -312,8 +323,7 @@ These special characters are often called "metacharacters".
 
     def getCaseAccessorMap(v: Product): List[(String, Any)] = {
       val tt = ScalaType.fromClass(v.getClass)
-      val ks = getCaseAccessorSymbols(tt)
-        .map(_.name.decoded)
+      val ks = getCaseAccessorFields(tt).map(_._1)
       val vs = v.productIterator.toList
       assert (ks.size == vs.size)
       ks.zip(vs)
