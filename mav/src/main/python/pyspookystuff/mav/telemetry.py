@@ -227,13 +227,13 @@ class Proxy(Daemon):
         print(cmd)
 
         import sarge  # included by transitive dependency
-        pipeline = sarge.run(cmd, async=True)
+        pipeline = sarge.run(cmd, async=True, env={'PYTHONPATH': ':'.join(sys.path)})
 
         self.p = pipeline
 
     @retry(Const.daemonStartRetries)
     def _start(self):
-        # type: () -> int
+        # type: () -> None
 
         if not self.p:
             self._spawnProxy()
@@ -253,8 +253,6 @@ class Proxy(Daemon):
             )
             self.logPrint("Proxy spawned: PID =", self.pid)
             vehicle.close()
-
-        return self.pid
 
     def _stop(self):
         if self.p:
