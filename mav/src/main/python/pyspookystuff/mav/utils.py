@@ -95,14 +95,15 @@ def get_location_metres(original_location, dNorth, dEast):
     return targetlocation
 
 
-def waitFor(condition, duration = 60):
+def waitFor(condition, duration=60, *extra):
+    # type: (function, int, *str) -> None
     for i in range(1, duration):
         v = condition(i)
         if v:
             return
         time.sleep(1)
         if i%10 == 0:
-            print("waiting for", str(condition), "\t|", i, "second(s)")
+            print("waiting for", condition.func_name, "\t|", i, "second(s)", *extra)
     raise os.error("timeout waiting for " + str(condition))
 
     # not accurate! should use ground dist

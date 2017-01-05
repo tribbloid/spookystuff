@@ -47,7 +47,7 @@ class VehicleFunctions(object):
                 print("Mode changing to", mode)
                 self.vehicle.mode = VehicleMode(mode)
             return self.vehicle.mode.name == mode
-        self.waitFor(isMode, 60)
+        self.waitFor(isMode, 60, "expected:", mode, "actual:", self.vehicle.mode.name)
 
     def arm(self, mode="GUIDED", preArmCheck=True):
         # type: (str, bool) -> None
@@ -254,9 +254,12 @@ class VehicleFunctions(object):
         print("last heartbeat = ", last_heartbeat)
         assert (self.vehicle.last_heartbeat < 30)
 
-    def waitFor(self, condition, duration = 60):
+    def waitFor(self, condition, duration=60, *extra):
+        # type: (function, int, *str) -> None
         # has timeout check.
         def newCondition(i):
             self.failOnTimeout()
-            condition(i)
-        utils.waitFor(newCondition, duration)
+            result = condition(i)
+            return result
+        newCondition.func_name = condition.func_name
+        utils.waitFor(newCondition, duration, *extra)
