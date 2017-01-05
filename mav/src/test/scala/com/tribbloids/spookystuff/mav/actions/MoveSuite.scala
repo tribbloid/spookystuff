@@ -73,8 +73,6 @@ class MoveSuite extends APMSimFixture {
     val rdd = sc.parallelize(tracks, this.parallelism)
     val df = sql.createDataFrame(rdd)
 
-    df.collect()
-
     val result = spooky.create(df)
       .fetch (
         Move('_1, '_2)
@@ -98,23 +96,6 @@ class MoveSuite extends APMSimFixture {
 
     val rdd = sc.parallelize(tracks, this.parallelism)
     val df = sql.createDataFrame(rdd)
-
-    df.collect()
-
-    df.mapPartitions {
-      itr =>
-        val seq = itr.toList
-        Iterator(seq)
-    }
-      .collect()
-      .map{
-        seq =>
-          val size = seq.size
-          assert(size >= 2)
-          assert(size <= 3)
-          seq
-      }
-      .foreach(println)
 
     val result = spooky.create(df)
       .fetch (

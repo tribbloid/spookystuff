@@ -50,10 +50,10 @@ object LinkFactories {
   case class ForkToGCS(
                         //primary localhost out port number -> list of URLs for multicast
                         //the first one used by DK, others nobody cares
-                        getExecutorOuts: Seq[String] = (12014 to 12108).map(i => s"udp:localhost:$i"),
+                        toExecutor: Seq[String] = (12014 to 12108).map(i => s"udp:localhost:$i"),
                         //this is the default port listened by QGCS
-                        getGCSOuts: Drone => Set[String] = _ => Set("udp:localhost:14550"),
-                        executorOutsSize: Int = 1
+                        toGCS: Drone => Set[String] = _ => Set("udp:localhost:14550"),
+                        ToExecutorSize: Int = 1
                       ) extends LinkFactory with PrettyProduct {
 
     //CAUTION: DO NOT select primary out sequentially!
@@ -63,14 +63,14 @@ object LinkFactories {
       LinkFactories.synchronized {
         val existing4Exec: Seq[String] = Link.existing.values.toSeq
           .flatMap(_.link.allURI)
-        val available4Exec = getExecutorOuts.filter {
+        val available4Exec = toExecutor.filter {
           v =>
             !existing4Exec.contains(v)
         }
         val shuffled = Random.shuffle(available4Exec)
 
-        val executorOuts = shuffled.slice(0, executorOutsSize)
-        val gcsOuts = getGCSOuts(endpoint).toSeq
+        val executorOuts = shuffled.slice(0, ToExecutorSize)
+        val gcsOuts = toGCS(endpoint).toSeq
         val result = Link(
           endpoint,
           executorOuts,

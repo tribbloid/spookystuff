@@ -105,7 +105,7 @@ class LinkIT extends APMSimFixture {
 class LinkWithProxyIT extends LinkIT {
 
   override lazy val factory = LinkFactories.ForkToGCS(
-    executorOutsSize = 2
+    ToExecutorSize = 2
   )
 
   test("GCS takeover and relinquish control during flight") {

@@ -40,7 +40,7 @@ class VehicleFunctions(object):
             self.getToClearanceAlt(minAlt, maxAlt, error)
 
     def mode(self, mode="GUIDED"):
-        # type: (Vehicle, str) -> None
+        # type: (str) -> None
         # Copter should arm in GUIDED mode
         def isMode(i):
             if i % 3 == 0:
@@ -51,7 +51,7 @@ class VehicleFunctions(object):
         utils.waitFor(isMode, 60)
 
     def arm(self, mode="GUIDED", preArmCheck=True):
-        # type: (Vehicle, str, bool) -> None
+        # type: (str, bool) -> None
         # Don't let the user try to fly when autopilot is booting
 
         if self.vehicle.armed: return

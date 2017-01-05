@@ -2,6 +2,7 @@ from __future__ import print_function
 
 import logging
 import os
+import pkgutil
 import random
 
 import dronekit
@@ -9,6 +10,8 @@ import sys
 import time
 
 import math
+
+from MAVProxy import mavproxy
 
 from pyspookystuff.mav import Const, VehicleFunctions, utils
 from pyspookystuff.mav.utils import retry
@@ -187,7 +190,14 @@ class Proxy(Daemon):
         self.baudRate = baudRate
         self.ssid = ssid
         self.name = name
-        self.process = None
+        self.p = None
+
+    @property
+    def process(self):
+        if self.p:
+            return self.p.processes[0]
+        else:
+            return None
 
     @property
     def fullName(self):
@@ -195,11 +205,13 @@ class Proxy(Daemon):
 
     # defaultOptions = '--daemon --cmd="module unload console"'
     def _spawnProxy(self, setup=False, options=defaultProxyOptions, logfile=sys.stdout):
-        # type: (bool, str, str) -> object
+        # type: (bool, str, str) -> None
 
-        import pexpect  # included by transitive dependency
-        MAVPROXY = os.getenv('MAVPROXY_CMD', 'mavproxy.py')
-        cmd = MAVPROXY + ' --master=%s' % self.master
+        loader = pkgutil.find_loader(mavproxy.__name__)
+        fileName = loader.get_filename(mavproxy.__name__)
+        MAVPROXY = os.getenv('MAVPROXY_CMD', fileName)
+
+        cmd = 'python ' + MAVPROXY + ' --master=%s' % self.master
         for out in self.outs:
             cmd += ' --out=%s' % out
         if setup:
@@ -214,18 +226,17 @@ class Proxy(Daemon):
 
         print(cmd)
 
-        p = pexpect.spawn(cmd, logfile=logfile, timeout=60, ignore_sighup=True)
-        p.delaybeforesend = 0
+        import sarge  # included by transitive dependency
+        pipeline = sarge.run(cmd, async=True)
 
-        return p
+        self.p = pipeline
 
     @retry(Const.daemonStartRetries)
     def _start(self):
         # type: () -> int
 
-        if not self.process:
-            p = self._spawnProxy()
-            self.process = p
+        if not self.p:
+            self._spawnProxy()
 
             time.sleep(1)  # wait for process creation
 
@@ -246,14 +257,15 @@ class Proxy(Daemon):
         return self.pid
 
     def _stop(self):
-        if self.process:
-            Proxy.killPID(self.process.pid)
+        if self.p:
+            for command in self.p.commands:
+                command.terminate()
 
             def isDead(i):
                 return not self.isAlive
             utils.waitFor(isDead, 10)
 
-            self.process = None
+            self.p = None
 
     @staticmethod
     def killPID(pid):
@@ -270,6 +282,6 @@ class Proxy(Daemon):
     @property
     def isAlive(self):
         if self.process:
-            return self.process.isalive()
+            return self.process.poll() is None
         else:
             return False

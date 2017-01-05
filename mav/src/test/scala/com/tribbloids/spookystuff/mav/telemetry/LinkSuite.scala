@@ -1,6 +1,6 @@
 package com.tribbloids.spookystuff.mav.telemetry
 
-import com.tribbloids.spookystuff.PyInterpreterException
+import com.tribbloids.spookystuff.{PyInterpreterException, SpookyEnvFixture}
 import com.tribbloids.spookystuff.mav.dsl.LinkFactories
 import com.tribbloids.spookystuff.mav.sim.APMSimFixture
 import com.tribbloids.spookystuff.session.python.PythonDriver
@@ -149,7 +149,7 @@ class LinkSuite extends APMSimFixture {
   }
 
   //  val defaultfactory = ProxyFactories.Default()
-  test("each Proxy for Link should use a different primary out") {
+  test("each Link Proxy should use a different primary out") {
     val spooky = this.spooky
     val factory = LinkFactories.ForkToGCS()
     val getEndpoints = this.getEndpoints
@@ -181,6 +181,34 @@ class LinkSuite extends APMSimFixture {
       sort = true
     )
     assert(outs.distinct.length == parallelism)
+  }
+
+  test("Link Proxy.PY.stop() should not leave dangling process") {
+    val spooky = this.spooky
+    val factory = LinkFactories.ForkToGCS()
+    val getEndpoints = this.getEndpoints
+    val linkRDD = simConnStrRDD.map {
+      connStr =>
+        val endpoint = Drone(Seq(connStr))
+        val session = new Session(spooky, driverLifespan)
+        val link = Link.getOrInitialize(
+          getEndpoints(connStr),
+          factory,
+          session
+        )
+        link
+    }
+    linkRDD.foreach {
+      link =>
+        val py = link.proxyOpt.get.PY
+        for (i <- 1 to 2) {
+          py.start()
+          py.stop()
+        }
+    }
+    sc.foreachComputer {
+      SpookyEnvFixture.processShouldBeClean(Seq("mavproxy"), Seq("mavproxy"), cleanSweep = false)
+    }
   }
 
   test("If with Proxy, Link.primary should = Proxy.outs.head") {

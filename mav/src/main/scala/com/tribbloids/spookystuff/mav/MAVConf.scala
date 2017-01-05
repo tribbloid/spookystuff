@@ -34,7 +34,7 @@ case class MAVConf(
                     var fleet: Seq[Drone] = Nil,
                     var linkFactory: LinkFactory = LinkFactories.ForkToGCS(),
                     var connectionRetries: Int = MAVConf.CONNECTION_RETRIES,
-                    var clearanceAltitude: Double = 20 // in meters
+                    var clearanceAltitude: Double = 10 // in meters
                   ) extends AbstractConf {
 
   // TODO: use reflection to automate, or implement

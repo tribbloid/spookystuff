@@ -253,7 +253,7 @@ object Link {
       def _startDaemons(): Unit = {
         if (!isStarted) {
           ref.proxyOpt.foreach {
-            _.managerPy.start()
+            _.PY.start()
           }
           ref.primaryEndpoint._Py(driver, spookyOpt).start()
         }
@@ -263,7 +263,7 @@ object Link {
       def stopDaemons(): Unit = {
         ref.primaryEndpoint._Py(driver, spookyOpt).stop()
         ref.proxyOpt.foreach {
-          _.managerPy.stop()
+          _.PY.stop()
         }
         isStarted = false
       }
@@ -333,7 +333,9 @@ case class Link(
                  gcsOuts: Seq[String] = Nil
                ) extends NoneRef with SingletonRef with LocalCleanable {
 
-  if (executorOuts.isEmpty) assert(gcsOuts.isEmpty, "No endpoint for executor")
+  {
+    if (executorOuts.isEmpty) assert(gcsOuts.isEmpty, "No endpoint for executor")
+  }
 
   val outs: Seq[String] = executorOuts ++ gcsOuts
   val allURI = (drone.connStrs ++ outs).distinct

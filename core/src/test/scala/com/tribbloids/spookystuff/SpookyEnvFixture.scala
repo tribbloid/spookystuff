@@ -27,11 +27,11 @@ object SpookyEnvFixture {
                      pNames: Seq[String]
                    ): Unit = {
 
-    driverInstancesShouldBeClean(spooky)
-    driverProcessShouldBeClean(pNames)
+    instancesShouldBeClean(spooky)
+    processShouldBeClean(pNames)
   }
 
-  def driverInstancesShouldBeClean(spooky: SpookyContext): Unit = {
+  def instancesShouldBeClean(spooky: SpookyContext): Unit = {
 
     Cleanable
       .uncleaned
@@ -52,29 +52,43 @@ object SpookyEnvFixture {
   /**
     * slow
     */
-  def driverProcessShouldBeClean(
-                                  pNames: Seq[String]
-                                ): Unit = {
+  def processShouldBeClean(
+                            names: Seq[String] = Nil,
+                            keywords: Seq[String] = Nil,
+                            cleanSweep: Boolean = true
+                          ): Unit = {
 
-    //this is necessary as each suite won't automatically cleanup drivers NOT in task when finished
-    Cleanable.cleanSweepAll (
-      condition = {
-        case v if v.lifespan.isThread => true
-        case _ => false
-      }
-    )
+    if (cleanSweep) {
+      //this is necessary as each suite won't automatically cleanup drivers NOT in task when finished
+      Cleanable.cleanSweepAll (
+        condition = {
+          case v if v.lifespan.isThread => true
+          case _ => false
+        }
+      )
+    }
+
 
     import scala.collection.JavaConverters._
 
     val processes = JProcesses.getProcessList()
       .asScala
 
-    pNames.foreach {
+    names.foreach {
       name =>
-        val matchedProcess = processes.filter(_.getName == name)
+        val matchedProcess = processes.filter(v => v.getName == name)
         assert(
           matchedProcess.isEmpty,
           s"${matchedProcess.size} $name process(es) left:\n" + matchedProcess.mkString("\n")
+        )
+    }
+
+    keywords.foreach {
+      keyword =>
+        val matchedProcess = processes.filter(v => v.getCommand.contains(keyword))
+        assert(
+          matchedProcess.isEmpty,
+          s"${matchedProcess.size} $keyword process(es) left:\n" + matchedProcess.mkString("\n")
         )
     }
   }
@@ -142,12 +156,12 @@ abstract class SpookyEnvFixture
     super.beforeAll()
   }
 
-  val pNames = Seq("phantomjs", "python")
+  val processNames = Seq("phantomjs", "python")
 
   override def afterAll() {
 
     val spooky = this.spooky
-    val pNames = this.pNames
+    val pNames = this.processNames
     TestHelper.clearTempDirs()
     sc.foreachComputer {
       SpookyEnvFixture.shouldBeClean(spooky, pNames)
@@ -190,7 +204,7 @@ abstract class SpookyEnvFixture
   def tearDown(): Unit = {
     val spooky = this.spooky
     sc.foreachComputer {
-      SpookyEnvFixture.driverInstancesShouldBeClean(spooky)
+      SpookyEnvFixture.instancesShouldBeClean(spooky)
     }
   }
 }

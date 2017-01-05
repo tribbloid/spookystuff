@@ -25,7 +25,7 @@ abstract class APMSimFixture extends SpookyEnvFixture {
 
   import com.tribbloids.spookystuff.utils.SpookyViews._
 
-  override val pNames = Seq("phantomjs", "python", "apm")
+  override val processNames = Seq("phantomjs", "python", "apm")
 
   var simConnStrRDD: RDD[String] = _
   def simConnStrs = simConnStrRDD.collect().toSeq.distinct
@@ -37,7 +37,7 @@ abstract class APMSimFixture extends SpookyEnvFixture {
   override def setUp(): Unit = {
     super.setUp()
     val mavConf = this.spooky.conf.submodules.get[MAVConf]()
-    mavConf.connectionRetries = 1 // do not retry
+    mavConf.connectionRetries = 2
     mavConf.fleet = simEndpoints
   }
 
