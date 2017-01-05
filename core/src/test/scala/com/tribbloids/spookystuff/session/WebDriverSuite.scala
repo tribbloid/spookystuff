@@ -16,7 +16,7 @@ class WebDriverSuite extends SpookyEnvFixture with LocalPathDocsFixture {
 
     this.spookyConf.webDriverFactory = DriverFactories.PhantomJS(
       getLocalURI = _ => "dummy/file",
-      getRemoteURI = _ => "http://dummy.org",
+      getRemoteURI = _ => "dummy.org/file",
       redeploy = true
     )
     try {
