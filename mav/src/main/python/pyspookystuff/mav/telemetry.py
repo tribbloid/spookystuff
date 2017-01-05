@@ -180,7 +180,7 @@ class Endpoint(Daemon, VehicleFunctions):
         self.restart()
 
 
-defaultProxyOptions = '--state-basedir=temp --daemon'  # --default-modules="link"'  # --cmd="module unload console"'
+defaultProxyOptions = '--state-basedir=temp --daemon --default-modules="link"'  # --cmd="module unload console"'
 class Proxy(Daemon):
     def __init__(self, master, outs, baudRate, ssid, name):
         # type: (str, list[str], int, int, str) -> None
