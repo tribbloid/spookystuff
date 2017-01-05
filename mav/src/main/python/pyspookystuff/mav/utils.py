@@ -95,16 +95,22 @@ def get_location_metres(original_location, dNorth, dEast):
     return targetlocation
 
 
-def waitFor(condition, duration=60, *extra):
-    # type: (function, int, *str) -> None
+def waitFor(condition, duration=60):
+    # type: (function, int) -> None
     for i in range(1, duration):
         v = condition(i)
+        try:
+            v = v[0]
+            comment = v[1]
+        except:
+            comment = ""
+
         if v:
             return
         time.sleep(1)
         if i%10 == 0:
-            print("waiting for", condition.func_name, "\t|", i, "second(s)", *extra)
-    raise os.error("timeout waiting for " + str(condition))
+            print("waiting for", condition.func_name, "\t|", i, "second(s)", comment)
+    raise os.error("timeout waiting for " + condition.func_name)
 
     # not accurate! should use ground dist
     # def get_distance_m(aLocation1, aLocation2):
