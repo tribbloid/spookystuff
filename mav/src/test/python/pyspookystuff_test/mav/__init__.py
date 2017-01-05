@@ -51,7 +51,7 @@ class TestProxy(TestCase):
 
     def testProxyRestart(self):
 
-        proxy = Proxy(self.url, ["udp:localhost:12052", self.gcs], self.dkBaud, 251, "DownloadWaypointTest")
+        proxy = Proxy(self.url, ["udp:localhost:12052", self.gcs], self.dkBaud, 251, self.__class__.__name__)
 
         for i in range(1, 3):
             proxy.start()
@@ -106,7 +106,7 @@ class TestAPMSim(TestCase):
 
     def test_downloadWaypointThroughProxyCannotTimeout(self):
         connStr = self.url
-        proxy = Proxy(connStr, ["udp:localhost:12052", self.gcs], self.dkBaud, 251, "DownloadWaypointTest")
+        proxy = Proxy(connStr, ["udp:localhost:12052", self.gcs], self.dkBaud, 251, self.__class__.__name__)
         proxy.start()
 
         self.stressTestDownloadWP("udp:localhost:12052")
@@ -137,7 +137,7 @@ class TestAPMSim(TestCase):
 
     def test_canArmThroughProxy(self):
         connStr = self.url
-        proxy = Proxy(connStr, ["udp:localhost:12052", self.gcs], self.dkBaud, 251, "DownloadWaypointTest")
+        proxy = Proxy(connStr, ["udp:localhost:12052", self.gcs], self.dkBaud, 251, self.__class__.__name__)
         proxy.start()
 
         self.stressTestArm("udp:localhost:12052")

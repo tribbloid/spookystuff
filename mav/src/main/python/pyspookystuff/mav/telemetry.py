@@ -1,16 +1,15 @@
 from __future__ import print_function
 
 import logging
+import math
 import os
 import pkgutil
 import random
-
-import dronekit
 import sys
 import time
 
-import math
-
+import dronekit
+import sarge
 from MAVProxy import mavproxy
 
 from pyspookystuff.mav import Const, VehicleFunctions, utils
@@ -226,8 +225,11 @@ class Proxy(Daemon):
 
         print(cmd)
 
-        import sarge  # included by transitive dependency
-        pipeline = sarge.run(cmd, async=True, env={'PYTHONPATH': ':'.join(sys.path)})
+        # TODO too heavyweight! exec in new daemon Thread + interpreter termination is good enough.
+        # using solution of [http://stackoverflow.com/questions/11269575/how-to-hide-output-of-subprocess-in-python-2-7]
+        pipeline = sarge.run(
+            cmd, async=True,
+            env={'PYTHONPATH': ':'.join(sys.path)}, stdout=utils.DEVNULL, stderr=utils.DEVNULL)
 
         self.p = pipeline
 
@@ -244,7 +246,7 @@ class Proxy(Daemon):
                 return self.isAlive
             utils.waitFor(isAlive, 10)
 
-            # ensure that proxy is usable, otherwise its garbage! TODO too slow
+            # ensure that proxy is usable, otherwise its garbage
             vehicle = dronekit.connect(
                 self.outs[0],
                 wait_ready=True,

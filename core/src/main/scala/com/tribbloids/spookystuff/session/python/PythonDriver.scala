@@ -57,9 +57,7 @@ object PythonDriver {
   }
 
   val NO_RETURN_VALUE: String =   "======== *!?no return value!?* ========"
-
   val EXECUTION_RESULT: String =  "======== *!?execution result!?* ========"
-
   val ERROR_INFO: String =        "======== *!?error info!?* ========"
 
   /**
@@ -186,7 +184,8 @@ class PythonDriver(
   }
 
   override def pyOutputLog(line: String) = {
-    s"$logPrefix $line"
+    val effectiveLine = removePrompts(line)
+    s"$logPrefix $effectiveLine"
   }
 
   private def _interpret(code: String, spookyOpt: Option[SpookyContext] = None, detectError: Boolean = true): Array[String] = {

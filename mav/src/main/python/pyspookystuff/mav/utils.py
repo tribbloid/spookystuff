@@ -10,6 +10,9 @@ from math import radians, cos, sin, asin, sqrt
 earth_radius = 6378137.0  # Radius of "spherical" earth
 
 
+DEVNULL = open(os.devnull, 'w')
+
+
 def _groundDistance(lon1, lat1, lon2, lat2):
     """
     haversine formula:

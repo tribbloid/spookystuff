@@ -47,8 +47,7 @@ class VehicleFunctions(object):
                 print("Mode changing to", mode)
                 self.vehicle.mode = VehicleMode(mode)
             return self.vehicle.mode.name == mode
-
-        utils.waitFor(isMode, 60)
+        self.waitFor(isMode, 60)
 
     def arm(self, mode="GUIDED", preArmCheck=True):
         # type: (str, bool) -> None
@@ -61,15 +60,13 @@ class VehicleFunctions(object):
         if preArmCheck:
             def isArmable(i):
                 return self.vehicle.is_armable
-
-            utils.waitFor(isArmable, 60)
+            self.waitFor(isArmable, 60)
 
         # Arm copter.
         def isArmed(i):
             if i % 3 == 0: self.vehicle.armed = True
             return self.vehicle.armed and self.vehicle.mode.name == mode
-
-        utils.waitFor(isArmed, 60)
+        self.waitFor(isArmed, 60)
 
     def unarm(self):
         # type: (Vehicle) -> None
@@ -79,7 +76,7 @@ class VehicleFunctions(object):
             if i % 3 == 0: self.vehicle.armed = False
             return self.vehicle.armed == False
 
-        utils.waitFor(isUnarmed, 60)
+        self.waitFor(isUnarmed, 60)
 
     def getToClearanceAlt(self, minAlt, maxAlt, error):
         # type: (float, float) -> None
@@ -143,6 +140,7 @@ class VehicleFunctions(object):
         return self.localOrigin
 
     @property
+    # TODO: commandsRefresh sometimes timeout on SITL, can fall back to deduction from LocationGlobal & LocationLocal
     def homeLocation(self):
         # type: () -> LocationGlobal
         """
@@ -228,7 +226,7 @@ class VehicleFunctions(object):
                         print("Engaging thruster")
                 oldDistance = distance
             else:
-                print("Control has been relinquished to manual")
+                print("Control has been relinquished to GCS")
                 oldDistance = None
 
             self.failOnTimeout()
@@ -252,4 +250,13 @@ class VehicleFunctions(object):
         self.vehicle.simple_goto(effectiveTL, airspeed, groundspeed)
 
     def failOnTimeout(self):
+        last_heartbeat = self.vehicle.last_heartbeat
+        print("last heartbeat = ", last_heartbeat)
         assert (self.vehicle.last_heartbeat < 30)
+
+    def waitFor(self, condition, duration = 60):
+        # has timeout check.
+        def newCondition(i):
+            self.failOnTimeout()
+            condition(i)
+        utils.waitFor(newCondition, duration)

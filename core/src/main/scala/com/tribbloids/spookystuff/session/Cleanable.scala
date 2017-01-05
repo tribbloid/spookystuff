@@ -110,12 +110,17 @@ sealed trait AbstractCleanable {
 
   final protected val defaultLifespan = new Lifespan.JVM()
 
-  LoggerFactory.getLogger(this.getClass).debug(s"$logPrefix Creating")
+  logConstructionDestruction("Created")
 
   //each can only be cleaned once
   @volatile var isCleaned: Boolean = false
 
   def logPrefix: String
+  protected def logConstructionDestruction(s: String) = {
+    LoggerFactory.getLogger(this.getClass).debug(s"$logPrefix $s")
+  }
+
+  protected def cleanImpl(): Unit
 
   //  private object CleanupLock
   //avoid double cleaning, this lock is not shared with any other invocation, PARTICULARLY subclasses
@@ -123,11 +128,9 @@ sealed trait AbstractCleanable {
     if (!isCleaned){
       isCleaned = true
       cleanImpl()
-      if (!silent) LoggerFactory.getLogger(this.getClass).info(s"$logPrefix Cleaned up")
+      if (!silent) logConstructionDestruction("Destroyed")
     }
   }
-
-  protected def cleanImpl(): Unit
 
   def tryClean(silent: Boolean = false): Unit = {
     try {
@@ -232,6 +235,14 @@ object Cleanable {
         tt =>
           cleanSweep(tt, condition)
       }
+  }
+
+  trait Verbose {
+    self: Cleanable =>
+
+    override def logConstructionDestruction(s: String): Unit = {
+      LoggerFactory.getLogger(this.getClass).info(s"$logPrefix $s")
+    }
   }
 }
 
