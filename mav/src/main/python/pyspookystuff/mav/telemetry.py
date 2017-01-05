@@ -259,7 +259,10 @@ class Proxy(Daemon):
     def _stop(self):
         if self.p:
             for command in self.p.commands:
-                command.terminate()
+                try:
+                    command.terminate()
+                except:
+                    pass
 
             def isDead(i):
                 return not self.isAlive

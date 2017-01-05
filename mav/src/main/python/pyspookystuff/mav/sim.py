@@ -53,11 +53,11 @@ class APMSim(object):
 
         download()
 
-        @retry(5)
+        @retry(2)
         def launch():
             try:
                 sitl.launch(self.args, await_ready=True, restart=True)
-                print("launching APM SITL:", *(self.args + ["PID=" + str(sitl.p.pid)]))
+                print("launching APM SITL:", *(self.args + ["URI=" + self.connStr] + ["PID=" + str(sitl.p.pid)]))
                 self.setParamAndRelaunch('SYSID_THISMAV', self.iNum + 1)
 
                 @self.withVehicle()
@@ -89,7 +89,6 @@ class APMSim(object):
         @self.withVehicle()
         def set(v):
             v.parameters.set(key, value, wait_ready=True)
-
         set()
 
         self.sitl.stop()
@@ -101,7 +100,6 @@ class APMSim(object):
             v.wait_ready()
             actualValue = v._params_map[key]
             assert actualValue == value
-
         get()
 
     def withVehicle(self):
