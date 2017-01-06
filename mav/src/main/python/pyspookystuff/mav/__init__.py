@@ -41,7 +41,69 @@ class VehicleFunctions(object):
 
     def mode(self, mode="GUIDED"):
         # type: (str) -> None
-        # Copter should arm in GUIDED mode
+        """
+        mode_mapping_apm = {
+    0 : 'MANUAL',
+    1 : 'CIRCLE',
+    2 : 'STABILIZE',
+    3 : 'TRAINING',
+    4 : 'ACRO',
+    5 : 'FBWA',
+    6 : 'FBWB',
+    7 : 'CRUISE',
+    8 : 'AUTOTUNE',
+    10 : 'AUTO',
+    11 : 'RTL',
+    12 : 'LOITER',
+    14 : 'LAND',
+    15 : 'GUIDED',
+    16 : 'INITIALISING',
+    17 : 'QSTABILIZE',
+    18 : 'QHOVER',
+    19 : 'QLOITER',
+    20 : 'QLAND',
+    21 : 'QRTL',
+    }
+mode_mapping_acm = {
+    0 : 'STABILIZE',
+    1 : 'ACRO',
+    2 : 'ALT_HOLD',
+    3 : 'AUTO',
+    4 : 'GUIDED',
+    5 : 'LOITER',
+    6 : 'RTL',
+    7 : 'CIRCLE',
+    8 : 'POSITION',
+    9 : 'LAND',
+    10 : 'OF_LOITER',
+    11 : 'DRIFT',
+    13 : 'SPORT',
+    14 : 'FLIP',
+    15 : 'AUTOTUNE',
+    16 : 'POSHOLD',
+    17 : 'BRAKE',
+    18 : 'THROW',
+    19 : 'AVOID_ADSB',
+    }
+mode_mapping_rover = {
+    0 : 'MANUAL',
+    2 : 'LEARNING',
+    3 : 'STEERING',
+    4 : 'HOLD',
+    10 : 'AUTO',
+    11 : 'RTL',
+    15 : 'GUIDED',
+    16 : 'INITIALISING'
+    }
+
+mode_mapping_tracker = {
+    0 : 'MANUAL',
+    1 : 'STOP',
+    2 : 'SCAN',
+    10 : 'AUTO',
+    16 : 'INITIALISING'
+    }
+        """
         def isMode(i):
             if i % 3 == 0:
                 print("Mode changing to", mode)
@@ -124,8 +186,8 @@ class VehicleFunctions(object):
                 self.failOnTimeout()
                 time.sleep(1)
 
-        alt = self.vehicle.location.global_relative_frame.alt
         armAndTakeOff()
+        alt = self.vehicle.location.global_relative_frame.alt
 
         if (minAlt - alt) > error:
             self.move(LocationGlobalRelative(None, None, minAlt))
@@ -210,8 +272,9 @@ class VehicleFunctions(object):
         oldDistance = None
 
         # self.getHomeLocation
-        while True:  # Stop action if we are no longer in guided mode.
+        while True:
             distance, hori, vert = utils.airDistance(currentL(), effectiveTL)
+            assert(self.vehicle.armed is True)
             print(
                 "Moving ... \tremaining distance:", str(distance) + "m",
                 "\thorizontal:", str(hori) + "m",
@@ -228,7 +291,7 @@ class VehicleFunctions(object):
                         self.goto2x(effectiveTL)
                         print("Engaging thruster")
                 oldDistance = distance
-            else:
+            else:  # Stop action if we are no longer in guided mode.
                 print("Control has been relinquished to GCS")
                 oldDistance = None
 
@@ -254,7 +317,7 @@ class VehicleFunctions(object):
 
     def failOnTimeout(self):
         last_heartbeat = self.vehicle.last_heartbeat
-        print("last heartbeat = ", last_heartbeat)
+        print("last heartbeat =", last_heartbeat)
         assert (self.vehicle.last_heartbeat < 30)
 
     def waitFor(self, condition, duration=60):

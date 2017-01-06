@@ -1,8 +1,6 @@
 # Not part of the routing as its marginally useful outside testing.
 from __future__ import print_function
 
-import os
-
 from dronekit import connect
 from dronekit_sitl import SITL
 
@@ -23,10 +21,10 @@ Options:
 """
 sitl_args = ['--model', 'quad', '--gimbal']
 
-if 'SITL_SPEEDUP' in os.environ:
-    sitl_args += ['--speedup', str(os.environ['SITL_SPEEDUP'])]
-if 'SITL_RATE' in os.environ:
-    sitl_args += ['-r', str(os.environ['SITL_RATE'])]
+# if 'SITL_SPEEDUP' in os.environ:
+#     sitl_args += ['--speedup', str(os.environ['SITL_SPEEDUP'])]Proxy
+# if 'SITL_RATE' in os.environ:
+#     sitl_args += ['-r', str(os.environ['SITL_RATE'])]
 
 
 def tcp_master(instance):
@@ -34,16 +32,17 @@ def tcp_master(instance):
 
 
 class APMSim(object):
-    def __init__(self, iNum, home, baudRate):
-        # type: (int, str, int) -> None
+    def __init__(self, iNum, home, rate, speedup):
+        # type: (int, str, int, int, int) -> None
 
         """
         :param iNum: instance number, affect SITL system ID
         :param home: (lat,lng,alt,yaw)
         """
         self.iNum = iNum
-        self.baudRate = baudRate
-        self.args = sitl_args + ['--home=' + home] + ['-I' + str(iNum)] + ['--rate=' + str(baudRate)]
+        self.rate = rate
+        self.args = sitl_args + ['--home=' + home] + ['-I' + str(iNum)] + ['--speedup', str(speedup)] + ['-r', str(rate)]
+
         sitl = SITL()
         self.sitl = sitl
 
@@ -105,7 +104,7 @@ class APMSim(object):
     def withVehicle(self):
         def decorate(fn):
             def fnM(*args, **kargs):
-                v = connect(self.connStr, wait_ready=True, baud=self.baudRate)
+                v = connect(self.connStr, wait_ready=True, baud=self.rate)
                 try:
                     return fn(v, *args, **kargs)
                 finally:

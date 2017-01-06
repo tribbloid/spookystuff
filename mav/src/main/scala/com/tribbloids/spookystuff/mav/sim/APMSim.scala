@@ -1,7 +1,6 @@
 package com.tribbloids.spookystuff.mav.sim
 
 import com.tribbloids.spookystuff.caching
-import com.tribbloids.spookystuff.mav.MAVConf
 import com.tribbloids.spookystuff.mav.actions.LocationGlobal
 import com.tribbloids.spookystuff.session.LocalCleanable
 import com.tribbloids.spookystuff.session.python.{CaseInstanceRef, SingletonRef}
@@ -20,6 +19,9 @@ object APMSim {
     lat = HOME.lat + (Random.nextDouble() - 0.5)*0.0002,
     lon = HOME.lon + (Random.nextDouble() - 0.5)*0.0002
   )
+
+  final val FRAMERATE = 200
+  final val SPEEDUP = 5
 
   /**
     * 43.694195,-79.262262,136,353
@@ -46,7 +48,8 @@ object APMSim {
 case class APMSim private (
                             iNum: Int,
                             home: String,
-                            baudRate: Int = MAVConf.DEFAULT_BAUDRATE
+                            rate: Int = APMSim.FRAMERATE,
+                            speedup: Int = APMSim.SPEEDUP
                           ) extends CaseInstanceRef with SingletonRef with LocalCleanable {
 
   APMSim.existing += this

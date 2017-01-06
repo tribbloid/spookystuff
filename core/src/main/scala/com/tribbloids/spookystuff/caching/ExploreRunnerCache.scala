@@ -16,22 +16,21 @@ object ExploreRunnerCache {
   val onGoings: ConcurrentMap[Long, ConcurrentSet[ExploreRunner]] = ConcurrentMap() //executionID -> running ExploreStateView
 
   def getOnGoingRunners(exeID: Long): ConcurrentSet[ExploreRunner] = {
-    onGoings.synchronized{
-      onGoings
-        .getOrElse(
-          exeID, {
-            val v = ConcurrentSet[ExploreRunner]()
-            onGoings.put(exeID, v)
-            v
-          }
-        )
-    }
+    //    onGoings.synchronized{
+    onGoings
+      .getOrElseUpdate(
+        exeID, {
+          val v = ConcurrentSet[ExploreRunner]()
+          v
+        }
+      )
+    //    }
   }
 
   def finishExploreExecutions(exeID: Long): Unit = {
-    onGoings.synchronized{
-      onGoings -= exeID
-    }
+    //    onGoings.synchronized{
+    onGoings -= exeID
+    //  }
   }
 
   //TODO: relax synchronized check to accelerate
@@ -41,9 +40,11 @@ object ExploreRunnerCache {
                        reducer: RowReducer
                      ): Unit = {
 
-    val oldVs = committedVisited.get(key)
-    val newVs = (Seq(value) ++ oldVs).reduce(reducer)
-    committedVisited.put(key, newVs)
+    committedVisited.synchronized{
+      val oldVs = committedVisited.get(key)
+      val newVs = (Seq(value) ++ oldVs).reduce(reducer)
+      committedVisited.put(key, newVs)
+    }
   }
 
   def commit(
@@ -51,11 +52,9 @@ object ExploreRunnerCache {
               reducer: RowReducer
             ): Unit = {
 
-    committedVisited.synchronized{
-      kvs.foreach{
-        kv =>
-          commit1(kv._1, kv._2, reducer)
-      }
+    kvs.foreach{
+      kv =>
+        commit1(kv._1, kv._2, reducer)
     }
   }
 

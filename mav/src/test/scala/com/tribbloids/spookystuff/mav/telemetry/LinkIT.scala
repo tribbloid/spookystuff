@@ -2,7 +2,7 @@ package com.tribbloids.spookystuff.mav.telemetry
 
 import com.tribbloids.spookystuff.SpookyContext
 import com.tribbloids.spookystuff.mav.dsl.{LinkFactories, LinkFactory}
-import com.tribbloids.spookystuff.mav.sim.APMSimFixture
+import com.tribbloids.spookystuff.mav.sim.{APMSim, APMSimFixture}
 import com.tribbloids.spookystuff.session.Session
 import com.tribbloids.spookystuff.session.python.PythonDriver
 import com.tribbloids.spookystuff.testutils.TestHelper
@@ -109,11 +109,12 @@ class LinkWithProxyIT extends LinkIT {
   )
 
   test("GCS takeover and relinquish control during flight") {
-    import scala.concurrent.duration._
     import scala.concurrent.ExecutionContext.Implicits.global
+    import scala.concurrent.duration._
 
     val spooky = this.spooky
     val factory = this.factory
+
     val rdd = simConnStrRDD.map {
         connStr =>
           val drones = Seq(Drone(Seq(connStr)))
@@ -134,12 +135,16 @@ class LinkWithProxyIT extends LinkIT {
           val moved = Future {
             endpoint1.Py(session).testMove()
           }
-          Thread.sleep(5000)
-          py2.mode("BRAKE")
-          TestHelper.assert(py2.vehicle.mode.name.$STR.get == "BRAKE")
-          py2.mode("ALT_HOLD")
-          TestHelper.assert(py2.vehicle.mode.name.$STR.get == "ALT_HOLD")
-          Thread.sleep(10000)
+          Thread.sleep(5000 / APMSim.SPEEDUP)
+
+          def changeMode(py: Endpoint#Binding, mode: String) = {
+            py.mode(mode)
+            TestHelper.assert(py.vehicle.mode.name.$STR.get == mode)
+          }
+
+          changeMode(py2, "BRAKE")
+          changeMode(py2, "LOITER")
+          Thread.sleep(5000 / APMSim.SPEEDUP)
           py2.mode("GUIDED")
           val position = Await.result(moved, 60.seconds).$STR.get
           println(position)

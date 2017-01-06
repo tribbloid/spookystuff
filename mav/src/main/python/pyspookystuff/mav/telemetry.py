@@ -229,7 +229,7 @@ class Proxy(Daemon):
         # using solution of [http://stackoverflow.com/questions/11269575/how-to-hide-output-of-subprocess-in-python-2-7]
         pipeline = sarge.run(
             cmd, async=True,
-            env={'PYTHONPATH': ':'.join(sys.path)}, stdout=utils.DEVNULL, stderr=utils.DEVNULL)
+            env={'PYTHONPATH': ':'.join(sys.path)}, stderr=utils.DEVNULL)
 
         self.p = pipeline
 
