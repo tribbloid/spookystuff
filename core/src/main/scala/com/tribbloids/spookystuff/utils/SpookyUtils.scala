@@ -365,10 +365,10 @@ These special characters are often called "metacharacters".
 
       val pathsStr = src + " => " + dst
 
-      val srcFile = new File(src.toString)
-      if (srcFile.isDirectory) {
+      if (Files.isDirectory(src)) {
         try {
           Files.copy(src, dst, options: _*)
+          //TODO: how to flush dst?
         }
         catch {
           case e: DirectoryNotEmptyException =>
@@ -381,6 +381,7 @@ These special characters are often called "metacharacters".
       }
       else {
         Files.copy(src, dst, options: _*) //this will either 1. copy file if src is a file. 2. create empty dir if src is a dir.
+        //TODO: how to flush dst?
 
         //assert(Files.exists(dst))
         //NIO copy should use non-NIO for validation to eliminate stream caching
