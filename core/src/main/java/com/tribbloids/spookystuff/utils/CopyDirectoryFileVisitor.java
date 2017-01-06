@@ -1,7 +1,5 @@
 package com.tribbloids.spookystuff.utils;
 
-import org.slf4j.LoggerFactory;
-
 import java.io.IOException;
 import java.nio.file.*;
 import java.nio.file.attribute.BasicFileAttributes;
@@ -30,7 +28,7 @@ class CopyDirectoryFileVisitor extends SimpleFileVisitor<Path> {
   public FileVisitResult visitFile(Path file, BasicFileAttributes attributes)
           throws IOException {
     Path dst = getTransitive(file);
-    SpookyUtils.blockingCopy(file, dst, options);
+    SpookyUtils.resilientCopy(file, dst, options);
     return FileVisitResult.CONTINUE;
   }
 
@@ -48,14 +46,8 @@ class CopyDirectoryFileVisitor extends SimpleFileVisitor<Path> {
   public FileVisitResult preVisitDirectory(Path directory,
                                            BasicFileAttributes attributes) throws IOException {
     Path targetDirectory = getTransitive(directory);
-    try {
-      Files.copy(directory, targetDirectory, options); //TODO: change to SpookyUtils.blockingCopy
-    }
-    catch (FileAlreadyExistsException | DirectoryNotEmptyException e) {
-      if (!Files.isDirectory(targetDirectory)) {
-        throw e;
-      }
-    }
+    SpookyUtils.resilientCopy(directory, targetDirectory, options); //TODO: change to SpookyUtils.blockingCopy
+
     return FileVisitResult.CONTINUE;
   }
 }

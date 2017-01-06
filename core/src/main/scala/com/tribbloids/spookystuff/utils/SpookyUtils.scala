@@ -360,20 +360,37 @@ These special characters are often called "metacharacters".
     assert(ClassLoader.getSystemClassLoader.asInstanceOf[URLClassLoader].getURLs.contains(url))
   }
 
-  def blockingCopy(src: Path, dst: Path, options: Array[CopyOption]): Unit ={
+  def resilientCopy(src: Path, dst: Path, options: Array[CopyOption]): Unit ={
     retry(5, 1000){
-      Files.copy(src, dst, options: _*)
 
-      //assert(Files.exists(dst))
-      //NIO copy should use non-NIO for validation to eliminate stream caching
-
-      val dstContent = LocalResolver.input(dst.toString){
-        fis =>
-          IOUtils.toByteArray(fis)
-      }
       val pathsStr = src + " => " + dst
-      //      assert(srcContent.length == dstContent.length, pathsStr + " copy failed")
-      LoggerFactory.getLogger(this.getClass).debug(pathsStr + s" ${dstContent.length} byte(s) copied")
+
+      val srcFile = new File(src.toString)
+      if (srcFile.isDirectory) {
+        try {
+          Files.copy(src, dst, options: _*)
+        }
+        catch {
+          case e: DirectoryNotEmptyException =>
+        }
+
+        val dstFile = new File(dst.toString)
+        assert(dstFile.isDirectory)
+
+        LoggerFactory.getLogger(this.getClass).debug(pathsStr + " no need to copy directory")
+      }
+      else {
+        Files.copy(src, dst, options: _*) //this will either 1. copy file if src is a file. 2. create empty dir if src is a dir.
+
+        //assert(Files.exists(dst))
+        //NIO copy should use non-NIO for validation to eliminate stream caching
+        val dstContent = LocalResolver.input(dst.toString){
+          fis =>
+            IOUtils.toByteArray(fis)
+        }
+        //      assert(srcContent.length == dstContent.length, pathsStr + " copy failed")
+        LoggerFactory.getLogger(this.getClass).debug(pathsStr + s" ${dstContent.length} byte(s) copied")
+      }
     }
   }
 

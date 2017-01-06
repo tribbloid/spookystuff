@@ -49,7 +49,7 @@ object LocalResolver extends PathResolver {
 
   override def input[T](pathStr: String)(f: (InputStream) => T): T = {
 
-    val file = new File(pathStr)
+    //    val file = new File(pathStr)
     //    ensureAbsolute(file)
 
     if (!pathStr.endsWith(lockedSuffix)) {
