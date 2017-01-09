@@ -3,11 +3,10 @@ package com.tribbloids.spookystuff.mav
 import com.tribbloids.spookystuff.AbstractConf
 import com.tribbloids.spookystuff.mav.dsl.{LinkFactories, LinkFactory}
 import com.tribbloids.spookystuff.mav.telemetry.Drone
-import org.apache.spark.SparkConf
 
 object MAVConf {
 
-  def default() = MAVConf()
+  val default = MAVConf()
 
   final val DEFAULT_BAUDRATE = 57600
 //  final val DEFAULT_BAUDRATE = 9200 // for testing only
@@ -36,7 +35,4 @@ case class MAVConf(
                     var connectionRetries: Int = MAVConf.CONNECTION_RETRIES,
                     var clearanceAltitude: Double = 10 // in meters
                   ) extends AbstractConf {
-
-  // TODO: use reflection to automate, or implement
-  override def importFrom(implicit sparkConf: SparkConf): this.type = this
 }

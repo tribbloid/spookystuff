@@ -37,7 +37,7 @@ class SpookyContextSuite extends SpookyEnvFixture with LocalPathDocsFixture{
 
     val conf1 = spooky.conf.dirConf.prettyJSON
     val conf2 = rdd2.spooky.conf.dirConf.prettyJSON
-    assert(conf1 == conf2)
+    conf1 shouldBe conf2
   }
 
   test("derived instances of a SpookyContext should have the same configuration after it has been modified") {
@@ -52,7 +52,7 @@ class SpookyContextSuite extends SpookyEnvFixture with LocalPathDocsFixture{
 
     val conf1 = spooky.conf.dirConf.prettyJSON
     val conf2 = rdd2.spooky.conf.dirConf.prettyJSON
-    assert(conf1 == conf2)
+    conf1 shouldBe conf2
   }
 
   test("each noInput should have independent metrics if sharedMetrics=false") {

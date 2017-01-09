@@ -47,6 +47,12 @@ object FlowUtils {
       .slice(2, Int.MaxValue)
   }
 
+  def getCallerMethodName(stackDepth: Int = 3): String = {
+    val bp = FlowUtils.getBreakpointInfo().apply(stackDepth)
+    assert(!bp.isNativeMethod) //can only use default value in def & lazy val blocks
+    bp.getMethodName
+  }
+
   def liftCamelCase(str: String) = str.head.toUpper.toString + str.substring(1)
   def toCamelCase(str: String) = str.head.toLower.toString + str.substring(1)
 

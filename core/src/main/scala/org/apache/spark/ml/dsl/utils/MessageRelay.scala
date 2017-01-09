@@ -1,5 +1,6 @@
 package org.apache.spark.ml.dsl.utils
 
+import org.apache.http.entity.StringEntity
 import org.apache.spark.ml.param.{ParamMap, Params}
 import org.apache.spark.ml.util._
 import org.apache.spark.sql.types.{DataType, UserDefinedType}
@@ -136,6 +137,12 @@ trait Message extends HasMessage {
   def toJSON(pretty: Boolean = true)(implicit formats: Formats = formats): String = {
     if (pretty) prettyJSON(formats)
     else compactJSON(formats)
+  }
+  def toHTTPEntity(implicit formats: Formats = formats): StringEntity = {
+    val requestEntity = new StringEntity(
+      this.toJSON()
+    )
+    requestEntity
   }
 
   def toXMLNode(implicit formats: Formats = formats): NodeSeq = Xml.toXml(value.getClass.getSimpleName -> toJValue)

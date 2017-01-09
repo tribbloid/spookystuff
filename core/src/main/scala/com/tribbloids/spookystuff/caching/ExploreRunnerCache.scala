@@ -33,7 +33,7 @@ object ExploreRunnerCache {
     //  }
   }
 
-  //TODO: relax synchronized check to accelerate
+  // TODO relax synchronized check to accelerate?
   private def commit1(
                        key: (TraceView, Long),
                        value: Iterable[DataRow],

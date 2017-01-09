@@ -133,7 +133,7 @@ case class HDFSResolver(
                          @transient ugiOverride: Option[UserGroupInformation] = None
                        ) extends PathResolver {
 
-  import SpookyViews.FunctionToPrivilegedAction
+  import SpookyViews.Function2PrivilegedAction
 
   def lockedSuffix: String = ".locked"
 

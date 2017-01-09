@@ -14,7 +14,7 @@ import scala.concurrent.duration._
 import scala.concurrent.{Await, Future, TimeoutException}
 import scala.language.implicitConversions
 import scala.reflect.ClassTag
-import scala.util.Random
+import scala.util.{Failure, Random, Success, Try}
 import scala.xml.PrettyPrinter
 
 object SpookyUtils {
@@ -491,6 +491,21 @@ These special characters are often called "metacharacters".
     }
     else {
       hostName
+    }
+  }
+
+  def tryParseBoolean(str: =>String): Try[Boolean] = {
+    Try{str}.flatMap {
+      v =>
+        v.toLowerCase match {
+          case "true" | "1" | "" => Success(true)
+          case "false" | "0" | "-1" => Success(false)
+          case _ => Failure(
+            new UnsupportedOperationException(
+              s"$v is not a boolean value"
+            )
+          )
+        }
     }
   }
 }

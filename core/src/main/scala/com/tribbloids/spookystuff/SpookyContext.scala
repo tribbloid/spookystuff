@@ -15,8 +15,8 @@ import scala.collection.immutable.ListMap
 import scala.language.implicitConversions
 
 case class SpookyContext private (
-                                   @transient sqlContext: SQLContext, //can't be used on executors, TODO: change to Option
-                                   @transient private var spookyConf: SpookyConf, //can only be used on executors after broadcast
+                                   @transient sqlContext: SQLContext, //can't be used on executors, TODO: change to Option or SparkContext
+                                   @transient private val spookyConf: SpookyConf, //can only be used on executors after broadcast
                                    metrics: SpookyMetrics //accumulators cannot be broadcasted,
                                  ) extends SerializationMarks {
 
@@ -24,7 +24,7 @@ case class SpookyContext private (
             sqlContext: SQLContext,
             conf: SpookyConf = new SpookyConf()
           ) {
-    this(sqlContext, conf.importFrom(sqlContext.sparkContext.getConf), new SpookyMetrics())
+    this(sqlContext, conf, new SpookyMetrics())
   }
 
   def this(sqlContext: SQLContext) {
@@ -45,16 +45,29 @@ case class SpookyContext private (
 
   import org.apache.spark.sql.catalyst.ScalaReflection.universe._
 
-  def sparkContext = this.sqlContext.sparkContext
+  def sparkContext: SparkContext = this.sqlContext.sparkContext
 
-  //TODO: package auto broadcast after shipping behaviour as Minimalistic API
-  @volatile var broadcastedSpookyConf: Broadcast[SpookyConf] = _
-  def conf = {
-    if (spookyConf == null) broadcastedSpookyConf.value
-    else spookyConf
+  @volatile private var effectiveConf: SpookyConf = _
+  private def setEffectiveConf(newConf: SpookyConf) = {
+    effectiveConf = newConf.importFrom(sqlContext.sparkContext.getConf)
   }
-  def conf_=(conf: SpookyConf): Unit = {
-    spookyConf = conf.importFrom(sqlContext.sparkContext.getConf)
+
+  //maybe obsolete if not rebroadcasted TODO: package auto broadcast after shipping behaviour as Minimalistic API
+  @volatile var broadcastedSpookyConf: Broadcast[SpookyConf] = _
+  def conf: SpookyConf = {
+    if (isShipped) broadcastedSpookyConf.value
+    else {
+      if (effectiveConf == null) setEffectiveConf(spookyConf)
+      effectiveConf
+    }
+  }
+
+  /**
+    * can only be used on driver
+    */
+  def conf_= (conf: SpookyConf): Unit = {
+    requireNotShipped()
+    setEffectiveConf(conf)
     rebroadcast()
   }
 
@@ -63,14 +76,15 @@ case class SpookyContext private (
 
   def resolver = HDFSResolver(hadoopConf)
 
-  def rebroadcast(): Unit = if (notShipped) {
+  def rebroadcast(): Unit = {
+    requireNotShipped()
     scala.util.Try {
       broadcastedSpookyConf.destroy()
     }
     scala.util.Try {
       broadcastedHadoopConf.destroy()
     }
-    broadcastedSpookyConf = sqlContext.sparkContext.broadcast(spookyConf)
+    broadcastedSpookyConf = sqlContext.sparkContext.broadcast(effectiveConf)
     broadcastedHadoopConf = sqlContext.sparkContext.broadcast(
       new SerializableWritable(this.sqlContext.sparkContext.hadoopConfiguration)
     )
@@ -102,7 +116,11 @@ case class SpookyContext private (
 
   def getSpookyForRDD = {
     if (conf.shareMetrics) this
-    else this.copy(metrics = new SpookyMetrics())
+    else {
+      val result = this.copy(metrics = new SpookyMetrics())
+      result.setEffectiveConf(this.effectiveConf)
+      result
+    }
   }
 
   def create(df: DataFrame): FetchedDataset = this.dsl.dataFrameToPageRowRDD(df)

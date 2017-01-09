@@ -1,5 +1,7 @@
 package com.tribbloids.spookystuff.utils
 
+import org.apache.spark.ml.dsl.utils.FlowUtils
+
 trait SerializationMarks {
 
   /**
@@ -20,6 +22,12 @@ trait SerializationMarks {
 
   def isShipped = shippingMark == null
   def notShipped = !isShipped
+
+  def requireNotShipped() = {
+    val methodName = FlowUtils.getCallerMethodName()
+
+    require(notShipped, s"INTERNAL: method $methodName is disabled after shipping")
+  }
 
   def isZombie = zombieMark == null
   def notZombie = !isZombie

@@ -3,59 +3,47 @@ import org.apache.spark.SparkConf
 
 object DirConf {
 
-  def default() = DirConf()
+  val default = DirConf(
+    root = "temp",
+    localRoot = "temp"
+  )
 }
 
 /**
   * Created by peng on 2/2/15.
   */
 case class DirConf(
-                    var root: String = null,//ystem.getProperty("spooky.dirs.root"),
+                    var root: String = null, //System.getProperty("spooky.dirs.root"),
                     var localRoot: String = null,
-                    var _autoSave: String = null,//System.getProperty("spooky.dirs.autosave"),
-                    var _cache: String = null,//System.getProperty("spooky.dirs.cache"),
-                    var _errorDump: String = null,//System.getProperty("spooky.dirs.errordump"),
-                    var _errorScreenshot: String = null,//System.getProperty("spooky.dirs.errorscreenshot"),
-                    var _checkpoint: String = null,//System.getProperty("spooky.dirs.checkpoint"),
-                    var _errorDumpLocal: String = null,//System.getProperty("spooky.dirs.errordump.local"),
-                    var _errorScreenshotLocal: String = null//System.getProperty("spooky.dirs.errorscreenshot.local")
+                    var autoSave: String = null, //System.getProperty("spooky.dirs.autosave"),
+                    var cache: String = null, //System.getProperty("spooky.dirs.cache"),
+                    var errorDump: String = null, //System.getProperty("spooky.dirs.errordump"),
+                    var errorScreenshot: String = null, //System.getProperty("spooky.dirs.errorscreenshot"),
+                    var checkpoint: String = null, //System.getProperty("spooky.dirs.checkpoint"),
+                    var errorDumpLocal: String = null, //System.getProperty("spooky.dirs.errordump.local"),
+                    var errorScreenshotLocal: String = null //System.getProperty("spooky.dirs.errorscreenshot.local")
                   ) extends AbstractConf {
 
   import com.tribbloids.spookystuff.utils.SpookyViews._
 
-  def root_\(subdir: String): String = Option(root).map(_ \\ subdir).orNull
-  def localRoot_\(subdir: String) = Option(root).map(_ \\ subdir).orNull
-
-  def autoSave_=(v: String): Unit = _autoSave = v
-  def cache_=(v: String): Unit = _cache = v
-  def errorDump_=(v: String): Unit = _errorDump = v
-  def errorScreenshot_=(v: String): Unit = _errorScreenshot = v
-  def checkpoint_=(v: String): Unit = _checkpoint = v
-  def errorDumpLocal_=(v: String): Unit = _errorDumpLocal = v
-  def errorScreenshotLocal_=(v: String): Unit = _errorScreenshotLocal = v
-
-  def autoSave: String = Option(_autoSave).getOrElse(root_\("autosave"))
-  def cache: String = Option(_autoSave).getOrElse(root_\("cache"))
-  def errorDump: String = Option(_autoSave).getOrElse(root_\("errorDump"))
-  def errorScreenshot: String = Option(_autoSave).getOrElse(root_\("errorScreenshot"))
-  def checkpoint: String = Option(_autoSave).getOrElse(root_\("checkpoint"))
-  def errorDumpLocal: String = Option(_autoSave).getOrElse(localRoot_\("errorDump"))
-  def errorScreenshotLocal: String = Option(_autoSave).getOrElse(localRoot_\("errorScreenshot"))
-
   // TODO: use reflection to automate and move to AbstractConf
   override def importFrom(implicit sparkConf: SparkConf): this.type = {
-    
-    new DirConf(
-      Option(root).getOrElse(SpookyConf.getPropertyOrDefault("spooky.dirs.root", "temp")),
-      Option(root).getOrElse(SpookyConf.getPropertyOrDefault("spooky.dirs.root.local", "temp")),
-      Option(_autoSave).getOrElse(SpookyConf.getPropertyOrDefault("spooky.dirs.autosave")),
-      Option(_cache).getOrElse(SpookyConf.getPropertyOrDefault("spooky.dirs.cache")),
-      Option(_errorDump).getOrElse(SpookyConf.getPropertyOrDefault("spooky.dirs.error.dump")),
-      Option(_errorScreenshot).getOrElse(SpookyConf.getPropertyOrDefault("spooky.dirs.error.screenshot")),
-      Option(_checkpoint).getOrElse(SpookyConf.getPropertyOrDefault("spooky.dirs.checkpoint")),
-      Option(_errorDumpLocal).getOrElse(SpookyConf.getPropertyOrDefault("spooky.dirs.error.dump.local")),
-      Option(_errorScreenshotLocal).getOrElse(SpookyConf.getPropertyOrDefault("spooky.dirs.error.screenshot.local"))
+
+    val _root = Option(root).getOrElse(AbstractConf.getOrDefault("spooky.dirs.root", DirConf.default.root))
+    val _localRoot = Option(localRoot).getOrElse(AbstractConf.getOrDefault("spooky.dirs.root", DirConf.default.localRoot))
+
+    val result = new DirConf(
+      root = _root,
+      localRoot = _localRoot,
+      autoSave = Option(autoSave).getOrElse(AbstractConf.getOrDefault("spooky.dirs.autosave", _root \\ "autosave")),
+      cache = Option(cache).getOrElse(AbstractConf.getOrDefault("spooky.dirs.cache", _root \\ "cache")),
+      errorDump = Option(errorDump).getOrElse(AbstractConf.getOrDefault("spooky.dirs.error.dump", _root \\ "errorDump")),
+      errorScreenshot = Option(errorScreenshot).getOrElse(AbstractConf.getOrDefault("spooky.dirs.error.screenshot", _root \\ "errorScreenshot")),
+      checkpoint = Option(checkpoint).getOrElse(AbstractConf.getOrDefault("spooky.dirs.checkpoint", _root \\ "checkpoint")),
+      errorDumpLocal = Option(errorDumpLocal).getOrElse(AbstractConf.getOrDefault("spooky.dirs.error.dump.local", _root \\ "errorDumpLocal")),
+      errorScreenshotLocal = Option(errorScreenshotLocal).getOrElse(AbstractConf.getOrDefault("spooky.dirs.error.screenshot.local", _root \\ "errorScreenshotLocal"))
     )
-      .asInstanceOf[this.type ]
+      .asInstanceOf[this.type]
+    result
   }
 }

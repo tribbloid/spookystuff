@@ -27,7 +27,7 @@ object SpookyViews {
   val RDD_SCOPE_KEY = "spark.rdd.scope"
   val RDD_SCOPE_NO_OVERRIDE_KEY = "spark.rdd.scope.noOverride"
 
-  implicit class FunctionToPrivilegedAction[T](f: => T) extends PrivilegedAction[T] {
+  implicit class Function2PrivilegedAction[T](f: => T) extends PrivilegedAction[T] {
     override def run(): T = {
       f
     }

@@ -37,11 +37,7 @@ trait DynamicParamsMixin extends Params with Dynamic {
   }
 
   protected def Param[T: ClassTag](
-                                    name: String = {
-                                      val bp = FlowUtils.getBreakpointInfo().apply(2)
-                                      assert(!bp.isNativeMethod) //can only use default value in def & lazy val blocks
-                                      bp.getMethodName
-                                    },
+                                    name: String = FlowUtils.getCallerMethodName(),
                                     doc: String = "Pending ...",
                                     default: T = null
                                   ): Param[T] = {
@@ -54,11 +50,7 @@ trait DynamicParamsMixin extends Params with Dynamic {
   }
 
   protected def GenericParam[T: Manifest](
-                                           name: String = {
-                                             val bp = FlowUtils.getBreakpointInfo().apply(2)
-                                             assert(!bp.isNativeMethod) //can only use default value in def & lazy val blocks
-                                             bp.getMethodName
-                                           },
+                                           name: String = FlowUtils.getCallerMethodName(),
                                            doc: String = "Pending ...",
                                            default: T = null
                                          ): Param[T] = {

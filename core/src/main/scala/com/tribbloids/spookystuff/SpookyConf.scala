@@ -6,7 +6,7 @@ import com.tribbloids.spookystuff.dsl._
 import com.tribbloids.spookystuff.row.Sampler
 import com.tribbloids.spookystuff.session._
 import com.tribbloids.spookystuff.session.python.PythonDriver
-import org.apache.spark.SparkConf
+import org.apache.spark.{SparkConf, SparkEnv}
 import org.apache.spark.ml.dsl.ReflectionUtils
 import org.apache.spark.ml.dsl.utils.Message
 import org.apache.spark.storage.StorageLevel
@@ -32,6 +32,13 @@ object Submodules {
       )
     )
   }
+
+  def getDefault(className: String): AnyRef = {
+
+    val clazz = Class.forName(className)
+    val neo = ReflectionUtils.invokeStatic(clazz, "default")
+    neo
+  }
 }
 
 case class Submodules[U] private(
@@ -42,13 +49,12 @@ case class Submodules[U] private(
                     className: String,
                     fn: Any => Any = identity
                   ): Try[U] = Try {
+    val neo = Submodules.getDefault(className)
     self
       .getOrElse (
         className,
         {
-          val clazz = Class.forName(className)
-          val neo = ReflectionUtils.invokeStatic(clazz, "default") //TODO: change to apply?
-        val result = fn(neo).asInstanceOf[U]
+          val result = fn(neo).asInstanceOf[U]
           self.put(className, result)
           result
         }
@@ -73,35 +79,11 @@ case class Submodules[U] private(
   override def iterator: Iterator[U] = self.valuesIterator
 }
 
-/**
-  * all subclasses have to define default() in their respective companion object.
-  */
-trait AbstractConf extends Message {
+object AbstractConf {
 
-  val submodules: Submodules[AbstractConf] = Submodules()
-
-  // TODO: use reflection to automate
-  def importFrom(implicit sparkConf: SparkConf): this.type
-
-  //  def getAndImport[T <: AbstractConf: ClassTag](sparkConfOpt: Option[SparkConf]) = {
-  //    sparkConfOpt match {
-  //      case None =>
-  //        this.components.get[T]()
-  //      case Some(conf) =>
-  //        this.components.get[T](_.importFrom(conf).asInstanceOf[T])
-  //    }
-  //  }
-}
-
-object SpookyConf {
-
-  /**
-    * spark config >> system property >> system environment >> default
-    */
-  def getPropertyOrDefault(
-                            property: String,
-                            default: String = null
-                          )(implicit conf: SparkConf = null): String = {
+  def get(
+           property: String
+         )(implicit conf: SparkConf = Option(SparkEnv.get).map(_.conf).orNull): Option[String] = {
 
     val env = property.replace('.','_').toUpperCase
 
@@ -115,10 +97,44 @@ object SpookyConf {
       .orElse{
         Option(System.getenv(env))
       }
+  }
+
+  /**
+    * spark config >> system property >> system environment >> default
+    */
+  def getOrDefault(
+                    property: String,
+                    default: String = null
+                  )(implicit conf: SparkConf = Option(SparkEnv.get).map(_.conf).orNull): String = {
+
+    get(property)
       .getOrElse{
         default
       }
   }
+}
+
+/**
+  * all subclasses have to define default() in their respective companion object.
+  */
+trait AbstractConf extends Message {
+
+  val submodules: Submodules[AbstractConf] = Submodules()
+
+  // TODO: use reflection to automate
+  def importFrom(implicit sparkConf: SparkConf): this.type = this
+
+  //  def getAndImport[T <: AbstractConf: ClassTag](sparkConfOpt: Option[SparkConf]) = {
+  //    sparkConfOpt match {
+  //      case None =>
+  //        this.components.get[T]()
+  //      case Some(conf) =>
+  //        this.components.get[T](_.importFrom(conf).asInstanceOf[T])
+  //    }
+  //  }
+}
+
+object SpookyConf {
 
   final val DEFAULT_WEBDRIVER_FACTORY = DriverFactories.PhantomJS().pooling
 
@@ -190,7 +206,7 @@ class SpookyConf (
 
   def dirConf: DirConf = submodules.get[DirConf]()
 
-  def importFrom(implicit sparkConf: SparkConf): this.type = {
+  override def importFrom(implicit sparkConf: SparkConf): this.type = {
 
     //TODO: eliminate hardcoding! we have 2 options:
     // 1. Use reflection: property name -> package name -> submodule class name
@@ -203,9 +219,10 @@ class SpookyConf (
         name =>
           this.submodules.tryGetByName(name)
       }
+    val transformed = this.submodules.transform(_.importFrom(sparkConf))
 
     new SpookyConf(
-      this.submodules.transform(_.importFrom(sparkConf)),
+      transformed,
 
       shareMetrics = this.shareMetrics,
 

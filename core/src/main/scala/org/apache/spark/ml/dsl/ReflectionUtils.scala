@@ -17,8 +17,6 @@
 
 package org.apache.spark.ml.dsl
 
-import org.apache.spark.ml.dsl.utils.FlowUtils
-
 object ReflectionUtils {
 
   import org.apache.spark.sql.catalyst.ScalaReflection.universe._
