@@ -15,16 +15,12 @@ trait AbstractGoto extends MAVInteraction {
   val to: Extractor[Any]
 
   lazy val toV = to.asInstanceOf[Literal[FR, Location]].value
-}
 
-class GotoEXE(
-               toV: Location,
-               session: Session
-             ) extends MAVInteractionEXE(session) {
-
-  override def conduct(): Unit = {
-    LoggerFactory.getLogger(this.getClass).info(s"scanning .. $toV")
-    pyEndpoint.move(toV)
+  class SessionView(session: Session) extends super.SessionView(session) {
+    override def conduct(): Unit = {
+      LoggerFactory.getLogger(this.getClass).info(s"scanning .. $toV")
+      py.move(toV)
+    }
   }
 }
 
@@ -32,10 +28,6 @@ case class Goto(
                  to: Extractor[Any],
                  override val delay: Duration = null
                ) extends AbstractGoto {
-
-  override def getExe(session: Session) = {
-    new GotoEXE(toV, session)
-  }
 
   override def doInterpolate(pageRow: FetchedRow, schema: DataRowSchema): Option[this.type] = {
     val toOpt = to.asInstanceOf[Extractor[Location]].resolve(schema).lift.apply(pageRow)

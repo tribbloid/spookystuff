@@ -1,6 +1,7 @@
 package com.tribbloids.spookystuff.dsl
 
 import com.tribbloids.spookystuff.actions.Visit
+import com.tribbloids.spookystuff.dsl.DriverFactories.{TaskLocal, Transient}
 import com.tribbloids.spookystuff.session.Session
 import com.tribbloids.spookystuff.testutils.LocalPathDocsFixture
 import com.tribbloids.spookystuff.{SpookyConf, SpookyContext, SpookyEnvFixture}
@@ -10,14 +11,14 @@ import com.tribbloids.spookystuff.{SpookyConf, SpookyContext, SpookyEnvFixture}
   */
 class TestDriverFactory extends SpookyEnvFixture with LocalPathDocsFixture {
 
-  val baseFactories: Seq[TransientFactory[_]] = Seq(
+  val baseFactories: Seq[Transient[_]] = Seq(
     DriverFactories.PhantomJS(),
     DriverFactories.Python()
   )
 
-  val poolingFactories: Seq[TaskLocalFactory[_]] = baseFactories
+  val poolingFactories: Seq[TaskLocal[_]] = baseFactories
     .map(
-      _.pooling
+      _.taskLocal
     )
 
   val factories = baseFactories ++ poolingFactories
@@ -26,8 +27,8 @@ class TestDriverFactory extends SpookyEnvFixture with LocalPathDocsFixture {
     test(s"$ff can factoryReset()") {
       val session = new Session(spooky)
       val driver = ff.dispatch(session)
-      ff.asInstanceOf[TransientFactory[Any]].factoryReset(driver.asInstanceOf[Any])
-      ff.asInstanceOf[TransientFactory[Any]].destroy(driver, session.taskOpt)
+      ff.asInstanceOf[Transient[Any]].factoryReset(driver.asInstanceOf[Any])
+      ff.asInstanceOf[Transient[Any]].destroy(driver, session.taskOpt)
     }
   }
 
@@ -35,7 +36,7 @@ class TestDriverFactory extends SpookyEnvFixture with LocalPathDocsFixture {
 //
 //  }
   test("If the old driver is released, the second Pooling DriverFactory.get() should yield the same driver") {
-    val conf = new SpookyConf(webDriverFactory = DriverFactories.PhantomJS().pooling)
+    val conf = new SpookyConf(webDriverFactory = DriverFactories.PhantomJS().taskLocal)
     val spooky = new SpookyContext(sql, conf)
 
     val session1 = new Session(spooky)

@@ -55,7 +55,11 @@ abstract class Metrics extends Message with Product with Serializable {
     }
   }
 
-  override val value: ListMap[String, Any] = toMap
+  //DO NOT change to val! metrics is very mutable
+  override def value: ListMap[String, Any] = {
+    val result = toMap
+    result
+  }
 
   val children: ArrayBuffer[Metrics] = ArrayBuffer()
 }

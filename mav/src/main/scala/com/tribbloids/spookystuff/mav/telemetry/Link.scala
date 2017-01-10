@@ -15,30 +15,29 @@ case class Drone(
                   // remember, one drone can have several telemetry
                   // endpoints: 1 primary and several backups (e.g. text message-based)
                   // TODO: implement telemetry backup mechanism, can use MAVproxy's multiple master feature
-                  connStrs: Seq[String], // [protocol]:ip:port;[baudRate]
-                  baudRate: Int = MAVConf.DEFAULT_BAUDRATE,
-                  ssid: Int = MAVConf.EXECUTOR_SSID,
+                  uris: Seq[String], // [protocol]:ip:port;[baudRate]
                   frame: Option[String] = None,
+                  baudRate: Int = MAVConf.DEFAULT_BAUDRATE,
+                  endpointSSID: Int = MAVConf.EXECUTOR_SSID,
                   name: String = "DRONE"
                 ) {
 
-  def nativeEndpoint = Endpoint(
-    connStrs.head,
+  def directEndpoint = Endpoint(
+    uris.head,
     baudRate,
-    ssid,
+    endpointSSID,
     frame
   )
 
-  override def toString = s"$name:$frame@${connStrs.head}"
+  override def toString = s"$name:$frame@${uris.head}"
 }
 
 case class Endpoint(
-                     connStr: String, // [protocol]:ip:port;[baudRate]
+                     uri: String, // [protocol]:ip:port;[baudRate]
                      baudRate: Int = MAVConf.DEFAULT_BAUDRATE,
                      ssid: Int = MAVConf.EXECUTOR_SSID,
                      frame: Option[String] = None
                    ) extends CaseInstanceRef with SingletonRef with LocalCleanable {
-
 
 }
 
@@ -60,6 +59,7 @@ object Link {
                        session: Session,
                        locationOpt: Option[Location] = None
                      ): Link = {
+
     session.initializeDriverIfMissing {
       getOrCreate(candidates, factory, session, locationOpt)
     }
@@ -228,6 +228,7 @@ object Link {
     )
   }
 
+  //TODO: this entire big thing should be delegated to Endpoint
   class PyBindingImpl(
                        override val ref: Link,
                        override val driver: PythonDriver,
@@ -285,7 +286,7 @@ object Link {
       def autoStart(): Unit = try {
         val retries = spookyOpt.map(
           spooky =>
-            spooky.conf.submodules.get[MAVConf]().connectionRetries
+            spooky.conf.submodule[MAVConf].connectionRetries
         )
           .getOrElse(MAVConf.CONNECTION_RETRIES)
         SpookyUtils.retry(retries) {
@@ -338,29 +339,29 @@ case class Link(
   }
 
   val outs: Seq[String] = executorOuts ++ gcsOuts
-  val allURI = (drone.connStrs ++ outs).distinct
+  val allURI = (drone.uris ++ outs).distinct
 
-  val nativeEndpoint: Endpoint = drone.nativeEndpoint
-  val endpointsForExecutor = if (executorOuts.isEmpty) {
-    Seq(nativeEndpoint)
+  def directEndpoint: Endpoint = drone.directEndpoint
+  val executorEndpoints = if (executorOuts.isEmpty) {
+    Seq(directEndpoint)
   }
   else {
     executorOuts.map {
       out =>
-        nativeEndpoint.copy(connStr = out)
+        directEndpoint.copy(uri = out)
     }
   }
   //always initialized in Python when created from companion object
-  val primaryEndpoint: Endpoint = endpointsForExecutor.head
+  val primaryEndpoint: Endpoint = executorEndpoints.head
 
-  val endpointsForGCS = {
+  val gcsEndpoints = {
     gcsOuts.map {
       out =>
-        nativeEndpoint.copy(connStr = out)
+        directEndpoint.copy(uri = out)
     }
   }
 
-  val allEndpoints: Seq[Endpoint] = (Seq(nativeEndpoint) ++ endpointsForExecutor ++ endpointsForGCS).distinct
+  val allEndpoints: Seq[Endpoint] = (Seq(directEndpoint) ++ executorEndpoints ++ gcsEndpoints).distinct
 
   override type Binding = Link.PyBindingImpl
 
@@ -379,9 +380,9 @@ case class Link(
       _proxyOpt = if (outs.isEmpty) None
       else {
         val proxy = Proxy(
-          nativeEndpoint.connStr,
+          directEndpoint.uri,
           outs,
-          nativeEndpoint.baudRate,
+          directEndpoint.baudRate,
           name = drone.name
         )
         Some(proxy)
@@ -422,10 +423,10 @@ case class Link(
     val includeThis: Seq[Link] = notThis ++ Seq(this)
     val s1 = if (_distinctEndpoint){
       val ss1 = Seq(
-        Try(assert(Link.existing.get(drone).forall(_.link eq this), s"Conflict: endpoint index ${nativeEndpoint.connStr} is already used")),
-        Try(assert(!notThis.exists(_.nativeEndpoint.connStr == nativeEndpoint.connStr), s"Conflict: endpoint ${nativeEndpoint.connStr} is already used"))
+        Try(assert(Link.existing.get(drone).forall(_.link eq this), s"Conflict: endpoint index ${directEndpoint.uri} is already used")),
+        Try(assert(!notThis.exists(_.directEndpoint.uri == directEndpoint.uri), s"Conflict: endpoint ${directEndpoint.uri} is already used"))
       )
-      val allConnStrs: Map[String, Int] = includeThis.flatMap(_.drone.connStrs)
+      val allConnStrs: Map[String, Int] = includeThis.flatMap(_.drone.uris)
         .groupBy(identity)
         .mapValues(_.size)
       val ss2 = allConnStrs.toSeq.map {

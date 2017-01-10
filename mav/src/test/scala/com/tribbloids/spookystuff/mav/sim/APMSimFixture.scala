@@ -23,6 +23,7 @@ import org.slf4j.LoggerFactory
 
 abstract class APMSimFixture extends SpookyEnvFixture {
 
+  import com.tribbloids.spookystuff.mav.dsl._
   import com.tribbloids.spookystuff.utils.SpookyViews._
 
   override val processNames = Seq("phantomjs", "python", "apm")
@@ -36,9 +37,9 @@ abstract class APMSimFixture extends SpookyEnvFixture {
 
   override def setUp(): Unit = {
     super.setUp()
-    val mavConf = this.spooky.conf.submodules.get[MAVConf]()
+    val mavConf = this.spooky.conf.submodule[MAVConf]
     mavConf.connectionRetries = 2
-    mavConf.fleet = simEndpoints
+    mavConf.fleet = Fleets.Inventory(simEndpoints)
   }
 
   override def beforeAll(): Unit = {

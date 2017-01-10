@@ -42,7 +42,7 @@ class LinkSuite extends APMSimFixture {
   test("Link can create Binding that doesn't have any method") {
 
     val session = new Session(spooky, driverLifespan)
-    val factory = LinkFactories.NoProxy
+    val factory = LinkFactories.Direct
     val link = Link.getOrInitialize(
       getEndpoints(simConnStrs.head),
       factory,
@@ -58,7 +58,7 @@ class LinkSuite extends APMSimFixture {
   test("Link cannot create 2 Bindings") {
 
     val session = new Session(spooky, driverLifespan)
-    val factory = LinkFactories.NoProxy
+    val factory = LinkFactories.Direct
     val link = Link.getOrInitialize(
       getEndpoints(simConnStrs.head),
       factory,
@@ -74,7 +74,7 @@ class LinkSuite extends APMSimFixture {
 
   test("Link failed to be created won't exist in Link.existing or driverLocal") {
     val session = new Session(spooky)
-    val factory = LinkFactories.NoProxy
+    val factory = LinkFactories.Direct
 
     Link.existing.values.toList.foreach(_.clean())
 
@@ -105,7 +105,7 @@ class LinkSuite extends APMSimFixture {
 
   test("Link.detectConflicts won't trigger false alarm by itself") {
     val session = new Session(spooky)
-    val factory = LinkFactories.NoProxy
+    val factory = LinkFactories.Direct
 
     val link = Link.selectAndCreate(
       getEndpoints(simConnStrs.head),
@@ -119,7 +119,7 @@ class LinkSuite extends APMSimFixture {
 
   test("If without Proxy, Link.primary should = endpoint") {
     val spooky = this.spooky
-    val factory = LinkFactories.NoProxy
+    val factory = LinkFactories.Direct
     val getEndpoints = this.getEndpoints
     val connStr_URIs = simConnStrRDD.map {
       connStr =>
@@ -130,7 +130,7 @@ class LinkSuite extends APMSimFixture {
           session
         )
 
-        link.nativeEndpoint.connStr -> link.primaryEndpoint.connStr
+        link.directEndpoint.uri -> link.primaryEndpoint.uri
     }
       .collect()
 
@@ -225,7 +225,7 @@ class LinkSuite extends APMSimFixture {
           session
         )
         val firstOut = link.proxyOpt.get.outs.head
-        val uri = link.primaryEndpoint.connStr
+        val uri = link.primaryEndpoint.uri
         firstOut -> uri
     }
       .collect()
@@ -236,7 +236,7 @@ class LinkSuite extends APMSimFixture {
   }
 
   val factories = Seq(
-    LinkFactories.NoProxy,
+    LinkFactories.Direct,
     LinkFactories.ForkToGCS()
   )
 

@@ -40,7 +40,7 @@ object LinkIT{
 
 class LinkIT extends APMSimFixture {
 
-  lazy val factory: LinkFactory = LinkFactories.NoProxy
+  lazy val factory: LinkFactory = LinkFactories.Direct
 
 //    override def parallelism: Int = 4
 
@@ -126,7 +126,7 @@ class LinkWithProxyIT extends LinkIT {
           )
 
           val endpoint1 = link.primaryEndpoint
-          val endpoint2 = link.endpointsForExecutor.last
+          val endpoint2 = link.executorEndpoints.last
           endpoint1.Py(session).assureClearanceAlt(20)
           val driver2 = new PythonDriver()
           val py2 = endpoint2._Py(driver2, Some(spooky))

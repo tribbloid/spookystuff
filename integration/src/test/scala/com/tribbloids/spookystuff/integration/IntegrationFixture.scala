@@ -25,7 +25,7 @@ abstract class IntegrationFixture extends SpookyEnvFixture with BeforeAndAfterAl
 
   lazy val driverFactories = Seq(
     phantomJS,
-    phantomJS.pooling
+    phantomJS.taskLocal
     //    htmlUnit
   )
 

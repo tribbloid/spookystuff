@@ -1,7 +1,7 @@
 package com.tribbloids.spookystuff.mav
 
 import com.tribbloids.spookystuff.AbstractConf
-import com.tribbloids.spookystuff.mav.dsl.{LinkFactories, LinkFactory}
+import com.tribbloids.spookystuff.mav.dsl.{Fleet, Fleets, LinkFactories, LinkFactory}
 import com.tribbloids.spookystuff.mav.telemetry.Drone
 
 object MAVConf {
@@ -30,9 +30,14 @@ case class MAVConf(
                     // connection list is configed by user and shared by all executors
                     // blacklist is node specific and determined by GenPartitioner
                     // routing now becomes part of Connection?
-                    var fleet: Seq[Drone] = Nil,
+                    var fleet: Fleet = Fleets.Inventory(Nil),
                     var linkFactory: LinkFactory = LinkFactories.ForkToGCS(),
                     var connectionRetries: Int = MAVConf.CONNECTION_RETRIES,
                     var clearanceAltitude: Double = 10 // in meters
                   ) extends AbstractConf {
+
+  /**
+    * singleton per worker, lost on shipping
+    */
+  @transient lazy val droneHost: Seq[(Drone, String)] = fleet.apply()
 }

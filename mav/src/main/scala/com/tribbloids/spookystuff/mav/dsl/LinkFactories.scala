@@ -34,7 +34,7 @@ object LinkFactories {
     if (!result) {
       LoggerFactory.getLogger(this.getClass).info (
         s"""
-           |Can no longer use existing telemetry link for drone ${link.link.nativeEndpoint.connStr}:
+           |Can no longer use existing telemetry link for drone ${link.link.directEndpoint.uri}:
            |output should be routed to GCS(s) ${gcsOutss.head.mkString("[",", ","]")}
            |but instead existing one routes it to ${gcsOutss.last.mkString("[",", ","]")}
              """.trim.stripMargin
@@ -43,7 +43,7 @@ object LinkFactories {
     result
   }
 
-  case object NoProxy extends LinkFactory with PrettyProduct{
+  case object Direct extends LinkFactory with PrettyProduct{
     def apply(endpoint: Drone) = Link(endpoint)
   }
 

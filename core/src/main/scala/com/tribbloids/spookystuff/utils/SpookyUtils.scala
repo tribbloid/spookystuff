@@ -7,6 +7,7 @@ import java.nio.file.{Files, _}
 import org.apache.commons.io.IOUtils
 import org.apache.spark.SparkEnv
 import org.apache.spark.ml.dsl.ReflectionUtils
+import org.apache.spark.storage.BlockManagerId
 import org.slf4j.LoggerFactory
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -472,7 +473,6 @@ These special characters are often called "metacharacters".
     Random.nextString(len)
   }
 
-
   /**
     * From doc of org.apache.spark.scheduler.TaskLocation
     * Create a TaskLocation from a string returned by getPreferredLocations.
@@ -483,8 +483,9 @@ These special characters are often called "metacharacters".
     * Not sure if it will change in future Spark releases
     */
   def getTaskLocationStr: String = {
-    val bmID = SparkEnv.get.blockManager.blockManagerId
-    val hostName = bmID.hostPort
+
+    val (hostName, bmID) = getHost_ExecutorID
+
     if (org.apache.spark.SPARK_VERSION.startsWith("1.6")) {
       val executorID = bmID.executorId
       s"executor_${hostName}_$executorID"
@@ -492,6 +493,12 @@ These special characters are often called "metacharacters".
     else {
       hostName
     }
+  }
+
+  def getHost_ExecutorID = {
+    val bmID = SparkEnv.get.blockManager.blockManagerId
+    val hostName = bmID.hostPort
+    hostName -> bmID
   }
 
   def tryParseBoolean(str: =>String): Try[Boolean] = {

@@ -4,7 +4,7 @@ import com.tribbloids.spookystuff.dsl.DriverFactories
 
 class TestTrace_PoolingPhantomJS extends TestTrace_PhantomJS {
 
-  override lazy val driverFactory = DriverFactories.PhantomJS().pooling
+  override lazy val driverFactory = DriverFactories.PhantomJS().taskLocal
 
   //TODO: current phantomjs is buggy and cannot handle these two, which is why they are here
   //TODO: current HtmlUnit is buggy and cannot handle these two

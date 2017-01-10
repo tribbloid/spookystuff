@@ -16,7 +16,7 @@ class LinkFactoriesSuite extends SpookyEnvFixture {
   test("NoProxy can create link without proxy") {
 
     Link.existing.values.foreach(_.tryClean())
-    val factory = LinkFactories.NoProxy
+    val factory = LinkFactories.Direct
     val link = Link(Drone(Seq("dummy")), Nil).wContext(spooky, factory)
     assert(LinkFactories.canCreate(factory, link))
   }
@@ -24,7 +24,7 @@ class LinkFactoriesSuite extends SpookyEnvFixture {
   test("NoProxy can create link with proxy that has no GCS out") {
 
     Link.existing.values.foreach(_.tryClean())
-    val factory = LinkFactories.NoProxy
+    val factory = LinkFactories.Direct
     val link = Link(Drone(Seq("dummy")), Seq("localhost:80")).wContext(spooky, factory)
     assert(LinkFactories.canCreate(factory, link))
   }
@@ -32,7 +32,7 @@ class LinkFactoriesSuite extends SpookyEnvFixture {
   test("NoProxy can create link with proxy that has 1 GCS outs") {
 
     Link.existing.values.foreach(_.tryClean())
-    val factory = LinkFactories.NoProxy
+    val factory = LinkFactories.Direct
     val link = Link(Drone(Seq("dummy")), Seq("localhost:80"), Seq("localhost:14550"))
       .wContext(spooky, factory)
     assert(!LinkFactories.canCreate(factory, link))

@@ -114,7 +114,7 @@ object Xml {
     case class XArray(elems: List[XElem]) extends XElem
 
     def toJValue(x: XElem): JValue = x match {
-      case XValue(s) => JString(s)
+      case XValue(s) => JString(s.trim)
       case XLeaf((name, value), attrs) => (value, attrs) match {
         case (_, Nil) => toJValue(value)
         case (XValue(""), xs) => JObject(mkAttributes(xs))

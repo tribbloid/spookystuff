@@ -116,11 +116,10 @@ def randomLocalLocation():
 
 class Endpoint(Daemon, VehicleFunctions):
     # TODO: use **local() to reduce boilerplate copies
-    def __init__(self, connStr, baudRate, ssid, frame=None, name=""):
+    def __init__(self, uri, baudRate, ssid, frame=None, name=""):
         # type: (str, int, int, str, str) -> None
         super(Endpoint, self).__init__(None)
-        self.connStr = connStr
-        self.uri = connStr
+        self.uri = uri
 
         self.baudRate = baudRate
         self.ssid = ssid
@@ -129,7 +128,7 @@ class Endpoint(Daemon, VehicleFunctions):
 
     @property
     def fullName(self):
-        return self.name + "@" + self.connStr
+        return self.name + "@" + self.uri
 
     @property
     def isConnected(self):
@@ -253,7 +252,7 @@ class Proxy(Daemon):
                 # source_system=self.ssid, TODO: how to handle this?
                 baud=self.baudRate
             )
-            self.logPrint("Proxy spawned: PID =", self.pid)
+            self.logPrint("Proxy spawned: PID =", self.pid, "URI =", self.outs[0])
             vehicle.close()
 
     def _stop(self):

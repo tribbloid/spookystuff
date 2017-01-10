@@ -35,17 +35,12 @@ case class Move(
     result.map(_.asInstanceOf[this.type])
   }
 
-  override def getExe(session: Session) = MoveEXE(session)
-
-  case class MoveEXE(
-                      session: Session
-                    ) extends GotoEXE(toV, session) {
-
+  class SessionView(session: Session) extends super.SessionView(session) {
     override def inbound(): Unit = {
       LoggerFactory.getLogger(this.getClass).debug(s"assureClearanceAltitude ${mavConf.clearanceAltitude}")
-      pyEndpoint.assureClearanceAlt(mavConf.clearanceAltitude)
+      py.assureClearanceAlt(mavConf.clearanceAltitude)
       LoggerFactory.getLogger(this.getClass).debug(s"inbound .. $fromV")
-      pyEndpoint.move(fromV)
+      py.move(fromV)
     }
   }
 }

@@ -61,12 +61,10 @@ case class Submodules[U] private(
       )
   }
 
-  def get[T <: U: ClassTag](
-                             fn: Any => Any = identity
-                           ): T = {
+  def get[T <: U: ClassTag]: T = {
     val clazz = implicitly[ClassTag[T]].runtimeClass.asInstanceOf[Class[T]]
     val className = clazz.getCanonicalName
-    tryGetByName(className, fn)
+    tryGetByName(className)
       .map(_.asInstanceOf[T])
       .get
   }
@@ -121,6 +119,8 @@ trait AbstractConf extends Message {
 
   val submodules: Submodules[AbstractConf] = Submodules()
 
+  def submodule[T <: AbstractConf: ClassTag]: T = submodules.get[T]
+
   // TODO: use reflection to automate
   def importFrom(implicit sparkConf: SparkConf): this.type = this
 
@@ -136,13 +136,13 @@ trait AbstractConf extends Message {
 
 object SpookyConf {
 
-  final val DEFAULT_WEBDRIVER_FACTORY = DriverFactories.PhantomJS().pooling
+  final val DEFAULT_WEBDRIVER_FACTORY = DriverFactories.PhantomJS().taskLocal
 
   /**
     * otherwise driver cannot do screenshot
     */
-  final val TEST_WEBDRIVER_FACTORY = DriverFactories.PhantomJS(loadImages = true).pooling
-  final val DEFAULT_PYTHONDRIVER_FACTORY = DriverFactories.Python().pooling
+  final val TEST_WEBDRIVER_FACTORY = DriverFactories.PhantomJS(loadImages = true).taskLocal
+  final val DEFAULT_PYTHONDRIVER_FACTORY = DriverFactories.Python().taskLocal
 }
 
 /**
@@ -204,7 +204,7 @@ class SpookyConf (
                    var defaultStorageLevel: StorageLevel = StorageLevel.MEMORY_ONLY
                  ) extends AbstractConf with Serializable {
 
-  def dirConf: DirConf = submodules.get[DirConf]()
+  def dirConf: DirConf = submodule[DirConf]
 
   override def importFrom(implicit sparkConf: SparkConf): this.type = {
 
