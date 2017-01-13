@@ -72,18 +72,21 @@ trait TestMixin extends FunSuite {
             .map(v => ("|" + v).trim.stripPrefix("|"))
           val b = if (sort) bRaw.sorted
           else bRaw
-
-          a.zip(b).foreach {
-            tuple =>
-              val fixes = tuple._2.split("[\\.]{6,}", 2)
-              assert(
-                tuple._1.startsWith(fixes.head),
-                comparisonStr(originalStr _, b)
-              )
-              assert(
-                tuple._1.endsWith(fixes.last),
-                comparisonStr(originalStr _, b)
-              )
+          try {
+            a.zipAll(b, null, null).foreach {
+              tuple =>
+                val fixes = tuple._2.split("[\\.]{6,}", 2)
+                assert(
+                  tuple._1.startsWith(fixes.head)
+                )
+                assert(
+                  tuple._1.endsWith(fixes.last)
+                )
+            }
+          }
+          catch {
+            case e: Throwable =>
+              throw new AssertionError("" + comparisonStr(originalStr _, bRaw), e)
           }
       }
     }
