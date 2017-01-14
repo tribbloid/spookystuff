@@ -5,6 +5,7 @@ import com.tribbloids.spookystuff.mav.dsl.LinkFactories
 import com.tribbloids.spookystuff.mav.sim.APMSimFixture
 import com.tribbloids.spookystuff.session.python.PythonDriver
 import com.tribbloids.spookystuff.session.{Lifespan, NoPythonDriverException, Session}
+import com.tribbloids.spookystuff.utils.SpookyUtils
 import org.slf4j.LoggerFactory
 
 object LinkSuite {
@@ -34,7 +35,7 @@ class LinkSuite extends APMSimFixture {
     LoggerFactory.getLogger(this.getClass).info("======== Python Drivers Cleanup ========")
     sc.foreachWorker {
 
-      Link.existing.values.foreach(_.link.validDriverToBindings.keys.foreach(_.tryClean()))
+      Link.existing.values.foreach(_.link.validDriverToBindings.keys.foreach(_.clean()))
     }
     Thread.sleep(2000)
   }
@@ -92,7 +93,7 @@ class LinkSuite extends APMSimFixture {
 
     // this will fail due to non-existing endpoint
     intercept[PyInterpreterException] {
-      val link = Link.getOrInitialize(
+      Link.getOrInitialize(
         Seq(Drone(Seq("dummy"))),
         factory,
         session
@@ -206,8 +207,11 @@ class LinkSuite extends APMSimFixture {
           py.stop()
         }
     }
-    sc.foreachComputer {
-      SpookyEnvFixture.processShouldBeClean(Seq("mavproxy"), Seq("mavproxy"), cleanSweep = false)
+    //wait for zombie process to be deregistered
+    SpookyUtils.retry(5) {
+      sc.foreachComputer {
+        SpookyEnvFixture.processShouldBeClean(Seq("mavproxy"), Seq("mavproxy"), cleanSweep = false)
+      }
     }
   }
 
@@ -245,7 +249,7 @@ class LinkSuite extends APMSimFixture {
       test(s"If factory=${factory.getClass.getSimpleName}," +
         s" Link created in the same python driver can be reused") {
         Link.existing.values.foreach {
-          _.tryClean()
+          _.clean()
         }
         Thread.sleep(2000) //Waiting for python drivers to terminate
 
@@ -281,7 +285,7 @@ class LinkSuite extends APMSimFixture {
       test(s"If factory=${factory.getClass.getSimpleName}," +
         s" idle Link (with no active Python driver) can be refit for anther Python driver") {
         Link.existing.values.foreach {
-          _.tryClean()
+          _.clean()
         }
         Thread.sleep(2000) //Waiting for python drivers to terminate
 

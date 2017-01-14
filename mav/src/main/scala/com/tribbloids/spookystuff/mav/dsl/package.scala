@@ -8,7 +8,7 @@ import com.tribbloids.spookystuff.mav.telemetry.{Drone, Link}
   */
 package object dsl {
 
-  type Fleet = () => Seq[(Drone, String)] //=> Seq[Drone, hostname={ip:port}]
+//  type Fleet = () => Seq[Drone] //=> Seq[Drone, hostname={ip:port}]
 
   type LinkFactory = (Drone => Link)
 }

@@ -1,3 +1,3 @@
 
-daemonStartRetries = 2
+daemonStartRetries = 3
 armRetries = 2

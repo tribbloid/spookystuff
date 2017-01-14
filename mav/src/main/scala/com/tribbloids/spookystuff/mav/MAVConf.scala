@@ -1,6 +1,7 @@
 package com.tribbloids.spookystuff.mav
 
 import com.tribbloids.spookystuff.AbstractConf
+import com.tribbloids.spookystuff.mav.actions.LocationLocal
 import com.tribbloids.spookystuff.mav.dsl.{Fleet, Fleets, LinkFactories, LinkFactory}
 import com.tribbloids.spookystuff.mav.telemetry.Drone
 
@@ -39,5 +40,5 @@ case class MAVConf(
   /**
     * singleton per worker, lost on shipping
     */
-  @transient lazy val droneHost: Seq[(Drone, String)] = fleet.apply()
+  def drones: Seq[Drone] = fleet.apply()
 }

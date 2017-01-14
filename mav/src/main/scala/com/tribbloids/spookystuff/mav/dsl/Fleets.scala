@@ -13,11 +13,11 @@ object Fleets {
                         hosts: (Drone, String) => Boolean = (_,_) => true
                       ) extends Fleet {
 
-    def apply(): Seq[(Drone, String)] = {
+    def apply(): Seq[Drone] = {
       val hostName = SpookyUtils.getHost_ExecutorID._1
       drones.flatMap {
         d =>
-          if (hosts(d, hostName)) Some(d -> hostName)
+          if (hosts(d, hostName)) Some(d)
           else None
       }
     }
@@ -29,9 +29,13 @@ object Fleets {
   //TODO: implement later
   case class Discover(delegate: Fleet) extends Fleet {
 
-    def apply(): Seq[(Drone, String)] = {
+    def apply(): Seq[Drone] = {
       val before = delegate()
       ???
     }
   }
+}
+
+trait Fleet extends (() => Seq[Drone]) {
+
 }

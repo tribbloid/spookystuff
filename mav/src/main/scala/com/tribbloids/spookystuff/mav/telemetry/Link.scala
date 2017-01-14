@@ -294,9 +294,7 @@ object Link {
         }
       }
       catch {
-        case e: PyInterpreterException => //this indicates a possible port conflict
-          //TODO: enable after ping daemon
-
+        case e: PyInterpreterException =>
           try {
             ref.detectPortConflicts(Option(e.cause).toSeq)
           }
@@ -306,7 +304,8 @@ object Link {
                 cause = ee
               )
           }
-          throw e.copy(code = e.code + "\n\n\t### No port conflict detected ###")
+          val withExtra = e.copy(code = e.code + "\n\n\t### No port conflict detected ###")
+          throw withExtra
       }
     }
   }
@@ -403,25 +402,17 @@ case class Link(
     factory
   )
 
-  //  def sublink(index: Int, ssid: Int): Sublink = {
-  //    val result = new Sublink(this,index, ssid)
-  //    result.detectPortConflicts()
-  //    result
-  //  }
-
   override protected def newPy(driver: PythonDriver, spookyOpt: Option[SpookyContext]): Link.PyBindingImpl = {
     val result = new Link.PyBindingImpl(this, driver, spookyOpt)
     onHold = false
     result
   }
 
-  def _distinctEndpoint: Boolean = true
-
   def detectPortConflicts(causes: Seq[Throwable] = Nil): Unit = {
     val existing = Link.existing.values.toList.map(_.link) // remember to clean up the old one to create a new one
     val notThis = existing.filterNot(_ eq this)
     val includeThis: Seq[Link] = notThis ++ Seq(this)
-    val s1 = if (_distinctEndpoint){
+    val s1 = {
       val ss1 = Seq(
         Try(assert(Link.existing.get(drone).forall(_.link eq this), s"Conflict: endpoint index ${directEndpoint.uri} is already used")),
         Try(assert(!notThis.exists(_.directEndpoint.uri == directEndpoint.uri), s"Conflict: endpoint ${directEndpoint.uri} is already used"))
@@ -434,9 +425,6 @@ case class Link(
           Try(assert(tuple._2 == 1, s"${tuple._2} endpoints has identical uri ${tuple._1}"))
       }
       ss1 ++ ss2
-    }
-    else {
-      Nil
     }
     val allExecutorOuts: Map[String, Int] = includeThis.flatMap(_.executorOuts)
       .groupBy(identity)
@@ -453,14 +441,6 @@ case class Link(
 
     val locations = primaryEndpoint.PY.vehicle.location
     val global = locations.global_frame.$MSG.get.cast[LocationGlobal]
-    //      val globalRelative = locations.global_relative_frame.$MSG.get.cast[LocationGlobalRelative]
-    //      val local = locations.local_frame.$MSG.get.cast[LocationLocal]
-
-    //      val result = LocationBundle(
-    //        global,
-    //        globalRelative,
-    //        local
-    //      )
     this.currentLocation = Some(global)
     global
   }

@@ -141,7 +141,7 @@ sealed trait AbstractCleanable {
       case e: Throwable =>
         val ee = e
         LoggerFactory.getLogger(this.getClass).warn(
-          s"$logPrefix !!! FAIL TO CLEAN UP !!!\n" + ee
+          s"$logPrefix !!! FAIL TO CLEAN UP !!!\n", ee
         )
     }
     finally {

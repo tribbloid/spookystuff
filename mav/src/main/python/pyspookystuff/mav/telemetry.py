@@ -11,8 +11,9 @@ import time
 import dronekit
 import sarge
 from MAVProxy import mavproxy
+from Const import *
 
-from pyspookystuff.mav import Const, VehicleFunctions, utils
+from pyspookystuff.mav import VehicleFunctions, utils
 from pyspookystuff.mav.utils import retry
 
 """
@@ -87,6 +88,7 @@ class Daemon(object):
     def _start(self):
         pass
 
+    @retry(5)
     def stop(self):
         print("stopping", self.fullName, ":", str(type(self)))
         self._stop()
@@ -99,7 +101,11 @@ class Daemon(object):
         self.start()
 
     def __del__(self):
-        self.stop()
+        try:
+            self.stop()
+        except:
+            print(self.fullName, "!!! FAIL TO CLEAN UP !!!")
+            raise
 
     def logPrint(self, *args):
         print(self.fullName, *args)
@@ -134,7 +140,7 @@ class Endpoint(Daemon, VehicleFunctions):
     def isConnected(self):
         return not (self.vehicle == None)
 
-    @retry(Const.daemonStartRetries)
+    @retry(daemonStartRetries)
     def _start(self):
         if not self.vehicle:
             self.vehicle = dronekit.connect(
@@ -232,7 +238,7 @@ class Proxy(Daemon):
 
         self.p = pipeline
 
-    @retry(Const.daemonStartRetries)
+    @retry(daemonStartRetries)
     def _start(self):
         # type: () -> None
 
@@ -245,15 +251,22 @@ class Proxy(Daemon):
                 return self.isAlive
             utils.waitFor(isAlive, 10)
 
-            # ensure that proxy is usable, otherwise its garbage
-            vehicle = dronekit.connect(
-                self.outs[0],
-                wait_ready=True,
-                # source_system=self.ssid, TODO: how to handle this?
-                baud=self.baudRate
-            )
+            @retry(daemonStartRetries)
+            def sanityCheck():
+                # ensure that proxy is usable, otherwise its garbage
+                vehicle = dronekit.connect(
+                    self.outs[0],
+                    wait_ready=True, #  TODO change to False once stabilized
+                    source_system=self.ssid, #  TODO: how to handle this?
+                    baud=self.baudRate
+                )
+                @retry(5)
+                def _close():
+                    vehicle.close()
+                _close()
+            sanityCheck()
+
             self.logPrint("Proxy spawned: PID =", self.pid, "URI =", self.outs[0])
-            vehicle.close()
 
     def _stop(self):
         if self.p:

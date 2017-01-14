@@ -15,7 +15,7 @@ trait MAVAction extends Action {
 
     val link: Link = {
       Link.getOrCreate(
-        mavConf.droneHost.map(_._1),
+        mavConf.drones,
         mavConf.linkFactory,
         session
       )
