@@ -4,7 +4,7 @@ import com.tribbloids.spookystuff.mav.actions._
 import com.tribbloids.spookystuff.mav.dsl.{LinkFactories, LinkFactory}
 import com.tribbloids.spookystuff.mav.{MAVConf, ReinforcementDepletedException}
 import com.tribbloids.spookystuff.session.python._
-import com.tribbloids.spookystuff.session.{LocalCleanable, Session}
+import com.tribbloids.spookystuff.session.{Cleanable, LocalCleanable, Session}
 import com.tribbloids.spookystuff.utils.{SpookyUtils, TreeException}
 import com.tribbloids.spookystuff.{PyInterpreterException, SpookyContext, caching}
 import org.slf4j.LoggerFactory
@@ -22,7 +22,7 @@ case class Drone(
                   name: String = "DRONE"
                 ) {
 
-  def directEndpoint = Endpoint(
+  def getDirectEndpoint = Endpoint(
     uris.head,
     baudRate,
     endpointSSID,
@@ -30,6 +30,9 @@ case class Drone(
   )
 
   override def toString = s"$name:$frame@${uris.head}"
+
+  var home: Option[LocationGlobal] = None
+  var lastLocation: Option[LocationGlobal] = None
 }
 
 case class Endpoint(
@@ -42,6 +45,17 @@ case class Endpoint(
 }
 
 object Link {
+
+  def cleanSanityCheck(): Unit = {
+    val subs = Cleanable.getTyped[Endpoint]() ++ Cleanable.getTyped[Proxy]()
+    val refSubs = Cleanable.getTyped[Link]().flatMap(_.subCleanable)
+    assert(
+      subs.intersect(refSubs).size <= refSubs.size,
+      {
+        "INTERNAL ERROR: dangling tree!"
+      }
+    )
+  }
 
   // max 1 per task/thread.
   val driverLocal: caching.ConcurrentMap[PythonDriver, Link] = caching.ConcurrentMap()
@@ -94,9 +108,9 @@ object Link {
 
     val result = local
       .getOrElse {
-        val newLink = recommissionIdle(candidates, factory, session, locationOpt)
+        val newLink = recommissionIdle(candidates, factory, session.spooky, locationOpt)
           .getOrElse {
-            selectAndCreate(candidates, factory, session)
+            selectAndCreate(candidates, factory, session.spooky)
           }
         try {
           newLink.link.Py(session)
@@ -116,7 +130,7 @@ object Link {
   def recommissionIdle(
                         candidates: Seq[Drone],
                         factory: LinkFactory,
-                        session: Session,
+                        spooky: SpookyContext,
                         locationOpt: Option[Location] = None
                       ): Option[LinkWithContext] = {
 
@@ -155,7 +169,7 @@ object Link {
                 s"Recommissioning telemetry Link for ${link.drone} with new proxy"
               }
               link.wContext(
-                session.spooky,
+                spooky,
                 factory
               )
             }
@@ -188,7 +202,7 @@ object Link {
   def selectAndCreate(
                        candidates: Seq[Drone],
                        factory: LinkFactory,
-                       session: Session
+                       spooky: SpookyContext
                      ): LinkWithContext = {
 
     val newLink = this.synchronized {
@@ -209,7 +223,7 @@ object Link {
           )
         )
 
-      create(endpoint, factory, session.spooky)
+      create(endpoint, factory, spooky)
     }
     newLink
   }
@@ -256,13 +270,13 @@ object Link {
           ref.proxyOpt.foreach {
             _.PY.start()
           }
-          ref.primaryEndpoint._Py(driver, spookyOpt).start()
+          ref.Endpoints.primary._Py(driver, spookyOpt).start()
         }
         isStarted = true
       }
 
       def stopDaemons(): Unit = {
-        ref.primaryEndpoint._Py(driver, spookyOpt).stop()
+        ref.Endpoints.primary._Py(driver, spookyOpt).stop()
         ref.proxyOpt.foreach {
           _.PY.stop()
         }
@@ -305,6 +319,7 @@ object Link {
               )
           }
           val withExtra = e.copy(code = e.code + "\n\n\t### No port conflict detected ###")
+          withExtra.setStackTrace(e.getStackTrace)
           throw withExtra
       }
     }
@@ -340,27 +355,32 @@ case class Link(
   val outs: Seq[String] = executorOuts ++ gcsOuts
   val allURI = (drone.uris ++ outs).distinct
 
-  def directEndpoint: Endpoint = drone.directEndpoint
-  val executorEndpoints = if (executorOuts.isEmpty) {
-    Seq(directEndpoint)
-  }
-  else {
-    executorOuts.map {
-      out =>
-        directEndpoint.copy(uri = out)
+  /**
+    * CAUTION: ALL of them have to be val or lazy val! Or you risk recreating many copies each with its own python! Conflict with each other!
+    */
+  object Endpoints {
+    val direct: Endpoint = drone.getDirectEndpoint
+    val executor = if (executorOuts.isEmpty) {
+      Seq(direct)
     }
-  }
-  //always initialized in Python when created from companion object
-  val primaryEndpoint: Endpoint = executorEndpoints.head
-
-  val gcsEndpoints = {
-    gcsOuts.map {
-      out =>
-        directEndpoint.copy(uri = out)
+    else {
+      executorOuts.map {
+        out =>
+          direct.copy(uri = out)
+      }
     }
+    //always initialized in Python when created from companion object
+    val primary: Endpoint = executor.head
+    val gcs = {
+      gcsOuts.map {
+        out =>
+          direct.copy(uri = out)
+      }
+    }
+    val all: Seq[Endpoint] = (Seq(direct) ++ executor ++ gcs).distinct
   }
 
-  val allEndpoints: Seq[Endpoint] = (Seq(directEndpoint) ++ executorEndpoints ++ gcsEndpoints).distinct
+  import Endpoints._
 
   override type Binding = Link.PyBindingImpl
 
@@ -369,7 +389,7 @@ case class Link(
     */
   @volatile var onHold: Boolean = true
   def isIdle: Boolean = {
-    !onHold && validDriverToBindings.isEmpty
+    !onHold && driverToBindingsAlive.isEmpty
   }
 
   //mnemonic
@@ -379,9 +399,9 @@ case class Link(
       _proxyOpt = if (outs.isEmpty) None
       else {
         val proxy = Proxy(
-          directEndpoint.uri,
+          direct.uri,
           outs,
-          directEndpoint.baudRate,
+          direct.baudRate,
           name = drone.name
         )
         Some(proxy)
@@ -389,9 +409,6 @@ case class Link(
       _proxyOpt
     }
   }
-
-  var home: Option[LocationGlobal] = None
-  var currentLocation: Option[LocationGlobal] = None
 
   def wContext(
                 spooky: SpookyContext,
@@ -414,8 +431,14 @@ case class Link(
     val includeThis: Seq[Link] = notThis ++ Seq(this)
     val s1 = {
       val ss1 = Seq(
-        Try(assert(Link.existing.get(drone).forall(_.link eq this), s"Conflict: endpoint index ${directEndpoint.uri} is already used")),
-        Try(assert(!notThis.exists(_.directEndpoint.uri == directEndpoint.uri), s"Conflict: endpoint ${directEndpoint.uri} is already used"))
+        Try(assert(
+          Link.existing.get(drone).forall(_.link eq this),
+          s"Conflict: endpoint index ${direct.uri} is already used")
+        ),
+        Try(assert(
+          !notThis.exists(_.Endpoints.direct.uri == direct.uri),
+          s"Conflict: endpoint ${direct.uri} is already used")
+        )
       )
       val allConnStrs: Map[String, Int] = includeThis.flatMap(_.drone.uris)
         .groupBy(identity)
@@ -424,6 +447,10 @@ case class Link(
         tuple =>
           Try(assert(tuple._2 == 1, s"${tuple._2} endpoints has identical uri ${tuple._1}"))
       }
+      val ss3 = Seq(
+        Try(PyRef.cleanSanityCheck()),
+        Try(Link.cleanSanityCheck())
+      )
       ss1 ++ ss2
     }
     val allExecutorOuts: Map[String, Int] = includeThis.flatMap(_.executorOuts)
@@ -437,25 +464,27 @@ case class Link(
     TreeException.&&&(s, extra = causes)
   }
 
-  def getCurrentLocation: LocationGlobal = {
+  def getLocation: LocationGlobal = {
 
-    val locations = primaryEndpoint.PY.vehicle.location
+    val locations = primary.PY.vehicle.location
     val global = locations.global_frame.$MSG.get.cast[LocationGlobal]
-    this.currentLocation = Some(global)
+    drone.lastLocation = Some(global)
     global
   }
 
   var isDryrun = false
   //finalizer may kick in and invoke it even if its in Link.existing
+
+  override def subCleanable: Seq[Cleanable] = {
+    all ++
+    _proxyOpt.toSeq ++
+    super.subCleanable
+  }
+
   override protected def cleanImpl(): Unit = {
 
-    allEndpoints.foreach(
-      v =>
-        v.clean()
-    )
-    _proxyOpt.foreach(_.clean())
     super.cleanImpl()
-    //TODO: move to LinkWithContext?
+
     val existingOpt = Link.existing.get(drone)
     existingOpt.foreach {
       v =>
@@ -467,8 +496,13 @@ case class Link(
     }
     //otherwise its a zombie Link created by LinkFactories.canCreate
   }
+
+//  object Context {
+//    var spookyOpt: Option[]
+//  }
 }
 
+//TODO: merge into link.
 case class LinkWithContext(
                             link: Link,
                             spooky: SpookyContext,

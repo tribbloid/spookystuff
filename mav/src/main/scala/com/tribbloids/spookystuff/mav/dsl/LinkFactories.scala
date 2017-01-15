@@ -34,7 +34,7 @@ object LinkFactories {
     if (!result) {
       LoggerFactory.getLogger(this.getClass).info (
         s"""
-           |Can no longer use existing telemetry link for drone ${link.link.directEndpoint.uri}:
+           |Can no longer use existing telemetry link for drone ${link.link.Endpoints.direct.uri}:
            |output should be routed to GCS(s) ${gcsOutss.head.mkString("[",", ","]")}
            |but instead existing one routes it to ${gcsOutss.last.mkString("[",", ","]")}
              """.trim.stripMargin

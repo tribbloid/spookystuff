@@ -36,13 +36,16 @@ trait PyRef extends Cleanable {
     caching.ConcurrentMap()
   }
 
-  def validDriverToBindings: ConcurrentMap[PythonDriver, PyBinding] = {
-    val deadDrivers = _driverToBindings.keys.filter(_.isCleaned)
-    _driverToBindings --= deadDrivers
+  def driverToBindingsAlive: ConcurrentMap[PythonDriver, PyBinding] = {
+    val deadBindings = _driverToBindings.filter(_._1.isCleaned).toSeq
+    deadBindings.foreach {
+      _._2.clean(true)
+    }
+    _driverToBindings --= deadBindings.map(_._1)
     _driverToBindings
   }
   // prevent concurrent modification error
-  def bindings: List[PyBinding] = validDriverToBindings.values.toList
+  def bindings: List[PyBinding] = driverToBindingsAlive.values.toList
 
   def imports: Seq[String] = Seq(
     "import simplejson as json"
@@ -71,22 +74,14 @@ trait PyRef extends Cleanable {
   def varNamePrefix = FlowUtils.toCamelCase(simpleClassName)
   def packageName = pyClassNameParts.slice(0, pyClassNameParts.length - 1).mkString(".")
 
-  protected def cleanImpl() = {
-    pyClean()
-  }
-
-  def pyClean() = {
-    bindings.foreach {
-      _.tryClean()
-    }
-  }
+  override def subCleanable: Seq[Cleanable] = bindings
 
   def _Py(
            driver: PythonDriver,
            spookyOpt: Option[SpookyContext] = None
          ): Binding = {
 
-    validDriverToBindings.getOrElse(
+    driverToBindingsAlive.getOrElse(
       driver,
       newPyDecorator(newPy(driver, spookyOpt))
     )
@@ -135,7 +130,7 @@ class PyBinding (
         else driver.interpret(code)
     }
 
-    ref.validDriverToBindings += driver -> this
+    ref.driverToBindingsAlive += driver -> this
   }
 
   //TODO: rename to something that is illegal in python syntax
@@ -213,11 +208,26 @@ class PyBinding (
       }
     }
 
-    validDriverToBindings.remove(this.driver)
+    driverToBindingsAlive.remove(this.driver)
   }
 }
 
-object ROOTRef extends PyRef
+object PyRef {
+
+  object ROOT extends PyRef
+
+  def cleanSanityCheck(): Unit = {
+    val subs = Cleanable.getTyped[PyBinding]()
+    val refSubs = Cleanable.getTyped[PyRef]().map(_.subCleanable)
+    assert(
+      subs.intersect(refSubs).size <= refSubs.size,
+      {
+        "INTERNAL ERROR: dangling tree!"
+      }
+    )
+  }
+}
+
 class NoneRef extends PyRef {
   override final val referenceOpt = Some("None")
   override final val delOpt = None
@@ -306,9 +316,9 @@ trait CaseInstanceRef extends InstanceRef with Product {
 trait SingletonRef extends PyRef {
 
   override protected def newPyDecorator(v: => PyBinding): PyBinding = {
-    require(validDriverToBindings.isEmpty, "can only be bind to one driver")
+    require(driverToBindingsAlive.isEmpty, "can only be bind to one driver")
     v
   }
 
-  def PY = validDriverToBindings.values.head
+  def PY = driverToBindingsAlive.values.head
 }

@@ -29,7 +29,7 @@ object LinkIT{
       session
     )
 
-    val location = link.primaryEndpoint.Py(session)
+    val location = link.Endpoints.primary.Py(session)
       .testMove()
       .$STR
       .get
@@ -125,8 +125,8 @@ class LinkWithProxyIT extends LinkIT {
             session
           )
 
-          val endpoint1 = link.primaryEndpoint
-          val endpoint2 = link.executorEndpoints.last
+          val endpoint1 = link.Endpoints.primary
+          val endpoint2 = link.Endpoints.executor.last
           endpoint1.Py(session).assureClearanceAlt(20)
           val driver2 = new PythonDriver()
           val py2 = endpoint2._Py(driver2, Some(spooky))

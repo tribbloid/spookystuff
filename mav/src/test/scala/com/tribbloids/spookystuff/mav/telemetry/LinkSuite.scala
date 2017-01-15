@@ -35,7 +35,7 @@ class LinkSuite extends APMSimFixture {
     LoggerFactory.getLogger(this.getClass).info("======== Python Drivers Cleanup ========")
     sc.foreachWorker {
 
-      Link.existing.values.foreach(_.link.validDriverToBindings.keys.foreach(_.clean()))
+      Link.existing.values.foreach(_.link.driverToBindingsAlive.keys.foreach(_.clean()))
     }
     Thread.sleep(2000)
   }
@@ -111,7 +111,7 @@ class LinkSuite extends APMSimFixture {
     val link = Link.selectAndCreate(
       getEndpoints(simConnStrs.head),
       factory,
-      session
+      session.spooky
     )
       .link
 
@@ -131,7 +131,7 @@ class LinkSuite extends APMSimFixture {
           session
         )
 
-        link.directEndpoint.uri -> link.primaryEndpoint.uri
+        link.Endpoints.direct.uri -> link.Endpoints.primary.uri
     }
       .collect()
 
@@ -208,7 +208,7 @@ class LinkSuite extends APMSimFixture {
         }
     }
     //wait for zombie process to be deregistered
-    SpookyUtils.retry(5) {
+    SpookyUtils.retry(5, 2000) {
       sc.foreachComputer {
         SpookyEnvFixture.processShouldBeClean(Seq("mavproxy"), Seq("mavproxy"), cleanSweep = false)
       }
@@ -229,7 +229,7 @@ class LinkSuite extends APMSimFixture {
           session
         )
         val firstOut = link.proxyOpt.get.outs.head
-        val uri = link.primaryEndpoint.uri
+        val uri = link.Endpoints.primary.uri
         firstOut -> uri
     }
       .collect()
@@ -311,7 +311,7 @@ class LinkSuite extends APMSimFixture {
 
         val livingLinkDrivers = Link.existing.values.toSeq.flatMap {
           link =>
-            link.link.validDriverToBindings.keys
+            link.link.driverToBindingsAlive.keys
         }
         assert(livingLinkDrivers.isEmpty)
 

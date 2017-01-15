@@ -1,13 +1,15 @@
 package com.tribbloids.spookystuff.session
 
 import com.tribbloids.spookystuff.caching._
-import com.tribbloids.spookystuff.utils.{IDMixin, NOTSerializable}
+import com.tribbloids.spookystuff.utils.{IDMixin, NOTSerializable, TreeException}
 import org.apache.spark.TaskContext
 import org.openqa.selenium.NoSuchSessionException
 import org.slf4j.LoggerFactory
 
 import scala.collection.mutable
 import scala.language.implicitConversions
+import scala.reflect.ClassTag
+import scala.util.Try
 
 class Lifespan extends IDMixin with Serializable {
 
@@ -120,7 +122,7 @@ sealed trait AbstractCleanable {
     LoggerFactory.getLogger(this.getClass).debug(s"$logPrefix $s")
   }
 
-  protected def cleanImpl(): Unit
+  protected def cleanImpl(): Unit = {}
 
   //  private object CleanupLock
   //avoid double cleaning, this lock is not shared with any other invocation, PARTICULARLY subclasses
@@ -188,8 +190,19 @@ trait Cleanable extends AbstractCleanable {
       )
   }
 
+  def subCleanable: Seq[Cleanable] = Nil
+
   override def clean(silent: Boolean): Unit = {
+    val trials = subCleanable.map {
+      v =>
+        Try {
+          v.clean(silent)
+        }
+    }
+    TreeException.&&&(trials)
+
     super.clean(silent)
+
     uncleanedInBatch -= this
   }
 }
@@ -204,7 +217,9 @@ object Cleanable {
       .filter(condition)
     (set, filtered)
   }
-  def getAll(condition: (Cleanable) => Boolean): Seq[Cleanable] = {
+  def getAll(
+              condition: (Cleanable) => Boolean = _ => true
+            ): Seq[Cleanable] = {
     uncleaned
       .keys.toSeq
       .flatMap {
@@ -212,9 +227,22 @@ object Cleanable {
           getByLifespan(tt, condition)._2
       }
   }
+  def getTyped[T <: Cleanable: ClassTag](): Seq[T] = {
+    val result = getAll{
+      case v: T => true
+      case _ => false
+    }
+      .map { v =>
+        v.asInstanceOf[T]
+      }
+    result
+  }
 
   // cannot execute concurrent
-  def cleanSweep(tt: Lifespan#ID, condition: Cleanable => Boolean = _ => true) = {
+  def cleanSweep(
+                  tt: Lifespan#ID,
+                  condition: Cleanable => Boolean = _ => true
+                ) = {
     val (set: ConcurrentSet[Cleanable], filtered: List[Cleanable]) = getByLifespan(tt, condition)
     filtered
       .foreach {
@@ -230,7 +258,7 @@ object Cleanable {
                    ) = {
 
     uncleaned
-      .keys
+      .keys.toSeq
       .foreach {
         tt =>
           cleanSweep(tt, condition)

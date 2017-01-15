@@ -5,6 +5,7 @@ import com.tribbloids.spookystuff.mav.MAVConf
 import com.tribbloids.spookystuff.mav.telemetry.{Drone, Link}
 import com.tribbloids.spookystuff.session.python.PythonDriver
 import com.tribbloids.spookystuff.session.{Cleanable, Lifespan}
+import com.tribbloids.spookystuff.utils.SpookyUtils
 import org.apache.spark.rdd.RDD
 import org.jutils.jprocesses.JProcesses
 import org.slf4j.LoggerFactory
@@ -44,6 +45,14 @@ abstract class APMSimFixture extends SpookyEnvFixture {
 
   override def beforeAll(): Unit = {
     cleanSweep()
+
+    SpookyUtils.retry(5, 2000) {
+      sc.foreachComputer {
+        SpookyEnvFixture.processShouldBeClean(Seq("apm"), cleanSweep = false)
+        SpookyEnvFixture.processShouldBeClean(Seq("python"), cleanSweep = false)
+        SpookyEnvFixture.processShouldBeClean(Seq("mavproxy"), Seq("mavproxy"), cleanSweep = false)
+      }
+    }
 
     super.beforeAll()
     val spooky = this.spooky

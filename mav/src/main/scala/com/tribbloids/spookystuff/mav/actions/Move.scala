@@ -35,6 +35,8 @@ case class Move(
     result.map(_.asInstanceOf[this.type])
   }
 
+  override def getSessionView(session: Session) = new this.SessionView(session)
+
   class SessionView(session: Session) extends super.SessionView(session) {
     override def inbound(): Unit = {
       LoggerFactory.getLogger(this.getClass).debug(s"assureClearanceAltitude ${mavConf.clearanceAltitude}")

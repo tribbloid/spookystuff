@@ -21,18 +21,11 @@ trait MAVAction extends Action {
       )
     }
 
-    def endpoint = link.primaryEndpoint
+    def endpoint = link.Endpoints.primary
     def py = endpoint.Py(session)
   }
 }
 
-/**
-  * can only be constructed after Python Driver is initialized, otherwise throw NoPythonDriverException
-  */
-class SessionView(session: Session) {
-
-
-}
 /**
   * inbound -> engage -> outbound
   *
@@ -41,13 +34,15 @@ trait MAVInteraction extends Interaction with MAVAction {
 
   override def exeNoOutput(session: Session): Unit = {
 
-    val sv = new SessionView(session)
+    val sv = this.getSessionView(session)
     sv.link.Py(session).$Helpers.withDaemonsUp {
       sv.inbound()
       sv.conduct()
       sv.outbound()
     }
   }
+
+  def getSessionView(session: Session) = new this.SessionView(session)
 
   class SessionView(session: Session) extends super.SessionView(session) {
     /**
