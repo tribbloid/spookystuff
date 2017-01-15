@@ -9,29 +9,7 @@ import com.tribbloids.spookystuff.utils.SpookyUtils
 import com.tribbloids.spookystuff.{PyInterpreterException, SpookyContext, caching}
 import org.slf4j.LoggerFactory
 
-case class Drone(
-                  // remember, one drone can have several telemetry
-                  // endpoints: 1 primary and several backups (e.g. text message-based)
-                  // TODO: implement telemetry backup mechanism, can use MAVproxy's multiple master feature
-                  uris: Seq[String], // [protocol]:ip:port;[baudRate]
-                  frame: Option[String] = None,
-                  baudRate: Int = MAVConf.DEFAULT_BAUDRATE,
-                  endpointSSID: Int = MAVConf.EXECUTOR_SSID,
-                  name: String = "DRONE"
-                ) {
-
-  def getDirectEndpoint = Endpoint(
-    uris.head,
-    baudRate,
-    endpointSSID,
-    frame
-  )
-
-  override def toString = s"$name:$frame@${uris.head}"
-
-  var home: Option[LocationGlobal] = None
-  var lastLocation: Option[LocationGlobal] = None
-}
+import scala.util.{Failure, Try}
 
 case class Endpoint(
                      uri: String, // [protocol]:ip:port;[baudRate]
@@ -155,7 +133,7 @@ object Link {
             if (LinkFactories.canCreate(factory, idleLink)) {
               idleLink.onHold = true
               LoggerFactory.getLogger(this.getClass).info {
-                s"Recommissioning telemetry Link for ${idleLink.drone} with old proxy"
+                s"Recommissioning telemetry for ${idleLink.drone} with existing proxy"
               }
               idleLink
             }
@@ -165,7 +143,8 @@ object Link {
               val link = factory.apply(idleLink.drone)
               link.onHold = true
               LoggerFactory.getLogger(this.getClass).info {
-                s"Recommissioning telemetry Link for ${link.drone} with new proxy"
+                s"Existing proxy for ${link.drone} is obsolete, " +
+                  s"will recreate proxy using ${factory.getClass.getSimpleName} and recommission telemetry"
               }
               link.wContext(
                 spooky,
@@ -309,7 +288,16 @@ object Link {
       catch {
         case e: PyInterpreterException =>
           try {
-            ResourceLock.detectConflict(Option(e.cause).toSeq)
+            val extra: Seq[Throwable] = {
+              Seq(
+                Try(PyRef.cleanSanityCheck()),
+                Try(Link.cleanSanityCheck())
+              ) ++ Option(e.cause).map(v => Failure(v))
+            }
+              .collect {
+                case Failure(ee) => ee
+              }
+            ResourceLock.detectConflict(extra)
           }
           catch {
             case ee: Throwable =>
@@ -512,6 +500,5 @@ case class Link(
       spooky =>
         spooky.metrics.linkDestroyed += 1
     }
-    //otherwise its a zombie Link created by LinkFactories.canCreate
   }
 }

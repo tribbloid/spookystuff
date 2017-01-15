@@ -137,13 +137,13 @@ class LinkWithProxyIT extends LinkIT {
           }
           Thread.sleep(5000 / APMSim.SPEEDUP)
 
-          def changeMode(py: Endpoint#Binding, mode: String) = {
+          def changeAndVerifyMode(py: Endpoint#Binding, mode: String) = {
             py.mode(mode)
             TestHelper.assert(py.vehicle.mode.name.$STR.get == mode)
           }
 
-          changeMode(py2, "BRAKE")
-          changeMode(py2, "LOITER")
+          changeAndVerifyMode(py2, "BRAKE")
+//          changeMode(py2, "LOITER")
           Thread.sleep(5000 / APMSim.SPEEDUP)
           py2.mode("GUIDED")
           val position = Await.result(moved, 60.seconds).$STR.get

@@ -30,7 +30,7 @@ case class DataRowSchema(
   }
   final def indexedFor(field: Field): Option[IndexedField] = {
     indexedFields.find(_._1.self == field)
-  } //TODO: not efficient
+  }
 
   def filterFields(filter: Field => Boolean = _.isSelected): DataRowSchema = {
     this.copy(

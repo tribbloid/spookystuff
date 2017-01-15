@@ -281,9 +281,6 @@ package object dsl {
 
   //--------------------------------------------------
 
-  //TODO: clean it up
-  def dynamic[T](expr: Extractor[T]): Extractor[T] = expr
-
   implicit def symbolToExpr(symbol: Symbol): GetExpr =
     new GetExpr(symbol.name)
 

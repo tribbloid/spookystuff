@@ -143,9 +143,9 @@ case class SpookyContext private (
     this.dsl.rddToPageRowRDD(this.sqlContext.sparkContext.parallelize(seq.toSeq, numSlices))
   }
 
-  lazy val blankSelfRDD = sparkContext.parallelize(Seq(SquashedFetchedRow.blank))
+  lazy val _blankSelfRDD = sparkContext.parallelize(Seq(SquashedFetchedRow.blank))
 
-  def createBlank = this.create(blankSelfRDD)
+  def createBlank = this.create(_blankSelfRDD)
 
   object dsl extends Serializable {
 

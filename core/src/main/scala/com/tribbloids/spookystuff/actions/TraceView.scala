@@ -8,7 +8,13 @@ import com.tribbloids.spookystuff.utils.IDMixin
 import com.tribbloids.spookystuff.{SpookyContext, dsl}
 
 import scala.collection.mutable.ArrayBuffer
+import scala.language.implicitConversions
 import scala.reflect.ClassTag
+
+object TraceView {
+
+  implicit def fromTrace(trace: Trace): TraceView = new TraceView(trace)
+}
 
 case class TraceView(
                       override val children: Trace = Nil,
@@ -102,6 +108,13 @@ case class TraceView(
   }
 
   override def _id: Any = children
+}
+
+object TraceSetView {
+
+  implicit def fromTrace(traces: Trace): TraceSetView = TraceSetView(Set(traces))
+
+  implicit def fromAction(action: Action): TraceSetView = TraceSetView(Set(List(action)))
 }
 
 //The precedence of an inﬁx operator is determined by the operator’s ﬁrst character.

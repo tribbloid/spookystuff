@@ -174,7 +174,6 @@ case class SquashedFetchedRow(
      */
     def interpolate(
                      traces: Set[Trace],
-
                      filterEmpty: Boolean = true,
                      distinct: Boolean = true
                    ): Array[(TraceView, DataRow)] = {

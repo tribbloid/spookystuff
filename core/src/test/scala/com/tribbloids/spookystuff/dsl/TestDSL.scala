@@ -77,7 +77,7 @@ class TestDSL extends SpookyEnvFixture with LocalPathDocsFixture {
     assert(rdd.count() == 1)
 
     val plan = rdd.plan
-    assert(plan.rdd() == spooky.blankSelfRDD)
+    assert(plan.rdd() == spooky._blankSelfRDD)
     assert(plan.spooky != spooky) //configs should be deep copied
   }
 }

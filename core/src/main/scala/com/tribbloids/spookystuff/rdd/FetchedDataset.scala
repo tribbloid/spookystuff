@@ -92,7 +92,7 @@ case class FetchedDataset(
     plan.cacheQueue.persist(dataRDD)
 
     val sorted = dataRDD.sortBy{_.sortIndex(sortIndices)} //sort usually takes 2 passes
-    sorted.name = "sort"
+    sorted.setName("sort")
 
     sorted.foreachPartition{_ =>} //force execution
     plan.cacheQueue.unpersist(dataRDD, blocking = false)

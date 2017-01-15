@@ -2,10 +2,15 @@ package com.tribbloids.spookystuff.mav.actions
 
 import com.tribbloids.spookystuff.actions.{Action, Interaction}
 import com.tribbloids.spookystuff.mav.MAVConf
-import com.tribbloids.spookystuff.mav.telemetry.Link
+import com.tribbloids.spookystuff.mav.telemetry.{Drone, Link}
 import com.tribbloids.spookystuff.session.Session
 
 trait MAVAction extends Action {
+
+  // override this to enforce selection over drones being deployed.
+  // drone that yield higher preference will be used if available, regardless of whether its in the air or not.
+  // drone that yield None will never be used.
+  def preference: Drone => Option[Double] = {_ => Some(1)}
 
   class SessionView(session: Session) {
 
