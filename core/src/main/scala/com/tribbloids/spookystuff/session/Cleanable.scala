@@ -122,7 +122,7 @@ sealed trait AbstractCleanable {
     LoggerFactory.getLogger(this.getClass).debug(s"$logPrefix $s")
   }
 
-  protected def cleanImpl(): Unit = {}
+  protected def cleanImpl(): Unit
 
   //  private object CleanupLock
   //avoid double cleaning, this lock is not shared with any other invocation, PARTICULARLY subclasses

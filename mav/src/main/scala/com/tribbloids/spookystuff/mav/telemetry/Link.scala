@@ -4,12 +4,10 @@ import com.tribbloids.spookystuff.mav.actions._
 import com.tribbloids.spookystuff.mav.dsl.{LinkFactories, LinkFactory}
 import com.tribbloids.spookystuff.mav.{MAVConf, ReinforcementDepletedException}
 import com.tribbloids.spookystuff.session.python._
-import com.tribbloids.spookystuff.session.{Cleanable, LocalCleanable, Session}
-import com.tribbloids.spookystuff.utils.{SpookyUtils, TreeException}
+import com.tribbloids.spookystuff.session.{Cleanable, LocalCleanable, ResourceLock, Session}
+import com.tribbloids.spookystuff.utils.SpookyUtils
 import com.tribbloids.spookystuff.{PyInterpreterException, SpookyContext, caching}
 import org.slf4j.LoggerFactory
-
-import scala.util.Try
 
 case class Drone(
                   // remember, one drone can have several telemetry
@@ -40,8 +38,9 @@ case class Endpoint(
                      baudRate: Int = MAVConf.DEFAULT_BAUDRATE,
                      ssid: Int = MAVConf.EXECUTOR_SSID,
                      frame: Option[String] = None
-                   ) extends CaseInstanceRef with SingletonRef with LocalCleanable {
+                   ) extends CaseInstanceRef with SingletonRef with LocalCleanable with ResourceLock {
 
+  override lazy val resourceIDs = Map("" -> Set(uri))
 }
 
 object Link {
@@ -62,7 +61,7 @@ object Link {
 
   // connStr -> (link, isBusy)
   // only 1 allowed per connStr, how to enforce?
-  val existing: caching.ConcurrentMap[Drone, LinkWithContext] = caching.ConcurrentMap()
+  val existing: caching.ConcurrentMap[Drone, Link] = caching.ConcurrentMap()
 
   // won't be used to create any link before its status being recovered by ping daemon.
   val blacklist: caching.ConcurrentSet[Drone] = caching.ConcurrentSet()
@@ -113,7 +112,7 @@ object Link {
             selectAndCreate(candidates, factory, session.spooky)
           }
         try {
-          newLink.link.Py(session)
+          newLink.Py(session)
         }
         catch {
           case e: Throwable =>
@@ -121,7 +120,7 @@ object Link {
             throw e
         }
 
-        newLink.link
+        newLink
       }
     result
   }
@@ -132,10 +131,10 @@ object Link {
                         factory: LinkFactory,
                         spooky: SpookyContext,
                         locationOpt: Option[Location] = None
-                      ): Option[LinkWithContext] = {
+                      ): Option[Link] = {
 
     val result = this.synchronized {
-      val existingCandidates: Seq[LinkWithContext] = candidates.collect {
+      val existingCandidates: Seq[Link] = candidates.collect {
         Function.unlift {
           endpoint =>
             existing.get(endpoint)
@@ -144,7 +143,7 @@ object Link {
 
       val idleLinks = existingCandidates.filter {
         link =>
-          link.link.isIdle
+          link.isIdle
       }
 
       //TODO: find the closest one!
@@ -154,16 +153,16 @@ object Link {
         case Some(idleLink) =>
           val recommissioned = {
             if (LinkFactories.canCreate(factory, idleLink)) {
-              idleLink.link.onHold = true
+              idleLink.onHold = true
               LoggerFactory.getLogger(this.getClass).info {
-                s"Recommissioning telemetry Link for ${idleLink.link.drone} with old proxy"
+                s"Recommissioning telemetry Link for ${idleLink.drone} with old proxy"
               }
               idleLink
             }
             else {
               idleLink.clean()
               // recreate proxy
-              val link = factory.apply(idleLink.link.drone)
+              val link = factory.apply(idleLink.drone)
               link.onHold = true
               LoggerFactory.getLogger(this.getClass).info {
                 s"Recommissioning telemetry Link for ${link.drone} with new proxy"
@@ -185,9 +184,9 @@ object Link {
           else {
             existingCandidates.map {
               link =>
-                assert(!link.link.isIdle)
-                if (link.link.onHold) s"${link.link.drone} is on hold"
-                else s"${link.link.drone} is busy"
+                assert(!link.isIdle)
+                if (link.onHold) s"${link.drone} is on hold"
+                else s"${link.drone} is busy"
             }
               .mkString("\n")
           }
@@ -203,7 +202,7 @@ object Link {
                        candidates: Seq[Drone],
                        factory: LinkFactory,
                        spooky: SpookyContext
-                     ): LinkWithContext = {
+                     ): Link = {
 
     val newLink = this.synchronized {
       val endpointOpt = candidates.find {
@@ -232,7 +231,7 @@ object Link {
               endpoint: Drone,
               factory: LinkFactory,
               spooky: SpookyContext
-            ): LinkWithContext = {
+            ): Link = {
 
     val link = factory.apply(endpoint)
     link.onHold = true
@@ -310,7 +309,7 @@ object Link {
       catch {
         case e: PyInterpreterException =>
           try {
-            ref.detectPortConflicts(Option(e.cause).toSeq)
+            ResourceLock.detectConflict(Option(e.cause).toSeq)
           }
           catch {
             case ee: Throwable =>
@@ -346,14 +345,14 @@ case class Link(
                  drone: Drone,
                  executorOuts: Seq[String] = Nil, // cannot have duplicates
                  gcsOuts: Seq[String] = Nil
-               ) extends NoneRef with SingletonRef with LocalCleanable {
+               ) extends NoneRef with SingletonRef with LocalCleanable with ResourceLock {
 
   {
     if (executorOuts.isEmpty) assert(gcsOuts.isEmpty, "No endpoint for executor")
   }
 
   val outs: Seq[String] = executorOuts ++ gcsOuts
-  val allURI = (drone.uris ++ outs).distinct
+  val allURIs = (drone.uris ++ outs).distinct
 
   /**
     * CAUTION: ALL of them have to be val or lazy val! Or you risk recreating many copies each with its own python! Conflict with each other!
@@ -379,6 +378,8 @@ case class Link(
     }
     val all: Seq[Endpoint] = (Seq(direct) ++ executor ++ gcs).distinct
   }
+
+  override lazy val resourceIDs = Map("" -> (drone.uris ++ executorOuts).toSet)
 
   import Endpoints._
 
@@ -410,14 +411,27 @@ case class Link(
     }
   }
 
+  var spookyOpt: Option[SpookyContext] = None
+  var factoryOpt: Option[LinkFactory] = None
   def wContext(
                 spooky: SpookyContext,
                 factory: LinkFactory
-              ) = LinkWithContext(
-    this,
-    spooky,
-    factory
-  )
+              ): this.type = {
+
+    try {
+      spookyOpt = Option(spooky)
+      factoryOpt = Option(factory)
+      spooky.metrics.linkCreated += 1
+      Link.existing += drone -> this
+
+      this
+    }
+    catch {
+      case e: Throwable =>
+        this.clean()
+        throw e
+    }
+  }
 
   override protected def newPy(driver: PythonDriver, spookyOpt: Option[SpookyContext]): Link.PyBindingImpl = {
     val result = new Link.PyBindingImpl(this, driver, spookyOpt)
@@ -425,44 +439,44 @@ case class Link(
     result
   }
 
-  def detectPortConflicts(causes: Seq[Throwable] = Nil): Unit = {
-    val existing = Link.existing.values.toList.map(_.link) // remember to clean up the old one to create a new one
-    val notThis = existing.filterNot(_ eq this)
-    val includeThis: Seq[Link] = notThis ++ Seq(this)
-    val s1 = {
-      val ss1 = Seq(
-        Try(assert(
-          Link.existing.get(drone).forall(_.link eq this),
-          s"Conflict: endpoint index ${direct.uri} is already used")
-        ),
-        Try(assert(
-          !notThis.exists(_.Endpoints.direct.uri == direct.uri),
-          s"Conflict: endpoint ${direct.uri} is already used")
-        )
-      )
-      val allConnStrs: Map[String, Int] = includeThis.flatMap(_.drone.uris)
-        .groupBy(identity)
-        .mapValues(_.size)
-      val ss2 = allConnStrs.toSeq.map {
-        tuple =>
-          Try(assert(tuple._2 == 1, s"${tuple._2} endpoints has identical uri ${tuple._1}"))
-      }
-      val ss3 = Seq(
-        Try(PyRef.cleanSanityCheck()),
-        Try(Link.cleanSanityCheck())
-      )
-      ss1 ++ ss2
-    }
-    val allExecutorOuts: Map[String, Int] = includeThis.flatMap(_.executorOuts)
-      .groupBy(identity)
-      .mapValues(_.size)
-    val s = s1 ++ allExecutorOuts.toSeq.map {
-      tuple =>
-        Try(assert(tuple._2 == 1, s"${tuple._2} executor out has identical uri ${tuple._1}"))
-    }
-
-    TreeException.&&&(s, extra = causes)
-  }
+  //  def detectPortConflicts(causes: Seq[Throwable] = Nil): Unit = {
+  //    val existing = Link.existing.values.toList.map(_.link) // remember to clean up the old one to create a new one
+  //    val notThis = existing.filterNot(_ eq this)
+  //    val includeThis: Seq[Link] = notThis ++ Seq(this)
+  //    val s1 = {
+  //      val ss1 = Seq(
+  //        Try(assert(
+  //          Link.existing.get(drone).forall(_.link eq this),
+  //          s"Conflict: endpoint index ${direct.uri} is already used")
+  //        ),
+  //        Try(assert(
+  //          !notThis.exists(_.Endpoints.direct.uri == direct.uri),
+  //          s"Conflict: endpoint ${direct.uri} is already used")
+  //        )
+  //      )
+  //      val allConnStrs: Map[String, Int] = includeThis.flatMap(_.drone.uris)
+  //        .groupBy(identity)
+  //        .mapValues(_.size)
+  //      val ss2 = allConnStrs.toSeq.map {
+  //        tuple =>
+  //          Try(assert(tuple._2 == 1, s"${tuple._2} endpoints has identical uri ${tuple._1}"))
+  //      }
+  //      val ss3 = Seq(
+  //        Try(PyRef.cleanSanityCheck()),
+  //        Try(Link.cleanSanityCheck())
+  //      )
+  //      ss1 ++ ss2
+  //    }
+  //    val allExecutorOuts: Map[String, Int] = includeThis.flatMap(_.executorOuts)
+  //      .groupBy(identity)
+  //      .mapValues(_.size)
+  //    val s = s1 ++ allExecutorOuts.toSeq.map {
+  //      tuple =>
+  //        Try(assert(tuple._2 == 1, s"${tuple._2} executor out has identical uri ${tuple._1}"))
+  //    }
+  //
+  //    TreeException.&&&(s, extra = causes)
+  //  }
 
   def getLocation: LocationGlobal = {
 
@@ -477,8 +491,8 @@ case class Link(
 
   override def subCleanable: Seq[Cleanable] = {
     all ++
-    _proxyOpt.toSeq ++
-    super.subCleanable
+      _proxyOpt.toSeq ++
+      super.subCleanable
   }
 
   override protected def cleanImpl(): Unit = {
@@ -488,41 +502,16 @@ case class Link(
     val existingOpt = Link.existing.get(drone)
     existingOpt.foreach {
       v =>
-        if (v.link eq this)
+        if (v eq this)
           Link.existing -= drone
         else {
           if (!isDryrun) throw new AssertionError("THIS IS NOT A DRYRUN OBJECT! SO ITS CREATED ILLEGALLY!")
         }
     }
+    spookyOpt.foreach {
+      spooky =>
+        spooky.metrics.linkDestroyed += 1
+    }
     //otherwise its a zombie Link created by LinkFactories.canCreate
-  }
-
-//  object Context {
-//    var spookyOpt: Option[]
-//  }
-}
-
-//TODO: merge into link.
-case class LinkWithContext(
-                            link: Link,
-                            spooky: SpookyContext,
-                            factory: LinkFactory
-                          ) extends LocalCleanable {
-  try {
-    link.detectPortConflicts()
-
-    Link.existing += link.drone -> this
-    spooky.metrics.linkCreated += 1
-  }
-  catch {
-    case e: Throwable =>
-      this.clean()
-      throw e
-  }
-
-  protected override def cleanImpl(): Unit = {
-
-    link.clean()
-    spooky.metrics.linkDestroyed += 1
   }
 }

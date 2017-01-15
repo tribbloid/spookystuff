@@ -52,6 +52,7 @@ def retry(maxTrial=3):
                     return result
                 except BaseException as e:
                     if i <= 1:
+                        print("All retrie(s) has failed", str(e), "...", str(i - 1), "time(s) left")
                         raise
                     else:
                         print("Retrying locally on", str(e), "...", str(i - 1), "time(s) left")

@@ -3,7 +3,7 @@ package com.tribbloids.spookystuff.mav.telemetry
 import com.tribbloids.spookystuff.caching
 import com.tribbloids.spookystuff.mav.MAVConf
 import com.tribbloids.spookystuff.session.python.{CaseInstanceRef, PyBinding, PythonDriver, SingletonRef}
-import com.tribbloids.spookystuff.session.{Lifespan, LocalCleanable}
+import com.tribbloids.spookystuff.session.{Lifespan, LocalCleanable, ResourceLock}
 
 object Proxy {
 
@@ -23,11 +23,10 @@ case class Proxy(
                   baudRate: Int,
                   ssid: Int = MAVConf.PROXY_SSID,
                   name: String
-                ) extends CaseInstanceRef with SingletonRef with LocalCleanable {
+                ) extends CaseInstanceRef with SingletonRef with LocalCleanable with ResourceLock {
 
-  //  this.synchronized {
-
-  //  val existing = Proxy.existing // remember to clean up the old one to create a new one
+  assert(!outs.contains(master))
+  override lazy val resourceIDs = Map("" -> Seq(master).toSet)
 
   {
     val condition = !Proxy.existing.exists(_.master == this.master)
@@ -35,14 +34,13 @@ case class Proxy(
   }
 
   Proxy.existing += this
-  //  }
 
   val managerDriver = {
       val v = new PythonDriver(lifespan = Lifespan.JVM(nameOpt = Some("ProxyManager")))
       v
     }
 
-  override val PY: PyBinding = this._Py(managerDriver)
+  override def PY: PyBinding = this._Py(managerDriver)
 
   //  override def _Py(driver: PythonDriver, spookyOpt: Option[SpookyContext]): PyBinding = {
   //    throw new UnsupportedOperationException("NOT ALLOWED! use mgrPy instead")

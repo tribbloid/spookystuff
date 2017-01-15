@@ -251,7 +251,7 @@ class Proxy(Daemon):
                 return self.isAlive
             utils.waitFor(isAlive, 10)
 
-            @retry(daemonStartRetries)
+            # @retry(daemonStartRetries)
             def sanityCheck():
                 # ensure that proxy is usable, otherwise its garbage
                 vehicle = dronekit.connect(

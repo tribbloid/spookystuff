@@ -9,7 +9,7 @@ object TreeException {
 
   case class TreeNodeView(self: Throwable) extends TreeNode[TreeNodeView] {
     override def children: Seq[TreeNodeView] = {
-      self match {
+      val result = self match {
         case v: TreeException =>
           v.causes.map(TreeNodeView)
         case _ =>
@@ -19,6 +19,7 @@ object TreeException {
           )
           eOpt.map(TreeNodeView).toSeq
       }
+      result.sortBy(_.simpleString())
     }
 
     override def simpleString(): String = {

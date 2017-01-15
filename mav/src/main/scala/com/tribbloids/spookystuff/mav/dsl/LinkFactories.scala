@@ -1,6 +1,6 @@
 package com.tribbloids.spookystuff.mav.dsl
 
-import com.tribbloids.spookystuff.mav.telemetry.{Drone, Link, LinkWithContext}
+import com.tribbloids.spookystuff.mav.telemetry.{Drone, Link}
 import com.tribbloids.spookystuff.utils.PrettyProduct
 import org.slf4j.LoggerFactory
 
@@ -14,16 +14,21 @@ object LinkFactories {
   /**
     * return true only of factory generates a proxy that has identical GCS outs comparing to link.proxy
     */
-  def canCreate(factory: LinkFactory, link: LinkWithContext): Boolean = {
+  def canCreate(factory: LinkFactory, link: Link): Boolean = {
 
-    val dryRun = factory.apply(link.link.drone)
-    dryRun.isDryrun = true
-    val actual = link.link
-    val links = Seq(
-      dryRun,
-      actual
-    )
-    dryRun.clean()
+    val dryRun = factory.apply(link.drone)
+    val links = try {
+      dryRun.isDryrun = true
+      val actual = link
+      Seq(
+        dryRun,
+        actual
+      )
+    }
+    finally {
+      dryRun.clean()
+    }
+
     val gcsOutss: Seq[Set[String]] = links
       .map {
         link =>
@@ -34,7 +39,7 @@ object LinkFactories {
     if (!result) {
       LoggerFactory.getLogger(this.getClass).info (
         s"""
-           |Can no longer use existing telemetry link for drone ${link.link.Endpoints.direct.uri}:
+           |Can no longer use existing telemetry link for drone ${link.Endpoints.direct.uri}:
            |output should be routed to GCS(s) ${gcsOutss.head.mkString("[",", ","]")}
            |but instead existing one routes it to ${gcsOutss.last.mkString("[",", ","]")}
              """.trim.stripMargin
@@ -62,12 +67,12 @@ object LinkFactories {
 
       LinkFactories.synchronized {
         val existing4Exec: Seq[String] = Link.existing.values.toSeq
-          .flatMap(_.link.allURI)
-        val available4Exec = toExecutor.filter {
+          .flatMap(_.allURIs)
+        val available = toExecutor.filter {
           v =>
             !existing4Exec.contains(v)
         }
-        val shuffled = Random.shuffle(available4Exec)
+        val shuffled = Random.shuffle(available)
 
         val executorOuts = shuffled.slice(0, ToExecutorSize)
         val gcsOuts = toGCS(endpoint).toSeq

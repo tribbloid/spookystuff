@@ -4,7 +4,7 @@ import com.tribbloids.spookystuff.{PyInterpreterException, SpookyEnvFixture}
 import com.tribbloids.spookystuff.mav.dsl.LinkFactories
 import com.tribbloids.spookystuff.mav.sim.APMSimFixture
 import com.tribbloids.spookystuff.session.python.PythonDriver
-import com.tribbloids.spookystuff.session.{Lifespan, NoPythonDriverException, Session}
+import com.tribbloids.spookystuff.session.{Lifespan, NoPythonDriverException, ResourceLock, Session}
 import com.tribbloids.spookystuff.utils.SpookyUtils
 import org.slf4j.LoggerFactory
 
@@ -35,7 +35,7 @@ class LinkSuite extends APMSimFixture {
     LoggerFactory.getLogger(this.getClass).info("======== Python Drivers Cleanup ========")
     sc.foreachWorker {
 
-      Link.existing.values.foreach(_.link.driverToBindingsAlive.keys.foreach(_.clean()))
+      Link.existing.values.foreach(_.driverToBindingsAlive.keys.foreach(_.clean()))
     }
     Thread.sleep(2000)
   }
@@ -113,9 +113,8 @@ class LinkSuite extends APMSimFixture {
       factory,
       session.spooky
     )
-      .link
 
-    link.detectPortConflicts()
+    ResourceLock.detectConflict()
   }
 
   test("If without Proxy, Link.primary should = endpoint") {
@@ -309,11 +308,11 @@ class LinkSuite extends APMSimFixture {
         assert(spooky.metrics.linkDestroyed.value == 0)
         assert(Link.existing.size == parallelism)
 
-        val livingLinkDrivers = Link.existing.values.toSeq.flatMap {
+        val linkDriversAlive = Link.existing.values.toSeq.flatMap {
           link =>
-            link.link.driverToBindingsAlive.keys
+            link.driverToBindingsAlive.keys
         }
-        assert(livingLinkDrivers.isEmpty)
+        assert(linkDriversAlive.isEmpty)
 
         val linkStrs2 = simConnStrRDD.map {
           connStr =>

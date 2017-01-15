@@ -57,7 +57,15 @@ trait PyRef extends Cleanable {
   // run on each driver
   // TODO: DO NOT override this, use __del__() in python implementation as much as you can so it will be called by python interpreter shutdown hook
   def delOpt: Option[String] = if (createOpt.nonEmpty) {
-    referenceOpt.map(v => s"del($v)")
+    referenceOpt.map(
+      v =>
+        s"""
+           |try:
+           |  del($v)
+           |except NameError:
+           |  pass
+           """.stripMargin
+    )
   }
   else {
     None
@@ -96,6 +104,8 @@ trait PyRef extends Cleanable {
   def Py(session: Session): Binding = {
     _Py(session.pythonDriver, Some(session.spooky))
   }
+
+  override protected def cleanImpl(): Unit = {}
 }
 
 /**
@@ -214,7 +224,8 @@ class PyBinding (
 
 object PyRef {
 
-  object ROOT extends PyRef
+  object ROOT extends PyRef {
+  }
 
   def cleanSanityCheck(): Unit = {
     val subs = Cleanable.getTyped[PyBinding]()
