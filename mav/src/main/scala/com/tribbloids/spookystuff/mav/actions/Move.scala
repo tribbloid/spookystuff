@@ -1,6 +1,7 @@
 package com.tribbloids.spookystuff.mav.actions
 
 import com.tribbloids.spookystuff.extractors.{Extractor, FR, Literal}
+import com.tribbloids.spookystuff.mav.MAVConf
 import com.tribbloids.spookystuff.row.{DataRowSchema, FetchedRow}
 import com.tribbloids.spookystuff.session.Session
 import org.slf4j.LoggerFactory
@@ -17,8 +18,6 @@ case class Move(
                  to: Extractor[Any],
                  override val delay: Duration = null
                ) extends AbstractGoto {
-
-  lazy val fromV = from.asInstanceOf[Literal[FR, Location]].value
 
   override def doInterpolate(pageRow: FetchedRow, schema: DataRowSchema): Option[this.type] = {
     val fromVOpt = from.asInstanceOf[Extractor[Location]].resolve(schema).lift.apply(pageRow)
@@ -38,6 +37,11 @@ case class Move(
   override def getSessionView(session: Session) = new this.SessionView(session)
 
   class SessionView(session: Session) extends super.SessionView(session) {
+
+    lazy val fromV: LocationGlobal = from.asInstanceOf[Literal[FR, Location]].value
+      .setRef(session.spooky.conf.submodule[MAVConf].globalReference)
+      .toGlobal
+
     override def inbound(): Unit = {
       LoggerFactory.getLogger(this.getClass).debug(s"assureClearanceAltitude ${mavConf.clearanceAltitude}")
       py.assureClearanceAlt(mavConf.clearanceAltitude)

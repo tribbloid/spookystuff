@@ -19,7 +19,7 @@ case class Mark() extends Export with MAVAction {
 
     try {
       val exe = new SessionView(session)
-      val location = exe.link.getLocation
+      val location = exe.link.getHome
 //      val result = MarkOutput(location)
       val jsonStr = MessageView(location).prettyJSON
 

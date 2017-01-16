@@ -2,6 +2,7 @@ package com.tribbloids.spookystuff.mav.telemetry
 
 import com.tribbloids.spookystuff.SpookyContext
 import com.tribbloids.spookystuff.mav.dsl.{LinkFactories, LinkFactory}
+import com.tribbloids.spookystuff.mav.hardware.Drone
 import com.tribbloids.spookystuff.mav.sim.{APMSim, APMSimFixture}
 import com.tribbloids.spookystuff.session.Session
 import com.tribbloids.spookystuff.session.python.PythonDriver

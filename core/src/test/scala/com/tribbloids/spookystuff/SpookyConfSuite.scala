@@ -44,4 +44,33 @@ class SpookyConfSuite extends SpookyEnvFixture {
     val dirConf = imported.dirConf
     assert(dirConf.autoSave == dummyV)
   }
+
+//  test("getProperty() can load property from system environment") {
+//  }
+
+  test("getProperty() can load property from system property") {
+
+    System.setProperty("dummy.property", "AA")
+
+    try {
+      assert(AbstractConf.get("dummy.property") == Some("AA"))
+    }
+    finally {
+      System.setProperty("dummy.property", "")
+    }
+  }
+
+  test("getProperty() can load property from spark property") {
+    System.setProperty("dummy.property", "AA")
+    val conf = sc.getConf
+    conf.set("dummy.property", "BB")
+
+    try {
+      assert(AbstractConf.get("dummy.property") == Some("BB"))
+    }
+    finally {
+      conf.remove("dummy.property")
+      System.setProperty("dummy.property", "")
+    }
+  }
 }

@@ -2,6 +2,7 @@ package com.tribbloids.spookystuff.mav.telemetry
 
 import com.tribbloids.spookystuff.mav.actions._
 import com.tribbloids.spookystuff.mav.dsl.{LinkFactories, LinkFactory}
+import com.tribbloids.spookystuff.mav.hardware.Drone
 import com.tribbloids.spookystuff.mav.{MAVConf, ReinforcementDepletedException}
 import com.tribbloids.spookystuff.session.python._
 import com.tribbloids.spookystuff.session.{Cleanable, LocalCleanable, ResourceLock, Session}
@@ -10,16 +11,6 @@ import com.tribbloids.spookystuff.{PyInterpreterException, SpookyContext, cachin
 import org.slf4j.LoggerFactory
 
 import scala.util.{Failure, Try}
-
-case class Endpoint(
-                     uri: String, // [protocol]:ip:port;[baudRate]
-                     baudRate: Int = MAVConf.DEFAULT_BAUDRATE,
-                     ssid: Int = MAVConf.EXECUTOR_SSID,
-                     frame: Option[String] = None
-                   ) extends CaseInstanceRef with SingletonRef with LocalCleanable with ResourceLock {
-
-  override lazy val resourceIDs = Map("" -> Set(uri))
-}
 
 object Link {
 
@@ -70,22 +61,23 @@ object Link {
                    candidates: Seq[Drone],
                    factory: LinkFactory,
                    session: Session,
-                   locationOpt: Option[Location] = None
+                   locationOpt: Option[Location] = None,
+                   recreateObsoleteLink: Boolean = true
                  ): Link = {
 
     val local = driverLocal
       .get(session.pythonDriver)
-
-    local.foreach {
-      link =>
-        LoggerFactory.getLogger(this.getClass).info(
-          s"Using existing Link ${link.drone} with the same driver"
-        )
-    }
+      .map {
+        v =>
+          LoggerFactory.getLogger(this.getClass).info(
+            s"Using existing Link ${v.drone} with the same driver"
+          )
+          v
+      }
 
     val result = local
       .getOrElse {
-        val newLink = recommissionIdle(candidates, factory, session.spooky, locationOpt)
+        val newLink = recommissionIdle(candidates, factory, session.spooky, locationOpt, recreateObsoleteLink)
           .getOrElse {
             selectAndCreate(candidates, factory, session.spooky)
           }
@@ -108,7 +100,8 @@ object Link {
                         candidates: Seq[Drone],
                         factory: LinkFactory,
                         spooky: SpookyContext,
-                        locationOpt: Option[Location] = None
+                        locationOpt: Option[Location] = None,
+                        recreateObsoleteLink: Boolean = true
                       ): Option[Link] = {
 
     val result = this.synchronized {
@@ -130,7 +123,7 @@ object Link {
       idleLinkOpt match {
         case Some(idleLink) =>
           val recommissioned = {
-            if (LinkFactories.canCreate(factory, idleLink)) {
+            if (recreateObsoleteLink && LinkFactories.canCreate(factory, idleLink)) {
               idleLink.onHold = true
               LoggerFactory.getLogger(this.getClass).info {
                 s"Recommissioning telemetry for ${idleLink.drone} with existing proxy"
@@ -314,12 +307,7 @@ object Link {
 }
 
 /**
-to keep a drone in the air, a python daemon process D has to be constantly running to
-supervise task-irrelevant path planning (e.g. RTL/Position Hold/Avoidance).
-This process outlives each task. Who launches D? how to ensure smooth transitioning
-of control during Partition1 => D => Partition2 ? Can they share the same
-Connection / Endpoint / Proxy ? Do you have to make them picklable ?
-
+Contains 0 or 1 proxy and several endpoints to be used by executor.
 GCS:UDP:xxx ------------------------> Proxy:TCP:xxx -> Drone
                                    /
 TaskProcess -> Connection:UDP:xx -/
@@ -427,50 +415,18 @@ case class Link(
     result
   }
 
-  //  def detectPortConflicts(causes: Seq[Throwable] = Nil): Unit = {
-  //    val existing = Link.existing.values.toList.map(_.link) // remember to clean up the old one to create a new one
-  //    val notThis = existing.filterNot(_ eq this)
-  //    val includeThis: Seq[Link] = notThis ++ Seq(this)
-  //    val s1 = {
-  //      val ss1 = Seq(
-  //        Try(assert(
-  //          Link.existing.get(drone).forall(_.link eq this),
-  //          s"Conflict: endpoint index ${direct.uri} is already used")
-  //        ),
-  //        Try(assert(
-  //          !notThis.exists(_.Endpoints.direct.uri == direct.uri),
-  //          s"Conflict: endpoint ${direct.uri} is already used")
-  //        )
-  //      )
-  //      val allConnStrs: Map[String, Int] = includeThis.flatMap(_.drone.uris)
-  //        .groupBy(identity)
-  //        .mapValues(_.size)
-  //      val ss2 = allConnStrs.toSeq.map {
-  //        tuple =>
-  //          Try(assert(tuple._2 == 1, s"${tuple._2} endpoints has identical uri ${tuple._1}"))
-  //      }
-  //      val ss3 = Seq(
-  //        Try(PyRef.cleanSanityCheck()),
-  //        Try(Link.cleanSanityCheck())
-  //      )
-  //      ss1 ++ ss2
-  //    }
-  //    val allExecutorOuts: Map[String, Int] = includeThis.flatMap(_.executorOuts)
-  //      .groupBy(identity)
-  //      .mapValues(_.size)
-  //    val s = s1 ++ allExecutorOuts.toSeq.map {
-  //      tuple =>
-  //        Try(assert(tuple._2 == 1, s"${tuple._2} executor out has identical uri ${tuple._1}"))
-  //    }
-  //
-  //    TreeException.&&&(s, extra = causes)
-  //  }
-
   def getLocation: LocationGlobal = {
 
     val locations = primary.PY.vehicle.location
     val global = locations.global_frame.$MSG.get.cast[LocationGlobal]
-    drone.lastLocation = Some(global)
+    drone.location = Some(global)
+    global
+  }
+  def getHome: LocationGlobal = {
+
+    val home = primary.PY.home
+    val global = home.$MSG.get.cast[LocationGlobal]
+    drone.home = Some(global)
     global
   }
 

@@ -46,7 +46,7 @@ abstract class ActionLike extends DetailedProduct with Serializable {
 
   def injectFrom(same: ActionLike): Unit = {} //TODO: change to immutable pattern to avoid one Trace being used twice with different names
 
-//  final def injectTo(same: ActionLike): Unit = same.injectFrom(this)
+  //  final def injectTo(same: ActionLike): Unit = same.injectFrom(this)
 
   //used to determine if snapshot needs to be appended or if possible to be executed lazily
   final def hasOutput: Boolean = outputNames.nonEmpty
@@ -104,21 +104,18 @@ abstract class ActionLike extends DetailedProduct with Serializable {
         "Resource is not cached and not allowed to be fetched remotely, " +
           "the later can be enabled by setting SpookyContext.conf.remote=true"
       )
-
-      val session = new Session(spooky)
-
-      try {
-        val result = this.apply(session)
-        spooky.metrics.fetchFromRemoteSuccess += 1
-        result
-      }
-      catch {
-        case e: Throwable =>
-          spooky.metrics.fetchFromRemoteFailure += 1
-          throw e
-      }
-      finally {
-        session.tryClean()
+      spooky.withSession {
+        session =>
+          try {
+            val result = this.apply(session)
+            spooky.metrics.fetchFromRemoteSuccess += 1
+            result
+          }
+          catch {
+            case e: Throwable =>
+              spooky.metrics.fetchFromRemoteFailure += 1
+              throw e
+          }
       }
     }
   }

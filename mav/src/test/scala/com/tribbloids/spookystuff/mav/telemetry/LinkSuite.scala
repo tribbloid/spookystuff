@@ -2,6 +2,7 @@ package com.tribbloids.spookystuff.mav.telemetry
 
 import com.tribbloids.spookystuff.{PyInterpreterException, SpookyEnvFixture}
 import com.tribbloids.spookystuff.mav.dsl.LinkFactories
+import com.tribbloids.spookystuff.mav.hardware.Drone
 import com.tribbloids.spookystuff.mav.sim.APMSimFixture
 import com.tribbloids.spookystuff.session.python.PythonDriver
 import com.tribbloids.spookystuff.session.{Lifespan, NoPythonDriverException, ResourceLock, Session}

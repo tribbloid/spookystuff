@@ -2,6 +2,7 @@ package com.tribbloids.spookystuff.mav.telemetry
 
 import com.tribbloids.spookystuff.SpookyEnvFixture
 import com.tribbloids.spookystuff.mav.dsl.LinkFactories
+import com.tribbloids.spookystuff.mav.hardware.Drone
 
 /**
   * Created by peng on 30/11/16.

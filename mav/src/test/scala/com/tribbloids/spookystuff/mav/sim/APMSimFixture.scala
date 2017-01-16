@@ -2,7 +2,8 @@ package com.tribbloids.spookystuff.mav.sim
 
 import com.tribbloids.spookystuff.SpookyEnvFixture
 import com.tribbloids.spookystuff.mav.MAVConf
-import com.tribbloids.spookystuff.mav.telemetry.{Drone, Link}
+import com.tribbloids.spookystuff.mav.hardware.Drone
+import com.tribbloids.spookystuff.mav.telemetry.Link
 import com.tribbloids.spookystuff.session.python.PythonDriver
 import com.tribbloids.spookystuff.session.{Cleanable, Lifespan}
 import com.tribbloids.spookystuff.utils.SpookyUtils
@@ -40,7 +41,7 @@ abstract class APMSimFixture extends SpookyEnvFixture {
     super.setUp()
     val mavConf = this.spooky.conf.submodule[MAVConf]
     mavConf.connectionRetries = 2
-    mavConf.fleet = Fleets.Inventory(simEndpoints)
+    mavConf.fleet = Fleet.Inventory(simEndpoints)
   }
 
   override def beforeAll(): Unit = {

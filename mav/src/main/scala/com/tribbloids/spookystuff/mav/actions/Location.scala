@@ -3,35 +3,36 @@ package com.tribbloids.spookystuff.mav.actions
 import breeze.linalg.{DenseVector, Vector => Vec}
 import com.tribbloids.spookystuff.mav.MAVConf
 import com.tribbloids.spookystuff.session.python.CaseInstanceRef
-import com.tribbloids.spookystuff.utils.SimpleUDT
-import org.apache.spark.sql.types.SQLUserDefinedType
 
 import scala.language.implicitConversions
 
 @SerialVersionUID(-928750192836509428L)
-trait Location {
-  def alt: Double
-}
-
-trait AbstractLocationGlobal extends Location {
+trait Location extends Serializable {
 
   def lat: Double
   def lon: Double
+  def alt: Double
+  def ref: Location = LocationGlobal.UnknownLocation
 
-  def absolute: LocationGlobal
+  def _global: LocationGlobal = LocationGlobal(lat, lon, alt)
 
-  def relativeTo(ref: AbstractLocationGlobal): LocationGlobalRelative = {
-    val abs = absolute
+  def toGlobal(ref: Location = this.ref): LocationGlobal
+
+  def relativeTo(ref: Location): LocationGlobalRelative = {
     LocationGlobalRelative(
       lat,
       lon,
-      abs.alt - ref.absolute.alt
-    )(
+      alt - ref.alt)(
       ref
     )
   }
+  def relativeFrom(from: Location): LocationGlobalRelative = from.relativeTo(this)
 
-  def relativeFrom(from: AbstractLocationGlobal): LocationGlobalRelative = from.relativeTo(this)
+//  def localTo(ref: Location): LocationLocal = {
+//    ???
+//  }
+
+//  def localFrom(from: Location): LocationLocal = from.localTo(this)
 
   /**
   from http://python.dronekit.io/guide/copter/guided_mode.htmlhttp://python.dronekit.io/guide/copter/guided_mode.html
@@ -58,78 +59,58 @@ trait AbstractLocationGlobal extends Location {
     val newLon = this.lon + (dLon * 180 / Math.PI)
     (newLat, newLon)
   }
-
-  def relativeFromLocal(local: LocationLocal): LocationGlobalRelative = {
-    val latlon = _local2LatLon(local.north, local.east)
-    LocationGlobalRelative(
-      latlon._1,
-      latlon._2,
-      local.alt
-    )(
-      this
-    )
-  }
 }
 
-//TODO: UDT should not be used extensively, All MAVAction should convert Vectors/Name to Locations on interpolation
-class LocationGlobalUDT() extends SimpleUDT[LocationGlobal]
-@SQLUserDefinedType(udt = classOf[LocationGlobalUDT])
 @SerialVersionUID(56746829410409L)
 case class LocationGlobal(
                            lat: Double,
                            lon: Double,
                            alt: Double
-                         ) extends AbstractLocationGlobal with CaseInstanceRef {
+                         ) extends Location with CaseInstanceRef {
 
-  override lazy val absolute: LocationGlobal = this
+  def toGlobal(ref: Location = this.ref) = this
 }
 
-class AltGlobal(alt: Double) extends LocationGlobal(Double.NaN, Double.NaN, alt)
+object LocationGlobal {
 
-class LocationGlobalRelativeUDT() extends SimpleUDT[LocationGlobalRelative] {}
+  def Altitude(alt: Double) = LocationGlobal(Double.NaN, Double.NaN, alt)
+  val UnknownLocation = LocationGlobal(Double.NaN, Double.NaN, Double.NaN)
+}
 
-/**
-  * This is the de-facto standard of specifying location for all outbound commands
-  */
-//TODO: native to Dronekit if based on home location, should convert all to this before being sent out
-//otherwise the local reference of each drone will be different and causes massive confusion
-@SQLUserDefinedType(udt = classOf[LocationGlobalRelativeUDT])
 @SerialVersionUID(-5039218743229730432L)
 case class LocationGlobalRelative(
                                    lat: Double,
                                    lon: Double,
-                                   alt: Double
-                                 )(
-                                   base: AbstractLocationGlobal // cannot be omitted
-                                 ) extends AbstractLocationGlobal with CaseInstanceRef {
+                                   altRelative: Double)(
+                                   override val ref: Location = LocationGlobal.UnknownLocation // cannot be omitted
+                                 ) extends Location {
 
-  override lazy val absolute: LocationGlobal = LocationGlobal(
-    lat, lon, alt + base.absolute.alt
-  )
+  val alt = altRelative + ref.alt
+
+  def toGlobal(ref: Location = this.ref) = this.copy()(ref = ref)._global
 }
 
-class LocationLocalUDT() extends SimpleUDT[LocationLocal]
-
-/**
-  * always use NED coordinate
-  */
-@SQLUserDefinedType(udt = classOf[LocationLocalUDT])
 @SerialVersionUID(4604257236921846832L)
 case class LocationLocal(
                           north: Double,
                           east: Double,
-                          down: Double
-                        ) extends DenseVector[Double](Array(north, east, down)) with Location with CaseInstanceRef {
+                          down: Double)(
+                          override val ref: Location = LocationGlobal.UnknownLocation // cannot be omitted
+                        ) extends Location {
 
-  def relativeTo(ref: AbstractLocationGlobal): LocationGlobalRelative = ref.relativeFromLocal(this)
+  def vec: DenseVector[Double] = DenseVector[Double](Array(north, east, down))
 
-  override def alt: Double = -down
+  override val alt: Double = ref.alt - down
+
+  override val (lat, lon) = ref._local2LatLon(north, east)
+
+  def toGlobal(ref: Location = this.ref) = this.copy()(ref = ref)._global
 }
 
 object LocationLocal {
 
   implicit def fromVec(vec: Vec[Double]): LocationLocal = {
-    assert(vec.length == 3, "vector is not a 3D coordinate!")
-    LocationLocal(vec(0), vec(1), vec(2))
+    assert(vec.length == 3, "vector is not 3D!")
+    LocationLocal(vec(0), vec(1), vec(2))()
   }
 }

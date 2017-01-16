@@ -1,16 +1,16 @@
 package com.tribbloids.spookystuff.mav
 
 import com.tribbloids.spookystuff.AbstractConf
-import com.tribbloids.spookystuff.mav.actions.LocationLocal
-import com.tribbloids.spookystuff.mav.dsl.{Fleet, Fleets, LinkFactories, LinkFactory}
-import com.tribbloids.spookystuff.mav.telemetry.Drone
+import com.tribbloids.spookystuff.mav.actions.LocationGlobal
+import com.tribbloids.spookystuff.mav.dsl._
+import com.tribbloids.spookystuff.mav.hardware.Drone
 
 object MAVConf {
 
   val default = MAVConf()
 
   final val DEFAULT_BAUDRATE = 57600
-//  final val DEFAULT_BAUDRATE = 9200 // for testing only
+  //  final val DEFAULT_BAUDRATE = 9200 // for testing only
 
   final val EXECUTOR_SSID = 250
   final val PROXY_SSID = 251
@@ -31,10 +31,11 @@ case class MAVConf(
                     // connection list is configed by user and shared by all executors
                     // blacklist is node specific and determined by GenPartitioner
                     // routing now becomes part of Connection?
-                    var fleet: Fleet = Fleets.Inventory(Nil),
+                    var fleet: Fleet = Fleet.Inventory(Nil),
                     var linkFactory: LinkFactory = LinkFactories.ForkToGCS(),
                     var connectionRetries: Int = MAVConf.CONNECTION_RETRIES,
-                    var clearanceAltitude: Double = 10 // in meters
+                    var clearanceAltitude: Double = 10, // in meters
+                    var globalReference: LocationGlobal = LocationGlobal.UnknownLocation // reference used to convert LocationLocal to LocationGlobal
                   ) extends AbstractConf {
 
   /**

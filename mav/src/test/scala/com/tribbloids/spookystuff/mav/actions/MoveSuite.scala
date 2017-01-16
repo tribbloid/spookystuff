@@ -14,8 +14,8 @@ object MoveSuite{
 
     val result = (0 until n).map {
       i =>
-        val p1: LocationLocal = origin + (stride :* i.toDouble)
-        val p2: LocationLocal = p1 + dir
+        val p1: LocationLocal = origin.vec + (stride.vec :* i.toDouble)
+        val p2: LocationLocal = p1.vec + dir.vec
         if (i % 2 == 0) {
           p1 -> p2
         }

@@ -2,6 +2,7 @@ package com.tribbloids.spookystuff
 
 import com.tribbloids.spookystuff.rdd.FetchedDataset
 import com.tribbloids.spookystuff.row._
+import com.tribbloids.spookystuff.session.Session
 import com.tribbloids.spookystuff.utils.{HDFSResolver, ScalaType, SerializationMarks, TreeException}
 import org.apache.hadoop.conf.Configuration
 import org.apache.spark._
@@ -141,6 +142,18 @@ case class SpookyContext private (
 
     implicit val ctg = ScalaType.fromTypeTag[T].asClassTag
     this.dsl.rddToPageRowRDD(this.sqlContext.sparkContext.parallelize(seq.toSeq, numSlices))
+  }
+
+  def withSession[T](fn: Session => T): T = {
+
+    val session = new Session(this)
+
+    try {
+      fn(session)
+    }
+    finally {
+      session.tryClean()
+    }
   }
 
   lazy val _blankSelfRDD = sparkContext.parallelize(Seq(SquashedFetchedRow.blank))

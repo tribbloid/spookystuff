@@ -2,15 +2,17 @@ package com.tribbloids.spookystuff.mav.actions
 
 import com.tribbloids.spookystuff.actions.{Action, Interaction}
 import com.tribbloids.spookystuff.mav.MAVConf
-import com.tribbloids.spookystuff.mav.telemetry.{Drone, Link}
+import com.tribbloids.spookystuff.mav.hardware.Drone
+import com.tribbloids.spookystuff.mav.telemetry.Link
 import com.tribbloids.spookystuff.session.Session
 
 trait MAVAction extends Action {
 
   // override this to enforce selection over drones being deployed.
   // drone that yield higher preference will be used if available, regardless of whether its in the air or not.
-  // drone that yield None will never be used.
-  def preference: Drone => Option[Double] = {_ => Some(1)}
+  // drone that yield None will never be used. TODO enable later
+//  def preference: DronePreference = {_ => Some(1)}
+  def preference: Seq[Drone] = Nil
 
   class SessionView(session: Session) {
 
@@ -18,9 +20,12 @@ trait MAVAction extends Action {
       session.spooky.conf.submodule[MAVConf]
     }
 
+    val drones = if (preference.isEmpty) mavConf.drones
+    else preference
+
     val link: Link = {
       Link.getOrCreate(
-        mavConf.drones,
+        drones,
         mavConf.linkFactory,
         session
       )

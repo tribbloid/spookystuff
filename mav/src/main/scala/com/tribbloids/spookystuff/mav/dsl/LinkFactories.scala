@@ -1,6 +1,7 @@
 package com.tribbloids.spookystuff.mav.dsl
 
-import com.tribbloids.spookystuff.mav.telemetry.{Drone, Link}
+import com.tribbloids.spookystuff.mav.hardware.Drone
+import com.tribbloids.spookystuff.mav.telemetry.Link
 import com.tribbloids.spookystuff.utils.PrettyProduct
 import org.slf4j.LoggerFactory
 

@@ -10,6 +10,7 @@ import org.apache.spark.{SparkConf, SparkEnv}
 import org.apache.spark.ml.dsl.ReflectionUtils
 import org.apache.spark.ml.dsl.utils.Message
 import org.apache.spark.storage.StorageLevel
+import org.slf4j.LoggerFactory
 
 import scala.collection.mutable
 import scala.concurrent.duration.Duration.Infinite
@@ -87,13 +88,25 @@ object AbstractConf {
 
     Option(conf)
       .flatMap(
-        _.getOption(property)
+        _.getOption(property).map {
+          v =>
+            LoggerFactory.getLogger(this.getClass).info(s"SparkConf has property $property -> $v")
+            v
+        }
       )
       .orElse{
-        Option(System.getProperty(property))
+        Option(System.getProperty(property)).map {
+          v =>
+            LoggerFactory.getLogger(this.getClass).info(s"System has property $property -> $v")
+            v
+        }
       }
       .orElse{
-        Option(System.getenv(env))
+        Option(System.getenv(env)).map {
+          v =>
+            LoggerFactory.getLogger(this.getClass).info(s"System has environment $env -> $v")
+            v
+        }
       }
   }
 

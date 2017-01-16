@@ -1,12 +1,12 @@
 package com.tribbloids.spookystuff.mav.dsl
 
-import com.tribbloids.spookystuff.mav.telemetry.Drone
+import com.tribbloids.spookystuff.mav.hardware.Drone
 import com.tribbloids.spookystuff.utils.SpookyUtils
 
 /**
   * SpookyContext => RDD[Drone]
   */
-object Fleets {
+object Fleet {
 
   case class Inventory(
                         drones: Seq[Drone],
@@ -27,7 +27,10 @@ object Fleets {
     * will do a pre-scan to determine the availabiliy of all vehicles
     */
   //TODO: implement later
-  case class Discover(delegate: Fleet) extends Fleet {
+  case class Discover(
+                       delegate: Fleet,
+                       base: BaseLocation
+                     ) extends Fleet {
 
     def apply(): Seq[Drone] = {
       val before = delegate()
@@ -38,4 +41,24 @@ object Fleets {
 
 trait Fleet extends (() => Seq[Drone]) {
 
+//  import com.tribbloids.spookystuff.utils.SpookyViews._
+//
+//  def base: BaseLocation
+//
+//  def getBase(spooky: SpookyContext): LocationGlobal = {
+//
+//    val droneRDD: RDD[Drone] = spooky.sparkContext.mapPerWorker {
+//      val drones = this.apply()
+//      drones.foreach {
+//        d =>
+//          Try {
+//            d.updateStatus(spooky)
+//          }
+//      }
+//      drones
+//    }
+//      .flatMap(identity)
+//
+//    base.apply(droneRDD)
+//  }
 }

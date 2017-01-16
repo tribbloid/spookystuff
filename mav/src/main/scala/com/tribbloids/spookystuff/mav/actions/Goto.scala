@@ -1,6 +1,7 @@
 package com.tribbloids.spookystuff.mav.actions
 
 import com.tribbloids.spookystuff.extractors.{Extractor, FR, Literal}
+import com.tribbloids.spookystuff.mav.MAVConf
 import com.tribbloids.spookystuff.row.{DataRowSchema, FetchedRow}
 import com.tribbloids.spookystuff.session.Session
 import org.slf4j.LoggerFactory
@@ -14,11 +15,13 @@ trait AbstractGoto extends MAVInteraction {
 
   val to: Extractor[Any]
 
-  lazy val toV = to.asInstanceOf[Literal[FR, Location]].value
-
   override def getSessionView(session: Session) = new this.SessionView(session)
 
   class SessionView(session: Session) extends super.SessionView(session) {
+    lazy val toV = to.asInstanceOf[Literal[FR, Location]].value
+      .setRef(session.spooky.conf.submodule[MAVConf].globalReference)
+      .toGlobal
+
     override def conduct(): Unit = {
       LoggerFactory.getLogger(this.getClass).info(s"scanning .. $toV")
       py.move(toV)

@@ -200,13 +200,13 @@ mode_mapping_tracker = {
     def getLocalOrigin(self):
         # type: () -> LocationGlobalRelative
         if not self.localOrigin:
-            origin = self.homeLocation
+            origin = self.home
             self.localOrigin = LocationGlobalRelative(origin.lat, origin.lon, 0)
         return self.localOrigin
 
     @property
     # TODO: commandsRefresh sometimes timeout on SITL, can fall back to deduction from LocationGlobal & LocationLocal
-    def homeLocation(self):
+    def home(self):
         # type: () -> LocationGlobal
         """
         slow and may retry several times, use with caution
