@@ -55,7 +55,11 @@ trait TestMixin extends FunSuite {
                       gd: String = null
                     ) = shouldBe(gd, sort = true)
 
-    def shouldBeLike(gd: String = null, sort: Boolean = false): Unit = {
+    def shouldBeLike(
+                      gd: String = null,
+                      sort: Boolean = false,
+                      ignoreCase: Boolean = false
+                    ): Unit = {
       val aRaw: List[String] = str.split("\n").toList.filterNot(_.replaceAllLiterally(" ","").isEmpty)
         .map(v => ("|" + v).trim.stripPrefix("|"))
       val a = if (sort) aRaw.sorted
@@ -68,10 +72,10 @@ trait TestMixin extends FunSuite {
         case None =>
           println(originalStr)
         case Some(_gd) =>
-          val bRaw = _gd.split("\n").toList.filterNot(_.replaceAllLiterally(" ","").isEmpty)
+          var b = _gd.split("\n").toList.filterNot(_.replaceAllLiterally(" ","").isEmpty)
             .map(v => ("|" + v).trim.stripPrefix("|"))
-          val b = if (sort) bRaw.sorted
-          else bRaw
+          if (sort) b = b.sorted
+          if (ignoreCase) b = b.map(_.toLowerCase)
           try {
             a.zipAll(b, null, null).foreach {
               tuple =>
@@ -86,7 +90,7 @@ trait TestMixin extends FunSuite {
           }
           catch {
             case e: Throwable =>
-              throw new AssertionError("" + comparisonStr(originalStr _, bRaw), e)
+              throw new AssertionError("" + comparisonStr(originalStr _, b), e)
           }
       }
     }
