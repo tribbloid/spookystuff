@@ -268,6 +268,8 @@ class Proxy(Daemon):
 
             self.logPrint("Proxy spawned: PID =", self.pid, "URI =", self.outs[0])
 
+            time.sleep(2) #  wait for port to be released
+
     def _stop(self):
         if self.p:
             for command in self.p.commands:

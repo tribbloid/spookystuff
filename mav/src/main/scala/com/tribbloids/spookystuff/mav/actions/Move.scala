@@ -39,7 +39,7 @@ case class Move(
   class SessionView(session: Session) extends super.SessionView(session) {
 
     lazy val fromV: LocationGlobal = from.asInstanceOf[Literal[FR, Location]].value
-      .toGlobal(session.spooky.conf.submodule[MAVConf].globalReference)
+      .toGlobal(Some(session.spooky.conf.submodule[MAVConf].locationReference))
 
     override def inbound(): Unit = {
       LoggerFactory.getLogger(this.getClass).debug(s"assureClearanceAltitude ${mavConf.clearanceAltitude}")

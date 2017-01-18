@@ -26,7 +26,10 @@ case class Proxy(
                 ) extends CaseInstanceRef with SingletonRef with LocalCleanable with ResourceLock {
 
   assert(!outs.contains(master))
-  override lazy val resourceIDs = Map("" -> Seq(master).toSet)
+  override lazy val resourceIDs = Map(
+    "master" -> Set(master),
+    "firstOut" -> outs.headOption.toSet //need at least 1 out for executor
+  )
 
   {
     val condition = !Proxy.existing.exists(_.master == this.master)
@@ -35,12 +38,12 @@ case class Proxy(
 
   Proxy.existing += this
 
-  val managerDriver = {
-      val v = new PythonDriver(lifespan = Lifespan.JVM(nameOpt = Some("ProxyManager")))
-      v
-    }
+  val driver = {
+    val v = new PythonDriver(lifespan = Lifespan.JVM(nameOpt = Some("Proxy")))
+    v
+  }
 
-  override def PY: PyBinding = this._Py(managerDriver)
+  override def PY: PyBinding = this._Py(driver)
 
   //  override def _Py(driver: PythonDriver, spookyOpt: Option[SpookyContext]): PyBinding = {
   //    throw new UnsupportedOperationException("NOT ALLOWED! use mgrPy instead")
@@ -48,7 +51,7 @@ case class Proxy(
 
   override protected def cleanImpl(): Unit = {
     super.cleanImpl()
-    managerDriver.clean()
+    driver.clean()
     Proxy.existing -= this
   }
 }

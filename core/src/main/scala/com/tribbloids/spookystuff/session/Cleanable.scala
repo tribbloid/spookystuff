@@ -18,10 +18,10 @@ class Lifespan extends IDMixin with Serializable {
   }
 
   def nameOpt: Option[String] = None
-  def name = nameOpt.getOrElse {
+  def name = {
     _id match {
-      case Left(v) => "Task-" + v
-      case Right(v) => "Thread-" + v
+      case Left(v) => nameOpt.getOrElse("Task") + "-" + v
+      case Right(v) => nameOpt.getOrElse("Thread") + "-" + v
     }
   }
 

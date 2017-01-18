@@ -111,7 +111,7 @@ class MessageReader[Obj](
   override def toMessage(v: Obj) = new MessageView[Obj](v, MessageReader.this.formats)
 }
 
-object GenericMessageReader extends MessageReader[Any]
+object MessageReader extends MessageReader[Any]
 
 trait HasMessage extends Serializable {
 
@@ -152,7 +152,7 @@ trait Message extends HasMessage {
   }
 
   def cast[T: Manifest](implicit formats: Formats = formats) = {
-    GenericMessageReader._fromJValue[T](toJValue(formats))
+    MessageReader._fromJValue[T](toJValue(formats))
   }
 }
 

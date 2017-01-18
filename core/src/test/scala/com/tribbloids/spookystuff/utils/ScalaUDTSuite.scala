@@ -91,7 +91,7 @@ class ScalaUDTSuite extends SpookyEnvFixture with TestMixin {
     val reified = getAndTestReifiedType[Doc]
     reified.toString.shouldBe(
       """
-        |doc
+        |unstructured
       """.stripMargin
     )
   }

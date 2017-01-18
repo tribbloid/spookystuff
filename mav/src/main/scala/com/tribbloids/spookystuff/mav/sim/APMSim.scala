@@ -16,8 +16,8 @@ object APMSim {
 
   final val HOME = LocationGlobal(43.694195, -79.262262, 136)
   def scatteredHome = HOME.copy(
-    lat = HOME.lat + (Random.nextDouble() - 0.5)*0.0002,
-    lon = HOME.lon + (Random.nextDouble() - 0.5)*0.0002
+    lat = HOME.lat + (Random.nextDouble() - 0.5)*0.001,
+    lon = HOME.lon + (Random.nextDouble() - 0.5)*0.001
   )
 
   final val FRAMERATE = 200

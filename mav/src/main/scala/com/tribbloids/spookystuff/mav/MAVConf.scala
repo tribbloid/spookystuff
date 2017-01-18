@@ -4,6 +4,7 @@ import com.tribbloids.spookystuff.AbstractConf
 import com.tribbloids.spookystuff.mav.actions.LocationGlobal
 import com.tribbloids.spookystuff.mav.dsl._
 import com.tribbloids.spookystuff.mav.hardware.Drone
+import com.tribbloids.spookystuff.mav.sim.APMSim
 
 object MAVConf {
 
@@ -35,7 +36,7 @@ case class MAVConf(
                     var linkFactory: LinkFactory = LinkFactories.ForkToGCS(),
                     var connectionRetries: Int = MAVConf.CONNECTION_RETRIES,
                     var clearanceAltitude: Double = 10, // in meters
-                    var globalReference: LocationGlobal = LocationGlobal.UnknownLocation // reference used to convert LocationLocal to LocationGlobal
+                    var locationReference: LocationGlobal = APMSim.HOME // reference used to convert LocationLocal to LocationGlobal
                   ) extends AbstractConf {
 
   /**

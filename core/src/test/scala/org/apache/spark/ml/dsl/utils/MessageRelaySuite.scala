@@ -5,8 +5,6 @@ import java.util.Date
 import org.apache.spark.ml.dsl.AbstractFlowSuite
 import org.json4s.MappingException
 
-
-
 case class TimeWrapper(time: Date)
 
 case class UsersWrapper(a: String, users: Users)
@@ -18,8 +16,11 @@ case class User(
                  roles: Option[Roles] = None
                )
 
-case class Roles(role: Seq[String]) {
-}
+case class Roles(role: Seq[String])
+
+case class MultipartExample(a: String, b: String)(c: Int = 10)
+
+//case object ObjectExample1 extends AbstractObjectExample
 
 object TimeRelay extends MessageRelay[Date] {
 
@@ -178,7 +179,24 @@ class MessageRelaySuite extends AbstractFlowSuite {
     v.toString.shouldBe("User(string,None)")
   }
 
-  test("TimeRelay should work for json") {
+  test("Multipart case class JSON read should be broken") {
+    val ex = MultipartExample("aa", "bb")(3)
+    val jsonStr = MessageView(ex).toJSON()
+    jsonStr.shouldBe(
+      s"""
+         |{
+         |  "a" : "aa",
+         |  "b" : "bb"
+         |}
+      """.stripMargin
+    )
+
+    intercept[MappingException] {
+      MessageReader._fromJSON[MultipartExample](jsonStr)
+    }
+  }
+
+  test("TimeRelay can be converted to JSON and back") {
 
     val jsonStr = TimeRelay.toMessage(date).toJSON(pretty = true)
     jsonStr.shouldBe(
