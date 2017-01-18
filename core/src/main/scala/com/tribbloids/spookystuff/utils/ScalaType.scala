@@ -2,7 +2,6 @@ package com.tribbloids.spookystuff.utils
 
 import java.sql.{Date, Timestamp}
 
-import org.apache.spark.ml.dsl.ReflectionUtils
 import org.apache.spark.sql.catalyst.ScalaReflection.universe._
 import org.apache.spark.sql.types._
 
@@ -12,6 +11,9 @@ import scala.reflect.ClassTag
 
 /**
   * interface that unifies TypeTag, ClassTag, Class & DataType
+  * Also a subclass of Spark SQL DataType but NOT recommended to use directly in DataFrame, can cause compatibility issues.
+  * either use tryReify to attempt converting to a native DataType. Or use UnoptimizedScalaUDT (which is abandoned in Spark 2.x)
+  * Will be simplified again once Spark 2.2 introduces UserDefinedType V2.
   */
 //TODO: change to ThreadLocal to bypass thread safety?
 //TODO: use scala type class: http://danielwestheide.com/blog/2013/02/06/the-neophytes-guide-to-scala-part-12-type-classes.html
@@ -319,8 +321,9 @@ object UnreifiedScalaType {
 /**
   *  A Scala TypeTag-based UDT, by default it doesn't compress object
   *  ideally it should compress object into InternalRow.
+  *  Should be working and serve as the fallback strategy for ScalaReflection.schemaFor
   */
-abstract class SimpleUDT[T: ClassTag] extends UserDefinedType[T] with ScalaType.Ctg[T] {
+abstract class ScalaUDT[T: ClassTag] extends UserDefinedType[T] with ScalaType.Ctg[T] {
 
   //backported
   override val typeName = this.getClass.getSimpleName.stripSuffix("$").stripSuffix("Type").stripSuffix("UDT").toLowerCase

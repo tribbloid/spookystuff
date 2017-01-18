@@ -83,6 +83,7 @@ class TestHelper() {
       .set("spark.serializer", "org.apache.spark.serializer.KryoSerializer")
       //      .set("spark.kryo.registrator", "com.tribbloids.spookystuff.SpookyRegistrator")Incomplete for the moment
       .set("spark.kryoserializer.buffer.max", "512m")
+      .set("dummy.property", "dummy")
 
     conf.setAll(coreSettings)
 

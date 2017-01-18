@@ -3,9 +3,15 @@ package com.tribbloids.spookystuff.mav.actions
 import breeze.linalg.{DenseVector, Vector => Vec}
 import com.tribbloids.spookystuff.mav.MAVConf
 import com.tribbloids.spookystuff.session.python.CaseInstanceRef
+import com.tribbloids.spookystuff.utils.ScalaUDT
+import org.apache.spark.sql.types.SQLUserDefinedType
 
 import scala.language.implicitConversions
 
+//TODO: UDT should not be used extensively,
+//All MAVAction should convert Vectors/Name to Locations on interpolation
+class LocationUDT() extends ScalaUDT[Location]
+@SQLUserDefinedType(udt = classOf[LocationUDT])
 @SerialVersionUID(-928750192836509428L)
 trait Location extends Serializable {
 
@@ -61,6 +67,7 @@ trait Location extends Serializable {
   }
 }
 
+@SQLUserDefinedType(udt = classOf[LocationUDT])
 @SerialVersionUID(56746829410409L)
 case class LocationGlobal(
                            lat: Double,
@@ -77,6 +84,7 @@ object LocationGlobal {
   val UnknownLocation = LocationGlobal(Double.NaN, Double.NaN, Double.NaN)
 }
 
+@SQLUserDefinedType(udt = classOf[LocationUDT])
 @SerialVersionUID(-5039218743229730432L)
 case class LocationGlobalRelative(
                                    lat: Double,
@@ -90,6 +98,7 @@ case class LocationGlobalRelative(
   def toGlobal(ref: Location = this.ref) = this.copy()(ref = ref)._global
 }
 
+@SQLUserDefinedType(udt = classOf[LocationUDT])
 @SerialVersionUID(4604257236921846832L)
 case class LocationLocal(
                           north: Double,

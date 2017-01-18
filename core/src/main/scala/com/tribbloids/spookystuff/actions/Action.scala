@@ -3,7 +3,7 @@ package com.tribbloids.spookystuff.actions
 import com.tribbloids.spookystuff.doc.{Doc, Fetched}
 import com.tribbloids.spookystuff.selenium.BySizzleCssSelector
 import com.tribbloids.spookystuff.session.Session
-import com.tribbloids.spookystuff.utils.{SimpleUDT, SpookyUtils}
+import com.tribbloids.spookystuff.utils.{ScalaUDT, SpookyUtils}
 import com.tribbloids.spookystuff.{ActionException, Const, SpookyContext}
 import org.apache.spark.ml.dsl.utils._
 import org.apache.spark.sql.types.SQLUserDefinedType
@@ -13,7 +13,7 @@ import org.slf4j.LoggerFactory
 
 import scala.concurrent.duration.Duration
 
-class ActionUDT extends SimpleUDT[Action]
+class ActionUDT extends ScalaUDT[Action]
 
 object ActionRelay extends MessageRelay[Action] {
 

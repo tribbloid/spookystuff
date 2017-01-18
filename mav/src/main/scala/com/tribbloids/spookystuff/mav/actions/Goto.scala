@@ -19,8 +19,7 @@ trait AbstractGoto extends MAVInteraction {
 
   class SessionView(session: Session) extends super.SessionView(session) {
     lazy val toV = to.asInstanceOf[Literal[FR, Location]].value
-      .setRef(session.spooky.conf.submodule[MAVConf].globalReference)
-      .toGlobal
+      .toGlobal(session.spooky.conf.submodule[MAVConf].globalReference)
 
     override def conduct(): Unit = {
       LoggerFactory.getLogger(this.getClass).info(s"scanning .. $toV")

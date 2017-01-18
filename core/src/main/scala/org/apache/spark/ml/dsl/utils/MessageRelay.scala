@@ -102,8 +102,6 @@ abstract class MessageRelay[Obj] {
 
 /**
   * a simple MessageRelay that use object directly as Message
-  * @param mf
-  * @tparam Obj
   */
 class MessageReader[Obj](
                           implicit override val mf: Manifest[Obj]

@@ -1,6 +1,6 @@
 package com.tribbloids.spookystuff.extractors
 
-import com.tribbloids.spookystuff.utils.SimpleUDT
+import com.tribbloids.spookystuff.utils.ScalaUDT
 import org.apache.spark.sql.types.SQLUserDefinedType
 
 /**
@@ -34,7 +34,7 @@ class GenericExample[T](
   def *=>(k: T): String = "" + k
 }
 
-class ExampleUDT extends SimpleUDT[Example]
+class ExampleUDT extends ScalaUDT[Example]
 @SQLUserDefinedType(udt = classOf[ExampleUDT])
 class Example(
                override val a: String = "dummy",

@@ -6,10 +6,10 @@ import com.tribbloids.spookystuff.dsl._
 import com.tribbloids.spookystuff.row.Sampler
 import com.tribbloids.spookystuff.session._
 import com.tribbloids.spookystuff.session.python.PythonDriver
-import org.apache.spark.{SparkConf, SparkEnv}
 import org.apache.spark.ml.dsl.ReflectionUtils
 import org.apache.spark.ml.dsl.utils.Message
 import org.apache.spark.storage.StorageLevel
+import org.apache.spark.{SparkConf, SparkEnv}
 import org.slf4j.LoggerFactory
 
 import scala.collection.mutable
@@ -80,33 +80,33 @@ case class Submodules[U] private(
 
 object AbstractConf {
 
-  def get(
-           property: String
-         )(implicit conf: SparkConf = Option(SparkEnv.get).map(_.conf).orNull): Option[String] = {
+  def getPropertyOrEnv(
+                        property: String
+                      )(implicit conf: SparkConf = Option(SparkEnv.get).map(_.conf).orNull): Option[String] = {
 
     val env = property.replace('.','_').toUpperCase
 
-    Option(conf)
-      .flatMap(
-        _.getOption(property).map {
-          v =>
-            LoggerFactory.getLogger(this.getClass).info(s"SparkConf has property $property -> $v")
-            v
-        }
-      )
-      .orElse{
-        Option(System.getProperty(property)).map {
-          v =>
-            LoggerFactory.getLogger(this.getClass).info(s"System has property $property -> $v")
-            v
-        }
-      }
-      .orElse{
+    Option(System.getProperty(property)).map {
+      v =>
+        LoggerFactory.getLogger(this.getClass).info(s"System has property $property -> $v")
+        v
+    }
+      .orElse {
         Option(System.getenv(env)).map {
           v =>
             LoggerFactory.getLogger(this.getClass).info(s"System has environment $env -> $v")
             v
         }
+      }
+      .orElse {
+        Option(conf) //this is ill-suited for third-party application, still here but has lowest precedence.
+          .flatMap(
+            _.getOption(property).map {
+              v =>
+                LoggerFactory.getLogger(this.getClass).info(s"SparkConf has property $property -> $v")
+                v
+            }
+          )
       }
   }
 
@@ -118,7 +118,7 @@ object AbstractConf {
                     default: String = null
                   )(implicit conf: SparkConf = Option(SparkEnv.get).map(_.conf).orNull): String = {
 
-    get(property)
+    getPropertyOrEnv(property)
       .getOrElse{
         default
       }

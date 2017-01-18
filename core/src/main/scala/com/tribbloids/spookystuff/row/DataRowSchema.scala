@@ -3,7 +3,7 @@ package com.tribbloids.spookystuff.row
 import com.tribbloids.spookystuff._
 import com.tribbloids.spookystuff.execution._
 import com.tribbloids.spookystuff.extractors._
-import com.tribbloids.spookystuff.utils.SimpleUDT
+import com.tribbloids.spookystuff.utils.ScalaUDT
 import org.apache.spark.sql.types.{DataType, StructField, StructType}
 
 import scala.collection.immutable.ListMap
@@ -14,7 +14,7 @@ import scala.language.implicitConversions
 case class DataRowSchema(
                           spooky: SpookyContext,
                           map: ListMap[Field, DataType] = ListMap.empty
-                        ) extends SimpleUDT[DataRow] {
+                        ) extends ScalaUDT[DataRow] {
 
   import com.tribbloids.spookystuff.utils.ScalaType._
 

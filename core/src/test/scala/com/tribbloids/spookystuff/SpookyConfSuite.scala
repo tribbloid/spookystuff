@@ -1,6 +1,6 @@
 package com.tribbloids.spookystuff
 
-import org.apache.spark.SparkConf
+import org.apache.spark.{SparkConf, SparkContext}
 
 import scala.util.Random
 
@@ -45,31 +45,26 @@ class SpookyConfSuite extends SpookyEnvFixture {
     assert(dirConf.autoSave == dummyV)
   }
 
-//  test("getProperty() can load property from system environment") {
-//  }
+  //  test("getProperty() can load property from system environment") {
+  //  }
+
+  test("getProperty() can load property from spark property") {
+    val conf = sc.getConf
+    val v = conf.get("dummy.property")
+
+    try {
+      assert(AbstractConf.getPropertyOrEnv("dummy.property") == Some(v))
+    }
+  }
 
   test("getProperty() can load property from system property") {
 
     System.setProperty("dummy.property", "AA")
 
     try {
-      assert(AbstractConf.get("dummy.property") == Some("AA"))
+      assert(AbstractConf.getPropertyOrEnv("dummy.property") == Some("AA"))
     }
     finally {
-      System.setProperty("dummy.property", "")
-    }
-  }
-
-  test("getProperty() can load property from spark property") {
-    System.setProperty("dummy.property", "AA")
-    val conf = sc.getConf
-    conf.set("dummy.property", "BB")
-
-    try {
-      assert(AbstractConf.get("dummy.property") == Some("BB"))
-    }
-    finally {
-      conf.remove("dummy.property")
       System.setProperty("dummy.property", "")
     }
   }

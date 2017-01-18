@@ -5,7 +5,7 @@ import java.util.UUID
 
 import com.tribbloids.spookystuff._
 import com.tribbloids.spookystuff.actions._
-import com.tribbloids.spookystuff.utils.{IDMixin, SimpleUDT, SpookyUtils}
+import com.tribbloids.spookystuff.utils.{IDMixin, ScalaUDT, SpookyUtils}
 import org.apache.commons.csv.CSVFormat
 import org.apache.hadoop.fs.Path
 import org.apache.http.StatusLine
@@ -33,7 +33,7 @@ case class DocUID(
 
 }
 
-class FetchedUDT extends SimpleUDT[Fetched]
+class FetchedUDT extends ScalaUDT[Fetched]
 
 //keep small, will be passed around by Spark
 //TODO: subclass Unstructured to save Message definition
@@ -120,10 +120,8 @@ object Doc {
 }
 
 
-class DocUDT extends SimpleUDT[Doc]
-
 @SerialVersionUID(94865098324L)
-@SQLUserDefinedType(udt = classOf[DocUDT])
+@SQLUserDefinedType(udt = classOf[UnstructuredUDT])
 case class Doc(
                 override val uid: DocUID,
 

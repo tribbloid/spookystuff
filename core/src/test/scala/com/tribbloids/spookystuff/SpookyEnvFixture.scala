@@ -120,6 +120,7 @@ abstract class SpookyEnvFixture
   }
 
   def reloadSpooky: SpookyContext = {
+    val sql = this.sql
     val result = new SpookyContext(sql, spookyConf)
     _spooky = result
     result
