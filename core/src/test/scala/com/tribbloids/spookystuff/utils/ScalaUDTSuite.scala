@@ -51,7 +51,7 @@ class ScalaUDTSuite extends SpookyEnvFixture with TestMixin {
     val typeName = reified.typeName
     reified.toString.shouldBe(
       """
-        |action
+        |ActionUDT
       """.stripMargin
     )
   }
@@ -61,7 +61,7 @@ class ScalaUDTSuite extends SpookyEnvFixture with TestMixin {
     val reified = getAndTestReifiedType[Array[Action]]
     reified.toString.shouldBe(
       """
-        |ArrayType(action,true)
+        |ArrayType(ActionUDT,true)
       """.stripMargin
     )
   }
@@ -71,7 +71,7 @@ class ScalaUDTSuite extends SpookyEnvFixture with TestMixin {
     val reified = getAndTestReifiedType[Unstructured]
     reified.toString.shouldBe(
       """
-        |unstructured
+        |UnstructuredUDT
       """.stripMargin
     )
   }
@@ -81,7 +81,7 @@ class ScalaUDTSuite extends SpookyEnvFixture with TestMixin {
     val reified = getAndTestReifiedType[Fetched]
     reified.toString.shouldBe(
       """
-        |fetched
+        |FetchedUDT
       """.stripMargin
     )
   }
@@ -91,7 +91,7 @@ class ScalaUDTSuite extends SpookyEnvFixture with TestMixin {
     val reified = getAndTestReifiedType[Doc]
     reified.toString.shouldBe(
       """
-        |unstructured
+        |UnstructuredUDT
       """.stripMargin
     )
   }

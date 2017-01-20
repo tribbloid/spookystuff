@@ -1,7 +1,7 @@
 package com.tribbloids.spookystuff.actions
 
 import com.tribbloids.spookystuff._
-import com.tribbloids.spookystuff.doc.{Doc, Fetched, NoDoc}
+import com.tribbloids.spookystuff.doc.{Doc, Fetched, FetchedNothing}
 import com.tribbloids.spookystuff.extractors.{Extractor, Literal}
 import com.tribbloids.spookystuff.http.HttpUtils
 import com.tribbloids.spookystuff.row.{DataRowSchema, FetchedRow}
@@ -59,7 +59,7 @@ abstract class Block(override val children: Trace) extends Actions(children) wit
       }
     }
     if (result.isEmpty && this.hasOutput) {
-      Seq(NoDoc(backtrace, cacheable = this.cacheEmptyOutput))
+      Seq(FetchedNothing(backtrace, cacheable = this.cacheEmptyOutput))
     }
     else if (result.count(_.isInstanceOf[Fetched]) == 0 && this.hasOutput) {
       result.map(_.update(cacheable = false))

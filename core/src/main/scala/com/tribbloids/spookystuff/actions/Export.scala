@@ -651,7 +651,7 @@ case class WpostImpl private[actions](
           IOUtils.copyLarge(entity.getContent, fos) //Overkill?
       }
 
-    val result = new NoDoc(
+    val result = new FetchedNothing(
       List(this),
       cacheable = false,
       metadata = Map("byteUploaded" -> size)
@@ -671,7 +671,7 @@ case class WpostImpl private[actions](
       stream.close()
     }
 
-    val result = new NoDoc(
+    val result = new FetchedNothing(
       List(this),
       cacheable = false
     )
