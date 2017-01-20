@@ -86,13 +86,13 @@ object AbstractConf {
 
     val env = property.replace('.','_').toUpperCase
 
-    Option(System.getProperty(property)).map {
+    Option(System.getProperty(property)).filter (_.toLowerCase != "null").map {
       v =>
         LoggerFactory.getLogger(this.getClass).info(s"System has property $property -> $v")
         v
     }
       .orElse {
-        Option(System.getenv(env)).map {
+        Option(System.getenv(env)).filter (_.toLowerCase != "null").map {
           v =>
             LoggerFactory.getLogger(this.getClass).info(s"System has environment $env -> $v")
             v
@@ -101,12 +101,13 @@ object AbstractConf {
       .orElse {
         Option(conf) //this is ill-suited for third-party application, still here but has lowest precedence.
           .flatMap(
-            _.getOption(property).map {
-              v =>
-                LoggerFactory.getLogger(this.getClass).info(s"SparkConf has property $property -> $v")
-                v
-            }
-          )
+          _.getOption(property).map {
+            v =>
+              LoggerFactory.getLogger(this.getClass).info(s"SparkConf has property $property -> $v")
+              v
+          }
+        )
+          .filter (_.toLowerCase != "null")
       }
   }
 

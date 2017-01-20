@@ -325,8 +325,7 @@ object UnreifiedScalaType {
   */
 abstract class ScalaUDT[T: ClassTag] extends UserDefinedType[T] with ScalaType.Ctg[T] {
 
-  //backported
-  override val typeName = this.getClass.getSimpleName.stripSuffix("$").stripSuffix("Type").stripSuffix("UDT").toLowerCase
+  override val typeName = this.getClass.getSimpleName.stripSuffix("$")//.stripSuffix("Type").stripSuffix("UDT").toLowerCase
 
   def _classTag: ClassTag[T] = implicitly[ClassTag[T]]
 
