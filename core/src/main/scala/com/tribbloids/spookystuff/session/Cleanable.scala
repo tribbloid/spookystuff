@@ -129,8 +129,15 @@ sealed trait AbstractCleanable {
   def clean(silent: Boolean = false): Unit = {
     if (!isCleaned){
       isCleaned = true
-      cleanImpl()
-      if (!silent) logConstructionDestruction("Destroyed")
+      try {
+        cleanImpl()
+        if (!silent) logConstructionDestruction("Destroyed")
+      }
+      catch {
+        case e: Throwable =>
+          isCleaned = false
+          throw e
+      }
     }
   }
 
@@ -193,15 +200,13 @@ trait Cleanable extends AbstractCleanable {
   def subCleanable: Seq[Cleanable] = Nil
 
   override def clean(silent: Boolean): Unit = {
-    val trials = subCleanable.map {
+    val trials: Seq[Try[Unit]] = subCleanable.map {
       v =>
         Try {
           v.clean(silent)
         }
     }
-    TreeException.&&&(trials)
-
-    super.clean(silent)
+    TreeException.&&&(trials :+ Try(super.clean(silent)))
 
     uncleanedInBatch -= this
   }

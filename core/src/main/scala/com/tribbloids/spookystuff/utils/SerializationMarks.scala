@@ -2,7 +2,7 @@ package com.tribbloids.spookystuff.utils
 
 import org.apache.spark.ml.dsl.utils.FlowUtils
 
-trait SerializationMarks {
+trait SerializationMarks extends Serializable {
 
   /**
     * a shipped object is a deep copy of another object through serailization & deserialization.

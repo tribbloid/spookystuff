@@ -1,9 +1,9 @@
 package com.tribbloids.spookystuff.mav.dsl
 
-import com.tribbloids.spookystuff.mav.hardware.Drone
+import com.tribbloids.spookystuff.mav.system.Drone
 import com.tribbloids.spookystuff.mav.telemetry.Link
+import com.tribbloids.spookystuff.mav.telemetry.mavlink.MAVLink
 import com.tribbloids.spookystuff.utils.PrettyProduct
-import org.slf4j.LoggerFactory
 
 import scala.util.Random
 
@@ -12,45 +12,8 @@ import scala.util.Random
   */
 object LinkFactories {
 
-  /**
-    * return true only of factory generates a proxy that has identical GCS outs comparing to link.proxy
-    */
-  def canCreate(factory: LinkFactory, link: Link): Boolean = {
-
-    val dryRun = factory.apply(link.drone)
-    val links = try {
-      dryRun.isDryrun = true
-      val actual = link
-      Seq(
-        dryRun,
-        actual
-      )
-    }
-    finally {
-      dryRun.clean()
-    }
-
-    val gcsOutss: Seq[Set[String]] = links
-      .map {
-        link =>
-          link.gcsOuts.toSet
-      }
-
-    val result = gcsOutss.distinct.size == 1
-    if (!result) {
-      LoggerFactory.getLogger(this.getClass).info (
-        s"""
-           |Can no longer use existing telemetry link for drone ${link.Endpoints.direct.uri}:
-           |output should be routed to GCS(s) ${gcsOutss.head.mkString("[",", ","]")}
-           |but instead existing one routes it to ${gcsOutss.last.mkString("[",", ","]")}
-             """.trim.stripMargin
-      )
-    }
-    result
-  }
-
   case object Direct extends LinkFactory with PrettyProduct{
-    def apply(endpoint: Drone) = Link(endpoint)
+    def apply(endpoint: Drone) = MAVLink(endpoint)
   }
 
   case class ForkToGCS(
@@ -66,24 +29,26 @@ object LinkFactories {
     // you can't distinguish vehicle failure and proxy failure, your best shot is to always use a random port for primary out
     def apply(endpoint: Drone): Link = {
 
-      LinkFactories.synchronized {
-        val existing4Exec: Seq[String] = Link.existing.values.toSeq
-          .flatMap(_.allURIs)
-        val available = toExecutor.filter {
-          v =>
-            !existing4Exec.contains(v)
+      //      LinkFactories.synchronized {
+      val existing4Exec: Seq[String] = Link.existing.values.toSeq
+        .flatMap {
+          case v: MAVLink => v.allURIs
         }
-        val shuffled = Random.shuffle(available)
-
-        val executorOuts = shuffled.slice(0, ToExecutorSize)
-        val gcsOuts = toGCS(endpoint).toSeq
-        val result = Link(
-          endpoint,
-          executorOuts,
-          gcsOuts
-        )
-        result
+      val available = toExecutor.filter {
+        v =>
+          !existing4Exec.contains(v)
       }
+      val shuffled = Random.shuffle(available)
+
+      val executorOuts = shuffled.slice(0, ToExecutorSize)
+      val gcsOuts = toGCS(endpoint).toSeq
+      val result = MAVLink(
+        endpoint,
+        executorOuts,
+        gcsOuts
+      )
+      result
+      //      }
     }
   }
 }

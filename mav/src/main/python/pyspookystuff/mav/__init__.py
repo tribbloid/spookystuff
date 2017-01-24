@@ -6,7 +6,7 @@ import time
 from dronekit import LocationGlobal, LocationGlobalRelative, LocationLocal, APIException
 from dronekit import Vehicle, VehicleMode
 
-from pyspookystuff.mav import Const
+from pyspookystuff.mav import const
 from pyspookystuff.mav.utils import retry
 
 
@@ -27,7 +27,7 @@ class VehicleFunctions(object):
         self._homeLocation = None
 
     # all the following are blocking API
-    @retry(Const.armRetries)
+    @retry(const.armRetries)
     def assureClearanceAlt(self, minAlt, maxAlt=121.92, error=None):  # max altitute capped to 400 ftp
         # type: (float, float) -> None
         if not error:

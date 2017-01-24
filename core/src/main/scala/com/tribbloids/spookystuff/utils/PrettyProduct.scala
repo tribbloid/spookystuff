@@ -3,7 +3,7 @@ package com.tribbloids.spookystuff.utils
 import java.io.File
 
 import com.tribbloids.spookystuff.extractors.Literal
-import org.apache.spark.ml.dsl.utils.Detail
+import org.apache.spark.ml.dsl.utils.Verbose
 
 import scala.runtime.ScalaRunTime
 
@@ -51,4 +51,4 @@ trait PrettyProduct extends Product {
   }
 }
 
-trait DetailedProduct extends PrettyProduct with Detail
+trait VerboseProduct extends PrettyProduct with Verbose

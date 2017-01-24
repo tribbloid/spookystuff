@@ -108,7 +108,7 @@ final case class ClusterRetry(
       case e: Throwable =>
         val logger = LoggerFactory.getLogger(this.getClass)
         //avoid endless retry if tcOpt is missing
-        val timesLeft = retries - session.taskOpt.map(_.attemptNumber()).getOrElse(Int.MaxValue)
+        val timesLeft = retries - session.taskContextOpt.map(_.attemptNumber()).getOrElse(Int.MaxValue)
         if (timesLeft > 0) {
           throw new RetryingException(
             s"Retrying cluster-wise on ${e.getClass.getSimpleName}... $timesLeft time(s) left\n" +

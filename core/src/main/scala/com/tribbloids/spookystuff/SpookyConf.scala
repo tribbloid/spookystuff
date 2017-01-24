@@ -62,12 +62,11 @@ case class Submodules[U] private(
       )
   }
 
-  def get[T <: U: ClassTag]: T = {
+  def tryGet[T <: U: ClassTag]: Try[T] = {
     val clazz = implicitly[ClassTag[T]].runtimeClass.asInstanceOf[Class[T]]
     val className = clazz.getCanonicalName
     tryGetByName(className)
       .map(_.asInstanceOf[T])
-      .get
   }
 
   def transform(f: U => U) = {
@@ -133,10 +132,10 @@ trait AbstractConf extends Message {
 
   val submodules: Submodules[AbstractConf] = Submodules()
 
-  def submodule[T <: AbstractConf: ClassTag]: T = submodules.get[T]
+  def submodule[T <: AbstractConf: ClassTag]: T = submodules.tryGet[T].get
 
   // TODO: use reflection to automate
-  def importFrom(implicit sparkConf: SparkConf): this.type = this
+  def importFrom(implicit sparkConf: SparkConf): this.type
 
   //  def getAndImport[T <: AbstractConf: ClassTag](sparkConfOpt: Option[SparkConf]) = {
   //    sparkConfOpt match {
@@ -146,6 +145,8 @@ trait AbstractConf extends Message {
   //        this.components.get[T](_.importFrom(conf).asInstanceOf[T])
   //    }
   //  }
+
+  override def clone: this.type = importFrom(new SparkConf())
 }
 
 object SpookyConf {
@@ -157,6 +158,9 @@ object SpookyConf {
     */
   final val TEST_WEBDRIVER_FACTORY = DriverFactories.PhantomJS(loadImages = true).taskLocal
   final val DEFAULT_PYTHONDRIVER_FACTORY = DriverFactories.Python().taskLocal
+
+  //DO NOT change to val! all confs are mutable
+  def default = new SpookyConf()
 }
 
 /**

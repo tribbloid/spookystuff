@@ -5,7 +5,7 @@ import java.util.regex.Pattern
 
 import com.tribbloids.spookystuff.session.{Lifespan, LocalCleanable}
 import com.tribbloids.spookystuff.utils.{SilentRetry, SpookyUtils}
-import com.tribbloids.spookystuff.{PyException, PyInterpreterException, SpookyContext}
+import com.tribbloids.spookystuff.{PyException, PyInterpretationException, SpookyContext}
 import org.apache.commons.io.FileUtils
 import org.slf4j.LoggerFactory
 
@@ -239,7 +239,7 @@ class PythonDriver(
       spookyOpt.foreach(
         _.metrics.pythonInterpretationError += 1
       )
-      val ee = new PyInterpreterException(
+      val ee = new PyInterpretationException(
         indentedCode,
         rows.mkString("\n"),
         historyCodeOpt = historyCodeOpt
@@ -268,7 +268,7 @@ class PythonDriver(
       case None =>
       case Some(i) =>
         val split = rows.splitAt(i._2)
-        throw new PyInterpreterException(
+        throw new PyInterpretationException(
           indentedCode,
           split._2.slice(1, Int.MaxValue).mkString("\n"),
           historyCodeOpt = historyCodeOpt

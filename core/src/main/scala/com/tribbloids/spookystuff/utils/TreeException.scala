@@ -44,7 +44,9 @@ object TreeException {
       trials.map(_.get)
     }
     else {
-      throw agg(extra.flatMap(v => Option(v)) ++ es)
+      val all = extra.flatMap(v => Option(v)) ++ es
+      if (all.size == 1) throw all.head
+      else throw agg(all)
     }
   }
 

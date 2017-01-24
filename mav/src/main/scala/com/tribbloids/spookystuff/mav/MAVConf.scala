@@ -3,12 +3,14 @@ package com.tribbloids.spookystuff.mav
 import com.tribbloids.spookystuff.AbstractConf
 import com.tribbloids.spookystuff.mav.actions.LocationGlobal
 import com.tribbloids.spookystuff.mav.dsl._
-import com.tribbloids.spookystuff.mav.hardware.Drone
+import com.tribbloids.spookystuff.mav.system.Drone
 import com.tribbloids.spookystuff.mav.sim.APMSim
+import org.apache.spark.SparkConf
 
 object MAVConf {
 
-  val default = MAVConf()
+  //DO NOT change to val! all confs are mutable
+  def default = MAVConf()
 
   final val DEFAULT_BAUDRATE = 57600
   //  final val DEFAULT_BAUDRATE = 9200 // for testing only
@@ -19,7 +21,8 @@ object MAVConf {
 
   final val EARTH_RADIUS = 6378137.0  // Radius of "spherical" earth
 
-  final val CONNECTION_RETRIES = 3
+  final val CONNECT_RETRIES = 2
+  final val BLACKLIST_RESET = 60*1000
 }
 
 /**
@@ -34,7 +37,8 @@ case class MAVConf(
                     // routing now becomes part of Connection?
                     var fleet: Fleet = Fleet.Inventory(Nil),
                     var linkFactory: LinkFactory = LinkFactories.ForkToGCS(),
-                    var connectionRetries: Int = MAVConf.CONNECTION_RETRIES,
+                    var connectRetries: Int = MAVConf.CONNECT_RETRIES,
+                    var blacklistReset: Long = MAVConf.BLACKLIST_RESET, //1 minute
                     var clearanceAltitude: Double = 10, // in meters
                     var locationReference: LocationGlobal = APMSim.HOME // reference used to convert LocationLocal to LocationGlobal
                   ) extends AbstractConf {
@@ -43,4 +47,7 @@ case class MAVConf(
     * singleton per worker, lost on shipping
     */
   def drones: Seq[Drone] = fleet.apply()
+
+  // TODO: use reflection to automate
+  override def importFrom(implicit sparkConf: SparkConf): MAVConf.this.type = this.copy().asInstanceOf[this.type]
 }

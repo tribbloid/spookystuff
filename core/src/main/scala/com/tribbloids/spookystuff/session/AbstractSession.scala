@@ -26,7 +26,7 @@ case object SessionRelay extends MessageRelay[Session] {
     M(
       v.startTime,
       v.backtrace,
-      v.taskOpt.map (tc => TaskContextRelay.toMessage(tc))
+      v.taskContextOpt.map (tc => TaskContextRelay.toMessage(tc))
     )
   }
 }
@@ -54,7 +54,7 @@ sealed abstract class AbstractSession(val spooky: SpookyContext) extends LocalCl
   def pythonDriver: PythonDriver
   def driverLifespan: Lifespan
 
-  val taskOpt: Option[TaskContext] = Option(TaskContext.get())
+  val taskContextOpt: Option[TaskContext] = Option(TaskContext.get())
 
   override def cleanImpl(): Unit = {
     spooky.metrics.sessionReclaimed += 1
@@ -133,7 +133,7 @@ class Session(
     }
   }
 
-  def initializeDriverIfMissing[T](f: => T, n: Int = 3): T = {
+  def withDriversDuring[T](f: => T, n: Int = 3): T = {
     try {
       assert(n >= 0)
       f
@@ -142,11 +142,11 @@ class Session(
       case NoWebDriverException =>
         LoggerFactory.getLogger(this.getClass).debug(s"Web driver doesn't exist, creating ... $n time(s) left")
         getOrProvisionWebDriver
-        initializeDriverIfMissing(f, n - 1)
+        withDriversDuring(f, n - 1)
       case NoPythonDriverException =>
         LoggerFactory.getLogger(this.getClass).debug(s"Python driver doesn't exist, creating ... $n time(s) left")
         getOrProvisionPythonDriver
-        initializeDriverIfMissing(f, n - 1)
+        withDriversDuring(f, n - 1)
       case e: Throwable =>
         throw e
     }

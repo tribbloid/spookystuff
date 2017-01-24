@@ -3,7 +3,7 @@ package org.apache.spark.ml.dsl.utils
 /**
   * Created by peng on 24/10/16.
   */
-trait Detail {
+trait Verbose {
 
   def detail: String = ""
 

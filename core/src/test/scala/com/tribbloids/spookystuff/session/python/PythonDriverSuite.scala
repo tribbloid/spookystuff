@@ -3,7 +3,7 @@ package com.tribbloids.spookystuff.session.python
 import com.tribbloids.spookystuff.session.Lifespan
 import com.tribbloids.spookystuff.testutils.TestHelper
 import com.tribbloids.spookystuff.utils.SpookyUtils
-import com.tribbloids.spookystuff.{PyInterpreterException, SpookyEnvFixture}
+import com.tribbloids.spookystuff.{PyInterpretationException, SpookyEnvFixture}
 import org.slf4j.LoggerFactory
 
 import scala.concurrent.Future
@@ -78,7 +78,7 @@ class PythonDriverSuite extends SpookyEnvFixture {
 
     PythonDriverSuite.runIterable(1 to 10) {
       (i, proc) =>
-        intercept[PyInterpreterException]{
+        intercept[PyInterpretationException]{
           proc.interpret(s"print($i / 0)")
         }
     }
@@ -88,7 +88,7 @@ class PythonDriverSuite extends SpookyEnvFixture {
 
     PythonDriverSuite.runIterable(1 to 10) {
       (i, proc) =>
-        intercept[PyInterpreterException]{
+        intercept[PyInterpretationException]{
           proc.interpret(
             s"""
                |raise Exception(
@@ -109,7 +109,7 @@ class PythonDriverSuite extends SpookyEnvFixture {
 
     PythonDriverSuite.runIterable(1 to 10) {
       (i, proc) =>
-        intercept[PyInterpreterException]{
+        intercept[PyInterpretationException]{
           proc.interpret(
             s"""
                |dummyPyAction4196844262929992980=List(py, s, p, o, o, k, y, s, t, u, f, f, ., m, a, v, ., a, c, t, i, o, n, s, ., D, u, m, m, y, P, y, A, c, t, i, o, n)(**(json.loads(

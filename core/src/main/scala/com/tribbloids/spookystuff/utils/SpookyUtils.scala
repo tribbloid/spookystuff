@@ -7,7 +7,6 @@ import java.nio.file.{Files, _}
 import org.apache.commons.io.IOUtils
 import org.apache.spark.SparkEnv
 import org.apache.spark.ml.dsl.ReflectionUtils
-import org.apache.spark.storage.BlockManagerId
 import org.slf4j.LoggerFactory
 
 import scala.concurrent.ExecutionContext.Implicits.global

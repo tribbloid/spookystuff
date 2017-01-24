@@ -33,7 +33,7 @@ abstract class XMLWeakDeserializer[T: Manifest] extends Serializer[T] {
     catch {
       case e: Exception =>
         val metadata = exceptionMetadata(jv, ti, format)
-        throw new DetailedJSONException(
+        throw new VerboseJSONException(
           "=========== [METADATA] ============\n" + e.getMessage,
           e,
           metadata
@@ -160,11 +160,11 @@ case class SerDeMetadata(
                           custom: Seq[String] = Nil
                         )
 
-class DetailedJSONException(
+class VerboseJSONException(
                              msg: String,
                              e: Exception,
                              metadata: JSONExceptionMetadata
-                           ) extends MappingException(msg, e) with Detail {
+                           ) extends MappingException(msg, e) with Verbose {
 
   override def toString = toStringVerbose
 

@@ -3,7 +3,7 @@ import org.apache.spark.SparkConf
 
 object DirConf {
 
-  val default = DirConf(
+  def default = DirConf(
     root = "temp",
     localRoot = "temp"
   )

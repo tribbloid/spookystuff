@@ -1,7 +1,6 @@
 package com.tribbloids.spookystuff.mav
 
-import com.tribbloids.spookystuff.mav.actions.LocationGlobal
-import com.tribbloids.spookystuff.mav.hardware.Drone
+import com.tribbloids.spookystuff.mav.system.{Base, Drone}
 import com.tribbloids.spookystuff.mav.telemetry.Link
 import org.apache.spark.rdd.RDD
 
@@ -14,7 +13,7 @@ package object dsl {
 
   type LinkFactory = (Drone => Link)
 
-  type BaseLocation = (RDD[Drone] => LocationGlobal)
+  type BaseLocator = (RDD[Drone] => Base)
 
 //  type DronePreference = Drone => Option[Double]
 }

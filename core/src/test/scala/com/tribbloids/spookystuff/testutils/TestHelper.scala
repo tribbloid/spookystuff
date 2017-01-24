@@ -167,6 +167,25 @@ class TestHelper() {
   }
   lazy val TestSQL = SQLContext.getOrCreate(TestSpark)
 
+  def setLoggerDuring[T](clazzes: Class[_]*)(fn: =>T, level: String = "OFF"): T = {
+    val logger_oldLevels = clazzes.map {
+      clazz =>
+        val logger = org.apache.log4j.Logger.getLogger(clazz)
+        val oldLevel = logger.getLevel
+        logger.setLevel(org.apache.log4j.Level.toLevel(level))
+        logger -> oldLevel
+    }
+    try {
+      fn
+    }
+    finally {
+      logger_oldLevels.foreach {
+        case (logger, oldLevel) =>
+          logger.setLevel(oldLevel)
+      }
+    }
+  }
+
   def assureKryoSerializer(sc: SparkContext): Unit = {
     val ser = SparkEnv.get.serializer
     require(ser.isInstanceOf[KryoSerializer])

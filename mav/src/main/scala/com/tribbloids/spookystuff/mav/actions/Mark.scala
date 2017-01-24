@@ -19,13 +19,12 @@ case class Mark() extends Export with MAVAction {
 
     try {
       val exe = new SessionView(session)
-      val location = exe.link.getHome
-//      val result = MarkOutput(location)
+      val location = exe.link.home
       val jsonStr = MessageView(location).prettyJSON
 
       Seq(new Doc(
         DocUID((session.backtrace :+ this).toList, this)(),
-        exe.endpoint.uri,
+        exe.link.drone.uris.head,
         Some(s"${ContentType.APPLICATION_JSON}; charset=UTF-8"),
         jsonStr.getBytes("UTF8")
       ))

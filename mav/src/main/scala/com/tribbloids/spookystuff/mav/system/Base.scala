@@ -1,4 +1,4 @@
-package com.tribbloids.spookystuff.mav.hardware
+package com.tribbloids.spookystuff.mav.system
 
 import com.tribbloids.spookystuff.mav.actions.LocationGlobal
 

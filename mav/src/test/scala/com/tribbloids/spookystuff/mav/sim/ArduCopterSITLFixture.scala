@@ -2,7 +2,7 @@ package com.tribbloids.spookystuff.mav.sim
 
 import com.tribbloids.spookystuff.SpookyEnvFixture
 import com.tribbloids.spookystuff.mav.MAVConf
-import com.tribbloids.spookystuff.mav.hardware.Drone
+import com.tribbloids.spookystuff.mav.system.Drone
 import com.tribbloids.spookystuff.mav.telemetry.Link
 import com.tribbloids.spookystuff.session.python.PythonDriver
 import com.tribbloids.spookystuff.session.{Cleanable, Lifespan}
@@ -23,25 +23,28 @@ import org.slf4j.LoggerFactory
 //  }
 //}
 
-abstract class APMSimFixture extends SpookyEnvFixture {
+trait SIMFixture extends SpookyEnvFixture {
+
+  var simURIRDD: RDD[String] = _
+  def simURIs = simURIRDD.collect().toSeq.distinct
+  def simDrones = simURIs.map(v => Drone(Seq(v)))
+
+  def parallelism: Int = sc.defaultParallelism
+  //  def parallelism: Int = 3
+}
+
+trait ArduCopterSITLFixture extends SIMFixture {
 
   import com.tribbloids.spookystuff.mav.dsl._
   import com.tribbloids.spookystuff.utils.SpookyViews._
 
   override val processNames = Seq("phantomjs", "python", "apm")
 
-  var simConnStrRDD: RDD[String] = _
-  def simConnStrs = simConnStrRDD.collect().toSeq.distinct
-  def simEndpoints = simConnStrs.map(v => Drone(Seq(v)))
-
-  def parallelism: Int = sc.defaultParallelism
-  //  def parallelism: Int = 3
-
   override def setUp(): Unit = {
     super.setUp()
     val mavConf = this.spooky.conf.submodule[MAVConf]
-    mavConf.connectionRetries = 2
-    mavConf.fleet = Fleet.Inventory(simEndpoints)
+    mavConf.connectRetries = 2
+    mavConf.fleet = Fleet.Inventory(simDrones)
   }
 
   override def beforeAll(): Unit = {
@@ -49,9 +52,9 @@ abstract class APMSimFixture extends SpookyEnvFixture {
 
     SpookyUtils.retry(5, 2000) {
       sc.foreachComputer {
-        SpookyEnvFixture.processShouldBeClean(Seq("apm"), cleanSweep = false)
-        SpookyEnvFixture.processShouldBeClean(Seq("python"), cleanSweep = false)
-        SpookyEnvFixture.processShouldBeClean(Seq("mavproxy"), Seq("mavproxy"), cleanSweep = false)
+        SpookyEnvFixture.processShouldBeClean(Seq("apm"), cleanSweepNotInTask = false)
+        SpookyEnvFixture.processShouldBeClean(Seq("python"), cleanSweepNotInTask = false)
+        SpookyEnvFixture.processShouldBeClean(Seq("mavproxy"), Seq("mavproxy"), cleanSweepNotInTask = false)
       }
     }
 
@@ -79,7 +82,7 @@ abstract class APMSimFixture extends SpookyEnvFixture {
          |$info
       """.stripMargin
     )
-    this.simConnStrRDD = connStrRDD
+    this.simURIRDD = connStrRDD
   }
 
   override def afterAll(): Unit = {
@@ -100,7 +103,7 @@ abstract class APMSimFixture extends SpookyEnvFixture {
   }
 }
 
-class APMSimSuite extends APMSimFixture {
+class ArduCopterSITLSuite extends ArduCopterSITLFixture {
 
   import com.tribbloids.spookystuff.utils.SpookyViews._
 
@@ -119,10 +122,10 @@ class APMSimSuite extends APMSimFixture {
     assert(iNums.nonEmpty)
     assert(iNums.size == iNums.distinct.size)
 
-    println(s"connStrs:\n${this.simConnStrs.mkString("\n")}")
-    assert(simConnStrs.nonEmpty)
-    assert(simConnStrs.size == simConnStrs.distinct.size)
-    assert(simConnStrs.size == iNums.size)
+    println(s"connStrs:\n${this.simURIs.mkString("\n")}")
+    assert(simURIs.nonEmpty)
+    assert(simURIs.size == simURIs.distinct.size)
+    assert(simURIs.size == iNums.size)
 
     import scala.collection.JavaConverters._
 
@@ -134,5 +137,5 @@ class APMSimSuite extends APMSimFixture {
     assert(apmPs.size == parallelism)
   }
 
-//  test("APM instances created with")
+  //  test("APM instances created with")
 }

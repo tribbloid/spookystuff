@@ -180,13 +180,13 @@ trait Action extends ActionLike with ActionRelay.HasRelay{
     }
   }
 
-  protected[actions] def withLazyDrivers[T](session: Session)(f: => T) = {
+  protected[actions] def withDriversTimedDuring[T](session: Session)(f: => T) = {
 
     this match {
       case tt: Timed =>
         LoggerFactory.getLogger(this.getClass).info(s"+> ${this.toStringVerbose} in ${tt.timeout(session)}")
 
-        session.asInstanceOf[Session].initializeDriverIfMissing(
+        session.withDriversDuring(
           SpookyUtils.withDeadline(tt.hardTerminateTimeout(session)) {
             f
           }
@@ -194,14 +194,14 @@ trait Action extends ActionLike with ActionRelay.HasRelay{
       case _ =>
         LoggerFactory.getLogger(this.getClass).info(s"+> ${this.toString}")
 
-        session.asInstanceOf[Session].initializeDriverIfMissing(
+        session.withDriversDuring(
           f
         )
     }
   }
 
   protected[actions] def exe(session: Session): Seq[Fetched] = {
-    withLazyDrivers(session){
+    withDriversTimedDuring(session){
       doExe(session)
     }
   }

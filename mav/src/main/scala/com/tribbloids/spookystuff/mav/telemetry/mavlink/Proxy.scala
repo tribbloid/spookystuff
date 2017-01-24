@@ -1,4 +1,4 @@
-package com.tribbloids.spookystuff.mav.telemetry
+package com.tribbloids.spookystuff.mav.telemetry.mavlink
 
 import com.tribbloids.spookystuff.mav.MAVConf
 import com.tribbloids.spookystuff.session.ResourceLedger

@@ -1,6 +1,5 @@
 package com.tribbloids.spookystuff.session
 
-import com.tribbloids.spookystuff.utils.NOTSerializable
 import org.openqa.selenium.WebDriver
 
 import scala.language.implicitConversions

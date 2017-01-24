@@ -11,7 +11,7 @@ import time
 import dronekit
 import sarge
 from MAVProxy import mavproxy
-from Const import *
+from pyspookystuff.mav.const import *
 
 from pyspookystuff.mav import VehicleFunctions, utils
 from pyspookystuff.mav.utils import retry
@@ -143,12 +143,17 @@ class Endpoint(Daemon, VehicleFunctions):
     @retry(daemonStartRetries)
     def _start(self):
         if not self.vehicle:
-            self.vehicle = dronekit.connect(
-                self.uri,
-                wait_ready=True,
-                source_system=self.ssid,
-                baud=self.baudRate
-            )
+            try:
+                self.vehicle = dronekit.connect(
+                    self.uri,
+                    wait_ready=True,
+                    source_system=self.ssid,
+                    baud=self.baudRate
+                )
+            except:
+                print("ERROR: ENDPOINT CANNOT CONNECT TO", self.uri)
+                raise
+
             # self.vehicle.commands.download()  # get home_location asynchronously
             # self.vehicle.wait_ready()
             return self.vehicle
@@ -254,12 +259,16 @@ class Proxy(Daemon):
             # @retry(daemonStartRetries)
             def sanityCheck():
                 # ensure that proxy is usable, otherwise its garbage
-                vehicle = dronekit.connect(
-                    self.outs[0],
-                    wait_ready=True, #  TODO change to False once stabilized
-                    source_system=self.ssid, #  TODO: how to handle this?
-                    baud=self.baudRate
-                )
+                try:
+                    vehicle = dronekit.connect(
+                        self.outs[0],
+                        wait_ready=True, #  TODO change to False once stabilized
+                        source_system=self.ssid, #  TODO: how to handle this?
+                        baud=self.baudRate
+                    )
+                except:
+                    print("ERROR: PROXY CANNOT CONNECT TO", self.outs[0])
+                    raise
                 @retry(5)
                 def _close():
                     vehicle.close()
@@ -272,6 +281,7 @@ class Proxy(Daemon):
 
     def _stop(self):
         if self.p:
+
             for command in self.p.commands:
                 try:
                     command.terminate()

@@ -55,14 +55,14 @@ object SpookyEnvFixture {
   def processShouldBeClean(
                             names: Seq[String] = Nil,
                             keywords: Seq[String] = Nil,
-                            cleanSweep: Boolean = true
+                            cleanSweepNotInTask: Boolean = true
                           ): Unit = {
 
-    if (cleanSweep) {
+    if (cleanSweepNotInTask) {
       //this is necessary as each suite won't automatically cleanup drivers NOT in task when finished
       Cleanable.cleanSweepAll (
         condition = {
-          case v if v.lifespan.isThread => true
+          case v if !v.lifespan.isTask => true
           case _ => false
         }
       )

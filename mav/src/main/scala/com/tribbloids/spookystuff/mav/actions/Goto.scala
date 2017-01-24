@@ -18,12 +18,17 @@ trait AbstractGoto extends MAVInteraction {
   override def getSessionView(session: Session) = new this.SessionView(session)
 
   class SessionView(session: Session) extends super.SessionView(session) {
-    lazy val toV = to.asInstanceOf[Literal[FR, Location]].value
+    lazy val toLocation = to.asInstanceOf[Literal[FR, Location]].value
       .toGlobal(Some(session.spooky.conf.submodule[MAVConf].locationReference))
 
+    override def inbound(): Unit = {
+      LoggerFactory.getLogger(this.getClass).debug(s"assureClearanceAltitude ${mavConf.clearanceAltitude}")
+      link.Synch.clearanceAlt(mavConf.clearanceAltitude)
+    }
+
     override def conduct(): Unit = {
-      LoggerFactory.getLogger(this.getClass).info(s"scanning .. $toV")
-      py.move(toV)
+      LoggerFactory.getLogger(this.getClass).info(s"scanning .. $toLocation")
+      link.Synch.move(toLocation)
     }
   }
 }

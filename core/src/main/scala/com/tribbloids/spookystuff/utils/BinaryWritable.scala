@@ -3,7 +3,7 @@ package com.tribbloids.spookystuff.utils
 import java.nio.ByteBuffer
 
 import org.apache.hadoop.io.Writable
-import org.apache.hadoop.security.UserGroupInformation
+import org.apache.hadoop.security.{Credentials, UserGroupInformation}
 import org.apache.spark.serializer.{JavaSerializer, KryoSerializer, SerializerInstance}
 import org.apache.spark.sql.catalyst.ScalaReflection.universe.TypeTag
 import org.apache.spark.{SerializableWritable, SparkConf}
@@ -31,7 +31,6 @@ class BinarySerializable[T: ClassTag](
                                        val serFactory: () => SerializerInstance = BinaryWritable.javaSerFactory
                                      ) extends Serializable {
 
-
   @transient lazy val ser = serFactory()
 
   val binary: Array[Byte] = {
@@ -48,7 +47,7 @@ class BinaryWritable[T <: Writable](
                                      val serFactory: () => SerializerInstance = BinaryWritable.javaSerFactory
                                    ) extends Serializable {
 
-  val delegate = new BinarySerializable(
+  val delegate: BinarySerializable[SerializableWritable[T]] = new BinarySerializable(
     new SerializableWritable(obj),
     serFactory
   )
@@ -64,7 +63,7 @@ class SerializableUGI(
                      ) extends Serializable {
 
   val name =  _ugi.getUserName
-  val credentials = new BinaryWritable(_ugi.getCredentials, serFactory)
+  val credentials: BinaryWritable[Credentials] = new BinaryWritable(_ugi.getCredentials, serFactory)
 
   @transient lazy val value = Option(_ugi).getOrElse {
     val result = UserGroupInformation.createRemoteUser(name)

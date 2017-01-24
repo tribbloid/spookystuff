@@ -14,6 +14,7 @@ import org.slf4j.LoggerFactory
 
 import scala.collection.immutable.ListMap
 import scala.language.implicitConversions
+import scala.reflect.ClassTag
 
 case class SpookyContext private (
                                    @transient sqlContext: SQLContext, //can't be used on executors, TODO: change to Option or SparkContext
@@ -41,6 +42,13 @@ case class SpookyContext private (
   }
 
   {
+    try {
+      deployDrivers()
+    }
+    catch {
+      case e: Throwable =>
+        LoggerFactory.getLogger(this.getClass).error("Driver deployment fail on SpookyContext initialization", e)
+    }
     rebroadcast()
   }
 
@@ -62,7 +70,6 @@ case class SpookyContext private (
       effectiveConf
     }
   }
-
   /**
     * can only be used on driver
     */
@@ -71,6 +78,8 @@ case class SpookyContext private (
     setEffectiveConf(conf)
     rebroadcast()
   }
+
+  def submodule[T <: AbstractConf: ClassTag] = conf.submodule[T]
 
   @volatile var broadcastedHadoopConf: Broadcast[SerializableWritable[Configuration]] = _
   def hadoopConf: Configuration = broadcastedHadoopConf.value.value
@@ -89,15 +98,9 @@ case class SpookyContext private (
     broadcastedHadoopConf = sqlContext.sparkContext.broadcast(
       new SerializableWritable(this.sqlContext.sparkContext.hadoopConfiguration)
     )
-    try {
-      deployDrivers()
-    }
-    catch {
-      case e: Throwable =>
-        LoggerFactory.getLogger(this.getClass).error("Driver deployment fail on SpookyContext initialization", e)
-    }
   }
 
+  // may take a long time then fail, only attempted once
   def deployDrivers(): Unit = {
     val trials = conf.driverFactories
       .map {
@@ -108,7 +111,6 @@ case class SpookyContext private (
       }
     TreeException.&&&(trials)
   }
-
 
   def zeroMetrics(): SpookyContext ={
     metrics.zero()

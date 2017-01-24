@@ -227,7 +227,7 @@ object PyRef {
   object ROOT extends PyRef {
   }
 
-  def cleanSanityCheck(): Unit = {
+  def sanityCheck(): Unit = {
     val subs = Cleanable.getTyped[PyBinding]
     val refSubs = Cleanable.getTyped[PyRef].map(_.subCleanable)
     assert(
@@ -239,7 +239,7 @@ object PyRef {
   }
 }
 
-class NoneRef extends PyRef {
+trait NoneRef extends PyRef {
   override final val referenceOpt = Some("None")
   override final val delOpt = None
 }
@@ -336,22 +336,27 @@ trait SingletonRef extends PyRef {
 
 trait BijectoryRef extends SingletonRef with LocalCleanable {
 
-  var _driver: PythonDriver = _
-  def driver = Option(_driver).getOrElse{
-    val v = new PythonDriver(lifespan = Lifespan.JVM(nameOpt = Some(this.getClass.getSimpleName)))
-    _driver = v
-    v
+  @transient var _driver: PythonDriver = _
+  def driver = this.synchronized {
+    Option(_driver).getOrElse{
+      val v = new PythonDriver(lifespan = Lifespan.JVM(nameOpt = Some(this.getClass.getSimpleName)))
+      _driver = v
+      v
+    }
   }
-  override def PY: PyBinding = this._Py(driver)
+  override def PY: PyBinding = super._Py(driver)
 
   def stopDriver(): Unit = {
     Option(_driver).foreach(_.clean())
     _driver = null
   }
 
-  //  override def _Py(driver: PythonDriver, spookyOpt: Option[SpookyContext]): PyBinding = {
-  //    throw new UnsupportedOperationException("NOT ALLOWED! use mgrPy instead")
-  //  }
+  override def _Py(
+                    driver: PythonDriver,
+                    spookyOpt: Option[SpookyContext] = None
+                  ): Binding = {
+    throw new UnsupportedOperationException("NOT ALLOWED! use PY instead")
+  }
 
   override protected def cleanImpl(): Unit = {
     super.cleanImpl()

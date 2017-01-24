@@ -1,7 +1,7 @@
 package com.tribbloids.spookystuff.mav.actions
 
 import com.tribbloids.spookystuff.extractors.Literal
-import com.tribbloids.spookystuff.mav.sim.APMSimFixture
+import com.tribbloids.spookystuff.mav.sim.ArduCopterSITLFixture
 
 object MoveSuite{
 
@@ -30,7 +30,7 @@ object MoveSuite{
 /**
   * All tests will use Proxy by default
   */
-class MoveSuite extends APMSimFixture {
+class MoveSuite extends ArduCopterSITLFixture {
 
   import com.tribbloids.spookystuff.dsl._
 

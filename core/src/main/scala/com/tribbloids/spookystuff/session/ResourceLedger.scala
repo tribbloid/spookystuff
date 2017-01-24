@@ -24,7 +24,7 @@ trait ResourceLedger extends Cleanable {
 
 object ResourceLedger {
 
-  def detectConflict(extra: Seq[Throwable] = Nil): Unit = {
+  def conflicts: Seq[Try[Unit]] = {
     val allResourceIDs: Map[String, Seq[Any]] = Cleanable.getTyped[ResourceLedger]
       .map {
         _.effectiveResourceIDs.mapValues(_.toSeq)
@@ -39,7 +39,7 @@ object ResourceLedger {
           }
           Map(kvs: _*)
       }
-    val trials: Seq[Try[Unit]] = allResourceIDs
+    allResourceIDs
       .toSeq
       .flatMap {
         tuple =>
@@ -51,6 +51,10 @@ object ResourceLedger {
                 }
             }
       }
-    TreeException.&&&(trials, extra = extra)
+  }
+
+  def detectConflict(extra: Seq[Throwable] = Nil): Unit = {
+
+    TreeException.&&&(conflicts, extra = extra)
   }
 }

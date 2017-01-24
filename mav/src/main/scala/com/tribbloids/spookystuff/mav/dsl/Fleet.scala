@@ -1,6 +1,6 @@
 package com.tribbloids.spookystuff.mav.dsl
 
-import com.tribbloids.spookystuff.mav.hardware.Drone
+import com.tribbloids.spookystuff.mav.system.Drone
 import com.tribbloids.spookystuff.utils.SpookyUtils
 
 /**
@@ -29,7 +29,7 @@ object Fleet {
   //TODO: implement later
   case class Discover(
                        delegate: Fleet,
-                       base: BaseLocation
+                       base: BaseLocator
                      ) extends Fleet {
 
     def apply(): Seq[Drone] = {
