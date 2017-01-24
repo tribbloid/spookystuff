@@ -39,7 +39,7 @@ class Lifespan extends IDMixin with Serializable {
   def isTask = _id.isLeft
   def isThread = _id.isRight
 
-  def getID: Either[Long, Long] = Option(TaskContext.get()) match {
+  def getID: ID = Option(TaskContext.get()) match {
     case Some(tc) =>
       Lifespan.taskID(tc)
     case None =>
@@ -221,13 +221,12 @@ object Cleanable {
               condition: (Cleanable) => Boolean = _ => true
             ): Seq[Cleanable] = {
     uncleaned
-      .keys.toSeq
-      .flatMap {
-        tt =>
-          getByLifespan(tt, condition)._2
-      }
+      .values
+      .toSeq
+      .flatten
+      .filter(condition)
   }
-  def getTyped[T <: Cleanable: ClassTag](): Seq[T] = {
+  def getTyped[T <: Cleanable: ClassTag]: Seq[T] = {
     val result = getAll{
       case v: T => true
       case _ => false

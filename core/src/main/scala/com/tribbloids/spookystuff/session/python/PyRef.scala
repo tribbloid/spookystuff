@@ -228,8 +228,8 @@ object PyRef {
   }
 
   def cleanSanityCheck(): Unit = {
-    val subs = Cleanable.getTyped[PyBinding]()
-    val refSubs = Cleanable.getTyped[PyRef]().map(_.subCleanable)
+    val subs = Cleanable.getTyped[PyBinding]
+    val refSubs = Cleanable.getTyped[PyRef].map(_.subCleanable)
     assert(
       subs.intersect(refSubs).size <= refSubs.size,
       {
@@ -332,4 +332,29 @@ trait SingletonRef extends PyRef {
   }
 
   def PY = driverToBindingsAlive.values.head
+}
+
+trait BijectoryRef extends SingletonRef with LocalCleanable {
+
+  var _driver: PythonDriver = _
+  def driver = Option(_driver).getOrElse{
+    val v = new PythonDriver(lifespan = Lifespan.JVM(nameOpt = Some(this.getClass.getSimpleName)))
+    _driver = v
+    v
+  }
+  override def PY: PyBinding = this._Py(driver)
+
+  def stopDriver(): Unit = {
+    Option(_driver).foreach(_.clean())
+    _driver = null
+  }
+
+  //  override def _Py(driver: PythonDriver, spookyOpt: Option[SpookyContext]): PyBinding = {
+  //    throw new UnsupportedOperationException("NOT ALLOWED! use mgrPy instead")
+  //  }
+
+  override protected def cleanImpl(): Unit = {
+    super.cleanImpl()
+    stopDriver()
+  }
 }

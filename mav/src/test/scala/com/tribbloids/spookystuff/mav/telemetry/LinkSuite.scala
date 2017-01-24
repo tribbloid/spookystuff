@@ -5,7 +5,7 @@ import com.tribbloids.spookystuff.mav.dsl.LinkFactories
 import com.tribbloids.spookystuff.mav.hardware.Drone
 import com.tribbloids.spookystuff.mav.sim.APMSimFixture
 import com.tribbloids.spookystuff.session.python.PythonDriver
-import com.tribbloids.spookystuff.session.{Lifespan, NoPythonDriverException, ResourceLock, Session}
+import com.tribbloids.spookystuff.session.{Lifespan, NoPythonDriverException, ResourceLedger, Session}
 import com.tribbloids.spookystuff.utils.SpookyUtils
 import org.slf4j.LoggerFactory
 
@@ -115,7 +115,7 @@ class LinkSuite extends APMSimFixture {
       session.spooky
     )
 
-    ResourceLock.detectConflict()
+    ResourceLedger.detectConflict()
   }
 
   test("If without Proxy, Link.primary should = endpoint") {

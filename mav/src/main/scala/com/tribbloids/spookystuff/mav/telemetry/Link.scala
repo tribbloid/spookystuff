@@ -5,7 +5,7 @@ import com.tribbloids.spookystuff.mav.dsl.{LinkFactories, LinkFactory}
 import com.tribbloids.spookystuff.mav.hardware.Drone
 import com.tribbloids.spookystuff.mav.{MAVConf, ReinforcementDepletedException}
 import com.tribbloids.spookystuff.session.python._
-import com.tribbloids.spookystuff.session.{Cleanable, LocalCleanable, ResourceLock, Session}
+import com.tribbloids.spookystuff.session.{Cleanable, LocalCleanable, ResourceLedger, Session}
 import com.tribbloids.spookystuff.utils.SpookyUtils
 import com.tribbloids.spookystuff.{PyInterpreterException, SpookyContext, caching}
 import org.slf4j.LoggerFactory
@@ -15,12 +15,12 @@ import scala.util.{Failure, Try}
 object Link {
 
   def cleanSanityCheck(): Unit = {
-    val subs = Cleanable.getTyped[Endpoint]() ++ Cleanable.getTyped[Proxy]()
-    val refSubs = Cleanable.getTyped[Link]().flatMap(_.subCleanable)
+    val subs = Cleanable.getTyped[Endpoint] ++ Cleanable.getTyped[Proxy]
+    val refSubs = Cleanable.getTyped[Link].flatMap(_.subCleanable)
     assert(
       subs.intersect(refSubs).size <= refSubs.size,
       {
-        "INTERNAL ERROR: dangling tree!"
+        "INTERNAL ERROR: endpoint or proxy without link!"
       }
     )
   }
@@ -290,7 +290,7 @@ object Link {
               .collect {
                 case Failure(ee) => ee
               }
-            ResourceLock.detectConflict(extra)
+            ResourceLedger.detectConflict(extra)
           }
           catch {
             case ee: Throwable =>
@@ -321,7 +321,7 @@ case class Link(
                  drone: Drone,
                  executorOuts: Seq[String] = Nil, // cannot have duplicates
                  gcsOuts: Seq[String] = Nil
-               ) extends NoneRef with SingletonRef with LocalCleanable with ResourceLock {
+               ) extends NoneRef with SingletonRef with LocalCleanable with ResourceLedger {
 
   {
     if (executorOuts.isEmpty) assert(gcsOuts.isEmpty, "No endpoint for executor")

@@ -2,7 +2,7 @@ package com.tribbloids.spookystuff.mav.telemetry
 
 import com.tribbloids.spookystuff.mav.MAVConf
 import com.tribbloids.spookystuff.session.python._
-import com.tribbloids.spookystuff.session.{LocalCleanable, ResourceLock}
+import com.tribbloids.spookystuff.session.{LocalCleanable, ResourceLedger}
 /**
   * Created by peng on 16/01/17.
   */
@@ -11,7 +11,7 @@ case class Endpoint(
                      baudRate: Int = MAVConf.DEFAULT_BAUDRATE,
                      ssid: Int = MAVConf.EXECUTOR_SSID,
                      frame: Option[String] = None
-                   ) extends CaseInstanceRef with SingletonRef with LocalCleanable with ResourceLock {
+                   ) extends CaseInstanceRef with SingletonRef with LocalCleanable with ResourceLedger {
 
   override lazy val resourceIDs = Map("" -> Set(uri))
 }
