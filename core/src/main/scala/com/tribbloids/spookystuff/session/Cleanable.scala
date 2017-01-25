@@ -221,8 +221,7 @@ object Cleanable {
               condition: (Cleanable) => Boolean = _ => true
             ): Seq[Cleanable] = {
     uncleaned
-      .values
-      .toSeq
+      .values.toList
       .flatten
       .filter(condition)
   }
@@ -257,7 +256,7 @@ object Cleanable {
                    ) = {
 
     uncleaned
-      .keys.toSeq
+      .keys.toList
       .foreach {
         tt =>
           cleanSweep(tt, condition)
