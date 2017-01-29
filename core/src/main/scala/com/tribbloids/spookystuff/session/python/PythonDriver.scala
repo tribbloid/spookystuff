@@ -183,7 +183,7 @@ class PythonDriver(
     str.stripPrefix("\r").replaceAll(PROMPTS, "")
   }
 
-  override def pyOutputLog(line: String) = {
+  override def logPyOutput(line: String) = {
     val effectiveLine = removePrompts(line)
     s"$logPrefix $effectiveLine"
   }

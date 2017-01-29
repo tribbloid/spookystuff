@@ -345,6 +345,10 @@ trait BijectoryRef extends SingletonRef with LocalCleanable {
     }
   }
   override def PY: PyBinding = super._Py(driver)
+  def PYOpt: Option[PyBinding] = Option(_driver).map {
+    driver =>
+      super._Py(driver)
+  }
 
   def stopDriver(): Unit = {
     Option(_driver).foreach(_.clean())

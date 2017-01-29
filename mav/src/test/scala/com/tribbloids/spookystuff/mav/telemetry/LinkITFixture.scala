@@ -32,7 +32,7 @@ object LinkITFixture{
   }
 }
 
-class LinkITFixture extends SIMFixture {
+abstract class LinkITFixture extends SIMFixture {
 
   lazy val linkFactory: LinkFactory = LinkFactories.Direct
 

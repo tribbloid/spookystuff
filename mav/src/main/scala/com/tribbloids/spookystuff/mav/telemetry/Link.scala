@@ -207,12 +207,12 @@ trait Link extends Cleanable with NOTSerializable {
             val afterDetection = {
               try {
                 TreeException.&&&(conflicts)
+                e
               }
               catch {
                 case ee: Throwable =>
                   ee
               }
-              e
             }
             if (!silent) LoggerFactory.getLogger(this.getClass).warn(s"CONNECTION TO $drone FAILED!", afterDetection)
             throw afterDetection

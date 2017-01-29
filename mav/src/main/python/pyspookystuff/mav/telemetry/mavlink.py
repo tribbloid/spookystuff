@@ -252,32 +252,34 @@ class Proxy(Daemon):
 
             time.sleep(1)  # wait for process creation
 
-            def isAlive(i):
-                return self.isAlive
-            utils.waitFor(isAlive, 10)
-
             # @retry(daemonStartRetries)
             def sanityCheck():
-                # ensure that proxy is usable, otherwise its garbage
                 try:
+                    def isAlive(i):
+                        return self.isAlive
+                    utils.waitFor(isAlive, 10)
+
+                    # ensure that proxy is usable, otherwise its garbage
                     vehicle = dronekit.connect(
                         self.outs[0],
                         wait_ready=True, #  TODO change to False once stabilized
                         source_system=self.ssid, #  TODO: how to handle this?
                         baud=self.baudRate
                     )
+                    @retry(5)
+                    def _close():
+                        vehicle.close()
+                    _close()
+
+                    time.sleep(2) #  wait for port to be released
                 except:
                     print("ERROR: PROXY CANNOT CONNECT TO", self.outs[0])
+                    self.stop()
                     raise
-                @retry(5)
-                def _close():
-                    vehicle.close()
-                _close()
+
             sanityCheck()
 
             self.logPrint("Proxy spawned: PID =", self.pid, "URI =", self.outs[0])
-
-            time.sleep(2) #  wait for port to be released
 
     def _stop(self):
         if self.p:

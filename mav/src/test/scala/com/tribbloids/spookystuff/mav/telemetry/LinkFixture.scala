@@ -8,6 +8,7 @@ import com.tribbloids.spookystuff.mav.{MAVConf, ReinforcementDepletedException}
 import com.tribbloids.spookystuff.session.Session
 import com.tribbloids.spookystuff.testutils.TestHelper
 import com.tribbloids.spookystuff.utils.SpookyUtils
+import com.tribbloids.spookystuff.utils.TreeException.MultiCauseWrapper
 import com.tribbloids.spookystuff.{PyInterpretationException, SpookyContext, SpookyEnvFixture}
 import org.apache.spark.rdd.RDD
 
@@ -61,11 +62,13 @@ abstract class LinkFixture extends SIMFixture {
           session
         )
           .get
-        Thread.sleep(5000) //otherwise a task will complete so fast such that another task hasn't start yet.
+        TestHelper.assert(link.isNotBlacklisted, "link is blacklisted")
+        link.isIdle = false
+//        Thread.sleep(5000) //otherwise a task will complete so fast such that another task hasn't start yet.
         link
     }
       .persist()
-    val uriRDD = linkRDD.persist().map {
+    val uriRDD = linkRDD.map {
       link =>
         link.drone.uris.head
     }
@@ -87,7 +90,7 @@ abstract class LinkFixture extends SIMFixture {
         val linkRDD: RDD[Link] = getLinkRDD(spooky)
       }
 
-      test(s"$testPrefix Link with connection failure should be disabled until blacklist timer reset") {
+      test(s"$testPrefix Link to non-existing drone should be disabled until blacklist timer reset") {
         val session = new Session(spooky)
         val drone = Drone(Seq("dummy"))
         TestHelper.setLoggerDuring(classOf[Link], classOf[MAVLink]) {
@@ -101,9 +104,12 @@ abstract class LinkFixture extends SIMFixture {
 
           val badLink = Link.existing(drone)
           badLink.statusString.shouldBeLike(
-            "Link DRONE@dummy is unreachable for ......s (PyInterpretationException)"
+            "Link DRONE@dummy is unreachable for ......"
           )
-          assert(badLink.lastFailureOpt.get._1.isInstanceOf[PyInterpretationException])
+          assert {
+            val e = badLink.lastFailureOpt.get._1
+            e.isInstanceOf[PyInterpretationException] || e.isInstanceOf[MultiCauseWrapper]
+          }
         }
       }
 
@@ -162,6 +168,11 @@ abstract class LinkFixture extends SIMFixture {
         assert(spooky.metrics.linkCreated.value == parallelism)
         assert(spooky.metrics.linkDestroyed.value == 0)
         assert(Link.existing.size == parallelism)
+
+        linkRDD1.foreach {
+          link =>
+            link.isIdle = true
+        }
 
         val linkRDD2: RDD[Link] = getLinkRDD(spooky)
 

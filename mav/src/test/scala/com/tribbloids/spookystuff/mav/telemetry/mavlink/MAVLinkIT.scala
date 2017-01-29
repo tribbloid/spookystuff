@@ -42,11 +42,10 @@ class MAVLinkIT_Proxy extends MAVLinkIT {
         val endpoint1 = link.Endpoints.primary
         val endpoint2 = link.Endpoints.executors.last
         endpoint1.PY.assureClearanceAlt(20)
-        val driver2 = new PythonDriver()
         endpoint2.PY.start()
 
         val moved = Future {
-          endpoint1.Py(session).testMove()
+          endpoint1.PY.testMove()
         }
         Thread.sleep(5000 / APMSim.SPEEDUP)
 

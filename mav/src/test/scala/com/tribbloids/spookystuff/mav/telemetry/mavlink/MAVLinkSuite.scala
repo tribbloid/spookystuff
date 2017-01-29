@@ -1,8 +1,12 @@
 package com.tribbloids.spookystuff.mav.telemetry.mavlink
 
+import com.tribbloids.spookystuff.mav.ReinforcementDepletedException
 import com.tribbloids.spookystuff.mav.dsl.LinkFactories
 import com.tribbloids.spookystuff.mav.sim.ArduCopterSITLFixture
-import com.tribbloids.spookystuff.mav.telemetry.LinkFixture
+import com.tribbloids.spookystuff.mav.system.Drone
+import com.tribbloids.spookystuff.mav.telemetry.{Link, LinkFixture}
+import com.tribbloids.spookystuff.session.Session
+import com.tribbloids.spookystuff.testutils.TestHelper
 import org.apache.spark.rdd.RDD
 
 /**
@@ -75,6 +79,27 @@ class MAVLinkSuite extends LinkFixture with ArduCopterSITLFixture {
         sort = true
       )
       assert(outs.distinct.length == parallelism, "Duplicated URIs:\n" + outs.mkString("\n"))
+    }
+
+    test(s"$testPrefix connection to non-existing drone should cause Proxy to fail early") {
+
+      val session = new Session(spooky)
+      val drone = Drone(Seq("dummy"))
+      TestHelper.setLoggerDuring(classOf[Link], classOf[MAVLink]) {
+        intercept[ReinforcementDepletedException]{
+          Link.trySelect(
+            Seq(drone),
+            session
+          )
+            .get
+        }
+
+        val badLink = Link.existing(drone).asInstanceOf[MAVLink]
+        val proxyPY = badLink.proxyOpt.get.PY
+        print(proxyPY.driver.historyCodeOpt.get)
+        assert(badLink.Endpoints.primary._driver == null,
+          "endpoint should not have driver\n" + Option(badLink.Endpoints.primary._driver).flatMap(_.historyCodeOpt).orNull)
+      }
     }
   }
 }

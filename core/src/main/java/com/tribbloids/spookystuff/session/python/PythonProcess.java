@@ -99,7 +99,7 @@ public class PythonProcess {
     String line;
 
     while (!(line = reader.readLine()).contains("*!?flush reader!?*")) {
-      logger.info(pyOutputLog(line));
+      logger.info(logPyOutput(line));
       if (line.equals("...")) {
         logger.warn("Syntax error ! ");
         outputBuffer += "Syntax error ! ";
@@ -110,7 +110,7 @@ public class PythonProcess {
     return outputBuffer;
   }
 
-  protected String pyOutputLog(String line) {
+  protected String logPyOutput(String line) {
     return "Read line from python shell : " + line;
   }
 

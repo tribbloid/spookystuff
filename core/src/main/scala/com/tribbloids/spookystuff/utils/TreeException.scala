@@ -68,7 +68,7 @@ object TreeException {
                                 override val causes: Seq[Throwable] = Nil
                               ) extends TreeException {
 
-    val nodeMessage: String = "[CAUSED BY ONE OR MORE EXCEPTION(S)]"
+    val nodeMessage: String = s"[CAUSED BY ${causes.size} EXCEPTION(S)]"
   }
 }
 

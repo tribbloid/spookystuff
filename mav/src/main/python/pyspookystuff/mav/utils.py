@@ -56,7 +56,6 @@ def retry(maxTrial=3):
                         raise
                     else:
                         print("Retrying locally on", str(e), "...", str(i - 1), "time(s) left")
-                        continue
 
         return retryFn
 

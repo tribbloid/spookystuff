@@ -6,13 +6,10 @@ import os
 from unittest import TestCase
 
 import dronekit
-import time
 
-from pyspookystuff.mav import VehicleFunctions
 from pyspookystuff.mav.sim import APMSim
-from pyspookystuff.mav.telemetry import Proxy
+from pyspookystuff.mav.telemetry.mavlink import Proxy
 from pyspookystuff.mav.utils import retry
-
 
 class TestUtils(TestCase):
     def test_retryCanFail(self):
@@ -30,7 +27,6 @@ class TestUtils(TestCase):
 
         raise os.error("impossible")
 
-
 class TestProxy(TestCase):
 
     @classmethod
@@ -46,7 +42,7 @@ class TestProxy(TestCase):
     @property
     def url(self):
         if not self.sim:
-            self.sim = APMSim(0, "43.694195,-79.262262,136,353", self.dkBaud)
+            self.sim = APMSim(0, "43.694195,-79.262262,136,353", 200, 5)
         return self.sim.connStr
 
     def testProxyRestart(self):
@@ -56,6 +52,17 @@ class TestProxy(TestCase):
         for i in range(1, 3):
             proxy.start()
             proxy.stop()
+
+    def testProxyToNonExistingDrone(self):
+        proxy = Proxy(self.url, ["udp:dummy:1000", self.gcs], self.dkBaud, 251, self.__class__.__name__)
+
+        try:
+            proxy.start()
+        except Exception as e:
+            print(e)
+            return
+        else:
+            raise os.error("IMPOSSIBLE!")
 
 
 class TestAPMSim(TestCase):

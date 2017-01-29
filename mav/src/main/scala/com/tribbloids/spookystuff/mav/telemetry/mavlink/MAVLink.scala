@@ -117,12 +117,13 @@ case class MAVLink(
       driver =>
         driver.historyCodeOpt.exists(_.contains(uri))
     }
-    val notMe = conflicting.filter {
+    val me = Option(Endpoints.primary._driver)
+    val notMe: Seq[PythonDriver] = conflicting.filterNot {
       driver =>
-        !(driver eq Endpoints.primary.PY.driver)
+        me.exists(_ eq driver)
     }
     assert(notMe.isEmpty,
-      s"Besides legitimate processs PID=${Endpoints.primary.PY.driver.getPid}. The following python process(es) also use $uri\n" +
+      s"Besides legitimate processs PID=${me.map(_.getPid).orNull}. The following python process(es) also use $uri\n" +
         notMe.map {
           driver =>
             s"=============== PID=${driver.getPid} ===============\n" +
@@ -145,9 +146,9 @@ case class MAVLink(
     Endpoints.primary.PY.start()
   }
   protected def _disconnect(): Unit = {
-    Endpoints.primary.PY.stop()
-    proxyOpt.foreach {
-      _.PY.stop()
+    Endpoints.primary.PYOpt.foreach(_.stop())
+    proxyOpt.flatMap(_.PYOpt).foreach {
+      _.stop()
     }
   }
 
