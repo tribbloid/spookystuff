@@ -5,11 +5,12 @@ import com.tribbloids.spookystuff.dsl._
 import com.tribbloids.spookystuff.extractors.Literal
 import com.tribbloids.spookystuff.row.{DataRow, FetchedRow, Field}
 import com.tribbloids.spookystuff.session.Session
+import com.tribbloids.spookystuff.testutils.TestHelper
 import com.tribbloids.spookystuff.{ActionException, Const, SpookyEnvFixture}
 import org.apache.spark.rdd.RDD
 
 import scala.collection.immutable.ListMap
-import scala.concurrent.duration
+import scala.concurrent.{TimeoutException, duration}
 import scala.util.Random
 
 class TestAction extends SpookyEnvFixture {
@@ -108,6 +109,29 @@ class TestAction extends SpookyEnvFixture {
         assert(e.getMessage.contains("Delay/1_second/ErrorScreenshot/ErrorWebExport"))
     }
   }
+
+  test("Timed mixin can terminate execution if it takes too long") {
+
+    val a = OverdueExport
+    val session = new Session(this.spooky)
+    assert(a.hardTerminateTimeout(session) == spookyConf.remoteResourceTimeout + Const.hardTerminateOverhead)
+    a in 10.seconds
+    assert(a.hardTerminateTimeout(session) == 10.seconds + Const.hardTerminateOverhead)
+
+    val (result, time) = TestHelper.timer {
+      try {
+        a
+          .fetch(spooky)
+        sys.error("impossible")
+      }
+      catch {
+        case e: ActionException =>
+          println(e)
+          assert(e.getCause.isInstanceOf[TimeoutException])
+      }
+    }
+    assert(time <= 35*1000*Const.remoteResourceLocalRetries)
+  }
 }
 
 case object ErrorExport extends Export {
@@ -122,5 +146,13 @@ case object ErrorWebExport extends Export {
   override def doExeNoName(session: Session): Seq[Fetched] = {
     session.webDriver
     sys.error("error")
+  }
+}
+
+case object OverdueExport extends Export with Timed {
+
+  override def doExeNoName(session: Session): Seq[Fetched] = {
+    Thread.sleep(120*1000)
+    Nil
   }
 }

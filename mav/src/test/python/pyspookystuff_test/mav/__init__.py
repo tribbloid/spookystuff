@@ -4,6 +4,7 @@ from __future__ import print_function
 
 import os
 from unittest import TestCase
+from unittest import skip
 
 import dronekit
 
@@ -54,7 +55,7 @@ class TestProxy(TestCase):
             proxy.stop()
 
     def testProxyToNonExistingDrone(self):
-        proxy = Proxy(self.url, ["udp:dummy:1000", self.gcs], self.dkBaud, 251, self.__class__.__name__)
+        proxy = Proxy("udp:dummy:1000", ["udp:localhost:12052", self.gcs], self.dkBaud, 251, self.__class__.__name__)
 
         try:
             proxy.start()
@@ -100,7 +101,7 @@ class TestAPMSim(TestCase):
     @property
     def url(self):
         if not self.sim:
-            self.sim = APMSim(0, "43.694195,-79.262262,136,353", self.dkBaud)
+            self.sim = APMSim(0, "43.694195,-79.262262,136,353", 200, 5)
         return self.sim.connStr
 
     @property
@@ -149,6 +150,7 @@ class TestAPMSim(TestCase):
 
         self.stressTestArm("udp:localhost:12052")
 
+@skip("connect to solo first")
 class TestSolo(TestAPMSim):
 
     @property
