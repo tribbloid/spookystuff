@@ -104,12 +104,11 @@ class TestHelper() {
     conf
   }
 
-  final val EXECUTOR_MEMORY_CAP = 4096
-  def executorMemory = numCoresPerWorkerOpt.map {
-    n =>
-      Math.min(n*1024, EXECUTOR_MEMORY_CAP)
+  final val TOTAL_MEMORY_CAP = 32768
+  final def executorMemoryCapOpt = clusterSizeOpt.map(TOTAL_MEMORY_CAP / _)
+  def executorMemoryOpt: Option[Int] = for (n <- numCoresPerWorkerOpt; c <- executorMemoryCapOpt) yield {
+    Math.min(n*1024, c)
   }
-    .getOrElse(EXECUTOR_MEMORY_CAP)
 
   /**
     *
@@ -125,12 +124,12 @@ class TestHelper() {
       )
     }
     else {
-      val masterStr = s"local-cluster[${clusterSizeOpt.get},${numCoresPerWorkerOpt.get},${executorMemory + 256}]"
+      val masterStr = s"local-cluster[${clusterSizeOpt.get},${numCoresPerWorkerOpt.get},${executorMemoryOpt.get + 256}]"
       println(s"initializing SparkContext in local-cluster simulation mode:" + masterStr)
       Map(
         "spark.master" -> masterStr,
         "spark.home" -> sparkHome,
-        "spark.executor.memory" -> (executorMemory + "m"),
+        "spark.executor.memory" -> (executorMemoryOpt.get + "m"),
         "spark.driver.extraClassPath" -> sys.props("java.class.path"),
         "spark.executor.extraClassPath" -> sys.props("java.class.path"),
         "spark.task.maxFailures" -> maxFailures.toString

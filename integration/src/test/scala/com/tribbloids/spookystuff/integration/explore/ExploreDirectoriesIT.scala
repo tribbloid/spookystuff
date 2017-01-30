@@ -7,7 +7,7 @@ import com.tribbloids.spookystuff.testutils.LocalPathResolver
 /**
   * Created by peng on 29/01/17.
   */
-class ExploreDirectories extends IntegrationFixture {
+class ExploreDirectoriesIT extends IntegrationFixture {
 
   import com.tribbloids.spookystuff.dsl._
 
