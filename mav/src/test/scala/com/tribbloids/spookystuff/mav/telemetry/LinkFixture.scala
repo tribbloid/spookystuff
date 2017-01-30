@@ -42,7 +42,7 @@ abstract class LinkFixture extends SIMFixture {
   def getSpooky(factory: LinkFactory): (SpookyContext, String) = {
 
     val conf = this.spooky.conf.clone
-    val spooky = this.spooky.copy(spookyConf = conf)
+    val spooky = this.spooky.copy(_conf = conf)
     spooky.submodule[MAVConf].linkFactory = factory
     spooky.rebroadcast()
 
