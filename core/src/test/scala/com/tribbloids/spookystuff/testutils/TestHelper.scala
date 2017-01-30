@@ -104,12 +104,12 @@ class TestHelper() {
     conf
   }
 
-  final val EXECUTOR_MEMORY = 2048
+  final val EXECUTOR_MEMORY_CAP = 4096
   def executorMemory = numCoresPerWorkerOpt.map {
     n =>
-      Math.min(n*512, EXECUTOR_MEMORY)
+      Math.min(n*512, EXECUTOR_MEMORY_CAP)
   }
-    .getOrElse(EXECUTOR_MEMORY)
+    .getOrElse(EXECUTOR_MEMORY_CAP)
 
   /**
     *
