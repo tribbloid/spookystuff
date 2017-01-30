@@ -53,7 +53,8 @@ class ExploreDirectories extends IntegrationFixture {
          |{"_":"$resourcePath","uri":"file:$resourcePath/dir","leaf":"Test.pdf","fullPath":"file:$resourcePath/dir/Test.pdf"}
          |{"_":"$resourcePath","uri":"file:$resourcePath/dir/dir","leaf":"pom.xml","fullPath":"file:$resourcePath/dir/dir/pom.xml"}
          |{"_":"$resourcePath","uri":"file:$resourcePath/dir/dir/dir","leaf":"tribbloid.json","fullPath":"file:$resourcePath/dir/dir/dir/tribbloid.json"}
-      """.stripMargin
+      """.stripMargin,
+      sort = true
     )
   }
 
