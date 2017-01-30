@@ -182,9 +182,11 @@ trait Action extends ActionLike with ActionRelay.HasRelay{
 
   protected[actions] def withDriversTimedDuring[T](session: Session)(f: => T) = {
 
+    var baseStr = s"[${session.taskContextOpt.map(_.partitionId()).getOrElse(0)}]+> ${this.toString}"
     this match {
       case tt: Timed =>
-        LoggerFactory.getLogger(this.getClass).info(s"+> ${this.toStringVerbose} in ${tt.timeout(session)}")
+        baseStr = baseStr + s" in ${tt.timeout(session)}"
+        LoggerFactory.getLogger(this.getClass).info(this.verbose(baseStr))
 
         session.withDriversDuring(
           SpookyUtils.withDeadline(tt.hardTerminateTimeout(session)) {
@@ -192,7 +194,7 @@ trait Action extends ActionLike with ActionRelay.HasRelay{
           }
         )
       case _ =>
-        LoggerFactory.getLogger(this.getClass).info(s"+> ${this.toString}")
+        LoggerFactory.getLogger(this.getClass).info(this.verbose(baseStr))
 
         session.withDriversDuring(
           f

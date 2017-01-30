@@ -108,4 +108,21 @@ class TestExplorePlan extends SpookyEnvFixture with LocalPathDocsFixture {
         )()
     }
   }
+
+  test("explore plan will avoid shuffling the latest batch to minimize repeated fetch") {
+    val first = spooky
+      .wget {
+        DEEP_DIR_URL
+      }
+    val ds = first
+      .explore(S"root directory".attr("path"))(
+        Wget('A)
+      )()
+      .persist()
+    ds.squashedRDD.count()
+    assert(ds.spooky.metrics.pagesFetched.value == 4)
+
+    ds.rdd.count()
+    assert(ds.spooky.metrics.pagesFetched.value <= 5)
+  }
 }

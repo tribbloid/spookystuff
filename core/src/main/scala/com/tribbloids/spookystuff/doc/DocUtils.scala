@@ -152,18 +152,19 @@ object DocUtils {
         val results = restore[Fetched](status.getPath.toString)(spooky)
 
         if (results == null) {
-          LoggerFactory.getLogger(this.getClass).warn("Cached content is corrputed")
+          LoggerFactory.getLogger(this.getClass).warn("Cached content is corrputed:\n" + dirPath
+          )
           null
         }
         else if (results.head.timeMillis >= earliestModificationTime) results
         else {
-          LoggerFactory.getLogger(this.getClass).info(s"All cached contents has become obsolete after ${new Date(earliestModificationTime).toString}:\n" +
-            s"$dirPath")
+          LoggerFactory.getLogger(this.getClass).info(s"All cached contents has become obsolete after " +
+            s"${new Date(earliestModificationTime).toString}:\n" +
+            dirPath)
           null
         }
       case _ =>
-        LoggerFactory.getLogger(this.getClass).info(s"Not cached:\n" +
-          s"$dirPath")
+        LoggerFactory.getLogger(this.getClass).info(s"Not cached:\n" + dirPath)
         null
     }
   }

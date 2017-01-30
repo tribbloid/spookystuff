@@ -5,7 +5,6 @@ import java.security.PrivilegedAction
 import com.tribbloids.spookystuff.caching.ConcurrentMap
 import com.tribbloids.spookystuff.row._
 import org.apache.spark.rdd.RDD
-import org.apache.spark.scheduler.TaskLocation
 import org.apache.spark.sql.DataFrame
 import org.apache.spark.{SparkContext, SparkEnv, TaskContext}
 

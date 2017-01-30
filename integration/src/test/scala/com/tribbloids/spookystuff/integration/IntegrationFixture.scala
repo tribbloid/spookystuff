@@ -67,14 +67,15 @@ abstract class IntegrationFixture extends SpookyEnvFixture with BeforeAndAfterAl
     println(metricsJSON)
 
     val pagesFetched = metrics.pagesFetched.value
-    numPages_distinct = metrics.pagesFetchedFromRemote.value
+    remotePagesFetched = metrics.pagesFetchedFromRemote.value
     assert(pagesFetched >= numPages)
-    assert(error contains numPages_distinct - numPages)
-    assert(metrics.pagesFetchedFromCache.value === pagesFetched - numPages_distinct)
+    assert(error contains remotePagesFetched - numPages)
+    assert(metrics.pagesFetchedFromCache.value === pagesFetched - remotePagesFetched)
     assert(metrics.sessionInitialized.value === numSessions)
     assert(metrics.sessionReclaimed.value >= metrics.sessionInitialized.value)
     assert(metrics.webDriverDispatched.value === numDrivers)
     assert(metrics.webDriverReleased.value >= metrics.webDriverDispatched.value)
+    assert(pagesFetched <= pageFetchedCap)
   }
 
   def assertAfterCache(): Unit = {
@@ -92,6 +93,7 @@ abstract class IntegrationFixture extends SpookyEnvFixture with BeforeAndAfterAl
     assert(metrics.webDriverReleased.value >= metrics.webDriverDispatched.value)
     //    assert(metrics.DFSReadSuccess.value > 0) //TODO: enable this after more detailed control over 2 caches.
     assert(metrics.DFSReadFailure.value === 0)
+//    assert(pagesFetched <= pageFetchedCap) // cache read is too fast, its hard to optimize
   }
 
   private val retry = 3
@@ -123,9 +125,14 @@ abstract class IntegrationFixture extends SpookyEnvFixture with BeforeAndAfterAl
   def doMain(): Unit
 
   def numPages: Int
-  var numPages_distinct: Int = _
-  def numSessions: Int = numPages_distinct
-  def numDrivers: Int = numSessions
+  var remotePagesFetched: Int = _
+  def numSessions: Int = remotePagesFetched
+  final def numDrivers: Int = {
+    if (driverFactories.flatMap(Option(_)).isEmpty) 0
+    else numSessions
+  }
+
+  def pageFetchedCap: Int = numPages * 2
 
   def error: Range = 0 to 0
 }

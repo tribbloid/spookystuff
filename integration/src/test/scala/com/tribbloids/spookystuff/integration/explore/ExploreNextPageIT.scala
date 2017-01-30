@@ -52,6 +52,4 @@ class ExploreNextPageIT extends IntegrationFixture {
   }
 
   override def numPages = 4
-
-  override def numDrivers = 0
 }

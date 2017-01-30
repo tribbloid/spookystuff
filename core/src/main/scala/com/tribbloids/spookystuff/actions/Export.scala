@@ -7,12 +7,13 @@ import java.util.Date
 import javax.net.ssl.SSLContext
 
 import com.tribbloids.spookystuff.Const
+import com.tribbloids.spookystuff.caching.CacheLevel
 import com.tribbloids.spookystuff.doc._
 import com.tribbloids.spookystuff.dsl.DocFilters
 import com.tribbloids.spookystuff.extractors.{Extractor, FR, Literal}
 import com.tribbloids.spookystuff.http._
 import com.tribbloids.spookystuff.row.{DataRowSchema, FetchedRow}
-import com.tribbloids.spookystuff.session.{WebProxySetting, Session}
+import com.tribbloids.spookystuff.session.{Session, WebProxySetting}
 import com.tribbloids.spookystuff.utils.{HDFSResolver, SpookyUtils}
 import org.apache.commons.io.IOUtils
 import org.apache.hadoop.fs.{FileStatus, FileSystem, Path}
@@ -218,7 +219,7 @@ abstract class HttpMethod(
                   httpClient: HttpClient,
                   context: HttpClientContext,
                   request: HttpUriRequest,
-                  cacheable: Boolean = true
+                  cacheLevel: CacheLevel.Value = CacheLevel.All
                 ): Fetched with Product = {
     val response = httpClient.execute(request, context)
     try {
@@ -245,7 +246,7 @@ abstract class HttpMethod(
           Some(contentType),
           content,
           httpStatus = Some(httpStatus),
-          cacheable = cacheable
+          cacheLevel = cacheLevel
         )
       }
       finally {
@@ -486,7 +487,7 @@ case class Wget(
       path.toString,
       Some("inode/directory; charset=UTF-8"),
       xmlStr.getBytes("utf-8"),
-      cacheable = false
+      cacheLevel = CacheLevel.InMemory
     )
     result
   }
@@ -504,7 +505,7 @@ case class Wget(
       path.toString,
       None,
       content,
-      cacheable = false
+      cacheLevel = CacheLevel.InMemory
     )
 
     result
@@ -633,7 +634,7 @@ case class WpostImpl private[actions](
       request
     }
 
-    httpInvoke(httpClient, context, request, cacheable = false)
+    httpInvoke(httpClient, context, request, cacheLevel = CacheLevel.None)
   }
 
   def writeHDFS(uri: URI, session: Session, entity: HttpEntity, overwrite: Boolean = true): Fetched = {
@@ -651,9 +652,9 @@ case class WpostImpl private[actions](
           IOUtils.copyLarge(entity.getContent, fos) //Overkill?
       }
 
-    val result = new FetchedNothing(
+    val result = new NoDoc(
       List(this),
-      cacheable = false,
+      cacheLevel = CacheLevel.None,
       metadata = Map("byteUploaded" -> size)
     )
     result
@@ -671,9 +672,9 @@ case class WpostImpl private[actions](
       stream.close()
     }
 
-    val result = new FetchedNothing(
+    val result = new NoDoc(
       List(this),
-      cacheable = false
+      cacheLevel = CacheLevel.None
     )
 
     result

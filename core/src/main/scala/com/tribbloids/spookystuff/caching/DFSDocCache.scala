@@ -14,6 +14,10 @@ import org.apache.hadoop.fs.Path
   */
 object DFSDocCache extends AbstractDocCache {
 
+  def cacheable(v: Seq[Fetched]): Boolean = {
+    v.exists(v => v.cacheLevel.isInstanceOf[CacheLevel.DFS])
+  }
+
   def getImpl(k: Trace, spooky: SpookyContext): Option[Seq[Fetched]] = {
 
     val pathStr = SpookyUtils.\\\(

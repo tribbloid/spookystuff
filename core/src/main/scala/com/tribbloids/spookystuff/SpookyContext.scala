@@ -18,7 +18,7 @@ import scala.reflect.ClassTag
 
 case class SpookyContext private (
                                    @transient sqlContext: SQLContext, //can't be used on executors, TODO: change to Option or SparkContext
-                                   @transient private val spookyConf: SpookyConf, //can only be used on executors after broadcast
+                                   @transient private val _conf: SpookyConf, //can only be used on executors after broadcast
                                    metrics: SpookyMetrics //accumulators cannot be broadcasted,
                                  ) extends SerializationMarks {
 
@@ -66,7 +66,7 @@ case class SpookyContext private (
   def conf: SpookyConf = {
     if (isShipped) broadcastedSpookyConf.value
     else {
-      if (effectiveConf == null) setEffectiveConf(spookyConf)
+      if (effectiveConf == null) setEffectiveConf(_conf)
       effectiveConf
     }
   }
@@ -129,6 +129,7 @@ case class SpookyContext private (
   def create(df: DataFrame): FetchedDataset = this.dsl.dataFrameToPageRowRDD(df)
   def create[T: TypeTag](rdd: RDD[T]): FetchedDataset = this.dsl.rddToPageRowRDD(rdd)
 
+  //TODO: merge after 2.0.x
   def create[T: TypeTag](
                           seq: TraversableOnce[T]
                         ): FetchedDataset = {
@@ -136,7 +137,6 @@ case class SpookyContext private (
     implicit val ctg = ScalaType.fromTypeTag[T].asClassTag
     this.dsl.rddToPageRowRDD(this.sqlContext.sparkContext.parallelize(seq.toSeq))
   }
-
   def create[T: TypeTag](
                           seq: TraversableOnce[T],
                           numSlices: Int

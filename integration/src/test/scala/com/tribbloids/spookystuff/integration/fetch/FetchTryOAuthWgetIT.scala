@@ -17,7 +17,6 @@ class FetchTryOAuthWgetIT extends UncacheableIntegrationFixture {
   override def doMain() {
 
     val spooky = this.spooky
-    import com.tribbloids.spookystuff.utils.SpookyViews._
     import spooky.dsl._
 
     val RDD = sc.parallelize(Seq("http://malformed uri"))
@@ -45,7 +44,5 @@ class FetchTryOAuthWgetIT extends UncacheableIntegrationFixture {
 
   override def numPages= 0
 
-  override def numSessions = 3 //TODO: should be 6, why local retry and cluster-wise retry doesn't count?
-
-  override def numDrivers = 0
+  override def numSessions = 1 //TODO: should be 6, why local retry and cluster-wise retry doesn't count?
 }

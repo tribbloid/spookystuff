@@ -1,7 +1,8 @@
 package com.tribbloids.spookystuff.actions
 
 import com.tribbloids.spookystuff._
-import com.tribbloids.spookystuff.doc.{Doc, Fetched, FetchedNothing}
+import com.tribbloids.spookystuff.caching.CacheLevel
+import com.tribbloids.spookystuff.doc.{Doc, Fetched, NoDoc}
 import com.tribbloids.spookystuff.extractors.{Extractor, Literal}
 import com.tribbloids.spookystuff.http.HttpUtils
 import com.tribbloids.spookystuff.row.{DataRowSchema, FetchedRow}
@@ -39,7 +40,7 @@ abstract class Block(override val children: Trace) extends Actions(children) wit
   //    this
   //  }
 
-  def cacheEmptyOutput: Boolean = true
+  def cacheEmptyOutput: CacheLevel.Value = CacheLevel.All
 
   final override def doExe(session: Session): Seq[Fetched] = {
 
@@ -59,10 +60,10 @@ abstract class Block(override val children: Trace) extends Actions(children) wit
       }
     }
     if (result.isEmpty && this.hasOutput) {
-      Seq(FetchedNothing(backtrace, cacheable = this.cacheEmptyOutput))
+      Seq(NoDoc(backtrace, cacheLevel = this.cacheEmptyOutput))
     }
     else if (result.count(_.isInstanceOf[Fetched]) == 0 && this.hasOutput) {
-      result.map(_.update(cacheable = false))
+      result.map(_.update(cacheLevel = this.cacheEmptyOutput))
     }
     else {
       result
@@ -77,12 +78,12 @@ object ClusterRetry {
   def apply(
              trace: Set[Trace],
              retries: Int = Const.clusterRetries,
-             cacheError: Boolean = false
+             cacheEmptyOutput: CacheLevel.Value = CacheLevel.None
            ): ClusterRetry = {
 
     assert(trace.size <= 1)
 
-    ClusterRetry(trace.headOption.getOrElse(Actions.empty))(retries, cacheError)
+    ClusterRetry(trace.headOption.getOrElse(Actions.empty))(retries, cacheEmptyOutput)
   }
 }
 
@@ -90,7 +91,7 @@ final case class ClusterRetry(
                                override val children: Trace
                              )(
                                retries: Int,
-                               override val cacheEmptyOutput: Boolean
+                               override val cacheEmptyOutput: CacheLevel.Value
                              ) extends Block(children) {
 
   override def trunk = Some(ClusterRetry(this.trunkSeq)(retries, cacheEmptyOutput).asInstanceOf[this.type])
@@ -117,7 +118,7 @@ final case class ClusterRetry(
             e
           )
         }
-        else logger.warn(s"Failover on ${e.getClass.getSimpleName}: Cluster-wise retries has depleted... ")
+        else logger.warn(s"Failover on ${e.getClass.getSimpleName}: Cluster-wise retries has depleted")
         logger.info("\t\\-->", e)
     }
 
@@ -136,12 +137,12 @@ object LocalRetry {
   def apply(
              trace: Set[Trace],
              retries: Int = Const.clusterRetries,
-             cacheError: Boolean = false
+             cacheEmptyOutput: CacheLevel.Value
            ): LocalRetry = {
 
     assert(trace.size <= 1)
 
-    LocalRetry(trace.headOption.getOrElse(Actions.empty))(retries, cacheError)
+    LocalRetry(trace.headOption.getOrElse(Actions.empty))(retries, cacheEmptyOutput)
   }
 }
 
@@ -149,7 +150,7 @@ final case class LocalRetry(
                              override val children: Trace
                            )(
                              retries: Int,
-                             override val cacheEmptyOutput: Boolean
+                             override val cacheEmptyOutput: CacheLevel.Value
                            ) extends Block(children) {
 
   override def trunk = Some(LocalRetry(this.trunkSeq)(retries, cacheEmptyOutput).asInstanceOf[this.type])

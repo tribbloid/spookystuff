@@ -53,7 +53,5 @@ class ExplorePagesIT extends IntegrationFixture {
 
   override def numPages= 5
 
-  override def numDrivers = 0
-
   override val error = 0 to 3
 }

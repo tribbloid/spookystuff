@@ -5,8 +5,10 @@ import java.net._
 import java.nio.file.{Files, _}
 
 import org.apache.commons.io.IOUtils
-import org.apache.spark.SparkEnv
+import org.apache.spark.{SparkEnv, TaskContext}
 import org.apache.spark.ml.dsl.ReflectionUtils
+import org.apache.spark.ml.dsl.utils.FlowUtils
+import org.apache.spark.storage.BlockManagerId
 import org.slf4j.LoggerFactory
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -45,7 +47,19 @@ object SpookyUtils {
 
   // Returning T, throwing the exception on failure
   @annotation.tailrec
-  def retry[T](n: Int, interval: Long = 0, silent: Boolean = false)(fn: => T): T = {
+  def retry[T](
+                n: Int,
+                interval: Long = 0,
+                silent: Boolean = false,
+                callerStr: String = null
+              )(fn: => T): T = {
+    var _callerStr = callerStr
+    if (callerStr == null)
+      _callerStr = FlowUtils.stackTracesShowStr(
+        FlowUtils.getBreakpointInfo()
+          .slice(1, Int.MaxValue)
+//          .filterNot(_.getClassName == this.getClass.getCanonicalName)
+      )
     util.Try { fn } match {
       case util.Success(x) =>
         x
@@ -54,12 +68,13 @@ object SpookyUtils {
         if (!(silent || e.isInstanceOf[SilentRetry.Wrapper])) {
           val logger = LoggerFactory.getLogger(this.getClass)
           logger.warn(
-            s"Retrying locally on ${e.getClass.getSimpleName} in ${interval.toDouble/1000} second(s)... ${n-1} time(s) left"
+            s"Retrying locally on ${e.getClass.getSimpleName} in ${interval.toDouble/1000} second(s)... ${n-1} time(s) left" +
+              "\t@ " + _callerStr
           )
           logger.debug("\t\\-->", e)
         }
         Thread.sleep(interval)
-        retry(n - 1, interval)(fn)
+        retry(n - 1, interval, callerStr = _callerStr)(fn)
       case util.Failure(e) =>
         throw e
     }
@@ -68,10 +83,13 @@ object SpookyUtils {
   def withDeadline[T](
                        n: Duration,
                        heartbeat: Option[Duration] = Some(10.seconds)
-                       //                       name: String = FlowUtils.getBreakpointInfo().apply(2).getMethodName
-                       //TODO: default name not working for inner function
                      )(fn: => T): T = {
 
+    val callerStr = FlowUtils.stackTracesShowStr(
+      FlowUtils.getBreakpointInfo()
+        .slice(1, Int.MaxValue)
+//        .filterNot(_.getClassName == this.getClass.getCanonicalName)
+    )
     val future = Future {
       fn
     }
@@ -88,7 +106,8 @@ object SpookyUtils {
               val left = n.minus(elapsed)
               assert(left.toMillis > 0, "INTERNAL ERROR: heartbeat not terminated")
               LoggerFactory.getLogger(this.getClass).info(
-                s"T - ${left.toMillis.toDouble/1000} second(s)"
+                s"T- ${left.toMillis.toDouble/1000} second(s)" +
+                  "\t@ " + callerStr
               )
             }
           }
@@ -110,8 +129,6 @@ object SpookyUtils {
   }
 
   //  def retryWithDeadline[T](n: Int, t: Duration)(fn: => T): T = retry(n){withDeadline(t){fn}}
-
-  @transient lazy val random = new util.Random()
 
   /*
 For Amazon S3:
@@ -494,7 +511,8 @@ These special characters are often called "metacharacters".
     }
   }
 
-  def getHost_ExecutorID = {
+  def getHost_ExecutorID: (String, BlockManagerId) = {
+    assert(!TaskContext.get().isRunningLocally())
     val bmID = SparkEnv.get.blockManager.blockManagerId
     val hostName = bmID.hostPort
     hostName -> bmID

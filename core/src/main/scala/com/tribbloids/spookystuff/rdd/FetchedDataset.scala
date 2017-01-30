@@ -8,6 +8,7 @@ import com.tribbloids.spookystuff.extractors.{GetExpr, _}
 import com.tribbloids.spookystuff.row.{Field, _}
 import com.tribbloids.spookystuff.utils.{SpookyUtils, SpookyViews}
 import com.tribbloids.spookystuff.{Const, SpookyConf, SpookyContext}
+import org.apache.spark.TaskContext
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.catalyst.analysis.UnresolvedAttribute
 import org.apache.spark.sql.catalyst.expressions
@@ -39,7 +40,7 @@ case class FetchedDataset(
   import plan.CacheQueueView
   import scala.Ordering.Implicits._ //DO NOT DELETE!
 
-  implicit def plan2Dataset(plan: ExecutionPlan): FetchedDataset = FetchedDataset(plan)
+  implicit def fromExecutionPlan(plan: ExecutionPlan): FetchedDataset = FetchedDataset(plan)
 
   def this(
             sourceRDD: SquashedFetchedRDD,
@@ -60,17 +61,30 @@ case class FetchedDataset(
 
   def sparkContext = plan.spooky.sparkContext
   def storageLevel: StorageLevel = plan.storageLevel
-  def storageLevel_=(lv: StorageLevel) = {plan.storageLevel = lv}
+  def storageLevel_=(lv: StorageLevel) = {
+    plan.storageLevel = lv
+  }
   def isCached = plan.isCached
 
-  def squashedRDD = {
+  def squashedRDD: SquashedFetchedRDD = {
     this.spooky.rebroadcast()
     plan.rdd()
   }
 
   def rdd = unsquashedRDD
+  def unsquashedRDD: RDD[FetchedRow] = this.squashedRDD.flatMap(
+    v =>
+      new v.WithSchema(schema).unsquash
+  )
 
-  def unsquashedRDD: RDD[FetchedRow] = this.squashedRDD.flatMap(v => new v.WithSchema(schema).unsquash)
+  def partitionRDD = rdd.mapPartitions {
+    ii =>
+      Iterator(TaskContext.get().partitionId() -> ii.toSeq)
+  }
+  def partitionSizeRDD = rdd.mapPartitions {
+    ii =>
+      Iterator(TaskContext.get().partitionId() -> ii.size)
+  }
 
   def spooky = plan.spooky
   def schema = plan.schema

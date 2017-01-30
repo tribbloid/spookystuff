@@ -60,7 +60,7 @@ case class SquashedFetchedRow(
 
   class WithSchema(schema: DataRowSchema) extends Serializable {
 
-    val withSpooky = new SquashedFetchedRow.this.traceView.WithSpooky(schema.spooky)
+    val withSpooky: traceView.WithSpooky = new SquashedFetchedRow.this.traceView.WithSpooky(schema.spooky)
 
     // by default, make sure no pages with identical name can appear in the same group.
     // TODO: need tests!

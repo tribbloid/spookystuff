@@ -13,6 +13,4 @@ class InnerWgetJoinIT extends InnerVisitJoinIT {
   )
 
   override def getPage(uri: Extractor[String]) = Wget(uri)
-
-  override def numDrivers = 0
 }

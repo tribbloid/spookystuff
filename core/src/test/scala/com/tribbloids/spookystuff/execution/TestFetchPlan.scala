@@ -33,18 +33,32 @@ class TestFetchPlan extends SpookyEnvFixture with LocalPathDocsFixture {
     assert(rdd1.spooky.metrics.pagesFetched.value === 0)
   }
 
-  test("FetchPlan + rdd() will do the fetch") {
+  test("fetch() + count() will fetch once") {
 
     val rdd1 = spooky
       .fetch(
         Wget(HTML_URL)
       )
 
-    rdd1.unsquashedRDD.count()
+    rdd1.rdd.count()
 
     assert(rdd1.spooky.metrics.pagesFetched.value === 1)
   }
 
+  test("fetch() + select() + count() will fetch once") {
+
+    val rdd1 = spooky
+      .fetch(
+        Wget(HTML_URL)
+      )
+      .select(
+        "Wikipedia" ~ 'name
+      )
+
+    rdd1.unsquashedRDD.count()
+
+    assert(rdd1.spooky.metrics.pagesFetched.value === 1)
+  }
 
   test("FetchPlan should create a new beaconRDD if its upstream doesn't have one"){
     val partitioner = new HashPartitioner(8)

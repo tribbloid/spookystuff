@@ -12,6 +12,10 @@ object InMemoryDocCache extends AbstractDocCache {
 
   val internal: ConcurrentCache[Trace, Seq[Fetched]] = ConcurrentCache()
 
+  def cacheable(v: Seq[Fetched]): Boolean = {
+    v.exists(v => v.cacheLevel.isInstanceOf[CacheLevel.InMemory])
+  }
+
   def getImpl(k: Trace, spooky: SpookyContext): Option[Seq[Fetched]] = {
     val candidate = internal.get(k)
     candidate.flatMap{

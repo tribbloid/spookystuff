@@ -20,17 +20,29 @@ object FlowUtils {
       yield xh :: xt
   }
 
-//  def jValue(obj: Any)(implicit formats: Formats = DefaultFormats): JValue = Extraction.decompose(obj)
-//  def compactJSON(obj: Any)(implicit formats: Formats = DefaultFormats) = compact(render(jValue(obj)))
-//  def prettyJSON(obj: Any)(implicit formats: Formats = DefaultFormats) = pretty(render(jValue(obj)))
-//
-//  def toJSON(obj: Any, pretty: Boolean = false)(implicit formats: Formats = DefaultFormats): String = {
-//    if (pretty) compactJSON(obj)
-//    else prettyJSON(obj)
-//  }
+  //  def jValue(obj: Any)(implicit formats: Formats = DefaultFormats): JValue = Extraction.decompose(obj)
+  //  def compactJSON(obj: Any)(implicit formats: Formats = DefaultFormats) = compact(render(jValue(obj)))
+  //  def prettyJSON(obj: Any)(implicit formats: Formats = DefaultFormats) = pretty(render(jValue(obj)))
+  //
+  //  def toJSON(obj: Any, pretty: Boolean = false)(implicit formats: Formats = DefaultFormats): String = {
+  //    if (pretty) compactJSON(obj)
+  //    else prettyJSON(obj)
+  //  }
 
   private lazy val LZYCOMPUTE = "$lzycompute"
   private lazy val INIT = "<init>"
+
+  final val breakpointInfoBlacklist = Seq(
+    this.getClass.getCanonicalName,
+    classOf[Thread].getCanonicalName
+  )
+  private def extraFilter(vs: Array[StackTraceElement]) = {
+    vs.filterNot {
+      v =>
+        v.getClassName.startsWith("scala") ||
+          breakpointInfoBlacklist.contains(v.getClassName)
+    }
+  }
 
   def getBreakpointInfo(
                          filterInitializer: Boolean = true,
@@ -42,14 +54,22 @@ object FlowUtils {
 
     if (filterInitializer) effectiveElements = effectiveElements.filter(v => !(v.getMethodName == INIT))
     if (filterLazyRelay) effectiveElements = effectiveElements.filter(v => !v.getMethodName.endsWith(LZYCOMPUTE))
+    effectiveElements = extraFilter(effectiveElements)
 
     effectiveElements
-      .slice(2, Int.MaxValue)
   }
 
-  def getCallerMethodName(stackDepth: Int = 3): String = {
-    val bp = FlowUtils.getBreakpointInfo().apply(stackDepth)
-    assert(!bp.isNativeMethod) //can only use default value in def & lazy val blocks
+  def stackTracesShowStr(
+                          vs: Array[StackTraceElement],
+                          maxDepth: Int = 1
+                        ): String = {
+    vs.slice(0, maxDepth)
+      .mkString("\n\t< ")
+  }
+
+  def getCallerMethodName(depth: Int = 2): String = {
+    val bp = FlowUtils.getBreakpointInfo().apply(depth)
+    assert(!bp.isNativeMethod, "can only getCallerMethodName in def & lazy val blocks")
     bp.getMethodName
   }
 

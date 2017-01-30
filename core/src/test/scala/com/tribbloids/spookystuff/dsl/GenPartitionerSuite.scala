@@ -19,25 +19,24 @@ class GenPartitionerSuite extends SpookyEnvFixture {
     val beaconOpt = gp.createBeaconRDD[Int](sc.emptyRDD[Int])
     //    val beacon = sc.makeRDD(1 to 1000, 1000).map(v => v -> v*v)
 
+    //TODO: this will have size 1 in local mode which will seriously screw up the following logic
     val tlStrs = sc.allTaskLocationStrs
     val size = tlStrs.length
 
-    val ref1 = sc.makeRDD[(Int, String)](
-      (1 to 1000).map {
-        v =>
-          (v -> v.toString) -> Seq(tlStrs(Random.nextInt(size)))
-      }
-    )
-      .coalesce(numPartitions + 5)
+    val src1 = (1 to 1000).map {
+      v =>
+        (v -> v.toString) -> Seq(tlStrs(Random.nextInt(size)))
+    }
+    val ref1 = sc.makeRDD[(Int, String)](src1)
+      .coalesce(numPartitions + 5, shuffle = false)
       .persist()
     ref1.count()
-    val ref2 = sc.makeRDD[(Int, String)](
-      (1 to 1000).map {
-        v =>
-          (v -> v.toString) -> Seq(tlStrs(Random.nextInt(size)))
-      }
-    )
-      .coalesce(numPartitions + 5)
+    val src2 = (1 to 1000).map {
+      v =>
+        (v -> v.toString) -> Seq(tlStrs(Random.nextInt(size)))
+    }
+    val ref2 = sc.makeRDD[(Int, String)](src2)
+      .coalesce(numPartitions + 5, shuffle = false)
       .persist()
     ref2.count()
 

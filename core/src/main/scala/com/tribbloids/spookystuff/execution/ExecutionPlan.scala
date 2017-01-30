@@ -65,7 +65,7 @@ abstract class ExecutionPlan(
 
   def isCached = cachedRDD.nonEmpty
 
-  //support lazy evaluation.
+  // TODO: cachedRDD is redundant? just make it lazy val!
   final def rdd(): SquashedFetchedRDD = {
     cachedRDD match {
       // if cached and loaded, use it
@@ -100,7 +100,7 @@ abstract class ExecutionPlan(
 
     def unpersist[T](
                       rdd: RDD[T],
-                      blocking: Boolean = true
+                      blocking: Boolean = false
                     ): RDD[T] = {
       rdd.unpersist(blocking)
       self -= rdd
@@ -109,7 +109,7 @@ abstract class ExecutionPlan(
 
     def unpersistAll(
                       except: Set[RDD[_]] = Set(),
-                      blocking: Boolean = true
+                      blocking: Boolean = false
                     ): Unit = {
       val unpersisted = self.filter(except.contains)
         .map {

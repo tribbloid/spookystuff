@@ -14,4 +14,5 @@ trait LocalPathDocsFixture extends RemoteDocsFixture {
   override def CSV_URL = unpacked("testutils/files/table.csv")
 
   def DIR_URL = unpacked("testutils/files")
+  def DEEP_DIR_URL = unpacked("testutils/dir")
 }

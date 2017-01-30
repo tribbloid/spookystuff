@@ -33,23 +33,23 @@ trait AbstractDocCache {
   }
   def getImpl(k: Trace, spooky: SpookyContext): Option[Seq[Fetched]]
 
+  def getOrElsePut(k: Trace, v: Seq[Fetched], spooky: SpookyContext): Seq[Fetched] = {
+
+    val gg = get(k, spooky)
+    gg.getOrElse {
+      put(k, v, spooky)
+      v
+    }
+  }
+
+  def cacheable(v: Seq[Fetched]): Boolean
+
   def put(k: Trace, v: Seq[Fetched], spooky: SpookyContext): this.type = {
 
-    if (v.exists(!_.cacheable)) this
-    else putImpl(k, v, spooky)
+    if (cacheable(v)) putImpl(k, v, spooky)
+    else this
   }
   def putImpl(k: Trace, v: Seq[Fetched], spooky: SpookyContext): this.type
-
-  def putIfAbsent(k: Trace, v: Seq[Fetched], spooky: SpookyContext): this.type = {
-
-    if (v.exists(!_.cacheable)) {}
-    else if (getImpl(k, spooky).nonEmpty) {}
-    else {
-      put(k, v, spooky)
-    }
-
-    this
-  }
 
   def inTimeRange(action: Action, fetched: Fetched, spooky: SpookyContext): Boolean = {
     val range = getTimeRange(action, spooky)

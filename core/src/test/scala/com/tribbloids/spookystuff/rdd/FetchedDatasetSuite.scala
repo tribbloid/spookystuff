@@ -1,12 +1,14 @@
 package com.tribbloids.spookystuff.rdd
 
 import com.tribbloids.spookystuff.actions._
+import com.tribbloids.spookystuff.extractors.Literal
+import com.tribbloids.spookystuff.testutils.LocalPathDocsFixture
 import com.tribbloids.spookystuff.{SpookyEnvFixture, dsl}
 
 /**
   * Created by peng on 5/10/15.
   */
-class FetchedDatasetSuite extends SpookyEnvFixture {
+class FetchedDatasetSuite extends SpookyEnvFixture with LocalPathDocsFixture {
 
   import dsl._
 
@@ -205,5 +207,92 @@ class FetchedDatasetSuite extends SpookyEnvFixture {
     )
 
     df.show(false)
+  }
+
+  test("fetch plan can be persisted") {
+    val ds = spooky
+      .fetch(
+        Wget(HTML_URL)
+      )
+      .persist()
+    ds.count()
+
+    assert(ds.spooky.metrics.pagesFetched.value == 1)
+    ds.spooky.metrics.zero()
+
+    ds
+      .wget(
+        JSON_URL
+      )
+      .count()
+
+    assert(ds.spooky.metrics.pagesFetched.value == 1)
+  }
+
+  test("extract plan can be persisted") {
+    val ds = spooky
+      .wget(
+        HTML_URL
+      )
+      .select("Wikipedia" ~ 'name)
+      .persist()
+    ds.count()
+
+    assert(ds.spooky.metrics.pagesFetched.value == 1)
+    ds.spooky.metrics.zero()
+
+    ds
+      .wget(
+        JSON_URL
+      )
+      .count()
+
+    assert(ds.spooky.metrics.pagesFetched.value == 1)
+  }
+
+  test("flatten plan can be persisted") {
+    val ds = spooky
+      .wget(
+        HTML_URL
+      )
+      .flatten(
+        Literal(Array("a"->1, "b"->2)) ~ 'Array
+      )
+      .persist()
+    ds.count()
+
+    assert(ds.spooky.metrics.pagesFetched.value == 1)
+    ds.spooky.metrics.zero()
+
+    ds
+      .wget(
+        JSON_URL
+      )
+      .count()
+
+    assert(ds.spooky.metrics.pagesFetched.value == 1)
+  }
+
+  test("explore plan can be persisted") {
+    val first = spooky
+      .wget{
+        DEEP_DIR_URL
+      }
+    val ds = first
+      .explore(S"root directory".attr("path"))(
+        Wget('A)
+      )()
+      .persist()
+    ds.count()
+
+    ds.spooky.metrics.zero()
+
+    ds
+      .wget(
+        JSON_URL
+      )
+      .count()
+
+    assert(ds.spooky.metrics.pagesFetched.value == 1)
   }
 }

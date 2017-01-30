@@ -50,6 +50,4 @@ class FlatSelectIT extends IntegrationFixture {
   }
 
   override def numPages= 1
-
-  override def numDrivers = 0
 }

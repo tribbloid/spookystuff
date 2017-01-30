@@ -1,13 +1,15 @@
 package com.tribbloids.spookystuff.integration.fetch
 
 import com.tribbloids.spookystuff.actions._
+import com.tribbloids.spookystuff.doc.DocUtils
 import com.tribbloids.spookystuff.dsl._
 import com.tribbloids.spookystuff.integration.IntegrationFixture
-import com.tribbloids.spookystuff.doc.DocUtils
 
 class FetchWgetAndSaveIT extends IntegrationFixture {
 
-  import com.tribbloids.spookystuff.utils.SpookyViews._
+  private val imageURL = {
+    "http://upload.wikimedia.org/wikipedia/en/thumb/8/80/Wikipedia-logo-v2.svg/220px-Wikipedia-logo-v2.svg.png"
+  }
 
   override lazy val driverFactories = Seq(
     null
@@ -15,15 +17,17 @@ class FetchWgetAndSaveIT extends IntegrationFixture {
 
   override def doMain() {
 
-    val RDD = spooky
+    val fetched = spooky
       .fetch(
-        Wget("http://upload.wikimedia.org/wikipedia/en/thumb/8/80/Wikipedia-logo-v2.svg/220px-Wikipedia-logo-v2.svg.png")
+        Wget(imageURL)
       )
       .select("Wikipedia" ~ 'name)
       .persist()
+    //    fetched.count()
+
+    val RDD = fetched
       .savePages(x"file://${System.getProperty("user.dir")}/temp/spooky-integration/save/${'name}", overwrite = true)
       .select(S.saved ~ 'saved_path)
-      .persist()
 
     val savedPageRows = RDD.unsquashedRDD.collect()
 
@@ -49,7 +53,7 @@ class FetchWgetAndSaveIT extends IntegrationFixture {
 
     val RDD2 = RDD
       .fetch(
-        Wget("http://upload.wikimedia.org/wikipedia/en/thumb/8/80/Wikipedia-logo-v2.svg/220px-Wikipedia-logo-v2.svg.png").as('b)
+        Wget(imageURL).as('b)
       )
 
     val unionRDD = RDD.union(RDD2)
@@ -72,5 +76,5 @@ class FetchWgetAndSaveIT extends IntegrationFixture {
     case _ => 1
   }
 
-  override def numDrivers = 0
+  override def pageFetchedCap: Int = 36 // way too large
 }

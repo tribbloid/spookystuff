@@ -46,8 +46,8 @@ case class FetchedRow(
     case _ => None
   }
 
-  def noDocs: Seq[FetchedNothing] = fetched.flatMap {
-    case noPage: FetchedNothing => Some(noPage)
+  def noDocs: Seq[NoDoc] = fetched.flatMap {
+    case noPage: NoDoc => Some(noPage)
     case _ => None
   }
 

@@ -14,13 +14,22 @@ import scala.reflect.ClassTag
 object TraceView {
 
   implicit def fromTrace(trace: Trace): TraceView = new TraceView(trace)
+
+  def apply(
+             children: Trace = Nil,
+             docs: Seq[Fetched] = null
+           ): TraceView = {
+    val result = apply(children)
+    result.docs = docs
+    result
+  }
 }
 
 case class TraceView(
-                      override val children: Trace = Nil,
-                      @transient var docs: Seq[Fetched] = null //override, cannot be shuffled
+                      override val children: Trace
                     ) extends Actions(children) with IDMixin { //remember trace is not a block! its the super container that cannot be wrapped
 
+  @volatile @transient var docs: Seq[Fetched] = _ //override, cannot be shuffled
   def docsOpt = Option(docs)
 
   //always has output (Sometimes Empty) to handle left join
@@ -50,7 +59,6 @@ case class TraceView(
             case _ =>
           }
           if (spooky.conf.cacheWrite) {
-            this.docs = docs
             val effectiveBacktrace = actionResult.head.uid.backtrace
             InMemoryDocCache.put(effectiveBacktrace, actionResult, spooky)
             DFSDocCache.put(effectiveBacktrace ,actionResult, spooky)
@@ -60,6 +68,7 @@ case class TraceView(
           assert(actionResult.isEmpty)
         }
     }
+    this.docs = results
 
     results
   }
@@ -95,7 +104,7 @@ case class TraceView(
   class WithSpooky(spooky: SpookyContext) {
 
     //fetched may yield very large documents and should only be loaded lazily and not shuffled or persisted (unless in-memory)
-    def get: Seq[Fetched] = {
+    def get: Seq[Fetched] = TraceView.this.synchronized{
       docsOpt.getOrElse{
         fetch
       }

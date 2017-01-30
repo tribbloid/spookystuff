@@ -86,7 +86,5 @@ class JoinAndExplorePagesIT extends IntegrationFixture {
 
   override def numPages= 15
 
-  override def numDrivers = 0
-
   override val error = 0 to 4
 }

@@ -14,6 +14,7 @@ import org.openqa.selenium.{By, JavascriptExecutor, WebDriver}
 import scala.collection.mutable
 import scala.concurrent.duration.Duration
 import scala.language.dynamics
+import scala.util.Random
 
 @SerialVersionUID(-98257039403274083L)
 abstract class Interaction extends Action {
@@ -143,7 +144,7 @@ case class RandomDelay(
   assert(maxDelay >= delay)
 
   override def exeNoOutput(session: Session) {
-    Thread.sleep(SpookyUtils.random.nextInt((maxDelay - delay).toMillis.toInt) )
+    Thread.sleep(Random.nextInt((maxDelay - delay).toMillis.toInt) )
   }
 }
 

@@ -62,4 +62,6 @@ class FetchVisitIT extends IntegrationFixture {
 //    case FetchOptimizers.WebCacheAware => 1
     case _ => 1
   }
+
+  override def pageFetchedCap: Int = 3
 }

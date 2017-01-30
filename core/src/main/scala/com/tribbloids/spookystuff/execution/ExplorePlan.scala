@@ -21,7 +21,6 @@ case class ExploreParams(
 }
 
 //TODO: test if lazy execution works on it.
-//TODO: what's the relationship between graph explore and drone explore in Prometheus?
 case class ExplorePlan(
                         override val child: ExecutionPlan,
 
@@ -138,19 +137,21 @@ case class ExplorePlan(
     }
 
     //this will use globalReducer, same thing will happen to later states, eliminator however will only be used inside ExploreStateView.execute()
-    val reducedState0RDD: RDD[(TraceView, Open_Visited)] = betweenEpochReduce(state0RDD, combinedReducer)
+//    val reducedState0RDD: RDD[(TraceView, Open_Visited)] = betweenEpochReduce(state0RDD, combinedReducer)
 
     val openSetSize = spooky.sparkContext.accumulator(0)
     var i = 1
     var stop: Boolean = false
 
-    var stateRDD: RDD[(TraceView, Open_Visited)] = reducedState0RDD
+    var stateRDD: RDD[(TraceView, Open_Visited)] = state0RDD
 
     while (!stop) {
 
       openSetSize.setValue(0)
 
-      val stateRDD_+ : RDD[(TraceView, Open_Visited)] = stateRDD.mapPartitions {
+      val reduceStateRDD: RDD[(TraceView, Open_Visited)] = betweenEpochReduce(stateRDD, combinedReducer)
+
+      val stateRDD_+ : RDD[(TraceView, Open_Visited)] = reduceStateRDD.mapPartitions {
         itr =>
           val state = new ExploreRunner(itr)
           val state_+ = state.execute(
@@ -173,18 +174,18 @@ case class ExplorePlan(
 
       //this will use globalReducer, same thing will happen to later states, eliminator however will only be used inside ExploreStateView.execute()
 
-      val reducedStateRDD_+ : RDD[(TraceView, Open_Visited)] = betweenEpochReduce(stateRDD_+, combinedReducer)
+//      val reducedStateRDD_+ : RDD[(TraceView, Open_Visited)] = betweenEpochReduce(stateRDD_+, combinedReducer)
 
-      cacheQueue.persist(reducedStateRDD_+, spooky.conf.defaultStorageLevel)
+      cacheQueue.persist(stateRDD_+, spooky.conf.defaultStorageLevel)
       if (checkpointInterval >0 && i % checkpointInterval == 0) {
-        reducedStateRDD_+.checkpoint()
+        stateRDD_+.checkpoint()
       }
 
-      reducedStateRDD_+.count()
+      stateRDD_+.count()
+      cacheQueue.unpersist(stateRDD)
       if (openSetSize.value == 0) stop = true
 
-      cacheQueue.unpersist(stateRDD)
-      stateRDD = reducedStateRDD_+
+      stateRDD = stateRDD_+
       i += 1
     }
 

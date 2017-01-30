@@ -5,6 +5,7 @@ import java.util.UUID
 
 import com.tribbloids.spookystuff._
 import com.tribbloids.spookystuff.actions._
+import com.tribbloids.spookystuff.caching.CacheLevel
 import com.tribbloids.spookystuff.utils.{IDMixin, ScalaUDT, SpookyUtils}
 import org.apache.commons.csv.CSVFormat
 import org.apache.hadoop.fs.Path
@@ -43,12 +44,12 @@ trait Fetched extends Serializable {
   def uid: DocUID
   def update(
               uid: DocUID = this.uid,
-              cacheable: Boolean = this.cacheable
+              cacheLevel: CacheLevel.Value = this.cacheLevel
             ): this.type
 
-  def cacheable: Boolean
+  def cacheLevel: CacheLevel.Value
 
-  def name = this.uid.name
+  def name: String = this.uid.name
 
   def timeMillis: Long
 
@@ -67,19 +68,19 @@ trait Fetched extends Serializable {
 }
 
 //Merely a placeholder when a Block returns nothing
-case class FetchedNothing(
-                           backtrace: Trace,
-                           override val timeMillis: Long = System.currentTimeMillis(),
-                           override val cacheable: Boolean = true,
-                           metadata: Map[String, Any] = Map.empty
-                         ) extends Serializable with Fetched {
+case class NoDoc(
+                  backtrace: Trace,
+                  override val timeMillis: Long = System.currentTimeMillis(),
+                  override val cacheLevel: CacheLevel.Value = CacheLevel.All,
+                  metadata: Map[String, Any] = Map.empty
+                ) extends Serializable with Fetched {
 
   @transient override lazy val uid: DocUID = DocUID(backtrace, null, 0, 1)()
 
   override def update(
                        uid: DocUID = this.uid,
-                       cacheable: Boolean = this.cacheable
-                     ) = this.copy(backtrace = uid.backtrace, cacheable = cacheable).asInstanceOf[this.type ]
+                       cacheLevel: CacheLevel.Value = this.cacheLevel
+                     ) = this.copy(backtrace = uid.backtrace, cacheLevel = cacheLevel).asInstanceOf[this.type ]
 }
 
 case class DocWithError(
@@ -100,12 +101,12 @@ case class DocWithError(
 
   override def update(
                        uid: DocUID = this.uid,
-                       cacheable: Boolean = this.cacheable
+                       cacheLevel: CacheLevel.Value = this.cacheLevel
                      ) = {
-    this.copy(delegate = delegate.update(uid, cacheable)).asInstanceOf[this.type]
+    this.copy(delegate = delegate.update(uid, cacheLevel)).asInstanceOf[this.type]
   }
 
-  override def cacheable: Boolean = delegate.cacheable
+  override def cacheLevel: CacheLevel.Value = delegate.cacheLevel
 
   override def metadata: Map[String, Any] = delegate.metadata
 
@@ -131,7 +132,7 @@ case class Doc(
                 //                 cookie: Seq[SerializableCookie] = Nil,
                 override val timeMillis: Long = System.currentTimeMillis(),
                 saved: scala.collection.mutable.Set[String] = scala.collection.mutable.Set(),
-                override val cacheable: Boolean = true,
+                override val cacheLevel: CacheLevel.Value = CacheLevel.All,
                 httpStatus: Option[StatusLine] = None,
                 metadata: Map[String, Any] = Map.empty //for customizing parsing TODO: remove, delegate to CSVElement.
               ) extends Unstructured with Fetched with IDMixin {
@@ -140,8 +141,8 @@ case class Doc(
 
   override def update(
                        uid: DocUID = this.uid,
-                       cacheable: Boolean = this.cacheable
-                     ): Doc.this.type = this.copy(uid = uid, cacheable = cacheable).asInstanceOf[this.type]
+                       cacheLevel: CacheLevel.Value = this.cacheLevel
+                     ): Doc.this.type = this.copy(uid = uid, cacheLevel = cacheLevel).asInstanceOf[this.type]
 
   private def detectCharset(contentType: ContentType): String = {
     val charsetD = new UniversalDetector(null)

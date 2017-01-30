@@ -13,6 +13,4 @@ class LeftWgetJoinIT extends LeftVisitJoinIT {
   )
 
   override def getPage(uri: Extractor[String]) = Wget(uri)
-
-  override def numDrivers = 0
 }
