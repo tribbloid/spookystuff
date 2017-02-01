@@ -130,7 +130,7 @@ class TestAction extends SpookyEnvFixture {
           assert(e.getCause.isInstanceOf[TimeoutException])
       }
     }
-    assert(time <= 35*1000*Const.remoteResourceLocalRetries)
+    assert(time <= 40*1000*Const.remoteResourceLocalRetries)
   }
 }
 
