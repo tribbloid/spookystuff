@@ -62,7 +62,7 @@ trait AbstractDocCache {
       case w: Wayback =>
         Option(w.wayback).map {
           expr =>
-            val result = expr.asInstanceOf[Literal[FR, Long]].value
+            val result = expr.asInstanceOf[Literal[FR, Long]].toMessage
             spooky.conf.IgnoreCachedDocsBefore match {
               case Some(date) =>
                 assert(result > date.getTime, "SpookyConf.pageNotExpiredSince cannot be set to later than wayback date")

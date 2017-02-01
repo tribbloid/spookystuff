@@ -22,13 +22,6 @@ case class MultipartExample(a: String, b: String)(c: Int = 10)
 
 //case object ObjectExample1 extends AbstractObjectExample
 
-object TimeRelay extends MessageRelay[Date] {
-
-  override def toMessage(v: Date): Message = M(v.getTime)
-
-  case class M(millis: Long) extends Message
-}
-
 class MessageRelaySuite extends AbstractFlowSuite {
 
   //TODO: disabled before FallbackSerializer is really put to use
@@ -194,20 +187,5 @@ class MessageRelaySuite extends AbstractFlowSuite {
     intercept[MappingException] {
       MessageReader._fromJSON[MultipartExample](jsonStr)
     }
-  }
-
-  test("TimeRelay can be converted to JSON and back") {
-
-    val jsonStr = TimeRelay.toMessage(date).toJSON(pretty = true)
-    jsonStr.shouldBe(
-      s"""
-         |{
-         |  "millis" : ${date.getTime}
-         |}
-      """.stripMargin
-    )
-
-    val date2 = TimeRelay.fromJSON(jsonStr).millis
-    assert (date2 == date.getTime)
   }
 }

@@ -5,7 +5,7 @@ import com.tribbloids.spookystuff.row.TypedField
 ;
 
 case class GenResolved[T, +R](
-                               self: PartialFunction[T, R],
+                               partialFunction: PartialFunction[T, R],
                                typedField: TypedField
                              ) extends Static[T, R] with Alias[T, R]{
 

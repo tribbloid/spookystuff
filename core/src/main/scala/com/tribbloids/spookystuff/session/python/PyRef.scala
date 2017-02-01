@@ -156,7 +156,7 @@ class PyBinding (
   }
 
   // TODO: so far, doesn't support nested object
-  def $MSG: Option[Message] = {
+  def $MSG: Option[MessageAPI] = {
 
     referenceOpt.flatMap {
       ref =>
@@ -299,10 +299,10 @@ trait InstanceRef extends ClassRef {
 }
 
 @Deprecated
-trait JSONInstanceRef extends InstanceRef with HasMessage {
+trait JSONInstanceRef extends InstanceRef with MessageAPI {
 
   override def pyConstructorArgs: String = {
-    val converted = this.converter.scala2py(this.toMessage)._2
+    val converted = this.converter.scala2py(this)._2
     val code =
       s"""
          |(**($converted))

@@ -7,6 +7,7 @@ import com.tribbloids.spookystuff.mav.system.Drone
 import com.tribbloids.spookystuff.mav.telemetry.{Link, LinkFixture}
 import com.tribbloids.spookystuff.session.Session
 import com.tribbloids.spookystuff.testutils.TestHelper
+import com.tribbloids.spookystuff.utils.SpookyUtils
 import org.apache.spark.rdd.RDD
 
 /**
@@ -85,7 +86,7 @@ class MAVLinkSuite extends LinkFixture with ArduCopterSITLFixture {
 
       val session = new Session(spooky)
       val drone = Drone(Seq("dummy"))
-      TestHelper.setLoggerDuring(classOf[Link], classOf[MAVLink]) {
+      TestHelper.setLoggerDuring(classOf[Link], classOf[MAVLink], SpookyUtils.getClass) {
         intercept[ReinforcementDepletedException]{
           Link.trySelect(
             Seq(drone),

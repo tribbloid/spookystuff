@@ -24,7 +24,7 @@ class MessageRelayParam[Obj](
 
   override def jsonEncode(value: Obj): String = {
 
-    outer.toMessage(value)
+    outer.toMessageAPI(value)
       .compactJSON(outer.formats)
   }
 

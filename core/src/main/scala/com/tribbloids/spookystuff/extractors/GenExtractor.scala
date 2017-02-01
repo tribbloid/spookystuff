@@ -45,7 +45,7 @@ object GenExtractor {
     final def resolveType(tt: DataType) = dataType
   }
   trait StaticPartialFunction[T, +R] extends GenExtractor[T,R] with PartialFunctionWrapper[T, R] {
-    final def resolve(tt: DataType) = self
+    final def resolve(tt: DataType) = partialFunction
   }
   trait Static[T, +R] extends StaticType[T,R] with StaticPartialFunction[T, R] with Leaf[T, R]
 

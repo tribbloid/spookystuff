@@ -42,6 +42,6 @@ object ReadWriteSupports {
 
     final def toMLReader: MLReader[Obj] = MessageMLReader(mr)
 
-    final def toMLWriter(v: Obj) = MessageMLWriter(mr.toMessage(v))
+    final def toMLWriter(v: Obj) = MessageMLWriter(mr.toMessageAPI(v))
   }
 }

@@ -5,7 +5,6 @@ import com.tribbloids.spookystuff.mav.sim.{APMSim, ArduCopterSITLFixture}
 import com.tribbloids.spookystuff.mav.system.Drone
 import com.tribbloids.spookystuff.mav.telemetry.{Link, LinkITFixture}
 import com.tribbloids.spookystuff.session.Session
-import com.tribbloids.spookystuff.session.python.PythonDriver
 import com.tribbloids.spookystuff.testutils.TestHelper
 
 import scala.concurrent.{Await, Future}

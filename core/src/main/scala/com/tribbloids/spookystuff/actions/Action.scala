@@ -27,8 +27,8 @@ object ActionRelay extends MessageRelay[Action] {
 
   private def convert(value: Any) = {
     value match {
-      case v: HasMessage => v.toMessageValue
-      case (k, v: HasMessage) => k -> v.toMessageValue
+      case v: MessageAPI => v.toMessage
+      case (k, v: MessageAPI) => k -> v.toMessage
       case v: Traversable[_] => batchConvert(v)
       case v => v
     }
@@ -50,7 +50,7 @@ object ActionRelay extends MessageRelay[Action] {
   case class M(
                 className: String,
                 params: Map[String, Any]
-              ) extends Message {
+              ) extends MessageAPI {
 
     override def formats: Formats = ActionRelay.this.formats
   }
@@ -66,7 +66,7 @@ object ActionRelay extends MessageRelay[Action] {
   */
 //TODO: merging with Extractor[Seq[Fetched]]?
 @SQLUserDefinedType(udt = classOf[ActionUDT])
-trait Action extends ActionLike with ActionRelay.HasRelay{
+trait Action extends ActionLike with ActionRelay.HasMessageRelay{
 
   override def children: Trace = Nil
 

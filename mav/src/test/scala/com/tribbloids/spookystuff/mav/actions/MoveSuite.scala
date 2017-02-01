@@ -40,7 +40,7 @@ class MoveSuite extends ArduCopterSITLFixture {
 
     val move = Move(Literal(wp1), Literal(wp2))
 
-    move.toMessage.prettyJSON().shouldBe(
+    move.prettyJSON().shouldBe(
       """{
         |  "className" : "com.tribbloids.spookystuff.mav.actions.Move",
         |  "params" : {

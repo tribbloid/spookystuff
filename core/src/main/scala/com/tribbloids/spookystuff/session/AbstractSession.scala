@@ -8,41 +8,41 @@ import com.tribbloids.spookystuff.session.python.PythonDriver
 import com.tribbloids.spookystuff.utils.SpookyUtils
 import com.tribbloids.spookystuff.{Const, SpookyContext, SpookyException}
 import org.apache.spark.TaskContext
-import org.apache.spark.ml.dsl.utils.{Message, MessageRelay}
+import org.apache.spark.ml.dsl.utils.{MessageAPI, MessageRelay}
 import org.openqa.selenium.Dimension
 import org.slf4j.LoggerFactory
 
 import scala.collection.mutable.ArrayBuffer
 
-case object SessionRelay extends MessageRelay[Session] {
-
-  case class M(
-                startTime: Long,
-                backtrace: Seq[Action],
-                TaskContext: Option[TaskContextRelay.M]
-              ) extends Message
-
-  override def toMessage(v: Session): M = {
-    M(
-      v.startTime,
-      v.backtrace,
-      v.taskContextOpt.map (tc => TaskContextRelay.toMessage(tc))
-    )
-  }
-}
-
-case object TaskContextRelay extends MessageRelay[TaskContext] {
-
-  case class M(
-                attemptNumber: Int
-              ) extends Message
-
-  override def toMessage(v: TaskContext): M = {
-    M(
-      v.attemptNumber()
-    )
-  }
-}
+//case object SessionRelay extends MessageRelay[Session] {
+//
+//  case class M(
+//                startTime: Long,
+//                backtrace: Seq[Action],
+//                TaskContext: Option[TaskContextRelay.M]
+//              ) extends Message
+//
+//  override def toMessage(v: Session): M = {
+//    M(
+//      v.startTime,
+//      v.backtrace,
+//      v.taskContextOpt.map (tc => TaskContextRelay.toMessage(tc))
+//    )
+//  }
+//}
+//
+//case object TaskContextRelay extends MessageRelay[TaskContext] {
+//
+//  case class M(
+//                attemptNumber: Int
+//              ) extends Message
+//
+//  override def toMessage(v: TaskContext): M = {
+//    M(
+//      v.attemptNumber()
+//    )
+//  }
+//}
 
 sealed abstract class AbstractSession(val spooky: SpookyContext) extends LocalCleanable {
 

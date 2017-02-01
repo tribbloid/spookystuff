@@ -3,7 +3,7 @@ package org.apache.spark.ml.dsl.utils
 import org.apache.spark.ml.PipelineStage
 import org.apache.spark.ml.dsl._
 import org.apache.spark.ml.param.{ParamPair, Params}
-import org.apache.spark.sql.types.DataType
+import org.apache.spark.sql.utils.DataTypeRelay
 import org.apache.spark.util.Utils
 import org.json4s._
 import org.json4s.jackson.JsonMethods._
@@ -22,21 +22,20 @@ object FlowRelay extends MessageRelay[Flow] {
     val leftWrappers = flow.leftTails.map(SimpleStepWrapper)
     val leftTrees = leftWrappers.map(flow.ForwardNode)
 
-
     val rightWrappers = flow.rightTails.map(SimpleStepWrapper)
     val rightTrees = rightWrappers.map(flow.ForwardNode)
 
     this.M(
       Declaration(
-        steps.map(StepRelay.toMessageValue)
+        steps.map(StepRelay.toMessage)
       ),
       Seq(
         GraphRepr(
-          leftTrees.map(StepTreeNodeRelay.toMessageValue),
+          leftTrees.map(StepTreeNodeRelay.toMessage),
           `@direction` = Some(FORWARD_LEFT)
         ),
         GraphRepr(
-          rightTrees.map(StepTreeNodeRelay.toMessageValue),
+          rightTrees.map(StepTreeNodeRelay.toMessage),
           `@direction` = Some(FORWARD_RIGHT)
         )
       ),
@@ -223,7 +222,6 @@ object StepTreeNodeRelay extends MessageRelay[StepTreeNode[_]] {
     )
   }
 
-
   case class M(
                 id: String,
                 dataTypes: Set[DataTypeRelay.M] = Set.empty,
@@ -233,25 +231,3 @@ object StepTreeNodeRelay extends MessageRelay[StepTreeNode[_]] {
   }
 }
 
-object DataTypeRelay extends MessageRelay[DataType] {
-
-  def toJsonAST(dataType: DataType): JValue = {
-    ReflectionUtils.invoke(classOf[DataType], dataType, "jsonValue").asInstanceOf[JValue]
-  }
-
-  def fromJsonAST(jv: JValue): DataType = {
-    ReflectionUtils.invoke(DataType.getClass, DataType, "parseDataType", classOf[JValue] -> jv).asInstanceOf[DataType]
-  }
-
-
-  override def toMessage(v: DataType): M = M(
-    toJsonAST(v)
-  )
-
-  case class M(
-                dataType: JValue
-              ) extends MessageRepr[DataType] {
-
-    override def toObject: DataType = fromJsonAST(dataType)
-  }
-}

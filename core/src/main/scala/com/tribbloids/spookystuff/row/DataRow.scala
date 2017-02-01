@@ -62,7 +62,7 @@ case class DataRow(
     .map(identity)
     .map(tuple => tuple._1.name -> tuple._2)
 
-  override val value: Map[String, Any] = toMap
+  override val toMessage: Map[String, Any] = toMap
 
   def sortIndex(fields: Seq[Field]): Seq[Option[Iterable[Int]]] = {
     val result = fields.map(key => this.getIntIterable(key))

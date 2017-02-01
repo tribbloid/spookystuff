@@ -1,9 +1,10 @@
 package org.apache.spark.ml.dsl.utils
 
+import org.apache.spark.ml.param.{ParamMap, Params}
 import org.apache.spark.ml.util.{DefaultParamsWriter, Identifiable, MLWriter}
 import org.json4s.JsonAST.JObject
 
-case class MessageMLWriter(message: Message) extends MLWriter with Serializable {
+case class MessageMLWriter(message: MessageAPI) extends MLWriter with Serializable {
 
   //    def saveJSON(path: String): Unit = {
   //      val resolver = HDFSResolver(sc.hadoopConfiguration)
@@ -26,4 +27,11 @@ case class MessageMLWriter(message: Message) extends MLWriter with Serializable 
     //      stage.write.save(getStagePath(stage.uid, idx, stages.length, stagesDir))
     //    }
   }
+}
+
+class MessageParams(
+                     val uid: String
+                   ) extends Params {
+
+  override def copy(extra: ParamMap): Params = this.defaultCopy(extra)
 }

@@ -309,7 +309,7 @@ case class TextInput(
 
     val element = this.getElement(selector, session)
 
-    element.sendKeys(text.asInstanceOf[Literal[FR, String]].value)
+    element.sendKeys(text.asInstanceOf[Literal[FR, String]].toMessage)
   }
 
   override def doInterpolate(pageRow: FetchedRow, schema: DataRowSchema): Option[this.type] = {
@@ -404,7 +404,7 @@ case class ExeScript(
       Some(element)
     }
 
-    val scriptStr = script.asInstanceOf[Literal[FR, String]].value
+    val scriptStr = script.asInstanceOf[Literal[FR, String]].toMessage
     session.webDriver match {
       case d: JavascriptExecutor => d.executeScript(scriptStr, element.toArray: _*)
       case _ => throw new UnsupportedOperationException("this web browser driver is not supported")

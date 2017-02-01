@@ -3,10 +3,10 @@ package com.tribbloids.spookystuff.row
 import com.tribbloids.spookystuff.SpookyContext
 import com.tribbloids.spookystuff.actions._
 import com.tribbloids.spookystuff.doc._
-import org.apache.spark.ml.dsl.utils.Message
+import org.apache.spark.ml.dsl.utils.MessageAPI
 
 //TODO: extends Spark SQL Row
-trait SpookyRow extends Message {
+trait SpookyRow extends MessageAPI {
 
 //  override def length: Int = this.productArity
 //

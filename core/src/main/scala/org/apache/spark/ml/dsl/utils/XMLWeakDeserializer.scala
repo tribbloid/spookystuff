@@ -151,7 +151,7 @@ case class JSONExceptionMetadata(
                                   jValue: Option[JValue] = None,
                                   typeInfo: Option[String] = None,
                                   serDe: SerDeMetadata
-                                ) extends Message
+                                ) extends MessageAPI
 
 case class SerDeMetadata(
                           reporting: Option[String] = None,

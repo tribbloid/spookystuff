@@ -75,8 +75,8 @@ object PyConverter {
     // this limits class constructor to use only JSON compatible weak types, which is not a big deal.
     def scala2py(v: Any): (Seq[PyRef], String) = {
       val json = v match {
-        case vv: HasMessage =>
-          vv.toMessage.prettyJSON
+        case vv: MessageAPI =>
+          vv.prettyJSON
         case _ =>
           MessageView(v).prettyJSON
       }

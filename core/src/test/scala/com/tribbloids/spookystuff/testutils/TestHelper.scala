@@ -111,7 +111,6 @@ class TestHelper() {
   }
 
   /**
-    *
     * @return local mode: None -> local[n, 4]
     *         cluster simulation mode: Some(SPARK_HOME) -> local-cluster[m,n, mem]
     */

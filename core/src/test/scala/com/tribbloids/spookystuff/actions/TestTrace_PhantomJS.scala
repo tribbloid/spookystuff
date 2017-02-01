@@ -135,7 +135,7 @@ class TestTrace_PhantomJS extends SpookyEnvFixture with TestMixin {
 
   test("Click.toJSON should work") {
     val action = Click("o1")
-    val json = action.toMessage.toJSON()
+    val json = action.toJSON()
     json.shouldBe(
       """
         |{
@@ -152,7 +152,7 @@ class TestTrace_PhantomJS extends SpookyEnvFixture with TestMixin {
 
   test("Wget.toJSON should work") {
     val action = Wget("http://dummy.com")
-    val json = action.toMessage.toJSON()
+    val json = action.toJSON()
     json.shouldBe(
       """
         |{
@@ -171,7 +171,7 @@ class TestTrace_PhantomJS extends SpookyEnvFixture with TestMixin {
       Click("o1")
         +> Snapshot()
     )
-    val json = action.toMessage.toJSON()
+    val json = action.toJSON()
     json.shouldBe(
       """
         |{

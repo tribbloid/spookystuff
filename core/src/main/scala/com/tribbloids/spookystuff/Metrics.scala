@@ -1,6 +1,6 @@
 package com.tribbloids.spookystuff
 
-import org.apache.spark.ml.dsl.utils.Message
+import org.apache.spark.ml.dsl.utils.MessageAPI
 import org.apache.spark.{Accumulator, AccumulatorParam, SparkContext}
 
 import scala.collection.immutable.ListMap
@@ -22,7 +22,7 @@ object Metrics {
 }
 
 @SerialVersionUID(-32509237409L)
-abstract class Metrics extends Message with Product with Serializable {
+abstract class Metrics extends MessageAPI with Product with Serializable {
 
   //this is necessary as direct JSON serialization on accumulator only yields meaningless string
   def toTuples: List[(String, Any)] = {
@@ -56,7 +56,7 @@ abstract class Metrics extends Message with Product with Serializable {
   }
 
   //DO NOT change to val! metrics is very mutable
-  override def value: ListMap[String, Any] = {
+  override def toMessage: ListMap[String, Any] = {
     val result = toMap
     result
   }

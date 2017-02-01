@@ -196,7 +196,7 @@ abstract class HttpMethod(
                          ) extends Export with Driverless with Timed with WaybackSupport {
 
   @transient lazy val uriOption: Option[URI] = {
-    val uriStr = uri.asInstanceOf[Literal[FR, String]].value.trim()
+    val uriStr = uri.asInstanceOf[Literal[FR, String]].toMessage.trim()
     if ( uriStr.isEmpty ) None
     else Some(HttpUtils.uri(uriStr))
   }

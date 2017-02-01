@@ -1,7 +1,6 @@
 package org.apache.spark.ml.dsl.utils
 
 import org.apache.http.entity.StringEntity
-import org.apache.spark.ml.param.{ParamMap, Params}
 import org.apache.spark.ml.util._
 import org.apache.spark.sql.types.{DataType, UserDefinedType}
 import org.apache.spark.util.Utils
@@ -12,15 +11,14 @@ import scala.language.implicitConversions
 import scala.util.Try
 import scala.xml.{NodeSeq, XML}
 
-//mixin to allow converting to  a simple case class and back
+//mixin to allow converting to a simple case class and back
 //used to delegate ser/de tasks (from/to xml, json & dataset encoded type) to the case class with a fixed schema
 //all subclasses must be objects otherwise Spark SQL can't find schema for Repr
 abstract class MessageRelay[Obj] {
 
   implicit def formats: Formats = Xml.defaultFormats
 
-  type M
-
+  type M //Message type
   implicit def mf: Manifest[this.M] = intrinsicManifestTry.get
 
   //TODO: it only works if impl of MessageRelay is an object
@@ -59,15 +57,27 @@ abstract class MessageRelay[Obj] {
   def fromXMLNode(ns: NodeSeq): M = _fromXMLNode[M](ns)
   def fromXML(xml: String): M = _fromXML[M](xml)
 
-  def toMessage(v: Obj): Message
-  final def toMessageValue(v: Obj): MessageRelay.this.M = toMessage(v).value.asInstanceOf[MessageRelay.this.M]
+  def toMessage(v: Obj): M
+  final def toMessageAPI(v: Obj): MessageAPI = {
+    val m = toMessage(v)
+    m match {
+      case m: MessageAPI => m
+      case _ => MessageView(m)
+    }
+  }
+  final def toMessageAPIIfNot(v: Obj): MessageAPI = {
+    v match {
+      case v: MessageAPI => v
+      case _ => toMessageAPI(v)
+    }
+  }
 
-  trait HasRelay extends HasMessage {
+  trait HasMessageRelay extends MessageAPI {
     self: Obj =>
 
     override def formats = MessageRelay.this.formats
 
-    final def toMessage: Message = MessageRelay.this.toMessage(self)
+    override def toMessage: Any = MessageRelay.this.toMessage(self)
   }
 
   class UDT extends UserDefinedType[Obj] {
@@ -108,28 +118,19 @@ class MessageReader[Obj](
                         ) extends MessageRelay[Obj] {
   type M = Obj
 
-  override def toMessage(v: Obj) = new MessageView[Obj](v, MessageReader.this.formats)
+  override def toMessage(v: Obj) = v
 }
-
 object MessageReader extends MessageReader[Any]
 
-trait HasMessage extends Serializable {
+trait MessageAPI extends Serializable {
 
   def formats: Formats = Xml.defaultFormats
 
-  def toMessage: Message
-  def toMessageValue: Any = toMessage.value
-}
-
-trait Message extends HasMessage {
-
-  def toMessage = this
-
-  def value: Any = this
+  def toMessage: Any = this
 
   import org.json4s.JsonDSL._
 
-  def toJValue(implicit formats: Formats = formats): JValue = Extraction.decompose(value)
+  def toJValue(implicit formats: Formats = formats): JValue = Extraction.decompose(toMessage)
   def compactJSON(implicit formats: Formats = formats): String = compact(render(toJValue))
   def prettyJSON(implicit formats: Formats = formats): String = pretty(render(toJValue))
   def toJSON(pretty: Boolean = true)(implicit formats: Formats = formats): String = {
@@ -143,7 +144,7 @@ trait Message extends HasMessage {
     requestEntity
   }
 
-  def toXMLNode(implicit formats: Formats = formats): NodeSeq = Xml.toXml(value.getClass.getSimpleName -> toJValue)
+  def toXMLNode(implicit formats: Formats = formats): NodeSeq = Xml.toXml(toMessage.getClass.getSimpleName -> toJValue)
   def compactXML(implicit formats: Formats = formats): String = toXMLNode.toString()
   def prettyXML(implicit formats: Formats = formats): String = Xml.defaultXMLPrinter.formatNodes(toXMLNode)
   def toXMLStr(pretty: Boolean = true)(implicit formats: Formats = formats): String = {
@@ -156,21 +157,15 @@ trait Message extends HasMessage {
   }
 }
 
-trait MessageRepr[Obj] extends Message {
+trait MessageRepr[Obj] extends MessageAPI {
 
   def toObject: Obj
 }
 
-//TODO: remove type param, useless!
-case class MessageView[M](
-                           override val value: M,
-                           override val formats: Formats = Xml.defaultFormats
-                         ) extends Message {
-}
+case class MessageView(
+                        value: Any,
+                        override val formats: Formats = Xml.defaultFormats
+                      ) extends MessageAPI {
 
-class MessageParams(
-                     val uid: String
-                   ) extends Params {
-
-  override def copy(extra: ParamMap): Params = this.defaultCopy(extra)
+  override def toMessage = value
 }

@@ -23,7 +23,7 @@ class ExtractorsSuite extends SpookyEnvFixture {
   test("Action that use Literal can be converted to JSON") {
     val action = Wget(Literal("http://dummy.org"))
 
-    val json = action.toMessage.toJSON()
+    val json = action.toJSON()
     json.shouldBe(
       """
         |{

@@ -25,11 +25,11 @@ abstract class LinkFixture extends SIMFixture {
 
   override def setUp(): Unit = {
 
-    super.setUp()
     sc.foreachCore {
       Random.shuffle(Link.existing.values.toList).foreach(_.clean())
     }
-    //    Thread.sleep(2000) //Waiting for python drivers to terminate
+    Thread.sleep(2000) //Waiting for both python drivers to terminate, DON'T DELETE! some tests create proxy processes and they all take a few seconds to release the port binding!
+    super.setUp()
   }
 
   //  override def tearDown(): Unit = {
@@ -41,8 +41,7 @@ abstract class LinkFixture extends SIMFixture {
 
   def getSpooky(factory: LinkFactory): (SpookyContext, String) = {
 
-    val conf = this.spooky.conf.clone
-    val spooky = this.spooky.copy(_conf = conf)
+    val spooky = this.spooky.copy(_conf = this.spooky.conf.clone)
     spooky.submodule[MAVConf].linkFactory = factory
     spooky.rebroadcast()
 
@@ -63,8 +62,9 @@ abstract class LinkFixture extends SIMFixture {
         )
           .get
         TestHelper.assert(link.isNotBlacklisted, "link is blacklisted")
+        TestHelper.assert(link.factoryOpt.get == spooky.submodule[MAVConf].linkFactory, "link doesn't comply to factory")
         link.isIdle = false
-//        Thread.sleep(5000) //otherwise a task will complete so fast such that another task hasn't start yet.
+        //        Thread.sleep(5000) //otherwise a task will complete so fast such that another task hasn't start yet.
         link
     }
       .persist()
@@ -77,10 +77,12 @@ abstract class LinkFixture extends SIMFixture {
     linkRDD
   }
 
-  val tuples = Seq(
+  val linkFactories = Seq(
     LinkFactories.Direct,
     LinkFactories.ForkToGCS()
-  ).map {
+  )
+
+  val tuples = linkFactories.map {
     getSpooky
   }
   tuples.foreach {
@@ -93,7 +95,7 @@ abstract class LinkFixture extends SIMFixture {
       test(s"$testPrefix Link to non-existing drone should be disabled until blacklist timer reset") {
         val session = new Session(spooky)
         val drone = Drone(Seq("dummy"))
-        TestHelper.setLoggerDuring(classOf[Link], classOf[MAVLink]) {
+        TestHelper.setLoggerDuring(classOf[Link], classOf[MAVLink], SpookyUtils.getClass) {
           intercept[ReinforcementDepletedException]{
             Link.trySelect(
               Seq(drone),
@@ -153,35 +155,80 @@ abstract class LinkFixture extends SIMFixture {
         }
           .collect()
         assert(spooky.metrics.linkCreated.value == parallelism)
-        //        assert(spooky.metrics.linkDestroyed.value == 0) // not testable, refit always destroy previous link
+        assert(spooky.metrics.linkDestroyed.value == 0)
         linkStrs.foreach {
           tuple =>
             assert(tuple._1 == tuple._2)
         }
       }
 
-      test(s"$testPrefix idle Link with no active TaskContext can be reused in another TaskContext") {
+      //      test(s"$testPrefix available Link can be recommissioned in another TaskContext") {
+      //
+      //        val linkRDD1: RDD[Link] = getLinkRDD(spooky)
+      //
+      //        assert(spooky.metrics.linkCreated.value == parallelism)
+      //        assert(spooky.metrics.linkDestroyed.value == 0)
+      //        assert(Link.existing.size == parallelism)
+      //
+      //        linkRDD1.foreach {
+      //          link =>
+      //            link.isIdle = true
+      //        }
+      //
+      //        val linkRDD2: RDD[Link] = getLinkRDD(spooky)
+      //
+      //        assert(spooky.metrics.linkCreated.value == parallelism)
+      //        assert(spooky.metrics.linkDestroyed.value == 0)
+      //        linkRDD1.map(_.toString).collect().mkString("\n").shouldBe (
+      //          linkRDD2.map(_.toString).collect().mkString("\n"),
+      //          sort = true
+      //        )
+      //      }
 
+      for (factory2 <- linkFactories) {
 
-        val linkRDD1: RDD[Link] = getLinkRDD(spooky)
+        test(s"$testPrefix~>${factory2.getClass.getSimpleName}: available Link can be recommissioned in another TaskContext") {
 
-        assert(spooky.metrics.linkCreated.value == parallelism)
-        assert(spooky.metrics.linkDestroyed.value == 0)
-        assert(Link.existing.size == parallelism)
+          val factory1 = spooky.submodule[MAVConf].linkFactory
 
-        linkRDD1.foreach {
-          link =>
-            link.isIdle = true
+          val linkRDD1: RDD[Link] = getLinkRDD(spooky)
+          linkRDD1.foreach {
+            link =>
+              link.isIdle = true
+          }
+
+          spooky.submodule[MAVConf].linkFactory = factory2
+          spooky.rebroadcast()
+
+          try {
+
+            assert(spooky.metrics.linkCreated.value == parallelism)
+            assert(spooky.metrics.linkDestroyed.value == 0)
+
+            val linkRDD2: RDD[Link] = getLinkRDD(spooky)
+
+            if (factory1 == factory2) {
+              assert(spooky.metrics.linkCreated.value == parallelism)
+              assert(spooky.metrics.linkDestroyed.value == 0)
+              linkRDD1.map(_.toString).collect().mkString("\n").shouldBe (
+                linkRDD2.map(_.toString).collect().mkString("\n"),
+                sort = true
+              )
+            }
+            else {
+              assert(spooky.metrics.linkCreated.value == parallelism) // TODO: should be parallelism*2!
+              assert(spooky.metrics.linkDestroyed.value == 0)
+              linkRDD1.map(_.drone).collect().mkString("\n").shouldBe (
+                linkRDD2.map(_.drone).collect().mkString("\n"),
+                sort = true
+              )
+            }
+          }
+          finally {
+            spooky.submodule[MAVConf].linkFactory = factory1
+            spooky.rebroadcast()
+          }
         }
-
-        val linkRDD2: RDD[Link] = getLinkRDD(spooky)
-
-        assert(spooky.metrics.linkCreated.value == parallelism)
-        assert(spooky.metrics.linkDestroyed.value == 0)
-        linkRDD1.map(_.toString).collect().mkString("\n").shouldBe (
-          linkRDD2.map(_.toString).collect().mkString("\n"),
-          sort = true
-        )
       }
   }
 }

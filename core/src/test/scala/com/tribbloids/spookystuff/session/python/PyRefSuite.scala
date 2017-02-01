@@ -1,7 +1,7 @@
 package com.tribbloids.spookystuff.session.python
 
 import com.tribbloids.spookystuff.testutils.TestMixin
-import org.apache.spark.ml.dsl.utils.Message
+import org.apache.spark.ml.dsl.utils.MessageAPI
 import org.scalatest.FunSuite
 
 /**
@@ -11,7 +11,7 @@ import org.scalatest.FunSuite
 case class JSONExample(
                         a: Int,
                         var bOpt: Option[String]
-                      ) extends JSONInstanceRef with Message
+                      ) extends JSONInstanceRef
 
 case class CaseExample(
                         a: Int,

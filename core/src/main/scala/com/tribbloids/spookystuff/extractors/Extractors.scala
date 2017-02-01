@@ -5,7 +5,7 @@ import com.tribbloids.spookystuff.extractors.GenExtractor.{AndThen, Leaf, Static
 import com.tribbloids.spookystuff.row.{DataRowSchema, _}
 import com.tribbloids.spookystuff.utils.ScalaType._
 import com.tribbloids.spookystuff.utils.{SpookyUtils, UnreifiedScalaType}
-import org.apache.spark.ml.dsl.utils.{Message, MessageView}
+import org.apache.spark.ml.dsl.utils.{MessageAPI, MessageView}
 import org.apache.spark.sql.catalyst.ScalaReflection.universe.TypeTag
 import org.apache.spark.sql.types._
 
@@ -82,9 +82,10 @@ object Literal {
 }
 
 //TODO: Message JSON conversion discard dataType info, is it wise?
-case class Literal[T, +R](override val value: R, dataType: DataType) extends Static[T, R] with Message {
+case class Literal[T, +R](value: R, dataType: DataType) extends Static[T, R] with MessageAPI {
 
   def valueOpt: Option[R] = Option(value)
+  override def toMessage = value
 
   override lazy val toString = valueOpt
     .map {
@@ -93,7 +94,7 @@ case class Literal[T, +R](override val value: R, dataType: DataType) extends Sta
     }
     .getOrElse("NULL")
 
-  override val self: PartialFunction[T, R] = Unlift({ _: T => valueOpt})
+  override val partialFunction: PartialFunction[T, R] = Unlift({ _: T => valueOpt})
 }
 
 case class GetExpr(field: Field) extends Leaf[FR, Any] {

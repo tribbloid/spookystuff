@@ -105,6 +105,10 @@ trait Link extends Cleanable with NOTSerializable {
   @volatile protected var _factory: LinkFactory = _
   def factoryOpt = Option(_factory)
 
+  lazy val runOnce: Unit = {
+    spookyOpt.get.metrics.linkCreated += 1
+  }
+
   def setContext(
                   spooky: SpookyContext = this._spooky,
                   factory: LinkFactory = this._factory
@@ -114,7 +118,8 @@ trait Link extends Cleanable with NOTSerializable {
       _spooky = spooky
       _factory = factory
       //      _taskContext = taskContext
-      Option(_spooky).foreach(_.metrics.linkCreated += 1)
+      spookyOpt.foreach(v => runOnce)
+
       val inserted = Link.existing.getOrElseUpdate(drone, this)
       assert(inserted eq this, s"Multiple Links created for drone $drone")
 
@@ -268,25 +273,26 @@ trait Link extends Cleanable with NOTSerializable {
                   ): Link = {
 
     val neo = factory.apply(drone)
-    if (coFactory(neo)) {
+    val result = if (coFactory(neo)) {
+      LoggerFactory.getLogger(this.getClass).info {
+        s"Reusing existing link for $drone"
+      }
       neo.isDryrun = true
       neo.clean(silent = true)
-      LoggerFactory.getLogger(this.getClass).info {
-        s"Recommissioning existing link $drone"
-      }
       this
     }
     else {
-      this.clean(silent = true)
-      neo.setContext(
-        this._spooky,
-        this._factory
-      )
       LoggerFactory.getLogger(this.getClass).info {
-        s"Existing link $drone is obsolete! recreating with new factory ${factory.getClass.getSimpleName}"
+        s"Existing link for $drone is obsolete! recreating with new factory ${factory.getClass.getSimpleName}"
       }
+      this.clean(silent = true)
       neo
     }
+    result.setContext(
+      this._spooky,
+      factory
+    )
+    result
   }
 
   //================== COMMON API ==================

@@ -7,7 +7,7 @@ import com.tribbloids.spookystuff.row.Sampler
 import com.tribbloids.spookystuff.session._
 import com.tribbloids.spookystuff.session.python.PythonDriver
 import org.apache.spark.ml.dsl.ReflectionUtils
-import org.apache.spark.ml.dsl.utils.Message
+import org.apache.spark.ml.dsl.utils.MessageAPI
 import org.apache.spark.storage.StorageLevel
 import org.apache.spark.{SparkConf, SparkEnv}
 import org.slf4j.LoggerFactory
@@ -128,7 +128,7 @@ object AbstractConf {
 /**
   * all subclasses have to define default() in their respective companion object.
   */
-trait AbstractConf extends Message {
+trait AbstractConf extends MessageAPI {
 
   val submodules: Submodules[AbstractConf] = Submodules()
 
