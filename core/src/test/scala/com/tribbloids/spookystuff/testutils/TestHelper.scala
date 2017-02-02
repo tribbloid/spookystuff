@@ -105,7 +105,7 @@ class TestHelper() {
   }
 
   final val TOTAL_MEMORY_CAP = 32768
-  final private def executorMemoryCapOpt = clusterSizeOpt.map(v => TOTAL_MEMORY_CAP / v - 256)
+  final private def executorMemoryCapOpt = clusterSizeOpt.map(v => TOTAL_MEMORY_CAP / v)
   def executorMemoryOpt: Option[Int] = for (n <- numCoresPerWorkerOpt; c <- executorMemoryCapOpt) yield {
     Math.min(n*1024, c)
   }

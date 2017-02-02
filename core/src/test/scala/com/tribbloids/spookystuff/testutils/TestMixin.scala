@@ -11,6 +11,9 @@ import scala.reflect.ClassTag
   */
 trait TestMixin extends FunSuite {
 
+  final val ACTUAL = "[ACTUAL  /  LEFT]"
+  final val EXPECTED = "[EXPECTED / RIGHT]"
+
   @transient implicit class TestStringView(str: String) {
 
     //TODO: use reflection to figure out test name and annotate
@@ -25,7 +28,7 @@ trait TestMixin extends FunSuite {
       if (sort) a = a.sorted
       if (ignoreCase) a = a.map(_.toLowerCase)
 
-      def originalStr = "================================ [ACTUAL] =================================\n" +
+      def originalStr = s"================================ $ACTUAL =================================\n" +
         a.mkString("\n") + "\n"
 
       Option(gd) match {
@@ -65,7 +68,7 @@ trait TestMixin extends FunSuite {
       val a = if (sort) aRaw.sorted
       else aRaw
 
-      def originalStr = "================================ [ACTUAL] =================================\n" +
+      def originalStr = s"================================ $ACTUAL =================================\n" +
         a.mkString("\n") + "\n"
 
       Option(gd) match {
@@ -117,7 +120,7 @@ trait TestMixin extends FunSuite {
 
     override def toString = {
       println(originalStr())
-      "\n=============================== [EXPECTED] ================================\n" +
+      s"\n=============================== $EXPECTED ================================\n" +
         b.mkString("\n") + "\n"
     }
   }

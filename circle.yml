@@ -5,13 +5,13 @@
 
 dependencies:
   override:
-    - 'exec build-tools/mvn-install.sh -Pspark-1.6 -Pscala-2.11 -Pmav'
+    - 'exec build-tools/mvn-install.sh -Pspark-1.6 -Pscala-2.11 -Puav'
 
 test:
   override:
     # code
 #    - 'nosetests -svx dronekit.test.web'
-    - 'mvn test -Pspark-1.6 -Pscala-2.11 -Pmav -pl mav'
+    - 'mvn test -Pspark-1.6 -Pscala-2.11 -Puav -pl uav'
 
 general:
   build_dir: .
