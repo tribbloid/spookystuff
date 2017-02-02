@@ -9,11 +9,13 @@ trait InjectBeaconRDDPlan extends ExecutionPlan {
 
   def genPartitioner: GenPartitioner
 
+  lazy val gpImpl = genPartitioner.getImpl(spooky)
+
   abstract override lazy val beaconRDDOpt: Option[BeaconRDD[TraceView]] = {
     inheritedBeaconRDDOpt.orElse {
       this.firstChildOpt.flatMap {
         child =>
-          genPartitioner.getImpl.createBeaconRDD[TraceView](child.rdd())
+          gpImpl.createBeaconRDD[TraceView](child.rdd())
       }
     }
   }
@@ -35,7 +37,6 @@ case class FetchPlan(
         _.interpolate(traces)
       }
 
-    val gpImpl = genPartitioner.getImpl
     val beaconRDDOpt = this.beaconRDDOpt
     val grouped = gpImpl.groupByKey(trace_DataRowRDD, beaconRDDOpt)
 

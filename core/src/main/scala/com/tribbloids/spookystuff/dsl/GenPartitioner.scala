@@ -1,5 +1,6 @@
 package com.tribbloids.spookystuff.dsl
 
+import com.tribbloids.spookystuff.SpookyContext
 import com.tribbloids.spookystuff.dsl.GenPartitioners.GenPartitionerImpl
 import com.tribbloids.spookystuff.row.BeaconRDD
 import org.apache.spark.Partitioner
@@ -14,7 +15,7 @@ import scala.reflect.ClassTag
   */
 trait GenPartitioner {
 
-  def getImpl: GenPartitionerImpl
+  def getImpl(spooky: SpookyContext): GenPartitionerImpl
 }
 
 object GenPartitioners {
@@ -49,7 +50,7 @@ object GenPartitioners {
   //this won't merge identical traces and do lookup, only used in case each resolve may yield different result
   case object Narrow extends GenPartitioner {
 
-    override def getImpl: GenPartitionerImpl = GPImpl
+    override def getImpl(spooky: SpookyContext): GenPartitionerImpl = GPImpl
 
     object GPImpl extends GenPartitionerImpl {
 
@@ -71,7 +72,7 @@ object GenPartitioners {
 
   case class Wide(partitionerFactory: RDD[_] => Partitioner = PartitionerFactories.SamePartitioner) extends GenPartitioner {
 
-    override def getImpl: GenPartitionerImpl = GPImpl
+    override def getImpl(spooky: SpookyContext): GenPartitionerImpl = GPImpl
 
     object GPImpl extends GenPartitionerImpl {
 
@@ -99,7 +100,7 @@ object GenPartitioners {
   //reduce workload by avoiding repeated access to the same url caused by duplicated context or diamond links (A->B,A->C,B->D,C->D)
   case class DocCacheAware(partitionerFactory: RDD[_] => Partitioner = PartitionerFactories.SamePartitioner) extends GenPartitioner {
 
-    override def getImpl: GenPartitionerImpl = GPImpl
+    override def getImpl(spooky: SpookyContext): GenPartitionerImpl = GPImpl
 
     object GPImpl extends GenPartitionerImpl {
 

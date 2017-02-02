@@ -20,7 +20,6 @@ case class ExploreParams(
 
 }
 
-//TODO: test if lazy execution works on it.
 case class ExplorePlan(
                         override val child: ExecutionPlan,
 
@@ -212,7 +211,6 @@ case class ExplorePlan(
                           stateRDD: RDD[(TraceView, Open_Visited)],
                           reducer: (Open_Visited, Open_Visited) => Open_Visited
                         ): RDD[(TraceView, Open_Visited)] = {
-    val gpImpl = genPartitioner.getImpl
     val beaconRDDOpt = this.beaconRDDOpt
     gpImpl.reduceByKey(stateRDD, reducer, beaconRDDOpt)
   }

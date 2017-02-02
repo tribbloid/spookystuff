@@ -125,9 +125,9 @@
         </profile>
 
         <profile>
-            <id>mav</id>
+            <id>uav</id>
             <modules>
-                <module>mav</module>
+                <module>uav</module>
                 <module>assembly</module>
             </modules>
         </profile>
