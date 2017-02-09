@@ -67,8 +67,7 @@ case class FetchedDataset(
   def isCached = plan.isCached
 
   def squashedRDD: SquashedFetchedRDD = {
-    this.spooky.rebroadcast()
-    plan.rdd()
+    plan.broadcastAndRDD()
   }
 
   def rdd = unsquashedRDD
@@ -92,8 +91,7 @@ case class FetchedDataset(
 
   def dataRDD: RDD[DataRow] = {
 
-    this.spooky.rebroadcast()
-    plan.rdd().flatMap {
+    plan.broadcastAndRDD().flatMap {
       _.dataRows
     }
   }

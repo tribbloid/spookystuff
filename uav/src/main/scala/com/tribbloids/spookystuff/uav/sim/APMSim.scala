@@ -1,9 +1,9 @@
 package com.tribbloids.spookystuff.uav.sim
 
 import com.tribbloids.spookystuff.caching
-import com.tribbloids.spookystuff.uav.actions.LocationGlobal
 import com.tribbloids.spookystuff.session.LocalCleanable
 import com.tribbloids.spookystuff.session.python.{CaseInstanceRef, SingletonRef}
+import com.tribbloids.spookystuff.uav.spatial.LocationGlobal
 
 import scala.util.Random
 

@@ -8,9 +8,9 @@ from unittest import skip
 
 import dronekit
 
-from pyspookystuff.mav.sim import APMSim
-from pyspookystuff.mav.telemetry.mavlink import Proxy
-from pyspookystuff.mav.utils import retry
+from pyspookystuff.uav.sim import APMSim
+from pyspookystuff.uav.telemetry.mavlink import Proxy
+from pyspookystuff.uav.utils import retry
 
 class TestUtils(TestCase):
     def test_retryCanFail(self):

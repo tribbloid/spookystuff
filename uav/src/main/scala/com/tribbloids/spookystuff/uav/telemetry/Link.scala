@@ -1,12 +1,12 @@
 package com.tribbloids.spookystuff.uav.telemetry
 
-import com.tribbloids.spookystuff.uav.actions.LocationGlobal
 import com.tribbloids.spookystuff.uav.dsl.LinkFactory
 import com.tribbloids.spookystuff.uav.system.Drone
 import com.tribbloids.spookystuff.uav.telemetry.mavlink.MAVLink
-import com.tribbloids.spookystuff.uav.{MAVConf, ReinforcementDepletedException}
+import com.tribbloids.spookystuff.uav.{UAVConf, ReinforcementDepletedException}
 import com.tribbloids.spookystuff.session.python.PyRef
 import com.tribbloids.spookystuff.session.{Cleanable, ResourceLedger, Session}
+import com.tribbloids.spookystuff.uav.spatial.LocationGlobal
 import com.tribbloids.spookystuff.utils.{NOTSerializable, SpookyUtils, TreeException}
 import com.tribbloids.spookystuff.{SpookyContext, caching}
 import org.apache.spark.TaskContext
@@ -60,7 +60,7 @@ object Link {
 
     if (recommission) resultOpt = resultOpt.map {
       link =>
-        val factory = session.spooky.conf.submodule[MAVConf].linkFactory
+        val factory = session.spooky.conf.submodule[UAVConf].linkFactory
         link.recommission(factory)
     }
 
@@ -181,9 +181,9 @@ trait Link extends Cleanable with NOTSerializable {
   private def connectRetries: Int = spookyOpt
     .map(
       spooky =>
-        spooky.conf.submodule[MAVConf].connectRetries
+        spooky.conf.submodule[UAVConf].connectRetries
     )
-    .getOrElse(MAVConf.CONNECT_RETRIES)
+    .getOrElse(UAVConf.CONNECT_RETRIES)
 
   @volatile var lastFailureOpt: Option[(Throwable, Long)] = None
 
@@ -239,9 +239,9 @@ trait Link extends Cleanable with NOTSerializable {
   private def blacklistDuration: Long = spookyOpt
     .map(
       spooky =>
-        spooky.conf.submodule[MAVConf].blacklistReset
+        spooky.conf.submodule[UAVConf].blacklistReset
     )
-    .getOrElse(MAVConf.BLACKLIST_RESET)
+    .getOrElse(UAVConf.BLACKLIST_RESET)
   def isNotBlacklisted: Boolean = !lastFailureOpt.exists {
     tt =>
       System.currentTimeMillis() - tt._2 <= blacklistDuration

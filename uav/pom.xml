@@ -20,6 +20,12 @@
             <artifactId>spookystuff-core</artifactId>
             <version>${project.version}</version>
         </dependency>
+        <!-- https://mvnrepository.com/artifact/com.azavea.geotrellis/geotrellis-proj4_2.11 -->
+        <dependency>
+            <groupId>com.azavea.geotrellis</groupId>
+            <artifactId>geotrellis-proj4_${scala.binary.version}</artifactId>
+            <version>0.10.3</version>
+        </dependency>
 
         <dependency>
             <groupId>com.tribbloids.spookystuff</groupId>
@@ -56,7 +62,7 @@
                                 <argument>--ignore-installed</argument>
                                 <argument>--target</argument>
                                 <argument>${project.build.directory}/classes/com/tribbloids/spookystuff/lib/python</argument>
-                           </arguments>
+                            </arguments>
                         </configuration>
                     </execution>
                 </executions>

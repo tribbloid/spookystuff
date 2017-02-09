@@ -4,7 +4,7 @@ from __future__ import print_function
 from dronekit import connect
 from dronekit_sitl import SITL
 
-from pyspookystuff.mav.utils import retry
+from pyspookystuff.uav.utils import retry
 
 """
 crash course on APM 3.3 SITL

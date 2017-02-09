@@ -1,6 +1,6 @@
 package com.tribbloids.spookystuff.uav.telemetry.mavlink
 
-import com.tribbloids.spookystuff.uav.MAVConf
+import com.tribbloids.spookystuff.uav.UAVConf
 import com.tribbloids.spookystuff.session.ResourceLedger
 import com.tribbloids.spookystuff.session.python._
 
@@ -9,8 +9,8 @@ import com.tribbloids.spookystuff.session.python._
   */
 case class Endpoint(
                      uri: String, // [protocol]:ip:port;[baudRate]
-                     baudRate: Int = MAVConf.DEFAULT_BAUDRATE,
-                     ssid: Int = MAVConf.EXECUTOR_SSID,
+                     baudRate: Int = UAVConf.DEFAULT_BAUDRATE,
+                     ssid: Int = UAVConf.EXECUTOR_SSID,
                      frame: Option[String] = None
                    ) extends CaseInstanceRef with BijectoryRef with ResourceLedger {
 

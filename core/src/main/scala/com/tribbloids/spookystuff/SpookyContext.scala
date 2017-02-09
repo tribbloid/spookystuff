@@ -14,11 +14,10 @@ import org.slf4j.LoggerFactory
 
 import scala.collection.immutable.ListMap
 import scala.language.implicitConversions
-import scala.reflect.ClassTag
 
 case class SpookyContext private (
                                    @transient sqlContext: SQLContext, //can't be used on executors, TODO: change to Option or SparkContext
-                                   @transient private val _conf: SpookyConf, //can only be used on executors after broadcast
+                                   @transient private var _conf: SpookyConf, //can only be used on executors after broadcast
                                    metrics: SpookyMetrics //accumulators cannot be broadcasted,
                                  ) extends SerializationMarks {
 
@@ -56,18 +55,13 @@ case class SpookyContext private (
 
   def sparkContext: SparkContext = this.sqlContext.sparkContext
 
-  @volatile private var effectiveConf: SpookyConf = _
-  private def setEffectiveConf(newConf: SpookyConf) = {
-    effectiveConf = newConf.importFrom(sqlContext.sparkContext.getConf)
-  }
-
   //maybe obsolete if not rebroadcasted TODO: package auto broadcast after shipping behaviour as Minimalistic API
   @volatile var broadcastedSpookyConf: Broadcast[SpookyConf] = _
   def conf: SpookyConf = {
     if (isShipped) broadcastedSpookyConf.value
     else {
-      if (effectiveConf == null) setEffectiveConf(_conf)
-      effectiveConf
+      resynch()
+      _conf
     }
   }
   /**
@@ -75,17 +69,21 @@ case class SpookyContext private (
     */
   def conf_= (conf: SpookyConf): Unit = {
     requireNotShipped()
-    setEffectiveConf(conf)
+    _conf = conf
     rebroadcast()
   }
 
-  def submodule[T <: AbstractConf: ClassTag] = conf.submodule[T]
+  def submodule[T <: ModuleConf: Submodules.Builder] = conf.submodule[T]
 
   @volatile var broadcastedHadoopConf: Broadcast[SerializableWritable[Configuration]] = _
   def hadoopConf: Configuration = broadcastedHadoopConf.value.value
 
   def resolver = HDFSResolver(hadoopConf)
 
+  private def resynch() = {
+    _conf.sparkConf = sqlContext.sparkContext.getConf
+    _conf = _conf.effective
+  }
   def rebroadcast(): Unit = {
     requireNotShipped()
     scala.util.Try {
@@ -94,7 +92,8 @@ case class SpookyContext private (
     scala.util.Try {
       broadcastedHadoopConf.destroy()
     }
-    broadcastedSpookyConf = sqlContext.sparkContext.broadcast(effectiveConf)
+    resynch()
+    broadcastedSpookyConf = sqlContext.sparkContext.broadcast(_conf.effective)
     broadcastedHadoopConf = sqlContext.sparkContext.broadcast(
       new SerializableWritable(this.sqlContext.sparkContext.hadoopConfiguration)
     )
@@ -120,8 +119,11 @@ case class SpookyContext private (
   def getSpookyForRDD = {
     if (conf.shareMetrics) this
     else {
-      val result = this.copy(metrics = new SpookyMetrics())
-      result.setEffectiveConf(this.effectiveConf)
+      rebroadcast()
+      val result = this.copy(
+        _conf = this._conf.effective,
+        metrics = new SpookyMetrics()
+      )
       result
     }
   }

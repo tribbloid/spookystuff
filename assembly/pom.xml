@@ -70,7 +70,7 @@
         <!--</dependency>-->
         <dependency>
             <groupId>com.tribbloids.spookystuff</groupId>
-            <artifactId>spookystuff-mav</artifactId>
+            <artifactId>spookystuff-uav</artifactId>
             <version>${project.version}</version>
         </dependency>
     </dependencies>

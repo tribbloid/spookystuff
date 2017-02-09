@@ -26,14 +26,15 @@ package object caching {
     * @throws IllegalStateException if the key strength was already set
     * @see WeakReference
     */
-  def ConcurrentCache[K <: AnyRef, V <: AnyRef](): ConcurrentCache[K, V] = {
+  def ConcurrentCache[K, V](): ConcurrentCache[K, V] = {
     CacheBuilder
       .newBuilder()
       .concurrencyLevel(SpookyUtils.numCores)
       .softValues()
-      .build[K, V]()
+      .build[Object, Object]()
       .asMap()
       .asScala
+      .asInstanceOf[ConcurrentCache[K, V]]
   }
 
   type ConcurrentMap[K, V] = scala.collection.concurrent.Map[K, V]

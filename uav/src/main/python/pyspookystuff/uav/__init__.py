@@ -6,8 +6,8 @@ import time
 from dronekit import LocationGlobal, LocationGlobalRelative, LocationLocal, APIException
 from dronekit import Vehicle, VehicleMode
 
-from pyspookystuff.mav import const
-from pyspookystuff.mav.utils import retry
+from pyspookystuff.uav import const
+from pyspookystuff.uav.utils import retry
 
 
 class MAVException(Exception):

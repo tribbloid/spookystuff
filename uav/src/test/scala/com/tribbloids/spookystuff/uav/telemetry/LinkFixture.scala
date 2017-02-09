@@ -4,7 +4,7 @@ import com.tribbloids.spookystuff.uav.dsl.{LinkFactories, LinkFactory}
 import com.tribbloids.spookystuff.uav.sim.SIMFixture
 import com.tribbloids.spookystuff.uav.system.Drone
 import com.tribbloids.spookystuff.uav.telemetry.mavlink.MAVLink
-import com.tribbloids.spookystuff.uav.{MAVConf, ReinforcementDepletedException}
+import com.tribbloids.spookystuff.uav.{UAVConf, ReinforcementDepletedException}
 import com.tribbloids.spookystuff.session.Session
 import com.tribbloids.spookystuff.testutils.TestHelper
 import com.tribbloids.spookystuff.utils.SpookyUtils
@@ -42,10 +42,10 @@ abstract class LinkFixture extends SIMFixture {
   def getSpooky(factory: LinkFactory): (SpookyContext, String) = {
 
     val spooky = this.spooky.copy(_conf = this.spooky.conf.clone)
-    spooky.submodule[MAVConf].linkFactory = factory
+    spooky.submodule[UAVConf].linkFactory = factory
     spooky.rebroadcast()
 
-    val name = spooky.submodule[MAVConf].linkFactory.getClass.getSimpleName
+    val name = spooky.submodule[UAVConf].linkFactory.getClass.getSimpleName
     spooky -> s"linkFactory=$name:"
   }
 
@@ -62,7 +62,7 @@ abstract class LinkFixture extends SIMFixture {
         )
           .get
         TestHelper.assert(link.isNotBlacklisted, "link is blacklisted")
-        TestHelper.assert(link.factoryOpt.get == spooky.submodule[MAVConf].linkFactory, "link doesn't comply to factory")
+        TestHelper.assert(link.factoryOpt.get == spooky.submodule[UAVConf].linkFactory, "link doesn't comply to factory")
         link.isIdle = false
         //        Thread.sleep(5000) //otherwise a task will complete so fast such that another task hasn't start yet.
         link
@@ -189,7 +189,7 @@ abstract class LinkFixture extends SIMFixture {
 
         test(s"$testPrefix~>${factory2.getClass.getSimpleName}: available Link can be recommissioned in another TaskContext") {
 
-          val factory1 = spooky.submodule[MAVConf].linkFactory
+          val factory1 = spooky.submodule[UAVConf].linkFactory
 
           val linkRDD1: RDD[Link] = getLinkRDD(spooky)
           linkRDD1.foreach {
@@ -197,7 +197,7 @@ abstract class LinkFixture extends SIMFixture {
               link.isIdle = true
           }
 
-          spooky.submodule[MAVConf].linkFactory = factory2
+          spooky.submodule[UAVConf].linkFactory = factory2
           spooky.rebroadcast()
 
           try {
@@ -225,7 +225,7 @@ abstract class LinkFixture extends SIMFixture {
             }
           }
           finally {
-            spooky.submodule[MAVConf].linkFactory = factory1
+            spooky.submodule[UAVConf].linkFactory = factory1
             spooky.rebroadcast()
           }
         }

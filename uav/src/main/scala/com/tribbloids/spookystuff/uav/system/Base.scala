@@ -1,6 +1,6 @@
 package com.tribbloids.spookystuff.uav.system
 
-import com.tribbloids.spookystuff.uav.actions.LocationGlobal
+import com.tribbloids.spookystuff.uav.spatial.LocationGlobal
 
 /**
   * Created by peng on 16/01/17.

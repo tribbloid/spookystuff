@@ -1,7 +1,7 @@
 package com.tribbloids.spookystuff.uav.telemetry
 
 import com.tribbloids.spookystuff.SpookyContext
-import com.tribbloids.spookystuff.uav.MAVConf
+import com.tribbloids.spookystuff.uav.UAVConf
 import com.tribbloids.spookystuff.uav.dsl.{LinkFactories, LinkFactory}
 import com.tribbloids.spookystuff.uav.sim.SIMFixture
 import com.tribbloids.spookystuff.uav.system.Drone
@@ -36,7 +36,7 @@ abstract class LinkITFixture extends SIMFixture {
 
   lazy val linkFactory: LinkFactory = LinkFactories.Direct
 
-  this.spooky.submodule[MAVConf].linkFactory = linkFactory
+  this.spooky.submodule[UAVConf].linkFactory = linkFactory
 
   //    override def parallelism: Int = 4
 

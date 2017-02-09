@@ -1,6 +1,7 @@
 package com.tribbloids.spookystuff
 
-import org.apache.spark.{SparkConf, SparkContext}
+import com.tribbloids.spookystuff.caching.DFSDocCache
+import org.apache.spark.SparkConf
 
 import scala.util.Random
 
@@ -40,6 +41,7 @@ class SpookyConfSuite extends SpookyEnvFixture {
     val sparkConf = new SparkConf()
     val dummyV = "dummy" + Random.nextLong()
     sparkConf.set("spooky.dirs.autosave", dummyV)
+    DFSDocCache
     val imported = conf.importFrom(sparkConf)
     val dirConf = imported.dirConf
     assert(dirConf.autoSave == dummyV)

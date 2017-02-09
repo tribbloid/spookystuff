@@ -65,6 +65,11 @@ abstract class ExecutionPlan(
 
   def isCached = cachedRDD.nonEmpty
 
+  final def broadcastAndRDD(): SquashedFetchedRDD = {
+    spooky.rebroadcast()
+    rdd()
+  }
+
   // TODO: cachedRDD is redundant? just make it lazy val!
   final def rdd(): SquashedFetchedRDD = {
     cachedRDD match {

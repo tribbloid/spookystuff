@@ -26,7 +26,7 @@ trait SerializationMarks extends Serializable {
   def requireNotShipped() = {
     val methodName = FlowUtils.getCallerMethodName()
 
-    require(notShipped, s"INTERNAL: method $methodName is disabled after shipping")
+    require(notShipped, s"method $methodName can only be used on Spark driver, it is disabled after shipping")
   }
 
   def isZombie = zombieMark == null

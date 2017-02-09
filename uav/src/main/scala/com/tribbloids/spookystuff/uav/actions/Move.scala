@@ -1,9 +1,10 @@
 package com.tribbloids.spookystuff.uav.actions
 
 import com.tribbloids.spookystuff.extractors.{Extractor, FR, Literal}
-import com.tribbloids.spookystuff.uav.MAVConf
 import com.tribbloids.spookystuff.row.{DataRowSchema, FetchedRow}
 import com.tribbloids.spookystuff.session.Session
+import com.tribbloids.spookystuff.uav.UAVConf
+import com.tribbloids.spookystuff.uav.spatial.LocationGlobal
 import org.slf4j.LoggerFactory
 
 import scala.concurrent.duration.Duration
@@ -20,8 +21,8 @@ case class Move(
                ) extends AbstractGoto {
 
   override def doInterpolate(pageRow: FetchedRow, schema: DataRowSchema): Option[this.type] = {
-    val fromVOpt = from.asInstanceOf[Extractor[Location]].resolve(schema).lift.apply(pageRow)
-    val toOpt = to.asInstanceOf[Extractor[Location]].resolve(schema).lift.apply(pageRow)
+    val fromVOpt = from.asInstanceOf[Extractor[LocationGlobal]].resolve(schema).lift.apply(pageRow)
+    val toOpt = to.asInstanceOf[Extractor[LocationGlobal]].resolve(schema).lift.apply(pageRow)
     val result = for(
       fromV <- fromVOpt;
       toV <- toOpt
@@ -38,8 +39,8 @@ case class Move(
 
   class SessionView(session: Session) extends super.SessionView(session) {
 
-    lazy val fromLocation: LocationGlobal = from.asInstanceOf[Literal[FR, Location]].value
-      .toGlobal(Some(session.spooky.conf.submodule[MAVConf].locationReference))
+    lazy val fromLocation: LocationGlobal = from.asInstanceOf[Literal[FR, LocationGlobal]].value
+      .toGlobal(Some(session.spooky.conf.submodule[UAVConf].locationReference))
 
     override def inbound(): Unit = {
       super.inbound()
@@ -47,4 +48,6 @@ case class Move(
       link.Synch.move(fromLocation)
     }
   }
+
+  override def start_end: Seq[(LocationGlobal, LocationGlobal)] = Nil
 }

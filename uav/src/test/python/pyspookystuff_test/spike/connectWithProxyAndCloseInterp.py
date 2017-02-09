@@ -16,14 +16,14 @@
 # Error interpreting:
 import simplejson as json
 
-import pyspookystuff.mav.telemetry
+import pyspookystuff.uav.telemetry
 
-endpoint3641353257086284776=pyspookystuff.mav.telemetry.Endpoint(connStrs=json.loads(
+endpoint3641353257086284776=pyspookystuff.uav.telemetry.Endpoint(connStrs=json.loads(
     """
     [ "tcp:localhost:5800" ]
     """
 ))
-proxy8080968396647159412=pyspookystuff.mav.telemetry.Proxy(master=json.loads(
+proxy8080968396647159412=pyspookystuff.uav.telemetry.Proxy(master=json.loads(
     """
     "tcp:localhost:5800"
     """
@@ -36,7 +36,7 @@ proxy8080968396647159412=pyspookystuff.mav.telemetry.Proxy(master=json.loads(
     "DRONE@tcp:localhost:5800"
     """
 ))
-link4395604505930358814=pyspookystuff.mav.telemetry.Link(endpoint=endpoint3641353257086284776, proxyOpt=proxy8080968396647159412)
+link4395604505930358814=pyspookystuff.uav.telemetry.Link(endpoint=endpoint3641353257086284776, proxyOpt=proxy8080968396647159412)
 proxyPID511134141563190063=link4395604505930358814.proxyPID
 
 link4395604505930358814.testMove()

@@ -1,7 +1,7 @@
-package com.tribbloids.spookystuff.uav.actions
+package com.tribbloids.spookystuff.uav.spatial
 
 import breeze.linalg.{DenseVector, Vector => Vec}
-import com.tribbloids.spookystuff.uav.MAVConf
+import com.tribbloids.spookystuff.uav.UAVConf
 import com.tribbloids.spookystuff.session.python.CaseInstanceRef
 import com.tribbloids.spookystuff.utils.ScalaUDT
 import org.apache.spark.sql.types.SQLUserDefinedType
@@ -55,8 +55,8 @@ trait Location extends Serializable {
     */
   def _local2LatLon(dNorth: Double, dEast: Double): (Double, Double) = {
 
-    val dLat = dNorth / MAVConf.EARTH_RADIUS
-    val dLon = dEast / (MAVConf.EARTH_RADIUS * Math.cos(Math.PI * this.lat / 180))
+    val dLat = dNorth / UAVConf.EARTH_RADIUS
+    val dLon = dEast / (UAVConf.EARTH_RADIUS * Math.cos(Math.PI * this.lat / 180))
 
     // New position in decimal degrees
     val newLat = this.lat + (dLat * 180 / Math.PI)

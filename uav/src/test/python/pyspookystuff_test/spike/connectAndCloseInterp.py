@@ -16,14 +16,14 @@
 # Error interpreting:
 import simplejson as json
 
-import pyspookystuff.mav.telemetry
+import pyspookystuff.uav.telemetry
 
-endpoint3641353257086284776=pyspookystuff.mav.telemetry.Endpoint(connStrs=json.loads(
+endpoint3641353257086284776=pyspookystuff.uav.telemetry.Endpoint(connStrs=json.loads(
     """
     [ "udp:localhost:12015" ]
     """
 ))
-link4395604505930358814=pyspookystuff.mav.telemetry.Link(endpoint=endpoint3641353257086284776, proxyOpt=None)
+link4395604505930358814=pyspookystuff.uav.telemetry.Link(endpoint=endpoint3641353257086284776, proxyOpt=None)
 
 link4395604505930358814.testMove()
 

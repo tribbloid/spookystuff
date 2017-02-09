@@ -1,9 +1,10 @@
 package com.tribbloids.spookystuff.uav.actions
 
 import com.tribbloids.spookystuff.extractors.{Extractor, FR, Literal}
-import com.tribbloids.spookystuff.uav.MAVConf
+import com.tribbloids.spookystuff.uav.UAVConf
 import com.tribbloids.spookystuff.row.{DataRowSchema, FetchedRow}
 import com.tribbloids.spookystuff.session.Session
+import com.tribbloids.spookystuff.uav.spatial.LocationGlobal
 import org.slf4j.LoggerFactory
 
 import scala.concurrent.duration.Duration
@@ -11,24 +12,23 @@ import scala.concurrent.duration.Duration
 /**
   * Created by peng on 18/12/16.
   */
-trait AbstractGoto extends MAVInteraction {
+trait AbstractGoto extends UAVPositioning {
 
   val to: Extractor[Any]
+  lazy val _to = to.asInstanceOf[Literal[FR, LocationGlobal]].value
 
   override def getSessionView(session: Session) = new this.SessionView(session)
 
   class SessionView(session: Session) extends super.SessionView(session) {
-    lazy val toLocation = to.asInstanceOf[Literal[FR, Location]].value
-      .toGlobal(Some(session.spooky.conf.submodule[MAVConf].locationReference))
 
     override def inbound(): Unit = {
       LoggerFactory.getLogger(this.getClass).debug(s"assureClearanceAltitude ${mavConf.clearanceAltitude}")
       link.Synch.clearanceAlt(mavConf.clearanceAltitude)
     }
 
-    override def conduct(): Unit = {
-      LoggerFactory.getLogger(this.getClass).info(s"scanning .. $toLocation")
-      link.Synch.move(toLocation)
+    override def engage(): Unit = {
+      LoggerFactory.getLogger(this.getClass).info(s"scanning .. ${_to}")
+      link.Synch.move(_to)
     }
   }
 }
@@ -39,7 +39,11 @@ case class Goto(
                ) extends AbstractGoto {
 
   override def doInterpolate(pageRow: FetchedRow, schema: DataRowSchema): Option[this.type] = {
-    val toOpt = to.asInstanceOf[Extractor[Location]].resolve(schema).lift.apply(pageRow)
+    val toOpt: Option[LocationGlobal] = to.asInstanceOf[Extractor[LocationGlobal]].resolve(schema).lift
+      .apply(pageRow)
+      .map {
+        _.toGlobal(Some(schema.spooky.conf.submodule[UAVConf].locationReference))
+      }
     val result = for(
       toV <- toOpt
     ) yield {
@@ -48,5 +52,9 @@ case class Goto(
       )
     }
     result.map(_.asInstanceOf[this.type])
+  }
+
+  override def start_end: Seq[(LocationGlobal, LocationGlobal)] = {
+    Nil
   }
 }

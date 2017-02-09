@@ -13,7 +13,7 @@ case class MarkOutput(
 /**
   * Mark current vehicle status
   */
-case class Mark() extends Export with MAVAction {
+case class Mark() extends Export with UAVAction {
 
   override def doExeNoName(session: Session): Seq[Fetched] = {
 

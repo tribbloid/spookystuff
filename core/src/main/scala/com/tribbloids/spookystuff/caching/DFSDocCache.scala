@@ -2,7 +2,7 @@ package com.tribbloids.spookystuff.caching
 
 import java.util.UUID
 
-import com.tribbloids.spookystuff.SpookyContext
+import com.tribbloids.spookystuff.{DirConf, SpookyContext}
 import com.tribbloids.spookystuff.actions.Trace
 import com.tribbloids.spookystuff.doc.{DocUtils, Fetched}
 import com.tribbloids.spookystuff.utils.SpookyUtils
@@ -13,6 +13,8 @@ import org.apache.hadoop.fs.Path
   * Always enabled
   */
 object DFSDocCache extends AbstractDocCache {
+
+  DirConf // register with [[Submodules]].builderRegistry
 
   def cacheable(v: Seq[Fetched]): Boolean = {
     v.exists(v => v.cacheLevel.isInstanceOf[CacheLevel.DFS])

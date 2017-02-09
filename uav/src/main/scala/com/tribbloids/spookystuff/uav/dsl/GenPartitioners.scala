@@ -13,7 +13,7 @@ import scala.reflect.ClassTag
   */
 object GenPartitioners {
 
-  object Voronoi extends GenPartitioner {
+  object Postman extends GenPartitioner {
 
     override def getImpl(spooky: SpookyContext): GenPartitionerImpl = GPImpl
 

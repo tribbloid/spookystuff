@@ -11,10 +11,10 @@ import time
 import dronekit
 import sarge
 from MAVProxy import mavproxy
-from pyspookystuff.mav.const import *
+from pyspookystuff.uav.const import *
 
-from pyspookystuff.mav import VehicleFunctions, utils
-from pyspookystuff.mav.utils import retry
+from pyspookystuff.uav import VehicleFunctions, utils
+from pyspookystuff.uav.utils import retry
 
 """
 crash course on MAVProxy:

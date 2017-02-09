@@ -4,7 +4,6 @@ import com.tribbloids.spookystuff.caching.{DFSDocCache, InMemoryDocCache}
 import com.tribbloids.spookystuff.doc.{Doc, Fetched}
 import com.tribbloids.spookystuff.row.{DataRowSchema, FetchedRow}
 import com.tribbloids.spookystuff.session.Session
-import com.tribbloids.spookystuff.utils.IDMixin
 import com.tribbloids.spookystuff.{SpookyContext, dsl}
 
 import scala.collection.mutable.ArrayBuffer
@@ -27,7 +26,7 @@ object TraceView {
 
 case class TraceView(
                       override val children: Trace
-                    ) extends Actions(children) with IDMixin { //remember trace is not a block! its the super container that cannot be wrapped
+                    ) extends Actions(children) { //remember trace is not a block! its the super container that cannot be wrapped
 
   @volatile @transient var docs: Seq[Fetched] = _ //override, cannot be shuffled
   def docsOpt = Option(docs)
@@ -115,8 +114,6 @@ case class TraceView(
       docs
     }
   }
-
-  override def _id: Any = children
 }
 
 object TraceSetView {

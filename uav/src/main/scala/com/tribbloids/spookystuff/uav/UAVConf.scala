@@ -1,16 +1,16 @@
 package com.tribbloids.spookystuff.uav
 
-import com.tribbloids.spookystuff.AbstractConf
-import com.tribbloids.spookystuff.uav.actions.LocationGlobal
+import com.tribbloids.spookystuff.{AbstractConf, ModuleConf, Submodules}
 import com.tribbloids.spookystuff.uav.dsl._
+import com.tribbloids.spookystuff.uav.spatial.LocationGlobal
 import com.tribbloids.spookystuff.uav.system.Drone
 import com.tribbloids.spookystuff.uav.sim.APMSim
 import org.apache.spark.SparkConf
 
-object MAVConf {
+object UAVConf extends Submodules.Builder[UAVConf]{
 
   //DO NOT change to val! all confs are mutable
-  def default = MAVConf()
+  def default = UAVConf()
 
   final val DEFAULT_BAUDRATE = 57600
   //  final val DEFAULT_BAUDRATE = 9200 // for testing only
@@ -28,7 +28,7 @@ object MAVConf {
 /**
   * Created by peng on 04/09/16.
   */
-case class MAVConf(
+case class UAVConf(
                     // list all possible connection string of drones
                     // including tcp, udp and serial,
                     // some of them may be unreachable but you don't care.
@@ -37,11 +37,11 @@ case class MAVConf(
                     // routing now becomes part of Connection?
                     var fleet: Fleet = Fleet.Inventory(Nil),
                     var linkFactory: LinkFactory = LinkFactories.ForkToGCS(),
-                    var connectRetries: Int = MAVConf.CONNECT_RETRIES,
-                    var blacklistReset: Long = MAVConf.BLACKLIST_RESET, //1 minute
+                    var connectRetries: Int = UAVConf.CONNECT_RETRIES,
+                    var blacklistReset: Long = UAVConf.BLACKLIST_RESET, //1 minute
                     var clearanceAltitude: Double = 10, // in meters
                     var locationReference: LocationGlobal = APMSim.HOME // reference used to convert LocationLocal to LocationGlobal
-                  ) extends AbstractConf {
+                  ) extends ModuleConf {
 
   /**
     * singleton per worker, lost on shipping
@@ -49,5 +49,5 @@ case class MAVConf(
   def drones: Seq[Drone] = fleet.apply()
 
   // TODO: use reflection to automate
-  override def importFrom(implicit sparkConf: SparkConf): MAVConf.this.type = this.copy().asInstanceOf[this.type]
+  override def importFrom(sparkConf: SparkConf): UAVConf.this.type = this.copy().asInstanceOf[this.type]
 }

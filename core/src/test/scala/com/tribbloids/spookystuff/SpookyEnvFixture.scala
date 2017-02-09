@@ -194,7 +194,7 @@ abstract class SpookyEnvFixture
     spooky.metrics.zero()
   }
 
-  def envComponents: Submodules[AbstractConf] = {
+  def envComponents: Submodules[ModuleConf] = {
     Submodules(
       new DirConf(
         root = SpookyUtils.\\\(TestHelper.TEMP_PATH, "spooky-unit")

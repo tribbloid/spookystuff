@@ -1,10 +1,10 @@
 package com.tribbloids.spookystuff.uav.telemetry.mavlink
 
-import com.tribbloids.spookystuff.uav.actions.LocationGlobal
 import com.tribbloids.spookystuff.uav.system.Drone
 import com.tribbloids.spookystuff.uav.telemetry.Link
 import com.tribbloids.spookystuff.session.python.PythonDriver
 import com.tribbloids.spookystuff.session.{Cleanable, ResourceLedger}
+import com.tribbloids.spookystuff.uav.spatial.LocationGlobal
 import org.slf4j.LoggerFactory
 
 object MAVLink {

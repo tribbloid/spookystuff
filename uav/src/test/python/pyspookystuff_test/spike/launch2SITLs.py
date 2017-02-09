@@ -4,12 +4,12 @@ from __future__ import print_function
 
 import time
 
-import pyspookystuff.mav.sim
-aPMSim1=pyspookystuff.mav.sim.APMSim(
+import pyspookystuff.uav.sim
+aPMSim1=pyspookystuff.uav.sim.APMSim(
     iNum = 1
 )
 
-aPMSim2=pyspookystuff.mav.sim.APMSim(
+aPMSim2=pyspookystuff.uav.sim.APMSim(
     iNum = 2
 )
 

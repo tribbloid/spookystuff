@@ -1,7 +1,7 @@
 package com.tribbloids.spookystuff
 import org.apache.spark.SparkConf
 
-object DirConf {
+object DirConf extends Submodules.Builder[DirConf]{
 
   def default = DirConf(
     root = "temp",
@@ -22,15 +22,17 @@ case class DirConf(
                     var checkpoint: String = null, //System.getProperty("spooky.dirs.checkpoint"),
                     var errorDumpLocal: String = null, //System.getProperty("spooky.dirs.errordump.local"),
                     var errorScreenshotLocal: String = null //System.getProperty("spooky.dirs.errorscreenshot.local")
-                  ) extends AbstractConf {
+                  ) extends ModuleConf {
 
   import com.tribbloids.spookystuff.utils.SpookyViews._
 
   // TODO: use reflection to automate and move to AbstractConf
-  override def importFrom(implicit sparkConf: SparkConf): this.type = {
+  override def importFrom(sparkConf: SparkConf): this.type = {
 
     val _root = Option(root).getOrElse(AbstractConf.getOrDefault("spooky.dirs.root", DirConf.default.root))
     val _localRoot = Option(localRoot).getOrElse(AbstractConf.getOrDefault("spooky.dirs.root", DirConf.default.localRoot))
+
+    implicit val conf = sparkConf
 
     val result = new DirConf(
       root = _root,

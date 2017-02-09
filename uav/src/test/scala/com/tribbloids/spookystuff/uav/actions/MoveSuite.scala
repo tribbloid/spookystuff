@@ -1,6 +1,7 @@
 package com.tribbloids.spookystuff.uav.actions
 
 import com.tribbloids.spookystuff.extractors.Literal
+import com.tribbloids.spookystuff.uav.spatial.{LocationGlobal, LocationLocal}
 import com.tribbloids.spookystuff.uav.sim.APMSITLFixture
 
 object MoveSuite{
@@ -42,7 +43,7 @@ class MoveSuite extends APMSITLFixture {
 
     move.prettyJSON().shouldBe(
       """{
-        |  "className" : "com.tribbloids.spookystuff.mav.actions.Move",
+        |  "className" : "com.tribbloids.spookystuff.uav.actions.Move",
         |  "params" : {
         |    "from" : {
         |      "lat" : 0.0,

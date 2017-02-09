@@ -1,6 +1,6 @@
 package com.tribbloids.spookystuff.uav.telemetry.mavlink
 
-import com.tribbloids.spookystuff.uav.MAVConf
+import com.tribbloids.spookystuff.uav.UAVConf
 import com.tribbloids.spookystuff.session.ResourceLedger
 import com.tribbloids.spookystuff.session.python._
 
@@ -15,7 +15,7 @@ case class Proxy(
                   master: String,
                   outs: Seq[String], //first member is always used by DK.
                   baudRate: Int,
-                  ssid: Int = MAVConf.PROXY_SSID,
+                  ssid: Int = UAVConf.PROXY_SSID,
                   name: String
                 ) extends CaseInstanceRef with BijectoryRef with ResourceLedger {
 

@@ -1,12 +1,13 @@
 package com.tribbloids.spookystuff.uav.actions
 
 import com.tribbloids.spookystuff.actions.{Action, Interaction}
-import com.tribbloids.spookystuff.uav.MAVConf
+import com.tribbloids.spookystuff.uav.UAVConf
 import com.tribbloids.spookystuff.uav.system.Drone
 import com.tribbloids.spookystuff.uav.telemetry.Link
 import com.tribbloids.spookystuff.session.Session
+import com.tribbloids.spookystuff.uav.spatial.LocationGlobal
 
-trait MAVAction extends Action {
+trait UAVAction extends Action {
 
   // override this to enforce selection over drones being deployed.
   // drone that yield higher preference will be used if available, regardless of whether its in the air or not.
@@ -15,8 +16,8 @@ trait MAVAction extends Action {
 
   class SessionView(session: Session) {
 
-    val mavConf: MAVConf = {
-      session.spooky.conf.submodule[MAVConf]
+    val mavConf: UAVConf = {
+      session.spooky.conf.submodule[UAVConf]
     }
 
     def effectiveDrones: Seq[Drone] = mavConf.drones
@@ -33,15 +34,17 @@ trait MAVAction extends Action {
 
 /**
   * inbound -> engage -> outbound
-  *
   */
-trait MAVInteraction extends Interaction with MAVAction {
+trait UAVPositioning extends Interaction with UAVAction {
+
+  def start_end: Seq[(LocationGlobal, LocationGlobal)]
+  def speed: Double = 5.0
 
   override def exeNoOutput(session: Session): Unit = {
 
     val sv = this.getSessionView(session)
     sv.inbound()
-    sv.conduct()
+    sv.engage()
     sv.outbound()
   }
 
@@ -53,7 +56,7 @@ trait MAVInteraction extends Interaction with MAVAction {
       */
     def inbound(): Unit = {}
 
-    def conduct(): Unit = {}
+    def engage(): Unit = {}
 
     def outbound(): Unit = {}
   }

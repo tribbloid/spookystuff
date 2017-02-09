@@ -1,7 +1,7 @@
 package com.tribbloids.spookystuff.uav.system
 
 import com.tribbloids.spookystuff.SpookyContext
-import com.tribbloids.spookystuff.uav.MAVConf
+import com.tribbloids.spookystuff.uav.UAVConf
 import com.tribbloids.spookystuff.uav.telemetry.Link
 
 /**
@@ -13,8 +13,8 @@ case class Drone(
                   // TODO: implement telemetry backup mechanism, can use MAVproxy's multiple master feature
                   uris: Seq[String], // [protocol]:ip:port;[baudRate]
                   frame: Option[String] = None,
-                  baudRate: Int = MAVConf.DEFAULT_BAUDRATE,
-                  endpointSSID: Int = MAVConf.EXECUTOR_SSID,
+                  baudRate: Int = UAVConf.DEFAULT_BAUDRATE,
+                  endpointSSID: Int = UAVConf.EXECUTOR_SSID,
                   name: String = "DRONE"
                 ) {
 
@@ -28,7 +28,7 @@ case class Drone(
       Link.existing.getOrElse(
         this,
         {
-          val factory = spooky.conf.submodule[MAVConf].linkFactory
+          val factory = spooky.conf.submodule[UAVConf].linkFactory
           val link = factory.apply(this)
           link.setContext(
             spooky,

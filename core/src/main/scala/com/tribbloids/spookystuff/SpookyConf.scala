@@ -6,17 +6,17 @@ import com.tribbloids.spookystuff.dsl._
 import com.tribbloids.spookystuff.row.Sampler
 import com.tribbloids.spookystuff.session._
 import com.tribbloids.spookystuff.session.python.PythonDriver
-import org.apache.spark.ml.dsl.ReflectionUtils
+import com.tribbloids.spookystuff.utils.Static
 import org.apache.spark.ml.dsl.utils.MessageAPI
 import org.apache.spark.storage.StorageLevel
 import org.apache.spark.{SparkConf, SparkEnv}
 import org.slf4j.LoggerFactory
 
 import scala.collection.mutable
+import scala.collection.mutable.ArrayBuffer
 import scala.concurrent.duration.Duration.Infinite
 import scala.concurrent.duration._
 import scala.reflect.ClassTag
-import scala.util.Try
 
 object Submodules {
 
@@ -34,11 +34,20 @@ object Submodules {
     )
   }
 
-  def getDefault(className: String): AnyRef = {
+  //  def getDefault(className: String): AnyRef = {
+  //
+  //    val clazz = Class.forName(className)
+  //    val neo = ReflectionUtils.invokeStatic(clazz, "default")
+  //    neo
+  //  }
 
-    val clazz = Class.forName(className)
-    val neo = ReflectionUtils.invokeStatic(clazz, "default")
-    neo
+  val builderRegistry: ArrayBuffer[Builder[_]] = ArrayBuffer[Builder[_]]() //singleton
+
+  abstract class Builder[T](implicit val ctg: ClassTag[T]) extends Static[T] {
+
+    builderRegistry += this
+
+    def default: T
   }
 }
 
@@ -46,30 +55,20 @@ case class Submodules[U] private(
                                   self: mutable.Map[String, U]
                                 ) extends Iterable[U] {
 
-  def tryGetByName(
-                    className: String,
-                    fn: Any => Any = identity
-                  ): Try[U] = Try {
-    val neo = Submodules.getDefault(className)
-    self
-      .getOrElse (
-        className,
-        {
-          val result = fn(neo).asInstanceOf[U]
-          self.put(className, result)
-          result
-        }
-      )
+  def getOrBuild[T <: U](implicit ev: Submodules.Builder[T]): T = {
+
+    self.get(ev.ctg.runtimeClass.getCanonicalName)
+      .map {
+        _.asInstanceOf[T]
+      }
+      .getOrElse {
+        val result = ev.default
+        self.put(result.getClass.getCanonicalName, result)
+        result
+      }
   }
 
-  def tryGet[T <: U: ClassTag]: Try[T] = {
-    val clazz = implicitly[ClassTag[T]].runtimeClass.asInstanceOf[Class[T]]
-    val className = clazz.getCanonicalName
-    tryGetByName(className)
-      .map(_.asInstanceOf[T])
-  }
-
-  def transform(f: U => U) = {
+  def transform(f: U => U): Submodules[U] = {
 
     Submodules(self.values.map(f).toSeq: _*)
   }
@@ -130,26 +129,28 @@ object AbstractConf {
   */
 trait AbstractConf extends MessageAPI {
 
-  val submodules: Submodules[AbstractConf] = Submodules()
-
-  def submodule[T <: AbstractConf: ClassTag]: T = submodules.tryGet[T].get
+  //  val submodules: Submodules[AbstractConf] = Submodules()
 
   // TODO: use reflection to automate
-  def importFrom(implicit sparkConf: SparkConf): this.type
+  protected def importFrom(sparkConf: SparkConf): this.type
 
-  //  def getAndImport[T <: AbstractConf: ClassTag](sparkConfOpt: Option[SparkConf]) = {
-  //    sparkConfOpt match {
-  //      case None =>
-  //        this.components.get[T]()
-  //      case Some(conf) =>
-  //        this.components.get[T](_.importFrom(conf).asInstanceOf[T])
-  //    }
-  //  }
+  @transient @volatile var sparkConf: SparkConf = _
+  def effective: this.type = Option(sparkConf).map {
+    conf =>
+      val result = importFrom(conf)
+      result.sparkConf = this.sparkConf
+      result
+  }
+    .getOrElse(this)
+    .asInstanceOf[this.type]
 
   override def clone: this.type = importFrom(new SparkConf())
 }
 
-object SpookyConf {
+trait ModuleConf extends AbstractConf {
+}
+
+object SpookyConf extends Submodules.Builder[SpookyConf]{
 
   final val DEFAULT_WEBDRIVER_FACTORY = DriverFactories.PhantomJS().taskLocal
 
@@ -168,76 +169,90 @@ object SpookyConf {
   * will be shipped to workers
   */
 //TODO: is var in serialized closure unstable for Spark production environment? consider changing to ConcurrentHashMap
-class SpookyConf (
-                   override val submodules: Submodules[AbstractConf] = Submodules(),
+class SpookyConf(
+                  val submodules: Submodules[ModuleConf] = Submodules(),
 
-                   var shareMetrics: Boolean = false, //TODO: not necessary
+                  var shareMetrics: Boolean = false, //TODO: not necessary
 
-                   var webDriverFactory: DriverFactory[CleanWebDriver] = SpookyConf.DEFAULT_WEBDRIVER_FACTORY,
-                   var pythonDriverFactory: DriverFactory[PythonDriver] = SpookyConf.DEFAULT_PYTHONDRIVER_FACTORY,
+                  var webDriverFactory: DriverFactory[CleanWebDriver] = SpookyConf.DEFAULT_WEBDRIVER_FACTORY,
+                  var pythonDriverFactory: DriverFactory[PythonDriver] = SpookyConf.DEFAULT_PYTHONDRIVER_FACTORY,
 
-                   var proxy: () => WebProxySetting = WebProxyFactories.NoProxy,
+                  var proxy: () => WebProxySetting = WebProxyFactories.NoProxy,
 
-                   //TODO: merge into headersFactory
-                   var userAgentFactory: () => String = {
-                     () => "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/37.0.2062.120 Safari/537.36"
-                   },
-                   var headersFactory: () => Map[String, String] = () => Map(),
-                   var oAuthKeysFactory: () => OAuthKeys = () => null,
+                  //TODO: merge into headersFactory
+                  var userAgentFactory: () => String = {
+                    () => "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/37.0.2062.120 Safari/537.36"
+                  },
+                  var headersFactory: () => Map[String, String] = () => Map(),
+                  var oAuthKeysFactory: () => OAuthKeys = () => null,
 
-                   val browserResolution: (Int, Int) = (1920, 1080),
+                  val browserResolution: (Int, Int) = (1920, 1080),
 
-                   var remote: Boolean = true, //if disabled won't use remote client at all
-                   var autoSave: Boolean = true,
-                   var cacheWrite: Boolean = true,
-                   var cacheRead: Boolean = true, //TODO: this enable both in-memory and DFS cache, should allow more refined control
-                   var errorDump: Boolean = true,
-                   var errorScreenshot: Boolean = true,
+                  var remote: Boolean = true, //if disabled won't use remote client at all
+                  var autoSave: Boolean = true,
+                  var cacheWrite: Boolean = true,
+                  var cacheRead: Boolean = true, //TODO: this enable both in-memory and DFS cache, should allow more refined control
+                  var errorDump: Boolean = true,
+                  var errorScreenshot: Boolean = true,
 
-                   var cachedDocsLifeSpan: Duration = 7.day,
-                   var IgnoreCachedDocsBefore: Option[Date] = None,
+                  var cachedDocsLifeSpan: Duration = 7.day,
+                  var IgnoreCachedDocsBefore: Option[Date] = None,
 
-                   var cacheFilePath: ByTrace[String] = FilePaths.Hierarchical,
-                   var autoSaveFilePath: ByDoc[String] = FilePaths.UUIDName(FilePaths.Hierarchical),
-                   var errorDumpFilePath: ByDoc[String] = FilePaths.UUIDName(FilePaths.Hierarchical),
+                  var cacheFilePath: ByTrace[String] = FilePaths.Hierarchical,
+                  var autoSaveFilePath: ByDoc[String] = FilePaths.UUIDName(FilePaths.Hierarchical),
+                  var errorDumpFilePath: ByDoc[String] = FilePaths.UUIDName(FilePaths.Hierarchical),
 
-                   var remoteResourceTimeout: Duration = 60.seconds,
-                   var DFSTimeout: Duration = 40.seconds,
+                  var remoteResourceTimeout: Duration = 60.seconds,
+                  var DFSTimeout: Duration = 40.seconds,
 
-                   var failOnDFSError: Boolean = false,
+                  var failOnDFSError: Boolean = false,
 
-                   val defaultJoinType: JoinType = Inner,
+                  val defaultJoinType: JoinType = Inner,
 
-                   var defaultFlattenSampler: Sampler[Any] = identity,
-                   var defaultJoinSampler: Sampler[Any] = identity, //join takes remote actions and cost much more than flatten.
-                   var defaultExploreRange: Range = 0 until Int.MaxValue,
+                  var defaultFlattenSampler: Sampler[Any] = identity,
+                  var defaultJoinSampler: Sampler[Any] = identity, //join takes remote actions and cost much more than flatten.
+                  var defaultExploreRange: Range = 0 until Int.MaxValue,
 
-                   var defaultGenPartitioner: GenPartitioner = GenPartitioners.Wide(),
-                   var defaultExploreAlgorithm: ExploreAlgorithm = ExploreAlgorithms.ShortestPath,
+                  var defaultGenPartitioner: GenPartitioner = GenPartitioners.Wide(),
+                  var defaultExploreAlgorithm: ExploreAlgorithm = ExploreAlgorithms.ShortestPath,
 
-                   var epochSize: Int = 500,
-                   var checkpointInterval: Int = -1, //disabled if <=0
+                  var epochSize: Int = 500,
+                  var checkpointInterval: Int = -1, //disabled if <=0
 
-                   //if encounter too many out of memory error, change to MEMORY_AND_DISK_SER
-                   var defaultStorageLevel: StorageLevel = StorageLevel.MEMORY_ONLY
-                 ) extends AbstractConf with Serializable {
+                  //if encounter too many out of memory error, change to MEMORY_AND_DISK_SER
+                  var defaultStorageLevel: StorageLevel = StorageLevel.MEMORY_ONLY
+                ) extends AbstractConf with Serializable {
+
+  def submodule[T <: ModuleConf](implicit ev: Submodules.Builder[T]): T = submodules.getOrBuild[T](ev)
 
   def dirConf: DirConf = submodule[DirConf]
 
-  override def importFrom(implicit sparkConf: SparkConf): this.type = {
+  override def importFrom(sparkConf: SparkConf): this.type = {
+
+    Submodules.builderRegistry.foreach {
+      builder =>
+        if (classOf[ModuleConf] isAssignableFrom builder.ctg.runtimeClass) {
+          this.submodule(builder.asInstanceOf[Submodules.Builder[_ <: ModuleConf]])
+        }
+    }
 
     //TODO: eliminate hardcoding! we have 2 options:
     // 1. Use reflection: property name -> package name -> submodule class name
     // 2. lazily loaded by constructor of Actions that use such submodule.
-    Seq(
-      classOf[DirConf].getCanonicalName,
-      "com.tribbloids.spookystuff.mav.MavConf"
-    )
-      .foreach {
-        name =>
-          this.submodules.tryGetByName(name)
-      }
-    val transformed = this.submodules.transform(_.importFrom(sparkConf))
+    //    Seq(
+    //      classOf[DirConf].getCanonicalName,
+    //      "com.tribbloids.spookystuff.mav.UAVConf"
+    //    )
+    //      .foreach {
+    //        name =>
+    //          this.submodules.tryGetByName(name)
+    //      }
+
+    val transformed = this.submodules.transform {
+      v =>
+        v.sparkConf = sparkConf
+        v.effective
+    }
 
     new SpookyConf(
       transformed,

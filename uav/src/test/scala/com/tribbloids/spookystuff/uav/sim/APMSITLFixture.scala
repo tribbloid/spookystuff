@@ -1,7 +1,7 @@
 package com.tribbloids.spookystuff.uav.sim
 
 import com.tribbloids.spookystuff.SpookyEnvFixture
-import com.tribbloids.spookystuff.uav.MAVConf
+import com.tribbloids.spookystuff.uav.UAVConf
 import com.tribbloids.spookystuff.uav.system.Drone
 import com.tribbloids.spookystuff.uav.telemetry.Link
 import com.tribbloids.spookystuff.session.python.PythonDriver
@@ -47,7 +47,7 @@ trait APMSITLFixture extends SIMFixture {
 
   override def setUp(): Unit = {
     super.setUp()
-    val mavConf = this.spooky.conf.submodule[MAVConf]
+    val mavConf = this.spooky.conf.submodule[UAVConf]
     mavConf.connectRetries = 2
     mavConf.fleet = Fleet.Inventory(simDrones)
   }

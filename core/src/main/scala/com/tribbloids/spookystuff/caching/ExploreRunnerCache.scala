@@ -28,9 +28,7 @@ object ExploreRunnerCache {
   }
 
   def finishExploreExecutions(exeID: Long): Unit = {
-    //    onGoings.synchronized{
     onGoings -= exeID
-    //  }
   }
 
   // TODO relax synchronized check to accelerate?
