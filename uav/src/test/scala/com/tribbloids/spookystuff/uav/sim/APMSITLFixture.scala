@@ -48,7 +48,7 @@ trait APMSITLFixture extends SIMFixture {
   override def setUp(): Unit = {
     super.setUp()
     val mavConf = this.spooky.conf.submodule[UAVConf]
-    mavConf.connectRetries = 2
+    mavConf.fastConnectionRetries = 2
     mavConf.fleet = Fleet.Inventory(simDrones)
   }
 

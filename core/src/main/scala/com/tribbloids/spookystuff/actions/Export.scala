@@ -585,7 +585,9 @@ case class WpostImpl private[actions](
   override def detail = {
     val txt = entity match {
       case v: StringEntity =>
-        val text = v.toString + "\n" + IOUtils.toString(v.getContent)
+        val text =
+          v.toString + "\n" +
+          IOUtils.toString(v.getContent)
         text
       //          .split("\n")
       //          .map(

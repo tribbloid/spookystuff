@@ -1,19 +1,20 @@
 package com.tribbloids.spookystuff.uav.telemetry
 
-import com.tribbloids.spookystuff.uav.dsl.LinkFactory
-import com.tribbloids.spookystuff.uav.system.Drone
-import com.tribbloids.spookystuff.uav.telemetry.mavlink.MAVLink
-import com.tribbloids.spookystuff.uav.{UAVConf, ReinforcementDepletedException}
 import com.tribbloids.spookystuff.session.python.PyRef
 import com.tribbloids.spookystuff.session.{Cleanable, ResourceLedger, Session}
-import com.tribbloids.spookystuff.uav.spatial.LocationGlobal
+import com.tribbloids.spookystuff.uav.dsl.LinkFactory
+import com.tribbloids.spookystuff.uav.spatial._
+import com.tribbloids.spookystuff.uav.system.Drone
+import com.tribbloids.spookystuff.uav.telemetry.mavlink.MAVLink
+import com.tribbloids.spookystuff.uav.{ReinforcementDepletedException, UAVConf}
 import com.tribbloids.spookystuff.utils.{NOTSerializable, SpookyUtils, TreeException}
 import com.tribbloids.spookystuff.{SpookyContext, caching}
 import org.apache.spark.TaskContext
 import org.slf4j.LoggerFactory
 
 import scala.collection.mutable.ArrayBuffer
-import scala.util.{Failure, Random, Success, Try}
+import scala.language.implicitConversions
+import scala.util.{Failure, Success, Try}
 
 /**
   * Created by peng on 24/01/17.
@@ -25,7 +26,7 @@ object Link {
   val existing: caching.ConcurrentMap[Drone, Link] = caching.ConcurrentMap()
 
   def trySelect(
-                 candidates: Seq[Drone],
+                 executedBy: List[Drone],
                  session: Session,
                  selector: Seq[Link] => Option[Link] = {
                    vs =>
@@ -42,8 +43,7 @@ object Link {
     }
 
     var resultOpt = taskLocalOpt.orElse {
-      val drones = Random.shuffle(candidates)
-      val links = drones.map(_.toLink(session.spooky))
+      val links = executedBy.map(_.toLink(session.spooky))
 
       this.synchronized {
         val available = links.filter(v => v.isAvailable)
@@ -68,7 +68,7 @@ object Link {
       case Some(result) => Success(result)
       case None =>
         val info = if (Link.existing.isEmpty) {
-          val msg = s"No existing telemetry Link for ${candidates.mkString("[", ", ", "]")}, existing links are:"
+          val msg = s"No existing telemetry Link for ${executedBy.mkString("[", ", ", "]")}, existing links are:"
           val hint = Link.existing.keys.toList.mkString("[", ", ", "]")
           msg + "\n" + hint
         }
@@ -181,9 +181,9 @@ trait Link extends Cleanable with NOTSerializable {
   private def connectRetries: Int = spookyOpt
     .map(
       spooky =>
-        spooky.conf.submodule[UAVConf].connectRetries
+        spooky.conf.submodule[UAVConf].fastConnectionRetries
     )
-    .getOrElse(UAVConf.CONNECT_RETRIES)
+    .getOrElse(UAVConf.FAST_CONNECTION_RETRIES)
 
   @volatile var lastFailureOpt: Option[(Throwable, Long)] = None
 
@@ -239,9 +239,11 @@ trait Link extends Cleanable with NOTSerializable {
   private def blacklistDuration: Long = spookyOpt
     .map(
       spooky =>
-        spooky.conf.submodule[UAVConf].blacklistReset
+        spooky.conf.submodule[UAVConf].slowConnectionRetryInterval
     )
-    .getOrElse(UAVConf.BLACKLIST_RESET)
+    .getOrElse(UAVConf.BLACKLIST_RESET_AFTER)
+    .toMillis
+
   def isNotBlacklisted: Boolean = !lastFailureOpt.exists {
     tt =>
       System.currentTimeMillis() - tt._2 <= blacklistDuration
@@ -305,8 +307,8 @@ trait Link extends Cleanable with NOTSerializable {
   }
 
   // TODO useless? Link command can set multiple landing site.
-  var _home: LocationGlobal = _
-  protected def _getHome: LocationGlobal
+  var _home: Location = _
+  protected def _getHome: Location
   final def home = retry(){
     Option(_home).getOrElse {
       val v = _getHome
@@ -315,22 +317,29 @@ trait Link extends Cleanable with NOTSerializable {
     }
   }
 
-  var _lastLocation: LocationGlobal = _
-  def _getLocation: LocationGlobal
-  final def location = retry(){
-    val v = _getLocation
-    _lastLocation = v
-    v
+  protected var _lastLocation: Location = _
+  protected def _getLocation: Location
+  final def getLocation(refresh: Boolean = true) = {
+    if (refresh || _lastLocation == null) {
+      retry(){
+        val v = _getLocation
+        _lastLocation = v
+        v
+      }
+    }
+    else {
+      _lastLocation
+    }
   }
 
-  //====================== Synchronous API =====================
+  //====================== Synchronous API ===================== TODO this should be abandoned and mimic by Asynch API
 
-  val Synch: SynchronousAPI
+  val synch: SynchronousAPI
   abstract class SynchronousAPI {
     def testMove: String
 
     def clearanceAlt(alt: Double): Unit
-    def move(location: LocationGlobal): Unit
+    def move(location: Location): Unit
   }
 
   //====================== Asynchronous API =====================

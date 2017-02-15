@@ -3,7 +3,7 @@ package com.tribbloids.spookystuff.uav.sim
 import com.tribbloids.spookystuff.caching
 import com.tribbloids.spookystuff.session.LocalCleanable
 import com.tribbloids.spookystuff.session.python.{CaseInstanceRef, SingletonRef}
-import com.tribbloids.spookystuff.uav.spatial.LocationGlobal
+import com.tribbloids.spookystuff.uav.spatial.LLA
 
 import scala.util.Random
 
@@ -14,11 +14,12 @@ object APMSim {
 
   val existing: caching.ConcurrentSet[APMSim] = caching.ConcurrentSet()
 
-  final val HOME = LocationGlobal(43.694195, -79.262262, 136)
-  def scatteredHome = HOME.copy(
-    lat = HOME.lat + (Random.nextDouble() - 0.5)*0.001,
-    lon = HOME.lon + (Random.nextDouble() - 0.5)*0.001
-  )
+  final val HOME_LLA = LLA(43.694195, -79.262262, 136)
+  def scatteredHome = {
+    val lat = HOME_LLA.lat + (Random.nextDouble() - 0.5)*0.001
+    val lon = HOME_LLA.lon + (Random.nextDouble() - 0.5)*0.001
+    LLA(lat, lon, HOME_LLA.alt)
+  }
 
   final val FRAMERATE = 200
   final val SPEEDUP = 5

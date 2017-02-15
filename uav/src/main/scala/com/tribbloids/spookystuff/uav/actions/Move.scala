@@ -4,7 +4,7 @@ import com.tribbloids.spookystuff.extractors.{Extractor, FR, Literal}
 import com.tribbloids.spookystuff.row.{DataRowSchema, FetchedRow}
 import com.tribbloids.spookystuff.session.Session
 import com.tribbloids.spookystuff.uav.UAVConf
-import com.tribbloids.spookystuff.uav.spatial.LocationGlobal
+import com.tribbloids.spookystuff.uav.spatial.Location
 import org.slf4j.LoggerFactory
 
 import scala.concurrent.duration.Duration
@@ -18,18 +18,18 @@ case class Move(
                  from: Extractor[Any],
                  to: Extractor[Any],
                  override val delay: Duration = null
-               ) extends AbstractGoto {
+               ) extends WaypointLike {
 
   override def doInterpolate(pageRow: FetchedRow, schema: DataRowSchema): Option[this.type] = {
-    val fromVOpt = from.asInstanceOf[Extractor[LocationGlobal]].resolve(schema).lift.apply(pageRow)
-    val toOpt = to.asInstanceOf[Extractor[LocationGlobal]].resolve(schema).lift.apply(pageRow)
+    val fromVOpt = from.resolve(schema).lift.apply(pageRow)
+    val toOpt = to.resolve(schema).lift.apply(pageRow)
     val result = for(
       fromV <- fromVOpt;
       toV <- toOpt
     ) yield {
       this.copy(
-        from = Literal(fromV),
-        to = Literal(toV)
+        from = Literal(Location.parse(fromV, schema.spooky.submodule[UAVConf])),
+        to = Literal(Location.parse(toV, schema.spooky.submodule[UAVConf]))
       )
     }
     result.map(_.asInstanceOf[this.type])
@@ -39,15 +39,14 @@ case class Move(
 
   class SessionView(session: Session) extends super.SessionView(session) {
 
-    lazy val fromLocation: LocationGlobal = from.asInstanceOf[Literal[FR, LocationGlobal]].value
-      .toGlobal(Some(session.spooky.conf.submodule[UAVConf].locationReference))
+    lazy val fromLocation: Location = from.asInstanceOf[Literal[FR, Location]].value
 
     override def inbound(): Unit = {
       super.inbound()
       LoggerFactory.getLogger(this.getClass).debug(s"inbound .. $fromLocation")
-      link.Synch.move(fromLocation)
+      link.synch.move(fromLocation)
     }
   }
 
-  override def start_end: Seq[(LocationGlobal, LocationGlobal)] = Nil
+  override def start_end = Nil
 }

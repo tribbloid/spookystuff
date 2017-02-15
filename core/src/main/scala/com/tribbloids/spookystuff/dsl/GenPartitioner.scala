@@ -3,6 +3,7 @@ package com.tribbloids.spookystuff.dsl
 import com.tribbloids.spookystuff.SpookyContext
 import com.tribbloids.spookystuff.dsl.GenPartitioners.GenPartitionerImpl
 import com.tribbloids.spookystuff.row.BeaconRDD
+import com.tribbloids.spookystuff.utils.SpookyUtils
 import org.apache.spark.Partitioner
 import org.apache.spark.rdd.RDD
 import org.apache.spark.storage.StorageLevel
@@ -24,9 +25,20 @@ object GenPartitioners {
 
   trait GenPartitionerImpl extends Serializable {
 
-    def createBeaconRDD[K: ClassTag](
-                                      ref: RDD[_]
-                                    ): Option[BeaconRDD[K]] = None
+    final def createBeaconRDD[K: ClassTag](
+                                            ref: RDD[_]
+                                          ): Option[BeaconRDD[K]] = {
+      val result: Option[BeaconRDD[K]] = _createBeaconRDD(ref)
+      result.foreach {
+        rdd =>
+          SpookyUtils.RDDs.assertIsBeaconRDD(rdd)
+      }
+      result
+    }
+
+    def _createBeaconRDD[K: ClassTag](
+                                       ref: RDD[_]
+                                     ): Option[BeaconRDD[K]] = None
 
     def groupByKey[K: ClassTag, V: ClassTag](
                                               rdd: RDD[(K, V)],
@@ -104,15 +116,16 @@ object GenPartitioners {
 
     object GPImpl extends GenPartitionerImpl {
 
-      override def createBeaconRDD[K: ClassTag](
-                                                 ref: RDD[_]
-                                               ): Option[BeaconRDD[K]] = {
+      override def _createBeaconRDD[K: ClassTag](
+                                                  ref: RDD[_]
+                                                ): Option[BeaconRDD[K]] = {
 
         val partitioner = partitionerFactory(ref)
         val result = ref.sparkContext
           .emptyRDD[(K, Unit)]
           .partitionBy(partitioner)
           .persist(StorageLevel.MEMORY_AND_DISK)
+        result.count()
         Some(result)
       }
 

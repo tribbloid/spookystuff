@@ -1,22 +1,22 @@
 package com.tribbloids.spookystuff.uav.actions
 
 import com.tribbloids.spookystuff.extractors.Literal
-import com.tribbloids.spookystuff.uav.spatial.{LocationGlobal, LocationLocal}
+import com.tribbloids.spookystuff.uav.spatial._
 import com.tribbloids.spookystuff.uav.sim.APMSITLFixture
 
 object MoveSuite{
 
-  def generateTracks(
-                      n: Int,
-                      origin: LocationLocal,
-                      dir: LocationLocal, // actual directions are always alternating
-                      stride: LocationLocal
-                    ): Seq[(LocationLocal, LocationLocal)] = {
+  def generateLawnMowerPattern(
+                                n: Int,
+                                origin: NED.V,
+                                dir: NED.V, // actual directions are always alternating
+                                stride: NED.V
+                              ): Seq[(NED.V, NED.V)] = {
 
     val result = (0 until n).map {
       i =>
-        val p1: LocationLocal = origin.vec + (stride.vec :* i.toDouble)
-        val p2: LocationLocal = p1.vec + dir.vec
+        val p1 = NED.create(origin.vector + (stride.vector :* i.toDouble))
+        val p2 = NED.create(p1.vector + dir.vector)
         if (i % 2 == 0) {
           p1 -> p2
         }
@@ -36,39 +36,23 @@ class MoveSuite extends APMSITLFixture {
   import com.tribbloids.spookystuff.dsl._
 
   test("Move.toJson should work") {
-    val wp1 = LocationGlobal(0,0,0)
-    val wp2 = LocationGlobal(20, 30, 50)
+    val wp1: Location = LLA(0,0,0) -> GeodeticAnchor
+    val wp2: Location = LLA(20, 30, 50) -> GeodeticAnchor
 
     val move = Move(Literal(wp1), Literal(wp2))
 
     move.prettyJSON().shouldBe(
-      """{
-        |  "className" : "com.tribbloids.spookystuff.uav.actions.Move",
-        |  "params" : {
-        |    "from" : {
-        |      "lat" : 0.0,
-        |      "lon" : 0.0,
-        |      "alt" : 0.0
-        |    },
-        |    "to" : {
-        |      "lat" : 20.0,
-        |      "lon" : 30.0,
-        |      "alt" : 50.0
-        |    },
-        |    "delay" : null
-        |  }
-        |}
-      """.stripMargin
+
     )
   }
 
   test("Run 1 track per drone") {
 
-    val tracks: Seq[(LocationLocal, LocationLocal)] = MoveSuite.generateTracks(
+    val tracks: Seq[(NED.V, NED.V)] = MoveSuite.generateLawnMowerPattern(
       (parallelism.toDouble * 1).toInt,
-      LocationLocal(10, 10, -10),
-      LocationLocal(100, 0, 0),
-      LocationLocal(0, 20, -2)
+      NED(10, 10, -10),
+      NED(100, 0, 0),
+      NED(0, 20, -2)
     )
 
     val rdd = sc.parallelize(tracks, this.parallelism)
@@ -88,11 +72,11 @@ class MoveSuite extends APMSITLFixture {
 
   test("Run 1.5 track per drone") {
 
-    val tracks: Seq[(LocationLocal, LocationLocal)] = MoveSuite.generateTracks(
+    val tracks: Seq[(NED.V, NED.V)] = MoveSuite.generateLawnMowerPattern(
       (parallelism.toDouble * 1.5).toInt,
-      LocationLocal(10, 10, -10),
-      LocationLocal(100, 0, 0),
-      LocationLocal(0, 20, -2)
+      NED(10, 10, -10),
+      NED(100, 0, 0),
+      NED(0, 20, -2)
     )
 
     val rdd = sc.parallelize(tracks, this.parallelism)

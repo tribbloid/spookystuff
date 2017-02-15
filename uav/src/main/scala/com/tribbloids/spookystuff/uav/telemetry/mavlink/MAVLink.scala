@@ -4,8 +4,10 @@ import com.tribbloids.spookystuff.uav.system.Drone
 import com.tribbloids.spookystuff.uav.telemetry.Link
 import com.tribbloids.spookystuff.session.python.PythonDriver
 import com.tribbloids.spookystuff.session.{Cleanable, ResourceLedger}
-import com.tribbloids.spookystuff.uav.spatial.LocationGlobal
+import com.tribbloids.spookystuff.uav.spatial.{GeodeticAnchor, LLA, Location}
 import org.slf4j.LoggerFactory
+
+import scala.language.implicitConversions
 
 object MAVLink {
 
@@ -152,20 +154,38 @@ case class MAVLink(
     }
   }
 
-  def _getLocation: LocationGlobal = {
+  implicit def toPyLocation(
+                             p: Location
+                           ): PyLocation = {
+    val lla = p.getCoordinate(LLA, GeodeticAnchor).get
+    LocationGlobal(lla.lat, lla.lon, lla.alt)
+  }
+
+  implicit def fromPyLocation(
+                               l: PyLocation
+                             ): Location = {
+    l match {
+      case l: LocationGlobal =>
+        LLA(l.lat, l.lon, l.alt) -> GeodeticAnchor
+      case _ =>
+        ???
+    }
+  }
+
+  def _getLocation: Location = {
 
     val locations = Endpoints.primary.PY.vehicle.location
     val global = locations.global_frame.$MSG.get.cast[LocationGlobal]
     global
   }
-  def _getHome: LocationGlobal = {
+  def _getHome: Location = {
 
     val home = Endpoints.primary.PY.home
     val global = home.$MSG.get.cast[LocationGlobal]
     global
   }
 
-  object Synch extends SynchronousAPI {
+  object synch extends SynchronousAPI {
 
     override def testMove: String = {
       Endpoints.primary.PY.testMove()
@@ -177,8 +197,8 @@ case class MAVLink(
       Endpoints.primary.PY.assureClearanceAlt(alt)
     }
 
-    override def move(location: LocationGlobal): Unit = {
-      Endpoints.primary.PY.move(location)
+    override def move(location: Location): Unit = {
+      Endpoints.primary.PY.move(location: PyLocation)
     }
   }
 }

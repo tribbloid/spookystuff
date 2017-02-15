@@ -26,7 +26,7 @@ object LinkITFixture{
     )
       .get
 
-    val location = link.Synch.testMove
+    val location = link.synch.testMove
 
     location
   }

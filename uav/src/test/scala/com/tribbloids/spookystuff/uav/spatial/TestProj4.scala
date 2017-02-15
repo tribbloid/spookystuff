@@ -15,8 +15,7 @@ class TestProj4 extends FunSuite {
 
   test("Local to Global by projection") {
 
-    val ref1 = APMSim.HOME
-    val ref2 = ref1._local2LatLon(2000,1000)
+    val ref1 = APMSim.HOME_LLA
 
     val projs = Seq(
       {
@@ -40,7 +39,7 @@ class TestProj4 extends FunSuite {
         val dst = new ProjCoordinate
         proj.inverseProject(src, dst) // NED -> WGS84
         val result = (dst.y, dst.x, dst.z)
-        println(s"origin: ${ref1.lat -> ref1.lon} expected: $ref2, actual: $result")
+        println(s"origin: ${ref1.lat -> ref1.lon}, actual: $result")
     }
   }
 }

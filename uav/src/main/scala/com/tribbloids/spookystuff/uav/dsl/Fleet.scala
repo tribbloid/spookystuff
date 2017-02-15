@@ -39,7 +39,7 @@ object Fleet {
   }
 }
 
-trait Fleet extends (() => Seq[Drone]) {
+trait Fleet extends (() => Set[Drone]) {
 
 //  import com.tribbloids.spookystuff.utils.SpookyViews._
 //

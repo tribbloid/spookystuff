@@ -15,7 +15,8 @@ trait InjectBeaconRDDPlan extends ExecutionPlan {
     inheritedBeaconRDDOpt.orElse {
       this.firstChildOpt.flatMap {
         child =>
-          gpImpl.createBeaconRDD[TraceView](child.rdd())
+          val beaconRDDOpt = gpImpl.createBeaconRDD[TraceView](child.rdd())
+          beaconRDDOpt
       }
     }
   }

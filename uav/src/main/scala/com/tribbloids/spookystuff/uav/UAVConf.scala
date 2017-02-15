@@ -1,11 +1,13 @@
 package com.tribbloids.spookystuff.uav
 
-import com.tribbloids.spookystuff.{AbstractConf, ModuleConf, Submodules}
 import com.tribbloids.spookystuff.uav.dsl._
-import com.tribbloids.spookystuff.uav.spatial.LocationGlobal
-import com.tribbloids.spookystuff.uav.system.Drone
 import com.tribbloids.spookystuff.uav.sim.APMSim
+import com.tribbloids.spookystuff.uav.spatial.{GeodeticAnchor, Location}
+import com.tribbloids.spookystuff.uav.system.Drone
+import com.tribbloids.spookystuff.{ModuleConf, Submodules}
 import org.apache.spark.SparkConf
+
+import scala.concurrent.duration._
 
 object UAVConf extends Submodules.Builder[UAVConf]{
 
@@ -19,10 +21,10 @@ object UAVConf extends Submodules.Builder[UAVConf]{
   final val PROXY_SSID = 251
   final val GCS_SSID = 255
 
-  final val EARTH_RADIUS = 6378137.0  // Radius of "spherical" earth
+  //  final val EARTH_RADIUS = 6378137.0  // Radius of "spherical" earth
 
-  final val CONNECT_RETRIES = 2
-  final val BLACKLIST_RESET = 60*1000
+  final val FAST_CONNECTION_RETRIES = 2
+  final val BLACKLIST_RESET_AFTER = 1.minute
 }
 
 /**
@@ -37,16 +39,19 @@ case class UAVConf(
                     // routing now becomes part of Connection?
                     var fleet: Fleet = Fleet.Inventory(Nil),
                     var linkFactory: LinkFactory = LinkFactories.ForkToGCS(),
-                    var connectRetries: Int = UAVConf.CONNECT_RETRIES,
-                    var blacklistReset: Long = UAVConf.BLACKLIST_RESET, //1 minute
+                    var fastConnectionRetries: Int = UAVConf.FAST_CONNECTION_RETRIES,
+                    var slowConnectionRetries: Int = Int.MaxValue,
+                    var slowConnectionRetryInterval: Duration = UAVConf.BLACKLIST_RESET_AFTER, //1 minute
                     var clearanceAltitude: Double = 10, // in meters
-                    var locationReference: LocationGlobal = APMSim.HOME // reference used to convert LocationLocal to LocationGlobal
+                    var homeLocation: Location = APMSim.HOME_LLA -> GeodeticAnchor,
+                    var actionCosts: ActionCosts = {_ => 0},
+                    var defaultSpeed: Double = 5.0
                   ) extends ModuleConf {
 
   /**
     * singleton per worker, lost on shipping
     */
-  def drones: Seq[Drone] = fleet.apply()
+  def dronesInFleet: Set[Drone] = fleet.apply()
 
   // TODO: use reflection to automate
   override def importFrom(sparkConf: SparkConf): UAVConf.this.type = this.copy().asInstanceOf[this.type]

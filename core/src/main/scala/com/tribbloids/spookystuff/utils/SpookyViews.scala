@@ -345,9 +345,9 @@ object SpookyViews {
     }
   }
 
-  implicit class MapView[K, V](m1: scala.collection.Map[K,V]) {
+  implicit class MapView[K, V](self: scala.collection.Map[K,V]) {
 
-    def getTyped[T: ClassTag](key: K): Option[T] = m1.get(key) match {
+    def getTyped[T: ClassTag](key: K): Option[T] = self.get(key) match {
 
       case Some(res) =>
         res match {
@@ -362,12 +362,12 @@ object SpookyViews {
                       sampler: Sampler[Any]
                     ): Seq[(Map[K, Any], Int)] = {
 
-      val valueOption: Option[V] = m1.get(key)
+      val valueOption: Option[V] = self.get(key)
 
       val values: Iterable[(Any, Int)] = valueOption.toIterable.flatMap(SpookyUtils.asIterable[Any]).zipWithIndex
       val sampled = sampler(values)
 
-      val cleaned = m1 - key
+      val cleaned = self - key
       val result = sampled.toSeq.map(
         tuple =>
           (cleaned + (key -> tuple._1)) -> tuple._2
@@ -376,7 +376,7 @@ object SpookyViews {
       result
     }
 
-    def canonizeKeysToColumnNames: scala.collection.Map[String,V] = m1.map(
+    def canonizeKeysToColumnNames: scala.collection.Map[String,V] = self.map(
       tuple =>{
         val keyName: String = tuple._1 match {
           case symbol: scala.Symbol =>
@@ -387,6 +387,11 @@ object SpookyViews {
         (SpookyUtils.canonizeColumnName(keyName), tuple._2)
       }
     )
+
+    def sortBy[B: Ordering](fn: ((K, V)) => B): ListMap[K, V] = {
+      val tuples = self.toList.sortBy(fn)
+      ListMap(tuples: _*)
+    }
   }
 
   implicit class TraversableLikeView[A, Repr](self: TraversableLike[A, Repr])(implicit ctg: ClassTag[A]) {

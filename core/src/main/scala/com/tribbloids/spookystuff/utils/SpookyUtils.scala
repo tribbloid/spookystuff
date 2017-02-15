@@ -8,9 +8,11 @@ import org.apache.commons.io.IOUtils
 import org.apache.spark.{SparkEnv, TaskContext}
 import org.apache.spark.ml.dsl.ReflectionUtils
 import org.apache.spark.ml.dsl.utils.FlowUtils
-import org.apache.spark.storage.BlockManagerId
+import org.apache.spark.rdd.RDD
+import org.apache.spark.storage.{BlockManagerId, StorageLevel}
 import org.slf4j.LoggerFactory
 
+import scala.collection.mutable
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._
 import scala.concurrent.{Await, Future, TimeoutException}
@@ -58,7 +60,7 @@ object SpookyUtils {
       _callerStr = FlowUtils.stackTracesShowStr(
         FlowUtils.getBreakpointInfo()
           .slice(1, Int.MaxValue)
-//          .filterNot(_.getClassName == this.getClass.getCanonicalName)
+        //          .filterNot(_.getClassName == this.getClass.getCanonicalName)
       )
     util.Try { fn } match {
       case util.Success(x) =>
@@ -88,7 +90,7 @@ object SpookyUtils {
     val callerStr = FlowUtils.stackTracesShowStr(
       FlowUtils.getBreakpointInfo()
         .slice(1, Int.MaxValue)
-//        .filterNot(_.getClassName == this.getClass.getCanonicalName)
+      //        .filterNot(_.getClassName == this.getClass.getCanonicalName)
     )
     val future = Future {
       fn
@@ -530,6 +532,75 @@ These special characters are often called "metacharacters".
             )
           )
         }
+    }
+  }
+
+  /**
+    * much faster and takes much less memory than groupBy + reduce
+    */
+  def reduceByKey[K, V](itr: Iterator[(K, V)], reducer: (V, V) => V): Map[K, V] = {
+
+    val result = itr.foldLeft(mutable.Map[K, V]())(
+      op = {
+        (map, tt) =>
+          val nv = map.get(tt._1)
+            .map(v => reducer(v, tt._2))
+            .getOrElse(tt._2)
+          map.update(tt._1, nv)
+          map
+      }
+    )
+    result.toMap
+  }
+
+  object RDDs {
+
+    def assertIsPersisted(rdd: RDD[_]): Unit = {
+      val rddInfos = rdd.sparkContext.getRDDStorageInfo
+      assert(rddInfos.find(_.id == rdd.id).get.storageLevel != StorageLevel.NONE)
+    }
+
+    def assertIsBeaconRDD(rdd: RDD[_]): Unit = {
+      assertIsPersisted(rdd)
+      assert(rdd.isEmpty())
+    }
+
+    /**
+      * much faster than reducing many rdds independently
+      * genetic algorithm depends on it
+      */
+    def batchReduce[T](
+                        rdds: Seq[RDD[T]]
+                      )(
+                        reducer: (T, T) => T
+                      ): Seq[T] = {
+
+      val zippedRDD: RDD[(Int, T)] = rdds
+        .zipWithIndex
+        .map {
+          case (rdd, id) =>
+            rdd.keyBy(_ => id)
+        }
+        .reduce {
+          (rdd1, rdd2) =>
+            rdd1.zipPartitions(rdd2, preservesPartitioning = false) {
+              (itr1, itr2) =>
+                itr1 ++ itr2
+            }
+        }
+
+      val reduced: Map[Int, T] = zippedRDD
+        .mapPartitions {
+          itr =>
+            val reduced = reduceByKey[Int, T](itr, reducer)
+            Iterator(reduced)
+        }
+        .reduce {
+          (m1, m2) =>
+            val rr = (m1.iterator ++ m2.iterator).toSeq.groupBy(_._1).mapValues(_.map(_._2).reduce(reducer))
+            rr
+        }
+      reduced.sortBy(_._1).values.toSeq
     }
   }
 }

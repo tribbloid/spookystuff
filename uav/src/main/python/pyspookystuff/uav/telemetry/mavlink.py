@@ -314,3 +314,18 @@ class Proxy(Daemon):
             return self.process.poll() is None
         else:
             return False
+
+
+class LocationGlobal(dronekit.LocationGlobal):
+    def __init__(self, lat, lon, alt=None):
+        super(LocationGlobal, self).__init__(lat, lon, alt)
+
+
+class LocationGlobalRelative(dronekit.LocationGlobalRelative):
+    def __init__(self, lat, lon, alt=None):
+        super(LocationGlobalRelative, self).__init__(lat, lon, alt)
+
+
+class LocationLocal(dronekit.LocationLocal):
+    def __init__(self, north, east, down):
+        super(LocationLocal, self).__init__(north, east, down)

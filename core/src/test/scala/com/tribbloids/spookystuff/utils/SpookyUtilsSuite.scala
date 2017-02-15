@@ -4,9 +4,12 @@ import java.io.File
 
 import com.tribbloids.spookystuff.testutils.TestHelper
 import org.apache.spark.TaskContext
+import org.apache.spark.rdd.RDD
 import org.scalatest.FunSuite
 
+import scala.collection.immutable.Seq
 import scala.concurrent.TimeoutException
+import scala.util.Random
 
 /**
  * Created by peng on 11/1/14.
@@ -65,5 +68,30 @@ class SpookyUtilsSuite extends FunSuite {
 
       TestHelper.assert(time < 12000)
     }
+  }
+
+  test("RDDs.batchReduce yield the same results as RDDs.map(_.reduce)") {
+    val src = TestHelper.TestSpark.parallelize(1 to 10)
+    val rdds: Seq[RDD[Int]] = (1 to 10).map {
+      i =>
+        val result = src.map {
+          j =>
+            Random.nextInt(100)
+        }
+        result.persist()
+    }
+
+    val sum1 = rdds.zipWithIndex.map {
+      case (rdd, i) =>
+        rdd.reduce(_ + _)
+    }
+
+    val sum2 = SpookyUtils.RDDs.batchReduce(rdds)(_ + _)
+    val sum3 = SpookyUtils.RDDs.batchReduce(rdds)(_ + _)
+
+    assert(sum1 == sum2)
+    assert(sum3 == sum1)
+
+    Thread.sleep(1000000000)
   }
 }

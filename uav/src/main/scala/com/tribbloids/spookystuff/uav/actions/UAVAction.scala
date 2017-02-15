@@ -1,30 +1,31 @@
 package com.tribbloids.spookystuff.uav.actions
 
 import com.tribbloids.spookystuff.actions.{Action, Interaction}
+import com.tribbloids.spookystuff.session.Session
 import com.tribbloids.spookystuff.uav.UAVConf
+import com.tribbloids.spookystuff.uav.spatial.StartEndLocation
 import com.tribbloids.spookystuff.uav.system.Drone
 import com.tribbloids.spookystuff.uav.telemetry.Link
-import com.tribbloids.spookystuff.session.Session
-import com.tribbloids.spookystuff.uav.spatial.LocationGlobal
+
+import scala.concurrent.duration.Duration
+import scala.util.Random
 
 trait UAVAction extends Action {
 
-  // override this to enforce selection over drones being deployed.
-  // drone that yield higher preference will be used if available, regardless of whether its in the air or not.
-  // drone that yield None will never be used. TODO enable later
-  //  def preference: DronePreference = {_ => Some(1)}
-
+  /**
+    * if left Nil will randomly choose any one from the fleet.
+    * can be changed by GenPartitioner to enforce globally optimal execution.
+    * if task already has a drone (TaskLocal) and its not in this list, will throw an error! GenPartitioner can detect this early
+    */
   class SessionView(session: Session) {
 
     val mavConf: UAVConf = {
       session.spooky.conf.submodule[UAVConf]
     }
 
-    def effectiveDrones: Seq[Drone] = mavConf.drones
-
     val link: Link = {
       Link.trySelect(
-        effectiveDrones,
+        Random.shuffle(mavConf.dronesInFleet.toList),
         session
       )
         .get
@@ -33,12 +34,26 @@ trait UAVAction extends Action {
 }
 
 /**
+  * override UAVConf.fleet
+  */
+case class UseFleet(
+                     drones: List[Drone]
+                   ) extends Interaction with UAVAction {
+  override def delay: Duration = Duration.Zero
+
+  override def exeNoOutput(session: Session): Unit = {
+    Link.trySelect(
+      drones,
+      session
+    )
+      .get
+  }
+}
+
+/**
   * inbound -> engage -> outbound
   */
-trait UAVPositioning extends Interaction with UAVAction {
-
-  def start_end: Seq[(LocationGlobal, LocationGlobal)]
-  def speed: Double = 5.0
+trait UAVNavigation extends Interaction with UAVAction with StartEndLocation {
 
   override def exeNoOutput(session: Session): Unit = {
 

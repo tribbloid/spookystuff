@@ -10,7 +10,7 @@ from pyspookystuff.uav import const
 from pyspookystuff.uav.utils import retry
 
 
-class MAVException(Exception):
+class UAVException(Exception):
     pass
 
 
@@ -317,7 +317,7 @@ mode_mapping_tracker = {
 
     def failOnTimeout(self):
         last_heartbeat = self.vehicle.last_heartbeat
-        print("last heartbeat =", last_heartbeat)
+        # print("last heartbeat =", last_heartbeat)
         assert (self.vehicle.last_heartbeat < 30)
 
     def waitFor(self, condition, duration=60):
