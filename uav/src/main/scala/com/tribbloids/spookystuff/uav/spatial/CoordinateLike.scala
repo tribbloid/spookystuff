@@ -2,7 +2,7 @@ package com.tribbloids.spookystuff.uav.spatial
 
 import breeze.linalg.{Vector => Vec}
 import com.tribbloids.spookystuff.caching.Memoize
-import com.tribbloids.spookystuff.utils.{IDMixin, ScalaUDT}
+import com.tribbloids.spookystuff.utils.ScalaUDT
 import geotrellis.proj4.LatLng
 import org.apache.spark.sql.types.SQLUserDefinedType
 import org.osgeo.proj4j.ProjCoordinate
@@ -11,7 +11,7 @@ import org.osgeo.proj4j.proj.{EquidistantAzimuthalProjection, Projection}
 
 import scala.collection.mutable.ArrayBuffer
 import scala.reflect.ClassTag
-import scala.util.{Random, Try}
+import scala.util.Try
 
 trait Coordinate extends Serializable {
 
@@ -24,18 +24,36 @@ trait Coordinate extends Serializable {
   def z: Double = vector(2)
 
   //implement this to bypass proj4
-  def customProjectTo(a: Reference, system2: CoordinateSystem): Option[system2.V] = None
+  def fastProjectTo(ref1: Reference, ref2: Reference, system2: CoordinateSystem): Option[system2.V] = None
 
-  def projectZ(a: Reference, system2: CoordinateSystem): Option[Double] = Some(z)
+  def projectZ(ref1: Reference, ref2: Reference, system2: CoordinateSystem): Option[Double] = {
 
-  def projectTo(a: Reference, system2: CoordinateSystem): Option[system2.V] = {
+    val delta2_1Opt = ref1.getCoordinate(LLA, ref2)
+      .map(v => v.alt)
+      .orElse {
+        ref2.getCoordinate(LLA, ref1)
+          .map(v => - v.alt)
+      }
 
-    val customResult: Option[system2.V] = customProjectTo(a, system2).map(_.asInstanceOf[system2.V]) // redundant! IDE error?
+    delta2_1Opt.map {
+      delta =>
+        delta + z
+    }
+  }
+
+  /**
+    * @param ref2 origin of the new coordinate system
+    * @param system2 type of the new coordinate system
+    * @return new coordinate
+    */
+  def projectTo(ref1: Reference, ref2: Reference, system2: CoordinateSystem): Option[system2.V] = {
+
+    val customResult: Option[system2.V] = fastProjectTo(ref1, ref2, system2).map(_.asInstanceOf[system2.V]) // redundant! IDE error?
     customResult.orElse {
-      val dstZOpt = projectZ(a, system2)
+      val dstZOpt = projectZ(ref1, ref2, system2)
       for (
-        proj1 <- system.get2DProj(a);
-        proj2 <- system2.get2DProj(a);
+        proj1 <- system.get2DProj(ref2);
+        proj2 <- system2.get2DProj(ref2);
         dstZ <- dstZOpt
       ) yield {
         val src = new ProjCoordinate(x, y)
@@ -96,6 +114,8 @@ object LLA extends CoordinateSystem {
     def alt = z
 
     override def ++>(b: V): V = V(Vec(b.x, b.y, this.z + b.z))
+
+    override lazy val toString = s"${this.system.getClass.getSimpleName.stripSuffix("$")} lat=$lat lon=$lon alt=$alt"
   }
 }
 
@@ -130,18 +150,24 @@ object NED extends CoordinateSystem {
     def east = x
     def down = - z
 
-//    def distance = vector*vector
+    //    def distance = vector*vector
 
     override def ++>(b: V): V = V(Vec(this.x + b.x, this.y + b.y, this.z + b.z))
+
+    override lazy val toString = s"${this.system.getClass.getSimpleName.stripSuffix("$")} north=$north east=$east down=$down"
   }
 }
 
 trait Reference extends Serializable {
+
+  def getCoordinate(system: CoordinateSystem = LLA, from: Reference = GeodeticRef): Option[system.V]
 }
 case object GeodeticRef extends Reference {
+  override def getCoordinate(system: CoordinateSystem, from: Reference): Option[system.V] = {
+    if (from == this) Some(system.create(Vec(0,0,0)))
+    else None
+  }
 }
-//case object GeocentricRef extends Reference {
-//}
 
 class PositionUDT() extends ScalaUDT[Position]
 
@@ -149,28 +175,56 @@ class PositionUDT() extends ScalaUDT[Position]
 @SQLUserDefinedType(udt = classOf[PositionUDT])
 @SerialVersionUID(-928750192836509428L)
 case class Position(
-                     id: Long = Random.nextLong(),
+                     //                     id: Long = Random.nextLong(),
                      coordinates: Seq[(Coordinate, Reference)] = Nil
-                   ) extends Reference with IDMixin {
+                   ) extends Reference {
 
   val buffer: ArrayBuffer[(Coordinate, Reference)] = ArrayBuffer.empty
 
   // always add result into buffer to avoid repeated computation
   // recursively search through its relations to deduce the coordinate.
-  def getCoordinate(system: CoordinateSystem, from: Reference = GeodeticRef): Option[system.V] = {
+  //TODO: need testing
+  def getCoordinate(system: CoordinateSystem = LLA, from: Reference = GeodeticRef): Option[system.V] = {
 
     val allCoordinates  = coordinates ++ buffer
-    val existing = allCoordinates.find(_._1.system == system)
-    if (existing.nonEmpty) return existing.map(_._1.asInstanceOf[system.V])
+    val exactMatch = allCoordinates.find(v => v._1.system == system && v._2 == from)
+    exactMatch.foreach {
+      tuple =>
+        return Some(tuple._1.asInstanceOf[system.V])
+    }
+
+    def cacheAndBox(v: Coordinate): Option[system.V] = {
+      buffer += v -> from
+      Some(v.asInstanceOf[system.V])
+    }
 
     allCoordinates.foreach {
       tuple =>
-        val result: Option[CoordinateSystem#V] = tuple._1.projectTo(from, system)
-        if (result.nonEmpty) {
-          buffer += result.get -> from
-          return result.map(_.asInstanceOf[system.V])
+        val directOpt: Option[CoordinateSystem#V] = tuple._1.projectTo(tuple._2, from, system)
+        directOpt.foreach {
+          direct =>
+            return cacheAndBox(direct)
+        }
+
+        //use chain rule for inference
+        tuple._2 match {
+          case p: Position =>
+            val c1Opt: Option[system.V] = p.getCoordinate(system, from)
+              .map(_.asInstanceOf[system.V])
+            val c2Opt: Option[system.V] = this.getCoordinate(system, p)
+              .map(_.asInstanceOf[system.V])
+            for (
+              c1 <- c1Opt;
+              c2 <- c2Opt
+            ) {
+              return cacheAndBox(c1 ++> c2)
+            }
+          case _ =>
         }
     }
+
+    //add reverse deduction.
+
     None
   }
 
@@ -184,8 +238,6 @@ case class Position(
   //    (this.id == b.id) ||
   //      (this.d(b) == Success(0))
   //  }
-
-  def _id = id
 }
 
 object Position {
