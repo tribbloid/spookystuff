@@ -40,7 +40,19 @@ class TestHelper() {
 
   def sparkHome = System.getenv("SPARK_HOME")
 
-  val numCores: Int = Runtime.getRuntime.availableProcessors()
+  final val MAX_TOTAL_MEMORY = 32768
+  final val MIN_EXECUTOR_MEMORY = 4096
+  final val EXECUTOR_JVM_MEMORY_OVERHEAD = 256
+
+  lazy val maxCores = {
+    var n = Option(props.getProperty("maxCores")).map(_.toInt).getOrElse {
+      Runtime.getRuntime.availableProcessors()
+    }
+    if (n < 2) n = 2
+    if (n > MAX_TOTAL_MEMORY / MIN_EXECUTOR_MEMORY)
+      n = MAX_TOTAL_MEMORY / MIN_EXECUTOR_MEMORY
+    n
+  }
 
   lazy val clusterSize_numCoresPerWorker_Opt: Option[(Int, Int)] = {
     Option(sparkHome).flatMap {
@@ -54,15 +66,12 @@ class TestHelper() {
           case (Some(v1), Some(v2)) =>
             Some(v1 -> v2)
           case (Some(v1), None) =>
-            Some(v1 -> Math.max(numCores / v1, 1))
+            Some(v1 -> Math.max(maxCores / v1, 1))
           case (None, Some(v2)) =>
-            Some(Math.max(numCores / v2, 1), v2)
+            Some(Math.max(maxCores / v2, 1), v2)
         }
     }
   }
-
-  //only used in local mode
-  lazy val maxLocalCores = Option(props.getProperty("maxLocalCores")).map(_.toInt)
 
   def clusterSizeOpt: Option[Int] = clusterSize_numCoresPerWorker_Opt.map(_._1)
   def numCoresPerWorkerOpt: Option[Int] = clusterSize_numCoresPerWorker_Opt.map(_._2)
@@ -104,8 +113,7 @@ class TestHelper() {
     conf
   }
 
-  final val TOTAL_MEMORY_CAP = 32768
-  final private def executorMemoryCapOpt = clusterSizeOpt.map(v => TOTAL_MEMORY_CAP / v)
+  final private def executorMemoryCapOpt = clusterSizeOpt.map(v => MAX_TOTAL_MEMORY / v)
   def executorMemoryOpt: Option[Int] = for (n <- numCoresPerWorkerOpt; c <- executorMemoryCapOpt) yield {
     Math.min(n*1024, c)
   }
@@ -116,19 +124,20 @@ class TestHelper() {
     */
   lazy val coreSettings: Map[String, String] = {
     if (clusterSizeOpt.isEmpty || numCoresPerWorkerOpt.isEmpty) {
-      val masterStr = s"local[${(Seq(numCores) ++ maxLocalCores.toSeq).min},$maxFailures]"
+      val masterStr = s"local[$maxCores,$maxFailures]"
       println("initializing SparkContext in local mode:" + masterStr)
       Map(
         "spark.master" -> masterStr
       )
     }
     else {
-      val masterStr = s"local-cluster[${clusterSizeOpt.get},${numCoresPerWorkerOpt.get},${executorMemoryOpt.get + 256}]"
+      val masterStr =
+        s"local-cluster[${clusterSizeOpt.get},${numCoresPerWorkerOpt.get},${executorMemoryOpt.get}]"
       println(s"initializing SparkContext in local-cluster simulation mode:" + masterStr)
       Map(
         "spark.master" -> masterStr,
         "spark.home" -> sparkHome,
-        "spark.executor.memory" -> (executorMemoryOpt.get + "m"),
+        "spark.executor.memory" -> ((executorMemoryOpt.get - EXECUTOR_JVM_MEMORY_OVERHEAD) + "m"),
         "spark.driver.extraClassPath" -> sys.props("java.class.path"),
         "spark.executor.extraClassPath" -> sys.props("java.class.path"),
         "spark.task.maxFailures" -> maxFailures.toString
