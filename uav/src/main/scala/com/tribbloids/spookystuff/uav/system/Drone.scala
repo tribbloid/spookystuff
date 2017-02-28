@@ -18,7 +18,7 @@ case class Drone(
                   name: String = "DRONE"
                 ) {
 
-  def toLink(
+  def getLink(
               spooky: SpookyContext,
               tryConnect: Boolean = true
             ): Link = {

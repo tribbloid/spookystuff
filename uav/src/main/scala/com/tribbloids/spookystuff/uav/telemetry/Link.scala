@@ -56,7 +56,7 @@ object Link {
     }
 
     var resultOpt = localOpt.orElse {
-      val links = executedBy.map(_.toLink(session.spooky))
+      val links = executedBy.map(_.getLink(session.spooky))
 
       this.synchronized {
         val available = links.filter(v => v.isAvailable)
@@ -271,16 +271,21 @@ trait Link extends Cleanable with NOTSerializable {
   }
 
   def statusString: String = {
+
     val strs = ArrayBuffer[String]()
     if (!isIdle) strs += "busy"
     if (!isNotBlacklisted) strs += s"unreachable for ${(System.currentTimeMillis() - lastFailureOpt.get._2).toDouble / 1000}s" +
       s" (${lastFailureOpt.get._1.getClass.getSimpleName})"
     if (!isNotUsedByTask) strs += s"used by Task-${lastUsed.taskContextOpt.get.taskAttemptId()}"
+
     s"Link $drone is " + {
-      if (strs.isEmpty)
+      if (isAvailable) {
+        assert(strs.isEmpty)
         "available"
-      else
+      }
+      else {
         strs.mkString(" & ")
+      }
     }
   }
 

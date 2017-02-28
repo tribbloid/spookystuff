@@ -49,10 +49,10 @@ class TestHelper() {
       Runtime.getRuntime.availableProcessors()
     }
     if (n < 2) n = 2
-    if (n > MAX_TOTAL_MEMORY / MIN_EXECUTOR_MEMORY)
-      n = MAX_TOTAL_MEMORY / MIN_EXECUTOR_MEMORY
     n
   }
+
+  final val MAX_CLUSTER_SIZE = MAX_TOTAL_MEMORY / MIN_EXECUTOR_MEMORY
 
   lazy val clusterSize_numCoresPerWorker_Opt: Option[(Int, Int)] = {
     Option(sparkHome).flatMap {
@@ -66,9 +66,9 @@ class TestHelper() {
           case (Some(v1), Some(v2)) =>
             Some(v1 -> v2)
           case (Some(v1), None) =>
-            Some(v1 -> Math.max(maxCores / v1, 1))
+            Some(Math.min(v1, MAX_CLUSTER_SIZE) -> Math.max(maxCores / v1, 1))
           case (None, Some(v2)) =>
-            Some(Math.max(maxCores / v2, 1), v2)
+            Some(Math.min(Math.max(maxCores / v2, 1), MAX_CLUSTER_SIZE), v2)
         }
     }
   }
