@@ -105,9 +105,17 @@ object SpookyViews {
 
     //TODO: change to concurrent execution
     def mapPerComputer[T: ClassTag](f: => T): RDD[T] = {
-      val perWorker = mapPerWorker(f)
       val v = f
-      self.makeRDD(Seq(v), 1).union(perWorker)
+
+      if (self.isLocal) {
+        self.makeRDD(Seq(v), 1)
+      }
+      else {
+        val perWorker = mapPerWorker {
+          f
+        }
+        self.makeRDD(Seq(v)).union(perWorker)
+      }
     }
     def foreachComputer[T: ClassTag](f: => T): Long = {
       mapPerComputer(f).count()

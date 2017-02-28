@@ -116,9 +116,9 @@ class SpookyViewsSuite extends SpookyEnvFixture {
         TaskContext.getPartitionId()
     }
       .collect()
-    assert(result.length == TestHelper.numWorkers + 1, result.mkString("\n"))
+    assert(result.length == TestHelper.numComputers, result.mkString("\n"))
     assert(result.map(_._1).distinct.length == TestHelper.numComputers, result.mkString("\n"))
-    assert(result.map(_._2).distinct.length == TestHelper.numWorkers + 1, result.mkString("\n"))
+    assert(result.map(_._2).distinct.length == TestHelper.numComputers, result.mkString("\n"))
     result.foreach(println)
   }
 
