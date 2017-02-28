@@ -51,4 +51,7 @@ case class Waypoint(
           .asInstanceOf[this.type ]
     }
   }
+
+  override def start: Location = _to
+  override def end: Location = _to
 }

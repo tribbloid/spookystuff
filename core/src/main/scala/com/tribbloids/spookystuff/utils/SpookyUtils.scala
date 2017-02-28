@@ -502,22 +502,21 @@ These special characters are often called "metacharacters".
     */
   def getTaskLocationStr: String = {
 
-    val (hostName, bmID) = getHost_ExecutorID
+    val bmID = getBlockManagerID
+    val hostPort = bmID.hostPort
 
     if (org.apache.spark.SPARK_VERSION.startsWith("1.6")) {
       val executorID = bmID.executorId
-      s"executor_${hostName}_$executorID"
+      s"executor_${hostPort}_$executorID"
     }
     else {
-      hostName
+      hostPort
     }
   }
 
-  def getHost_ExecutorID: (String, BlockManagerId) = {
-    assert(!TaskContext.get().isRunningLocally())
+  def getBlockManagerID: BlockManagerId = {
     val bmID = SparkEnv.get.blockManager.blockManagerId
-    val hostName = bmID.hostPort
-    hostName -> bmID
+    bmID
   }
 
   def tryParseBoolean(str: =>String): Try[Boolean] = {

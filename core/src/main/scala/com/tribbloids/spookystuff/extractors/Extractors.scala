@@ -90,7 +90,8 @@ case class Literal[T, +R](value: R, dataType: DataType) extends Static[T, R] wit
   override lazy val toString = valueOpt
     .map {
       v =>
-        MessageView(v).toJSON(pretty = false)
+//        MessageView(v).toJSON(pretty = false)
+        "" + v
     }
     .getOrElse("NULL")
 

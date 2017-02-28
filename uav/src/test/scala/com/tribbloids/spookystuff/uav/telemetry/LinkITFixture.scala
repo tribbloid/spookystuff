@@ -3,7 +3,7 @@ package com.tribbloids.spookystuff.uav.telemetry
 import com.tribbloids.spookystuff.SpookyContext
 import com.tribbloids.spookystuff.uav.UAVConf
 import com.tribbloids.spookystuff.uav.dsl.{LinkFactories, LinkFactory}
-import com.tribbloids.spookystuff.uav.sim.SIMFixture
+import com.tribbloids.spookystuff.uav.sim.SimFixture
 import com.tribbloids.spookystuff.uav.system.Drone
 import com.tribbloids.spookystuff.session.Session
 import org.apache.spark.rdd.RDD
@@ -32,7 +32,7 @@ object LinkITFixture{
   }
 }
 
-abstract class LinkITFixture extends SIMFixture {
+abstract class LinkITFixture extends SimFixture {
 
   lazy val linkFactory: LinkFactory = LinkFactories.Direct
 

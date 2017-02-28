@@ -334,7 +334,7 @@ trait SingletonRef extends PyRef {
   def PY = driverToBindingsAlive.values.head
 }
 
-trait BijectoryRef extends SingletonRef with LocalCleanable {
+trait BindedRef extends SingletonRef with LocalCleanable {
 
   @transient var _driver: PythonDriver = _
   def driver = this.synchronized {

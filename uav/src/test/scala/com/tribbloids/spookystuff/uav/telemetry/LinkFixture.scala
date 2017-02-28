@@ -1,7 +1,7 @@
 package com.tribbloids.spookystuff.uav.telemetry
 
 import com.tribbloids.spookystuff.uav.dsl.{LinkFactories, LinkFactory}
-import com.tribbloids.spookystuff.uav.sim.SIMFixture
+import com.tribbloids.spookystuff.uav.sim.SimFixture
 import com.tribbloids.spookystuff.uav.system.Drone
 import com.tribbloids.spookystuff.uav.telemetry.mavlink.MAVLink
 import com.tribbloids.spookystuff.uav.{UAVConf, ReinforcementDepletedException}
@@ -14,7 +14,7 @@ import org.apache.spark.rdd.RDD
 
 import scala.util.Random
 
-abstract class LinkFixture extends SIMFixture {
+abstract class LinkFixture extends SimFixture {
 
   import com.tribbloids.spookystuff.utils.SpookyViews._
 

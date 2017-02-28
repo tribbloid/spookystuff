@@ -172,7 +172,7 @@ case class MAVLink(
     }
   }
 
-  def _getLocation: Location = {
+  def _getCurrentLocation: Location = {
 
     val locations = Endpoints.primary.PY.vehicle.location
     val global = locations.global_frame.$MSG.get.cast[LocationGlobal]

@@ -12,7 +12,7 @@ case class Endpoint(
                      baudRate: Int = UAVConf.DEFAULT_BAUDRATE,
                      ssid: Int = UAVConf.EXECUTOR_SSID,
                      frame: Option[String] = None
-                   ) extends CaseInstanceRef with BijectoryRef with ResourceLedger {
+                   ) extends CaseInstanceRef with BindedRef with ResourceLedger {
 
   override lazy val resourceIDs = Map("" -> Set(uri))
 }

@@ -34,23 +34,6 @@ trait UAVAction extends Action {
 }
 
 /**
-  * override UAVConf.fleet
-  */
-case class UseFleet(
-                     drones: List[Drone]
-                   ) extends Interaction with UAVAction {
-  override def delay: Duration = Duration.Zero
-
-  override def exeNoOutput(session: Session): Unit = {
-    Link.trySelect(
-      drones,
-      session
-    )
-      .get
-  }
-}
-
-/**
   * inbound -> engage -> outbound
   */
 trait UAVNavigation extends Interaction with UAVAction with StartEndLocation {

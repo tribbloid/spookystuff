@@ -1,29 +1,17 @@
 package com.tribbloids.spookystuff.uav.sim
 
 import com.tribbloids.spookystuff.SpookyEnvFixture
+import com.tribbloids.spookystuff.session.python.PythonDriver
+import com.tribbloids.spookystuff.session.{Cleanable, Lifespan}
 import com.tribbloids.spookystuff.uav.UAVConf
 import com.tribbloids.spookystuff.uav.system.Drone
 import com.tribbloids.spookystuff.uav.telemetry.Link
-import com.tribbloids.spookystuff.session.python.PythonDriver
-import com.tribbloids.spookystuff.session.{Cleanable, Lifespan}
 import com.tribbloids.spookystuff.utils.SpookyUtils
 import org.apache.spark.rdd.RDD
 import org.jutils.jprocesses.JProcesses
 import org.slf4j.LoggerFactory
 
-/**
-  * Created by peng on 01/10/16.
-  */
-//object SimFixture {
-//
-//  def launch(session: AbstractSession): APMSim = {
-//    val sim = APMSim.next
-//    sim.Py(session)
-//    sim
-//  }
-//}
-
-trait SIMFixture extends SpookyEnvFixture {
+trait SimFixture extends SpookyEnvFixture {
 
   var simURIRDD: RDD[String] = _
   def simURIs = simURIRDD.collect().toSeq.distinct
@@ -33,15 +21,12 @@ trait SIMFixture extends SpookyEnvFixture {
   //  def parallelism: Int = 3
 }
 
-trait APMSITLFixture extends SIMFixture {
-
-  val getNext: () => APMSim = {
-    () =>
-      APMSim.next(vType = "copter", version = "3.3")
-  }
+trait APMSITLFixture extends SimFixture {
 
   import com.tribbloids.spookystuff.uav.dsl._
   import com.tribbloids.spookystuff.utils.SpookyViews._
+
+  lazy val simFactory = DefaultSimFactory
 
   override val processNames = Seq("phantomjs", "python", "apm")
 
@@ -69,13 +54,13 @@ trait APMSITLFixture extends SIMFixture {
     val isEmpty = sc.mapPerComputer {APMSim.existing.isEmpty}.collect()
     assert(!isEmpty.contains(false))
 
-    val getNext = this.getNext
+    val simFactory = this.simFactory
     val connStrRDD = sc.parallelize(1 to parallelism)
       .map {
         i =>
           //NOT cleaned by TaskCompletionListener
           val apmSimDriver = new PythonDriver(lifespan = Lifespan.JVM(nameOpt = Some(s"APMSim$i")))
-          val sim = getNext()
+          val sim = simFactory.getNext
           sim._Py(apmSimDriver).connStr.$STR
       }
       .flatMap(v => v)

@@ -2,7 +2,7 @@ package com.tribbloids.spookystuff.uav
 
 import com.tribbloids.spookystuff.uav.dsl._
 import com.tribbloids.spookystuff.uav.sim.APMSim
-import com.tribbloids.spookystuff.uav.spatial.{GeodeticAnchor, Location}
+import com.tribbloids.spookystuff.uav.spatial.{GeodeticAnchor, LLA, Location}
 import com.tribbloids.spookystuff.uav.system.Drone
 import com.tribbloids.spookystuff.{ModuleConf, Submodules}
 import org.apache.spark.SparkConf
@@ -25,6 +25,11 @@ object UAVConf extends Submodules.Builder[UAVConf]{
 
   final val FAST_CONNECTION_RETRIES = 2
   final val BLACKLIST_RESET_AFTER = 1.minute
+
+  /**
+    * 43.694195,-79.262262,136,353
+    */
+  final val HOME_LOCATION: Location = LLA(43.694195, -79.262262, 136) -> GeodeticAnchor
 }
 
 /**
@@ -43,8 +48,8 @@ case class UAVConf(
                     var slowConnectionRetries: Int = Int.MaxValue,
                     var slowConnectionRetryInterval: Duration = UAVConf.BLACKLIST_RESET_AFTER, //1 minute
                     var clearanceAltitude: Double = 10, // in meters
-                    var homeLocation: Location = APMSim.HOME_LLA -> GeodeticAnchor,
-                    var actionCosts: ActionCosts = {_ => 0},
+                    var homeLocation: Location = UAVConf.HOME_LOCATION,
+                    var actionCosts: ActionCosts = ActionCosts.Default(5.0),
                     var defaultSpeed: Double = 5.0
                   ) extends ModuleConf {
 

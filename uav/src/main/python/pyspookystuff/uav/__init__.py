@@ -3,6 +3,8 @@ from __future__ import print_function
 import logging
 
 import time
+
+import sys
 from dronekit import LocationGlobal, LocationGlobalRelative, LocationLocal, APIException
 from dronekit import Vehicle, VehicleMode
 
@@ -14,8 +16,8 @@ class UAVException(Exception):
     pass
 
 
-def stdError(dist=10000.0, maxError=1.0):
-    error = min(dist * 0.05, maxError)
+def stdDeviance(dist=10000.0, max=1.0):
+    error = min(dist * 0.05, max)
     return error
 
 
@@ -31,7 +33,7 @@ class VehicleFunctions(object):
     def assureClearanceAlt(self, minAlt, maxAlt=121.92, error=None):  # max altitute capped to 400 ftp
         # type: (float, float) -> None
         if not error:
-            error = stdError(minAlt)
+            error = stdDeviance(minAlt)
 
         alt = self.vehicle.location.global_relative_frame.alt
         if (minAlt - alt) <= error:
@@ -271,6 +273,8 @@ mode_mapping_tracker = {
 
         oldDistance = None
 
+        brokenCounter = 0
+
         # self.getHomeLocation
         while True:
             distance, hori, vert = utils.airDistance(currentL(), effectiveTL)
@@ -284,10 +288,13 @@ mode_mapping_tracker = {
             if self.vehicle.mode.name == "GUIDED":
                 if oldDistance <= distance:
                     # TODO: calculation of closest distance can be more refined
-                    if oldDistance is not None and oldDistance <= stdError(maxError=2):
+                    if oldDistance is not None and oldDistance <= stdDeviance(max=2):
                         print("Reached target")
                         break
                     else:
+                        brokenCounter += 1
+                        if brokenCounter >= 100:
+                            raise Exception("drone is immobile")
                         self.goto2x(effectiveTL)
                         print("Engaging thruster")
                 oldDistance = distance

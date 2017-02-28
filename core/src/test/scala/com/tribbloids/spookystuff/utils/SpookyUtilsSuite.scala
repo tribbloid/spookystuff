@@ -91,7 +91,5 @@ class SpookyUtilsSuite extends FunSuite {
 
     assert(sum1 == sum2)
     assert(sum3 == sum1)
-
-    Thread.sleep(1000000000)
   }
 }

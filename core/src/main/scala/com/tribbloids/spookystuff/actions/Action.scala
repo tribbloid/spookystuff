@@ -182,7 +182,7 @@ trait Action extends ActionLike with ActionRelay.HasMessageRelay{
 
   protected[actions] def withDriversTimedDuring[T](session: Session)(f: => T) = {
 
-    var baseStr = s"[${session.taskContextOpt.map(_.partitionId()).getOrElse(0)}]+> ${this.toString}"
+    var baseStr = s"[${session.taskContextOptOnCreation.map(_.partitionId()).getOrElse(0)}]+> ${this.toString}"
     this match {
       case tt: Timed =>
         baseStr = baseStr + s" in ${tt.timeout(session)}"

@@ -130,7 +130,7 @@ object DriverFactories {
       val existingOpt = sessionLocals.remove(session)
       existingOpt.foreach {
         driver =>
-          destroy(driver, session.taskContextOpt)
+          destroy(driver, session.taskContextOptOnCreation)
       }
     }
 
@@ -179,13 +179,13 @@ object DriverFactories {
               }
               catch {
                 case e: Throwable =>
-                  delegate.destroy(status.self, session.taskContextOpt)
+                  delegate.destroy(status.self, session.taskContextOptOnCreation)
                   refreshDriver
               }
             }
             else {
               // TODO: should wait until its no longer busy, instead of destroying it.
-              delegate.destroy(status.self, session.taskContextOpt)
+              delegate.destroy(status.self, session.taskContextOptOnCreation)
               refreshDriver
             }
         }

@@ -1,7 +1,8 @@
 package com.tribbloids.spookystuff.uav.telemetry
 
+import com.tribbloids.spookystuff.caching.Memoize
 import com.tribbloids.spookystuff.session.python.PyRef
-import com.tribbloids.spookystuff.session.{Cleanable, ResourceLedger, Session}
+import com.tribbloids.spookystuff.session.{Cleanable, Lifespan, ResourceLedger, Session}
 import com.tribbloids.spookystuff.uav.dsl.LinkFactory
 import com.tribbloids.spookystuff.uav.spatial._
 import com.tribbloids.spookystuff.uav.system.Drone
@@ -9,7 +10,6 @@ import com.tribbloids.spookystuff.uav.telemetry.mavlink.MAVLink
 import com.tribbloids.spookystuff.uav.{ReinforcementDepletedException, UAVConf}
 import com.tribbloids.spookystuff.utils.{NOTSerializable, SpookyUtils, TreeException}
 import com.tribbloids.spookystuff.{SpookyContext, caching}
-import org.apache.spark.TaskContext
 import org.slf4j.LoggerFactory
 
 import scala.collection.mutable.ArrayBuffer
@@ -26,7 +26,7 @@ object Link {
   val existing: caching.ConcurrentMap[Drone, Link] = caching.ConcurrentMap()
 
   def trySelect(
-                 executedBy: List[Drone],
+                 executedBy: Seq[Drone],
                  session: Session,
                  selector: Seq[Link] => Option[Link] = {
                    vs =>
@@ -35,50 +35,59 @@ object Link {
                  recommission: Boolean = true
                ): Try[Link] = {
 
-    val taskLocalOpt = session.taskContextOpt.flatMap {
-      tc =>
-        val sameTCs = Link.existing.values.toList.filter(_.taskContextOpt == Some(tc))
-        assert(sameTCs.size <= 1, "2 Links in 1 task context!")
-        sameTCs.headOption
+    val sessionOnCreation = session.lifespan.onCreation
+
+    val localOpt = {
+      val locals = Link.existing.values.toList.filter{
+        v =>
+          val tc1Opt = v.lastUsedOpt.flatMap(_.taskContextOpt)
+          val tc2Opt = sessionOnCreation.taskContextOpt
+          val tcMatch = (tc1Opt, tc2Opt) match {
+            case (Some(tc1), Some(tc2)) if tc1 == tc2 => true
+            case _ => false
+          }
+          val thMatch = v.lastUsedOpt.map(_.thread) == Some(sessionOnCreation.thread)
+          tcMatch || thMatch
+      }
+      assert(locals.size <= 1, "Multiple Links cannot share task context or thread")
+      val result = locals.headOption
+      result.foreach(_.setLastUsed(session.lifespan.onCreation))
+      result
     }
 
-    var resultOpt = taskLocalOpt.orElse {
+    var resultOpt = localOpt.orElse {
       val links = executedBy.map(_.toLink(session.spooky))
 
       this.synchronized {
         val available = links.filter(v => v.isAvailable)
         val selectedOpt = selector(available)
-        for (
-          tc <- session.taskContextOpt;
-          selected <- selectedOpt
-        ) {
-          selected.setTask(tc)
-        }
+        selectedOpt.foreach(_.setLastUsed(session.lifespan.onCreation))
         selectedOpt
       }
     }
 
-    if (recommission) resultOpt = resultOpt.map {
-      link =>
-        val factory = session.spooky.conf.submodule[UAVConf].linkFactory
-        link.recommission(factory)
-    }
-
     resultOpt match {
-      case Some(result) => Success(result)
+      case Some(link) =>
+        if (recommission) {
+          val factory = session.spooky.submodule[UAVConf].linkFactory
+          Success(link.recommission(factory))
+        }
+        else {
+          Success(link)
+        }
       case None =>
         val info = if (Link.existing.isEmpty) {
-          val msg = s"No existing telemetry Link for ${executedBy.mkString("[", ", ", "]")}, existing links are:"
+          val msg = s"No telemetry Link for ${executedBy.mkString("[", ", ", "]")}, existing links are:"
           val hint = Link.existing.keys.toList.mkString("[", ", ", "]")
           msg + "\n" + hint
         }
         else {
-          Link.existing.values.map {
-            link =>
-              assert(!link.isAvailable)
-              link.statusString
-          }
-            .mkString("\n")
+          "All telemetry Links are busy:\n" +
+            Link.existing.values.map {
+              link =>
+                link.statusString
+            }
+              .mkString("\n")
         }
         Failure(
           new ReinforcementDepletedException(info)
@@ -132,16 +141,20 @@ trait Link extends Cleanable with NOTSerializable {
     }
   }
 
-  @volatile protected var _taskContext: TaskContext = _
-  def taskContextOpt = Option(_taskContext)
+  @volatile protected var lastUsed: Lifespan.Context = _
+  def lastUsedOpt = Option(lastUsed)
 
-  def setTask(
-               taskContext: TaskContext
-             ): this.type = this.synchronized{
-
-    assert(taskContextOpt.forall(_.isCompleted()))
-    this._taskContext = taskContext
-    this
+  def setLastUsed(
+                   c: Lifespan.Context
+                 ): this.type = {
+    if (lastUsedOpt.exists(_ == c)) this
+    else {
+      this.synchronized{
+        assert(isNotUsedByTask)
+        this.lastUsed = c
+        this
+      }
+    }
   }
 
   var isDryrun = false
@@ -249,15 +262,12 @@ trait Link extends Cleanable with NOTSerializable {
       System.currentTimeMillis() - tt._2 <= blacklistDuration
   }
 
-  def isNotInTask: Boolean = {
-    taskContextOpt.forall {
-      tc =>
-        tc.isCompleted()
-    }
+  def isNotUsedByTask: Boolean = {
+    Option(lastUsed).flatMap(_.taskContextOpt).forall(_.isCompleted())
   }
 
   def isAvailable: Boolean = {
-    isIdle && isNotBlacklisted && isNotInTask
+    isIdle && isNotBlacklisted && isNotUsedByTask
   }
 
   def statusString: String = {
@@ -265,8 +275,13 @@ trait Link extends Cleanable with NOTSerializable {
     if (!isIdle) strs += "busy"
     if (!isNotBlacklisted) strs += s"unreachable for ${(System.currentTimeMillis() - lastFailureOpt.get._2).toDouble / 1000}s" +
       s" (${lastFailureOpt.get._1.getClass.getSimpleName})"
-    if (!isNotInTask) strs += s"occupied by Task-${taskContextOpt.get.taskAttemptId()}"
-    s"Link $drone is " + strs.mkString(" & ")
+    if (!isNotUsedByTask) strs += s"used by Task-${lastUsed.taskContextOpt.get.taskAttemptId()}"
+    s"Link $drone is " + {
+      if (strs.isEmpty)
+        "available"
+      else
+        strs.mkString(" & ")
+    }
   }
 
   def coFactory(another: Link): Boolean
@@ -306,30 +321,24 @@ trait Link extends Cleanable with NOTSerializable {
     retry()(Unit)
   }
 
-  // TODO useless? Link command can set multiple landing site.
-  var _home: Location = _
+  // Most telemetry support setting up multiple landing site.
   protected def _getHome: Location
-  final def home = retry(){
-    Option(_home).getOrElse {
-      val v = _getHome
-      _home = v
-      v
+  final lazy val home: Location = {
+    retry(5){
+      _getHome
     }
   }
 
-  protected var _lastLocation: Location = _
-  protected def _getLocation: Location
-  final def getLocation(refresh: Boolean = true) = {
-    if (refresh || _lastLocation == null) {
-      retry(){
-        val v = _getLocation
-        _lastLocation = v
-        v
+  protected def _getCurrentLocation: Location
+  object CurrentLocation extends Memoize[Unit, Location]{
+    override def f(v: Unit): Location = {
+      retry(5) {
+        _getCurrentLocation
       }
     }
-    else {
-      _lastLocation
-    }
+  }
+  def currentLocation(expireAfter: Long = 1000): Location = {
+    CurrentLocation.getIfNotExpire((), expireAfter)
   }
 
   //====================== Synchronous API ===================== TODO this should be abandoned and mimic by Asynch API

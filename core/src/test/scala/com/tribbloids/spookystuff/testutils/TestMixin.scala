@@ -1,5 +1,6 @@
 package com.tribbloids.spookystuff.testutils
 
+import com.mchange.v2.c3p0.util.TestUtils
 import org.apache.spark.SparkEnv
 import org.apache.spark.serializer.{JavaSerializer, KryoSerializer, Serializer}
 import org.scalatest.FunSuite
@@ -40,13 +41,13 @@ trait TestMixin extends FunSuite {
           if (sort) b = b.sorted
           if (ignoreCase) b = b.map(_.toLowerCase)
           if (superSet) {
-            assert(
+            TestHelper.assert(
               a.intersect(b).nonEmpty,
               comparisonStr(originalStr _, b)
             )
           }
           else {
-            assert(
+            TestHelper.assert(
               a == b,
               comparisonStr(originalStr _, b)
             )
@@ -83,10 +84,10 @@ trait TestMixin extends FunSuite {
             a.zipAll(b, null, null).foreach {
               tuple =>
                 val fixes = tuple._2.split("[\\.]{6,}", 2)
-                assert(
+                TestHelper.assert(
                   tuple._1.startsWith(fixes.head)
                 )
-                assert(
+                TestHelper.assert(
                   tuple._1.endsWith(fixes.last)
                 )
             }

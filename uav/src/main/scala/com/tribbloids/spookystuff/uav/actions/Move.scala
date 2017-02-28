@@ -48,5 +48,6 @@ case class Move(
     }
   }
 
-  override def start_end = Nil
+  override def start: Location = ???
+  override def end: Location = ???
 }

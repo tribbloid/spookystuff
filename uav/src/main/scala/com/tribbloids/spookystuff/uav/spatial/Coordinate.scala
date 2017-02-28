@@ -1,6 +1,7 @@
 package com.tribbloids.spookystuff.uav.spatial
 
 import breeze.linalg.{Vector => Vec}
+import com.tribbloids.spookystuff.utils.SpookyUtils
 import geotrellis.proj4.LatLng
 import org.osgeo.proj4j.ProjCoordinate
 import org.osgeo.proj4j.datum.Ellipsoid
@@ -18,8 +19,10 @@ trait Coordinate extends Serializable {
   def y: Double = vector(1)
   def z: Double = vector(2)
 
+  var ic: InferenceContext = _
+
   //implement this to bypass proj4
-  def fastProjectTo(ref1: Anchor, ref2: Anchor, system2: CoordinateSystem, cyclic: Set[Anchor]): Option[system2.V] = {
+  def fastProjectTo(ref1: Anchor, ref2: Anchor, system2: CoordinateSystem, ic: InferenceContext): Option[system2.V] = {
     system2 match {
       case NED if ref1 == ref2 => Some(NED.V(0,0,0).asInstanceOf[system2.V])
       case _ => None
@@ -27,14 +30,16 @@ trait Coordinate extends Serializable {
     //    None
   }
 
-  def projectZ(ref1: Anchor, ref2: Anchor, system2: CoordinateSystem, cyclic: Set[Anchor]): Option[Double] = {
+  def projectZ(ref1: Anchor, ref2: Anchor, system2: CoordinateSystem, ic: InferenceContext): Option[Double] = {
 
-    val delta2_1Opt = ref1._getCoordinate(LLA, ref2, cyclic)
-      .map(v => v.alt)
-      .orElse {
-        ref2._getCoordinate(LLA, ref1, cyclic)
-          .map(v => - v.alt)
-      }
+    val delta2_1Opt = {
+      ic.getCoordinate(PendingTriplet(ref2, LLA, ref1))
+        .map(_.asInstanceOf[LLA.V].alt)
+        .orElse {
+          ic.getCoordinate(PendingTriplet(ref1, LLA, ref2))
+            .map(v => - v.asInstanceOf[LLA.V].alt)
+        }
+    }
 
     delta2_1Opt.map {
       delta =>
@@ -47,14 +52,15 @@ trait Coordinate extends Serializable {
     * @param system2 type of the new coordinate system
     * @return new coordinate
     */
-  def projectTo(ref1: Anchor, ref2: Anchor, system2: CoordinateSystem, cyclic: Set[Anchor]): Option[system2.V] = {
+  def project(ref1: Anchor, ref2: Anchor, system2: CoordinateSystem, ic: InferenceContext): Option[system2.V] = {
 
-    val customResult: Option[system2.V] = fastProjectTo(ref1, ref2, system2, cyclic).map(_.asInstanceOf[system2.V]) // redundant! IDE error?
+    val customResult: Option[system2.V] = fastProjectTo(ref1, ref2, system2, ic)
+      .map(_.asInstanceOf[system2.V]) // redundant! IDE error?
     customResult.orElse {
-      val dstZOpt = projectZ(ref1, ref2, system2, cyclic)
+      val dstZOpt = projectZ(ref1, ref2, system2, ic)
       for (
-        proj1 <- system.get2DProj(ref2, cyclic);
-        proj2 <- system2.get2DProj(ref2, cyclic);
+        proj1 <- system.get2DProj(ref1, ic);
+        proj2 <- system2.get2DProj(ref2, ic);
         dstZ <- dstZOpt
       ) yield {
         val src = new ProjCoordinate(x, y)
@@ -62,10 +68,26 @@ trait Coordinate extends Serializable {
         val dst = new ProjCoordinate
         proj1.inverseProject(src, wgs84)
         proj2.project(wgs84, dst)
-        system2.create(Vec(dst.x, dst.y, dstZ))
+        system2.create(Vec(dst.x, dst.y, dstZ), ic)
       }
     }
   }
+
+  override lazy val toString = {
+    s"${this.system.name} " + {
+      this match {
+        case v: Product =>
+          SpookyUtils.Reflection.getCaseAccessorMap(v).map {
+            case (vv, d: Double) => s"$vv=${d.formatted("%f")}"
+            case (vv, d@ _) => s"$vv=$d"
+          }
+            .mkString(" ")
+        case _ => super.toString
+      }
+    }
+  }
+
+  def withICString = (Seq(toString) ++ Option(ic).toSeq).mkString(" ")
 }
 
 /**
@@ -73,24 +95,35 @@ trait Coordinate extends Serializable {
   * subclasses MUST define a CRS or worthless
   */
 trait CoordinateSystem extends Serializable {
-  outer =>
+
+  def name: String = this.getClass.getSimpleName.stripSuffix("$")
 
   //to save time we avoid using proj4 string parsing and implement our own alternative conversion rule if Projection is not available.
-  def get2DProj(a: Anchor, cyclic: Set[Anchor]): Option[Projection]
+  def get2DProj(a: Anchor, ic: InferenceContext): Option[Projection]
 
   protected def _create(vector: Vec[Double]): V
-  def create(vector: Vec[Double]) = {
+  def create(vector: Vec[Double], ic: InferenceContext = InferenceContext()) = {
     val result = _create(vector)
-    assert(result.vector == vector)
+    assert(result.vector == vector) //TODO: remove
+    result.ic = ic
     result
   }
 
   type V <: Value
 
+  def zero: Option[V] = None
+
   trait Value extends Coordinate {
     def system: CoordinateSystem = CoordinateSystem.this
 
-    def ++>(b: V): V
+    final def ++>(b: V): V = {
+      val result = _chain(b)
+      assert(this.ic == b.ic)
+      result.ic = this.ic
+      result
+    }
+
+    protected def _chain(b: V): V
   }
 }
 
@@ -105,7 +138,7 @@ object LLA extends CoordinateSystem {
   }
 
   //to save time we avoid using proj4 string parsing and implement our own alternative conversion rule if Projection is not available.
-  override def get2DProj(a: Anchor, cyclic: Set[Anchor]): Option[Projection] = {
+  override def get2DProj(a: Anchor, ic: InferenceContext): Option[Projection] = {
     projOpt
   }
 
@@ -125,9 +158,7 @@ object LLA extends CoordinateSystem {
 
     val vector = Vec(lon, lat, alt)
 
-    override def ++>(b: V): V = V(b.lat, b.lon, this.alt + b.alt)
-
-    override lazy val toString = s"${this.system.getClass.getSimpleName.stripSuffix("$")} lat=$lat lon=$lon alt=$alt"
+    override def _chain(b: V): V = V(b.lat, b.lon, this.alt + b.alt)
   }
 }
 
@@ -136,10 +167,10 @@ object LLA extends CoordinateSystem {
   */
 object NED extends CoordinateSystem {
   //to save time we avoid using proj4 string parsing and implement our own alternative conversion rule if Projection is not available.
-  override def get2DProj(a: Anchor, cyclic: Set[Anchor]): Option[Projection] = {
+  override def get2DProj(a: Anchor, ic: InferenceContext): Option[Projection] = {
     a match {
       case p: Location =>
-        val opt =  p._getCoordinate(LLA, GeodeticAnchor, cyclic)
+        val opt: Option[LLA.V] = ic.getCoordinate(PendingTriplet(GeodeticAnchor, LLA, p)).map(_.asInstanceOf[LLA.V])
         opt.map {
           origin =>
             val proj = new EquidistantAzimuthalProjection(Math.toRadians(origin.lat), Math.toRadians(origin.lon))
@@ -154,11 +185,13 @@ object NED extends CoordinateSystem {
 
   override def _create(v: Vec[Double]): V = V(v(1), v(0), - v(2))
 
+  override def zero: Option[V] = Some(create(Vec(0.0, 0.0, 0.0)))
+
   def apply(
              north: Double,
              east: Double,
              down: Double
-           ) = V(north, east,- down)
+           ) = V(north, east, down)
 
   case class V(
                 north: Double,
@@ -168,8 +201,6 @@ object NED extends CoordinateSystem {
 
     val vector = Vec(east, north, - down)
 
-    override def ++>(b: V): V = V(this.north + b.north, this.east + b.east, this.down + b.down)
-
-    override lazy val toString = s"${this.system.getClass.getSimpleName.stripSuffix("$")} north=$north east=$east down=$down"
+    override def _chain(b: V): V = V(this.north + b.north, this.east + b.east, this.down + b.down)
   }
 }

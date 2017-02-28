@@ -21,7 +21,7 @@ abstract class Interaction extends Action {
 
   def delay: Duration
 
-  final override def outputNames = Set()
+  final override def outputNames = Set.empty
 
   final override def trunk = Some(this) //can't be ommitted
 

@@ -6,8 +6,8 @@ package com.tribbloids.spookystuff.uav.spatial
 
 trait StartEndLocation {
 
-  def start: Location
-  def end: Location
+  def start: LocationLike
+  def end: LocationLike
 
   def speed: Double = Double.MaxValue //teleporting :)
 }

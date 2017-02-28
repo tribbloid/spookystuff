@@ -17,7 +17,7 @@ case class Proxy(
                   baudRate: Int,
                   ssid: Int = UAVConf.PROXY_SSID,
                   name: String
-                ) extends CaseInstanceRef with BijectoryRef with ResourceLedger {
+                ) extends CaseInstanceRef with BindedRef with ResourceLedger {
 
   assert(!outs.contains(master))
   override lazy val resourceIDs = Map(

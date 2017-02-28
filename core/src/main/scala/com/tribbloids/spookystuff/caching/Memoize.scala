@@ -16,20 +16,50 @@
 
 package com.tribbloids.spookystuff.caching
 
-import java.util.concurrent.ConcurrentHashMap
-
 /**
- * @author Manuri Perera
- */
-case class Memoize[T, R](f: T => R) extends (T => R) {
-  val cache = ConcurrentCache[T, R]()
+  * @author Manuri Perera
+  */
+trait Memoize[T, R] extends (T => R) with Serializable {
+
+  def f(v: T): R
+
+  val cache = ConcurrentCache[T, (R, Long)]()
+
+  def get(x: T, condition: ((R, Long)) => Boolean): R = {
+    if (cache.contains(x)) {
+      val cached = cache(x)
+      if (condition(cached))
+        return cached._1
+    }
+    val y = f(x)
+    val time = System.currentTimeMillis()
+    cache.put(x, y -> time)
+    y
+  }
+
 
   def apply(x: T): R = {
-    if (cache.contains(x)) cache(x)
-    else {
-      val y = f(x)
-      cache.put(x, y)
-      y
-    }
+    get(x, _ => true)
+  }
+
+  def getIfNotExpire(x: T, expireAfter: Long): R = {
+    get(
+      x,
+      {
+        tuple =>
+          val elapsed = System.currentTimeMillis() - tuple._2
+          elapsed > expireAfter
+      }
+    )
+  }
+
+  def getLaterThan(x: T, timestamp: Long): R = {
+    get(
+      x,
+      {
+        tuple =>
+          tuple._2 > timestamp
+      }
+    )
   }
 }

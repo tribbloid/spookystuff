@@ -8,7 +8,6 @@ import com.tribbloids.spookystuff.session.python.PythonDriver
 import com.tribbloids.spookystuff.utils.SpookyUtils
 import com.tribbloids.spookystuff.{Const, SpookyContext, SpookyException}
 import org.apache.spark.TaskContext
-import org.apache.spark.ml.dsl.utils.{MessageAPI, MessageRelay}
 import org.openqa.selenium.Dimension
 import org.slf4j.LoggerFactory
 
@@ -54,7 +53,7 @@ sealed abstract class AbstractSession(val spooky: SpookyContext) extends LocalCl
   def pythonDriver: PythonDriver
   def driverLifespan: Lifespan
 
-  val taskContextOpt: Option[TaskContext] = Option(TaskContext.get())
+  def taskContextOptOnCreation: Option[TaskContext] = lifespan.onCreation.taskContextOpt
 
   override def cleanImpl(): Unit = {
     spooky.metrics.sessionReclaimed += 1

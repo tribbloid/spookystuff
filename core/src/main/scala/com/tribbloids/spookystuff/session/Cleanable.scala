@@ -11,10 +11,11 @@ import scala.language.implicitConversions
 import scala.reflect.ClassTag
 import scala.util.Try
 
-class Lifespan extends IDMixin with Serializable {
+abstract class Lifespan extends IDMixin with Serializable {
 
   {
     _id //always getID on construction
+    onCreation
   }
 
   def nameOpt: Option[String] = None
@@ -39,12 +40,9 @@ class Lifespan extends IDMixin with Serializable {
   def isTask = _id.isLeft
   def isThread = _id.isRight
 
-  def getID: ID = Option(TaskContext.get()) match {
-    case Some(tc) =>
-      Lifespan.taskID(tc)
-    case None =>
-      Lifespan.threadID
-  }
+  def getID: ID
+
+  @transient lazy val onCreation = Lifespan.Context()
 
   @transient lazy val _id = {
     getID
@@ -74,43 +72,50 @@ class Lifespan extends IDMixin with Serializable {
 
 object Lifespan {
 
-  def taskID(tc: TaskContext): Left[Long, Long] = {
-    Left(tc.taskAttemptId)
-  }
-
-  def threadID: Right[Long, Long] = {
-    Right(Thread.currentThread().getId)
-  }
+  case class Context(
+                      taskContextOpt: Option[TaskContext] = Option(TaskContext.get()),
+                      thread: Thread = Thread.currentThread()
+                    )
 
   //CAUTION: keep the empty constructor! Kryo deserializer use them to initialize object
   case class Auto(override val nameOpt: Option[String]) extends Lifespan {
     def this() = this(None)
+
+    override def getID: ID = onCreation.taskContextOpt.map {
+      tc =>
+        Left(tc.taskAttemptId())
+    }
+      .getOrElse {
+        Right(onCreation.thread.getId)
+      }
   }
 
   case class Task(override val nameOpt: Option[String]) extends Lifespan {
     def this() = this(None)
 
-    require(_id.isLeft, "Not inside any Spark Task")
+    override def getID: ID = onCreation.taskContextOpt.map {
+      tc =>
+        Left(tc.taskAttemptId())
+    }
+      .getOrElse {
+        throw new UnsupportedOperationException("Not inside any Spark Task")
+      }
   }
 
   case class JVM(override val nameOpt: Option[String]) extends Lifespan {
     def this() = this(None)
 
-    override def getID: ID = threadID
+    override def getID: ID = Right(onCreation.thread.getId)
   }
 
-  case class Custom(threadID: Long = 0, override val nameOpt: Option[String] = None) extends Lifespan {
-    def this() = this(0, None)
-
-    override def getID: ID = Right(threadID)
+  case class Custom(getID: Either[Long, Long] = Right(0), override val nameOpt: Option[String] = None) extends Lifespan {
+    def this() = this(Right(0), None)
 
     override def addCleanupHook(fn: () => Unit): Unit = {}
   }
 }
 
 sealed trait AbstractCleanable {
-
-  final protected val defaultLifespan = new Lifespan.JVM()
 
   logConstructionDestruction("Created")
 
@@ -174,7 +179,7 @@ trait Cleanable extends AbstractCleanable {
     * taskOrThreadOnCreation is incorrect in withDeadline or threads not created by Spark
     * Override this to correct such problem
     */
-  def lifespan: Lifespan = defaultLifespan
+  def lifespan: Lifespan = new Lifespan.JVM()
   lifespan //initialize lazily
 
   uncleanedInBatch += this

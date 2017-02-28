@@ -9,17 +9,18 @@ import com.tribbloids.spookystuff.utils.SpookyUtils
 object Fleet {
 
   case class Inventory(
-                        drones: Seq[Drone],
+                        drones: Iterable[Drone],
                         hosts: (Drone, String) => Boolean = (_,_) => true
                       ) extends Fleet {
 
-    def apply(): Seq[Drone] = {
-      val hostName = SpookyUtils.getHost_ExecutorID._1
+    def apply(): Set[Drone] = {
+      val hostPort = SpookyUtils.getBlockManagerID.hostPort
       drones.flatMap {
         d =>
-          if (hosts(d, hostName)) Some(d)
+          if (hosts(d, hostPort)) Some(d)
           else None
       }
+        .toSet
     }
   }
 
@@ -32,7 +33,7 @@ object Fleet {
                        base: BaseLocator
                      ) extends Fleet {
 
-    def apply(): Seq[Drone] = {
+    def apply(): Set[Drone] = {
       val before = delegate()
       ???
     }
