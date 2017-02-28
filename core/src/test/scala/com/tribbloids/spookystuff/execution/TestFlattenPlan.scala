@@ -28,7 +28,8 @@ class TestFlattenPlan extends SpookyEnvFixture {
         |Map(_1 -> WrappedArray(4, 5, 6), _2 -> WrappedArray(b, c, d), B -> 5)
         |Map(_1 -> WrappedArray(1, 2, 3), B -> 3)
         |Map(_1 -> WrappedArray(4, 5, 6), _2 -> WrappedArray(b, c, d), B -> 6)
-      """.stripMargin
+      """.stripMargin,
+      sort = true
     )
   }
 
@@ -45,7 +46,8 @@ class TestFlattenPlan extends SpookyEnvFixture {
         |Map(_1 -> WrappedArray(4, 5, 6), _2 -> WrappedArray(b, c, d), A -> 5)
         |Map(_1 -> WrappedArray(1, 2, 3), A -> 3)
         |Map(_1 -> WrappedArray(4, 5, 6), _2 -> WrappedArray(b, c, d), A -> 6)
-      """.stripMargin
+      """.stripMargin,
+      sort = true
     )
   }
 
