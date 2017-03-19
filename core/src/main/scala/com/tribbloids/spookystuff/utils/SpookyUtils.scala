@@ -5,7 +5,7 @@ import java.net._
 import java.nio.file.{Files, _}
 
 import org.apache.commons.io.IOUtils
-import org.apache.spark.{SparkEnv, TaskContext}
+import org.apache.spark.SparkEnv
 import org.apache.spark.ml.dsl.ReflectionUtils
 import org.apache.spark.ml.dsl.utils.FlowUtils
 import org.apache.spark.rdd.RDD
@@ -13,8 +13,6 @@ import org.apache.spark.storage.{BlockManagerId, StorageLevel}
 import org.slf4j.LoggerFactory
 
 import scala.collection.mutable
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.duration._
 import scala.concurrent.{Await, Future, TimeoutException}
 import scala.language.implicitConversions
 import scala.reflect.ClassTag
@@ -23,7 +21,9 @@ import scala.xml.PrettyPrinter
 
 object SpookyUtils {
 
+  import scala.concurrent.ExecutionContext.Implicits.global
   import SpookyViews._
+  import scala.concurrent.duration._
 
   def qualifiedName(separator: String)(parts: String*) = {
     parts.flatMap(v => Option(v)).reduceLeftOption(addSuffix(separator, _) + _).orNull
@@ -84,49 +84,65 @@ object SpookyUtils {
 
   def withDeadline[T](
                        n: Duration,
-                       heartbeat: Option[Duration] = Some(10.seconds)
-                     )(fn: => T): T = {
+                       heartbeatOpt: Option[Duration] = Some(10.seconds)
+                     )(
+                       fn: =>T,
+                       heartbeatFn: Option[Int => Unit] = None
+                     ): T = {
 
-    val callerStr = FlowUtils.stackTracesShowStr(
+    val breakpointStr: String = FlowUtils.stackTracesShowStr(
       FlowUtils.getBreakpointInfo()
         .slice(1, Int.MaxValue)
       //        .filterNot(_.getClassName == this.getClass.getCanonicalName)
     )
+    val startTime = System.currentTimeMillis()
+
     val future = Future {
       fn
     }
 
-    @volatile var completed = false
-    try {
-      heartbeat.foreach {
-        hb =>
-          val printer = Future {
-            val current = System.currentTimeMillis()
-            while(!completed) {
-              Thread.sleep(hb.toMillis)
-              val elapsed = (System.currentTimeMillis() - current).millis
-              val left = n.minus(elapsed)
-              assert(left.toMillis > 0, "INTERNAL ERROR: heartbeat not terminated")
-              LoggerFactory.getLogger(this.getClass).info(
-                s"T- ${left.toMillis.toDouble/1000} second(s)" +
-                  "\t@ " + callerStr
-              )
-            }
-          }
-      }
+    val nMillis = n.toMillis
+    val terminateAt = startTime + nMillis
 
-      //TODO: this doesn't terminate the future upon timeout exception! need a better pattern.
-      try {
-        Await.result(future, n)
-      }
-      catch {
-        case e: TimeoutException =>
-          LoggerFactory.getLogger(this.getClass).debug("TIMEOUT!!!!")
-          throw e
-      }
+    val effectiveHeartbeatFn: (Int) => Unit = heartbeatFn.getOrElse {
+      i =>
+        val remainMillis = terminateAt - System.currentTimeMillis()
+        LoggerFactory.getLogger(this.getClass).info(
+          s"T - ${remainMillis.toDouble/1000} second(s)" +
+            "\t@ " + breakpointStr
+        )
     }
-    finally {
-      completed = true
+
+    //TODO: this doesn't terminate the future upon timeout exception! need a better pattern.
+    heartbeatOpt match {
+      case None =>
+        try {
+          Await.result(future, n)
+        }
+        catch {
+          case e: TimeoutException =>
+            LoggerFactory.getLogger(this.getClass).debug("TIMEOUT!!!!")
+            throw e
+        }
+      case Some(heartbeat) =>
+        val heartbeatMillis = heartbeat.toMillis
+        for (i <- 0 to (nMillis / heartbeatMillis).toInt) {
+          val remainMillis = terminateAt - System.currentTimeMillis()
+          effectiveHeartbeatFn(i)
+          val epochMillis = Math.min(heartbeatMillis, remainMillis)
+          try {
+            val result =  Await.result(future, epochMillis.milliseconds)
+            return result
+          }
+          catch {
+            case e: TimeoutException =>
+              if (heartbeatMillis >= remainMillis) {
+                LoggerFactory.getLogger(this.getClass).debug("TIMEOUT!!!!")
+                throw e
+              }
+          }
+        }
+        throw new UnknownError("IMPOSSIBLE")
     }
   }
 

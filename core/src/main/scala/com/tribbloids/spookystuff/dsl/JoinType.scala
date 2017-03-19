@@ -4,6 +4,7 @@ package com.tribbloids.spookystuff.dsl
  * Created by peng on 8/31/14.
  */
 
+//TODO: use Spark JoinType
 sealed abstract class JoinType(val isLeft: Boolean) extends Serializable with Product
 
 //trait LeftLink extends JoinType //Join yield at least 1 PageRow that may have empty action chain, now assuming always happen

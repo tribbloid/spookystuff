@@ -19,10 +19,10 @@ trait QueryCore extends LocalSpookyCore {
     val result = doMain(spooky)
 
     val array = result match {
-      case schemaRdd: DataFrame =>
-        val array = schemaRdd.rdd.persist().takeSample(withReplacement = false, num = 100)
-        schemaRdd.printSchema()
-        println(schemaRdd.schema.fieldNames.mkString("[","\t","]"))
+      case df: DataFrame =>
+        val array = df.rdd.persist().takeSample(withReplacement = false, num = 100)
+        df.printSchema()
+        println(df.schema.fieldNames.mkString("[","\t","]"))
         array
       case pageRowRDD: ExecutionPlan =>
         val array = pageRowRDD.rdd.persist().takeSample(withReplacement = false, num = 100)

@@ -2,19 +2,23 @@ package com.tribbloids.spookystuff.utils
 
 import java.io.File
 
-import com.tribbloids.spookystuff.testutils.TestHelper
+import com.tribbloids.spookystuff.testutils.{TestHelper, TestMixin}
 import org.apache.spark.TaskContext
 import org.apache.spark.rdd.RDD
 import org.scalatest.FunSuite
 
 import scala.collection.immutable.Seq
+import scala.collection.mutable.ArrayBuffer
 import scala.concurrent.TimeoutException
 import scala.util.Random
 
 /**
- * Created by peng on 11/1/14.
- */
-class SpookyUtilsSuite extends FunSuite {
+  * Created by peng on 11/1/14.
+  */
+class SpookyUtilsSuite extends FunSuite with TestMixin {
+
+  import SpookyViews.SparkContextView
+  import scala.concurrent.duration._
 
   test("canonizeUrn should clean ?:$&#"){
     val url = SpookyUtils.canonizeUrn("http://abc.com?re#k2$si")
@@ -50,10 +54,91 @@ class SpookyUtilsSuite extends FunSuite {
     assert(dir.list().nonEmpty)
   }
 
-  test("withDeadline won't be affected by scala concurrency global ForkJoin thread pool") {
+  test("withDeadline can write heartbeat info into log by default") {
 
-    import SpookyViews.SparkContextView
-    import scala.concurrent.duration._
+    val (_, time) = TestHelper.timer {
+      TestHelper.intercept[TimeoutException] {
+        SpookyUtils.withDeadline(10.seconds, Some(1.second))(
+          {
+            Thread.sleep(20000)
+          }
+        )
+      }
+    }
+    TestHelper.assert(time < 12000)
+
+    val (_, time2) = TestHelper.timer {
+      SpookyUtils.withDeadline(10.seconds, Some(1.second))(
+        {
+          Thread.sleep(5000)
+        }
+      )
+    }
+    TestHelper.assert(time2 < 6000)
+  }
+
+  test("withDeadline can execute heartbeat") {
+
+    var log = ArrayBuffer[String]()
+
+    val (_, time) = TestHelper.timer {
+      TestHelper.intercept[TimeoutException] {
+        SpookyUtils.withDeadline(10.seconds, Some(1.second))(
+          {
+            Thread.sleep(20000)
+          },
+          Some {
+            i: Int =>
+              val str = s"heartbeat: i=$i"
+              println(str)
+              log += str
+          }
+        )
+      }
+    }
+    TestHelper.assert(time < 12000)
+    log.mkString("\n").shouldBe(
+      """
+        |heartbeat: i=0
+        |heartbeat: i=1
+        |heartbeat: i=2
+        |heartbeat: i=3
+        |heartbeat: i=4
+        |heartbeat: i=5
+        |heartbeat: i=6
+        |heartbeat: i=7
+        |heartbeat: i=8
+        |heartbeat: i=9
+      """.stripMargin
+    )
+
+    log.clear()
+    val (_, time2) = TestHelper.timer {
+      SpookyUtils.withDeadline(10.seconds, Some(1.second))(
+        {
+          Thread.sleep(5000)
+        },
+        Some {
+          i: Int =>
+            val str = s"heartbeat: i=$i"
+            println(str)
+            log += str
+        }
+      )
+    }
+    TestHelper.assert(time2 < 6000)
+    log.mkString("\n").shouldBe(
+      """
+        |heartbeat: i=0
+        |heartbeat: i=1
+        |heartbeat: i=2
+        |heartbeat: i=3
+        |heartbeat: i=4
+      """.stripMargin
+    )
+  }
+
+  test("withDeadline won't be affected by scala concurrency global ForkJoin thread pool") {
 
     TestHelper.TestSpark.foreachExecutor {
 
@@ -65,8 +150,14 @@ class SpookyUtilsSuite extends FunSuite {
           }
         }
       }
+      TestHelper.assert(time < 11000)
 
-      TestHelper.assert(time < 12000)
+      val (_, time2) = TestHelper.timer {
+        SpookyUtils.withDeadline(10.seconds, Some(1.second)) {
+          Thread.sleep(5000)
+        }
+      }
+      TestHelper.assert(time2 < 6000)
     }
   }
 
