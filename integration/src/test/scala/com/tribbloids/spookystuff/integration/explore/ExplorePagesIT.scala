@@ -54,5 +54,5 @@ class ExplorePagesIT extends IntegrationFixture {
   override def numPages= 5
   override val error = 0 to 3
 
-  override def pageFetchedCap: Int = 12
+  override def pageFetchedCap: Int = 13
 }
