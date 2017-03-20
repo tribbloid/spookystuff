@@ -2,9 +2,9 @@ version: 2
 
 jobs:
   build:
-    working_directory: ~/spookystuff
+    working_directory: ~/spookystuff-ci # change to something irregular
     docker:
-      - image: python:2.7.12
+      - image: buildpack-deps:trusty
 
         environment:
 #          SITL_SPEEDUP: 10
