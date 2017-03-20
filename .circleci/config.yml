@@ -10,8 +10,6 @@ jobs:
 #          SITL_SPEEDUP: 10
 #          SITL_RATE: 200
     steps:
-      - run: ''
-
       - checkout
 
       - run: 'exec build-tools/mvn-install.sh -Pspark-1.6 -Pscala-2.11 -Puav'
