@@ -1,0 +1,18 @@
+# for 2.0 beta.
+
+version: 2
+jobs:
+  build:
+    working_directory: ~/
+    docker:
+      - image: java:1.8
+
+        environment:
+#          SITL_SPEEDUP: 10
+#          SITL_RATE: 200
+    steps:
+      - checkout
+
+      - run: 'exec build-tools/mvn-install.sh -Pspark-1.6 -Pscala-2.11 -Puav'
+
+      - run: 'mvn test -Pspark-1.6 -Pscala-2.11 -Puav -pl uav'
