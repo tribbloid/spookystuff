@@ -1,6 +1,5 @@
-# for 2.0 beta.
-
 version: 2
+
 jobs:
   build:
     working_directory: ~/
@@ -16,3 +15,5 @@ jobs:
       - run: 'exec build-tools/mvn-install.sh -Pspark-1.6 -Pscala-2.11 -Puav'
 
       - run: 'mvn test -Pspark-1.6 -Pscala-2.11 -Puav -pl uav'
+
+# for 2.0 beta.
