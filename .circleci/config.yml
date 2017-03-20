@@ -4,7 +4,7 @@ jobs:
   build:
     working_directory: ~/spookystuff-ci # change to something irregular
     docker:
-      - image: java:oracle-java8
+      - image: openjdk:8-jdk
 
         environment:
 #          SITL_SPEEDUP: 10
