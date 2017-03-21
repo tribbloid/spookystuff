@@ -53,7 +53,7 @@ sealed abstract class AbstractSession(val spooky: SpookyContext) extends LocalCl
   def pythonDriver: PythonDriver
   def driverLifespan: Lifespan
 
-  def taskContextOptOnCreation: Option[TaskContext] = lifespan.onCreation.taskContextOpt
+  def taskContextOpt: Option[TaskContext] = lifespan.ctx.taskContextOpt
 
   override def cleanImpl(): Unit = {
     spooky.metrics.sessionReclaimed += 1

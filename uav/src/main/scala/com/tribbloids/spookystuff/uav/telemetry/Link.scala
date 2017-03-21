@@ -35,23 +35,22 @@ object Link {
                  recommission: Boolean = true
                ): Try[Link] = {
 
-    val sessionOnCreation = session.lifespan.onCreation
+    val sessionLifespanOpt = Some(session.lifespan)
 
     val localOpt = {
       val locals = Link.existing.values.toList.filter{
         v =>
-          val tc1Opt = v.lastUsedOpt.flatMap(_.taskContextOpt)
-          val tc2Opt = sessionOnCreation.taskContextOpt
-          val tcMatch = (tc1Opt, tc2Opt) match {
+          val l1Opt = v.usedInLifespanOpt
+          val l2Opt = sessionLifespanOpt
+          val lMatch = (l1Opt, l2Opt) match {
             case (Some(tc1), Some(tc2)) if tc1 == tc2 => true
             case _ => false
           }
-          val thMatch = v.lastUsedOpt.map(_.thread) == Some(sessionOnCreation.thread)
-          tcMatch || thMatch
+          lMatch
       }
       assert(locals.size <= 1, "Multiple Links cannot share task context or thread")
       val result = locals.headOption
-      result.foreach(_.setLastUsed(session.lifespan.onCreation))
+      result.foreach(_.usedInLifespan = session.lifespan)
       result
     }
 
@@ -61,7 +60,7 @@ object Link {
       this.synchronized {
         val available = links.filter(v => v.isAvailable)
         val selectedOpt = selector(available)
-        selectedOpt.foreach(_.setLastUsed(session.lifespan.onCreation))
+        selectedOpt.foreach(_.usedInLifespan = session.lifespan)
         selectedOpt
       }
     }
@@ -141,17 +140,18 @@ trait Link extends Cleanable with NOTSerializable {
     }
   }
 
-  @volatile protected var lastUsed: Lifespan.Context = _
-  def lastUsedOpt = Option(lastUsed)
+  @volatile protected var _usedInLifespan: Lifespan = _
+  def usedInLifespanOpt = Option(_usedInLifespan)
+  def usedInLifespan = usedInLifespanOpt.get
+  def usedInLifespan_=(
+                        c: Lifespan
+                      ): this.type = {
 
-  def setLastUsed(
-                   c: Lifespan.Context
-                 ): this.type = {
-    if (lastUsedOpt.exists(_ == c)) this
+    if (usedInLifespanOpt.exists(_ == c)) this
     else {
       this.synchronized{
-        assert(isNotUsedByTask, s"Cannot set last used: $statusString")
-        this.lastUsed = c
+        assert(isNotUsedInLifespan, s"Cannot set usedInLifespan to $c: $statusString")
+        this._usedInLifespan = c
         this
       }
     }
@@ -262,12 +262,12 @@ trait Link extends Cleanable with NOTSerializable {
       System.currentTimeMillis() - tt._2 <= blacklistDuration
   }
 
-  def isNotUsedByTask: Boolean = {
-    Option(lastUsed).flatMap(_.taskContextOpt).forall(_.isCompleted())
+  def isNotUsedInLifespan: Boolean = {
+    Option(_usedInLifespan).forall(_.isTerminated)
   }
 
   def isAvailable: Boolean = {
-    isNotBooked && isNotBlacklisted && isNotUsedByTask
+    isNotBooked && isNotBlacklisted && isNotUsedInLifespan
   }
 
   def statusString: String = {
@@ -276,7 +276,7 @@ trait Link extends Cleanable with NOTSerializable {
     if (!isNotBooked) strs += "booked"
     if (!isNotBlacklisted) strs += s"unreachable for ${(System.currentTimeMillis() - lastFailureOpt.get._2).toDouble / 1000}s" +
       s" (${lastFailureOpt.get._1.getClass.getSimpleName})"
-    if (!isNotUsedByTask) strs += s"used by Task-${lastUsed.taskContextOpt.get.taskAttemptId()}"
+    if (!isNotUsedInLifespan) strs += s"used by $_usedInLifespan"
 
     s"Link $drone is " + {
       if (isAvailable) {

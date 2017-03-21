@@ -15,7 +15,7 @@ abstract class Lifespan extends IDMixin with Serializable {
 
   {
     _id //always getID on construction
-    onCreation
+    ctx
   }
 
   def nameOpt: Option[String] = None
@@ -42,10 +42,17 @@ abstract class Lifespan extends IDMixin with Serializable {
 
   def getID: ID
 
-  @transient lazy val onCreation = Lifespan.Context()
+  @transient lazy val ctx = Lifespan.Context()
 
   @transient lazy val _id = {
     getID
+  }
+
+  def isTerminated: Boolean = _id match {
+    case Left(id) =>
+      ctx.taskContextOpt.get.isCompleted()
+    case Right(id) =>
+      ctx.thread.getState == Thread.State.TERMINATED
   }
 
   def readObject(in: java.io.ObjectInputStream): Unit = {
@@ -75,25 +82,28 @@ object Lifespan {
   case class Context(
                       taskContextOpt: Option[TaskContext] = Option(TaskContext.get()),
                       thread: Thread = Thread.currentThread()
-                    )
+                    ) {
+
+  }
 
   //CAUTION: keep the empty constructor! Kryo deserializer use them to initialize object
   case class Auto(override val nameOpt: Option[String]) extends Lifespan {
     def this() = this(None)
 
-    override def getID: ID = onCreation.taskContextOpt.map {
-      tc =>
-        Left(tc.taskAttemptId())
-    }
+    override def getID: ID = ctx.taskContextOpt
+      .map {
+        tc =>
+          Left(tc.taskAttemptId())
+      }
       .getOrElse {
-        Right(onCreation.thread.getId)
+        Right(ctx.thread.getId)
       }
   }
 
   case class Task(override val nameOpt: Option[String]) extends Lifespan {
     def this() = this(None)
 
-    override def getID: ID = onCreation.taskContextOpt.map {
+    override def getID: ID = ctx.taskContextOpt.map {
       tc =>
         Left(tc.taskAttemptId())
     }
@@ -105,7 +115,7 @@ object Lifespan {
   case class JVM(override val nameOpt: Option[String]) extends Lifespan {
     def this() = this(None)
 
-    override def getID: ID = Right(onCreation.thread.getId)
+    override def getID: ID = Right(ctx.thread.getId)
   }
 
   case class Custom(getID: Either[Long, Long] = Right(0), override val nameOpt: Option[String] = None) extends Lifespan {
