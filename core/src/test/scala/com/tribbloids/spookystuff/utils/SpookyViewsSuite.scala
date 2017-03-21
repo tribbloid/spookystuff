@@ -12,6 +12,7 @@ import scala.util.Random
 class SpookyViewsSuite extends SpookyEnvFixture {
 
   import SpookyViews._
+  import org.scalatest.Matchers._
 
   test("multiPassFlatMap should yield same result as flatMap") {
 
@@ -116,9 +117,10 @@ class SpookyViewsSuite extends SpookyEnvFixture {
         TaskContext.getPartitionId()
     }
       .collect()
-    assert(result.length == TestHelper.numComputers, result.mkString("\n"))
-    assert(result.map(_._1).distinct.length == TestHelper.numComputers, result.mkString("\n"))
-    assert(result.map(_._2).distinct.length == TestHelper.numComputers, result.mkString("\n"))
+    //+- 1 is for executor lost tolerance
+    assert(result.length === TestHelper.numComputers +- 1, result.mkString("\n"))
+    assert(result.map(_._1).distinct.length === TestHelper.numComputers +- 1, result.mkString("\n"))
+    assert(result.map(_._2).distinct.length === TestHelper.numComputers +- 1, result.mkString("\n"))
     result.foreach(println)
   }
 
