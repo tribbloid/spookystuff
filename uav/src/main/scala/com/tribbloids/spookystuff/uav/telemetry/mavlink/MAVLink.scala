@@ -100,7 +100,7 @@ case class MAVLink(
         if (!result) {
           LoggerFactory.getLogger(this.getClass).info (
             s"""
-               |Cannot use existing MAVLink for ${v.drone}:
+               |Existing link for $drone is obsolete! Recreating ...
                |output should be routed to GCS(s) ${v.gcsOuts.mkString("[",", ","]")}
                |but instead existing one routes it to ${gcsOuts.mkString("[",", ","]")}
              """.trim.stripMargin

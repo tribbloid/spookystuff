@@ -150,7 +150,7 @@ trait Link extends Cleanable with NOTSerializable {
     if (lastUsedOpt.exists(_ == c)) this
     else {
       this.synchronized{
-        assert(isNotUsedByTask)
+        assert(isNotUsedByTask, s"Cannot set last used: $statusString")
         this.lastUsed = c
         this
       }
@@ -247,7 +247,7 @@ trait Link extends Cleanable with NOTSerializable {
   /**
     * set true to block being used by another thread before its driver is created
     */
-  @volatile var isIdle: Boolean = true
+  @volatile var isNotBooked: Boolean = true
 
   private def blacklistDuration: Long = spookyOpt
     .map(
@@ -267,13 +267,13 @@ trait Link extends Cleanable with NOTSerializable {
   }
 
   def isAvailable: Boolean = {
-    isIdle && isNotBlacklisted && isNotUsedByTask
+    isNotBooked && isNotBlacklisted && isNotUsedByTask
   }
 
   def statusString: String = {
 
     val strs = ArrayBuffer[String]()
-    if (!isIdle) strs += "busy"
+    if (!isNotBooked) strs += "booked"
     if (!isNotBlacklisted) strs += s"unreachable for ${(System.currentTimeMillis() - lastFailureOpt.get._2).toDouble / 1000}s" +
       s" (${lastFailureOpt.get._1.getClass.getSimpleName})"
     if (!isNotUsedByTask) strs += s"used by Task-${lastUsed.taskContextOpt.get.taskAttemptId()}"
@@ -305,7 +305,7 @@ trait Link extends Cleanable with NOTSerializable {
     }
     else {
       LoggerFactory.getLogger(this.getClass).info {
-        s"Existing link for $drone is obsolete! recreating with new factory ${factory.getClass.getSimpleName}"
+        s"Recreating link with new factory ${factory.getClass.getSimpleName}"
       }
       this.clean(silent = true)
       neo

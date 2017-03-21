@@ -63,7 +63,7 @@ abstract class LinkFixture extends SimFixture {
           .get
         TestHelper.assert(link.isNotBlacklisted, "link is blacklisted")
         TestHelper.assert(link.factoryOpt.get == spooky.submodule[UAVConf].linkFactory, "link doesn't comply to factory")
-        link.isIdle = false
+        link.isNotBooked = false
         //        Thread.sleep(5000) //otherwise a task will complete so fast such that another task hasn't start yet.
         link
     }
@@ -194,7 +194,7 @@ abstract class LinkFixture extends SimFixture {
           val linkRDD1: RDD[Link] = getLinkRDD(spooky)
           linkRDD1.foreach {
             link =>
-              link.isIdle = true
+              link.isNotBooked = true
           }
 
           spooky.submodule[UAVConf].linkFactory = factory2
