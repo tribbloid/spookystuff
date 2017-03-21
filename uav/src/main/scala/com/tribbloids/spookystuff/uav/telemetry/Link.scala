@@ -273,10 +273,13 @@ trait Link extends Cleanable with NOTSerializable {
   def statusString: String = {
 
     val strs = ArrayBuffer[String]()
-    if (!isNotBooked) strs += "booked"
-    if (!isNotBlacklisted) strs += s"unreachable for ${(System.currentTimeMillis() - lastFailureOpt.get._2).toDouble / 1000}s" +
-      s" (${lastFailureOpt.get._1.getClass.getSimpleName})"
-    if (!isNotUsedInLifespan) strs += s"used by $_usedInLifespan"
+    if (!isNotBooked)
+      strs += "booked"
+    if (!isNotBlacklisted)
+      strs += s"unreachable for ${(System.currentTimeMillis() - lastFailureOpt.get._2).toDouble / 1000}s" +
+        s" (${lastFailureOpt.get._1.getClass.getSimpleName})"
+    if (!isNotUsedInLifespan)
+      strs += s"used by ${_usedInLifespan}"
 
     s"Link $drone is " + {
       if (isAvailable) {
