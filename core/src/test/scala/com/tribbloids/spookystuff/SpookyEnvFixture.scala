@@ -150,13 +150,6 @@ abstract class SpookyEnvFixture
 
   import com.tribbloids.spookystuff.utils.SpookyViews.SparkContextView
 
-  override def beforeAll() {
-
-    TestHelper.TestSparkConf.setAppName("Test:" + this.getClass.getSimpleName)
-
-    super.beforeAll()
-  }
-
   val processNames = Seq("phantomjs", "python")
 
   override def afterAll() {
