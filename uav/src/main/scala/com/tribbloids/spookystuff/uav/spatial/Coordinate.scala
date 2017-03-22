@@ -34,10 +34,10 @@ trait Coordinate extends Serializable {
 
     val delta2_1Opt = {
       ic.getCoordinate(PendingTriplet(ref2, LLA, ref1))
-        .map(_.asInstanceOf[LLA.V].alt)
+        .map(_.alt)
         .orElse {
           ic.getCoordinate(PendingTriplet(ref1, LLA, ref2))
-            .map(v => - v.asInstanceOf[LLA.V].alt)
+            .map(v => - v.alt)
         }
     }
 
@@ -170,7 +170,7 @@ object NED extends CoordinateSystem {
   override def get2DProj(a: Anchor, ic: InferenceContext): Option[Projection] = {
     a match {
       case p: Location =>
-        val opt: Option[LLA.V] = ic.getCoordinate(PendingTriplet(GeodeticAnchor, LLA, p)).map(_.asInstanceOf[LLA.V])
+        val opt: Option[LLA.V] = ic.getCoordinate(PendingTriplet(GeodeticAnchor, LLA, p))
         opt.map {
           origin =>
             val proj = new EquidistantAzimuthalProjection(Math.toRadians(origin.lat), Math.toRadians(origin.lon))

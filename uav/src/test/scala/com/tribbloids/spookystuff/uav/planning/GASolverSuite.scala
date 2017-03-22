@@ -12,10 +12,6 @@ import org.scalactic.TolerantNumerics
   */
 class GASolverSuite extends APMSITLFixture {
 
-  override lazy val simFactory = DefaultSimFactory
-
-  override def parallelism: Int = 4
-
   val main: Seq[Waypoint] = UAVTestUtils.LawnMowerPattern(
     5,
     NED(10, 10, -10),
@@ -39,24 +35,24 @@ class GASolverSuite extends APMSITLFixture {
     this.spooky
   )
 
-  lazy val link = {
+  lazy val dummyLink = {
     val drone = simDrones.head
     val link = DummyLink(drone)
     link
   }
-  lazy val initialRoute = {
-    Route(link, main.indices)
+  lazy val dummyRoute = {
+    Route(dummyLink, main.indices)
   }
 
   test("Route can be converted to traces") {
 
-    val route = initialRoute
+    val route = dummyRoute
     val traces = route.toTraces(solver.allTracesBroadcasted.value)
     traces.mkString("\n").shouldBe(
       main.map{a => List(a)}
         .map {
           trace =>
-            Seq(UseLink(link)) ++ trace
+            Seq(UseLink(dummyLink)) ++ trace
         }
         .mkString("\n")
     )
@@ -66,13 +62,13 @@ class GASolverSuite extends APMSITLFixture {
 
     implicit val doubleEquality = TolerantNumerics.tolerantDoubleEquality(0.00001)
 
-    val route = initialRoute
+    val route = dummyRoute
     val cost = route.estimateCost(solver)
     assert(cost === 119.543903)
   }
 
   test("Route can calculate the optimal strategy to insert a waypoint") {
-    val route = initialRoute
+    val route = dummyRoute
     val inserted = route.optimalInsertFrom(Seq(main.length), solver)
     inserted.is.mkString(",").shouldBe(
       "0,10,1,2,3,4,5,6,7,8,9"
@@ -80,7 +76,7 @@ class GASolverSuite extends APMSITLFixture {
   }
 
   test("Route can calculate the optimal strategy to insert several waypoints") {
-    val route = initialRoute
+    val route = dummyRoute
     val inserted = route.optimalInsertFrom(main.length until allWPs.length, solver)
     inserted.is.mkString(",").shouldBe(
       "0,10,1,2,11,3,4,5,6,12,7,8,13,9"

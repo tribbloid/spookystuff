@@ -16,7 +16,7 @@ case class Relation(
     * @return new coordinate
     */
   def project(from2: Anchor, system2: CoordinateSystem, ic: InferenceContext): Option[system2.V] = {
-    coordinate.project(from, from2, system2, ic).map(_.asInstanceOf[system2.V])
+    coordinate.project(from, from2, system2, ic)//.map(_.asInstanceOf[system2.V])
   }
 
   override def simpleString: String = {

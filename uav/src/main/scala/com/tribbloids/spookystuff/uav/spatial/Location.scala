@@ -20,14 +20,13 @@ trait Anchor extends Serializable {
                      system: CoordinateSystem = LLA,
                      from: Anchor = GeodeticAnchor
                    ): Option[system.V] = {
-    _getCoordinate(system, from, InferenceContext())//.map(_.asInstanceOf[system.V])
+    _getCoordinate(system, from, InferenceContext())
   }
 
   def coordinate(system: CoordinateSystem = LLA, from: Anchor = GeodeticAnchor): system.V = {
     getCoordinate(system, from).getOrElse {
       throw new UnsupportedOperationException(s"cannot determine relative position from $from to $this")
     }
-    //.asInstanceOf[system.V]
   }
 
   def _getCoordinate(

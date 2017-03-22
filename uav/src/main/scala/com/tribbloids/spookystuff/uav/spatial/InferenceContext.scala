@@ -6,16 +6,16 @@ import scala.collection.mutable
   * Created by peng on 26/02/17.
   */
 
-case class PendingTriplet(
-                           from: Anchor,
-                           system: CoordinateSystem,
-                           to: Anchor
-                         ) {
+case class PendingTriplet[+T <: CoordinateSystem](
+                                                  from: Anchor,
+                                                  system: T,
+                                                  to: Anchor
+                                                ) {
 }
 
 case class InferenceContext(
-                             stack: mutable.ArrayBuffer[PendingTriplet] = mutable.ArrayBuffer.empty,
-                             failed: mutable.Set[PendingTriplet] = mutable.Set.empty,
+                             stack: mutable.ArrayBuffer[PendingTriplet[CoordinateSystem]] = mutable.ArrayBuffer.empty,
+                             failed: mutable.Set[PendingTriplet[CoordinateSystem]] = mutable.Set.empty,
                              var hops: Int = 0,
                              var recursions: Int = 0
                            ) {
@@ -24,14 +24,14 @@ case class InferenceContext(
     s"hops=$hops recursions=$recursions"
   }
 
-  def isForbidden(triplet: PendingTriplet) = {
+  def isForbidden(triplet: PendingTriplet[CoordinateSystem]) = {
     stack.contains(triplet) || failed.contains(triplet)
   }
 
-  def isAllowed(triplet: PendingTriplet) = !isForbidden(triplet)
+  def isAllowed(triplet: PendingTriplet[CoordinateSystem]) = !isForbidden(triplet)
 
   def getCoordinate(
-                     triplet: PendingTriplet
+                     triplet: PendingTriplet[CoordinateSystem]
                    ): Option[triplet.system.V] = {
 
     recursions += 1
@@ -39,12 +39,12 @@ case class InferenceContext(
     if (isForbidden(triplet))
       return None
 
-    import triplet._
+//    import triplet._
     assert(stack.count(_ == triplet) == 0)
     stack += triplet
     if (hops <= stack.size) hops = stack.size
     try {
-      val result = to._getCoordinate(system, from, this)
+      val result = triplet.to._getCoordinate(triplet.system, triplet.from, this)
       result match {
         case None =>
           failed += triplet
