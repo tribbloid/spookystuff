@@ -1,8 +1,7 @@
 package com.tribbloids.spookystuff.session
 
 import com.tribbloids.spookystuff.caching._
-import com.tribbloids.spookystuff.utils.{IDMixin, NOTSerializable, TreeException}
-import org.apache.spark.TaskContext
+import com.tribbloids.spookystuff.utils.{NOTSerializable, TreeException}
 import org.openqa.selenium.NoSuchSessionException
 import org.slf4j.LoggerFactory
 
@@ -10,117 +9,6 @@ import scala.collection.mutable
 import scala.language.implicitConversions
 import scala.reflect.ClassTag
 import scala.util.Try
-
-abstract class Lifespan extends IDMixin with Serializable {
-
-  {
-    _id //always getID on construction
-    ctx
-    if (!Cleanable.uncleaned.contains(_id)) {
-      addCleanupHook {
-        () =>
-          Cleanable.cleanSweep(_id)
-      }
-    }
-  }
-
-  def nameOpt: Option[String] = None
-  def name: String = {
-    _id match {
-      case Left(v) => nameOpt.getOrElse("Task") + "-" + v
-      case Right(v) => nameOpt.getOrElse("Thread") + "-" + v
-    }
-  }
-
-  type ID = Either[Long, Long]
-
-  def isTask = _id.isLeft
-  def isThread = _id.isRight
-
-  def getID: ID
-
-  @transient lazy val ctx = Lifespan.Context()
-
-  @transient lazy val _id = {
-    getID
-  }
-
-  def isTerminated: Boolean = _id match {
-    case Left(id) =>
-      ctx.taskContextOpt.get.isCompleted()
-    case Right(id) =>
-      ctx.thread.getState == Thread.State.TERMINATED
-  }
-
-  def readObject(in: java.io.ObjectInputStream): Unit = {
-    in.defaultReadObject()
-    _id
-  }
-
-  override def toString = name
-
-  def addCleanupHook(fn: () => Unit): Unit = {
-    _id match {
-      case Left(_) =>
-        TaskContext.get().addTaskCompletionListener {
-          tc =>
-            fn()
-        }
-      case Right(_) =>
-        sys.addShutdownHook {
-          fn()
-        }
-    }
-  }
-}
-
-object Lifespan {
-
-  case class Context(
-                      taskContextOpt: Option[TaskContext] = Option(TaskContext.get()),
-                      thread: Thread = Thread.currentThread()
-                    ) extends NOTSerializable {
-
-  }
-
-  //CAUTION: keep the empty constructor! Kryo deserializer use them to initialize object
-  case class Auto(override val nameOpt: Option[String]) extends Lifespan {
-    def this() = this(None)
-
-    override def getID: ID = ctx.taskContextOpt
-      .map {
-        tc =>
-          Left(tc.taskAttemptId())
-      }
-      .getOrElse {
-        Right(ctx.thread.getId)
-      }
-  }
-
-  case class Task(override val nameOpt: Option[String]) extends Lifespan {
-    def this() = this(None)
-
-    override def getID: ID = ctx.taskContextOpt.map {
-      tc =>
-        Left(tc.taskAttemptId())
-    }
-      .getOrElse {
-        throw new UnsupportedOperationException("Not inside any Spark Task")
-      }
-  }
-
-  case class JVM(override val nameOpt: Option[String]) extends Lifespan {
-    def this() = this(None)
-
-    override def getID: ID = Right(ctx.thread.getId)
-  }
-
-  case class Custom(getID: Either[Long, Long] = Right(0), override val nameOpt: Option[String] = None) extends Lifespan {
-    def this() = this(Right(0), None)
-
-    override def addCleanupHook(fn: () => Unit): Unit = {}
-  }
-}
 
 sealed trait AbstractCleanable {
 
@@ -196,7 +84,8 @@ trait Cleanable extends AbstractCleanable {
   }
 
   @transient lazy val uncleanedInBatch: ConcurrentSet[Cleanable] = {
-    // This weird implementation is to mitigate thread-unsafe competition: 2 empty Set being inserted simultaneously
+    // This weird implementation is to mitigate thread-unsafe competition:
+    // 2 empty Set being inserted simultaneously
     Cleanable.uncleaned
       .getOrElseUpdate(
         lifespan._id,
@@ -226,9 +115,9 @@ trait Cleanable extends AbstractCleanable {
 
 object Cleanable {
 
-  val uncleaned: ConcurrentMap[Lifespan#ID, ConcurrentSet[Cleanable]] = ConcurrentMap()
+  val uncleaned: ConcurrentMap[Any, ConcurrentSet[Cleanable]] = ConcurrentMap()
 
-  def getByLifespan(tt: Lifespan#ID, condition: (Cleanable) => Boolean): (ConcurrentSet[Cleanable], List[Cleanable]) = {
+  def getByLifespan(tt: Any, condition: (Cleanable) => Boolean): (ConcurrentSet[Cleanable], List[Cleanable]) = {
     val set = uncleaned.getOrElse(tt, mutable.Set.empty)
     val filtered = set.toList
       .filter(condition)
@@ -255,7 +144,7 @@ object Cleanable {
 
   // cannot execute concurrent
   def cleanSweep(
-                  tt: Lifespan#ID,
+                  tt: Any,
                   condition: Cleanable => Boolean = _ => true
                 ) = {
     val (set: ConcurrentSet[Cleanable], filtered: List[Cleanable]) = getByLifespan(tt, condition)

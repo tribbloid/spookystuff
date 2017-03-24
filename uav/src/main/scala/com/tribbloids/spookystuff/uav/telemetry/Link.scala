@@ -1,14 +1,14 @@
 package com.tribbloids.spookystuff.uav.telemetry
 
 import com.tribbloids.spookystuff.caching.Memoize
-import com.tribbloids.spookystuff.session.python.PyRef
 import com.tribbloids.spookystuff.session._
+import com.tribbloids.spookystuff.session.python.PyRef
 import com.tribbloids.spookystuff.uav.dsl.LinkFactory
 import com.tribbloids.spookystuff.uav.spatial._
 import com.tribbloids.spookystuff.uav.system.Drone
 import com.tribbloids.spookystuff.uav.telemetry.mavlink.MAVLink
 import com.tribbloids.spookystuff.uav.{ReinforcementDepletedException, UAVConf}
-import com.tribbloids.spookystuff.utils.{NOTSerializable, SpookyUtils, TreeException}
+import com.tribbloids.spookystuff.utils.{SpookyUtils, TreeException}
 import com.tribbloids.spookystuff.{SpookyContext, caching}
 import org.slf4j.LoggerFactory
 
@@ -35,14 +35,14 @@ object Link {
                  recommission: Boolean = true
                ): Try[Link] = {
 
-    val sessionLifespanOpt = Some(session.lifespan)
+    val sessionThreadOpt = Some(session.lifespan.ctx.thread)
 
     val localOpt = {
       val locals = Link.existing.values.toList.filter{
         v =>
-          val l1Opt = v.usedInLifespanOpt
-          val l2Opt = sessionLifespanOpt
-          val lMatch = (l1Opt, l2Opt) match {
+          val id1Opt = v.usedByThreadOpt.map(_.getId)
+          val id2Opt = sessionThreadOpt.map(_.getId)
+          val lMatch = (id1Opt, id2Opt) match {
             case (Some(tc1), Some(tc2)) if tc1 == tc2 => true
             case _ => false
           }
@@ -50,7 +50,7 @@ object Link {
       }
       assert(locals.size <= 1, "Multiple Links cannot share task context or thread")
       val result = locals.headOption
-      result.foreach(_.usedInLifespan = session.lifespan)
+      result.foreach(_.usedByThread = session.lifespan.ctx.thread)
       result
     }
 
@@ -60,7 +60,7 @@ object Link {
       this.synchronized {
         val available = links.filter(v => v.isAvailable)
         val selectedOpt = selector(available)
-        selectedOpt.foreach(_.usedInLifespan = session.lifespan)
+        selectedOpt.foreach(_.usedByThread = session.lifespan.ctx.thread)
         selectedOpt
       }
     }
@@ -140,18 +140,18 @@ trait Link extends LocalCleanable {
     }
   }
 
-  @volatile protected var _usedInLifespan: Lifespan = _
-  def usedInLifespanOpt = Option(_usedInLifespan)
-  def usedInLifespan = usedInLifespanOpt.get
-  def usedInLifespan_=(
-                        c: Lifespan
-                      ): this.type = {
+  @volatile protected var _usedByThread: Thread = _
+  def usedByThreadOpt = Option(_usedByThread)
+  def usedByThread = usedByThreadOpt.get
+  def usedByThread_=(
+                      c: Thread
+                    ): this.type = {
 
-    if (usedInLifespanOpt.exists(_ == c)) this
+    if (usedByThreadOpt.exists(v => v.getId == c.getId)) this
     else {
       this.synchronized{
-        assert(isNotUsedInLifespan, s"Cannot set usedInLifespan to $c: $statusString")
-        this._usedInLifespan = c
+        assert(isNotUsedByThread, s"Cannot be used by thread ${c.getName}: $statusString")
+        this._usedByThread = c
         this
       }
     }
@@ -262,12 +262,12 @@ trait Link extends LocalCleanable {
       System.currentTimeMillis() - tt._2 <= blacklistDuration
   }
 
-  def isNotUsedInLifespan: Boolean = {
-    Option(_usedInLifespan).forall(_.isTerminated)
+  def isNotUsedByThread: Boolean = {
+    usedByThreadOpt.forall(v => !v.isAlive)
   }
 
   def isAvailable: Boolean = {
-    isNotBooked && isNotBlacklisted && isNotUsedInLifespan
+    isNotBooked && isNotBlacklisted && isNotUsedByThread
   }
 
   def statusString: String = {
@@ -278,8 +278,8 @@ trait Link extends LocalCleanable {
     if (!isNotBlacklisted)
       strs += s"unreachable for ${(System.currentTimeMillis() - lastFailureOpt.get._2).toDouble / 1000}s" +
         s" (${lastFailureOpt.get._1.getClass.getSimpleName})"
-    if (!isNotUsedInLifespan)
-      strs += s"used by ${_usedInLifespan}"
+    if (!isNotUsedByThread)
+      strs += s"used by ${_usedByThread}"
 
     s"Link $drone is " + {
       if (isAvailable) {

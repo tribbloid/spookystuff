@@ -40,7 +40,7 @@ object SpookyEnvFixture {
           val nonLocalDrivers = tuple._2
             .filter {
               v =>
-                v.lifespan.isInstanceOf[Lifespan.Task]
+                v.lifespan.strategy == Lifespan.Task
             }
           assert(
             nonLocalDrivers.isEmpty,

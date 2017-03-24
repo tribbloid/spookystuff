@@ -15,19 +15,19 @@ class CleanableSuite extends SpookyEnvFixture {
   test("Lifespan is serializable") {
 
     sc.foreachExecutorCore {
-      val lifespan = new Lifespan.Task()
+      val lifespan = Lifespan.Task()
 
       AssertSerializable(lifespan)
     }
 
-    assertSerializable(Lifespan.JVM)
+    assertSerializable(Lifespan.JVM())
   }
 
   test("Lifespan._id should be updated after being shipped to a different executor") {
 
     val rdd = sc.mapPerExecutorCore {
-      val lifespan = new Lifespan.Task()
-      val oldID = lifespan._id.left.get
+      val lifespan = Lifespan.Task()
+      val oldID = lifespan._id.asInstanceOf[Lifespan.Task.ID].id
       lifespan -> oldID
     }
 
@@ -40,7 +40,7 @@ class CleanableSuite extends SpookyEnvFixture {
         tuple =>
           val v = tuple._1
           val newID = TaskContext.get().taskAttemptId()
-          Predef.assert (v._id.left.get == newID)
+          Predef.assert (v._id.asInstanceOf[Lifespan.Task.ID].id == newID)
           tuple._2 -> newID
       }
       .collectPerPartition
@@ -52,8 +52,8 @@ class CleanableSuite extends SpookyEnvFixture {
   test("Lifespan._id should be updated after being shipped to driver") {
 
     val rdd = sc.mapPerWorker {
-      val lifespan = new Lifespan.Auto()
-      val oldID = lifespan._id.left.get
+      val lifespan = Lifespan.Auto()
+      val oldID = lifespan._id.asInstanceOf[Lifespan.Task.ID].id
       lifespan -> oldID
     }
 
@@ -63,7 +63,7 @@ class CleanableSuite extends SpookyEnvFixture {
       .foreach {
         tuple =>
           val v = tuple._1
-          Predef.assert (v._id.isRight)
+          Predef.assert (v._id.isInstanceOf[Lifespan.JVM.ID])
       }
   }
 
@@ -71,8 +71,8 @@ class CleanableSuite extends SpookyEnvFixture {
     import scala.concurrent.duration._
 
     val rdd = sc.mapPerExecutorCore {
-      val lifespan = new Lifespan.Task()
-      val oldID = lifespan._id.left.get
+      val lifespan = Lifespan.Task()
+      val oldID = lifespan._id.asInstanceOf[Lifespan.Task.ID].id
       lifespan -> oldID
     }
 
@@ -83,12 +83,15 @@ class CleanableSuite extends SpookyEnvFixture {
     repartitioned
       .map {
         tuple =>
-          val v = tuple._1
+          val v: Lifespan = tuple._1
           val newID = TaskContext.get().taskAttemptId()
-          val newID2Opt = SpookyUtils.withDeadline(10.seconds) {
-            v._id
+//          val newID2 = v._id
+          val newID3 = SpookyUtils.withDeadline(10.seconds) {
+            val result = v._id
+//            Predef.assert(v._id == newID2)
+            result
           }
-          Predef.assert (newID2Opt.left.get == newID)
+          Predef.assert (newID3.asInstanceOf[Lifespan.Task.ID].id == newID)
           tuple._2 -> newID
       }
       .collectPerPartition

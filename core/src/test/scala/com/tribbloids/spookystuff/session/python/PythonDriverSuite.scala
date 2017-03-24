@@ -23,7 +23,9 @@ object PythonDriverSuite {
   }
 
   def runIterable[T, R](xs: Iterable[T])(f: (T, PythonDriver) => R): Iterable[R] = {
-    val proc = new PythonDriver("python", lifespan = new Lifespan.Auto(Some("testPython")))
+    val proc = new PythonDriver("python", lifespan = Lifespan.Auto(
+      nameOpt = Some("testPython")
+    ))
     try {
       val result = xs.map{
         f(_, proc)
@@ -38,8 +40,8 @@ object PythonDriverSuite {
 
 class PythonDriverSuite extends SpookyEnvFixture {
 
-  import scala.concurrent.duration._
   import scala.concurrent.ExecutionContext.Implicits.global
+  import scala.concurrent.duration._
 
   test("sendAndGetResult should work in single thread") {
     PythonDriverSuite.onePlusX(1 to 100)

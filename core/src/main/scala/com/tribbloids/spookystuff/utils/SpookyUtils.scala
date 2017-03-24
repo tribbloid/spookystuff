@@ -13,7 +13,7 @@ import org.apache.spark.storage.{BlockManagerId, StorageLevel}
 import org.slf4j.LoggerFactory
 
 import scala.collection.mutable
-import scala.concurrent.{Await, Future, TimeoutException}
+import scala.concurrent._
 import scala.language.implicitConversions
 import scala.reflect.ClassTag
 import scala.util.{Failure, Random, Success, Try}
@@ -62,11 +62,11 @@ object SpookyUtils {
           .slice(1, Int.MaxValue)
         //          .filterNot(_.getClassName == this.getClass.getCanonicalName)
       )
-    util.Try { fn } match {
-      case util.Success(x) =>
+    Try { fn } match {
+      case Success(x) =>
         x
-      case util.Failure(e: NoRetry.Wrapper) => throw e.getCause
-      case util.Failure(e) if n > 1 =>
+      case Failure(e: NoRetry.Wrapper) => throw e.getCause
+      case Failure(e) if n > 1 =>
         if (!(silent || e.isInstanceOf[SilentRetry.Wrapper])) {
           val logger = LoggerFactory.getLogger(this.getClass)
           logger.warn(
@@ -77,7 +77,7 @@ object SpookyUtils {
         }
         Thread.sleep(interval)
         retry(n - 1, interval, callerStr = _callerStr)(fn)
-      case util.Failure(e) =>
+      case Failure(e) =>
         throw e
     }
   }
@@ -97,7 +97,9 @@ object SpookyUtils {
     )
     val startTime = System.currentTimeMillis()
 
+    var thread: Thread = null
     val future = Future {
+      thread = Thread.currentThread()
       fn
     }
 
@@ -127,7 +129,7 @@ object SpookyUtils {
       case Some(heartbeat) =>
         val heartbeatMillis = heartbeat.toMillis
         for (i <- 0 to (nMillis / heartbeatMillis).toInt) {
-          val remainMillis = terminateAt - System.currentTimeMillis()
+          val remainMillis = Math.max(terminateAt - System.currentTimeMillis(), 0L)
           effectiveHeartbeatFn(i)
           val epochMillis = Math.min(heartbeatMillis, remainMillis)
           try {
@@ -137,6 +139,7 @@ object SpookyUtils {
           catch {
             case e: TimeoutException =>
               if (heartbeatMillis >= remainMillis) {
+                Option(thread).foreach(_.interrupt())
                 LoggerFactory.getLogger(this.getClass).debug("TIMEOUT!!!!")
                 throw e
               }

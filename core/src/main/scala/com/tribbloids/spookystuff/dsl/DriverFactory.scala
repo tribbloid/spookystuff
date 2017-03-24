@@ -154,7 +154,7 @@ object DriverFactories {
                          ) extends DriverFactory[T] {
 
     //taskOrThreadID -> (driver, busy)
-    @transient lazy val taskLocals: ConcurrentMap[Lifespan#ID, DriverStatus[T]] = {
+    @transient lazy val taskLocals: ConcurrentMap[Any, DriverStatus[T]] = {
       ConcurrentMap()
     }
 

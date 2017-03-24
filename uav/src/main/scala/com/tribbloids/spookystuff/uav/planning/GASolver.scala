@@ -248,22 +248,22 @@ case class GASolver(
   }
 
   //TODO: takes 1 stage, not efficient! sad!
-  def getSeed(sc: SparkContext): RDD[Route] = {
+//  def getSeed(sc: SparkContext): RDD[Route] = {
+//
+//    SpookyUtils.RDDs.shuffle(allIndicesRDD)
+//      .map {
+//        i =>
+//          Link.trySelect(spooky.submodule[UAVConf].dronesInFleet)
+//      }
+//  }
 
-    SpookyUtils.RDDs.shuffle(allIndicesRDD)
-      .map {
-        i =>
-          Link.trySelect(spooky.submodule[UAVConf].dronesInFleet)
-      }
-  }
-
-  def run(): Unit = {
-    val ga = new GeneticAlgorithm(
-      Crossover(),
-      1,
-      Mutation(),
-      0.10,
-      Selection()
-    )
-  }
+//  def run(): Unit = {
+//    val ga = new GeneticAlgorithm(
+//      Crossover(),
+//      1,
+//      Mutation(),
+//      0.10,
+//      Selection()
+//    )
+//  }
 }

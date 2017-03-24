@@ -147,17 +147,19 @@ class SpookyUtilsSuite extends FunSuite with TestMixin {
         TestHelper.intercept[TimeoutException] {
           SpookyUtils.withDeadline(10.seconds, Some(1.second)) {
             Thread.sleep(20000)
+            println("result 1")
           }
         }
       }
-      TestHelper.assert(time < 11000)
+      TestHelper.assert(time < 11000, s"$time vs 11000")
 
       val (_, time2) = TestHelper.timer {
         SpookyUtils.withDeadline(10.seconds, Some(1.second)) {
-          Thread.sleep(5000)
+          Thread.sleep(3000)
+          println("result 2")
         }
       }
-      TestHelper.assert(time2 < 6000)
+      TestHelper.assert(time2 < 6000, s"$time2 vs 6000")
     }
   }
 

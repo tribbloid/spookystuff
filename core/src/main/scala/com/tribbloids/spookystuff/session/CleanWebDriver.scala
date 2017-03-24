@@ -11,7 +11,7 @@ object CleanWebDriver {
 
 class CleanWebDriver(
                       val self: WebDriver,
-                      override val lifespan: Lifespan = new Lifespan.Auto()
+                      override val lifespan: Lifespan = Lifespan.Auto()
                     ) extends LocalCleanable {
 
   override def cleanImpl(): Unit = {
