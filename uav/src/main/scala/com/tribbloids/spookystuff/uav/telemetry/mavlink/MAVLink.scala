@@ -3,7 +3,7 @@ package com.tribbloids.spookystuff.uav.telemetry.mavlink
 import com.tribbloids.spookystuff.uav.system.Drone
 import com.tribbloids.spookystuff.uav.telemetry.Link
 import com.tribbloids.spookystuff.session.python.PythonDriver
-import com.tribbloids.spookystuff.session.{Cleanable, ResourceLedger}
+import com.tribbloids.spookystuff.session.{Cleanable, DetectResourceConflict}
 import com.tribbloids.spookystuff.uav.spatial.{GeodeticAnchor, LLA, Location}
 import org.slf4j.LoggerFactory
 
@@ -34,7 +34,7 @@ case class MAVLink(
                     drone: Drone,
                     executorOuts: Seq[String] = Nil, // cannot have duplicates
                     gcsOuts: Seq[String] = Nil
-                  ) extends Link with ResourceLedger {
+                  ) extends Link with DetectResourceConflict {
 
   {
     if (executorOuts.isEmpty) assert(gcsOuts.isEmpty, "No endpoint for executor")

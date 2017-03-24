@@ -3,7 +3,7 @@ package com.tribbloids.spookystuff.uav.dsl
 import com.tribbloids.spookystuff.SpookyContext
 import com.tribbloids.spookystuff.actions.{Action, Trace}
 import com.tribbloids.spookystuff.uav.actions.UAVNavigation
-import com.tribbloids.spookystuff.uav.planning.UseLink
+import com.tribbloids.spookystuff.uav.planning.PreferLink
 import com.tribbloids.spookystuff.uav.spatial.{NED, StartEndLocation}
 
 trait ActionCosts {
@@ -50,7 +50,7 @@ object ActionCosts {
         case nav: UAVNavigation => nav
       }
       val useLink = concated.collect {
-        case v: UseLink => v
+        case v: PreferLink => v
       }
         .distinct
 

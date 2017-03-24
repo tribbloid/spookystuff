@@ -2,7 +2,7 @@ package com.tribbloids.spookystuff.uav.telemetry
 
 import com.tribbloids.spookystuff.caching.Memoize
 import com.tribbloids.spookystuff.session.python.PyRef
-import com.tribbloids.spookystuff.session.{Cleanable, Lifespan, ResourceLedger, Session}
+import com.tribbloids.spookystuff.session._
 import com.tribbloids.spookystuff.uav.dsl.LinkFactory
 import com.tribbloids.spookystuff.uav.spatial._
 import com.tribbloids.spookystuff.uav.system.Drone
@@ -99,11 +99,11 @@ object Link {
       Try(PyRef.sanityCheck()),
       Try(MAVLink.sanityCheck())
     ) ++
-      ResourceLedger.conflicts
+      DetectResourceConflict.conflicts
   }
 }
 
-trait Link extends Cleanable with NOTSerializable {
+trait Link extends LocalCleanable {
 
   val drone: Drone
 

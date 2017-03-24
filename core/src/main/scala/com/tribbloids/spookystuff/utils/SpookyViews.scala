@@ -67,14 +67,15 @@ object SpookyViews {
       seed
     }
 
-    def mapPerExecutor[T: ClassTag](f: => T): RDD[T] = {
-      val alreadyRunExecutorID: ConcurrentMap[String, Unit] = ConcurrentMap()
+    def mapPerExecutorCore[T: ClassTag](f: => T): RDD[T] = {
+      val alreadyRunThreadID: ConcurrentMap[(String, Long), Unit] = ConcurrentMap()
 
       seed.mapPartitions {
         itr =>
-          val id = SparkEnv.get.executorId
-          if (!alreadyRunExecutorID.contains(id)) {
-            alreadyRunExecutorID += id -> Unit
+          val executorID = SparkEnv.get.executorId //technically this is useless as the map is only shared locally but whatever
+          val threadID = Thread.currentThread().getId
+          if (!alreadyRunThreadID.contains(executorID -> threadID)) {
+            alreadyRunThreadID += (executorID -> threadID) -> Unit
             Iterator(f)
           }
           else {
@@ -82,7 +83,7 @@ object SpookyViews {
           }
       }
     }
-    def foreachExecutor[T: ClassTag](f: => T) = mapPerExecutor(f).count()
+    def foreachExecutorCore[T: ClassTag](f: => T) = mapPerExecutorCore(f).count()
 
     def mapPerWorker[T: ClassTag](f: => T): RDD[T] = {
 
@@ -123,7 +124,7 @@ object SpookyViews {
 
     //TODO: change to concurrent execution
     def mapPerCore[T: ClassTag](f: => T): RDD[T] = {
-      val perExec = mapPerExecutor(f)
+      val perExec = mapPerExecutorCore(f)
       val v = f
       self.makeRDD(Seq(v), 1).union(perExec)
     }
@@ -134,6 +135,15 @@ object SpookyViews {
     def allTaskLocationStrs: Seq[String] = {
       mapPerWorker {
         SpookyUtils.getTaskLocationStr
+      }
+        .collect()
+    }
+
+    // TODO: remove! not useful
+    def allExecutorCoreIDs = {
+      mapPerExecutorCore {
+        val thread = Thread.currentThread()
+        (SpookyUtils.getBlockManagerID, thread.getId, thread.getName)
       }
         .collect()
     }

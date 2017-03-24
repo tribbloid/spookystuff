@@ -8,6 +8,7 @@ import com.tribbloids.spookystuff.utils.SpookyUtils
 import org.apache.commons.math3.exception.MathIllegalArgumentException
 import org.apache.commons.math3.exception.util.LocalizedFormats
 import org.apache.commons.math3.genetics._
+import org.apache.spark.SparkContext
 import org.apache.spark.rdd.RDD
 
 import scala.collection.mutable.ArrayBuffer
@@ -25,7 +26,7 @@ case class Route(
     }
     val seq = traces.map {
       tr =>
-        List(UseLink(link)) ++ tr
+        List(PreferLink(link)) ++ tr
     }
     seq
   }
@@ -50,9 +51,9 @@ case class Route(
           insertedRoute -> cost
       }
         .sortBy(_._2)
-//      LoggerFactory.getLogger(this.getClass).debug(
-//        MessageView(candidates_costs).toJSON()
-//      )
+      //      LoggerFactory.getLogger(this.getClass).debug(
+      //        MessageView(candidates_costs).toJSON()
+      //      )
       state = candidates_costs.head._1
     }
     state
@@ -65,14 +66,15 @@ case class Route(
   * use 1 shuffling per generation.
   * Unfortunately this may be suboptimal comparing to http://niels.nu/blog/2016/spark-of-life-genetic-algorithm.html
   * which has many micro local generations per shuffling.
-  * takes further testing to know if the convenience of local estimation worths more shuffling.
+  * takes further testing to know if the convenience of local estimation worth more shuffling.
   */
 case class GASolver(
                      @transient private val allTraces: List[Trace],
                      spooky: SpookyContext
-                   ) {
+                   ) { // TODO: NOTSerializable?
 
   val allTracesBroadcasted = spooky.sparkContext.broadcast(allTraces)
+  val allIndicesRDD = spooky.sparkContext.parallelize(allTraces.indices).persist()
 
   @transient lazy val conf = spooky.submodule[UAVConf]
   def actionCosts = conf.actionCosts
@@ -243,5 +245,25 @@ case class GASolver(
           throw new MathIllegalArgumentException(LocalizedFormats.UNSUPPORTED_OPERATION, v)
       }
     }
+  }
+
+  //TODO: takes 1 stage, not efficient! sad!
+  def getSeed(sc: SparkContext): RDD[Route] = {
+
+    SpookyUtils.RDDs.shuffle(allIndicesRDD)
+      .map {
+        i =>
+          Link.trySelect(spooky.submodule[UAVConf].dronesInFleet)
+      }
+  }
+
+  def run(): Unit = {
+    val ga = new GeneticAlgorithm(
+      Crossover(),
+      1,
+      Mutation(),
+      0.10,
+      Selection()
+    )
   }
 }

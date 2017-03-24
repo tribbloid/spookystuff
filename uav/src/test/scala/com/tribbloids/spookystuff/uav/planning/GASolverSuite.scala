@@ -2,7 +2,7 @@ package com.tribbloids.spookystuff.uav.planning
 
 import com.tribbloids.spookystuff.uav.UAVTestUtils
 import com.tribbloids.spookystuff.uav.actions.Waypoint
-import com.tribbloids.spookystuff.uav.sim.{APMSITLFixture, DefaultSimFactory}
+import com.tribbloids.spookystuff.uav.sim.APMSITLFixture
 import com.tribbloids.spookystuff.uav.spatial.NED
 import com.tribbloids.spookystuff.uav.telemetry.DummyLink
 import org.scalactic.TolerantNumerics
@@ -52,7 +52,7 @@ class GASolverSuite extends APMSITLFixture {
       main.map{a => List(a)}
         .map {
           trace =>
-            Seq(UseLink(dummyLink)) ++ trace
+            Seq(PreferLink(dummyLink)) ++ trace
         }
         .mkString("\n")
     )

@@ -73,8 +73,8 @@ class SpookyViewsSuite extends SpookyEnvFixture {
     assert(nullStr \\ nullStr \\ "abc" \\ null \\ null == "abc")
   }
 
-  test("mapPerExecutor will run properly") {
-    val result = sc.mapPerExecutor {
+  test("mapPerExecutorThread will run properly") {
+    val result = sc.mapPerExecutorCore {
       TestHelper.assert(!TaskContext.get().isRunningLocally())
       SparkEnv.get.blockManager.blockManagerId ->
         TaskContext.getPartitionId()
@@ -126,7 +126,7 @@ class SpookyViewsSuite extends SpookyEnvFixture {
 
   test("result of allTaskLocationStrs can be used as partition's preferred location") {
     //TODO: change to more succinct ignore
-    if (org.apache.spark.SPARK_VERSION.startsWith("1.6")) {
+    if (org.apache.spark.SPARK_VERSION.replaceAllLiterally(".","").toInt >= 16) {
       val tlStrs = sc.allTaskLocationStrs
       tlStrs.foreach(println)
       val length = tlStrs.size

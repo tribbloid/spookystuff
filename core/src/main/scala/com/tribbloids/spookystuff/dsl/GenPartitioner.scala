@@ -23,6 +23,7 @@ object GenPartitioners {
 
   import RDD._
 
+  //TODO: add bounding class level generic parameters
   trait GenPartitionerImpl extends Serializable {
 
     final def createBeaconRDD[K: ClassTag](

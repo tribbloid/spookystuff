@@ -5,7 +5,7 @@ import java.net._
 import java.nio.file.{Files, _}
 
 import org.apache.commons.io.IOUtils
-import org.apache.spark.SparkEnv
+import org.apache.spark.{HashPartitioner, SparkEnv}
 import org.apache.spark.ml.dsl.ReflectionUtils
 import org.apache.spark.ml.dsl.utils.FlowUtils
 import org.apache.spark.rdd.RDD
@@ -570,14 +570,23 @@ These special characters are often called "metacharacters".
 
   object RDDs {
 
-    def assertIsPersisted(rdd: RDD[_]): Unit = {
+    def isPersisted(rdd: RDD[_]): Boolean = {
       val rddInfos = rdd.sparkContext.getRDDStorageInfo
-      assert(rddInfos.find(_.id == rdd.id).get.storageLevel != StorageLevel.NONE)
+      rddInfos.find(_.id == rdd.id).get.storageLevel != StorageLevel.NONE
     }
 
     def assertIsBeaconRDD(rdd: RDD[_]): Unit = {
-      assertIsPersisted(rdd)
+      assert(isPersisted(rdd))
       assert(rdd.isEmpty())
+    }
+
+    def shuffle[T: ClassTag](
+                              rdd: RDD[T]
+                            ): RDD[T] = {
+
+      val randomKeyed: RDD[(Long, T)] = rdd.keyBy(_ => Random.nextLong())
+      val shuffled = randomKeyed.partitionBy(new HashPartitioner(rdd.partitions.length))
+      shuffled.values
     }
 
     /**

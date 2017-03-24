@@ -17,7 +17,7 @@ import scala.util.Random
   */
 class SpookyUtilsSuite extends FunSuite with TestMixin {
 
-  import SpookyViews.SparkContextView
+  import SpookyViews._
   import scala.concurrent.duration._
 
   test("canonizeUrn should clean ?:$&#"){
@@ -140,7 +140,7 @@ class SpookyUtilsSuite extends FunSuite with TestMixin {
 
   test("withDeadline won't be affected by scala concurrency global ForkJoin thread pool") {
 
-    TestHelper.TestSpark.foreachExecutor {
+    TestHelper.TestSpark.foreachExecutorCore {
 
       println("partition-" + TaskContext.get().partitionId())
       val (_, time) = TestHelper.timer {
@@ -182,5 +182,25 @@ class SpookyUtilsSuite extends FunSuite with TestMixin {
 
     assert(sum1 == sum2)
     assert(sum3 == sum1)
+  }
+
+  test("RDDs.shuffle can move data into random partitions") {
+
+    val src = TestHelper.TestSpark.parallelize(1 to 100).persist()
+
+    val shuffled1 = SpookyUtils.RDDs.shuffle(src)
+    val shuffled2 = SpookyUtils.RDDs.shuffle(src)
+
+    val identical = shuffled1.zipPartitions(shuffled2){
+      (i1, i2) =>
+        Iterator(i1.toSet == i2.toSet)
+    }
+      .collect()
+
+    assert(identical.length > identical.count(identity))
+
+    val clusters1 = shuffled1.collectPerPartition.toSet
+    val clusters2 = shuffled2.collectPerPartition.toSet
+    assert(clusters1 != clusters2)
   }
 }

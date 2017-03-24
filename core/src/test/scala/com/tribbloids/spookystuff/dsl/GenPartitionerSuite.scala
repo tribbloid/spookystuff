@@ -1,7 +1,9 @@
 package com.tribbloids.spookystuff.dsl
 
 import com.tribbloids.spookystuff.SpookyEnvFixture
+import com.tribbloids.spookystuff.utils.SpookyUtils
 import org.apache.spark.HashPartitioner
+import org.apache.spark.rdd.RDD
 
 import scala.util.Random
 
@@ -9,8 +11,6 @@ import scala.util.Random
   * Created by peng on 20/12/16.
   */
 class GenPartitionerSuite extends SpookyEnvFixture {
-
-  import com.tribbloids.spookystuff.utils.SpookyViews._
 
   test("DocCacheAware can co-partition 2 RDDs") {
     val numPartitions = Random.nextInt(80) + 9
@@ -20,24 +20,24 @@ class GenPartitionerSuite extends SpookyEnvFixture {
     //    val beacon = sc.makeRDD(1 to 1000, 1000).map(v => v -> v*v)
 
     //TODO: this will have size 1 in local mode which will seriously screw up the following logic
-    val tlStrs = sc.allTaskLocationStrs
-    val size = tlStrs.length
+    //    val tlStrs = sc.allExecutorCoreLocationStrs
+    //    val size = tlStrs.length
 
-    val src1 = (1 to 1000).map {
-      v =>
-        (v -> v.toString) -> Seq(tlStrs(Random.nextInt(size)))
-    }
-    val ref1 = sc.makeRDD[(Int, String)](src1)
-      .coalesce(numPartitions + 5, shuffle = false)
+    val srcRDD: RDD[(Int, String)] = sc.parallelize (
+      {
+        (1 to 1000).map {
+          v =>
+            v -> v.toString
+        }
+      },
+      numPartitions + 5
+    )
       .persist()
+
+    val ref1 = SpookyUtils.RDDs.shuffle(srcRDD).persist()
     ref1.count()
-    val src2 = (1 to 1000).map {
-      v =>
-        (v -> v.toString) -> Seq(tlStrs(Random.nextInt(size)))
-    }
-    val ref2 = sc.makeRDD[(Int, String)](src2)
-      .coalesce(numPartitions + 5, shuffle = false)
-      .persist()
+
+    val ref2 = SpookyUtils.RDDs.shuffle(srcRDD).persist()
     ref2.count()
 
     //    ref1.mapPartitions(i => Iterator(i.toList)).collect().foreach(println)

@@ -8,10 +8,11 @@ import com.tribbloids.spookystuff.utils.NOTSerializable
 
 /**
   * useless in DSL, cannot be shipped, prepend by GenPartitioner only.
+  * does NOT fail when the Link is unreachable (hence prefer), will trySelect another.
   */
-private[uav] case class UseLink(
-                    link: Link
-                  ) extends UAVAction with NOTSerializable {
+private[uav] case class PreferLink(
+                                    link: Link
+                                  ) extends UAVAction with NOTSerializable {
 
   override def trunk = None
 

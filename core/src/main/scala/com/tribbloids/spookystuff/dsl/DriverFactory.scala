@@ -117,9 +117,7 @@ object DriverFactories {
     }
 
     final def create(session: Session): T = {
-      val created = _createImpl(session)
-
-      created
+      _createImpl(session)
     }
 
     def _createImpl(session: Session): T
@@ -152,25 +150,33 @@ object DriverFactories {
     * call any function with a new Spark Task ID will add a cleanup TaskCompletionListener to the Task that destroy all drivers
     */
   case class TaskLocal[T](
-                                  delegate: Transient[T]
-                                ) extends DriverFactory[T] {
+                           delegate: Transient[T]
+                         ) extends DriverFactory[T] {
 
     //taskOrThreadID -> (driver, busy)
-    @transient lazy val taskLocals: ConcurrentMap[Lifespan#ID, DriverStatus[T]] = ConcurrentMap()
+    @transient lazy val taskLocals: ConcurrentMap[Lifespan#ID, DriverStatus[T]] = {
+      ConcurrentMap()
+    }
 
     override def dispatch(session: Session): T = {
 
-      val opt = taskLocals.get(session.driverLifespan._id)
+      val taskLocalOpt = taskLocals.get(session.driverLifespan._id)
 
-      def refreshDriver: T = {
+      def newDriver: T = {
         val fresh = delegate.create(session)
         taskLocals.put(session.driverLifespan._id, new DriverStatus(fresh))
         fresh
       }
 
-      opt
+      taskLocalOpt
         .map {
           status =>
+
+            def recreateDriver: T = {
+              delegate.destroy(status.self, session.taskContextOpt)
+              newDriver
+            }
+
             if (!status.isBusy) {
               try{
                 delegate.factoryReset(status.self)
@@ -179,18 +185,16 @@ object DriverFactories {
               }
               catch {
                 case e: Throwable =>
-                  delegate.destroy(status.self, session.taskContextOpt)
-                  refreshDriver
+                  recreateDriver
               }
             }
             else {
               // TODO: should wait until its no longer busy, instead of destroying it.
-              delegate.destroy(status.self, session.taskContextOpt)
-              refreshDriver
+              recreateDriver
             }
         }
         .getOrElse {
-          refreshDriver
+          newDriver
         }
     }
 
@@ -257,7 +261,7 @@ object DriverFactories {
         val fileName = PhantomJS.uri2fileName(uri)
 
         if (redeploy) {
-          sc.mapPerExecutor {
+          sc.mapPerExecutorCore {
             Try {
               val dstStr = getLocalURI(spooky)
               PhantomJS.syncDelete(dstStr)
@@ -266,7 +270,7 @@ object DriverFactories {
             .count()
         }
 
-        sc.mapPerExecutor {
+        sc.mapPerExecutorCore {
           val srcStr = SparkFiles.get(fileName)
           val dstStr = getLocalURI(spooky)
           val srcFile = new File(srcStr)
@@ -290,7 +294,7 @@ object DriverFactories {
       val isDeployedOnWorkers: Boolean = {
 
         val sc = spooky.sqlContext.sparkContext
-        val pathRDD: RDD[Option[String]] = sc.mapPerExecutor {
+        val pathRDD: RDD[Option[String]] = sc.mapPerExecutorCore {
           val pathOpt = SpookyUtils.validateLocalPath(getLocalURI(spooky))
           pathOpt
         }
@@ -343,10 +347,8 @@ object DriverFactories {
 
     //called from executors
     override def _createImpl(session: Session): CleanWebDriver = {
-      new CleanWebDriver(
-        new PhantomJSDriver(newCap(session.spooky)),
-        session.driverLifespan
-      )
+      val self = new PhantomJSDriver(newCap(session.spooky))
+      new CleanWebDriver(self, session.driverLifespan)
     }
   }
 
@@ -379,10 +381,7 @@ object DriverFactories {
       val self = new HtmlUnitDriver(browser)
       self.setJavascriptEnabled(true)
       self.setProxySettings(Proxy.extractFrom(cap))
-      val driver = new CleanWebDriver(
-        self,
-        session.driverLifespan
-      )
+      val driver = new CleanWebDriver(self, session.driverLifespan)
 
       driver
     }

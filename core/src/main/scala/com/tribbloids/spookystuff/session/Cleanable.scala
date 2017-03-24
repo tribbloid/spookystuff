@@ -16,22 +16,19 @@ abstract class Lifespan extends IDMixin with Serializable {
   {
     _id //always getID on construction
     ctx
-  }
-
-  def nameOpt: Option[String] = None
-  def name = {
-    _id match {
-      case Left(v) => nameOpt.getOrElse("Task") + "-" + v
-      case Right(v) => nameOpt.getOrElse("Thread") + "-" + v
-    }
-  }
-
-  {
     if (!Cleanable.uncleaned.contains(_id)) {
       addCleanupHook {
         () =>
           Cleanable.cleanSweep(_id)
       }
+    }
+  }
+
+  def nameOpt: Option[String] = None
+  def name: String = {
+    _id match {
+      case Left(v) => nameOpt.getOrElse("Task") + "-" + v
+      case Right(v) => nameOpt.getOrElse("Thread") + "-" + v
     }
   }
 
@@ -82,7 +79,7 @@ object Lifespan {
   case class Context(
                       taskContextOpt: Option[TaskContext] = Option(TaskContext.get()),
                       thread: Thread = Thread.currentThread()
-                    ) {
+                    ) extends NOTSerializable {
 
   }
 
