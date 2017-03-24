@@ -1,6 +1,6 @@
 package org.apache.spark.ml.dsl
 
-import com.tribbloids.spookystuff.testutils.{TestHelper, TestMixin}
+import com.tribbloids.spookystuff.testutils.{TestHelper, FunSuitex}
 import org.apache.spark.ml.PipelineStage
 import org.apache.spark.ml.param.shared.{HasInputCol, HasInputCols, HasOutputCol}
 import org.scalatest.{BeforeAndAfterAll, FunSuite}
@@ -12,7 +12,7 @@ import scala.util.matching.Regex
 /**
   * Created by peng on 18/04/16.
   */
-abstract class AbstractFlowSuite extends FunSuite with BeforeAndAfterAll with TestMixin{
+abstract class AbstractFlowSuite extends FunSuite with BeforeAndAfterAll with FunSuitex{
 
   implicit class StringView(str: String) extends super.TestStringView(str){
 

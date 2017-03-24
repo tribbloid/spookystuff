@@ -1,6 +1,6 @@
 package com.tribbloids.spookystuff.session.python
 
-import com.tribbloids.spookystuff.testutils.TestMixin
+import com.tribbloids.spookystuff.testutils.FunSuitex
 import org.apache.spark.ml.dsl.utils.MessageAPI
 import org.scalatest.FunSuite
 
@@ -20,7 +20,7 @@ case class CaseExample(
 //                        child2: Option[JSONExample] = None
                       ) extends CaseInstanceRef
 
-class PyRefSuite extends FunSuite with TestMixin {
+class PyRefSuite extends FunSuite with FunSuitex {
 
   test("JSONInstanceRef can initialize Python instance with missing constructor parameter") {
     val example = JSONExample(1, None)

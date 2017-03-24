@@ -2,7 +2,7 @@ package com.tribbloids.spookystuff.utils
 
 import java.io.File
 
-import com.tribbloids.spookystuff.testutils.{TestHelper, TestMixin}
+import com.tribbloids.spookystuff.testutils.{TestHelper, FunSuitex}
 import org.apache.spark.TaskContext
 import org.apache.spark.rdd.RDD
 import org.scalatest.FunSuite
@@ -15,7 +15,7 @@ import scala.util.Random
 /**
   * Created by peng on 11/1/14.
   */
-class SpookyUtilsSuite extends FunSuite with TestMixin {
+class SpookyUtilsSuite extends FunSuite with FunSuitex {
 
   import SpookyViews._
   import scala.concurrent.duration._

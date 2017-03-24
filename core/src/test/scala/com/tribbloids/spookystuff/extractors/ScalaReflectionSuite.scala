@@ -1,14 +1,14 @@
 package com.tribbloids.spookystuff.extractors
 
 import com.tribbloids.spookystuff.row.FetchedRow
-import com.tribbloids.spookystuff.testutils.TestMixin
+import com.tribbloids.spookystuff.testutils.FunSuitex
 import com.tribbloids.spookystuff.utils.{TypeUtils, UnreifiedScalaType}
 import org.apache.spark.sql.types.{IntegerType, StringType}
 import org.scalatest.FunSuite
 
 //object ScalaReflectionSuite {
 
-class ScalaReflectionSuite extends FunSuite with TestMixin {
+class ScalaReflectionSuite extends FunSuite with FunSuitex {
 
   import com.tribbloids.spookystuff.utils.ScalaType._
 

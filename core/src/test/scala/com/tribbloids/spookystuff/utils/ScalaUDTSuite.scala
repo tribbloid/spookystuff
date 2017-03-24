@@ -3,13 +3,13 @@ package com.tribbloids.spookystuff.utils
 import com.tribbloids.spookystuff.SpookyEnvFixture
 import com.tribbloids.spookystuff.actions.Action
 import com.tribbloids.spookystuff.doc.{Doc, Fetched, Unstructured}
-import com.tribbloids.spookystuff.testutils.TestMixin
+import com.tribbloids.spookystuff.testutils.FunSuitex
 import org.apache.spark.sql.types.DataType
 
 /**
   * Created by peng on 28/05/16.
   */
-class ScalaUDTSuite extends SpookyEnvFixture with TestMixin {
+class ScalaUDTSuite extends SpookyEnvFixture with FunSuitex {
 
   import ScalaType._
   import org.apache.spark.sql.catalyst.ScalaReflection.universe._

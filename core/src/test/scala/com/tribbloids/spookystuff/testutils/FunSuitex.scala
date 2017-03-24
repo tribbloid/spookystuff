@@ -1,16 +1,16 @@
 package com.tribbloids.spookystuff.testutils
 
-import com.mchange.v2.c3p0.util.TestUtils
 import org.apache.spark.SparkEnv
 import org.apache.spark.serializer.{JavaSerializer, KryoSerializer, Serializer}
-import org.scalatest.FunSuite
+import org.scalatest.{FunSpec, FunSuite, Suite}
 
 import scala.reflect.ClassTag
 
 /**
   * Created by peng on 17/05/16.
   */
-trait TestMixin extends FunSuite {
+trait Suitex extends {
+  self: Suite =>
 
   final val ACTUAL = "[ACTUAL  /  LEFT]"
   final val EXPECTED = "[EXPECTED / RIGHT]"
@@ -188,6 +188,9 @@ trait TestMixin extends FunSuite {
   //    }
   //  }
 }
+
+trait FunSuitex extends FunSuite with Suitex
+trait FunSpecx extends FunSpec with Suitex
 
 case class AssertSerializable[T <: AnyRef: ClassTag](
                                                       element: T,

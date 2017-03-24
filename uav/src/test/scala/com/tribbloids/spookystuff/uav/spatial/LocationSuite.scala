@@ -1,14 +1,14 @@
 package com.tribbloids.spookystuff.uav.spatial
 
 import breeze.linalg.{Vector => Vec}
-import com.tribbloids.spookystuff.testutils.TestMixin
+import com.tribbloids.spookystuff.testutils.FunSuitex
 import com.tribbloids.spookystuff.uav.UAVConf
 import org.scalatest.FunSuite
 
 /**
   * Created by peng on 14/02/17.
   */
-class LocationSuite extends FunSuite with TestMixin {
+class LocationSuite extends FunSuite with FunSuitex {
 
   test("Location can infer LLA from NED") {
 

@@ -3,9 +3,9 @@ package com.tribbloids.spookystuff.actions
 import com.tribbloids.spookystuff.SpookyEnvFixture
 import com.tribbloids.spookystuff.doc.Doc
 import com.tribbloids.spookystuff.session.{CleanWebDriver, Session, AbstractSession}
-import com.tribbloids.spookystuff.testutils.TestMixin
+import com.tribbloids.spookystuff.testutils.FunSuitex
 
-class TestTrace_PhantomJS extends SpookyEnvFixture with TestMixin {
+class TestTrace_PhantomJS extends SpookyEnvFixture with FunSuitex {
 
   import com.tribbloids.spookystuff.dsl._
 

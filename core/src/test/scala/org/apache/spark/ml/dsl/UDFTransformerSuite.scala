@@ -1,6 +1,6 @@
 package org.apache.spark.ml.dsl
 
-import com.tribbloids.spookystuff.testutils.{TestHelper, TestMixin}
+import com.tribbloids.spookystuff.testutils.{TestHelper, FunSuitex}
 import org.apache.spark.ml.feature.Tokenizer
 import org.apache.spark.sql.functions._
 import org.scalatest.FunSuite
@@ -11,7 +11,7 @@ case class User(
                age: Int
                )
 
-class UDFTransformerSuite extends FunSuite with TestMixin {
+class UDFTransformerSuite extends FunSuite with FunSuitex {
 
   val df1 = TestHelper.TestSQL.createDataFrame(Seq(
     User("Reza$", 25),
