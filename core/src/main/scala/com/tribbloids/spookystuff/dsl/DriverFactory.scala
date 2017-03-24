@@ -49,7 +49,7 @@ abstract sealed class DriverFactory[+T] extends Serializable {
   def dispatch(session: Session): T
   def release(session: Session): Unit
 
-  def driverLifespan(session: Session): Lifespan = Lifespan.Auto()
+  def driverLifespan(session: Session): Lifespan = Lifespan.Auto(ctxFactory = () => session.lifespan.ctx)
 
   def deploy(spooky: SpookyContext): Unit = {}
 }
