@@ -49,6 +49,8 @@ abstract sealed class DriverFactory[+T] extends Serializable {
   def dispatch(session: Session): T
   def release(session: Session): Unit
 
+  def driverLifespan(session: Session): Lifespan = Lifespan.Auto()
+
   def deploy(spooky: SpookyContext): Unit = {}
 }
 
@@ -117,10 +119,10 @@ object DriverFactories {
     }
 
     final def create(session: Session): T = {
-      _createImpl(session)
+      _createImpl(session, driverLifespan(session))
     }
 
-    def _createImpl(session: Session): T
+    def _createImpl(session: Session, lifespan: Lifespan): T
 
     def factoryReset(driver: T): Unit
 
@@ -160,11 +162,12 @@ object DriverFactories {
 
     override def dispatch(session: Session): T = {
 
-      val taskLocalOpt = taskLocals.get(session.driverLifespan._id)
+      val ls = driverLifespan(session)
+      val taskLocalOpt = taskLocals.get(ls._id)
 
       def newDriver: T = {
         val fresh = delegate.create(session)
-        taskLocals.put(session.driverLifespan._id, new DriverStatus(fresh))
+        taskLocals.put(ls._id, new DriverStatus(fresh))
         fresh
       }
 
@@ -200,7 +203,8 @@ object DriverFactories {
 
     override def release(session: Session): Unit = {
 
-      val opt = taskLocals.get(session.driverLifespan._id)
+      val ls = driverLifespan(session)
+      val opt = taskLocals.get(ls._id)
       opt.foreach{
         status =>
           status.isBusy = false
@@ -346,9 +350,9 @@ object DriverFactories {
     }
 
     //called from executors
-    override def _createImpl(session: Session): CleanWebDriver = {
+    override def _createImpl(session: Session, lifespan: Lifespan): CleanWebDriver = {
       val self = new PhantomJSDriver(newCap(session.spooky))
-      new CleanWebDriver(self, session.driverLifespan)
+      new CleanWebDriver(self, lifespan)
     }
   }
 
@@ -375,13 +379,13 @@ object DriverFactories {
       result.merge(capabilities)
     }
 
-    override def _createImpl(session: Session): CleanWebDriver = {
+    override def _createImpl(session: Session, lifespan: Lifespan): CleanWebDriver = {
 
       val cap = newCap(null, session.spooky)
       val self = new HtmlUnitDriver(browser)
       self.setJavascriptEnabled(true)
       self.setProxySettings(Proxy.extractFrom(cap))
-      val driver = new CleanWebDriver(self, session.driverLifespan)
+      val driver = new CleanWebDriver(self, lifespan)
 
       driver
     }
@@ -412,9 +416,9 @@ object DriverFactories {
                      getExecutable: SpookyContext => String = _ => "python"
                    ) extends PythonDriverFactory {
 
-    override def _createImpl(session: Session): PythonDriver = {
+    override def _createImpl(session: Session, lifespan: Lifespan): PythonDriver = {
       val exeStr = getExecutable(session.spooky)
-      new PythonDriver(exeStr, lifespan = session.driverLifespan)
+      new PythonDriver(exeStr, lifespan = lifespan)
     }
   }
 }

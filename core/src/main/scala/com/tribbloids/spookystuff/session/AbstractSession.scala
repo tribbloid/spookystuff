@@ -51,7 +51,6 @@ sealed abstract class AbstractSession(val spooky: SpookyContext) extends LocalCl
 
   def webDriver: CleanWebDriver
   def pythonDriver: PythonDriver
-  def driverLifespan: Lifespan
 
   def taskContextOpt: Option[TaskContext] = lifespan.ctx.taskContextOpt
 
@@ -69,7 +68,6 @@ object NoPythonDriverException extends SpookyException("INTERNAL ERROR: should i
   */
 class Session(
                override val spooky: SpookyContext,
-               val driverLifespan: Lifespan = new Lifespan.Auto(),
                override val lifespan: Lifespan = new Lifespan.JVM()
              ) extends AbstractSession(spooky){
 
