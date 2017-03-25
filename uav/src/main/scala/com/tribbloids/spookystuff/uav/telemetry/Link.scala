@@ -54,7 +54,7 @@ object Link {
       result
     }
 
-    var resultOpt = localOpt.orElse {
+    val resultOpt = localOpt.orElse {
       val links = executedBy.map(_.getLink(session.spooky))
 
       this.synchronized {
@@ -248,6 +248,7 @@ trait Link extends LocalCleanable {
     * set true to block being used by another thread before its driver is created
     */
   @volatile var isNotBooked: Boolean = true
+  def isBooked: Boolean = !isNotBooked
 
   private def blacklistDuration: Long = spookyOpt
     .map(

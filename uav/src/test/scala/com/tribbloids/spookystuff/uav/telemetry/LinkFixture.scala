@@ -162,32 +162,12 @@ abstract class LinkFixture extends SimFixture {
         }
       }
 
-      //      test(s"$testPrefix available Link can be recommissioned in another TaskContext") {
-      //
-      //        val linkRDD1: RDD[Link] = getLinkRDD(spooky)
-      //
-      //        assert(spooky.metrics.linkCreated.value == parallelism)
-      //        assert(spooky.metrics.linkDestroyed.value == 0)
-      //        assert(Link.existing.size == parallelism)
-      //
-      //        linkRDD1.foreach {
-      //          link =>
-      //            link.isIdle = true
-      //        }
-      //
-      //        val linkRDD2: RDD[Link] = getLinkRDD(spooky)
-      //
-      //        assert(spooky.metrics.linkCreated.value == parallelism)
-      //        assert(spooky.metrics.linkDestroyed.value == 0)
-      //        linkRDD1.map(_.toString).collect().mkString("\n").shouldBe (
-      //          linkRDD2.map(_.toString).collect().mkString("\n"),
-      //          sort = true
-      //        )
-      //      }
-
       for (factory2 <- linkFactories) {
 
-        test(s"$testPrefix~>${factory2.getClass.getSimpleName}: available Link can be recommissioned in another TaskContext") {
+        test(
+          s"$testPrefix~>${factory2.getClass.getSimpleName}:" +
+            s" available Link can be recommissioned in another TaskContext"
+        ) {
 
           val factory1 = spooky.submodule[UAVConf].linkFactory
 
