@@ -128,7 +128,6 @@
             <id>uav</id>
             <modules>
                 <module>uav</module>
-                <module>assembly</module>
             </modules>
         </profile>
     </profiles>
