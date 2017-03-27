@@ -176,7 +176,6 @@ abstract class SpookyEnvFixture
   }
 
   def setUp(): Unit = {
-    val spooky = this.spooky
     //    SpookyEnvFixture.cleanDriverInstances()
     spooky.conf = new SpookyConf(
       autoSave = true,
@@ -185,6 +184,7 @@ abstract class SpookyEnvFixture
       submodules = envComponents
     )
     spooky.metrics.zero()
+    spooky.rebroadcast()
   }
 
   def envComponents: Submodules[ModuleConf] = {

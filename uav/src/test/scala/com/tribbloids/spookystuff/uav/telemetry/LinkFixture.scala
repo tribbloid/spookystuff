@@ -24,12 +24,11 @@ abstract class LinkFixture extends SimFixture {
   }
 
   override def setUp(): Unit = {
-
-    sc.foreachCore {
+    super.setUp()
+    sc.foreachComputer {
       Random.shuffle(Link.existing.values.toList).foreach(_.clean())
     }
     Thread.sleep(2000) //Waiting for both python drivers to terminate, DON'T DELETE! some tests create proxy processes and they all take a few seconds to release the port binding!
-    super.setUp()
   }
 
   //  override def tearDown(): Unit = {

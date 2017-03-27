@@ -1,11 +1,14 @@
 package com.tribbloids.spookystuff.uav.planning
 
+import com.tribbloids.spookystuff.testutils.TestHelper
 import com.tribbloids.spookystuff.uav.UAVTestUtils
 import com.tribbloids.spookystuff.uav.actions.Waypoint
 import com.tribbloids.spookystuff.uav.sim.APMSITLFixture
 import com.tribbloids.spookystuff.uav.spatial.NED
 import com.tribbloids.spookystuff.uav.telemetry.DummyLink
 import org.scalactic.TolerantNumerics
+
+import scala.util.Success
 
 /**
   * Created by peng on 24/02/17.
@@ -41,7 +44,7 @@ class GASolverSuite extends APMSITLFixture {
     link
   }
   lazy val dummyRoute = {
-    Route(Some(dummyLink), main.indices)
+    Route(Success(dummyLink), main.indices)
   }
 
   test("Route can be converted to traces") {
@@ -85,6 +88,14 @@ class GASolverSuite extends APMSITLFixture {
 
   test("Generating seed population") {
 
-//    val
+    val seed = solver.generate1Seed(TestHelper.TestSpark)
+
+    seed
+      .map {
+        route =>
+          route.linkTry.map(_.uav) -> route.is.toList
+      }
+      .collect()
+      .foreach(println)
   }
 }

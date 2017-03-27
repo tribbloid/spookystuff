@@ -12,15 +12,15 @@ import org.apache.spark.SparkContext
 import org.apache.spark.rdd.RDD
 
 import scala.collection.mutable.ArrayBuffer
-import scala.util.Random
+import scala.util.{Random, Try}
 
 case class Route(
-                  linkOpt: Option[Link],
+                  linkTry: Try[Link],
                   is: Seq[Int]
                 ) {
 
   def toTracesOpt(allTraces: Seq[Trace]): Option[Seq[Trace]] = {
-    linkOpt.map {
+    linkTry.toOption.map {
       link =>
         val traces: Seq[Trace] = is.map {
           i =>
@@ -78,16 +78,15 @@ case class Route(
   * takes further testing to know if the convenience of local estimation worth more shuffling.
   */
 case class GASolver(
-                     @transient private val allTraces: List[Trace],
+                     @transient allTraces: List[Trace],
                      spooky: SpookyContext
-                   ) { //TODO: NOTSerializable?
+                   ) extends Serializable {
 
   import com.tribbloids.spookystuff.utils.SpookyViews._
 
   val allTracesBroadcasted = spooky.sparkContext.broadcast(allTraces)
-  val allIndicesRDD = spooky.sparkContext.parallelize(allTraces.indices).persist()
 
-  @transient lazy val conf = spooky.submodule[UAVConf]
+  def conf = spooky.submodule[UAVConf]
   def actionCosts = conf.actionCosts
 
   @transient val allHypotheses: ArrayBuffer[Hypothesis] = ArrayBuffer.empty
@@ -165,8 +164,8 @@ case class GASolver(
 
           val swapped = zipped.map {
             wi =>
-              assert(wi._1._1.linkOpt == wi._1._2.linkOpt)
-              val linkOpt = wi._1._1.linkOpt
+              assert(wi._1._1.linkTry == wi._1._2.linkTry)
+              val linkOpt = wi._1._1.linkTry
               val leftCleaned = wi._1._1.is.filterNot {
                 i =>
                   routesSelected._2.is.contains(i)
@@ -276,6 +275,7 @@ case class GASolver(
   //    rdd
   //  }
 
+  @transient val allIndicesRDD = spooky.sparkContext.parallelize(allTraces.indices).persist()
   //TODO: takes 1 stage, not efficient! sad!
   def generate1Seed(sc: SparkContext): RDD[Route] = {
 
@@ -283,15 +283,14 @@ case class GASolver(
     val routeRDD = shuffled.mapPartitions {
       itr =>
         val uavs = spooky.submodule[UAVConf].uavsRandomList
-        val linkOpt = spooky.withSession {
+        val linkTry = spooky.withSession {
           session =>
             Link.trySelect(
               uavs,
               session
             )
-              .toOption
         }
-        Iterator(Route(linkOpt, itr.toSeq))
+        Iterator(Route(linkTry, itr.toSeq))
     }
     routeRDD
   }

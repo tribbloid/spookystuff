@@ -49,7 +49,7 @@ class TestInMemoryDocCache extends SpookyEnvFixture with LocalPathDocsFixture {
     assert(page2.head.code === page2.head.code)
     assert(page2.head.name === "new")
 
-    Thread.sleep(10000)
+    Thread.sleep(11000)
 
     val page3 = cache.get(visitPage.head.uid.backtrace, spooky).orNull
     assert(page3 === null)
@@ -75,7 +75,7 @@ class TestInMemoryDocCache extends SpookyEnvFixture with LocalPathDocsFixture {
 //    assert(page2.head.code === page2.head.code)
     assert(page2.head.name === "newWget")
 
-    Thread.sleep(10000)
+    Thread.sleep(11000)
 
     val page3 = cache.get(wgetPage.head.uid.backtrace, spooky).orNull
     assert(page3 === null)

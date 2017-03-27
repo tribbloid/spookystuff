@@ -17,7 +17,7 @@ import scala.language.implicitConversions
 
 case class SpookyContext private (
                                    @transient sqlContext: SQLContext, //can't be used on executors, TODO: change to Option or SparkContext
-                                   @transient private var _conf: SpookyConf, //can only be used on executors after broadcast
+                                   private var _conf: SpookyConf, //can only be used on executors after broadcast
                                    metrics: SpookyMetrics //accumulators cannot be broadcasted,
                                  ) extends SerializationMarks {
 
@@ -48,19 +48,20 @@ case class SpookyContext private (
       case e: Throwable =>
         LoggerFactory.getLogger(this.getClass).error("Driver deployment fail on SpookyContext initialization", e)
     }
-    rebroadcast()
   }
 
   import org.apache.spark.sql.catalyst.ScalaReflection.universe._
 
   def sparkContext: SparkContext = this.sqlContext.sparkContext
 
-  //maybe obsolete if not rebroadcasted TODO: package auto broadcast after shipping behaviour as Minimalistic API
-  @volatile var broadcastedSpookyConf: Broadcast[SpookyConf] = _
   def conf: SpookyConf = {
-    if (isShipped) broadcastedSpookyConf.value
+    if (isShipped) {
+      _conf
+    }
     else {
-      resynch()
+      val sparkConf = sparkContext.getConf
+      _conf.sparkConf = sparkConf
+      _conf = _conf.effective
       _conf
     }
   }
@@ -70,33 +71,28 @@ case class SpookyContext private (
   def conf_= (conf: SpookyConf): Unit = {
     requireNotShipped()
     _conf = conf
-    rebroadcast()
   }
 
   def submodule[T <: ModuleConf: Submodules.Builder] = conf.submodule[T]
 
-  @volatile var broadcastedHadoopConf: Broadcast[SerializableWritable[Configuration]] = _
+  val broadcastedHadoopConf: Broadcast[SerializableWritable[Configuration]] = sqlContext.sparkContext.broadcast(
+    new SerializableWritable(this.sqlContext.sparkContext.hadoopConfiguration)
+  )
   def hadoopConf: Configuration = broadcastedHadoopConf.value.value
 
   def resolver = HDFSResolver(hadoopConf)
 
-  private def resynch() = {
-    _conf.sparkConf = sqlContext.sparkContext.getConf
-    _conf = _conf.effective
-  }
+  //  private def resynch() = {
+  //    _conf.sparkConf = sqlContext.sparkContext.getConf
+  //    _conf = _conf.effective
+  //  }
   def rebroadcast(): Unit = {
-    requireNotShipped()
-    scala.util.Try {
-      broadcastedSpookyConf.destroy()
-    }
-    scala.util.Try {
-      broadcastedHadoopConf.destroy()
-    }
-    resynch()
-    broadcastedSpookyConf = sqlContext.sparkContext.broadcast(_conf.effective)
-    broadcastedHadoopConf = sqlContext.sparkContext.broadcast(
-      new SerializableWritable(this.sqlContext.sparkContext.hadoopConfiguration)
-    )
+    //    requireNotShipped()
+    //    scala.util.Try {
+    //      broadcastedSpookyConf.destroy()
+    //    }
+    //    resynch()
+    //    broadcastedSpookyConf = sqlContext.sparkContext.broadcast(_conf.effective)
   }
 
   // may take a long time then fail, only attempted once
