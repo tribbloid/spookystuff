@@ -16,11 +16,7 @@ private[uav] case class PreferLink(
 
   override def trunk = None
 
-  //  override def exeNoOutput(session: Session): Unit = {
-  //    link
-  //  }
   override protected def doExe(session: Session): Seq[Fetched] = {
-    //    link
     Nil
   }
 

@@ -5,11 +5,11 @@ import java.net._
 import java.nio.file.{Files, _}
 
 import org.apache.commons.io.IOUtils
-import org.apache.spark.{HashPartitioner, SparkEnv}
+import org.apache.spark.SparkEnv
 import org.apache.spark.ml.dsl.ReflectionUtils
 import org.apache.spark.ml.dsl.utils.FlowUtils
 import org.apache.spark.rdd.RDD
-import org.apache.spark.storage.{BlockManagerId, StorageLevel}
+import org.apache.spark.storage.BlockManagerId
 import org.slf4j.LoggerFactory
 
 import scala.collection.mutable
@@ -21,8 +21,9 @@ import scala.xml.PrettyPrinter
 
 object SpookyUtils {
 
-  import scala.concurrent.ExecutionContext.Implicits.global
   import SpookyViews._
+
+  import scala.concurrent.ExecutionContext.Implicits.global
   import scala.concurrent.duration._
 
   def qualifiedName(separator: String)(parts: String*) = {
@@ -572,25 +573,6 @@ These special characters are often called "metacharacters".
   }
 
   object RDDs {
-
-    def isPersisted(rdd: RDD[_]): Boolean = {
-      val rddInfos = rdd.sparkContext.getRDDStorageInfo
-      rddInfos.find(_.id == rdd.id).get.storageLevel != StorageLevel.NONE
-    }
-
-    def assertIsBeaconRDD(rdd: RDD[_]): Unit = {
-      assert(isPersisted(rdd))
-      assert(rdd.isEmpty())
-    }
-
-    def shuffle[T: ClassTag](
-                              rdd: RDD[T]
-                            ): RDD[T] = {
-
-      val randomKeyed: RDD[(Long, T)] = rdd.keyBy(_ => Random.nextLong())
-      val shuffled = randomKeyed.partitionBy(new HashPartitioner(rdd.partitions.length))
-      shuffled.values
-    }
 
     /**
       * much faster than reducing many rdds independently

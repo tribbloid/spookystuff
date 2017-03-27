@@ -4,11 +4,7 @@ import com.tribbloids.spookystuff.actions.{Action, Interaction}
 import com.tribbloids.spookystuff.session.Session
 import com.tribbloids.spookystuff.uav.UAVConf
 import com.tribbloids.spookystuff.uav.spatial.StartEndLocation
-import com.tribbloids.spookystuff.uav.system.Drone
 import com.tribbloids.spookystuff.uav.telemetry.Link
-
-import scala.concurrent.duration.Duration
-import scala.util.Random
 
 trait UAVAction extends Action {
 
@@ -19,13 +15,13 @@ trait UAVAction extends Action {
     */
   class SessionView(session: Session) {
 
-    val mavConf: UAVConf = {
+    val uavConf: UAVConf = {
       session.spooky.conf.submodule[UAVConf]
     }
 
     val link: Link = {
       Link.trySelect(
-        Random.shuffle(mavConf.dronesInFleet.toList),
+        uavConf.uavsRandomList,
         session
       )
         .get

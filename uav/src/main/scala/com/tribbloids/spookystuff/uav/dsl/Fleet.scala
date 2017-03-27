@@ -1,6 +1,6 @@
 package com.tribbloids.spookystuff.uav.dsl
 
-import com.tribbloids.spookystuff.uav.system.Drone
+import com.tribbloids.spookystuff.uav.system.UAV
 import com.tribbloids.spookystuff.utils.SpookyUtils
 
 /**
@@ -9,13 +9,13 @@ import com.tribbloids.spookystuff.utils.SpookyUtils
 object Fleet {
 
   case class Inventory(
-                        drones: Iterable[Drone],
-                        hosts: (Drone, String) => Boolean = (_,_) => true
+                        uavs: Iterable[UAV],
+                        hosts: (UAV, String) => Boolean = (_, _) => true
                       ) extends Fleet {
 
-    def apply(): Set[Drone] = {
+    def apply(): Set[UAV] = {
       val hostPort = SpookyUtils.getBlockManagerID.hostPort
-      drones.flatMap {
+      uavs.flatMap {
         d =>
           if (hosts(d, hostPort)) Some(d)
           else None
@@ -33,14 +33,14 @@ object Fleet {
                        base: BaseLocator
                      ) extends Fleet {
 
-    def apply(): Set[Drone] = {
+    def apply(): Set[UAV] = {
       val before = delegate()
       ???
     }
   }
 }
 
-trait Fleet extends (() => Set[Drone]) {
+trait Fleet extends (() => Set[UAV]) {
 
 //  import com.tribbloids.spookystuff.utils.SpookyViews._
 //

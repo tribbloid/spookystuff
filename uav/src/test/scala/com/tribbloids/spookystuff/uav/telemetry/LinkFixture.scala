@@ -2,7 +2,7 @@ package com.tribbloids.spookystuff.uav.telemetry
 
 import com.tribbloids.spookystuff.uav.dsl.{LinkFactories, LinkFactory}
 import com.tribbloids.spookystuff.uav.sim.SimFixture
-import com.tribbloids.spookystuff.uav.system.Drone
+import com.tribbloids.spookystuff.uav.system.UAV
 import com.tribbloids.spookystuff.uav.telemetry.mavlink.MAVLink
 import com.tribbloids.spookystuff.uav.{UAVConf, ReinforcementDepletedException}
 import com.tribbloids.spookystuff.session.Session
@@ -18,9 +18,9 @@ abstract class LinkFixture extends SimFixture {
 
   import com.tribbloids.spookystuff.utils.SpookyViews._
 
-  lazy val listDrones: String => Seq[Drone] = {
+  lazy val listDrones: String => Seq[UAV] = {
     connStr =>
-      Seq(Drone(Seq(connStr)))
+      Seq(UAV(Seq(connStr)))
   }
 
   override def setUp(): Unit = {
@@ -54,7 +54,7 @@ abstract class LinkFixture extends SimFixture {
     val listDrones = this.listDrones
     val linkRDD = simURIRDD.map {
       connStr =>
-        val endpoint = Drone(Seq(connStr))
+        val endpoint = UAV(Seq(connStr))
         val session = new Session(spooky)
         val link = Link.trySelect(
           listDrones(connStr),
@@ -63,14 +63,14 @@ abstract class LinkFixture extends SimFixture {
           .get
         TestHelper.assert(link.isNotBlacklisted, "link is blacklisted")
         TestHelper.assert(link.factoryOpt.get == spooky.submodule[UAVConf].linkFactory, "link doesn't comply to factory")
-        link.isNotBooked = false
+        link.isBooked = true
         //        Thread.sleep(5000) //otherwise a task will complete so fast such that another task hasn't start yet.
         link
     }
       .persist()
     val uriRDD = linkRDD.map {
       link =>
-        link.drone.uris.head
+        link.uav.uris.head
     }
     val uris = uriRDD.collect()
     assert(uris.distinct.length == this.parallelism, "Duplicated URIs:\n" + uris.mkString("\n"))
@@ -94,7 +94,7 @@ abstract class LinkFixture extends SimFixture {
 
       test(s"$testPrefix Link to non-existing drone should be disabled until blacklist timer reset") {
         val session = new Session(spooky)
-        val drone = Drone(Seq("dummy"))
+        val drone = UAV(Seq("dummy"))
         TestHelper.setLoggerDuring(classOf[Link], classOf[MAVLink], SpookyUtils.getClass) {
           intercept[ReinforcementDepletedException]{
             Link.trySelect(
@@ -174,7 +174,7 @@ abstract class LinkFixture extends SimFixture {
           val linkRDD1: RDD[Link] = getLinkRDD(spooky)
           linkRDD1.foreach {
             link =>
-              link.isNotBooked = true
+              link.isBooked = false
           }
 
           spooky.submodule[UAVConf].linkFactory = factory2
@@ -198,8 +198,8 @@ abstract class LinkFixture extends SimFixture {
             else {
               assert(spooky.metrics.linkCreated.value == parallelism) // TODO: should be parallelism*2!
               assert(spooky.metrics.linkDestroyed.value == 0)
-              linkRDD1.map(_.drone).collect().mkString("\n").shouldBe (
-                linkRDD2.map(_.drone).collect().mkString("\n"),
+              linkRDD1.map(_.uav).collect().mkString("\n").shouldBe (
+                linkRDD2.map(_.uav).collect().mkString("\n"),
                 sort = true
               )
             }

@@ -25,10 +25,9 @@ Powered by
 - Selenium
 - JSoup
 - Apache Tika
-- (build) Apache Maven
-- (browser integration) PhantomJS/GhostDriver
-- (drone integration) MAVLink
-- Current implementation is influenced by Spark SQL and Mahout Sparkbinding.
+- Apache Maven
+- PhantomJS/GhostDriver
+- (UAV) MAVLink
 
 ![Apache Spark](http://spark.apache.org/images/spark-logo.png)
 ![Selenium](http://docs.seleniumhq.org/images/big-logo.png)

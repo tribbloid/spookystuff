@@ -4,7 +4,7 @@ import com.tribbloids.spookystuff.SpookyEnvFixture
 import com.tribbloids.spookystuff.session.python.PythonDriver
 import com.tribbloids.spookystuff.session.{Cleanable, Lifespan}
 import com.tribbloids.spookystuff.uav.UAVConf
-import com.tribbloids.spookystuff.uav.system.Drone
+import com.tribbloids.spookystuff.uav.system.UAV
 import com.tribbloids.spookystuff.uav.telemetry.Link
 import com.tribbloids.spookystuff.utils.SpookyUtils
 import org.apache.spark.rdd.RDD
@@ -15,7 +15,7 @@ trait SimFixture extends SpookyEnvFixture {
 
   var simURIRDD: RDD[String] = _
   def simURIs = simURIRDD.collect().toSeq.distinct
-  def simDrones = simURIs.map(v => Drone(Seq(v)))
+  def simDrones = simURIs.map(v => UAV(Seq(v)))
 
   def parallelism: Int = sc.defaultParallelism
   //  def parallelism: Int = 3
@@ -32,9 +32,9 @@ trait APMSITLFixture extends SimFixture {
 
   override def setUp(): Unit = {
     super.setUp()
-    val mavConf = this.spooky.conf.submodule[UAVConf]
-    mavConf.fastConnectionRetries = 2
-    mavConf.fleet = Fleet.Inventory(simDrones)
+    val uavConf = this.spooky.conf.submodule[UAVConf]
+    uavConf.fastConnectionRetries = 2
+    uavConf.fleet = Fleet.Inventory(simDrones)
   }
 
   override def beforeAll(): Unit = {

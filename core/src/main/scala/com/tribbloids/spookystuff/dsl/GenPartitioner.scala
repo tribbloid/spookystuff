@@ -3,7 +3,6 @@ package com.tribbloids.spookystuff.dsl
 import com.tribbloids.spookystuff.SpookyContext
 import com.tribbloids.spookystuff.dsl.GenPartitioners.GenPartitionerImpl
 import com.tribbloids.spookystuff.row.BeaconRDD
-import com.tribbloids.spookystuff.utils.SpookyUtils
 import org.apache.spark.Partitioner
 import org.apache.spark.rdd.RDD
 import org.apache.spark.storage.StorageLevel
@@ -21,7 +20,7 @@ trait GenPartitioner {
 
 object GenPartitioners {
 
-  import RDD._
+  import com.tribbloids.spookystuff.utils.SpookyViews._
 
   //TODO: add bounding class level generic parameters
   trait GenPartitionerImpl extends Serializable {
@@ -32,7 +31,7 @@ object GenPartitioners {
       val result: Option[BeaconRDD[K]] = _createBeaconRDD(ref)
       result.foreach {
         rdd =>
-          SpookyUtils.RDDs.assertIsBeaconRDD(rdd)
+          rdd.assertIsBeaconRDD()
       }
       result
     }

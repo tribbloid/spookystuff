@@ -4,7 +4,7 @@ import com.tribbloids.spookystuff.SpookyContext
 import com.tribbloids.spookystuff.uav.UAVConf
 import com.tribbloids.spookystuff.uav.dsl.{LinkFactories, LinkFactory}
 import com.tribbloids.spookystuff.uav.sim.SimFixture
-import com.tribbloids.spookystuff.uav.system.Drone
+import com.tribbloids.spookystuff.uav.system.UAV
 import com.tribbloids.spookystuff.session.Session
 import org.apache.spark.rdd.RDD
 
@@ -18,7 +18,7 @@ object LinkITFixture{
                 connStrs: Seq[String]
               ): String = {
 
-    val drones = connStrs.map(v => Drone(Seq(v)))
+    val drones = connStrs.map(v => UAV(Seq(v)))
     val session = new Session(spooky)
     val link = Link.trySelect(
       drones,

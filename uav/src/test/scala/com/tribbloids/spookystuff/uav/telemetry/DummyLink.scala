@@ -2,13 +2,13 @@ package com.tribbloids.spookystuff.uav.telemetry
 
 import com.tribbloids.spookystuff.uav.UAVConf
 import com.tribbloids.spookystuff.uav.spatial.Location
-import com.tribbloids.spookystuff.uav.system.Drone
+import com.tribbloids.spookystuff.uav.system.UAV
 
 /**
   * Created by peng on 24/02/17.
   */
 case class DummyLink(
-                      drone: Drone
+                      uav: UAV
                     ) extends Link {
 
   override protected def _connect(): Unit = {}

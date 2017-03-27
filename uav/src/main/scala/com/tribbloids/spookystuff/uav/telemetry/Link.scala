@@ -5,7 +5,7 @@ import com.tribbloids.spookystuff.session._
 import com.tribbloids.spookystuff.session.python.PyRef
 import com.tribbloids.spookystuff.uav.dsl.LinkFactory
 import com.tribbloids.spookystuff.uav.spatial._
-import com.tribbloids.spookystuff.uav.system.Drone
+import com.tribbloids.spookystuff.uav.system.UAV
 import com.tribbloids.spookystuff.uav.telemetry.mavlink.MAVLink
 import com.tribbloids.spookystuff.uav.{ReinforcementDepletedException, UAVConf}
 import com.tribbloids.spookystuff.utils.{SpookyUtils, TreeException}
@@ -23,10 +23,10 @@ object Link {
 
   // connStr -> (link, isBusy)
   // only 1 allowed per connStr, how to enforce?
-  val existing: caching.ConcurrentMap[Drone, Link] = caching.ConcurrentMap()
+  val existing: caching.ConcurrentMap[UAV, Link] = caching.ConcurrentMap()
 
   def trySelect(
-                 executedBy: Seq[Drone],
+                 executedBy: Seq[UAV],
                  session: Session,
                  selector: Seq[Link] => Option[Link] = {
                    vs =>
@@ -37,8 +37,8 @@ object Link {
 
     val sessionThreadOpt = Some(session.lifespan.ctx.thread)
 
-    val localOpt = {
-      val locals = Link.existing.values.toList.filter{
+    val threadLocalOpt = {
+      val results = Link.existing.values.toList.filter{
         v =>
           val id1Opt = v.usedByThreadOpt.map(_.getId)
           val id2Opt = sessionThreadOpt.map(_.getId)
@@ -48,13 +48,13 @@ object Link {
           }
           lMatch
       }
-      assert(locals.size <= 1, "Multiple Links cannot share task context or thread")
-      val result = locals.headOption
+      assert(results.size <= 1, "Multiple Links cannot share task context or thread")
+      val result = results.headOption
       result.foreach(_.usedByThread = session.lifespan.ctx.thread)
       result
     }
 
-    val resultOpt = localOpt.orElse {
+    val resultOpt = threadLocalOpt.orElse {
       val links = executedBy.map(_.getLink(session.spooky))
 
       this.synchronized {
@@ -105,7 +105,7 @@ object Link {
 
 trait Link extends LocalCleanable {
 
-  val drone: Drone
+  val uav: UAV
 
   @volatile protected var _spooky: SpookyContext = _
   def spookyOpt = Option(_spooky)
@@ -128,8 +128,8 @@ trait Link extends LocalCleanable {
       //      _taskContext = taskContext
       spookyOpt.foreach(v => runOnce)
 
-      val inserted = Link.existing.getOrElseUpdate(drone, this)
-      assert(inserted eq this, s"Multiple Links created for drone $drone")
+      val inserted = Link.existing.getOrElseUpdate(uav, this)
+      assert(inserted eq this, s"Multiple Links created for drone $uav")
 
       this
     }
@@ -161,11 +161,11 @@ trait Link extends LocalCleanable {
   //finalizer may kick in and invoke it even if its in Link.existing
   override protected def cleanImpl(): Unit = {
 
-    val existingOpt = Link.existing.get(drone)
+    val existingOpt = Link.existing.get(uav)
     existingOpt.foreach {
       v =>
         if (v eq this)
-          Link.existing -= drone
+          Link.existing -= uav
         else {
           if (!isDryrun) throw new AssertionError("THIS IS NOT A DRYRUN OBJECT! SO ITS CREATED ILLEGALLY!")
         }
@@ -232,7 +232,7 @@ trait Link extends LocalCleanable {
                   ee
               }
             }
-            if (!silent) LoggerFactory.getLogger(this.getClass).warn(s"CONNECTION TO $drone FAILED!", afterDetection)
+            if (!silent) LoggerFactory.getLogger(this.getClass).warn(s"CONNECTION TO $uav FAILED!", afterDetection)
             throw afterDetection
         }
       }
@@ -245,10 +245,13 @@ trait Link extends LocalCleanable {
   }
 
   /**
-    * set true to block being used by another thread before its driver is created
+    * set true to block being used by another thread
+    * This should be a Future to indicate 3 states:
+    * Completed(true): don't think about it, just use another link or (if depleted) report error.
+    * Completed(false): use it immediately.
+    * Pending: wait for result, then decide.
     */
-  @volatile var isNotBooked: Boolean = true
-  def isBooked: Boolean = !isNotBooked
+  @volatile var isBooked: Boolean = false
 
   private def blacklistDuration: Long = spookyOpt
     .map(
@@ -268,13 +271,13 @@ trait Link extends LocalCleanable {
   }
 
   def isAvailable: Boolean = {
-    isNotBooked && isNotBlacklisted && isNotUsedByThread
+    !isBooked && isNotBlacklisted && isNotUsedByThread
   }
 
   def statusString: String = {
 
     val strs = ArrayBuffer[String]()
-    if (!isNotBooked)
+    if (isBooked)
       strs += "booked"
     if (!isNotBlacklisted)
       strs += s"unreachable for ${(System.currentTimeMillis() - lastFailureOpt.get._2).toDouble / 1000}s" +
@@ -282,7 +285,7 @@ trait Link extends LocalCleanable {
     if (!isNotUsedByThread)
       strs += s"used by ${_usedByThread}"
 
-    s"Link $drone is " + {
+    s"Link $uav is " + {
       if (isAvailable) {
         assert(strs.isEmpty)
         "available"
@@ -298,10 +301,10 @@ trait Link extends LocalCleanable {
                     factory: LinkFactory
                   ): Link = {
 
-    val neo = factory.apply(drone)
+    val neo = factory.apply(uav)
     val result = if (coFactory(neo)) {
       LoggerFactory.getLogger(this.getClass).info {
-        s"Reusing existing link for $drone"
+        s"Reusing existing link for $uav"
       }
       neo.isDryrun = true
       neo.clean(silent = true)
@@ -350,7 +353,7 @@ trait Link extends LocalCleanable {
     CurrentLocation.getIfNotExpire((), expireAfter)
   }
 
-  //====================== Synchronous API ===================== TODO this should be abandoned and mimic by Asynch API
+  //====================== Synchronous API ====================== TODO this should be abandoned and mimic by Asynch API
 
   val synch: SynchronousAPI
   abstract class SynchronousAPI {

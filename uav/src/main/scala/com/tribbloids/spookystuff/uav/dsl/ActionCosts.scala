@@ -6,6 +6,7 @@ import com.tribbloids.spookystuff.uav.actions.UAVNavigation
 import com.tribbloids.spookystuff.uav.planning.PreferLink
 import com.tribbloids.spookystuff.uav.spatial.{NED, StartEndLocation}
 
+//TODO: this API may take too long to extend, should delegate most of it to Action
 trait ActionCosts {
 
   def estimate(

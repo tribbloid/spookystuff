@@ -1,7 +1,6 @@
 package com.tribbloids.spookystuff.dsl
 
 import com.tribbloids.spookystuff.SpookyEnvFixture
-import com.tribbloids.spookystuff.utils.SpookyUtils
 import org.apache.spark.HashPartitioner
 import org.apache.spark.rdd.RDD
 
@@ -11,6 +10,8 @@ import scala.util.Random
   * Created by peng on 20/12/16.
   */
 class GenPartitionerSuite extends SpookyEnvFixture {
+
+  import com.tribbloids.spookystuff.utils.SpookyViews._
 
   test("DocCacheAware can co-partition 2 RDDs") {
     val numPartitions = Random.nextInt(80) + 9
@@ -34,10 +35,10 @@ class GenPartitionerSuite extends SpookyEnvFixture {
     )
       .persist()
 
-    val ref1 = SpookyUtils.RDDs.shuffle(srcRDD).persist()
+    val ref1 = srcRDD.shuffle.persist()
     ref1.count()
 
-    val ref2 = SpookyUtils.RDDs.shuffle(srcRDD).persist()
+    val ref2 = srcRDD.shuffle.persist()
     ref2.count()
 
     //    ref1.mapPartitions(i => Iterator(i.toList)).collect().foreach(println)

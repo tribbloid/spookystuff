@@ -22,8 +22,8 @@ trait WaypointLike extends UAVNavigation {
   class SessionView(session: Session) extends super.SessionView(session) {
 
     override def inbound(): Unit = {
-      LoggerFactory.getLogger(this.getClass).debug(s"assureClearanceAltitude ${mavConf.clearanceAltitude}")
-      link.synch.clearanceAlt(mavConf.clearanceAltitude)
+      LoggerFactory.getLogger(this.getClass).debug(s"assureClearanceAltitude ${uavConf.clearanceAltitude}")
+      link.synch.clearanceAlt(uavConf.clearanceAltitude)
     }
 
     override def engage(): Unit = {

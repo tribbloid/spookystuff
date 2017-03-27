@@ -7,21 +7,21 @@ import com.tribbloids.spookystuff.uav.telemetry.Link
 /**
   * Created by peng on 15/01/17.
   */
-case class Drone(
-                  // remember, one drone can have several telemetry
-                  // endpoints: 1 primary and several backups (e.g. text message-based)
-                  // TODO: implement telemetry backup mechanism, can use MAVproxy's multiple master feature
-                  uris: Seq[String], // [protocol]:ip:port;[baudRate]
-                  frame: Option[String] = None,
-                  baudRate: Int = UAVConf.DEFAULT_BAUDRATE,
-                  endpointSSID: Int = UAVConf.EXECUTOR_SSID,
-                  name: String = "DRONE"
-                ) {
+case class UAV(
+                // remember, one drone can have several telemetry
+                // endpoints: 1 primary and several backups (e.g. text message-based)
+                // TODO: implement telemetry backup mechanism, can use MAVproxy's multiple master feature
+                uris: Seq[String], // [protocol]:ip:port;[baudRate]
+                frame: Option[String] = None,
+                baudRate: Int = UAVConf.DEFAULT_BAUDRATE,
+                endpointSSID: Int = UAVConf.EXECUTOR_SSID,
+                name: String = "DRONE"
+              ) {
 
   def getLink(
-              spooky: SpookyContext,
-              tryConnect: Boolean = true
-            ): Link = {
+               spooky: SpookyContext,
+               tryConnect: Boolean = true
+             ): Link = {
 
     var newLink: Boolean = false
     val link = Link.synchronized {

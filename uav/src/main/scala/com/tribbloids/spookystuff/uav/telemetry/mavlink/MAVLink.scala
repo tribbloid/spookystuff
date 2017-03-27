@@ -1,6 +1,6 @@
 package com.tribbloids.spookystuff.uav.telemetry.mavlink
 
-import com.tribbloids.spookystuff.uav.system.Drone
+import com.tribbloids.spookystuff.uav.system.UAV
 import com.tribbloids.spookystuff.uav.telemetry.Link
 import com.tribbloids.spookystuff.session.python.PythonDriver
 import com.tribbloids.spookystuff.session.{Cleanable, DetectResourceConflict}
@@ -31,7 +31,7 @@ TaskProcess -> Connection:UDP:xx -/
             /
   */
 case class MAVLink(
-                    drone: Drone,
+                    uav: UAV,
                     executorOuts: Seq[String] = Nil, // cannot have duplicates
                     gcsOuts: Seq[String] = Nil
                   ) extends Link with DetectResourceConflict {
@@ -40,10 +40,10 @@ case class MAVLink(
     if (executorOuts.isEmpty) assert(gcsOuts.isEmpty, "No endpoint for executor")
   }
 
-  override lazy val resourceIDs = Map("" -> (drone.uris ++ executorOuts).toSet)
+  override lazy val resourceIDs = Map("" -> (uav.uris ++ executorOuts).toSet)
 
   val outs: Seq[String] = executorOuts ++ gcsOuts
-  val allURIs = (drone.uris ++ outs).distinct
+  val allURIs = (uav.uris ++ outs).distinct
 
   /**
     * CAUTION: ALL of them have to be val or lazy val! Or you risk recreating many copies each with its own python!
@@ -52,10 +52,10 @@ case class MAVLink(
   object Endpoints {
     val direct: Endpoint = {
       Endpoint(
-        drone.uris.head,
-        drone.baudRate,
-        drone.endpointSSID,
-        drone.frame
+        uav.uris.head,
+        uav.baudRate,
+        uav.endpointSSID,
+        uav.frame
       )
     }
     val executors: Seq[Endpoint] = if (executorOuts.isEmpty) {
@@ -86,7 +86,7 @@ case class MAVLink(
         Endpoints.direct.uri,
         outs,
         Endpoints.direct.baudRate,
-        name = drone.name
+        name = uav.name
       )
       Some(proxy)
     }
@@ -100,7 +100,7 @@ case class MAVLink(
         if (!result) {
           LoggerFactory.getLogger(this.getClass).info (
             s"""
-               |Existing link for $drone is obsolete! Recreating ...
+               |Existing link for $uav is obsolete! Recreating ...
                |output should be routed to GCS(s) ${v.gcsOuts.mkString("[",", ","]")}
                |but instead existing one routes it to ${gcsOuts.mkString("[",", ","]")}
              """.trim.stripMargin

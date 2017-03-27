@@ -41,13 +41,13 @@ class GASolverSuite extends APMSITLFixture {
     link
   }
   lazy val dummyRoute = {
-    Route(dummyLink, main.indices)
+    Route(Some(dummyLink), main.indices)
   }
 
   test("Route can be converted to traces") {
 
     val route = dummyRoute
-    val traces = route.toTraces(solver.allTracesBroadcasted.value)
+    val traces = route.toTracesOpt(solver.allTracesBroadcasted.value).get
     traces.mkString("\n").shouldBe(
       main.map{a => List(a)}
         .map {
@@ -63,7 +63,7 @@ class GASolverSuite extends APMSITLFixture {
     implicit val doubleEquality = TolerantNumerics.tolerantDoubleEquality(0.00001)
 
     val route = dummyRoute
-    val cost = route.estimateCost(solver)
+    val cost = route.estimatePartialCost(solver)
     assert(cost === 119.543903)
   }
 

@@ -15,26 +15,35 @@ import scala.collection.mutable.ArrayBuffer
 import scala.util.Random
 
 case class Route(
-                  link: Link,
+                  linkOpt: Option[Link],
                   is: Seq[Int]
                 ) {
 
-  def toTraces(allTraces: Seq[Trace]): Seq[Trace] = {
-    val traces: Seq[Trace] = is.map {
-      i =>
-        allTraces(i)
+  def toTracesOpt(allTraces: Seq[Trace]): Option[Seq[Trace]] = {
+    linkOpt.map {
+      link =>
+        val traces: Seq[Trace] = is.map {
+          i =>
+            allTraces(i)
+        }
+        val seq = traces.map {
+          tr =>
+            List(PreferLink(link)) ++ tr
+        }
+        seq
     }
-    val seq = traces.map {
-      tr =>
-        List(PreferLink(link)) ++ tr
-    }
-    seq
   }
 
-  def estimateCost(solver: GASolver): Double = {
+  def estimatePartialCost(solver: GASolver): Double = {
 
-    val seq = toTraces(solver.allTracesBroadcasted.value)
-    solver.actionCosts.estimate(seq, solver.spooky)
+    val seqOpt = toTracesOpt(solver.allTracesBroadcasted.value)
+    seqOpt.map {
+      seq =>
+        solver.actionCosts.estimate(seq, solver.spooky)
+    }
+      .getOrElse {
+        Double.MaxValue
+      }
   }
 
   def optimalInsertFrom(from: Seq[Int], solver: GASolver): Route = {
@@ -47,7 +56,7 @@ case class Route(
           val splitted = state.is.splitAt(j)
           val inserted = splitted._1 ++ Seq(i) ++ splitted._2
           val insertedRoute = this.copy(is = inserted)
-          val cost = insertedRoute.estimateCost(solver)
+          val cost = insertedRoute.estimatePartialCost(solver)
           insertedRoute -> cost
       }
         .sortBy(_._2)
@@ -71,7 +80,9 @@ case class Route(
 case class GASolver(
                      @transient private val allTraces: List[Trace],
                      spooky: SpookyContext
-                   ) { // TODO: NOTSerializable?
+                   ) { //TODO: NOTSerializable?
+
+  import com.tribbloids.spookystuff.utils.SpookyViews._
 
   val allTracesBroadcasted = spooky.sparkContext.broadcast(allTraces)
   val allIndicesRDD = spooky.sparkContext.parallelize(allTraces.indices).persist()
@@ -95,7 +106,7 @@ case class GASolver(
         v =>
           v.map {
             subseq =>
-              subseq.estimateCost(this)
+              subseq.estimatePartialCost(this)
           }
       }
       val reduced: Seq[Double] = SpookyUtils.RDDs.batchReduce(costRDDs) {
@@ -117,6 +128,7 @@ case class GASolver(
   case class Hypothesis(
                          indexRDD: RDD[Route]
                        ) extends Chromosome {
+
     allHypotheses += this
 
     var _fitness: Option[Double] = None
@@ -151,30 +163,29 @@ case class GASolver(
           }
             .first()._1
 
-          val swapped = zipped
-            .map {
-              wi =>
-                assert(wi._1._1.link == wi._1._2.link)
-                val link = wi._1._1.link
-                val leftCleaned = wi._1._1.is.filterNot {
-                  i =>
-                    routesSelected._2.is.contains(i)
-                }
-                val rightCleaned = wi._1._2.is.filterNot {
-                  i =>
-                    routesSelected._1.is.contains(i)
-                }
-                val left = Route(link, leftCleaned)
-                val right = Route(link, rightCleaned)
-                if (wi._2 == iRouteSelected) {
-                  val leftInserted = left.optimalInsertFrom(routesSelected._2.is, GASolver.this)
-                  val rightInserted = right.optimalInsertFrom(routesSelected._1.is, GASolver.this)
-                  leftInserted -> rightInserted
-                }
-                else {
-                  left -> right
-                }
-            }
+          val swapped = zipped.map {
+            wi =>
+              assert(wi._1._1.linkOpt == wi._1._2.linkOpt)
+              val linkOpt = wi._1._1.linkOpt
+              val leftCleaned = wi._1._1.is.filterNot {
+                i =>
+                  routesSelected._2.is.contains(i)
+              }
+              val rightCleaned = wi._1._2.is.filterNot {
+                i =>
+                  routesSelected._1.is.contains(i)
+              }
+              val left = Route(linkOpt, leftCleaned)
+              val right = Route(linkOpt, rightCleaned)
+              if (wi._2 == iRouteSelected) {
+                val leftInserted = left.optimalInsertFrom(routesSelected._2.is, GASolver.this)
+                val rightInserted = right.optimalInsertFrom(routesSelected._1.is, GASolver.this)
+                leftInserted -> rightInserted
+              }
+              else {
+                left -> right
+              }
+          }
           val rddLeft = swapped.keys
           val rddRight = swapped.values
           new ChromosomePair(
@@ -247,23 +258,51 @@ case class GASolver(
     }
   }
 
-  //TODO: takes 1 stage, not efficient! sad!
-//  def getSeed(sc: SparkContext): RDD[Route] = {
-//
-//    SpookyUtils.RDDs.shuffle(allIndicesRDD)
-//      .map {
-//        i =>
-//          Link.trySelect(spooky.submodule[UAVConf].dronesInFleet)
-//      }
-//  }
+  //  lazy val linkOptRDD: RDD[Option[Link]] = {
+  //    val rdd = spooky.sparkContext.mapPerExecutorCore {
+  //      val uavs = spooky.submodule[UAVConf].uavsRandomList
+  //      val linkOpt = spooky.withSession {
+  //        session =>
+  //          Link.trySelect(
+  //            uavs,
+  //            session
+  //          )
+  //            .toOption
+  //      }
+  //      linkOpt
+  //    }
+  //    rdd.persist()
+  //    rdd.count()
+  //    rdd
+  //  }
 
-//  def run(): Unit = {
-//    val ga = new GeneticAlgorithm(
-//      Crossover(),
-//      1,
-//      Mutation(),
-//      0.10,
-//      Selection()
-//    )
-//  }
+  //TODO: takes 1 stage, not efficient! sad!
+  def generate1Seed(sc: SparkContext): RDD[Route] = {
+
+    val shuffled = allIndicesRDD.shuffle
+    val routeRDD = shuffled.mapPartitions {
+      itr =>
+        val uavs = spooky.submodule[UAVConf].uavsRandomList
+        val linkOpt = spooky.withSession {
+          session =>
+            Link.trySelect(
+              uavs,
+              session
+            )
+              .toOption
+        }
+        Iterator(Route(linkOpt, itr.toSeq))
+    }
+    routeRDD
+  }
+
+  //  def run(): Unit = {
+  //    val ga = new GeneticAlgorithm(
+  //      Crossover(),
+  //      1,
+  //      Mutation(),
+  //      0.10,
+  //      Selection()
+  //    )
+  //  }
 }

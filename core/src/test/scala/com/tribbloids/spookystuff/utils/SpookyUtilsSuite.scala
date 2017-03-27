@@ -190,8 +190,8 @@ class SpookyUtilsSuite extends FunSuite with FunSuitex {
 
     val src = TestHelper.TestSpark.parallelize(1 to 100).persist()
 
-    val shuffled1 = SpookyUtils.RDDs.shuffle(src)
-    val shuffled2 = SpookyUtils.RDDs.shuffle(src)
+    val shuffled1 = src.shuffle
+    val shuffled2 = src.shuffle
 
     val identical = shuffled1.zipPartitions(shuffled2){
       (i1, i2) =>

@@ -21,7 +21,7 @@ case class Mark() extends Export with UAVAction {
 
       Seq(new Doc(
         DocUID((session.backtrace :+ this).toList, this)(),
-        exe.link.drone.uris.head,
+        exe.link.uav.uris.head,
         Some(s"${ContentType.APPLICATION_JSON}; charset=UTF-8"),
         jsonStr.getBytes("UTF8")
       ))

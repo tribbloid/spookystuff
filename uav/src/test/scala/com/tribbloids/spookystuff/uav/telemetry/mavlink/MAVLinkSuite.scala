@@ -3,7 +3,7 @@ package com.tribbloids.spookystuff.uav.telemetry.mavlink
 import com.tribbloids.spookystuff.uav.ReinforcementDepletedException
 import com.tribbloids.spookystuff.uav.dsl.LinkFactories
 import com.tribbloids.spookystuff.uav.sim.APMSITLFixture
-import com.tribbloids.spookystuff.uav.system.Drone
+import com.tribbloids.spookystuff.uav.system.UAV
 import com.tribbloids.spookystuff.uav.telemetry.{Link, LinkFixture}
 import com.tribbloids.spookystuff.session.Session
 import com.tribbloids.spookystuff.testutils.TestHelper
@@ -85,7 +85,7 @@ class MAVLinkSuite extends LinkFixture with APMSITLFixture {
     test(s"$testPrefix connection to non-existing drone should cause Proxy to fail early") {
 
       val session = new Session(spooky)
-      val drone = Drone(Seq("dummy"))
+      val drone = UAV(Seq("dummy"))
       TestHelper.setLoggerDuring(classOf[Link], classOf[MAVLink], SpookyUtils.getClass) {
         intercept[ReinforcementDepletedException]{
           Link.trySelect(

@@ -53,10 +53,6 @@ sealed abstract class AbstractSession(val spooky: SpookyContext) extends LocalCl
   def pythonDriver: PythonDriver
 
   def taskContextOpt: Option[TaskContext] = lifespan.ctx.taskContextOpt
-
-  override def cleanImpl(): Unit = {
-    spooky.metrics.sessionReclaimed += 1
-  }
 }
 
 object NoWebDriverException extends SpookyException("INTERNAL ERROR: should initialize driver automatically")
@@ -160,6 +156,6 @@ class Session(
         factory.release(this)
         spooky.metrics.pythonDriverReleased += 1
     }
-    super.cleanImpl()
+    spooky.metrics.sessionReclaimed += 1
   }
 }

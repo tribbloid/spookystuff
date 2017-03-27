@@ -6,13 +6,15 @@ import com.tribbloids.spookystuff.caching.ConcurrentMap
 import com.tribbloids.spookystuff.row._
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.DataFrame
-import org.apache.spark.{SparkContext, SparkEnv, TaskContext}
+import org.apache.spark.storage.StorageLevel
+import org.apache.spark.{HashPartitioner, SparkContext, SparkEnv, TaskContext}
 
 import scala.collection.generic.CanBuildFrom
 import scala.collection.immutable.ListMap
 import scala.collection.{Map, TraversableLike}
 import scala.language.{higherKinds, implicitConversions}
 import scala.reflect.ClassTag
+import scala.util.Random
 
 /**
   * Created by peng on 11/7/14.
@@ -73,7 +75,7 @@ object SpookyViews {
       seed.mapPartitions {
         itr =>
           val executorID = SparkEnv.get.executorId //technically this is useless as the map is only shared locally but whatever
-          val threadID = Thread.currentThread().getId
+        val threadID = Thread.currentThread().getId
           if (!alreadyRunThreadID.contains(executorID -> threadID)) {
             alreadyRunThreadID += (executorID -> threadID) -> Unit
             Iterator(f)
@@ -139,7 +141,7 @@ object SpookyViews {
         .collect()
     }
 
-    // TODO: remove! not useful
+    //TODO: remove! not useful
     def allExecutorCoreIDs = {
       mapPerExecutorCore {
         val thread = Thread.currentThread()
@@ -233,7 +235,7 @@ object SpookyViews {
     //        result
     //      }
 
-    //  def checkpointNow(): Unit = {
+    //  def checkpointNow(): Unit = { TODO: is it useless now?
     //    persistDuring(StorageLevel.MEMORY_ONLY) {
     //      self.checkpoint()
     //      self.foreach(_ =>)
@@ -241,6 +243,23 @@ object SpookyViews {
     //    }
     //    Unit
     //  }
+
+    def isPersisted: Boolean = {
+      val rddInfos = self.sparkContext.getRDDStorageInfo
+      rddInfos.find(_.id == self.id).get.storageLevel != StorageLevel.NONE
+    }
+
+    def assertIsBeaconRDD(): Unit = {
+      assert(isPersisted)
+      assert(self.isEmpty())
+    }
+
+    def shuffle(implicit ev: ClassTag[T]): RDD[T] = {
+
+      val randomKeyed: RDD[(Long, T)] = self.keyBy(_ => Random.nextLong())
+      val shuffled = randomKeyed.partitionBy(new HashPartitioner(self.partitions.length))
+      shuffled.values
+    }
   }
 
   implicit class PairRDDView[K: ClassTag, V: ClassTag](val self: RDD[(K, V)]) {

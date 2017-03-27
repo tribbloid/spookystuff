@@ -1,13 +1,13 @@
 package com.tribbloids.spookystuff.uav
 
 import com.tribbloids.spookystuff.uav.dsl._
-import com.tribbloids.spookystuff.uav.sim.APMSim
 import com.tribbloids.spookystuff.uav.spatial.{GeodeticAnchor, LLA, Location}
-import com.tribbloids.spookystuff.uav.system.Drone
+import com.tribbloids.spookystuff.uav.system.UAV
 import com.tribbloids.spookystuff.{ModuleConf, Submodules}
 import org.apache.spark.SparkConf
 
 import scala.concurrent.duration._
+import scala.util.Random
 
 object UAVConf extends Submodules.Builder[UAVConf]{
 
@@ -56,7 +56,9 @@ case class UAVConf(
   /**
     * singleton per worker, lost on shipping
     */
-  def dronesInFleet: Set[Drone] = fleet.apply()
+  def uavsInFleet: Set[UAV] = fleet.apply()
+
+  def uavsRandomList: Seq[UAV] = Random.shuffle(uavsInFleet.toList)
 
   // TODO: use reflection to automate
   override def importFrom(sparkConf: SparkConf): UAVConf.this.type = this.copy().asInstanceOf[this.type]

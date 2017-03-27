@@ -2,7 +2,7 @@ package com.tribbloids.spookystuff.uav.telemetry
 
 import com.tribbloids.spookystuff.SpookyEnvFixture
 import com.tribbloids.spookystuff.uav.dsl.{LinkFactories, LinkFactory}
-import com.tribbloids.spookystuff.uav.system.Drone
+import com.tribbloids.spookystuff.uav.system.UAV
 import com.tribbloids.spookystuff.uav.telemetry.mavlink.MAVLink
 
 /**
@@ -12,7 +12,7 @@ class LinkFactoriesSuite extends SpookyEnvFixture {
 
   def canCreate(factory: LinkFactory, link: Link): Boolean = {
 
-    val dryRun = factory.apply(link.drone)
+    val dryRun = factory.apply(link.uav)
     val result = link.coFactory(dryRun)
 
     result
@@ -31,21 +31,21 @@ class LinkFactoriesSuite extends SpookyEnvFixture {
   test("NoProxy can create link without proxy") {
 
     val factory = LinkFactories.Direct
-    val link = MAVLink(Drone(Seq("dummy")), Nil).setContext(spooky, factory)
+    val link = MAVLink(UAV(Seq("dummy")), Nil).setContext(spooky, factory)
     assert(canCreate(factory, link))
   }
 
   test("NoProxy can create link with proxy that has no GCS out") {
 
     val factory = LinkFactories.Direct
-    val link = MAVLink(Drone(Seq("dummy")), Seq("localhost:80")).setContext(spooky, factory)
+    val link = MAVLink(UAV(Seq("dummy")), Seq("localhost:80")).setContext(spooky, factory)
     assert(canCreate(factory, link))
   }
 
   test("NoProxy can create link with proxy that has 1 GCS outs") {
 
     val factory = LinkFactories.Direct
-    val link = MAVLink(Drone(Seq("dummy")), Seq("localhost:80"), Seq("localhost:14550"))
+    val link = MAVLink(UAV(Seq("dummy")), Seq("localhost:80"), Seq("localhost:14550"))
       .setContext(spooky, factory)
     assert(!canCreate(factory, link))
   }
@@ -53,14 +53,14 @@ class LinkFactoriesSuite extends SpookyEnvFixture {
   test("ForkToGCS cannot create link without proxy") {
 
     val factory = LinkFactories.ForkToGCS()
-    val link = MAVLink(Drone(Seq("dummy")), Nil).setContext(spooky, factory)
+    val link = MAVLink(UAV(Seq("dummy")), Nil).setContext(spooky, factory)
     assert(!canCreate(factory, link))
   }
 
   test("ForkToGCS can create link with proxy that has identical GCS outs") {
 
     val factory = LinkFactories.ForkToGCS()
-    val link = MAVLink(Drone(Seq("dummy")), Seq("localhost:80"), Seq("udp:localhost:14550"))
+    val link = MAVLink(UAV(Seq("dummy")), Seq("localhost:80"), Seq("udp:localhost:14550"))
       .setContext(spooky, factory)
     assert(canCreate(factory, link))
   }
@@ -68,7 +68,7 @@ class LinkFactoriesSuite extends SpookyEnvFixture {
   test("ForkToGCS cannot create link with proxy that has different GCS outs") {
 
     val factory = LinkFactories.ForkToGCS()
-    val link = MAVLink(Drone(Seq("dummy")), Seq("localhost:80")).setContext(spooky, factory)
+    val link = MAVLink(UAV(Seq("dummy")), Seq("localhost:80")).setContext(spooky, factory)
     assert(!canCreate(factory, link))
   }
 }

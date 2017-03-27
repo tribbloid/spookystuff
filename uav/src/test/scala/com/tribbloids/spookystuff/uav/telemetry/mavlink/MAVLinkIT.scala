@@ -2,7 +2,7 @@ package com.tribbloids.spookystuff.uav.telemetry.mavlink
 
 import com.tribbloids.spookystuff.uav.dsl.LinkFactories
 import com.tribbloids.spookystuff.uav.sim.{APMSim, APMSITLFixture}
-import com.tribbloids.spookystuff.uav.system.Drone
+import com.tribbloids.spookystuff.uav.system.UAV
 import com.tribbloids.spookystuff.uav.telemetry.{Link, LinkITFixture}
 import com.tribbloids.spookystuff.session.Session
 import com.tribbloids.spookystuff.testutils.TestHelper
@@ -30,7 +30,7 @@ class MAVLinkIT_Proxy extends MAVLinkIT {
 
     val rdd = simURIRDD.map {
       connStr =>
-        val drones = Seq(Drone(Seq(connStr)))
+        val drones = Seq(UAV(Seq(connStr)))
         val session = new Session(spooky)
         val link = Link.trySelect( //refitting
           drones,
