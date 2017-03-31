@@ -7,11 +7,14 @@
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-        <java.version>1.7</java.version>
-        <scala.version>2.10.4</scala.version>
+        <java.version>1.8</java.version>
+        <scala.version>2.10.6</scala.version>
         <scala.binary.version>2.10</scala.binary.version>
-        <hadoop.version>2.6.0</hadoop.version>
-        <spark.version>1.4.1</spark.version>
+        <!--has to be used with <exclusions></exclusions>-->
+        <scala.fallback.version>2.10</scala.fallback.version>
+        <spark.version>1.6.3</spark.version>
+        <spark.binary.version>1.6</spark.binary.version>
+        <spark.classifier>spark${spark.binary.version}</spark.classifier>
         <PermGen>512m</PermGen>
         <MaxPermGen>2g</MaxPermGen>
         <failsafe.version>2.18</failsafe.version>
@@ -19,30 +22,121 @@
 
     <profiles>
         <profile>
-            <id>spark-1.3.1</id>
+            <id>java7</id>
             <properties>
-                <spark.version>1.3.1</spark.version>
+                <java.version>1.7</java.version>
             </properties>
         </profile>
         <profile>
-            <id>spark-1.4.1</id>
+            <id>java8</id>
+            <activation>
+                <activeByDefault>true</activeByDefault>
+            </activation>
+        </profile>
+
+        <profile>
+            <id>scala-2.10</id>
             <activation>
                 <activeByDefault>true</activeByDefault>
             </activation>
         </profile>
         <profile>
-            <id>spark-1.5.0</id>
+            <id>scala-2.11</id>
             <properties>
-                <spark.version>1.5.0</spark.version>
+                <scala.version>2.11.8</scala.version>
+                <scala.binary.version>2.11</scala.binary.version>
             </properties>
+        </profile>
+
+        <!--<profile>-->
+        <!--<id>spark-1.3</id>-->
+        <!--<properties>-->
+        <!--<spark.version>1.3.1</spark.version>-->
+        <!--<spark.binary.version>1.3</spark.binary.version>-->
+        <!--</properties>-->
+        <!--<build>-->
+        <!--<plugins>-->
+        <!--<plugin>-->
+        <!--<groupId>net.alchim31.maven</groupId>-->
+        <!--<artifactId>scala-maven-plugin</artifactId>-->
+        <!--<configuration>-->
+        <!--<excludes>-->
+        <!--<exclude>com/tribbloids/spookystuff/pipeline/**</exclude>-->
+        <!--</excludes>-->
+        <!--</configuration>-->
+        <!--</plugin>-->
+        <!--</plugins>-->
+        <!--</build>-->
+        <!--</profile>-->
+
+        <profile>
+            <id>spark-1.4</id>
+            <properties>
+                <spark.version>1.4.1</spark.version>
+                <spark.binary.version>1.4</spark.binary.version>
+            </properties>
+        </profile>
+
+        <profile>
+            <id>spark-1.5</id>
+            <properties>
+                <spark.version>1.5.2</spark.version>
+                <spark.binary.version>1.5</spark.binary.version>
+            </properties>
+        </profile>
+
+        <profile>
+            <id>spark-1.6</id>
+            <activation>
+                <activeByDefault>true</activeByDefault>
+            </activation>
+            <properties>
+            </properties>
+        </profile>
+
+        <profile>
+            <id>spark-2.0</id>
+            <properties>
+                <spark.version>2.0.1</spark.version>
+                <spark.binary.version>2.0</spark.binary.version>
+            </properties>
+        </profile>
+
+        <profile>
+            <id>release-sign-artifacts</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-gpg-plugin</artifactId>
+                        <version>1.6</version>
+                        <executions>
+                            <execution>
+                                <id>sign-artifacts</id>
+                                <phase>verify</phase>
+                                <goals>
+                                    <goal>sign</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+
+        <profile>
+            <id>uav</id>
+            <modules>
+                <module>uav</module>
+            </modules>
         </profile>
     </profiles>
 
     <groupId>com.tribbloids.spookystuff</groupId>
     <artifactId>spookystuff</artifactId>
-    <version>0.3.2-SNAPSHOT</version>
+    <version>0.4.0-SNAPSHOT</version>
     <packaging>pom</packaging>
-    <name>SpookyStuff</name>
+    <name>spookystuff</name>
     <description>Scalable Query Engine for Data Acquisition based on Apache Spark</description>
     <url>http://tribbloid.github.io/spookystuff/</url>
     <licenses>
@@ -65,45 +159,11 @@
         <url>git@github.com:tribbloid/spookystuff.git</url>
     </scm>
 
-    <!--<repositories>-->
-        <!--<repository>-->
-            <!--<id>apache-repo</id>-->
-            <!--<name>Apache Repository</name>-->
-            <!--<url>https://repository.apache.org/content/repositories/releases</url>-->
-            <!--<releases>-->
-                <!--<enabled>true</enabled>-->
-            <!--</releases>-->
-            <!--<snapshots>-->
-                <!--<enabled>false</enabled>-->
-            <!--</snapshots>-->
-        <!--</repository>-->
-        <!--<repository>-->
-            <!--<id>typesafe</id>-->
-            <!--<name>Typesafe - releases</name>-->
-            <!--<url>http://repo.typesafe.com/typesafe/releases/</url>-->
-            <!--<snapshots>-->
-                <!--<enabled>false</enabled>-->
-            <!--</snapshots>-->
-        <!--</repository>-->
-        <!--<repository>-->
-            <!--<id>typesafe-ivy</id>-->
-            <!--<name>Typesafe - ivy - releases</name>-->
-            <!--<url>http://repo.typesafe.com/typesafe/maven-ivy-releases/</url>-->
-            <!--<snapshots>-->
-                <!--<enabled>false</enabled>-->
-            <!--</snapshots>-->
-        <!--</repository>-->
-        <!--<repository>-->
-            <!--<id>oss.sonatype.org</id>-->
-            <!--<name>sonatype sapshots</name>-->
-            <!--<url>https://oss.sonatype.org/content/repositories/snapshots</url>-->
-        <!--</repository>-->
-    <!--</repositories>-->
-
     <modules>
         <module>core</module>
         <module>integration</module>
-        <module>example</module>
+        <!--<module>pipeline</module>-->
+        <!--<module>example</module>-->
         <module>assembly</module>
     </modules>
 
@@ -111,26 +171,122 @@
         <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
-            <version>4.11</version>
+            <version>4.12</version>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.scalatest</groupId>
             <artifactId>scalatest_${scala.binary.version}</artifactId>
-            <version>2.2.4</version>
+            <version>2.2.6</version>
             <scope>test</scope>
         </dependency>
+        <!--for driver leakage detection-->
+        <dependency>
+            <groupId>org.jprocesses</groupId>
+            <artifactId>jProcesses</artifactId>
+            <version>1.6.2</version>
+            <scope>test</scope>
+        </dependency>
+        <!--<dependency>-->
+        <!--<groupId>org.scalacheck</groupId>-->
+        <!--<artifactId>scalacheck_${scala.binaryexclusions.version}</artifactId>-->
+        <!--<version>1.13.2</version>-->
+        <!--<scope>test</scope>-->
+        <!--</dependency>-->
+
+        <dependency>
+            <groupId>org.apache.spark</groupId>
+            <artifactId>spark-core_${scala.binary.version}</artifactId>
+            <version>${spark.version}</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.spark</groupId>
+            <artifactId>spark-sql_${scala.binary.version}</artifactId>
+            <version>${spark.version}</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.spark</groupId>
+            <artifactId>spark-mllib_${scala.binary.version}</artifactId>
+            <version>${spark.version}</version>
+            <scope>provided</scope>
+        </dependency>
+        <!--<dependency>-->
+        <!--<groupId>org.apache.spark</groupId>-->
+        <!--<artifactId>spark-graphx_${scala.binary.version}</artifactId>-->
+        <!--<version>${spark.version}</version>-->
+        <!--<scope>provided</scope>-->
+        <!--</dependency>-->
     </dependencies>
 
     <build>
-        <outputDirectory>target/scala/classes</outputDirectory>
-        <testOutputDirectory>target/scala/test-classes</testOutputDirectory>
+        <!--<outputDirectory>target/classes</outputDirectory>-->
+        <!--<testOutputDirectory>target/test-classes</testOutputDirectory>-->
+
+        <!--add python into fat jar that are shipped to all workers TODO: merge with build-helper-maven-plugin?-->
+        <resources>
+            <resource>
+                <directory>src/main/resources</directory>
+            </resource>
+            <resource>
+                <directory>src/main/python</directory>
+                <targetPath>com/tribbloids</targetPath>
+            </resource>
+            <!--<resource>-->
+                <!--<directory>lib_managed</directory>-->
+                <!--<targetPath>com/tribbloids/spookystuff/lib</targetPath>-->
+            <!--</resource>-->
+        </resources>
+        <testResources>
+            <testResource>
+                <directory>src/test/resources</directory>
+            </testResource>
+            <!--<testResource>-->
+                <!--<directory>src/test/python</directory>-->
+                <!--<targetPath>com/tribbloids</targetPath>-->
+            <!--</testResource>-->
+        </testResources>
+
         <plugins>
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>build-helper-maven-plugin</artifactId>
+                <version>1.12</version>
+                <executions>
+                    <execution>
+                        <id>add-scala-source</id>
+                        <phase>generate-sources</phase>
+                        <goals>
+                            <goal>add-source</goal>
+                        </goals>
+                        <configuration>
+                            <sources>
+                                <source>${project.basedir}/shims/${spark.classifier}-shim/main/scala</source>
+                            </sources>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>add-scala-test-sources</id>
+                        <phase>generate-test-sources</phase>
+                        <goals>
+                            <goal>add-test-source</goal>
+                        </goals>
+                        <configuration>
+                            <sources>
+                                <source>${project.basedir}/shims/${spark.classifier}-shim/test/scala</source>
+                            </sources>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+
             <plugin>
                 <groupId>net.alchim31.maven</groupId>
                 <artifactId>scala-maven-plugin</artifactId>
-                <version>3.2.0</version>
+                <version>3.2.2</version>
                 <executions>
+
                     <execution>
                         <id>scala-compile-first</id>
                         <phase>process-resources</phase>
@@ -143,6 +299,13 @@
                         <phase>process-test-resources</phase>
                         <goals>
                             <goal>testCompile</goal>
+                        </goals>
+                    </execution>
+                    <!--required for publishing to maven central-->
+                    <execution>
+                        <id>eclipse-add-source</id>
+                        <goals>
+                            <goal>add-source</goal>
                         </goals>
                     </execution>
                     <execution>
@@ -183,10 +346,27 @@
                     <!--</compilerPlugins>-->
                 </configuration>
             </plugin>
+
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>3.5.1</version>
+                <configuration>
+                    <source>${java.version}</source>
+                    <target>${java.version}</target>
+                </configuration>
+            </plugin>
+
             <plugin>
                 <groupId>org.scalatest</groupId>
                 <artifactId>scalatest-maven-plugin</artifactId>
                 <version>1.0</version>
+                <configuration>
+                    <tagsToExclude>
+                        com.tribbloids.spookystuff.testutils.Unstable,
+                        com.tribbloids.spookystuff.testutils.LocalOnly
+                    </tagsToExclude>
+                </configuration>
                 <executions>
                     <execution>
                         <id>test</id>
@@ -197,6 +377,23 @@
                 </executions>
             </plugin>
 
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-gpg-plugin</artifactId>
+                <version>1.6</version>
+            </plugin>
+
+            <plugin>
+                <groupId>org.sonatype.plugins</groupId>
+                <artifactId>nexus-staging-maven-plugin</artifactId>
+                <version>1.6.6</version>
+                <extensions>true</extensions>
+                <configuration>
+                    <serverId>ossrh</serverId>
+                    <nexusUrl>https://oss.sonatype.org/</nexusUrl>
+                    <!--<autoReleaseAfterClose>true</autoReleaseAfterClose>-->
+                </configuration>
+            </plugin>
             <!--<plugin>-->
             <!--<groupId>com.github.klieber</groupId>-->
             <!--<artifactId>phantomjs-maven-plugin</artifactId>-->
@@ -224,5 +421,16 @@
             <!--</plugin>-->
         </plugins>
     </build>
+
+    <distributionManagement>
+        <repository>
+            <id>ossrh</id>
+            <url>https://oss.sonatype.org/service/local/staging/deploy/maven2</url>
+        </repository>
+        <snapshotRepository>
+            <id>ossrh</id>
+            <url>https://oss.sonatype.org/content/repositories/snapshots</url>
+        </snapshotRepository>
+    </distributionManagement>
 
 </project>

@@ -2,13 +2,15 @@ package com.tribbloids.spookystuff.http;
 
 import org.apache.http.conn.ssl.X509HostnameVerifier;
 
-import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.SSLException;
 import javax.net.ssl.SSLSession;
 import javax.net.ssl.SSLSocket;
 import java.io.IOException;
 import java.security.cert.X509Certificate;
 
+/**
+ * WARNING: keep until Spark get rid of httpclient 4.3
+ */
 public class InsecureHostnameVerifier implements X509HostnameVerifier {
 
     public boolean verify(String arg0, SSLSession arg1) {

@@ -4,14 +4,14 @@ package com.tribbloids.spookystuff.dsl
  * Created by peng on 8/31/14.
  */
 
-sealed abstract class JoinType extends Serializable with Product
+//TODO: use Spark JoinType
+sealed abstract class JoinType(val isLeft: Boolean) extends Serializable with Product
 
 //trait LeftLink extends JoinType //Join yield at least 1 PageRow that may have empty action chain, now assuming always happen
-case object Inner extends JoinType
-case object LeftOuter extends JoinType //Flatten yield at least 1 PageRow that may have no page
-case object Replace extends JoinType //keep the original pages if action chain is empty
-case object Append extends JoinType //always keep the original pages
-case object Merge extends JoinType
+case object Inner extends JoinType(false)
+case object LeftOuter extends JoinType(true) //Flatten yield at least 1 PageRow that may have no page
+//case object Overwrite extends JoinType //keep the original pages if new trace is empty
+//case object Append extends JoinType //always keep the original traces
 
 //sealed class MergeStrategy(val f: (Any, Any) => Any)
 //

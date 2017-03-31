@@ -1,0 +1,4 @@
+#TODO: cluster size confined to 1 due to APM & MAVProxy port conflicts caused by multiple workers on 1 node
+#ClusterSize=1
+MaxFailures=1
+maxCores=6

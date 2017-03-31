@@ -5,7 +5,7 @@
     <parent>
         <artifactId>spookystuff</artifactId>
         <groupId>com.tribbloids.spookystuff</groupId>
-        <version>0.3.2-SNAPSHOT</version>
+        <version>0.4.0-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
@@ -13,11 +13,44 @@
 
     <properties>
         <assembly.jar.dir>scala-${scala.binary.version}</assembly.jar.dir>
-        <assembly.jar.basename>${project.artifactId}-${project.version}.jar</assembly.jar.basename>
-        <example.jar.basename>spookystuff-example-${project.version}.jar</example.jar.basename>
+        <assembly.jar.basename>${project.artifactId}-${project.version}-${spark.classifier}.jar</assembly.jar.basename>
+        <example.jar.basename>${project.parent.artifactId}-example-${project.version}-${spark.classifier}.jar</example.jar.basename>
     </properties>
 
+    <profiles>
+        <profile>
+            <id>dist</id>
+            <!-- This profile uses the assembly plugin to create a special "dist" package -->
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-assembly-plugin</artifactId>
+                        <version>2.6</version>
+                        <executions>
+                            <execution>
+                                <id>dist</id>
+                                <phase>package</phase>
+                                <goals>
+                                    <goal>single</goal>
+                                </goals>
+                                <configuration>
+                                    <outputDirectory>${project.build.directory}/${assembly.jar.dir}</outputDirectory>
+                                    <descriptors>
+                                        <descriptor>src/main/assembly/assembly.xml</descriptor>
+                                    </descriptors>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
+
     <dependencies>
+
+        <!--TODO: remove this dependency: useless-->
         <dependency>
             <groupId>org.apache.spark</groupId>
             <artifactId>spark-repl_${scala.binary.version}</artifactId>
@@ -28,15 +61,56 @@
             <groupId>com.tribbloids.spookystuff</groupId>
             <artifactId>spookystuff-core</artifactId>
             <version>${project.version}</version>
+            <!--<classifier>${project.classifier}</classifier>-->
         </dependency>
+        <!--<dependency>-->
+            <!--<groupId>com.tribbloids.spookystuff</groupId>-->
+            <!--<artifactId>spookystuff-pipeline</artifactId>-->
+            <!--<version>${project.version}</version>-->
+        <!--</dependency>-->
+        <!--<dependency>-->
+            <!--<groupId>com.tribbloids.spookystuff</groupId>-->
+            <!--<artifactId>spookystuff-uav</artifactId>-->
+            <!--<version>${project.version}</version>-->
+        <!--</dependency>-->
     </dependencies>
 
     <build>
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-shade-plugin</artifactId>
+                <artifactId>maven-source-plugin</artifactId>
                 <version>2.4</version>
+                <configuration>
+                    <attach>true</attach>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>attach-sources</id>
+                        <goals>
+                            <goal>jar-no-fork</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-javadoc-plugin</artifactId>
+                <version>2.10.3</version>
+                <executions>
+                    <execution>
+                        <id>attach-javadoc</id>
+                        <goals>
+                            <goal>jar</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-shade-plugin</artifactId>
+                <version>2.4.3</version>
                 <configuration>
                     <outputFile>${project.build.directory}/${assembly.jar.dir}/${assembly.jar.basename}</outputFile>
                     <filters>
@@ -58,6 +132,7 @@
                         </goals>
                         <configuration>
                             <createDependencyReducedPom>false</createDependencyReducedPom>
+                            <shadedClassifierName>${spark.classifier}</shadedClassifierName>
                             <relocations>
                                 <relocation>
                                     <pattern>org.apache.http</pattern>
@@ -70,34 +145,4 @@
             </plugin>
         </plugins>
     </build>
-
-    <profiles>
-        <profile>
-            <id>dist</id>
-            <!-- This profile uses the assembly plugin to create a special "dist" package -->
-            <build>
-                <plugins>
-                    <plugin>
-                        <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-assembly-plugin</artifactId>
-                        <executions>
-                            <execution>
-                                <id>dist</id>
-                                <phase>package</phase>
-                                <goals>
-                                    <goal>single</goal>
-                                </goals>
-                                <configuration>
-                                    <outputDirectory>${project.build.directory}/${assembly.jar.dir}</outputDirectory>
-                                    <descriptors>
-                                        <descriptor>src/main/assembly/assembly.xml</descriptor>
-                                    </descriptors>
-                                </configuration>
-                            </execution>
-                        </executions>
-                    </plugin>
-                </plugins>
-            </build>
-        </profile>
-    </profiles>
 </project>

@@ -1,55 +1,71 @@
 package com.tribbloids.spookystuff.actions
 
 import com.thoughtworks.selenium.SeleniumException
+import com.tribbloids.spookystuff.Const
+import com.tribbloids.spookystuff.doc.{Doc, Unstructured}
+import com.tribbloids.spookystuff.extractors.{Extractor, FR, Literal}
+import com.tribbloids.spookystuff.row.{DataRowSchema, FetchedRow}
+import com.tribbloids.spookystuff.session.Session
+import com.tribbloids.spookystuff.utils.SpookyUtils
 import org.openqa.selenium.interactions.{Actions => SeleniumActions}
 import org.openqa.selenium.support.ui.{ExpectedCondition, ExpectedConditions, Select}
 import org.openqa.selenium.{By, JavascriptExecutor, WebDriver}
-import com.tribbloids.spookystuff.Const
-import com.tribbloids.spookystuff.actions.WaitForDocumentReady._
-import com.tribbloids.spookystuff.entity.PageRow
-import com.tribbloids.spookystuff.expressions.{Expression, Literal}
-import com.tribbloids.spookystuff.pages.{Page, Unstructured}
-import com.tribbloids.spookystuff.session.Session
-import com.tribbloids.spookystuff.utils.Utils
 
 import scala.collection.mutable
 import scala.concurrent.duration.Duration
+import scala.language.dynamics
+import scala.util.Random
 
-/**
- * Interact with the browser (e.g. click a button or type into a search box) to reach the data page.
- * these will be logged into target page's backtrace.
- * failed interactive will trigger an error dump by snapshot.
- * has an option to be delayed to
- */
-abstract class Interaction(
-                            val delay: Duration,
-                            val blocking: Boolean
-                            ) extends Action {
+@SerialVersionUID(-98257039403274083L)
+abstract class Interaction extends Action {
 
-  final override def outputNames = Set()
+  def delay: Duration
+
+  final override def outputNames = Set.empty
 
   final override def trunk = Some(this) //can't be ommitted
 
-  final override def doExe(session: Session): Seq[Page] = {
+  override def doExe(session: Session): Seq[Doc] = {
 
-    exeWithoutPage(session: Session)
+    exeNoOutput(session: Session)
 
     if (delay != null && delay.toMillis > 0) {
       Thread.sleep(delay.toMillis)
-    }
-    if (blocking) {
-      driverWait(session).until(DocumentReadyCondition)
     }
 
     Nil
   }
 
-  def exeWithoutPage(session: Session): Unit
+  def exeNoOutput(session: Session): Unit
+}
+
+/**
+  * Interact with the browser (e.g. click a button or type into a search box) to reach the data page.
+  * these will be logged into target page's backtrace.
+  * failed interactive will trigger an error dump by snapshot.
+  * has an option to be delayed to
+  */
+@SerialVersionUID(-6784287573066896999L)
+abstract class WebInteraction(
+                               val delay: Duration,
+                               val blocking: Boolean
+                             ) extends Interaction with Timed {
+
+  override def doExe(session: Session): Seq[Doc] = {
+
+    super.doExe(session)
+
+    if (blocking) {
+      webDriverWait(session).until(DocumentReadyCondition)
+    }
+
+    Nil
+  }
 }
 
 object DocumentReadyCondition extends ExpectedCondition[Boolean] {
 
-  val script = "return document.readyState"
+  final def script = "return document.readyState"
 
   override def apply(input: WebDriver): Boolean = {
 
@@ -63,26 +79,27 @@ object DocumentReadyCondition extends ExpectedCondition[Boolean] {
 }
 
 /**
- * Type into browser's url bar and click "goto"
- * @param uri support cell interpolation
- */
+  * Type into browser's url bar and click "goto"
+  *
+  * @param uri support cell interpolation
+  */
 case class Visit(
-                  uri: Expression[Any],
+                  uri: Extractor[Any],
                   override val delay: Duration = Const.interactionDelayMin,
                   override val blocking: Boolean = Const.interactionBlock
-                  ) extends Interaction(delay, blocking) with Timed {
+                ) extends WebInteraction(delay, blocking) {
 
-  override def exeWithoutPage(session: Session) {
-    session.driver.get(uri.asInstanceOf[Literal[String]].value)
+  override def exeNoOutput(session: Session) {
+    session.webDriver.get(uri.asInstanceOf[Literal[FR, String]].value)
 
-//    if (hasTitle) {
-//      val wait = new WebDriverWait(session.driver, timeout(session).toSeconds)
-//      wait.until(ExpectedConditions.not(ExpectedConditions.titleIs("")))
-//    }
+    //    if (hasTitle) {
+    //      val wait = new WebDriverWait(session.driver, timeout(session).toSeconds)
+    //      wait.until(ExpectedConditions.not(ExpectedConditions.titleIs("")))
+    //    }
   }
 
-  override def doInterpolate(pageRow: PageRow): Option[this.type] = {
-    val first = this.uri(pageRow).flatMap(Utils.encapsulateAsIterable(_).headOption)
+  override def doInterpolate(pageRow: FetchedRow, schema: DataRowSchema): Option[this.type] = {
+    val first = this.uri.resolve(schema).lift(pageRow).flatMap(SpookyUtils.asArray[Any](_).headOption)
 
     val uriStr: Option[String] = first.flatMap {
       case element: Unstructured => element.href
@@ -93,62 +110,67 @@ case class Visit(
 
     uriStr.map(
       str =>
-        this.copy(uri = new Literal(str)).asInstanceOf[this.type]
+        this.copy(uri = Literal.erase(str)).asInstanceOf[this.type]
     )
   }
 }
 
 /**
- * Wait for some time
- * @param delay seconds to be wait for
- */
+  * Wait for some time
+  *
+  * @param delay seconds to be wait for
+  */
+@SerialVersionUID(-4852391414869985193L)
 case class Delay(
                   override val delay: Duration = Const.interactionDelayMin
-                  ) extends Interaction(delay, false) with Driverless {
+                ) extends Interaction with Driverless {
 
-  override def exeWithoutPage(session: Session): Unit = {
+  override def exeNoOutput(session: Session): Unit = {
     //do nothing
   }
 }
 
 /**
- * Wait for some random time, add some unpredictability
- * @param delay seconds to be wait for
- */
+  * Wait for some random time, add some unpredictability
+  *
+  * @param delay seconds to be wait for
+  */
+@SerialVersionUID(2291926240766143181L)
 case class RandomDelay(
                         override val delay: Duration = Const.interactionDelayMin,
-                        max: Duration = Const.interactionDelayMax
-                        ) extends Interaction(delay, false) with Driverless {
+                        maxDelay: Duration = Const.interactionDelayMax
+                      ) extends Interaction with Driverless {
 
-  assert(max >= delay)
+  assert(maxDelay >= delay)
 
-  override def exeWithoutPage(session: Session) {
-    Thread.sleep(Utils.random.nextInt((max - delay).toMillis.toInt) )
+  override def exeNoOutput(session: Session) {
+    Thread.sleep(Random.nextInt((maxDelay - delay).toMillis.toInt) )
   }
 }
 
 /**
- * Wait until at least one particular element appears, otherwise throws an exception
- * @param selector css selector of the element
- *              after which it will throw an exception!
- */
-case class WaitFor(selector: String) extends Interaction(null, false) with Timed {
+  * Wait until at least one particular element appears, otherwise throws an exception
+  *
+  * @param selector css selector of the element
+  *              after which it will throw an exception!
+  */
+case class WaitFor(selector: Selector) extends WebInteraction(null, false) {
 
-  override def exeWithoutPage(session: Session) {
+  override def exeNoOutput(session: Session) {
     this.getElement(selector, session)
   }
 }
 
-case object WaitForDocumentReady extends Interaction(null, true) with Timed {
+case object WaitForDocumentReady extends WebInteraction(null, true) {
 
-  override def exeWithoutPage(session: Session): Unit = {
+  override def exeNoOutput(session: Session): Unit = {
     //do nothing
   }
 }
 
 
 //experimental
-//case class DelayForAjaxReady() extends Interaction with Timed {
+//case class DelayForAjaxReady() extends Interaction {
 //
 //  object AjaxReadyCondition extends ExpectedCondition[Boolean] {
 //
@@ -176,15 +198,16 @@ case object WaitForDocumentReady extends Interaction(null, true) with Timed {
 //}
 
 /**
- * Click an element with your mouse pointer.
- * @param selector css selector of the element, only the first element will be affected
- */
+  * Click an element with your mouse pointer.
+  *
+  * @param selector css selector of the element, only the first element will be affected
+  */
 case class Click(
-                  selector: String,
+                  selector: Selector,
                   override val delay: Duration = Const.interactionDelayMin,
                   override val blocking: Boolean = Const.interactionBlock
-                  ) extends Interaction(delay, blocking) with Timed {
-  override def exeWithoutPage(session: Session) {
+                ) extends WebInteraction(delay, blocking) {
+  override def exeNoOutput(session: Session) {
     val element = this.getClickableElement(selector, session)
 
     element.click()
@@ -192,19 +215,21 @@ case class Click(
 }
 
 /**
- * Click an element with your mouse pointer.
- * @param selector css selector of the element, only the first element will be affected
- */
+  * Click an element with your mouse pointer.
+  *
+  * @param selector css selector of the element, only the first element will be affected
+  */
 case class ClickNext(
-                      selector: String,
+                      selector: Selector,
                       exclude: Seq[String],
+                      //TODO: remove this, and supercede with Selector
                       override val delay: Duration = Const.interactionDelayMin,
                       override val blocking: Boolean = Const.interactionBlock
-                      ) extends Interaction(delay, blocking) with Timed {
+                    ) extends WebInteraction(delay, blocking) {
 
-  val clicked: mutable.HashSet[String] = mutable.HashSet(exclude: _*)
+  @transient lazy val clicked: mutable.HashSet[String] = mutable.HashSet(exclude: _*)
 
-  override def exeWithoutPage(session: Session) {
+  override def exeNoOutput(session: Session) {
 
     val elements = this.getElements(selector, session)
 
@@ -213,7 +238,7 @@ case class ClickNext(
     elements.foreach{
       element => {
         if (!clicked.contains(element.getText)){
-          driverWait(session).until(ExpectedConditions.elementToBeClickable(element))
+          webDriverWait(session).until(ExpectedConditions.elementToBeClickable(element))
           clicked += element.getText
           element.click()
           return
@@ -223,7 +248,7 @@ case class ClickNext(
     throw new SeleniumException("all elements has been clicked before")
   }
 
-  override def doInterpolate(pageRow: PageRow): Option[this.type] =
+  override def doInterpolate(pageRow: FetchedRow, schema: DataRowSchema): Option[this.type] =
     Some(this.copy().asInstanceOf[this.type])
 }
 
@@ -232,8 +257,8 @@ case class ClickNext(
 // * @param selector css selector of the element, only the first element will be affected
 // */
 //case class ClickAll(
-//                     selector: String
-//                     )extends Interaction with Timed {
+//                     selector: Selector
+//                     )extends Interaction {
 //
 //  override def exeWithoutPage(session: Session) {
 //
@@ -251,15 +276,16 @@ case class ClickNext(
 //}
 
 /**
- * Submit a form, wait until new content returned by the submission has finished loading
- * @param selector css selector of the element, only the first element will be affected
- */
+  * Submit a form, wait until new content returned by the submission has finished loading
+  *
+  * @param selector css selector of the element, only the first element will be affected
+  */
 case class Submit(
-                   selector: String,
+                   selector: Selector,
                    override val delay: Duration = Const.interactionDelayMin,
                    override val blocking: Boolean = Const.interactionBlock
-                   ) extends Interaction(delay, blocking) with Timed {
-  override def exeWithoutPage(session: Session) {
+                 ) extends WebInteraction(delay, blocking) {
+  override def exeNoOutput(session: Session) {
 
     val element = this.getElement(selector, session)
 
@@ -268,26 +294,27 @@ case class Submit(
 }
 
 /**
- * Type into a textbox
- * @param selector css selector of the textbox, only the first element will be affected
- * @param text support cell interpolation
- */
+  * Type into a textbox
+  *
+  * @param selector css selector of the textbox, only the first element will be affected
+  * @param text support cell interpolation
+  */
 case class TextInput(
-                      selector: String,
-                      text: Expression[Any],
+                      selector: Selector,
+                      text: Extractor[Any],
                       override val delay: Duration = Const.interactionDelayMin,
                       override val blocking: Boolean = Const.interactionBlock
-                      ) extends Interaction(delay, blocking) with Timed {
-  override def exeWithoutPage(session: Session) {
+                    ) extends WebInteraction(delay, blocking) {
+  override def exeNoOutput(session: Session) {
 
     val element = this.getElement(selector, session)
 
-    element.sendKeys(text.asInstanceOf[Literal[String]].value)
+    element.sendKeys(text.asInstanceOf[Literal[FR, String]].toMessage)
   }
 
-  override def doInterpolate(pageRow: PageRow): Option[this.type] = {
+  override def doInterpolate(pageRow: FetchedRow, schema: DataRowSchema): Option[this.type] = {
 
-    val first = this.text(pageRow).flatMap(Utils.encapsulateAsIterable(_).headOption)
+    val first = this.text.resolve(schema).lift(pageRow).flatMap(SpookyUtils.asArray[Any](_).headOption)
 
     val textStr: Option[String] = first.flatMap {
       case element: Unstructured => element.text
@@ -298,32 +325,33 @@ case class TextInput(
 
     textStr.map(
       str =>
-        this.copy(text = new Literal(str)).asInstanceOf[this.type]
+        this.copy(text = Literal.erase(str)).asInstanceOf[this.type]
     )
   }
 }
 
 /**
- * Select an item from a drop down list
- * @param selector css selector of the drop down list, only the first element will be affected
- * @param value support cell interpolation
- */
+  * Select an item from a drop down list
+  *
+  * @param selector css selector of the drop down list, only the first element will be affected
+  * @param value support cell interpolation
+  */
 case class DropDownSelect(
-                           selector: String,
-                           value: Expression[Any],
+                           selector: Selector,
+                           value: Extractor[Any],
                            override val delay: Duration = Const.interactionDelayMin,
                            override val blocking: Boolean = Const.interactionBlock
-                           ) extends Interaction(delay, blocking) with Timed {
-  override def exeWithoutPage(session: Session) {
+                         ) extends WebInteraction(delay, blocking) {
+  override def exeNoOutput(session: Session) {
 
     val element = this.getElement(selector, session)
 
     val select = new Select(element)
-    select.selectByValue(value.asInstanceOf[Literal[String]].value)
+    select.selectByValue(value.asInstanceOf[Literal[FR, String]].value)
   }
 
-  override def doInterpolate(pageRow: PageRow): Option[this.type] = {
-    val first = this.value(pageRow).flatMap(Utils.encapsulateAsIterable(_).headOption)
+  override def doInterpolate(pageRow: FetchedRow, schema: DataRowSchema): Option[this.type] = {
+    val first = this.value.resolve(schema).lift(pageRow).flatMap(SpookyUtils.asArray[Any](_).headOption)
 
     val valueStr: Option[String] = first.flatMap {
       case element: Unstructured => element.attr("value")
@@ -334,38 +362,41 @@ case class DropDownSelect(
 
     valueStr.map(
       str =>
-        this.copy(value = new Literal(str)).asInstanceOf[this.type]
+        this.copy(value = Literal.erase(str)).asInstanceOf[this.type]
     )
   }
 }
 
 /**
- * Request browser to change focus to a frame/iframe embedded in the global page,
- * after which only elements inside the focused frame/iframe can be selected.
- * Can be used multiple times to switch focus back and forth
- * @param selector css selector of the frame/iframe, only the first element will be affected
- */
-case class SwitchToFrame(selector: String)extends Interaction(null, false) with Timed {
-  override def exeWithoutPage(session: Session) {
+  * Request browser to change focus to a frame/iframe embedded in the global page,
+  * after which only elements inside the focused frame/iframe can be selected.
+  * Can be used multiple times to switch focus back and forth
+  *
+  * @param selector css selector of the frame/iframe, only the first element will be affected
+  */
+//TODO: not possible to switch back, need a better abstraction
+case class ToFrame(selector: Selector)extends WebInteraction(null, false) {
+  override def exeNoOutput(session: Session) {
 
     val element = this.getElement(selector, session)
 
-    session.driver.switchTo().frame(element)
+    session.webDriver.switchTo().frame(element)
   }
 }
 
 /**
- * Execute a javascript snippet
- * @param script support cell interpolation
- * @param selector selector of the element this script is executed against, if null, against the entire page
- */
+  * Execute a javascript snippet
+  *
+  * @param script support cell interpolation
+  * @param selector selector of the element this script is executed against, if null, against the entire page
+  */
 case class ExeScript(
-                      script: Expression[Any],
-                      selector: String = null,
+                      script: Extractor[String],
+                      selector: Selector = null,
                       override val delay: Duration = Const.interactionDelayMin,
                       override val blocking: Boolean = Const.interactionBlock
-                      ) extends Interaction(delay, blocking) with Timed {
-  override def exeWithoutPage(session: Session) {
+                    ) extends WebInteraction(delay, blocking) {
+  override def exeNoOutput(session: Session) {
 
     val element = if (selector == null) None
     else {
@@ -373,15 +404,15 @@ case class ExeScript(
       Some(element)
     }
 
-    val scriptStr = script.asInstanceOf[Literal[String]].value
-    session.driver match {
+    val scriptStr = script.asInstanceOf[Literal[FR, String]].toMessage
+    session.webDriver match {
       case d: JavascriptExecutor => d.executeScript(scriptStr, element.toArray: _*)
       case _ => throw new UnsupportedOperationException("this web browser driver is not supported")
     }
   }
 
-  override def doInterpolate(pageRow: PageRow): Option[this.type] = {
-    val first = this.script(pageRow).flatMap(Utils.encapsulateAsIterable(_).headOption)
+  override def doInterpolate(pageRow: FetchedRow, schema: DataRowSchema): Option[this.type] = {
+    val first = this.script.resolve(schema).lift(pageRow).flatMap(SpookyUtils.asArray[Any](_).headOption)
 
     val scriptStr: Option[String] = first.flatMap {
       case element: Unstructured => element.text
@@ -392,26 +423,26 @@ case class ExeScript(
 
     scriptStr.map(
       str =>
-        this.copy(script = new Literal(str)).asInstanceOf[this.type]
+        this.copy(script = Literal.erase(str)).asInstanceOf[this.type]
     )
   }
 }
 
 /**
- *
- * @param selector selector of the slide bar
- * @param percentage distance and direction of moving of the slider handle, positive number is up/right, negative number is down/left
- * @param handleSelector selector of the slider
- */
+  *
+  * @param selector selector of the slide bar
+  * @param percentage distance and direction of moving of the slider handle, positive number is up/right, negative number is down/left
+  * @param handleSelector selector of the slider
+  */
 case class DragSlider(
-                       selector: String,
+                       selector: Selector,
                        percentage: Double,
-                       handleSelector: String = "*",
+                       handleSelector: Selector = "*",
                        override val delay: Duration = Const.interactionDelayMin,
                        override val blocking: Boolean = Const.interactionBlock
-                       ) extends Interaction(delay, blocking) with Timed {
+                     ) extends WebInteraction(delay, blocking) {
 
-  override def exeWithoutPage(session: Session): Unit = {
+  override def exeNoOutput(session: Session): Unit = {
 
     val element = this.getElement(selector, session)
 
@@ -421,19 +452,19 @@ case class DragSlider(
     val height = dim.getHeight
     val width = dim.getWidth
 
-    new SeleniumActions(session.driver).clickAndHold(handle).perform()
+    new SeleniumActions(session.webDriver).clickAndHold(handle).perform()
 
     Thread.sleep(1000)
 
-    new SeleniumActions(session.driver).moveByOffset(1, 0).perform()
+    new SeleniumActions(session.webDriver).moveByOffset(1, 0).perform()
 
     Thread.sleep(1000)
 
-    if (width > height) new SeleniumActions(session.driver).moveByOffset((width * percentage).asInstanceOf[Int], 0).perform()
-    else new SeleniumActions(session.driver).moveByOffset(0, (height * percentage).asInstanceOf[Int]).perform()
+    if (width > height) new SeleniumActions(session.webDriver).moveByOffset((width * percentage).asInstanceOf[Int], 0).perform()
+    else new SeleniumActions(session.webDriver).moveByOffset(0, (height * percentage).asInstanceOf[Int]).perform()
 
     Thread.sleep(1000)
 
-    new SeleniumActions(session.driver).release().perform()
+    new SeleniumActions(session.webDriver).release().perform()
   }
 }

@@ -2,193 +2,331 @@ package com.tribbloids.spookystuff
 
 import java.util.Date
 
-import org.apache.spark.rdd.RDD
-import org.apache.spark.storage.StorageLevel
-import org.apache.spark.{SparkConf, SparkContext}
-import com.tribbloids.spookystuff.SpookyConf.DirConf
 import com.tribbloids.spookystuff.dsl._
-import com.tribbloids.spookystuff.expressions.{CacheFilePath, PageFilePath}
-import com.tribbloids.spookystuff.session.OAuthKeys
-import com.tribbloids.spookystuff.utils.Utils
+import com.tribbloids.spookystuff.row.Sampler
+import com.tribbloids.spookystuff.session._
+import com.tribbloids.spookystuff.session.python.PythonDriver
+import com.tribbloids.spookystuff.utils.Static
+import org.apache.spark.ml.dsl.utils.MessageAPI
+import org.apache.spark.storage.StorageLevel
+import org.apache.spark.{SparkConf, SparkEnv}
+import org.slf4j.LoggerFactory
 
+import scala.collection.mutable
+import scala.collection.mutable.ArrayBuffer
+import scala.concurrent.duration.Duration.Infinite
 import scala.concurrent.duration._
+import scala.reflect.ClassTag
 
-/**
- * Created by peng on 2/2/15.
- */
-object SpookyConf {
+object Submodules {
 
-  private def getDefault(
-                          property: String,
-                          backup: String = null
-                          )(implicit conf: SparkConf): String = {
-    val env = property.replace('.','_').toUpperCase
+  def apply[U](
+                vs: U*
+              ): Submodules[U] = {
 
-    conf.getOption(property)
-      .orElse{
-      Option(System.getProperty(property))
-    }.orElse{
-      Option(System.getenv(env))
-    }.getOrElse{
-      backup
-    }
+    Submodules[U](
+      mutable.Map(
+        vs.map {
+          v =>
+            v.getClass.getCanonicalName -> v
+        }: _*
+      )
+    )
   }
 
-  class DirConf(
-                 var root: String = null,//ystem.getProperty("spooky.dirs.root"),
-                 var localRoot: String = null,
-                 var _autoSave: String = null,//System.getProperty("spooky.dirs.autosave"),
-                 var _cache: String = null,//System.getProperty("spooky.dirs.cache"),
-                 var _errorDump: String = null,//System.getProperty("spooky.dirs.errordump"),
-                 var _errorScreenshot: String = null,//System.getProperty("spooky.dirs.errorscreenshot"),
-                 var _checkpoint: String = null,//System.getProperty("spooky.dirs.checkpoint"),
-                 var _errorDumpLocal: String = null,//System.getProperty("spooky.dirs.errordump.local"),
-                 var _errorScreenshotLocal: String = null//System.getProperty("spooky.dirs.errorscreenshot.local")
-                 ) extends Serializable {
+  //  def getDefault(className: String): AnyRef = {
+  //
+  //    val clazz = Class.forName(className)
+  //    val neo = ReflectionUtils.invokeStatic(clazz, "default")
+  //    neo
+  //  }
 
-    def root_/(subdir: String): String = Utils.uriSlash(root) + subdir
-    def localRoot_/(subdir: String) = Utils.uriSlash(root) + subdir
+  val builderRegistry: ArrayBuffer[Builder[_]] = ArrayBuffer[Builder[_]]() //singleton
 
-    def autoSave_=(v: String): Unit = _autoSave = v
-    def cache_=(v: String): Unit = _cache = v
-    def errorDump_=(v: String): Unit = _errorDump = v
-    def errorScreenshot_=(v: String): Unit = _errorScreenshot = v
-    def checkpoint_=(v: String): Unit = _checkpoint = v
-    def errorDumpLocal_=(v: String): Unit = _errorDumpLocal = v
-    def errorScreenshotLocal_=(v: String): Unit = _errorScreenshotLocal = v
+  abstract class Builder[T](implicit val ctg: ClassTag[T]) extends Static[T] {
 
-    def autoSave: String = Option(_autoSave).getOrElse(root_/("autosave"))
-    def cache: String = Option(_autoSave).getOrElse(root_/("cache"))
-    def errorDump: String = Option(_autoSave).getOrElse(root_/("errorDump"))
-    def errorScreenshot: String = Option(_autoSave).getOrElse(root_/("errorScreenshot"))
-    def checkpoint: String = Option(_autoSave).getOrElse(root_/("checkpoint"))
-    def errorDumpLocal: String = Option(_autoSave).getOrElse(localRoot_/("errorDump"))
-    def errorScreenshotLocal: String = Option(_autoSave).getOrElse(localRoot_/("errorScreenshot"))
+    builderRegistry += this
+
+    def default: T
+  }
+}
+
+case class Submodules[U] private(
+                                  self: mutable.Map[String, U]
+                                ) extends Iterable[U] {
+
+  def getOrBuild[T <: U](implicit ev: Submodules.Builder[T]): T = {
+
+    self.get(ev.ctg.runtimeClass.getCanonicalName)
+      .map {
+        _.asInstanceOf[T]
+      }
+      .getOrElse {
+        val result = ev.default
+        self.put(result.getClass.getCanonicalName, result)
+        result
+      }
+  }
+
+  def transform(f: U => U): Submodules[U] = {
+
+    Submodules(self.values.map(f).toSeq: _*)
+  }
+
+  override def iterator: Iterator[U] = self.valuesIterator
+}
+
+object AbstractConf {
+
+  def getPropertyOrEnv(
+                        property: String
+                      )(implicit conf: SparkConf = Option(SparkEnv.get).map(_.conf).orNull): Option[String] = {
+
+    val env = property.replace('.','_').toUpperCase
+
+    Option(System.getProperty(property)).filter (_.toLowerCase != "null").map {
+      v =>
+        LoggerFactory.getLogger(this.getClass).info(s"System has property $property -> $v")
+        v
+    }
+      .orElse {
+        Option(System.getenv(env)).filter (_.toLowerCase != "null").map {
+          v =>
+            LoggerFactory.getLogger(this.getClass).info(s"System has environment $env -> $v")
+            v
+        }
+      }
+      .orElse {
+        Option(conf) //this is ill-suited for third-party application, still here but has lowest precedence.
+          .flatMap(
+          _.getOption(property).map {
+            v =>
+              LoggerFactory.getLogger(this.getClass).info(s"SparkConf has property $property -> $v")
+              v
+          }
+        )
+          .filter (_.toLowerCase != "null")
+      }
+  }
+
+  /**
+    * spark config >> system property >> system environment >> default
+    */
+  def getOrDefault(
+                    property: String,
+                    default: String = null
+                  )(implicit conf: SparkConf = Option(SparkEnv.get).map(_.conf).orNull): String = {
+
+    getPropertyOrEnv(property)
+      .getOrElse{
+        default
+      }
   }
 }
 
 /**
- * Created by peng on 12/06/14.
- * will be shipped to workers
- */
-//TODO: is var in serialized closure unstable for Spark production environment? consider changing to ConcurrentHashMap or merge with SparkConf
-class SpookyConf (
-                   val dirs: DirConf = new DirConf(),
+  * all subclasses have to define default() in their respective companion object.
+  */
+trait AbstractConf extends MessageAPI {
 
-                   var shareMetrics: Boolean = false, //TODO: not necessary
+  //  val submodules: Submodules[AbstractConf] = Submodules()
 
-                   //TODO: 3 of the following functions can be changed to Expressions
-                   var driverFactory: DriverFactory = DriverFactories.PhantomJS(),
-                   var proxy: ProxyFactory = ProxyFactories.NoProxy,
-                   //                   var userAgent: ()=> String = () => null,
-                   var userAgent: ()=> String = () => "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/37.0.2062.120 Safari/537.36",
-                   var headers: ()=> Map[String, String] = () => Map(),
-                   var oAuthKeys: () => OAuthKeys = () => null,
+  // TODO: use reflection to automate
+  protected def importFrom(sparkConf: SparkConf): this.type
 
-                   val browserResolution: (Int, Int) = (1920, 1080),
+  @transient @volatile var sparkConf: SparkConf = _
+  def effective: this.type = Option(sparkConf).map {
+    conf =>
+      val result = importFrom(conf)
+      result.sparkConf = this.sparkConf
+      result
+  }
+    .getOrElse(this)
+    .asInstanceOf[this.type]
 
-                   var remote: Boolean = true, //if disabled won't use remote client at all
-                   var autoSave: Boolean = true,
-                   var cacheWrite: Boolean = true,
-                   var cacheRead: Boolean = true,
-                   var errorDump: Boolean = true,
-                   var errorScreenshot: Boolean = true,
+  override def clone: this.type = importFrom(new SparkConf())
+}
 
-                   var pageExpireAfter: Duration = 7.day,
-                   var pageNotExpiredSince: Option[Date] = None,
+trait ModuleConf extends AbstractConf {
+}
 
-                   var cachePath: CacheFilePath[String] = CacheFilePaths.Hierarchical,
-                   var autoSavePath: PageFilePath[String] = PageFilePaths.UUIDName(CacheFilePaths.Hierarchical),
-                   var errorDumpPath: PageFilePath[String] = PageFilePaths.UUIDName(CacheFilePaths.Hierarchical),
+object SpookyConf extends Submodules.Builder[SpookyConf]{
 
-                   var defaultParallelism: RDD[_] => Int = Parallelism.PerCore(8),
+  final val DEFAULT_WEBDRIVER_FACTORY = DriverFactories.PhantomJS().taskLocal
 
-                   var remoteResourceTimeout: Duration = 60.seconds,
-                   var DFSTimeout: Duration = 40.seconds,
+  /**
+    * otherwise driver cannot do screenshot
+    */
+  final val TEST_WEBDRIVER_FACTORY = DriverFactories.PhantomJS(loadImages = true).taskLocal
+  final val DEFAULT_PYTHONDRIVER_FACTORY = DriverFactories.Python().taskLocal
 
-                   var failOnDFSError: Boolean = false,
+  //DO NOT change to val! all confs are mutable
+  def default = new SpookyConf()
+}
 
-                   val defaultJoinType: JoinType = LeftOuter,
+/**
+  * Created by peng on 12/06/14.
+  * will be shipped to workers
+  */
+//TODO: is var in serialized closure unstable for Spark production environment? consider changing to ConcurrentHashMap
+class SpookyConf(
+                  val submodules: Submodules[ModuleConf] = Submodules(),
 
-                   //default max number of elements scraped from a page, set to Int.MaxValue to allow unlimited fetch
-                   var maxJoinOrdinal: Int = Int.MaxValue,
-                   var maxExploreDepth: Int = Int.MaxValue,
+                  var shareMetrics: Boolean = false, //TODO: not necessary
 
-                   var defaultQueryOptimizer: QueryOptimizer = Wide,
+                  var webDriverFactory: DriverFactory[CleanWebDriver] = SpookyConf.DEFAULT_WEBDRIVER_FACTORY,
+                  var pythonDriverFactory: DriverFactory[PythonDriver] = SpookyConf.DEFAULT_PYTHONDRIVER_FACTORY,
 
-                   var checkpointInterval: Int = 100,
+                  var proxy: () => WebProxySetting = WebProxyFactories.NoProxy,
 
-                   var defaultStorageLevel: StorageLevel = StorageLevel.MEMORY_ONLY
-                   ) extends Serializable {
+                  //TODO: merge into headersFactory
+                  var userAgentFactory: () => String = {
+                    () => "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/37.0.2062.120 Safari/537.36"
+                  },
+                  var headersFactory: () => Map[String, String] = () => Map(),
+                  var oAuthKeysFactory: () => OAuthKeys = () => null,
 
-  def importFrom(implicit sparkConf: SparkConf): SpookyConf = {
+                  val browserResolution: (Int, Int) = (1920, 1080),
 
-    val root = Option(this.dirs.root).getOrElse(SpookyConf.getDefault("spooky.dirs.root", "temp"))
-    //    def root_/(subdir: String) = Utils.uriSlash(root) + subdir
+                  var remote: Boolean = true, //if disabled won't use remote client at all
+                  var autoSave: Boolean = true,
+                  var cacheWrite: Boolean = true,
+                  var cacheRead: Boolean = true, //TODO: this enable both in-memory and DFS cache, should allow more refined control
+                  var errorDump: Boolean = true,
+                  var errorScreenshot: Boolean = true,
 
-    val localRoot = Option(this.dirs.root).getOrElse(SpookyConf.getDefault("spooky.dirs.root.local", "temp"))
-    //    def localRoot_/(subdir: String) = Utils.uriSlash(root) + subdir
+                  var cachedDocsLifeSpan: Duration = 7.day,
+                  var IgnoreCachedDocsBefore: Option[Date] = None,
 
-    val dirs = new DirConf(
-      root,
-      localRoot,
-      Option(this.dirs._autoSave).getOrElse(SpookyConf.getDefault("spooky.dirs.autosave")),
-      Option(this.dirs._cache).getOrElse(SpookyConf.getDefault("spooky.dirs.cache")),
-      Option(this.dirs._errorDump).getOrElse(SpookyConf.getDefault("spooky.dirs.error.dump")),
-      Option(this.dirs._errorScreenshot).getOrElse(SpookyConf.getDefault("spooky.dirs.error.screenshot")),
-      Option(this.dirs._checkpoint).getOrElse(SpookyConf.getDefault("spooky.dirs.checkpoint")),
-      Option(this.dirs._errorDumpLocal).getOrElse(SpookyConf.getDefault("spooky.dirs.error.dump.local")),
-      Option(this.dirs._errorScreenshotLocal).getOrElse(SpookyConf.getDefault("spooky.dirs.error.screenshot.local"))
-    )
+                  var cacheFilePath: ByTrace[String] = FilePaths.Hierarchical,
+                  var autoSaveFilePath: ByDoc[String] = FilePaths.UUIDName(FilePaths.Hierarchical),
+                  var errorDumpFilePath: ByDoc[String] = FilePaths.UUIDName(FilePaths.Hierarchical),
+
+                  var remoteResourceTimeout: Duration = 60.seconds,
+                  var DFSTimeout: Duration = 40.seconds,
+
+                  var failOnDFSError: Boolean = false,
+
+                  val defaultJoinType: JoinType = Inner,
+
+                  var defaultFlattenSampler: Sampler[Any] = identity,
+                  var defaultJoinSampler: Sampler[Any] = identity, //join takes remote actions and cost much more than flatten.
+                  var defaultExploreRange: Range = 0 until Int.MaxValue,
+
+                  var defaultGenPartitioner: GenPartitioner = GenPartitioners.Wide(),
+                  var defaultExploreAlgorithm: ExploreAlgorithm = ExploreAlgorithms.ShortestPath,
+
+                  var epochSize: Int = 500,
+                  var checkpointInterval: Int = -1, //disabled if <=0
+
+                  //if encounter too many out of memory error, change to MEMORY_AND_DISK_SER
+                  var defaultStorageLevel: StorageLevel = StorageLevel.MEMORY_ONLY
+                ) extends AbstractConf with Serializable {
+
+  def submodule[T <: ModuleConf](implicit ev: Submodules.Builder[T]): T = submodules.getOrBuild[T](ev)
+
+  def dirConf: DirConf = submodule[DirConf]
+
+  override def importFrom(sparkConf: SparkConf): this.type = {
+
+    Submodules.builderRegistry.foreach {
+      builder =>
+        if (classOf[ModuleConf] isAssignableFrom builder.ctg.runtimeClass) {
+          this.submodule(builder.asInstanceOf[Submodules.Builder[_ <: ModuleConf]])
+        }
+    }
+
+    //TODO: eliminate hardcoding! we have 2 options:
+    // 1. Use reflection: property name -> package name -> submodule class name
+    // 2. lazily loaded by constructor of Actions that use such submodule.
+    //    Seq(
+    //      classOf[DirConf].getCanonicalName,
+    //      "com.tribbloids.spookystuff.mav.UAVConf"
+    //    )
+    //      .foreach {
+    //        name =>
+    //          this.submodules.tryGetByName(name)
+    //      }
+
+    val transformed = this.submodules.transform {
+      v =>
+        v.sparkConf = sparkConf
+        v.effective
+    }
 
     new SpookyConf(
-      dirs,
+      transformed,
 
-      this.shareMetrics,
+      shareMetrics = this.shareMetrics,
 
-      this.driverFactory,
-      this.proxy,
+      webDriverFactory = this.webDriverFactory,
+      pythonDriverFactory = this.pythonDriverFactory,
+      proxy = this.proxy,
       //                   var userAgent: ()=> String = () => null,
-      this.userAgent,
-      this.headers,
-      this.oAuthKeys,
+      userAgentFactory = this.userAgentFactory,
+      headersFactory = this.headersFactory,
+      oAuthKeysFactory = this.oAuthKeysFactory,
 
-      this.browserResolution,
+      browserResolution = this.browserResolution,
 
-      this.remote,
-      this.autoSave,
-      this.cacheWrite,
-      this.cacheRead,
-      this.errorDump,
-      this.errorScreenshot,
+      remote = this.remote,
+      autoSave = this.autoSave,
+      cacheWrite = this.cacheWrite,
+      cacheRead = this.cacheRead,
+      errorDump = this.errorDump,
+      errorScreenshot = this.errorScreenshot,
 
-      this.pageExpireAfter,
-      this.pageNotExpiredSince,
+      cachedDocsLifeSpan = this.cachedDocsLifeSpan,
+      IgnoreCachedDocsBefore = this.IgnoreCachedDocsBefore,
 
-      this.cachePath,
-      this.autoSavePath,
-      this.errorDumpPath,
+      cacheFilePath = this.cacheFilePath,
+      autoSaveFilePath = this.autoSaveFilePath,
+      errorDumpFilePath = this.errorDumpFilePath,
 
-      this.defaultParallelism,
+      remoteResourceTimeout = this.remoteResourceTimeout,
+      DFSTimeout = this.DFSTimeout,
 
-      this.remoteResourceTimeout,
-      this.DFSTimeout,
+      failOnDFSError = this.failOnDFSError,
 
-      this.failOnDFSError,
-
-      this.defaultJoinType,
+      defaultJoinType = this.defaultJoinType,
 
       //default max number of elements scraped from a page, set to Int.MaxValue to allow unlimited fetch
-      this.maxJoinOrdinal,
-      this.maxExploreDepth,
+      defaultFlattenSampler = this.defaultFlattenSampler,
+      defaultJoinSampler = this.defaultJoinSampler,
 
-      this.defaultQueryOptimizer,
+      defaultExploreRange = this.defaultExploreRange,
 
-      this.checkpointInterval,
+      defaultGenPartitioner = this.defaultGenPartitioner,
+      defaultExploreAlgorithm = this.defaultExploreAlgorithm,
 
-      this.defaultStorageLevel
+      epochSize = this.epochSize,
+      checkpointInterval = this.checkpointInterval,
+
+      defaultStorageLevel = this.defaultStorageLevel
     )
+      .asInstanceOf[this.type]
   }
 
+  def getEarliestDocCreationTime(nowMillis: Long = System.currentTimeMillis()): Long = {
 
+    val earliestTimeFromDuration = cachedDocsLifeSpan match {
+      case inf: Infinite => Long.MinValue
+      case d =>
+        nowMillis - d.toMillis
+    }
+    IgnoreCachedDocsBefore match {
+      case Some(expire) =>
+        Math.max(expire.getTime, earliestTimeFromDuration)
+      case None =>
+        earliestTimeFromDuration
+    }
+  }
+
+  def driverFactories: Seq[DriverFactory[_]] = {
+    Seq(
+      webDriverFactory,
+      pythonDriverFactory
+    )
+      .flatMap(v => Option(v))
+  }
 }

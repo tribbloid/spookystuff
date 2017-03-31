@@ -1,55 +1,73 @@
 package com.tribbloids.spookystuff.actions
 
-import org.slf4j.LoggerFactory
-import com.tribbloids.spookystuff.entity.PageRow
-import com.tribbloids.spookystuff.pages.{Page, PageLike, PageUtils}
-import com.tribbloids.spookystuff.session.{DriverSession, NoDriverSession, Session}
-import com.tribbloids.spookystuff.utils.Utils
-import com.tribbloids.spookystuff.{RemoteDisabledException, dsl, Const, SpookyContext}
+import com.tribbloids.spookystuff.caching.{DFSDocCache, InMemoryDocCache}
+import com.tribbloids.spookystuff.doc.{Doc, Fetched}
+import com.tribbloids.spookystuff.row.{DataRowSchema, FetchedRow}
+import com.tribbloids.spookystuff.session.Session
+import com.tribbloids.spookystuff.{SpookyContext, dsl}
 
 import scala.collection.mutable.ArrayBuffer
+import scala.language.implicitConversions
 import scala.reflect.ClassTag
 
-/**
- * Created by peng on 10/25/14.
- */
-class TraceView(
-                        override val self: Seq[Action]
-                        ) extends Actions(self) { //remember trace is not a block! its the super container that cannot be wrapped
+object TraceView {
+
+  implicit def fromTrace(trace: Trace): TraceView = new TraceView(trace)
+
+  def apply(
+             children: Trace = Nil,
+             docs: Seq[Fetched] = null
+           ): TraceView = {
+    val result = apply(children)
+    result.docs = docs
+    result
+  }
+}
+
+case class TraceView(
+                      override val children: Trace
+                    ) extends Actions(children) { //remember trace is not a block! its the super container that cannot be wrapped
+
+  @volatile @transient var docs: Seq[Fetched] = _ //override, cannot be shuffled
+  def docsOpt = Option(docs)
 
   //always has output (Sometimes Empty) to handle left join
-  override def doInterpolate(pr: PageRow): Option[this.type] = {
-    val seq = this.doInterpolateSeq(pr)
+  override def doInterpolate(pr: FetchedRow, schema: DataRowSchema): Option[this.type] = {
+    val seq = this.doInterpolateSeq(pr, schema)
 
     Some(new TraceView(seq).asInstanceOf[this.type])
   }
 
-  override def apply(session: Session): Seq[PageLike] = {
+  override def apply(session: Session): Seq[Fetched] = {
 
-    val results = new ArrayBuffer[PageLike]()
+    val results = new ArrayBuffer[Fetched]()
 
-    this.self.foreach {
+    this.children.foreach {
       action =>
-        val result = action.apply(session)
+        val actionResult = action.apply(session)
         session.backtrace ++= action.trunk
 
         if (action.hasOutput) {
 
-          results ++= result
-          session.spooky.metrics.pagesFetchedFromWeb += result.count(_.isInstanceOf[Page])
+          results ++= actionResult
 
           val spooky = session.spooky
 
-          if (spooky.conf.autoSave) result.foreach{
-            case page: Page => page.autoSave(spooky)
+          if (spooky.conf.autoSave) actionResult.foreach{
+            case page: Doc => page.autoSave(spooky)
             case _ =>
           }
-          if (spooky.conf.cacheWrite) PageUtils.autoCache(result, spooky)
+          if (spooky.conf.cacheWrite) {
+            val effectiveBacktrace = actionResult.head.uid.backtrace
+            InMemoryDocCache.put(effectiveBacktrace, actionResult, spooky)
+            DFSDocCache.put(effectiveBacktrace ,actionResult, spooky)
+          }
         }
         else {
-          assert(result.isEmpty)
+          assert(actionResult.isEmpty)
         }
     }
+    this.docs = results
 
     results
   }
@@ -57,69 +75,52 @@ class TraceView(
   lazy val dryrun: DryRun = {
     val result: ArrayBuffer[Trace] = ArrayBuffer()
 
-    for (i <- self.indices) {
-      val selfi = self(i)
-      if (selfi.hasOutput){
-        val backtrace = selfi match {
-          case dl: Driverless => selfi :: Nil
-          case _ => self.slice(0, i).flatMap(_.trunk) :+ selfi
+    for (i <- children.indices) {
+      val child = children(i)
+      if (child.hasOutput){
+        val backtrace: Trace = child match {
+          case dl: Driverless => child :: Nil
+          case _ => children.slice(0, i).flatMap(_.trunk) :+ child
         }
         result += backtrace
       }
     }
 
-    result
+    result.toList
   }
 
+  //if Trace has no output, automatically append Snapshot
   //invoke before interpolation!
   def autoSnapshot: Trace = {
-    if (this.hasOutput && self.nonEmpty) self
-    else self :+ Snapshot() //Don't use singleton, otherwise will flush timestamp and name
-  }
-
-  def resolve(spooky: SpookyContext): Seq[PageLike] = {
-
-    val results = Utils.retry (Const.remoteResourceLocalRetries){
-      resolvePlain(spooky)
-    }
-    val numPages = results.count(_.isInstanceOf[Page])
-    spooky.metrics.pagesFetched += numPages
-    results
-  }
-
-  def resolvePlain(spooky: SpookyContext): Seq[PageLike] = {
-
-    if (!this.hasOutput) return Nil
-
-    val pagesFromCache = if (!spooky.conf.cacheRead) Seq(null)
-    else dryrun.map(dry => PageUtils.autoRestore(dry, spooky))
-
-    if (!pagesFromCache.contains(null)){
-      val results = pagesFromCache.flatten
-      spooky.metrics.pagesFetchedFromCache += results.count(_.isInstanceOf[Page])
-      this.self.foreach{
-        action =>
-          LoggerFactory.getLogger(this.getClass).info(s"(cached)+> ${action.toString}")
-      }
-
-      results
-    }
-    else { //TODO: this still launch Driver for Blocks (e.g. Try) containing only Driverless Actions
-      if (!spooky.conf.remote) throw new RemoteDisabledException("Resource is not cached and not allowed to be fetched remotely, the later can be enabled by setting SpookyContext.conf.remote=true")
-
-      val session = if (self.count(_.needDriver) == 0) new NoDriverSession(spooky)
-      else new DriverSession(spooky)
-      try {
-        this.apply(session)
-      }
-      finally {
-        session.close()
-      }
-    }
+    if (children.isEmpty) children
+    else if (children.last.hasOutput) children
+    else children :+ Snapshot() //Don't use singleton, otherwise will flush timestamp and name
   }
 
   //the minimal equivalent action that can be put into backtrace
   override def trunk = Some(new TraceView(this.trunkSeq).asInstanceOf[this.type])
+
+  class WithSpooky(spooky: SpookyContext) {
+
+    //fetched may yield very large documents and should only be loaded lazily and not shuffled or persisted (unless in-memory)
+    def get: Seq[Fetched] = TraceView.this.synchronized{
+      docsOpt.getOrElse{
+        fetch
+      }
+    }
+
+    def fetch: Seq[Fetched] = {
+      val docs = TraceView.this.fetch(spooky)
+      docs
+    }
+  }
+}
+
+object TraceSetView {
+
+  implicit def fromTrace(traces: Trace): TraceSetView = TraceSetView(Set(traces))
+
+  implicit def fromAction(action: Action): TraceSetView = TraceSetView(Set(List(action)))
 }
 
 //The precedence of an inﬁx operator is determined by the operator’s ﬁrst character.
@@ -138,7 +139,8 @@ class TraceView(
 //(all other special characters)
 //now using immutable pattern to increase maintainability
 //put all narrow transformation closures here
-final class TraceSetView(self: Set[Trace]) {
+//TODO: this list is incomplete, some operators, e.g. # are missing
+final case class TraceSetView(self: Set[Trace]) {
 
   import dsl._
 
@@ -160,9 +162,10 @@ final class TraceSetView(self: Set[Trace]) {
 
   def ||(other: TraversableOnce[Trace]): Set[Trace] = self ++ other
 
-  def autoSnapshot: Set[Trace] = self.map(_.autoSnapshot)
+  def correct: Set[Trace] = self.map(_.autoSnapshot)
 
-  def interpolate(row: PageRow): Set[Trace] = self.flatMap(_.interpolate(row).map(_.self))
+  def interpolate(row: FetchedRow, schema: DataRowSchema): Set[Trace] =
+    self.flatMap(_.interpolate(row, schema: DataRowSchema).map(_.children))
 
   def outputNames: Set[String] = self.map(_.outputNames).reduce(_ ++ _)
 }

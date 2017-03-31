@@ -4,12 +4,12 @@ import scala.collection.immutable
 
 class Default[+A](val default: A)
 
-trait LowerPriorityImplicits {
+trait LowerPriorityDefault {
   // Stop AnyRefs from clashing with AnyVals
   implicit def defaultNull[A <: AnyRef]:Default[A] = new Default[A](null.asInstanceOf[A])
 }
 
-object Default extends LowerPriorityImplicits {
+object Default extends LowerPriorityDefault {
   implicit object DefaultDouble extends Default[Double](0.0)
   implicit object DefaultFloat extends Default[Float](0.0F)
   implicit object DefaultInt extends Default[Int](0)

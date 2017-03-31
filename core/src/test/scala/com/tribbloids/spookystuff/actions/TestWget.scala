@@ -1,185 +1,137 @@
 package com.tribbloids.spookystuff.actions
 
+import java.sql.Timestamp
+
+import com.tribbloids.spookystuff.SpookyEnvFixture
+import com.tribbloids.spookystuff.doc.Doc
+import com.tribbloids.spookystuff.rdd.FetchedDataset
+import com.tribbloids.spookystuff.testutils.LocalOnly
+import org.scalatest.Tag
 import org.scalatest.tags.Retryable
-import com.tribbloids.spookystuff.SpookyEnvSuite
-import com.tribbloids.spookystuff.pages.{NoPage, Page}
 
 import scala.concurrent.duration
 
-/**
- * Created by peng on 11/6/14.
- */
+object TestWget {
+
+  case class Sample(A: String, B: Timestamp)
+}
+
 @Retryable
-class TestWget extends SpookyEnvSuite {
+class TestWget extends SpookyEnvFixture {
 
   import com.tribbloids.spookystuff.dsl._
 
   def wget(uri: String): Action = Wget(uri)
 
-  lazy val noProxyIP = {
-    spooky.conf.proxy = ProxyFactories.NoProxy
+  lazy val noProxyIP: String = {
+    spooky.conf.proxy = WebProxyFactories.NoProxy
+
+    getIP()
+  }
+
+  Seq(
+    "http" -> HTTP_IP_URL,
+    "https" -> HTTPS_IP_URL
+  )
+    .foreach {
+      tuple =>
+        test(s"use TOR socks5 proxy for ${tuple._1} wget", Tag(classOf[LocalOnly].getCanonicalName)) {
+
+          val newIP = {
+            spooky.conf.proxy = WebProxyFactories.Tor
+
+            getIP(tuple._2)
+          }
+
+          assert(newIP !== null)
+          assert(newIP !== "")
+          assert(newIP !== noProxyIP)
+        }
+
+        test(s"revert from TOR socks5 proxy for ${tuple._1} wget", Tag(classOf[LocalOnly].getCanonicalName)) {
+
+          val newIP = {
+            spooky.conf.proxy = WebProxyFactories.Tor
+
+            getIP(tuple._2)
+          }
+
+          val noProxyIP2 = {
+            spooky.conf.proxy = WebProxyFactories.NoProxy
+
+            getIP(tuple._2)
+          }
+
+          assert(newIP !== noProxyIP2)
+        }
+    }
+
+  def getIP(url: String = HTTP_IP_URL): String = {
+    val results = (
+      wget(HTTPS_IP_URL) :: Nil
+      )
+      .fetch(spooky)
+
+    results.head.asInstanceOf[Doc].code.get
+  }
+
+  //TODO: add canonized URI check
+  test("wget should encode malformed url") {
+    spooky.conf.proxy = WebProxyFactories.NoProxy
 
     val results = (
-      //TODO: may not be stable, alternatives are http://www.whatsmyua.com/ and http://user-agent.me/
-      wget("http://www.whatsmyuseragent.com/") :: Nil
-      ).resolve(spooky)
-
-    results.head.asInstanceOf[Page].findAll("h3.info").texts.head
-  }
-
-  test("use TOR socks5 proxy for http wget") {
-
-    val newIP = {
-      spooky.conf.proxy = ProxyFactories.Tor
-
-      val results = (
-        wget("http://www.whatsmyuseragent.com/") :: Nil
-        ).resolve(spooky)
-
-      results.head.asInstanceOf[Page].findAll("h3.info").texts.head
-    }
-
-    assert(newIP !== null)
-    assert(newIP !== "")
-    assert(newIP !== noProxyIP)
-  }
-
-  //TODO: find a test site for https!
-  test("use TOR socks5 proxy for https wget") {
-
-    val newIP = {
-      spooky.conf.proxy = ProxyFactories.Tor
-
-      val results = (
-        wget("https://www.astrill.com/what-is-my-ip-address.php") :: Nil
-        ).resolve(spooky)
-
-      results.head.asInstanceOf[Page].findAll("h1").texts.head
-    }
-
-    assert(newIP !== null)
-    assert(newIP !== "")
-    assert(newIP !== noProxyIP)
-  }
-
-  test("revert proxy setting for http wget") {
-
-    val newIP = {
-      spooky.conf.proxy = ProxyFactories.Tor
-
-      val results = (
-        wget("http://www.whatsmyuseragent.com/") :: Nil
-        ).resolve(spooky)
-      Actions
-      results.head.asInstanceOf[Page].findAll("h3.info").texts.head
-    }
-
-    val noProxyIP2 = {
-      spooky.conf.proxy = ProxyFactories.NoProxy
-
-      val results = (
-        wget("http://www.whatsmyuseragent.com/") :: Nil
-        ).resolve(spooky)
-
-      results.head.asInstanceOf[Page].findAll("h3.info").texts.head
-    }
-
-    assert(newIP !== noProxyIP2)
-  }
-
-  test("revert proxy setting for https wget") {
-
-    val newIP = {
-      spooky.conf.proxy = ProxyFactories.Tor
-
-      val results = (
-        wget("https://www.astrill.com/what-is-my-ip-address.php") :: Nil
-        ).resolve(spooky)
-
-      results.head.asInstanceOf[Page].findAll("h1").texts.head
-    }
-
-    val noProxyIP2 = {
-      spooky.conf.proxy = ProxyFactories.NoProxy
-
-      val results = (
-        wget("https://www.astrill.com/what-is-my-ip-address.php") :: Nil
-        ).resolve(spooky)
-
-      results.head.asInstanceOf[Page].findAll("h1").texts.head
-    }
-
-    assert(newIP !== noProxyIP2)
-  }
-
-  test("wget should encode malformed url 1") {
-    spooky.conf.proxy = ProxyFactories.NoProxy
-
-    val results = (
-      wget("http://www.sigmaaldrich.com/catalog/search?term=38183-12-9&interface=CAS No.&N=0&mode=partialmax&lang=en&region=US&focus=product") :: Nil
-      ).resolve(spooky)
+      wget("https://www.google.com/?q=giant robot") :: Nil
+      ).fetch(spooky)
 
     assert(results.size === 1)
-    results.head.asInstanceOf[Page]
+    val doc = results.head.asInstanceOf[Doc]
+    assert(doc.uri.contains("?q=giant+robot") || doc.uri.contains("?q=giant%20robot" ))
   }
 
-  test("wget should encode malformed url 2") {
-    spooky.conf.proxy = ProxyFactories.NoProxy
-    spooky.conf.userAgent = () => "Wget/1.15 (linux-gnu)"
-    spooky.conf.headers= () => Map(
-      "Accept" -> "*/*",
-      "Connection" -> "Keep-Alive"
-    )
+  //TODO: find a new way to test it!
+  //  test("wget should encode redirection to malformed url") {
+  //
+  //    spooky.conf.proxy = ProxyFactories.NoProxy
+  //
+  //    val url = "http://www.sigmaaldrich.com/catalog/search/SearchResultsPage?Query=%3Ca+href%3D%22%2Fcatalog%2Fsearch%3Fterm%3D81-25-4%26interface%3DCAS+No.%26N%3D0%26mode%3Dpartialmax%26lang%3Den%26region%3DUS%26focus%3Dproduct%22%3E81-25-4%3C%2Fa%3E&Scope=CASSearch&btnSearch.x=1"
+  //
+  //    val results = (
+  //      Wget(url) :: Nil
+  //      ).fetch(spooky)
+  //
+  //    assert(results.size === 1)
+  //    val page = results.head.asInstanceOf[Page]
+  //    assert(page.uri.contains("www.sigmaaldrich.com/catalog/AdvancedSearchPage"))
+  //  }
 
-    val results = (
-      wget("http://www.perkinelmer.ca/Catalog/Gallery.aspx?ID=Mass Spectrometry [GC/MS and ICP-MS]&PID=Gas Chromatography Mass Spectrometry Consumables&refineCat=Technology&N=172 139 78928 4293910906&TechNVal=4293910906") :: Nil
-      ).resolve(spooky)
+  //TODO: find a new way to test it!
+  //  test("wget should correct redirection to relative url path") {
+  //    spooky.conf.proxy = ProxyFactories.NoProxy
+  //
+  //    val results = (
+  //      wget("http://www.sigmaaldrich.com/etc/controller/controller-page.html?TablePage=17193175") :: Nil
+  //      ).fetch(spooky)
+  //
+  //    assert(results.size === 1)
+  //    val page = results.head.asInstanceOf[Page]
+  //    assert(page.findAll("title").head.text.get.contains("Sigma-Aldrich"))
+  //    assert(page.uri.contains("www.sigmaaldrich.com/labware"))
+  //  }
 
-    assert(results.size === 1)
-    results.head.asInstanceOf[Page]
-  }
-
-  test("wget should encode redirection to malformed url") {
-
-    spooky.conf.proxy = ProxyFactories.NoProxy
-
-    val url = "http://www.sigmaaldrich.com/catalog/search/SearchResultsPage?Query=%3Ca+href%3D%22%2Fcatalog%2Fsearch%3Fterm%3D81-25-4%26interface%3DCAS+No.%26N%3D0%26mode%3Dpartialmax%26lang%3Den%26region%3DUS%26focus%3Dproduct%22%3E81-25-4%3C%2Fa%3E&Scope=CASSearch&btnSearch.x=1"
-
-    val results = (
-      Wget(url) :: Nil
-      ).resolve(spooky)
-
-    assert(results.size === 1)
-    val page = results.head.asInstanceOf[Page]
-    assert(page.uri.contains("www.sigmaaldrich.com/catalog/AdvancedSearchPage"))
-  }
-
-  test("wget should correct redirection to relative url path") {
-    spooky.conf.proxy = ProxyFactories.NoProxy
-
-    val results = (
-      wget("http://www.sigmaaldrich.com/etc/controller/controller-page.html?TablePage=17193175") :: Nil
-      ).resolve(spooky)
-
-    assert(results.size === 1)
-    val page = results.head.asInstanceOf[Page]
-    assert(page.findAll("title").head.text.get.contains("Sigma-Aldrich"))
-    assert(page.uri.contains("www.sigmaaldrich.com/labware"))
-  }
-
-  test("wget should smoothly fail on circular redirection") {
-    spooky.conf.proxy = ProxyFactories.NoProxy
-
-    val results = (
-      wget("http://www.perkinelmer.ca/en-ca/products/consumables-accessories/integrated-solutions/for-thermo-scientific-gcs/default.xhtml") :: Nil
-      ).resolve(spooky)
-
-    assert(results.size === 1)
-    assert(results.head.isInstanceOf[NoPage])
-  }
+  //TODO: how to simulate circular redirection?
+  //  test("wget should smoothly fail on circular redirection") {
+  //    spooky.conf.proxy = ProxyFactories.NoProxy
+  //
+  //    val results = (
+  //      wget("http://www.perkinelmer.ca/en-ca/products/consumables-accessories/integrated-solutions/for-thermo-scientific-gcs/default.xhtml") :: Nil
+  //      ).fetch(spooky)
+  //
+  //    assert(results.size === 1)
+  //    assert(results.head.isInstanceOf[NoPage])
+  //  }
 
   test("output of wget should not include session's backtrace") {
-    spooky.conf.proxy = ProxyFactories.NoProxy
+    spooky.conf.proxy = WebProxyFactories.NoProxy
 
     import duration._
 
@@ -187,17 +139,61 @@ class TestWget extends SpookyEnvSuite {
       RandomDelay(1.seconds, 2.seconds)
         :: wget("http://www.wikipedia.org")
         :: Nil
-      ).resolve(spooky)
+      ).fetch(spooky)
 
     assert(results.size === 1)
-    assert(results.head.uid.backtrace.self == wget("http://www.wikipedia.org") :: Nil)
+    assert(results.head.uid.backtrace.children.last == wget("http://www.wikipedia.org"))
   }
 
-  test("wget should handle PKIX exception") {
-    spooky.conf.proxy = ProxyFactories.NoProxy
+  //TODO: how to simulate a PKIX exception page?
+  //  test("wget should handle PKIX exception") {
+  //    spooky.conf.proxy = ProxyFactories.NoProxy
+  //
+  //    val results = List(
+  //      wget("https://www.canadacompany.ca/en/")
+  //    ).fetch(spooky)
+  //  }
 
-    val results = Seq(
-      wget("https://www.canadacompany.ca/en/")
-    ).resolve(spooky)
+  test("wget.interpolate should not overwrite each other") {
+    val wget = Wget(
+      'A
+    ) waybackTo 'B.typed[Timestamp]
+
+    val rows = 1 to 5 map {
+      i =>
+        TestWget.Sample("http://dummy.com" + i, new Timestamp(i * 100000))
+    }
+    require(rows.map(_.B.getTime).distinct.size == rows.size)
+
+    val df = sql.createDataFrame(sc.parallelize(rows))
+    val set: FetchedDataset = spooky.create(df)
+
+    require(set.toObjectRDD('B).collect().toSeq.map(_.asInstanceOf[Timestamp].getTime).distinct.size == rows.size)
+    val fetchedRows = set.unsquashedRDD.collect()
+
+    val interpolated = fetchedRows.map{
+      fr =>
+        wget.interpolate(fr, set.schema).get
+    }
+
+    assert(interpolated.distinct.length == rows.size)
+    assert(interpolated.map(_.wayback).distinct.length == rows.size)
   }
+
+//  val classes = Seq(
+//    classOf[Wget],
+//    classOf[Visit],
+//    classOf[Snapshot]
+//  )
+//
+//  classes.foreach {
+//    clazz =>
+//      val name = clazz.getCanonicalName
+//
+//      test(s"$name.serialVersionUID should be generated properly") {
+//        val expected = SpookyUtils.hash(clazz)
+//        val actual = java.io.ObjectStreamClass.lookup(clazz).getSerialVersionUID
+//        assert(expected == actual)
+//      }
+//  }
 }

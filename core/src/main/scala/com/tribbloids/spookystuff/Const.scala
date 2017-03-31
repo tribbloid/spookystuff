@@ -1,12 +1,10 @@
 package com.tribbloids.spookystuff
 
+import com.tribbloids.spookystuff.row.Field
 import org.apache.tika.detect.DefaultDetector
 import org.json4s.DefaultFormats
-import com.tribbloids.spookystuff.dsl.ExportFilters
+import com.tribbloids.spookystuff.dsl.DocFilters
 
-/**
- * Created by peng on 04/06/14.
- */
 object Const {
 
   import scala.concurrent.duration._
@@ -14,34 +12,39 @@ object Const {
   val maxLoop = Int.MaxValue
 
   val defaultTextCharset = "ISO-8859-1"
-  val defaultApplicationCharset = "utf-8"
+  val defaultApplicationCharset = "UTF-8"
 
   //  val webClientOptions = new WebClientOptions
   //  webClientOptions.setUseInsecureSSL(true)
 
+  //TODO: move to SpookyConf as much as possible
   val sessionInitializationTimeout = 40.seconds
 
-  val localResourceLocalRetries = 3
-  val remoteResourceLocalRetries = 2
+  val localResourceLocalRetries = 3 //In-node/partition retries
+  val remoteResourceLocalRetries = 2 //In-node/partition retries
   val DFSLocalRetries = 2
+  val DFSBlockedAccessRetries = 10
   val clusterRetries = 3
 
   val interactionDelayMax: Duration = 60.seconds
-  val interactionDelayMin: Duration = 1.seconds
+  val interactionDelayMin: Duration = 0.seconds
   val interactionBlock: Boolean = true
 
   val hardTerminateOverhead: Duration = 20.seconds
 
   val defaultInputKey = "_"
   val keyDelimiter = "'"
-  val onlyPageWildcard = "S"
-  val allPagesWildcard = "S_*"
-  val defaultJoinKey = "A"
+  val onlyPageExtractor = "S"
+  val allPagesExtractor = "S_*"
 
-  val jsonFormats = DefaultFormats
+  val groupIndexExtractor = "G"
+
+  val defaultJoinField = Field("A", isWeak = true)
 
   val mimeDetector = new DefaultDetector()
 
-  val defaultDocumentFilter = ExportFilters.MustHaveTitle
-  val defaultImageFilter = ExportFilters.PassAll
+  val defaultDocumentFilter = DocFilters.MustHaveTitle
+  val defaultImageFilter = DocFilters.AcceptStatusCode2XX
+
+  val exploreStageSize = 100
 }

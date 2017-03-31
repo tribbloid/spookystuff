@@ -5,6 +5,7 @@ import java.util.Properties
 import org.apache.spark.sql.SQLContext
 import org.apache.spark.{SparkConf, SparkContext}
 import com.tribbloids.spookystuff.SpookyContext
+import com.tribbloids.spookystuff.dsl.Samplers
 
 /**
  * Created by peng on 22/06/14.
@@ -17,12 +18,12 @@ trait LocalSpookyCore {
 
   val sc: SparkContext = {
     val conf: SparkConf = new SparkConf().setAppName(appName)
-    //    conf.set("spark.task.maxFailures","1000") //TODO: why it doesn't work
 
     var master: String = null
     master = Option(master).getOrElse(conf.getOption("spark.master").orNull)
     master = Option(master).getOrElse(System.getenv("MASTER"))
     master = Option(master).getOrElse(s"local[${Runtime.getRuntime.availableProcessors()},10]")
+//    master = Option(master).getOrElse(s"local-cluster[4,4,1024]")
 
     conf.setMaster(master)
     new SparkContext(conf)
@@ -32,7 +33,7 @@ trait LocalSpookyCore {
     new SQLContext(sc)
   }
 
-  def maxJoinOrdinal = 3
+  def sampler = Samplers.FirstN(3)
   def maxExploreDepth = 2
   var maxInputSize = 3
 
@@ -43,8 +44,8 @@ trait LocalSpookyCore {
     val dirs = spooky.conf.dirs
 
     if (dirs.root == null && dirs.cache == null){
-      dirs.root = s"file://${System.getProperty("user.home")}/spooky-local/$appName/"
-      dirs.cache = s"file://${System.getProperty("user.home")}/spooky-local/cache/"
+      dirs.root = s"file://${System.getProperty("user.dir")}/temp/spooky-local/$appName/"
+      dirs.cache = s"file://${System.getProperty("user.dir")}/temp/spooky-local/cache/"
     }
 
     val p = new Properties()
@@ -55,8 +56,8 @@ trait LocalSpookyCore {
     )
       .getOrElse(p.getProperty("spooky.preview.mode"))
     if (preview == "preview") {
-      spooky.conf.maxJoinOrdinal = maxJoinOrdinal
-      spooky.conf.maxExploreDepth = maxExploreDepth
+      spooky.conf.defaultJoinSampler = sampler
+      spooky.conf.defaultExploreRange = 0 to maxExploreDepth
     }
     else {
       this.maxInputSize = Int.MaxValue

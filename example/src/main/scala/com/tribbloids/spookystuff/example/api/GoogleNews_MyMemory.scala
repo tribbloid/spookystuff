@@ -15,7 +15,7 @@ object GoogleNews_MyMemory extends QueryCore {
     import dsl._
 
     spooky.wget("https://ajax.googleapis.com/ajax/services/search/news?v=1.0&q=nepal")
-    .wgetJoin(x"http://api.mymemory.translated.net/get?q=${S\"responseData"\"results"\"content" text}!&langpair=en|fr")
-    .select((S\"responseData"\"translatedText" text) ~ 'text)
+      .wgetJoin(x"http://api.mymemory.translated.net/get?q=${S\"responseData"\"results"\"content" text}!&langpair=en|fr")
+      .select((S\"responseData"\"translatedText" text) ~ 'text)
   }
 }

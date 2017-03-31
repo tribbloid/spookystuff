@@ -1,0 +1,25 @@
+##machine:
+##  environment:
+##    SITL_SPEEDUP: 10
+##    SITL_RATE: 200
+#
+#dependencies:
+#  override:
+#    - 'exec build-tools/mvn-install.sh -Pspark-1.6 -Pscala-2.11 -Puav'
+#
+#test:
+#  override:
+#    # code
+##    - 'nosetests -svx dronekit.test.web'
+#    - 'mvn test -Pspark-1.6 -Pscala-2.11 -Puav -pl uav'
+#
+#general:
+#  build_dir: .
+#
+##deployment:
+##    production:
+##        branch: master
+##        commands:
+##            - ./scripts/update-docs.sh
+
+# disabled in favor of 2.0 beta

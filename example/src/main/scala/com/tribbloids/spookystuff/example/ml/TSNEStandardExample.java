@@ -21,7 +21,7 @@
 // */
 //public class TSNEStandardExample {
 //
-//    private static Logger log = LoggerFactory.getLogger(TSNEStandardExample.class);
+//    private static Logger log = LoggerFactory.getLogger(TSNEStandardExample.class);m[
 //
 //    public static void main(String[] args) throws Exception  {
 //        int iterations = 100;

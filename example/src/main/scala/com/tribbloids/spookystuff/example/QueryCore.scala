@@ -3,7 +3,7 @@ package com.tribbloids.spookystuff.example
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.DataFrame
 import com.tribbloids.spookystuff.SpookyContext
-import com.tribbloids.spookystuff.sparkbinding.PageRowRDD
+import com.tribbloids.spookystuff.execution.ExecutionPlan
 
 trait QueryCore extends LocalSpookyCore {
 
@@ -19,14 +19,14 @@ trait QueryCore extends LocalSpookyCore {
     val result = doMain(spooky)
 
     val array = result match {
-      case schemaRdd: DataFrame =>
-        val array = schemaRdd.rdd.persist().takeSample(withReplacement = false, num = 100)
-        schemaRdd.printSchema()
-        println(schemaRdd.schema.fieldNames.mkString("[","\t","]"))
+      case df: DataFrame =>
+        val array = df.rdd.persist().takeSample(withReplacement = false, num = 100)
+        df.printSchema()
+        println(df.schema.fieldNames.mkString("[","\t","]"))
         array
-      case pageRowRDD: PageRowRDD =>
-        val array = pageRowRDD.self.persist().takeSample(withReplacement = false, num = 100)
-        println(pageRowRDD.keysSeq)
+      case pageRowRDD: ExecutionPlan =>
+        val array = pageRowRDD.rdd.persist().takeSample(withReplacement = false, num = 100)
+        println(pageRowRDD.fields)
         array
       case rdd: RDD[_] =>
         rdd.persist().takeSample(withReplacement = false, num = 100)
@@ -37,7 +37,5 @@ trait QueryCore extends LocalSpookyCore {
     println("-------------------returned "+array.length+" rows------------------")
     println(s"------------------fetched ${spooky.metrics.pagesFetched.value} pages-----------------")
     println(s"------------------${spooky.metrics.pagesFetchedFromCache.value} pages from web cache-----------------")
-
-    //    rdd.saveAsTextFile("file://"+System.getProperty("user.home")+"/spooky-local/result"+s"/$appName-${System.currentTimeMillis()}.json")
   }
 }

@@ -1,0 +1,9 @@
+future >= 0.16.0
+dronekit >= 2.9
+dronekit-sitl >= 3.2
+# TODO dronekit-solo >= 1.3
+pymavlink == 2.0.8
+# TODO: pymavlink >= 2.0.9
+MAVProxy >= 1.5.7
+simplejson >= 3.10.0
+sarge >= 0.1.4

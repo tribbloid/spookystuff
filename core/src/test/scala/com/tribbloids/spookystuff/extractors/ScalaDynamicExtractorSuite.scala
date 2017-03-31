@@ -1,0 +1,476 @@
+package com.tribbloids.spookystuff.extractors
+
+import com.tribbloids.spookystuff.SpookyEnvFixture
+import com.tribbloids.spookystuff.actions.{Action, ActionUDT, Wget}
+import com.tribbloids.spookystuff.doc.Doc
+import com.tribbloids.spookystuff.testutils.{LocalPathDocsFixture, TestHelper}
+import org.apache.spark.sql.types._
+
+/**
+  * Created by peng on 09/07/16.
+  */
+
+class ScalaDynamicExtractorSuite extends SpookyEnvFixture with LocalPathDocsFixture {
+
+  import com.tribbloids.spookystuff.dsl._
+  import com.tribbloids.spookystuff.utils.ScalaType._
+
+  val doc = Wget(HTML_URL).fetch(spooky).head
+
+  test("can resolve Fetched.timestamp") {
+
+    val result = doc.timestamp
+
+    def dynamic = ScalaDynamicExtractor (
+      Literal(doc),
+      "timestamp",
+      None
+    )
+
+    dynamic.resolveType(null) should_=~= TimestampType
+    val fn = dynamic.resolve(null)
+    assert(fn.apply(null) == result)
+  }
+
+  test("can resolve Doc.uri") {
+
+    val result = doc.asInstanceOf[Doc].uri
+
+    def dynamic = ScalaDynamicExtractor (
+      Literal(doc.asInstanceOf[Doc]),
+      "uri",
+      None
+    )
+
+    dynamic.resolveType(null) should_=~= StringType
+    val fn = dynamic.resolve(null)
+    assert(fn.apply(null) == result)
+  }
+
+  test("can resolve Doc.code") {
+
+    val result = doc.asInstanceOf[Doc].code.get
+
+    def dynamic = ScalaDynamicExtractor (
+      Literal(doc.asInstanceOf[Doc]),
+      "code",
+      None
+    )
+
+    dynamic.resolveType(null) should_=~= StringType
+    val fn = dynamic.resolve(null)
+    val dynamicResult = fn.apply(null)
+    assert(dynamicResult == result)
+  }
+
+  //useless at the moment
+  test("can resolve Action.dryrun") {
+    import com.tribbloids.spookystuff.dsl._
+
+    val action: Action = Wget(HTML_URL)
+
+    val result = action.dryrun
+
+    def dynamic = ScalaDynamicExtractor (
+      Literal[Action](action),
+      "dryrun",
+      None
+    )
+
+    dynamic.resolveType(null) should_=~= ArrayType(ArrayType(new ActionUDT()))
+    val fn = dynamic.resolve(null)
+    assert(fn.apply(null) == result)
+  }
+
+  //  test("can resolve function of String.startsWith(String) using Scala") {
+  //    {
+  //      def dynamic = ScalaDynamicExtractor(
+  //        Literal("abcde"),
+  //        "startsWith",
+  //        Option(List(Literal("abc")))
+  //      )
+  //
+  //      val impl = dynamic.resolveUsingScala(null)
+  //      val result = impl.apply(null).get
+  //
+  //      assert(result == true)
+  //    }
+  //    {
+  //      def dynamic = ScalaDynamicExtractor(
+  //        Literal("abcde"),
+  //        "startsWith",
+  //        Option(List(Literal("abd")))
+  //      )
+  //
+  //      val impl = dynamic.resolveUsingScala(null)
+  //      val result = impl.apply(null).get
+  //
+  //      assert(result == false)
+  //    }
+  //  }
+
+  import com.tribbloids.spookystuff.dsl._
+
+  // deliberately stressful to ensure thread safety
+  //  val src = sc.parallelize(0 to 1023)
+  //    .map {
+  //      i =>
+  //        (
+  //          Some(new Example(Random.nextString(i), Random.nextInt())).filter(_.b >= 0),
+  //          Some(Random.nextInt()).filter(_ >= 0),
+  //          Random.nextString(i)
+  //          )
+  //    }
+
+  val src = List(
+    (Some(new Example()), Some(2), "abc"),
+    (Some(new Example()), Some(1), "abc"),
+    (Some(new Example()), None, "abd"),
+    (None, Some(2), "abe")
+  )
+  val df = sql.createDataFrame(src).toDF("A", "B", "C")
+  val ds = spooky
+    .create(df)
+    .fetch(
+      Wget(HTML_URL)
+    )
+
+  val rdd = ds.unsquashedRDD.persist()
+  val rows = rdd.take(10)
+  override lazy val schema = ds.schema
+
+  val getNullType = Literal[Null](null)
+
+  def verifyOnDriverAndWorkers(dynamic: ScalaDynamicExtractor[FR], staticFn: FR => Option[Any]): Unit = {
+
+    val dynamicFn: (FR) => Option[Any] = dynamic.resolve(schema).lift
+
+    {
+      rows.foreach {
+        row =>
+          val dd = dynamicFn.apply(row)
+          val ss = staticFn.apply(row)
+          Predef.assert(dd == ss, s"$dd != $ss")
+      }
+    }
+
+    {
+      rdd.foreach {
+        row =>
+          val dd = dynamicFn.apply(row)
+          val ss = staticFn.apply(row)
+          Predef.assert(dd == ss, s"$dd != $ss")
+      }
+    }
+  }
+
+  test("can resolve a defined class method") {
+
+    def dynamic = ScalaDynamicExtractor(
+      'A,
+      "fn",
+      Some(List[GetExpr]('B))
+    )
+    val staticFn: (FR) => Option[Any] = {
+      fr =>
+        val dr = fr.dataRow
+        val result = for (
+          a <- dr.get('A);
+          b <- dr.get('B)
+        ) yield {
+          a.asInstanceOf[Example].fn(b.asInstanceOf[Int])
+        }
+        result
+    }
+
+    dynamic.resolveType(schema) should_=~= StringType
+    verifyOnDriverAndWorkers(dynamic, staticFn)
+  }
+
+  test("can resolve a defined class method that has option return type") {
+
+    def dynamic = ScalaDynamicExtractor(
+      'A,
+      "fnOpt",
+      Some(List[GetExpr]('B))
+    )
+    val staticFn: (FR) => Option[Any] = {
+      fr =>
+        val dr = fr.dataRow
+        val result = for (
+          a <- dr.get('A);
+          b <- dr.get('B)
+        ) yield {
+          a.asInstanceOf[Example].fnOpt(b.asInstanceOf[Int])
+        }
+        result.flatten
+    }
+
+    dynamic.resolveType(schema) should_=~= IntegerType
+    verifyOnDriverAndWorkers(dynamic, staticFn)
+  }
+
+  test("can resolve String.concat(String)") {
+    def dynamic = ScalaDynamicExtractor(
+      Literal("abcde"),
+      "concat",
+      Some(List[GetExpr]('C))
+    )
+    val staticFn: (FR) => Option[Any] = {
+      fr =>
+        val dr = fr.dataRow
+        val result = for (
+          c <- dr.get('C)
+        ) yield {
+          "abcde" concat c.asInstanceOf[String]
+        }
+        result
+    }
+
+    dynamic.resolveType(schema) should_=~= StringType
+    verifyOnDriverAndWorkers(dynamic, staticFn)
+  }
+
+  test("can resolve Array[String].length") {
+    def dynamic = ScalaDynamicExtractor(
+      Literal("a b c d e".split(" ")),
+      "length",
+      None
+    )
+
+    dynamic.resolveType(schema) should_=~= IntegerType
+    val dynamicFn = dynamic.resolve(schema).lift
+    assert(dynamicFn.apply(null) == Some(5))
+  }
+
+  test("can resolve type of List[String].head") {
+    def dynamic = ScalaDynamicExtractor(
+      Literal("a b c d e".split(" ").toList),
+      "head",
+      None
+    )
+
+    dynamic.resolveType(null) should_=~= StringType
+    val dynamicFn = dynamic.resolve(schema).lift
+    assert(dynamicFn.apply(null) == Some("a"))
+  }
+
+  test("can resolve type of Seq[String].head") {
+    def dynamic = ScalaDynamicExtractor (
+      Literal("a b c d e".split(" ").toSeq),
+      "head",
+      None
+    )
+
+    dynamic.resolveType(null) should_=~= StringType
+    val dynamicFn = dynamic.resolve(schema).lift
+    assert(dynamicFn.apply(null) == Some("a"))
+  }
+
+  //  test("can resolve function when base yields NULL") {
+  //
+  //    def dynamic = ScalaDynamicExtractor(
+  //      'A,
+  //      "fn",
+  //      Some(List[GetExpr]('B))
+  //    )
+  //
+  //    val fn = dynamic.resolve(schema)
+  //    val result = fn.lift.apply(row)
+  //    assert(result.isEmpty)
+  //  }
+  //
+  //  test("can resolve function when arg yields NULL") {
+  //
+  //    def dynamic = ScalaDynamicExtractor(
+  //      'A,
+  //      "fn",
+  //      Some(List[GetExpr]('BNull))
+  //    )
+  //
+  //    val fn = dynamic.resolve(schema)
+  //    val result = fn.lift.apply(row)
+  //    assert(result.isEmpty)
+  //  }
+
+  //TODO: this will change in the future
+  test("cannot resolve function when base type is NULL") {
+
+    def dynamic = ScalaDynamicExtractor(
+      getNullType,
+      "fn",
+      Some(List[GetExpr]('B))
+    )
+
+    intercept[UnsupportedOperationException] {
+      val fn = dynamic.resolve(schema)
+    }
+  }
+
+  test("cannot resolve function when arg type is NULL") {
+
+    def dynamic = ScalaDynamicExtractor(
+      'A,
+      "fn",
+      Some(List(getNullType))
+    )
+
+    intercept[UnsupportedOperationException] {
+      val fn = dynamic.resolve(schema)
+    }
+  }
+
+  //  test("can resolve function that takes monad parameter") {
+  //
+  //    def dynamic = ScalaDynamicExtractor(
+  //      'A,
+  //      "fnOpt",
+  //      Some(List[GetExpr]('ANull))
+  //    )
+  //
+  //    val fn = dynamic.resolve(schema)
+  //    val result = fn.lift.apply(row)
+  //    assert(result.isEmpty)
+  //  }
+  //
+  //  test("can resolve function that takes monad arg that yields NULL") {
+  //
+  //    def dynamic = ScalaDynamicExtractor(
+  //      'A,
+  //      "fnOpt",
+  //      Some(List[GetExpr]('ANull))
+  //    )
+  //
+  //    val fn = dynamic.resolve(schema)
+  //    val result = fn.lift.apply(row)
+  //    assert(result.isEmpty)
+  //  }
+  //
+  //  test("can resolve function that takes monad arg of which type is NULL") {
+  //
+  //    def dynamic = ScalaDynamicExtractor(
+  //      'A,
+  //      "fnOpt",
+  //      Some(List[GetExpr]('ANull))
+  //    )
+  //
+  //    val fn = dynamic.resolve(schema)
+  //    val result = fn.lift.apply(row)
+  //    assert(result.isEmpty)
+  //  }
+
+
+  test("can resolve function of String.startsWith(String) using Java") {
+    {
+      def dynamic = ScalaDynamicExtractor(
+        Literal("abcde"),
+        "startsWith",
+        Option(List(Literal("abc")))
+      )
+
+      val impl = dynamic.resolveUsingJava(null)
+      val result = impl.apply(null).get
+
+      assert(result == true)
+    }
+    {
+      def dynamic = ScalaDynamicExtractor(
+        Literal("abcde"),
+        "startsWith",
+        Option(List(Literal("abd")))
+      )
+
+      val impl = dynamic.resolveUsingJava(null)
+      val result = impl.apply(null).get
+
+      assert(result == false)
+    }
+  }
+
+  //TODO: remove or optimize Java implementation
+  ignore("Performance test: Java reflection should be faster than ScalaReflection") {
+    val int2Str: GenExtractor[Int, String] = { i: Int => "" + i }
+
+    val int2_10: GenExtractor[Int, String] = { i: Int => "10" }
+    def dynamic = ScalaDynamicExtractor[Int](
+      int2Str,
+      "startsWith",
+      Option(List(int2_10))
+    )
+
+    val ints = 1 to 1000000
+
+    val pfScala = dynamic.resolveUsingScala(IntegerType)
+    val (scalaRes, scalaTime) = TestHelper.timer(
+      ints.map(
+        i =>
+          pfScala.apply(i).get.asInstanceOf[Boolean]
+      )
+    )
+    println(scalaTime)
+
+    val pfJava= dynamic.resolveUsingScala(IntegerType)
+    val (javaRes, javaTime) = TestHelper.timer(
+      ints.map(
+        i =>
+          pfJava.apply(i).get.asInstanceOf[Boolean]
+      )
+    )
+    println(javaTime)
+
+    val (nativeRes, nativeTime) = TestHelper.timer (
+      ints.map(
+        i =>
+          int2Str(i).startsWith(int2_10(i))
+      )
+    )
+    println(nativeTime)
+
+    assert((scalaRes.count(v => v): Int) == (javaRes.count(v => v): Int))
+    assert((nativeRes.count(v => v): Int) == (javaRes.count(v => v): Int))
+    assert(javaTime < scalaTime)
+  }
+
+  //  test("Performance test: Java reflection should be faster than ScalaReflection") {
+  //    val int2Str: GenExtractor[Int, String] = { i: Int => "" + i }
+  //
+  //    val int2_10: GenExtractor[Int, String] = { i: Int => "10" }
+  //    def dynamic = ScalaDynamicExtractor[Int](
+  //      int2Str,
+  //      "startsWith",
+  //      Option(List(int2_10))
+  //    )
+  //
+  //    val ints = 1 to 1000000
+  //
+  //    val pfScala = dynamic.resolveUsingScala(IntegerType)
+  //    val (scalaRes, scalaTime) = TestHelper.timer(
+  //      ints.map(
+  //        i =>
+  //          pfScala.apply(i).asInstanceOf[Boolean]
+  //      )
+  //    )
+  //    println(scalaTime)
+  //
+  //    val pfJava= dynamic.resolveUsingScala(IntegerType)
+  //    val (javaRes, javaTime) = TestHelper.timer(
+  //      ints.map(
+  //        i =>
+  //          pfJava.apply(i).asInstanceOf[Boolean]
+  //      )
+  //    )
+  //    println(javaTime)
+  //
+  //    val (nativeRes, nativeTime) = TestHelper.timer(
+  //      ints.map(
+  //        i =>
+  //          int2Str(i).startsWith(int2_10(i))
+  //      )
+  //    )
+  //    println(nativeTime)
+  //
+  //    assert((scalaRes.count(v => v): Int) == (javaRes.count(v => v): Int))
+  //    assert((nativeRes.count(v => v): Int) == (javaRes.count(v => v): Int))
+  //    assert(javaTime < scalaTime)
+  //  }
+}

@@ -24,7 +24,7 @@ object GoogleImage_Universities extends QueryCore {
       .wgetJoin(S"div#search img".src, maxOrdinal = 1)
       .persist()
       .savePages(
-        x"file://${System.getProperty("user.home")}/spooky-example/$appName/images/${'name}"
+        x"file://${System.getProperty("user.dir")}/temp/spooky-example/$appName/images/${'name}"
       )
       .select(
         S.saved ~ 'path

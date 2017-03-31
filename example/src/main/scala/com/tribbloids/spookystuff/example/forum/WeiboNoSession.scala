@@ -7,7 +7,7 @@ import com.tribbloids.spookystuff.SpookyContext
 import com.tribbloids.spookystuff.actions._
 import com.tribbloids.spookystuff.dsl._
 import com.tribbloids.spookystuff.example.QueryCore
-import com.tribbloids.spookystuff.expressions.Expression
+import com.tribbloids.spookystuff.extractors.Extractor
 
 /**
  * Created by peng on 8/28/14.
@@ -36,7 +36,7 @@ object WeiboNoSession extends QueryCore {
         A"div.search_feed dl.feed_list".size ~ 'count,
         A"p.code_tit".text ~ 'CAPCHAS
       )
-      .flatSelect(S"div.search_feed dl.feed_list", ordinalKey = 'item)(
+      .flatExtract(S"div.search_feed dl.feed_list", ordinalKey = 'item)(
         "成都银行" ~ 'name,
         A"p > em".text ~ 'text,
         "weibo" ~ 'forum,

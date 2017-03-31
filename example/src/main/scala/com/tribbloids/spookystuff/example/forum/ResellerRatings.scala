@@ -18,7 +18,7 @@ object ResellerRatings extends QueryCore {
         Wget( "http://www.resellerratings.com/store/'{_}")
       )
       .wgetExplore(S"div#survey-header ul.pagination a:contains(next)", depthKey = 'page)
-      .flatSelect(S"div.review")(
+      .flatExtract(S"div.review")(
         A("div.rating strong").text ~ 'rating,
         A("div.date span").text ~ 'date,
         A("p.review-body").text ~ 'body

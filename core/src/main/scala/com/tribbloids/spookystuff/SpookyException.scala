@@ -1,56 +1,94 @@
 package com.tribbloids.spookystuff
 
-/**
- * Created by peng on 9/11/14.
- * doesn't have to catch it every time
- */
-class SpookyException (
-                        val message: String = "",
-                        val cause: Throwable = null
-                        )
-  extends RuntimeException(message, cause) {
+import com.tribbloids.spookystuff.utils.TreeException
 
-  override def getMessage: String = if (cause == null) this.message
-  else s"${this.message}\nCaused by: ${this.getCause}"
+/**
+  * Created by peng on 9/11/14.
+  * doesn't have to catch it every time
+  */
+////TODO: merge with MultiCauses
+//class TreeCauses(
+//                  message: String = "",
+//                  cause: Throwable = null
+//                ) extends RuntimeException(message, cause) {
+//
+//  override def getMessage: String = {
+//    //    if (cause == null) {
+//    messageStr
+//    //    }
+//    //    else {
+//    //      s"$messageStr\nCaused by: ${this.getCause}"
+//    //    }
+//  }
+//
+//  def messageStr: String = {
+//    this.message
+//  }
+//}
+
+class SpookyException(
+                       val message: String = "",
+                       override val cause: Throwable = null
+                     ) extends TreeException.Node(message, cause) {
+
 }
 
 class ActionException(
                        override val message: String = "",
                        override val cause: Throwable = null
-                       ) extends SpookyException(message, cause) {
+                     ) extends SpookyException(message, cause) {
 
 }
 
-class RemoteDisabledException(
-                               override val message: String = "",
-                               override val cause: Throwable = null
-                               ) extends SpookyException(message, cause) {
+class PyException(
+                   val code: String,
+                   val output: String,
+                   override val cause: Throwable = null,
+                   val historyCodeOpt: Option[String] = None
+                 ) extends SpookyException(
+  {
+    s"""
+       |${historyCodeOpt.map(v => "\t### History ###\n" + v).getOrElse("")}
+       |
+       |${"\t"}### Error interpreting: ###
+       |
+       |$code
+       |================== TRACEBACK / ERROR ==================
+       |$output
+     """.stripMargin.trim
+  },
+  cause
+)
 
-}
+case class PyInterpretationException(
+                                      override val code: String,
+                                      override val output: String,
+                                      override val cause: Throwable = null,
+                                      override val historyCodeOpt: Option[String] = None
+                                    ) extends PyException(code, output, cause, historyCodeOpt)
 
-class ExportFilterException(
-                             override val message: String = "",
-                             override val cause: Throwable = null
-                             ) extends ActionException(message, cause) {
-
-}
+class RetryingException(
+                         override val message: String = "",
+                         override val cause: Throwable = null
+                       ) extends ActionException(message, cause)
 
 class DFSReadException(
                         override val message: String = "",
                         override val cause: Throwable = null
-                        ) extends SpookyException(message, cause)
+                      ) extends SpookyException(message, cause)
 
 class DFSWriteException(
                          override val message: String = "",
                          override val cause: Throwable = null
-                         ) extends SpookyException(message, cause)
+                       ) extends SpookyException(message, cause)
 
+//TODO: cause confusion! replace with IllegalArgumentException or use mixin
 class QueryException(
                       override val message: String = "",
                       override val cause: Throwable = null
-                      ) extends SpookyException(message, cause)
+                    ) extends SpookyException(message, cause)
 
-//class UnsupportedContentTypeException(
-//                                        override val message: String = "",
-//                                        override val cause: Throwable = null
-//                                   ``     ) extends SpookyExc```ion(message, cause)
+class BrowserDeploymentException(
+                                  override val message: String = "",
+                                  override val cause: Throwable = null
+                                ) extends SpookyException(message, cause)
