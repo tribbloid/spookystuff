@@ -16,6 +16,7 @@ SpookyStuff-UAV *(alpha component)*
 -----------
 
 [![Build Status](https://semaphoreci.com/api/v1/tribbloid/spookystuff/branches/master/badge.svg)](https://semaphoreci.com/tribbloid/spookystuff)
+[![Join the chat at https://gitter.im/spookystuff-UAV/Lobby](https://badges.gitter.im/spookystuff-UAV/Lobby.svg)](https://gitter.im/spookystuff-UAV/Lobby?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 
 ... allows the same engine to be used to control a swarm of aerial robots for photogrammatry and sensor data acquisition. It is still a work in progress, please refer to [this proposal](https://github.com/tribbloid/spookystuff/issues/54) for a feature and implementation overview.
 
