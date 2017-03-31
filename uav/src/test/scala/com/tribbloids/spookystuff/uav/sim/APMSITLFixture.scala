@@ -14,7 +14,7 @@ import org.slf4j.LoggerFactory
 trait SimFixture extends SpookyEnvFixture {
 
   var simURIRDD: RDD[String] = _
-  def simURIs = simURIRDD.collect().toSeq.distinct
+  def simURIs: Seq[String] = simURIRDD.collect().toSeq.distinct
   def simDrones = simURIs.map(v => UAV(Seq(v)))
 
   def parallelism: Int = sc.defaultParallelism
@@ -26,7 +26,7 @@ trait APMSITLFixture extends SimFixture {
   import com.tribbloids.spookystuff.uav.dsl._
   import com.tribbloids.spookystuff.utils.SpookyViews._
 
-  lazy val simFactory = DefaultSimFactory
+  lazy val simFactory = QuadSimFactory()
 
   override val processNames = Seq("phantomjs", "python", "apm")
 
@@ -49,7 +49,6 @@ trait APMSITLFixture extends SimFixture {
     }
 
     super.beforeAll()
-    val spooky = this.spooky
 
     val isEmpty = sc.mapPerComputer {APMSim.existing.isEmpty}.collect()
     assert(!isEmpty.contains(false))

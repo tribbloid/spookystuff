@@ -17,7 +17,7 @@ object UAVTestUtils {
       tuple =>
         val l1: Location = tuple._1
         val l2: Location = tuple._2
-        l1.assumeAnchor(UAVConf.HOME_LOCATION) -> l2.assumeAnchor(UAVConf.HOME_LOCATION)
+        l1.assumeAnchor(UAVConf.DEFAULT_HOME_LOCATION) -> l2.assumeAnchor(UAVConf.DEFAULT_HOME_LOCATION)
     }
 
     val wpActions: Seq[Waypoint] = {
@@ -59,6 +59,5 @@ object UAVTestUtils {
       }
       result
     }
-
   }
 }

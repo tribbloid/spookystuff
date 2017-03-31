@@ -17,9 +17,9 @@ case class DummyLink(
 
   override def coFactory(another: Link): Boolean = false
 
-  override protected def _getHome: Location = {UAVConf.HOME_LOCATION}
+  override protected def _getHome: Location = {UAVConf.DEFAULT_HOME_LOCATION}
 
-  override protected def _getCurrentLocation: Location = {UAVConf.HOME_LOCATION}
+  override protected def _getCurrentLocation: Location = {UAVConf.DEFAULT_HOME_LOCATION}
 
   override val synch: SynchronousAPI = new SynchronousAPI {
 

@@ -29,7 +29,7 @@ object UAVConf extends Submodules.Builder[UAVConf]{
   /**
     * 43.694195,-79.262262,136,353
     */
-  final val HOME_LOCATION: Location = LLA(43.694195, -79.262262, 136) -> GeodeticAnchor
+  final val DEFAULT_HOME_LOCATION: Location = LLA(43.694195, -79.262262, 136) -> GeodeticAnchor
 }
 
 /**
@@ -48,7 +48,7 @@ case class UAVConf(
                     var slowConnectionRetries: Int = Int.MaxValue,
                     var slowConnectionRetryInterval: Duration = UAVConf.BLACKLIST_RESET_AFTER, //1 minute
                     var clearanceAltitude: Double = 10, // in meters
-                    var homeLocation: Location = UAVConf.HOME_LOCATION,
+                    var homeLocation: Location = UAVConf.DEFAULT_HOME_LOCATION,
                     var actionCosts: ActionCosts = ActionCosts.Default(5.0),
                     var defaultSpeed: Double = 5.0
                   ) extends ModuleConf {

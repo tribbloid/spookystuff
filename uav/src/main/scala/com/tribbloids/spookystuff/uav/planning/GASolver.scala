@@ -8,11 +8,10 @@ import com.tribbloids.spookystuff.utils.SpookyUtils
 import org.apache.commons.math3.exception.MathIllegalArgumentException
 import org.apache.commons.math3.exception.util.LocalizedFormats
 import org.apache.commons.math3.genetics._
-import org.apache.spark.SparkContext
 import org.apache.spark.rdd.RDD
 
 import scala.collection.mutable.ArrayBuffer
-import scala.util.{Random, Try}
+import scala.util.{Random, Success, Try}
 
 case class Route(
                   linkTry: Try[Link],
@@ -99,7 +98,7 @@ case class GASolver(
     if (unevaluatedHypotheses.nonEmpty) {
       val rdds: Seq[RDD[Route]] = unevaluatedHypotheses.map {
         h =>
-          h.indexRDD
+          h.rdd
       }
       val costRDDs: Seq[RDD[Double]] = rdds.map {
         v =>
@@ -125,7 +124,7 @@ case class GASolver(
   //the last 3 parameters must have identical cadinality
   //total distance can be easily calculated
   case class Hypothesis(
-                         indexRDD: RDD[Route]
+                         rdd: RDD[Route]
                        ) extends Chromosome {
 
     allHypotheses += this
@@ -145,58 +144,6 @@ case class GASolver(
     }
   }
 
-  case class Selection() extends TournamentSelection(4) {
-  }
-
-  case class Crossover() extends CrossoverPolicy {
-
-    override def crossover(first: Chromosome, second: Chromosome): ChromosomePair = {
-      (first, second) match {
-        case (Hypothesis(rdd1), Hypothesis(rdd2)) =>
-          val zipped = rdd1.zip(rdd2).zipWithIndex()
-          val numRoutes = zipped.partitions.length
-          val iRouteSelected = Random.nextInt(numRoutes)
-          val routesSelected: (Route, Route) = zipped.filter {
-            wi =>
-              wi._2 == iRouteSelected
-          }
-            .first()._1
-
-          val swapped = zipped.map {
-            wi =>
-              assert(wi._1._1.linkTry == wi._1._2.linkTry)
-              val linkOpt = wi._1._1.linkTry
-              val leftCleaned = wi._1._1.is.filterNot {
-                i =>
-                  routesSelected._2.is.contains(i)
-              }
-              val rightCleaned = wi._1._2.is.filterNot {
-                i =>
-                  routesSelected._1.is.contains(i)
-              }
-              val left = Route(linkOpt, leftCleaned)
-              val right = Route(linkOpt, rightCleaned)
-              if (wi._2 == iRouteSelected) {
-                val leftInserted = left.optimalInsertFrom(routesSelected._2.is, GASolver.this)
-                val rightInserted = right.optimalInsertFrom(routesSelected._1.is, GASolver.this)
-                leftInserted -> rightInserted
-              }
-              else {
-                left -> right
-              }
-          }
-          val rddLeft = swapped.keys
-          val rddRight = swapped.values
-          new ChromosomePair(
-            Hypothesis(rddLeft),
-            Hypothesis(rddRight)
-          )
-        case _ =>
-          throw new MathIllegalArgumentException(LocalizedFormats.UNSUPPORTED_OPERATION, first, second)
-      }
-    }
-  }
-
   def sampleWithoutReplacement(
                                 n: Int = 1,
                                 exclude: Seq[Int] = Nil,
@@ -208,7 +155,9 @@ case class GASolver(
       val h = Random.nextInt(max)
       if (!exclude.contains(h)) next = h
     }
-    sampleWithoutReplacement(n - 1, exclude :+ next, max) :+ next
+
+    if (n > 1) sampleWithoutReplacement(n - 1, exclude :+ next, max) :+ next
+    else Seq(next)
   }
 
   def swap(rdd: RDD[Route]): RDD[Route] = {
@@ -228,18 +177,21 @@ case class GASolver(
   def insert(rdd: RDD[Route]): RDD[Route] = {
     val pair = this.sampleWithoutReplacement(2)
     rdd.map {
-      subseq =>
-        val mutated = subseq.is.flatMap {
+      h =>
+        val mutated = h.is.flatMap {
           i =>
             if (i == pair.head) Nil
             else if (i == pair.last) pair //TODO: not covering insert at the end of the queue.
             else Seq(i)
         }
-        subseq.copy(is = mutated)
+        h.copy(is = mutated)
     }
   }
 
-  case class Mutation() extends MutationPolicy {
+  case object Selection extends TournamentSelection(4) {
+  }
+
+  case object Mutation extends MutationPolicy {
 
     override def mutate(original: Chromosome): Chromosome = {
       original match {
@@ -257,51 +209,137 @@ case class GASolver(
     }
   }
 
-  //  lazy val linkOptRDD: RDD[Option[Link]] = {
-  //    val rdd = spooky.sparkContext.mapPerExecutorCore {
-  //      val uavs = spooky.submodule[UAVConf].uavsRandomList
-  //      val linkOpt = spooky.withSession {
-  //        session =>
-  //          Link.trySelect(
-  //            uavs,
-  //            session
-  //          )
-  //            .toOption
-  //      }
-  //      linkOpt
-  //    }
-  //    rdd.persist()
-  //    rdd.count()
-  //    rdd
-  //  }
+  case object Crossover extends CrossoverPolicy {
 
-  @transient val allIndicesRDD = spooky.sparkContext.parallelize(allTraces.indices).persist()
-  //TODO: takes 1 stage, not efficient! sad!
-  def generate1Seed(sc: SparkContext): RDD[Route] = {
+    override def crossover(first: Chromosome, second: Chromosome): ChromosomePair = {
+      (first, second) match {
+        case (Hypothesis(rdd1), Hypothesis(rdd2)) =>
+          val zipped = rdd1.zipPartitions(rdd2){
+            (i1, i2) =>
+              val r1 = i1.next()
+              val r2 = i2.next()
+              val seq2 = i2.toSeq
+              assert(r1.linkTry == r2.linkTry)
+              assert(i1.isEmpty)
+              assert(i2.isEmpty)
+              Iterator(r1 -> r2)
+          }
+          val wIndex = zipped.zipWithIndex()
+          val numRoutes = wIndex.partitions.length
+          val iRouteSelected = Random.nextInt(numRoutes)
+          val routesSelected: (Seq[Int], Seq[Int]) = wIndex.filter {
+            wi =>
+              wi._2 == iRouteSelected
+          }
+            .map {
+              _._1 match {
+                case (r1, r2) =>
+                  r1.is -> r2.is
+              }
+            }
+            .first()
 
-    val shuffled = allIndicesRDD.shuffle
-    val routeRDD = shuffled.mapPartitions {
-      itr =>
-        val uavs = spooky.submodule[UAVConf].uavsRandomList
-        val linkTry = spooky.withSession {
-          session =>
-            Link.trySelect(
-              uavs,
-              session
-            )
-        }
-        Iterator(Route(linkTry, itr.toSeq))
+          val swapped = wIndex.map {
+            wi =>
+              assert(wi._1._1.linkTry == wi._1._2.linkTry)
+              val linkOpt = wi._1._1.linkTry
+              val leftCleaned = wi._1._1.is.filterNot {
+                i =>
+                  routesSelected._2.contains(i)
+              }
+              val rightCleaned = wi._1._2.is.filterNot {
+                i =>
+                  routesSelected._1.contains(i)
+              }
+              val left = Route(linkOpt, leftCleaned)
+              val right = Route(linkOpt, rightCleaned)
+              if (wi._2 == iRouteSelected) {
+                val leftInserted = left.optimalInsertFrom(routesSelected._2, GASolver.this)
+                val rightInserted = right.optimalInsertFrom(routesSelected._1, GASolver.this)
+                leftInserted -> rightInserted
+              }
+              else {
+                left -> right
+              }
+          }
+          val rddLeft = swapped.keys
+          val rddRight = swapped.values
+          new ChromosomePair(
+            Hypothesis(rddLeft),
+            Hypothesis(rddRight)
+          )
+        case _ =>
+          throw new MathIllegalArgumentException(LocalizedFormats.UNSUPPORTED_OPERATION, first, second)
+      }
     }
-    routeRDD
   }
 
-  //  def run(): Unit = {
-  //    val ga = new GeneticAlgorithm(
-  //      Crossover(),
-  //      1,
-  //      Mutation(),
-  //      0.10,
-  //      Selection()
-  //    )
-  //  }
+  def getLinkRDD: RDD[Link] = {
+    val proto: RDD[Link] = spooky.sparkContext.mapPerExecutorCore {
+      val uavs = spooky.submodule[UAVConf].uavsRandomList
+      val linkTry = spooky.withSession {
+        session =>
+          Link.trySelect(
+            uavs,
+            session
+          )
+      }
+      linkTry
+    }
+      .flatMap(_.toOption)
+    proto
+  }
+
+  def generateSeedPairs(
+                         numTraces: Int,
+                         numSeeds: Int
+                       ): RDD[(Link, Seq[Seq[Int]])] = {
+    val seeds = (1 to numSeeds).map {
+      i =>
+        Random.nextLong()
+    }
+    val proto: RDD[Link] = getLinkRDD
+    proto.persist()
+    val numLinks = proto.count().toInt
+
+    val pairs = proto
+      .zipWithIndex()
+      .map {
+        tuple =>
+          val is: Seq[Seq[Int]] = seeds.map {
+            seed =>
+              val random = new Random(seed)
+              val inPartition = (0 until numTraces).flatMap {
+                i =>
+                  val partition = random.nextInt(numLinks) % numLinks
+                  if (partition == tuple._2) Some(i)
+                  else None
+              }
+              val result = Random.shuffle(inPartition)
+              result
+          }
+          tuple._1 -> is
+      }
+
+    pairs.persist()
+    pairs.count()
+
+    proto.unpersist()
+
+    pairs
+  }
+
+  def generateSeeds(
+                     numSeeds: Int
+                   ): Seq[Hypothesis] = {
+    val pairs = generateSeedPairs(this.allTraces.size, numSeeds)
+    (0 until numSeeds).map {
+      i =>
+        val subRDD = pairs.map {
+          case (link, iss) =>
+            Route(Success(link), iss(i))
+        }
+        Hypothesis(subRDD)
+    }
+  }
 }

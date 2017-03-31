@@ -58,7 +58,7 @@ class LocationSuite extends FunSuite with FunSuitex {
     }
 
     {
-      val base: Location = UAVConf.HOME_LOCATION
+      val base: Location = UAVConf.DEFAULT_HOME_LOCATION
       val p1 : Location = NED(300, 200, 10) -> base
       val p2 : Location = NED(100, 200, 30) -> base
 

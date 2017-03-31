@@ -2,7 +2,6 @@ package com.tribbloids.spookystuff.uav.sim
 
 import com.tribbloids.spookystuff.uav.UAVConf
 import com.tribbloids.spookystuff.uav.spatial.LLA
-import com.tribbloids.spookystuff.uav.spatial.LLA.V
 
 import scala.util.Random
 
@@ -22,33 +21,38 @@ trait SimFactory extends Serializable {
   def getNext: APMSim
 }
 
-trait SimQuadFactory extends SimFactory {
+trait MAVLinkSimFactory extends SimFactory {
 
-  def getHomeLLA: V
+  def getHomeLLA: LLA.V
 
-  def getHomeStr: String = {
-    val coordinate = getHomeLLA.productIterator.toSeq
-    val yaw = Random.nextDouble() * 360.0
-    (coordinate ++ Seq(yaw)).mkString(",")
-  }
+  def model = "quad"
 
   def getNext: APMSim = {
+    val homeStr: String = {
+      val coordinate = getHomeLLA.productIterator.toSeq
+      val yaw = Random.nextDouble() * 360.0
+      (coordinate ++ Seq(yaw)).mkString(",")
+    }
+
     APMSim.next(
       extraArgs = Seq(
-        "--model", "quad",
+        "--model", model,
         "--gimbal",
-        "--home", getHomeStr
+        "--home", homeStr
       )
     )
   }
 }
 
-object DefaultSimFactory extends SimQuadFactory {
+case class QuadSimFactory(
+                              dispersionLatLng: Double = 0.001
+                            ) extends MAVLinkSimFactory {
 
-  val HOME_LLA = UAVConf.HOME_LOCATION.getCoordinate(LLA).get
-  def getHomeLLA: V = {
-      val lat = HOME_LLA.lat + (Random.nextDouble() - 0.5)*0.001
-      val lon = HOME_LLA.lon + (Random.nextDouble() - 0.5)*0.001
-      LLA(lat, lon, HOME_LLA.alt)
+  val homeCenter = UAVConf.DEFAULT_HOME_LOCATION.getCoordinate(LLA).get
+
+  def getHomeLLA: LLA.V = {
+    val lat = homeCenter.lat + (Random.nextDouble() - 0.5)*dispersionLatLng
+    val lon = homeCenter.lon + (Random.nextDouble() - 0.5)*dispersionLatLng
+    LLA(lat, lon, homeCenter.alt)
   }
 }
