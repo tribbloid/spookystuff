@@ -58,7 +58,7 @@ class CompactionSuite extends AbstractFlowSuite {
       Seq(s1, s2).foreach{
         s =>
 
-          test(s"${v.getClass.getSimpleName.stripSuffix("$")} should work on ${s.head} ...") {
+          it(s"${v.getClass.getSimpleName.stripSuffix("$")} should work on ${s.head} ...") {
 
             testCompaction(v, s, null)
           }

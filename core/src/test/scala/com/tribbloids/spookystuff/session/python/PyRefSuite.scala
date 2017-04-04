@@ -1,6 +1,6 @@
 package com.tribbloids.spookystuff.session.python
 
-import com.tribbloids.spookystuff.testutils.FunSuitex
+import com.tribbloids.spookystuff.testutils.FunSpecx
 import org.apache.spark.ml.dsl.utils.MessageAPI
 import org.scalatest.FunSuite
 
@@ -20,9 +20,9 @@ case class CaseExample(
 //                        child2: Option[JSONExample] = None
                       ) extends CaseInstanceRef
 
-class PyRefSuite extends FunSuite with FunSuitex {
+class PyRefSuite extends FunSpecx {
 
-  test("JSONInstanceRef can initialize Python instance with missing constructor parameter") {
+  it("JSONInstanceRef can initialize Python instance with missing constructor parameter") {
     val example = JSONExample(1, None)
     val str = example.createOpt.get
     str.shouldBe(
@@ -38,7 +38,7 @@ class PyRefSuite extends FunSuite with FunSuitex {
     )
   }
 
-  test("JSONInstanceRef can initialize Python instance after constructor parameter has been changed") {
+  it("JSONInstanceRef can initialize Python instance after constructor parameter has been changed") {
     val example = JSONExample(1, Some("a"))
     val str = example.createOpt.get
     str.shouldBe(
@@ -68,7 +68,7 @@ class PyRefSuite extends FunSuite with FunSuitex {
     )
   }
 
-  test("CaseExample can initialize Python instance with missing constructor parameter") {
+  it("CaseExample can initialize Python instance with missing constructor parameter") {
     val example = CaseExample(1, Some("a"))
     example.bOpt = None
     val str = example.createOpt.get
@@ -83,7 +83,7 @@ class PyRefSuite extends FunSuite with FunSuitex {
     )
   }
 
-  test("CaseExample can initialize Python instance after constructor parameter has been changed") {
+  it("CaseExample can initialize Python instance after constructor parameter has been changed") {
     val example = CaseExample(1, Some("a"))
     val str = example.createOpt.get
     str.shouldBe(

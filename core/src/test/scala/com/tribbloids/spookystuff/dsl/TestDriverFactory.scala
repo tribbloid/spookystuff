@@ -24,7 +24,7 @@ class TestDriverFactory extends SpookyEnvFixture with LocalPathDocsFixture {
   val factories = baseFactories ++ poolingFactories
 
   for (ff <- baseFactories) {
-    test(s"$ff can factoryReset()") {
+    it(s"$ff can factoryReset()") {
       val session = new Session(spooky)
       val driver = ff.dispatch(session)
       ff.asInstanceOf[Transient[Any]].factoryReset(driver.asInstanceOf[Any])
@@ -35,7 +35,7 @@ class TestDriverFactory extends SpookyEnvFixture with LocalPathDocsFixture {
 //  for (ff <- poolingFactories) {
 //
 //  }
-  test("If the old driver is released, the second Pooling DriverFactory.get() should yield the same driver") {
+  it("If the old driver is released, the second Pooling DriverFactory.get() should yield the same driver") {
     val conf = new SpookyConf(webDriverFactory = DriverFactories.PhantomJS().taskLocal)
     val spooky = new SpookyContext(sql, conf)
 

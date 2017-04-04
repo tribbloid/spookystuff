@@ -47,7 +47,7 @@ class GASolverSuite extends SpookyEnvFixture {
     Route(Success(dummyLink), main.indices)
   }
 
-  test("Route can be converted to traces") {
+  it("Route can be converted to traces") {
 
     val route = dummyRoute
     val traces = route.toTracesOpt(solver.allTracesBroadcasted.value).get
@@ -61,7 +61,7 @@ class GASolverSuite extends SpookyEnvFixture {
     )
   }
 
-  test("Route can estimate cost") {
+  it("Route can estimate cost") {
 
     implicit val doubleEquality = TolerantNumerics.tolerantDoubleEquality(0.00001)
 
@@ -70,7 +70,7 @@ class GASolverSuite extends SpookyEnvFixture {
     assert(cost === 119.543903)
   }
 
-  test("Route can calculate the optimal strategy to insert a waypoint") {
+  it("Route can calculate the optimal strategy to insert a waypoint") {
     val route = dummyRoute
     val inserted = route.optimalInsertFrom(Seq(main.length), solver)
     inserted.is.mkString(",").shouldBe(
@@ -78,7 +78,7 @@ class GASolverSuite extends SpookyEnvFixture {
     )
   }
 
-  test("Route can calculate the optimal strategy to insert several waypoints") {
+  it("Route can calculate the optimal strategy to insert several waypoints") {
     val route = dummyRoute
     val inserted = route.optimalInsertFrom(main.length until allWPs.length, solver)
     inserted.is.mkString(",").shouldBe(
@@ -86,7 +86,7 @@ class GASolverSuite extends SpookyEnvFixture {
     )
   }
 
-  test("sampling without replacement") {
+  it("sampling without replacement") {
 
     val seq = solver.sampleWithoutReplacement(2)
     assert(seq.size == 2)

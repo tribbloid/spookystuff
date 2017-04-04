@@ -11,7 +11,7 @@ class SchemaContextSuite extends SpookyEnvFixture{
 
   import com.tribbloids.spookystuff.dsl._
 
-  test("Resolver should not scramble sequence of fields") {
+  it("Resolver should not scramble sequence of fields") {
 
     val schema0 = DataRowSchema(spooky)
     val resolver0 = schema0.newResolver

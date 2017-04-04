@@ -43,11 +43,11 @@ class PythonDriverSuite extends SpookyEnvFixture {
   import scala.concurrent.ExecutionContext.Implicits.global
   import scala.concurrent.duration._
 
-  test("sendAndGetResult should work in single thread") {
+  it("sendAndGetResult should work in single thread") {
     PythonDriverSuite.onePlusX(1 to 100)
   }
 
-  test("sendAndGetResult should work in multiple threads") {
+  it("sendAndGetResult should work in multiple threads") {
     val rdd = sc.parallelize(1 to 100)
     assert(rdd.partitions.length > 1)
     rdd.foreachPartition{
@@ -57,7 +57,7 @@ class PythonDriverSuite extends SpookyEnvFixture {
     }
   }
 
-  test("sendAndGetResult should work if interpretation triggers an error") {
+  it("sendAndGetResult should work if interpretation triggers an error") {
     PythonDriverSuite.runIterable(1 to 10) {
       (i, proc) =>
         val r = proc.sendAndGetResult(s"print($i / 0)")
@@ -65,7 +65,7 @@ class PythonDriverSuite extends SpookyEnvFixture {
     }
   }
 
-  test("interpret should yield 1 row for a single print") {
+  it("interpret should yield 1 row for a single print") {
 
     PythonDriverSuite.runIterable(1 to 10) {
       (i, proc) =>
@@ -76,7 +76,7 @@ class PythonDriverSuite extends SpookyEnvFixture {
     }
   }
 
-  test("interpret should throw an exception if interpreter raises an error") {
+  it("interpret should throw an exception if interpreter raises an error") {
 
     PythonDriverSuite.runIterable(1 to 10) {
       (i, proc) =>
@@ -86,7 +86,7 @@ class PythonDriverSuite extends SpookyEnvFixture {
     }
   }
 
-  test("interpret should throw an exception if interpreter raises a multi-line error") {
+  it("interpret should throw an exception if interpreter raises a multi-line error") {
 
     PythonDriverSuite.runIterable(1 to 10) {
       (i, proc) =>
@@ -107,7 +107,7 @@ class PythonDriverSuite extends SpookyEnvFixture {
     }
   }
 
-  test("interpret should throw an exception if interpreter raises a syntax error") {
+  it("interpret should throw an exception if interpreter raises a syntax error") {
 
     PythonDriverSuite.runIterable(1 to 10) {
       (i, proc) =>
@@ -134,7 +134,7 @@ class PythonDriverSuite extends SpookyEnvFixture {
     }
   }
 
-  test("call should return None if result variable is undefined") {
+  it("call should return None if result variable is undefined") {
 
     PythonDriverSuite.runIterable(1 to 10) {
       (i, proc) =>
@@ -144,7 +144,7 @@ class PythonDriverSuite extends SpookyEnvFixture {
     }
   }
 
-  test("SpookyUtils.withDeadline can interrupt python execution that blocks indefinitely") {
+  it("SpookyUtils.withDeadline can interrupt python execution that blocks indefinitely") {
 
     PythonDriverSuite.runIterable(1 to 3) {
       (i, proc) =>
@@ -164,7 +164,7 @@ class PythonDriverSuite extends SpookyEnvFixture {
     }
   }
 
-  test("clean() won't be blocked indefinitely by ongoing python execution") {
+  it("clean() won't be blocked indefinitely by ongoing python execution") {
 
     PythonDriverSuite.runIterable(1 to 3) {
       (i, proc) =>

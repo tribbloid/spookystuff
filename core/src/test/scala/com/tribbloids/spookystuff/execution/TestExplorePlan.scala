@@ -12,7 +12,7 @@ class TestExplorePlan extends SpookyEnvFixture with LocalPathDocsFixture {
 
   import dsl._
 
-  test("ExplorePlan.toString should work") {
+  it("ExplorePlan.toString should work") {
 
     val base = spooky
       .fetch(
@@ -31,7 +31,7 @@ class TestExplorePlan extends SpookyEnvFixture with LocalPathDocsFixture {
     println(explored.plan.toString)
   }
 
-  test("ExplorePlan should create a new beaconRDD if its upstream doesn't have one"){
+  it("ExplorePlan should create a new beaconRDD if its upstream doesn't have one"){
     val partitioner = new HashPartitioner(8)
 
     val src = spooky
@@ -49,7 +49,7 @@ class TestExplorePlan extends SpookyEnvFixture with LocalPathDocsFixture {
   }
 
 
-  test("ExplorePlan should inherit old beaconRDD from upstream if exists") {
+  it("ExplorePlan should inherit old beaconRDD from upstream if exists") {
     val partitioner = new HashPartitioner(8)
     val partitioner2 = new HashPartitioner(16)
 
@@ -73,7 +73,7 @@ class TestExplorePlan extends SpookyEnvFixture with LocalPathDocsFixture {
     assert(rdd2.plan.beaconRDDOpt.get eq beaconRDD)
   }
 
-  test("ExplorePlan should work recursively on directory") {
+  it("ExplorePlan should work recursively on directory") {
 
     val resourcePath = DIR_URL
 
@@ -94,7 +94,7 @@ class TestExplorePlan extends SpookyEnvFixture with LocalPathDocsFixture {
     df.show(truncate = false)
   }
 
-  test("ExplorePlan will throw an exception if OrdinalField == DepthField") {
+  it("ExplorePlan will throw an exception if OrdinalField == DepthField") {
     val rdd1 = spooky
       .fetch{
         Wget(HTML_URL)
@@ -109,7 +109,7 @@ class TestExplorePlan extends SpookyEnvFixture with LocalPathDocsFixture {
     }
   }
 
-  test("explore plan will avoid shuffling the latest batch to minimize repeated fetch") {
+  it("explore plan will avoid shuffling the latest batch to minimize repeated fetch") {
     val first = spooky
       .wget {
         DEEP_DIR_URL

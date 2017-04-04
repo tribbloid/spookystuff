@@ -35,7 +35,7 @@ class TestWget extends SpookyEnvFixture {
   )
     .foreach {
       tuple =>
-        test(s"use TOR socks5 proxy for ${tuple._1} wget", Tag(classOf[LocalOnly].getCanonicalName)) {
+        it(s"use TOR socks5 proxy for ${tuple._1} wget", Tag(classOf[LocalOnly].getCanonicalName)) {
 
           val newIP = {
             spooky.conf.proxy = WebProxyFactories.Tor
@@ -48,7 +48,7 @@ class TestWget extends SpookyEnvFixture {
           assert(newIP !== noProxyIP)
         }
 
-        test(s"revert from TOR socks5 proxy for ${tuple._1} wget", Tag(classOf[LocalOnly].getCanonicalName)) {
+        it(s"revert from TOR socks5 proxy for ${tuple._1} wget", Tag(classOf[LocalOnly].getCanonicalName)) {
 
           val newIP = {
             spooky.conf.proxy = WebProxyFactories.Tor
@@ -76,7 +76,7 @@ class TestWget extends SpookyEnvFixture {
   }
 
   //TODO: add canonized URI check
-  test("wget should encode malformed url") {
+  it("wget should encode malformed url") {
     spooky.conf.proxy = WebProxyFactories.NoProxy
 
     val results = (
@@ -130,7 +130,7 @@ class TestWget extends SpookyEnvFixture {
   //    assert(results.head.isInstanceOf[NoPage])
   //  }
 
-  test("output of wget should not include session's backtrace") {
+  it("output of wget should not include session's backtrace") {
     spooky.conf.proxy = WebProxyFactories.NoProxy
 
     import duration._
@@ -154,7 +154,7 @@ class TestWget extends SpookyEnvFixture {
   //    ).fetch(spooky)
   //  }
 
-  test("wget.interpolate should not overwrite each other") {
+  it("wget.interpolate should not overwrite each other") {
     val wget = Wget(
       'A
     ) waybackTo 'B.typed[Timestamp]

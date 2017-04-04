@@ -12,7 +12,7 @@ class WebDriverSuite extends SpookyEnvFixture with LocalPathDocsFixture {
 
   import com.tribbloids.spookystuff.dsl._
 
-  test("PhantomJS DriverFactory can degrade gracefully if remote URI is unreachable") {
+  it("PhantomJS DriverFactory can degrade gracefully if remote URI is unreachable") {
 
     this.spookyConf.webDriverFactory = DriverFactories.PhantomJS(
       getLocalURI = _ => "dummy/file",

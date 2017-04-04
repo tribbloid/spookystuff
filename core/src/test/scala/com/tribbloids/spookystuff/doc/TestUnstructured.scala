@@ -14,7 +14,7 @@ class TestUnstructured extends SpookyEnvFixture {
 
   lazy val page = (Wget("http://www.wikipedia.org/").as('old)::Nil).fetch(spooky).head.asInstanceOf[Doc]
 
-  test("Unstructured is serializable for div") {
+  it("Unstructured is serializable for div") {
     val elements = page.findAll("div.central-featured-lang")
 
     assert(elements.size === 10)
@@ -40,7 +40,7 @@ class TestUnstructured extends SpookyEnvFixture {
 
   lazy val tablePage = (Wget("http://en.wikipedia.org/").as('old)::Nil).fetch(spooky).head.asInstanceOf[Doc]
 
-  test("Unstructured is serializable for tr") {
+  it("Unstructured is serializable for tr") {
     val elements = tablePage.findAll("table#mp-topbanner > tbody > tr")
 
     assert(elements.size === 1)
@@ -60,7 +60,7 @@ class TestUnstructured extends SpookyEnvFixture {
     }
   }
 
-  test("Unstructured is serializable for td") {
+  it("Unstructured is serializable for td") {
     val elements = tablePage.findAll("table#mp-topbanner > tbody > tr > td")
 
     assert(elements.size === 4)
@@ -80,7 +80,7 @@ class TestUnstructured extends SpookyEnvFixture {
     }
   }
 
-  test("attrs should handles empty attributes properly") {
+  it("attrs should handles empty attributes properly") {
 
     assert(page.findAll("h1.central-textlogo img").attrs("title").nonEmpty)
     assert(page.findAll("h1.central-textlogo img dummy").attrs("title").isEmpty)

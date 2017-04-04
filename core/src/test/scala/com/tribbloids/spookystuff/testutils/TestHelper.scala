@@ -57,10 +57,11 @@ class TestHelper() {
   lazy val clusterSize_numCoresPerWorker_Opt: Option[(Int, Int)] = {
     Option(sparkHome).flatMap {
       h =>
-        (
+        val tuple = (
           Option(props.getProperty("ClusterSize")).map(_.toInt),
           Option(props.getProperty("NumCoresPerWorker")).map(_.toInt)
-        ) match {
+        )
+        tuple match {
           case (None, None) =>
             None
           case (Some(v1), Some(v2)) =>

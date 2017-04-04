@@ -14,7 +14,7 @@ class SpookyViewsSuite extends SpookyEnvFixture {
   import SpookyViews._
   import org.scalatest.Matchers._
 
-  test("multiPassFlatMap should yield same result as flatMap") {
+  it("multiPassFlatMap should yield same result as flatMap") {
 
     val src = sc.parallelize(1 to 100).persist()
 
@@ -38,7 +38,7 @@ class SpookyViewsSuite extends SpookyEnvFixture {
     assert(counter2.value > 100)
   }
 
-  test("TraversableLike.filterByType should work on primitive types") {
+  it("TraversableLike.filterByType should work on primitive types") {
 
     assert(Seq(1, 2.2, "a").filterByType[Int].get == Seq(1))
     assert(Seq(1, 2.2, "a").filterByType[java.lang.Integer].get == Seq(1: java.lang.Integer))
@@ -53,7 +53,7 @@ class SpookyViewsSuite extends SpookyEnvFixture {
     assert(Set(1, 2.2, "a").filterByType[String].get == Set("a"))
   }
 
-  test("Array.filterByType should work on primitive types") {
+  it("Array.filterByType should work on primitive types") {
 
     assert(Array(1, 2.2, "a").filterByType[Int].toSeq == Seq(1))
     assert(Array(1, 2.2, "a").filterByType[java.lang.Integer].toSeq == Seq(1: java.lang.Integer))
@@ -63,17 +63,17 @@ class SpookyViewsSuite extends SpookyEnvFixture {
   }
 
   val nullStr = null: String
-  test(":/ can handle null component") {
+  it(":/ can handle null component") {
 
     assert(nullStr :/ nullStr :/ "abc" :/ null :/ null == "abc")
   }
 
-  test("\\\\ can handle null component") {
+  it("\\\\ can handle null component") {
 
     assert(nullStr \\ nullStr \\ "abc" \\ null \\ null == "abc")
   }
 
-  test("mapPerExecutorThread will run properly") {
+  it("mapPerExecutorThread will run properly") {
     val result = sc.mapPerExecutorCore {
       TestHelper.assert(!TaskContext.get().isRunningLocally())
       SparkEnv.get.blockManager.blockManagerId ->
@@ -86,7 +86,7 @@ class SpookyViewsSuite extends SpookyEnvFixture {
     result.foreach(println)
   }
 
-  test("mapPerWorker will run properly") {
+  it("mapPerWorker will run properly") {
     val result = sc.mapPerWorker {
       TestHelper.assert(!TaskContext.get().isRunningLocally())
       SparkEnv.get.blockManager.blockManagerId ->
@@ -99,7 +99,7 @@ class SpookyViewsSuite extends SpookyEnvFixture {
     result.foreach(println)
   }
 
-  test("mapPerCore will run properly") {
+  it("mapPerCore will run properly") {
     val result = sc.mapPerCore {
       SparkEnv.get.blockManager.blockManagerId ->
         TaskContext.getPartitionId()
@@ -111,7 +111,7 @@ class SpookyViewsSuite extends SpookyEnvFixture {
     result.foreach(println)
   }
 
-  test("mapPerComputer will run properly") {
+  it("mapPerComputer will run properly") {
     val result = sc.mapPerComputer {
       SparkEnv.get.blockManager.blockManagerId ->
         TaskContext.getPartitionId()
@@ -124,7 +124,7 @@ class SpookyViewsSuite extends SpookyEnvFixture {
     result.foreach(println)
   }
 
-  test("result of allTaskLocationStrs can be used as partition's preferred location") {
+  it("result of allTaskLocationStrs can be used as partition's preferred location") {
     //TODO: change to more succinct ignore
     if (org.apache.spark.SPARK_VERSION.replaceAllLiterally(".","").toInt >= 160) {
       val tlStrs = sc.allTaskLocationStrs
@@ -147,7 +147,7 @@ class SpookyViewsSuite extends SpookyEnvFixture {
     }
   }
 
-  test("interpolate can use common character as delimiter") {
+  it("interpolate can use common character as delimiter") {
 
     val original = "ORA'{TEST}"
     val interpolated = original.interpolate("'"){
@@ -157,7 +157,7 @@ class SpookyViewsSuite extends SpookyEnvFixture {
     assert(interpolated == "ORAReplaced")
   }
 
-  test("interpolate can use special regex character as delimiter") {
+  it("interpolate can use special regex character as delimiter") {
 
     val original = "ORA${TEST}"
     val interpolated = original.interpolate("$"){
@@ -167,7 +167,7 @@ class SpookyViewsSuite extends SpookyEnvFixture {
     assert(interpolated == "ORAReplaced")
   }
 
-  test("interpolate should ignore string that contains delimiter without bracket") {
+  it("interpolate should ignore string that contains delimiter without bracket") {
 
     val original = "ORA$TEST"
     val interpolated = original.interpolate("$"){
@@ -177,7 +177,7 @@ class SpookyViewsSuite extends SpookyEnvFixture {
     assert(interpolated == original)
   }
 
-  test("interpolate should allow delimiter to be escaped") {
+  it("interpolate should allow delimiter to be escaped") {
 
     val original = "ORA$${TEST}"
     val interpolated = original.interpolate("$"){

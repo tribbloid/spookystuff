@@ -6,19 +6,19 @@ class MergeSuite extends AbstractFlowSuite {
 
   import FlowComponent._
 
-  test("merge_> Source doesn't work") {
+  it("merge_> Source doesn't work") {
     intercept[AssertionError]{
       'input >>> new Tokenizer() >>> 'dummy
     }
   }
 
-  test("merge_< Source doesn't work") {
+  it("merge_< Source doesn't work") {
     intercept[AssertionError] {
       'input >>> new Tokenizer() >>> 'dummy
     }
   }
 
-  test("merge_> PASSTHROUGH doesn't change the flow") {
+  it("merge_> PASSTHROUGH doesn't change the flow") {
     val flow = 'input >>> new Tokenizer() >>> PASSTHROUGH
     val flow2 = 'input >>> new Tokenizer()
     flow.show(showID = false, compactionOpt = compactionOpt).treeNodeShouldBe(
@@ -26,7 +26,7 @@ class MergeSuite extends AbstractFlowSuite {
     )
   }
 
-  test("PASSTHROUGH merge_> Stage doesn't change the flow") {
+  it("PASSTHROUGH merge_> Stage doesn't change the flow") {
     val flow1 = 'input >>> (PASSTHROUGH >>> new Tokenizer())
     val flow2 = 'input >>> new Tokenizer()
     flow1.show(showID = false, compactionOpt = compactionOpt).treeNodeShouldBe(
@@ -34,7 +34,7 @@ class MergeSuite extends AbstractFlowSuite {
     )
   }
 
-  test("merge_> (PASSTHROUGH || Stage) generates 2 heads") {
+  it("merge_> (PASSTHROUGH || Stage) generates 2 heads") {
     val flow = (
       'input
         >-> new Tokenizer()
@@ -58,7 +58,7 @@ class MergeSuite extends AbstractFlowSuite {
     )
   }
 
-  test("declare API is equally effective") {
+  it("declare API is equally effective") {
     val flow1 = (
       new VectorAssembler()
         <<< (new HashingTF()
@@ -90,7 +90,7 @@ class MergeSuite extends AbstractFlowSuite {
     )
   }
 
-  test("result of merge_> can be the first operand of merge_<") {
+  it("result of merge_> can be the first operand of merge_<") {
     val flow = new VectorAssembler() <<< (
       'input >>> new Tokenizer() >>> new HashingTF()
       )
@@ -110,7 +110,7 @@ class MergeSuite extends AbstractFlowSuite {
     flow.show(showID = false, compactionOpt = compactionOpt, asciiArt = true).treeNodeShouldBe()
   }
 
-  test("result of merge_< can be the first operand of merge_>") {
+  it("result of merge_< can be the first operand of merge_>") {
     val flow = (
       new HashingTF() <<< new Tokenizer() <<< 'input
         >>> new VectorAssembler()
@@ -132,7 +132,7 @@ class MergeSuite extends AbstractFlowSuite {
     flow.show(showID = false, compactionOpt = compactionOpt, asciiArt = true).treeNodeShouldBe()
   }
 
-  test("A merge_> (PASSTHROUGH || Stage) rebase_> B is associative") {
+  it("A merge_> (PASSTHROUGH || Stage) rebase_> B is associative") {
     val flow1 = (
       new Tokenizer()
         >>> (
@@ -155,7 +155,7 @@ class MergeSuite extends AbstractFlowSuite {
     )
   }
 
-  test("merge_> can append a stage to 2 heads") {
+  it("merge_> can append a stage to 2 heads") {
     val flow = (
       ('input1 U 'input2)
         >>> new VectorAssembler()
@@ -174,7 +174,7 @@ class MergeSuite extends AbstractFlowSuite {
     )
   }
 
-  test("merge_< can append a stage to 2 heads") {
+  it("merge_< can append a stage to 2 heads") {
 
     val flow = (
       new VectorAssembler()
@@ -194,7 +194,7 @@ class MergeSuite extends AbstractFlowSuite {
     )
   }
 
-  test("merge_> can append a stage to 2 heads from 1 tail") {
+  it("merge_> can append a stage to 2 heads from 1 tail") {
 
     val flow = (
       'input
@@ -223,7 +223,7 @@ class MergeSuite extends AbstractFlowSuite {
     )
   }
 
-  test("merge_< can append a stage to 2 heads from 1 tail") {
+  it("merge_< can append a stage to 2 heads from 1 tail") {
 
     val flow = (
       new VectorAssembler()
@@ -252,7 +252,7 @@ class MergeSuite extends AbstractFlowSuite {
     )
   }
 
-  test("merge_> can append a stage to merged heads") {
+  it("merge_> can append a stage to merged heads") {
     val flow = (
       ('input1 U 'input2)
         >>> new VectorAssembler()
@@ -274,7 +274,7 @@ class MergeSuite extends AbstractFlowSuite {
     )
   }
 
-  test("merge_< can append a stage to merged heads") {
+  it("merge_< can append a stage to merged heads") {
 
     val flow = (
       new IndexToString()
@@ -297,7 +297,7 @@ class MergeSuite extends AbstractFlowSuite {
     )
   }
 
-  test("merge_> can bypass Source of downstream") {
+  it("merge_> can bypass Source of downstream") {
     val flow = (
       'input
         >>> (
@@ -317,7 +317,7 @@ class MergeSuite extends AbstractFlowSuite {
     )
   }
 
-  test("merge_< can bypass Source of downstream") {
+  it("merge_< can bypass Source of downstream") {
     val flow = (
       new Tokenizer() <<<
         'dummy
@@ -353,7 +353,7 @@ class MergeSuite extends AbstractFlowSuite {
   //  }
 
 
-  test("Merge works when operand2 is type consistent") {
+  it("Merge works when operand2 is type consistent") {
 
     val flow = (
       'input.string
@@ -364,7 +364,7 @@ class MergeSuite extends AbstractFlowSuite {
     flow.show(showID = false, compactionOpt = compactionOpt).treeNodeShouldBe()
   }
 
-  test("Merge throws an exception when operand2 is type inconsistent with output of operand1 as a Source") {
+  it("Merge throws an exception when operand2 is type inconsistent with output of operand1 as a Source") {
 
     intercept[IllegalArgumentException]{
       (
@@ -374,7 +374,7 @@ class MergeSuite extends AbstractFlowSuite {
     }
   }
 
-  test("Merge throws an exception when operand2 is type inconsistent with output of operand1 as a Flow") {
+  it("Merge throws an exception when operand2 is type inconsistent with output of operand1 as a Flow") {
 
     intercept[IllegalArgumentException]{
       (
@@ -385,7 +385,7 @@ class MergeSuite extends AbstractFlowSuite {
     }
   }
 
-  test("Union throws an exception when a stage in result is type inconsistent") {
+  it("Union throws an exception when a stage in result is type inconsistent") {
 
     val part1 = declare(
       new Tokenizer() < 'input.string
@@ -399,7 +399,7 @@ class MergeSuite extends AbstractFlowSuite {
     }
   }
 
-  test("Union throws an exception when a stage in result has incompatible number of inputCols") {
+  it("Union throws an exception when a stage in result has incompatible number of inputCols") {
 
     val part1 = declare(
       new Tokenizer() < 'input.string

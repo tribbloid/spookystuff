@@ -46,11 +46,11 @@ class GenExtractorSuite extends SpookyEnvFixture {
   import GenExtractorSuite._
   import com.tribbloids.spookystuff.dsl._
 
-  test("Some(partialFn) is serializable") {
+  it("Some(partialFn) is serializable") {
     assertSerializable[Option[(String => Int)]](Some(partialFn), condition = (_, _) => {})
   }
 
-  test("Some(optionFn) is serializable") {
+  it("Some(optionFn) is serializable") {
     assertSerializable[Option[(String => Option[Int])]](Some(optionFn), condition = (_, _) => {})
   }
 
@@ -65,13 +65,13 @@ class GenExtractorSuite extends SpookyEnvFixture {
     tuple =>
       val extractor = tuple._1
       val str = tuple._2
-      test(s"$str and all its resolved functions are serializable") {
+      it(s"$str and all its resolved functions are serializable") {
         assertSerializable[GenExtractor[String, Int]](extractor, condition = (_, _) => {})
         assertSerializable[PartialFunction[String, Int]](extractor.resolve(schema), condition = (_, _) => {})
         assertSerializable[Function1[String, Option[Int]]](extractor.resolve(schema).lift, condition = (_, _) => {})
       }
 
-      test(s"$str.apply won't execute twice") {
+      it(s"$str.apply won't execute twice") {
         counter = 0
 
         println(extractor.apply("abc"))
@@ -83,7 +83,7 @@ class GenExtractorSuite extends SpookyEnvFixture {
         assert(counter == 2)
       }
 
-      test(s"$str.lift.apply won't execute twice") {
+      it(s"$str.lift.apply won't execute twice") {
         counter = 0
 
         println(extractor.lift.apply("abc"))
@@ -93,7 +93,7 @@ class GenExtractorSuite extends SpookyEnvFixture {
         assert(counter == 2)
       }
 
-      test(s"$str.applyOrElse won't execute twice") {
+      it(s"$str.applyOrElse won't execute twice") {
         counter = 0
 
         println(extractor.applyOrElse("abc", (_: String) => 0))
@@ -103,7 +103,7 @@ class GenExtractorSuite extends SpookyEnvFixture {
         assert(counter == 2)
       }
 
-      test(s"$str.isDefined won't execute twice") {
+      it(s"$str.isDefined won't execute twice") {
         counter = 0
 
         println(extractor.isDefinedAt("abc"))

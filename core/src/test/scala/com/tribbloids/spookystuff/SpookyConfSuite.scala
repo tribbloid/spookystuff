@@ -11,7 +11,7 @@ import scala.util.Random
 class SpookyConfSuite extends SpookyEnvFixture {
 
   def conf = new SpookyConf()
-  test("SpookyConf is serializable") {
+  it("SpookyConf is serializable") {
 
     assertSerializable(
       conf,
@@ -24,7 +24,7 @@ class SpookyConfSuite extends SpookyEnvFixture {
     )
   }
 
-  test("SpookyConf.import is serializable") {
+  it("SpookyConf.import is serializable") {
     val imported = conf.importFrom(sc.getConf)
     assertSerializable(
       imported,
@@ -37,7 +37,7 @@ class SpookyConfSuite extends SpookyEnvFixture {
     )
   }
 
-  test("SpookyConf.import can read from SparkConf before any of its submodule is created") {
+  it("SpookyConf.import can read from SparkConf before any of its submodule is created") {
     val sparkConf = new SparkConf()
     val dummyV = "dummy" + Random.nextLong()
     sparkConf.set("spooky.dirs.autosave", dummyV)
@@ -50,7 +50,7 @@ class SpookyConfSuite extends SpookyEnvFixture {
   //  test("getProperty() can load property from system environment") {
   //  }
 
-  test("getProperty() can load property from spark property") {
+  it("getProperty() can load property from spark property") {
     val conf = sc.getConf
     val v = conf.get("dummy.property")
 
@@ -59,7 +59,7 @@ class SpookyConfSuite extends SpookyEnvFixture {
     }
   }
 
-  test("getProperty() can load property from system property") {
+  it("getProperty() can load property from system property") {
 
     System.setProperty("dummy.property", "AA")
 

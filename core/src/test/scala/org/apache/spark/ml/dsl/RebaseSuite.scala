@@ -9,19 +9,19 @@ class RebaseSuite extends AbstractFlowSuite {
 
   import FlowComponent._
 
-  test("rebase_> Source doesn't work") {
+  it("rebase_> Source doesn't work") {
     intercept[AssertionError]{
       'input >=> new Tokenizer() >=> 'dummy
     }
   }
 
-  test("rebase_< Source doesn't work") {
+  it("rebase_< Source doesn't work") {
     intercept[AssertionError] {
       'input <=< new Tokenizer() <=< 'dummy
     }
   }
 
-  test("rebase_> can append to 2 heads") {
+  it("rebase_> can append to 2 heads") {
     val flow = (
       ('input1 U 'input2)
         >=> new VectorAssembler()
@@ -40,7 +40,7 @@ class RebaseSuite extends AbstractFlowSuite {
     )
   }
 
-  test("rebase_< can append to 2 heads") {
+  it("rebase_< can append to 2 heads") {
 
     val flow = (
       new VectorAssembler()
@@ -60,7 +60,7 @@ class RebaseSuite extends AbstractFlowSuite {
     )
   }
 
-  test("rebase_> can generate 2 stage replicas and append to 2 selected") {
+  it("rebase_> can generate 2 stage replicas and append to 2 selected") {
 
     val flow = (
       (
@@ -86,7 +86,7 @@ class RebaseSuite extends AbstractFlowSuite {
     )
   }
 
-  test("rebase_< can generate 2 stage replicas and append to 2 selected") {
+  it("rebase_< can generate 2 stage replicas and append to 2 selected") {
 
     val flow = (
       new NGram()
@@ -112,7 +112,7 @@ class RebaseSuite extends AbstractFlowSuite {
     )
   }
 
-  test("rebase_> can generate 2 stage replicas and append to 2 heads") {
+  it("rebase_> can generate 2 stage replicas and append to 2 heads") {
 
     val flow = (
       (
@@ -142,7 +142,7 @@ class RebaseSuite extends AbstractFlowSuite {
   }
 
 
-  test("rebase_< can generate 2 stage replicas and append to 2 heads") {
+  it("rebase_< can generate 2 stage replicas and append to 2 heads") {
 
     val flow = (
       new HashingTF()
@@ -171,7 +171,7 @@ class RebaseSuite extends AbstractFlowSuite {
     )
   }
 
-  test("rebase_> won't remove Source of downstream if it's in tails of both side") {
+  it("rebase_> won't remove Source of downstream if it's in tails of both side") {
 
     val dummy: FlowComponent = 'dummy
     val down = dummy >-> new VectorAssembler() <-< dummy
@@ -191,7 +191,7 @@ class RebaseSuite extends AbstractFlowSuite {
     )
   }
 
-  test("rebase_< won't remove Source of downstream if it's in tails of both side") {
+  it("rebase_< won't remove Source of downstream if it's in tails of both side") {
 
     val dummy: FlowComponent = 'dummy
     val down = dummy >-> new VectorAssembler() <-< dummy

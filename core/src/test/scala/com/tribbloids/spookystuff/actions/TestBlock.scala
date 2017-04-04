@@ -12,7 +12,7 @@ class TestBlock extends SpookyEnvFixture {
 
   import scala.concurrent.duration._
 
-  test("loop without export won't need driver") {
+  it("loop without export won't need driver") {
 
     val loop = Loop(
       Delay(10.seconds) +> Wget("ftp://www.dummy.co")
@@ -27,7 +27,7 @@ class TestBlock extends SpookyEnvFixture {
 //    assert(!loop.needDriver)
   }
 
-  test("try without export won't need driver") {
+  it("try without export won't need driver") {
     import scala.concurrent.duration._
 
     val tryy = ClusterRetry(
@@ -42,11 +42,11 @@ class TestBlock extends SpookyEnvFixture {
     assert(session.webDriverOpt.isEmpty)
   }
 
-  test("Try(Wget) can failsafe on malformed uri") {
+  it("Try(Wget) can failsafe on malformed uri") {
 
   }
 
-  test("wayback time of loop should be identical to its last child supporting wayback") {
+  it("wayback time of loop should be identical to its last child supporting wayback") {
     val waybackDate = new Date()
 
     val loop = Loop(

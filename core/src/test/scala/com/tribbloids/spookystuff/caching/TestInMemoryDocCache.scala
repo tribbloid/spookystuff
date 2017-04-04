@@ -21,7 +21,7 @@ class TestInMemoryDocCache extends SpookyEnvFixture with LocalPathDocsFixture {
   val wget = Wget(HTML_URL).as('oldWget)::Nil
   lazy val wgetPage = wget.fetch(spooky).map(_.asInstanceOf[Doc].update(cacheLevel = CacheLevel.All)) //By default wget from DFS are only cached in-memory
 
-  test("cache and restore") {
+  it("cache and restore") {
     spooky.conf.cachedDocsLifeSpan = 10.seconds
 
     assert(visitPage.head.uid === DocUID(Visit(HTML_URL) :: Snapshot().as('U) :: Nil, Snapshot())())
@@ -35,7 +35,7 @@ class TestInMemoryDocCache extends SpookyEnvFixture with LocalPathDocsFixture {
     assert(visitPage.head === loadedPages.head)
   }
 
-  test ("cache visit and restore with different name") {
+  it ("cache visit and restore with different name") {
     spooky.conf.cachedDocsLifeSpan = 10.seconds
 
     cache.put(visit, visitPage, spooky)
@@ -61,7 +61,7 @@ class TestInMemoryDocCache extends SpookyEnvFixture with LocalPathDocsFixture {
     assert(page2.head.code === page2.head.code)
   }
 
-  test ("cache wget and restore with different name") {
+  it ("cache wget and restore with different name") {
     spooky.conf.cachedDocsLifeSpan = 10.seconds
 
     cache.put(wget, wgetPage, spooky)

@@ -11,7 +11,7 @@ import org.apache.spark.sql.types.NullType
   */
 class ExtractorsSuite extends SpookyEnvFixture {
 
-  test("Literal can be converted to JSON") {
+  it("Literal can be converted to JSON") {
     val lit: Literal[FR, Int] = Literal(1)
 
     val json = lit.toJSON()
@@ -20,7 +20,7 @@ class ExtractorsSuite extends SpookyEnvFixture {
     )
   }
 
-  test("Action that use Literal can be converted to JSON") {
+  it("Action that use Literal can be converted to JSON") {
     val action = Wget(Literal("http://dummy.org"))
 
     val json = action.toJSON()
@@ -37,7 +37,7 @@ class ExtractorsSuite extends SpookyEnvFixture {
     )
   }
 
-  test("Literal has the correct toString form") {
+  it("Literal has the correct toString form") {
     val str = Literal("lit").toString
     assert(str == "lit")
   }

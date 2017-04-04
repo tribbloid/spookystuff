@@ -1,16 +1,15 @@
 package com.tribbloids.spookystuff.uav.spatial
 
 import breeze.linalg.{Vector => Vec}
-import com.tribbloids.spookystuff.testutils.FunSuitex
+import com.tribbloids.spookystuff.testutils.FunSpecx
 import com.tribbloids.spookystuff.uav.UAVConf
-import org.scalatest.FunSuite
 
 /**
   * Created by peng on 14/02/17.
   */
-class LocationSuite extends FunSuite with FunSuitex {
+class LocationSuite extends FunSpecx {
 
-  test("Location can infer LLA from NED") {
+  it("Location can infer LLA from NED") {
 
     val p1 : Location = LLA.create(Vec(-79.262262, 43.694195, 136)) -> GeodeticAnchor
 
@@ -22,7 +21,7 @@ class LocationSuite extends FunSuite with FunSuitex {
     )
   }
 
-  test("Location can infer LLA from LLA") {
+  it("Location can infer LLA from LLA") {
 
     val p1 : Location = LLA.create(Vec(-79.262262, 43.694195, 136)) -> GeodeticAnchor
 
@@ -34,7 +33,7 @@ class LocationSuite extends FunSuite with FunSuitex {
     )
   }
 
-  test("Location can infer NED from LLA") {
+  it("Location can infer NED from LLA") {
     val p1 : Location = LLA.create(Vec(-79.262262, 43.694195, 136)) -> GeodeticAnchor
 
     val p2 : Location = LLA.create(Vec(-79.386132, 43.647023, 100)) -> GeodeticAnchor
@@ -45,7 +44,7 @@ class LocationSuite extends FunSuite with FunSuitex {
     )
   }
 
-  test("Location can infer NED from NED") {
+  it("Location can infer NED from NED") {
     {
       val base: Location = LLA(0, 0, 0) -> GeodeticAnchor
       val p1 : Location = NED(300, 200, 10) -> base
@@ -69,7 +68,7 @@ class LocationSuite extends FunSuite with FunSuitex {
     }
   }
 
-  test("Location can handle cyclic referential NED") {
+  it("Location can handle cyclic referential NED") {
     val p1 = Location(Nil)
 
     val p2 : Location = NED.create(Vec(1000, 2000, 30)) -> p1
@@ -80,7 +79,7 @@ class LocationSuite extends FunSuite with FunSuitex {
     assert(c2.isEmpty)
   }
 
-  test("Location can handle cyclic referential LLA") {
+  it("Location can handle cyclic referential LLA") {
     val p1 = Location(Nil)
 
     val p2 : Location = LLA.create(Vec(-79.262262, 43.694195, 30)) -> p1
@@ -92,7 +91,7 @@ class LocationSuite extends FunSuite with FunSuitex {
     assert(c2_Geo.isEmpty)
   }
 
-  test("Location can infer self referential NED from NED") {
+  it("Location can infer self referential NED from NED") {
     val p1 = Location(Nil)
 
     val p2 : Location = NED.create(Vec(1000, 2000, 30)) -> p1
@@ -112,7 +111,7 @@ class LocationSuite extends FunSuite with FunSuitex {
     }
   }
 
-  test("Location can infer self referential NED from LLA") {
+  it("Location can infer self referential NED from LLA") {
     val p1 = Location(Nil)
 
     val p2 : Location = LLA.create(Vec(-79.262262, 43.694195, 30)) -> p1

@@ -189,8 +189,8 @@ trait Suitex extends {
   //  }
 }
 
-trait FunSuitex extends FunSuite with Suitex
-trait FunSpecx extends FunSpec with Suitex
+trait FunSpecx extends FunSpec with Suitex {
+}
 
 case class AssertSerializable[T <: AnyRef: ClassTag](
                                                       element: T,

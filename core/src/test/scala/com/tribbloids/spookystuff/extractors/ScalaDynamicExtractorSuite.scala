@@ -17,7 +17,7 @@ class ScalaDynamicExtractorSuite extends SpookyEnvFixture with LocalPathDocsFixt
 
   val doc = Wget(HTML_URL).fetch(spooky).head
 
-  test("can resolve Fetched.timestamp") {
+  it("can resolve Fetched.timestamp") {
 
     val result = doc.timestamp
 
@@ -32,7 +32,7 @@ class ScalaDynamicExtractorSuite extends SpookyEnvFixture with LocalPathDocsFixt
     assert(fn.apply(null) == result)
   }
 
-  test("can resolve Doc.uri") {
+  it("can resolve Doc.uri") {
 
     val result = doc.asInstanceOf[Doc].uri
 
@@ -47,7 +47,7 @@ class ScalaDynamicExtractorSuite extends SpookyEnvFixture with LocalPathDocsFixt
     assert(fn.apply(null) == result)
   }
 
-  test("can resolve Doc.code") {
+  it("can resolve Doc.code") {
 
     val result = doc.asInstanceOf[Doc].code.get
 
@@ -64,7 +64,7 @@ class ScalaDynamicExtractorSuite extends SpookyEnvFixture with LocalPathDocsFixt
   }
 
   //useless at the moment
-  test("can resolve Action.dryrun") {
+  it("can resolve Action.dryrun") {
     import com.tribbloids.spookystuff.dsl._
 
     val action: Action = Wget(HTML_URL)
@@ -164,7 +164,7 @@ class ScalaDynamicExtractorSuite extends SpookyEnvFixture with LocalPathDocsFixt
     }
   }
 
-  test("can resolve a defined class method") {
+  it("can resolve a defined class method") {
 
     def dynamic = ScalaDynamicExtractor(
       'A,
@@ -187,7 +187,7 @@ class ScalaDynamicExtractorSuite extends SpookyEnvFixture with LocalPathDocsFixt
     verifyOnDriverAndWorkers(dynamic, staticFn)
   }
 
-  test("can resolve a defined class method that has option return type") {
+  it("can resolve a defined class method that has option return type") {
 
     def dynamic = ScalaDynamicExtractor(
       'A,
@@ -210,7 +210,7 @@ class ScalaDynamicExtractorSuite extends SpookyEnvFixture with LocalPathDocsFixt
     verifyOnDriverAndWorkers(dynamic, staticFn)
   }
 
-  test("can resolve String.concat(String)") {
+  it("can resolve String.concat(String)") {
     def dynamic = ScalaDynamicExtractor(
       Literal("abcde"),
       "concat",
@@ -231,7 +231,7 @@ class ScalaDynamicExtractorSuite extends SpookyEnvFixture with LocalPathDocsFixt
     verifyOnDriverAndWorkers(dynamic, staticFn)
   }
 
-  test("can resolve Array[String].length") {
+  it("can resolve Array[String].length") {
     def dynamic = ScalaDynamicExtractor(
       Literal("a b c d e".split(" ")),
       "length",
@@ -243,7 +243,7 @@ class ScalaDynamicExtractorSuite extends SpookyEnvFixture with LocalPathDocsFixt
     assert(dynamicFn.apply(null) == Some(5))
   }
 
-  test("can resolve type of List[String].head") {
+  it("can resolve type of List[String].head") {
     def dynamic = ScalaDynamicExtractor(
       Literal("a b c d e".split(" ").toList),
       "head",
@@ -255,7 +255,7 @@ class ScalaDynamicExtractorSuite extends SpookyEnvFixture with LocalPathDocsFixt
     assert(dynamicFn.apply(null) == Some("a"))
   }
 
-  test("can resolve type of Seq[String].head") {
+  it("can resolve type of Seq[String].head") {
     def dynamic = ScalaDynamicExtractor (
       Literal("a b c d e".split(" ").toSeq),
       "head",
@@ -294,7 +294,7 @@ class ScalaDynamicExtractorSuite extends SpookyEnvFixture with LocalPathDocsFixt
   //  }
 
   //TODO: this will change in the future
-  test("cannot resolve function when base type is NULL") {
+  it("cannot resolve function when base type is NULL") {
 
     def dynamic = ScalaDynamicExtractor(
       getNullType,
@@ -307,7 +307,7 @@ class ScalaDynamicExtractorSuite extends SpookyEnvFixture with LocalPathDocsFixt
     }
   }
 
-  test("cannot resolve function when arg type is NULL") {
+  it("cannot resolve function when arg type is NULL") {
 
     def dynamic = ScalaDynamicExtractor(
       'A,
@@ -360,7 +360,7 @@ class ScalaDynamicExtractorSuite extends SpookyEnvFixture with LocalPathDocsFixt
   //  }
 
 
-  test("can resolve function of String.startsWith(String) using Java") {
+  it("can resolve function of String.startsWith(String) using Java") {
     {
       def dynamic = ScalaDynamicExtractor(
         Literal("abcde"),

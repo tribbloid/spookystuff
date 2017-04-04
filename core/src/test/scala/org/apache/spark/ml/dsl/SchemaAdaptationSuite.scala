@@ -7,7 +7,7 @@ import org.apache.spark.ml.dsl.utils.FlowUtils
   */
 class SchemaAdaptationSuite extends AbstractFlowSuite {
 
-  test("cartesianProduct should work on list") {
+  it("cartesianProduct should work on list") {
     val before: List[List[String]] = List(
       List("a", "b", "c"),
       List("1", "2", "3"),
@@ -48,7 +48,7 @@ class SchemaAdaptationSuite extends AbstractFlowSuite {
     )
   }
 
-  test("cartesianProduct should work on empty list") {
+  it("cartesianProduct should work on empty list") {
     val before: List[Set[String]] = List()
     val after = FlowUtils.cartesianProductSet(before).toList.sortBy(_.toString())
 
@@ -59,7 +59,7 @@ class SchemaAdaptationSuite extends AbstractFlowSuite {
     )
   }
 
-  test("cartesianProduct should work on list of empty sets") {
+  it("cartesianProduct should work on list of empty sets") {
     val before: List[Set[String]] = List(
       Set(),
       Set("1", "2", "3"),

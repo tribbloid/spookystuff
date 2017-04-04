@@ -100,7 +100,7 @@ class APMCopterSITLSuite extends APMSITLFixture {
   /**
     * this test assumes that all test runs on a single machine, so all SITL instance number has to be different
     */
-  test("can create many APM instances with different iNum") {
+  it("can create many APM instances with different iNum") {
     val iNums = sc.mapPerWorker {
       APMSim.existing.map(_.iNum)
     }

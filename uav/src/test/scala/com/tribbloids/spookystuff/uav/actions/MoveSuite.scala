@@ -12,7 +12,7 @@ class MoveSuite extends APMSITLFixture {
 
   import com.tribbloids.spookystuff.dsl._
 
-  test("Move.toJson should work") {
+  it("Move.toJson should work") {
     val wp1: Location = LLA(0,0,0) -> GeodeticAnchor
     val wp2: Location = LLA(20, 30, 50) -> GeodeticAnchor
 
@@ -30,7 +30,7 @@ class MoveSuite extends APMSITLFixture {
     NED(0, 20, -2)
   ).neds
 
-  test("Run 1 track per drone") {
+  it("Run 1 track per drone") {
 
     val rdd = sc.parallelize(tracks, this.parallelism)
     val df = sql.createDataFrame(rdd)
@@ -47,7 +47,7 @@ class MoveSuite extends APMSITLFixture {
     result.foreach(println)
   }
 
-  test("Run 1.5 track per drone") {
+  it("Run 1.5 track per drone") {
 
     val rdd = sc.parallelize(tracks, this.parallelism)
     val df = sql.createDataFrame(rdd)

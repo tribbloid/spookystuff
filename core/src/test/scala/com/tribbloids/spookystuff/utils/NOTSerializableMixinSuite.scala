@@ -10,7 +10,7 @@ case class Thing2(str: String) extends NOTSerializableMixinSuite
 
 class NOTSerializableMixinSuite extends SpookyEnvFixture {
 
-  test("case class is serializable") {
+  it("case class is serializable") {
     val whatever = new Thing("abc")
 
     assertSerializable(whatever)
@@ -24,7 +24,7 @@ class NOTSerializableMixinSuite extends SpookyEnvFixture {
     assert(out == Seq("abc1", "abc2"))
   }
 
-  test("case class with NotSerializableMixin will trigger a runtime error in closure cleaning") {
+  it("case class with NotSerializableMixin will trigger a runtime error in closure cleaning") {
     val whatever = new Thing2("abc")
 
     intercept[NotSerializableException]{

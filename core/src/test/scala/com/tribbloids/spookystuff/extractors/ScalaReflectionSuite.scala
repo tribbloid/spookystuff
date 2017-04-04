@@ -1,21 +1,21 @@
 package com.tribbloids.spookystuff.extractors
 
 import com.tribbloids.spookystuff.row.FetchedRow
-import com.tribbloids.spookystuff.testutils.FunSuitex
+import com.tribbloids.spookystuff.testutils.FunSpecx
 import com.tribbloids.spookystuff.utils.{TypeUtils, UnreifiedScalaType}
 import org.apache.spark.sql.types.{IntegerType, StringType}
 import org.scalatest.FunSuite
 
 //object ScalaReflectionSuite {
 
-class ScalaReflectionSuite extends FunSuite with FunSuitex {
+class ScalaReflectionSuite extends FunSpecx {
 
   import com.tribbloids.spookystuff.utils.ScalaType._
 
   lazy val exLit: Literal[FetchedRow, _] = Literal(new Example())
   lazy val exType: DataType = UnreifiedScalaType.apply[Example]
 
-  test("getMethodsByName should work on overloaded function") {
+  it("getMethodsByName should work on overloaded function") {
 
     val dynamic = ScalaDynamic(
       "fn"
@@ -41,7 +41,7 @@ class ScalaReflectionSuite extends FunSuite with FunSuitex {
     )
   }
 
-  test("getMethodsByName should work on case constructor parameter") {
+  it("getMethodsByName should work on case constructor parameter") {
 
     val dynamic = ScalaDynamic (
       "a"
@@ -63,7 +63,7 @@ class ScalaReflectionSuite extends FunSuite with FunSuitex {
     )
   }
 
-  test("getMethodsByName should work on lazy val property") {
+  it("getMethodsByName should work on lazy val property") {
 
     val dynamic = ScalaDynamic(
       "c"
@@ -85,7 +85,7 @@ class ScalaReflectionSuite extends FunSuite with FunSuitex {
     )
   }
 
-  test("getMethodsByName should work on function with default parameters") {
+  it("getMethodsByName should work on function with default parameters") {
 
     val dynamic = ScalaDynamic(
       "fnDefault"
@@ -107,7 +107,7 @@ class ScalaReflectionSuite extends FunSuite with FunSuitex {
     )
   }
 
-  test("getMethodsByName should work on operator") {
+  it("getMethodsByName should work on operator") {
 
     val dynamic = ScalaDynamic(
       "*=>"
@@ -129,7 +129,7 @@ class ScalaReflectionSuite extends FunSuite with FunSuitex {
     )
   }
 
-  test("getMethodByScala should work on overloaded function") {
+  it("getMethodByScala should work on overloaded function") {
     val dynamic = ScalaDynamic(
       "fn"
     )
@@ -141,7 +141,7 @@ class ScalaReflectionSuite extends FunSuite with FunSuitex {
     )
   }
 
-  test("getMethodByJava should work on overloaded function") {
+  it("getMethodByJava should work on overloaded function") {
     val dynamic = ScalaDynamic(
       "fn"
     )
@@ -155,7 +155,7 @@ class ScalaReflectionSuite extends FunSuite with FunSuitex {
     )
   }
 
-  test("getMethodByScala should work on function with option output") {
+  it("getMethodByScala should work on function with option output") {
     val dynamic = ScalaDynamic(
       "fnOpt"
     )
@@ -167,7 +167,7 @@ class ScalaReflectionSuite extends FunSuite with FunSuitex {
     )
   }
 
-  test("getMethodByJava should work on function with option output") {
+  it("getMethodByJava should work on function with option output") {
     val dynamic = ScalaDynamic(
       "fnOpt"
     )
@@ -205,7 +205,7 @@ class ScalaReflectionSuite extends FunSuite with FunSuitex {
     )
   }
 
-  test("getMethodByScala should throw error if parameter Type is incorrect") {
+  it("getMethodByScala should throw error if parameter Type is incorrect") {
     val dynamic = ScalaDynamic(
       "fn"
     )
@@ -226,7 +226,7 @@ class ScalaReflectionSuite extends FunSuite with FunSuitex {
     }
   }
 
-  test("getMethodByScala should work on operator") {
+  it("getMethodByScala should work on operator") {
 
     val dynamic = ScalaDynamic(
       "*=>"
@@ -247,7 +247,7 @@ class ScalaReflectionSuite extends FunSuite with FunSuitex {
     )
   }
 
-  test("getMethodByJava should work on operator") {
+  it("getMethodByJava should work on operator") {
 
     val dynamic = ScalaDynamic(
       "*=>"

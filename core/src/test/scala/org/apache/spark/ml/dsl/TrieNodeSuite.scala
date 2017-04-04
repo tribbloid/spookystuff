@@ -5,7 +5,7 @@ package org.apache.spark.ml.dsl
   */
 class TrieNodeSuite extends AbstractFlowSuite {
 
-  test("compact can merge single child parents") {
+  it("compact can merge single child parents") {
     val map = Seq(
       "A",
       "AB",
@@ -52,7 +52,7 @@ class TrieNodeSuite extends AbstractFlowSuite {
     )
   }
 
-  test("pruneUp can rename single children") {
+  it("pruneUp can rename single children") {
     val map = Seq(
       "A",
       "AB",
@@ -103,7 +103,7 @@ class TrieNodeSuite extends AbstractFlowSuite {
     )
   }
 
-  test("reversed pruneUp can minimize names") {
+  it("reversed pruneUp can minimize names") {
     val names =
       """
         |AB
@@ -150,7 +150,7 @@ class TrieNodeSuite extends AbstractFlowSuite {
     )
   }
 
-  test("reversed compact can minimize repeated names") {
+  it("reversed compact can minimize repeated names") {
     val names =
       """
         |A
@@ -195,7 +195,7 @@ class TrieNodeSuite extends AbstractFlowSuite {
     )
   }
 
-  test("reversed compact can minimize some names") {
+  it("reversed compact can minimize some names") {
     val names =
       """
         |input Tokenizer

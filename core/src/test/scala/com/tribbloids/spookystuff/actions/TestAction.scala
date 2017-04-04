@@ -17,7 +17,7 @@ class TestAction extends SpookyEnvFixture {
 
   import duration._
 
-  test("interpolate should not change timeout") {
+  it("interpolate should not change timeout") {
     import scala.concurrent.duration._
 
     val randomTimeout = Random.nextInt().seconds
@@ -34,7 +34,7 @@ class TestAction extends SpookyEnvFixture {
     assert(FilePaths.Hierarchical.apply(rewritten :: Nil) contains "/www.dummy.com")
   }
 
-  test("interpolate should not change name") {
+  it("interpolate should not change name") {
 
     val action = Wget("'{~}").as('dummy_name)
 
@@ -56,7 +56,7 @@ class TestAction extends SpookyEnvFixture {
   //TODO: finish assertion
   exampleActionList.foreach{
     a =>
-      test(s"${a.getClass.getSimpleName} has an UDT") {
+      it(s"${a.getClass.getSimpleName} has an UDT") {
         val rdd: RDD[(Selector, Action)] = sc.parallelize(Seq("1" -> a))
         val df = sql.createDataFrame(rdd)
 
@@ -67,7 +67,7 @@ class TestAction extends SpookyEnvFixture {
       }
   }
 
-  test("a session without webDriver initialized won't trigger errorDump") {
+  it("a session without webDriver initialized won't trigger errorDump") {
     try {
       ErrorExport.fetch(spooky)
       sys.error("impossible")
@@ -79,7 +79,7 @@ class TestAction extends SpookyEnvFixture {
     }
   }
 
-  test("a session with webDriver initialized will trigger errorDump, which should not be blocked by DocFilter") {
+  it("a session with webDriver initialized will trigger errorDump, which should not be blocked by DocFilter") {
     try {
       ErrorWebExport.fetch(spooky)
       sys.error("impossible")
@@ -92,7 +92,7 @@ class TestAction extends SpookyEnvFixture {
     }
   }
 
-  test("errorDump at the end of a series of actions should contains all backtraces") {
+  it("errorDump at the end of a series of actions should contains all backtraces") {
     try {
       (
         Delay(1.seconds) +>
@@ -110,7 +110,7 @@ class TestAction extends SpookyEnvFixture {
     }
   }
 
-  test("Timed mixin can terminate execution if it takes too long") {
+  it("Timed mixin can terminate execution if it takes too long") {
 
     val a = OverdueExport
     val session = new Session(this.spooky)

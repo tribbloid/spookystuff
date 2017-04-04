@@ -10,13 +10,13 @@ class SquashedFetchedRowSuite extends SpookyEnvFixture {
 
   import com.tribbloids.spookystuff.dsl._
 
-  test("Array[Page]().grouping yields at least 1 group") {
+  it("Array[Page]().grouping yields at least 1 group") {
     val row = SquashedFetchedRow()
     val grouped = row.defaultGroupedFetched.toSeq
     assert(grouped == Seq(Seq()))
   }
 
-  test("['a 'b 'a 'b].grouping yields ['a 'b] ['a 'b]") {
+  it("['a 'b 'a 'b].grouping yields ['a 'b] ['a 'b]") {
     val trace = List(
       Visit(HTML_URL),
       Snapshot() ~ 'a,

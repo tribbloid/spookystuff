@@ -22,7 +22,7 @@ class MAVLinkIT_Proxy extends MAVLinkIT {
     ToExecutorSize = 2
   )
 
-  test("GCS takeover and relinquish control during flight") {
+  it("GCS takeover and relinquish control during flight") {
     import scala.concurrent.ExecutionContext.Implicits.global
     import scala.concurrent.duration._
 

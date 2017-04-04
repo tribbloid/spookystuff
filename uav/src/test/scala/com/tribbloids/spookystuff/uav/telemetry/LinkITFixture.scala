@@ -46,7 +46,7 @@ abstract class LinkITFixture extends SimFixture {
     assert(acc == n)
   }
 
-  test("move 1 drone") {
+  it("move 1 drone") {
     val spooky = this.spooky
 
     val rdd = sc.parallelize(Seq(this.simURIs.head))
@@ -60,7 +60,7 @@ abstract class LinkITFixture extends SimFixture {
     assertLinkCreated(1)
   }
 
-  test("move drones to different directions") {
+  it("move drones to different directions") {
     val spooky = this.spooky
 
     val connStrs = this.simURIs
@@ -77,7 +77,7 @@ abstract class LinkITFixture extends SimFixture {
     assertLinkCreated(parallelism)
   }
 
-  test("move all drones several times") {
+  it("move all drones several times") {
     val spooky = this.spooky
 
     var locations: Array[String] = null

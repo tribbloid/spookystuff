@@ -12,7 +12,7 @@ class CleanableSuite extends SpookyEnvFixture {
 
   import com.tribbloids.spookystuff.utils.SpookyViews._
 
-  test("Lifespan is serializable") {
+  it("Lifespan is serializable") {
 
     sc.foreachExecutorCore {
       val lifespan = Lifespan.Task()
@@ -23,7 +23,7 @@ class CleanableSuite extends SpookyEnvFixture {
     assertSerializable(Lifespan.JVM())
   }
 
-  test("Lifespan._id should be updated after being shipped to a different executor") {
+  it("Lifespan._id should be updated after being shipped to a different executor") {
 
     val rdd = sc.mapPerExecutorCore {
       val lifespan = Lifespan.Task()
@@ -49,7 +49,7 @@ class CleanableSuite extends SpookyEnvFixture {
       }
   }
 
-  test("Lifespan._id should be updated after being shipped to driver") {
+  it("Lifespan._id should be updated after being shipped to driver") {
 
     val rdd = sc.mapPerWorker {
       val lifespan = Lifespan.Auto()
@@ -67,7 +67,7 @@ class CleanableSuite extends SpookyEnvFixture {
       }
   }
 
-  test("Lifespan._id should be updated after being shipped to a new thread created by a different executor") {
+  it("Lifespan._id should be updated after being shipped to a new thread created by a different executor") {
     import scala.concurrent.duration._
 
     val rdd = sc.mapPerExecutorCore {

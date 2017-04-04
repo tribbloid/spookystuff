@@ -18,7 +18,7 @@ class MAVLinkSuite extends LinkFixture with APMSITLFixture {
   {
     val (spooky, testPrefix) = getSpooky(LinkFactories.Direct)
 
-    test(s"$testPrefix should use first drone uri as primary endpoint") {
+    it(s"$testPrefix should use first drone uri as primary endpoint") {
       val linkRDD = getLinkRDD(spooky).asInstanceOf[RDD[MAVLink]]
       val connStr_URIs = linkRDD.map {
         link =>
@@ -44,7 +44,7 @@ class MAVLinkSuite extends LinkFixture with APMSITLFixture {
   {
     val (spooky, testPrefix) = getSpooky(LinkFactories.ForkToGCS())
 
-    test(s"$testPrefix should use first proxy out as primary endpoint") {
+    it(s"$testPrefix should use first proxy out as primary endpoint") {
 
       val linkRDD = getLinkRDD(spooky).asInstanceOf[RDD[MAVLink]]
       val uris = linkRDD.map {
@@ -60,7 +60,7 @@ class MAVLinkSuite extends LinkFixture with APMSITLFixture {
       }
     }
 
-    test(s"$testPrefix Proxy should have different output") {
+    it(s"$testPrefix Proxy should have different output") {
 
       val linkRDD = getLinkRDD(spooky).asInstanceOf[RDD[MAVLink]]
       val outs = linkRDD.map {
@@ -82,7 +82,7 @@ class MAVLinkSuite extends LinkFixture with APMSITLFixture {
       assert(outs.distinct.length == parallelism, "Duplicated URIs:\n" + outs.mkString("\n"))
     }
 
-    test(s"$testPrefix connection to non-existing drone should cause Proxy to fail early") {
+    it(s"$testPrefix connection to non-existing drone should cause Proxy to fail early") {
 
       val session = new Session(spooky)
       val drone = UAV(Seq("dummy"))

@@ -9,7 +9,7 @@ class TestPageFromHttp extends SpookyEnvFixture {
 
   import dsl._
 
-  test("wget html, save and load") {
+  it("wget html, save and load") {
 
     val results = SpookyUtils.retry(5){Wget(HTML_URL).fetch(spooky)}
 
@@ -27,7 +27,7 @@ class TestPageFromHttp extends SpookyEnvFixture {
     assert(loadedContent === page.raw)
   }
 
-  test("wget json, save and load") {
+  it("wget json, save and load") {
 
     val results = Wget(JSON_URL).fetch(spooky)
 
@@ -49,7 +49,7 @@ class TestPageFromHttp extends SpookyEnvFixture {
     assert(loadedContent === page.raw)
   }
 
-  test("wget image, save and load") {
+  it("wget image, save and load") {
 
     val results = Wget(PNG_URL).fetch(spooky)
 
@@ -67,7 +67,7 @@ class TestPageFromHttp extends SpookyEnvFixture {
     assert(loadedContent === page.raw)
   }
 
-  test("wget pdf, save and load") {
+  it("wget pdf, save and load") {
 
     val results = Wget(PDF_URL).fetch(spooky)
 
@@ -85,7 +85,7 @@ class TestPageFromHttp extends SpookyEnvFixture {
     assert(loadedContent === page.raw)
   }
 
-  test("childrenWithSiblings") {
+  it("childrenWithSiblings") {
     val page = SpookyUtils.retry(5){Wget(HTML_URL).fetch(spooky)}.head.asInstanceOf[Doc]
 
     val ranges = page.findAllWithSiblings("a.link-box em", -2 to 1)
@@ -98,7 +98,7 @@ class TestPageFromHttp extends SpookyEnvFixture {
     assert(first(3).code.get.startsWith("<br"))
   }
 
-  test("childrenWithSiblings with overlapping elimiation") {
+  it("childrenWithSiblings with overlapping elimiation") {
     val page = SpookyUtils.retry(5){Wget(HTML_URL).fetch(spooky)}.head.asInstanceOf[Doc]
 
     val ranges = page.findAllWithSiblings("div.central-featured-lang[lang^=e]", -2 to 2)
@@ -114,7 +114,7 @@ class TestPageFromHttp extends SpookyEnvFixture {
     assert(second(2).attr("class").get.contains("lang"))
   }
 
-  test("wget xml, save and load") {
+  it("wget xml, save and load") {
 
     val results = Wget(XML_URL).fetch(spooky)
 
@@ -136,7 +136,7 @@ class TestPageFromHttp extends SpookyEnvFixture {
     assert(loadedContent === page.raw)
   }
 
-  test("wget csv, save and load") {
+  it("wget csv, save and load") {
 
     val results = Wget(CSV_URL).fetch(spooky)
 

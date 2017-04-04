@@ -13,7 +13,7 @@ class GenPartitionerSuite extends SpookyEnvFixture {
 
   import com.tribbloids.spookystuff.utils.SpookyViews._
 
-  test("DocCacheAware can co-partition 2 RDDs") {
+  it("DocCacheAware can co-partition 2 RDDs") {
     val numPartitions = Random.nextInt(80) + 9
 
     val gp = GenPartitioners.DocCacheAware(_ => new HashPartitioner(numPartitions)).getImpl(spooky)

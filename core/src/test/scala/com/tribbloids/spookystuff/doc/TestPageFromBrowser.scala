@@ -8,7 +8,7 @@ class TestPageFromBrowser extends SpookyEnvFixture {
 
   import dsl._
 
-  test("empty page") {
+  it("empty page") {
     val emptyPage: Doc = {
       val session = new Session(spooky)
       session.getOrProvisionWebDriver
@@ -21,7 +21,7 @@ class TestPageFromBrowser extends SpookyEnvFixture {
     assert (emptyPage.findAll("div.dummy").isEmpty)
   }
 
-  test("visit, save and load") {
+  it("visit, save and load") {
 
     val results = (
       Visit("http://en.wikipedia.org") ::

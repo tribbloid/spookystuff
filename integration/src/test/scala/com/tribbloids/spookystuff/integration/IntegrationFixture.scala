@@ -41,7 +41,7 @@ abstract class IntegrationFixture extends SpookyEnvFixture with BeforeAndAfterAl
   for (root <- roots) {
     for (driver <- driverFactories) {
       for (gp <- genPartitioners) {
-        test(s"$gp/$driver/$root") {
+        it(s"$gp/$driver/$root") {
           _spooky = new SpookyContext(
             sql,
             new SpookyConf(

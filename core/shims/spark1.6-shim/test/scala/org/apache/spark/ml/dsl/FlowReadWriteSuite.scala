@@ -20,7 +20,7 @@ class FlowReadWriteSuite extends AbstractFlowSuite {
   val pipelinePath = "temp/pipeline/pipeline"
 //  def sc: SparkContext = TestHelper.TestSpark
 
-  test("Pipeline can be saved and loaded") {
+  it("Pipeline can be saved and loaded") {
     val flow = (Flow('input)
       >-> new Tokenizer() -> TOKEN
       >-> stemming -> STEMMED
@@ -37,7 +37,7 @@ class FlowReadWriteSuite extends AbstractFlowSuite {
     pipeline.toString().shouldBe(pipeline2.toString())
   }
 
-  test("PipelineModel can be saved and loaded") {
+  it("PipelineModel can be saved and loaded") {
     val model = (
       Flow('input)
         >-> new Tokenizer() -> TOKEN
@@ -52,7 +52,7 @@ class FlowReadWriteSuite extends AbstractFlowSuite {
     model.toString().shouldBe(model2.toString())
   }
 
-  test("Flow can be serialized into JSON and back") {
+  it("Flow can be serialized into JSON and back") {
 
     val flow = (
       Flow('input.string)
@@ -77,7 +77,7 @@ class FlowReadWriteSuite extends AbstractFlowSuite {
     )
   }
 
-  test("Flow can be serialized into XML and back") {
+  it("Flow can be serialized into XML and back") {
 
     val flow = (
       Flow('input.string)

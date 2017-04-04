@@ -49,7 +49,7 @@ class FlowSuite extends AbstractFlowSuite {
     (11L, "hadoop software", 0.0)
   )).toDF("id", "input", "label")
 
-  test("Flow can build Pipeline") {
+  it("Flow can build Pipeline") {
     val part1 = (Flow('input)
       >-> new Tokenizer() -> TOKEN
       >-> stemming -> STEMMED
@@ -180,7 +180,7 @@ class FlowSuite extends AbstractFlowSuite {
     )
   }
 
-  test("Flow can build PipelineModel") {
+  it("Flow can build PipelineModel") {
     val model = (
       Flow('input)
         >-> new Tokenizer() -> TOKEN
@@ -216,7 +216,7 @@ class FlowSuite extends AbstractFlowSuite {
   val irrelevantPart = Flow('dummy) >>> new OneHotEncoder() -> "dummy_one_hot"
   val typeInconsistentPart = Flow('label) >>> new Tokenizer() -> "label_cannot_be_tokenized"
 
-  test("If adaptation = IgnoreIrrelevant, Flow can build a full pipeline given a valid schema evidence") {
+  it("If adaptation = IgnoreIrrelevant, Flow can build a full pipeline given a valid schema evidence") {
 
     val complete = ((validPart U validPart2) >>> new VectorAssembler())
       .build(
@@ -234,7 +234,7 @@ class FlowSuite extends AbstractFlowSuite {
     )
   }
 
-  test("If adaptation = IgnoreIrrelevant, Flow can build an incomplete pipeline when some of the sources are missing") {
+  it("If adaptation = IgnoreIrrelevant, Flow can build an incomplete pipeline when some of the sources are missing") {
 
     val incomplete = ((validPart U irrelevantPart) >>> new VectorAssembler())
       .build(
@@ -250,7 +250,7 @@ class FlowSuite extends AbstractFlowSuite {
     )
   }
 
-  test("If adaptation = IgnoreIrrelevant, Flow can build an incomplete pipeline when some of the sources have inconsistent type") {
+  it("If adaptation = IgnoreIrrelevant, Flow can build an incomplete pipeline when some of the sources have inconsistent type") {
 
     val incomplete = ((validPart U typeInconsistentPart) >>> new VectorAssembler())
       .build(
@@ -266,7 +266,7 @@ class FlowSuite extends AbstractFlowSuite {
     )
   }
 
-  test("If adaptation = IgnoreIrrelevant_TypeUnsafe, Flow can still build a full pipeline when some of the sources have inconsistent type") {
+  it("If adaptation = IgnoreIrrelevant_TypeUnsafe, Flow can still build a full pipeline when some of the sources have inconsistent type") {
 
     val incomplete = ((validPart U typeInconsistentPart) >>> new VectorAssembler())
       .build(
@@ -284,7 +284,7 @@ class FlowSuite extends AbstractFlowSuite {
     )
   }
 
-  test("If adaptation = Force, Flow can still build a full pipeline when some of the sources are missing") {
+  it("If adaptation = Force, Flow can still build a full pipeline when some of the sources are missing") {
 
     val forced = ((validPart U irrelevantPart) >>> new VectorAssembler())
       .build(
@@ -302,7 +302,7 @@ class FlowSuite extends AbstractFlowSuite {
     )
   }
 
-  test("If adaptation = Force, Flow can still build a full pipeline when some of the sources have inconsistent type") {
+  it("If adaptation = Force, Flow can still build a full pipeline when some of the sources have inconsistent type") {
 
     val forced = ((validPart U typeInconsistentPart) >>> new VectorAssembler())
       .build(
@@ -320,7 +320,7 @@ class FlowSuite extends AbstractFlowSuite {
     )
   }
 
-  test("If adaption = FailFast, throw an exception when some of the sources are missing") {
+  it("If adaption = FailFast, throw an exception when some of the sources are missing") {
 
     intercept[IllegalArgumentException](
       ((validPart U irrelevantPart) >>> new VectorAssembler())
@@ -331,7 +331,7 @@ class FlowSuite extends AbstractFlowSuite {
     )
   }
 
-  test("If adaption = FailFast, throw an exception when some of the sources have inconsistent type") {
+  it("If adaption = FailFast, throw an exception when some of the sources have inconsistent type") {
 
     intercept[IllegalArgumentException](
       ((validPart U typeInconsistentPart) >>> new VectorAssembler())
@@ -342,7 +342,7 @@ class FlowSuite extends AbstractFlowSuite {
     )
   }
 
-  test("If adaptation = FailFast_TypeUnsafe, Flow can still build a full pipeline when some of the sources have inconsistent type") {
+  it("If adaptation = FailFast_TypeUnsafe, Flow can still build a full pipeline when some of the sources have inconsistent type") {
 
     val incomplete = ((validPart U typeInconsistentPart) >>> new VectorAssembler())
       .build(
@@ -360,7 +360,7 @@ class FlowSuite extends AbstractFlowSuite {
     )
   }
 
-  test("If adaption = IgnoreIrrelevant_ValidateSchema, Flow can build an incomplete pipeline when some of the sources are missing") {
+  it("If adaption = IgnoreIrrelevant_ValidateSchema, Flow can build an incomplete pipeline when some of the sources are missing") {
 
     val incomplete = ((validPart U irrelevantPart) >>> new VectorAssembler())
       .build(
@@ -376,7 +376,7 @@ class FlowSuite extends AbstractFlowSuite {
     )
   }
 
-  test("If adaption = IgnoreIrrelevant_ValidateSchema, throw an exception when some of the sources have inconsistent type") {
+  it("If adaption = IgnoreIrrelevant_ValidateSchema, throw an exception when some of the sources have inconsistent type") {
 
     intercept[IllegalArgumentException](
       ((validPart U typeInconsistentPart) >>> new VectorAssembler())

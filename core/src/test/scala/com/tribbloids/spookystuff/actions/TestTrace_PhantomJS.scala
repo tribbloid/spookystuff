@@ -3,9 +3,9 @@ package com.tribbloids.spookystuff.actions
 import com.tribbloids.spookystuff.SpookyEnvFixture
 import com.tribbloids.spookystuff.doc.Doc
 import com.tribbloids.spookystuff.session.{CleanWebDriver, Session, AbstractSession}
-import com.tribbloids.spookystuff.testutils.FunSuitex
+import com.tribbloids.spookystuff.testutils.FunSpecx
 
-class TestTrace_PhantomJS extends SpookyEnvFixture with FunSuitex {
+class TestTrace_PhantomJS extends SpookyEnvFixture with FunSpecx {
 
   import com.tribbloids.spookystuff.dsl._
 
@@ -13,7 +13,7 @@ class TestTrace_PhantomJS extends SpookyEnvFixture with FunSuitex {
 
   override lazy val driverFactory: DriverFactory[CleanWebDriver] = DriverFactories.PhantomJS()
 
-  test("inject output names should change output doc names") {
+  it("inject output names should change output doc names") {
 
     val t1 = (
       Visit("http://webscraper.io/test-sites/e-commerce/ajax/computers/laptops")
@@ -40,7 +40,7 @@ class TestTrace_PhantomJS extends SpookyEnvFixture with FunSuitex {
     assert(t1.outputNames === Set("c","d"))
   }
 
-  test("dryrun should discard preceding actions when calculating Driverless action's backtrace") {
+  it("dryrun should discard preceding actions when calculating Driverless action's backtrace") {
 
     val dry = (Delay(10.seconds) +> Wget("http://dum.my")).head.dryrun
     assert(dry.size == 1)
@@ -51,12 +51,12 @@ class TestTrace_PhantomJS extends SpookyEnvFixture with FunSuitex {
     assert(dry2.head == Seq(OAuthV2(Wget("http://dum.my"))))
   }
 
-  test("Trace.correct should not modify empty Trace") {
+  it("Trace.correct should not modify empty Trace") {
 
     assert(TraceView(List[Action]()).autoSnapshot == List[Action]())
   }
 
-  test("Trace.correct should append Snapshot to non-empty Trace that doesn't end with Export OR Block") {
+  it("Trace.correct should append Snapshot to non-empty Trace that doesn't end with Export OR Block") {
 
     val trace = List(
       Visit("dummy"),
@@ -67,7 +67,7 @@ class TestTrace_PhantomJS extends SpookyEnvFixture with FunSuitex {
     assert(trace.autoSnapshot == trace :+ Snapshot())
   }
 
-  test("Trace.correct should append Snapshot to non-empty Trace that has no output") {
+  it("Trace.correct should append Snapshot to non-empty Trace that has no output") {
 
     val trace = List(
       Visit("dummy"),
@@ -81,7 +81,7 @@ class TestTrace_PhantomJS extends SpookyEnvFixture with FunSuitex {
     assert(trace.autoSnapshot == trace :+ Snapshot())
   }
 
-  test("TraceView.TreeNode.toString should have indentations of TreeNode") {
+  it("TraceView.TreeNode.toString should have indentations of TreeNode") {
     import com.tribbloids.spookystuff.dsl._
 
     val traces: Set[Trace] = (
@@ -133,7 +133,7 @@ class TestTrace_PhantomJS extends SpookyEnvFixture with FunSuitex {
   //    println(json)
   //  }
 
-  test("Click.toJSON should work") {
+  it("Click.toJSON should work") {
     val action = Click("o1")
     val json = action.toJSON()
     json.shouldBe(
@@ -150,7 +150,7 @@ class TestTrace_PhantomJS extends SpookyEnvFixture with FunSuitex {
     )
   }
 
-  test("Wget.toJSON should work") {
+  it("Wget.toJSON should work") {
     val action = Wget("http://dummy.com")
     val json = action.toJSON()
     json.shouldBe(
@@ -166,7 +166,7 @@ class TestTrace_PhantomJS extends SpookyEnvFixture with FunSuitex {
     )
   }
 
-  test("Loop.toJSON should work") {
+  it("Loop.toJSON should work") {
     val action = Loop(
       Click("o1")
         +> Snapshot()
@@ -250,7 +250,7 @@ class TestTrace_PhantomJS extends SpookyEnvFixture with FunSuitex {
   //    ds.collect().foreach(println)
   //  }
 
-  test("visit and snapshot") {
+  it("visit and snapshot") {
     val builder = new Session(spooky)
     Visit("http://www.wikipedia.org")(builder)
     val page = Snapshot()(builder).toList.head.asInstanceOf[Doc]
@@ -261,7 +261,7 @@ class TestTrace_PhantomJS extends SpookyEnvFixture with FunSuitex {
     assert(page.uri contains "//www.wikipedia.org/")
   }
 
-  test("visit, input submit and snapshot") {
+  it("visit, input submit and snapshot") {
     val results = (
       Visit("http://www.wikipedia.org") ::
         WaitFor("input#searchInput").in(40.seconds) ::
@@ -295,7 +295,7 @@ class TestTrace_PhantomJS extends SpookyEnvFixture with FunSuitex {
     assert(res2.name === "B")
   }
 
-  test("sizzle selector should work") {
+  it("sizzle selector should work") {
 
     val results = (
       Visit("http://www.wikipedia.org/") ::

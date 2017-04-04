@@ -7,7 +7,7 @@ import com.tribbloids.spookystuff.testutils.LocalPathDocsFixture
 
 class SpookyContextSuite extends SpookyEnvFixture with LocalPathDocsFixture{
 
-  test("SpookyContext should be Serializable") {
+  it("SpookyContext should be Serializable") {
 
     val spooky = this.spooky
     val src = spooky.sqlContext.sparkContext.parallelize(1 to 10)
@@ -17,7 +17,7 @@ class SpookyContextSuite extends SpookyEnvFixture with LocalPathDocsFixture{
     }.reduce(_ + _)
   }
 
-  test("SpookyContext.dsl should be Serializable") {
+  it("SpookyContext.dsl should be Serializable") {
 
     val spooky = this.spooky
     val src = spooky.sqlContext.sparkContext.parallelize(1 to 10)
@@ -27,7 +27,7 @@ class SpookyContextSuite extends SpookyEnvFixture with LocalPathDocsFixture{
     }.reduce(_ + _)
   }
 
-  test("derived instances of a SpookyContext should have the same configuration") {
+  it("derived instances of a SpookyContext should have the same configuration") {
 
     val spooky = this.spooky
     spooky.conf.shareMetrics = false
@@ -40,7 +40,7 @@ class SpookyContextSuite extends SpookyEnvFixture with LocalPathDocsFixture{
     conf1 shouldBe conf2
   }
 
-  test("derived instances of a SpookyContext should have the same configuration after it has been modified") {
+  it("derived instances of a SpookyContext should have the same configuration after it has been modified") {
 
     val spooky = this.spooky
     spooky.conf.shareMetrics = false
@@ -55,7 +55,7 @@ class SpookyContextSuite extends SpookyEnvFixture with LocalPathDocsFixture{
     conf1 shouldBe conf2
   }
 
-  test("each noInput should have independent metrics if sharedMetrics=false") {
+  it("each noInput should have independent metrics if sharedMetrics=false") {
 
     val spooky = this.spooky
     spooky.conf.shareMetrics = false
@@ -78,7 +78,7 @@ class SpookyContextSuite extends SpookyEnvFixture with LocalPathDocsFixture{
     assert(rdd2.spooky.metrics.pagesFetched.value === 1)
   }
 
-  test("each noInput should have shared metrics if sharedMetrics=true") {
+  it("each noInput should have shared metrics if sharedMetrics=true") {
 
     val spooky = this.spooky
     spooky.conf.shareMetrics = true
@@ -98,7 +98,7 @@ class SpookyContextSuite extends SpookyEnvFixture with LocalPathDocsFixture{
     assert(rdd1.spooky.metrics.toJSON() === rdd2.spooky.metrics.toJSON())
   }
 
-  test("can create PageRow from String") {
+  it("can create PageRow from String") {
 
     val spooky = this.spooky
     val rows = spooky.create(Seq("a", "b"))
@@ -107,7 +107,7 @@ class SpookyContextSuite extends SpookyEnvFixture with LocalPathDocsFixture{
     assert(data == List(Map(Field("_") -> "a"), Map(Field("_") -> "b")))
   }
 
-  test("can create PageRow from map[String, String]") {
+  it("can create PageRow from map[String, String]") {
 
     val spooky = this.spooky
     val rows = spooky.create(Seq(Map("1" -> "a"), Map("2" -> "b")))
@@ -116,7 +116,7 @@ class SpookyContextSuite extends SpookyEnvFixture with LocalPathDocsFixture{
     assert(data == List(Map(Field("1") -> "a"), Map(Field("2") -> "b")))
   }
 
-  test("can create PageRow from map[Symbol, String]") {
+  it("can create PageRow from map[Symbol, String]") {
 
     val spooky = this.spooky
     val rows = spooky.create(Seq(Map('a1 -> "a"), Map('a2 -> "b")))
@@ -125,7 +125,7 @@ class SpookyContextSuite extends SpookyEnvFixture with LocalPathDocsFixture{
     assert(data == List(Map(Field("a1") -> "a"), Map(Field("a2") -> "b")))
   }
 
-  test("can create PageRow from map[Int, String]") {
+  it("can create PageRow from map[Int, String]") {
 
     val spooky = this.spooky
     val rows = spooky.create(Seq(Map(1 -> "a"), Map(2 -> "b")))
@@ -134,7 +134,7 @@ class SpookyContextSuite extends SpookyEnvFixture with LocalPathDocsFixture{
     assert(data == List(Map(Field("1") -> "a"), Map(Field("2") -> "b")))
   }
 
-  test("default SpookyContext should have default dir configs") {
+  it("default SpookyContext should have default dir configs") {
 
     val context = new SpookyContext(this.sql)
 
@@ -146,7 +146,7 @@ class SpookyContextSuite extends SpookyEnvFixture with LocalPathDocsFixture{
     assert(!Seq(root, localRoot, autoSave, cache, errorDump, errorScreenshot, checkpoint, errorDumpLocal, errorScreenshotLocal).contains(null))
   }
 
-  test("when sharedMetrics=false, new SpookyContext created from default SpookyConf should have default dir configs") {
+  it("when sharedMetrics=false, new SpookyContext created from default SpookyConf should have default dir configs") {
 
     val conf: SpookyConf = new SpookyConf(shareMetrics = false)
     val context = new SpookyContext(this.sql, conf)
@@ -159,7 +159,7 @@ class SpookyContextSuite extends SpookyEnvFixture with LocalPathDocsFixture{
     assert(!Seq(root, localRoot, autoSave, cache, errorDump, errorScreenshot, checkpoint, errorDumpLocal, errorScreenshotLocal).contains(null))
   }
 
-  test("when sharedMetrics=true, new SpookyContext created from default SpookyConf should have default dir configs") {
+  it("when sharedMetrics=true, new SpookyContext created from default SpookyConf should have default dir configs") {
 
     val conf: SpookyConf = new SpookyConf(shareMetrics = true)
     val context = new SpookyContext(this.sql, conf)

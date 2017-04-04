@@ -12,7 +12,7 @@ class TestFetchPlan extends SpookyEnvFixture with LocalPathDocsFixture {
 
   import dsl._
 
-  test("FetchPlan.toString should work") {
+  it("FetchPlan.toString should work") {
 
     val rdd1 = spooky
       .fetch(
@@ -22,7 +22,7 @@ class TestFetchPlan extends SpookyEnvFixture with LocalPathDocsFixture {
     println(rdd1.plan.toString)
   }
 
-  test("FetchPlan is lazy and doesn't immediately do the fetch"){
+  it("FetchPlan is lazy and doesn't immediately do the fetch"){
 
     val rdd1 = spooky
       .fetch(
@@ -33,7 +33,7 @@ class TestFetchPlan extends SpookyEnvFixture with LocalPathDocsFixture {
     assert(rdd1.spooky.metrics.pagesFetched.value === 0)
   }
 
-  test("fetch() + count() will fetch once") {
+  it("fetch() + count() will fetch once") {
 
     val rdd1 = spooky
       .fetch(
@@ -45,7 +45,7 @@ class TestFetchPlan extends SpookyEnvFixture with LocalPathDocsFixture {
     assert(rdd1.spooky.metrics.pagesFetched.value === 1)
   }
 
-  test("fetch() + select() + count() will fetch once") {
+  it("fetch() + select() + count() will fetch once") {
 
     val rdd1 = spooky
       .fetch(
@@ -60,7 +60,7 @@ class TestFetchPlan extends SpookyEnvFixture with LocalPathDocsFixture {
     assert(rdd1.spooky.metrics.pagesFetched.value === 1)
   }
 
-  test("FetchPlan should create a new beaconRDD if its upstream doesn't have one"){
+  it("FetchPlan should create a new beaconRDD if its upstream doesn't have one"){
     val partitioner = new HashPartitioner(8)
 
     val src = spooky
@@ -78,7 +78,7 @@ class TestFetchPlan extends SpookyEnvFixture with LocalPathDocsFixture {
   }
 
 
-  test("FetchPlan should inherit old beaconRDD from upstream if exists") {
+  it("FetchPlan should inherit old beaconRDD from upstream if exists") {
     val partitioner = new HashPartitioner(8)
     val partitioner2 = new HashPartitioner(16)
 

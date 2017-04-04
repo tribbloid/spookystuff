@@ -38,7 +38,7 @@ class MessageRelaySuite extends AbstractFlowSuite {
 
   val date = new Date()
 
-  test("can read generated timestamp") {
+  it("can read generated timestamp") {
     val obj = TimeWrapper(date)
 
     val xmlStr = MessageView(obj).toXMLStr(pretty = false)
@@ -51,7 +51,7 @@ class MessageRelaySuite extends AbstractFlowSuite {
     v.toString.shouldBe(s"TimeWrapper($date)")
   }
 
-  test("can read lossless timestamp") {
+  it("can read lossless timestamp") {
     val str = "2016-09-08T15:00:00.0Z"
     val xmlStr = s"<TimeWrapper><time>$str</time></TimeWrapper>"
     println(xmlStr)
@@ -61,7 +61,7 @@ class MessageRelaySuite extends AbstractFlowSuite {
     v.toString.shouldBeLike("TimeWrapper(Thu Sep 08 15:00:00......)")
   }
 
-  test("can read less accurate timestamp") {
+  it("can read less accurate timestamp") {
     val str = "2016-09-08T15:00:00Z"
     val xmlStr = s"<TimeWrapper><time>$str</time></TimeWrapper>"
     println(xmlStr)
@@ -71,7 +71,7 @@ class MessageRelaySuite extends AbstractFlowSuite {
     v.toString.shouldBeLike("TimeWrapper(Thu Sep 08 15:00:00......)")
   }
 
-  test("can convert even less accurate timestamp") {
+  it("can convert even less accurate timestamp") {
     val str = "2016-09-08T15:00"
     val xmlStr = s"<TimeWrapper><time>$str</time></TimeWrapper>"
     println(xmlStr)
@@ -81,7 +81,7 @@ class MessageRelaySuite extends AbstractFlowSuite {
     v.toString.shouldBeLike("TimeWrapper(Thu Sep 08 15:00:00......)")
   }
 
-  test("reading an object with missing value & default value should fail early") {
+  it("reading an object with missing value & default value should fail early") {
 
     val xmlStr = s"<node><roles><role>DC</role></roles></node>"
 
@@ -91,7 +91,7 @@ class MessageRelaySuite extends AbstractFlowSuite {
     }
   }
 
-  test("reading an array with misplaced value & default value should fail early") {
+  it("reading an array with misplaced value & default value should fail early") {
 
     val xmlStr =
       s"""
@@ -107,7 +107,7 @@ class MessageRelaySuite extends AbstractFlowSuite {
     }
   }
 
-  test("reading a wrapped array with misplaced value & default value should fail early") {
+  it("reading a wrapped array with misplaced value & default value should fail early") {
 
     val xmlStr =
       s"""
@@ -126,7 +126,7 @@ class MessageRelaySuite extends AbstractFlowSuite {
     }
   }
 
-  test("reading an array with missing value & default value should fail early") {
+  it("reading an array with missing value & default value should fail early") {
 
     val xmlStr =
       s"""
@@ -142,7 +142,7 @@ class MessageRelaySuite extends AbstractFlowSuite {
     }
   }
 
-  test("reading an object from a converted string should work") {
+  it("reading an object from a converted string should work") {
 
     val xmlStr = MessageView(User(name = "30")).toXMLStr(pretty = false)
     xmlStr.shouldBe(
@@ -154,7 +154,7 @@ class MessageRelaySuite extends AbstractFlowSuite {
     v.toString.shouldBe("User(30,None)")
   }
 
-  test("reading an object with provided value should work") {
+  it("reading an object with provided value should work") {
 
     val xmlStr = s"<node><name>string</name><roles><role>DC</role></roles></node>"
 
@@ -163,7 +163,7 @@ class MessageRelaySuite extends AbstractFlowSuite {
     v.toString.shouldBe("User(string,Some(Roles(List(DC))))")
   }
 
-  test("reading an object with default value should work") {
+  it("reading an object with default value should work") {
 
     val xmlStr = s"<node><name>string</name></node>"
 
@@ -172,7 +172,7 @@ class MessageRelaySuite extends AbstractFlowSuite {
     v.toString.shouldBe("User(string,None)")
   }
 
-  test("Multipart case class JSON read should be broken") {
+  it("Multipart case class JSON read should be broken") {
     val ex = MultipartExample("aa", "bb")(3)
     val jsonStr = MessageView(ex).toJSON()
     jsonStr.shouldBe(

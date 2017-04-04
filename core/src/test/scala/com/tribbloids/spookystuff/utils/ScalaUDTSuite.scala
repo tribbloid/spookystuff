@@ -3,13 +3,13 @@ package com.tribbloids.spookystuff.utils
 import com.tribbloids.spookystuff.SpookyEnvFixture
 import com.tribbloids.spookystuff.actions.Action
 import com.tribbloids.spookystuff.doc.{Doc, Fetched, Unstructured}
-import com.tribbloids.spookystuff.testutils.FunSuitex
+import com.tribbloids.spookystuff.testutils.FunSpecx
 import org.apache.spark.sql.types.DataType
 
 /**
   * Created by peng on 28/05/16.
   */
-class ScalaUDTSuite extends SpookyEnvFixture with FunSuitex {
+class ScalaUDTSuite extends SpookyEnvFixture with FunSpecx {
 
   import ScalaType._
   import org.apache.spark.sql.catalyst.ScalaReflection.universe._
@@ -24,7 +24,7 @@ class ScalaUDTSuite extends SpookyEnvFixture with FunSuitex {
     reified
   }
 
-  test("Int has a datatype") {
+  it("Int has a datatype") {
 
     val reified = getAndTestReifiedType[Int]
     reified.toString.shouldBe(
@@ -34,7 +34,7 @@ class ScalaUDTSuite extends SpookyEnvFixture with FunSuitex {
     )
   }
 
-  test("Array[Int] has a datatype") {
+  it("Array[Int] has a datatype") {
 
     val reified = getAndTestReifiedType[Array[Int]]
     reified.toString.shouldBe(
@@ -44,7 +44,7 @@ class ScalaUDTSuite extends SpookyEnvFixture with FunSuitex {
     )
   }
 
-  test("Action has a datatype") {
+  it("Action has a datatype") {
 
     val reified = getAndTestReifiedType[Action]
 
@@ -56,7 +56,7 @@ class ScalaUDTSuite extends SpookyEnvFixture with FunSuitex {
     )
   }
 
-  test("Array[Action] has a datatype") {
+  it("Array[Action] has a datatype") {
 
     val reified = getAndTestReifiedType[Array[Action]]
     reified.toString.shouldBe(
@@ -66,7 +66,7 @@ class ScalaUDTSuite extends SpookyEnvFixture with FunSuitex {
     )
   }
 
-  test("Unstructured has a datatype") {
+  it("Unstructured has a datatype") {
 
     val reified = getAndTestReifiedType[Unstructured]
     reified.toString.shouldBe(
@@ -76,7 +76,7 @@ class ScalaUDTSuite extends SpookyEnvFixture with FunSuitex {
     )
   }
 
-  test("Fetched has a datatype") {
+  it("Fetched has a datatype") {
 
     val reified = getAndTestReifiedType[Fetched]
     reified.toString.shouldBe(
@@ -86,7 +86,7 @@ class ScalaUDTSuite extends SpookyEnvFixture with FunSuitex {
     )
   }
 
-  test("Doc has a datatype") {
+  it("Doc has a datatype") {
 
     val reified = getAndTestReifiedType[Doc]
     reified.toString.shouldBe(

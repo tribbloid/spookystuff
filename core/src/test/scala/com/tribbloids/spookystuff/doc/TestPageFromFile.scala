@@ -8,7 +8,7 @@ class TestPageFromFile extends TestPageFromHttp with LocalPathDocsFixture {
 
   import dsl._
 
-  test("wget dir, save and load") {
+  it("wget dir, save and load") {
     val results = (
       Wget(DIR_URL) :: Nil
       ).fetch(spooky)

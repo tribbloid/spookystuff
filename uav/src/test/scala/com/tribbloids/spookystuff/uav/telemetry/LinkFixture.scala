@@ -87,11 +87,11 @@ abstract class LinkFixture extends SimFixture {
   tuples.foreach {
     case (spooky, testPrefix) =>
 
-      test(s"$testPrefix Link should use different drones") {
+      it(s"$testPrefix Link should use different drones") {
         val linkRDD: RDD[Link] = getLinkRDD(spooky)
       }
 
-      test(s"$testPrefix Link to non-existing drone should be disabled until blacklist timer reset") {
+      it(s"$testPrefix Link to non-existing drone should be disabled until blacklist timer reset") {
         val session = new Session(spooky)
         val drone = UAV(Seq("dummy"))
         TestHelper.setLoggerDuring(classOf[Link], classOf[MAVLink], SpookyUtils.getClass) {
@@ -114,7 +114,7 @@ abstract class LinkFixture extends SimFixture {
         }
       }
 
-      test(s"$testPrefix Link.connect()/disconnect() should not leave dangling process") {
+      it(s"$testPrefix Link.connect()/disconnect() should not leave dangling process") {
         val linkRDD: RDD[Link] = getLinkRDD(spooky)
         linkRDD.foreach {
           link =>
@@ -131,7 +131,7 @@ abstract class LinkFixture extends SimFixture {
         }
       }
 
-      test(s"$testPrefix Link created in the same TaskContext should be reused") {
+      it(s"$testPrefix Link created in the same TaskContext should be reused") {
 
         val listDrones = this.listDrones
         val linkStrs = simURIRDD.map {
@@ -163,7 +163,7 @@ abstract class LinkFixture extends SimFixture {
 
       for (factory2 <- linkFactories) {
 
-        test(
+        it(
           s"$testPrefix~>${factory2.getClass.getSimpleName}:" +
             s" available Link can be recommissioned in another TaskContext"
         ) {

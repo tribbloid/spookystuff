@@ -29,7 +29,7 @@ class GASolveIT extends APMSITLFixture {
 
   def seeds = solver.generateSeedPairs(200, 200)
 
-  test("seed population should include all UAVs in the pool") {
+  it("seed population should include all UAVs in the pool") {
 
     val uavs = seeds.map {
       tuple =>
@@ -46,7 +46,7 @@ class GASolveIT extends APMSITLFixture {
       )
   }
 
-  test("each hypothesis in the seed population should cover all indices") {
+  it("each hypothesis in the seed population should cover all indices") {
 
     val iss = seeds.map(_._2)
       .collect()
@@ -63,7 +63,7 @@ class GASolveIT extends APMSITLFixture {
     fn: solver.Hypothesis => solver.Hypothesis
   ): Unit = {
 
-    test(s"hypothesis after N $name(s) still covers all indices") {
+    it(s"hypothesis after N $name(s) still covers all indices") {
       val first = hypotheses.head
 
       assertCoverAllIndices(first)

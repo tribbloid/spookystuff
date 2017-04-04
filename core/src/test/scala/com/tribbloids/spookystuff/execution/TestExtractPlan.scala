@@ -12,7 +12,7 @@ class TestExtractPlan extends SpookyEnvFixture {
   lazy val df = sql.createDataFrame(Seq(1 -> "a", 2 -> "b"))
   lazy val src = spooky.create(df)
 
-  test("ExtractPlan can assign aliases to unnamed fields") {
+  it("ExtractPlan can assign aliases to unnamed fields") {
 
     val extracted = src
       .extract(
@@ -47,7 +47,7 @@ class TestExtractPlan extends SpookyEnvFixture {
     extracted.toDF().show(false)
   }
 
-  test("ExtractPlan can overwrite old values using ! postfix") {
+  it("ExtractPlan can overwrite old values using ! postfix") {
 
     val extracted = src
       .extract{
@@ -74,7 +74,7 @@ class TestExtractPlan extends SpookyEnvFixture {
     extracted.toDF().show(false)
   }
 
-  test("ExtractPlan cannot partially overwrite old values with the same field id but different DataType") {
+  it("ExtractPlan cannot partially overwrite old values with the same field id but different DataType") {
 
     intercept[IllegalArgumentException]{
       val extracted = src
@@ -88,7 +88,7 @@ class TestExtractPlan extends SpookyEnvFixture {
     }
   }
 
-  test("ExtractPlan can append to old values using ~+ operator") {
+  it("ExtractPlan can append to old values using ~+ operator") {
     val extracted = src
       .extract{
         '_1.typed[Int].andOptionFn{
@@ -112,7 +112,7 @@ class TestExtractPlan extends SpookyEnvFixture {
     extracted.toDF().show(false)
   }
 
-  test("ExtractPlan can erase old values that has a different DataType using ~+ operator") {
+  it("ExtractPlan can erase old values that has a different DataType using ~+ operator") {
     val extracted = src
       .extract{
         '_1.typed[Int].andOptionFn{
@@ -136,7 +136,7 @@ class TestExtractPlan extends SpookyEnvFixture {
     extracted.toDF().show(false)
   }
 
-  test("In ExtractPlan, weak values are cleaned in case of a conflict") {
+  it("In ExtractPlan, weak values are cleaned in case of a conflict") {
     val extracted = src
       .extract{
         '_2 ~ '_3.*
@@ -167,7 +167,7 @@ class TestExtractPlan extends SpookyEnvFixture {
     extracted.toDF().show(false)
   }
 
-  test("In ExtractPlan, weak values are not cleaned if being overwritten using ~! operator") {
+  it("In ExtractPlan, weak values are not cleaned if being overwritten using ~! operator") {
     val extracted = src
       .extract{
         '_2 ~ '_3.*

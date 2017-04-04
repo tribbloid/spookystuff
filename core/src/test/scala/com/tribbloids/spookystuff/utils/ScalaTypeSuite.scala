@@ -16,7 +16,7 @@ class ScalaTypeSuite extends SpookyEnvFixture {
   /**
     * please keep this test to quickly identify any potential problems caused by changes in scala reflection API in the future
     */
-  test("scala reflection can be used to get type of Array[String].headOption") {
+  it("scala reflection can be used to get type of Array[String].headOption") {
 
     val arr: Seq[String] = Seq("abc", "def")
     val cls = arr.head.getClass
@@ -60,13 +60,13 @@ class ScalaTypeSuite extends SpookyEnvFixture {
 
   typePairs.foreach{
     pair =>
-      test(s"scalaType (${pair._2.tpe}) => catalystType (${pair._1})") {
+      it(s"scalaType (${pair._2.tpe}) => catalystType (${pair._1})") {
         val converted = pair._2.tryReify.toOption
         println(converted)
         assert(converted == Some(pair._1))
       }
 
-      test(s"catalystType (${pair._1}) => scalaType (${pair._2.tpe})") {
+      it(s"catalystType (${pair._1}) => scalaType (${pair._2.tpe})") {
         val converted = pair._1.scalaTypeOpt
         println(converted)
         assert(converted.map(_.asClass) == Some(pair._2.asClass))
@@ -82,7 +82,7 @@ class ScalaTypeSuite extends SpookyEnvFixture {
 
   oneWayPairs.foreach{
     pair =>
-      test(s"scalaType (${pair._1.tpe}) => catalystType (${pair._2})") {
+      it(s"scalaType (${pair._1.tpe}) => catalystType (${pair._2})") {
         val converted = pair._1.tryReify.toOption
         println(converted)
         assert(converted == Some(pair._2))

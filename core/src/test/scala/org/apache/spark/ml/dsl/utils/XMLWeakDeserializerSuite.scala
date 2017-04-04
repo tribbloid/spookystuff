@@ -45,7 +45,7 @@ class XMLWeakDeserializerSuite extends AbstractFlowSuite{
   import XMLWeakDeserializerSuite._
   import org.json4s.Extraction._
 
-  test("int to String") {
+  it("int to String") {
 
     val d1 = StrInt("a", 12)
     val json = decompose(d1)
@@ -54,7 +54,7 @@ class XMLWeakDeserializerSuite extends AbstractFlowSuite{
     d2.toString.shouldBe("StrStr(a,12)")
   }
 
-  test("string to int") {
+  it("string to int") {
     val d1 = StrStr("a", "12")
     val json = decompose(d1)
 
@@ -62,7 +62,7 @@ class XMLWeakDeserializerSuite extends AbstractFlowSuite{
     d2.toString.shouldBe("StrInt(a,12)")
   }
 
-  test("double to int") {
+  it("double to int") {
     val d1 = StrDbl("a", 12.51)
     val json = decompose(d1)
 
@@ -70,7 +70,7 @@ class XMLWeakDeserializerSuite extends AbstractFlowSuite{
     d2.toString.shouldBe("StrInt(a,12)")
   }
 
-  test("int to int array") {
+  it("int to int array") {
     val d1 = StrInt("a", 12)
     val json = decompose(d1)
 
@@ -78,7 +78,7 @@ class XMLWeakDeserializerSuite extends AbstractFlowSuite{
     d2.copy(b = null).toString.shouldBe("StrIntArray(a,null)")
   }
 
-  test("int array to int array") {
+  it("int array to int array") {
     val d1 = StrIntArray("a", Array(12))
     val json = decompose(d1)
 
@@ -86,7 +86,7 @@ class XMLWeakDeserializerSuite extends AbstractFlowSuite{
     d2.copy(b = null).toString.shouldBe("StrIntArray(a,null)")
   }
 
-  test("int to int seq") {
+  it("int to int seq") {
     val d1 = StrInt("a", 12)
     val json = decompose(d1)
 
@@ -94,7 +94,7 @@ class XMLWeakDeserializerSuite extends AbstractFlowSuite{
     d2.toString.shouldBe("StrIntSeq(a,List(12))")
   }
 
-  test("int to int set") {
+  it("int to int set") {
     val d1 = StrInt("a", 12)
     val json = decompose(d1)
 
@@ -102,7 +102,7 @@ class XMLWeakDeserializerSuite extends AbstractFlowSuite{
     d2.toString.shouldBe("StrIntSet(a,Set(12))")
   }
 
-  test("string to int array") {
+  it("string to int array") {
     val d1 = StrStr("a", "12")
     val json = decompose(d1)
 
@@ -110,7 +110,7 @@ class XMLWeakDeserializerSuite extends AbstractFlowSuite{
     d2.copy(b = null).toString.shouldBe("StrIntArray(a,null)")
   }
 
-  test("string to int seq") {
+  it("string to int seq") {
     val d1 = StrStr("a", "12")
     val json = decompose(d1)
 
@@ -118,7 +118,7 @@ class XMLWeakDeserializerSuite extends AbstractFlowSuite{
     d2.toString.shouldBe("StrIntSeq(a,List(12))")
   }
 
-  test("string to int set") {
+  it("string to int set") {
     val d1 = StrStr("a", "12")
     val json = decompose(d1)
 
@@ -126,7 +126,7 @@ class XMLWeakDeserializerSuite extends AbstractFlowSuite{
     d2.toString.shouldBe("StrIntSet(a,Set(12))")
   }
 
-  test("empty string to Object") {
+  it("empty string to Object") {
     val d1 = ""
     val json = decompose(d1)
 
@@ -134,7 +134,7 @@ class XMLWeakDeserializerSuite extends AbstractFlowSuite{
     d2.toString.shouldBe("OptInt(None)")
   }
 
-  test("empty string to Option[Map]") {
+  it("empty string to Option[Map]") {
     val d1 = ""
     val json = decompose(d1)
 
@@ -142,7 +142,7 @@ class XMLWeakDeserializerSuite extends AbstractFlowSuite{
     d2.toString.shouldBe("Some(Map())")
   }
 
-  test("missing member to default constructor value") {
+  it("missing member to default constructor value") {
     val d1 = StrIntSeq("a", Nil)
     val json = decompose(d1)
 
@@ -150,7 +150,7 @@ class XMLWeakDeserializerSuite extends AbstractFlowSuite{
     d2.toString.shouldBe("StrInt(a,2)")
   }
 
-  test("empty string to default constructor value") {
+  it("empty string to default constructor value") {
     val d1 = ""
     val json = decompose(d1)
 

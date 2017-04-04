@@ -46,15 +46,15 @@ class FilePathsSuite extends SpookyEnvFixture{
       val encoded1 = byTrace.apply(doc1.uid.backtrace)
       val encoded2 = byTrace.apply(doc2.uid.backtrace)
 
-      test(s"${byTrace.getClass.getSimpleName} should not encode action parameters that are not in primary constructor") {
+      it(s"${byTrace.getClass.getSimpleName} should not encode action parameters that are not in primary constructor") {
         assert(encoded1 == encoded2)
       }
 
-      test(s"${byTrace.getClass.getSimpleName} should not yield string containing new line character") {
+      it(s"${byTrace.getClass.getSimpleName} should not yield string containing new line character") {
         assert(!encoded1.contains('\n'))
       }
 
-      test(s"${byTrace.getClass.getSimpleName} should not use default Function.toString") {
+      it(s"${byTrace.getClass.getSimpleName} should not use default Function.toString") {
         assert(!encoded1.contains("Function"))
       }
   }
@@ -65,15 +65,15 @@ class FilePathsSuite extends SpookyEnvFixture{
       val encoded1 = byDoc.apply(doc1)
       val encoded2 = byDoc.apply(doc2)
 
-      test(s"${byDoc.getClass.getSimpleName} should not encode action parameters that are not in primary constructor") {
+      it(s"${byDoc.getClass.getSimpleName} should not encode action parameters that are not in primary constructor") {
         assert(encoded1.split(File.separator).toSeq.slice(0, -1) == encoded2.split(File.separator).toSeq.slice(0, -1))
       }
 
-      test(s"${byDoc.getClass.getSimpleName} should not yield string containing new line character") {
+      it(s"${byDoc.getClass.getSimpleName} should not yield string containing new line character") {
         assert(!encoded1.contains('\n'))
       }
 
-      test(s"${byDoc.getClass.getSimpleName} should not use default Function.toString") {
+      it(s"${byDoc.getClass.getSimpleName} should not use default Function.toString") {
         assert(!encoded1.contains("Function"))
       }
   }

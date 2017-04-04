@@ -46,13 +46,13 @@ class PythonActionSuite extends SpookyEnvFixture {
 
   def action = DummyPyAction()
 
-  test("can be created on python") {
+  it("can be created on python") {
     action.createOpt.get.shouldBe(
 
     )
   }
 
-  test("can execute on driver") {
+  it("can execute on driver") {
 
     val doc = action.fetch(spooky)
     doc.flatMap(_.asInstanceOf[Doc].code).mkString("\n").shouldBe("6")
@@ -68,7 +68,7 @@ class PythonActionSuite extends SpookyEnvFixture {
 
   import com.tribbloids.spookystuff.dsl._
 
-  test("can execute on workers") {
+  it("can execute on workers") {
     val df = sql
       .createDataFrame((0 to 16)
         .map(v => Tuple1(v)))

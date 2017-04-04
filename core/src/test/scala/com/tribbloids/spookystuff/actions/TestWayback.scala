@@ -14,7 +14,7 @@ class TestWayback extends SpookyEnvFixture {
 
   import scala.concurrent.duration._
 
-  test("Wget.waybackTo should work on cache") {
+  it("Wget.waybackTo should work on cache") {
     spooky.conf.cacheWrite = true
     spooky.conf.IgnoreCachedDocsBefore = Some(new Date())
 
@@ -43,7 +43,7 @@ class TestWayback extends SpookyEnvFixture {
     }
   }
 
-  test("Snapshot.waybackTo should work on cache") {
+  it("Snapshot.waybackTo should work on cache") {
     spooky.conf.cacheWrite = true
     spooky.conf.IgnoreCachedDocsBefore = Some(new Date())
 
@@ -75,7 +75,7 @@ class TestWayback extends SpookyEnvFixture {
     }
   }
 
-  test("Screenshot.waybackTo should work on cache") {
+  it("Screenshot.waybackTo should work on cache") {
     spooky.conf.cacheWrite = true
     spooky.conf.IgnoreCachedDocsBefore = Some(new Date())
 

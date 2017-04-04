@@ -9,7 +9,7 @@ class CommitSuite extends AbstractFlowSuite {
 
   import FlowComponent._
 
-  test("commit_>/merge_>/rebase_> can automatically generate names") {
+  it("commit_>/merge_>/rebase_> can automatically generate names") {
 
     val flow = (
       'input
@@ -33,7 +33,7 @@ class CommitSuite extends AbstractFlowSuite {
     )
   }
 
-  test("pincer topology can be defined by A commit B timmoc A") {
+  it("pincer topology can be defined by A commit B timmoc A") {
     val input: FlowComponent = 'input
     val flow = input >-> new VectorAssembler() <-< input
 
@@ -46,31 +46,31 @@ class CommitSuite extends AbstractFlowSuite {
     )
   }
 
-  test("A commit_> B commit_> Source is associative") {
+  it("A commit_> B commit_> Source is associative") {
     val flow1 = 'input >-> new Tokenizer() >-> 'dummy // resolve to rebase then union
     val flow2 = 'input >-> (new Tokenizer() >-> 'dummy) // resolve to union then rebase
     flow1.show(showID = false, compactionOpt = compactionOpt).treeNodeShouldBe(flow2.show(showID = false, compactionOpt = compactionOpt))
   }
 
-  test("A commit_< B commit_< Source is associative") {
+  it("A commit_< B commit_< Source is associative") {
     val flow1 = 'dummy <-< new Tokenizer() <-< 'input
     val flow2 = 'dummy <-< (new Tokenizer() <-< 'input)
     flow1.show(showID = false, compactionOpt = compactionOpt).treeNodeShouldBe(flow2.show(showID = false, compactionOpt = compactionOpt))
   }
 
-  test("A commit_> B commit_> detached Stage is associative") {
+  it("A commit_> B commit_> detached Stage is associative") {
     val flow1 = 'input >-> new Tokenizer() >-> new NGram() // resolve to rebase then union
     val flow2 = 'input >-> (new Tokenizer() >-> new NGram() ) // resolve to union then rebase
     flow1.show(showID = false, compactionOpt = compactionOpt).treeNodeShouldBe(flow2.show(showID = false, compactionOpt = compactionOpt))
   }
 
-  test("A commit_< B commit_< detached Stage is associative") {
+  it("A commit_< B commit_< detached Stage is associative") {
     val flow1 = new NGram()  <-< new Tokenizer() <-< 'input
     val flow2 = new NGram()  <-< (new Tokenizer() <-< 'input)
     flow1.show(showID = false, compactionOpt = compactionOpt).treeNodeShouldBe(flow2.show(showID = false, compactionOpt = compactionOpt))
   }
 
-  test("commit_> Stage is cast to rebase") {
+  it("commit_> Stage is cast to rebase") {
 
     val flow = (
       (
@@ -100,7 +100,7 @@ class CommitSuite extends AbstractFlowSuite {
     )
   }
 
-  test("commit_< Stage is cast to rebase") {
+  it("commit_< Stage is cast to rebase") {
 
     val flow = (
       new NGram()
@@ -128,7 +128,7 @@ class CommitSuite extends AbstractFlowSuite {
     )
   }
 
-  test("commit_> Source is cast to union") {
+  it("commit_> Source is cast to union") {
     val flow = 'input >-> new Tokenizer() >-> 'dummy
     flow.show(showID = false, compactionOpt = compactionOpt).treeNodeShouldBe(
       """
@@ -143,7 +143,7 @@ class CommitSuite extends AbstractFlowSuite {
     )
   }
 
-  test("commit_< Source is cast to union") {
+  it("commit_< Source is cast to union") {
     val flow = 'dummy <-< new Tokenizer() <-< 'input
     flow.show(showID = false, compactionOpt = compactionOpt).treeNodeShouldBe(
       """

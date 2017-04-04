@@ -33,7 +33,7 @@ class FetchedDatasetSuite extends SpookyEnvFixture with LocalPathDocsFixture {
   //      assert(first.spooky.metrics.pagesFetched.value == 2)
   //    }
 
-  test(s".map should not run preceding transformation multiple times") {
+  it(s".map should not run preceding transformation multiple times") {
     val acc = sc.accumulator(0)
 
     val set = spooky
@@ -54,7 +54,7 @@ class FetchedDatasetSuite extends SpookyEnvFixture with LocalPathDocsFixture {
     assert(acc.value == 1)
   }
 
-  test(s".rdd should not run preceding transformation multiple times") {
+  it(s".rdd should not run preceding transformation multiple times") {
     val acc = sc.accumulator(0)
 
     val set = spooky
@@ -81,7 +81,7 @@ class FetchedDatasetSuite extends SpookyEnvFixture with LocalPathDocsFixture {
   // 1. add breakpoint on accumulator, execute to it >1 times and dump a memory snapshot
   // 2. compare stacktrace of executor thread on both snapshots
   for (sort <- Seq(false, true)) {
-    test(s"toDF($sort) should not run preceding transformation multiple times") {
+    it(s"toDF($sort) should not run preceding transformation multiple times") {
       val acc = sc.accumulator(0)
 
       val set = spooky
@@ -104,7 +104,7 @@ class FetchedDatasetSuite extends SpookyEnvFixture with LocalPathDocsFixture {
       assert(acc.value == 1)
     }
 
-    test(s"toJSON($sort) should not run preceding transformation multiple times") {
+    it(s"toJSON($sort) should not run preceding transformation multiple times") {
       val acc = sc.accumulator(0)
 
       val set = spooky
@@ -127,7 +127,7 @@ class FetchedDatasetSuite extends SpookyEnvFixture with LocalPathDocsFixture {
       assert(acc.value == 1)
     }
 
-    test(s"toMapRDD($sort) should not run preceding transformation multiple times") {
+    it(s"toMapRDD($sort) should not run preceding transformation multiple times") {
       val acc = sc.accumulator(0)
 
       val set = spooky
@@ -151,7 +151,7 @@ class FetchedDatasetSuite extends SpookyEnvFixture with LocalPathDocsFixture {
     }
   }
 
-  test("toDF can yield a DataFrame") {
+  it("toDF can yield a DataFrame") {
 
     val set = spooky
       .fetch(
@@ -181,7 +181,7 @@ class FetchedDatasetSuite extends SpookyEnvFixture with LocalPathDocsFixture {
     df.show(false)
   }
 
-  test("toDF can yield a DataFrame excluding Fields with .isSelected = false") {
+  it("toDF can yield a DataFrame excluding Fields with .isSelected = false") {
 
     val set = spooky
       .fetch(
@@ -209,7 +209,7 @@ class FetchedDatasetSuite extends SpookyEnvFixture with LocalPathDocsFixture {
     df.show(false)
   }
 
-  test("fetch plan can be persisted") {
+  it("fetch plan can be persisted") {
     val ds = spooky
       .fetch(
         Wget(HTML_URL)
@@ -229,7 +229,7 @@ class FetchedDatasetSuite extends SpookyEnvFixture with LocalPathDocsFixture {
     assert(ds.spooky.metrics.pagesFetched.value == 1)
   }
 
-  test("extract plan can be persisted") {
+  it("extract plan can be persisted") {
     val ds = spooky
       .wget(
         HTML_URL
@@ -250,7 +250,7 @@ class FetchedDatasetSuite extends SpookyEnvFixture with LocalPathDocsFixture {
     assert(ds.spooky.metrics.pagesFetched.value == 1)
   }
 
-  test("flatten plan can be persisted") {
+  it("flatten plan can be persisted") {
     val ds = spooky
       .wget(
         HTML_URL
@@ -273,7 +273,7 @@ class FetchedDatasetSuite extends SpookyEnvFixture with LocalPathDocsFixture {
     assert(ds.spooky.metrics.pagesFetched.value == 1)
   }
 
-  test("explore plan can be persisted") {
+  it("explore plan can be persisted") {
     val first = spooky
       .wget{
         DEEP_DIR_URL
