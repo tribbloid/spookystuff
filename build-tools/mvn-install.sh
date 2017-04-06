@@ -2,4 +2,4 @@
 
 CRDIR="$(cd "`dirname "$0"`"; pwd)"
 
-exec "$CRDIR"/test-install.sh -DskipTests=true -Pdist -Puav -q "$@"
+exec "$CRDIR"/test-install.sh -DskipTests=true -Pdist -q "$@"
