@@ -52,7 +52,7 @@ object DocUtils {
 
   def load(pathStr: String)(spooky: SpookyContext): Array[Byte] =
     dfsRead("load", pathStr, spooky) {
-      val result = spooky.resolver.input(pathStr) {
+      val result = spooky.pathResolver.input(pathStr) {
         fis =>
           IOUtils.toByteArray(fis)
       }
@@ -71,7 +71,7 @@ object DocUtils {
               )(spooky: SpookyContext): Unit =
   dfsWrite("cache", pathStr, spooky) {
 
-    spooky.resolver.output(pathStr, overwrite) {
+    spooky.pathResolver.output(pathStr, overwrite) {
       fos =>
         val ser = SparkEnv.get.serializer.newInstance()
         val serOut = ser.serializeStream(fos)
@@ -90,7 +90,7 @@ object DocUtils {
   private def restore[T](pathStr: String)(spooky: SpookyContext): Seq[T] =
     dfsRead("restore", pathStr, spooky) {
 
-      val result = spooky.resolver.input(pathStr) {
+      val result = spooky.pathResolver.input(pathStr) {
         fis =>
           val ser = SparkEnv.get.serializer.newInstance()
 

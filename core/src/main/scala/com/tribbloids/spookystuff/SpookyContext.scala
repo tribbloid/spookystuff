@@ -80,7 +80,7 @@ case class SpookyContext private (
   )
   def hadoopConf: Configuration = broadcastedHadoopConf.value.value
 
-  def resolver = HDFSResolver(hadoopConf)
+  def pathResolver = HDFSResolver(hadoopConf)
 
   //  private def resynch() = {
   //    _conf.sparkConf = sqlContext.sparkContext.getConf
