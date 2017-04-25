@@ -2,7 +2,7 @@ package com.tribbloids.spookystuff.integration.explore
 
 import com.tribbloids.spookystuff.actions.Wget
 import com.tribbloids.spookystuff.integration.IntegrationFixture
-import com.tribbloids.spookystuff.testutils.LocalPathResolver
+import com.tribbloids.spookystuff.testutils.TestJARResolver
 
 /**
   * Created by peng on 29/01/17.
@@ -15,7 +15,7 @@ class ExploreDirectoriesIT extends IntegrationFixture {
     null
   )
 
-  val resourcePath = LocalPathResolver.unpackedURL("testutils/dir").getPath
+  val resourcePath = TestJARResolver.unpackedURL("testutils/dir").getPath
 
   override def doMain(): Unit = {
     val url = resourcePath
