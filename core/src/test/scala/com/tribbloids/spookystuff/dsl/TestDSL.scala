@@ -24,7 +24,7 @@ class TestDSL extends SpookyEnvFixture with LocalPathDocsFixture {
       .unsquash.head
 
   it("symbol as Expr"){
-    assert('abc.resolve(schema).apply(row) === "Wikipedia")
+    assert('abc.resolve(emptySchema).apply(row) === "Wikipedia")
   }
 
   it("defaultAs should not rename an Alias") {
@@ -37,13 +37,13 @@ class TestDSL extends SpookyEnvFixture with LocalPathDocsFixture {
   }
 
   it("andFn"){
-    val fun = 'abc.andFn(_.toString).resolve(schema)
+    val fun = 'abc.andFn(_.toString).resolve(emptySchema)
 //    assert(fun.toString === "<function1>")
     assert(fun(row) === "Wikipedia")
   }
 
   it("andUnlift"){
-    val fun = 'abc.andOptionFn(_.toString.headOption).resolve(schema)
+    val fun = 'abc.andOptionFn(_.toString.headOption).resolve(emptySchema)
 //    assert(fun.toString === "<function1>")
     assert(fun(row) === 'W')
   }
@@ -66,7 +66,7 @@ class TestDSL extends SpookyEnvFixture with LocalPathDocsFixture {
   }
 
   it("string interpolation") {
-    val expr = x"static ${'notexist}".resolve(schema)
+    val expr = x"static ${'notexist}".resolve(emptySchema)
     assert(expr.lift.apply(row).isEmpty)
     assert(expr.orElse[FetchedRow, String]{case _ => " "}.apply(row) == " ")
   }

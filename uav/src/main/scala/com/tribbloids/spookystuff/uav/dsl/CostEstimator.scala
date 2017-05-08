@@ -6,8 +6,8 @@ import com.tribbloids.spookystuff.uav.actions.UAVNavigation
 import com.tribbloids.spookystuff.uav.planning.PreferLink
 import com.tribbloids.spookystuff.uav.spatial.{NED, StartEndLocation}
 
-//TODO: this API may take too long to extend, should delegate most of it to Action
-trait ActionCosts {
+//TODO: this API may take too long to extend, should delegate most of it to UAVAction
+trait CostEstimator {
 
   def estimate(
                 traces: Seq[Trace],
@@ -15,11 +15,11 @@ trait ActionCosts {
               ): Double = 0
 }
 
-object ActionCosts {
+object CostEstimator {
 
   case class Default(
                       defaultNavSpeed: Double
-                    ) extends ActionCosts {
+                    ) extends CostEstimator {
 
     def intraCost(nav: StartEndLocation) = {
       import nav._
@@ -61,7 +61,7 @@ object ActionCosts {
           " (This behaviour is likely permanent and won't be fixed in the future)"
       )
 
-      val firstLocation = useLink.head.link.currentLocation()
+      val firstLocation = useLink.head.firstLink.currentLocation()
 
       var prev: StartEndLocation = firstLocation
       var costSum = 0.0

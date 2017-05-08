@@ -13,18 +13,25 @@ import scala.reflect.ClassTag
   */
 object GenPartitioners {
 
-  object Postman extends GenPartitioner {
+  object JSprit extends GenPartitioner {
 
-    override def getImpl(spooky: SpookyContext): GenPartitionerImpl = GPImpl
+    override def getImpl(spooky: SpookyContext): GenPartitionerImpl = Impl
 
-    object GPImpl extends GenPartitionerImpl {
+    object Impl extends GenPartitionerImpl {
 
       override def groupByKey[K: ClassTag, V: ClassTag](
                                                          rdd: RDD[(K, V)],
                                                          beaconRDDOpt: Option[BeaconRDD[K]]
                                                        ): RDD[(K, Iterable[V])] = {
+
         ???
       }
     }
+  }
+
+  // all adaptive improvements goes here.
+  object DRL extends GenPartitioner {
+
+    override def getImpl(spooky: SpookyContext): GenPartitionerImpl = ???
   }
 }

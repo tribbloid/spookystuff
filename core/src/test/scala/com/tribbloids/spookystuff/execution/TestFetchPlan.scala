@@ -1,6 +1,7 @@
 package com.tribbloids.spookystuff.execution
 
 import com.tribbloids.spookystuff.actions.Wget
+import com.tribbloids.spookystuff.extractors.Lit
 import com.tribbloids.spookystuff.testutils.LocalPathDocsFixture
 import com.tribbloids.spookystuff.{SpookyEnvFixture, dsl}
 import org.apache.spark.HashPartitioner
@@ -52,7 +53,7 @@ class TestFetchPlan extends SpookyEnvFixture with LocalPathDocsFixture {
         Wget(HTML_URL)
       )
       .select(
-        "Wikipedia" ~ 'name
+        Lit("Wikipedia") ~ 'name
       )
 
     rdd1.unsquashedRDD.count()
@@ -64,7 +65,7 @@ class TestFetchPlan extends SpookyEnvFixture with LocalPathDocsFixture {
     val partitioner = new HashPartitioner(8)
 
     val src = spooky
-      .extract("abc" ~ 'dummy)
+      .extract(Lit("abc") ~ 'dummy)
 
     assert(src.plan.beaconRDDOpt.isEmpty)
 
@@ -83,7 +84,7 @@ class TestFetchPlan extends SpookyEnvFixture with LocalPathDocsFixture {
     val partitioner2 = new HashPartitioner(16)
 
     val rdd1 = spooky
-      .extract("abc" ~ 'dummy)
+      .extract(Lit("abc") ~ 'dummy)
       .fetch(
         Wget(HTML_URL),
         genPartitioner = GenPartitioners.DocCacheAware(_ => partitioner)

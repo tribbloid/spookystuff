@@ -1,7 +1,7 @@
 package com.tribbloids.spookystuff.execution
 
 import com.tribbloids.spookystuff.SpookyEnvFixture
-import com.tribbloids.spookystuff.extractors.Literal
+import com.tribbloids.spookystuff.extractors.Lit
 import com.tribbloids.spookystuff.utils.UnreifiedScalaType
 import org.apache.spark.sql.types.{IntegerType, StringType, StructField, StructType}
 
@@ -88,7 +88,7 @@ class TestFlattenPlan extends SpookyEnvFixture {
       HTML_URL
     )
       .extract(
-        Literal(Array("a"->1, "b"->2)) ~ 'Array
+        Lit(Array("a"->1, "b"->2)) ~ 'Array
       )
 
     assert(extracted.schema.typedFor('Array).get.dataType == UnreifiedScalaType.apply[Array[Tuple2[java.lang.String, Int]]])
@@ -110,7 +110,7 @@ class TestFlattenPlan extends SpookyEnvFixture {
       HTML_URL
     )
       .extract(
-        Literal(Seq("a"->1, "b"->2)) ~ 'Array
+        Lit(Seq("a"->1, "b"->2)) ~ 'Array
       )
 
     assert(extracted.schema.typedFor('Array).get.dataType == UnreifiedScalaType.apply[Seq[Tuple2[java.lang.String, Int]]])
@@ -133,7 +133,7 @@ class TestFlattenPlan extends SpookyEnvFixture {
       HTML_URL
     )
       .extract(
-        Literal(List("a"->1, "b"->2)) ~ 'Array
+        Lit(List("a"->1, "b"->2)) ~ 'Array
       )
 
     assert(extracted.schema.typedFor('Array).get.dataType == UnreifiedScalaType.apply[List[Tuple2[java.lang.String, Int]]])

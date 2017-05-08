@@ -12,7 +12,7 @@ class ScalaReflectionSuite extends FunSpecx {
 
   import com.tribbloids.spookystuff.utils.ScalaType._
 
-  lazy val exLit: Literal[FetchedRow, _] = Literal(new Example())
+  lazy val exLit: Lit[FetchedRow, _] = Lit(new Example())
   lazy val exType: DataType = UnreifiedScalaType.apply[Example]
 
   it("getMethodsByName should work on overloaded function") {
@@ -285,7 +285,7 @@ class ScalaReflectionSuite extends FunSpecx {
 
 class ScalaReflectionSuite_Generic extends ScalaReflectionSuite {
 
-  override lazy val exLit = Literal(new GenericExample[Int]("dummy", 1))
+  override lazy val exLit = Lit(new GenericExample[Int]("dummy", 1))
   //  val evi = (ex.dataType)
   override lazy val exType = UnreifiedScalaType.apply[GenericExample[Int]]
 }

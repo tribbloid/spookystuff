@@ -10,7 +10,7 @@ import com.tribbloids.spookystuff.Const
 import com.tribbloids.spookystuff.caching.CacheLevel
 import com.tribbloids.spookystuff.doc._
 import com.tribbloids.spookystuff.dsl.DocFilters
-import com.tribbloids.spookystuff.extractors.{Extractor, FR, Literal}
+import com.tribbloids.spookystuff.extractors.{Extractor, FR, Lit}
 import com.tribbloids.spookystuff.http._
 import com.tribbloids.spookystuff.row.{DataRowSchema, FetchedRow}
 import com.tribbloids.spookystuff.session.{Session, WebProxySetting}
@@ -82,14 +82,14 @@ trait WaybackSupport extends Wayback {
     this
   }
 
-  def waybackTo(date: Date): this.type = this.waybackTo(Literal(date))
+  def waybackTo(date: Date): this.type = this.waybackTo(Lit(date))
 
   def waybackToTimeMillis(time: Extractor[Long]): this.type = {
     this.wayback = time
     this
   }
 
-  def waybackToTimeMillis(date: Long): this.type = this.waybackToTimeMillis(Literal(date))
+  def waybackToTimeMillis(date: Long): this.type = this.waybackToTimeMillis(Lit(date))
 
   //has to be used after copy
   protected def injectWayback(
@@ -102,7 +102,7 @@ trait WaybackSupport extends Wayback {
       val valueOpt = wayback.resolve(schema).lift(pageRow)
       valueOpt.map{
         v =>
-          this.wayback = Literal.erase(v)
+          this.wayback = Lit.erase(v)
           this
       }
     }
@@ -196,12 +196,12 @@ abstract class HttpMethod(
                          ) extends Export with Driverless with Timed with WaybackSupport {
 
   @transient lazy val uriOption: Option[URI] = {
-    val uriStr = uri.asInstanceOf[Literal[FR, String]].toMessage.trim()
+    val uriStr = uri.asInstanceOf[Lit[FR, String]].toMessage.trim()
     if ( uriStr.isEmpty ) None
     else Some(HttpUtils.uri(uriStr))
   }
 
-  def resolveURI(pageRow: FetchedRow, schema: DataRowSchema): Option[Literal[FR, String]] = {
+  def resolveURI(pageRow: FetchedRow, schema: DataRowSchema): Option[Lit[FR, String]] = {
     val first = this.uri.resolve(schema).lift(pageRow).flatMap(SpookyUtils.asArray[Any](_).headOption)
     //TODO: no need to resolve array output?
 
@@ -211,7 +211,7 @@ abstract class HttpMethod(
       case obj: Any => Option(obj.toString)
       case other => None
     }
-    val uriLit = uriStr.map(Literal.erase[String])
+    val uriLit = uriStr.map(Lit.erase[String])
     uriLit
   }
 
@@ -555,7 +555,7 @@ case class Wget(
   }
 
   override def doInterpolate(pageRow: FetchedRow, schema: DataRowSchema): Option[this.type] = {
-    val uriLit: Option[Literal[FR, String]] = resolveURI(pageRow, schema)
+    val uriLit: Option[Lit[FR, String]] = resolveURI(pageRow, schema)
 
     uriLit.flatMap(
       lit =>
@@ -683,7 +683,7 @@ case class WpostImpl private[actions](
   }
 
   override def doInterpolate(pageRow: FetchedRow, schema: DataRowSchema): Option[this.type] = {
-    val uriLit: Option[Literal[FR, String]] = resolveURI(pageRow, schema)
+    val uriLit: Option[Lit[FR, String]] = resolveURI(pageRow, schema)
 
     uriLit.flatMap(
       lit =>

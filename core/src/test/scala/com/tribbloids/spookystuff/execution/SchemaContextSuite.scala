@@ -1,7 +1,7 @@
 package com.tribbloids.spookystuff.execution
 
 import com.tribbloids.spookystuff.SpookyEnvFixture
-import com.tribbloids.spookystuff.extractors.Literal
+import com.tribbloids.spookystuff.extractors.Lit
 import com.tribbloids.spookystuff.row.DataRowSchema
 
 /**
@@ -17,8 +17,8 @@ class SchemaContextSuite extends SpookyEnvFixture{
     val resolver0 = schema0.newResolver
     resolver0
       .include(
-        "literal1" ~ 'a,
-        Literal(0) ~ 'b
+        Lit("literal1") ~ 'a,
+        Lit(0) ~ 'b
       )
 
     val schema1 = resolver0.build
@@ -29,7 +29,7 @@ class SchemaContextSuite extends SpookyEnvFixture{
     resolver1
       .include(
         'a ~ 'c,
-        Literal(0.0) ~ 'd
+        Lit(0.0) ~ 'd
       )
 
     val schema2 = resolver1.build

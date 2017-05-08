@@ -3,7 +3,7 @@ package com.tribbloids.spookystuff.actions
 import com.thoughtworks.selenium.SeleniumException
 import com.tribbloids.spookystuff.Const
 import com.tribbloids.spookystuff.doc.{Doc, Unstructured}
-import com.tribbloids.spookystuff.extractors.{Extractor, FR, Literal}
+import com.tribbloids.spookystuff.extractors.{Extractor, FR, Lit}
 import com.tribbloids.spookystuff.row.{DataRowSchema, FetchedRow}
 import com.tribbloids.spookystuff.session.Session
 import com.tribbloids.spookystuff.utils.SpookyUtils
@@ -90,7 +90,7 @@ case class Visit(
                 ) extends WebInteraction(delay, blocking) {
 
   override def exeNoOutput(session: Session) {
-    session.webDriver.get(uri.asInstanceOf[Literal[FR, String]].value)
+    session.webDriver.get(uri.asInstanceOf[Lit[FR, String]].value)
 
     //    if (hasTitle) {
     //      val wait = new WebDriverWait(session.driver, timeout(session).toSeconds)
@@ -110,7 +110,7 @@ case class Visit(
 
     uriStr.map(
       str =>
-        this.copy(uri = Literal.erase(str)).asInstanceOf[this.type]
+        this.copy(uri = Lit.erase(str)).asInstanceOf[this.type]
     )
   }
 }
@@ -309,7 +309,7 @@ case class TextInput(
 
     val element = this.getElement(selector, session)
 
-    element.sendKeys(text.asInstanceOf[Literal[FR, String]].toMessage)
+    element.sendKeys(text.asInstanceOf[Lit[FR, String]].toMessage)
   }
 
   override def doInterpolate(pageRow: FetchedRow, schema: DataRowSchema): Option[this.type] = {
@@ -325,7 +325,7 @@ case class TextInput(
 
     textStr.map(
       str =>
-        this.copy(text = Literal.erase(str)).asInstanceOf[this.type]
+        this.copy(text = Lit.erase(str)).asInstanceOf[this.type]
     )
   }
 }
@@ -347,7 +347,7 @@ case class DropDownSelect(
     val element = this.getElement(selector, session)
 
     val select = new Select(element)
-    select.selectByValue(value.asInstanceOf[Literal[FR, String]].value)
+    select.selectByValue(value.asInstanceOf[Lit[FR, String]].value)
   }
 
   override def doInterpolate(pageRow: FetchedRow, schema: DataRowSchema): Option[this.type] = {
@@ -362,7 +362,7 @@ case class DropDownSelect(
 
     valueStr.map(
       str =>
-        this.copy(value = Literal.erase(str)).asInstanceOf[this.type]
+        this.copy(value = Lit.erase(str)).asInstanceOf[this.type]
     )
   }
 }
@@ -404,7 +404,7 @@ case class ExeScript(
       Some(element)
     }
 
-    val scriptStr = script.asInstanceOf[Literal[FR, String]].toMessage
+    val scriptStr = script.asInstanceOf[Lit[FR, String]].toMessage
     session.webDriver match {
       case d: JavascriptExecutor => d.executeScript(scriptStr, element.toArray: _*)
       case _ => throw new UnsupportedOperationException("this web browser driver is not supported")
@@ -423,7 +423,7 @@ case class ExeScript(
 
     scriptStr.map(
       str =>
-        this.copy(script = Literal.erase(str)).asInstanceOf[this.type]
+        this.copy(script = Lit.erase(str)).asInstanceOf[this.type]
     )
   }
 }

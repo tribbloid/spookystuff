@@ -1,7 +1,7 @@
 package com.tribbloids.spookystuff.rdd
 
 import com.tribbloids.spookystuff.actions._
-import com.tribbloids.spookystuff.extractors.Literal
+import com.tribbloids.spookystuff.extractors.Lit
 import com.tribbloids.spookystuff.testutils.LocalPathDocsFixture
 import com.tribbloids.spookystuff.{SpookyEnvFixture, dsl}
 
@@ -234,7 +234,7 @@ class FetchedDatasetSuite extends SpookyEnvFixture with LocalPathDocsFixture {
       .wget(
         HTML_URL
       )
-      .select("Wikipedia" ~ 'name)
+      .select(Lit("Wikipedia") ~ 'name)
       .persist()
     ds.count()
 
@@ -256,7 +256,7 @@ class FetchedDatasetSuite extends SpookyEnvFixture with LocalPathDocsFixture {
         HTML_URL
       )
       .flatten(
-        Literal(Array("a"->1, "b"->2)) ~ 'Array
+        Lit(Array("a"->1, "b"->2)) ~ 'Array
       )
       .persist()
     ds.count()

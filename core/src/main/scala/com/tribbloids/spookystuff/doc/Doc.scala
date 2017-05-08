@@ -42,10 +42,10 @@ class FetchedUDT extends ScalaUDT[Fetched]
 trait Fetched extends Serializable {
 
   def uid: DocUID
-  def update(
-              uid: DocUID = this.uid,
-              cacheLevel: CacheLevel.Value = this.cacheLevel
-            ): this.type
+  def updated(
+               uid: DocUID = this.uid,
+               cacheLevel: CacheLevel.Value = this.cacheLevel
+             ): this.type
 
   def cacheLevel: CacheLevel.Value
 
@@ -62,12 +62,12 @@ trait Fetched extends Serializable {
   def laterOf(v2: Fetched): Fetched = if (laterThan(v2)) this
   else v2
 
+  type RootType
+  def root: RootType
   def metadata: Map[String, Any]
-
-  //  def revertToUnfetched: Unfetched = Unfetched(uid.backtrace)
 }
 
-//Merely a placeholder when a Block returns nothing
+//Merely a placeholder if a conditional block is not applicable
 case class NoDoc(
                   backtrace: Trace,
                   override val timeMillis: Long = System.currentTimeMillis(),
@@ -77,10 +77,13 @@ case class NoDoc(
 
   @transient override lazy val uid: DocUID = DocUID(backtrace, null, 0, 1)()
 
-  override def update(
-                       uid: DocUID = this.uid,
-                       cacheLevel: CacheLevel.Value = this.cacheLevel
-                     ) = this.copy(backtrace = uid.backtrace, cacheLevel = cacheLevel).asInstanceOf[this.type ]
+  override def updated(
+                        uid: DocUID = this.uid,
+                        cacheLevel: CacheLevel.Value = this.cacheLevel
+                      ) = this.copy(backtrace = uid.backtrace, cacheLevel = cacheLevel).asInstanceOf[this.type ]
+
+  override type RootType = Unit
+  override def root: Unit = {}
 }
 
 case class DocWithError(
@@ -88,28 +91,31 @@ case class DocWithError(
                          header: String = "",
                          override val cause: Throwable = null
                        ) extends ActionException(
-  header + delegate.formattedCode.map(
+
+  header + delegate.root.formattedCode.map(
     "\n" + _
   )
     .getOrElse(""),
   cause
-) with Fetched {
+) with  Fetched {
 
   override def timeMillis: Long = delegate.timeMillis
 
   override def uid: DocUID = delegate.uid
 
-  override def update(
-                       uid: DocUID = this.uid,
-                       cacheLevel: CacheLevel.Value = this.cacheLevel
-                     ) = {
-    this.copy(delegate = delegate.update(uid, cacheLevel)).asInstanceOf[this.type]
+  override def updated(
+                        uid: DocUID = this.uid,
+                        cacheLevel: CacheLevel.Value = this.cacheLevel
+                      ) = {
+    this.copy(delegate = delegate.updated(uid, cacheLevel)).asInstanceOf[this.type]
   }
 
   override def cacheLevel: CacheLevel.Value = delegate.cacheLevel
 
-  override def metadata: Map[String, Any] = delegate.metadata
+  override type RootType = delegate.RootType
+  override def root: Unstructured = delegate.root
 
+  override def metadata: Map[String, Any] = delegate.metadata
 }
 
 object Doc {
@@ -126,7 +132,7 @@ object Doc {
 case class Doc(
                 override val uid: DocUID,
 
-                override val uri: String, //redirected
+                uri: String, //redirected
                 declaredContentType: Option[String],
                 raw: Array[Byte],
                 //                 cookie: Seq[SerializableCookie] = Nil,
@@ -135,14 +141,14 @@ case class Doc(
                 override val cacheLevel: CacheLevel.Value = CacheLevel.All,
                 httpStatus: Option[StatusLine] = None,
                 metadata: Map[String, Any] = Map.empty //for customizing parsing TODO: remove, delegate to CSVElement.
-              ) extends Unstructured with Fetched with IDMixin {
+              ) extends Fetched with IDMixin {
 
   lazy val _id = (uid, uri, declaredContentType, timeMillis, httpStatus.toString)
 
-  override def update(
-                       uid: DocUID = this.uid,
-                       cacheLevel: CacheLevel.Value = this.cacheLevel
-                     ): Doc.this.type = this.copy(uid = uid, cacheLevel = cacheLevel).asInstanceOf[this.type]
+  override def updated(
+                        uid: DocUID = this.uid,
+                        cacheLevel: CacheLevel.Value = this.cacheLevel
+                      ): Doc.this.type = this.copy(uid = uid, cacheLevel = cacheLevel).asInstanceOf[this.type]
 
   private def detectCharset(contentType: ContentType): String = {
     val charsetD = new UniversalDetector(null)
@@ -203,8 +209,9 @@ case class Doc(
     }
   }
 
+  override type RootType = Unstructured
   //TODO: use reflection to find any element implementation that can resolve supplied MIME type
-  @transient lazy val root: Unstructured = {
+  @transient override lazy val root: Unstructured = {
     val effectiveCharset = charset.orNull
 
     val contentStr = new String(raw, effectiveCharset)
@@ -242,20 +249,20 @@ case class Doc(
   }
   def defaultFileExtension: Option[String] = fileExtensions.headOption
 
-  override def findAll(selector: String) = root.findAll(selector)
-  override def findAllWithSiblings(start: String, range: Range) = root.findAllWithSiblings(start, range)
-  override def children(selector: Selector): Elements[Unstructured] = root.children(selector)
-  override def childrenWithSiblings(selector: Selector, range: Range): Elements[Siblings[Unstructured]] = root.childrenWithSiblings(selector, range)
-  override def code: Option[String] = root.code
-  override def formattedCode: Option[String] = root.formattedCode
-  override def allAttr: Option[Map[String, String]] = root.allAttr
-  override def attr(attr: String, noEmpty: Boolean): Option[String] = root.attr(attr, noEmpty)
-  override def href: Option[String] = root.href
-  override def src: Option[String] = root.src
-  override def text: Option[String] = root.text
-  override def ownText: Option[String] = root.ownText
-  override def boilerPipe: Option[String] = root.boilerPipe
-  override def breadcrumb: Option[Seq[String]] = root.breadcrumb
+//  override def findAll(selector: String) = root.findAll(selector)
+//  override def findAllWithSiblings(start: String, range: Range) = root.findAllWithSiblings(start, range)
+//  override def children(selector: Selector): Elements[Unstructured] = root.children(selector)
+//  override def childrenWithSiblings(selector: Selector, range: Range): Elements[Siblings[Unstructured]] = root.childrenWithSiblings(selector, range)
+//  override def code: Option[String] = root.code
+//  override def formattedCode: Option[String] = root.formattedCode
+//  override def allAttr: Option[Map[String, String]] = root.allAttr
+//  override def attr(attr: String, noEmpty: Boolean): Option[String] = root.attr(attr, noEmpty)
+//  override def href: Option[String] = root.href
+//  override def src: Option[String] = root.src
+//  override def text: Option[String] = root.text
+//  override def ownText: Option[String] = root.ownText
+//  override def boilerPipe: Option[String] = root.boilerPipe
+//  override def breadcrumb: Option[Seq[String]] = root.breadcrumb TODO: remove
   //---------------------------------------------------------------------------------------------------
 
   def save(

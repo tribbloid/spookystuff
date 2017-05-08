@@ -5,7 +5,7 @@ import com.tribbloids.spookystuff.extractors.GenExtractor.{AndThen, Leaf, Static
 import com.tribbloids.spookystuff.row.{DataRowSchema, _}
 import com.tribbloids.spookystuff.utils.ScalaType._
 import com.tribbloids.spookystuff.utils.{SpookyUtils, UnreifiedScalaType}
-import org.apache.spark.ml.dsl.utils.{MessageAPI, MessageView}
+import org.apache.spark.ml.dsl.utils.MessageAPI
 import org.apache.spark.sql.catalyst.ScalaReflection.universe.TypeTag
 import org.apache.spark.sql.types._
 
@@ -15,24 +15,30 @@ import scala.reflect.ClassTag
 
 object Extractors {
 
-  def GroupIndexExpr = GenExtractor.fromFn{
+  val GroupIndexExpr = GenExtractor.fromFn{
     (v1: FR) => v1.dataRow.groupIndex
   }
 
-  def GetUnstructuredExpr(field: Field) = GenExtractor.fromOptionFn {
+  //
+  def GetUnstructuredExpr(field: Field): GenExtractor[FR, Unstructured] = GenExtractor.fromOptionFn {
     (v1: FR) =>
       v1.getUnstructured(field)
-        .orElse(v1.getUnstructured(field.copy(isWeak = true)))
+        .orElse{
+          v1.getUnstructured(field.copy(isWeak = true))
+        }
+        .orElse {
+          v1.getDoc(field.name).map(_.root)
+        }
   }
 
-  def GetPageExpr(field: Field) = GenExtractor.fromOptionFn {
+  def GetDocExpr(field: Field) = GenExtractor.fromOptionFn {
     (v1: FR) => v1.getDoc(field.name)
   }
-  def GetOnlyPageExpr = GenExtractor.fromOptionFn {
+  val GetOnlyDocExpr = GenExtractor.fromOptionFn {
     (v1: FR) => v1.getOnlyDoc
   }
-  def GetAllPagesExpr = GenExtractor.fromFn {
-    (v1: FR) => new Elements(v1.docs.toList)
+  val GetAllRootExpr = GenExtractor.fromFn {
+    (v1: FR) => new Elements(v1.docs.map(_.root).toList)
   }
 
   case class FindAllMeta(arg: Extractor[Unstructured], selector: String)
@@ -68,21 +74,21 @@ object Extractors {
   }
 }
 
-object Literal {
+object Lit {
 
-  def apply[T: TypeTag](v: T): Literal[FR, T] = {
+  def apply[T: TypeTag](v: T): Lit[FR, T] = {
     apply[FR, T](v, UnreifiedScalaType.apply[T])
   }
 
-  def erase[T](v: T): Literal[FR, T] = {
+  def erase[T](v: T): Lit[FR, T] = {
     apply[FR, T](v, NullType)
   }
 
-  lazy val NULL: Literal[FR, Null] = erase(null)
+  lazy val NULL: Lit[FR, Null] = erase(null)
 }
 
 //TODO: Message JSON conversion discard dataType info, is it wise?
-case class Literal[T, +R](value: R, dataType: DataType) extends Static[T, R] with MessageAPI {
+case class Lit[T, +R](value: R, dataType: DataType) extends Static[T, R] with MessageAPI {
 
   def valueOpt: Option[R] = Option(value)
   override def toMessage = value
@@ -90,7 +96,7 @@ case class Literal[T, +R](value: R, dataType: DataType) extends Static[T, R] wit
   override lazy val toString = valueOpt
     .map {
       v =>
-//        MessageView(v).toJSON(pretty = false)
+        //        MessageView(v).toJSON(pretty = false)
         "" + v
     }
     .getOrElse("NULL")

@@ -9,5 +9,5 @@ trait StartEndLocation {
   def start: LocationLike
   def end: LocationLike
 
-  def speed: Double = Double.MaxValue //teleporting :)
+  def speed: Double = Double.MaxValue
 }

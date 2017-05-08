@@ -1,6 +1,7 @@
 package com.tribbloids.spookystuff.execution
 
 import com.tribbloids.spookystuff.actions.Wget
+import com.tribbloids.spookystuff.extractors.Lit
 import com.tribbloids.spookystuff.testutils.LocalPathDocsFixture
 import com.tribbloids.spookystuff.{QueryException, SpookyEnvFixture, dsl}
 import org.apache.spark.HashPartitioner
@@ -35,7 +36,7 @@ class TestExplorePlan extends SpookyEnvFixture with LocalPathDocsFixture {
     val partitioner = new HashPartitioner(8)
 
     val src = spooky
-      .extract("abc" ~ 'dummy)
+      .extract(Lit("abc") ~ 'dummy)
 
     assert(src.plan.beaconRDDOpt.isEmpty)
 
@@ -54,7 +55,7 @@ class TestExplorePlan extends SpookyEnvFixture with LocalPathDocsFixture {
     val partitioner2 = new HashPartitioner(16)
 
     val rdd1 = spooky
-      .extract("abc" ~ 'dummy)
+      .extract(Lit("abc") ~ 'dummy)
       .explore('dummy)(
         Wget(HTML_URL),
         genPartitioner = GenPartitioners.DocCacheAware(_ => partitioner)

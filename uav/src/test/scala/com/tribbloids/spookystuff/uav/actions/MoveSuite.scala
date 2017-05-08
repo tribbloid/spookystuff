@@ -1,6 +1,6 @@
 package com.tribbloids.spookystuff.uav.actions
 
-import com.tribbloids.spookystuff.extractors.Literal
+import com.tribbloids.spookystuff.extractors.Lit
 import com.tribbloids.spookystuff.uav.UAVTestUtils
 import com.tribbloids.spookystuff.uav.spatial._
 import com.tribbloids.spookystuff.uav.sim.APMSITLFixture
@@ -16,7 +16,7 @@ class MoveSuite extends APMSITLFixture {
     val wp1: Location = LLA(0,0,0) -> GeodeticAnchor
     val wp2: Location = LLA(20, 30, 50) -> GeodeticAnchor
 
-    val move = Move(Literal(wp1), Literal(wp2))
+    val move = Move(Lit(wp1), Lit(wp2))
 
     move.prettyJSON().shouldBe(
 

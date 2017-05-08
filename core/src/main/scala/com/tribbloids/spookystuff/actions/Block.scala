@@ -3,7 +3,7 @@ package com.tribbloids.spookystuff.actions
 import com.tribbloids.spookystuff._
 import com.tribbloids.spookystuff.caching.CacheLevel
 import com.tribbloids.spookystuff.doc.{Doc, Fetched, NoDoc}
-import com.tribbloids.spookystuff.extractors.{Extractor, Literal}
+import com.tribbloids.spookystuff.extractors.{Extractor, Lit}
 import com.tribbloids.spookystuff.http.HttpUtils
 import com.tribbloids.spookystuff.row.{DataRowSchema, FetchedRow}
 import com.tribbloids.spookystuff.session.Session
@@ -54,7 +54,7 @@ abstract class Block(override val children: Trace) extends Actions(children) wit
         val updatedName = this.nameOpt.getOrElse {
           fetched.uid.name
         }
-        fetched.update(
+        fetched.updated(
           uid = fetched.uid.copy(backtrace = backtrace, blockIndex = tuple._2, blockSize = doc.size)(name = updatedName)
         )
       }
@@ -63,7 +63,7 @@ abstract class Block(override val children: Trace) extends Actions(children) wit
       Seq(NoDoc(backtrace, cacheLevel = this.cacheEmptyOutput))
     }
     else if (result.count(_.isInstanceOf[Fetched]) == 0 && this.hasOutput) {
-      result.map(_.update(cacheLevel = this.cacheEmptyOutput))
+      result.map(_.updated(cacheLevel = this.cacheEmptyOutput))
     }
     else {
       result
@@ -341,7 +341,7 @@ case class OAuthV2(self: Wget) extends Block(List(self)) with Driverless {
     val effectiveWget: Wget = self.uriOption match {
       case Some(uri) =>
         val signed = HttpUtils.OauthV2(uri.toString, keys.consumerKey, keys.consumerSecret, keys.token, keys.tokenSecret)
-        self.copy(uri = Literal.erase(signed))
+        self.copy(uri = Lit.erase(signed))
       case None =>
         self
     }

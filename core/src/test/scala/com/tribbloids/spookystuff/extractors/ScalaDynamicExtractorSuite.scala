@@ -2,14 +2,13 @@ package com.tribbloids.spookystuff.extractors
 
 import com.tribbloids.spookystuff.SpookyEnvFixture
 import com.tribbloids.spookystuff.actions.{Action, ActionUDT, Wget}
-import com.tribbloids.spookystuff.doc.Doc
+import com.tribbloids.spookystuff.doc.{Doc, Unstructured}
 import com.tribbloids.spookystuff.testutils.{LocalPathDocsFixture, TestHelper}
 import org.apache.spark.sql.types._
 
 /**
   * Created by peng on 09/07/16.
   */
-
 class ScalaDynamicExtractorSuite extends SpookyEnvFixture with LocalPathDocsFixture {
 
   import com.tribbloids.spookystuff.dsl._
@@ -22,7 +21,7 @@ class ScalaDynamicExtractorSuite extends SpookyEnvFixture with LocalPathDocsFixt
     val result = doc.timestamp
 
     def dynamic = ScalaDynamicExtractor (
-      Literal(doc),
+      Lit(doc),
       "timestamp",
       None
     )
@@ -37,7 +36,7 @@ class ScalaDynamicExtractorSuite extends SpookyEnvFixture with LocalPathDocsFixt
     val result = doc.asInstanceOf[Doc].uri
 
     def dynamic = ScalaDynamicExtractor (
-      Literal(doc.asInstanceOf[Doc]),
+      Lit(doc.asInstanceOf[Doc]),
       "uri",
       None
     )
@@ -47,12 +46,12 @@ class ScalaDynamicExtractorSuite extends SpookyEnvFixture with LocalPathDocsFixt
     assert(fn.apply(null) == result)
   }
 
-  it("can resolve Doc.code") {
+  it("can resolve Unstructured.code") {
 
-    val result = doc.asInstanceOf[Doc].code.get
+    val result = doc.root.asInstanceOf[Unstructured].code.get
 
     def dynamic = ScalaDynamicExtractor (
-      Literal(doc.asInstanceOf[Doc]),
+      Lit(doc.root.asInstanceOf[Unstructured]),
       "code",
       None
     )
@@ -72,7 +71,7 @@ class ScalaDynamicExtractorSuite extends SpookyEnvFixture with LocalPathDocsFixt
     val result = action.dryrun
 
     def dynamic = ScalaDynamicExtractor (
-      Literal[Action](action),
+      Lit[Action](action),
       "dryrun",
       None
     )
@@ -137,13 +136,13 @@ class ScalaDynamicExtractorSuite extends SpookyEnvFixture with LocalPathDocsFixt
 
   val rdd = ds.unsquashedRDD.persist()
   val rows = rdd.take(10)
-  override lazy val schema = ds.schema
+  override lazy val emptySchema = ds.schema
 
-  val getNullType = Literal[Null](null)
+  val getNullType = Lit[Null](null)
 
   def verifyOnDriverAndWorkers(dynamic: ScalaDynamicExtractor[FR], staticFn: FR => Option[Any]): Unit = {
 
-    val dynamicFn: (FR) => Option[Any] = dynamic.resolve(schema).lift
+    val dynamicFn: (FR) => Option[Any] = dynamic.resolve(emptySchema).lift
 
     {
       rows.foreach {
@@ -183,7 +182,7 @@ class ScalaDynamicExtractorSuite extends SpookyEnvFixture with LocalPathDocsFixt
         result
     }
 
-    dynamic.resolveType(schema) should_=~= StringType
+    dynamic.resolveType(emptySchema) should_=~= StringType
     verifyOnDriverAndWorkers(dynamic, staticFn)
   }
 
@@ -206,13 +205,13 @@ class ScalaDynamicExtractorSuite extends SpookyEnvFixture with LocalPathDocsFixt
         result.flatten
     }
 
-    dynamic.resolveType(schema) should_=~= IntegerType
+    dynamic.resolveType(emptySchema) should_=~= IntegerType
     verifyOnDriverAndWorkers(dynamic, staticFn)
   }
 
   it("can resolve String.concat(String)") {
     def dynamic = ScalaDynamicExtractor(
-      Literal("abcde"),
+      Lit("abcde"),
       "concat",
       Some(List[GetExpr]('C))
     )
@@ -227,43 +226,43 @@ class ScalaDynamicExtractorSuite extends SpookyEnvFixture with LocalPathDocsFixt
         result
     }
 
-    dynamic.resolveType(schema) should_=~= StringType
+    dynamic.resolveType(emptySchema) should_=~= StringType
     verifyOnDriverAndWorkers(dynamic, staticFn)
   }
 
   it("can resolve Array[String].length") {
     def dynamic = ScalaDynamicExtractor(
-      Literal("a b c d e".split(" ")),
+      Lit("a b c d e".split(" ")),
       "length",
       None
     )
 
-    dynamic.resolveType(schema) should_=~= IntegerType
-    val dynamicFn = dynamic.resolve(schema).lift
+    dynamic.resolveType(emptySchema) should_=~= IntegerType
+    val dynamicFn = dynamic.resolve(emptySchema).lift
     assert(dynamicFn.apply(null) == Some(5))
   }
 
   it("can resolve type of List[String].head") {
     def dynamic = ScalaDynamicExtractor(
-      Literal("a b c d e".split(" ").toList),
+      Lit("a b c d e".split(" ").toList),
       "head",
       None
     )
 
     dynamic.resolveType(null) should_=~= StringType
-    val dynamicFn = dynamic.resolve(schema).lift
+    val dynamicFn = dynamic.resolve(emptySchema).lift
     assert(dynamicFn.apply(null) == Some("a"))
   }
 
   it("can resolve type of Seq[String].head") {
     def dynamic = ScalaDynamicExtractor (
-      Literal("a b c d e".split(" ").toSeq),
+      Lit("a b c d e".split(" ").toSeq),
       "head",
       None
     )
 
     dynamic.resolveType(null) should_=~= StringType
-    val dynamicFn = dynamic.resolve(schema).lift
+    val dynamicFn = dynamic.resolve(emptySchema).lift
     assert(dynamicFn.apply(null) == Some("a"))
   }
 
@@ -303,7 +302,7 @@ class ScalaDynamicExtractorSuite extends SpookyEnvFixture with LocalPathDocsFixt
     )
 
     intercept[UnsupportedOperationException] {
-      val fn = dynamic.resolve(schema)
+      val fn = dynamic.resolve(emptySchema)
     }
   }
 
@@ -316,7 +315,7 @@ class ScalaDynamicExtractorSuite extends SpookyEnvFixture with LocalPathDocsFixt
     )
 
     intercept[UnsupportedOperationException] {
-      val fn = dynamic.resolve(schema)
+      val fn = dynamic.resolve(emptySchema)
     }
   }
 
@@ -363,9 +362,9 @@ class ScalaDynamicExtractorSuite extends SpookyEnvFixture with LocalPathDocsFixt
   it("can resolve function of String.startsWith(String) using Java") {
     {
       def dynamic = ScalaDynamicExtractor(
-        Literal("abcde"),
+        Lit("abcde"),
         "startsWith",
-        Option(List(Literal("abc")))
+        Option(List(Lit("abc")))
       )
 
       val impl = dynamic.resolveUsingJava(null)
@@ -375,9 +374,9 @@ class ScalaDynamicExtractorSuite extends SpookyEnvFixture with LocalPathDocsFixt
     }
     {
       def dynamic = ScalaDynamicExtractor(
-        Literal("abcde"),
+        Lit("abcde"),
         "startsWith",
-        Option(List(Literal("abd")))
+        Option(List(Lit("abd")))
       )
 
       val impl = dynamic.resolveUsingJava(null)

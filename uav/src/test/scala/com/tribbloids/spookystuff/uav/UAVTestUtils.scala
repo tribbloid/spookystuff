@@ -1,6 +1,6 @@
 package com.tribbloids.spookystuff.uav
 
-import com.tribbloids.spookystuff.extractors.Literal
+import com.tribbloids.spookystuff.extractors.Lit
 import com.tribbloids.spookystuff.uav.actions.Waypoint
 import com.tribbloids.spookystuff.uav.spatial.{Location, NED}
 
@@ -24,8 +24,8 @@ object UAVTestUtils {
       locations.flatMap {
         tuple =>
           Seq(
-            Waypoint(Literal(tuple._1)),
-            Waypoint(Literal(tuple._2))
+            Waypoint(Lit(tuple._1)),
+            Waypoint(Lit(tuple._2))
           )
       }
     }

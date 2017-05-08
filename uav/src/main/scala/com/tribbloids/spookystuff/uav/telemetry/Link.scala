@@ -26,7 +26,7 @@ object Link {
   val existing: caching.ConcurrentMap[UAV, Link] = caching.ConcurrentMap()
 
   def trySelect(
-                 executedBy: Seq[UAV],
+                 runBy: Seq[UAV],
                  session: Session,
                  selector: Seq[Link] => Option[Link] = {
                    vs =>
@@ -55,7 +55,7 @@ object Link {
     }
 
     val resultOpt = threadLocalOpt.orElse {
-      val links = executedBy.map(_.getLink(session.spooky))
+      val links = runBy.map(_.getLink(session.spooky))
 
       this.synchronized {
         val available = links.filter(v => v.isAvailable)
@@ -76,7 +76,7 @@ object Link {
         }
       case None =>
         val info = if (Link.existing.isEmpty) {
-          val msg = s"No telemetry Link for ${executedBy.mkString("[", ", ", "]")}, existing links are:"
+          val msg = s"No telemetry Link for ${runBy.mkString("[", ", ", "]")}, existing links are:"
           val hint = Link.existing.keys.toList.mkString("[", ", ", "]")
           msg + "\n" + hint
         }

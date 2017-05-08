@@ -3,7 +3,7 @@ package com.tribbloids.spookystuff.caching
 import com.tribbloids.spookystuff.{SpookyContext, dsl}
 import com.tribbloids.spookystuff.actions._
 import com.tribbloids.spookystuff.doc.Fetched
-import com.tribbloids.spookystuff.extractors.{FR, Literal}
+import com.tribbloids.spookystuff.extractors.{FR, Lit}
 
 /**
   * Created by peng on 07/06/16.
@@ -24,7 +24,7 @@ trait AbstractDocCache {
           val similarTrace = dryrun.find(_ == pageBacktrace).get
 
           pageBacktrace.injectFrom(similarTrace) //this is to allow actions in backtrace to have different name than those cached
-          page.update(
+          page.updated(
             uid = page.uid.copy()(name = Option(page.uid.output).map(_.name).orNull)
           )
         }
@@ -62,7 +62,7 @@ trait AbstractDocCache {
       case w: Wayback =>
         Option(w.wayback).map {
           expr =>
-            val result = expr.asInstanceOf[Literal[FR, Long]].toMessage
+            val result = expr.asInstanceOf[Lit[FR, Long]].toMessage
             spooky.conf.IgnoreCachedDocsBefore match {
               case Some(date) =>
                 assert(result > date.getTime, "SpookyConf.pageNotExpiredSince cannot be set to later than wayback date")

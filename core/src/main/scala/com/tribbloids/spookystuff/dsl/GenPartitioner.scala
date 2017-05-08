@@ -13,6 +13,7 @@ import scala.reflect.ClassTag
 /**
   * Created by peng on 1/27/15.
   */
+//TODO: name should be 'planner'?
 trait GenPartitioner {
 
   def getImpl(spooky: SpookyContext): GenPartitionerImpl

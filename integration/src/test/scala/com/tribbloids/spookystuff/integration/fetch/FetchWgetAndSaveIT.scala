@@ -3,6 +3,7 @@ package com.tribbloids.spookystuff.integration.fetch
 import com.tribbloids.spookystuff.actions._
 import com.tribbloids.spookystuff.doc.DocUtils
 import com.tribbloids.spookystuff.dsl._
+import com.tribbloids.spookystuff.extractors.Lit
 import com.tribbloids.spookystuff.integration.IntegrationFixture
 
 class FetchWgetAndSaveIT extends IntegrationFixture {
@@ -21,7 +22,7 @@ class FetchWgetAndSaveIT extends IntegrationFixture {
       .fetch(
         Wget(imageURL)
       )
-      .select("Wikipedia" ~ 'name)
+      .select(Lit("Wikipedia") ~ 'name)
       .persist()
     //    fetched.count()
 

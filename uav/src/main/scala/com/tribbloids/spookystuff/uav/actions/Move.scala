@@ -1,6 +1,6 @@
 package com.tribbloids.spookystuff.uav.actions
 
-import com.tribbloids.spookystuff.extractors.{Extractor, FR, Literal}
+import com.tribbloids.spookystuff.extractors.{Extractor, FR, Lit}
 import com.tribbloids.spookystuff.row.{DataRowSchema, FetchedRow}
 import com.tribbloids.spookystuff.session.Session
 import com.tribbloids.spookystuff.uav.UAVConf
@@ -28,8 +28,8 @@ case class Move(
       toV <- toOpt
     ) yield {
       this.copy(
-        from = Literal(Location.parse(fromV, schema.spooky.submodule[UAVConf])),
-        to = Literal(Location.parse(toV, schema.spooky.submodule[UAVConf]))
+        from = Lit(Location.parse(fromV, schema.spooky.submodule[UAVConf])),
+        to = Lit(Location.parse(toV, schema.spooky.submodule[UAVConf]))
       )
     }
     result.map(_.asInstanceOf[this.type])
@@ -39,7 +39,7 @@ case class Move(
 
   class SessionView(session: Session) extends super.SessionView(session) {
 
-    lazy val fromLocation: Location = from.asInstanceOf[Literal[FR, Location]].value
+    lazy val fromLocation: Location = from.asInstanceOf[Lit[FR, Location]].value
 
     override def inbound(): Unit = {
       super.inbound()

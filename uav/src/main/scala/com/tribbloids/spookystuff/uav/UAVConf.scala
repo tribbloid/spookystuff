@@ -49,7 +49,7 @@ case class UAVConf(
                     var slowConnectionRetryInterval: Duration = UAVConf.BLACKLIST_RESET_AFTER, //1 minute
                     var clearanceAltitude: Double = 10, // in meters
                     var homeLocation: Location = UAVConf.DEFAULT_HOME_LOCATION,
-                    var actionCosts: ActionCosts = ActionCosts.Default(5.0),
+                    var actionCosts: CostEstimator = CostEstimator.Default(5.0),
                     var defaultSpeed: Double = 5.0
                   ) extends ModuleConf {
 
@@ -58,7 +58,7 @@ case class UAVConf(
     */
   def uavsInFleet: Set[UAV] = fleet.apply()
 
-  def uavsRandomList: Seq[UAV] = Random.shuffle(uavsInFleet.toList)
+  def uavsInFleetShuffled: Seq[UAV] = Random.shuffle(uavsInFleet.toList)
 
   // TODO: use reflection to automate
   override def importFrom(sparkConf: SparkConf): UAVConf.this.type = this.copy().asInstanceOf[this.type]

@@ -19,7 +19,7 @@ class TestInMemoryDocCache extends SpookyEnvFixture with LocalPathDocsFixture {
   lazy val visitPage = visit.fetch(spooky).map(_.asInstanceOf[Doc])
 
   val wget = Wget(HTML_URL).as('oldWget)::Nil
-  lazy val wgetPage = wget.fetch(spooky).map(_.asInstanceOf[Doc].update(cacheLevel = CacheLevel.All)) //By default wget from DFS are only cached in-memory
+  lazy val wgetPage = wget.fetch(spooky).map(_.asInstanceOf[Doc].updated(cacheLevel = CacheLevel.All)) //By default wget from DFS are only cached in-memory
 
   it("cache and restore") {
     spooky.conf.cachedDocsLifeSpan = 10.seconds

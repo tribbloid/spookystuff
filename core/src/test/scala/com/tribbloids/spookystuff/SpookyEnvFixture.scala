@@ -1,5 +1,6 @@
 package com.tribbloids.spookystuff
 
+import com.tribbloids.spookystuff.doc.{Doc, Unstructured}
 import com.tribbloids.spookystuff.dsl.DriverFactory
 import com.tribbloids.spookystuff.extractors.{Alias, GenExtractor, GenResolved}
 import com.tribbloids.spookystuff.row.{DataRowSchema, SquashedFetchedRow, TypedField}
@@ -127,18 +128,18 @@ abstract class SpookyEnvFixture
     result
   }
 
-  def schema = DataRowSchema(spooky)
+  def emptySchema = DataRowSchema(spooky)
 
-  implicit def withSchema(row: SquashedFetchedRow): SquashedFetchedRow#WithSchema = new row.WithSchema(schema)
+  implicit def withSchema(row: SquashedFetchedRow): SquashedFetchedRow#WithSchema = new row.WithSchema(emptySchema)
   implicit def extractor2Resolved[T, R](extractor: Alias[T, R]): GenResolved[T, R] = GenResolved(
-    extractor.resolve(schema),
+    extractor.resolve(emptySchema),
     TypedField(
       extractor.field,
-      extractor.resolveType(schema)
+      extractor.resolveType(emptySchema)
     )
   )
-
-  implicit def extractor2Function[T, R](extractor: GenExtractor[T, R]): PartialFunction[T, R] = extractor.resolve(schema)
+  implicit def extractor2Function[T, R](extractor: GenExtractor[T, R]): PartialFunction[T, R] = extractor.resolve(emptySchema)
+  implicit def doc2Root(doc: Doc): Unstructured = doc.root
 
   lazy val driverFactory: DriverFactory[CleanWebDriver] = SpookyConf.TEST_WEBDRIVER_FACTORY
 

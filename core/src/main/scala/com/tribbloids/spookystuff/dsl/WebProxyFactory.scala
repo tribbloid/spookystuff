@@ -4,7 +4,7 @@ import com.tribbloids.spookystuff.session.WebProxySetting
 
 import scala.util.{Random => SR}
 
-abstract class WebProxyFactory extends (() => WebProxySetting) with Serializable
+sealed abstract class WebProxyFactory extends (() => WebProxySetting) with Serializable
 
 object WebProxyFactories {
 

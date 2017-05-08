@@ -126,7 +126,7 @@ trait RemoteTransformer extends RemoteTransformerLike with Dynamic {
 
     keys.foreach{
       key =>
-        val distinct = result.flatMap(_.dataRow.get(key)).distinct()
+        val distinct = result.rdd.flatMap(_.dataRow.get(key)).distinct()
         val values = distinct.take(2)
         assert(values.length >= 1)
         if (key.isDepth) {

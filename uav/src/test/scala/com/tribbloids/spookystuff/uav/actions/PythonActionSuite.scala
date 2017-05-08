@@ -3,7 +3,7 @@ package com.tribbloids.spookystuff.uav.actions
 import com.tribbloids.spookystuff.SpookyEnvFixture
 import com.tribbloids.spookystuff.actions.Export
 import com.tribbloids.spookystuff.doc.{Doc, DocUID, Fetched}
-import com.tribbloids.spookystuff.extractors.{Extractor, Literal}
+import com.tribbloids.spookystuff.extractors.{Extractor, Lit}
 import com.tribbloids.spookystuff.row.{DataRowSchema, FetchedRow}
 import com.tribbloids.spookystuff.session.Session
 import com.tribbloids.spookystuff.session.python.CaseInstanceRef
@@ -14,7 +14,7 @@ import org.apache.http.entity.ContentType
   */
 @SerialVersionUID(-6784287573066896999L)
 case class DummyPyAction(
-                          a: Extractor[Int] = Literal(1)
+                          a: Extractor[Int] = Lit(1)
                         ) extends Export with CaseInstanceRef {
 
   override def doExeNoName(session: Session): Seq[Fetched] = {
@@ -37,7 +37,7 @@ case class DummyPyAction(
       .apply(pageRow)
       .map(
         v =>
-          this.copy(a = Literal.erase(v)).asInstanceOf[this.type]
+          this.copy(a = Lit.erase(v)).asInstanceOf[this.type]
       )
   }
 }

@@ -1,6 +1,7 @@
 package com.tribbloids.spookystuff.extractors
 
 import com.tribbloids.spookystuff.Const
+import com.tribbloids.spookystuff.extractors.Extractors.ReplaceKeyExpr
 import com.tribbloids.spookystuff.extractors.GenExtractor._
 import com.tribbloids.spookystuff.row.Field
 import com.tribbloids.spookystuff.utils.{ScalaType, SpookyUtils, UnreifiedScalaType}
@@ -8,8 +9,30 @@ import org.apache.spark.sql.catalyst.ScalaReflection.universe.{TypeTag, typeTag}
 import org.apache.spark.sql.catalyst.trees.TreeNode
 
 import scala.language.implicitConversions
+import scala.reflect.ClassTag
 
-object GenExtractor {
+trait LowLevelImplicits {
+
+  implicit def fromAny[T: ClassTag](lit: T): Extractor[T] = {
+
+    val ctg = implicitly[ClassTag[T]]
+
+    lit match {
+      case str: String if ctg <:< ClassTag(classOf[String]) =>
+        val delimiter = Const.keyDelimiter
+        val regex = (delimiter+"\\{[^\\{\\}\r\n]*\\}").r
+
+        val result = if (regex.findFirstIn(str).isEmpty)
+          Lit[String](str)
+        else
+          ReplaceKeyExpr(str)
+
+        result.asInstanceOf[Extractor[T]]
+    }
+  }
+}
+
+object GenExtractor extends LowLevelImplicits {
 
   import com.tribbloids.spookystuff.utils.ScalaType._
 
@@ -17,10 +40,6 @@ object GenExtractor {
 
   def fromFn[T, R](self: (T) => R, dataType: DataType): GenExtractor[T, R] = {
     Elem(_ => Partial(self), _ => dataType)
-  }
-  implicit def fromFn[T, R: TypeTag](self: T => R): GenExtractor[T, R] = {
-
-    fromFn(self, UnreifiedScalaType.apply[R])
   }
 
   def fromOptionFn[T, R](self: (T) => Option[R], dataType: DataType): GenExtractor[T, R] = {
@@ -129,6 +148,13 @@ object GenExtractor {
   case class TreeNodeView(self: GenExtractor[_,_]) extends TreeNode[TreeNodeView] {
     override def children: Seq[TreeNodeView] = self._args.map(TreeNodeView)
   }
+
+  // ------------implicits-------------
+
+  implicit def fromFn[T, R: TypeTag](self: T => R): GenExtractor[T, R] = {
+
+    fromFn(self, UnreifiedScalaType.apply[R])
+  }
 }
 
 // a special expression that can be applied on:
@@ -138,7 +164,8 @@ object GenExtractor {
 // a subclass wraps an expression and convert it into extractor, which converts all attribute reference children into data reference children and
 // (To be implemented) can be converted to an expression to be wrapped by other expressions
 //TODO: merge with Extractor
-trait GenExtractor[T, +R] extends ScalaDynamicMixin[T, R] with Serializable {
+trait GenExtractor[T, +R] extends Serializable with ScalaDynamicMixin[T, R] {
+  //trait GenExtractor[T, +R] extends Serializable with ReflectionLock {
 
   lazy val TreeNode: GenExtractor.TreeNodeView = GenExtractor.TreeNodeView(this)
 

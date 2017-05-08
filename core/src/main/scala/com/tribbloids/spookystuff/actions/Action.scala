@@ -82,7 +82,7 @@ trait Action extends ActionLike with ActionRelay.HasMessageRelay{
   }
 
   //this should handle autoSave, cache and errorDump
-  override def apply(session: Session): Seq[Fetched] = {
+  final override def apply(session: Session): Seq[Fetched] = {
 
     val results = try {
       exe(session)
@@ -202,7 +202,7 @@ trait Action extends ActionLike with ActionRelay.HasMessageRelay{
     }
   }
 
-  protected[actions] def exe(session: Session): Seq[Fetched] = {
+  final protected[actions] def exe(session: Session): Seq[Fetched] = {
     withDriversTimedDuring(session){
       doExe(session)
     }

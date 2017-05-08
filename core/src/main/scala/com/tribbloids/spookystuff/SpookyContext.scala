@@ -25,7 +25,7 @@ case class SpookyContext private (
             sqlContext: SQLContext,
             conf: SpookyConf = new SpookyConf()
           ) {
-    this(sqlContext, conf, new SpookyMetrics())
+    this(sqlContext, conf, SpookyMetrics())
   }
 
   def this(sqlContext: SQLContext) {
@@ -118,7 +118,7 @@ case class SpookyContext private (
       rebroadcast()
       val result = this.copy(
         _conf = this._conf.effective,
-        metrics = new SpookyMetrics()
+        metrics = SpookyMetrics()
       )
       result
     }

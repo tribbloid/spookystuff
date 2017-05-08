@@ -2,7 +2,7 @@ package com.tribbloids.spookystuff.utils
 
 import java.io.File
 
-import com.tribbloids.spookystuff.extractors.Literal
+import com.tribbloids.spookystuff.extractors.Lit
 import org.apache.spark.ml.dsl.utils.Verbose
 
 /**
@@ -20,7 +20,7 @@ object PrettyProduct {
                       recursion: Int = 0
                     ): String = {
     x match {
-      case v: Literal[_, _] => v.toString
+      case v: Lit[_, _] => v.toString
       case _ =>
         val strs = x.productIterator
           .map {

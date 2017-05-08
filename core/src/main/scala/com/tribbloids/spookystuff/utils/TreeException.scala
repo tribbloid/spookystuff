@@ -3,7 +3,7 @@ package com.tribbloids.spookystuff.utils
 import com.tribbloids.spookystuff.utils.TreeException.TreeNodeView
 import org.apache.spark.sql.catalyst.trees.TreeNode
 
-import scala.util.{Failure, Try}
+import scala.util.{Failure, Success, Try}
 
 object TreeException {
 
@@ -32,11 +32,32 @@ object TreeException {
     }
   }
 
+  def effectiveAgg(
+                    agg: Seq[Throwable] => TreeException = es => MultiCauseWrapper(causes = es),
+                    extra: Seq[Throwable] = Nil,
+                    expandUnary: Boolean = false
+                  ): Seq[Throwable] => Throwable = {
+
+    {
+      seq =>
+        val flat = seq.flatMap {
+          case MultiCauseWrapper(causes) =>
+            causes
+          case v@ _ => Seq(v)
+        }
+        val all = extra.flatMap(v => Option(v)) ++ flat
+        if (expandUnary && all.size == 1) all.head
+        else agg(all)
+    }
+  }
+
   def &&&[T](
               trials: Seq[Try[T]],
-              agg: Seq[Throwable] => TreeException = es => new MultiCauseWrapper(causes = es),
-              extra: Seq[Throwable] = Nil
+              agg: Seq[Throwable] => TreeException = es => MultiCauseWrapper(causes = es),
+              extra: Seq[Throwable] = Nil,
+              expandUnary: Boolean = false
             ): Seq[T] = {
+
     val es = trials.collect{
       case Failure(e) => e
     }
@@ -44,9 +65,33 @@ object TreeException {
       trials.map(_.get)
     }
     else {
-      val all = extra.flatMap(v => Option(v)) ++ es
-      if (all.size == 1) throw all.head
-      else throw agg(all)
+      val _agg = effectiveAgg(agg, extra, expandUnary)
+      throw _agg(es)
+    }
+  }
+
+  def |||[T](
+              trials: Seq[Try[T]],
+              agg: Seq[Throwable] => TreeException = es => MultiCauseWrapper(causes = es),
+              extra: Seq[Throwable] = Nil,
+              expandUnary: Boolean = false
+            ): Seq[T] = {
+
+    if (trials.isEmpty) return Nil
+
+    val results = trials.collect{
+      case Success(e) => e
+    }
+
+    if (results.isEmpty) {
+      val es = trials.collect{
+        case Failure(e) => e
+      }
+      val _agg = effectiveAgg(agg, extra, expandUnary)
+      throw _agg(es)
+    }
+    else {
+      results
     }
   }
 

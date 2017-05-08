@@ -5,7 +5,7 @@ import com.tribbloids.spookystuff.doc.Doc
 import com.tribbloids.spookystuff.session.Session
 
 //TODO: support chaining & extends ExpressionLike/TreeNode
-trait AbstractDocFilter extends DocFilter {
+sealed trait AbstractDocFilter extends DocFilter {
 
   def assertStatusCode(page: Doc){
     page.httpStatus.foreach {
@@ -38,9 +38,9 @@ object DocFilters {
       assertStatusCode(result)
       if (result.mimeType.contains("html")){
         assert(
-          result.\("html").\("title").text.getOrElse("").nonEmpty,
+          result.root.\("html").\("title").text.getOrElse("").nonEmpty,
           s"Html Page @ ${result.uri} has no title" +
-            result.code.map {
+            result.root.code.map {
               code =>
                 ":\n" + code.slice(0,500)
             }

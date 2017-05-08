@@ -66,7 +66,7 @@ class GASolverSuite extends SpookyEnvFixture {
     implicit val doubleEquality = TolerantNumerics.tolerantDoubleEquality(0.00001)
 
     val route = dummyRoute
-    val cost = route.estimatePartialCost(solver)
+    val cost = route.estimateCost(solver)
     assert(cost === 119.543903)
   }
 

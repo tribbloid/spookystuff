@@ -24,6 +24,8 @@ object Field {
   case object Overwrite extends ConflictResolving
 
   implicit def str2Field(str: String): Field = Field(str)
+
+  implicit def symbol2Field(sym: Symbol): Field = Field(sym.name)
 }
 
 /**

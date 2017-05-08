@@ -4,7 +4,7 @@ import com.tribbloids.spookystuff.SpookyContext
 import com.tribbloids.spookystuff.actions.Trace
 import com.tribbloids.spookystuff.uav.UAVConf
 import com.tribbloids.spookystuff.uav.telemetry.Link
-import com.tribbloids.spookystuff.utils.SpookyUtils
+import com.tribbloids.spookystuff.utils.{NOTSerializable, SpookyUtils}
 import org.apache.commons.math3.exception.MathIllegalArgumentException
 import org.apache.commons.math3.exception.util.LocalizedFormats
 import org.apache.commons.math3.genetics._
@@ -16,7 +16,7 @@ import scala.util.{Random, Success, Try}
 case class Route(
                   linkTry: Try[Link],
                   is: Seq[Int]
-                ) {
+                ) extends NOTSerializable {
 
   def toTracesOpt(allTraces: Seq[Trace]): Option[Seq[Trace]] = {
     linkTry.toOption.map {
@@ -33,8 +33,12 @@ case class Route(
     }
   }
 
-  def estimatePartialCost(solver: GASolver): Double = {
+  def estimateCost(solver: GASolver): Double = {
 
+    linkTry match {
+      case Success(link) =>
+
+    }
     val seqOpt = toTracesOpt(solver.allTracesBroadcasted.value)
     seqOpt.map {
       seq =>
@@ -55,7 +59,7 @@ case class Route(
           val splitted = state.is.splitAt(j)
           val inserted = splitted._1 ++ Seq(i) ++ splitted._2
           val insertedRoute = this.copy(is = inserted)
-          val cost = insertedRoute.estimatePartialCost(solver)
+          val cost = insertedRoute.estimateCost(solver)
           insertedRoute -> cost
       }
         .sortBy(_._2)
@@ -104,7 +108,7 @@ case class GASolver(
         v =>
           v.map {
             subseq =>
-              subseq.estimatePartialCost(this)
+              subseq.estimateCost(this)
           }
       }
       val reduced: Seq[Double] = SpookyUtils.RDDs.batchReduce(costRDDs) {
@@ -275,14 +279,11 @@ case class GASolver(
   }
 
   def getLinkRDD: RDD[Link] = {
+    import com.tribbloids.spookystuff.uav.utils.UAVViews._
     val proto: RDD[Link] = spooky.sparkContext.mapPerExecutorCore {
-      val uavs = spooky.submodule[UAVConf].uavsRandomList
       val linkTry = spooky.withSession {
         session =>
-          Link.trySelect(
-            uavs,
-            session
-          )
+          session.linkTry
       }
       linkTry
     }

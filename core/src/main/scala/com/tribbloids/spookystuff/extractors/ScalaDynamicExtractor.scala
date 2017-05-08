@@ -331,7 +331,7 @@ trait ScalaDynamicMixin[T, +R] extends Dynamic with ReflectionLock {
         ex.asInstanceOf[GenExtractor[T, Any]]
       case v@ _ =>
         val tt = UnreifiedScalaType.fromInstance(v)
-        new Literal[T, Any](Option(v), tt)
+        new Lit[T, Any](Option(v), tt)
     }
 
     ScalaDynamicExtractor(this, methodName, Some(argExs.toList))

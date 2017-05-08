@@ -11,8 +11,10 @@ import com.tribbloids.spookystuff.utils.NOTSerializable
   * does NOT fail when the Link is unreachable (hence prefer), will trySelect another.
   */
 private[uav] case class PreferLink(
-                                    link: Link
+                                    links: Link*
                                   ) extends UAVAction with NOTSerializable {
+
+  val firstLink = links.head
 
   override def trunk = None
 

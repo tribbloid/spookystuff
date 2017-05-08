@@ -3,7 +3,7 @@ package com.tribbloids.spookystuff.actions
 import java.util.Date
 
 import com.tribbloids.spookystuff.SpookyEnvFixture
-import com.tribbloids.spookystuff.extractors.Literal
+import com.tribbloids.spookystuff.extractors.Lit
 import com.tribbloids.spookystuff.session.Session
 
 class TestBlock extends SpookyEnvFixture {
@@ -54,6 +54,6 @@ class TestBlock extends SpookyEnvFixture {
     +> Delay(20.seconds) +> Wget("ftp://www.dummy2.co").waybackToTimeMillis(waybackDate.getTime - 100000)
     )
 
-    assert(loop.wayback == Literal[Long](waybackDate.getTime - 100000))
+    assert(loop.wayback == Lit[Long](waybackDate.getTime - 100000))
   }
 }

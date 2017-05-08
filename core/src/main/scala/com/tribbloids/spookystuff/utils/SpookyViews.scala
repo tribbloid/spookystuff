@@ -5,7 +5,8 @@ import java.security.PrivilegedAction
 import com.tribbloids.spookystuff.caching.ConcurrentMap
 import com.tribbloids.spookystuff.row._
 import org.apache.spark.rdd.RDD
-import org.apache.spark.sql.DataFrame
+import org.apache.spark.sql.catalyst.expressions.{Alias, NamedExpression}
+import org.apache.spark.sql.{Column, DataFrame}
 import org.apache.spark.storage.StorageLevel
 import org.apache.spark.{HashPartitioner, SparkContext, SparkEnv, TaskContext}
 
@@ -260,6 +261,25 @@ object SpookyViews {
       val shuffled = randomKeyed.partitionBy(new HashPartitioner(self.partitions.length))
       shuffled.values
     }
+  }
+
+  implicit class StringRDDView(val self: RDD[String]) {
+
+    //csv has to be headerless, there is no better solution as header will be shuffled to nowhere
+    def csvToMap(headerRow: String, splitter: String = ","): RDD[Map[String,String]] = {
+      val headers = headerRow.split(splitter)
+
+      //cannot handle when a row is identical to headerline, but whatever
+      self.map {
+        str => {
+          val values = str.split(splitter)
+
+          ListMap(headers.zip(values): _*)
+        }
+      }
+    }
+
+    def tsvToMap(headerRow: String) = csvToMap(headerRow,"\t")
   }
 
   implicit class PairRDDView[K: ClassTag, V: ClassTag](val self: RDD[(K, V)]) {

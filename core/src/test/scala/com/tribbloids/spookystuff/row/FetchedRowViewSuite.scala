@@ -41,7 +41,7 @@ class FetchedRowViewSuite extends SpookyEnvFixture with LocalPathDocsFixture {
       .unsquash.head
 
     val page2 = row.getUnstructured('pp)
-    assert(page2.get === pages.head)
+    assert(page2.get === pages.head.root)
 
     val e1 = row.getUnstructured('e1)
     assert(e1.get.attr("title").get === "Wikipedia")

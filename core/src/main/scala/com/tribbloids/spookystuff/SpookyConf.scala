@@ -170,6 +170,7 @@ object SpookyConf extends Submodules.Builder[SpookyConf]{
   */
 //TODO: is var in serialized closure unstable for Spark production environment? consider changing to ConcurrentHashMap
 class SpookyConf(
+                //TODO: this should be lifted to the same level in SpookyContext
                   val submodules: Submodules[ModuleConf] = Submodules(),
 
                   var shareMetrics: Boolean = false, //TODO: not necessary

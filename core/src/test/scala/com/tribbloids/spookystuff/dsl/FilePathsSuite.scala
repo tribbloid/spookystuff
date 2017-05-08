@@ -2,12 +2,11 @@ package com.tribbloids.spookystuff.dsl
 
 import java.io.File
 
+import com.tribbloids.spookystuff.SpookyEnvFixture
 import com.tribbloids.spookystuff.actions._
-import com.tribbloids.spookystuff.{SpookyEnvFixture, dsl}
 
 class FilePathsSuite extends SpookyEnvFixture{
 
-  import dsl._
   import scala.concurrent.duration._
 
   //TODO: add more non-primary-construtor params

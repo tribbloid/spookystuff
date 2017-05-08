@@ -67,8 +67,8 @@ class GenExtractorSuite extends SpookyEnvFixture {
       val str = tuple._2
       it(s"$str and all its resolved functions are serializable") {
         assertSerializable[GenExtractor[String, Int]](extractor, condition = (_, _) => {})
-        assertSerializable[PartialFunction[String, Int]](extractor.resolve(schema), condition = (_, _) => {})
-        assertSerializable[Function1[String, Option[Int]]](extractor.resolve(schema).lift, condition = (_, _) => {})
+        assertSerializable[PartialFunction[String, Int]](extractor.resolve(emptySchema), condition = (_, _) => {})
+        assertSerializable[Function1[String, Option[Int]]](extractor.resolve(emptySchema).lift, condition = (_, _) => {})
       }
 
       it(s"$str.apply won't execute twice") {

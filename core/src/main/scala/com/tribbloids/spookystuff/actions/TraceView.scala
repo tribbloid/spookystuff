@@ -72,7 +72,7 @@ case class TraceView(
     results
   }
 
-  lazy val dryrun: DryRun = {
+  override lazy val dryrun: DryRun = {
     val result: ArrayBuffer[Trace] = ArrayBuffer()
 
     for (i <- children.indices) {
