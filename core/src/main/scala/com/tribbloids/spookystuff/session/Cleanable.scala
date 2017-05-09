@@ -119,7 +119,7 @@ object Cleanable {
 
   def getByLifespan(tt: Any, condition: (Cleanable) => Boolean): (ConcurrentSet[Cleanable], List[Cleanable]) = {
     val set = uncleaned.getOrElse(tt, mutable.Set.empty)
-    val filtered = set.toList
+    val filtered = set.toList //create deep copy to avoid in-place deletion
       .filter(condition)
     (set, filtered)
   }

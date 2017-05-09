@@ -76,6 +76,4 @@ case class FetchedRow(
     if (page.nonEmpty && value.nonEmpty) throw new UnsupportedOperationException("Ambiguous key referring to both pages and data")
     else page.map(_.root).orElse(value)
   }
-
-  @transient lazy val dryrun: DryRun = fetched.toList.map(_.uid.backtrace).distinct
 }
