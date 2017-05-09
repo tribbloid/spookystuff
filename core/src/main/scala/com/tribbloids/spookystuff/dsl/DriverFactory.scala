@@ -82,25 +82,6 @@ object DriverFactories {
 
   import com.tribbloids.spookystuff.utils.SpookyViews._
 
-  object PhantomJS {
-
-    final val HTTP_RESOURCE_URI = "https://s3-us-west-1.amazonaws.com/spooky-bin/phantomjs-linux/phantomjs"
-
-    final def uri2fileName(path: String) = path.split("/").last
-
-    final def DEFAULT_PATH = System.getProperty("user.home") \\ ".spookystuff" \\ "phantomjs"
-
-    def defaultGetPath: SpookyContext => String = {
-      _ =>
-        AbstractConf.getOrDefault("phantomjs.path", DEFAULT_PATH)
-    }
-
-    def syncDelete(dst: String): Unit = this.synchronized {
-      val dstFile = new File(dst)
-      FileUtils.forceDelete(dstFile)
-    }
-  }
-
   /**
     * session local
     * @tparam T AutoCleanable preferred
@@ -136,7 +117,7 @@ object DriverFactories {
 
     final def destroy(driver: T, tcOpt: Option[TaskContext]): Unit = {
       driver match {
-        case v: LocalCleanable => v.tryClean()
+        case v: Cleanable => v.tryClean()
         case _ =>
       }
     }
@@ -212,6 +193,27 @@ object DriverFactories {
     }
 
     override def deploy(spooky: SpookyContext): Unit = delegate.deploy(spooky)
+  }
+
+
+  object PhantomJS {
+
+    // TODO: separate win/mac/linux32/linux64 versions
+    final val HTTP_RESOURCE_URI = "https://s3-us-west-1.amazonaws.com/spooky-bin/phantomjs-linux/phantomjs"
+
+    final def uri2fileName(path: String) = path.split("/").last
+
+    final def DEFAULT_PATH = System.getProperty("user.home") \\ ".spookystuff" \\ "phantomjs"
+
+    def defaultGetPath: SpookyContext => String = {
+      _ =>
+        AbstractConf.getOrDefault("phantomjs.path", DEFAULT_PATH)
+    }
+
+    def syncDelete(dst: String): Unit = this.synchronized {
+      val dstFile = new File(dst)
+      FileUtils.forceDelete(dstFile)
+    }
   }
 
   case class PhantomJS(

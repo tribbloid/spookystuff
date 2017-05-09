@@ -28,7 +28,7 @@ case class TraceView(
                       override val children: Trace
                     ) extends Actions(children) { //remember trace is not a block! its the super container that cannot be wrapped
 
-  @volatile @transient var docs: Seq[Fetched] = _ //override, cannot be shuffled
+  @volatile @transient var docs: Seq[Fetched] = _ //override, cannot be shipped, lazy evaluated
   def docsOpt = Option(docs)
 
   //always has output (Sometimes Empty) to handle left join
@@ -38,18 +38,24 @@ case class TraceView(
     Some(new TraceView(seq).asInstanceOf[this.type])
   }
 
+
   override def apply(session: Session): Seq[Fetched] = {
 
-    val results = new ArrayBuffer[Fetched]()
+    _apply(session)
+  }
 
-    this.children.foreach {
+  protected[actions] def _apply(session: Session, lazyStream: Boolean = false): Seq[Fetched] = {
+
+    val _children: Seq[Action] = if (lazyStream) children.toStream
+    // this is a good pattern as long as anticipated result doesn't grow too long
+    else children
+
+    val results = _children.flatMap {
       action =>
         val actionResult = action.apply(session)
-        session.backtrace ++= action.trunk
+        session.backtrace ++= action.skeleton
 
         if (action.hasOutput) {
-
-          results ++= actionResult
 
           val spooky = session.spooky
 
@@ -62,11 +68,14 @@ case class TraceView(
             InMemoryDocCache.put(effectiveBacktrace, actionResult, spooky)
             DFSDocCache.put(effectiveBacktrace ,actionResult, spooky)
           }
+          actionResult
         }
         else {
           assert(actionResult.isEmpty)
+          Nil
         }
     }
+
     this.docs = results
 
     results
@@ -80,7 +89,7 @@ case class TraceView(
       if (child.hasOutput){
         val backtrace: Trace = child match {
           case dl: Driverless => child :: Nil
-          case _ => children.slice(0, i).flatMap(_.trunk) :+ child
+          case _ => children.slice(0, i).flatMap(_.skeleton) :+ child
         }
         result += backtrace
       }
@@ -98,7 +107,7 @@ case class TraceView(
   }
 
   //the minimal equivalent action that can be put into backtrace
-  override def trunk = Some(new TraceView(this.trunkSeq).asInstanceOf[this.type])
+  override def skeleton = Some(new TraceView(this.trunkSeq).asInstanceOf[this.type])
 
   class WithSpooky(spooky: SpookyContext) {
 

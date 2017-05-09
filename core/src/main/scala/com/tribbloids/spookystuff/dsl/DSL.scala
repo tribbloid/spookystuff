@@ -102,7 +102,6 @@ sealed trait Level2 {
     def expand(range: Range) = ExpandExpr(self, range)
   }
 
-
   implicit class ElementsExView(self: Extractor[Elements[_]]) extends Serializable {
 
     def uris: Extractor[Seq[String]] = self.andFn(_.uris)

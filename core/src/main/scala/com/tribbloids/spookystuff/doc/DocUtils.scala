@@ -70,6 +70,7 @@ object DocUtils {
                 overwrite: Boolean = true
               )(spooky: SpookyContext): Unit =
   dfsWrite("cache", pathStr, spooky) {
+    val list = pageLikes.toList // Seq may be a stream that cannot be serialized
 
     spooky.pathResolver.output(pathStr, overwrite) {
       fos =>
@@ -77,8 +78,8 @@ object DocUtils {
         val serOut = ser.serializeStream(fos)
 
         try {
-          serOut.writeObject[Seq[T]](
-            pageLikes.asInstanceOf[Seq[T] @SerialVersionUID(cacheVID) with Serializable]
+          serOut.writeObject (
+            list.asInstanceOf[List[T] @SerialVersionUID(cacheVID) with Serializable]
           )
         }
         finally {
@@ -96,7 +97,7 @@ object DocUtils {
 
           val serIn = ser.deserializeStream(fis)
           try {
-            serIn.readObject[Seq[T]]()
+            serIn.readObject[List[T]]()
           }
           finally{
             serIn.close()

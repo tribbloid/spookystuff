@@ -40,7 +40,7 @@ abstract class ActionLike extends VerboseProduct with Serializable {
 
   //TODO: use reflection to simplify
   /**
-    * convert all extractor constructor parameters to Literal
+    * convert all extractor constructor parameters to Literals
     */
   def doInterpolate(pageRow: FetchedRow, schema: DataRowSchema): Option[this.type] = Some(this)
 
@@ -51,12 +51,16 @@ abstract class ActionLike extends VerboseProduct with Serializable {
   //used to determine if snapshot needs to be appended or if possible to be executed lazily
   final def hasOutput: Boolean = outputNames.nonEmpty
 
-  def outputNames: Set[String]
+  def outputNames: Set[String] = Set.empty
 
+  /**
+    * create a list of list each denoting the anticipated backtrace of each output.
+    * @return
+    */
   def dryrun: DryRun
 
   //the minimal equivalent action that can be put into backtrace
-  def trunk: Option[this.type]
+  def skeleton: Option[this.type] = Some(this)
 
   def apply(session: Session): Seq[Fetched]
 

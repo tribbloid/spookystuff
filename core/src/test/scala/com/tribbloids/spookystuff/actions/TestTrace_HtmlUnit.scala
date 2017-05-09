@@ -6,8 +6,7 @@ class TestTrace_HtmlUnit extends TestTrace_PhantomJS {
 
   override lazy val driverFactory = DriverFactories.HtmlUnit()
 
-  //TODO: current phantomjs is buggy and cannot handle these two, which is why they are here
-  //TODO: current HtmlUnit is buggy and cannot handle these two
+  //TODO: find the cause and a more stable test case
 //  test("click should not double click") {
 //    spooky.conf.remoteResourceTimeout = 180.seconds
 //

@@ -94,7 +94,7 @@ final case class ClusterRetry(
                                override val cacheEmptyOutput: CacheLevel.Value
                              ) extends Block(children) {
 
-  override def trunk = Some(ClusterRetry(this.trunkSeq)(retries, cacheEmptyOutput).asInstanceOf[this.type])
+  override def skeleton = Some(ClusterRetry(this.trunkSeq)(retries, cacheEmptyOutput).asInstanceOf[this.type])
 
   override def doExeNoUID(session: Session): Seq[Fetched] = {
 
@@ -153,7 +153,7 @@ final case class LocalRetry(
                              override val cacheEmptyOutput: CacheLevel.Value
                            ) extends Block(children) {
 
-  override def trunk = Some(LocalRetry(this.trunkSeq)(retries, cacheEmptyOutput).asInstanceOf[this.type])
+  override def skeleton = Some(LocalRetry(this.trunkSeq)(retries, cacheEmptyOutput).asInstanceOf[this.type])
 
   override def doExeNoUID(session: Session): Seq[Fetched] = {
 
@@ -213,7 +213,7 @@ final case class Loop(
 
   assert(limit>0)
 
-  override def trunk = Some(this.copy(children = this.trunkSeq).asInstanceOf[this.type])
+  override def skeleton = Some(this.copy(children = this.trunkSeq).asInstanceOf[this.type])
 
   override def doExeNoUID(session: Session): Seq[Fetched] = {
 
@@ -300,7 +300,7 @@ final case class If(
                      ifFalse: Trace
                    ) extends Block(ifTrue ++ ifFalse) {
 
-  override def trunk = Some(this.copy(ifTrue = ifTrue.flatMap(_.trunk), ifFalse = ifFalse.flatMap(_.trunk)).asInstanceOf[this.type])
+  override def skeleton = Some(this.copy(ifTrue = ifTrue.flatMap(_.skeleton), ifFalse = ifFalse.flatMap(_.skeleton)).asInstanceOf[this.type])
 
   override def doExeNoUID(session: Session): Seq[Fetched] = {
 
@@ -357,7 +357,7 @@ case class OAuthV2(self: Wget) extends Block(List(self)) with Driverless {
   //    }
   //  }
 
-  override def trunk = Some(this)
+  override def skeleton = Some(this)
 
   override def doInterpolate(pageRow: FetchedRow, schema: DataRowSchema): Option[this.type] =
     self.interpolate(pageRow, schema).map {
@@ -374,7 +374,7 @@ case class OAuthV2(self: Wget) extends Block(List(self)) with Driverless {
 
 final case class AndThen(self: Action, f: Seq[Fetched] => Seq[Fetched]) extends Block(List(self)) {
 
-  override def trunk = Some(this)
+  override def skeleton = Some(this)
 
   override def doExeNoUID(session: Session): Seq[Fetched] = {
     f(self.exe(session))

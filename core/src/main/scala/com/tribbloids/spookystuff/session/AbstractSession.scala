@@ -55,8 +55,9 @@ sealed abstract class AbstractSession(val spooky: SpookyContext) extends LocalCl
   def taskContextOpt: Option[TaskContext] = lifespan.ctx.taskContextOpt
 }
 
-object NoWebDriverException extends SpookyException("INTERNAL ERROR: should initialize driver automatically")
-object NoPythonDriverException extends SpookyException("INTERNAL ERROR: should initialize driver automatically")
+abstract class NoDriverException(val str: String) extends SpookyException(str: String)
+object NoWebDriverException extends NoDriverException("INTERNAL ERROR: should initialize driver automatically")
+object NoPythonDriverException extends NoDriverException("INTERNAL ERROR: should initialize driver automatically")
 
 /**
   * the only implementation

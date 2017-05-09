@@ -4,12 +4,12 @@ import com.tribbloids.spookystuff.row.{FetchedRow, DataRowSchema}
 
 abstract class Actions(override val children: Trace) extends ActionLike {
 
-  final def outputNames = {
+  override final def outputNames = {
     val names = children.map(_.outputNames)
     names.reduceLeftOption(_ ++ _).getOrElse(Set())
   }
 
-  final protected def trunkSeq: Trace = children.flatMap(_.trunk)
+  final protected def trunkSeq: Trace = children.flatMap(_.skeleton)
 
   final protected def doInterpolateSeq(pr: FetchedRow, schema: DataRowSchema): Trace =
     Actions.doInterppolateSeq(children, pr, schema: DataRowSchema)

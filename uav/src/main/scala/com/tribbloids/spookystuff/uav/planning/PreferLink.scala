@@ -16,11 +16,9 @@ private[uav] case class PreferLink(
 
   val firstLink = links.head
 
-  override def trunk = None
+  override def skeleton = None
 
   override protected def doExe(session: Session): Seq[Fetched] = {
     Nil
   }
-
-  override def outputNames: Set[String] = Set.empty
 }

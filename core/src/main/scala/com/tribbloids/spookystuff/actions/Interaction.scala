@@ -21,10 +21,6 @@ abstract class Interaction extends Action {
 
   def delay: Duration
 
-  final override def outputNames = Set.empty
-
-  final override def trunk = Some(this) //can't be ommitted
-
   override def doExe(session: Session): Seq[Doc] = {
 
     exeNoOutput(session: Session)

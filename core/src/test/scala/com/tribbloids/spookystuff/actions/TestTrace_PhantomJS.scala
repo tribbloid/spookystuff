@@ -2,7 +2,7 @@ package com.tribbloids.spookystuff.actions
 
 import com.tribbloids.spookystuff.SpookyEnvFixture
 import com.tribbloids.spookystuff.doc.Doc
-import com.tribbloids.spookystuff.session.{CleanWebDriver, Session, AbstractSession}
+import com.tribbloids.spookystuff.session.{AbstractSession, CleanWebDriver, Session}
 import com.tribbloids.spookystuff.testutils.FunSpecx
 
 class TestTrace_PhantomJS extends SpookyEnvFixture with FunSpecx {
@@ -51,12 +51,12 @@ class TestTrace_PhantomJS extends SpookyEnvFixture with FunSpecx {
     assert(dry2.head == Seq(OAuthV2(Wget("http://dum.my"))))
   }
 
-  it("Trace.correct should not modify empty Trace") {
+  it("TraceView.autoSnapshot should not modify empty Trace") {
 
     assert(TraceView(List[Action]()).autoSnapshot == List[Action]())
   }
 
-  it("Trace.correct should append Snapshot to non-empty Trace that doesn't end with Export OR Block") {
+  it("TraceView.autoSnapshot should append Snapshot to non-empty Trace that doesn't end with Export OR Block") {
 
     val trace = List(
       Visit("dummy"),
@@ -67,7 +67,7 @@ class TestTrace_PhantomJS extends SpookyEnvFixture with FunSpecx {
     assert(trace.autoSnapshot == trace :+ Snapshot())
   }
 
-  it("Trace.correct should append Snapshot to non-empty Trace that has no output") {
+  it("TraceView.autoSnapshot should append Snapshot to non-empty Trace that has no output") {
 
     val trace = List(
       Visit("dummy"),
@@ -307,16 +307,55 @@ class TestTrace_PhantomJS extends SpookyEnvFixture with FunSpecx {
     assert(code.contains("Wikipedia"))
   }
 
-  //  test("visit should handle corsera") {
+  //TODO: put in IT?
+  it("visit should handle corsera") {
+    val results = (
+      Visit("https://www.coursera.org/yale") ::
+        Snapshot() :: Nil
+      )
+      .fetch(spooky)
 
-  //TODO: PhantomJS is broken on this: re-enable after its fixed or switching to alternative browser.
+    val title = results.head.asInstanceOf[Doc]
+      .root.\("title").head.text.get
+    assert(title.toLowerCase.contains("coursera"))
+  }
 
-  //    val results = (
-  //      Visit("https://www.coursera.org/yale") ::
-  //        Snapshot() :: Nil
-  //      ).resolve(spooky)
-  //
-  //    val code = results.head.asInstanceOf[Page].code.get.split('\n').map(_.trim).mkString
-  //    assert(code.contains("<title>Yale University"))
-  //  }
+  // This is fundamentally conflicting with session & driver management
+//  ignore("TraceView.apply should yield lazy stream") {
+//
+//    var acc: Int = 0
+//
+//    case object DummyAction extends Action {
+//
+//      override def outputNames: Set[String] = Set("dummy")
+//
+//      override protected def doExe(session: Session): Seq[Fetched] = {
+//        acc += 1
+//        Seq(NoDoc(Nil))
+//      }
+//    }
+//
+//    val actions = List(
+//      DummyAction,
+//      DummyAction,
+//      DummyAction
+//    )
+//
+//    spooky.withSession {
+//      session =>
+//        val results = actions.apply(session)
+//        assert(acc == 1) // preemptive execution
+//
+//        results.headOption
+//        assert(acc == 1)
+//
+//        results.toList
+//        assert(acc == 3)
+//
+//        // in comparison
+////        acc = 0
+////        val notLazy = TraceView(actions)._apply(session, lazyStream = false)
+////        assert(acc == 3)
+//    }
+//  }
 }

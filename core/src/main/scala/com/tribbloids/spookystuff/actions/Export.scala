@@ -43,7 +43,7 @@ abstract class Export extends Named {
 
   final override def outputNames = Set(this.name)
 
-  final override def trunk = None //have not impact to driver
+  final override def skeleton = None //have not impact to driver
 
   final def doExe(session: Session): Seq[Fetched] = {
     val results = doExeNoName(session)

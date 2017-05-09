@@ -23,6 +23,8 @@ object SpookyEnvFixture {
   //    }
   //  }
 
+  @volatile var firstRun: Boolean = true
+
   def shouldBeClean(
                      spooky: SpookyContext,
                      pNames: Seq[String]
@@ -154,13 +156,24 @@ abstract class SpookyEnvFixture
 
   val processNames = Seq("phantomjs", "python")
 
+  override def beforeAll(): Unit = if (SpookyEnvFixture.firstRun){
+
+    val spooky = this.spooky
+    val processNames = this.processNames
+    super.beforeAll()
+    sc.foreachComputer {
+      SpookyEnvFixture.shouldBeClean(spooky, processNames)
+    }
+    SpookyEnvFixture.firstRun = false
+  }
+
   override def afterAll() {
 
     val spooky = this.spooky
-    val pNames = this.processNames
+    val processNames = this.processNames
     TestHelper.clearTempDirs()
     sc.foreachComputer {
-      SpookyEnvFixture.shouldBeClean(spooky, pNames)
+      SpookyEnvFixture.shouldBeClean(spooky, processNames)
     }
     super.afterAll()
   }

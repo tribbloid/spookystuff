@@ -136,7 +136,7 @@ trait Action extends ActionLike with ActionRelay.HasMessageRelay{
           }
           if (errorDumpScreenshot) {
             try {
-              val rawPage = ErrorScreenshot.exe(session).toList.head.asInstanceOf[Doc]
+              val rawPage = ErrorScreenshot.exe(session).head.asInstanceOf[Doc]
               message += "\nScreenshot: " + this.errorDump(message, rawPage, session.spooky)
             }
             catch {
@@ -180,7 +180,7 @@ trait Action extends ActionLike with ActionRelay.HasMessageRelay{
     }
   }
 
-  protected[actions] def withDriversTimedDuring[T](session: Session)(f: => T) = {
+  protected[actions] def withDriversDuring[T](session: Session)(f: => T) = {
 
     var baseStr = s"[${session.taskContextOpt.map(_.partitionId()).getOrElse(0)}]+> ${this.toString}"
     this match {
@@ -203,7 +203,7 @@ trait Action extends ActionLike with ActionRelay.HasMessageRelay{
   }
 
   final protected[actions] def exe(session: Session): Seq[Fetched] = {
-    withDriversTimedDuring(session){
+    withDriversDuring(session){
       doExe(session)
     }
   }
