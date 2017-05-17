@@ -140,7 +140,7 @@ object HDFSResolver {
 
 case class HDFSResolver(
                          @transient hadoopConf: Configuration,
-                         @transient doAsOpt: Option[(() => Unit) => Unit] = HDFSResolver.defaultDoAsOpt
+                         doAsOpt: Option[(() => Unit) => Unit] = HDFSResolver.defaultDoAsOpt
                        ) extends PathResolver {
 
   def lockedSuffix: String = ".locked"

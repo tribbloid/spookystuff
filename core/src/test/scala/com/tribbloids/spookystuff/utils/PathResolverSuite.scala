@@ -13,7 +13,7 @@ class PathResolverSuite extends SpookyEnvFixture with LocalPathDocsFixture {
 
   val resolverWithUser = HDFSResolver(
     sc.hadoopConfiguration,
-    Some({
+    Option({
       fn =>
         val ugi = UserGroupInformation.createUserForTesting("dummy", Array.empty)
         ugi.doAs(fn)
