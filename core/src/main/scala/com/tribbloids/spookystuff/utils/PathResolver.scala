@@ -8,7 +8,7 @@ import com.tribbloids.spookystuff.Const
 import org.apache.hadoop
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.{FSDataInputStream, FSDataOutputStream, Path}
-import org.apache.hadoop.security.UserGroupInformation
+import org.apache.spark.deploy.SparkHadoopUtil
 
 /*
  * to make it resilient to asynchronous read/write, let output rename the file, write it, and rename back,
@@ -128,42 +128,47 @@ object LocalResolver extends PathResolver {
   }
 }
 
+object HDFSResolver {
+
+  def sparkDoAsOpt: Option[(() => Unit) => Unit] = Some {
+    fn =>
+      SparkHadoopUtil.get.runAsSparkUser(fn)
+  }
+
+  def defaultDoAsOpt: Option[(() => Unit) => Unit] = None
+}
+
 case class HDFSResolver(
                          @transient hadoopConf: Configuration,
-                         @transient ugiOverride: Option[UserGroupInformation] = None
+                         @transient doAsOpt: Option[(() => Unit) => Unit] = HDFSResolver.defaultDoAsOpt
                        ) extends PathResolver {
-
-  import SpookyViews.Function2PrivilegedAction
 
   def lockedSuffix: String = ".locked"
 
   val confBinary = new BinaryWritable(hadoopConf)
-  val ugiWrapperOpt = ugiOverride.map(new SerializableUGI(_))
 
   def getHadoopConf: Configuration = {
     confBinary.value
   }
-  def getUGIOverride: Option[UserGroupInformation] = ugiWrapperOpt.map{
-    _.value
-  }
 
-
-  override def toString = s"${this.getClass.getSimpleName}($getHadoopConf, $getUGIOverride)"
-
+  override def toString = s"${this.getClass.getSimpleName}($getHadoopConf)"
 
   def ensureAbsolute(path: Path): Unit = {
     assert(path.isAbsolute, s"BAD DESIGN: ${path.toString} is not an absolute path")
   }
 
-  def doAsUGI[T](f: =>T): T = {
-    getUGIOverride match {
+  protected def doAsUGI[T](f: =>T): T = {
+    doAsOpt match {
       case None =>
         f
-      case Some(ugi) =>
+      case Some(doAs) =>
         try {
-          ugi.doAs {
-            f
+          @transient var result: AnyRef = null
+          doAs {
+            () =>
+              result = f.asInstanceOf[AnyRef]
           }
+          result.asInstanceOf[T]
         }
         catch {
           case e: Throwable =>

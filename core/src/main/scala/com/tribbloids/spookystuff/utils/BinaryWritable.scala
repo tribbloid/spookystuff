@@ -65,7 +65,7 @@ class SerializableUGI(
   val name =  _ugi.getUserName
   val credentials: BinaryWritable[Credentials] = new BinaryWritable(_ugi.getCredentials, serFactory)
 
-  @transient lazy val value = Option(_ugi).getOrElse {
+  @transient lazy val value: UserGroupInformation = Option(_ugi).getOrElse {
     val result = UserGroupInformation.createRemoteUser(name)
     result.addCredentials(credentials.value)
     result
