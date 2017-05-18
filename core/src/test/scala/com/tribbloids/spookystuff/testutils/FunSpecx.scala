@@ -24,6 +24,7 @@ trait Suitex extends {
                   ignoreCase: Boolean = false,
                   superSet: Boolean = false
                 ): Unit = {
+
       var a: List[String] = str.split("\n").toList.filterNot(_.replaceAllLiterally(" ","").isEmpty)
         .map(v => ("|" + v).trim.stripPrefix("|"))
       if (sort) a = a.sorted

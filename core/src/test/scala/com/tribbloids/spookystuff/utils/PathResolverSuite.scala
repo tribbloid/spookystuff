@@ -9,17 +9,10 @@ import org.apache.hadoop.security.UserGroupInformation
   */
 class PathResolverSuite extends SpookyEnvFixture with LocalPathDocsFixture {
 
-  import SpookyViews._
-
   val resolverWithUser = HDFSResolver(
     sc.hadoopConfiguration,
-    Option({
-      fn =>
-        val ugi = UserGroupInformation.createUserForTesting("dummy", Array.empty)
-        ugi.doAs(fn)
-    })
+    () => Some(UserGroupInformation.createUserForTesting("dummy", Array.empty))
   )
-
 
   it("HDFSResolver can override login UGI") {
     val user = resolverWithUser.input(HTML_URL) {
