@@ -15,7 +15,7 @@ import org.apache.spark.util.SparkHelper
   */
 case class HDFSResolver(
                          @transient hadoopConf: Configuration,
-                         ugiFactory: () => Option[UserGroupInformation] = HDFSResolver.defaultUGIFactory
+                         ugiFactory: () => Option[UserGroupInformation] = HDFSResolver.noUGIFactory
                        ) extends PathResolver {
 
   import SpookyViews._
@@ -164,5 +164,5 @@ object HDFSResolver {
 
   def sparkUGIFactory = () => Some(SparkHelper.getSparkUGI)
 
-  def defaultUGIFactory = () => None
+  def noUGIFactory = () => None
 }

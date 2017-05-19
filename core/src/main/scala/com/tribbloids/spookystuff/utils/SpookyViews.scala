@@ -21,7 +21,9 @@ import scala.util.Random
   * Created by peng on 11/7/14.
   * implicit conversions in this package are used for development only
   */
-object SpookyViews {
+object SpookyViews extends SpookyViews
+
+class SpookyViews {
 
   val SPARK_JOB_DESCRIPTION = "spark.job.description"
   val SPARK_JOB_GROUP_ID = "spark.jobGroup.id"
