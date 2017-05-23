@@ -1,12 +1,12 @@
 package com.tribbloids.spookystuff.utils
 
-import java.io._
+import java.io.{InputStream, OutputStream}
 import java.security.PrivilegedActionException
 
 import com.tribbloids.spookystuff.Const
 import org.apache.hadoop
 import org.apache.hadoop.conf.Configuration
-import org.apache.hadoop.fs.{FSDataInputStream, FSDataOutputStream, Path}
+import org.apache.hadoop.fs.{FSDataInputStream, FSDataOutputStream, FileSystem, Path}
 import org.apache.hadoop.security.UserGroupInformation
 import org.apache.spark.util.SparkHelper
 
@@ -56,13 +56,15 @@ case class HDFSResolver(
 
   def input[T](pathStr: String)(f: InputStream => T): T = {
     val path: Path = new Path(pathStr)
-    val fs = path.getFileSystem(getHadoopConf)
+    val fs: FileSystem = path.getFileSystem(getHadoopConf)
 
     doAsUGI {
       if (!pathStr.endsWith(lockedSuffix)) {
         //wait for its locked file to finish its locked session
 
         val lockedPath = new Path(pathStr + lockedSuffix)
+
+        fs.getStatus(path)
 
         //wait for 15 seconds in total
         SpookyUtils.retry(Const.DFSBlockedAccessRetries) {
