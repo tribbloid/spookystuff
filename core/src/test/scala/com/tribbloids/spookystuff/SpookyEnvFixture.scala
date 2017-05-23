@@ -152,7 +152,7 @@ abstract class SpookyEnvFixture
       super.withFixture(test)
   }
 
-  import com.tribbloids.spookystuff.utils.SpookyViews.SparkContextView
+  import com.tribbloids.spookystuff.utils.SpookyViews._
 
   val processNames = Seq("phantomjs", "python")
 

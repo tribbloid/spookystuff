@@ -5,8 +5,7 @@ import java.security.PrivilegedAction
 import com.tribbloids.spookystuff.caching.ConcurrentMap
 import com.tribbloids.spookystuff.row._
 import org.apache.spark.rdd.RDD
-import org.apache.spark.sql.catalyst.expressions.{Alias, NamedExpression}
-import org.apache.spark.sql.{Column, DataFrame}
+import org.apache.spark.sql.DataFrame
 import org.apache.spark.storage.StorageLevel
 import org.apache.spark.{HashPartitioner, SparkContext, SparkEnv, TaskContext}
 
@@ -21,9 +20,7 @@ import scala.util.Random
   * Created by peng on 11/7/14.
   * implicit conversions in this package are used for development only
   */
-object SpookyViews extends SpookyViews
-
-class SpookyViews {
+case object SpookyViews {
 
   val SPARK_JOB_DESCRIPTION = "spark.job.description"
   val SPARK_JOB_GROUP_ID = "spark.jobGroup.id"
