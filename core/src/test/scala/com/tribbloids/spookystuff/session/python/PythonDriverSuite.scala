@@ -43,6 +43,12 @@ class PythonDriverSuite extends SpookyEnvFixture {
   import scala.concurrent.ExecutionContext.Implicits.global
   import scala.concurrent.duration._
 
+  override def afterAll(): Unit = {
+
+    Thread.sleep(3000) //wait for zombie process to die
+    super.afterAll()
+  }
+
   it("sendAndGetResult should work in single thread") {
     PythonDriverSuite.onePlusX(1 to 100)
   }
