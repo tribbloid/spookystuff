@@ -12,18 +12,16 @@ import com.tribbloids.spookystuff.dsl.Samplers
  * allowing execution as a main object and tested as a test class
  * keep each test as small as possible, by using downsampling & very few iterations
  */
-trait LocalSpookyCore {
+trait SpookyEnv {
 
   val appName = this.getClass.getSimpleName.replace("$","")
 
   val sc: SparkContext = {
     val conf: SparkConf = new SparkConf().setAppName(appName)
 
-    var master: String = null
-    master = Option(master).getOrElse(conf.getOption("spark.master").orNull)
-    master = Option(master).getOrElse(System.getenv("MASTER"))
-    master = Option(master).getOrElse(s"local[${Runtime.getRuntime.availableProcessors()},10]")
-//    master = Option(master).getOrElse(s"local-cluster[4,4,1024]")
+    val master = conf.getOption("spark.master")
+    .orElse(Option(System.getenv("MASTER")))
+    .getOrElse(s"local[${Runtime.getRuntime.availableProcessors()},10]")
 
     conf.setMaster(master)
     new SparkContext(conf)
@@ -41,10 +39,13 @@ trait LocalSpookyCore {
 
     val spooky = new SpookyContext(sql)
 
-    val dirs = spooky.conf.dirs
+    val dirs = spooky.conf.dirConf
 
-    if (dirs.root == null && dirs.cache == null){
+    if (dirs.root == null){
       dirs.root = s"file://${System.getProperty("user.dir")}/temp/spooky-local/$appName/"
+    }
+
+    if (dirs.cache == null){
       dirs.cache = s"file://${System.getProperty("user.dir")}/temp/spooky-local/cache/"
     }
 

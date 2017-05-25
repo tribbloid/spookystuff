@@ -163,7 +163,7 @@
         <module>core</module>
         <module>integration</module>
         <!--<module>pipeline</module>-->
-        <!--<module>example</module>-->
+        <module>example</module>
         <module>assembly</module>
     </modules>
 

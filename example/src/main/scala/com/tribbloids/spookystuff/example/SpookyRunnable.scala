@@ -1,11 +1,11 @@
 package com.tribbloids.spookystuff.example
 
+import com.tribbloids.spookystuff.SpookyContext
+import com.tribbloids.spookystuff.rdd.FetchedDataset
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.DataFrame
-import com.tribbloids.spookystuff.SpookyContext
-import com.tribbloids.spookystuff.execution.ExecutionPlan
 
-trait QueryCore extends LocalSpookyCore {
+trait SpookyRunnable extends SpookyEnv {
 
   override def finalize(): Unit = {
     sc.stop()
@@ -24,9 +24,9 @@ trait QueryCore extends LocalSpookyCore {
         df.printSchema()
         println(df.schema.fieldNames.mkString("[","\t","]"))
         array
-      case pageRowRDD: ExecutionPlan =>
+      case pageRowRDD: FetchedDataset =>
         val array = pageRowRDD.rdd.persist().takeSample(withReplacement = false, num = 100)
-        println(pageRowRDD.fields)
+        println(pageRowRDD.schema)
         array
       case rdd: RDD[_] =>
         rdd.persist().takeSample(withReplacement = false, num = 100)

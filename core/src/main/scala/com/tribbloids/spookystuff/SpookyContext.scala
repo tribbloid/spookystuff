@@ -16,7 +16,8 @@ import scala.collection.immutable.ListMap
 import scala.language.implicitConversions
 
 case class SpookyContext private (
-                                   @transient sqlContext: SQLContext, //can't be used on executors, TODO: change to Option or SparkContext
+                                   @transient sqlContext: SQLContext, //can't be used on executors,
+                                   // TODO: change to Option or SparkContext
                                    private var _conf: SpookyConf, //can only be used on executors after broadcast
                                    metrics: SpookyMetrics //accumulators cannot be broadcasted,
                                  ) extends SerializationMarks {

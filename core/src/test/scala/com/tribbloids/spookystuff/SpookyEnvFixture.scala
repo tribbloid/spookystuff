@@ -109,6 +109,8 @@ abstract class SpookyEnvFixture
   def sc: SparkContext = TestHelper.TestSpark
   def sql: SQLContext = TestHelper.TestSQL
 
+  lazy val driverFactory: DriverFactory[CleanWebDriver] = SpookyConf.TEST_WEBDRIVER_FACTORY
+
   @transient lazy val spookyConf = new SpookyConf(
     webDriverFactory = driverFactory
   )
@@ -142,8 +144,6 @@ abstract class SpookyEnvFixture
   )
   implicit def extractor2Function[T, R](extractor: GenExtractor[T, R]): PartialFunction[T, R] = extractor.resolve(emptySchema)
   implicit def doc2Root(doc: Doc): Unstructured = doc.root
-
-  lazy val driverFactory: DriverFactory[CleanWebDriver] = SpookyConf.TEST_WEBDRIVER_FACTORY
 
   override def withFixture(test: NoArgTest) = {
     if (isRetryable(test))
