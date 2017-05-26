@@ -11,29 +11,18 @@
 
     <artifactId>spookystuff-example</artifactId>
 
-    <!--<properties>-->
-    <!--<assembly.jar.dir>scala-${scala.binary.version}</assembly.jar.dir>-->
-    <!--<assembly.jar.basename>${project.artifactId}-${project.version}.jar</assembly.jar.basename>-->
-    <!--<dependencies.scope>provided</dependencies.scope>-->
-    <!--<nd4j.version>0.0.3.5.5.5</nd4j.version>-->
-    <!--<dl4j.version>0.0.3.3.4.alpha2</dl4j.version>-->
-    <!--</properties>-->
-
-    <profiles>
-        <profile>
-            <id>all-inclusive-examples</id>
-            <properties>
-                <spark.scope>compile</spark.scope>
-            </properties>
-        </profile>
-    </profiles>
+    <properties>
+        <assembly.jar.dir>scala-${scala.binary.version}</assembly.jar.dir>
+        <assembly.jar.basename>${project.artifactId}-${project.version}.jar</assembly.jar.basename>
+        <nd4j.version>0.0.3.5.5.5</nd4j.version>
+        <dl4j.version>0.0.3.3.4.alpha2</dl4j.version>
+    </properties>
 
     <dependencies>
         <dependency>
             <groupId>com.tribbloids.spookystuff</groupId>
             <artifactId>spookystuff-core</artifactId>
             <version>${project.version}</version>
-            <scope>${spark.scope}</scope>
         </dependency>
         <!--<dependency>-->
         <!--<groupId>com.tribbloids.spookystuff</groupId>-->
@@ -53,55 +42,55 @@
         <!--</dependency>-->
     </dependencies>
 
-    <!--<build>-->
-    <!--<plugins>-->
-    <!--<plugin>-->
-    <!--<groupId>org.apache.maven.plugins</groupId>-->
-    <!--<artifactId>maven-shade-plugin</artifactId>-->
-    <!--<version>2.4.3</version>-->
-    <!--<configuration>-->
-    <!--<outputFile>${project.build.directory}/${assembly.jar.dir}/${assembly.jar.basename}</outputFile>-->
-    <!--<filters>-->
-    <!--<filter>-->
-    <!--<artifact>*:*</artifact>-->
-    <!--<excludes>-->
-    <!--<exclude>META-INF/*.SF</exclude>-->
-    <!--<exclude>META-INF/*.DSA</exclude>-->
-    <!--<exclude>META-INF/*.RSA</exclude>-->
-    <!--</excludes>-->
-    <!--</filter>-->
-    <!--</filters>-->
-    <!--</configuration>-->
-    <!--<executions>-->
-    <!--<execution>-->
-    <!--<phase>package</phase>-->
-    <!--<goals>-->
-    <!--<goal>shade</goal>-->
-    <!--</goals>-->
-    <!--<configuration>-->
-    <!--<createDependencyReducedPom>false</createDependencyReducedPom>-->
-    <!--<relocations>-->
-    <!--<relocation>-->
-    <!--<pattern>org.apache.http</pattern>-->
-    <!--<shadedPattern>org.spookystuff-project.apache.http</shadedPattern>-->
-    <!--</relocation>-->
-    <!--<relocation>-->
-    <!--<pattern>org.json4s</pattern>-->
-    <!--<shadedPattern>org.spookystuff-project.json4s</shadedPattern>-->
-    <!--</relocation>-->
-    <!--</relocations>-->
-    <!--</configuration>-->
-    <!--</execution>-->
-    <!--</executions>-->
-    <!--</plugin>-->
-    <!--<plugin>-->
-    <!--<groupId>org.sonatype.plugins</groupId>-->
-    <!--<artifactId>nexus-staging-maven-plugin</artifactId>-->
-    <!--<configuration>-->
-    <!--<skipNexusStagingDeployMojo>true</skipNexusStagingDeployMojo>-->
-    <!--</configuration>-->
-    <!--</plugin>-->
-    <!--</plugins>-->
-    <!--</build>-->
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-shade-plugin</artifactId>
+                <version>2.4.3</version>
+                <configuration>
+                    <outputFile>${project.build.directory}/${assembly.jar.dir}/${assembly.jar.basename}</outputFile>
+                    <filters>
+                        <filter>
+                            <artifact>*:*</artifact>
+                            <excludes>
+                                <exclude>META-INF/*.SF</exclude>
+                                <exclude>META-INF/*.DSA</exclude>
+                                <exclude>META-INF/*.RSA</exclude>
+                            </excludes>
+                        </filter>
+                    </filters>
+                </configuration>
+                <executions>
+                    <execution>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>shade</goal>
+                        </goals>
+                        <configuration>
+                            <createDependencyReducedPom>false</createDependencyReducedPom>
+                            <relocations>
+                                <relocation>
+                                    <pattern>org.apache.http</pattern>
+                                    <shadedPattern>org.spookystuff-project.apache.http</shadedPattern>
+                                </relocation>
+                                <relocation>
+                                    <pattern>org.json4s</pattern>
+                                    <shadedPattern>org.spookystuff-project.json4s</shadedPattern>
+                                </relocation>
+                            </relocations>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.sonatype.plugins</groupId>
+                <artifactId>nexus-staging-maven-plugin</artifactId>
+                <configuration>
+                    <skipNexusStagingDeployMojo>true</skipNexusStagingDeployMojo>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
 
 </project>
