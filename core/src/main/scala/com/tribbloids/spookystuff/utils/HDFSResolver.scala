@@ -164,7 +164,7 @@ case class HDFSResolver(
 
 object HDFSResolver {
 
-  def sparkUGIFactory = () => Some(SparkHelper.getSparkUGI)
+  def serviceUGIFactory = () => Some(SparkHelper.serviceUGI)
 
   def noUGIFactory = () => None
 }
