@@ -35,7 +35,7 @@ Powered by
 ![Apache Tika](http://tika.apache.org/tika.png)
 ![Apache Maven](https://maven.apache.org/images/maven-logo-black-on-white.png)
 ![PhantomJS](http://phantomjs.org/img/phantomjs-logo.png)
-![MAVLink](https://www.dronecode.org/sites/dronecode/files/pages/images/logo_mavlink.png)
+![MAVLink](https://avatars1.githubusercontent.com/u/961247)
 
 License
 -----------
