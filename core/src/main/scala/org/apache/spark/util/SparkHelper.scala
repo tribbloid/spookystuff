@@ -13,4 +13,8 @@ object SparkHelper {
     val service = Option(user.getRealUser).getOrElse(user)
     service
   }
+
+  def exceptionString(e: Throwable) = {
+    org.apache.spark.util.Utils.exceptionString(e)
+  }
 }
