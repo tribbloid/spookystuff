@@ -1,5 +1,6 @@
 package org.apache.spark.ml.dsl.utils
 
+import com.tribbloids.spookystuff.actions.Verbose
 import org.json4s.Extraction._
 import org.json4s.JsonAST.JString
 import org.json4s._
@@ -33,8 +34,8 @@ abstract class XMLWeakDeserializer[T: Manifest] extends Serializer[T] {
     catch {
       case e: Exception =>
         val metadata = exceptionMetadata(jv, ti, format)
-        throw new VerboseJSONException(
-          "=========== [METADATA] ============\n" + e.getMessage,
+        throw new JSONException(
+          e.getMessage,
           e,
           metadata
         )
@@ -160,14 +161,14 @@ case class SerDeMetadata(
                           custom: Seq[String] = Nil
                         )
 
-class VerboseJSONException(
-                             msg: String,
-                             e: Exception,
-                             metadata: JSONExceptionMetadata
-                           ) extends MappingException(msg, e) with Verbose {
+class JSONException(
+                     msg: String,
+                     cause: Exception,
+                     metadata: JSONExceptionMetadata
+                   ) extends MappingException(msg, cause) with Verbose {
 
-  override def toString = toStringVerbose
+  override def getMessage = toStringVerbose
 
-  override def detail = metadata.toJSON(pretty = true)
+  override def detail = "=========== [METADATA] ============\n" + metadata.toJSON(pretty = true)
 }
 

@@ -6,6 +6,7 @@ import java.util.UUID
 import com.tribbloids.spookystuff.actions.Trace
 import com.tribbloids.spookystuff.doc.Doc
 import com.tribbloids.spookystuff.utils.SpookyUtils
+import org.apache.spark.ml.dsl.utils.MessageView
 
 object FilePaths{
 
@@ -13,7 +14,7 @@ object FilePaths{
 
     override def apply(trace: Trace): String = {
 
-      val actionStrs = trace.map(_.toString_\\\)
+      val actionStrs = trace.map(v => MessageView(v).toString_\\\)
 
       val actionConcat = if (actionStrs.size > 4) {
         val oneTwoThree = actionStrs.slice(0,3)
@@ -34,7 +35,7 @@ object FilePaths{
 
     override def apply(trace: Trace): String = {
 
-      val actionStrs = trace.map(_.toString_\\\)
+      val actionStrs = trace.map(v => MessageView(v).toString_\\\)
 
       val actionConcat = if (actionStrs.size > 4) {
         val oneTwoThree = actionStrs.slice(0,3)

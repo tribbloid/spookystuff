@@ -8,7 +8,6 @@ import com.tribbloids.spookystuff.testutils.FunSpecx
 class TestTrace_PhantomJS extends SpookyEnvFixture with FunSpecx {
 
   import com.tribbloids.spookystuff.dsl._
-
   import scala.concurrent.duration._
 
   override lazy val driverFactory: DriverFactory[CleanWebDriver] = DriverFactories.PhantomJS()
@@ -132,70 +131,6 @@ class TestTrace_PhantomJS extends SpookyEnvFixture with FunSpecx {
   //    val json = action.toString()
   //    println(json)
   //  }
-
-  it("Click.toJSON should work") {
-    val action = Click("o1")
-    val json = action.toJSON()
-    json.shouldBe(
-      """
-        |{
-        |  "className" : "com.tribbloids.spookystuff.actions.Click",
-        |  "params" : {
-        |    "selector" : "o1",
-        |    "delay" : "0 seconds",
-        |    "blocking" : true
-        |  }
-        |}
-      """.stripMargin
-    )
-  }
-
-  it("Wget.toJSON should work") {
-    val action = Wget("http://dummy.com")
-    val json = action.toJSON()
-    json.shouldBe(
-      """
-        |{
-        |  "className" : "com.tribbloids.spookystuff.actions.Wget",
-        |  "params" : {
-        |    "uri" : "http://dummy.com",
-        |    "filter" : { }
-        |  }
-        |}
-      """.stripMargin
-    )
-  }
-
-  it("Loop.toJSON should work") {
-    val action = Loop(
-      Click("o1")
-        +> Snapshot()
-    )
-    val json = action.toJSON()
-    json.shouldBe(
-      """
-        |{
-        |  "className" : "com.tribbloids.spookystuff.actions.Loop",
-        |  "params" : {
-        |    "children" : [ {
-        |      "className" : "com.tribbloids.spookystuff.actions.Click",
-        |      "params" : {
-        |        "selector" : "o1",
-        |        "delay" : "0 seconds",
-        |        "blocking" : true
-        |      }
-        |    }, {
-        |      "className" : "com.tribbloids.spookystuff.actions.Snapshot",
-        |      "params" : {
-        |        "filter" : { }
-        |      }
-        |    } ],
-        |    "limit" : 2147483647
-        |  }
-        |}
-      """.stripMargin
-    )
-  }
 
   //TODO: enable these
   //  test("Action.toJSON should work") {

@@ -5,56 +5,14 @@ import com.tribbloids.spookystuff.selenium.BySizzleCssSelector
 import com.tribbloids.spookystuff.session.Session
 import com.tribbloids.spookystuff.utils.{ScalaUDT, SpookyUtils}
 import com.tribbloids.spookystuff.{ActionException, Const, SpookyContext}
-import org.apache.spark.ml.dsl.utils._
+import org.apache.spark.ml.dsl.utils.MessageView
 import org.apache.spark.sql.types.SQLUserDefinedType
-import org.json4s.Formats
 import org.openqa.selenium.support.ui.{ExpectedConditions, WebDriverWait}
 import org.slf4j.LoggerFactory
 
 import scala.concurrent.duration.Duration
 
 class ActionUDT extends ScalaUDT[Action]
-
-object ActionRelay extends MessageRelay[Action] {
-
-  //  override implicit def formats: Formats = Xml.defaultFormats + FallbackJSONSerializer
-
-  def batchConvert(elements: Traversable[_]): Traversable[Any] = elements
-    .map {
-      v =>
-        convert(v)
-    }
-
-  private def convert(value: Any) = {
-    value match {
-      case v: MessageAPI => v.toMessage
-      case (k, v: MessageAPI) => k -> v.toMessage
-      case v: Traversable[_] => batchConvert(v)
-      case v => v
-    }
-  }
-
-  //avoid using scala reflections on worker as they are thread unsafe, use JSON4s that is more battle tested
-  override def toMessage(value: Action): M = {
-    val className = value.getClass.getCanonicalName
-    val map: Map[String, Any] = Map(SpookyUtils.Reflection.getCaseAccessorMap(value): _*)
-    val effectiveMap = map.mapValues {convert}
-
-    M(
-      className,
-      effectiveMap
-    )
-  }
-
-  //TODO: change to MessageRepr to allow 2-way conversions.
-  case class M(
-                className: String,
-                params: Map[String, Any]
-              ) extends MessageAPI {
-
-    override def formats: Formats = ActionRelay.this.formats
-  }
-}
 
 /**
   * These are the same actions a human would do to get to the data page,
@@ -66,7 +24,7 @@ object ActionRelay extends MessageRelay[Action] {
   */
 //TODO: merging with Extractor[Seq[Fetched]]?
 @SQLUserDefinedType(udt = classOf[ActionUDT])
-trait Action extends ActionLike with ActionRelay.HasMessageRelay{
+trait Action extends ActionLike {
 
   override def children: Trace = Nil
 
@@ -186,7 +144,7 @@ trait Action extends ActionLike with ActionRelay.HasMessageRelay{
     this match {
       case tt: Timed =>
         baseStr = baseStr + s" in ${tt.timeout(session)}"
-        LoggerFactory.getLogger(this.getClass).info(this.verbose(baseStr))
+        LoggerFactory.getLogger(this.getClass).info(this.verbosify(baseStr))
 
         session.withDriversDuring(
           SpookyUtils.withDeadline(tt.hardTerminateTimeout(session)) {
@@ -194,7 +152,7 @@ trait Action extends ActionLike with ActionRelay.HasMessageRelay{
           }
         )
       case _ =>
-        LoggerFactory.getLogger(this.getClass).info(this.verbose(baseStr))
+        LoggerFactory.getLogger(this.getClass).info(this.verbosify(baseStr))
 
         session.withDriversDuring(
           f

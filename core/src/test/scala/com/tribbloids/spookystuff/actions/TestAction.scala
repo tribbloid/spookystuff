@@ -69,7 +69,7 @@ class TestAction extends SpookyEnvFixture {
 
   it("a session without webDriver initialized won't trigger errorDump") {
     try {
-      ErrorExport.fetch(spooky)
+      DefectiveExport.fetch(spooky)
       sys.error("impossible")
     }
     catch {
@@ -81,14 +81,14 @@ class TestAction extends SpookyEnvFixture {
 
   it("a session with webDriver initialized will trigger errorDump, which should not be blocked by DocFilter") {
     try {
-      ErrorWebExport.fetch(spooky)
+      DefectiveWebExport.fetch(spooky)
       sys.error("impossible")
     }
     catch {
       case e: ActionException =>
         println(e)
-        assert(e.getMessage.contains("ErrorDump/ErrorWebExport"))
-        assert(e.getMessage.contains("ErrorScreenshot/ErrorWebExport"))
+        assert(e.getMessage.contains("ErrorDump/DefectiveWebExport"))
+        assert(e.getMessage.contains("ErrorScreenshot/DefectiveWebExport"))
     }
   }
 
@@ -96,7 +96,7 @@ class TestAction extends SpookyEnvFixture {
     try {
       (
         Delay(1.seconds) +>
-          ErrorWebExport
+          DefectiveWebExport
         )
         .head
         .fetch(spooky)
@@ -105,8 +105,8 @@ class TestAction extends SpookyEnvFixture {
     catch {
       case e: ActionException =>
         println(e)
-        assert(e.getMessage.contains("Delay/1_second/ErrorDump/ErrorWebExport"))
-        assert(e.getMessage.contains("Delay/1_second/ErrorScreenshot/ErrorWebExport"))
+        assert(e.getMessage.contains("Delay/1_second/ErrorDump/DefectiveWebExport"))
+        assert(e.getMessage.contains("Delay/1_second/ErrorScreenshot/DefectiveWebExport"))
     }
   }
 
@@ -134,14 +134,14 @@ class TestAction extends SpookyEnvFixture {
   }
 }
 
-case object ErrorExport extends Export {
+case object DefectiveExport extends Export {
 
   override def doExeNoName(session: Session): Seq[Fetched] = {
     sys.error("error")
   }
 }
 
-case object ErrorWebExport extends Export {
+case object DefectiveWebExport extends Export {
 
   override def doExeNoName(session: Session): Seq[Fetched] = {
     session.webDriver

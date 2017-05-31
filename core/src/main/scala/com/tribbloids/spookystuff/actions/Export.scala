@@ -55,7 +55,7 @@ abstract class Export extends Named {
         catch {
           case e: Throwable =>
             val message = getSessionExceptionString(session, Some(doc))
-            val wrapped = new DocWithError(doc, message, e)
+            val wrapped = DocWithError(doc, message, e)
 
             throw wrapped
         }
@@ -144,11 +144,8 @@ case class Snapshot(
 //this is used to save GC when invoked by anothor component
 object QuickSnapshot extends Snapshot(DocFilters.Bypass)
 object ErrorDump extends Snapshot(DocFilters.Bypass) {
-  override def product2String(
-                               start: String = "(",
-                               sep: String = ",",
-                               end: String = ")"
-                             ): String = "[ErrorDump]"
+
+  override def productPrefix = "[ErrorDump]"
 }
 
 case class Screenshot(
@@ -183,11 +180,8 @@ case class Screenshot(
 
 object QuickScreenshot extends Screenshot(DocFilters.Bypass)
 object ErrorScreenshot extends Snapshot(DocFilters.Bypass) {
-  override def product2String(
-                               start: String = "(",
-                               sep: String = ",",
-                               end: String = ")"
-                             ): String = "[ErrorScreenshot]"
+
+  override def productPrefix = "[ErrorScreenshot]"
 }
 
 @SerialVersionUID(7344992460754628988L)
@@ -587,7 +581,7 @@ case class WpostImpl private[actions](
       case v: StringEntity =>
         val text =
           v.toString + "\n" +
-          IOUtils.toString(v.getContent)
+            IOUtils.toString(v.getContent)
         text
       //          .split("\n")
       //          .map(
@@ -674,7 +668,7 @@ case class WpostImpl private[actions](
       stream.close()
     }
 
-    val result = new NoDoc(
+    val result = NoDoc(
       List(this),
       cacheLevel = CacheLevel.None
     )

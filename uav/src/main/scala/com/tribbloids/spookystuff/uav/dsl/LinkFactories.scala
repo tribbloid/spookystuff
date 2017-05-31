@@ -3,7 +3,6 @@ package com.tribbloids.spookystuff.uav.dsl
 import com.tribbloids.spookystuff.uav.system.UAV
 import com.tribbloids.spookystuff.uav.telemetry.Link
 import com.tribbloids.spookystuff.uav.telemetry.mavlink.MAVLink
-import com.tribbloids.spookystuff.utils.PrettyProduct
 
 import scala.util.Random
 

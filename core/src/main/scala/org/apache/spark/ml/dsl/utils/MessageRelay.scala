@@ -1,5 +1,8 @@
 package org.apache.spark.ml.dsl.utils
 
+import java.io.File
+
+import com.tribbloids.spookystuff.extractors.Lit
 import org.apache.http.entity.StringEntity
 import org.apache.spark.ml.util._
 import org.apache.spark.sql.types.{DataType, UserDefinedType}
@@ -151,6 +154,40 @@ trait MessageAPI extends Serializable {
     if (pretty) prettyXML
     else compactXML
   }
+
+  def productStr(
+                  start: String = "(",
+                  sep: String = ",",
+                  end: String = ")",
+                  indentFn: Int => String = _ => "",
+                  recursion: Int = 0
+                ): String = {
+
+    val msg = toMessage
+    msg match {
+      case v: Lit[_, _] => v.toString
+      case v: Product =>
+        val strs = v.productIterator
+          .map {
+            case vv: MessageAPI =>
+              vv.productStr(start, sep, end, indentFn, recursion + 1) //has verbose over
+            case vv@ _ =>
+              MessageView(vv).productStr(start, sep, end, indentFn, recursion + 1)
+          }
+          .map {
+            str =>
+              val indent = indentFn(recursion)
+              indent + str
+          }
+        val concat = strs
+          .mkString(v.productPrefix + start, sep, end)
+        concat
+      case _ =>
+        "" + msg
+    }
+  }
+  def toString_\\\ = this.productStr(File.separator, File.separator, File.separator)
+  def toString_/:/ = this.productStr("/", "/", "/")
 
   def cast[T: Manifest](implicit formats: Formats = formats) = {
     MessageReader._fromJValue[T](toJValue(formats))
