@@ -28,6 +28,7 @@ import org.apache.http.impl.client.{CloseableHttpClient, HttpClients}
 import org.apache.http.impl.conn.PoolingHttpClientConnectionManager
 import org.apache.http.protocol.HttpCoreContext
 import org.apache.http.{HttpEntity, HttpHost, StatusLine}
+import org.apache.spark.ml.dsl.utils.MessageAPI
 import org.openqa.selenium.{OutputType, TakesScreenshot}
 
 import scala.xml._
@@ -143,9 +144,9 @@ case class Snapshot(
 
 //this is used to save GC when invoked by anothor component
 object QuickSnapshot extends Snapshot(DocFilters.Bypass)
-object ErrorDump extends Snapshot(DocFilters.Bypass) {
+object ErrorDump extends Snapshot(DocFilters.Bypass) with MessageAPI {
 
-  override def productPrefix = "[ErrorDump]"
+  override def toMessage = "ErrorDump"
 }
 
 case class Screenshot(
@@ -179,9 +180,9 @@ case class Screenshot(
 }
 
 object QuickScreenshot extends Screenshot(DocFilters.Bypass)
-object ErrorScreenshot extends Snapshot(DocFilters.Bypass) {
+object ErrorScreenshot extends Screenshot(DocFilters.Bypass) with MessageAPI {
 
-  override def productPrefix = "[ErrorScreenshot]"
+  override def toMessage = "ErrorScreenshot"
 }
 
 @SerialVersionUID(7344992460754628988L)

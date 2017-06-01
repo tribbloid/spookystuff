@@ -76,7 +76,7 @@ trait Action extends ActionLike {
         action =>
           "| " + action.toString
       } ++
-        Seq("+> " + this.toStringVerbose)
+        Seq("+> " + this.toStringDetailed)
     }
       .mkString("\n")
 
@@ -144,7 +144,7 @@ trait Action extends ActionLike {
     this match {
       case tt: Timed =>
         baseStr = baseStr + s" in ${tt.timeout(session)}"
-        LoggerFactory.getLogger(this.getClass).info(this.verbosify(baseStr))
+        LoggerFactory.getLogger(this.getClass).info(this.showDetail(baseStr))
 
         session.withDriversDuring(
           SpookyUtils.withDeadline(tt.hardTerminateTimeout(session)) {
@@ -152,7 +152,7 @@ trait Action extends ActionLike {
           }
         )
       case _ =>
-        LoggerFactory.getLogger(this.getClass).info(this.verbosify(baseStr))
+        LoggerFactory.getLogger(this.getClass).info(this.showDetail(baseStr))
 
         session.withDriversDuring(
           f

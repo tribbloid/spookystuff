@@ -2,7 +2,6 @@ package org.apache.spark.ml.dsl.utils
 
 import java.io.File
 
-import com.tribbloids.spookystuff.extractors.Lit
 import org.apache.http.entity.StringEntity
 import org.apache.spark.ml.util._
 import org.apache.spark.sql.types.{DataType, UserDefinedType}
@@ -165,7 +164,8 @@ trait MessageAPI extends Serializable {
 
     val msg = toMessage
     msg match {
-      case v: Lit[_, _] => v.toString
+//      case v: Lit[_, _] =>
+//        v.toString
       case v: Product =>
         val strs = v.productIterator
           .map {
@@ -204,5 +204,8 @@ case class MessageView(
                         override val formats: Formats = Xml.defaultFormats
                       ) extends MessageAPI {
 
-  override def toMessage = value
+  override def toMessage = value match {
+    case v: MessageAPI => v.toMessage
+    case _ => value
+  }
 }

@@ -1,6 +1,5 @@
 package org.apache.spark.ml.dsl.utils
 
-import com.tribbloids.spookystuff.actions.Verbose
 import org.json4s.Extraction._
 import org.json4s.JsonAST.JString
 import org.json4s._
@@ -167,7 +166,7 @@ class JSONException(
                      metadata: JSONExceptionMetadata
                    ) extends MappingException(msg, cause) with Verbose {
 
-  override def getMessage = toStringVerbose
+  override def getMessage = toStringDetailed
 
   override def detail = "=========== [METADATA] ============\n" + metadata.toJSON(pretty = true)
 }

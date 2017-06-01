@@ -6,6 +6,7 @@ import com.tribbloids.spookystuff.row.{DataRowSchema, FetchedRow}
 import com.tribbloids.spookystuff.session.Session
 import com.tribbloids.spookystuff.utils.SpookyUtils
 import com.tribbloids.spookystuff.{Const, QueryException, SpookyContext}
+import org.apache.spark.ml.dsl.utils.Verbose
 import org.apache.spark.sql.catalyst.trees.TreeNode
 import org.slf4j.LoggerFactory
 
@@ -21,19 +22,7 @@ object ActionLike {
   }
 }
 
-trait Verbose {
 
-  def detail: String = ""
-
-  def verbosify(nonVerbose: String) = {
-    val result = nonVerbose + Option(detail).filter(_.nonEmpty).map("\n" + _).getOrElse("")
-    result
-  }
-
-  def toStringVerbose = {
-    verbosify(super.toString)
-  }
-}
 
 @SerialVersionUID(8566489926281786854L)
 abstract class ActionLike extends Product with Serializable with Verbose {

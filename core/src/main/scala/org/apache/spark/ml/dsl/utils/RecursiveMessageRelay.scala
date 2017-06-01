@@ -14,6 +14,10 @@ object RecursiveMessageRelay extends MessageRelay[Any] {
     val result = f.applyOrElse[Any, Any](
       value,
       {
+        case v: Map[_,_] =>
+          v.mapValues(v => transform(v)(f))
+        case v: Traversable[_] =>
+          v.map(v => transform(v)(f))
         case (k: String, v: Any) =>
           k -> transform(v)(f)
         case v: Product =>
@@ -24,10 +28,6 @@ object RecursiveMessageRelay extends MessageRelay[Any] {
           catch {
             case _: Throwable => v
           }
-        case v: Map[_,_] =>
-          v.mapValues(v => transform(v)(f))
-        case v: Traversable[_] =>
-          v.map(v => transform(v)(f))
         case v =>
           v
       }

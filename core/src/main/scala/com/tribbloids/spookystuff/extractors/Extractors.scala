@@ -88,7 +88,8 @@ object Lit {
 }
 
 //TODO: Message JSON conversion discard dataType info, is it wise?
-case class Lit[T, +R](value: R, dataType: DataType) extends Static[T, R] with MessageAPI {
+case class Lit[T, +R](value: R, dataType: DataType)
+  extends Static[T, R] with MessageAPI {
 
   def valueOpt: Option[R] = Option(value)
   override def toMessage = value

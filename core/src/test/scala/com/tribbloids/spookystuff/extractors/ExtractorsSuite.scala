@@ -76,19 +76,13 @@ class ExtractorsSuite extends SpookyEnvFixture {
     json.shouldBe(
       """
         |{
-        |  "children" : {
-        |    "hd$1" : {
-        |      "selector" : "o1",
-        |      "delay" : "0 seconds",
-        |      "blocking" : true
-        |    },
-        |    "tl$1" : {
-        |      "hd$1" : {
-        |        "filter" : { }
-        |      },
-        |      "tl$1" : { }
-        |    }
-        |  },
+        |  "children" : [ {
+        |    "selector" : "o1",
+        |    "delay" : "0 seconds",
+        |    "blocking" : true
+        |  }, {
+        |    "filter" : { }
+        |  } ],
         |  "limit" : 2147483647
         |}
       """.stripMargin
