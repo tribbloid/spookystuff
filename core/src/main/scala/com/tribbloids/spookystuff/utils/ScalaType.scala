@@ -38,6 +38,13 @@ trait ScalaType[T] extends DataType with (() => TypeTag[T]) with ReflectionLock 
   }
   @transient lazy val tryReify: scala.util.Try[DataType] = locked {
     TypeUtils.tryCatalystTypeFor(asTypeTag)
+      .flatMap {
+        t =>
+          scala.util.Try {
+            assert(t.getClass != this.getClass, "cyclic reification")
+            t
+          }
+      }
   }
 
   // if ttg is lost, will try to reconstruct from reified DType
@@ -92,7 +99,7 @@ object ScalaType {
       val loader = _class.getClassLoader
       runtimeMirror(loader)
     }
-//    def mirror = ReflectionUtils.mirrorFactory.get()
+    //    def mirror = ReflectionUtils.mirrorFactory.get()
 
     @transient override lazy val asType = locked {
       val classSymbol = mirror.staticClass(_class.getCanonicalName)
@@ -329,7 +336,7 @@ abstract class ScalaUDT[T: ClassTag] extends UserDefinedType[T] with ScalaType.C
 
   def _classTag: ClassTag[T] = implicitly[ClassTag[T]]
 
-  def sqlType: DataType = tryReify.getOrElse(NullType)
+  def sqlType: DataType = BinaryType
 
   override def userClass: Class[T] = {
     _classTag.runtimeClass.asInstanceOf[Class[T]]

@@ -2,7 +2,9 @@ package com.tribbloids.spookystuff.utils
 
 import com.tribbloids.spookystuff.SpookyEnvFixture
 import com.tribbloids.spookystuff.actions.{Action, ActionUDT}
+import com.tribbloids.spookystuff.extractors.{Example, ExampleUDT}
 import org.apache.spark.sql.catalyst.ScalaReflection
+import org.apache.spark.sql.catalyst.expressions.codegen.GenerateProjection
 import org.apache.spark.sql.types._
 
 /**
@@ -55,7 +57,8 @@ class ScalaTypeSuite extends SpookyEnvFixture {
     //    ArrayType(StringType, containsNull = true) -> typeTag[Array[(String, Int)]],
 
     //    tupleSchema -> typeTag[(Int, String)], //TODO: urge spark team to fix the bug and re-enable it
-    new ActionUDT -> typeTag[Action]
+    new ActionUDT -> typeTag[Action],
+    new ExampleUDT -> typeTag[Example]
   )
 
   typePairs.foreach{
@@ -71,6 +74,14 @@ class ScalaTypeSuite extends SpookyEnvFixture {
         println(converted)
         assert(converted.map(_.asClass) == Some(pair._2.asClass))
       }
+
+      it(s"CodeGenerator.javaType(${pair._1})") {
+        val genCtx = GenerateProjection.newCodeGenContext()
+        val tt = genCtx.javaType(pair._1)
+        assert(tt.toLowerCase() != "object")
+      }
+
+      //TODO: add 1 test to ensure that ScalaUDT can be used in DataFrame with codegen.
   }
 
   val oneWayPairs: Seq[(TypeTag[_], DataType)] = Seq(
