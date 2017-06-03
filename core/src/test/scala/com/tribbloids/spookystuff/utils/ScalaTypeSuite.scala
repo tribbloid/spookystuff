@@ -5,6 +5,7 @@ import com.tribbloids.spookystuff.actions.{Action, ActionUDT}
 import com.tribbloids.spookystuff.extractors.{Example, ExampleUDT}
 import org.apache.spark.sql.catalyst.ScalaReflection
 import org.apache.spark.sql.catalyst.expressions.codegen.GenerateProjection
+import org.apache.spark.sql.functions
 import org.apache.spark.sql.types._
 
 /**
@@ -78,17 +79,22 @@ class ScalaTypeSuite extends SpookyEnvFixture {
       it(s"CodeGenerator.javaType(${pair._1})") {
         val genCtx = GenerateProjection.newCodeGenContext()
         val tt = genCtx.javaType(pair._1)
+        pair._1 match {
+          case v: UserDefinedType[_] =>
+            println(v.sqlType)
+          case _ =>
+        }
         assert(tt.toLowerCase() != "object")
       }
 
-      //TODO: add 1 test to ensure that ScalaUDT can be used in DataFrame with codegen.
+    //TODO: add 1 test to ensure that ScalaUDT can be used in DataFrame with codegen.
   }
 
   val oneWayPairs: Seq[(TypeTag[_], DataType)] = Seq(
     typeTag[Array[(String, Int)]] -> ArrayType(StructType(Seq(StructField("_1", StringType), StructField("_2", IntegerType, nullable = false))), containsNull = true),
     typeTag[Seq[(String, Int)]] -> ArrayType(StructType(Seq(StructField("_1", StringType), StructField("_2", IntegerType, nullable = false))), containsNull = true)
-//    typeTag[Set[(String, Int)]] -> ArrayType(StructType(Seq(StructField("_1", StringType), StructField("_2", IntegerType, nullable = false))), containsNull = true),
-//    typeTag[Iterable[(String, Int)]] -> ArrayType(StructType(Seq(StructField("_1", StringType), StructField("_2", IntegerType, nullable = false))), containsNull = true)
+    //    typeTag[Set[(String, Int)]] -> ArrayType(StructType(Seq(StructField("_1", StringType), StructField("_2", IntegerType, nullable = false))), containsNull = true),
+    //    typeTag[Iterable[(String, Int)]] -> ArrayType(StructType(Seq(StructField("_1", StringType), StructField("_2", IntegerType, nullable = false))), containsNull = true)
   )
 
   oneWayPairs.foreach{
@@ -98,5 +104,17 @@ class ScalaTypeSuite extends SpookyEnvFixture {
         println(converted)
         assert(converted == Some(pair._2))
       }
+  }
+
+  it("ScalaUDT will not interfere with catalyst CodeGen") {
+    val df = sql.createDataFrame(
+      Seq(
+        1 -> new Example("a", 1),
+        2 -> new Example("b", 2),
+        3 -> null
+      )
+    )
+    df.filter(df.col("`_2`").isNotNull)
+      .show()
   }
 }

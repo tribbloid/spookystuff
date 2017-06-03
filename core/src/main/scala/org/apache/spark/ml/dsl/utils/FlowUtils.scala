@@ -1,5 +1,7 @@
 package org.apache.spark.ml.dsl.utils
 
+import org.apache.spark.SparkContext
+
 object FlowUtils {
 
   def cartesianProductSet[T](xss: Seq[Set[T]]): Set[List[T]] = xss match {

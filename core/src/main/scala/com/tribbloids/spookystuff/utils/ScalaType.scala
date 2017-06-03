@@ -1,7 +1,10 @@
 package com.tribbloids.spookystuff.utils
 
+import java.nio.ByteBuffer
 import java.sql.{Date, Timestamp}
 
+import org.apache.spark.SparkConf
+import org.apache.spark.serializer.JavaSerializer
 import org.apache.spark.sql.catalyst.ScalaReflection.universe._
 import org.apache.spark.sql.types._
 
@@ -334,6 +337,11 @@ abstract class ScalaUDT[T: ClassTag] extends UserDefinedType[T] with ScalaType.C
 
   override val typeName = this.getClass.getSimpleName.stripSuffix("$")//.stripSuffix("Type").stripSuffix("UDT").toLowerCase
 
+  def serDe = { //TODO: kryo is better
+    val conf = new SparkConf()
+    new JavaSerializer(conf)
+  }
+
   def _classTag: ClassTag[T] = implicitly[ClassTag[T]]
 
   def sqlType: DataType = BinaryType
@@ -343,11 +351,14 @@ abstract class ScalaUDT[T: ClassTag] extends UserDefinedType[T] with ScalaType.C
   }
 
   //should convert to internal Row.
-  override def serialize(obj: Any): Any = obj
+  override def serialize(obj: Any): Any = {
+    serDe.newInstance().serialize(obj).array()
+  }
 
   override def deserialize(datum: Any): T = {
     datum match {
-      case a: T => a
+      case a: Array[Byte] =>
+        serDe.newInstance().deserialize[T](ByteBuffer.wrap(a))
     }
   }
 }

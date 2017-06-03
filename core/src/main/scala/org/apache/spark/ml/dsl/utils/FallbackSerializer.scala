@@ -12,7 +12,7 @@ import scala.reflect.ClassTag
 // fallback mechanism that works for any java object
 abstract class FallbackSerializer(
                                    sparkSerializer: org.apache.spark.serializer.Serializer = { //TODO: kryo is better
-                                   val conf = new SparkConf()
+                                     val conf = new SparkConf()
                                      new JavaSerializer(conf)
                                    }
                                  ) extends Serializer[Any] {
