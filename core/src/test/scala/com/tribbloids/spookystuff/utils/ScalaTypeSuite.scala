@@ -78,12 +78,13 @@ class ScalaTypeSuite extends SpookyEnvFixture {
 
       it(s"CodeGenerator.javaType(${pair._1})") {
         val genCtx = GenerateProjection.newCodeGenContext()
-        val tt = genCtx.javaType(pair._1)
         pair._1 match {
           case v: UserDefinedType[_] =>
-            println(v.sqlType)
+            println(s"UDT: ${pair._1.getClass.getCanonicalName}")
+            assert(v.sqlType == BinaryType)
           case _ =>
         }
+        val tt = genCtx.javaType(pair._1)
         assert(tt.toLowerCase() != "object")
       }
 
