@@ -212,6 +212,6 @@ case class ExplorePlan(
                           reducer: (Open_Visited, Open_Visited) => Open_Visited
                         ): RDD[(TraceView, Open_Visited)] = {
     val beaconRDDOpt = this.beaconRDDOpt
-    gpImpl.reduceByKey(stateRDD, reducer, beaconRDDOpt)
+    gpImpl.reduceByKey[Open_Visited](stateRDD, reducer, beaconRDDOpt)
   }
 }
