@@ -20,6 +20,8 @@ case class Move(
                  override val delay: Duration = null
                ) extends WaypointLike {
 
+  override def _from: Location = from.asInstanceOf[Lit[FR, Location]].value
+
   override def doInterpolate(pageRow: FetchedRow, schema: DataRowSchema): Option[this.type] = {
     val fromVOpt = from.resolve(schema).lift.apply(pageRow)
     val toOpt = to.resolve(schema).lift.apply(pageRow)
@@ -39,15 +41,10 @@ case class Move(
 
   class SessionView(session: Session) extends super.SessionView(session) {
 
-    lazy val fromLocation: Location = from.asInstanceOf[Lit[FR, Location]].value
-
     override def inbound(): Unit = {
       super.inbound()
-      LoggerFactory.getLogger(this.getClass).debug(s"inbound .. $fromLocation")
-      link.synch.move(fromLocation)
+      LoggerFactory.getLogger(this.getClass).debug(s"inbound .. $_from")
+      link.synch.move(_from)
     }
   }
-
-  override def start: Location = ???
-  override def end: Location = ???
 }

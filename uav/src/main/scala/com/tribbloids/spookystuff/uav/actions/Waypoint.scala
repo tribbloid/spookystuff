@@ -27,7 +27,7 @@ trait WaypointLike extends UAVNavigation {
     }
 
     override def engage(): Unit = {
-      LoggerFactory.getLogger(this.getClass).info(s"scanning .. ${_to}")
+      LoggerFactory.getLogger(this.getClass).info(s"scanning .. ${_from}")
       link.synch.move(_to)
     }
   }
@@ -52,6 +52,5 @@ case class Waypoint(
     }
   }
 
-  override def start: Location = _to
-  override def end: Location = _to
+  override def _from: Location = _to
 }

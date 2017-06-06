@@ -3,7 +3,7 @@ package com.tribbloids.spookystuff.uav.dsl
 import com.graphhopper.jsprit.core.problem.vehicle.{VehicleImpl, VehicleTypeImpl}
 import com.graphhopper.jsprit.core.problem.{Capacity, VehicleRoutingProblem, Location => JLocation}
 import com.tribbloids.spookystuff.SpookyContext
-import com.tribbloids.spookystuff.actions.TraceView
+import com.tribbloids.spookystuff.actions.{Trace, TraceView}
 import com.tribbloids.spookystuff.dsl.GenPartitioner
 import com.tribbloids.spookystuff.dsl.GenPartitioners.Instance
 import com.tribbloids.spookystuff.execution.ExecutionPlan
@@ -64,17 +64,18 @@ object GenPartitioners {
         //        val uavRDD = bifurcated.flatMap(_._1)
         //        val notUAVRDD = bifurcated.flatMap(_._2)
 
-        val uavRDD: RDD[TraceView] = proto.flatMap {
+        val uavRDD: RDD[Trace] = proto.flatMap {
           case (k: TraceView, v)
             if k.children.exists(_.isInstanceOf[UAVAction]) =>
-            Some(k)
+            Some(k.children)
           case _ =>
             None
         }
 
-        val uavActions: Array[TraceView] = uavRDD.collect()
+        val uavActions: Array[Trace] = uavRDD
+          .collect()
 
-        val
+        val costEstimator = spooky.submodule[UAVConf].costEstimator
 
         // get available drones
         val sc = rdd.sparkContext
@@ -98,6 +99,8 @@ object GenPartitioners {
           .build()
         val jVType = VehicleTypeImpl.Builder.newInstance("UAV")
           .setCapacityDimensions(cap)
+
+
 
         val jVehicles = statusRDD
           .collect()

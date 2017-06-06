@@ -3,8 +3,8 @@ package com.tribbloids.spookystuff.uav.dsl
 import com.tribbloids.spookystuff.SpookyContext
 import com.tribbloids.spookystuff.actions.{Action, Trace}
 import com.tribbloids.spookystuff.uav.actions.UAVNavigation
-import com.tribbloids.spookystuff.uav.planning.PreferLink
-import com.tribbloids.spookystuff.uav.spatial.{NED, StartEndLocation}
+import com.tribbloids.spookystuff.uav.planning.{FromLocation, PreferLink}
+import com.tribbloids.spookystuff.uav.spatial.NED
 
 //TODO: this API may take too long to extend, should delegate most of it to UAVAction
 trait CostEstimator {
@@ -18,27 +18,28 @@ trait CostEstimator {
 object CostEstimator {
 
   case class Default(
-                      defaultNavSpeed: Double
+                      navSpeed: Double
                     ) extends CostEstimator {
 
-    def intraCost(nav: StartEndLocation) = {
-      import nav._
+    def intraCost(nav: UAVNavigation) = {
 
-      val ned = end.getCoordinate(NED, start).get
+      val ned = nav._to.getCoordinate(NED, nav._from).get
       val distance = Math.sqrt(ned.vector dot ned.vector)
+
+      val speed = nav.speedOpt.getOrElse(navSpeed)
 
       distance / speed
     }
 
-    def interCost(nav1: StartEndLocation, nav2: StartEndLocation) = {
+    def interCost(nav1: UAVNavigation, nav2: UAVNavigation) = {
 
-      val end1 = nav1.end
-      val start2 = nav2.start
+      val end1 = nav1._to
+      val start2 = nav2._from
 
       val ned = start2.getCoordinate(NED, end1).get
       val distance = Math.sqrt(ned.vector dot ned.vector)
 
-      distance / defaultNavSpeed
+      distance / navSpeed
     }
 
     override def estimate(
@@ -63,7 +64,7 @@ object CostEstimator {
 
       val firstLocation = useLink.head.firstLink.status().currentLocation
 
-      var prev: StartEndLocation = firstLocation
+      var prev: UAVNavigation = FromLocation(firstLocation)
       var costSum = 0.0
       navs.foreach {
         nav =>

@@ -29,7 +29,9 @@ object UAVConf extends Submodules.Builder[UAVConf]{
   /**
     * 43.694195,-79.262262,136,353
     */
-  final val DEFAULT_HOME_LOCATION: Location = LLA(43.694195, -79.262262, 136) -> GeodeticAnchor
+  final val DEFAULT_HOME_LOCATION: Location = {
+    LLA(43.694195, -79.262262, 136) -> GeodeticAnchor
+  }
 }
 
 /**
@@ -49,7 +51,7 @@ case class UAVConf(
                     var slowConnectionRetryInterval: Duration = UAVConf.BLACKLIST_RESET_AFTER, //1 minute
                     var clearanceAltitude: Double = 10, // in meters
                     var homeLocation: Location = UAVConf.DEFAULT_HOME_LOCATION,
-                    var actionCosts: CostEstimator = CostEstimator.Default(5.0),
+                    var costEstimator: CostEstimator = CostEstimator.Default(5.0),
                     var defaultSpeed: Double = 5.0
                   ) extends ModuleConf {
 
@@ -61,5 +63,7 @@ case class UAVConf(
   def uavsInFleetShuffled: Seq[UAV] = Random.shuffle(uavsInFleet.toList)
 
   // TODO: use reflection to automate
-  override def importFrom(sparkConf: SparkConf): UAVConf.this.type = this.copy().asInstanceOf[this.type]
+  override def importFrom(sparkConf: SparkConf): UAVConf.this.type = {
+    this.copy().asInstanceOf[this.type]
+  }
 }

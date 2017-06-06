@@ -90,7 +90,7 @@ case class GASolver(
   val allTracesBroadcasted = spooky.sparkContext.broadcast(allTraces)
 
   def conf = spooky.submodule[UAVConf]
-  def actionCosts = conf.actionCosts
+  def actionCosts = conf.costEstimator
 
   @transient val allHypotheses: ArrayBuffer[Hypothesis] = ArrayBuffer.empty
 

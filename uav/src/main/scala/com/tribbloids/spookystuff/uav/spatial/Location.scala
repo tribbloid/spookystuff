@@ -1,6 +1,5 @@
 package com.tribbloids.spookystuff.uav.spatial
 
-import com.tribbloids.spookystuff.caching.ConcurrentSet
 import com.tribbloids.spookystuff.uav.UAVConf
 import com.tribbloids.spookystuff.utils.ScalaUDT
 import org.apache.spark.sql.catalyst.expressions.GenericRowWithSchema
@@ -42,10 +41,7 @@ case object GeodeticAnchor extends Anchor {
 case object PlaceHoldingAnchor extends Anchor {
 }
 
-trait LocationLike extends Anchor with StartEndLocation {
-
-  override def start = this
-  override def end = this
+trait LocationLike extends Anchor {
 }
 
 case class UnknownLocation(

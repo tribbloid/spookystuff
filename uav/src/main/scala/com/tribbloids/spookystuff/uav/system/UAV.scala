@@ -10,7 +10,7 @@ import com.tribbloids.spookystuff.uav.telemetry.Link
 case class UAV(
                 // remember, one drone can have several telemetry
                 // endpoints: 1 primary and several backups (e.g. text message-based)
-                // TODO: implement telemetry backup mechanism, can use MAVproxy's multiple master feature
+                // TODO: implement telemetry backup mechanism, can use MAVproxy's multiplexing feature
                 uris: Seq[String], // [protocol]:ip:port;[baudRate]
                 frame: Option[String] = None,
                 baudRate: Int = UAVConf.DEFAULT_BAUDRATE,

@@ -1,6 +1,7 @@
 package com.tribbloids.spookystuff.dsl
 
 import com.tribbloids.spookystuff.SpookyEnvFixture
+import com.tribbloids.spookystuff.execution.ExecutionPlan
 import org.apache.spark.HashPartitioner
 import org.apache.spark.rdd.RDD
 
@@ -17,7 +18,7 @@ class GenPartitionerSuite extends SpookyEnvFixture {
     val numPartitions = Random.nextInt(80) + 9
 
     val gp = GenPartitioners.DocCacheAware(_ => new HashPartitioner(numPartitions))
-      .getInstance[Int](spooky)
+      .getInstance[Int](ExecutionPlan.Context(spooky))
     val beaconOpt = gp.createBeaconRDD(sc.emptyRDD[Int])
     //    val beacon = sc.makeRDD(1 to 1000, 1000).map(v => v -> v*v)
 

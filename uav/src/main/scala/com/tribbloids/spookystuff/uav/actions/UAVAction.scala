@@ -2,7 +2,7 @@ package com.tribbloids.spookystuff.uav.actions
 
 import com.tribbloids.spookystuff.actions.{Action, Interaction}
 import com.tribbloids.spookystuff.session.Session
-import com.tribbloids.spookystuff.uav.spatial.StartEndLocation
+import com.tribbloids.spookystuff.uav.spatial.Location
 import com.tribbloids.spookystuff.uav.utils.UAVViews
 
 /**
@@ -14,7 +14,12 @@ trait UAVAction extends Action {
 /**
   * inbound -> engage -> outbound
   */
-trait UAVNavigation extends Interaction with UAVAction with StartEndLocation {
+trait UAVNavigation extends Interaction with UAVAction {
+
+  def _from: Location
+  def _to: Location
+
+  def speedOpt: Option[Double] = None
 
   override def exeNoOutput(session: Session): Unit = {
 
