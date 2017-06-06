@@ -26,13 +26,13 @@ object Link {
   val existing: caching.ConcurrentMap[UAV, Link] = caching.ConcurrentMap()
 
   def trySelect(
-                 runBy: Seq[UAV],
+                 uavs: Seq[UAV],
                  session: Session,
-                 selector: Seq[Link] => Option[Link] = {
+                 prefer: Seq[Link] => Option[Link] = {
                    vs =>
                      vs.headOption
                  },
-                 recommission: Boolean = true
+                 recommissionWithNewProxy: Boolean = true
                ): Try[Link] = {
 
     val sessionThreadOpt = Some(session.lifespan.ctx.thread)
@@ -55,11 +55,11 @@ object Link {
     }
 
     val resultOpt = threadLocalOpt.orElse {
-      val links = runBy.map(_.getLink(session.spooky))
+      val links = uavs.map(_.getLink(session.spooky))
 
       this.synchronized {
         val available = links.filter(v => v.isAvailable)
-        val selectedOpt = selector(available)
+        val selectedOpt = prefer(available)
         selectedOpt.foreach(_.usedByThread = session.lifespan.ctx.thread)
         selectedOpt
       }
@@ -67,16 +67,17 @@ object Link {
 
     resultOpt match {
       case Some(link) =>
-        if (recommission) {
+        val result = if (recommissionWithNewProxy) {
           val factory = session.spooky.submodule[UAVConf].linkFactory
-          Success(link.recommission(factory))
+          link.recommission(factory)
         }
         else {
-          Success(link)
+          link
         }
+        Success(result)
       case None =>
         val info = if (Link.existing.isEmpty) {
-          val msg = s"No telemetry Link for ${runBy.mkString("[", ", ", "]")}, existing links are:"
+          val msg = s"No telemetry Link for ${uavs.mkString("[", ", ", "]")}, existing links are:"
           val hint = Link.existing.keys.toList.mkString("[", ", ", "]")
           msg + "\n" + hint
         }
@@ -335,25 +336,28 @@ trait Link extends LocalCleanable {
 
   // Most telemetry support setting up multiple landing site.
   protected def _getHome: Location
-  final lazy val home: Location = {
+  protected lazy val home: Location = {
     retry(5){
       _getHome
     }
   }
 
   protected def _getCurrentLocation: Location
-  object CurrentLocation extends Memoize[Unit, Location]{
+  protected object CurrentLocation extends Memoize[Unit, Location]{
     override def f(v: Unit): Location = {
       retry(5) {
         _getCurrentLocation
       }
     }
   }
-  def currentLocation(expireAfter: Long = 1000): Location = {
-    CurrentLocation.getIfNotExpire((), expireAfter)
+
+  def status(expireAfter: Long = 1000) = {
+    val current = CurrentLocation.getIfNotExpire((), expireAfter)
+    LinkStatus(uav, home, current)
   }
 
-  //====================== Synchronous API ====================== TODO this should be abandoned and mimic by Asynch API
+  //====================== Synchronous API ======================
+  // TODO this should be abandoned and mimic by Asynch API
 
   val synch: SynchronousAPI
   abstract class SynchronousAPI {

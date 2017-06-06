@@ -15,8 +15,11 @@ case class RDDPlan(
                     override val schema: DataRowSchema,
                     override val spooky: SpookyContext,
                     beaconRDD: Option[BeaconRDD[TraceView]] = None,
-                    override val cacheQueue: ArrayBuffer[RDD[_]] = ArrayBuffer()
-                  ) extends ExecutionPlan(Seq(), spooky, cacheQueue) {
+                    scratchRDDs: ScratchRDDs = ScratchRDDs()
+                  ) extends ExecutionPlan(
+  Seq(),
+  ExecutionPlan.Context(spooky, scratchRDDs)
+) {
 
   override lazy val beaconRDDOpt = beaconRDD
 

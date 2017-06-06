@@ -18,7 +18,6 @@ import org.apache.spark.storage.StorageLevel
 
 import scala.collection.Map
 import scala.collection.immutable.ListMap
-import scala.collection.mutable.ArrayBuffer
 import scala.language.implicitConversions
 import scala.reflect.ClassTag
 
@@ -37,8 +36,7 @@ case class FetchedDataset(
                          ) extends FetchedRDDAPI {
 
   import SpookyViews._
-  import plan.CacheQueueView
-  import scala.Ordering.Implicits._ //DO NOT DELETE!
+  import plan.Views
 
   implicit def fromExecutionPlan(plan: ExecutionPlan): FetchedDataset = FetchedDataset(plan)
 
@@ -46,11 +44,17 @@ case class FetchedDataset(
             sourceRDD: SquashedFetchedRDD,
             fieldMap: ListMap[Field, DataType],
             spooky: SpookyContext,
-            beaconRDDOpt: Option[BeaconRDD[TraceView]] = None,
-            cacheQueue: ArrayBuffer[RDD[_]] = ArrayBuffer()
+            beaconRDDOpt: Option[BeaconRDD[TraceView]] = None
           ) = {
 
-    this(RDDPlan(sourceRDD, DataRowSchema(spooky, fieldMap), spooky, beaconRDDOpt, cacheQueue))
+    this(
+      RDDPlan(
+        sourceRDD,
+        DataRowSchema(spooky, fieldMap),
+        spooky,
+        beaconRDDOpt
+      )
+    )
   }
 
   //TODO: use reflection for more clear API
@@ -98,16 +102,18 @@ case class FetchedDataset(
 
   def dataRDDSorted: RDD[DataRow] = {
 
+    import scala.Ordering.Implicits._ //DO NOT DELETE!
+
     val sortIndices: List[Field] = plan.allSortIndices.map(_._1.self)
 
     val dataRDD = this.dataRDD
-    plan.cacheQueue.persist(dataRDD)
+    plan.tempRDDs.persist(dataRDD)
 
-    val sorted = dataRDD.sortBy{_.sortIndex(sortIndices)} //sort usually takes 2 passes
+    val sorted = dataRDD.sortBy{_.sortIndex(sortIndices)}
     sorted.setName("sort")
 
     sorted.foreachPartition{_ =>} //force execution
-    plan.cacheQueue.unpersist(dataRDD, blocking = false)
+    plan.tempRDDs.unpersist(dataRDD, blocking = false)
 
     sorted
   }
@@ -164,7 +170,7 @@ case class FetchedDataset(
   sparkContext.withJob(s"toDF(sort=$sort, name=$tableName)") {
 
     val jsonRDD = this.toJSON(sort)
-    plan.cacheQueue.persist(jsonRDD)
+    plan.tempRDDs.persist(jsonRDD)
 
     val schemaRDD = spooky.sqlContext.read.json(jsonRDD)
 
@@ -180,7 +186,7 @@ case class FetchedDataset(
     val result = schemaRDD.select(columns: _*)
 
     if (tableName!=null) result.registerTempTable(tableName)
-    plan.cacheQueue.unpersistAll()
+    plan.tempRDDs.unpersistAll()
 
     result
   }

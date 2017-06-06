@@ -13,12 +13,35 @@ import scala.collection.immutable.ListMap
 import scala.collection.mutable.ArrayBuffer
 import scala.language.implicitConversions
 
+object ExecutionPlan {
+
+  case class Context(
+                      spooky: SpookyContext,
+                      @transient scratchRDDs: ScratchRDDs = new ScratchRDDs()
+                    ) {
+
+    def ++(b: Context) = {
+      assert(this.spooky == b.spooky,
+        "cannot merge execution plans due to diverging SpookyContext")
+
+      import this.scratchRDDs._
+      val bb = b.scratchRDDs
+      this.copy(
+        scratchRDDs = new ScratchRDDs(
+          tempTables = <+>(bb, _.tempTables),
+          tempRDDs = <+>(bb, _.tempRDDs),
+          tempDFs = <+>(bb, _.tempDFs)
+        )
+      )
+    }
+  }
+}
+
 //right now it vaguely resembles SparkPlan in catalyst
 //TODO: may subclass SparkPlan in the future to generate DataFrame directly, but not so fast
 abstract class ExecutionPlan(
                               val children: Seq[ExecutionPlan],
-                              val spooky: SpookyContext,
-                              val cacheQueue: ArrayBuffer[RDD[_]]
+                              val ec: ExecutionPlan.Context
                             ) extends TreeNode[ExecutionPlan] with NOTSerializable {
 
   def this(
@@ -26,9 +49,11 @@ abstract class ExecutionPlan(
           ) = this(
 
     children,
-    children.head.spooky,
-    children.map(_.cacheQueue).reduce(_ ++ _)
+    children.map(_.ec).reduce(_ ++ _)
   )
+
+  def spooky = ec.spooky
+  def tempRDDs = ec.scratchRDDs.tempRDDs
 
   //Cannot be lazy, always defined on construction
   val schema: DataRowSchema = DataRowSchema(
@@ -49,7 +74,7 @@ abstract class ExecutionPlan(
   //beconRDD is always empty, with fixed partitioning, cogroup with it to maximize Local Cache hitting chance
   //by default, inherit from the first child
   protected final def inheritedBeaconRDDOpt =
-    firstChildOpt.flatMap(_.beaconRDDOpt)
+  firstChildOpt.flatMap(_.beaconRDDOpt)
 
   lazy val beaconRDDOpt: Option[BeaconRDD[TraceView]] = inheritedBeaconRDDOpt
 
@@ -91,7 +116,7 @@ abstract class ExecutionPlan(
   def unsquashedRDD: RDD[FetchedRow] = rdd()
     .flatMap(v => new v.WithSchema(schema).unsquash)
 
-  implicit class CacheQueueView(val self: ArrayBuffer[RDD[_]]) {
+  implicit class Views(val self: ArrayBuffer[RDD[_]]) {
 
     def persist[T](
                     rdd: RDD[T],
@@ -127,16 +152,7 @@ abstract class ExecutionPlan(
 }
 
 abstract class UnaryPlan(
-                          val child: ExecutionPlan,
-                          override val spooky: SpookyContext,
-                          override val cacheQueue: ArrayBuffer[RDD[_]]
-                        ) extends ExecutionPlan(Seq(child), spooky, cacheQueue) {
+                          val child: ExecutionPlan
+                        ) extends ExecutionPlan(Seq(child)) {
 
-  def this(
-            child: ExecutionPlan
-          ) = this(
-    child,
-    child.spooky,
-    child.cacheQueue
-  )
 }

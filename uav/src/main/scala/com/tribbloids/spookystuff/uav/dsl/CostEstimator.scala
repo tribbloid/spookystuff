@@ -61,7 +61,7 @@ object CostEstimator {
           " (This behaviour is likely permanent and won't be fixed in the future)"
       )
 
-      val firstLocation = useLink.head.firstLink.currentLocation()
+      val firstLocation = useLink.head.firstLink.status().currentLocation
 
       var prev: StartEndLocation = firstLocation
       var costSum = 0.0

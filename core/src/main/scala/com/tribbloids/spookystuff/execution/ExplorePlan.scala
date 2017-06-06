@@ -175,13 +175,13 @@ case class ExplorePlan(
 
 //      val reducedStateRDD_+ : RDD[(TraceView, Open_Visited)] = betweenEpochReduce(stateRDD_+, combinedReducer)
 
-      cacheQueue.persist(stateRDD_+, spooky.conf.defaultStorageLevel)
+      tempRDDs.persist(stateRDD_+, spooky.conf.defaultStorageLevel)
       if (checkpointInterval >0 && i % checkpointInterval == 0) {
         stateRDD_+.checkpoint()
       }
 
       stateRDD_+.count()
-      cacheQueue.unpersist(stateRDD)
+      tempRDDs.unpersist(stateRDD)
       if (openSetSize.value == 0) stop = true
 
       stateRDD = stateRDD_+

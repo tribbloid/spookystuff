@@ -8,11 +8,13 @@ import com.tribbloids.spookystuff.session.python._
   * Created by peng on 16/01/17.
   */
 case class Endpoint(
-                     uri: String, // [protocol]:ip:port;[baudRate]
+                     uri: String,
+                     frame: Option[String] = None,
                      baudRate: Int = UAVConf.DEFAULT_BAUDRATE,
-                     ssid: Int = UAVConf.EXECUTOR_SSID,
-                     frame: Option[String] = None
-                   ) extends CaseInstanceRef with BindedRef with DetectResourceConflict {
+                     groundSSID: Int = UAVConf.EXECUTOR_SSID
+                   ) extends CaseInstanceRef
+  with BindedRef
+  with DetectResourceConflict {
 
   override lazy val resourceIDs = Map("" -> Set(uri))
 }

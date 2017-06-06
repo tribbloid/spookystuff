@@ -1,7 +1,6 @@
 package com.tribbloids.spookystuff.uav.actions
 
 import com.tribbloids.spookystuff.actions.{Action, Interaction}
-import com.tribbloids.spookystuff.doc.Fetched
 import com.tribbloids.spookystuff.session.Session
 import com.tribbloids.spookystuff.uav.spatial.StartEndLocation
 import com.tribbloids.spookystuff.uav.utils.UAVViews
@@ -10,7 +9,6 @@ import com.tribbloids.spookystuff.uav.utils.UAVViews
   * all actions are lazy: they just
   */
 trait UAVAction extends Action {
-
 }
 
 /**

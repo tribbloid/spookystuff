@@ -14,7 +14,7 @@ case class UAV(
                 uris: Seq[String], // [protocol]:ip:port;[baudRate]
                 frame: Option[String] = None,
                 baudRate: Int = UAVConf.DEFAULT_BAUDRATE,
-                endpointSSID: Int = UAVConf.EXECUTOR_SSID,
+                groundSSID: Int = UAVConf.EXECUTOR_SSID,
                 name: String = "DRONE"
               ) {
 
@@ -49,5 +49,9 @@ case class UAV(
     link
   }
 
-  override def toString = s"${(Seq(name) ++ frame.toSeq).mkString(":")}@${uris.head}"
+  def fullName = {
+    s"${(Seq(name) ++ frame.toSeq).mkString(":")}@${uris.head}"
+  }
+
+  override def toString = fullName
 }

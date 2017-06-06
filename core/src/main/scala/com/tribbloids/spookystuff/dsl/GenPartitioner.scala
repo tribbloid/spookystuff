@@ -1,7 +1,7 @@
 package com.tribbloids.spookystuff.dsl
 
-import com.tribbloids.spookystuff.SpookyContext
 import com.tribbloids.spookystuff.dsl.GenPartitioners.Instance
+import com.tribbloids.spookystuff.execution.ExecutionPlan
 import com.tribbloids.spookystuff.row.BeaconRDD
 import org.apache.spark.Partitioner
 import org.apache.spark.rdd.RDD
@@ -16,14 +16,13 @@ import scala.reflect.ClassTag
 //TODO: name should be 'planner'?
 trait GenPartitioner {
 
-  def getInstance[K: ClassTag](spooky: SpookyContext): Instance[K]
+  def getInstance[K: ClassTag](ec: ExecutionPlan.Context): Instance[K]
 }
 
 object GenPartitioners {
 
   import com.tribbloids.spookystuff.utils.SpookyViews._
 
-  //TODO: add bounding class level generic parameters
   trait Instance[K] extends Serializable {
     implicit def ctg: ClassTag[K]
 
@@ -48,12 +47,12 @@ object GenPartitioners {
                                  beaconRDDOpt: Option[BeaconRDD[K]] = None
                                ): RDD[(K, Iterable[V])]
 
-    // inefficient for wide transformation
     def reduceByKey[V: ClassTag](
                                   rdd: RDD[(K, V)],
                                   reducer: (V, V) => V,
                                   beaconRDDOpt: Option[BeaconRDD[K]] = None
                                 ): RDD[(K, V)] = {
+
       groupByKey(rdd, beaconRDDOpt)
         .map(
           tuple =>
@@ -65,13 +64,13 @@ object GenPartitioners {
   //this won't merge identical traces and do lookup, only used in case each resolve may yield different result
   case object Narrow extends GenPartitioner {
 
-    override def getInstance[K: ClassTag](spooky: SpookyContext) = {
-      GPImpl[K]()
+    def getInstance[K: ClassTag](ec: ExecutionPlan.Context): Instance[K] = {
+      Inst[K]()
     }
 
-    case class GPImpl[K](
-                          implicit val ctg: ClassTag[K]
-                        ) extends Instance[K] {
+    case class Inst[K](
+                        implicit val ctg: ClassTag[K]
+                      ) extends Instance[K] {
 
       override def groupByKey[V: ClassTag](
                                             rdd: RDD[(K, V)],
@@ -93,14 +92,16 @@ object GenPartitioners {
     PartitionerFactories.SamePartitioner
   }) extends GenPartitioner {
 
-    override def getInstance[K: ClassTag](spooky: SpookyContext) = {
-      GPImpl[K]()
+    def getInstance[K: ClassTag](ec: ExecutionPlan.Context): Instance[K] = {
+      Inst[K]()
     }
 
-    case class GPImpl[K](
-                          implicit val ctg: ClassTag[K]
-                        ) extends Instance[K] {
+    case class Inst[K](
+                        implicit val ctg: ClassTag[K]
+                      ) extends Instance[K] {
 
+      // very expensive and may cause memory overflow.
+      // TODO: does cogrouping with oneself solve the problem?
       override def groupByKey[V: ClassTag](
                                             rdd: RDD[(K, V)],
                                             beaconRDDOpt: Option[BeaconRDD[K]] = None
@@ -129,13 +130,13 @@ object GenPartitioners {
                             }
                           ) extends GenPartitioner {
 
-    override def getInstance[K: ClassTag](spooky: SpookyContext) = {
-      GPImpl[K]()
+    def getInstance[K: ClassTag](ec: ExecutionPlan.Context): Instance[K] = {
+      Inst[K]()
     }
 
-    case class GPImpl[K](
-                          implicit val ctg: ClassTag[K]
-                        ) extends Instance[K] {
+    case class Inst[K](
+                        implicit val ctg: ClassTag[K]
+                      ) extends Instance[K] {
 
       override def _createBeaconRDD(
                                      ref: RDD[_]
@@ -154,6 +155,7 @@ object GenPartitioners {
                                             rdd: RDD[(K, V)],
                                             beaconRDDOpt: Option[BeaconRDD[K]] = None
                                           ): RDD[(K, Iterable[V])] = {
+
         val beaconRDD = beaconRDDOpt.get
 
         val partitioner = partitionerFactory(rdd)

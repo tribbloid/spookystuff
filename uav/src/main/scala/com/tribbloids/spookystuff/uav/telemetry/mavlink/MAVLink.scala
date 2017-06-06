@@ -51,12 +51,7 @@ case class MAVLink(
     */
   object Endpoints {
     val direct: Endpoint = {
-      Endpoint(
-        uav.uris.head,
-        uav.baudRate,
-        uav.endpointSSID,
-        uav.frame
-      )
+      Endpoint(uav.uris.head, uav.frame, uav.baudRate, uav.groundSSID)
     }
     val executors: Seq[Endpoint] = if (executorOuts.isEmpty) {
       Seq(direct)
