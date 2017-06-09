@@ -10,7 +10,7 @@ import com.tribbloids.spookystuff.uav.spatial.NED
 trait CostEstimator {
 
   def estimate(
-                traces: Seq[Trace],
+                trace: Trace,
                 spooky: SpookyContext
               ): Double = 0
 }
@@ -43,11 +43,11 @@ object CostEstimator {
     }
 
     override def estimate(
-                           traces: Seq[Trace],
+                           trace: Trace,
                            spooky: SpookyContext
                          ): Double = {
 
-      val concated: Seq[Action] = traces.flatten
+      val concated: Seq[Action] = trace
       val navs: Seq[UAVNavigation] = concated.collect {
         case nav: UAVNavigation => nav
       }

@@ -8,6 +8,7 @@ import org.apache.spark.sql.types.{DataType, UserDefinedType}
 import org.apache.spark.util.Utils
 import org.json4s._
 import org.json4s.jackson.JsonMethods._
+import org.slf4j.LoggerFactory
 
 import scala.language.implicitConversions
 import scala.util.Try
@@ -122,7 +123,21 @@ class MessageReader[Obj](
 
   override def toMessage(v: Obj) = v
 }
-object MessageReader extends MessageReader[Any]
+object MessageReader extends MessageReader[Any] {
+
+  def _toXMLAndBack[T: Manifest](model: T): T = {
+    val xml = MessageView(model).prettyXML
+    LoggerFactory.getLogger(this.getClass).info(
+      s"""
+         |========================= XML ========================
+         |$xml
+         |======================== /XML ========================
+      """.stripMargin
+    )
+    val back = this._fromXML[T](xml)
+    back
+  }
+}
 
 trait MessageAPI extends Serializable {
 
@@ -164,8 +179,8 @@ trait MessageAPI extends Serializable {
 
     val msg = toMessage
     msg match {
-//      case v: Lit[_, _] =>
-//        v.toString
+      //      case v: Lit[_, _] =>
+      //        v.toString
       case v: Product =>
         val strs = v.productIterator
           .map {

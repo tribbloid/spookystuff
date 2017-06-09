@@ -3,13 +3,14 @@ package com.tribbloids.spookystuff.uav.dsl
 import com.graphhopper.jsprit.core.problem.vehicle.{VehicleImpl, VehicleTypeImpl}
 import com.graphhopper.jsprit.core.problem.{Capacity, VehicleRoutingProblem, Location => JLocation}
 import com.tribbloids.spookystuff.SpookyContext
-import com.tribbloids.spookystuff.actions.{Trace, TraceView}
+import com.tribbloids.spookystuff.actions.{Action, Trace, TraceView}
 import com.tribbloids.spookystuff.dsl.GenPartitioner
 import com.tribbloids.spookystuff.dsl.GenPartitioners.Instance
 import com.tribbloids.spookystuff.execution.ExecutionPlan
 import com.tribbloids.spookystuff.row.BeaconRDD
 import com.tribbloids.spookystuff.uav.UAVConf
-import com.tribbloids.spookystuff.uav.actions.UAVAction
+import com.tribbloids.spookystuff.uav.actions.{UAVAction, UAVNavigation}
+import com.tribbloids.spookystuff.uav.planning.FromLocation
 import com.tribbloids.spookystuff.uav.telemetry.{Link, LinkStatus}
 import org.apache.spark.rdd.RDD
 
@@ -71,28 +72,53 @@ object GenPartitioners {
           case _ =>
             None
         }
-
-        val uavActions: Array[Trace] = uavRDD
-          .collect()
-
         val costEstimator = spooky.submodule[UAVConf].costEstimator
 
+        val uavTraces: Array[Trace] = uavRDD.collect()
+
         // get available drones
-        val sc = rdd.sparkContext
-        val statusRDD: RDD[LinkStatus] = sc.mapPerExecutorCore {
-          spooky.withSession {
-            session =>
-              val linkTry = Link.trySelect(
-                spooky.submodule[UAVConf].uavsInFleetShuffled,
-                session
-              )
-              linkTry.map {
-                link =>
-                  link.status()
-              }
+        val linkRDD: RDD[LinkStatus] = spooky.sparkContext
+          .mapPerExecutorCore {
+            spooky.withSession {
+              session =>
+                val linkTry = Link.trySelect (
+                  spooky.submodule[UAVConf].uavsInFleetShuffled,
+                  session
+                )
+                linkTry.map {
+                  link =>
+                    link.status()
+                }
+            }
           }
-        }
           .flatMap(_.toOption.toSeq)
+        val links = linkRDD.collect()
+
+        val traces_linkOpts_ids = links.map {
+          link =>
+            List(FromLocation(link.currentLocation)) -> Some(link)
+        } ++ uavTraces.map {
+          trace =>
+            trace -> None
+        }
+          .zipWithIndex
+        val trace_ids = traces_linkOpts_ids.map {
+          triplet =>
+            triplet
+        }
+
+        val dMat = for (
+          i <- trace_ids;
+          j <- trace_ids
+        ) {
+          val last = i._1.collect{case v: UAVNavigation => v}.last
+          val lastLocation = last._to
+          val cost = spooky.submodule[UAVConf].costEstimator.estimate(
+            List(FromLocation(lastLocation)) ++ j._1,
+            spooky
+          )
+          (i._2, j._2, cost)
+        }
 
         val cap = Capacity.Builder.newInstance()
           .addDimension(0, 1)
@@ -100,16 +126,14 @@ object GenPartitioners {
         val jVType = VehicleTypeImpl.Builder.newInstance("UAV")
           .setCapacityDimensions(cap)
 
-
-
-        val jVehicles = statusRDD
+        val jVehicles = linkRDD
           .collect()
           .map {
             status =>
               val location = status.currentLocation
               val jLocation = JLocation.Builder
-              .newInstance()
-              .setIndex()
+                .newInstance()
+                .setIndex()
               val jVehicle = VehicleImpl.Builder
                 .newInstance(status.uav.fullName)
                 .setStartLocation(status.currentLocation)
