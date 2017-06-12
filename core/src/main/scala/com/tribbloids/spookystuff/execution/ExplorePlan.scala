@@ -28,7 +28,7 @@ case class ExplorePlan(
                         joinType: JoinType,
 
                         traces: Set[Trace],
-                        genPartitioner: GenPartitioner,
+                        genPartitioner: GenPartitioner[TraceView],
 
                         params: ExploreParams,
                         exploreAlgorithm: ExploreAlgorithm,

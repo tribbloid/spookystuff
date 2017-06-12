@@ -49,9 +49,9 @@ case class UAV(
     link
   }
 
-  def fullName = {
+  def fullID = {
     s"${(Seq(name) ++ frame.toSeq).mkString(":")}@${uris.head}"
   }
 
-  override def toString = fullName
+  override def toString = fullID
 }

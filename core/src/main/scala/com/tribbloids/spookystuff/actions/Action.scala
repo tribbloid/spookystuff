@@ -5,7 +5,6 @@ import com.tribbloids.spookystuff.selenium.BySizzleCssSelector
 import com.tribbloids.spookystuff.session.Session
 import com.tribbloids.spookystuff.utils.{ScalaUDT, SpookyUtils}
 import com.tribbloids.spookystuff.{ActionException, Const, SpookyContext}
-import org.apache.spark.ml.dsl.utils.MessageView
 import org.apache.spark.sql.types.SQLUserDefinedType
 import org.openqa.selenium.support.ui.{ExpectedConditions, WebDriverWait}
 import org.slf4j.LoggerFactory

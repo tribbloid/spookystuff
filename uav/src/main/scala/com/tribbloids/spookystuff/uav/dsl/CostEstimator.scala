@@ -3,7 +3,7 @@ package com.tribbloids.spookystuff.uav.dsl
 import com.tribbloids.spookystuff.SpookyContext
 import com.tribbloids.spookystuff.actions.{Action, Trace}
 import com.tribbloids.spookystuff.uav.actions.UAVNavigation
-import com.tribbloids.spookystuff.uav.planning.{FromLocation, PreferLink}
+import com.tribbloids.spookystuff.uav.planning.PreferUAV
 import com.tribbloids.spookystuff.uav.spatial.NED
 
 //TODO: this API may take too long to extend, should delegate most of it to UAVAction
@@ -48,31 +48,30 @@ object CostEstimator {
                          ): Double = {
 
       val concated: Seq[Action] = trace
+
+      {
+        val preferUAVs = concated.collect {
+          case v: PreferUAV => v
+        }
+        require(preferUAVs.size <= 1,
+          s"attempt to dispatch ${preferUAVs.size} UAVs for a task," +
+            " only 1 UAV can be dispatched for a task." +
+            " (This behaviour is likely permanent and won't be fixed in the future)"
+        )
+      }
+
       val navs: Seq[UAVNavigation] = concated.collect {
         case nav: UAVNavigation => nav
       }
-      val useLink = concated.collect {
-        case v: PreferLink => v
+
+      val costSum = navs.indices.map {
+        i =>
+          val c1 = intraCost(navs(i))
+          val c2 = if (i >= navs.size - 1) 0
+          else interCost(navs(i), navs(i + 1))
+          c1 + c2
       }
-        .distinct
-
-      require(useLink.size == 1,
-        s"attempt to dispatch ${useLink.size} drone for a task," +
-          " only 1 drone can be dispatched for a task." +
-          " (This behaviour is likely permanent and won't be fixed in the future)"
-      )
-
-      val firstLocation = useLink.head.firstLink.status().currentLocation
-
-      var prev: UAVNavigation = FromLocation(firstLocation)
-      var costSum = 0.0
-      navs.foreach {
-        nav =>
-          val c1 = intraCost(nav)
-          val c2 = interCost(prev, nav)
-          prev = nav
-          costSum += c1 + c2
-      }
+        .sum
 
       costSum
     }

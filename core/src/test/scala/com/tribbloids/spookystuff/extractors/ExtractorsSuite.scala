@@ -14,7 +14,7 @@ class ExtractorsSuite extends SpookyEnvFixture {
   it("Literal -> JSON") {
     val lit: Lit[FR, Int] = Lit(1)
 
-    val json = lit.toJSON()
+    val json = lit.prettyJSON()
     json.shouldBe (
       "1"
     )
@@ -23,7 +23,7 @@ class ExtractorsSuite extends SpookyEnvFixture {
   it("Action with Literal -> JSON") {
     val action = Wget(Lit("http://dummy.org"))
 
-    val json = RecursiveMessageRelay.toMessage(action).toJSON()
+    val json = RecursiveMessageRelay.toMessage(action).prettyJSON()
     json.shouldBe(
       """
         |{
@@ -42,7 +42,7 @@ class ExtractorsSuite extends SpookyEnvFixture {
 
   it("Click -> JSON") {
     val action = Click("o1")
-    val json = RecursiveMessageRelay.toMessage(action).toJSON()
+    val json = RecursiveMessageRelay.toMessage(action).prettyJSON()
     json.shouldBe(
       """
         |{
@@ -56,7 +56,7 @@ class ExtractorsSuite extends SpookyEnvFixture {
 
   it("Wget -> JSON") {
     val action = Wget("http://dummy.com")
-    val json = RecursiveMessageRelay.toMessage(action).toJSON()
+    val json = RecursiveMessageRelay.toMessage(action).prettyJSON()
     json.shouldBe(
       """
         |{
@@ -72,7 +72,7 @@ class ExtractorsSuite extends SpookyEnvFixture {
       Click("o1")
         +> Snapshot()
     )
-    val json = RecursiveMessageRelay.toMessage(action).toJSON()
+    val json = RecursiveMessageRelay.toMessage(action).prettyJSON()
     json.shouldBe(
       """
         |{

@@ -16,6 +16,7 @@ trait WaypointLike extends UAVNavigation {
 
   val to: Extractor[Any]
   lazy val _to = to.asInstanceOf[Lit[FR, Location]].value
+  override def _from: Location = _to
 
   override def getSessionView(session: Session) = new this.SessionView(session)
 
@@ -27,7 +28,7 @@ trait WaypointLike extends UAVNavigation {
     }
 
     override def engage(): Unit = {
-      LoggerFactory.getLogger(this.getClass).info(s"scanning .. ${_from}")
+      LoggerFactory.getLogger(this.getClass).info(s"scanning ... ${_from}")
       link.synch.move(_to)
     }
   }
@@ -51,6 +52,4 @@ case class Waypoint(
           .asInstanceOf[this.type ]
     }
   }
-
-  override def _from: Location = _to
 }

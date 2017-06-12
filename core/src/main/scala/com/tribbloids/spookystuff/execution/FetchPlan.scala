@@ -7,7 +7,7 @@ import org.apache.spark.rdd.RDD
 
 trait InjectBeaconRDDPlan extends ExecutionPlan {
 
-  def genPartitioner: GenPartitioner
+  def genPartitioner: GenPartitioner[TraceView]
 
   lazy val gpImpl: GenPartitioners.Instance[TraceView] = {
     genPartitioner.getInstance[TraceView](ec)
@@ -30,7 +30,7 @@ trait InjectBeaconRDDPlan extends ExecutionPlan {
 case class FetchPlan(
                       override val child: ExecutionPlan,
                       traces: Set[Trace],
-                      genPartitioner: GenPartitioner
+                      genPartitioner: GenPartitioner[TraceView]
                     ) extends UnaryPlan(child) with InjectBeaconRDDPlan {
 
   override def doExecute(): SquashedFetchedRDD = {

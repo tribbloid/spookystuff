@@ -11,6 +11,10 @@
 
     <artifactId>spookystuff-uav</artifactId>
 
+    <properties>
+        <jsprit.version>1.7.2</jsprit.version>
+    </properties>
+
     <!--premature optimization is the ultimate evil-->
     <!--just get in the air first!-->
 
@@ -34,11 +38,23 @@
             <type>test-jar</type>
             <scope>test</scope>
         </dependency>
+
         <dependency>
             <groupId>com.graphhopper</groupId>
             <artifactId>jsprit-core</artifactId>
-            <version>1.7</version>
+            <version>${jsprit.version}</version>
         </dependency>
+        <dependency>
+            <groupId>com.graphhopper</groupId>
+            <artifactId>jsprit-analysis</artifactId>
+            <version>${jsprit.version}</version>
+        </dependency>
+
+        <!--<dependency>-->
+        <!--<groupId>com.graphhopper</groupId>-->
+        <!--<artifactId>jsprit-util</artifactId>-->
+        <!--<version>1.7</version>-->
+        <!--</dependency>-->
     </dependencies>
 
     <build>

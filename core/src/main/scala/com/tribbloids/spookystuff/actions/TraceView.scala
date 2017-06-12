@@ -12,7 +12,7 @@ import scala.reflect.ClassTag
 
 object TraceView {
 
-  implicit def fromTrace(trace: Trace): TraceView = new TraceView(trace)
+  implicit def fromTrace(trace: Trace): TraceView = TraceView(trace)
 
   def apply(
              children: Trace = Nil,

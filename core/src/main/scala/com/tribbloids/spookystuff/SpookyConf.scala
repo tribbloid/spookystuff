@@ -2,6 +2,7 @@ package com.tribbloids.spookystuff
 
 import java.util.Date
 
+import com.tribbloids.spookystuff.actions.TraceView
 import com.tribbloids.spookystuff.dsl._
 import com.tribbloids.spookystuff.row.Sampler
 import com.tribbloids.spookystuff.session._
@@ -170,7 +171,7 @@ object SpookyConf extends Submodules.Builder[SpookyConf]{
   */
 //TODO: is var in serialized closure unstable for Spark production environment? consider changing to ConcurrentHashMap
 class SpookyConf(
-                //TODO: this should be lifted to the same level in SpookyContext
+                  //TODO: this should be lifted to the same level in SpookyContext
                   val submodules: Submodules[ModuleConf] = Submodules(),
 
                   var shareMetrics: Boolean = false, //TODO: not necessary
@@ -214,7 +215,7 @@ class SpookyConf(
                   var defaultJoinSampler: Sampler[Any] = identity, //join takes remote actions and cost much more than flatten.
                   var defaultExploreRange: Range = 0 until Int.MaxValue,
 
-                  var defaultGenPartitioner: GenPartitioner = GenPartitioners.Wide(),
+                  var defaultGenPartitioner: GenPartitioner[TraceView] = GenPartitioners.Wide(),
                   var defaultExploreAlgorithm: ExploreAlgorithm = ExploreAlgorithms.ShortestPath,
 
                   var epochSize: Int = 500,

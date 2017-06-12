@@ -4,6 +4,7 @@ import com.tribbloids.spookystuff.extractors.Lit
 import com.tribbloids.spookystuff.uav.UAVTestUtils
 import com.tribbloids.spookystuff.uav.spatial._
 import com.tribbloids.spookystuff.uav.sim.APMSITLFixture
+import org.apache.spark.ml.dsl.utils.RecursiveMessageRelay
 
 /**
   * All tests will use Proxy by default
@@ -18,7 +19,7 @@ class MoveSuite extends APMSITLFixture {
 
     val move = Move(Lit(wp1), Lit(wp2))
 
-    move.prettyJSON().shouldBe(
+    RecursiveMessageRelay.toMessage(move).prettyJSON.shouldBe(
 
     )
   }

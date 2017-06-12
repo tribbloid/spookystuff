@@ -55,7 +55,7 @@ class GASolverSuite extends SpookyEnvFixture {
       main.map{a => List(a)}
         .map {
           trace =>
-            Seq(PreferLink(dummyLink)) ++ trace
+            Seq(PreferUAV(dummyLink)) ++ trace
         }
         .mkString("\n")
     )

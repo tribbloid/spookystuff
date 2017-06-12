@@ -27,7 +27,7 @@ case class Route(
         }
         val seq = traces.map {
           tr =>
-            List(PreferLink(link)) ++ tr
+            List(PreferUAV(link)) ++ tr
         }
         seq
     }
@@ -35,14 +35,14 @@ case class Route(
 
   def estimateCost(solver: GASolver): Double = {
 
-    linkTry match {
-      case Success(link) =>
-
-    }
+//    linkTry match {
+//      case Success(link) =>
+//
+//    }
     val seqOpt = toTracesOpt(solver.allTracesBroadcasted.value)
     seqOpt.map {
       seq =>
-        solver.actionCosts.estimate(seq, solver.spooky)
+        solver.actionCosts.estimate(seq.toList.flatten, solver.spooky)
     }
       .getOrElse {
         Double.MaxValue

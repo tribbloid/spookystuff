@@ -43,7 +43,7 @@ case class Move(
 
     override def inbound(): Unit = {
       super.inbound()
-      LoggerFactory.getLogger(this.getClass).debug(s"inbound .. $_from")
+      LoggerFactory.getLogger(this.getClass).debug(s"inbound .. ${_from}")
       link.synch.move(_from)
     }
   }

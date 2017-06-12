@@ -372,7 +372,7 @@ case class FetchedDataset(
   // Always left
   def fetch(
              traces: Set[Trace],
-             genPartitioner: GenPartitioner = spooky.conf.defaultGenPartitioner
+             genPartitioner: GenPartitioner[TraceView] = spooky.conf.defaultGenPartitioner
            ): FetchedDataset = FetchPlan(plan, traces.correct, genPartitioner)
 
   //shorthand of fetch
@@ -380,7 +380,7 @@ case class FetchedDataset(
              ex: Extractor[Any],
              filter: DocFilter = Const.defaultDocumentFilter,
              failSafe: Int = -1,
-             genPartitioner: GenPartitioner = spooky.conf.defaultGenPartitioner
+             genPartitioner: GenPartitioner[TraceView] = spooky.conf.defaultGenPartitioner
            ): FetchedDataset = {
 
     var trace: Set[Trace] =  (
@@ -400,7 +400,7 @@ case class FetchedDataset(
             ex: Extractor[Any],
             filter: DocFilter = Const.defaultDocumentFilter,
             failSafe: Int = -1,
-            genPartitioner: GenPartitioner = spooky.conf.defaultGenPartitioner
+            genPartitioner: GenPartitioner[TraceView] = spooky.conf.defaultGenPartitioner
           ): FetchedDataset = {
 
     var trace: Set[Trace] =  Wget(ex, filter)
@@ -420,7 +420,7 @@ case class FetchedDataset(
             sampler: Sampler[Any] = spooky.conf.defaultJoinSampler
           )(
             traces: Set[Trace],
-            genPartitioner: GenPartitioner = spooky.conf.defaultGenPartitioner
+            genPartitioner: GenPartitioner[TraceView] = spooky.conf.defaultGenPartitioner
           ): FetchedDataset = {
 
     val flat = this
@@ -442,7 +442,7 @@ case class FetchedDataset(
                  sampler: Sampler[Any] = spooky.conf.defaultJoinSampler,
                  filter: DocFilter = Const.defaultDocumentFilter,
                  failSafe: Int = -1,
-                 genPartitioner: GenPartitioner = spooky.conf.defaultGenPartitioner
+                 genPartitioner: GenPartitioner[TraceView] = spooky.conf.defaultGenPartitioner
                ): FetchedDataset = {
 
     var trace = (
@@ -472,7 +472,7 @@ case class FetchedDataset(
                 sampler: Sampler[Any] = spooky.conf.defaultJoinSampler,
                 filter: DocFilter = Const.defaultDocumentFilter,
                 failSafe: Int = -1,
-                genPartitioner: GenPartitioner = spooky.conf.defaultGenPartitioner
+                genPartitioner: GenPartitioner[TraceView] = spooky.conf.defaultGenPartitioner
               ): FetchedDataset = {
 
     var trace: Set[Trace] = Wget(new GetExpr(Const.defaultJoinField), filter)
@@ -494,7 +494,7 @@ case class FetchedDataset(
                sampler: Sampler[Any] = spooky.conf.defaultJoinSampler
              )(
                traces: Set[Trace],
-               genPartitioner: GenPartitioner = spooky.conf.defaultGenPartitioner,
+               genPartitioner: GenPartitioner[TraceView] = spooky.conf.defaultGenPartitioner,
 
                depthField: Field = null,
                range: Range = spooky.conf.defaultExploreRange,
@@ -523,7 +523,7 @@ case class FetchedDataset(
                     filter: DocFilter = Const.defaultDocumentFilter,
 
                     failSafe: Int = -1,
-                    genPartitioner: GenPartitioner = spooky.conf.defaultGenPartitioner,
+                    genPartitioner: GenPartitioner[TraceView] = spooky.conf.defaultGenPartitioner,
 
                     depthField: Field = null,
                     range: Range = spooky.conf.defaultExploreRange,
@@ -558,7 +558,7 @@ case class FetchedDataset(
                    filter: DocFilter = Const.defaultDocumentFilter,
 
                    failSafe: Int = -1,
-                   genPartitioner: GenPartitioner = spooky.conf.defaultGenPartitioner,
+                   genPartitioner: GenPartitioner[TraceView] = spooky.conf.defaultGenPartitioner,
 
                    depthField: Field = null,
                    range: Range = spooky.conf.defaultExploreRange,

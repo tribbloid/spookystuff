@@ -16,8 +16,8 @@ trait UAVAction extends Action {
   */
 trait UAVNavigation extends Interaction with UAVAction {
 
-  def _from: Location
   def _to: Location
+  def _from: Location = _to
 
   def speedOpt: Option[Double] = None
 
