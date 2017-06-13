@@ -215,7 +215,7 @@ class SpookyConf(
                   var defaultJoinSampler: Sampler[Any] = identity, //join takes remote actions and cost much more than flatten.
                   var defaultExploreRange: Range = 0 until Int.MaxValue,
 
-                  var defaultGenPartitioner: GenPartitioner[TraceView] = GenPartitioners.Wide(),
+                  var defaultGenPartitioner: GenPartitioner = GenPartitioners.Wide(),
                   var defaultExploreAlgorithm: ExploreAlgorithm = ExploreAlgorithms.ShortestPath,
 
                   var epochSize: Int = 500,

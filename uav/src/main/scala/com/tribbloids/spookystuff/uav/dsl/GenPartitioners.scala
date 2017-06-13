@@ -5,7 +5,7 @@ import com.graphhopper.jsprit.core.problem.job.Service
 import com.graphhopper.jsprit.core.problem.vehicle.{VehicleImpl, VehicleTypeImpl}
 import com.graphhopper.jsprit.core.problem.{Capacity, VehicleRoutingProblem, Location => JLocation}
 import com.graphhopper.jsprit.core.util.{Coordinate, FastVehicleRoutingTransportCostsMatrix, Solutions}
-import com.tribbloids.spookystuff.actions.{Trace, TraceView}
+import com.tribbloids.spookystuff.actions.TraceView
 import com.tribbloids.spookystuff.dsl.GenPartitioner
 import com.tribbloids.spookystuff.dsl.GenPartitioners.Instance
 import com.tribbloids.spookystuff.execution.ExecutionPlan
@@ -29,13 +29,13 @@ object GenPartitioners {
   case class JSprit(
                      //                     backup: GenPartitioner, // for any key that doesn't contain UAVAction.
                      vizPathOpt: Option[String] = Some("output/GP.png") // for debugging only.
-                   ) extends GenPartitioner[TraceView] {
+                   ) extends GenPartitioner {
 
     def getInstance[K: ClassTag](ec: ExecutionPlan.Context): Instance[K] = {
       Inst[K](ec)
     }
 
-    case class Inst[K <: TraceView](ec: ExecutionPlan.Context)(
+    case class Inst[K >: TraceView](ec: ExecutionPlan.Context)(
       implicit val ctg: ClassTag[K]
     ) extends Instance[K] {
 
@@ -66,18 +66,20 @@ object GenPartitioners {
 
         ec.scratchRDDs.persist(rdd)
 
-        val hasUAVRDD: RDD[K] = rdd.flatMap {
-          case (k, v) =>
+        val hasUAVRDD: RDD[TraceView] = rdd.flatMap {
+          case (k: TraceView, v) =>
             val c = k.children
             if (c.exists(_.isInstanceOf[UAVAction])) Some(k)
             else None
+          case _ =>
+            None
         }
           .distinct()
 
         //        val hasUAVTraces_Data: Array[(TraceView, V)] = hasUAVRDD.distinct().collect()
         //        val hasUAVTraces = hasUAVTraces_Data.map(_._1.children)
 
-        val hasUAVTraces: Array[K] = hasUAVRDD.collect()
+        val hasUAVTraces: Array[TraceView] = hasUAVRDD.collect()
 
         // get available drones
         val linkRDD = spooky.sparkContext
@@ -228,22 +230,22 @@ object GenPartitioners {
 
         import scala.collection.JavaConverters._
 
-        val link_traces: Seq[(LinkStatus, Seq[K])] = best.getRoutes.asScala.toSeq.map {
+        val link_traces: Seq[(LinkStatus, Seq[TraceView])] = best.getRoutes.asScala.toSeq.map {
           route =>
             val link = links.find(_.uav.fullID == route.getVehicle.getId).get
             val tours = route.getTourActivities.getActivities.asScala
             val traces = for (tour <- tours) yield {
               val index = tour.getLocation.getIndex
-              val trace = trace_indices.find(_._2 == index).get._1.asInstanceOf[K]
+              val trace = trace_indices.find(_._2 == index).get._1
               trace
             }
             link -> traces
         }
 
-        val link_traceRDD: RDD[(LinkStatus, Seq[K])] = spooky.sparkContext.parallelize(link_traces)
+        val link_traceRDD: RDD[(LinkStatus, Seq[TraceView])] = spooky.sparkContext.parallelize(link_traces)
 
         //if you don't know cogroup preserve sequence, don't use it.
-        val realignedTraceRDD: RDD[(Seq[K], Link)] = linkRDD.cogroup {
+        val realignedTraceRDD: RDD[(Seq[TraceView], Link)] = linkRDD.cogroup {
           link_traceRDD
           //linkRDD doesn't have a partitioner so no need to explicit
         }
@@ -255,17 +257,18 @@ object GenPartitioners {
               tuple._2.head -> tuple._1.head
           }
 
-        val trace_all_linkRDD: RDD[(K, (Seq[K], Link))] = realignedTraceRDD
+        val trace_index_linkRDD: RDD[(K, (Int, Link))] = realignedTraceRDD
           .flatMap {
             tuple =>
               tuple._1
+                  .zipWithIndex
                 .map {
-                  trace =>
-                    trace -> (tuple._1 -> tuple._2)
+                  tt =>
+                    tt._1 -> (tt._2 -> tuple._2)
                 }
           }
 
-        val cogroupedRDD: RDD[(K, (Iterable[(Seq[Trace], Link)], Iterable[V]))] = trace_all_linkRDD.cogroup {
+        val cogroupedRDD: RDD[(K, (Iterable[(Int, Link)], Iterable[V]))] = trace_index_linkRDD.cogroup {
           rdd
         }
 
@@ -280,7 +283,7 @@ object GenPartitioners {
   }
 
   // all adaptive improvements goes here.
-  object DRL extends GenPartitioner[TraceView] {
+  object DRL extends GenPartitioner {
 
     def getInstance[K: ClassTag](ec: ExecutionPlan.Context): Instance[K] = {
       ???
