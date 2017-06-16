@@ -6,6 +6,7 @@ import com.tribbloids.spookystuff.uav.system.UAV
 
 /**
   * Created by peng on 24/02/17.
+  * Only used in tests
   */
 case class DummyLink(
                       uav: UAV

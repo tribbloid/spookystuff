@@ -12,7 +12,7 @@ import com.tribbloids.spookystuff.execution.ExecutionPlan
 import com.tribbloids.spookystuff.row.BeaconRDD
 import com.tribbloids.spookystuff.uav.UAVConf
 import com.tribbloids.spookystuff.uav.actions.{UAVAction, UAVNavigation}
-import com.tribbloids.spookystuff.uav.planning.WrapLocation
+import com.tribbloids.spookystuff.uav.planning.{PreferUAV, WrapLocation}
 import com.tribbloids.spookystuff.uav.spatial.NED
 import com.tribbloids.spookystuff.uav.telemetry.{Link, LinkStatus}
 import org.apache.spark.rdd.RDD
@@ -27,11 +27,10 @@ object GenPartitioners {
   import com.tribbloids.spookystuff.utils.SpookyViews._
 
   case class JSprit(
-                     //                     backup: GenPartitioner, // for any key that doesn't contain UAVAction.
                      vizPathOpt: Option[String] = Some("output/GP.png") // for debugging only.
                    ) extends GenPartitioner {
 
-    def getInstance[K: ClassTag](ec: ExecutionPlan.Context): Instance[K] = {
+    def getInstance[K >: TraceView: ClassTag](ec: ExecutionPlan.Context): Instance[K] = {
       Inst[K](ec)
     }
 
@@ -47,27 +46,10 @@ object GenPartitioners {
 
         val spooky = ec.spooky
 
-        //        val bifurcated = rdd.map {
-        //          case (k: TraceView, v) =>
-        //            if (k.children.exists(_.isInstanceOf[UAVAction])) {
-        //              Some[(TraceView, V)](k -> v) -> None
-        //            }
-        //            else {
-        //              None -> Some(k -> v)
-        //            }
-        //          case tt@ _ =>
-        //            None -> Some(tt)
-        //        }
-        //
-        //        ec.scratchRDDs.persist(bifurcated)
-        //
-        //        val hasUAVRDD = bifurcated.flatMap(_._1)
-        //        val notUAVRDD = bifurcated.flatMap(_._2)
-
         ec.scratchRDDs.persist(rdd)
 
         val hasUAVRDD: RDD[TraceView] = rdd.flatMap {
-          case (k: TraceView, v) =>
+          case (k: TraceView, _) =>
             val c = k.children
             if (c.exists(_.isInstanceOf[UAVAction])) Some(k)
             else None
@@ -151,6 +133,7 @@ object GenPartitioners {
           .build()
         val jVType = VehicleTypeImpl.Builder.newInstance("UAV")
           .setCapacityDimensions(cap)
+          .build()
 
         val jVehicles = traces_linkOpts_indices
           .flatMap {
@@ -173,6 +156,7 @@ object GenPartitioners {
                 .build()
               val jVehicle = VehicleImpl.Builder
                 .newInstance(status.uav.fullID)
+                .setType(jVType)
                 .setStartLocation(jLocation)
                 .build()
               jVehicle
@@ -244,6 +228,8 @@ object GenPartitioners {
 
         val link_traceRDD: RDD[(LinkStatus, Seq[TraceView])] = spooky.sparkContext.parallelize(link_traces)
 
+        //TODO: cogroup is expensive
+
         //if you don't know cogroup preserve sequence, don't use it.
         val realignedTraceRDD: RDD[(Seq[TraceView], Link)] = linkRDD.cogroup {
           link_traceRDD
@@ -261,20 +247,38 @@ object GenPartitioners {
           .flatMap {
             tuple =>
               tuple._1
-                  .zipWithIndex
+                .zipWithIndex
                 .map {
                   tt =>
                     tt._1 -> (tt._2 -> tuple._2)
                 }
           }
 
-        val cogroupedRDD: RDD[(K, (Iterable[(Int, Link)], Iterable[V]))] = trace_index_linkRDD.cogroup {
-          rdd
+        val cogroupedRDD: RDD[(K, (Iterable[(Int, Link)], Iterable[V]))] =
+          trace_index_linkRDD.cogroup {
+            rdd
+          }
+
+        val kv_index = cogroupedRDD.map {
+          triplet =>
+            val is_links = triplet._2._1.toSeq
+            is_links.size match {
+              case 0 =>
+                val k = triplet._1
+                (k -> triplet._2._2) -> -1
+              case 1 =>
+                val k = triplet._1.asInstanceOf[TraceView]
+                val updatedK = k.copy(children = List(PreferUAV(is_links.head._2)) ++ k.children)
+                (updatedK -> triplet._2._2) -> is_links.head._1
+              case _ =>
+                throw new AssertionError(s"size cannot be ${is_links.size}")
+            }
         }
 
-        cogroupedRDD.
-
-
+        kv_index.mapPartitions {
+          itr =>
+            itr.toSeq.sortBy(_._2).map(_._1).iterator
+        }
 
         // merge with trace that doesn't contain UAVNavigations
         // also carry data with them, by treating realigned link_traceRDD like a beaconRDD.

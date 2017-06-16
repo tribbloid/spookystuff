@@ -32,17 +32,17 @@ TaskProcess -> Connection:UDP:xx -/
   */
 case class MAVLink(
                     uav: UAV,
-                    executorOuts: Seq[String] = Nil, // cannot have duplicates
-                    gcsOuts: Seq[String] = Nil
+                    toSpark: Seq[String] = Nil, // cannot have duplicates
+                    toGCS: Seq[String] = Nil
                   ) extends Link with DetectResourceConflict {
 
   {
-    if (executorOuts.isEmpty) assert(gcsOuts.isEmpty, "No endpoint for executor")
+    if (toSpark.isEmpty) assert(toGCS.isEmpty, "No endpoint for executor")
   }
 
-  override lazy val resourceIDs = Map("" -> (uav.uris ++ executorOuts).toSet)
+  override lazy val resourceIDs = Map("" -> (uav.uris ++ toSpark).toSet)
 
-  val outs: Seq[String] = executorOuts ++ gcsOuts
+  val outs: Seq[String] = toSpark ++ toGCS
   val allURIs = (uav.uris ++ outs).distinct
 
   /**
@@ -53,11 +53,11 @@ case class MAVLink(
     val direct: Endpoint = {
       Endpoint(uav.uris.head, uav.frame, uav.baudRate, uav.groundSSID)
     }
-    val executors: Seq[Endpoint] = if (executorOuts.isEmpty) {
+    val executors: Seq[Endpoint] = if (toSpark.isEmpty) {
       Seq(direct)
     }
     else {
-      executorOuts.map {
+      toSpark.map {
         out =>
           direct.copy(uri = out)
       }
@@ -65,7 +65,7 @@ case class MAVLink(
     //always initialized in Python when created from companion object
     val primary: Endpoint = executors.head
     val GCSs: Seq[Endpoint] = {
-      gcsOuts.map {
+      toGCS.map {
         out =>
           direct.copy(uri = out)
       }
@@ -91,13 +91,13 @@ case class MAVLink(
   def coFactory(another: Link): Boolean = {
     another match {
       case v: MAVLink =>
-        val result = this.gcsOuts.toSet == v.gcsOuts.toSet
+        val result = this.toGCS.toSet == v.toGCS.toSet
         if (!result) {
           LoggerFactory.getLogger(this.getClass).info (
             s"""
                |Existing link for $uav is obsolete! Recreating ...
-               |output should be routed to GCS(s) ${v.gcsOuts.mkString("[",", ","]")}
-               |but instead existing one routes it to ${gcsOuts.mkString("[",", ","]")}
+               |output should be routed to GCS(s) ${v.toGCS.mkString("[",", ","]")}
+               |but instead existing one routes it to ${toGCS.mkString("[",", ","]")}
              """.trim.stripMargin
           )
         }

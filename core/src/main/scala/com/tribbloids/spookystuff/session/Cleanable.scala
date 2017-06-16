@@ -169,13 +169,13 @@ object Cleanable {
       }
   }
 
-  trait Verbose {
-    self: Cleanable =>
-
-    override def logConstructionDestruction(s: String): Unit = {
-      LoggerFactory.getLogger(this.getClass).info(s"$logPrefix $s")
-    }
-  }
+//  trait Verbose {
+//    self: Cleanable =>
+//
+//    override def logConstructionDestruction(s: String): Unit = {
+//      LoggerFactory.getLogger(this.getClass).info(s"$logPrefix $s")
+//    }
+//  }
 }
 
 trait LocalCleanable extends Cleanable with NOTSerializable
