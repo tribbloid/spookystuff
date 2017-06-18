@@ -2,8 +2,9 @@ package com.tribbloids.spookystuff.caching
 
 import java.util.UUID
 
-import com.tribbloids.spookystuff.{DirConf, SpookyContext}
+import com.tribbloids.spookystuff.SpookyContext
 import com.tribbloids.spookystuff.actions.Trace
+import com.tribbloids.spookystuff.conf.DirConf
 import com.tribbloids.spookystuff.doc.{DocUtils, Fetched}
 import com.tribbloids.spookystuff.utils.SpookyUtils
 import org.apache.hadoop.fs.Path
@@ -23,8 +24,8 @@ object DFSDocCache extends AbstractDocCache {
   def getImpl(k: Trace, spooky: SpookyContext): Option[Seq[Fetched]] = {
 
     val pathStr = SpookyUtils.\\\(
-      spooky.conf.dirConf.cache,
-      spooky.conf.cacheFilePath(k).toString
+      spooky.dirConf.cache,
+      spooky.spookyConf.cacheFilePath(k).toString
     )
 
     val (earliestTime: Long, latestTime: Long) = getTimeRange(k.last, spooky)
@@ -41,8 +42,8 @@ object DFSDocCache extends AbstractDocCache {
   def putImpl(k: Trace, v: Seq[Fetched], spooky: SpookyContext): this.type = {
 
     val pathStr = SpookyUtils.\\\(
-      spooky.conf.dirConf.cache,
-      spooky.conf.cacheFilePath(k).toString,
+      spooky.dirConf.cache,
+      spooky.spookyConf.cacheFilePath(k).toString,
       UUID.randomUUID().toString
     )
 

@@ -38,7 +38,7 @@ class TestHelper() {
     System.setProperty("fs.s3.awsSecretAccessKey", _)
   }
 
-  def sparkHome = System.getenv("SPARK_HOME")
+  def SPARK_HOME = System.getenv("SPARK_HOME")
 
   final val MAX_TOTAL_MEMORY = 32768
   final val MIN_EXECUTOR_MEMORY = 4096
@@ -55,7 +55,7 @@ class TestHelper() {
   final val MAX_CLUSTER_SIZE = MAX_TOTAL_MEMORY / MIN_EXECUTOR_MEMORY
 
   lazy val clusterSize_numCoresPerWorker_Opt: Option[(Int, Int)] = {
-    Option(sparkHome).flatMap {
+    Option(SPARK_HOME).flatMap {
       h =>
         val tuple = (
           Option(props.getProperty("ClusterSize")).map(_.toInt),
@@ -137,7 +137,7 @@ class TestHelper() {
       println(s"initializing SparkContext in local-cluster simulation mode:" + masterStr)
       Map(
         "spark.master" -> masterStr,
-        "spark.home" -> sparkHome,
+        "spark.home" -> SPARK_HOME,
         "spark.executor.memory" -> ((executorMemoryOpt.get - EXECUTOR_JVM_MEMORY_OVERHEAD) + "m"),
         "spark.driver.extraClassPath" -> sys.props("java.class.path"),
         "spark.executor.extraClassPath" -> sys.props("java.class.path"),

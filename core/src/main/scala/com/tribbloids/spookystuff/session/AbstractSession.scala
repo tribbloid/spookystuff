@@ -45,7 +45,7 @@ import scala.collection.mutable.ArrayBuffer
 
 sealed abstract class AbstractSession(val spooky: SpookyContext) extends LocalCleanable {
 
-  spooky.metrics.sessionInitialized += 1
+  spooky.spookyMetrics.sessionInitialized += 1
   val startTime: Long = new Date().getTime
   val backtrace: ArrayBuffer[Action] = ArrayBuffer()
 
@@ -79,15 +79,15 @@ class Session(
     webDriverOpt.getOrElse {
       SpookyUtils.retry(Const.localResourceLocalRetries) {
         SpookyUtils.withDeadline(Const.sessionInitializationTimeout) {
-          val driver = spooky.conf.webDriverFactory.dispatch(this)
-          spooky.metrics.webDriverDispatched += 1
+          val driver = spooky.spookyConf.webDriverFactory.dispatch(this)
+          spooky.spookyMetrics.webDriverDispatched += 1
           //      try {
           driver.manage().timeouts()
-            .implicitlyWait(spooky.conf.remoteResourceTimeout.toSeconds, TimeUnit.SECONDS)
-            .pageLoadTimeout(spooky.conf.remoteResourceTimeout.toSeconds, TimeUnit.SECONDS)
-            .setScriptTimeout(spooky.conf.remoteResourceTimeout.toSeconds, TimeUnit.SECONDS)
+            .implicitlyWait(spooky.spookyConf.remoteResourceTimeout.toSeconds, TimeUnit.SECONDS)
+            .pageLoadTimeout(spooky.spookyConf.remoteResourceTimeout.toSeconds, TimeUnit.SECONDS)
+            .setScriptTimeout(spooky.spookyConf.remoteResourceTimeout.toSeconds, TimeUnit.SECONDS)
 
-          val resolution = spooky.conf.browserResolution
+          val resolution = spooky.spookyConf.browserResolution
           if (resolution != null) driver.manage().window().setSize(new Dimension(resolution._1, resolution._2))
 
           _webDriverOpt = Some(driver)
@@ -117,8 +117,8 @@ class Session(
       SpookyUtils.retry(Const.localResourceLocalRetries) {
 
         SpookyUtils.withDeadline(Const.sessionInitializationTimeout) {
-          val driver = spooky.conf.pythonDriverFactory.dispatch(this)
-          spooky.metrics.pythonDriverDispatched += 1
+          val driver = spooky.spookyConf.pythonDriverFactory.dispatch(this)
+          spooky.spookyMetrics.pythonDriverDispatched += 1
 
           _pythonDriverOpt = Some(driver)
           driver
@@ -147,16 +147,16 @@ class Session(
   }
 
   override def cleanImpl(): Unit = {
-    Option(spooky.conf.webDriverFactory).foreach{
+    Option(spooky.spookyConf.webDriverFactory).foreach{
       factory =>
         factory.release(this)
-        spooky.metrics.webDriverReleased += 1
+        spooky.spookyMetrics.webDriverReleased += 1
     }
-    Option(spooky.conf.pythonDriverFactory).foreach{
+    Option(spooky.spookyConf.pythonDriverFactory).foreach{
       factory =>
         factory.release(this)
-        spooky.metrics.pythonDriverReleased += 1
+        spooky.spookyMetrics.pythonDriverReleased += 1
     }
-    spooky.metrics.sessionReclaimed += 1
+    spooky.spookyMetrics.sessionReclaimed += 1
   }
 }

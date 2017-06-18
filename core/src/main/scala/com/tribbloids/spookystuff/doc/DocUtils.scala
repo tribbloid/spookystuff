@@ -14,17 +14,17 @@ object DocUtils {
   def dfsRead[T](message: String, pathStr: String, spooky: SpookyContext)(f: => T): T = {
     try {
       val result = SpookyUtils.retry(Const.DFSLocalRetries) {
-        SpookyUtils.withDeadline(spooky.conf.DFSTimeout) {f}
+        SpookyUtils.withDeadline(spooky.spookyConf.DFSTimeout) {f}
       }
-      spooky.metrics.DFSReadSuccess += 1
+      spooky.spookyMetrics.DFSReadSuccess += 1
       result
     }
     catch {
       case e: Throwable =>
-        spooky.metrics.DFSReadFailure += 1
+        spooky.spookyMetrics.DFSReadFailure += 1
         val ex = new DFSReadException(pathStr ,e)
         ex.setStackTrace(e.getStackTrace)
-        if (spooky.conf.failOnDFSError) throw ex
+        if (spooky.spookyConf.failOnDFSError) throw ex
         else {
           LoggerFactory.getLogger(this.getClass).warn(message, ex)
           null.asInstanceOf[T]
@@ -36,14 +36,14 @@ object DocUtils {
   def dfsWrite[T](message: String, pathStr: String, spooky: SpookyContext)(f: => T): T = {
     try {
       val result = SpookyUtils.retry(Const.DFSLocalRetries) {
-        SpookyUtils.withDeadline(spooky.conf.DFSTimeout) {f}
+        SpookyUtils.withDeadline(spooky.spookyConf.DFSTimeout) {f}
       }
-      spooky.metrics.DFSWriteSuccess += 1
+      spooky.spookyMetrics.DFSWriteSuccess += 1
       result
     }
     catch {
       case e: Throwable =>
-        spooky.metrics.DFSWriteFailure += 1
+        spooky.spookyMetrics.DFSWriteFailure += 1
         val ex = new DFSWriteException(pathStr ,e)
         ex.setStackTrace(e.getStackTrace)
         throw ex

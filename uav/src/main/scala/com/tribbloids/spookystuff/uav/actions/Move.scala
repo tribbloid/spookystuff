@@ -30,8 +30,8 @@ case class Move(
       toV <- toOpt
     ) yield {
       this.copy(
-        from = Lit(Location.parse(fromV, schema.spooky.submodule[UAVConf])),
-        to = Lit(Location.parse(toV, schema.spooky.submodule[UAVConf]))
+        from = Lit(Location.parse(fromV, schema.spooky.getConf[UAVConf])),
+        to = Lit(Location.parse(toV, schema.spooky.getConf[UAVConf]))
       )
     }
     result.map(_.asInstanceOf[this.type])

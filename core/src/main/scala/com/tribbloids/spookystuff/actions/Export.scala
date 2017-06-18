@@ -204,7 +204,7 @@ abstract class HttpMethod(
       case element: Unstructured => element.href
       case str: String => Option(str)
       case obj: Any => Option(obj.toString)
-      case other => None
+      case _ => None
     }
     val uriLit = uriStr.map(Lit.erase[String])
     uriLit
@@ -266,7 +266,7 @@ abstract class HttpMethod(
   }
 
   def getHttpClient(session: Session): (CloseableHttpClient, HttpClientContext) = {
-    val proxy = session.spooky.conf.proxy()
+    val proxy = session.spooky.spookyConf.webProxy()
     val timeoutMs = this.timeout(session).toMillis.toInt
 
     val requestConfig = {
@@ -533,8 +533,8 @@ case class Wget(
 
     val (httpClient: CloseableHttpClient, context: HttpClientContext) = getHttpClient(session)
 
-    val userAgent = session.spooky.conf.userAgentFactory()
-    val headers = session.spooky.conf.headersFactory()
+    val userAgent = session.spooky.spookyConf.userAgentFactory()
+    val headers = session.spooky.spookyConf.headersFactory()
 
     val request = {
       val request = new HttpGet(uri)
@@ -617,8 +617,8 @@ case class WpostImpl private[actions](
 
     val (httpClient: CloseableHttpClient, context: HttpClientContext) = getHttpClient(session)
 
-    val userAgent = session.spooky.conf.userAgentFactory()
-    val headers = session.spooky.conf.headersFactory()
+    val userAgent = session.spooky.spookyConf.userAgentFactory()
+    val headers = session.spooky.spookyConf.headersFactory()
 
     val request = {
       val request = new HttpPost(uri)

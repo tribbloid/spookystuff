@@ -58,7 +58,7 @@ class PythonActionSuite extends SpookyEnvFixture {
     doc.flatMap(_.asInstanceOf[Doc].code).mkString("\n").shouldBe("6")
 
     //assuming that lazy interpret is effective
-    assert(spooky.metrics.pythonInterpretationSuccess.value <= 3)
+    assert(spooky.spookyMetrics.pythonInterpretationSuccess.value <= 3)
 
 //    val processes = JProcesses.getProcessList()
 //      .asScala

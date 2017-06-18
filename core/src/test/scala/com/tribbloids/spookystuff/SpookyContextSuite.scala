@@ -1,6 +1,7 @@
 package com.tribbloids.spookystuff
 
 import com.tribbloids.spookystuff.actions._
+import com.tribbloids.spookystuff.conf.SpookyConf
 import com.tribbloids.spookystuff.dsl._
 import com.tribbloids.spookystuff.row.Field
 import com.tribbloids.spookystuff.testutils.LocalPathDocsFixture
@@ -10,55 +11,53 @@ class SpookyContextSuite extends SpookyEnvFixture with LocalPathDocsFixture{
   it("SpookyContext should be Serializable") {
 
     val spooky = this.spooky
-    val src = spooky.sqlContext.sparkContext.parallelize(1 to 10)
 
-    val res = src.map {
-      v => spooky.hashCode() + v
-    }.reduce(_ + _)
+    assertSer(
+      spooky
+    )
   }
 
   it("SpookyContext.dsl should be Serializable") {
 
     val spooky = this.spooky
-    val src = spooky.sqlContext.sparkContext.parallelize(1 to 10)
 
-    val res = src.map {
-      v => spooky.dsl.hashCode() + v
-    }.reduce(_ + _)
+    assertSer(
+      spooky.dsl
+    )
   }
 
   it("derived instances of a SpookyContext should have the same configuration") {
 
     val spooky = this.spooky
-    spooky.conf.shareMetrics = false
+    spooky.spookyConf.shareMetrics = false
 
     val rdd2 = spooky.create(Seq("dummy"))
     assert(!(rdd2.spooky eq spooky))
 
-    val conf1 = spooky.conf.dirConf.prettyJSON
-    val conf2 = rdd2.spooky.conf.dirConf.prettyJSON
+    val conf1 = spooky.dirConf.prettyJSON
+    val conf2 = rdd2.spooky.dirConf.prettyJSON
     conf1 shouldBe conf2
   }
 
   it("derived instances of a SpookyContext should have the same configuration after it has been modified") {
 
     val spooky = this.spooky
-    spooky.conf.shareMetrics = false
-    spooky.conf.dirConf.root = "s3://root"
-    spooky.conf.dirConf.cache = "hdfs://dummy"
+    spooky.spookyConf.shareMetrics = false
+    spooky.dirConf.root = "s3://root"
+    spooky.dirConf.cache = "hdfs://dummy"
 
     val rdd2 = spooky.create(Seq("dummy"))
     assert(!(rdd2.spooky eq spooky))
 
-    val conf1 = spooky.conf.dirConf.prettyJSON
-    val conf2 = rdd2.spooky.conf.dirConf.prettyJSON
+    val conf1 = spooky.dirConf.prettyJSON
+    val conf2 = rdd2.spooky.dirConf.prettyJSON
     conf1 shouldBe conf2
   }
 
   it("each noInput should have independent metrics if sharedMetrics=false") {
 
     val spooky = this.spooky
-    spooky.conf.shareMetrics = false
+    spooky.spookyConf.shareMetrics = false
 
     val rdd1 = spooky
       .fetch(
@@ -70,18 +69,18 @@ class SpookyContextSuite extends SpookyEnvFixture with LocalPathDocsFixture{
       .fetch(
         Wget(HTML_URL)
       )
-      
+
     rdd2.unsquashedRDD.count()
 
-    assert(rdd1.spooky.metrics !== rdd2.spooky.metrics)
-    assert(rdd1.spooky.metrics.pagesFetched.value === 1)
-    assert(rdd2.spooky.metrics.pagesFetched.value === 1)
+    assert(rdd1.spooky.spookyMetrics !== rdd2.spooky.spookyMetrics)
+    assert(rdd1.spooky.spookyMetrics.pagesFetched.value === 1)
+    assert(rdd2.spooky.spookyMetrics.pagesFetched.value === 1)
   }
 
   it("each noInput should have shared metrics if sharedMetrics=true") {
 
     val spooky = this.spooky
-    spooky.conf.shareMetrics = true
+    spooky.spookyConf.shareMetrics = true
 
     val rdd1 = spooky
       .fetch(
@@ -95,7 +94,7 @@ class SpookyContextSuite extends SpookyEnvFixture with LocalPathDocsFixture{
       )
     rdd2.count()
 
-    assert(rdd1.spooky.metrics.toJSON() === rdd2.spooky.metrics.toJSON())
+    assert(rdd1.spooky.spookyMetrics.toJSON() === rdd2.spooky.spookyMetrics.toJSON())
   }
 
   it("can create PageRow from String") {
@@ -138,7 +137,7 @@ class SpookyContextSuite extends SpookyEnvFixture with LocalPathDocsFixture{
 
     val context = new SpookyContext(this.sql)
 
-    val dirs = context.conf.dirConf
+    val dirs = context.dirConf
     val json = dirs.prettyJSON
     println(json)
 
@@ -151,7 +150,7 @@ class SpookyContextSuite extends SpookyEnvFixture with LocalPathDocsFixture{
     val conf: SpookyConf = new SpookyConf(shareMetrics = false)
     val context = new SpookyContext(this.sql, conf)
 
-    val dirs = context.conf.dirConf
+    val dirs = context.dirConf
     val json = dirs.prettyJSON
     println(json)
 
@@ -164,7 +163,7 @@ class SpookyContextSuite extends SpookyEnvFixture with LocalPathDocsFixture{
     val conf: SpookyConf = new SpookyConf(shareMetrics = true)
     val context = new SpookyContext(this.sql, conf)
 
-    val dirs = context.conf.dirConf
+    val dirs = context.dirConf
     val json = dirs.prettyJSON
     println(json)
 

@@ -1,5 +1,6 @@
 package com.tribbloids.spookystuff
 
+import com.tribbloids.spookystuff.conf.{AbstractConf, DirConf, SpookyConf, Submodules}
 import com.tribbloids.spookystuff.rdd.FetchedDataset
 import com.tribbloids.spookystuff.row._
 import com.tribbloids.spookystuff.session.Session
@@ -15,18 +16,18 @@ import org.slf4j.LoggerFactory
 import scala.collection.immutable.ListMap
 import scala.language.implicitConversions
 
-case class SpookyContext private (
-                                   @transient sqlContext: SQLContext, //can't be used on executors,
-                                   // TODO: change to Option or SparkContext
-                                   private var _conf: SpookyConf, //can only be used on executors after broadcast
-                                   metrics: SpookyMetrics //accumulators cannot be broadcasted,
-                                 ) extends SerializationMarks {
+case class SpookyContext (
+                           @transient sqlContext: SQLContext, //can't be used on executors,
+                           // TODO: change to Option or SparkContext
+                           var _configurations: Submodules[AbstractConf] = Submodules(), //always broadcasted
+                           _metrics: Submodules[Metrics] = Submodules() //accumulators cannot be broadcasted,
+                         ) extends SerializationMarks {
 
   def this(
             sqlContext: SQLContext,
-            conf: SpookyConf = new SpookyConf()
+            conf: SpookyConf
           ) {
-    this(sqlContext, conf, SpookyMetrics())
+    this(sqlContext, _configurations = Submodules(conf))
   }
 
   def this(sqlContext: SQLContext) {
@@ -42,6 +43,13 @@ case class SpookyContext private (
   }
 
   {
+    SpookyConf
+    DirConf
+    SpookyMetrics
+
+    _configurations.buildAll[AbstractConf]()
+    _metrics.buildAll[Metrics]()
+
     try {
       deployDrivers()
     }
@@ -55,50 +63,77 @@ case class SpookyContext private (
 
   def sparkContext: SparkContext = this.sqlContext.sparkContext
 
-  def conf: SpookyConf = {
+  def configurations: Submodules[AbstractConf] = {
     if (isShipped) {
-      _conf
+      broadcastedConfigurations.value
     }
     else {
-      val sparkConf = sparkContext.getConf
-      _conf.sparkConf = sparkConf
-      _conf = _conf.effective
-      _conf
+      _configurations.buildAll[AbstractConf]()
+
+      _configurations = _configurations.transform {
+        conf =>
+          conf.importFrom(sqlContext.sparkContext.getConf)
+      }
+      _configurations
     }
   }
+
+  def getConf[T <: AbstractConf](implicit ev: Submodules.Builder[T]): T = {
+    configurations.getOrBuild[T]
+  }
+
+  def spookyConf: SpookyConf = getConf[SpookyConf]
+  def dirConf: DirConf = getConf[DirConf]
+
   /**
     * can only be used on driver
     */
-  def conf_= (conf: SpookyConf): Unit = {
+  def setConf[T <: AbstractConf](v: T)(implicit ev: Submodules.Builder[T]): Unit = {
     requireNotShipped()
-    _conf = conf
+    implicit val ctg = ev.ctg
+    _configurations.transform {
+      case _: T => v
+      case v@ _ => v
+    }
   }
 
-  def submodule[T <: ModuleConf: Submodules.Builder] = conf.submodule[T]
+  def spookyConf_=(v: SpookyConf): Unit = {
+    setConf(v)
+  }
+  def dirConf_= (v: DirConf): Unit = {
+    setConf(v)
+  }
 
-  val broadcastedHadoopConf: Broadcast[SerializableWritable[Configuration]] = sqlContext.sparkContext.broadcast(
-    new SerializableWritable(this.sqlContext.sparkContext.hadoopConfiguration)
-  )
+  val broadcastedHadoopConf: Broadcast[SerializableWritable[Configuration]] = {
+    sqlContext.sparkContext.broadcast(
+      new SerializableWritable(this.sqlContext.sparkContext.hadoopConfiguration)
+    )
+  }
   def hadoopConf: Configuration = broadcastedHadoopConf.value.value
 
   def pathResolver = HDFSResolver(hadoopConf)
 
-  //  private def resynch() = {
-  //    _conf.sparkConf = sqlContext.sparkContext.getConf
-  //    _conf = _conf.effective
-  //  }
+  var broadcastedConfigurations: Broadcast[Submodules[AbstractConf]] = {
+    sqlContext.sparkContext.broadcast(
+      this.configurations
+    )
+  }
+
   def rebroadcast(): Unit = {
-    //    requireNotShipped()
-    //    scala.util.Try {
-    //      broadcastedSpookyConf.destroy()
-    //    }
-    //    resynch()
-    //    broadcastedSpookyConf = sqlContext.sparkContext.broadcast(_conf.effective)
+    requireNotShipped()
+    scala.util.Try {
+      broadcastedConfigurations.destroy()
+    }
+    broadcastedConfigurations = {
+      sqlContext.sparkContext.broadcast(
+        this.configurations
+      )
+    }
   }
 
   // may take a long time then fail, only attempted once
   def deployDrivers(): Unit = {
-    val trials = conf.driverFactories
+    val trials = spookyConf.driverFactories
       .map {
         v =>
           scala.util.Try {
@@ -108,18 +143,27 @@ case class SpookyContext private (
     TreeException.&&&(trials)
   }
 
+  def metrics = {
+    _metrics.buildAll[Metrics]()
+    _metrics
+  }
+
+  def spookyMetrics: SpookyMetrics = metrics.getOrBuild[SpookyMetrics]
+
   def zeroMetrics(): SpookyContext ={
-    metrics.zero()
+    metrics.foreach {
+      _.zero()
+    }
     this
   }
 
   def getSpookyForRDD = {
-    if (conf.shareMetrics) this
+    if (spookyConf.shareMetrics) this
     else {
       rebroadcast()
       val result = this.copy(
-        _conf = this._conf.effective,
-        metrics = SpookyMetrics()
+        _configurations = this.configurations,
+        _metrics = Submodules()
       )
       result
     }
@@ -167,7 +211,7 @@ case class SpookyContext private (
 
     implicit def dataFrameToPageRowRDD(df: DataFrame): FetchedDataset = {
       val self: SquashedFetchedRDD = new DataFrameView(df)
-        .toMapRDD(false)
+        .toMapRDD()
         .map {
           map =>
             SquashedFetchedRow(

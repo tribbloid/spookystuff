@@ -16,11 +16,11 @@ class ScalaUDTSuite extends SpookyEnvFixture with FunSpecx {
 
   def getAndTestReifiedType[T: TypeTag]: DataType = {
     val unreified = UnreifiedScalaType.apply[T]
-    assertSerializable(unreified)
+    assertSerDe(unreified)
 
     val reified = TypeUtils.tryCatalystTypeFor[T].get
     assert(reified == unreified.reify)
-    assertSerializable(reified)
+    assertSerDe(reified)
     reified
   }
 

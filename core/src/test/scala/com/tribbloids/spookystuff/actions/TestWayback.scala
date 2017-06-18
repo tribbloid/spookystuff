@@ -15,8 +15,8 @@ class TestWayback extends SpookyEnvFixture {
   import scala.concurrent.duration._
 
   it("Wget.waybackTo should work on cache") {
-    spooky.conf.cacheWrite = true
-    spooky.conf.IgnoreCachedDocsBefore = Some(new Date())
+    spooky.spookyConf.cacheWrite = true
+    spooky.spookyConf.IgnoreCachedDocsBefore = Some(new Date())
 
     val dates: Seq[Long] = (0 to 2).map {
       i =>
@@ -26,7 +26,7 @@ class TestWayback extends SpookyEnvFixture {
         pages.head.timeMillis
     }
 
-    spooky.conf.cacheRead = true
+    spooky.spookyConf.cacheRead = true
 
     val cachedPages = (Delay(10.seconds)
       +> Wget("http://www.wikipedia.org").waybackToTimeMillis(dates(1) + 2000)
@@ -34,7 +34,7 @@ class TestWayback extends SpookyEnvFixture {
     assert(cachedPages.size == 1)
     assert(cachedPages.head.timeMillis == dates(1))
 
-    spooky.conf.remote = false
+    spooky.spookyConf.remote = false
 
     intercept[QueryException] {
       (Delay(10.seconds)
@@ -44,8 +44,8 @@ class TestWayback extends SpookyEnvFixture {
   }
 
   it("Snapshot.waybackTo should work on cache") {
-    spooky.conf.cacheWrite = true
-    spooky.conf.IgnoreCachedDocsBefore = Some(new Date())
+    spooky.spookyConf.cacheWrite = true
+    spooky.spookyConf.IgnoreCachedDocsBefore = Some(new Date())
 
     val dates: Seq[Long] = (0 to 2).map {
       i =>
@@ -56,7 +56,7 @@ class TestWayback extends SpookyEnvFixture {
         pages.head.timeMillis
     }
 
-    spooky.conf.cacheRead = true
+    spooky.spookyConf.cacheRead = true
 
     val cachedPages = (Delay(10.seconds)
       +> Visit("http://www.wikipedia.org")
@@ -65,7 +65,7 @@ class TestWayback extends SpookyEnvFixture {
     assert(cachedPages.size == 1)
     assert(cachedPages.head.timeMillis == dates(1))
 
-    spooky.conf.remote = false
+    spooky.spookyConf.remote = false
 
     intercept[QueryException] {
       (Delay(10.seconds)
@@ -76,8 +76,8 @@ class TestWayback extends SpookyEnvFixture {
   }
 
   it("Screenshot.waybackTo should work on cache") {
-    spooky.conf.cacheWrite = true
-    spooky.conf.IgnoreCachedDocsBefore = Some(new Date())
+    spooky.spookyConf.cacheWrite = true
+    spooky.spookyConf.IgnoreCachedDocsBefore = Some(new Date())
 
     val dates: Seq[Long] = (0 to 2).map {
       i =>
@@ -88,7 +88,7 @@ class TestWayback extends SpookyEnvFixture {
         pages.head.timeMillis
     }
 
-    spooky.conf.cacheRead = true
+    spooky.spookyConf.cacheRead = true
 
     val cachedPages = (Delay(10.seconds)
       +> Visit("http://www.wikipedia.org")
@@ -97,7 +97,7 @@ class TestWayback extends SpookyEnvFixture {
     assert(cachedPages.size == 1)
     assert(cachedPages.head.timeMillis == dates(1))
 
-    spooky.conf.remote = false
+    spooky.spookyConf.remote = false
 
     intercept[QueryException] {
       (Delay(10.seconds)

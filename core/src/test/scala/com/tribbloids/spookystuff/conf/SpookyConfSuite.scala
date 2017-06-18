@@ -1,5 +1,6 @@
-package com.tribbloids.spookystuff
+package com.tribbloids.spookystuff.conf
 
+import com.tribbloids.spookystuff.SpookyEnvFixture
 import com.tribbloids.spookystuff.caching.DFSDocCache
 import org.apache.spark.SparkConf
 
@@ -11,44 +12,39 @@ import scala.util.Random
 class SpookyConfSuite extends SpookyEnvFixture {
 
   def conf = new SpookyConf()
+  def dirConf = new DirConf()
+
   it("SpookyConf is serializable") {
 
-    assertSerializable(
+    assertSerDe(
       conf,
       condition = {
         (v1: SpookyConf, v2: SpookyConf) =>
-          v1.submodules.mkString("\n").shouldBe (
-            v2.submodules.mkString("\n")
-          )
+          v1.cacheFilePath == v2.cacheFilePath
       }
     )
   }
 
-  it("SpookyConf.import is serializable") {
-    val imported = conf.importFrom(sc.getConf)
-    assertSerializable(
-      imported,
-      condition = {
-        (v1: SpookyConf, v2: SpookyConf) =>
-          v1.submodules.mkString("\n").shouldBe (
-            v2.submodules.mkString("\n")
-          )
-      }
+  it("DirConf.import is serializable") {
+
+    val sparkConf = new SparkConf()
+    val dummyV = "dummy" + Random.nextLong()
+    sparkConf.set("spooky.dirs.autosave", dummyV)
+    val imported = dirConf.importFrom(sparkConf)
+    assertSerDe(
+      imported
     )
   }
 
-  it("SpookyConf.import can read from SparkConf before any of its submodule is created") {
+  it("DirConf.import can read from SparkConf") {
     val sparkConf = new SparkConf()
     val dummyV = "dummy" + Random.nextLong()
     sparkConf.set("spooky.dirs.autosave", dummyV)
     DFSDocCache
-    val imported = conf.importFrom(sparkConf)
-    val dirConf = imported.dirConf
-    assert(dirConf.autoSave == dummyV)
-  }
+    val imported = dirConf.importFrom(sparkConf)
 
-  //  test("getProperty() can load property from system environment") {
-  //  }
+    assert(imported.autoSave == dummyV)
+  }
 
   it("getProperty() can load property from spark property") {
     val conf = sc.getConf

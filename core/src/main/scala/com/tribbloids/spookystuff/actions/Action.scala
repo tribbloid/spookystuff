@@ -58,7 +58,7 @@ trait Action extends ActionLike {
     }
 
     this.timeElapsed = System.currentTimeMillis() - session.startTime
-    session.spooky.metrics.pagesFetchedFromRemote += results.count(_.isInstanceOf[Doc])
+    session.spooky.spookyMetrics.pagesFetchedFromRemote += results.count(_.isInstanceOf[Doc])
 
     results
   }
@@ -79,8 +79,8 @@ trait Action extends ActionLike {
     }
       .mkString("\n")
 
-    val errorDump: Boolean = session.spooky.conf.errorDump
-    val errorDumpScreenshot: Boolean = session.spooky.conf.errorScreenshot
+    val errorDump: Boolean = session.spooky.spookyConf.errorDump
+    val errorDumpScreenshot: Boolean = session.spooky.spookyConf.errorScreenshot
 
     message += "\n}"
 
@@ -185,7 +185,7 @@ trait Timed extends Action {
   }
 
   def timeout(session: Session): Duration = {
-    val base = if (this._timeout == null) session.spooky.conf.remoteResourceTimeout
+    val base = if (this._timeout == null) session.spooky.spookyConf.remoteResourceTimeout
     else this._timeout
 
     base

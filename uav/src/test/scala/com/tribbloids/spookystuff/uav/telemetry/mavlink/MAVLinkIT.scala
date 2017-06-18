@@ -1,7 +1,7 @@
 package com.tribbloids.spookystuff.uav.telemetry.mavlink
 
 import com.tribbloids.spookystuff.uav.dsl.LinkFactories
-import com.tribbloids.spookystuff.uav.sim.{APMSim, APMSITLFixture}
+import com.tribbloids.spookystuff.uav.sim.{APMSim, APMQuadFixture}
 import com.tribbloids.spookystuff.uav.system.UAV
 import com.tribbloids.spookystuff.uav.telemetry.{Link, LinkITFixture}
 import com.tribbloids.spookystuff.session.Session
@@ -12,7 +12,7 @@ import scala.concurrent.{Await, Future}
 /**
   * Created by peng on 27/01/17.
   */
-class MAVLinkIT extends LinkITFixture with APMSITLFixture {
+class MAVLinkIT extends LinkITFixture with APMQuadFixture {
 
 }
 

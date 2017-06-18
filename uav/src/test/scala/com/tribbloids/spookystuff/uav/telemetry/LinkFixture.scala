@@ -31,29 +31,20 @@ abstract class LinkFixture extends SimFixture {
     Thread.sleep(2000) //Waiting for both python drivers to terminate, DON'T DELETE! some tests create proxy processes and they all take a few seconds to release the port binding!
   }
 
-  //  override def tearDown(): Unit = {
-  //    sc.foreachComputer {
-  //      ResourceLedger.detectConflict()
-  //    }
-  //    super.tearDown()
-  //  }
-
   def getSpooky(factory: LinkFactory): (SpookyContext, String) = {
 
-    val spooky = this.spooky.copy(_conf = this.spooky.conf.clone)
-    spooky.submodule[UAVConf].linkFactory = factory
+    val spooky = this.spooky.copy(_configurations = this.spooky.configurations.transform(_.clone))
+    spooky.getConf[UAVConf].linkFactory = factory
     spooky.rebroadcast()
 
-    val name = spooky.submodule[UAVConf].linkFactory.getClass.getSimpleName
+    val name = spooky.getConf[UAVConf].linkFactory.getClass.getSimpleName
     spooky -> s"linkFactory=$name:"
   }
-
 
   protected def getLinkRDD(spooky: SpookyContext) = {
     val listDrones = this.listDrones
     val linkRDD = simURIRDD.map {
       connStr =>
-        val endpoint = UAV(Seq(connStr))
         val session = new Session(spooky)
         val link = Link.trySelect(
           listDrones(connStr),
@@ -61,7 +52,7 @@ abstract class LinkFixture extends SimFixture {
         )
           .get
         TestHelper.assert(link.isNotBlacklisted, "link is blacklisted")
-        TestHelper.assert(link.factoryOpt.get == spooky.submodule[UAVConf].linkFactory, "link doesn't comply to factory")
+        TestHelper.assert(link.factoryOpt.get == spooky.getConf[UAVConf].linkFactory, "link doesn't comply to factory")
         link.isBooked = true
         //        Thread.sleep(5000) //otherwise a task will complete so fast such that another task hasn't start yet.
         link
@@ -84,6 +75,7 @@ abstract class LinkFixture extends SimFixture {
   val tuples = linkFactories.map {
     getSpooky
   }
+
   tuples.foreach {
     case (spooky, testPrefix) =>
 
@@ -153,8 +145,8 @@ abstract class LinkFixture extends SimFixture {
             result
         }
           .collect()
-        assert(spooky.metrics.linkCreated.value == parallelism)
-        assert(spooky.metrics.linkDestroyed.value == 0)
+        assert(spooky.spookyMetrics.linkCreated.value == parallelism)
+        assert(spooky.spookyMetrics.linkDestroyed.value == 0)
         linkStrs.foreach {
           tuple =>
             assert(tuple._1 == tuple._2)
@@ -168,7 +160,7 @@ abstract class LinkFixture extends SimFixture {
             s" available Link can be recommissioned in another TaskContext"
         ) {
 
-          val factory1 = spooky.submodule[UAVConf].linkFactory
+          val factory1 = spooky.getConf[UAVConf].linkFactory
 
           val linkRDD1: RDD[Link] = getLinkRDD(spooky)
           linkRDD1.foreach {
@@ -176,27 +168,27 @@ abstract class LinkFixture extends SimFixture {
               link.isBooked = false
           }
 
-          spooky.submodule[UAVConf].linkFactory = factory2
+          spooky.getConf[UAVConf].linkFactory = factory2
           spooky.rebroadcast()
 
           try {
 
-            assert(spooky.metrics.linkCreated.value == parallelism)
-            assert(spooky.metrics.linkDestroyed.value == 0)
+            assert(spooky.spookyMetrics.linkCreated.value == parallelism)
+            assert(spooky.spookyMetrics.linkDestroyed.value == 0)
 
             val linkRDD2: RDD[Link] = getLinkRDD(spooky)
 
             if (factory1 == factory2) {
-              assert(spooky.metrics.linkCreated.value == parallelism)
-              assert(spooky.metrics.linkDestroyed.value == 0)
+              assert(spooky.spookyMetrics.linkCreated.value == parallelism)
+              assert(spooky.spookyMetrics.linkDestroyed.value == 0)
               linkRDD1.map(_.toString).collect().mkString("\n").shouldBe (
                 linkRDD2.map(_.toString).collect().mkString("\n"),
                 sort = true
               )
             }
             else {
-              assert(spooky.metrics.linkCreated.value == parallelism) // TODO: should be parallelism*2!
-              assert(spooky.metrics.linkDestroyed.value == 0)
+              assert(spooky.spookyMetrics.linkCreated.value == parallelism) // TODO: should be parallelism*2!
+              assert(spooky.spookyMetrics.linkDestroyed.value == 0)
               linkRDD1.map(_.uav).collect().mkString("\n").shouldBe (
                 linkRDD2.map(_.uav).collect().mkString("\n"),
                 sort = true
@@ -204,7 +196,7 @@ abstract class LinkFixture extends SimFixture {
             }
           }
           finally {
-            spooky.submodule[UAVConf].linkFactory = factory1
+            spooky.getConf[UAVConf].linkFactory = factory1
             spooky.rebroadcast()
           }
         }

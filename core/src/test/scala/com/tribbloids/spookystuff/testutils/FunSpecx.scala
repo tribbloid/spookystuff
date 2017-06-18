@@ -2,7 +2,7 @@ package com.tribbloids.spookystuff.testutils
 
 import org.apache.spark.SparkEnv
 import org.apache.spark.serializer.{JavaSerializer, KryoSerializer, Serializer}
-import org.scalatest.{FunSpec, FunSuite, Suite}
+import org.scalatest.{FunSpec, Suite}
 
 import scala.reflect.ClassTag
 
@@ -154,23 +154,38 @@ trait Suitex extends {
     }
   }
 
-  def assertSerializable[T <: AnyRef: ClassTag](
-                                                 element: T,
-                                                 serializers: Seq[Serializer] = {
-                                                   val conf = SparkEnv.get.conf
-                                                   Seq(
-                                                     new JavaSerializer(conf),
-                                                     new KryoSerializer(conf)
-                                                   )
-                                                 },
-                                                 condition: (T, T) => Any = {
-                                                   (v1: T, v2: T) =>
-                                                     assert((v1: T) == (v2: T))
-                                                     assert(v1.toString == v2.toString)
-                                                 }
-                                               ): Unit = {
+  def assertSerDe[T <: AnyRef: ClassTag](
+                                          element: T,
+                                          serializers: Seq[Serializer] = {
+                                            val conf = SparkEnv.get.conf
+                                            Seq(
+                                              new JavaSerializer(conf),
+                                              new KryoSerializer(conf)
+                                            )
+                                          },
+                                          condition: (T, T) => Any = {
+                                            (v1: T, v2: T) =>
+                                              assert((v1: T) == (v2: T))
+                                              assert(v1.toString == v2.toString)
+                                              if (!v1.getClass.getCanonicalName.endsWith("$"))
+                                                assert(!(v1 eq v2))
+                                          }
+                                        ): Unit = {
 
     AssertSerializable(element, serializers, condition)
+  }
+
+  def assertSer[T <: AnyRef: ClassTag](
+                                        element: T,
+                                        serializers: Seq[Serializer] = {
+                                          val conf = SparkEnv.get.conf
+                                          Seq(
+                                            new JavaSerializer(conf),
+                                            new KryoSerializer(conf)
+                                          )
+                                        }
+                                      ) = {
+    assertSerDe(element, serializers, (_: T, _: T) => true)
   }
 
   def printSplitter(name: String) = {

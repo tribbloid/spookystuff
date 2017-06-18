@@ -11,7 +11,8 @@ case class Endpoint(
                      uri: String,
                      frame: Option[String] = None,
                      baudRate: Int = UAVConf.DEFAULT_BAUDRATE,
-                     groundSSID: Int = UAVConf.EXECUTOR_SSID
+                     groundSSID: Int = UAVConf.EXECUTOR_SSID,
+                     name: String = "DRONE"
                    ) extends CaseInstanceRef
   with BindedRef
   with DetectResourceConflict {

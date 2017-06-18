@@ -122,13 +122,13 @@ def randomLocalLocation():
 
 class Endpoint(Daemon, VehicleFunctions):
     # TODO: use **local() to reduce boilerplate copies
-    def __init__(self, uri, baudRate, ssid, frame=None, name=""):
+    def __init__(self, uri, baudRate, groundSSID, frame=None, name=""):
         # type: (str, int, int, str, str) -> None
         super(Endpoint, self).__init__(None)
         self.uri = uri
 
         self.baudRate = baudRate
-        self.ssid = ssid
+        self.ssid = groundSSID
         self.frame = frame
         self.name = name
 

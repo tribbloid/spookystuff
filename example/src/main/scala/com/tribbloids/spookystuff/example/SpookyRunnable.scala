@@ -35,7 +35,7 @@ trait SpookyRunnable extends SpookyEnv {
 
     array.foreach(row => println(row))
     println("-------------------returned "+array.length+" rows------------------")
-    println(s"------------------fetched ${spooky.metrics.pagesFetched.value} pages-----------------")
-    println(s"------------------${spooky.metrics.pagesFetchedFromCache.value} pages from web cache-----------------")
+    println(s"------------------fetched ${spooky.spookyMetrics.pagesFetched.value} pages-----------------")
+    println(s"------------------${spooky.spookyMetrics.pagesFetchedFromCache.value} pages from web cache-----------------")
   }
 }

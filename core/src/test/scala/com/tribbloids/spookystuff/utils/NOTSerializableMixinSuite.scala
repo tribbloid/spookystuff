@@ -13,7 +13,7 @@ class NOTSerializableMixinSuite extends SpookyEnvFixture {
   it("case class is serializable") {
     val whatever = new Thing("abc")
 
-    assertSerializable(whatever)
+    assertSerDe(whatever)
 
     val in = 1 to 2
     val out = sc.parallelize(in).map{
@@ -28,7 +28,7 @@ class NOTSerializableMixinSuite extends SpookyEnvFixture {
     val whatever = new Thing2("abc")
 
     intercept[NotSerializableException]{
-      assertSerializable(whatever)
+      assertSerDe(whatever)
     }
 
     val in = 1 to 2

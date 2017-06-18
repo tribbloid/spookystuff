@@ -1,7 +1,7 @@
 package com.tribbloids.spookystuff.uav.dsl
 
 import com.tribbloids.spookystuff.uav.system.UAV
-import com.tribbloids.spookystuff.uav.telemetry.Link
+import com.tribbloids.spookystuff.uav.telemetry.{DummyLink, Link}
 import com.tribbloids.spookystuff.uav.telemetry.mavlink.MAVLink
 
 import scala.util.Random
@@ -11,11 +11,11 @@ import scala.util.Random
   */
 object LinkFactories {
 
-  abstract class MAVLinkFactory extends LinkFactory {
-
+  case object Dummy extends LinkFactory {
+    def apply(uav: UAV) = DummyLink(uav)
   }
 
-  case object Direct extends MAVLinkFactory {
+  case object Direct extends LinkFactory {
     def apply(uav: UAV) = MAVLink(uav)
   }
 
@@ -26,7 +26,7 @@ object LinkFactories {
                         //this is the default port listened by QGCS
                         toGCS: UAV => Set[String] = _ => Set("udp:localhost:14550"),
                         ToExecutorSize: Int = 1
-                      ) extends MAVLinkFactory {
+                      ) extends LinkFactory {
 
     //CAUTION: DO NOT select primary out sequentially!
     // you can't distinguish vehicle failure and proxy failure, your best shot is to always use a random port for primary out

@@ -58,7 +58,7 @@ class FetchVisitIT extends IntegrationFixture {
     assert(fetchNoneRows(1).docs.length === 0)
   }
 
-  override def numPages= spooky.conf.defaultGenPartitioner match {
+  override def numPages= spooky.spookyConf.defaultGenPartitioner match {
 //    case FetchOptimizers.WebCacheAware => 1
     case _ => 1
   }

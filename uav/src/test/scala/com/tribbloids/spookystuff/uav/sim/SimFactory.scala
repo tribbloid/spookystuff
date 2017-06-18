@@ -8,16 +8,8 @@ import scala.util.Random
 /**
   * Created by peng on 01/10/16.
   */
-//object SimFixture {
-//
-//  def launch(session: AbstractSession): APMSim = {
-//    val sim = APMSim.next
-//    sim.Py(session)
-//    sim
-//  }
-//}
-
 trait SimFactory extends Serializable {
+
   def getNext: APMSim
 }
 
@@ -45,8 +37,8 @@ trait MAVLinkSimFactory extends SimFactory {
 }
 
 case class QuadSimFactory(
-                              dispersionLatLng: Double = 0.001
-                            ) extends MAVLinkSimFactory {
+                           dispersionLatLng: Double = 0.001
+                         ) extends MAVLinkSimFactory {
 
   val homeCenter = UAVConf.DEFAULT_HOME_LOCATION.getCoordinate(LLA).get
 

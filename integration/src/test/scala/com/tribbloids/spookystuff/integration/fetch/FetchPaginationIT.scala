@@ -55,7 +55,7 @@ class FetchPaginationIT extends IntegrationFixture {
     assert(pageRows2(1).docs.map(_.name) === Seq("d"))
   }
 
-  override def numPages= spooky.conf.defaultGenPartitioner match {
+  override def numPages= spooky.spookyConf.defaultGenPartitioner match {
 //    case FetchOptimizers.WebCacheAware => 3
     case _ => 3
   }

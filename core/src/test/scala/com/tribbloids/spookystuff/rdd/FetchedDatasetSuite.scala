@@ -217,8 +217,8 @@ class FetchedDatasetSuite extends SpookyEnvFixture with LocalPathDocsFixture {
       .persist()
     ds.count()
 
-    assert(ds.spooky.metrics.pagesFetched.value == 1)
-    ds.spooky.metrics.zero()
+    assert(ds.spooky.spookyMetrics.pagesFetched.value == 1)
+    ds.spooky.spookyMetrics.zero()
 
     ds
       .wget(
@@ -226,7 +226,7 @@ class FetchedDatasetSuite extends SpookyEnvFixture with LocalPathDocsFixture {
       )
       .count()
 
-    assert(ds.spooky.metrics.pagesFetched.value == 1)
+    assert(ds.spooky.spookyMetrics.pagesFetched.value == 1)
   }
 
   it("extract plan can be persisted") {
@@ -238,8 +238,8 @@ class FetchedDatasetSuite extends SpookyEnvFixture with LocalPathDocsFixture {
       .persist()
     ds.count()
 
-    assert(ds.spooky.metrics.pagesFetched.value == 1)
-    ds.spooky.metrics.zero()
+    assert(ds.spooky.spookyMetrics.pagesFetched.value == 1)
+    ds.spooky.spookyMetrics.zero()
 
     ds
       .wget(
@@ -247,7 +247,7 @@ class FetchedDatasetSuite extends SpookyEnvFixture with LocalPathDocsFixture {
       )
       .count()
 
-    assert(ds.spooky.metrics.pagesFetched.value == 1)
+    assert(ds.spooky.spookyMetrics.pagesFetched.value == 1)
   }
 
   it("flatten plan can be persisted") {
@@ -261,8 +261,8 @@ class FetchedDatasetSuite extends SpookyEnvFixture with LocalPathDocsFixture {
       .persist()
     ds.count()
 
-    assert(ds.spooky.metrics.pagesFetched.value == 1)
-    ds.spooky.metrics.zero()
+    assert(ds.spooky.spookyMetrics.pagesFetched.value == 1)
+    ds.spooky.spookyMetrics.zero()
 
     ds
       .wget(
@@ -270,7 +270,7 @@ class FetchedDatasetSuite extends SpookyEnvFixture with LocalPathDocsFixture {
       )
       .count()
 
-    assert(ds.spooky.metrics.pagesFetched.value == 1)
+    assert(ds.spooky.spookyMetrics.pagesFetched.value == 1)
   }
 
   it("explore plan can be persisted") {
@@ -285,7 +285,7 @@ class FetchedDatasetSuite extends SpookyEnvFixture with LocalPathDocsFixture {
       .persist()
     ds.count()
 
-    ds.spooky.metrics.zero()
+    ds.spooky.spookyMetrics.zero()
 
     ds
       .wget(
@@ -293,6 +293,6 @@ class FetchedDatasetSuite extends SpookyEnvFixture with LocalPathDocsFixture {
       )
       .count()
 
-    assert(ds.spooky.metrics.pagesFetched.value == 1)
+    assert(ds.spooky.spookyMetrics.pagesFetched.value == 1)
   }
 }

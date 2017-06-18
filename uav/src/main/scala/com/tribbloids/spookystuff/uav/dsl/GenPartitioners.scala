@@ -69,7 +69,7 @@ object GenPartitioners {
             spooky.withSession {
               session =>
                 val linkTry = Link.trySelect (
-                  spooky.submodule[UAVConf].uavsInFleetShuffled,
+                  spooky.getConf[UAVConf].uavsInFleetShuffled,
                   session
                 )
                 linkTry.map {
@@ -101,8 +101,8 @@ object GenPartitioners {
             triplet._1._1 -> triplet._2
         }
 
-        val costEstimator = spooky.submodule[UAVConf].costEstimator
-        val homeLocation = spooky.submodule[UAVConf].homeLocation
+        val costEstimator = spooky.getConf[UAVConf].costEstimator
+        val homeLocation = spooky.getConf[UAVConf].homeLocation
 
         val dMat = for (
           i <- trace_indices;

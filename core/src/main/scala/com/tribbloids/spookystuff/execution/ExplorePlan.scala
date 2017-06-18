@@ -94,7 +94,7 @@ case class ExplorePlan(
     assert(_params.depthField != null)
 
     if (spooky.sparkContext.getCheckpointDir.isEmpty && checkpointInterval > 0)
-      spooky.sparkContext.setCheckpointDir(spooky.conf.dirConf.checkpoint)
+      spooky.sparkContext.setCheckpointDir(spooky.dirConf.checkpoint)
 
     val rowFn: SquashedFetchedRow => SquashedFetchedRow = {
       row: SquashedFetchedRow =>
@@ -175,7 +175,7 @@ case class ExplorePlan(
 
 //      val reducedStateRDD_+ : RDD[(TraceView, Open_Visited)] = betweenEpochReduce(stateRDD_+, combinedReducer)
 
-      tempRDDs.persist(stateRDD_+, spooky.conf.defaultStorageLevel)
+      tempRDDs.persist(stateRDD_+, spooky.spookyConf.defaultStorageLevel)
       if (checkpointInterval >0 && i % checkpointInterval == 0) {
         stateRDD_+.checkpoint()
       }

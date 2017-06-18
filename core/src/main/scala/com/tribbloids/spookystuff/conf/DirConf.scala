@@ -1,4 +1,5 @@
-package com.tribbloids.spookystuff
+package com.tribbloids.spookystuff.conf
+
 import org.apache.spark.SparkConf
 
 object DirConf extends Submodules.Builder[DirConf]{
@@ -22,7 +23,7 @@ case class DirConf(
                     var checkpoint: String = null, //System.getProperty("spooky.dirs.checkpoint"),
                     var errorDumpLocal: String = null, //System.getProperty("spooky.dirs.errordump.local"),
                     var errorScreenshotLocal: String = null //System.getProperty("spooky.dirs.errorscreenshot.local")
-                  ) extends ModuleConf {
+                  ) extends AbstractConf {
 
   import com.tribbloids.spookystuff.utils.SpookyViews._
 

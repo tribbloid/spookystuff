@@ -68,7 +68,7 @@ object Link {
     resultOpt match {
       case Some(link) =>
         val result = if (recommissionWithNewProxy) {
-          val factory = session.spooky.submodule[UAVConf].linkFactory
+          val factory = session.spooky.getConf[UAVConf].linkFactory
           link.recommission(factory)
         }
         else {
@@ -115,7 +115,7 @@ trait Link extends LocalCleanable {
   def factoryOpt = Option(_factory)
 
   lazy val runOnce: Unit = {
-    spookyOpt.get.metrics.linkCreated += 1
+    spookyOpt.get.spookyMetrics.linkCreated += 1
   }
 
   def setContext(
@@ -173,7 +173,7 @@ trait Link extends LocalCleanable {
     }
     spookyOpt.foreach {
       spooky =>
-        spooky.metrics.linkDestroyed += 1
+        spooky.spookyMetrics.linkDestroyed += 1
     }
   }
 
@@ -195,7 +195,7 @@ trait Link extends LocalCleanable {
   private def connectRetries: Int = spookyOpt
     .map(
       spooky =>
-        spooky.conf.submodule[UAVConf].fastConnectionRetries
+        spooky.getConf[UAVConf].fastConnectionRetries
     )
     .getOrElse(UAVConf.FAST_CONNECTION_RETRIES)
 
@@ -257,7 +257,7 @@ trait Link extends LocalCleanable {
   private def blacklistDuration: Long = spookyOpt
     .map(
       spooky =>
-        spooky.conf.submodule[UAVConf].slowConnectionRetryInterval
+        spooky.getConf[UAVConf].slowConnectionRetryInterval
     )
     .getOrElse(UAVConf.BLACKLIST_RESET_AFTER)
     .toMillis

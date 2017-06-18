@@ -120,7 +120,7 @@ abstract class ExecutionPlan(
 
     def persist[T](
                     rdd: RDD[T],
-                    storageLevel: StorageLevel = ExecutionPlan.this.spooky.conf.defaultStorageLevel
+                    storageLevel: StorageLevel = ExecutionPlan.this.spooky.spookyConf.defaultStorageLevel
                   ): RDD[T] = {
       if (rdd.getStorageLevel == StorageLevel.NONE) {
         self += rdd.persist(storageLevel)

@@ -20,7 +20,7 @@ class CleanableSuite extends SpookyEnvFixture {
       AssertSerializable(lifespan)
     }
 
-    assertSerializable(Lifespan.JVM())
+    assertSerDe(Lifespan.JVM())
   }
 
   it("Lifespan._id should be updated after being shipped to a different executor") {

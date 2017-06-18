@@ -21,7 +21,7 @@ class TestUnstructured extends SpookyEnvFixture {
 
     elements.foreach{
       element =>
-        assertSerializable[Unstructured](
+        assertSerDe[Unstructured](
           element,
           condition = {
             (element, element2) =>

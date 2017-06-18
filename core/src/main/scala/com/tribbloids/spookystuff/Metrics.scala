@@ -1,5 +1,6 @@
 package com.tribbloids.spookystuff
 
+import com.tribbloids.spookystuff.conf.Submodules
 import org.apache.spark.ml.dsl.utils.MessageAPI
 import org.apache.spark.{Accumulator, AccumulatorParam, SparkContext}
 
@@ -16,6 +17,7 @@ object Metrics {
                       name: String,
                       scOpt: Option[SparkContext] = None
                     )(implicit param: AccumulatorParam[T]): Accumulator[T] = {
+
     val sc = scOpt.getOrElse(SparkContext.getOrCreate())
     sc.accumulator(initialValue, name)
   }
@@ -64,6 +66,11 @@ abstract class Metrics extends MessageAPI with Product with Serializable {
   val children: ArrayBuffer[Metrics] = ArrayBuffer()
 }
 
+object SpookyMetrics extends Submodules.Builder[SpookyMetrics] {
+
+  override def default: SpookyMetrics = SpookyMetrics()
+}
+
 //TODO: change to multi-level
 @SerialVersionUID(64065023841293L)
 case class SpookyMetrics(
@@ -105,6 +112,6 @@ case class SpookyMetrics(
 
                           linkCreated: Accumulator[Int] = Metrics.accumulator(0, "linkCreated"),
                           linkDestroyed: Accumulator[Int] = Metrics.accumulator(0, "linkDestroyed")
-//                          linkRefitted: Accumulator[Int] = Metrics.accumulator(0, "linkRefitted")
+                          //                          linkRefitted: Accumulator[Int] = Metrics.accumulator(0, "linkRefitted")
                         ) extends Metrics {
 }

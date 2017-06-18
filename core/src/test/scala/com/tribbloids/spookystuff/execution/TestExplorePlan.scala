@@ -121,9 +121,9 @@ class TestExplorePlan extends SpookyEnvFixture with LocalPathDocsFixture {
       )()
       .persist()
     ds.squashedRDD.count()
-    assert(ds.spooky.metrics.pagesFetched.value == 4)
+    assert(ds.spooky.spookyMetrics.pagesFetched.value == 4)
 
     ds.rdd.count()
-    assert(ds.spooky.metrics.pagesFetched.value <= 5)
+    assert(ds.spooky.spookyMetrics.pagesFetched.value <= 5)
   }
 }

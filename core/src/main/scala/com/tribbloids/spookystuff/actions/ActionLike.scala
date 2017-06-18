@@ -73,7 +73,7 @@ abstract class ActionLike extends Product with Serializable with Verbose {
       fetchOnce(spooky)
     }
     val numPages = results.count(_.isInstanceOf[Doc])
-    spooky.metrics.pagesFetched += numPages
+    spooky.spookyMetrics.pagesFetched += numPages
 
     results
   }
@@ -82,7 +82,7 @@ abstract class ActionLike extends Product with Serializable with Verbose {
 
     if (!this.hasOutput) return Nil
 
-    val pagesFromCache: Seq[Seq[Fetched]] = if (!spooky.conf.cacheRead) Seq(null)
+    val pagesFromCache: Seq[Seq[Fetched]] = if (!spooky.spookyConf.cacheRead) Seq(null)
     else dryrun.map (
       dry =>
         InMemoryDocCache.get(dry, spooky)
@@ -93,10 +93,10 @@ abstract class ActionLike extends Product with Serializable with Verbose {
     )
 
     if (!pagesFromCache.contains(null)){
-      spooky.metrics.fetchFromCacheSuccess += 1
+      spooky.spookyMetrics.fetchFromCacheSuccess += 1
 
       val results = pagesFromCache.flatten
-      spooky.metrics.pagesFetchedFromCache += results.count(_.isInstanceOf[Doc])
+      spooky.spookyMetrics.pagesFetchedFromCache += results.count(_.isInstanceOf[Doc])
       this.children.foreach{
         action =>
           LoggerFactory.getLogger(this.getClass).info(s"(cached)+> ${action.toString}")
@@ -105,9 +105,9 @@ abstract class ActionLike extends Product with Serializable with Verbose {
       results
     }
     else {
-      spooky.metrics.fetchFromCacheFailure += 1
+      spooky.spookyMetrics.fetchFromCacheFailure += 1
 
-      if (!spooky.conf.remote) throw new QueryException(
+      if (!spooky.spookyConf.remote) throw new QueryException(
         "Resource is not cached and not allowed to be fetched remotely, " +
           "the later can be enabled by setting SpookyContext.conf.remote=true"
       )
@@ -115,12 +115,12 @@ abstract class ActionLike extends Product with Serializable with Verbose {
         session =>
           try {
             val result = this.apply(session)
-            spooky.metrics.fetchFromRemoteSuccess += 1
+            spooky.spookyMetrics.fetchFromRemoteSuccess += 1
             result
           }
           catch {
             case e: Throwable =>
-              spooky.metrics.fetchFromRemoteFailure += 1
+              spooky.spookyMetrics.fetchFromRemoteFailure += 1
               throw e
           }
       }

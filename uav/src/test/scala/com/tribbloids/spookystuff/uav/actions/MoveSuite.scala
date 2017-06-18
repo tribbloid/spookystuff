@@ -3,13 +3,13 @@ package com.tribbloids.spookystuff.uav.actions
 import com.tribbloids.spookystuff.extractors.Lit
 import com.tribbloids.spookystuff.uav.UAVTestUtils
 import com.tribbloids.spookystuff.uav.spatial._
-import com.tribbloids.spookystuff.uav.sim.APMSITLFixture
+import com.tribbloids.spookystuff.uav.sim.APMQuadFixture
 import org.apache.spark.ml.dsl.utils.RecursiveMessageRelay
 
 /**
   * All tests will use Proxy by default
   */
-class MoveSuite extends APMSITLFixture {
+class MoveSuite extends APMQuadFixture {
 
   import com.tribbloids.spookystuff.dsl._
 

@@ -207,7 +207,7 @@ class PythonDriver(
     catch {
       case e: Throwable =>
         spookyOpt.foreach(
-          _.metrics.pythonInterpretationError += 1
+          _.spookyMetrics.pythonInterpretationError += 1
         )
         val cause = e
         if (this.isCleaned) {
@@ -237,9 +237,9 @@ class PythonDriver(
 
     if (hasError) {
       spookyOpt.foreach(
-        _.metrics.pythonInterpretationError += 1
+        _.spookyMetrics.pythonInterpretationError += 1
       )
-      val ee = new PyInterpretationException(
+      val ee = PyInterpretationException(
         indentedCode,
         rows.mkString("\n"),
         historyCodeOpt = historyCodeOpt
@@ -276,7 +276,7 @@ class PythonDriver(
     }
 
     spookyOpt.foreach(
-      _.metrics.pythonInterpretationSuccess += 1
+      _.spookyMetrics.pythonInterpretationSuccess += 1
     )
 
     rows

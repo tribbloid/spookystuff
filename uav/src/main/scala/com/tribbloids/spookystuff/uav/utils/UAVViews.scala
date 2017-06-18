@@ -16,7 +16,7 @@ object UAVViews {
     */
   implicit class SessionView(session: Session) {
 
-    val uavConf: UAVConf = session.spooky.conf.submodule[UAVConf]
+    val uavConf: UAVConf = session.spooky.getConf[UAVConf]
 
     val linkTry = {
       Link.trySelect(

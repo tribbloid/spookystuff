@@ -2,7 +2,7 @@ package com.tribbloids.spookystuff.uav.telemetry.mavlink
 
 import com.tribbloids.spookystuff.uav.ReinforcementDepletedException
 import com.tribbloids.spookystuff.uav.dsl.LinkFactories
-import com.tribbloids.spookystuff.uav.sim.APMSITLFixture
+import com.tribbloids.spookystuff.uav.sim.APMQuadFixture
 import com.tribbloids.spookystuff.uav.system.UAV
 import com.tribbloids.spookystuff.uav.telemetry.{Link, LinkFixture}
 import com.tribbloids.spookystuff.session.Session
@@ -13,7 +13,7 @@ import org.apache.spark.rdd.RDD
 /**
   * Created by peng on 27/01/17.
   */
-class MAVLinkSuite extends LinkFixture with APMSITLFixture {
+class MAVLinkSuite extends LinkFixture with APMQuadFixture {
 
   {
     val (spooky, testPrefix) = getSpooky(LinkFactories.Direct)

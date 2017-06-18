@@ -334,7 +334,7 @@ case class OAuthV2(self: Wget) extends Block(List(self)) with Driverless {
 
   def rewrite(session: Session): Wget = {
 
-    val keys = session.spooky.conf.oAuthKeysFactory.apply()
+    val keys = session.spooky.spookyConf.oAuthKeysFactory.apply()
     if (keys == null) {
       throw new QueryException("need to set SpookyConf.oAuthKeys first")
     }

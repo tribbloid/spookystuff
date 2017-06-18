@@ -1,13 +1,14 @@
 package com.tribbloids.spookystuff.rdd
 
 import com.tribbloids.spookystuff.actions.{ClusterRetry, Snapshot, Visit, Wget, _}
+import com.tribbloids.spookystuff.conf.SpookyConf
 import com.tribbloids.spookystuff.doc.Doc
 import com.tribbloids.spookystuff.dsl.{ExploreAlgorithm, GenPartitioner, JoinType, _}
 import com.tribbloids.spookystuff.execution.{ExplorePlan, FetchPlan, _}
 import com.tribbloids.spookystuff.extractors.{GetExpr, _}
 import com.tribbloids.spookystuff.row.{Field, _}
 import com.tribbloids.spookystuff.utils.{SpookyUtils, SpookyViews}
-import com.tribbloids.spookystuff.{Const, SpookyConf, SpookyContext}
+import com.tribbloids.spookystuff.{Const, SpookyContext}
 import org.apache.spark.TaskContext
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.catalyst.analysis.UnresolvedAttribute
@@ -59,7 +60,7 @@ case class FetchedDataset(
 
   //TODO: use reflection for more clear API
   def setConf(f: SpookyConf => Unit): this.type = {
-    f(spooky.conf)
+    f(spooky.spookyConf)
     this
   }
 
@@ -275,7 +276,7 @@ case class FetchedDataset(
                 str =>
                   val page = _pageExpr.lift(pageRow)
 
-                  spooky.metrics.pagesSaved += 1
+                  spooky.spookyMetrics.pagesSaved += 1
 
                   page.foreach(_.save(Seq(str), overwrite)(spooky))
               }
@@ -326,7 +327,7 @@ case class FetchedDataset(
                ex: Extractor[Any],
                isLeft: Boolean = true,
                ordinalField: Field = null,
-               sampler: Sampler[Any] = spooky.conf.defaultFlattenSampler
+               sampler: Sampler[Any] = spooky.spookyConf.defaultFlattenSampler
              ): FetchedDataset = {
 
     val (on, extracted) = ex match {
@@ -351,7 +352,7 @@ case class FetchedDataset(
                    on: Extractor[Any], //TODO: used to be Iterable[Unstructured], any tradeoff?
                    isLeft: Boolean = true,
                    ordinalField: Field = null,
-                   sampler: Sampler[Any] = spooky.conf.defaultFlattenSampler
+                   sampler: Sampler[Any] = spooky.spookyConf.defaultFlattenSampler
                  )(exprs: Extractor[Any]*): FetchedDataset = {
     this
       .flatten(on.withJoinFieldIfMissing, isLeft, ordinalField, sampler)
@@ -361,7 +362,7 @@ case class FetchedDataset(
   def flatSelect(
                   on: Extractor[Any], //TODO: used to be Iterable[Unstructured], any tradeoff?
                   ordinalField: Field = null,
-                  sampler: Sampler[Any] = spooky.conf.defaultFlattenSampler,
+                  sampler: Sampler[Any] = spooky.spookyConf.defaultFlattenSampler,
                   isLeft: Boolean = true
                 )(exprs: Extractor[Any]*) = flatExtract(on, isLeft, ordinalField, sampler)(exprs: _*)
 
@@ -372,7 +373,7 @@ case class FetchedDataset(
   // Always left
   def fetch(
              traces: Set[Trace],
-             genPartitioner: GenPartitioner = spooky.conf.defaultGenPartitioner
+             genPartitioner: GenPartitioner = spooky.spookyConf.defaultGenPartitioner
            ): FetchedDataset = FetchPlan(plan, traces.correct, genPartitioner)
 
   //shorthand of fetch
@@ -380,7 +381,7 @@ case class FetchedDataset(
              ex: Extractor[Any],
              filter: DocFilter = Const.defaultDocumentFilter,
              failSafe: Int = -1,
-             genPartitioner: GenPartitioner = spooky.conf.defaultGenPartitioner
+             genPartitioner: GenPartitioner = spooky.spookyConf.defaultGenPartitioner
            ): FetchedDataset = {
 
     var trace: Set[Trace] =  (
@@ -400,7 +401,7 @@ case class FetchedDataset(
             ex: Extractor[Any],
             filter: DocFilter = Const.defaultDocumentFilter,
             failSafe: Int = -1,
-            genPartitioner: GenPartitioner = spooky.conf.defaultGenPartitioner
+            genPartitioner: GenPartitioner = spooky.spookyConf.defaultGenPartitioner
           ): FetchedDataset = {
 
     var trace: Set[Trace] =  Wget(ex, filter)
@@ -415,12 +416,12 @@ case class FetchedDataset(
 
   def join(
             on: Extractor[Any], //name is discarded
-            joinType: JoinType = spooky.conf.defaultJoinType,
+            joinType: JoinType = spooky.spookyConf.defaultJoinType,
             ordinalField: Field = null, //left & idempotent parameters are missing as they are always set to true
-            sampler: Sampler[Any] = spooky.conf.defaultJoinSampler
+            sampler: Sampler[Any] = spooky.spookyConf.defaultJoinSampler
           )(
             traces: Set[Trace],
-            genPartitioner: GenPartitioner = spooky.conf.defaultGenPartitioner
+            genPartitioner: GenPartitioner = spooky.spookyConf.defaultGenPartitioner
           ): FetchedDataset = {
 
     val flat = this
@@ -437,12 +438,12 @@ case class FetchedDataset(
     */
   def visitJoin(
                  on: Extractor[Any],
-                 joinType: JoinType = spooky.conf.defaultJoinType,
+                 joinType: JoinType = spooky.spookyConf.defaultJoinType,
                  ordinalField: Field = null, //left & idempotent parameters are missing as they are always set to true
-                 sampler: Sampler[Any] = spooky.conf.defaultJoinSampler,
+                 sampler: Sampler[Any] = spooky.spookyConf.defaultJoinSampler,
                  filter: DocFilter = Const.defaultDocumentFilter,
                  failSafe: Int = -1,
-                 genPartitioner: GenPartitioner = spooky.conf.defaultGenPartitioner
+                 genPartitioner: GenPartitioner = spooky.spookyConf.defaultGenPartitioner
                ): FetchedDataset = {
 
     var trace = (
@@ -467,12 +468,12 @@ case class FetchedDataset(
     */
   def wgetJoin(
                 on: Extractor[Any],
-                joinType: JoinType = spooky.conf.defaultJoinType,
+                joinType: JoinType = spooky.spookyConf.defaultJoinType,
                 ordinalField: Field = null, //left & idempotent parameters are missing as they are always set to true
-                sampler: Sampler[Any] = spooky.conf.defaultJoinSampler,
+                sampler: Sampler[Any] = spooky.spookyConf.defaultJoinSampler,
                 filter: DocFilter = Const.defaultDocumentFilter,
                 failSafe: Int = -1,
-                genPartitioner: GenPartitioner = spooky.conf.defaultGenPartitioner
+                genPartitioner: GenPartitioner = spooky.spookyConf.defaultGenPartitioner
               ): FetchedDataset = {
 
     var trace: Set[Trace] = Wget(new GetExpr(Const.defaultJoinField), filter)
@@ -489,18 +490,18 @@ case class FetchedDataset(
   //TODO: how to unify this with join?
   def explore(
                on: Extractor[Any],
-               joinType: JoinType = spooky.conf.defaultJoinType,
+               joinType: JoinType = spooky.spookyConf.defaultJoinType,
                ordinalField: Field = null,
-               sampler: Sampler[Any] = spooky.conf.defaultJoinSampler
+               sampler: Sampler[Any] = spooky.spookyConf.defaultJoinSampler
              )(
                traces: Set[Trace],
-               genPartitioner: GenPartitioner = spooky.conf.defaultGenPartitioner,
+               genPartitioner: GenPartitioner = spooky.spookyConf.defaultGenPartitioner,
 
                depthField: Field = null,
-               range: Range = spooky.conf.defaultExploreRange,
-               exploreAlgorithm: ExploreAlgorithm = spooky.conf.defaultExploreAlgorithm,
-               epochSize: Int = spooky.conf.epochSize,
-               checkpointInterval: Int = spooky.conf.checkpointInterval // set to Int.MaxValue to disable checkpointing,
+               range: Range = spooky.spookyConf.defaultExploreRange,
+               exploreAlgorithm: ExploreAlgorithm = spooky.spookyConf.defaultExploreAlgorithm,
+               epochSize: Int = spooky.spookyConf.epochSize,
+               checkpointInterval: Int = spooky.spookyConf.checkpointInterval // set to Int.MaxValue to disable checkpointing,
              )(
                extracts: Extractor[Any]*
                //apply immediately after depth selection, this include depth0
@@ -516,20 +517,20 @@ case class FetchedDataset(
 
   def visitExplore(
                     ex: Extractor[Any],
-                    joinType: JoinType = spooky.conf.defaultJoinType,
+                    joinType: JoinType = spooky.spookyConf.defaultJoinType,
                     ordinalField: Field = null,
-                    sampler: Sampler[Any] = spooky.conf.defaultJoinSampler,
+                    sampler: Sampler[Any] = spooky.spookyConf.defaultJoinSampler,
 
                     filter: DocFilter = Const.defaultDocumentFilter,
 
                     failSafe: Int = -1,
-                    genPartitioner: GenPartitioner = spooky.conf.defaultGenPartitioner,
+                    genPartitioner: GenPartitioner = spooky.spookyConf.defaultGenPartitioner,
 
                     depthField: Field = null,
-                    range: Range = spooky.conf.defaultExploreRange,
-                    exploreAlgorithm: ExploreAlgorithm = spooky.conf.defaultExploreAlgorithm,
+                    range: Range = spooky.spookyConf.defaultExploreRange,
+                    exploreAlgorithm: ExploreAlgorithm = spooky.spookyConf.defaultExploreAlgorithm,
                     miniBatch: Int = 500,
-                    checkpointInterval: Int = spooky.conf.checkpointInterval, // set to Int.MaxValue to disable checkpointing,
+                    checkpointInterval: Int = spooky.spookyConf.checkpointInterval, // set to Int.MaxValue to disable checkpointing,
 
                     select: Extractor[Any] = null,
                     selects: Traversable[Extractor[Any]] = Seq()
@@ -552,19 +553,19 @@ case class FetchedDataset(
 
   def wgetExplore(
                    ex: Extractor[Any],
-                   joinType: JoinType = spooky.conf.defaultJoinType,
+                   joinType: JoinType = spooky.spookyConf.defaultJoinType,
                    ordinalField: Field = null,
-                   sampler: Sampler[Any] = spooky.conf.defaultJoinSampler,
+                   sampler: Sampler[Any] = spooky.spookyConf.defaultJoinSampler,
                    filter: DocFilter = Const.defaultDocumentFilter,
 
                    failSafe: Int = -1,
-                   genPartitioner: GenPartitioner = spooky.conf.defaultGenPartitioner,
+                   genPartitioner: GenPartitioner = spooky.spookyConf.defaultGenPartitioner,
 
                    depthField: Field = null,
-                   range: Range = spooky.conf.defaultExploreRange,
-                   exploreAlgorithm: ExploreAlgorithm = spooky.conf.defaultExploreAlgorithm,
+                   range: Range = spooky.spookyConf.defaultExploreRange,
+                   exploreAlgorithm: ExploreAlgorithm = spooky.spookyConf.defaultExploreAlgorithm,
                    miniBatch: Int = 500,
-                   checkpointInterval: Int = spooky.conf.checkpointInterval, // set to Int.MaxValue to disable checkpointing,
+                   checkpointInterval: Int = spooky.spookyConf.checkpointInterval, // set to Int.MaxValue to disable checkpointing,
 
                    select: Extractor[Any] = null,
                    selects: Traversable[Extractor[Any]] = Seq()

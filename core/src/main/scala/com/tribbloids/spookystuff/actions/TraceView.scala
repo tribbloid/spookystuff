@@ -59,11 +59,11 @@ case class TraceView(
 
           val spooky = session.spooky
 
-          if (spooky.conf.autoSave) actionResult.foreach{
+          if (spooky.spookyConf.autoSave) actionResult.foreach{
             case page: Doc => page.autoSave(spooky)
             case _ =>
           }
-          if (spooky.conf.cacheWrite) {
+          if (spooky.spookyConf.cacheWrite) {
             val effectiveBacktrace = actionResult.head.uid.backtrace
             InMemoryDocCache.put(effectiveBacktrace, actionResult, spooky)
             DFSDocCache.put(effectiveBacktrace ,actionResult, spooky)

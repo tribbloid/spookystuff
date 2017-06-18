@@ -3,6 +3,7 @@ package com.tribbloids.spookystuff.integration
 import java.util.Date
 
 import com.tribbloids.spookystuff._
+import com.tribbloids.spookystuff.conf.{SpookyConf, Submodules}
 import com.tribbloids.spookystuff.dsl._
 import com.tribbloids.spookystuff.testutils.{RemoteDocsFixture, TestHelper}
 import com.tribbloids.spookystuff.utils.SpookyUtils
@@ -42,16 +43,21 @@ abstract class IntegrationFixture extends SpookyEnvFixture with BeforeAndAfterAl
     for (driver <- driverFactories) {
       for (gp <- genPartitioners) {
         it(s"$gp/$driver/$root") {
-          _spooky = new SpookyContext(
+          val submodules = this.submodules.transform {
+            case _: SpookyConf =>
+              new SpookyConf(
+                webDriverFactory = driver,
+                defaultGenPartitioner = gp,
+                epochSize = 1 + Random.nextInt(4),
+                shareMetrics = true,
+                remoteResourceTimeout = 10.seconds
+              )
+            case v@ _ => v
+          }
+
+          _spooky = SpookyContext(
             sql,
-            new SpookyConf(
-              submodules = envComponents,
-              webDriverFactory = driver,
-              defaultGenPartitioner = gp,
-              epochSize = 1 + Random.nextInt(4),
-              shareMetrics = true,
-              remoteResourceTimeout = 10.seconds
-            )
+            submodules
           )
 
           doTest()
@@ -62,7 +68,7 @@ abstract class IntegrationFixture extends SpookyEnvFixture with BeforeAndAfterAl
 
   //TODO: for local-cluster mode, some of these metrics may have higher than expected results because.
   def assertBeforeCache(): Unit = {
-    val metrics: SpookyMetrics = spooky.metrics
+    val metrics: SpookyMetrics = spooky.spookyMetrics
     val metricsJSON: String = metrics.toJSON() //TODO: this will trigger a compiler bug in scala 2.10.6, need to fix it!
     println(metricsJSON)
 
@@ -79,7 +85,7 @@ abstract class IntegrationFixture extends SpookyEnvFixture with BeforeAndAfterAl
   }
 
   def assertAfterCache(): Unit = {
-    val metrics: SpookyMetrics = spooky.metrics
+    val metrics: SpookyMetrics = spooky.spookyMetrics
     val metricsJSON: String = metrics.toJSON()
     println(metricsJSON)
 
@@ -115,7 +121,7 @@ abstract class IntegrationFixture extends SpookyEnvFixture with BeforeAndAfterAl
 
   protected def doTestBeforeCache(): Unit = {
     SpookyUtils.retry(retry) {
-      spooky.conf.IgnoreCachedDocsBefore = Some(new Date(System.currentTimeMillis()))
+      spooky.spookyConf.IgnoreCachedDocsBefore = Some(new Date(System.currentTimeMillis()))
       spooky.zeroMetrics()
       doMain()
       assertBeforeCache()

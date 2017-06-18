@@ -31,7 +31,7 @@ class TestFetchPlan extends SpookyEnvFixture with LocalPathDocsFixture {
       )
     rdd1.dataRDD.count()
 
-    assert(rdd1.spooky.metrics.pagesFetched.value === 0)
+    assert(rdd1.spooky.spookyMetrics.pagesFetched.value === 0)
   }
 
   it("fetch() + count() will fetch once") {
@@ -43,7 +43,7 @@ class TestFetchPlan extends SpookyEnvFixture with LocalPathDocsFixture {
 
     rdd1.rdd.count()
 
-    assert(rdd1.spooky.metrics.pagesFetched.value === 1)
+    assert(rdd1.spooky.spookyMetrics.pagesFetched.value === 1)
   }
 
   it("fetch() + select() + count() will fetch once") {
@@ -58,7 +58,7 @@ class TestFetchPlan extends SpookyEnvFixture with LocalPathDocsFixture {
 
     rdd1.unsquashedRDD.count()
 
-    assert(rdd1.spooky.metrics.pagesFetched.value === 1)
+    assert(rdd1.spooky.spookyMetrics.pagesFetched.value === 1)
   }
 
   it("FetchPlan should create a new beaconRDD if its upstream doesn't have one"){

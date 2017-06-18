@@ -39,7 +39,7 @@ trait SpookyEnv {
 
     val spooky = new SpookyContext(sql)
 
-    val dirs = spooky.conf.dirConf
+    val dirs = spooky.dirConf
 
     if (dirs.root == null){
       dirs.root = s"file://${System.getProperty("user.dir")}/temp/spooky-local/$appName/"
@@ -57,14 +57,14 @@ trait SpookyEnv {
     )
       .getOrElse(p.getProperty("spooky.preview.mode"))
     if (preview == "preview") {
-      spooky.conf.defaultJoinSampler = sampler
-      spooky.conf.defaultExploreRange = 0 to maxExploreDepth
+      spooky.spookyConf.defaultJoinSampler = sampler
+      spooky.spookyConf.defaultExploreRange = 0 to maxExploreDepth
     }
     else {
       this.maxInputSize = Int.MaxValue
     }
 
-    spooky.conf.shareMetrics = true
+    spooky.spookyConf.shareMetrics = true
 
     spooky
   }

@@ -35,14 +35,11 @@ object LinkITFixture{
 abstract class LinkITFixture extends SimFixture {
 
   lazy val linkFactory: LinkFactory = LinkFactories.Direct
-
-  this.spooky.submodule[UAVConf].linkFactory = linkFactory
-
-  //    override def parallelism: Int = 4
+  this.spooky.getConf[UAVConf].linkFactory = linkFactory
 
   var acc: Int = 0
   def assertLinkCreated(n: Int): Unit ={
-    acc += spooky.metrics.linkCreated.value
+    acc += spooky.spookyMetrics.linkCreated.value
     assert(acc == n)
   }
 

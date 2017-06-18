@@ -22,7 +22,8 @@ import com.tribbloids.spookystuff.caching._
 import com.tribbloids.spookystuff.session._
 import com.tribbloids.spookystuff.session.python.PythonDriver
 import com.tribbloids.spookystuff.utils.SpookyUtils
-import com.tribbloids.spookystuff.{AbstractConf, SpookyContext}
+import com.tribbloids.spookystuff.SpookyContext
+import com.tribbloids.spookystuff.conf.AbstractConf
 import org.apache.commons.io.FileUtils
 import org.apache.spark.rdd.RDD
 import org.apache.spark.{SparkFiles, TaskContext}
@@ -332,15 +333,15 @@ object DriverFactories {
       baseCaps.setCapability(PhantomJSDriverService.PHANTOMJS_EXECUTABLE_PATH_PROPERTY, pathStr)
       baseCaps.setCapability (
         PhantomJSDriverService.PHANTOMJS_PAGE_SETTINGS_PREFIX + "resourceTimeout",
-        spooky.conf.remoteResourceTimeout.toMillis
+        spooky.spookyConf.remoteResourceTimeout.toMillis
       )
 
-      val userAgent = spooky.conf.userAgentFactory
+      val userAgent = spooky.spookyConf.userAgentFactory
       if (userAgent != null) {
         baseCaps.setCapability(PhantomJSDriverService.PHANTOMJS_PAGE_SETTINGS_PREFIX + "userAgent", userAgent)
       }
 
-      val proxy = spooky.conf.proxy()
+      val proxy = spooky.spookyConf.webProxy()
 
       if (proxy != null)
         baseCaps.setCapability(
@@ -367,12 +368,12 @@ object DriverFactories {
     def newCap(capabilities: Capabilities, spooky: SpookyContext): DesiredCapabilities = {
       val result = new DesiredCapabilities(baseCaps)
 
-      val userAgent = spooky.conf.userAgentFactory
+      val userAgent = spooky.spookyConf.userAgentFactory
       //TODO: this is useless, need custom BrowserVersion
       //see http://stackoverflow.com/questions/12853715/setting-user-agent-for-htmlunitdriver-selenium
       if (userAgent != null) result.setCapability(PhantomJSDriverService.PHANTOMJS_PAGE_SETTINGS_PREFIX + "userAgent", userAgent)
 
-      val proxy: WebProxySetting = spooky.conf.proxy()
+      val proxy: WebProxySetting = spooky.spookyConf.webProxy()
 
       if (proxy != null) {
         result.setCapability(PROXY, proxy.toSeleniumProxy)

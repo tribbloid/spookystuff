@@ -45,7 +45,7 @@ case class Waypoint(
 
     vOpt.map {
       v =>
-        val p = Location.parse(v, schema.spooky.submodule[UAVConf])
+        val p = Location.parse(v, schema.spooky.getConf[UAVConf])
         this.copy(
           to = Lit(p)
         )

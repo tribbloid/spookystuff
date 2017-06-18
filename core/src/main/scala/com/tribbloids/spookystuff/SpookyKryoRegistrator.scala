@@ -4,6 +4,7 @@ import java.util.UUID
 import java.util.concurrent.TimeUnit
 
 import com.esotericsoftware.kryo.Kryo
+import com.tribbloids.spookystuff.conf.{DirConf, SpookyConf}
 import com.tribbloids.spookystuff.dsl._
 import com.tribbloids.spookystuff.doc._
 import com.tribbloids.spookystuff.row.FetchedRow

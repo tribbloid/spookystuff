@@ -1,10 +1,11 @@
 package com.tribbloids.spookystuff.dsl
 
 import com.tribbloids.spookystuff.actions.Visit
+import com.tribbloids.spookystuff.conf.SpookyConf
 import com.tribbloids.spookystuff.dsl.DriverFactories.{TaskLocal, Transient}
 import com.tribbloids.spookystuff.session.Session
 import com.tribbloids.spookystuff.testutils.LocalPathDocsFixture
-import com.tribbloids.spookystuff.{SpookyConf, SpookyContext, SpookyEnvFixture}
+import com.tribbloids.spookystuff.{SpookyContext, SpookyEnvFixture}
 
 /**
   * Created by peng on 22/10/16.

@@ -28,7 +28,7 @@ case class UAV(
       Link.existing.getOrElse(
         this,
         {
-          val factory = spooky.conf.submodule[UAVConf].linkFactory
+          val factory = spooky.getConf[UAVConf].linkFactory
           val link = factory.apply(this)
           link.setContext(
             spooky,

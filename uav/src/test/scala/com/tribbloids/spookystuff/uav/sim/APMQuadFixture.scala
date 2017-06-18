@@ -21,18 +21,18 @@ trait SimFixture extends SpookyEnvFixture {
   //  def parallelism: Int = 3
 }
 
-trait APMSITLFixture extends SimFixture {
+trait APMFixture extends SimFixture {
 
   import com.tribbloids.spookystuff.uav.dsl._
   import com.tribbloids.spookystuff.utils.SpookyViews._
 
-  lazy val simFactory = QuadSimFactory()
+  def simFactory: SimFactory
 
   override val processNames = Seq("phantomjs", "python", "apm")
 
   override def setUp(): Unit = {
     super.setUp()
-    val uavConf = spooky.conf.submodule[UAVConf]
+    val uavConf = spooky.getConf[UAVConf]
     uavConf.fastConnectionRetries = 2
     uavConf.fleet = Fleet.Inventory(simDrones)
   }
@@ -93,7 +93,7 @@ trait APMSITLFixture extends SimFixture {
   }
 }
 
-class APMCopterSITLSuite extends APMSITLFixture {
+class TestAPMQuad extends APMQuadFixture {
 
   import com.tribbloids.spookystuff.utils.SpookyViews._
 
@@ -126,8 +126,11 @@ class APMCopterSITLSuite extends APMSITLFixture {
     val apmPs = processes.filter(_.getName == "apm")
     assert(apmPs.size == parallelism)
   }
+}
 
-  //  test("APM instances created with")
+trait APMQuadFixture extends APMFixture {
+
+  lazy val simFactory = QuadSimFactory()
 }
 
 //class APMPlaneSITLSuite extends APMCopterSITLSuite {

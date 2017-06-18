@@ -1,5 +1,6 @@
 package com.tribbloids.spookystuff
 
+import com.tribbloids.spookystuff.conf.{AbstractConf, DirConf, SpookyConf, Submodules}
 import com.tribbloids.spookystuff.doc.{Doc, Unstructured}
 import com.tribbloids.spookystuff.dsl.DriverFactory
 import com.tribbloids.spookystuff.extractors.{Alias, GenExtractor, GenResolved}
@@ -192,18 +193,18 @@ abstract class SpookyEnvFixture
 
   def setUp(): Unit = {
     //    SpookyEnvFixture.cleanDriverInstances()
-    spooky.conf = new SpookyConf(
-      autoSave = true,
-      cacheWrite = false,
-      cacheRead = false,
-      submodules = envComponents
-    )
-    spooky.metrics.zero()
+    spooky._configurations = submodules
+    spooky.spookyMetrics.zero()
     spooky.rebroadcast()
   }
 
-  def envComponents: Submodules[ModuleConf] = {
+  def submodules: Submodules[AbstractConf] = {
     Submodules(
+      new SpookyConf(
+        autoSave = true,
+        cacheWrite = false,
+        cacheRead = false
+      ),
       new DirConf(
         root = SpookyUtils.\\\(TestHelper.TEMP_PATH, "spooky-unit")
       )
