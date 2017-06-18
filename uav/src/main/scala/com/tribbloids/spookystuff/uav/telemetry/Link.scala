@@ -158,7 +158,6 @@ trait Link extends LocalCleanable {
     }
   }
 
-  var isDryrun = false
   //finalizer may kick in and invoke it even if its in Link.existing
   override protected def cleanImpl(): Unit = {
 
@@ -167,9 +166,6 @@ trait Link extends LocalCleanable {
       v =>
         if (v eq this)
           Link.existing -= uav
-        else {
-          if (!isDryrun) throw new AssertionError("THIS IS NOT A DRYRUN OBJECT! SO ITS CREATED ILLEGALLY!")
-        }
     }
     spookyOpt.foreach {
       spooky =>
@@ -307,7 +303,6 @@ trait Link extends LocalCleanable {
       LoggerFactory.getLogger(this.getClass).info {
         s"Reusing existing link for $uav"
       }
-      neo.isDryrun = true
       neo.clean(silent = true)
       this
     }

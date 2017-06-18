@@ -1,11 +1,10 @@
 package com.tribbloids.spookystuff.uav.telemetry
 
 import com.tribbloids.spookystuff.SpookyContext
-import com.tribbloids.spookystuff.uav.UAVConf
-import com.tribbloids.spookystuff.uav.dsl.{LinkFactories, LinkFactory}
-import com.tribbloids.spookystuff.uav.sim.SimFixture
-import com.tribbloids.spookystuff.uav.system.UAV
 import com.tribbloids.spookystuff.session.Session
+import com.tribbloids.spookystuff.uav.UAVFixture
+import com.tribbloids.spookystuff.uav.dsl.{LinkFactories, LinkFactory}
+import com.tribbloids.spookystuff.uav.system.UAV
 import org.apache.spark.rdd.RDD
 
 /**
@@ -32,10 +31,9 @@ object LinkITFixture{
   }
 }
 
-abstract class LinkITFixture extends SimFixture {
+abstract class LinkITFixture extends UAVFixture {
 
-  lazy val linkFactory: LinkFactory = LinkFactories.Direct
-  this.spooky.getConf[UAVConf].linkFactory = linkFactory
+  override lazy val linkFactory: LinkFactory = LinkFactories.Direct
 
   var acc: Int = 0
   def assertLinkCreated(n: Int): Unit ={
@@ -62,7 +60,7 @@ abstract class LinkITFixture extends SimFixture {
 
     val connStrs = this.simURIs
     val rdd = simURIRDD.map {
-      connStr =>
+      _ =>
         LinkITFixture.testMove(spooky, connStrs)
     }
       .persist()
@@ -80,9 +78,9 @@ abstract class LinkITFixture extends SimFixture {
     var locations: Array[String] = null
     val connStrs = this.simURIs
 
-    for (i <- 1 to 2) {
+    for (_ <- 1 to 2) {
       val rdd: RDD[String] = simURIRDD.map {
-        connStr =>
+        _ =>
           LinkITFixture.testMove(spooky, connStrs)
       }
 

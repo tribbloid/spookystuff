@@ -3,39 +3,19 @@ package com.tribbloids.spookystuff.uav.sim
 import com.tribbloids.spookystuff.SpookyEnvFixture
 import com.tribbloids.spookystuff.session.python.PythonDriver
 import com.tribbloids.spookystuff.session.{Cleanable, Lifespan}
-import com.tribbloids.spookystuff.uav.UAVConf
-import com.tribbloids.spookystuff.uav.system.UAV
+import com.tribbloids.spookystuff.uav.UAVFixture
 import com.tribbloids.spookystuff.uav.telemetry.Link
 import com.tribbloids.spookystuff.utils.SpookyUtils
-import org.apache.spark.rdd.RDD
 import org.jutils.jprocesses.JProcesses
 import org.slf4j.LoggerFactory
 
-trait SimFixture extends SpookyEnvFixture {
+trait APMFixture extends UAVFixture {
 
-  var simURIRDD: RDD[String] = _
-  def simURIs: Seq[String] = simURIRDD.collect().toSeq.distinct
-  def simDrones = simURIs.map(v => UAV(Seq(v)))
-
-  def parallelism: Int = sc.defaultParallelism
-  //  def parallelism: Int = 3
-}
-
-trait APMFixture extends SimFixture {
-
-  import com.tribbloids.spookystuff.uav.dsl._
   import com.tribbloids.spookystuff.utils.SpookyViews._
 
   def simFactory: SimFactory
 
   override val processNames = Seq("phantomjs", "python", "apm")
-
-  override def setUp(): Unit = {
-    super.setUp()
-    val uavConf = spooky.getConf[UAVConf]
-    uavConf.fastConnectionRetries = 2
-    uavConf.fleet = Fleet.Inventory(simDrones)
-  }
 
   override def beforeAll(): Unit = {
     cleanSweep()
@@ -112,10 +92,10 @@ class TestAPMQuad extends APMQuadFixture {
     assert(iNums.nonEmpty)
     assert(iNums.size == iNums.distinct.size)
 
-    println(s"connStrs:\n${this.simURIs.mkString("\n")}")
-    assert(simURIs.nonEmpty)
-    assert(simURIs.size == simURIs.distinct.size)
-    assert(simURIs.size == iNums.size)
+    println(s"connStrs:\n${this.simUAVs.mkString("\n")}")
+    assert(simUAVs.nonEmpty)
+    assert(simUAVs.size == simUAVs.distinct.size)
+    assert(simUAVs.size == iNums.size)
 
     import scala.collection.JavaConverters._
 

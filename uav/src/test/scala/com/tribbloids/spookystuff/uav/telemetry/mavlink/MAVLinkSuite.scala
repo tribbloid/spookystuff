@@ -108,7 +108,7 @@ class MAVLinkSuite extends LinkFixture with APMQuadFixture {
 class MAVLinkSuite_SelectFromFleet extends MAVLinkSuite {
 
   override lazy val listDrones = {
-    val simEndpoints = this.simDrones
+    val simEndpoints = this.simUAVs
     _: String => simEndpoints
   }
 }

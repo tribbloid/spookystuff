@@ -18,6 +18,8 @@ case class UAV(
                 name: String = "DRONE"
               ) {
 
+  val primaryURI = uris.head
+
   def getLink(
                spooky: SpookyContext,
                tryConnect: Boolean = true

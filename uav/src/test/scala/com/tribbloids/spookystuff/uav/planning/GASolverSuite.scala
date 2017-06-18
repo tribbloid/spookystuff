@@ -7,12 +7,14 @@ import com.tribbloids.spookystuff.uav.spatial.NED
 import com.tribbloids.spookystuff.uav.system.UAV
 import com.tribbloids.spookystuff.uav.telemetry.DummyLink
 import org.scalactic.TolerantNumerics
+import org.scalatest.Ignore
 
 import scala.util.Success
 
 /**
   * Created by peng on 24/02/17.
   */
+@Ignore
 class GASolverSuite extends SpookyEnvFixture {
 
   val main: Seq[Waypoint] = UAVTestUtils.LawnMowerPattern(
