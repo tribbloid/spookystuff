@@ -17,7 +17,7 @@ import scala.util.Success
 @Ignore
 class GASolverSuite extends SpookyEnvFixture {
 
-  val main: Seq[Waypoint] = UAVTestUtils.LawnMowerPattern(
+  val waypoints: Seq[Waypoint] = UAVTestUtils.LawnMowerPattern(
     5,
     NED(10, 10, -10),
     NED(100, 0, 0),
@@ -33,7 +33,7 @@ class GASolverSuite extends SpookyEnvFixture {
   )
     .wpActions
 
-  val allWPs = main ++ toBeInserted
+  val allWPs = waypoints ++ toBeInserted
 
   val solver = GASolver(
     allWPs.map{ a => List(a)}.toList,
@@ -46,7 +46,7 @@ class GASolverSuite extends SpookyEnvFixture {
     link
   }
   lazy val dummyRoute = {
-    Route(Success(dummyLink), main.indices)
+    Route(Success(dummyLink), waypoints.indices)
   }
 
   it("Route can be converted to traces") {
@@ -54,7 +54,7 @@ class GASolverSuite extends SpookyEnvFixture {
     val route = dummyRoute
     val traces = route.toTracesOpt(solver.allTracesBroadcasted.value).get
     traces.mkString("\n").shouldBe(
-      main.map{a => List(a)}
+      waypoints.map{ a => List(a)}
         .map {
           trace =>
             Seq(PreferUAV(dummyLink)) ++ trace
@@ -74,7 +74,7 @@ class GASolverSuite extends SpookyEnvFixture {
 
   it("Route can calculate the optimal strategy to insert a waypoint") {
     val route = dummyRoute
-    val inserted = route.optimalInsertFrom(Seq(main.length), solver)
+    val inserted = route.optimalInsertFrom(Seq(waypoints.length), solver)
     inserted.is.mkString(",").shouldBe(
       "0,10,1,2,3,4,5,6,7,8,9"
     )
@@ -82,7 +82,7 @@ class GASolverSuite extends SpookyEnvFixture {
 
   it("Route can calculate the optimal strategy to insert several waypoints") {
     val route = dummyRoute
-    val inserted = route.optimalInsertFrom(main.length until allWPs.length, solver)
+    val inserted = route.optimalInsertFrom(waypoints.length until allWPs.length, solver)
     inserted.is.mkString(",").shouldBe(
       "0,10,1,2,11,3,4,5,6,12,7,8,13,9"
     )

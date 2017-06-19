@@ -5,7 +5,7 @@ import com.tribbloids.spookystuff.uav.system.UAV
 /**
   * All should be non-blocking
   */
-case class LinkStatus(
+case class UAVStatus(
                        uav: UAV,
                        home: Location,
                        currentLocation: Location

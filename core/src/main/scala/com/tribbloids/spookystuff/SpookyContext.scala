@@ -210,8 +210,10 @@ case class SpookyContext (
     import com.tribbloids.spookystuff.utils.SpookyViews._
 
     implicit def dataFrameToPageRowRDD(df: DataFrame): FetchedDataset = {
-      val self: SquashedFetchedRDD = new DataFrameView(df)
+      val mapRDD = new DataFrameView(df)
         .toMapRDD()
+
+      val self: SquashedFetchedRDD = mapRDD
         .map {
           map =>
             SquashedFetchedRow(

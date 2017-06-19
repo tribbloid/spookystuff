@@ -14,7 +14,7 @@ import com.tribbloids.spookystuff.uav.UAVConf
 import com.tribbloids.spookystuff.uav.actions.{UAVAction, UAVNavigation}
 import com.tribbloids.spookystuff.uav.planning.{PreferUAV, WrapLocation}
 import com.tribbloids.spookystuff.uav.spatial.NED
-import com.tribbloids.spookystuff.uav.telemetry.{Link, LinkStatus}
+import com.tribbloids.spookystuff.uav.telemetry.{Link, UAVStatus}
 import org.apache.spark.rdd.RDD
 
 import scala.reflect.ClassTag
@@ -68,8 +68,9 @@ object GenPartitioners {
           .mapPerExecutorCore {
             spooky.withSession {
               session =>
+                val uavsInFleet = spooky.getConf[UAVConf].uavsInFleetShuffled
                 val linkTry = Link.trySelect (
-                  spooky.getConf[UAVConf].uavsInFleetShuffled,
+                  uavsInFleet,
                   session
                 )
                 linkTry.map {
@@ -81,14 +82,14 @@ object GenPartitioners {
           .flatMap(_.toOption.toSeq)
         val links = linkRDD.keys.collect()
 
-        val traces_linkOpts_indices: Array[((TraceView, Option[LinkStatus]), Int)] = {
-          val fromLinks: Array[(TraceView, Option[LinkStatus])] =
+        val traces_linkOpts_indices: Array[((TraceView, Option[UAVStatus]), Int)] = {
+          val fromLinks: Array[(TraceView, Option[UAVStatus])] =
             links.map {
               link =>
                 TraceView(List(WrapLocation(link.currentLocation))) -> Some(link)
             }
 
-          val fromTraces: Array[(TraceView, Option[LinkStatus])] =
+          val fromTraces: Array[(TraceView, Option[UAVStatus])] =
             hasUAVTraces.map {
               trace =>
                 trace -> None
@@ -214,7 +215,7 @@ object GenPartitioners {
 
         import scala.collection.JavaConverters._
 
-        val link_traces: Seq[(LinkStatus, Seq[TraceView])] = best.getRoutes.asScala.toSeq.map {
+        val link_traces: Seq[(UAVStatus, Seq[TraceView])] = best.getRoutes.asScala.toList.map {
           route =>
             val link = links.find(_.uav.fullID == route.getVehicle.getId).get
             val tours = route.getTourActivities.getActivities.asScala
@@ -226,7 +227,7 @@ object GenPartitioners {
             link -> traces
         }
 
-        val link_traceRDD: RDD[(LinkStatus, Seq[TraceView])] = spooky.sparkContext.parallelize(link_traces)
+        val link_traceRDD: RDD[(UAVStatus, Seq[TraceView])] = spooky.sparkContext.parallelize(link_traces)
 
         //TODO: cogroup is expensive
 

@@ -348,7 +348,7 @@ trait Link extends LocalCleanable {
 
   def status(expireAfter: Long = 1000) = {
     val current = CurrentLocation.getIfNotExpire((), expireAfter)
-    LinkStatus(uav, home, current)
+    UAVStatus(uav, home, current)
   }
 
   //====================== Synchronous API ======================
