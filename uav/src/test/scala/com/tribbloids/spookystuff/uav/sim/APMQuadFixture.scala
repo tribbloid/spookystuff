@@ -6,6 +6,7 @@ import com.tribbloids.spookystuff.session.{Cleanable, Lifespan}
 import com.tribbloids.spookystuff.uav.UAVFixture
 import com.tribbloids.spookystuff.uav.telemetry.Link
 import com.tribbloids.spookystuff.utils.SpookyUtils
+import org.apache.spark.rdd.RDD
 import org.jutils.jprocesses.JProcesses
 import org.slf4j.LoggerFactory
 
@@ -16,6 +17,33 @@ trait APMFixture extends UAVFixture {
   def simFactory: SimFactory
 
   override val processNames = Seq("phantomjs", "python", "apm")
+
+  private var _simURIRDD: RDD[String] = _
+  lazy val simURIs: Seq[String] = {
+
+    val simFactory = this.simFactory
+    this._simURIRDD = sc.parallelize(1 to parallelism)
+      .map {
+        i =>
+          //NOT cleaned by TaskCompletionListener
+          val apmSimDriver = new PythonDriver(lifespan = Lifespan.JVM(nameOpt = Some(s"APMSim$i")))
+          val sim = simFactory.getNext
+          sim._Py(apmSimDriver).connStr.$STR
+      }
+      .flatMap(v => v)
+      .persist()
+
+    val result = _simURIRDD.collect().toSeq
+    assert(result.size == result.distinct.size)
+    val info = result.mkString("\n")
+    LoggerFactory.getLogger(this.getClass).info(
+      s"""
+         |APM simulation(s) are up and running:
+         |$info
+      """.stripMargin
+    )
+    result
+  }
 
   override def beforeAll(): Unit = {
     cleanSweep()
@@ -32,31 +60,11 @@ trait APMFixture extends UAVFixture {
 
     val isEmpty = sc.mapPerComputer {APMSim.existing.isEmpty}.collect()
     assert(!isEmpty.contains(false))
-
-    val simFactory = this.simFactory
-    val connStrRDD = sc.parallelize(1 to parallelism)
-      .map {
-        i =>
-          //NOT cleaned by TaskCompletionListener
-          val apmSimDriver = new PythonDriver(lifespan = Lifespan.JVM(nameOpt = Some(s"APMSim$i")))
-          val sim = simFactory.getNext
-          sim._Py(apmSimDriver).connStr.$STR
-      }
-      .flatMap(v => v)
-      .persist()
-
-    val info = connStrRDD.collect().mkString("\n")
-    LoggerFactory.getLogger(this.getClass).info(
-      s"""
-         |APM simulation(s) are up and running:
-         |$info
-      """.stripMargin
-    )
-    this.simURIRDD = connStrRDD
   }
 
   override def afterAll(): Unit = {
     cleanSweep()
+    Option(this._simURIRDD).foreach(_.unpersist())
     super.afterAll()
   }
 
@@ -65,8 +73,8 @@ trait APMFixture extends UAVFixture {
       // in production Links will be cleaned up by shutdown hook, unfortunately test suites can't wait for that long.
 
       Cleanable.cleanSweepAll {
-        case v: Link => true // required as midair Links are only idled but never cleaned.
-        case v: APMSim => true
+        case _: Link => true // required as midair Links are only idled but never cleaned.
+        case _: APMSim => true
         case _ => false
       }
     }

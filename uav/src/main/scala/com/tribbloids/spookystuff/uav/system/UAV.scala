@@ -4,6 +4,8 @@ import com.tribbloids.spookystuff.SpookyContext
 import com.tribbloids.spookystuff.uav.UAVConf
 import com.tribbloids.spookystuff.uav.telemetry.Link
 
+import scala.util.Try
+
 /**
   * Created by peng on 15/01/17.
   */
@@ -32,7 +34,7 @@ case class UAV(
         {
           val factory = spooky.getConf[UAVConf].linkFactory
           val link = factory.apply(this)
-          link.setContext(
+          link.setFactory(
             spooky,
             factory
           )
@@ -41,11 +43,8 @@ case class UAV(
         }
       )
     }
-    if (newLink && tryConnect) try {
+    if (newLink && tryConnect) Try {
       link.connect()
-    }
-    catch {
-      case e: Throwable =>
     }
 
     link

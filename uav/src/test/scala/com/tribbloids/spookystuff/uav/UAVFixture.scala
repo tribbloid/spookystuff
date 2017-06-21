@@ -10,9 +10,7 @@ import org.apache.spark.rdd.RDD
   */
 trait UAVFixture extends SpookyEnvFixture {
 
-  var simURIRDD: RDD[String] = _
-
-  def simURIs: Seq[String] = simURIRDD.collect().toSeq.distinct
+  def simURIs: Seq[String]
   def simUAVs = simURIs.map(v => UAV(Seq(v)))
 
   def parallelism: Int = sc.defaultParallelism

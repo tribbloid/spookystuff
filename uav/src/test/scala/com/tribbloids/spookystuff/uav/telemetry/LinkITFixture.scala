@@ -59,7 +59,7 @@ abstract class LinkITFixture extends UAVFixture {
     val spooky = this.spooky
 
     val connStrs = this.simURIs
-    val rdd = simURIRDD.map {
+    val rdd = sc.parallelize(simURIs).map {
       _ =>
         LinkITFixture.testMove(spooky, connStrs)
     }
@@ -79,7 +79,7 @@ abstract class LinkITFixture extends UAVFixture {
     val connStrs = this.simURIs
 
     for (_ <- 1 to 2) {
-      val rdd: RDD[String] = simURIRDD.map {
+      val rdd: RDD[String] = sc.parallelize(simURIs).map {
         _ =>
           LinkITFixture.testMove(spooky, connStrs)
       }

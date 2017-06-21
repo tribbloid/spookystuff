@@ -3,7 +3,7 @@ package com.tribbloids.spookystuff.uav.telemetry.mavlink
 import com.tribbloids.spookystuff.uav.system.UAV
 import com.tribbloids.spookystuff.uav.telemetry.Link
 import com.tribbloids.spookystuff.session.python.PythonDriver
-import com.tribbloids.spookystuff.session.{Cleanable, DetectResourceConflict}
+import com.tribbloids.spookystuff.session.{Cleanable, ConflictDetection}
 import com.tribbloids.spookystuff.uav.spatial.{GeodeticAnchor, LLA, Location}
 import org.slf4j.LoggerFactory
 
@@ -34,7 +34,7 @@ case class MAVLink(
                     uav: UAV,
                     toSpark: Seq[String] = Nil, // cannot have duplicates
                     toGCS: Seq[String] = Nil
-                  ) extends Link with DetectResourceConflict {
+                  ) extends Link with ConflictDetection {
 
   {
     if (toSpark.isEmpty) assert(toGCS.isEmpty, "No endpoint for executor")
@@ -43,7 +43,7 @@ case class MAVLink(
   override lazy val resourceIDs = Map("" -> (uav.uris ++ toSpark).toSet)
 
   val outs: Seq[String] = toSpark ++ toGCS
-  val allURIs = (uav.uris ++ outs).distinct
+  val exclusiveURIs: Seq[String] = (uav.uris ++ toSpark).distinct
 
   /**
     * CAUTION: ALL of them have to be val or lazy val! Or you risk recreating many copies each with its own python!
@@ -108,20 +108,21 @@ case class MAVLink(
   }
 
   override protected def detectConflicts(): Unit = {
+    super.detectConflicts()
     def uri = Endpoints.primary.uri
     val drivers = Cleanable.getTyped[PythonDriver]
     val conflicting = drivers.filter {
       driver =>
         driver.historyCodeOpt.exists(_.contains(uri))
     }
-    val me = Option(Endpoints.primary._driver)
-    val notMe: Seq[PythonDriver] = conflicting.filterNot {
+    val myDriver = Option(Endpoints.primary._driver)
+    val notMyDriver: Seq[PythonDriver] = conflicting.filterNot {
       driver =>
-        me.exists(_ eq driver)
+        myDriver.exists(_ eq driver)
     }
-    assert(notMe.isEmpty,
-      s"Besides legitimate processs PID=${me.map(_.getPid).orNull}. The following python process(es) also use $uri\n" +
-        notMe.map {
+    assert(notMyDriver.isEmpty,
+      s"Besides legitimate processs PID=${myDriver.map(_.getPid).orNull}. The following python process(es) also use $uri\n" +
+        notMyDriver.map {
           driver =>
             s"=============== PID=${driver.getPid} ===============\n" +
               driver.historyCodeOpt.getOrElse("")

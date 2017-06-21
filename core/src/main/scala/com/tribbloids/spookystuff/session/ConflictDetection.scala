@@ -7,7 +7,7 @@ import scala.util.Try
 /**
   * Created by peng on 14/01/17.
   */
-trait DetectResourceConflict extends Cleanable {
+trait ConflictDetection extends Cleanable {
 
   def resourceIDs: Map[String, Set[_]]
   def prefix: String = this.getClass.getCanonicalName
@@ -22,10 +22,10 @@ trait DetectResourceConflict extends Cleanable {
   }
 }
 
-object DetectResourceConflict {
+object ConflictDetection {
 
   def conflicts: Seq[Try[Unit]] = {
-    val allResourceIDs: Map[String, Seq[Any]] = Cleanable.getTyped[DetectResourceConflict]
+    val allResourceIDs: Map[String, Seq[Any]] = Cleanable.getTyped[ConflictDetection]
       .map {
         _.effectiveResourceIDs.mapValues(_.toSeq)
       }

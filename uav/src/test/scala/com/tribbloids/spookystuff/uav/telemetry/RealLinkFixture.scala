@@ -1,11 +1,11 @@
 package com.tribbloids.spookystuff.uav.telemetry
 
-import com.tribbloids.spookystuff.uav.dsl.{LinkFactories, LinkFactory}
-import com.tribbloids.spookystuff.uav.system.UAV
-import com.tribbloids.spookystuff.uav.telemetry.mavlink.MAVLink
-import com.tribbloids.spookystuff.uav.{ReinforcementDepletedException, UAVFixture, UAVConf}
 import com.tribbloids.spookystuff.session.Session
 import com.tribbloids.spookystuff.testutils.TestHelper
+import com.tribbloids.spookystuff.uav.dsl.LinkFactory
+import com.tribbloids.spookystuff.uav.system.UAV
+import com.tribbloids.spookystuff.uav.telemetry.mavlink.MAVLink
+import com.tribbloids.spookystuff.uav.{ReinforcementDepletedException, UAVConf, UAVFixture}
 import com.tribbloids.spookystuff.utils.SpookyUtils
 import com.tribbloids.spookystuff.utils.TreeException.MultiCauseWrapper
 import com.tribbloids.spookystuff.{PyInterpretationException, SpookyContext, SpookyEnvFixture}
@@ -17,7 +17,7 @@ abstract class LinkFixture extends UAVFixture {
 
   import com.tribbloids.spookystuff.utils.SpookyViews._
 
-  lazy val listDrones: String => Seq[UAV] = {
+  lazy val getFleet: String => Seq[UAV] = {
     connStr =>
       Seq(UAV(Seq(connStr)))
   }
@@ -30,102 +30,48 @@ abstract class LinkFixture extends UAVFixture {
     Thread.sleep(2000) //Waiting for both python drivers to terminate, DON'T DELETE! some tests create proxy processes and they all take a few seconds to release the port binding!
   }
 
-  def getSpooky(factory: LinkFactory): (SpookyContext, String) = {
+  def factory2Spooky(factory: LinkFactory): (SpookyContext, String) = {
 
     val spooky = this.spooky.copy(_configurations = this.spooky.configurations.transform(_.clone))
     spooky.getConf[UAVConf].linkFactory = factory
     spooky.rebroadcast()
 
     val name = spooky.getConf[UAVConf].linkFactory.getClass.getSimpleName
-    spooky -> s"linkFactory=$name:"
+    spooky -> s"linkFactory=$name"
   }
 
-  protected def getLinkRDD(spooky: SpookyContext) = {
-    val listDrones = this.listDrones
-    val linkRDD = simURIRDD.map {
-      connStr =>
-        val session = new Session(spooky)
-        val link = Link.trySelect(
-          listDrones(connStr),
-          session
-        )
-          .get
-        TestHelper.assert(link.isNotBlacklisted, "link is blacklisted")
-        TestHelper.assert(link.factoryOpt.get == spooky.getConf[UAVConf].linkFactory, "link doesn't comply to factory")
-        link.isBooked = true
-        //        Thread.sleep(5000) //otherwise a task will complete so fast such that another task hasn't start yet.
-        link
+  def factories: Seq[LinkFactory]
+  val fixtures: Seq[(SpookyContext, String)] = factories.map {
+    factory2Spooky
+  }
+
+  def runTests(fixtures: Seq[(SpookyContext, String)])(f: (SpookyContext) => Unit) = {
+    fixtures.foreach {
+      case (spooky, testPrefix) =>
+        describe(testPrefix) {
+          f(spooky)
+        }
     }
-      .persist()
-    val uriRDD = linkRDD.map {
-      link =>
-        link.uav.uris.head
-    }
-    val uris = uriRDD.collect()
-    assert(uris.distinct.length == this.parallelism, "Duplicated URIs:\n" + uris.mkString("\n"))
-    linkRDD
   }
 
-  val linkFactories = Seq(
-    LinkFactories.Direct,
-    LinkFactories.ForkToGCS()
-  )
+  runTests(fixtures) {
+    spooky =>
 
-  val tuples = linkFactories.map {
-    getSpooky
-  }
-
-  tuples.foreach {
-    case (spooky, testPrefix) =>
-
-      it(s"$testPrefix Link should use different drones") {
-        val linkRDD: RDD[Link] = getLinkRDD(spooky)
-      }
-
-      it(s"$testPrefix Link to non-existing drone should be disabled until blacklist timer reset") {
-        val session = new Session(spooky)
-        val drone = UAV(Seq("dummy"))
-        TestHelper.setLoggerDuring(classOf[Link], classOf[MAVLink], SpookyUtils.getClass) {
-          intercept[ReinforcementDepletedException]{
-            Link.trySelect(
-              Seq(drone),
-              session
-            )
-              .get
-          }
-
-          val badLink = Link.existing(drone)
-          badLink.statusString.shouldBeLike(
-            "Link DRONE@dummy is unreachable for ......"
-          )
-          assert {
-            val e = badLink.lastFailureOpt.get._1
-            e.isInstanceOf[PyInterpretationException] || e.isInstanceOf[MultiCauseWrapper]
-          }
+      it("Link should use different UAVs") {
+        for (i <- 0 to 5) {
+          println(s"=========== $i ===========")
+          val linkRDD: RDD[Link] = getLinkRDD(spooky)
+          val uavs = linkRDD.map(_.uav).collect().toSeq
+          val uris = uavs.map(_.primaryURI)
+          assert(uris.size == this.parallelism, "Duplicated URIs:\n" + uris.mkString("\n"))
+          assert(uris.size == uris.distinct.size, "Duplicated URIs:\n" + uris.mkString("\n"))
         }
       }
 
-      it(s"$testPrefix Link.connect()/disconnect() should not leave dangling process") {
-        val linkRDD: RDD[Link] = getLinkRDD(spooky)
-        linkRDD.foreach {
-          link =>
-            for (i <- 1 to 2) {
-              link.connect()
-              link.disconnect()
-            }
-        }
-        //wait for zombie process to be deregistered
-        SpookyUtils.retry(5, 2000) {
-          sc.foreachComputer {
-            SpookyEnvFixture.processShouldBeClean(Seq("mavproxy"), Seq("mavproxy"), cleanSweepNotInTask = false)
-          }
-        }
-      }
+      it("Link created in the same TaskContext should be reused") {
 
-      it(s"$testPrefix Link created in the same TaskContext should be reused") {
-
-        val listDrones = this.listDrones
-        val linkStrs = simURIRDD.map {
+        val listDrones = this.getFleet
+        val linkStrs = sc.parallelize(simURIs).map {
           connStr =>
             val endpoints = listDrones(connStr)
             val session = new Session(spooky)
@@ -151,21 +97,98 @@ abstract class LinkFixture extends UAVFixture {
             assert(tuple._1 == tuple._2)
         }
       }
+  }
 
-      for (factory2 <- linkFactories) {
+  protected def getLinkRDD(spooky: SpookyContext): RDD[Link] = {
+    val listDrones = this.getFleet
+    val linkRDD = sc.parallelize(simURIs).map {
+      connStr =>
+        val link = spooky.withSession {
+          session =>
+            Link.trySelect(
+              listDrones(connStr),
+              session
+            )
+              .get
+        }
+        TestHelper.assert(link.isNotBlacklisted, "link is blacklisted")
+        TestHelper.assert(link.factoryOpt.get == spooky.getConf[UAVConf].linkFactory, "link doesn't comply to factory")
+        //        link.isBooked = true
+        //        Thread.sleep(5000) //otherwise a task will complete so fast such that another task hasn't start yet.
+        link
+    }
+      .persist()
+    linkRDD.map(_.uav).collect().foreach(println)
+    //    linkRDD.map {
+    //      v =>
+    //        v.isBooked = false
+    //        v
+    //    }
+    linkRDD
+  }
+}
+
+abstract class RealLinkFixture extends LinkFixture {
+
+  import com.tribbloids.spookystuff.utils.SpookyViews._
+
+  runTests(fixtures){
+    spooky =>
+
+      it("Link to unreachable drone should be disabled until blacklist timer reset") {
+        val session = new Session(spooky)
+        val drone = UAV(Seq("dummy"))
+        TestHelper.setLoggerDuring(classOf[Link], classOf[MAVLink], SpookyUtils.getClass) {
+          intercept[ReinforcementDepletedException] {
+            Link.trySelect(
+              Seq(drone),
+              session
+            )
+              .get
+          }
+
+          val badLink = Link.existing(drone)
+          badLink.statusString.shouldBeLike(
+            "Link DRONE@dummy is unreachable for ......"
+          )
+          assert {
+            val e = badLink.lastFailureOpt.get._1
+            e.isInstanceOf[PyInterpretationException] || e.isInstanceOf[MultiCauseWrapper]
+          }
+        }
+      }
+
+      it("Link.connect()/disconnect() should not leave dangling process") {
+        val linkRDD: RDD[Link] = getLinkRDD(spooky)
+        linkRDD.foreach {
+          link =>
+            for (_ <- 1 to 2) {
+              link.connect()
+              link.disconnect()
+            }
+        }
+        //wait for zombie process to be deregistered
+        SpookyUtils.retry(5, 2000) {
+          sc.foreachComputer {
+            SpookyEnvFixture.processShouldBeClean(Seq("mavproxy"), Seq("mavproxy"), cleanSweepNotInTask = false)
+          }
+        }
+      }
+
+      for (factory2 <- factories) {
 
         it(
-          s"$testPrefix~>${factory2.getClass.getSimpleName}:" +
+          s"~> ${factory2.getClass.getSimpleName}:" +
             s" available Link can be recommissioned in another TaskContext"
         ) {
 
           val factory1 = spooky.getConf[UAVConf].linkFactory
 
           val linkRDD1: RDD[Link] = getLinkRDD(spooky)
-          linkRDD1.foreach {
-            link =>
-              link.isBooked = false
-          }
+          //          linkRDD1.foreach {
+          //            link =>
+          //              link.isBooked = false
+          //          }
 
           spooky.getConf[UAVConf].linkFactory = factory2
           spooky.rebroadcast()

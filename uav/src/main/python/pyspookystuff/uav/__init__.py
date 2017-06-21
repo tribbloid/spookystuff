@@ -1,16 +1,13 @@
 from __future__ import print_function
 
 import logging
-
 import time
 
-import sys
 from dronekit import LocationGlobal, LocationGlobalRelative, LocationLocal, APIException
 from dronekit import Vehicle, VehicleMode
 
 from pyspookystuff.uav import const
 from pyspookystuff.uav.utils import retry
-
 
 class UAVException(Exception):
     pass
@@ -28,20 +25,7 @@ class VehicleFunctions(object):
         self.localOrigin = None
         self._homeLocation = None
 
-    # all the following are blocking API
-    @retry(const.armRetries)
-    def assureClearanceAlt(self, minAlt, maxAlt=121.92, error=None):  # max altitute capped to 400 ftp
-        # type: (float, float) -> None
-        if not error:
-            error = stdDeviance(minAlt)
-
-        alt = self.vehicle.location.global_relative_frame.alt
-        if (minAlt - alt) <= error:
-            logging.info("already reach clearance altitude")
-        else:
-            self.getToClearanceAlt(minAlt, maxAlt, error)
-
-    def mode(self, mode="GUIDED"):
+    def setMode(self, mode="GUIDED"):
         # type: (str) -> None
         """
         mode_mapping_apm = {
@@ -122,7 +106,7 @@ mode_mapping_tracker = {
 
         if self.vehicle.armed: return
 
-        self.mode(mode)
+        self.setMode(mode)
 
         if preArmCheck:
             def isArmable(i):
@@ -144,6 +128,19 @@ mode_mapping_tracker = {
             return self.vehicle.armed == False
 
         self.waitFor(isUnarmed, 60)
+
+    # all the following are blocking API
+    @retry(const.armRetries)
+    def assureClearanceAlt(self, minAlt, maxAlt=121.92, error=None):  # max altitude capped to 400 ft
+        # type: (float, float) -> None
+        if not error:
+            error = stdDeviance(minAlt)
+
+        alt = self.vehicle.location.global_relative_frame.alt
+        if (minAlt - alt) <= error:
+            logging.info("already reach clearance altitude")
+        else:
+            self.getToClearanceAlt(minAlt, maxAlt, error)
 
     def getToClearanceAlt(self, minAlt, maxAlt, error):
         # type: (float, float) -> None
@@ -299,7 +296,8 @@ mode_mapping_tracker = {
                         print("Engaging thruster")
                 oldDistance = distance
             else:  # Stop action if we are no longer in guided mode.
-                print("Control has been relinquished to GCS")
+                mode = self.vehicle.mode.name
+                print("Control taken over by", mode)
                 oldDistance = None
 
             self.failOnTimeout()

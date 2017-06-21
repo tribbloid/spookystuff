@@ -12,11 +12,19 @@ case class DummyLink(
                       uav: UAV
                     ) extends Link {
 
+  override val exclusiveURIs: Seq[String] = uav.uris
+
   override protected def _connect(): Unit = {}
 
   override protected def _disconnect(): Unit = {}
 
-  override def coFactory(another: Link): Boolean = false
+  override def coFactory(v: Link): Boolean = {
+    v match {
+      case DummyLink(u2) => u2 == this.uav
+      case _ => false
+    }
+  }
+//  override def coFactory(v: Link): Boolean = false
 
   override protected def _getHome: Location = {UAVConf.DEFAULT_HOME_LOCATION}
 

@@ -25,6 +25,10 @@ object Link {
   // only 1 allowed per connStr, how to enforce?
   val existing: caching.ConcurrentMap[UAV, Link] = caching.ConcurrentMap()
 
+  def threadStr(thread: Thread): String = {
+    "Thread-" + thread.getId + s"[${thread.getName}]"
+  }
+
   def trySelect(
                  uavs: Seq[UAV],
                  session: Session,
@@ -38,10 +42,10 @@ object Link {
     val sessionThreadOpt = Some(session.lifespan.ctx.thread)
 
     val threadLocalOpt = {
-      val results = Link.existing.values.toList.filter{
+      val id2Opt = sessionThreadOpt.map(_.getId)
+      val results = Link.existing.values.toList.filter {
         v =>
           val id1Opt = v.usedByThreadOpt.map(_.getId)
-          val id2Opt = sessionThreadOpt.map(_.getId)
           val lMatch = (id1Opt, id2Opt) match {
             case (Some(tc1), Some(tc2)) if tc1 == tc2 => true
             case _ => false
@@ -49,32 +53,49 @@ object Link {
           lMatch
       }
       assert(results.size <= 1, "Multiple Links cannot share task context or thread")
-      val result = results.headOption
-      result.foreach(_.usedByThread = session.lifespan.ctx.thread)
-      result
+      val opt = results.headOption
+      opt.foreach(_.usedByThread = session.lifespan.ctx.thread)
+      opt
     }
 
-    val resultOpt = threadLocalOpt.orElse {
+    val recommissionedOpt = threadLocalOpt match {
+      case None =>
+        LoggerFactory.getLogger(this.getClass).info (
+          s"ThreadLocal link not found: ${threadStr(session.lifespan.ctx.thread)}" +
+            s" <\\- ${Link.existing.values.flatMap(_.usedByThreadOpt.map(threadStr)).mkString("[", ",", "]")}"
+        )
+        None
+      case Some(threadLocal) =>
+        val result = if (recommissionWithNewProxy) {
+          val factory = session.spooky.getConf[UAVConf].linkFactory
+          threadLocal.recommission(factory)
+        }
+        else {
+          threadLocal
+        }
+        Some(result)
+    }
+
+    // no need to recommission if the link is fresh
+    val resultOpt = recommissionedOpt.orElse {
       val links = uavs.map(_.getLink(session.spooky))
 
       this.synchronized {
         val available = links.filter(v => v.isAvailable)
-        val selectedOpt = prefer(available)
-        selectedOpt.foreach(_.usedByThread = session.lifespan.ctx.thread)
-        selectedOpt
+        val opt = prefer(available)
+        opt.foreach(_.usedByThread = session.lifespan.ctx.thread)
+        opt
       }
     }
 
+    //    resultOpt.foreach {
+    //      v =>
+    //        v.detectConflicts()
+    //    }
+
     resultOpt match {
       case Some(link) =>
-        val result = if (recommissionWithNewProxy) {
-          val factory = session.spooky.getConf[UAVConf].linkFactory
-          link.recommission(factory)
-        }
-        else {
-          link
-        }
-        Success(result)
+        Success(link)
       case None =>
         val info = if (Link.existing.isEmpty) {
           val msg = s"No telemetry Link for ${uavs.mkString("[", ", ", "]")}, existing links are:"
@@ -95,18 +116,20 @@ object Link {
     }
   }
 
-  def allConflicts = {
+  def allConflicts: Seq[Try[Unit]] = {
     Seq(
       Try(PyRef.sanityCheck()),
       Try(MAVLink.sanityCheck())
     ) ++
-      DetectResourceConflict.conflicts
+      ConflictDetection.conflicts
   }
 }
 
 trait Link extends LocalCleanable {
 
   val uav: UAV
+
+  val exclusiveURIs: Seq[String]
 
   @volatile protected var _spooky: SpookyContext = _
   def spookyOpt = Option(_spooky)
@@ -118,19 +141,24 @@ trait Link extends LocalCleanable {
     spookyOpt.get.spookyMetrics.linkCreated += 1
   }
 
-  def setContext(
+  def setFactory(
                   spooky: SpookyContext = this._spooky,
                   factory: LinkFactory = this._factory
-                ): this.type = this.synchronized{
+                ): this.type = Link.synchronized{
 
     try {
       _spooky = spooky
       _factory = factory
       //      _taskContext = taskContext
-      spookyOpt.foreach(v => runOnce)
+      spookyOpt.foreach(_ => runOnce)
 
       val inserted = Link.existing.getOrElseUpdate(uav, this)
-      assert(inserted eq this, s"Multiple Links created for drone $uav")
+      assert(
+        inserted eq this,
+        {
+          s"Multiple Links created for UAV $uav"
+        }
+      )
 
       this
     }
@@ -197,7 +225,17 @@ trait Link extends LocalCleanable {
 
   @volatile var lastFailureOpt: Option[(Throwable, Long)] = None
 
-  protected def detectConflicts(): Unit = {}
+  protected def detectConflicts(): Unit = {
+    val notMe: Seq[Link] = Link.existing.values.toList.filterNot(_ eq this)
+
+    for (
+      myURI <- this.exclusiveURIs;
+      notMe1 <- notMe
+    ) {
+      val notMyURIs = notMe1.exclusiveURIs
+      assert(!notMyURIs.contains(myURI), s"'$myURI' is already used by link ${notMe1.uav}")
+    }
+  }
 
   /**
     * A utility function that all implementation should ideally be enclosed
@@ -280,7 +318,7 @@ trait Link extends LocalCleanable {
       strs += s"unreachable for ${(System.currentTimeMillis() - lastFailureOpt.get._2).toDouble / 1000}s" +
         s" (${lastFailureOpt.get._1.getClass.getSimpleName})"
     if (!isNotUsedByThread)
-      strs += s"used by ${_usedByThread}"
+      strs += s"used by ${Link.threadStr(_usedByThread)}"
 
     s"Link $uav is " + {
       if (isAvailable) {
@@ -308,12 +346,12 @@ trait Link extends LocalCleanable {
     }
     else {
       LoggerFactory.getLogger(this.getClass).info {
-        s"Recreating link with new factory ${factory.getClass.getSimpleName}"
+        s"Recreating link for $uav with new factory ${factory.getClass.getSimpleName}"
       }
       this.clean(silent = true)
       neo
     }
-    result.setContext(
+    result.setFactory(
       this._spooky,
       factory
     )

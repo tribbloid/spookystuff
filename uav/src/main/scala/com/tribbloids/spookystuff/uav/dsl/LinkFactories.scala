@@ -32,10 +32,9 @@ object LinkFactories {
     // you can't distinguish vehicle failure and proxy failure, your best shot is to always use a random port for primary out
     def apply(endpoint: UAV): Link = {
 
-      //      LinkFactories.synchronized {
       val existing: Seq[String] = Link.existing.values.toSeq
         .flatMap {
-          case v: MAVLink => v.allURIs
+          _.exclusiveURIs
         }
       val available = toSpark.filter {
         v =>
@@ -51,14 +50,11 @@ object LinkFactories {
         gcsOuts
       )
       result
-      //      }
     }
   }
 }
 
-abstract class LinkFactory {
+abstract class LinkFactory extends Serializable {
 
   def apply(uav: UAV): Link
-
-  //    def canCreate()
 }

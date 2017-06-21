@@ -1,7 +1,7 @@
 package com.tribbloids.spookystuff.uav.telemetry.mavlink
 
 import com.tribbloids.spookystuff.uav.UAVConf
-import com.tribbloids.spookystuff.session.DetectResourceConflict
+import com.tribbloids.spookystuff.session.ConflictDetection
 import com.tribbloids.spookystuff.session.python._
 
 /**
@@ -17,7 +17,7 @@ case class Proxy(
                   baudRate: Int,
                   ssid: Int = UAVConf.PROXY_SSID,
                   name: String
-                ) extends CaseInstanceRef with BindedRef with DetectResourceConflict {
+                ) extends CaseInstanceRef with BindedRef with ConflictDetection {
 
   assert(!outs.contains(master))
   override lazy val resourceIDs = Map(

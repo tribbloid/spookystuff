@@ -45,9 +45,13 @@ class TestHelper() {
   final val EXECUTOR_JVM_MEMORY_OVERHEAD = 256
 
   lazy val maxCores = {
-    var n = Option(props.getProperty("maxCores")).map(_.toInt).getOrElse {
-      Runtime.getRuntime.availableProcessors()
-    }
+    val max = Option(props.getProperty("maxCores")).map(_.toInt)
+      .getOrElse(Int.MaxValue)
+    var n = Math.min (
+      Runtime.getRuntime.availableProcessors(),
+      max
+    )
+
     if (n < 2) n = 2
     n
   }
