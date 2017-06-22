@@ -35,10 +35,9 @@ abstract class LinkITFixture extends UAVFixture {
 
   override lazy val linkFactory: LinkFactory = LinkFactories.Direct
 
-  var acc: Int = 0
-  def assertLinkCreated(n: Int): Unit ={
-    acc += spooky.spookyMetrics.linkCreated.value
-    assert(acc == n)
+  def assertMaxLinkCreated(n: Int): Unit = {
+    val acc = spooky.spookyMetrics.linkCreated.value
+    assert(acc <= n)
   }
 
   it("move 1 drone") {
@@ -52,7 +51,7 @@ abstract class LinkITFixture extends UAVFixture {
     val location = rdd.collect().head
 
     println(location)
-    assertLinkCreated(1)
+    assertMaxLinkCreated(1)
   }
 
   it("move drones to different directions") {
@@ -69,7 +68,7 @@ abstract class LinkITFixture extends UAVFixture {
     locations.toSeq.foreach(
       println
     )
-    assertLinkCreated(parallelism)
+    assertMaxLinkCreated(parallelism)
   }
 
   it("move all drones several times") {
@@ -94,6 +93,6 @@ abstract class LinkITFixture extends UAVFixture {
     locations.toSeq.foreach(
       println
     )
-    assertLinkCreated(parallelism)
+    assertMaxLinkCreated(parallelism)
   }
 }

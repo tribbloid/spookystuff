@@ -23,8 +23,7 @@ case class UAV(
   val primaryURI = uris.head
 
   def getLink(
-               spooky: SpookyContext,
-               tryConnect: Boolean = true
+               spooky: SpookyContext
              ): Link = {
 
     var newLink: Boolean = false
@@ -42,9 +41,6 @@ case class UAV(
           link
         }
       )
-    }
-    if (newLink && tryConnect) Try {
-      link.connect()
     }
 
     link

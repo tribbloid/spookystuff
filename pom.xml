@@ -69,13 +69,13 @@
     <!--</build>-->
     <!--</profile>-->
 
-    <profile>
-      <id>spark-1.4</id>
-      <properties>
-        <spark.version>1.4.1</spark.version>
-        <spark.binary.version>1.4</spark.binary.version>
-      </properties>
-    </profile>
+    <!--<profile>-->
+      <!--<id>spark-1.4</id>-->
+      <!--<properties>-->
+        <!--<spark.version>1.4.1</spark.version>-->
+        <!--<spark.binary.version>1.4</spark.binary.version>-->
+      <!--</properties>-->
+    <!--</profile>-->
 
     <profile>
       <id>spark-1.5</id>

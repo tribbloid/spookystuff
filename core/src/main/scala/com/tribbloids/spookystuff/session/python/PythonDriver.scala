@@ -268,7 +268,7 @@ class PythonDriver(
       case None =>
       case Some(i) =>
         val split = rows.splitAt(i._2)
-        throw new PyInterpretationException(
+        throw PyInterpretationException(
           indentedCode,
           split._2.slice(1, Int.MaxValue).mkString("\n"),
           historyCodeOpt = historyCodeOpt

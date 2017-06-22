@@ -58,7 +58,7 @@ abstract class LinkFixture extends UAVFixture {
     spooky =>
 
       it("Link should use different UAVs") {
-        for (i <- 0 to 5) {
+        for (i <- 0 to 10) {
           println(s"=========== $i ===========")
           val linkRDD: RDD[Link] = getLinkRDD(spooky)
           val uavs = linkRDD.map(_.uav).collect().toSeq
@@ -111,7 +111,7 @@ abstract class LinkFixture extends UAVFixture {
             )
               .get
         }
-        TestHelper.assert(link.isNotBlacklisted, "link is blacklisted")
+        TestHelper.assert(link.isReachable, "link is blacklisted")
         TestHelper.assert(link.factoryOpt.get == spooky.getConf[UAVConf].linkFactory, "link doesn't comply to factory")
         //        link.isBooked = true
         //        Thread.sleep(5000) //otherwise a task will complete so fast such that another task hasn't start yet.

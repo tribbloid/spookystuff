@@ -26,7 +26,12 @@ object Link {
   val existing: caching.ConcurrentMap[UAV, Link] = caching.ConcurrentMap()
 
   def threadStr(thread: Thread): String = {
-    "Thread-" + thread.getId + s"[${thread.getName}]"
+    "Thread-" + thread.getId + s"[${thread.getName}]" +
+      {
+        if (thread.isInterrupted) "(interrupted)"
+        if (!thread.isAlive) "(dead)"
+        else ""
+      }
   }
 
   def trySelect(
@@ -62,40 +67,58 @@ object Link {
       case None =>
         LoggerFactory.getLogger(this.getClass).info (
           s"ThreadLocal link not found: ${threadStr(session.lifespan.ctx.thread)}" +
-            s" <\\- ${Link.existing.values.flatMap(_.usedByThreadOpt.map(threadStr)).mkString("[", ",", "]")}"
+            s" <\\- ${Link.existing.values.flatMap(_.usedByThreadOpt.map(threadStr))
+              .mkString("{", ", ", "}")}"
         )
         None
       case Some(threadLocal) =>
-        val result = if (recommissionWithNewProxy) {
+        val v = if (recommissionWithNewProxy) {
           val factory = session.spooky.getConf[UAVConf].linkFactory
           threadLocal.recommission(factory)
         }
         else {
           threadLocal
         }
-        Some(result)
+        Try{
+          v.connect()
+          v
+        }
+          .toOption
     }
 
-    // no need to recommission if the link is fresh
-    val resultOpt = recommissionedOpt.orElse {
-      val links = uavs.map(_.getLink(session.spooky))
+    // no need to recommission if the link is fre
+    val resultOpt = recommissionedOpt
+      .orElse {
+        val links = uavs.flatMap{
+          uav =>
+            val vv = uav.getLink(session.spooky)
+            Try {
+              vv.connect()
+              vv
+            }
+              .toOption
+        }
 
-      this.synchronized {
-        val available = links.filter(v => v.isAvailable)
-        val opt = prefer(available)
-        opt.foreach(_.usedByThread = session.lifespan.ctx.thread)
+        val opt = this.synchronized {
+          val available = links.filter(v => v.isAvailable)
+          val opt = prefer(available)
+          opt.foreach(_.usedByThread = session.lifespan.ctx.thread)
+          opt
+        }
+
         opt
       }
-    }
 
     //    resultOpt.foreach {
     //      v =>
-    //        v.detectConflicts()
+    //        v.connect()
     //    }
 
     resultOpt match {
       case Some(link) =>
-        Success(link)
+        Success {
+          link
+        }
       case None =>
         val info = if (Link.existing.isEmpty) {
           val msg = s"No telemetry Link for ${uavs.mkString("[", ", ", "]")}, existing links are:"
@@ -296,7 +319,7 @@ trait Link extends LocalCleanable {
     .getOrElse(UAVConf.BLACKLIST_RESET_AFTER)
     .toMillis
 
-  def isNotBlacklisted: Boolean = !lastFailureOpt.exists {
+  def isReachable: Boolean = !lastFailureOpt.exists {
     tt =>
       System.currentTimeMillis() - tt._2 <= blacklistDuration
   }
@@ -306,7 +329,7 @@ trait Link extends LocalCleanable {
   }
 
   def isAvailable: Boolean = {
-    !isBooked && isNotBlacklisted && isNotUsedByThread
+    !isBooked && isReachable && isNotUsedByThread
   }
 
   def statusString: String = {
@@ -314,7 +337,7 @@ trait Link extends LocalCleanable {
     val strs = ArrayBuffer[String]()
     if (isBooked)
       strs += "booked"
-    if (!isNotBlacklisted)
+    if (!isReachable)
       strs += s"unreachable for ${(System.currentTimeMillis() - lastFailureOpt.get._2).toDouble / 1000}s" +
         s" (${lastFailureOpt.get._1.getClass.getSimpleName})"
     if (!isNotUsedByThread)

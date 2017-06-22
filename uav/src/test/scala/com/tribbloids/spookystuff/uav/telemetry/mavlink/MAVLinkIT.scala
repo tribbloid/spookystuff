@@ -65,6 +65,6 @@ class MAVLinkIT_Proxy extends MAVLinkIT {
     val location = rdd.collect().head
 
     println(location)
-    assertLinkCreated(parallelism)
+    assertMaxLinkCreated(parallelism)
   }
 }
