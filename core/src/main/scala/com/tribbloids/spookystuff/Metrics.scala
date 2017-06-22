@@ -68,7 +68,7 @@ abstract class Metrics extends MessageAPI with Product with Serializable {
 
 object SpookyMetrics extends Submodules.Builder[SpookyMetrics] {
 
-  override def default: SpookyMetrics = SpookyMetrics()
+  override implicit def default: SpookyMetrics = SpookyMetrics()
 }
 
 //TODO: change to multi-level
@@ -104,14 +104,7 @@ case class SpookyMetrics(
                           fetchFromRemoteSuccess: Accumulator[Int] = Metrics.accumulator(0, "fetchFromRemoteSuccess"),
                           fetchFromRemoteFailure: Accumulator[Int] = Metrics.accumulator(0, "fetchFromRemoteFailure"),
 
-                          pagesSaved: Accumulator[Int] = Metrics.accumulator(0, "pagesSaved"),
+                          pagesSaved: Accumulator[Int] = Metrics.accumulator(0, "pagesSaved")
 
-                          //TODO: move to MAV component
-                          //                          proxyCreated: Accumulator[Int] = SpookyMetrics.accumulator(0, "mavProxyCreated"),
-                          //                          proxyDestroyed: Accumulator[Int] = SpookyMetrics.accumulator(0, "mavProxyCreated"),
-
-                          linkCreated: Accumulator[Int] = Metrics.accumulator(0, "linkCreated"),
-                          linkDestroyed: Accumulator[Int] = Metrics.accumulator(0, "linkDestroyed")
-                          //                          linkRefitted: Accumulator[Int] = Metrics.accumulator(0, "linkRefitted")
                         ) extends Metrics {
 }

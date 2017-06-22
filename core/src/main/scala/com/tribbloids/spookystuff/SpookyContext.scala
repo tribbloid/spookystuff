@@ -78,7 +78,7 @@ case class SpookyContext (
     }
   }
 
-  def getConf[T <: AbstractConf](implicit ev: Submodules.Builder[T]): T = {
+  def getConf[T <: AbstractConf: Submodules.Builder]: T = {
     configurations.getOrBuild[T]
   }
 
@@ -143,12 +143,14 @@ case class SpookyContext (
     TreeException.&&&(trials)
   }
 
-  def metrics = {
+  def metrics: Submodules[Metrics] = {
     _metrics.buildAll[Metrics]()
     _metrics
   }
 
-  def spookyMetrics: SpookyMetrics = metrics.getOrBuild[SpookyMetrics]
+  def getMetrics[T <: Metrics: Submodules.Builder]: T = metrics.getOrBuild[T]
+
+  def spookyMetrics: SpookyMetrics = getMetrics[SpookyMetrics]
 
   def zeroMetrics(): SpookyContext ={
     metrics.foreach {

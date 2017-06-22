@@ -5,7 +5,7 @@ import com.tribbloids.spookystuff.testutils.TestHelper
 import com.tribbloids.spookystuff.uav.dsl.LinkFactory
 import com.tribbloids.spookystuff.uav.system.UAV
 import com.tribbloids.spookystuff.uav.telemetry.mavlink.MAVLink
-import com.tribbloids.spookystuff.uav.{ReinforcementDepletedException, UAVConf, UAVFixture}
+import com.tribbloids.spookystuff.uav.{ReinforcementDepletedException, UAVConf, UAVFixture, UAVMetrics}
 import com.tribbloids.spookystuff.utils.SpookyUtils
 import com.tribbloids.spookystuff.utils.TreeException.MultiCauseWrapper
 import com.tribbloids.spookystuff.{PyInterpretationException, SpookyContext, SpookyEnvFixture}
@@ -90,8 +90,8 @@ abstract class LinkFixture extends UAVFixture {
             result
         }
           .collect()
-        assert(spooky.spookyMetrics.linkCreated.value == parallelism)
-        assert(spooky.spookyMetrics.linkDestroyed.value == 0)
+        assert(spooky.getMetrics[UAVMetrics].linkCreated.value == parallelism)
+        assert(spooky.getMetrics[UAVMetrics].linkDestroyed.value == 0)
         linkStrs.foreach {
           tuple =>
             assert(tuple._1 == tuple._2)
@@ -195,22 +195,22 @@ abstract class RealLinkFixture extends LinkFixture {
 
           try {
 
-            assert(spooky.spookyMetrics.linkCreated.value == parallelism)
-            assert(spooky.spookyMetrics.linkDestroyed.value == 0)
+            assert(spooky.getMetrics[UAVMetrics].linkCreated.value == parallelism)
+            assert(spooky.getMetrics[UAVMetrics].linkDestroyed.value == 0)
 
             val linkRDD2: RDD[Link] = getLinkRDD(spooky)
 
             if (factory1 == factory2) {
-              assert(spooky.spookyMetrics.linkCreated.value == parallelism)
-              assert(spooky.spookyMetrics.linkDestroyed.value == 0)
+              assert(spooky.getMetrics[UAVMetrics].linkCreated.value == parallelism)
+              assert(spooky.getMetrics[UAVMetrics].linkDestroyed.value == 0)
               linkRDD1.map(_.toString).collect().mkString("\n").shouldBe (
                 linkRDD2.map(_.toString).collect().mkString("\n"),
                 sort = true
               )
             }
             else {
-              assert(spooky.spookyMetrics.linkCreated.value == parallelism) // TODO: should be parallelism*2!
-              assert(spooky.spookyMetrics.linkDestroyed.value == 0)
+              assert(spooky.getMetrics[UAVMetrics].linkCreated.value == parallelism) // TODO: should be parallelism*2!
+              assert(spooky.getMetrics[UAVMetrics].linkDestroyed.value == 0)
               linkRDD1.map(_.uav).collect().mkString("\n").shouldBe (
                 linkRDD2.map(_.uav).collect().mkString("\n"),
                 sort = true

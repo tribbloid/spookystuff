@@ -7,7 +7,7 @@ import com.tribbloids.spookystuff.uav.dsl.LinkFactory
 import com.tribbloids.spookystuff.uav.spatial._
 import com.tribbloids.spookystuff.uav.system.UAV
 import com.tribbloids.spookystuff.uav.telemetry.mavlink.MAVLink
-import com.tribbloids.spookystuff.uav.{ReinforcementDepletedException, UAVConf}
+import com.tribbloids.spookystuff.uav.{ReinforcementDepletedException, UAVConf, UAVMetrics}
 import com.tribbloids.spookystuff.utils.{SpookyUtils, TreeException}
 import com.tribbloids.spookystuff.{SpookyContext, caching}
 import org.slf4j.LoggerFactory
@@ -161,7 +161,7 @@ trait Link extends LocalCleanable {
   def factoryOpt = Option(_factory)
 
   lazy val runOnce: Unit = {
-    spookyOpt.get.spookyMetrics.linkCreated += 1
+    spookyOpt.get.getMetrics[UAVMetrics].linkCreated += 1
   }
 
   def setFactory(
@@ -220,7 +220,7 @@ trait Link extends LocalCleanable {
     }
     spookyOpt.foreach {
       spooky =>
-        spooky.spookyMetrics.linkDestroyed += 1
+        spooky.getMetrics[UAVMetrics].linkDestroyed += 1
     }
   }
 
