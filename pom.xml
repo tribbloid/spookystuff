@@ -4,6 +4,41 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
 
+  <groupId>com.tribbloids.spookystuff</groupId>
+  <artifactId>spookystuff</artifactId>
+  <version>0.4.0-SNAPSHOT</version>
+  <packaging>pom</packaging>
+  <name>spookystuff</name>
+  <description>Scalable Query Engine for Data Acquisition based on Apache Spark</description>
+  <url>http://tribbloid.github.io/spookystuff/</url>
+  <licenses>
+    <license>
+      <name>The Apache License, Version 2.0</name>
+      <url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
+    </license>
+  </licenses>
+  <developers>
+    <developer>
+      <name>Peng Cheng</name>
+      <email>pc175@uow.edu.au</email>
+      <organization>tribbloids.com</organization>
+      <organizationUrl>http://tribbloid.github.io</organizationUrl>
+    </developer>
+  </developers>
+  <scm>
+    <connection>scm:git:git@github.com:tribbloid/spookystuff.git</connection>
+    <developerConnection>scm:git:git@github.com:tribbloid/spookystuff.git</developerConnection>
+    <url>git@github.com:tribbloid/spookystuff.git</url>
+  </scm>
+
+  <modules>
+    <module>core</module>
+    <module>integration</module>
+    <!--<module>pipeline</module>-->
+    <module>example</module>
+    <module>assembly</module>
+  </modules>
+
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
@@ -14,10 +49,12 @@
     <scala.fallback.version>2.10</scala.fallback.version>
     <spark.version>1.6.3</spark.version>
     <spark.binary.version>1.6</spark.binary.version>
+    <spark.assembly.version>${spark.binary.version}</spark.assembly.version>
     <spark.classifier>spark${spark.binary.version}</spark.classifier>
     <PermGen>512m</PermGen>
     <MaxPermGen>2g</MaxPermGen>
     <failsafe.version>2.18</failsafe.version>
+    <cdh.suffix>cdh5.8.4</cdh.suffix>
   </properties>
 
   <profiles>
@@ -103,6 +140,14 @@
     </profile>
 
     <profile>
+      <id>spark-cdh5</id>
+      <properties>
+        <spark.version>1.6.0-${cdh.suffix}</spark.version>
+        <spark.assembly.version>${spark.binary.version}-cdh5</spark.assembly.version>
+      </properties>
+    </profile>
+
+    <profile>
       <id>release-sign-artifacts</id>
       <build>
         <plugins>
@@ -132,40 +177,77 @@
     </profile>
   </profiles>
 
-  <groupId>com.tribbloids.spookystuff</groupId>
-  <artifactId>spookystuff</artifactId>
-  <version>0.4.0-SNAPSHOT</version>
-  <packaging>pom</packaging>
-  <name>spookystuff</name>
-  <description>Scalable Query Engine for Data Acquisition based on Apache Spark</description>
-  <url>http://tribbloid.github.io/spookystuff/</url>
-  <licenses>
-    <license>
-      <name>The Apache License, Version 2.0</name>
-      <url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
-    </license>
-  </licenses>
-  <developers>
-    <developer>
-      <name>Peng Cheng</name>
-      <email>pc175@uow.edu.au</email>
-      <organization>tribbloids.com</organization>
-      <organizationUrl>http://tribbloid.github.io</organizationUrl>
-    </developer>
-  </developers>
-  <scm>
-    <connection>scm:git:git@github.com:tribbloid/spookystuff.git</connection>
-    <developerConnection>scm:git:git@github.com:tribbloid/spookystuff.git</developerConnection>
-    <url>git@github.com:tribbloid/spookystuff.git</url>
-  </scm>
 
-  <modules>
-    <module>core</module>
-    <module>integration</module>
-    <!--<module>pipeline</module>-->
-    <module>example</module>
-    <module>assembly</module>
-  </modules>
+  <repositories>
+    <repository>
+      <id>apache-repo</id>
+      <name>Apache Repository</name>
+      <url>https://repository.apache.org/content/repositories/releases</url>
+      <releases>
+        <enabled>true</enabled>
+      </releases>
+      <snapshots>
+        <enabled>false</enabled>
+      </snapshots>
+    </repository>
+    <repository>
+      <id>typesafe</id>
+      <name>typesafe - releases</name>
+      <url>http://repo.typesafe.com/typesafe/releases/</url>
+      <snapshots>
+        <enabled>false</enabled>
+      </snapshots>
+    </repository>
+    <repository>
+      <id>cloudera</id>
+      <url>https://repository.cloudera.com/artifactory/cloudera-repos/</url>
+    </repository>
+    <repository>
+      <id>typesafe-ivy</id>
+      <name>Typesafe - ivy - releases</name>
+      <url>http://repo.typesafe.com/typesafe/maven-ivy-releases/</url>
+      <snapshots>
+        <enabled>false</enabled>
+      </snapshots>
+    </repository>
+    <repository>
+      <id>oss.sonatype.org</id>
+      <name>sonatype snapshots</name>
+      <url>https://oss.sonatype.org/content/repositories/snapshots</url>
+    </repository>
+    <repository>
+      <id>IESL Releases</id>
+      <name>IESL Repo</name>
+      <url>https://dev-iesl.cs.umass.edu/nexus/content/groups/public</url>
+      <snapshots>
+        <enabled>false</enabled>
+      </snapshots>
+      <releases>
+        <enabled>true</enabled>
+      </releases>
+    </repository>
+    <!--<repository>-->
+    <!--<id>clojars.org</id>-->
+    <!--<url>http://clojars.org/repo</url>-->
+    <!--</repository>-->
+    <repository>
+      <id>DataNucleus_Repos2</id>
+      <name>DataNucleus Repository</name>
+      <url>http://www.datanucleus.org/downloads/maven2</url>
+    </repository>
+
+    <repository>
+      <id>maven.oracle.com</id>
+      <releases>
+        <enabled>true</enabled>
+      </releases>
+      <snapshots>
+        <enabled>false</enabled>
+      </snapshots>
+      <url>https://maven.oracle.com</url>
+      <layout>default</layout>
+    </repository>
+  </repositories>
 
   <dependencies>
     <dependency>

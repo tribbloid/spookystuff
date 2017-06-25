@@ -28,7 +28,7 @@ class GenPartitionersSuite extends UAVFixture {
 
     lazy val genPartitioner = GenPartitioners.JSprit()
 
-    ignore("can optimize max cost of 1 waypoint per UAV") {
+    it("can optimize max cost of 1 waypoint per UAV") {
 
       val wps = waypoints()
       val rdd = sc.parallelize(

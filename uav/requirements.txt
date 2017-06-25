@@ -1,4 +1,4 @@
-setuptools >= 36.0
+setuptools
 future >= 0.16.0
 dronekit >= 2.9
 dronekit-sitl >= 3.2

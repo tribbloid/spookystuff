@@ -13,8 +13,9 @@
 
     <properties>
         <assembly.jar.dir>scala-${scala.binary.version}</assembly.jar.dir>
-        <assembly.jar.basename>${project.artifactId}-${project.version}-${spark.classifier}.jar</assembly.jar.basename>
-        <example.jar.basename>${project.parent.artifactId}-example-${project.version}-${spark.classifier}.jar</example.jar.basename>
+        <assembly.jar.suffix>spark${spark.assembly.version}</assembly.jar.suffix>
+        <assembly.jar.basename>${project.artifactId}-${project.version}-${assembly.jar.suffix}.jar</assembly.jar.basename>
+        <example.jar.basename>${project.parent.artifactId}-example-${project.version}-${assembly.jar.suffix}.jar</example.jar.basename>
     </properties>
 
     <profiles>
