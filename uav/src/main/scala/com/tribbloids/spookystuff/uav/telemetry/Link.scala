@@ -10,6 +10,7 @@ import com.tribbloids.spookystuff.uav.telemetry.mavlink.MAVLink
 import com.tribbloids.spookystuff.uav.{ReinforcementDepletedException, UAVConf, UAVMetrics}
 import com.tribbloids.spookystuff.utils.{SpookyUtils, TreeException}
 import com.tribbloids.spookystuff.{SpookyContext, caching}
+import org.apache.spark.rdd.RDD
 import org.slf4j.LoggerFactory
 
 import scala.collection.mutable.ArrayBuffer
@@ -20,6 +21,8 @@ import scala.util.{Failure, Success, Try}
   * Created by peng on 24/01/17.
   */
 object Link {
+
+  import com.tribbloids.spookystuff.utils.SpookyViews._
 
   // connStr -> (link, isBusy)
   // only 1 allowed per connStr, how to enforce?
@@ -145,6 +148,27 @@ object Link {
       Try(MAVLink.sanityCheck())
     ) ++
       ConflictDetection.conflicts
+  }
+
+  // get available drones, TODO: merge other impl to it.
+  def linkRDD(spooky: SpookyContext): RDD[(UAVStatus, Link)] = {
+
+    spooky.sparkContext
+      .mapPerExecutorCore {
+        spooky.withSession {
+          session =>
+            val uavsInFleet = spooky.getConf[UAVConf].uavsInFleetShuffled
+            val linkTry = Link.trySelect (
+              uavsInFleet,
+              session
+            )
+            linkTry.map {
+              link =>
+                link.status() -> link
+            }
+        }
+      }
+      .flatMap(_.toOption.toSeq)
   }
 }
 

@@ -1,10 +1,15 @@
 package com.tribbloids.spookystuff.uav.dsl
 
 import com.graphhopper.jsprit.core.algorithm.box.Jsprit
+import com.graphhopper.jsprit.core.algorithm.recreate.VariableTransportCostCalculator
+import com.graphhopper.jsprit.core.algorithm.state.{MaxTimeCost, MaxTimeUpdater}
+import com.graphhopper.jsprit.core.problem.constraint.ConstraintManager
 import com.graphhopper.jsprit.core.problem.job.Service
+import com.graphhopper.jsprit.core.problem.solution.VehicleRoutingProblemSolution
 import com.graphhopper.jsprit.core.problem.vehicle.{VehicleImpl, VehicleTypeImpl}
 import com.graphhopper.jsprit.core.problem.{Capacity, VehicleRoutingProblem, Location => JLocation}
 import com.graphhopper.jsprit.core.util.{Coordinate, FastVehicleRoutingTransportCostsMatrix, Solutions}
+import com.tribbloids.spookystuff.SpookyContext
 import com.tribbloids.spookystuff.actions.TraceView
 import com.tribbloids.spookystuff.dsl.GenPartitioner
 import com.tribbloids.spookystuff.dsl.GenPartitioners.Instance
@@ -23,8 +28,6 @@ import scala.reflect.ClassTag
   * Created by peng on 31/12/16.
   */
 object GenPartitioners {
-
-  import com.tribbloids.spookystuff.utils.SpookyViews._
 
   case class JSprit(
                      vizPathOpt: Option[String] = Some("output/GP.png") // for debugging only.
@@ -63,23 +66,7 @@ object GenPartitioners {
 
         val hasUAVTraces: Array[TraceView] = hasUAVRDD.collect()
 
-        // get available drones
-        val linkRDD = spooky.sparkContext
-          .mapPerExecutorCore {
-            spooky.withSession {
-              session =>
-                val uavsInFleet = spooky.getConf[UAVConf].uavsInFleetShuffled
-                val linkTry = Link.trySelect (
-                  uavsInFleet,
-                  session
-                )
-                linkTry.map {
-                  link =>
-                    link.status() -> link
-                }
-            }
-          }
-          .flatMap(_.toOption.toSeq)
+        val linkRDD = Link.linkRDD(spooky)
         val links = linkRDD.keys.collect()
 
         val traces_linkOpts_indices: Array[((TraceView, Option[UAVStatus]), Int)] = {
@@ -97,121 +84,8 @@ object GenPartitioners {
 
           (fromLinks ++ fromTraces).zipWithIndex
         }
-        val trace_indices: Array[(TraceView, Int)] = traces_linkOpts_indices.map {
-          triplet =>
-            triplet._1._1 -> triplet._2
-        }
 
-        val costEstimator = spooky.getConf[UAVConf].costEstimator
-        val homeLocation = spooky.getConf[UAVConf].homeLocation
-
-        val dMat = for (
-          i <- trace_indices;
-          j <- trace_indices
-        ) yield {
-          val traceView: TraceView = i._1
-          val last = traceView.children.collect{case v: UAVNavigation => v}.last
-          val lastLocation = last._to
-          val cost = costEstimator.estimate(
-            List(WrapLocation(lastLocation)) ++ j._1.children,
-            spooky
-          )
-          (i._2, j._2, cost)
-        }
-
-        val jCosts = {
-          val builder = FastVehicleRoutingTransportCostsMatrix.Builder
-            .newInstance(trace_indices.length, false)
-          dMat.foreach {
-            entry =>
-              builder.addTransportDistance(entry._1, entry._2, entry._3)
-          }
-          builder.build()
-        }
-
-        val cap = Capacity.Builder.newInstance()
-          .addDimension(0, 1)
-          .build()
-        val jVType = VehicleTypeImpl.Builder.newInstance("UAV")
-          .setCapacityDimensions(cap)
-          .build()
-
-        val jVehicles = traces_linkOpts_indices
-          .flatMap {
-            triplet =>
-              triplet._1._2.map {v => v -> triplet._2}
-          }
-          .map {
-            tuple =>
-              val status = tuple._1
-              val location = status.currentLocation
-              val coord = location.getCoordinate(NED, homeLocation).get
-              val jLocation = JLocation.Builder.newInstance()
-                .setIndex(tuple._2)
-                .setCoordinate(
-                  Coordinate.newInstance(
-                    coord.east,
-                    coord.north
-                  )
-                )
-                .build()
-              val jVehicle = VehicleImpl.Builder
-                .newInstance(status.uav.fullID)
-                .setType(jVType)
-                .setStartLocation(jLocation)
-                .build()
-              jVehicle
-          }
-
-        //TODO: why not use shipment? has better visualization.
-        val jobs: Array[Service] = traces_linkOpts_indices
-          .flatMap {
-            triplet =>
-              triplet._1._2 match {
-                case Some(_) =>
-                  None
-                case None =>
-                  Some(triplet._1._1 -> triplet._2)
-              }
-          }
-          .map {
-            tuple =>
-              val navs: Seq[UAVNavigation] = tuple._1.children.collect {
-                case nav: UAVNavigation => nav
-              }
-
-              val coord = navs.head._from.getCoordinate(NED, homeLocation).get
-              val location = JLocation.Builder
-                .newInstance()
-                .setIndex(tuple._2)
-                .setCoordinate(
-                  Coordinate.newInstance(
-                    coord.east,
-                    coord.north
-                  )
-                )
-                .build()
-
-              Service.Builder.newInstance(tuple._1.TreeNode.treeString)
-                .setLocation(location)
-                .build()
-          }
-
-        val vrp = {
-          val builder = VehicleRoutingProblem.Builder.newInstance()
-            .setRoutingCost(jCosts)
-          for (v <- jVehicles) {
-            builder.addVehicle(v)
-          }
-          for (s <- jobs) {
-            builder.addJob(s)
-          }
-          builder.build()
-        }
-        val vra = Jsprit.createAlgorithm(vrp)
-
-        val solutions = vra.searchSolutions
-        val best = Solutions.bestOf(solutions)
+        val best: VehicleRoutingProblemSolution = JSprit.vrpSolution(spooky, traces_linkOpts_indices)
 
         import scala.collection.JavaConverters._
 
@@ -221,7 +95,7 @@ object GenPartitioners {
             val tours = route.getTourActivities.getActivities.asScala
             val traces = for (tour <- tours) yield {
               val index = tour.getLocation.getIndex
-              val trace = trace_indices.find(_._2 == index).get._1
+              val trace = traces_linkOpts_indices.find(_._2 == index).get._1._1
               trace
             }
             link -> traces
@@ -230,7 +104,6 @@ object GenPartitioners {
         val link_traceRDD: RDD[(UAVStatus, Seq[TraceView])] = spooky.sparkContext.parallelize(link_traces)
 
         //TODO: cogroup is expensive
-
         //if you don't know cogroup preserve sequence, don't use it.
         val realignedTraceRDD: RDD[(Seq[TraceView], Link)] = linkRDD.cogroup {
           link_traceRDD
@@ -284,6 +157,143 @@ object GenPartitioners {
         // merge with trace that doesn't contain UAVNavigations
         // also carry data with them, by treating realigned link_traceRDD like a beaconRDD.
       }
+    }
+  }
+
+  object JSprit {
+
+    // TODO: need independent test
+    def vrpSolution(spooky: SpookyContext, traces_linkOpts_indices: Array[((TraceView, Option[UAVStatus]), Int)]) = {
+      val trace_indices: Array[(TraceView, Int)] = traces_linkOpts_indices.map {
+        triplet =>
+          triplet._1._1 -> triplet._2
+      }
+
+      val costEstimator = spooky.getConf[UAVConf].costEstimator
+      val homeLocation = spooky.getConf[UAVConf].homeLocation
+
+      val dMat = for (
+        i <- trace_indices;
+        j <- trace_indices
+      ) yield {
+        val traceView: TraceView = i._1
+        val last = traceView.children.collect { case v: UAVNavigation => v }.last
+        val lastLocation = last._to
+        val cost = costEstimator.estimate(
+          List(WrapLocation(lastLocation)) ++ j._1.children,
+          spooky
+        )
+        (i._2, j._2, cost)
+      }
+
+      val jRoutingCostMat: FastVehicleRoutingTransportCostsMatrix = {
+        val builder = FastVehicleRoutingTransportCostsMatrix.Builder
+          .newInstance(traces_linkOpts_indices.length, false)
+        dMat.foreach {
+          entry =>
+            builder.addTransportDistance(entry._1, entry._2, entry._3)
+        }
+        builder.build()
+      }
+
+      val cap = Capacity.Builder.newInstance()
+        .addDimension(0, 1)
+        .build()
+      val jVType = VehicleTypeImpl.Builder.newInstance("UAV")
+        .setCapacityDimensions(cap)
+        .build()
+
+      val jVehicles = traces_linkOpts_indices
+        .flatMap {
+          triplet =>
+            triplet._1._2.map { v => v -> triplet._2 }
+        }
+        .map {
+          tuple =>
+            val status = tuple._1
+            val location = status.currentLocation
+            val coord = location.getCoordinate(NED, homeLocation).get
+            val jLocation = JLocation.Builder.newInstance()
+              .setIndex(tuple._2)
+              .setCoordinate(
+                Coordinate.newInstance(
+                  coord.east,
+                  coord.north
+                )
+              )
+              .build()
+            val jVehicle = VehicleImpl.Builder
+              .newInstance(status.uav.fullID)
+              .setType(jVType)
+              .setStartLocation(jLocation)
+              .build()
+            jVehicle
+        }
+
+      //TODO: why not use shipment? has better visualization.
+      val jobs: Array[Service] = traces_linkOpts_indices
+        .flatMap {
+          triplet =>
+            triplet._1._2 match {
+              case Some(_) =>
+                None
+              case None =>
+                Some(triplet._1._1 -> triplet._2)
+            }
+        }
+        .map {
+          tuple =>
+            val navs: Seq[UAVNavigation] = tuple._1.children.collect {
+              case nav: UAVNavigation => nav
+            }
+
+            val coord = navs.head._from.getCoordinate(NED, homeLocation).get
+            val location = JLocation.Builder
+              .newInstance()
+              .setIndex(tuple._2)
+              .setCoordinate(
+                Coordinate.newInstance(
+                  coord.east,
+                  coord.north
+                )
+              )
+              .build()
+
+            Service.Builder.newInstance(tuple._1.TreeNode.treeString)
+              .setLocation(location)
+              .build()
+        }
+      val vrp = {
+        val builder = VehicleRoutingProblem.Builder.newInstance()
+          .setRoutingCost(jRoutingCostMat)
+        for (v <- jVehicles) {
+          builder.addVehicle(v)
+        }
+        for (s <- jobs) {
+          builder.addJob(s)
+        }
+        builder.build()
+      }
+
+      val stateManager = MaxTimeUpdater.getStateManager(vrp)
+
+      val constraintManager = new ConstraintManager(vrp, stateManager)
+      // soft constraint that calculates additional transport costs when inserting a job(activity) at specified position
+      constraintManager.addConstraint(
+        new VariableTransportCostCalculator(vrp.getTransportCosts, vrp.getActivityCosts)
+      )
+
+      val objectiveFn = MaxTimeCost(stateManager)
+
+      val vra = Jsprit.Builder.newInstance(vrp)
+        .setObjectiveFunction(objectiveFn)
+        .setStateAndConstraintManager(stateManager, constraintManager)
+        .addCoreStateAndConstraintStuff(true)
+        .buildAlgorithm()
+
+      val solutions = vra.searchSolutions
+      val best = Solutions.bestOf(solutions)
+      best
     }
   }
 
