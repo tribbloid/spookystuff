@@ -32,11 +32,15 @@ class MaxTimeUpdater(
 
   override def finish(): Unit = {
     timeTracker.finish()
-    val newRouteEndTime = timeTracker.getActArrTime
-    val currentMaxTransportTime = stateManager.getProblemState(StateFactory.createId("max-transport-time"), classOf[Double])
+    val newRouteEndTime: Double = timeTracker.getActArrTime
+    val currentMaxTransportTime: Double = stateManager.getProblemState(
+      stateManager.createStateId("max-transport-time"),
+      classOf[Any]
+    )
+      .asInstanceOf[Double]
     if (newRouteEndTime > currentMaxTransportTime) stateManager.putProblemState(
-      StateFactory.createId("max-transport-time"),
-      classOf[Double],
+      stateManager.createStateId("max-transport-time"),
+      classOf[Any],
       newRouteEndTime
     )
   }
@@ -47,9 +51,9 @@ object MaxTimeUpdater {
   def getStateManager(vrp: VehicleRoutingProblem): StateManager = {
     val stateManager = new StateManager(vrp)
     //introduce a new state called "max-transport-time"
-    val max_transport_time_state = StateFactory.createId("max-transport-time")
+    val max_transport_time_state = stateManager.createStateId("max-transport-time")
     //add a default-state for "max-transport-time"
-    stateManager.putProblemState(max_transport_time_state, classOf[Double], 0.0)
+    stateManager.putProblemState(max_transport_time_state, classOf[Any], 0.0)
     //
     stateManager.addStateUpdater(new MaxTimeUpdater(stateManager, vrp.getTransportCosts))
 

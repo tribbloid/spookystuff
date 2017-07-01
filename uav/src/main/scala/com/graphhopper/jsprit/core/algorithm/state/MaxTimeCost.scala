@@ -2,7 +2,6 @@ package com.graphhopper.jsprit.core.algorithm.state
 
 import com.graphhopper.jsprit.core.problem.solution.route.state.RouteAndActivityStateGetter
 import com.graphhopper.jsprit.core.problem.solution.{SolutionCostCalculator, VehicleRoutingProblemSolution}
-import com.graphhopper.jsprit.core.problem.vehicle.Vehicle
 
 /**
   * Created by peng on 6/26/17.

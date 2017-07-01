@@ -28,7 +28,7 @@ case class MaxTimeConstraint(
     /*
      * determines maximum of all routes' transport times, which is here basically a state that can be fetched via the stateManager
      */
-    val maxTime = stateManager.getProblemState(StateFactory.createId("max-transport-time"), classOf[Double])
+    val maxTime = stateManager.getProblemState(stateManager.createStateId("max-transport-time"), classOf[Double])
 
     /*
      * determines additional time of route when inserting newAct between prevAct and nextAct

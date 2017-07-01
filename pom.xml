@@ -236,17 +236,17 @@
       <url>http://www.datanucleus.org/downloads/maven2</url>
     </repository>
 
-    <repository>
-      <id>maven.oracle.com</id>
-      <releases>
-        <enabled>true</enabled>
-      </releases>
-      <snapshots>
-        <enabled>false</enabled>
-      </snapshots>
-      <url>https://maven.oracle.com</url>
-      <layout>default</layout>
-    </repository>
+    <!--<repository>-->
+      <!--<id>maven.oracle.com</id>-->
+      <!--<releases>-->
+        <!--<enabled>true</enabled>-->
+      <!--</releases>-->
+      <!--<snapshots>-->
+        <!--<enabled>false</enabled>-->
+      <!--</snapshots>-->
+      <!--<url>https://maven.oracle.com</url>-->
+      <!--<layout>default</layout>-->
+    <!--</repository>-->
   </repositories>
 
   <dependencies>
