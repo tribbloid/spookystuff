@@ -2,6 +2,7 @@ package com.tribbloids.spookystuff.extractors
 
 import com.tribbloids.spookystuff.SpookyEnvFixture
 import com.tribbloids.spookystuff.actions._
+import com.tribbloids.spookystuff.extractors.impl.Lit
 import org.apache.spark.ml.dsl.utils.RecursiveMessageRelay
 
 /**

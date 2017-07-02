@@ -5,8 +5,9 @@ import java.sql.Timestamp
 import com.tribbloids.spookystuff.SpookyContext
 import com.tribbloids.spookystuff.actions.{Action, Trace, TraceSetView, TraceView}
 import com.tribbloids.spookystuff.doc.{Doc, DocUID, Elements, Unstructured}
-import com.tribbloids.spookystuff.extractors.Extractors._
+import com.tribbloids.spookystuff.extractors.impl.Extractors._
 import com.tribbloids.spookystuff.extractors._
+import com.tribbloids.spookystuff.extractors.impl.{AppendExpr, GetExpr, InterpolateExpr, ZippedExpr}
 import com.tribbloids.spookystuff.rdd.FetchedDataset
 import com.tribbloids.spookystuff.row.{FetchedRow, Field}
 import com.tribbloids.spookystuff.utils.{Default, UnreifiedScalaType}
@@ -283,7 +284,7 @@ sealed trait Level1 extends Level2 {
 
 class DSL extends Level1 {
 
-  import Extractors._
+  import com.tribbloids.spookystuff.extractors.impl.Extractors._
 
   def S: GenExtractor[FR, Doc] = GetOnlyDocExpr
   def S(selector: String): GenExtractor[FR, Elements[Unstructured]] = S.andFn(_.root).findAll(selector)

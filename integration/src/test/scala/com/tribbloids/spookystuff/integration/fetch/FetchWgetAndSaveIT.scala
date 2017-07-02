@@ -3,7 +3,7 @@ package com.tribbloids.spookystuff.integration.fetch
 import com.tribbloids.spookystuff.actions._
 import com.tribbloids.spookystuff.doc.DocUtils
 import com.tribbloids.spookystuff.dsl._
-import com.tribbloids.spookystuff.extractors.Lit
+import com.tribbloids.spookystuff.extractors.impl.Lit
 import com.tribbloids.spookystuff.integration.IntegrationFixture
 
 class FetchWgetAndSaveIT extends IntegrationFixture {

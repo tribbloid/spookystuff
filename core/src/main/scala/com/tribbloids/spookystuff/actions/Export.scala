@@ -10,7 +10,8 @@ import com.tribbloids.spookystuff.Const
 import com.tribbloids.spookystuff.caching.CacheLevel
 import com.tribbloids.spookystuff.doc._
 import com.tribbloids.spookystuff.dsl.DocFilters
-import com.tribbloids.spookystuff.extractors.{Extractor, FR, Lit}
+import com.tribbloids.spookystuff.extractors.impl.Lit
+import com.tribbloids.spookystuff.extractors.{Extractor, FR}
 import com.tribbloids.spookystuff.http._
 import com.tribbloids.spookystuff.row.{DataRowSchema, FetchedRow}
 import com.tribbloids.spookystuff.session.{Session, WebProxySetting}
@@ -631,7 +632,7 @@ case class WpostImpl private[actions](
       request
     }
 
-    httpInvoke(httpClient, context, request, cacheLevel = CacheLevel.None)
+    httpInvoke(httpClient, context, request, cacheLevel = CacheLevel.NoCache)
   }
 
   def writeHDFS(uri: URI, session: Session, entity: HttpEntity, overwrite: Boolean = true): Fetched = {
@@ -651,7 +652,7 @@ case class WpostImpl private[actions](
 
     val result = NoDoc(
       List(this),
-      cacheLevel = CacheLevel.None,
+      cacheLevel = CacheLevel.NoCache,
       metadata = Map("byteUploaded" -> size)
     )
     result
@@ -671,7 +672,7 @@ case class WpostImpl private[actions](
 
     val result = NoDoc(
       List(this),
-      cacheLevel = CacheLevel.None
+      cacheLevel = CacheLevel.NoCache
     )
 
     result

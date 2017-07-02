@@ -1,7 +1,7 @@
 package com.tribbloids.spookystuff.execution
 
 import com.tribbloids.spookystuff.SpookyEnvFixture
-import com.tribbloids.spookystuff.extractors.Lit
+import com.tribbloids.spookystuff.extractors.impl.Lit
 import com.tribbloids.spookystuff.utils.UnreifiedScalaType
 import org.apache.spark.sql.types.{IntegerType, StringType, StructField, StructType}
 

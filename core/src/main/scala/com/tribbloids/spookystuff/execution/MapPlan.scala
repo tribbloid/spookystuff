@@ -1,6 +1,7 @@
 package com.tribbloids.spookystuff.execution
 
-import com.tribbloids.spookystuff.extractors.{Extractor, GetExpr, Resolved}
+import com.tribbloids.spookystuff.extractors.impl.GetExpr
+import com.tribbloids.spookystuff.extractors.{Extractor, Resolved}
 import com.tribbloids.spookystuff.row._
 import org.apache.spark.sql.types.{ArrayType, IntegerType}
 

@@ -1,6 +1,7 @@
 package com.tribbloids.spookystuff.uav.actions
 
-import com.tribbloids.spookystuff.extractors.{Extractor, FR, Lit}
+import com.tribbloids.spookystuff.extractors.impl.Lit
+import com.tribbloids.spookystuff.extractors.{Extractor, FR}
 import com.tribbloids.spookystuff.uav.UAVConf
 import com.tribbloids.spookystuff.row.{DataRowSchema, FetchedRow}
 import com.tribbloids.spookystuff.session.Session

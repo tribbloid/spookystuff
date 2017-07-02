@@ -3,7 +3,8 @@ package com.tribbloids.spookystuff.caching
 import com.tribbloids.spookystuff.{SpookyContext, dsl}
 import com.tribbloids.spookystuff.actions._
 import com.tribbloids.spookystuff.doc.Fetched
-import com.tribbloids.spookystuff.extractors.{FR, Lit}
+import com.tribbloids.spookystuff.extractors.FR
+import com.tribbloids.spookystuff.extractors.impl.Lit
 
 /**
   * Created by peng on 07/06/16.

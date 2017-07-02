@@ -15,8 +15,8 @@ object TraceView {
   implicit def fromTrace(trace: Trace): TraceView = TraceView(trace)
 
   def apply(
-             children: Trace = Nil,
-             docs: Seq[Fetched] = null
+             children: Trace,
+             docs: Seq[Fetched]
            ): TraceView = {
     val result = apply(children)
     result.docs = docs
@@ -25,7 +25,7 @@ object TraceView {
 }
 
 case class TraceView(
-                      override val children: Trace
+                      override val children: Trace = Nil
                     ) extends Actions(children) { //remember trace is not a block! its the super container that cannot be wrapped
 
   @volatile @transient var docs: Seq[Fetched] = _ //override, cannot be shipped, lazy evaluated

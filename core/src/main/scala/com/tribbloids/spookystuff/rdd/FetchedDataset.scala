@@ -5,7 +5,8 @@ import com.tribbloids.spookystuff.conf.SpookyConf
 import com.tribbloids.spookystuff.doc.Doc
 import com.tribbloids.spookystuff.dsl.{ExploreAlgorithm, GenPartitioner, JoinType, _}
 import com.tribbloids.spookystuff.execution.{ExplorePlan, FetchPlan, _}
-import com.tribbloids.spookystuff.extractors.{GetExpr, _}
+import com.tribbloids.spookystuff.extractors._
+import com.tribbloids.spookystuff.extractors.impl.GetExpr
 import com.tribbloids.spookystuff.row.{Field, _}
 import com.tribbloids.spookystuff.utils.{SpookyUtils, SpookyViews}
 import com.tribbloids.spookystuff.{Const, SpookyContext}

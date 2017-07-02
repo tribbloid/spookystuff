@@ -3,7 +3,8 @@ package com.tribbloids.spookystuff.actions
 import com.thoughtworks.selenium.SeleniumException
 import com.tribbloids.spookystuff.Const
 import com.tribbloids.spookystuff.doc.{Doc, Unstructured}
-import com.tribbloids.spookystuff.extractors.{Extractor, FR, Lit}
+import com.tribbloids.spookystuff.extractors.impl.Lit
+import com.tribbloids.spookystuff.extractors.{Extractor, FR}
 import com.tribbloids.spookystuff.row.{DataRowSchema, FetchedRow}
 import com.tribbloids.spookystuff.session.Session
 import com.tribbloids.spookystuff.utils.SpookyUtils

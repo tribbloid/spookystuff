@@ -1,24 +1,25 @@
 package com.tribbloids.spookystuff.extractors
 
 import com.tribbloids.spookystuff.Const
-import com.tribbloids.spookystuff.extractors.Extractors.ReplaceKeyExpr
 import com.tribbloids.spookystuff.extractors.GenExtractor._
+import com.tribbloids.spookystuff.extractors.impl.Extractors.ReplaceKeyExpr
+import com.tribbloids.spookystuff.extractors.impl.Lit
 import com.tribbloids.spookystuff.row.Field
 import com.tribbloids.spookystuff.utils.{ScalaType, SpookyUtils, UnreifiedScalaType}
 import org.apache.spark.sql.catalyst.ScalaReflection.universe.{TypeTag, typeTag}
 import org.apache.spark.sql.catalyst.trees.TreeNode
 
 import scala.language.implicitConversions
-import scala.reflect.ClassTag
 
 trait LowLevelImplicits {
 
-  implicit def fromAny[T: ClassTag](lit: T): Extractor[T] = {
+  implicit def fromAny[T: TypeTag](vv: T): Extractor[T] = {
 
-    val ctg = implicitly[ClassTag[T]]
+//    val ctg = implicitly[ClassTag[T]]
 
-    lit match {
-      case str: String if ctg <:< ClassTag(classOf[String]) =>
+    vv match {
+//      case str: String if ctg <:< ClassTag(classOf[String]) =>
+      case str: String =>
         val delimiter = Const.keyDelimiter
         val regex = (delimiter+"\\{[^\\{\\}\r\n]*\\}").r
 
@@ -28,6 +29,8 @@ trait LowLevelImplicits {
           ReplaceKeyExpr(str)
 
         result.asInstanceOf[Extractor[T]]
+      case _ =>
+        Lit(vv)
     }
   }
 }

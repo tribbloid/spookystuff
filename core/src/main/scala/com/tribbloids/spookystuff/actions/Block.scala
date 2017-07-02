@@ -3,7 +3,8 @@ package com.tribbloids.spookystuff.actions
 import com.tribbloids.spookystuff._
 import com.tribbloids.spookystuff.caching.CacheLevel
 import com.tribbloids.spookystuff.doc.{Doc, Fetched, NoDoc}
-import com.tribbloids.spookystuff.extractors.{Extractor, Lit}
+import com.tribbloids.spookystuff.extractors.Extractor
+import com.tribbloids.spookystuff.extractors.impl.Lit
 import com.tribbloids.spookystuff.http.HttpUtils
 import com.tribbloids.spookystuff.row.{DataRowSchema, FetchedRow}
 import com.tribbloids.spookystuff.session.Session
@@ -78,7 +79,7 @@ object ClusterRetry {
   def apply(
              trace: Set[Trace],
              retries: Int = Const.clusterRetries,
-             cacheEmptyOutput: CacheLevel.Value = CacheLevel.None
+             cacheEmptyOutput: CacheLevel.Value = CacheLevel.NoCache
            ): ClusterRetry = {
 
     assert(trace.size <= 1)

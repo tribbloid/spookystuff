@@ -1,6 +1,6 @@
 package com.tribbloids.spookystuff.uav.actions
 
-import com.tribbloids.spookystuff.extractors.Lit
+import com.tribbloids.spookystuff.extractors.impl.Lit
 import com.tribbloids.spookystuff.uav.UAVTestUtils
 import com.tribbloids.spookystuff.uav.spatial._
 import com.tribbloids.spookystuff.uav.sim.APMQuadFixture

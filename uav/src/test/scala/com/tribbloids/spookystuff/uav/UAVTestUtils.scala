@@ -1,6 +1,6 @@
 package com.tribbloids.spookystuff.uav
 
-import com.tribbloids.spookystuff.extractors.Lit
+import com.tribbloids.spookystuff.extractors.impl.Lit
 import com.tribbloids.spookystuff.uav.actions.Waypoint
 import com.tribbloids.spookystuff.uav.spatial.{Location, NED}
 

@@ -7,7 +7,7 @@ object CacheLevel {
 
   trait Value extends Serializable
 
-  object None extends Value
+  object NoCache extends Value
 
   trait InMemory extends Value
   object InMemory extends InMemory

@@ -2,6 +2,7 @@ package com.tribbloids.spookystuff.extractors
 
 import java.lang.reflect.Method
 
+import com.tribbloids.spookystuff.extractors.impl.Lit
 import com.tribbloids.spookystuff.utils.{ReflectionLock, TypeUtils, UnreifiedScalaType}
 import org.apache.spark.ml.dsl.ReflectionUtils
 import org.apache.spark.ml.dsl.utils.FlowUtils
