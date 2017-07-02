@@ -35,9 +35,9 @@
       <searchStrategy name="radialRuinAndRecreate">
         <selector name="selectBest"/>
         <acceptor name="schrimpfAcceptance">
-					<alpha>0.05</alpha>
-					<warmup>20</warmup>
-		</acceptor>
+          <alpha>0.05</alpha>
+          <warmup>20</warmup>
+        </acceptor>
         <modules>
           <module name="ruin_and_recreate">
             <ruin name="randomRuin">
@@ -53,7 +53,7 @@
       <searchStrategy name="radialRuinAndRecreate">
         <selector name="selectBest"/>
         <acceptor name="schrimpfAcceptance"/>
-		<modules>
+        <modules>
           <module name="ruin_and_recreate">
             <ruin id="1" name="radialRuin">
               <share>0.3</share>
