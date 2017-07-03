@@ -7,7 +7,7 @@ import com.tribbloids.spookystuff.actions.{Action, Trace, TraceSetView, TraceVie
 import com.tribbloids.spookystuff.doc.{Doc, DocUID, Elements, Unstructured}
 import com.tribbloids.spookystuff.extractors.impl.Extractors._
 import com.tribbloids.spookystuff.extractors._
-import com.tribbloids.spookystuff.extractors.impl.{AppendExpr, GetExpr, InterpolateExpr, ZippedExpr}
+import com.tribbloids.spookystuff.extractors.impl.{Append, Get, Interpolate, Zipped}
 import com.tribbloids.spookystuff.rdd.FetchedDataset
 import com.tribbloids.spookystuff.row.{FetchedRow, Field}
 import com.tribbloids.spookystuff.utils.{Default, UnreifiedScalaType}
@@ -39,7 +39,7 @@ sealed trait Level2 {
 
     private def defaultVal: R = Default.value[R]
 
-    def into(field: Field) = AppendExpr.create[R](field, self)
+    def into(field: Field) = Append.create[R](field, self)
     def ~+(field: Field) = into(field)
 
     //    def -->[R2](g: Extractor[R2]) = And_->(self, g)
@@ -185,11 +185,11 @@ sealed trait Level2 {
     def mkString(start: String, sep: String, end: String): Extractor[String] = self.andFn(_.mkString(start, sep, end))
 
     //TODO: Why IterableExView.filter cannot be applied on ZippedExpr? is the scala compiler malfunctioning?
-    def zipWithKeys(keys: Extractor[Any]): ZippedExpr[Any, T] =
-      new ZippedExpr[Any,T](keys.typed[Iterable[_]], self)
+    def zipWithKeys(keys: Extractor[Any]): Zipped[Any, T] =
+      new Zipped[Any,T](keys.typed[Iterable[_]], self)
 
-    def zipWithValues(values: Extractor[Any]): ZippedExpr[T, Any] =
-      new ZippedExpr[T,Any](self, values.typed[Iterable[_]])
+    def zipWithValues(values: Extractor[Any]): Zipped[T, Any] =
+      new Zipped[T,Any](self, values.typed[Iterable[_]])
 
     protected def groupByImpl[K](f: T => K): (Iterable[T]) => Map[K, Seq[T]] =
       (v: Iterable[T]) => v.groupBy(f).mapValues(_.toSeq)
@@ -243,14 +243,14 @@ sealed trait Level2 {
   implicit def symbol2Field(symbol: Symbol): Field =
     Option(symbol).map(v => Field(v.name)).orNull
 
-  implicit def symbol2Get(symbol: Symbol): GetExpr =
-    GetExpr(symbol.name)
+  implicit def symbol2Get(symbol: Symbol): Get =
+    Get(symbol.name)
 
   implicit def symbolToDocExView(symbol: Symbol): DocExView =
     GetDocExpr(symbol.name)
 
   implicit def symbol2GetItr(symbol: Symbol): IterableExView[Any] =
-    IterableExView(GetExpr(symbol.name).GetSeqExpr)
+    IterableExView(Get(symbol.name).GetSeq)
 }
 
 sealed trait Level1 extends Level2 {
@@ -260,7 +260,7 @@ sealed trait Level1 extends Level2 {
 
   implicit class StrContextHelper(val strC: StringContext) extends Serializable {
 
-    def x(fs: (Extractor[Any])*) = InterpolateExpr(strC.parts, fs)
+    def x(fs: (Extractor[Any])*) = Interpolate(strC.parts, fs)
 
     def CSS() = GetOnlyDocExpr.andFn(_.root).findAll(strC.s())
     def S() = CSS()

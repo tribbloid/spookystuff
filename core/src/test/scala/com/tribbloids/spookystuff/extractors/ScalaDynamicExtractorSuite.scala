@@ -3,7 +3,7 @@ package com.tribbloids.spookystuff.extractors
 import com.tribbloids.spookystuff.SpookyEnvFixture
 import com.tribbloids.spookystuff.actions.{Action, ActionUDT, Wget}
 import com.tribbloids.spookystuff.doc.{Doc, Unstructured}
-import com.tribbloids.spookystuff.extractors.impl.{GetExpr, Lit}
+import com.tribbloids.spookystuff.extractors.impl.{Get, Lit}
 import com.tribbloids.spookystuff.testutils.{LocalPathDocsFixture, TestHelper}
 import org.apache.spark.sql.types._
 
@@ -169,7 +169,7 @@ class ScalaDynamicExtractorSuite extends SpookyEnvFixture with LocalPathDocsFixt
     def dynamic = ScalaDynamicExtractor(
       'A,
       "fn",
-      Some(List[GetExpr]('B))
+      Some(List[Get]('B))
     )
     val staticFn: (FR) => Option[Any] = {
       fr =>
@@ -192,7 +192,7 @@ class ScalaDynamicExtractorSuite extends SpookyEnvFixture with LocalPathDocsFixt
     def dynamic = ScalaDynamicExtractor(
       'A,
       "fnOpt",
-      Some(List[GetExpr]('B))
+      Some(List[Get]('B))
     )
     val staticFn: (FR) => Option[Any] = {
       fr =>
@@ -214,7 +214,7 @@ class ScalaDynamicExtractorSuite extends SpookyEnvFixture with LocalPathDocsFixt
     def dynamic = ScalaDynamicExtractor(
       Lit("abcde"),
       "concat",
-      Some(List[GetExpr]('C))
+      Some(List[Get]('C))
     )
     val staticFn: (FR) => Option[Any] = {
       fr =>
@@ -299,7 +299,7 @@ class ScalaDynamicExtractorSuite extends SpookyEnvFixture with LocalPathDocsFixt
     def dynamic = ScalaDynamicExtractor(
       getNullType,
       "fn",
-      Some(List[GetExpr]('B))
+      Some(List[Get]('B))
     )
 
     intercept[UnsupportedOperationException] {

@@ -1,6 +1,6 @@
 package com.tribbloids.spookystuff.execution
 
-import com.tribbloids.spookystuff.extractors.impl.GetExpr
+import com.tribbloids.spookystuff.extractors.impl.Get
 import com.tribbloids.spookystuff.extractors.{Extractor, Resolved}
 import com.tribbloids.spookystuff.row._
 import org.apache.spark.sql.types.{ArrayType, IntegerType}
@@ -50,7 +50,7 @@ case class FlattenPlan(
   val resolver = child.schema.newResolver
 
   val _on: TypedField = {
-    val flattenType = GetExpr(onField).resolveType(child.schema).unboxArrayOrMap
+    val flattenType = Get(onField).resolveType(child.schema).unboxArrayOrMap
     val tf = TypedField(onField.!!, flattenType)
 
     resolver.includeTyped(tf).head

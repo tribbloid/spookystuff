@@ -11,7 +11,7 @@ import scala.collection.TraversableOnce
 /**
   * Created by peng on 7/3/17.
   */
-case class GetExpr(field: Field) extends Leaf[FR, Any] {
+case class Get(field: Field) extends Leaf[FR, Any] {
 
   override def resolveType(tt: DataType): DataType = tt match {
     case schema: DataRowSchema =>
@@ -31,7 +31,7 @@ case class GetExpr(field: Field) extends Leaf[FR, Any] {
       v.dataRow.orWeak(field)
   )
 
-  def GetSeqExpr: GenExtractor[FR, Seq[Any]] = this.andOptionTyped[Any, Seq[Any]](
+  def GetSeq: GenExtractor[FR, Seq[Any]] = this.andOptionTyped[Any, Seq[Any]](
     {
       case v: TraversableOnce[Any] => Some(v.toSeq)
       case v: Array[Any] => Some(v.toSeq)
@@ -42,7 +42,7 @@ case class GetExpr(field: Field) extends Leaf[FR, Any] {
     }
   )
 
-  def AsSeqExpr: GenExtractor[FR, Seq[Any]] = this.andOptionTyped[Any, Seq[Any]](
+  def AsSeq: GenExtractor[FR, Seq[Any]] = this.andOptionTyped[Any, Seq[Any]](
     {
       case v: TraversableOnce[Any] => Some(v.toSeq)
       case v: Array[Any] => Some(v.toSeq)

@@ -17,7 +17,7 @@ trait CostEstimator {
 object CostEstimator {
 
   case class Default(
-                      navSpeed: Double
+                      speed: Double = 1.0
                     ) extends CostEstimator {
 
     def intraCost(nav: UAVNavigation) = {
@@ -25,9 +25,9 @@ object CostEstimator {
       val ned = nav._to.getCoordinate(NED, nav._from).get
       val distance = Math.sqrt(ned.vector dot ned.vector)
 
-      val speed = nav.speedOpt.getOrElse(navSpeed)
+      val _speed = nav.speedOpt.getOrElse(speed)
 
-      distance / speed
+      distance / _speed
     }
 
     def interCost(nav1: UAVNavigation, nav2: UAVNavigation) = {
@@ -38,7 +38,7 @@ object CostEstimator {
       val ned = start2.getCoordinate(NED, end1).get
       val distance = Math.sqrt(ned.vector dot ned.vector)
 
-      distance / navSpeed
+      distance / speed
     }
 
     override def estimate(

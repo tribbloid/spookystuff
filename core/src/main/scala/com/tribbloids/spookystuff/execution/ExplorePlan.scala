@@ -4,7 +4,7 @@ import com.tribbloids.spookystuff.actions.{Trace, TraceView}
 import com.tribbloids.spookystuff.caching.ExploreRunnerCache
 import com.tribbloids.spookystuff.dsl.{ExploreAlgorithm, GenPartitioner, JoinType}
 import com.tribbloids.spookystuff.extractors._
-import com.tribbloids.spookystuff.extractors.impl.{GetExpr, Lit}
+import com.tribbloids.spookystuff.extractors.impl.{Get, Lit}
 import com.tribbloids.spookystuff.row.{SquashedFetchedRow, _}
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.types.{ArrayType, IntegerType}
@@ -69,7 +69,7 @@ case class ExplorePlan(
 
   val depth_0: Resolved[Int] = resolver.include(Lit(0) withAlias _params.depthField).head
   val depth_++ : Resolved[Int] = resolver.include(
-    GetExpr(_params.depthField).typed[Int].andFn(_ + 1) withAlias _params.depthField.!!
+    Get(_params.depthField).typed[Int].andFn(_ + 1) withAlias _params.depthField.!!
   ).head
   val _ordinal: TypedField = resolver.includeTyped(TypedField(_params.ordinalField, ArrayType(IntegerType))).head
   val _extracts: Seq[Resolved[Any]] = resolver.include(_params.extracts: _*)
