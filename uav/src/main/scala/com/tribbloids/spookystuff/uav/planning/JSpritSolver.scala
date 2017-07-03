@@ -1,7 +1,5 @@
 package com.tribbloids.spookystuff.uav.planning
 
-import java.util
-
 import com.graphhopper.jsprit.analysis.toolbox.{AlgorithmSearchProgressChartListener, Plotter}
 import com.graphhopper.jsprit.core.algorithm.VehicleRoutingAlgorithm
 import com.graphhopper.jsprit.core.algorithm.box.Jsprit
@@ -56,15 +54,8 @@ object JSpritSolver {
       (i._2, j._2, cost)
     }
 
-    val jRoutingCostMat: FastVehicleRoutingTransportCostsMatrix = {
-      val builder = FastVehicleRoutingTransportCostsMatrix.Builder
-        .newInstance(trace_uavOpt_index.length, false)
-      dMat.foreach {
-        entry =>
-          builder.addTransportDistance(entry._1, entry._2, entry._3)
-      }
-      builder.build()
-    }
+    val size = trace_uavOpt_index.length
+    val jRoutingCostMat: FastVehicleRoutingTransportCostsMatrix = buildRoutingCostmatrix(dMat, size)
 
     val cap = Capacity.Builder.newInstance()
       .addDimension(0, 1)
@@ -158,7 +149,7 @@ object JSpritSolver {
     val stateId: StateId = stateManager.createStateId("max-transport-time")
     //introduce a new state called "max-transport-time"
     //add a default-state for "max-transport-time"
-//    stateManager.putProblemState(stateId, classOf[Double], 0.0)
+    //    stateManager.putProblemState(stateId, classOf[Double], 0.0)
     //
     stateManager.addStateUpdater(new MinimaxUpdater(stateManager, vrp, stateId))
 
@@ -200,29 +191,42 @@ object JSpritSolver {
 
     SolutionPrinter.print(vrp, best, Print.VERBOSE)
 
-//    System.out.println("total-time: " + getTotalTime(vrp, Solutions.bestOf(solutions)))
-//    System.out.println("total-distance: " + getTotalDistance(matrixReader, Solutions.bestOf(solutions)))
+    //    System.out.println("total-time: " + getTotalTime(vrp, Solutions.bestOf(solutions)))
+    //    System.out.println("total-distance: " + getTotalDistance(matrixReader, Solutions.bestOf(solutions)))
 
 
 
-//    val stateManager = MaxTimeUpdater.getStateManager(vrp)
-//
-//    val constraintManager = new ConstraintManager(vrp, stateManager)
-//    // soft constraint that calculates additional transport costs when inserting a job(activity) at specified position
-//    constraintManager.addConstraint(
-//      new VariableTransportCostCalculator(vrp.getTransportCosts, vrp.getActivityCosts)
-//    )
-//
-//    val objectiveFn = MaxTimeCost(stateManager)
-//
-//    val vra = Jsprit.Builder.newInstance(vrp)
-//      .setObjectiveFunction(objectiveFn)
-//      .setStateAndConstraintManager(stateManager, constraintManager)
-//      .addCoreStateAndConstraintStuff(true)
-//      .buildAlgorithm()
-//
-//    val solutions = vra.searchSolutions
-//    val best = Solutions.bestOf(solutions)
+    //    val stateManager = MaxTimeUpdater.getStateManager(vrp)
+    //
+    //    val constraintManager = new ConstraintManager(vrp, stateManager)
+    //    // soft constraint that calculates additional transport costs when inserting a job(activity) at specified position
+    //    constraintManager.addConstraint(
+    //      new VariableTransportCostCalculator(vrp.getTransportCosts, vrp.getActivityCosts)
+    //    )
+    //
+    //    val objectiveFn = MaxTimeCost(stateManager)
+    //
+    //    val vra = Jsprit.Builder.newInstance(vrp)
+    //      .setObjectiveFunction(objectiveFn)
+    //      .setStateAndConstraintManager(stateManager, constraintManager)
+    //      .addCoreStateAndConstraintStuff(true)
+    //      .buildAlgorithm()
+    //
+    //    val solutions = vra.searchSolutions
+    //    val best = Solutions.bestOf(solutions)
     best
+  }
+
+  private def buildRoutingCostmatrix(dMat: Array[(Int, Int, Double)], size: Int) = {
+    val jRoutingCostMat: FastVehicleRoutingTransportCostsMatrix = {
+      val builder = FastVehicleRoutingTransportCostsMatrix.Builder
+        .newInstance(size, false)
+      dMat.foreach {
+        entry =>
+          builder.addTransportDistance(entry._1, entry._2, entry._3)
+      }
+      builder.build()
+    }
+    jRoutingCostMat
   }
 }

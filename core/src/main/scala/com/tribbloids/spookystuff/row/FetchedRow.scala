@@ -36,9 +36,7 @@ case class FetchedRow(
   //TODO: trace implementation is not accurate: the last backtrace has all previous exports removed
   def squash(spooky: SpookyContext): SquashedFetchedRow = SquashedFetchedRow(
     Array(dataRow),
-    TraceView(
-      docs = fetched
-    )
+    TraceView(docs = fetched)
   )
 
   def docs: Seq[Doc] = fetched.flatMap {

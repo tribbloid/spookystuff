@@ -19,7 +19,7 @@ object SquashedFetchedRow {
                 docs: Seq[Fetched] = null
               ): SquashedFetchedRow = SquashedFetchedRow(
     dataRows = dataRows,
-    traceView = TraceView(Nil, docs = docs)
+    traceView = TraceView(docs = docs)
   )
 
   lazy val blank: SquashedFetchedRow = SquashedFetchedRow(Array(DataRow()))

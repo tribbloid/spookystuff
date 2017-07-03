@@ -22,6 +22,14 @@ object TraceView {
     result.docs = docs
     result
   }
+
+  def apply(
+             docs: Seq[Fetched]
+           ): TraceView = {
+    val result = apply()
+    result.docs = docs
+    result
+  }
 }
 
 case class TraceView(
