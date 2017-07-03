@@ -32,30 +32,14 @@ object JSpritSolver {
                    trace_uavOpt_index: Array[((TraceView, Option[UAVStatus]), Int)]
                  ): VehicleRoutingProblemSolution = {
 
+    val homeLocation = spooky.getConf[UAVConf].homeLocation
+
     val trace_indices: Array[(TraceView, Int)] = trace_uavOpt_index.map {
       triplet =>
         triplet._1._1 -> triplet._2
     }
 
-    val costEstimator = spooky.getConf[UAVConf].costEstimator
-    val homeLocation = spooky.getConf[UAVConf].homeLocation
-
-    val dMat = for (
-      i <- trace_indices;
-      j <- trace_indices
-    ) yield {
-      val traceView: TraceView = i._1
-      val last = traceView.children.collect { case v: UAVNavigation => v }.last
-      val lastLocation = last._to
-      val cost = costEstimator.estimate(
-        List(WrapLocation(lastLocation)) ++ j._1.children,
-        spooky
-      )
-      (i._2, j._2, cost)
-    }
-
-    val size = trace_uavOpt_index.length
-    val jRoutingCostMat: FastVehicleRoutingTransportCostsMatrix = buildRoutingCostmatrix(dMat, size)
+    val jRoutingCostMat: FastVehicleRoutingTransportCostsMatrix = getCostMatrix(spooky, trace_indices)
 
     val cap = Capacity.Builder.newInstance()
       .addDimension(0, 1)
@@ -217,7 +201,24 @@ object JSpritSolver {
     best
   }
 
-  private def buildRoutingCostmatrix(dMat: Array[(Int, Int, Double)], size: Int) = {
+  def getCostMatrix(spooky: SpookyContext, trace_indices: Array[(TraceView, Int)]) = {
+    val costEstimator = spooky.getConf[UAVConf].costEstimator
+
+    val dMat = for (
+      i <- trace_indices;
+      j <- trace_indices
+    ) yield {
+      val traceView: TraceView = i._1
+      val last = traceView.children.collect { case v: UAVNavigation => v }.last
+      val lastLocation = last._to
+      val cost = costEstimator.estimate(
+        List(WrapLocation(lastLocation)) ++ j._1.children,
+        spooky
+      )
+      (i._2, j._2, cost)
+    }
+
+    val size = trace_indices.length
     val jRoutingCostMat: FastVehicleRoutingTransportCostsMatrix = {
       val builder = FastVehicleRoutingTransportCostsMatrix.Builder
         .newInstance(size, false)
