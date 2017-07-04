@@ -24,5 +24,6 @@ trait UAVFixture extends SpookyEnvFixture {
 //    uavConf.fastConnectionRetries = 2
     uavConf.fleet = Fleet.Inventory(simUAVs)
     uavConf.linkFactory = linkFactory
+    spooky.zeroMetrics()
   }
 }

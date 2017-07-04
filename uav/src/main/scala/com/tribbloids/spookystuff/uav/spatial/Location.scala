@@ -10,44 +10,12 @@ import scala.collection.mutable.ArrayBuffer
 import scala.language.implicitConversions
 import scala.util.Random
 
-/**
-  * Created by peng on 15/02/17.
-  */
-trait Anchor extends Serializable {
-
-  def getCoordinate(
-                     system: CoordinateSystem = LLA,
-                     from: Anchor = GeodeticAnchor
-                   ): Option[system.V] = {
-    _getCoordinate(system, from, InferenceContext())
-  }
-
-  def coordinate(system: CoordinateSystem = LLA, from: Anchor = GeodeticAnchor): system.V = {
-    getCoordinate(system, from).getOrElse {
-      throw new UnsupportedOperationException(s"cannot determine relative position from $from to $this")
-    }
-  }
-
-  def _getCoordinate(
-                      system: CoordinateSystem,
-                      from: Anchor = GeodeticAnchor,
-                      ic: InferenceContext
-                    ): Option[system.V] = None
-}
-
-case object GeodeticAnchor extends Anchor {
-}
-// to be injected by SpookyConf
-case object PlaceHoldingAnchor extends Anchor {
-}
-
 trait LocationLike extends Anchor {
 }
 
 case class UnknownLocation(
-                            _id: Long = Random.nextLong()
+                            id: Long = Random.nextLong()
                           ) extends LocationLike {
-
 }
 
 class LocationUDT() extends ScalaUDT[Location]
@@ -57,12 +25,7 @@ class LocationUDT() extends ScalaUDT[Location]
 @SerialVersionUID(-928750192836509428L)
 case class Location(
                      definedBy: Seq[Relation] = Nil
-                     //                     _id: Long = Random.nextLong()
                    ) extends LocationLike {
-
-  //  assert(definedBy.nonEmpty, "Location not defined")
-
-  //  require(!coordinates.exists(_._2 == this), "self referential coordinate cannot be used")
 
   def assumeAnchor(ref: Anchor): Location = {
     val cs = definedBy.map {
@@ -116,60 +79,65 @@ case class Location(
       Some(v.asInstanceOf[system.V])
     }
 
-    allRelations
-      .foreach {
-        rel =>
-          if (
-            rel.coordinate.system == system &&
-              rel.from == from
-          ) {
-            return Some(rel.coordinate.asInstanceOf[system.V])
-          }
-      }
+    allRelations.foreach {
+      rel =>
+        if (
+          rel.coordinate.system == system &&
+            rel.from == from
+        ) {
+          return Some(rel.coordinate.asInstanceOf[system.V])
+        }
+    }
 
-    allRelations
-      .foreach {
-        rel =>
-          val debugStr = s"""
-                            |${this.toString}
-                            |-------------
-                            |inferring ${system.name} from $from
-                            |using ${rel.coordinate.system.name} from ${rel.from}
+    allRelations.foreach {
+      rel =>
+        val debugStr = s"""
+                          |${this.treeString}
+                          |-------------
+                          |inferring ${system.name} from $from
+                          |using ${rel.coordinate.system.name} from ${rel.from}
                           """.trim.stripMargin
-          LoggerFactory.getLogger(this.getClass).debug {
-            debugStr
-          }
+        LoggerFactory.getLogger(this.getClass).debug {
+          debugStr
+        }
 
-          val directOpt: Option[CoordinateSystem#V] = rel.project(from, system, ic)
-          directOpt.foreach {
-            direct =>
-              return cacheAndYield(direct)
-          }
+        val directOpt: Option[CoordinateSystem#V] = rel.project(from, system, ic)
+        directOpt.foreach {
+          direct =>
+            return cacheAndYield(direct)
+        }
 
-          //use chain rule for inference
-          rel.from match {
-            case middle: Location if middle != this && middle != from =>
-              for (
-                c2 <- {
-                  ic.getCoordinate(PendingTriplet(middle, system, this))
-                };
-                c1 <- {
-                  ic.getCoordinate(PendingTriplet(from, system, middle))
-                }
-              ) {
-                return cacheAndYield(c1.asInstanceOf[system.V] ++> c2.asInstanceOf[system.V])
+        //use chain rule for inference
+        rel.from match {
+          case middle: Location if middle != this && middle != from =>
+            for (
+              c2 <- {
+                ic.getCoordinate(PendingTriplet(middle, system, this))
+              };
+              c1 <- {
+                ic.getCoordinate(PendingTriplet(from, system, middle))
               }
-            case _ =>
-          }
-      }
+            ) {
+              return cacheAndYield(c1.asInstanceOf[system.V] ++> c2.asInstanceOf[system.V])
+            }
+          case _ =>
+        }
+    }
 
     //add reverse deduction.
 
     None
   }
 
+  def treeString: String = {
+    definedBy.map(_.treeString).mkString("\n")
+  }
+
   override def toString: String = {
-    definedBy.map(_.treeString).mkString("[\n", ",", "]")
+    definedBy.headOption.map {
+      _.coordinate
+    }
+      .mkString("<", "", ">")
   }
 }
 

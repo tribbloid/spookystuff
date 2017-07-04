@@ -16,7 +16,7 @@ class LocationSuite extends FunSpecx {
     val p2 : Location = NED.create(Vec(1000, 2000, 30)) -> p1
 
     val c2 = p2.getCoordinate(LLA, GeodeticAnchor)
-    c2.get.withICString.shouldBe(
+    c2.get.toStrWithInferenceCtx.shouldBe(
       "LLA lat=43.712195 lon=-79.249854 alt=166.000000 hops=1 recursions=2"
     )
   }
@@ -28,7 +28,7 @@ class LocationSuite extends FunSpecx {
     val p2 : Location = NED.create(Vec(1000, 2000, 30)) -> p1
 
     val c2 = p2.getCoordinate(LLA, p1)
-    c2.get.withICString.shouldBe(
+    c2.get.toStrWithInferenceCtx.shouldBe(
       "LLA lat=43.712195 lon=-79.249854 alt=30.000000 hops=2 recursions=4"
     )
   }
@@ -39,7 +39,7 @@ class LocationSuite extends FunSpecx {
     val p2 : Location = LLA.create(Vec(-79.386132, 43.647023, 100)) -> GeodeticAnchor
 
     val c2 = p2.getCoordinate(NED, p1)
-    c2.get.withICString.shouldBe(
+    c2.get.toStrWithInferenceCtx.shouldBe(
       "NED north=-5233.622679 east=-9993.849545 down=36.000000 hops=1 recursions=3"
     )
   }
@@ -51,7 +51,7 @@ class LocationSuite extends FunSpecx {
       val p2 : Location = NED(100, 200, 30) -> base
 
       val c2 = p2.getCoordinate(NED, p1)
-      c2.get.withICString.shouldBe(
+      c2.get.toStrWithInferenceCtx.shouldBe(
         "NED north=-200.000000 east=-0.000000 down=20.000000 hops=3 recursions=7"
       )
     }
@@ -62,7 +62,7 @@ class LocationSuite extends FunSpecx {
       val p2 : Location = NED(100, 200, 30) -> base
 
       val c2 = p2.getCoordinate(NED, p1)
-      c2.get.withICString.shouldBe(
+      c2.get.toStrWithInferenceCtx.shouldBe(
         "NED north=-200.000000 east=-0.005983 down=20.000000 hops=3 recursions=7"
       )
     }
@@ -98,14 +98,14 @@ class LocationSuite extends FunSpecx {
 
     {
       val c2 = p1.getCoordinate(NED, p1)
-      c2.get.withICString.shouldBe(
+      c2.get.toStrWithInferenceCtx.shouldBe(
         "NED north=0.000000 east=0.000000 down=-0.000000 hops=0 recursions=0"
       )
     }
 
     {
       val c2 = p2.getCoordinate(NED, p2)
-      c2.get.withICString.shouldBe(
+      c2.get.toStrWithInferenceCtx.shouldBe(
         "NED north=0.000000 east=0.000000 down=-0.000000 hops=0 recursions=0"
       )
     }
@@ -118,14 +118,14 @@ class LocationSuite extends FunSpecx {
 
     {
       val c2 = p2.getCoordinate(LLA, p2)
-      c2.get.withICString.shouldBe(
+      c2.get.toStrWithInferenceCtx.shouldBe(
         "LLA lat=43.694195 lon=-79.262262 alt=0.000000 hops=1 recursions=2"
       )
     }
 
     {
       val c2 = p2.getCoordinate(NED, p2)
-      c2.get.withICString.shouldBe(
+      c2.get.toStrWithInferenceCtx.shouldBe(
         "NED north=0.000000 east=0.000000 down=-0.000000 hops=0 recursions=0"
       )
     }

@@ -22,7 +22,7 @@ class GASolveIT extends APMQuadFixture {
     NED(100, 0, 0),
     NED(0, 20, -2)
   )
-    .wpActions
+    .waypoints
 
   val solver = GASolver(
     wps.map{ a => List(a)}.toList,

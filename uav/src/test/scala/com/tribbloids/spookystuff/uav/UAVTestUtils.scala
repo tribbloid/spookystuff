@@ -20,7 +20,7 @@ object UAVTestUtils {
         l1.assumeAnchor(UAVConf.DEFAULT_HOME_LOCATION) -> l2.assumeAnchor(UAVConf.DEFAULT_HOME_LOCATION)
     }
 
-    val wpActions: Seq[Waypoint] = {
+    val waypoints: Seq[Waypoint] = {
       locations.flatMap {
         tuple =>
           Seq(
@@ -48,8 +48,8 @@ object UAVTestUtils {
 
       val result = (0 until n).map {
         i =>
-          val p1 = NED.create(origin.vector + (stride.vector :* i.toDouble))
-          val p2 = NED.create(p1.vector + dir.vector)
+          val p1: NED.V = NED.create(origin.vector + (stride.vector :* i.toDouble))
+          val p2: NED.V = NED.create(p1.vector + dir.vector)
           if (i % 2 == 0) {
             p1 -> p2
           }

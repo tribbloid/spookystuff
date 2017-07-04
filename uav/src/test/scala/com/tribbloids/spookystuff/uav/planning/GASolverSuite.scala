@@ -23,7 +23,7 @@ class GASolverSuite extends SpookyEnvFixture {
     NED(100, 0, 0),
     NED(0, 20, -2)
   )
-    .wpActions
+    .waypoints
 
   val toBeInserted: Seq[Waypoint] = UAVTestUtils.NEDPattern(
     Seq(
@@ -31,7 +31,7 @@ class GASolverSuite extends SpookyEnvFixture {
       NED(50, 80, 0) -> NED(50, 100, 0)
     )
   )
-    .wpActions
+    .waypoints
 
   val allWPs = waypoints ++ toBeInserted
 

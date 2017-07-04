@@ -78,7 +78,7 @@ object GenPartitioners {
 
         import scala.collection.JavaConverters._
 
-        val link_traces: Seq[(UAVStatus, Seq[TraceView])] = best.getRoutes.asScala.toList.map {
+        val status_traces: Seq[(UAVStatus, Seq[TraceView])] = best.getRoutes.asScala.toList.map {
           route =>
             val link = links.find(_.uav.fullID == route.getVehicle.getId).get
             val tours = route.getTourActivities.getActivities.asScala
@@ -90,12 +90,12 @@ object GenPartitioners {
             link -> traces
         }
 
-        val link_traceRDD: RDD[(UAVStatus, Seq[TraceView])] = spooky.sparkContext.parallelize(link_traces)
+        val status_traceRDD: RDD[(UAVStatus, Seq[TraceView])] = spooky.sparkContext.parallelize(status_traces)
 
         //TODO: cogroup is expensive
         //if you don't know cogroup preserve sequence, don't use it.
         val realignedTraceRDD: RDD[(Seq[TraceView], Link)] = linkRDD.cogroup {
-          link_traceRDD
+          status_traceRDD
           //linkRDD doesn't have a partitioner so no need to explicit
         }
           .values
@@ -106,16 +106,15 @@ object GenPartitioners {
               tuple._2.head -> tuple._1.head
           }
 
-        val trace_index_linkRDD: RDD[(K, (Int, Link))] = realignedTraceRDD
-          .flatMap {
-            tuple =>
-              tuple._1
-                .zipWithIndex
-                .map {
-                  tt =>
-                    tt._1 -> (tt._2 -> tuple._2)
-                }
-          }
+        val trace_index_linkRDD: RDD[(K, (Int, Link))] = realignedTraceRDD.flatMap {
+          tuple =>
+            tuple._1
+              .zipWithIndex
+              .map {
+                tt =>
+                  tt._1 -> (tt._2 -> tuple._2)
+              }
+        }
 
         val cogroupedRDD: RDD[(K, (Iterable[(Int, Link)], Iterable[V]))] =
           trace_index_linkRDD.cogroup {

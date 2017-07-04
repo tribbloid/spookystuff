@@ -21,7 +21,7 @@ case class Relation(
 
   override def simpleString: String = {
     from match {
-      case Location(seq) =>
+      case Location(_) =>
         coordinate.toString
       case _ =>
         s"${coordinate.toString} +- $from"

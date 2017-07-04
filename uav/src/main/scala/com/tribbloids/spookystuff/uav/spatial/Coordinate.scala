@@ -87,7 +87,7 @@ trait Coordinate extends Serializable {
     }
   }
 
-  def withICString = (Seq(toString) ++ Option(ic).toSeq).mkString(" ")
+  def toStrWithInferenceCtx = (Seq(toString) ++ Option(ic).toSeq).mkString(" ")
 }
 
 /**

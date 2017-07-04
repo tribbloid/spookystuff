@@ -51,13 +51,10 @@ case class UAVConf(
                     var slowConnectionRetryInterval: Duration = UAVConf.BLACKLIST_RESET_AFTER, //1 minute
                     var clearanceAltitude: Double = 10, // in meters
                     var homeLocation: Location = UAVConf.DEFAULT_HOME_LOCATION,
-                    var costEstimator: CostEstimator = CostEstimator.Default(5.0),
+                    var costEstimator: CostEstimator = CostEstimator.Default(),
                     var defaultSpeed: Double = 5.0
                   ) extends AbstractConf {
 
-  /**
-    * singleton per worker, lost on shipping
-    */
   def uavsInFleet: Set[UAV] = fleet.apply()
 
   def uavsInFleetShuffled: Seq[UAV] = Random.shuffle(uavsInFleet.toList)

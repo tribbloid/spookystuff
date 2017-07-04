@@ -36,6 +36,8 @@ case class TraceView(
                       override val children: Trace = Nil
                     ) extends Actions(children) { //remember trace is not a block! its the super container that cannot be wrapped
 
+  override def toString = children.mkString(" -> ")
+
   @volatile @transient var docs: Seq[Fetched] = _ //override, cannot be shipped, lazy evaluated
   def docsOpt = Option(docs)
 
@@ -45,7 +47,6 @@ case class TraceView(
 
     Some(new TraceView(seq).asInstanceOf[this.type])
   }
-
 
   override def apply(session: Session): Seq[Fetched] = {
 

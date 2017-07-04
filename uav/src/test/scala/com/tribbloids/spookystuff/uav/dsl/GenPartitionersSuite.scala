@@ -16,29 +16,27 @@ class GenPartitionersSuite extends UAVFixture {
       s"dummy:localhost:$v"
   }
 
-  def waypoints(n:Int = parallelism): Seq[Waypoint] = UAVTestUtils.LawnMowerPattern(
-    parallelism,
+  def waypoints(n:Int): Seq[Waypoint] = UAVTestUtils.LawnMowerPattern(
+    n,
     NED(10, 10, -10),
     NED(100, 0, 0),
     NED(0, 20, -2)
   )
-    .wpActions
+    .waypoints
 
   describe("JSpirt") {
 
     lazy val genPartitioner = GenPartitioners.JSprit()
 
-    it("can optimize max cost of 1 waypoint per UAV") {
-
-      val wps = waypoints()
+    def testOnWaypoints(n: Int) = {
+      val wps = waypoints(n)
       val rdd = sc.parallelize(
         wps
-      )
-        .map {
-          wp =>
-            val k = TraceView(List(wp))
-            k -> Unit
-        }
+      ).map {
+        wp =>
+          val k = TraceView(List(wp))
+          k -> Unit
+      }
 
       spooky.rebroadcast()
       val ec = ExecutionPlan.Context(spooky)
@@ -50,9 +48,14 @@ class GenPartitionersSuite extends UAVFixture {
       grouped.foreach(println)
     }
 
+    it("can optimize max cost of 1 waypoint per UAV") {
+
+      testOnWaypoints(parallelism)
+    }
+
     it("can optimize max cost of 2.5 waypoints per UAV") {
 
-
+      testOnWaypoints((parallelism * 2.5).toInt)
     }
 
     it("can optimize max cost of scans") {

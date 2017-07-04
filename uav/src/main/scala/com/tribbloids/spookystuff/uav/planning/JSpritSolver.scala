@@ -161,7 +161,7 @@ object JSpritSolver {
 
     val vra: VehicleRoutingAlgorithm = algorithmBuilder.buildAlgorithm
 
-    vra.addListener(new AlgorithmSearchProgressChartListener("output/abe/progress.png"))
+    vra.addListener(new AlgorithmSearchProgressChartListener("output/peng/progress.png"))
     val prematureAlgorithmTermination: VariationCoefficientTermination = new VariationCoefficientTermination(150, 0.001)
     vra.addListener(prematureAlgorithmTermination)
     vra.setPrematureAlgorithmTermination(prematureAlgorithmTermination)
@@ -171,37 +171,18 @@ object JSpritSolver {
     val best = Solutions.bestOf(solutions)
     val plotter2: Plotter = new Plotter(vrp, best)
     //		plotter2.setShowFirstActivity(true);
-    plotter2.plot("output/abe/abeProblemWithSolution.png", "abe")
+    plotter2.plot("output/peng/abeProblemWithSolution.png", "abe")
 
     SolutionPrinter.print(vrp, best, Print.VERBOSE)
 
     //    System.out.println("total-time: " + getTotalTime(vrp, Solutions.bestOf(solutions)))
     //    System.out.println("total-distance: " + getTotalDistance(matrixReader, Solutions.bestOf(solutions)))
 
-
-
-    //    val stateManager = MaxTimeUpdater.getStateManager(vrp)
-    //
-    //    val constraintManager = new ConstraintManager(vrp, stateManager)
-    //    // soft constraint that calculates additional transport costs when inserting a job(activity) at specified position
-    //    constraintManager.addConstraint(
-    //      new VariableTransportCostCalculator(vrp.getTransportCosts, vrp.getActivityCosts)
-    //    )
-    //
-    //    val objectiveFn = MaxTimeCost(stateManager)
-    //
-    //    val vra = Jsprit.Builder.newInstance(vrp)
-    //      .setObjectiveFunction(objectiveFn)
-    //      .setStateAndConstraintManager(stateManager, constraintManager)
-    //      .addCoreStateAndConstraintStuff(true)
-    //      .buildAlgorithm()
-    //
-    //    val solutions = vra.searchSolutions
-    //    val best = Solutions.bestOf(solutions)
     best
   }
 
-  def getCostMatrix(spooky: SpookyContext, trace_indices: Array[(TraceView, Int)]) = {
+  def getCostMatrix(spooky: SpookyContext, trace_indices: Seq[(TraceView, Int)]) = {
+
     val costEstimator = spooky.getConf[UAVConf].costEstimator
 
     val dMat = for (
@@ -211,10 +192,8 @@ object JSpritSolver {
       val traceView: TraceView = i._1
       val last = traceView.children.collect { case v: UAVNavigation => v }.last
       val lastLocation = last._to
-      val cost = costEstimator.estimate(
-        List(WrapLocation(lastLocation)) ++ j._1.children,
-        spooky
-      )
+      val realTrace = List(WrapLocation(lastLocation)) ++ j._1.children
+      val cost = costEstimator.estimate(realTrace, spooky)
       (i._2, j._2, cost)
     }
 
@@ -224,7 +203,7 @@ object JSpritSolver {
         .newInstance(size, false)
       dMat.foreach {
         entry =>
-          builder.addTransportDistance(entry._1, entry._2, entry._3)
+          builder.addTransportTimeAndDistance(entry._1, entry._2, entry._3, entry._3)
       }
       builder.build()
     }

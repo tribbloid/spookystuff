@@ -1,7 +1,9 @@
 package com.tribbloids.spookystuff.uav.dsl
 
 import com.tribbloids.spookystuff.SpookyEnvFixture
+import com.tribbloids.spookystuff.uav.UAVConf
 import com.tribbloids.spookystuff.uav.actions.Waypoint
+import com.tribbloids.spookystuff.uav.planning.WrapLocation
 import com.tribbloids.spookystuff.uav.spatial.{Location, NED}
 
 /**
@@ -20,7 +22,44 @@ class CostEstimatorSuite extends SpookyEnvFixture {
       )
       val estimator = CostEstimator.Default()
       assert(estimator.estimate(trace, spooky) == 5.0)
-//      assert(estimator.estimate(trace.reverse, spooky) == 5.0)
+      //      assert(estimator.estimate(trace.reverse, spooky) == 5.0)
+    }
+
+    //TODO: fix it
+    it("can measure cost of 2 Waypints 2") {
+      val p1 = Location.fromTuple(NED(0, 0, 0) -> UAVConf.DEFAULT_HOME_LOCATION)
+      val p2 = Location.fromTuple(NED(3, 4, 0) -> UAVConf.DEFAULT_HOME_LOCATION)
+      val trace = List(
+        WrapLocation(p1),
+        Waypoint(p2)
+      )
+      val estimator = CostEstimator.Default()
+      assert(estimator.estimate(trace, spooky) == 5.0)
+      assert(estimator.estimate(trace.reverse, spooky) == 5.0)
+    }
+
+    it("can measure cost of 2 Waypints 3") {
+      val p1 = Location.fromTuple(NED(3, 0, 0) -> UAVConf.DEFAULT_HOME_LOCATION)
+      val p2 = Location.fromTuple(NED(0, 4, 0) -> UAVConf.DEFAULT_HOME_LOCATION)
+      val trace = List(
+        WrapLocation(p1),
+        Waypoint(p2)
+      )
+      val estimator = CostEstimator.Default()
+      assert(estimator.estimate(trace, spooky) == 5.0)
+      assert(estimator.estimate(trace.reverse, spooky) == 5.0)
+    }
+
+    it("can measure cost of 2 Waypints 4") {
+      val p1 = Location.fromTuple(NED(0, 0, 0) -> UAVConf.DEFAULT_HOME_LOCATION)
+      val p2 = Location.fromTuple(NED(3, 0, 0) -> UAVConf.DEFAULT_HOME_LOCATION)
+      val trace = List(
+        WrapLocation(p1),
+        Waypoint(p2)
+      )
+      val estimator = CostEstimator.Default()
+      assert(estimator.estimate(trace, spooky) == 5.0)
+      assert(estimator.estimate(trace.reverse, spooky) == 5.0)
     }
   }
 }

@@ -1,6 +1,6 @@
 package com.tribbloids.spookystuff.uav
 
-import com.tribbloids.spookystuff.{Metrics, SpookyMetrics}
+import com.tribbloids.spookystuff.Metrics
 import com.tribbloids.spookystuff.conf.Submodules
 import org.apache.spark.Accumulator
 
