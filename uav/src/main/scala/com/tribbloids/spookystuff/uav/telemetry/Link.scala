@@ -37,6 +37,19 @@ object Link {
       }
   }
 
+  def select(
+              uavs: Seq[UAV],
+              session: Session,
+              prefer: Seq[Link] => Option[Link] = {
+                vs =>
+                  vs.headOption
+              },
+              recommissionWithNewProxy: Boolean = true
+            ): Link = {
+
+    trySelect(uavs, session, prefer, recommissionWithNewProxy).get
+  }
+
   def trySelect(
                  uavs: Seq[UAV],
                  session: Session,
@@ -45,7 +58,22 @@ object Link {
                      vs.headOption
                  },
                  recommissionWithNewProxy: Boolean = true
-               ): Try[Link] = {
+               ) = Try {
+
+    SpookyUtils.retry(3) {
+      _trySelect(uavs, session, prefer, recommissionWithNewProxy).get
+    }
+  }
+
+  def _trySelect(
+                  uavs: Seq[UAV],
+                  session: Session,
+                  prefer: Seq[Link] => Option[Link] = {
+                    vs =>
+                      vs.headOption
+                  },
+                  recommissionWithNewProxy: Boolean = true
+                ): Try[Link] = {
 
     val sessionThreadOpt = Some(session.lifespan.ctx.thread)
 
@@ -111,11 +139,6 @@ object Link {
 
         opt
       }
-
-    //    resultOpt.foreach {
-    //      v =>
-    //        v.connect()
-    //    }
 
     resultOpt match {
       case Some(link) =>

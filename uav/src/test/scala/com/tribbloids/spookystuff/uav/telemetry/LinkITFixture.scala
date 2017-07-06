@@ -19,11 +19,10 @@ object LinkITFixture{
 
     val drones = connStrs.map(v => UAV(Seq(v)))
     val session = new Session(spooky)
-    val link = Link.trySelect(
+    val link = Link.select(
       drones,
       session
     )
-      .get
 
     val location = link.synch.testMove
 

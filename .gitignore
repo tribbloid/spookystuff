@@ -44,5 +44,10 @@ foo
 #syncthing
 .stfolder
 
-#spike
-**/spike*
+#temporary code that are not supposed to be uploaded.
+**/spike*.*
+
+#vscode
+.vscode
+
+**/.rootkey.csv

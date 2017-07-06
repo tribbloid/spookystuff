@@ -5,10 +5,12 @@ import com.tribbloids.spookystuff.execution.ExecutionPlan
 import com.tribbloids.spookystuff.uav.actions.Waypoint
 import com.tribbloids.spookystuff.uav.spatial.NED
 import com.tribbloids.spookystuff.uav.{UAVFixture, UAVTestUtils}
+import org.scalatest.Ignore
 
 /**
   * Created by peng on 16/06/17.
   */
+@Ignore
 class GenPartitionersSuite extends UAVFixture {
 
   override def simURIs = (0 until parallelism).map {

@@ -18,13 +18,18 @@ class TestHelper() {
   val UNPACK_RESOURCE_PATH = SpookyUtils.\\\(System.getProperty("java.io.tmpdir"), "spookystuff", "resources")
 
   val props = new Properties()
-  try {
-    props.load(ClassLoader.getSystemResourceAsStream("rootkey.csv"))
+  Try {
+    props.load(ClassLoader.getSystemResourceAsStream(".rootkey.csv"))
   }
-  catch {
-    case e: Throwable =>
+    .recoverWith {
+      case _: Throwable =>
+        Try {
+          props.load(ClassLoader.getSystemResourceAsStream("rootkey.csv"))
+        }
+    }
+    .getOrElse {
       println("rootkey.csv is missing")
-  }
+    }
 
   val S3Path = Option(props.getProperty("S3Path"))
   if (S3Path.isDefined) println("Test on AWS S3 with credentials provided by rootkey.csv")
