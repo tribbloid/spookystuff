@@ -4,8 +4,6 @@ import com.tribbloids.spookystuff.SpookyContext
 import com.tribbloids.spookystuff.uav.UAVConf
 import com.tribbloids.spookystuff.uav.telemetry.Link
 
-import scala.util.Try
-
 /**
   * Created by peng on 15/01/17.
   */
@@ -21,6 +19,7 @@ case class UAV(
               ) {
 
   val primaryURI = uris.head
+  val fullName = s"${(Seq(name) ++ frame.toSeq).mkString(":")}@${uris.head}"
 
   def getLink(
                spooky: SpookyContext
@@ -46,9 +45,5 @@ case class UAV(
     link
   }
 
-  def fullID = {
-    s"${(Seq(name) ++ frame.toSeq).mkString(":")}@${uris.head}"
-  }
-
-  override def toString = fullID
+  override def toString = fullName
 }

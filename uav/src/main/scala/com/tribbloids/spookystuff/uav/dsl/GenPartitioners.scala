@@ -56,11 +56,13 @@ object GenPartitioners {
         val hasUAVTraces: Array[TraceView] = hasUAVRDD.collect()
 
         val linkRDD = Link.linkRDD(spooky)
-        val links = linkRDD.keys.collect()
+        linkRDD.persist()
+        linkRDD.count() //TODO: optional
+        val statuses = linkRDD.keys.collect()
 
         val traces_linkOpts_indices: Array[((TraceView, Option[UAVStatus]), Int)] = {
           val fromLinks: Array[(TraceView, Option[UAVStatus])] =
-            links.map {
+            statuses.map {
               link =>
                 TraceView(List(WrapLocation(link.currentLocation))) -> Some(link)
             }
@@ -74,20 +76,21 @@ object GenPartitioners {
           (fromLinks ++ fromTraces).zipWithIndex
         }
 
-        val best: VehicleRoutingProblemSolution = JSpritSolver.vrpSolution(spooky, traces_linkOpts_indices)
+        val best: VehicleRoutingProblemSolution = JSpritSolver.solveTraces(spooky, traces_linkOpts_indices)
 
         import scala.collection.JavaConverters._
 
-        val status_traces: Seq[(UAVStatus, Seq[TraceView])] = best.getRoutes.asScala.toList.map {
+        val routes = best.getRoutes.asScala.toList
+        val status_traces: Seq[(UAVStatus, Seq[TraceView])] = routes.map {
           route =>
-            val link = links.find(_.uav.fullID == route.getVehicle.getId).get
+            val status = statuses.find(_.uav.primaryURI == route.getVehicle.getId).get
             val tours = route.getTourActivities.getActivities.asScala
             val traces = for (tour <- tours) yield {
               val index = tour.getLocation.getIndex
               val trace = traces_linkOpts_indices.find(_._2 == index).get._1._1
               trace
             }
-            link -> traces
+            status -> traces
         }
 
         val status_traceRDD: RDD[(UAVStatus, Seq[TraceView])] = spooky.sparkContext.parallelize(status_traces)

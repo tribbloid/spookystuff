@@ -1,5 +1,7 @@
 package com.tribbloids.spookystuff.uav.planning
 
+import java.io.File
+
 import com.graphhopper.jsprit.analysis.toolbox.{AlgorithmSearchProgressChartListener, Plotter}
 import com.graphhopper.jsprit.core.algorithm.VehicleRoutingAlgorithm
 import com.graphhopper.jsprit.core.algorithm.box.Jsprit
@@ -21,13 +23,16 @@ import com.tribbloids.spookystuff.uav.actions.UAVNavigation
 import com.tribbloids.spookystuff.uav.spatial.NED
 import com.tribbloids.spookystuff.uav.telemetry.UAVStatus
 
+import scala.util.Random
+
 /**
   * Created by peng on 7/2/17.
   */
 object JSpritSolver {
 
   // TODO: need independent test
-  def vrpSolution(
+  // TODO: switch from service to shipment?
+  def solveTraces(
                    spooky: SpookyContext,
                    trace_uavOpt_index: Array[((TraceView, Option[UAVStatus]), Int)]
                  ): VehicleRoutingProblemSolution = {
@@ -68,7 +73,7 @@ object JSpritSolver {
             )
             .build()
           val jVehicle = VehicleImpl.Builder
-            .newInstance(status.uav.fullID)
+            .newInstance(status.uav.primaryURI)
             .setType(jVType)
             .setStartLocation(jLocation)
             .build()
@@ -76,7 +81,7 @@ object JSpritSolver {
       }
 
     //TODO: why not use shipment? has better visualization.
-    val jobs: Array[Service] = trace_uavOpt_index
+    val jJobs: Array[Service] = trace_uavOpt_index
       .flatMap {
         triplet =>
           triplet._1._2 match {
@@ -104,7 +109,7 @@ object JSpritSolver {
             )
             .build()
 
-          Service.Builder.newInstance(tuple._1.TreeNode.treeString)
+          Service.Builder.newInstance(tuple._1.hashCode().toString)
             .setLocation(location)
             .build()
       }
@@ -114,12 +119,19 @@ object JSpritSolver {
       for (v <- jVehicles) {
         builder.addVehicle(v)
       }
-      for (s <- jobs) {
+      for (s <- jJobs) {
         builder.addJob(s)
       }
+      builder.setFleetSize(VehicleRoutingProblem.FleetSize.FINITE)
       builder.build()
     }
 
+    val tuple = solveVRP(vrp)
+    println(s"cost = ${tuple._2}")
+    tuple._1
+  }
+
+  def solveVRP(vrp: VehicleRoutingProblem) = {
     /*
          * Your custom objective function that min max transport times. Additionally you can try to consider overall transport times
          * in your objective as well. Thus you minimize max transport times first, and second, you minimize overall transport time.
@@ -169,19 +181,35 @@ object JSpritSolver {
     val solutions = vra.searchSolutions
 
     val best = Solutions.bestOf(solutions)
-    val plotter2: Plotter = new Plotter(vrp, best)
-    //		plotter2.setShowFirstActivity(true);
-    plotter2.plot("output/peng/abeProblemWithSolution.png", "abe")
 
     SolutionPrinter.print(vrp, best, Print.VERBOSE)
+    plot(vrp, best, s"temp/JSprit/solution-${Random.nextLong()}.png")
 
-    //    System.out.println("total-time: " + getTotalTime(vrp, Solutions.bestOf(solutions)))
-    //    System.out.println("total-distance: " + getTotalDistance(matrixReader, Solutions.bestOf(solutions)))
-
-    best
+    best -> objectiveFunction.getCosts(best)
   }
 
-  def getCostMatrix(spooky: SpookyContext, trace_indices: Seq[(TraceView, Int)]) = {
+  def plot(
+            vrp: VehicleRoutingProblem,
+            solution: VehicleRoutingProblemSolution,
+            path: String,
+            title: String = "JSprit"
+          ) = {
+
+    val file = new File(path)
+    //    ensureAbsolute(file)
+
+    if (!file.exists()) file.getParentFile.mkdirs()
+
+    val plotter2: Plotter = new Plotter(vrp, solution)
+    //		plotter2.setShowFirstActivity(true);
+
+    plotter2.plot(path, title)
+  }
+
+  def getCostMatrix(
+                     spooky: SpookyContext,
+                     trace_indices: Seq[(TraceView, Int)]
+                   ): FastVehicleRoutingTransportCostsMatrix = {
 
     val costEstimator = spooky.getConf[UAVConf].costEstimator
 
