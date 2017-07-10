@@ -27,7 +27,7 @@ case class Route(
         }
         val seq = traces.map {
           tr =>
-            List(PreferUAV(link)) ++ tr
+            List(PreferUAV(link.status())) ++ tr
         }
         seq
     }

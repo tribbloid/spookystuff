@@ -2,7 +2,7 @@ package com.tribbloids.spookystuff.dsl
 
 import com.tribbloids.spookystuff.actions.TraceView
 import com.tribbloids.spookystuff.dsl.GenPartitioners.Instance
-import com.tribbloids.spookystuff.execution.ExecutionPlan
+import com.tribbloids.spookystuff.execution.ExecutionContext
 import com.tribbloids.spookystuff.row.BeaconRDD
 import org.apache.spark.Partitioner
 import org.apache.spark.rdd.RDD
@@ -17,7 +17,7 @@ import scala.reflect.ClassTag
 //TODO: name should be 'planner'?
 trait GenPartitionerLike[+C] {
 
-  def getInstance[K >: C: ClassTag](ec: ExecutionPlan.Context): Instance[K]
+  def getInstance[K >: C: ClassTag](ec: ExecutionContext): Instance[K]
 }
 
 trait GenPartitioner extends GenPartitionerLike[TraceView]
@@ -36,7 +36,7 @@ object GenPartitioners {
       val result: Option[BeaconRDD[K]] = _createBeaconRDD(ref)
       result.foreach {
         rdd =>
-          rdd.assertIsBeaconRDD()
+          rdd.assertIsBeacon()
       }
       result
     }
@@ -67,7 +67,7 @@ object GenPartitioners {
   //this won't merge identical traces and do lookup, only used in case each resolve may yield different result
   case object Narrow extends GenPartitioner {
 
-    def getInstance[K: ClassTag](ec: ExecutionPlan.Context): Instance[K] = {
+    def getInstance[K: ClassTag](ec: ExecutionContext): Instance[K] = {
       Inst[K]()
     }
 
@@ -95,7 +95,7 @@ object GenPartitioners {
     PartitionerFactories.SamePartitioner
   }) extends GenPartitioner {
 
-    def getInstance[K: ClassTag](ec: ExecutionPlan.Context): Instance[K] = {
+    def getInstance[K: ClassTag](ec: ExecutionContext): Instance[K] = {
       Inst[K]()
     }
 
@@ -133,7 +133,7 @@ object GenPartitioners {
                             }
                           ) extends GenPartitioner {
 
-    def getInstance[K: ClassTag](ec: ExecutionPlan.Context): Instance[K] = {
+    def getInstance[K: ClassTag](ec: ExecutionContext): Instance[K] = {
       Inst[K]()
     }
 

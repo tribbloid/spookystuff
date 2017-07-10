@@ -525,7 +525,7 @@ These special characters are often called "metacharacters".
     val bmID = getBlockManagerID
     val hostPort = bmID.hostPort
 
-    if (org.apache.spark.SPARK_VERSION.startsWith("1.6")) {
+    if (org.apache.spark.SPARK_VERSION.substring(0, 3).toDouble >= 1.6) {
       val executorID = bmID.executorId
       s"executor_${hostPort}_$executorID"
     }

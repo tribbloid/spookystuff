@@ -4,7 +4,7 @@ import com.tribbloids.spookystuff.conf.{AbstractConf, DirConf, SpookyConf, Submo
 import com.tribbloids.spookystuff.rdd.FetchedDataset
 import com.tribbloids.spookystuff.row._
 import com.tribbloids.spookystuff.session.Session
-import com.tribbloids.spookystuff.utils.{HDFSResolver, ScalaType, SerializationMarks, TreeException}
+import com.tribbloids.spookystuff.utils.{HDFSResolver, ScalaType, ShippingMarks, TreeException}
 import org.apache.hadoop.conf.Configuration
 import org.apache.spark._
 import org.apache.spark.broadcast.Broadcast
@@ -21,7 +21,7 @@ case class SpookyContext (
                            // TODO: change to Option or SparkContext
                            var _configurations: Submodules[AbstractConf] = Submodules(), //always broadcasted
                            _metrics: Submodules[Metrics] = Submodules() //accumulators cannot be broadcasted,
-                         ) extends SerializationMarks {
+                         ) extends ShippingMarks {
 
   def this(
             sqlContext: SQLContext,

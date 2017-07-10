@@ -13,35 +13,11 @@ import scala.collection.immutable.ListMap
 import scala.collection.mutable.ArrayBuffer
 import scala.language.implicitConversions
 
-object ExecutionPlan {
-
-  case class Context(
-                      spooky: SpookyContext,
-                      @transient scratchRDDs: ScratchRDDs = new ScratchRDDs()
-                    ) {
-
-    def ++(b: Context) = {
-      assert(this.spooky == b.spooky,
-        "cannot merge execution plans due to diverging SpookyContext")
-
-      import this.scratchRDDs._
-      val bb = b.scratchRDDs
-      this.copy(
-        scratchRDDs = new ScratchRDDs(
-          tempTables = <+>(bb, _.tempTables),
-          tempRDDs = <+>(bb, _.tempRDDs),
-          tempDFs = <+>(bb, _.tempDFs)
-        )
-      )
-    }
-  }
-}
-
 //right now it vaguely resembles SparkPlan in catalyst
 //TODO: may subclass SparkPlan in the future to generate DataFrame directly, but not so fast
 abstract class ExecutionPlan(
                               val children: Seq[ExecutionPlan],
-                              val ec: ExecutionPlan.Context
+                              val ec: ExecutionContext
                             ) extends TreeNode[ExecutionPlan] with NOTSerializable {
 
   def this(

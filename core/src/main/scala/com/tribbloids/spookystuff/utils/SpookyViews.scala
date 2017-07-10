@@ -249,12 +249,12 @@ case object SpookyViews {
       rddInfos.find(_.id == self.id).get.storageLevel != StorageLevel.NONE
     }
 
-    def assertIsBeaconRDD(): Unit = {
+    def assertIsBeacon(): Unit = {
       assert(isPersisted)
       assert(self.isEmpty())
     }
 
-    def shuffle(implicit ev: ClassTag[T]): RDD[T] = {
+    def shufflePartitions(implicit ev: ClassTag[T]): RDD[T] = {
 
       val randomKeyed: RDD[(Long, T)] = self.keyBy(_ => Random.nextLong())
       val shuffled = randomKeyed.partitionBy(new HashPartitioner(self.partitions.length))

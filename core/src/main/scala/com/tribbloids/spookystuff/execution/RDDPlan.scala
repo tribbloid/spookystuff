@@ -18,7 +18,7 @@ case class RDDPlan(
                     scratchRDDs: ScratchRDDs = ScratchRDDs()
                   ) extends ExecutionPlan(
   Seq(),
-  ExecutionPlan.Context(spooky, scratchRDDs)
+  ExecutionContext(spooky, scratchRDDs)
 ) {
 
   override lazy val beaconRDDOpt = beaconRDD

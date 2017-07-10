@@ -29,7 +29,7 @@ case class DataRow(
                     groupID: Option[UUID] = this.groupID,
                     groupIndex: Int = this.groupIndex, //set to 0...n for each page group after SquashedPageRow.semiUnsquash/unsquash
                     freeze: Boolean = this.freeze //if set to true PageRow.extract won't insert anything into it, used in merge/replace join
-                  ) = new DataRow(data, groupID, groupIndex, freeze)
+                  ) = DataRow(data, groupID, groupIndex, freeze)
 
   def ++(m: Iterable[(Field, Any)]): DataRow = this.copyWithArgs(data = data ++ m)
 

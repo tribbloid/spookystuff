@@ -186,12 +186,12 @@ class SpookyUtilsSuite extends FunSpecx {
     assert(sum3 == sum1)
   }
 
-  it("RDDs.shuffle can move data into random partitions") {
+  it("RDDs.shufflePartitions can move data into random partitions") {
 
     val src = TestHelper.TestSpark.parallelize(1 to 100).persist()
 
-    val shuffled1 = src.shuffle
-    val shuffled2 = src.shuffle
+    val shuffled1 = src.shufflePartitions
+    val shuffled2 = src.shufflePartitions
 
     val identical = shuffled1.zipPartitions(shuffled2){
       (i1, i2) =>
