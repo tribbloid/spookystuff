@@ -247,7 +247,7 @@ case class FetchedDataset(
                  overwrite: Boolean = false
                ): this.type = {
 
-    val effectiveExt = Option(extension.ex).getOrElse(page.defaultFileExtension)
+    val effectiveExt = Option(extension).map(_.ex).getOrElse(page.defaultFileExtension)
 
     val _ext = newResolver.include(effectiveExt).head
     val _path = newResolver.include(path.ex).head
