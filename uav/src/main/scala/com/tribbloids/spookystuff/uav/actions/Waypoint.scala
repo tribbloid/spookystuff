@@ -1,7 +1,7 @@
 package com.tribbloids.spookystuff.uav.actions
 
 import com.tribbloids.spookystuff.extractors.impl.Lit
-import com.tribbloids.spookystuff.extractors.{Extractor, FR}
+import com.tribbloids.spookystuff.extractors.{Col, Extractor, FR}
 import com.tribbloids.spookystuff.uav.UAVConf
 import com.tribbloids.spookystuff.row.{DataRowSchema, FetchedRow}
 import com.tribbloids.spookystuff.session.Session
@@ -15,8 +15,8 @@ import scala.concurrent.duration.Duration
   */
 trait WaypointLike extends UAVNavigation {
 
-  val to: Extractor[Any]
-  lazy val _to = to.asInstanceOf[Lit[FR, Location]].value
+  val to: Col[Location]
+  lazy val _to = to.value
   override def _from: Location = _to
 
   override def getSessionView(session: Session) = new this.SessionView(session)
@@ -36,7 +36,7 @@ trait WaypointLike extends UAVNavigation {
 }
 
 case class Waypoint(
-                     to: Extractor[Any],
+                     override val to: Col[Location],
                      override val delay: Duration = null
                    ) extends WaypointLike {
 

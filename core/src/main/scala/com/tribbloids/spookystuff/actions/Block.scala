@@ -342,7 +342,7 @@ case class OAuthV2(self: Wget) extends Block(List(self)) with Driverless {
     val effectiveWget: Wget = self.uriOption match {
       case Some(uri) =>
         val signed = HttpUtils.OauthV2(uri.toString, keys.consumerKey, keys.consumerSecret, keys.token, keys.tokenSecret)
-        self.copy(uri = Lit.erase(signed))
+        self.copy(uri = Lit.erased(signed))
       case None =>
         self
     }

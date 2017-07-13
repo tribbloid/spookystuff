@@ -1,10 +1,10 @@
 package com.tribbloids.spookystuff.dsl
 
 import com.tribbloids.spookystuff.SpookyEnvFixture
-import com.tribbloids.spookystuff.execution.{ExecutionContext, ExecutionPlan}
+import com.tribbloids.spookystuff.execution.ExecutionContext
 import com.tribbloids.spookystuff.utils.NOTSerializable
+import org.apache.spark.HashPartitioner
 import org.apache.spark.rdd.RDD
-import org.apache.spark.{HashPartitioner, SparkException}
 
 import scala.util.Random
 
@@ -20,7 +20,6 @@ object GenPartitionerSuite {
   */
 class GenPartitionerSuite extends SpookyEnvFixture {
 
-  import GenPartitionerSuite._
   import com.tribbloids.spookystuff.utils.SpookyViews._
 
   //TODO: doesn't work in 1.6.x, sould find new ways to control fine tune location in 2.1.x

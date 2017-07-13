@@ -4,7 +4,7 @@ import com.thoughtworks.selenium.SeleniumException
 import com.tribbloids.spookystuff.Const
 import com.tribbloids.spookystuff.doc.{Doc, Unstructured}
 import com.tribbloids.spookystuff.extractors.impl.Lit
-import com.tribbloids.spookystuff.extractors.{Extractor, FR}
+import com.tribbloids.spookystuff.extractors.{Col, Extractor, FR}
 import com.tribbloids.spookystuff.row.{DataRowSchema, FetchedRow}
 import com.tribbloids.spookystuff.session.Session
 import com.tribbloids.spookystuff.utils.SpookyUtils
@@ -81,13 +81,13 @@ object DocumentReadyCondition extends ExpectedCondition[Boolean] {
   * @param uri support cell interpolation
   */
 case class Visit(
-                  uri: Extractor[Any],
+                  uri: Col[String],
                   override val delay: Duration = Const.interactionDelayMin,
                   override val blocking: Boolean = Const.interactionBlock
                 ) extends WebInteraction(delay, blocking) {
 
   override def exeNoOutput(session: Session) {
-    session.webDriver.get(uri.asInstanceOf[Lit[FR, String]].value)
+    session.webDriver.get(uri.value)
 
     //    if (hasTitle) {
     //      val wait = new WebDriverWait(session.driver, timeout(session).toSeconds)
@@ -107,7 +107,7 @@ case class Visit(
 
     uriStr.map(
       str =>
-        this.copy(uri = Lit.erase(str)).asInstanceOf[this.type]
+        this.copy(uri = Lit.erased(str)).asInstanceOf[this.type]
     )
   }
 }
@@ -298,7 +298,7 @@ case class Submit(
   */
 case class TextInput(
                       selector: Selector,
-                      text: Extractor[Any],
+                      text: Col[String],
                       override val delay: Duration = Const.interactionDelayMin,
                       override val blocking: Boolean = Const.interactionBlock
                     ) extends WebInteraction(delay, blocking) {
@@ -306,7 +306,7 @@ case class TextInput(
 
     val element = this.getElement(selector, session)
 
-    element.sendKeys(text.asInstanceOf[Lit[FR, String]].toMessage)
+    element.sendKeys(text.value)
   }
 
   override def doInterpolate(pageRow: FetchedRow, schema: DataRowSchema): Option[this.type] = {
@@ -322,7 +322,7 @@ case class TextInput(
 
     textStr.map(
       str =>
-        this.copy(text = Lit.erase(str)).asInstanceOf[this.type]
+        this.copy(text = Lit.erased(str)).asInstanceOf[this.type]
     )
   }
 }
@@ -335,7 +335,7 @@ case class TextInput(
   */
 case class DropDownSelect(
                            selector: Selector,
-                           value: Extractor[Any],
+                           value: Col[String],
                            override val delay: Duration = Const.interactionDelayMin,
                            override val blocking: Boolean = Const.interactionBlock
                          ) extends WebInteraction(delay, blocking) {
@@ -344,7 +344,7 @@ case class DropDownSelect(
     val element = this.getElement(selector, session)
 
     val select = new Select(element)
-    select.selectByValue(value.asInstanceOf[Lit[FR, String]].value)
+    select.selectByValue(value.value)
   }
 
   override def doInterpolate(pageRow: FetchedRow, schema: DataRowSchema): Option[this.type] = {
@@ -359,7 +359,7 @@ case class DropDownSelect(
 
     valueStr.map(
       str =>
-        this.copy(value = Lit.erase(str)).asInstanceOf[this.type]
+        this.copy(value = Lit.erased(str)).asInstanceOf[this.type]
     )
   }
 }
@@ -388,7 +388,7 @@ case class ToFrame(selector: Selector)extends WebInteraction(null, false) {
   * @param selector selector of the element this script is executed against, if null, against the entire page
   */
 case class ExeScript(
-                      script: Extractor[String],
+                      script: Col[String],
                       selector: Selector = null,
                       override val delay: Duration = Const.interactionDelayMin,
                       override val blocking: Boolean = Const.interactionBlock
@@ -401,7 +401,7 @@ case class ExeScript(
       Some(element)
     }
 
-    val scriptStr = script.asInstanceOf[Lit[FR, String]].toMessage
+    val scriptStr = script.value
     session.webDriver match {
       case d: JavascriptExecutor => d.executeScript(scriptStr, element.toArray: _*)
       case _ => throw new UnsupportedOperationException("this web browser driver is not supported")
@@ -420,7 +420,7 @@ case class ExeScript(
 
     scriptStr.map(
       str =>
-        this.copy(script = Lit.erase(str)).asInstanceOf[this.type]
+        this.copy(script = Lit.erased(str)).asInstanceOf[this.type]
     )
   }
 }

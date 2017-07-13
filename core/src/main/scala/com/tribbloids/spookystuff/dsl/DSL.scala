@@ -260,7 +260,7 @@ sealed trait Level1 extends Level2 {
 
   implicit class StrContextHelper(val strC: StringContext) extends Serializable {
 
-    def x(fs: (Extractor[Any])*) = Interpolate(strC.parts, fs)
+    def x(fs: (Col[String])*) = Interpolate(strC.parts, fs.map(_.ex))
 
     def CSS() = GetOnlyDocExpr.andFn(_.root).findAll(strC.s())
     def S() = CSS()

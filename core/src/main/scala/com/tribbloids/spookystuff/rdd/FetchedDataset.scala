@@ -241,16 +241,16 @@ case class FetchedDataset(
     */
   //always use the same path pattern for filtered pages, if you want pages to be saved with different path, use multiple saveContent with different names
   def savePages(
-                 path: Extractor[Any],
-                 extension: Extractor[Any] = null,
+                 path: Col[String],
+                 extension: Col[String] = null,
                  page: Extractor[Doc] = S,
                  overwrite: Boolean = false
                ): this.type = {
 
-    val effectiveExt = Option(extension).getOrElse(page.defaultFileExtension)
+    val effectiveExt = Option(extension.ex).getOrElse(page.defaultFileExtension)
 
     val _ext = newResolver.include(effectiveExt).head
-    val _path = newResolver.include(path).head
+    val _path = newResolver.include(path.ex).head
     val _pageExpr = newResolver.include(page).head
 
     //Execute immediately
@@ -379,7 +379,7 @@ case class FetchedDataset(
 
   //shorthand of fetch
   def visit(
-             ex: Extractor[Any],
+             ex: Col[String],
              filter: DocFilter = Const.defaultDocumentFilter,
              failSafe: Int = -1,
              genPartitioner: GenPartitioner = spooky.spookyConf.defaultGenPartitioner
@@ -399,7 +399,7 @@ case class FetchedDataset(
 
   //shorthand of fetch
   def wget(
-            ex: Extractor[Any],
+            ex: Col[String],
             filter: DocFilter = Const.defaultDocumentFilter,
             failSafe: Int = -1,
             genPartitioner: GenPartitioner = spooky.spookyConf.defaultGenPartitioner
@@ -448,7 +448,7 @@ case class FetchedDataset(
                ): FetchedDataset = {
 
     var trace = (
-      Visit(new Get(Const.defaultJoinField))
+      Visit(Get(Const.defaultJoinField))
         +> Snapshot(filter)
       )
     if (failSafe > 0) {
@@ -477,7 +477,7 @@ case class FetchedDataset(
                 genPartitioner: GenPartitioner = spooky.spookyConf.defaultGenPartitioner
               ): FetchedDataset = {
 
-    var trace: Set[Trace] = Wget(new Get(Const.defaultJoinField), filter)
+    var trace: Set[Trace] = Wget(Get(Const.defaultJoinField), filter)
     if (failSafe > 0) {
       trace = ClusterRetry(trace, failSafe)
     }
@@ -538,7 +538,7 @@ case class FetchedDataset(
                   ): FetchedDataset = {
 
     var trace: Set[Trace] =  (
-      Visit(new Get(Const.defaultJoinField))
+      Visit(Get(Const.defaultJoinField))
         +> Snapshot(filter)
       )
     if (failSafe > 0) trace = ClusterRetry(trace, failSafe)

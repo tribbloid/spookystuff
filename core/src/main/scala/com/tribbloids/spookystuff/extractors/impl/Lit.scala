@@ -11,22 +11,20 @@ import org.apache.spark.sql.types._
   * Created by peng on 7/3/17.
   */
 //TODO: Message JSON conversion discard dataType info, is it wise?
-case class Lit[T, +R](value: R, dataType: DataType)
-  extends Static[T, R] with MessageAPI {
+case class Lit[T, +R](value: R, dataType: DataType) extends Static[T, R] {
 
-    def valueOpt: Option[R] = Option(value)
-    override def toMessage = value
+  def valueOpt: Option[R] = Option(value)
 
-    override lazy val toString = valueOpt
-      .map {
-        v =>
-          //        MessageView(v).toJSON(pretty = false)
-          "" + v
-      }
-      .getOrElse("NULL")
+  override lazy val toString = valueOpt
+    .map {
+      v =>
+        //        MessageView(v).toJSON(pretty = false)
+        "" + v
+    }
+    .getOrElse("NULL")
 
-    override val partialFunction: PartialFunction[T, R] = Unlift({ _: T => valueOpt})
-  }
+  override val partialFunction: PartialFunction[T, R] = Unlift({ _: T => valueOpt})
+}
 
 object Lit {
 
@@ -34,9 +32,9 @@ object Lit {
     apply[FR, T](v, UnreifiedScalaType.apply[T])
   }
 
-  def erase[T](v: T): Lit[FR, T] = {
+  def erased[T](v: T): Lit[FR, T] = {
     apply[FR, T](v, NullType)
   }
 
-  lazy val NULL: Lit[FR, Null] = erase(null)
+  lazy val NULL: Lit[FR, Null] = erased(null)
 }

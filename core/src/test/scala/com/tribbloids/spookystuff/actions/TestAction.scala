@@ -29,7 +29,7 @@ class TestAction extends SpookyEnvFixture {
     //    val b = Literal("http://www.dummy.com").dataType.asInstanceOf[UnreifiedScalaType].ttg.tpe.normalize
     //    val c = Literal(new Example()).dataType.asInstanceOf[UnreifiedScalaType].ttg.tpe.normalize
 
-    assert(rewritten === Wget(Lit.erase("http://www.dummy.com")))
+    assert(rewritten === Wget(Lit.erased("http://www.dummy.com")))
     assert(rewritten.timeout(null) === randomTimeout)
     assert(FilePaths.Hierarchical.apply(rewritten :: Nil) contains "/www.dummy.com")
   }
@@ -40,7 +40,7 @@ class TestAction extends SpookyEnvFixture {
 
     val rewritten = action.interpolate(FetchedRow(DataRow(data = ListMap(Field("~") -> "http://www.dummy.com")), Seq()), emptySchema).get
 
-    assert(rewritten === Wget(Lit.erase("http://www.dummy.com")))
+    assert(rewritten === Wget(Lit.erased("http://www.dummy.com")))
     assert(rewritten.name === "dummy_name")
     assert(FilePaths.Hierarchical.apply(rewritten :: Nil) contains "/www.dummy.com")
   }

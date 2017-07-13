@@ -22,7 +22,7 @@ class ExtractorsSuite extends SpookyEnvFixture {
   }
 
   it("Action with Literal -> JSON") {
-    val action = Wget(Lit("http://dummy.org"))
+    val action = Wget("http://dummy.org")
 
     val json = RecursiveMessageRelay.toMessage(action).prettyJSON()
     json.shouldBe(

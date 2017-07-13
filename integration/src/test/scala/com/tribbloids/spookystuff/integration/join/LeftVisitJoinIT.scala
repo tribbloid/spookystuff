@@ -10,7 +10,7 @@ import com.tribbloids.spookystuff.integration.IntegrationFixture
   */
 class LeftVisitJoinIT extends IntegrationFixture {
 
-  def getPage(uri: Extractor[String]): Action = Visit(uri)
+  def getPage(uri: Col[String]): Action = Visit(uri)
 
   override def doMain(): Unit = {
 

@@ -1,7 +1,7 @@
 package com.tribbloids.spookystuff.uav.actions
 
 import com.tribbloids.spookystuff.extractors.impl.Lit
-import com.tribbloids.spookystuff.extractors.{Extractor, FR}
+import com.tribbloids.spookystuff.extractors.{Col, Extractor, FR}
 import com.tribbloids.spookystuff.row.{DataRowSchema, FetchedRow}
 import com.tribbloids.spookystuff.session.Session
 import com.tribbloids.spookystuff.uav.UAVConf
@@ -16,12 +16,12 @@ import scala.concurrent.duration.Duration
   */
 // How to accommodate camera & gimbal control? Right now do not refactor! Simplicity first.
 case class Move(
-                 from: Extractor[Any],
-                 to: Extractor[Any],
+                 from: Col[Location],
+                 to: Col[Location],
                  override val delay: Duration = null
                ) extends WaypointLike {
 
-  override def _from: Location = from.asInstanceOf[Lit[FR, Location]].value
+  override def _from: Location = from.value
 
   override def doInterpolate(pageRow: FetchedRow, schema: DataRowSchema): Option[this.type] = {
     val fromVOpt = from.resolve(schema).lift.apply(pageRow)

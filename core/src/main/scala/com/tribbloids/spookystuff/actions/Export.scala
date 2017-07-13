@@ -11,7 +11,7 @@ import com.tribbloids.spookystuff.caching.CacheLevel
 import com.tribbloids.spookystuff.doc._
 import com.tribbloids.spookystuff.dsl.DocFilters
 import com.tribbloids.spookystuff.extractors.impl.Lit
-import com.tribbloids.spookystuff.extractors.{Extractor, FR}
+import com.tribbloids.spookystuff.extractors.{Col, Extractor, FR}
 import com.tribbloids.spookystuff.http._
 import com.tribbloids.spookystuff.row.{DataRowSchema, FetchedRow}
 import com.tribbloids.spookystuff.session.{Session, WebProxySetting}
@@ -104,7 +104,7 @@ trait WaybackSupport extends Wayback {
       val valueOpt = wayback.resolve(schema).lift(pageRow)
       valueOpt.map{
         v =>
-          this.wayback = Lit.erase(v)
+          this.wayback = Lit.erased(v)
           this
       }
     }
@@ -188,17 +188,18 @@ object ErrorScreenshot extends Screenshot(DocFilters.Bypass) with MessageAPI {
 
 @SerialVersionUID(7344992460754628988L)
 abstract class HttpMethod(
-                           uri: Extractor[Any]
+                           uri: Col[String]
                          ) extends Export with Driverless with Timed with WaybackSupport {
 
   @transient lazy val uriOption: Option[URI] = {
-    val uriStr = uri.asInstanceOf[Lit[FR, String]].toMessage.trim()
+    val uriStr = uri.value.trim()
     if ( uriStr.isEmpty ) None
     else Some(HttpUtils.uri(uriStr))
   }
 
   def resolveURI(pageRow: FetchedRow, schema: DataRowSchema): Option[Lit[FR, String]] = {
-    val first = this.uri.resolve(schema).lift(pageRow).flatMap(SpookyUtils.asArray[Any](_).headOption)
+    val first = this.uri.resolve(schema).lift(pageRow)
+      .flatMap(SpookyUtils.asArray[Any](_).headOption)
     //TODO: no need to resolve array output?
 
     val uriStr: Option[String] = first.flatMap {
@@ -207,7 +208,7 @@ abstract class HttpMethod(
       case obj: Any => Option(obj.toString)
       case _ => None
     }
-    val uriLit = uriStr.map(Lit.erase[String])
+    val uriLit = uriStr.map(Lit.erased[String])
     uriLit
   }
 
@@ -359,7 +360,7 @@ abstract class HttpMethod(
   */
 @SerialVersionUID(-8687280136721213696L)
 case class Wget(
-                 uri: Extractor[Any],
+                 uri: Col[String],
                  override val filter: DocFilter = Const.defaultDocumentFilter
                ) extends HttpMethod(uri) {
 
@@ -563,7 +564,7 @@ case class Wget(
 object Wpost{
 
   def apply(
-             uri: Extractor[Any],
+             uri: Col[String],
              filter: DocFilter = Const.defaultDocumentFilter,
              entity: HttpEntity = new StringEntity("")
            ): WpostImpl = WpostImpl(uri, filter)(entity)
@@ -572,7 +573,7 @@ object Wpost{
 
 @SerialVersionUID(2416628905154681500L)
 case class WpostImpl private[actions](
-                                       uri: Extractor[Any],
+                                       uri: Col[String],
                                        override val filter: DocFilter
                                      )(
                                        entity: HttpEntity // TODO: cannot be dumped or serialized, fix it!

@@ -38,7 +38,7 @@ case class DummyPyAction(
       .apply(pageRow)
       .map(
         v =>
-          this.copy(a = Lit.erase(v)).asInstanceOf[this.type]
+          this.copy(a = Lit.erased(v)).asInstanceOf[this.type]
       )
   }
 }

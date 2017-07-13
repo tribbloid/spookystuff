@@ -25,6 +25,7 @@ case class UnionPlan(
                       override val children: Seq[ExecutionPlan]
                     ) extends ExecutionPlan(children) {
 
+  //TODO: also use PartitionerAwareUnionRDD
   def doExecute(): SquashedFetchedRDD = {
     new UnionRDD(
       spooky.sparkContext,
