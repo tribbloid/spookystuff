@@ -20,7 +20,7 @@ case class Col[T](
 
   def value: T = ex.asInstanceOf[Lit[FR, T]].value
 
-  override def toMessage = value
+  override def toMessage: T = value
 }
 
 object Col {

@@ -1,6 +1,5 @@
 package com.tribbloids.spookystuff.uav.planning
 
-import com.graphhopper.jsprit.analysis.toolbox.Plotter
 import com.graphhopper.jsprit.core.problem.VehicleRoutingProblem
 import com.graphhopper.jsprit.core.util.{FastVehicleRoutingTransportCostsMatrix, VehicleRoutingTransportCostsMatrix}
 import com.graphhopper.jsprit.io.problem.VrpXMLReader
