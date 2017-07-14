@@ -18,7 +18,12 @@ case class Col[T](
   def resolveType(tt: DataType) = ex.resolveType(tt)
   def resolve(tt: DataType) = ex.resolve(tt)
 
-  def value: T = ex.asInstanceOf[Lit[FR, T]].value
+  def value: T = {
+    ex match {
+      case v: Lit[FR, T] => v.value
+      case _ => throw new UnsupportedOperationException("Not a literal")
+    }
+  }
 
   override def toMessage: T = value
 }

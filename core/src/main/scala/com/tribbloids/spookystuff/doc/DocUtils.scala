@@ -160,12 +160,12 @@ object DocUtils {
         else if (results.head.timeMillis >= earliestModificationTime) results
         else {
           LoggerFactory.getLogger(this.getClass).info(s"All cached contents has become obsolete after " +
-            s"${new Date(earliestModificationTime).toString}:\n" +
+            s"${new Date(earliestModificationTime).toString}: " +
             dirPath)
           null
         }
       case _ =>
-        LoggerFactory.getLogger(this.getClass).info(s"Not cached:\n" + dirPath)
+        LoggerFactory.getLogger(this.getClass).info(s"Not cached: " + dirPath)
         null
     }
   }

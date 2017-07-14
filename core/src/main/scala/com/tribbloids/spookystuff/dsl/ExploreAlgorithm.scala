@@ -83,7 +83,7 @@ object ExploreAlgorithms {
             .getOnGoingRunners(params.executionID)
             .flatMap(_.fetchingInProgressOpt)
 
-          if (inProgress contains tuple._1) {
+          val result = if (inProgress contains tuple._1) {
             Int.MaxValue
           }
           else {
@@ -92,6 +92,7 @@ object ExploreAlgorithms {
             v.head.getInt(depthField)
               .getOrElse(Int.MaxValue)
           }
+          result
       }
 
       override val eliminator: RowEliminator = {

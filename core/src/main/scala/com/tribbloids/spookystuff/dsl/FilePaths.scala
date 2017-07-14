@@ -25,7 +25,7 @@ object FilePaths{
       }
       else actionStrs.mkString("~")
 
-      val hash = "-"+trace.hashCode
+      val hash = ""+trace.hashCode
 
       SpookyUtils.canonizeFileName(actionConcat + hash)
     }
@@ -40,13 +40,13 @@ object FilePaths{
       val actionConcat = if (actionStrs.size > 4) {
         val oneTwoThree = actionStrs.slice(0,3)
         val last = actionStrs.last
-        val omitted = File.separator + (trace.length-4) + "more"+ File.separator
+        val omitted = File.separator + (trace.length - 4) + "more"+ File.separator
 
         SpookyUtils.\\\(oneTwoThree: _*) + omitted + last
       }
       else SpookyUtils.\\\(actionStrs: _*)
 
-      val hash = "-"+trace.hashCode
+      val hash = ""+trace.hashCode
 
       SpookyUtils.canonizeUrn(actionConcat + hash)
     }
