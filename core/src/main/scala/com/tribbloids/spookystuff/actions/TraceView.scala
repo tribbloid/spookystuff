@@ -120,7 +120,8 @@ case class TraceView(
 
   class WithSpooky(spooky: SpookyContext) {
 
-    //fetched may yield very large documents and should only be loaded lazily and not shuffled or persisted (unless in-memory)
+    //fetched may yield very large documents and should only be
+    // loaded lazily and not shuffled or persisted (unless in-memory)
     def get: Seq[Fetched] = TraceView.this.synchronized{
       docsOpt.getOrElse{
         fetch

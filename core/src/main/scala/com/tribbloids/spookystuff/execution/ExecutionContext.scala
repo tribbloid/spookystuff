@@ -5,6 +5,7 @@ import com.tribbloids.spookystuff.SpookyContext
 /**
   * Created by peng on 10/07/17.
   */
+//TODO: merge into DataRowSchema?
 case class ExecutionContext(
                              spooky: SpookyContext,
                              @transient scratchRDDs: ScratchRDDs = new ScratchRDDs()
