@@ -77,7 +77,7 @@ abstract class IntegrationFixture
     val pagesFetched = metrics.pagesFetched.value
     remotePagesFetched = metrics.pagesFetchedFromRemote.value
     assert(pagesFetched >= numPages)
-    assert(error contains remotePagesFetched - numPages)
+    assert(remoteFetchSuboptimality contains remotePagesFetched - numPages)
     assert(metrics.pagesFetchedFromCache.value === pagesFetched - remotePagesFetched)
     assert(metrics.sessionInitialized.value === numSessions)
     assert(metrics.sessionReclaimed.value >= metrics.sessionInitialized.value)
@@ -142,7 +142,7 @@ abstract class IntegrationFixture
 
   def pageFetchedCap: Int = numPages * 2
 
-  def error: Range = 0 to 0
+  def remoteFetchSuboptimality: Range = 0 to 0
 }
 
 abstract class UncacheableIntegrationFixture extends IntegrationFixture {
