@@ -2,6 +2,7 @@ package com.tribbloids.spookystuff
 
 import com.tribbloids.spookystuff.doc.Doc
 import com.tribbloids.spookystuff.session.Session
+import com.tribbloids.spookystuff.utils.Lambda
 
 import scala.language.implicitConversions
 
@@ -14,9 +15,9 @@ package object actions {
 
   type DryRun = List[Trace]
 
-  type DocFilter = ((Doc, Session) => Doc) //TODO: merge with Selector[Doc]
+  type DocFilter = Lambda[(Doc, Session), Doc] //TODO: merge with Selector[Doc]
 
-  type DocCondition = ((Doc, Session) => Boolean) //TODO: merge with Selector[Doc]
+  type DocCondition = Lambda[(Doc, Session), Boolean] //TODO: merge with Selector[Doc]
 
   type Selector = String //TODO: change to Doc => Element or Extraction
 }

@@ -6,6 +6,7 @@ import com.tribbloids.spookystuff.dsl._
 import com.tribbloids.spookystuff.row.Sampler
 import com.tribbloids.spookystuff.session._
 import com.tribbloids.spookystuff.session.python.PythonDriver
+import com.tribbloids.spookystuff.utils.Lambda0
 import org.apache.spark.SparkConf
 import org.apache.spark.storage.StorageLevel
 
@@ -37,14 +38,14 @@ class SpookyConf(
                   var webDriverFactory: DriverFactory[CleanWebDriver] = SpookyConf.DEFAULT_WEBDRIVER_FACTORY,
                   var pythonDriverFactory: DriverFactory[PythonDriver] = SpookyConf.DEFAULT_PYTHONDRIVER_FACTORY,
 
-                  var webProxy: () => WebProxySetting = WebProxyFactories.NoProxy,
+                  var webProxy: WebProxyFactory = WebProxyFactories.NoProxy,
 
                   //TODO: merge into headersFactory
-                  var userAgentFactory: () => String = {
+                  var userAgentFactory: Lambda0[String] = {
                     () => "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/37.0.2062.120 Safari/537.36"
                   },
-                  var headersFactory: () => Map[String, String] = () => Map(),
-                  var oAuthKeysFactory: () => OAuthKeys = () => null,
+                  var headersFactory: Lambda0[Map[String, String]] = () => Map[String, String](),
+                  var oAuthKeysFactory: Lambda0[OAuthKeys] = () => null,
 
                   var browserResolution: (Int, Int) = (1920, 1080),
 
@@ -93,7 +94,6 @@ class SpookyConf(
       webDriverFactory = this.webDriverFactory,
       pythonDriverFactory = this.pythonDriverFactory,
       webProxy = this.webProxy,
-      //                   var userAgent: ()=> String = () => null,
       userAgentFactory = this.userAgentFactory,
       headersFactory = this.headersFactory,
       oAuthKeysFactory = this.oAuthKeysFactory,

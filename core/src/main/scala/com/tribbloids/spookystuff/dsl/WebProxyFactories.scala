@@ -4,15 +4,15 @@ import com.tribbloids.spookystuff.session.WebProxySetting
 
 import scala.util.{Random => SR}
 
-sealed abstract class WebProxyFactory extends (() => WebProxySetting) with Serializable
+//sealed abstract class WebProxyFactory extends (() => WebProxySetting) with Serializable
 
 object WebProxyFactories {
 
-  object NoProxy extends WebProxyFactory {
+  case object NoProxy extends WebProxyFactory {
     override def apply(): WebProxySetting = null
   }
 
-  object Tor extends WebProxyFactory {
+  case object Tor extends WebProxyFactory {
     def apply() = WebProxySetting("127.0.0.1", 9050, "socks5")
   }
 

@@ -19,14 +19,15 @@ object DocFilters {
 
   case object Bypass extends AbstractDocFilter {
 
-    override def apply(result: Doc, session: Session): Doc = {
-      result
+    override def apply(v: (Doc, Session)): Doc = {
+      v._1
     }
   }
 
   case object AcceptStatusCode2XX extends AbstractDocFilter {
 
-    override def apply(result: Doc, session: Session): Doc = {
+    override def apply(v: (Doc, Session)): Doc = {
+      val result = v._1
       assertStatusCode(result)
       result
     }
@@ -34,7 +35,8 @@ object DocFilters {
 
   case object MustHaveTitle extends AbstractDocFilter {
 
-    override def apply(result: Doc, session: Session): Doc = {
+    override def apply(v: (Doc, Session)): Doc = {
+      val result = v._1
       assertStatusCode(result)
       if (result.mimeType.contains("html")){
         assert(
