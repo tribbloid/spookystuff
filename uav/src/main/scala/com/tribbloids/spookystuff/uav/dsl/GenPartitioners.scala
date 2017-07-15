@@ -1,13 +1,12 @@
 package com.tribbloids.spookystuff.uav.dsl
 
-import com.graphhopper.jsprit.core.problem.solution.VehicleRoutingProblemSolution
 import com.tribbloids.spookystuff.actions.TraceView
 import com.tribbloids.spookystuff.dsl.GenPartitioner
 import com.tribbloids.spookystuff.dsl.GenPartitioners.Instance
 import com.tribbloids.spookystuff.execution.ExecutionContext
 import com.tribbloids.spookystuff.row.BeaconRDD
 import com.tribbloids.spookystuff.uav.actions.UAVAction
-import com.tribbloids.spookystuff.uav.planning.{JSpritSolver, PreferUAV, WrapLocation}
+import com.tribbloids.spookystuff.uav.planning.{JSpritSolver, PreferUAV}
 import com.tribbloids.spookystuff.uav.telemetry.{Link, UAVStatus}
 import org.apache.spark.rdd.RDD
 
@@ -19,7 +18,8 @@ import scala.reflect.ClassTag
 object GenPartitioners {
 
   case class JSprit(
-                     vizPathOpt: Option[String] = Some("output/GP.png") // for debugging only.
+                     solutionPlotPathOpt: Option[String] = Some("log/solution.png"),
+                     progressPlotPathOpt: Option[String] = Some("log/progress.png") // for debugging only.
                    ) extends GenPartitioner {
 
     def getInstance[K >: TraceView: ClassTag](ec: ExecutionContext): Instance[K] = {
@@ -55,58 +55,21 @@ object GenPartitioners {
 
         ec.scratchRDDs.persist(bifurcated)
 
-        //        val hasUAVTraces_Data: Array[(TraceView, V)] = hasUAVRDD.distinct().collect()
-        //        val hasUAVTraces = hasUAVTraces_Data.map(_._1.children)
-
-        val hasUAV: Array[(TraceView, Seq[V])] = bifurcated
+        val hasNavRows: Array[(TraceView, Seq[V])] = bifurcated
           .flatMap(tt => tt._1._1.map(v => v -> tt._2)).collect()
-
-        val hasUAVTraces = hasUAV.map(_._1)
 
         val linkRDD = Link.linkRDD(spooky)
         linkRDD.persist()
         linkRDD.count() //TODO: optional
-        val statuses = linkRDD.keys.collect()
+        val uavs = linkRDD.keys.collect()
 
-        val traces_linkOpts_indices: Array[((TraceView, Option[UAVStatus]), Int)] = {
-          val fromLinks: Array[(TraceView, Option[UAVStatus])] =
-            statuses.map {
-              link =>
-                TraceView(List(WrapLocation(link.currentLocation))) -> Some(link)
-            }
-
-          val fromTraces: Array[(TraceView, Option[UAVStatus])] =
-            hasUAVTraces.map {
-              trace =>
-                trace -> None
-            }
-
-          (fromLinks ++ fromTraces).zipWithIndex
-        }
-
-        val best: VehicleRoutingProblemSolution = JSpritSolver.solveTraces(spooky, traces_linkOpts_indices)
-
-        import scala.collection.JavaConverters._
-
-        val routes = best.getRoutes.asScala.toList
-        val status_KVs: Seq[(UAVStatus, Seq[(TraceView, Seq[V])])] = routes.map {
-          route =>
-            val status = statuses.find(_.uav.primaryURI == route.getVehicle.getId).get
-            val tours = route.getTourActivities.getActivities.asScala.toList
-            val traces = for (tour <- tours) yield {
-              val index = tour.getLocation.getIndex
-              val trace: TraceView = traces_linkOpts_indices.find(_._2 == index).get._1._1
-              val v = hasUAV.find(_._1 == trace).get._2
-              trace -> v
-            }
-            status -> traces
-        }
-        val status_KVMap = Map(status_KVs: _*)
+        val solver = JSpritSolver(JSprit.this, spooky, uavs, hasNavRows)
+        val uav2RowsMap: Map[UAVStatus, Seq[(TraceView, Seq[V])]] = solver.getUAV2RowsMap
 
         val realignedRDD: RDD[(K, Iterable[V])] = linkRDD.flatMap {
           tuple =>
             val link = tuple._2
-            val KVs = status_KVMap.getOrElse(tuple._1, Nil)
+            val KVs = uav2RowsMap.getOrElse(tuple._1, Nil)
             val result = KVs.map {
               kv =>
                 val vv = kv._1

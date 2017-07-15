@@ -82,7 +82,7 @@ public class AbeProblemMinMax {
 
         VehicleRoutingAlgorithm vra = algorithmBuilder.buildAlgorithm();
 
-        vra.addListener(new AlgorithmSearchProgressChartListener("output/abe/progress.png"));
+        vra.addListener(new AlgorithmSearchProgressChartListener("log/abe/progress.png"));
         VariationCoefficientTermination prematureAlgorithmTermination = new VariationCoefficientTermination(150, 0.001);
         vra.addListener(prematureAlgorithmTermination);
         vra.setPrematureAlgorithmTermination(prematureAlgorithmTermination);
@@ -93,7 +93,7 @@ public class AbeProblemMinMax {
 
         Plotter plotter2 = new Plotter(vrp, best);
 //		plotter2.setShowFirstActivity(true);
-        plotter2.plot("output/abe/abeProblemWithSolution.png", "abe");
+        plotter2.plot("log/abe/abeProblemWithSolution.png", "abe");
         SolutionPrinter.print(vrp, best, Print.VERBOSE);
 
         System.out.println("total-time: " + getTotalTime(vrp, best));

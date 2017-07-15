@@ -9,7 +9,7 @@ import com.graphhopper.jsprit.core.problem.solution.route.VehicleRoute;
  */
 public class MinimiaxCost implements SolutionCostCalculator {
 
-	private final double scalingParameter = 0.2;
+	private final double scalingParameter = 0.0;
 
 	@Override
 	public double getCosts(VehicleRoutingProblemSolution solution) {

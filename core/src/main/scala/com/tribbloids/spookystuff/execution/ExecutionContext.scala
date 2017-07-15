@@ -15,7 +15,7 @@ case class ExecutionContext(
     assert(this.spooky == b.spooky,
       "cannot merge execution plans due to diverging SpookyContext")
 
-    import this.scratchRDDs._
+    import scratchRDDs._
     val bb = b.scratchRDDs
     this.copy(
       scratchRDDs = new ScratchRDDs(

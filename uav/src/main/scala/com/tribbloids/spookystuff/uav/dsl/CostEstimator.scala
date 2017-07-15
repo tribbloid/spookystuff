@@ -63,16 +63,16 @@ object CostEstimator {
         case nav: UAVNavigation => nav
       }
 
-      val costSum = navs.indices.map {
+      val costs = navs.indices.map {
         i =>
           val c1 = intraCost(navs(i))
           val c2 = if (i >= navs.size - 1) 0
           else interCost(navs(i), navs(i + 1))
           c1 + c2
       }
-        .sum
+      val sum = costs.sum
 
-      costSum
+      sum
     }
   }
 }

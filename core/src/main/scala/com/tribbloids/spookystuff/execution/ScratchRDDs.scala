@@ -1,5 +1,6 @@
 package com.tribbloids.spookystuff.execution
 
+import com.tribbloids.spookystuff.session.LocalCleanable
 import com.tribbloids.spookystuff.utils.NOTSerializable
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.DataFrame
@@ -22,7 +23,7 @@ case class ScratchRDDs(
                         tempTables: ArrayBuffer[(String, DataFrame)] = ArrayBuffer(),
                         tempRDDs: ArrayBuffer[RDD[_]] = ArrayBuffer(),
                         tempDFs: ArrayBuffer[DataFrame] = ArrayBuffer()
-                      ) extends NOTSerializable {
+                      ) extends LocalCleanable {
 
   def register(
                 df: DataFrame
@@ -88,5 +89,9 @@ case class ScratchRDDs(
 
   def <+>[T](b: ScratchRDDs, f: ScratchRDDs => ArrayBuffer[T]) = {
     f(this) ++ f(b)
+  }
+
+  override protected def cleanImpl(): Unit = {
+    clearAll()
   }
 }

@@ -20,191 +20,20 @@ import com.tribbloids.spookystuff.SpookyContext
 import com.tribbloids.spookystuff.actions.TraceView
 import com.tribbloids.spookystuff.uav.UAVConf
 import com.tribbloids.spookystuff.uav.actions.UAVNavigation
+import com.tribbloids.spookystuff.uav.dsl.GenPartitioners
 import com.tribbloids.spookystuff.uav.spatial.NED
 import com.tribbloids.spookystuff.uav.telemetry.UAVStatus
 
-import scala.util.Random
-
-/**
-  * Created by peng on 7/2/17.
-  */
 object JSpritSolver {
 
-  // TODO: need independent test
-  // TODO: switch from service to shipment?
-  def solveTraces(
-                   spooky: SpookyContext,
-                   trace_uavOpt_index: Array[((TraceView, Option[UAVStatus]), Int)]
-                 ): VehicleRoutingProblemSolution = {
+  /*
+   * Your custom objective function that min max transport times. Additionally you can try to consider overall transport times
+   * in your objective as well. Thus you minimize max transport times first, and second, you minimize overall transport time.
+   *
+   * If you choose to consider overall transport times, makes sure you scale it appropriately.
+   */
+  val objectiveFunction: SolutionCostCalculator = new MinimiaxCost
 
-    val homeLocation = spooky.getConf[UAVConf].homeLocation
-
-    val trace_indices: Array[(TraceView, Int)] = trace_uavOpt_index.map {
-      triplet =>
-        triplet._1._1 -> triplet._2
-    }
-
-    val jRoutingCostMat: FastVehicleRoutingTransportCostsMatrix = getCostMatrix(spooky, trace_indices)
-
-    val cap = Capacity.Builder.newInstance()
-      .addDimension(0, 1)
-      .build()
-    val jVType = VehicleTypeImpl.Builder.newInstance("UAV")
-      .setCapacityDimensions(cap)
-      .build()
-
-    val jVehicles = trace_uavOpt_index
-      .flatMap {
-        triplet =>
-          triplet._1._2.map { v => v -> triplet._2 }
-      }
-      .map {
-        tuple =>
-          val status = tuple._1
-          val location = status.currentLocation
-          val coord = location.getCoordinate(NED, homeLocation).get
-          val jLocation = JLocation.Builder.newInstance()
-            .setIndex(tuple._2)
-            .setCoordinate(
-              Coordinate.newInstance(
-                coord.east,
-                coord.north
-              )
-            )
-            .build()
-          val jVehicle = VehicleImpl.Builder
-            .newInstance(status.uav.primaryURI)
-            .setType(jVType)
-            .setStartLocation(jLocation)
-            .build()
-          jVehicle
-      }
-
-    //TODO: why not use shipment? has better visualization.
-    val jJobs: Array[Service] = trace_uavOpt_index
-      .flatMap {
-        triplet =>
-          triplet._1._2 match {
-            case Some(_) =>
-              None
-            case None =>
-              Some(triplet._1._1 -> triplet._2)
-          }
-      }
-      .map {
-        tuple =>
-          val navs: Seq[UAVNavigation] = tuple._1.children.collect {
-            case nav: UAVNavigation => nav
-          }
-
-          val coord = navs.head._from.getCoordinate(NED, homeLocation).get
-          val location = JLocation.Builder
-            .newInstance()
-            .setIndex(tuple._2)
-            .setCoordinate(
-              Coordinate.newInstance(
-                coord.east,
-                coord.north
-              )
-            )
-            .build()
-
-          Service.Builder.newInstance(tuple._1.hashCode().toString)
-            .setLocation(location)
-            .build()
-      }
-    val vrp = {
-      val builder = VehicleRoutingProblem.Builder.newInstance()
-        .setRoutingCost(jRoutingCostMat)
-      for (v <- jVehicles) {
-        builder.addVehicle(v)
-      }
-      for (s <- jJobs) {
-        builder.addJob(s)
-      }
-      builder.setFleetSize(VehicleRoutingProblem.FleetSize.FINITE)
-      builder.build()
-    }
-
-    val tuple = solveVRP(vrp)
-    println(s"cost = ${tuple._2}")
-    tuple._1
-  }
-
-  def solveVRP(vrp: VehicleRoutingProblem) = {
-    /*
-         * Your custom objective function that min max transport times. Additionally you can try to consider overall transport times
-         * in your objective as well. Thus you minimize max transport times first, and second, you minimize overall transport time.
-         *
-         * If you choose to consider overall transport times, makes sure you scale it appropriately.
-         */
-    val objectiveFunction: SolutionCostCalculator = new MinimiaxCost
-
-    val stateManager: StateManager = new StateManager(vrp)
-
-    val stateId: StateId = stateManager.createStateId("max-transport-time")
-    //introduce a new state called "max-transport-time"
-    //add a default-state for "max-transport-time"
-    //    stateManager.putProblemState(stateId, classOf[Double], 0.0)
-    //
-    stateManager.addStateUpdater(new MinimaxUpdater(stateManager, vrp, stateId))
-
-    /*
-     * The insertion heuristics is controlled with your constraints
-     */
-    val constraintManager: ConstraintManager = new ConstraintManager(vrp, stateManager)
-    // soft constraint that calculates additional transport costs when inserting a job(activity) at specified position
-    constraintManager.addConstraint(new VariableTransportCostCalculator(vrp.getTransportCosts, vrp.getActivityCosts))
-    /*
-     *  soft constraint that penalyzes a shift of max-route transport time, i.e. once the insertion heuristic
-     *  tries to insert a jobActivity at position which results in a shift of max-transport-time, it is penalyzed with
-     *  penaltyForEachTimeUnitAboveCurrentMaxTime
-     *
-     */
-    val constraint: SoftActivityConstraint = new MinimaxConstraint(vrp, stateManager, stateId)
-    constraintManager.addConstraint(constraint)
-
-    val algorithmBuilder: Jsprit.Builder = Jsprit.Builder.newInstance(vrp)
-    //		algorithmBuilder
-    algorithmBuilder.setObjectiveFunction(objectiveFunction)
-
-    algorithmBuilder.setStateAndConstraintManager(stateManager, constraintManager)
-    algorithmBuilder.addCoreStateAndConstraintStuff(true)
-
-    val vra: VehicleRoutingAlgorithm = algorithmBuilder.buildAlgorithm
-
-    vra.addListener(new AlgorithmSearchProgressChartListener("output/peng/progress.png"))
-    val prematureAlgorithmTermination: VariationCoefficientTermination = new VariationCoefficientTermination(150, 0.001)
-    vra.addListener(prematureAlgorithmTermination)
-    vra.setPrematureAlgorithmTermination(prematureAlgorithmTermination)
-
-    val solutions = vra.searchSolutions
-
-    val best = Solutions.bestOf(solutions)
-
-    SolutionPrinter.print(vrp, best, Print.VERBOSE)
-    plot(vrp, best, s"temp/JSprit/solution-${Random.nextLong()}.png")
-
-    best -> objectiveFunction.getCosts(best)
-  }
-
-  def plot(
-            vrp: VehicleRoutingProblem,
-            solution: VehicleRoutingProblemSolution,
-            path: String,
-            title: String = "JSprit"
-          ) = {
-
-    val file = new File(path)
-    //    ensureAbsolute(file)
-
-    if (!file.exists()) file.getParentFile.mkdirs()
-
-    val plotter2: Plotter = new Plotter(vrp, solution)
-    //		plotter2.setShowFirstActivity(true);
-
-    plotter2.plot(path, title)
-  }
 
   def getCostMatrix(
                      spooky: SpookyContext,
@@ -236,5 +65,248 @@ object JSpritSolver {
       builder.build()
     }
     jRoutingCostMat
+  }
+
+
+  def solveVRP(
+                vrp: VehicleRoutingProblem,
+                gp: GenPartitioners.JSprit
+              ): (VehicleRoutingProblemSolution, Double) = {
+
+    val stateManager: StateManager = new StateManager(vrp)
+
+    val stateId: StateId = stateManager.createStateId("max-transport-time")
+    //introduce a new state called "max-transport-time"
+    //add a default-state for "max-transport-time"
+    //    stateManager.putProblemState(stateId, classOf[Double], 0.0)
+    //
+    stateManager.addStateUpdater(new MinimaxUpdater(stateManager, vrp, stateId))
+
+    /*
+     * The insertion heuristics is controlled with your constraints
+     */
+    val constraintManager: ConstraintManager = new ConstraintManager(vrp, stateManager)
+    // soft constraint that calculates additional transport costs when inserting a job(activity) at specified position
+    constraintManager.addConstraint(new VariableTransportCostCalculator(vrp.getTransportCosts, vrp.getActivityCosts))
+    /*
+     *  soft constraint that penalyzes a shift of max-route transport time, i.e. once the insertion heuristic
+     *  tries to insert a jobActivity at position which results in a shift of max-transport-time, it is penalyzed with
+     *  penaltyForEachTimeUnitAboveCurrentMaxTime
+     *
+     */
+    val constraint: SoftActivityConstraint = new MinimaxConstraint(vrp, stateManager, stateId)
+    constraintManager.addConstraint(constraint)
+
+    val algorithmBuilder: Jsprit.Builder = Jsprit.Builder.newInstance(vrp)
+    //		algorithmBuilder
+    algorithmBuilder.setObjectiveFunction(JSpritSolver.objectiveFunction)
+
+    algorithmBuilder.setStateAndConstraintManager(stateManager, constraintManager)
+    algorithmBuilder.addCoreStateAndConstraintStuff(true)
+
+    val vra: VehicleRoutingAlgorithm = algorithmBuilder.buildAlgorithm
+
+    gp.progressPlotPathOpt.foreach {
+      v =>
+        val file = new File(v)
+        if (!file.exists()) file.getParentFile.mkdirs()
+        vra.addListener(new AlgorithmSearchProgressChartListener(v))
+    }
+    val prematureAlgorithmTermination: VariationCoefficientTermination = new VariationCoefficientTermination(150, 0.001)
+    vra.addListener(prematureAlgorithmTermination)
+    vra.setPrematureAlgorithmTermination(prematureAlgorithmTermination)
+
+    val solutions = vra.searchSolutions
+
+    val best = Solutions.bestOf(solutions)
+
+    SolutionPrinter.print(vrp, best, Print.VERBOSE)
+    gp.solutionPlotPathOpt.foreach {
+      v =>
+        plot(vrp, best, v)
+    }
+
+    best -> JSpritSolver.objectiveFunction.getCosts(best)
+  }
+
+  def plot(
+            vrp: VehicleRoutingProblem,
+            solution: VehicleRoutingProblemSolution,
+            path: String,
+            title: String = "JSprit"
+          ) = {
+
+    val file = new File(path)
+    if (!file.exists()) file.getParentFile.mkdirs()
+
+    val plotter2: Plotter = new Plotter(vrp, solution)
+    //		plotter2.setShowFirstActivity(true);
+
+    plotter2.plot(path, title)
+  }
+}
+
+/**
+  * Created by peng on 7/2/17.
+  */
+case class JSpritSolver[V](
+                            gp: GenPartitioners.JSprit,
+                            spooky: SpookyContext,
+                            uavs: Array[UAVStatus],
+                            rows: Array[(TraceView, Seq[V])]
+                          ) {
+
+  val traces = rows.map(_._1)
+
+  val trace_uavOpt_index: Array[((TraceView, Option[UAVStatus]), Int)] = {
+    val fromUAVs: Array[(TraceView, Option[UAVStatus])] =
+      uavs.map {
+        uav =>
+          TraceView(List(WrapLocation(uav.currentLocation))) -> Some(uav)
+      }
+
+    val fromTraces: Array[(TraceView, Option[UAVStatus])] = traces.map {
+      trace =>
+        trace -> None
+    }
+
+    (fromUAVs ++ fromTraces).zipWithIndex
+  }
+
+  val homeLocation = spooky.getConf[UAVConf].homeLocation
+
+  lazy val define: VehicleRoutingProblem = {
+
+    val trace_indices: Array[(TraceView, Int)] = trace_uavOpt_index.map {
+      triplet =>
+        triplet._1._1 -> triplet._2
+    }
+
+    val jRoutingCostMat: FastVehicleRoutingTransportCostsMatrix =
+      JSpritSolver.getCostMatrix(spooky, trace_indices)
+
+    val jVehicles: Array[VehicleImpl] = getJVehicles
+
+    val jServices: Array[Service] = getJServices
+
+    val vrp = {
+      val builder = VehicleRoutingProblem.Builder.newInstance()
+        .setRoutingCost(jRoutingCostMat)
+      for (v <- jVehicles) {
+        builder.addVehicle(v)
+      }
+      for (s <- jServices) {
+        builder.addJob(s)
+      }
+      builder.setFleetSize(VehicleRoutingProblem.FleetSize.FINITE)
+      builder.build()
+    }
+    vrp
+  }
+
+  def getJVehicles: Array[VehicleImpl] = {
+    val cap = Capacity.Builder.newInstance()
+      .addDimension(0, 1)
+      .build()
+    val jVType = VehicleTypeImpl.Builder.newInstance("UAV")
+      .setCapacityDimensions(cap)
+      .build()
+
+    val jVehicles = trace_uavOpt_index
+      .flatMap {
+        triplet =>
+          triplet._1._2.map { v => v -> triplet._2 }
+      }
+      .map {
+        tuple =>
+          val status = tuple._1
+          val location = status.currentLocation
+          val coord = location.getCoordinate(NED, homeLocation).get
+          val jLocation = JLocation.Builder.newInstance()
+            .setIndex(tuple._2)
+            .setCoordinate(
+              Coordinate.newInstance(
+                coord.east,
+                coord.north
+              )
+            )
+            .build()
+          val jVehicle = VehicleImpl.Builder
+            .newInstance(status.uav.primaryURI)
+            .setType(jVType)
+            .setStartLocation(jLocation)
+            .setReturnToDepot(false)
+            .build()
+          jVehicle
+      }
+    jVehicles
+  }
+
+  def getJServices: Array[Service] = {
+    val jServices: Array[Service] = trace_uavOpt_index
+      .flatMap {
+        triplet =>
+          triplet._1._2 match {
+            case Some(_) =>
+              None
+            case None =>
+              Some(triplet._1._1 -> triplet._2)
+          }
+      }
+      .map {
+        tuple =>
+          val navs: Seq[UAVNavigation] = tuple._1.children.collect {
+            case nav: UAVNavigation => nav
+          }
+
+          val coord = navs.head._from.getCoordinate(NED, homeLocation).get
+          val location = JLocation.Builder
+            .newInstance()
+            .setIndex(tuple._2)
+            .setCoordinate(
+              Coordinate.newInstance(
+                coord.east,
+                coord.north
+              )
+            )
+            .build()
+
+          Service.Builder.newInstance(tuple._1.hashCode().toString)
+            .setLocation(location)
+            .build()
+      }
+    jServices
+  }
+
+  // TODO: need independent test
+  // TODO: why not use shipment? has better visualization.
+  lazy val solve: VehicleRoutingProblemSolution = {
+
+    val vrp: VehicleRoutingProblem = define
+
+    val tuple = JSpritSolver.solveVRP(vrp, gp)
+    println(s"cost = ${tuple._2}")
+    tuple._1
+  }
+
+  lazy val getUAV2RowsMap: Map[UAVStatus, Seq[(TraceView, Seq[V])]] = {
+
+    import scala.collection.JavaConverters._
+
+    val routes = solve.getRoutes.asScala.toList
+    val status_KVs: Seq[(UAVStatus, Seq[(TraceView, Seq[V])])] = routes.map {
+      route =>
+        val status = uavs.find(_.uav.primaryURI == route.getVehicle.getId).get
+        val tours = route.getTourActivities.getActivities.asScala.toList
+        val traces = for (tour <- tours) yield {
+          val index = tour.getLocation.getIndex
+          val trace: TraceView = trace_uavOpt_index.find(_._2 == index).get._1._1
+          val v = rows.find(_._1 == trace).get._2
+          trace -> v
+        }
+        status -> traces
+    }
+    val status_KVMap = Map(status_KVs: _*)
+    status_KVMap
   }
 }

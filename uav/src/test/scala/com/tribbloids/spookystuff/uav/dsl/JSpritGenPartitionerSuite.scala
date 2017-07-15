@@ -4,7 +4,7 @@ import com.tribbloids.spookystuff.actions.{Action, TraceView}
 import com.tribbloids.spookystuff.execution.ExecutionContext
 import com.tribbloids.spookystuff.row.DataRow
 import com.tribbloids.spookystuff.uav.actions.Waypoint
-import com.tribbloids.spookystuff.uav.planning.{PreferUAV, WrapLocation}
+import com.tribbloids.spookystuff.uav.planning.{JSpritFixture, PreferUAV, WrapLocation}
 import com.tribbloids.spookystuff.uav.spatial.NED
 import com.tribbloids.spookystuff.uav.system.UAV
 import com.tribbloids.spookystuff.uav.{UAVConf, UAVFixture, UAVTestUtils}
@@ -13,8 +13,8 @@ import org.scalatest.Ignore
 /**
   * Created by peng on 16/06/17.
   */
-@Ignore //TODO: problem should be set up to be invariant to number of cores
-class JSpritGenPartitionerSuite extends UAVFixture {
+//@Ignore //TODO: problem should be set up to be invariant to number of cores
+class JSpritGenPartitionerSuite extends UAVFixture with JSpritFixture {
 
   override def simURIs = (0 until parallelism).map {
     v =>
@@ -28,8 +28,6 @@ class JSpritGenPartitionerSuite extends UAVFixture {
     NED(0, 20, -2)
   )
     .waypoints
-
-  lazy val genPartitioner = GenPartitioners.JSprit()
 
   def runTest(
                wps: Seq[Action]
@@ -45,24 +43,24 @@ class JSpritGenPartitionerSuite extends UAVFixture {
 
     spooky.rebroadcast()
     val ec = ExecutionContext(spooky)
-    val inst = genPartitioner.Inst(ec)
+    val gp = getJSprit
+    val inst = gp.Inst(ec)
 
     val groupedRDD = inst.groupByKey(rdd)
 
-    val grouped = groupedRDD.keys.mapPartitions{
+    val grouped = groupedRDD.keys.mapPartitions {
       itr =>
         Iterator(itr.toList)
     }
       .collect()
-    grouped.foreach(println)
     grouped
   }
 
   def getCost(grouped: Array[List[TraceView]]) = {
-    val uav_lengths: Array[(UAV, Double)] = grouped.map {
+    val uav_lengths: Array[(UAV, Double)] = grouped.flatMap {
       path =>
         val actions = path.flatMap(_.children)
-        if (actions.isEmpty) UAV(Seq("non-existance")) -> 0.0
+        if (actions.isEmpty) None
         else {
           val statusSeq = actions.collect {
             case PreferUAV(uav) => uav
@@ -77,30 +75,29 @@ class JSpritGenPartitionerSuite extends UAVFixture {
           }
 
           val cost = spooky.getConf[UAVConf].costEstimator.estimate(List(first) ++ others, spooky)
-          status.uav -> cost
+          Some(status.uav -> cost)
         }
     }
 
-    uav_lengths.foreach(v => println(s"UAV ${v._1} will move ${v._2}m"))
+    uav_lengths.foreach(v => println(s"Length = ${v._2}m for ${v._1}"))
 
     val lengths: Array[Double] = uav_lengths.map(_._2)
     val cost = lengths.max
 
-    println(s"total cost = $cost")
+    println(s"Max length = ${cost}m")
     cost
   }
-
 
   it("can optimize max cost of 1 waypoint per UAV") {
 
     val grouped = runTest(waypoints(parallelism))
-    assert(getCost(grouped) <= 191.662)
+    assert(getCost(grouped) <= 141.739)
   }
 
   it("can optimize max cost of 2.5 waypoints per UAV") {
 
     val grouped = runTest(waypoints((parallelism * 2.5).toInt))
-    assert(getCost(grouped) <= 291.804)
+    assert(getCost(grouped) <= 231.504)
   }
 
   it("can optimize max cost of 1 scan per UAV") {

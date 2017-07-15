@@ -1,5 +1,4 @@
 *.class
-*.log
 
 # maven
 *.versionsBackup
@@ -38,7 +37,9 @@ foo
 #aws key
 # **/rootkey.csv
 
-#mavproxy test log
+#test logs
+*.log
+**/log
 **/logs
 
 #syncthing
