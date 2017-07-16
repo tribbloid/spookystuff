@@ -58,7 +58,7 @@ sealed trait AbstractCleanable {
     }
   }
 
-  override protected def finalize() = tryClean(false)
+  override protected def finalize() = tryClean()
 }
 
 /**

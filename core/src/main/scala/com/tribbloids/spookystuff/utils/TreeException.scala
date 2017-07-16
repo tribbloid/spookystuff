@@ -33,7 +33,7 @@ object TreeException {
   }
 
   def effectiveAgg(
-                    agg: Seq[Throwable] => TreeException = es => MultiCauseWrapper(causes = es),
+                    agg: Seq[Throwable] => Throwable,
                     extra: Seq[Throwable] = Nil,
                     expandUnary: Boolean = false
                   ): Seq[Throwable] => Throwable = {
@@ -53,7 +53,15 @@ object TreeException {
 
   def &&&[T](
               trials: Seq[Try[T]],
-              agg: Seq[Throwable] => TreeException = es => MultiCauseWrapper(causes = es),
+              agg: Seq[Throwable] => Throwable = {
+                es =>
+                  if (es.size == 1) {
+                    es.head
+                  }
+                  else {
+                    MultiCauseWrapper(causes = es)
+                  }
+              },
               extra: Seq[Throwable] = Nil,
               expandUnary: Boolean = false
             ): Seq[T] = {
@@ -72,7 +80,15 @@ object TreeException {
 
   def |||[T](
               trials: Seq[Try[T]],
-              agg: Seq[Throwable] => TreeException = es => MultiCauseWrapper(causes = es),
+              agg: Seq[Throwable] => Throwable = {
+                es =>
+                  if (es.size == 1) {
+                    es.head
+                  }
+                  else {
+                    MultiCauseWrapper(causes = es)
+                  }
+              },
               extra: Seq[Throwable] = Nil,
               expandUnary: Boolean = false
             ): Seq[T] = {

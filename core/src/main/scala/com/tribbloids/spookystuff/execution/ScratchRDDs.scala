@@ -1,7 +1,7 @@
 package com.tribbloids.spookystuff.execution
 
 import com.tribbloids.spookystuff.session.LocalCleanable
-import com.tribbloids.spookystuff.utils.NOTSerializable
+import com.tribbloids.spookystuff.utils.ShippingMarks
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.DataFrame
 
@@ -23,7 +23,7 @@ case class ScratchRDDs(
                         tempTables: ArrayBuffer[(String, DataFrame)] = ArrayBuffer(),
                         tempRDDs: ArrayBuffer[RDD[_]] = ArrayBuffer(),
                         tempDFs: ArrayBuffer[DataFrame] = ArrayBuffer()
-                      ) extends LocalCleanable {
+                      ) extends LocalCleanable with ShippingMarks {
 
   def register(
                 df: DataFrame
@@ -92,6 +92,7 @@ case class ScratchRDDs(
   }
 
   override protected def cleanImpl(): Unit = {
-    clearAll()
+    //    if (!isShipped) clearAll()
+    // TODO: right now GC may clean it prematurely, disabled until better solution.
   }
 }
