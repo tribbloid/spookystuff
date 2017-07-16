@@ -46,12 +46,16 @@ object JSpritSolver {
       i <- trace_indices;
       j <- trace_indices
     ) yield {
-      val traceView: TraceView = i._1
-      val last = traceView.children.collect { case v: UAVNavigation => v }.last
-      val lastLocation = last._to
-      val realTrace = List(WaypointPlaceholder(lastLocation)) ++ j._1.children
-      val cost = costEstimator.estimate(realTrace, spooky)
-      (i._2, j._2, cost)
+      if (i._2 == j._2)
+        (i._2, j._2, 0.0)
+      else {
+        val traceView: TraceView = i._1
+        val last = traceView.children.collect { case v: UAVNavigation => v }.last
+        val lastLocation = last._to
+        val realTrace = List(WaypointPlaceholder(lastLocation)) ++ j._1.children
+        val cost = costEstimator.estimate(realTrace, spooky)
+        (i._2, j._2, cost)
+      }
     }
 
     val size = trace_indices.length

@@ -21,6 +21,7 @@ import com.graphhopper.jsprit.core.util.Solutions;
 import com.graphhopper.jsprit.core.util.VehicleRoutingTransportCostsMatrix;
 import com.graphhopper.jsprit.io.problem.VrpXMLReader;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.Collection;
 
@@ -81,6 +82,9 @@ public class AbeProblemMinMax {
         algorithmBuilder.addCoreStateAndConstraintStuff(true);
 
         VehicleRoutingAlgorithm vra = algorithmBuilder.buildAlgorithm();
+
+        File file = new File("log/abe/");
+        if (!file.exists()) file.mkdirs();
 
         vra.addListener(new AlgorithmSearchProgressChartListener("log/abe/progress.png"));
         VariationCoefficientTermination prematureAlgorithmTermination = new VariationCoefficientTermination(150, 0.001);

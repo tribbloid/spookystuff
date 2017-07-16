@@ -14,7 +14,7 @@ import com.tribbloids.spookystuff.uav.{DummyUAVFixture, UAVConf, UAVTestUtils}
   */
 class JSpritGenPartitionerSuite extends DummyUAVFixture with JSpritFixture {
 
-  override def parallelism: Int = 8
+  override def parallelism: Int = 4
 
   def pattern(n: Int) = UAVTestUtils.LawnMowerPattern(
     n,
@@ -89,27 +89,27 @@ class JSpritGenPartitionerSuite extends DummyUAVFixture with JSpritFixture {
     cost
   }
 
-  it("can optimize max cost of 2 waypoint per UAV") {
+  it("can optimize max cost of 2 waypoints per UAV") {
 
     val grouped = runTest(waypoints(parallelism))
-    assert(getCost(grouped) <= 187.553)
+    assert(getCost(grouped) <= 141.739)
   }
 
-  it("can optimize max cost of 3.5 waypoints per UAV") {
+  it("can optimize max cost of 5 waypoints per UAV") {
 
-    val grouped = runTest(waypoints((parallelism * 1.75).toInt))
-    assert(getCost(grouped) <= 293.762)
+    val grouped = runTest(waypoints((parallelism * 2.5).toInt))
+    assert(getCost(grouped) <= 231.504)
   }
 
-  it("can optimize max cost of 1 line scan per UAV") {
+  it("can optimize max cost of 2 line scan per UAV") {
 
-    val grouped = runTest(lineScans(parallelism))
+    val grouped = runTest(lineScans(parallelism * 2))
     assert(getCost(grouped) <= 352.327)
   }
 
-  it("can optimize max cost of 2.5 line scans per UAV") {
+  it("can optimize max cost of 5 line scans per UAV") {
 
-    val grouped = runTest(lineScans((parallelism * 2.5).toInt))
+    val grouped = runTest(lineScans((parallelism * 5).toInt))
     assert(getCost(grouped) <= 832.726)
   }
 }

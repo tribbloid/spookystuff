@@ -5,7 +5,7 @@ import com.graphhopper.jsprit.core.util.{FastVehicleRoutingTransportCostsMatrix,
 import com.graphhopper.jsprit.io.problem.VrpXMLReader
 import com.tribbloids.spookystuff.SpookyEnvFixture
 import com.tribbloids.spookystuff.actions.TraceView
-import com.tribbloids.spookystuff.uav.UAVConf
+import com.tribbloids.spookystuff.uav.{UAVConf, UAVFixture}
 import com.tribbloids.spookystuff.uav.actions.Waypoint
 import com.tribbloids.spookystuff.uav.dsl.GenPartitioners
 import com.tribbloids.spookystuff.uav.spatial.{Location, NED}
@@ -24,8 +24,9 @@ trait JSpritFixture extends SpookyEnvFixture {
     val progressPath = s"log/JSprit/${this.getClass.getSimpleName}.$i.progress.png"
     i += 1
     GenPartitioners.JSprit(
-      Some(solutionPath),
-      Some(progressPath)
+      numUAVsOpt = Some(this.parallelism),
+      solutionPlotPathOpt = Some(solutionPath),
+      progressPlotPathOpt = Some(progressPath)
     )
   }
 }

@@ -53,26 +53,25 @@ case object SpookyViews {
     /**
       * guaranteed to have at least 1 datum on each executor thread. Better distribute evenly
       */
-    private def seed = {
-      val pp = self.defaultParallelism
-      val seed = self.makeRDD(1 to pp, pp)
+    private def seed(size: Int = self.defaultParallelism) = {
+      val seed = self.makeRDD(1 to size, size)
         .map(i => i->i)
-        .sortByKey(numPartitions = pp)
+        .sortByKey(numPartitions = size)
       //        .partitionBy(new HashPartitioner(self.defaultParallelism)) //TODO: should use RangePartitioner?
       //        .persist()
       //      seed.count()
       //      val seed = self.makeRDD[Int]((1 to self.defaultParallelism).map(i => i -> Seq(i.toString)))
       assert(
-        seed.partitions.length == pp,
-        s"seed doesn't have the right number of partitions: expected $pp, actual ${seed.partitions.length}"
+        seed.partitions.length == size,
+        s"seed doesn't have the right number of partitions: expected $size, actual ${seed.partitions.length}"
       )
       seed
     }
 
-    def mapPerExecutorCore[T: ClassTag](f: => T): RDD[T] = {
+    def mapPerExecutorCore[T: ClassTag](f: => T, size: Int = self.defaultParallelism): RDD[T] = {
       val alreadyRunThreadID: ConcurrentMap[(String, Long), Unit] = ConcurrentMap()
 
-      seed.mapPartitions {
+      seed(size).mapPartitions {
         itr =>
           val executorID = SparkEnv.get.executorId //technically this is useless as the map is only shared locally but whatever
         val threadID = Thread.currentThread().getId
@@ -85,11 +84,23 @@ case object SpookyViews {
           }
       }
     }
-    def foreachExecutorCore[T: ClassTag](f: => T) = mapPerExecutorCore(f).count()
+    def foreachExecutorCore[T: ClassTag](f: => T, size: Int = self.defaultParallelism) =
+      mapPerExecutorCore(f, size).count()
+
+    //TODO: change to concurrent execution
+    def mapPerCore[T: ClassTag](f: => T, size: Int = self.defaultParallelism): RDD[T] = {
+      val perExec = mapPerExecutorCore(f, size)
+      val v = f
+      self.makeRDD(Seq(v), 1).union(perExec)
+    }
+
+    def foreachCore[T: ClassTag](f: => T): Long = {
+      mapPerCore(f).count()
+    }
 
     def mapPerWorker[T: ClassTag](f: => T): RDD[T] = {
 
-      seed.mapPartitions {
+      seed().mapPartitions {
         itr =>
           val stageID = TaskContext.get.stageId()
           perWorkerMark.synchronized {
@@ -122,16 +133,6 @@ case object SpookyViews {
     }
     def foreachComputer[T: ClassTag](f: => T): Long = {
       mapPerComputer(f).count()
-    }
-
-    //TODO: change to concurrent execution
-    def mapPerCore[T: ClassTag](f: => T): RDD[T] = {
-      val perExec = mapPerExecutorCore(f)
-      val v = f
-      self.makeRDD(Seq(v), 1).union(perExec)
-    }
-    def foreachCore[T: ClassTag](f: => T): Long = {
-      mapPerCore(f).count()
     }
 
     def allTaskLocationStrs: Seq[String] = {

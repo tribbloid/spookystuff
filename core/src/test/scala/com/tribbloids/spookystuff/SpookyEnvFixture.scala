@@ -110,6 +110,8 @@ abstract class SpookyEnvFixture
   def sc: SparkContext = TestHelper.TestSpark
   def sql: SQLContext = TestHelper.TestSQL
 
+  def parallelism: Int = sc.defaultParallelism
+
   lazy val driverFactory: DriverFactory[CleanWebDriver] = SpookyConf.TEST_WEBDRIVER_FACTORY
 
   @transient lazy val spookyConf = new SpookyConf(

@@ -2,12 +2,12 @@ package com.tribbloids.spookystuff.uav.dsl
 
 import com.tribbloids.spookystuff.actions.TraceView
 import com.tribbloids.spookystuff.dsl.GenPartitioner
-import com.tribbloids.spookystuff.dsl.GenPartitioners.Instance
+import com.tribbloids.spookystuff.dsl.GenPartitionerLike.Instance
 import com.tribbloids.spookystuff.execution.ExecutionContext
 import com.tribbloids.spookystuff.row.BeaconRDD
 import com.tribbloids.spookystuff.uav.actions.UAVAction
 import com.tribbloids.spookystuff.uav.planning.{JSpritSolver, PreferUAV}
-import com.tribbloids.spookystuff.uav.telemetry.{DummyLink, Link, UAVStatus}
+import com.tribbloids.spookystuff.uav.telemetry.{Link, UAVStatus}
 import org.apache.spark.rdd.RDD
 
 import scala.reflect.ClassTag
@@ -18,6 +18,10 @@ import scala.reflect.ClassTag
 object GenPartitioners {
 
   case class JSprit(
+                     preprocessing: GenPartitioner = {
+                       com.tribbloids.spookystuff.dsl.GenPartitioners.Wide()
+                     },
+                     numUAVsOpt: Option[Int] = None,
                      solutionPlotPathOpt: Option[String] = Some("log/solution.png"),
                      progressPlotPathOpt: Option[String] = Some("log/progress.png") // for debugging only.
                    ) extends GenPartitioner {
@@ -38,19 +42,21 @@ object GenPartitioners {
 
         val spooky = ec.spooky
 
-        val bifurcated: RDD[((Option[TraceView], Option[K]), Seq[V])] = rdd.map {
-          case (k: TraceView, v) =>
-            val c = k.children
-            val result: (Option[TraceView], Option[K]) = {
-              if (c.exists(_.isInstanceOf[UAVAction])) Some(k) -> None
-              else None -> Some(k: K)
-            }
-            result -> v
-          case (k, v) =>
-            val result: (Option[TraceView], Option[K]) = None -> Some(k)
-            result -> v
-        }
-          .groupByKey()
+        val preprocessed = preprocessing.getInstance[K](ec).groupByKey(rdd, beaconRDDOpt)
+
+        val bifurcated: RDD[((Option[TraceView], Option[K]), Seq[V])] = preprocessed
+          .map {
+            case (k: TraceView, v) =>
+              val c = k.children
+              val result: (Option[TraceView], Option[K]) = {
+                if (c.exists(_.isInstanceOf[UAVAction])) Some(k) -> None
+                else None -> Some(k: K)
+              }
+              result -> v
+            case (k, v) =>
+              val result: (Option[TraceView], Option[K]) = None -> Some(k)
+              result -> v
+          }
           .mapValues(v => v.toList)
 
         ec.scratchRDDs.persist(bifurcated)
@@ -58,7 +64,7 @@ object GenPartitioners {
         val hasNavRows: Array[(TraceView, Seq[V])] = bifurcated
           .flatMap(tt => tt._1._1.map(v => v -> tt._2)).collect()
 
-        val linkRDD = Link.linkRDD(spooky)
+        val linkRDD = Link.linkRDD(spooky, numUAVsOpt)
         linkRDD.persist()
         linkRDD.count() //TODO: optional
         val uavs = linkRDD.keys.collect()

@@ -12,7 +12,6 @@ trait UAVFixture extends SpookyEnvFixture {
   def simURIs: Seq[String]
   def simUAVs = simURIs.map(v => UAV(Seq(v)))
 
-  def parallelism: Int = sc.defaultParallelism
   //  def parallelism: Int = 3
 
   def linkFactory: LinkFactory

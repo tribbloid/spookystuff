@@ -10,8 +10,6 @@ import com.graphhopper.jsprit.core.problem.solution.route.activity.TourActivity;
 import com.graphhopper.jsprit.core.util.ActivityTimeTracker;
 
 /**
- * Created by peng on 7/2/17.
- */ /*
  * This updates the state "max-transport-time" which is introduced below. Once either the insertion procedure starts or a job has
  * been inserted, UpdateMaxTransportTime is called for the route that has been changed.
  *

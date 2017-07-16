@@ -1,7 +1,7 @@
 package com.tribbloids.spookystuff.dsl
 
 import com.tribbloids.spookystuff.actions.TraceView
-import com.tribbloids.spookystuff.dsl.GenPartitioners.Instance
+import com.tribbloids.spookystuff.dsl.GenPartitionerLike.Instance
 import com.tribbloids.spookystuff.execution.ExecutionContext
 import com.tribbloids.spookystuff.row.BeaconRDD
 import org.apache.spark.Partitioner
@@ -15,14 +15,12 @@ import scala.reflect.ClassTag
   * Created by peng on 1/27/15.
   */
 //TODO: name should be 'planner'?
-trait GenPartitionerLike[+C] {
+sealed trait GenPartitionerLike[+C] {
 
   def getInstance[K >: C: ClassTag](ec: ExecutionContext): Instance[K]
 }
 
-trait GenPartitioner extends GenPartitionerLike[TraceView]
-
-object GenPartitioners {
+object GenPartitionerLike {
 
   import com.tribbloids.spookystuff.utils.SpookyViews._
 
@@ -63,6 +61,11 @@ object GenPartitioners {
         )
     }
   }
+}
+
+trait GenPartitioner extends GenPartitionerLike[TraceView]
+
+object GenPartitioners {
 
   //this won't merge identical traces and do lookup, only used in case each resolve may yield different result
   case object Narrow extends GenPartitioner {
@@ -91,9 +94,10 @@ object GenPartitioners {
     }
   }
 
-  case class Wide(partitionerFactory: RDD[_] => Partitioner = {
-    PartitionerFactories.SamePartitioner
-  }) extends GenPartitioner {
+  case class Wide(
+                   partitionerFactory: RDD[_] => Partitioner = {
+                     PartitionerFactories.SamePartitioner
+                   }) extends GenPartitioner {
 
     def getInstance[K: ClassTag](ec: ExecutionContext): Instance[K] = {
       Inst[K]()

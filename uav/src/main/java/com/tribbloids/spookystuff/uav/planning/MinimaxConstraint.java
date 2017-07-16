@@ -21,9 +21,9 @@ public class MinimaxConstraint implements SoftActivityConstraint {
   private final StateId stateId;
 
   MinimaxConstraint(
-    VehicleRoutingProblem problem,
-    StateManager stateManager,
-    StateId stateId
+          VehicleRoutingProblem problem,
+          StateManager stateManager,
+          StateId stateId
   ) {
     super();
     this.problem = problem;
@@ -77,6 +77,5 @@ public class MinimaxConstraint implements SoftActivityConstraint {
     double tpTime = iFacts.getRoute().getEnd().getArrTime() - iFacts.getRoute().getStart().getEndTime() + additionalTime;
 
     return penaltyForEachTimeUnitAboveCurrentMaxTime*Math.max(0,tpTime-maxTime);
-
   }
 }
