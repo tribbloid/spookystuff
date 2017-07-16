@@ -51,7 +51,7 @@ class TestWayback extends SpookyEnvFixture {
       i =>
         val pages = (Delay(10.seconds)
           +> Visit("http://www.wikipedia.org")
-          ).correct.head.fetch(spooky) //5s is long enough
+          ).rewritten.head.fetch(spooky) //5s is long enough
         assert(pages.size == 1)
         pages.head.timeMillis
     }

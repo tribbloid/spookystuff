@@ -27,6 +27,8 @@ trait Action extends ActionLike {
 
   override def children: Trace = Nil
 
+  def rewriters: Seq[Rewriter[Trace]] = Nil
+
   var timeElapsed: Long = -1 //only set once
 
   override def dryrun: List[List[Action]] = {

@@ -375,7 +375,7 @@ case class FetchedDataset(
   def fetch(
              traces: Set[Trace],
              genPartitioner: GenPartitioner = spooky.spookyConf.defaultGenPartitioner
-           ): FetchedDataset = FetchPlan(plan, traces.correct, genPartitioner)
+           ): FetchedDataset = FetchPlan(plan, traces.rewritten, genPartitioner)
 
   //shorthand of fetch
   def visit(
@@ -511,7 +511,7 @@ case class FetchedDataset(
     val params = ExploreParams(depthField, ordinalField, range, extracts)
 
     ExplorePlan(plan, on.withJoinFieldIfMissing, sampler, joinType,
-      traces.correct, genPartitioner,
+      traces.rewritten, genPartitioner,
       params, exploreAlgorithm, epochSize, checkpointInterval
     )
   }
