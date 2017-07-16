@@ -7,12 +7,14 @@ import com.tribbloids.spookystuff.uav.system.UAV
 /**
   * Created by peng on 24/02/17.
   * Only used in tests
+  * DON'T merge with UAVStatus!
+  * despite similarity, all Links are subjected to resource control and automatic resource cleanup
   */
 case class DummyLink(
-                       uav: UAV,
-                       home: Location = UAVConf.DEFAULT_HOME_LOCATION,
-                       currentLocation: Location = UAVConf.DEFAULT_HOME_LOCATION
-                     ) extends Link {
+                      uav: UAV,
+                      home: Location = UAVConf.DEFAULT_HOME_LOCATION,
+                      currentLocation: Location = UAVConf.DEFAULT_HOME_LOCATION
+                    ) extends Link {
 
   override val exclusiveURIs: Seq[String] = uav.uris
 

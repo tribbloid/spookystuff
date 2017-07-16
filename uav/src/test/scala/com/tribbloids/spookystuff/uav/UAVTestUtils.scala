@@ -1,5 +1,6 @@
 package com.tribbloids.spookystuff.uav
 
+import com.tribbloids.spookystuff.actions.Trace
 import com.tribbloids.spookystuff.extractors.impl.Lit
 import com.tribbloids.spookystuff.uav.actions.Waypoint
 import com.tribbloids.spookystuff.uav.spatial.{Location, NED}
@@ -20,14 +21,18 @@ object UAVTestUtils {
         l1.assumeAnchor(UAVConf.DEFAULT_HOME_LOCATION) -> l2.assumeAnchor(UAVConf.DEFAULT_HOME_LOCATION)
     }
 
-    val waypoints: Seq[Waypoint] = {
-      locations.flatMap {
+    val lineScans: Seq[List[Waypoint]] = {
+      locations.map {
         tuple =>
-          Seq(
+          List(
             Waypoint(Lit(tuple._1)),
             Waypoint(Lit(tuple._2))
           )
       }
+    }
+
+    val waypoints: Seq[Waypoint] = {
+      lineScans.flatten
     }
   }
 

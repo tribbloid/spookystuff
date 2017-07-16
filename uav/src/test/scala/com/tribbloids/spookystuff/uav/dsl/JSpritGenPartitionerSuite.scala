@@ -1,38 +1,44 @@
 package com.tribbloids.spookystuff.uav.dsl
 
-import com.tribbloids.spookystuff.actions.{Action, TraceView}
+import com.tribbloids.spookystuff.actions.{Trace, TraceView}
 import com.tribbloids.spookystuff.execution.ExecutionContext
 import com.tribbloids.spookystuff.row.DataRow
 import com.tribbloids.spookystuff.uav.actions.Waypoint
 import com.tribbloids.spookystuff.uav.planning.{JSpritFixture, PreferUAV, WaypointPlaceholder}
 import com.tribbloids.spookystuff.uav.spatial.NED
 import com.tribbloids.spookystuff.uav.system.UAV
-import com.tribbloids.spookystuff.uav.{DummyUAVFixture, UAVConf, UAVFixture, UAVTestUtils}
-import org.scalatest.Ignore
+import com.tribbloids.spookystuff.uav.{DummyUAVFixture, UAVConf, UAVTestUtils}
 
 /**
   * Created by peng on 16/06/17.
   */
-@Ignore //TODO: problem should be set up to be invariant to number of cores
 class JSpritGenPartitionerSuite extends DummyUAVFixture with JSpritFixture {
 
-  def waypoints(n:Int): Seq[Waypoint] = UAVTestUtils.LawnMowerPattern(
+  override def parallelism: Int = 8
+
+  def pattern(n: Int) = UAVTestUtils.LawnMowerPattern(
     n,
     NED(10, 10, -10),
     NED(100, 0, 0),
     NED(0, 20, -2)
   )
+
+  def waypoints(n: Int): Seq[List[Waypoint]] = pattern(n)
     .waypoints
+    .map {v => List(v)}
+
+  def lineScans(n: Int): Seq[List[Waypoint]] = pattern(n)
+    .lineScans
 
   def runTest(
-               wps: Seq[Action]
+               traces: Seq[Trace]
              ): Array[List[TraceView]] = {
 
     val rdd = sc.parallelize(
-      wps
+      traces
     ).map {
-      wp =>
-        val k = TraceView(List(wp))
+      trace =>
+        val k = TraceView(trace)
         k -> DataRow()
     }
 
@@ -83,20 +89,27 @@ class JSpritGenPartitionerSuite extends DummyUAVFixture with JSpritFixture {
     cost
   }
 
-  it("can optimize max cost of 1 waypoint per UAV") {
+  it("can optimize max cost of 2 waypoint per UAV") {
 
     val grouped = runTest(waypoints(parallelism))
-    assert(getCost(grouped) <= 141.739)
+    assert(getCost(grouped) <= 187.553)
   }
 
-  it("can optimize max cost of 2.5 waypoints per UAV") {
+  it("can optimize max cost of 3.5 waypoints per UAV") {
 
-    val grouped = runTest(waypoints((parallelism * 2.5).toInt))
-    assert(getCost(grouped) <= 231.504)
+    val grouped = runTest(waypoints((parallelism * 1.75).toInt))
+    assert(getCost(grouped) <= 293.762)
   }
 
-  it("can optimize max cost of 1 scan per UAV") {
+  it("can optimize max cost of 1 line scan per UAV") {
 
+    val grouped = runTest(lineScans(parallelism))
+    assert(getCost(grouped) <= 352.327)
+  }
 
+  it("can optimize max cost of 2.5 line scans per UAV") {
+
+    val grouped = runTest(lineScans((parallelism * 2.5).toInt))
+    assert(getCost(grouped) <= 832.726)
   }
 }

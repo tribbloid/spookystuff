@@ -22,6 +22,7 @@ trait JSpritFixture extends SpookyEnvFixture {
   def getJSprit: GenPartitioners.JSprit = {
     val solutionPath = s"log/JSprit/${this.getClass.getSimpleName}.$i.solution.png"
     val progressPath = s"log/JSprit/${this.getClass.getSimpleName}.$i.progress.png"
+    i += 1
     GenPartitioners.JSprit(
       Some(solutionPath),
       Some(progressPath)
