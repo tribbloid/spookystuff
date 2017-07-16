@@ -4,7 +4,7 @@ import com.tribbloids.spookystuff.actions.{Action, TraceView}
 import com.tribbloids.spookystuff.execution.ExecutionContext
 import com.tribbloids.spookystuff.row.DataRow
 import com.tribbloids.spookystuff.uav.actions.Waypoint
-import com.tribbloids.spookystuff.uav.planning.{JSpritFixture, PreferUAV, WrapLocation}
+import com.tribbloids.spookystuff.uav.planning.{JSpritFixture, PreferUAV, WaypointPlaceholder}
 import com.tribbloids.spookystuff.uav.spatial.NED
 import com.tribbloids.spookystuff.uav.system.UAV
 import com.tribbloids.spookystuff.uav.{UAVConf, UAVFixture, UAVTestUtils}
@@ -13,7 +13,7 @@ import org.scalatest.Ignore
 /**
   * Created by peng on 16/06/17.
   */
-//@Ignore //TODO: problem should be set up to be invariant to number of cores
+@Ignore //TODO: problem should be set up to be invariant to number of cores
 class JSpritGenPartitionerSuite extends UAVFixture with JSpritFixture {
 
   override def simURIs = (0 until parallelism).map {
@@ -63,12 +63,12 @@ class JSpritGenPartitionerSuite extends UAVFixture with JSpritFixture {
         if (actions.isEmpty) None
         else {
           val statusSeq = actions.collect {
-            case PreferUAV(uav) => uav
+            case PreferUAV(uav) => uav.status()
           }
             .distinct
           assert(statusSeq.size == 1)
           val status = statusSeq.head
-          val first = WrapLocation(status.currentLocation)
+          val first = WaypointPlaceholder(status.currentLocation)
           val others = actions.flatMap {
             case PreferUAV(uav) => None
             case v@_ => Some(v)

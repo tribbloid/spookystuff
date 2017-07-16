@@ -1,7 +1,7 @@
 package com.tribbloids.spookystuff.uav.dsl
 
 import com.tribbloids.spookystuff.uav.system.UAV
-import com.tribbloids.spookystuff.uav.telemetry.{DummyLink, Link}
+import com.tribbloids.spookystuff.uav.telemetry.{LinkStatus, Link}
 import com.tribbloids.spookystuff.uav.telemetry.mavlink.MAVLink
 
 import scala.util.Random
@@ -12,7 +12,7 @@ import scala.util.Random
 object LinkFactories {
 
   case object Dummy extends LinkFactory {
-    def apply(uav: UAV) = DummyLink(uav)
+    def apply(uav: UAV) = LinkStatus(uav)
   }
 
   case object Direct extends LinkFactory {

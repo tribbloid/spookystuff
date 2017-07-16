@@ -3,7 +3,7 @@ package com.tribbloids.spookystuff.uav.dsl
 import com.tribbloids.spookystuff.SpookyEnvFixture
 import com.tribbloids.spookystuff.uav.UAVConf
 import com.tribbloids.spookystuff.uav.actions.Waypoint
-import com.tribbloids.spookystuff.uav.planning.WrapLocation
+import com.tribbloids.spookystuff.uav.planning.WaypointPlaceholder
 import com.tribbloids.spookystuff.uav.spatial.{Location, NED}
 import org.scalactic.TolerantNumerics
 
@@ -33,7 +33,7 @@ class CostEstimatorSuite extends SpookyEnvFixture {
       val p1 = Location.fromTuple(NED(0, 0, 0) -> UAVConf.DEFAULT_HOME_LOCATION)
       val p2 = Location.fromTuple(NED(3, 4, 0) -> UAVConf.DEFAULT_HOME_LOCATION)
       val trace = List(
-        WrapLocation(p1),
+        WaypointPlaceholder(p1),
         Waypoint(p2)
       )
       val estimator = CostEstimator.Default()
@@ -45,7 +45,7 @@ class CostEstimatorSuite extends SpookyEnvFixture {
       val p1 = Location.fromTuple(NED(3, 0, 0) -> UAVConf.DEFAULT_HOME_LOCATION)
       val p2 = Location.fromTuple(NED(0, 4, 0) -> UAVConf.DEFAULT_HOME_LOCATION)
       val trace = List(
-        WrapLocation(p1),
+        WaypointPlaceholder(p1),
         Waypoint(p2)
       )
       val estimator = CostEstimator.Default()
@@ -57,7 +57,7 @@ class CostEstimatorSuite extends SpookyEnvFixture {
       val p1 = Location.fromTuple(NED(0, 0, 0) -> UAVConf.DEFAULT_HOME_LOCATION)
       val p2 = Location.fromTuple(NED(5, 0, 0) -> UAVConf.DEFAULT_HOME_LOCATION)
       val trace = List(
-        WrapLocation(p1),
+        WaypointPlaceholder(p1),
         Waypoint(p2)
       )
       val estimator = CostEstimator.Default()

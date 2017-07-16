@@ -3,7 +3,7 @@ package com.tribbloids.spookystuff.uav.planning
 import com.tribbloids.spookystuff.session.Session
 import com.tribbloids.spookystuff.uav.actions.{UAVAction, UAVNavigation}
 import com.tribbloids.spookystuff.uav.spatial.Location
-import com.tribbloids.spookystuff.uav.telemetry.UAVStatus
+import com.tribbloids.spookystuff.uav.telemetry.Link
 import com.tribbloids.spookystuff.utils.ShippingMarks
 
 import scala.concurrent.duration.Duration
@@ -13,8 +13,10 @@ import scala.concurrent.duration.Duration
   * does NOT fail when the Link is unreachable (hence prefer), will try any available alternative instead.
   */
 private[uav] case class PreferUAV(
-                                   uavs: UAVStatus*
+                                   links: Link*
                                  ) extends UAVAction with ShippingMarks {
+
+  def uavs = links.map(_.status())
 
   override def skeleton = None
 
@@ -25,9 +27,9 @@ private[uav] case class PreferUAV(
   }
 }
 
-private[uav] case class WrapLocation(
-                                      _to: Location
-                                    ) extends UAVNavigation {
+private[uav] case class WaypointPlaceholder(
+                                             _to: Location
+                                           ) extends UAVNavigation {
 
   override def delay: Duration = Duration.Zero
 

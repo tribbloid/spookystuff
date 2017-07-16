@@ -12,9 +12,8 @@ import scala.concurrent.duration.Duration
 
 /**
   * Created by peng on 26/08/16.
-  * Go to point1 then go to point2, end of.
   */
-// How to accommodate camera & gimbal control? Right now do not refactor! Simplicity first.
+@Deprecated // use waypoint
 case class Move(
                  from: Col[Location],
                  to: Col[Location],
@@ -45,7 +44,7 @@ case class Move(
     override def inbound(): Unit = {
       super.inbound()
       LoggerFactory.getLogger(this.getClass).debug(s"inbound .. ${_from}")
-      link.synch.move(_from)
+      link.synch.goto(_from)
     }
   }
 }

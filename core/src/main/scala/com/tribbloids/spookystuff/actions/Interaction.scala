@@ -22,8 +22,6 @@ abstract class Interaction extends Action {
 
   def delay: Duration
 
-  override def rewriters: Seq[Rewriter[Trace]] = Seq(AutoSnapshotRewriter)
-
   override def doExe(session: Session): Seq[Doc] = {
 
     exeNoOutput(session: Session)
@@ -49,6 +47,8 @@ abstract class WebInteraction(
                                val delay: Duration,
                                val blocking: Boolean
                              ) extends Interaction with Timed {
+
+  override def rewriters: Seq[Rewriter[Trace]] = Seq(AutoSnapshotRewriter)
 
   override def doExe(session: Session): Seq[Doc] = {
 
@@ -84,8 +84,8 @@ object DocumentReadyCondition extends ExpectedCondition[Boolean] {
   */
 case class Visit(
                   uri: Col[String],
-                  override val delay: Duration = Const.interactionDelayMin,
-                  override val blocking: Boolean = Const.interactionBlock
+                  override val delay: Duration = Const.Interaction.delayMin,
+                  override val blocking: Boolean = Const.Interaction.blocking
                 ) extends WebInteraction(delay, blocking) {
 
   override def exeNoOutput(session: Session) {
@@ -121,7 +121,7 @@ case class Visit(
   */
 @SerialVersionUID(-4852391414869985193L)
 case class Delay(
-                  override val delay: Duration = Const.interactionDelayMin
+                  override val delay: Duration
                 ) extends Interaction with Driverless {
 
   override def exeNoOutput(session: Session): Unit = {
@@ -136,8 +136,8 @@ case class Delay(
   */
 @SerialVersionUID(2291926240766143181L)
 case class RandomDelay(
-                        override val delay: Duration = Const.interactionDelayMin,
-                        maxDelay: Duration = Const.interactionDelayMax
+                        override val delay: Duration = Const.Interaction.delayMin,
+                        maxDelay: Duration = Const.Interaction.delayMax
                       ) extends Interaction with Driverless {
 
   assert(maxDelay >= delay)
@@ -203,8 +203,8 @@ case object WaitForDocumentReady extends WebInteraction(null, true) {
   */
 case class Click(
                   selector: Selector,
-                  override val delay: Duration = Const.interactionDelayMin,
-                  override val blocking: Boolean = Const.interactionBlock
+                  override val delay: Duration = Const.Interaction.delayMin,
+                  override val blocking: Boolean = Const.Interaction.blocking
                 ) extends WebInteraction(delay, blocking) {
   override def exeNoOutput(session: Session) {
     val element = this.getClickableElement(selector, session)
@@ -222,8 +222,8 @@ case class ClickNext(
                       selector: Selector,
                       exclude: Seq[String],
                       //TODO: remove this, and supercede with Selector
-                      override val delay: Duration = Const.interactionDelayMin,
-                      override val blocking: Boolean = Const.interactionBlock
+                      override val delay: Duration = Const.Interaction.delayMin,
+                      override val blocking: Boolean = Const.Interaction.blocking
                     ) extends WebInteraction(delay, blocking) {
 
   @transient lazy val clicked: mutable.HashSet[String] = mutable.HashSet(exclude: _*)
@@ -281,8 +281,8 @@ case class ClickNext(
   */
 case class Submit(
                    selector: Selector,
-                   override val delay: Duration = Const.interactionDelayMin,
-                   override val blocking: Boolean = Const.interactionBlock
+                   override val delay: Duration = Const.Interaction.delayMin,
+                   override val blocking: Boolean = Const.Interaction.blocking
                  ) extends WebInteraction(delay, blocking) {
   override def exeNoOutput(session: Session) {
 
@@ -301,8 +301,8 @@ case class Submit(
 case class TextInput(
                       selector: Selector,
                       text: Col[String],
-                      override val delay: Duration = Const.interactionDelayMin,
-                      override val blocking: Boolean = Const.interactionBlock
+                      override val delay: Duration = Const.Interaction.delayMin,
+                      override val blocking: Boolean = Const.Interaction.blocking
                     ) extends WebInteraction(delay, blocking) {
   override def exeNoOutput(session: Session) {
 
@@ -338,8 +338,8 @@ case class TextInput(
 case class DropDownSelect(
                            selector: Selector,
                            value: Col[String],
-                           override val delay: Duration = Const.interactionDelayMin,
-                           override val blocking: Boolean = Const.interactionBlock
+                           override val delay: Duration = Const.Interaction.delayMin,
+                           override val blocking: Boolean = Const.Interaction.blocking
                          ) extends WebInteraction(delay, blocking) {
   override def exeNoOutput(session: Session) {
 
@@ -392,8 +392,8 @@ case class ToFrame(selector: Selector)extends WebInteraction(null, false) {
 case class ExeScript(
                       script: Col[String],
                       selector: Selector = null,
-                      override val delay: Duration = Const.interactionDelayMin,
-                      override val blocking: Boolean = Const.interactionBlock
+                      override val delay: Duration = Const.Interaction.delayMin,
+                      override val blocking: Boolean = Const.Interaction.blocking
                     ) extends WebInteraction(delay, blocking) {
   override def exeNoOutput(session: Session) {
 
@@ -437,8 +437,8 @@ case class DragSlider(
                        selector: Selector,
                        percentage: Double,
                        handleSelector: Selector = "*",
-                       override val delay: Duration = Const.interactionDelayMin,
-                       override val blocking: Boolean = Const.interactionBlock
+                       override val delay: Duration = Const.Interaction.delayMin,
+                       override val blocking: Boolean = Const.Interaction.blocking
                      ) extends WebInteraction(delay, blocking) {
 
   override def exeNoOutput(session: Session): Unit = {

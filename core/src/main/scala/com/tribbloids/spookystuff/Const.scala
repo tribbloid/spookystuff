@@ -26,9 +26,12 @@ object Const {
   val DFSBlockedAccessRetries = 10
   val clusterRetries = 3
 
-  val interactionDelayMax: Duration = 60.seconds
-  val interactionDelayMin: Duration = 0.seconds
-  val interactionBlock: Boolean = true
+  object Interaction {
+
+    val delayMax: Duration = 60.seconds
+    val delayMin: Duration = 0.seconds
+    val blocking: Boolean = true
+  }
 
   val hardTerminateOverhead: Duration = 20.seconds
 

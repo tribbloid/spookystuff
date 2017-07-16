@@ -6,7 +6,7 @@ import com.tribbloids.spookystuff.uav.system.UAV
 /**
   * Created by peng on 6/20/17.
   */
-class DummyLinkSuite extends LinkFixture {
+class LinkStatusSuite extends LinkFixture {
 
   override lazy val getFleet: (String) => Seq[UAV] = {
     val simEndpoints = this.simUAVs

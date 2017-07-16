@@ -193,7 +193,7 @@ case class MAVLink(
       Endpoints.primary.PY.assureClearanceAlt(alt)
     }
 
-    override def move(location: Location): Unit = {
+    override def goto(location: Location): Unit = {
       Endpoints.primary.PY.move(location: PyLocation)
     }
   }

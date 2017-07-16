@@ -174,7 +174,7 @@ object Link {
   }
 
   // get available drones, TODO: merge other impl to it.
-  def linkRDD(spooky: SpookyContext): RDD[(UAVStatus, Link)] = {
+  def linkRDD(spooky: SpookyContext): RDD[(LinkStatus, Link)] = {
 
     spooky.sparkContext
       .mapPerExecutorCore {
@@ -439,7 +439,7 @@ trait Link extends LocalCleanable {
 
   // Most telemetry support setting up multiple landing site.
   protected def _getHome: Location
-  protected lazy val home: Location = {
+  protected lazy val getHome: Location = {
     retry(5){
       _getHome
     }
@@ -456,7 +456,7 @@ trait Link extends LocalCleanable {
 
   def status(expireAfter: Long = 1000) = {
     val current = CurrentLocation.getIfNotExpire((), expireAfter)
-    UAVStatus(uav, home, current)
+    LinkStatus(uav, getHome, current)
   }
 
   //====================== Synchronous API ======================
@@ -467,7 +467,7 @@ trait Link extends LocalCleanable {
     def testMove: String
 
     def clearanceAlt(alt: Double): Unit
-    def move(location: Location): Unit
+    def goto(location: Location): Unit
   }
 
   //====================== Asynchronous API =====================

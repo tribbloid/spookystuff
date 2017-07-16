@@ -1,46 +1,43 @@
 package com.tribbloids.spookystuff.uav.actions
 
-import com.tribbloids.spookystuff.extractors.impl.Lit
 import com.tribbloids.spookystuff.uav.UAVTestUtils
-import com.tribbloids.spookystuff.uav.spatial._
 import com.tribbloids.spookystuff.uav.sim.APMQuadFixture
+import com.tribbloids.spookystuff.uav.spatial._
 import org.apache.spark.ml.dsl.utils.RecursiveMessageRelay
 
 /**
-  * All tests will use Proxy by default
+  * Created by peng on 16/07/17.
   */
-@Deprecated // use waypoint
-class MoveSuite extends APMQuadFixture {
+class WaypointSuite extends APMQuadFixture {
 
   import com.tribbloids.spookystuff.dsl._
 
   it("toJson should work") {
     val wp1: Location = LLA(0,0,0) -> GeodeticAnchor
-    val wp2: Location = LLA(20, 30, 50) -> GeodeticAnchor
 
-    val move = Move(Lit(wp1), Lit(wp2))
+    val move = Waypoint(wp1)
 
     RecursiveMessageRelay.toMessage(move).prettyJSON.shouldBe(
 
     )
   }
 
-  val tracks: Seq[(NED.V, NED.V)] = UAVTestUtils.LawnMowerPattern(
+  val pattern: Seq[(NED.V, NED.V)] = UAVTestUtils.LawnMowerPattern(
     (parallelism.toDouble * 1).toInt,
     NED(10, 10, -10),
     NED(100, 0, 0),
     NED(0, 20, -2)
-  ).neds
+  )
+    .neds
 
   it("Run 1 track per drone") {
 
-    val rdd = sc.parallelize(tracks, this.parallelism)
+    val rdd = sc.parallelize(pattern, this.parallelism)
     val df = sql.createDataFrame(rdd)
 
     val result = spooky.create(df)
       .fetch (
-        Move('_1, '_2)
-          +> Mark(),
+        Waypoint('_1) +> Waypoint('_2) +> Mark(),
         genPartitioner = GenPartitioners.Narrow // current genPartitioner is ill-suited
       )
       .toObjectRDD(S.formattedCode)
@@ -51,13 +48,12 @@ class MoveSuite extends APMQuadFixture {
 
   it("Run 1.5 track per drone") {
 
-    val rdd = sc.parallelize(tracks, this.parallelism)
+    val rdd = sc.parallelize(pattern, this.parallelism)
     val df = sql.createDataFrame(rdd)
 
     val result = spooky.create(df)
       .fetch (
-        Move('_1, '_2)
-          +> Mark(),
+        Waypoint('_1) +> Waypoint('_2) +> Mark(),
         genPartitioner = GenPartitioners.Narrow
       )
       .collect()

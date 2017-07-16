@@ -251,7 +251,7 @@ object LoadMore {
   def apply(
              selector: String,
              limit: Int = Const.maxLoop,
-             delay: Duration = Const.interactionDelayMin
+             delay: Duration = Const.Interaction.delayMin
            ): Loop =
     Loop(
       Click(selector, delay = delay),
@@ -266,7 +266,7 @@ object Paginate {
   def apply(
              selector: String,
              limit: Int = Const.maxLoop,
-             delay: Duration = Const.interactionDelayMin
+             delay: Duration = Const.Interaction.delayMin
            ): Loop = {
     Loop(
       Snapshot()
