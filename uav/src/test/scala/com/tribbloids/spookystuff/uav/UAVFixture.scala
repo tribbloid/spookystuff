@@ -3,7 +3,6 @@ package com.tribbloids.spookystuff.uav
 import com.tribbloids.spookystuff.SpookyEnvFixture
 import com.tribbloids.spookystuff.uav.dsl.{Fleet, LinkFactories, LinkFactory}
 import com.tribbloids.spookystuff.uav.system.UAV
-import org.apache.spark.rdd.RDD
 
 /**
   * Created by peng on 18/06/17.
@@ -16,7 +15,7 @@ trait UAVFixture extends SpookyEnvFixture {
   def parallelism: Int = sc.defaultParallelism
   //  def parallelism: Int = 3
 
-  lazy val linkFactory: LinkFactory = LinkFactories.Dummy
+  def linkFactory: LinkFactory
 
   override def setUp(): Unit = {
     super.setUp()
@@ -26,4 +25,17 @@ trait UAVFixture extends SpookyEnvFixture {
     uavConf.linkFactory = linkFactory
     spooky.zeroMetrics()
   }
+}
+
+trait DummyUAVFixture extends UAVFixture {
+  override def linkFactory: LinkFactory = LinkFactories.Dummy
+
+  override lazy val simURIs: Seq[String] = (0 until parallelism).map {
+    v =>
+      s"dummy:localhost:$v"
+  }
+}
+
+trait SimUAVFixture extends UAVFixture {
+  override def linkFactory: LinkFactory = LinkFactories.Direct
 }

@@ -168,6 +168,5 @@ class JSONException(
 
   override def getMessage = toStringDetailed
 
-  override def detail = "=========== [METADATA] ============\n" + metadata.toJSON(pretty = true)
+  override def detail = "=========== [METADATA] ============\n" + metadata.toJSON()
 }
-

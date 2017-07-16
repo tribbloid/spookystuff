@@ -1,9 +1,8 @@
 package com.tribbloids.spookystuff.uav.planning
 
-import com.tribbloids.spookystuff.uav.UAVTestUtils
 import com.tribbloids.spookystuff.uav.actions.Waypoint
-import com.tribbloids.spookystuff.uav.sim.{APMQuadFixture, QuadSimFactory}
 import com.tribbloids.spookystuff.uav.spatial.NED
+import com.tribbloids.spookystuff.uav.{DummyUAVFixture, UAVTestUtils}
 import org.scalatest.Ignore
 
 import scala.util.Random
@@ -12,9 +11,7 @@ import scala.util.Random
   * Created by peng on 28/03/17.
   */
 @Ignore
-class GASolveIT extends APMQuadFixture {
-
-  override lazy val simFactory = QuadSimFactory(0)
+class GASolveIT extends DummyUAVFixture {
 
   val wps: Seq[Waypoint] = UAVTestUtils.LawnMowerPattern(
     parallelism * 3,

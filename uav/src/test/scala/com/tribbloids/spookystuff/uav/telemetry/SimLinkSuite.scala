@@ -5,7 +5,7 @@ import com.tribbloids.spookystuff.testutils.TestHelper
 import com.tribbloids.spookystuff.uav.dsl.LinkFactory
 import com.tribbloids.spookystuff.uav.system.UAV
 import com.tribbloids.spookystuff.uav.telemetry.mavlink.MAVLink
-import com.tribbloids.spookystuff.uav.{ReinforcementDepletedException, UAVConf, UAVFixture, UAVMetrics}
+import com.tribbloids.spookystuff.uav._
 import com.tribbloids.spookystuff.utils.SpookyUtils
 import com.tribbloids.spookystuff.utils.TreeException.MultiCauseWrapper
 import com.tribbloids.spookystuff.{PyInterpretationException, SpookyContext, SpookyEnvFixture}
@@ -13,7 +13,7 @@ import org.apache.spark.rdd.RDD
 
 import scala.util.Random
 
-abstract class LinkFixture extends UAVFixture {
+abstract class LinkSuite extends UAVFixture {
 
   import com.tribbloids.spookystuff.utils.SpookyViews._
 
@@ -125,7 +125,7 @@ abstract class LinkFixture extends UAVFixture {
   }
 }
 
-abstract class RealLinkFixture extends LinkFixture {
+abstract class SimLinkSuite extends LinkSuite with SimUAVFixture {
 
   import com.tribbloids.spookystuff.utils.SpookyViews._
 

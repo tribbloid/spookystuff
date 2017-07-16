@@ -7,19 +7,14 @@ import com.tribbloids.spookystuff.uav.actions.Waypoint
 import com.tribbloids.spookystuff.uav.planning.{JSpritFixture, PreferUAV, WaypointPlaceholder}
 import com.tribbloids.spookystuff.uav.spatial.NED
 import com.tribbloids.spookystuff.uav.system.UAV
-import com.tribbloids.spookystuff.uav.{UAVConf, UAVFixture, UAVTestUtils}
+import com.tribbloids.spookystuff.uav.{DummyUAVFixture, UAVConf, UAVFixture, UAVTestUtils}
 import org.scalatest.Ignore
 
 /**
   * Created by peng on 16/06/17.
   */
 @Ignore //TODO: problem should be set up to be invariant to number of cores
-class JSpritGenPartitionerSuite extends UAVFixture with JSpritFixture {
-
-  override def simURIs = (0 until parallelism).map {
-    v =>
-      s"dummy:localhost:$v"
-  }
+class JSpritGenPartitionerSuite extends DummyUAVFixture with JSpritFixture {
 
   def waypoints(n:Int): Seq[Waypoint] = UAVTestUtils.LawnMowerPattern(
     n,
@@ -63,7 +58,7 @@ class JSpritGenPartitionerSuite extends UAVFixture with JSpritFixture {
         if (actions.isEmpty) None
         else {
           val statusSeq = actions.collect {
-            case PreferUAV(uav) => uav.status()
+            case PreferUAV(uav) => uav
           }
             .distinct
           assert(statusSeq.size == 1)

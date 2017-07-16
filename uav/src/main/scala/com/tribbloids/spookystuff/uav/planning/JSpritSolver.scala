@@ -22,7 +22,7 @@ import com.tribbloids.spookystuff.uav.UAVConf
 import com.tribbloids.spookystuff.uav.actions.UAVNavigation
 import com.tribbloids.spookystuff.uav.dsl.GenPartitioners
 import com.tribbloids.spookystuff.uav.spatial.NED
-import com.tribbloids.spookystuff.uav.telemetry.LinkStatus
+import com.tribbloids.spookystuff.uav.telemetry.UAVStatus
 
 object JSpritSolver {
 
@@ -152,20 +152,20 @@ object JSpritSolver {
 case class JSpritSolver[V](
                             gp: GenPartitioners.JSprit,
                             spooky: SpookyContext,
-                            uavs: Array[LinkStatus],
+                            uavs: Array[UAVStatus],
                             rows: Array[(TraceView, Seq[V])]
                           ) {
 
   val traces = rows.map(_._1)
 
-  val trace_uavOpt_index: Array[((TraceView, Option[LinkStatus]), Int)] = {
-    val fromUAVs: Array[(TraceView, Option[LinkStatus])] =
+  val trace_uavOpt_index: Array[((TraceView, Option[UAVStatus]), Int)] = {
+    val fromUAVs: Array[(TraceView, Option[UAVStatus])] =
       uavs.map {
         uav =>
           TraceView(List(WaypointPlaceholder(uav.currentLocation))) -> Some(uav)
       }
 
-    val fromTraces: Array[(TraceView, Option[LinkStatus])] = traces.map {
+    val fromTraces: Array[(TraceView, Option[UAVStatus])] = traces.map {
       trace =>
         trace -> None
     }
@@ -289,12 +289,12 @@ case class JSpritSolver[V](
     tuple._1
   }
 
-  lazy val getUAV2RowsMap: Map[LinkStatus, Seq[(TraceView, Seq[V])]] = {
+  lazy val getUAV2RowsMap: Map[UAVStatus, Seq[(TraceView, Seq[V])]] = {
 
     import scala.collection.JavaConverters._
 
     val routes = solve.getRoutes.asScala.toList
-    val status_KVs: Seq[(LinkStatus, Seq[(TraceView, Seq[V])])] = routes.map {
+    val status_KVs: Seq[(UAVStatus, Seq[(TraceView, Seq[V])])] = routes.map {
       route =>
         val status = uavs.find(_.uav.primaryURI == route.getVehicle.getId).get
         val tours = route.getTourActivities.getActivities.asScala.toList

@@ -174,7 +174,7 @@ object Link {
   }
 
   // get available drones, TODO: merge other impl to it.
-  def linkRDD(spooky: SpookyContext): RDD[(LinkStatus, Link)] = {
+  def linkRDD(spooky: SpookyContext): RDD[(UAVStatus, Link)] = {
 
     spooky.sparkContext
       .mapPerExecutorCore {
@@ -454,9 +454,9 @@ trait Link extends LocalCleanable {
     }
   }
 
-  def status(expireAfter: Long = 1000) = {
+  def status(expireAfter: Long = 1000): UAVStatus = {
     val current = CurrentLocation.getIfNotExpire((), expireAfter)
-    LinkStatus(uav, getHome, current)
+    UAVStatus(uav, getHome, current)
   }
 
   //====================== Synchronous API ======================

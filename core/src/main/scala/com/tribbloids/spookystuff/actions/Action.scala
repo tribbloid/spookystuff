@@ -49,11 +49,11 @@ trait Action extends ActionLike {
     catch {
       case e: Throwable =>
 
-        val message: String = getSessionExceptionString(session)
+        val message: String = getSessionExceptionMessage(session)
 
         val ex = e match {
           case ae: ActionException => ae
-          case _ =>new ActionException(message, e)
+          case _ => new ActionException(message, e)
         }
         ex.setStackTrace(e.getStackTrace)
         throw ex
@@ -66,10 +66,10 @@ trait Action extends ActionLike {
   }
 
   //execute errorDumps as side effects
-  protected def getSessionExceptionString(
-                                           session: Session,
-                                           docOpt: Option[Doc] = None
-                                         ): String = {
+  protected def getSessionExceptionMessage(
+                                            session: Session,
+                                            docOpt: Option[Doc] = None
+                                          ): String = {
     var message: String = "\n{\n"
 
     message += {
@@ -145,7 +145,7 @@ trait Action extends ActionLike {
     this match {
       case tt: Timed =>
         baseStr = baseStr + s" in ${tt.timeout(session)}"
-        LoggerFactory.getLogger(this.getClass).info(this.showDetail(baseStr))
+        LoggerFactory.getLogger(this.getClass).info(this.withDetail(baseStr))
 
         session.withDriversDuring(
           SpookyUtils.withDeadline(tt.hardTerminateTimeout(session)) {
@@ -153,7 +153,7 @@ trait Action extends ActionLike {
           }
         )
       case _ =>
-        LoggerFactory.getLogger(this.getClass).info(this.showDetail(baseStr))
+        LoggerFactory.getLogger(this.getClass).info(this.withDetail(baseStr))
 
         session.withDriversDuring(
           f

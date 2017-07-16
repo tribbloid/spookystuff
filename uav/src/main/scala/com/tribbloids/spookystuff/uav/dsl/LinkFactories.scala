@@ -1,7 +1,7 @@
 package com.tribbloids.spookystuff.uav.dsl
 
 import com.tribbloids.spookystuff.uav.system.UAV
-import com.tribbloids.spookystuff.uav.telemetry.{LinkStatus, Link}
+import com.tribbloids.spookystuff.uav.telemetry.{DummyLink, Link}
 import com.tribbloids.spookystuff.uav.telemetry.mavlink.MAVLink
 
 import scala.util.Random
@@ -12,10 +12,11 @@ import scala.util.Random
 object LinkFactories {
 
   case object Dummy extends LinkFactory {
-    def apply(uav: UAV) = LinkStatus(uav)
+    def apply(uav: UAV) = DummyLink(uav)
   }
 
   case object Direct extends LinkFactory {
+
     def apply(uav: UAV) = MAVLink(uav)
   }
 
@@ -25,7 +26,7 @@ object LinkFactories {
                         toSpark: Seq[String] = (12014 to 12108).map(i => s"udp:localhost:$i"),
                         //this is the default port listened by QGCS
                         toGCS: UAV => Set[String] = _ => Set("udp:localhost:14550"),
-                        ToExecutorSize: Int = 1
+                        toSprakSize: Int = 1
                       ) extends LinkFactory {
 
     //CAUTION: DO NOT select primary out sequentially!
@@ -42,7 +43,7 @@ object LinkFactories {
       }
       val shuffled = Random.shuffle(available)
 
-      val executorOuts = shuffled.slice(0, ToExecutorSize)
+      val executorOuts = shuffled.slice(0, toSprakSize)
       val gcsOuts = toGCS(endpoint).toSeq
       val result = MAVLink(
         endpoint,

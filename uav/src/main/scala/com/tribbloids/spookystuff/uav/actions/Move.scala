@@ -4,7 +4,7 @@ import com.tribbloids.spookystuff.extractors.impl.Lit
 import com.tribbloids.spookystuff.extractors.{Col, Extractor, FR}
 import com.tribbloids.spookystuff.row.{DataRowSchema, FetchedRow}
 import com.tribbloids.spookystuff.session.Session
-import com.tribbloids.spookystuff.uav.UAVConf
+import com.tribbloids.spookystuff.uav.{UAVConf, UAVConst}
 import com.tribbloids.spookystuff.uav.spatial.Location
 import org.slf4j.LoggerFactory
 
@@ -17,7 +17,7 @@ import scala.concurrent.duration.Duration
 case class Move(
                  from: Col[Location],
                  to: Col[Location],
-                 override val delay: Duration = null
+                 override val delay: Duration = UAVConst.UAVNavigation.delayMin
                ) extends WaypointLike {
 
   override def _from: Location = from.value

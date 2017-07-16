@@ -115,7 +115,7 @@ final case class ClusterRetry(
           throw new RetryingException(
             s"Retrying cluster-wise on ${e.getClass.getSimpleName}... $timesLeft time(s) left\n" +
               "(if Spark job failed because of this, please increase your spark.task.maxFailures)" +
-              this.getSessionExceptionString(session),
+              this.getSessionExceptionMessage(session),
             e
           )
         }

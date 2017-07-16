@@ -5,7 +5,7 @@ import com.tribbloids.spookystuff.uav.UAVTestUtils
 import com.tribbloids.spookystuff.uav.actions.Waypoint
 import com.tribbloids.spookystuff.uav.spatial.NED
 import com.tribbloids.spookystuff.uav.system.UAV
-import com.tribbloids.spookystuff.uav.telemetry.LinkStatus
+import com.tribbloids.spookystuff.uav.telemetry.DummyLink
 import org.scalactic.TolerantNumerics
 import org.scalatest.Ignore
 
@@ -42,7 +42,7 @@ class GASolverSuite extends SpookyEnvFixture {
 
   lazy val dummyLink = {
     val drone = UAV(Seq("dummy"))
-    val link = LinkStatus(drone)
+    val link = DummyLink(drone)
     link
   }
   lazy val dummyRoute = {

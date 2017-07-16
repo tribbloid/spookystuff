@@ -26,8 +26,7 @@ object UAVViews {
     }
 
     val link: Link = {
-      linkTry
-        .get
+      linkTry.get
     }
   }
 }

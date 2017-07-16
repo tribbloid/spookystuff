@@ -2,7 +2,7 @@ package com.tribbloids.spookystuff.uav.telemetry
 
 import com.tribbloids.spookystuff.SpookyContext
 import com.tribbloids.spookystuff.session.Session
-import com.tribbloids.spookystuff.uav.{UAVFixture, UAVMetrics}
+import com.tribbloids.spookystuff.uav.{SimUAVFixture, UAVFixture, UAVMetrics}
 import com.tribbloids.spookystuff.uav.dsl.{LinkFactories, LinkFactory}
 import com.tribbloids.spookystuff.uav.system.UAV
 import org.apache.spark.rdd.RDD
@@ -30,9 +30,7 @@ object LinkITFixture{
   }
 }
 
-abstract class LinkITFixture extends UAVFixture {
-
-  override lazy val linkFactory: LinkFactory = LinkFactories.Direct
+abstract class LinkITFixture extends SimUAVFixture {
 
   def assertMaxLinkCreated(n: Int): Unit = {
     val acc = spooky.getMetrics[UAVMetrics].linkCreated.value

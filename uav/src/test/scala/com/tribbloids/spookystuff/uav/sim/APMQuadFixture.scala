@@ -3,14 +3,14 @@ package com.tribbloids.spookystuff.uav.sim
 import com.tribbloids.spookystuff.SpookyEnvFixture
 import com.tribbloids.spookystuff.session.python.PythonDriver
 import com.tribbloids.spookystuff.session.{Cleanable, Lifespan}
-import com.tribbloids.spookystuff.uav.UAVFixture
+import com.tribbloids.spookystuff.uav.SimUAVFixture
 import com.tribbloids.spookystuff.uav.telemetry.Link
 import com.tribbloids.spookystuff.utils.SpookyUtils
 import org.apache.spark.rdd.RDD
 import org.jutils.jprocesses.JProcesses
 import org.slf4j.LoggerFactory
 
-trait APMFixture extends UAVFixture {
+trait APMFixture extends SimUAVFixture {
 
   import com.tribbloids.spookystuff.utils.SpookyViews._
 

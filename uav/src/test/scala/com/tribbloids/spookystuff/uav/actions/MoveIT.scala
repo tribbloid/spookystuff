@@ -6,38 +6,40 @@ import com.tribbloids.spookystuff.uav.spatial._
 import org.apache.spark.ml.dsl.utils.RecursiveMessageRelay
 
 /**
-  * Created by peng on 16/07/17.
+  * All tests will use Proxy by default
   */
-class WaypointSuite extends APMQuadFixture {
+@Deprecated // use waypoint
+class MoveIT extends APMQuadFixture {
 
   import com.tribbloids.spookystuff.dsl._
 
   it("toJson should work") {
     val wp1: Location = LLA(0,0,0) -> GeodeticAnchor
+    val wp2: Location = LLA(20, 30, 50) -> GeodeticAnchor
 
-    val move = Waypoint(wp1)
+    val move = Move(wp1, wp2)
 
     RecursiveMessageRelay.toMessage(move).prettyJSON.shouldBe(
 
     )
   }
 
-  val pattern: Seq[(NED.V, NED.V)] = UAVTestUtils.LawnMowerPattern(
+  val tracks: Seq[(NED.V, NED.V)] = UAVTestUtils.LawnMowerPattern(
     (parallelism.toDouble * 1).toInt,
     NED(10, 10, -10),
     NED(100, 0, 0),
     NED(0, 20, -2)
-  )
-    .neds
+  ).neds
 
   it("Run 1 track per drone") {
 
-    val rdd = sc.parallelize(pattern, this.parallelism)
+    val rdd = sc.parallelize(tracks, this.parallelism)
     val df = sql.createDataFrame(rdd)
 
     val result = spooky.create(df)
       .fetch (
-        Waypoint('_1) +> Waypoint('_2) +> Mark(),
+        Move('_1, '_2)
+          +> Mark(),
         genPartitioner = GenPartitioners.Narrow // current genPartitioner is ill-suited
       )
       .toObjectRDD(S.formattedCode)
@@ -48,12 +50,13 @@ class WaypointSuite extends APMQuadFixture {
 
   it("Run 1.5 track per drone") {
 
-    val rdd = sc.parallelize(pattern, this.parallelism)
+    val rdd = sc.parallelize(tracks, this.parallelism)
     val df = sql.createDataFrame(rdd)
 
     val result = spooky.create(df)
       .fetch (
-        Waypoint('_1) +> Waypoint('_2) +> Mark(),
+        Move('_1, '_2)
+          +> Mark(),
         genPartitioner = GenPartitioners.Narrow
       )
       .collect()

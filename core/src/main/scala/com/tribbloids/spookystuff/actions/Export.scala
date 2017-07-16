@@ -56,7 +56,7 @@ abstract class Export extends Named {
         }
         catch {
           case e: Throwable =>
-            val message = getSessionExceptionString(session, Some(doc))
+            val message = getSessionExceptionMessage(session, Some(doc))
             val wrapped = DocWithError(doc, message, e)
 
             throw wrapped

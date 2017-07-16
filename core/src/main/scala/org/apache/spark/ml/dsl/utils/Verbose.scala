@@ -1,20 +1,22 @@
 package org.apache.spark.ml.dsl.utils
 
+import scala.runtime.ScalaRunTime
+
 /**
   * Created by peng on 31/05/17.
   */
-trait Verbose {
+trait Verbose extends Product {
 
-  def toStringOverride = super.toString
+  def toStringOverride = ScalaRunTime._toString(this)
   def detail: String = ""
 
-  def showDetail(nonVerbose: String) = {
-    val result = nonVerbose + Option(detail)
+  def withDetail(str: String) = {
+    val result = str + Option(detail)
       .filter(_.nonEmpty).map("\n" + _).getOrElse("")
     result
   }
 
   def toStringDetailed = {
-    showDetail(toStringOverride)
+    withDetail(toStringOverride)
   }
 }

@@ -4,7 +4,7 @@ import com.tribbloids.spookystuff.uav.ReinforcementDepletedException
 import com.tribbloids.spookystuff.uav.dsl.{LinkFactories, LinkFactory}
 import com.tribbloids.spookystuff.uav.sim.APMQuadFixture
 import com.tribbloids.spookystuff.uav.system.UAV
-import com.tribbloids.spookystuff.uav.telemetry.{Link, RealLinkFixture}
+import com.tribbloids.spookystuff.uav.telemetry.{Link, SimLinkSuite}
 import com.tribbloids.spookystuff.session.Session
 import com.tribbloids.spookystuff.testutils.TestHelper
 import com.tribbloids.spookystuff.utils.SpookyUtils
@@ -13,7 +13,7 @@ import org.apache.spark.rdd.RDD
 /**
   * Created by peng on 27/01/17.
   */
-class MAVLinkSuite extends RealLinkFixture with APMQuadFixture {
+class MAVLinkSuite extends SimLinkSuite with APMQuadFixture {
 
   override lazy val factories: Seq[LinkFactory] = Seq(
     LinkFactories.Direct,

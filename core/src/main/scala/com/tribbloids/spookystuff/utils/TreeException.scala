@@ -32,11 +32,11 @@ object TreeException {
     }
   }
 
-  def effectiveAgg(
-                    agg: Seq[Throwable] => Throwable,
-                    extra: Seq[Throwable] = Nil,
-                    expandUnary: Boolean = false
-                  ): Seq[Throwable] => Throwable = {
+  def aggregate(
+                 fn: Seq[Throwable] => Throwable,
+                 extra: Seq[Throwable] = Nil,
+                 expandUnary: Boolean = false
+               ): Seq[Throwable] => Throwable = {
 
     {
       seq =>
@@ -47,7 +47,7 @@ object TreeException {
         }
         val all = extra.flatMap(v => Option(v)) ++ flat
         if (expandUnary && all.size == 1) all.head
-        else agg(all)
+        else fn(all)
     }
   }
 
@@ -73,7 +73,7 @@ object TreeException {
       trials.map(_.get)
     }
     else {
-      val _agg = effectiveAgg(agg, extra, expandUnary)
+      val _agg = aggregate(agg, extra, expandUnary)
       throw _agg(es)
     }
   }
@@ -103,7 +103,7 @@ object TreeException {
       val es = trials.collect{
         case Failure(e) => e
       }
-      val _agg = effectiveAgg(agg, extra, expandUnary)
+      val _agg = aggregate(agg, extra, expandUnary)
       throw _agg(es)
     }
     else {

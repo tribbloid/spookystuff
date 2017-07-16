@@ -7,7 +7,7 @@ import com.tribbloids.spookystuff.execution.ExecutionContext
 import com.tribbloids.spookystuff.row.BeaconRDD
 import com.tribbloids.spookystuff.uav.actions.UAVAction
 import com.tribbloids.spookystuff.uav.planning.{JSpritSolver, PreferUAV}
-import com.tribbloids.spookystuff.uav.telemetry.{Link, LinkStatus}
+import com.tribbloids.spookystuff.uav.telemetry.{DummyLink, Link, UAVStatus}
 import org.apache.spark.rdd.RDD
 
 import scala.reflect.ClassTag
@@ -64,7 +64,7 @@ object GenPartitioners {
         val uavs = linkRDD.keys.collect()
 
         val solver = JSpritSolver(JSprit.this, spooky, uavs, hasNavRows)
-        val uav2RowsMap: Map[LinkStatus, Seq[(TraceView, Seq[V])]] = solver.getUAV2RowsMap
+        val uav2RowsMap: Map[UAVStatus, Seq[(TraceView, Seq[V])]] = solver.getUAV2RowsMap
 
         val realignedRDD: RDD[(K, Iterable[V])] = linkRDD.flatMap {
           tuple =>
