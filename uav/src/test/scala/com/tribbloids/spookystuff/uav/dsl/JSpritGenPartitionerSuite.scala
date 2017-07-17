@@ -36,11 +36,12 @@ class JSpritGenPartitionerSuite extends DummyUAVFixture with JSpritFixture {
 
     val rdd = sc.parallelize(
       traces
-    ).map {
-      trace =>
-        val k = TraceView(trace)
-        k -> DataRow()
-    }
+    )
+      .map {
+        trace =>
+          val k = TraceView(trace)
+          k -> DataRow()
+      }
 
     spooky.rebroadcast()
     val ec = ExecutionContext(spooky)
@@ -54,6 +55,8 @@ class JSpritGenPartitionerSuite extends DummyUAVFixture with JSpritFixture {
         Iterator(itr.toList)
     }
       .collect()
+
+    ec.scratchRDDs.clearAll()
     grouped
   }
 

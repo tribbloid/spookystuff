@@ -11,6 +11,7 @@ import com.tribbloids.spookystuff.uav.telemetry.{Link, UAVStatus}
 import org.apache.spark.rdd.RDD
 
 import scala.reflect.ClassTag
+import scala.util.Failure
 
 /**
   * Created by peng on 31/12/16.
@@ -64,10 +65,15 @@ object GenPartitioners {
         val hasNavRows: Array[(TraceView, Seq[V])] = bifurcated
           .flatMap(tt => tt._1._1.map(v => v -> tt._2)).collect()
 
-        val linkRDD = Link.linkRDD(spooky, numUAVsOpt)
+        val linkRDD = Link.availableLinkRDD(spooky)
         linkRDD.persist()
         linkRDD.count() //TODO: optional
-        val uavs = linkRDD.keys.collect()
+
+        val allUAVs = linkRDD.keys.collect()
+        val uavs = numUAVsOpt match {
+          case Some(n) => allUAVs.slice(0, n)
+          case None => allUAVs
+        }
 
         val solver = JSpritSolver(JSprit.this, spooky, uavs, hasNavRows)
         val uav2RowsMap: Map[UAVStatus, Seq[(TraceView, Seq[V])]] = solver.getUAV2RowsMap

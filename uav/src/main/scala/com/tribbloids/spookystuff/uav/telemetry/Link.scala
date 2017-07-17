@@ -60,7 +60,7 @@ object Link {
                  recommissionWithNewProxy: Boolean = true
                ) = Try {
 
-    SpookyUtils.retry(3) {
+    SpookyUtils.retry(3, 2000) {
       _trySelect(uavs, session, prefer, recommissionWithNewProxy).get
     }
   }
@@ -174,29 +174,32 @@ object Link {
   }
 
   // get available drones, TODO: merge other impl to it.
-  def linkRDD(spooky: SpookyContext, sizeOpt: Option[Int] = None): RDD[(UAVStatus, Link)] = {
+  def availableLinkRDD(spooky: SpookyContext): RDD[(UAVStatus, Link)] = {
 
-    val size = sizeOpt.getOrElse(spooky.sparkContext.defaultParallelism)
-
-    spooky.sparkContext
-      .mapPerExecutorCore(
-        {
-          spooky.withSession {
-            session =>
-              val uavsInFleet = spooky.getConf[UAVConf].uavsInFleetShuffled
-              val linkTry = Link.trySelect (
-                uavsInFleet,
-                session
-              )
-              linkTry.map {
-                link =>
-                  link.status() -> link
-              }
-          }
-        },
-        size
-      )
-      .flatMap(_.toOption.toSeq)
+    val rdd = spooky.sparkContext
+      .mapPerExecutorCore({
+        spooky.withSession {
+          session =>
+            val uavsInFleet = spooky.getConf[UAVConf].uavsInFleetShuffled
+            val linkTry = Link.trySelect (
+              uavsInFleet,
+              session
+            )
+            linkTry.map {
+              link =>
+                link.status() -> link
+            }
+        }
+      })
+    rdd.flatMap {
+      v =>
+        v.recover {
+          case vv =>
+            LoggerFactory.getLogger(this.getClass).warn(null, vv)
+            throw vv
+        }
+          .toOption
+    }
   }
 }
 

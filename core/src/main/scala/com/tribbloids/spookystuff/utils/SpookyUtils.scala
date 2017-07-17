@@ -66,13 +66,15 @@ object SpookyUtils {
     Try { fn } match {
       case Success(x) =>
         x
-      case Failure(e: NoRetry.Wrapper) => throw e.getCause
+      case Failure(e: NoRetry.Wrapper) =>
+        throw e.getCause
       case Failure(e) if n > 1 =>
         if (!(silent || e.isInstanceOf[SilentRetry.Wrapper])) {
           val logger = LoggerFactory.getLogger(this.getClass)
           logger.warn(
             s"Retrying locally on ${e.getClass.getSimpleName} in ${interval.toDouble/1000} second(s)... ${n-1} time(s) left" +
-              "\t@ " + _callerStr
+              "\t@ " + _callerStr +
+              "\n\t" + e.getMessage
           )
           logger.debug("\t\\-->", e)
         }
