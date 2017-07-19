@@ -421,7 +421,7 @@ object DriverFactories {
 
     override def _createImpl(session: Session, lifespan: Lifespan): PythonDriver = {
       val exeStr = getExecutable(session.spooky)
-      new PythonDriver(exeStr, lifespan = lifespan)
+      new PythonDriver(exeStr, _lifespan = lifespan)
     }
   }
 }
