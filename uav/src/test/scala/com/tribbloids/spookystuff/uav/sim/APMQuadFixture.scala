@@ -26,7 +26,7 @@ trait APMFixture extends SimUAVFixture {
       .map {
         i =>
           //NOT cleaned by TaskCompletionListener
-          val apmSimDriver = new PythonDriver(lifespan = Lifespan.JVM(nameOpt = Some(s"APMSim$i")))
+          val apmSimDriver = new PythonDriver(_lifespan = Lifespan.JVM(nameOpt = Some(s"APMSim$i")))
           val sim = simFactory.getNext
           sim._Py(apmSimDriver).connStr.$STR
       }

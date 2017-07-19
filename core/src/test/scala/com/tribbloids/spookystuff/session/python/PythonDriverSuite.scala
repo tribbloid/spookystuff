@@ -23,7 +23,7 @@ object PythonDriverSuite {
   }
 
   def runIterable[T, R](xs: Iterable[T])(f: (T, PythonDriver) => R): Iterable[R] = {
-    val proc = new PythonDriver("python", lifespan = Lifespan.Auto(
+    val proc = new PythonDriver("python", _lifespan = Lifespan.Auto(
       nameOpt = Some("testPython")
     ))
     try {
