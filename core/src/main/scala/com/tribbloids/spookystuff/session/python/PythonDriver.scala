@@ -326,7 +326,10 @@ class PythonDriver(
              |del($resultVar)
           """.trim.stripMargin
         val rows = interpret(_code, spookyOpt).toSeq
-        val splitterIndex = rows.zipWithIndex.find(_._1 == EXECUTION_RESULT).get._2
+        val splitterIndex = rows.zipWithIndex.find(_._1 == EXECUTION_RESULT)
+          .getOrElse(
+            throw new AssertionError(s"Cannot find $EXECUTION_RESULT\n" + rows.mkString("\n"))
+          )._2
         val split = rows.splitAt(splitterIndex)
 
         val _result = split._2.slice(1, Int.MaxValue).mkString("\n")
