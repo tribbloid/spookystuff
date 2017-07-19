@@ -81,7 +81,7 @@ object Link {
       }
       assert(results.size <= 1, "Multiple Links cannot share task context or thread")
       val opt = results.headOption
-//      opt.foreach(_.usedBy = session.lifespan.ctx)
+      opt.foreach(_.usedBy = session.lifespan.ctx)
       opt
     }
 
