@@ -61,6 +61,7 @@ class JSpritGenPartitionerSuite extends DummyUAVFixture with JSpritFixture {
   }
 
   def getCost(grouped: Array[List[TraceView]]) = {
+
     val uav_lengths: Array[(UAV, Double)] = grouped.flatMap {
       path =>
         val actions = path.flatMap(_.children)

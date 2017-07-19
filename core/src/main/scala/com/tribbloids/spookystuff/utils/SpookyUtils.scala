@@ -57,6 +57,7 @@ object SpookyUtils {
                 callerStr: String = null
               )(fn: => T): T = {
     var _callerStr = callerStr
+    //TODO: this should be exposed as utility.
     if (callerStr == null)
       _callerStr = FlowUtils.stackTracesShowStr(
         FlowUtils.getBreakpointInfo()
@@ -74,7 +75,7 @@ object SpookyUtils {
           logger.warn(
             s"Retrying locally on ${e.getClass.getSimpleName} in ${interval.toDouble/1000} second(s)... ${n-1} time(s) left" +
               "\t@ " + _callerStr +
-              "\n\t" + e.getMessage
+              "\n" + e.getMessage
           )
           logger.debug("\t\\-->", e)
         }

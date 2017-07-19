@@ -14,7 +14,22 @@ abstract class Lifespan extends IDMixin with Serializable {
   def strategy: CleanupStrategy
   def ctxFactory: () => LifespanContext
 
-  @transient lazy val ctx = ctxFactory.apply()
+  @transient @volatile var _ctx: LifespanContext = _
+  def ctx = this.synchronized {
+    if (_ctx == null) {
+      updateCtx()
+    }
+    else {
+      _ctx
+    }
+  }
+
+  def updateCtx(factory: () => LifespanContext = ctxFactory): LifespanContext = {
+    val neo = ctxFactory()
+    _ctx = neo
+    neo
+  }
+
   def _id = {
     strategy.getCleanupBatchID(ctx)
   }
@@ -53,8 +68,33 @@ abstract class Lifespan extends IDMixin with Serializable {
 case class LifespanContext(
                             taskContextOpt: Option[TaskContext] = Option(TaskContext.get()),
                             thread: Thread = Thread.currentThread()
-                          ) extends NOTSerializable {
+                          ) extends NOTSerializable with IDMixin {
 
+  override def _id: Any = taskContextOpt.map(_.taskAttemptId()) -> thread.getId
+
+  def threadStr: String = {
+    "Thread-" + thread.getId + s"[${thread.getName}]" +
+      {
+        if (thread.isInterrupted) "(interrupted)"
+        else if (!thread.isAlive) "(dead)"
+        else ""
+      }
+  }
+
+  def taskStr: String = taskContextOpt.map{
+    task =>
+      "Task-" + task.taskAttemptId() +
+        {
+          var suffix: Seq[String] = Nil
+          if (task.isCompleted()) suffix :+= "completed"
+          if (task.isInterrupted()) suffix :+= "interrupted"
+          if (task.isRunningLocally()) suffix :+= "local"
+          suffix.mkString("(",",",")")
+        }
+  }
+    .getOrElse("[NOT IN TASK]")
+
+  override def toString = threadStr + " / " + taskStr
 }
 
 abstract class CleanupStrategy extends Serializable {

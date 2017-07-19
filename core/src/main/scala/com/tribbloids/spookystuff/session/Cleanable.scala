@@ -12,8 +12,6 @@ import scala.util.Try
 
 sealed trait AbstractCleanable {
 
-  logConstructionDestruction("Created")
-
   //each can only be cleaned once
   @volatile var isCleaned: Boolean = false
 
@@ -74,8 +72,10 @@ trait Cleanable extends AbstractCleanable {
     * taskOrThreadOnCreation is incorrect in withDeadline or threads not created by Spark
     * Override this to correct such problem
     */
-  def lifespan: Lifespan = new Lifespan.JVM()
-  lifespan //initialize lazily
+  val lifespan: Lifespan = new Lifespan.JVM()
+
+  logConstructionDestruction("Created")
+//  lifespan //initialize lazily
 
   uncleanedInBatch += this
 

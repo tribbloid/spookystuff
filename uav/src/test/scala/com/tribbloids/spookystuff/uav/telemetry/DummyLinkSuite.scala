@@ -9,12 +9,15 @@ import com.tribbloids.spookystuff.uav.system.UAV
   */
 class DummyLinkSuite extends LinkSuite with DummyUAVFixture {
 
+  override lazy val factories: Seq[LinkFactory] = Seq(
+    LinkFactories.Dummy
+  )
+}
+
+class DummyLinkSuite_SelectFromFleet extends DummyLinkSuite {
+
   override lazy val getFleet: (String) => Seq[UAV] = {
     val simEndpoints = this.simUAVs
     _: String => simEndpoints
   }
-
-  override lazy val factories: Seq[LinkFactory] = Seq(
-    LinkFactories.Dummy
-  )
 }

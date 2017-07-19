@@ -46,6 +46,7 @@ abstract class LinkSuite extends UAVFixture {
   }
 
   def runTests(fixtures: Seq[(SpookyContext, String)])(f: (SpookyContext) => Unit) = {
+
     fixtures.foreach {
       case (spooky, testPrefix) =>
         describe(testPrefix) {
@@ -68,7 +69,7 @@ abstract class LinkSuite extends UAVFixture {
         }
       }
 
-      it("Link created in the same TaskContext should be reused") {
+      it("Link created in the same Task should be reused") {
 
         val listDrones = this.getFleet
         val linkStrs = sc.parallelize(simURIs).map {
@@ -95,6 +96,62 @@ abstract class LinkSuite extends UAVFixture {
             assert(tuple._1 == tuple._2)
         }
       }
+
+      for (factory2 <- factories) {
+
+        it(
+          s"~> ${factory2.getClass.getSimpleName}:" +
+            s" available Link can be recommissioned in another Task"
+        ) {
+
+          val factory1 = spooky.getConf[UAVConf].linkFactory
+
+          val linkRDD1: RDD[Link] = getLinkRDD(spooky)
+
+          spooky.getConf[UAVConf].linkFactory = factory2
+          spooky.rebroadcast()
+
+          try {
+
+            assert(spooky.getMetrics[UAVMetrics].linkCreated.value == parallelism)
+            assert(spooky.getMetrics[UAVMetrics].linkDestroyed.value == 0)
+
+            val linkRDD2: RDD[Link] = getLinkRDD(spooky)
+
+            if (factory1 == factory2) {
+              assert(spooky.getMetrics[UAVMetrics].linkCreated.value == parallelism)
+              assert(spooky.getMetrics[UAVMetrics].linkDestroyed.value == 0)
+              linkRDD1.map(_.toString).collect().mkString("\n").shouldBe (
+                linkRDD2.map(_.toString).collect().mkString("\n"),
+                sort = true
+              )
+            }
+            else {
+              assert(spooky.getMetrics[UAVMetrics].linkCreated.value == parallelism) // TODO: should be parallelism*2!
+              assert(spooky.getMetrics[UAVMetrics].linkDestroyed.value == 0)
+              linkRDD1.map(_.uav).collect().mkString("\n").shouldBe (
+                linkRDD2.map(_.uav).collect().mkString("\n"),
+                sort = true
+              )
+            }
+          }
+          finally {
+            spooky.getConf[UAVConf].linkFactory = factory1
+            spooky.rebroadcast()
+          }
+        }
+      }
+
+      it("Link can be created and reused quickly in different tasks") {
+
+        for (i <- 0 to 10) {
+          val linkRDD = getLinkRDD(spooky)
+          linkRDD.persist()
+          val uavs = linkRDD.map(_.uav).collect()
+          println(s"=========== $i ==========")
+          uavs.foreach(println)
+        }
+      }
   }
 
   protected def getLinkRDD(spooky: SpookyContext): RDD[Link] = {
@@ -109,7 +166,10 @@ abstract class LinkSuite extends UAVFixture {
             )
         }
         TestHelper.assert(link.isReachable, "link is blacklisted")
-        TestHelper.assert(link.factoryOpt.get == spooky.getConf[UAVConf].linkFactory, "link doesn't comply to factory")
+        TestHelper.assert(
+          link.factoryOpt.get == spooky.getConf[UAVConf].linkFactory,
+          "link doesn't comply to factory"
+        )
         //        link.isBooked = true
         //        Thread.sleep(5000) //otherwise a task will complete so fast such that another task hasn't start yet.
         link
@@ -167,55 +227,6 @@ abstract class SimLinkSuite extends LinkSuite with SimUAVFixture {
         SpookyUtils.retry(5, 2000) {
           sc.foreachComputer {
             SpookyEnvFixture.processShouldBeClean(Seq("mavproxy"), Seq("mavproxy"), cleanSweepNotInTask = false)
-          }
-        }
-      }
-
-      for (factory2 <- factories) {
-
-        it(
-          s"~> ${factory2.getClass.getSimpleName}:" +
-            s" available Link can be recommissioned in another TaskContext"
-        ) {
-
-          val factory1 = spooky.getConf[UAVConf].linkFactory
-
-          val linkRDD1: RDD[Link] = getLinkRDD(spooky)
-          //          linkRDD1.foreach {
-          //            link =>
-          //              link.isBooked = false
-          //          }
-
-          spooky.getConf[UAVConf].linkFactory = factory2
-          spooky.rebroadcast()
-
-          try {
-
-            assert(spooky.getMetrics[UAVMetrics].linkCreated.value == parallelism)
-            assert(spooky.getMetrics[UAVMetrics].linkDestroyed.value == 0)
-
-            val linkRDD2: RDD[Link] = getLinkRDD(spooky)
-
-            if (factory1 == factory2) {
-              assert(spooky.getMetrics[UAVMetrics].linkCreated.value == parallelism)
-              assert(spooky.getMetrics[UAVMetrics].linkDestroyed.value == 0)
-              linkRDD1.map(_.toString).collect().mkString("\n").shouldBe (
-                linkRDD2.map(_.toString).collect().mkString("\n"),
-                sort = true
-              )
-            }
-            else {
-              assert(spooky.getMetrics[UAVMetrics].linkCreated.value == parallelism) // TODO: should be parallelism*2!
-              assert(spooky.getMetrics[UAVMetrics].linkDestroyed.value == 0)
-              linkRDD1.map(_.uav).collect().mkString("\n").shouldBe (
-                linkRDD2.map(_.uav).collect().mkString("\n"),
-                sort = true
-              )
-            }
-          }
-          finally {
-            spooky.getConf[UAVConf].linkFactory = factory1
-            spooky.rebroadcast()
           }
         }
       }

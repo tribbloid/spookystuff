@@ -28,15 +28,6 @@ object Link {
   // only 1 allowed per connStr, how to enforce?
   val existing: caching.ConcurrentMap[UAV, Link] = caching.ConcurrentMap()
 
-  def threadStr(thread: Thread): String = {
-    "Thread-" + thread.getId + s"[${thread.getName}]" +
-      {
-        if (thread.isInterrupted) "(interrupted)"
-        if (!thread.isAlive) "(dead)"
-        else ""
-      }
-  }
-
   def select(
               uavs: Seq[UAV],
               session: Session,
@@ -60,7 +51,7 @@ object Link {
                  recommissionWithNewProxy: Boolean = true
                ) = Try {
 
-    SpookyUtils.retry(3, 2000) {
+    SpookyUtils.retry(3, 1000) {
       _trySelect(uavs, session, prefer, recommissionWithNewProxy).get
     }
   }
@@ -81,7 +72,7 @@ object Link {
       val id2Opt = sessionThreadOpt.map(_.getId)
       val results = Link.existing.values.toList.filter {
         v =>
-          val id1Opt = v.usedByThreadOpt.map(_.getId)
+          val id1Opt = v.usedByOpt.map(_.thread.getId)
           val lMatch = (id1Opt, id2Opt) match {
             case (Some(tc1), Some(tc2)) if tc1 == tc2 => true
             case _ => false
@@ -90,15 +81,15 @@ object Link {
       }
       assert(results.size <= 1, "Multiple Links cannot share task context or thread")
       val opt = results.headOption
-      opt.foreach(_.usedByThread = session.lifespan.ctx.thread)
+//      opt.foreach(_.usedBy = session.lifespan.ctx)
       opt
     }
 
     val recommissionedOpt = threadLocalOpt match {
       case None =>
         LoggerFactory.getLogger(this.getClass).info (
-          s"ThreadLocal link not found: ${threadStr(session.lifespan.ctx.thread)}" +
-            s" <\\- ${Link.existing.values.flatMap(_.usedByThreadOpt.map(threadStr))
+          s"ThreadLocal link not found: ${session.lifespan.ctx.toString}" +
+            s" <\\- ${Link.existing.values.flatMap(_.usedByOpt)
               .mkString("{", ", ", "}")}"
         )
         None
@@ -133,12 +124,15 @@ object Link {
         val opt = this.synchronized {
           val available = links.filter(v => v.isAvailable)
           val opt = prefer(available)
-          opt.foreach(_.usedByThread = session.lifespan.ctx.thread)
+          //deliberately set inside synchronized block to avoid being selected by 2 threads
+          opt.foreach(_.usedBy = session.lifespan.ctx)
           opt
         }
 
         opt
       }
+
+    resultOpt.foreach(_.usedBy = session.lifespan.ctx)
 
     resultOpt match {
       case Some(link) =>
@@ -152,7 +146,7 @@ object Link {
           msg + "\n" + hint
         }
         else {
-          "All telemetry Links are busy:\n" +
+          "All telemetry links are busy:\n" +
             Link.existing.values.map {
               link =>
                 link.statusString
@@ -194,20 +188,21 @@ object Link {
     rdd.flatMap {
       v =>
         v.recover {
-          case vv =>
-            LoggerFactory.getLogger(this.getClass).warn(null, vv)
-            throw vv
+          case e =>
+            LoggerFactory.getLogger(this.getClass).warn(e.toString)
+            throw e
         }
           .toOption
     }
   }
 }
 
-trait Link extends LocalCleanable {
+trait Link extends LocalCleanable with ConflictDetection {
 
   val uav: UAV
 
-  val exclusiveURIs: Seq[String]
+  val exclusiveURIs: Set[String]
+  final override lazy val resourceIDs = Map("uris" -> exclusiveURIs)
 
   @volatile protected var _spooky: SpookyContext = _
   def spookyOpt = Option(_spooky)
@@ -247,18 +242,22 @@ trait Link extends LocalCleanable {
     }
   }
 
-  @volatile protected var _usedByThread: Thread = _
-  def usedByThreadOpt = Option(_usedByThread)
-  def usedByThread = usedByThreadOpt.get
-  def usedByThread_=(
-                      c: Thread
-                    ): this.type = {
+  @volatile protected var _usedBy: LifespanContext = _
+  def usedByOpt = Option(_usedBy)
+  def usedBy = usedByOpt.get
+  def usedBy_= (
+                 c: LifespanContext
+               ): this.type = {
 
-    if (usedByThreadOpt.exists(v => v.getId == c.getId)) this
+    if (usedByOpt.exists(v => v == c)) this
     else {
+
       this.synchronized{
-        assert(isNotUsedByThread, s"Cannot be used by thread ${c.getName}: $statusString")
-        this._usedByThread = c
+        assert(
+          isNotUsed,
+          s"Unavailable to ${c.toString} until current thread/task is finished: $statusString"
+        )
+        this._usedBy = c
         this
       }
     }
@@ -380,12 +379,20 @@ trait Link extends LocalCleanable {
   }
 
   def isNotUsedByThread: Boolean = {
-    usedByThreadOpt.forall(v => !v.isAlive)
+    usedByOpt.forall(v => !v.thread.isAlive)
   }
+  def isNotUsedByTask: Boolean = {
+    usedByOpt.flatMap(_.taskContextOpt).forall(v => v.isCompleted())
+  }
+  def isNotUsed = isNotUsedByThread || isNotUsedByTask
 
   def isAvailable: Boolean = {
-    !isBooked && isReachable && isNotUsedByThread
+    !isBooked && isReachable && isNotUsed
   }
+  //
+//  def maybeAvailable: Boolean = {
+//    !isBooked && isReachable && isNotUsedByTask
+//  }
 
   def statusString: String = {
 
@@ -395,8 +402,8 @@ trait Link extends LocalCleanable {
     if (!isReachable)
       strs += s"unreachable for ${(System.currentTimeMillis() - lastFailureOpt.get._2).toDouble / 1000}s" +
         s" (${lastFailureOpt.get._1.getClass.getSimpleName})"
-    if (!isNotUsedByThread)
-      strs += s"used by ${Link.threadStr(_usedByThread)}"
+    if (!isNotUsedByThread || !isNotUsedByTask)
+      strs += s"used by ${_usedBy.toString}"
 
     s"Link $uav is " + {
       if (isAvailable) {
@@ -448,7 +455,7 @@ trait Link extends LocalCleanable {
   // Most telemetry support setting up multiple landing site.
   protected def _getHome: Location
   protected lazy val getHome: Location = {
-    retry(5){
+    retry(){
       _getHome
     }
   }
@@ -456,7 +463,7 @@ trait Link extends LocalCleanable {
   protected def _getCurrentLocation: Location
   protected object CurrentLocation extends Memoize[Unit, Location]{
     override def f(v: Unit): Location = {
-      retry(5) {
+      retry() {
         _getCurrentLocation
       }
     }

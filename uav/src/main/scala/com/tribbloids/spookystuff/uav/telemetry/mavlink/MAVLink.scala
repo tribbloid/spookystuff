@@ -40,10 +40,8 @@ case class MAVLink(
     if (toSpark.isEmpty) assert(toGCS.isEmpty, "No endpoint for executor")
   }
 
-  override lazy val resourceIDs = Map("" -> (uav.uris ++ toSpark).toSet)
-
   val outs: Seq[String] = toSpark ++ toGCS
-  val exclusiveURIs: Seq[String] = (uav.uris ++ toSpark).distinct
+  val exclusiveURIs: Set[String] = (uav.uris ++ toSpark).toSet
 
   /**
     * CAUTION: ALL of them have to be val or lazy val! Or you risk recreating many copies each with its own python!

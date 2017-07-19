@@ -1,5 +1,6 @@
 package com.tribbloids.spookystuff.uav.telemetry
 
+import com.tribbloids.spookystuff.session.ConflictDetection
 import com.tribbloids.spookystuff.uav.UAVConf
 import com.tribbloids.spookystuff.uav.spatial.Location
 import com.tribbloids.spookystuff.uav.system.UAV
@@ -16,7 +17,7 @@ case class DummyLink(
                       currentLocation: Location = UAVConf.DEFAULT_HOME_LOCATION
                     ) extends Link {
 
-  override val exclusiveURIs: Seq[String] = uav.uris
+  override val exclusiveURIs: Set[String] = uav.uris.toSet
 
   override protected def _connect(): Unit = {}
 
