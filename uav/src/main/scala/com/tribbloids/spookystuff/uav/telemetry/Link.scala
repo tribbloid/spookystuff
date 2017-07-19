@@ -440,6 +440,7 @@ trait Link extends LocalCleanable with ConflictDetection {
       this._spooky,
       factory
     )
+    result.usedBy = this.usedBy
     result
   }
 
