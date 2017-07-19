@@ -11,7 +11,6 @@ import com.tribbloids.spookystuff.uav.telemetry.{Link, UAVStatus}
 import org.apache.spark.rdd.RDD
 
 import scala.reflect.ClassTag
-import scala.util.Failure
 
 /**
   * Created by peng on 31/12/16.
@@ -70,6 +69,12 @@ object GenPartitioners {
         linkRDD.count() //TODO: optional
 
         val allUAVs = linkRDD.keys.collect()
+        val uris = allUAVs.flatMap(_.uav.uris)
+          val grouped = uris.groupBy(identity)
+        grouped.values.foreach {
+          v =>
+          assert(v.length == 1, s"multiple UAVs sharing the same uris ${v.mkString("[", ",", "]")}")
+        }
         val uavs = numUAVsOpt match {
           case Some(n) => allUAVs.slice(0, n)
           case None => allUAVs

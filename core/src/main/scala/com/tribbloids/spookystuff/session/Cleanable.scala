@@ -72,7 +72,8 @@ trait Cleanable extends AbstractCleanable {
     * taskOrThreadOnCreation is incorrect in withDeadline or threads not created by Spark
     * Override this to correct such problem
     */
-  val lifespan: Lifespan = new Lifespan.JVM()
+  def _lifespan: Lifespan = new Lifespan.JVM()
+  final val lifespan = _lifespan
 
   logConstructionDestruction("Created")
 //  lifespan //initialize lazily

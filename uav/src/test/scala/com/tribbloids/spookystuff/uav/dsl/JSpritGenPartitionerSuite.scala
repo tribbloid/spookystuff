@@ -102,7 +102,7 @@ class JSpritGenPartitionerSuite extends DummyUAVFixture with JSpritFixture {
   it("can optimize max cost of 5 waypoints per UAV") {
 
     val grouped = runTest(waypoints((parallelism * 2.5).toInt))
-    assert(getCost(grouped) <= 231.504)
+    assert(getCost(grouped) <= 224.247)
   }
 
   it("can optimize max cost of 2 line scan per UAV") {

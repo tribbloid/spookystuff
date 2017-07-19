@@ -104,7 +104,7 @@ class PythonDriver(
                       |import os
                       |from __future__ import print_function
                     """.trim.stripMargin,
-                    override val lifespan: Lifespan = new Lifespan.Auto()
+                    override val _lifespan: Lifespan = new Lifespan.Auto()
                   ) extends PythonProcess(executable) with LocalCleanable {
 
   import scala.concurrent.duration._
