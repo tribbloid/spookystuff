@@ -53,12 +53,14 @@ case object SpookyViews {
     }
 
     // large enough such that all idle threads has a chance to pick up >1 partition
-    val SEED_TRIAL = 16
+    val SEED_REPLICATING_FACTOR = 16
     /**
       * guaranteed to have at least 1 datum on each executor thread. Better distribute evenly
       */
-    private def seed() = {
-      val size = self.defaultParallelism * SEED_TRIAL
+    private def seed(
+                      sizeOpt: Option[Int]
+                    ) = {
+      val size = sizeOpt.getOrElse(self.defaultParallelism * SEED_REPLICATING_FACTOR)
       val seed = self.makeRDD(1 to size, size)
         .map(i => i->i)
         .sortByKey(numPartitions = size)
@@ -73,9 +75,12 @@ case object SpookyViews {
       seed
     }
 
-    def mapAtLeastOncePerExecutorCore[T: ClassTag](f: => T): RDD[T] = {
+    def mapAtLeastOncePerExecutorCore[T: ClassTag](
+                                                    f: => T,
+                                                    sizeOpt: Option[Int] = None
+                                                  ): RDD[T] = {
 
-      seed().mapPartitions {
+      seed(sizeOpt).mapPartitions {
         itr =>
           val stageID = TaskContext.get.stageId()
           //          val executorID = SparkEnv.get.executorId //technically this is useless as the map is only shared locally but whatever
@@ -97,23 +102,35 @@ case object SpookyViews {
           }
       }
     }
-    def exeAtLeastOncePerExecutorCore[T: ClassTag](f: => T) =
-      mapAtLeastOncePerExecutorCore(f).count()
+    def exeAtLeastOncePerExecutorCore[T: ClassTag](
+                                                    f: => T,
+                                                    sizeOpt: Option[Int] = None
+                                                  ) =
+      mapAtLeastOncePerExecutorCore(f, sizeOpt).count()
 
     //TODO: change to concurrent execution
-    def mapAtLeastOncePerCore[T: ClassTag](f: => T): RDD[T] = {
-      val perExec = mapAtLeastOncePerExecutorCore(f)
+    def mapAtLeastOncePerCore[T: ClassTag](
+                                            f: => T,
+                                            sizeOpt: Option[Int] = None
+                                          ): RDD[T] = {
+      val perExec = mapAtLeastOncePerExecutorCore(f, sizeOpt)
       val v = f
       self.makeRDD(Seq(v), 1).union(perExec)
     }
 
-    def exeAtLeastOncePerCore[T: ClassTag](f: => T): Long = {
-      mapAtLeastOncePerCore(f).count()
+    def exeAtLeastOncePerCore[T: ClassTag](
+                                            f: => T,
+                                            sizeOpt: Option[Int] = None
+                                          ): Long = {
+      mapAtLeastOncePerCore(f, sizeOpt).count()
     }
 
-    def mapPerWorker[T: ClassTag](f: => T): RDD[T] = {
+    def mapPerWorker[T: ClassTag](
+                                   f: => T,
+                                   sizeOpt: Option[Int] = None
+                                 ): RDD[T] = {
 
-      seed().mapPartitions {
+      seed(sizeOpt).mapPartitions {
         itr =>
           val stageID = TaskContext.get.stageId()
           val alreadyRun = perWorkerMark.synchronized {
@@ -132,24 +149,31 @@ case object SpookyViews {
           }
       }
     }
-    def foreachWorker[T: ClassTag](f: => T): Long = mapPerWorker(f).count()
+    def foreachWorker[T: ClassTag](
+                                    f: => T,
+                                    sizeOpt: Option[Int] = None
+                                  ): Long = mapPerWorker(f, sizeOpt).count()
 
     //TODO: change to concurrent execution
-    def mapPerComputer[T: ClassTag](f: => T): RDD[T] = {
+    def mapPerComputer[T: ClassTag](
+                                     f: => T,
+                                     sizeOpt: Option[Int] = None
+                                   ): RDD[T] = {
       val v = f
 
       if (self.isLocal) {
         self.makeRDD(Seq(v), 1)
       }
       else {
-        val perWorker = mapPerWorker {
-          f
-        }
+        val perWorker = mapPerWorker(f, sizeOpt)
         self.makeRDD(Seq(v)).union(perWorker)
       }
     }
-    def foreachComputer[T: ClassTag](f: => T): Long = {
-      mapPerComputer(f).count()
+    def foreachComputer[T: ClassTag](
+                                      f: => T,
+                                      sizeOpt: Option[Int] = None
+                                    ): Long = {
+      mapPerComputer(f, sizeOpt).count()
     }
 
     def allTaskLocationStrs: Seq[String] = {

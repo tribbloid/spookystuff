@@ -7,6 +7,24 @@ import org.apache.spark.{SparkEnv, TaskContext}
 
 import scala.util.Random
 
+object SpookyViewsSuite {
+
+  val getThreadInfo = {
+    () =>
+      Option(TaskContext.get()).foreach {
+        tc =>
+          TestHelper.assert(!tc.isRunningLocally())
+      }
+      val ctx = LifespanContext()
+      (
+        SparkEnv.get.blockManager.blockManagerId,
+        SparkEnv.get.executorId -> ctx.thread.getId,
+        TaskContext.getPartitionId(),
+        ctx
+      )
+  }
+}
+
 /**
   * Created by peng on 16/11/15.
   */
@@ -14,6 +32,7 @@ class SpookyViewsSuite extends SpookyEnvFixture {
 
   import SpookyViews._
   import org.scalatest.Matchers._
+  import SpookyViewsSuite._
 
   it("multiPassFlatMap should yield same result as flatMap") {
 
@@ -72,20 +91,6 @@ class SpookyViewsSuite extends SpookyEnvFixture {
   it("\\\\ can handle null component") {
 
     assert(nullStr \\ nullStr \\ "abc" \\ null \\ null == "abc")
-  }
-
-  val getThreadInfo = {
-    () =>
-      Option(TaskContext.get()).foreach {
-        tc =>
-          TestHelper.assert(!tc.isRunningLocally())
-      }
-      (
-        SparkEnv.get.blockManager.blockManagerId,
-        Thread.currentThread().getId,
-        TaskContext.getPartitionId(),
-        LifespanContext()
-      )
   }
 
   it("mapAtLeastOncePerExecutorCore will run properly") {
