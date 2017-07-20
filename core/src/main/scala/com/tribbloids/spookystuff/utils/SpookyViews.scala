@@ -7,7 +7,7 @@ import com.tribbloids.spookystuff.row._
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.DataFrame
 import org.apache.spark.storage.StorageLevel
-import org.apache.spark.{HashPartitioner, SparkContext, SparkEnv, TaskContext}
+import org.apache.spark.{HashPartitioner, SparkContext, TaskContext}
 
 import scala.collection.generic.CanBuildFrom
 import scala.collection.immutable.ListMap
@@ -34,8 +34,10 @@ case object SpookyViews {
     }
   }
 
+  // (stageID -> threadID) -> isExecuted
+  val perCoreMark: ConcurrentMap[(Int, Long), Boolean] = ConcurrentMap()
   // stageID -> isExecuted
-  val perWorkerMark: ConcurrentMap[Long, Boolean] = ConcurrentMap()
+  val perWorkerMark: ConcurrentMap[Int, Boolean] = ConcurrentMap()
 
   implicit class SparkContextView(val self: SparkContext) {
 
@@ -50,10 +52,13 @@ case object SpookyViews {
       result
     }
 
+    // large enough such that all idle threads has a chance to pick up >1 partition
+    val SEED_TRIAL = 16
     /**
       * guaranteed to have at least 1 datum on each executor thread. Better distribute evenly
       */
-    private def seed(size: Int = self.defaultParallelism) = {
+    private def seed() = {
+      val size = self.defaultParallelism * SEED_TRIAL
       val seed = self.makeRDD(1 to size, size)
         .map(i => i->i)
         .sortByKey(numPartitions = size)
@@ -68,15 +73,23 @@ case object SpookyViews {
       seed
     }
 
-    def mapPerExecutorCore[T: ClassTag](f: => T, size: Int = self.defaultParallelism): RDD[T] = {
-      val alreadyRunThreadID: ConcurrentMap[(String, Long), Unit] = ConcurrentMap()
+    def mapAtLeastOncePerExecutorCore[T: ClassTag](f: => T): RDD[T] = {
 
-      seed(size).mapPartitions {
+      seed().mapPartitions {
         itr =>
-          val executorID = SparkEnv.get.executorId //technically this is useless as the map is only shared locally but whatever
-        val threadID = Thread.currentThread().getId
-          if (!alreadyRunThreadID.contains(executorID -> threadID)) {
-            alreadyRunThreadID += (executorID -> threadID) -> Unit
+          val stageID = TaskContext.get.stageId()
+          //          val executorID = SparkEnv.get.executorId //technically this is useless as the map is only shared locally but whatever
+          val threadID = Thread.currentThread().getId
+          val allIDs = stageID -> threadID
+          val alreadyRun = perCoreMark.synchronized {
+            val alreadyRun = perCoreMark.getOrElseUpdate(allIDs, false)
+            if (!alreadyRun) {
+              perCoreMark.put(allIDs, true)
+            }
+            alreadyRun
+          }
+          if (!alreadyRun) {
+            //            Thread.sleep(1000)
             Iterator(f)
           }
           else {
@@ -84,18 +97,18 @@ case object SpookyViews {
           }
       }
     }
-    def foreachExecutorCore[T: ClassTag](f: => T, size: Int = self.defaultParallelism) =
-      mapPerExecutorCore(f, size).count()
+    def exeAtLeastOncePerExecutorCore[T: ClassTag](f: => T) =
+      mapAtLeastOncePerExecutorCore(f).count()
 
     //TODO: change to concurrent execution
-    def mapPerCore[T: ClassTag](f: => T, size: Int = self.defaultParallelism): RDD[T] = {
-      val perExec = mapPerExecutorCore(f, size)
+    def mapAtLeastOncePerCore[T: ClassTag](f: => T): RDD[T] = {
+      val perExec = mapAtLeastOncePerExecutorCore(f)
       val v = f
       self.makeRDD(Seq(v), 1).union(perExec)
     }
 
-    def foreachCore[T: ClassTag](f: => T): Long = {
-      mapPerCore(f).count()
+    def exeAtLeastOncePerCore[T: ClassTag](f: => T): Long = {
+      mapAtLeastOncePerCore(f).count()
     }
 
     def mapPerWorker[T: ClassTag](f: => T): RDD[T] = {
@@ -103,15 +116,19 @@ case object SpookyViews {
       seed().mapPartitions {
         itr =>
           val stageID = TaskContext.get.stageId()
-          perWorkerMark.synchronized {
+          val alreadyRun = perWorkerMark.synchronized {
             val alreadyRun = perWorkerMark.getOrElseUpdate(stageID, false)
             if (!alreadyRun) {
               perWorkerMark.put(stageID, true)
-              Iterator(f)
             }
-            else {
-              Iterator.empty
-            }
+            alreadyRun
+          }
+          if (!alreadyRun) {
+            Thread.sleep(1000)
+            Iterator(f)
+          }
+          else {
+            Iterator.empty
           }
       }
     }
@@ -144,7 +161,7 @@ case object SpookyViews {
 
     //TODO: remove! not useful
     def allExecutorCoreIDs = {
-      mapPerExecutorCore {
+      mapAtLeastOncePerExecutorCore {
         val thread = Thread.currentThread()
         (SpookyUtils.getBlockManagerID, thread.getId, thread.getName)
       }

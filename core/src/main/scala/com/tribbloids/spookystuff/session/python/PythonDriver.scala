@@ -328,7 +328,12 @@ class PythonDriver(
         val rows = interpret(_code, spookyOpt).toSeq
         val splitterIndex = rows.zipWithIndex.find(_._1 == EXECUTION_RESULT)
           .getOrElse(
-            throw new AssertionError(s"Cannot find $EXECUTION_RESULT\n" + rows.mkString("\n"))
+            if (this.isCleaned)
+              throw new AssertionError("python driver is cleaned")
+            else if (!this.process.isAlive)
+              throw new AssertionError("python driver is dead")
+            else
+              throw new AssertionError(s"Cannot find $EXECUTION_RESULT\n" + rows.mkString("\n"))
           )._2
         val split = rows.splitAt(splitterIndex)
 

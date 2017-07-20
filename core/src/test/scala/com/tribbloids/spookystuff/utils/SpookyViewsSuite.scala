@@ -1,6 +1,7 @@
 package com.tribbloids.spookystuff.utils
 
 import com.tribbloids.spookystuff.SpookyEnvFixture
+import com.tribbloids.spookystuff.session.LifespanContext
 import com.tribbloids.spookystuff.testutils.TestHelper
 import org.apache.spark.{SparkEnv, TaskContext}
 
@@ -73,55 +74,66 @@ class SpookyViewsSuite extends SpookyEnvFixture {
     assert(nullStr \\ nullStr \\ "abc" \\ null \\ null == "abc")
   }
 
-  it("mapPerExecutorThread will run properly") {
-    val result = sc.mapPerExecutorCore {
-      TestHelper.assert(!TaskContext.get().isRunningLocally())
-      SparkEnv.get.blockManager.blockManagerId ->
-        TaskContext.getPartitionId()
+  val getThreadInfo = {
+    () =>
+      Option(TaskContext.get()).foreach {
+        tc =>
+          TestHelper.assert(!tc.isRunningLocally())
+      }
+      (
+        SparkEnv.get.blockManager.blockManagerId,
+        Thread.currentThread().getId,
+        TaskContext.getPartitionId(),
+        LifespanContext()
+      )
+  }
+
+  it("mapAtLeastOncePerExecutorCore will run properly") {
+    val result = sc.mapAtLeastOncePerExecutorCore {
+      getThreadInfo()
     }
       .collect()
-    assert(result.length == sc.defaultParallelism, result.mkString("\n"))
-    assert(result.map(_._1).distinct.length == TestHelper.numWorkers, result.mkString("\n"))
-    assert(result.map(_._2).distinct.length == sc.defaultParallelism, result.mkString("\n"))
+
     result.foreach(println)
+    assert(result.length >= sc.defaultParallelism, result.mkString("\n"))
+    assert(result.map(_._1).distinct.length == TestHelper.numWorkers, result.mkString("\n"))
+    assert(result.map(_._2).distinct.length == result.length, result.mkString("\n"))
   }
 
   it("mapPerWorker will run properly") {
     val result = sc.mapPerWorker {
-      TestHelper.assert(!TaskContext.get().isRunningLocally())
-      SparkEnv.get.blockManager.blockManagerId ->
-        TaskContext.getPartitionId()
+      getThreadInfo()
     }
       .collect()
+
+    result.foreach(println)
     assert(result.length == TestHelper.numWorkers, result.mkString("\n"))
     assert(result.map(_._1).distinct.length == TestHelper.numWorkers, result.mkString("\n"))
     assert(result.map(_._2).distinct.length == TestHelper.numWorkers, result.mkString("\n"))
-    result.foreach(println)
   }
 
-  it("mapPerCore will run properly") {
-    val result = sc.mapPerCore {
-      SparkEnv.get.blockManager.blockManagerId ->
-        TaskContext.getPartitionId()
+  it("mapAtLeastOncePerCore will run properly") {
+    val result = sc.mapAtLeastOncePerCore {
+      getThreadInfo()
     }
       .collect()
-    assert(result.length == sc.defaultParallelism + 1, result.mkString("\n"))
-    assert(result.map(_._1).distinct.length == TestHelper.numComputers, result.mkString("\n"))
-    assert(result.map(_._2).distinct.length == sc.defaultParallelism + 1, result.mkString("\n"))
+
     result.foreach(println)
+    assert(result.length >= sc.defaultParallelism + 1, result.mkString("\n"))
+    assert(result.map(_._1).distinct.length == TestHelper.numComputers, result.mkString("\n"))
+    assert(result.map(_._2).distinct.length == result.length, result.mkString("\n"))
   }
 
   it("mapPerComputer will run properly") {
     val result = sc.mapPerComputer {
-      SparkEnv.get.blockManager.blockManagerId ->
-        TaskContext.getPartitionId()
+      getThreadInfo()
     }
       .collect()
     //+- 1 is for executor lost tolerance
+    result.foreach(println)
     assert(result.length === TestHelper.numComputers +- 1, result.mkString("\n"))
     assert(result.map(_._1).distinct.length === TestHelper.numComputers +- 1, result.mkString("\n"))
     assert(result.map(_._2).distinct.length === TestHelper.numComputers +- 1, result.mkString("\n"))
-    result.foreach(println)
   }
 
   it("result of allTaskLocationStrs can be used as partition's preferred location") {

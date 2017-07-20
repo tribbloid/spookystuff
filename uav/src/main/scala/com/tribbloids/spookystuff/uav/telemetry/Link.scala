@@ -174,21 +174,20 @@ object Link {
   // get available drones, TODO: merge other impl to it.
   def availableLinkRDD(spooky: SpookyContext): RDD[(LinkStatus, Link)] = {
 
-    val rdd = spooky.sparkContext
-      .mapPerExecutorCore({
-        spooky.withSession {
-          session =>
-            val uavsInFleet = spooky.getConf[UAVConf].uavsInFleetShuffled
-            val linkTry = Link.trySelect (
-              uavsInFleet,
-              session
-            )
-            linkTry.map {
-              link =>
-                link.status() -> link
-            }
-        }
-      })
+    val rdd = spooky.sparkContext.mapAtLeastOncePerExecutorCore({
+      spooky.withSession {
+        session =>
+          val uavsInFleet = spooky.getConf[UAVConf].uavsInFleetShuffled
+          val linkTry = Link.trySelect (
+            uavsInFleet,
+            session
+          )
+          linkTry.map {
+            link =>
+              link.status() -> link
+          }
+      }
+    })
     val linkRDD = rdd.flatMap {
       v =>
         v.recover {

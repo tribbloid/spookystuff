@@ -140,7 +140,7 @@ class SpookyUtilsSuite extends FunSpecx {
 
   it("withDeadline won't be affected by scala concurrency global ForkJoin thread pool") {
 
-    TestHelper.TestSpark.foreachExecutorCore {
+    TestHelper.TestSpark.exeAtLeastOncePerExecutorCore {
 
       println("partition-" + TaskContext.get().partitionId())
       val (_, time) = TestHelper.timer {

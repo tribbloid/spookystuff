@@ -280,7 +280,7 @@ case class GASolver(
 
   def getLinkRDD: RDD[Link] = {
     import com.tribbloids.spookystuff.uav.utils.UAVViews._
-    val proto: RDD[Link] = spooky.sparkContext.mapPerExecutorCore {
+    val proto: RDD[Link] = spooky.sparkContext.mapAtLeastOncePerExecutorCore {
       val linkTry = spooky.withSession {
         session =>
           session.linkTry

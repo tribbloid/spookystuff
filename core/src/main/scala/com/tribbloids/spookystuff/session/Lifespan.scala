@@ -1,6 +1,6 @@
 package com.tribbloids.spookystuff.session
 
-import com.tribbloids.spookystuff.utils.{IDMixin, NOTSerializable}
+import com.tribbloids.spookystuff.utils.IDMixin
 import org.apache.spark.TaskContext
 
 import scala.language.implicitConversions
@@ -66,13 +66,13 @@ abstract class Lifespan extends IDMixin with Serializable {
 }
 
 case class LifespanContext(
-                            taskContextOpt: Option[TaskContext] = Option(TaskContext.get()),
-                            thread: Thread = Thread.currentThread()
-                          ) extends NOTSerializable with IDMixin {
+                            @transient taskContextOpt: Option[TaskContext] = Option(TaskContext.get()),
+                            @transient thread: Thread = Thread.currentThread()
+                          ) extends IDMixin {
 
   override def _id: Any = taskContextOpt.map(_.taskAttemptId()) -> thread.getId
 
-  def threadStr: String = {
+  val threadStr: String = {
     "Thread-" + thread.getId + s"[${thread.getName}]" +
       {
         if (thread.isInterrupted) "(interrupted)"
@@ -81,7 +81,7 @@ case class LifespanContext(
       }
   }
 
-  def taskStr: String = taskContextOpt.map{
+  val taskStr: String = taskContextOpt.map{
     task =>
       "Task-" + task.taskAttemptId() +
         {

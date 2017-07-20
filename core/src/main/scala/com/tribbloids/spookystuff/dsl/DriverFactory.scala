@@ -268,7 +268,7 @@ object DriverFactories {
         val fileName = PhantomJS.uri2fileName(uri)
 
         if (redeploy) {
-          sc.mapPerExecutorCore {
+          sc.mapAtLeastOncePerExecutorCore {
             Try {
               val dstStr = getLocalURI(spooky)
               PhantomJS.syncDelete(dstStr)
@@ -277,7 +277,7 @@ object DriverFactories {
             .count()
         }
 
-        sc.mapPerExecutorCore {
+        sc.mapAtLeastOncePerExecutorCore {
           val srcStr = SparkFiles.get(fileName)
           val dstStr = getLocalURI(spooky)
           val srcFile = new File(srcStr)
@@ -301,7 +301,7 @@ object DriverFactories {
       val isDeployedOnWorkers: Boolean = {
 
         val sc = spooky.sqlContext.sparkContext
-        val pathRDD: RDD[Option[String]] = sc.mapPerExecutorCore {
+        val pathRDD: RDD[Option[String]] = sc.mapPerWorker {
           val pathOpt = SpookyUtils.validateLocalPath(getLocalURI(spooky))
           pathOpt
         }
