@@ -155,13 +155,13 @@ abstract class LinkSuite extends UAVFixture {
   }
 
   protected def getLinkRDD(spooky: SpookyContext): RDD[Link] = {
-    val listDrones = this.getFleet
+    val getFleet = this.getFleet
     val linkRDD = sc.parallelize(simURIs).map {
       connStr =>
         val link = spooky.withSession {
           session =>
             Link.select(
-              listDrones(connStr),
+              getFleet(connStr),
               session
             )
         }

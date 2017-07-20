@@ -7,7 +7,7 @@ import com.tribbloids.spookystuff.execution.ExecutionContext
 import com.tribbloids.spookystuff.row.BeaconRDD
 import com.tribbloids.spookystuff.uav.actions.UAVAction
 import com.tribbloids.spookystuff.uav.planning.{JSpritSolver, PreferUAV}
-import com.tribbloids.spookystuff.uav.telemetry.{Link, UAVStatus}
+import com.tribbloids.spookystuff.uav.telemetry.{Link, LinkStatus}
 import org.apache.spark.rdd.RDD
 
 import scala.reflect.ClassTag
@@ -65,23 +65,15 @@ object GenPartitioners {
           .flatMap(tt => tt._1._1.map(v => v -> tt._2)).collect()
 
         val linkRDD = Link.availableLinkRDD(spooky)
-        linkRDD.persist()
-        linkRDD.count() //TODO: optional
 
         val allUAVs = linkRDD.keys.collect()
-        val uris = allUAVs.flatMap(_.uav.uris)
-          val grouped = uris.groupBy(identity)
-        grouped.values.foreach {
-          v =>
-          assert(v.length == 1, s"multiple UAVs sharing the same uris ${v.mkString("[", ",", "]")}")
-        }
         val uavs = numUAVsOpt match {
           case Some(n) => allUAVs.slice(0, n)
           case None => allUAVs
         }
 
         val solver = JSpritSolver(JSprit.this, spooky, uavs, hasNavRows)
-        val uav2RowsMap: Map[UAVStatus, Seq[(TraceView, Seq[V])]] = solver.getUAV2RowsMap
+        val uav2RowsMap: Map[LinkStatus, Seq[(TraceView, Seq[V])]] = solver.getUAV2RowsMap
 
         val realignedRDD: RDD[(K, Iterable[V])] = linkRDD.flatMap {
           tuple =>

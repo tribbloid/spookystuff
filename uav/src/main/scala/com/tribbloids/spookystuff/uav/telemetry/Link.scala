@@ -68,11 +68,11 @@ object Link {
 
     val sessionThreadOpt = Some(session.lifespan.ctx.thread)
 
-    val threadLocalOpt = Link.synchronized{
+    val threadLocalOpt = Link.synchronized {
       val id2Opt = sessionThreadOpt.map(_.getId)
       val results = Link.existing.values.toList.filter {
         v =>
-          val id1Opt = v.usedByOpt.map(_.thread.getId)
+          val id1Opt = v.ownerOpt.map(_.thread.getId)
           val lMatch = (id1Opt, id2Opt) match {
             case (Some(tc1), Some(tc2)) if tc1 == tc2 => true
             case _ => false
@@ -81,7 +81,7 @@ object Link {
       }
       assert(results.size <= 1, "Multiple Links cannot share task context or thread")
       val opt = results.headOption
-      opt.foreach(_.usedBy = session.lifespan.ctx)
+      opt.foreach(_.owner = session.lifespan.ctx)
       opt
     }
 
@@ -89,7 +89,7 @@ object Link {
       case None =>
         LoggerFactory.getLogger(this.getClass).info (
           s"ThreadLocal link not found: ${session.lifespan.ctx.toString}" +
-            s" <\\- ${Link.existing.values.flatMap(_.usedByOpt)
+            s" <\\- ${Link.existing.values.flatMap(_.ownerOpt)
               .mkString("{", ", ", "}")}"
         )
         None
@@ -125,17 +125,21 @@ object Link {
           val available = links.filter(v => v.isAvailable)
           val opt = prefer(available)
           //deliberately set inside synchronized block to avoid being selected by 2 threads
-          opt.foreach(_.usedBy = session.lifespan.ctx)
+          opt.foreach(_.owner = session.lifespan.ctx)
           opt
         }
 
         opt
       }
 
-//    resultOpt.foreach(_.usedBy = session.lifespan.ctx)
+    //    resultOpt.foreach(_.usedBy = session.lifespan.ctx)
 
     resultOpt match {
       case Some(link) =>
+        assert(
+          link.owner == session.lifespan.ctx,
+          s"owner inconsistent! ${link.owner} != ${session.lifespan.ctx}"
+        )
         Success {
           link
         }
@@ -168,7 +172,7 @@ object Link {
   }
 
   // get available drones, TODO: merge other impl to it.
-  def availableLinkRDD(spooky: SpookyContext): RDD[(UAVStatus, Link)] = {
+  def availableLinkRDD(spooky: SpookyContext): RDD[(LinkStatus, Link)] = {
 
     val rdd = spooky.sparkContext
       .mapPerExecutorCore({
@@ -185,7 +189,7 @@ object Link {
             }
         }
       })
-    rdd.flatMap {
+    val linkRDD = rdd.flatMap {
       v =>
         v.recover {
           case e =>
@@ -194,6 +198,34 @@ object Link {
         }
           .toOption
     }
+
+    linkRDD.persist()
+    linkRDD.count() //TODO: optional
+
+    val allUAVStatuses = linkRDD.values.map(_.status()).collect()
+    val uri_statuses = allUAVStatuses.flatMap {
+      status =>
+        status.uav.uris.map {
+          uri =>
+            uri -> status
+        }
+    }
+    val grouped = uri_statuses.groupBy(_._1)
+    grouped.values.foreach {
+      v =>
+        assert(
+          v.length == 1,
+          s""""
+             |multiple UAVs sharing the same uris:
+             |${v.map {
+            vv =>
+              s"${vv._2.uav} @ ${vv._2.ownerOpt.getOrElse("[MISSING]")}"
+          }
+            .mkString("\n")}
+             """.stripMargin
+        )
+    }
+    linkRDD
   }
 }
 
@@ -242,22 +274,21 @@ trait Link extends LocalCleanable with ConflictDetection {
     }
   }
 
-  @volatile protected var _usedBy: LifespanContext = _
-  def usedByOpt = Option(_usedBy)
-  def usedBy = usedByOpt.get
-  def usedBy_= (
-                 c: LifespanContext
-               ): this.type = {
+  @volatile protected var _owner: LifespanContext = _
+  def ownerOpt = Option(_owner)
+  def owner = ownerOpt.get
+  def owner_=(
+               c: LifespanContext
+             ): this.type = {
 
-    if (usedByOpt.exists(v => v == c)) this
+    if (ownerOpt.exists(v => v == c)) this
     else {
-
       this.synchronized{
         assert(
           isNotUsed,
-          s"Unavailable to ${c.toString} until current thread/task is finished: $statusString"
+          s"Unavailable to ${c.toString} until previous thread/task is finished: $statusString"
         )
-        this._usedBy = c
+        this._owner = c
         this
       }
     }
@@ -379,20 +410,16 @@ trait Link extends LocalCleanable with ConflictDetection {
   }
 
   def isNotUsedByThread: Boolean = {
-    usedByOpt.forall(v => !v.thread.isAlive)
+    ownerOpt.forall(v => !v.thread.isAlive)
   }
   def isNotUsedByTask: Boolean = {
-    usedByOpt.flatMap(_.taskContextOpt).forall(v => v.isCompleted())
+    ownerOpt.flatMap(_.taskContextOpt).forall(v => v.isCompleted())
   }
   def isNotUsed = isNotUsedByThread || isNotUsedByTask
 
   def isAvailable: Boolean = {
-    !isBooked && isReachable && isNotUsed
+    !isBooked && isReachable && isNotUsed && !isCleaned
   }
-  //
-//  def maybeAvailable: Boolean = {
-//    !isBooked && isReachable && isNotUsedByTask
-//  }
 
   def statusString: String = {
 
@@ -403,7 +430,7 @@ trait Link extends LocalCleanable with ConflictDetection {
       strs += s"unreachable for ${(System.currentTimeMillis() - lastFailureOpt.get._2).toDouble / 1000}s" +
         s" (${lastFailureOpt.get._1.getClass.getSimpleName})"
     if (!isNotUsedByThread || !isNotUsedByTask)
-      strs += s"used by ${_usedBy.toString}"
+      strs += s"used by ${_owner.toString}"
 
     s"Link $uav is " + {
       if (isAvailable) {
@@ -421,8 +448,11 @@ trait Link extends LocalCleanable with ConflictDetection {
                     factory: LinkFactory
                   ): Link = {
 
-    val neo = factory.apply(uav)
-    neo.usedBy = this.usedBy
+    val neo = Link.synchronized {
+      val neo = factory.apply(uav)
+      neo.owner = this.owner
+      neo
+    }
     val result = if (coFactory(neo)) {
       LoggerFactory.getLogger(this.getClass).info {
         s"Reusing existing link for $uav"
@@ -470,9 +500,9 @@ trait Link extends LocalCleanable with ConflictDetection {
     }
   }
 
-  def status(expireAfter: Long = 1000): UAVStatus = {
+  def status(expireAfter: Long = 1000): LinkStatus = {
     val current = CurrentLocation.getIfNotExpire((), expireAfter)
-    UAVStatus(uav, getHome, current)
+    LinkStatus(uav, ownerOpt, getHome, current)
   }
 
   //====================== Synchronous API ======================
