@@ -68,7 +68,7 @@ object Link {
 
     val sessionThreadOpt = Some(session.lifespan.ctx.thread)
 
-    val threadLocalOpt = {
+    val threadLocalOpt = Link.synchronized{
       val id2Opt = sessionThreadOpt.map(_.getId)
       val results = Link.existing.values.toList.filter {
         v =>
@@ -121,7 +121,7 @@ object Link {
               .toOption
         }
 
-        val opt = this.synchronized {
+        val opt = Link.synchronized {
           val available = links.filter(v => v.isAvailable)
           val opt = prefer(available)
           //deliberately set inside synchronized block to avoid being selected by 2 threads
@@ -132,7 +132,7 @@ object Link {
         opt
       }
 
-    resultOpt.foreach(_.usedBy = session.lifespan.ctx)
+//    resultOpt.foreach(_.usedBy = session.lifespan.ctx)
 
     resultOpt match {
       case Some(link) =>
@@ -422,6 +422,7 @@ trait Link extends LocalCleanable with ConflictDetection {
                   ): Link = {
 
     val neo = factory.apply(uav)
+    neo.usedBy = this.usedBy
     val result = if (coFactory(neo)) {
       LoggerFactory.getLogger(this.getClass).info {
         s"Reusing existing link for $uav"
@@ -440,7 +441,6 @@ trait Link extends LocalCleanable with ConflictDetection {
       this._spooky,
       factory
     )
-    result.usedBy = this.usedBy
     result
   }
 
