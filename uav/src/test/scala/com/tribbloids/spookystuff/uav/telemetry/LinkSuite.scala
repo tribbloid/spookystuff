@@ -76,14 +76,16 @@ abstract class LinkSuite extends UAVFixture {
           connStr =>
             val endpoints = listDrones(connStr)
             val session = new Session(spooky)
-            val link1 = Link.select (
+            val link1 = Link.Selector (
               endpoints,
               session
             )
-            val link2 = Link.select (
+              .select
+            val link2 = Link.Selector (
               endpoints,
               session
             )
+              .select
             Thread.sleep(5000) //otherwise a task will complete so fast such that another task hasn't start yet.
           val result = link1.toString -> link2.toString
             result
@@ -162,10 +164,11 @@ abstract class LinkSuite extends UAVFixture {
       connStr =>
         val link = spooky.withSession {
           session =>
-            Link.select(
+            Link.Selector(
               getFleet(connStr),
               session
             )
+              .select
         }
         TestHelper.assert(link.isReachable, "link is unreacheable")
         TestHelper.assert(
@@ -199,10 +202,11 @@ abstract class SimLinkSuite extends LinkSuite with SimUAVFixture {
         val drone = UAV(Seq("dummy"))
         TestHelper.setLoggerDuring(classOf[Link], classOf[MAVLink], SpookyUtils.getClass) {
           intercept[ReinforcementDepletedException] {
-            Link.select(
+            Link.Selector(
               Seq(drone),
               session
             )
+              .select
           }
 
           val badLink = Link.existing(drone)

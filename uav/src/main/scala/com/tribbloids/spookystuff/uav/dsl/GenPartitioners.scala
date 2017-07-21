@@ -82,7 +82,10 @@ object GenPartitioners {
             val result = KVs.map {
               kv =>
                 val vv = kv._1
-                val updatedVV = vv.copy(children = List(PreferUAV(status, link._mutex)) ++ vv.children)
+                val updatedVV = vv.copy(
+                  children = List(PreferUAV(status, Some(link._lock.get._id)))
+                    ++ vv.children
+                )
                 (updatedVV: K) -> kv._2
             }
             result

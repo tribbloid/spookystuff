@@ -2,9 +2,8 @@ package com.tribbloids.spookystuff.uav.telemetry
 
 import com.tribbloids.spookystuff.SpookyContext
 import com.tribbloids.spookystuff.session.Session
-import com.tribbloids.spookystuff.uav.{SimUAVFixture, UAVFixture, UAVMetrics}
-import com.tribbloids.spookystuff.uav.dsl.{LinkFactories, LinkFactory}
 import com.tribbloids.spookystuff.uav.system.UAV
+import com.tribbloids.spookystuff.uav.{SimUAVFixture, UAVMetrics}
 import org.apache.spark.rdd.RDD
 
 /**
@@ -19,10 +18,11 @@ object LinkITFixture{
 
     val drones = connStrs.map(v => UAV(Seq(v)))
     val session = new Session(spooky)
-    val link = Link.select(
+    val link = Link.Selector(
       drones,
       session
     )
+      .select
 
     val location = link.synch.testMove
 

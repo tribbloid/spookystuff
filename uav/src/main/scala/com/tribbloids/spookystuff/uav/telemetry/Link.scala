@@ -6,7 +6,7 @@ import com.tribbloids.spookystuff.session.python.PyRef
 import com.tribbloids.spookystuff.uav.dsl.LinkFactory
 import com.tribbloids.spookystuff.uav.spatial._
 import com.tribbloids.spookystuff.uav.system.UAV
-import com.tribbloids.spookystuff.uav.telemetry.Link.Lock
+import com.tribbloids.spookystuff.uav.telemetry.Link.MutexLock
 import com.tribbloids.spookystuff.uav.telemetry.mavlink.MAVLink
 import com.tribbloids.spookystuff.uav.{ReinforcementDepletedException, UAVConf, UAVMetrics}
 import com.tribbloids.spookystuff.utils.{IDMixin, SpookyUtils, TreeException}
@@ -26,145 +26,6 @@ object Link {
   // only 1 allowed per connStr, how to enforce?
   val existing: caching.ConcurrentMap[UAV, Link] = caching.ConcurrentMap()
 
-  def select(
-              uavs: Seq[UAV],
-              session: Session,
-              prefer: Seq[Link] => Option[Link] = {
-                vs =>
-                  vs.headOption
-              },
-              recommissionWithNewProxy: Boolean = true
-            ): Link = {
-
-    trySelect(uavs, session, prefer, recommissionWithNewProxy).get
-  }
-
-  def trySelect(
-                 uavs: Seq[UAV],
-                 session: Session,
-                 prefer: Seq[Link] => Option[Link] = {
-                   vs =>
-                     vs.headOption
-                 },
-                 recommissionWithNewProxy: Boolean = true
-               ) = Try {
-
-    SpookyUtils.retry(3, 1000) {
-      _trySelect(uavs, session, prefer, recommissionWithNewProxy).get
-    }
-  }
-
-  def _trySelect(
-                  uavs: Seq[UAV],
-                  session: Session,
-                  prefer: Seq[Link] => Option[Link] = {
-                    vs =>
-                      vs.headOption
-                  },
-                  recommissionWithNewProxy: Boolean = true
-                ): Try[Link] = {
-
-    val sessionThreadOpt = Some(session.lifespan.ctx.thread)
-
-    val threadLocalOpt = Link.synchronized {
-      val id2Opt = sessionThreadOpt.map(_.getId)
-      val local = Link.existing.values.toList.filter {
-        v =>
-          val id1Opt = v.ownerOpt.map(_.thread.getId)
-          val lMatch = (id1Opt, id2Opt) match {
-            case (Some(tc1), Some(tc2)) if tc1 == tc2 => true
-            case _ => false
-          }
-          lMatch
-      }
-
-      assert(local.size <= 1, "Multiple Links cannot share task context or thread")
-      val first = local.find {
-        link =>
-          uavs.contains(link.uav)
-      }
-      first.foreach(_.owner = session.lifespan.ctx)
-      first
-    }
-
-    val recommissionedOpt = threadLocalOpt match {
-      case None =>
-        LoggerFactory.getLogger(this.getClass).info (
-          s"ThreadLocal link not found: ${session.lifespan.ctx.toString}" +
-            s" <\\- ${Link.existing.values.flatMap(_.ownerOpt)
-              .mkString("{", ", ", "}")}"
-        )
-        None
-      case Some(threadLocal) =>
-        val v = if (recommissionWithNewProxy) {
-          val factory = session.spooky.getConf[UAVConf].linkFactory
-          threadLocal.recommission(factory)
-        }
-        else {
-          threadLocal
-        }
-        Try{
-          v.connect()
-          v
-        }
-          .toOption
-    }
-
-    // no need to recommission if the link is fre
-    val resultOpt = recommissionedOpt
-      .orElse {
-        val links = uavs.flatMap{
-          uav =>
-            val vv = uav.getLink(session.spooky)
-            Try {
-              vv.connect()
-              vv
-            }
-              .toOption
-        }
-
-        val opt = Link.synchronized {
-          val available = links.filter(v => v.isAvailable)
-          val opt = prefer(available)
-          //deliberately set inside synchronized block to avoid being selected by 2 threads
-          opt.foreach(_.owner = session.lifespan.ctx)
-          opt
-        }
-
-        opt
-      }
-
-    //    resultOpt.foreach(_.usedBy = session.lifespan.ctx)
-
-    resultOpt match {
-      case Some(link) =>
-        assert(
-          link.owner == session.lifespan.ctx,
-          s"owner inconsistent! ${link.owner} != ${session.lifespan.ctx}"
-        )
-        Success {
-          link
-        }
-      case None =>
-        val info = if (Link.existing.isEmpty) {
-          val msg = s"No telemetry Link for ${uavs.mkString("[", ", ", "]")}, existing links are:"
-          val hint = Link.existing.keys.toList.mkString("[", ", ", "]")
-          msg + "\n" + hint
-        }
-        else {
-          "All telemetry links are busy:\n" +
-            Link.existing.values.map {
-              link =>
-                link.statusString
-            }
-              .mkString("\n")
-        }
-        Failure(
-          new ReinforcementDepletedException(info)
-        )
-    }
-  }
-
   def allConflicts: Seq[Try[Unit]] = {
     Seq(
       Try(PyRef.sanityCheck()),
@@ -174,12 +35,163 @@ object Link {
   }
 
   val LOCK_EXPIRE_AFTER = 60 * 1000
-  case class Lock(
-                      _id: Long = Random.nextLong(), //can only be lifted by PreferUAV that has the same token.
-                      timestamp: Long = System.currentTimeMillis()
-                    ) extends IDMixin {
+  case class MutexLock(
+                        _id: Long = Random.nextLong(), //can only be lifted by PreferUAV that has the same token.
+                        timestamp: Long = System.currentTimeMillis()
+                      ) extends IDMixin {
 
     def expireAfter = timestamp + LOCK_EXPIRE_AFTER
+  }
+
+  case class Selector(
+                       fleet: Seq[UAV],
+                       session: Session,
+                       preference: Seq[Link] => Option[Link] = {
+                         vs =>
+                           vs.find(_.isAvailable)
+                       },
+                       recommissionWithNewProxy: Boolean = true
+                     ) {
+
+    lazy val spooky = session.spooky
+    lazy val ctx = session.lifespan.ctx
+
+    def select: Link = {
+
+      trySelect.get
+    }
+
+    def trySelect: Try[Link] = Try {
+
+      SpookyUtils.retry(3, 1000) {
+        _trySelect.get
+      }
+    }
+
+    /**
+      * @return a link that is unlocked and owned by session's lifespan
+      */
+    private def _trySelect: Try[Link] = {
+
+      val threadOpt = Some(ctx.thread)
+
+      // IMPORTANT: ALWAYS set owner first!
+      // or the link may become available to other threads and snatched by them
+      def setOwnerAndUnlock(v: Link): Link = {
+        v.owner = ctx
+        v.unlock()
+        v
+      }
+
+      val threadLocalOpt = Link.synchronized {
+        val id2Opt = threadOpt.map(_.getId)
+        val local = Link.existing.values.toList.filter {
+          v =>
+            val id1Opt = v.ownerOpt.map(_.thread.getId)
+            val lMatch = (id1Opt, id2Opt) match {
+              case (Some(tc1), Some(tc2)) if tc1 == tc2 => true
+              case _ => false
+            }
+            lMatch
+        }
+
+        assert(local.size <= 1, "Multiple Links cannot share task context or thread")
+        val opt = local.find {
+          link =>
+            fleet.contains(link.uav)
+        }
+        opt.map(setOwnerAndUnlock)
+      }
+
+      val recommissionedOpt = threadLocalOpt match {
+        case None =>
+          LoggerFactory.getLogger(this.getClass).info (
+            s"ThreadLocal link not found: ${ctx.toString}" +
+              s" <\\- ${Link.existing.values.flatMap(_.ownerOpt)
+                .mkString("{", ", ", "}")}"
+          )
+          None
+        case Some(threadLocal) =>
+          val v = if (recommissionWithNewProxy) {
+            val factory = spooky.getConf[UAVConf].linkFactory
+            threadLocal.recommission(factory)
+          }
+          else {
+            threadLocal
+          }
+          Try{
+            v.connect()
+            v
+          }
+            .toOption
+      }
+
+      // no need to recommission if the link is fre
+      val resultOpt = recommissionedOpt
+        .orElse {
+          val links = fleet.flatMap{
+            uav =>
+              val vv = uav.getLink(spooky)
+              Try {
+                vv.connect()
+                vv
+              }
+                .toOption
+          }
+
+          val opt = Link.synchronized {
+            val opt = preference(links)
+            //deliberately set inside synchronized block to avoid being selected by 2 threads
+            opt.map(setOwnerAndUnlock)
+          }
+
+          opt
+        }
+
+      resultOpt match {
+        case Some(link) =>
+          assert(
+            link.owner == ctx,
+            s"owner inconsistent! ${link.owner} != ${ctx}"
+          )
+          Success {
+            link
+          }
+        case None =>
+          val info = if (Link.existing.isEmpty) {
+            val msg = s"No telemetry Link for ${fleet.mkString("[", ", ", "]")}, existing links are:"
+            val hint = Link.existing.keys.toList.mkString("[", ", ", "]")
+            msg + "\n" + hint
+          }
+          else {
+            "All telemetry links are busy:\n" +
+              Link.existing.values.map {
+                link =>
+                  link.statusString
+              }
+                .mkString("\n")
+          }
+          Failure(
+            new ReinforcementDepletedException(info)
+          )
+      }
+    }
+  }
+
+  object Selector {
+
+    def withMutex(
+                   fleet: Seq[UAV],
+                   session: Session,
+                   mutexIDOpt: Option[Long]
+                 ) = Selector(
+      fleet,
+      session,
+      preference = {
+        vs =>
+          vs.find(_.isAvailableTo(mutexIDOpt))
+      }
+    )
   }
 }
 
@@ -344,8 +356,17 @@ trait Link extends LocalCleanable with ConflictDetection {
   /**
     * set this to avoid being used by another task even the current task finish.
     */
-  @volatile var _mutex: Option[Lock] = None
-  def isLocked: Boolean = _mutex.exists(v => System.currentTimeMillis() < v.expireAfter)
+  @volatile var _lock: Option[MutexLock] = None
+  def isLocked: Boolean = _lock.exists(v => System.currentTimeMillis() < v.expireAfter)
+  def lock(): MutexLock = {
+    assert(!isLocked)
+    val v = MutexLock()
+    _lock = Some(v)
+    v
+  }
+  def unlock(): Unit = {
+    _lock = None
+  }
 
   private def blacklistDuration: Long = spookyOpt
     .map(
@@ -371,7 +392,17 @@ trait Link extends LocalCleanable with ConflictDetection {
   def isAvailable: Boolean = {
     !isLocked && isReachable && isNotUsed && !isCleaned
   }
+  // return true regardless if given the same MutexID
+  def isAvailableTo(mutexIDOpt: Option[Long]): Boolean = {
+    isAvailable || {
+      mutexIDOpt.exists(
+        mutexID =>
+          _lock.get._id == mutexID
+      )
+    }
+  }
 
+  // TODO: move to UAVStatus?
   def statusString: String = {
 
     val strs = ArrayBuffer[String]()

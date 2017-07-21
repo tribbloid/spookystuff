@@ -4,7 +4,6 @@ import com.tribbloids.spookystuff.session.Session
 import com.tribbloids.spookystuff.uav.UAVConf
 import com.tribbloids.spookystuff.uav.actions.{UAVAction, UAVNavigation}
 import com.tribbloids.spookystuff.uav.spatial.Location
-import com.tribbloids.spookystuff.uav.telemetry.Link.Lock
 import com.tribbloids.spookystuff.uav.telemetry.{Link, UAVStatus}
 import com.tribbloids.spookystuff.utils.ShippingMarks
 
@@ -16,7 +15,7 @@ import scala.concurrent.duration.Duration
   */
 private[uav] case class PreferUAV(
                                    uavStatus: UAVStatus,
-                                   unlockOpt: Option[Lock] = None
+                                   mutexIDOpt: Option[Long] = None
                                  ) extends UAVAction with ShippingMarks {
 
   override def skeleton = None
@@ -27,24 +26,10 @@ private[uav] case class PreferUAV(
     val fleet = session.spooky.getConf[UAVConf].uavsInFleetShuffled
     assert(fleet.contains(uavStatus.uav), "cannot prefer UAV not in the fleet")
 
-    val link = uavStatus.uav.getLink(session.spooky)
-    for (
-      m1 <- link._mutex;
-      m2 <- this.unlockOpt
-    ) {
-      assert(m1 == m2, "cannot unlock due to ID mismatch")
-      link._mutex = None
-    }
-
-    Link.select(
+    Link.Selector.withMutex(
       fleet,
       session,
-      {
-        seq =>
-          val exact = seq.find(_.uav == uavStatus.uav)
-          val result = exact.orElse(seq.headOption)
-          result
-      }
+      mutexIDOpt
     )
 
     Nil

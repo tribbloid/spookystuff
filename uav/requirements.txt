@@ -1,9 +1,9 @@
 setuptools
 future >= 0.16.0
 dronekit >= 2.9.1
-dronekit-sitl >= 3.2
+dronekit-sitl >= 3.2.0
 # TODO dronekit-solo >= 1.3
-pymavlink == 2.0.8
+pymavlink == 2.2.3
 # TODO: pymavlink >= 2.0.9
 MAVProxy >= 1.6.1
 simplejson >= 3.10.0

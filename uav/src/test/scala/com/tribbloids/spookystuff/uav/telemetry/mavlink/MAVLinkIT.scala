@@ -33,10 +33,11 @@ class MAVLinkIT_Proxy extends MAVLinkIT {
       connStr =>
         val drones = Seq(UAV(Seq(connStr)))
         val session = new Session(spooky)
-        val link = Link.select( //refitting
+        val link = Link.Selector( //refitting
           drones,
           session
         )
+          .select
           .asInstanceOf[MAVLink]
 
         val endpoint1 = link.Endpoints.primary

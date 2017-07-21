@@ -17,10 +17,11 @@ object LinkUtils {
         spooky.withSession {
           session =>
             val uavsInFleet: Seq[UAV] = spooky.getConf[UAVConf].uavsInFleetShuffled
-            val linkTry = Link.trySelect (
+            val linkTry = Link.Selector (
               uavsInFleet,
               session
             )
+              .trySelect
             linkTry
         }
       },
@@ -49,7 +50,7 @@ object LinkUtils {
     val available = availableLinkRDD(spooky)
     val locked = available.map {
       link =>
-        link._mutex = Some(Link.Lock())
+        link.lock()
         link
     }
 
@@ -85,7 +86,7 @@ object LinkUtils {
   def unlockAll(): Unit = {
     Link.existing.values.foreach {
       link =>
-        link._mutex = None
+        link.unlock()
     }
   }
 }
