@@ -7,7 +7,7 @@ import com.tribbloids.spookystuff.execution.ExecutionContext
 import com.tribbloids.spookystuff.row.BeaconRDD
 import com.tribbloids.spookystuff.uav.actions.UAVAction
 import com.tribbloids.spookystuff.uav.planning.{JSpritSolver, PreferUAV}
-import com.tribbloids.spookystuff.uav.telemetry.{Link, LinkStatus}
+import com.tribbloids.spookystuff.uav.telemetry.{LinkUtils, UAVStatus}
 import org.apache.spark.rdd.RDD
 
 import scala.reflect.ClassTag
@@ -64,25 +64,25 @@ object GenPartitioners {
         val hasNavRows: Array[(TraceView, Seq[V])] = bifurcated
           .flatMap(tt => tt._1._1.map(v => v -> tt._2)).collect()
 
-        val linkRDD = Link.availableLinkRDD(spooky)
+        val linkRDD = LinkUtils.bookedLinkRDD(spooky)
 
-        val allUAVs = linkRDD.keys.collect()
+        val allUAVs = linkRDD.map(_.status()).collect()
         val uavs = numUAVsOpt match {
           case Some(n) => allUAVs.slice(0, n)
           case None => allUAVs
         }
 
         val solver = JSpritSolver(JSprit.this, spooky, uavs, hasNavRows)
-        val uav2RowsMap: Map[LinkStatus, Seq[(TraceView, Seq[V])]] = solver.getUAV2RowsMap
+        val uav2RowsMap: Map[UAVStatus, Seq[(TraceView, Seq[V])]] = solver.getUAV2RowsMap
 
         val realignedRDD: RDD[(K, Iterable[V])] = linkRDD.flatMap {
-          tuple =>
-            val link = tuple._2
-            val KVs = uav2RowsMap.getOrElse(tuple._1, Nil)
+          link =>
+            val status = link.status()
+            val KVs = uav2RowsMap.getOrElse(status, Nil)
             val result = KVs.map {
               kv =>
                 val vv = kv._1
-                val updatedVV = vv.copy(children = List(PreferUAV(tuple._1)) ++ vv.children)
+                val updatedVV = vv.copy(children = List(PreferUAV(status)) ++ vv.children)
                 (updatedVV: K) -> kv._2
             }
             result

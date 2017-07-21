@@ -94,8 +94,9 @@ case object SpookyViews {
             alreadyRun
           }
           if (!alreadyRun) {
-            //            Thread.sleep(1000)
-            Iterator(f)
+            val result = f
+            Thread.sleep(1000)
+            Iterator(result)
           }
           else {
             Iterator.empty
@@ -141,8 +142,9 @@ case object SpookyViews {
             alreadyRun
           }
           if (!alreadyRun) {
+            val result = f
             Thread.sleep(1000)
-            Iterator(f)
+            Iterator(result)
           }
           else {
             Iterator.empty

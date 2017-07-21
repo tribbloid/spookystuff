@@ -127,7 +127,8 @@ abstract class LinkSuite extends UAVFixture {
               )
             }
             else {
-              assert(spooky.getMetrics[UAVMetrics].linkCreated.value == parallelism) // TODO: should be parallelism*2!
+              assert(spooky.getMetrics[UAVMetrics].linkCreated.value == parallelism)
+              // TODO: should be parallelism*2!
               assert(spooky.getMetrics[UAVMetrics].linkDestroyed.value == 0)
               linkRDD1.map(_.uav).collect().mkString("\n").shouldBe (
                 linkRDD2.map(_.uav).collect().mkString("\n"),
@@ -154,7 +155,8 @@ abstract class LinkSuite extends UAVFixture {
       }
   }
 
-  protected def getLinkRDD(spooky: SpookyContext): RDD[Link] = {
+  //TODO: merge
+  def getLinkRDD(spooky: SpookyContext): RDD[Link] = {
     val getFleet = this.getFleet
     val linkRDD = sc.parallelize(simURIs).map {
       connStr =>
@@ -165,7 +167,7 @@ abstract class LinkSuite extends UAVFixture {
               session
             )
         }
-        TestHelper.assert(link.isReachable, "link is blacklisted")
+        TestHelper.assert(link.isReachable, "link is unreacheable")
         TestHelper.assert(
           link.factoryOpt.get == spooky.getConf[UAVConf].linkFactory,
           "link doesn't comply to factory"

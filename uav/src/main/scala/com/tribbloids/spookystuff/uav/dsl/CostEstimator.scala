@@ -52,6 +52,7 @@ object CostEstimator {
         val preferUAVs = concated.collect {
           case v: PreferUAV => v
         }
+          .distinct
         require(preferUAVs.size <= 1,
           s"attempt to dispatch ${preferUAVs.size} UAVs for a task," +
             " only 1 UAV can be dispatched for a task." +

@@ -66,11 +66,11 @@ abstract class Lifespan extends IDMixin with Serializable {
 }
 
 case class LifespanContext(
-                            @transient taskContextOpt: Option[TaskContext] = Option(TaskContext.get()),
+                            @transient taskOpt: Option[TaskContext] = Option(TaskContext.get()),
                             @transient thread: Thread = Thread.currentThread()
                           ) extends IDMixin {
 
-  override def _id: Any = taskContextOpt.map(_.taskAttemptId()) -> thread.getId
+  override def _id: Any = taskOpt.map(_.taskAttemptId()) -> thread.getId
 
   val threadStr: String = {
     "Thread-" + thread.getId + s"[${thread.getName}]" +
@@ -81,7 +81,7 @@ case class LifespanContext(
       }
   }
 
-  val taskStr: String = taskContextOpt.map{
+  val taskStr: String = taskOpt.map{
     task =>
       "Task-" + task.taskAttemptId() +
         {
@@ -112,7 +112,7 @@ object Lifespan {
   object Task extends CleanupStrategy {
 
     private def tc(ctx: LifespanContext) = {
-      ctx.taskContextOpt.getOrElse(
+      ctx.taskOpt.getOrElse(
         throw new UnsupportedOperationException("Not inside any Spark Task")
       )
     }
@@ -149,7 +149,7 @@ object Lifespan {
 
   object Auto extends CleanupStrategy {
     private def delegate(ctx: LifespanContext) = {
-      ctx.taskContextOpt match {
+      ctx.taskOpt match {
         case Some(tc) =>
           Task
         case None =>

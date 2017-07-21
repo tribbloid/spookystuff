@@ -9,10 +9,12 @@ import com.tribbloids.spookystuff.session.Session
 import com.tribbloids.spookystuff.testutils.TestHelper
 import com.tribbloids.spookystuff.utils.SpookyUtils
 import org.apache.spark.rdd.RDD
+import org.scalatest.Ignore
 
 /**
   * Created by peng on 27/01/17.
   */
+@Ignore
 class MAVLinkSuite extends SimLinkSuite with APMQuadFixture {
 
   override lazy val factories: Seq[LinkFactory] = Seq(

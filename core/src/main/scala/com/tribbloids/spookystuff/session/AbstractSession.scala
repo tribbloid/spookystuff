@@ -52,7 +52,7 @@ sealed abstract class AbstractSession(val spooky: SpookyContext) extends LocalCl
   def webDriver: CleanWebDriver
   def pythonDriver: PythonDriver
 
-  def taskContextOpt: Option[TaskContext] = lifespan.ctx.taskContextOpt
+  def taskContextOpt: Option[TaskContext] = lifespan.ctx.taskOpt
 }
 
 abstract class NoDriverException(val str: String) extends SpookyException(str: String)

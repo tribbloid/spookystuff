@@ -6,23 +6,21 @@ import com.tribbloids.spookystuff.session.python.PyRef
 import com.tribbloids.spookystuff.uav.dsl.LinkFactory
 import com.tribbloids.spookystuff.uav.spatial._
 import com.tribbloids.spookystuff.uav.system.UAV
+import com.tribbloids.spookystuff.uav.telemetry.Link.Booking
 import com.tribbloids.spookystuff.uav.telemetry.mavlink.MAVLink
 import com.tribbloids.spookystuff.uav.{ReinforcementDepletedException, UAVConf, UAVMetrics}
-import com.tribbloids.spookystuff.utils.{SpookyUtils, TreeException}
+import com.tribbloids.spookystuff.utils.{IDMixin, SpookyUtils, TreeException}
 import com.tribbloids.spookystuff.{SpookyContext, caching}
-import org.apache.spark.rdd.RDD
 import org.slf4j.LoggerFactory
 
 import scala.collection.mutable.ArrayBuffer
 import scala.language.implicitConversions
-import scala.util.{Failure, Success, Try}
+import scala.util.{Failure, Random, Success, Try}
 
 /**
   * Created by peng on 24/01/17.
   */
 object Link {
-
-  import com.tribbloids.spookystuff.utils.SpookyViews._
 
   // connStr -> (link, isBusy)
   // only 1 allowed per connStr, how to enforce?
@@ -70,7 +68,7 @@ object Link {
 
     val threadLocalOpt = Link.synchronized {
       val id2Opt = sessionThreadOpt.map(_.getId)
-      val results = Link.existing.values.toList.filter {
+      val local = Link.existing.values.toList.filter {
         v =>
           val id1Opt = v.ownerOpt.map(_.thread.getId)
           val lMatch = (id1Opt, id2Opt) match {
@@ -79,10 +77,14 @@ object Link {
           }
           lMatch
       }
-      assert(results.size <= 1, "Multiple Links cannot share task context or thread")
-      val opt = results.headOption
-      opt.foreach(_.owner = session.lifespan.ctx)
-      opt
+
+      assert(local.size <= 1, "Multiple Links cannot share task context or thread")
+      val first = local.find {
+        link =>
+          uavs.contains(link.uav)
+      }
+      first.foreach(_.owner = session.lifespan.ctx)
+      first
     }
 
     val recommissionedOpt = threadLocalOpt match {
@@ -171,60 +173,13 @@ object Link {
       ConflictDetection.conflicts
   }
 
-  // get available drones, TODO: merge other impl to it.
-  def availableLinkRDD(spooky: SpookyContext): RDD[(LinkStatus, Link)] = {
+  val BOOKING_EXPIRE_AFTER = 60 * 1000
+  case class Booking(
+                      _id: Long = Random.nextLong(), //can only be lifted by PreferUAV that has the same token.
+                      timestamp: Long = System.currentTimeMillis()
+                    ) extends IDMixin {
 
-    val rdd = spooky.sparkContext.mapAtLeastOncePerExecutorCore({
-      spooky.withSession {
-        session =>
-          val uavsInFleet = spooky.getConf[UAVConf].uavsInFleetShuffled
-          val linkTry = Link.trySelect (
-            uavsInFleet,
-            session
-          )
-          linkTry.map {
-            link =>
-              link.status() -> link
-          }
-      }
-    })
-    val linkRDD = rdd.flatMap {
-      v =>
-        v.recover {
-          case e =>
-            LoggerFactory.getLogger(this.getClass).warn(e.toString)
-            throw e
-        }
-          .toOption
-    }
-
-    linkRDD.persist()
-    linkRDD.count() //TODO: optional
-
-    val allUAVStatuses = linkRDD.values.map(_.status()).collect()
-    val uri_statuses = allUAVStatuses.flatMap {
-      status =>
-        status.uav.uris.map {
-          uri =>
-            uri -> status
-        }
-    }
-    val grouped = uri_statuses.groupBy(_._1)
-    grouped.values.foreach {
-      v =>
-        assert(
-          v.length == 1,
-          s""""
-             |multiple UAVs sharing the same uris:
-             |${v.map {
-            vv =>
-              s"${vv._2.uav} @ ${vv._2.ownerOpt.getOrElse("[MISSING]")}"
-          }
-            .mkString("\n")}
-             """.stripMargin
-        )
-    }
-    linkRDD
+    def expireAfter = timestamp + BOOKING_EXPIRE_AFTER
   }
 }
 
@@ -387,13 +342,10 @@ trait Link extends LocalCleanable with ConflictDetection {
   }
 
   /**
-    * set true to block being used by another thread
-    * This should be a Future to indicate 3 states:
-    * Completed(true): don't think about it, just use another link or (if depleted) report error.
-    * Completed(false): use it immediately.
-    * Pending: wait for result, then decide.
+    * set this to avoid being used by another task even the current task finish.
     */
-  @volatile var isBooked: Boolean = false
+  @volatile var _bookedBy: Option[Booking] = None
+  def isBooked: Boolean = _bookedBy.exists(v => System.currentTimeMillis() < v.expireAfter)
 
   private def blacklistDuration: Long = spookyOpt
     .map(
@@ -412,7 +364,7 @@ trait Link extends LocalCleanable with ConflictDetection {
     ownerOpt.forall(v => !v.thread.isAlive)
   }
   def isNotUsedByTask: Boolean = {
-    ownerOpt.flatMap(_.taskContextOpt).forall(v => v.isCompleted())
+    ownerOpt.flatMap(_.taskOpt).forall(v => v.isCompleted())
   }
   def isNotUsed = isNotUsedByThread || isNotUsedByTask
 
@@ -499,9 +451,9 @@ trait Link extends LocalCleanable with ConflictDetection {
     }
   }
 
-  def status(expireAfter: Long = 1000): LinkStatus = {
+  def status(expireAfter: Long = 1000): UAVStatus = {
     val current = CurrentLocation.getIfNotExpire((), expireAfter)
-    LinkStatus(uav, ownerOpt, getHome, current)
+    UAVStatus(uav, ownerOpt, getHome, current)
   }
 
   //====================== Synchronous API ======================

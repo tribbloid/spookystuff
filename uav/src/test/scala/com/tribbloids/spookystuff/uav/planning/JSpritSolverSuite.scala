@@ -10,7 +10,7 @@ import com.tribbloids.spookystuff.uav.actions.Waypoint
 import com.tribbloids.spookystuff.uav.dsl.GenPartitioners
 import com.tribbloids.spookystuff.uav.spatial.{Location, NED}
 import com.tribbloids.spookystuff.uav.system.UAV
-import com.tribbloids.spookystuff.uav.telemetry.LinkStatus
+import com.tribbloids.spookystuff.uav.telemetry.UAVStatus
 
 /**
   * Created by peng on 7/3/17.
@@ -70,7 +70,7 @@ class JSpritSolverSuite extends JSpritFixture {
 
     it("can evaluate 1 route") {
       val location = UAVConf.DEFAULT_HOME_LOCATION
-      val uav = LinkStatus(UAV(Seq("dummy@localhost")), None, location, location)
+      val uav = UAVStatus(UAV(Seq("dummy@localhost")), None, location, location)
       val solver = JSpritSolver[Int](getJSprit, spooky, Array(uav), waypoints.map(v => v -> Nil))
 
       val solution = solver.solve

@@ -7,6 +7,7 @@ import com.tribbloids.spookystuff.uav.actions.Waypoint
 import com.tribbloids.spookystuff.uav.planning.{JSpritFixture, PreferUAV, WaypointPlaceholder}
 import com.tribbloids.spookystuff.uav.spatial.NED
 import com.tribbloids.spookystuff.uav.system.UAV
+import com.tribbloids.spookystuff.uav.telemetry.LinkUtils
 import com.tribbloids.spookystuff.uav.{DummyUAVFixture, UAVConf, UAVTestUtils}
 
 /**
@@ -33,6 +34,8 @@ class JSpritGenPartitionerSuite extends DummyUAVFixture with JSpritFixture {
   def runTest(
                traces: Seq[Trace]
              ): Array[List[TraceView]] = {
+
+    LinkUtils.unbookAll()
 
     val rdd = sc.parallelize(
       traces
@@ -68,14 +71,14 @@ class JSpritGenPartitionerSuite extends DummyUAVFixture with JSpritFixture {
         if (actions.isEmpty) None
         else {
           val statusSeq = actions.collect {
-            case PreferUAV(uav) => uav
+            case PreferUAV(uav, _) => uav
           }
             .distinct
           assert(statusSeq.size == 1)
           val status = statusSeq.head
           val first = WaypointPlaceholder(status.currentLocation)
           val others = actions.flatMap {
-            case PreferUAV(uav) => None
+            case PreferUAV(uav, _) => None
             case v@_ => Some(v)
           }
 
@@ -113,7 +116,7 @@ class JSpritGenPartitionerSuite extends DummyUAVFixture with JSpritFixture {
 
   it("can optimize max cost of 5 line scans per UAV") {
 
-    val grouped = runTest(lineScans((parallelism * 5).toInt))
+    val grouped = runTest(lineScans(parallelism * 5))
     assert(getCost(grouped) <= 832.726)
   }
 }
