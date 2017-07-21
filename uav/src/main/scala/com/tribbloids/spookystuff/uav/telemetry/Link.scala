@@ -6,7 +6,7 @@ import com.tribbloids.spookystuff.session.python.PyRef
 import com.tribbloids.spookystuff.uav.dsl.LinkFactory
 import com.tribbloids.spookystuff.uav.spatial._
 import com.tribbloids.spookystuff.uav.system.UAV
-import com.tribbloids.spookystuff.uav.telemetry.Link.Booking
+import com.tribbloids.spookystuff.uav.telemetry.Link.Lock
 import com.tribbloids.spookystuff.uav.telemetry.mavlink.MAVLink
 import com.tribbloids.spookystuff.uav.{ReinforcementDepletedException, UAVConf, UAVMetrics}
 import com.tribbloids.spookystuff.utils.{IDMixin, SpookyUtils, TreeException}
@@ -173,13 +173,13 @@ object Link {
       ConflictDetection.conflicts
   }
 
-  val BOOKING_EXPIRE_AFTER = 60 * 1000
-  case class Booking(
+  val LOCK_EXPIRE_AFTER = 60 * 1000
+  case class Lock(
                       _id: Long = Random.nextLong(), //can only be lifted by PreferUAV that has the same token.
                       timestamp: Long = System.currentTimeMillis()
                     ) extends IDMixin {
 
-    def expireAfter = timestamp + BOOKING_EXPIRE_AFTER
+    def expireAfter = timestamp + LOCK_EXPIRE_AFTER
   }
 }
 
@@ -344,8 +344,8 @@ trait Link extends LocalCleanable with ConflictDetection {
   /**
     * set this to avoid being used by another task even the current task finish.
     */
-  @volatile var _bookedBy: Option[Booking] = None
-  def isBooked: Boolean = _bookedBy.exists(v => System.currentTimeMillis() < v.expireAfter)
+  @volatile var _mutex: Option[Lock] = None
+  def isLocked: Boolean = _mutex.exists(v => System.currentTimeMillis() < v.expireAfter)
 
   private def blacklistDuration: Long = spookyOpt
     .map(
@@ -369,14 +369,14 @@ trait Link extends LocalCleanable with ConflictDetection {
   def isNotUsed = isNotUsedByThread || isNotUsedByTask
 
   def isAvailable: Boolean = {
-    !isBooked && isReachable && isNotUsed && !isCleaned
+    !isLocked && isReachable && isNotUsed && !isCleaned
   }
 
   def statusString: String = {
 
     val strs = ArrayBuffer[String]()
-    if (isBooked)
-      strs += "booked"
+    if (isLocked)
+      strs += "locked"
     if (!isReachable)
       strs += s"unreachable for ${(System.currentTimeMillis() - lastFailureOpt.get._2).toDouble / 1000}s" +
         s" (${lastFailureOpt.get._1.getClass.getSimpleName})"

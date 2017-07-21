@@ -35,7 +35,7 @@ class JSpritGenPartitionerSuite extends DummyUAVFixture with JSpritFixture {
                traces: Seq[Trace]
              ): Array[List[TraceView]] = {
 
-    LinkUtils.unbookAll()
+    LinkUtils.unlockAll()
 
     val rdd = sc.parallelize(
       traces

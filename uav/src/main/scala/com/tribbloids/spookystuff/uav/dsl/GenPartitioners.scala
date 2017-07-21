@@ -64,7 +64,7 @@ object GenPartitioners {
         val hasNavRows: Array[(TraceView, Seq[V])] = bifurcated
           .flatMap(tt => tt._1._1.map(v => v -> tt._2)).collect()
 
-        val linkRDD = LinkUtils.bookedLinkRDD(spooky)
+        val linkRDD = LinkUtils.lockedLinkRDD(spooky)
 
         val allUAVs = linkRDD.map(_.status()).collect()
         val uavs = numUAVsOpt match {
@@ -82,7 +82,7 @@ object GenPartitioners {
             val result = KVs.map {
               kv =>
                 val vv = kv._1
-                val updatedVV = vv.copy(children = List(PreferUAV(status)) ++ vv.children)
+                val updatedVV = vv.copy(children = List(PreferUAV(status, link._mutex)) ++ vv.children)
                 (updatedVV: K) -> kv._2
             }
             result

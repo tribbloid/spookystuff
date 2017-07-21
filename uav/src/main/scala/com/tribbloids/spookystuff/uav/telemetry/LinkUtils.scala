@@ -44,19 +44,19 @@ object LinkUtils {
     available
   }
 
-  def bookedLinkRDD(spooky: SpookyContext): RDD[Link] = {
+  def lockedLinkRDD(spooky: SpookyContext): RDD[Link] = {
 
     val available = availableLinkRDD(spooky)
-    val booked = available.map {
+    val locked = available.map {
       link =>
-        link._bookedBy = Some(Link.Booking())
+        link._mutex = Some(Link.Lock())
         link
     }
 
-    booked.persist()
-    booked.count()
+    locked.persist()
+    locked.count()
 
-    val allUAVStatuses = booked.map(_.status()).collect()
+    val allUAVStatuses = locked.map(_.status()).collect()
     val uri_statuses = allUAVStatuses.flatMap {
       status =>
         status.uav.uris.map {
@@ -79,13 +79,13 @@ object LinkUtils {
              """.stripMargin
         )
     }
-    booked
+    locked
   }
 
-  def unbookAll(): Unit = {
+  def unlockAll(): Unit = {
     Link.existing.values.foreach {
       link =>
-        link._bookedBy = None
+        link._mutex = None
     }
   }
 }

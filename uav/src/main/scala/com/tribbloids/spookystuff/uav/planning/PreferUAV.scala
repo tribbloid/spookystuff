@@ -4,7 +4,7 @@ import com.tribbloids.spookystuff.session.Session
 import com.tribbloids.spookystuff.uav.UAVConf
 import com.tribbloids.spookystuff.uav.actions.{UAVAction, UAVNavigation}
 import com.tribbloids.spookystuff.uav.spatial.Location
-import com.tribbloids.spookystuff.uav.telemetry.Link.Booking
+import com.tribbloids.spookystuff.uav.telemetry.Link.Lock
 import com.tribbloids.spookystuff.uav.telemetry.{Link, UAVStatus}
 import com.tribbloids.spookystuff.utils.ShippingMarks
 
@@ -16,7 +16,7 @@ import scala.concurrent.duration.Duration
   */
 private[uav] case class PreferUAV(
                                    uavStatus: UAVStatus,
-                                   bookedBy: Option[Booking] = None
+                                   unlockOpt: Option[Lock] = None
                                  ) extends UAVAction with ShippingMarks {
 
   override def skeleton = None
@@ -29,11 +29,11 @@ private[uav] case class PreferUAV(
 
     val link = uavStatus.uav.getLink(session.spooky)
     for (
-      b1 <- link._bookedBy;
-      b2 <- this.bookedBy
+      m1 <- link._mutex;
+      m2 <- this.unlockOpt
     ) {
-      assert(b1 == b2, "cannot unbook due to ID mismatch")
-      link._bookedBy = None
+      assert(m1 == m2, "cannot unlock due to ID mismatch")
+      link._mutex = None
     }
 
     Link.select(
