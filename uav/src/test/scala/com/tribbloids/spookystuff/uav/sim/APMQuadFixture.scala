@@ -48,6 +48,10 @@ trait APMFixture extends SimUAVFixture {
   override def beforeAll(): Unit = {
     cleanSweep()
 
+    Thread.sleep(2000)
+    // small delay added to ensure that cleanSweep
+    // won't accidentally clean object created in the suite
+
     SpookyUtils.retry(5, 2000) {
       sc.foreachComputer {
         SpookyEnvFixture.processShouldBeClean(Seq("apm"), cleanSweepNotInTask = false)
