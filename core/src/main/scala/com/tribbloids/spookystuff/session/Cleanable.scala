@@ -17,7 +17,7 @@ sealed trait AbstractCleanable {
 
   def logPrefix: String
   protected def logConstructionDestruction(s: String) = {
-    LoggerFactory.getLogger(this.getClass).debug(s"$logPrefix $s")
+    LoggerFactory.getLogger(this.getClass).info(s"$logPrefix $s")
   }
 
   protected def cleanImpl(): Unit
