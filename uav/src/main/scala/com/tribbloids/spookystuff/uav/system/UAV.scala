@@ -27,7 +27,7 @@ case class UAV(
 
     var newLink: Boolean = false
     val link = Link.synchronized {
-      Link.existing.getOrElse (
+      Link.registered.getOrElse (
         this,
         {
           val factory = spooky.getConf[UAVConf].linkFactory

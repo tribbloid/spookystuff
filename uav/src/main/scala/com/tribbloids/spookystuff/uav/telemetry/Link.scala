@@ -8,6 +8,7 @@ import com.tribbloids.spookystuff.uav.spatial._
 import com.tribbloids.spookystuff.uav.system.UAV
 import com.tribbloids.spookystuff.uav.telemetry.Link.MutexLock
 import com.tribbloids.spookystuff.uav.telemetry.mavlink.MAVLink
+import com.tribbloids.spookystuff.uav.utils.UAVUtils
 import com.tribbloids.spookystuff.uav.{ReinforcementDepletedException, UAVConf, UAVMetrics}
 import com.tribbloids.spookystuff.utils.{IDMixin, SpookyUtils, TreeException}
 import com.tribbloids.spookystuff.{SpookyContext, caching}
@@ -22,16 +23,18 @@ import scala.util.{Failure, Random, Success, Try}
   */
 object Link {
 
-  // connStr -> (link, isBusy)
-  // only 1 allowed per connStr, how to enforce?
-  val existing: caching.ConcurrentMap[UAV, Link] = caching.ConcurrentMap()
+  // not all created Links are registered
+  val registered: caching.ConcurrentMap[UAV, Link] = caching.ConcurrentMap()
 
-  def allConflicts: Seq[Try[Unit]] = {
-    Seq(
-      Try(PyRef.sanityCheck()),
-      Try(MAVLink.sanityCheck())
-    ) ++
-      ConflictDetection.conflicts
+  def sanityCheck(): Unit = {
+    val cLinks = Cleanable.getTyped[Link].toSet
+    val rLinks = registered.values.toSet
+    val residual = rLinks -- cLinks
+    assert(
+      residual.isEmpty,
+      s"the following link(s) are registered but cannot be cleaned:\n" +
+        residual.mkString("\n")
+    )
   }
 
   val LOCK_EXPIRE_AFTER = 60 * 1000
@@ -85,7 +88,7 @@ object Link {
 
       val threadLocalOpt = {
         val id2Opt = threadOpt.map(_.getId)
-        val local = Link.existing.values.toList.filter {
+        val local = Link.registered.values.toList.filter {
           v =>
             val id1Opt = v.ownerOpt.map(_.thread.getId)
             val lMatch = (id1Opt, id2Opt) match {
@@ -95,7 +98,13 @@ object Link {
             lMatch
         }
 
-        assert(local.size <= 1, "Multiple Links cannot share task context or thread")
+        assert(
+          local.size <= 1,
+          s"""
+             |Multiple Links cannot share task context or thread:
+             |${local.map(_.status()).mkString("\n")}
+          """.stripMargin
+        )
         val opt = local.find {
           link =>
             fleet.contains(link.uav)
@@ -107,7 +116,7 @@ object Link {
         case None =>
           LoggerFactory.getLogger(this.getClass).info (
             s"ThreadLocal link not found: ${ctx.toString}" +
-              s" <\\- ${Link.existing.values.flatMap(_.ownerOpt)
+              s" <\\- ${Link.registered.values.flatMap(_.ownerOpt)
                 .mkString("{", ", ", "}")}"
           )
           None
@@ -152,20 +161,20 @@ object Link {
         case Some(link) =>
           assert(
             link.owner == ctx,
-            s"owner inconsistent! ${link.owner} != ${ctx}"
+            s"owner inconsistent! ${link.owner} != $ctx"
           )
           Success {
             link
           }
         case None =>
-          val info = if (Link.existing.isEmpty) {
+          val info = if (Link.registered.isEmpty) {
             val msg = s"No telemetry Link for ${fleet.mkString("[", ", ", "]")}, existing links are:"
-            val hint = Link.existing.keys.toList.mkString("[", ", ", "]")
+            val hint = Link.registered.keys.toList.mkString("[", ", ", "]")
             msg + "\n" + hint
           }
           else {
             "All telemetry links are busy:\n" +
-              Link.existing.values.map {
+              Link.registered.values.map {
                 link =>
                   link.statusString
               }
@@ -223,7 +232,7 @@ trait Link extends LocalCleanable with ConflictDetection {
       //      _taskContext = taskContext
       spookyOpt.foreach(_ => runOnce)
 
-      val inserted = Link.existing.getOrElseUpdate(uav, this)
+      val inserted = Link.registered.getOrElseUpdate(uav, this)
       assert(
         inserted eq this,
         {
@@ -239,6 +248,7 @@ trait Link extends LocalCleanable with ConflictDetection {
         throw e
     }
   }
+  def isRegistered: Boolean = Link.registered.get(uav) == Some(this)
 
   @volatile protected var _owner: LifespanContext = _
   def ownerOpt = Option(_owner)
@@ -263,11 +273,11 @@ trait Link extends LocalCleanable with ConflictDetection {
   //finalizer may kick in and invoke it even if its in Link.existing
   override protected def cleanImpl(): Unit = {
 
-    val existingOpt = Link.existing.get(uav)
+    val existingOpt = Link.registered.get(uav)
     existingOpt.foreach {
       v =>
         if (v eq this)
-          Link.existing -= uav
+          Link.registered -= uav
     }
     spookyOpt.foreach {
       spooky =>
@@ -300,7 +310,7 @@ trait Link extends LocalCleanable with ConflictDetection {
   @volatile var lastFailureOpt: Option[(Throwable, Long)] = None
 
   protected def detectConflicts(): Unit = {
-    val notMe: Seq[Link] = Link.existing.values.toList.filterNot(_ eq this)
+    val notMe: Seq[Link] = Link.registered.values.toList.filterNot(_ eq this)
 
     for (
       myURI <- this.exclusiveURIs;
@@ -330,7 +340,7 @@ trait Link extends LocalCleanable with ConflictDetection {
             disconnect()
             val conflicts = Seq(Failure[Unit](e)) ++
               Seq(Try(detectConflicts())) ++
-              Link.allConflicts
+              UAVUtils.localSanityTrials
             val afterDetection = {
               try {
                 TreeException.&&&(conflicts)

@@ -8,7 +8,6 @@ import org.scalatest.Ignore
 /**
   * Created by peng on 6/20/17.
   */
-@Ignore
 class DummyLinkSuite extends LinkSuite with DummyUAVFixture {
 
   override lazy val factories: Seq[LinkFactory] = Seq(
@@ -16,10 +15,11 @@ class DummyLinkSuite extends LinkSuite with DummyUAVFixture {
   )
 }
 
-class DummyLinkSuite_SelectFromFleet extends DummyLinkSuite {
+@Ignore
+class DummyLinkSuite_SingleUAV extends DummyLinkSuite {
 
-  override lazy val getFleet: (String) => Seq[UAV] = {
-    val simEndpoints = this.simUAVs
-    _: String => simEndpoints
+  override lazy val getFleet: String => Seq[UAV] = {
+    connStr =>
+      Seq(UAV(Seq(connStr)))
   }
 }

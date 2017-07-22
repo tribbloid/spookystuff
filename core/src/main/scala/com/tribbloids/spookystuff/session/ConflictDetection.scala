@@ -29,7 +29,7 @@ object ConflictDetection {
       .map {
         _.effectiveResourceIDs.mapValues(_.toSeq)
       }
-      .reduce {
+      .reduceOption {
         (m1, m2) =>
           val keys = (m1.keys ++ m2.keys).toSeq.distinct
           val kvs = keys.map {
@@ -39,6 +39,7 @@ object ConflictDetection {
           }
           Map(kvs: _*)
       }
+      .getOrElse(Map.empty)
     allResourceIDs
       .toSeq
       .flatMap {

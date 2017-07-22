@@ -14,7 +14,6 @@ import org.scalatest.Ignore
 /**
   * Created by peng on 27/01/17.
   */
-@Ignore
 class MAVLinkSuite extends SimLinkSuite with APMQuadFixture {
 
   override lazy val factories: Seq[LinkFactory] = Seq(
@@ -106,7 +105,7 @@ class MAVLinkSuite extends SimLinkSuite with APMQuadFixture {
               .select
           }
 
-          val badLink = Link.existing(drone).asInstanceOf[MAVLink]
+          val badLink = Link.registered(drone).asInstanceOf[MAVLink]
           val proxyPY = badLink.proxyOpt.get.PY
           print(proxyPY.driver.historyCodeOpt.get)
           assert(badLink.Endpoints.primary._driver == null,
@@ -117,10 +116,11 @@ class MAVLinkSuite extends SimLinkSuite with APMQuadFixture {
   }
 }
 
-class MAVLinkSuite_SelectFromFleet extends MAVLinkSuite {
+@Ignore
+class MAVLinkSuite_SingleUAV extends MAVLinkSuite {
 
-  override lazy val getFleet: (String) => Seq[UAV] = {
-    val simEndpoints = this.simUAVs
-    _: String => simEndpoints
+  override lazy val getFleet: String => Seq[UAV] = {
+    connStr =>
+      Seq(UAV(Seq(connStr)))
   }
 }

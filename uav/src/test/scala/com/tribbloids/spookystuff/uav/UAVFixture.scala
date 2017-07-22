@@ -3,6 +3,7 @@ package com.tribbloids.spookystuff.uav
 import com.tribbloids.spookystuff.SpookyEnvFixture
 import com.tribbloids.spookystuff.uav.dsl.{Fleet, LinkFactories, LinkFactory}
 import com.tribbloids.spookystuff.uav.system.UAV
+import com.tribbloids.spookystuff.uav.utils.UAVUtils
 
 /**
   * Created by peng on 18/06/17.
@@ -23,6 +24,11 @@ trait UAVFixture extends SpookyEnvFixture {
     uavConf.fleet = Fleet.Inventory(simUAVs)
     uavConf.linkFactory = linkFactory
     spooky.zeroMetrics()
+    UAVUtils.sanityCheck(sc)
+  }
+
+  override def tearDown(): Unit = {
+    UAVUtils.sanityCheck(sc)
   }
 }
 

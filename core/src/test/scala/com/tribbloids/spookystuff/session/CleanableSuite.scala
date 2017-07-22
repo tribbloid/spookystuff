@@ -1,6 +1,7 @@
 package com.tribbloids.spookystuff.session
 
 import com.tribbloids.spookystuff.SpookyEnvFixture
+import com.tribbloids.spookystuff.session.CleanableSuite.DummyCleanable
 import com.tribbloids.spookystuff.testutils.AssertSerializable
 import com.tribbloids.spookystuff.utils.SpookyUtils
 import org.apache.spark.{HashPartitioner, TaskContext}
@@ -98,5 +99,33 @@ class CleanableSuite extends SpookyEnvFixture {
       .foreach {
         println
       }
+  }
+
+  it("getTyped can retrieve all created Cleanables") {
+
+    val ss = 1 to 10
+    for (i <- 1 to 10) {
+      sc.parallelize(ss).foreach {
+        i =>
+          new DummyCleanable(i)
+      }
+    }
+
+    val i2 = sc.mapPerWorker {
+      Cleanable.getTyped[DummyCleanable].map(_.id)
+    }
+      .flatMap(identity)
+      .collect().toSeq
+
+    assert(i2.size == ss.size * 10)
+    assert(i2.distinct.sorted == ss)
+  }
+}
+
+object CleanableSuite {
+
+  class DummyCleanable(val id: Int) extends LocalCleanable {
+
+    override protected def cleanImpl(): Unit = {}
   }
 }

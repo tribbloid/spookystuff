@@ -121,7 +121,7 @@ class PyBinding (
   import ref._
 
   {
-    require(!ref.isCleaned, ref + " is cleaned, cannot create binding")
+    assertNotCleaned("cannot create binding")
     dependencies.foreach {
       dep =>
         dep._Py(driver, spookyOpt)

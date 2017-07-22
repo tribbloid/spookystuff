@@ -184,7 +184,7 @@ abstract class SpookyEnvFixture
   before{
     // bypass java.lang.NullPointerException at org.apache.spark.broadcast.TorrentBroadcast$.unpersist(TorrentBroadcast.scala:228)
     // TODO: clean up after fix
-    SpookyUtils.retry(5, 1000) {
+    SpookyUtils.retry(3, 1000) {
       setUp()
     }
   }

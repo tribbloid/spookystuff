@@ -33,7 +33,7 @@ object LinkFactories {
     // you can't distinguish vehicle failure and proxy failure, your best shot is to always use a random port for primary out
     def apply(endpoint: UAV): Link = {
 
-      val existing: Seq[String] = Link.existing.values.toSeq
+      val existing: Seq[String] = Link.registered.values.toSeq
         .flatMap {
           _.exclusiveURIs
         }

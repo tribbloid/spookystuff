@@ -20,11 +20,11 @@ class LinkFactoriesSuite extends SpookyEnvFixture {
 
   override def setUp(): Unit = {
     super.setUp()
-    Link.existing.values.foreach(_.tryClean())
+    Link.registered.values.foreach(_.tryClean())
   }
 
   override def tearDown(): Unit = {
-    assert(Link.existing.size == 1) // ensure that canCreate won't leave zombie link(s)
+    assert(Link.registered.size == 1) // ensure that canCreate won't leave zombie link(s)
     super.tearDown()
   }
 

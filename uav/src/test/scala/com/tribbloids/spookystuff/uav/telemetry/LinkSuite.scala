@@ -1,6 +1,6 @@
 package com.tribbloids.spookystuff.uav.telemetry
 
-import com.tribbloids.spookystuff.session.Session
+import com.tribbloids.spookystuff.session.{Cleanable, Session}
 import com.tribbloids.spookystuff.testutils.TestHelper
 import com.tribbloids.spookystuff.uav.dsl.LinkFactory
 import com.tribbloids.spookystuff.uav.system.UAV
@@ -17,15 +17,15 @@ abstract class LinkSuite extends UAVFixture {
 
   import com.tribbloids.spookystuff.utils.SpookyViews._
 
-  lazy val getFleet: String => Seq[UAV] = {
-    connStr =>
-      Seq(UAV(Seq(connStr)))
+  lazy val getFleet: (String) => Seq[UAV] = {
+    val simEndpoints = this.simUAVs
+    _: String => simEndpoints
   }
 
   override def setUp(): Unit = {
     super.setUp()
     sc.foreachComputer {
-      Random.shuffle(Link.existing.values.toList).foreach(_.clean())
+      Random.shuffle(Link.registered.values.toList).foreach(_.clean())
     }
     Thread.sleep(2000) //Waiting for both python drivers to terminate, DON'T DELETE! some tests create proxy processes and they all take a few seconds to release the port binding!
   }
@@ -57,6 +57,23 @@ abstract class LinkSuite extends UAVFixture {
 
   runTests(fixtures) {
     spooky =>
+
+      it("Link should be registered in both Link and Cleanable") {
+
+        for (i <- 0 to 10) {
+          val linkRDD = getLinkRDD(spooky)
+          linkRDD.persist()
+          val uavs = linkRDD.map(_.uav).collect()
+          println(s"=========== $i ==========")
+          uavs.foreach(println)
+        }
+
+        spooky.sparkContext.foreachComputer {
+          val registered = Link.registered.values.toSet
+          val cleanable = Cleanable.getTyped[Link].toSet
+          assert(registered.subsetOf(cleanable))
+        }
+      }
 
       it("Link should use different UAVs") {
         for (i <- 0 to 10) {
@@ -144,17 +161,6 @@ abstract class LinkSuite extends UAVFixture {
           }
         }
       }
-
-      it("Link can be created and reused quickly in different tasks") {
-
-        for (i <- 0 to 10) {
-          val linkRDD = getLinkRDD(spooky)
-          linkRDD.persist()
-          val uavs = linkRDD.map(_.uav).collect()
-          println(s"=========== $i ==========")
-          uavs.foreach(println)
-        }
-      }
   }
 
   //TODO: merge
@@ -209,7 +215,7 @@ abstract class SimLinkSuite extends LinkSuite with SimUAVFixture {
               .select
           }
 
-          val badLink = Link.existing(drone)
+          val badLink = Link.registered(drone)
           badLink.statusString.shouldBeLike(
             "Link DRONE@dummy is unreachable for ......"
           )

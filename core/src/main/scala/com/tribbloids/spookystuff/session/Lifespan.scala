@@ -14,21 +14,23 @@ abstract class Lifespan extends IDMixin with Serializable {
   def strategy: CleanupStrategy
   def ctxFactory: () => LifespanContext
 
-  @transient @volatile var _ctx: LifespanContext = _
-  def ctx = this.synchronized {
-    if (_ctx == null) {
-      updateCtx()
-    }
-    else {
-      _ctx
-    }
-  }
+  @transient lazy val ctx = ctxFactory()
 
-  def updateCtx(factory: () => LifespanContext = ctxFactory): LifespanContext = {
-    val neo = ctxFactory()
-    _ctx = neo
-    neo
-  }
+//  @transient @volatile var _ctx: LifespanContext = _
+//  def ctx = this.synchronized {
+//    if (_ctx == null) {
+//      updateCtx()
+//    }
+//    else {
+//      _ctx
+//    }
+//  }
+//
+//  def updateCtx(factory: () => LifespanContext = ctxFactory): LifespanContext = {
+//    val neo = ctxFactory()
+//    _ctx = neo
+//    neo
+//  }
 
   def _id = {
     strategy.getCleanupBatchID(ctx)

@@ -84,7 +84,7 @@ object LinkUtils {
   }
 
   def unlockAll(): Unit = {
-    Link.existing.values.foreach {
+    Link.registered.values.foreach {
       link =>
         link.unlock()
     }

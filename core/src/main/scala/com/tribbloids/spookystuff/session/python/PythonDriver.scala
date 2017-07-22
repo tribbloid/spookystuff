@@ -211,7 +211,9 @@ class PythonDriver(
         )
         val cause = e
         if (this.isCleaned) {
-          LoggerFactory.getLogger(this.getClass).debug(s"ignoring ${cause.getClass.getSimpleName} as python process is cleaned")
+          LoggerFactory.getLogger(this.getClass).debug(
+            s"ignoring ${cause.getClass.getSimpleName}, python process is cleaned"
+          )
           return Array.empty[String]
         }
         else {
@@ -327,14 +329,13 @@ class PythonDriver(
           """.trim.stripMargin
         val rows = interpret(_code, spookyOpt).toSeq
         val splitterIndex = rows.zipWithIndex.find(_._1 == EXECUTION_RESULT)
-          .getOrElse(
-            if (this.isCleaned)
-              throw new AssertionError(s"$logPrefix python driver is cleaned")
-            else if (!this.process.isAlive)
+          .getOrElse {
+            assertNotCleaned("Empty output")
+            if (!this.process.isAlive)
               throw new AssertionError(s"$logPrefix python driver is dead")
             else
               throw new AssertionError(s"$logPrefix Cannot find $EXECUTION_RESULT\n" + rows.mkString("\n"))
-          )._2
+          }._2
         val split = rows.splitAt(splitterIndex)
 
         val _result = split._2.slice(1, Int.MaxValue).mkString("\n")
