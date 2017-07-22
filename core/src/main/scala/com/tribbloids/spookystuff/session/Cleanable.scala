@@ -29,7 +29,7 @@ sealed trait AbstractCleanable {
       isCleaned = true
       try {
         cleanImpl()
-        if (!silent) logConstructionDestruction("Destroyed")
+        if (!silent) logConstructionDestruction("Cleaned")
       }
       catch {
         case e: Throwable =>

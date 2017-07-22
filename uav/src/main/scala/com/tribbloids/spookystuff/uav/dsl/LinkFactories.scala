@@ -26,7 +26,7 @@ object LinkFactories {
                         toSpark: Seq[String] = (12014 to 12108).map(i => s"udp:localhost:$i"),
                         //this is the default port listened by QGCS
                         toGCS: UAV => Set[String] = _ => Set("udp:localhost:14550"),
-                        toSprakSize: Int = 1
+                        toSparkSize: Int = 1
                       ) extends LinkFactory {
 
     //CAUTION: DO NOT select primary out sequentially!
@@ -43,7 +43,7 @@ object LinkFactories {
       }
       val shuffled = Random.shuffle(available)
 
-      val executorOuts = shuffled.slice(0, toSprakSize)
+      val executorOuts = shuffled.slice(0, toSparkSize)
       val gcsOuts = toGCS(endpoint).toSeq
       val result = MAVLink(
         endpoint,

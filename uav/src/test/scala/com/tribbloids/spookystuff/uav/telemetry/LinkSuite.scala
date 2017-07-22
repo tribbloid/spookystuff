@@ -175,17 +175,17 @@ abstract class LinkSuite extends UAVFixture {
           link.factoryOpt.get == spooky.getConf[UAVConf].linkFactory,
           "link doesn't comply to factory"
         )
-        //        link.isBooked = true
+        link.lock()
         //        Thread.sleep(5000) //otherwise a task will complete so fast such that another task hasn't start yet.
         link
     }
       .persist()
     linkRDD.map(_.uav).collect().foreach(println)
-    //    linkRDD.map {
-    //      v =>
-    //        v.isBooked = false
-    //        v
-    //    }
+    linkRDD.map {
+      link =>
+        link.unlock()
+        link
+    }
     linkRDD
   }
 }

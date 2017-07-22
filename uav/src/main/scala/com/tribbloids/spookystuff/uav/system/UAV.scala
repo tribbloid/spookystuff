@@ -32,7 +32,7 @@ case class UAV(
         {
           val factory = spooky.getConf[UAVConf].linkFactory
           val link = factory.apply(this)
-          link.setFactory(
+          link.register(
             spooky,
             factory
           )

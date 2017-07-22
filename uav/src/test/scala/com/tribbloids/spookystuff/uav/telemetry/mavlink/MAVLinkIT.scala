@@ -20,7 +20,7 @@ class MAVLinkIT extends LinkITFixture with APMQuadFixture {
 class MAVLinkIT_Proxy extends MAVLinkIT {
 
   override lazy val linkFactory = LinkFactories.ForkToGCS(
-    toSprakSize = 2
+    toSparkSize = 2
   )
 
   it("GCS takeover and relinquish control during flight") {

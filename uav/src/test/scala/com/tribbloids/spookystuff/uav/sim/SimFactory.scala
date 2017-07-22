@@ -36,7 +36,7 @@ trait MAVLinkSimFactory extends SimFactory {
   }
 }
 
-case class QuadSimFactory(
+case class APMQuadSimFactory(
                            dispersionLatLng: Double = 0.001
                          ) extends MAVLinkSimFactory {
 

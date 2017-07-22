@@ -329,11 +329,11 @@ class PythonDriver(
         val splitterIndex = rows.zipWithIndex.find(_._1 == EXECUTION_RESULT)
           .getOrElse(
             if (this.isCleaned)
-              throw new AssertionError("python driver is cleaned")
+              throw new AssertionError(s"$logPrefix python driver is cleaned")
             else if (!this.process.isAlive)
-              throw new AssertionError("python driver is dead")
+              throw new AssertionError(s"$logPrefix python driver is dead")
             else
-              throw new AssertionError(s"Cannot find $EXECUTION_RESULT\n" + rows.mkString("\n"))
+              throw new AssertionError(s"$logPrefix Cannot find $EXECUTION_RESULT\n" + rows.mkString("\n"))
           )._2
         val split = rows.splitAt(splitterIndex)
 

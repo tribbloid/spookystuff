@@ -122,7 +122,7 @@ class TestAPMQuad extends APMQuadFixture {
 
 trait APMQuadFixture extends APMFixture {
 
-  lazy val simFactory = QuadSimFactory()
+  lazy val simFactory = APMQuadSimFactory()
 }
 
 //class APMPlaneSITLSuite extends APMCopterSITLSuite {

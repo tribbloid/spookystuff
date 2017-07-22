@@ -83,7 +83,7 @@ object Link {
         v
       }
 
-      val threadLocalOpt = Link.synchronized {
+      val threadLocalOpt = {
         val id2Opt = threadOpt.map(_.getId)
         val local = Link.existing.values.toList.filter {
           v =>
@@ -141,7 +141,7 @@ object Link {
 
           val opt = Link.synchronized {
             val opt = preference(links)
-            //deliberately set inside synchronized block to avoid being selected by 2 threads
+            //deliberately set inside synched block to avoid being selected by 2 threads
             opt.map(setOwnerAndUnlock)
           }
 
@@ -212,10 +212,10 @@ trait Link extends LocalCleanable with ConflictDetection {
     spookyOpt.get.getMetrics[UAVMetrics].linkCreated += 1
   }
 
-  def setFactory(
-                  spooky: SpookyContext = this._spooky,
-                  factory: LinkFactory = this._factory
-                ): this.type = Link.synchronized{
+  def register(
+                spooky: SpookyContext = this._spooky,
+                factory: LinkFactory = this._factory
+              ): this.type = Link.synchronized{
 
     try {
       _spooky = spooky
@@ -430,26 +430,22 @@ trait Link extends LocalCleanable with ConflictDetection {
                     factory: LinkFactory
                   ): Link = {
 
-    val neo = Link.synchronized {
-      val neo = factory.apply(uav)
-      neo.owner = this.owner
-      neo
-    }
+    val neo = factory.apply(uav)
     val result = if (coFactory(neo)) {
       LoggerFactory.getLogger(this.getClass).info {
         s"Reusing existing link for $uav"
       }
-      neo.clean(silent = true)
+      neo.clean()
       this
     }
     else {
       LoggerFactory.getLogger(this.getClass).info {
         s"Recreating link for $uav with new factory ${factory.getClass.getSimpleName}"
       }
-      this.clean(silent = true)
+      this.clean()
       neo
     }
-    result.setFactory(
+    result.register(
       this._spooky,
       factory
     )
