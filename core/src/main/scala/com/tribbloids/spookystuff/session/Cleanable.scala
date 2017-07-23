@@ -5,32 +5,34 @@ import com.tribbloids.spookystuff.utils.{NOTSerializable, TreeException}
 import org.openqa.selenium.NoSuchSessionException
 import org.slf4j.LoggerFactory
 
-import scala.collection.mutable
 import scala.language.implicitConversions
 import scala.reflect.ClassTag
 import scala.util.{Random, Try}
 
 object Cleanable {
 
-  val uncleaned: ConcurrentMap[Any, ConcurrentSet[Cleanable]] = ConcurrentMap()
+  val uncleaned: ConcurrentMap[Any, ConcurrentMap[Long, Cleanable]] = ConcurrentMap()
 
-  def getByLifespan(tt: Any, condition: (Cleanable) => Boolean): (ConcurrentSet[Cleanable], List[Cleanable]) = {
-    val set = uncleaned.getOrElse(tt, mutable.Set.empty)
-    val filtered = set.toList //create deep copy to avoid in-place deletion
+  def getByLifespan(
+                     id: Any,
+                     condition: (Cleanable) => Boolean
+                   ): (ConcurrentMap[Long, Cleanable], List[Cleanable]) = {
+    val batch = uncleaned.getOrElse(id, ConcurrentMap())
+    val filtered = batch.values.toList //create deep copy to avoid in-place deletion
       .filter(condition)
-    (set, filtered)
+    (batch, filtered)
   }
   def getAll(
               condition: (Cleanable) => Boolean = _ => true
             ): Seq[Cleanable] = {
-    uncleaned
-      .values.toList
+    uncleaned.values.toList
       .flatten
+      .map(_._2)
       .filter(condition)
   }
   def getTyped[T <: Cleanable: ClassTag]: Seq[T] = {
-    val result = getAll{
-      case v: T => true
+    val result = getAll {
+      case _: T => true
       case _ => false
     }
       .map { v =>
@@ -41,17 +43,18 @@ object Cleanable {
 
   // cannot execute concurrent
   def cleanSweep(
-                  tt: Any,
+                  id: Any,
                   condition: Cleanable => Boolean = _ => true
                 ) = {
-    val (set: ConcurrentSet[Cleanable], filtered: List[Cleanable]) = getByLifespan(tt, condition)
+
+    val (map, filtered) = getByLifespan(id, condition)
     filtered
       .foreach {
         instance =>
           instance.tryClean()
       }
-    set --= filtered
-    if (set.isEmpty) uncleaned.remove(tt)
+    map --= filtered.map(_.trackingNumber)
+    if (map.isEmpty) uncleaned.remove(id)
   }
 
   def cleanSweepAll(
@@ -82,15 +85,33 @@ trait Cleanable {
     */
   def _lifespan: Lifespan = new Lifespan.JVM()
   final val lifespan = _lifespan
-  final val trackingNumber = Random.nextInt()
+  final val trackingNumber = Random.nextLong()
 
   //each can only be cleaned once
   @volatile var isCleaned: Boolean = false
   @volatile var stacktraceAtCleaning: Option[Array[StackTraceElement]] = None
 
+  @transient lazy val uncleanedInBatch: ConcurrentMap[Long, Cleanable] = {
+    // This weird implementation is to mitigate thread-unsafe competition:
+    // 2 empty collections being inserted simultaneously
+    Cleanable.uncleaned
+      .getOrElse(
+        lifespan._id,
+        {
+          Cleanable.synchronized{
+            Cleanable.uncleaned
+              .getOrElseUpdate(
+                lifespan._id,
+                ConcurrentMap()
+              )
+          }
+        }
+      )
+  }
+
   {
     logPrefixed("Created")
-    uncleanedInBatch += this
+    uncleanedInBatch += this.trackingNumber -> this
   }
 
   def logPrefix: String = {
@@ -110,25 +131,10 @@ trait Cleanable {
     )
   }
 
-  def uncleanedInBatch: ConcurrentSet[Cleanable] = {
-    // This weird implementation is to mitigate thread-unsafe competition:
-    // 2 empty Set being inserted simultaneously
-    Cleanable.uncleaned
-      .getOrElseUpdate(
-        lifespan._id,
-        Cleanable.synchronized{
-          Cleanable.uncleaned.getOrElse(
-            lifespan._id,
-            ConcurrentSet()
-          )
-        }
-      )
-  }
-
-  def subCleanable: Seq[Cleanable] = Nil
+  def chainClean: Seq[Cleanable] = Nil
 
   def clean(silent: Boolean = false): Unit = {
-    val sub: Seq[Try[Unit]] = subCleanable.map {
+    val chained: Seq[Try[Unit]] = chainClean.map {
       v =>
         Try {
           v.clean(silent)
@@ -150,9 +156,9 @@ trait Cleanable {
         }
       }
     }
-    TreeException.&&&(sub :+ self)
+    TreeException.&&&(chained :+ self)
 
-    uncleanedInBatch -= this
+    uncleanedInBatch -= this.trackingNumber
   }
 
   def tryClean(silent: Boolean = false): Unit = {
@@ -160,7 +166,7 @@ trait Cleanable {
       clean(silent)
     }
     catch {
-      case e: NoSuchSessionException => //already cleaned before
+      case _: NoSuchSessionException => //already cleaned before
       case e: Throwable =>
         val ee = e
         LoggerFactory.getLogger(this.getClass).warn(

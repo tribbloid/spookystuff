@@ -82,7 +82,7 @@ trait PyRef extends Cleanable {
   def varNamePrefix = FlowUtils.toCamelCase(simpleClassName)
   def packageName = pyClassNameParts.slice(0, pyClassNameParts.length - 1).mkString(".")
 
-  override def subCleanable: Seq[Cleanable] = bindings
+  override def chainClean: Seq[Cleanable] = bindings
 
   def _Py(
            driver: PythonDriver,
@@ -229,7 +229,7 @@ object PyRef {
 
   def sanityCheck(): Unit = {
     val subs = Cleanable.getTyped[PyBinding]
-    val refSubs = Cleanable.getTyped[PyRef].map(_.subCleanable)
+    val refSubs = Cleanable.getTyped[PyRef].map(_.chainClean)
     assert(
       subs.intersect(refSubs).size <= refSubs.size,
       {

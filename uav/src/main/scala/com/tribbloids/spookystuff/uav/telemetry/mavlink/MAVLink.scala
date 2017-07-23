@@ -13,7 +13,7 @@ object MAVLink {
 
   def sanityCheck(): Unit = {
     val subs = Cleanable.getTyped[Endpoint] ++ Cleanable.getTyped[Proxy]
-    val refSubs = Cleanable.getTyped[MAVLink].flatMap(_.subCleanable)
+    val refSubs = Cleanable.getTyped[MAVLink].flatMap(_.chainClean)
     assert(
       subs.intersect(refSubs).size <= refSubs.size,
       {
@@ -129,10 +129,10 @@ case class MAVLink(
     )
   }
 
-  override def subCleanable: Seq[Cleanable] = {
+  override def chainClean: Seq[Cleanable] = {
     Endpoints.all ++
       proxyOpt.toSeq ++
-      super.subCleanable
+      super.chainClean
   }
 
   protected def _connect(): Unit = {

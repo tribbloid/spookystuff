@@ -20,7 +20,7 @@ case class Proxy(
                 ) extends CaseInstanceRef with BindedRef with ConflictDetection {
 
   assert(!outs.contains(master))
-  override lazy val resourceIDs = Map(
+  override lazy val _resourceIDs = Map(
     "master" -> Set(master),
     "firstOut" -> outs.headOption.toSet //need at least 1 out for executor
   )

@@ -41,7 +41,7 @@ object SpookyEnvFixture {
       .uncleaned
       .foreach {
         tuple =>
-          val nonLocalDrivers = tuple._2
+          val nonLocalDrivers = tuple._2.values
             .filter {
               v =>
                 v.lifespan.strategy == Lifespan.Task

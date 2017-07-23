@@ -1,8 +1,7 @@
 package com.tribbloids.spookystuff.uav.telemetry.mavlink
 
-import com.tribbloids.spookystuff.uav.UAVConf
-import com.tribbloids.spookystuff.session.ConflictDetection
 import com.tribbloids.spookystuff.session.python._
+import com.tribbloids.spookystuff.uav.UAVConf
 
 /**
   * Created by peng on 16/01/17.
@@ -14,8 +13,8 @@ case class Endpoint(
                      groundSSID: Int = UAVConf.EXECUTOR_SSID,
                      name: String = "DRONE"
                    ) extends CaseInstanceRef
-  with BindedRef
-  with ConflictDetection {
+//  with ConflictDetection
+  with BindedRef {
 
-  override lazy val resourceIDs = Map("" -> Set(uri))
+//  override lazy val _resourceIDs = Map("" -> Set(uri))
 }

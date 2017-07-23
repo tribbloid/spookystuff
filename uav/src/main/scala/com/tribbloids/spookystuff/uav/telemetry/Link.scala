@@ -2,12 +2,10 @@ package com.tribbloids.spookystuff.uav.telemetry
 
 import com.tribbloids.spookystuff.caching.Memoize
 import com.tribbloids.spookystuff.session._
-import com.tribbloids.spookystuff.session.python.PyRef
 import com.tribbloids.spookystuff.uav.dsl.LinkFactory
 import com.tribbloids.spookystuff.uav.spatial._
 import com.tribbloids.spookystuff.uav.system.UAV
 import com.tribbloids.spookystuff.uav.telemetry.Link.MutexLock
-import com.tribbloids.spookystuff.uav.telemetry.mavlink.MAVLink
 import com.tribbloids.spookystuff.uav.utils.UAVUtils
 import com.tribbloids.spookystuff.uav.{ReinforcementDepletedException, UAVConf, UAVMetrics}
 import com.tribbloids.spookystuff.utils.{IDMixin, SpookyUtils, TreeException}
@@ -30,10 +28,10 @@ object Link {
     val cLinks = Cleanable.getTyped[Link].toSet
     val rLinks = registered.values.toSet
     val residual = rLinks -- cLinks
-    assert(
+    assert (
       residual.isEmpty,
-      s"the following link(s) are registered but cannot be cleaned:\n" +
-        residual.mkString("\n")
+      s"the following link(s) are registered but not cleanable:\n" +
+        residual.map(v => v.logPrefix + v.toString).mkString("\n")
     )
   }
 
@@ -209,7 +207,7 @@ trait Link extends LocalCleanable with ConflictDetection {
   val uav: UAV
 
   val exclusiveURIs: Set[String]
-  final override lazy val resourceIDs = Map("uris" -> exclusiveURIs)
+  final override lazy val _resourceIDs = Map("uris" -> exclusiveURIs)
 
   @volatile protected var _spooky: SpookyContext = _
   def spookyOpt = Option(_spooky)
@@ -278,6 +276,25 @@ trait Link extends LocalCleanable with ConflictDetection {
       v =>
         if (v eq this)
           Link.registered -= uav
+        else {
+          val registeredThis = Link.registered.toList.filter(_._2 eq this)
+          assert(
+            registeredThis.isEmpty,
+            {
+              s"""
+                 |this link's UAV is registered with a different link:
+                 |$uav -> ${Link.registered(uav)}
+                 |====================================================
+                 |and this link is registered with a diffferent UAV:
+                 |${registeredThis.map{
+                tuple =>
+                  s"${tuple._1} -> ${tuple._2}"
+              }.mkString("\n")
+              }
+              """.stripMargin
+            }
+          )
+        }
     }
     spookyOpt.foreach {
       spooky =>
@@ -338,12 +355,12 @@ trait Link extends LocalCleanable with ConflictDetection {
         catch {
           case e: Throwable =>
             disconnect()
-            val conflicts = Seq(Failure[Unit](e)) ++
+            val sanityTrials = Seq(Failure[Unit](e)) ++
               Seq(Try(detectConflicts())) ++
               UAVUtils.localSanityTrials
             val afterDetection = {
               try {
-                TreeException.&&&(conflicts)
+                TreeException.&&&(sanityTrials)
                 e
               }
               catch {

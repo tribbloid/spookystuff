@@ -9,14 +9,14 @@ import scala.util.Try
   */
 trait ConflictDetection extends Cleanable {
 
-  def resourceIDs: Map[String, Set[_]]
-  def prefix: String = this.getClass.getCanonicalName
+  def _resourceIDs: Map[String, Set[_]]
+  def _resourcePrefix: String = this.getClass.getCanonicalName
 
-  final def effectiveResourceIDs: Map[String, Set[Any]] = resourceIDs.map {
+  final def resourceIDs: Map[String, Set[Any]] = _resourceIDs.map {
     tuple =>
       val rawK = if (tuple._1.isEmpty) null
       else tuple._1
-      val k = SpookyUtils./:/(prefix, rawK)
+      val k = SpookyUtils./:/(_resourcePrefix, rawK)
       val v = tuple._2.map(_.asInstanceOf[Any])
       k -> v
   }
@@ -25,9 +25,12 @@ trait ConflictDetection extends Cleanable {
 object ConflictDetection {
 
   def conflicts: Seq[Try[Unit]] = {
-    val allResourceIDs: Map[String, Seq[Any]] = Cleanable.getTyped[ConflictDetection]
+
+    val allObj = Cleanable.getTyped[ConflictDetection]
+
+    val allResourceIDs: Map[String, Seq[Any]] = allObj
       .map {
-        _.effectiveResourceIDs.mapValues(_.toSeq)
+        _.resourceIDs.mapValues(_.toSeq)
       }
       .reduceOption {
         (m1, m2) =>
@@ -40,6 +43,7 @@ object ConflictDetection {
           Map(kvs: _*)
       }
       .getOrElse(Map.empty)
+
     allResourceIDs
       .toSeq
       .flatMap {
@@ -48,7 +52,21 @@ object ConflictDetection {
             .map {
               vs =>
                 Try {
-                  assert(vs.size == 1, s"${tuple._1}: resource ${vs.head} is used by ${vs.size} objects")
+                  assert(
+                    vs.size == 1,
+                    {
+                      s"""
+                         |${tuple._1}: resource ${vs.head} is used by ${vs.size} objects:
+                         |${allObj.filter(
+                        v =>
+                          v.resourceIDs.getOrElse(tuple._1, Set.empty)
+                            .contains(vs.head)
+                      )
+                        .map(v => s"$v -> ${vs.head}")
+                        .mkString("\n")}
+                     """.stripMargin
+                    }
+                  )
                 }
             }
       }

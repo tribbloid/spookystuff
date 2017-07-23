@@ -6,12 +6,21 @@ import com.tribbloids.spookystuff.testutils.AssertSerializable
 import com.tribbloids.spookystuff.utils.SpookyUtils
 import org.apache.spark.{HashPartitioner, TaskContext}
 
+import scala.util.Random
+
 /**
   * Created by peng on 16/11/16.
   */
 class CleanableSuite extends SpookyEnvFixture {
 
   import com.tribbloids.spookystuff.utils.SpookyViews._
+
+  override def setUp(): Unit = {
+    super.setUp()
+    Cleanable.cleanSweepAll {
+      case _: DummyCleanable => true
+    }
+  }
 
   it("Lifespan is serializable") {
 
@@ -86,10 +95,10 @@ class CleanableSuite extends SpookyEnvFixture {
         tuple =>
           val v: Lifespan = tuple._1
           val newID = TaskContext.get().taskAttemptId()
-//          val newID2 = v._id
+          //          val newID2 = v._id
           val newID3 = SpookyUtils.withDeadline(10.seconds) {
             val result = v._id
-//            Predef.assert(v._id == newID2)
+            //            Predef.assert(v._id == newID2)
             result
           }
           Predef.assert (newID3.asInstanceOf[Lifespan.Task.ID].id == newID)
@@ -101,18 +110,21 @@ class CleanableSuite extends SpookyEnvFixture {
       }
   }
 
-  it("getTyped can retrieve all created Cleanables") {
+  it("can get all created Cleanables") {
 
+    runTest(i => DummyCleanable(i))
+  }
+
+  private def runTest(getDummy: (Int) => Unit) = {
     val ss = 1 to 10
-    for (i <- 1 to 10) {
+    for (_ <- 1 to 10) {
       sc.parallelize(ss).foreach {
-        i =>
-          new DummyCleanable(i)
+        getDummy
       }
     }
 
     val i2 = sc.mapPerWorker {
-      Cleanable.getTyped[DummyCleanable].map(_.id)
+      Cleanable.getTyped[DummyCleanable].map(_.index)
     }
       .flatMap(identity)
       .collect().toSeq
@@ -120,11 +132,19 @@ class CleanableSuite extends SpookyEnvFixture {
     assert(i2.size == ss.size * 10)
     assert(i2.distinct.sorted == ss)
   }
+
+  it("can get all created Cleanables even their hashcodes may overlap") {
+
+    runTest(i => DummyCleanable(i, None))
+  }
 }
 
 object CleanableSuite {
 
-  class DummyCleanable(val id: Int) extends LocalCleanable {
+  case class DummyCleanable(
+                             index: Int,
+                             id: Option[Long] = Some(Random.nextLong())
+                           ) extends LocalCleanable {
 
     override protected def cleanImpl(): Unit = {}
   }
