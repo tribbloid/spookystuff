@@ -17,8 +17,10 @@ class CleanableSuite extends SpookyEnvFixture {
 
   override def setUp(): Unit = {
     super.setUp()
-    Cleanable.cleanSweepAll {
-      case _: DummyCleanable => true
+    sc.foreachWorker {
+      Cleanable.cleanSweepAll {
+        case _: DummyCleanable => true
+      }
     }
   }
 
