@@ -11,11 +11,11 @@
 
   <artifactId>spookystuff-core</artifactId>
   <dependencies>
-    <!--<dependency>-->
-    <!--<groupId>com.github.detro</groupId>-->
-    <!--<artifactId>phantomjsdriver</artifactId>-->
-    <!--<version>1.2.0</version>-->
-    <!--</dependency>-->
+    <dependency>
+      <groupId>com.tribbloids.spookystuff</groupId>
+      <artifactId>spookystuff-common</artifactId>
+      <version>${project.version}</version>
+    </dependency>
     <dependency>
       <groupId>com.codeborne</groupId>
       <artifactId>phantomjsdriver</artifactId>
