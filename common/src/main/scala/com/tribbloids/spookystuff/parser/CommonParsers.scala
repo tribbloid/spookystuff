@@ -1,5 +1,7 @@
 package com.tribbloids.spookystuff.parser
 
+import org.apache.spark.sql.catalyst.SqlLexical
+
 import scala.language.{implicitConversions, postfixOps}
 import scala.util.Try
 import scala.util.parsing.combinator._
@@ -75,6 +77,25 @@ abstract class CommonParsers extends StandardTokenParsers with PackratParsers {
     }
   }
 
+  def getSQLLexical: SqlLexical = {
+    val reservedWords: Array[String] = this
+      .getClass
+      .getMethods
+      .filter(
+        v =>
+          v.getParameterTypes.length == 0 &&
+            v.getReturnType == classOf[KeyWord]
+      )
+      .map(
+        v =>
+          v.invoke(this).asInstanceOf[KeyWord].str
+      )
+
+    val lexical = new SqlLexical
+    lexical.initialize(reservedWords.distinct)
+    lexical
+  }
+
   // Returns the rest of the input string that are not parsed yet
   lazy val restInput: PackratParser[String] = new PackratParser[String] {
     def apply(in: Input): ParseResult[String] =
@@ -84,6 +105,18 @@ abstract class CommonParsers extends StandardTokenParsers with PackratParsers {
       )
   }
 
+
+  // Returns the whole input string
+  lazy val wholeInput: PackratParser[String] = new PackratParser[String] {
+    def apply(in: Input): ParseResult[String] =
+      Success(in.source.toString, in.drop(in.source.length()))
+  }
+
+  //string interpolation always enabled
+  lazy val restPairOptions: PackratParser[Map[String, Option[String]]] = restInput ^^ {
+    str =>
+      OptionsParsers.apply(str)
+  }
 
   def matchUntilKeyword(
                           kw: KeyWord,
