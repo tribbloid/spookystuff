@@ -25,7 +25,7 @@ class TestOptionsParsers extends FunSpec {
           |(a,Some(1))
           |(b,Some(2))
           |(c,Some(3))
-        """.stripMargin
+        """.trim.stripMargin
     )
   }
 }
