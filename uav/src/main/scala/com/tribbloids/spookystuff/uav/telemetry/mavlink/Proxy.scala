@@ -25,14 +25,6 @@ case class Proxy(
     "firstOut" -> outs.headOption.toSet //need at least 1 out for executor
   )
 
-//  {
-//    val existing = Cleanable.getTyped[Proxy].filterNot(_ == this)
-//    val condition = !existing.exists(_.master == this.master)
-//    assert(condition, s"master ${this.master} is already used")
-//  }
-
-//  Proxy.existing += this
-
 //  override protected def cleanImpl(): Unit = {
 //    super.cleanImpl()
 ////    Proxy.existing -= this

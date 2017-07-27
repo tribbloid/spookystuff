@@ -455,7 +455,7 @@ trait Link extends LocalCleanable with ConflictDetection {
   def coFactory(another: Link): Boolean
   def recommission(
                     factory: LinkFactory
-                  ): Link = {
+                  ): Link = Link.synchronized {
 
     val neo = factory.apply(uav)
     val result = if (coFactory(neo)) {
