@@ -51,7 +51,7 @@ class SpookyConfSuite extends SpookyEnvFixture {
     val v = conf.get("dummy.property")
 
     try {
-      assert(AbstractConf.getPropertyOrEnv("dummy.property") == Some(v))
+      assert(ConfUtils.getPropertyOrEnv("dummy.property") == Some(v))
     }
   }
 
@@ -60,7 +60,7 @@ class SpookyConfSuite extends SpookyEnvFixture {
     System.setProperty("dummy.property", "AA")
 
     try {
-      assert(AbstractConf.getPropertyOrEnv("dummy.property") == Some("AA"))
+      assert(ConfUtils.getPropertyOrEnv("dummy.property") == Some("AA"))
     }
     finally {
       System.setProperty("dummy.property", "")

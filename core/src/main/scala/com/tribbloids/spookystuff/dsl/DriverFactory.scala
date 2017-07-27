@@ -23,7 +23,7 @@ import com.tribbloids.spookystuff.session._
 import com.tribbloids.spookystuff.session.python.PythonDriver
 import com.tribbloids.spookystuff.utils.SpookyUtils
 import com.tribbloids.spookystuff.SpookyContext
-import com.tribbloids.spookystuff.conf.AbstractConf
+import com.tribbloids.spookystuff.conf.ConfUtils
 import org.apache.commons.io.FileUtils
 import org.apache.spark.rdd.RDD
 import org.apache.spark.{SparkFiles, TaskContext}
@@ -208,7 +208,7 @@ object DriverFactories {
 
     def defaultGetPath: SpookyContext => String = {
       _ =>
-        AbstractConf.getOrDefault("phantomjs.path", DEFAULT_PATH)
+        ConfUtils.getOrDefault("phantomjs.path", DEFAULT_PATH)
     }
 
     def syncDelete(dst: String): Unit = this.synchronized {

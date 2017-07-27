@@ -3,7 +3,7 @@ package com.tribbloids.spookystuff.uav
 import com.tribbloids.spookystuff.uav.dsl._
 import com.tribbloids.spookystuff.uav.spatial.{GeodeticAnchor, LLA, Location}
 import com.tribbloids.spookystuff.uav.system.UAV
-import com.tribbloids.spookystuff.conf.{AbstractConf, Submodules}
+import com.tribbloids.spookystuff.conf.{ConfUtils, Submodules}
 import org.apache.spark.SparkConf
 
 import scala.concurrent.duration._
@@ -53,7 +53,7 @@ case class UAVConf(
                     var homeLocation: Location = UAVConf.DEFAULT_HOME_LOCATION,
                     var costEstimator: CostEstimator = CostEstimator.Default(),
                     var defaultSpeed: Double = 5.0
-                  ) extends AbstractConf {
+                  ) extends ConfUtils {
 
   def uavsInFleet: Set[UAV] = fleet.apply()
 
