@@ -95,7 +95,7 @@ class TestHelper() {
 
   //if SPARK_PATH & ClusterSize in rootkey.csv is detected, use local-cluster simulation mode
   //otherwise use local mode
-  val TestSparkConf: SparkConf = {
+  lazy val TestSparkConf: SparkConf = {
 
     //always use KryoSerializer, it is less stable than Native Serializer
     val conf: SparkConf = new SparkConf()
