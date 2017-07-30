@@ -6,7 +6,7 @@ import java.util.UUID
 import com.tribbloids.spookystuff._
 import com.tribbloids.spookystuff.actions._
 import com.tribbloids.spookystuff.caching.CacheLevel
-import com.tribbloids.spookystuff.utils.{IDMixin, ScalaUDT, SpookyUtils}
+import com.tribbloids.spookystuff.utils.{CommonUtils, IDMixin, ScalaUDT, SpookyUtils}
 import org.apache.commons.csv.CSVFormat
 import org.apache.hadoop.fs.Path
 import org.apache.http.StatusLine
@@ -270,7 +270,7 @@ case class Doc(
             overwrite: Boolean = false
           )(spooky: SpookyContext): Unit = {
 
-    val path = SpookyUtils.\\\(pathParts: _*)
+    val path = CommonUtils.\\\(pathParts: _*)
 
     DocUtils.dfsWrite("save", path, spooky) {
 

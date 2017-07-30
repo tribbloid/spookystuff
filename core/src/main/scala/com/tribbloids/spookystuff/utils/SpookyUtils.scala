@@ -26,20 +26,6 @@ object SpookyUtils {
   import scala.concurrent.ExecutionContext.Implicits.global
   import scala.concurrent.duration._
 
-  def qualifiedName(separator: String)(parts: String*) = {
-    parts.flatMap(v => Option(v)).reduceLeftOption(addSuffix(separator, _) + _).orNull
-  }
-  def addSuffix(suffix: String, part: String) = {
-    if (part.endsWith(suffix)) part
-    else part+suffix
-  }
-
-  def /:/(parts: String*): String = qualifiedName("/")(parts: _*)
-  def :/(part: String): String = addSuffix("/", part)
-
-  def \\\(parts: String*): String = qualifiedName(File.separator)(parts: _*)
-  def :\(part: String): String = addSuffix(File.separator, part)
-
   def numCores = {
     val result = Runtime.getRuntime.availableProcessors()
     assert(result > 0)

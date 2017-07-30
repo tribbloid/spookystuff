@@ -6,7 +6,7 @@ import com.tribbloids.spookystuff._
 import com.tribbloids.spookystuff.conf.SpookyConf
 import com.tribbloids.spookystuff.dsl._
 import com.tribbloids.spookystuff.testutils.{RemoteDocsFixture, TestHelper}
-import com.tribbloids.spookystuff.utils.SpookyUtils
+import com.tribbloids.spookystuff.utils.{CommonUtils, SpookyUtils}
 import org.scalatest.BeforeAndAfterAll
 
 import scala.concurrent.duration
@@ -21,7 +21,7 @@ abstract class IntegrationFixture
 
   lazy val roots: Seq[String] = {
 
-    val local = Seq(SpookyUtils.\\\(TestHelper.TEMP_PATH, "spooky-integration"))
+    val local = Seq(CommonUtils.\\\(TestHelper.TEMP_PATH, "spooky-integration"))
 
     local ++ TestHelper.S3Path
   }

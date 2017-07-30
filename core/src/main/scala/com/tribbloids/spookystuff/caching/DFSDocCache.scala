@@ -6,7 +6,7 @@ import com.tribbloids.spookystuff.SpookyContext
 import com.tribbloids.spookystuff.actions.Trace
 import com.tribbloids.spookystuff.conf.DirConf
 import com.tribbloids.spookystuff.doc.{DocUtils, Fetched}
-import com.tribbloids.spookystuff.utils.SpookyUtils
+import com.tribbloids.spookystuff.utils.{CommonUtils, SpookyUtils}
 import org.apache.hadoop.fs.Path
 
 /**
@@ -23,7 +23,7 @@ object DFSDocCache extends AbstractDocCache {
 
   def getImpl(k: Trace, spooky: SpookyContext): Option[Seq[Fetched]] = {
 
-    val pathStr = SpookyUtils.\\\(
+    val pathStr = CommonUtils.\\\(
       spooky.dirConf.cache,
       spooky.spookyConf.cacheFilePath(k).toString
     )
@@ -41,7 +41,7 @@ object DFSDocCache extends AbstractDocCache {
 
   def putImpl(k: Trace, v: Seq[Fetched], spooky: SpookyContext): this.type = {
 
-    val pathStr = SpookyUtils.\\\(
+    val pathStr = CommonUtils.\\\(
       spooky.dirConf.cache,
       spooky.spookyConf.cacheFilePath(k).toString,
       UUID.randomUUID().toString

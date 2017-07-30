@@ -617,8 +617,8 @@ case object SpookyViews {
 
   implicit class StringView(str: String) {
 
-    def :/(other: String): String = SpookyUtils./:/(str, other)
-    def \\(other: String): String = SpookyUtils.\\\(str, other)
+    def :/(other: String): String = CommonUtils./:/(str, other)
+    def \\(other: String): String = CommonUtils.\\\(str, other)
 
     def interpolate(delimiter: String)(
       replace: String => String

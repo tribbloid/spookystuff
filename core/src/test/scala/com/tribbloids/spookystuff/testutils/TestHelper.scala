@@ -3,7 +3,7 @@ package com.tribbloids.spookystuff.testutils
 import java.io.File
 import java.util.Properties
 
-import com.tribbloids.spookystuff.utils.SpookyUtils
+import com.tribbloids.spookystuff.utils.{CommonUtils, SpookyUtils}
 import org.apache.commons.io.FileUtils
 import org.apache.spark.serializer.KryoSerializer
 import org.apache.spark.sql.SQLContext
@@ -14,8 +14,8 @@ import scala.util.{Failure, Success, Try}
 
 class TestHelper() {
 
-  val TEMP_PATH = SpookyUtils.\\\(System.getProperty("user.dir"), "temp")
-  val UNPACK_RESOURCE_PATH = SpookyUtils.\\\(System.getProperty("java.io.tmpdir"), "spookystuff", "resources")
+  val TEMP_PATH = CommonUtils.\\\(System.getProperty("user.dir"), "temp")
+  val UNPACK_RESOURCE_PATH = CommonUtils.\\\(System.getProperty("java.io.tmpdir"), "spookystuff", "resources")
 
   val props = new Properties()
   Try {
