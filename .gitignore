@@ -52,3 +52,5 @@ foo
 .vscode
 
 **/.rootkey.csv
+
+**/.spark-dist
