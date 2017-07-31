@@ -14,7 +14,8 @@ import java.security.cert.X509Certificate;
 public class InsecureHostnameVerifier implements X509HostnameVerifier {
 
     public boolean verify(String arg0, SSLSession arg1) {
-            return true;   // mark everything as verified
+        return true;
+        // mark everything as verified
     }
 
     public void verify(String host, SSLSocket ssl) throws IOException {

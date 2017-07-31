@@ -77,7 +77,7 @@ class SpookyConf(
                   var defaultExploreRange: Range = 0 until Int.MaxValue,
 
                   var defaultGenPartitioner: GenPartitioner = GenPartitioners.Wide(),
-                  var defaultExploreAlgorithm: ExploreAlgorithm = ExploreAlgorithms.ShortestPath,
+                  var defaultExploreAlgorithm: ExploreAlgorithm = ExploreAlgorithms.BreadthFirst,
 
                   var epochSize: Int = 500,
                   var checkpointInterval: Int = -1, //disabled if <=0

@@ -78,13 +78,11 @@ object ExploreAlgorithm {
   }
 }
 
-//TODO: this API is too complex and impose unnecessary restriction on UAV graph algorithms
-//solution 1: merge ordering and eliminator?
 object ExploreAlgorithms {
 
   import ExploreAlgorithm._
 
-  case object ShortestPath extends ExploreAlgorithm {
+  case object BreadthFirst extends ExploreAlgorithm {
 
     override def getImpl(
                           params: ExploreParams,
@@ -176,6 +174,33 @@ object ExploreAlgorithms {
   //      else Some(filtered.minBy(_.sortIndex(Seq(depthField, ordinalField))))
   //  }
   //}
+
+  case object DepthFirst extends ExploreAlgorithm {
+
+    override def getImpl(params: ExploreParams, schema: DataRowSchema): Impl =
+      Impl(params, schema)
+
+    case class Impl(params: ExploreParams, schema: DataRowSchema) extends EliminatingImpl {
+      /**
+        *
+        */
+      override val ordering: RowOrdering = ???
+
+      /**
+        *
+        */
+      override def eliminator(open: Iterable[DataRow], visited: Iterable[DataRow]): Iterable[DataRow] = ???
+
+      /**
+        *
+        */
+      override val openReducer: RowReducer = ???
+      /**
+        *
+        */
+      override val visitedReducer: RowReducer = ???
+    }
+  }
 }
 
 //TODO: finish these
