@@ -21,7 +21,7 @@ package object row {
   type RowOrdering = Ordering[(TraceView, Iterable[DataRow])]
 
   // f(open, visited) => open
-  type RowEliminator = (Iterable[DataRow], Iterable[DataRow]) => Iterable[DataRow]
+//  type RowEliminator = (Iterable[DataRow], Iterable[DataRow]) => Iterable[DataRow]
 
   // In every execution plan, the schema: Map(Field -> DataType) has to be created on construction, which enables every Field to be cast into TypedField or IndexedField
   type IndexedField = (TypedField, Int)

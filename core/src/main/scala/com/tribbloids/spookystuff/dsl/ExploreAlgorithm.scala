@@ -1,8 +1,7 @@
 package com.tribbloids.spookystuff.dsl
 
 import com.tribbloids.spookystuff.actions._
-import com.tribbloids.spookystuff.caching.ExploreRunnerCache
-import com.tribbloids.spookystuff.dsl.ExploreAlgorithms.ExploreImpl
+import com.tribbloids.spookystuff.caching.{ConcurrentMap, ExploreRunnerCache}
 import com.tribbloids.spookystuff.execution.ExploreParams
 import com.tribbloids.spookystuff.row._
 
@@ -11,12 +10,12 @@ sealed trait ExploreAlgorithm {
   def getImpl(
                params: ExploreParams,
                schema: DataRowSchema
-             ): ExploreImpl
+             ): ExploreAlgorithm.Impl
 }
 
-object ExploreAlgorithms {
+object ExploreAlgorithm {
 
-  trait ExploreImpl {
+  trait Impl extends Serializable {
 
     val params: ExploreParams
     val schema: DataRowSchema
@@ -35,6 +34,13 @@ object ExploreAlgorithms {
 
     def visitedReducerBetweenEpochs: RowReducer = visitedReducer
 
+    def openSelector(
+                      open: ConcurrentMap[TraceView, Iterable[DataRow]]
+                    ): (TraceView, Iterable[DataRow])
+  }
+
+  trait EliminatingImpl extends Impl {
+
     /**
       *
       */
@@ -43,8 +49,40 @@ object ExploreAlgorithms {
     /**
       *
       */
-    val eliminator: RowEliminator
+    def eliminator(
+                    open: Iterable[DataRow],
+                    visited: Iterable[DataRow]
+                  ): Iterable[DataRow]
+
+    override final def openSelector(
+                                     open: ConcurrentMap[TraceView, Iterable[DataRow]]
+                                   ): (TraceView, Iterable[DataRow]) = {
+
+      //Should I use pre-sorted collection? Or is it overengineering?
+      val bestOpenBeforeElimination: (TraceView, Iterable[DataRow]) = open.min(ordering)
+
+      open -= bestOpenBeforeElimination._1
+
+      val existingVisitedOption: Option[Iterable[DataRow]] =
+        ExploreRunnerCache.get(bestOpenBeforeElimination._1 -> params.executionID, visitedReducer)
+
+      val bestOpen: (TraceView, Iterable[DataRow]) = existingVisitedOption match {
+        case Some(allVisited) =>
+          val dataRowsAfterElimination = eliminator(bestOpenBeforeElimination._2, allVisited)
+          bestOpenBeforeElimination.copy(_2 = dataRowsAfterElimination)
+        case None =>
+          bestOpenBeforeElimination
+      }
+      bestOpen
+    }
   }
+}
+
+//TODO: this API is too complex and impose unnecessary restriction on UAV graph algorithms
+//solution 1: merge ordering and eliminator?
+object ExploreAlgorithms {
+
+  import ExploreAlgorithm._
 
   case object ShortestPath extends ExploreAlgorithm {
 
@@ -56,7 +94,7 @@ object ExploreAlgorithms {
     case class Impl(
                      override val params: ExploreParams,
                      schema: DataRowSchema
-                   ) extends ExploreImpl {
+                   ) extends EliminatingImpl {
 
       import params._
       import scala.Ordering.Implicits._
@@ -69,13 +107,7 @@ object ExploreAlgorithms {
             .minBy(_.head.sortIndex(Seq(depthField, ordinalField)))
       }
 
-      override val visitedReducer: RowReducer = {
-        (v1, v2) =>
-          (v1 ++ v2)
-            .groupBy(_.groupID)
-            .values
-            .minBy(_.head.sortIndex(Seq(depthField, ordinalField)))
-      }
+      override val visitedReducer: RowReducer = openReducer
 
       override val ordering: RowOrdering = Ordering.by {
         tuple: (TraceView, Iterable[DataRow]) =>
@@ -95,13 +127,15 @@ object ExploreAlgorithms {
           result
       }
 
-      override val eliminator: RowEliminator = {
-        (v1, v2) =>
-          val visitedDepth = v2.head.getInt(depthField)
-          v1.filter {
-            row =>
-              row.getInt(depthField) < visitedDepth
-          }
+      override def eliminator(
+                               open: Iterable[DataRow],
+                               visited: Iterable[DataRow]
+                             ): Iterable[DataRow] = {
+        val visitedDepth = visited.head.getInt(depthField)
+        open.filter {
+          row =>
+            row.getInt(depthField) < visitedDepth
+        }
       }
     }
   }

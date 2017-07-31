@@ -2,7 +2,7 @@ package com.tribbloids.spookystuff.execution
 
 import com.tribbloids.spookystuff.actions.{Trace, TraceView}
 import com.tribbloids.spookystuff.caching.{ConcurrentMap, ExploreRunnerCache}
-import com.tribbloids.spookystuff.dsl.ExploreAlgorithms.ExploreImpl
+import com.tribbloids.spookystuff.dsl.ExploreAlgorithm.Impl
 import com.tribbloids.spookystuff.extractors.Resolved
 import com.tribbloids.spookystuff.row._
 import com.tribbloids.spookystuff.utils.NOTSerializable
@@ -56,7 +56,7 @@ class ExploreRunner(
 
                              trace: Set[Trace]
                            )(
-                             impl: ExploreImpl,
+                             impl: Impl,
                              `depth_++`: Resolved[Int],
                              spooky: SpookyContext
                            )(
@@ -68,23 +68,10 @@ class ExploreRunner(
     import impl._
     import params._
 
-    implicit def withSchema(row: SquashedFetchedRow): SquashedFetchedRow#WithSchema = new row.WithSchema(schema)
+    implicit def withSchema(row: SquashedFetchedRow): SquashedFetchedRow#WithSchema =
+      new row.WithSchema(schema)
 
-    val bestOpenBeforeElimination: (TraceView, Iterable[DataRow]) = open.min(ordering) //TODO: expensive! use pre-sorted collection
-
-    open -= bestOpenBeforeElimination._1
-
-    val existingVisitedOption: Option[Array[DataRow]] = {
-      ExploreRunnerCache.get(bestOpenBeforeElimination._1 -> executionID, visitedReducer)
-    }
-
-    val bestOpen: (TraceView, Iterable[DataRow]) = existingVisitedOption match {
-      case Some(allVisited) =>
-        val dataRowsAfterElimination = eliminator(bestOpenBeforeElimination._2, allVisited)
-        bestOpenBeforeElimination.copy(_2 = dataRowsAfterElimination)
-      case None =>
-        bestOpenBeforeElimination
-    }
+    val bestOpen: (TraceView, Iterable[DataRow]) = openSelector(open)
 
     if (bestOpen._2.nonEmpty) {
       this.fetchingInProgressOpt = Some(bestOpen._1)
@@ -136,7 +123,7 @@ class ExploreRunner(
                traces: Set[Trace]
              )(
                maxItr: Int,
-               impl: ExploreImpl,
+               impl: Impl,
                `depth_++`: Resolved[Int],
                spooky: SpookyContext
              )(
@@ -169,7 +156,7 @@ class ExploreRunner(
       (open ++ visited).iterator
     }
 
-    for (i <- 0 to maxItr) {
+    for (_ <- 0 to maxItr) {
       if (open.isEmpty) return finish()
       executeOnce(resolved, sampler, joinType, traces)(impl, `depth_++`, spooky)(rowFn)
     }

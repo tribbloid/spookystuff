@@ -67,22 +67,22 @@ object ExploreRunnerCache {
   def get(
            key: (TraceView, Long),
            reducer: RowReducer
-         ): Option[Array[DataRow]] = {
+         ): Option[Iterable[DataRow]] = {
 
     getAll(key)
-      .reduceOption(reducer).map(_.toArray)
+      .reduceOption(reducer)
   }
 
   def getAll(key: (TraceView, Long)): Set[Iterable[DataRow]] = {
     val onGoing = this.getOnGoingRunners(key._2)
       .toSet[ExploreRunner]
 
-    val onGoingVs = onGoing
+    val onGoingVisitedSet = onGoing
       .flatMap {
         v =>
           v.visited.get(key._1)
       }
 
-    onGoingVs ++ committedVisited.get(key)
+    onGoingVisitedSet ++ committedVisited.get(key)
   }
 }
