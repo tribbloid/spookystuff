@@ -1,17 +1,15 @@
 package com.tribbloids.spookystuff.doc
 
+import com.tribbloids.spookystuff.SpookyEnvFixture
 import com.tribbloids.spookystuff.actions.Wget
-import com.tribbloids.spookystuff.utils.SpookyUtils
-import com.tribbloids.spookystuff.{SpookyEnvFixture, dsl}
+import com.tribbloids.spookystuff.utils.CommonUtils
 import org.apache.commons.csv.CSVFormat
 
 class TestPageFromHttp extends SpookyEnvFixture {
 
-  import dsl._
-
   it("wget html, save and load") {
 
-    val results = SpookyUtils.retry(5){Wget(HTML_URL).fetch(spooky)}
+    val results = CommonUtils.retry(5){Wget(HTML_URL).fetch(spooky)}
 
     assert(results.length === 1)
     val page = results.head.asInstanceOf[Doc]
@@ -86,7 +84,7 @@ class TestPageFromHttp extends SpookyEnvFixture {
   }
 
   it("childrenWithSiblings") {
-    val page = SpookyUtils.retry(5){Wget(HTML_URL).fetch(spooky)}.head.asInstanceOf[Doc]
+    val page = CommonUtils.retry(5){Wget(HTML_URL).fetch(spooky)}.head.asInstanceOf[Doc]
 
     val ranges = page.findAllWithSiblings("a.link-box em", -2 to 1)
     assert(ranges.size === 10)
@@ -99,7 +97,7 @@ class TestPageFromHttp extends SpookyEnvFixture {
   }
 
   it("childrenWithSiblings with overlapping elimiation") {
-    val page = SpookyUtils.retry(5){Wget(HTML_URL).fetch(spooky)}.head.asInstanceOf[Doc]
+    val page = CommonUtils.retry(5){Wget(HTML_URL).fetch(spooky)}.head.asInstanceOf[Doc]
 
     val ranges = page.findAllWithSiblings("div.central-featured-lang[lang^=e]", -2 to 2)
     assert(ranges.size === 2)

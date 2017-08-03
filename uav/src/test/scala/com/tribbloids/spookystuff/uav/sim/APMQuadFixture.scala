@@ -5,7 +5,7 @@ import com.tribbloids.spookystuff.session.python.PythonDriver
 import com.tribbloids.spookystuff.session.{Cleanable, Lifespan}
 import com.tribbloids.spookystuff.uav.SimUAVFixture
 import com.tribbloids.spookystuff.uav.telemetry.Link
-import com.tribbloids.spookystuff.utils.SpookyUtils
+import com.tribbloids.spookystuff.utils.CommonUtils
 import org.apache.spark.rdd.RDD
 import org.jutils.jprocesses.JProcesses
 import org.slf4j.LoggerFactory
@@ -52,7 +52,7 @@ trait APMFixture extends SimUAVFixture {
     // small delay added to ensure that cleanSweep
     // won't accidentally clean object created in the suite
 
-    SpookyUtils.retry(5, 2000) {
+    CommonUtils.retry(5, 2000) {
       sc.foreachComputer {
         SpookyEnvFixture.processShouldBeClean(Seq("apm"), cleanSweepNotInTask = false)
         SpookyEnvFixture.processShouldBeClean(Seq("python"), cleanSweepNotInTask = false)

@@ -2,7 +2,7 @@ package com.tribbloids.spookystuff.session.python
 
 import com.tribbloids.spookystuff.session.Lifespan
 import com.tribbloids.spookystuff.testutils.TestHelper
-import com.tribbloids.spookystuff.utils.SpookyUtils
+import com.tribbloids.spookystuff.utils.CommonUtils
 import com.tribbloids.spookystuff.{PyInterpretationException, SpookyEnvFixture}
 import org.slf4j.LoggerFactory
 
@@ -150,13 +150,13 @@ class PythonDriverSuite extends SpookyEnvFixture {
     }
   }
 
-  it("SpookyUtils.withDeadline can interrupt python execution that blocks indefinitely") {
+  it("CommonUtils.withDeadline can interrupt python execution that blocks indefinitely") {
 
     PythonDriverSuite.runIterable(1 to 3) {
       (i, proc) =>
         proc.batchImport(Seq("import time"))
         val (_, time) = TestHelper.timer {
-          Try {SpookyUtils.withDeadline(5.seconds) {
+          Try {CommonUtils.withDeadline(5.seconds) {
             proc.interpret(
               s"""
                  |for i in range(10, 1, -1):
@@ -185,7 +185,7 @@ class PythonDriverSuite extends SpookyEnvFixture {
         }
 
         LoggerFactory.getLogger(this.getClass).info("========= START CLEANING =========")
-        SpookyUtils.withDeadline(20.seconds, Some(1.second)) {
+        CommonUtils.withDeadline(20.seconds, Some(1.second)) {
           proc.clean()
         }
     }

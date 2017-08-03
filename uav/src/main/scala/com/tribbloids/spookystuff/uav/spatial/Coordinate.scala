@@ -1,7 +1,7 @@
 package com.tribbloids.spookystuff.uav.spatial
 
 import breeze.linalg.{Vector => Vec}
-import com.tribbloids.spookystuff.utils.SpookyUtils
+import com.tribbloids.spookystuff.utils.ReflectionUtils
 import geotrellis.proj4.LatLng
 import org.osgeo.proj4j.ProjCoordinate
 import org.osgeo.proj4j.datum.Ellipsoid
@@ -77,7 +77,7 @@ trait Coordinate extends Serializable {
     s"${this.system.name} " + {
       this match {
         case v: Product =>
-          SpookyUtils.Reflection.getCaseAccessorMap(v).map {
+          ReflectionUtils.getCaseAccessorMap(v).map {
             case (vv, d: Double) => s"$vv=${d.formatted("%f")}"
             case (vv, d@ _) => s"$vv=$d"
           }

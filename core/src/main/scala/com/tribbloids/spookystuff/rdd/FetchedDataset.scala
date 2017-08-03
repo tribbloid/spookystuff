@@ -24,9 +24,6 @@ import scala.language.implicitConversions
 import scala.reflect.ClassTag
 
 /**
-  * Created by peng on 28/03/16.
-  */
-/**
   * Created by peng on 8/29/14.
   * Core component, abstraction of distributed Page + schemaless KVStore to represent all stages of remote resource discovery
   * CAUTION: for bug tracking purpose it is important for all RDDs having their names set to their {function name}.{variable names}

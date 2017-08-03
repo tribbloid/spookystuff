@@ -6,14 +6,12 @@ import java.nio.file.{Files, _}
 
 import org.apache.commons.io.IOUtils
 import org.apache.spark.SparkEnv
-import org.apache.spark.ml.dsl.ReflectionUtils
-import org.apache.spark.ml.dsl.utils.FlowUtils
+import org.apache.spark.ml.dsl.UnsafeUtils
 import org.apache.spark.rdd.RDD
 import org.apache.spark.storage.BlockManagerId
 import org.slf4j.LoggerFactory
 
 import scala.collection.mutable
-import scala.concurrent._
 import scala.language.implicitConversions
 import scala.reflect.ClassTag
 import scala.util.{Failure, Random, Success, Try}
@@ -23,9 +21,6 @@ object SpookyUtils {
 
   import SpookyViews._
 
-  import scala.concurrent.ExecutionContext.Implicits.global
-  import scala.concurrent.duration._
-
   def numCores = {
     val result = Runtime.getRuntime.availableProcessors()
     assert(result > 0)
@@ -33,111 +28,6 @@ object SpookyUtils {
   }
 
   val xmlPrinter = new PrettyPrinter(Int.MaxValue, 2)
-
-  // Returning T, throwing the exception on failure
-  @annotation.tailrec
-  def retry[T](
-                n: Int,
-                interval: Long = 0,
-                silent: Boolean = false,
-                callerStr: String = null
-              )(fn: => T): T = {
-    var _callerStr = callerStr
-    //TODO: this should be exposed as utility.
-    if (callerStr == null)
-      _callerStr = FlowUtils.stackTracesShowStr(
-        FlowUtils.getBreakpointInfo()
-          .slice(1, Int.MaxValue)
-        //          .filterNot(_.getClassName == this.getClass.getCanonicalName)
-      )
-    Try { fn } match {
-      case Success(x) =>
-        x
-      case Failure(e: NoRetry.Wrapper) =>
-        throw e.getCause
-      case Failure(e) if n > 1 =>
-        if (!(silent || e.isInstanceOf[SilentRetry.Wrapper])) {
-          val logger = LoggerFactory.getLogger(this.getClass)
-          logger.warn(
-            s"Retrying locally on ${e.getClass.getSimpleName} in ${interval.toDouble/1000} second(s)... ${n-1} time(s) left" +
-              "\t@ " + _callerStr +
-              "\n" + e.getMessage
-          )
-          logger.debug("\t\\-->", e)
-        }
-        Thread.sleep(interval)
-        retry(n - 1, interval, callerStr = _callerStr)(fn)
-      case Failure(e) =>
-        throw e
-    }
-  }
-
-  def withDeadline[T](
-                       n: Duration,
-                       heartbeatOpt: Option[Duration] = Some(10.seconds)
-                     )(
-                       fn: =>T,
-                       heartbeatFn: Option[Int => Unit] = None
-                     ): T = {
-
-    val breakpointStr: String = FlowUtils.stackTracesShowStr(
-      FlowUtils.getBreakpointInfo()
-        .slice(1, Int.MaxValue)
-      //        .filterNot(_.getClassName == this.getClass.getCanonicalName)
-    )
-    val startTime = System.currentTimeMillis()
-
-    var thread: Thread = null
-    val future = Future {
-      thread = Thread.currentThread()
-      fn
-    }
-
-    val nMillis = n.toMillis
-    val terminateAt = startTime + nMillis
-
-    val effectiveHeartbeatFn: (Int) => Unit = heartbeatFn.getOrElse {
-      i =>
-        val remainMillis = terminateAt - System.currentTimeMillis()
-        LoggerFactory.getLogger(this.getClass).info(
-          s"T - ${remainMillis.toDouble/1000} second(s)" +
-            "\t@ " + breakpointStr
-        )
-    }
-
-    //TODO: this doesn't terminate the future upon timeout exception! need a better pattern.
-    heartbeatOpt match {
-      case None =>
-        try {
-          Await.result(future, n)
-        }
-        catch {
-          case e: TimeoutException =>
-            LoggerFactory.getLogger(this.getClass).debug("TIMEOUT!!!!")
-            throw e
-        }
-      case Some(heartbeat) =>
-        val heartbeatMillis = heartbeat.toMillis
-        for (i <- 0 to (nMillis / heartbeatMillis).toInt) {
-          val remainMillis = Math.max(terminateAt - System.currentTimeMillis(), 0L)
-          effectiveHeartbeatFn(i)
-          val epochMillis = Math.min(heartbeatMillis, remainMillis)
-          try {
-            val result =  Await.result(future, epochMillis.milliseconds)
-            return result
-          }
-          catch {
-            case e: TimeoutException =>
-              if (heartbeatMillis >= remainMillis) {
-                Option(thread).foreach(_.interrupt())
-                LoggerFactory.getLogger(this.getClass).debug("TIMEOUT!!!!")
-                throw e
-              }
-          }
-        }
-        throw new UnknownError("IMPOSSIBLE")
-    }
-  }
 
   //  def retryWithDeadline[T](n: Int, t: Duration)(fn: => T): T = retry(n){withDeadline(t){fn}}
 
@@ -293,80 +183,6 @@ These special characters are often called "metacharacters".
     }
   }
 
-  //TODO: simply by using a common relay that different type representation can be cast into
-  /**
-    * all implementation has to be synchronized and preferrably not executed concurrently to preserve efficiency.
-    */
-  object Reflection extends ReflectionLock {
-
-    import org.apache.spark.sql.catalyst.ScalaReflection.universe._
-
-    def getCaseAccessorSymbols(tt: ScalaType[_]): List[MethodSymbol] = locked{
-      val accessors = tt.asType.members
-        .toList
-        .reverse
-        .flatMap(filterCaseAccessors)
-      accessors
-    }
-
-    def filterCaseAccessors(s: Symbol): Seq[MethodSymbol] = {
-      s match {
-        case m: MethodSymbol if m.isCaseAccessor =>
-          Seq(m)
-        case t: TermSymbol =>
-          t.allOverriddenSymbols.flatMap(filterCaseAccessors)
-        case _ =>
-          Nil
-      }
-    }
-
-    def getCaseAccessorFields(tt: ScalaType[_]): List[(String, Type)] = {
-      getCaseAccessorSymbols(tt).map {
-        ss =>
-          ss.name.decoded -> ss.typeSignature
-      }
-    }
-
-    def getConstructorParameters(tt: ScalaType[_]): Seq[(String, Type)] = locked{
-      val formalTypeArgs = tt.asType.typeSymbol.asClass.typeParams
-      val TypeRef(_, _, actualTypeArgs) = tt.asType
-      val constructorSymbol = tt.asType.member(nme.CONSTRUCTOR)
-      val params = if (constructorSymbol.isMethod) {
-        constructorSymbol.asMethod.paramss
-      } else {
-        // Find the primary constructor, and use its parameter ordering.
-        val primaryConstructorSymbol: Option[Symbol] = constructorSymbol.asTerm.alternatives.find(
-          s => s.isMethod && s.asMethod.isPrimaryConstructor)
-        if (primaryConstructorSymbol.isEmpty) {
-          sys.error("Internal SQL error: Product object did not have a primary constructor.")
-        } else {
-          primaryConstructorSymbol.get.asMethod.paramss
-        }
-      }
-
-      params.flatten.map { p =>
-        p.name.toString -> p.typeSignature.substituteTypes(formalTypeArgs, actualTypeArgs)
-      }
-    }
-
-    def getCaseAccessorMap(v: Product): List[(String, Any)] = {
-      val tt = ScalaType.fromClass(v.getClass)
-      val ks = getCaseAccessorFields(tt).map(_._1)
-      val vs = v.productIterator.toList
-      assert (ks.size == vs.size)
-      ks.zip(vs)
-    }
-
-    //    def newCase[A]()(implicit t: ClassTag[A]): A = {
-    //      val cm = rootMirror
-    //      val clazz = cm classSymbol t.runtimeClass
-    //      val modul = clazz.companionSymbol.asModule
-    //      val im = cm reflect (cm reflectModule modul).instance
-    //      ReflectionUtils.invokeStatic(clazz)
-    //      defaut[A](im, "apply")
-    //    }
-  }
-
   def getCPResource(str: String): Option[URL] =
     Option(ClassLoader.getSystemClassLoader.getResource(str.stripSuffix(File.separator)))
   def getCPResourceAsStream(str: String): Option[InputStream] =
@@ -378,7 +194,7 @@ These special characters are often called "metacharacters".
 
     assert(url.toString.startsWith("file"))
 
-    ReflectionUtils.invoke(
+    UnsafeUtils.invoke(
       classOf[URLClassLoader],
       ClassLoader.getSystemClassLoader,
       "addURL",
@@ -389,7 +205,7 @@ These special characters are often called "metacharacters".
   }
 
   def resilientCopy(src: Path, dst: Path, options: Array[CopyOption]): Unit ={
-    retry(5, 1000){
+    CommonUtils.retry(5, 1000){
 
       val pathsStr = src + " => " + dst
 

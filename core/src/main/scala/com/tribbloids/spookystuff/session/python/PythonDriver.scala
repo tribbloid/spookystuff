@@ -4,7 +4,7 @@ import java.io.File
 import java.util.regex.Pattern
 
 import com.tribbloids.spookystuff.session.{Lifespan, LocalCleanable}
-import com.tribbloids.spookystuff.utils.{SilentRetry, SpookyUtils}
+import com.tribbloids.spookystuff.utils.{CommonUtils, SilentRetry, SpookyUtils}
 import com.tribbloids.spookystuff.{PyException, PyInterpretationException, SpookyContext}
 import org.apache.commons.io.FileUtils
 import org.slf4j.LoggerFactory
@@ -150,9 +150,9 @@ class PythonDriver(
 
   override def cleanImpl(): Unit = {
     Try {
-      SpookyUtils.retry(5) {
+      CommonUtils.retry(5) {
         try { if (process.isAlive) {
-          SpookyUtils.withDeadline(3.seconds) {
+          CommonUtils.withDeadline(3.seconds) {
             try {
               this._interpret("exit()")
             }

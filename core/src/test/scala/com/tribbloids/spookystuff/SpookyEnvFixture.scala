@@ -7,7 +7,7 @@ import com.tribbloids.spookystuff.extractors.{Alias, GenExtractor, GenResolved}
 import com.tribbloids.spookystuff.row.{DataRowSchema, SquashedFetchedRow, TypedField}
 import com.tribbloids.spookystuff.session.{CleanWebDriver, Cleanable, Lifespan}
 import com.tribbloids.spookystuff.testutils.{FunSpecx, RemoteDocsFixture, TestHelper}
-import com.tribbloids.spookystuff.utils.{CommonUtils, SpookyUtils}
+import com.tribbloids.spookystuff.utils.CommonUtils
 import org.apache.spark.SparkContext
 import org.apache.spark.sql.SQLContext
 import org.jutils.jprocesses.JProcesses
@@ -150,7 +150,7 @@ abstract class SpookyEnvFixture
 
   override def withFixture(test: NoArgTest) = {
     if (isRetryable(test))
-      SpookyUtils.retry(4) { super.withFixture(test) }
+      CommonUtils.retry(4) { super.withFixture(test) }
     else
       super.withFixture(test)
   }
@@ -184,7 +184,7 @@ abstract class SpookyEnvFixture
   before{
     // bypass java.lang.NullPointerException at org.apache.spark.broadcast.TorrentBroadcast$.unpersist(TorrentBroadcast.scala:228)
     // TODO: clean up after fix
-    SpookyUtils.retry(3, 1000) {
+    CommonUtils.retry(3, 1000) {
       setUp()
     }
   }

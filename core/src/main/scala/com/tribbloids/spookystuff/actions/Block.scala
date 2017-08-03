@@ -8,7 +8,7 @@ import com.tribbloids.spookystuff.extractors.impl.Lit
 import com.tribbloids.spookystuff.http.HttpUtils
 import com.tribbloids.spookystuff.row.{DataRowSchema, FetchedRow}
 import com.tribbloids.spookystuff.session.Session
-import com.tribbloids.spookystuff.utils.SpookyUtils.retry
+import com.tribbloids.spookystuff.utils.CommonUtils
 import org.slf4j.LoggerFactory
 
 import scala.collection.mutable.ArrayBuffer
@@ -167,7 +167,7 @@ final case class LocalRetry(
     }
     catch {
       case e: Throwable =>
-        retry[Seq[Fetched]](retries)({
+        CommonUtils.retry[Seq[Fetched]](retries)({
           val retriedPages = new ArrayBuffer[Fetched]()
 
           for (action <- children) {

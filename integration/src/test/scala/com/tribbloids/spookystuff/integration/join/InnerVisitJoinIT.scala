@@ -70,7 +70,7 @@ class InnerVisitJoinIT extends IntegrationFixture {
     )
   }
 
-  override def numPages= spooky.spookyConf.defaultGenPartitioner match {
+  override def numPages = spooky.spookyConf.defaultGenPartitioner match {
     //    case FetchOptimizers.WebCacheAware => 6
     case _ => 6
   }

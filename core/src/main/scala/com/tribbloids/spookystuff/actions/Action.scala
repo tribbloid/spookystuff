@@ -3,7 +3,7 @@ package com.tribbloids.spookystuff.actions
 import com.tribbloids.spookystuff.doc.{Doc, Fetched}
 import com.tribbloids.spookystuff.selenium.BySizzleCssSelector
 import com.tribbloids.spookystuff.session.Session
-import com.tribbloids.spookystuff.utils.{ScalaUDT, SpookyUtils}
+import com.tribbloids.spookystuff.utils.{CommonUtils, ScalaUDT}
 import com.tribbloids.spookystuff.{ActionException, Const, SpookyContext}
 import org.apache.spark.sql.types.SQLUserDefinedType
 import org.openqa.selenium.support.ui.{ExpectedConditions, WebDriverWait}
@@ -148,7 +148,7 @@ trait Action extends ActionLike {
         LoggerFactory.getLogger(this.getClass).info(this.withDetail(baseStr))
 
         session.withDriversDuring(
-          SpookyUtils.withDeadline(tt.hardTerminateTimeout(session)) {
+          CommonUtils.withDeadline(tt.hardTerminateTimeout(session)) {
             f
           }
         )

@@ -4,7 +4,7 @@ import com.tribbloids.spookystuff.caching.{DFSDocCache, InMemoryDocCache}
 import com.tribbloids.spookystuff.doc.{Doc, Fetched}
 import com.tribbloids.spookystuff.row.{DataRowSchema, FetchedRow}
 import com.tribbloids.spookystuff.session.Session
-import com.tribbloids.spookystuff.utils.SpookyUtils
+import com.tribbloids.spookystuff.utils.{CommonUtils, SpookyUtils}
 import com.tribbloids.spookystuff.{Const, QueryException, SpookyContext}
 import org.apache.spark.ml.dsl.utils.Verbose
 import org.apache.spark.sql.catalyst.trees.TreeNode
@@ -68,7 +68,7 @@ abstract class ActionLike extends Product with Serializable with Verbose {
 
   def fetch(spooky: SpookyContext): Seq[Fetched] = {
 
-    val results = SpookyUtils.retry (Const.remoteResourceLocalRetries){
+    val results = CommonUtils.retry(Const.remoteResourceLocalRetries){
       fetchOnce(spooky)
     }
     val numPages = results.count(_.isInstanceOf[Doc])

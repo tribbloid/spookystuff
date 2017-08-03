@@ -6,7 +6,7 @@ import com.tribbloids.spookystuff._
 import com.tribbloids.spookystuff.conf.SpookyConf
 import com.tribbloids.spookystuff.dsl._
 import com.tribbloids.spookystuff.testutils.{RemoteDocsFixture, TestHelper}
-import com.tribbloids.spookystuff.utils.{CommonUtils, SpookyUtils}
+import com.tribbloids.spookystuff.utils.CommonUtils
 import org.scalatest.BeforeAndAfterAll
 
 import scala.concurrent.duration
@@ -114,7 +114,7 @@ abstract class IntegrationFixture
   }
 
   protected def doTestAfterCache(): Unit = {
-    SpookyUtils.retry(retry) {
+    CommonUtils.retry(retry) {
       spooky.zeroMetrics()
       doMain()
       assertAfterCache()
@@ -122,7 +122,7 @@ abstract class IntegrationFixture
   }
 
   protected def doTestBeforeCache(): Unit = {
-    SpookyUtils.retry(retry) {
+    CommonUtils.retry(retry) {
       spooky.spookyConf.IgnoreCachedDocsBefore = Some(new Date(System.currentTimeMillis()))
       spooky.zeroMetrics()
       doMain()

@@ -58,7 +58,7 @@ class SpookyUtilsSuite extends FunSpecx {
 
     val (_, time) = TestHelper.timer {
       TestHelper.intercept[TimeoutException] {
-        SpookyUtils.withDeadline(10.seconds, Some(1.second))(
+        CommonUtils.withDeadline(10.seconds, Some(1.second))(
           {
             Thread.sleep(20000)
           }
@@ -68,7 +68,7 @@ class SpookyUtilsSuite extends FunSpecx {
     TestHelper.assert(time < 12000)
 
     val (_, time2) = TestHelper.timer {
-      SpookyUtils.withDeadline(10.seconds, Some(1.second))(
+      CommonUtils.withDeadline(10.seconds, Some(1.second))(
         {
           Thread.sleep(5000)
         }
@@ -83,7 +83,7 @@ class SpookyUtilsSuite extends FunSpecx {
 
     val (_, time) = TestHelper.timer {
       TestHelper.intercept[TimeoutException] {
-        SpookyUtils.withDeadline(10.seconds, Some(1.second))(
+        CommonUtils.withDeadline(10.seconds, Some(1.second))(
           {
             Thread.sleep(20000)
           },
@@ -114,7 +114,7 @@ class SpookyUtilsSuite extends FunSpecx {
 
     log.clear()
     val (_, time2) = TestHelper.timer {
-      SpookyUtils.withDeadline(10.seconds, Some(1.second))(
+      CommonUtils.withDeadline(10.seconds, Some(1.second))(
         {
           Thread.sleep(5000)
         },
@@ -145,7 +145,7 @@ class SpookyUtilsSuite extends FunSpecx {
       println("partition-" + TaskContext.get().partitionId())
       val (_, time) = TestHelper.timer {
         TestHelper.intercept[TimeoutException] {
-          SpookyUtils.withDeadline(10.seconds, Some(1.second)) {
+          CommonUtils.withDeadline(10.seconds, Some(1.second)) {
             Thread.sleep(20000)
             println("result 1")
           }
@@ -154,7 +154,7 @@ class SpookyUtilsSuite extends FunSpecx {
       TestHelper.assert(time < 11000, s"$time vs 11000")
 
       val (_, time2) = TestHelper.timer {
-        SpookyUtils.withDeadline(10.seconds, Some(1.second)) {
+        CommonUtils.withDeadline(10.seconds, Some(1.second)) {
           Thread.sleep(3000)
           println("result 2")
         }

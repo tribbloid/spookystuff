@@ -1,12 +1,12 @@
 package com.tribbloids.spookystuff.uav.telemetry.mavlink
 
+import com.tribbloids.spookystuff.session.Session
+import com.tribbloids.spookystuff.testutils.TestHelper
 import com.tribbloids.spookystuff.uav.dsl.LinkFactories
 import com.tribbloids.spookystuff.uav.sim.{APMQuadFixture, APMSim}
 import com.tribbloids.spookystuff.uav.system.UAV
 import com.tribbloids.spookystuff.uav.telemetry.{Link, LinkITFixture}
-import com.tribbloids.spookystuff.session.Session
-import com.tribbloids.spookystuff.testutils.TestHelper
-import com.tribbloids.spookystuff.utils.SpookyUtils
+import com.tribbloids.spookystuff.utils.CommonUtils
 
 import scala.concurrent.{Await, Future}
 
@@ -50,7 +50,7 @@ class MAVLinkIT_Proxy extends MAVLinkIT {
         }
         Thread.sleep(5000 / APMSim.SPEEDUP)
 
-        def changeAndVerifyMode(endpoint: Endpoint, mode: String) = SpookyUtils.withDeadline(20.seconds){
+        def changeAndVerifyMode(endpoint: Endpoint, mode: String) = CommonUtils.withDeadline(20.seconds){
           val py = endpoint.PY
           py.setMode(mode)
           TestHelper.assert(py.vehicle.mode.name.$STR.get == mode)

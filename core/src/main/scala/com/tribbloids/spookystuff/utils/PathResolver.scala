@@ -54,7 +54,7 @@ object LocalResolver extends PathResolver {
       val lockedFile = new File(lockedPath)
 
       //wait for 15 seconds in total
-      SpookyUtils.retry(Const.DFSBlockedAccessRetries) {
+      CommonUtils.retry(Const.DFSBlockedAccessRetries) {
         assert(!lockedFile.exists(), s"File $pathStr is locked by another executor or thread")
         //        Thread.sleep(3*1000)
       }
@@ -101,7 +101,7 @@ object LocalResolver extends PathResolver {
     val lockedPath = pathStr + lockedSuffix
     val lockedFile = new File(lockedPath)
 
-    SpookyUtils.retry(Const.DFSBlockedAccessRetries) {
+    CommonUtils.retry(Const.DFSBlockedAccessRetries) {
       assert(!lockedFile.exists(), s"File $pathStr is locked by another executor or thread")
       //        Thread.sleep(3*1000)
     }

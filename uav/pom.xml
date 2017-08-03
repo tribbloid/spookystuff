@@ -32,19 +32,26 @@
       <artifactId>spookystuff-core</artifactId>
       <version>${project.version}</version>
     </dependency>
-    <!-- https://mvnrepository.com/artifact/com.azavea.geotrellis/geotrellis-proj4_2.11 -->
     <dependency>
-      <groupId>com.azavea.geotrellis</groupId>
-      <artifactId>geotrellis-proj4_${scala.binary.version}</artifactId>
-      <version>0.10.3</version>
+      <groupId>com.tribbloids.spookystuff</groupId>
+      <artifactId>spookystuff-mldsl</artifactId>
+      <version>${project.version}</version>
+      <type>test-jar</type>
+      <scope>test</scope>
     </dependency>
-
     <dependency>
       <groupId>com.tribbloids.spookystuff</groupId>
       <artifactId>spookystuff-core</artifactId>
       <version>${project.version}</version>
       <type>test-jar</type>
       <scope>test</scope>
+    </dependency>
+
+    <!-- https://mvnrepository.com/artifact/com.azavea.geotrellis/geotrellis-proj4_2.11 -->
+    <dependency>
+      <groupId>com.azavea.geotrellis</groupId>
+      <artifactId>geotrellis-proj4_${scala.binary.version}</artifactId>
+      <version>0.10.3</version>
     </dependency>
 
     <!--<dependency>-->

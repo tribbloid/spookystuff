@@ -5,7 +5,7 @@ import java.util.concurrent.TimeUnit
 
 import com.tribbloids.spookystuff.actions._
 import com.tribbloids.spookystuff.session.python.PythonDriver
-import com.tribbloids.spookystuff.utils.SpookyUtils
+import com.tribbloids.spookystuff.utils.{CommonUtils, SpookyUtils}
 import com.tribbloids.spookystuff.{Const, SpookyContext, SpookyException}
 import org.apache.spark.TaskContext
 import org.openqa.selenium.Dimension
@@ -77,8 +77,8 @@ class Session(
 
   def getOrProvisionWebDriver: CleanWebDriver = {
     webDriverOpt.getOrElse {
-      SpookyUtils.retry(Const.localResourceLocalRetries) {
-        SpookyUtils.withDeadline(Const.sessionInitializationTimeout) {
+      CommonUtils.retry(Const.localResourceLocalRetries) {
+        CommonUtils.withDeadline(Const.sessionInitializationTimeout) {
           val driver = spooky.spookyConf.webDriverFactory.dispatch(this)
           spooky.spookyMetrics.webDriverDispatched += 1
           //      try {
@@ -114,9 +114,9 @@ class Session(
 
   def getOrProvisionPythonDriver: PythonDriver = {
     pythonDriverOpt.getOrElse {
-      SpookyUtils.retry(Const.localResourceLocalRetries) {
+      CommonUtils.retry(Const.localResourceLocalRetries) {
 
-        SpookyUtils.withDeadline(Const.sessionInitializationTimeout) {
+        CommonUtils.withDeadline(Const.sessionInitializationTimeout) {
           val driver = spooky.spookyConf.pythonDriverFactory.dispatch(this)
           spooky.spookyMetrics.pythonDriverDispatched += 1
 

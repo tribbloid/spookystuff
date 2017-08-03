@@ -66,7 +66,7 @@ case class HDFSResolver(
         fs.getStatus(path)
 
         //wait for 15 seconds in total
-        SpookyUtils.retry(Const.DFSBlockedAccessRetries) {
+        CommonUtils.retry(Const.DFSBlockedAccessRetries) {
           assert(!fs.exists(lockedPath), s"File $pathStr is locked by another executor or thread")
           //        Thread.sleep(3*1000)
         }
@@ -109,7 +109,7 @@ case class HDFSResolver(
 
     val lockedPath = new Path(pathStr + lockedSuffix)
 
-    SpookyUtils.retry(Const.DFSBlockedAccessRetries, 1000) {
+    CommonUtils.retry(Const.DFSBlockedAccessRetries, 1000) {
       assert(
         !fs.exists(lockedPath),
         {
@@ -122,7 +122,7 @@ case class HDFSResolver(
     val fileExists = fs.exists(path)
     if (fileExists) {
       fs.rename(path, lockedPath)
-      SpookyUtils.retry(Const.DFSBlockedAccessRetries) {
+      CommonUtils.retry(Const.DFSBlockedAccessRetries) {
         assert(fs.exists(lockedPath), s"Locking of $pathStr cannot be persisted")
       }
     }

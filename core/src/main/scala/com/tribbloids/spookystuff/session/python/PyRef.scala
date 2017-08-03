@@ -3,7 +3,7 @@ package com.tribbloids.spookystuff.session.python
 
 import com.tribbloids.spookystuff.caching.ConcurrentMap
 import com.tribbloids.spookystuff.session._
-import com.tribbloids.spookystuff.utils.SpookyUtils
+import com.tribbloids.spookystuff.utils.{ReflectionUtils, SpookyUtils}
 import com.tribbloids.spookystuff.{SpookyContext, caching}
 import org.apache.spark.ml.dsl.utils._
 import org.json4s.jackson.JsonMethods._
@@ -313,7 +313,7 @@ trait JSONInstanceRef extends InstanceRef with MessageAPI {
 
 trait CaseInstanceRef extends InstanceRef with Product {
 
-  def attrMap = SpookyUtils.Reflection.getCaseAccessorMap(this)
+  def attrMap = ReflectionUtils.getCaseAccessorMap(this)
 
   override def dependencies = {
     this.converter.kwargs2Ref(attrMap)._1

@@ -3,7 +3,7 @@ package com.tribbloids.spookystuff.session
 import com.tribbloids.spookystuff.SpookyEnvFixture
 import com.tribbloids.spookystuff.session.CleanableSuite.DummyCleanable
 import com.tribbloids.spookystuff.testutils.AssertSerializable
-import com.tribbloids.spookystuff.utils.SpookyUtils
+import com.tribbloids.spookystuff.utils.CommonUtils
 import org.apache.spark.{HashPartitioner, TaskContext}
 
 import scala.util.Random
@@ -98,7 +98,7 @@ class CleanableSuite extends SpookyEnvFixture {
           val v: Lifespan = tuple._1
           val newID = TaskContext.get().taskAttemptId()
           //          val newID2 = v._id
-          val newID3 = SpookyUtils.withDeadline(10.seconds) {
+          val newID3 = CommonUtils.withDeadline(10.seconds) {
             val result = v._id
             //            Predef.assert(v._id == newID2)
             result

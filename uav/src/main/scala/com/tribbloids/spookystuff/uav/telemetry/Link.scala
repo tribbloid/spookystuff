@@ -8,7 +8,7 @@ import com.tribbloids.spookystuff.uav.system.UAV
 import com.tribbloids.spookystuff.uav.telemetry.Link.MutexLock
 import com.tribbloids.spookystuff.uav.utils.UAVUtils
 import com.tribbloids.spookystuff.uav.{ReinforcementDepletedException, UAVConf, UAVMetrics}
-import com.tribbloids.spookystuff.utils.{IDMixin, SpookyUtils, TreeException}
+import com.tribbloids.spookystuff.utils.{CommonUtils, IDMixin, TreeException}
 import com.tribbloids.spookystuff.{SpookyContext, caching}
 import org.slf4j.LoggerFactory
 
@@ -64,7 +64,7 @@ object Link {
 
     def trySelect: Try[Link] = Try {
 
-      SpookyUtils.retry(3, 1000) {
+      CommonUtils.retry(3, 1000) {
         _trySelect.get
       }
     }
@@ -347,7 +347,7 @@ trait Link extends LocalCleanable with ConflictDetection {
     fn: =>T
   ): T = {
     try {
-      SpookyUtils.retry(n, interval, silent) {
+      CommonUtils.retry(n, interval, silent) {
         try {
           connectIfNot()
           fn

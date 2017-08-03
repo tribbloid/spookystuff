@@ -6,7 +6,7 @@ import com.tribbloids.spookystuff.uav.dsl.LinkFactory
 import com.tribbloids.spookystuff.uav.system.UAV
 import com.tribbloids.spookystuff.uav.telemetry.mavlink.MAVLink
 import com.tribbloids.spookystuff.uav._
-import com.tribbloids.spookystuff.utils.SpookyUtils
+import com.tribbloids.spookystuff.utils.{CommonUtils, SpookyUtils}
 import com.tribbloids.spookystuff.utils.TreeException.MultiCauseWrapper
 import com.tribbloids.spookystuff.{PyInterpretationException, SpookyContext, SpookyEnvFixture}
 import org.apache.spark.rdd.RDD
@@ -236,7 +236,7 @@ abstract class SimLinkSuite extends LinkSuite with SimUAVFixture {
             }
         }
         //wait for zombie process to be deregistered
-        SpookyUtils.retry(5, 2000) {
+        CommonUtils.retry(5, 2000) {
           sc.foreachComputer {
             SpookyEnvFixture.processShouldBeClean(Seq("mavproxy"), Seq("mavproxy"), cleanSweepNotInTask = false)
           }
