@@ -45,7 +45,7 @@ public class AbeProblemMinMax {
 		 *
 		 * If you choose to consider overall transport times, makes sure you scale it appropriately.
 		 */
-        SolutionCostCalculator objectiveFunction = new MinimiaxCost();
+        SolutionCostCalculator objectiveFunction = new MinimiaxCost(0);
 
         final StateManager stateManager = new StateManager(vrp);
 

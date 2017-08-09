@@ -26,13 +26,8 @@ import com.tribbloids.spookystuff.uav.telemetry.UAVStatus
 
 object JSpritSolver {
 
-  /*
-   * Your custom objective function that min max transport times. Additionally you can try to consider overall transport times
-   * in your objective as well. Thus you minimize max transport times first, and second, you minimize overall transport time.
-   *
-   * If you choose to consider overall transport times, makes sure you scale it appropriately.
-   */
-  val objectiveFunction: SolutionCostCalculator = new MinimiaxCost
+  def getObjectiveFunction(cohesiveness: Double): SolutionCostCalculator =
+    new MinimiaxCost(cohesiveness)
 
 
   def getCostMatrix(
@@ -103,7 +98,8 @@ object JSpritSolver {
 
     val algorithmBuilder: Jsprit.Builder = Jsprit.Builder.newInstance(vrp)
     //		algorithmBuilder
-    algorithmBuilder.setObjectiveFunction(JSpritSolver.objectiveFunction)
+    val objectiveFunction = JSpritSolver.getObjectiveFunction(gp.cohesiveness)
+    algorithmBuilder.setObjectiveFunction(objectiveFunction)
 
     algorithmBuilder.setStateAndConstraintManager(stateManager, constraintManager)
     algorithmBuilder.addCoreStateAndConstraintStuff(true)
@@ -130,7 +126,7 @@ object JSpritSolver {
         plot(vrp, best, v)
     }
 
-    best -> JSpritSolver.objectiveFunction.getCosts(best)
+    best -> objectiveFunction.getCosts(best)
   }
 
   def plot(

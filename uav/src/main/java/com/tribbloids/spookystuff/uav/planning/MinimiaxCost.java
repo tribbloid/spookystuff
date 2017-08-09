@@ -9,7 +9,14 @@ import com.graphhopper.jsprit.core.problem.solution.route.VehicleRoute;
  */
 public class MinimiaxCost implements SolutionCostCalculator {
 
-	private final double scalingParameter = 0.0;
+	private double cohesiveness = 0.05;
+
+//	public MinimiaxCost() {
+//	}
+
+	public MinimiaxCost(double cohesiveness) {
+		this.cohesiveness = cohesiveness;
+	}
 
 	@Override
 	public double getCosts(VehicleRoutingProblemSolution solution) {
@@ -22,6 +29,6 @@ public class MinimiaxCost implements SolutionCostCalculator {
 				maxTransportTime = tpTime;
 			}
 		}
-		return maxTransportTime + scalingParameter*sumTransportTimes;
+		return maxTransportTime + cohesiveness *sumTransportTimes;
 	}
 }

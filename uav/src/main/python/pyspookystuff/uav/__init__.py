@@ -28,7 +28,7 @@ class VehicleFunctions(object):
     def setMode(self, mode="GUIDED"):
         # type: (str) -> None
         """
-        mode_mapping_apm = {
+mode_mapping_apm = {
     0 : 'MANUAL',
     1 : 'CIRCLE',
     2 : 'STABILIZE',
@@ -81,7 +81,6 @@ mode_mapping_rover = {
     15 : 'GUIDED',
     16 : 'INITIALISING'
     }
-
 mode_mapping_tracker = {
     0 : 'MANUAL',
     1 : 'STOP',
@@ -98,6 +97,7 @@ mode_mapping_tracker = {
             condition = actual == mode
             comment = "expected: " + mode + " actual: " + actual
             return condition, comment
+
         self.waitFor(isMode, 60)
 
     def arm(self, mode="GUIDED", preArmCheck=True):

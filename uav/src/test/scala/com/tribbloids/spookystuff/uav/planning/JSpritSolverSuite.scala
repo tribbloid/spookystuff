@@ -24,7 +24,8 @@ trait JSpritFixture extends SpookyEnvFixture {
     val progressPath = s"log/JSprit/${this.getClass.getSimpleName}.$i.progress.png"
     i += 1
     GenPartitioners.JSprit(
-      numUAVsOpt = Some(this.parallelism),
+      numUAVOverride = Some(this.parallelism),
+      cohesiveness = 0,
       solutionPlotPathOpt = Some(solutionPath),
       progressPlotPathOpt = Some(progressPath)
     )
@@ -75,7 +76,7 @@ class JSpritSolverSuite extends JSpritFixture {
 
       val solution = solver.solve
 
-      val cost = JSpritSolver.objectiveFunction.getCosts(solution)
+      val cost = JSpritSolver.getObjectiveFunction(0).getCosts(solution)
       assert((cost * 1000).toInt == 10000)
 
       val map = solver.getUAV2RowsMap
@@ -85,6 +86,36 @@ class JSpritSolverSuite extends JSpritFixture {
         first._2.flatMap(_._1.children)
 
       val cost2 = spooky.getConf[UAVConf].costEstimator.estimate(trace, spooky)
+      assert(cost == cost2)
+    }
+
+    it("can evaluate 3 route") {
+      val location = UAVConf.DEFAULT_HOME_LOCATION
+      val uavs = Array("A", "B", "C").map {
+        v =>
+          UAVStatus(UAV(Seq(s"$v@localhost")), None, location, location)
+      }
+
+      val solver = JSpritSolver[Int](getJSprit, spooky, uavs, waypoints.map(v => v -> Nil))
+
+      val solution = solver.solve
+
+      val cost = JSpritSolver.getObjectiveFunction(0).getCosts(solution)
+      assert((cost * 1000).toInt == 5000)
+
+      val map = solver.getUAV2RowsMap
+
+      val traces = map.toSeq.map {
+        v =>
+          List(WaypointPlaceholder(v._1.currentLocation)) ++
+            v._2.flatMap(_._1.children)
+      }
+
+      val costs2 = traces.map {
+        trace =>
+          spooky.getConf[UAVConf].costEstimator.estimate(trace, spooky)
+      }
+      val cost2 = costs2.max
       assert(cost == cost2)
     }
   }

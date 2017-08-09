@@ -18,10 +18,14 @@ import scala.reflect.ClassTag
 object GenPartitioners {
 
   case class JSprit(
-                     preprocessing: GenPartitioner = {
+                     prepartitioner: GenPartitioner = {
                        com.tribbloids.spookystuff.dsl.GenPartitioners.Wide()
                      },
-                     numUAVsOpt: Option[Int] = None,
+                     numUAVOverride: Option[Int] = None,
+
+                     // how much effort optimizer spend to reduce total length instead of max length
+                     cohesiveness: Double = 0.05,
+
                      solutionPlotPathOpt: Option[String] = Some("log/solution.png"),
                      progressPlotPathOpt: Option[String] = Some("log/progress.png") // for debugging only.
                    ) extends GenPartitioner {
@@ -42,7 +46,7 @@ object GenPartitioners {
 
         val spooky = ec.spooky
 
-        val preprocessed = preprocessing.getInstance[K](ec).groupByKey(rdd, beaconRDDOpt)
+        val preprocessed = prepartitioner.getInstance[K](ec).groupByKey(rdd, beaconRDDOpt)
 
         val bifurcated: RDD[((Option[TraceView], Option[K]), Seq[V])] = preprocessed
           .map {
@@ -67,7 +71,7 @@ object GenPartitioners {
         val linkRDD = LinkUtils.lockedLinkRDD(spooky)
 
         val allUAVs = linkRDD.map(_.status()).collect()
-        val uavs = numUAVsOpt match {
+        val uavs = numUAVOverride match {
           case Some(n) => allUAVs.slice(0, n)
           case None => allUAVs
         }
