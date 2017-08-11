@@ -5,9 +5,8 @@ import com.tribbloids.spookystuff.dsl.GenPartitioner
 import com.tribbloids.spookystuff.dsl.GenPartitionerLike.Instance
 import com.tribbloids.spookystuff.execution.ExecutionContext
 import com.tribbloids.spookystuff.row.BeaconRDD
-import com.tribbloids.spookystuff.uav.actions.UAVAction
-import com.tribbloids.spookystuff.uav.planning.{JSpritSolver, PreferUAV}
-import com.tribbloids.spookystuff.uav.telemetry.{LinkUtils, UAVStatus}
+import com.tribbloids.spookystuff.uav.actions.HasCost
+import com.tribbloids.spookystuff.uav.planning.{JSpritSolver, MinimaxSolver}
 import org.apache.spark.rdd.RDD
 
 import scala.reflect.ClassTag
@@ -17,18 +16,22 @@ import scala.reflect.ClassTag
   */
 object GenPartitioners {
 
-  case class JSprit(
-                     prepartitioner: GenPartitioner = {
-                       com.tribbloids.spookystuff.dsl.GenPartitioners.Wide()
-                     },
-                     numUAVOverride: Option[Int] = None,
+  case class MinimaxCost(
+                          prepartitioner: GenPartitioner = {
+                            com.tribbloids.spookystuff.dsl.GenPartitioners.Wide()
+                          },
 
-                     // how much effort optimizer spend to reduce total length instead of max length
-                     cohesiveness: Double = 0.05,
+                          // if missing, use ALL OF THEM!
+                          numUAVOverride: Option[Int] = None,
 
-                     solutionPlotPathOpt: Option[String] = Some("log/solution.png"),
-                     progressPlotPathOpt: Option[String] = Some("log/progress.png") // for debugging only.
-                   ) extends GenPartitioner {
+                          // how much effort optimizer spend to reduce total length instead of max length
+                          cohesiveness: Double = 0.05,
+                          solver: MinimaxSolver = JSpritSolver,
+
+                          // for debugging only.
+                          solutionPlotPathOpt: Option[String] = None,
+                          progressPlotPathOpt: Option[String] = None
+                        ) extends GenPartitioner {
 
     def getInstance[K >: TraceView: ClassTag](ec: ExecutionContext): Instance[K] = {
       Inst[K](ec)
@@ -48,12 +51,12 @@ object GenPartitioners {
 
         val preprocessed = prepartitioner.getInstance[K](ec).groupByKey(rdd, beaconRDDOpt)
 
-        val bifurcated: RDD[((Option[TraceView], Option[K]), Seq[V])] = preprocessed
+        val bifurcated: RDD[((Option[TraceView], Option[K]), Iterable[V])] = preprocessed
           .map {
             case (k: TraceView, v) =>
               val c = k.children
               val result: (Option[TraceView], Option[K]) = {
-                if (c.exists(_.isInstanceOf[UAVAction])) Some(k) -> None
+                if (c.exists(_.isInstanceOf[HasCost])) Some(k) -> None
                 else None -> Some(k: K)
               }
               result -> v
@@ -61,51 +64,27 @@ object GenPartitioners {
               val result: (Option[TraceView], Option[K]) = None -> Some(k)
               result -> v
           }
-          .mapValues(v => v.toList)
+        //          .mapValues(v => v.toList)
 
         ec.scratchRDDs.persist(bifurcated)
 
-        val hasNavRows: Array[(TraceView, Seq[V])] = bifurcated
-          .flatMap(tt => tt._1._1.map(v => v -> tt._2)).collect()
+        val hasCostRDD: RDD[(TraceView, Iterable[V])] = bifurcated
+          .flatMap(tt => tt._1._1.map(v => v -> tt._2))
 
-        val linkRDD = LinkUtils.lockedLinkRDD(spooky)
+        val realignedRDD: RDD[(K, Iterable[V])] = solver.getRealignedRDD(
+          MinimaxCost.this, spooky, hasCostRDD)
+          .map(tuple => (tuple._1: K) -> tuple._2)
 
-        val allUAVs = linkRDD.map(_.status()).collect()
-        val uavs = numUAVOverride match {
-          case Some(n) => allUAVs.slice(0, n)
-          case None => allUAVs
-        }
-
-        val solver = JSpritSolver(JSprit.this, spooky, uavs, hasNavRows)
-        val uav2RowsMap: Map[UAVStatus, Seq[(TraceView, Seq[V])]] = solver.getUAV2RowsMap
-
-        val realignedRDD: RDD[(K, Iterable[V])] = linkRDD.flatMap {
-          link =>
-            val status = link.status()
-            val KVs = uav2RowsMap.getOrElse(status, Nil)
-            val result = KVs.map {
-              kv =>
-                val vv = kv._1
-                val updatedVV = vv.copy(
-                  children = List(PreferUAV(status, Some(link._lock.get._id)))
-                    ++ vv.children
-                )
-                (updatedVV: K) -> kv._2
-            }
-            result
-        }
-
-        val notHaveUAVRDD: RDD[(K, Iterable[V])] = bifurcated
+        val hasNoCostRDD: RDD[(K, Iterable[V])] = bifurcated
           .flatMap(tt => tt._1._2.map(v => v -> tt._2))
 
-        val result = realignedRDD.union(notHaveUAVRDD)
+        val result = realignedRDD.union(hasNoCostRDD)
 
         result
       }
 
       //        val status_traceRDD: RDD[(UAVStatus, Seq[TraceView])] = spooky.sparkContext.parallelize(status_traces)
       //
-      //        //TODO: cogroup is expensive
       //        //if you don't know cogroup preserve sequence, don't use it.
       //        val realignedTraceRDD: RDD[(Seq[TraceView], Link)] = linkRDD.cogroup {
       //          status_traceRDD
@@ -158,14 +137,6 @@ object GenPartitioners {
       //        // merge with trace that doesn't contain UAVNavigations
       //        // also carry data with them, by treating realigned link_traceRDD like a beaconRDD.
       //      }
-    }
-  }
-
-  // all adaptive improvements goes here.
-  object DRL extends GenPartitioner {
-
-    def getInstance[K: ClassTag](ec: ExecutionContext): Instance[K] = {
-      ???
     }
   }
 }

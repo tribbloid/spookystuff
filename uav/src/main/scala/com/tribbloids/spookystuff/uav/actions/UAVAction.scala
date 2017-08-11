@@ -7,9 +7,13 @@ import com.tribbloids.spookystuff.uav.spatial.Location
 import com.tribbloids.spookystuff.uav.utils.UAVViews
 
 /**
-  * all actions are lazy: they just
+  * unless mixin, assume cost is 0
   */
-trait UAVAction extends Action {
+trait HasCost {
+  self: Action =>
+}
+
+trait UAVAction extends Action with HasCost {
   {
     UAVConf
     UAVMetrics

@@ -17,6 +17,8 @@ import scala.util.Success
 @Ignore
 class GASolverSuite extends SpookyEnvFixture {
 
+  import GASolver._
+
   val waypoints: Seq[Waypoint] = UAVTestUtils.LawnMowerPattern(
     5,
     NED(10, 10, -10),

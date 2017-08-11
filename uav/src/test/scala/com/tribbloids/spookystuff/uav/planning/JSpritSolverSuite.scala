@@ -19,11 +19,11 @@ trait JSpritFixture extends SpookyEnvFixture {
 
   var i = 1
 
-  def getJSprit: GenPartitioners.JSprit = {
+  def getJSprit: GenPartitioners.MinimaxCost = {
     val solutionPath = s"log/JSprit/${this.getClass.getSimpleName}.$i.solution.png"
     val progressPath = s"log/JSprit/${this.getClass.getSimpleName}.$i.progress.png"
     i += 1
-    GenPartitioners.JSprit(
+    GenPartitioners.MinimaxCost(
       numUAVOverride = Some(this.parallelism),
       cohesiveness = 0,
       solutionPlotPathOpt = Some(solutionPath),
@@ -34,6 +34,8 @@ trait JSpritFixture extends SpookyEnvFixture {
 
 class JSpritSolverSuite extends JSpritFixture {
 
+  import JSpritSolver.Solution
+
   val waypoints: Array[TraceView] = Array(
     List(Waypoint(Location.fromTuple(NED(3,4,0) -> UAVConf.DEFAULT_HOME_LOCATION))),
     List(Waypoint(Location.fromTuple(NED(3,0,0) -> UAVConf.DEFAULT_HOME_LOCATION))),
@@ -41,7 +43,7 @@ class JSpritSolverSuite extends JSpritFixture {
   )
 
   it("getCostMatrix") {
-    val mat: FastVehicleRoutingTransportCostsMatrix = JSpritSolver
+    val mat: FastVehicleRoutingTransportCostsMatrix = Solution
       .getCostMatrix(spooky, waypoints.zipWithIndex)
     //TODO: add assertion
 
@@ -72,11 +74,11 @@ class JSpritSolverSuite extends JSpritFixture {
     it("can evaluate 1 route") {
       val location = UAVConf.DEFAULT_HOME_LOCATION
       val uav = UAVStatus(UAV(Seq("dummy@localhost")), None, location, location)
-      val solver = JSpritSolver[Int](getJSprit, spooky, Array(uav), waypoints.map(v => v -> Nil))
+      val solver = Solution[Int](getJSprit, spooky, Array(uav), waypoints.map(v => v -> Nil))
 
       val solution = solver.solve
 
-      val cost = JSpritSolver.getObjectiveFunction(0).getCosts(solution)
+      val cost = Solution.getObjectiveFunction(0).getCosts(solution)
       assert((cost * 1000).toInt == 10000)
 
       val map = solver.getUAV2RowsMap
@@ -96,11 +98,11 @@ class JSpritSolverSuite extends JSpritFixture {
           UAVStatus(UAV(Seq(s"$v@localhost")), None, location, location)
       }
 
-      val solver = JSpritSolver[Int](getJSprit, spooky, uavs, waypoints.map(v => v -> Nil))
+      val solver = Solution[Int](getJSprit, spooky, uavs, waypoints.map(v => v -> Nil))
 
       val solution = solver.solve
 
-      val cost = JSpritSolver.getObjectiveFunction(0).getCosts(solution)
+      val cost = Solution.getObjectiveFunction(0).getCosts(solution)
       assert((cost * 1000).toInt == 5000)
 
       val map = solver.getUAV2RowsMap
@@ -132,7 +134,7 @@ class JSpritSolverSuite extends JSpritFixture {
 
     val vrp = vrpBuilder.build
 
-    val tuple = JSpritSolver.solveVRP(vrp, getJSprit)
+    val tuple = Solution.solveVRP(vrp, getJSprit)
 
     System.out.println("cost: " + tuple._2)
     assert(tuple._2 <= 1011.777)

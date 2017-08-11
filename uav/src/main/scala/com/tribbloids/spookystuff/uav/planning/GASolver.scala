@@ -1,8 +1,9 @@
 package com.tribbloids.spookystuff.uav.planning
 
 import com.tribbloids.spookystuff.SpookyContext
-import com.tribbloids.spookystuff.actions.Trace
+import com.tribbloids.spookystuff.actions.{Trace, TraceView}
 import com.tribbloids.spookystuff.uav.UAVConf
+import com.tribbloids.spookystuff.uav.dsl.GenPartitioners
 import com.tribbloids.spookystuff.uav.telemetry.Link
 import com.tribbloids.spookystuff.utils.{NOTSerializable, SpookyUtils}
 import org.apache.commons.math3.exception.MathIllegalArgumentException
@@ -13,62 +14,65 @@ import org.apache.spark.rdd.RDD
 import scala.collection.mutable.ArrayBuffer
 import scala.util.{Random, Success, Try}
 
-case class Route(
-                  linkTry: Try[Link],
-                  is: Seq[Int]
-                ) extends NOTSerializable {
+object GASolver {
 
-  def toTracesOpt(allTraces: Seq[Trace]): Option[Seq[Trace]] = {
-    linkTry.toOption.map {
-      link =>
-        val traces: Seq[Trace] = is.map {
-          i =>
-            allTraces(i)
-        }
-        val seq = traces.map {
-          tr =>
-            List(PreferUAV(link.status())) ++ tr
-        }
-        seq
-    }
-  }
+  case class Route(
+                    linkTry: Try[Link],
+                    is: Seq[Int]
+                  ) extends NOTSerializable {
 
-  def estimateCost(solver: GASolver): Double = {
-
-//    linkTry match {
-//      case Success(link) =>
-//
-//    }
-    val seqOpt = toTracesOpt(solver.allTracesBroadcasted.value)
-    seqOpt.map {
-      seq =>
-        solver.actionCosts.estimate(seq.toList.flatten, solver.spooky)
-    }
-      .getOrElse {
-        Double.MaxValue
+    def toTracesOpt(allTraces: Seq[Trace]): Option[Seq[Trace]] = {
+      linkTry.toOption.map {
+        link =>
+          val traces: Seq[Trace] = is.map {
+            i =>
+              allTraces(i)
+          }
+          val seq = traces.map {
+            tr =>
+              List(PreferUAV(link.status())) ++ tr
+          }
+          seq
       }
-  }
-
-  def optimalInsertFrom(from: Seq[Int], solver: GASolver): Route = {
-    var state = this
-    for (i <- from) {
-      // insert into left that yield the best cost
-      val size = state.is.size
-      val candidates_costs = (0 to size).map {
-        j =>
-          val splitted = state.is.splitAt(j)
-          val inserted = splitted._1 ++ Seq(i) ++ splitted._2
-          val insertedRoute = this.copy(is = inserted)
-          val cost = insertedRoute.estimateCost(solver)
-          insertedRoute -> cost
-      }
-        .sortBy(_._2)
-      //      LoggerFactory.getLogger(this.getClass).debug(
-      //        MessageView(candidates_costs).toJSON()
-      //      )
-      state = candidates_costs.head._1
     }
-    state
+
+    def estimateCost(solver: GASolver): Double = {
+
+      //    linkTry match {
+      //      case Success(link) =>
+      //
+      //    }
+      val seqOpt = toTracesOpt(solver.allTracesBroadcasted.value)
+      seqOpt.map {
+        seq =>
+          solver.actionCosts.estimate(seq.toList.flatten, solver.spooky)
+      }
+        .getOrElse {
+          Double.MaxValue
+        }
+    }
+
+    def optimalInsertFrom(from: Seq[Int], solver: GASolver): Route = {
+      var state = this
+      for (i <- from) {
+        // insert into left that yield the best cost
+        val size = state.is.size
+        val candidates_costs = (0 to size).map {
+          j =>
+            val splitted = state.is.splitAt(j)
+            val inserted = splitted._1 ++ Seq(i) ++ splitted._2
+            val insertedRoute = this.copy(is = inserted)
+            val cost = insertedRoute.estimateCost(solver)
+            insertedRoute -> cost
+        }
+          .sortBy(_._2)
+        //      LoggerFactory.getLogger(this.getClass).debug(
+        //        MessageView(candidates_costs).toJSON()
+        //      )
+        state = candidates_costs.head._1
+      }
+      state
+    }
   }
 }
 
@@ -83,9 +87,10 @@ case class Route(
 case class GASolver(
                      @transient allTraces: List[Trace],
                      spooky: SpookyContext
-                   ) extends Serializable {
+                   ) extends MinimaxSolver {
 
   import com.tribbloids.spookystuff.utils.SpookyViews._
+  import GASolver._
 
   val allTracesBroadcasted = spooky.sparkContext.broadcast(allTraces)
 
@@ -343,4 +348,6 @@ case class GASolver(
         Hypothesis(subRDD)
     }
   }
+
+  override def getRealignedRDD[V](minimax: GenPartitioners.MinimaxCost, spooky: SpookyContext, rowRDD: RDD[(TraceView, Iterable[V])]) = ???
 }
