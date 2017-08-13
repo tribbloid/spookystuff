@@ -18,6 +18,7 @@ import com.graphhopper.jsprit.core.reporting.SolutionPrinter.Print
 import com.graphhopper.jsprit.core.util.{Coordinate, FastVehicleRoutingTransportCostsMatrix, Solutions}
 import com.tribbloids.spookystuff.SpookyContext
 import com.tribbloids.spookystuff.actions.TraceView
+import com.tribbloids.spookystuff.execution.ExecutionContext
 import com.tribbloids.spookystuff.uav.UAVConf
 import com.tribbloids.spookystuff.uav.actions.UAVNavigation
 import com.tribbloids.spookystuff.uav.dsl.GenPartitioners
@@ -25,24 +26,25 @@ import com.tribbloids.spookystuff.uav.spatial.NED
 import com.tribbloids.spookystuff.uav.telemetry.{LinkUtils, UAVStatus}
 import org.apache.spark.rdd.RDD
 
-case object JSpritSolver extends MinimaxSolver {
+object JSpritSolver extends MinimaxSolver {
 
-  override def getRealignedRDD[V](
-                                   minimax: GenPartitioners.MinimaxCost,
-                                   spooky: SpookyContext,
-                                   rowRDD: RDD[(TraceView, Iterable[V])]
-                                 ): RDD[(TraceView, Iterable[V])] = {
+  override def rewrite[V](
+                           gp: GenPartitioners.MinimaxCost,
+                           ec: ExecutionContext,
+                           rdd: RDD[(TraceView, Iterable[V])]
+                         ): RDD[(TraceView, Iterable[V])] = {
 
+    val spooky = ec.spooky
     val linkRDD = LinkUtils.lockedLinkRDD(spooky)
 
     val allUAVs = linkRDD.map(v => v.status()).collect()
-    val uavs = minimax.numUAVOverride match {
+    val uavs = gp.numUAVOverride match {
       case Some(n) => allUAVs.slice(0, n)
       case None => allUAVs
     }
 
-    val rows = rowRDD.collect()
-    val solution = Solution(minimax, spooky, uavs, rows)
+    val rows = rdd.collect()
+    val solution = Solution(gp, spooky, uavs, rows)
 
     //TODO: this is where the monkey patch start, should avoid shipping V to drivers
     val uav2RowsMap: Map[UAVStatus, Seq[(TraceView, Iterable[V])]] =

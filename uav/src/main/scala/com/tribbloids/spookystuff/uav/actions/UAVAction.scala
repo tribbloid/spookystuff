@@ -13,7 +13,16 @@ trait HasCost {
   self: Action =>
 }
 
-trait UAVAction extends Action with HasCost {
+/**
+  * used by TrafficControl to generate new actions that minimize risk.
+  */
+trait HasRisk {
+  self: Action =>
+
+  def
+}
+
+trait UAVAction extends Action {
   {
     UAVConf
     UAVMetrics
@@ -23,7 +32,7 @@ trait UAVAction extends Action with HasCost {
 /**
   * inbound -> engage -> outbound
   */
-trait UAVNavigation extends Interaction with UAVAction {
+trait UAVNavigation extends Interaction with UAVAction with HasCost with HasRisk {
 
   def _to: Location
   def _from: Location = _to

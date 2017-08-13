@@ -6,7 +6,7 @@ import com.tribbloids.spookystuff.dsl.GenPartitionerLike.Instance
 import com.tribbloids.spookystuff.execution.ExecutionContext
 import com.tribbloids.spookystuff.row.BeaconRDD
 import com.tribbloids.spookystuff.uav.actions.HasCost
-import com.tribbloids.spookystuff.uav.planning.{JSpritSolver, MinimaxSolver}
+import com.tribbloids.spookystuff.uav.planning.{MinimaxSolver, TrafficControl}
 import org.apache.spark.rdd.RDD
 
 import scala.reflect.ClassTag
@@ -26,7 +26,8 @@ object GenPartitioners {
 
                           // how much effort optimizer spend to reduce total length instead of max length
                           cohesiveness: Double = 0.05,
-                          solver: MinimaxSolver = JSpritSolver,
+                          solver: MinimaxSolver = MinimaxSolver.JSprit,
+                          trafficControl: TrafficControl = TrafficControl.Disabled,
 
                           // for debugging only.
                           solutionPlotPathOpt: Option[String] = None,
@@ -71,14 +72,15 @@ object GenPartitioners {
         val hasCostRDD: RDD[(TraceView, Iterable[V])] = bifurcated
           .flatMap(tt => tt._1._1.map(v => v -> tt._2))
 
-        val realignedRDD: RDD[(K, Iterable[V])] = solver.getRealignedRDD(
-          MinimaxCost.this, spooky, hasCostRDD)
+        val solvedRDD = solver.rewrite(MinimaxCost.this, ec, hasCostRDD)
+
+        val trafficControlledRDD = trafficControl.rewrite(ec, solvedRDD)
           .map(tuple => (tuple._1: K) -> tuple._2)
 
         val hasNoCostRDD: RDD[(K, Iterable[V])] = bifurcated
           .flatMap(tt => tt._1._2.map(v => v -> tt._2))
 
-        val result = realignedRDD.union(hasNoCostRDD)
+        val result = trafficControlledRDD.union(hasNoCostRDD)
 
         result
       }

@@ -5,7 +5,7 @@ import java.util.concurrent.TimeUnit
 
 import com.tribbloids.spookystuff.actions._
 import com.tribbloids.spookystuff.session.python.PythonDriver
-import com.tribbloids.spookystuff.utils.{CommonUtils, SpookyUtils}
+import com.tribbloids.spookystuff.utils.CommonUtils
 import com.tribbloids.spookystuff.{Const, SpookyContext, SpookyException}
 import org.apache.spark.TaskContext
 import org.openqa.selenium.Dimension

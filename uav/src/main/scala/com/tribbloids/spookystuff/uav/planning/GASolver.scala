@@ -2,6 +2,7 @@ package com.tribbloids.spookystuff.uav.planning
 
 import com.tribbloids.spookystuff.SpookyContext
 import com.tribbloids.spookystuff.actions.{Trace, TraceView}
+import com.tribbloids.spookystuff.execution.ExecutionContext
 import com.tribbloids.spookystuff.uav.UAVConf
 import com.tribbloids.spookystuff.uav.dsl.GenPartitioners
 import com.tribbloids.spookystuff.uav.telemetry.Link
@@ -349,5 +350,9 @@ case class GASolver(
     }
   }
 
-  override def getRealignedRDD[V](minimax: GenPartitioners.MinimaxCost, spooky: SpookyContext, rowRDD: RDD[(TraceView, Iterable[V])]) = ???
+  override def rewrite[V](
+                           gp: GenPartitioners.MinimaxCost,
+                           ec: ExecutionContext,
+                           rdd: RDD[(TraceView, Iterable[V])]
+                         ) = ???
 }
