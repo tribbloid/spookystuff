@@ -19,7 +19,7 @@ trait HasCost {
 trait HasRisk {
   self: Action =>
 
-  def
+//  def
 }
 
 trait UAVAction extends Action {
