@@ -20,7 +20,7 @@ import com.tribbloids.spookystuff.SpookyContext
 import com.tribbloids.spookystuff.actions.TraceView
 import com.tribbloids.spookystuff.execution.ExecutionContext
 import com.tribbloids.spookystuff.uav.UAVConf
-import com.tribbloids.spookystuff.uav.actions.UAVNavigation
+import com.tribbloids.spookystuff.uav.actions.{UAVNavigation, Waypoint}
 import com.tribbloids.spookystuff.uav.dsl.GenPartitioners
 import com.tribbloids.spookystuff.uav.spatial.NED
 import com.tribbloids.spookystuff.uav.telemetry.{LinkUtils, UAVStatus}
@@ -91,7 +91,7 @@ object JSpritSolver extends MinimaxSolver {
           val traceView: TraceView = i._1
           val last = traceView.children.collect { case v: UAVNavigation => v }.last
           val lastLocation = last._to
-          val realTrace = List(WaypointPlaceholder(lastLocation)) ++ j._1.children
+          val realTrace = List(Waypoint(lastLocation)) ++ j._1.children
           val cost = costEstimator.estimate(realTrace, spooky)
           (i._2, j._2, cost)
         }
@@ -203,7 +203,7 @@ object JSpritSolver extends MinimaxSolver {
       val fromUAVs: Array[(TraceView, Option[UAVStatus])] =
         uavs.map {
           uav =>
-            TraceView(List(WaypointPlaceholder(uav.currentLocation))) -> Some(uav)
+            TraceView(List(Waypoint(uav.currentLocation))) -> Some(uav)
         }
 
       val fromTraces: Array[(TraceView, Option[UAVStatus])] = traces.map {

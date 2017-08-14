@@ -4,7 +4,7 @@ import com.tribbloids.spookystuff.actions.{Trace, TraceView}
 import com.tribbloids.spookystuff.execution.ExecutionContext
 import com.tribbloids.spookystuff.row.DataRow
 import com.tribbloids.spookystuff.uav.actions.Waypoint
-import com.tribbloids.spookystuff.uav.planning.{JSpritFixture, PreferUAV, WaypointPlaceholder}
+import com.tribbloids.spookystuff.uav.planning.{JSpritFixture, PreferUAV}
 import com.tribbloids.spookystuff.uav.spatial.NED
 import com.tribbloids.spookystuff.uav.system.UAV
 import com.tribbloids.spookystuff.uav.telemetry.LinkUtils
@@ -76,7 +76,7 @@ class JSpritGenPartitionerSuite extends DummyUAVFixture with JSpritFixture {
             .distinct
           assert(statusSeq.size == 1)
           val status = statusSeq.head
-          val first = WaypointPlaceholder(status.currentLocation)
+          val first = Waypoint(status.currentLocation)
           val others = actions.flatMap {
             case PreferUAV(uav, _) => None
             case v@_ => Some(v)

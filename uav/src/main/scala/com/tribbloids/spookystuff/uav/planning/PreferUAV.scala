@@ -35,14 +35,3 @@ private[uav] case class PreferUAV(
     Nil
   }
 }
-
-private[uav] case class WaypointPlaceholder(
-                                             _to: Location
-                                           ) extends UAVNavigation {
-
-  override def delay: Duration = Duration.Zero
-
-  override def exeNoOutput(session: Session): Unit = {
-    Nil
-  }
-}

@@ -84,7 +84,7 @@ class JSpritSolverSuite extends JSpritFixture {
       val map = solver.getUAV2RowsMap
 
       val first = map.head
-      val trace = List(WaypointPlaceholder(first._1.currentLocation)) ++
+      val trace = List(Waypoint(first._1.currentLocation)) ++
         first._2.flatMap(_._1.children)
 
       val cost2 = spooky.getConf[UAVConf].costEstimator.estimate(trace, spooky)
@@ -109,7 +109,7 @@ class JSpritSolverSuite extends JSpritFixture {
 
       val traces = map.toSeq.map {
         v =>
-          List(WaypointPlaceholder(v._1.currentLocation)) ++
+          List(Waypoint(v._1.currentLocation)) ++
             v._2.flatMap(_._1.children)
       }
 
