@@ -4,10 +4,8 @@ import com.tribbloids.spookystuff.extractors.Col
 import com.tribbloids.spookystuff.extractors.impl.Lit
 import com.tribbloids.spookystuff.row.{DataRowSchema, FetchedRow}
 import com.tribbloids.spookystuff.session.Session
-import com.tribbloids.spookystuff.uav.{UAVConf, UAVConst}
 import com.tribbloids.spookystuff.uav.spatial.Location
-import org.apache.spark.ml.dsl.utils.VectorAPI
-import org.apache.spark.mllib.linalg
+import com.tribbloids.spookystuff.uav.{UAVConf, UAVConst}
 import org.slf4j.LoggerFactory
 
 import scala.concurrent.duration.Duration
@@ -55,11 +53,9 @@ case class Waypoint(
           .asInstanceOf[this.type]
     }
   }
-
-  override def encode = ???
 }
 
-object Waypoint extends VectorAPI.Decoder[Waypoint] {
-
-  override def _decode(vector: linalg.Vector) = ???
-}
+//object Waypoint extends VectorAPI.Decoder[Waypoint] {
+//
+//  override def _decode(vector: linalg.Vector) = ???
+//}

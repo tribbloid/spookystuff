@@ -24,7 +24,7 @@ trait UAVAction extends Action {
 /**
   * inbound -> engage -> outbound
   */
-trait UAVNavigation extends Interaction with UAVAction with HasCost with VectorAPI {
+trait UAVNavigation extends Interaction with UAVAction with HasCost {
 
   def _to: Location
   def _from: Location = _to

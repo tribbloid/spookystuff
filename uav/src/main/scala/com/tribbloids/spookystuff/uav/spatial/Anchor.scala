@@ -9,7 +9,7 @@ trait Anchor extends Serializable {
                      system: CoordinateSystem = LLA,
                      from: Anchor = GeodeticAnchor
                    ): Option[system.V] = {
-    _getCoordinate(system, from, InferenceContext())
+    _getCoordinate(system, from, Tabu())
   }
 
   def coordinate(
@@ -24,7 +24,7 @@ trait Anchor extends Serializable {
   def _getCoordinate(
                       system: CoordinateSystem,
                       from: Anchor = GeodeticAnchor,
-                      ic: InferenceContext
+                      ic: Tabu
                     ): Option[system.V] = None
 }
 

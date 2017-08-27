@@ -16,7 +16,7 @@ class CostEstimatorSuite extends SpookyEnvFixture {
   describe("Default CostEstimator") {
 
     it("can measure cost of 2 Waypints") {
-      val p1 = Location()
+      val p1 = Location(Nil)
       val p2 = Location.fromTuple(NED(3, 4, 0) -> p1)
       val trace = List(
         Waypoint(p1),
@@ -27,7 +27,6 @@ class CostEstimatorSuite extends SpookyEnvFixture {
       //      assert(estimator.estimate(trace.reverse, spooky) == 5.0)
     }
 
-    //TODO: fix it
     it("can measure cost of 2 Waypints 2") {
       val p1 = Location.fromTuple(NED(0, 0, 0) -> UAVConf.DEFAULT_HOME_LOCATION)
       val p2 = Location.fromTuple(NED(3, 4, 0) -> UAVConf.DEFAULT_HOME_LOCATION)

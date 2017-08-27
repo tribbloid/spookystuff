@@ -47,6 +47,4 @@ case class Move(
       link.synch.goto(_from)
     }
   }
-
-  override def encode = ???
 }

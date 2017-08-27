@@ -24,10 +24,14 @@ class LocationUDT() extends ScalaUDT[Location]
 @SQLUserDefinedType(udt = classOf[LocationUDT])
 @SerialVersionUID(-928750192836509428L)
 case class Location(
-                     definedBy: Seq[Relation] = Nil
+                     definedBy: Seq[SpatialRelation]
                    ) extends LocationLike {
 
+  /**
+    * replace all PlaceHoldingAnchor with ref.
+    */
   def assumeAnchor(ref: Anchor): Location = {
+
     val cs = definedBy.map {
       tuple =>
         if (tuple.from == PlaceHoldingAnchor) {
@@ -39,14 +43,14 @@ case class Location(
     this.copy(definedBy = cs)
   }
 
-  private val mnemonics: ArrayBuffer[Relation] = {
-    val result = ArrayBuffer.empty[Relation]
+  private val mnemonics: ArrayBuffer[SpatialRelation] = {
+    val result = ArrayBuffer.empty[SpatialRelation]
     val preset = definedBy // ++ Seq(Denotation(NED(0,0,0), this))
     result.++=(preset)
     result
   }
 
-  def addCoordinate(tuples: Relation*): this.type = {
+  def addCoordinate(tuples: SpatialRelation*): this.type = {
     assert(!tuples.contains(null))
     mnemonics ++= tuples
     //    require(!tuples.exists(_._2 == this), "self referential coordinate cannot be used")
@@ -58,7 +62,7 @@ case class Location(
   override def _getCoordinate(
                                system: CoordinateSystem,
                                from: Anchor = GeodeticAnchor,
-                               ic: InferenceContext
+                               ic: Tabu
                              ): Option[system.V] = {
 
     if (ic.recursions >= 1000) {
@@ -75,7 +79,7 @@ case class Location(
     val allRelations = mnemonics
 
     def cacheAndYield(v: Coordinate): Option[system.V] = {
-      addCoordinate(Relation(v, from))
+      addCoordinate(SpatialRelation(v, from))
       Some(v.asInstanceOf[system.V])
     }
 
@@ -112,10 +116,10 @@ case class Location(
           case middle: Location if middle != this && middle != from =>
             for (
               c2 <- {
-                ic.getCoordinate(PendingTriplet(middle, system, this))
+                ic.getCoordinate(SpatialEdge(middle, system, this))
               };
               c1 <- {
-                ic.getCoordinate(PendingTriplet(from, system, middle))
+                ic.getCoordinate(SpatialEdge(from, system, middle))
               }
             ) {
               return cacheAndYield(c1.asInstanceOf[system.V] ++> c2.asInstanceOf[system.V])
@@ -147,7 +151,7 @@ object Location {
                                c: Coordinate
                              ): Location = {
     Location(Seq(
-      Relation(c, PlaceHoldingAnchor)
+      SpatialRelation(c, PlaceHoldingAnchor)
     ))
   }
 
@@ -155,7 +159,7 @@ object Location {
                           t: (Coordinate, Anchor)
                         ): Location = {
     Location(Seq(
-      Relation(t._1, t._2)
+      SpatialRelation(t._1, t._2)
     ))
   }
 

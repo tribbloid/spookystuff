@@ -7,6 +7,7 @@ import scala.language.implicitConversions
   * used by TrafficControl to generate new actions that minimize risk.
   * (In the future) used by RL algorithms to represent strategy to adapt to environment.
   */
+@Deprecated
 trait VectorAPI {
 
   def encode: Vector

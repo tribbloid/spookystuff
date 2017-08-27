@@ -11,7 +11,7 @@ import org.slf4j.LoggerFactory
 
 import scala.language.implicitConversions
 import scala.util.Try
-import scala.xml.{NodeSeq, XML}
+import scala.xml.{Elem, NodeSeq, XML}
 
 //mixin to allow converting to a simple case class and back
 //used to delegate ser/de tasks (from/to xml, json & dataset encoded type) to the case class with a fixed schema
@@ -46,11 +46,15 @@ abstract class MessageRelay[Obj] {
     _fromJValue[T](jv.children.head)
   }
   def _fromXML[T: Manifest](xml: String): T = {
-    val bomRemoved = xml.replaceAll("[^\\x20-\\x7e]", "").trim //remove BOM (byte order mark)
-    val prologRemoved = bomRemoved.replaceFirst("[^<]*(?=<)","")
-    val ns = XML.loadString(prologRemoved)
+    val nodes: Elem = xmlStr2Node(xml)
 
-    _fromXMLNode[T](ns)
+    _fromXMLNode[T](nodes)
+  }
+  def xmlStr2Node(xml: String): Elem = {
+    val bomRemoved = xml.replaceAll("[^\\x20-\\x7e]", "").trim //remove BOM (byte order mark)
+    val prologRemoved = bomRemoved.replaceFirst("[^<]*(?=<)", "")
+    val result = XML.loadString(prologRemoved)
+    result
   }
 
   def fromJValue(jv: JValue): M = _fromJValue[M](jv)
