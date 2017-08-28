@@ -80,6 +80,12 @@ object LocalResolver extends PathResolver {
       file.getParentFile.mkdirs()
       file.createNewFile()
     }
+    else if (file.isDirectory) {
+      file.delete()
+
+      file.getParentFile.mkdirs()
+      file.createNewFile()
+    }
 
     val fos = new FileOutputStream(pathStr, false)
 
