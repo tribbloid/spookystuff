@@ -6,7 +6,7 @@ import com.tribbloids.spookystuff.dsl.GenPartitionerLike.Instance
 import com.tribbloids.spookystuff.execution.ExecutionContext
 import com.tribbloids.spookystuff.row.BeaconRDD
 import com.tribbloids.spookystuff.uav.actions.HasCost
-import com.tribbloids.spookystuff.uav.planning.{MinimaxSolver, CollisionAvoidance}
+import com.tribbloids.spookystuff.uav.planning.{CollisionAvoidance, MinimaxSolver, NoCollisionAvoidance}
 import org.apache.spark.rdd.RDD
 
 import scala.reflect.ClassTag
@@ -27,7 +27,7 @@ object GenPartitioners {
                           // how much effort optimizer spend to reduce total length instead of max length
                           cohesiveness: Double = 0.05,
                           solver: MinimaxSolver = MinimaxSolver.JSprit,
-                          collisionAvoidance: CollisionAvoidance = CollisionAvoidance.Disabled,
+                          collisionAvoidance: CollisionAvoidance = NoCollisionAvoidance,
 
                           // for debugging only.
                           solutionPlotPathOpt: Option[String] = None,
