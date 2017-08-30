@@ -1,6 +1,6 @@
 package com.tribbloids.spookystuff.uav.spatial
 
-import breeze.linalg.{Vector => Vec}
+import breeze.linalg.{DenseVector, Vector => Vec}
 import com.tribbloids.spookystuff.utils.ReflectionUtils
 import geotrellis.proj4.LatLng
 import org.osgeo.proj4j.ProjCoordinate
@@ -164,7 +164,7 @@ object LLA extends CoordinateSystem {
                 alt: Double
               ) extends this.Value {
 
-    val vector = Vec(lon, lat, alt)
+    val vector: DenseVector[Double] = DenseVector(lon, lat, alt)
 
     override def _chain(b: V): V = V(b.lat, b.lon, this.alt + b.alt)
   }
@@ -207,7 +207,7 @@ object NED extends CoordinateSystem {
                 down: Double
               ) extends this.Value {
 
-    val vector = Vec(east, north, - down)
+    val vector: DenseVector[Double] = DenseVector(east, north, - down)
 
     override def _chain(b: V): V = V(this.north + b.north, this.east + b.east, this.down + b.down)
   }

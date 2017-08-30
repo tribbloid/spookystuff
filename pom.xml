@@ -140,13 +140,13 @@
       </properties>
     </profile>
 
-    <profile>
-      <id>spark-cdh5</id>
-      <properties>
-        <spark.version>1.6.0-${cdh.suffix}</spark.version>
-        <spark.assembly.version>${spark.binary.version}-cdh5</spark.assembly.version>
-      </properties>
-    </profile>
+    <!--<profile>-->
+      <!--<id>spark-cdh5</id>-->
+      <!--<properties>-->
+        <!--<spark.version>1.6.0-${cdh.suffix}</spark.version>-->
+        <!--<spark.assembly.version>${spark.binary.version}-cdh5</spark.assembly.version>-->
+      <!--</properties>-->
+    <!--</profile>-->
 
     <profile>
       <id>release-sign-artifacts</id>
