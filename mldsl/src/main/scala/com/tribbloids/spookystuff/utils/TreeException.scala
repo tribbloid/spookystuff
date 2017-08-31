@@ -1,6 +1,5 @@
 package com.tribbloids.spookystuff.utils
 
-import com.tribbloids.spookystuff.utils.TreeException.TreeNodeView
 import org.apache.spark.sql.catalyst.trees.TreeNode
 
 import scala.util.{Failure, Success, Try}
@@ -134,6 +133,8 @@ object TreeException {
 }
 
 trait TreeException extends Throwable {
+
+  import com.tribbloids.spookystuff.utils.TreeException.TreeNodeView
 
   def causes: Seq[Throwable] = Nil
 

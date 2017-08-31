@@ -3,8 +3,6 @@ package com.tribbloids.spookystuff.utils
 import java.io._
 import java.nio.file.FileAlreadyExistsException
 
-import com.tribbloids.spookystuff.Const
-
 /*
  * to make it resilient to asynchronous read/write, let output rename the file, write it, and rename back,
  * and let input wait for file name's reversion if its renamed by another node.
@@ -27,7 +25,7 @@ abstract class PathResolver extends Serializable {
   }
 
   def resourceOrAbsolute(pathStr: String): String = {
-    val resourcePath = SpookyUtils.getCPResource(pathStr.stripPrefix("/")).map(_.getPath).getOrElse(pathStr)
+    val resourcePath = CommonUtils.getCPResource(pathStr.stripPrefix("/")).map(_.getPath).getOrElse(pathStr)
 
     val result = this.toAbsolute(resourcePath)
     result
@@ -54,7 +52,7 @@ object LocalResolver extends PathResolver {
       val lockedFile = new File(lockedPath)
 
       //wait for 15 seconds in total
-      CommonUtils.retry(Const.DFSBlockedAccessRetries) {
+      CommonUtils.retry(CommonConst.DFSBlockedAccessRetries) {
         assert(!lockedFile.exists(), s"File $pathStr is locked by another executor or thread")
         //        Thread.sleep(3*1000)
       }
@@ -107,7 +105,7 @@ object LocalResolver extends PathResolver {
     val lockedPath = pathStr + lockedSuffix
     val lockedFile = new File(lockedPath)
 
-    CommonUtils.retry(Const.DFSBlockedAccessRetries) {
+    CommonUtils.retry(CommonConst.DFSBlockedAccessRetries) {
       assert(!lockedFile.exists(), s"File $pathStr is locked by another executor or thread")
       //        Thread.sleep(3*1000)
     }

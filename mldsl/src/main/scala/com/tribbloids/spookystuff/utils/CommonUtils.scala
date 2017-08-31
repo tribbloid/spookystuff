@@ -1,6 +1,7 @@
 package com.tribbloids.spookystuff.utils
 
-import java.io.File
+import java.io.{File, InputStream}
+import java.net.URL
 
 import org.apache.spark.ml.dsl.utils.FlowUtils
 import org.slf4j.LoggerFactory
@@ -8,7 +9,7 @@ import org.slf4j.LoggerFactory
 import scala.concurrent.{Await, Future, TimeoutException}
 import scala.util.{Failure, Success, Try}
 
-object CommonUtils {
+class CommonUtils {
 
   import scala.concurrent.ExecutionContext.Implicits.global
   import scala.concurrent.duration._
@@ -30,7 +31,7 @@ object CommonUtils {
 
   // Returning T, throwing the exception on failure
   @annotation.tailrec
-  def retry[T](
+  final def retry[T](
                 n: Int,
                 interval: Long = 0,
                 silent: Boolean = false,
@@ -132,4 +133,12 @@ object CommonUtils {
         throw new UnknownError("IMPOSSIBLE")
     }
   }
+
+  def getCPResource(str: String): Option[URL] =
+    Option(ClassLoader.getSystemClassLoader.getResource(str.stripSuffix(File.separator)))
+  def getCPResourceAsStream(str: String): Option[InputStream] =
+    Option(ClassLoader.getSystemClassLoader.getResourceAsStream(str.stripSuffix(File.separator)))
+
 }
+
+object CommonUtils extends CommonUtils

@@ -1,6 +1,6 @@
 package com.tribbloids.spookystuff.utils
 
-import java.io.{File, InputStream}
+import java.io.File
 import java.net._
 import java.nio.file.{Files, _}
 
@@ -17,7 +17,7 @@ import scala.reflect.ClassTag
 import scala.util.{Failure, Random, Success, Try}
 import scala.xml.PrettyPrinter
 
-object SpookyUtils {
+object SpookyUtils extends CommonUtils {
 
   import SpookyViews._
 
@@ -182,11 +182,6 @@ These special characters are often called "metacharacters".
         o
     }
   }
-
-  def getCPResource(str: String): Option[URL] =
-    Option(ClassLoader.getSystemClassLoader.getResource(str.stripSuffix(File.separator)))
-  def getCPResourceAsStream(str: String): Option[InputStream] =
-    Option(ClassLoader.getSystemClassLoader.getResourceAsStream(str.stripSuffix(File.separator)))
 
   def addCPResource(urlStr: String): Unit = {
 
