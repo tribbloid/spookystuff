@@ -15,17 +15,8 @@ trait CollisionAvoidance {
                 ): RDD[(TraceView, Iterable[V])]
 }
 
-case object NoCollisionAvoidance extends CollisionAvoidance {
+object CollisionAvoidance {
 
-  override def rewrite[V](
-                           ec: ExecutionContext,
-                           rdd: RDD[(TraceView, Iterable[V])]
-                         ): RDD[(TraceView, Iterable[V])] = rdd
-}
-
-object AltitudeOnly {
-
-  //TODO: test!
   def t4MinimalDist(
                      A1: NED.V,
                      B1: NED.V,
@@ -37,15 +28,27 @@ object AltitudeOnly {
     val C1 = B1.vector - A1.vector
     val C2 = B2.vector - A2.vector
 
-    val G = (C2 * C1.t) + (C1 * C2.t)
+    val C21 = C2 * C1.t
+    val G = C21 - C21.t
 
     val C1TGC2 = C1.t * G * C2
 
-    val t1 = M.t * G * C2
-    val t2 = M.t * G * C1
+    val _t1 = - (M.t * G * C2) / C1TGC2
+    val _t2 = - (M.t * G * C1) / C1TGC2
+
+    val t1 = Math.max(Math.min(1.0, _t1), 0.0)
+    val t2 = Math.max(Math.min(1.0, _t2), 0.0)
 
     t1 -> t2
   }
+}
+
+case object NoCollisionAvoidance extends CollisionAvoidance {
+
+  override def rewrite[V](
+                           ec: ExecutionContext,
+                           rdd: RDD[(TraceView, Iterable[V])]
+                         ): RDD[(TraceView, Iterable[V])] = rdd
 }
 
 sealed case class AltitudeOnly(
