@@ -55,7 +55,6 @@
     <PermGen>512m</PermGen>
     <MaxPermGen>2g</MaxPermGen>
     <failsafe.version>2.18</failsafe.version>
-    <cdh.suffix>cdh5.10.2</cdh.suffix>
   </properties>
 
   <profiles>
