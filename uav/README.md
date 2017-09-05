@@ -40,7 +40,7 @@ to find the distance between line section $A_1 B_1$ and $A_2 B_2$ we minimize th
 
 $$
 \begin{aligned}
-D &= || M + t1 C_1 - t2 C_2 ||^2 \\
+D^2 &= || M + t1 C_1 - t2 C_2 ||^2 \\
 \dot{t1}, \dot{t2} &= \arg \min_{ \{t1, t2\} } D
 \end{aligned}
 $$
@@ -60,19 +60,28 @@ after which the 1st-order approximation of $D$ is reduced to:
 
 $$
 \begin{aligned}
-D &= <\dot M + \dot{t1} \dot C_1 - \dot{t2} \dot C_2, M + \dot{t1} C_1 - \dot{t2} C_2> \\
+D^2 &\approx <\dot M + \dot{t1} \dot C_1 - \dot{t2} \dot C_2, M + \dot{t1} C_1 - \dot{t2} C_2> \\
 &= <P, \{ (1-\dot{t_1}) A_1 - (1-\dot{t_2}) A_2 + \dot{t_1} B_1 - \dot{t_2} B_2 \}>
 \end{aligned}
 $$
 
-finally we get $D$'s gradient w.r.t. $M, C_1, C_2$
+where $P = \dot M + \dot{t1} \dot C_1 - \dot{t2} \dot C_2$, Now defining energy $E$ representing violation of clearance between line section $A_1 B_1$ and $A_2 B_2$:
+
+$$
+\begin{aligned}
+E_1 &= \max \{ D^2 - R^2, 0 \}
+\end{aligned}
+$$
+(This is One definition, the other is $E_1 = \max^2 \{ D-R, 0 \}$ which will be compared in performance)
+
+Finally we get $E$'s gradient w.r.t. $M, C_1, C_2$
 
 $$
 \begin{cases}
-\nabla_{A_1} D &= (1-\dot{t1}) P \\
-\nabla_{A_2} D &= (\dot{t2} - 1) P \\
-\nabla_{B_1} D &= \dot{t1} P \\
-\nabla_{B_2} D &= -\dot{t2} P
+\nabla_{A_1} E_1 &= (1-\dot{t1}) P \\
+\nabla_{A_2} E_1 &= (\dot{t2} - 1) P \\
+\nabla_{B_1} E_1 &= \dot{t1} P \\
+\nabla_{B_2} E_1 &= -\dot{t2} P
 \end{cases}
 $$
 
@@ -80,3 +89,7 @@ use $- \nabla_{(A_1, A_2, B_1, B_2)}$ to update all the points until (local) min
 
 ##### 2b. terrain adaptation
 
+(Much simpler and of low priority)
+
+Given 
+$E_2$ can be defined as 
