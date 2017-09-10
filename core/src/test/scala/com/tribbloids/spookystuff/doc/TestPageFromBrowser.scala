@@ -24,7 +24,7 @@ class TestPageFromBrowser extends SpookyEnvFixture {
   it("visit, save and load") {
 
     val results = (
-      Visit("http://en.wikipedia.org") ::
+      Visit(HTML_URL) ::
         Snapshot().as('T) :: Nil
       ).fetch(spooky)
 

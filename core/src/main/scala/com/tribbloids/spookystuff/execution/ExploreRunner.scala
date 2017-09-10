@@ -99,7 +99,7 @@ class ExploreRunner(
       val newOpens : Array[(TraceView, DataRow)] = bestNonFringeRow
         .extract(resolved)
         .flattenData(resolved.field, ordinalField, joinType.isLeft, sampler)
-        .interpolate(trace)
+        .rewriteLocally(trace)
         .map {
           tuple =>
             tuple._1 -> tuple._2

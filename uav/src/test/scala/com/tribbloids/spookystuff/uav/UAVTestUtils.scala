@@ -1,9 +1,8 @@
 package com.tribbloids.spookystuff.uav
 
-import com.tribbloids.spookystuff.actions.Trace
 import com.tribbloids.spookystuff.extractors.impl.Lit
 import com.tribbloids.spookystuff.uav.actions.Waypoint
-import com.tribbloids.spookystuff.uav.spatial.{Location, NED}
+import com.tribbloids.spookystuff.uav.spatial.{Anchors, Location, NED}
 
 /**
   * Created by peng on 24/02/17.
@@ -18,7 +17,13 @@ object UAVTestUtils {
       tuple =>
         val l1: Location = tuple._1
         val l2: Location = tuple._2
-        l1.assumeAnchor(UAVConf.DEFAULT_HOME_LOCATION) -> l2.assumeAnchor(UAVConf.DEFAULT_HOME_LOCATION)
+        l1.replaceAnchors{
+          case Anchors.Home =>
+            UAVConf.DEFAULT_HOME_LOCATION
+        } -> l2.replaceAnchors{
+          case Anchors.Home =>
+            UAVConf.DEFAULT_HOME_LOCATION
+        }
     }
 
     val lineScans: Seq[List[Waypoint]] = {

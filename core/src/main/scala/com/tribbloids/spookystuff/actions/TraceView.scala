@@ -42,13 +42,6 @@ case class TraceView(
   @volatile @transient var docs: Seq[Fetched] = _ //override, cannot be shipped, lazy evaluated
   def docsOpt = Option(docs)
 
-  //always has output (Sometimes Empty) to handle left join
-  override def doInterpolate(pr: FetchedRow, schema: DataRowSchema): Option[this.type] = {
-    val seq = this.doInterpolateSeq(pr, schema)
-
-    Some(new TraceView(seq).asInstanceOf[this.type])
-  }
-
   override def apply(session: Session): Seq[Fetched] = {
 
     _apply(session)
@@ -108,11 +101,31 @@ case class TraceView(
     result.toList
   }
 
-  def rewrite(ec: ExecutionContext): Trace = {
-    val rewriters = children.flatMap(_.rewriters).distinct
+  //always has output (Sometimes Empty) to handle left join
+  override def doInterpolate(row: FetchedRow, schema: DataRowSchema): Option[this.type] = {
+    val seq = this.doInterpolateSeq(row, schema)
+
+    Some(new TraceView(seq).asInstanceOf[this.type])
+  }
+
+  override lazy val rewriters = children.flatMap(_.rewriters).distinct
+
+  def rewriteGlobally(schema: DataRowSchema): Trace = {
     rewriters.foldLeft(children){
       (trace, rewriter) =>
-        rewriter.rewrite(trace, ec)
+        rewriter.rewriteGlobally(trace, schema)
+    }
+  }
+
+  def rewriteLocally(row: FetchedRow, schema: DataRowSchema): Option[Trace] = {
+    val interpolatedOpt = doInterpolate(row, schema)
+      .map(_.children)
+    rewriters.foldLeft(interpolatedOpt){
+      (opt, rewriter) =>
+        opt.flatMap {
+          trace =>
+            rewriter.rewriteLocally(trace, row, schema)
+        }
     }
   }
 
@@ -182,10 +195,10 @@ final case class TraceSetView(self: Set[Trace]) {
 
   def ||(other: TraversableOnce[Trace]): Set[Trace] = self ++ other
 
-  def rewrite(ec: ExecutionContext): Set[Trace] = self.map(_.rewrite(ec))
+  def rewriteGlobally(schema: DataRowSchema): Set[Trace] = self.map(_.rewriteGlobally(schema))
 
-  def interpolate(row: FetchedRow, schema: DataRowSchema): Set[Trace] =
-    self.flatMap(_.interpolate(row, schema: DataRowSchema).map(_.children))
+  //  def interpolate(row: FetchedRow, schema: DataRowSchema): Set[Trace] =
+  //    self.flatMap(_.interpolate(row, schema: DataRowSchema).map(_.children))
 
   def outputNames: Set[String] = self.map(_.outputNames).reduce(_ ++ _)
 }

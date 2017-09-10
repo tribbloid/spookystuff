@@ -37,7 +37,7 @@ case class FetchPlan(
 
     val trace_DataRowRDD: RDD[(TraceView, DataRow)] = child.rdd()
       .flatMap {
-        _.interpolate(traces)
+        _.rewriteLocally(traces)
       }
 
     val beaconRDDOpt = this.beaconRDDOpt

@@ -1,6 +1,5 @@
 package com.tribbloids.spookystuff.row
 
-import com.tribbloids.spookystuff._
 import com.tribbloids.spookystuff.execution._
 import com.tribbloids.spookystuff.extractors._
 import com.tribbloids.spookystuff.utils.ScalaUDT
@@ -12,19 +11,20 @@ import scala.language.implicitConversions
 //this is a special StructType that carries more metadata
 //TODO: override sqlType, serialize & deserialize to compress into InternalRow
 case class DataRowSchema(
-                          spooky: SpookyContext,
-                          map: ListMap[Field, DataType] = ListMap.empty
+                          ec: ExecutionContext,
+                          fieldTypes: ListMap[Field, DataType] = ListMap.empty
                         ) extends ScalaUDT[DataRow] {
 
   import com.tribbloids.spookystuff.utils.ScalaType._
 
-  final def fields: List[Field] = map.keys.toList
-  final def typedFields: List[TypedField] = map.iterator.toList.map(tuple => TypedField(tuple._1, tuple._2))
+  def spooky = ec.spooky
+
+  final def fields: List[Field] = fieldTypes.keys.toList
+  final def typedFields: List[TypedField] = fieldTypes.iterator.toList.map(tuple => TypedField(tuple._1, tuple._2))
   final def indexedFields: List[IndexedField] = typedFields.zipWithIndex
 
   final def typedFor(field: Field): Option[TypedField] = {
-    map.get(field).map {
-
+    fieldTypes.get(field).map {
       TypedField(field, _)
     }
   }
@@ -34,12 +34,12 @@ case class DataRowSchema(
 
   def filterFields(filter: Field => Boolean = _.isSelected): DataRowSchema = {
     this.copy(
-      map = ListMap(map.filterKeys(filter).toSeq: _*)
+      fieldTypes = ListMap(fieldTypes.filterKeys(filter).toSeq: _*)
     )
   }
 
   def toStructType: StructType = {
-    val structFields = map
+    val structFields = fieldTypes
       .toSeq
       .map {
         tuple =>
@@ -53,7 +53,7 @@ case class DataRowSchema(
   }
 
   def -- (field: Iterable[Field]): DataRowSchema = this.copy(
-    map = map -- field
+    fieldTypes = fieldTypes -- field
   )
 
   def newResolver: Resolver = new Resolver()
@@ -61,10 +61,10 @@ case class DataRowSchema(
   class Resolver extends Serializable {
 
     val buffer: LinkedMap[Field, DataType] = LinkedMap()
-    buffer ++= DataRowSchema.this.map.toSeq
+    buffer ++= DataRowSchema.this.fieldTypes.toSeq
     //    val lookup: mutable.HashMap[Extractor[_], Resolved[_]] = mutable.HashMap()
 
-    def build: DataRowSchema = DataRowSchema.this.copy(map = ListMap(buffer.toSeq: _*))
+    def build: DataRowSchema = DataRowSchema.this.copy(fieldTypes = ListMap(buffer.toSeq: _*))
 
     private def resolveField(field: Field): Field = {
 
@@ -133,7 +133,7 @@ case class DataRowSchema(
 
   def mergeType(resolvedField: Field, dataType: DataType): DataType = {
 
-    val existingTypeOpt = DataRowSchema.this.map.get(resolvedField)
+    val existingTypeOpt = DataRowSchema.this.fieldTypes.get(resolvedField)
 
     (existingTypeOpt, resolvedField.conflictResolving) match {
       case (Some(existingType), Field.Overwrite) =>

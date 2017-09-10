@@ -1,8 +1,23 @@
 package com.tribbloids.spookystuff.actions
 
-import com.tribbloids.spookystuff.execution.ExecutionContext
+import com.tribbloids.spookystuff.row.{DataRowSchema, FetchedRow}
 
 trait Rewriter[T] {
 
-  def rewrite(v: T, ec: ExecutionContext): T
+  /**
+    * invoked on driver
+    * @param v
+    * @param schema
+    * @return
+    */
+  def rewriteGlobally(v: T, schema: DataRowSchema): T = v
+
+  /**
+    * invoked on executors, immediately after interpolation
+    * @param v
+    * @param row
+    * @param schema
+    * @return
+    */
+  def rewriteLocally(v: T, row: FetchedRow, schema: DataRowSchema): Option[T] = Some(v)
 }

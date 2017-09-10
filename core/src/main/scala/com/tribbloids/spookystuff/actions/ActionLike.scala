@@ -29,15 +29,15 @@ abstract class ActionLike extends Product with Serializable with Verbose {
 
   lazy val TreeNode: ActionLike.TreeNodeView = ActionLike.TreeNodeView(this)
 
-  //TODO: this step should be broken into 2 stages for better efficiency:
-  // f1 =[schema](resolve on driver)=> f2 =[row](eval on executors)=> v
+  def rewriters: Seq[TraceRewriter] = Nil
+
   final def interpolate(row: FetchedRow, schema: DataRowSchema): Option[this.type] = {
-    val option = this.doInterpolate(row, schema)
-    option.foreach{
+    val result = this.doInterpolate(row, schema)
+    result.foreach{
       action =>
         action.injectFrom(this)
     }
-    option
+    result
   }
 
   //TODO: use reflection to simplify

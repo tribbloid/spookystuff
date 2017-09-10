@@ -25,7 +25,7 @@ abstract class ExecutionPlan(
           ) = this(
 
     children,
-    children.map(_.ec).reduce(_ ++ _)
+    children.map(_.ec).reduce(_ merge _)
   )
 
   def spooky = ec.spooky
@@ -33,15 +33,15 @@ abstract class ExecutionPlan(
 
   //Cannot be lazy, always defined on construction
   val schema: DataRowSchema = DataRowSchema(
-    spooky,
-    map = children.map(_.schema.map)
+    ec,
+    fieldTypes = children.map(_.schema.fieldTypes)
       .reduceOption(_ ++ _)
       .getOrElse(ListMap[Field, DataType]())
   )
 
   implicit def withSchema(row: SquashedFetchedRow): SquashedFetchedRow#WithSchema = new row.WithSchema(schema)
 
-  def fieldMap: ListMap[Field, DataType] = schema.map
+  def fieldMap: ListMap[Field, DataType] = schema.fieldTypes
 
   def allSortIndices: List[IndexedField] = schema.indexedFields.filter(_._1.self.isSortIndex)
 

@@ -13,7 +13,7 @@ class SchemaContextSuite extends SpookyEnvFixture{
 
   it("Resolver should not scramble sequence of fields") {
 
-    val schema0 = DataRowSchema(spooky)
+    val schema0 = DataRowSchema(ExecutionContext(spooky))
     val resolver0 = schema0.newResolver
     resolver0
       .include(

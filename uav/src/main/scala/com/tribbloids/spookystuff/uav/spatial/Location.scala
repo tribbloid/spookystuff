@@ -26,18 +26,34 @@ case class Location(
                      definedBy: Seq[SpatialRelation]
                    ) extends LocationLike {
 
+
+  case class WithHome(
+                       home: Location
+                     ) {
+
+    lazy val homeLevelProj: Location = {
+      val ned = Location.this.getCoordinate(NED, home).get
+      Location.fromTuple(ned.copy(down = 0) -> home)
+    }
+
+    lazy val MSLProj: Location = {
+      val lle = Location.this.getCoordinate(LLA, home).get
+      Location.fromTuple(lle.copy(alt = 0) -> Anchors.Geodetic)
+    }
+  }
+
   /**
     * replace all PlaceHoldingAnchor with ref.
     */
-  def assumeAnchor(ref: Anchor): Location = {
+  def replaceAnchors(fn: PartialFunction[Anchor, Anchor]): Location = {
 
     val cs = definedBy.map {
-      tuple =>
-        if (tuple.from == PlaceHoldingAnchor) {
-          require(definedBy.size == 1, "")
-          tuple.copy(from = ref)
-        }
-        else tuple
+      rel =>
+        //TODO: unnecessary copy if out of fn domain
+        val replaced: Anchor = fn.applyOrElse(rel.from, _ => rel.from)
+        rel.copy(
+          from = replaced
+        )
     }
     this.copy(definedBy = cs)
   }
@@ -60,8 +76,8 @@ case class Location(
   // recursively search through its relations to deduce the coordinate.
   override def _getCoordinate(
                                system: CoordinateSystem,
-                               from: Anchor = GeodeticAnchor,
-                               ic: Tabu
+                               from: Anchor = Anchors.Geodetic,
+                               ic: SearchHistory
                              ): Option[system.V] = {
 
     if (ic.recursions >= 1000) {
@@ -149,25 +165,21 @@ object Location {
   implicit def fromCoordinate(
                                c: Coordinate
                              ): Location = {
-    Location(Seq(
-      SpatialRelation(c, PlaceHoldingAnchor)
-    ))
+    Location(Seq(c -> Anchors.Home))
   }
 
   implicit def fromTuple(
                           t: (Coordinate, Anchor)
                         ): Location = {
-    Location(Seq(
-      SpatialRelation(t._1, t._2)
-    ))
+    Location(Seq(t))
   }
 
   def parse(v: Any, conf: UAVConf): Location = {
     v match {
       case p: Location =>
-        p.assumeAnchor(conf.homeLocation)
+        p.replaceAnchors(conf.home)
       case c: Coordinate =>
-        c.assumeAnchor(conf.homeLocation)
+        c.replaceAnchors(conf.home)
       case v: GenericRowWithSchema =>
         val schema = v.schema
         val names = schema.fields.map(_.name)
@@ -188,7 +200,7 @@ object Location {
         else {
           ???
         }
-        c.assumeAnchor(conf.homeLocation)
+        c.replaceAnchors(conf.home)
       case s: String =>
         ???
       case _ =>

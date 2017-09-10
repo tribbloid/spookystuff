@@ -4,7 +4,7 @@ import com.tribbloids.spookystuff.extractors.Col
 import com.tribbloids.spookystuff.extractors.impl.Lit
 import com.tribbloids.spookystuff.row.{DataRowSchema, FetchedRow}
 import com.tribbloids.spookystuff.session.Session
-import com.tribbloids.spookystuff.uav.spatial.Location
+import com.tribbloids.spookystuff.uav.spatial.{Anchor, Location}
 import com.tribbloids.spookystuff.uav.{UAVConf, UAVConst}
 import org.slf4j.LoggerFactory
 
@@ -16,7 +16,7 @@ import scala.concurrent.duration.Duration
 trait WaypointLike extends UAVNavigation {
 
   val to: Col[Location]
-  lazy val _to = to.value
+  lazy val _end = to.value
 
   override def getSessionView(session: Session) = new this.SessionView(session)
 
@@ -24,7 +24,7 @@ trait WaypointLike extends UAVNavigation {
 
     override def engage(): Unit = {
       LoggerFactory.getLogger(this.getClass).info(s"moving to $to")
-      link.synch.goto(_to)
+      link.synch.goto(_end)
     }
   }
 }
@@ -52,4 +52,8 @@ case class Waypoint(
           .asInstanceOf[this.type]
     }
   }
+
+  override def replaceAnchor(fn: PartialFunction[Anchor, Anchor]) = this.copy(
+    to = to.value.replaceAnchors(fn)
+  ).asInstanceOf[this.type]
 }

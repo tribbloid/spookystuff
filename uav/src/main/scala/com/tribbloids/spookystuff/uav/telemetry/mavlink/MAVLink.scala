@@ -4,7 +4,7 @@ import com.tribbloids.spookystuff.uav.system.UAV
 import com.tribbloids.spookystuff.uav.telemetry.Link
 import com.tribbloids.spookystuff.session.python.PythonDriver
 import com.tribbloids.spookystuff.session.{Cleanable, ConflictDetection}
-import com.tribbloids.spookystuff.uav.spatial.{GeodeticAnchor, LLA, Location}
+import com.tribbloids.spookystuff.uav.spatial.{Anchors, LLA, Location}
 import org.slf4j.LoggerFactory
 
 import scala.language.implicitConversions
@@ -151,7 +151,7 @@ case class MAVLink(
   implicit def toPyLocation(
                              p: Location
                            ): PyLocation = {
-    val lla = p.getCoordinate(LLA, GeodeticAnchor).get
+    val lla = p.getCoordinate(LLA, Anchors.Geodetic).get
     LocationGlobal(lla.lat, lla.lon, lla.alt)
   }
 
@@ -160,7 +160,7 @@ case class MAVLink(
                              ): Location = {
     l match {
       case l: LocationGlobal =>
-        LLA(l.lat, l.lon, l.alt) -> GeodeticAnchor
+        LLA(l.lat, l.lon, l.alt) -> Anchors.Geodetic
       case _ =>
         ???
     }

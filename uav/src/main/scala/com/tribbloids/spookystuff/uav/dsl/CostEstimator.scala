@@ -3,7 +3,7 @@ package com.tribbloids.spookystuff.uav.dsl
 import com.tribbloids.spookystuff.SpookyContext
 import com.tribbloids.spookystuff.actions.{Action, Trace}
 import com.tribbloids.spookystuff.uav.actions.UAVNavigation
-import com.tribbloids.spookystuff.uav.planning.TakeoffWithUAV
+import com.tribbloids.spookystuff.uav.planning.PreferUAV
 import com.tribbloids.spookystuff.uav.spatial.NED
 
 trait CostEstimator {
@@ -22,7 +22,7 @@ object CostEstimator {
 
     def intraCost(nav: UAVNavigation) = {
 
-      val ned = nav._to.coordinate(NED, nav._from)
+      val ned = nav._end.coordinate(NED, nav._start)
       val distance = Math.sqrt(ned.vector dot ned.vector)
 
       val _speed = nav.speedOpt.getOrElse(speed)
@@ -32,8 +32,8 @@ object CostEstimator {
 
     def interCost(nav1: UAVNavigation, nav2: UAVNavigation) = {
 
-      val end1 = nav1._to
-      val start2 = nav2._from
+      val end1 = nav1._end
+      val start2 = nav2._start
 
       val ned = start2.coordinate(NED, end1)
       val distance = Math.sqrt(ned.vector dot ned.vector)
@@ -50,7 +50,7 @@ object CostEstimator {
 
       {
         val preferUAVs = concated.collect {
-          case v: TakeoffWithUAV => v
+          case v: PreferUAV => v
         }
           .distinct
         require(preferUAVs.size <= 1,

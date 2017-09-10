@@ -11,7 +11,7 @@ case class ExecutionContext(
                              @transient scratchRDDs: ScratchRDDs = new ScratchRDDs()
                            ) {
 
-  def ++(b: ExecutionContext) = {
+  def merge(b: ExecutionContext) = {
     //    assert(this.spooky == b.spooky,
     //      "cannot merge execution plans due to diverging SpookyContext")
 

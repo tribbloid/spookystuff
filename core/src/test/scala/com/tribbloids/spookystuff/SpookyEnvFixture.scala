@@ -130,6 +130,7 @@ abstract class SpookyEnvFixture
   }
 
   lazy val defaultEC = ExecutionContext(spooky)
+  lazy val defaultSchema = DataRowSchema(defaultEC)
 
   def reloadSpooky: SpookyContext = {
     val sql = this.sql
@@ -138,7 +139,7 @@ abstract class SpookyEnvFixture
     result
   }
 
-  def emptySchema = DataRowSchema(spooky)
+  def emptySchema = DataRowSchema(ExecutionContext(spooky))
 
   implicit def withSchema(row: SquashedFetchedRow): SquashedFetchedRow#WithSchema = new row.WithSchema(emptySchema)
   implicit def extractor2Resolved[T, R](extractor: Alias[T, R]): GenResolved[T, R] = GenResolved(

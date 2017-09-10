@@ -49,7 +49,7 @@ case class FetchedDataset(
     this(
       RDDPlan(
         sourceRDD,
-        DataRowSchema(spooky, fieldMap),
+        DataRowSchema(ExecutionContext(spooky), fieldMap),
         spooky,
         beaconRDDOpt
       )
@@ -154,7 +154,7 @@ case class FetchedDataset(
 
       val structType = filtered.toStructType
 
-      val rowRDD = toRowRDD(sort, filtered.map.keys.toList)
+      val rowRDD = toRowRDD(sort, filtered.fieldTypes.keys.toList)
 
       val result = spooky.sqlContext.createDataFrame(rowRDD, structType)
 
@@ -372,7 +372,7 @@ case class FetchedDataset(
   def fetch(
              traces: Set[Trace],
              genPartitioner: GenPartitioner = spooky.spookyConf.defaultGenPartitioner
-           ): FetchedDataset = FetchPlan(plan, traces.rewrite(plan.ec), genPartitioner)
+           ): FetchedDataset = FetchPlan(plan, traces.rewriteGlobally(plan.schema), genPartitioner)
 
   //shorthand of fetch
   def visit(
@@ -508,7 +508,7 @@ case class FetchedDataset(
     val params = ExploreParams(depthField, ordinalField, range, extracts)
 
     ExplorePlan(plan, on.withJoinFieldIfMissing, sampler, joinType,
-      traces.rewrite(plan.ec), genPartitioner,
+      traces.rewriteGlobally(plan.schema), genPartitioner,
       params, exploreAlgorithm, epochSize, checkpointInterval
     )
   }

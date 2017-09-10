@@ -2,7 +2,7 @@ package com.tribbloids.spookystuff.uav.actions
 
 import com.tribbloids.spookystuff.actions.{Action, Interaction}
 import com.tribbloids.spookystuff.session.Session
-import com.tribbloids.spookystuff.uav.spatial.Location
+import com.tribbloids.spookystuff.uav.spatial.{Anchor, Location}
 import com.tribbloids.spookystuff.uav.utils.UAVViews
 import com.tribbloids.spookystuff.uav.{UAVConf, UAVMetrics}
 import org.slf4j.LoggerFactory
@@ -26,10 +26,12 @@ trait UAVAction extends Action {
   */
 trait UAVNavigation extends Interaction with UAVAction with HasCost {
 
-  def _to: Location
-  def _from: Location = _to
+  def _end: Location
+  def _start: Location = _end
 
   def speedOpt: Option[Double] = None
+
+  def replaceAnchor(fn: PartialFunction[Anchor, Anchor]): this.type = this
 
   override def exeNoOutput(session: Session): Unit = {
 

@@ -2,7 +2,7 @@ package com.tribbloids.spookystuff.uav
 
 import com.tribbloids.spookystuff.conf.{AbstractConf, Submodules}
 import com.tribbloids.spookystuff.uav.dsl._
-import com.tribbloids.spookystuff.uav.spatial.{GeodeticAnchor, LLA, Location}
+import com.tribbloids.spookystuff.uav.spatial.{Anchors, LLA, Location}
 import com.tribbloids.spookystuff.uav.system.UAV
 import org.apache.spark.SparkConf
 
@@ -30,7 +30,7 @@ object UAVConf extends Submodules.Builder[UAVConf]{
     * 43.694195,-79.262262,136,353
     */
   final val DEFAULT_HOME_LOCATION: Location = {
-    LLA(43.694195, -79.262262, 136) -> GeodeticAnchor
+    LLA(43.694195, -79.262262, 136) -> Anchors.Geodetic
   }
 }
 
@@ -53,7 +53,7 @@ case class UAVConf(
                     var slowConnectionRetries: Int = Int.MaxValue,
                     var slowConnectionRetryInterval: Duration = UAVConf.BLACKLIST_RESET_AFTER, //1 minute
 
-                    var homeLocation: Location = UAVConf.DEFAULT_HOME_LOCATION,
+                    var home: Location = UAVConf.DEFAULT_HOME_LOCATION,
                     var costEstimator: CostEstimator = CostEstimator.Default(),
 
                     var defaultSpeed: Double = 5.0,
@@ -74,6 +74,4 @@ case class UAVConf(
   override def importFrom(sparkConf: SparkConf): UAVConf.this.type = {
     this.copy().asInstanceOf[this.type]
   }
-
-  def
 }

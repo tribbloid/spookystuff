@@ -79,13 +79,13 @@ sealed case class AltitudeOnly(
         wps -> tuple._2
     }
 
-    val home = spooky.getConf[UAVConf].homeLocation
+    val home = spooky.getConf[UAVConf].home
 
     val nedWithIDRDD: RDD[(List[(NED.V, Int)], Long)] = wpWithIDRDD.map {
       tuple =>
         val coords = tuple._1.flatMap {
           case (wp, i) =>
-            wp._to.getCoordinate(NED, home).map {
+            wp._end.getCoordinate(NED, home).map {
               v =>
                 v -> i
             }

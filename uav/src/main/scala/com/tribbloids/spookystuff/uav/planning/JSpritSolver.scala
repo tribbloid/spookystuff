@@ -58,7 +58,7 @@ object JSpritSolver extends MinimaxSolver {
           kv =>
             val vv = kv._1
             val updatedVV = vv.copy(
-              children = List(TakeoffWithUAV(status.uav,  Some(link._mutex.get._id)))
+              children = List(PreferUAV(status,  Some(link._mutex.get._id)))
                 ++ vv.children
             )
             updatedVV -> kv._2
@@ -90,7 +90,7 @@ object JSpritSolver extends MinimaxSolver {
         else {
           val traceView: TraceView = i._1
           val last = traceView.children.collect { case v: UAVNavigation => v }.last
-          val lastLocation = last._to
+          val lastLocation = last._end
           val realTrace = List(Waypoint(lastLocation)) ++ j._1.children
           val cost = costEstimator.estimate(realTrace, spooky)
           (i._2, j._2, cost)
@@ -214,7 +214,7 @@ object JSpritSolver extends MinimaxSolver {
       (fromUAVs ++ fromTraces).zipWithIndex
     }
 
-    val homeLocation = spooky.getConf[UAVConf].homeLocation
+    val homeLocation = spooky.getConf[UAVConf].home
 
     lazy val define: VehicleRoutingProblem = {
 
@@ -300,7 +300,7 @@ object JSpritSolver extends MinimaxSolver {
               case nav: UAVNavigation => nav
             }
 
-            val coord = navs.head._from.getCoordinate(NED, homeLocation).get
+            val coord = navs.head._start.getCoordinate(NED, homeLocation).get
             val location = JLocation.Builder
               .newInstance()
               .setIndex(tuple._2)

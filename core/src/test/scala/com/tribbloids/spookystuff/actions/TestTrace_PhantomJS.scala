@@ -2,14 +2,13 @@ package com.tribbloids.spookystuff.actions
 
 import com.tribbloids.spookystuff.SpookyEnvFixture
 import com.tribbloids.spookystuff.doc.Doc
-import com.tribbloids.spookystuff.execution.ExecutionContext
 import com.tribbloids.spookystuff.session.{AbstractSession, CleanWebDriver, Session}
 import com.tribbloids.spookystuff.testutils.FunSpecx
-import org.apache.xmlbeans.impl.common.XPath.ExecutionContext
 
 class TestTrace_PhantomJS extends SpookyEnvFixture with FunSpecx {
 
   import com.tribbloids.spookystuff.dsl._
+
   import scala.concurrent.duration._
 
   override lazy val driverFactory: DriverFactory[CleanWebDriver] = DriverFactories.PhantomJS()
@@ -54,7 +53,7 @@ class TestTrace_PhantomJS extends SpookyEnvFixture with FunSpecx {
 
   it("TraceView.autoSnapshot should not modify empty Trace") {
 
-    assert(TraceView(List[Action]()).rewrite(defaultEC) == List[Action]())
+    assert(TraceView(List[Action]()).rewriteGlobally(defaultSchema) == List[Action]())
   }
 
   it("TraceView.autoSnapshot should append Snapshot to non-empty Trace that doesn't end with Export OR Block") {
@@ -65,7 +64,7 @@ class TestTrace_PhantomJS extends SpookyEnvFixture with FunSpecx {
       Click("dummy")
     )
 
-    assert(trace.rewrite(defaultEC) == trace :+ Snapshot())
+    assert(trace.rewriteGlobally(defaultSchema) == trace :+ Snapshot())
   }
 
   it("TraceView.autoSnapshot should append Snapshot to non-empty Trace that has no output") {
@@ -79,7 +78,7 @@ class TestTrace_PhantomJS extends SpookyEnvFixture with FunSpecx {
       )
     )
 
-    assert(trace.rewrite(defaultEC) == trace :+ Snapshot())
+    assert(trace.rewriteGlobally(defaultSchema) == trace :+ Snapshot())
   }
 
   it("TraceView.TreeNode.toString should have indentations of TreeNode") {

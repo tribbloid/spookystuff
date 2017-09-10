@@ -19,13 +19,13 @@ trait Coordinate extends Serializable {
   def y: Double = vector(1)
   def z: Double = vector(2)
 
-  var ic: Tabu = _
+  var ic: SearchHistory = _
 
   //implement this to bypass proj4
   def fastProjectTo(
                      ref1: Anchor,
                      ref2: Anchor, system2: CoordinateSystem,
-                     ic: Tabu
+                     ic: SearchHistory
                    ): Option[system2.V] = {
     system2 match {
       case NED if ref1 == ref2 => Some(NED.V(0,0,0).asInstanceOf[system2.V])
@@ -33,7 +33,7 @@ trait Coordinate extends Serializable {
     }
   }
 
-  def projectZ(ref1: Anchor, ref2: Anchor, system2: CoordinateSystem, ic: Tabu): Option[Double] = {
+  def projectZ(ref1: Anchor, ref2: Anchor, system2: CoordinateSystem, ic: SearchHistory): Option[Double] = {
 
     val delta2_1Opt = {
       ic.getCoordinate(SpatialEdge(ref2, LLA, ref1))
@@ -59,7 +59,7 @@ trait Coordinate extends Serializable {
                ref1: Anchor,
                ref2: Anchor,
                system2: CoordinateSystem,
-               ic: Tabu
+               ic: SearchHistory
              ): Option[system2.V] = {
 
     val customResult: Option[system2.V] = fastProjectTo(ref1, ref2, system2, ic)
@@ -107,10 +107,10 @@ trait CoordinateSystem extends Serializable {
   def name: String = this.getClass.getSimpleName.stripSuffix("$")
 
   //to save time we avoid using proj4 string parsing and implement our own alternative conversion rule if Projection is not available.
-  def get2DProj(a: Anchor, ic: Tabu): Option[Projection]
+  def get2DProj(a: Anchor, ic: SearchHistory): Option[Projection]
 
   protected def _create(vector: Vec[Double]): V
-  def create(vector: Vec[Double], ic: Tabu = Tabu()) = {
+  def create(vector: Vec[Double], ic: SearchHistory = SearchHistory()) = {
     val result = _create(vector)
     assert(result.vector == vector) //TODO: remove
     result.ic = ic
@@ -146,7 +146,7 @@ object LLA extends CoordinateSystem {
   }
 
   //to save time we avoid using proj4 string parsing and implement our own alternative conversion rule if Projection is not available.
-  override def get2DProj(a: Anchor, ic: Tabu): Option[Projection] = {
+  override def get2DProj(a: Anchor, ic: SearchHistory): Option[Projection] = {
     projOpt
   }
 
@@ -175,10 +175,10 @@ object LLA extends CoordinateSystem {
   */
 object NED extends CoordinateSystem {
   //to save time we avoid using proj4 string parsing and implement our own alternative conversion rule if Projection is not available.
-  override def get2DProj(a: Anchor, ic: Tabu): Option[Projection] = {
+  override def get2DProj(a: Anchor, ic: SearchHistory): Option[Projection] = {
     a match {
       case p: Location =>
-        val opt: Option[LLA.V] = ic.getCoordinate(SpatialEdge(GeodeticAnchor, LLA, p))
+        val opt: Option[LLA.V] = ic.getCoordinate(SpatialEdge(Anchors.Geodetic, LLA, p))
         opt.map {
           origin =>
             val proj = new EquidistantAzimuthalProjection(Math.toRadians(origin.lat), Math.toRadians(origin.lon))

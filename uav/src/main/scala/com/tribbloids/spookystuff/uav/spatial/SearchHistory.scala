@@ -13,12 +13,12 @@ case class SpatialEdge[+T <: CoordinateSystem](
                                               ) {
 }
 
-case class Tabu(
-                 stack: mutable.ArrayBuffer[SpatialEdge[CoordinateSystem]] = mutable.ArrayBuffer.empty,
-                 failed: mutable.Set[SpatialEdge[CoordinateSystem]] = mutable.Set.empty,
-                 var hops: Int = 0,
-                 var recursions: Int = 0
-               ) {
+case class SearchHistory(
+                          stack: mutable.ArrayBuffer[SpatialEdge[CoordinateSystem]] = mutable.ArrayBuffer.empty,
+                          failed: mutable.Set[SpatialEdge[CoordinateSystem]] = mutable.Set.empty,
+                          var hops: Int = 0,
+                          var recursions: Int = 0
+                        ) {
 
   override def toString: String = {
     s"hops=$hops recursions=$recursions"

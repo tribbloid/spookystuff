@@ -172,11 +172,11 @@ case class SquashedFetchedRow(
      * if a groupedFetched doesn't yield any trace it is omitted
      * if 2 groupedFetched yield identical traces only the first is preserved?
      */
-    def interpolate(
-                     traces: Set[Trace],
-                     filterEmpty: Boolean = true,
-                     distinct: Boolean = true
-                   ): Array[(TraceView, DataRow)] = {
+    def rewriteLocally(
+                        traces: Set[Trace],
+                        filterEmpty: Boolean = true,
+                        distinct: Boolean = true
+                      ): Array[(TraceView, DataRow)] = {
 
       val dataRows_traceOpts = semiUnsquash.flatMap {
         rows => //each element contains a different page group, CAUTION: not all of them are used: page group that yield no new datum will be removed, if all groups yield no new datum at least 1 row is preserved
@@ -184,8 +184,8 @@ case class SquashedFetchedRow(
             row =>
               traces.map {
                 trace =>
-                  val interpolated: Option[Trace] = TraceView(trace).interpolate(row, schema).map(_.children)
-                  row.dataRow -> interpolated
+                  val rewritten: Option[Trace] = TraceView(trace).rewriteLocally(row, schema)
+                  row.dataRow -> rewritten
                 //always discard old pages & temporary data before repartition, unlike flatten
               }
           }

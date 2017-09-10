@@ -118,7 +118,7 @@ case class ExplorePlan(
           val open0 = depth0
             .extract(_on)
             .flattenData(_on.field, _params.ordinalField, joinType.isLeft, sampler)
-            .interpolate(traces)
+            .rewriteLocally(traces)
             .map {
               t =>
                 t._1 -> Open_Visited(open = Some(Array(t._2)))
