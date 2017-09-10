@@ -2,6 +2,7 @@ package com.tribbloids.spookystuff.actions
 
 import com.tribbloids.spookystuff.caching.{DFSDocCache, InMemoryDocCache}
 import com.tribbloids.spookystuff.doc.{Doc, Fetched}
+import com.tribbloids.spookystuff.execution.ExecutionContext
 import com.tribbloids.spookystuff.row.{DataRowSchema, FetchedRow}
 import com.tribbloids.spookystuff.session.Session
 import com.tribbloids.spookystuff.{SpookyContext, dsl}
@@ -107,11 +108,11 @@ case class TraceView(
     result.toList
   }
 
-  lazy val rewritten: Trace = {
+  def rewrite(ec: ExecutionContext): Trace = {
     val rewriters = children.flatMap(_.rewriters).distinct
     rewriters.foldLeft(children){
       (trace, rewriter) =>
-        rewriter.apply(trace)
+        rewriter.rewrite(trace, ec)
     }
   }
 
@@ -181,7 +182,7 @@ final case class TraceSetView(self: Set[Trace]) {
 
   def ||(other: TraversableOnce[Trace]): Set[Trace] = self ++ other
 
-  def rewritten: Set[Trace] = self.map(_.rewritten)
+  def rewrite(ec: ExecutionContext): Set[Trace] = self.map(_.rewrite(ec))
 
   def interpolate(row: FetchedRow, schema: DataRowSchema): Set[Trace] =
     self.flatMap(_.interpolate(row, schema: DataRowSchema).map(_.children))

@@ -8,15 +8,14 @@ import org.slf4j.LoggerFactory
 
 import scala.collection.mutable.ArrayBuffer
 import scala.language.implicitConversions
-import scala.util.Random
 
 trait LocationLike extends Anchor {
 }
 
-case class UnknownLocation(
-                            id: Long = Random.nextLong()
-                          ) extends LocationLike {
-}
+//case class UnknownLocation(
+//                            id: Long = Random.nextLong()
+//                          ) extends LocationLike {
+//}
 
 class LocationUDT() extends ScalaUDT[Location]
 

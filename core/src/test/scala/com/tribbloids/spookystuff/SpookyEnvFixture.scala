@@ -3,6 +3,7 @@ package com.tribbloids.spookystuff
 import com.tribbloids.spookystuff.conf._
 import com.tribbloids.spookystuff.doc.{Doc, Unstructured}
 import com.tribbloids.spookystuff.dsl.DriverFactory
+import com.tribbloids.spookystuff.execution.ExecutionContext
 import com.tribbloids.spookystuff.extractors.{Alias, GenExtractor, GenResolved}
 import com.tribbloids.spookystuff.row.{DataRowSchema, SquashedFetchedRow, TypedField}
 import com.tribbloids.spookystuff.session.{CleanWebDriver, Cleanable, Lifespan}
@@ -127,6 +128,8 @@ abstract class SpookyEnvFixture
       result
     }
   }
+
+  lazy val defaultEC = ExecutionContext(spooky)
 
   def reloadSpooky: SpookyContext = {
     val sql = this.sql

@@ -4,17 +4,18 @@ package com.tribbloids.spookystuff.uav.spatial
   * Created by peng on 15/02/17.
   */
 trait Anchor extends Serializable {
+  import Anchors._
 
   def getCoordinate(
                      system: CoordinateSystem = LLA,
-                     from: Anchor = GeodeticAnchor
+                     from: Anchor = Geodetic
                    ): Option[system.V] = {
     _getCoordinate(system, from, Tabu())
   }
 
   def coordinate(
                   system: CoordinateSystem = LLA,
-                  from: Anchor = GeodeticAnchor
+                  from: Anchor = Geodetic
                 ): system.V = {
     getCoordinate(system, from).getOrElse {
       throw new UnsupportedOperationException(s"cannot determine relative position from $from to $this")
@@ -23,13 +24,8 @@ trait Anchor extends Serializable {
 
   def _getCoordinate(
                       system: CoordinateSystem,
-                      from: Anchor = GeodeticAnchor,
+                      from: Anchor = Geodetic,
                       ic: Tabu
                     ): Option[system.V] = None
 }
 
-case object GeodeticAnchor extends Anchor {
-}
-// to be injected by SpookyConf
-case object PlaceHoldingAnchor extends Anchor {
-}

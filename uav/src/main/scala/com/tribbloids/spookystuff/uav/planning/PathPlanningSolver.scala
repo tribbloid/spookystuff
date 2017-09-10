@@ -5,7 +5,7 @@ import com.tribbloids.spookystuff.dsl.GenPartitioner
 import com.tribbloids.spookystuff.execution.ExecutionContext
 import org.apache.spark.rdd.RDD
 
-trait Solver[T <: GenPartitioner] {
+trait PathPlanningSolver[T <: GenPartitioner] {
 
   def rewrite[V](
                   gp: T,

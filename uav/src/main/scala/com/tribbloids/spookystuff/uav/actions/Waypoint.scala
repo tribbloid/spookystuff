@@ -22,13 +22,8 @@ trait WaypointLike extends UAVNavigation {
 
   class SessionView(session: Session) extends super.SessionView(session) {
 
-    override def inbound(): Unit = {
-      LoggerFactory.getLogger(this.getClass).debug(s"assureClearanceAltitude ${uavConf.clearanceAltitude}")
-      link.synch.clearanceAlt(uavConf.clearanceAltitude)
-    }
-
     override def engage(): Unit = {
-      LoggerFactory.getLogger(this.getClass).info(s"scanning ... ${_from}")
+      LoggerFactory.getLogger(this.getClass).info(s"moving to $to")
       link.synch.goto(_to)
     }
   }
@@ -40,7 +35,11 @@ case class Waypoint(
                      override val delay: Duration = UAVConst.UAVNavigation.delayMin
                    ) extends WaypointLike {
 
-  override def doInterpolate(pageRow: FetchedRow, schema: DataRowSchema): Option[this.type] = {
+  override def doInterpolate(
+                              pageRow: FetchedRow,
+                              schema: DataRowSchema
+                            ): Option[this.type] = {
+
     val vOpt: Option[Any] = to.resolve(schema).lift
       .apply(pageRow)
 
@@ -54,8 +53,3 @@ case class Waypoint(
     }
   }
 }
-
-//object Waypoint extends VectorAPI.Decoder[Waypoint] {
-//
-//  override def _decode(vector: linalg.Vector) = ???
-//}

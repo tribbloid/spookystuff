@@ -383,16 +383,16 @@ trait Link extends LocalCleanable with ConflictDetection {
   /**
     * set this to avoid being used by another task even the current task finish.
     */
-  @volatile var _lock: Option[MutexLock] = None
-  def isLocked: Boolean = _lock.exists(v => System.currentTimeMillis() < v.expireAfter)
+  @volatile var _mutex: Option[MutexLock] = None
+  def isLocked: Boolean = _mutex.exists(v => System.currentTimeMillis() < v.expireAfter)
   def lock(): MutexLock = {
     assert(!isLocked)
     val v = MutexLock()
-    _lock = Some(v)
+    _mutex = Some(v)
     v
   }
   def unlock(): Unit = {
-    _lock = None
+    _mutex = None
   }
 
   private def blacklistDuration: Long = spookyOpt
@@ -424,7 +424,7 @@ trait Link extends LocalCleanable with ConflictDetection {
     isAvailable || {
       mutexIDOpt.exists(
         mutexID =>
-          _lock.get._id == mutexID
+          _mutex.get._id == mutexID
       )
     }
   }

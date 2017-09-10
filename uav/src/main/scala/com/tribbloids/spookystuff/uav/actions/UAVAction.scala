@@ -5,7 +5,7 @@ import com.tribbloids.spookystuff.session.Session
 import com.tribbloids.spookystuff.uav.spatial.Location
 import com.tribbloids.spookystuff.uav.utils.UAVViews
 import com.tribbloids.spookystuff.uav.{UAVConf, UAVMetrics}
-import org.apache.spark.ml.dsl.utils.VectorAPI
+import org.slf4j.LoggerFactory
 
 /**
   * unless mixin, assume cost is 0
@@ -43,10 +43,17 @@ trait UAVNavigation extends Interaction with UAVAction with HasCost {
 
   implicit class SessionView(session: Session) extends UAVViews.SessionView(session) {
 
+    lazy val _alt = uavConf.clearanceAltitudeMin
     /**
       * when enclosed in an export, may behave differently.
       */
-    def inbound(): Unit = {}
+    def inbound(): Unit = {
+
+      LoggerFactory.getLogger(this.getClass)
+        .info(s"climbing to ${_alt}")
+
+      link.synch.clearanceAlt(_alt)
+    }
 
     def engage(): Unit = {}
 

@@ -17,7 +17,7 @@ import scala.reflect.ClassTag
 object GenPartitioners {
 
   case class MinimaxCost(
-                          prepartitioner: GenPartitioner = {
+                          base: GenPartitioner = {
                             com.tribbloids.spookystuff.dsl.GenPartitioners.Wide()
                           },
 
@@ -50,7 +50,7 @@ object GenPartitioners {
 
         val spooky = ec.spooky
 
-        val preprocessed = prepartitioner.getInstance[K](ec).groupByKey(rdd, beaconRDDOpt)
+        val preprocessed = base.getInstance[K](ec).groupByKey(rdd, beaconRDDOpt)
 
         val bifurcated: RDD[((Option[TraceView], Option[K]), Iterable[V])] = preprocessed
           .map {

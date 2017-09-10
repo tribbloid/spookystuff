@@ -41,18 +41,29 @@ case class UAVConf(
                     // list all possible connection string of drones
                     // including tcp, udp and serial,
                     // some of them may be unreachable but you don't care.
-                    // connection list is configed by user and shared by all executors
+                    // connection list is configured by user and shared by all executors
                     // blacklist is node specific and determined by GenPartitioner
                     // routing now becomes part of Connection?
+
                     var fleet: Fleet = Fleet.Inventory(Nil),
                     var linkFactory: LinkFactory = LinkFactories.ForkToGCS(),
                     var fastConnectionRetries: Int = UAVConf.FAST_CONNECTION_RETRIES,
+
+                    //TODO: by convention, should use exponentially increasing intervals
                     var slowConnectionRetries: Int = Int.MaxValue,
                     var slowConnectionRetryInterval: Duration = UAVConf.BLACKLIST_RESET_AFTER, //1 minute
-                    var clearanceAltitude: Double = 10, // in meters
+
                     var homeLocation: Location = UAVConf.DEFAULT_HOME_LOCATION,
                     var costEstimator: CostEstimator = CostEstimator.Default(),
-                    var defaultSpeed: Double = 5.0
+
+                    var defaultSpeed: Double = 5.0,
+
+                    // used by Rewriters to clamp Waypoint's altitude before being submitted to Global Planner (GenPartitioner)4
+                    // IMPORTANT: always rewrite locally first, globally last!
+                    // All UAVNavigation will climb into range before doing anything else.
+                    var clearanceAltitudeMin: Double = 10,
+                    var clearanceAltitudeMax: Double = 121.92
+
                   ) extends AbstractConf {
 
   def uavsInFleet: Set[UAV] = fleet.apply()
@@ -63,4 +74,6 @@ case class UAVConf(
   override def importFrom(sparkConf: SparkConf): UAVConf.this.type = {
     this.copy().asInstanceOf[this.type]
   }
+
+  def
 }

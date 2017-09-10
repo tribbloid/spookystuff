@@ -20,7 +20,7 @@ import scala.util.Random
 @SerialVersionUID(-98257039403274083L)
 abstract class Interaction extends Action {
 
-  def delay: Duration
+  def delay: Duration = Duration.Zero
 
   override def doExe(session: Session): Seq[Doc] = {
 
@@ -44,7 +44,7 @@ abstract class Interaction extends Action {
   */
 @SerialVersionUID(-6784287573066896999L)
 abstract class WebInteraction(
-                               val delay: Duration,
+                               override val delay: Duration,
                                val blocking: Boolean
                              ) extends Interaction with Timed {
 

@@ -58,7 +58,7 @@ object JSpritSolver extends MinimaxSolver {
           kv =>
             val vv = kv._1
             val updatedVV = vv.copy(
-              children = List(PreferUAV(status, Some(link._lock.get._id)))
+              children = List(TakeoffWithUAV(status.uav,  Some(link._mutex.get._id)))
                 ++ vv.children
             )
             updatedVV -> kv._2

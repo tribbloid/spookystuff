@@ -59,7 +59,7 @@ class GASolverSuite extends SpookyEnvFixture {
       waypoints.map{ a => List(a)}
         .map {
           trace =>
-            Seq(PreferUAV(dummyLink.status())) ++ trace
+            Seq(TakeoffWithUAV(dummyLink.status())) ++ trace
         }
         .mkString("\n")
     )

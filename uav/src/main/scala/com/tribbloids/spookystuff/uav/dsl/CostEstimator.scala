@@ -3,7 +3,7 @@ package com.tribbloids.spookystuff.uav.dsl
 import com.tribbloids.spookystuff.SpookyContext
 import com.tribbloids.spookystuff.actions.{Action, Trace}
 import com.tribbloids.spookystuff.uav.actions.UAVNavigation
-import com.tribbloids.spookystuff.uav.planning.PreferUAV
+import com.tribbloids.spookystuff.uav.planning.TakeoffWithUAV
 import com.tribbloids.spookystuff.uav.spatial.NED
 
 trait CostEstimator {
@@ -50,7 +50,7 @@ object CostEstimator {
 
       {
         val preferUAVs = concated.collect {
-          case v: PreferUAV => v
+          case v: TakeoffWithUAV => v
         }
           .distinct
         require(preferUAVs.size <= 1,

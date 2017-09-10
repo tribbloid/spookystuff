@@ -12,8 +12,8 @@ case class ExecutionContext(
                            ) {
 
   def ++(b: ExecutionContext) = {
-    assert(this.spooky == b.spooky,
-      "cannot merge execution plans due to diverging SpookyContext")
+    //    assert(this.spooky == b.spooky,
+    //      "cannot merge execution plans due to diverging SpookyContext")
 
     import scratchRDDs._
     val bb = b.scratchRDDs
