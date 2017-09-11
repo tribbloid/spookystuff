@@ -2,8 +2,7 @@ package com.tribbloids.spookystuff.dsl
 
 import com.tribbloids.spookystuff.actions.TraceView
 import com.tribbloids.spookystuff.dsl.GenPartitionerLike.Instance
-import com.tribbloids.spookystuff.execution.ExecutionContext
-import com.tribbloids.spookystuff.row.BeaconRDD
+import com.tribbloids.spookystuff.row.{BeaconRDD, DataRowSchema}
 import org.apache.spark.Partitioner
 import org.apache.spark.rdd.RDD
 import org.apache.spark.storage.StorageLevel
@@ -17,7 +16,7 @@ import scala.reflect.ClassTag
 //TODO: name should be 'planner'?
 sealed trait GenPartitionerLike[+C] {
 
-  def getInstance[K >: C: ClassTag](ec: ExecutionContext): Instance[K]
+  def getInstance[K >: C: ClassTag](schema: DataRowSchema): Instance[K]
 }
 
 object GenPartitionerLike {
@@ -70,7 +69,7 @@ object GenPartitioners {
   //this won't merge identical traces and do lookup, only used in case each resolve may yield different result
   case object Narrow extends GenPartitioner {
 
-    def getInstance[K: ClassTag](ec: ExecutionContext): Instance[K] = {
+    def getInstance[K: ClassTag](schema: DataRowSchema): Instance[K] = {
       Inst[K]()
     }
 
@@ -99,7 +98,7 @@ object GenPartitioners {
                      PartitionerFactories.SamePartitioner
                    }) extends GenPartitioner {
 
-    def getInstance[K: ClassTag](ec: ExecutionContext): Instance[K] = {
+    def getInstance[K: ClassTag](schema: DataRowSchema): Instance[K] = {
       Inst[K]()
     }
 
@@ -137,7 +136,7 @@ object GenPartitioners {
                             }
                           ) extends GenPartitioner {
 
-    def getInstance[K: ClassTag](ec: ExecutionContext): Instance[K] = {
+    def getInstance[K: ClassTag](schema: DataRowSchema): Instance[K] = {
       Inst[K]()
     }
 

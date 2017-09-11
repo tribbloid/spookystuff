@@ -1,7 +1,6 @@
 package com.tribbloids.spookystuff.uav.dsl
 
 import com.tribbloids.spookystuff.actions.{Trace, TraceView}
-import com.tribbloids.spookystuff.execution.ExecutionContext
 import com.tribbloids.spookystuff.row.DataRow
 import com.tribbloids.spookystuff.uav.actions.Waypoint
 import com.tribbloids.spookystuff.uav.planning.{JSpritFixture, PreferUAV}
@@ -47,9 +46,8 @@ class JSpritGenPartitionerSuite extends DummyUAVFixture with JSpritFixture {
       }
 
     spooky.rebroadcast()
-    val ec = ExecutionContext(spooky)
     val gp = getJSprit
-    val inst = gp.Inst(ec)
+    val inst = gp.Inst(defaultSchema)
 
     val groupedRDD = inst.groupByKey(rdd)
 
@@ -59,7 +57,7 @@ class JSpritGenPartitionerSuite extends DummyUAVFixture with JSpritFixture {
     }
       .collect()
 
-    ec.scratchRDDs.clearAll()
+    defaultSchema.ec.scratchRDDs.clearAll()
     grouped
   }
 

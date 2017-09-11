@@ -10,7 +10,7 @@ trait InjectBeaconRDDPlan extends ExecutionPlan {
   def genPartitioner: GenPartitioner
 
   lazy val gpImpl: GenPartitionerLike.Instance[TraceView] = {
-    genPartitioner.getInstance[TraceView](ec)
+    genPartitioner.getInstance[TraceView](schema)
   }
 
   abstract override lazy val beaconRDDOpt: Option[BeaconRDD[TraceView]] = {

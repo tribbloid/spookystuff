@@ -1,6 +1,5 @@
 package com.tribbloids.spookystuff.execution
 
-import com.tribbloids.spookystuff._
 import com.tribbloids.spookystuff.actions.TraceView
 import com.tribbloids.spookystuff.row._
 import com.tribbloids.spookystuff.utils.NOTSerializable

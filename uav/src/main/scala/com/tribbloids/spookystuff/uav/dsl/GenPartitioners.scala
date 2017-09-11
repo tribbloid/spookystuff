@@ -3,8 +3,7 @@ package com.tribbloids.spookystuff.uav.dsl
 import com.tribbloids.spookystuff.actions.TraceView
 import com.tribbloids.spookystuff.dsl.GenPartitioner
 import com.tribbloids.spookystuff.dsl.GenPartitionerLike.Instance
-import com.tribbloids.spookystuff.execution.ExecutionContext
-import com.tribbloids.spookystuff.row.BeaconRDD
+import com.tribbloids.spookystuff.row.{BeaconRDD, DataRowSchema}
 import com.tribbloids.spookystuff.uav.actions.HasCost
 import com.tribbloids.spookystuff.uav.planning.{CollisionAvoidance, MinimaxSolver, NoCollisionAvoidance}
 import org.apache.spark.rdd.RDD
@@ -34,11 +33,11 @@ object GenPartitioners {
                           progressPlotPathOpt: Option[String] = None
                         ) extends GenPartitioner {
 
-    def getInstance[K >: TraceView: ClassTag](ec: ExecutionContext): Instance[K] = {
-      Inst[K](ec)
+    def getInstance[K >: TraceView: ClassTag](schema: DataRowSchema): Instance[K] = {
+      Inst[K](schema)
     }
 
-    case class Inst[K >: TraceView](ec: ExecutionContext)(
+    case class Inst[K >: TraceView](schema: DataRowSchema)(
       implicit val ctg: ClassTag[K]
     ) extends Instance[K] {
 
@@ -48,9 +47,10 @@ object GenPartitioners {
                                             beaconRDDOpt: Option[BeaconRDD[K]]
                                           ): RDD[(K, Iterable[V])] = {
 
-        val spooky = ec.spooky
+        import schema.ec
+        val spooky = schema.ec.spooky
 
-        val preprocessed = base.getInstance[K](ec).groupByKey(rdd, beaconRDDOpt)
+        val preprocessed = base.getInstance[K](schema).groupByKey(rdd, beaconRDDOpt)
 
         val bifurcated: RDD[((Option[TraceView], Option[K]), Iterable[V])] = preprocessed
           .map {
