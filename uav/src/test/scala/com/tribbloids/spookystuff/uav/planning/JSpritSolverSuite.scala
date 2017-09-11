@@ -36,10 +36,10 @@ class JSpritSolverSuite extends JSpritFixture {
 
   import JSpritSolver.Solution
 
-  val waypoints: Array[TraceView] = Array(
-    List(Waypoint(Location.fromTuple(NED(3,4,0) -> UAVConf.DEFAULT_HOME_LOCATION))),
-    List(Waypoint(Location.fromTuple(NED(3,0,0) -> UAVConf.DEFAULT_HOME_LOCATION))),
-    List(Waypoint(Location.fromTuple(NED(0,4,0) -> UAVConf.DEFAULT_HOME_LOCATION)))
+  val waypoints: Array[TraceView] = Array[TraceView](
+    List(Waypoint(NED(3, 4, 0) -> UAVConf.DEFAULT_HOME_LOCATION: Location)),
+    List(Waypoint(NED(3, 0, 0) -> UAVConf.DEFAULT_HOME_LOCATION: Location)),
+    List(Waypoint(NED(0, 4, 0) -> UAVConf.DEFAULT_HOME_LOCATION: Location))
   )
 
   it("getCostMatrix") {

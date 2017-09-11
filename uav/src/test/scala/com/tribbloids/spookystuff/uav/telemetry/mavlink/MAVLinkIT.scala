@@ -2,24 +2,27 @@ package com.tribbloids.spookystuff.uav.telemetry.mavlink
 
 import com.tribbloids.spookystuff.session.Session
 import com.tribbloids.spookystuff.testutils.TestHelper
-import com.tribbloids.spookystuff.uav.dsl.LinkFactories
+import com.tribbloids.spookystuff.uav.dsl.{LinkFactories, LinkFactory}
 import com.tribbloids.spookystuff.uav.sim.{APMQuadFixture, APMSim}
 import com.tribbloids.spookystuff.uav.system.UAV
 import com.tribbloids.spookystuff.uav.telemetry.{Link, LinkITFixture}
 import com.tribbloids.spookystuff.utils.CommonUtils
+import org.scalatest.Ignore
 
 import scala.concurrent.{Await, Future}
 
 /**
   * Created by peng on 27/01/17.
   */
-class MAVLinkIT extends LinkITFixture with APMQuadFixture {
+@Ignore
+class MAVLinkIT_NoProxy extends MAVLinkIT {
 
+  override lazy val linkFactory = LinkFactories.Direct
 }
 
-class MAVLinkIT_Proxy extends MAVLinkIT {
+class MAVLinkIT extends LinkITFixture with APMQuadFixture {
 
-  override lazy val linkFactory = LinkFactories.ForkToGCS(
+  override lazy val linkFactory: LinkFactory = LinkFactories.ForkToGCS(
     toSparkSize = 2
   )
 

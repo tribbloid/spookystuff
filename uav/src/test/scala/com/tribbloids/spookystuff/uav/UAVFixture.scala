@@ -42,5 +42,5 @@ trait DummyUAVFixture extends UAVFixture {
 }
 
 trait SimUAVFixture extends UAVFixture {
-  override def linkFactory: LinkFactory = LinkFactories.Direct
+  override lazy val linkFactory: LinkFactory = LinkFactories.ForkToGCS()
 }
