@@ -118,15 +118,16 @@ case class TraceView(
   }
 
   def rewriteLocally(row: FetchedRow, schema: DataRowSchema): Option[Trace] = {
-    val interpolatedOpt = doInterpolate(row, schema)
+    val interpolatedOpt = interpolate(row, schema)
       .map(_.children)
-    rewriters.foldLeft(interpolatedOpt){
+    val result = rewriters.foldLeft(interpolatedOpt){
       (opt, rewriter) =>
         opt.flatMap {
           trace =>
             rewriter.rewriteLocally(trace, row, schema)
         }
     }
+    result
   }
 
   //the minimal equivalent action that can be put into backtrace

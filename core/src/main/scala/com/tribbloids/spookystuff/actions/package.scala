@@ -13,8 +13,6 @@ package object actions {
 
   type Trace = List[Action]
 
-  type TraceRewriter = Rewriter[Trace]
-
   type DryRun = List[Trace]
 
   type DocFilter = Lambda[(Doc, Session), Doc] //TODO: merge with Selector[Doc]

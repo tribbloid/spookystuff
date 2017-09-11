@@ -5,7 +5,7 @@ import com.tribbloids.spookystuff.row.DataRowSchema
 /**
   * Created by peng on 15/07/17.
   */
-object AutoSnapshotRewriter extends TraceRewriter {
+object AutoSnapshotRewriter extends Rewriter[Trace] {
 
   override def rewriteGlobally(v: Trace, schema: DataRowSchema): Trace = {
     val n = v.count(_.isInstanceOf[WebInteraction])
