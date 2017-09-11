@@ -19,6 +19,16 @@ trait UAVAction extends Action {
     UAVConf
     UAVMetrics
   }
+
+  override def rewriters = super.rewriters :+ UAVRewriter
+
+  def replaceAnchors(fn: PartialFunction[Anchor, Anchor]) = {
+    val result = doReplaceAnchors(fn)
+    result.injectFrom(this)
+    result
+  }
+
+  def doReplaceAnchors(fn: PartialFunction[Anchor, Anchor]): this.type = this
 }
 
 /**
@@ -30,8 +40,6 @@ trait UAVNavigation extends Interaction with UAVAction with HasCost {
   def _start: Location = _end
 
   def speedOpt: Option[Double] = None
-
-  def replaceAnchor(fn: PartialFunction[Anchor, Anchor]): this.type = this
 
   override def exeNoOutput(session: Session): Unit = {
 
@@ -45,17 +53,7 @@ trait UAVNavigation extends Interaction with UAVAction with HasCost {
 
   implicit class SessionView(session: Session) extends UAVViews.SessionView(session) {
 
-    lazy val _alt = uavConf.clearanceAltitudeMin
-    /**
-      * when enclosed in an export, may behave differently.
-      */
-    def inbound(): Unit = {
-
-      LoggerFactory.getLogger(this.getClass)
-        .info(s"climbing to ${_alt}")
-
-      link.synch.clearanceAlt(_alt)
-    }
+    def inbound(): Unit = {}
 
     def engage(): Unit = {}
 

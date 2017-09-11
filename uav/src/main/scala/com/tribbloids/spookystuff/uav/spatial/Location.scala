@@ -26,6 +26,7 @@ case class Location(
                      definedBy: Seq[SpatialRelation]
                    ) extends LocationLike {
 
+  def withHome(home: Location) = WithHome(home)
 
   case class WithHome(
                        home: Location
@@ -50,7 +51,7 @@ case class Location(
     val cs = definedBy.map {
       rel =>
         //TODO: unnecessary copy if out of fn domain
-        val replaced: Anchor = fn.applyOrElse(rel.from, _ => rel.from)
+        val replaced: Anchor = fn.applyOrElse(rel.from, (_: Anchor) => rel.from)
         rel.copy(
           from = replaced
         )
@@ -177,9 +178,9 @@ object Location {
   def parse(v: Any, conf: UAVConf): Location = {
     v match {
       case p: Location =>
-        p.replaceAnchors(conf.home)
+        p
       case c: Coordinate =>
-        c.replaceAnchors(conf.home)
+        c
       case v: GenericRowWithSchema =>
         val schema = v.schema
         val names = schema.fields.map(_.name)
@@ -200,7 +201,7 @@ object Location {
         else {
           ???
         }
-        c.replaceAnchors(conf.home)
+        c
       case s: String =>
         ???
       case _ =>

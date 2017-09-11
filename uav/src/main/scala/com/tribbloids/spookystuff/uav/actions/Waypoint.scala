@@ -53,7 +53,7 @@ case class Waypoint(
     }
   }
 
-  override def replaceAnchor(fn: PartialFunction[Anchor, Anchor]) = this.copy(
+  override def doReplaceAnchors(fn: PartialFunction[Anchor, Anchor]) = this.copy(
     to = to.value.replaceAnchors(fn)
   ).asInstanceOf[this.type]
 }

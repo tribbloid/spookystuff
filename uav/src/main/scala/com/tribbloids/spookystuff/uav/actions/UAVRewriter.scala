@@ -9,28 +9,27 @@ import com.tribbloids.spookystuff.uav.spatial.{Anchors, Location}
   * Do many things:
   * Globally
   * 1. add takeoff to the beginning of the trace if it is missing
-  * 2. replace Anchors.Home with UAVConf.home
   *
   * Locally
+  * 2. replace Anchors.Home with UAVConf.home
   * 3. replace Anchors.HomeLevelProjection with previous action._end minus its relative altitude to UAVConf.home
   * 4. replace Anchors.MSLProjection with previous action._end minus its absolute altitude to Anchors.Geodetic
   * 5. (pending) replace Anchors.GroundProjection with previous action._end
   *     minus its relative altitude to ground elevation directly under it (query from various terrian API or DB)
   */
-object UAVRewriter extends TraceRewriter {
+object UAVRewriter extends Rewriter[Trace] {
 
   override def rewriteGlobally(v1: Trace, schema: DataRowSchema): Trace = {
 
     val uavConf = schema.ec.spooky.getConf[UAVConf]
 
     val navs = v1.collect {
-      case nav: UAVNavigation => nav.replaceAnchor {
-        case Anchors.Home =>
-          uavConf.home
-      }
+      case nav: UAVNavigation => nav
     }
 
-    val result = if (!navs.head.isInstanceOf[Takeoff])
+    val result = if (navs.isEmpty)
+      v1
+    else if (!navs.head.isInstanceOf[Takeoff])
       List(Takeoff()) ++ v1
     else
       v1
@@ -42,17 +41,24 @@ object UAVRewriter extends TraceRewriter {
 
     val uavConf = schema.ec.spooky.getConf[UAVConf]
 
-    var previous: Location#WithHome = null
+    var lastLocationOpt: Option[Location#WithHome] = None
+    def lastLocation = lastLocationOpt.getOrElse(uavConf.home.withHome(uavConf.home))
 
     val result = v1.map {
-      case nav: UAVNavigation =>
-        val replaced = nav.replaceAnchor {
+      case uavAction: UAVAction =>
+        val replaced = uavAction.replaceAnchors {
+          case Anchors.Home =>
+            uavConf.home
           case Anchors.HomeLevelProjection =>
-            previous.homeLevelProj
+            lastLocation.homeLevelProj
           case Anchors.MSLProjection =>
-            previous.MSLProj
+            lastLocation.MSLProj
         }
-        previous = replaced._end.WithHome(uavConf.home)
+        replaced match {
+          case nav: UAVNavigation =>
+            lastLocationOpt = Some(nav._end.withHome(uavConf.home))
+          case _ =>
+        }
         replaced
       case other@ _ =>
         other

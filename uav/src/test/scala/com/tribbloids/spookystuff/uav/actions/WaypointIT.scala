@@ -13,7 +13,7 @@ class WaypointIT extends APMQuadFixture {
   import com.tribbloids.spookystuff.dsl._
 
   it("toJson should work") {
-    val wp1: Location = LLA(0,0,0) -> GeodeticAnchor
+    val wp1: Location = LLA(0,0,0) -> Anchors.Geodetic
 
     val move = Waypoint(wp1)
 

@@ -11,11 +11,11 @@ class LocationSuite extends FunSpecx {
 
   it("Location can infer LLA from NED") {
 
-    val p1 : Location = LLA.create(Vec(-79.262262, 43.694195, 136)) -> GeodeticAnchor
+    val p1 : Location = LLA.create(Vec(-79.262262, 43.694195, 136)) -> Anchors.Geodetic
 
     val p2 : Location = NED.create(Vec(1000, 2000, 30)) -> p1
 
-    val c2 = p2.getCoordinate(LLA, GeodeticAnchor)
+    val c2 = p2.getCoordinate(LLA, Anchors.Geodetic)
     c2.get.toStrWithInferenceCtx.shouldBe(
       "LLA lat=43.712195 lon=-79.249854 alt=166.000000 hops=1 recursions=2"
     )
@@ -23,7 +23,7 @@ class LocationSuite extends FunSpecx {
 
   it("Location can infer LLA from LLA") {
 
-    val p1 : Location = LLA.create(Vec(-79.262262, 43.694195, 136)) -> GeodeticAnchor
+    val p1 : Location = LLA.create(Vec(-79.262262, 43.694195, 136)) -> Anchors.Geodetic
 
     val p2 : Location = NED.create(Vec(1000, 2000, 30)) -> p1
 
@@ -34,9 +34,9 @@ class LocationSuite extends FunSpecx {
   }
 
   it("Location can infer NED from LLA") {
-    val p1 : Location = LLA.create(Vec(-79.262262, 43.694195, 136)) -> GeodeticAnchor
+    val p1 : Location = LLA.create(Vec(-79.262262, 43.694195, 136)) -> Anchors.Geodetic
 
-    val p2 : Location = LLA.create(Vec(-79.386132, 43.647023, 100)) -> GeodeticAnchor
+    val p2 : Location = LLA.create(Vec(-79.386132, 43.647023, 100)) -> Anchors.Geodetic
 
     val c2 = p2.getCoordinate(NED, p1)
     c2.get.toStrWithInferenceCtx.shouldBe(
@@ -46,7 +46,7 @@ class LocationSuite extends FunSpecx {
 
   it("Location can infer NED from NED") {
     {
-      val base: Location = LLA(0, 0, 0) -> GeodeticAnchor
+      val base: Location = LLA(0, 0, 0) -> Anchors.Geodetic
       val p1 : Location = NED(300, 200, 10) -> base
       val p2 : Location = NED(100, 200, 30) -> base
 
@@ -75,7 +75,7 @@ class LocationSuite extends FunSpecx {
 
     p1.addCoordinate(SpatialRelation(NED.create(Vec(-1000,-2000,-30)), p2))
 
-    val c2 = p2.getCoordinate(LLA, GeodeticAnchor)
+    val c2 = p2.getCoordinate(LLA, Anchors.Geodetic)
     assert(c2.isEmpty)
   }
 
@@ -86,7 +86,7 @@ class LocationSuite extends FunSpecx {
 
     p1.addCoordinate(SpatialRelation(LLA.create(Vec(-79.262262, 43.694195,-30)), p2))
 
-    val c2_Geo = p2.getCoordinate(LLA, GeodeticAnchor)
+    val c2_Geo = p2.getCoordinate(LLA, Anchors.Geodetic)
     //TODO: should I use NaN and yield the known part?
     assert(c2_Geo.isEmpty)
   }
