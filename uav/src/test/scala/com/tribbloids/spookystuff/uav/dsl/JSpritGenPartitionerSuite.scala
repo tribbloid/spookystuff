@@ -58,6 +58,9 @@ class JSpritGenPartitionerSuite extends DummyUAVFixture with JSpritFixture {
       .collect()
 
     defaultSchema.ec.scratchRDDs.clearAll()
+
+    LinkUtils.unlockAll()
+
     grouped
   }
 

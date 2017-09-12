@@ -10,6 +10,11 @@ import com.tribbloids.spookystuff.uav.utils.UAVUtils
   */
 trait UAVFixture extends SpookyEnvFixture {
 
+  {
+    UAVConf
+    UAVMetrics
+  }
+
   def simURIs: Seq[String]
   def simUAVs = simURIs.map(v => UAV(Seq(v)))
 

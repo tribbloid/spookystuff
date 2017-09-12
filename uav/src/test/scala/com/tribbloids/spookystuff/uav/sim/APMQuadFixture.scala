@@ -76,14 +76,19 @@ trait APMFixture extends SimUAVFixture {
     sc.foreachComputer {
       // in production Links will be cleaned up by shutdown hook
 
-      cleanSweepLocally()
-      assert(
+      APMFixture.cleanSweepLocally()
+      Predef.assert(
         Link.registered.isEmpty,
         Link.registered.keys.mkString("\n")
       )
     }
   }
-  private def cleanSweepLocally() = {
+
+}
+
+object APMFixture {
+
+  def cleanSweepLocally() = {
     Cleanable.cleanSweepAll {
       case _: Link => true
       case _: APMSim => true

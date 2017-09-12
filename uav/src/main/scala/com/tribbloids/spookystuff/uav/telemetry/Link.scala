@@ -47,7 +47,7 @@ object Link {
   case class Selector(
                        fleet: Seq[UAV],
                        session: Session,
-                       preference: Seq[Link] => Option[Link] = {
+                       prefer: Seq[Link] => Option[Link] = {
                          vs =>
                            vs.find(_.isAvailable)
                        },
@@ -113,9 +113,9 @@ object Link {
       val recommissionedOpt = threadLocalOpt match {
         case None =>
           LoggerFactory.getLogger(this.getClass).info (
-            s"ThreadLocal link not found: ${ctx.toString}" +
-              s" <\\- ${Link.registered.values.flatMap(_.ownerOpt)
-                .mkString("{", ", ", "}")}"
+            s"${ctx.toString} ThreadLocal link not found:\n" +
+              Link.registered.values.flatMap(_.ownerOpt)
+                .mkString("\n")
           )
           None
         case Some(threadLocal) =>
@@ -133,7 +133,7 @@ object Link {
             .toOption
       }
 
-      // no need to recommission if the link is fre
+      // no need to recommission if the link is free
       val resultOpt = recommissionedOpt
         .orElse {
           val links = fleet.flatMap{
@@ -147,7 +147,7 @@ object Link {
           }
 
           val opt = Link.synchronized {
-            val opt = preference(links)
+            val opt = prefer(links)
             //deliberately set inside synched block to avoid being selected by 2 threads
             opt.map(setOwnerAndUnlock)
           }
@@ -179,7 +179,7 @@ object Link {
                 .mkString("\n")
           }
           Failure(
-            new ReinforcementDepletedException(info)
+            new ReinforcementDepletedException(ctx.toString + " " +info)
           )
       }
     }
@@ -194,7 +194,7 @@ object Link {
                  ) = Selector(
       fleet,
       session,
-      preference = {
+      prefer = {
         vs =>
           vs.find(_.isAvailableTo(mutexIDOpt))
       }
@@ -441,7 +441,7 @@ trait Link extends LocalCleanable with ConflictDetection {
     if (!isNotUsedByThread || !isNotUsedByTask)
       strs += s"used by ${_owner.toString}"
 
-    s"Link $uav is " + {
+    s"${this.getClass.getSimpleName} $uav is " + {
       if (isAvailable) {
         assert(strs.isEmpty)
         "available"

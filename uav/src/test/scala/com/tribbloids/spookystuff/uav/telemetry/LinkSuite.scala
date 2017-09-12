@@ -71,7 +71,7 @@ abstract class LinkSuite extends UAVFixture {
         spooky.sparkContext.foreachComputer {
           val registered = Link.registered.values.toSet
           val cleanable = Cleanable.getTyped[Link].toSet
-          assert(registered.subsetOf(cleanable))
+          Predef.assert(registered.subsetOf(cleanable))
         }
       }
 
@@ -81,8 +81,8 @@ abstract class LinkSuite extends UAVFixture {
           val linkRDD: RDD[Link] = getLinkRDD(spooky)
           val uavs = linkRDD.map(_.uav).collect().toSeq
           val uris = uavs.map(_.primaryURI)
-          assert(uris.size == this.parallelism, "Duplicated URIs:\n" + uris.mkString("\n"))
-          assert(uris.size == uris.distinct.size, "Duplicated URIs:\n" + uris.mkString("\n"))
+          Predef.assert(uris.size == this.parallelism, "Duplicated URIs:\n" + uris.mkString("\n"))
+          Predef.assert(uris.size == uris.distinct.size, "Duplicated URIs:\n" + uris.mkString("\n"))
         }
       }
 
