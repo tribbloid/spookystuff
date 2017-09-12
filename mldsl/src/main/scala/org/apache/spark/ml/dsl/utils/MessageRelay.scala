@@ -159,7 +159,7 @@ trait MessageAPI extends Serializable {
   }
 
   def toXMLNode(implicit formats: Formats = formats): NodeSeq = Xml.toXml(toMessage.getClass.getSimpleName -> toJValue)
-  def compactXML(implicit formats: Formats = formats): String = toXMLNode.toString()
+  def compactXML(implicit formats: Formats = formats): String = toXMLNode.toString().replaceAllLiterally("\n","")
   def prettyXML(implicit formats: Formats = formats): String = Xml.defaultXMLPrinter.formatNodes(toXMLNode)
   def toXMLStr(pretty: Boolean = true)(implicit formats: Formats = formats): String = {
     if (pretty) prettyXML
