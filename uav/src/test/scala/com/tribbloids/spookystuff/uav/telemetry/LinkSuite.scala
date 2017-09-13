@@ -216,9 +216,7 @@ abstract class SimLinkSuite extends LinkSuite with SimUAVFixture {
           }
 
           val badLink = Link.registered(drone)
-          badLink.statusString.shouldBeLike(
-            "Link DRONE@dummy is unreachable for ......"
-          )
+          assert(badLink.statusString.contains("Link DRONE@dummy is unreachable for"))
           assert {
             val e = badLink.lastFailureOpt.get._1
             e.isInstanceOf[PyInterpretationException] || e.isInstanceOf[MultiCauseWrapper]
