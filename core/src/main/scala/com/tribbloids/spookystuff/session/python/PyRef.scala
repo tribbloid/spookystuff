@@ -6,6 +6,7 @@ import com.tribbloids.spookystuff.session._
 import com.tribbloids.spookystuff.utils.{ReflectionUtils, SpookyUtils}
 import com.tribbloids.spookystuff.{SpookyContext, caching}
 import org.apache.spark.ml.dsl.utils._
+import org.apache.spark.ml.dsl.utils.messaging.{MessageAPI, MessageView}
 import org.json4s.jackson.JsonMethods._
 
 import scala.language.dynamics

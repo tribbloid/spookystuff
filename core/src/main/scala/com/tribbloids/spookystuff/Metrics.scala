@@ -1,7 +1,7 @@
 package com.tribbloids.spookystuff
 
 import com.tribbloids.spookystuff.conf.Submodules
-import org.apache.spark.ml.dsl.utils.MessageAPI
+import org.apache.spark.ml.dsl.utils.messaging.MessageAPI
 import org.apache.spark.{Accumulator, AccumulatorParam, SparkContext}
 
 import scala.collection.immutable.ListMap
@@ -58,7 +58,7 @@ abstract class Metrics extends MessageAPI with Product with Serializable {
   }
 
   //DO NOT change to val! metrics is very mutable
-  override def toMessage: ListMap[String, Any] = {
+  override def proto: ListMap[String, Any] = {
     val result = toMap
     result
   }

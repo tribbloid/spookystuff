@@ -8,7 +8,7 @@ import com.tribbloids.spookystuff.utils.{HDFSResolver, ScalaType, ShippingMarks,
 import org.apache.hadoop.conf.Configuration
 import org.apache.spark._
 import org.apache.spark.broadcast.Broadcast
-import org.apache.spark.ml.dsl.utils.MessageView
+import org.apache.spark.ml.dsl.utils.messaging.MessageView
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.{DataFrame, SQLContext}
 import org.slf4j.LoggerFactory

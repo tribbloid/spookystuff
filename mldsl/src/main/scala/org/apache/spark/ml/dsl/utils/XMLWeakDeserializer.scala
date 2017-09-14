@@ -1,5 +1,6 @@
 package org.apache.spark.ml.dsl.utils
 
+import org.apache.spark.ml.dsl.utils.messaging.MessageAPI
 import org.json4s.Extraction._
 import org.json4s.JsonAST.JString
 import org.json4s._

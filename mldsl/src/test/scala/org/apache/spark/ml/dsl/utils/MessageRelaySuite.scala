@@ -3,6 +3,7 @@ package org.apache.spark.ml.dsl.utils
 import java.util.Date
 
 import org.apache.spark.ml.dsl.AbstractFlowSuite
+import org.apache.spark.ml.dsl.utils.messaging.{MessageReader, MessageView}
 import org.json4s.MappingException
 
 case class TimeWrapper(time: Date)
@@ -19,6 +20,9 @@ case class User(
 case class Roles(role: Seq[String])
 
 case class MultipartExample(a: String, b: String)(c: Int = 10)
+
+object MultipartExample extends MessageReader[MultipartExample] {
+}
 
 //case object ObjectExample1 extends AbstractObjectExample
 

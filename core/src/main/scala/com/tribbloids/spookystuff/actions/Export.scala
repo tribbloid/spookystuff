@@ -29,7 +29,7 @@ import org.apache.http.impl.client.{CloseableHttpClient, HttpClients}
 import org.apache.http.impl.conn.PoolingHttpClientConnectionManager
 import org.apache.http.protocol.HttpCoreContext
 import org.apache.http.{HttpEntity, HttpHost, StatusLine}
-import org.apache.spark.ml.dsl.utils.MessageAPI
+import org.apache.spark.ml.dsl.utils.messaging.MessageAPI
 import org.openqa.selenium.{OutputType, TakesScreenshot}
 
 import scala.xml._
@@ -147,7 +147,7 @@ case class Snapshot(
 object QuickSnapshot extends Snapshot(DocFilters.Bypass)
 object ErrorDump extends Snapshot(DocFilters.Bypass) with MessageAPI {
 
-  override def toMessage = "ErrorDump"
+  override def proto = "ErrorDump"
 }
 
 case class Screenshot(
@@ -183,7 +183,7 @@ case class Screenshot(
 object QuickScreenshot extends Screenshot(DocFilters.Bypass)
 object ErrorScreenshot extends Screenshot(DocFilters.Bypass) with MessageAPI {
 
-  override def toMessage = "ErrorScreenshot"
+  override def proto = "ErrorScreenshot"
 }
 
 @SerialVersionUID(7344992460754628988L)

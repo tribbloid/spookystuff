@@ -1,6 +1,7 @@
 package com.tribbloids.spookystuff.uav.telemetry.mavlink
 
 import com.tribbloids.spookystuff.session.python.CaseInstanceRef
+import org.apache.spark.ml.dsl.utils.messaging.MessageReader
 
 import scala.language.implicitConversions
 
@@ -62,6 +63,8 @@ import scala.language.implicitConversions
 //}
 
 trait PyLocation extends CaseInstanceRef
+
+object LocationGlobal extends MessageReader[LocationGlobal]
 
 case class LocationGlobal(
                            lat: Double,

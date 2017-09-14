@@ -1,4 +1,4 @@
-package org.apache.spark.ml.dsl.utils
+package org.apache.spark.ml.dsl.utils.messaging
 
 import com.tribbloids.spookystuff.utils.ReflectionUtils
 
@@ -37,16 +37,16 @@ object RecursiveMessageRelay extends MessageRelay[Any] {
 
   //TODO: change to MessageRepr to allow 2-way conversions.
   case class M(
-                override val toMessage: Any
+                override val proto: Any
               ) extends MessageAPI {
 
     override def formats = RecursiveMessageRelay.this.formats
   }
 
-  override def toMessage(v: Any): M = {
+  override def toM(v: Any): M = {
     val msg = transform(v){
       case v: MessageAPI =>
-        v.toMessage
+        v.proto
     }
     M(msg)
   }

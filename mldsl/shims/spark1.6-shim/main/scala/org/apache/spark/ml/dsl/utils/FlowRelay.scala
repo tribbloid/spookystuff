@@ -2,6 +2,7 @@ package org.apache.spark.ml.dsl.utils
 
 import org.apache.spark.ml.PipelineStage
 import org.apache.spark.ml.dsl._
+import org.apache.spark.ml.dsl.utils.messaging.{MessageRelay, MessageRepr}
 import org.apache.spark.ml.param.{ParamPair, Params}
 import org.apache.spark.sql.utils.DataTypeRelay
 import org.apache.spark.util.Utils
@@ -13,7 +14,7 @@ import scala.util.Try
 
 object FlowRelay extends MessageRelay[Flow] {
 
-  override def toMessage(flow: Flow): M = {
+  override def toM(flow: Flow): M = {
 
     val steps: Seq[Step] = flow.coll.values.collect {
       case st: Step => st
@@ -27,15 +28,15 @@ object FlowRelay extends MessageRelay[Flow] {
 
     this.M(
       Declaration(
-        steps.map(StepRelay.toMessage)
+        steps.map(StepRelay.toM)
       ),
       Seq(
         GraphRepr(
-          leftTrees.map(StepTreeNodeRelay.toMessage),
+          leftTrees.map(StepTreeNodeRelay.toM),
           `@direction` = Some(FORWARD_LEFT)
         ),
         GraphRepr(
-          rightTrees.map(StepTreeNodeRelay.toMessage),
+          rightTrees.map(StepTreeNodeRelay.toM),
           `@direction` = Some(FORWARD_RIGHT)
         )
       ),
@@ -106,7 +107,7 @@ object StepRelay extends MessageRelay[Step] {
 
   val paramMap: Option[JValue]  = None
 
-  override def toMessage(v: Step): M = {
+  override def toM(v: Step): M = {
     import org.json4s.JsonDSL._
     import v._
 
@@ -206,19 +207,19 @@ object StepRelay extends MessageRelay[Step] {
 
 object StepTreeNodeRelay extends MessageRelay[StepTreeNode[_]] {
 
-  override def toMessage(v: StepTreeNode[_]): M = {
+  override def toM(v: StepTreeNode[_]): M = {
     val base = v.self match {
       case source: Source =>
         M(
           source.id,
           dataTypes = source.dataTypes
-            .map(DataTypeRelay.toMessage)
+            .map(DataTypeRelay.toM)
         )
       case _ =>
         M(v.self.id)
     }
     base.copy(
-      stage = v.children.map(this.toMessage)
+      stage = v.children.map(this.toM)
     )
   }
 

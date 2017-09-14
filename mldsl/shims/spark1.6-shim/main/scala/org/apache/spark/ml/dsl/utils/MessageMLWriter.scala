@@ -1,5 +1,6 @@
 package org.apache.spark.ml.dsl.utils
 
+import org.apache.spark.ml.dsl.utils.messaging.MessageAPI
 import org.apache.spark.ml.param.{ParamMap, Params}
 import org.apache.spark.ml.util.{DefaultParamsWriter, Identifiable, MLWriter}
 import org.json4s.JsonAST.JObject

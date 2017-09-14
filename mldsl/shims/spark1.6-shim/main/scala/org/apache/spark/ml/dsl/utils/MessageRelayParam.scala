@@ -1,6 +1,7 @@
 package org.apache.spark.ml.dsl.utils
 
 import org.apache.spark.annotation.DeveloperApi
+import org.apache.spark.ml.dsl.utils.messaging.{MessageReader, MessageRelayLike, MessageRepr}
 import org.json4s._
 
 import scala.language.implicitConversions
@@ -11,7 +12,7 @@ import scala.language.implicitConversions
   */
 @DeveloperApi
 class MessageRelayParam[Obj](
-                              outer: MessageRelay[Obj],
+                              outer: MessageRelayLike[Obj],
                               parent: String,
                               name: String,
                               doc: String,

@@ -22,11 +22,11 @@ class ColSuite extends FunSpecx {
   }
 
   it("Col(Lit).toMessage") {
-    c1.toMessage.shouldBe(
+    c1.proto.shouldBe(
       "abc"
     )
     intercept[UnsupportedOperationException] {
-      cNonLit.toMessage
+      cNonLit.proto
     }
   }
 

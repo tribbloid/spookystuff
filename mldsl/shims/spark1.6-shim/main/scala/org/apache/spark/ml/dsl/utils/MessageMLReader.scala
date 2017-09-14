@@ -1,5 +1,6 @@
 package org.apache.spark.ml.dsl.utils
 
+import org.apache.spark.ml.dsl.utils.messaging.MessageRelay
 import org.apache.spark.ml.util.MLReader
 
 /**

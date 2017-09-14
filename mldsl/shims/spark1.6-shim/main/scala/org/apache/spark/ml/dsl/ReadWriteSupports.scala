@@ -1,7 +1,8 @@
 package org.apache.spark.ml.dsl
 
 import org.apache.spark.ml.Pipeline.SharedReadWrite
-import org.apache.spark.ml.dsl.utils.{FlowRelay, MessageMLReader, MessageMLWriter, MessageRelay}
+import org.apache.spark.ml.dsl.utils.messaging.MessageRelay
+import org.apache.spark.ml.dsl.utils.{FlowRelay, MessageMLReader, MessageMLWriter}
 import org.apache.spark.ml.util.{MLReadable, MLReader, MLWritable}
 
 /**

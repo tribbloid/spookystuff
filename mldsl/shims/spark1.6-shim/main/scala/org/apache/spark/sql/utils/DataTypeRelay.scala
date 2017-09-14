@@ -1,7 +1,6 @@
 package org.apache.spark.sql.utils
 
-import org.apache.spark.ml.dsl.UnsafeUtils
-import org.apache.spark.ml.dsl.utils.{MessageRelay, MessageRepr}
+import org.apache.spark.ml.dsl.utils.messaging.{MessageRelay, MessageRepr}
 import org.apache.spark.sql.types.DataType
 import org.json4s.JValue
 
@@ -18,7 +17,7 @@ object DataTypeRelay extends MessageRelay[DataType] {
     DataType.parseDataType(jv)
   }
 
-  override def toMessage(v: DataType): M = M(
+  override def toM(v: DataType): M = M(
     toJsonAST(v)
   )
 

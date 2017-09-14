@@ -1,7 +1,7 @@
 package com.tribbloids.spookystuff.session.python
 
 import com.tribbloids.spookystuff.testutils.FunSpecx
-import org.apache.spark.ml.dsl.utils.MessageAPI
+import org.apache.spark.ml.dsl.utils.messaging.MessageAPI
 import org.scalatest.FunSuite
 
 /**

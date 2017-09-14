@@ -1,6 +1,7 @@
 package com.tribbloids.spookystuff.session.python
 
 import org.apache.spark.ml.dsl.utils._
+import org.apache.spark.ml.dsl.utils.messaging.{MessageAPI, MessageView}
 
 /**
   * Created by peng on 01/11/16.

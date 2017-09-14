@@ -1,6 +1,7 @@
 package org.apache.spark.ml.dsl
 
-import org.apache.spark.ml.dsl.utils.{FallbackJSONSerializer, FlowUtils, MessageReader}
+import org.apache.spark.ml.dsl.utils.messaging.MessageReader
+import org.apache.spark.ml.dsl.utils.{FallbackJSONSerializer, FlowUtils}
 import org.apache.spark.ml.param.{Param, Params}
 
 import scala.language.{dynamics, implicitConversions}

@@ -1,7 +1,7 @@
 package com.tribbloids.spookystuff.conf
 
 import org.apache.spark.SparkConf
-import org.apache.spark.ml.dsl.utils.MessageAPI
+import org.apache.spark.ml.dsl.utils.messaging.MessageAPI
 
 /**
   * all subclasses have to define default() in their respective companion object.

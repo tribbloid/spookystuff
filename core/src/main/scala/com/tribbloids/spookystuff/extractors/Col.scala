@@ -3,7 +3,7 @@ package com.tribbloids.spookystuff.extractors
 import com.tribbloids.spookystuff.Const
 import com.tribbloids.spookystuff.dsl.Implicits
 import com.tribbloids.spookystuff.extractors.impl.{Extractors, Lit}
-import org.apache.spark.ml.dsl.utils.MessageAPI
+import org.apache.spark.ml.dsl.utils.messaging.MessageAPI
 import org.apache.spark.sql.catalyst.ScalaReflection.universe.TypeTag
 
 /**
@@ -25,7 +25,7 @@ case class Col[T](
     }
   }
 
-  override def toMessage: T = value
+  override def proto: T = value
 }
 
 object Col {
