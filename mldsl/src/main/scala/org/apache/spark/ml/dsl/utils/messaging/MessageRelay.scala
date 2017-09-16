@@ -23,15 +23,16 @@ abstract class RelayLike[Obj] {
 
   type M //Message type
 
-  def _read(jv: JValue): M = {
+  def _read(jv: JValue, formats: Formats, mf: Manifest[M]): M = {
 
-    val message: M = Extraction.extract[M](jv)
+    val message: M = Extraction.extract[M](jv)(formats, mf)
     message
   }
 
   final def _fromJValue[T: MessageReader](jv: JValue): T = {
 
-    implicitly[MessageReader[T]]._read(jv)
+    val reader = implicitly[MessageReader[T]]
+    reader._read(jv, this.formats, reader.mf)
   }
   final def _fromJSON[T: MessageReader](json: String): T = _fromJValue[T](parse(json))
 
@@ -146,7 +147,7 @@ abstract class MessageRelay[Obj] extends RelayLike[Obj] {
   object MReader extends MessageReader[M]()(mf) {
     override implicit def formats: Formats = MessageRelay.this.formats
 
-    override def _read(jv: JValue) =
-      MessageRelay.this._read(jv)
+    override def _read(jv: JValue, formats: Formats, mf: Manifest[M]) =
+      MessageRelay.this._read(jv, formats, mf)
   }
 }
