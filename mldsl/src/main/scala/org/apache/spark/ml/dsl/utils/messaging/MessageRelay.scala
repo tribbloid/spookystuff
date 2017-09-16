@@ -89,12 +89,16 @@ abstract class RelayLike[Obj] {
     }
   }
 
-  trait HasMessageRelay extends MessageAPI {
+  trait API extends MessageAPI {
     self: Obj =>
 
     override def formats = RelayLike.this.formats
 
-    override def proto: Any = RelayLike.this.toM(self)
+    final def toM = RelayLike.this.toM(self)
+    final def toMessageAPI = RelayLike.this.toMessageAPI(self)
+    final def toMessageAPIIfNot = RelayLike.this.toMessageAPI(self)
+
+    override def proto: Any = toMessageAPI.proto
   }
 
   class UDT extends UserDefinedType[Obj] {
