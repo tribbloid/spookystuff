@@ -1,7 +1,7 @@
 package org.apache.spark.ml.dsl.utils
 
 import org.apache.spark.annotation.DeveloperApi
-import org.apache.spark.ml.dsl.utils.messaging.{MessageRelay, MessageRepr}
+import org.apache.spark.ml.dsl.utils.messaging.{MessageRelay, MessageAPI_<=>}
 import org.json4s._
 
 import scala.language.implicitConversions
@@ -35,7 +35,7 @@ class MessageRelayParam[Obj](
 
     val message: outer.M = outer.fromJSON(json)
     message match {
-      case v: MessageRepr[_] =>
+      case v: MessageAPI_<=>[_] =>
         v.toObject.asInstanceOf[Obj]
       case _ =>
         throw new UnsupportedOperationException("jsonDecode is not implemented")

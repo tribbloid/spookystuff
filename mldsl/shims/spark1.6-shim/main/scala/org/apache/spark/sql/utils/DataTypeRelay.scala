@@ -1,6 +1,6 @@
 package org.apache.spark.sql.utils
 
-import org.apache.spark.ml.dsl.utils.messaging.{MessageRelay, MessageRepr}
+import org.apache.spark.ml.dsl.utils.messaging.{MessageRelay, MessageAPI_<=>}
 import org.apache.spark.sql.types.DataType
 import org.json4s.JValue
 
@@ -23,7 +23,7 @@ object DataTypeRelay extends MessageRelay[DataType] {
 
   case class M(
                 dataType: JValue
-              ) extends MessageRepr[DataType] {
+              ) extends MessageAPI_<=>[DataType] {
 
     override def toObject: DataType = fromJsonAST(dataType)
   }

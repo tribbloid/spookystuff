@@ -5,7 +5,7 @@ package org.apache.spark.ml.dsl.utils.messaging
   */
 class MessageReader[Obj](
                           implicit override val mf: Manifest[Obj]
-                        ) extends MessageRelayLike[Obj] {
+                        ) extends RelayLike[Obj] {
   type M = Obj
 
   override def toM(v: Obj) = v

@@ -73,7 +73,7 @@ trait MessageAPI extends Serializable {
   }
 }
 
-trait MessageRepr[Obj] extends MessageAPI {
+trait MessageAPI_<=>[Obj] extends MessageAPI {
 
   def toObject: Obj
 }

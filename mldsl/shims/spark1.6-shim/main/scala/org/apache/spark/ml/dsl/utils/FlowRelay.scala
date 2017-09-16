@@ -2,7 +2,7 @@ package org.apache.spark.ml.dsl.utils
 
 import org.apache.spark.ml.PipelineStage
 import org.apache.spark.ml.dsl._
-import org.apache.spark.ml.dsl.utils.messaging.{MessageRelay, MessageRepr}
+import org.apache.spark.ml.dsl.utils.messaging.{MessageRelay, MessageAPI_<=>}
 import org.apache.spark.ml.param.{ParamPair, Params}
 import org.apache.spark.sql.utils.DataTypeRelay
 import org.apache.spark.util.Utils
@@ -52,7 +52,7 @@ object FlowRelay extends MessageRelay[Flow] {
                 declarations: Declaration,
                 flowLines: Seq[GraphRepr],
                 headIDs: HeadIDs
-              ) extends MessageRepr[Flow]{
+              ) extends MessageAPI_<=>[Flow]{
 
     implicit def stepsToView(steps: StepMap[String, StepLike]): StepMapView = new StepMapView(steps)
 
@@ -142,7 +142,7 @@ object StepRelay extends MessageRelay[Step] {
                 implementation: String,
                 uid: Option[String] = None,
                 params: Option[JValue] = None
-              ) extends MessageRepr[Step] {
+              ) extends MessageAPI_<=>[Step] {
 
     override lazy val toObject: Step = {
 
@@ -227,7 +227,7 @@ object StepTreeNodeRelay extends MessageRelay[StepTreeNode[_]] {
                 id: String,
                 dataTypes: Set[DataTypeRelay.M] = Set.empty,
                 stage: Seq[M] = Nil
-              ) extends MessageRepr[StepTreeNode[_]] {
+              ) extends MessageAPI_<=>[StepTreeNode[_]] {
     override def toObject: StepTreeNode[_] = ???
   }
 }

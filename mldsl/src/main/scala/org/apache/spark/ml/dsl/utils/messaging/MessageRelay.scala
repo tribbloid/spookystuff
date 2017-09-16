@@ -15,16 +15,15 @@ import scala.xml.{Elem, NodeSeq, XML}
 //mixin to allow converting to a simple case class and back
 //used to delegate ser/de tasks (from/to xml, json & dataset encoded type) to the case class with a fixed schema
 //all subclasses must be objects otherwise Spark SQL can't find schema for Repr
-abstract class MessageRelayLike[Obj] {
+abstract class RelayLike[Obj] {
 
   implicit def formats: Formats = Xml.defaultFormats
-  implicit def reader: MessageReader[M]
 
   implicit def mf: Manifest[M]
 
   type M //Message type
 
-  def intrinsicFromJValue(jv: JValue): M = {
+  def _read(jv: JValue): M = {
 
     val message: M = Extraction.extract[M](jv)
     message
@@ -32,7 +31,7 @@ abstract class MessageRelayLike[Obj] {
 
   final def _fromJValue[T: MessageReader](jv: JValue): T = {
 
-    implicitly[MessageReader[T]].fromJValue(jv)
+    implicitly[MessageReader[T]]._read(jv)
   }
   final def _fromJSON[T: MessageReader](json: String): T = _fromJValue[T](parse(json))
 
@@ -66,6 +65,8 @@ abstract class MessageRelayLike[Obj] {
     result
   }
 
+  implicit def reader: MessageReader[M]
+
   final def fromJValue(jv: JValue): M = _fromJValue[M](jv)
   final def fromJSON(json: String): M = _fromJSON[M](json)
 
@@ -90,9 +91,9 @@ abstract class MessageRelayLike[Obj] {
   trait HasMessageRelay extends MessageAPI {
     self: Obj =>
 
-    override def formats = MessageRelayLike.this.formats
+    override def formats = RelayLike.this.formats
 
-    override def proto: Any = MessageRelayLike.this.toM(self)
+    override def proto: Any = RelayLike.this.toM(self)
   }
 
   class UDT extends UserDefinedType[Obj] {
@@ -112,7 +113,7 @@ abstract class MessageRelayLike[Obj] {
              doc: String,
              isValid: Obj => Boolean,
              // serializer = SparkEnv.get.serializer
-             formats: Formats = MessageRelayLike.this.formats
+             formats: Formats = RelayLike.this.formats
            ): MessageRelayParam[Obj] = new MessageRelayParam(this, parent, name, doc, isValid, formats)
 
   def Param(parent: String, name: String, doc: String): MessageRelayParam[Obj] =
@@ -125,11 +126,12 @@ abstract class MessageRelayLike[Obj] {
     Param(parent.uid, name, doc)
 }
 
-abstract class MessageRelay[Obj] extends MessageRelayLike[Obj] {
+abstract class MessageRelay[Obj] extends RelayLike[Obj] {
 
   override def mf: Manifest[M] = intrinsicManifestTry.get
 
   //TODO: it only works if impl of MessageRelay is an object
+  // maybe switching to M.<get companion class>?
   final val intrinsicManifestTry: Try[Manifest[this.M]] = Try{
 
     val clazz = this.getClass
@@ -140,11 +142,11 @@ abstract class MessageRelay[Obj] extends MessageRelayLike[Obj] {
     Manifest.classType[this.M](reprClazz)
   }
 
-  override def reader = this.MReader
+  override def reader: MessageReader[M] = this.MReader
   object MReader extends MessageReader[M]()(mf) {
     override implicit def formats: Formats = MessageRelay.this.formats
 
-    override def intrinsicFromJValue(jv: JValue) =
-      MessageRelay.this.intrinsicFromJValue(jv)
+    override def _read(jv: JValue) =
+      MessageRelay.this._read(jv)
   }
 }

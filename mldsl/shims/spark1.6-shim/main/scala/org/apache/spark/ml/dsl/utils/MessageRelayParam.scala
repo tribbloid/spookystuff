@@ -1,7 +1,7 @@
 package org.apache.spark.ml.dsl.utils
 
 import org.apache.spark.annotation.DeveloperApi
-import org.apache.spark.ml.dsl.utils.messaging.{MessageReader, MessageRelayLike, MessageRepr}
+import org.apache.spark.ml.dsl.utils.messaging.{MessageReader, RelayLike, MessageAPI_<=>}
 import org.json4s._
 
 import scala.language.implicitConversions
@@ -12,7 +12,7 @@ import scala.language.implicitConversions
   */
 @DeveloperApi
 class MessageRelayParam[Obj](
-                              outer: MessageRelayLike[Obj],
+                              outer: RelayLike[Obj],
                               parent: String,
                               name: String,
                               doc: String,
@@ -35,7 +35,7 @@ class MessageRelayParam[Obj](
 
     val messageV: outer.M = outer.fromJSON(json)
     messageV match {
-      case v: MessageRepr[_] =>
+      case v: MessageAPI_<=>[_] =>
         v.toObject.asInstanceOf[Obj]
       case _ =>
         //TODO: this is hacking, is there a more rigorous impl?
