@@ -223,10 +223,10 @@ object Xml {
   }
 
   class XmlNode(name: String, children: Seq[Node], attributes: MetaData)
-    extends Elem(null, name, attributes, TopScope, children :_*)
+    extends Elem(null, name, attributes, TopScope, false, children :_*)
 
   class XmlElem(name: String, value: String)
-    extends Elem(null, name, xml.Null, TopScope, Text(value))
+    extends Elem(null, name, xml.Null, TopScope, false, Text(value))
 
   val baseDataFormatsFactory = new FlowUtils.ThreadLocal(
     Seq(
