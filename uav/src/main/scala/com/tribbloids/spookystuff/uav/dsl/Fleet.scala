@@ -29,8 +29,8 @@ object Fleet {
     */
   //TODO: implement later
   case class Discover(
-                       delegate: Fleet,
-                       base: BaseLocator
+                       delegate: Fleet
+//                       base: BaseLocator
                      ) extends Fleet {
 
     def apply(): Set[UAV] = {

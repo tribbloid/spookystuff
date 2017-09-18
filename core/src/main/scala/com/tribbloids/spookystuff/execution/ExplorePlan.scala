@@ -137,7 +137,7 @@ case class ExplorePlan(
     }
 
     //this will use globalReducer, same thing will happen to later states, eliminator however will only be used inside ExploreStateView.execute()
-//    val reducedState0RDD: RDD[(TraceView, Open_Visited)] = betweenEpochReduce(state0RDD, combinedReducer)
+    //    val reducedState0RDD: RDD[(TraceView, Open_Visited)] = betweenEpochReduce(state0RDD, combinedReducer)
 
     val openSetSize = spooky.sparkContext.accumulator(0)
     var i = 1
@@ -174,7 +174,7 @@ case class ExplorePlan(
 
       //this will use globalReducer, same thing will happen to later states, eliminator however will only be used inside ExploreStateView.execute()
 
-//      val reducedStateRDD_+ : RDD[(TraceView, Open_Visited)] = betweenEpochReduce(stateRDD_+, combinedReducer)
+      //      val reducedStateRDD_+ : RDD[(TraceView, Open_Visited)] = betweenEpochReduce(stateRDD_+, combinedReducer)
 
       tempRDDs.persist(stateRDD_+, spooky.spookyConf.defaultStorageLevel)
       if (checkpointInterval >0 && i % checkpointInterval == 0) {

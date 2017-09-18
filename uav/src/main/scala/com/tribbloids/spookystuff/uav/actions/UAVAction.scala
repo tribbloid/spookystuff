@@ -5,7 +5,6 @@ import com.tribbloids.spookystuff.session.Session
 import com.tribbloids.spookystuff.uav.spatial.{Anchor, Location}
 import com.tribbloids.spookystuff.uav.utils.UAVViews
 import com.tribbloids.spookystuff.uav.{UAVConf, UAVMetrics}
-import org.slf4j.LoggerFactory
 
 /**
   * unless mixin, assume cost is 0

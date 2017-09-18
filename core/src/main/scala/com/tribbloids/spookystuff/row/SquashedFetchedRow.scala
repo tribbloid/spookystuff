@@ -184,7 +184,7 @@ case class SquashedFetchedRow(
             row =>
               traces.map {
                 trace =>
-                  val rewritten: Option[Trace] = TraceView(trace).rewriteLocally(row, schema)
+                  val rewritten: Option[Trace] = TraceView(trace).interpolateAndRewriteLocally(row, schema)
                   row.dataRow -> rewritten
                 //always discard old pages & temporary data before repartition, unlike flatten
               }

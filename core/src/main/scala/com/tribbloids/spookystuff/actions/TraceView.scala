@@ -2,7 +2,6 @@ package com.tribbloids.spookystuff.actions
 
 import com.tribbloids.spookystuff.caching.{DFSDocCache, InMemoryDocCache}
 import com.tribbloids.spookystuff.doc.{Doc, Fetched}
-import com.tribbloids.spookystuff.execution.ExecutionContext
 import com.tribbloids.spookystuff.row.{DataRowSchema, FetchedRow}
 import com.tribbloids.spookystuff.session.Session
 import com.tribbloids.spookystuff.{SpookyContext, dsl}
@@ -117,14 +116,23 @@ case class TraceView(
     }
   }
 
-  def rewriteLocally(row: FetchedRow, schema: DataRowSchema): Option[Trace] = {
-    val interpolatedOpt = interpolate(row, schema)
+  def interpolateAndRewriteLocally(row: FetchedRow, schema: DataRowSchema): Option[Trace] = {
+    //TODO: isolate interploation into an independent rewriter?
+    val interpolatedOpt: Option[Trace] = interpolate(row, schema)
       .map(_.children)
+    interpolatedOpt.flatMap {
+      v =>
+        TraceView(v).rewriteLocally(schema)
+    }
+  }
+
+  def rewriteLocally(schema: DataRowSchema): Option[Trace] = {
+    val interpolatedOpt: Option[Trace] = Some(this.children)
     val result = rewriters.foldLeft(interpolatedOpt){
       (opt, rewriter) =>
         opt.flatMap {
           trace =>
-            rewriter.rewriteLocally(trace, row, schema)
+            rewriter.rewriteLocally(trace, schema)
         }
     }
     result

@@ -18,7 +18,7 @@ import com.graphhopper.jsprit.core.reporting.SolutionPrinter.Print
 import com.graphhopper.jsprit.core.util.{Coordinate, FastVehicleRoutingTransportCostsMatrix, Solutions}
 import com.tribbloids.spookystuff.SpookyContext
 import com.tribbloids.spookystuff.actions.TraceView
-import com.tribbloids.spookystuff.execution.ExecutionContext
+import com.tribbloids.spookystuff.row.DataRowSchema
 import com.tribbloids.spookystuff.uav.UAVConf
 import com.tribbloids.spookystuff.uav.actions.{UAVNavigation, Waypoint}
 import com.tribbloids.spookystuff.uav.dsl.GenPartitioners
@@ -29,22 +29,22 @@ import org.apache.spark.rdd.RDD
 object JSpritSolver extends MinimaxSolver {
 
   override def rewrite[V](
-                           gp: GenPartitioners.MinimaxCost,
-                           ec: ExecutionContext,
+                           problem: GenPartitioners.MinimaxCost,
+                           schema: DataRowSchema,
                            rdd: RDD[(TraceView, Iterable[V])]
                          ): RDD[(TraceView, Iterable[V])] = {
 
-    val spooky = ec.spooky
+    val spooky = schema.ec.spooky
     val linkRDD = LinkUtils.lockedLinkRDD(spooky)
 
     val allUAVs = linkRDD.map(v => v.status()).collect()
-    val uavs = gp.numUAVOverride match {
+    val uavs = problem.numUAVOverride match {
       case Some(n) => allUAVs.slice(0, n)
       case None => allUAVs
     }
 
     val rows = rdd.collect()
-    val solution = Solution(gp, spooky, uavs, rows)
+    val solution = Solution(problem, spooky, uavs, rows)
 
     //TODO: this is where the monkey patch start, should avoid shipping V to drivers
     val uav2RowsMap: Map[UAVStatus, Seq[(TraceView, Iterable[V])]] =
@@ -54,14 +54,18 @@ object JSpritSolver extends MinimaxSolver {
       link =>
         val status = link.status()
         val KVs = uav2RowsMap.getOrElse(status, Nil)
-        val result = KVs.map {
+        val result = KVs.flatMap {
           kv =>
-            val vv = kv._1
-            val updatedVV = vv.copy(
-              children = List(PreferUAV(status,  Some(link._mutex.get._id)))
-                ++ vv.children
+            val trace = kv._1
+            val updated = trace.copy(
+              children = List(PreferUAV(status, Some(link._mutex.get._id)))
+                ++ trace.children
             )
-            updatedVV -> kv._2
+            val rewrittenOpt = updated.rewriteLocally(schema)
+            rewrittenOpt.map {
+              v =>
+                TraceView(v) -> kv._2
+            }
         }
         result
     }
@@ -109,7 +113,6 @@ object JSpritSolver extends MinimaxSolver {
       }
       jRoutingCostMat
     }
-
 
     def solveVRP(
                   vrp: VehicleRoutingProblem,
@@ -178,7 +181,7 @@ object JSpritSolver extends MinimaxSolver {
               solution: VehicleRoutingProblemSolution,
               path: String,
               title: String = "JSprit"
-            ) = {
+            ): Unit = {
 
       val file = new File(path)
       if (!file.exists()) file.getParentFile.mkdirs()
@@ -191,7 +194,7 @@ object JSpritSolver extends MinimaxSolver {
   }
 
   case class Solution[V](
-                          minimax: GenPartitioners.MinimaxCost,
+                          problem: GenPartitioners.MinimaxCost,
                           spooky: SpookyContext,
                           uavs: Array[UAVStatus],
                           rows: Array[(TraceView, Iterable[V])]
@@ -325,7 +328,7 @@ object JSpritSolver extends MinimaxSolver {
 
       val vrp: VehicleRoutingProblem = define
 
-      val tuple = Solution.solveVRP(vrp, minimax)
+      val tuple = Solution.solveVRP(vrp, problem)
       println(s"cost = ${tuple._2}")
       tuple._1
     }

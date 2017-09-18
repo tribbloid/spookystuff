@@ -15,7 +15,7 @@ package object dsl {
 
   //  type LinkFactory = (UAV => Link)
 
-  type BaseLocator = (RDD[UAV] => Base)
+  //  type BaseLocator = (RDD[UAV] => Base)
 
   //  type DronePreference = Drone => Option[Double]
 }
