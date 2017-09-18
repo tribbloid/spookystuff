@@ -23,7 +23,7 @@ class CostEstimatorSuite extends SpookyEnvFixture {
         Waypoint(p2)
       )
       val estimator = CostEstimator.Default()
-      assert(estimator.estimate(trace, spooky) == 5.0)
+      assert(estimator.estimate(trace, defaultSchema) == 5.0)
       //      assert(estimator.estimate(trace.reverse, spooky) == 5.0)
     }
 
@@ -35,8 +35,8 @@ class CostEstimatorSuite extends SpookyEnvFixture {
         Waypoint(p2)
       )
       val estimator = CostEstimator.Default()
-      assert(estimator.estimate(trace, spooky) === 5.0)
-      assert(estimator.estimate(trace.reverse, spooky) === 5.0)
+      assert(estimator.estimate(trace, defaultSchema) === 5.0)
+      assert(estimator.estimate(trace.reverse, defaultSchema) === 5.0)
     }
 
     it("can measure cost of 2 Waypints 3") {
@@ -47,8 +47,8 @@ class CostEstimatorSuite extends SpookyEnvFixture {
         Waypoint(p2)
       )
       val estimator = CostEstimator.Default()
-      assert(estimator.estimate(trace, spooky) === 5.0)
-      assert(estimator.estimate(trace.reverse, spooky) === 5.0)
+      assert(estimator.estimate(trace, defaultSchema) === 5.0)
+      assert(estimator.estimate(trace.reverse, defaultSchema) === 5.0)
     }
 
     it("can measure cost of 2 Waypints 4") {
@@ -59,8 +59,8 @@ class CostEstimatorSuite extends SpookyEnvFixture {
         Waypoint(p2)
       )
       val estimator = CostEstimator.Default()
-      assert(estimator.estimate(trace, spooky) === 5.0)
-      assert(estimator.estimate(trace.reverse, spooky) === 5.0)
+      assert(estimator.estimate(trace, defaultSchema) === 5.0)
+      assert(estimator.estimate(trace.reverse, defaultSchema) === 5.0)
     }
   }
 }

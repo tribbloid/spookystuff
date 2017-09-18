@@ -16,7 +16,6 @@ import com.graphhopper.jsprit.core.problem.{Capacity, VehicleRoutingProblem, Loc
 import com.graphhopper.jsprit.core.reporting.SolutionPrinter
 import com.graphhopper.jsprit.core.reporting.SolutionPrinter.Print
 import com.graphhopper.jsprit.core.util.{Coordinate, FastVehicleRoutingTransportCostsMatrix, Solutions}
-import com.tribbloids.spookystuff.SpookyContext
 import com.tribbloids.spookystuff.actions.TraceView
 import com.tribbloids.spookystuff.row.DataRowSchema
 import com.tribbloids.spookystuff.uav.UAVConf
@@ -44,7 +43,7 @@ object JSpritSolver extends MinimaxSolver {
     }
 
     val rows = rdd.collect()
-    val solution = Solution(problem, spooky, uavs, rows)
+    val solution = Solution(problem, schema, uavs, rows)
 
     //TODO: this is where the monkey patch start, should avoid shipping V to drivers
     val uav2RowsMap: Map[UAVStatus, Seq[(TraceView, Iterable[V])]] =
@@ -79,11 +78,11 @@ object JSpritSolver extends MinimaxSolver {
 
 
     def getCostMatrix(
-                       spooky: SpookyContext,
+                       schema: DataRowSchema,
                        trace_indices: Seq[(TraceView, Int)]
                      ): FastVehicleRoutingTransportCostsMatrix = {
 
-      val costEstimator = spooky.getConf[UAVConf].costEstimator
+      val costEstimator = schema.ec.spooky.getConf[UAVConf].costEstimator
 
       val dMat = for (
         i <- trace_indices;
@@ -96,7 +95,7 @@ object JSpritSolver extends MinimaxSolver {
           val last = traceView.children.collect { case v: UAVNavigation => v }.last
           val lastLocation = last._end
           val realTrace = List(Waypoint(lastLocation)) ++ j._1.children
-          val cost = costEstimator.estimate(realTrace, spooky)
+          val cost = costEstimator.estimate(realTrace, schema)
           (i._2, j._2, cost)
         }
       }
@@ -195,11 +194,12 @@ object JSpritSolver extends MinimaxSolver {
 
   case class Solution[V](
                           problem: GenPartitioners.MinimaxCost,
-                          spooky: SpookyContext,
+                          schema: DataRowSchema,
                           uavs: Array[UAVStatus],
                           rows: Array[(TraceView, Iterable[V])]
                         ) {
 
+    val spooky = schema.ec.spooky
     val traces = rows.map(_._1)
 
     val trace_uavOpt_index: Array[((TraceView, Option[UAVStatus]), Int)] = {
@@ -227,7 +227,7 @@ object JSpritSolver extends MinimaxSolver {
       }
 
       val jRoutingCostMat: FastVehicleRoutingTransportCostsMatrix =
-        Solution.getCostMatrix(spooky, trace_indices)
+        Solution.getCostMatrix(schema, trace_indices)
 
       val jVehicles: Array[VehicleImpl] = getJVehicles
 

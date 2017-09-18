@@ -1,7 +1,7 @@
 package com.tribbloids.spookystuff.uav.dsl
 
-import com.tribbloids.spookystuff.SpookyContext
-import com.tribbloids.spookystuff.actions.{Action, Trace}
+import com.tribbloids.spookystuff.actions.{Action, Trace, TraceView}
+import com.tribbloids.spookystuff.row.DataRowSchema
 import com.tribbloids.spookystuff.uav.actions.UAVNavigation
 import com.tribbloids.spookystuff.uav.planning.PreferUAV
 import com.tribbloids.spookystuff.uav.spatial.NED
@@ -10,7 +10,7 @@ trait CostEstimator {
 
   def estimate(
                 trace: Trace,
-                spooky: SpookyContext
+                schema: DataRowSchema
               ): Double = 0
 }
 
@@ -43,10 +43,11 @@ object CostEstimator {
 
     override def estimate(
                            trace: Trace,
-                           spooky: SpookyContext
+                           schema: DataRowSchema
                          ): Double = {
 
-      val concated: Seq[Action] = trace
+      val spooky = schema.ec.spooky
+      val concated: Seq[Action] = TraceView(trace).rewriteLocally(schema).getOrElse(Nil)
 
       {
         val preferUAVs = concated.collect {

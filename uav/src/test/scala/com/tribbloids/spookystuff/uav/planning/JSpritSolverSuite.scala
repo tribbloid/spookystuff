@@ -44,7 +44,7 @@ class JSpritSolverSuite extends JSpritFixture {
 
   it("getCostMatrix") {
     val mat: FastVehicleRoutingTransportCostsMatrix = Solution
-      .getCostMatrix(spooky, waypoints.zipWithIndex)
+      .getCostMatrix(defaultSchema, waypoints.zipWithIndex)
     //TODO: add assertion
 
     val mat2 = for(
@@ -74,7 +74,7 @@ class JSpritSolverSuite extends JSpritFixture {
     it("can evaluate 1 route") {
       val location = UAVConf.DEFAULT_HOME_LOCATION
       val uav = UAVStatus(UAV(Seq("dummy@localhost")), None, location, location)
-      val solver = Solution[Int](getJSprit, spooky, Array(uav), waypoints.map(v => v -> Nil))
+      val solver = Solution[Int](getJSprit, defaultSchema, Array(uav), waypoints.map(v => v -> Nil))
 
       val solution = solver.solve
 
@@ -87,7 +87,7 @@ class JSpritSolverSuite extends JSpritFixture {
       val trace = List(Waypoint(first._1.currentLocation)) ++
         first._2.flatMap(_._1.children)
 
-      val cost2 = spooky.getConf[UAVConf].costEstimator.estimate(trace, spooky)
+      val cost2 = spooky.getConf[UAVConf].costEstimator.estimate(trace, defaultSchema)
       assert(cost == cost2)
     }
 
@@ -98,7 +98,7 @@ class JSpritSolverSuite extends JSpritFixture {
           UAVStatus(UAV(Seq(s"$v@localhost")), None, location, location)
       }
 
-      val solver = Solution[Int](getJSprit, spooky, uavs, waypoints.map(v => v -> Nil))
+      val solver = Solution[Int](getJSprit, defaultSchema, uavs, waypoints.map(v => v -> Nil))
 
       val solution = solver.solve
 
@@ -115,7 +115,7 @@ class JSpritSolverSuite extends JSpritFixture {
 
       val costs2 = traces.map {
         trace =>
-          spooky.getConf[UAVConf].costEstimator.estimate(trace, spooky)
+          spooky.getConf[UAVConf].costEstimator.estimate(trace, defaultSchema)
       }
       val cost2 = costs2.max
       assert(cost == cost2)

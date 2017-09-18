@@ -2,7 +2,7 @@ package com.tribbloids.spookystuff.uav.dsl
 
 import com.tribbloids.spookystuff.actions.{Trace, TraceView}
 import com.tribbloids.spookystuff.row.DataRow
-import com.tribbloids.spookystuff.uav.actions.Waypoint
+import com.tribbloids.spookystuff.uav.actions.{Takeoff, Waypoint}
 import com.tribbloids.spookystuff.uav.planning.{JSpritFixture, PreferUAV}
 import com.tribbloids.spookystuff.uav.spatial.NED
 import com.tribbloids.spookystuff.uav.system.UAV
@@ -83,7 +83,7 @@ class JSpritGenPartitionerSuite extends DummyUAVFixture with JSpritFixture {
             case v@_ => Some(v)
           }
 
-          val cost = spooky.getConf[UAVConf].costEstimator.estimate(List(first) ++ others, spooky)
+          val cost = spooky.getConf[UAVConf].costEstimator.estimate(List(first) ++ others, defaultSchema)
           Some(status.uav -> cost)
         }
     }
@@ -119,5 +119,17 @@ class JSpritGenPartitionerSuite extends DummyUAVFixture with JSpritFixture {
 
     val grouped = runTest(lineScans(parallelism * 5))
     assert(getCost(grouped) <= 832.726)
+  }
+
+  it("can optimize max cost of 2 takeoff + line scan per UAV") {
+
+    val scans = lineScans(parallelism * 2)
+    val withTakeoff = scans.map {
+      scan =>
+        List(Takeoff(10)) ++ scan
+    }
+
+    val grouped = runTest(withTakeoff)
+    assert(getCost(grouped) <= 352.327)
   }
 }
