@@ -83,7 +83,8 @@ class JSpritGenPartitionerSuite extends DummyUAVFixture with JSpritFixture {
             case v@_ => Some(v)
           }
 
-          val cost = spooky.getConf[UAVConf].costEstimator.estimate(List(first) ++ others, defaultSchema)
+          val _trace = List(first) ++ others
+          val cost = spooky.getConf[UAVConf].costEstimator.estimate(_trace, defaultSchema)
           Some(status.uav -> cost)
         }
     }
@@ -126,10 +127,10 @@ class JSpritGenPartitionerSuite extends DummyUAVFixture with JSpritFixture {
     val scans = lineScans(parallelism * 2)
     val withTakeoff = scans.map {
       scan =>
-        List(Takeoff(10)) ++ scan
+        List(Takeoff(10.0)) ++ scan
     }
 
     val grouped = runTest(withTakeoff)
-    assert(getCost(grouped) <= 352.327)
+    assert(getCost(grouped) <= 362)
   }
 }

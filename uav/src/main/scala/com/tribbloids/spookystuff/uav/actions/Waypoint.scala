@@ -4,7 +4,8 @@ import com.tribbloids.spookystuff.extractors.Col
 import com.tribbloids.spookystuff.extractors.impl.Lit
 import com.tribbloids.spookystuff.row.{DataRowSchema, FetchedRow}
 import com.tribbloids.spookystuff.session.Session
-import com.tribbloids.spookystuff.uav.spatial.{Anchor, Location}
+import com.tribbloids.spookystuff.uav.actions.mixin.HasExactStartEndLocation
+import com.tribbloids.spookystuff.uav.spatial.{Anchors, Location}
 import com.tribbloids.spookystuff.uav.{UAVConf, UAVConst}
 import org.slf4j.LoggerFactory
 
@@ -13,10 +14,10 @@ import scala.concurrent.duration.Duration
 /**
   * Created by peng on 18/12/16.
   */
-trait WaypointLike extends UAVNavigation {
+trait WaypointLike extends UAVNavigation with HasExactStartEndLocation {
 
   val to: Col[Location]
-  lazy val _end = to.value
+  lazy val _start = to.value
 
   override def getSessionView(session: Session) = new this.SessionView(session)
 
@@ -24,7 +25,7 @@ trait WaypointLike extends UAVNavigation {
 
     override def engage(): Unit = {
       LoggerFactory.getLogger(this.getClass).info(s"moving to $to")
-      link.synch.goto(_end)
+      link.synch.goto(_start)
     }
   }
 }
@@ -43,17 +44,19 @@ case class Waypoint(
     val vOpt: Option[Any] = to.resolve(schema).lift
       .apply(pageRow)
 
+    val uavConf = schema.spooky.getConf[UAVConf]
+
     vOpt.map {
       v =>
-        val p = Location.parse(v, schema.spooky.getConf[UAVConf])
+        val p = Location.parse(v)
+          .replaceAnchors {
+            case Anchors.Home =>
+              uavConf.home
+          }
         this.copy(
           to = Lit(p)
         )
           .asInstanceOf[this.type]
     }
   }
-
-  override def doReplaceAnchors(fn: PartialFunction[Anchor, Anchor]) = this.copy(
-    to = to.value.replaceAnchors(fn)
-  ).asInstanceOf[this.type]
 }

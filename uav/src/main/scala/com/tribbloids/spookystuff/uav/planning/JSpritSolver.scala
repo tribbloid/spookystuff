@@ -16,10 +16,11 @@ import com.graphhopper.jsprit.core.problem.{Capacity, VehicleRoutingProblem, Loc
 import com.graphhopper.jsprit.core.reporting.SolutionPrinter
 import com.graphhopper.jsprit.core.reporting.SolutionPrinter.Print
 import com.graphhopper.jsprit.core.util.{Coordinate, FastVehicleRoutingTransportCostsMatrix, Solutions}
-import com.tribbloids.spookystuff.actions.TraceView
+import com.tribbloids.spookystuff.actions.{Trace, TraceView}
 import com.tribbloids.spookystuff.row.DataRowSchema
 import com.tribbloids.spookystuff.uav.UAVConf
-import com.tribbloids.spookystuff.uav.actions.{UAVNavigation, Waypoint}
+import com.tribbloids.spookystuff.uav.actions.Waypoint
+import com.tribbloids.spookystuff.uav.actions.mixin.HasStartEndLocations
 import com.tribbloids.spookystuff.uav.dsl.GenPartitioners
 import com.tribbloids.spookystuff.uav.spatial.NED
 import com.tribbloids.spookystuff.uav.telemetry.{LinkUtils, UAVStatus}
@@ -92,8 +93,9 @@ object JSpritSolver extends MinimaxSolver {
           (i._2, j._2, 0.0)
         else {
           val traceView: TraceView = i._1
-          val last = traceView.children.collect { case v: UAVNavigation => v }.last
-          val lastLocation = last._end
+          val trace = traceView.children
+          val last = trace.collect { case v: HasStartEndLocations => v }.last
+          val lastLocation = last.getEnd(trace, schema.ec.spooky)
           val realTrace = List(Waypoint(lastLocation)) ++ j._1.children
           val cost = costEstimator.estimate(realTrace, schema)
           (i._2, j._2, cost)
@@ -173,6 +175,19 @@ object JSpritSolver extends MinimaxSolver {
       }
 
       best -> objectiveFunction.getCosts(best)
+    }
+
+    def getPlotCoord(trace: Trace, schema: DataRowSchema): NED.V = {
+      val navs: Seq[HasStartEndLocations] = trace.collect {
+        case nav: HasStartEndLocations => nav
+      }
+      val homeLocation = schema.ec.spooky.getConf[UAVConf].home
+      for (nav <- navs) {
+        val opt = nav.getStart(trace, schema.ec.spooky)
+          .getCoordinate(NED, homeLocation)
+        if (opt.nonEmpty) return opt.get
+      }
+      NED.V(navs.size,0,0)
     }
 
     def plot(
@@ -299,18 +314,16 @@ object JSpritSolver extends MinimaxSolver {
         }
         .map {
           tuple =>
-            val navs: Seq[UAVNavigation] = tuple._1.children.collect {
-              case nav: UAVNavigation => nav
-            }
+            val trace = tuple._1.children
 
-            val coord = navs.head._start.getCoordinate(NED, homeLocation).get
+            val plotCoord = Solution.getPlotCoord(trace, schema)
             val location = JLocation.Builder
               .newInstance()
               .setIndex(tuple._2)
               .setCoordinate(
                 Coordinate.newInstance(
-                  coord.east,
-                  coord.north
+                  plotCoord.east,
+                  plotCoord.north
                 )
               )
               .build()

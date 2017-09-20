@@ -20,25 +20,64 @@ object CostEstimator {
                       speed: Double = 1.0
                     ) extends CostEstimator {
 
-    def intraCost(nav: UAVNavigation) = {
+    class Instance(
+                    trace: Trace,
+                    schema: DataRowSchema
+                  ) {
 
-      val ned = nav._end.coordinate(NED, nav._start)
-      val distance = Math.sqrt(ned.vector dot ned.vector)
+      def intraCost(nav: UAVNavigation) = {
 
-      val _speed = nav.speedOpt.getOrElse(speed)
+        val ned = nav.getEnd(trace, schema.ec.spooky)
+          .coordinate(NED, nav.getStart(trace, schema.ec.spooky))
+        val distance = Math.sqrt(ned.vector dot ned.vector)
 
-      distance / _speed
-    }
+        val _speed = nav.speedOpt.getOrElse(speed)
 
-    def interCost(nav1: UAVNavigation, nav2: UAVNavigation) = {
+        distance / _speed
+      }
 
-      val end1 = nav1._end
-      val start2 = nav2._start
+      def interCost(nav1: UAVNavigation, nav2: UAVNavigation) = {
 
-      val ned = start2.coordinate(NED, end1)
-      val distance = Math.sqrt(ned.vector dot ned.vector)
+        val end1 = nav1.getEnd(trace, schema.ec.spooky)
+        val start2 = nav2.getStart(trace, schema.ec.spooky)
 
-      distance / speed
+        val ned = start2.coordinate(NED, end1)
+        val distance = Math.sqrt(ned.vector dot ned.vector)
+
+        distance / speed
+      }
+
+      lazy val solve = {
+        val spooky = schema.ec.spooky
+        val concated: Seq[Action] = TraceView(trace).rewriteLocally(schema).getOrElse(Nil)
+
+        {
+          val preferUAVs = concated.collect {
+            case v: PreferUAV => v
+          }
+            .distinct
+          require(preferUAVs.size <= 1,
+            s"attempt to dispatch ${preferUAVs.size} UAVs for a task," +
+              " only 1 UAV can be dispatched for a task." +
+              " (This behaviour is likely permanent and won't be fixed in the future)"
+          )
+        }
+
+        val navs: Seq[UAVNavigation] = concated.collect {
+          case nav: UAVNavigation => nav
+        }
+
+        val costs = navs.indices.map {
+          i =>
+            val c1 = intraCost(navs(i))
+            val c2 = if (i >= navs.size - 1) 0
+            else interCost(navs(i), navs(i + 1))
+            c1 + c2
+        }
+        val sum = costs.sum
+
+        sum
+      }
     }
 
     override def estimate(
@@ -46,35 +85,7 @@ object CostEstimator {
                            schema: DataRowSchema
                          ): Double = {
 
-      val spooky = schema.ec.spooky
-      val concated: Seq[Action] = TraceView(trace).rewriteLocally(schema).getOrElse(Nil)
-
-      {
-        val preferUAVs = concated.collect {
-          case v: PreferUAV => v
-        }
-          .distinct
-        require(preferUAVs.size <= 1,
-          s"attempt to dispatch ${preferUAVs.size} UAVs for a task," +
-            " only 1 UAV can be dispatched for a task." +
-            " (This behaviour is likely permanent and won't be fixed in the future)"
-        )
-      }
-
-      val navs: Seq[UAVNavigation] = concated.collect {
-        case nav: UAVNavigation => nav
-      }
-
-      val costs = navs.indices.map {
-        i =>
-          val c1 = intraCost(navs(i))
-          val c2 = if (i >= navs.size - 1) 0
-          else interCost(navs(i), navs(i + 1))
-          c1 + c2
-      }
-      val sum = costs.sum
-
-      sum
+      new Instance(trace, schema).solve
     }
   }
 }

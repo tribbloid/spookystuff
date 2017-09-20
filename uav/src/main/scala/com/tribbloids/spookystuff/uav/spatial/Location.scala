@@ -1,6 +1,5 @@
 package com.tribbloids.spookystuff.uav.spatial
 
-import com.tribbloids.spookystuff.uav.UAVConf
 import com.tribbloids.spookystuff.utils.ScalaUDT
 import org.apache.spark.sql.catalyst.expressions.GenericRowWithSchema
 import org.apache.spark.sql.types.SQLUserDefinedType
@@ -175,7 +174,7 @@ object Location {
     Location(Seq(t))
   }
 
-  def parse(v: Any, conf: UAVConf): Location = {
+  def parse(v: Any): Location = {
     v match {
       case p: Location =>
         p

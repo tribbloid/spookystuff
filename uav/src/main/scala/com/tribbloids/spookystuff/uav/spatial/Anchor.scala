@@ -18,7 +18,9 @@ trait Anchor extends Serializable {
                   from: Anchor = Geodetic
                 ): system.V = {
     getCoordinate(system, from).getOrElse {
-      throw new UnsupportedOperationException(s"cannot determine relative position from $from to $this")
+      throw new UnsupportedOperationException(
+        s"cannot determine relative position from $from to $this"
+      )
     }
   }
 

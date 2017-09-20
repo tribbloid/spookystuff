@@ -37,35 +37,35 @@ object UAVRewriter extends Rewriter[Trace] {
     result
   }
 
-  override def rewriteLocally(v1: Trace, schema: DataRowSchema): Some[Trace] = {
-
-    val uavConf = schema.ec.spooky.getConf[UAVConf]
-
-    var lastLocationOpt: Option[Location#WithHome] = None
-
-    val result = v1.map {
-      case uavAction: UAVAction =>
-        val replaced = uavAction.replaceAnchors {
-          case Anchors.Home =>
-            uavConf.home
-          case Anchors.HomeLevelProjection =>
-            lastLocationOpt.map(_.homeLevelProj).getOrElse(
-              Anchors.HomeLevelProjection
-            )
-          case Anchors.MSLProjection =>
-            lastLocationOpt.map(_.homeLevelProj).getOrElse(
-              Anchors.MSLProjection
-            )
-        }
-        replaced match {
-          case nav: UAVNavigation =>
-            lastLocationOpt = Some(nav._end.withHome(uavConf.home))
-          case _ =>
-        }
-        replaced
-      case other@ _ =>
-        other
-    }
-    Some(result)
-  }
+//  override def rewriteLocally(v1: Trace, schema: DataRowSchema): Some[Trace] = {
+//
+//    val uavConf = schema.ec.spooky.getConf[UAVConf]
+//
+//    var lastLocationOpt: Option[Location#WithHome] = None
+//
+//    val result = v1.map {
+//      case uavAction: UAVAction =>
+//        val replaced = uavAction.replaceAnchors {
+//          case Anchors.Home =>
+//            uavConf.home
+//          case Anchors.HomeLevelProjection =>
+//            lastLocationOpt.map(_.homeLevelProj).getOrElse(
+//              Anchors.HomeLevelProjection
+//            )
+//          case Anchors.MSLProjection =>
+//            lastLocationOpt.map(_.homeLevelProj).getOrElse(
+//              Anchors.MSLProjection
+//            )
+//        }
+//        replaced match {
+//          case nav: UAVNavigation =>
+//            lastLocationOpt = Some(nav._end.withHome(uavConf.home))
+//          case _ =>
+//        }
+//        replaced
+//      case other@ _ =>
+//        other
+//    }
+//    Some(result)
+//  }
 }
