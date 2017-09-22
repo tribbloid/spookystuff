@@ -25,9 +25,17 @@ class CommonUtils {
   def /:/(parts: String*): String = qualifiedName("/")(parts: _*)
   def :/(part: String): String = addSuffix("/", part)
 
-  def \\\(parts: String*): String = qualifiedName(File.separator)(parts: _*)
-  def :\(part: String): String = addSuffix(File.separator, part)
-
+  def \\\(parts: String*): String = {
+    val _parts = parts.map {
+      v =>
+        v.replace('/',File.separatorChar)
+    }
+    qualifiedName(File.separator)(_parts: _*)
+  }
+  def :\(part: String): String = {
+    val _part = part.replace('/',File.separatorChar)
+    addSuffix(File.separator, _part)
+  }
 
   // Returning T, throwing the exception on failure
   @annotation.tailrec
