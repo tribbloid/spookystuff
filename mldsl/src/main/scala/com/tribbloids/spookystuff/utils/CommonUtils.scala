@@ -26,9 +26,11 @@ class CommonUtils {
   def :/(part: String): String = addSuffix("/", part)
 
   def \\\(parts: String*): String = {
-    val _parts = parts.map {
+    val _parts = parts.flatMap {
       v =>
-        v.replace('/',File.separatorChar)
+        Option(v).map (
+          _.replace('/',File.separatorChar)
+        )
     }
     qualifiedName(File.separator)(_parts: _*)
   }
@@ -40,11 +42,12 @@ class CommonUtils {
   // Returning T, throwing the exception on failure
   @annotation.tailrec
   final def retry[T](
-                n: Int,
-                interval: Long = 0,
-                silent: Boolean = false,
-                callerStr: String = null
-              )(fn: => T): T = {
+                      n: Int,
+                      interval: Long = 0,
+                      silent: Boolean = false,
+                      callerStr: String = null
+                    )(fn: => T): T = {
+
     var _callerStr = callerStr
     //TODO: this should be exposed as utility.
     if (callerStr == null)

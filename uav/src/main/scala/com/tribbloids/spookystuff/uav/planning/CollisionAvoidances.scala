@@ -2,6 +2,7 @@ package com.tribbloids.spookystuff.uav.planning
 
 import com.tribbloids.spookystuff.actions.{Action, TraceView}
 import com.tribbloids.spookystuff.execution.ExecutionContext
+import com.tribbloids.spookystuff.row.DataRowSchema
 import com.tribbloids.spookystuff.uav.UAVConf
 import com.tribbloids.spookystuff.uav.actions.Waypoint
 import com.tribbloids.spookystuff.uav.spatial.NED
@@ -12,7 +13,7 @@ object CollisionAvoidances {
   case object None extends CollisionAvoidance {
 
     override def rewrite[V](
-                             ec: ExecutionContext,
+                             schema: DataRowSchema,
                              rdd: RDD[(TraceView, Iterable[V])]
                            ): RDD[(TraceView, Iterable[V])] = rdd
   }
@@ -23,18 +24,17 @@ object CollisionAvoidances {
                                 ) extends CollisionAvoidance {
 
     override def rewrite[V](
-                             ec: ExecutionContext,
+                             schema: DataRowSchema,
                              rdd: RDD[(TraceView, Iterable[V])]
                            ): RDD[(TraceView, Iterable[V])] = {
-
-      import ec._
 
       val withIDs = rdd.map {
         tuple =>
           tuple._1.children.zipWithIndex -> tuple._2
       }
         .zipWithUniqueId()
-      ec.scratchRDDs.persist(withIDs)
+      schema.ec.scratchRDDs.persist(withIDs)
+
       val traceWIDs: RDD[List[IndexedAction]] = withIDs.map {
         triplet =>
           triplet._1._1.map {
