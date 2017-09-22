@@ -33,7 +33,7 @@ case class HDFSResolver(
     assert(path.isAbsolute, s"BAD DESIGN: ${path.toString} is not an absolute path")
   }
 
-  @transient lazy val ugiOpt = ugiFactory()
+  def ugiOpt = ugiFactory()
 
   protected def doAsUGI[T](f: =>T): T = {
     ugiOpt match {
@@ -53,51 +53,48 @@ case class HDFSResolver(
     }
   }
 
-  def input[T](pathStr: String)(f: InputStream => T): T = {
+  def input[T](pathStr: String)(f: InputStream => T): T = doAsUGI {
     val path: Path = new Path(pathStr)
     val fs: FileSystem = path.getFileSystem(getHadoopConf)
 
-    doAsUGI {
-      if (!pathStr.endsWith(lockedSuffix)) {
-        //wait for its locked file to finish its locked session
+    if (!pathStr.endsWith(lockedSuffix)) {
+      //wait for its locked file to finish its locked session
 
-        val lockedPath = new Path(pathStr + lockedSuffix)
+      val lockedPath = new Path(pathStr + lockedSuffix)
 
-        fs.getStatus(path)
+      fs.getStatus(path)
 
-        //wait for 15 seconds in total
-        CommonUtils.retry(Const.DFSBlockedAccessRetries) {
-          assert(!fs.exists(lockedPath), s"File $pathStr is locked by another executor or thread")
-          //        Thread.sleep(3*1000)
-        }
+      //wait for 15 seconds in total
+      CommonUtils.retry(Const.DFSBlockedAccessRetries) {
+        assert(!fs.exists(lockedPath), s"File $pathStr is locked by another executor or thread")
+        //        Thread.sleep(3*1000)
       }
+    }
 
-      val fis: FSDataInputStream = fs.open(path)
+    val fis: FSDataInputStream = fs.open(path)
 
-      try {
-        f(fis)
-      }
-      finally {
-        fis.close()
-      }
+    try {
+      f(fis)
+    }
+    finally {
+      fis.close()
     }
   }
 
-  override def output[T](pathStr: String, overwrite: Boolean)(f: (OutputStream) => T): T = {
+  override def output[T](pathStr: String, overwrite: Boolean
+                        )(f: (OutputStream) => T): T = doAsUGI{
     val path = new Path(pathStr)
     val fs = path.getFileSystem(getHadoopConf)
 
-    doAsUGI {
-      val fos: FSDataOutputStream = fs.create(path, overwrite)
+    val fos: FSDataOutputStream = fs.create(path, overwrite)
 
-      try {
-        val result = f(fos)
-        fos.flush()
-        result
-      }
-      finally {
-        fos.close()
-      }
+    try {
+      val result = f(fos)
+      fos.flush()
+      result
+    }
+    finally {
+      fos.close()
     }
   }
 
@@ -165,9 +162,9 @@ object HDFSResolver {
 
   def noUGIFactory = () => None
 
-//  def serviceUGIFactory = () => Some(SparkHelper.serviceUGI)
-//
-//  val lazyService = SparkHelper.serviceUGI
-//
-//  def lazyServiceUGIFactory = () => Some(lazyService)
+  //  def serviceUGIFactory = () => Some(SparkHelper.serviceUGI)
+  //
+  //  val lazyService = SparkHelper.serviceUGI
+  //
+  //  def lazyServiceUGIFactory = () => Some(lazyService)
 }
