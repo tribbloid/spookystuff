@@ -74,7 +74,7 @@ object GenPartitioners {
 
         val solvedRDD = solver.rewrite(MinimaxCost.this, schema, hasCostRDD)
 
-        val trafficControlledRDD = collisionAvoidance.rewrite(ec, solvedRDD)
+        val trafficControlledRDD = collisionAvoidance.rewrite(schema, solvedRDD)
           .map(tuple => (tuple._1: K) -> tuple._2)
 
         val hasNoCostRDD: RDD[(K, Iterable[V])] = bifurcated
