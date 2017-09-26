@@ -72,8 +72,17 @@ case class Location(
     this
   }
 
-  // always add result into buffer to avoid repeated computation
-  // recursively search through its relations to deduce the coordinate.
+  /**
+    * always add result into buffer to avoid repeated computation
+    * recursively search through its relations to deduce the coordinate.
+    * TODO: this implementation is not designed to infer each dimension individually
+    * (e.g. when try to get LLA coord but only has NED to home with altitude known
+    * the result can still be (NaN, NaN, Alt) )
+    * @param system
+    * @param from
+    * @param ic
+    * @return
+    */
   override def _getCoordinate(
                                system: CoordinateSystem,
                                from: Anchor = Anchors.Geodetic,
@@ -207,11 +216,4 @@ object Location {
         ???
     }
   }
-
-  //TODO: from Row
-
-  //  def d[T <: CoordinateLike : ClassTag](a: Position, b: Position): Try[Double] = {
-  //    val ctg = implicitly[ClassTag[T]]
-  //    dMat((a, b, ctg))
-  //  }
 }

@@ -20,7 +20,7 @@ import com.tribbloids.spookystuff.actions.{Trace, TraceView}
 import com.tribbloids.spookystuff.row.DataRowSchema
 import com.tribbloids.spookystuff.uav.UAVConf
 import com.tribbloids.spookystuff.uav.actions.Waypoint
-import com.tribbloids.spookystuff.uav.actions.mixin.HasStartEndLocations
+import com.tribbloids.spookystuff.uav.actions.mixin.HasLocation
 import com.tribbloids.spookystuff.uav.dsl.GenPartitioners
 import com.tribbloids.spookystuff.uav.spatial.NED
 import com.tribbloids.spookystuff.uav.telemetry.{LinkUtils, UAVStatus}
@@ -94,7 +94,7 @@ object JSpritSolver extends MinimaxSolver {
         else {
           val traceView: TraceView = i._1
           val trace = traceView.children
-          val last = trace.collect { case v: HasStartEndLocations => v }.last
+          val last = trace.collect { case v: HasLocation => v }.last
           val lastLocation = last.getEnd(trace, schema.ec.spooky)
           val realTrace = List(Waypoint(lastLocation)) ++ j._1.children
           val cost = costEstimator.estimate(realTrace, schema)
@@ -178,12 +178,12 @@ object JSpritSolver extends MinimaxSolver {
     }
 
     def getPlotCoord(trace: Trace, schema: DataRowSchema): NED.V = {
-      val navs: Seq[HasStartEndLocations] = trace.collect {
-        case nav: HasStartEndLocations => nav
+      val navs: Seq[HasLocation] = trace.collect {
+        case nav: HasLocation => nav
       }
       val homeLocation = schema.ec.spooky.getConf[UAVConf].home
       for (nav <- navs) {
-        val opt = nav.getStart(trace, schema.ec.spooky)
+        val opt = nav.getLocation(trace, schema)
           .getCoordinate(NED, homeLocation)
         if (opt.nonEmpty) return opt.get
       }

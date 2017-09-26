@@ -27,8 +27,8 @@ object CostEstimator {
 
       def intraCost(nav: UAVNavigation) = {
 
-        val ned = nav.getEnd(trace, schema.ec.spooky)
-          .coordinate(NED, nav.getStart(trace, schema.ec.spooky))
+        val ned = nav.getEnd(trace, schema)
+          .coordinate(NED, nav.getLocation(trace, schema))
         val distance = Math.sqrt(ned.vector dot ned.vector)
 
         val _speed = nav.speedOpt.getOrElse(speed)
@@ -38,8 +38,8 @@ object CostEstimator {
 
       def interCost(nav1: UAVNavigation, nav2: UAVNavigation) = {
 
-        val end1 = nav1.getEnd(trace, schema.ec.spooky)
-        val start2 = nav2.getStart(trace, schema.ec.spooky)
+        val end1 = nav1.getEnd(trace, schema)
+        val start2 = nav2.getLocation(trace, schema)
 
         val ned = start2.coordinate(NED, end1)
         val distance = Math.sqrt(ned.vector dot ned.vector)

@@ -3,7 +3,7 @@ package com.tribbloids.spookystuff.uav.planning
 import com.tribbloids.spookystuff.session.Session
 import com.tribbloids.spookystuff.uav.UAVConf
 import com.tribbloids.spookystuff.uav.actions.UAVNavigation
-import com.tribbloids.spookystuff.uav.actions.mixin.HasExactStartEndLocation
+import com.tribbloids.spookystuff.uav.actions.mixin.HasExactLocation
 import com.tribbloids.spookystuff.uav.telemetry.{Link, UAVStatus}
 import com.tribbloids.spookystuff.utils.ShippingMarks
 
@@ -15,7 +15,7 @@ private[uav] case class PreferUAV(
                                    uavStatus: UAVStatus,
                                    mutexIDOpt: Option[Long] = None
                                  ) extends UAVNavigation
-  with HasExactStartEndLocation
+  with HasExactLocation
   with ShippingMarks {
 
   override def skeleton = None

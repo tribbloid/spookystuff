@@ -4,7 +4,7 @@ import com.tribbloids.spookystuff.actions.TraceView
 import com.tribbloids.spookystuff.dsl.GenPartitioner
 import com.tribbloids.spookystuff.dsl.GenPartitionerLike.Instance
 import com.tribbloids.spookystuff.row.{BeaconRDD, DataRowSchema}
-import com.tribbloids.spookystuff.uav.actions.mixin.HasStartEndLocations
+import com.tribbloids.spookystuff.uav.actions.mixin.HasLocation
 import com.tribbloids.spookystuff.uav.planning.{CollisionAvoidance, CollisionAvoidances, MinimaxSolver}
 import org.apache.spark.rdd.RDD
 
@@ -57,7 +57,7 @@ object GenPartitioners {
             case (k: TraceView, v) =>
               val c = k.children
               val result: (Option[TraceView], Option[K]) = {
-                if (c.exists(_.isInstanceOf[HasStartEndLocations])) Some(k) -> None
+                if (c.exists(_.isInstanceOf[HasLocation])) Some(k) -> None
                 else None -> Some(k: K)
               }
               result -> v

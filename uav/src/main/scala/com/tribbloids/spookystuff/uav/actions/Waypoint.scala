@@ -4,7 +4,7 @@ import com.tribbloids.spookystuff.extractors.Col
 import com.tribbloids.spookystuff.extractors.impl.Lit
 import com.tribbloids.spookystuff.row.{DataRowSchema, FetchedRow}
 import com.tribbloids.spookystuff.session.Session
-import com.tribbloids.spookystuff.uav.actions.mixin.HasExactStartEndLocation
+import com.tribbloids.spookystuff.uav.actions.mixin.HasExactLocation
 import com.tribbloids.spookystuff.uav.spatial.{Anchors, Location}
 import com.tribbloids.spookystuff.uav.{UAVConf, UAVConst}
 import org.slf4j.LoggerFactory
@@ -14,7 +14,7 @@ import scala.concurrent.duration.Duration
 /**
   * Created by peng on 18/12/16.
   */
-trait WaypointLike extends UAVNavigation with HasExactStartEndLocation {
+trait WaypointLike extends UAVNavigation with HasExactLocation {
 
   val to: Col[Location]
   lazy val _start = to.value
@@ -28,6 +28,10 @@ trait WaypointLike extends UAVNavigation with HasExactStartEndLocation {
       link.synch.goto(_start)
     }
   }
+}
+
+object WP {
+  def apply = Waypoint.apply _
 }
 
 // How to accommodate camera & gimbal control? Right now do not refactor! Simplicity first.

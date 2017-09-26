@@ -40,11 +40,14 @@ object CollisionAvoidances {
           triplet._1._1.map {
             v =>
               IndexedAction(v._1, v._2 -> triplet._2)
+              IndexedAction(v._1, v._2 -> triplet._2)
           }
       }
 
+      val traceWIDs: RDD[List[
 
 //      val
+//
 //
 //
 //

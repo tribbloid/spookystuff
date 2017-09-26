@@ -3,9 +3,10 @@ package com.tribbloids.spookystuff.uav.actions
 import com.tribbloids.spookystuff.SpookyContext
 import com.tribbloids.spookystuff.actions.Trace
 import com.tribbloids.spookystuff.extractors.Col
+import com.tribbloids.spookystuff.row.DataRowSchema
 import com.tribbloids.spookystuff.session.Session
 import com.tribbloids.spookystuff.uav.UAVConf
-import com.tribbloids.spookystuff.uav.actions.mixin.HasStartEndLocations
+import com.tribbloids.spookystuff.uav.actions.mixin.HasLocation
 import com.tribbloids.spookystuff.uav.spatial.{Anchors, Location, NED}
 import org.slf4j.LoggerFactory
 
@@ -36,21 +37,22 @@ case class Takeoff(
     else uavConf.clearanceAltitudeMin
   }
 
-  override def getStart(trace: Trace, spooky: SpookyContext) = {
+  override def getLocation(trace: Trace, schema: DataRowSchema) = {
+    val spooky = schema.ec.spooky
     val uavConf = spooky.getConf[UAVConf]
     val minAlt = getMinAlt(uavConf)
 
     def fallbackLocation = Location.fromTuple(NED.V(0,0,-minAlt) -> Anchors.HomeLevelProjection)
 
     val hasStartEndLocations = trace.collect {
-      case v: HasStartEndLocations => v
+      case v: HasLocation => v
     }
     val i = hasStartEndLocations.indexWhere(_ eq this)
     if (i < 0) throw new UnsupportedOperationException(s"$this is not in the trace")
     else if (i == 0) fallbackLocation
     else {
       val previous = hasStartEndLocations(i - 1)
-      val previousLocaion = previous.getEnd(trace, spooky)
+      val previousLocaion = previous.getEnd(trace, schema)
       val previousCoordOpt = previousLocaion.getCoordinate(NED, uavConf.home)
       val result = previousCoordOpt match {
         case Some(coord) =>
