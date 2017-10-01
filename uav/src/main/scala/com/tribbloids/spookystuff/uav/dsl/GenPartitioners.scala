@@ -4,8 +4,10 @@ import com.tribbloids.spookystuff.actions.TraceView
 import com.tribbloids.spookystuff.dsl.GenPartitioner
 import com.tribbloids.spookystuff.dsl.GenPartitionerLike.Instance
 import com.tribbloids.spookystuff.row.{BeaconRDD, DataRowSchema}
-import com.tribbloids.spookystuff.uav.actions.mixin.HasLocation
-import com.tribbloids.spookystuff.uav.planning.{CollisionAvoidance, CollisionAvoidances, MinimaxSolver}
+import com.tribbloids.spookystuff.uav.actions.UAVNavigation
+import com.tribbloids.spookystuff.uav.planning.minimax.MinimaxSolver
+import com.tribbloids.spookystuff.uav.planning.traffic.CollisionAvoidance
+import com.tribbloids.spookystuff.uav.planning.{CollisionAvoidances, MinimaxSolvers}
 import org.apache.spark.rdd.RDD
 
 import scala.reflect.ClassTag
@@ -25,7 +27,7 @@ object GenPartitioners {
 
                           // how much effort optimizer spend to reduce total length instead of max length
                           cohesiveness: Double = 0.05,
-                          solver: MinimaxSolver = MinimaxSolver.JSprit,
+                          solver: MinimaxSolver = MinimaxSolvers.JSprit,
                           collisionAvoidance: CollisionAvoidance = CollisionAvoidances.None,
 
                           // for debugging only.
@@ -57,7 +59,7 @@ object GenPartitioners {
             case (k: TraceView, v) =>
               val c = k.children
               val result: (Option[TraceView], Option[K]) = {
-                if (c.exists(_.isInstanceOf[HasLocation])) Some(k) -> None
+                if (c.exists(_.isInstanceOf[UAVNavigation])) Some(k) -> None
                 else None -> Some(k: K)
               }
               result -> v
@@ -74,7 +76,7 @@ object GenPartitioners {
 
         val solvedRDD = solver.rewrite(MinimaxCost.this, schema, hasCostRDD)
 
-        val trafficControlledRDD = collisionAvoidance.rewrite(schema, solvedRDD)
+        val trafficControlledRDD = collisionAvoidance.rewrite(solvedRDD, schema)
           .map(tuple => (tuple._1: K) -> tuple._2)
 
         val hasNoCostRDD: RDD[(K, Iterable[V])] = bifurcated

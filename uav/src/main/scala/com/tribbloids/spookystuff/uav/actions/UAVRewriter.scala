@@ -19,7 +19,7 @@ import com.tribbloids.spookystuff.uav.spatial.{Anchors, Location}
   */
 object UAVRewriter extends Rewriter[Trace] {
 
-  override def rewriteGlobally(v1: Trace, schema: DataRowSchema): Trace = {
+  override def rewrite(v1: Trace, schema: DataRowSchema): Trace = {
 
     val uavConf = schema.ec.spooky.getConf[UAVConf]
 

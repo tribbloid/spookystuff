@@ -2,7 +2,7 @@ package com.tribbloids.spookystuff.uav.actions
 
 import com.tribbloids.spookystuff.actions.Interaction
 import com.tribbloids.spookystuff.session.Session
-import com.tribbloids.spookystuff.uav.actions.mixin.HasLocationDelta
+import com.tribbloids.spookystuff.uav.actions.mixin.HasLocation
 import com.tribbloids.spookystuff.uav.utils.UAVViews
 
 /**
@@ -10,7 +10,7 @@ import com.tribbloids.spookystuff.uav.utils.UAVViews
   */
 trait UAVNavigation extends Interaction
   with UAVAction
-  with HasLocationDelta {
+  with HasLocation {
 
   def speedOpt: Option[Double] = None
 

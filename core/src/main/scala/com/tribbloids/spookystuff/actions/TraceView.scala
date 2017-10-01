@@ -107,12 +107,12 @@ case class TraceView(
     Some(new TraceView(seq).asInstanceOf[this.type])
   }
 
-  override lazy val rewriters = children.flatMap(_.rewriters).distinct
+  override lazy val globalRewriters = children.flatMap(_.globalRewriters).distinct
 
   def rewriteGlobally(schema: DataRowSchema): Trace = {
-    rewriters.foldLeft(children){
+    globalRewriters.foldLeft(children){
       (trace, rewriter) =>
-        rewriter.rewriteGlobally(trace, schema)
+        rewriter.rewrite(trace, schema)
     }
   }
 
@@ -128,11 +128,11 @@ case class TraceView(
 
   def rewriteLocally(schema: DataRowSchema): Option[Trace] = {
     val interpolatedOpt: Option[Trace] = Some(this.children)
-    val result = rewriters.foldLeft(interpolatedOpt){
+    val result = localRewriters.foldLeft(interpolatedOpt){
       (opt, rewriter) =>
         opt.flatMap {
           trace =>
-            rewriter.rewriteLocally(trace, schema)
+            rewriter.rewrite(trace, schema)
         }
     }
     result

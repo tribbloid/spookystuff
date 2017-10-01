@@ -1,4 +1,4 @@
-package com.tribbloids.spookystuff.uav.planning
+package com.tribbloids.spookystuff.uav.planning.minimax
 
 import com.graphhopper.jsprit.core.problem.VehicleRoutingProblem
 import com.graphhopper.jsprit.core.util.{FastVehicleRoutingTransportCostsMatrix, VehicleRoutingTransportCostsMatrix}

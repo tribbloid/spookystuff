@@ -109,9 +109,9 @@ trait CoordinateSystem extends Serializable {
   //to save time we avoid using proj4 string parsing and implement our own alternative conversion rule if Projection is not available.
   def get2DProj(a: Anchor, ic: SearchHistory): Option[Projection]
 
-  protected def _create(vector: Vec[Double]): V
+  protected def _fromVector(vector: Vec[Double]): V
   def create(vector: Vec[Double], ic: SearchHistory = SearchHistory()) = {
-    val result = _create(vector)
+    val result = _fromVector(vector)
     assert(result.vector == vector) //TODO: remove
     result.ic = ic
     result
@@ -156,7 +156,7 @@ object LLA extends CoordinateSystem {
              alt: Double
            ) = V(lat, lon, alt)
 
-  override def _create(v: Vec[Double]): V = V(v(1), v(0), v(2))
+  override def _fromVector(v: Vec[Double]): V = V(v(1), v(0), v(2))
 
   case class V(
                 lat: Double,
@@ -191,7 +191,7 @@ object NED extends CoordinateSystem {
     }
   }
 
-  override def _create(v: Vec[Double]): V = V(v(1), v(0), - v(2))
+  override def _fromVector(v: Vec[Double]): V = V(v(1), v(0), - v(2))
 
   override def zero: Option[V] = Some(create(Vec(0.0, 0.0, 0.0)))
 

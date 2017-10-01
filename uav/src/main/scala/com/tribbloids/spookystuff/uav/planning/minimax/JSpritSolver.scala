@@ -1,4 +1,4 @@
-package com.tribbloids.spookystuff.uav.planning
+package com.tribbloids.spookystuff.uav.planning.minimax
 
 import java.io.File
 
@@ -19,9 +19,9 @@ import com.graphhopper.jsprit.core.util.{Coordinate, FastVehicleRoutingTransport
 import com.tribbloids.spookystuff.actions.{Trace, TraceView}
 import com.tribbloids.spookystuff.row.DataRowSchema
 import com.tribbloids.spookystuff.uav.UAVConf
-import com.tribbloids.spookystuff.uav.actions.Waypoint
-import com.tribbloids.spookystuff.uav.actions.mixin.HasLocation
+import com.tribbloids.spookystuff.uav.actions.{UAVNavigation, Waypoint}
 import com.tribbloids.spookystuff.uav.dsl.GenPartitioners
+import com.tribbloids.spookystuff.uav.planning._
 import com.tribbloids.spookystuff.uav.spatial.NED
 import com.tribbloids.spookystuff.uav.telemetry.{LinkUtils, UAVStatus}
 import org.apache.spark.rdd.RDD
@@ -77,7 +77,6 @@ object JSpritSolver extends MinimaxSolver {
     def getObjectiveFunction(cohesiveness: Double): SolutionCostCalculator =
       new MinimiaxCost(cohesiveness)
 
-
     def getCostMatrix(
                        schema: DataRowSchema,
                        trace_indices: Seq[(TraceView, Int)]
@@ -94,8 +93,8 @@ object JSpritSolver extends MinimaxSolver {
         else {
           val traceView: TraceView = i._1
           val trace = traceView.children
-          val last = trace.collect { case v: HasLocation => v }.last
-          val lastLocation = last.getEnd(trace, schema.ec.spooky)
+          val last = trace.collect { case v: UAVNavigation => v }.last
+          val lastLocation = last.getEnd(trace, schema)
           val realTrace = List(Waypoint(lastLocation)) ++ j._1.children
           val cost = costEstimator.estimate(realTrace, schema)
           (i._2, j._2, cost)
@@ -178,8 +177,8 @@ object JSpritSolver extends MinimaxSolver {
     }
 
     def getPlotCoord(trace: Trace, schema: DataRowSchema): NED.V = {
-      val navs: Seq[HasLocation] = trace.collect {
-        case nav: HasLocation => nav
+      val navs: Seq[UAVNavigation] = trace.collect {
+        case nav: UAVNavigation => nav
       }
       val homeLocation = schema.ec.spooky.getConf[UAVConf].home
       for (nav <- navs) {

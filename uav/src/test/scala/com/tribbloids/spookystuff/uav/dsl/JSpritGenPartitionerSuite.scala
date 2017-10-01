@@ -3,7 +3,8 @@ package com.tribbloids.spookystuff.uav.dsl
 import com.tribbloids.spookystuff.actions.{Trace, TraceView}
 import com.tribbloids.spookystuff.row.DataRow
 import com.tribbloids.spookystuff.uav.actions.{Takeoff, Waypoint}
-import com.tribbloids.spookystuff.uav.planning.{JSpritFixture, PreferUAV}
+import com.tribbloids.spookystuff.uav.planning.PreferUAV
+import com.tribbloids.spookystuff.uav.planning.minimax.JSpritFixture
 import com.tribbloids.spookystuff.uav.spatial.NED
 import com.tribbloids.spookystuff.uav.system.UAV
 import com.tribbloids.spookystuff.uav.telemetry.LinkUtils

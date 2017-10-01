@@ -1,4 +1,4 @@
-package com.tribbloids.spookystuff.uav.planning;
+package com.tribbloids.spookystuff.uav.planning.minimax;
 
 import com.graphhopper.jsprit.core.algorithm.state.StateId;
 import com.graphhopper.jsprit.core.algorithm.state.StateManager;
