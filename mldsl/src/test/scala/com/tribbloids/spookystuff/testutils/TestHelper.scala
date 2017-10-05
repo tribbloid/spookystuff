@@ -99,10 +99,6 @@ class TestHelper() {
 
     //always use KryoSerializer, it is less stable than Native Serializer
     val conf: SparkConf = new SparkConf()
-      .set("spark.serializer", "org.apache.spark.serializer.KryoSerializer")
-      //      .set("spark.kryo.registrator", "com.tribbloids.spookystuff.SpookyRegistrator")Incomplete for the moment
-      .set("spark.kryoserializer.buffer.max", "512m")
-      .set("dummy.property", "dummy")
 
     conf.setAll(coreSettings)
 
@@ -150,7 +146,12 @@ class TestHelper() {
         "spark.executor.memory" -> ((executorMemoryOpt.get - EXECUTOR_JVM_MEMORY_OVERHEAD) + "m"),
         "spark.driver.extraClassPath" -> sys.props("java.class.path"),
         "spark.executor.extraClassPath" -> sys.props("java.class.path"),
-        "spark.task.maxFailures" -> maxFailures.toString
+        "spark.task.maxFailures" -> maxFailures.toString,
+
+        ("spark.serializer", "org.apache.spark.serializer.KryoSerializer"),
+        //      .set("spark.kryo.registrator", "com.tribbloids.spookystuff.SpookyRegistrator")Incomplete for the moment
+        ("spark.kryoserializer.buffer.max", "512m"),
+        ("dummy.property", "dummy")
       )
     }
   }

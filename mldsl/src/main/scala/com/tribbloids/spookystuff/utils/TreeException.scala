@@ -2,6 +2,7 @@ package com.tribbloids.spookystuff.utils
 
 import org.apache.spark.sql.catalyst.trees.TreeNode
 
+import scala.collection.mutable.ArrayBuffer
 import scala.util.{Failure, Success, Try}
 
 object TreeException {
@@ -42,7 +43,7 @@ object TreeException {
         val flat = seq.flatMap {
           case MultiCauseWrapper(causes) =>
             causes
-          case v@ _ => Seq(v)
+          case v@_ => Seq(v)
         }
         val all = extra.flatMap(v => Option(v)) ++ flat
         if (expandUnary && all.size == 1) all.head
@@ -65,7 +66,7 @@ object TreeException {
               expandUnary: Boolean = false
             ): Seq[T] = {
 
-    val es = trials.collect{
+    val es = trials.collect {
       case Failure(e) => e
     }
     if (es.isEmpty) {
@@ -94,12 +95,12 @@ object TreeException {
 
     if (trials.isEmpty) return Nil
 
-    val results = trials.collect{
+    val results = trials.collect {
       case Success(e) => e
     }
 
     if (results.isEmpty) {
-      val es = trials.collect{
+      val es = trials.collect {
         case Failure(e) => e
       }
       val _agg = aggregate(agg, extra, expandUnary)
@@ -107,6 +108,55 @@ object TreeException {
     }
     else {
       results
+    }
+  }
+
+  /**
+    * early exit
+    * @param trials
+    * @param agg
+    * @param extra
+    * @param expandUnary
+    * @tparam T
+    * @return
+    */
+  def |||^[T](
+               trials: Seq[() => T],
+               agg: Seq[Throwable] => Throwable = {
+                 es =>
+                   if (es.size == 1) {
+                     es.head
+                   }
+                   else {
+                     MultiCauseWrapper(causes = es)
+                   }
+               },
+               extra: Seq[Throwable] = Nil,
+               expandUnary: Boolean = false
+             ): Option[T] = {
+
+    val buffer = ArrayBuffer[Try[T]]()
+
+    if (trials.isEmpty) return None
+
+    val results = for (fn <- trials) yield {
+
+      val result = Try{fn()}
+      result match {
+        case Success(t) => return Some(t)
+      }
+      result
+    }
+
+    if (results.isEmpty) {
+      val es = results.collect {
+        case Failure(e) => e
+      }
+      val _agg = aggregate(agg, extra, expandUnary)
+      throw _agg(es)
+    }
+    else {
+      throw new RuntimeException("IMPOSSIBLE!")
     }
   }
 
