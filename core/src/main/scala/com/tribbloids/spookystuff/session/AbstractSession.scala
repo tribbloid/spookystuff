@@ -56,8 +56,8 @@ sealed abstract class AbstractSession(val spooky: SpookyContext) extends LocalCl
 }
 
 abstract class NoDriverException(val str: String) extends SpookyException(str: String)
-object NoWebDriverException extends NoDriverException("INTERNAL ERROR: should initialize driver automatically")
-object NoPythonDriverException extends NoDriverException("INTERNAL ERROR: should initialize driver automatically")
+class NoWebDriverException extends NoDriverException("INTERNAL ERROR: should initialize driver automatically")
+class NoPythonDriverException extends NoDriverException("INTERNAL ERROR: should initialize driver automatically")
 
 /**
   * the only implementation
@@ -72,7 +72,7 @@ class Session(
   def webDriverOpt = _webDriverOpt.filter(!_.isCleaned)
   //throwing error instead of lazy creation is required for restarting timer
   def webDriver = webDriverOpt.getOrElse{
-    throw NoWebDriverException
+    throw new NoWebDriverException
   }
 
   def getOrProvisionWebDriver: CleanWebDriver = {
@@ -109,7 +109,7 @@ class Session(
   def pythonDriverOpt = _pythonDriverOpt.filter(!_.isCleaned)
   //throwing error instead of lazy creation is required for restarting timer
   def pythonDriver = pythonDriverOpt.getOrElse{
-    throw NoPythonDriverException
+    throw new NoPythonDriverException
   }
 
   def getOrProvisionPythonDriver: PythonDriver = {
@@ -133,11 +133,11 @@ class Session(
       f
     }
     catch {
-      case NoWebDriverException =>
+      case _: NoWebDriverException =>
         LoggerFactory.getLogger(this.getClass).debug(s"Web driver doesn't exist, creating ... $n time(s) left")
         getOrProvisionWebDriver
         withDriversDuring(f, n - 1)
-      case NoPythonDriverException =>
+      case _: NoPythonDriverException =>
         LoggerFactory.getLogger(this.getClass).debug(s"Python driver doesn't exist, creating ... $n time(s) left")
         getOrProvisionPythonDriver
         withDriversDuring(f, n - 1)
