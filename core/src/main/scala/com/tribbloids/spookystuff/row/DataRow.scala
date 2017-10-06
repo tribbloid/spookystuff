@@ -22,6 +22,10 @@ case class DataRow(
                     freeze: Boolean = false //if set to true PageRow.extract won't insert anything into it, used in merge/replace join
                   ) extends SpookyRow {
 
+  {
+    assert(data.isInstanceOf[Serializable]) //fail early
+  }
+
   import SpookyViews._
 
   def copyWithArgs(

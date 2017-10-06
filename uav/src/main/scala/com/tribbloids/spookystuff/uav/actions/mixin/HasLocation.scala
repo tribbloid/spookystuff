@@ -30,7 +30,7 @@ trait HasLocation extends Rewriter[Vec] {
 
   final val vectorDim = 3
 
-  def computeDelta(vector: Array[Double]): this.type = this
+  def shiftLocation(vector: Array[Double]): this.type = this
 }
 
 trait HasExactLocation extends HasLocation {

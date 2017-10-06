@@ -144,6 +144,7 @@ object TreeException {
       val result = Try{fn()}
       result match {
         case Success(t) => return Some(t)
+        case _ =>
       }
       result
     }

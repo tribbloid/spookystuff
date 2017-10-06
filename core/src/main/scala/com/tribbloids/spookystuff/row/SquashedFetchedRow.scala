@@ -11,7 +11,7 @@ import scala.collection.mutable.ArrayBuffer
 object SquashedFetchedRow {
 
   def apply(data: Map[Field, Any]): SquashedFetchedRow = SquashedFetchedRow(
-    dataRows = Array(DataRow(data.mapValues(_.asInstanceOf[Object])))
+    dataRows = Array(DataRow(data))
   )
 
   def withDocs(

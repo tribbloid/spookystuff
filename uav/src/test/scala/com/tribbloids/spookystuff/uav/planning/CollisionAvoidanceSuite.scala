@@ -8,7 +8,7 @@ class CollisionAvoidanceSuite extends SpookyEnvFixture {
 
   describe("t4MinimalDist can solve arg min t1 & t2") {
 
-    it("case 1") {
+    it("example 1") {
       val A1 = NED.V(1,0,0)
       val B1 = NED.V(0,1,0)
       val A2 = NED.V(0,0,-1)
@@ -19,7 +19,7 @@ class CollisionAvoidanceSuite extends SpookyEnvFixture {
       assert(t2 === 2.0/3)
     }
 
-    it("case 2") {
+    it("example 2") {
       val A1 = NED.V(2,0,0)
       val B1 = NED.V(0,1,0)
       val A2 = NED.V(0,0,-2)

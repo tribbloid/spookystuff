@@ -87,8 +87,16 @@ case class ScratchRDDs(
     tempRDDs.clear()
   }
 
-  def <+>[T](b: ScratchRDDs, f: ScratchRDDs => ArrayBuffer[T]) = {
+  def <+>[T](b: ScratchRDDs, f: ScratchRDDs => ArrayBuffer[T]): ArrayBuffer[T] = {
     f(this) ++ f(b)
+  }
+
+  def ++(other: ScratchRDDs) = {
+    this.copy(
+      <+>(other, _.tempTables),
+      <+>(other, _.tempRDDs),
+      <+>(other, _.tempDFs)
+    )
   }
 
   override protected def cleanImpl(): Unit = {

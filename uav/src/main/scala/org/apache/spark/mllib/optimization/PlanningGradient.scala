@@ -5,19 +5,24 @@ import com.tribbloids.spookystuff.caching.ConcurrentCache
 import com.tribbloids.spookystuff.row.DataRowSchema
 import com.tribbloids.spookystuff.session.Session
 import com.tribbloids.spookystuff.uav.actions.UAVNavigation
+import org.apache.spark.rdd.RDD
+
+import scala.util.Random
 
 trait PlanningGradient extends Gradient {
 
   def traces: Array[Trace]
+  def schema: DataRowSchema
+  lazy val initializationNoise = 0.01
 
   val (
     weightDim: Int,
     dataDim: Int,
-    n_indices: Array[List[Action]]
+    nav_indices: Array[List[Action]]
     ) = {
     var weightDim = 0
     var dataDim = 0
-    val a_wIndex: Array[List[Action]] = traces.map {
+    val nav_indices: Array[List[Action]] = traces.map {
       trace =>
         val features = trace.map {
           case v: UAVNavigation =>
@@ -30,7 +35,7 @@ trait PlanningGradient extends Gradient {
         }
         features
     }
-    (weightDim, dataDim, a_wIndex)
+    (weightDim, dataDim, nav_indices)
   }
 
   val cache = ConcurrentCache[Vec, WithWeights]()
@@ -46,18 +51,54 @@ trait PlanningGradient extends Gradient {
   sealed case class WithWeights(weights: Vec) {
     assert(weights.size == PlanningGradient.this.weightDim)
 
-    lazy val n_indicesDelta: Array[List[Action]] = n_indices.map {
+    lazy val shiftLocation: Array[List[Action]] = nav_indices.map {
       list =>
         list.map {
           case n_index: Nav_Index =>
-            val delta = n_index.computeDelta(weights)
-            n_index.copy(
-              nav = delta
-            )
+            val delta = n_index.shiftLocation(weights)
+            delta
           case others =>
             others
         }
     }
+  }
+
+  /**
+    * yield spark vector RDD
+    * non-zero index representing the participating index of traces
+    * index of 1 represents the first
+    * index of 1 also represents the second
+    * @return
+    */
+  lazy val dataRDD: RDD[(Double, MLVec)] = {
+
+    val dim = nav_indices.length
+    val pair = for (
+      i <- 0 until dim;
+      j <- 0 until dim
+    ) yield {
+      i -> j
+    }
+    val result = pair.flatMap {
+      case (i, j) if i < j =>
+        Some(new MLSVec(dim, Array(i, j), Array(1, 1)))
+      case _ =>
+        None
+    }
+    val withLabel = result.map {
+      v =>
+        0.0 -> v
+    }
+    val sc = schema.spooky.sparkContext
+    sc.parallelize(withLabel)
+  }
+
+  def initializeWeight: MLVec = {
+    val array = Array.fill(weightDim){
+      Random.nextDouble()* initializationNoise
+    }
+
+    new MLDVec(array)
   }
 }
 
@@ -67,10 +108,10 @@ case class Nav_Index(
                       dataIndex: Int //TODO: currently useless, remove?
                     ) extends UAVNavigation{
 
-  def computeDelta(weights: Vec): UAVNavigation = {
+  def shiftLocation(weights: Vec): UAVNavigation = {
     val range = weightIndex
     val sliced = weights.toArray.slice(range.start, range.end)
-    nav.computeDelta(sliced)
+    nav.shiftLocation(sliced)
     nav
   }
 

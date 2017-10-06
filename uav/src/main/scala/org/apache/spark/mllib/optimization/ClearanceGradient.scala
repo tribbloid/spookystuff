@@ -1,16 +1,11 @@
 package org.apache.spark.mllib.optimization
 
-import com.tribbloids.spookystuff.actions.{Action, Trace}
-import com.tribbloids.spookystuff.row.DataRowSchema
+import com.tribbloids.spookystuff.actions.Action
 import com.tribbloids.spookystuff.uav.UAVConf
-import com.tribbloids.spookystuff.uav.planning.traffic.{Clearance, CollisionAvoidance}
 import com.tribbloids.spookystuff.uav.spatial.NED
-import org.apache.spark.SparkContext
 import org.apache.spark.mllib.linalg.BLAS
-import org.apache.spark.rdd.RDD
 
 object ClearanceGradient {
-
 
   def t4MinimalDist(
                      A1: NED.V,
@@ -39,10 +34,12 @@ object ClearanceGradient {
 }
 
 case class ClearanceGradient(
-                              traces: Array[Trace],
-                              schema: DataRowSchema,
-                              outer: Clearance
+                              runner: ClearanceRunner
                             ) extends PlanningGradient {
+
+  def traces = runner.traces
+  def schema = runner.schema
+  def outer = runner.outer
 
   val uavConf = schema.ec.spooky.getConf[UAVConf]
   val home = uavConf.home
@@ -58,10 +55,12 @@ case class ClearanceGradient(
 
     val withWeights = this.withWeights(weights)
 
-    val n_indexDelta: Array[List[Action]] = withWeights.n_indicesDelta
+    val n_indexDelta: Array[List[Action]] = withWeights.shiftLocation
 
-    val first = data(0).toInt
-    val second = data(1).toInt
+    val (first,second) = {
+      val sparse = data.asInstanceOf[MLSVec]
+      sparse.indices(0) -> sparse.indices(1)
+    }
 
     val firstNavs = n_indexDelta(first).collect {
       case v: Nav_Index => v
@@ -132,22 +131,5 @@ case class ClearanceGradient(
       cumViolation += violation
     }
     cumViolation
-  }
-
-  def generateDataRDD(sc: SparkContext): RDD[MLVec] = {
-
-    val pair = for (
-      i <- 0 until dataDim;
-      j <- 0 until dataDim
-    ) yield {
-      i -> j
-    }
-    val result = pair.flatMap {
-      case (i, j) if i < j =>
-        Some(new MLDVec(Array(i, j)))
-      case _ =>
-        None
-    }
-    sc.parallelize(result)
   }
 }
