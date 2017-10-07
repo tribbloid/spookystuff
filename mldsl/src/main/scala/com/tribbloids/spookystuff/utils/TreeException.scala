@@ -149,7 +149,7 @@ object TreeException {
       result
     }
 
-    if (results.isEmpty) {
+    if (results.nonEmpty) {
       val es = results.collect {
         case Failure(e) => e
       }
