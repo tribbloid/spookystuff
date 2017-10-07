@@ -27,7 +27,7 @@ case class Mark() extends Export with UAVAction {
       ))
     }
     catch {
-      case NoPythonDriverException =>
+      case e: NoPythonDriverException =>
         Nil
     }
   }
