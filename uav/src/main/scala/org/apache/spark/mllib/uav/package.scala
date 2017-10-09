@@ -1,6 +1,6 @@
 package org.apache.spark.mllib
 
-package object optimization {
+package object uav {
 
   type Vec = breeze.linalg.Vector[Double]
   def Vec = breeze.linalg.Vector

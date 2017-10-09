@@ -4,7 +4,7 @@ import com.tribbloids.spookystuff.actions.{Rewriter, Trace}
 import com.tribbloids.spookystuff.row.DataRowSchema
 import com.tribbloids.spookystuff.uav.actions.UAVAction
 import com.tribbloids.spookystuff.uav.spatial.Location
-import org.apache.spark.mllib.optimization.Vec
+import org.apache.spark.mllib.uav.Vec
 
 /**
   * unless mixin, assume cost is 0

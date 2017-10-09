@@ -1,6 +1,6 @@
 package com.tribbloids.spookystuff.actions
 
-import com.tribbloids.spookystuff.row.{DataRowSchema, FetchedRow}
+import com.tribbloids.spookystuff.row.DataRowSchema
 
 trait Rewriter[T] {
 

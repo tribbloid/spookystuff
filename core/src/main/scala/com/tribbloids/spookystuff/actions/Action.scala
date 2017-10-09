@@ -247,3 +247,10 @@ trait Named extends Action {
 
 trait Driverless extends Action {
 }
+
+trait ActionPlaceholder extends Action {
+
+  override protected def doExe(session: Session) = {
+    throw new UnsupportedOperationException(s"${this.getClass.getSimpleName} is a placeholder")
+  }
+}

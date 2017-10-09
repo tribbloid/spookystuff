@@ -6,6 +6,8 @@ import com.tribbloids.spookystuff.extractors.impl.{Extractors, Lit}
 import org.apache.spark.ml.dsl.utils.messaging.MessageAPI
 import org.apache.spark.sql.catalyst.ScalaReflection.universe.TypeTag
 
+import scala.language.implicitConversions
+
 /**
   * Created by peng on 12/07/17.
   */
@@ -32,7 +34,7 @@ object Col {
 
   import Implicits._
 
-  implicit def fromLiteral[T: TypeTag](v: T): Col[T] = {
+  implicit def fromLiteral[T: TypeTag, V](v: V)(implicit ev: V => T): Col[T] = {
     val ex = v match {
       //      case str: String if ctg <:< ClassTag(classOf[String]) =>
       case str: String =>
@@ -46,7 +48,7 @@ object Col {
 
         result.asInstanceOf[Extractor[T]]
       case _ =>
-        Lit(v)
+        Lit(ev(v))
     }
 
     Col[T](ex)

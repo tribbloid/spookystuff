@@ -30,10 +30,6 @@ trait WaypointLike extends UAVNavigation with HasExactLocation {
   }
 }
 
-object WP {
-  def apply = Waypoint.apply _
-}
-
 // How to accommodate camera & gimbal control? Right now do not refactor! Simplicity first.
 case class Waypoint(
                      override val to: Col[Location],
@@ -63,4 +59,8 @@ case class Waypoint(
           .asInstanceOf[this.type]
     }
   }
+}
+
+object WP {
+  def apply = Waypoint.apply _
 }

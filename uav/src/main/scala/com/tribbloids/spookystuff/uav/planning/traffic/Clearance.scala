@@ -2,17 +2,17 @@ package com.tribbloids.spookystuff.uav.planning.traffic
 
 import com.tribbloids.spookystuff.actions.{Rewriter, Trace, TraceView}
 import com.tribbloids.spookystuff.row.DataRowSchema
-import org.apache.spark.mllib.optimization.{DVec, Vec}
+import org.apache.spark.mllib.uav.{DVec, Vec}
 import org.apache.spark.rdd.RDD
 
 object Clearance {
 
   type Interpolation = Rewriter[Trace]
-  type LocatioUpdater = Rewriter[Vec]
+  type LocatioShifter = Rewriter[Vec]
 
   object NoInperolation extends Interpolation
 
-  object AltitudeOnly extends LocatioUpdater {
+  object AltitudeOnly extends LocatioShifter {
     override def rewrite(v: Vec, schema: DataRowSchema): Vec = {
       val alt = v(3)
       new DVec(Array(0,0,alt))
@@ -24,7 +24,7 @@ case class Clearance(
                       traffic: Double = 1,
                       terrain: Option[Double] = None, //TODO: enable later
                       interpolation: Clearance.Interpolation,
-                      locationUpdater: Clearance.LocatioUpdater
+                      locationShifter: Clearance.LocatioShifter
                     ) extends CollisionAvoidance {
 
   override def rewrite[V](
