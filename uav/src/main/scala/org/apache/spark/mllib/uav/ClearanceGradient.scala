@@ -37,10 +37,9 @@ case class ClearanceGradient(
                               runner: ClearanceRunner
                             ) extends PathPlanningGradient {
 
-  def id2Traces: Map[Int, Array[Trace]] = runner.partitionID2Traces
+  def id2Traces: Map[Int, Seq[Trace]] = runner.partitionID2Traces
 
   def schema = runner.schema
-  def outer = runner.outer
 
   val uavConf = schema.ec.spooky.getConf[UAVConf]
   val home = uavConf.home
@@ -129,31 +128,32 @@ case class ClearanceGradient(
         A2.coordinate, B2.coordinate
       )
 
-      val m = A1.vector - A2.vector
-      val c1 = B1.vector - A1.vector
-      val c2 = B2.vector - A2.vector
+      val M = A1.vector - A2.vector
+      val C1 = B1.vector - A1.vector
+      val C2 = B2.vector - A2.vector
 
-      val p = m + t1*c1 - t2*c2
-      val dSquare = p dot p
-      val violation = Math.pow(outer.traffic, 2.0) - dSquare
+      val P = M + t1*C1 - t2*C2
+      val DSquare = P dot P
+      val D = Math.sqrt(DSquare)
+      val violation = runner.outer.traffic - D
 
       if (violation > 0) {
 
-        A1.nabla = (1 - t1) * p
-        B1.nabla = t1*p
-        A2.nabla = (1 - t2) * p
-        B2.nabla = t2*p
+        val ratio = violation/D // TODO: or square of it? I'm confused
 
-        val concat: Seq[(Int, Double)] = Seq(A1, B1, A2, B2)
-          .flatMap {
-            notation =>
-              val nabla: Vec = notation.nabla
-              val updated1: Vec = notation.vin.nav.rewrite(nabla, schema)
-              val updated2: Vec = outer.locationShifter.rewrite(updated1, schema)
+        A1.nabla = (1 - t1) * ratio * P
+        B1.nabla = t1 * ratio * P
+        A2.nabla = (t2 - 1) * ratio * P
+        B2.nabla = - t2 * ratio * P
 
-              notation.vin.weightIndex.zip(updated2.toArray)
-              null
-          }
+        val concat: Seq[(Int, Double)] = Seq(A1, B1, A2, B2).flatMap {
+          notation =>
+            val nabla: Vec = notation.nabla
+            val updated1: Vec = notation.vin.nav.rewrite(nabla, schema)
+            val updated2: Vec = runner.outer.locationShifter.rewrite(updated1, schema)
+
+            notation.vin.weightIndex.zip(updated2.toArray)
+        }
 
         val concatGradVec = new MLSVec(
           weights.size,

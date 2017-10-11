@@ -13,14 +13,14 @@ trait PathPlanningGradient extends Gradient {
   def schema: DataRowSchema
 
   // id = TaskContext.get.partitionID
-  def id2Traces: Map[Int, Array[Trace]]
+  def id2Traces: Map[Int, Seq[Trace]]
 
   lazy val numPartitions = id2Traces.size
 
   val (
     d_weight: Int,
     d_data: Int,
-    id2Traces_indexed: Map[Int, Array[Trace]]
+    id2Traces_indexed: Map[Int, Seq[Trace]]
     ) = {
     var weightDim = 0
     var dataDim = 0
@@ -40,10 +40,11 @@ trait PathPlanningGradient extends Gradient {
             indexed
         }
     }
+      .map(identity)
     (weightDim, dataDim, id2Traces_indexed)
   }
 
-  lazy val flatten: Seq[(Int, Trace)] = id2Traces.flatMap(
+  lazy val flatten: Seq[(Int, Trace)] = id2Traces_indexed.flatMap(
     tuple =>
       tuple._2.map(v => tuple._1 -> v)
   )
@@ -82,11 +83,12 @@ trait PathPlanningGradient extends Gradient {
     * index of 1 also represents the second
     * @return RDD[Label (always 0) -> SparseVector (index of operand trace in expanded)]
     */
-  lazy val dataRDD: RDD[(Double, MLVec)] = {
+  def generateDataRDD: RDD[(Double, MLVec)] = {
 
     // this operation should be distributed
     val sc = schema.spooky.sparkContext
 
+    val numTraces = this.numTraces
     val pairRDD: RDD[(Int, Int)] = sc.parallelize(0 until numTraces)
       .flatMap {
         i =>

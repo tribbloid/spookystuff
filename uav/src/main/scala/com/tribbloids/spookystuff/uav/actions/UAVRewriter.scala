@@ -3,7 +3,6 @@ package com.tribbloids.spookystuff.uav.actions
 import com.tribbloids.spookystuff.actions._
 import com.tribbloids.spookystuff.row.DataRowSchema
 import com.tribbloids.spookystuff.uav.UAVConf
-import com.tribbloids.spookystuff.uav.spatial.{Anchors, Location}
 
 /**
   * Do many things:

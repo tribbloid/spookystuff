@@ -24,7 +24,7 @@ abstract class ExecutionPlan(
           ) = this(
 
     children,
-    children.map(_.ec).reduce(_ merge _)
+    children.map(_.ec).reduce(_ :++ _)
   )
 
   def spooky = ec.spooky

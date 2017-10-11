@@ -11,6 +11,13 @@ import org.slf4j.LoggerFactory
 /**
   * won't do a thing if already in the air.
   */
+//old design is unable to evolve Takeoff of which exact location depends on previous nav
+//in case of ...WP1)-(Takeoff-WP2..., both has violations, each update then becomes:
+//  WP1-Takeoff: No violation
+//  Takeoff-WP2: Has violation but Takeoff cannot be lowered.
+
+//TODO: this should become a wrapper, current design is very inefficient!
+//TODO: change to be like this: wrap a Nav, if on the ground, arm and takeoff, if in the air, serve as an altitude lower bound
 case class Takeoff(
                     altitude: Col[Double] = 0.0
                   ) extends UAVNavigation {

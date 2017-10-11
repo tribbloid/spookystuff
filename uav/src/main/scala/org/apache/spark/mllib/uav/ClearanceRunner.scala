@@ -14,18 +14,18 @@ import org.apache.spark.mllib.optimization.{GradientDescent, SquaredL2Updater}
   * @param outer
   */
 case class ClearanceRunner(
-                            partitionID2Traces: Map[Int, Array[Trace]],
+                            partitionID2Traces: Map[Int, Seq[Trace]],
                             schema: DataRowSchema,
                             outer: Clearance
-                          ) extends NOTSerializable {
+                          ) {
 
   val gradient = ClearanceGradient(this)
   val updater = new SquaredL2Updater()
 
   //TODO: result may be a very large object that requires shipping
   //should optimize after PoC
-  def solve: Map[Int, Array[Trace]] = {
-    val data = gradient.dataRDD
+  def solve: Map[Int, Seq[Trace]] = {
+    val data = gradient.generateDataRDD
     val (weights, convergence) = GradientDescent
       .runMiniBatchSGD(
         data,
