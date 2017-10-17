@@ -21,7 +21,7 @@ trait WaypointLike extends UAVNavigation with HasExactLocation {
 
   override def getSessionView(session: Session) = new this.SessionView(session)
 
-  class SessionView(session: Session) extends super.SessionView(session) {
+  class SessionView(session: Session) extends NavSessionView(session) {
 
     override def engage(): Unit = {
       LoggerFactory.getLogger(this.getClass).info(s"moving to $to")

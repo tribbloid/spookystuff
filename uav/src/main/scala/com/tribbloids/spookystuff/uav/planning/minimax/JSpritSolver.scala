@@ -176,7 +176,7 @@ object JSpritSolver extends MinimaxSolver {
       best -> objectiveFunction.getCosts(best)
     }
 
-    def getPlotCoord(trace: Trace, schema: DataRowSchema): NED.V = {
+    def getPlotCoord(trace: Trace, schema: DataRowSchema): NED.C = {
       val navs: Seq[UAVNavigation] = trace.collect {
         case nav: UAVNavigation => nav
       }
@@ -186,7 +186,7 @@ object JSpritSolver extends MinimaxSolver {
           .getCoordinate(NED, homeLocation)
         if (opt.nonEmpty) return opt.get
       }
-      NED.V(navs.size,0,0)
+      NED.C(navs.size,0,0)
     }
 
     def plot(

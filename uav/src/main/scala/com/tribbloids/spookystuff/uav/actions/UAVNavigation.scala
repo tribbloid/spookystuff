@@ -5,6 +5,8 @@ import com.tribbloids.spookystuff.session.Session
 import com.tribbloids.spookystuff.uav.actions.mixin.HasLocation
 import com.tribbloids.spookystuff.uav.utils.UAVViews
 
+import scala.language.implicitConversions
+
 /**
   * inbound -> engage -> outbound
   */
@@ -22,14 +24,14 @@ trait UAVNavigation extends Interaction
     sv.outbound()
   }
 
-  def getSessionView(session: Session) = new this.SessionView(session)
+  implicit def getSessionView(session: Session) = new NavSessionView(session)
+}
 
-  implicit class SessionView(session: Session) extends UAVViews.SessionView(session) {
+class NavSessionView(session: Session) extends UAVViews.SessionView(session) {
 
-    def inbound(): Unit = {}
+  def inbound(): Unit = {}
 
-    def engage(): Unit = {}
+  def engage(): Unit = {}
 
-    def outbound(): Unit = {}
-  }
+  def outbound(): Unit = {}
 }

@@ -19,12 +19,12 @@ import org.slf4j.LoggerFactory
 //TODO: this should become a wrapper, current design is very inefficient!
 //TODO: change to be like this: wrap a Nav, if on the ground, arm and takeoff, if in the air, serve as an altitude lower bound
 case class Takeoff(
-                    altitude: Col[Double] = 0.0
+                    altitude: Col[Double] = 1.0
                   ) extends UAVNavigation {
 
   override def getSessionView(session: Session) = new this.SessionView(session)
 
-  implicit class SessionView(session: Session) extends super.SessionView(session) {
+  implicit class SessionView(session: Session) extends NavSessionView(session) {
 
     val minAlt = getMinAlt(uavConf)
 
@@ -41,33 +41,36 @@ case class Takeoff(
     if (altitude.value > 0) altitude.value
     else uavConf.clearanceAltitudeMin
   }
+}
+
+/**
+  * inserted by GenPartitioner to bind with another Nav
+  * Binding is the only option to ensure that both nav are treated as a rigid body, no deformity is allowed
+  */
+case class AndTakeoff(
+                       prevNav: UAVNavigation,
+                       takeoff: Takeoff
+                     ) extends UAVNavigation {
+
+  override def getSessionView(session: Session) = takeoff.getSessionView(session)
 
   override def getLocation(trace: Trace, schema: DataRowSchema) = {
     val spooky = schema.ec.spooky
     val uavConf = spooky.getConf[UAVConf]
-    val minAlt = getMinAlt(uavConf)
+    val minAlt = takeoff.getMinAlt(uavConf)
 
-    def fallbackLocation = Location.fromTuple(NED.V(0,0,-minAlt) -> Anchors.HomeLevelProjection)
+    def fallbackLocation = Location.fromTuple(NED.C(0,0,-minAlt) -> Anchors.HomeLevelProjection)
 
-    val navs = trace.collect {
-      case v: UAVNavigation => v
+    val previousLocation = prevNav.getEnd(trace, schema)
+    val previousCoordOpt = previousLocation.getCoordinate(NED, uavConf.home)
+    val result = previousCoordOpt match {
+      case Some(coord) =>
+        val alt = -coord.down
+        val objAlt = Math.max(alt, minAlt)
+        Location.fromTuple(coord.copy(down = -objAlt) -> uavConf.home)
+      case None =>
+        fallbackLocation
     }
-    val i = navs.indexWhere(_ eq this)
-    if (i < 0) throw new UnsupportedOperationException(s"$this is not in the trace")
-    else if (i == 0) fallbackLocation
-    else {
-      val previous = navs(i - 1)
-      val previousLocation = previous.getEnd(trace, schema)
-      val previousCoordOpt = previousLocation.getCoordinate(NED, uavConf.home)
-      val result = previousCoordOpt match {
-        case Some(coord) =>
-          val alt = -coord.down
-          val objAlt = Math.max(alt, minAlt)
-          Location.fromTuple(coord.copy(down = -objAlt) -> uavConf.home)
-        case None =>
-          fallbackLocation
-      }
-      result
-    }
+    result
   }
 }

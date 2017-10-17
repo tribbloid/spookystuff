@@ -29,13 +29,13 @@ abstract class ActionLike extends Product with Serializable with Verbose {
 
   lazy val TreeNode: ActionLike.TreeNodeView = ActionLike.TreeNodeView(this)
 
-  def globalRewriters: Seq[Rewriter[Trace]] = Nil
+  def globalRewriters: Seq[RewriteRule[Trace]] = Nil
 
   /**
     * invoked on executors, immediately after interpolation
     * *IMPORTANT!* may be called several times, before or after GenPartitioner.
     **/
-  def localRewriters: Seq[MonadicRewriter[Trace]] = Nil
+  def localRewriters: Seq[MonadicRewriteRule[Trace]] = Nil
 
   final def interpolate(row: FetchedRow, schema: DataRowSchema): Option[this.type] = {
     val result = this.doInterpolate(row, schema)

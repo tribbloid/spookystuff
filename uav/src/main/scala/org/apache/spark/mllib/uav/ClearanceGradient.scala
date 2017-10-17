@@ -8,10 +8,10 @@ import org.apache.spark.mllib.linalg.BLAS
 object ClearanceGradient {
 
   def t4MinimalDist(
-                     A1: NED.V,
-                     B1: NED.V,
-                     A2: NED.V,
-                     B2: NED.V
+                     A1: NED.C,
+                     B1: NED.C,
+                     A2: NED.C,
+                     B2: NED.C
                    ): (Double, Double) = {
 
     val M = A1.vector - A2.vector
@@ -109,7 +109,7 @@ case class ClearanceGradient(
       j <- 0 until (nav_coordinates2.size - 1)
     ) {
 
-      case class Notation(v: (VectorIndexedNav, NED.V)) {
+      case class Notation(v: (VectorIndexedNav, NED.C)) {
 
         val vin = v._1
         val coordinate = v._2

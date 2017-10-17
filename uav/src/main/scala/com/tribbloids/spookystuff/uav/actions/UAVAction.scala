@@ -9,7 +9,7 @@ trait UAVAction extends Action {
     UAVMetrics
   }
 
-  override def globalRewriters = super.globalRewriters :+ UAVRewriter
+  override def globalRewriters = super.globalRewriters :+ UAVRewriteRule
 
 //  def replaceAnchors(fn: PartialFunction[Anchor, Anchor]) = {
 //    val result = doReplaceAnchors(fn)

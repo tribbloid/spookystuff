@@ -1,5 +1,6 @@
 package com.tribbloids.spookystuff.uav.spatial
 
+import com.tribbloids.spookystuff.uav.spatial.util.{SearchHistory, SearchAttempt}
 import com.tribbloids.spookystuff.utils.ScalaUDT
 import org.apache.spark.sql.catalyst.expressions.GenericRowWithSchema
 import org.apache.spark.sql.types.SQLUserDefinedType
@@ -7,9 +8,6 @@ import org.slf4j.LoggerFactory
 
 import scala.collection.mutable.ArrayBuffer
 import scala.language.implicitConversions
-
-trait LocationLike extends Anchor {
-}
 
 //case class UnknownLocation(
 //                            id: Long = Random.nextLong()
@@ -22,7 +20,7 @@ class LocationUDT() extends ScalaUDT[Location]
 @SQLUserDefinedType(udt = classOf[LocationUDT])
 @SerialVersionUID(-928750192836509428L)
 case class Location(
-                     definedBy: Seq[SpatialRelation]
+                     definedBy: Seq[CoordinateAssociation]
                    ) extends LocationLike {
 
   def withHome(home: Location) = WithHome(home)
@@ -50,22 +48,22 @@ case class Location(
     val cs = definedBy.map {
       rel =>
         //TODO: unnecessary copy if out of fn domain
-        val replaced: Anchor = fn.applyOrElse(rel.from, (_: Anchor) => rel.from)
+        val replaced: Anchor = fn.applyOrElse(rel.anchor, (_: Anchor) => rel.anchor)
         rel.copy(
-          from = replaced
+          anchor = replaced
         )
     }
     this.copy(definedBy = cs)
   }
 
-  private val mnemonics: ArrayBuffer[SpatialRelation] = {
-    val result = ArrayBuffer.empty[SpatialRelation]
+  private val mnemonics: ArrayBuffer[CoordinateAssociation] = {
+    val result = ArrayBuffer.empty[CoordinateAssociation]
     val preset = definedBy // ++ Seq(Denotation(NED(0,0,0), this))
     result.++=(preset)
     result
   }
 
-  def addCoordinate(tuples: SpatialRelation*): this.type = {
+  def addCoordinate(tuples: CoordinateAssociation*): this.type = {
     assert(!tuples.contains(null))
     mnemonics ++= tuples
     //    require(!tuples.exists(_._2 == this), "self referential coordinate cannot be used")
@@ -80,16 +78,16 @@ case class Location(
     * the result can still be (NaN, NaN, Alt) )
     * @param system
     * @param from
-    * @param ic
+    * @param sh
     * @return
     */
   override def _getCoordinate(
-                               system: CoordinateSystem,
+                               system: SpatialSystem,
                                from: Anchor = Anchors.Geodetic,
-                               ic: SearchHistory
-                             ): Option[system.V] = {
+                               sh: SearchHistory
+                             ): Option[system.C] = {
 
-    if (ic.recursions >= 1000) {
+    if (sh.recursions >= 1000) {
       throw new UnsupportedOperationException("too many recursions")
     }
 
@@ -102,18 +100,18 @@ case class Location(
 
     val allRelations = mnemonics
 
-    def cacheAndYield(v: Coordinate): Option[system.V] = {
-      addCoordinate(SpatialRelation(v, from))
-      Some(v.asInstanceOf[system.V])
+    def cacheAndYield(v: Coordinate): Option[system.C] = {
+      addCoordinate(CoordinateAssociation(v, from))
+      Some(v.asInstanceOf[system.C])
     }
 
     allRelations.foreach {
       rel =>
         if (
-          rel.coordinate.system == system &&
-            rel.from == from
+          rel.data.system == system &&
+            rel.anchor == from
         ) {
-          return Some(rel.coordinate.asInstanceOf[system.V])
+          return Some(rel.data.asInstanceOf[system.C])
         }
     }
 
@@ -123,30 +121,30 @@ case class Location(
                           |${this.treeString}
                           |-------------
                           |inferring ${system.name} from $from
-                          |using ${rel.coordinate.system.name} from ${rel.from}
+                          |using ${rel.data.system.name} from ${rel.anchor}
                           """.trim.stripMargin
         LoggerFactory.getLogger(this.getClass).debug {
           debugStr
         }
 
-        val directOpt: Option[CoordinateSystem#V] = rel.project(from, system, ic)
+        val directOpt: Option[SpatialSystem#C] = rel.project(from, system, sh)
         directOpt.foreach {
           direct =>
             return cacheAndYield(direct)
         }
 
         //use chain rule for inference
-        rel.from match {
+        rel.anchor match {
           case middle: Location if middle != this && middle != from =>
             for (
               c2 <- {
-                ic.getCoordinate(SpatialEdge(middle, system, this))
+                sh.getCoordinate(SearchAttempt(middle, system, this))
               };
               c1 <- {
-                ic.getCoordinate(SpatialEdge(from, system, middle))
+                sh.getCoordinate(SearchAttempt(from, system, middle))
               }
             ) {
-              return cacheAndYield(c1.asInstanceOf[system.V] ++> c2.asInstanceOf[system.V])
+              return cacheAndYield(c1.asInstanceOf[system.C] ++> c2.asInstanceOf[system.C])
             }
           case _ =>
         }
@@ -163,7 +161,7 @@ case class Location(
 
   override def toString: String = {
     definedBy.headOption.map {
-      _.coordinate
+      _.data
     }
       .mkString("<", "", ">")
   }

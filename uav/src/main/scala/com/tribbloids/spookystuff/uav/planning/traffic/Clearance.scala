@@ -1,6 +1,6 @@
 package com.tribbloids.spookystuff.uav.planning.traffic
 
-import com.tribbloids.spookystuff.actions.{Rewriter, Trace, TraceView}
+import com.tribbloids.spookystuff.actions.{RewriteRule, Trace, TraceView}
 import com.tribbloids.spookystuff.row.DataRowSchema
 import com.tribbloids.spookystuff.uav.planning.traffic.Clearance.{AltitudeOnly, NoInperolation}
 import org.apache.spark.mllib.uav.{DVec, Vec}
@@ -8,8 +8,8 @@ import org.apache.spark.rdd.RDD
 
 object Clearance {
 
-  type Interpolation = Rewriter[Trace]
-  type LocatioShifter = Rewriter[Vec]
+  type Interpolation = RewriteRule[Trace]
+  type LocatioShifter = RewriteRule[Vec]
 
   object NoInperolation extends Interpolation
 

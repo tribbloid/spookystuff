@@ -16,7 +16,7 @@ import com.tribbloids.spookystuff.uav.UAVConf
   * 5. (pending) replace Anchors.GroundProjection with previous action._end
   *     minus its relative altitude to ground elevation directly under it (query from various terrian API or DB)
   */
-object UAVRewriter extends Rewriter[Trace] {
+object UAVRewriteRule extends RewriteRule[Trace] {
 
   override def rewrite(v1: Trace, schema: DataRowSchema): Trace = {
 

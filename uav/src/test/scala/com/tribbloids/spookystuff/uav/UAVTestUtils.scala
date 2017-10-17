@@ -11,7 +11,7 @@ object UAVTestUtils {
 
   abstract class Pattern {
 
-    def neds: Seq[(NED.V, NED.V)]
+    def neds: Seq[(NED.C, NED.C)]
 
     val locations = neds.map {
       tuple =>
@@ -42,24 +42,24 @@ object UAVTestUtils {
   }
 
   case class NEDPattern(
-                         neds: Seq[(NED.V, NED.V)]
+                         neds: Seq[(NED.C, NED.C)]
                        ) extends Pattern {
 
   }
 
   case class LawnMowerPattern(
                                n: Int,
-                               origin: NED.V,
-                               dir: NED.V, // actual directions are always alternating
-                               stride: NED.V
+                               origin: NED.C,
+                               dir: NED.C, // actual directions are always alternating
+                               stride: NED.C
                              ) extends Pattern {
 
-    def neds: Seq[(NED.V, NED.V)] = {
+    def neds: Seq[(NED.C, NED.C)] = {
 
       val result = (0 until n).map {
         i =>
-          val p1: NED.V = NED.create(origin.vector + (stride.vector :* i.toDouble))
-          val p2: NED.V = NED.create(p1.vector + dir.vector)
+          val p1: NED.C = NED.create(origin.vector + (stride.vector :* i.toDouble))
+          val p2: NED.C = NED.create(p1.vector + dir.vector)
           if (i % 2 == 0) {
             p1 -> p2
           }

@@ -73,7 +73,7 @@ class LocationSuite extends FunSpecx {
 
     val p2 : Location = NED.create(Vec(1000, 2000, 30)) -> p1
 
-    p1.addCoordinate(SpatialRelation(NED.create(Vec(-1000,-2000,-30)), p2))
+    p1.addCoordinate(CoordinateAssociation(NED.create(Vec(-1000,-2000,-30)), p2))
 
     val c2 = p2.getCoordinate(LLA, Anchors.Geodetic)
     assert(c2.isEmpty)
@@ -84,7 +84,7 @@ class LocationSuite extends FunSpecx {
 
     val p2 : Location = LLA.create(Vec(-79.262262, 43.694195, 30)) -> p1
 
-    p1.addCoordinate(SpatialRelation(LLA.create(Vec(-79.262262, 43.694195,-30)), p2))
+    p1.addCoordinate(CoordinateAssociation(LLA.create(Vec(-79.262262, 43.694195,-30)), p2))
 
     val c2_Geo = p2.getCoordinate(LLA, Anchors.Geodetic)
     //TODO: should I use NaN and yield the known part?

@@ -2,7 +2,7 @@ package com.tribbloids.spookystuff.actions
 
 import com.tribbloids.spookystuff.row.DataRowSchema
 
-trait Rewriter[T] extends Serializable{
+trait RewriteRule[T] extends Serializable{
 
   /**
     * @param v
@@ -12,7 +12,7 @@ trait Rewriter[T] extends Serializable{
   def rewrite(v: T, schema: DataRowSchema): T = v
 }
 
-trait MonadicRewriter[T] extends Serializable{
+trait MonadicRewriteRule[T] extends Serializable{
 
   /**
     * @param v

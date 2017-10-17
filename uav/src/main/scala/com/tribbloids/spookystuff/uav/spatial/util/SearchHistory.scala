@@ -1,21 +1,15 @@
-package com.tribbloids.spookystuff.uav.spatial
+package com.tribbloids.spookystuff.uav.spatial.util
+
+import com.tribbloids.spookystuff.uav.spatial.SpatialSystem
 
 import scala.collection.mutable
 
 /**
   * Created by peng on 26/02/17.
   */
-
-case class SpatialEdge[+T <: CoordinateSystem](
-                                                from: Anchor,
-                                                system: T,
-                                                to: Anchor
-                                              ) {
-}
-
 case class SearchHistory(
-                          stack: mutable.ArrayBuffer[SpatialEdge[CoordinateSystem]] = mutable.ArrayBuffer.empty,
-                          failed: mutable.Set[SpatialEdge[CoordinateSystem]] = mutable.Set.empty,
+                          stack: mutable.ArrayBuffer[SearchAttempt[SpatialSystem]] = mutable.ArrayBuffer.empty,
+                          failed: mutable.Set[SearchAttempt[SpatialSystem]] = mutable.Set.empty,
                           var hops: Int = 0,
                           var recursions: Int = 0
                         ) {
@@ -24,15 +18,15 @@ case class SearchHistory(
     s"hops=$hops recursions=$recursions"
   }
 
-  def isForbidden(triplet: SpatialEdge[CoordinateSystem]) = {
+  def isForbidden(triplet: SearchAttempt[SpatialSystem]) = {
     stack.contains(triplet) || failed.contains(triplet)
   }
 
-  def isAllowed(triplet: SpatialEdge[CoordinateSystem]) = !isForbidden(triplet)
+  def isAllowed(triplet: SearchAttempt[SpatialSystem]) = !isForbidden(triplet)
 
   def getCoordinate(
-                     triplet: SpatialEdge[CoordinateSystem]
-                   ): Option[triplet.system.V] = {
+                     triplet: SearchAttempt[SpatialSystem]
+                   ): Option[triplet.system.C] = {
 
     recursions += 1
 

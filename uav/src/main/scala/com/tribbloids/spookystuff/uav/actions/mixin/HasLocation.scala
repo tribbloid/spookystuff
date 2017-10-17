@@ -1,6 +1,6 @@
 package com.tribbloids.spookystuff.uav.actions.mixin
 
-import com.tribbloids.spookystuff.actions.{Rewriter, Trace}
+import com.tribbloids.spookystuff.actions.{RewriteRule, Trace}
 import com.tribbloids.spookystuff.row.DataRowSchema
 import com.tribbloids.spookystuff.uav.actions.UAVAction
 import com.tribbloids.spookystuff.uav.spatial.Location
@@ -13,10 +13,10 @@ import org.apache.spark.mllib.uav.Vec
   * with mllib Updater
   * has built-in 'stiffness' that affects each dimension's tolerance to change
   */
-trait HasLocation extends Rewriter[Vec] {
+trait HasLocation extends RewriteRule[Vec] {
   self: UAVAction =>
 
-  def getLocation(trace: Trace, schema: DataRowSchema): Location
+  def getLocation(trace: Trace, schema: DataRowSchema): Location = ???
 
 //  def vector(trace: Trace, schema: DataRowSchema): DenseVector[Double] = {
 //    val location = getLocation(trace, schema)
