@@ -2,7 +2,8 @@ package com.tribbloids.spookystuff.uav
 
 import com.tribbloids.spookystuff.conf.{AbstractConf, Submodules}
 import com.tribbloids.spookystuff.uav.dsl._
-import com.tribbloids.spookystuff.uav.spatial.{Anchors, LLA, Location}
+import com.tribbloids.spookystuff.uav.spatial.point.{LLA, Location}
+import com.tribbloids.spookystuff.uav.spatial.Anchors
 import com.tribbloids.spookystuff.uav.system.UAV
 import org.apache.spark.SparkConf
 

@@ -1,6 +1,6 @@
 package com.tribbloids.spookystuff.uav.spatial.util
 
-import com.tribbloids.spookystuff.uav.spatial.SpatialSystem
+import com.tribbloids.spookystuff.uav.spatial.point.CoordinateSystem
 
 import scala.collection.mutable
 
@@ -8,8 +8,8 @@ import scala.collection.mutable
   * Created by peng on 26/02/17.
   */
 case class SearchHistory(
-                          stack: mutable.ArrayBuffer[SearchAttempt[SpatialSystem]] = mutable.ArrayBuffer.empty,
-                          failed: mutable.Set[SearchAttempt[SpatialSystem]] = mutable.Set.empty,
+                          stack: mutable.ArrayBuffer[SearchAttempt[CoordinateSystem]] = mutable.ArrayBuffer.empty,
+                          failed: mutable.Set[SearchAttempt[CoordinateSystem]] = mutable.Set.empty,
                           var hops: Int = 0,
                           var recursions: Int = 0
                         ) {
@@ -18,14 +18,14 @@ case class SearchHistory(
     s"hops=$hops recursions=$recursions"
   }
 
-  def isForbidden(triplet: SearchAttempt[SpatialSystem]) = {
+  def isForbidden(triplet: SearchAttempt[CoordinateSystem]) = {
     stack.contains(triplet) || failed.contains(triplet)
   }
 
-  def isAllowed(triplet: SearchAttempt[SpatialSystem]) = !isForbidden(triplet)
+  def isAllowed(triplet: SearchAttempt[CoordinateSystem]) = !isForbidden(triplet)
 
   def getCoordinate(
-                     triplet: SearchAttempt[SpatialSystem]
+                     triplet: SearchAttempt[CoordinateSystem]
                    ): Option[triplet.system.C] = {
 
     recursions += 1

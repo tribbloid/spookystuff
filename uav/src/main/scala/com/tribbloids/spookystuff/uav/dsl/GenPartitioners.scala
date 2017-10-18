@@ -71,10 +71,10 @@ object GenPartitioners {
 
         ec.scratchRDDs.persist(bifurcated)
 
-        val hasCostRDD: RDD[(TraceView, Iterable[V])] = bifurcated
+        val hasNavRDD: RDD[(TraceView, Iterable[V])] = bifurcated
           .flatMap(tt => tt._1._1.map(v => v -> tt._2))
 
-        val solvedRDD = solver.rewrite(MinimaxCost.this, schema, hasCostRDD)
+        val solvedRDD = solver.solve(MinimaxCost.this, schema, hasNavRDD)
 
         val trafficControlledRDD = collisionAvoidance.rewrite(solvedRDD, schema)
           .map(tuple => (tuple._1: K) -> tuple._2)

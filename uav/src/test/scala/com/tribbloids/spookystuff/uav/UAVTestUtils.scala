@@ -2,7 +2,8 @@ package com.tribbloids.spookystuff.uav
 
 import com.tribbloids.spookystuff.extractors.impl.Lit
 import com.tribbloids.spookystuff.uav.actions.Waypoint
-import com.tribbloids.spookystuff.uav.spatial.{Anchors, Location, NED}
+import com.tribbloids.spookystuff.uav.spatial.point.{Location, NED}
+import com.tribbloids.spookystuff.uav.spatial.Anchors
 
 /**
   * Created by peng on 24/02/17.

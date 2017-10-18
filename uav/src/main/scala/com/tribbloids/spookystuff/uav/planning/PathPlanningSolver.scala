@@ -7,9 +7,9 @@ import org.apache.spark.rdd.RDD
 
 trait PathPlanningSolver[T <: GenPartitioner] {
 
-  def rewrite[V](
-                  gp: T,
-                  schema: DataRowSchema,
-                  rdd: RDD[(TraceView, Iterable[V])]
-                ): RDD[(TraceView, Iterable[V])]
+  def solve[V](
+                gp: T,
+                schema: DataRowSchema,
+                rdd: RDD[(TraceView, Iterable[V])]
+              ): RDD[(TraceView, Iterable[V])]
 }

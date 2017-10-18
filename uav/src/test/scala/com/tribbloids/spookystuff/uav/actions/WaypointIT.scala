@@ -3,6 +3,7 @@ package com.tribbloids.spookystuff.uav.actions
 import com.tribbloids.spookystuff.uav.UAVTestUtils
 import com.tribbloids.spookystuff.uav.sim.APMQuadFixture
 import com.tribbloids.spookystuff.uav.spatial._
+import com.tribbloids.spookystuff.uav.spatial.point.{LLA, Location, NED}
 import org.apache.spark.ml.dsl.utils.messaging.RecursiveMessageRelay
 
 /**

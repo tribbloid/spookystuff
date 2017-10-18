@@ -1,7 +1,7 @@
 package com.tribbloids.spookystuff.uav.planning
 
 import com.tribbloids.spookystuff.SpookyEnvFixture
-import com.tribbloids.spookystuff.uav.spatial.NED
+import com.tribbloids.spookystuff.uav.spatial.point.NED
 import org.apache.spark.mllib.uav.ClearanceGradient
 
 class CollisionAvoidanceSuite extends SpookyEnvFixture {

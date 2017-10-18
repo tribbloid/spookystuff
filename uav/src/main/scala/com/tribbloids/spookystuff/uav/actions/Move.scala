@@ -4,7 +4,7 @@
 //import com.tribbloids.spookystuff.extractors.impl.Lit
 //import com.tribbloids.spookystuff.row.{DataRowSchema, FetchedRow}
 //import com.tribbloids.spookystuff.session.Session
-//import com.tribbloids.spookystuff.uav.spatial.Location
+//import com.tribbloids.spookystuff.uav.spatial.point.Location
 //import com.tribbloids.spookystuff.uav.{UAVConf, UAVConst}
 //import org.slf4j.LoggerFactory
 //

@@ -4,7 +4,8 @@ import com.tribbloids.spookystuff.uav.system.UAV
 import com.tribbloids.spookystuff.uav.telemetry.Link
 import com.tribbloids.spookystuff.session.python.PythonDriver
 import com.tribbloids.spookystuff.session.{Cleanable, ConflictDetection}
-import com.tribbloids.spookystuff.uav.spatial.{Anchors, LLA, Location}
+import com.tribbloids.spookystuff.uav.spatial.point.{LLA, Location}
+import com.tribbloids.spookystuff.uav.spatial.Anchors
 import org.slf4j.LoggerFactory
 
 import scala.language.implicitConversions

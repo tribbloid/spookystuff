@@ -9,7 +9,7 @@ trait RewriteRule[T] extends Serializable{
     * @param schema
     * @return
     */
-  def rewrite(v: T, schema: DataRowSchema): T = v
+  def rewrite(v: T, schema: DataRowSchema): T
 }
 
 trait MonadicRewriteRule[T] extends Serializable{
@@ -19,5 +19,5 @@ trait MonadicRewriteRule[T] extends Serializable{
     * @param schema
     * @return
     */
-  def rewrite(v: T, schema: DataRowSchema): Option[T] = Some(v)
+  def rewrite(v: T, schema: DataRowSchema): Option[T]
 }

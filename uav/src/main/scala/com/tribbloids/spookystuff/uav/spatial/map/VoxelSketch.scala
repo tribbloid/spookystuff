@@ -1,12 +1,13 @@
-package com.tribbloids.spookystuff.uav.spatial
+package com.tribbloids.spookystuff.uav.spatial.map
 
-import breeze.util.BloomFilter
+import com.tribbloids.spookystuff.uav.spatial.Spatial
+import com.tribbloids.spookystuff.uav.spatial.point.NED
 
 case class Octree(
 
                  )
 
-trait VoxelSketch extends SpatialData {
+trait VoxelSketch extends Spatial {
 
 }
 
@@ -16,5 +17,9 @@ trait VoxelSketch extends SpatialData {
   * after all voxels are registered, for any new point, its distance to the closest occupied voxel
   * can be approximated by the number/ratio of bloom filters that has returns positives.
   */
-case class VoxelSketchImpl(
-                          )
+case class VoxelSketchImpl() extends VoxelSketch {
+
+  override def system = NED
+
+  override def vector = ???
+}

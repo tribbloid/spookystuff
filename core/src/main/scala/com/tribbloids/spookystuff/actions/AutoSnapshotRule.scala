@@ -5,7 +5,7 @@ import com.tribbloids.spookystuff.row.DataRowSchema
 /**
   * Created by peng on 15/07/17.
   */
-object AutoSnapshotRewriteRule extends RewriteRule[Trace] {
+object AutoSnapshotRule extends RewriteRule[Trace] {
 
   override def rewrite(v: Trace, schema: DataRowSchema): Trace = {
     val n = v.count(_.isInstanceOf[WebInteraction])

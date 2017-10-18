@@ -1,11 +1,11 @@
 package com.tribbloids.spookystuff.uav.actions
 
-import com.tribbloids.spookystuff.actions.Trace
 import com.tribbloids.spookystuff.extractors.Col
 import com.tribbloids.spookystuff.row.DataRowSchema
 import com.tribbloids.spookystuff.session.Session
 import com.tribbloids.spookystuff.uav.UAVConf
-import com.tribbloids.spookystuff.uav.spatial.{Anchors, Location, NED}
+import com.tribbloids.spookystuff.uav.spatial.Anchors
+import com.tribbloids.spookystuff.uav.spatial.point.{Location, NED}
 import org.slf4j.LoggerFactory
 
 /**
@@ -19,8 +19,16 @@ import org.slf4j.LoggerFactory
 //TODO: this should become a wrapper, current design is very inefficient!
 //TODO: change to be like this: wrap a Nav, if on the ground, arm and takeoff, if in the air, serve as an altitude lower bound
 case class Takeoff(
-                    altitude: Col[Double] = 1.0
+                    altitude: Col[Double] = 1.0,
+                    prevNavOpt: Option[UAVNavigation] = None
                   ) extends UAVNavigation {
+
+  /**
+    * inserted by GenPartitioner for path calculation
+    */
+  def prevNav = prevNavOpt.getOrElse {
+    throw new UnsupportedOperationException("prevNavOpt is unset")
+  }
 
   override def getSessionView(session: Session) = new this.SessionView(session)
 
@@ -41,27 +49,15 @@ case class Takeoff(
     if (altitude.value > 0) altitude.value
     else uavConf.clearanceAltitudeMin
   }
-}
 
-/**
-  * inserted by GenPartitioner to bind with another Nav
-  * Binding is the only option to ensure that both nav are treated as a rigid body, no deformity is allowed
-  */
-case class AndTakeoff(
-                       prevNav: UAVNavigation,
-                       takeoff: Takeoff
-                     ) extends UAVNavigation {
-
-  override def getSessionView(session: Session) = takeoff.getSessionView(session)
-
-  override def getLocation(trace: Trace, schema: DataRowSchema) = {
+  override def getLocation(schema: DataRowSchema) = {
     val spooky = schema.ec.spooky
     val uavConf = spooky.getConf[UAVConf]
-    val minAlt = takeoff.getMinAlt(uavConf)
+    val minAlt = getMinAlt(uavConf)
 
     def fallbackLocation = Location.fromTuple(NED.C(0,0,-minAlt) -> Anchors.HomeLevelProjection)
 
-    val previousLocation = prevNav.getEnd(trace, schema)
+    val previousLocation = prevNav.getEnd(schema)
     val previousCoordOpt = previousLocation.getCoordinate(NED, uavConf.home)
     val result = previousCoordOpt match {
       case Some(coord) =>

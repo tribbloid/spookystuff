@@ -1,5 +1,6 @@
 package com.tribbloids.spookystuff.uav.spatial
 
+import com.tribbloids.spookystuff.uav.spatial.point.{CoordinateSystem, LLA}
 import com.tribbloids.spookystuff.uav.spatial.util.SearchHistory
 
 /**
@@ -13,16 +14,17 @@ trait Anchor extends Serializable {
   import Anchors._
 
   final def getCoordinate(
-                           system: SpatialSystem = LLA,
+                           system: CoordinateSystem = LLA,
                            from: Anchor = Geodetic
                          ): Option[system.C] = {
     _getCoordinate(system, from, SearchHistory())
   }
 
   final def coordinate(
-                        system: SpatialSystem = LLA,
+                        system: CoordinateSystem = LLA,
                         from: Anchor = Geodetic
                       ): system.C = {
+
     getCoordinate(system, from).getOrElse {
       throw new UnsupportedOperationException(
         s"cannot determine relative position from $from to $this"
@@ -31,7 +33,7 @@ trait Anchor extends Serializable {
   }
 
   def _getCoordinate(
-                      system: SpatialSystem,
+                      system: CoordinateSystem,
                       from: Anchor = Geodetic,
                       ic: SearchHistory
                     ): Option[system.C] = None
@@ -41,5 +43,5 @@ trait LocationLike extends Anchor {
 }
 trait EstimationLike extends Anchor {
 }
-trait UnknownAnchor extends Anchor {
+trait UndeterminedLike extends Anchor {
 }

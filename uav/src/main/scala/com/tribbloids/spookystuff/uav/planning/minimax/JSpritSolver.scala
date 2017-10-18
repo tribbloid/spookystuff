@@ -22,17 +22,19 @@ import com.tribbloids.spookystuff.uav.UAVConf
 import com.tribbloids.spookystuff.uav.actions.{UAVNavigation, Waypoint}
 import com.tribbloids.spookystuff.uav.dsl.GenPartitioners
 import com.tribbloids.spookystuff.uav.planning._
-import com.tribbloids.spookystuff.uav.spatial.NED
+import com.tribbloids.spookystuff.uav.spatial.point.NED
 import com.tribbloids.spookystuff.uav.telemetry.{LinkUtils, UAVStatus}
 import org.apache.spark.rdd.RDD
 
+import scala.util.Try
+
 object JSpritSolver extends MinimaxSolver {
 
-  override def rewrite[V](
-                           problem: GenPartitioners.MinimaxCost,
-                           schema: DataRowSchema,
-                           rdd: RDD[(TraceView, Iterable[V])]
-                         ): RDD[(TraceView, Iterable[V])] = {
+  override def solve[V](
+                         problem: GenPartitioners.MinimaxCost,
+                         schema: DataRowSchema,
+                         rdd: RDD[(TraceView, Iterable[V])]
+                       ): RDD[(TraceView, Iterable[V])] = {
 
     val spooky = schema.ec.spooky
     val linkRDD = LinkUtils.lockedLinkRDD(spooky)
@@ -94,7 +96,7 @@ object JSpritSolver extends MinimaxSolver {
           val traceView: TraceView = i._1
           val trace = traceView.children
           val last = trace.collect { case v: UAVNavigation => v }.last
-          val lastLocation = last.getEnd(trace, schema)
+          val lastLocation = last.getEnd(schema)
           val realTrace = List(Waypoint(lastLocation)) ++ j._1.children
           val cost = costEstimator.estimate(realTrace, schema)
           (i._2, j._2, cost)
@@ -182,8 +184,9 @@ object JSpritSolver extends MinimaxSolver {
       }
       val homeLocation = schema.ec.spooky.getConf[UAVConf].home
       for (nav <- navs) {
-        val opt = nav.getLocation(trace, schema)
-          .getCoordinate(NED, homeLocation)
+        val opt = Try{nav.getLocation(schema)}.toOption.flatMap {
+          _.getCoordinate(NED, homeLocation)
+        }
         if (opt.nonEmpty) return opt.get
       }
       NED.C(navs.size,0,0)

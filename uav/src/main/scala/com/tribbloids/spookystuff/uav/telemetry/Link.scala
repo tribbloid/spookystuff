@@ -4,6 +4,7 @@ import com.tribbloids.spookystuff.caching.Memoize
 import com.tribbloids.spookystuff.session._
 import com.tribbloids.spookystuff.uav.dsl.LinkFactory
 import com.tribbloids.spookystuff.uav.spatial._
+import com.tribbloids.spookystuff.uav.spatial.point.Location
 import com.tribbloids.spookystuff.uav.system.UAV
 import com.tribbloids.spookystuff.uav.telemetry.Link.MutexLock
 import com.tribbloids.spookystuff.uav.utils.UAVUtils

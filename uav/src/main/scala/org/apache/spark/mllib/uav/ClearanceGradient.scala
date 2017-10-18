@@ -2,7 +2,7 @@ package org.apache.spark.mllib.uav
 
 import com.tribbloids.spookystuff.actions.Trace
 import com.tribbloids.spookystuff.uav.UAVConf
-import com.tribbloids.spookystuff.uav.spatial.NED
+import com.tribbloids.spookystuff.uav.spatial.point.NED
 import org.apache.spark.mllib.linalg.BLAS
 
 object ClearanceGradient {
@@ -83,14 +83,14 @@ case class ClearanceGradient(
           navs.map {
             nav =>
               nav -> nav.shiftLocationByWeight(weights.toBreeze)
-                .getLocation(tuple._1, schema)
+                .getLocation(schema)
           }
         }
         val nextNav_locationOpt = tuple._2.map {
           nextTrace =>
             val nextNav = nextTrace.find(_.isInstanceOf[VectorIndexedNav]).get.asInstanceOf[VectorIndexedNav]
             nextNav -> nextNav.shiftLocationByWeight(weights.toBreeze)
-              .getLocation(nextTrace, schema)
+              .getLocation(schema)
         }
         nav_locations ++ nextNav_locationOpt
     }

@@ -4,7 +4,7 @@ import com.tribbloids.spookystuff.caching
 import com.tribbloids.spookystuff.session.LocalCleanable
 import com.tribbloids.spookystuff.session.python.{CaseInstanceRef, SingletonRef}
 import com.tribbloids.spookystuff.uav.UAVConf
-import com.tribbloids.spookystuff.uav.spatial.LLA
+import com.tribbloids.spookystuff.uav.spatial.point.LLA
 
 import scala.util.Random
 

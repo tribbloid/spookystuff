@@ -8,7 +8,7 @@ import org.apache.spark.rdd.RDD
 // TODO: all adaptive improvements goes here
 case object DRLSolver extends MinimaxSolver {
 
-  override def rewrite[V](
+  override def solve[V](
                            gp: GenPartitioners.MinimaxCost,
                            schema: DataRowSchema,
                            rdd: RDD[(TraceView, Iterable[V])]

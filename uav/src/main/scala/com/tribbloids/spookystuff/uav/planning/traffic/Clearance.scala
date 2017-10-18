@@ -11,7 +11,9 @@ object Clearance {
   type Interpolation = RewriteRule[Trace]
   type LocatioShifter = RewriteRule[Vec]
 
-  object NoInperolation extends Interpolation
+  object NoInperolation extends Interpolation {
+    override def rewrite(v: Trace, schema: DataRowSchema): Trace = v
+  }
 
   object AltitudeOnly extends LocatioShifter {
     override def rewrite(v: Vec, schema: DataRowSchema): Vec = {

@@ -1,7 +1,7 @@
 package com.tribbloids.spookystuff.uav.sim
 
 import com.tribbloids.spookystuff.uav.UAVConf
-import com.tribbloids.spookystuff.uav.spatial.LLA
+import com.tribbloids.spookystuff.uav.spatial.point.LLA
 
 import scala.util.Random
 

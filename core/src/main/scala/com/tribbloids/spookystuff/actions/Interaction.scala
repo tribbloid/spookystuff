@@ -48,7 +48,7 @@ abstract class WebInteraction(
                                val blocking: Boolean
                              ) extends Interaction with Timed {
 
-  override def globalRewriters: Seq[RewriteRule[Trace]] = Seq(AutoSnapshotRewriteRule)
+  override def globalRewriters: Seq[RewriteRule[Trace]] = Seq(AutoSnapshotRule)
 
   override def doExe(session: Session): Seq[Doc] = {
 

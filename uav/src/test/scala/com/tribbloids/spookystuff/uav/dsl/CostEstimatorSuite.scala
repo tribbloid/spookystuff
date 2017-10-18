@@ -3,7 +3,7 @@ package com.tribbloids.spookystuff.uav.dsl
 import com.tribbloids.spookystuff.SpookyEnvFixture
 import com.tribbloids.spookystuff.uav.UAVConf
 import com.tribbloids.spookystuff.uav.actions.Waypoint
-import com.tribbloids.spookystuff.uav.spatial.{Location, NED}
+import com.tribbloids.spookystuff.uav.spatial.point.{Location, NED}
 import org.scalactic.TolerantNumerics
 
 /**

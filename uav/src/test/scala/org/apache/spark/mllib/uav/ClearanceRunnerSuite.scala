@@ -8,7 +8,7 @@ import com.tribbloids.spookystuff.testutils.AssertSerializable
 import com.tribbloids.spookystuff.uav.UAVConf
 import com.tribbloids.spookystuff.uav.actions.{UAVRewriteRule$, Waypoint}
 import com.tribbloids.spookystuff.uav.planning.traffic.Clearance
-import com.tribbloids.spookystuff.uav.spatial.NED
+import com.tribbloids.spookystuff.uav.spatial.point.NED
 
 class ClearanceRunnerSuite extends SpookyEnvFixture {
 
@@ -52,12 +52,9 @@ class ClearanceRunnerSuite extends SpookyEnvFixture {
     data.map(_._2.toDense.toBreeze.map(_.toInt))
       .mkString("\n").shouldBe(
       """
-        |DenseVector(1, 1, 0, 0)
-        |DenseVector(1, 0, 1, 0)
-        |DenseVector(1, 0, 0, 1)
-        |DenseVector(0, 1, 1, 0)
-        |DenseVector(0, 1, 0, 1)
-        |DenseVector(0, 0, 1, 1)
+        |DenseVector(1, 1, 0)
+        |DenseVector(1, 0, 1)
+        |DenseVector(0, 1, 1)
       """.stripMargin
     )
   }

@@ -3,15 +3,28 @@ package com.tribbloids.spookystuff.uav.dsl
 import com.tribbloids.spookystuff.actions.{Action, Trace, TraceView}
 import com.tribbloids.spookystuff.row.DataRowSchema
 import com.tribbloids.spookystuff.uav.actions.UAVNavigation
-import com.tribbloids.spookystuff.uav.planning.PreferUAV
-import com.tribbloids.spookystuff.uav.spatial.NED
+import com.tribbloids.spookystuff.uav.planning.{InsertPrevNavRule, PreferUAV}
+import com.tribbloids.spookystuff.uav.spatial.point.NED
 
 trait CostEstimator {
 
   def estimate(
                 trace: Trace,
                 schema: DataRowSchema
-              ): Double = 0
+              ): Double = {
+
+    def getTrace = {
+      () =>
+        InsertPrevNavRule.rewrite(trace, schema)
+    }
+
+    _estimate(getTrace, schema)
+  }
+
+  def _estimate(
+                 getTrace: () => Trace,
+                 schema: DataRowSchema
+               ): Double = 0
 }
 
 object CostEstimator {
@@ -27,8 +40,8 @@ object CostEstimator {
 
       def intraCost(nav: UAVNavigation) = {
 
-        val ned = nav.getEnd(trace, schema)
-          .coordinate(NED, nav.getLocation(trace, schema))
+        val ned = nav.getEnd(schema)
+          .coordinate(NED, nav.getLocation(schema))
         val distance = Math.sqrt(ned.vector dot ned.vector)
 
         val _speed = nav.speedOpt.getOrElse(speed)
@@ -38,8 +51,8 @@ object CostEstimator {
 
       def interCost(nav1: UAVNavigation, nav2: UAVNavigation) = {
 
-        val end1 = nav1.getEnd(trace, schema)
-        val start2 = nav2.getLocation(trace, schema)
+        val end1 = nav1.getEnd(schema)
+        val start2 = nav2.getLocation(schema)
 
         val ned = start2.coordinate(NED, end1)
         val distance = Math.sqrt(ned.vector dot ned.vector)
@@ -80,11 +93,11 @@ object CostEstimator {
       }
     }
 
-    override def estimate(
-                           trace: Trace,
-                           schema: DataRowSchema
-                         ): Double = {
-
+    override def _estimate(
+                            getTrace: () => Trace,
+                            schema: DataRowSchema
+                          ): Double = {
+      val trace = getTrace()
       new Instance(trace, schema).solve
     }
   }

@@ -3,7 +3,7 @@ package com.tribbloids.spookystuff.uav.actions.mixin
 import com.tribbloids.spookystuff.actions.{RewriteRule, Trace}
 import com.tribbloids.spookystuff.row.DataRowSchema
 import com.tribbloids.spookystuff.uav.actions.UAVAction
-import com.tribbloids.spookystuff.uav.spatial.Location
+import com.tribbloids.spookystuff.uav.spatial.point.Location
 import org.apache.spark.mllib.uav.Vec
 
 /**
@@ -16,7 +16,10 @@ import org.apache.spark.mllib.uav.Vec
 trait HasLocation extends RewriteRule[Vec] {
   self: UAVAction =>
 
-  def getLocation(trace: Trace, schema: DataRowSchema): Location = ???
+  /**
+    * reserved for further use
+    */
+  def getLocation(schema: DataRowSchema): Location
 
 //  def vector(trace: Trace, schema: DataRowSchema): DenseVector[Double] = {
 //    val location = getLocation(trace, schema)
@@ -31,12 +34,6 @@ trait HasLocation extends RewriteRule[Vec] {
   final val vectorDim = 3
 
   def shiftLocation(vector: Array[Double]): this.type = this
-}
 
-trait HasExactLocation extends HasLocation {
-  self: UAVAction =>
-
-  override def getLocation(trace: Trace, schema: DataRowSchema): Location = _start
-
-  def _start: Location
+  override def rewrite(v: Vec, schema: DataRowSchema): Vec = v
 }

@@ -1,22 +1,31 @@
 package com.tribbloids.spookystuff.uav.spatial
 
+import com.tribbloids.spookystuff.uav.spatial.point.{Coordinate, Location}
 import org.apache.spark.sql.catalyst.trees.TreeNode
 
-trait Association extends TreeNode[Association] {
+import scala.language.implicitConversions
 
-  def data: SpatialData
-  def anchor: Anchor
+object Association {
+
+  implicit def fromTuple[T <: Spatial](tuple: (T, Anchor)) = Association[T](tuple._1, tuple._2)
+}
+
+
+case class Association[T <: Spatial](
+                                      datum: T,
+                                      anchor: Anchor
+                                    ) extends TreeNode[Association[_]] {
 
   override def simpleString: String = {
     anchor match {
       case Location(_) =>
-        data.toString
+        datum.toString
       case _ =>
-        s"${data.toString} -+ $anchor"
+        s"${datum.toString} -+ $anchor"
     }
   }
 
-  override def children: Seq[CoordinateAssociation] = {
+  override def children: Seq[Association[Coordinate]] = {
     anchor match {
       case Location(seq) =>
         seq

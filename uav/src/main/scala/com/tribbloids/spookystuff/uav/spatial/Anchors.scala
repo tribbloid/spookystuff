@@ -4,19 +4,19 @@ package com.tribbloids.spookystuff.uav.spatial
 object Anchors {
 
   // only used by LLA as AMSL anchor
-  case object Geodetic extends UnknownAnchor
+  case object Geodetic extends UndeterminedLike
 
   // cast to UAVConf.HomeLocation
-  case object Home extends UnknownAnchor
+  case object Home extends UndeterminedLike
 
   // cast to UAV's projection to mean sea level (MSL)
-  case object MSLProjection extends UnknownAnchor
+  case object MSLProjection extends UndeterminedLike
 
   // cast to UAV's projection to home level
-  case object HomeLevelProjection extends UnknownAnchor
+  case object HomeLevelProjection extends UndeterminedLike
 
   // cast to UAV's projection to ground terrain
-  case object GroundProjection extends UnknownAnchor
+  case object GroundProjection extends UndeterminedLike
 
-  case class Custom(name: String) extends UnknownAnchor
+  case class Custom(name: String) extends UndeterminedLike
 }
