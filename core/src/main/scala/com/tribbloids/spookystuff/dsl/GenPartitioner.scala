@@ -45,20 +45,26 @@ object GenPartitionerLike {
     def groupByKey[V: ClassTag](
                                  rdd: RDD[(K, V)],
                                  beaconRDDOpt: Option[BeaconRDD[K]] = None
-                               ): RDD[(K, Iterable[V])]
+                               ): RDD[(K, Iterable[V])] = {
+      val itrRDD = rdd.mapValues(v => Iterable(v))
+      reduceByKey(itrRDD, {
+        _ ++ _
+      },
+        beaconRDDOpt)
+    }
 
     def reduceByKey[V: ClassTag](
                                   rdd: RDD[(K, V)],
                                   reducer: (V, V) => V,
                                   beaconRDDOpt: Option[BeaconRDD[K]] = None
-                                ): RDD[(K, V)] = {
+                                ): RDD[(K, V)]
 
-      groupByKey(rdd, beaconRDDOpt)
-        .map(
-          tuple =>
-            tuple._1 -> tuple._2.reduce(reducer)
-        )
-    }
+    //      groupByKey(rdd, beaconRDDOpt)
+    //        .map(
+    //          tuple =>
+    //            tuple._1 -> tuple._2.reduce(reducer)
+    //        )
+    //    }
   }
 }
 
@@ -77,16 +83,17 @@ object GenPartitioners {
                         implicit val ctg: ClassTag[K]
                       ) extends Instance[K] {
 
-      override def groupByKey[V: ClassTag](
-                                            rdd: RDD[(K, V)],
-                                            beaconRDDOpt: Option[BeaconRDD[K]] = None
-                                          ): RDD[(K, Iterable[V])] = {
+      override def reduceByKey[V: ClassTag](
+                                             rdd: RDD[(K, V)],
+                                             reducer: (V, V) => V,
+                                             beaconRDDOpt: Option[BeaconRDD[K]] = None
+                                           ): RDD[(K, V)] = {
         rdd.mapPartitions{
           itr =>
             itr
               .toTraversable
               .groupBy(_._1)
-              .map(v => v._1 -> v._2.map(_._2).toIterable)
+              .map(v => v._1 -> v._2.map(_._2).reduce(reducer))
               .iterator
         }
       }
@@ -105,16 +112,6 @@ object GenPartitioners {
     case class Inst[K](
                         implicit val ctg: ClassTag[K]
                       ) extends Instance[K] {
-
-      // very expensive and may cause memory overflow.
-      // TODO: does cogrouping with oneself solve the problem?
-      override def groupByKey[V: ClassTag](
-                                            rdd: RDD[(K, V)],
-                                            beaconRDDOpt: Option[BeaconRDD[K]] = None
-                                          ): RDD[(K, Iterable[V])] = {
-        val partitioner = partitionerFactory(rdd)
-        rdd.groupByKey(partitioner)
-      }
 
       //this is faster and saves more memory
       override def reduceByKey[V: ClassTag](
@@ -157,18 +154,20 @@ object GenPartitioners {
         Some(result)
       }
 
-      override def groupByKey[V: ClassTag](
-                                            rdd: RDD[(K, V)],
-                                            beaconRDDOpt: Option[BeaconRDD[K]] = None
-                                          ): RDD[(K, Iterable[V])] = {
+      override def reduceByKey[V: ClassTag](
+                                             rdd: RDD[(K, V)],
+                                             reducer: (V, V) => V,
+                                             beaconRDDOpt: Option[BeaconRDD[K]] = None
+                                           ): RDD[(K, V)] = {
 
         val beaconRDD = beaconRDDOpt.get
 
         val partitioner = partitionerFactory(rdd)
-        val cogrouped = rdd.cogroup(beaconRDD, beaconRDD.partitioner.getOrElse(partitioner))
+        val cogrouped = rdd
+          .cogroup(beaconRDD, beaconRDD.partitioner.getOrElse(partitioner))
         cogrouped.mapValues {
           tuple =>
-            tuple._1
+            tuple._1.reduce(reducer)
         }
       }
     }

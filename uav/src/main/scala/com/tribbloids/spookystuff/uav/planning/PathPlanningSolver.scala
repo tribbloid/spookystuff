@@ -5,11 +5,13 @@ import com.tribbloids.spookystuff.dsl.GenPartitioner
 import com.tribbloids.spookystuff.row.DataRowSchema
 import org.apache.spark.rdd.RDD
 
+import scala.reflect.ClassTag
+
 trait PathPlanningSolver[T <: GenPartitioner] {
 
-  def solve[V](
-                gp: T,
-                schema: DataRowSchema,
-                rdd: RDD[(TraceView, Iterable[V])]
-              ): RDD[(TraceView, Iterable[V])]
+  def solve[V: ClassTag](
+                          gp: T,
+                          schema: DataRowSchema,
+                          rdd: RDD[(TraceView, V)]
+                        ): RDD[(TraceView, V)]
 }

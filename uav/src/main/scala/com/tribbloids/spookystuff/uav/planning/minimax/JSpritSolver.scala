@@ -26,15 +26,16 @@ import com.tribbloids.spookystuff.uav.spatial.point.NED
 import com.tribbloids.spookystuff.uav.telemetry.{LinkUtils, UAVStatus}
 import org.apache.spark.rdd.RDD
 
+import scala.reflect.ClassTag
 import scala.util.Try
 
 object JSpritSolver extends MinimaxSolver {
 
-  override def solve[V](
-                         problem: GenPartitioners.MinimaxCost,
-                         schema: DataRowSchema,
-                         rdd: RDD[(TraceView, Iterable[V])]
-                       ): RDD[(TraceView, Iterable[V])] = {
+  override def solve[V: ClassTag](
+                                   problem: GenPartitioners.MinimaxCost,
+                                   schema: DataRowSchema,
+                                   rdd: RDD[(TraceView, V)]
+                                 ) = {
 
     val spooky = schema.ec.spooky
     val linkRDD = LinkUtils.lockedLinkRDD(spooky)
@@ -49,10 +50,10 @@ object JSpritSolver extends MinimaxSolver {
     val solution = Solution(problem, schema, uavs, rows)
 
     //TODO: this is where the monkey patch start, should avoid shipping V to drivers
-    val uav2RowsMap: Map[UAVStatus, Seq[(TraceView, Iterable[V])]] =
+    val uav2RowsMap: Map[UAVStatus, Seq[(TraceView, V)]] =
       solution.getUAV2RowsMap
 
-    val realignedRDD: RDD[(TraceView, Iterable[V])] = linkRDD.flatMap {
+    val realignedRDD: RDD[(TraceView, V)] = linkRDD.flatMap {
       link =>
         val status = link.status()
         val KVs = uav2RowsMap.getOrElse(status, Nil)
@@ -209,12 +210,12 @@ object JSpritSolver extends MinimaxSolver {
     }
   }
 
-  case class Solution[V](
-                          problem: GenPartitioners.MinimaxCost,
-                          schema: DataRowSchema,
-                          uavs: Array[UAVStatus],
-                          rows: Array[(TraceView, Iterable[V])]
-                        ) {
+  case class Solution[V: ClassTag](
+                                    problem: GenPartitioners.MinimaxCost,
+                                    schema: DataRowSchema,
+                                    uavs: Array[UAVStatus],
+                                    rows: Array[(TraceView, V)]
+                                  ) {
 
     val spooky = schema.ec.spooky
     val traces = rows.map(_._1)
@@ -348,12 +349,12 @@ object JSpritSolver extends MinimaxSolver {
       tuple._1
     }
 
-    lazy val getUAV2RowsMap: Map[UAVStatus, Seq[(TraceView, Iterable[V])]] = {
+    lazy val getUAV2RowsMap: Map[UAVStatus, Seq[(TraceView, V)]] = {
 
       import scala.collection.JavaConverters._
 
       val routes = solve.getRoutes.asScala.toList
-      val status_KVs: Seq[(UAVStatus, List[(TraceView, Iterable[V])])] = routes.map {
+      val status_KVs: Seq[(UAVStatus, List[(TraceView, V)])] = routes.map {
         route =>
           val status = uavs.find(_.uav.primaryURI == route.getVehicle.getId).get
           val tours = route.getTourActivities.getActivities.asScala.toList

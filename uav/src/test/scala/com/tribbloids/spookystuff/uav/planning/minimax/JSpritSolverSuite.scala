@@ -74,7 +74,7 @@ class JSpritSolverSuite extends JSpritFixture {
     it("can evaluate 1 route") {
       val location = UAVConf.DEFAULT_HOME_LOCATION
       val uav = UAVStatus(UAV(Seq("dummy@localhost")), None, location, location)
-      val solver = Solution[Int](getJSprit, defaultSchema, Array(uav), waypoints.map(v => v -> Nil))
+      val solver = Solution[Int](getJSprit, defaultSchema, Array(uav), waypoints.map(v => v -> 0))
 
       val solution = solver.solve
 
@@ -98,7 +98,7 @@ class JSpritSolverSuite extends JSpritFixture {
           UAVStatus(UAV(Seq(s"$v@localhost")), None, location, location)
       }
 
-      val solver = Solution[Int](getJSprit, defaultSchema, uavs, waypoints.map(v => v -> Nil))
+      val solver = Solution[Int](getJSprit, defaultSchema, uavs, waypoints.map(v => v -> 0))
 
       val solution = solver.solve
 

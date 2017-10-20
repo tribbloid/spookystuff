@@ -6,7 +6,7 @@ import com.tribbloids.spookystuff.execution.ExecutionContext
 import com.tribbloids.spookystuff.row.DataRowSchema
 import com.tribbloids.spookystuff.testutils.AssertSerializable
 import com.tribbloids.spookystuff.uav.UAVConf
-import com.tribbloids.spookystuff.uav.actions.{UAVRewriteRule$, Waypoint}
+import com.tribbloids.spookystuff.uav.actions.Waypoint
 import com.tribbloids.spookystuff.uav.planning.traffic.Clearance
 import com.tribbloids.spookystuff.uav.spatial.point.NED
 

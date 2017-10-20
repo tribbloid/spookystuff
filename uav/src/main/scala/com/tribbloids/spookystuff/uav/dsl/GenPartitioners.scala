@@ -44,17 +44,18 @@ object GenPartitioners {
     ) extends Instance[K] {
 
       //gather all UAVActions to driver and use a local solver (JSprit) to rearrange them.
-      override def groupByKey[V: ClassTag](
-                                            rdd: RDD[(K, V)],
-                                            beaconRDDOpt: Option[BeaconRDD[K]]
-                                          ): RDD[(K, Iterable[V])] = {
+      override def reduceByKey[V: ClassTag](
+                                             rdd: RDD[(K, V)],
+                                             reducer: (V, V) => V,
+                                             beaconRDDOpt: Option[BeaconRDD[K]] = None
+                                           ): RDD[(K, V)] = {
 
         import schema.ec
         val spooky = schema.ec.spooky
 
-        val preprocessed = base.getInstance[K](schema).groupByKey(rdd, beaconRDDOpt)
+        val preprocessed = base.getInstance[K](schema).reduceByKey(rdd, reducer, beaconRDDOpt)
 
-        val bifurcated: RDD[((Option[TraceView], Option[K]), Iterable[V])] = preprocessed
+        val bifurcated: RDD[((Option[TraceView], Option[K]), V)] = preprocessed
           .map {
             case (k: TraceView, v) =>
               val c = k.children
@@ -71,7 +72,7 @@ object GenPartitioners {
 
         ec.scratchRDDs.persist(bifurcated)
 
-        val hasNavRDD: RDD[(TraceView, Iterable[V])] = bifurcated
+        val hasNavRDD: RDD[(TraceView, V)] = bifurcated
           .flatMap(tt => tt._1._1.map(v => v -> tt._2))
 
         val solvedRDD = solver.solve(MinimaxCost.this, schema, hasNavRDD)
@@ -79,7 +80,7 @@ object GenPartitioners {
         val trafficControlledRDD = collisionAvoidance.rewrite(solvedRDD, schema)
           .map(tuple => (tuple._1: K) -> tuple._2)
 
-        val hasNoCostRDD: RDD[(K, Iterable[V])] = bifurcated
+        val hasNoCostRDD: RDD[(K, V)] = bifurcated
           .flatMap(tt => tt._1._2.map(v => v -> tt._2))
 
         val result = trafficControlledRDD.union(hasNoCostRDD)

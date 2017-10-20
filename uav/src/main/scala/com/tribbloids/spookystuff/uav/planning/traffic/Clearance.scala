@@ -6,6 +6,8 @@ import com.tribbloids.spookystuff.uav.planning.traffic.Clearance.{AltitudeOnly, 
 import org.apache.spark.mllib.uav.{DVec, Vec}
 import org.apache.spark.rdd.RDD
 
+import scala.reflect.ClassTag
+
 object Clearance {
 
   type Interpolation = RewriteRule[Trace]
@@ -30,10 +32,10 @@ case class Clearance(
                       locationShifter: Clearance.LocatioShifter = AltitudeOnly
                     ) extends CollisionAvoidance {
 
-  override def rewrite[V](
-                           rdd: RDD[(TraceView, Iterable[V])],
+  override def rewrite[V: ClassTag](
+                           rdd: RDD[(TraceView, V)],
                            schema: DataRowSchema
-                         ): RDD[(TraceView, Iterable[V])] = {
+                         ): RDD[(TraceView, V)] = {
 
     schema.ec.scratchRDDs.persist(rdd)
 
