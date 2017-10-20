@@ -6,6 +6,7 @@ import com.tribbloids.spookystuff.session.Session
 import com.tribbloids.spookystuff.uav.UAVConf
 import com.tribbloids.spookystuff.uav.spatial.Anchors
 import com.tribbloids.spookystuff.uav.spatial.point.{Location, NED}
+import org.apache.spark.mllib.uav.Vec
 import org.slf4j.LoggerFactory
 
 /**
@@ -16,10 +17,10 @@ import org.slf4j.LoggerFactory
 //  WP1-Takeoff: No violation
 //  Takeoff-WP2: Has violation but Takeoff cannot be lowered.
 
-//TODO: this should become a wrapper, current design is very inefficient!
 //TODO: change to be like this: wrap a Nav, if on the ground, arm and takeoff, if in the air, serve as an altitude lower bound
 case class Takeoff(
-                    altitude: Col[Double] = 1.0,
+                    minAlt: Col[Double] = 1.0,
+                    maxAlt: Col[Double] = 1.0,
                     prevNavOpt: Option[UAVNavigation] = None
                   ) extends UAVNavigation {
 
@@ -34,20 +35,25 @@ case class Takeoff(
 
   implicit class SessionView(session: Session) extends NavSessionView(session) {
 
-    val minAlt = getMinAlt(uavConf)
+    val _minAlt = getMinAlt(uavConf)
+    val _maxAlt = getMaxAlt(uavConf)
 
     override def engage(): Unit = {
 
       LoggerFactory.getLogger(this.getClass)
-        .info(s"taking off and climbing to $minAlt")
+        .info(s"taking off and climbing to $_minAlt ~ $_maxAlt")
 
-      link.synch.clearanceAlt(minAlt)
+      link.synch.clearanceAlt(_minAlt)
     }
   }
 
   def getMinAlt(uavConf: UAVConf) = {
-    if (altitude.value > 0) altitude.value
-    else uavConf.clearanceAltitudeMin
+    if (minAlt.value > 0) minAlt.value
+    else uavConf.takeoffMinAltitude
+  }
+  def getMaxAlt(uavConf: UAVConf) = {
+    if (maxAlt.value > 0) maxAlt.value
+    else uavConf.takeoffMaxAltitude
   }
 
   override def getLocation(schema: DataRowSchema) = {
@@ -68,5 +74,14 @@ case class Takeoff(
         fallbackLocation
     }
     result
+  }
+
+  /**
+    * can only increase altitude
+    * @param vector
+    * @return
+    */
+  override def shift(vector: Vec): this.type = {
+    ???
   }
 }

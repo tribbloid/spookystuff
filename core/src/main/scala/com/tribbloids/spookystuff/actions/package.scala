@@ -11,6 +11,8 @@ import scala.language.implicitConversions
  */
 package object actions {
 
+//  type GenTrace = Seq[Action]
+
   type Trace = List[Action]
 
   type DryRun = List[Trace]

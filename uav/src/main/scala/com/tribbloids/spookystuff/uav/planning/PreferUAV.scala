@@ -27,7 +27,7 @@ private[uav] case class PreferUAV(
     assert(fleet.contains(uavStatus.uav), "cannot prefer UAV not in the fleet")
 
     Link.Selector.withMutex(
-      fleet,
+      Seq(uavStatus.uav),
       session,
       mutexIDOpt
     )

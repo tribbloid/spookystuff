@@ -18,18 +18,36 @@ object ClearanceGradient {
     val C1 = B1.vector - A1.vector
     val C2 = B2.vector - A2.vector
 
-    val C21 = C2 * C1.t
-    val G = C21 - C21.t
+    val CC1 = C1.t * C1
+    val CC2 = C2.t * C2
 
-    val C1TGC2 = C1.t * G * C2
+    def clamp(_t1: Double, _t2: Double) = {
+      val t1 = Math.max(Math.min(1.0, _t1), 0.0)
+      val t2 = Math.max(Math.min(1.0, _t2), 0.0)
+      t1 -> t2
+    }
 
-    val _t1 = - (M.t * G * C2) / C1TGC2
-    val _t2 = - (M.t * G * C1) / C1TGC2
+    (CC1, CC2) match {
+      case (0.0, 0.0) =>
+        clamp(0.0, 0.0)
+      case (0.0, _) =>
+        val t1 = 0
+        val t2 = C2.t * M / CC2
+        clamp(t1, t2)
+      case (_, 0.0) =>
+        val t2 = 0
+        val t1 = - C1.t * M / CC1
+        clamp(t1, t2)
+      case _ =>
+        val C21 = C2 * C1.t
+        val G = C21 - C21.t
+        val C1TGC2 = C1.t * G * C2
 
-    val t1 = Math.max(Math.min(1.0, _t1), 0.0)
-    val t2 = Math.max(Math.min(1.0, _t2), 0.0)
+        def t1 = - (M.t * G * C2) / C1TGC2
+        def t2 = - (M.t * G * C1) / C1TGC2
 
-    t1 -> t2
+        clamp(t1, t2)
+    }
   }
 }
 
@@ -82,14 +100,14 @@ case class ClearanceGradient(
           }
           navs.map {
             nav =>
-              nav -> nav.shiftLocationByWeight(weights.toBreeze)
+              nav -> nav.shiftAllByWeight(weights.toBreeze)
                 .getLocation(schema)
           }
         }
         val nextNav_locationOpt = tuple._2.map {
           nextTrace =>
             val nextNav = nextTrace.find(_.isInstanceOf[VectorIndexedNav]).get.asInstanceOf[VectorIndexedNav]
-            nextNav -> nextNav.shiftLocationByWeight(weights.toBreeze)
+            nextNav -> nextNav.shiftAllByWeight(weights.toBreeze)
               .getLocation(schema)
         }
         nav_locations ++ nextNav_locationOpt
@@ -140,11 +158,12 @@ case class ClearanceGradient(
       if (violation > 0) {
 
         val ratio = violation/D // TODO: or square of it? I'm confused
+        val aug = ratio*ratio
 
-        A1.nabla = (1 - t1) * ratio * P
-        B1.nabla = t1 * ratio * P
-        A2.nabla = (t2 - 1) * ratio * P
-        B2.nabla = - t2 * ratio * P
+        A1.nabla = (1 - t1) * aug * P
+        B1.nabla = t1 * aug * P
+        A2.nabla = (t2 - 1) * aug * P
+        B2.nabla = - t2 * aug * P
 
         val concat: Seq[(Int, Double)] = Seq(A1, B1, A2, B2).flatMap {
           notation =>
@@ -164,6 +183,7 @@ case class ClearanceGradient(
       }
       cumViolation += violation
     }
+    println(s"========= cumViolation: $cumViolation =========")
     cumViolation
   }
 }

@@ -54,7 +54,7 @@ public class AbeProblemMinMax {
         //add a default-state for "max-transport-time"
 //		stateManager.putProblemState(stateId, Double.class, 0.);
         //
-        stateManager.addStateUpdater(new MinimaxUpdater(stateManager, vrp, stateId));
+        stateManager.addStateUpdater(new MinimaxStateUpdater(stateManager, vrp, stateId));
 		
 		/*
 		 * The insertion heuristics is controlled with your constraints

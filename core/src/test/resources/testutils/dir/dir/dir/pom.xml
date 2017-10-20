@@ -5,7 +5,7 @@
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>com.schedule1.datapassport</groupId>
-    <artifactId>datapassport</artifactId>
+    <artifactId>datapassports</artifactId>
   <packaging>pom</packaging>
     <name>datapassport</name>
     <url>https://github.com/tribbloid/spookystuff</url>

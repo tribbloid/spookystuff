@@ -20,13 +20,13 @@ import com.graphhopper.jsprit.core.util.ActivityTimeTracker;
  * that this requires the stateName "max-transport-time" you define below. If you choose to define this as class in a new file,
  * you might define "max-transport-time" as static id in another file, to make sure you do not have type errors etc..
  */
-public class MinimaxUpdater implements ActivityVisitor, StateUpdater {
+public class MinimaxStateUpdater implements ActivityVisitor, StateUpdater {
 
 	private final StateManager stateManager;
 	private final ActivityTimeTracker timeTracker;
 	private final StateId stateID;
 
-	public MinimaxUpdater(
+	public MinimaxStateUpdater(
 		StateManager stateManager,
 		VehicleRoutingProblem vrp,
 		StateId stateID

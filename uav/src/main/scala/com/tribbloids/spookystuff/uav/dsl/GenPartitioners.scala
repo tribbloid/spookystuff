@@ -7,7 +7,7 @@ import com.tribbloids.spookystuff.row.{BeaconRDD, DataRowSchema}
 import com.tribbloids.spookystuff.uav.actions.UAVNavigation
 import com.tribbloids.spookystuff.uav.planning.minimax.MinimaxSolver
 import com.tribbloids.spookystuff.uav.planning.traffic.CollisionAvoidance
-import com.tribbloids.spookystuff.uav.planning.{CollisionAvoidances, MinimaxSolvers}
+import com.tribbloids.spookystuff.uav.planning.{CollisionAvoidances, InsertPrevNavRule, MinimaxSolvers}
 import org.apache.spark.rdd.RDD
 
 import scala.reflect.ClassTag
@@ -76,8 +76,12 @@ object GenPartitioners {
           .flatMap(tt => tt._1._1.map(v => v -> tt._2))
 
         val solvedRDD = solver.solve(MinimaxCost.this, schema, hasNavRDD)
+        val solvedRDD_prevNav = solvedRDD.mapPartitions {
+          itr =>
+            InsertPrevNavRule._rewritePartition[V](itr, schema)
+        }
 
-        val trafficControlledRDD = collisionAvoidance.rewrite(solvedRDD, schema)
+        val trafficControlledRDD = collisionAvoidance.rewrite(solvedRDD_prevNav, schema)
           .map(tuple => (tuple._1: K) -> tuple._2)
 
         val hasNoCostRDD: RDD[(K, V)] = bifurcated

@@ -129,7 +129,7 @@ object JSpritSolver extends MinimaxSolver {
       //add a default-state for "max-transport-time"
       //    stateManager.putProblemState(stateId, classOf[Double], 0.0)
       //
-      stateManager.addStateUpdater(new MinimaxUpdater(stateManager, vrp, stateId))
+      stateManager.addStateUpdater(new MinimaxStateUpdater(stateManager, vrp, stateId))
 
       /*
        * The insertion heuristics is controlled with your constraints

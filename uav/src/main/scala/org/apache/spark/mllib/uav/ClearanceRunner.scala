@@ -26,16 +26,15 @@ case class ClearanceRunner(
   //should optimize after PoC
   def solve: Map[Int, Seq[Trace]] = {
     val data = gradient.generateDataRDD
-    val (weights, convergence) = GradientDescent
-      .runMiniBatchSGD(
-        data,
-        gradient,
-        updater,
-        1.0,
-        100,
-        1.0,
-        1.0,
-        gradient.initializeWeight
+    val (weights, convergence) = GradientDescent.runMiniBatchSGD(
+        data = data,
+        gradient = gradient,
+        updater = updater,
+        stepSize = 1.0,
+        numIterations = 100,
+        regParam = 1.0,
+        miniBatchFraction = 1.0,
+        initialWeights = gradient.initializeWeight
       )
     val solution = gradient.id2Traces_indexed.mapValues {
       array =>
@@ -45,7 +44,7 @@ case class ClearanceRunner(
               action =>
                 val shifted = action match {
                   case v: VectorIndexedNav =>
-                    v.shiftLocationByWeight(weights.toBreeze)
+                    v.shiftAllByWeight(weights.toBreeze)
                   case _ =>
                     action
                 }

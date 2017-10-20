@@ -132,10 +132,10 @@ case class VectorIndexedNav(
                            ) extends ActionPlaceholder {
 
   // TODO: expensive! this should have mnemonics
-  def shiftLocationByWeight(weights: Vec): UAVNavigation = {
+  def shiftAllByWeight(weights: Vec): UAVNavigation = {
     val range = weightIndex
-    val sliced = weights.toArray.slice(range.start, range.end)
-    nav.shiftLocation(sliced)
+    val sliced = weights(range)
+    nav.shift(sliced)
     nav
   }
 }
@@ -147,7 +147,7 @@ case class VectorIndexedTrace(
   def shiftLocationByWeight(weights: Vec): Trace = {
     trace.map {
       case vin: VectorIndexedNav =>
-        vin.shiftLocationByWeight(weights)
+        vin.shiftAllByWeight(weights)
       case v@ _ =>
         v
     }

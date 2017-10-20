@@ -62,8 +62,8 @@ case class UAVConf(
                     // used by Rewriters to clamp Waypoint's altitude before being submitted to Global Planner (GenPartitioner)4
                     // IMPORTANT: always rewrite locally first, globally last!
                     // All UAVNavigation will climb into range before doing anything else.
-                    var clearanceAltitudeMin: Double = 10,
-                    var clearanceAltitudeMax: Double = 121.92
+                    var takeoffMinAltitude: Double = 10.0, //TODO: simplify to 10.0 to 121.92?
+                    var takeoffMaxAltitude: Double = 121.92
 
                   ) extends AbstractConf {
 

@@ -33,9 +33,9 @@ case class Clearance(
                     ) extends CollisionAvoidance {
 
   override def rewrite[V: ClassTag](
-                           rdd: RDD[(TraceView, V)],
-                           schema: DataRowSchema
-                         ): RDD[(TraceView, V)] = {
+                                     rdd: RDD[(TraceView, V)],
+                                     schema: DataRowSchema
+                                   ): RDD[(TraceView, V)] = {
 
     schema.ec.scratchRDDs.persist(rdd)
 
