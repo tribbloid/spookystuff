@@ -3,14 +3,17 @@ package org.apache.spark.mllib.uav
 import com.tribbloids.spookystuff.actions.{ActionPlaceholder, Trace}
 import com.tribbloids.spookystuff.row.DataRowSchema
 import com.tribbloids.spookystuff.uav.actions.UAVNavigation
+import com.tribbloids.spookystuff.uav.planning.Constraint
 import org.apache.spark.mllib.optimization.Gradient
 import org.apache.spark.rdd.RDD
 
+import scala.collection.mutable.ArrayBuffer
 import scala.util.Random
 
 trait PathPlanningGradient extends Gradient {
 
   def schema: DataRowSchema
+  def constraint: Option[Constraint]
 
   // id = TaskContext.get.partitionID
   def id2Traces: Map[Int, Seq[Trace]]
@@ -18,13 +21,13 @@ trait PathPlanningGradient extends Gradient {
   lazy val numPartitions = id2Traces.size
 
   val (
-    d_weight: Int,
-    d_data: Int,
-    id2Traces_indexed: Map[Int, Seq[Trace]]
+    vectorIndexedNavs: Seq[VectorIndexedNav],
+    id2VectorIndexedTrace: Map[Int, Seq[Trace]]
     ) = {
     var weightDim = 0
     var dataDim = 0
-    val id2Traces_indexed = id2Traces.mapValues {
+    val buffer = ArrayBuffer.empty[VectorIndexedNav]
+    val id2VIT = id2Traces.mapValues {
       traces =>
         traces.map {
           trace =>
@@ -33,7 +36,10 @@ trait PathPlanningGradient extends Gradient {
                 val wi = weightDim until (weightDim + v.vectorDim)
                 val di = dataDim
                 weightDim += v.vectorDim
-                VectorIndexedNav(v, wi, di)
+                dataDim += 1
+                val result = VectorIndexedNav(v, wi, di)
+                buffer += result
+                result
               case v =>
                 v
             }
@@ -41,10 +47,10 @@ trait PathPlanningGradient extends Gradient {
         }
     }
       .map(identity)
-    (weightDim, dataDim, id2Traces_indexed)
+    (buffer, id2VIT)
   }
 
-  lazy val flatten: Seq[(Int, Trace)] = id2Traces_indexed.flatMap(
+  lazy val flatten: Seq[(Int, Trace)] = id2VectorIndexedTrace.flatMap(
     tuple =>
       tuple._2.map(v => tuple._1 -> v)
   )
@@ -117,9 +123,18 @@ trait PathPlanningGradient extends Gradient {
 
   lazy val initializationNoise = 0.01
   def initializeWeight: MLVec = {
-    val array = Array.fill(d_weight){
-      Random.nextDouble()* initializationNoise
+    val array = vectorIndexedNavs.flatMap {
+      vin =>
+        var vec = Vec.fill(vin.nav.vectorDim){
+          Random.nextDouble()* initializationNoise
+        }
+        (vin.nav.constraint.toSeq ++ this.constraint).foreach {
+          cc =>
+          vec = cc.rewrite(vec, schema)
+        }
+        vec.toArray
     }
+      .toArray
 
     new MLDVec(array)
   }
@@ -136,20 +151,19 @@ case class VectorIndexedNav(
     val range = weightIndex
     val sliced = weights(range)
     nav.shift(sliced)
-    nav
   }
 }
 
-case class VectorIndexedTrace(
-                               trace: Trace
-                             ) {
-
-  def shiftLocationByWeight(weights: Vec): Trace = {
-    trace.map {
-      case vin: VectorIndexedNav =>
-        vin.shiftAllByWeight(weights)
-      case v@ _ =>
-        v
-    }
-  }
-}
+//case class VectorIndexedTrace(
+//                               trace: Trace
+//                             ) {
+//
+//  def shiftLocationByWeight(weights: Vec): Trace = {
+//    trace.map {
+//      case vin: VectorIndexedNav =>
+//        vin.shiftAllByWeight(weights)
+//      case v@ _ =>
+//        v
+//    }
+//  }
+//}

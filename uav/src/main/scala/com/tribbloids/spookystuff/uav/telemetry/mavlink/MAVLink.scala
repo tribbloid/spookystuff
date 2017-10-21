@@ -189,7 +189,7 @@ case class MAVLink(
     }
 
     def clearanceAlt(alt: Double): Unit = {
-      Endpoints.primary.PY.assureClearanceAlt(alt)
+      Endpoints.primary.PY.assureClearanceAlt(alt) //TODO: should have both maxAlt and minAlt
     }
 
     override def goto(location: Location): Unit = {

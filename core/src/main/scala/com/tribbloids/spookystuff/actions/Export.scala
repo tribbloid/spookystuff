@@ -199,7 +199,7 @@ abstract class HttpMethod(
 
   def resolveURI(pageRow: FetchedRow, schema: DataRowSchema): Option[Lit[FR, String]] = {
     val first = this.uri.resolve(schema).lift(pageRow)
-      .flatMap(SpookyUtils.asArray[Any](_).headOption)
+      .flatMap(SpookyUtils.asOption[Any])
     //TODO: no need to resolve array output?
 
     val uriStr: Option[String] = first.flatMap {

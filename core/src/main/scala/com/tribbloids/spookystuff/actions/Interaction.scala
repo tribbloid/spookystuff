@@ -98,7 +98,7 @@ case class Visit(
   }
 
   override def doInterpolate(pageRow: FetchedRow, schema: DataRowSchema): Option[this.type] = {
-    val first = this.uri.resolve(schema).lift(pageRow).flatMap(SpookyUtils.asArray[Any](_).headOption)
+    val first: Option[Any] = this.uri.resolve(schema).lift(pageRow).flatMap(SpookyUtils.asOption[Any])
 
     val uriStr: Option[String] = first.flatMap {
       case element: Unstructured => element.href
@@ -313,7 +313,7 @@ case class TextInput(
 
   override def doInterpolate(pageRow: FetchedRow, schema: DataRowSchema): Option[this.type] = {
 
-    val first = this.text.resolve(schema).lift(pageRow).flatMap(SpookyUtils.asArray[Any](_).headOption)
+    val first = this.text.resolve(schema).lift(pageRow).flatMap(SpookyUtils.asOption[Any])
 
     val textStr: Option[String] = first.flatMap {
       case element: Unstructured => element.text
@@ -350,7 +350,7 @@ case class DropDownSelect(
   }
 
   override def doInterpolate(pageRow: FetchedRow, schema: DataRowSchema): Option[this.type] = {
-    val first = this.value.resolve(schema).lift(pageRow).flatMap(SpookyUtils.asArray[Any](_).headOption)
+    val first = this.value.resolve(schema).lift(pageRow).flatMap(SpookyUtils.asOption[Any])
 
     val valueStr: Option[String] = first.flatMap {
       case element: Unstructured => element.attr("value")
@@ -411,7 +411,7 @@ case class ExeScript(
   }
 
   override def doInterpolate(pageRow: FetchedRow, schema: DataRowSchema): Option[this.type] = {
-    val first = this.script.resolve(schema).lift(pageRow).flatMap(SpookyUtils.asArray[Any](_).headOption)
+    val first = this.script.resolve(schema).lift(pageRow).flatMap(SpookyUtils.asOption[Any])
 
     val scriptStr: Option[String] = first.flatMap {
       case element: Unstructured => element.text

@@ -1,4 +1,4 @@
-package com.tribbloids.spookystuff.uav.planning.minimax
+package com.tribbloids.spookystuff.uav.planning.MinimaxSolvers
 
 import com.graphhopper.jsprit.core.problem.VehicleRoutingProblem
 import com.graphhopper.jsprit.core.util.{FastVehicleRoutingTransportCostsMatrix, VehicleRoutingTransportCostsMatrix}
@@ -34,7 +34,7 @@ trait JSpritFixture extends SpookyEnvFixture {
 
 class JSpritSolverSuite extends JSpritFixture {
 
-  import JSpritSolver.Solution
+  import JSprit.Solution
 
   val waypoints: Array[TraceView] = Array[TraceView](
     List(Waypoint(NED(3, 4, 0) -> UAVConf.DEFAULT_HOME_LOCATION: Location)),

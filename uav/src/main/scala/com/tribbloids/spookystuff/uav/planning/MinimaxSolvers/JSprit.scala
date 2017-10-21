@@ -1,4 +1,4 @@
-package com.tribbloids.spookystuff.uav.planning.minimax
+package com.tribbloids.spookystuff.uav.planning.MinimaxSolvers
 
 import java.io.File
 
@@ -29,7 +29,7 @@ import org.apache.spark.rdd.RDD
 import scala.reflect.ClassTag
 import scala.util.Try
 
-object JSpritSolver extends MinimaxSolver {
+object JSprit extends MinimaxSolver {
 
   override def solve[V: ClassTag](
                                    problem: GenPartitioners.MinimaxCost,

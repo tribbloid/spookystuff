@@ -2,8 +2,7 @@ package org.apache.spark.mllib.uav
 
 import com.tribbloids.spookystuff.actions.Trace
 import com.tribbloids.spookystuff.row.DataRowSchema
-import com.tribbloids.spookystuff.uav.planning.traffic.Clearance
-import com.tribbloids.spookystuff.utils.NOTSerializable
+import com.tribbloids.spookystuff.uav.planning.CollisionAvoidances.Clearance
 import org.apache.spark.mllib.optimization.{GradientDescent, SquaredL2Updater}
 
 /**
@@ -32,11 +31,11 @@ case class ClearanceRunner(
         updater = updater,
         stepSize = 1.0,
         numIterations = 100,
-        regParam = 1.0,
+        regParam = 0.1,
         miniBatchFraction = 1.0,
         initialWeights = gradient.initializeWeight
       )
-    val solution = gradient.id2Traces_indexed.mapValues {
+    val solution = gradient.id2VectorIndexedTrace.mapValues {
       array =>
         array.map {
           trace =>

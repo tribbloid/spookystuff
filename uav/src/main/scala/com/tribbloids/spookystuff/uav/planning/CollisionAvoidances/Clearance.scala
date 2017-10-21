@@ -1,35 +1,18 @@
-package com.tribbloids.spookystuff.uav.planning.traffic
+package com.tribbloids.spookystuff.uav.planning.CollisionAvoidances
 
-import com.tribbloids.spookystuff.actions.{RewriteRule, Trace, TraceView}
+import com.tribbloids.spookystuff.actions.TraceView
 import com.tribbloids.spookystuff.row.DataRowSchema
-import com.tribbloids.spookystuff.uav.planning.traffic.Clearance.{AltitudeOnly, NoInperolation}
-import org.apache.spark.mllib.uav.{DVec, Vec}
+import com.tribbloids.spookystuff.uav.planning.Constraints
+import com.tribbloids.spookystuff.uav.planning.{CollisionAvoidance, Constraint, Resampler}
 import org.apache.spark.rdd.RDD
 
 import scala.reflect.ClassTag
 
-object Clearance {
-
-  type Interpolation = RewriteRule[Trace]
-  type LocatioShifter = RewriteRule[Vec]
-
-  object NoInperolation extends Interpolation {
-    override def rewrite(v: Trace, schema: DataRowSchema): Trace = v
-  }
-
-  object AltitudeOnly extends LocatioShifter {
-    override def rewrite(v: Vec, schema: DataRowSchema): Vec = {
-      val alt = v(2)
-      new DVec(Array(0,0,alt))
-    }
-  }
-}
-
 case class Clearance(
                       traffic: Double = 1.0,
                       terrain: Option[Double] = None, //TODO: enable later
-                      interpolation: Clearance.Interpolation = NoInperolation,
-                      locationShifter: Clearance.LocatioShifter = AltitudeOnly
+                      resampler: Option[Resampler] = None,
+                      constraint: Option[Constraint] = Some(Constraints.AltitudeOnly)
                     ) extends CollisionAvoidance {
 
   override def rewrite[V: ClassTag](

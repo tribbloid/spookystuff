@@ -1,6 +1,5 @@
-package com.tribbloids.spookystuff.uav.planning.minimax
+package com.tribbloids.spookystuff.uav.planning
 
 import com.tribbloids.spookystuff.uav.dsl.GenPartitioners
-import com.tribbloids.spookystuff.uav.planning.PathPlanningSolver
 
 trait MinimaxSolver extends PathPlanningSolver[GenPartitioners.MinimaxCost]

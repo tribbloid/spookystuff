@@ -5,9 +5,7 @@ import com.tribbloids.spookystuff.dsl.GenPartitioner
 import com.tribbloids.spookystuff.dsl.GenPartitionerLike.Instance
 import com.tribbloids.spookystuff.row.{BeaconRDD, DataRowSchema}
 import com.tribbloids.spookystuff.uav.actions.UAVNavigation
-import com.tribbloids.spookystuff.uav.planning.minimax.MinimaxSolver
-import com.tribbloids.spookystuff.uav.planning.traffic.CollisionAvoidance
-import com.tribbloids.spookystuff.uav.planning.{CollisionAvoidances, InsertPrevNavRule, MinimaxSolvers}
+import com.tribbloids.spookystuff.uav.planning._
 import org.apache.spark.rdd.RDD
 
 import scala.reflect.ClassTag
@@ -28,7 +26,7 @@ object GenPartitioners {
                           // how much effort optimizer spend to reduce total length instead of max length
                           cohesiveness: Double = 0.05,
                           solver: MinimaxSolver = MinimaxSolvers.JSprit,
-                          collisionAvoidance: CollisionAvoidance = CollisionAvoidances.None,
+                          collisionAvoidance: Option[CollisionAvoidance] = None,
 
                           // for debugging only.
                           solutionPlotPathOpt: Option[String] = None,
@@ -75,14 +73,17 @@ object GenPartitioners {
         val hasNavRDD: RDD[(TraceView, V)] = bifurcated
           .flatMap(tt => tt._1._1.map(v => v -> tt._2))
 
-        val solvedRDD = solver.solve(MinimaxCost.this, schema, hasNavRDD)
-        val solvedRDD_prevNav = solvedRDD.mapPartitions {
+        var solvedRDD = solver.solve(MinimaxCost.this, schema, hasNavRDD)
+        solvedRDD = solvedRDD.mapPartitions {
           itr =>
             InsertPrevNavRule._rewritePartition[V](itr, schema)
         }
+        collisionAvoidance.foreach {
+          ca =>
+            solvedRDD = ca.rewrite(solvedRDD, schema)
+        }
 
-        val trafficControlledRDD = collisionAvoidance.rewrite(solvedRDD_prevNav, schema)
-          .map(tuple => (tuple._1: K) -> tuple._2)
+        val trafficControlledRDD = solvedRDD.map(tuple => (tuple._1: K) -> tuple._2)
 
         val hasNoCostRDD: RDD[(K, V)] = bifurcated
           .flatMap(tt => tt._1._2.map(v => v -> tt._2))

@@ -1,5 +1,6 @@
 package org.apache.spark.mllib.uav
 
+import breeze.linalg.DenseVector
 import com.tribbloids.spookystuff.actions.Trace
 import com.tribbloids.spookystuff.uav.UAVConf
 import com.tribbloids.spookystuff.uav.spatial.point.NED
@@ -58,6 +59,7 @@ case class ClearanceGradient(
   def id2Traces: Map[Int, Seq[Trace]] = runner.partitionID2Traces
 
   def schema = runner.schema
+  override def constraint = runner.outer.constraint
 
   val uavConf = schema.ec.spooky.getConf[UAVConf]
   val home = uavConf.home
@@ -133,7 +135,7 @@ case class ClearanceGradient(
         val coordinate = v._2
         val vector = coordinate.vector
 
-        var nabla: Vec = _
+        var negNabla: Vec = _
       }
 
       val A1 = Notation(nav_coordinates1(i))
@@ -150,28 +152,34 @@ case class ClearanceGradient(
       val C1 = B1.vector - A1.vector
       val C2 = B2.vector - A2.vector
 
-      val P = M + t1*C1 - t2*C2
+      val P: DenseVector[Double] = M + t1*C1 - t2*C2
       val DSquare = P dot P
       val D = Math.sqrt(DSquare)
       val violation = runner.outer.traffic - D
 
       if (violation > 0) {
 
-        val ratio = violation/D // TODO: or square of it? I'm confused
-        val aug = ratio*ratio
+        val scaling = {
+          //          val ratio = violation/D //L2 loss
+          val ratio = 1/D //hinge loss
+          ratio
+        }
 
-        A1.nabla = (1 - t1) * aug * P
-        B1.nabla = t1 * aug * P
-        A2.nabla = (t2 - 1) * aug * P
-        B2.nabla = - t2 * aug * P
+        A1.negNabla = (1 - t1) * scaling * P
+        B1.negNabla = t1 * scaling * P
+        A2.negNabla = (t2 - 1) * scaling * P
+        B2.negNabla = - t2 * scaling * P
 
         val concat: Seq[(Int, Double)] = Seq(A1, B1, A2, B2).flatMap {
           notation =>
-            val nabla: Vec = notation.nabla
-            val updated1: Vec = notation.vin.nav.rewrite(nabla, schema)
-            val updated2: Vec = runner.outer.locationShifter.rewrite(updated1, schema)
+            var nabla: Vec = - notation.negNabla
 
-            notation.vin.weightIndex.zip(updated2.toArray)
+            (notation.vin.nav.constraint.toSeq ++ this.constraint).foreach {
+              cc =>
+                nabla = cc.rewrite(nabla, schema)
+            }
+
+            notation.vin.weightIndex.zip(nabla.toArray)
         }
 
         val concatGradVec = new MLSVec(
@@ -180,10 +188,10 @@ case class ClearanceGradient(
           concat.map(_._2).toArray
         )
         BLAS.axpy(1.0, concatGradVec, cumGradient)
+        cumViolation += violation
       }
-      cumViolation += violation
     }
-    println(s"========= cumViolation: $cumViolation =========")
+    //    println(s"========= cumViolation: $cumViolation =========")
     cumViolation
   }
 }

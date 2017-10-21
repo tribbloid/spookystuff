@@ -132,7 +132,7 @@ These special characters are often called "metacharacters".
   }
 
   //TODO: move to class & try @Specialized?
-  def asArray[T <: Any : ClassTag](obj: Any): Array[T] = {
+  def asArray[T <: Any: ClassTag](obj: Any): Array[T] = {
 
     obj match {
       case v: TraversableOnce[Any] => v.toArray.filterByType[T]
@@ -142,7 +142,9 @@ These special characters are often called "metacharacters".
     }
   }
 
-  def asIterable[T <: Any : ClassTag](obj: Any): Iterable[T] = {
+  def asOption[T <: Any: ClassTag](obj: Any): Option[T] = asIterable[T](obj).headOption
+
+  def asIterable[T <: Any: ClassTag](obj: Any): Iterable[T] = {
 
     obj match {
       case v: TraversableOnce[Any] => v.toArray.filterByType[T]

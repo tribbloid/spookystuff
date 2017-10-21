@@ -1,4 +1,4 @@
-package com.tribbloids.spookystuff.uav.planning.minimax;
+package com.tribbloids.spookystuff.uav.planning.MinimaxSolvers;
 
 import com.graphhopper.jsprit.core.problem.solution.SolutionCostCalculator;
 import com.graphhopper.jsprit.core.problem.solution.VehicleRoutingProblemSolution;

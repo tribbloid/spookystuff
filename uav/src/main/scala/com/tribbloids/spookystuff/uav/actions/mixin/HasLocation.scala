@@ -1,9 +1,9 @@
 package com.tribbloids.spookystuff.uav.actions.mixin
 
-import com.tribbloids.spookystuff.actions.RewriteRule
 import com.tribbloids.spookystuff.row.DataRowSchema
 import com.tribbloids.spookystuff.uav.actions.UAVAction
-import com.tribbloids.spookystuff.uav.spatial.point.{Location, NED}
+import com.tribbloids.spookystuff.uav.planning.Constraint
+import com.tribbloids.spookystuff.uav.spatial.point.Location
 import org.apache.spark.mllib.uav.Vec
 
 /**
@@ -13,7 +13,7 @@ import org.apache.spark.mllib.uav.Vec
   * with mllib Updater
   * has built-in 'stiffness' that affects each dimension's tolerance to change
   */
-trait HasLocation extends RewriteRule[Vec] {
+trait HasLocation {
   self: UAVAction =>
 
   /**
@@ -36,10 +36,7 @@ trait HasLocation extends RewriteRule[Vec] {
 
   def shift(vector: Vec): this.type = this
 
-  def _shift(vector: Vec, schema: DataRowSchema): Location = {
-    NED.create(vector) -> this.getLocation(schema)
-  }
-
+  def constraint: Option[Constraint] = None
   // subclasses generally don't have to touch this part
-  override def rewrite(v: Vec, schema: DataRowSchema): Vec = v
+//  override def rewrite(v: Vec, schema: DataRowSchema): Vec = v
 }
