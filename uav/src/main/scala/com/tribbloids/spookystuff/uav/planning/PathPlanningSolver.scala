@@ -7,7 +7,7 @@ import org.apache.spark.rdd.RDD
 
 import scala.reflect.ClassTag
 
-trait PathPlanningSolver[T <: GenPartitioner] {
+trait PathPlanningSolver[T <: GenPartitioner] extends Serializable {
 
   def solve[V: ClassTag](
                           gp: T,

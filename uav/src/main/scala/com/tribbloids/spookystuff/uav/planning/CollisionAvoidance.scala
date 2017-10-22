@@ -6,7 +6,7 @@ import org.apache.spark.rdd.RDD
 
 import scala.reflect.ClassTag
 
-trait CollisionAvoidance {
+trait CollisionAvoidance extends Serializable {
 
   def rewrite[V: ClassTag](
                             rdd: RDD[(TraceView, V)],
