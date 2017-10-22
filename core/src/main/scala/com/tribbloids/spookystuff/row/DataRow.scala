@@ -20,7 +20,7 @@ case class DataRow(
                     groupID: Option[UUID] = None,
                     groupIndex: Int = 0, //set to 0...n for each page group after SquashedPageRow.semiUnsquash/unsquash
                     freeze: Boolean = false //if set to true PageRow.extract won't insert anything into it, used in merge/replace join
-                  ) extends SpookyRow {
+                  ) extends AbstractSpookyRow {
 
   {
     assert(data.isInstanceOf[Serializable]) //fail early

@@ -24,7 +24,7 @@ trait UAVNavigation extends Interaction
     sv.outbound()
   }
 
-  implicit def getSessionView(session: Session) = new NavSessionView(session)
+  def getSessionView(session: Session) = new NavSessionView(session)
 }
 
 class NavSessionView(session: Session) extends UAVViews.SessionView(session) {

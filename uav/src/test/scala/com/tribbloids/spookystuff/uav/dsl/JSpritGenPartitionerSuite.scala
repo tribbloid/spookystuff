@@ -128,7 +128,7 @@ class JSpritGenPartitionerSuite extends DummyUAVFixture with JSpritFixture {
     val scans = lineScans(parallelism * 2)
     val withTakeoff = scans.map {
       scan =>
-        List(Takeoff(10.0)) ++ scan
+        List(Takeoff(10, 100)) ++ scan
     }
 
     val grouped = runTest(withTakeoff)

@@ -6,7 +6,7 @@ import com.tribbloids.spookystuff.doc._
 import org.apache.spark.ml.dsl.utils.messaging.MessageAPI
 
 //TODO: extends Spark SQL Row
-trait SpookyRow extends MessageAPI {
+trait AbstractSpookyRow extends MessageAPI {
 
 //  override def length: Int = this.productArity
 //
@@ -31,7 +31,7 @@ object FetchedRow {
 case class FetchedRow(
                        dataRow: DataRow = DataRow(),
                        fetched: Seq[Fetched] = Seq()
-                     ) extends SpookyRow {
+                     ) extends AbstractSpookyRow {
 
   //TODO: trace implementation is not accurate: the last backtrace has all previous exports removed
   def squash(spooky: SpookyContext): SquashedFetchedRow = SquashedFetchedRow(
@@ -75,3 +75,5 @@ case class FetchedRow(
     else page.map(_.root).orElse(value)
   }
 }
+
+object EmptyFetchedRow extends FetchedRow()

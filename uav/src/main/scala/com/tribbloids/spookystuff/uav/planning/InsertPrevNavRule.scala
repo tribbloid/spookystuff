@@ -25,7 +25,7 @@ object InsertPrevNavRule extends RewriteRule[Trace] {
         val rr = v._1.children.map {
           case vv: Takeoff =>
             val result = vv.copy(
-              prevNavOpt = vv.prevNavOpt.orElse(Option(prevNav))
+              prevNavOpt = Option(prevNav)
             )
             prevNav = result
             result

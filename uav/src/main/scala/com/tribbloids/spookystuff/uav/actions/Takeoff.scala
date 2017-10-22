@@ -19,8 +19,8 @@ import org.slf4j.LoggerFactory
 
 //TODO: change to be like this: wrap a Nav, if on the ground, arm and takeoff, if in the air, serve as an altitude lower bound
 case class Takeoff(
-                    minAlt: Col[Double] = 1.0,
-                    maxAlt: Col[Double] = 1.0,
+                    minAlt: Col[Double] = -1,
+                    maxAlt: Col[Double] = -1,
                     prevNavOpt: Option[UAVNavigation] = None
                   ) extends UAVNavigation {
 
@@ -37,6 +37,7 @@ case class Takeoff(
         val _max = if (max > 0) max
         else uav.takeoffMaxAltitude
 
+        assert(min <= max, s"minAlt $min should < maxAlt $max")
         Some(this.copy(minAlt = _min, maxAlt = _max).asInstanceOf[this.type])
       case _ =>
         None
@@ -52,7 +53,9 @@ case class Takeoff(
 
   override def getSessionView(session: Session) = new this.SessionView(session)
 
-  implicit class SessionView(session: Session) extends NavSessionView(session) {
+  class SessionView(session: Session) extends NavSessionView(session) {
+
+    validateValues()
 
     override def engage(): Unit = {
 
@@ -63,7 +66,20 @@ case class Takeoff(
     }
   }
 
+  private def validateValues() = {
+
+    val min = minAlt.value
+    val max = maxAlt.value
+
+    assert(min > 0, s"minAlt $min should > 0")
+    assert(max > 0, s"maxAlt $max should > 0")
+    assert(min <= max, s"minAlt $min should < maxAlt $max")
+
+  }
+
   override def getLocation(schema: DataRowSchema) = {
+    validateValues()
+
     val spooky = schema.ec.spooky
     val uavConf = spooky.getConf[UAVConf]
     //    def fallbackLocation = Location.fromTuple(NED.C(0,0,-minAlt) -> Anchors.HomeLevelProjection)
