@@ -1,10 +1,11 @@
 package org.apache.spark.mllib.uav
 
 import breeze.linalg.DenseVector
-import com.tribbloids.spookystuff.actions.Trace
+import com.tribbloids.spookystuff.actions.{Trace, TraceView}
 import com.tribbloids.spookystuff.uav.UAVConf
 import com.tribbloids.spookystuff.uav.spatial.point.NED
 import org.apache.spark.mllib.linalg.BLAS
+import org.slf4j.LoggerFactory
 
 object ClearanceGradient {
 
@@ -53,10 +54,10 @@ object ClearanceGradient {
 }
 
 case class ClearanceGradient(
-                              runner: ClearanceRunner
+                              runner: ClearanceRunner[_]
                             ) extends PathPlanningGradient {
 
-  def id2Traces: Map[Int, Seq[Trace]] = runner.partitionID2Traces
+  def id2Traces: Map[Int, Seq[TraceView]] = runner.pid2Traces
 
   def schema = runner.schema
   override def constraint = runner.outer.constraint
@@ -191,7 +192,10 @@ case class ClearanceGradient(
         cumViolation += violation
       }
     }
-    //    println(s"========= cumViolation: $cumViolation =========")
+    println(
+//    LoggerFactory.getLogger(this.getClass).info(
+      s"========= cumViolation: $cumViolation ========="
+    )
     cumViolation
   }
 }

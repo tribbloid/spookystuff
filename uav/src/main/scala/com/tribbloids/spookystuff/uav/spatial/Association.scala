@@ -11,26 +11,38 @@ object Association {
 }
 
 
-case class Association[T <: Spatial](
+case class Association[+T <: Spatial](
                                       datum: T,
                                       anchor: Anchor
-                                    ) extends TreeNode[Association[_]] {
+                                    ) extends TreeNode[Association[Spatial]] {
 
   override def simpleString: String = {
-    anchor match {
-      case Location(_) =>
-        datum.toString
-      case _ =>
-        s"${datum.toString} -+ $anchor"
-    }
+    datum.toString + " -+ " + anchor.name
   }
 
-  override def children: Seq[Association[Coordinate]] = {
+  override def children: Seq[Association[Spatial]] = {
     anchor match {
-      case Location(seq) =>
+      case Location(seq, _) =>
         seq
       case _ =>
         Nil
     }
   }
+
+//  def simplifyOnce = {
+//    children.map {
+//      child =>
+//
+//    }
+//  }
+//
+//  def simplify: Association[T] = {
+//    this.transformUp {
+//      case Association(coord: Coordinate, Location(definedBy, tag)) =>
+//        val projected = definedBy.map {
+//          chil
+//        }
+//    }
+//    ???
+//  }
 }

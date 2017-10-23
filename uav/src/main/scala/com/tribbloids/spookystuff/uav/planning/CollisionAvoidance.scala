@@ -8,8 +8,8 @@ import scala.reflect.ClassTag
 
 trait CollisionAvoidance extends Serializable {
 
-  def rewrite[V: ClassTag](
-                            rdd: RDD[(TraceView, V)],
-                            schema: DataRowSchema
-                          ): RDD[(TraceView, V)] = rdd
+  def solve[V: ClassTag](
+                          rdd: RDD[(TraceView, V)],
+                          schema: DataRowSchema
+                        ): RDD[(TraceView, V)] = rdd
 }

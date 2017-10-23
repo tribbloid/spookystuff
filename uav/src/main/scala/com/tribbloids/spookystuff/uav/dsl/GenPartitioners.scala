@@ -49,7 +49,6 @@ object GenPartitioners {
                                            ): RDD[(K, V)] = {
 
         import schema.ec
-        val spooky = schema.ec.spooky
 
         val preprocessed = base.getInstance[K](schema).reduceByKey(rdd, reducer, beaconRDDOpt)
 
@@ -80,7 +79,7 @@ object GenPartitioners {
         }
         collisionAvoidance.foreach {
           ca =>
-            solvedRDD = ca.rewrite(solvedRDD, schema)
+            solvedRDD = ca.solve(solvedRDD, schema)
         }
 
         val trafficControlledRDD = solvedRDD.map(tuple => (tuple._1: K) -> tuple._2)

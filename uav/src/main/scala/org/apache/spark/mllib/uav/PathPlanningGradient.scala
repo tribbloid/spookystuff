@@ -1,6 +1,6 @@
 package org.apache.spark.mllib.uav
 
-import com.tribbloids.spookystuff.actions.{ActionPlaceholder, Trace}
+import com.tribbloids.spookystuff.actions.{ActionPlaceholder, Trace, TraceView}
 import com.tribbloids.spookystuff.row.DataRowSchema
 import com.tribbloids.spookystuff.uav.actions.UAVNavigation
 import com.tribbloids.spookystuff.uav.planning.Constraint
@@ -16,7 +16,7 @@ trait PathPlanningGradient extends Gradient {
   def constraint: Option[Constraint]
 
   // id = TaskContext.get.partitionID
-  def id2Traces: Map[Int, Seq[Trace]]
+  def id2Traces: Map[Int, Seq[TraceView]]
 
   lazy val numPartitions = id2Traces.size
 
@@ -31,7 +31,7 @@ trait PathPlanningGradient extends Gradient {
       traces =>
         traces.map {
           trace =>
-            val indexed = trace.map {
+            val indexed = trace.children.map {
               case v: UAVNavigation =>
                 val wi = weightDim until (weightDim + v.vectorDim)
                 val di = dataDim
@@ -50,11 +50,15 @@ trait PathPlanningGradient extends Gradient {
     (buffer, id2VIT)
   }
 
-  lazy val flatten: Seq[(Int, Trace)] = id2VectorIndexedTrace.flatMap(
-    tuple =>
-      tuple._2.map(v => tuple._1 -> v)
-  )
-    .toSeq
+  lazy val flatten: Seq[(Int, Trace)] = {
+    val seq = id2VectorIndexedTrace.toSeq
+    val result = seq
+      .flatMap(
+        tuple =>
+          tuple._2.map(v => tuple._1 -> v)
+      )
+    result
+  }
   lazy val numTraces = flatten.size
 
   //  val cache = ConcurrentCache[Vec, WithWeights]()
@@ -130,7 +134,7 @@ trait PathPlanningGradient extends Gradient {
         }
         (vin.nav.constraint.toSeq ++ this.constraint).foreach {
           cc =>
-          vec = cc.rewrite(vec, schema)
+            vec = cc.rewrite(vec, schema)
         }
         vec.toArray
     }

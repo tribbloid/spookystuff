@@ -20,9 +20,11 @@ class LocationUDT() extends ScalaUDT[Location]
 @SQLUserDefinedType(udt = classOf[LocationUDT])
 @SerialVersionUID(-928750192836509428L)
 case class Location(
-                     definedBy: Seq[Association[Coordinate]]
+                     definedBy: Seq[Association[Coordinate]],
+                     tagOpt: Option[Anchors.Tag] = None
                    ) extends LocationLike with Fusion[Coordinate] {
 
+  override def name = tagOpt.map(_.name).getOrElse("@"+this.hashCode)
   def withHome(home: Location) = WithHome(home)
 
   case class WithHome(
@@ -49,8 +51,12 @@ case class Location(
       rel =>
         //TODO: unnecessary copy if out of fn domain
         val replaced: Anchor = fn.applyOrElse(rel.anchor, (_: Anchor) => rel.anchor)
+        val taggedReplaced = rel.anchor -> replaced match {
+          case (t: Anchors.Tag, v: Location) => v.copy(tagOpt = Some(t))
+          case _ => replaced
+        }
         rel.copy[Coordinate](
-          anchor = replaced
+          anchor = taggedReplaced
         )
     }
     this.copy(definedBy = cs)
@@ -166,12 +172,34 @@ case class Location(
     definedBy.map(_.treeString).mkString("\n")
   }
 
-  override def toString: String = {
-    definedBy.headOption.map {
-      _.datum
+  lazy val reanchorToPrimary: this.type = {
+    val children = definedBy.flatMap {
+      v =>
+        v.children
     }
+    val firstChildOpt = children.collect {
+      case Association(x, y: Location) => x -> y
+    }
+      .headOption
+    firstChildOpt.flatMap {
+      case (x, y) =>
+        this.reanchor(y.reanchorToPrimary, x.system)
+    }
+      .getOrElse {
+        this
+      }
+      .asInstanceOf[this.type]
+  }
+
+  def simpleString: String = {
+    name + ": " + reanchorToPrimary
+      .definedBy
+      .headOption
+      .map(_.simpleString)
       .mkString("<", "", ">")
   }
+
+  override def toString: String = simpleString
 }
 
 object Location {

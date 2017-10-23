@@ -13,6 +13,8 @@ import com.tribbloids.spookystuff.uav.spatial.util.SearchHistory
 trait Anchor extends Serializable {
   import Anchors._
 
+  def name: String
+
   final def getCoordinate(
                            system: CoordinateSystem = LLA,
                            from: Anchor = Geodetic

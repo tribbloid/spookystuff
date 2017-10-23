@@ -396,54 +396,69 @@ case object SpookyViews {
       }
     }
 
-    //TODO: remove, delegated to GenPartitioner
-    //    def groupByKey_narrow(): RDD[(K, Iterable[V])] = {
-    //
-    //      self.mapPartitions{
-    //        itr =>
-    //          itr
-    //            .toTraversable
-    //            .groupBy(_._1)
-    //            .map(v => v._1 -> v._2.map(_._2).toIterable)
-    //            .iterator
-    //      }
-    //    }
-    //    def reduceByKey_narrow(
-    //                            reducer: (V, V) => V
-    //                          ): RDD[(K, V)] = {
-    //      self.mapPartitions{
-    //        itr =>
-    //          itr
-    //            .toTraversable
-    //            .groupBy(_._1)
-    //            .map(v => v._1 -> v._2.map(_._2).reduce(reducer))
-    //            .iterator
-    //      }
-    //    }
-    //
-    //    def groupByKey_beacon[T](
-    //                              beaconRDD: RDD[(K, T)]
-    //                            ): RDD[(K, Iterable[V])] = {
-    //
-    //      val cogrouped = self.cogroup(beaconRDD, beaconRDD.partitioner.get)
-    //      cogrouped.mapValues {
-    //        tuple =>
-    //          tuple._1
-    //      }
-    //    }
+    def broadcastSemiCogroup[V2: ClassTag](
+                                            other: RDD[(K, V2)]
+                                          ): RDD[(K, (V, Iterable[V2]))] = {
 
-    def reduceByKey_beacon[T](
-                               reducer: (V, V) => V,
-                               beaconRDD: RDD[(K, T)]
-                             ): RDD[(K, V)] = {
+      //      val grouped: RDD[(K, Iterable[V])] = self.groupByKey()
+      //      val a = grouped.map(_._2.toList).collect()
+      val otherMap = other.groupByKey().collectAsMap()
+      val otherMapBroadcast = self.sparkContext.broadcast(otherMap)
 
-      val cogrouped = self.cogroup(beaconRDD, beaconRDD.partitioner.get)
-      cogrouped.mapValues {
-        tuple =>
-          tuple._1.reduce(reducer)
+      val cogrouped: RDD[(K, (V, Iterable[V2]))] = self.mapPartitions {
+        bigItr =>
+          val otherMap = otherMapBroadcast.value
+          val result = bigItr.map {
+            case (k, itr) =>
+              val itr2 = otherMap.getOrElse(k, Nil)
+              k -> (itr, itr2)
+          }
+          result
       }
+      cogrouped
     }
+
+    /**
+      * always preserve partition locality of self
+      * @param other
+      * @tparam V2
+      * @return
+      */
+    def localityPreservingSemiCogroup[V2: ClassTag](
+                                                     other: RDD[(K, V2)]
+                                                   ): RDD[(K, (V, Iterable[V2]))] = {
+
+      broadcastSemiCogroup(other)
+    }
+
+    //    /**
+    //      * a beast of many form
+    //      * @param other
+    //      * @tparam V2
+    //      * @return
+    //      */
+    //    def genJoin[V2: ClassTag](
+    //                               other: RDD[(K, V2)],
+    //                               cogroup: RDD[(K, V2)] => RDD[(K, (Iterable[V], Iterable[V2]))] = {
+    //                                 v =>
+    //                                   this.broadcastCogroup[V2](v)
+    //                               }
+    //                             ): RDD[(K, (V, V2))] = {
+    //      cogroup(other).flatMap {
+    //        case (k, (itr1, itr2)) =>
+    //          val result = itr1.flatMap {
+    //            v1 =>
+    //              itr2.map {
+    //                v2 =>
+    //                  k -> (v1 -> v2)
+    //              }
+    //          }
+    //          result
+    //      }
+    //    }
   }
+
+
 
   implicit class MapView[K, V](self: scala.collection.Map[K,V]) {
 

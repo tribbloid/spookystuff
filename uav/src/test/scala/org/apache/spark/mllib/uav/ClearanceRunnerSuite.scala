@@ -1,7 +1,7 @@
 package org.apache.spark.mllib.uav
 
 import com.tribbloids.spookystuff.SpookyEnvFixture
-import com.tribbloids.spookystuff.actions.Trace
+import com.tribbloids.spookystuff.actions.{Trace, TraceView}
 import com.tribbloids.spookystuff.execution.ExecutionContext
 import com.tribbloids.spookystuff.row.DataRowSchema
 import com.tribbloids.spookystuff.testutils.AssertSerializable
@@ -26,8 +26,17 @@ class ClearanceRunnerSuite extends SpookyEnvFixture {
         Waypoint(NED(0,1,0.1))
       ))
     )
-    val runner = ClearanceRunner(input, schema, clearance)
+    val runner = ClearanceRunner(map2rdd(input), schema, clearance)
     AssertSerializable(runner.gradient, condition = {(v1: ClearanceGradient,v2: ClearanceGradient) => })
+  }
+
+  private def map2rdd(input: Map[Int, Seq[Trace]]) = {
+    val rdd = spooky.sparkContext.parallelize(input.toSeq, input.size)
+      .flatMap {
+        case (i, seq) =>
+          seq.map(v => TraceView(v) -> i)
+      }
+    rdd
   }
 
   it("can generate data RDD") {
@@ -45,7 +54,7 @@ class ClearanceRunnerSuite extends SpookyEnvFixture {
         Waypoint(NED(0,1,0.1))
       ))
     )
-    val runner = ClearanceRunner(input, schema, clearance)
+    val runner = ClearanceRunner(map2rdd(input), schema, clearance)
     val data = runner.gradient.generateDataRDD
       .collect()
 
@@ -71,9 +80,70 @@ class ClearanceRunnerSuite extends SpookyEnvFixture {
         Waypoint(NED(0,1,0.1) -> spooky.getConf[UAVConf].home)
       ))
     )
-    val runner = ClearanceRunner(input, schema, clearance)
-    val output = runner.solve
+    val runner = ClearanceRunner(map2rdd(input), schema, clearance)
+    val output = runner.solved
 
-    output.foreach(println)
+    output.foreachPartition(v => println(v.toList))
+  }
+
+  it("can optimize 2 very close unbalanced traces") {
+
+    val input: Map[Int, Seq[Trace]] = Map(
+      1 -> Seq(List(
+        Waypoint(NED(0,0,-0.3) -> spooky.getConf[UAVConf].home),
+        Waypoint(NED(1,5,-0.3) -> spooky.getConf[UAVConf].home)
+      )),
+      2 -> Seq(List(
+        Waypoint(NED(1,0,0.3) -> spooky.getConf[UAVConf].home),
+        Waypoint(NED(0,1,0.3) -> spooky.getConf[UAVConf].home)
+      ))
+    )
+    val runner = ClearanceRunner(map2rdd(input), schema, clearance)
+    val output = runner.solved
+
+    output.foreachPartition(v => println(v.toList))
+  }
+
+  it("can optimize 2 intersecting traces") {
+
+    val input: Map[Int, Seq[Trace]] = Map(
+      1 -> Seq(List(
+        Waypoint(NED(0,0,0) -> spooky.getConf[UAVConf].home),
+        Waypoint(NED(1,1,0) -> spooky.getConf[UAVConf].home)
+      )),
+      2 -> Seq(List(
+        Waypoint(NED(1,0,0) -> spooky.getConf[UAVConf].home),
+        Waypoint(NED(0,1,0) -> spooky.getConf[UAVConf].home)
+      ))
+    )
+    val runner = ClearanceRunner(map2rdd(input), schema, clearance)
+    val output = runner.solved
+
+    output.foreachPartition(v => println(v.toList))
+  }
+
+  it("can optimize 4 intersecting Waypoints") {
+
+    val input: Map[Int, Seq[Trace]] = Map(
+      1 -> Seq(
+        List(
+          Waypoint(NED(0,0,0) -> spooky.getConf[UAVConf].home)
+        ),
+        List(
+          Waypoint(NED(1,1,0) -> spooky.getConf[UAVConf].home)
+        )),
+      2 -> Seq(
+        List(
+          Waypoint(NED(1,0,0) -> spooky.getConf[UAVConf].home)
+        ),
+        List(
+          Waypoint(NED(0,1,0) -> spooky.getConf[UAVConf].home)
+        )
+      )
+    )
+    val runner = ClearanceRunner(map2rdd(input), schema, clearance)
+    val output = runner.solved
+
+    output.foreachPartition(v => println(v.toList))
   }
 }
