@@ -21,12 +21,6 @@ object SpookyUtils extends CommonUtils {
 
   import SpookyViews._
 
-  def numCores = {
-    val result = Runtime.getRuntime.availableProcessors()
-    assert(result > 0)
-    result
-  }
-
   val xmlPrinter = new PrettyPrinter(Int.MaxValue, 2)
 
   //  def retryWithDeadline[T](n: Int, t: Duration)(fn: => T): T = retry(n){withDeadline(t){fn}}

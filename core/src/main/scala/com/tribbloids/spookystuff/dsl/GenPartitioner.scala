@@ -42,6 +42,7 @@ object GenPartitionerLike {
                           ref: RDD[_]
                         ): Option[BeaconRDD[K]] = None
 
+    //TODO: comparing to old implementation, does this create too much object overhead?
     def groupByKey[V: ClassTag](
                                  rdd: RDD[(K, V)],
                                  beaconRDDOpt: Option[BeaconRDD[K]] = None

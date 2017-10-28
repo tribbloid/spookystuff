@@ -1,6 +1,6 @@
 package com.tribbloids.spookystuff.session
 
-import com.tribbloids.spookystuff.utils.{CommonUtils, SpookyUtils, TreeException}
+import com.tribbloids.spookystuff.utils.{CommonUtils, TreeException}
 
 import scala.util.Try
 
@@ -10,13 +10,13 @@ import scala.util.Try
 trait ConflictDetection extends Cleanable {
 
   def _resourceIDs: Map[String, Set[_]]
-  def _resourcePrefix: String = this.getClass.getCanonicalName
+  def _resourceQualifier: String = this.getClass.getCanonicalName
 
   final def resourceIDs: Map[String, Set[Any]] = _resourceIDs.map {
     tuple =>
       val rawK = if (tuple._1.isEmpty) null
       else tuple._1
-      val k = CommonUtils./:/(_resourcePrefix, rawK)
+      val k = CommonUtils./:/(_resourceQualifier, rawK)
       val v = tuple._2.map(_.asInstanceOf[Any])
       k -> v
   }

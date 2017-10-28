@@ -1,7 +1,7 @@
 package com.tribbloids.spookystuff
 
 import com.google.common.cache.CacheBuilder
-import com.tribbloids.spookystuff.utils.SpookyUtils
+import com.tribbloids.spookystuff.utils.CommonUtils
 
 import scala.collection.mutable
 
@@ -29,7 +29,7 @@ package object caching {
   def ConcurrentCache[K, V](): ConcurrentCache[K, V] = {
     CacheBuilder
       .newBuilder()
-      .concurrencyLevel(SpookyUtils.numCores)
+      .concurrencyLevel(CommonUtils.numDriverCores)
       .softValues()
       .build[Object, Object]()
       .asMap()

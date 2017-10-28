@@ -2,7 +2,6 @@ package com.tribbloids.spookystuff.session
 
 import com.tribbloids.spookystuff.caching._
 import com.tribbloids.spookystuff.utils.{NOTSerializable, TreeException}
-import org.openqa.selenium.NoSuchSessionException
 import org.slf4j.LoggerFactory
 
 import scala.language.implicitConversions
@@ -161,15 +160,16 @@ trait Cleanable {
     uncleanedInBatch -= this.trackingNumber
   }
 
+  def isSilent(ee: Throwable): Boolean = false
+
   def tryClean(silent: Boolean = false): Unit = {
     try {
       clean(silent)
     }
     catch {
-      case _: NoSuchSessionException => //already cleaned before
       case e: Throwable =>
         val ee = e
-        LoggerFactory.getLogger(this.getClass).warn(
+        if (!isSilent(ee)) LoggerFactory.getLogger(this.getClass).warn(
           s"$logPrefix !!! FAIL TO CLEAN UP !!!\n", ee
         )
     }

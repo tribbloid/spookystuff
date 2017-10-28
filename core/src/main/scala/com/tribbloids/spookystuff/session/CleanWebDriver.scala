@@ -1,6 +1,6 @@
 package com.tribbloids.spookystuff.session
 
-import org.openqa.selenium.WebDriver
+import org.openqa.selenium.{NoSuchSessionException, WebDriver}
 
 import scala.language.implicitConversions
 
@@ -17,5 +17,12 @@ class CleanWebDriver(
   override def cleanImpl(): Unit = {
     self.close()
     self.quit()
+  }
+
+  override def isSilent(ee: Throwable): Boolean = {
+    ee match {
+      case e: NoSuchSessionException => true
+      case _ => false
+    }
   }
 }

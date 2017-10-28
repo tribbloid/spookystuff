@@ -14,6 +14,12 @@ class CommonUtils {
   import scala.concurrent.ExecutionContext.Implicits.global
   import scala.concurrent.duration._
 
+  def numDriverCores = {
+    val result = Runtime.getRuntime.availableProcessors()
+    assert(result > 0)
+    result
+  }
+
   def qualifiedName(separator: String)(parts: String*) = {
     parts.flatMap(v => Option(v)).reduceLeftOption(addSuffix(separator, _) + _).orNull
   }
