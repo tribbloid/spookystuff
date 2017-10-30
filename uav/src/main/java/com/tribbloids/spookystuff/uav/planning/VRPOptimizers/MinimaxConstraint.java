@@ -1,4 +1,4 @@
-package com.tribbloids.spookystuff.uav.planning.MinimaxSolvers;
+package com.tribbloids.spookystuff.uav.planning.VRPOptimizers;
 
 import com.graphhopper.jsprit.core.algorithm.state.StateId;
 import com.graphhopper.jsprit.core.algorithm.state.StateManager;

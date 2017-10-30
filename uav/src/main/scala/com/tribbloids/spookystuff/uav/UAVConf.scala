@@ -55,7 +55,7 @@ case class UAVConf(
                     var slowConnectionRetryInterval: Duration = UAVConf.BLACKLIST_RESET_AFTER, //1 minute
 
                     var home: Location = UAVConf.DEFAULT_HOME_LOCATION,
-                    var costEstimator: CostEstimator = CostEstimator.Default(),
+                    var costEstimator: CostEstimator = CostEstimator.L2Distance(),
 
                     var defaultSpeed: Double = 5.0,
 

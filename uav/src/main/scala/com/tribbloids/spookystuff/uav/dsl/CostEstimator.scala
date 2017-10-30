@@ -3,7 +3,7 @@ package com.tribbloids.spookystuff.uav.dsl
 import com.tribbloids.spookystuff.actions.{Action, Trace, TraceView}
 import com.tribbloids.spookystuff.row.DataRowSchema
 import com.tribbloids.spookystuff.uav.actions.UAVNavigation
-import com.tribbloids.spookystuff.uav.planning.{InsertPrevNavRule, PreferUAV}
+import com.tribbloids.spookystuff.uav.planning.{TakeoffInsertCtxRule, PreferUAV}
 import com.tribbloids.spookystuff.uav.spatial.point.NED
 
 trait CostEstimator {
@@ -11,27 +11,14 @@ trait CostEstimator {
   def estimate(
                 trace: Trace,
                 schema: DataRowSchema
-              ): Double = {
-
-    def getTrace = {
-      () =>
-        InsertPrevNavRule.rewrite(trace, schema)
-    }
-
-    _estimate(getTrace, schema)
-  }
-
-  def _estimate(
-                 getTrace: () => Trace,
-                 schema: DataRowSchema
-               ): Double = 0
+              ): Double
 }
 
 object CostEstimator {
 
-  case class Default(
-                      speed: Double = 1.0
-                    ) extends CostEstimator {
+  case class L2Distance(
+                         defaultSpeed: Double = 1.0
+                       ) extends CostEstimator {
 
     class Instance(
                     trace: Trace,
@@ -44,7 +31,7 @@ object CostEstimator {
           .coordinate(NED, nav.getLocation(schema))
         val distance = Math.sqrt(ned.vector dot ned.vector)
 
-        val _speed = nav.speedOpt.getOrElse(speed)
+        val _speed = nav.speedOpt.getOrElse(defaultSpeed)
 
         distance / _speed
       }
@@ -57,7 +44,7 @@ object CostEstimator {
         val ned = start2.coordinate(NED, end1)
         val distance = Math.sqrt(ned.vector dot ned.vector)
 
-        distance / speed
+        distance / defaultSpeed
       }
 
       lazy val solve = {
@@ -93,12 +80,21 @@ object CostEstimator {
       }
     }
 
-    override def _estimate(
-                            getTrace: () => Trace,
-                            schema: DataRowSchema
-                          ): Double = {
-      val trace = getTrace()
+    def _estimate(
+                   trace: Trace,
+                   schema: DataRowSchema
+                 ): Double = {
       new Instance(trace, schema).solve
+    }
+
+    override def estimate(
+                           trace: Trace,
+                           schema: DataRowSchema
+                         ): Double = {
+
+      val _trace = TakeoffInsertCtxRule.rewrite(trace, schema)
+
+      _estimate(_trace, schema)
     }
   }
 }

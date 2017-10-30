@@ -35,7 +35,6 @@ case class FetchedDataset(
                          ) extends FetchedRDDAPI {
 
   import SpookyViews._
-  import plan.Views
 
   implicit def fromExecutionPlan(plan: ExecutionPlan): FetchedDataset = FetchedDataset(plan)
 
@@ -49,7 +48,7 @@ case class FetchedDataset(
     this(
       RDDPlan(
         sourceRDD,
-        DataRowSchema(ExecutionContext(spooky), fieldMap),
+        DataRowSchema(SpookyExecutionContext(spooky), fieldMap),
         spooky,
         beaconRDDOpt
       )
@@ -106,13 +105,13 @@ case class FetchedDataset(
     val sortIndices: List[Field] = plan.allSortIndices.map(_._1.self)
 
     val dataRDD = this.dataRDD
-    plan.tempRDDs.persist(dataRDD)
+    plan.persist(dataRDD)
 
     val sorted = dataRDD.sortBy{_.sortIndex(sortIndices)}
     sorted.setName("sort")
 
     sorted.foreachPartition{_ =>} //force execution
-    plan.tempRDDs.unpersist(dataRDD, blocking = false)
+    plan.scratchRDDs.unpersist(dataRDD, blocking = false)
 
     sorted
   }
@@ -169,7 +168,7 @@ case class FetchedDataset(
   sparkContext.withJob(s"toDF(sort=$sort, name=$tableName)") {
 
     val jsonRDD = this.toJSON(sort)
-    plan.tempRDDs.persist(jsonRDD)
+    plan.persist(jsonRDD)
 
     val schemaRDD = spooky.sqlContext.read.json(jsonRDD)
 
@@ -185,7 +184,7 @@ case class FetchedDataset(
     val result = schemaRDD.select(columns: _*)
 
     if (tableName!=null) result.registerTempTable(tableName)
-    plan.tempRDDs.unpersistAll()
+    plan.scratchRDDs.clearAll()
 
     result
   }

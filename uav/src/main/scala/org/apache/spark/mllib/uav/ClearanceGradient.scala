@@ -54,7 +54,7 @@ object ClearanceGradient {
 }
 
 case class ClearanceGradient(
-                              runner: ClearanceRunner[_]
+                              runner: ClearanceSGDRunner
                             ) extends PathPlanningGradient {
 
   def id2Traces: Map[Int, Seq[TraceView]] = runner.pid2Traces
@@ -193,7 +193,7 @@ case class ClearanceGradient(
       }
     }
     println(
-//    LoggerFactory.getLogger(this.getClass).info(
+      //    LoggerFactory.getLogger(this.getClass).info(
       s"========= cumViolation: $cumViolation ========="
     )
     cumViolation

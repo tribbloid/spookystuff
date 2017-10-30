@@ -14,11 +14,12 @@ object Metrics {
 
   def accumulator[T](
                       initialValue: T,
-                      name: String,
-                      scOpt: Option[SparkContext] = None
-                    )(implicit param: AccumulatorParam[T]): Accumulator[T] = {
+                      name: String
+                    )(implicit
+                      param: AccumulatorParam[T],
+                      sc: SparkContext = SparkContext.getOrCreate()
+                    ): Accumulator[T] = {
 
-    val sc = scOpt.getOrElse(SparkContext.getOrCreate())
     sc.accumulator(initialValue, name)
   }
 }

@@ -3,7 +3,7 @@ package com.tribbloids.spookystuff
 import com.tribbloids.spookystuff.conf._
 import com.tribbloids.spookystuff.doc.{Doc, Unstructured}
 import com.tribbloids.spookystuff.dsl.DriverFactory
-import com.tribbloids.spookystuff.execution.ExecutionContext
+import com.tribbloids.spookystuff.execution.SpookyExecutionContext
 import com.tribbloids.spookystuff.extractors.{Alias, GenExtractor, GenResolved}
 import com.tribbloids.spookystuff.row.{DataRowSchema, SquashedFetchedRow, TypedField}
 import com.tribbloids.spookystuff.session.{CleanWebDriver, Cleanable, Lifespan}
@@ -129,7 +129,7 @@ abstract class SpookyEnvFixture
     }
   }
 
-  lazy val defaultEC = ExecutionContext(spooky)
+  lazy val defaultEC = SpookyExecutionContext(spooky)
   lazy val defaultSchema = DataRowSchema(defaultEC)
 
   def reloadSpooky: SpookyContext = {
@@ -139,7 +139,7 @@ abstract class SpookyEnvFixture
     result
   }
 
-  def emptySchema = DataRowSchema(ExecutionContext(spooky))
+  def emptySchema = DataRowSchema(SpookyExecutionContext(spooky))
 
   implicit def withSchema(row: SquashedFetchedRow): SquashedFetchedRow#WithSchema = new row.WithSchema(emptySchema)
   implicit def extractor2Resolved[T, R](extractor: Alias[T, R]): GenResolved[T, R] = GenResolved(

@@ -2,18 +2,19 @@ package org.apache.spark.mllib.uav
 
 import com.tribbloids.spookystuff.SpookyEnvFixture
 import com.tribbloids.spookystuff.actions.{Trace, TraceView}
-import com.tribbloids.spookystuff.execution.ExecutionContext
+import com.tribbloids.spookystuff.execution.SpookyExecutionContext
 import com.tribbloids.spookystuff.row.DataRowSchema
 import com.tribbloids.spookystuff.testutils.AssertSerializable
 import com.tribbloids.spookystuff.uav.UAVConf
 import com.tribbloids.spookystuff.uav.actions.Waypoint
 import com.tribbloids.spookystuff.uav.planning.CollisionAvoidances.Clearance
 import com.tribbloids.spookystuff.uav.spatial.point.NED
+import org.apache.spark.rdd.RDD
 
-class ClearanceRunnerSuite extends SpookyEnvFixture {
+class ClearanceSGDRunnerSuite extends SpookyEnvFixture {
 
   val clearance = Clearance()
-  val schema = DataRowSchema(ExecutionContext(spooky))
+  val schema = DataRowSchema(SpookyExecutionContext(spooky))
 
   it("ClearanceGradient is serializable") {
     val input: Map[Int, Seq[Trace]] = Map(
@@ -26,15 +27,15 @@ class ClearanceRunnerSuite extends SpookyEnvFixture {
         Waypoint(NED(0,1,0.1))
       ))
     )
-    val runner = ClearanceRunner(map2rdd(input), schema, clearance)
-    AssertSerializable(runner.gradient, condition = {(v1: ClearanceGradient,v2: ClearanceGradient) => })
+    val runner = ClearanceSGDRunner(map2rdd(input), schema, clearance)
+    AssertSerializable(runner.gradient, condition = {(v1: ClearanceGradient, v2: ClearanceGradient) => })
   }
 
-  private def map2rdd(input: Map[Int, Seq[Trace]]) = {
+  private def map2rdd(input: Map[Int, Seq[Trace]]): RDD[(Int, List[TraceView])] = {
     val rdd = spooky.sparkContext.parallelize(input.toSeq, input.size)
-      .flatMap {
-        case (i, seq) =>
-          seq.map(v => TraceView(v) -> i)
+      .mapValues {
+        seq =>
+          seq.map(v => TraceView(v)).toList
       }
     rdd
   }
@@ -54,7 +55,7 @@ class ClearanceRunnerSuite extends SpookyEnvFixture {
         Waypoint(NED(0,1,0.1))
       ))
     )
-    val runner = ClearanceRunner(map2rdd(input), schema, clearance)
+    val runner = ClearanceSGDRunner(map2rdd(input), schema, clearance)
     val data = runner.gradient.generateDataRDD
       .collect()
 
@@ -64,7 +65,8 @@ class ClearanceRunnerSuite extends SpookyEnvFixture {
         |DenseVector(1, 1, 0)
         |DenseVector(1, 0, 1)
         |DenseVector(0, 1, 1)
-      """.stripMargin
+      """.stripMargin,
+      sort = true
     )
   }
 
@@ -80,10 +82,10 @@ class ClearanceRunnerSuite extends SpookyEnvFixture {
         Waypoint(NED(0,1,0.1) -> spooky.getConf[UAVConf].home)
       ))
     )
-    val runner = ClearanceRunner(map2rdd(input), schema, clearance)
-    val output = runner.solved
+    val runner = ClearanceSGDRunner(map2rdd(input), schema, clearance)
 
-    output.foreachPartition(v => println(v.toList))
+    val output = runner.pid2Traces_flatten
+    output.foreach(v => println(v))
   }
 
   it("can optimize 2 very close unbalanced traces") {
@@ -98,10 +100,10 @@ class ClearanceRunnerSuite extends SpookyEnvFixture {
         Waypoint(NED(0,1,0.3) -> spooky.getConf[UAVConf].home)
       ))
     )
-    val runner = ClearanceRunner(map2rdd(input), schema, clearance)
-    val output = runner.solved
+    val runner = ClearanceSGDRunner(map2rdd(input), schema, clearance)
 
-    output.foreachPartition(v => println(v.toList))
+    val output = runner.pid2Traces_flatten
+    output.foreach(v => println(v))
   }
 
   it("can optimize 2 intersecting traces") {
@@ -116,10 +118,10 @@ class ClearanceRunnerSuite extends SpookyEnvFixture {
         Waypoint(NED(0,1,0) -> spooky.getConf[UAVConf].home)
       ))
     )
-    val runner = ClearanceRunner(map2rdd(input), schema, clearance)
-    val output = runner.solved
+    val runner = ClearanceSGDRunner(map2rdd(input), schema, clearance)
 
-    output.foreachPartition(v => println(v.toList))
+    val output = runner.pid2Traces_flatten
+    output.foreach(v => println(v))
   }
 
   it("can optimize 4 intersecting Waypoints") {
@@ -141,9 +143,9 @@ class ClearanceRunnerSuite extends SpookyEnvFixture {
         )
       )
     )
-    val runner = ClearanceRunner(map2rdd(input), schema, clearance)
-    val output = runner.solved
+    val runner = ClearanceSGDRunner(map2rdd(input), schema, clearance)
 
-    output.foreachPartition(v => println(v.toList))
+    val output = runner.pid2Traces_flatten
+    output.foreach(v => println(v))
   }
 }

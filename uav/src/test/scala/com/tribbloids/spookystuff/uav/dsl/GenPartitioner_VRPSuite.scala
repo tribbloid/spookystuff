@@ -4,7 +4,7 @@ import com.tribbloids.spookystuff.actions.{Trace, TraceView}
 import com.tribbloids.spookystuff.row.DataRow
 import com.tribbloids.spookystuff.uav.actions.{Takeoff, Waypoint}
 import com.tribbloids.spookystuff.uav.planning.PreferUAV
-import com.tribbloids.spookystuff.uav.planning.MinimaxSolvers.JSpritFixture
+import com.tribbloids.spookystuff.uav.planning.VRPOptimizers.VRPFixture
 import com.tribbloids.spookystuff.uav.spatial.point.NED
 import com.tribbloids.spookystuff.uav.system.UAV
 import com.tribbloids.spookystuff.uav.telemetry.LinkUtils
@@ -13,7 +13,7 @@ import com.tribbloids.spookystuff.uav.{DummyUAVFixture, UAVConf, UAVTestUtils}
 /**
   * Created by peng on 16/06/17.
   */
-class JSpritGenPartitionerSuite extends DummyUAVFixture with JSpritFixture {
+class GenPartitioner_VRPSuite extends DummyUAVFixture with VRPFixture {
 
   override def parallelism: Int = 4
 
@@ -47,7 +47,7 @@ class JSpritGenPartitionerSuite extends DummyUAVFixture with JSpritFixture {
       }
 
     spooky.rebroadcast()
-    val gp = getJSprit
+    val gp = getVRP
     val inst = gp.Inst(defaultSchema)
 
     val groupedRDD = inst.groupByKey(rdd)

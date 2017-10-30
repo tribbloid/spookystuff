@@ -1,6 +1,5 @@
 package com.tribbloids.spookystuff.conf
 
-import com.tribbloids.spookystuff.Metrics
 import com.tribbloids.spookystuff.utils.Static
 
 import scala.collection.mutable

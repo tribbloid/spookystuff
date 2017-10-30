@@ -4,7 +4,7 @@ import com.tribbloids.spookystuff.actions.{Action, RewriteRule, Trace, TraceView
 import com.tribbloids.spookystuff.row.DataRowSchema
 import com.tribbloids.spookystuff.uav.actions.{Takeoff, UAVNavigation}
 
-object InsertPrevNavRule extends RewriteRule[Trace] {
+object TakeoffInsertCtxRule extends RewriteRule[Trace] {
 
   /**
     * @param v

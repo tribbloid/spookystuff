@@ -11,7 +11,7 @@ import scala.language.implicitConversions
 //this is a special StructType that carries more metadata
 //TODO: override sqlType, serialize & deserialize to compress into InternalRow
 case class DataRowSchema(
-                          ec: ExecutionContext,
+                          ec: SpookyExecutionContext,
                           fieldTypes: ListMap[Field, DataType] = ListMap.empty
                         ) extends ScalaUDT[DataRow] {
 

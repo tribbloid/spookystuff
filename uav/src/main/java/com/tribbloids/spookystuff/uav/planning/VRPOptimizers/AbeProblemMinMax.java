@@ -1,4 +1,4 @@
-package com.tribbloids.spookystuff.uav.planning.MinimaxSolvers;
+package com.tribbloids.spookystuff.uav.planning.VRPOptimizers;
 
 import com.graphhopper.jsprit.analysis.toolbox.AlgorithmSearchProgressChartListener;
 import com.graphhopper.jsprit.analysis.toolbox.Plotter;

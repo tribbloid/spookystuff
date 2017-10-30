@@ -22,7 +22,7 @@ class CostEstimatorSuite extends SpookyEnvFixture {
         Waypoint(p1),
         Waypoint(p2)
       )
-      val estimator = CostEstimator.Default()
+      val estimator = CostEstimator.L2Distance()
       assert(estimator.estimate(trace, defaultSchema) == 5.0)
       //      assert(estimator.estimate(trace.reverse, spooky) == 5.0)
     }
@@ -34,7 +34,7 @@ class CostEstimatorSuite extends SpookyEnvFixture {
         Waypoint(p1),
         Waypoint(p2)
       )
-      val estimator = CostEstimator.Default()
+      val estimator = CostEstimator.L2Distance()
       assert(estimator.estimate(trace, defaultSchema) === 5.0)
       assert(estimator.estimate(trace.reverse, defaultSchema) === 5.0)
     }
@@ -46,7 +46,7 @@ class CostEstimatorSuite extends SpookyEnvFixture {
         Waypoint(p1),
         Waypoint(p2)
       )
-      val estimator = CostEstimator.Default()
+      val estimator = CostEstimator.L2Distance()
       assert(estimator.estimate(trace, defaultSchema) === 5.0)
       assert(estimator.estimate(trace.reverse, defaultSchema) === 5.0)
     }
@@ -58,7 +58,7 @@ class CostEstimatorSuite extends SpookyEnvFixture {
         Waypoint(p1),
         Waypoint(p2)
       )
-      val estimator = CostEstimator.Default()
+      val estimator = CostEstimator.L2Distance()
       assert(estimator.estimate(trace, defaultSchema) === 5.0)
       assert(estimator.estimate(trace.reverse, defaultSchema) === 5.0)
     }

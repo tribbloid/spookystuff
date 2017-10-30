@@ -2,9 +2,9 @@ package com.tribbloids.spookystuff.uav.dsl
 
 import com.tribbloids.spookystuff.actions.TraceView
 import com.tribbloids.spookystuff.dsl.GenPartitioner
-import com.tribbloids.spookystuff.dsl.GenPartitionerLike.Instance
+import com.tribbloids.spookystuff.dsl.GenPartitioner.Instance
 import com.tribbloids.spookystuff.row.{BeaconRDD, DataRowSchema}
-import com.tribbloids.spookystuff.uav.actions.UAVNavigation
+import com.tribbloids.spookystuff.uav.actions.mixin.HasCost
 import com.tribbloids.spookystuff.uav.planning._
 import org.apache.spark.rdd.RDD
 
@@ -15,23 +15,30 @@ import scala.reflect.ClassTag
   */
 object GenPartitioners {
 
-  case class MinimaxCost(
-                          base: GenPartitioner = {
-                            com.tribbloids.spookystuff.dsl.GenPartitioners.Wide()
-                          },
+  case class VRP(
+                  base: GenPartitioner = {
+                    com.tribbloids.spookystuff.dsl.GenPartitioners.Wide()
+                  },
 
-                          // if missing, use ALL OF THEM!
-                          numUAVOverride: Option[Int] = None,
+                  // if missing, use ALL OF THEM!
+                  numUAVOverride: Option[Int] = None,
 
-                          // how much effort optimizer spend to reduce total length instead of max length
-                          cohesiveness: Double = 0.05,
-                          solver: MinimaxSolver = MinimaxSolvers.JSprit,
-                          collisionAvoidance: Option[CollisionAvoidance] = None,
+                  // how much effort optimizer spend to reduce total length instead of max length
+                  cohesiveness: Double = 0.05,
 
-                          // for debugging only.
-                          solutionPlotPathOpt: Option[String] = None,
-                          progressPlotPathOpt: Option[String] = None
-                        ) extends GenPartitioner {
+                  // for debugging only.
+                  solutionPlotPathOpt: Option[String] = None,
+                  covergencePlotPathOpt: Option[String] = None,
+
+                  // only applies to HasCost
+                  optimizer: VRPOptimizer = VRPOptimizers.JSprit_Minimax,
+
+                  // only applies to UAVNavigation
+                  collisionAvoidance: Option[VRPOptimizer] = {
+                    None
+                    //                    Some(CollisionAvoidances.Clearance())
+                  }
+                ) extends GenPartitioner {
 
     def getInstance[K >: TraceView: ClassTag](schema: DataRowSchema): Instance[K] = {
       Inst[K](schema)
@@ -57,7 +64,7 @@ object GenPartitioners {
             case (k: TraceView, v) =>
               val c = k.children
               val result: (Option[TraceView], Option[K]) = {
-                if (c.exists(_.isInstanceOf[UAVNavigation])) Some(k) -> None
+                if (c.exists(_.isInstanceOf[HasCost])) Some(k) -> None
                 else None -> Some(k: K)
               }
               result -> v
@@ -65,29 +72,33 @@ object GenPartitioners {
               val result: (Option[TraceView], Option[K]) = None -> Some(k)
               result -> v
           }
-        //          .mapValues(v => v.toList)
 
         ec.scratchRDDs.persist(bifurcated)
 
-        val hasNavRDD: RDD[(TraceView, V)] = bifurcated
+        val hasCostRDD: RDD[(TraceView, V)] = bifurcated
           .flatMap(tt => tt._1._1.map(v => v -> tt._2))
 
-        var solvedRDD = solver.solve(MinimaxCost.this, schema, hasNavRDD)
-        solvedRDD = solvedRDD.mapPartitions {
+        var optimizedRDD: RDD[(TraceView, V)] = {
+          val instance = optimizer.apply(VRP.this, schema)
+          instance.reduceByKey(hasCostRDD, reducer, None) //add beaconRDD
+        }
+
+        optimizedRDD = optimizedRDD.mapPartitions {
           itr =>
-            InsertPrevNavRule._rewritePartition[V](itr, schema)
+            TakeoffInsertCtxRule._rewritePartition[V](itr, schema)
         }
         collisionAvoidance.foreach {
           ca =>
-            solvedRDD = ca.solve(solvedRDD, schema)
+            val instance = ca.apply(VRP.this, schema)
+            optimizedRDD = instance.reduceByKey(optimizedRDD, reducer, None)
         }
 
-        val trafficControlledRDD = solvedRDD.map(tuple => (tuple._1: K) -> tuple._2)
+        val optimizedRDD_final = optimizedRDD.map(tuple => (tuple._1: K) -> tuple._2)
 
         val hasNoCostRDD: RDD[(K, V)] = bifurcated
           .flatMap(tt => tt._1._2.map(v => v -> tt._2))
 
-        val result = trafficControlledRDD.union(hasNoCostRDD)
+        val result = optimizedRDD_final.union(hasNoCostRDD)
 
         result
       }

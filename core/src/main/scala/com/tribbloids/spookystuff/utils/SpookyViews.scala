@@ -4,9 +4,10 @@ import java.security.PrivilegedAction
 
 import com.tribbloids.spookystuff.caching.ConcurrentMap
 import com.tribbloids.spookystuff.row._
+import com.tribbloids.spookystuff.utils.locality.PartitionIdPassthrough
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.DataFrame
-import org.apache.spark.storage.StorageLevel
+import org.apache.spark.storage.{RDDInfo, StorageLevel}
 import org.apache.spark.{HashPartitioner, SparkContext, TaskContext}
 
 import scala.collection.generic.CanBuildFrom
@@ -288,9 +289,20 @@ case object SpookyViews {
     //    Unit
     //  }
 
-    def isPersisted: Boolean = {
+    def injectPassthroughPartitioner(implicit ev: ClassTag[T]): RDD[(Int, T)] = {
+
+      val withPID = self.map(v => TaskContext.get().partitionId() -> v)
+      val result = withPID.partitionBy(new PartitionIdPassthrough(withPID.partitions.length))
+      result
+    }
+
+    def getInfo: RDDInfo = {
       val rddInfos = self.sparkContext.getRDDStorageInfo
-      rddInfos.find(_.id == self.id).get.storageLevel != StorageLevel.NONE
+      rddInfos.find(_.id == self.id).get
+    }
+
+    def isPersisted: Boolean = {
+      getInfo.storageLevel != StorageLevel.NONE
     }
 
     def assertIsBeacon(): Unit = {
@@ -394,41 +406,6 @@ case object SpookyViews {
             None
           }
       }
-    }
-
-    def broadcastSemiCogroup[V2: ClassTag](
-                                            other: RDD[(K, V2)]
-                                          ): RDD[(K, (V, Iterable[V2]))] = {
-
-      //      val grouped: RDD[(K, Iterable[V])] = self.groupByKey()
-      //      val a = grouped.map(_._2.toList).collect()
-      val otherMap = other.groupByKey().collectAsMap()
-      val otherMapBroadcast = self.sparkContext.broadcast(otherMap)
-
-      val cogrouped: RDD[(K, (V, Iterable[V2]))] = self.mapPartitions {
-        bigItr =>
-          val otherMap = otherMapBroadcast.value
-          val result = bigItr.map {
-            case (k, itr) =>
-              val itr2 = otherMap.getOrElse(k, Nil)
-              k -> (itr, itr2)
-          }
-          result
-      }
-      cogrouped
-    }
-
-    /**
-      * always preserve partition locality of self
-      * @param other
-      * @tparam V2
-      * @return
-      */
-    def localityPreservingSemiCogroup[V2: ClassTag](
-                                                     other: RDD[(K, V2)]
-                                                   ): RDD[(K, (V, Iterable[V2]))] = {
-
-      broadcastSemiCogroup(other)
     }
 
     //    /**

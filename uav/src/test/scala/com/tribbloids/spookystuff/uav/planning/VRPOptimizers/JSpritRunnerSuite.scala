@@ -1,4 +1,4 @@
-package com.tribbloids.spookystuff.uav.planning.MinimaxSolvers
+package com.tribbloids.spookystuff.uav.planning.VRPOptimizers
 
 import com.graphhopper.jsprit.core.problem.VehicleRoutingProblem
 import com.graphhopper.jsprit.core.util.{FastVehicleRoutingTransportCostsMatrix, VehicleRoutingTransportCostsMatrix}
@@ -15,26 +15,24 @@ import com.tribbloids.spookystuff.uav.telemetry.UAVStatus
 /**
   * Created by peng on 7/3/17.
   */
-trait JSpritFixture extends SpookyEnvFixture {
+trait VRPFixture extends SpookyEnvFixture {
 
   var i = 1
 
-  def getJSprit: GenPartitioners.MinimaxCost = {
+  def getVRP: GenPartitioners.VRP = {
     val solutionPath = s"log/JSprit/${this.getClass.getSimpleName}.$i.solution.png"
     val progressPath = s"log/JSprit/${this.getClass.getSimpleName}.$i.progress.png"
     i += 1
-    GenPartitioners.MinimaxCost(
+    GenPartitioners.VRP(
       numUAVOverride = Some(this.parallelism),
       cohesiveness = 0,
       solutionPlotPathOpt = Some(solutionPath),
-      progressPlotPathOpt = Some(progressPath)
+      covergencePlotPathOpt = Some(progressPath)
     )
   }
 }
 
-class JSpritSolverSuite extends JSpritFixture {
-
-  import JSprit.Solution
+class JSpritRunnerSuite extends VRPFixture {
 
   val waypoints: Array[TraceView] = Array[TraceView](
     List(Waypoint(NED(3, 4, 0) -> UAVConf.DEFAULT_HOME_LOCATION: Location)),
@@ -43,7 +41,7 @@ class JSpritSolverSuite extends JSpritFixture {
   )
 
   it("getCostMatrix") {
-    val mat: FastVehicleRoutingTransportCostsMatrix = Solution
+    val mat: FastVehicleRoutingTransportCostsMatrix = JSpritRunner
       .getCostMatrix(defaultSchema, waypoints.zipWithIndex)
     //TODO: add assertion
 
@@ -74,18 +72,18 @@ class JSpritSolverSuite extends JSpritFixture {
     it("can evaluate 1 route") {
       val location = UAVConf.DEFAULT_HOME_LOCATION
       val uav = UAVStatus(UAV(Seq("dummy@localhost")), None, location, location)
-      val solver = Solution[Int](getJSprit, defaultSchema, Array(uav), waypoints.map(v => v -> 0))
+      val runner = JSpritRunner(getVRP, defaultSchema, Array(uav), waypoints)
 
-      val solution = solver.solve
+      val solution = runner.solve
 
-      val cost = Solution.getObjectiveFunction(0).getCosts(solution)
+      val cost = JSpritRunner.getObjectiveFunction(0).getCosts(solution)
       assert((cost * 1000).toInt == 10000)
 
-      val map = solver.getUAV2RowsMap
+      val map = runner.getUAV2Trace
 
       val first = map.head
       val trace = List(Waypoint(first._1.currentLocation)) ++
-        first._2.flatMap(_._1.children)
+        first._2.flatMap(_.children)
 
       val cost2 = spooky.getConf[UAVConf].costEstimator.estimate(trace, defaultSchema)
       assert(cost == cost2)
@@ -98,19 +96,19 @@ class JSpritSolverSuite extends JSpritFixture {
           UAVStatus(UAV(Seq(s"$v@localhost")), None, location, location)
       }
 
-      val solver = Solution[Int](getJSprit, defaultSchema, uavs, waypoints.map(v => v -> 0))
+      val runner = JSpritRunner(getVRP, defaultSchema, uavs, waypoints)
 
-      val solution = solver.solve
+      val solution = runner.solve
 
-      val cost = Solution.getObjectiveFunction(0).getCosts(solution)
+      val cost = JSpritRunner.getObjectiveFunction(0).getCosts(solution)
       assert((cost * 1000).toInt == 5000)
 
-      val map = solver.getUAV2RowsMap
+      val map = runner.getUAV2Trace
 
       val traces = map.toSeq.map {
         v =>
           List(Waypoint(v._1.currentLocation)) ++
-            v._2.flatMap(_._1.children)
+            v._2.flatMap(_.children)
       }
 
       val costs2 = traces.map {
@@ -134,7 +132,7 @@ class JSpritSolverSuite extends JSpritFixture {
 
     val vrp = vrpBuilder.build
 
-    val tuple = Solution.solveVRP(vrp, getJSprit)
+    val tuple = JSpritRunner.solveVRP(vrp, getVRP)
 
     System.out.println("cost: " + tuple._2)
     assert(tuple._2 <= 1011.777)

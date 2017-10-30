@@ -9,10 +9,11 @@ import scala.reflect.ClassTag
 /**
   * Created by peng on 27/01/17.
   */
-case class BroadcastWrapper[T: ClassTag](
-                                          @transient sc: SparkContext,
-                                          @transient v: T
-                                        ) extends ShippingMarks {
+case class Broadcasted[T: ClassTag](
+                                     @transient v: T
+                                   )(implicit
+                                     @transient sc: SparkContext = SparkContext.getOrCreate()
+                                   ) extends ShippingMarks {
 
   var broadcasted: Broadcast[T] = sc.broadcast(v)
 

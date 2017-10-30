@@ -176,13 +176,13 @@ case class ExplorePlan(
 
       //      val reducedStateRDD_+ : RDD[(TraceView, Open_Visited)] = betweenEpochReduce(stateRDD_+, combinedReducer)
 
-      tempRDDs.persist(stateRDD_+, spooky.spookyConf.defaultStorageLevel)
+      persist(stateRDD_+, spooky.spookyConf.defaultStorageLevel)
       if (checkpointInterval >0 && i % checkpointInterval == 0) {
         stateRDD_+.checkpoint()
       }
 
       stateRDD_+.count()
-      tempRDDs.unpersist(stateRDD)
+      scratchRDDs.unpersist(stateRDD)
       if (openSetSize.value == 0) stop = true
 
       stateRDD = stateRDD_+
@@ -212,7 +212,6 @@ case class ExplorePlan(
                           stateRDD: RDD[(TraceView, Open_Visited)],
                           reducer: (Open_Visited, Open_Visited) => Open_Visited
                         ): RDD[(TraceView, Open_Visited)] = {
-    val beaconRDDOpt = this.beaconRDDOpt
     gpImpl.reduceByKey[Open_Visited](stateRDD, reducer, beaconRDDOpt)
   }
 }

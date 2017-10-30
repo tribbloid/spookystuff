@@ -3,42 +3,31 @@ package org.apache.spark.mllib.uav
 import com.tribbloids.spookystuff.actions.TraceView
 import com.tribbloids.spookystuff.row.DataRowSchema
 import com.tribbloids.spookystuff.uav.planning.CollisionAvoidances.Clearance
-import org.apache.spark.TaskContext
 import org.apache.spark.mllib.optimization.{GradientDescent, SquaredL2Updater}
 import org.apache.spark.rdd.RDD
 
 import scala.collection.immutable
-import scala.reflect.ClassTag
 
 /**
   *
   * @param schema
   */
-case class ClearanceRunner[V: ClassTag](
-                                         @transient rdd: RDD[(TraceView, V)],
-                                         schema: DataRowSchema,
-                                         outer: Clearance
-                                       ) {
+case class ClearanceSGDRunner(
+                               @transient pid2TracesRDD: RDD[(Int, List[TraceView])],
+                               schema: DataRowSchema,
+                               outer: Clearance
+                             ) {
 
-  import com.tribbloids.spookystuff.utils.SpookyViews._
+  val pid2Traces: Map[Int, Seq[TraceView]] = pid2TracesRDD.collectAsMap()
+    .toMap.map(identity)
 
-  val updater = new SquaredL2Updater()
-
-  schema.ec.scratchRDDs.persist(rdd)
-  val pid2TracesRDD: RDD[(Int, List[TraceView])] = {
-    rdd.keys
-      .mapPartitions {
-        itr =>
-          val result: (Int, List[TraceView]) = TaskContext.get().partitionId() -> itr.toList
-          Iterator(result)
-      }
-  }
-  val pid2Traces: Map[Int, Seq[TraceView]] = pid2TracesRDD.collectAsMap().toMap
   val gradient = ClearanceGradient(this)
+  val updater = new SquaredL2Updater()
 
   //TODO: result may be a very large object that requires shipping
   //should optimize after PoC
-  def conversion: Seq[(TraceView, TraceView)] = {
+  @transient lazy val conversion: Seq[(TraceView, TraceView)] = {
+
     val data = gradient.generateDataRDD
     val (weights, convergence) = GradientDescent.runMiniBatchSGD(
       data = data,
@@ -81,22 +70,41 @@ case class ClearanceRunner[V: ClassTag](
     result
   }
 
-  def solved: RDD[(TraceView, V)] = {
-    val solvedMappings = this.conversion
-    val solvedMappingsRDD: RDD[(TraceView, TraceView)] = schema.spooky.sparkContext
-      .parallelize(solvedMappings)
+  @transient lazy val conversionMap = Map(conversion: _*)
+  @transient lazy val conversionMap_broadcast = schema.spooky.sparkContext.broadcast(conversionMap)
 
-    val semiCogrouped = rdd
-      .localityPreservingSemiCogroup(solvedMappingsRDD)
-
-    val result: RDD[(TraceView, V)] = semiCogrouped
-      .values
-      .map {
-        v =>
-          assert(v._2.size == 1, "IMPOSSIBLE!")
-          v._2.head -> v._1
-      }
-
-    result
+  @transient lazy val pid2Traces_converted: Map[Int, Seq[TraceView]] = pid2Traces.mapValues {
+    v =>
+      v.map(vv => conversionMap(vv))
   }
+
+  @transient lazy val pid2Traces_flatten: List[(Int, TraceView)] = pid2Traces_converted.toList.flatMap {
+    case (i, v) =>
+      v.map {
+        vv =>
+          i -> vv
+      }
+  }
+
+  //  def solved: RDD[(TraceView, TraceView)] = {
+  //    val solvedMappings = this.conversion
+  //    val solvedMappingsRDD: RDD[(TraceView, TraceView)] = schema.spooky.sparkContext
+  //      .parallelize(solvedMappings)
+  //
+  //    schema.ec.scratchRDDs.persist(rdd, schema.spooky.spookyConf.defaultStorageLevel)
+  //    val locality = LocalityRDDView(rdd)
+  //
+  //    val semiCogrouped: RDD[(TraceView, (V, Iterable[TraceView]))] = locality
+  //      .cogroupBase(solvedMappingsRDD)
+  //
+  //    val result: RDD[(TraceView, V)] = semiCogrouped
+  //      .values
+  //      .map {
+  //        v =>
+  //          assert(v._2.size == 1, "IMPOSSIBLE!")
+  //          v._2.head -> v._1
+  //      }
+  //
+  //    result
+  //  }
 }

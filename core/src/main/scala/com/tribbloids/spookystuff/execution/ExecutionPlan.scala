@@ -9,14 +9,13 @@ import org.apache.spark.sql.types.DataType
 import org.apache.spark.storage.StorageLevel
 
 import scala.collection.immutable.ListMap
-import scala.collection.mutable.ArrayBuffer
 import scala.language.implicitConversions
 
 //right now it vaguely resembles SparkPlan in catalyst
 //TODO: may subclass SparkPlan in the future to generate DataFrame directly, but not so fast
 abstract class ExecutionPlan(
                               val children: Seq[ExecutionPlan],
-                              val ec: ExecutionContext
+                              val ec: SpookyExecutionContext
                             ) extends TreeNode[ExecutionPlan] with NOTSerializable {
 
   def this(
@@ -28,7 +27,7 @@ abstract class ExecutionPlan(
   )
 
   def spooky = ec.spooky
-  def tempRDDs = ec.scratchRDDs.tempRDDs
+  def scratchRDDs = ec.scratchRDDs
 
   //Cannot be lazy, always defined on construction
   val schema: DataRowSchema = DataRowSchema(
@@ -91,39 +90,11 @@ abstract class ExecutionPlan(
   def unsquashedRDD: RDD[FetchedRow] = rdd()
     .flatMap(v => new v.WithSchema(schema).unsquash)
 
-  implicit class Views(val self: ArrayBuffer[RDD[_]]) {
+  def persist[T](
+                  rdd: RDD[T],
+                  storageLevel: StorageLevel = ExecutionPlan.this.spooky.spookyConf.defaultStorageLevel
+                ) = scratchRDDs.persist(rdd, storageLevel)
 
-    def persist[T](
-                    rdd: RDD[T],
-                    storageLevel: StorageLevel = ExecutionPlan.this.spooky.spookyConf.defaultStorageLevel
-                  ): RDD[T] = {
-      if (rdd.getStorageLevel == StorageLevel.NONE) {
-        self += rdd.persist(storageLevel)
-      }
-      rdd
-    }
-
-    def unpersist[T](
-                      rdd: RDD[T],
-                      blocking: Boolean = false
-                    ): RDD[T] = {
-      rdd.unpersist(blocking)
-      self -= rdd
-      rdd
-    }
-
-    def unpersistAll(
-                      except: Set[RDD[_]] = Set(),
-                      blocking: Boolean = false
-                    ): Unit = {
-      val unpersisted = self.filter(except.contains)
-        .map {
-          _.unpersist(blocking)
-        }
-
-      self --= unpersisted
-    }
-  }
 }
 
 abstract class UnaryPlan(

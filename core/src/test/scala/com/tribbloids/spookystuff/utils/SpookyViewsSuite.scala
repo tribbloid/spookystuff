@@ -1,8 +1,11 @@
 package com.tribbloids.spookystuff.utils
 
 import com.tribbloids.spookystuff.SpookyEnvFixture
+import com.tribbloids.spookystuff.TestBeans._
 import com.tribbloids.spookystuff.session.LifespanContext
 import com.tribbloids.spookystuff.testutils.TestHelper
+import com.tribbloids.spookystuff.utils.locality.PartitionIdPassthrough
+import org.apache.spark.rdd.RDD
 import org.apache.spark.{SparkEnv, TaskContext}
 
 import scala.util.Random
@@ -91,6 +94,51 @@ class SpookyViewsSuite extends SpookyEnvFixture {
   it("\\\\ can handle null component") {
 
     assert(nullStr \\ nullStr \\ "abc" \\ null \\ null == "abc")
+  }
+
+
+  import com.tribbloids.spookystuff.utils.SpookyViews._
+
+  it("injectPassthroughPartitioner should not move partitions") {
+    val rdd1: RDD[WithID] = sc.parallelize(1 to 100)
+      .map(v => WithID(v))
+    val rdd2: RDD[(Int, WithID)] = rdd1.injectPassthroughPartitioner
+    assert(rdd2.partitioner.get.getClass == classOf[PartitionIdPassthrough])
+
+    val zipped = rdd1.zipPartitions(rdd2) {
+      (itr1, itr2) =>
+        val a1 = itr1.toList.sortBy(_.hashCode)
+        val a2 = itr2.map(_._2).toList.sortBy(_.hashCode)
+        Iterator(
+          a1 -> a2
+        )
+    }
+
+    val array = zipped.collect()
+    array.foreach(println)
+    assert(array.count(v => v._1 == v._2) == array.length)
+  }
+
+  //TODO: doesn't work by now
+  ignore("... even if the RDD is not Serializable") {
+
+    val rdd1: RDD[WithID] = sc.parallelize(1 to 100)
+      .map(v => NOTSerializableID(v))
+    val rdd2: RDD[(Int, WithID)] = rdd1.injectPassthroughPartitioner
+    assert(rdd2.partitioner.get.getClass == classOf[PartitionIdPassthrough])
+
+    val zipped = rdd1.zipPartitions(rdd2) {
+      (itr1, itr2) =>
+        val a1 = itr1.toList.sortBy(_.hashCode)
+        val a2 = itr2.map(_._2).toList.sortBy(_.hashCode)
+        Iterator(
+          a1 -> a2
+        )
+    }
+
+    val array = zipped.collect()
+    array.foreach(println)
+    assert(array.count(v => v._1 == v._2) == array.length)
   }
 
   it("mapAtLeastOncePerExecutorCore will run properly") {

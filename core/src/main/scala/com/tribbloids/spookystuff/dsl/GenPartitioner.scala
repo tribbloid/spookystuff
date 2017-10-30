@@ -1,7 +1,7 @@
 package com.tribbloids.spookystuff.dsl
 
 import com.tribbloids.spookystuff.actions.TraceView
-import com.tribbloids.spookystuff.dsl.GenPartitionerLike.Instance
+import com.tribbloids.spookystuff.dsl.GenPartitioner.Instance
 import com.tribbloids.spookystuff.row.{BeaconRDD, DataRowSchema}
 import org.apache.spark.Partitioner
 import org.apache.spark.rdd.RDD
@@ -19,7 +19,7 @@ sealed trait GenPartitionerLike[+C] {
   def getInstance[K >: C: ClassTag](schema: DataRowSchema): Instance[K]
 }
 
-object GenPartitionerLike {
+object GenPartitioner {
 
   import com.tribbloids.spookystuff.utils.SpookyViews._
 

@@ -4,6 +4,7 @@ import com.tribbloids.spookystuff.session.LocalCleanable
 import com.tribbloids.spookystuff.utils.ShippingMarks
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.DataFrame
+import org.apache.spark.storage.StorageLevel
 
 import scala.collection.mutable.ArrayBuffer
 import scala.util.Random
@@ -47,20 +48,31 @@ case class ScratchRDDs(
     df.persist()
     tempDFs += df
   }
-  def persist(rdd: RDD[_]): Unit = {
+  def persist[T](
+                  rdd: RDD[T],
+                  storageLevel: StorageLevel = StorageLevel.MEMORY_ONLY
+                ): RDD[T] = {
 
-    rdd.persist()
-    tempRDDs += rdd
+    if (rdd.getStorageLevel == StorageLevel.NONE) {
+      tempRDDs += rdd.persist(storageLevel)
+    }
+    rdd
   }
 
-  def unpersist(df: DataFrame): Unit = {
+  def unpersistDF(
+                   df: DataFrame,
+                   blocking: Boolean = false
+                 ): Unit = {
 
-    df.unpersist()
+    df.unpersist(blocking)
     tempDFs -= df
   }
-  def unpersist(rdd: RDD[_]): Unit = {
+  def unpersist(
+                 rdd: RDD[_],
+                 blocking: Boolean = false
+               ): Unit = {
 
-    rdd.unpersist()
+    rdd.unpersist(blocking)
     tempRDDs -= rdd
   }
 
@@ -72,17 +84,19 @@ case class ScratchRDDs(
     tempTables.clear()
   }
 
-  def clearAll(): Unit = {
+  def clearAll(
+                blocking: Boolean = false
+              ): Unit = {
 
     clearTables()
     tempDFs.foreach {
       df =>
-        df.unpersist(false)
+        df.unpersist(blocking)
     }
     tempDFs.clear()
     tempRDDs.foreach {
       rdd =>
-        rdd.unpersist(false)
+        rdd.unpersist(blocking)
     }
     tempRDDs.clear()
   }
