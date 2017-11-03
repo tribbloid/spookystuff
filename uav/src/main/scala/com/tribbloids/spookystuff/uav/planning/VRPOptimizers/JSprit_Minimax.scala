@@ -1,6 +1,7 @@
 package com.tribbloids.spookystuff.uav.planning.VRPOptimizers
 
 import com.tribbloids.spookystuff.actions.TraceView
+import com.tribbloids.spookystuff.dsl.GenPartitioner.RepartitionKeyImpl
 import com.tribbloids.spookystuff.row.{BeaconRDD, DataRowSchema}
 import com.tribbloids.spookystuff.uav.dsl.GenPartitioners
 import com.tribbloids.spookystuff.uav.planning._
