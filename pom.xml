@@ -107,11 +107,11 @@
     <!--</profile>-->
 
     <!--<profile>-->
-      <!--<id>spark-1.4</id>-->
-      <!--<properties>-->
-        <!--<spark.version>1.4.1</spark.version>-->
-        <!--<spark.binary.version>1.4</spark.binary.version>-->
-      <!--</properties>-->
+    <!--<id>spark-1.4</id>-->
+    <!--<properties>-->
+    <!--<spark.version>1.4.1</spark.version>-->
+    <!--<spark.binary.version>1.4</spark.binary.version>-->
+    <!--</properties>-->
     <!--</profile>-->
 
     <profile>
@@ -221,25 +221,45 @@
     </repository>
 
     <!--<repository>-->
-      <!--<id>maven.oracle.com</id>-->
-      <!--<releases>-->
-        <!--<enabled>true</enabled>-->
-      <!--</releases>-->
-      <!--<snapshots>-->
-        <!--<enabled>false</enabled>-->
-      <!--</snapshots>-->
-      <!--<url>https://maven.oracle.com</url>-->
-      <!--<layout>default</layout>-->
+    <!--<id>maven.oracle.com</id>-->
+    <!--<releases>-->
+    <!--<enabled>true</enabled>-->
+    <!--</releases>-->
+    <!--<snapshots>-->
+    <!--<enabled>false</enabled>-->
+    <!--</snapshots>-->
+    <!--<url>https://maven.oracle.com</url>-->
+    <!--<layout>default</layout>-->
     <!--</repository>-->
   </repositories>
 
   <dependencies>
+    <dependency>
+      <groupId>org.scala-lang</groupId>
+      <artifactId>scala-compiler</artifactId>
+      <version>${scala.version}</version>
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.scala-lang</groupId>
+      <artifactId>scala-library</artifactId>
+      <version>${scala.version}</version>
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.scala-lang</groupId>
+      <artifactId>scala-reflect</artifactId>
+      <version>${scala.version}</version>
+      <scope>provided</scope>
+    </dependency>
+
     <dependency>
       <groupId>junit</groupId>
       <artifactId>junit</artifactId>
       <version>4.12</version>
       <scope>test</scope>
     </dependency>
+
     <dependency>
       <groupId>org.scalatest</groupId>
       <artifactId>scalatest_${scala.binary.version}</artifactId>
@@ -284,6 +304,7 @@
     <!--<version>${spark.version}</version>-->
     <!--<scope>provided</scope>-->
     <!--</dependency>-->
+
   </dependencies>
 
   <build>
