@@ -11,36 +11,20 @@
 
   <artifactId>spookystuff-mldsl</artifactId>
 
-  <profiles>
+  <dependencies>
+    <dependency>
+      <groupId>com.github.jlmauduy</groupId>
+      <artifactId>ascii-graphs_2.11</artifactId>
+      <version>0.0.7</version>
 
-    <!--TODO: unify them-->
-    <profile>
-      <id>scala-2.10</id>
-      <activation>
-        <activeByDefault>true</activeByDefault>
-      </activation>
-
-      <dependencies>
-        <dependency>
-          <groupId>com.github.mdr</groupId>
-          <artifactId>ascii-graphs_2.10</artifactId>
-          <version>0.0.6</version>
-        </dependency>
-      </dependencies>
-    </profile>
-
-    <profile>
-      <id>scala-2.11</id>
-
-      <dependencies>
-        <dependency>
-          <groupId>com.github.jlmauduy</groupId>
-          <artifactId>ascii-graphs_2.11</artifactId>
-          <version>0.0.7</version>
-        </dependency>
-      </dependencies>
-    </profile>
-  </profiles>
+      <exclusions>
+        <exclusion>
+          <groupId>org.scala-lang</groupId>
+          <artifactId>scala-library</artifactId>
+        </exclusion>
+      </exclusions>
+    </dependency>
+  </dependencies>
 
   <build>
     <plugins>
