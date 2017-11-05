@@ -118,10 +118,10 @@ case class DataRow(
   //T cannot <: AnyVal otherwise will run into https://issues.scala-lang.org/browse/SI-6967
   //getIntIterable cannot use it for the same reason
   def getTypedArray[T <: Any: ClassTag](field: Field): Option[Array[T]] = {
-    val res = data.get(field).map {
+    val result = data.get(field).map {
       v => SpookyUtils.asArray[T](v)
     }
-    res
+    result
   }
   def getArray(field: Field): Option[Array[Any]] = getTypedArray[Any](field)
 

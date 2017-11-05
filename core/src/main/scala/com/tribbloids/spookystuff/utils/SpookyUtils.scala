@@ -130,7 +130,7 @@ These special characters are often called "metacharacters".
 
     obj match {
       case v: TraversableOnce[Any] => v.toArray.filterByType[T]
-      case v: Array[Any] => v.filterByType[T]
+      case v: Array[T] => v.filterByType[T]
       case _ =>
         Array[Any](obj).filterByType[T]
     }
@@ -142,7 +142,7 @@ These special characters are often called "metacharacters".
 
     obj match {
       case v: TraversableOnce[Any] => v.toArray.filterByType[T]
-      case v: Array[Any] => v.filterByType[T].toIterable
+      case v: Array[T] => v.filterByType[T].toIterable
       case _ =>
         Array[Any](obj).filterByType[T]
     }
