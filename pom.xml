@@ -381,15 +381,6 @@
 
     <plugins>
 
-
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-install-plugin</artifactId>
-        <configuration>
-          <artifactId>${project.artifactId}_${scala.binary.version}</artifactId>
-        </configuration>
-      </plugin>
-
       <plugin>
         <groupId>org.codehaus.mojo</groupId>
         <artifactId>flatten-maven-plugin</artifactId>
@@ -413,9 +404,6 @@
           </execution>
         </executions>
 
-        <configuration>
-          <updatePomFile></updatePomFile>
-        </configuration>
       </plugin>
 
       <plugin>
