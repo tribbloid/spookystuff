@@ -478,7 +478,7 @@
           <scalaVersion>${scala.version}</scalaVersion>
           <scalaCompatVersion>${scala.binary.version}</scalaCompatVersion>
           <recompileMode>incremental</recompileMode>
-          <!--<useZincServer>true</useZincServer>-->
+          <useZincServer>true</useZincServer>
           <args>
             <arg>-unchecked</arg>
             <arg>-deprecation</arg>
