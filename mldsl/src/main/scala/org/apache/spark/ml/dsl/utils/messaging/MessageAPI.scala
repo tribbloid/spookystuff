@@ -24,8 +24,10 @@ trait MessageAPI extends Serializable {
     else compactJSON(formats)
   }
 
+  def rootTag: String = proto.getClass.getSimpleName.stripSuffix("$") //TODO: change to this.getClass.getSimpleName?
+
   def toXMLNode(implicit formats: Formats = formats): NodeSeq =
-    Xml.toXml(JObject(proto.getClass.getSimpleName -> toJValue))
+    Xml.toXml(JObject(rootTag -> toJValue))
   def compactXML(implicit formats: Formats = formats): String = toXMLNode.toString().replaceAllLiterally("\n","")
   def prettyXML(implicit formats: Formats = formats): String = Xml.defaultXMLPrinter.formatNodes(toXMLNode)
   def toXMLStr(pretty: Boolean = true)(implicit formats: Formats = formats): String = {

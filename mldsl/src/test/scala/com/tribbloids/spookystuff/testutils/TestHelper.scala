@@ -129,7 +129,7 @@ class TestHelper() {
     *         cluster simulation mode: Some(SPARK_HOME) -> local-cluster[m,n, mem]
     */
   lazy val coreSettings: Map[String, String] = {
-    if (clusterSizeOpt.isEmpty || numCoresPerWorkerOpt.isEmpty) {
+    val base = if (clusterSizeOpt.isEmpty || numCoresPerWorkerOpt.isEmpty) {
       val masterStr = s"local[$maxCores,$maxFailures]"
       println("initializing SparkContext in local mode:" + masterStr)
       Map(
@@ -146,14 +146,15 @@ class TestHelper() {
         "spark.executor.memory" -> ((executorMemoryOpt.get - EXECUTOR_JVM_MEMORY_OVERHEAD) + "m"),
         "spark.driver.extraClassPath" -> sys.props("java.class.path"),
         "spark.executor.extraClassPath" -> sys.props("java.class.path"),
-        "spark.task.maxFailures" -> maxFailures.toString,
-
-        ("spark.serializer", "org.apache.spark.serializer.KryoSerializer"),
-        //      .set("spark.kryo.registrator", "com.tribbloids.spookystuff.SpookyRegistrator")Incomplete for the moment
-        ("spark.kryoserializer.buffer.max", "512m"),
-        ("dummy.property", "dummy")
+        "spark.task.maxFailures" -> maxFailures.toString
       )
     }
+    base ++ Map(
+      ("spark.serializer", "org.apache.spark.serializer.KryoSerializer"),
+      //      .set("spark.kryo.registrator", "com.tribbloids.spookystuff.SpookyRegistrator")Incomplete for the moment
+      ("spark.kryoserializer.buffer.max", "512m"),
+      ("dummy.property", "dummy")
+    )
   }
 
   lazy val TestSpark = {
@@ -181,6 +182,7 @@ class TestHelper() {
       //      }
       //      println("=============== Test Spark Context has stopped ==============")
     }
+    TestHelper.assureKryoSerializer(sc)
     sc
   }
   lazy val TestSQL = SQLContext.getOrCreate(TestSpark)

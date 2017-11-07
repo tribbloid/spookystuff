@@ -4,8 +4,9 @@ import org.apache.spark.ml.dsl.utils._
 import org.apache.spark.ml.util._
 import org.apache.spark.sql.types.{DataType, UserDefinedType}
 import org.apache.spark.util.Utils
+import org.json4s.JsonAST.{JArray, JObject}
 import org.json4s.jackson.JsonMethods._
-import org.json4s.{Extraction, Formats, JValue}
+import org.json4s.{Extraction, Formats, JField, JValue}
 import org.slf4j.LoggerFactory
 
 import scala.language.implicitConversions
@@ -23,23 +24,33 @@ abstract class RelayLike[Obj] {
 
   type M //Message type
 
-  def _read(jv: JValue, formats: Formats, mf: Manifest[M]): M = {
+  def _read(jf: JField, formats: Formats, mf: Manifest[M]): M = {
 
-    val message: M = Extraction.extract[M](jv)(formats, mf)
+    val message: M = Extraction.extract[M](jf._2)(formats, mf)
     message
   }
 
-  final def _fromJValue[T: MessageReader](jv: JValue): T = {
-
+  final def _fromJField[T: MessageReader](jf: JField): T = {
     val reader = implicitly[MessageReader[T]]
-    reader._read(jv, this.formats, reader.mf)
+    reader._read(jf, this.formats, reader.mf)
+  }
+  final def _fromJValue[T: MessageReader](jv: JValue): T = {
+    val reader = implicitly[MessageReader[T]]
+    val rootTag = reader.mf.runtimeClass.getSimpleName.stripSuffix("$")
+    _fromJField(rootTag -> jv)
   }
   final def _fromJSON[T: MessageReader](json: String): T = _fromJValue[T](parse(json))
 
   final def _fromXMLNode[T: MessageReader](ns: NodeSeq): T = {
-    val jv = Xml.toJson(ns)
-
-    _fromJValue[T](jv.children.head)
+    val jv: JValue = Xml.toJson(ns)
+    jv match {
+      case JObject(kvs) =>
+        _fromJField[T](kvs.head)
+      case JArray(vs) =>
+        _fromJValue[T](vs.head)
+      case _ =>
+        _fromJValue[T](jv) //TODO: not possible!
+    }
   }
   final def _fromXML[T: MessageReader](xml: String): T = {
     val nodes: Elem = xmlStr2Node(xml)
@@ -151,7 +162,7 @@ abstract class MessageRelay[Obj] extends RelayLike[Obj] {
   object MReader extends MessageReader[M]()(mf) {
     override implicit def formats: Formats = MessageRelay.this.formats
 
-    override def _read(jv: JValue, formats: Formats, mf: Manifest[M]) =
-      MessageRelay.this._read(jv, formats, mf)
+    override def _read(jf: JField, formats: Formats, mf: Manifest[M]) =
+      MessageRelay.this._read(jf, formats, mf)
   }
 }
