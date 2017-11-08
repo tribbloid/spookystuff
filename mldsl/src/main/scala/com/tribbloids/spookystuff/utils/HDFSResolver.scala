@@ -1,9 +1,8 @@
 package com.tribbloids.spookystuff.utils
 
 import java.io.{InputStream, OutputStream}
-import java.security.PrivilegedActionException
+import java.security.{PrivilegedAction, PrivilegedActionException}
 
-import com.tribbloids.spookystuff.Const
 import org.apache.hadoop
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.{FSDataInputStream, FSDataOutputStream, FileSystem, Path}
@@ -16,8 +15,6 @@ case class HDFSResolver(
                          @transient hadoopConf: Configuration,
                          ugiFactory: () => Option[UserGroupInformation] = HDFSResolver.noUGIFactory
                        ) extends PathResolver {
-
-  import SpookyViews._
 
   def lockedSuffix: String = ".locked"
 
@@ -42,13 +39,17 @@ case class HDFSResolver(
       case Some(ugi) =>
         try {
           ugi.doAs {
-            f
+            new PrivilegedAction[T] {
+              override def run(): T = {
+                f
+              }
+            }
           }
         }
         catch {
           case e: Throwable =>
             // UGI.doAs wraps any exception in PrivilegedActionException, should be unwrapped and thrown
-            throw SpookyUtils.unboxException[PrivilegedActionException](e)
+            throw CommonUtils.unboxException[PrivilegedActionException](e)
         }
     }
   }
@@ -65,7 +66,7 @@ case class HDFSResolver(
       fs.getStatus(path)
 
       //wait for 15 seconds in total
-      CommonUtils.retry(Const.DFSBlockedAccessRetries) {
+      retry {
         assert(!fs.exists(lockedPath), s"File $pathStr is locked by another executor or thread")
         //        Thread.sleep(3*1000)
       }
@@ -106,7 +107,7 @@ case class HDFSResolver(
 
     val lockedPath = new Path(pathStr + lockedSuffix)
 
-    CommonUtils.retry(Const.DFSBlockedAccessRetries, 1000) {
+    retry {
       assert(
         !fs.exists(lockedPath),
         {
@@ -119,7 +120,7 @@ case class HDFSResolver(
     val fileExists = fs.exists(path)
     if (fileExists) {
       fs.rename(path, lockedPath)
-      CommonUtils.retry(Const.DFSBlockedAccessRetries) {
+      retry {
         assert(fs.exists(lockedPath), s"Locking of $pathStr cannot be persisted")
       }
     }

@@ -290,16 +290,6 @@ These special characters are often called "metacharacters".
     h
   }
 
-  @scala.annotation.tailrec
-  def unboxException[T <: Throwable: ClassTag](e: Throwable): Throwable = {
-    e match {
-      case ee: T =>
-        unboxException[T](ee.getCause)
-      case _ =>
-        e
-    }
-  }
-
   def randomSuffix = Math.abs(Random.nextLong())
 
   def randomChars: String = {

@@ -7,6 +7,7 @@ import org.apache.spark.ml.dsl.utils.FlowUtils
 import org.slf4j.LoggerFactory
 
 import scala.concurrent.{Await, Future, TimeoutException}
+import scala.reflect.ClassTag
 import scala.util.{Failure, Success, Try}
 
 class CommonUtils {
@@ -156,6 +157,15 @@ class CommonUtils {
   def getCPResourceAsStream(str: String): Option[InputStream] =
     Option(ClassLoader.getSystemClassLoader.getResourceAsStream(str.stripSuffix(File.separator)))
 
+  @scala.annotation.tailrec
+  final def unboxException[T <: Throwable: ClassTag](e: Throwable): Throwable = {
+    e match {
+      case ee: T =>
+        unboxException[T](ee.getCause)
+      case _ =>
+        e
+    }
+  }
 }
 
 object CommonUtils extends CommonUtils

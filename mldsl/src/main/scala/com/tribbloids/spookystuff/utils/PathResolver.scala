@@ -30,6 +30,15 @@ abstract class PathResolver extends Serializable {
     val result = this.toAbsolute(resourcePath)
     result
   }
+
+  def DFSBlockedAccessRetries = 10
+  def DFSBlockedAccessInterval = 1000
+
+  def retry[T](f: =>T): T = {
+    CommonUtils.retry(DFSBlockedAccessRetries, DFSBlockedAccessInterval){
+      f
+    }
+  }
 }
 
 object LocalResolver extends PathResolver {
@@ -52,9 +61,8 @@ object LocalResolver extends PathResolver {
       val lockedFile = new File(lockedPath)
 
       //wait for 15 seconds in total
-      CommonUtils.retry(CommonConst.DFSBlockedAccessRetries) {
+      retry {
         assert(!lockedFile.exists(), s"File $pathStr is locked by another executor or thread")
-        //        Thread.sleep(3*1000)
       }
     }
 
@@ -105,7 +113,7 @@ object LocalResolver extends PathResolver {
     val lockedPath = pathStr + lockedSuffix
     val lockedFile = new File(lockedPath)
 
-    CommonUtils.retry(CommonConst.DFSBlockedAccessRetries) {
+    retry {
       assert(!lockedFile.exists(), s"File $pathStr is locked by another executor or thread")
       //        Thread.sleep(3*1000)
     }
