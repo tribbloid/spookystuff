@@ -1,7 +1,7 @@
 package com.tribbloids.spookystuff.execution
 
 import com.tribbloids.spookystuff.actions._
-import com.tribbloids.spookystuff.dsl.GenPartitioner
+import com.tribbloids.spookystuff.dsl.{GenPartitioner, GenPartitionerLike}
 import com.tribbloids.spookystuff.row.{BeaconRDD, DataRow, SquashedFetchedRDD, SquashedFetchedRow}
 import org.apache.spark.rdd.RDD
 
@@ -9,7 +9,7 @@ trait InjectBeaconRDDPlan extends ExecutionPlan {
 
   def genPartitioner: GenPartitioner
 
-  lazy val gpImpl: GenPartitioner.Instance[TraceView] = {
+  lazy val gpImpl: GenPartitionerLike.Instance[TraceView] = {
     genPartitioner.getInstance[TraceView](schema)
   }
 

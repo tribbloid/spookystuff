@@ -1,9 +1,7 @@
 package com.tribbloids.spookystuff.dsl
 
-import com.tribbloids.spookystuff.actions.TraceView
-import com.tribbloids.spookystuff.dsl.GenPartitioner.Instance
+import com.tribbloids.spookystuff.dsl.GenPartitionerLike.Instance
 import com.tribbloids.spookystuff.row.{BeaconRDD, DataRowSchema}
-import com.tribbloids.spookystuff.utils.locality.LocalityRDDView
 import org.apache.spark.Partitioner
 import org.apache.spark.rdd.RDD
 import org.apache.spark.storage.StorageLevel
@@ -11,108 +9,10 @@ import org.apache.spark.storage.StorageLevel
 import scala.language.existentials
 import scala.reflect.ClassTag
 
-/**
-  * Created by peng on 1/27/15.
-  */
-//TODO: name should be 'planner'?
-sealed trait GenPartitionerLike[+C] {
-
-  def getInstance[K >: C: ClassTag](schema: DataRowSchema): Instance[K]
-}
-
-object GenPartitioner {
-
-  import com.tribbloids.spookystuff.utils.SpookyViews._
-
-  trait Instance[K] extends Serializable {
-    implicit def ctg: ClassTag[K]
-
-    final def createBeaconRDD(
-                               ref: RDD[_]
-                             ): Option[BeaconRDD[K]] = {
-
-      val result: Option[BeaconRDD[K]] = _createBeaconRDD(ref)
-      result.foreach {
-        rdd =>
-          rdd.assertIsBeacon()
-      }
-      result
-    }
-
-    def _createBeaconRDD(
-                          ref: RDD[_]
-                        ): Option[BeaconRDD[K]] = None
-
-    //TODO: comparing to old implementation, does this create too much object overhead?
-    def groupByKey[V: ClassTag](
-                                 rdd: RDD[(K, V)],
-                                 beaconRDDOpt: Option[BeaconRDD[K]] = None
-                               ): RDD[(K, Iterable[V])] = {
-      val itrRDD = rdd.mapValues(v => Iterable(v))
-      reduceByKey(itrRDD, {
-        _ ++ _
-      },
-        beaconRDDOpt)
-    }
-
-    def reduceByKey[V: ClassTag](
-                                  rdd: RDD[(K, V)],
-                                  reducer: (V, V) => V,
-                                  beaconRDDOpt: Option[BeaconRDD[K]] = None
-                                ): RDD[(K, V)]
-
-    //      groupByKey(rdd, beaconRDDOpt)
-    //        .map(
-    //          tuple =>
-    //            tuple._1 -> tuple._2.reduce(reducer)
-    //        )
-    //    }
-  }
-
-
-  /**
-    * only need to defined a key repartitioning function
-    * @tparam K
-    */
-  abstract class RepartitionKeyImpl[K](implicit val ctg: ClassTag[K]) extends Instance[K] {
-
-    def schema: DataRowSchema
-
-    def reduceByKey[V: ClassTag](
-                                  rdd: RDD[(K, V)],
-                                  reducer: (V, V) => V,
-                                  beaconRDDOpt: Option[BeaconRDD[K]] = None
-                                ): RDD[(K, V)] = {
-
-      val ec = schema.ec
-      ec.scratchRDDs.persist(rdd, ec.spooky.spookyConf.defaultStorageLevel) //TODO: optional?
-      val keys = rdd.keys
-
-      val keysRepartitioned = repartitionKey(keys, beaconRDDOpt)
-
-      val result = LocalityRDDView(keysRepartitioned).cogroupBase(rdd)
-        .values
-        .map {
-          tuple =>
-            tuple._1 -> tuple._2.reduce(reducer)
-        }
-      result
-    }
-
-    def repartitionKey(
-                        rdd: RDD[K],
-                        beaconRDDOpt: Option[BeaconRDD[K]] = None
-                      ): RDD[(K, K)]
-  }
-
-}
-
-trait GenPartitioner extends GenPartitionerLike[TraceView]
-
 object GenPartitioners {
 
   //this won't merge identical traces and do lookup, only used in case each resolve may yield different result
-  case object Narrow extends GenPartitioner {
+  case object Narrow extends AnyGenPartitioner {
 
     def getInstance[K: ClassTag](schema: DataRowSchema): Instance[K] = {
       Inst[K]()
@@ -142,7 +42,7 @@ object GenPartitioners {
   case class Wide(
                    partitionerFactory: RDD[_] => Partitioner = {
                      PartitionerFactories.SamePartitioner
-                   }) extends GenPartitioner {
+                   }) extends AnyGenPartitioner {
 
     def getInstance[K: ClassTag](schema: DataRowSchema): Instance[K] = {
       Inst[K]()
@@ -170,7 +70,7 @@ object GenPartitioners {
                             partitionerFactory: RDD[_] => Partitioner = {
                               PartitionerFactories.SamePartitioner
                             }
-                          ) extends GenPartitioner {
+                          ) extends AnyGenPartitioner {
 
     def getInstance[K: ClassTag](schema: DataRowSchema): Instance[K] = {
       Inst[K]()

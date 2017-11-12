@@ -132,7 +132,7 @@ case class HDFSResolver(
     finally {
       if (fileExists) {
         fs.rename(lockedPath, path)
-        fs.delete(lockedPath, true)
+        fs.delete(lockedPath, true) //TODO: this line is useless?
       }
     }
   }

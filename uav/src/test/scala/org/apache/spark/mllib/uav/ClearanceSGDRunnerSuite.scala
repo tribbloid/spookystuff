@@ -40,7 +40,7 @@ class ClearanceSGDRunnerSuite extends SpookyEnvFixture {
     rdd
   }
 
-  it("can generate data RDD") {
+  it("can generate training data data RDD") {
     val input: Map[Int, Seq[Trace]] = Map(
       1 -> Seq(List(
         Waypoint(NED(0,0,0)),
@@ -124,7 +124,7 @@ class ClearanceSGDRunnerSuite extends SpookyEnvFixture {
     output.foreach(v => println(v))
   }
 
-  it("can optimize 4 intersecting Waypoints") {
+  it("can optimize 4 Waypoints in 2 partitions") {
 
     val input: Map[Int, Seq[Trace]] = Map(
       1 -> Seq(

@@ -12,4 +12,7 @@ package object dsl extends DSL {
   type ByDoc[+R] = Lambda[Doc, R]
   type ByTrace[+R] = Lambda[Trace, R]
   type WebProxyFactory = Lambda0[WebProxySetting]
+
+  type GenPartitioner = GenPartitionerLike[TraceView, TraceView]
+  type AnyGenPartitioner = GenPartitionerLike[TraceView, Any]
 }

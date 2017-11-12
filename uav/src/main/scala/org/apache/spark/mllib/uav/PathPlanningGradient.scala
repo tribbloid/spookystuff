@@ -21,12 +21,12 @@ trait PathPlanningGradient extends Gradient {
   lazy val numPartitions = id2Traces.size
 
   val (
-    vectorIndexedNavs: Seq[VectorIndexedNav],
+    vectorIndexedNavs: Seq[NavFeatureEncoding],
     id2VectorIndexedTrace: Map[Int, Seq[Trace]]
     ) = {
     var weightDim = 0
     var dataDim = 0
-    val buffer = ArrayBuffer.empty[VectorIndexedNav]
+    val buffer = ArrayBuffer.empty[NavFeatureEncoding]
     val id2VIT = id2Traces.mapValues {
       traces =>
         traces.map {
@@ -37,7 +37,7 @@ trait PathPlanningGradient extends Gradient {
                 val di = dataDim
                 weightDim += v.vectorDim
                 dataDim += 1
-                val result = VectorIndexedNav(v, wi, di)
+                val result = NavFeatureEncoding(v, wi, di)
                 buffer += result
                 result
               case v =>
@@ -126,7 +126,7 @@ trait PathPlanningGradient extends Gradient {
   }
 
   lazy val initializationNoise = 0.01
-  def initializeWeight: MLVec = {
+  def initialWeights: MLVec = {
     val array = vectorIndexedNavs.flatMap {
       vin =>
         var vec = Vec.fill(vin.nav.vectorDim){
@@ -144,15 +144,15 @@ trait PathPlanningGradient extends Gradient {
   }
 }
 
-case class VectorIndexedNav(
-                             nav: UAVNavigation,
-                             weightIndex: Range,
-                             seqID: Int //TODO: currently useless, remove?
-                           ) extends ActionPlaceholder {
+case class NavFeatureEncoding(
+                               nav: UAVNavigation,
+                               weightIndices: Range,
+                               seqIndex: Int //TODO: currently useless, remove?
+                             ) extends ActionPlaceholder {
 
   // TODO: expensive! this should have mnemonics
   def shiftAllByWeight(weights: Vec): UAVNavigation = {
-    val range = weightIndex
+    val range = weightIndices
     val sliced = weights(range)
     nav.shift(sliced)
   }

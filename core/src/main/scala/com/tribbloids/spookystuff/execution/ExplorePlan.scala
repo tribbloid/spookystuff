@@ -2,7 +2,7 @@ package com.tribbloids.spookystuff.execution
 
 import com.tribbloids.spookystuff.actions.{Trace, TraceView}
 import com.tribbloids.spookystuff.caching.ExploreRunnerCache
-import com.tribbloids.spookystuff.dsl.{ExploreAlgorithm, GenPartitioner, JoinType}
+import com.tribbloids.spookystuff.dsl.{ExploreAlgorithm, GenPartitioner, GenPartitionerLike, JoinType}
 import com.tribbloids.spookystuff.extractors._
 import com.tribbloids.spookystuff.extractors.impl.{Get, Lit}
 import com.tribbloids.spookystuff.row.{SquashedFetchedRow, _}

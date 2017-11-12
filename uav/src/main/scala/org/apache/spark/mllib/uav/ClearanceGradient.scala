@@ -71,7 +71,7 @@ case class ClearanceGradient(
       val (nextPID, trace) = flatten(i)
       if (nextPID != partitionID) return None
       trace.foreach {
-        case vin: VectorIndexedNav => return Some(trace)
+        case vin: NavFeatureEncoding => return Some(trace)
         case _ =>
       }
     }
@@ -99,7 +99,7 @@ case class ClearanceGradient(
       tuple =>
         val nav_locations = {
           val navs = tuple._1.collect {
-            case v: VectorIndexedNav => v
+            case v: NavFeatureEncoding => v
           }
           navs.map {
             nav =>
@@ -109,7 +109,7 @@ case class ClearanceGradient(
         }
         val nextNav_locationOpt = tuple._2.map {
           nextTrace =>
-            val nextNav = nextTrace.find(_.isInstanceOf[VectorIndexedNav]).get.asInstanceOf[VectorIndexedNav]
+            val nextNav = nextTrace.find(_.isInstanceOf[NavFeatureEncoding]).get.asInstanceOf[NavFeatureEncoding]
             nextNav -> nextNav.shiftAllByWeight(weights.toBreeze)
               .getLocation(schema)
         }
@@ -130,7 +130,7 @@ case class ClearanceGradient(
       j <- 0 until (nav_coordinates2.size - 1)
     ) {
 
-      case class Notation(v: (VectorIndexedNav, NED.C)) {
+      case class Notation(v: (NavFeatureEncoding, NED.C)) {
 
         val vin = v._1
         val coordinate = v._2
@@ -180,7 +180,7 @@ case class ClearanceGradient(
                 nabla = cc.rewrite(nabla, schema)
             }
 
-            notation.vin.weightIndex.zip(nabla.toArray)
+            notation.vin.weightIndices.zip(nabla.toArray)
         }
 
         val concatGradVec = new MLSVec(

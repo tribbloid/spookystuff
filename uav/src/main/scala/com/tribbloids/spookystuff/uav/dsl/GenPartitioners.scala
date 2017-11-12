@@ -2,7 +2,7 @@ package com.tribbloids.spookystuff.uav.dsl
 
 import com.tribbloids.spookystuff.actions.TraceView
 import com.tribbloids.spookystuff.dsl.GenPartitioner
-import com.tribbloids.spookystuff.dsl.GenPartitioner.Instance
+import com.tribbloids.spookystuff.dsl.GenPartitionerLike.Instance
 import com.tribbloids.spookystuff.row.{BeaconRDD, DataRowSchema}
 import com.tribbloids.spookystuff.uav.actions.mixin.HasCost
 import com.tribbloids.spookystuff.uav.planning._
@@ -34,19 +34,20 @@ object GenPartitioners {
                   optimizer: VRPOptimizer = VRPOptimizers.JSprit_Minimax,
 
                   // only applies to UAVNavigation
-                  collisionAvoidance: Option[VRPOptimizer] = {
+                  collisionAvoidance: Option[GenPartitioner] = {
                     None
                     //                    Some(CollisionAvoidances.Clearance())
                   }
                 ) extends GenPartitioner {
 
-    def getInstance[K >: TraceView: ClassTag](schema: DataRowSchema): Instance[K] = {
-      Inst[K](schema)
+    override def getInstance[K >: TraceView <: TraceView : ClassTag](schema: DataRowSchema): Instance[K] = {
+      Inst(schema).asInstanceOf[Instance[K]]
     }
 
-    case class Inst[K >: TraceView](schema: DataRowSchema)(
-      implicit val ctg: ClassTag[K]
-    ) extends Instance[K] {
+    case class Inst(schema: DataRowSchema)(
+      implicit val ctg: ClassTag[TraceView]) extends Instance[TraceView] {
+
+      type K = TraceView
 
       //gather all UAVActions to driver and use a local solver (JSprit) to rearrange them.
       override def reduceByKey[V: ClassTag](
@@ -89,7 +90,7 @@ object GenPartitioners {
         }
         collisionAvoidance.foreach {
           ca =>
-            val instance = ca.apply(VRP.this, schema)
+            val instance = ca.getInstance(schema)
             optimizedRDD = instance.reduceByKey(optimizedRDD, reducer, None)
         }
 
@@ -158,5 +159,6 @@ object GenPartitioners {
       //        // also carry data with them, by treating realigned link_traceRDD like a beaconRDD.
       //      }
     }
+
   }
 }

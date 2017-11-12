@@ -37,7 +37,7 @@ case class ClearanceSGDRunner(
       numIterations = 50,
       regParam = 0.1,
       miniBatchFraction = 1.0,
-      initialWeights = gradient.initializeWeight
+      initialWeights = gradient.initialWeights
     )
     val weights_brz = weights.toBreeze
     val pid2TracesRDD_shifted: Map[Int, Seq[TraceView]] = gradient.id2VectorIndexedTrace
@@ -48,7 +48,7 @@ case class ClearanceSGDRunner(
               val shifted = trace.map {
                 action =>
                   val shifted = action match {
-                    case v: VectorIndexedNav =>
+                    case v: NavFeatureEncoding =>
                       v.shiftAllByWeight(weights_brz)
                     case _ =>
                       action

@@ -3,7 +3,7 @@ package com.tribbloids.spookystuff.rdd
 import com.tribbloids.spookystuff.actions.{ClusterRetry, Snapshot, Visit, Wget, _}
 import com.tribbloids.spookystuff.conf.SpookyConf
 import com.tribbloids.spookystuff.doc.Doc
-import com.tribbloids.spookystuff.dsl.{ExploreAlgorithm, GenPartitioner, JoinType, _}
+import com.tribbloids.spookystuff.dsl.{ExploreAlgorithm, GenPartitionerLike, JoinType, _}
 import com.tribbloids.spookystuff.execution.{ExplorePlan, FetchPlan, _}
 import com.tribbloids.spookystuff.extractors._
 import com.tribbloids.spookystuff.extractors.impl.Get
