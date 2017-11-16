@@ -21,10 +21,10 @@ class LocationUDT() extends ScalaUDT[Location]
 @SerialVersionUID(-928750192836509428L)
 case class Location(
                      definedBy: Seq[Association[Coordinate]],
-                     tagOpt: Option[Anchors.Tag] = None
+                     aliasOpt: Option[Anchors.Alias] = None
                    ) extends LocationLike with Fusion[Coordinate] {
 
-  override def name = tagOpt.map(_.name).getOrElse("@"+this.hashCode)
+  override def name = aliasOpt.map(_.name).getOrElse("@"+this.hashCode)
   def withHome(home: Location) = WithHome(home)
 
   case class WithHome(
@@ -48,14 +48,14 @@ case class Location(
   def replaceAnchors(fn: PartialFunction[Anchor, Anchor]): Location = {
 
     val cs = definedBy.map {
-      rel =>
+      assoc =>
         //TODO: unnecessary copy if out of fn domain
-        val replaced: Anchor = fn.applyOrElse(rel.anchor, (_: Anchor) => rel.anchor)
-        val taggedReplaced = rel.anchor -> replaced match {
-          case (t: Anchors.Tag, v: Location) => v.copy(tagOpt = Some(t))
+        val replaced: Anchor = fn.applyOrElse(assoc.anchor, (_: Anchor) => assoc.anchor)
+        val taggedReplaced = assoc.anchor -> replaced match {
+          case (t: Anchors.Alias, v: Location) => v.copy(aliasOpt = Some(t))
           case _ => replaced
         }
-        rel.copy[Coordinate](
+        assoc.copy[Coordinate](
           anchor = taggedReplaced
         )
     }

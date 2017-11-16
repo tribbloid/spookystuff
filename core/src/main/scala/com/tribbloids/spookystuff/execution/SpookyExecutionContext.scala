@@ -1,6 +1,8 @@
 package com.tribbloids.spookystuff.execution
 
 import com.tribbloids.spookystuff.SpookyContext
+import org.apache.spark.rdd.RDD
+import org.apache.spark.storage.StorageLevel
 
 /**
   * Created by peng on 10/07/17.
@@ -24,5 +26,13 @@ case class SpookyExecutionContext(
         tempDFs = <+>(bb, _.tempDFs)
       )
     )
+  }
+
+  def persist[T](
+                  rdd: RDD[T],
+                  storageLevel: StorageLevel = StorageLevel.MEMORY_ONLY
+                ): RDD[T] = {
+
+    scratchRDDs.persist(rdd, spooky.spookyConf.defaultStorageLevel)
   }
 }

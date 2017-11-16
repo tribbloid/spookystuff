@@ -48,7 +48,7 @@ case class FetchedDataset(
     this(
       RDDPlan(
         sourceRDD,
-        DataRowSchema(SpookyExecutionContext(spooky), fieldMap),
+        SpookySchema(SpookyExecutionContext(spooky), fieldMap),
         spooky,
         beaconRDDOpt
       )
@@ -75,7 +75,7 @@ case class FetchedDataset(
   def rdd = unsquashedRDD
   def unsquashedRDD: RDD[FetchedRow] = this.squashedRDD.flatMap(
     v =>
-      new v.WithSchema(schema).unsquash
+      new v.WSchema(schema).unsquash
   )
 
   def partitionRDD = rdd.mapPartitions {
@@ -253,7 +253,7 @@ case class FetchedDataset(
     squashedRDD.foreach {
       squashedPageRow =>
         val w = new squashedPageRow
-        .WithSchema(schema)
+        .WSchema(schema)
 
         w
           .unsquash

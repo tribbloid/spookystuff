@@ -1,7 +1,7 @@
 package org.apache.spark.mllib.uav
 
-import com.tribbloids.spookystuff.actions.{ActionPlaceholder, Trace, TraceView}
-import com.tribbloids.spookystuff.row.DataRowSchema
+import com.tribbloids.spookystuff.actions.{Action, Trace}
+import com.tribbloids.spookystuff.row.SpookySchema
 import com.tribbloids.spookystuff.uav.actions.UAVNavigation
 import com.tribbloids.spookystuff.uav.planning.Constraint
 import org.apache.spark.mllib.optimization.Gradient
@@ -12,79 +12,55 @@ import scala.util.Random
 
 trait PathPlanningGradient extends Gradient {
 
-  def schema: DataRowSchema
+  def schema: SpookySchema
   def constraint: Option[Constraint]
 
   // id = TaskContext.get.partitionID
-  def id2Traces: Map[Int, Seq[TraceView]]
+  def id2Traces: Map[Int, Seq[Trace]]
 
-  lazy val numPartitions = id2Traces.size
-
-  val (
-    vectorIndexedNavs: Seq[NavFeatureEncoding],
-    id2VectorIndexedTrace: Map[Int, Seq[Trace]]
-    ) = {
+  val encodedBuffer = ArrayBuffer.empty[VectorEncodedNav]
+  val id2Traces_withEncoded: Map[Int, Seq[Trace]] = {
     var weightDim = 0
     var dataDim = 0
-    val buffer = ArrayBuffer.empty[NavFeatureEncoding]
     val id2VIT = id2Traces.mapValues {
-      traces =>
+      traces: Seq[Trace] =>
         traces.map {
-          trace =>
-            val indexed = trace.children.map {
-              case v: UAVNavigation =>
-                val wi = weightDim until (weightDim + v.vectorDim)
-                val di = dataDim
-                weightDim += v.vectorDim
-                dataDim += 1
-                val result = NavFeatureEncoding(v, wi, di)
-                buffer += result
-                result
-              case v =>
-                v
+          trace: Trace =>
+            val encoded: Trace = trace.map {
+              action =>
+                //TODO: CAUTION! scala 2.10 compiler will trigger a bug once switching to match
+                if (action.isInstanceOf[UAVNavigation]) {
+                  val nav = action.asInstanceOf[UAVNavigation]
+                  val wi = weightDim until (weightDim + nav.vectorDim)
+                  val di = dataDim
+                  weightDim += nav.vectorDim
+                  dataDim += 1
+                  val withSchema = nav.WSchema(schema)
+                  val result: VectorEncodedNav = VectorEncodedNav(withSchema, wi, di)
+                  encodedBuffer += result
+                  result: Action
+                }
+                else {
+                  action
+                }
             }
-            indexed
+            encoded
         }
     }
       .map(identity)
-    (buffer, id2VIT)
+    id2VIT
   }
 
   lazy val flatten: Seq[(Int, Trace)] = {
-    val seq = id2VectorIndexedTrace.toSeq
+    val seq = id2Traces_withEncoded.toSeq
     val result = seq
       .flatMap(
         tuple =>
-          tuple._2.map(v => tuple._1 -> v)
+          tuple._2.map(tuple._1 -> _)
       )
     result
   }
   lazy val numTraces = flatten.size
-
-  //  val cache = ConcurrentCache[Vec, WithWeights]()
-  //  def withWeights(weights: MLVec): WithWeights = {
-  //
-  //    val _weights: Vec = weights.toBreeze
-  //    cache.getOrElseUpdate(
-  //      _weights,
-  //      WithWeights(_weights)
-  //    )
-  //  }
-
-  //  sealed case class WithWeights(weights: Vec) {
-  //    assert(weights.size == PathPlanningGradient.this.d_weight)
-  //
-  //    lazy val shiftLocation: Array[List[Action]] = nav_indices.map {
-  //      list =>
-  //        list.map {
-  //          case n_index: IndexedNav =>
-  //            val delta = n_index.shiftLocation(weights)
-  //            delta
-  //          case others =>
-  //            others
-  //        }
-  //    }
-  //  }
 
   /**
     * yield spark vector RDD
@@ -118,21 +94,18 @@ trait PathPlanningGradient extends Gradient {
       case _ =>
         None
     }
-    val withLabelRDD: RDD[(Double, MLVec)] = dataRDD.map {
-      v =>
-        0.0 -> v
-    }
+    val withLabelRDD: RDD[(Double, MLVec)] = dataRDD.map {0.0 -> _}
     withLabelRDD
   }
 
-  lazy val initializationNoise = 0.01
+  val initializationNoise = 0.01
   def initialWeights: MLVec = {
-    val array = vectorIndexedNavs.flatMap {
-      vin =>
-        var vec = Vec.fill(vin.nav.vectorDim){
+    val array = encodedBuffer.flatMap {
+      ven =>
+        var vec = Vec.fill(ven.vectorDim){
           Random.nextDouble()* initializationNoise
         }
-        (vin.nav.constraint.toSeq ++ this.constraint).foreach {
+        (ven.self.outer.constraint.toSeq ++ this.constraint).foreach {
           cc =>
             vec = cc.rewrite(vec, schema)
         }
@@ -143,31 +116,3 @@ trait PathPlanningGradient extends Gradient {
     new MLDVec(array)
   }
 }
-
-case class NavFeatureEncoding(
-                               nav: UAVNavigation,
-                               weightIndices: Range,
-                               seqIndex: Int //TODO: currently useless, remove?
-                             ) extends ActionPlaceholder {
-
-  // TODO: expensive! this should have mnemonics
-  def shiftAllByWeight(weights: Vec): UAVNavigation = {
-    val range = weightIndices
-    val sliced = weights(range)
-    nav.shift(sliced)
-  }
-}
-
-//case class VectorIndexedTrace(
-//                               trace: Trace
-//                             ) {
-//
-//  def shiftLocationByWeight(weights: Vec): Trace = {
-//    trace.map {
-//      case vin: VectorIndexedNav =>
-//        vin.shiftAllByWeight(weights)
-//      case v@ _ =>
-//        v
-//    }
-//  }
-//}

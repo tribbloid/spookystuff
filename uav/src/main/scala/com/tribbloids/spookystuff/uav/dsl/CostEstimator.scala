@@ -1,16 +1,16 @@
 package com.tribbloids.spookystuff.uav.dsl
 
 import com.tribbloids.spookystuff.actions.{Action, Trace, TraceView}
-import com.tribbloids.spookystuff.row.DataRowSchema
+import com.tribbloids.spookystuff.row.SpookySchema
 import com.tribbloids.spookystuff.uav.actions.UAVNavigation
-import com.tribbloids.spookystuff.uav.planning.{TakeoffInsertCtxRule, PreferUAV}
+import com.tribbloids.spookystuff.uav.planning.{EstimateLocationRule, PreferUAV}
 import com.tribbloids.spookystuff.uav.spatial.point.NED
 
 trait CostEstimator {
 
   def estimate(
                 trace: Trace,
-                schema: DataRowSchema
+                schema: SpookySchema
               ): Double
 }
 
@@ -22,7 +22,7 @@ object CostEstimator {
 
     class Instance(
                     trace: Trace,
-                    schema: DataRowSchema
+                    schema: SpookySchema
                   ) {
 
       def intraCost(nav: UAVNavigation) = {
@@ -82,17 +82,17 @@ object CostEstimator {
 
     def _estimate(
                    trace: Trace,
-                   schema: DataRowSchema
+                   schema: SpookySchema
                  ): Double = {
       new Instance(trace, schema).solve
     }
 
     override def estimate(
                            trace: Trace,
-                           schema: DataRowSchema
+                           schema: SpookySchema
                          ): Double = {
 
-      val _trace = TakeoffInsertCtxRule.rewrite(trace, schema)
+      val _trace = EstimateLocationRule.rewrite(trace, schema)
 
       _estimate(_trace, schema)
     }

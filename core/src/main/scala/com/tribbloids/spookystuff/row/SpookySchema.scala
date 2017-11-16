@@ -10,7 +10,7 @@ import scala.language.implicitConversions
 
 //this is a special StructType that carries more metadata
 //TODO: override sqlType, serialize & deserialize to compress into InternalRow
-case class DataRowSchema(
+case class SpookySchema(
                           ec: SpookyExecutionContext,
                           fieldTypes: ListMap[Field, DataType] = ListMap.empty
                         ) extends ScalaUDT[DataRow] {
@@ -32,7 +32,7 @@ case class DataRowSchema(
     indexedFields.find(_._1.self == field)
   }
 
-  def filterFields(filter: Field => Boolean = _.isSelected): DataRowSchema = {
+  def filterFields(filter: Field => Boolean = _.isSelected): SpookySchema = {
     this.copy(
       fieldTypes = ListMap(fieldTypes.filterKeys(filter).toSeq: _*)
     )
@@ -52,7 +52,7 @@ case class DataRowSchema(
     StructType(structFields)
   }
 
-  def -- (field: Iterable[Field]): DataRowSchema = this.copy(
+  def -- (field: Iterable[Field]): SpookySchema = this.copy(
     fieldTypes = fieldTypes -- field
   )
 
@@ -61,10 +61,10 @@ case class DataRowSchema(
   class Resolver extends Serializable {
 
     val buffer: LinkedMap[Field, DataType] = LinkedMap()
-    buffer ++= DataRowSchema.this.fieldTypes.toSeq
+    buffer ++= SpookySchema.this.fieldTypes.toSeq
     //    val lookup: mutable.HashMap[Extractor[_], Resolved[_]] = mutable.HashMap()
 
-    def build: DataRowSchema = DataRowSchema.this.copy(fieldTypes = ListMap(buffer.toSeq: _*))
+    def build: SpookySchema = SpookySchema.this.copy(fieldTypes = ListMap(buffer.toSeq: _*))
 
     private def resolveField(field: Field): Field = {
 
@@ -110,8 +110,8 @@ case class DataRowSchema(
           ).get
           ex withAlias Field("_c" + i)
       }
-      val resolved = alias.resolve(DataRowSchema.this)
-      val dataType = alias.resolveType(DataRowSchema.this)
+      val resolved = alias.resolve(SpookySchema.this)
+      val dataType = alias.resolveType(SpookySchema.this)
 
       val mergedType = mergeType(alias.field, dataType)
 
@@ -133,7 +133,7 @@ case class DataRowSchema(
 
   def mergeType(resolvedField: Field, dataType: DataType): DataType = {
 
-    val existingTypeOpt = DataRowSchema.this.fieldTypes.get(resolvedField)
+    val existingTypeOpt = SpookySchema.this.fieldTypes.get(resolvedField)
 
     (existingTypeOpt, resolvedField.conflictResolving) match {
       case (Some(existingType), Field.Overwrite) =>
@@ -154,7 +154,7 @@ case class DataRowSchema(
 
   //use it after Row-based data representation
   object ImplicitLookup {
-    implicit def fieldToTyped(field: Field): TypedField = DataRowSchema.this.typedFor(field).get
-    implicit def fieldToIndexed(field: Field): IndexedField = DataRowSchema.this.indexedFor(field).get
+    implicit def fieldToTyped(field: Field): TypedField = SpookySchema.this.typedFor(field).get
+    implicit def fieldToIndexed(field: Field): IndexedField = SpookySchema.this.indexedFor(field).get
   }
 }

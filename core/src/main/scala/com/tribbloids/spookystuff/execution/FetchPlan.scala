@@ -37,7 +37,7 @@ case class FetchPlan(
 
     val trace_DataRowRDD: RDD[(TraceView, DataRow)] = child.rdd()
       .flatMap {
-        _.rewriteLocally(traces)
+        _.interpolateAndRewriteLocally(traces)
       }
 
     val grouped = gpImpl.groupByKey(trace_DataRowRDD, beaconRDDOpt)

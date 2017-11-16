@@ -30,14 +30,14 @@ abstract class ExecutionPlan(
   def scratchRDDs = ec.scratchRDDs
 
   //Cannot be lazy, always defined on construction
-  val schema: DataRowSchema = DataRowSchema(
+  val schema: SpookySchema = SpookySchema(
     ec,
     fieldTypes = children.map(_.schema.fieldTypes)
       .reduceOption(_ ++ _)
       .getOrElse(ListMap[Field, DataType]())
   )
 
-  implicit def withSchema(row: SquashedFetchedRow): SquashedFetchedRow#WithSchema = new row.WithSchema(schema)
+  implicit def withSchema(row: SquashedFetchedRow): SquashedFetchedRow#WSchema = new row.WSchema(schema)
 
   def fieldMap: ListMap[Field, DataType] = schema.fieldTypes
 
@@ -88,7 +88,7 @@ abstract class ExecutionPlan(
   }
 
   def unsquashedRDD: RDD[FetchedRow] = rdd()
-    .flatMap(v => new v.WithSchema(schema).unsquash)
+    .flatMap(v => new v.WSchema(schema).unsquash)
 
   def persist[T](
                   rdd: RDD[T],

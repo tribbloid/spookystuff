@@ -2,7 +2,7 @@ package com.tribbloids.spookystuff.actions
 
 import com.tribbloids.spookystuff.caching.{DFSDocCache, InMemoryDocCache}
 import com.tribbloids.spookystuff.doc.{Doc, Fetched}
-import com.tribbloids.spookystuff.row.{DataRowSchema, FetchedRow}
+import com.tribbloids.spookystuff.row.{SpookySchema, FetchedRow}
 import com.tribbloids.spookystuff.session.Session
 import com.tribbloids.spookystuff.utils.CommonUtils
 import com.tribbloids.spookystuff.{Const, QueryException, SpookyContext}
@@ -37,7 +37,7 @@ abstract class ActionLike extends Product with Serializable with Verbose {
     **/
   def localRewriters: Seq[MonadicRewriteRule[Trace]] = Nil
 
-  final def interpolate(row: FetchedRow, schema: DataRowSchema): Option[this.type] = {
+  final def interpolate(row: FetchedRow, schema: SpookySchema): Option[this.type] = {
     val result = this.doInterpolate(row, schema)
     result.foreach{
       action =>
@@ -50,7 +50,7 @@ abstract class ActionLike extends Product with Serializable with Verbose {
   /**
     * convert all extractor constructor parameters to Literals
     */
-  def doInterpolate(row: FetchedRow, schema: DataRowSchema): Option[this.type] = Some(this)
+  def doInterpolate(row: FetchedRow, schema: SpookySchema): Option[this.type] = Some(this)
 
   def injectFrom(same: ActionLike): Unit = {} //TODO: change to immutable pattern to avoid one Trace being used twice with different names
 

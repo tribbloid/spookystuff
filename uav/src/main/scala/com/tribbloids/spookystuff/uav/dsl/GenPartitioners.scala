@@ -3,7 +3,7 @@ package com.tribbloids.spookystuff.uav.dsl
 import com.tribbloids.spookystuff.actions.TraceView
 import com.tribbloids.spookystuff.dsl.GenPartitioner
 import com.tribbloids.spookystuff.dsl.GenPartitionerLike.Instance
-import com.tribbloids.spookystuff.row.{BeaconRDD, DataRowSchema}
+import com.tribbloids.spookystuff.row.{BeaconRDD, SpookySchema}
 import com.tribbloids.spookystuff.uav.actions.mixin.HasCost
 import com.tribbloids.spookystuff.uav.planning._
 import org.apache.spark.rdd.RDD
@@ -34,17 +34,17 @@ object GenPartitioners {
                   optimizer: VRPOptimizer = VRPOptimizers.JSprit_Minimax,
 
                   // only applies to UAVNavigation
-                  collisionAvoidance: Option[GenPartitioner] = {
+                  traffic: Option[Traffic] = {
                     None
                     //                    Some(CollisionAvoidances.Clearance())
                   }
                 ) extends GenPartitioner {
 
-    override def getInstance[K >: TraceView <: TraceView : ClassTag](schema: DataRowSchema): Instance[K] = {
+    override def getInstance[K >: TraceView <: TraceView : ClassTag](schema: SpookySchema): Instance[K] = {
       Inst(schema).asInstanceOf[Instance[K]]
     }
 
-    case class Inst(schema: DataRowSchema)(
+    case class Inst(schema: SpookySchema)(
       implicit val ctg: ClassTag[TraceView]) extends Instance[TraceView] {
 
       type K = TraceView
@@ -74,7 +74,7 @@ object GenPartitioners {
               result -> v
           }
 
-        ec.scratchRDDs.persist(bifurcated)
+        ec.persist(bifurcated)
 
         val hasCostRDD: RDD[(TraceView, V)] = bifurcated
           .flatMap(tt => tt._1._1.map(v => v -> tt._2))
@@ -86,9 +86,9 @@ object GenPartitioners {
 
         optimizedRDD = optimizedRDD.mapPartitions {
           itr =>
-            TakeoffInsertCtxRule._rewritePartition[V](itr, schema)
+            EstimateLocationRule._rewritePartition[V](itr, schema)
         }
-        collisionAvoidance.foreach {
+        traffic.foreach {
           ca =>
             val instance = ca.getInstance(schema)
             optimizedRDD = instance.reduceByKey(optimizedRDD, reducer, None)

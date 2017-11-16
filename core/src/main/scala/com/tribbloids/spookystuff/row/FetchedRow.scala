@@ -17,6 +17,8 @@ trait AbstractSpookyRow extends MessageAPI {
 
 object FetchedRow {
 
+  object Empty extends FetchedRow()
+
   //  def apply(
   //             dataRow: DataRow = DataRow(),
   //             pageLikes: Seq[Fetched] = Seq()
@@ -75,5 +77,3 @@ case class FetchedRow(
     else page.map(_.root).orElse(value)
   }
 }
-
-object EmptyFetchedRow extends FetchedRow()

@@ -1,7 +1,7 @@
 package com.tribbloids.spookystuff.dsl
 
 import com.tribbloids.spookystuff.dsl.GenPartitionerLike.Instance
-import com.tribbloids.spookystuff.row.{BeaconRDD, DataRowSchema}
+import com.tribbloids.spookystuff.row.{BeaconRDD, SpookySchema}
 import org.apache.spark.Partitioner
 import org.apache.spark.rdd.RDD
 import org.apache.spark.storage.StorageLevel
@@ -14,7 +14,7 @@ object GenPartitioners {
   //this won't merge identical traces and do lookup, only used in case each resolve may yield different result
   case object Narrow extends AnyGenPartitioner {
 
-    def getInstance[K: ClassTag](schema: DataRowSchema): Instance[K] = {
+    def getInstance[K: ClassTag](schema: SpookySchema): Instance[K] = {
       Inst[K]()
     }
 
@@ -44,7 +44,7 @@ object GenPartitioners {
                      PartitionerFactories.SamePartitioner
                    }) extends AnyGenPartitioner {
 
-    def getInstance[K: ClassTag](schema: DataRowSchema): Instance[K] = {
+    def getInstance[K: ClassTag](schema: SpookySchema): Instance[K] = {
       Inst[K]()
     }
 
@@ -72,7 +72,7 @@ object GenPartitioners {
                             }
                           ) extends AnyGenPartitioner {
 
-    def getInstance[K: ClassTag](schema: DataRowSchema): Instance[K] = {
+    def getInstance[K: ClassTag](schema: SpookySchema): Instance[K] = {
       Inst[K]()
     }
 

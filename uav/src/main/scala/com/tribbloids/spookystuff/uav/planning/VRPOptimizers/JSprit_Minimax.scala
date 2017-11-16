@@ -2,7 +2,7 @@ package com.tribbloids.spookystuff.uav.planning.VRPOptimizers
 
 import com.tribbloids.spookystuff.actions.TraceView
 import com.tribbloids.spookystuff.dsl.GenPartitionerLike.RepartitionKeyImpl
-import com.tribbloids.spookystuff.row.{BeaconRDD, DataRowSchema}
+import com.tribbloids.spookystuff.row.{BeaconRDD, SpookySchema}
 import com.tribbloids.spookystuff.uav.dsl.GenPartitioners
 import com.tribbloids.spookystuff.uav.planning._
 import com.tribbloids.spookystuff.uav.telemetry.{LinkUtils, UAVStatus}
@@ -13,7 +13,7 @@ object JSprit_Minimax extends VRPOptimizer {
 
 case class JSprit_Minimax(
                            problem: GenPartitioners.VRP,
-                           schema: DataRowSchema
+                           schema: SpookySchema
                          ) extends RepartitionKeyImpl[TraceView] {
 
   override def repartitionKey(

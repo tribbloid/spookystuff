@@ -1,6 +1,6 @@
 package com.tribbloids.spookystuff.actions
 
-import com.tribbloids.spookystuff.row.{FetchedRow, DataRowSchema}
+import com.tribbloids.spookystuff.row.{FetchedRow, SpookySchema}
 
 abstract class Actions(override val children: Trace) extends ActionLike {
 
@@ -11,8 +11,8 @@ abstract class Actions(override val children: Trace) extends ActionLike {
 
   final protected def trunkSeq: Trace = children.flatMap(_.skeleton)
 
-  final protected def doInterpolateSeq(pr: FetchedRow, schema: DataRowSchema): Trace =
-    Actions.doInterppolateSeq(children, pr, schema: DataRowSchema)
+  final protected def doInterpolateSeq(pr: FetchedRow, schema: SpookySchema): Trace =
+    Actions.doInterppolateSeq(children, pr, schema: SpookySchema)
 
   //names are not encoded in PageUID and are injected after being read from cache
   override def injectFrom(same: ActionLike): Unit = {
@@ -27,7 +27,7 @@ abstract class Actions(override val children: Trace) extends ActionLike {
 
 object Actions {
 
-  def doInterppolateSeq(self: Trace, pr: FetchedRow, schema: DataRowSchema): Trace = {
+  def doInterppolateSeq(self: Trace, pr: FetchedRow, schema: SpookySchema): Trace = {
     val seq = self.map(_.doInterpolate(pr, schema))
 
     if (seq.contains(None)) Nil

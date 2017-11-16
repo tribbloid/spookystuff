@@ -1,7 +1,7 @@
 package com.tribbloids.spookystuff.uav.actions
 
 import com.tribbloids.spookystuff.extractors.Col
-import com.tribbloids.spookystuff.row.{DataRowSchema, FetchedRow}
+import com.tribbloids.spookystuff.row.{SpookySchema, FetchedRow}
 import com.tribbloids.spookystuff.session.Session
 import com.tribbloids.spookystuff.uav.UAVConf
 import com.tribbloids.spookystuff.uav.spatial.point.{Location, NED}
@@ -24,7 +24,7 @@ case class Takeoff(
                     prevNavOpt: Option[UAVNavigation] = None
                   ) extends UAVNavigation {
 
-  override def doInterpolate(row: FetchedRow, schema: DataRowSchema): Option[this.type] = {
+  override def doInterpolate(row: FetchedRow, schema: SpookySchema): Option[this.type] = {
     val uav = schema.spooky.getConf[UAVConf]
     val minAltOpt = this.minAlt.resolve(schema).lift(row).flatMap(SpookyUtils.asOption[Double])
     val maxAltOpt = this.minAlt.resolve(schema).lift(row).flatMap(SpookyUtils.asOption[Double])
@@ -77,7 +77,7 @@ case class Takeoff(
 
   }
 
-  override def getLocation(schema: DataRowSchema) = {
+  override def getLocation(schema: SpookySchema) = {
     validateValues()
 
     val spooky = schema.ec.spooky
@@ -85,10 +85,10 @@ case class Takeoff(
     //    def fallbackLocation = Location.fromTuple(NED.C(0,0,-minAlt) -> Anchors.HomeLevelProjection)
 
     val prevLocation = prevNav.getEnd(schema)
-    val coord = prevLocation.coordinate(NED, uavConf.home)
+    val coord = prevLocation.coordinate(NED, uavConf._home)
     val alt = -coord.down
     val objAlt = Math.min(Math.max(alt, minAlt.value), maxAlt.value)
-    Location.fromTuple(coord.copy(down = -objAlt) -> uavConf.home)
+    Location.fromTuple(coord.copy(down = -objAlt) -> uavConf._home)
   }
 
   /**

@@ -2,7 +2,7 @@ package com.tribbloids.spookystuff.execution
 
 import com.tribbloids.spookystuff.SpookyEnvFixture
 import com.tribbloids.spookystuff.extractors.impl.Lit
-import com.tribbloids.spookystuff.row.DataRowSchema
+import com.tribbloids.spookystuff.row.SpookySchema
 
 /**
   * Created by peng on 14/06/16.
@@ -13,7 +13,7 @@ class SchemaContextSuite extends SpookyEnvFixture{
 
   it("Resolver should not scramble sequence of fields") {
 
-    val schema0 = DataRowSchema(SpookyExecutionContext(spooky))
+    val schema0 = SpookySchema(SpookyExecutionContext(spooky))
     val resolver0 = schema0.newResolver
     resolver0
       .include(

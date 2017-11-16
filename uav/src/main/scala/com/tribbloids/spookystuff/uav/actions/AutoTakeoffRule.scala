@@ -1,7 +1,7 @@
 package com.tribbloids.spookystuff.uav.actions
 
 import com.tribbloids.spookystuff.actions._
-import com.tribbloids.spookystuff.row.DataRowSchema
+import com.tribbloids.spookystuff.row.SpookySchema
 import com.tribbloids.spookystuff.uav.UAVConf
 
 /**
@@ -18,7 +18,7 @@ import com.tribbloids.spookystuff.uav.UAVConf
   */
 object AutoTakeoffRule extends RewriteRule[Trace] {
 
-  override def rewrite(v1: Trace, schema: DataRowSchema): Trace = {
+  override def rewrite(v1: Trace, schema: SpookySchema): Trace = {
 
     val uavConf = schema.ec.spooky.getConf[UAVConf]
 

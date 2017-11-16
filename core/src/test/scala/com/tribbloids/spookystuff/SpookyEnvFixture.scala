@@ -5,7 +5,7 @@ import com.tribbloids.spookystuff.doc.{Doc, Unstructured}
 import com.tribbloids.spookystuff.dsl.DriverFactory
 import com.tribbloids.spookystuff.execution.SpookyExecutionContext
 import com.tribbloids.spookystuff.extractors.{Alias, GenExtractor, GenResolved}
-import com.tribbloids.spookystuff.row.{DataRowSchema, SquashedFetchedRow, TypedField}
+import com.tribbloids.spookystuff.row.{SpookySchema, SquashedFetchedRow, TypedField}
 import com.tribbloids.spookystuff.session.{CleanWebDriver, Cleanable, Lifespan}
 import com.tribbloids.spookystuff.testutils.{FunSpecx, RemoteDocsFixture, TestHelper}
 import com.tribbloids.spookystuff.utils.CommonUtils
@@ -130,7 +130,7 @@ abstract class SpookyEnvFixture
   }
 
   lazy val defaultEC = SpookyExecutionContext(spooky)
-  lazy val defaultSchema = DataRowSchema(defaultEC)
+  lazy val defaultSchema = SpookySchema(defaultEC)
 
   def reloadSpooky: SpookyContext = {
     val sql = this.sql
@@ -139,9 +139,9 @@ abstract class SpookyEnvFixture
     result
   }
 
-  def emptySchema = DataRowSchema(SpookyExecutionContext(spooky))
+  def emptySchema = SpookySchema(SpookyExecutionContext(spooky))
 
-  implicit def withSchema(row: SquashedFetchedRow): SquashedFetchedRow#WithSchema = new row.WithSchema(emptySchema)
+  implicit def withSchema(row: SquashedFetchedRow): SquashedFetchedRow#WSchema = new row.WSchema(emptySchema)
   implicit def extractor2Resolved[T, R](extractor: Alias[T, R]): GenResolved[T, R] = GenResolved(
     extractor.resolve(emptySchema),
     TypedField(

@@ -1,6 +1,6 @@
 package com.tribbloids.spookystuff.actions
 
-import com.tribbloids.spookystuff.row.DataRowSchema
+import com.tribbloids.spookystuff.row.SpookySchema
 
 trait RewriteRule[T] extends Serializable{
 
@@ -9,7 +9,7 @@ trait RewriteRule[T] extends Serializable{
     * @param schema
     * @return
     */
-  def rewrite(v: T, schema: DataRowSchema): T
+  def rewrite(v: T, schema: SpookySchema): T
 }
 
 trait MonadicRewriteRule[T] extends Serializable{
@@ -19,5 +19,5 @@ trait MonadicRewriteRule[T] extends Serializable{
     * @param schema
     * @return
     */
-  def rewrite(v: T, schema: DataRowSchema): Option[T]
+  def rewrite(v: T, schema: SpookySchema): Option[T]
 }

@@ -58,7 +58,7 @@ case class SquashedFetchedRow(
     dataRows = dataRows.map(_.--(fields))
   )
 
-  class WithSchema(schema: DataRowSchema) extends Serializable {
+  class WSchema(schema: SpookySchema) extends Serializable {
 
     val withSpooky: traceView.WithSpooky = new SquashedFetchedRow.this.traceView.WithSpooky(schema.spooky)
 
@@ -172,11 +172,11 @@ case class SquashedFetchedRow(
      * if a groupedFetched doesn't yield any trace it is omitted
      * if 2 groupedFetched yield identical traces only the first is preserved?
      */
-    def rewriteLocally(
-                        traces: Set[Trace],
-                        filterEmpty: Boolean = true,
-                        distinct: Boolean = true
-                      ): Array[(TraceView, DataRow)] = {
+    def interpolateAndRewriteLocally(
+                                      traces: Set[Trace],
+                                      filterEmpty: Boolean = true,
+                                      distinct: Boolean = true
+                                    ): Array[(TraceView, DataRow)] = {
 
       val dataRows_traceOpts = semiUnsquash.flatMap {
         rows => //each element contains a different page group, CAUTION: not all of them are used: page group that yield no new datum will be removed, if all groups yield no new datum at least 1 row is preserved

@@ -13,7 +13,7 @@ import com.tribbloids.spookystuff.uav.{DummyUAVFixture, UAVConf, UAVTestUtils}
 /**
   * Created by peng on 16/06/17.
   */
-class GenPartitioner_VRPSuite extends DummyUAVFixture with VRPFixture {
+class VRPSuite extends DummyUAVFixture with VRPFixture {
 
   override def parallelism: Int = 4
 

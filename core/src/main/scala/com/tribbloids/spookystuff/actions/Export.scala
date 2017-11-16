@@ -13,7 +13,7 @@ import com.tribbloids.spookystuff.dsl.DocFilters
 import com.tribbloids.spookystuff.extractors.impl.Lit
 import com.tribbloids.spookystuff.extractors.{Col, Extractor, FR}
 import com.tribbloids.spookystuff.http._
-import com.tribbloids.spookystuff.row.{DataRowSchema, FetchedRow}
+import com.tribbloids.spookystuff.row.{SpookySchema, FetchedRow}
 import com.tribbloids.spookystuff.session.{Session, WebProxySetting}
 import com.tribbloids.spookystuff.utils.{HDFSResolver, SpookyUtils}
 import org.apache.commons.io.IOUtils
@@ -97,7 +97,7 @@ trait WaybackSupport extends Wayback {
   protected def injectWayback(
                                wayback: Extractor[Long],
                                pageRow: FetchedRow,
-                               schema: DataRowSchema
+                               schema: SpookySchema
                              ): Option[this.type] = {
     if (wayback == null) Some(this)
     else {
@@ -138,7 +138,7 @@ case class Snapshot(
     pageOpt.map(v => Seq(v)).getOrElse(Nil)
   }
 
-  override def doInterpolate(pageRow: FetchedRow, schema: DataRowSchema) = {
+  override def doInterpolate(pageRow: FetchedRow, schema: SpookySchema) = {
     this.copy().asInstanceOf[this.type].injectWayback(this.wayback, pageRow, schema)
   }
 }
@@ -175,7 +175,7 @@ case class Screenshot(
     pageOpt.map(v => Seq(v)).getOrElse(Nil)
   }
 
-  override def doInterpolate(pageRow: FetchedRow, schema: DataRowSchema) = {
+  override def doInterpolate(pageRow: FetchedRow, schema: SpookySchema) = {
     this.copy().asInstanceOf[this.type].injectWayback(this.wayback, pageRow, schema)
   }
 }
@@ -197,7 +197,7 @@ abstract class HttpMethod(
     else Some(HttpUtils.uri(uriStr))
   }
 
-  def resolveURI(pageRow: FetchedRow, schema: DataRowSchema): Option[Lit[FR, String]] = {
+  def resolveURI(pageRow: FetchedRow, schema: SpookySchema): Option[Lit[FR, String]] = {
     val first = this.uri.resolve(schema).lift(pageRow)
       .flatMap(SpookyUtils.asOption[Any])
     //TODO: no need to resolve array output?
@@ -551,7 +551,7 @@ case class Wget(
     httpInvoke(httpClient, context, request)
   }
 
-  override def doInterpolate(pageRow: FetchedRow, schema: DataRowSchema): Option[this.type] = {
+  override def doInterpolate(pageRow: FetchedRow, schema: SpookySchema): Option[this.type] = {
     val uriLit: Option[Lit[FR, String]] = resolveURI(pageRow, schema)
 
     uriLit.flatMap(
@@ -679,7 +679,7 @@ case class WpostImpl private[actions](
     result
   }
 
-  override def doInterpolate(pageRow: FetchedRow, schema: DataRowSchema): Option[this.type] = {
+  override def doInterpolate(pageRow: FetchedRow, schema: SpookySchema): Option[this.type] = {
     val uriLit: Option[Lit[FR, String]] = resolveURI(pageRow, schema)
 
     uriLit.flatMap(

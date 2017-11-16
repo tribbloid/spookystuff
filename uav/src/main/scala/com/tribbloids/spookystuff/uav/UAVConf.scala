@@ -67,6 +67,8 @@ case class UAVConf(
 
                   ) extends AbstractConf {
 
+  def _home = home.copy(aliasOpt = Some(Anchors.Home))
+
   def uavsInFleet: Set[UAV] = fleet.apply()
 
   def uavsInFleetShuffled: Seq[UAV] = Random.shuffle(uavsInFleet.toList)

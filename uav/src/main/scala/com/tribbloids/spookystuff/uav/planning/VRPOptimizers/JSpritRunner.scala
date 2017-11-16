@@ -18,7 +18,7 @@ import com.graphhopper.jsprit.core.reporting.SolutionPrinter
 import com.graphhopper.jsprit.core.reporting.SolutionPrinter.Print
 import com.graphhopper.jsprit.core.util.{Coordinate, FastVehicleRoutingTransportCostsMatrix, Solutions}
 import com.tribbloids.spookystuff.actions.{Trace, TraceView}
-import com.tribbloids.spookystuff.row.DataRowSchema
+import com.tribbloids.spookystuff.row.SpookySchema
 import com.tribbloids.spookystuff.uav.UAVConf
 import com.tribbloids.spookystuff.uav.actions.{UAVNavigation, Waypoint}
 import com.tribbloids.spookystuff.uav.dsl.GenPartitioners
@@ -33,7 +33,7 @@ object JSpritRunner {
     new MinimiaxCost(cohesiveness)
 
   def getCostMatrix(
-                     schema: DataRowSchema,
+                     schema: SpookySchema,
                      trace_indices: Seq[(TraceView, Int)]
                    ): FastVehicleRoutingTransportCostsMatrix = {
 
@@ -131,14 +131,14 @@ object JSpritRunner {
     best -> objectiveFunction.getCosts(best)
   }
 
-  def getPlotCoord(trace: Trace, schema: DataRowSchema): NED.C = {
+  def getPlotCoord(trace: Trace, schema: SpookySchema): NED.C = {
     val navs: Seq[UAVNavigation] = trace.collect {
       case nav: UAVNavigation => nav
     }
-    val homeLocation = schema.ec.spooky.getConf[UAVConf].home
+    val home = schema.ec.spooky.getConf[UAVConf]._home
     for (nav <- navs) {
       val opt = Try{nav.getLocation(schema)}.toOption.flatMap {
-        _.getCoordinate(NED, homeLocation)
+        _.getCoordinate(NED, home)
       }
       if (opt.nonEmpty) return opt.get
     }
@@ -164,7 +164,7 @@ object JSpritRunner {
 
 case class JSpritRunner(
                          problem: GenPartitioners.VRP,
-                         schema: DataRowSchema,
+                         schema: SpookySchema,
                          uavs: Array[UAVStatus],
                          traces: Array[TraceView]
                        ) {
@@ -186,7 +186,7 @@ case class JSpritRunner(
     (fromUAVs ++ fromTraces).zipWithIndex
   }
 
-  val homeLocation = spooky.getConf[UAVConf].home
+  val homeLocation = spooky.getConf[UAVConf]._home
 
   lazy val define: VehicleRoutingProblem = {
 

@@ -2,7 +2,7 @@ package com.tribbloids.spookystuff.uav.actions
 
 import com.tribbloids.spookystuff.extractors.Col
 import com.tribbloids.spookystuff.extractors.impl.Lit
-import com.tribbloids.spookystuff.row.{DataRowSchema, FetchedRow}
+import com.tribbloids.spookystuff.row.{SpookySchema, FetchedRow}
 import com.tribbloids.spookystuff.session.Session
 import com.tribbloids.spookystuff.uav.spatial.Anchors
 import com.tribbloids.spookystuff.uav.spatial.point.{Location, NED}
@@ -20,7 +20,7 @@ trait WaypointLike extends UAVNavigation {
   val to: Col[Location]
   lazy val _to = to.value
 
-  override def getLocation(schema: DataRowSchema): Location = _to
+  override def getLocation(schema: SpookySchema): Location = _to
 
   override def getSessionView(session: Session) = new this.SessionView(session)
 
@@ -41,7 +41,7 @@ case class Waypoint(
 
   override def doInterpolate(
                               pageRow: FetchedRow,
-                              schema: DataRowSchema
+                              schema: SpookySchema
                             ): Option[this.type] = {
 
     val vOpt: Option[Any] = to.resolve(schema).lift(pageRow)
@@ -53,7 +53,7 @@ case class Waypoint(
         val p = Location.parse(v)
           .replaceAnchors {
             case Anchors.Home =>
-              uavConf.home
+              uavConf._home
           }
         this.copy(
           to = Lit(p)

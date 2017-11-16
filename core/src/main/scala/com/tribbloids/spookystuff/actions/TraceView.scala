@@ -2,7 +2,7 @@ package com.tribbloids.spookystuff.actions
 
 import com.tribbloids.spookystuff.caching.{DFSDocCache, InMemoryDocCache}
 import com.tribbloids.spookystuff.doc.{Doc, Fetched}
-import com.tribbloids.spookystuff.row.{DataRowSchema, FetchedRow}
+import com.tribbloids.spookystuff.row.{SpookySchema, FetchedRow}
 import com.tribbloids.spookystuff.session.Session
 import com.tribbloids.spookystuff.utils.IDMixin
 import com.tribbloids.spookystuff.{SpookyContext, dsl}
@@ -104,7 +104,7 @@ case class TraceView(
   }
 
   //always has output (Sometimes Empty) to handle left join
-  override def doInterpolate(row: FetchedRow, schema: DataRowSchema): Option[this.type] = {
+  override def doInterpolate(row: FetchedRow, schema: SpookySchema): Option[this.type] = {
     val seq = this.doInterpolateSeq(row, schema)
 
     Some(new TraceView(seq).asInstanceOf[this.type])
@@ -112,14 +112,14 @@ case class TraceView(
 
   override lazy val globalRewriters = children.flatMap(_.globalRewriters).distinct
 
-  def rewriteGlobally(schema: DataRowSchema): Trace = {
+  def rewriteGlobally(schema: SpookySchema): Trace = {
     globalRewriters.foldLeft(children){
       (trace, rewriter) =>
         rewriter.rewrite(trace, schema)
     }
   }
 
-  def interpolateAndRewriteLocally(row: FetchedRow, schema: DataRowSchema): Option[Trace] = {
+  def interpolateAndRewriteLocally(row: FetchedRow, schema: SpookySchema): Option[Trace] = {
     //TODO: isolate interploation into an independent rewriter?
     val interpolatedOpt: Option[Trace] = interpolate(row, schema)
       .map(_.children)
@@ -129,7 +129,7 @@ case class TraceView(
     }
   }
 
-  def rewriteLocally(schema: DataRowSchema): Option[Trace] = {
+  def rewriteLocally(schema: SpookySchema): Option[Trace] = {
     val interpolatedOpt: Option[Trace] = Some(this.children)
     val result = localRewriters.foldLeft(interpolatedOpt){
       (opt, rewriter) =>
@@ -207,7 +207,7 @@ final case class TraceSetView(self: Set[Trace]) {
 
   def ||(other: TraversableOnce[Trace]): Set[Trace] = self ++ other
 
-  def rewriteGlobally(schema: DataRowSchema): Set[Trace] = self.map(_.rewriteGlobally(schema))
+  def rewriteGlobally(schema: SpookySchema): Set[Trace] = self.map(_.rewriteGlobally(schema))
 
   //  def interpolate(row: FetchedRow, schema: DataRowSchema): Set[Trace] =
   //    self.flatMap(_.interpolate(row, schema: DataRowSchema).map(_.children))

@@ -5,7 +5,7 @@ import com.tribbloids.spookystuff.actions.Export
 import com.tribbloids.spookystuff.doc.{Doc, DocUID, Fetched}
 import com.tribbloids.spookystuff.extractors.Col
 import com.tribbloids.spookystuff.extractors.impl.Lit
-import com.tribbloids.spookystuff.row.{DataRowSchema, FetchedRow}
+import com.tribbloids.spookystuff.row.{SpookySchema, FetchedRow}
 import com.tribbloids.spookystuff.session.Session
 import com.tribbloids.spookystuff.session.python.{CaseInstanceRef, PyConverter}
 import org.apache.http.entity.ContentType
@@ -31,7 +31,7 @@ case class DummyPyAction(
     Seq(doc)
   }
 
-  override def doInterpolate(pageRow: FetchedRow, schema: DataRowSchema) = {
+  override def doInterpolate(pageRow: FetchedRow, schema: SpookySchema) = {
 
     a.resolve(schema)
       .lift

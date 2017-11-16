@@ -1,77 +1,38 @@
 package org.apache.spark.mllib.uav
 
-import breeze.linalg.DenseVector
-import com.tribbloids.spookystuff.actions.{Trace, TraceView}
-import com.tribbloids.spookystuff.uav.UAVConf
-import com.tribbloids.spookystuff.uav.spatial.point.NED
+import com.tribbloids.spookystuff.actions.Trace
+import com.tribbloids.spookystuff.row.SpookySchema
+import com.tribbloids.spookystuff.uav.planning.Traffics.Clearance
 import org.apache.spark.mllib.linalg.BLAS
-import org.slf4j.LoggerFactory
 
 object ClearanceGradient {
 
-  def t4MinimalDist(
-                     A1: NED.C,
-                     B1: NED.C,
-                     A2: NED.C,
-                     B2: NED.C
-                   ): (Double, Double) = {
-
-    val M = A1.vector - A2.vector
-    val C1 = B1.vector - A1.vector
-    val C2 = B2.vector - A2.vector
-
-    val CC1 = C1.t * C1
-    val CC2 = C2.t * C2
-
-    def clamp(_t1: Double, _t2: Double) = {
-      val t1 = Math.max(Math.min(1.0, _t1), 0.0)
-      val t2 = Math.max(Math.min(1.0, _t2), 0.0)
-      t1 -> t2
-    }
-
-    (CC1, CC2) match {
-      case (0.0, 0.0) =>
-        clamp(0.0, 0.0)
-      case (0.0, _) =>
-        val t1 = 0
-        val t2 = C2.t * M / CC2
-        clamp(t1, t2)
-      case (_, 0.0) =>
-        val t2 = 0
-        val t1 = - C1.t * M / CC1
-        clamp(t1, t2)
-      case _ =>
-        val C21 = C2 * C1.t
-        val G = C21 - C21.t
-        val C1TGC2 = C1.t * G * C2
-
-        def t1 = - (M.t * G * C2) / C1TGC2
-        def t2 = - (M.t * G * C1) / C1TGC2
-
-        clamp(t1, t2)
-    }
-  }
+  def apply(runner: ClearanceSGDRunner): ClearanceGradient = ClearanceGradient(
+    runner.pid2Traces_resampled,
+    runner.outer,
+    runner.schema
+  )
 }
 
 case class ClearanceGradient(
-                              runner: ClearanceSGDRunner
+                              id2Traces: Map[Int, Seq[Trace]],
+                              self: Clearance,
+                              schema: SpookySchema
                             ) extends PathPlanningGradient {
 
-  def id2Traces: Map[Int, Seq[TraceView]] = runner.pid2Traces
+  override def constraint = self.constraint
 
-  def schema = runner.schema
-  override def constraint = runner.outer.constraint
-
-  val uavConf = schema.ec.spooky.getConf[UAVConf]
-  val home = uavConf.home
+  //  val uavConf = schema.ec.spooky.getConf[UAVConf]
+  //  val home = uavConf.home
 
   def findNextTraceInSamePartition(flattenIndex: Int,
                                    partitionID: Int): Option[Trace] = {
+
     for (i <- (flattenIndex + 1) until flatten.size) {
       val (nextPID, trace) = flatten(i)
       if (nextPID != partitionID) return None
       trace.foreach {
-        case vin: NavFeatureEncoding => return Some(trace)
+        case ven: VectorEncodedNav => return Some(trace)
         case _ =>
       }
     }
@@ -95,68 +56,54 @@ case class ClearanceGradient(
         trace -> nextTraceOpt
     }
 
-    val nav_locations1_2 = traces1_2.map {
+    val encoded1_2: Array[List[VectorEncodedNav]] = traces1_2.map {
       tuple =>
-        val nav_locations = {
-          val navs = tuple._1.collect {
-            case v: NavFeatureEncoding => v
+        val shifted = {
+          val encoded = tuple._1.collect {
+            case v: VectorEncodedNav => v
           }
-          navs.map {
+          encoded.map {
             nav =>
-              nav -> nav.shiftAllByWeight(weights.toBreeze)
-                .getLocation(schema)
+              nav.shiftByWeights(weights.toBreeze)
           }
         }
-        val nextNav_locationOpt = tuple._2.map {
+        val nextShiftedOpt = tuple._2.map {
           nextTrace =>
-            val nextNav = nextTrace.find(_.isInstanceOf[NavFeatureEncoding]).get.asInstanceOf[NavFeatureEncoding]
-            nextNav -> nextNav.shiftAllByWeight(weights.toBreeze)
-              .getLocation(schema)
+            val nextNav = nextTrace.find(_.isInstanceOf[VectorEncodedNav])
+              .get.asInstanceOf[VectorEncodedNav]
+            nextNav.shiftByWeights(weights.toBreeze)
         }
-        nav_locations ++ nextNav_locationOpt
+        shifted ++ nextShiftedOpt
     }
-    val nav_coordinates1_2 = nav_locations1_2.map {
-      nav_locations =>
-        nav_locations.map {
-          nav_location =>
-            nav_location._1 -> nav_location._2.getCoordinate(NED, home).get
-        }
-    }
-    val Array(nav_coordinates1, nav_coordinates2) = nav_coordinates1_2
+    //    val nav_coordinates1_2 = encoded1_2.map {
+    //      nav_locations =>
+    //        nav_locations.map {
+    //          nav_location =>
+    //            nav_location._1 -> nav_location._2.getCoordinate(NED, home).get
+    //        }
+    //    }
+    val Array(encoded1, encoded2) = encoded1_2
 
     var cumViolation = 0.0
     for (
-      i <- 0 until (nav_coordinates1.size - 1);
-      j <- 0 until (nav_coordinates2.size - 1)
+      i <- 0 until (encoded1.size - 1);
+      j <- 0 until (encoded2.size - 1)
     ) {
 
-      case class Notation(v: (NavFeatureEncoding, NED.C)) {
+      case class Notation(v: VectorEncodedNav) {
 
-        val vin = v._1
-        val coordinate = v._2
-        val vector = coordinate.vector
-
-        var negNabla: Vec = _
+        var offset: Vec = _
       }
 
-      val A1 = Notation(nav_coordinates1(i))
-      val B1 = Notation(nav_coordinates1(i+1))
-      val A2 = Notation(nav_coordinates2(i))
-      val B2 = Notation(nav_coordinates2(i+1))
+      val A1 = Notation(encoded1(i))
+      val B1 = Notation(encoded1(i+1))
+      val A2 = Notation(encoded2(i))
+      val B2 = Notation(encoded2(i+1))
 
-      val (t1, t2) = ClearanceGradient.t4MinimalDist(
-        A1.coordinate, B1.coordinate,
-        A2.coordinate, B2.coordinate
-      )
+      val twoLines: TwoLines = TwoLines(A1.v, B1.v, A2.v, B2.v)
+      import twoLines._
 
-      val M = A1.vector - A2.vector
-      val C1 = B1.vector - A1.vector
-      val C2 = B2.vector - A2.vector
-
-      val P: DenseVector[Double] = M + t1*C1 - t2*C2
-      val DSquare = P dot P
-      val D = Math.sqrt(DSquare)
-      val violation = runner.outer.traffic - D
+      val violation = self._traffic - D
 
       if (violation > 0) {
 
@@ -166,21 +113,21 @@ case class ClearanceGradient(
           ratio
         }
 
-        A1.negNabla = (1 - t1) * scaling * P
-        B1.negNabla = t1 * scaling * P
-        A2.negNabla = (t2 - 1) * scaling * P
-        B2.negNabla = - t2 * scaling * P
+        A1.offset = (1 - t1) * scaling * P
+        B1.offset = t1 * scaling * P
+        A2.offset = (t2 - 1) * scaling * P
+        B2.offset = - t2 * scaling * P
 
         val concat: Seq[(Int, Double)] = Seq(A1, B1, A2, B2).flatMap {
           notation =>
-            var nabla: Vec = - notation.negNabla
+            var nabla: Vec = - notation.offset
 
-            (notation.vin.nav.constraint.toSeq ++ this.constraint).foreach {
+            (notation.v.constraint.toSeq ++ this.constraint).foreach {
               cc =>
                 nabla = cc.rewrite(nabla, schema)
             }
 
-            notation.vin.weightIndices.zip(nabla.toArray)
+            notation.v.weightIndices.zip(nabla.toArray)
         }
 
         val concatGradVec = new MLSVec(
@@ -192,10 +139,9 @@ case class ClearanceGradient(
         cumViolation += violation
       }
     }
-    println(
-      //    LoggerFactory.getLogger(this.getClass).info(
-      s"========= cumViolation: $cumViolation ========="
-    )
+    //    LoggerFactory.getLogger(this.getClass).info(
+    //      s"========= cumViolation: $cumViolation ========="
+    //    )
     cumViolation
   }
 }

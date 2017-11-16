@@ -1,6 +1,6 @@
 package com.tribbloids.spookystuff.uav.planning
 
-import com.tribbloids.spookystuff.row.DataRowSchema
+import com.tribbloids.spookystuff.row.SpookySchema
 import com.tribbloids.spookystuff.session.Session
 import com.tribbloids.spookystuff.uav.UAVConf
 import com.tribbloids.spookystuff.uav.actions.UAVNavigation
@@ -35,5 +35,5 @@ private[uav] case class PreferUAV(
     Nil
   }
 
-  override def getLocation(schema: DataRowSchema): Location = uavStatus.currentLocation
+  override def getLocation(schema: SpookySchema): Location = uavStatus.currentLocation
 }

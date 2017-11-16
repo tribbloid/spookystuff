@@ -9,7 +9,7 @@ sealed trait ExploreAlgorithm {
 
   def getImpl(
                params: ExploreParams,
-               schema: DataRowSchema
+               schema: SpookySchema
              ): ExploreAlgorithm.Impl
 }
 
@@ -18,7 +18,7 @@ object ExploreAlgorithm {
   trait Impl extends Serializable {
 
     val params: ExploreParams
-    val schema: DataRowSchema
+    val schema: SpookySchema
 
     /**
       *
@@ -86,12 +86,12 @@ object ExploreAlgorithms {
 
     override def getImpl(
                           params: ExploreParams,
-                          schema: DataRowSchema
+                          schema: SpookySchema
                         ) = Impl(params, schema)
 
     case class Impl(
                      override val params: ExploreParams,
-                     schema: DataRowSchema
+                     schema: SpookySchema
                    ) extends EliminatingImpl {
 
       import params._
@@ -177,10 +177,10 @@ object ExploreAlgorithms {
 
   case object DepthFirst extends ExploreAlgorithm {
 
-    override def getImpl(params: ExploreParams, schema: DataRowSchema): Impl =
+    override def getImpl(params: ExploreParams, schema: SpookySchema): Impl =
       Impl(params, schema)
 
-    case class Impl(params: ExploreParams, schema: DataRowSchema) extends EliminatingImpl {
+    case class Impl(params: ExploreParams, schema: SpookySchema) extends EliminatingImpl {
       /**
         *
         */

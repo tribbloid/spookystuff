@@ -68,8 +68,8 @@ class ExploreRunner(
     import impl._
     import params._
 
-    implicit def withSchema(row: SquashedFetchedRow): SquashedFetchedRow#WithSchema =
-      new row.WithSchema(schema)
+    implicit def withSchema(row: SquashedFetchedRow): SquashedFetchedRow#WSchema =
+      new row.WSchema(schema)
 
     val bestOpen: (TraceView, Iterable[DataRow]) = openSelector(open)
 
@@ -99,7 +99,7 @@ class ExploreRunner(
       val newOpens : Array[(TraceView, DataRow)] = bestNonFringeRow
         .extract(resolved)
         .flattenData(resolved.field, ordinalField, joinType.isLeft, sampler)
-        .rewriteLocally(trace)
+        .interpolateAndRewriteLocally(trace)
         .map {
           tuple =>
             tuple._1 -> tuple._2

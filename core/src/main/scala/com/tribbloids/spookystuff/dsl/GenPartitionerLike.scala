@@ -1,7 +1,7 @@
 package com.tribbloids.spookystuff.dsl
 
 import com.tribbloids.spookystuff.dsl.GenPartitionerLike.Instance
-import com.tribbloids.spookystuff.row.{BeaconRDD, DataRowSchema}
+import com.tribbloids.spookystuff.row.{BeaconRDD, SpookySchema}
 import com.tribbloids.spookystuff.utils.locality.LocalityRDDView
 import org.apache.spark.rdd.RDD
 
@@ -14,7 +14,7 @@ import scala.reflect.ClassTag
 //TODO: name should be 'planner'?
 trait GenPartitionerLike[L, -U >: L] {
 
-  def getInstance[K >: L <: U: ClassTag](schema: DataRowSchema): Instance[K]
+  def getInstance[K >: L <: U: ClassTag](schema: SpookySchema): Instance[K]
 }
 
 object GenPartitionerLike {
@@ -73,7 +73,7 @@ object GenPartitionerLike {
     */
   abstract class RepartitionKeyImpl[K](implicit val ctg: ClassTag[K]) extends Instance[K] {
 
-    def schema: DataRowSchema
+    def schema: SpookySchema
 
     def reduceByKey[V: ClassTag](
                                   rdd: RDD[(K, V)],
@@ -82,7 +82,7 @@ object GenPartitionerLike {
                                 ): RDD[(K, V)] = {
 
       val ec = schema.ec
-      ec.scratchRDDs.persist(rdd, ec.spooky.spookyConf.defaultStorageLevel) //TODO: optional?
+      ec.persist(rdd) //TODO: optional?
       val keys = rdd.keys
 
       val keysRepartitioned = repartitionKey(keys, beaconRDDOpt)
