@@ -1,4 +1,4 @@
-package com.tribbloids.spookystuff.http;
+package com.tribbloids.spookystuff.utils.http;
 
 import org.apache.http.conn.ssl.X509HostnameVerifier;
 

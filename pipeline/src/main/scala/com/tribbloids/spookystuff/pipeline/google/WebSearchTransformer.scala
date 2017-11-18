@@ -3,7 +3,7 @@ package com.tribbloids.spookystuff.pipeline.google
 import java.util.UUID
 
 import com.tribbloids.spookystuff.actions._
-import com.tribbloids.spookystuff.http.HttpUtils
+import com.tribbloids.spookystuff.utils.http.HttpUtils
 import com.tribbloids.spookystuff.pipeline.RemoteTransformer
 import com.tribbloids.spookystuff.rdd.FetchedDataset
 import com.tribbloids.spookystuff.{SpookyContext, dsl}

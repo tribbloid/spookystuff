@@ -6,7 +6,7 @@ import java.util.UUID
 import com.tribbloids.spookystuff._
 import com.tribbloids.spookystuff.actions._
 import com.tribbloids.spookystuff.caching.CacheLevel
-import com.tribbloids.spookystuff.utils.{CommonUtils, IDMixin, ScalaUDT, SpookyUtils}
+import com.tribbloids.spookystuff.utils.{CommonUtils, IDMixin, ScalaUDT}
 import org.apache.commons.csv.CSVFormat
 import org.apache.hadoop.fs.Path
 import org.apache.http.StatusLine

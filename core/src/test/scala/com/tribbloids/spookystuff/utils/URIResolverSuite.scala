@@ -2,12 +2,13 @@ package com.tribbloids.spookystuff.utils
 
 import com.tribbloids.spookystuff.SpookyEnvFixture
 import com.tribbloids.spookystuff.testutils.LocalPathDocsFixture
+import com.tribbloids.spookystuff.utils.io.HDFSResolver
 import org.apache.hadoop.security.UserGroupInformation
 
 /**
   * Created by peng on 01/09/16.
   */
-class PathResolverSuite extends SpookyEnvFixture with LocalPathDocsFixture {
+class URIResolverSuite extends SpookyEnvFixture with LocalPathDocsFixture {
 
   val resolverWithUser = HDFSResolver(
     sc.hadoopConfiguration,
@@ -15,7 +16,7 @@ class PathResolverSuite extends SpookyEnvFixture with LocalPathDocsFixture {
   )
 
   it("HDFSResolver can override login UGI") {
-    val user = resolverWithUser.input(HTML_URL) {
+    val user: String = resolverWithUser.input(HTML_URL) {
       is =>
         UserGroupInformation.getCurrentUser.getUserName
     }

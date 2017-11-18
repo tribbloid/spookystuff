@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.tribbloids.spookystuff.http;
+package com.tribbloids.spookystuff.utils.http;
 
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;

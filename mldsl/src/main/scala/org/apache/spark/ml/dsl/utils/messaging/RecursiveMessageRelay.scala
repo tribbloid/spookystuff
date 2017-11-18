@@ -7,8 +7,6 @@ import com.tribbloids.spookystuff.utils.ReflectionUtils
   */
 object RecursiveMessageRelay extends MessageRelay[Any] {
 
-  //  override implicit def formats: Formats = Xml.defaultFormats + FallbackJSONSerializer
-
   //avoid using scala reflections on worker as they are thread unsafe, use JSON4s that is more battle tested
   def transform(value: Any)(f: PartialFunction[Any, Any]): Any = {
     val result = f.applyOrElse[Any, Any](

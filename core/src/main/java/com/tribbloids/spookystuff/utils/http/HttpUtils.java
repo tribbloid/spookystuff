@@ -1,4 +1,4 @@
-package com.tribbloids.spookystuff.http;
+package com.tribbloids.spookystuff.utils.http;
 
 import oauth.signpost.basic.DefaultOAuthConsumer;
 import oauth.signpost.exception.OAuthCommunicationException;
@@ -31,7 +31,9 @@ public class HttpUtils {
     return uri(s).toString();
   }
 
-  public static URI uri(String s) throws URISyntaxException {
+  public static URI uri(String str) throws URISyntaxException {
+
+    String s = str.trim();
 
     //this solution is abandoned as it cannot handle question mark
 //    URI uri;

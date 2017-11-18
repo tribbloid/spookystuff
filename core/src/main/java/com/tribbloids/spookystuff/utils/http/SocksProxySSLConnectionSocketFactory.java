@@ -1,4 +1,4 @@
-package com.tribbloids.spookystuff.http;
+package com.tribbloids.spookystuff.utils.http;
 
 import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
 import org.apache.http.protocol.HttpContext;

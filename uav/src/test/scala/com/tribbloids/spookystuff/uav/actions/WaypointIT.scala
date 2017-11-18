@@ -19,7 +19,7 @@ class WaypointIT extends APMQuadFixture {
     val move = Waypoint(wp1)
 
     RecursiveMessageRelay.toM(move).prettyJSON.shouldBe(
-
+      //TODO: missing
     )
   }
 

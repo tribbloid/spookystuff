@@ -5,7 +5,7 @@ import com.tribbloids.spookystuff.caching.CacheLevel
 import com.tribbloids.spookystuff.doc.{Doc, Fetched, NoDoc}
 import com.tribbloids.spookystuff.extractors.Extractor
 import com.tribbloids.spookystuff.extractors.impl.Lit
-import com.tribbloids.spookystuff.http.HttpUtils
+import com.tribbloids.spookystuff.utils.http.HttpUtils
 import com.tribbloids.spookystuff.row.{SpookySchema, FetchedRow}
 import com.tribbloids.spookystuff.session.Session
 import com.tribbloids.spookystuff.utils.CommonUtils

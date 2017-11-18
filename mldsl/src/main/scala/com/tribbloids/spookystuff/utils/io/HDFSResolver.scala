@@ -1,11 +1,12 @@
-package com.tribbloids.spookystuff.utils
+package com.tribbloids.spookystuff.utils.io
 
 import java.io.{InputStream, OutputStream}
 import java.security.{PrivilegedAction, PrivilegedActionException}
 
+import com.tribbloids.spookystuff.utils.{BinaryWritable, CommonUtils}
 import org.apache.hadoop
 import org.apache.hadoop.conf.Configuration
-import org.apache.hadoop.fs.{FSDataInputStream, FSDataOutputStream, FileSystem, Path}
+import org.apache.hadoop.fs._
 import org.apache.hadoop.security.UserGroupInformation
 
 /**
@@ -14,7 +15,7 @@ import org.apache.hadoop.security.UserGroupInformation
 case class HDFSResolver(
                          @transient hadoopConf: Configuration,
                          ugiFactory: () => Option[UserGroupInformation] = HDFSResolver.noUGIFactory
-                       ) extends PathResolver {
+                       ) extends URIResolver {
 
   def lockedSuffix: String = ".locked"
 
@@ -54,7 +55,7 @@ case class HDFSResolver(
     }
   }
 
-  def input[T](pathStr: String)(f: InputStream => T): T = doAsUGI {
+  def input[T](pathStr: String)(f: InputStream => T) = doAsUGI {
     val path: Path = new Path(pathStr)
     val fs: FileSystem = path.getFileSystem(getHadoopConf)
 
@@ -63,7 +64,7 @@ case class HDFSResolver(
 
       val lockedPath = new Path(pathStr + lockedSuffix)
 
-      fs.getStatus(path)
+      val status = fs.getStatus(path)
 
       //wait for 15 seconds in total
       retry {
@@ -75,7 +76,10 @@ case class HDFSResolver(
     val fis: FSDataInputStream = fs.open(path)
 
     try {
-      f(fis)
+      val result = f(fis)
+      new Resource(result) {
+        override lazy val metadata = describe(path)
+      }
     }
     finally {
       fis.close()
@@ -83,7 +87,7 @@ case class HDFSResolver(
   }
 
   override def output[T](pathStr: String, overwrite: Boolean
-                        )(f: (OutputStream) => T): T = doAsUGI{
+                        )(f: (OutputStream) => T) = doAsUGI {
     val path = new Path(pathStr)
     val fs = path.getFileSystem(getHadoopConf)
 
@@ -92,7 +96,9 @@ case class HDFSResolver(
     try {
       val result = f(fos)
       fos.flush()
-      result
+      new Resource(result) {
+        override lazy val metadata = describe(path)
+      }
     }
     finally {
       fos.close()
@@ -156,6 +162,36 @@ case class HDFSResolver(
         fs.close()
       }
     }
+  }
+
+  def describe(path: Path): ResourceMetadata = {
+    val fs: FileSystem = path.getFileSystem(hadoopConf)
+
+    def getMetadata(status: FileStatus) = {
+      val name = status.getPath.getName
+      val map = reflectiveMetadata(status)
+      val tpe = if (status.isDirectory)
+        Some(URIResolver.DIR_TYPE)
+      else
+        None
+      ResourceMetadata(
+        path.toString,
+        Option(name),
+        tpe,
+        map
+      )
+    }
+
+    val root = {
+      val status = fs.getFileStatus(path)
+      getMetadata(status)
+    }
+
+    val children = fs.listStatus(path).map {
+      status =>
+        getMetadata(status)
+    }
+    root.copy(children = children)
   }
 }
 

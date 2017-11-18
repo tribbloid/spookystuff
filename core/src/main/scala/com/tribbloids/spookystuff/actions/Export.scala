@@ -12,10 +12,11 @@ import com.tribbloids.spookystuff.doc._
 import com.tribbloids.spookystuff.dsl.DocFilters
 import com.tribbloids.spookystuff.extractors.impl.Lit
 import com.tribbloids.spookystuff.extractors.{Col, Extractor, FR}
-import com.tribbloids.spookystuff.http._
-import com.tribbloids.spookystuff.row.{SpookySchema, FetchedRow}
+import com.tribbloids.spookystuff.utils.http._
+import com.tribbloids.spookystuff.row.{FetchedRow, SpookySchema}
 import com.tribbloids.spookystuff.session.{Session, WebProxySetting}
-import com.tribbloids.spookystuff.utils.{HDFSResolver, SpookyUtils}
+import com.tribbloids.spookystuff.utils.SpookyUtils
+import com.tribbloids.spookystuff.utils.io.HDFSResolver
 import org.apache.commons.io.IOUtils
 import org.apache.hadoop.fs.{FileStatus, FileSystem, Path}
 import org.apache.http.client.HttpClient

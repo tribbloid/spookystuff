@@ -1,47 +1,9 @@
-package com.tribbloids.spookystuff.utils
+package com.tribbloids.spookystuff.utils.io
 
 import java.io._
 import java.nio.file.FileAlreadyExistsException
 
-/*
- * to make it resilient to asynchronous read/write, let output rename the file, write it, and rename back,
- * and let input wait for file name's reversion if its renamed by another node.
- *
- * also, can ONLY resolve ABSOLUTE path! since its instances cannot be guaranteed to be in the same JVM,
- * this is the only way to guarantee that files are not affected by their respective working directory.
- */
-abstract class PathResolver extends Serializable {
-
-  def input[T](pathStr: String)(f: InputStream => T): T
-
-  def output[T](pathStr: String, overwrite: Boolean)(f: OutputStream => T): T
-
-  def lockAccessDuring[T](pathStr: String)(f: String => T): T
-
-  def toAbsolute(pathStr: String): String
-
-  final def isAbsolute(pathStr: String) = {
-    toAbsolute(pathStr) == pathStr
-  }
-
-  def resourceOrAbsolute(pathStr: String): String = {
-    val resourcePath = CommonUtils.getCPResource(pathStr.stripPrefix("/")).map(_.getPath).getOrElse(pathStr)
-
-    val result = this.toAbsolute(resourcePath)
-    result
-  }
-
-  def DFSBlockedAccessRetries = 10
-  def DFSBlockedAccessInterval = 1000
-
-  def retry[T](f: =>T): T = {
-    CommonUtils.retry(DFSBlockedAccessRetries, DFSBlockedAccessInterval){
-      f
-    }
-  }
-}
-
-object LocalResolver extends PathResolver {
+object LocalResolver extends URIResolver {
 
   val lockedSuffix: String = ".locked"
 
@@ -49,7 +11,7 @@ object LocalResolver extends PathResolver {
     assert(file.isAbsolute, s"BAD DESIGN: ${file.getPath} is not an absolute path")
   }
 
-  override def input[T](pathStr: String)(f: (InputStream) => T): T = {
+  override def input[T](pathStr: String)(f: (InputStream) => T) = {
 
     //    val file = new File(pathStr)
     //    ensureAbsolute(file)
@@ -66,17 +28,22 @@ object LocalResolver extends PathResolver {
       }
     }
 
-    val fis = new FileInputStream(pathStr)
+    val file = new File(pathStr)
+    val fis = new FileInputStream(file)
+
 
     try {
-      f(fis)
+      val result = f(fis)
+      new Resource(result) {
+        override lazy val metadata = describe(file)
+      }
     }
     finally {
       fis.close()
     }
   }
 
-  override def output[T](pathStr: String, overwrite: Boolean)(f: (OutputStream) => T): T = {
+  override def output[T](pathStr: String, overwrite: Boolean)(f: (OutputStream) => T) = {
 
     val file = new File(pathStr)
     //    ensureAbsolute(file)
@@ -98,7 +65,9 @@ object LocalResolver extends PathResolver {
     try {
       val result = f(fos)
       fos.flush()
-      result
+      new Resource(result) {
+        override lazy val metadata = describe(file)
+      }
     }
     finally {
       fos.close()
@@ -133,7 +102,32 @@ object LocalResolver extends PathResolver {
     val file = new File(pathStr)
     file.getAbsolutePath
   }
+
+  def describe(file: File): ResourceMetadata = {
+
+    def getMetadata(file: File) = {
+      val name = file.getName
+      val map = reflectiveMetadata(file)
+      val tpe = if (file.isDirectory)
+        Some(URIResolver.DIR_TYPE)
+      else
+        None
+      ResourceMetadata(
+        file.getAbsolutePath,
+        Option(name),
+        tpe,
+        map
+      )
+    }
+
+    val root = {
+      getMetadata(file)
+    }
+
+    val children = file.listFiles().map {
+      file =>
+        getMetadata(file)
+    }
+    root.copy(children = children)
+  }
 }
-
-
-

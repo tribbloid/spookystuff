@@ -17,7 +17,7 @@ class MessageReader[Obj](
 
   override def toM(v: Obj) = v
 
-  def reader = this
+  override def reader = this
 }
 
 object MessageReader extends MessageReader[Any] with Level1 {
