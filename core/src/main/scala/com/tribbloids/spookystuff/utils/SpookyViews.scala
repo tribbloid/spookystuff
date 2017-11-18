@@ -493,12 +493,12 @@ case object SpookyViews {
     class FilterByType[B: ClassTag] {
 
       def get[That](implicit bf: CanBuildFrom[Repr, B, That]): That = {
-        //        val result = self.flatMap{
-        //          v =>
-        //            SpookyUtils.typedOrNone[B](v)
-        //        }(bf)
-        val result = self.collect {case v: B => v}
-        result
+        self.flatMap{
+          v =>
+            SpookyUtils.typedOrNone[B](v)
+        }(bf)
+
+        //        self.collect {case v: B => v} //TODO: switch to this after stop 2.10 support
       }
     }
 
@@ -528,13 +528,12 @@ case object SpookyViews {
   implicit class ArrayView[A](self: Array[A]) {
 
     def filterByType[B <: A: ClassTag]: Array[B] = {
-//      self.flatMap {
-//        v =>
-//          SpookyUtils.typedOrNone[B](v)
-//      }
+      self.flatMap {
+        v =>
+          SpookyUtils.typedOrNone[B](v)
+      }
 
-      val result = self.collect {case v: B => v}
-      result
+      //      self.collect {case v: B => v} //TODO: switch to this after stop 2.10 support
     }
 
     def flattenByIndex(
