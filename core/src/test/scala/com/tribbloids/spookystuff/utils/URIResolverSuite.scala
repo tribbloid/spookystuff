@@ -29,7 +29,7 @@ class URIResolverSuite extends SpookyEnvFixture with LocalPathDocsFixture {
     val users = sc.parallelize(1 to (sc.defaultParallelism * 2))
       .mapPartitions {
         itr =>
-          val str = resolver.input(HTML_URL) {
+          val str: String = resolver.input(HTML_URL) {
             is =>
               UserGroupInformation.getCurrentUser.getUserName
           }
