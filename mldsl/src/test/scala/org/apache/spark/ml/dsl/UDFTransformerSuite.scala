@@ -4,10 +4,9 @@ import com.tribbloids.spookystuff.testutils.{FunSpecx, TestHelper}
 import org.apache.spark.ml.feature.Tokenizer
 import org.apache.spark.sql.functions._
 
-
 case class User(
-               name: String,
-               age: Int
+                 name: String,
+                 age: Int
                )
 
 class UDFTransformerSuite extends FunSpecx {
@@ -34,6 +33,6 @@ class UDFTransformerSuite extends FunSpecx {
   it("transformer can add new column") {
     val end = arch.transform(src)
     end.collect().mkString("\n").shouldBe()
-//    end.show(false)
+    //    end.show(false)
   }
 }

@@ -2,11 +2,37 @@ package org.apache.spark.ml.dsl
 
 import org.apache.spark.annotation.DeveloperApi
 import org.apache.spark.ml.Transformer
-import org.apache.spark.ml.param.ParamMap
 import org.apache.spark.ml.param.shared.{HasInputCols, HasOutputCol}
+import org.apache.spark.ml.param.{Param, ParamMap}
 import org.apache.spark.ml.util.{DefaultParamsReadable, DefaultParamsWritable, Identifiable}
-import org.apache.spark.sql.{DataFrame, UserDefinedFunction}
 import org.apache.spark.sql.types.{StructField, StructType}
+import org.apache.spark.sql.{DataFrame, UserDefinedFunction}
+
+abstract class UDFTransformerLike
+  extends Transformer
+    with HasOutputCol
+    with DynamicParamsMixin {
+
+  def udfImpl: UserDefinedFunction
+
+  def getInputCols: Array[String]
+
+  import org.apache.spark.sql.functions._
+
+  override def transform(dataset: DataFrame): DataFrame = {
+    dataset.withColumn(
+      outputCol,
+      udfImpl(
+        (getInputCols: Array[String])
+          .map(v => col(v)): _*)
+    )
+  }
+
+  @DeveloperApi
+  override def transformSchema(schema: StructType): StructType = {
+    StructType(schema.fields :+ StructField(getOutputCol, udfImpl.dataType, nullable = true))
+  }
+}
 
 object UDFTransformer extends DefaultParamsReadable[UDFTransformer] {
 
@@ -22,23 +48,12 @@ object UDFTransformer extends DefaultParamsReadable[UDFTransformer] {
 case class UDFTransformer(
                            uid: String = Identifiable.randomUID("udf")
                          )
-  extends Transformer
+  extends UDFTransformerLike
     with HasInputCols
-    with HasOutputCol
-    with DefaultParamsWritable
-    with DynamicParamsMixin {
+    with DefaultParamsWritable{
 
-  lazy val UDF = GenericParam[UserDefinedFunction]()
-
-  import org.apache.spark.sql.functions._
-
-  override def transform(dataset: DataFrame): DataFrame = {
-    dataset.withColumn(outputCol,
-      UDF(
-        (inputCols: Array[String])
-          .map(v => col(v)): _*)
-    )
-  }
+  lazy val UDF: Param[UserDefinedFunction] = GenericParam[UserDefinedFunction]()
+  def udfImpl: UserDefinedFunction = UDF: UserDefinedFunction
 
   override def copy(extra: ParamMap): Transformer = this.defaultCopy(extra)
 
