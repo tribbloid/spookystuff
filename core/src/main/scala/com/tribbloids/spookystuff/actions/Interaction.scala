@@ -1,16 +1,15 @@
 package com.tribbloids.spookystuff.actions
 
-import com.thoughtworks.selenium.SeleniumException
-import com.tribbloids.spookystuff.Const
+import com.tribbloids.spookystuff.{ActionException, Const}
 import com.tribbloids.spookystuff.doc.{Doc, Unstructured}
 import com.tribbloids.spookystuff.extractors.Col
 import com.tribbloids.spookystuff.extractors.impl.Lit
-import com.tribbloids.spookystuff.row.{SpookySchema, FetchedRow}
+import com.tribbloids.spookystuff.row.{FetchedRow, SpookySchema}
 import com.tribbloids.spookystuff.session.Session
 import com.tribbloids.spookystuff.utils.SpookyUtils
 import org.openqa.selenium.interactions.{Actions => SeleniumActions}
 import org.openqa.selenium.support.ui.{ExpectedCondition, ExpectedConditions, Select}
-import org.openqa.selenium.{By, JavascriptExecutor, WebDriver}
+import org.openqa.selenium.{JavascriptExecutor, WebDriver}
 
 import scala.collection.mutable
 import scala.concurrent.duration.Duration
@@ -244,7 +243,7 @@ case class ClickNext(
         }
       }
     }
-    throw new SeleniumException("all elements has been clicked before")
+    throw new ActionException("all elements has been clicked before")
   }
 
   override def doInterpolate(pageRow: FetchedRow, schema: SpookySchema): Option[this.type] =
@@ -445,7 +444,7 @@ case class DragSlider(
 
     val element = this.getElement(selector, session)
 
-    val handle = element.findElement(By.cssSelector(handleSelector))
+    val handle = element.findElement(handleSelector.by)
 
     val dim = element.getSize
     val height = dim.getHeight

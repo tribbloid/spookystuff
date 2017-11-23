@@ -7,13 +7,14 @@ import com.tribbloids.spookystuff.row.{DataRow, FetchedRow, Field}
 import com.tribbloids.spookystuff.session.Session
 import com.tribbloids.spookystuff.testutils.TestHelper
 import com.tribbloids.spookystuff.{ActionException, Const, SpookyEnvFixture}
+import org.apache.spark.ml.dsl.utils.messaging.RecursiveMessageRelay
 import org.apache.spark.rdd.RDD
 
 import scala.collection.immutable.ListMap
 import scala.concurrent.{TimeoutException, duration}
 import scala.util.Random
 
-class TestAction extends SpookyEnvFixture {
+class ActionSuite extends SpookyEnvFixture {
 
   import duration._
 
@@ -57,7 +58,7 @@ class TestAction extends SpookyEnvFixture {
   exampleActionList.foreach{
     a =>
       it(s"${a.getClass.getSimpleName} has an UDT") {
-        val rdd: RDD[(Selector, Action)] = sc.parallelize(Seq("1" -> a))
+        val rdd: RDD[(Selector, Action)] = sc.parallelize(Seq(("1": Selector) -> a))
         val df = sql.createDataFrame(rdd)
 
         df.show(false)
@@ -65,6 +66,56 @@ class TestAction extends SpookyEnvFixture {
 
         //        df.toJSON.collect().foreach(println)
       }
+  }
+
+
+  it("Click -> JSON") {
+    val action = Click("o1")
+    val json = RecursiveMessageRelay.toM(action).prettyJSON() //TODO: add as a trait
+    json.shouldBe(
+      """
+        |{
+        |  "selector" : "By.sizzleCssSelector: o1",
+        |  "delay" : "0 seconds",
+        |  "blocking" : true
+        |}
+      """.stripMargin
+    )
+  }
+
+  it("Wget -> JSON") {
+    val action = Wget("http://dummy.com")
+    val json = RecursiveMessageRelay.toM(action).prettyJSON()
+    json.shouldBe(
+      """
+        |{
+        |  "uri" : "http://dummy.com",
+        |  "filter" : { }
+        |}
+      """.stripMargin
+    )
+  }
+
+  it("Loop -> JSON") {
+    val action = Loop(
+      Click("o1")
+        +> Snapshot()
+    )
+    val json = RecursiveMessageRelay.toM(action).prettyJSON()
+    json.shouldBe(
+      """
+        |{
+        |  "children" : [ {
+        |    "selector" : "By.sizzleCssSelector: o1",
+        |    "delay" : "0 seconds",
+        |    "blocking" : true
+        |  }, {
+        |    "filter" : { }
+        |  } ],
+        |  "limit" : 2147483647
+        |}
+      """.stripMargin
+    )
   }
 
   it("a session without webDriver initialized won't trigger errorDump") {

@@ -265,7 +265,7 @@ sealed trait Level1 extends Level2 {
     def CSS() = GetOnlyDocExpr.andFn(_.root).findAll(strC.s())
     def S() = CSS()
 
-    def CSS_*() = GetAllRootExpr.findAll(strC.s())
+    def CSS_*() = GetAllDocsExpr.findAll(strC.s())
     def S_*() = CSS_*()
 
     def A() = 'A.findAll(strC.s())
@@ -292,7 +292,7 @@ class DSL extends Level1 {
   //    val expr = this.S(selector)
   //    new IterableExView(expr).get(i)
   //  }
-  def `S_*`: GenExtractor[FR, Elements[Unstructured]] = GetAllRootExpr
+  def `S_*`: GenExtractor[FR, Elements[Unstructured]] = GetAllDocsExpr
   def S_*(selector: String): GenExtractor[FR, Elements[Unstructured]] = `S_*`.findAll(selector)
   //  def S_*(selector: String, i: Int): Extractor[Unstructured] = {
   //    val expr = GetAllPagesExpr.findAll(selector)

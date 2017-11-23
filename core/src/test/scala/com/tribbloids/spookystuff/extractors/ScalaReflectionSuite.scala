@@ -3,6 +3,7 @@ package com.tribbloids.spookystuff.extractors
 import com.tribbloids.spookystuff.extractors.impl.Lit
 import com.tribbloids.spookystuff.row.FetchedRow
 import com.tribbloids.spookystuff.testutils.FunSpecx
+import com.tribbloids.spookystuff.testutils.beans.{Example, GenericExample}
 import com.tribbloids.spookystuff.utils.{TypeUtils, UnreifiedScalaType}
 import org.apache.spark.sql.types.{IntegerType, StringType}
 import org.scalatest.FunSuite

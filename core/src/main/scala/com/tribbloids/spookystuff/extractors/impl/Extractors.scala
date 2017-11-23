@@ -29,7 +29,7 @@ object Extractors {
   val GetOnlyDocExpr = GenExtractor.fromOptionFn {
     (v1: FR) => v1.getOnlyDoc
   }
-  val GetAllRootExpr = GenExtractor.fromFn {
+  val GetAllDocsExpr = GenExtractor.fromFn {
     (v1: FR) => new Elements(v1.docs.map(_.root).toList)
   }
 

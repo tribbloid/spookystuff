@@ -2,7 +2,7 @@ package com.tribbloids.spookystuff.utils
 
 import com.tribbloids.spookystuff.SpookyEnvFixture
 import com.tribbloids.spookystuff.actions.{Action, ActionUDT}
-import com.tribbloids.spookystuff.extractors.{Example, ExampleUDT}
+import com.tribbloids.spookystuff.testutils.beans.{Example, ExampleUDT}
 import org.apache.spark.sql.catalyst.ScalaReflection
 import org.apache.spark.sql.catalyst.expressions.codegen.GenerateProjection
 import org.apache.spark.sql.types._

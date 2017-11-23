@@ -20,6 +20,4 @@ package object actions {
   type DocFilter = Lambda[(Doc, Session), Doc] //TODO: merge with Selector[Doc]
 
   type DocCondition = Lambda[(Doc, Session), Boolean] //TODO: merge with Selector[Doc]
-
-  type Selector = String //TODO: change to Doc => Element or Extraction
 }

@@ -64,7 +64,7 @@ trait ScalaType[T] extends DataType with (() => TypeTag[T]) with ReflectionLock 
   //      }
   //  }
 
-  def reifyOrError: DataType = tryReify.get
+  def reify: DataType = tryReify.get
   def reifyOrSelf = tryReify.getOrElse{this}
   def reifyOrNullType = tryReify.getOrElse{NullType}
 
@@ -309,7 +309,7 @@ object UnreifiedScalaType {
 
   def reify(tt: DataType): DataType = {
     tt match {
-      case udt: UnreifiedScalaType[_] => udt.reifyOrError
+      case udt: UnreifiedScalaType[_] => udt.reify
       case ArrayType(v, n) =>
         ArrayType(reify(v), n)
       case StructType(fields) =>

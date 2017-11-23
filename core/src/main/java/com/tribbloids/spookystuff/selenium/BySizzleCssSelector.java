@@ -32,7 +32,7 @@ public class BySizzleCssSelector extends By implements Serializable {
 
   @Override
   public String toString() {
-    return "By.selector: " + selector;
+    return "By.sizzleCssSelector: " + selector;
   }
 
   protected List<WebElement> evaluateSizzleSelector(JavascriptExecutor context, String selector) {

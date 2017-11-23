@@ -1,7 +1,6 @@
 package com.tribbloids.spookystuff.actions
 
 import com.tribbloids.spookystuff.doc.{Doc, Fetched}
-import com.tribbloids.spookystuff.selenium.BySizzleCssSelector
 import com.tribbloids.spookystuff.session.Session
 import com.tribbloids.spookystuff.utils.{CommonUtils, ScalaUDT}
 import com.tribbloids.spookystuff.{ActionException, Const, SpookyContext}
@@ -198,23 +197,23 @@ trait Timed extends Action {
 
   def webDriverWait(session: Session): WebDriverWait = new WebDriverWait(session.webDriver, this.timeout(session).toSeconds)
 
-  def getClickableElement(selector: String, session: Session) = {
+  def getClickableElement(selector: Selector, session: Session) = {
 
-    val elements = webDriverWait(session).until(ExpectedConditions.elementToBeClickable(new BySizzleCssSelector(selector)))
-
-    elements
-  }
-
-  def getElement(selector: String, session: Session) = {
-
-    val elements = webDriverWait(session).until(ExpectedConditions.presenceOfElementLocated(new BySizzleCssSelector(selector)))
+    val elements = webDriverWait(session).until(ExpectedConditions.elementToBeClickable(selector.by))
 
     elements
   }
 
-  def getElements(selector: String, session: Session) = {
+  def getElement(selector: Selector, session: Session) = {
 
-    val elements = webDriverWait(session).until(ExpectedConditions.presenceOfAllElementsLocatedBy(new BySizzleCssSelector(selector)))
+    val elements = webDriverWait(session).until(ExpectedConditions.presenceOfElementLocated(selector.by))
+
+    elements
+  }
+
+  def getElements(selector: Selector, session: Session) = {
+
+    val elements = webDriverWait(session).until(ExpectedConditions.presenceOfAllElementsLocatedBy(selector.by))
 
     elements
   }
