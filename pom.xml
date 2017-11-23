@@ -275,6 +275,12 @@
       <artifactId>jProcesses</artifactId>
       <version>1.6.2</version>
       <scope>test</scope>
+      <exclusions>
+        <exclusion>
+          <groupId>com.google.guava</groupId>
+          <artifactId>guava</artifactId>
+        </exclusion>
+      </exclusions>
     </dependency>
 
     <!--<dependency>-->
