@@ -53,7 +53,7 @@ case class UDFTransformer(
     with DefaultParamsWritable{
 
   lazy val UDF: Param[UserDefinedFunction] = GenericParam[UserDefinedFunction]()
-  def udfImpl: UserDefinedFunction = UDF: UserDefinedFunction
+  def udfImpl: UserDefinedFunction = UDF
 
   override def copy(extra: ParamMap): Transformer = this.defaultCopy(extra)
 
