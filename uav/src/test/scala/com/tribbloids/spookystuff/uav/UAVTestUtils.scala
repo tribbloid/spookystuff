@@ -59,8 +59,8 @@ object UAVTestUtils {
 
       val result = (0 until n).map {
         i =>
-          val p1: NED.Coordinate = NED.vec2Coordinate(origin.vector + (stride.vector :* i.toDouble))
-          val p2: NED.Coordinate = NED.vec2Coordinate(p1.vector + dir.vector)
+          val p1: NED.Coordinate = NED.fromVec(origin.vector + (stride.vector :* i.toDouble))
+          val p2: NED.Coordinate = NED.fromVec(p1.vector + dir.vector)
           if (i % 2 == 0) {
             p1 -> p2
           }

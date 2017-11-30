@@ -1,10 +1,11 @@
 package com.tribbloids.spookystuff.uav.spatial.map
 
+import breeze.linalg.DenseVector
 import com.tribbloids.spookystuff.uav.spatial.Spatial
 import com.tribbloids.spookystuff.uav.spatial.point.NED
 import com.tribbloids.spookystuff.uav.spatial.util.UnknownTrellisGeometry
 
-trait VoxelSketch extends Spatial[UnknownTrellisGeometry.type] {
+trait VoxelSketch extends Spatial {
 
 }
 
@@ -17,5 +18,5 @@ trait VoxelSketch extends Spatial[UnknownTrellisGeometry.type] {
 case class VoxelSketchImpl() extends VoxelSketch {
   override def system = NED
 
-  override def geom = ???
+  override def vector: DenseVector[Double] = ???
 }

@@ -16,7 +16,7 @@ import scala.reflect.ClassTag
   */
 trait CoordinateSystem extends Serializable {
 
-  def _fromTrellis[T <: TrellisGeom: ClassTag](v: T) = new GeomSpatial(v)
+  def _fromTrellis[T <: TrellisGeom: ClassTag](v: T) = new CRSSpatial(v)
   final def fromTrellis[T <: TrellisGeom: ClassTag](v: T, ic: SearchHistory = SearchHistory()) = {
     val result = _fromTrellis(v)
     result.searchHistory = ic
@@ -28,7 +28,7 @@ trait CoordinateSystem extends Serializable {
   //to save time we avoid using proj4 string parsing and implement our own alternative conversion rule if Projection is not available.
   def get2DProj(a: Anchor, ic: SearchHistory): Option[Projection]
 
-  def zeroOpt: Option[GeomSpatial[TrellisPoint]] = Some(apply(0, 0, 0))
+  def zeroOpt: Option[CRSSpatial[TrellisPoint]] = Some(apply(0, 0, 0))
 
   //  trait Coordinate extends AbstractSpatial[TrellisPoint] with CoordinateLike {
   //    /**
@@ -47,7 +47,7 @@ trait CoordinateSystem extends Serializable {
   //    protected def _chain(b: C): C
   //  }
 
-  type Coordinate = this.GeomSpatial[TrellisPoint]
+  type Coordinate = this.CRSSpatial[TrellisPoint]
 
   def apply(
              x: Double,
@@ -56,7 +56,7 @@ trait CoordinateSystem extends Serializable {
            ): Coordinate = {
 
     val jtsPoint = JTSGeomFactory.createPoint(new JTSCoord(x, y, z))
-    new GeomSpatial[TrellisPoint](jtsPoint).asInstanceOf[Coordinate]
+    new CRSSpatial[TrellisPoint](jtsPoint).asInstanceOf[Coordinate]
   }
 
   protected def _fromVec(vector: Vec): Coordinate = CoordinateSystem.this.apply(vector(0), vector(1), vector(2))
@@ -70,7 +70,7 @@ trait CoordinateSystem extends Serializable {
 
   def _chain(self: Coordinate, b: Coordinate): Coordinate
 
-  class GeomSpatial[+T: ClassTag](override val geom: T) extends Spatial[T] {
+  class CRSSpatial[+T <: TrellisGeom: ClassTag](override val geom: T) extends GeomSpatial[T] {
 
     def system = CoordinateSystem.this
 
@@ -92,10 +92,10 @@ trait CoordinateSystem extends Serializable {
     def toStr_withSearchHistory = (Seq(toString) ++ Option(searchHistory).toSeq).mkString(" ")
   }
 
-  object GeomSpatial {
+  object CRSSpatial {
 
     implicit class CoordinateView(override val self: Coordinate) extends
-      PointViewBase(self) {
+      Spatial.PointView(self) {
 
       /**
         * NOT commutative

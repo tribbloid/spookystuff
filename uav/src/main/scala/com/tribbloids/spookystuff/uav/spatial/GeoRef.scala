@@ -7,20 +7,20 @@ import scala.language.implicitConversions
 
 object GeoRef {
 
-  implicit def fromTuple[T <: Spatial[_]](tuple: (T, Anchor)) = GeoRef[T](tuple._1, tuple._2)
+  implicit def fromTuple[T <: Spatial](tuple: (T, Anchor)) = GeoRef[T](tuple._1, tuple._2)
 }
 
 
-case class GeoRef[+T <: Spatial[_]](
-                                     spatial: T,
-                                     anchor: Anchor
-                                   ) extends TreeNode[GeoRef[Spatial[_]]] {
+case class GeoRef[+T <: Spatial](
+                                  spatial: T,
+                                  anchor: Anchor
+                                ) extends TreeNode[GeoRef[Spatial]] {
 
   override def simpleString: String = {
     spatial.toString + " -+ " + anchor.name
   }
 
-  override def children: Seq[GeoRef[Spatial[_]]] = {
+  override def children: Seq[GeoRef[Spatial]] = {
     anchor match {
       case Location(seq, _) =>
         seq

@@ -47,6 +47,17 @@
                 </plugins>
             </build>
         </profile>
+
+        <profile>
+            <id>uav</id>
+            <dependencies>
+                <dependency>
+                    <groupId>com.tribbloids.spookystuff</groupId>
+                    <artifactId>spookystuff-uav</artifactId>
+                    <version>${project.version}</version>
+                </dependency>
+            </dependencies>
+        </profile>
     </profiles>
 
     <dependencies>

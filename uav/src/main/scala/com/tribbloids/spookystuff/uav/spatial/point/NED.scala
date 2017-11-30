@@ -29,7 +29,7 @@ object NED extends CoordinateSystem {
     }
   }
 
-  override protected def _chain(self: Coordinate, b: Coordinate): Coordinate = {
+  override def _chain(self: Coordinate, b: Coordinate): Coordinate = {
     apply(self.north + b.north, self.east + b.east, self.down + b.down)
   }
 

@@ -13,7 +13,7 @@ class JTSSpike extends FunSpecx {
       var parser = new WKTReader(geoFactory)
 
       val obj = parser.read("POINT (30 10 20)")
-      val expectedCoord = new Coordinate(30, 10, 20)
+      val expectedCoord = new JTSCoord(30, 10, 20)
       assert(obj.getClass == classOf[Point])
       assert(obj == geoFactory.createPoint(expectedCoord))
     }

@@ -7,7 +7,7 @@ import com.tribbloids.spookystuff.uav.spatial.point.CoordinateSystem
   * different sensors or estimators fused together
   * @tparam T
   */
-trait GeoFusion[T <: Spatial[_]] {
+trait GeoFusion[T <: Spatial] {
 
   def definedBy: Seq[GeoRef[T]]
 

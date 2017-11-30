@@ -8,10 +8,10 @@ class TwoLinesSuite extends SpookyEnvFixture {
   describe("can solve arg min t1 & t2") {
 
     it("example 1") {
-      val A1 = NED.Coordinate(1,0,0)
-      val B1 = NED.Coordinate(0,1,0)
-      val A2 = NED.Coordinate(0,0,-1)
-      val B2 = NED.Coordinate(1,1,0)
+      val A1 = NED.apply(1,0,0)
+      val B1 = NED.apply(0,1,0)
+      val A2 = NED.apply(0,0,-1)
+      val B2 = NED.apply(1,1,0)
 
       val v = TwoLines(A1, B1, A2, B2)
       import v._
@@ -20,10 +20,10 @@ class TwoLinesSuite extends SpookyEnvFixture {
     }
 
     it("example 2") {
-      val A1 = NED.Coordinate(2,0,0)
-      val B1 = NED.Coordinate(0,1,0)
-      val A2 = NED.Coordinate(0,0,-2)
-      val B2 = NED.Coordinate(1,1,0)
+      val A1 = NED.apply(2,0,0)
+      val B1 = NED.apply(0,1,0)
+      val A2 = NED.apply(0,0,-2)
+      val B2 = NED.apply(1,1,0)
 
       val v = TwoLines(A1, B1, A2, B2)
       import v._
@@ -32,10 +32,10 @@ class TwoLinesSuite extends SpookyEnvFixture {
     }
 
     it("when A1 = B1") {
-      val A1 = NED.Coordinate(1,0,0)
-      val B1 = NED.Coordinate(1,0,0)
-      val A2 = NED.Coordinate(0,0,-1)
-      val B2 = NED.Coordinate(1,1,0)
+      val A1 = NED.apply(1,0,0)
+      val B1 = NED.apply(1,0,0)
+      val A2 = NED.apply(0,0,-1)
+      val B2 = NED.apply(1,1,0)
 
       val v = TwoLines(A1, B1, A2, B2)
       import v._
@@ -43,10 +43,10 @@ class TwoLinesSuite extends SpookyEnvFixture {
       assert(t2 === 2.0/3)
     }
     it("when A2 = B2") {
-      val A1 = NED.Coordinate(1,0,0)
-      val B1 = NED.Coordinate(0,1,0)
-      val A2 = NED.Coordinate(1,1,0)
-      val B2 = NED.Coordinate(1,1,0)
+      val A1 = NED.apply(1,0,0)
+      val B1 = NED.apply(0,1,0)
+      val A2 = NED.apply(1,1,0)
+      val B2 = NED.apply(1,1,0)
 
       val v = TwoLines(A1, B1, A2, B2)
       import v._
@@ -55,10 +55,10 @@ class TwoLinesSuite extends SpookyEnvFixture {
     }
 
     it("when A1 = A2") {
-      val A1 = NED.Coordinate(1,0,0)
-      val B1 = NED.Coordinate(0,1,0)
-      val A2 = NED.Coordinate(1,0,0)
-      val B2 = NED.Coordinate(1,1,0)
+      val A1 = NED.apply(1,0,0)
+      val B1 = NED.apply(0,1,0)
+      val A2 = NED.apply(1,0,0)
+      val B2 = NED.apply(1,1,0)
 
       val v = TwoLines(A1, B1, A2, B2)
       import v._
@@ -67,10 +67,10 @@ class TwoLinesSuite extends SpookyEnvFixture {
     }
 
     it("when A1B1 // A2B2") {
-      val A1 = NED.Coordinate(1,0,0)
-      val B1 = NED.Coordinate(0,1,0)
-      val A2 = NED.Coordinate(2,0,0)
-      val B2 = NED.Coordinate(1,1,0)
+      val A1 = NED.apply(1,0,0)
+      val B1 = NED.apply(0,1,0)
+      val A2 = NED.apply(2,0,0)
+      val B2 = NED.apply(1,1,0)
 
       val v = TwoLines(A1, B1, A2, B2)
       import v._
@@ -79,10 +79,10 @@ class TwoLinesSuite extends SpookyEnvFixture {
     }
 
     it("when A1B1 == A2B2") {
-      val A1 = NED.Coordinate(1,0,0)
-      val B1 = NED.Coordinate(0,1,0)
-      val A2 = NED.Coordinate(1,0,0)
-      val B2 = NED.Coordinate(0,1,0)
+      val A1 = NED.apply(1,0,0)
+      val B1 = NED.apply(0,1,0)
+      val A2 = NED.apply(1,0,0)
+      val B2 = NED.apply(0,1,0)
 
       val v = TwoLines(A1, B1, A2, B2)
       import v._
