@@ -15,7 +15,7 @@ trait SimFactory extends Serializable {
 
 trait MAVLinkSimFactory extends SimFactory {
 
-  def getHomeLLA: LLA.C
+  def getHomeLLA: LLA.Coordinate
 
   def model = "quad"
 
@@ -42,7 +42,7 @@ case class APMQuadSimFactory(
 
   val homeCenter = UAVConf.DEFAULT_HOME_LOCATION.getCoordinate(LLA).get
 
-  def getHomeLLA: LLA.C = {
+  def getHomeLLA: LLA.Coordinate = {
     val lat = homeCenter.lat + (Random.nextDouble() - 0.5)*dispersionLatLng
     val lon = homeCenter.lon + (Random.nextDouble() - 0.5)*dispersionLatLng
     LLA(lat, lon, homeCenter.alt)

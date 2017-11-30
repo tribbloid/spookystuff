@@ -7,9 +7,9 @@ import com.tribbloids.spookystuff.uav.spatial.point.CoordinateSystem
   * different sensors or estimators fused together
   * @tparam T
   */
-trait Fusion[T <: Spatial] {
+trait GeoFusion[T <: Spatial[_]] {
 
-  def definedBy: Seq[Association[T]]
+  def definedBy: Seq[GeoRef[T]]
 
   def reanchor(anchor: Anchor, system: CoordinateSystem): Option[this.type]
 }

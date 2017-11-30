@@ -47,12 +47,19 @@
       <scope>test</scope>
     </dependency>
 
-    <!-- https://mvnrepository.com/artifact/com.azavea.geotrellis/geotrellis-proj4_2.11 -->
+    <!-- https://mvnrepository.com/artifact/org.locationtech.geotrellis/geotrellis-vector -->
     <dependency>
-      <groupId>com.azavea.geotrellis</groupId>
-      <artifactId>geotrellis-proj4_${scala.binary.version}</artifactId>
-      <version>0.10.3</version>
+      <groupId>org.locationtech.geotrellis</groupId>
+      <artifactId>geotrellis-vector_2.11</artifactId>
+      <version>1.1.1</version>
     </dependency>
+
+    <!-- https://mvnrepository.com/artifact/com.esri.geometry/esri-geometry-api -->
+    <!--<dependency>-->
+      <!--<groupId>com.esri.geometry</groupId>-->
+      <!--<artifactId>esri-geometry-api</artifactId>-->
+      <!--<version>2.0.0</version>-->
+    <!--</dependency>-->
 
     <!--<dependency>-->
     <!--<groupId>jsprit</groupId>-->

@@ -1,27 +1,32 @@
 package com.tribbloids.spookystuff.uav.spatial.point
 
+import com.tribbloids.spookystuff.uav.spatial.{Anchor, JTSPoint, Spatial, TrellisPoint}
 import com.tribbloids.spookystuff.uav.spatial.util.{SearchAttempt, SearchHistory}
-import com.tribbloids.spookystuff.uav.spatial.{Anchor, Spatial}
-import com.tribbloids.spookystuff.utils.ReflectionUtils
 import org.apache.spark.mllib.uav.Vec
 import org.osgeo.proj4j.ProjCoordinate
 
 import scala.language.implicitConversions
 
-trait Coordinate extends Spatial {
+class PointViewBase(val self: Spatial[TrellisPoint]) {
 
-  def x: Double = vector(0)
-  def y: Double = vector(1)
-  def z: Double = vector(2)
+  def system: CoordinateSystem = self.system
+  def point: JTSPoint = self.geom.jtsGeom
 
-  //implement this to bypass proj4
-  def fastProjectTo(
-                     ref1: Anchor,
-                     ref2: Anchor, system2: CoordinateSystem,
-                     ic: SearchHistory
-                   ): Option[system2.C] = {
+  def x: Double = point.getX
+  def y: Double = point.getY
+  def z: Double = point.getCoordinate.z
+
+  /**
+    * implement this to bypass proj4
+    */
+  def fastProject(
+                   ref1: Anchor,
+                   ref2: Anchor,
+                   system2: CoordinateSystem,
+                   ic: SearchHistory
+                 ): Option[system2.Coordinate] = {
     system2 match {
-      case NED if ref1 == ref2 => Some(NED.C(0,0,0).asInstanceOf[system2.C])
+      case NED if ref1 == ref2 => Some(NED(0,0,0).asInstanceOf[system2.Coordinate])
       case _ => None
     }
   }
@@ -53,10 +58,10 @@ trait Coordinate extends Spatial {
                ref2: Anchor,
                system2: CoordinateSystem,
                ic: SearchHistory
-             ): Option[system2.C] = {
+             ): Option[system2.Coordinate] = {
 
-    val customResult: Option[system2.C] = fastProjectTo(ref1, ref2, system2, ic)
-      .map(_.asInstanceOf[system2.C]) // redundant! IDE error?
+    val customResult: Option[system2.Coordinate] = fastProject(ref1, ref2, system2, ic)
+      .map(_.asInstanceOf[system2.Coordinate]) // redundant! IDE error?
     customResult.orElse {
       val dstZOpt = projectZ(ref1, ref2, system2, ic)
       for (
@@ -70,24 +75,8 @@ trait Coordinate extends Spatial {
         proj1.inverseProject(src, wgs84)
         proj2.project(wgs84, dst)
         val vec: Vec = Vec(dst.x, dst.y, dstZ)
-        system2.create(vec, ic)
+        system2.fromVec(vec, ic)
       }
     }
   }
-
-  override lazy val toString = {
-    s"${this.system.name} " + {
-      this match {
-        case v: Product =>
-          ReflectionUtils.getCaseAccessorMap(v).map {
-            case (vv, d: Double) => s"$vv=${d.formatted("%f")}"
-            case (vv, d@ _) => s"$vv=$d"
-          }
-            .mkString(" ")
-        case _ => super.toString
-      }
-    }
-  }
-
-  def toStr_withSearchHistory = (Seq(toString) ++ Option(searchHistory).toSeq).mkString(" ")
 }

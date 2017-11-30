@@ -131,7 +131,7 @@ object JSpritRunner {
     best -> objectiveFunction.getCosts(best)
   }
 
-  def getPlotCoord(trace: Trace, schema: SpookySchema): NED.C = {
+  def getPlotCoord(trace: Trace, schema: SpookySchema): NED.Coordinate = {
     val navs: Seq[UAVNavigation] = trace.collect {
       case nav: UAVNavigation => nav
     }
@@ -142,7 +142,7 @@ object JSpritRunner {
       }
       if (opt.nonEmpty) return opt.get
     }
-    NED.C(navs.size,0,0)
+    NED(navs.size,0,0)
   }
 
   def plot(

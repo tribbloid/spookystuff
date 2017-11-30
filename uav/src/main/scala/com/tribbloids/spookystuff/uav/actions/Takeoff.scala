@@ -88,7 +88,7 @@ case class Takeoff(
     val coord = prevLocation.coordinate(NED, uavConf._home)
     val alt = -coord.down
     val objAlt = Math.min(Math.max(alt, minAlt.value), maxAlt.value)
-    Location.fromTuple(coord.copy(down = -objAlt) -> uavConf._home)
+    Location.fromTuple(coord.copy(down = -objAlt).v -> uavConf._home)
   }
 
   /**

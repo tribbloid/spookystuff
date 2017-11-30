@@ -2,12 +2,9 @@ package com.tribbloids.spookystuff.uav.spatial.map
 
 import com.tribbloids.spookystuff.uav.spatial.Spatial
 import com.tribbloids.spookystuff.uav.spatial.point.NED
+import com.tribbloids.spookystuff.uav.spatial.util.UnknownTrellisGeometry
 
-case class Octree(
-
-                 )
-
-trait VoxelSketch extends Spatial {
+trait VoxelSketch extends Spatial[UnknownTrellisGeometry.type] {
 
 }
 
@@ -18,8 +15,7 @@ trait VoxelSketch extends Spatial {
   * can be approximated by the number/ratio of bloom filters that has returns positives.
   */
 case class VoxelSketchImpl() extends VoxelSketch {
-
   override def system = NED
 
-  override def vector = ???
+  override def geom = ???
 }

@@ -16,6 +16,7 @@ package object caching {
   //  type MapCache[K, V] = mutable.WeakHashMap[K, V]
   //  def MapCache[K, V]() = new mutable.WeakHashMap[K, V]()
 
+  // TODO: switching to https://github.com/blemale/scaffeine if faster?
   type ConcurrentCache[K, V] = scala.collection.concurrent.Map[K, V]
 
   /**

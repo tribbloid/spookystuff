@@ -20,9 +20,9 @@ class LocationUDT() extends ScalaUDT[Location]
 @SQLUserDefinedType(udt = classOf[LocationUDT])
 @SerialVersionUID(-928750192836509428L)
 case class Location(
-                     definedBy: Seq[Association[Coordinate]],
+                     definedBy: Seq[GeoRef[Coordinate]],
                      aliasOpt: Option[Anchors.Alias] = None
-                   ) extends LocationLike with Fusion[Coordinate] {
+                   ) extends LocationLike with GeoFusion[Coordinate] {
 
   override def name = aliasOpt.map(_.name).getOrElse("@"+this.hashCode)
   def withHome(home: Location) = WithHome(home)
@@ -33,12 +33,12 @@ case class Location(
 
     lazy val homeLevelProj: Location = {
       val ned = Location.this.getCoordinate(NED, home).get
-      Location.fromTuple(ned.copy(down = 0) -> home)
+      Location.fromTuple(ned.copy(down = 0).v -> home)
     }
 
     lazy val MSLProj: Location = {
       val lle = Location.this.getCoordinate(LLA, home).get
-      Location.fromTuple(lle.copy(alt = 0) -> Anchors.Geodetic)
+      Location.fromTuple(lle.copy(alt = 0).v -> Anchors.Geodetic)
     }
   }
 
@@ -62,14 +62,14 @@ case class Location(
     this.copy(definedBy = cs)
   }
 
-  private val _mnemonics: ArrayBuffer[Association[Coordinate]] = {
-    val result = ArrayBuffer.empty[Association[Coordinate]]
+  private val _mnemonics: ArrayBuffer[GeoRef[Coordinate]] = {
+    val result = ArrayBuffer.empty[GeoRef[Coordinate]]
     val preset = definedBy // ++ Seq(Denotation(NED(0,0,0), this))
     result.++=(preset)
     result
   }
 
-  def _cache(tuples: Association[Coordinate]*): this.type = {
+  def _cache(tuples: GeoRef[Coordinate]*): this.type = {
     assert(!tuples.contains(null))
     _mnemonics ++= tuples
     //    require(!tuples.exists(_._2 == this), "self referential coordinate cannot be used")
@@ -90,7 +90,7 @@ case class Location(
                                system: CoordinateSystem,
                                from: Anchor = Anchors.Geodetic,
                                sh: SearchHistory
-                             ): Option[system.C] = {
+                             ): Option[system.Coordinate] = {
 
     if (sh.recursions >= 1000) {
       throw new UnsupportedOperationException("too many recursions")
@@ -103,18 +103,18 @@ case class Location(
       }
     }
 
-    def _cacheAndYield(v: system.C): Option[system.C] = {
-      _cache(Association[Coordinate](v, from))
+    def _cacheAndYield(v: system.Coordinate): Option[system.Coordinate] = {
+      _cache(GeoRef[Coordinate](v, from))
       Some(v)
     }
 
     _mnemonics.foreach {
       rel =>
         if (
-          rel.datum.system == system &&
+          rel.spatial.system == system &&
             rel.anchor == from
         ) {
-          return Some(rel.datum.asInstanceOf[system.C])
+          return Some(rel.spatial.asInstanceOf[system.Coordinate])
         }
     }
 
@@ -124,13 +124,13 @@ case class Location(
                           |${this.treeString}
                           |-------------
                           |inferring ${system.name} from $from
-                          |using ${rel.datum.system.name} from ${rel.anchor}
+                          |using ${rel.spatial.system.name} from ${rel.anchor}
                           """.trim.stripMargin
         LoggerFactory.getLogger(this.getClass).debug {
           debugStr
         }
 
-        val directOpt: Option[system.C] = rel.datum.project(rel.anchor, from, system, sh)
+        val directOpt: Option[system.Coordinate] = rel.spatial.project(rel.anchor, from, system, sh)
         directOpt.foreach {
           direct =>
             return _cacheAndYield(direct)
@@ -147,7 +147,7 @@ case class Location(
                 sh.getCoordinate(SearchAttempt(from, system, middle))
               }
             ) {
-              return _cacheAndYield(c1.asInstanceOf[system.C] :+ c2.asInstanceOf[system.C])
+              return _cacheAndYield(c1.asInstanceOf[system.Coordinate] :+ c2.asInstanceOf[system.Coordinate])
             }
           case _ =>
         }
@@ -178,7 +178,7 @@ case class Location(
         v.children
     }
     val firstChildOpt = children.collect {
-      case Association(x, y: Location) => x -> y
+      case GeoRef(x, y: Location) => x -> y
     }
       .headOption
     firstChildOpt.flatMap {

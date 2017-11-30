@@ -23,7 +23,7 @@ class WaypointIT extends APMQuadFixture {
     )
   }
 
-  val pattern: Seq[(NED.C, NED.C)] = UAVTestUtils.LawnMowerPattern(
+  val pattern: Seq[(NED.Coordinate, NED.Coordinate)] = UAVTestUtils.LawnMowerPattern(
     (parallelism.toDouble * 1).toInt,
     NED(10, 10, -10),
     NED(100, 0, 0),

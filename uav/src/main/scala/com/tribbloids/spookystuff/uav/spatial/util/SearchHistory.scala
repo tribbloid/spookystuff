@@ -26,7 +26,7 @@ case class SearchHistory(
 
   def getCoordinate(
                      triplet: SearchAttempt[CoordinateSystem]
-                   ): Option[triplet.system.C] = {
+                   ): Option[triplet.system.Coordinate] = {
 
     recursions += 1
 

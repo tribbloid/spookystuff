@@ -411,6 +411,35 @@
         </executions>
       </plugin>
 
+      <!--TODO: switch to it after https://github.com/mojohaus/flatten-maven-plugin/issues/61!-->
+      <!--<plugin>-->
+      <!--<groupId>org.codehaus.mojo</groupId>-->
+      <!--<artifactId>flatten-maven-plugin</artifactId>-->
+      <!--<version>1.1.0-SNAPSHOT</version>-->
+      <!--<executions>-->
+      <!--&lt;!&ndash; enable flattening &ndash;&gt;-->
+      <!--<execution>-->
+      <!--<id>flatten</id>-->
+      <!--<phase>process-resources</phase>-->
+      <!--<goals>-->
+      <!--<goal>flatten</goal>-->
+      <!--</goals>-->
+      <!--</execution>-->
+      <!--&lt;!&ndash; ensure proper cleanup &ndash;&gt;-->
+      <!--<execution>-->
+      <!--<id>flatten.clean</id>-->
+      <!--<phase>clean</phase>-->
+      <!--<goals>-->
+      <!--<goal>clean</goal>-->
+      <!--</goals>-->
+      <!--</execution>-->
+      <!--</executions>-->
+
+      <!--<configuration>-->
+      <!--<artifactIdOverride>${project.artifactId}_${scala.binary.version}</artifactIdOverride>-->
+      <!--</configuration>-->
+      <!--</plugin>-->
+
       <plugin>
         <groupId>org.codehaus.mojo</groupId>
         <artifactId>build-helper-maven-plugin</artifactId>

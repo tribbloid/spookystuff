@@ -31,7 +31,7 @@ case class ResamplingBuffer(
       }
       val wps = vectors.map {
         v =>
-          val location: Location = NED.create(v) -> to._1.home
+          val location: Location = NED.fromVec(v) -> to._1.home
           Waypoint(location)
       }
       wps

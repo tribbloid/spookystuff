@@ -63,7 +63,7 @@ case class Waypoint(
   }
 
   override def shift(vector: Vec): this.type = {
-    val shifted: Location = NED.create(vector) -> _to
+    val shifted: Location = NED.fromVec(vector) -> _to
     this.copy(to = shifted).asInstanceOf[this.type]
   }
 }

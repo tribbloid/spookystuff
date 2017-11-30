@@ -1,6 +1,5 @@
 package org.apache.spark.mllib.uav
 
-import breeze.linalg.DenseVector
 import com.tribbloids.spookystuff.uav.actions.UAVNavigation
 import com.tribbloids.spookystuff.uav.spatial.point.NED
 
@@ -17,10 +16,10 @@ object TwoLines {
 }
 
 case class TwoLines(
-                     A1: NED.C,
-                     B1: NED.C,
-                     A2: NED.C,
-                     B2: NED.C
+                     A1: NED.Coordinate,
+                     B1: NED.Coordinate,
+                     A2: NED.Coordinate,
+                     B2: NED.Coordinate
                    ) {
 
   val (t1, t2) = {
@@ -69,7 +68,7 @@ case class TwoLines(
   val C1 = B1.vector - A1.vector
   val C2 = B2.vector - A2.vector
 
-  val P: DenseVector[Double] = M + t1*C1 - t2*C2
+  val P: Vec = M + t1*C1 - t2*C2
   val DSquare = P dot P
   val D = Math.sqrt(DSquare)
 }

@@ -11,7 +11,7 @@ object PipelineModelShim {
   def create(
               stages: Array[Transformer],
               uid: String = Identifiable.randomUID(classOf[PipelineModel].getSimpleName)
-              ) = new PipelineModel(uid, stages)
+            ) = new PipelineModel(uid, stages)
 
   def apply(stages: Transformer*) = create(stages.toArray)
 }

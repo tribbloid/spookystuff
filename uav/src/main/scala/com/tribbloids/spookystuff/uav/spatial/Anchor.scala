@@ -18,14 +18,14 @@ trait Anchor extends Serializable {
   final def getCoordinate(
                            system: CoordinateSystem = LLA,
                            from: Anchor = Geodetic
-                         ): Option[system.C] = {
+                         ): Option[system.Coordinate] = {
     _getCoordinate(system, from, SearchHistory())
   }
 
   final def coordinate(
                         system: CoordinateSystem = LLA,
                         from: Anchor = Geodetic
-                      ): system.C = {
+                      ): system.Coordinate = {
 
     getCoordinate(system, from).getOrElse {
       throw new UnsupportedOperationException(
@@ -38,7 +38,7 @@ trait Anchor extends Serializable {
                       system: CoordinateSystem,
                       from: Anchor = Geodetic,
                       ic: SearchHistory
-                    ): Option[system.C] = None
+                    ): Option[system.Coordinate] = None
 }
 
 trait LocationLike extends Anchor {
