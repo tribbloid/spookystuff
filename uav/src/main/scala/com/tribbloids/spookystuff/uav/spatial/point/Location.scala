@@ -33,12 +33,12 @@ case class Location(
 
     lazy val homeLevelProj: Location = {
       val ned = Location.this.getCoordinate(NED, home).get
-      Location.fromTuple(ned.copy(down = 0).v -> home)
+      Location.fromTuple(ned.copy(down = 0) -> home)
     }
 
     lazy val MSLProj: Location = {
       val lle = Location.this.getCoordinate(LLA, home).get
-      Location.fromTuple(lle.copy(alt = 0).v -> Anchors.Geodetic)
+      Location.fromTuple(lle.copy(alt = 0) -> Anchors.Geodetic)
     }
   }
 
@@ -64,12 +64,11 @@ case class Location(
 
   private val _mnemonics: ArrayBuffer[GeoRef[Coordinate]] = {
     val result = ArrayBuffer.empty[GeoRef[Coordinate]]
-    val preset = definedBy // ++ Seq(Denotation(NED(0,0,0), this))
-    result.++=(preset)
+    result ++= definedBy //preset
     result
   }
 
-  def _cache(tuples: GeoRef[Coordinate]*): this.type = {
+  def cache(tuples: GeoRef[Coordinate]*): this.type = {
     assert(!tuples.contains(null))
     _mnemonics ++= tuples
     //    require(!tuples.exists(_._2 == this), "self referential coordinate cannot be used")
@@ -98,62 +97,64 @@ case class Location(
 
     if (from == this) {
       system.zeroOpt.foreach {
-        z =>
-          return Some(z)
+        zero =>
+          return Some(zero)
       }
     }
 
-    def _cacheAndYield(v: system.Coordinate): Option[system.Coordinate] = {
-      _cache(GeoRef[Coordinate](v, from))
+    def cacheAndYield(v: system.Coordinate): Option[system.Coordinate] = {
+      cache(GeoRef[Coordinate](v, from))
       Some(v)
     }
 
     _mnemonics.foreach {
       rel =>
         if (
-          rel.spatial.system == system &&
+          rel.geom.system == system &&
             rel.anchor == from
         ) {
-          return Some(rel.spatial.asInstanceOf[system.Coordinate])
+          return Some(rel.geom.asInstanceOf[system.Coordinate])
         }
     }
 
     _mnemonics.foreach {
       rel =>
         val debugStr = s"""
-                          |${this.treeString}
-                          |-------------
-                          |inferring ${system.name} from $from
-                          |using ${rel.spatial.system.name} from ${rel.anchor}
-                          """.trim.stripMargin
+                          |${this.treeString.trim}
+                          |{
+                          |  inferring ${system.name} from $from
+                          |  using ${rel.geom.system.name} from ${rel.anchor}
+                          |}
+                          |
+                          """.stripMargin
         LoggerFactory.getLogger(this.getClass).debug {
           debugStr
         }
 
-        val directOpt: Option[system.Coordinate] = rel.spatial.project(rel.anchor, from, system, sh)
+        val directOpt: Option[system.Coordinate] = rel.geom.project(rel.anchor, from, system, sh)
         directOpt.foreach {
           direct =>
-            return _cacheAndYield(direct)
+            return cacheAndYield(direct)
         }
 
         //use chain rule for inference
         rel.anchor match {
-          case middle: Location if middle != this && middle != from =>
+          case relay: Location if relay != this && relay != from =>
             for (
               c2 <- {
-                sh.getCoordinate(SearchAttempt(middle, system, this))
+                sh.getCoordinate(SearchAttempt(relay, system, this))
               };
               c1 <- {
-                sh.getCoordinate(SearchAttempt(from, system, middle))
+                sh.getCoordinate(SearchAttempt(from, system, relay))
               }
             ) {
-              return _cacheAndYield(c1.asInstanceOf[system.Coordinate] :+ c2.asInstanceOf[system.Coordinate])
+              return cacheAndYield(c1.asInstanceOf[system.Coordinate] :+ c2.asInstanceOf[system.Coordinate])
             }
           case _ =>
         }
     }
 
-    //add reverse deduction.
+    //TODO: add reverse deduction.
 
     None
   }
@@ -177,10 +178,9 @@ case class Location(
       v =>
         v.children
     }
-    val firstChildOpt = children.collect {
+    val firstChildOpt = children.collectFirst {
       case GeoRef(x, y: Location) => x -> y
     }
-      .headOption
     firstChildOpt.flatMap {
       case (x, y) =>
         this.reanchor(y.reanchorToPrimary, x.system)

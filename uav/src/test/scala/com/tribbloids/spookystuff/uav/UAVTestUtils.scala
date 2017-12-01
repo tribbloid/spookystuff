@@ -3,7 +3,7 @@ package com.tribbloids.spookystuff.uav
 import com.tribbloids.spookystuff.extractors.impl.Lit
 import com.tribbloids.spookystuff.uav.actions.Waypoint
 import com.tribbloids.spookystuff.uav.spatial.point.{Location, NED}
-import com.tribbloids.spookystuff.uav.spatial.Anchors
+import com.tribbloids.spookystuff.uav.spatial.{Anchors, Coordinate}
 
 /**
   * Created by peng on 24/02/17.
@@ -12,9 +12,9 @@ object UAVTestUtils {
 
   abstract class Pattern {
 
-    def neds: Seq[(NED.Coordinate, NED.Coordinate)]
+    def coordinates: Seq[(Coordinate, Coordinate)]
 
-    val locations = neds.map {
+    val locations = coordinates.map {
       tuple =>
         val l1: Location = tuple._1
         val l2: Location = tuple._2
@@ -43,7 +43,7 @@ object UAVTestUtils {
   }
 
   case class NEDPattern(
-                         neds: Seq[(NED.Coordinate, NED.Coordinate)]
+                         coordinates: Seq[(NED.Coordinate, NED.Coordinate)]
                        ) extends Pattern {
 
   }
@@ -55,7 +55,7 @@ object UAVTestUtils {
                                stride: NED.Coordinate
                              ) extends Pattern {
 
-    def neds: Seq[(NED.Coordinate, NED.Coordinate)] = {
+    def coordinates: Seq[(Coordinate, Coordinate)] = {
 
       val result = (0 until n).map {
         i =>
@@ -68,7 +68,10 @@ object UAVTestUtils {
             p2 -> p1
           }
       }
-      result
+      result.map {
+        case (v1, v2) =>
+          (v1: Coordinate) -> (v2: Coordinate)
+      }
     }
   }
 }

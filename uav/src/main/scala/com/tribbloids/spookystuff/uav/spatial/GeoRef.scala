@@ -12,12 +12,12 @@ object GeoRef {
 
 
 case class GeoRef[+T <: Spatial](
-                                  spatial: T,
+                                  geom: T,
                                   anchor: Anchor
                                 ) extends TreeNode[GeoRef[Spatial]] {
 
   override def simpleString: String = {
-    spatial.toString + " -+ " + anchor.name
+    geom.toString + " -+ " + anchor.name
   }
 
   override def children: Seq[GeoRef[Spatial]] = {

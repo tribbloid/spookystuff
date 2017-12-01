@@ -30,12 +30,9 @@ trait Suitex extends {
       if (sort) a = a.sorted
       if (ignoreCase) a = a.map(_.toLowerCase)
 
-      def originalStr = s"================================ $ACTUAL =================================\n" +
-        a.mkString("\n") + "\n"
-
       Option(gd) match {
         case None =>
-          println(originalStr)
+          println(AssertionErrorObject(a, null).actualInfo)
         case Some(_gd) =>
           var b = _gd.split("\n").toList.filterNot(_.replaceAllLiterally(" ","").isEmpty)
             .map(v => ("|" + v).trim.stripPrefix("|"))
@@ -44,13 +41,13 @@ trait Suitex extends {
           if (superSet) {
             TestHelper.assert(
               a.intersect(b).nonEmpty,
-              comparisonStr(originalStr _, b)
+              AssertionErrorObject(a, b)
             )
           }
           else {
             TestHelper.assert(
               a == b,
-              comparisonStr(originalStr _, b)
+              AssertionErrorObject(a, b)
             )
           }
       }
@@ -70,12 +67,9 @@ trait Suitex extends {
       val a = if (sort) aRaw.sorted
       else aRaw
 
-      def originalStr = s"================================ $ACTUAL =================================\n" +
-        a.mkString("\n") + "\n"
-
       Option(gd) match {
         case None =>
-          println(originalStr)
+          println(AssertionErrorObject(a, null).actualInfo)
         case Some(_gd) =>
           var b = _gd.split("\n").toList.filterNot(_.replaceAllLiterally(" ","").isEmpty)
             .map(v => ("|" + v).trim.stripPrefix("|"))
@@ -95,7 +89,7 @@ trait Suitex extends {
           }
           catch {
             case e: Throwable =>
-              throw new AssertionError("" + comparisonStr(originalStr _, b), e)
+              throw new AssertionError("" + AssertionErrorObject(a, b), e)
           }
       }
     }
@@ -118,12 +112,23 @@ trait Suitex extends {
     //    }
   }
 
-  def comparisonStr(originalStr: () => String, b: List[String]): AnyRef = new AnyRef {
+  //TODO: update to be on par with scalatest supported by IDE
+  case class AssertionErrorObject(actual: List[String], expected: List[String]) {
+
+    lazy val actualInfo = s"================================ $ACTUAL =================================\n" +
+      actual.mkString("\n") + "\n"
 
     override def toString = {
-      println(originalStr())
-      s"\n=============================== $EXPECTED ================================\n" +
-        b.mkString("\n") + "\n"
+      val toBePrinted =
+        s"\n=============================== $EXPECTED ================================\n" +
+          expected.mkString("\n") + "\n" +
+          actualInfo
+
+      println(toBePrinted)
+
+      s"""
+        |"${actual.mkString("\n")}" did not equal "${expected.mkString("\n")}"
+      """.trim.stripMargin
     }
   }
 

@@ -8,6 +8,9 @@ import org.osgeo.proj4j.proj.{EquidistantAzimuthalProjection, Projection}
 import scala.language.implicitConversions
 
 /**
+  * x = east (always east/horizontal)
+  * y = north (always north/vertical)
+  * z = -down (always up/altitude)
   * use Azimuthal projection (NOT Cartisian but a mere approximation)
   */
 object NED extends CoordinateSystem {
@@ -30,15 +33,18 @@ object NED extends CoordinateSystem {
   }
 
   override def _chain(self: Coordinate, b: Coordinate): Coordinate = {
-    apply(self.north + b.north, self.east + b.east, self.down + b.down)
+    NED(self.north + b.north, self.east + b.east, self.down + b.down)
   }
 
-  case class Proto(
-                    north: Double,
-                    east: Double,
-                    down: Double
-                  ) {
+  override def zeroOpt: Option[CSGeom[TrellisPoint]] = Some(NED(0, 0, 0))
 
-    lazy val v: Coordinate = apply(north, east, down)
-  }
+  type Repr = NED
+  override def toRepr(v: Coordinate): NED = NED(v.y, v.x, - v.z)
+}
+
+case class NED(
+                north: Double,
+                east: Double,
+                down: Double
+              ) extends NED.CoordinateRepr(east, north, - down) {
 }

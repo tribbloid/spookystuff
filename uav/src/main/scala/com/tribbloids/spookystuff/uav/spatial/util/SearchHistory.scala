@@ -8,8 +8,8 @@ import scala.collection.mutable
   * Created by peng on 26/02/17.
   */
 case class SearchHistory(
-                          stack: mutable.ArrayBuffer[SearchAttempt[CoordinateSystem]] = mutable.ArrayBuffer.empty,
-                          failed: mutable.Set[SearchAttempt[CoordinateSystem]] = mutable.Set.empty,
+                          stack: mutable.ArrayBuffer[SearchAttempt[_]] = mutable.ArrayBuffer.empty,
+                          failed: mutable.Set[SearchAttempt[_]] = mutable.Set.empty,
                           var hops: Int = 0,
                           var recursions: Int = 0
                         ) {
@@ -18,38 +18,38 @@ case class SearchHistory(
     s"hops=$hops recursions=$recursions"
   }
 
-  def isForbidden(triplet: SearchAttempt[CoordinateSystem]) = {
+  def isBlacklisted(triplet: SearchAttempt[_]) = {
     stack.contains(triplet) || failed.contains(triplet)
   }
 
-  def isAllowed(triplet: SearchAttempt[CoordinateSystem]) = !isForbidden(triplet)
+  def isAllowed(triplet: SearchAttempt[_]) = !isBlacklisted(triplet)
 
   def getCoordinate(
-                     triplet: SearchAttempt[CoordinateSystem]
-                   ): Option[triplet.system.Coordinate] = {
+                     attempt: SearchAttempt[CoordinateSystem]
+                   ): Option[attempt.system.Coordinate] = {
 
     recursions += 1
 
-    if (isForbidden(triplet))
+    if (isBlacklisted(attempt))
       return None
 
     //    import triplet._
-    assert(stack.count(_ == triplet) == 0)
-    stack += triplet
+    assert(stack.count(_ == attempt) == 0)
+    stack += attempt
     if (hops <= stack.size) hops = stack.size
     try {
-      val result = triplet.to._getCoordinate(triplet.system, triplet.from, this)
+      val result = attempt.to._getCoordinate(attempt.system, attempt.from, this)
       result match {
         case None =>
-          failed += triplet
+          failed += attempt
         case _ =>
       }
       result
     }
     finally {
-      assert(stack.last == triplet)
-      assert(stack.count(_ == triplet) == 1)
-      stack -= triplet
+      assert(stack.last == attempt)
+      assert(stack.count(_ == attempt) == 1)
+      stack -= attempt
     }
   }
 }

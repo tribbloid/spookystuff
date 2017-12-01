@@ -23,18 +23,19 @@ class WaypointIT extends APMQuadFixture {
     )
   }
 
-  val pattern: Seq[(NED.Coordinate, NED.Coordinate)] = UAVTestUtils.LawnMowerPattern(
+  val pattern = UAVTestUtils.LawnMowerPattern(
     (parallelism.toDouble * 1).toInt,
     NED(10, 10, -10),
     NED(100, 0, 0),
     NED(0, 20, -2)
   )
-    .neds
+    .coordinates
+
+
+  val rdd = sc.parallelize(pattern, this.parallelism)
+  val df = sql.createDataFrame(rdd)
 
   it("Run 1 track per drone") {
-
-    val rdd = sc.parallelize(pattern, this.parallelism)
-    val df = sql.createDataFrame(rdd)
 
     val result = spooky.create(df)
       .fetch (
@@ -48,9 +49,6 @@ class WaypointIT extends APMQuadFixture {
   }
 
   it("Run 1.5 track per drone") {
-
-    val rdd = sc.parallelize(pattern, this.parallelism)
-    val df = sql.createDataFrame(rdd)
 
     val result = spooky.create(df)
       .fetch (

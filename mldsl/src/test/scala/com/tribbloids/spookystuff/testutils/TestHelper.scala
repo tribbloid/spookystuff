@@ -252,7 +252,10 @@ class TestHelper() {
   }
 
   def assert(fn: =>Boolean) = Predef.assert(fn)
-  def assert(fn: =>Boolean, message: =>Any) = Predef.assert(fn, message)
+  def assert(fn: =>Boolean, message: =>Any) = {
+    if (!fn)
+      throw new java.lang.AssertionError(message)
+  }
   def intercept[EE <: Exception: ClassTag](fn: =>Any) = {
     val trial = Try {
       fn

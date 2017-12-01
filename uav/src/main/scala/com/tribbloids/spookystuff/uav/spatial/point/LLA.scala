@@ -8,7 +8,10 @@ import org.osgeo.proj4j.proj.Projection
 import scala.language.implicitConversions
 
 /**
-  * use WGS84 projection, more will come
+  * x = longitude (always east/horizontal)
+  * y = latitude (always north/vertical)
+  * z = altitude (always up/altitude)
+  * use WGS84/EPSG:4326 projection, more will come
   */
 object LLA extends CoordinateSystem {
 
@@ -22,14 +25,15 @@ object LLA extends CoordinateSystem {
     projOpt
   }
 
-  override def _chain(self: LLA.Coordinate, b: LLA.Coordinate) = apply(b.lat, b.lon, self.alt + b.alt)
+  override def _chain(self: LLA.Coordinate, b: LLA.Coordinate) = LLA(b.lat, b.lon, self.alt + b.alt)
 
-  case class Proto(
-                    lat: Double,
-                    lon: Double,
-                    alt: Double
-                  ) {
+  type Repr = LLA
+  override def toRepr(v: Coordinate): LLA = LLA(v.y, v.x, v.z)
+}
 
-    lazy val v: Coordinate = apply(lat, lon, alt)
-  }
+case class LLA(
+                lat: Double,
+                lon: Double,
+                alt: Double
+              ) extends LLA.CoordinateRepr(lon, lat, alt) {
 }

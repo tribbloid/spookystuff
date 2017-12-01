@@ -1,7 +1,7 @@
 package com.tribbloids.spookystuff.uav
 
-import com.tribbloids.spookystuff.uav.spatial.point.CoordinateSystem
-import com.vividsolutions.jts
+import com.vividsolutions.jts.geom.PrecisionModel
+import com.vividsolutions.jts.{geom, io}
 import geotrellis.vector.{Geometry, Point}
 
 /**
@@ -9,12 +9,20 @@ import geotrellis.vector.{Geometry, Point}
   */
 package object spatial {
 
-  type JTSCoord = jts.geom.Coordinate
-  type JTSGeom = jts.geom.Geometry
-  type JTSPoint = jts.geom.Point
+  type JTSCoord = geom.Coordinate
+  type JTSGeom = geom.Geometry
+  type JTSPoint = geom.Point
 
   type TrellisGeom = Geometry //wraps jts Geometry
   type TrellisPoint = Point
 
-  type Coordinate = CoordinateSystem#Coordinate
+  type Coordinate = Geom[TrellisPoint]
+
+  /**
+    * Should be thread safe??
+    */
+  object JTSGeomFactory extends geom.GeometryFactory(new PrecisionModel(PrecisionModel.FLOATING_SINGLE))
+//  object JTSGeomFactory extends geom.GeometryFactory(new PrecisionModel(0.00000000000001))
+  object WKTWriter extends io.WKTWriter(3)
+  object WKTReader extends io.WKTReader(JTSGeomFactory)
 }

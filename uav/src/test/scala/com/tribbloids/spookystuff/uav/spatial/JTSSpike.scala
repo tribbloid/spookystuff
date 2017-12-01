@@ -1,8 +1,7 @@
 package com.tribbloids.spookystuff.uav.spatial
 
 import com.tribbloids.spookystuff.testutils.FunSpecx
-import com.vividsolutions.jts.geom.{Coordinate, GeometryFactory, Point}
-import com.vividsolutions.jts.io.WKTReader
+import com.vividsolutions.jts.geom.{GeometryFactory, Point}
 
 class JTSSpike extends FunSpecx {
 
@@ -10,12 +9,16 @@ class JTSSpike extends FunSpecx {
 
   describe("WKTReader") {
     it("Can parse 3D point") {
-      var parser = new WKTReader(geoFactory)
 
-      val obj = parser.read("POINT (30 10 20)")
+      val geom = WKTReader.read("POINT (30 10 20)")
       val expectedCoord = new JTSCoord(30, 10, 20)
-      assert(obj.getClass == classOf[Point])
-      assert(obj == geoFactory.createPoint(expectedCoord))
+      assert(geom.getClass == classOf[Point])
+      assert(geom == geoFactory.createPoint(expectedCoord))
+
+      val str = WKTWriter.write(geom)
+      str.shouldBe(
+        "POINT (30 10 20)"
+      )
     }
   }
 }
