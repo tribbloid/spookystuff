@@ -16,20 +16,22 @@ import scala.reflect.ClassTag
   */
 trait CoordinateSystem extends Serializable {
 
-  def _fromTrellis[T <: TrellisGeom: ClassTag](v: T) = new CSGeom(v)
-  final def fromTrellis[T <: TrellisGeom: ClassTag](v: T, ic: SearchHistory = SearchHistory()) = {
-    val result = _fromTrellis(v)
-    result.searchHistory = ic
+  def fromTrellis[T <: TrellisGeom: ClassTag](v: T) = {
+    val result = new CSGeom(v)
     result
   }
+  def fromWKT(wkt: String) = {
+    val parsed: JTSGeom = WKTReader.read(wkt)
+    fromTrellis[TrellisGeom](parsed)
+  }
 
-  def name: String = this.getClass.getSimpleName.stripSuffix("$")
+  lazy val name: String = this.getClass.getSimpleName.stripSuffix("$")
 
   //to save time we avoid using proj4 string parsing and implement our own alternative conversion rule if Projection is not available.
   def get2DProj(a: Anchor, ic: SearchHistory): Option[Projection]
 
   //TODO: this is unmathical, should be superceded by reverse operator
-  def zeroOpt: Option[CSGeom[TrellisPoint]] = None
+  def zeroOpt: Option[Coordinate] = None
 
 
   //  def fromXYZ(x: Double, y: Double, z: Double, existingOpt: Option[TrellisPoint] = None): TrellisPoint = {

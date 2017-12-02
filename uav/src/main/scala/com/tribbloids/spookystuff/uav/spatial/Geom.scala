@@ -22,7 +22,7 @@ trait Geom[+T <: TrellisGeom] extends Spatial with IDMixin {
   }
 
   override lazy val toString = {
-    s"${system.name} $wktString"
+    s"${system.name}:$wktString"
     //      + {
     //        this match {
     //          case v: Product =>
@@ -41,5 +41,6 @@ trait Geom[+T <: TrellisGeom] extends Spatial with IDMixin {
 
 object Geom {
 
-  implicit class PV(val self: Geom[TrellisPoint]) extends PointViewBase
+  implicit class PV(val self: Coordinate) extends PointViewBase
+
 }

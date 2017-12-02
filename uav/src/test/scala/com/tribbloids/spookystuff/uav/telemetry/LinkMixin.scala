@@ -13,7 +13,8 @@ import org.apache.spark.rdd.RDD
 
 import scala.util.Random
 
-abstract class LinkSuite extends UAVFixture {
+trait LinkMixin {
+  self: UAVFixture =>
 
   import com.tribbloids.spookystuff.utils.SpookyViews._
 
@@ -23,7 +24,7 @@ abstract class LinkSuite extends UAVFixture {
   }
 
   override def setUp(): Unit = {
-    super.setUp()
+    self.setUp()
     sc.foreachComputer {
       Random.shuffle(Link.registered.values.toList).foreach(_.clean())
     }
@@ -196,7 +197,7 @@ abstract class LinkSuite extends UAVFixture {
   }
 }
 
-abstract class SimLinkSuite extends LinkSuite with SimUAVFixture {
+abstract class SimLinkSuite extends SimUAVFixture with LinkMixin {
 
   import com.tribbloids.spookystuff.utils.SpookyViews._
 

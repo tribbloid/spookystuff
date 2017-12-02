@@ -36,7 +36,7 @@ object NED extends CoordinateSystem {
     NED(self.north + b.north, self.east + b.east, self.down + b.down)
   }
 
-  override def zeroOpt: Option[CSGeom[TrellisPoint]] = Some(NED(0, 0, 0))
+  override def zeroOpt: Option[Coordinate] = Some(NED(0, 0, 0))
 
   type Repr = NED
   override def toRepr(v: Coordinate): NED = NED(v.y, v.x, - v.z)

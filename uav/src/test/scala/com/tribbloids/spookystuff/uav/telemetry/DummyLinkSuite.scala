@@ -8,7 +8,7 @@ import org.scalatest.Ignore
 /**
   * Created by peng on 6/20/17.
   */
-class DummyLinkSuite extends LinkSuite with DummyUAVFixture {
+class DummyLinkSuite extends DummyUAVFixture with LinkMixin {
 
   override lazy val factories: Seq[LinkFactory] = Seq(
     LinkFactories.Dummy

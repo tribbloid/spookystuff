@@ -18,14 +18,14 @@ class LocationSuite extends FunSpecx {
     {
       val c2 = p2.getCoordinate(LLA, Anchors.Geodetic)
       c2.get.toStr_withSearchHistory.shouldBe(
-        "LLA POINT (-79.249854 43.712195 166) hops=1 recursions=2"
+        "LLA:POINT (-79.249854 43.712195 166) hops=1 recursions=2"
       )
     }
 
     {
       val c2 = p2.getCoordinate(LLA, p1)
       c2.get.toStr_withSearchHistory.shouldBe(
-        "LLA POINT (-79.249854 43.712195 30) hops=2 recursions=4"
+        "LLA:POINT (-79.249854 43.712195 30) hops=2 recursions=4"
       )
     }
   }
@@ -36,7 +36,7 @@ class LocationSuite extends FunSpecx {
 
     val c2 = p2.getCoordinate(NED, p1)
     c2.get.toStr_withSearchHistory.shouldBe(
-      "NED POINT (-9993.849545 -5233.622679 -36) hops=1 recursions=3"
+      "NED:POINT (-9993.849545 -5233.622679 -36) hops=1 recursions=3"
     )
   }
 
@@ -48,7 +48,7 @@ class LocationSuite extends FunSpecx {
 
       val c2 = p2.getCoordinate(NED, p1)
       c2.get.toStr_withSearchHistory.shouldBe(
-        "NED POINT (-0 -200 -20) hops=3 recursions=7"
+        "NED:POINT (-0 -200 -20) hops=3 recursions=7"
       )
     }
 
@@ -59,7 +59,7 @@ class LocationSuite extends FunSpecx {
 
       val c2 = p2.getCoordinate(NED, p1)
       c2.get.toStr_withSearchHistory.shouldBe(
-        "NED POINT (-0.005983 -200 -20) hops=3 recursions=7" //TODO: should be 0
+        "NED:POINT (-0.005983 -200 -20) hops=3 recursions=7" //TODO: should be 0
       )
     }
   }
@@ -72,7 +72,7 @@ class LocationSuite extends FunSpecx {
 
     val c2 = p2.getCoordinate(NED, p1)
     c2.get.toStr_withSearchHistory.shouldBe(
-      "NED POINT (-0 -200 -20) hops=3 recursions=7"
+      "NED:POINT (-0 -200 -20) hops=3 recursions=7"
     )
   }
 
@@ -107,14 +107,14 @@ class LocationSuite extends FunSpecx {
     {
       val c2 = p1.getCoordinate(NED, p1)
       c2.get.toStr_withSearchHistory.shouldBe(
-        "NED POINT (0 0 -0) hops=0 recursions=0"
+        "NED:POINT (0 0 -0) hops=0 recursions=0"
       )
     }
 
     {
       val c2 = p2.getCoordinate(NED, p2)
       c2.get.toStr_withSearchHistory.shouldBe(
-        "NED POINT (0 0 -0) hops=0 recursions=0"
+        "NED:POINT (0 0 -0) hops=0 recursions=0"
       )
     }
   }
@@ -127,14 +127,14 @@ class LocationSuite extends FunSpecx {
     {
       val c2 = p2.getCoordinate(LLA, p2)
       c2.get.toStr_withSearchHistory.shouldBe(
-        "LLA POINT (-79.262262 43.694195 0) hops=1 recursions=2"
+        "LLA:POINT (-79.262262 43.694195 0) hops=1 recursions=2"
       )
     }
 
     {
       val c2 = p2.getCoordinate(NED, p2)
       c2.get.toStr_withSearchHistory.shouldBe(
-        "NED POINT (0 0 -0) hops=0 recursions=0"
+        "NED:POINT (0 0 -0) hops=0 recursions=0"
       )
     }
   }
