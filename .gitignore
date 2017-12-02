@@ -57,3 +57,4 @@ foo
 
 #flatten-maven-plugin
 .flattened-pom.xml
+pom.xml.flatten
