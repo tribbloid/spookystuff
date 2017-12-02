@@ -13,8 +13,7 @@ import org.apache.spark.rdd.RDD
 
 import scala.util.Random
 
-trait LinkMixin {
-  self: UAVFixture =>
+trait LinkMixin extends UAVFixture {
 
   import com.tribbloids.spookystuff.utils.SpookyViews._
 
@@ -24,11 +23,13 @@ trait LinkMixin {
   }
 
   override def setUp(): Unit = {
-    self.setUp()
+    super.setUp()
     sc.foreachComputer {
       Random.shuffle(Link.registered.values.toList).foreach(_.clean())
     }
-    Thread.sleep(2000) //Waiting for both python drivers to terminate, DON'T DELETE! some tests create proxy processes and they all take a few seconds to release the port binding!
+    Thread.sleep(2000)
+    // Waiting for both python drivers to terminate.
+    // DON'T DELETE! some tests create proxy processes and they all take a few seconds to release the port binding!
   }
 
   def factory2Spooky(factory: LinkFactory): (SpookyContext, String) = {
