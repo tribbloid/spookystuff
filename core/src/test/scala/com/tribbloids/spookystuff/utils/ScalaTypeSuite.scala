@@ -3,6 +3,7 @@ package com.tribbloids.spookystuff.utils
 import com.tribbloids.spookystuff.SpookyEnvFixture
 import com.tribbloids.spookystuff.actions.{Action, ActionUDT}
 import com.tribbloids.spookystuff.testutils.beans.{Example, ExampleUDT}
+import com.tribbloids.spookystuff.utils.refl.TypeUtils
 import org.apache.spark.sql.catalyst.ScalaReflection
 import org.apache.spark.sql.catalyst.expressions.codegen.GenerateProjection
 import org.apache.spark.sql.types._
@@ -13,7 +14,7 @@ import org.apache.spark.sql.types._
 class ScalaTypeSuite extends SpookyEnvFixture {
 
   import ScalaReflection.universe._
-  import ScalaType._
+  import com.tribbloids.spookystuff.utils.refl.ScalaType._
 
   /**
     * please keep this test to quickly identify any potential problems caused by changes in scala reflection API in the future

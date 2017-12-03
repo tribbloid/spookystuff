@@ -3,7 +3,8 @@ package com.tribbloids.spookystuff.extractors
 import com.tribbloids.spookystuff.Const
 import com.tribbloids.spookystuff.extractors.GenExtractor._
 import com.tribbloids.spookystuff.row.Field
-import com.tribbloids.spookystuff.utils.{ScalaType, SpookyUtils, UnreifiedScalaType}
+import com.tribbloids.spookystuff.utils.refl.{ScalaType, UnreifiedScalaType}
+import com.tribbloids.spookystuff.utils.SpookyUtils
 import org.apache.spark.sql.catalyst.ScalaReflection.universe.{TypeTag, typeTag}
 import org.apache.spark.sql.catalyst.trees.TreeNode
 
@@ -11,7 +12,7 @@ import scala.language.implicitConversions
 
 object GenExtractor {
 
-  import com.tribbloids.spookystuff.utils.ScalaType._
+  import com.tribbloids.spookystuff.utils.refl.ScalaType._
 
   final val functionVID = -592849327L
 

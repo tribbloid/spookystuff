@@ -3,7 +3,7 @@ package com.tribbloids.spookystuff.extractors.impl
 import com.tribbloids.spookystuff.extractors.GenExtractor.Leaf
 import com.tribbloids.spookystuff.extractors._
 import com.tribbloids.spookystuff.row.{SpookySchema, _}
-import com.tribbloids.spookystuff.utils.ScalaType._
+import com.tribbloids.spookystuff.utils.refl.ScalaType._
 import org.apache.spark.sql.types._
 
 import scala.collection.TraversableOnce

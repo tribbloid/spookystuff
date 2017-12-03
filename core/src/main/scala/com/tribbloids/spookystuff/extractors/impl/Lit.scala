@@ -2,7 +2,8 @@ package com.tribbloids.spookystuff.extractors.impl
 
 import com.tribbloids.spookystuff.extractors.GenExtractor.Static
 import com.tribbloids.spookystuff.extractors._
-import com.tribbloids.spookystuff.utils.{IDMixin, UnreifiedScalaType}
+import com.tribbloids.spookystuff.utils.IDMixin
+import com.tribbloids.spookystuff.utils.refl.UnreifiedScalaType
 import org.apache.spark.sql.catalyst.ScalaReflection.universe.TypeTag
 import org.apache.spark.sql.types._
 

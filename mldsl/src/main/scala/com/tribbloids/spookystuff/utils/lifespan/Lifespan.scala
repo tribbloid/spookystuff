@@ -1,4 +1,4 @@
-package com.tribbloids.spookystuff.session
+package com.tribbloids.spookystuff.utils.lifespan
 
 import com.tribbloids.spookystuff.utils.IDMixin
 import org.apache.spark.TaskContext
@@ -11,7 +11,7 @@ import scala.util.Try
   */
 abstract class Lifespan extends IDMixin with Serializable {
 
-  def strategy: CleanupStrategy
+  def strategy: LifespanType
   def ctxFactory: () => LifespanContext
 
   @transient lazy val ctx = ctxFactory()
@@ -99,7 +99,7 @@ case class LifespanContext(
   override def toString = threadStr + " / " + taskStr
 }
 
-abstract class CleanupStrategy extends Serializable {
+abstract class LifespanType extends Serializable {
 
   def addCleanupHook(
                       ctx: LifespanContext,
@@ -111,7 +111,7 @@ abstract class CleanupStrategy extends Serializable {
 
 object Lifespan {
 
-  object Task extends CleanupStrategy {
+  object Task extends LifespanType {
 
     private def tc(ctx: LifespanContext) = {
       ctx.taskOpt.getOrElse(
@@ -133,8 +133,16 @@ object Lifespan {
       ID(tc(ctx).taskAttemptId())
     }
   }
+  case class Task(
+                   override val nameOpt: Option[String] = None,
+                   ctxFactory: () => LifespanContext = () => LifespanContext()
+                 ) extends Lifespan {
+    def this() = this(None)
 
-  object JVM extends CleanupStrategy {
+    override def strategy: LifespanType = Task
+  }
+
+  object JVM extends LifespanType {
     override def addCleanupHook(ctx: LifespanContext, fn: () => Unit): Unit = {
       sys.addShutdownHook {
         fn()
@@ -148,8 +156,16 @@ object Lifespan {
       ID(ctx.thread.getId)
     }
   }
+  case class JVM(
+                  override val nameOpt: Option[String] = None,
+                  ctxFactory: () => LifespanContext = () => LifespanContext()
+                ) extends Lifespan {
+    def this() = this(None)
 
-  object Auto extends CleanupStrategy {
+    override def strategy: LifespanType = JVM
+  }
+
+  object Auto extends LifespanType {
     private def delegate(ctx: LifespanContext) = {
       ctx.taskOpt match {
         case Some(tc) =>
@@ -167,7 +183,6 @@ object Lifespan {
       delegate(ctx).getCleanupBatchID(ctx)
     }
   }
-
   //CAUTION: keep the empty constructor! Kryo deserializer use them to initialize object
   case class Auto(
                    override val nameOpt: Option[String] = None,
@@ -175,24 +190,6 @@ object Lifespan {
                  ) extends Lifespan {
     def this() = this(None)
 
-    override def strategy: CleanupStrategy = Auto
-  }
-
-  case class Task(
-                   override val nameOpt: Option[String] = None,
-                   ctxFactory: () => LifespanContext = () => LifespanContext()
-                 ) extends Lifespan {
-    def this() = this(None)
-
-    override def strategy: CleanupStrategy = Task
-  }
-
-  case class JVM(
-                  override val nameOpt: Option[String] = None,
-                  ctxFactory: () => LifespanContext = () => LifespanContext()
-                ) extends Lifespan {
-    def this() = this(None)
-
-    override def strategy: CleanupStrategy = JVM
+    override def strategy: LifespanType = Auto
   }
 }

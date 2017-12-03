@@ -2,10 +2,10 @@ package com.tribbloids.spookystuff.uav.sim
 
 import com.tribbloids.spookystuff.SpookyEnvFixture
 import com.tribbloids.spookystuff.session.python.PythonDriver
-import com.tribbloids.spookystuff.session.{Cleanable, Lifespan}
 import com.tribbloids.spookystuff.uav.SimUAVFixture
 import com.tribbloids.spookystuff.uav.telemetry.Link
 import com.tribbloids.spookystuff.utils.CommonUtils
+import com.tribbloids.spookystuff.utils.lifespan.{Cleanable, Lifespan}
 import org.apache.spark.rdd.RDD
 import org.jutils.jprocesses.JProcesses
 import org.slf4j.LoggerFactory

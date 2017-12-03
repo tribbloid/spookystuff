@@ -1,7 +1,7 @@
 package com.tribbloids.spookystuff.execution
 
-import com.tribbloids.spookystuff.session.LocalCleanable
 import com.tribbloids.spookystuff.utils.ShippingMarks
+import com.tribbloids.spookystuff.utils.lifespan.LocalCleanable
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.DataFrame
 import org.apache.spark.storage.StorageLevel

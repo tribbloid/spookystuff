@@ -26,6 +26,8 @@ object SpookyConf extends Submodules.Builder[SpookyConf]{
   //DO NOT change to val! all confs are
   // mutable
   def default = new SpookyConf()
+
+
 }
 
 /**

@@ -2,7 +2,8 @@ package com.tribbloids.spookystuff.actions
 
 import com.tribbloids.spookystuff.doc.{Doc, Fetched}
 import com.tribbloids.spookystuff.session.Session
-import com.tribbloids.spookystuff.utils.{CommonUtils, ScalaUDT}
+import com.tribbloids.spookystuff.utils.CommonUtils
+import com.tribbloids.spookystuff.utils.refl.ScalaUDT
 import com.tribbloids.spookystuff.{ActionException, Const, SpookyContext}
 import org.apache.spark.sql.types.SQLUserDefinedType
 import org.openqa.selenium.support.ui.{ExpectedConditions, WebDriverWait}

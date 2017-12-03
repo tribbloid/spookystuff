@@ -1,5 +1,6 @@
 package com.tribbloids.spookystuff.session
 
+import com.tribbloids.spookystuff.utils.lifespan.{Lifespan, LocalCleanable}
 import org.openqa.selenium.{NoSuchSessionException, WebDriver}
 
 import scala.language.implicitConversions

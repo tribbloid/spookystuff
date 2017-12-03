@@ -1,5 +1,6 @@
 package com.tribbloids.spookystuff.conf
 
+import com.tribbloids.spookystuff.utils.ConfUtils
 import org.apache.spark.SparkConf
 
 object DirConf extends Submodules.Builder[DirConf]{

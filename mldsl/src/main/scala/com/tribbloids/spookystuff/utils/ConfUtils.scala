@@ -1,4 +1,4 @@
-package com.tribbloids.spookystuff.conf
+package com.tribbloids.spookystuff.utils
 
 import org.apache.spark.{SparkConf, SparkEnv}
 import org.slf4j.LoggerFactory

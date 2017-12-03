@@ -6,9 +6,10 @@ import com.tribbloids.spookystuff.dsl.DriverFactory
 import com.tribbloids.spookystuff.execution.SpookyExecutionContext
 import com.tribbloids.spookystuff.extractors.{Alias, GenExtractor, GenResolved}
 import com.tribbloids.spookystuff.row.{SpookySchema, SquashedFetchedRow, TypedField}
-import com.tribbloids.spookystuff.session.{CleanWebDriver, Cleanable, Lifespan}
+import com.tribbloids.spookystuff.session.CleanWebDriver
 import com.tribbloids.spookystuff.testutils.{FunSpecx, RemoteDocsFixture, TestHelper}
 import com.tribbloids.spookystuff.utils.CommonUtils
+import com.tribbloids.spookystuff.utils.lifespan.{Cleanable, Lifespan}
 import org.apache.spark.SparkContext
 import org.apache.spark.sql.SQLContext
 import org.jutils.jprocesses.JProcesses

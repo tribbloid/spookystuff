@@ -16,14 +16,17 @@
 
 package com.tribbloids.spookystuff.caching
 
+import com.tribbloids.spookystuff.utils.CachingUtils
+
 /**
   * @author Manuri Perera
   */
+//TODO: not efficient should be replaced
 trait Memoize[T, R] extends (T => R) with Serializable {
 
   def f(v: T): R
 
-  val cache = ConcurrentCache[T, (R, Long)]()
+  val cache = CachingUtils.ConcurrentCache[T, (R, Long)]()
 
   def get(x: T, condition: ((R, Long)) => Boolean): R = {
     if (cache.contains(x)) {

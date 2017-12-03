@@ -4,6 +4,7 @@ import com.tribbloids.spookystuff.SpookyEnvFixture
 import com.tribbloids.spookystuff.session.CleanableSuite.DummyCleanable
 import com.tribbloids.spookystuff.testutils.AssertSerializable
 import com.tribbloids.spookystuff.utils.CommonUtils
+import com.tribbloids.spookystuff.utils.lifespan.{Cleanable, Lifespan, LocalCleanable}
 import org.apache.spark.{HashPartitioner, TaskContext}
 
 import scala.util.Random

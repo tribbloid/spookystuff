@@ -1,6 +1,6 @@
 package com.tribbloids.spookystuff.testutils.beans
 
-import com.tribbloids.spookystuff.utils.ScalaUDT
+import com.tribbloids.spookystuff.utils.refl.ScalaUDT
 import org.apache.spark.sql.types.SQLUserDefinedType
 
 /**

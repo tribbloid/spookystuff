@@ -14,7 +14,7 @@ import org.apache.spark.sql.types._
 class ScalaDynamicExtractorSuite extends SpookyEnvFixture with LocalPathDocsFixture {
 
   import com.tribbloids.spookystuff.dsl._
-  import com.tribbloids.spookystuff.utils.ScalaType._
+  import com.tribbloids.spookystuff.utils.refl.ScalaType._
 
   val doc = Wget(HTML_URL).fetch(spooky).head
 

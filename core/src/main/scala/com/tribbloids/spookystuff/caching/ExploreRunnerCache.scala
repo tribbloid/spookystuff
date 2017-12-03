@@ -3,6 +3,7 @@ package com.tribbloids.spookystuff.caching
 import com.tribbloids.spookystuff.actions.TraceView
 import com.tribbloids.spookystuff.execution.ExploreRunner
 import com.tribbloids.spookystuff.row.{DataRow, RowReducer}
+import com.tribbloids.spookystuff.utils.CachingUtils.{ConcurrentCache, ConcurrentMap, ConcurrentSet}
 
 /**
   * Singleton, always in the JVM and shared by all executors on the same machine

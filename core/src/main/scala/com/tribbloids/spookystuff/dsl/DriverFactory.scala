@@ -18,12 +18,12 @@ package com.tribbloids.spookystuff.dsl
 import java.io.File
 
 import com.gargoylesoftware.htmlunit.BrowserVersion
-import com.tribbloids.spookystuff.caching._
+import com.tribbloids.spookystuff.SpookyContext
 import com.tribbloids.spookystuff.session._
 import com.tribbloids.spookystuff.session.python.PythonDriver
-import com.tribbloids.spookystuff.utils.SpookyUtils
-import com.tribbloids.spookystuff.SpookyContext
-import com.tribbloids.spookystuff.conf.ConfUtils
+import com.tribbloids.spookystuff.utils.CachingUtils.ConcurrentMap
+import com.tribbloids.spookystuff.utils.lifespan.{Cleanable, Lifespan}
+import com.tribbloids.spookystuff.utils.{ConfUtils, SpookyUtils}
 import org.apache.commons.io.FileUtils
 import org.apache.spark.rdd.RDD
 import org.apache.spark.{SparkFiles, TaskContext}

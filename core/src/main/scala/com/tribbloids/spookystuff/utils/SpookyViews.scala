@@ -2,8 +2,8 @@ package com.tribbloids.spookystuff.utils
 
 import java.security.PrivilegedAction
 
-import com.tribbloids.spookystuff.caching.ConcurrentMap
 import com.tribbloids.spookystuff.row._
+import com.tribbloids.spookystuff.utils.CachingUtils.ConcurrentMap
 import com.tribbloids.spookystuff.utils.locality.PartitionIdPassthrough
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.DataFrame

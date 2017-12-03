@@ -1,6 +1,6 @@
 package com.tribbloids.spookystuff.uav.telemetry
 
-import com.tribbloids.spookystuff.session.{Cleanable, Session}
+import com.tribbloids.spookystuff.session.Session
 import com.tribbloids.spookystuff.testutils.TestHelper
 import com.tribbloids.spookystuff.uav.dsl.LinkFactory
 import com.tribbloids.spookystuff.uav.system.UAV
@@ -8,6 +8,7 @@ import com.tribbloids.spookystuff.uav.telemetry.mavlink.MAVLink
 import com.tribbloids.spookystuff.uav._
 import com.tribbloids.spookystuff.utils.{CommonUtils, SpookyUtils}
 import com.tribbloids.spookystuff.utils.TreeException.MultiCauseWrapper
+import com.tribbloids.spookystuff.utils.lifespan.Cleanable
 import com.tribbloids.spookystuff.{PyInterpretationException, SpookyContext, SpookyEnvFixture}
 import org.apache.spark.rdd.RDD
 

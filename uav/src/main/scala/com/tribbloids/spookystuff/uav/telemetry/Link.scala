@@ -1,16 +1,16 @@
 package com.tribbloids.spookystuff.uav.telemetry
 
+import com.tribbloids.spookystuff.SpookyContext
 import com.tribbloids.spookystuff.caching.Memoize
 import com.tribbloids.spookystuff.session._
 import com.tribbloids.spookystuff.uav.dsl.LinkFactory
-import com.tribbloids.spookystuff.uav.spatial._
 import com.tribbloids.spookystuff.uav.spatial.point.Location
 import com.tribbloids.spookystuff.uav.system.UAV
 import com.tribbloids.spookystuff.uav.telemetry.Link.MutexLock
 import com.tribbloids.spookystuff.uav.utils.UAVUtils
 import com.tribbloids.spookystuff.uav.{ReinforcementDepletedException, UAVConf, UAVMetrics}
-import com.tribbloids.spookystuff.utils.{CommonUtils, IDMixin, TreeException}
-import com.tribbloids.spookystuff.{SpookyContext, caching}
+import com.tribbloids.spookystuff.utils.lifespan.{Cleanable, LifespanContext, LocalCleanable}
+import com.tribbloids.spookystuff.utils.{CachingUtils, CommonUtils, IDMixin, TreeException}
 import org.slf4j.LoggerFactory
 
 import scala.collection.mutable.ArrayBuffer
@@ -23,7 +23,7 @@ import scala.util.{Failure, Random, Success, Try}
 object Link {
 
   // not all created Links are registered
-  val registered: caching.ConcurrentMap[UAV, Link] = caching.ConcurrentMap()
+  val registered: CachingUtils.ConcurrentMap[UAV, Link] = CachingUtils.ConcurrentMap()
 
   def sanityCheck(): Unit = {
     val cLinks = Cleanable.getTyped[Link].toSet

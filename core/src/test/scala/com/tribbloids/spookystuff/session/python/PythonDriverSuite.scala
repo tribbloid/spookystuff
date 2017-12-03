@@ -1,8 +1,8 @@
 package com.tribbloids.spookystuff.session.python
 
-import com.tribbloids.spookystuff.session.Lifespan
 import com.tribbloids.spookystuff.testutils.TestHelper
 import com.tribbloids.spookystuff.utils.CommonUtils
+import com.tribbloids.spookystuff.utils.lifespan.Lifespan
 import com.tribbloids.spookystuff.{PyInterpretationException, SpookyEnvFixture}
 import org.slf4j.LoggerFactory
 

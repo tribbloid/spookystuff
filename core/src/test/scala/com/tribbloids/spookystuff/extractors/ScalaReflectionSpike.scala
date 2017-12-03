@@ -4,15 +4,14 @@ import com.tribbloids.spookystuff.extractors.impl.Lit
 import com.tribbloids.spookystuff.row.FetchedRow
 import com.tribbloids.spookystuff.testutils.FunSpecx
 import com.tribbloids.spookystuff.testutils.beans.{Example, GenericExample}
-import com.tribbloids.spookystuff.utils.{TypeUtils, UnreifiedScalaType}
+import com.tribbloids.spookystuff.utils.refl.{TypeUtils, UnreifiedScalaType}
 import org.apache.spark.sql.types.{IntegerType, StringType}
-import org.scalatest.FunSuite
 
 //object ScalaReflectionSuite {
 
-class ScalaReflectionSuite extends FunSpecx {
+class ScalaReflectionSpike extends FunSpecx {
 
-  import com.tribbloids.spookystuff.utils.ScalaType._
+  import com.tribbloids.spookystuff.utils.refl.ScalaType._
 
   lazy val exLit: Lit[FetchedRow, _] = Lit(new Example())
   lazy val exType: DataType = UnreifiedScalaType.apply[Example]
@@ -285,7 +284,7 @@ class ScalaReflectionSuite extends FunSpecx {
   //  }
 }
 
-class ScalaReflectionSuite_Generic extends ScalaReflectionSuite {
+class ScalaReflectionSpike_Generic extends ScalaReflectionSpike {
 
   override lazy val exLit = Lit(new GenericExample[Int]("dummy", 1))
   //  val evi = (ex.dataType)

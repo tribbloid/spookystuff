@@ -1,5 +1,6 @@
 package com.tribbloids.spookystuff.session
 
+import com.tribbloids.spookystuff.utils.lifespan.Cleanable
 import com.tribbloids.spookystuff.utils.{CommonUtils, TreeException}
 
 import scala.util.Try

@@ -1,7 +1,7 @@
 package com.tribbloids.spookystuff.actions
 
 import com.tribbloids.spookystuff.selenium.BySizzleCssSelector
-import com.tribbloids.spookystuff.utils.ScalaUDT
+import com.tribbloids.spookystuff.utils.refl.ScalaUDT
 import org.apache.spark.ml.dsl.utils.messaging.MessageRelay
 import org.apache.spark.sql.types.SQLUserDefinedType
 import org.openqa.selenium.By

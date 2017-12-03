@@ -1,6 +1,6 @@
 package org.apache.spark.ml.dsl.utils.messaging
 
-import com.tribbloids.spookystuff.utils.ReflectionUtils
+import com.tribbloids.spookystuff.utils.refl.ReflectionUtils
 
 /**
   * Created by peng on 31/05/17.

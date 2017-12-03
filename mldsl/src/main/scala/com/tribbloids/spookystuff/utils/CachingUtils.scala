@@ -1,14 +1,10 @@
-package com.tribbloids.spookystuff
+package com.tribbloids.spookystuff.utils
 
 import com.google.common.cache.CacheBuilder
-import com.tribbloids.spookystuff.utils.CommonUtils
 
 import scala.collection.mutable
 
-/**
-  * Created by peng on 18/03/16.
-  */
-package object caching {
+object CachingUtils {
 
   import scala.collection.JavaConverters._
 
@@ -48,8 +44,8 @@ package object caching {
 
   //TODO: change to MapAsSet? not sure if its better
   def ConcurrentSet[V](): mutable.SynchronizedSet[V] = {
-//    Collections.synchronizedSet[V](new util.HashSet[V]())
-//      .asScala
+    //    Collections.synchronizedSet[V](new util.HashSet[V]())
+    //      .asScala
     new mutable.HashSet[V]() with mutable.SynchronizedSet[V]
   }
 }

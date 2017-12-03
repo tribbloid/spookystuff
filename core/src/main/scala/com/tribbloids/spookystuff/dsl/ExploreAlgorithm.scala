@@ -1,9 +1,10 @@
 package com.tribbloids.spookystuff.dsl
 
 import com.tribbloids.spookystuff.actions._
-import com.tribbloids.spookystuff.caching.{ConcurrentMap, ExploreRunnerCache}
+import com.tribbloids.spookystuff.caching.ExploreRunnerCache
 import com.tribbloids.spookystuff.execution.ExploreParams
 import com.tribbloids.spookystuff.row._
+import com.tribbloids.spookystuff.utils.CachingUtils.ConcurrentMap
 
 sealed trait ExploreAlgorithm {
 
@@ -95,6 +96,7 @@ object ExploreAlgorithms {
                    ) extends EliminatingImpl {
 
       import params._
+
       import scala.Ordering.Implicits._
 
       override val openReducer: RowReducer = {

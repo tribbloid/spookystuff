@@ -1,19 +1,15 @@
 package com.tribbloids.spookystuff.uav.sim
 
-import com.tribbloids.spookystuff.caching
-import com.tribbloids.spookystuff.session.LocalCleanable
 import com.tribbloids.spookystuff.session.python.{CaseInstanceRef, SingletonRef}
-import com.tribbloids.spookystuff.uav.UAVConf
-import com.tribbloids.spookystuff.uav.spatial.point.LLA
-
-import scala.util.Random
+import com.tribbloids.spookystuff.utils.CachingUtils
+import com.tribbloids.spookystuff.utils.lifespan.LocalCleanable
 
 /**
   * Created by peng on 27/10/16.
   */
 object APMSim {
 
-  val existing: caching.ConcurrentSet[APMSim] = caching.ConcurrentSet()
+  val existing: CachingUtils.ConcurrentSet[APMSim] = CachingUtils.ConcurrentSet()
 
   final val FRAMERATE = 200
   final val SPEEDUP = 5

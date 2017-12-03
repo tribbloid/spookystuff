@@ -10,7 +10,8 @@ import com.tribbloids.spookystuff.extractors._
 import com.tribbloids.spookystuff.extractors.impl.{Append, Get, Interpolate, Zipped}
 import com.tribbloids.spookystuff.rdd.FetchedDataset
 import com.tribbloids.spookystuff.row.{FetchedRow, Field}
-import com.tribbloids.spookystuff.utils.{Default, UnreifiedScalaType}
+import com.tribbloids.spookystuff.utils.Default
+import com.tribbloids.spookystuff.utils.refl.UnreifiedScalaType
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.types.MapType
 
@@ -32,7 +33,7 @@ import scala.reflect.ClassTag
   */
 sealed trait Level2 {
 
-  import com.tribbloids.spookystuff.utils.ScalaType._
+  import com.tribbloids.spookystuff.utils.refl.ScalaType._
   import org.apache.spark.sql.catalyst.ScalaReflection.universe.TypeTag
 
   implicit class ExView[R: ClassTag](self: Extractor[R]) extends Serializable {

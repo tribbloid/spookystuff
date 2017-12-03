@@ -3,8 +3,7 @@ package com.tribbloids.spookystuff.extractors
 import java.lang.reflect.Method
 
 import com.tribbloids.spookystuff.extractors.impl.Lit
-import com.tribbloids.spookystuff.utils.{ReflectionLock, TypeUtils, UnreifiedScalaType}
-import org.apache.spark.ml.dsl.UnsafeUtils
+import com.tribbloids.spookystuff.utils.refl.{ReflectionLock, TypeUtils, UnreifiedScalaType}
 import org.apache.spark.ml.dsl.utils.FlowUtils
 import org.apache.spark.sql.catalyst.ScalaReflection.universe._
 
@@ -14,7 +13,7 @@ case class ScalaDynamic(
                          methodName: String
                        ) extends ReflectionLock{
 
-  import com.tribbloids.spookystuff.utils.ScalaType._
+  import com.tribbloids.spookystuff.utils.refl.ScalaType._
 
   def getMethodsByName(dType: DataType): List[MethodSymbol] = locked {
     val tpe = dType.scalaType.tpe
@@ -153,7 +152,7 @@ case class ScalaDynamicExtractor[T](
                                      argsOpt: Option[List[GenExtractor[T, _]]]
                                    ) extends GenExtractor[T, Any] {
 
-  import com.tribbloids.spookystuff.utils.ScalaType._
+  import com.tribbloids.spookystuff.utils.refl.ScalaType._
 
   val dynamic = ScalaDynamic(methodName)
 

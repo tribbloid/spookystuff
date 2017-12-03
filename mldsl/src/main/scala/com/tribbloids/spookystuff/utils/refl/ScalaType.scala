@@ -1,8 +1,9 @@
-package com.tribbloids.spookystuff.utils
+package com.tribbloids.spookystuff.utils.refl
 
 import java.nio.ByteBuffer
 import java.sql.{Date, Timestamp}
 
+import com.tribbloids.spookystuff.utils._
 import org.apache.spark.SparkConf
 import org.apache.spark.serializer.JavaSerializer
 import org.apache.spark.sql.catalyst.ScalaReflection.universe._

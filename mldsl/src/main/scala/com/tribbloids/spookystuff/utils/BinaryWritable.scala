@@ -2,6 +2,7 @@ package com.tribbloids.spookystuff.utils
 
 import java.nio.ByteBuffer
 
+import com.tribbloids.spookystuff.utils.refl.{ScalaType, TypeUtils}
 import org.apache.hadoop.io.Writable
 import org.apache.hadoop.security.{Credentials, UserGroupInformation}
 import org.apache.spark.serializer.{JavaSerializer, KryoSerializer, SerializerInstance}

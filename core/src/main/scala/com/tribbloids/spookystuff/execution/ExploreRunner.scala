@@ -1,10 +1,11 @@
 package com.tribbloids.spookystuff.execution
 
 import com.tribbloids.spookystuff.actions.{Trace, TraceView}
-import com.tribbloids.spookystuff.caching.{ConcurrentMap, ExploreRunnerCache}
+import com.tribbloids.spookystuff.caching.ExploreRunnerCache
 import com.tribbloids.spookystuff.dsl.ExploreAlgorithm.Impl
 import com.tribbloids.spookystuff.extractors.Resolved
 import com.tribbloids.spookystuff.row._
+import com.tribbloids.spookystuff.utils.CachingUtils.ConcurrentMap
 import com.tribbloids.spookystuff.utils.NOTSerializable
 import com.tribbloids.spookystuff.{SpookyContext, dsl}
 

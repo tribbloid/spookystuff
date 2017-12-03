@@ -1,10 +1,12 @@
 
 package com.tribbloids.spookystuff.session.python
 
-import com.tribbloids.spookystuff.caching.ConcurrentMap
+import com.tribbloids.spookystuff.SpookyContext
 import com.tribbloids.spookystuff.session._
-import com.tribbloids.spookystuff.utils.{ReflectionUtils, SpookyUtils}
-import com.tribbloids.spookystuff.{SpookyContext, caching}
+import com.tribbloids.spookystuff.utils.CachingUtils.ConcurrentMap
+import com.tribbloids.spookystuff.utils.lifespan.{Cleanable, Lifespan, LocalCleanable}
+import com.tribbloids.spookystuff.utils.refl.ReflectionUtils
+import com.tribbloids.spookystuff.utils.SpookyUtils
 import org.apache.spark.ml.dsl.utils._
 import org.apache.spark.ml.dsl.utils.messaging.{MessageAPI, MessageView}
 import org.json4s.jackson.JsonMethods._
@@ -33,8 +35,8 @@ trait PyRef extends Cleanable {
       .split('.')
   }
 
-  @transient lazy val _driverToBindings: caching.ConcurrentMap[PythonDriver, PyBinding] = {
-    caching.ConcurrentMap()
+  @transient lazy val _driverToBindings: ConcurrentMap[PythonDriver, PyBinding] = {
+    ConcurrentMap()
   }
 
   def driverToBindingsAlive: ConcurrentMap[PythonDriver, PyBinding] = {

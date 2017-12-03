@@ -3,6 +3,7 @@ package com.tribbloids.spookystuff.caching
 import com.tribbloids.spookystuff.SpookyContext
 import com.tribbloids.spookystuff.actions.Trace
 import com.tribbloids.spookystuff.doc.Fetched
+import com.tribbloids.spookystuff.utils.CachingUtils.ConcurrentCache
 
 /**
   * Backed by a WeakHashMap, the web cache temporarily store all trace -> Array[Page] until next GC.
