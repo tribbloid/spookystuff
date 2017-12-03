@@ -11,5 +11,5 @@ package object planning {
   type Constraint = RewriteRule[Vec]
 
   type VRPOptimizer = (GenPartitioners.VRP, SpookySchema) => GenPartitionerLike.Instance[TraceView]
-  type Resampler = (Traffic, SpookySchema) => ResamplerInst
+  type Resampler = (TrafficControl, SpookySchema) => ResamplerInst
 }

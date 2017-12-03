@@ -3,20 +3,20 @@ package com.tribbloids.spookystuff.uav.planning.Resamplers
 import com.tribbloids.spookystuff.actions.{Action, Trace}
 import com.tribbloids.spookystuff.row.SpookySchema
 import com.tribbloids.spookystuff.uav.actions.UAVNavigation
-import com.tribbloids.spookystuff.uav.planning.Traffics.Clearance
-import com.tribbloids.spookystuff.uav.planning.{Resampler, ResamplerInst, Traffic}
+import com.tribbloids.spookystuff.uav.planning.TrafficControls.Avoid
+import com.tribbloids.spookystuff.uav.planning.{Resampler, ResamplerInst, TrafficControl}
 import org.apache.spark.mllib.uav.TwoLines
 
-case class InsertWaypoint(
+case class InsertWP(
                            granularity: Double = 1.0
                          ) extends Resampler {
 
-  def apply(gp: Traffic, schema: SpookySchema) = Inst(gp, schema)
+  def apply(gp: TrafficControl, schema: SpookySchema) = Inst(gp, schema)
 
-  case class Inst(gp: Traffic, schema: SpookySchema) extends ResamplerInst {
+  case class Inst(gp: TrafficControl, schema: SpookySchema) extends ResamplerInst {
 
     lazy val trafficClearance = gp match {
-      case v: Clearance => v._traffic
+      case v: Avoid => v._traffic
       case _ => 0.0
     }
 

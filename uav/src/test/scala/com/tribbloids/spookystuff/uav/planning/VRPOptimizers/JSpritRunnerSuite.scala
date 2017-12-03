@@ -3,34 +3,12 @@ package com.tribbloids.spookystuff.uav.planning.VRPOptimizers
 import com.graphhopper.jsprit.core.problem.VehicleRoutingProblem
 import com.graphhopper.jsprit.core.util.{FastVehicleRoutingTransportCostsMatrix, VehicleRoutingTransportCostsMatrix}
 import com.graphhopper.jsprit.io.problem.VrpXMLReader
-import com.tribbloids.spookystuff.SpookyEnvFixture
 import com.tribbloids.spookystuff.actions.TraceView
 import com.tribbloids.spookystuff.uav.UAVConf
 import com.tribbloids.spookystuff.uav.actions.Waypoint
-import com.tribbloids.spookystuff.uav.dsl.GenPartitioners
 import com.tribbloids.spookystuff.uav.spatial.point.{Location, NED}
 import com.tribbloids.spookystuff.uav.system.UAV
 import com.tribbloids.spookystuff.uav.telemetry.UAVStatus
-
-/**
-  * Created by peng on 7/3/17.
-  */
-trait VRPFixture extends SpookyEnvFixture {
-
-  var i = 1
-
-  def getVRP: GenPartitioners.VRP = {
-    val solutionPath = s"log/JSprit/${this.getClass.getSimpleName}.$i.solution.png"
-    val progressPath = s"log/JSprit/${this.getClass.getSimpleName}.$i.progress.png"
-    i += 1
-    GenPartitioners.VRP(
-      numUAVOverride = Some(this.parallelism),
-      cohesiveness = 0,
-      solutionPlotPathOpt = Some(solutionPath),
-      covergencePlotPathOpt = Some(progressPath)
-    )
-  }
-}
 
 class JSpritRunnerSuite extends VRPFixture {
 

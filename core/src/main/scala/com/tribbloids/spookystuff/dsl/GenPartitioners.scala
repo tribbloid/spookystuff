@@ -11,6 +11,8 @@ import scala.reflect.ClassTag
 
 object GenPartitioners {
 
+  case object Disabled extends GenPartitionerLike.Disabled
+
   //this won't merge identical traces and do lookup, only used in case each resolve may yield different result
   case object Narrow extends AnyGenPartitioner {
 
@@ -31,7 +33,7 @@ object GenPartitioners {
           itr =>
             itr
               .toTraversable
-              .groupBy(_._1)
+              .groupBy(_._1) //TODO: is it memory efficient? Write a test case for it
               .map(v => v._1 -> v._2.map(_._2).reduce(reducer))
               .iterator
         }

@@ -31,10 +31,10 @@ object GenPartitioners {
                   covergencePlotPathOpt: Option[String] = None,
 
                   // only applies to HasCost
-                  optimizer: VRPOptimizer = VRPOptimizers.JSprit_Minimax,
+                  optimizer: VRPOptimizer = VRPOptimizers.JSprit,
 
                   // only applies to UAVNavigation
-                  traffic: Option[Traffic] = {
+                  traffic: Option[TrafficControl] = {
                     None
                     //                    Some(CollisionAvoidances.Clearance())
                   }

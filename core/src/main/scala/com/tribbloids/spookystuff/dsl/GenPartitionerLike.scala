@@ -102,4 +102,23 @@ object GenPartitionerLike {
                       ): RDD[(K, K)]
   }
 
+  trait Disabled extends AnyGenPartitioner {
+
+    def getInstance[K: ClassTag](schema: SpookySchema): Instance[K] = {
+      Inst[K]()
+    }
+
+    case class Inst[K](
+                        implicit val ctg: ClassTag[K]
+                      ) extends Instance[K] {
+
+      override def reduceByKey[V: ClassTag](
+                                             rdd: RDD[(K, V)],
+                                             reducer: (V, V) => V,
+                                             beaconRDDOpt: Option[BeaconRDD[K]] = None
+                                           ): RDD[(K, V)] = {
+        rdd
+      }
+    }
+  }
 }

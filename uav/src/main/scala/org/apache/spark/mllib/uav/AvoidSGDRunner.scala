@@ -2,17 +2,17 @@ package org.apache.spark.mllib.uav
 
 import com.tribbloids.spookystuff.actions.{Trace, TraceView}
 import com.tribbloids.spookystuff.row.SpookySchema
-import com.tribbloids.spookystuff.uav.planning.Traffics.Clearance
+import com.tribbloids.spookystuff.uav.planning.TrafficControls.Avoid
 import org.apache.spark.mllib.optimization.{GradientDescent, SquaredL2Updater}
 import org.apache.spark.rdd.RDD
 
 import scala.collection.immutable
 
-case class ClearanceSGDRunner(
-                               pid2TracesRDD: RDD[(Int, List[TraceView])],
-                               schema: SpookySchema,
-                               outer: Clearance
-                             ) {
+case class AvoidSGDRunner(
+                           pid2TracesRDD: RDD[(Int, List[TraceView])],
+                           schema: SpookySchema,
+                           outer: Avoid
+                         ) {
 
   val pid2Traces: Map[Int, Seq[Trace]] = pid2TracesRDD
     .mapValues {
@@ -29,7 +29,7 @@ case class ClearanceSGDRunner(
       v.apply(outer, schema).apply(pid2Traces)
   }
 
-  val gradient = ClearanceGradient(this)
+  val gradient = AvoidGradient(this)
   val updater = new SquaredL2Updater()
 
   //TODO: result may be a very large object that requires shipping
@@ -88,11 +88,17 @@ case class ClearanceSGDRunner(
       v.map(vv => conversionMap(vv))
   }
 
-  lazy val pid2Traces_flatten: List[(Int, Trace)] = pid2Traces_converted.toList.flatMap {
-    case (i, v) =>
-      v.map {
-        vv =>
-          i -> vv
-      }
+  lazy val pid2Traces_flatten: Map[(Int, Int), Trace] = {
+
+    pid2Traces_converted.flatMap {
+      case (i, v) =>
+        val seq = v.zipWithIndex.map {
+          case (vv, j) =>
+            (i, j) -> vv
+        }
+        seq
+    }
   }
+
+  lazy val traces_flatten = pid2Traces_flatten.toSeq.sortBy(_._1).map(_._2)
 }

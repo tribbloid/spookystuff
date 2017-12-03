@@ -8,13 +8,13 @@ import com.tribbloids.spookystuff.uav.planning._
 import com.tribbloids.spookystuff.uav.telemetry.{LinkUtils, UAVStatus}
 import org.apache.spark.rdd.RDD
 
-object JSprit_Minimax extends VRPOptimizer {
+object JSprit extends VRPOptimizer {
 }
 
-case class JSprit_Minimax(
-                           problem: GenPartitioners.VRP,
-                           schema: SpookySchema
-                         ) extends RepartitionKeyImpl[TraceView] {
+case class JSprit(
+                   problem: GenPartitioners.VRP,
+                   schema: SpookySchema
+                 ) extends RepartitionKeyImpl[TraceView] {
 
   override def repartitionKey(
                                rdd: RDD[TraceView],

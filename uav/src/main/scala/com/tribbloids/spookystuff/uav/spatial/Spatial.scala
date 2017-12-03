@@ -34,9 +34,7 @@ object Spatial {
         case NED.name => NED.fromWKT(wkt)
       }
     }
-    geomTry.getOrElse {
-      ???
-      //TODO: parse non-geometric spatial
-    }
+    geomTry.get
+    //TODO: parse non-geometric spatial
   }
 }

@@ -2,21 +2,21 @@ package org.apache.spark.mllib.uav
 
 import com.tribbloids.spookystuff.actions.Trace
 import com.tribbloids.spookystuff.row.SpookySchema
-import com.tribbloids.spookystuff.uav.planning.Traffics.Clearance
+import com.tribbloids.spookystuff.uav.planning.TrafficControls.Avoid
 import org.apache.spark.mllib.linalg.BLAS
 
-object ClearanceGradient {
+object AvoidGradient {
 
-  def apply(runner: ClearanceSGDRunner): ClearanceGradient = ClearanceGradient(
+  def apply(runner: AvoidSGDRunner): AvoidGradient = AvoidGradient(
     runner.pid2Traces_resampled,
     runner.outer,
     runner.schema
   )
 }
 
-case class ClearanceGradient(
+case class AvoidGradient(
                               id2Traces: Map[Int, Seq[Trace]],
-                              self: Clearance,
+                              self: Avoid,
                               schema: SpookySchema
                             ) extends PathPlanningGradient {
 

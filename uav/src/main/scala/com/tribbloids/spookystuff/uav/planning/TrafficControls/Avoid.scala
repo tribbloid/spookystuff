@@ -1,4 +1,4 @@
-package com.tribbloids.spookystuff.uav.planning.Traffics
+package com.tribbloids.spookystuff.uav.planning.TrafficControls
 
 import com.tribbloids.spookystuff.actions.TraceView
 import com.tribbloids.spookystuff.dsl.GenPartitionerLike
@@ -6,17 +6,17 @@ import com.tribbloids.spookystuff.dsl.GenPartitionerLike.Instance
 import com.tribbloids.spookystuff.row.{BeaconRDD, SpookySchema}
 import com.tribbloids.spookystuff.uav.planning._
 import org.apache.spark.TaskContext
-import org.apache.spark.mllib.uav.ClearanceSGDRunner
+import org.apache.spark.mllib.uav.AvoidSGDRunner
 import org.apache.spark.rdd.RDD
 
 import scala.reflect.ClassTag
 
-case class Clearance(
-                      traffic: Option[Double] = Some(1.0),
-                      terrain: Option[Double] = None, //TODO: enable later
-                      resampler: Option[Resampler] = None,
-                      constraint: Option[Constraint] = Some(Constraints.AltitudeOnly)
-                    ) extends Traffic {
+case class Avoid(
+                  traffic: Option[Double] = Some(1.0),
+                  terrain: Option[Double] = None, //TODO: enable later
+                  resampler: Option[Resampler] = None,
+                  constraint: Option[Constraint] = Some(Constraints.AltitudeOnly)
+                ) extends TrafficControl {
 
   val _traffic = traffic.getOrElse(0.0)
 
@@ -42,7 +42,7 @@ case class Clearance(
             Iterator(result)
         }
 
-      val runner = ClearanceSGDRunner(pid2TracesRDD, schema, Clearance.this)
+      val runner = AvoidSGDRunner(pid2TracesRDD, schema, Avoid.this) //TODO: not general enough for distributed runner
       val conversionMap_broadcast = runner.conversionMap_broadcast
       val result = rdd.map {
         case (trace, v) =>
