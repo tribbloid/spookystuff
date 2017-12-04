@@ -2,7 +2,7 @@ package org.apache.spark.ml.dsl.utils
 
 import org.apache.spark.ml.PipelineStage
 import org.apache.spark.ml.dsl._
-import org.apache.spark.ml.dsl.utils.messaging.{MessageRelay, MessageAPI_<=>}
+import org.apache.spark.ml.dsl.utils.messaging.{MessageAPI_<=>, MessageRelay}
 import org.apache.spark.ml.param.{ParamPair, Params}
 import org.apache.spark.sql.utils.DataTypeRelay
 import org.apache.spark.util.Utils

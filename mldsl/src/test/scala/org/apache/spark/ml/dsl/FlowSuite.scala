@@ -3,8 +3,8 @@ package org.apache.spark.ml.dsl
 import com.tribbloids.spookystuff.testutils.TestHelper
 import org.apache.spark.ml.feature._
 import org.apache.spark.mllib.feature
-import org.apache.spark.mllib.linalg.{Vector => MLVector}
-import org.apache.spark.sql.UserDefinedFunction
+import org.apache.spark.ml.linalg.{Vector => MLVector}
+import org.apache.spark.sql.expressions.UserDefinedFunction
 import org.apache.spark.sql.functions._
 
 object FlowSuite {

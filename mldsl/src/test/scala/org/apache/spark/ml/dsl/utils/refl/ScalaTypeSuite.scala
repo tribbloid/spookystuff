@@ -1,20 +1,18 @@
-package com.tribbloids.spookystuff.utils
+package org.apache.spark.ml.dsl.utils.refl
 
-import com.tribbloids.spookystuff.SpookyEnvFixture
-import com.tribbloids.spookystuff.actions.{Action, ActionUDT}
-import com.tribbloids.spookystuff.testutils.beans.{Example, ExampleUDT}
-import com.tribbloids.spookystuff.utils.refl.TypeUtils
+import com.tribbloids.spookystuff.testbeans.{Example, ExampleUDT}
+import com.tribbloids.spookystuff.testutils.{FunSpecx, TestHelper}
 import org.apache.spark.sql.catalyst.ScalaReflection
-import org.apache.spark.sql.catalyst.expressions.codegen.GenerateProjection
+import org.apache.spark.sql.catalyst.expressions.codegen.CodegenContext
 import org.apache.spark.sql.types._
 
 /**
   * Created by peng on 08/06/16.
   */
-class ScalaTypeSuite extends SpookyEnvFixture {
+class ScalaTypeSuite extends FunSpecx {
 
   import ScalaReflection.universe._
-  import com.tribbloids.spookystuff.utils.refl.ScalaType._
+  import org.apache.spark.ml.dsl.utils.refl.ScalaType._
 
   /**
     * please keep this test to quickly identify any potential problems caused by changes in scala reflection API in the future
@@ -58,7 +56,7 @@ class ScalaTypeSuite extends SpookyEnvFixture {
     //    ArrayType(StringType, containsNull = true) -> typeTag[Array[(String, Int)]],
 
     //    tupleSchema -> typeTag[(Int, String)], //TODO: urge spark team to fix the bug and re-enable it
-    new ActionUDT -> typeTag[Action],
+//    new ActionUDT -> typeTag[Action],
     new ExampleUDT -> typeTag[Example]
   )
 
@@ -78,7 +76,7 @@ class ScalaTypeSuite extends SpookyEnvFixture {
 
       //TODO: this failed on CI for UDT with unknown reason, why?
       ignore(s"CodeGenerator.javaType(${pair._1})") {
-        val genCtx = GenerateProjection.newCodeGenContext()
+        val genCtx = new CodegenContext
         pair._1 match {
           case v: UserDefinedType[_] =>
             println(s"UDT: ${pair._1.getClass.getCanonicalName}")
@@ -109,7 +107,7 @@ class ScalaTypeSuite extends SpookyEnvFixture {
   }
 
   it("ScalaUDT will not interfere with catalyst CodeGen") {
-    val df = sql.createDataFrame(
+    val df = TestHelper.TestSQL.createDataFrame(
       Seq(
         1 -> new Example("a", 1),
         2 -> new Example("b", 2),

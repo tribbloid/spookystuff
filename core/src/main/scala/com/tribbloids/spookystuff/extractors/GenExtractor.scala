@@ -3,7 +3,7 @@ package com.tribbloids.spookystuff.extractors
 import com.tribbloids.spookystuff.Const
 import com.tribbloids.spookystuff.extractors.GenExtractor._
 import com.tribbloids.spookystuff.row.Field
-import com.tribbloids.spookystuff.utils.refl.{ScalaType, UnreifiedScalaType}
+import org.apache.spark.ml.dsl.utils.refl.{ScalaType, UnreifiedScalaType}
 import com.tribbloids.spookystuff.utils.SpookyUtils
 import org.apache.spark.sql.catalyst.ScalaReflection.universe.{TypeTag, typeTag}
 import org.apache.spark.sql.catalyst.trees.TreeNode
@@ -12,7 +12,7 @@ import scala.language.implicitConversions
 
 object GenExtractor {
 
-  import com.tribbloids.spookystuff.utils.refl.ScalaType._
+  import org.apache.spark.ml.dsl.utils.refl.ScalaType._
 
   final val functionVID = -592849327L
 
@@ -125,6 +125,8 @@ object GenExtractor {
 
   case class TreeNodeView(self: GenExtractor[_,_]) extends TreeNode[TreeNodeView] {
     override def children: Seq[TreeNodeView] = self._args.map(TreeNodeView)
+
+    override def verboseString: String = simpleString
   }
 
   // ------------implicits-------------

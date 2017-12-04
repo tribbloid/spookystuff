@@ -2,7 +2,7 @@ package com.tribbloids.spookystuff.row
 
 import com.tribbloids.spookystuff.execution._
 import com.tribbloids.spookystuff.extractors._
-import com.tribbloids.spookystuff.utils.refl.ScalaUDT
+import org.apache.spark.ml.dsl.utils.refl.ScalaUDT
 import org.apache.spark.sql.types.{DataType, StructField, StructType}
 
 import scala.collection.immutable.ListMap
@@ -15,7 +15,7 @@ case class SpookySchema(
                           fieldTypes: ListMap[Field, DataType] = ListMap.empty
                         ) extends ScalaUDT[DataRow] {
 
-  import com.tribbloids.spookystuff.utils.refl.ScalaType._
+  import org.apache.spark.ml.dsl.utils.refl.ScalaType._
 
   def spooky = ec.spooky
 

@@ -15,6 +15,9 @@ class CommonUtils {
   import scala.concurrent.ExecutionContext.Implicits.global
   import scala.concurrent.duration._
 
+  lazy val scalaVersion: String = scala.util.Properties.versionNumberString
+  lazy val scalaBinaryVersion = scalaVersion.split('.').slice(0, 2).mkString(".")
+
   def numDriverCores = {
     val result = Runtime.getRuntime.availableProcessors()
     assert(result > 0)

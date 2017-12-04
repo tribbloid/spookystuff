@@ -1,4 +1,4 @@
-package org.apache.spark.mllib.uav
+package org.apache.spark.ml.uav
 
 import com.tribbloids.spookystuff.uav.actions.UAVNavigation
 import com.tribbloids.spookystuff.uav.spatial.point.NED

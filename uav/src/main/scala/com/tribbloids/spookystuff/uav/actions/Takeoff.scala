@@ -6,7 +6,7 @@ import com.tribbloids.spookystuff.session.Session
 import com.tribbloids.spookystuff.uav.UAVConf
 import com.tribbloids.spookystuff.uav.spatial.point.{Location, NED}
 import com.tribbloids.spookystuff.utils.SpookyUtils
-import org.apache.spark.mllib.uav.Vec
+import org.apache.spark.ml.uav.Vec
 import org.slf4j.LoggerFactory
 
 /**

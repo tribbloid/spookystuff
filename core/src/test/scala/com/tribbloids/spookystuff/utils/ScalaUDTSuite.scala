@@ -4,7 +4,7 @@ import com.tribbloids.spookystuff.SpookyEnvFixture
 import com.tribbloids.spookystuff.actions.Action
 import com.tribbloids.spookystuff.doc.{Doc, Fetched, Unstructured}
 import com.tribbloids.spookystuff.testutils.FunSpecx
-import com.tribbloids.spookystuff.utils.refl.{TypeUtils, UnreifiedScalaType}
+import org.apache.spark.ml.dsl.utils.refl.{TypeUtils, UnreifiedScalaType}
 import org.apache.spark.sql.types.DataType
 
 /**
@@ -12,7 +12,7 @@ import org.apache.spark.sql.types.DataType
   */
 class ScalaUDTSuite extends SpookyEnvFixture with FunSpecx {
 
-  import com.tribbloids.spookystuff.utils.refl.ScalaType._
+  import org.apache.spark.ml.dsl.utils.refl.ScalaType._
   import org.apache.spark.sql.catalyst.ScalaReflection.universe._
 
   def getAndTestReifiedType[T: TypeTag]: DataType = {

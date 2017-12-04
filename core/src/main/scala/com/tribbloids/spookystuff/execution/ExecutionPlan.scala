@@ -29,6 +29,8 @@ abstract class ExecutionPlan(
   def spooky = ec.spooky
   def scratchRDDs = ec.scratchRDDs
 
+  def verboseString = simpleString
+
   //Cannot be lazy, always defined on construction
   val schema: SpookySchema = SpookySchema(
     ec,

@@ -226,12 +226,12 @@ object DriverFactories {
 
     override def deploy(spooky: SpookyContext): Unit = {
       try {
-        spooky.sparkContext.clearFiles()
+//        spooky.sparkContext.clearFiles()
         _deploy(spooky)
       }
       catch {
         case e: Throwable =>
-          spooky.sparkContext.clearFiles()
+//          spooky.sparkContext.clearFiles()
           throw new UnsupportedOperationException(
             s"${this.getClass.getSimpleName} cannot find resource for deployment, " +
               s"please provide Internet Connection or deploy manually",
@@ -264,8 +264,6 @@ object DriverFactories {
         }
 
         val sc = spooky.sqlContext.sparkContext
-        sc.addFile(uri)
-        val fileName = PhantomJS.uri2fileName(uri)
 
         if (redeploy) {
           sc.mapAtLeastOncePerExecutorCore {
@@ -276,6 +274,9 @@ object DriverFactories {
           }
             .count()
         }
+
+        sc.addFile(uri)
+        val fileName = PhantomJS.uri2fileName(uri)
 
         sc.mapAtLeastOncePerExecutorCore {
           val srcStr = SparkFiles.get(fileName)

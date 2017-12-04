@@ -4,7 +4,7 @@ import com.tribbloids.spookystuff.SpookyEnvFixture
 import com.tribbloids.spookystuff.actions.{Action, ActionUDT, Wget}
 import com.tribbloids.spookystuff.doc.{Doc, Unstructured}
 import com.tribbloids.spookystuff.extractors.impl.{Get, Lit}
-import com.tribbloids.spookystuff.testutils.beans.Example
+import com.tribbloids.spookystuff.testbeans.Example
 import com.tribbloids.spookystuff.testutils.{LocalPathDocsFixture, TestHelper}
 import org.apache.spark.sql.types._
 
@@ -14,7 +14,7 @@ import org.apache.spark.sql.types._
 class ScalaDynamicExtractorSuite extends SpookyEnvFixture with LocalPathDocsFixture {
 
   import com.tribbloids.spookystuff.dsl._
-  import com.tribbloids.spookystuff.utils.refl.ScalaType._
+  import org.apache.spark.ml.dsl.utils.refl.ScalaType._
 
   val doc = Wget(HTML_URL).fetch(spooky).head
 

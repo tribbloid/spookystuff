@@ -1,4 +1,4 @@
-package org.apache.spark.mllib.uav
+package org.apache.spark.ml.uav
 
 import com.tribbloids.spookystuff.actions.Trace
 import com.tribbloids.spookystuff.row.SpookySchema
@@ -64,14 +64,14 @@ case class AvoidGradient(
           }
           encoded.map {
             nav =>
-              nav.shiftByWeights(weights.toBreeze)
+              nav.shiftByWeights(weights.asBreeze)
           }
         }
         val nextShiftedOpt = tuple._2.map {
           nextTrace =>
             val nextNav = nextTrace.find(_.isInstanceOf[VectorEncodedNav])
               .get.asInstanceOf[VectorEncodedNav]
-            nextNav.shiftByWeights(weights.toBreeze)
+            nextNav.shiftByWeights(weights.asBreeze)
         }
         shifted ++ nextShiftedOpt
     }

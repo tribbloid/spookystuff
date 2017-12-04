@@ -6,7 +6,7 @@ import java.util.UUID
 import com.tribbloids.spookystuff._
 import com.tribbloids.spookystuff.actions._
 import com.tribbloids.spookystuff.caching.CacheLevel
-import com.tribbloids.spookystuff.utils.refl.ScalaUDT
+import org.apache.spark.ml.dsl.utils.refl.ScalaUDT
 import com.tribbloids.spookystuff.utils.{CommonUtils, IDMixin}
 import org.apache.commons.csv.CSVFormat
 import org.apache.hadoop.fs.Path

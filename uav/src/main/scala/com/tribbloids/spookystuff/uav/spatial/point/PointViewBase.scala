@@ -3,7 +3,7 @@ package com.tribbloids.spookystuff.uav.spatial.point
 
 import com.tribbloids.spookystuff.uav.spatial.util.{SearchAttempt, SearchHistory}
 import com.tribbloids.spookystuff.uav.spatial._
-import org.apache.spark.mllib.uav.Vec
+import org.apache.spark.ml.uav.Vec
 import org.osgeo.proj4j.ProjCoordinate
 
 trait PointViewBase {

@@ -1,4 +1,4 @@
-package org.apache.spark.ml
+package org.apache.spark.ml.dsl
 
 import org.apache.spark.ml.param.Params
 import org.apache.spark.ml.param.shared.{HasInputCol, HasInputCols, HasOutputCol}

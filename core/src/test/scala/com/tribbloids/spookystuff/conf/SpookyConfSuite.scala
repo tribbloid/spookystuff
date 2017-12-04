@@ -51,9 +51,7 @@ class SpookyConfSuite extends SpookyEnvFixture {
     val conf = sc.getConf
     val v = conf.get("dummy.property")
 
-    try {
-      assert(ConfUtils.getPropertyOrEnv("dummy.property") == Some(v))
-    }
+    assert(ConfUtils.getPropertyOrEnv("dummy.property").contains(v))
   }
 
   it("getProperty() can load property from system property") {
@@ -61,7 +59,7 @@ class SpookyConfSuite extends SpookyEnvFixture {
     System.setProperty("dummy.property", "AA")
 
     try {
-      assert(ConfUtils.getPropertyOrEnv("dummy.property") == Some("AA"))
+      assert(ConfUtils.getPropertyOrEnv("dummy.property").contains("AA"))
     }
     finally {
       System.setProperty("dummy.property", "")

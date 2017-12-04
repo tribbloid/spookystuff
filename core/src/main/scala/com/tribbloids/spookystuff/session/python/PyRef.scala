@@ -5,7 +5,7 @@ import com.tribbloids.spookystuff.SpookyContext
 import com.tribbloids.spookystuff.session._
 import com.tribbloids.spookystuff.utils.CachingUtils.ConcurrentMap
 import com.tribbloids.spookystuff.utils.lifespan.{Cleanable, Lifespan, LocalCleanable}
-import com.tribbloids.spookystuff.utils.refl.ReflectionUtils
+import org.apache.spark.ml.dsl.utils.refl.ReflectionUtils
 import com.tribbloids.spookystuff.utils.SpookyUtils
 import org.apache.spark.ml.dsl.utils._
 import org.apache.spark.ml.dsl.utils.messaging.{MessageAPI, MessageView}

@@ -2,7 +2,7 @@ package com.tribbloids.spookystuff.extractors.impl
 
 import com.tribbloids.spookystuff.extractors._
 import com.tribbloids.spookystuff.row._
-import com.tribbloids.spookystuff.utils.refl.ScalaType._
+import org.apache.spark.ml.dsl.utils.refl.ScalaType._
 import com.tribbloids.spookystuff.utils.SpookyUtils
 import org.apache.spark.sql.types._
 

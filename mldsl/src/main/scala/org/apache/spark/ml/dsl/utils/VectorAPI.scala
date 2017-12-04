@@ -1,12 +1,9 @@
 package org.apache.spark.ml.dsl.utils
 
-import org.apache.spark.mllib.linalg._
+import org.apache.spark.ml.linalg._
 
 import scala.language.implicitConversions
-/**
-  * used by TrafficControl to generate new actions that minimize risk.
-  * (In the future) used by RL algorithms to represent strategy to adapt to environment.
-  */
+
 @Deprecated
 trait VectorAPI {
 

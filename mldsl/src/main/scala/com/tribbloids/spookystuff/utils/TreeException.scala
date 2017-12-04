@@ -1,5 +1,6 @@
 package com.tribbloids.spookystuff.utils
 
+import org.apache.spark.ml.dsl.utils.FlowUtils
 import org.apache.spark.sql.catalyst.trees.TreeNode
 
 import scala.collection.mutable.ArrayBuffer
@@ -19,17 +20,19 @@ object TreeException {
           )
           eOpt.map(TreeNodeView).toSeq
       }
-      result.sortBy(_.simpleString())
+      result.sortBy(_.simpleString)
     }
 
-    override def simpleString(): String = {
+    override def simpleString: String = {
       self match {
         case v: TreeException =>
-          v.nodeMessage
+          v.simpleMessage
         case _ =>
           self.getClass.getName + ": " + self.getMessage
       }
     }
+
+    override def verboseString: String = simpleString + "\n" + FlowUtils.stackTracesShowStr(self.getStackTrace)
   }
 
   def aggregate(
@@ -162,7 +165,7 @@ object TreeException {
   }
 
   class Node(
-              val nodeMessage: String = "",
+              val simpleMessage: String = "",
               val cause: Throwable = null
             ) extends TreeException {
 
@@ -179,7 +182,7 @@ object TreeException {
                                 override val causes: Seq[Throwable] = Nil
                               ) extends TreeException {
 
-    val nodeMessage: String = s"[CAUSED BY ${causes.size} EXCEPTION(S)]"
+    val simpleMessage: String = s"[CAUSED BY ${causes.size} EXCEPTION(S)]"
   }
 }
 
@@ -195,5 +198,5 @@ trait TreeException extends Throwable {
 
   override def getCause: Throwable = causes.headOption.orNull
 
-  def nodeMessage: String
+  def simpleMessage: String
 }

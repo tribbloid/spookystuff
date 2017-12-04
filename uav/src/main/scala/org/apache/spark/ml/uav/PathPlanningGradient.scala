@@ -1,4 +1,4 @@
-package org.apache.spark.mllib.uav
+package org.apache.spark.ml.uav
 
 import com.tribbloids.spookystuff.actions.{Action, Trace}
 import com.tribbloids.spookystuff.row.SpookySchema

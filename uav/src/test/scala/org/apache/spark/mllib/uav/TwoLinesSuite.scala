@@ -2,6 +2,7 @@ package org.apache.spark.mllib.uav
 
 import com.tribbloids.spookystuff.SpookyEnvFixture
 import com.tribbloids.spookystuff.uav.spatial.point.NED
+import org.apache.spark.ml.uav.TwoLines
 
 class TwoLinesSuite extends SpookyEnvFixture {
 

@@ -112,16 +112,16 @@ abstract class RelayLike[Obj] {
     override def proto: Any = toMessageAPI.proto
   }
 
-  class UDT extends UserDefinedType[Obj] {
-
-    override def sqlType: DataType = ???
-
-    override def serialize(obj: Any): Any = ???
-
-    override def deserialize(datum: Any): Obj = ???
-
-    override def userClass: Class[Obj] = ???
-  }
+//  class UDT extends UserDefinedType[Obj] {
+//
+//    override def sqlType: DataType = ???
+//
+//    override def serialize(obj: Obj): Any = ???
+//
+//    override def deserialize(datum: Any): Obj = ???
+//
+//    override def userClass: Class[Obj] = ???
+//  }
 
   def Param(
              parent: String,

@@ -10,7 +10,6 @@ object GeoRef {
   implicit def fromTuple[T <: Spatial](tuple: (T, Anchor)) = GeoRef[T](tuple._1, tuple._2)
 }
 
-
 case class GeoRef[+T <: Spatial](
                                   geom: T,
                                   anchor: Anchor
@@ -19,6 +18,8 @@ case class GeoRef[+T <: Spatial](
   override def simpleString: String = {
     geom.toString + " -+ " + anchor.name
   }
+
+  override def verboseString: String = simpleString
 
   override def children: Seq[GeoRef[Spatial]] = {
     anchor match {

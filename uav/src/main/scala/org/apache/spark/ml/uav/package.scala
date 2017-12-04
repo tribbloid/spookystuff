@@ -1,4 +1,4 @@
-package org.apache.spark.mllib
+package org.apache.spark.ml
 
 package object uav {
 

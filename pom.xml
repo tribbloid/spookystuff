@@ -6,7 +6,7 @@
 
   <groupId>com.tribbloids.spookystuff</groupId>
   <artifactId>spookystuff</artifactId>
-  <version>0.4.0-SNAPSHOT</version>
+  <version>0.5.0-SNAPSHOT</version>
   <packaging>pom</packaging>
   <name>spookystuff</name>
   <description>Scalable Query Engine for Data Acquisition based on Apache Spark</description>
@@ -48,12 +48,12 @@
     <PermGen>512m</PermGen>
     <MaxPermGen>2g</MaxPermGen>
 
-    <scala.version>2.10.6</scala.version>
-    <scala.binary.version>2.10</scala.binary.version>
+    <scala.version>2.11.11</scala.version>
+    <scala.binary.version>2.11</scala.binary.version>
     <!--has to be used with <exclusions></exclusions>-->
     <!--<scala.fallback.version>2.10</scala.fallback.version>-->
-    <spark.version>1.6.3</spark.version>
-    <spark.binary.version>1.6</spark.binary.version>
+    <spark.version>2.2.0</spark.version>
+    <spark.binary.version>2.2</spark.binary.version>
     <spark.assembly.version>${spark.binary.version}</spark.assembly.version>
     <spark.classifier>spark${spark.binary.version}</spark.classifier>
 
@@ -75,16 +75,16 @@
     </profile>
 
     <profile>
-      <id>scala-2.10</id>
+      <id>scala-2.11</id>
       <activation>
         <activeByDefault>true</activeByDefault>
       </activation>
     </profile>
     <profile>
-      <id>scala-2.11</id>
+      <id>scala-2.10</id>
       <properties>
-        <scala.version>2.11.11</scala.version>
-        <scala.binary.version>2.11</scala.binary.version>
+        <scala.version>2.10.6</scala.version>
+        <scala.binary.version>2.10</scala.binary.version>
       </properties>
     </profile>
 
@@ -118,7 +118,7 @@
     <!--</profile>-->
 
     <profile>
-      <id>spark-1.6</id>
+      <id>spark-2.2</id>
       <activation>
         <activeByDefault>true</activeByDefault>
       </activation>
@@ -126,13 +126,13 @@
       </properties>
     </profile>
 
-    <profile>
-      <id>spark-2.0</id>
-      <properties>
-        <spark.version>2.0.1</spark.version>
-        <spark.binary.version>2.0</spark.binary.version>
-      </properties>
-    </profile>
+    <!--<profile>-->
+      <!--<id>spark-2.0</id>-->
+      <!--<properties>-->
+        <!--<spark.version>2.0.1</spark.version>-->
+        <!--<spark.binary.version>2.0</spark.binary.version>-->
+      <!--</properties>-->
+    <!--</profile>-->
 
     <profile>
       <id>release-sign-artifacts</id>

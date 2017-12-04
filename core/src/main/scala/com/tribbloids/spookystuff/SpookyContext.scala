@@ -5,7 +5,7 @@ import com.tribbloids.spookystuff.rdd.FetchedDataset
 import com.tribbloids.spookystuff.row._
 import com.tribbloids.spookystuff.session.Session
 import com.tribbloids.spookystuff.utils.io.HDFSResolver
-import com.tribbloids.spookystuff.utils.refl.ScalaType
+import org.apache.spark.ml.dsl.utils.refl.ScalaType
 import com.tribbloids.spookystuff.utils.{ShippingMarks, TreeException}
 import org.apache.hadoop.conf.Configuration
 import org.apache.spark._

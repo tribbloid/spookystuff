@@ -1,7 +1,8 @@
 package com.tribbloids.spookystuff.utils.locality
 
 import com.tribbloids.spookystuff.SpookyEnvFixture
-import com.tribbloids.spookystuff.TestBeans._
+import com.tribbloids.spookystuff.testbeans._
+import org.apache.spark
 import org.apache.spark.rdd.RDD
 import org.apache.spark.{HashPartitioner, RangePartitioner, SparkException}
 import org.scalatest.FunSpec
@@ -83,26 +84,56 @@ class LocalityImplSuite extends SpookyEnvFixture {
       Validate(moved, still, false).assertLocalityWithoutOrder()
     }
 
-    it("the second will NOT move if both have partitioners") {
+    describe("in Spark 1.x") {
+      if (spark.SPARK_VERSION.startsWith("1.")) {
+        it("the second will NOT move if both have partitioners") {
 
-      val still = rdd1
-        .partitionBy(new HashPartitioner(np))
-      val moved = rdd2
-        .partitionBy(new RangePartitioner(np, rdd2))
+          val still = rdd1
+            .partitionBy(new HashPartitioner(np))
+          val moved = rdd2
+            .partitionBy(new RangePartitioner(np, rdd2))
 
-      Validate(moved, still, false).assertLocalityWithoutOrder()
+          Validate(moved, still, false).assertLocalityWithoutOrder()
+        }
+
+        it("the second will NOT move even if both have partitioners and the second is in memory") {
+
+          val still = rdd1
+            .partitionBy(new RangePartitioner(np, rdd1))
+          val moved = rdd2
+            .partitionBy(new HashPartitioner(np))
+            .persist()
+          moved.count()
+
+          Validate(moved, still, false).assertLocalityWithoutOrder()
+        }
+      }
     }
 
-    it("the second will NOT move even if both have partitioners and the second is in memory") {
+    describe("in Spark 2.x") {
+      if (spark.SPARK_VERSION.startsWith("2.")) {
+        it("the first will NOT move if both have partitioners") {
 
-      val still = rdd1
-        .partitionBy(new RangePartitioner(np, rdd1))
-      val moved = rdd2
-        .partitionBy(new HashPartitioner(np))
-        .persist()
-      moved.count()
+          val still = rdd1
+            .partitionBy(new HashPartitioner(np))
+          val moved = rdd2
+            .partitionBy(new RangePartitioner(np, rdd2))
 
-      Validate(moved, still, false).assertLocalityWithoutOrder()
+          Validate(moved, still, true).assertLocalityWithoutOrder()
+        }
+
+        it("the first will NOT move even if both have partitioners and the second is in memory") {
+
+          val still = rdd1
+            .partitionBy(new RangePartitioner(np, rdd1))
+          val moved = rdd2
+            .partitionBy(new HashPartitioner(np))
+            .persist()
+          moved.count()
+
+          Validate(moved, still, true).assertLocalityWithoutOrder()
+        }
+      }
     }
   }
 
@@ -253,7 +284,7 @@ object LocalityImplSuite extends FunSpec {
                                                  cogroupBaseOverride: Option[RDD[(K, (V, Iterable[V]))]] = None
                                                ) {
 
-    val (shouldStay, shouldMove) = if (firstStay) {
+    val (shouldStay: (Int, Int), shouldMove: (Int, Int)) = if (firstStay) {
       (0->2, 1->3)
     }
     else {
@@ -271,9 +302,9 @@ object LocalityImplSuite extends FunSpec {
       }
     }
 
-    val still_moved: RDD[(V, Iterable[V])] = cogroupBase.values
+    val cogroupedValues: RDD[(V, Iterable[V])] = cogroupBase.values
 
-    val allZipped: RDD[List[List[V]]] = still_moved
+    val allZipped: RDD[List[List[V]]] = cogroupedValues
       .zipPartitions(first, second) {
         (itr1, itr2, itr3) =>
           val first = itr2.map(_._2).toList

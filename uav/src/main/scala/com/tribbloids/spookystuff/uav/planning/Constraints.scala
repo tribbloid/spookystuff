@@ -1,7 +1,7 @@
 package com.tribbloids.spookystuff.uav.planning
 
 import com.tribbloids.spookystuff.row.SpookySchema
-import org.apache.spark.mllib.uav.{DVec, Vec}
+import org.apache.spark.ml.uav.{DVec, Vec}
 
 object Constraints {
   object AltitudeOnly extends Constraint {

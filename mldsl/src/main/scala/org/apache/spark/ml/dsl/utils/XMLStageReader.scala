@@ -5,9 +5,9 @@ import org.apache.spark.ml.util.DefaultParamsReader.Metadata
 import org.apache.spark.ml.util.{DefaultParamsReader, MLReadable, MLReader}
 import org.apache.spark.util.Utils
 import org.json4s.JsonAST.JObject
-import org.json4s.{Formats, Serializer}
 import org.json4s.jackson.JsonMethods._
 import org.json4s.jackson.Serialization
+import org.json4s.{Formats, Serializer}
 
 import scala.xml.{NodeSeq, XML}
 

@@ -1,4 +1,4 @@
-package org.apache.spark.mllib.uav
+package org.apache.spark.ml.uav
 
 import com.tribbloids.spookystuff.actions.{Trace, TraceView}
 import com.tribbloids.spookystuff.row.SpookySchema
@@ -45,9 +45,10 @@ case class AvoidSGDRunner(
       numIterations = 50,
       regParam = 0.1,
       miniBatchFraction = 1.0,
-      initialWeights = gradient.initialWeights
+      initialWeights = gradient.initialWeights,
+      convergenceTol = 0.001
     )
-    val weights_brz = weights.toBreeze
+    val weights_brz = weights.asBreeze
     val pid2TracesRDD_shifted: Map[Int, Seq[Trace]] = gradient
       .id2Traces_withEncoded
       .mapValues {

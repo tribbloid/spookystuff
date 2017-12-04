@@ -3,7 +3,7 @@ package com.tribbloids.spookystuff.testutils
 import java.io.File
 import java.util.Properties
 
-import com.tribbloids.spookystuff.utils.CommonUtils
+import com.tribbloids.spookystuff.utils.{CommonUtils, ConfUtils}
 import org.apache.commons.io.FileUtils
 import org.apache.spark.serializer.KryoSerializer
 import org.apache.spark.sql.SQLContext
@@ -17,25 +17,25 @@ class TestHelper() {
   val TEMP_PATH = CommonUtils.\\\(System.getProperty("user.dir"), "temp")
   val UNPACK_RESOURCE_PATH = CommonUtils.\\\(System.getProperty("java.io.tmpdir"), "spookystuff", "resources")
 
-  val props = new Properties()
+  val properties = new Properties()
   Try {
-    props.load(ClassLoader.getSystemResourceAsStream(".rootkey.csv"))
+    properties.load(ClassLoader.getSystemResourceAsStream(".rootkey.csv"))
   }
     .recoverWith {
       case _: Throwable =>
         Try {
-          props.load(ClassLoader.getSystemResourceAsStream("rootkey.csv"))
+          properties.load(ClassLoader.getSystemResourceAsStream("rootkey.csv"))
         }
     }
     .getOrElse {
       println("rootkey.csv is missing")
     }
 
-  val S3Path = Option(props.getProperty("S3Path"))
+  val S3Path = Option(properties.getProperty("S3Path"))
   if (S3Path.isDefined) println("Test on AWS S3 with credentials provided by rootkey.csv")
 
-  val AWSAccessKeyId = Option(props.getProperty("AWSAccessKeyId"))
-  val AWSSecretKey = Option(props.getProperty("AWSSecretKey"))
+  val AWSAccessKeyId = Option(properties.getProperty("AWSAccessKeyId"))
+  val AWSSecretKey = Option(properties.getProperty("AWSSecretKey"))
   AWSAccessKeyId.foreach{
     System.setProperty("fs.s3.awsAccessKeyId", _) //TODO: useless here? set in conf directly?
   }
@@ -50,7 +50,7 @@ class TestHelper() {
   final val EXECUTOR_JVM_MEMORY_OVERHEAD = 256
 
   lazy val maxCores = {
-    val max = Option(props.getProperty("maxCores")).map(_.toInt)
+    val max = Option(properties.getProperty("maxCores")).map(_.toInt)
       .getOrElse(Int.MaxValue)
     var n = Math.min (
       Runtime.getRuntime.availableProcessors(),
@@ -67,8 +67,8 @@ class TestHelper() {
     Option(SPARK_HOME).flatMap {
       h =>
         val tuple = (
-          Option(props.getProperty("ClusterSize")).map(_.toInt),
-          Option(props.getProperty("NumCoresPerWorker")).map(_.toInt)
+          Option(properties.getProperty("ClusterSize")).map(_.toInt),
+          Option(properties.getProperty("NumCoresPerWorker")).map(_.toInt)
         )
         tuple match {
           case (None, None) =>
@@ -87,7 +87,7 @@ class TestHelper() {
   def numCoresPerWorkerOpt: Option[Int] = clusterSize_numCoresPerWorker_Opt.map(_._2)
 
   def maxFailures: Int = {
-    Option(props.getProperty("MaxFailures")).map(_.toInt).getOrElse(4)
+    Option(properties.getProperty("MaxFailures")).map(_.toInt).getOrElse(4)
   }
 
   def numWorkers = clusterSizeOpt.getOrElse(1)
@@ -98,7 +98,7 @@ class TestHelper() {
   lazy val TestSparkConf: SparkConf = {
 
     //always use KryoSerializer, it is less stable than Native Serializer
-    val conf: SparkConf = new SparkConf()
+    val conf: SparkConf = new SparkConf(false)
 
     conf.setAll(coreSettings)
 
@@ -140,6 +140,7 @@ class TestHelper() {
       val masterStr =
         s"local-cluster[${clusterSizeOpt.get},${numCoresPerWorkerOpt.get},${executorMemoryOpt.get}]"
       println(s"initializing SparkContext in local-cluster simulation mode:" + masterStr)
+      ConfUtils.setEnv("SPARK_SCALA_VERSION", CommonUtils.scalaBinaryVersion)
       Map(
         "spark.master" -> masterStr,
         "spark.home" -> SPARK_HOME,

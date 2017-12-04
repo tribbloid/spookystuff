@@ -4,7 +4,7 @@ import com.tribbloids.spookystuff.actions.{RewriteRule, TraceView}
 import com.tribbloids.spookystuff.dsl.GenPartitionerLike
 import com.tribbloids.spookystuff.row.SpookySchema
 import com.tribbloids.spookystuff.uav.dsl.GenPartitioners
-import org.apache.spark.mllib.uav.Vec
+import org.apache.spark.ml.uav.Vec
 
 package object planning {
 

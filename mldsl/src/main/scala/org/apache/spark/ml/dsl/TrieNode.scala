@@ -88,4 +88,6 @@ case class TrieNode[K, V](
       }
     )
   }
+
+  override def verboseString: String = simpleString
 }

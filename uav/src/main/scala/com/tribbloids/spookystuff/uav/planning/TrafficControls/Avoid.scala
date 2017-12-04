@@ -6,7 +6,7 @@ import com.tribbloids.spookystuff.dsl.GenPartitionerLike.Instance
 import com.tribbloids.spookystuff.row.{BeaconRDD, SpookySchema}
 import com.tribbloids.spookystuff.uav.planning._
 import org.apache.spark.TaskContext
-import org.apache.spark.mllib.uav.AvoidSGDRunner
+import org.apache.spark.ml.uav.AvoidSGDRunner
 import org.apache.spark.rdd.RDD
 
 import scala.reflect.ClassTag

@@ -6,6 +6,8 @@ trait StepTreeNode[BaseType <: StepTreeNode[BaseType]] extends TreeNode[StepTree
 
   val self: StepLike
 
+  override def verboseString: String = this.simpleString + "\n========= PATHS =========\n" + mergedPath.mkString("\n")
+
   lazy val paths: Seq[Seq[String]] = {
     val rootPath = Seq(self.name)
     if (children.nonEmpty) {

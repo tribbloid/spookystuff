@@ -5,7 +5,7 @@ import com.tribbloids.spookystuff.row.SpookySchema
 import com.tribbloids.spookystuff.uav.actions.UAVNavigation
 import com.tribbloids.spookystuff.uav.planning.TrafficControls.Avoid
 import com.tribbloids.spookystuff.uav.planning.{Resampler, ResamplerInst, TrafficControl}
-import org.apache.spark.mllib.uav.TwoLines
+import org.apache.spark.ml.uav.TwoLines
 
 case class InsertWP(
                            granularity: Double = 1.0

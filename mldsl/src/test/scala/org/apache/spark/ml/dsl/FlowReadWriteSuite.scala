@@ -1,7 +1,5 @@
 package org.apache.spark.ml.dsl
 
-import com.tribbloids.spookystuff.testutils.TestHelper
-import org.apache.spark.SparkContext
 import org.apache.spark.ml.dsl.utils.{FlowRelay, Xml}
 import org.apache.spark.ml.feature._
 import org.apache.spark.ml.{Pipeline, PipelineModel}

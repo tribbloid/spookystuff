@@ -7,6 +7,7 @@ import com.tribbloids.spookystuff.uav.actions.Waypoint
 import com.tribbloids.spookystuff.uav.planning.TrafficControls.Avoid
 import com.tribbloids.spookystuff.uav.spatial.point.NED
 import com.tribbloids.spookystuff.utils.TreeException
+import org.apache.spark.ml.uav.{AvoidGradient, AvoidSGDRunner}
 import org.apache.spark.rdd.RDD
 
 import scala.util.Try
@@ -66,7 +67,7 @@ class AvoidSGDRunnerSuite extends GeomMixin {
     val data = runner.gradient.generateDataRDD
       .collect()
 
-    data.map(_._2.toDense.toBreeze.map(_.toInt))
+    data.map(_._2.toDense.asBreeze.map(_.toInt))
       .mkString("\n").shouldBe(
       """
         |DenseVector(1, 1, 0)

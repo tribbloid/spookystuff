@@ -1,7 +1,7 @@
 package org.apache.spark.ml.dsl.utils
 
 import org.apache.spark.annotation.DeveloperApi
-import org.apache.spark.ml.dsl.utils.messaging.{MessageReader, RelayLike, MessageAPI_<=>}
+import org.apache.spark.ml.dsl.utils.messaging.{MessageAPI_<=>, MessageReader, RelayLike}
 import org.json4s._
 
 import scala.language.implicitConversions

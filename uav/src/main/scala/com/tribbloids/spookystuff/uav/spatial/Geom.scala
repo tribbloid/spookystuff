@@ -3,7 +3,7 @@ package com.tribbloids.spookystuff.uav.spatial
 import breeze.linalg.DenseVector
 import com.tribbloids.spookystuff.uav.spatial.point.PointViewBase
 import com.tribbloids.spookystuff.utils.IDMixin
-import com.tribbloids.spookystuff.utils.refl.ScalaUDT
+import org.apache.spark.ml.dsl.utils.refl.ScalaUDT
 import org.apache.spark.sql.types.SQLUserDefinedType
 
 class GeomUDT extends ScalaUDT[Geom[_]]

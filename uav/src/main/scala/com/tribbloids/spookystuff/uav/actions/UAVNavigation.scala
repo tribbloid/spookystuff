@@ -8,7 +8,7 @@ import com.tribbloids.spookystuff.uav.actions.mixin.HasCost
 import com.tribbloids.spookystuff.uav.planning.Constraint
 import com.tribbloids.spookystuff.uav.spatial.point.{Location, NED}
 import com.tribbloids.spookystuff.uav.utils.UAVViews
-import org.apache.spark.mllib.uav.Vec
+import org.apache.spark.ml.uav.Vec
 
 import scala.language.implicitConversions
 

@@ -1,4 +1,4 @@
-package com.tribbloids.spookystuff.utils.refl
+package org.apache.spark.ml.dsl.utils.refl
 
 import java.nio.ByteBuffer
 import java.sql.{Date, Timestamp}
@@ -334,7 +334,7 @@ object UnreifiedScalaType {
   *  ideally it should compress object into InternalRow.
   *  Should be working and serve as the fallback strategy for ScalaReflection.schemaFor
   */
-abstract class ScalaUDT[T: ClassTag] extends UserDefinedType[T] with ScalaType.Ctg[T] {
+abstract class ScalaUDT[T >: Null: ClassTag] extends UserDefinedType[T] with ScalaType.Ctg[T] {
 
   override val typeName = this.getClass.getSimpleName.stripSuffix("$")//.stripSuffix("Type").stripSuffix("UDT").toLowerCase
 
@@ -352,7 +352,7 @@ abstract class ScalaUDT[T: ClassTag] extends UserDefinedType[T] with ScalaType.C
   }
 
   //should convert to internal Row.
-  override def serialize(obj: Any): Any = {
+  override def serialize(obj: T): Any = {
     serDe.newInstance().serialize(obj).array()
   }
 

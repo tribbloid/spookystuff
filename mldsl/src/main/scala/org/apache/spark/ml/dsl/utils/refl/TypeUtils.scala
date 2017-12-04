@@ -1,4 +1,4 @@
-package com.tribbloids.spookystuff.utils.refl
+package org.apache.spark.ml.dsl.utils.refl
 
 import org.apache.spark.sql.catalyst.ScalaReflection
 import org.apache.spark.sql.types._

@@ -2,7 +2,7 @@ package com.tribbloids.spookystuff.uav.spatial.point
 
 import com.tribbloids.spookystuff.uav.spatial._
 import com.tribbloids.spookystuff.uav.spatial.util.SearchHistory
-import org.apache.spark.mllib.uav.Vec
+import org.apache.spark.ml.uav.Vec
 import org.osgeo.proj4j.proj.Projection
 
 import scala.language.implicitConversions

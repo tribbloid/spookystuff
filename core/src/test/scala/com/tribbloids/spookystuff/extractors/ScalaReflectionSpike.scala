@@ -2,16 +2,16 @@ package com.tribbloids.spookystuff.extractors
 
 import com.tribbloids.spookystuff.extractors.impl.Lit
 import com.tribbloids.spookystuff.row.FetchedRow
+import com.tribbloids.spookystuff.testbeans.{Example, GenericExample}
 import com.tribbloids.spookystuff.testutils.FunSpecx
-import com.tribbloids.spookystuff.testutils.beans.{Example, GenericExample}
-import com.tribbloids.spookystuff.utils.refl.{TypeUtils, UnreifiedScalaType}
+import org.apache.spark.ml.dsl.utils.refl.{TypeUtils, UnreifiedScalaType}
 import org.apache.spark.sql.types.{IntegerType, StringType}
 
 //object ScalaReflectionSuite {
 
 class ScalaReflectionSpike extends FunSpecx {
 
-  import com.tribbloids.spookystuff.utils.refl.ScalaType._
+  import org.apache.spark.ml.dsl.utils.refl.ScalaType._
 
   lazy val exLit: Lit[FetchedRow, _] = Lit(new Example())
   lazy val exType: DataType = UnreifiedScalaType.apply[Example]

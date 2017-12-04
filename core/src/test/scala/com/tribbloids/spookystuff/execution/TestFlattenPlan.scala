@@ -2,7 +2,7 @@ package com.tribbloids.spookystuff.execution
 
 import com.tribbloids.spookystuff.SpookyEnvFixture
 import com.tribbloids.spookystuff.extractors.impl.Lit
-import com.tribbloids.spookystuff.utils.refl.UnreifiedScalaType
+import org.apache.spark.ml.dsl.utils.refl.UnreifiedScalaType
 import org.apache.spark.sql.types.{IntegerType, StringType, StructField, StructType}
 
 /**
@@ -64,7 +64,8 @@ class TestFlattenPlan extends SpookyEnvFixture {
         |Map(_2 -> WrappedArray(b, c, d), _1 -> 5)
         |Map(_1 -> 3)
         |Map(_2 -> WrappedArray(b, c, d), _1 -> 6)
-      """.stripMargin
+      """.stripMargin,
+      sort = true
     )
   }
 
@@ -79,7 +80,8 @@ class TestFlattenPlan extends SpookyEnvFixture {
         |Map(_1 -> WrappedArray(4, 5, 6), _2 -> WrappedArray(b, c, d), A -> b)
         |Map(_1 -> WrappedArray(4, 5, 6), _2 -> WrappedArray(b, c, d), A -> c)
         |Map(_1 -> WrappedArray(4, 5, 6), _2 -> WrappedArray(b, c, d), A -> d)
-      """.stripMargin
+      """.stripMargin,
+      sort = true
     )
   }
 
