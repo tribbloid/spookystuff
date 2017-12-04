@@ -19,7 +19,7 @@ object UAVViews {
     val uavConf: UAVConf = session.spooky.getConf[UAVConf]
 
     val linkTry = {
-      Link.Selector(
+      Link.UAVSelector(
         uavConf.uavsInFleetShuffled,
         session
       )

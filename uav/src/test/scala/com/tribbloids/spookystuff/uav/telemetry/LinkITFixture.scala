@@ -18,7 +18,7 @@ object LinkITFixture{
 
     val drones = connStrs.map(v => UAV(Seq(v)))
     val session = new Session(spooky)
-    val link = Link.Selector(
+    val link = Link.UAVSelector(
       drones,
       session
     )

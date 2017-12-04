@@ -17,7 +17,7 @@ object LinkUtils {
         spooky.withSession {
           session =>
             val uavsInFleet: Seq[UAV] = spooky.getConf[UAVConf].uavsInFleetShuffled
-            val linkTry = Link.Selector (
+            val linkTry = Link.UAVSelector (
               uavsInFleet,
               session
             )

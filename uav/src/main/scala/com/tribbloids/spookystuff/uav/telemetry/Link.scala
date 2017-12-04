@@ -45,15 +45,15 @@ object Link {
     def expireAfter = timestamp + LOCK_EXPIRE_AFTER
   }
 
-  case class Selector(
-                       fleet: Seq[UAV],
-                       session: Session,
-                       prefer: Seq[Link] => Option[Link] = {
-                         vs =>
-                           vs.find(_.isAvailable)
-                       },
-                       recommissionWithNewProxy: Boolean = true
-                     ) {
+  case class UAVSelector(
+                          fleet: Seq[UAV],
+                          session: Session,
+                          prefer: Seq[Link] => Option[Link] = {
+                            vs =>
+                              vs.find(_.isAvailable)
+                          },
+                          recommissionWithNewProxy: Boolean = true
+                        ) {
 
     lazy val spooky = session.spooky
     lazy val ctx = session.lifespan.ctx
@@ -186,13 +186,13 @@ object Link {
     }
   }
 
-  object Selector {
+  object UAVSelector {
 
     def withMutex(
                    fleet: Seq[UAV],
                    session: Session,
                    mutexIDOpt: Option[Long]
-                 ) = Selector(
+                 ) = UAVSelector(
       fleet,
       session,
       prefer = {

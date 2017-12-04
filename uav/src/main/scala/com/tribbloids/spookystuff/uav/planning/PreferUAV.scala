@@ -26,7 +26,7 @@ private[uav] case class PreferUAV(
     val fleet = session.spooky.getConf[UAVConf].uavsInFleetShuffled
     assert(fleet.contains(uavStatus.uav), "cannot prefer UAV not in the fleet")
 
-    Link.Selector.withMutex(
+    Link.UAVSelector.withMutex(
       Seq(uavStatus.uav),
       session,
       mutexIDOpt

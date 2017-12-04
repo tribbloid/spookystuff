@@ -10,7 +10,32 @@ import scala.language.implicitConversions
 
 object Selector extends MessageRelay[Selector]{
 
-  implicit def fromString(v: String) = Selector(new BySizzleCssSelector(v))
+  final val SCHEMA = "By.sizzleCssSelector"
+
+  implicit def fromString(v: String) = {
+
+    val splitted = v.split(":")
+    val (schema, vv) = if (splitted.size <= 1) {
+      SCHEMA -> v.trim
+    }
+    else {
+      splitted.head.trim -> splitted.slice(1, Int.MaxValue).mkString(":")
+    }
+
+    val by = schema match {
+      case "By.id" => By.id(vv)
+      case "By.name" => By.name(vv)
+      case "By.cssSelector" => By.cssSelector(vv)
+      case "By.linkText" => By.linkText(vv)
+      case "By.className" => By.className(vv)
+      case "By.tagName" => By.tagName(vv)
+      case "By.xpath" => By.xpath(vv)
+      case "By.partialLinkText" => By.partialLinkText(vv)
+      case SCHEMA => new BySizzleCssSelector(v)
+    }
+
+    Selector(by)
+  }
 
   override type M = String
 

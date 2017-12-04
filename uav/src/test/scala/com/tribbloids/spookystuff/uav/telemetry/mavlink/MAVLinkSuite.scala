@@ -98,7 +98,7 @@ class MAVLinkSuite extends SimLinkSuite with APMQuadFixture {
         val drone = UAV(Seq("dummy"))
         TestHelper.setLoggerDuring(classOf[Link], classOf[MAVLink], SpookyUtils.getClass) {
           intercept[ReinforcementDepletedException]{
-            Link.Selector(
+            Link.UAVSelector(
               Seq(drone),
               session
             )

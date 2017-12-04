@@ -36,7 +36,7 @@ class MAVLinkIT extends LinkITFixture with APMQuadFixture {
       connStr =>
         val drones = Seq(UAV(Seq(connStr)))
         val session = new Session(spooky)
-        val link = Link.Selector( //refitting
+        val link = Link.UAVSelector( //refitting
           drones,
           session
         )

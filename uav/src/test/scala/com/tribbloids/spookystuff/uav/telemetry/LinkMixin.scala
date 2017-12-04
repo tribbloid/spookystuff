@@ -96,12 +96,12 @@ trait LinkMixin extends UAVFixture {
           connStr =>
             val endpoints = listDrones(connStr)
             val session = new Session(spooky)
-            val link1 = Link.Selector (
+            val link1 = Link.UAVSelector (
               endpoints,
               session
             )
               .select
-            val link2 = Link.Selector (
+            val link2 = Link.UAVSelector (
               endpoints,
               session
             )
@@ -173,7 +173,7 @@ trait LinkMixin extends UAVFixture {
       connStr =>
         val link = spooky.withSession {
           session =>
-            Link.Selector(
+            Link.UAVSelector(
               getFleet(connStr),
               session
             )
@@ -211,7 +211,7 @@ abstract class SimLinkSuite extends SimUAVFixture with LinkMixin {
         val drone = UAV(Seq("dummy"))
         TestHelper.setLoggerDuring(classOf[Link], classOf[MAVLink], SpookyUtils.getClass) {
           intercept[ReinforcementDepletedException] {
-            Link.Selector(
+            Link.UAVSelector(
               Seq(drone),
               session
             )
