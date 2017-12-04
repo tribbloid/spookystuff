@@ -243,6 +243,18 @@ class TestTrace_PhantomJS extends SpookyEnvFixture with FunSpecx {
     assert(code.contains("Wikipedia"))
   }
 
+  it("css selector should work") {
+
+    val results = (
+      Visit("http://www.wikipedia.org/") ::
+        WaitFor("cssSelector: a.link-box") ::
+        Snapshot() :: Nil
+      ).fetch(spooky)
+
+    val code = results.head.asInstanceOf[Doc].code.get.split('\n').map(_.trim).mkString
+    assert(code.contains("Wikipedia"))
+  }
+
   //TODO: put in IT?
   it("visit should handle corsera") {
     val results = (

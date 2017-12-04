@@ -12,29 +12,37 @@ object Selector extends MessageRelay[Selector]{
 
   final val SCHEMA = "By.sizzleCssSelector"
 
-  implicit def fromString(v: String) = {
+  final val factories: Seq[String => By] = {
+    Seq(
+      By.id(_),
+      By.name(_),
+      By.cssSelector(_),
+      By.linkText(_),
+      By.className(_),
+      By.tagName(_),
+      By.xpath(_),
+      By.partialLinkText(_),
+      v => new BySizzleCssSelector(v)
+    )
+  }
+  final val factory_patterns = factories.map {
+    fn =>
+      fn -> fn("(.*)").toString.r
+  }
 
-    val splitted = v.split(":")
-    val (schema, vv) = if (splitted.size <= 1) {
-      SCHEMA -> v.trim
-    }
-    else {
-      splitted.head.trim -> splitted.slice(1, Int.MaxValue).mkString(":")
+  implicit def fromString(v: String): Selector = {
+
+    val withPrefix = "By." + v
+    for (tuple <- factory_patterns) {
+      val pattern = tuple._2
+      withPrefix match {
+        case pattern(selector) =>
+          return Selector(tuple._1(selector))
+        case _ =>
+      }
     }
 
-    val by = schema match {
-      case "By.id" => By.id(vv)
-      case "By.name" => By.name(vv)
-      case "By.cssSelector" => By.cssSelector(vv)
-      case "By.linkText" => By.linkText(vv)
-      case "By.className" => By.className(vv)
-      case "By.tagName" => By.tagName(vv)
-      case "By.xpath" => By.xpath(vv)
-      case "By.partialLinkText" => By.partialLinkText(vv)
-      case SCHEMA => new BySizzleCssSelector(v)
-    }
-
-    Selector(by)
+    Selector(new BySizzleCssSelector(v))
   }
 
   override type M = String
