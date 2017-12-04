@@ -381,12 +381,40 @@
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-install-plugin</artifactId>
           <version>2.5.2</version>
+
+          <!--<executions>-->
+            <!--<execution>-->
+              <!--<id>install</id>-->
+              <!--<phase>install</phase>-->
+              <!--<goals>-->
+                <!--<goal>install</goal>-->
+              <!--</goals>-->
+
+              <!--&lt;!&ndash;<configuration>&ndash;&gt;-->
+                <!--&lt;!&ndash;<pomFile>.flattened-pom.xml</pomFile>&ndash;&gt;-->
+              <!--&lt;!&ndash;</configuration>&ndash;&gt;-->
+            <!--</execution>-->
+
+            <!--<execution>-->
+            <!--<id>install-file</id>-->
+            <!--<phase>install</phase>-->
+            <!--<goals>-->
+            <!--<goal>install-file</goal>-->
+            <!--</goals>-->
+
+            <!--<configuration>-->
+            <!--<file></file>-->
+            <!--<artifactId>spooky</artifactId>-->
+            <!--</configuration>-->
+            <!--</execution>-->
+          <!--</executions>-->
         </plugin>
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-deploy-plugin</artifactId>
           <version>2.8.2</version>
         </plugin>
+
         <plugin>
           <groupId>org.sonatype.plugins</groupId>
           <artifactId>nexus-staging-maven-plugin</artifactId>
@@ -404,7 +432,7 @@
             <execution>
               <id>attach-sources</id>
               <goals>
-                <goal>jar-no-fork</goal>
+                <goal>jar</goal>
               </goals>
             </execution>
           </executions>
@@ -426,6 +454,62 @@
             </execution>
           </executions>
         </plugin>
+
+        <plugin>
+          <groupId>com.carrotgarden.maven</groupId>
+          <artifactId>flatten-maven-plugin</artifactId>
+          <version>1.2.20171206225205</version>
+          <!-- enable flattening -->
+          <executions>
+            <execution>
+              <id>flatten</id>
+              <goals>
+                <goal>flatten</goal>
+              </goals>
+            </execution>
+          </executions>
+
+          <configuration>
+            <targetPomFile>.flattened-pom.xml</targetPomFile>
+            <performOverrideIdentity>true</performOverrideIdentity>
+            <overrideArtifactId>${project.artifactId}_${scala.binary.version}</overrideArtifactId>
+
+            <!-- Switch project from pom.xml to pom.xml.flatten. -->
+            <performSwitchPomXml>true</performSwitchPomXml>
+            <!--<packagingSwitchList>-->
+              <!--<packaging>jar</packaging>-->
+            <!--</packagingSwitchList>-->
+          </configuration>
+        </plugin>
+
+        <plugin>
+          <groupId>org.codehaus.mojo</groupId>
+          <artifactId>flatten-maven-plugin</artifactId>
+          <version>1.1.0-SNAPSHOT</version>
+          <executions>
+            <!-- enable flattening -->
+            <execution>
+              <id>flatten</id>
+              <phase>process-resources</phase>
+              <goals>
+                <goal>flatten</goal>
+              </goals>
+            </execution>
+            <!-- ensure proper cleanup -->
+            <execution>
+              <id>flatten.clean</id>
+              <phase>clean</phase>
+              <goals>
+                <goal>clean</goal>
+              </goals>
+            </execution>
+          </executions>
+          <configuration>
+            <artifactIdOverride>${project.artifactId}_${scala.binary.version}</artifactIdOverride>
+            <updatePomFile>true</updatePomFile>
+          </configuration>
+        </plugin>
+
       </plugins>
     </pluginManagement>
 
@@ -434,47 +518,11 @@
       <!--<plugin>-->
       <!--<groupId>org.codehaus.mojo</groupId>-->
       <!--<artifactId>flatten-maven-plugin</artifactId>-->
-      <!--<version>1.0.1</version>-->
-      <!--<executions>-->
-      <!--&lt;!&ndash; enable flattening &ndash;&gt;-->
-      <!--<execution>-->
-      <!--<id>flatten</id>-->
-      <!--<phase>process-resources</phase>-->
-      <!--<goals>-->
-      <!--<goal>flatten</goal>-->
-      <!--</goals>-->
-      <!--</execution>-->
-      <!--&lt;!&ndash; ensure proper cleanup &ndash;&gt;-->
-      <!--<execution>-->
-      <!--<id>flatten.clean</id>-->
-      <!--<phase>clean</phase>-->
-      <!--<goals>-->
-      <!--<goal>clean</goal>-->
-      <!--</goals>-->
-      <!--</execution>-->
-      <!--</executions>-->
       <!--</plugin>-->
 
-      <!--TODO: switch to it after https://github.com/mojohaus/flatten-maven-plugin/issues/61!-->
       <plugin>
         <groupId>com.carrotgarden.maven</groupId>
         <artifactId>flatten-maven-plugin</artifactId>
-        <version>1.0.20171129163300</version>
-        <executions>
-          <!-- enable flattening -->
-          <execution>
-            <id>flatten</id>
-            <goals>
-              <goal>flatten</goal>
-            </goals>
-          </execution>
-        </executions>
-
-        <configuration>
-          <!--<performOverrideIdentity>true</performOverrideIdentity>-->
-          <!--<overrideArtifactId>${project.artifactId}_${scala.binary.version}</overrideArtifactId>-->
-          <!--TODO: upgrade to support these-->
-        </configuration>
       </plugin>
 
       <plugin>
