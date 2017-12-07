@@ -532,7 +532,7 @@
           </execution>
           <!--required for publishing to maven central-->
           <execution>
-            <id>eclipse-add-source</id>
+            <id>add-source</id>
             <goals>
               <goal>add-source</goal>
             </goals>
@@ -541,6 +541,7 @@
             <id>attach-scaladocs</id>
             <phase>verify</phase>
             <goals>
+              <goal>doc</goal>
               <goal>doc-jar</goal>
             </goals>
           </execution>
