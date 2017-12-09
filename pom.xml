@@ -50,8 +50,6 @@
 
     <scala.version>2.11.11</scala.version>
     <scala.binary.version>2.11</scala.binary.version>
-    <!--has to be used with <exclusions></exclusions>-->
-    <!--<scala.fallback.version>2.10</scala.fallback.version>-->
     <spark.version>2.2.0</spark.version>
     <spark.binary.version>2.2</spark.binary.version>
     <spark.assembly.version>${spark.binary.version}</spark.assembly.version>
@@ -541,7 +539,6 @@
             <id>attach-scaladocs</id>
             <phase>verify</phase>
             <goals>
-              <goal>doc</goal>
               <goal>doc-jar</goal>
             </goals>
           </execution>

@@ -42,7 +42,7 @@ object CachingUtils {
 
   type ConcurrentSet[V] = mutable.Set[V]
 
-  //TODO: change to MapAsSet? not sure if its better
+  //TODO: change to MapAsSet? impl in scala deprecated
   def ConcurrentSet[V](): mutable.SynchronizedSet[V] = {
     //    Collections.synchronizedSet[V](new util.HashSet[V]())
     //      .asScala
