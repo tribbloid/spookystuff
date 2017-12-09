@@ -62,7 +62,7 @@ case class Location(
     this.copy(definedBy = cs)
   }
 
-  private val _mnemonics: ArrayBuffer[GeoRef[Coordinate]] = {
+  @transient lazy val _mnemonics: ArrayBuffer[GeoRef[Coordinate]] = {
     val result = ArrayBuffer.empty[GeoRef[Coordinate]]
     result ++= definedBy //preset
     result
@@ -173,7 +173,7 @@ case class Location(
     definedBy.map(_.treeString).mkString("\n")
   }
 
-  lazy val reanchorToPrimary: this.type = {
+  @transient lazy val reanchorToPrimary: this.type = {
     val children = definedBy.flatMap {
       v =>
         v.children

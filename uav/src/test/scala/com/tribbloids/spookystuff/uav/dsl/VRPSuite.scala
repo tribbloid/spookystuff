@@ -102,25 +102,25 @@ class VRPSuite extends DummyUAVFixture with VRPFixture {
   it("can optimize max cost of 2 waypoints per UAV") {
 
     val grouped = runTest(waypoints(parallelism))
-    assert(getCost(grouped) <= 141.739)
+    assert(getCost(grouped) <= 142)
   }
 
   it("can optimize max cost of 5 waypoints per UAV") {
 
     val grouped = runTest(waypoints((parallelism * 2.5).toInt))
-    assert(getCost(grouped) <= 224.247)
+    assert(getCost(grouped) <= 228)
   }
 
   it("can optimize max cost of 2 line scan per UAV") {
 
     val grouped = runTest(lineScans(parallelism * 2))
-    assert(getCost(grouped) <= 352.327)
+    assert(getCost(grouped) <= 353)
   }
 
   it("can optimize max cost of 5 line scans per UAV") {
 
     val grouped = runTest(lineScans(parallelism * 5))
-    assert(getCost(grouped) <= 832.726)
+    assert(getCost(grouped) <= 833)
   }
 
   it("can optimize max cost of 2 takeoff + line scan per UAV") {

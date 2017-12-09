@@ -72,7 +72,7 @@ case class LifespanContext(
                             @transient thread: Thread = Thread.currentThread()
                           ) extends IDMixin {
 
-  override def _id: Any = taskOpt.map(_.taskAttemptId()) -> thread.getId
+  override val _id: Any = taskOpt.map(_.taskAttemptId()) -> thread.getId
 
   val threadStr: String = {
     "Thread-" + thread.getId + s"[${thread.getName}]" +

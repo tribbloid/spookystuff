@@ -1,14 +1,21 @@
 package com.tribbloids.spookystuff.uav.spatial.point
 
 import breeze.linalg.{Vector => Vec}
-import com.tribbloids.spookystuff.testutils.FunSpecx
+import com.tribbloids.spookystuff.SpookyEnvFixture
+import com.tribbloids.spookystuff.testutils.AssertSerializable
 import com.tribbloids.spookystuff.uav.UAVConf
 import com.tribbloids.spookystuff.uav.spatial.Anchors
 
 /**
   * Created by peng on 14/02/17.
   */
-class LocationSuite extends FunSpecx {
+class LocationSuite extends SpookyEnvFixture {
+
+  it("is serializable") {
+
+    val location: Location = LLA.fromVec(Vec(-79.262262, 43.694195, 136)) -> Anchors.Geodetic
+    AssertSerializable(location)
+  }
 
   it("LLA + NED => LLA") {
 

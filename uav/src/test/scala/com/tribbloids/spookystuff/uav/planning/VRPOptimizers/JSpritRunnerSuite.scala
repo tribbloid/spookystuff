@@ -57,7 +57,7 @@ class JSpritRunnerSuite extends VRPFixture {
       val cost = JSpritRunner.getObjectiveFunction(0).getCosts(solution)
       assert((cost * 1000).toInt == 10000)
 
-      val map = runner.getUAV2Trace
+      val map = runner.getUAV2TraceMap
 
       val first = map.head
       val trace = List(Waypoint(first._1.currentLocation)) ++
@@ -81,7 +81,7 @@ class JSpritRunnerSuite extends VRPFixture {
       val cost = JSpritRunner.getObjectiveFunction(0).getCosts(solution)
       assert((cost * 1000).toInt == 5000)
 
-      val map = runner.getUAV2Trace
+      val map = runner.getUAV2TraceMap
 
       val traces = map.toSeq.map {
         v =>

@@ -300,7 +300,7 @@ case class JSpritRunner(
     tuple._1
   }
 
-  lazy val getUAV2Trace: Map[UAVStatus, Seq[TraceView]] = {
+  lazy val getUAV2TraceMap: Map[UAVStatus, Seq[TraceView]] = {
 
     import scala.collection.JavaConverters._
 

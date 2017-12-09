@@ -284,6 +284,8 @@ object LocalityImplSuite extends FunSpec {
                                                  cogroupBaseOverride: Option[RDD[(K, (V, Iterable[V]))]] = None
                                                ) {
 
+    assert(first.partitions.length == second.partitions.length, "number of partitions mismatch")
+
     val (shouldStay: (Int, Int), shouldMove: (Int, Int)) = if (firstStay) {
       (0->2, 1->3)
     }

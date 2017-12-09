@@ -16,7 +16,7 @@ trait Geom[+T <: TrellisGeom] extends Spatial with IDMixin {
   def jtsGeom: JTSGeom = trellisGeom.jtsGeom
   def vector: DenseVector[Double] = DenseVector(jtsGeom.getCoordinates.flatMap(v => Seq(v.x, v.y, v.z)))
 
-  override lazy val _id = (system, trellisGeom)
+  @transient override lazy val _id = (system.name, trellisGeom)
 
   lazy val wktString = {
     WKTWriter.write(jtsGeom)
