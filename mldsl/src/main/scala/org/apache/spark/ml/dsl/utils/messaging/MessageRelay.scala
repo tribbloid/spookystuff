@@ -2,7 +2,6 @@ package org.apache.spark.ml.dsl.utils.messaging
 
 import org.apache.spark.ml.dsl.utils._
 import org.apache.spark.ml.util._
-import org.apache.spark.sql.types.{DataType, UserDefinedType}
 import org.apache.spark.util.Utils
 import org.json4s.JsonAST.{JArray, JObject}
 import org.json4s.jackson.JsonMethods._
