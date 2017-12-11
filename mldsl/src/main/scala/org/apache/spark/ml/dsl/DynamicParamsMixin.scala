@@ -38,7 +38,7 @@ trait DynamicParamsMixin extends Params with Dynamic {
   }
 
   protected def Param[T: ClassTag](
-                                    name: String = FlowUtils.getCallerMethodName(),
+                                    name: String = FlowUtils.callerMethodName(),
                                     doc: String = "Pending ...",
                                     default: T = null
                                   ): Param[T] = {
@@ -51,7 +51,7 @@ trait DynamicParamsMixin extends Params with Dynamic {
   }
 
   protected def GenericParam[T: Manifest](
-                                           name: String = FlowUtils.getCallerMethodName(),
+                                           name: String = FlowUtils.callerMethodName(),
                                            doc: String = "Pending ...",
                                            default: T = null
                                          ): Param[T] = {

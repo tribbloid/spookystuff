@@ -8,7 +8,6 @@ import org.slf4j.LoggerFactory
 
 import scala.concurrent.{Await, Future, TimeoutException}
 import scala.reflect.ClassTag
-import scala.util.{Failure, Success, Try}
 
 class CommonUtils {
 
@@ -49,44 +48,8 @@ class CommonUtils {
     addSuffix(File.separator, _part)
   }
 
-  // Returning T, throwing the exception on failure
-  @annotation.tailrec
-  final def retry[T](
-                      n: Int,
-                      interval: Long = 0,
-                      silent: Boolean = false,
-                      callerStr: String = null
-                    )(fn: => T): T = {
-
-    var _callerStr = callerStr
-    //TODO: this should be exposed as utility.
-    if (callerStr == null)
-      _callerStr = FlowUtils.stackTracesShowStr(
-        FlowUtils.getBreakpointInfo()
-          .slice(1, Int.MaxValue)
-        //          .filterNot(_.getClassName == this.getClass.getCanonicalName)
-      )
-    Try { fn } match {
-      case Success(x) =>
-        x
-      case Failure(e: NoRetry.Wrapper) =>
-        throw e.getCause
-      case Failure(e) if n > 1 =>
-        if (!(silent || e.isInstanceOf[SilentRetry.Wrapper])) {
-          val logger = LoggerFactory.getLogger(this.getClass)
-          logger.warn(
-            s"Retrying locally on ${e.getClass.getSimpleName} in ${interval.toDouble/1000} second(s)... ${n-1} time(s) left" +
-              "\t@ " + _callerStr +
-              "\n" + e.getMessage
-          )
-          logger.debug("\t\\-->", e)
-        }
-        Thread.sleep(interval)
-        retry(n - 1, interval, callerStr = _callerStr)(fn)
-      case Failure(e) =>
-        throw e
-    }
-  }
+  // TODO: remove, use object API everywhere.
+  def retryFixedInterval = RetryFixedInterval
 
   def withDeadline[T](
                        n: Duration,

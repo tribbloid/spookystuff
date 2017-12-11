@@ -237,7 +237,7 @@ abstract class SimLinkSuite extends SimUAVFixture with LinkMixin {
             }
         }
         //wait for zombie process to be deregistered
-        CommonUtils.retry(5, 2000) {
+        CommonUtils.retryFixedInterval(5, 2000) {
           sc.foreachComputer {
             SpookyEnvFixture.processShouldBeClean(Seq("mavproxy"), Seq("mavproxy"), cleanSweepNotInTask = false)
           }

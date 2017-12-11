@@ -146,48 +146,44 @@ case class FetchedDataset(
       }
   }
 
-  def toDF(sort: Boolean = false, tableName: String = null): DataFrame =
-    sparkContext.withJob(s"toDF(sort=$sort, name=$tableName)") {
+  def toDF(sort: Boolean = false): DataFrame =
+    sparkContext.withJob(s"toDF(sort=$sort)") {
 
       val filtered = schema.filterFields()
-
       val structType = filtered.toStructType
-
       val rowRDD = toRowRDD(sort, filtered.fieldTypes.keys.toList)
 
       val result = spooky.sqlContext.createDataFrame(rowRDD, structType)
 
-      if (tableName!=null) result.registerTempTable(tableName)
-
       result
     }
 
-  //TODO: cleanup, useful only in comparison
-  @Deprecated
-  def toDFLegacy(sort: Boolean = false, tableName: String = null): DataFrame =
-  sparkContext.withJob(s"toDF(sort=$sort, name=$tableName)") {
-
-    val jsonRDD = this.toJSON(sort)
-    plan.persist(jsonRDD)
-
-    val schemaRDD = spooky.sqlContext.read.json(jsonRDD)
-
-    val columns: Seq[Column] = fields
-      .filter(key => !key.isWeak)
-      .map {
-        key =>
-          val name = SpookyUtils.canonizeColumnName(key.name)
-          if (schemaRDD.schema.fieldNames.contains(name)) new Column(UnresolvedAttribute(name))
-          else new Column(expressions.Alias(org.apache.spark.sql.catalyst.expressions.Literal(null), name)())
-      }
-
-    val result = schemaRDD.select(columns: _*)
-
-    if (tableName!=null) result.registerTempTable(tableName)
-    plan.scratchRDDs.clearAll()
-
-    result
-  }
+  //TODO: cleanup
+  //  @Deprecated
+  //  def toDFLegacy(sort: Boolean = false, tableName: String = null): DataFrame =
+  //    sparkContext.withJob(s"toDF(sort=$sort, name=$tableName)") {
+  //
+  //      val jsonRDD = this.toJSON(sort)
+  //      plan.persist(jsonRDD)
+  //
+  //      val schemaRDD = spooky.sqlContext.read.json(jsonRDD)
+  //
+  //      val columns: Seq[Column] = fields
+  //        .filter(key => !key.isWeak)
+  //        .map {
+  //          key =>
+  //            val name = SpookyUtils.canonizeColumnName(key.name)
+  //            if (schemaRDD.schema.fieldNames.contains(name)) new Column(UnresolvedAttribute(name))
+  //            else new Column(expressions.Alias(org.apache.spark.sql.catalyst.expressions.Literal(null), name)())
+  //        }
+  //
+  //      val result = schemaRDD.select(columns: _*)
+  //
+  //      if (tableName!=null) result.registerTempTable(tableName)
+  //      plan.scratchRDDs.clearAll()
+  //
+  //      result
+  //    }
 
   def newResolver = schema.newResolver
 

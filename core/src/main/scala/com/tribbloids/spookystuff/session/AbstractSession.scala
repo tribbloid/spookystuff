@@ -78,7 +78,7 @@ class Session(
 
   def getOrProvisionWebDriver: CleanWebDriver = {
     webDriverOpt.getOrElse {
-      CommonUtils.retry(Const.localResourceLocalRetries) {
+      CommonUtils.retryFixedInterval(Const.localResourceLocalRetries) {
         CommonUtils.withDeadline(Const.sessionInitializationTimeout) {
           val driver = spooky.spookyConf.webDriverFactory.dispatch(this)
           spooky.spookyMetrics.webDriverDispatched += 1
@@ -115,7 +115,7 @@ class Session(
 
   def getOrProvisionPythonDriver: PythonDriver = {
     pythonDriverOpt.getOrElse {
-      CommonUtils.retry(Const.localResourceLocalRetries) {
+      CommonUtils.retryFixedInterval(Const.localResourceLocalRetries) {
 
         CommonUtils.withDeadline(Const.sessionInitializationTimeout) {
           val driver = spooky.spookyConf.pythonDriverFactory.dispatch(this)

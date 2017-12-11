@@ -52,7 +52,7 @@ trait APMFixture extends SimUAVFixture {
     // small delay added to ensure that cleanSweep
     // won't accidentally clean object created in the suite
 
-    CommonUtils.retry(5, 2000) {
+    CommonUtils.retryFixedInterval(5, 2000) {
       sc.foreachComputer {
         SpookyEnvFixture.processShouldBeClean(Seq("apm"), cleanSweepNotInTask = false)
         SpookyEnvFixture.processShouldBeClean(Seq("python"), cleanSweepNotInTask = false)

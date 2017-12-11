@@ -155,7 +155,7 @@ abstract class SpookyEnvFixture
 
   override def withFixture(test: NoArgTest) = {
     if (isRetryable(test))
-      CommonUtils.retry(4) { super.withFixture(test) }
+      CommonUtils.retryFixedInterval(4) { super.withFixture(test) }
     else
       super.withFixture(test)
   }
@@ -189,7 +189,7 @@ abstract class SpookyEnvFixture
   before{
     // bypass java.lang.NullPointerException at org.apache.spark.broadcast.TorrentBroadcast$.unpersist(TorrentBroadcast.scala:228)
     // TODO: clean up after fix
-    CommonUtils.retry(3, 1000) {
+    CommonUtils.retryFixedInterval(3, 1000) {
       setUp()
     }
   }

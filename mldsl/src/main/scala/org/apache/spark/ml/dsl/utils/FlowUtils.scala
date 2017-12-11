@@ -67,7 +67,14 @@ object FlowUtils {
       .mkString("\n\t< ")
   }
 
-  def getCallerMethodName(depth: Int = 2): String = {
+  def callerShowStr(depth: Int = 2): String  ={
+    stackTracesShowStr(
+      getBreakpointInfo()
+        .slice(depth, Int.MaxValue)
+    )
+  }
+
+  def callerMethodName(depth: Int = 2): String = {
     val bp = FlowUtils.getBreakpointInfo().apply(depth)
     assert(!bp.isNativeMethod, "can only getCallerMethodName in def & lazy val blocks")
     bp.getMethodName

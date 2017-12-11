@@ -13,7 +13,7 @@ object DocUtils {
 
   def dfsRead[T](message: String, pathStr: String, spooky: SpookyContext)(f: => T): T = {
     try {
-      val result = CommonUtils.retry(Const.DFSLocalRetries) {
+      val result = CommonUtils.retryFixedInterval(Const.DFSLocalRetries) {
         CommonUtils.withDeadline(spooky.spookyConf.DFSTimeout) {f}
       }
       spooky.spookyMetrics.DFSReadSuccess += 1
@@ -35,7 +35,7 @@ object DocUtils {
   //always fail on retry depletion and timeout
   def dfsWrite[T](message: String, pathStr: String, spooky: SpookyContext)(f: => T): T = {
     try {
-      val result = CommonUtils.retry(Const.DFSLocalRetries) {
+      val result = CommonUtils.retryFixedInterval(Const.DFSLocalRetries) {
         CommonUtils.withDeadline(spooky.spookyConf.DFSTimeout) {f}
       }
       spooky.spookyMetrics.DFSWriteSuccess += 1

@@ -238,7 +238,7 @@ class TestHelper() {
       path =>
         Try {
           val file = new File(path)
-          CommonUtils.retry(3) {
+          CommonUtils.retryFixedInterval(3) {
             FileUtils.deleteDirectory(file)
           }
         }

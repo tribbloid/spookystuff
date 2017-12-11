@@ -197,7 +197,7 @@ These special characters are often called "metacharacters".
   }
 
   def resilientCopy(src: Path, dst: Path, options: Array[CopyOption]): Unit ={
-    CommonUtils.retry(5, 1000){
+    CommonUtils.retryFixedInterval(5, 1000){
 
       val pathsStr = src + " => " + dst
 

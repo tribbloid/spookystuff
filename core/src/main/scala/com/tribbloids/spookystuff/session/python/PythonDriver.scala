@@ -150,7 +150,7 @@ class PythonDriver(
 
   override def cleanImpl(): Unit = {
     Try {
-      CommonUtils.retry(5) {
+      CommonUtils.retryFixedInterval(5) {
         try { if (process.isAlive) {
           CommonUtils.withDeadline(3.seconds) {
             try {
@@ -165,7 +165,7 @@ class PythonDriver(
         }}
         catch {
           case e: TimeoutException =>
-            throw SilentRetry.Wrapper(e)
+            throw SilentRetry(e)
           case e: Throwable =>
             throw e
         }

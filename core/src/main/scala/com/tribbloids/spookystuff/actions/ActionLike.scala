@@ -77,7 +77,7 @@ abstract class ActionLike extends Product with Serializable with Verbose {
 
   def fetch(spooky: SpookyContext): Seq[Fetched] = {
 
-    val results = CommonUtils.retry(Const.remoteResourceLocalRetries){
+    val results = CommonUtils.retryFixedInterval(Const.remoteResourceLocalRetries){
       fetchOnce(spooky)
     }
     val numPages = results.count(_.isInstanceOf[Doc])

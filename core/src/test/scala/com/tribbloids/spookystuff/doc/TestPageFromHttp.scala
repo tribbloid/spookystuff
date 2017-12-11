@@ -9,7 +9,7 @@ class TestPageFromHttp extends SpookyEnvFixture {
 
   it("wget html, save and load") {
 
-    val results = CommonUtils.retry(5){Wget(HTML_URL).fetch(spooky)}
+    val results = CommonUtils.retryFixedInterval(5){Wget(HTML_URL).fetch(spooky)}
 
     assert(results.length === 1)
     val page = results.head.asInstanceOf[Doc]
@@ -84,7 +84,7 @@ class TestPageFromHttp extends SpookyEnvFixture {
   }
 
   it("childrenWithSiblings") {
-    val page = CommonUtils.retry(5){Wget(HTML_URL).fetch(spooky)}.head.asInstanceOf[Doc]
+    val page = CommonUtils.retryFixedInterval(5){Wget(HTML_URL).fetch(spooky)}.head.asInstanceOf[Doc]
 
     val ranges = page.findAllWithSiblings("a.link-box em", -2 to 1)
     assert(ranges.size === 10)
@@ -97,7 +97,7 @@ class TestPageFromHttp extends SpookyEnvFixture {
   }
 
   it("childrenWithSiblings with overlapping elimiation") {
-    val page = CommonUtils.retry(5){Wget(HTML_URL).fetch(spooky)}.head.asInstanceOf[Doc]
+    val page = CommonUtils.retryFixedInterval(5){Wget(HTML_URL).fetch(spooky)}.head.asInstanceOf[Doc]
 
     val ranges = page.findAllWithSiblings("div.central-featured-lang[lang^=e]", -2 to 2)
     assert(ranges.size === 2)

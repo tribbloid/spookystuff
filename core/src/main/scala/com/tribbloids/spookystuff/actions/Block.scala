@@ -167,7 +167,7 @@ final case class LocalRetry(
     }
     catch {
       case e: Throwable =>
-        CommonUtils.retry[Seq[Fetched]](retries)({
+        CommonUtils.retryFixedInterval(retries)({
           val retriedPages = new ArrayBuffer[Fetched]()
 
           for (action <- children) {

@@ -43,7 +43,7 @@ abstract class URIResolver extends Serializable {
   def DFSBlockedAccessInterval = 1000
 
   def retry[T](f: =>T): T = {
-    CommonUtils.retry(DFSBlockedAccessRetries, DFSBlockedAccessInterval){
+    CommonUtils.retryFixedInterval(DFSBlockedAccessRetries, DFSBlockedAccessInterval){
       f
     }
   }
