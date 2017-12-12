@@ -39,7 +39,7 @@ object RetryFixedInterval {
              interval: Long = 0L,
              silent: Boolean = false,
              callerStr: String = null
-           ) = Retry(n, {_ => interval}, silent, callerStr)
+           ) = Retry(n, { _ => interval}, silent, callerStr)
 }
 
 object RetryExponentialBackoff {
@@ -58,7 +58,7 @@ object RetryExponentialBackoff {
 }
 
 case class Retry(
-                  n: Int,
+                  n: Int = 3,
                   intervalFactory: Int => Long = {_ => 0L},
                   silent: Boolean = false,
                   callerStr: String = null
@@ -66,26 +66,35 @@ case class Retry(
 
   def apply[T](fn: =>T) = {
 
-    new RetryImpl[T](fn).get(this)
+    new RetryImpl[T](() => fn).get(this)
+  }
+
+  def getImpl[T](fn: =>T) = {
+    new RetryImpl[T](() => fn, this)
   }
 }
 
-class RetryImpl[T](
-                    fn: =>T
-                  ) {
+object DefaultRetry extends Retry
+
+case class RetryImpl[T](
+                         fn: () => T,
+                         defaultOptions: Retry = DefaultRetry
+                       ) {
+
+  def get: T = get(defaultOptions)
 
   @annotation.tailrec
   final def get(
-                 retry: Retry
+                 options: Retry
                ): T = {
 
-    import retry._
+    import options._
 
     var _callerStr = callerStr
     if (callerStr == null)
       _callerStr = FlowUtils.callerShowStr()
     val interval = intervalFactory(n)
-    Try { fn } match {
+    Try { fn() } match {
       case Success(x) =>
         x
       case Failure(e: NoRetry.ExceptionWrapper) =>
@@ -101,7 +110,7 @@ class RetryImpl[T](
           logger.debug("\t\\-->", e)
         }
         Thread.sleep(interval)
-        get(retry.copy(n = n - 1))
+        get(options.copy(n = n - 1))
       case Failure(e) =>
         throw e
     }
@@ -119,9 +128,10 @@ class RetryImpl[T](
         g(v)
     }
 
-    new RetryImpl[T2](
-      effectiveG(Try{fn})
+    val result: RetryImpl[T2] = this.copy(
+      () => effectiveG(Try{fn()})
     )
+    result
   }
 
   def mapSuccess[T2](g: T => T2): RetryImpl[T2] = {
