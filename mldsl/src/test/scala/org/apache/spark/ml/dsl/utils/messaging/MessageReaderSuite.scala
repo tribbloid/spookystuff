@@ -1,9 +1,8 @@
-package org.apache.spark.ml.dsl.utils
+package org.apache.spark.ml.dsl.utils.messaging
 
 import java.util.Date
 
 import org.apache.spark.ml.dsl.AbstractFlowSuite
-import org.apache.spark.ml.dsl.utils.messaging.{MessageReader, MessageView}
 import org.json4s.MappingException
 
 case class TimeWrapper(time: Date)
@@ -12,6 +11,8 @@ case class UsersWrapper(a: String, users: Users)
 
 case class Users(user: Seq[User])
 
+object user
+
 case class User(
                  name: String,
                  roles: Option[Roles] = None
@@ -19,14 +20,14 @@ case class User(
 
 case class Roles(role: Seq[String])
 
-case class MultipartExample(a: String, b: String)(c: Int = 10)
+case class Multipart(a: String, b: String)(c: Int = 10)
 
-object MultipartExample extends MessageReader[MultipartExample] {
+object Multipart extends MessageReader[Multipart] {
 }
 
 //case object ObjectExample1 extends AbstractObjectExample
 
-class MessageRelaySuite extends AbstractFlowSuite {
+class MessageReaderSuite extends AbstractFlowSuite {
 
   //TODO: disabled before FallbackSerializer is really put to use
   ignore("SerializingParam[Function1] should work") {
@@ -45,7 +46,7 @@ class MessageRelaySuite extends AbstractFlowSuite {
   it("can read generated timestamp") {
     val obj = TimeWrapper(date)
 
-    val xmlStr = MessageView(obj).toXMLStr(pretty = false)
+    val xmlStr = MessageWriter(obj).toXMLStr(pretty = false)
     xmlStr.shouldBeLike(
       s"<TimeWrapper><time>......</time></TimeWrapper>"
     )
@@ -148,7 +149,7 @@ class MessageRelaySuite extends AbstractFlowSuite {
 
   it("reading an object from a converted string should work") {
 
-    val xmlStr = MessageView(User(name = "30")).toXMLStr(pretty = false)
+    val xmlStr = MessageWriter(User(name = "30")).toXMLStr(pretty = false)
     xmlStr.shouldBe(
       "<User><name>30</name></User>"
     )
@@ -177,8 +178,8 @@ class MessageRelaySuite extends AbstractFlowSuite {
   }
 
   it("Multipart case class JSON read should be broken") {
-    val ex = MultipartExample("aa", "bb")(3)
-    val jsonStr = MessageView(ex).toJSON()
+    val ex = Multipart("aa", "bb")(3)
+    val jsonStr = MessageWriter(ex).toJSON()
     jsonStr.shouldBe(
       s"""
          |{
@@ -188,8 +189,10 @@ class MessageRelaySuite extends AbstractFlowSuite {
       """.stripMargin
     )
 
+    val reader = implicitly[MessageReader[Multipart]]
+
     intercept[MappingException] {
-      MessageReader._fromJSON[MultipartExample](jsonStr)
+      MessageReader._fromJSON[Multipart](jsonStr)(reader)
     }
   }
 }

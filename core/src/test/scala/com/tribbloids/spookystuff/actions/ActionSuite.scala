@@ -1,13 +1,13 @@
 package com.tribbloids.spookystuff.actions
 
-import com.tribbloids.spookystuff.doc.Fetched
+import com.tribbloids.spookystuff.doc.DocOption
 import com.tribbloids.spookystuff.dsl._
 import com.tribbloids.spookystuff.extractors.impl.Lit
 import com.tribbloids.spookystuff.row.{DataRow, FetchedRow, Field}
 import com.tribbloids.spookystuff.session.Session
 import com.tribbloids.spookystuff.testutils.TestHelper
 import com.tribbloids.spookystuff.{ActionException, Const, SpookyEnvFixture}
-import org.apache.spark.ml.dsl.utils.messaging.RecursiveMessageRelay
+import org.apache.spark.ml.dsl.utils.messaging.MessageWriter
 import org.apache.spark.rdd.RDD
 
 import scala.collection.immutable.ListMap
@@ -68,54 +68,111 @@ class ActionSuite extends SpookyEnvFixture {
       }
   }
 
-
-  it("Click -> JSON") {
+  describe("Click") {
     val action = Click("o1")
-    val json = RecursiveMessageRelay.toM(action).prettyJSON() //TODO: add as a trait
-    json.shouldBe(
-      """
-        |{
-        |  "selector" : "By.sizzleCssSelector: o1",
-        |  "delay" : "0 seconds",
-        |  "blocking" : true
-        |}
-      """.stripMargin
-    )
+
+    it("-> JSON") {
+      val str = action.prettyJSON() //TODO: add as a trait
+      str.shouldBe(
+        """
+          |{
+          |  "selector" : "By.sizzleCssSelector: o1",
+          |  "delay" : "0 seconds",
+          |  "blocking" : true
+          |}
+        """.stripMargin
+      )
+    }
+
+    it("-> memberStrPretty") {
+      val str = action.memberStrPretty //TODO: add as a trait
+
+      val codec: MessageWriter[_] = action
+
+      str.shouldBe(
+        """
+          |Click(
+          |	By.sizzleCssSelector: o1,
+          |	0 seconds,
+          |	true
+          |)
+        """.stripMargin
+      )
+    }
   }
 
-  it("Wget -> JSON") {
+  describe("Wget") {
     val action = Wget("http://dummy.com")
-    val json = RecursiveMessageRelay.toM(action).prettyJSON()
-    json.shouldBe(
-      """
-        |{
-        |  "uri" : "http://dummy.com",
-        |  "filter" : { }
-        |}
-      """.stripMargin
-    )
+
+    it("-> JSON") {
+      val str = action.prettyJSON()
+      str.shouldBe(
+        """
+          |{
+          |  "uri" : "http://dummy.com",
+          |  "filter" : { }
+          |}
+        """.stripMargin
+      )
+    }
+
+    it("-> memberStrPretty") {
+      val str = action.memberStrPretty
+      str.shouldBe(
+        """
+          |Wget(
+          |	http://dummy.com,
+          |	MustHaveTitle
+          |)
+        """.stripMargin
+      )
+    }
   }
 
-  it("Loop -> JSON") {
+  describe("Loop") {
     val action = Loop(
       Click("o1")
         +> Snapshot()
     )
-    val json = RecursiveMessageRelay.toM(action).prettyJSON()
-    json.shouldBe(
-      """
-        |{
-        |  "children" : [ {
-        |    "selector" : "By.sizzleCssSelector: o1",
-        |    "delay" : "0 seconds",
-        |    "blocking" : true
-        |  }, {
-        |    "filter" : { }
-        |  } ],
-        |  "limit" : 2147483647
-        |}
-      """.stripMargin
-    )
+
+    it("-> JSON") {
+      val str = action.prettyJSON()
+      str.shouldBe(
+        """
+          |{
+          |  "children" : [ {
+          |    "selector" : "By.sizzleCssSelector: o1",
+          |    "delay" : "0 seconds",
+          |    "blocking" : true
+          |  }, {
+          |    "filter" : { }
+          |  } ],
+          |  "limit" : 2147483647
+          |}
+        """.stripMargin
+      )
+    }
+
+    it("-> memberStrPretty") {
+      val str = action.memberStrPretty
+      str.shouldBe(
+        """
+          |Loop(
+          |	List(
+          |		Click(
+          |			By.sizzleCssSelector: o1,
+          |			0 seconds,
+          |			true
+          |		),
+          |		Snapshot(
+          |			MustHaveTitle
+          |		)
+          |	),
+          |	2147483647
+          |)
+        """.stripMargin
+      )
+    }
   }
 
   it("a session without webDriver initialized won't trigger errorDump") {
@@ -187,14 +244,14 @@ class ActionSuite extends SpookyEnvFixture {
 
 case object DefectiveExport extends Export {
 
-  override def doExeNoName(session: Session): Seq[Fetched] = {
+  override def doExeNoName(session: Session): Seq[DocOption] = {
     sys.error("error")
   }
 }
 
 case object DefectiveWebExport extends Export {
 
-  override def doExeNoName(session: Session): Seq[Fetched] = {
+  override def doExeNoName(session: Session): Seq[DocOption] = {
     session.webDriver
     sys.error("error")
   }
@@ -202,7 +259,7 @@ case object DefectiveWebExport extends Export {
 
 case object OverdueExport extends Export with Timed {
 
-  override def doExeNoName(session: Session): Seq[Fetched] = {
+  override def doExeNoName(session: Session): Seq[DocOption] = {
     Thread.sleep(120*1000)
     Nil
   }

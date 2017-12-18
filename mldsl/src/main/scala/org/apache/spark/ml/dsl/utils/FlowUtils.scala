@@ -87,4 +87,8 @@ object FlowUtils {
     override def initialValue = init
     def apply = get
   }
+
+  def indent(text: String, str: String = "\t") = {
+    text.split('\n').filter(_.nonEmpty).map(str + _).mkString("\n")
+  }
 }

@@ -5,5 +5,6 @@ package com.tribbloids.spookystuff
  */
 package object doc {
 
-  type Selector = String
+  //TODO: unify with action.Selector
+  type CSSQuery = String
 }

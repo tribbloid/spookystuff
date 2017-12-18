@@ -34,7 +34,7 @@ case class CSVElement(
 
   override def breadcrumb: Option[Seq[String]] = ???
 
-  override def children(selector: Selector): Elements[Unstructured] = {
+  override def children(selector: CSSQuery): Elements[Unstructured] = {
     if (!this.headers.contains(selector)) new EmptyElements
     else {
       val data = parsedList.map {
@@ -49,7 +49,7 @@ case class CSVElement(
     }
   }
 
-  override def childrenWithSiblings(selector: Selector, range: Range): Elements[Siblings[Unstructured]] = {
+  override def childrenWithSiblings(selector: CSSQuery, range: Range): Elements[Siblings[Unstructured]] = {
     if (!this.headers.contains(selector)) new EmptyElements
     else {
       val data = parsedList.map {
@@ -81,9 +81,9 @@ case class CSVElement(
 
   override def boilerPipe: Option[String] = text
 
-  override def findAll(selector: Selector): Elements[Unstructured] = children(selector)
+  override def findAll(selector: CSSQuery): Elements[Unstructured] = children(selector)
 
-  override def findAllWithSiblings(selector: Selector, range: Range): Elements[Siblings[Unstructured]] =
+  override def findAllWithSiblings(selector: CSSQuery, range: Range): Elements[Siblings[Unstructured]] =
     childrenWithSiblings(selector, range)
 
   override def href: Option[String] = ownText
@@ -101,13 +101,13 @@ class CsvCell(
                val header: String
              ) extends Unstructured {
 
-  override def findAll(selector: Selector): Elements[Unstructured] = new EmptyElements
+  override def findAll(selector: CSSQuery): Elements[Unstructured] = new EmptyElements
 
   override def text: Option[String] = ownText
 
   override def breadcrumb: Option[Seq[String]] = ???
 
-  override def children(selector: Selector): Elements[Unstructured] = new EmptyElements
+  override def children(selector: CSSQuery): Elements[Unstructured] = new EmptyElements
 
   override def ownText: Option[String] = Some(_ownText)
 
@@ -117,13 +117,13 @@ class CsvCell(
 
   override def boilerPipe: Option[String] = ownText
 
-  override def findAllWithSiblings(selector: Selector, range: Range): Elements[Siblings[Unstructured]] = new EmptyElements
+  override def findAllWithSiblings(selector: CSSQuery, range: Range): Elements[Siblings[Unstructured]] = new EmptyElements
 
   override def href: Option[String] = ownText
 
   override def code: Option[String] = ownText
 
-  override def childrenWithSiblings(selector: Selector, range: Range): Elements[Siblings[Unstructured]] = new EmptyElements
+  override def childrenWithSiblings(selector: CSSQuery, range: Range): Elements[Siblings[Unstructured]] = new EmptyElements
 
   override def allAttr: Option[Map[String, String]] = Some(Map())
 

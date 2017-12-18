@@ -171,13 +171,13 @@ case class MAVLink(
   def _getCurrentLocation: Location = {
 
     val locations = Endpoints.primary.PY.vehicle.location
-    val global = locations.global_frame.$MSG.get.cast[LocationGlobal]
+    val global = locations.global_frame.$MSG.get.cast[LocationGlobal]()
     global
   }
   def _getHome: Location = {
 
     val home = Endpoints.primary.PY.home
-    val global = home.$MSG.get.cast[LocationGlobal]
+    val global = home.$MSG.get.cast[LocationGlobal]()
     global
   }
 

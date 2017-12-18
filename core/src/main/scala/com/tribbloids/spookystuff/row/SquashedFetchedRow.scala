@@ -3,7 +3,7 @@ package com.tribbloids.spookystuff.row
 import java.util.UUID
 
 import com.tribbloids.spookystuff.actions.{Actions, Trace, TraceView}
-import com.tribbloids.spookystuff.doc.Fetched
+import com.tribbloids.spookystuff.doc.DocOption
 import com.tribbloids.spookystuff.extractors.Resolved
 
 import scala.collection.mutable.ArrayBuffer
@@ -16,7 +16,7 @@ object SquashedFetchedRow {
 
   def withDocs(
                 dataRows: Array[DataRow] = Array(DataRow()),
-                docs: Seq[Fetched] = null
+                docs: Seq[DocOption] = null
               ): SquashedFetchedRow = SquashedFetchedRow(
     dataRows = dataRows,
     traceView = TraceView(docs = docs)
@@ -64,9 +64,9 @@ case class SquashedFetchedRow(
 
     // by default, make sure no pages with identical name can appear in the same group.
     // TODO: need tests!
-    @transient lazy val defaultGroupedFetched: Array[Seq[Fetched]] = {
-      val grandBuffer: ArrayBuffer[Seq[Fetched]] = ArrayBuffer()
-      val buffer: ArrayBuffer[Fetched] = ArrayBuffer()
+    @transient lazy val defaultGroupedFetched: Array[Seq[DocOption]] = {
+      val grandBuffer: ArrayBuffer[Seq[DocOption]] = ArrayBuffer()
+      val buffer: ArrayBuffer[DocOption] = ArrayBuffer()
       withSpooky.get.foreach {
         page =>
           if (buffer.exists(_.name == page.name)) {
@@ -80,7 +80,7 @@ case class SquashedFetchedRow(
       grandBuffer.toArray
     }
 
-    def groupedFetched: Array[Seq[Fetched]] = groupedFetchedOption.getOrElse(defaultGroupedFetched)
+    def groupedFetched: Array[Seq[DocOption]] = groupedFetchedOption.getOrElse(defaultGroupedFetched)
 
     //outer: dataRows, inner: grouped pages
     def semiUnsquash: Array[Array[FetchedRow]] = dataRows.map{
@@ -92,7 +92,7 @@ case class SquashedFetchedRow(
               groupID = Some(groupID),
               groupIndex = tuple._2
             )
-            FetchedRow(withGroupID, tuple._1: Seq[Fetched])
+            FetchedRow(withGroupID, tuple._1: Seq[DocOption])
         }
     }
 
@@ -210,5 +210,5 @@ case class SquashedFetchedRow(
     }
   }
 
-  @volatile var groupedFetchedOption: Option[Array[Seq[Fetched]]] = None
+  @volatile var groupedFetchedOption: Option[Array[Seq[DocOption]]] = None
 }

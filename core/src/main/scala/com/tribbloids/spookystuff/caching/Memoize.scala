@@ -18,9 +18,6 @@ package com.tribbloids.spookystuff.caching
 
 import com.tribbloids.spookystuff.utils.CachingUtils
 
-/**
-  * @author Manuri Perera
-  */
 //TODO: not efficient should be replaced
 trait Memoize[T, R] extends (T => R) with Serializable {
 

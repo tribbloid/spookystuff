@@ -1,16 +1,17 @@
 package com.tribbloids.spookystuff.actions
 
 import com.tribbloids.spookystuff.caching.{DFSDocCache, InMemoryDocCache}
-import com.tribbloids.spookystuff.doc.{Doc, Fetched}
-import com.tribbloids.spookystuff.row.{SpookySchema, FetchedRow}
+import com.tribbloids.spookystuff.doc.{Doc, DocOption}
+import com.tribbloids.spookystuff.row.{FetchedRow, SpookySchema}
 import com.tribbloids.spookystuff.session.Session
 import com.tribbloids.spookystuff.utils.CommonUtils
 import com.tribbloids.spookystuff.{Const, QueryException, SpookyContext}
 import org.apache.spark.ml.dsl.utils.Verbose
+import org.apache.spark.ml.dsl.utils.messaging.AutomaticRelay
 import org.apache.spark.sql.catalyst.trees.TreeNode
 import org.slf4j.LoggerFactory
 
-object ActionLike {
+object ActionLike extends AutomaticRelay[ActionLike] {
 
   //TODO: aggregate all object that has children
   case class TreeNodeView(
@@ -27,6 +28,8 @@ object ActionLike {
 
 @SerialVersionUID(8566489926281786854L)
 abstract class ActionLike extends Product with Serializable with Verbose {
+
+  override val productPrefix = this.getClass.getSimpleName
 
   def children: Trace
 
@@ -73,11 +76,11 @@ abstract class ActionLike extends Product with Serializable with Verbose {
   //the minimal equivalent action that can be put into backtrace
   def skeleton: Option[this.type] = Some(this)
 
-  def apply(session: Session): Seq[Fetched]
+  def apply(session: Session): Seq[DocOption]
 
-  def fetch(spooky: SpookyContext): Seq[Fetched] = {
+  def fetch(spooky: SpookyContext): Seq[DocOption] = {
 
-    val results = CommonUtils.retryFixedInterval(Const.remoteResourceLocalRetries){
+    val results = CommonUtils.retry(Const.remoteResourceLocalRetries){
       fetchOnce(spooky)
     }
     val numPages = results.count(_.isInstanceOf[Doc])
@@ -86,11 +89,11 @@ abstract class ActionLike extends Product with Serializable with Verbose {
     results
   }
 
-  def fetchOnce(spooky: SpookyContext): Seq[Fetched] = {
+  def fetchOnce(spooky: SpookyContext): Seq[DocOption] = {
 
     if (!this.hasOutput) return Nil
 
-    val pagesFromCache: Seq[Seq[Fetched]] = if (!spooky.spookyConf.cacheRead) Seq(null)
+    val pagesFromCache: Seq[Seq[DocOption]] = if (!spooky.spookyConf.cacheRead) Seq(null)
     else dryrun.map (
       dry =>
         InMemoryDocCache.get(dry, spooky)

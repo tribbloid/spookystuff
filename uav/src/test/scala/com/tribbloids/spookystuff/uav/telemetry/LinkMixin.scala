@@ -7,7 +7,7 @@ import com.tribbloids.spookystuff.uav.system.UAV
 import com.tribbloids.spookystuff.uav.telemetry.mavlink.MAVLink
 import com.tribbloids.spookystuff.uav._
 import com.tribbloids.spookystuff.utils.{CommonUtils, SpookyUtils}
-import com.tribbloids.spookystuff.utils.TreeException.MultiCauseWrapper
+import com.tribbloids.spookystuff.utils.TreeException.Wrapper
 import com.tribbloids.spookystuff.utils.lifespan.Cleanable
 import com.tribbloids.spookystuff.{PyInterpretationException, SpookyContext, SpookyEnvFixture}
 import org.apache.spark.rdd.RDD
@@ -222,7 +222,7 @@ abstract class SimLinkSuite extends SimUAVFixture with LinkMixin {
           assert(badLink.statusString.contains("Link DRONE@dummy is unreachable for"))
           assert {
             val e = badLink.lastFailureOpt.get._1
-            e.isInstanceOf[PyInterpretationException] || e.isInstanceOf[MultiCauseWrapper]
+            e.isInstanceOf[PyInterpretationException] || e.isInstanceOf[Wrapper]
           }
         }
       }
@@ -237,7 +237,7 @@ abstract class SimLinkSuite extends SimUAVFixture with LinkMixin {
             }
         }
         //wait for zombie process to be deregistered
-        CommonUtils.retryFixedInterval(5, 2000) {
+        CommonUtils.retry(5, 2000) {
           sc.foreachComputer {
             SpookyEnvFixture.processShouldBeClean(Seq("mavproxy"), Seq("mavproxy"), cleanSweepNotInTask = false)
           }

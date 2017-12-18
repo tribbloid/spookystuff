@@ -68,9 +68,9 @@ with SeqLike[T, Elements[T]] {
 
   override def findAllWithSiblings(selector: String, range: Range) = new Elements(self.flatMap(_.findAllWithSiblings(selector, range)))
 
-  override def children(selector: Selector) = new Elements(self.flatMap(_.children(selector)))
+  override def children(selector: CSSQuery) = new Elements(self.flatMap(_.children(selector)))
 
-  override def childrenWithSiblings(selector: Selector, range: Range) = new Elements(self.flatMap(_.childrenWithSiblings(selector, range)))
+  override def childrenWithSiblings(selector: CSSQuery, range: Range) = new Elements(self.flatMap(_.childrenWithSiblings(selector, range)))
 
   override def ownText: Option[String] = ownTexts.headOption
 

@@ -13,7 +13,7 @@ import scala.util.Random
 class SpookyConfSuite extends SpookyEnvFixture {
 
   def conf = new SpookyConf()
-  def dirConf = new DirConf()
+  def dirConf = DirConf()
 
   it("SpookyConf is serializable") {
 

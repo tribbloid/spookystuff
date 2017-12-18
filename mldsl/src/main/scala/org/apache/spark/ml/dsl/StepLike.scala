@@ -1,9 +1,18 @@
 package org.apache.spark.ml.dsl
 
+import org.apache.spark.ml.PipelineStage
+import org.apache.spark.ml.dsl.utils.Xml
+import org.apache.spark.ml.dsl.utils.messaging.{MessageAPI_<=>, MessageRelay}
+import org.apache.spark.ml.param.{ParamPair, Params}
 import org.apache.spark.sql.ColumnName
 import org.apache.spark.sql.types.DataType
+import org.apache.spark.util.Utils
+import org.json4s.JsonAST.JObject
+import org.json4s.jackson.JsonMethods.{compact, parse, pretty, render}
+import org.json4s.{JArray, JBool, JDecimal, JDouble, JInt, JNull, JString, JValue}
 
 import scala.collection.mutable
+import scala.util.Try
 
 /**
   * Created by peng on 24/04/16.
@@ -35,6 +44,108 @@ trait StepLike extends FlowComponent {
   override def leftTailIDs: Seq[String] = Seq(id)
 
   override def rightTailIDs: Seq[String] = Seq(id)
+}
+
+object Step extends MessageRelay[Step] {
+
+  val paramMap: Option[JValue]  = None
+
+  override def toMessage_>>(v: Step): M = {
+    import org.json4s.JsonDSL._
+    import v._
+
+    val instance = stage.stage
+    val params = instance.extractParamMap().toSeq.asInstanceOf[Seq[ParamPair[Any]]]
+    val jsonParams: JValue = paramMap.getOrElse(
+      render(
+        params.map {
+          case ParamPair(p, vv) =>
+            p.name -> parse(p.jsonEncode(vv))
+        }.toList
+      )
+    )
+
+    M(
+      id,
+      stage.name,
+      stage.tags,
+      stage.outputColOverride,
+      instance.getClass.getCanonicalName,
+      Some(instance.uid),
+      params = Some(jsonParams)
+    )
+  }
+
+
+  case class M(
+                id: String,
+                name: String,
+                tag: Set[String],
+                forceOutput: Option[String],
+                implementation: String,
+                uid: Option[String] = None,
+                params: Option[JValue] = None
+              ) extends MessageAPI_<=>[Step] {
+
+    override lazy val toSelf_<< : Step = {
+
+      val cls = Utils.classForName(implementation)
+      val instance = cls.getConstructor(classOf[String]).newInstance(uid.toSeq: _*).asInstanceOf[PipelineStage]
+      getAndSetParams(instance, params.getOrElse(JNull))
+
+      val stage = NamedStage(
+        instance,
+        name,
+        tag,
+        forceOutput,
+        id
+      )
+
+      Step(stage)
+    }
+
+    //TODO: can we merge this into MessageRelay?
+    def getAndSetParams(instance: Params, params: JValue): Unit = {
+//      implicit val format = Xml.defaultFormats
+      params match {
+        case JObject(pairs) =>
+          pairs.foreach { case (paramName, jsonValue) =>
+            val param = instance.getParam(paramName)
+            val valueTry = Try {
+              param.jsonDecode(compact(render(jsonValue)))
+            }
+              .orElse{Try{
+                param.jsonDecode(compact(render(JArray(List(jsonValue)))))
+              }}
+
+            val value = jsonValue match {
+              case js: JString =>
+                valueTry
+                  .orElse{Try{
+                    param.jsonDecode(compact(render(JInt(js.values.toLong))))
+                  }}
+                  .orElse{Try{
+                    param.jsonDecode(compact(render(JDouble(js.values.toDouble))))
+                  }}
+                  .orElse{Try{
+                    param.jsonDecode(compact(render(JDecimal(js.values.toDouble))))
+                  }}
+                  .orElse{Try{
+                    param.jsonDecode(compact(render(JBool(js.values.toBoolean))))
+                  }}
+                  .get
+              case _ =>
+                valueTry.get
+            }
+
+            instance.set(param, value)
+          }
+        case _ =>
+          throw new IllegalArgumentException(
+            s"Cannot recognize JSON metadata:\n ${pretty(params)}.")
+      }
+    }
+  }
 }
 
 case class Step(

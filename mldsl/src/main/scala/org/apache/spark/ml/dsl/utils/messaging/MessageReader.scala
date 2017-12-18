@@ -1,24 +1,27 @@
 package org.apache.spark.ml.dsl.utils.messaging
 
+import org.apache.spark.ml.dsl.utils.refl.ScalaType
+
 import scala.language.implicitConversions
 
 /**
   * a simple MessageRelay that use object directly as Message
   */
-sealed trait Level1 {
+sealed trait MessageReaderLevel1 {
 
   implicit def fromMF[T](implicit mf: Manifest[T]) = new MessageReader[T]()(mf)
 }
 
-class MessageReader[Obj](
-                          implicit override val mf: Manifest[Obj]
-                        ) extends RelayLike[Obj] {
-  type M = Obj
+class MessageReader[Self](
+                           implicit override val messageMF: Manifest[Self]
+                         ) extends Codec[Self] {
+  type M = Self
 
-  override def toM(v: Obj) = v
+  override def selfType: ScalaType[Self] = messageMF
 
-  override def reader = this
+  override def toMessage_>>(v: Self) = v
+  override def toSelf_<<(v: Self): Self = v
 }
 
-object MessageReader extends MessageReader[Any] with Level1 {
+object MessageReader extends MessageReader[Any] with MessageReaderLevel1 {
 }

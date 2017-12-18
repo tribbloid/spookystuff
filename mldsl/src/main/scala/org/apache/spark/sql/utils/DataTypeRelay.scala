@@ -17,7 +17,7 @@ object DataTypeRelay extends MessageRelay[DataType] {
     DataType.parseDataType(jv)
   }
 
-  override def toM(v: DataType): M = M(
+  override def toMessage_>>(v: DataType): M = M(
     toJsonAST(v)
   )
 
@@ -25,6 +25,6 @@ object DataTypeRelay extends MessageRelay[DataType] {
                 dataType: JValue
               ) extends MessageAPI_<=>[DataType] {
 
-    override def toObject: DataType = fromJsonAST(dataType)
+    override def toSelf_<< : DataType = fromJsonAST(dataType)
   }
 }

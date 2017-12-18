@@ -11,7 +11,7 @@ object ConfUtils {
 
     val env = property.replace('.','_').toUpperCase
 
-    Option(System.getProperty(property)).filter (_.toLowerCase != "null").map {
+    val result = Option(System.getProperty(property)).filter (_.toLowerCase != "null").map {
       v =>
         LoggerFactory.getLogger(this.getClass).info(s"System has property $property -> $v")
         v
@@ -34,6 +34,8 @@ object ConfUtils {
         )
           .filter (_.toLowerCase != "null")
       }
+
+    result
   }
 
   /**
@@ -44,10 +46,10 @@ object ConfUtils {
                     default: String = null
                   )(implicit conf: SparkConf = Option(SparkEnv.get).map(_.conf).orNull): String = {
 
-    getPropertyOrEnv(property)
-      .getOrElse{
-        default
-      }
+    val v = getPropertyOrEnv(property)
+    v.getOrElse{
+      default
+    }
   }
 
   /**

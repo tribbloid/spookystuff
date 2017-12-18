@@ -1,7 +1,7 @@
 package com.tribbloids.spookystuff.session.python
 
 import org.apache.spark.ml.dsl.utils._
-import org.apache.spark.ml.dsl.utils.messaging.{MessageAPI, MessageView}
+import org.apache.spark.ml.dsl.utils.messaging.{MessageAPI, MessageWriter}
 
 /**
   * Created by peng on 01/11/16.
@@ -79,7 +79,7 @@ object PyConverter {
         case vv: MessageAPI =>
           vv.prettyJSON
         case _ =>
-          MessageView(v).prettyJSON
+          MessageWriter(v).prettyJSON
       }
       val code =
         s"""

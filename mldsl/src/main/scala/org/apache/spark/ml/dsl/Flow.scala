@@ -4,6 +4,7 @@ import com.github.mdr.ascii.graph.Graph
 import com.github.mdr.ascii.layout.GraphLayout
 import com.github.mdr.ascii.layout.prefs.LayoutPrefsImpl
 import org.apache.spark.ml.dsl.utils.FlowUtils
+import org.apache.spark.ml.dsl.utils.messaging.{MessageAPI_<=>, MessageRelay}
 import org.apache.spark.ml.{Pipeline, PipelineModel, PipelineStage, Transformer}
 import org.apache.spark.sql.catalyst.expressions.NamedExpression
 import org.apache.spark.sql.types.{StructField, StructType}
@@ -594,6 +595,7 @@ trait FlowComponent extends MayHaveHeads with MayHaveTails {
   }
 
   //this operation IS stateful & destructive, any other options?
+  //TODO: should generate deep copy to become stateless
   def propagateCols[T <: PipelineStage](compaction: PathCompaction): Unit = {
     val ids_MultiPartNames = coll.mapValues(v => this.BackwardNode(StepVisualWrapper(v)).mergedPath)
 
@@ -949,7 +951,7 @@ trait FlowComponent extends MayHaveHeads with MayHaveTails {
   }
 }
 
-object Flow {
+object Flow extends MessageRelay[Flow] {
 
   final val DEFAULT_COMPACTION: PathCompaction = Compactions.PruneDownPath
   final val DEFAULT_SCHEMA_ADAPTATION: SchemaAdaptation = SchemaAdaptations.FailFast
@@ -962,6 +964,95 @@ object Flow {
   def apply(s: Symbol): Source = s
   def apply(s: StructField): Source = s
 
+  override def toMessage_>>(flow: Flow): M = {
+
+    flow.propagateCols(Flow.DEFAULT_COMPACTION)
+
+    val steps: Seq[Step] = flow.coll.values.collect {
+      case st: Step => st
+    }.toSeq
+
+    val leftWrappers = flow.leftTails.map(SimpleStepWrapper)
+    val leftTrees = leftWrappers.map(flow.ForwardNode)
+
+    val rightWrappers = flow.rightTails.map(SimpleStepWrapper)
+    val rightTrees = rightWrappers.map(flow.ForwardNode)
+
+    this.M(
+      Declaration(
+        steps.map(Step.toMessage_>>)
+      ),
+      Seq(
+        GraphRepr(
+          leftTrees.map(StepTreeNode.toMessage_>>),
+          `@direction` = Some(FORWARD_LEFT)
+        ),
+        GraphRepr(
+          rightTrees.map(StepTreeNode.toMessage_>>),
+          `@direction` = Some(FORWARD_RIGHT)
+        )
+      ),
+      HeadIDs(flow.headIDs)
+    )
+  }
+
+  def FORWARD_RIGHT: String = "forwardRight"
+  def FORWARD_LEFT: String = "forwardLeft"
+
+
+  case class M(
+                declarations: Declaration,
+                flowLines: Seq[GraphRepr],
+                headIDs: HeadIDs
+              ) extends MessageAPI_<=>[Flow]{
+
+    implicit def stepsToView(steps: StepMap[String, StepLike]): StepMapView = new StepMapView(steps)
+
+    override def toSelf_<< : Flow = {
+
+      val steps = declarations.stage.map(_.toSelf_<<)
+      var buffer: StepMap[String, StepLike] = StepMap(steps.map(v => v.id -> v): _*)
+
+      def treeNodeReprToLink(repr: StepTreeNode.M): Unit = {
+        if (! buffer.contains(repr.id)) {
+          buffer = buffer.updated(repr.id, Source(repr.id, repr.dataTypes.map(_.toSelf_<<)))
+        }
+        val children = repr.stage
+        buffer = buffer.connectAll(Seq(repr.id), children.map(_.id))
+        children.foreach(treeNodeReprToLink)
+      }
+
+      for (
+        graph <- flowLines;
+        tree <- graph.flowLine
+      ) {
+        treeNodeReprToLink(tree)
+      }
+
+      val leftTailIDs = flowLines.filter(_.`@direction`.exists(_ == FORWARD_LEFT)).flatMap(_.flowLine.map(_.id))
+      val rightTailIDs = flowLines.filter(_.`@direction`.exists(_ == FORWARD_RIGHT)).flatMap(_.flowLine.map(_.id))
+
+      Flow(
+        buffer,
+        leftTailIDs = leftTailIDs,
+        rightTailIDs = rightTailIDs,
+        headIDs = headIDs.headID
+      )
+    }
+  }
+
+  case class Declaration(
+                          stage: Seq[Step.M]
+                        )
+
+  case class GraphRepr(
+                        flowLine: Seq[StepTreeNode.M],
+                        `@direction`: Option[String] = None
+                      )
+
+  case class HeadIDs (
+                       headID: Seq[String]
+                     )
   //  class FlowWriter(flow: Flow) extends MLWriter {
   //
   //    SharedReadWrite.validateStages(flow.stages)

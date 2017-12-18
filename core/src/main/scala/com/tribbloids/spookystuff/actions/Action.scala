@@ -1,6 +1,6 @@
 package com.tribbloids.spookystuff.actions
 
-import com.tribbloids.spookystuff.doc.{Doc, Fetched}
+import com.tribbloids.spookystuff.doc.{Doc, DocOption}
 import com.tribbloids.spookystuff.session.Session
 import com.tribbloids.spookystuff.utils.CommonUtils
 import org.apache.spark.ml.dsl.utils.refl.ScalaUDT
@@ -39,7 +39,7 @@ trait Action extends ActionLike {
   }
 
   //this should handle autoSave, cache and errorDump
-  final override def apply(session: Session): Seq[Fetched] = {
+  final override def apply(session: Session): Seq[DocOption] = {
 
     val results = try {
       exe(session)
@@ -75,7 +75,7 @@ trait Action extends ActionLike {
         action =>
           "| " + action.toString
       } ++
-        Seq("+> " + this.toStringDetailed)
+        Seq("+> " + this.toStrDetailed)
     }
       .mkString("\n")
 
@@ -159,15 +159,15 @@ trait Action extends ActionLike {
     }
   }
 
-  final protected[actions] def exe(session: Session): Seq[Fetched] = {
+  final protected[actions] def exe(session: Session): Seq[DocOption] = {
     withDriversDuring(session){
       doExe(session)
     }
   }
 
-  protected def doExe(session: Session): Seq[Fetched]
+  protected def doExe(session: Session): Seq[DocOption]
 
-  def andThen(f: Seq[Fetched] => Seq[Fetched]): Action = AndThen(this, f)
+  def andThen(f: Seq[DocOption] => Seq[DocOption]): Action = AndThen(this, f)
 
   override def injectFrom(same: ActionLike): Unit = {
     super.injectFrom(same)

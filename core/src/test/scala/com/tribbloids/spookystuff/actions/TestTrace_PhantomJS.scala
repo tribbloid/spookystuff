@@ -269,41 +269,41 @@ class TestTrace_PhantomJS extends SpookyEnvFixture with FunSpecx {
   }
 
   // This is fundamentally conflicting with session & driver management
-//  ignore("TraceView.apply should yield lazy stream") {
-//
-//    var acc: Int = 0
-//
-//    case object DummyAction extends Action {
-//
-//      override def outputNames: Set[String] = Set("dummy")
-//
-//      override protected def doExe(session: Session): Seq[Fetched] = {
-//        acc += 1
-//        Seq(NoDoc(Nil))
-//      }
-//    }
-//
-//    val actions = List(
-//      DummyAction,
-//      DummyAction,
-//      DummyAction
-//    )
-//
-//    spooky.withSession {
-//      session =>
-//        val results = actions.apply(session)
-//        assert(acc == 1) // preemptive execution
-//
-//        results.headOption
-//        assert(acc == 1)
-//
-//        results.toList
-//        assert(acc == 3)
-//
-//        // in comparison
-////        acc = 0
-////        val notLazy = TraceView(actions)._apply(session, lazyStream = false)
-////        assert(acc == 3)
-//    }
-//  }
+  //  ignore("TraceView.apply should yield lazy stream") {
+  //
+  //    var acc: Int = 0
+  //
+  //    case object DummyAction extends Action {
+  //
+  //      override def outputNames: Set[String] = Set("dummy")
+  //
+  //      override protected def doExe(session: Session): Seq[Fetched] = {
+  //        acc += 1
+  //        Seq(NoDoc(Nil))
+  //      }
+  //    }
+  //
+  //    val actions = List(
+  //      DummyAction,
+  //      DummyAction,
+  //      DummyAction
+  //    )
+  //
+  //    spooky.withSession {
+  //      session =>
+  //        val results = actions.apply(session)
+  //        assert(acc == 1) // preemptive execution
+  //
+  //        results.headOption
+  //        assert(acc == 1)
+  //
+  //        results.toList
+  //        assert(acc == 3)
+  //
+  //        // in comparison
+  ////        acc = 0
+  ////        val notLazy = TraceView(actions)._apply(session, lazyStream = false)
+  ////        assert(acc == 3)
+  //    }
+  //  }
 }

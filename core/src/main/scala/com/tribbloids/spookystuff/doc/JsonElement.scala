@@ -39,7 +39,7 @@ class JsonElement private (
 
   override def hashCode(): Int = (this.field, this.uri).hashCode()
 
-  override def findAll(selector: Selector): Elements[JsonElement] = {
+  override def findAll(selector: CSSQuery): Elements[JsonElement] = {
 
     val selected = field._2 \\ selector
 
@@ -47,7 +47,7 @@ class JsonElement private (
   }
 
   //TODO: how to implement?
-  override def findAllWithSiblings(selector: Selector, range: Range) = {
+  override def findAllWithSiblings(selector: CSSQuery, range: Range) = {
     val found = this.findAll(selector).self
     new Elements(found.map(unstructured => new Siblings(List(unstructured))))
   }
@@ -84,13 +84,13 @@ class JsonElement private (
     }
   }
 
-  override def children(selector: Selector): Elements[Unstructured] = {
+  override def children(selector: CSSQuery): Elements[Unstructured] = {
     val selected = field._2 \ selector
 
     jValueToElements(selector, selected)
   }
 
-  override def childrenWithSiblings(selector: Selector, range: Range): Elements[Siblings[Unstructured]] = {
+  override def childrenWithSiblings(selector: CSSQuery, range: Range): Elements[Siblings[Unstructured]] = {
     val found = this.children(selector).self
     new Elements(found.map(unstructured => new Siblings(List(unstructured))))
   }

@@ -114,7 +114,7 @@ abstract class IntegrationFixture
   }
 
   protected def doTestAfterCache(): Unit = {
-    CommonUtils.retryFixedInterval(retry) {
+    CommonUtils.retry(retry) {
       spooky.zeroMetrics()
       doMain()
       assertAfterCache()
@@ -122,7 +122,7 @@ abstract class IntegrationFixture
   }
 
   protected def doTestBeforeCache(): Unit = {
-    CommonUtils.retryFixedInterval(retry) {
+    CommonUtils.retry(retry) {
       spooky.spookyConf.IgnoreCachedDocsBefore = Some(new Date(System.currentTimeMillis()))
       spooky.zeroMetrics()
       doMain()

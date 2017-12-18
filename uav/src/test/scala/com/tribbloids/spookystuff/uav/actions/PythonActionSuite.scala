@@ -2,7 +2,7 @@ package com.tribbloids.spookystuff.uav.actions
 
 import com.tribbloids.spookystuff.SpookyEnvFixture
 import com.tribbloids.spookystuff.actions.Export
-import com.tribbloids.spookystuff.doc.{Doc, DocUID, Fetched}
+import com.tribbloids.spookystuff.doc.{Doc, DocUID, DocOption}
 import com.tribbloids.spookystuff.extractors.Col
 import com.tribbloids.spookystuff.extractors.impl.Lit
 import com.tribbloids.spookystuff.row.{SpookySchema, FetchedRow}
@@ -18,7 +18,7 @@ case class DummyPyAction(
                           a: Col[Int] = 1
                         ) extends Export with CaseInstanceRef {
 
-  override def doExeNoName(session: Session): Seq[Fetched] = {
+  override def doExeNoName(session: Session): Seq[DocOption] = {
     val repr1 = Py(session).dummy(2, 3).$STR
     val repr2 = Py(session).dummy(b = 3, c = 2).$STR
     assert(repr1 == repr2)

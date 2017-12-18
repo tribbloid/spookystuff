@@ -35,38 +35,27 @@ object TreeException {
     override def verboseString: String = simpleString + "\n" + FlowUtils.stackTracesShowStr(self.getStackTrace)
   }
 
-  def aggregate(
-                 fn: Seq[Throwable] => Throwable,
-                 extra: Seq[Throwable] = Nil,
-                 expandUnary: Boolean = false
-               ): Seq[Throwable] => Throwable = {
-
-    {
-      seq =>
-        val flat = seq.flatMap {
-          case MultiCauseWrapper(causes) =>
-            causes
-          case v@_ => Seq(v)
-        }
-        val all = extra.flatMap(v => Option(v)) ++ flat
-        if (expandUnary && all.size == 1) all.head
-        else fn(all)
-    }
-  }
+  //  def aggregate(
+  //                 fn: Seq[Throwable] => Throwable,
+  //                 extra: Seq[Throwable] = Nil
+  //               )(seq: Seq[Throwable]): Throwable = {
+  //
+  //    val flat = seq.flatMap {
+  //      case Wrapper(causes) =>
+  //        causes
+  //      case v@_ => Seq(v)
+  //    }
+  //    val all = extra.flatMap(v => Option(v)) ++ flat
+  //    fn(all)
+  //  }
 
   def &&&[T](
               trials: Seq[Try[T]],
               agg: Seq[Throwable] => Throwable = {
                 es =>
-                  if (es.size == 1) {
-                    es.head
-                  }
-                  else {
-                    MultiCauseWrapper(causes = es)
-                  }
+                  wrap(es)
               },
-              extra: Seq[Throwable] = Nil,
-              expandUnary: Boolean = false
+              extra: Seq[Throwable] = Nil
             ): Seq[T] = {
 
     val es = trials.collect {
@@ -76,8 +65,7 @@ object TreeException {
       trials.map(_.get)
     }
     else {
-      val _agg = aggregate(agg, extra, expandUnary)
-      throw _agg(es)
+      throw agg(extra.flatMap(v => Option(v)) ++ es)
     }
   }
 
@@ -85,15 +73,9 @@ object TreeException {
               trials: Seq[Try[T]],
               agg: Seq[Throwable] => Throwable = {
                 es =>
-                  if (es.size == 1) {
-                    es.head
-                  }
-                  else {
-                    MultiCauseWrapper(causes = es)
-                  }
+                  wrap(es)
               },
-              extra: Seq[Throwable] = Nil,
-              expandUnary: Boolean = false
+              extra: Seq[Throwable] = Nil
             ): Seq[T] = {
 
     if (trials.isEmpty) return Nil
@@ -106,8 +88,7 @@ object TreeException {
       val es = trials.collect {
         case Failure(e) => e
       }
-      val _agg = aggregate(agg, extra, expandUnary)
-      throw _agg(es)
+      throw agg(extra.flatMap(v => Option(v)) ++ es)
     }
     else {
       results
@@ -116,10 +97,10 @@ object TreeException {
 
   /**
     * early exit
+    *
     * @param trials
     * @param agg
     * @param extra
-    * @param expandUnary
     * @tparam T
     * @return
     */
@@ -127,15 +108,9 @@ object TreeException {
                trials: Seq[() => T],
                agg: Seq[Throwable] => Throwable = {
                  es =>
-                   if (es.size == 1) {
-                     es.head
-                   }
-                   else {
-                     MultiCauseWrapper(causes = es)
-                   }
+                   wrap(es)
                },
-               extra: Seq[Throwable] = Nil,
-               expandUnary: Boolean = false
+               extra: Seq[Throwable] = Nil
              ): Option[T] = {
 
     val buffer = ArrayBuffer[Try[T]]()
@@ -156,8 +131,7 @@ object TreeException {
       val es = results.collect {
         case Failure(e) => e
       }
-      val _agg = aggregate(agg, extra, expandUnary)
-      throw _agg(es)
+      throw agg(extra.flatMap(v => Option(v)) ++ es)
     }
     else {
       throw new RuntimeException("IMPOSSIBLE!")
@@ -170,17 +144,35 @@ object TreeException {
             ) extends TreeException {
 
     override def causes: Seq[Throwable] = {
+
       cause match {
-        case MultiCauseWrapper(causes) => causes
+        case Wrapper(causes) => causes
         case _ =>
           Option(cause).toSeq
       }
     }
   }
 
-  case class MultiCauseWrapper(
-                                override val causes: Seq[Throwable] = Nil
-                              ) extends TreeException {
+  /**
+    *
+    * @param es
+    * @param upliftUnary not recommended to set to false, should use Wrapper() directly for type safety
+    * @return
+    */
+  def wrap(es: Seq[Throwable], upliftUnary: Boolean = true): Throwable = {
+    require(es.nonEmpty, "No exception")
+
+    if (es.size == 1 && upliftUnary) {
+      es.head
+    }
+    else {
+      Wrapper(causes = es)
+    }
+  }
+
+  case class Wrapper(
+                      override val causes: Seq[Throwable] = Nil
+                    ) extends TreeException {
 
     val simpleMessage: String = s"[CAUSED BY ${causes.size} EXCEPTION(S)]"
   }

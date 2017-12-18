@@ -2,20 +2,18 @@ package com.tribbloids.spookystuff.rdd
 
 import com.tribbloids.spookystuff.actions.{ClusterRetry, Snapshot, Visit, Wget, _}
 import com.tribbloids.spookystuff.conf.SpookyConf
-import com.tribbloids.spookystuff.doc.Doc
-import com.tribbloids.spookystuff.dsl.{ExploreAlgorithm, GenPartitionerLike, JoinType, _}
+import com.tribbloids.spookystuff.doc.{Doc, DocOption}
+import com.tribbloids.spookystuff.dsl.{ExploreAlgorithm, JoinType, _}
 import com.tribbloids.spookystuff.execution.{ExplorePlan, FetchPlan, _}
 import com.tribbloids.spookystuff.extractors._
 import com.tribbloids.spookystuff.extractors.impl.Get
 import com.tribbloids.spookystuff.row.{Field, _}
-import com.tribbloids.spookystuff.utils.{SpookyUtils, SpookyViews}
+import com.tribbloids.spookystuff.utils.SpookyViews
 import com.tribbloids.spookystuff.{Const, SpookyContext}
 import org.apache.spark.TaskContext
 import org.apache.spark.rdd.RDD
-import org.apache.spark.sql.catalyst.analysis.UnresolvedAttribute
-import org.apache.spark.sql.catalyst.expressions
 import org.apache.spark.sql.types.DataType
-import org.apache.spark.sql.{Column, DataFrame, Row}
+import org.apache.spark.sql.{DataFrame, Row}
 import org.apache.spark.storage.StorageLevel
 
 import scala.collection.Map
@@ -78,6 +76,20 @@ case class FetchedDataset(
       new v.WSchema(schema).unsquash
   )
 
+  def docRDD: RDD[DocOption] = {
+
+    squashedRDD.flatMap {
+      _.traceView.docs
+    }
+  }
+
+  def dataRDD: RDD[DataRow] = {
+
+    squashedRDD.flatMap {
+      _.dataRows
+    }
+  }
+
   def partitionRDD = rdd.mapPartitions {
     ii =>
       Iterator(TaskContext.get().partitionId() -> ii.toSeq)
@@ -90,13 +102,6 @@ case class FetchedDataset(
   def spooky = plan.spooky
   def schema = plan.schema
   def fields = schema.fields
-
-  def dataRDD: RDD[DataRow] = {
-
-    plan.broadcastAndRDD().flatMap {
-      _.dataRows
-    }
-  }
 
   def dataRDDSorted: RDD[DataRow] = {
 

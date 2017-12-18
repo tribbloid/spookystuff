@@ -49,7 +49,7 @@ class CommonUtils {
   }
 
   // TODO: remove, use object API everywhere.
-  def retryFixedInterval = RetryFixedInterval
+  def retry = RetryFixedInterval
 
   def withDeadline[T](
                        n: Duration,

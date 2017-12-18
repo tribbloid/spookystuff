@@ -47,11 +47,11 @@ object Selector extends MessageRelay[Selector]{
 
   override type M = String
 
-  override def toM(v: Selector) = v.toString
+  override def toMessage_>>(v: Selector) = v.toString
 }
 
 @SQLUserDefinedType(udt = classOf[SelectorUDT])
-case class Selector(by: By) extends Selector.API {
+case class Selector(by: By) {
 
   override def toString: String = by.toString
 }

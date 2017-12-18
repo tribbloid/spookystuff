@@ -167,7 +167,7 @@ class JSONException(
                      metadata: JSONExceptionMetadata
                    ) extends MappingException(msg, cause) with Verbose {
 
-  override def getMessage = toStringDetailed
+  override def getMessage = toStrDetailed
 
   override def detail = "=========== [METADATA] ============\n" + metadata.toJSON()
 }

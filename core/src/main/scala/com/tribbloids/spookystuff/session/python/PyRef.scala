@@ -8,7 +8,8 @@ import com.tribbloids.spookystuff.utils.lifespan.{Cleanable, Lifespan, LocalClea
 import org.apache.spark.ml.dsl.utils.refl.ReflectionUtils
 import com.tribbloids.spookystuff.utils.SpookyUtils
 import org.apache.spark.ml.dsl.utils._
-import org.apache.spark.ml.dsl.utils.messaging.{MessageAPI, MessageView}
+import org.apache.spark.ml.dsl.utils.messaging.{MessageAPI, MessageWriter}
+import org.json4s.JsonAST.JValue
 import org.json4s.jackson.JsonMethods._
 
 import scala.language.dynamics
@@ -159,7 +160,7 @@ class PyBinding (
   }
 
   // TODO: so far, doesn't support nested object
-  def $MSG: Option[MessageAPI] = {
+  def $MSG: Option[MessageWriter[JValue]] = {
 
     referenceOpt.flatMap {
       ref =>
@@ -168,7 +169,7 @@ class PyBinding (
         jsonOpt.map {
           json =>
             val jValue = parse(json)
-            MessageView(jValue)
+            MessageWriter(jValue)
         }
     }
   }

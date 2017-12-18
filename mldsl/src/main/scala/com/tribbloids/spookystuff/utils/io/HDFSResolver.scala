@@ -8,6 +8,9 @@ import org.apache.hadoop
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs._
 import org.apache.hadoop.security.UserGroupInformation
+import org.apache.spark.ml.dsl.utils.metadata.MetadataMap
+
+import scala.collection.immutable.ListMap
 
 /**
   * Created by peng on 17/05/17.
@@ -55,34 +58,37 @@ case class HDFSResolver(
     }
   }
 
-  def input[T](pathStr: String)(f: InputStream => T) = doAsUGI {
+  def input[T](pathStr: String)(f: InputStream => T): Resource[T] = {
     val path: Path = new Path(pathStr)
     val fs: FileSystem = path.getFileSystem(getHadoopConf)
 
-    if (!pathStr.endsWith(lockedSuffix)) {
-      //wait for its locked file to finish its locked session
+    new Resource[T] {
 
-      val lockedPath = new Path(pathStr + lockedSuffix)
+      override lazy val value: T = doAsUGI {
 
-      val status = fs.getStatus(path)
+        if (!pathStr.endsWith(lockedSuffix)) {
+          //wait for its locked file to finish its locked session
 
-      //wait for 15 seconds in total
-      retry {
-        assert(!fs.exists(lockedPath), s"File $pathStr is locked by another executor or thread")
-        //        Thread.sleep(3*1000)
+          val lockedPath = new Path(pathStr + lockedSuffix)
+
+          //wait for 15 seconds in total
+          retry {
+            assert(!fs.exists(lockedPath), s"File $pathStr is locked by another executor or thread")
+            //        Thread.sleep(3*1000)
+          }
+        }
+
+        val fis: FSDataInputStream = fs.open(path)
+
+        try {
+          f(fis)
+        }
+        finally {
+          fis.close()
+        }
       }
-    }
 
-    val fis: FSDataInputStream = fs.open(path)
-
-    try {
-      val result = f(fis)
-      new Resource(result) {
-        override lazy val metadata = describe(path)
-      }
-    }
-    finally {
-      fis.close()
+      override lazy val metadata = describe(path)
     }
   }
 
@@ -91,17 +97,22 @@ case class HDFSResolver(
     val path = new Path(pathStr)
     val fs = path.getFileSystem(getHadoopConf)
 
-    val fos: FSDataOutputStream = fs.create(path, overwrite)
+    new Resource[T] {
 
-    try {
-      val result = f(fos)
-      fos.flush()
-      new Resource(result) {
-        override lazy val metadata = describe(path)
+      override val value: T = {
+
+        val fos: FSDataOutputStream = fs.create(path, overwrite)
+        try {
+          val result = f(fos)
+          fos.flush()
+          result
+        }
+        finally {
+          fos.close()
+        }
       }
-    }
-    finally {
-      fos.close()
+
+      override lazy val metadata = describe(path)
     }
   }
 
@@ -164,34 +175,56 @@ case class HDFSResolver(
     }
   }
 
-  def describe(path: Path): ResourceMetadata = {
+  def describe(path: Path): ResourceMD = doAsUGI {
+    import Resource._
+
     val fs: FileSystem = path.getFileSystem(hadoopConf)
 
-    def getMetadata(status: FileStatus) = {
-      val name = status.getPath.getName
-      val map = reflectiveMetadata(status)
-      val tpe = if (status.isDirectory)
-        Some(URIResolver.DIR_TYPE)
-      else
-        None
-      ResourceMetadata(
-        path.toString,
-        Option(name),
-        tpe,
-        map
+    def getMap(status: FileStatus): ListMap[String, Any] = {
+      var map = reflectiveMetadata(status)
+      map ++= MetadataMap(
+        URI_ -> toAbsolute(status.getPath.toUri.toString),
+        NAME -> status.getPath.getName
       )
+
+      if (status.isDirectory)
+        map ++= MetadataMap(CONTENT_TYPE -> URIResolver.DIR_TYPE)
+
+      map
     }
 
-    val root = {
-      val status = fs.getFileStatus(path)
-      getMetadata(status)
-    }
+    val status = fs.getFileStatus(path)
+    val root = getMap(status)
 
-    val children = fs.listStatus(path).map {
-      status =>
-        getMetadata(status)
+    if (status.isDirectory) {
+      val children = fs.listStatus(path)
+
+      val groupedChildren: Map[String, Seq[Map[String, Any]]] = {
+
+        val withType = children.map {
+          child =>
+            val tpe = if (child.isDirectory) "directory"
+            else if (child.isSymlink) "symlink"
+            else if (child.isFile) "file"
+            else "others"
+
+            tpe -> child
+        }
+
+        withType.groupBy(_._1).mapValues {
+          array =>
+            array.toSeq.map(kv => getMap(kv._2))
+        }
+      }
+
+      val map = root ++ groupedChildren
+      val result = ResourceMD(map)
+      val x = result.message
+      result
     }
-    root.copy(children = children)
+    else{
+      root
+    }
   }
 }
 

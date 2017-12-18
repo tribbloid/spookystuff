@@ -65,7 +65,7 @@ object Link {
 
     def trySelect: Try[Link] = Try {
 
-      CommonUtils.retryFixedInterval(3, 1000) {
+      CommonUtils.retry(3, 1000) {
         _trySelect.get
       }
     }
@@ -348,7 +348,7 @@ trait Link extends LocalCleanable with ConflictDetection {
     fn: =>T
   ): T = {
     try {
-      CommonUtils.retryFixedInterval(n, interval, silent) {
+      CommonUtils.retry(n, interval, silent) {
         try {
           connectIfNot()
           fn

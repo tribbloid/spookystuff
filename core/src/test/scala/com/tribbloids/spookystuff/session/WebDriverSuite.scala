@@ -31,12 +31,14 @@ class WebDriverSuite extends SpookyEnvFixture with LocalPathDocsFixture {
         .count()
 
       intercept[SparkException] {
-        spooky
+        val docs = spooky
           .create(1 to 2)
           .fetch(
             Visit(HTML_URL)
           )
-          .count()
+          .docRDD
+
+        docs.collect().foreach(println)
       }
     }
     finally {

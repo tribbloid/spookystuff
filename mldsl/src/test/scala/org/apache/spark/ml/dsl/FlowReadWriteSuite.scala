@@ -1,6 +1,7 @@
 package org.apache.spark.ml.dsl
 
-import org.apache.spark.ml.dsl.utils.{FlowRelay, Xml}
+import com.tribbloids.spookystuff.testutils.TestHelper
+import org.apache.spark.ml.dsl.utils.Xml
 import org.apache.spark.ml.feature._
 import org.apache.spark.ml.{Pipeline, PipelineModel}
 import org.json4s.JValue
@@ -13,7 +14,9 @@ class FlowReadWriteSuite extends AbstractFlowSuite {
 
   import FlowComponent._
   import org.apache.spark.ml.dsl.FlowSuite._
-  import org.apache.spark.ml.dsl.ReadWriteSupports._
+  import org.apache.spark.ml.dsl.utils.messaging.MLReadWriteSupports._
+
+  TestHelper.TestSpark
 
   val pipelinePath = "temp/pipeline/pipeline"
 //  def sc: SparkContext = TestHelper.TestSpark
@@ -27,7 +30,7 @@ class FlowReadWriteSuite extends AbstractFlowSuite {
       >- STEMMED <>- TF >>> UDFTransformer(zipping) -> TF_ZIPPED)
       .from(STEMMED) <>- IDF >>> UDFTransformer(zipping) -> IDF_ZIPPED
 
-    val pipeline = flow.build()
+    val pipeline: Pipeline = flow.build()
 
     pipeline.write.overwrite().save(pipelinePath)
     val pipeline2 = Pipeline.read.load(pipelinePath)
@@ -66,7 +69,7 @@ class FlowReadWriteSuite extends AbstractFlowSuite {
 
     prettyJSON.shouldBe()
 
-    val flow2 = FlowRelay.fromJSON(prettyJSON).toObject
+    val flow2 = Flow.fromJSON(prettyJSON)
 
     println(flow2.show(asciiArt = true))
 
@@ -94,7 +97,7 @@ class FlowReadWriteSuite extends AbstractFlowSuite {
 
     prettyXML.shouldBe()
 
-    val flow2 = FlowRelay.fromXML(prettyXML).toObject
+    val flow2 = Flow.fromXML(prettyXML)
 
     println(flow2.show(asciiArt = true))
 

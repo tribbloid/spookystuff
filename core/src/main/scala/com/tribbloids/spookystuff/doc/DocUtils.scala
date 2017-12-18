@@ -13,7 +13,7 @@ object DocUtils {
 
   def dfsRead[T](message: String, pathStr: String, spooky: SpookyContext)(f: => T): T = {
     try {
-      val result = CommonUtils.retryFixedInterval(Const.DFSLocalRetries) {
+      val result = CommonUtils.retry(Const.DFSLocalRetries) {
         CommonUtils.withDeadline(spooky.spookyConf.DFSTimeout) {f}
       }
       spooky.spookyMetrics.DFSReadSuccess += 1
@@ -35,7 +35,7 @@ object DocUtils {
   //always fail on retry depletion and timeout
   def dfsWrite[T](message: String, pathStr: String, spooky: SpookyContext)(f: => T): T = {
     try {
-      val result = CommonUtils.retryFixedInterval(Const.DFSLocalRetries) {
+      val result = CommonUtils.retry(Const.DFSLocalRetries) {
         CommonUtils.withDeadline(spooky.spookyConf.DFSTimeout) {f}
       }
       spooky.spookyMetrics.DFSWriteSuccess += 1
@@ -130,7 +130,7 @@ object DocUtils {
                      dirPath: Path,
                      earliestModificationTime: Long,
                      latestModificationTime: Long
-                   )(spooky: SpookyContext): Seq[Fetched] = {
+                   )(spooky: SpookyContext): Seq[DocOption] = {
 
     val latestStatus: Option[FileStatus] = dfsRead("get latest version", dirPath.toString, spooky) {
 
@@ -150,7 +150,7 @@ object DocUtils {
 
     latestStatus match {
       case Some(status) =>
-        val results = restore[Fetched](status.getPath.toString)(spooky)
+        val results = restore[DocOption](status.getPath.toString)(spooky)
 
         if (results == null) {
           LoggerFactory.getLogger(this.getClass).warn("Cached content is corrputed:\n" + dirPath

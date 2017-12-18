@@ -3,7 +3,7 @@ package com.tribbloids.spookystuff.extractors
 import com.tribbloids.spookystuff.Const
 import com.tribbloids.spookystuff.dsl.Implicits
 import com.tribbloids.spookystuff.extractors.impl.{Extractors, Lit}
-import org.apache.spark.ml.dsl.utils.messaging.MessageAPI
+import org.apache.spark.ml.dsl.utils.messaging.SelfAPI
 import org.apache.spark.sql.catalyst.ScalaReflection.universe.TypeTag
 
 import scala.language.implicitConversions
@@ -11,25 +11,6 @@ import scala.language.implicitConversions
 /**
   * Created by peng on 12/07/17.
   */
-case class Col[T](
-                   ex: Extractor[_ >: T]
-                 ) extends MessageAPI {
-
-  override def toString = ex.toString
-
-  def resolveType(tt: DataType) = ex.resolveType(tt)
-  def resolve(tt: DataType) = ex.resolve(tt)
-
-  def value: T = {
-    ex match {
-      case v: Lit[FR, T] => v.value
-      case _ => throw new UnsupportedOperationException("Not a literal")
-    }
-  }
-
-  override def proto: T = value
-}
-
 object Col {
 
   import Implicits._
@@ -60,5 +41,29 @@ object Col {
 
   implicit def fromSymbol[T](v: Symbol): Col[T] = {
     Col[T](v)
+  }
+}
+
+case class Col[T](
+                   ex: Extractor[_ >: T]
+                 ) extends SelfAPI{
+
+  override def toString = this.memberStr
+
+  def resolveType(tt: DataType) = ex.resolveType(tt)
+  def resolve(tt: DataType) = ex.resolve(tt)
+
+  def value: T = {
+    ex match {
+      case v: Lit[FR, T] => v.value
+      case _ => throw new UnsupportedOperationException("Not a literal")
+    }
+  }
+
+  override def toMessage_>> : Any = {
+    ex match {
+      case v: Lit[FR, T] => v.value
+      case _ => ex.message
+    }
   }
 }

@@ -1,6 +1,8 @@
 package org.apache.spark.ml.dsl
 
+import org.apache.spark.ml.dsl.utils.messaging.{MessageAPI_<=>, MessageRelay}
 import org.apache.spark.sql.catalyst.trees.TreeNode
+import org.apache.spark.sql.utils.DataTypeRelay
 
 trait StepTreeNode[BaseType <: StepTreeNode[BaseType]] extends TreeNode[StepTreeNode[BaseType]] {
 
@@ -41,5 +43,32 @@ trait StepTreeNode[BaseType <: StepTreeNode[BaseType]] extends TreeNode[StepTree
       else commonAncestor ++ commonParent
     }
     result
+  }
+}
+
+object StepTreeNode extends MessageRelay[StepTreeNode[_]] {
+
+  override def toMessage_>>(v: StepTreeNode[_]): M = {
+    val base = v.self match {
+      case source: Source =>
+        M(
+          source.id,
+          dataTypes = source.dataTypes
+            .map(DataTypeRelay.toMessage_>>)
+        )
+      case _ =>
+        M(v.self.id)
+    }
+    base.copy(
+      stage = v.children.map(this.toMessage_>>)
+    )
+  }
+
+  case class M(
+                id: String,
+                dataTypes: Set[DataTypeRelay.M] = Set.empty,
+                stage: Seq[M] = Nil
+              ) extends MessageAPI_<=>[StepTreeNode[_]] {
+    override def toSelf_<< : StepTreeNode[_] = ???
   }
 }

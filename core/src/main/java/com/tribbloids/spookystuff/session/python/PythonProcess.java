@@ -88,6 +88,7 @@ public class PythonProcess {
     }
   }
 
+  //TODO: change to StringBuffer! current impl is not thread safe
   volatile public String outputBuffer = "";
   public String sendAndGetResult(String cmd) throws IOException {
 

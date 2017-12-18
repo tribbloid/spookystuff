@@ -10,7 +10,7 @@ import com.tribbloids.spookystuff.utils.{ShippingMarks, TreeException}
 import org.apache.hadoop.conf.Configuration
 import org.apache.spark._
 import org.apache.spark.broadcast.Broadcast
-import org.apache.spark.ml.dsl.utils.messaging.MessageView
+import org.apache.spark.ml.dsl.utils.messaging.MessageWriter
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.{DataFrame, SQLContext}
 import org.slf4j.LoggerFactory
@@ -19,7 +19,7 @@ import scala.collection.immutable.ListMap
 import scala.language.implicitConversions
 
 case class SpookyContext (
-                           @transient sqlContext: SQLContext, //can't be used on executors,
+                           @transient sqlContext: SQLContext, //can't be used on executors, TODO: change to SparkSession
                            // TODO: change to Option or SparkContext
                            var _configurations: Submodules[AbstractConf] = Submodules(), //always broadcasted
                            _metrics: Submodules[Metrics] = Submodules() //accumulators cannot be broadcasted,
@@ -74,7 +74,7 @@ case class SpookyContext (
 
       _configurations = _configurations.transform {
         conf =>
-          conf.importFrom(sqlContext.sparkContext.getConf)
+          conf.importFrom(sparkContext.getConf)
       }
       _configurations
     }
@@ -139,7 +139,7 @@ case class SpookyContext (
       .map {
         v =>
           scala.util.Try {
-            v.deploy(this)
+            v.deployGlobally(this)
           }
       }
     TreeException.&&&(trials)
@@ -252,7 +252,7 @@ case class SpookyContext (
 
           val jsonRDD = canonRdd.map(
             map =>
-              MessageView(map).compactJSON()
+              MessageWriter(map).compactJSON()
           )
           val dataFrame = sqlContext.read.json(jsonRDD)
           dataFrameToPageRowRDD(dataFrame)

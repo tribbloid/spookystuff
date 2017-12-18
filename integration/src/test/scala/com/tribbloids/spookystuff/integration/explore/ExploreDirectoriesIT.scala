@@ -15,7 +15,8 @@ class ExploreDirectoriesIT extends IntegrationFixture {
     null
   )
 
-  val resourcePath = TestJARResolver.unpackedURL("testutils/dir").getPath
+  val _resourcePath = TestJARResolver.unpackedURL("testutils/dir").getPath
+  lazy val resourcePath = _resourcePath
 
   override def doMain(): Unit = {
     val url = resourcePath
@@ -24,14 +25,14 @@ class ExploreDirectoriesIT extends IntegrationFixture {
         Wget('_)
       }
     val nodes = rootDoc
-      .explore(S"root directory".attr("path"))(
+      .explore(S"root directory Path".texts)(
         Wget('A)
       )()
       .extract(S.uri ~ 'uri)
     val result = nodes
       .flatExtract(S"root file")(
-        'A.ownText ~ 'leaf,
-        'A.attr("path") ~ 'fullPath
+        A"Name".text ~ 'leaf,
+        A"Path".text ~ 'fullPath
       )
       .toDF(sort = true)
 
@@ -48,11 +49,11 @@ class ExploreDirectoriesIT extends IntegrationFixture {
     val formatted = result.toJSON.collect().mkString("\n")
     formatted.shouldBe (
       s"""
-         |{"_":"$resourcePath","uri":"$resourcePath","leaf":"table.csv","fullPath":"file:$resourcePath/table.csv"}
-         |{"_":"$resourcePath","uri":"$resourcePath","leaf":"hivetable.csv","fullPath":"file:$resourcePath/hivetable.csv"}
-         |{"_":"$resourcePath","uri":"file:$resourcePath/dir","leaf":"Test.pdf","fullPath":"file:$resourcePath/dir/Test.pdf"}
-         |{"_":"$resourcePath","uri":"file:$resourcePath/dir/dir","leaf":"pom.xml","fullPath":"file:$resourcePath/dir/dir/pom.xml"}
-         |{"_":"$resourcePath","uri":"file:$resourcePath/dir/dir/dir","leaf":"tribbloid.json","fullPath":"file:$resourcePath/dir/dir/dir/tribbloid.json"}
+         |{"_":"$resourcePath","uri":"file:${_resourcePath}","leaf":"table.csv","fullPath":"file:${_resourcePath}/table.csv"}
+         |{"_":"$resourcePath","uri":"file:${_resourcePath}","leaf":"hivetable.csv","fullPath":"file:${_resourcePath}/hivetable.csv"}
+         |{"_":"$resourcePath","uri":"file:${_resourcePath}/dir","leaf":"Test.pdf","fullPath":"file:${_resourcePath}/dir/Test.pdf"}
+         |{"_":"$resourcePath","uri":"file:${_resourcePath}/dir/dir","leaf":"pom.xml","fullPath":"file:${_resourcePath}/dir/dir/pom.xml"}
+         |{"_":"$resourcePath","uri":"file:${_resourcePath}/dir/dir/dir","leaf":"tribbloid.json","fullPath":"file:${_resourcePath}/dir/dir/dir/tribbloid.json"}
       """.stripMargin,
       sort = true
     )
@@ -60,4 +61,9 @@ class ExploreDirectoriesIT extends IntegrationFixture {
 
   override def numPages: Int = 4
   override def pageFetchedCap: Int = 16 // way too large
+}
+
+class ExploreDirectoriesWithSchemaIT extends ExploreDirectoriesIT {
+
+  override lazy val resourcePath: String = "file:" + _resourcePath
 }

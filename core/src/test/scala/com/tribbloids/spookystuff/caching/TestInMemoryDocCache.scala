@@ -1,7 +1,7 @@
 package com.tribbloids.spookystuff.caching
 
 import com.tribbloids.spookystuff.SpookyEnvFixture
-import com.tribbloids.spookystuff.actions.{Snapshot, Visit, Wget}
+import com.tribbloids.spookystuff.actions.{Action, Snapshot, Visit, Wget}
 import com.tribbloids.spookystuff.doc.{Doc, DocUID}
 import com.tribbloids.spookystuff.dsl._
 import com.tribbloids.spookystuff.testutils.LocalPathDocsFixture
@@ -15,11 +15,11 @@ class TestInMemoryDocCache extends SpookyEnvFixture with LocalPathDocsFixture {
 
   lazy val cache: AbstractDocCache = InMemoryDocCache
 
-  val visit = Visit(HTML_URL)::Snapshot().as('old)::Nil
+  val visit: List[Action] = Visit(HTML_URL)::Snapshot().as('old)::Nil
   def visitPage: Seq[Doc] = visit.fetch(spooky).map(_.asInstanceOf[Doc])
 
   val wget = Wget(HTML_URL).as('oldWget)::Nil
-  def wgetPage: Seq[Doc] = wget.fetch(spooky).map(_.asInstanceOf[Doc].updated(cacheLevel = CacheLevel.All)) //By default wget from DFS are only cached in-memory
+  def wgetPage: Seq[Doc] = wget.fetch(spooky).map(_.asInstanceOf[Doc].updated(cacheLevel = DocCacheLevel.All)) //By default wget from DFS are only cached in-memory
 
   it("cache and restore") {
     val visitPage = this.visitPage
@@ -29,11 +29,12 @@ class TestInMemoryDocCache extends SpookyEnvFixture with LocalPathDocsFixture {
 
     cache.put(visit, visitPage, spooky)
 
-    val loadedPages = cache.get(visitPage.head.uid.backtrace,spooky).get.map(_.asInstanceOf[Doc])
+    val page2 = cache.get(visitPage.head.uid.backtrace, spooky).get.map(_.asInstanceOf[Doc])
 
-    assert(loadedPages.length === 1)
-    assert(visitPage.head.raw === loadedPages.head.raw)
-    assert(visitPage.head === loadedPages.head)
+    assert(page2.length === 1)
+    assert(page2.head._id === visitPage.head._id)
+    assert(visitPage.head.raw === page2.head.raw)
+    assert(visitPage.head === page2.head)
   }
 
   it ("cache visit and restore with different name") {
@@ -47,7 +48,7 @@ class TestInMemoryDocCache extends SpookyEnvFixture with LocalPathDocsFixture {
     val page2 = cache.get(newTrace, spooky).get.map(_.asInstanceOf[Doc])
 
     assert(page2.size === 1)
-    assert(page2.head === visitPage.head)
+    assert(page2.head._id === visitPage.head._id)
     assert(page2.head.code === page2.head.code)
     assert(page2.head.name === "new")
 
@@ -86,7 +87,7 @@ class TestInMemoryDocCache extends SpookyEnvFixture with LocalPathDocsFixture {
     spooky.spookyConf.cachedDocsLifeSpan = 30.days
 
     assert(page2.size === 1)
-    assert(page2.head === wgetPage.head)
+    assert(page2.head._id === wgetPage.head._id)
 //    assert(page2.head.code === page2.head.code)
   }
 

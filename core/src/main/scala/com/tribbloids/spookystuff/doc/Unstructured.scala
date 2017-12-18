@@ -9,34 +9,34 @@ trait Unstructured extends Serializable {
 
   def uri: String
 
-  def findAll(selector: Selector): Elements[Unstructured]
+  def findAll(selector: CSSQuery): Elements[Unstructured]
 
-  final def \\(selector: Selector) = findAll(selector)
+  final def \\(selector: CSSQuery) = findAll(selector)
 
-  final def findFirst(selector: Selector): Option[Unstructured] =
+  final def findFirst(selector: CSSQuery): Option[Unstructured] =
     findAll(selector).headOption
 
   def findAllWithSiblings(
-                            selector: Selector,
-                            range: Range
-                            ): Elements[Siblings[Unstructured]]
+                           selector: CSSQuery,
+                           range: Range
+                         ): Elements[Siblings[Unstructured]]
 
-  final def findFirstWithSiblings(selector: Selector, range: Range): Option[Siblings[Unstructured]] =
+  final def findFirstWithSiblings(selector: CSSQuery, range: Range): Option[Siblings[Unstructured]] =
     findAllWithSiblings(selector, range).headOption
 
-  def children(selector: Selector): Elements[Unstructured]
+  def children(selector: CSSQuery): Elements[Unstructured]
 
-  final def \(selector: Selector) = findAll(selector)
+  final def \(selector: CSSQuery) = findAll(selector)
 
-  final def child(selector: Selector): Option[Unstructured] =
+  final def child(selector: CSSQuery): Option[Unstructured] =
     children(selector).headOption
 
   def childrenWithSiblings(
-                           selector: Selector,
-                           range: Range
-                           ): Elements[Siblings[Unstructured]]
+                            selector: CSSQuery,
+                            range: Range
+                          ): Elements[Siblings[Unstructured]]
 
-  final def childWithSiblings(selector: Selector, range: Range): Option[Siblings[Unstructured]] =
+  final def childWithSiblings(selector: CSSQuery, range: Range): Option[Siblings[Unstructured]] =
     findAllWithSiblings(selector, range).headOption
 
   def code: Option[String]

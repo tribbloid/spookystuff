@@ -4,7 +4,6 @@ import com.tribbloids.spookystuff.uav.UAVTestUtils
 import com.tribbloids.spookystuff.uav.sim.APMQuadFixture
 import com.tribbloids.spookystuff.uav.spatial._
 import com.tribbloids.spookystuff.uav.spatial.point.{LLA, Location, NED}
-import org.apache.spark.ml.dsl.utils.messaging.RecursiveMessageRelay
 
 /**
   * Created by peng on 16/07/17.
@@ -18,7 +17,7 @@ class WaypointIT extends APMQuadFixture {
 
     val move = Waypoint(wp1)
 
-    RecursiveMessageRelay.toM(move).prettyJSON.shouldBe(
+    move.prettyJSON.shouldBe(
       //TODO: missing
     )
   }

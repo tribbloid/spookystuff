@@ -4,7 +4,6 @@ import java.io._
 import java.lang.reflect.InvocationTargetException
 
 import com.tribbloids.spookystuff.utils.CommonUtils
-import org.apache.spark.ml.dsl.utils.messaging.MetadataRelay
 import org.json4s.JsonAST.JValue
 
 import scala.collection.immutable.ListMap
@@ -43,13 +42,9 @@ abstract class URIResolver extends Serializable {
   def DFSBlockedAccessInterval = 1000
 
   def retry[T](f: =>T): T = {
-    CommonUtils.retryFixedInterval(DFSBlockedAccessRetries, DFSBlockedAccessInterval){
+    CommonUtils.retry(DFSBlockedAccessRetries, DFSBlockedAccessInterval){
       f
     }
-  }
-
-  implicit def makeMetadataSerializable(m: Map[String, _ <: Any]): Map[String, JValue] = {
-    MetadataRelay.toM(m).proto
   }
 
   protected def reflectiveMetadata[T](status: T): ListMap[String, Any] = {

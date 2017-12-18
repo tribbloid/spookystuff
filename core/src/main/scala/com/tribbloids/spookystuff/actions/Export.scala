@@ -1,39 +1,25 @@
 package com.tribbloids.spookystuff.actions
 
-import java.io.Closeable
-import java.lang.reflect.InvocationTargetException
-import java.net.{InetSocketAddress, URI, URLConnection}
+import java.net.URI
 import java.util.Date
-import javax.net.ssl.SSLContext
 
 import com.tribbloids.spookystuff.Const
-import com.tribbloids.spookystuff.caching.CacheLevel
+import com.tribbloids.spookystuff.caching.DocCacheLevel
 import com.tribbloids.spookystuff.doc._
 import com.tribbloids.spookystuff.dsl.DocFilters
 import com.tribbloids.spookystuff.extractors.impl.Lit
 import com.tribbloids.spookystuff.extractors.{Col, Extractor, FR}
-import com.tribbloids.spookystuff.utils.http._
 import com.tribbloids.spookystuff.row.{FetchedRow, SpookySchema}
-import com.tribbloids.spookystuff.session.{Session, WebProxySetting}
+import com.tribbloids.spookystuff.session.Session
 import com.tribbloids.spookystuff.utils.SpookyUtils
-import com.tribbloids.spookystuff.utils.io.HDFSResolver
+import com.tribbloids.spookystuff.utils.http._
+import com.tribbloids.spookystuff.utils.io._
 import org.apache.commons.io.IOUtils
-import org.apache.hadoop.fs.{FileStatus, FileSystem, Path}
-import org.apache.http.client.HttpClient
-import org.apache.http.client.config.RequestConfig
-import org.apache.http.client.methods.{HttpGet, HttpPost, HttpUriRequest}
-import org.apache.http.client.protocol.HttpClientContext
-import org.apache.http.config.RegistryBuilder
-import org.apache.http.conn.socket.ConnectionSocketFactory
+import org.apache.http.HttpEntity
+import org.apache.http.client.methods.{HttpGet, HttpPost}
 import org.apache.http.entity.StringEntity
-import org.apache.http.impl.client.{CloseableHttpClient, HttpClients}
-import org.apache.http.impl.conn.PoolingHttpClientConnectionManager
-import org.apache.http.protocol.HttpCoreContext
-import org.apache.http.{HttpEntity, HttpHost, StatusLine}
-import org.apache.spark.ml.dsl.utils.messaging.MessageAPI
+import org.apache.spark.ml.dsl.utils.metadata.MetadataMap
 import org.openqa.selenium.{OutputType, TakesScreenshot}
-
-import scala.xml._
 
 /**
   * Export a page from the browser or http client
@@ -48,7 +34,7 @@ abstract class Export extends Named {
 
   final override def skeleton = None //have not impact to driver
 
-  final def doExe(session: Session): Seq[Fetched] = {
+  final def doExe(session: Session): Seq[DocOption] = {
     val results = doExeNoName(session)
     results.map{
       case doc: Doc =>
@@ -62,12 +48,12 @@ abstract class Export extends Named {
 
             throw wrapped
         }
-      case other: Fetched =>
+      case other: DocOption =>
         other
     }
   }
 
-  def doExeNoName(session: Session): Seq[Fetched]
+  def doExeNoName(session: Session): Seq[DocOption]
 }
 
 
@@ -130,8 +116,8 @@ case class Snapshot(
         new Doc(
           DocUID((session.backtrace :+ this).toList, this)(),
           webDriver.getCurrentUrl,
-          Some("text/html; charset=UTF-8"),
-          webDriver.getPageSource.getBytes("UTF8")
+          webDriver.getPageSource.getBytes("UTF8"),
+          Some("text/html; charset=UTF-8")
           //      serializableCookies
         )
     }
@@ -146,9 +132,11 @@ case class Snapshot(
 
 //this is used to save GC when invoked by anothor component
 object QuickSnapshot extends Snapshot(DocFilters.Bypass)
-object ErrorDump extends Snapshot(DocFilters.Bypass) with MessageAPI {
+object ErrorDump extends Snapshot(DocFilters.Bypass)
+  //  with MessageAPI
+{
 
-  override def proto = "ErrorDump"
+  //  override def proto = "ErrorDump"
 }
 
 case class Screenshot(
@@ -167,8 +155,8 @@ case class Screenshot(
         val page = new Doc(
           DocUID((session.backtrace :+ this).toList, this)(),
           webDriver.getCurrentUrl,
-          Some("image/png"),
-          content
+          content,
+          Some("image/png")
         )
         page
     }
@@ -182,12 +170,15 @@ case class Screenshot(
 }
 
 object QuickScreenshot extends Screenshot(DocFilters.Bypass)
-object ErrorScreenshot extends Screenshot(DocFilters.Bypass) with MessageAPI {
+object ErrorScreenshot extends Screenshot(DocFilters.Bypass)
+  //  with MessageAPI
+{
 
-  override def proto = "ErrorScreenshot"
+  //  override def proto = "ErrorScreenshot"
 }
 
-@SerialVersionUID(7344992460754628988L)
+//TODO: handle RedirectException for too many redirections.
+//@SerialVersionUID(7344992460754628988L)
 abstract class HttpMethod(
                            uri: Col[String]
                          ) extends Export with Driverless with Timed with WaybackSupport {
@@ -212,143 +203,6 @@ abstract class HttpMethod(
     val uriLit = uriStr.map(Lit.erased[String])
     uriLit
   }
-
-  def httpInvoke(
-                  httpClient: HttpClient,
-                  context: HttpClientContext,
-                  request: HttpUriRequest,
-                  cacheLevel: CacheLevel.Value = CacheLevel.All
-                ): Fetched with Product = {
-    val response = httpClient.execute(request, context)
-    try {
-      val currentReq = context.getAttribute(HttpCoreContext.HTTP_REQUEST).asInstanceOf[HttpUriRequest]
-      val currentHost = context.getAttribute(HttpCoreContext.HTTP_TARGET_HOST).asInstanceOf[HttpHost]
-      val currentUrl = if (currentReq.getURI.isAbsolute) {
-        currentReq.getURI.toString
-      }
-      else {
-        currentHost.toURI + currentReq.getURI
-      }
-
-      val entity: HttpEntity = response.getEntity
-      val httpStatus: StatusLine = response.getStatusLine
-
-      val stream = entity.getContent
-      val result = try {
-        val content = IOUtils.toByteArray(stream)
-        val contentType = entity.getContentType.getValue
-
-        new Doc(
-          DocUID(List(this), this)(),
-          currentUrl,
-          Some(contentType),
-          content,
-          httpStatus = Some(httpStatus),
-          cacheLevel = cacheLevel
-        )
-      }
-      finally {
-        stream.close()
-      }
-
-      result
-    }
-    finally {
-      response match {
-        case v: Closeable => v.close()
-      }
-    }
-    //    catch {
-    //      case e: ClientProtocolException =>
-    //        val cause = e.getCause
-    //        if (cause.isInstanceOf[RedirectException]) NoDoc(List(this)) //TODO: is it a reasonable exception? don't think so
-    //        else throw e
-    //      case e: Throwable =>
-    //        throw e
-    //    }
-  }
-
-  def getHttpClient(session: Session): (CloseableHttpClient, HttpClientContext) = {
-    val proxy = session.spooky.spookyConf.webProxy()
-    val timeoutMs = this.timeout(session).toMillis.toInt
-
-    val requestConfig = {
-
-      var builder = RequestConfig.custom()
-        .setConnectTimeout(timeoutMs)
-        .setConnectionRequestTimeout(timeoutMs)
-        .setSocketTimeout(timeoutMs)
-        .setRedirectsEnabled(true)
-        .setCircularRedirectsAllowed(true)
-        .setRelativeRedirectsAllowed(true)
-        .setAuthenticationEnabled(false)
-      //        .setCookieSpec(CookieSpecs.BEST_MATCH)
-
-      if (proxy != null && !proxy.protocol.startsWith("socks")) builder = builder.setProxy(new HttpHost(proxy.addr, proxy.port, proxy.protocol))
-
-      val result = builder.build()
-      result
-    }
-
-    val sslContext: SSLContext = SSLContext.getInstance("SSL")
-    sslContext.init(null, Array(new InsecureTrustManager()), null)
-    val hostVerifier = new InsecureHostnameVerifier()
-
-    val httpClient = if (proxy != null && proxy.protocol.startsWith("socks")) {
-      val reg = RegistryBuilder.create[ConnectionSocketFactory]
-        .register("http", new SocksProxyConnectionSocketFactory())
-        .register("https", new SocksProxySSLConnectionSocketFactory(sslContext))
-        .build()
-      val cm = new PoolingHttpClientConnectionManager(reg)
-
-      val httpClient = HttpClients.custom
-        .setConnectionManager(cm)
-        .setDefaultRequestConfig(requestConfig)
-        .setRedirectStrategy(new ResilientRedirectStrategy())
-        .setSslcontext(sslContext) //WARNING: keep until Spark get rid of httpclient 4.3
-        .setHostnameVerifier(hostVerifier) //WARNING: keep until Spark get rid of httpclient 4.3
-        .build
-
-      httpClient
-    }
-    else {
-      val httpClient = HttpClients.custom
-        .setDefaultRequestConfig(requestConfig)
-        .setRedirectStrategy(new ResilientRedirectStrategy())
-        .setSslcontext(sslContext) //WARNING: keep until Spark get rid of httpclient 4.3
-        .setHostnameVerifier(hostVerifier) //WARNING: keep until Spark get rid of httpclient 4.3
-        .build()
-
-      httpClient
-    }
-
-    val context: HttpClientContext = getHttpContext(proxy)
-    (httpClient, context)
-  }
-
-  def getHttpContext(proxy: WebProxySetting): HttpClientContext = {
-
-    val context: HttpClientContext = HttpClientContext.create
-
-    if (proxy != null && proxy.protocol.startsWith("socks")) {
-      val socksaddr: InetSocketAddress = new InetSocketAddress(proxy.addr, proxy.port)
-      context.setAttribute("socks.address", socksaddr)
-
-      context
-    }
-    context
-  }
-
-  def getURLConn(uri: URI, session: Session): URLConnection = {
-    val timeoutMs = this.timeout(session).toMillis.toInt
-
-    val uc = uri.toURL.openConnection()
-    uc.setConnectTimeout(timeoutMs)
-    uc.setReadTimeout(timeoutMs)
-
-    uc.connect()
-    uc
-  }
 }
 
 /**
@@ -365,191 +219,71 @@ case class Wget(
                  override val filter: DocFilter = Const.defaultDocumentFilter
                ) extends HttpMethod(uri) {
 
-  override def doExeNoName(session: Session): Seq[Fetched] = {
+  def getResolver(session: Session) = {
+    val hadoopConf = session.spooky.hadoopConf
+    val timeout = this.timeout(session).toMillis.toInt
+    val proxy = session.spooky.spookyConf.webProxy()
 
-    uriOption match {
-      case None => Nil
-      case Some(uriURI) =>
-        val result = Option(uriURI.getScheme).getOrElse("file") match {
-          case "http" | "https" =>
-            getHttp(uriURI, session)
-          case "ftp" =>
-            getFtp(uriURI, session)
-          //          case "file" =>
-          //            getLocal(uriURI, session)
-          case _ =>
-            readHDFS(uriURI, session)
-        }
-        Seq(result)
-    }
+    val resolver = new OmniResolver(
+      hadoopConf,
+      timeout,
+      proxy,
+      {
+        uri =>
+          val headers = session.spooky.spookyConf.httpHeadersFactory()
+
+          val request = new HttpGet(uri)
+          for (pair <- headers) {
+            request.addHeader(pair._1, pair._2)
+          }
+
+          request
+      }
+    )
+    resolver
   }
 
-  //DEFINITELY NOT CACHEABLE
-  //  def getLocal(uri: URI, session: Session): Seq[Fetched] = {
-  //
-  //    val pathStr = uri.toString.replaceFirst("file://","")
-  //
-  //    val content = try {
-  //      LocalResolver.input(pathStr) {
-  //        fis =>
-  //          IOUtils.toByteArray(fis)
-  //      }
-  //    }
-  //    catch {
-  //      case e: Throwable =>
-  //        return Seq(
-  //          NoPage(List(this), cacheable = false)
-  //        )
-  //    }
-  //
-  //    val result = new Page(
-  //      PageUID(List(this), this),
-  //      uri.toString,
-  //      None,
-  //      content,
-  //      cacheable = false
-  //    )
-  //
-  //    result
-  //  }
+  override def doExeNoName(session: Session): Seq[DocOption] = {
 
-  def readHDFS(uri: URI, session: Session): Fetched = {
-    val spooky = session.spooky
-    val path = new Path(uri.toString)
+    val resolver = getResolver(session)
 
-    val fs = path.getFileSystem(spooky.hadoopConf)
+    val _uri = uri.value
 
-    //    if (fs.exists(path)) {
-    val result: Fetched = if (fs.getFileStatus(path).isDirectory) {
-      this.readHDFSDirectory(path, fs)
+    val resource: Resource[Array[Byte]] = resolver.input(_uri) {
+      is =>
+        IOUtils.toByteArray(is)
+    }
+
+    val md: ResourceMD = resource.metadata
+
+    import Resource._
+
+    val cacheLevel = DocCacheLevel.getDefault(uriOption)
+    val doc = if (md.IS_DIR.get.getOrElse(false)) {
+      val xmlStr = md.toXMLStr()
+
+      new Doc(
+        uid = DocUID(List(this), this)(),
+        uri = md.URI_(),
+        raw = xmlStr.getBytes("utf-8"),
+        declaredContentType = Some("inode/directory; charset=UTF-8"),
+        cacheLevel = cacheLevel,
+        metadata = md
+      )
     }
     else {
-      this.readHDFSFile(path, session)
-    }
-    result
-    //    }
-    //    else
-    //      throw new FileNotFoundException(s"$uri is not a file or directory ")
-  }
 
-  def readHDFSDirectory(path: Path, fs: FileSystem): Fetched = {
-    val statuses = fs.listStatus(path)
-    val xmls: Array[Elem] = statuses.map {
-      (status: FileStatus) =>
-        //use reflection for all getter & boolean getter
-        //TODO: move to utility
-        val methods = status.getClass.getMethods
-        val getters = methods.filter {
-          m =>
-            m.getName.startsWith("get") && (m.getParameterTypes.length == 0)
-        }
-          .map(v => v.getName.stripPrefix("get") -> v)
-        val booleanGetters = methods.filter {
-          m =>
-            m.getName.startsWith("is") && (m.getParameterTypes.length == 0)
-        }
-          .map(v => v.getName -> v)
-        val validMethods = getters ++ booleanGetters
-        val kvs = validMethods.flatMap {
-          tuple =>
-            try {
-              tuple._2.setAccessible(true)
-              Some(tuple._1 -> tuple._2.invoke(status))
-            }
-            catch {
-              case e: InvocationTargetException =>
-                //                println(e.getCause.getMessage)
-                None
-            }
-        }
-        val nodeName = status.getPath.getName
-        val attributes: Array[Attribute] = kvs.map(
-          kv =>
-            Attribute(null, kv._1, ""+kv._2, Null)
-        )
+      import Resource._
 
-        val node = if (status.isFile) <file>{nodeName}</file>
-        else if (status.isDirectory) <directory>{nodeName}</directory>
-        else if (status.isSymlink) <symlink>{nodeName}</symlink>
-        else <subnode>{nodeName}</subnode>
-
-        attributes.foldLeft(node) {
-          (v1, v2) =>v1 % v2
-        }
-    }
-    val xml = <root>{NodeSeq.fromSeq(xmls)}</root>
-    val xmlStr = SpookyUtils.xmlPrinter.format(xml)
-
-    val result: Fetched = new Doc(
-      DocUID(List(this), this)(),
-      path.toString,
-      Some("inode/directory; charset=UTF-8"),
-      xmlStr.getBytes("utf-8"),
-      cacheLevel = CacheLevel.InMemory
-    )
-    result
-  }
-
-  //not cacheable
-  def readHDFSFile(path: Path, session: Session): Fetched = {
-    val content =
-      HDFSResolver(session.spooky.hadoopConf).input(path.toString) {
-        fis =>
-          IOUtils.toByteArray(fis)
-      }
-
-    val result = new Doc(
-      DocUID(List(this), this)(),
-      path.toString,
-      None,
-      content,
-      cacheLevel = CacheLevel.InMemory
-    )
-
-    result
-  }
-
-  def getFtp(uri: URI, session: Session): Fetched = {
-
-    val uc: URLConnection = getURLConn(uri, session)
-    val stream = uc.getInputStream
-
-    try {
-
-      val content = IOUtils.toByteArray ( stream )
-
-      val result = new Doc(
-        DocUID(List(this), this)(),
-        uri.toString,
-        None,
-        content
+      new Doc(
+        uid = DocUID(List(this), this)(),
+        uri = md.URI_(),
+        raw = resource.value,
+        cacheLevel = cacheLevel,
+        metadata = md
       )
-
-      result
     }
-    finally {
-      stream.close()
-    }
-  }
-
-  def getHttp(uri: URI, session: Session): Fetched = {
-
-    val (httpClient: CloseableHttpClient, context: HttpClientContext) = getHttpClient(session)
-
-    val userAgent = session.spooky.spookyConf.userAgentFactory()
-    val headers = session.spooky.spookyConf.headersFactory()
-
-    val request = {
-      val request = new HttpGet(uri)
-      if (userAgent != null) request.addHeader("User-Agent", userAgent)
-      for (pair <- headers) {
-        request.addHeader(pair._1, pair._2)
-      }
-
-      request
-    }
-
-    httpInvoke(httpClient, context, request)
+    Seq(doc)
   }
 
   override def doInterpolate(pageRow: FetchedRow, schema: SpookySchema): Option[this.type] = {
@@ -580,104 +314,87 @@ case class WpostImpl private[actions](
                                        entity: HttpEntity // TODO: cannot be dumped or serialized, fix it!
                                      ) extends HttpMethod(uri) {
 
-  override def detail = {
+  override def detail: String = {
     val txt = entity match {
       case v: StringEntity =>
         val text =
           v.toString + "\n" +
             IOUtils.toString(v.getContent)
         text
-      //          .split("\n")
-      //          .map(
-      //            v =>
-      //              "\t" + v
-      //          )
-      //          .mkString("\n")
       case _ => entity.toString
     }
     txt + "\n"
   }
 
-  // not cacheable
-  override def doExeNoName(session: Session): Seq[Fetched] = {
+  def getResolver(session: Session) = {
 
-    uriOption match {
-      case None => Nil
-      case Some(uriURI) =>
-        val result: Fetched = Option(uriURI.getScheme).getOrElse("file") match {
-          case "http" | "https" =>
-            postHttp(uriURI, session, entity)
-          case "ftp" =>
-            uploadFtp(uriURI, session, entity)
-          case _ =>
-            writeHDFS(uriURI, session, entity, overwrite = false)
+    val timeout = this.timeout(session).toMillis.toInt
+    val hadoopConf = session.spooky.sparkContext.hadoopConfiguration
+    val proxy = session.spooky.spookyConf.webProxy()
+
+    val resolver = new OmniResolver(
+      hadoopConf,
+      timeout,
+      proxy,
+      {
+        uri: URI =>
+          val headers = session.spooky.spookyConf.httpHeadersFactory()
+
+          val post = new HttpPost(uri)
+          for (pair <- headers) {
+            post.addHeader(pair._1, pair._2)
+          }
+          post.setEntity(entity)
+
+          post
+      }
+    )
+    resolver
+  }
+
+  override def doExeNoName(session: Session): Seq[DocOption] = {
+
+    val uri = this.uri.value
+
+    val resolver = getResolver(session)
+    val impl = resolver.getImpl(uri)
+
+    val doc = impl match {
+      case v: HTTPResolver =>
+        val resource: Resource[Array[Byte]] = v.input(uri){
+          is =>
+            IOUtils.toByteArray(is)
         }
-        Seq(result)
+
+        val md = resource.metadata
+
+        import Resource._
+
+        val cacheLevel = DocCacheLevel.getDefault(uriOption)
+        new Doc(
+          uid = DocUID(List(this), this)(),
+          uri = md.URI_(),
+          raw = resource.value,
+          cacheLevel = cacheLevel,
+          metadata = md
+        )
+      case _ =>
+        val resource: Resource[Int] = impl.output(uri, overwrite = true){
+          os =>
+            IOUtils.copy(entity.getContent, os)
+        }
+
+        import Resource._
+
+        val md: ResourceMD = resource.metadata.map ++ MetadataMap(LENGTH -> resource.value)
+
+        NoDoc(
+          backtrace = List(this),
+          cacheLevel = DocCacheLevel.NoCache,
+          metadata = md
+        )
     }
-  }
-
-  def postHttp(uri: URI, session: Session, entity: HttpEntity): Fetched = {
-
-    val (httpClient: CloseableHttpClient, context: HttpClientContext) = getHttpClient(session)
-
-    val userAgent = session.spooky.spookyConf.userAgentFactory()
-    val headers = session.spooky.spookyConf.headersFactory()
-
-    val request = {
-      val request = new HttpPost(uri)
-      if (userAgent != null) request.addHeader("User-Agent", userAgent)
-      for (pair <- headers) {
-        request.addHeader(pair._1, pair._2)
-      }
-      request.setEntity(entity)
-
-      request
-    }
-
-    httpInvoke(httpClient, context, request, cacheLevel = CacheLevel.NoCache)
-  }
-
-  def writeHDFS(uri: URI, session: Session, entity: HttpEntity, overwrite: Boolean = true): Fetched = {
-    val path = new Path(uri.toString)
-
-    val result: Fetched = this.writeHDFSFile(path, session, entity, overwrite)
-    result
-  }
-
-  //not cacheable
-  def writeHDFSFile(path: Path, session: Session, entity: HttpEntity, overwrite: Boolean = true): Fetched = {
-    val size = HDFSResolver(session.spooky.hadoopConf)
-      .output(path.toString, overwrite) {
-        fos =>
-          IOUtils.copyLarge(entity.getContent, fos) //Overkill?
-      }
-
-    val result = NoDoc(
-      List(this),
-      cacheLevel = CacheLevel.NoCache,
-      metadata = Map("byteUploaded" -> size)
-    )
-    result
-  }
-
-  def uploadFtp(uri: URI, session: Session, entity: HttpEntity): Fetched = {
-
-    val uc: URLConnection = getURLConn(uri, session)
-    val stream = uc.getOutputStream
-
-    val length = try {
-      IOUtils.copyLarge(entity.getContent, stream) //Overkill?
-    }
-    finally {
-      stream.close()
-    }
-
-    val result = NoDoc(
-      List(this),
-      cacheLevel = CacheLevel.NoCache
-    )
-
-    result
+    Seq(doc)
   }
 
   override def doInterpolate(pageRow: FetchedRow, schema: SpookySchema): Option[this.type] = {

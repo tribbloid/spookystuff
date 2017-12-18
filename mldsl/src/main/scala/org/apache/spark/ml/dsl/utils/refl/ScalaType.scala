@@ -6,6 +6,7 @@ import java.sql.{Date, Timestamp}
 import com.tribbloids.spookystuff.utils._
 import org.apache.spark.SparkConf
 import org.apache.spark.serializer.JavaSerializer
+import org.apache.spark.sql.catalyst.ScalaReflection
 import org.apache.spark.sql.catalyst.ScalaReflection.universe._
 import org.apache.spark.sql.types._
 
@@ -28,14 +29,17 @@ trait ScalaType[T] extends DataType with (() => TypeTag[T]) with ReflectionLock 
 
   override def toString = typeName
 
+  @transient lazy val mirror: Mirror = asTypeTag.mirror
+
   @transient lazy val asTypeTag: TypeTag[T] = locked {
     apply()
   }
-  @transient lazy val asType = locked {
-    asTypeTag.tpe
+  @transient lazy val asType: Type = locked {
+    ScalaReflection.localTypeOf(asTypeTag)
   }
   @transient lazy val asClass: Class[T] = locked {
-    asTypeTag.mirror.runtimeClass(asType).asInstanceOf[Class[T]]
+    val result = mirror.runtimeClass(asType).asInstanceOf[Class[T]]
+    result
   }
   @transient lazy val asClassTag: ClassTag[T] = locked {
     ClassTag(asClass)
@@ -51,28 +55,38 @@ trait ScalaType[T] extends DataType with (() => TypeTag[T]) with ReflectionLock 
       }
   }
 
-  // if ttg is lost, will try to reconstruct from reified DType
-  //  def scalaTypeOpt: Option[TypeTag[_]] = {
-  //    Option(ttg)
-  //      .orElse {
-  //        reifyOpt.flatMap[TypeTag[_]] {
-  //          (reified: DataType) =>
-  //            scala.util.Try {
-  //              reified.scalaType
-  //            }
-  //              .toOption
-  //        }
-  //      }
-  //  }
-
   def reify: DataType = tryReify.get
   def reifyOrSelf = tryReify.getOrElse{this}
   def reifyOrNullType = tryReify.getOrElse{NullType}
 
   // see [SPARK-8647], this achieves the needed constant hash code without declaring singleton
   //TODO: this is not accurate due to type erasure, need a better way to handle both type erasure & type alias
-  override val _id = {
-    "" + asClass + "/" + asTypeTag.tpe.toString
+  @transient override lazy val _id = {
+    (asClass , asType)
+  }
+
+  object utils {
+
+    lazy val companionObject: Any = {
+      val mirror = ScalaType.this.mirror
+      val companionMirror = mirror.reflectModule(asType.typeSymbol.companion.asModule)
+      companionMirror.instance
+    }
+
+    lazy val baseCompanionObjects: Seq[Any] = {
+
+      val mirror = ScalaType.this.mirror
+      val supers = asType.typeSymbol.asClass.baseClasses
+
+      supers.flatMap {
+        ss =>
+          scala.util.Try {
+            val companionMirror = mirror.reflectModule(ss.companion.asModule)
+            companionMirror.instance
+          }
+            .toOption
+      }
+    }
   }
 }
 
@@ -99,14 +113,15 @@ object ScalaType {
       _class
     }
 
-    private def mirror = {
+    @transient override lazy val mirror = {
       val loader = _class.getClassLoader
       runtimeMirror(loader)
     }
     //    def mirror = ReflectionUtils.mirrorFactory.get()
 
     @transient override lazy val asType = locked {
-      val classSymbol = mirror.staticClass(_class.getCanonicalName)
+      //      val name = _class.getCanonicalName
+      val classSymbol = mirror.classSymbol(_class)
       val tpe = classSymbol.selfType
       tpe
     }
@@ -121,7 +136,7 @@ object ScalaType {
   trait Ctg[T] extends Clz[T] {
 
     def _classTag: ClassTag[T]
-    override lazy val asClassTag = {
+    @transient override lazy val asClassTag = {
       _classTag
     }
 
@@ -166,6 +181,7 @@ object ScalaType {
     }
   }
 
+  //TODO: subclass ScalaType
   implicit class DTypeView(tt: DataType) extends ReflectionLock {
 
     // CatalystType => ScalaType

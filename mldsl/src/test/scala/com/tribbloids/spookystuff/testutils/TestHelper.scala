@@ -3,7 +3,7 @@ package com.tribbloids.spookystuff.testutils
 import java.io.File
 import java.util.Properties
 
-import com.tribbloids.spookystuff.utils.{CommonUtils, ConfUtils}
+import com.tribbloids.spookystuff.utils.{CommonUtils, ConfUtils, NOTSerializable}
 import org.apache.commons.io.FileUtils
 import org.apache.spark.serializer.KryoSerializer
 import org.apache.spark.sql.SQLContext
@@ -12,7 +12,7 @@ import org.apache.spark.{SparkConf, SparkContext, SparkEnv, SparkException}
 import scala.reflect.ClassTag
 import scala.util.{Failure, Success, Try}
 
-class TestHelper() {
+class TestHelper() extends NOTSerializable {
 
   val TEMP_PATH = CommonUtils.\\\(System.getProperty("user.dir"), "temp")
   val UNPACK_RESOURCE_PATH = CommonUtils.\\\(System.getProperty("java.io.tmpdir"), "spookystuff", "resources")
@@ -124,6 +124,9 @@ class TestHelper() {
     Math.min(n*1024, c)
   }
 
+  val METASTORE_PATH = CommonUtils.\\\(System.getProperty("user.dir"), "metastore_db")
+  val WAREHOUSE_PATH = CommonUtils.\\\(System.getProperty("user.dir"), "warehouse")
+
   /**
     * @return local mode: None -> local[n, 4]
     *         cluster simulation mode: Some(SPARK_HOME) -> local-cluster[m,n, mem]
@@ -151,9 +154,10 @@ class TestHelper() {
       )
     }
     base ++ Map(
-      ("spark.serializer", "org.apache.spark.serializer.KryoSerializer"),
+      "spark.serializer" -> "org.apache.spark.serializer.KryoSerializer",
       //      .set("spark.kryo.registrator", "com.tribbloids.spookystuff.SpookyRegistrator")Incomplete for the moment
-      ("spark.kryoserializer.buffer.max", "512m"),
+      "spark.kryoserializer.buffer.max" -> "512m",
+      "spark.sql.warehouse.dir" -> WAREHOUSE_PATH,
       ("dummy.property", "dummy")
     )
   }
@@ -207,28 +211,31 @@ class TestHelper() {
     }
   }
 
-  def assureKryoSerializer(sc: SparkContext): Unit = {
+  def assureKryoSerializer(sc: SparkContext, rigorous: Boolean = false): Unit = {
     val ser = SparkEnv.get.serializer
     require(ser.isInstanceOf[KryoSerializer])
 
-    val rdd = sc.parallelize(Seq(sc)).map {
-      v =>
-        v.startTime
-    }
+    // will print a long warning message into stderr, disabled by default
+    if (rigorous) {
+      val rdd = sc.parallelize(Seq(sc)).map {
+        v =>
+          v.startTime
+      }
 
-    try {
-      rdd.reduce(_ + _)
-      throw new AssertionError("should throw SparkException")
-    }
-    catch {
-      case e: SparkException =>
-        val ee = e
-        assert(
-          ee.getMessage.contains("com.esotericsoftware.kryo.KryoException"),
-          "should be triggered by KryoException, but the message doesn't indicate that:\n"+ ee.getMessage
-        )
-      case e: Throwable =>
-        throw new AssertionError(s"Expecting SparkException, but ${e.getClass.getSimpleName} was thrown", e)
+      try {
+        rdd.reduce(_ + _)
+        throw new AssertionError("should throw SparkException")
+      }
+      catch {
+        case e: SparkException =>
+          val ee = e
+          assert(
+            ee.getMessage.contains("com.esotericsoftware.kryo.KryoException"),
+            "should be triggered by KryoException, but the message doesn't indicate that:\n"+ ee.getMessage
+          )
+        case e: Throwable =>
+          throw new AssertionError(s"Expecting SparkException, but ${e.getClass.getSimpleName} was thrown", e)
+      }
     }
   }
 
@@ -238,7 +245,7 @@ class TestHelper() {
       path =>
         Try {
           val file = new File(path)
-          CommonUtils.retryFixedInterval(3) {
+          CommonUtils.retry(3) {
             FileUtils.deleteDirectory(file)
           }
         }

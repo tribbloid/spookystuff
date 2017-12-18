@@ -106,7 +106,6 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-shade-plugin</artifactId>
-                <version>3.1.0</version>
                 <configuration>
                     <outputFile>${project.build.directory}/${assembly.jar.dir}/${assembly.jar.basename}</outputFile>
                     <filters>

@@ -3,6 +3,10 @@ package com.tribbloids.spookystuff.utils.io
 import java.io._
 import java.nio.file.FileAlreadyExistsException
 
+import org.apache.spark.ml.dsl.utils.metadata.MetadataMap
+
+import scala.collection.immutable.ListMap
+
 object LocalResolver extends URIResolver {
 
   val lockedSuffix: String = ".locked"
@@ -16,31 +20,35 @@ object LocalResolver extends URIResolver {
     //    val file = new File(pathStr)
     //    ensureAbsolute(file)
 
-    if (!pathStr.endsWith(lockedSuffix)) {
-      //wait for its locked file to finish its locked session
-
-      val lockedPath = pathStr + lockedSuffix
-      val lockedFile = new File(lockedPath)
-
-      //wait for 15 seconds in total
-      retry {
-        assert(!lockedFile.exists(), s"File $pathStr is locked by another executor or thread")
-      }
-    }
-
     val file = new File(pathStr)
-    val fis = new FileInputStream(file)
+    new Resource[T] {
 
+      override lazy val value: T = {
+        if (!pathStr.endsWith(lockedSuffix)) {
+          //wait for its locked file to finish its locked session
 
-    try {
-      val result = f(fis)
-      new Resource(result) {
-        override lazy val metadata = describe(file)
+          val lockedPath = pathStr + lockedSuffix
+          val lockedFile = new File(lockedPath)
+
+          //wait for 15 seconds in total
+          retry {
+            assert(!lockedFile.exists(), s"File $pathStr is locked by another executor or thread")
+          }
+        }
+
+        val fis = new FileInputStream(file)
+
+        try {
+          f(fis)
+        }
+        finally {
+          fis.close()
+        }
       }
+
+      override lazy val metadata = describe(file)
     }
-    finally {
-      fis.close()
-    }
+
   }
 
   override def output[T](pathStr: String, overwrite: Boolean)(f: (OutputStream) => T) = {
@@ -60,17 +68,22 @@ object LocalResolver extends URIResolver {
       file.createNewFile()
     }
 
-    val fos = new FileOutputStream(pathStr, false)
+    new Resource[T] {
 
-    try {
-      val result = f(fos)
-      fos.flush()
-      new Resource(result) {
-        override lazy val metadata = describe(file)
+      override val value: T = {
+
+        val fos = new FileOutputStream(pathStr, false)
+        try {
+          val result = f(fos)
+          fos.flush()
+          result
+        }
+        finally {
+          fos.close()
+        }
       }
-    }
-    finally {
-      fos.close()
+
+      override lazy val metadata = describe(file)
     }
   }
 
@@ -103,31 +116,51 @@ object LocalResolver extends URIResolver {
     file.getAbsolutePath
   }
 
-  def describe(file: File): ResourceMetadata = {
+  def describe(file: File): ResourceMD = {
 
-    def getMetadata(file: File) = {
-      val name = file.getName
-      val map = reflectiveMetadata(file)
-      val tpe = if (file.isDirectory)
-        Some(URIResolver.DIR_TYPE)
-      else
-        None
-      ResourceMetadata(
-        file.getAbsolutePath,
-        Option(name),
-        tpe,
-        map
+    import Resource._
+
+    def getMap(file: File): ListMap[String, Any] = {
+      var map = reflectiveMetadata(file)
+      map ++= MetadataMap(
+        URI_ -> toAbsolute(file.getAbsolutePath),
+        NAME -> file.getName
       )
+      if (file.isDirectory)
+        map ++= MetadataMap(CONTENT_TYPE -> URIResolver.DIR_TYPE)
+
+      map
     }
 
     val root = {
-      getMetadata(file)
+      getMap(file)
     }
 
-    val children = file.listFiles().map {
-      file =>
-        getMetadata(file)
+    if (file.isDirectory) {
+
+      val children = file.listFiles()
+
+      val groupedChildren: Map[String, Seq[Map[String, Any]]] = {
+
+        val withType = children.map {
+          child =>
+            val tpe = if (child.isDirectory) "directory"
+            else if (child.isFile) "file"
+            else "others"
+
+            tpe -> child
+        }
+
+        withType.groupBy(_._1).mapValues {
+          array =>
+            array.toSeq.map(kv => getMap(kv._2))
+        }
+      }
+      val result = root ++ groupedChildren
+      ResourceMD(result)
     }
-    root.copy(children = children)
+    else {
+      root
+    }
   }
 }

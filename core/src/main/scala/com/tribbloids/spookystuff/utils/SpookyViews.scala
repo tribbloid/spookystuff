@@ -120,6 +120,7 @@ case object SpookyViews {
       self.makeRDD(Seq(v), 1).union(perExec)
     }
 
+    //TODO: these are considered anti-pattern in spark, they never consider autoscaling, initialization of resource should be lazy/preemptive
     def exeAtLeastOncePerCore[T: ClassTag](
                                             f: => T,
                                             sizeOpt: Option[Int] = None

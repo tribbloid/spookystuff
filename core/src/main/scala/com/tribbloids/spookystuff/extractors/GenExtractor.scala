@@ -1,16 +1,16 @@
 package com.tribbloids.spookystuff.extractors
 
 import com.tribbloids.spookystuff.Const
-import com.tribbloids.spookystuff.extractors.GenExtractor._
 import com.tribbloids.spookystuff.row.Field
 import org.apache.spark.ml.dsl.utils.refl.{ScalaType, UnreifiedScalaType}
 import com.tribbloids.spookystuff.utils.SpookyUtils
+import org.apache.spark.ml.dsl.utils.messaging.AutomaticRelay
 import org.apache.spark.sql.catalyst.ScalaReflection.universe.{TypeTag, typeTag}
 import org.apache.spark.sql.catalyst.trees.TreeNode
 
 import scala.language.implicitConversions
 
-object GenExtractor {
+object GenExtractor extends AutomaticRelay[GenExtractor[_,_]] {
 
   import org.apache.spark.ml.dsl.utils.refl.ScalaType._
 
@@ -144,7 +144,10 @@ object GenExtractor {
 // a subclass wraps an expression and convert it into extractor, which converts all attribute reference children into data reference children and
 // (To be implemented) can be converted to an expression to be wrapped by other expressions
 //TODO: merge with Extractor
-trait GenExtractor[T, +R] extends Serializable with ScalaDynamicMixin[T, R] {
+trait GenExtractor[T, +R] extends Product with Serializable with ScalaDynamicMixin[T, R] {
+
+  import com.tribbloids.spookystuff.extractors.GenExtractor._
+
   //trait GenExtractor[T, +R] extends Serializable with ReflectionLock {
 
   lazy val TreeNode: GenExtractor.TreeNodeView = GenExtractor.TreeNodeView(this)
@@ -241,6 +244,6 @@ trait Alias[T, +R] extends GenExtractor[T, R] {
 case class AliasImpl[T, +R](
                              child: GenExtractor[T, R],
                              field: Field
-                           ) extends Alias[T, R] with Wrapper[T, R] {
+                           ) extends Alias[T, R] with GenExtractor.Wrapper[T, R] {
 }
 

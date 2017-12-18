@@ -116,14 +116,14 @@ class TestExplorePlan extends SpookyEnvFixture with LocalPathDocsFixture {
         DEEP_DIR_URL
       }
     val ds = first
-      .explore(S"root directory".attr("path"))(
+      .explore(S"root directory uri".text)(
         Wget('A)
       )()
       .persist()
-    ds.squashedRDD.count()
+    assert(ds.squashedRDD.count() == 4)
     assert(ds.spooky.spookyMetrics.pagesFetched.value == 4)
 
-    ds.rdd.count()
-    assert(ds.spooky.spookyMetrics.pagesFetched.value <= 5)
+    assert(ds.rdd.count() == 4)
+    assert(ds.spooky.spookyMetrics.pagesFetched.value <= 5) //TODO: this can be reduced further
   }
 }

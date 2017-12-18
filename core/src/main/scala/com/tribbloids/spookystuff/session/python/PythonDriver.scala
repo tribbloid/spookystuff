@@ -7,6 +7,7 @@ import com.tribbloids.spookystuff.utils.lifespan.{Lifespan, LocalCleanable}
 import com.tribbloids.spookystuff.utils.{CommonUtils, SilentRetry, SpookyUtils}
 import com.tribbloids.spookystuff.{PyException, PyInterpretationException, SpookyContext}
 import org.apache.commons.io.FileUtils
+import org.apache.spark.ml.dsl.utils.FlowUtils
 import org.slf4j.LoggerFactory
 
 import scala.collection.mutable.ArrayBuffer
@@ -87,10 +88,6 @@ object PythonDriver {
     }
     syntaxErrorLine.nonEmpty
   }
-
-  def indent(code: String) = {
-    code.split('\n').filter(_.nonEmpty).map("\t" + _).mkString("\n")
-  }
 }
 
 /**
@@ -122,7 +119,7 @@ class PythonDriver(
     if (this.historyLines.isEmpty) None
     else {
       val combined = "\n" + this.historyLines.mkString("\n").stripPrefix("\n")
-      val indentedCode = indent(combined)
+      val indentedCode = FlowUtils.indent(combined)
 
       Some(indentedCode)
     }
@@ -150,7 +147,7 @@ class PythonDriver(
 
   override def cleanImpl(): Unit = {
     Try {
-      CommonUtils.retryFixedInterval(5) {
+      CommonUtils.retry(5) {
         try { if (process.isAlive) {
           CommonUtils.withDeadline(3.seconds) {
             try {
@@ -189,7 +186,7 @@ class PythonDriver(
   }
 
   private def _interpret(code: String, spookyOpt: Option[SpookyContext] = None, detectError: Boolean = true): Array[String] = {
-    val indentedCode = indent(code)
+    val indentedCode = FlowUtils.indent(code)
 
     LoggerFactory.getLogger(this.getClass).debug(s">>> $logPrefix INPUT >>>\n" + indentedCode)
 
@@ -253,7 +250,7 @@ class PythonDriver(
   }
 
   private def _interpretCaptureError(code: String, spookyOpt: Option[SpookyContext] = None): Array[String] = {
-    val indentedCode = indent(code)
+    val indentedCode = FlowUtils.indent(code)
     val codeTryExcept =
       s"""
          |try:

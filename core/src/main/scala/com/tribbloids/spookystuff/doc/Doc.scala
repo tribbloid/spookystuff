@@ -5,13 +5,14 @@ import java.util.UUID
 
 import com.tribbloids.spookystuff._
 import com.tribbloids.spookystuff.actions._
-import com.tribbloids.spookystuff.caching.CacheLevel
-import org.apache.spark.ml.dsl.utils.refl.ScalaUDT
+import com.tribbloids.spookystuff.caching.DocCacheLevel
+import com.tribbloids.spookystuff.utils.io.ResourceMD
 import com.tribbloids.spookystuff.utils.{CommonUtils, IDMixin}
 import org.apache.commons.csv.CSVFormat
 import org.apache.hadoop.fs.Path
 import org.apache.http.StatusLine
 import org.apache.http.entity.ContentType
+import org.apache.spark.ml.dsl.utils.refl.ScalaUDT
 import org.apache.spark.sql.types.SQLUserDefinedType
 import org.apache.tika.io.TikaInputStream
 import org.apache.tika.metadata.{Metadata, TikaMetadataKeys}
@@ -35,20 +36,20 @@ case class DocUID(
 
 }
 
-class FetchedUDT extends ScalaUDT[Fetched]
+class DocOptionUDT extends ScalaUDT[DocOption]
 
 //keep small, will be passed around by Spark
 //TODO: subclass Unstructured to save Message definition
-@SQLUserDefinedType(udt = classOf[FetchedUDT])
-trait Fetched extends Serializable {
+@SQLUserDefinedType(udt = classOf[DocOptionUDT])
+trait DocOption extends Serializable {
 
   def uid: DocUID
   def updated(
                uid: DocUID = this.uid,
-               cacheLevel: CacheLevel.Value = this.cacheLevel
+               cacheLevel: DocCacheLevel.Value = this.cacheLevel
              ): this.type
 
-  def cacheLevel: CacheLevel.Value
+  def cacheLevel: DocCacheLevel.Value
 
   def name: String = this.uid.name
 
@@ -58,29 +59,29 @@ trait Fetched extends Serializable {
   lazy val time: Time = new Time(timeMillis)
   lazy val timestamp: Timestamp = new Timestamp(timeMillis)
 
-  def laterThan(v2: Fetched): Boolean = this.timeMillis > v2.timeMillis
+  def laterThan(v2: DocOption): Boolean = this.timeMillis > v2.timeMillis
 
-  def laterOf(v2: Fetched): Fetched = if (laterThan(v2)) this
+  def laterOf(v2: DocOption): DocOption = if (laterThan(v2)) this
   else v2
 
   type RootType
   def root: RootType
-  def metadata: Map[String, Any]
+  def metadata: ResourceMD
 }
 
 //Merely a placeholder if a conditional block is not applicable
 case class NoDoc(
                   backtrace: Trace,
                   override val timeMillis: Long = System.currentTimeMillis(),
-                  override val cacheLevel: CacheLevel.Value = CacheLevel.All,
-                  metadata: Map[String, Any] = Map.empty
-                ) extends Serializable with Fetched {
+                  override val cacheLevel: DocCacheLevel.Value = DocCacheLevel.All,
+                  override val metadata: ResourceMD = Map.empty[String, Any]
+                ) extends Serializable with DocOption {
 
   @transient override lazy val uid: DocUID = DocUID(backtrace, null, 0, 1)()
 
   override def updated(
                         uid: DocUID = this.uid,
-                        cacheLevel: CacheLevel.Value = this.cacheLevel
+                        cacheLevel: DocCacheLevel.Value = this.cacheLevel
                       ) = this.copy(backtrace = uid.backtrace, cacheLevel = cacheLevel).asInstanceOf[this.type ]
 
   override type RootType = Unit
@@ -98,7 +99,7 @@ case class DocWithError(
   )
     .getOrElse(""),
   cause
-) with  Fetched {
+) with  DocOption {
 
   override def timeMillis: Long = delegate.timeMillis
 
@@ -106,17 +107,17 @@ case class DocWithError(
 
   override def updated(
                         uid: DocUID = this.uid,
-                        cacheLevel: CacheLevel.Value = this.cacheLevel
+                        cacheLevel: DocCacheLevel.Value = this.cacheLevel
                       ) = {
     this.copy(delegate = delegate.updated(uid, cacheLevel)).asInstanceOf[this.type]
   }
 
-  override def cacheLevel: CacheLevel.Value = delegate.cacheLevel
+  override def cacheLevel: DocCacheLevel.Value = delegate.cacheLevel
 
   override type RootType = delegate.RootType
   override def root: Unstructured = delegate.root
 
-  override def metadata: Map[String, Any] = delegate.metadata
+  override def metadata = delegate.metadata
 }
 
 object Doc {
@@ -134,21 +135,21 @@ case class Doc(
                 override val uid: DocUID,
 
                 uri: String, //redirected
-                declaredContentType: Option[String],
                 raw: Array[Byte],
+                declaredContentType: Option[String] = None,
                 //                 cookie: Seq[SerializableCookie] = Nil,
                 override val timeMillis: Long = System.currentTimeMillis(),
-                saved: scala.collection.mutable.Set[String] = scala.collection.mutable.Set(),
-                override val cacheLevel: CacheLevel.Value = CacheLevel.All,
+                saved: scala.collection.mutable.Set[String] = scala.collection.mutable.Set(), //TODO: move out of constructor
+                override val cacheLevel: DocCacheLevel.Value = DocCacheLevel.All,
                 httpStatus: Option[StatusLine] = None,
-                metadata: Map[String, Any] = Map.empty //for customizing parsing TODO: remove, delegate to CSVElement.
-              ) extends Fetched with IDMixin {
+                override val metadata: ResourceMD = ResourceMD.empty //for customizing parsing TODO: remove, delegate to CSVElement.
+              ) extends DocOption with IDMixin {
 
   lazy val _id = (uid, uri, declaredContentType, timeMillis, httpStatus.toString)
 
   override def updated(
                         uid: DocUID = this.uid,
-                        cacheLevel: CacheLevel.Value = this.cacheLevel
+                        cacheLevel: DocCacheLevel.Value = this.cacheLevel
                       ): Doc.this.type = this.copy(uid = uid, cacheLevel = cacheLevel).asInstanceOf[this.type]
 
   private def detectCharset(contentType: ContentType): String = {
@@ -173,8 +174,9 @@ case class Doc(
   }
 
   @transient lazy val parsedContentType: ContentType = {
-    val strOpt = metadata
-      .get(Doc.CONTENT_TYPE)
+    import com.tribbloids.spookystuff.utils.io.Resource._
+
+    val strOpt = metadata.CONTENT_TYPE.get
       .map("" + _)
       .orElse(declaredContentType)
     strOpt match {
@@ -223,8 +225,9 @@ case class Doc(
       JsonElement(contentStr, null, uri) //not serialize, parsing is faster
     }
     else if (mimeType.contains("csv")) {
-      val csvFormat = this.metadata.get(Doc.CSV_FORMAT).map{
-        _.asInstanceOf[CSVFormat]
+      val csvFormat: CSVFormat = this.metadata.map.get(Doc.CSV_FORMAT).map{
+        case v: CSVFormat => v
+        case v@ _ => CSVFormat.valueOf(v.toString)
       }
         .getOrElse(Doc.defaultCSVFormat)
 
@@ -237,7 +240,7 @@ case class Doc(
       TikaMetadataXMLElement(raw, effectiveCharset, mimeType, uri)
     }
   }
-  def charset: Option[Selector] = Option(parsedContentType.getCharset).map(_.name())
+  def charset: Option[CSSQuery] = Option(parsedContentType.getCharset).map(_.name())
   def mimeType: String = parsedContentType.getMimeType
 
   def contentType = parsedContentType.toString
@@ -250,20 +253,20 @@ case class Doc(
   }
   def defaultFileExtension: Option[String] = fileExtensions.headOption
 
-//  override def findAll(selector: String) = root.findAll(selector)
-//  override def findAllWithSiblings(start: String, range: Range) = root.findAllWithSiblings(start, range)
-//  override def children(selector: Selector): Elements[Unstructured] = root.children(selector)
-//  override def childrenWithSiblings(selector: Selector, range: Range): Elements[Siblings[Unstructured]] = root.childrenWithSiblings(selector, range)
-//  override def code: Option[String] = root.code
-//  override def formattedCode: Option[String] = root.formattedCode
-//  override def allAttr: Option[Map[String, String]] = root.allAttr
-//  override def attr(attr: String, noEmpty: Boolean): Option[String] = root.attr(attr, noEmpty)
-//  override def href: Option[String] = root.href
-//  override def src: Option[String] = root.src
-//  override def text: Option[String] = root.text
-//  override def ownText: Option[String] = root.ownText
-//  override def boilerPipe: Option[String] = root.boilerPipe
-//  override def breadcrumb: Option[Seq[String]] = root.breadcrumb TODO: remove
+  //  override def findAll(selector: String) = root.findAll(selector)
+  //  override def findAllWithSiblings(start: String, range: Range) = root.findAllWithSiblings(start, range)
+  //  override def children(selector: Selector): Elements[Unstructured] = root.children(selector)
+  //  override def childrenWithSiblings(selector: Selector, range: Range): Elements[Siblings[Unstructured]] = root.childrenWithSiblings(selector, range)
+  //  override def code: Option[String] = root.code
+  //  override def formattedCode: Option[String] = root.formattedCode
+  //  override def allAttr: Option[Map[String, String]] = root.allAttr
+  //  override def attr(attr: String, noEmpty: Boolean): Option[String] = root.attr(attr, noEmpty)
+  //  override def href: Option[String] = root.href
+  //  override def src: Option[String] = root.src
+  //  override def text: Option[String] = root.text
+  //  override def ownText: Option[String] = root.ownText
+  //  override def boilerPipe: Option[String] = root.boilerPipe
+  //  override def breadcrumb: Option[Seq[String]] = root.breadcrumb TODO: remove
   //---------------------------------------------------------------------------------------------------
 
   def save(
@@ -334,7 +337,7 @@ case class Doc(
     )(spooky)
   }
 
-  def set(tuples: (String, Any)*): Doc = this.copy(
-    metadata = this.metadata ++ Map(tuples: _*)
+  def setMetadata(tuples: (String, Any)*): Doc = this.copy(
+    metadata = this.metadata.map ++ Map(tuples: _*)
   )
 }

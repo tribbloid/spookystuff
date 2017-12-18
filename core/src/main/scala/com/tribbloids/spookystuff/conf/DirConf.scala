@@ -36,7 +36,7 @@ case class DirConf(
 
     implicit val conf = sparkConf
 
-    val result = new DirConf(
+    val result = DirConf(
       root = _root,
       localRoot = _localRoot,
       autoSave = Option(autoSave).getOrElse(ConfUtils.getOrDefault("spooky.dirs.autosave", _root \\ "autosave")),

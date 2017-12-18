@@ -118,13 +118,13 @@ class HtmlElement private (
     new Elements(colls.toList)
   }
 
-  override def children(selector: Selector) = {
+  override def children(selector: CSSQuery) = {
 
     val found: select.Elements = new select.Elements(parsed.select(selector).filter(ee => parsed.children().contains(ee)))
     new Elements(found.map(new HtmlElement(_)).toList)
   }
 
-  override def childrenWithSiblings(selector: Selector, range: Range): Elements[Siblings[Unstructured]] = {
+  override def childrenWithSiblings(selector: CSSQuery, range: Range): Elements[Siblings[Unstructured]] = {
 
     val found: select.Elements = new select.Elements(parsed.select(selector).filter(ee => parsed.children().contains(ee)))
     expand(found, range)

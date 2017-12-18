@@ -2,7 +2,7 @@ package com.tribbloids.spookystuff.utils
 
 import com.tribbloids.spookystuff.SpookyEnvFixture
 import com.tribbloids.spookystuff.actions.Action
-import com.tribbloids.spookystuff.doc.{Doc, Fetched, Unstructured}
+import com.tribbloids.spookystuff.doc.{Doc, DocOption, Unstructured}
 import com.tribbloids.spookystuff.testutils.FunSpecx
 import org.apache.spark.ml.dsl.utils.refl.{TypeUtils, UnreifiedScalaType}
 import org.apache.spark.sql.types.DataType
@@ -23,26 +23,6 @@ class ScalaUDTSuite extends SpookyEnvFixture with FunSpecx {
     assert(reified == unreified.reify)
     assertSerDe(reified)
     reified
-  }
-
-  it("Int has a datatype") {
-
-    val reified = getAndTestReifiedType[Int]
-    reified.toString.shouldBe(
-      """
-        |IntegerType
-      """.stripMargin
-    )
-  }
-
-  it("Array[Int] has a datatype") {
-
-    val reified = getAndTestReifiedType[Array[Int]]
-    reified.toString.shouldBe(
-      """
-        |ArrayType(IntegerType,false)
-      """.stripMargin
-    )
   }
 
   it("Action has a datatype") {
@@ -77,12 +57,12 @@ class ScalaUDTSuite extends SpookyEnvFixture with FunSpecx {
     )
   }
 
-  it("Fetched has a datatype") {
+  it("DocOption has a datatype") {
 
-    val reified = getAndTestReifiedType[Fetched]
+    val reified = getAndTestReifiedType[DocOption]
     reified.toString.shouldBe(
       """
-        |FetchedUDT
+        |DocOptionUDT
       """.stripMargin
     )
   }

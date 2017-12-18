@@ -4,6 +4,7 @@ import java.util.UUID
 
 import com.tribbloids.spookystuff.Const
 import com.tribbloids.spookystuff.utils.{SpookyUtils, SpookyViews}
+import org.apache.spark.ml.dsl.utils.messaging.SelfAPI
 
 import scala.reflect.ClassTag
 
@@ -20,7 +21,7 @@ case class DataRow(
                     groupID: Option[UUID] = None,
                     groupIndex: Int = 0, //set to 0...n for each page group after SquashedPageRow.semiUnsquash/unsquash
                     freeze: Boolean = false //if set to true PageRow.extract won't insert anything into it, used in merge/replace join
-                  ) extends AbstractSpookyRow {
+                  ) extends AbstractSpookyRow with SelfAPI {
 
   {
     assert(data.isInstanceOf[Serializable]) //fail early
@@ -61,12 +62,12 @@ case class DataRow(
 
   def getInt(field: Field): Option[Int] = getTyped[Int](field)
 
-  def toMap: Map[String, Any] = data
+  lazy val toMap: Map[String, Any] = data
     .filterKeys(_.isSelected)
     .map(identity)
     .map(tuple => tuple._1.name -> tuple._2)
 
-  override val proto: Map[String, Any] = toMap
+  override def toMessage_>> : Map[String, Any] = toMap
 
   def sortIndex(fields: Seq[Field]): Seq[Option[Iterable[Int]]] = {
     val result = fields.map(key => this.getIntIterable(key))

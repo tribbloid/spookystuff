@@ -2,7 +2,7 @@ package com.tribbloids.spookystuff.caching
 
 import com.tribbloids.spookystuff.SpookyContext
 import com.tribbloids.spookystuff.actions.Trace
-import com.tribbloids.spookystuff.doc.Fetched
+import com.tribbloids.spookystuff.doc.DocOption
 import com.tribbloids.spookystuff.utils.CachingUtils.ConcurrentCache
 
 /**
@@ -11,13 +11,13 @@ import com.tribbloids.spookystuff.utils.CachingUtils.ConcurrentCache
   */
 object InMemoryDocCache extends AbstractDocCache {
 
-  val internal: ConcurrentCache[Trace, Seq[Fetched]] = ConcurrentCache()
+  val internal: ConcurrentCache[Trace, Seq[DocOption]] = ConcurrentCache()
 
-  def cacheable(v: Seq[Fetched]): Boolean = {
-    v.exists(v => v.cacheLevel.isInstanceOf[CacheLevel.InMemory])
+  def cacheable(v: Seq[DocOption]): Boolean = {
+    v.exists(v => v.cacheLevel.isInstanceOf[DocCacheLevel.InMemory])
   }
 
-  def getImpl(k: Trace, spooky: SpookyContext): Option[Seq[Fetched]] = {
+  def getImpl(k: Trace, spooky: SpookyContext): Option[Seq[DocOption]] = {
     val candidate = internal.get(k)
     candidate.flatMap{
       v =>
@@ -31,7 +31,7 @@ object InMemoryDocCache extends AbstractDocCache {
     }
   }
 
-  def putImpl(k: Trace, v: Seq[Fetched], spooky: SpookyContext): this.type = {
+  def putImpl(k: Trace, v: Seq[DocOption], spooky: SpookyContext): this.type = {
     internal.put(k, v)
     this
   }

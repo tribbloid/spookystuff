@@ -13,6 +13,7 @@ class ColSuite extends FunSpecx {
   val cNonLit: Col[String] = 'A
 
   it("Col(Lit).toString") {
+
     c1.toString.shouldBe(
       "abc"
     )
@@ -21,12 +22,12 @@ class ColSuite extends FunSpecx {
     )
   }
 
-  it("Col(Lit).toMessage") {
-    c1.proto.shouldBe(
+  it("Col(Lit).value") {
+    c1.value.shouldBe(
       "abc"
     )
     intercept[UnsupportedOperationException] {
-      cNonLit.proto
+      cNonLit.value
     }
   }
 

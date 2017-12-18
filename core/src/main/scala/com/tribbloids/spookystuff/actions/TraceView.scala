@@ -1,7 +1,7 @@
 package com.tribbloids.spookystuff.actions
 
 import com.tribbloids.spookystuff.caching.{DFSDocCache, InMemoryDocCache}
-import com.tribbloids.spookystuff.doc.{Doc, Fetched}
+import com.tribbloids.spookystuff.doc.{Doc, DocOption}
 import com.tribbloids.spookystuff.row.{SpookySchema, FetchedRow}
 import com.tribbloids.spookystuff.session.Session
 import com.tribbloids.spookystuff.utils.IDMixin
@@ -17,7 +17,7 @@ object TraceView {
 
   def apply(
              children: Trace,
-             docs: Seq[Fetched]
+             docs: Seq[DocOption]
            ): TraceView = {
     val result = apply(children)
     result.docs = docs
@@ -25,7 +25,7 @@ object TraceView {
   }
 
   def apply(
-             docs: Seq[Fetched]
+             docs: Seq[DocOption]
            ): TraceView = {
     val result = apply()
     result.docs = docs
@@ -41,15 +41,15 @@ case class TraceView(
   override def toString = children.mkString(" -> ")
   override val _id: Int = idOverride.getOrElse(children.hashCode())
 
-  @volatile @transient var docs: Seq[Fetched] = _ //override, cannot be shipped, lazy evaluated
+  @volatile @transient var docs: Seq[DocOption] = _ //override, cannot be shipped, lazy evaluated
   def docsOpt = Option(docs)
 
-  override def apply(session: Session): Seq[Fetched] = {
+  override def apply(session: Session): Seq[DocOption] = {
 
     _apply(session)
   }
 
-  protected[actions] def _apply(session: Session, lazyStream: Boolean = false): Seq[Fetched] = {
+  protected[actions] def _apply(session: Session, lazyStream: Boolean = false): Seq[DocOption] = {
 
     val _children: Seq[Action] = if (lazyStream) children.toStream
     // this is a good pattern as long as anticipated result doesn't grow too long
@@ -148,13 +148,13 @@ case class TraceView(
 
     //fetched may yield very large documents and should only be
     // loaded lazily and not shuffled or persisted (unless in-memory)
-    def get: Seq[Fetched] = TraceView.this.synchronized{
+    def get: Seq[DocOption] = TraceView.this.synchronized{
       docsOpt.getOrElse{
         fetch
       }
     }
 
-    def fetch: Seq[Fetched] = {
+    def fetch: Seq[DocOption] = {
       val docs = TraceView.this.fetch(spooky)
       docs
     }
