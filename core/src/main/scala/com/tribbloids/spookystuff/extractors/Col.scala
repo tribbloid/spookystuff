@@ -3,7 +3,7 @@ package com.tribbloids.spookystuff.extractors
 import com.tribbloids.spookystuff.Const
 import com.tribbloids.spookystuff.dsl.Implicits
 import com.tribbloids.spookystuff.extractors.impl.{Extractors, Lit}
-import org.apache.spark.ml.dsl.utils.messaging.SelfAPI
+import org.apache.spark.ml.dsl.utils.messaging.ProtoAPI
 import org.apache.spark.sql.catalyst.ScalaReflection.universe.TypeTag
 
 import scala.language.implicitConversions
@@ -46,7 +46,7 @@ object Col {
 
 case class Col[T](
                    ex: Extractor[_ >: T]
-                 ) extends SelfAPI{
+                 ) extends ProtoAPI{
 
   override def toString = this.memberStr
 

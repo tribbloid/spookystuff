@@ -1,7 +1,7 @@
 package com.tribbloids.spookystuff
 
 import com.tribbloids.spookystuff.conf.Submodules
-import org.apache.spark.ml.dsl.utils.messaging.SelfAPI
+import org.apache.spark.ml.dsl.utils.messaging.ProtoAPI
 import org.apache.spark.{Accumulator, AccumulatorParam, SparkContext}
 
 import scala.collection.immutable.ListMap
@@ -25,7 +25,7 @@ object Metrics {
 }
 
 @SerialVersionUID(-32509237409L)
-abstract class Metrics extends SelfAPI with Product with Serializable {
+abstract class Metrics extends ProtoAPI with Product with Serializable {
 
   //this is necessary as direct JSON serialization on accumulator only yields meaningless string
   def toTuples: List[(String, Any)] = {

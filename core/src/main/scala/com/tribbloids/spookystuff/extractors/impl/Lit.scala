@@ -4,7 +4,7 @@ import com.tribbloids.spookystuff.extractors
 import com.tribbloids.spookystuff.extractors.GenExtractor.Static
 import com.tribbloids.spookystuff.extractors._
 import com.tribbloids.spookystuff.utils.IDMixin
-import org.apache.spark.ml.dsl.utils.messaging.SelfRelay
+import org.apache.spark.ml.dsl.utils.messaging.Relay_>>
 import org.apache.spark.ml.dsl.utils.refl.UnreifiedScalaType
 import org.apache.spark.sql.catalyst.ScalaReflection.universe.TypeTag
 import org.apache.spark.sql.types._
@@ -26,7 +26,7 @@ case class Lit[T, +R](value: R, dataType: DataType) extends Static[T, R] with ID
   override val partialFunction: PartialFunction[T, R] = Unlift({ _: T => valueOpt})
 }
 
-object Lit extends SelfRelay[Lit[_,_]] {
+object Lit extends Relay_>>[Lit[_,_]] {
 
   def apply[T: TypeTag](v: T): Lit[FR, T] = {
     apply[FR, T](v, UnreifiedScalaType.apply[T])

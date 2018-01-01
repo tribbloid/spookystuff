@@ -4,7 +4,7 @@ import java.util.UUID
 
 import com.tribbloids.spookystuff.Const
 import com.tribbloids.spookystuff.utils.{SpookyUtils, SpookyViews}
-import org.apache.spark.ml.dsl.utils.messaging.SelfAPI
+import org.apache.spark.ml.dsl.utils.messaging.ProtoAPI
 
 import scala.reflect.ClassTag
 
@@ -21,7 +21,7 @@ case class DataRow(
                     groupID: Option[UUID] = None,
                     groupIndex: Int = 0, //set to 0...n for each page group after SquashedPageRow.semiUnsquash/unsquash
                     freeze: Boolean = false //if set to true PageRow.extract won't insert anything into it, used in merge/replace join
-                  ) extends AbstractSpookyRow with SelfAPI {
+                  ) extends AbstractSpookyRow with ProtoAPI {
 
   {
     assert(data.isInstanceOf[Serializable]) //fail early
