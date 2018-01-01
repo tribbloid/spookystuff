@@ -1,6 +1,5 @@
 package com.tribbloids.spookystuff.session.python
 
-import org.apache.spark.ml.dsl.utils._
 import org.apache.spark.ml.dsl.utils.messaging.{MessageAPI, MessageWriter}
 
 /**
