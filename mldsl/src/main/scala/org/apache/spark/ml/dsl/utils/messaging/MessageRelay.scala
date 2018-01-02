@@ -21,12 +21,12 @@ abstract class MessageRelay[Proto: ClassTag] extends Codec[Proto] {
       )
   }
 
-  override def toProto_<<(v: M): Proto = v match {
+  override def toProto_<<(v: M, rootTag: String): Proto = v match {
     case vv: MessageAPI_<< =>
       vv.toProto_<<.asInstanceOf[Proto]
     case _ =>
       throw new UnsupportedOperationException(
-        s"toSelf_<< is not implemented in ${this.getClass.getName} for message type ${this.messageMF.runtimeClass.getName}"
+        s"toProto_<< is not implemented in ${this.getClass.getName} for message type ${this.messageMF.runtimeClass.getName}"
       )
   }
 

@@ -22,7 +22,9 @@ import scala.reflect.ClassTag
   */
 //TODO: change to ThreadLocal to bypass thread safety?
 //TODO: use scala type class: http://danielwestheide.com/blog/2013/02/06/the-neophytes-guide-to-scala-part-12-type-classes.html
-trait ScalaType[T] extends DataType with (() => TypeTag[T]) with ReflectionLock with Serializable with IDMixin {
+trait ScalaType[T] extends DataType
+  with (() => TypeTag[T])
+  with ReflectionLock with Serializable with IDMixin {
 
   override def defaultSize: Int = 0
   override def asNullable: this.type = this
@@ -316,7 +318,7 @@ object ScalaType {
   */
 class UnreifiedScalaType[T](@transient val _typeTag: TypeTag[T]) extends ScalaType.TTg[T] {
 
-  override val typeName: String = "(unreified) " + asTypeTag
+  override val typeName: String = "(unreified) " + asType
 }
 
 object UnreifiedScalaType {

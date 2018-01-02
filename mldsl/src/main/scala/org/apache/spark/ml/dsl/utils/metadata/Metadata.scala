@@ -49,7 +49,7 @@ object Metadata extends MessageRelay[Metadata] {
 
   object empty extends Metadata()
 
-  override def getRootTag(messageOpt: Option[Map[String, JValue]]): String = "root"
+  override def getRootTag(protoOpt: Option[Metadata], messageOpt: Option[Map[String, JValue]]): String = "root"
 
   private val jvBlacklist: Set[JValue] = Set(
     JObject()
@@ -92,7 +92,7 @@ object Metadata extends MessageRelay[Metadata] {
     ListMap(result: _*)
   }
 
-  override def toProto_<<(m: M): Metadata = {
+  override def toProto_<<(m: M, rootTag: String): Metadata = {
     val map = m
       .toSeq
       .map {

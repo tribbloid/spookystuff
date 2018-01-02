@@ -55,11 +55,11 @@ abstract class Codec[Proto] extends CodecLevel1 with HasRootTag {
     MessageWriter[M](
       msg,
       this.formats,
-      Some(getRootTag(Some(msg)))
+      Some(getRootTag(Some(v), Some(msg)))
     )
   }
 
-  def getRootTag(messageOpt: Option[M]): String = {
+  def getRootTag(protoOpt: Option[Proto], messageOpt: Option[M]): String = {
     messageOpt.map {
       v => Codec.getRootTag(v)
     }
@@ -71,13 +71,13 @@ abstract class Codec[Proto] extends CodecLevel1 with HasRootTag {
   //  Catalog.AllInclusive.registry += selfType -> this
 
   def toMessage_>>(v: Proto): M
-  def toProto_<<(v: M): Proto
+  def toProto_<<(v: M, rootTag: String): Proto
 
   def fromJField(jf: JField, formats: Formats = this.formats): Proto = {
 
     val mf = this.messageMF
     val m = Extraction.extract[M](jf._2)(formats, mf)
-    toProto_<<(m)
+    toProto_<<(m, jf._1)
   }
 
   final def _fromJField[T: Codec](jf: JField): T = {
@@ -86,7 +86,7 @@ abstract class Codec[Proto] extends CodecLevel1 with HasRootTag {
   }
   final def _fromJValue[T: Codec](jv: JValue): T = {
     val reader = implicitly[Codec[T]]
-    val rootTag = reader.getRootTag(None)
+    val rootTag = reader.getRootTag(None, None)
     _fromJField(rootTag -> jv)(reader)
   }
   final def _fromJSON[T: Codec](json: String): T = _fromJValue[T](parse(json))

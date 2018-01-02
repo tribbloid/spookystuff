@@ -12,7 +12,7 @@ trait HasRootTag {
   def rootTag: String = Codec.getDefaultRootTag(this)
 }
 
-trait ProtoAPI {
+trait ProtoAPI extends HasRootTag {
 
   def toMessage_>> : Any
 }
