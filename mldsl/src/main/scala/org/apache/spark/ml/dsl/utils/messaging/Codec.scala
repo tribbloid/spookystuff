@@ -18,18 +18,9 @@ trait CodecLevel1 {
   type M //Message type
   protected implicit def messageMF: Manifest[M]
 
-  lazy val defaultRootTag = this.getClass.getSimpleName.stripSuffix("$")
-
-  def rootTag: String = defaultRootTag
-
   //  implicit def proto2Message(m: M): MessageWriter[M] = {
   //    MessageWriter[M](m, this.formats)
   //  }
-}
-
-object Codec {
-
-  def defaultFormats: Formats = Xml.defaultFormats
 }
 
 /**
@@ -53,25 +44,40 @@ Implicit scope of an argument’s type (2.9.1) - e.g. Companion objects
 Implicit scope of type arguments (2.8.0) - e.g. Companion objects
 Outer objects for nested types
 
-  * @tparam Self
+  * @tparam Proto
   */
-abstract class Codec[Self] extends CodecLevel1 {
+abstract class Codec[Proto] extends CodecLevel1 with HasRootTag {
 
-  implicit def findCodec: Codec[Self] = this
-  implicit def toWriter_>>(v: Self): MessageWriter[M] = MessageWriter[M](toMessage_>>(v), this.formats, Some(this.rootTag))
+  implicit def findCodec: Codec[Proto] = this
+  implicit def toWriter_>>(v: Proto): MessageWriter[M] = {
 
-  def selfType: ScalaType[Self]
+    val msg = toMessage_>>(v)
+    MessageWriter[M](
+      msg,
+      this.formats,
+      Some(getRootTag(Some(msg)))
+    )
+  }
 
-//  Catalog.AllInclusive.registry += selfType -> this
+  def getRootTag(messageOpt: Option[M]): String = {
+    messageOpt.map {
+      v => Codec.getRootTag(v)
+    }
+      .getOrElse(this.rootTag)
+  }
 
-  def toMessage_>>(v: Self): M
-  def toSelf_<<(v: M): Self
+  def selfType: ScalaType[Proto]
 
-  def fromJField(jf: JField, formats: Formats = this.formats): Self = {
+  //  Catalog.AllInclusive.registry += selfType -> this
+
+  def toMessage_>>(v: Proto): M
+  def toProto_<<(v: M): Proto
+
+  def fromJField(jf: JField, formats: Formats = this.formats): Proto = {
 
     val mf = this.messageMF
     val m = Extraction.extract[M](jf._2)(formats, mf)
-    toSelf_<<(m)
+    toProto_<<(m)
   }
 
   final def _fromJField[T: Codec](jf: JField): T = {
@@ -80,7 +86,7 @@ abstract class Codec[Self] extends CodecLevel1 {
   }
   final def _fromJValue[T: Codec](jv: JValue): T = {
     val reader = implicitly[Codec[T]]
-    val rootTag = reader.rootTag
+    val rootTag = reader.getRootTag(None)
     _fromJField(rootTag -> jv)(reader)
   }
   final def _fromJSON[T: Codec](json: String): T = _fromJValue[T](parse(json))
@@ -121,11 +127,11 @@ abstract class Codec[Self] extends CodecLevel1 {
     result
   }
 
-  final def fromJValue(jv: JValue): Self = _fromJValue[Self](jv)(this)
-  final def fromJSON(json: String): Self = _fromJSON[Self](json)(this)
+  final def fromJValue(jv: JValue): Proto = _fromJValue[Proto](jv)(this)
+  final def fromJSON(json: String): Proto = _fromJSON[Proto](json)(this)
 
-  final def fromXMLNode(ns: NodeSeq): Self = _fromXMLNode[Self](ns)(this)
-  final def fromXML(xml: String): Self = _fromXML[Self](xml)(this)
+  final def fromXMLNode(ns: NodeSeq): Proto = _fromXMLNode[Proto](ns)(this)
+  final def fromXML(xml: String): Proto = _fromXML[Proto](xml)(this)
 
   //  final def toMessageAPIIfNot(v: Self): MessageAPI = {
   //    v match {
@@ -160,22 +166,49 @@ abstract class Codec[Self] extends CodecLevel1 {
              parent: String,
              name: String,
              doc: String,
-             isValid: Self => Boolean,
+             isValid: Proto => Boolean,
              // serializer = SparkEnv.get.serializer
              formats: Formats = Codec.this.formats
-           ): MessageMLParam[Self] = new MessageMLParam(this, parent, name, doc, isValid, formats)
+           ): MessageMLParam[Proto] = new MessageMLParam(this, parent, name, doc, isValid, formats)
 
-  def Param(parent: String, name: String, doc: String): MessageMLParam[Self] =
-    Param(parent, name, doc, (_: Self) => true)
+  def Param(parent: String, name: String, doc: String): MessageMLParam[Proto] =
+    Param(parent, name, doc, (_: Proto) => true)
 
-  def Param(parent: Identifiable, name: String, doc: String, isValid: Self => Boolean): MessageMLParam[Self] =
+  def Param(parent: Identifiable, name: String, doc: String, isValid: Proto => Boolean): MessageMLParam[Proto] =
     Param(parent.uid, name, doc, isValid)
 
-  def Param(parent: Identifiable, name: String, doc: String): MessageMLParam[Self] =
+  def Param(parent: Identifiable, name: String, doc: String): MessageMLParam[Proto] =
     Param(parent.uid, name, doc)
 
   trait API {
 
-    def outer: Codec[Self] = Codec.this
+    def outer: Codec[Proto] = Codec.this
   }
+}
+
+object Codec {
+
+  def defaultFormats: Formats = Xml.defaultFormats
+
+  def getRootTag(v: Any): String = {
+    v match {
+      case vv: HasRootTag =>
+        vv.rootTag
+      case _ =>
+        getDefaultRootTag(v)
+    }
+  }
+
+  def getDefaultRootTag(v: Any): String = {
+    v match {
+      case vv: Traversable[_] =>
+        vv.stringPrefix
+      case vv: Product =>
+        vv.productPrefix
+      case _ =>
+        ScalaType.getRuntimeType(v).asClass.getSimpleName.stripSuffix("$")
+    }
+  }
+
+  implicit def fallbackCodec[T: Manifest]: Codec[T] = new MessageReader[T]()
 }

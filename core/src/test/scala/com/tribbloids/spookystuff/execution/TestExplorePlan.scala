@@ -120,6 +120,7 @@ class TestExplorePlan extends SpookyEnvFixture with LocalPathDocsFixture {
         Wget('A)
       )()
       .persist()
+
     assert(ds.squashedRDD.count() == 4)
     assert(ds.spooky.spookyMetrics.pagesFetched.value == 4)
 

@@ -13,7 +13,7 @@ object FilePaths{
 
     override def apply(trace: Trace): String = {
 
-      val actionStrs = trace.map(v => v.memberStr_\\\)
+      val actionStrs = trace.map(v => v.memberStr)
 
       val actionConcat = if (actionStrs.size > 4) {
         val oneTwoThree = actionStrs.slice(0,3)
@@ -24,9 +24,9 @@ object FilePaths{
       }
       else actionStrs.mkString("~")
 
-      val hash = ""+trace.hashCode
+      val hash = "" + trace.hashCode
 
-      SpookyUtils.canonizeFileName(actionConcat + hash)
+      SpookyUtils.canonizeFileName(actionConcat + "~" + hash)
     }
   }
 
@@ -48,7 +48,7 @@ object FilePaths{
 
       val hash = ""+trace.hashCode
 
-      SpookyUtils.canonizeUrn(actionConcat + hash)
+      SpookyUtils.canonizeUrn(CommonUtils.\\\(actionConcat, hash))
     }
   }
 

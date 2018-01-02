@@ -49,6 +49,8 @@ object Metadata extends MessageRelay[Metadata] {
 
   object empty extends Metadata()
 
+  override def getRootTag(messageOpt: Option[Map[String, JValue]]): String = "root"
+
   private val jvBlacklist: Set[JValue] = Set(
     JObject()
   )
@@ -60,8 +62,6 @@ object Metadata extends MessageRelay[Metadata] {
   implicit def fromStrMap(map: Map[String, Any]) = apply(map.toSeq: _*)
 
   def apply(vs: Tuple2[String, Any]*): Metadata = Metadata(ListMap(vs: _*))
-
-  override val rootTag: String = "root"
 
   type M = Map[String, JValue]
   override def messageMF = implicitly[Manifest[M]]
@@ -92,7 +92,7 @@ object Metadata extends MessageRelay[Metadata] {
     ListMap(result: _*)
   }
 
-  override def toSelf_<<(m: M): Metadata = {
+  override def toProto_<<(m: M): Metadata = {
     val map = m
       .toSeq
       .map {

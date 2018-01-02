@@ -13,14 +13,14 @@ sealed trait MessageReaderLevel1 {
 }
 
 class MessageReader[Self](
-                           implicit override val messageMF: Manifest[Self]
+                           implicit override val messageMF: Manifest[Self] //TODO: change to ScalaType
                          ) extends Codec[Self] {
   type M = Self
 
   override def selfType: ScalaType[Self] = messageMF
 
   override def toMessage_>>(v: Self) = v
-  override def toSelf_<<(v: Self): Self = v
+  override def toProto_<<(v: Self): Self = v
 }
 
 object MessageReader extends MessageReader[Any] with MessageReaderLevel1 {

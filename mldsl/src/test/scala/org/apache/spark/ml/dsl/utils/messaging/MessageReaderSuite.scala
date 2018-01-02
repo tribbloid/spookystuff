@@ -11,8 +11,6 @@ case class UsersWrapper(a: String, users: Users)
 
 case class Users(user: Seq[User])
 
-object user
-
 case class User(
                  name: String,
                  roles: Option[Roles] = None

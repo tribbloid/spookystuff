@@ -1,5 +1,7 @@
 package com.tribbloids.spookystuff.session
 
+import java.util.Date
+
 import com.tribbloids.spookystuff.SpookyEnvFixture
 import com.tribbloids.spookystuff.actions.{Visit, Wget}
 import com.tribbloids.spookystuff.testutils.LocalPathDocsFixture
@@ -19,6 +21,7 @@ class WebDriverSuite extends SpookyEnvFixture with LocalPathDocsFixture {
       getRemoteURI = _ => "dummy.org/file",
       redeploy = true
     )
+    this.spookyConf.IgnoreCachedDocsBefore = Some(new Date())
     try {
 
       reloadSpooky

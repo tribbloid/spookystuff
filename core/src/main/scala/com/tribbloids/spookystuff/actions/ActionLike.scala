@@ -29,7 +29,7 @@ object ActionLike extends AutomaticRelay[ActionLike] {
 @SerialVersionUID(8566489926281786854L)
 abstract class ActionLike extends Product with Serializable with Verbose {
 
-  override val productPrefix = this.getClass.getSimpleName
+  override val productPrefix = this.getClass.getSimpleName.stripSuffix("$")
 
   def children: Trace
 

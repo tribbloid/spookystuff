@@ -17,6 +17,10 @@ class ColSuite extends FunSpecx {
     c1.toString.shouldBe(
       "abc"
     )
+//    val k = cNonLit.ex.memberStr
+//    val msg = cNonLit.message
+//    val writer = cNonLit: MessageWriter[_]
+//    val mem = cNonLit.memberStr
     cNonLit.toString.shouldBe(
       "Get('A)"
     )

@@ -76,10 +76,11 @@ case class FetchedDataset(
       new v.WSchema(schema).unsquash
   )
 
-  def docRDD: RDD[DocOption] = {
+  def docRDD: RDD[Seq[DocOption]] = {
 
-    squashedRDD.flatMap {
-      _.traceView.docs
+    squashedRDD.map {
+      row =>
+        new row.WSchema(schema).withSpooky.getDoc
     }
   }
 

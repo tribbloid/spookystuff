@@ -41,7 +41,7 @@ case class TraceView(
   override def toString = children.mkString(" -> ")
   override val _id: Int = idOverride.getOrElse(children.hashCode())
 
-  @volatile @transient var docs: Seq[DocOption] = _ //override, cannot be shipped, lazy evaluated
+  @volatile @transient private var docs: Seq[DocOption] = _ //override, cannot be shipped, lazy evaluated
   def docsOpt = Option(docs)
 
   override def apply(session: Session): Seq[DocOption] = {
@@ -148,7 +148,7 @@ case class TraceView(
 
     //fetched may yield very large documents and should only be
     // loaded lazily and not shuffled or persisted (unless in-memory)
-    def get: Seq[DocOption] = TraceView.this.synchronized{
+    def getDoc: Seq[DocOption] = TraceView.this.synchronized{
       docsOpt.getOrElse{
         fetch
       }

@@ -1,14 +1,20 @@
 package org.apache.spark.ml.dsl.utils.messaging
 
-import org.apache.spark.ml.dsl.utils.refl.ReflectionUtils
+import org.apache.spark.ml.dsl.utils.refl.{ReflectionUtils, ScalaType, RuntimeTypeOverride}
 
 import scala.collection.immutable.ListMap
 
 //TODO: add type information
 case class GenericProduct[T <: Product: Manifest](
                                                    override val productPrefix: String,
-                                                   kvs: ListMap[String, Any]
-                                                 ) extends Product with Map[String, Any] {
+                                                   kvs: ListMap[String, Any],
+                                                   runtimeType: ScalaType[_]
+                                                 )
+  extends MessageAPI
+    with Map[String, Any]
+    with RuntimeTypeOverride {
+
+  override def rootTag: String = productPrefix
 
   override def productElement(n: Int): Any = kvs.toSeq(n)._2
 
@@ -44,7 +50,7 @@ abstract class AutomaticRelay[T <: Product: Manifest] extends MessageRelay[T] {
 
     val casted = ListMap(transformedKVs.toSeq: _*)
 
-    val result = GenericProduct[T](prefix, casted)
+    val result = GenericProduct[T](prefix, casted, v.getClass)
     result
   }
 }

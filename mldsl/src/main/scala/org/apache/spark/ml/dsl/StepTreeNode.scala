@@ -1,6 +1,6 @@
 package org.apache.spark.ml.dsl
 
-import org.apache.spark.ml.dsl.utils.messaging.{MessageAPI_<=>, MessageRelay}
+import org.apache.spark.ml.dsl.utils.messaging.{MessageAPI_<<, MessageRelay}
 import org.apache.spark.sql.catalyst.trees.TreeNode
 import org.apache.spark.sql.utils.DataTypeRelay
 
@@ -68,7 +68,7 @@ object StepTreeNode extends MessageRelay[StepTreeNode[_]] {
                 id: String,
                 dataTypes: Set[DataTypeRelay.M] = Set.empty,
                 stage: Seq[M] = Nil
-              ) extends MessageAPI_<=>[StepTreeNode[_]] {
-    override def toSelf_<< : StepTreeNode[_] = ???
+              ) extends MessageAPI_<< {
+    override def toProto_<< : StepTreeNode[_] = ???
   }
 }

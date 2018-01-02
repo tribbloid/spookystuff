@@ -43,7 +43,7 @@ trait Registry {
             codecOpt match {
               case Some(codec: Codec[_]) =>
                 Success(codec)
-              case None =>
+              case _ =>
                 Failure(new UnsupportedOperationException(s"$clazz has no companion Codec"))
             }
           }

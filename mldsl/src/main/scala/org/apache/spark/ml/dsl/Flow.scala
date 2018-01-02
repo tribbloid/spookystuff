@@ -4,7 +4,7 @@ import com.github.mdr.ascii.graph.Graph
 import com.github.mdr.ascii.layout.GraphLayout
 import com.github.mdr.ascii.layout.prefs.LayoutPrefsImpl
 import org.apache.spark.ml.dsl.utils.FlowUtils
-import org.apache.spark.ml.dsl.utils.messaging.{MessageAPI_<=>, MessageRelay}
+import org.apache.spark.ml.dsl.utils.messaging.{MessageAPI_<<, MessageRelay}
 import org.apache.spark.ml.{Pipeline, PipelineModel, PipelineStage, Transformer}
 import org.apache.spark.sql.catalyst.expressions.NamedExpression
 import org.apache.spark.sql.types.{StructField, StructType}
@@ -1004,18 +1004,18 @@ object Flow extends MessageRelay[Flow] {
                 declarations: Declaration,
                 flowLines: Seq[GraphRepr],
                 headIDs: HeadIDs
-              ) extends MessageAPI_<=>[Flow]{
+              ) extends MessageAPI_<<{
 
     implicit def stepsToView(steps: StepMap[String, StepLike]): StepMapView = new StepMapView(steps)
 
-    override def toSelf_<< : Flow = {
+    override def toProto_<< : Flow = {
 
-      val steps = declarations.stage.map(_.toSelf_<<)
+      val steps = declarations.stage.map(_.toProto_<<)
       var buffer: StepMap[String, StepLike] = StepMap(steps.map(v => v.id -> v): _*)
 
       def treeNodeReprToLink(repr: StepTreeNode.M): Unit = {
         if (! buffer.contains(repr.id)) {
-          buffer = buffer.updated(repr.id, Source(repr.id, repr.dataTypes.map(_.toSelf_<<)))
+          buffer = buffer.updated(repr.id, Source(repr.id, repr.dataTypes.map(_.toProto_<<)))
         }
         val children = repr.stage
         buffer = buffer.connectAll(Seq(repr.id), children.map(_.id))

@@ -67,7 +67,7 @@ case class SquashedFetchedRow(
     @transient lazy val defaultGroupedFetched: Array[Seq[DocOption]] = {
       val grandBuffer: ArrayBuffer[Seq[DocOption]] = ArrayBuffer()
       val buffer: ArrayBuffer[DocOption] = ArrayBuffer()
-      withSpooky.get.foreach {
+      withSpooky.getDoc.foreach {
         page =>
           if (buffer.exists(_.name == page.name)) {
             grandBuffer += buffer.toList

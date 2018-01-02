@@ -2,7 +2,7 @@ package org.apache.spark.ml.dsl
 
 import org.apache.spark.ml.PipelineStage
 import org.apache.spark.ml.dsl.utils.Xml
-import org.apache.spark.ml.dsl.utils.messaging.{MessageAPI_<=>, MessageRelay}
+import org.apache.spark.ml.dsl.utils.messaging.{MessageAPI_<<, MessageRelay}
 import org.apache.spark.ml.param.{ParamPair, Params}
 import org.apache.spark.sql.ColumnName
 import org.apache.spark.sql.types.DataType
@@ -85,9 +85,9 @@ object Step extends MessageRelay[Step] {
                 implementation: String,
                 uid: Option[String] = None,
                 params: Option[JValue] = None
-              ) extends MessageAPI_<=>[Step] {
+              ) extends MessageAPI_<< {
 
-    override lazy val toSelf_<< : Step = {
+    override lazy val toProto_<< : Step = {
 
       val cls = Utils.classForName(implementation)
       val instance = cls.getConstructor(classOf[String]).newInstance(uid.toSeq: _*).asInstanceOf[PipelineStage]

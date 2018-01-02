@@ -8,13 +8,22 @@ import spire.ClassTag
 import scala.language.implicitConversions
 import scala.util.Try
 
-abstract class MessageRelay[Self: ClassTag] extends Codec[Self] {
+abstract class MessageRelay[Proto: ClassTag] extends Codec[Proto] {
 
-  override def selfType: ScalaType[Self] = implicitly[ClassTag[Self]]
+  override def selfType: ScalaType[Proto] = implicitly[ClassTag[Proto]]
 
-  override def toSelf_<<(v: M): Self = v match {
-    case vv: MessageAPI_<=>[Self] =>
-      vv.toSelf_<<
+  override def toMessage_>>(v: Proto): M = v match {
+    case vv: ProtoAPI =>
+      vv.toMessage_>>.asInstanceOf[M]
+    case _ =>
+      throw new UnsupportedOperationException(
+        s"toMessage_>> is not implemented in ${this.getClass.getName} for message type ${this.messageMF.runtimeClass.getName}"
+      )
+  }
+
+  override def toProto_<<(v: M): Proto = v match {
+    case vv: MessageAPI_<< =>
+      vv.toProto_<<.asInstanceOf[Proto]
     case _ =>
       throw new UnsupportedOperationException(
         s"toSelf_<< is not implemented in ${this.getClass.getName} for message type ${this.messageMF.runtimeClass.getName}"

@@ -147,6 +147,13 @@ object ScalaType {
   implicit class FromClassTag[T](val _classTag: ClassTag[T]) extends Ctg[T]
   def fromClassTag[T](implicit v: ClassTag[T]) = new FromClassTag(v)
 
+  def getRuntimeType(v: Any): ScalaType[_] = {
+    v match {
+      case v: RuntimeTypeOverride => v.runtimeType
+      case _ => v.getClass
+    }
+  }
+
   object DTypeView {
 
     lazy val atomicExamples: Seq[(Any, TypeTag[_])] = {

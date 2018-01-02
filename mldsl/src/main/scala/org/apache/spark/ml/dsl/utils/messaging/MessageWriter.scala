@@ -3,6 +3,7 @@ package org.apache.spark.ml.dsl.utils.messaging
 import java.io.File
 
 import org.apache.spark.ml.dsl.utils._
+import org.apache.spark.ml.dsl.utils.refl.ScalaType
 import org.json4s.JsonAST.JObject
 import org.json4s.jackson.JsonMethods.{pretty, _}
 import org.json4s.{Extraction, Formats, JValue}
@@ -13,10 +14,12 @@ import scala.xml.NodeSeq
 case class MessageWriter[M](
                              message: M,
                              formats: Formats = Xml.defaultFormats,
-                             rootTagOpt: Option[String] = None
+                             rootTagOverride: Option[String] = None
                            ) extends Serializable {
 
-  def rootTag: String = rootTagOpt.getOrElse(message.getClass.getSimpleName.stripSuffix("$"))
+  def rootTag: String = rootTagOverride.getOrElse(
+    Codec.getRootTag(message)
+  )
 
   def toJValue(implicit formats: Formats = formats): JValue = Extraction.decompose(message)
   def compactJSON(implicit formats: Formats = formats): String = compact(render(toJValue))
@@ -72,13 +75,15 @@ case class MessageWriter[M](
 
     def product2Str(v: Product): String = {
       val elems = v.productIterator.toList
-      val concat = if (elems.isEmpty || v.productPrefix.endsWith("$")) {
-        v.productPrefix.stripSuffix("$")
+      val runtimeType = ScalaType.getRuntimeType(v)
+
+      val concat = if (elems.isEmpty || runtimeType.asClass.getCanonicalName.endsWith("$")) {
+        rootTag
       }
       else {
         val strs: List[String] = listRecursion(elems)
 
-        strs.mkString(v.productPrefix + start, sep, end)
+        strs.mkString(rootTag + start, sep, end)
       }
       concat
     }
@@ -90,17 +95,17 @@ case class MessageWriter[M](
       case is: Map[_, _] =>
         val strs = mapRecursion(is)
         val concat = if (strs.nonEmpty)
-          strs.mkString(is.stringPrefix + start, sep, end)
+          strs.mkString(rootTag + start, sep, end)
         else
-          is.stringPrefix + start + end
+          rootTag + start + end
         concat
 
       case is: Traversable[_] =>
         val strs = listRecursion(is)
         val concat = if (strs.nonEmpty)
-          strs.mkString(is.stringPrefix + start, sep, end)
+          strs.mkString(rootTag + start, sep, end)
         else
-          is.stringPrefix + start + end
+          rootTag + start + end
         concat
 
       case v: Product =>
