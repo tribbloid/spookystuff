@@ -5,7 +5,8 @@ import com.tribbloids.spookystuff.actions.{Action, ActionUDT, Wget}
 import com.tribbloids.spookystuff.doc.{Doc, Unstructured}
 import com.tribbloids.spookystuff.extractors.impl.{Get, Lit}
 import com.tribbloids.spookystuff.testbeans.Example
-import com.tribbloids.spookystuff.testutils.{LocalPathDocsFixture, TestHelper}
+import com.tribbloids.spookystuff.testutils.LocalPathDocsFixture
+import com.tribbloids.spookystuff.utils.CommonUtils
 import org.apache.spark.sql.types._
 
 /**
@@ -13,7 +14,6 @@ import org.apache.spark.sql.types._
   */
 class ScalaDynamicExtractorSuite extends SpookyEnvFixture with LocalPathDocsFixture {
 
-  import com.tribbloids.spookystuff.dsl._
   import org.apache.spark.ml.dsl.utils.refl.ScalaType._
 
   val doc = Wget(HTML_URL).fetch(spooky).head
@@ -66,7 +66,6 @@ class ScalaDynamicExtractorSuite extends SpookyEnvFixture with LocalPathDocsFixt
 
   //useless at the moment
   it("can resolve Action.dryrun") {
-    import com.tribbloids.spookystuff.dsl._
 
     val action: Action = Wget(HTML_URL)
 
@@ -402,7 +401,7 @@ class ScalaDynamicExtractorSuite extends SpookyEnvFixture with LocalPathDocsFixt
     val ints = 1 to 1000000
 
     val pfScala = dynamic.resolveUsingScala(IntegerType)
-    val (scalaRes, scalaTime) = TestHelper.timer(
+    val (scalaRes, scalaTime) = CommonUtils.timer(
       ints.map(
         i =>
           pfScala.apply(i).get.asInstanceOf[Boolean]
@@ -411,7 +410,7 @@ class ScalaDynamicExtractorSuite extends SpookyEnvFixture with LocalPathDocsFixt
     println(scalaTime)
 
     val pfJava= dynamic.resolveUsingScala(IntegerType)
-    val (javaRes, javaTime) = TestHelper.timer(
+    val (javaRes, javaTime) = CommonUtils.timer(
       ints.map(
         i =>
           pfJava.apply(i).get.asInstanceOf[Boolean]
@@ -419,7 +418,7 @@ class ScalaDynamicExtractorSuite extends SpookyEnvFixture with LocalPathDocsFixt
     )
     println(javaTime)
 
-    val (nativeRes, nativeTime) = TestHelper.timer (
+    val (nativeRes, nativeTime) = CommonUtils.timer (
       ints.map(
         i =>
           int2Str(i).startsWith(int2_10(i))
@@ -445,7 +444,7 @@ class ScalaDynamicExtractorSuite extends SpookyEnvFixture with LocalPathDocsFixt
   //    val ints = 1 to 1000000
   //
   //    val pfScala = dynamic.resolveUsingScala(IntegerType)
-  //    val (scalaRes, scalaTime) = TestHelper.timer(
+  //    val (scalaRes, scalaTime) = CommonUtils.timer(
   //      ints.map(
   //        i =>
   //          pfScala.apply(i).asInstanceOf[Boolean]
@@ -454,7 +453,7 @@ class ScalaDynamicExtractorSuite extends SpookyEnvFixture with LocalPathDocsFixt
   //    println(scalaTime)
   //
   //    val pfJava= dynamic.resolveUsingScala(IntegerType)
-  //    val (javaRes, javaTime) = TestHelper.timer(
+  //    val (javaRes, javaTime) = CommonUtils.timer(
   //      ints.map(
   //        i =>
   //          pfJava.apply(i).asInstanceOf[Boolean]
@@ -462,7 +461,7 @@ class ScalaDynamicExtractorSuite extends SpookyEnvFixture with LocalPathDocsFixt
   //    )
   //    println(javaTime)
   //
-  //    val (nativeRes, nativeTime) = TestHelper.timer(
+  //    val (nativeRes, nativeTime) = CommonUtils.timer(
   //      ints.map(
   //        i =>
   //          int2Str(i).startsWith(int2_10(i))

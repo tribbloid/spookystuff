@@ -1,6 +1,5 @@
 package com.tribbloids.spookystuff.session.python
 
-import com.tribbloids.spookystuff.testutils.TestHelper
 import com.tribbloids.spookystuff.utils.CommonUtils
 import com.tribbloids.spookystuff.utils.lifespan.Lifespan
 import com.tribbloids.spookystuff.{PyInterpretationException, SpookyEnvFixture}
@@ -155,7 +154,7 @@ class PythonDriverSuite extends SpookyEnvFixture {
     PythonDriverSuite.runIterable(1 to 3) {
       (i, proc) =>
         proc.batchImport(Seq("import time"))
-        val (_, time) = TestHelper.timer {
+        val (_, time) = CommonUtils.timer {
           Try {CommonUtils.withDeadline(5.seconds) {
             proc.interpret(
               s"""

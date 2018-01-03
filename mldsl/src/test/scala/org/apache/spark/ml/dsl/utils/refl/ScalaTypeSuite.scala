@@ -19,7 +19,7 @@ class ScalaTypeSuite extends FunSpecx {
 
     val tt = UnreifiedScalaType(typeTag[Int])
     tt.toString.shouldBe(
-      "(unreified) TypeTag[Int]"
+      "(unreified) Int"
     )
   }
 

@@ -133,6 +133,13 @@ class CommonUtils {
     }
   }
 
+  def timer[T](fn: => T): (T, Long) = {
+    val startTime = System.currentTimeMillis()
+    val result = fn
+    val endTime = System.currentTimeMillis()
+    (result, endTime - startTime)
+  }
+
 }
 
 object CommonUtils extends CommonUtils

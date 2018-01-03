@@ -2,10 +2,9 @@ package com.tribbloids.spookystuff.utils
 
 import java.io.File
 
-import com.tribbloids.spookystuff.testutils.{TestHelper, FunSpecx}
+import com.tribbloids.spookystuff.testutils.{FunSpecx, TestHelper}
 import org.apache.spark.TaskContext
 import org.apache.spark.rdd.RDD
-import org.scalatest.FunSuite
 
 import scala.collection.immutable.Seq
 import scala.collection.mutable.ArrayBuffer
@@ -18,6 +17,7 @@ import scala.util.Random
 class SpookyUtilsSuite extends FunSpecx {
 
   import SpookyViews._
+
   import scala.concurrent.duration._
 
   it("canonizeUrn should clean ?:$&#"){
@@ -56,7 +56,7 @@ class SpookyUtilsSuite extends FunSpecx {
 
   it("withDeadline can write heartbeat info into log by default") {
 
-    val (_, time) = TestHelper.timer {
+    val (_, time) = CommonUtils.timer {
       TestHelper.intercept[TimeoutException] {
         CommonUtils.withDeadline(10.seconds, Some(1.second))(
           {
@@ -67,7 +67,7 @@ class SpookyUtilsSuite extends FunSpecx {
     }
     TestHelper.assert(time < 12000)
 
-    val (_, time2) = TestHelper.timer {
+    val (_, time2) = CommonUtils.timer {
       CommonUtils.withDeadline(10.seconds, Some(1.second))(
         {
           Thread.sleep(5000)
@@ -81,7 +81,7 @@ class SpookyUtilsSuite extends FunSpecx {
 
     var log = ArrayBuffer[String]()
 
-    val (_, time) = TestHelper.timer {
+    val (_, time) = CommonUtils.timer {
       TestHelper.intercept[TimeoutException] {
         CommonUtils.withDeadline(10.seconds, Some(1.second))(
           {
@@ -113,7 +113,7 @@ class SpookyUtilsSuite extends FunSpecx {
     )
 
     log.clear()
-    val (_, time2) = TestHelper.timer {
+    val (_, time2) = CommonUtils.timer {
       CommonUtils.withDeadline(10.seconds, Some(1.second))(
         {
           Thread.sleep(5000)
@@ -143,7 +143,7 @@ class SpookyUtilsSuite extends FunSpecx {
     TestHelper.TestSpark.exeAtLeastOncePerExecutorCore {
 
       println("partition-" + TaskContext.get().partitionId())
-      val (_, time) = TestHelper.timer {
+      val (_, time) = CommonUtils.timer {
         TestHelper.intercept[TimeoutException] {
           CommonUtils.withDeadline(10.seconds, Some(1.second)) {
             Thread.sleep(20000)
@@ -153,7 +153,7 @@ class SpookyUtilsSuite extends FunSpecx {
       }
       TestHelper.assert(time < 11000, s"$time vs 11000")
 
-      val (_, time2) = TestHelper.timer {
+      val (_, time2) = CommonUtils.timer {
         CommonUtils.withDeadline(10.seconds, Some(1.second)) {
           Thread.sleep(3000)
           println("result 2")

@@ -5,7 +5,7 @@ import com.tribbloids.spookystuff.dsl._
 import com.tribbloids.spookystuff.extractors.impl.Lit
 import com.tribbloids.spookystuff.row.{DataRow, FetchedRow, Field}
 import com.tribbloids.spookystuff.session.Session
-import com.tribbloids.spookystuff.testutils.TestHelper
+import com.tribbloids.spookystuff.utils.CommonUtils
 import com.tribbloids.spookystuff.{ActionException, Const, SpookyEnvFixture}
 import org.apache.spark.ml.dsl.utils.messaging.MessageWriter
 import org.apache.spark.rdd.RDD
@@ -226,7 +226,7 @@ class ActionSuite extends SpookyEnvFixture {
     a in 10.seconds
     assert(a.hardTerminateTimeout(session) == 10.seconds + Const.hardTerminateOverhead)
 
-    val (result, time) = TestHelper.timer {
+    val (result, time) = CommonUtils.timer {
       try {
         a
           .fetch(spooky)
