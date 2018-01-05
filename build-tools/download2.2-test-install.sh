@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 CRDIR="$(cd "`dirname "$0"`"; pwd)"
-SPARK_NAME="${SPARK:-spark-2.2.0}"
+SPARK_NAME="${SPARK:-spark-2.2.1}"
 
 SPARK_DIR_NAME="$SPARK_NAME"-bin-hadoop2.6
 
