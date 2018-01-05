@@ -14,7 +14,7 @@ class ScalaReflectionSpike extends FunSpecx {
   import org.apache.spark.ml.dsl.utils.refl.ScalaType._
 
   lazy val exLit: Lit[FetchedRow, _] = Lit(new Example())
-  lazy val exType: DataType = UnreifiedScalaType.apply[Example]
+  lazy val exType: DataType = UnreifiedScalaType.forType[Example]
 
   it("getMethodsByName should work on overloaded function") {
 
@@ -288,5 +288,5 @@ class ScalaReflectionSpike_Generic extends ScalaReflectionSpike {
 
   override lazy val exLit = Lit(new GenericExample[Int]("dummy", 1))
   //  val evi = (ex.dataType)
-  override lazy val exType = UnreifiedScalaType.apply[GenericExample[Int]]
+  override lazy val exType = UnreifiedScalaType.forType[GenericExample[Int]]
 }

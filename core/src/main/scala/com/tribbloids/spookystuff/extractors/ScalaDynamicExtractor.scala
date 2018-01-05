@@ -163,7 +163,7 @@ case class ScalaDynamicExtractor[T](
   override def resolveType(tt: DataType): DataType = locked {
     val tag: TypeTag[Any] = _resolveTypeTag(tt)
 
-    UnreifiedScalaType(tag)
+    UnreifiedScalaType.forType(tag)
   }
 
   private def _resolveTypeTag(tt: DataType): TypeTag[Any] = locked {
@@ -330,7 +330,7 @@ trait ScalaDynamicMixin[T, +R] extends Dynamic with ReflectionLock {
       case ex: GenExtractor[_, _] =>
         ex.asInstanceOf[GenExtractor[T, Any]]
       case v@ _ =>
-        val tt = UnreifiedScalaType.fromInstance(v)
+        val tt = UnreifiedScalaType.forRuntimeInstance(v)
         new Lit[T, Any](Option(v), tt)
     }
 

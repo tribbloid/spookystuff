@@ -16,7 +16,7 @@ class ScalaUDTSuite extends SpookyEnvFixture with FunSpecx {
   import org.apache.spark.sql.catalyst.ScalaReflection.universe._
 
   def getAndTestReifiedType[T: TypeTag]: DataType = {
-    val unreified = UnreifiedScalaType.apply[T]
+    val unreified = UnreifiedScalaType.forType[T]
     assertSerDe(unreified)
 
     val reified = TypeUtils.tryCatalystTypeFor[T].get

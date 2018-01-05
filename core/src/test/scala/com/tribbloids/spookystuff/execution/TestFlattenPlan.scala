@@ -85,6 +85,12 @@ class TestFlattenPlan extends SpookyEnvFixture {
     )
   }
 
+  def assertTypeEqual(t1: UnreifiedScalaType[_], t2: UnreifiedScalaType[_]) = {
+    assert(t1.asClass == t2.asType)
+    assert(t1.asType == t2.asType)
+    assert(t1 == t2)
+  }
+
   it("FlattenPlan should work on extracted array") {
     val extracted = src.wget(
       HTML_URL
@@ -93,14 +99,16 @@ class TestFlattenPlan extends SpookyEnvFixture {
         Lit(Array("a"->1, "b"->2)) ~ 'Array
       )
 
-    assert(extracted.schema.typedFor('Array).get.dataType == UnreifiedScalaType.apply[Array[Tuple2[java.lang.String, Int]]])
+    val t1 = extracted.schema.typedFor('Array).get.dataType.asInstanceOf[UnreifiedScalaType[_]]
+    val t2 = UnreifiedScalaType.forType[Array[Tuple2[String, Int]]].asInstanceOf[UnreifiedScalaType[_]]
+    assertTypeEqual(t1, t2)
 
     val flattened = extracted
       .flatten(
         'Array
       )
 
-//    assert(flattened.schema.typedFor('Array).get.dataType == UnreifiedScalaType.apply[Tuple2[String, Int]])
+    //    assert(flattened.schema.typedFor('Array).get.dataType == UnreifiedScalaType.apply[Tuple2[String, Int]])
     assert(flattened.schema.typedFor('Array).get.dataType == StructType(Array(
       StructField("_1",StringType,nullable = true),
       StructField("_2",IntegerType,nullable = false)
@@ -115,20 +123,21 @@ class TestFlattenPlan extends SpookyEnvFixture {
         Lit(Seq("a"->1, "b"->2)) ~ 'Array
       )
 
-    assert(extracted.schema.typedFor('Array).get.dataType == UnreifiedScalaType.apply[Seq[Tuple2[java.lang.String, Int]]])
+    val t1 = extracted.schema.typedFor('Array).get.dataType.asInstanceOf[UnreifiedScalaType[_]]
+    val t2 = UnreifiedScalaType.forType[Seq[Tuple2[String, Int]]].asInstanceOf[UnreifiedScalaType[_]]
+    assertTypeEqual(t1, t2)
 
     val flattened = extracted
       .flatten(
         'Array
       )
 
-//    assert(flattened.schema.typedFor('Array).get.dataType == UnreifiedScalaType.apply[Tuple2[String, Int]])
+    //    assert(flattened.schema.typedFor('Array).get.dataType == UnreifiedScalaType.apply[Tuple2[String, Int]])
     assert(flattened.schema.typedFor('Array).get.dataType == StructType(Array(
       StructField("_1",StringType,nullable = true),
       StructField("_2",IntegerType,nullable = false)
     )))
   }
-
 
   it("FlattenPlan should work on extracted List") {
     val extracted = src.wget(
@@ -138,14 +147,16 @@ class TestFlattenPlan extends SpookyEnvFixture {
         Lit(List("a"->1, "b"->2)) ~ 'Array
       )
 
-    assert(extracted.schema.typedFor('Array).get.dataType == UnreifiedScalaType.apply[List[Tuple2[java.lang.String, Int]]])
+    val t1 = extracted.schema.typedFor('Array).get.dataType.asInstanceOf[UnreifiedScalaType[_]]
+    val t2 = UnreifiedScalaType.forType[List[Tuple2[String, Int]]].asInstanceOf[UnreifiedScalaType[_]]
+    assertTypeEqual(t1, t2)
 
     val flattened = extracted
       .flatten(
         'Array
       )
 
-//    assert(flattened.schema.typedFor('Array).get.dataType == UnreifiedScalaType.apply[Tuple2[String, Int]])
+    //    assert(flattened.schema.typedFor('Array).get.dataType == UnreifiedScalaType.apply[Tuple2[String, Int]])
     assert(flattened.schema.typedFor('Array).get.dataType == StructType(Array(
       StructField("_1",StringType,nullable = true),
       StructField("_2",IntegerType,nullable = false)

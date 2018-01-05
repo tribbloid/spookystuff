@@ -25,7 +25,7 @@ object GenExtractor extends AutomaticRelay[GenExtractor[_,_]] {
   }
   def fromOptionFn[T, R: TypeTag](self: T => Option[R]): GenExtractor[T, R] = {
 
-    fromOptionFn(self, UnreifiedScalaType.apply[R])
+    fromOptionFn(self, UnreifiedScalaType.forType[R])
   }
 
   trait Leaf[T, +R] extends GenExtractor[T, R] {
@@ -102,7 +102,7 @@ object GenExtractor extends AutomaticRelay[GenExtractor[_,_]] {
           typeTag[Tuple2[a, b]]
       }
 
-      UnreifiedScalaType(ttg)
+      UnreifiedScalaType.forType(ttg)
     }
 
     override def resolve(tt: DataType): PartialFunction[T, (R1, R2)] = {
@@ -133,7 +133,7 @@ object GenExtractor extends AutomaticRelay[GenExtractor[_,_]] {
 
   implicit def fromFn[T, R: TypeTag](self: T => R): GenExtractor[T, R] = {
 
-    fromFn(self, UnreifiedScalaType.apply[R])
+    fromFn(self, UnreifiedScalaType.forType[R])
   }
 }
 

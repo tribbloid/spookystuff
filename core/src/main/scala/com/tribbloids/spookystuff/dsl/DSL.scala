@@ -197,7 +197,7 @@ sealed trait Level2 {
 
     def groupBy[K: TypeTag](f: T => K): Extractor[Map[K, Seq[T]]] = {
 
-      val keyType = UnreifiedScalaType.apply[K]
+      val keyType = UnreifiedScalaType.forType[K]
 
       self.andTyped (
         groupByImpl(f),

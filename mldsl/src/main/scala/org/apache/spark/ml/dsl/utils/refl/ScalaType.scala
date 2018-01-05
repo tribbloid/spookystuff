@@ -323,14 +323,14 @@ class UnreifiedScalaType[T](@transient val _typeTag: TypeTag[T]) extends ScalaTy
 
 object UnreifiedScalaType {
 
-  def apply[T](implicit ttg: TypeTag[T]): DataType = {
+  def forType[T](implicit ttg: TypeTag[T]): DataType = {
     if (ttg == TypeTag.Null) NullType
     else new UnreifiedScalaType(ttg)
   }
 
-  def fromInstance[T](obj: T): DataType = {
+  def forRuntimeInstance[T](obj: T): DataType = {
     val clazz: Class[_] = obj.getClass
-    apply(new ScalaType.FromClass(clazz).asTypeTag)
+    forType(new ScalaType.FromClass(clazz).asTypeTag)
   }
 
   def reify(tt: DataType): DataType = {

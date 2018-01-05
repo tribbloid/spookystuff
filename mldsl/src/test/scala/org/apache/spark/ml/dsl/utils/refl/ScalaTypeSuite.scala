@@ -17,7 +17,7 @@ class ScalaTypeSuite extends FunSpecx {
 
   it("UnreifiedScalaType.toString") {
 
-    val tt = UnreifiedScalaType(typeTag[Int])
+    val tt = UnreifiedScalaType.forType(typeTag[Int])
     tt.toString.shouldBe(
       "(unreified) Int"
     )
@@ -138,8 +138,8 @@ class ScalaTypeSuite extends FunSpecx {
       typeTag[User],
       typeTag[Multipart],
       typeTag[Multipart.type]
-//      typeTag[Map[_,_]], //TODO: why this fails? Add back!
-//      typeTag[List[_]]
+      //      typeTag[Map[_,_]], //TODO: why this fails? Add back!
+      //      typeTag[List[_]]
     )
 
     ttgs.foreach {
