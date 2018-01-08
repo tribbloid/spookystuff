@@ -46,10 +46,10 @@ class TestHelper() extends NOTSerializable {
   def SPARK_HOME = System.getenv("SPARK_HOME")
 
   final val MAX_TOTAL_MEMORY = 32768
-  final val MIN_MEMORY_PER_CORE = 1024
+  final val MEMORY_PER_CORE = 1024
   //  final val EXECUTOR_JVM_MEMORY_OVERHEAD = 256 //TODO: remove, too complex
 
-  final val MAX_CORES = MAX_TOTAL_MEMORY / MIN_MEMORY_PER_CORE
+  final val MAX_CORES = MAX_TOTAL_MEMORY / MEMORY_PER_CORE
 
   lazy val numCores: Int = {
     val max = Option(properties.getProperty("maxCores")).map(_.toInt)
@@ -93,9 +93,10 @@ class TestHelper() extends NOTSerializable {
   def numWorkers: Int = clusterSizeOpt.getOrElse(1)
   def numComputers: Int = clusterSizeOpt.map(_ + 1).getOrElse(1)
 
-  final private def executorMemoryCapOpt = clusterSizeOpt.map(v => MAX_TOTAL_MEMORY / v)
-  def executorMemoryOpt: Option[Int] = for (n <- numCoresPerWorkerOpt; c <- executorMemoryCapOpt) yield {
-    Math.min(n*MIN_MEMORY_PER_CORE, c)
+  def executorMemoryCapOpt: Option[Int] = clusterSizeOpt.map(clusterSize => MAX_TOTAL_MEMORY / clusterSize)
+
+  def executorMemoryOpt: Option[Int] = for (n <- numCoresPerWorkerOpt; cap <- executorMemoryCapOpt) yield {
+    Math.min(n*MEMORY_PER_CORE, cap)
   }
 
   val METASTORE_PATH = CommonUtils.\\\(System.getProperty("user.dir"), "metastore_db")
