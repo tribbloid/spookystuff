@@ -140,7 +140,7 @@ class SpookyUtilsSuite extends FunSpecx {
 
   it("withDeadline won't be affected by scala concurrency global ForkJoin thread pool") {
 
-    TestHelper.TestSpark.exeAtLeastOncePerExecutorCore {
+    TestHelper.TestSC.exeAtLeastOncePerExecutorCore {
 
       println("partition-" + TaskContext.get().partitionId())
       val (_, time) = CommonUtils.timer {
@@ -164,7 +164,7 @@ class SpookyUtilsSuite extends FunSpecx {
   }
 
   it("RDDs.batchReduce yield the same results as RDDs.map(_.reduce)") {
-    val src = TestHelper.TestSpark.parallelize(1 to 10)
+    val src = TestHelper.TestSC.parallelize(1 to 10)
     val rdds: Seq[RDD[Int]] = (1 to 10).map {
       i =>
         val result = src.map {
@@ -188,7 +188,7 @@ class SpookyUtilsSuite extends FunSpecx {
 
   it("RDDs.shufflePartitions can move data into random partitions") {
 
-    val src = TestHelper.TestSpark.parallelize(1 to 100).persist()
+    val src = TestHelper.TestSC.parallelize(1 to 100).persist()
 
     val shuffled1 = src.shufflePartitions
     val shuffled2 = src.shufflePartitions

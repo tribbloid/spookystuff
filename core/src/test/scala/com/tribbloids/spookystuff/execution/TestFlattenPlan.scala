@@ -87,7 +87,7 @@ class TestFlattenPlan extends SpookyEnvFixture {
 
   def assertTypeEqual(t1: UnreifiedScalaType[_], t2: UnreifiedScalaType[_]) = {
     assert(t1.asClass == t2.asClass)
-    assert(t1.asType == t2.asType)
+    assert(t1.asType =:= t2.asType)
     assert(t1 == t2)
   }
 

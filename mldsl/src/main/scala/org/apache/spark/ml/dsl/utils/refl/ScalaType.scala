@@ -24,7 +24,7 @@ import scala.reflect.ClassTag
 //TODO: use scala type class: http://danielwestheide.com/blog/2013/02/06/the-neophytes-guide-to-scala-part-12-type-classes.html
 trait ScalaType[T] extends DataType
   with (() => TypeTag[T])
-  with ReflectionLock with Serializable with IDMixin {
+  with ReflectionLock with Serializable {
 
   override def defaultSize: Int = 0
   override def asNullable: this.type = this
@@ -62,9 +62,16 @@ trait ScalaType[T] extends DataType
   def reifyOrNullType = tryReify.getOrElse{NullType}
 
   // see [SPARK-8647], this achieves the needed constant hash code without declaring singleton
-  //TODO: this is not accurate due to type erasure, need a better way to handle both type erasure & type alias
-  @transient override lazy val _id = {
-    (asClass , asType)
+  final override def hashCode: Int = asClass.hashCode()
+
+  final override def equals(v: Any): Boolean = {
+    if (v == null) return false
+    v match {
+      case vv: ScalaType[_] =>
+        (this.asClass == vv.asClass) && (this.asType =:= vv.asType)
+      case _ =>
+        false
+    }
   }
 
   object utils {

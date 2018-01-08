@@ -6,7 +6,7 @@ import java.util.Properties
 import com.tribbloids.spookystuff.utils.{CommonUtils, ConfUtils, NOTSerializable}
 import org.apache.commons.io.FileUtils
 import org.apache.spark.serializer.KryoSerializer
-import org.apache.spark.sql.SQLContext
+import org.apache.spark.sql.SparkSession
 import org.apache.spark.{SparkConf, SparkContext, SparkEnv, SparkException}
 
 import scala.reflect.ClassTag
@@ -46,12 +46,14 @@ class TestHelper() extends NOTSerializable {
   def SPARK_HOME = System.getenv("SPARK_HOME")
 
   final val MAX_TOTAL_MEMORY = 32768
-  final val MIN_EXECUTOR_MEMORY = 4096
-  final val EXECUTOR_JVM_MEMORY_OVERHEAD = 256
+  final val MIN_MEMORY_PER_CORE = 1024
+  //  final val EXECUTOR_JVM_MEMORY_OVERHEAD = 256 //TODO: remove, too complex
 
-  lazy val maxCores = {
+  final val MAX_CORES = MAX_TOTAL_MEMORY / MIN_MEMORY_PER_CORE
+
+  lazy val numCores: Int = {
     val max = Option(properties.getProperty("maxCores")).map(_.toInt)
-      .getOrElse(Int.MaxValue)
+      .getOrElse(MAX_CORES)
     var n = Math.min (
       Runtime.getRuntime.availableProcessors(),
       max
@@ -60,8 +62,6 @@ class TestHelper() extends NOTSerializable {
     if (n < 2) n = 2
     n
   }
-
-  final val MAX_CLUSTER_SIZE = MAX_TOTAL_MEMORY / MIN_EXECUTOR_MEMORY
 
   lazy val clusterSize_numCoresPerWorker_Opt: Option[(Int, Int)] = {
     Option(SPARK_HOME).flatMap {
@@ -76,9 +76,9 @@ class TestHelper() extends NOTSerializable {
           case (Some(v1), Some(v2)) =>
             Some(v1 -> v2)
           case (Some(v1), None) =>
-            Some(Math.min(v1, MAX_CLUSTER_SIZE) -> Math.max(maxCores / v1, 1))
+            Some(v1 -> Math.max(numCores / v1, 1))
           case (None, Some(v2)) =>
-            Some(Math.min(Math.max(maxCores / v2, 1), MAX_CLUSTER_SIZE), v2)
+            Some(Math.max(numCores / v2, 1), v2)
         }
     }
   }
@@ -90,8 +90,51 @@ class TestHelper() extends NOTSerializable {
     Option(properties.getProperty("MaxFailures")).map(_.toInt).getOrElse(4)
   }
 
-  def numWorkers = clusterSizeOpt.getOrElse(1)
-  def numComputers = clusterSizeOpt.map(_ + 1).getOrElse(1)
+  def numWorkers: Int = clusterSizeOpt.getOrElse(1)
+  def numComputers: Int = clusterSizeOpt.map(_ + 1).getOrElse(1)
+
+  final private def executorMemoryCapOpt = clusterSizeOpt.map(v => MAX_TOTAL_MEMORY / v)
+  def executorMemoryOpt: Option[Int] = for (n <- numCoresPerWorkerOpt; c <- executorMemoryCapOpt) yield {
+    Math.min(n*MIN_MEMORY_PER_CORE, c)
+  }
+
+  val METASTORE_PATH = CommonUtils.\\\(System.getProperty("user.dir"), "metastore_db")
+  val WAREHOUSE_PATH = CommonUtils.\\\(System.getProperty("user.dir"), "warehouse")
+
+  /**
+    * @return local mode: None -> local[n, 4]
+    *         cluster simulation mode: Some(SPARK_HOME) -> local-cluster[m,n, mem]
+    */
+  lazy val coreSettings: Map[String, String] = {
+    val base = if (clusterSizeOpt.isEmpty || numCoresPerWorkerOpt.isEmpty) {
+      val masterStr = s"local[$numCores,$maxFailures]"
+      println("initializing SparkContext in local mode:" + masterStr)
+      Map(
+        "spark.master" -> masterStr
+      )
+    }
+    else {
+      val masterStr =
+        s"local-cluster[${clusterSizeOpt.get},${numCoresPerWorkerOpt.get},${executorMemoryOpt.get}]"
+      println(s"initializing SparkContext in local-cluster simulation mode:" + masterStr)
+      ConfUtils.setEnv("SPARK_SCALA_VERSION", CommonUtils.scalaBinaryVersion)
+      Map(
+        "spark.master" -> masterStr,
+        "spark.home" -> SPARK_HOME,
+        "spark.executor.memory" -> (executorMemoryOpt.get + "m"),
+        "spark.driver.extraClassPath" -> sys.props("java.class.path"),
+        "spark.executor.extraClassPath" -> sys.props("java.class.path"),
+        "spark.task.maxFailures" -> maxFailures.toString
+      )
+    }
+    base ++ Map(
+      "spark.serializer" -> "org.apache.spark.serializer.KryoSerializer",
+      //      .set("spark.kryo.registrator", "com.tribbloids.spookystuff.SpookyRegistrator")Incomplete for the moment
+      "spark.kryoserializer.buffer.max" -> "512m",
+      "spark.sql.warehouse.dir" -> WAREHOUSE_PATH,
+      ("dummy.property", "dummy")
+    )
+  }
 
   //if SPARK_PATH & ClusterSize in rootkey.csv is detected, use local-cluster simulation mode
   //otherwise use local mode
@@ -119,51 +162,14 @@ class TestHelper() extends NOTSerializable {
     conf
   }
 
-  final private def executorMemoryCapOpt = clusterSizeOpt.map(v => MAX_TOTAL_MEMORY / v)
-  def executorMemoryOpt: Option[Int] = for (n <- numCoresPerWorkerOpt; c <- executorMemoryCapOpt) yield {
-    Math.min(n*1024, c)
+  lazy val TestSparkSession = {
+
+    val session = SparkSession.builder.config(TestSparkConf).getOrCreate()
+    session
   }
+  lazy val TestSC = {
 
-  val METASTORE_PATH = CommonUtils.\\\(System.getProperty("user.dir"), "metastore_db")
-  val WAREHOUSE_PATH = CommonUtils.\\\(System.getProperty("user.dir"), "warehouse")
-
-  /**
-    * @return local mode: None -> local[n, 4]
-    *         cluster simulation mode: Some(SPARK_HOME) -> local-cluster[m,n, mem]
-    */
-  lazy val coreSettings: Map[String, String] = {
-    val base = if (clusterSizeOpt.isEmpty || numCoresPerWorkerOpt.isEmpty) {
-      val masterStr = s"local[$maxCores,$maxFailures]"
-      println("initializing SparkContext in local mode:" + masterStr)
-      Map(
-        "spark.master" -> masterStr
-      )
-    }
-    else {
-      val masterStr =
-        s"local-cluster[${clusterSizeOpt.get},${numCoresPerWorkerOpt.get},${executorMemoryOpt.get}]"
-      println(s"initializing SparkContext in local-cluster simulation mode:" + masterStr)
-      ConfUtils.setEnv("SPARK_SCALA_VERSION", CommonUtils.scalaBinaryVersion)
-      Map(
-        "spark.master" -> masterStr,
-        "spark.home" -> SPARK_HOME,
-        "spark.executor.memory" -> ((executorMemoryOpt.get - EXECUTOR_JVM_MEMORY_OVERHEAD) + "m"),
-        "spark.driver.extraClassPath" -> sys.props("java.class.path"),
-        "spark.executor.extraClassPath" -> sys.props("java.class.path"),
-        "spark.task.maxFailures" -> maxFailures.toString
-      )
-    }
-    base ++ Map(
-      "spark.serializer" -> "org.apache.spark.serializer.KryoSerializer",
-      //      .set("spark.kryo.registrator", "com.tribbloids.spookystuff.SpookyRegistrator")Incomplete for the moment
-      "spark.kryoserializer.buffer.max" -> "512m",
-      "spark.sql.warehouse.dir" -> WAREHOUSE_PATH,
-      ("dummy.property", "dummy")
-    )
-  }
-
-  lazy val TestSpark = {
-    val sc = SparkContext.getOrCreate(TestSparkConf)
+    val sc = TestSparkSession.sparkContext
     sys.addShutdownHook {
 
       println("=============== Stopping Test Spark Context ==============")
@@ -190,7 +196,9 @@ class TestHelper() extends NOTSerializable {
     TestHelper.assureKryoSerializer(sc)
     sc
   }
-  lazy val TestSQL = SQLContext.getOrCreate(TestSpark)
+  lazy val TestSQL = {
+    TestSparkSession.sqlContext
+  }
 
   def setLoggerDuring[T](clazzes: Class[_]*)(fn: =>T, level: String = "OFF"): T = {
     val logger_oldLevels = clazzes.map {

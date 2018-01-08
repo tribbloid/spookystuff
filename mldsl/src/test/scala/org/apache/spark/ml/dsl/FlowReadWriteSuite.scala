@@ -16,7 +16,7 @@ class FlowReadWriteSuite extends AbstractFlowSuite {
   import org.apache.spark.ml.dsl.FlowSuite._
   import org.apache.spark.ml.dsl.utils.messaging.MLReadWriteSupports._
 
-  TestHelper.TestSpark
+  TestHelper.TestSC
 
   val pipelinePath = "temp/pipeline/pipeline"
 //  def sc: SparkContext = TestHelper.TestSpark

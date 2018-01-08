@@ -109,7 +109,7 @@ abstract class SpookyEnvFixture
 
   //  val startTime = System.currentTimeMillis()
 
-  def sc: SparkContext = TestHelper.TestSpark
+  def sc: SparkContext = TestHelper.TestSC
   def sql: SQLContext = TestHelper.TestSQL
 
   def parallelism: Int = sc.defaultParallelism
