@@ -80,7 +80,7 @@ class SpookyConf(
                   var defaultExploreAlgorithm: ExploreAlgorithm = ExploreAlgorithms.BreadthFirst,
 
                   var epochSize: Int = 500,
-                  var checkpointInterval: Int = -1, //disabled if <=0
+                  var checkpointInterval: Int = 50, //disabled if <=0
 
                   //if encounter too many out of memory error, change to MEMORY_AND_DISK_SER
                   var defaultStorageLevel: StorageLevel = StorageLevel.MEMORY_ONLY

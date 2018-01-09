@@ -77,5 +77,5 @@ class FetchWgetAndSaveIT extends IntegrationFixture {
     case _ => 1
   }
 
-  override def pageFetchedCap: Int = 36 // way too large
+  override def pageFetchedCap = 36 // way too large
 }

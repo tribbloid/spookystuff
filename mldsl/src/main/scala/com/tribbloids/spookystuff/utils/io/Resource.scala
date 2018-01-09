@@ -27,6 +27,17 @@ abstract class Resource[+T] extends NOTSerializable {
   def metadata: ResourceMD
 }
 
+/**
+  * lazy execution disabled
+  * @param value
+  * @param metadata
+  * @tparam T
+  */
+case class SimpleResource[+T](
+                               value: T,
+                               metadata: ResourceMD
+                             ) extends Resource[T]
+
 object Resource extends ResourceMDView(Metadata.empty) {
 
   implicit def unbox[T](obj: Resource[T]): T = obj.value

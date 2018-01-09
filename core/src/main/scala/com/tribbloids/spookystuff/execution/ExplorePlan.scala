@@ -33,7 +33,7 @@ case class ExplorePlan(
 
                         params: ExploreParams,
                         exploreAlgorithm: ExploreAlgorithm,
-                        iterationsPerEpoch: Int,
+                        epochSize: Int,
                         //TODO: stopping condition can be more than this,
                         //TODO: test if proceed to next epoch works
                         checkpointInterval: Int // set to Int.MaxValue to disable checkpointing,
@@ -161,7 +161,7 @@ case class ExplorePlan(
 
             traces
           )(
-            iterationsPerEpoch,
+            epochSize,
             impl,
             depth_++,
             spooky

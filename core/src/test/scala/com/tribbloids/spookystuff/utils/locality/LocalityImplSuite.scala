@@ -5,7 +5,7 @@ import com.tribbloids.spookystuff.testbeans._
 import org.apache.spark
 import org.apache.spark.rdd.RDD
 import org.apache.spark.{HashPartitioner, RangePartitioner, SparkException}
-import org.scalatest.FunSpec
+import org.scalatest.{Assertions, FunSpec}
 
 import scala.reflect.ClassTag
 import scala.util.Random
@@ -62,7 +62,7 @@ class LocalityImplSuite extends SpookyEnvFixture {
       val still = rdd2
         .partitionBy(new HashPartitioner(np))
 
-      Validate(moved, still, false).assertLocalityWithoutOrder()
+      Validate(moved, still, firstStay = false).assertLocalityWithoutOrder()
     }
 
 
@@ -275,7 +275,7 @@ class LocalityImplSuite extends SpookyEnvFixture {
   }
 }
 
-object LocalityImplSuite extends FunSpec {
+object LocalityImplSuite extends Assertions {
 
   case class Validate[K: ClassTag, V: ClassTag](
                                                  first: RDD[(K, V)],

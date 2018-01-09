@@ -220,8 +220,9 @@ case class Wget(
                ) extends HttpMethod(uri) {
 
   def getResolver(session: Session) = {
-    val hadoopConf = session.spooky.hadoopConf
+
     val timeout = this.timeout(session).toMillis.toInt
+    val hadoopConf = session.spooky.hadoopConf
     val proxy = session.spooky.spookyConf.webProxy()
 
     val resolver = new OmniResolver(
@@ -329,7 +330,7 @@ case class WpostImpl private[actions](
   def getResolver(session: Session) = {
 
     val timeout = this.timeout(session).toMillis.toInt
-    val hadoopConf = session.spooky.sparkContext.hadoopConfiguration
+    val hadoopConf = session.spooky.hadoopConf
     val proxy = session.spooky.spookyConf.webProxy()
 
     val resolver = new OmniResolver(

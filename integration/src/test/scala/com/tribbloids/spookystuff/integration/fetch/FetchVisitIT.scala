@@ -63,5 +63,5 @@ class FetchVisitIT extends IntegrationFixture {
     case _ => 1
   }
 
-  override def pageFetchedCap: Int = 3
+  override def pageFetchedCap = 3
 }

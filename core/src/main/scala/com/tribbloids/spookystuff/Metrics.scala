@@ -1,26 +1,74 @@
 package com.tribbloids.spookystuff
 
+import java.lang
+
+import com.tribbloids.spookystuff.Metrics.Acc
 import com.tribbloids.spookystuff.conf.Submodules
+import org.apache.spark.SparkContext
 import org.apache.spark.ml.dsl.utils.messaging.ProtoAPI
-import org.apache.spark.{Accumulator, AccumulatorParam, SparkContext}
+import org.apache.spark.util.{AccumulatorV2, DoubleAccumulator, LongAccumulator}
 
 import scala.collection.immutable.ListMap
 import scala.collection.mutable.ArrayBuffer
+import scala.language.implicitConversions
 
 /**
   * Created by peng on 03/10/15.
   */
 object Metrics {
 
-  def accumulator[T](
-                      initialValue: T,
-                      name: String
-                    )(implicit
-                      param: AccumulatorParam[T],
-                      sc: SparkContext = SparkContext.getOrCreate()
-                    ): Accumulator[T] = {
+  trait CanBuildFrom[T1, IN] extends (T1 => Acc[IN])
 
-    sc.accumulator(initialValue, name)
+  object CanBuildFrom {
+    trait BuildLong[T] extends CanBuildFrom[T, lang.Long] {
+      override def apply(v1: T) = new Acc(new LongAccumulator()) {
+        override def +=(v: Number): Unit = self.add(v.longValue())
+      }
+    }
+    trait BuildDouble[T] extends CanBuildFrom[T, lang.Double] {
+      override def apply(v1: T) = new Acc(new DoubleAccumulator()) {
+        override def +=(v: Number): Unit = self.add(v.doubleValue())
+      }
+    }
+
+    implicit object Long2Long extends BuildLong[Long]
+    implicit object JLong2Long extends BuildLong[lang.Long]
+    implicit object Int2Long extends BuildLong[Int]
+
+    implicit object Double2Double extends BuildDouble[Double]
+    implicit object JDouble2Double extends BuildDouble[lang.Double]
+    implicit object Float2Double extends BuildDouble[Float]
+  }
+
+  //TODO: is this efficient?
+  abstract class Acc[IN](
+                          val self: AccumulatorV2[IN, IN]
+                        ) extends Serializable {
+
+    def += (v: Number): Unit //adapter that does type cast
+
+    def reset(): Unit = self.reset()
+    def name = self.name
+    def value = self.value
+  }
+
+  def accumulator[T1, IN](
+                           value: T1,
+                           name: String
+                         )(
+                           implicit
+                           canBuildFrom: CanBuildFrom[T1, IN],
+                           cast: T1 => Number,
+                           sc: SparkContext = SparkContext.getOrCreate()
+                         ): Acc[IN] = {
+
+    val acc: Acc[IN] = canBuildFrom(value)
+    acc.reset()
+    acc += value
+
+    sc.register(acc.self, name)
+
+    acc
   }
 }
 
@@ -30,7 +78,7 @@ abstract class Metrics extends ProtoAPI with Product with Serializable {
   //this is necessary as direct JSON serialization on accumulator only yields meaningless string
   def toTuples: List[(String, Any)] = {
     this.productIterator.toList.flatMap {
-      case acc: Accumulator[_] =>
+      case acc: Acc[_] =>
         acc.name.flatMap {
           v =>
             acc.value match {
@@ -51,9 +99,8 @@ abstract class Metrics extends ProtoAPI with Product with Serializable {
   def zero(): Unit = {
 
     this.productIterator.toList.foreach {
-      case acc: Accumulator[_] =>
-        if (acc.value.isInstanceOf[Int])
-          acc.asInstanceOf[Accumulator[Int]].setValue(0)
+      case acc: Acc[_] =>
+        acc.reset()
       case _ =>
     }
   }
@@ -75,37 +122,37 @@ object SpookyMetrics extends Submodules.Builder[SpookyMetrics] {
 //TODO: change to multi-level
 @SerialVersionUID(64065023841293L)
 case class SpookyMetrics(
-                          webDriverDispatched: Accumulator[Int] = Metrics.accumulator(0, "webDriverDispatched"),
-                          webDriverReleased: Accumulator[Int] = Metrics.accumulator(0, "webDriverReleased"),
+                          webDriverDispatched: Acc[lang.Long] = Metrics.accumulator(0L, "webDriverDispatched"),
+                          webDriverReleased: Acc[lang.Long] = Metrics.accumulator(0L, "webDriverReleased"),
 
-                          pythonDriverDispatched: Accumulator[Int] = Metrics.accumulator(0, "pythonDriverDispatched"),
-                          pythonDriverReleased: Accumulator[Int] = Metrics.accumulator(0, "pythonDriverReleased"),
+                          pythonDriverDispatched: Acc[lang.Long] = Metrics.accumulator(0L, "pythonDriverDispatched"),
+                          pythonDriverReleased: Acc[lang.Long] = Metrics.accumulator(0L, "pythonDriverReleased"),
 
                           //TODO: cleanup? useless
-                          pythonInterpretationSuccess: Accumulator[Int] = Metrics.accumulator(0, "pythonInterpretationSuccess"),
-                          pythonInterpretationError: Accumulator[Int] = Metrics.accumulator(0, "pythonInterpretationSuccess"),
+                          pythonInterpretationSuccess: Acc[lang.Long] = Metrics.accumulator(0L, "pythonInterpretationSuccess"),
+                          pythonInterpretationError: Acc[lang.Long] = Metrics.accumulator(0L, "pythonInterpretationSuccess"),
 
-                          sessionInitialized: Accumulator[Int] = Metrics.accumulator(0, "sessionInitialized"),
-                          sessionReclaimed: Accumulator[Int] = Metrics.accumulator(0, "sessionReclaimed"),
+                          sessionInitialized: Acc[lang.Long] = Metrics.accumulator(0L, "sessionInitialized"),
+                          sessionReclaimed: Acc[lang.Long] = Metrics.accumulator(0L, "sessionReclaimed"),
 
-                          DFSReadSuccess: Accumulator[Int] = Metrics.accumulator(0, "DFSReadSuccess"),
-                          DFSReadFailure: Accumulator[Int] = Metrics.accumulator(0, "DFSReadFail"),
+                          DFSReadSuccess: Acc[lang.Long] = Metrics.accumulator(0L, "DFSReadSuccess"),
+                          DFSReadFailure: Acc[lang.Long] = Metrics.accumulator(0L, "DFSReadFail"),
 
-                          DFSWriteSuccess: Accumulator[Int] = Metrics.accumulator(0, "DFSWriteSuccess"),
-                          DFSWriteFailure: Accumulator[Int] = Metrics.accumulator(0, "DFSWriteFail"),
+                          DFSWriteSuccess: Acc[lang.Long] = Metrics.accumulator(0L, "DFSWriteSuccess"),
+                          DFSWriteFailure: Acc[lang.Long] = Metrics.accumulator(0L, "DFSWriteFail"),
 
-                          pagesFetched: Accumulator[Int] = Metrics.accumulator(0, "pagesFetched"),
+                          pagesFetched: Acc[lang.Long] = Metrics.accumulator(0L, "pagesFetched"),
 
-                          pagesFetchedFromCache: Accumulator[Int] = Metrics.accumulator(0, "pagesFetchedFromCache"),
-                          pagesFetchedFromRemote: Accumulator[Int] = Metrics.accumulator(0, "pagesFetchedFromRemote"),
+                          pagesFetchedFromCache: Acc[lang.Long] = Metrics.accumulator(0L, "pagesFetchedFromCache"),
+                          pagesFetchedFromRemote: Acc[lang.Long] = Metrics.accumulator(0L, "pagesFetchedFromRemote"),
 
-                          fetchFromCacheSuccess: Accumulator[Int] = Metrics.accumulator(0, "fetchFromCacheSuccess"),
-                          fetchFromCacheFailure: Accumulator[Int] = Metrics.accumulator(0, "fetchFromCacheFailure"),
+                          fetchFromCacheSuccess: Acc[lang.Long] = Metrics.accumulator(0L, "fetchFromCacheSuccess"),
+                          fetchFromCacheFailure: Acc[lang.Long] = Metrics.accumulator(0L, "fetchFromCacheFailure"),
 
-                          fetchFromRemoteSuccess: Accumulator[Int] = Metrics.accumulator(0, "fetchFromRemoteSuccess"),
-                          fetchFromRemoteFailure: Accumulator[Int] = Metrics.accumulator(0, "fetchFromRemoteFailure"),
+                          fetchFromRemoteSuccess: Acc[lang.Long] = Metrics.accumulator(0L, "fetchFromRemoteSuccess"),
+                          fetchFromRemoteFailure: Acc[lang.Long] = Metrics.accumulator(0L, "fetchFromRemoteFailure"),
 
-                          pagesSaved: Accumulator[Int] = Metrics.accumulator(0, "pagesSaved")
+                          pagesSaved: Acc[lang.Long] = Metrics.accumulator(0L, "pagesSaved")
 
                         ) extends Metrics {
 }

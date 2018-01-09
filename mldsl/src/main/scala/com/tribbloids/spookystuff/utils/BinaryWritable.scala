@@ -43,6 +43,7 @@ class BinarySerializable[T: ClassTag](
   }
 }
 
+//TODO: cleanup, useless, can be completely superceded by SerializableWritable?
 class BinaryWritable[T <: Writable](
                                      @transient val obj: T,
                                      val serFactory: () => SerializerInstance = BinaryWritable.javaSerFactory
@@ -58,6 +59,7 @@ class BinaryWritable[T <: Writable](
   }
 }
 
+//TODO: cleanup in scala2.11
 class SerializableUGI(
                        @transient val _ugi: UserGroupInformation,
                        val serFactory: () => SerializerInstance = BinaryWritable.javaSerFactory

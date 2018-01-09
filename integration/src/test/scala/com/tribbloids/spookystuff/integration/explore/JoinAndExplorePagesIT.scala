@@ -87,5 +87,5 @@ class JoinAndExplorePagesIT extends IntegrationFixture {
   override def numPages= 15
 
   override val remoteFetchSuboptimality = 0 to 4
-  override def pageFetchedCap: Int = 40
+  override def pageFetchedCap = 40
 }

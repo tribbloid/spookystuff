@@ -15,16 +15,14 @@ case class FTPResolver(
     val uri = HttpUtils.uri(pathStr)
     val uc = input2Connection(uri)
     uc.connect()
-    val stream = uc.getInputStream
+    val is = uc.getInputStream
 
     try {
-      val result = f(stream)
+      val result = f(is)
 
-      new Resource[T] {
-
-        override val value: T = result
-
-        override val metadata: ResourceMD = {
+      SimpleResource[T](
+        result,
+        {
           import Resource._
 
           MetadataMap(
@@ -33,10 +31,10 @@ case class FTPResolver(
             LENGTH -> uc.getContentLength
           )
         }
-      }
+      )
     }
     finally {
-      stream.close()
+      is.close()
     }
   }
 
@@ -50,11 +48,9 @@ case class FTPResolver(
       val result = f(os)
       os.flush()
 
-      new Resource[T] {
-
-        override val value: T = result
-
-        override val metadata: ResourceMD = {
+      SimpleResource(
+        result,
+        {
           import Resource._
 
           MetadataMap(
@@ -63,7 +59,7 @@ case class FTPResolver(
             LENGTH -> uc.getContentLength
           )
         }
-      }
+      )
     }
     finally {
       os.close()

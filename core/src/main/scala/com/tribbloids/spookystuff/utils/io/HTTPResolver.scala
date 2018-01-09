@@ -143,20 +143,19 @@ case class HTTPResolver(
 
       val entity: HttpEntity = response.getEntity
 
-      val stream = entity.getContent
+      val is = entity.getContent
       val result: T = try {
-        processResponseBody(stream)
+        processResponseBody(is)
       }
       finally {
-        stream.close()
+        is.close()
       }
 
-      new Resource[T] {
-        import Resource._
+      SimpleResource(
+        result,
+        {
+          import Resource._
 
-        override val value: T = result
-
-        override val metadata: ResourceMD = {
           val map = MetadataMap(
             LENGTH -> entity.getContentLength
           )
@@ -171,7 +170,7 @@ case class HTTPResolver(
             NAME -> entity.getContentType.getName
           )
         }
-      }
+      )
     }
     finally {
       response match {

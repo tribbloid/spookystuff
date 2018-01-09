@@ -132,15 +132,15 @@ abstract class IntegrationFixture
 
   def doMain(): Unit
 
-  def numPages: Int
-  var remotePagesFetched: Int = _
-  def numSessions: Int = remotePagesFetched
-  final def numDrivers: Int = {
+  def numPages: Long
+  var remotePagesFetched: Long = _
+  def numSessions: Long = remotePagesFetched
+  final def numDrivers: Long = {
     if (driverFactories.flatMap(Option(_)).isEmpty) 0
     else numSessions
   }
 
-  def pageFetchedCap: Int = numPages * 2
+  def pageFetchedCap: Long = numPages * 2
 
   def remoteFetchSuboptimality: Range = 0 to 0
 }
