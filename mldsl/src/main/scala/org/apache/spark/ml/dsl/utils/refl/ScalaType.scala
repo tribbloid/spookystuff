@@ -105,7 +105,7 @@ object ScalaType {
 
     def _typeTag: TypeTag[T] // not serializable in 2.10
 
-    lazy val serTypeTag: SerializableTypeTag[T] = new SerializableTypeTag(_typeTag)
+    lazy val serTypeTag: WritableTypeTag[T] = new WritableTypeTag(_typeTag)
     serTypeTag
 
     override def apply() = Option(_typeTag).getOrElse {

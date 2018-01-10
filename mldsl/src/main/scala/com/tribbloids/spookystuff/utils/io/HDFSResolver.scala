@@ -1,14 +1,13 @@
 package com.tribbloids.spookystuff.utils.io
 
-import java.io.{InputStream, ObjectOutputStream, OutputStream}
+import java.io.{InputStream, OutputStream}
 import java.security.{PrivilegedAction, PrivilegedActionException}
 
-import com.tribbloids.spookystuff.utils.CommonUtils
+import com.tribbloids.spookystuff.utils.{CommonUtils, SerBox}
 import org.apache.hadoop
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs._
 import org.apache.hadoop.security.UserGroupInformation
-import org.apache.spark.SerializableWritable
 import org.apache.spark.ml.dsl.utils.metadata.MetadataMap
 
 import scala.collection.immutable.ListMap
@@ -17,21 +16,14 @@ import scala.collection.immutable.ListMap
   * Created by peng on 17/05/17.
   */
 case class HDFSResolver(
-                         @transient hadoopConf: Configuration,
+                         hadoopConf: SerBox[Configuration],
                          ugiFactory: () => Option[UserGroupInformation] = HDFSResolver.noUGIFactory
                        ) extends URIResolver {
-
-  lazy val _hadoopConf: SerializableWritable[Configuration] = new SerializableWritable(hadoopConf)
-
-  private def writeObject(out: ObjectOutputStream): Unit = {
-    _hadoopConf
-    out.defaultWriteObject()
-  }
 
   final def lockedSuffix: String = ".locked"
 
   def getHadoopConf: Configuration = {
-    Option(hadoopConf).getOrElse(_hadoopConf.value)
+    hadoopConf.value
   }
 
   override def toString = s"${this.getClass.getSimpleName}($getHadoopConf)"

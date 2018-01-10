@@ -4,7 +4,7 @@ import java.io.{InputStream, OutputStream}
 import java.net.URI
 
 import com.tribbloids.spookystuff.session.WebProxySetting
-import com.tribbloids.spookystuff.utils.NOTSerializable
+import com.tribbloids.spookystuff.utils.{NOTSerializable, SerBox}
 import com.tribbloids.spookystuff.utils.http._
 import org.apache.hadoop.conf.Configuration
 import org.apache.http.client.methods.HttpRequestBase
@@ -24,7 +24,7 @@ trait CompoundResolver extends URIResolver {
 }
 
 class FSResolver(
-                  hadoopConf: Configuration,
+                  hadoopConf: SerBox[Configuration],
                   timeoutMillis: Int
                 ) extends CompoundResolver {
 
@@ -54,7 +54,7 @@ class FSResolver(
 }
 
 class OmniResolver(
-                    hadoopConf: Configuration,
+                    hadoopConf: SerBox[Configuration],
                     timeoutMillis: Int,
                     webProxy: WebProxySetting,
                     input2Http: URI => HttpRequestBase

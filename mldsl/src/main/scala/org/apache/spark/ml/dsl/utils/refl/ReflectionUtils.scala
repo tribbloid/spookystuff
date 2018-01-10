@@ -22,7 +22,7 @@ object ReflectionUtils extends ReflectionLock {
       case m: MethodSymbol if m.isCaseAccessor =>
         Seq(m)
       case t: TermSymbol =>
-        t.allOverriddenSymbols.flatMap(filterCaseAccessors)
+        t.overrides.flatMap(filterCaseAccessors)
       case _ =>
         Nil
     }
@@ -31,7 +31,7 @@ object ReflectionUtils extends ReflectionLock {
   def getCaseAccessorFields(tt: ScalaType[_]): List[(String, Type)] = {
     getCaseAccessorSymbols(tt).map {
       ss =>
-        ss.name.decoded -> ss.typeSignature
+        ss.name.decodedName -> ss.typeSignature
     }
   }
 
@@ -40,7 +40,7 @@ object ReflectionUtils extends ReflectionLock {
     val TypeRef(_, _, actualTypeArgs) = tt.asType
     val constructorSymbol = tt.asType.member(nme.CONSTRUCTOR)
     val params = if (constructorSymbol.isMethod) {
-      constructorSymbol.asMethod.paramss
+      constructorSymbol.asMethod.paramLists
     } else {
       // Find the primary constructor, and use its parameter ordering.
       val primaryConstructorSymbol: Option[Symbol] = constructorSymbol.asTerm.alternatives.find(
@@ -48,7 +48,7 @@ object ReflectionUtils extends ReflectionLock {
       if (primaryConstructorSymbol.isEmpty) {
         sys.error("Internal SQL error: Product object did not have a primary constructor.")
       } else {
-        primaryConstructorSymbol.get.asMethod.paramss
+        primaryConstructorSymbol.get.asMethod.paramLists
       }
     }
 

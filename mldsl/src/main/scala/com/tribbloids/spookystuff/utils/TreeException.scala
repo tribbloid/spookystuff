@@ -134,7 +134,7 @@ object TreeException {
       throw agg(extra.flatMap(v => Option(v)) ++ es)
     }
     else {
-      throw new RuntimeException("IMPOSSIBLE!")
+      throw new UnknownError("IMPOSSIBLE!")
     }
   }
 

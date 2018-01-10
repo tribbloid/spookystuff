@@ -54,7 +54,7 @@ object Metrics {
 
   def accumulator[T1, IN](
                            value: T1,
-                           name: String
+                           name: String = null
                          )(
                            implicit
                            canBuildFrom: CanBuildFrom[T1, IN],
@@ -66,7 +66,12 @@ object Metrics {
     acc.reset()
     acc += value
 
-    sc.register(acc.self, name)
+    Option(name) match {
+      case Some(nn) =>
+        sc.register(acc.self, nn)
+      case None =>
+        sc.register(acc.self)
+    }
 
     acc
   }

@@ -6,7 +6,7 @@ import com.tribbloids.spookystuff.row._
 import com.tribbloids.spookystuff.session.Session
 import com.tribbloids.spookystuff.utils.io.HDFSResolver
 import org.apache.spark.ml.dsl.utils.refl.ScalaType
-import com.tribbloids.spookystuff.utils.{ShippingMarks, TreeException}
+import com.tribbloids.spookystuff.utils.{SerBox, ShippingMarks, TreeException}
 import org.apache.hadoop.conf.Configuration
 import org.apache.spark._
 import org.apache.spark.broadcast.Broadcast
@@ -106,9 +106,9 @@ case class SpookyContext (
     setConf(v)
   }
 
-  val broadcastedHadoopConf: Broadcast[SerializableWritable[Configuration]] = {
+  val broadcastedHadoopConf: Broadcast[SerBox[Configuration]] = {
     sqlContext.sparkContext.broadcast(
-      new SerializableWritable(this.sqlContext.sparkContext.hadoopConfiguration)
+      SerBox(this.sqlContext.sparkContext.hadoopConfiguration)
     )
   }
   def hadoopConf: Configuration = broadcastedHadoopConf.value.value
