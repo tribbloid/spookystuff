@@ -45,7 +45,7 @@ class TestHelper() extends NOTSerializable {
 
   def SPARK_HOME = System.getenv("SPARK_HOME")
 
-  final val MAX_TOTAL_MEMORY = 30720
+  final val MAX_TOTAL_MEMORY = 16*1024
   final val MEMORY_PER_CORE = 1024
   //  final val EXECUTOR_JVM_MEMORY_OVERHEAD = 256 //TODO: remove, too complex
 

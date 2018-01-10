@@ -2,7 +2,7 @@ package com.tribbloids.spookystuff.execution
 
 import com.tribbloids.spookystuff.actions.{Trace, TraceView}
 import com.tribbloids.spookystuff.caching.ExploreRunnerCache
-import com.tribbloids.spookystuff.dsl.{ExploreAlgorithm, GenPartitioner, GenPartitionerLike, JoinType}
+import com.tribbloids.spookystuff.dsl.{ExploreAlgorithm, GenPartitioner, JoinType}
 import com.tribbloids.spookystuff.extractors._
 import com.tribbloids.spookystuff.extractors.impl.{Get, Lit}
 import com.tribbloids.spookystuff.row.{SquashedFetchedRow, _}
@@ -139,7 +139,7 @@ case class ExplorePlan(
     //this will use globalReducer, same thing will happen to later states, eliminator however will only be used inside ExploreStateView.execute()
     //    val reducedState0RDD: RDD[(TraceView, Open_Visited)] = betweenEpochReduce(state0RDD, combinedReducer)
 
-    val openSetSize = spooky.sparkContext.accumulator(0)
+    val openSetSize = spooky.sparkContext.longAccumulator
     var i = 1
     var stop: Boolean = false
 
@@ -147,7 +147,7 @@ case class ExplorePlan(
 
     while (!stop) {
 
-      openSetSize.setValue(0)
+      openSetSize.reset
 
       val reduceStateRDD: RDD[(TraceView, Open_Visited)] = betweenEpochReduce(stateRDD, combinedReducer)
 
@@ -168,7 +168,7 @@ case class ExplorePlan(
           )(
             rowFn
           )
-          openSetSize += state.open.size
+          openSetSize add state.open.size.toLong
           state_+
       }
 

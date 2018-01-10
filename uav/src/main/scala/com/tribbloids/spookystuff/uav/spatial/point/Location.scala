@@ -2,6 +2,7 @@ package com.tribbloids.spookystuff.uav.spatial.point
 
 import com.tribbloids.spookystuff.uav.spatial._
 import com.tribbloids.spookystuff.uav.spatial.util.{SearchAttempt, SearchHistory}
+import org.apache.spark.ml.dsl.utils.messaging.MessageAPI
 import org.apache.spark.ml.dsl.utils.refl.ScalaUDT
 import org.apache.spark.sql.catalyst.expressions.GenericRowWithSchema
 import org.apache.spark.sql.types.SQLUserDefinedType
@@ -22,7 +23,7 @@ class LocationUDT() extends ScalaUDT[Location]
 case class Location(
                      definedBy: Seq[GeoRef[Coordinate]],
                      aliasOpt: Option[Anchors.Alias] = None
-                   ) extends LocationLike with GeoFusion[Coordinate] {
+                   ) extends LocationLike with GeoFusion[Coordinate] with MessageAPI {
 
   override def name = aliasOpt.map(_.name).getOrElse("@"+this.hashCode)
   def withHome(home: Location) = WithHome(home)

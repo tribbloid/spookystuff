@@ -54,7 +54,7 @@ object Metadata extends MessageRelay[Metadata] {
   private val jvBlacklist: Set[JValue] = Set(
     JObject()
   )
-  def wellFormed(jv: JValue): JValue = {
+  def assertWellFormed(jv: JValue): JValue = {
     assert(!jvBlacklist.contains(jv))
     jv
   }
@@ -77,7 +77,7 @@ object Metadata extends MessageRelay[Metadata] {
                 {
                   () =>
                     val codec = Registry.Default.findCodecOrDefault(v)
-                    wellFormed(codec.toWriter_>>(elem).toJValue)
+                    assertWellFormed(codec.toWriter_>>(elem).toJValue)
                 },
                 {
                   () =>

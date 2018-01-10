@@ -108,7 +108,8 @@ abstract class Codec[Proto] extends CodecLevel1 with HasRootTag {
     _fromXMLNode[T](nodes)
   }
   final def _toXMLAndBack[T: Codec](proto: T): T = {
-    val xml = MessageWriter(proto).prettyXML
+    val codec = implicitly[Codec[T]]
+    val xml = codec.toWriter_>>(proto).prettyXML
     LoggerFactory.getLogger(this.getClass).info(
       s"""
          |========================= XML ========================

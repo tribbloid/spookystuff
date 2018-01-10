@@ -5,12 +5,13 @@ import com.tribbloids.spookystuff.uav.spatial.point.PointViewBase
 import com.tribbloids.spookystuff.utils.IDMixin
 import org.apache.spark.ml.dsl.utils.refl.ScalaUDT
 import org.apache.spark.sql.types.SQLUserDefinedType
+import spire.ClassTag
 
 class GeomUDT extends ScalaUDT[Geom[_]]
 
 @SQLUserDefinedType(udt = classOf[GeomUDT])
 @SerialVersionUID(-75028740932743L)
-trait Geom[+T <: TrellisGeom] extends Spatial with IDMixin {
+abstract class Geom[+T <: TrellisGeom: ClassTag] extends Spatial with IDMixin {
 
   def trellisGeom: T
   def jtsGeom: JTSGeom = trellisGeom.jtsGeom

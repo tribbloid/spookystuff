@@ -1,6 +1,7 @@
 package com.tribbloids.spookystuff.session.python
 
-import org.apache.spark.ml.dsl.utils.messaging.{MessageAPI, MessageWriter}
+import com.sun.jmx.mbeanserver.Repository.RegistrationContext
+import org.apache.spark.ml.dsl.utils.messaging.{MessageAPI, MessageWriter, Registry}
 
 /**
   * Created by peng on 01/11/16.
@@ -74,12 +75,9 @@ object PyConverter {
     // as deep as not inspecting case class constructor, if you do it all hell break loose
     // this limits class constructor to use only JSON compatible weak types, which is not a big deal.
     def scala2py(v: Any): (Seq[PyRef], String) = {
-      val json = v match {
-        case vv: MessageAPI =>
-          vv.prettyJSON
-        case _ =>
-          MessageWriter(v).prettyJSON
-      }
+      val codec = Registry.Default.findCodecOrDefault(v)
+      val json = codec.toWriter_>>(v).prettyJSON
+
       val code =
         s"""
            |json.loads(

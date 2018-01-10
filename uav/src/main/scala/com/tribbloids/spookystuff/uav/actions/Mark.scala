@@ -17,7 +17,7 @@ case class Mark() extends Export with UAVAction {
     try {
       val exe = new SessionView(session)
       val location = exe.link.status().currentLocation
-      val jsonStr = MessageWriter(location).prettyJSON
+      val jsonStr = location.prettyJSON
 
       Seq(new Doc(
         DocUID((session.backtrace :+ this).toList, this)(),

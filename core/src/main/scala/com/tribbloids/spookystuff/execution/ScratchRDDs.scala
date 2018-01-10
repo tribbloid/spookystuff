@@ -35,7 +35,7 @@ case class ScratchRDDs(
     existing match {
       case None =>
         val tempTableName = ScratchRDDs.tempTableName()
-        df.registerTempTable(tempTableName)
+        df.createOrReplaceTempView(tempTableName)
         tempTables += tempTableName -> df
         tempTableName
       case Some(tuple) =>

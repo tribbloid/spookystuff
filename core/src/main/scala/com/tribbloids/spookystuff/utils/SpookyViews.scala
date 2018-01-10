@@ -215,18 +215,18 @@ case object SpookyViews {
     //TODO: this is the first implementation, simple but may not the most efficient
     def multiPassFlatMap[U: ClassTag](f: T => Option[TraversableOnce[U]]): RDD[U] = {
 
-      val counter = self.sparkContext.accumulator(0, "unprocessed data")
+      val counter = self.sparkContext.longAccumulator
       var halfDone: RDD[Either[T, TraversableOnce[U]]] = self.map(v => Left(v))
 
       while(true) {
-        counter.setValue(0)
+        counter.reset()
 
         val updated: RDD[Either[T, TraversableOnce[U]]] = halfDone.map {
           case Left(src) =>
             f(src) match {
               case Some(res) => Right(res)
               case None =>
-                counter += 1
+                counter add 1L
                 Left(src)
             }
           case Right(res) => Right(res)

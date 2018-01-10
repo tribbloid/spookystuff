@@ -23,7 +23,7 @@ case class ScalaDynamic(
       .members.toList
 
     val members = allMembers
-      .filter(_.name.decoded == methodName)
+      .filter(_.name.decodedName.toString == methodName)
       .map {
         v =>
           v.asMethod
@@ -113,7 +113,7 @@ case class ScalaDynamic(
         Seq(None)
     }
 
-    val encodedMethodName = (methodName: TermName).encoded
+    val encodedMethodName = (methodName: TermName).encodedName.toString
     val methods = expectedClasssList.flatMap {
       classs =>
         try {

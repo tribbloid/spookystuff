@@ -174,7 +174,7 @@ case class SpookyContext (
   }
 
   def create(df: DataFrame): FetchedDataset = this.dsl.dataFrameToPageRowRDD(df)
-  def create[T: TypeTag](rdd: RDD[T]): FetchedDataset = this.dsl.rddToPageRowRDD(rdd)
+  def create[T: TypeTag](rdd: RDD[T]): FetchedDataset = this.dsl.rddToFetchedDataset(rdd)
 
   //TODO: merge after 2.0.x
   def create[T: TypeTag](
@@ -182,7 +182,7 @@ case class SpookyContext (
                         ): FetchedDataset = {
 
     implicit val ctg = ScalaType.fromTypeTag[T].asClassTag
-    this.dsl.rddToPageRowRDD(this.sqlContext.sparkContext.parallelize(seq.toSeq))
+    this.dsl.rddToFetchedDataset(this.sqlContext.sparkContext.parallelize(seq.toSeq))
   }
   def create[T: TypeTag](
                           seq: TraversableOnce[T],
@@ -190,7 +190,7 @@ case class SpookyContext (
                         ): FetchedDataset = {
 
     implicit val ctg = ScalaType.fromTypeTag[T].asClassTag
-    this.dsl.rddToPageRowRDD(this.sqlContext.sparkContext.parallelize(seq.toSeq, numSlices))
+    this.dsl.rddToFetchedDataset(this.sqlContext.sparkContext.parallelize(seq.toSeq, numSlices))
   }
 
   def withSession[T](fn: Session => T): T = {
@@ -238,7 +238,7 @@ case class SpookyContext (
     }
 
     //every input or noInput will generate a new metrics
-    implicit def rddToPageRowRDD[T: TypeTag](rdd: RDD[T]): FetchedDataset = {
+    implicit def rddToFetchedDataset[T: TypeTag](rdd: RDD[T]): FetchedDataset = {
 
       val ttg = implicitly[TypeTag[T]]
 
@@ -247,12 +247,12 @@ case class SpookyContext (
         case _ if ttg.tpe <:< typeOf[Map[_,_]] =>
           //        classOf[Map[_,_]].isAssignableFrom(classTag[T].runtimeClass) => //use classOf everywhere?
           val canonRdd = rdd.map(
-            map =>map.asInstanceOf[Map[_,_]].canonizeKeysToColumnNames
+            map => map.asInstanceOf[Map[_,_]].canonizeKeysToColumnNames
           )
 
           val jsonRDD = canonRdd.map(
             map =>
-              MessageWriter(map).compactJSON()
+              MessageWriter(map).compactJSON
           )
           val dataFrame = sqlContext.read.json(jsonRDD)
           dataFrameToPageRowRDD(dataFrame)
