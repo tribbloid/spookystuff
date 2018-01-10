@@ -113,7 +113,7 @@ case class ScalaDynamic(
         Seq(None)
     }
 
-    val encodedMethodName = (methodName: TermName).encodedName.toString
+    val encodedMethodName = TermName(methodName).encodedName.toString
     val methods = expectedClasssList.flatMap {
       classs =>
         try {
