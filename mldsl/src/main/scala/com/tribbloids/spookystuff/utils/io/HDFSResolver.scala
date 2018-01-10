@@ -176,7 +176,7 @@ case class HDFSResolver(
   def describe(path: Path): ResourceMD = doAsUGI {
     import Resource._
 
-    val fs: FileSystem = path.getFileSystem(hadoopConf)
+    val fs: FileSystem = path.getFileSystem(hadoopConf.value)
 
     def getMap(status: FileStatus): ListMap[String, Any] = {
       var map = reflectiveMetadata(status)

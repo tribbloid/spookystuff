@@ -31,7 +31,7 @@ object ReflectionUtils extends ReflectionLock {
   def getCaseAccessorFields(tt: ScalaType[_]): List[(String, Type)] = {
     getCaseAccessorSymbols(tt).map {
       ss =>
-        ss.name.decodedName -> ss.typeSignature
+        ss.name.decodedName.toString -> ss.typeSignature
     }
   }
 
