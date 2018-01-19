@@ -15,7 +15,7 @@ import org.slf4j.LoggerFactory
 import scala.collection.mutable
 import scala.language.implicitConversions
 import scala.reflect.ClassTag
-import scala.util.{Failure, Random, Success, Try}
+import scala.util.{Failure, Success, Try}
 import scala.xml.PrettyPrinter
 
 class SpookyUtils extends CommonUtils {
@@ -352,7 +352,7 @@ These special characters are often called "metacharacters".
     result.toMap
   }
 
-  object RDDs {
+  case object RDDs {
 
     /**
       * much faster than reducing many rdds independently
