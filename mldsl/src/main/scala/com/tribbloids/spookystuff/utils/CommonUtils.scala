@@ -8,6 +8,7 @@ import org.slf4j.LoggerFactory
 
 import scala.concurrent.{Await, Future, TimeoutException}
 import scala.reflect.ClassTag
+import scala.util.Random
 
 class CommonUtils {
 
@@ -138,6 +139,13 @@ class CommonUtils {
     val result = fn
     val endTime = System.currentTimeMillis()
     (result, endTime - startTime)
+  }
+
+  def randomSuffix = Math.abs(Random.nextLong())
+
+  def randomChars: String = {
+    val len = Random.nextInt(128)
+    Random.nextString(len)
   }
 
 }

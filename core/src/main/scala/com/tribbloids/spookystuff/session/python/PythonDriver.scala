@@ -95,7 +95,7 @@ object PythonDriver {
   */
 //TODO: not reusing Python worker for spark, is it not optimal?
 class PythonDriver(
-                    val executable: String = "python",
+                    val executable: String = "python2",
                     val autoImports: String =
                     """
                       |import os

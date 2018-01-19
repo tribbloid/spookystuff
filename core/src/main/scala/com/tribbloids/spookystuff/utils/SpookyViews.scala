@@ -21,7 +21,7 @@ import scala.util.Random
   * Created by peng on 11/7/14.
   * implicit conversions in this package are used for development only
   */
-case object SpookyViews {
+object SpookyViewsSingleton {
 
   val SPARK_JOB_DESCRIPTION = "spark.job.description"
   val SPARK_JOB_GROUP_ID = "spark.jobGroup.id"
@@ -29,16 +29,24 @@ case object SpookyViews {
   val RDD_SCOPE_KEY = "spark.rdd.scope"
   val RDD_SCOPE_NO_OVERRIDE_KEY = "spark.rdd.scope.noOverride"
 
+  // (stageID -> threadID) -> isExecuted
+  val perCoreMark: ConcurrentMap[(Int, Long), Boolean] = ConcurrentMap()
+  // stageID -> isExecuted
+  val perWorkerMark: ConcurrentMap[Int, Boolean] = ConcurrentMap()
+
+  // large enough such that all idle threads has a chance to pick up >1 partition
+  val SEED_REPLICATING_FACTOR = 16
+}
+
+class SpookyViews extends CommonViews {
+
+  import SpookyViewsSingleton._
+
   implicit class Function2PrivilegedAction[T](f: => T) extends PrivilegedAction[T] {
     override def run(): T = {
       f
     }
   }
-
-  // (stageID -> threadID) -> isExecuted
-  val perCoreMark: ConcurrentMap[(Int, Long), Boolean] = ConcurrentMap()
-  // stageID -> isExecuted
-  val perWorkerMark: ConcurrentMap[Int, Boolean] = ConcurrentMap()
 
   implicit class SparkContextView(val self: SparkContext) {
 
@@ -53,8 +61,6 @@ case object SpookyViews {
       result
     }
 
-    // large enough such that all idle threads has a chance to pick up >1 partition
-    val SEED_REPLICATING_FACTOR = 16
     /**
       * guaranteed to have at least 1 datum on each executor thread. Better distribute evenly
       */
@@ -610,32 +616,8 @@ case object SpookyViews {
   //      result
   //    }
   //  }
+}
 
-  implicit class StringView(str: String) {
+object SpookyViews extends SpookyViews {
 
-    def :/(other: String): String = CommonUtils./:/(str, other)
-    def \\(other: String): String = CommonUtils.\\\(str, other)
-
-    def interpolate(delimiter: String)(
-      replace: String => String
-    ): String = {
-
-      if (str == null || str.isEmpty) return str
-
-      val specialChars = "(?=[]\\[+$&|!(){}^\"~*?:\\\\-])"
-      val escaped = delimiter.replaceAll(specialChars, "\\\\")
-      val regex = ("(?<!" + escaped + ")" + escaped + "\\{[^\\{\\}\r\n]*\\}").r
-
-      val result = regex.replaceAllIn(
-        str,
-        m => {
-          val original = m.group(0)
-          val key = original.substring(2, original.length - 1)
-
-          val replacement = replace(key)
-          replacement
-        })
-      result
-    }
-  }
 }

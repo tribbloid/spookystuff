@@ -3,7 +3,7 @@ package com.tribbloids.spookystuff.example
 import com.tribbloids.spookystuff.SpookyContext
 import com.tribbloids.spookystuff.rdd.FetchedDataset
 import org.apache.spark.rdd.RDD
-import org.apache.spark.sql.DataFrame
+import org.apache.spark.sql.Dataset
 
 trait SpookyRunnable extends SpookyEnv {
 
@@ -19,7 +19,7 @@ trait SpookyRunnable extends SpookyEnv {
     val result = doMain(spooky)
 
     val array = result match {
-      case df: DataFrame =>
+      case df: Dataset[_] =>
         val array = df.rdd.persist().takeSample(withReplacement = false, num = 100)
         df.printSchema()
         println(df.schema.fieldNames.mkString("[","\t","]"))

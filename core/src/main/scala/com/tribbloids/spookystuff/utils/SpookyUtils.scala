@@ -18,7 +18,7 @@ import scala.reflect.ClassTag
 import scala.util.{Failure, Random, Success, Try}
 import scala.xml.PrettyPrinter
 
-object SpookyUtils extends CommonUtils {
+class SpookyUtils extends CommonUtils {
 
   import SpookyViews._
 
@@ -291,13 +291,6 @@ These special characters are often called "metacharacters".
     h
   }
 
-  def randomSuffix = Math.abs(Random.nextLong())
-
-  def randomChars: String = {
-    val len = Random.nextInt(128)
-    Random.nextString(len)
-  }
-
   /**
     * From doc of org.apache.spark.scheduler.TaskLocation
     * Create a TaskLocation from a string returned by getPreferredLocations.
@@ -400,3 +393,7 @@ These special characters are often called "metacharacters".
     }
   }
 }
+
+object SpookyUtils extends SpookyUtils
+
+object JavaSpookyUtils extends SpookyUtils

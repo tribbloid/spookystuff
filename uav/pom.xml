@@ -13,6 +13,7 @@
 
   <properties>
     <jsprit.version>1.7.2</jsprit.version>
+    <python.command>python2</python.command>
     <pip.command>pip2</pip.command>
   </properties>
 
@@ -56,9 +57,9 @@
 
     <!-- https://mvnrepository.com/artifact/com.esri.geometry/esri-geometry-api -->
     <!--<dependency>-->
-      <!--<groupId>com.esri.geometry</groupId>-->
-      <!--<artifactId>esri-geometry-api</artifactId>-->
-      <!--<version>2.0.0</version>-->
+    <!--<groupId>com.esri.geometry</groupId>-->
+    <!--<artifactId>esri-geometry-api</artifactId>-->
+    <!--<version>2.0.0</version>-->
     <!--</dependency>-->
 
     <!--<dependency>-->
@@ -130,9 +131,9 @@
               <goal>exec</goal>
             </goals>
             <configuration>
-              <executable>${pip.command}</executable>
               <workingDirectory>${project.basedir}</workingDirectory>
               <!--codeship doesn't have pip download, should run pip upgrade on codeship and change to pip download-->
+              <executable>${pip.command}</executable>
               <arguments>
                 <argument>install</argument>
                 <argument>-r</argument>
@@ -143,6 +144,14 @@
                 <argument>--target</argument>
                 <argument>${project.build.directory}/classes/com/tribbloids/spookystuff/lib/python</argument>
               </arguments>
+
+              <!--<executable>${python.command}</executable>-->
+              <!--<arguments>-->
+              <!--<argument>setup.py</argument>-->
+              <!--<argument>sdist</argument>-->
+              <!--<argument>&#45;&#45;dist-dir</argument>-->
+              <!--<argument>${project.build.directory}/classes/com/tribbloids/spookystuff/lib/python</argument>-->
+              <!--</arguments>-->
             </configuration>
           </execution>
         </executions>
