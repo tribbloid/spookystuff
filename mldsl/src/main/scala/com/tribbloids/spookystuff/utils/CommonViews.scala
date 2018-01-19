@@ -1,6 +1,6 @@
 package com.tribbloids.spookystuff.utils
 
-class CommonViews extends Serializable {
+abstract class CommonViews {
 
   implicit class StringView(str: String) {
 

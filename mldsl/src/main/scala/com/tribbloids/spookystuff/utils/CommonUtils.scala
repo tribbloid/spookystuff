@@ -10,7 +10,7 @@ import scala.concurrent.{Await, Future, TimeoutException}
 import scala.reflect.ClassTag
 import scala.util.Random
 
-class CommonUtils extends Serializable {
+abstract class CommonUtils {
 
   import scala.concurrent.ExecutionContext.Implicits.global
   import scala.concurrent.duration._

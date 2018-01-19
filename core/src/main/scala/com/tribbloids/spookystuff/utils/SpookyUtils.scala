@@ -18,7 +18,7 @@ import scala.reflect.ClassTag
 import scala.util.{Failure, Success, Try}
 import scala.xml.PrettyPrinter
 
-class SpookyUtils extends CommonUtils {
+abstract class SpookyUtils extends CommonUtils {
 
   import SpookyViews._
 

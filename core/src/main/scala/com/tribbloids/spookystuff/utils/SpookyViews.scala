@@ -38,7 +38,7 @@ object SpookyViewsSingleton {
   val SEED_REPLICATING_FACTOR = 16
 }
 
-class SpookyViews extends CommonViews {
+abstract class SpookyViews extends CommonViews {
 
   import SpookyViewsSingleton._
 
