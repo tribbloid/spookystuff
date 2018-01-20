@@ -22,7 +22,7 @@ abstract class SpookyUtils extends CommonUtils {
 
   import SpookyViews._
 
-  val xmlPrinter = new PrettyPrinter(Int.MaxValue, 2)
+  @transient lazy val xmlPrinter = new PrettyPrinter(Int.MaxValue, 2)
 
   //  def retryWithDeadline[T](n: Int, t: Duration)(fn: => T): T = retry(n){withDeadline(t){fn}}
 
@@ -381,7 +381,7 @@ These special characters are often called "metacharacters".
       val reduced: Map[Int, T] = zippedRDD
         .mapPartitions {
           itr =>
-            val reduced = reduceByKey[Int, T](itr, reducer)
+            val reduced = SpookyUtils.reduceByKey[Int, T](itr, reducer)
             Iterator(reduced)
         }
         .reduce {
