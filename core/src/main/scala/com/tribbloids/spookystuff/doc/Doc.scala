@@ -233,7 +233,7 @@ case class Doc(
 
       CSVElement.apply(contentStr, uri, csvFormat) //not serialize, parsing is faster
     }
-    else if (mimeType.contains("plain")) {
+    else if (mimeType.contains("plain") || mimeType.contains("text")) {
       PlainElement(contentStr, uri) //not serialize, parsing is faster
     }
     else {

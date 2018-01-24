@@ -19,6 +19,7 @@ package org.apache.spark.ml.dsl.utils
 import java.text.SimpleDateFormat
 import java.util.Date
 
+import org.apache.spark.ml.dsl.utils.Xml.baseDataFormatsFactory
 import org.json4s._
 
 import scala.util.Try
@@ -236,30 +237,15 @@ object Xml {
     )
   )
 
-  val baseFormat = new DefaultFormats {
-    override val dateFormat: DateFormat = new DateFormat {
-      def parse(s: String) = dateFormats.flatMap {
-        format =>
-          Try {
-            Some(format.parse(s))
-          }
-            .toOption
-      }
-        .head
-
-      def format(d: Date) = dateFormats.head.format(d)
-    }
-
-    def dateFormats = baseDataFormatsFactory()
-  }
+  val baseFormat = XMLDefaultFormats
 
   def xmlFormats(base: Formats = baseFormat) = base +
     StringToNumberDeserializer +
     EmptyStringToEmptyObjectDeserializer +
     ElementToArrayDeserializer +
     DurationJSONSerializer
-//  +
-//    FallbackJSONSerializer
+  //  +
+  //    FallbackJSONSerializer
 
   lazy val defaultFormats = xmlFormats()
 
@@ -268,3 +254,21 @@ object Xml {
 }
 
 class CompoundDateFormat() extends SimpleDateFormat("abc")
+
+object XMLDefaultFormats extends DefaultFormats {
+
+  override val dateFormat: DateFormat = new DateFormat {
+    def parse(s: String) = dateFormats.flatMap {
+      format =>
+        Try {
+          Some(format.parse(s))
+        }
+          .toOption
+    }
+      .head
+
+    def format(d: Date) = dateFormats.head.format(d)
+  }
+
+  def dateFormats = baseDataFormatsFactory()
+}
