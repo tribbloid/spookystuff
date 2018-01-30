@@ -185,7 +185,7 @@ case class FetchedDataset(
   //
   //      val result = schemaRDD.select(columns: _*)
   //
-  //      if (tableName!=null) result.registerTempTable(tableName)
+  //      if (tableName!=null) result.createOrReplaceTempView(tableName)
   //      plan.scratchRDDs.clearAll()
   //
   //      result
