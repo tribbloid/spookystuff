@@ -1,6 +1,7 @@
 package org.apache.spark.ml.dsl.utils.messaging
 
 import org.apache.spark.ml.dsl.utils.refl.ScalaType
+import org.json4s.JValue
 
 import scala.language.implicitConversions
 
@@ -25,3 +26,5 @@ class MessageReader[Self](
 
 object MessageReader extends MessageReader[Any] with MessageReaderLevel1 {
 }
+
+object JValueMessageReader extends MessageReader[JValue] with MessageReaderLevel1
