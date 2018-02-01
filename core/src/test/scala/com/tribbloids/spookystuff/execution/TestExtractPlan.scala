@@ -29,7 +29,7 @@ class TestExtractPlan extends SpookyEnvFixture {
       )
       .persist()
 
-    extracted.schema.toStructType.treeString.shouldBe(
+    extracted.schema.structType.treeString.shouldBe(
       """
         |root
         | |-- _1: integer (nullable = true)
@@ -58,7 +58,7 @@ class TestExtractPlan extends SpookyEnvFixture {
         } ~ '_2.!
       }
 
-    extracted.schema.toStructType.treeString.shouldBe(
+    extracted.schema.structType.treeString.shouldBe(
       """
         |root
         | |-- _1: integer (nullable = true)
@@ -98,7 +98,7 @@ class TestExtractPlan extends SpookyEnvFixture {
         } ~+ '_2
       }
 
-    extracted.schema.toStructType.treeString.shouldBe(
+    extracted.schema.structType.treeString.shouldBe(
       """
         |root
         | |-- _1: integer (nullable = true)
@@ -122,7 +122,7 @@ class TestExtractPlan extends SpookyEnvFixture {
         } ~+ '_2
       }
 
-    extracted.schema.toStructType.treeString.shouldBe(
+    extracted.schema.structType.treeString.shouldBe(
       """
         |root
         | |-- _1: integer (nullable = true)
@@ -152,7 +152,7 @@ class TestExtractPlan extends SpookyEnvFixture {
         '_3 ~ '_3 //force output
       )
 
-    extracted.schema.toStructType.treeString.shouldBe(
+    extracted.schema.structType.treeString.shouldBe(
       """
         |root
         | |-- _1: integer (nullable = true)
@@ -183,7 +183,7 @@ class TestExtractPlan extends SpookyEnvFixture {
         '_3 ~ '_3
       )
 
-    extracted.schema.toStructType.treeString.shouldBe(
+    extracted.schema.structType.treeString.shouldBe(
       """
         |root
         | |-- _1: integer (nullable = true)

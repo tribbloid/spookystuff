@@ -95,7 +95,7 @@ object GenExtractor extends AutomaticRelay[GenExtractor[_,_]] {
       val t1 = arg1.resolveType(tt)
       val t2 = arg2.resolveType(tt)
 
-      val ttg = (t1.scalaType, t2.scalaType) match {
+      val ttg = (t1.asTypeTag, t2.asTypeTag) match {
         case (ttg1: TypeTag[a], ttg2: TypeTag[b]) =>
           implicit val t1 = ttg1
           implicit val t2 = ttg2

@@ -19,7 +19,7 @@ class ScalaUDTSuite extends FunSpecx {
     assertSerDe(unreified)
 
     val reified = TypeUtils.tryCatalystTypeFor[T].get
-    assert(reified == unreified.reify)
+    assert(reified == unreified.reified)
     assertSerDe(reified)
     reified
   }

@@ -32,7 +32,7 @@ class ScalaReflectionSpike extends FunSpecx {
     )
 
     val returnTypes = dynamic.getMethodsByName(exType).map{
-      TypeUtils.getParameter_ReturnTypes(_, exType.scalaType.tpe)
+      TypeUtils.getParameter_ReturnTypes(_, exType.asTypeTag.tpe)
     }
     returnTypes.mkString("\n").shouldBe (
       """
@@ -55,7 +55,7 @@ class ScalaReflectionSpike extends FunSpecx {
     )
 
     val returnTypes = dynamic.getMethodsByName(exType).map{
-      TypeUtils.getParameter_ReturnTypes(_, exType.scalaType.tpe)
+      TypeUtils.getParameter_ReturnTypes(_, exType.asTypeTag.tpe)
     }
     returnTypes.mkString("\n").shouldBe (
       """
@@ -77,7 +77,7 @@ class ScalaReflectionSpike extends FunSpecx {
     )
 
     val returnTypes = dynamic.getMethodsByName(exType).map{
-      TypeUtils.getParameter_ReturnTypes(_, exType.scalaType.tpe)
+      TypeUtils.getParameter_ReturnTypes(_, exType.asTypeTag.tpe)
     }
     returnTypes.mkString("\n").shouldBe (
       """
@@ -99,7 +99,7 @@ class ScalaReflectionSpike extends FunSpecx {
     )
 
     val returnTypes = dynamic.getMethodsByName(exType).map{
-      TypeUtils.getParameter_ReturnTypes(_, exType.scalaType.tpe)
+      TypeUtils.getParameter_ReturnTypes(_, exType.asTypeTag.tpe)
     }
     returnTypes.mkString("\n").shouldBe (
       """
@@ -121,7 +121,7 @@ class ScalaReflectionSpike extends FunSpecx {
     )
 
     val returnTypes = dynamic.getMethodsByName(exType).map{
-      TypeUtils.getParameter_ReturnTypes(_, exType.scalaType.tpe)
+      TypeUtils.getParameter_ReturnTypes(_, exType.asTypeTag.tpe)
     }
     returnTypes.mkString("\n").shouldBe (
       """
@@ -240,7 +240,7 @@ class ScalaReflectionSpike extends FunSpecx {
       "List(List(value k))"
     )
 
-    val returnType = TypeUtils.getParameter_ReturnTypes(method, exType.scalaType.tpe)
+    val returnType = TypeUtils.getParameter_ReturnTypes(method, exType.asTypeTag.tpe)
     returnType.toString.shouldBe (
       """
         |(List(List(Int)),String)

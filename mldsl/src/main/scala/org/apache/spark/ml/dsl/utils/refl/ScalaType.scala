@@ -7,6 +7,7 @@ import com.tribbloids.spookystuff.utils._
 import org.apache.spark.SparkConf
 import org.apache.spark.serializer.JavaSerializer
 import org.apache.spark.sql.catalyst.ScalaReflection
+import org.apache.spark.sql.catalyst.ScalaReflection.universe
 import org.apache.spark.sql.catalyst.ScalaReflection.universe._
 import org.apache.spark.sql.types._
 
@@ -163,7 +164,7 @@ object ScalaType {
     }
   }
 
-  object DTypeView {
+  object DataTypeView {
 
     lazy val atomicExamples: Seq[(Any, TypeTag[_])] = {
 
@@ -198,7 +199,7 @@ object ScalaType {
   }
 
   //TODO: subclass ScalaType
-  implicit class DTypeView(tt: DataType) extends ReflectionLock {
+  implicit class DataTypeView(tt: DataType) extends ReflectionLock {
 
     // CatalystType => ScalaType
     // used in ReflectionMixin to determine the exact function to:
@@ -212,8 +213,8 @@ object ScalaType {
           Some(TypeTag.Null)
         case st: ScalaType[_] =>
           Some(st.asTypeTag)
-        case t if DTypeView.atomicTypeMap.contains(t) =>
-          DTypeView.atomicTypeMap.get(t)
+        case t if DataTypeView.atomicTypeMap.contains(t) =>
+          DataTypeView.atomicTypeMap.get(t)
         case ArrayType(inner, _) =>
           val innerTagOpt = inner.scalaTypeOpt
           innerTagOpt.map {
@@ -243,13 +244,15 @@ object ScalaType {
       }
     }
 
-    def scalaType: TypeTag[_] = {
+    def asTypeTag: TypeTag[_] = {
       scalaTypeOpt.getOrElse {
         throw new UnsupportedOperationException(s"cannot convert Catalyst type $tt to Scala type: TypeTag=${tt.scalaTypeOpt}")
       }
     }
 
-    def reify = locked {
+    def asTypeTagCasted[T]: TypeTag[T] = asTypeTag.asInstanceOf[TypeTag[T]]
+
+    @transient lazy val reified: DataType = locked {
       val result = UnreifiedScalaType.reify(tt)
       result
     }
@@ -257,7 +260,7 @@ object ScalaType {
     def unboxArrayOrMap: DataType = locked {
       tt._unboxArrayOrMapOpt
         .orElse(
-          tt.reify._unboxArrayOrMapOpt
+          tt.reified._unboxArrayOrMapOpt
         )
         .getOrElse(
           throw new UnsupportedOperationException(s"Type $tt is not an Array")
@@ -279,7 +282,7 @@ object ScalaType {
     }
 
     def filterArray: Option[DataType] = locked {
-      if (tt.reify.isInstanceOf[ArrayType])
+      if (tt.reified.isInstanceOf[ArrayType])
         Some(tt)
       else
         None
@@ -300,7 +303,7 @@ object ScalaType {
     def =~= (another: DataType): Boolean = {
       val result = (tt eq another) ||
         (tt == another) ||
-        (tt.reify == another.reify)
+        (tt.reified == another.reified)
 
       result
     }
@@ -311,8 +314,8 @@ object ScalaType {
         result,
         s"""
            |Type not equal:
-           |LEFT:  $tt -> ${tt.reify}
-           |RIGHT: $another -> ${another.reify}
+           |LEFT:  $tt -> ${tt.reified}
+           |RIGHT: $another -> ${another.reified}
           """.stripMargin
       )
     }

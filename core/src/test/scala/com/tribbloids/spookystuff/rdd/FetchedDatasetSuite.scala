@@ -3,6 +3,7 @@ package com.tribbloids.spookystuff.rdd
 import com.tribbloids.spookystuff.actions._
 import com.tribbloids.spookystuff.extractors.impl.Lit
 import com.tribbloids.spookystuff.testutils.LocalPathDocsFixture
+import com.tribbloids.spookystuff.testutils.beans.Composite
 import com.tribbloids.spookystuff.{SpookyEnvFixture, dsl}
 
 /**
@@ -151,7 +152,7 @@ class FetchedDatasetSuite extends SpookyEnvFixture with LocalPathDocsFixture {
     }
   }
 
-  it("toDF can yield a DataFrame") {
+  it("toDF can handle simple types") {
 
     val set = spooky
       .fetch(
@@ -175,6 +176,30 @@ class FetchedDatasetSuite extends SpookyEnvFixture with LocalPathDocsFixture {
         | |-- size: integer (nullable = true)
         | |-- timestamp: timestamp (nullable = true)
         | |-- saved: string (nullable = true)
+      """.stripMargin
+    )
+
+    df.show(false)
+  }
+
+  it("toDF can handle composite types") {
+    val set = spooky
+      .select(
+        Lit(0 -> "str") ~ 'tuple,
+        Lit(Composite()) ~ 'composite
+      )
+
+    val df = set.toDF()
+
+    df.schema.treeString.shouldBe(
+      """
+        |root
+        | |-- tuple: struct (nullable = true)
+        | |    |-- _1: integer (nullable = false)
+        | |    |-- _2: string (nullable = true)
+        | |-- composite: struct (nullable = true)
+        | |    |-- n: integer (nullable = false)
+        | |    |-- str: string (nullable = true)
       """.stripMargin
     )
 

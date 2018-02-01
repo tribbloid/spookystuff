@@ -11,8 +11,13 @@ import com.tribbloids.spookystuff.row.{Field, _}
 import com.tribbloids.spookystuff.utils.SpookyViews
 import com.tribbloids.spookystuff.{Const, SpookyContext}
 import org.apache.spark.TaskContext
+import org.apache.spark.ml.dsl.utils.refl.ScalaType
 import org.apache.spark.rdd.RDD
-import org.apache.spark.sql.types.DataType
+import org.apache.spark.sql.catalyst.{CatalystTypeConverters, InternalRow}
+import org.apache.spark.sql.catalyst.encoders.{ExpressionEncoder, RowEncoder}
+import org.apache.spark.sql.catalyst.expressions.GenericInternalRow
+import org.apache.spark.sql.types.{DataType, StructType}
+import org.apache.spark.sql.utils.SparkHelper
 import org.apache.spark.sql.{DataFrame, Row}
 import org.apache.spark.storage.StorageLevel
 
@@ -138,28 +143,55 @@ case class FetchedDataset(
       .map(_.compactJSON)
   }
 
-  //TODO: take filter schema as parameter
-  protected def toRowRDD(sort: Boolean = false, fields: List[Field]): RDD[Row] = {
+  protected def toInternalRowRDD(
+                                  sort: Boolean = false,
+                                  spookySchema: SpookySchema
+                                ): RDD[InternalRow] = {
 
     val dataRDD = if (!sort) this.dataRDD
     else dataRDDSorted
 
+    import ScalaType._
+
+    val field2Encoder: Map[Field, ExpressionEncoder[Any]] = spookySchema.fieldTypes.mapValues {
+      tpe =>
+        val ttg = tpe.asTypeTagCasted[Any]
+        ExpressionEncoder.apply()(ttg)
+    }
+
+    @transient lazy val field2Converter: Map[Field, Any => Any] = spookySchema.fieldTypes.mapValues {
+      tpe =>
+        val reified = tpe.reified
+        val converter = CatalystTypeConverters.createToCatalystConverter(reified)
+        converter
+    }
+
+    val rowEncoder = RowEncoder.apply(spookySchema.structType)
+
     dataRDD
       .map {
         v =>
-          val result = Row(fields.map(vv => v.data.get(vv).orNull): _*)
-          result
+          val converted: Seq[Any] = fields.map {
+            field =>
+              val raw: Any = v.data.get(field).orNull
+              //              val encoder: ExpressionEncoder[Any] = field2Encoder(field)
+              val converter = field2Converter(field)
+              converter.apply(raw)
+          }
+          val internalRow = new GenericInternalRow(converted.toArray)
+
+          internalRow
       }
   }
 
   def toDF(sort: Boolean = false): DataFrame =
     sparkContext.withJob(s"toDF(sort=$sort)") {
 
-      val filtered = schema.filterFields()
-      val structType = filtered.toStructType
-      val rowRDD = toRowRDD(sort, filtered.fieldTypes.keys.toList)
+      val filteredSchema: SpookySchema = schema.filterFields()
+      val sqlSchema: StructType = filteredSchema.structType
+      val rowRDD = toInternalRowRDD(sort, filteredSchema)
 
-      val result = spooky.sqlContext.createDataFrame(rowRDD, structType)
+      val result = SparkHelper.internalCreateDF(spooky.sqlContext, rowRDD, sqlSchema)
 
       result
     }

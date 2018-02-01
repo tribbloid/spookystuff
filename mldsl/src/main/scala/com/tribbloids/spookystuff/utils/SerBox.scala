@@ -2,13 +2,12 @@ package com.tribbloids.spookystuff.utils
 
 import java.io.Serializable
 import java.nio.ByteBuffer
-import javax.management.RuntimeErrorException
 
 import org.apache.hadoop.io.Writable
-import org.apache.spark.{SerializableWritable, SparkConf}
 import org.apache.spark.ml.dsl.utils.refl.{ScalaType, TypeUtils}
 import org.apache.spark.serializer.{JavaSerializer, KryoSerializer, SerializerInstance}
 import org.apache.spark.sql.catalyst.ScalaReflection.universe.TypeTag
+import org.apache.spark.{SerializableWritable, SparkConf}
 
 import scala.language.implicitConversions
 import scala.reflect.ClassTag
@@ -137,7 +136,7 @@ class WritableTypeTag[T](
     .orElse {
       dTypeOpt.flatMap {
         dType =>
-          ScalaType.DTypeView(dType).scalaTypeOpt.map(_.asInstanceOf[TypeTag[T]])
+          ScalaType.DataTypeView(dType).scalaTypeOpt.map(_.asInstanceOf[TypeTag[T]])
       }
     }
     .getOrElse(

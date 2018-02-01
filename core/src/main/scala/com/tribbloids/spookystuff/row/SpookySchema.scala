@@ -38,16 +38,17 @@ case class SpookySchema(
     )
   }
 
-  def toStructType: StructType = {
-    val structFields = fieldTypes
-      .toSeq
-      .map {
-        tuple =>
-          StructField(
-            tuple._1.name,
-            tuple._2.reify
-          )
-      }
+  lazy val structFields = fieldTypes
+    .toSeq
+    .map {
+      tuple =>
+        StructField(
+          tuple._1.name,
+          tuple._2.reified
+        )
+    }
+
+  lazy val structType: StructType = {
 
     StructType(structFields)
   }
@@ -138,7 +139,7 @@ case class SpookySchema(
     (existingTypeOpt, resolvedField.conflictResolving) match {
       case (Some(existingType), Field.Overwrite) =>
         if (dataType == existingType) dataType
-        else if (dataType.reify == existingType.reify) dataType.reify
+        else if (dataType.reified == existingType.reified) dataType.reified
         else throw new IllegalArgumentException(
           s"""
              |Overwriting field ${resolvedField.name} with inconsistent type:

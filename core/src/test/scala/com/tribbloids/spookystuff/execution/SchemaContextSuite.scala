@@ -22,7 +22,7 @@ class SchemaContextSuite extends SpookyEnvFixture{
       )
 
     val schema1 = resolver0.build
-    schema1.toStructType.toString().shouldBe(
+    schema1.structType.toString().shouldBe(
       "StructType(StructField(a,StringType,true), StructField(b,IntegerType,true))"
     )
     val resolver1 = schema1.newResolver
@@ -33,7 +33,7 @@ class SchemaContextSuite extends SpookyEnvFixture{
       )
 
     val schema2 = resolver1.build
-    schema2.toStructType.toString().shouldBe(
+    schema2.structType.toString().shouldBe(
       "StructType(StructField(a,StringType,true), StructField(b,IntegerType,true), StructField(c,StringType,true), StructField(d,DoubleType,true))"
     )
   }
