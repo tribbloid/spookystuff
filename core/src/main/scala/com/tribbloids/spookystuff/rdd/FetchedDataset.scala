@@ -13,12 +13,12 @@ import com.tribbloids.spookystuff.{Const, SpookyContext}
 import org.apache.spark.TaskContext
 import org.apache.spark.ml.dsl.utils.refl.ScalaType
 import org.apache.spark.rdd.RDD
-import org.apache.spark.sql.catalyst.{CatalystTypeConverters, InternalRow}
-import org.apache.spark.sql.catalyst.encoders.{ExpressionEncoder, RowEncoder}
+import org.apache.spark.sql.DataFrame
+import org.apache.spark.sql.catalyst.encoders.RowEncoder
 import org.apache.spark.sql.catalyst.expressions.GenericInternalRow
+import org.apache.spark.sql.catalyst.{CatalystTypeConverters, InternalRow}
 import org.apache.spark.sql.types.{DataType, StructType}
 import org.apache.spark.sql.utils.SparkHelper
-import org.apache.spark.sql.{DataFrame, Row}
 import org.apache.spark.storage.StorageLevel
 
 import scala.collection.Map
@@ -122,7 +122,7 @@ case class FetchedDataset(
     sorted.setName("sort")
 
     sorted.foreachPartition{_ =>} //force execution
-    plan.scratchRDDs.unpersist(dataRDD, blocking = false)
+    plan.scratchRDDs.unpersist(dataRDD)
 
     sorted
   }
