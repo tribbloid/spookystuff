@@ -153,12 +153,13 @@ case class FetchedDataset(
 
     import ScalaType._
 
-    val field2Encoder: Map[Field, ExpressionEncoder[Any]] = spookySchema.fieldTypes.mapValues {
-      tpe =>
-        val ttg = tpe.asTypeTagCasted[Any]
-        ExpressionEncoder.apply()(ttg)
-    }
+//    val field2Encoder: Map[Field, ExpressionEncoder[Any]] = spookySchema.fieldTypes.mapValues {
+//      tpe =>
+//        val ttg = tpe.asTypeTagCasted[Any]
+//        ExpressionEncoder.apply()(ttg)
+//    }
 
+    //TOOD: how to make it serializable so it can be reused by different partitions?
     @transient lazy val field2Converter: Map[Field, Any => Any] = spookySchema.fieldTypes.mapValues {
       tpe =>
         val reified = tpe.reified
@@ -171,7 +172,7 @@ case class FetchedDataset(
     dataRDD
       .map {
         v =>
-          val converted: Seq[Any] = fields.map {
+          val converted: Seq[Any] = spookySchema.fields.map {
             field =>
               val raw: Any = v.data.get(field).orNull
               //              val encoder: ExpressionEncoder[Any] = field2Encoder(field)
