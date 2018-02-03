@@ -14,6 +14,7 @@ object SnapshotRunner extends SpookyEnv {
   val SPLITTER = "/http://webscraper.io:80"
 
   import scala.concurrent.duration._
+  val cooldown = Some(5.seconds)
 
   implicit class FDSView(fd: FetchedDataset) {
 
@@ -36,7 +37,7 @@ object SnapshotRunner extends SpookyEnv {
             first + "id_" + SPLITTER + last
         }
       ),
-        cooldown = Some(1.second))
+        cooldown = cooldown)
       originalVersion
         .savePages(pathEncoding, overwrite = true)
 
@@ -55,11 +56,11 @@ object SnapshotRunner extends SpookyEnv {
       "https://web.archive.org/web/20170707111752/http://webscraper.io:80/test-sites"
     )
       .save()
-      .wgetJoin(S"h2.site-heading a", cooldown = Some(1.seconds))
+      .wgetJoin(S"h2.site-heading a", cooldown = cooldown)
       .save()
-      .wgetExplore(S"div.sidebar-nav a", cooldown = Some(1.seconds))
+      .wgetExplore(S"div.sidebar-nav a", cooldown = cooldown)
       .save()
-      .wgetExplore(S"ul.pagination a", cooldown = Some(1.seconds))
+      .wgetExplore(S"ul.pagination a", cooldown = cooldown)
       .save()
   }
 }
