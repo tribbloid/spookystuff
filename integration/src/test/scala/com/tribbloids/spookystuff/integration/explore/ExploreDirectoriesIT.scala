@@ -62,8 +62,3 @@ class ExploreDirectoriesIT extends IntegrationFixture {
   override def numPages = 4
   override def pageFetchedCap = 16 // way too large
 }
-
-class ExploreDirectoriesWithSchemaIT extends ExploreDirectoriesIT {
-
-  override lazy val resourcePath: String = "file:" + _resourcePath
-}

@@ -309,4 +309,4 @@ class DSL extends Level1 {
   }
 }
 
-object Implicits extends Level1
+object DSL extends DSL

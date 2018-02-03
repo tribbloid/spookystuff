@@ -24,7 +24,7 @@ class CommonConst {
   object Interaction {
 
     val delayMax: Duration = 60.seconds
-    val delayMin: Duration = 0.seconds
+    val delayMin: Duration = Duration.Zero
     val blocking: Boolean = true
   }
 

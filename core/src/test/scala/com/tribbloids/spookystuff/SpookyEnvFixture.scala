@@ -100,38 +100,24 @@ object SpookyEnvFixture {
   }
 }
 
-abstract class SpookyEnvFixture
-  extends FunSpecx
-    with RemoteDocsFixture
-    with BeforeAndAfter
-    with BeforeAndAfterAll
-    with Retries {
-
-  //  val startTime = System.currentTimeMillis()
+trait SpookyEnv {
 
   def sc: SparkContext = TestHelper.TestSC
   def sql: SQLContext = TestHelper.TestSQL
-
-  def parallelism: Int = sc.defaultParallelism
 
   lazy val driverFactory: DriverFactory[CleanWebDriver] = SpookyConf.TEST_WEBDRIVER_FACTORY
 
   @transient lazy val spookyConf = new SpookyConf(
     webDriverFactory = driverFactory
   )
-
   var _spooky: SpookyContext = _
   def spooky = {
     Option(_spooky)
-      //      .filterNot(_.sparkContext.isStopped) TODO: not compatible with 1.5
       .getOrElse {
-      val result: SpookyContext = reloadSpooky
-      result
-    }
+        val result: SpookyContext = reloadSpooky
+        result
+      }
   }
-
-  lazy val defaultEC = SpookyExecutionContext(spooky)
-  lazy val defaultSchema = SpookySchema(defaultEC)
 
   def reloadSpooky: SpookyContext = {
     val sql = this.sql
@@ -139,6 +125,22 @@ abstract class SpookyEnvFixture
     _spooky = result
     result
   }
+}
+
+abstract class SpookyEnvFixture
+  extends FunSpecx
+    with SpookyEnv
+    with RemoteDocsFixture
+    with BeforeAndAfter
+    with BeforeAndAfterAll
+    with Retries {
+
+  //  val startTime = System.currentTimeMillis()
+
+  def parallelism: Int = sc.defaultParallelism
+
+  lazy val defaultEC = SpookyExecutionContext(spooky)
+  lazy val defaultSchema = SpookySchema(defaultEC)
 
   def emptySchema = SpookySchema(SpookyExecutionContext(spooky))
 
@@ -182,9 +184,9 @@ abstract class SpookyEnvFixture
     TestHelper.clearTempDirs()
 
     //unpersist all RDDs, disabled to better detect memory leak
-//    sc.getPersistentRDDs.values.toList.foreach {
-//      _.unpersist()
-//    }
+    //    sc.getPersistentRDDs.values.toList.foreach {
+    //      _.unpersist()
+    //    }
 
     sc.foreachComputer {
       SpookyEnvFixture.shouldBeClean(spooky, processNames)

@@ -4,7 +4,7 @@ import com.tribbloids.spookystuff.actions._
 import com.tribbloids.spookystuff.extractors.impl.Lit
 import com.tribbloids.spookystuff.testutils.LocalPathDocsFixture
 import com.tribbloids.spookystuff.testutils.beans.Composite
-import com.tribbloids.spookystuff.{SpookyEnvFixture, dsl}
+import com.tribbloids.spookystuff.{Metrics, SpookyEnvFixture, dsl}
 
 /**
   * Created by peng on 5/10/15.
@@ -35,7 +35,7 @@ class FetchedDatasetSuite extends SpookyEnvFixture with LocalPathDocsFixture {
   //    }
 
   it(s".map should not run preceding transformation multiple times") {
-    val acc = sc.accumulator(0)
+    val acc = Metrics.accumulator(0)
 
     val set = spooky
       .fetch(
@@ -56,7 +56,7 @@ class FetchedDatasetSuite extends SpookyEnvFixture with LocalPathDocsFixture {
   }
 
   it(s".rdd should not run preceding transformation multiple times") {
-    val acc = sc.accumulator(0)
+    val acc = Metrics.accumulator(0)
 
     val set = spooky
       .fetch(
@@ -83,7 +83,7 @@ class FetchedDatasetSuite extends SpookyEnvFixture with LocalPathDocsFixture {
   // 2. compare stacktrace of executor thread on both snapshots
   for (sort <- Seq(false, true)) {
     it(s"toDF($sort) should not run preceding transformation multiple times") {
-      val acc = sc.accumulator(0)
+      val acc = Metrics.accumulator(0)
 
       val set = spooky
         .fetch(
@@ -106,7 +106,7 @@ class FetchedDatasetSuite extends SpookyEnvFixture with LocalPathDocsFixture {
     }
 
     it(s"toJSON($sort) should not run preceding transformation multiple times") {
-      val acc = sc.accumulator(0)
+      val acc = Metrics.accumulator(0)
 
       val set = spooky
         .fetch(
@@ -129,7 +129,7 @@ class FetchedDatasetSuite extends SpookyEnvFixture with LocalPathDocsFixture {
     }
 
     it(s"toMapRDD($sort) should not run preceding transformation multiple times") {
-      val acc = sc.accumulator(0)
+      val acc = Metrics.accumulator(0)
 
       val set = spooky
         .fetch(

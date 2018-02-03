@@ -23,6 +23,7 @@ import org.apache.spark.storage.StorageLevel
 
 import scala.collection.Map
 import scala.collection.immutable.ListMap
+import scala.concurrent.duration.Duration
 import scala.language.implicitConversions
 import scala.reflect.ClassTag
 
@@ -153,11 +154,11 @@ case class FetchedDataset(
 
     import ScalaType._
 
-//    val field2Encoder: Map[Field, ExpressionEncoder[Any]] = spookySchema.fieldTypes.mapValues {
-//      tpe =>
-//        val ttg = tpe.asTypeTagCasted[Any]
-//        ExpressionEncoder.apply()(ttg)
-//    }
+    //    val field2Encoder: Map[Field, ExpressionEncoder[Any]] = spookySchema.fieldTypes.mapValues {
+    //      tpe =>
+    //        val ttg = tpe.asTypeTagCasted[Any]
+    //        ExpressionEncoder.apply()(ttg)
+    //    }
 
     //TOOD: how to make it serializable so it can be reused by different partitions?
     @transient lazy val field2Converter: Map[Field, Any => Any] = spookySchema.fieldTypes.mapValues {
@@ -278,7 +279,9 @@ case class FetchedDataset(
                  overwrite: Boolean = false
                ): this.type = {
 
-    val effectiveExt = Option(extension).map(_.ex).getOrElse(page.defaultFileExtension)
+    val effectiveExt: Extractor[_ >: String] = Option(extension)
+      .map(_.ex)
+      .getOrElse(page.defaultFileExtension)
 
     val _ext = newResolver.include(effectiveExt).head
     val _path = newResolver.include(path.ex).head
@@ -402,6 +405,42 @@ case class FetchedDataset(
   def agg(exprs: Seq[(FetchedRow => Any)], reducer: RowReducer): FetchedDataset = AggPlan(plan, exprs, reducer)
   def distinctBy(exprs: (FetchedRow => Any)*): FetchedDataset = agg(exprs, (v1, v2) => v1)
 
+  protected def _defaultCooldown(v: Option[Duration]) = {
+    val _delay: Trace = v.map {
+      dd =>
+        Delay(dd)
+    }.toList
+    _delay
+  }
+
+  protected def _defaultVisit(
+                               cooldown: Option[Duration] = None,
+                               filter: DocFilter = Const.defaultDocumentFilter,
+                               on: Col[String] = Get(Const.defaultJoinField)
+                             ) = {
+
+    val _cooldown: Duration = cooldown.getOrElse(Const.Interaction.delayMin)
+    val result = (
+      Visit(on, cooldown = _cooldown)
+        +> Snapshot(filter)
+      )
+
+    result
+  }
+
+  protected def _defaultWget(
+                              cooldown: Option[Duration] = None,
+                              filter: DocFilter = Const.defaultDocumentFilter,
+                              on: Col[String] = Get(Const.defaultJoinField)
+                            ) = {
+
+    val _delay: Trace = _defaultCooldown(cooldown)
+
+    val result = Wget(on, filter) +> Set(_delay)
+
+    result
+  }
+
   // Always left
   def fetch(
              traces: Set[Trace],
@@ -410,16 +449,14 @@ case class FetchedDataset(
 
   //shorthand of fetch
   def visit(
-             ex: Col[String],
+             on: Col[String],
+             cooldown: Option[Duration] = None,
              filter: DocFilter = Const.defaultDocumentFilter,
              failSafe: Int = -1,
              genPartitioner: GenPartitioner = spooky.spookyConf.defaultGenPartitioner
            ): FetchedDataset = {
 
-    var trace: Set[Trace] =  (
-      Visit(ex)
-        +> Snapshot(filter)
-      )
+    var trace = _defaultVisit(cooldown, filter, on)
     if (failSafe > 0) trace = ClusterRetry(trace, failSafe)
 
     this.fetch(
@@ -430,13 +467,14 @@ case class FetchedDataset(
 
   //shorthand of fetch
   def wget(
-            ex: Col[String],
+            on: Col[String],
+            cooldown: Option[Duration] = None,
             filter: DocFilter = Const.defaultDocumentFilter,
             failSafe: Int = -1,
             genPartitioner: GenPartitioner = spooky.spookyConf.defaultGenPartitioner
           ): FetchedDataset = {
 
-    var trace: Set[Trace] =  Wget(ex, filter)
+    var trace = _defaultWget(cooldown, filter, on)
 
     if (failSafe > 0) trace = ClusterRetry(trace, failSafe)
 
@@ -473,15 +511,13 @@ case class FetchedDataset(
                  joinType: JoinType = spooky.spookyConf.defaultJoinType,
                  ordinalField: Field = null, //left & idempotent parameters are missing as they are always set to true
                  sampler: Sampler[Any] = spooky.spookyConf.defaultJoinSampler,
+                 cooldown: Option[Duration] = None,
                  filter: DocFilter = Const.defaultDocumentFilter,
                  failSafe: Int = -1,
                  genPartitioner: GenPartitioner = spooky.spookyConf.defaultGenPartitioner
                ): FetchedDataset = {
 
-    var trace = (
-      Visit(Get(Const.defaultJoinField))
-        +> Snapshot(filter)
-      )
+    var trace = _defaultVisit(cooldown, filter)
     if (failSafe > 0) {
       trace = ClusterRetry(trace, failSafe)
     }
@@ -503,12 +539,13 @@ case class FetchedDataset(
                 joinType: JoinType = spooky.spookyConf.defaultJoinType,
                 ordinalField: Field = null, //left & idempotent parameters are missing as they are always set to true
                 sampler: Sampler[Any] = spooky.spookyConf.defaultJoinSampler,
+                cooldown: Option[Duration] = None,
                 filter: DocFilter = Const.defaultDocumentFilter,
                 failSafe: Int = -1,
                 genPartitioner: GenPartitioner = spooky.spookyConf.defaultGenPartitioner
               ): FetchedDataset = {
 
-    var trace: Set[Trace] = Wget(Get(Const.defaultJoinField), filter)
+    var trace = _defaultWget(cooldown, filter)
     if (failSafe > 0) {
       trace = ClusterRetry(trace, failSafe)
     }
@@ -548,11 +585,11 @@ case class FetchedDataset(
   }
 
   def visitExplore(
-                    ex: Extractor[Any],
+                    on: Extractor[Any],
                     joinType: JoinType = spooky.spookyConf.defaultJoinType,
                     ordinalField: Field = null,
                     sampler: Sampler[Any] = spooky.spookyConf.defaultJoinSampler,
-
+                    cooldown: Option[Duration] = None,
                     filter: DocFilter = Const.defaultDocumentFilter,
 
                     failSafe: Int = -1,
@@ -568,13 +605,10 @@ case class FetchedDataset(
                     selects: Traversable[Extractor[Any]] = Seq()
                   ): FetchedDataset = {
 
-    var trace: Set[Trace] =  (
-      Visit(Get(Const.defaultJoinField))
-        +> Snapshot(filter)
-      )
+    var trace = _defaultVisit(cooldown, filter)
     if (failSafe > 0) trace = ClusterRetry(trace, failSafe)
 
-    explore(ex, joinType, ordinalField, sampler)(
+    explore(on, joinType, ordinalField, sampler)(
       trace, genPartitioner,
 
       depthField, range, exploreAlgorithm, miniBatch, checkpointInterval
@@ -584,10 +618,11 @@ case class FetchedDataset(
   }
 
   def wgetExplore(
-                   ex: Extractor[Any],
+                   on: Extractor[Any],
                    joinType: JoinType = spooky.spookyConf.defaultJoinType,
                    ordinalField: Field = null,
                    sampler: Sampler[Any] = spooky.spookyConf.defaultJoinSampler,
+                   cooldown: Option[Duration] = None,
                    filter: DocFilter = Const.defaultDocumentFilter,
 
                    failSafe: Int = -1,
@@ -603,10 +638,10 @@ case class FetchedDataset(
                    selects: Traversable[Extractor[Any]] = Seq()
                  ): FetchedDataset = {
 
-    var trace: Set[Trace] =  Wget(uri = Get(Const.defaultJoinField), filter = filter)
+    var trace = _defaultWget(cooldown, filter)
     if (failSafe > 0) trace = ClusterRetry(trace, failSafe)
 
-    explore(ex, joinType, ordinalField, sampler)(
+    explore(on, joinType, ordinalField, sampler)(
       trace, genPartitioner,
 
       depthField, range, exploreAlgorithm, miniBatch, checkpointInterval

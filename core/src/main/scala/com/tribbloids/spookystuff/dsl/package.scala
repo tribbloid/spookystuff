@@ -7,6 +7,7 @@ import com.tribbloids.spookystuff.utils.{Lambda0, Lambda}
 
 import scala.language.implicitConversions
 
+// should import DSL directly, instead of package dsl.
 package object dsl extends DSL {
 
   type ByDoc[+R] = Lambda[Doc, R]

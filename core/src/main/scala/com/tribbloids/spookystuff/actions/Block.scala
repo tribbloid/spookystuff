@@ -254,7 +254,7 @@ object LoadMore {
              delay: Duration = Const.Interaction.delayMin
            ): Loop =
     Loop(
-      Click(selector, delay = delay),
+      Click(selector, cooldown = delay),
       limit
     )
 }
@@ -270,7 +270,7 @@ object Paginate {
            ): Loop = {
     Loop(
       Snapshot()
-        +> Click(selector, delay = delay),
+        +> Click(selector, cooldown = delay),
       limit
     )
   }

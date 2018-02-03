@@ -36,7 +36,7 @@ trait WaypointLike extends UAVNavigation {
 // How to accommodate camera & gimbal control? Right now do not refactor! Simplicity first.
 case class Waypoint(
                      override val to: Col[Location],
-                     override val delay: Duration = UAVConst.UAVNavigation.delayMin
+                     override val cooldown: Duration = UAVConst.UAVNavigation.delayMin
                    ) extends WaypointLike {
 
   override def doInterpolate(

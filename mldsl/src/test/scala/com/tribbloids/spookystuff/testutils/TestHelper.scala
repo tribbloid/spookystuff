@@ -14,7 +14,8 @@ import scala.util.{Failure, Success, Try}
 
 class TestHelper() extends NOTSerializable {
 
-  val TEMP_PATH = CommonUtils.\\\(System.getProperty("user.dir"), "temp")
+  val USER_DIR = System.getProperty("user.dir")
+  val TEMP_PATH = CommonUtils.\\\(USER_DIR, "temp")
   val UNPACK_RESOURCE_PATH = CommonUtils.\\\(System.getProperty("java.io.tmpdir"), "spookystuff", "resources")
 
   val properties = new Properties()

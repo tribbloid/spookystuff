@@ -19,14 +19,14 @@ import scala.util.Random
 @SerialVersionUID(-98257039403274083L)
 abstract class Interaction extends Action {
 
-  def delay: Duration = Duration.Zero
+  def cooldown: Duration
 
   override def doExe(session: Session): Seq[Doc] = {
 
     exeNoOutput(session: Session)
 
-    if (delay != null && delay.toMillis > 0) {
-      Thread.sleep(delay.toMillis)
+    if (cooldown != null && cooldown.toMillis > 0) {
+      Thread.sleep(cooldown.toMillis)
     }
 
     Nil
@@ -43,7 +43,7 @@ abstract class Interaction extends Action {
   */
 @SerialVersionUID(-6784287573066896999L)
 abstract class WebInteraction(
-                               override val delay: Duration,
+                               override val cooldown: Duration,
                                val blocking: Boolean
                              ) extends Interaction with Timed {
 
@@ -83,9 +83,9 @@ object DocumentReadyCondition extends ExpectedCondition[Boolean] {
   */
 case class Visit(
                   uri: Col[String],
-                  override val delay: Duration = Const.Interaction.delayMin,
+                  override val cooldown: Duration = Const.Interaction.delayMin,
                   override val blocking: Boolean = Const.Interaction.blocking
-                ) extends WebInteraction(delay, blocking) {
+                ) extends WebInteraction(cooldown, blocking) {
 
   override def exeNoOutput(session: Session) {
     session.webDriver.get(uri.value)
@@ -116,11 +116,11 @@ case class Visit(
 /**
   * Wait for some time
   *
-  * @param delay seconds to be wait for
+  * @param cooldown seconds to be wait for
   */
 @SerialVersionUID(-4852391414869985193L)
 case class Delay(
-                  override val delay: Duration
+                  override val cooldown: Duration = Const.Interaction.delayMax
                 ) extends Interaction with Driverless {
 
   override def exeNoOutput(session: Session): Unit = {
@@ -131,18 +131,18 @@ case class Delay(
 /**
   * Wait for some random time, add some unpredictability
   *
-  * @param delay seconds to be wait for
+  * @param cooldown seconds to be wait for
   */
 @SerialVersionUID(2291926240766143181L)
 case class RandomDelay(
-                        override val delay: Duration = Const.Interaction.delayMin,
+                        override val cooldown: Duration = Const.Interaction.delayMin,
                         maxDelay: Duration = Const.Interaction.delayMax
                       ) extends Interaction with Driverless {
 
-  assert(maxDelay >= delay)
+  assert(maxDelay >= cooldown)
 
   override def exeNoOutput(session: Session) {
-    Thread.sleep(Random.nextInt((maxDelay - delay).toMillis.toInt) )
+    Thread.sleep(Random.nextInt((maxDelay - cooldown).toMillis.toInt) )
   }
 }
 
@@ -202,9 +202,9 @@ case object WaitForDocumentReady extends WebInteraction(null, true) {
   */
 case class Click(
                   selector: Selector,
-                  override val delay: Duration = Const.Interaction.delayMin,
+                  override val cooldown: Duration = Const.Interaction.delayMin,
                   override val blocking: Boolean = Const.Interaction.blocking
-                ) extends WebInteraction(delay, blocking) {
+                ) extends WebInteraction(cooldown, blocking) {
   override def exeNoOutput(session: Session) {
     val element = this.getClickableElement(selector, session)
 
@@ -221,9 +221,9 @@ case class ClickNext(
                       selector: Selector,
                       exclude: Seq[String],
                       //TODO: remove this, and supercede with Selector
-                      override val delay: Duration = Const.Interaction.delayMin,
+                      override val cooldown: Duration = Const.Interaction.delayMin,
                       override val blocking: Boolean = Const.Interaction.blocking
-                    ) extends WebInteraction(delay, blocking) {
+                    ) extends WebInteraction(cooldown, blocking) {
 
   @transient lazy val clicked: mutable.HashSet[String] = mutable.HashSet(exclude: _*)
 
@@ -280,9 +280,9 @@ case class ClickNext(
   */
 case class Submit(
                    selector: Selector,
-                   override val delay: Duration = Const.Interaction.delayMin,
+                   override val cooldown: Duration = Const.Interaction.delayMin,
                    override val blocking: Boolean = Const.Interaction.blocking
-                 ) extends WebInteraction(delay, blocking) {
+                 ) extends WebInteraction(cooldown, blocking) {
   override def exeNoOutput(session: Session) {
 
     val element = this.getElement(selector, session)
@@ -300,9 +300,9 @@ case class Submit(
 case class TextInput(
                       selector: Selector,
                       text: Col[String],
-                      override val delay: Duration = Const.Interaction.delayMin,
+                      override val cooldown: Duration = Const.Interaction.delayMin,
                       override val blocking: Boolean = Const.Interaction.blocking
-                    ) extends WebInteraction(delay, blocking) {
+                    ) extends WebInteraction(cooldown, blocking) {
   override def exeNoOutput(session: Session) {
 
     val element = this.getElement(selector, session)
@@ -337,9 +337,9 @@ case class TextInput(
 case class DropDownSelect(
                            selector: Selector,
                            value: Col[String],
-                           override val delay: Duration = Const.Interaction.delayMin,
+                           override val cooldown: Duration = Const.Interaction.delayMin,
                            override val blocking: Boolean = Const.Interaction.blocking
-                         ) extends WebInteraction(delay, blocking) {
+                         ) extends WebInteraction(cooldown, blocking) {
   override def exeNoOutput(session: Session) {
 
     val element = this.getElement(selector, session)
@@ -391,9 +391,9 @@ case class ToFrame(selector: Selector)extends WebInteraction(null, false) {
 case class ExeScript(
                       script: Col[String],
                       selector: Selector = null,
-                      override val delay: Duration = Const.Interaction.delayMin,
+                      override val cooldown: Duration = Const.Interaction.delayMin,
                       override val blocking: Boolean = Const.Interaction.blocking
-                    ) extends WebInteraction(delay, blocking) {
+                    ) extends WebInteraction(cooldown, blocking) {
   override def exeNoOutput(session: Session) {
 
     val element = if (selector == null) None
@@ -436,9 +436,9 @@ case class DragSlider(
                        selector: Selector,
                        percentage: Double,
                        handleSelector: Selector = "*",
-                       override val delay: Duration = Const.Interaction.delayMin,
+                       override val cooldown: Duration = Const.Interaction.delayMin,
                        override val blocking: Boolean = Const.Interaction.blocking
-                     ) extends WebInteraction(delay, blocking) {
+                     ) extends WebInteraction(cooldown, blocking) {
 
   override def exeNoOutput(session: Session): Unit = {
 

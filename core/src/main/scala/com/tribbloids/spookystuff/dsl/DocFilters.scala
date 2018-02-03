@@ -44,7 +44,7 @@ object DocFilters {
           s"Html Page @ ${result.uri} has no title" +
             result.root.code.map {
               code =>
-                ":\n" + code.slice(0,500)
+                ":\n" + code.slice(0,500) + "\n..."
             }
               .getOrElse("")
         )
