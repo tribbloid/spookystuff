@@ -77,7 +77,7 @@ class ActionSuite extends SpookyEnvFixture {
         """
           |{
           |  "selector" : "By.sizzleCssSelector: o1",
-          |  "delay" : "0 seconds",
+          |  "cooldown" : "0 seconds",
           |  "blocking" : true
           |}
         """.stripMargin
@@ -142,7 +142,7 @@ class ActionSuite extends SpookyEnvFixture {
           |{
           |  "children" : [ {
           |    "selector" : "By.sizzleCssSelector: o1",
-          |    "delay" : "0 seconds",
+          |    "cooldown" : "0 seconds",
           |    "blocking" : true
           |  }, {
           |    "filter" : { }
