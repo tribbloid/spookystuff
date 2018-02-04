@@ -1,13 +1,16 @@
 package com.tribbloids.spookystuff.uav.actions
 
+import com.tribbloids.spookystuff.Const
 import com.tribbloids.spookystuff.extractors.Col
-import com.tribbloids.spookystuff.row.{SpookySchema, FetchedRow}
+import com.tribbloids.spookystuff.row.{FetchedRow, SpookySchema}
 import com.tribbloids.spookystuff.session.Session
 import com.tribbloids.spookystuff.uav.UAVConf
 import com.tribbloids.spookystuff.uav.spatial.point.{Location, NED}
 import com.tribbloids.spookystuff.utils.SpookyUtils
 import org.apache.spark.ml.uav.Vec
 import org.slf4j.LoggerFactory
+
+import scala.concurrent.duration.Duration
 
 /**
   * won't do a thing if already in the air.
@@ -21,6 +24,7 @@ import org.slf4j.LoggerFactory
 case class Takeoff(
                     minAlt: Col[Double] = -1,
                     maxAlt: Col[Double] = -1,
+                    override val cooldown: Duration = Const.Interaction.delayMin,
                     prevNavOpt: Option[UAVNavigation] = None
                   ) extends UAVNavigation {
 

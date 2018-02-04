@@ -1,6 +1,7 @@
 package com.tribbloids.spookystuff
 
-import java.util
+import com.tribbloids.spookystuff.execution.MapPlan.RowMapper
+import com.tribbloids.spookystuff.row.{SpookySchema, SquashedFetchedRow}
 
 import scala.collection.mutable
 
@@ -9,8 +10,8 @@ import scala.collection.mutable
   */
 package object execution {
 
-  import scala.collection.JavaConverters._
-
   type LinkedMap[K, V] = mutable.LinkedHashMap[K, V]
   def LinkedMap[K, V](): LinkedMap[K, V] = new mutable.LinkedHashMap[K, V]()
+
+  type RowMapperFactory = (SpookySchema => RowMapper)
 }

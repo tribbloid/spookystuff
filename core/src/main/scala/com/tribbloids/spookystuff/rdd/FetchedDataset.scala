@@ -290,10 +290,10 @@ case class FetchedDataset(
     //Execute immediately
     squashedRDD.foreach {
       squashedPageRow =>
-        val w = new squashedPageRow
-        .WSchema(schema)
+        val wSchema = squashedPageRow
+          .WSchema(schema)
 
-        w
+        wSchema
           .unsquash
           .foreach{
             pageRow =>
@@ -320,14 +320,15 @@ case class FetchedDataset(
     this
   }
 
-  def extract[T](exs: (Extractor[T])*): FetchedDataset = {
-
-    ExtractPlan[T](plan, exs)
+  def extract(exs: (Extractor[_])*): FetchedDataset = {
+    MapPlan(plan, MapPlan.Extract(exs))
   }
 
   def select(exprs: Extractor[_]*) = extract(exprs: _*)
 
-  def remove(fields: Field*): FetchedDataset = RemovePlan(plan, fields)
+  def remove(fields: Field*): FetchedDataset = {
+    MapPlan(plan, MapPlan.Remove(fields))
+  }
 
   def removeWeaks(): FetchedDataset = this.remove(fields.filter(_.isWeak): _*)
 
@@ -374,7 +375,7 @@ case class FetchedDataset(
         ff -> this.extract(ex)
     }
 
-    FlattenPlan(extracted.plan, on, ordinalField, sampler, isLeft)
+    MapPlan(extracted.plan, MapPlan.Flatten(on, ordinalField, sampler, isLeft))
   }
 
   //  /**

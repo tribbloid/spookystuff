@@ -8,6 +8,8 @@ import com.tribbloids.spookystuff.uav.spatial.point.Location
 import com.tribbloids.spookystuff.uav.telemetry.{Link, UAVStatus}
 import com.tribbloids.spookystuff.utils.ShippingMarks
 
+import scala.concurrent.duration.Duration
+
 /**
   * useless in DSL, cannot be shipped, prepend by GenPartitioner only.
   * does NOT fail when the Link is unreachable (hence prefer), will try any available alternative instead.
@@ -17,6 +19,8 @@ private[uav] case class PreferUAV(
                                    mutexIDOpt: Option[Long] = None
                                  ) extends UAVNavigation
   with ShippingMarks {
+
+  override val cooldown: Duration = Duration.Zero
 
   override def skeleton = None
 

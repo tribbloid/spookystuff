@@ -54,14 +54,14 @@ case class Col[T](
 
   def value: T = {
     ex match {
-      case v: Lit[FR, T] => v.value
+      case v: Lit[_, T] => v.value
       case _ => throw new UnsupportedOperationException("Not a literal")
     }
   }
 
   override def toMessage_>> : Any = {
     ex match {
-      case v: Lit[FR, T] => v.value
+      case v: Lit[_, T] => v.value
       case _ => ex.message
     }
   }

@@ -90,7 +90,7 @@ case class LifespanContext(
           var suffix: Seq[String] = Nil
           if (task.isCompleted()) suffix :+= "completed"
           if (task.isInterrupted()) suffix :+= "interrupted"
-          if (task.isRunningLocally()) suffix :+= "local"
+//          if (task.isRunningLocally()) suffix :+= "local"
           suffix.mkString("(",",",")")
         }
   }

@@ -58,7 +58,7 @@ case class SquashedFetchedRow(
     dataRows = dataRows.map(_.--(fields))
   )
 
-  class WSchema(schema: SpookySchema) extends Serializable {
+  case class WSchema(schema: SpookySchema) extends Serializable {
 
     val withSpooky: traceView.WithSpooky = new SquashedFetchedRow.this.traceView.WithSpooky(schema.spooky)
 

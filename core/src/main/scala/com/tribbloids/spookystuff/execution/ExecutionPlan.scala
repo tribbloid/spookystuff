@@ -39,7 +39,7 @@ abstract class ExecutionPlan(
       .getOrElse(ListMap[Field, DataType]())
   )
 
-  implicit def withSchema(row: SquashedFetchedRow): SquashedFetchedRow#WSchema = new row.WSchema(schema)
+  implicit def withSchema(row: SquashedFetchedRow): SquashedFetchedRow#WSchema = row.WSchema(schema)
 
   def fieldMap: ListMap[Field, DataType] = schema.fieldTypes
 
@@ -90,7 +90,7 @@ abstract class ExecutionPlan(
   }
 
   def unsquashedRDD: RDD[FetchedRow] = rdd()
-    .flatMap(v => new v.WSchema(schema).unsquash)
+    .flatMap(v => v.WSchema(schema).unsquash)
 
   def persist[T](
                   rdd: RDD[T],

@@ -38,7 +38,7 @@ object ReflectionUtils extends ReflectionLock {
   def getConstructorParameters(tt: ScalaType[_]): Seq[(String, Type)] = locked{
     val formalTypeArgs = tt.asType.typeSymbol.asClass.typeParams
     val TypeRef(_, _, actualTypeArgs) = tt.asType
-    val constructorSymbol = tt.asType.member(nme.CONSTRUCTOR)
+    val constructorSymbol = tt.asType.member(termNames.CONSTRUCTOR)
     val params = if (constructorSymbol.isMethod) {
       constructorSymbol.asMethod.paramLists
     } else {
