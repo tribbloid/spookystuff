@@ -18,11 +18,11 @@ import org.apache.commons.csv.{CSVFormat, CSVParser}
   *   ...
   * </splitter>
   */
-case class CSVElement(
-                       _text: String,
-                       override val uri: String,
-                       csvFormat: CSVFormat
-                     ) extends Unstructured {
+case class CSVBlock(
+                     _text: String,
+                     override val uri: String,
+                     csvFormat: CSVFormat
+                   ) extends Unstructured {
 
   import scala.collection.JavaConverters._
 
@@ -41,7 +41,7 @@ case class CSVElement(
         record =>
           val datum = record.get(selector)
 
-          new CsvCell(uri, datum, selector)
+          new CSVCell(uri, datum, selector)
       }
       new Elements(
         data
@@ -61,7 +61,7 @@ case class CSVElement(
             siblingHeaders.map {
               h =>
                 val datum = record.get(h)
-                new CsvCell(uri, datum, selector)
+                new CSVCell(uri, datum, selector)
             },
             delimiter,
             delimiter
@@ -95,7 +95,7 @@ case class CSVElement(
   override def attr(attr: String, noEmpty: Boolean): Option[String] = ownText
 }
 
-class CsvCell(
+class CSVCell(
                override val uri: String,
                val _ownText: String,
                val header: String

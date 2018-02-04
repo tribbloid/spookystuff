@@ -5,8 +5,8 @@ import org.apache.tika.io.TikaInputStream
 import org.apache.tika.metadata.{HttpHeaders, Metadata}
 import org.apache.tika.parser.{AutoDetectParser, ParseContext}
 import org.apache.tika.sax.ToXMLContentHandler
+import org.jsoup.Jsoup
 import org.jsoup.nodes.Element
-import org.jsoup.{Jsoup, select}
 
 import scala.collection.JavaConverters
 
@@ -54,6 +54,8 @@ class HtmlElement private (
                             override val uri: String
                           ) extends Unstructured {
 
+  import JavaConverters._
+
   //constructor for HtmlElement returned by .children()
   private def this(_parsed: Element) = this(
     _parsed,
@@ -73,7 +75,7 @@ class HtmlElement private (
 
   override def hashCode(): Int = (this.html, this.uri).hashCode()
 
-  @transient lazy val parsed = Option(_parsed).getOrElse {
+  @transient lazy val parsed: Element = Option(_parsed).getOrElse {
 
     tag match {
       case Some(_tag) =>
@@ -86,22 +88,22 @@ class HtmlElement private (
     }
   }
 
-  import scala.collection.JavaConversions._
-
-  override def findAll(selector: String) = new Elements(parsed.select(selector).map(new HtmlElement(_)).toList)
+  override def findAll(selector: String) = new Elements(parsed.select(selector)
+      .asScala
+    .map(new HtmlElement(_)).toList)
 
   override def findAllWithSiblings(selector: String, range: Range) = {
 
-    val found: select.Elements = parsed.select(selector)
+    val found = parsed.select(selector).asScala
     expand(found, range)
   }
 
-  private def expand(found: select.Elements, range: Range) = {
+  private def expand(found: Seq[Element], range: Range) = {
     val colls = found.map{
       self =>
         val selfIndex = self.elementSiblingIndex()
         //        val siblings = self.siblingElements()
-        val siblings = self.parent().children()
+        val siblings = self.parent().children().asScala
 
         val prevChildIndex = siblings.lastIndexWhere(ee => found.contains(ee), selfIndex - 1)
         val head = if (prevChildIndex == -1) selfIndex + range.head
@@ -120,13 +122,17 @@ class HtmlElement private (
 
   override def children(selector: CSSQuery) = {
 
-    val found: select.Elements = new select.Elements(parsed.select(selector).filter(ee => parsed.children().contains(ee)))
+    val found: Seq[Element] = parsed.select(selector)
+      .asScala
+      .filter(elem => parsed.children().contains(elem)) //TODO: switch to more efficient NodeFilter
     new Elements(found.map(new HtmlElement(_)).toList)
   }
 
   override def childrenWithSiblings(selector: CSSQuery, range: Range): Elements[Siblings[Unstructured]] = {
 
-    val found: select.Elements = new select.Elements(parsed.select(selector).filter(ee => parsed.children().contains(ee)))
+    val found: Seq[Element] = parsed.select(selector)
+      .asScala
+      .filter(elem => parsed.children().contains(elem)) //TODO: ditto
     expand(found, range)
   }
 
@@ -140,7 +146,7 @@ class HtmlElement private (
   }
 
   override def allAttr: Option[Map[String, String]] = {
-    val result = Map(parsed.attributes().toSeq.map{
+    val result = Map(parsed.attributes.asScala.toSeq.map{
       attr =>
         attr.getKey -> attr.getValue
     }: _*)

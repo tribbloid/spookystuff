@@ -231,7 +231,7 @@ case class Doc(
       }
         .getOrElse(Doc.defaultCSVFormat)
 
-      CSVElement.apply(contentStr, uri, csvFormat) //not serialize, parsing is faster
+      CSVBlock.apply(contentStr, uri, csvFormat) //not serialize, parsing is faster
     }
     else if (mimeType.contains("plain") || mimeType.contains("text")) {
       PlainElement(contentStr, uri) //not serialize, parsing is faster

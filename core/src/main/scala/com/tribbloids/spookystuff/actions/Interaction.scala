@@ -231,7 +231,7 @@ case class ClickNext(
 
     val elements = this.getElements(selector, session)
 
-    import scala.collection.JavaConversions._
+    import scala.collection.JavaConversions._ //TODO: use JavaConverters
 
     elements.foreach{
       element => {
