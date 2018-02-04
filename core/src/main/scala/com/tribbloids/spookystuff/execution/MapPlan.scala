@@ -1,5 +1,6 @@
 package com.tribbloids.spookystuff.execution
 
+import com.tribbloids.spookystuff.execution.MapPlan.RowMapperFactory
 import com.tribbloids.spookystuff.extractors.impl.Get
 import com.tribbloids.spookystuff.extractors.{Extractor, Resolved}
 import com.tribbloids.spookystuff.row._
@@ -7,12 +8,12 @@ import org.apache.spark.sql.types.{ArrayType, IntegerType}
 
 case class MapPlan(
                     override val child: ExecutionPlan,
-                    mapFactory: RowMapperFactory
+                    rowMapperFactory: RowMapperFactory
                   ) extends UnaryPlan(child) {
 
 
   @transient lazy val mapFn = {
-    mapFactory.apply(child.schema)
+    rowMapperFactory.apply(child.schema)
   }
 
   override val schema: SpookySchema = mapFn.schema
@@ -26,11 +27,31 @@ case class MapPlan(
   }
 }
 
+object OptimizedMapPlan {
+
+  def apply(
+             child: ExecutionPlan,
+             rowMapperFactory: RowMapperFactory
+           ) = {
+
+    child match {
+      case plan: ExplorePlan if !plan.isCached =>
+        plan.copy(rowMapperFactories = plan.rowMapperFactories :+ rowMapperFactory)
+      case _ =>
+        MapPlan(child, rowMapperFactory)
+    }
+  }
+}
+
 object MapPlan {
 
-  trait RowMapper extends (SquashedFetchedRow => SquashedFetchedRow) with Serializable {
+  type RowMapperBase = (SquashedFetchedRow => SquashedFetchedRow)
+
+  trait RowMapper extends RowMapperBase with Serializable {
     def schema: SpookySchema
   }
+
+  type RowMapperFactory = (SpookySchema => RowMapper)
 
   /**
     * extract parts of each Page and insert into their respective context
@@ -41,7 +62,7 @@ object MapPlan {
   case class Extract(exs: Seq[Extractor[_]])(val childSchema: SpookySchema) extends RowMapper {
 
     val resolver = childSchema.newResolver
-    val _exs: Seq[Resolved[Any]] = resolver.include[Any](exs: _*)
+    val _exs = resolver.include(exs: _*)
 
     override val schema: SpookySchema = {
       resolver.build

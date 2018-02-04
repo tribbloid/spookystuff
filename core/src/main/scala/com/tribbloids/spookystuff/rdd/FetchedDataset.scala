@@ -261,6 +261,20 @@ case class FetchedDataset(
   //        t1 -> t2
   //    }
 
+  // IMPORTANT: DO NOT discard type parameter! otherwise arguments' type will be coerced into Any!
+  def extract[T](exs: (Extractor[T])*): FetchedDataset = {
+    OptimizedMapPlan(plan, MapPlan.Extract(exs))
+  }
+
+  def select[T](exprs: Extractor[T]*) = extract(exprs: _*)
+
+  def remove(fields: Field*): FetchedDataset = {
+    OptimizedMapPlan(plan, MapPlan.Remove(fields))
+  }
+
+  def removeWeaks(): FetchedDataset = this.remove(fields.filter(_.isWeak): _*)
+
+
   /**
     * save each page to a designated directory
     * this is an action that will be triggered immediately
@@ -274,7 +288,7 @@ case class FetchedDataset(
   //always use the same path pattern for filtered pages, if you want pages to be saved with different path, use multiple saveContent with different names
   def savePages(
                  path: Col[String],
-                 extension: Col[String] = null,
+                 extension: Col[String] = null, //set to
                  page: Extractor[Doc] = S,
                  overwrite: Boolean = false
                ): this.type = {
@@ -320,18 +334,6 @@ case class FetchedDataset(
     this
   }
 
-  def extract(exs: (Extractor[_])*): FetchedDataset = {
-    MapPlan(plan, MapPlan.Extract(exs))
-  }
-
-  def select(exprs: Extractor[_]*) = extract(exprs: _*)
-
-  def remove(fields: Field*): FetchedDataset = {
-    MapPlan(plan, MapPlan.Remove(fields))
-  }
-
-  def removeWeaks(): FetchedDataset = this.remove(fields.filter(_.isWeak): _*)
-
   /**
     * extract expressions before the block and scrape all temporary KV after
     */
@@ -375,7 +377,7 @@ case class FetchedDataset(
         ff -> this.extract(ex)
     }
 
-    MapPlan(extracted.plan, MapPlan.Flatten(on, ordinalField, sampler, isLeft))
+    OptimizedMapPlan(extracted.plan, MapPlan.Flatten(on, ordinalField, sampler, isLeft))
   }
 
   //  /**
@@ -573,15 +575,16 @@ case class FetchedDataset(
                epochSize: Int = spooky.spookyConf.epochSize,
                checkpointInterval: Int = spooky.spookyConf.checkpointInterval // set to Int.MaxValue to disable checkpointing,
              )(
-               extracts: Extractor[Any]*
+               extracts: Extractor[_]*
                //apply immediately after depth selection, this include depth0
              ): FetchedDataset = {
 
-    val params = ExploreParams(depthField, ordinalField, range, extracts)
+    val params = ExploreParams(depthField, ordinalField, range)
 
     ExplorePlan(plan, on.withJoinFieldIfMissing, sampler, joinType,
       traces.rewriteGlobally(plan.schema), genPartitioner,
-      params, exploreAlgorithm, epochSize, checkpointInterval
+      params, exploreAlgorithm, epochSize, checkpointInterval,
+      List(MapPlan.Extract(extracts))
     )
   }
 

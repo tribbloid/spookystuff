@@ -12,7 +12,7 @@ import scala.reflect.ClassTag
 case class Broadcasted[T: ClassTag](
                                      @transient v: T
                                    )(implicit
-                                     @transient sc: SparkContext = SparkContext.getOrCreate()
+                                     @transient val sc: SparkContext = SparkContext.getOrCreate()
                                    ) extends ShippingMarks {
 
   var broadcasted: Broadcast[T] = sc.broadcast(v)

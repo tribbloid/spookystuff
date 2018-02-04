@@ -3,23 +3,23 @@ package com.tribbloids.spookystuff.execution
 import com.tribbloids.spookystuff.actions.{Trace, TraceView}
 import com.tribbloids.spookystuff.caching.ExploreRunnerCache
 import com.tribbloids.spookystuff.dsl.{ExploreAlgorithm, GenPartitioner, JoinType}
+import com.tribbloids.spookystuff.execution.MapPlan.RowMapperFactory
 import com.tribbloids.spookystuff.extractors._
 import com.tribbloids.spookystuff.extractors.impl.{Get, Lit}
 import com.tribbloids.spookystuff.row.{SquashedFetchedRow, _}
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.types.{ArrayType, IntegerType}
 
+import scala.collection.mutable.ArrayBuffer
 import scala.util.Random
 
 case class ExploreParams(
                           depthField: Field, //can be null
                           ordinalField: Field, //can be null
                           range: Range,
-                          extracts: Seq[Extractor[Any]],
 
                           executionID: Long = Random.nextLong()
                         ) {
-
 }
 
 case class ExplorePlan(
@@ -37,10 +37,37 @@ case class ExplorePlan(
                         epochSize: Int,
                         //TODO: stopping condition can be more than this,
                         //TODO: test if proceed to next epoch works
-                        checkpointInterval: Int // set to Int.MaxValue to disable checkpointing,
+                        checkpointInterval: Int, // set to Int.MaxValue to disable checkpointing,
+
+                        //                          extracts: Seq[Extractor[Any]],
+                        rowMapperFactories: List[RowMapperFactory]
                       ) extends UnaryPlan(child) with InjectBeaconRDDPlan {
 
-  val resolver = child.schema.newResolver
+  val (_protoSchema, rowMappers) = {
+    var prevSchema = child.schema
+
+    val rowMappers = rowMapperFactories.map {
+      factory =>
+        val rowMapper = factory(prevSchema)
+        prevSchema = rowMapper.schema
+        rowMapper
+    }
+
+    prevSchema -> rowMappers
+  }
+  val resolver = _protoSchema.newResolver
+
+  val invariantRowMapperFactories = ArrayBuffer.empty[RowMapperFactory]
+
+  def invariantRowMappers = {
+    invariantRowMapperFactories.map {
+      factory =>
+        val rowMapper = factory(_protoSchema)
+        rowMapper
+    }
+  }
+
+  def allRowMappers = rowMappers ++ invariantRowMappers
 
   val _on: Resolved[Any] = resolver.include(on).head
   val _params: ExploreParams = {
@@ -73,7 +100,7 @@ case class ExplorePlan(
     Get(_params.depthField).typed[Int].andFn(_ + 1) withAlias _params.depthField.!!
   ).head
   val _ordinal: TypedField = resolver.includeTyped(TypedField(_params.ordinalField, ArrayType(IntegerType))).head
-  val _extracts: Seq[Resolved[Any]] = resolver.include(_params.extracts: _*)
+  //  val _extracts: Seq[Resolved[Any]] = resolver.include(_params.extracts: _*)
 
   override val schema: SpookySchema = resolver.build
 
@@ -99,8 +126,11 @@ case class ExplorePlan(
       spooky.sparkContext.setCheckpointDir(spooky.dirConf.checkpoint)
 
     val rowFn: SquashedFetchedRow => SquashedFetchedRow = {
-      row: SquashedFetchedRow =>
-        row.extract(_extracts: _*)
+      row =>
+        allRowMappers.foldLeft(row){
+          (row, rowMapper) =>
+            rowMapper(row)
+        }
     }
 
     val state0RDD: RDD[(TraceView, Open_Visited)] = child.rdd()

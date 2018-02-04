@@ -22,9 +22,9 @@ class ScalaReflectionSpike extends FunSpecx {
       "fn"
     )
 
-    val paramss = dynamic.getMethodsByName(exType).map(_.paramss)
+    val paramLists = dynamic.getMethodsByName(exType).map(_.paramLists)
 
-    paramss.mkString("\n").shouldBe (
+    paramLists.mkString("\n").shouldBe (
       """
         |List(List(value i))
         |List()
@@ -48,9 +48,9 @@ class ScalaReflectionSpike extends FunSpecx {
       "a"
     )
 
-    val paramss = dynamic.getMethodsByName(exType).map(v => v.paramss)
+    val paramLists = dynamic.getMethodsByName(exType).map(v => v.paramLists)
 
-    paramss.mkString("\n").shouldBe(
+    paramLists.mkString("\n").shouldBe(
       "List()"
     )
 
@@ -70,9 +70,9 @@ class ScalaReflectionSpike extends FunSpecx {
       "c"
     )
 
-    val paramss = dynamic.getMethodsByName(exType).map(_.paramss)
+    val paramLists = dynamic.getMethodsByName(exType).map(_.paramLists)
 
-    paramss.mkString("\n").shouldBe(
+    paramLists.mkString("\n").shouldBe(
       "List()"
     )
 
@@ -92,9 +92,9 @@ class ScalaReflectionSpike extends FunSpecx {
       "fnDefault"
     )
 
-    val paramss = dynamic.getMethodsByName(exType).map(_.paramss)
+    val paramLists = dynamic.getMethodsByName(exType).map(_.paramLists)
 
-    paramss.mkString("\n").shouldBe(
+    paramLists.mkString("\n").shouldBe(
       "List(List(value a, value b))"
     )
 
@@ -114,9 +114,9 @@ class ScalaReflectionSpike extends FunSpecx {
       "*=>"
     )
 
-    val paramss = dynamic.getMethodsByName(exType).map(_.paramss)
+    val paramLists = dynamic.getMethodsByName(exType).map(_.paramLists)
 
-    paramss.mkString("\n").shouldBe(
+    paramLists.mkString("\n").shouldBe(
       "List(List(value k))"
     )
 
@@ -135,9 +135,9 @@ class ScalaReflectionSpike extends FunSpecx {
       "fn"
     )
 
-    val paramss = dynamic.getMethodByScala(exType, Some(List(IntegerType))).paramss
+    val paramLists = dynamic.getMethodByScala(exType, Some(List(IntegerType))).paramLists
 
-    paramss.toString.shouldBe(
+    paramLists.toString.shouldBe(
       "List(List(value i))"
     )
   }
@@ -147,11 +147,11 @@ class ScalaReflectionSpike extends FunSpecx {
       "fn"
     )
 
-    val paramss = dynamic.getMethodByJava(exType, Some(List(IntegerType)))
+    val paramLists = dynamic.getMethodByJava(exType, Some(List(IntegerType)))
       .getParameterTypes
       .mkString("|")
 
-    paramss.shouldBe(
+    paramLists.shouldBe(
       "class java.lang.Object"
     )
   }
@@ -161,9 +161,9 @@ class ScalaReflectionSpike extends FunSpecx {
       "fnOpt"
     )
 
-    val paramss = dynamic.getMethodByScala(exType, Some(List(IntegerType))).paramss
+    val paramLists = dynamic.getMethodByScala(exType, Some(List(IntegerType))).paramLists
 
-    paramss.toString.shouldBe(
+    paramLists.toString.shouldBe(
       "List(List(value x))"
     )
   }
@@ -173,10 +173,10 @@ class ScalaReflectionSpike extends FunSpecx {
       "fnOpt"
     )
 
-    val paramss = dynamic.getMethodByJava(exType, Some(List(IntegerType)))
+    val paramLists = dynamic.getMethodByJava(exType, Some(List(IntegerType)))
       .getParameterTypes.mkString("|")
 
-    paramss.shouldBe(
+    paramLists.shouldBe(
       "class java.lang.Object"
     )
   }
@@ -186,9 +186,9 @@ class ScalaReflectionSpike extends FunSpecx {
       "fnOptOpt"
     )
 
-    val paramss = dynamic.getMethodByScala(exType, Some(List(IntegerType))).paramss
+    val paramLists = dynamic.getMethodByScala(exType, Some(List(IntegerType))).paramLists
 
-    paramss.toString.shouldBe(
+    paramLists.toString.shouldBe(
       "List(List(value x))"
     )
   }
@@ -198,10 +198,10 @@ class ScalaReflectionSpike extends FunSpecx {
       "fnOptOpt"
     )
 
-    val paramss = dynamic.getMethodByJava(exType, Some(List(IntegerType)))
+    val paramLists = dynamic.getMethodByJava(exType, Some(List(IntegerType)))
       .getParameterTypes.mkString("|")
 
-    paramss.shouldBe(
+    paramLists.shouldBe(
       "class scala.Option"
     )
   }
@@ -212,7 +212,7 @@ class ScalaReflectionSpike extends FunSpecx {
     )
 
     intercept[UnsupportedOperationException] {
-      val paramss = dynamic.getMethodByScala(exType, Some(List(StringType)))
+      val paramLists = dynamic.getMethodByScala(exType, Some(List(StringType)))
     }
   }
 
@@ -223,7 +223,7 @@ class ScalaReflectionSpike extends FunSpecx {
     )
 
     intercept[UnsupportedOperationException] {
-      val paramss = dynamic.getMethodByJava(exType, Some(List(StringType)))
+      val paramLists = dynamic.getMethodByJava(exType, Some(List(StringType)))
     }
   }
 
@@ -234,9 +234,9 @@ class ScalaReflectionSpike extends FunSpecx {
     )
 
     val method = dynamic.getMethodByScala(exType, Some(List(IntegerType)))
-    val paramss = method.paramss
+    val paramLists = method.paramLists
 
-    paramss.toString.shouldBe(
+    paramLists.toString.shouldBe(
       "List(List(value k))"
     )
 

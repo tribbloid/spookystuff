@@ -15,13 +15,13 @@ case class SortingLocalityImpl[K: ClassTag, V: ClassTag](
 
   lazy val beacon: RDD[(K, (V, Long))] = {
 
-    val acc = rdd1.sparkContext.accumulator(0L)
+    val acc = rdd1.sparkContext.longAccumulator
 
     val withLocalIndex = rdd1.mapValues{
       v =>
-        val accV = acc.localValue
-        val result = v -> accV
-        acc += 1
+        val accV = acc.value
+        val result = v -> accV.longValue
+        acc.add(1L)
         result
     }
     assert(withLocalIndex.partitioner.nonEmpty)
