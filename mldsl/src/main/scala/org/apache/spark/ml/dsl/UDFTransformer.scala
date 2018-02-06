@@ -5,6 +5,7 @@ import org.apache.spark.ml.Transformer
 import org.apache.spark.ml.param.shared.{HasInputCols, HasOutputCol}
 import org.apache.spark.ml.param.{Param, ParamMap}
 import org.apache.spark.ml.util.{DefaultParamsReadable, DefaultParamsWritable, Identifiable}
+import org.apache.spark.mllib.linalg.VectorUDT
 import org.apache.spark.sql.{DataFrame, Dataset}
 import org.apache.spark.sql.expressions.UserDefinedFunction
 import org.apache.spark.sql.types.{StructField, StructType}
@@ -16,17 +17,26 @@ abstract class UDFTransformerLike
 
   def udfImpl: UserDefinedFunction
 
+  def setUDFSafely(_udfImpl: UserDefinedFunction) = {
+    _udfImpl.inputTypes.toSeq.flatten.foreach {
+      dataType =>
+        assert(!dataType.isInstanceOf[VectorUDT], s"UDF input type ${classOf[VectorUDT].getCanonicalName} is obsolete!")
+    }
+    assert(!_udfImpl.dataType.isInstanceOf[VectorUDT], s"UDF output type ${classOf[VectorUDT].getCanonicalName} is obsolete!")
+    this.setUDF(_udfImpl)
+  }
+
   def getInputCols: Array[String]
 
   import org.apache.spark.sql.functions._
 
   override def transform(dataset: Dataset[_]): DataFrame = {
-    dataset.withColumn(
-      outputCol,
-      udfImpl(
-        (getInputCols: Array[String])
-          .map(v => col(v)): _*)
-    )
+    val newCol = udfImpl(
+      (getInputCols: Array[String])
+        .map(v => col(v)): _*)
+
+    val result = dataset.withColumn(outputCol, newCol)
+    result
   }
 
   @DeveloperApi
@@ -37,7 +47,7 @@ abstract class UDFTransformerLike
 
 object UDFTransformer extends DefaultParamsReadable[UDFTransformer] {
 
-  def apply(udf: UserDefinedFunction) = new UDFTransformer().setUDF(udf)
+  def apply(udf: UserDefinedFunction) = new UDFTransformer().setUDFSafely(udf)
 
   override def load(path: String): UDFTransformer = super.load(path)
 }

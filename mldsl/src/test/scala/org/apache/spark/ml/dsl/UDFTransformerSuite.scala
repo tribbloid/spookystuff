@@ -20,7 +20,7 @@ class UDFTransformerSuite extends FunSpecx {
   val stemming = udf {
     v: Seq[String] => v.map(_.stripSuffix("$"))
   }
-  val arch = UDFTransformer().setUDF(stemming).setInputCols(Array("name_token")).setOutputCol("name_stemmed")
+  val arch = UDFTransformer().setUDFSafely(stemming).setInputCols(Array("name_token")).setOutputCol("name_stemmed")
   val src = tokenizer.transform(df1)
 
   it("transformer has consistent schema") {
