@@ -319,9 +319,9 @@
 
     <!--DON'T DELETE! guava has too many versions and a ground truth has to be setup.-->
     <!--<dependency>-->
-      <!--<groupId>com.google.guava</groupId>-->
-      <!--<artifactId>guava</artifactId>-->
-      <!--<version>16.0.1</version>-->
+    <!--<groupId>com.google.guava</groupId>-->
+    <!--<artifactId>guava</artifactId>-->
+    <!--<version>16.0.1</version>-->
     <!--</dependency>-->
     <!--<dependency>-->
     <!--<groupId>org.apache.spark</groupId>-->
@@ -463,51 +463,51 @@
 
     <plugins>
 
-      <!--<plugin>-->
-      <!--<groupId>org.codehaus.mojo</groupId>-->
-      <!--<artifactId>flatten-maven-plugin</artifactId>-->
-      <!--<version>1.0.1</version>-->
-      <!--<executions>-->
-      <!--&lt;!&ndash; enable flattening &ndash;&gt;-->
-      <!--<execution>-->
-      <!--<id>flatten</id>-->
-      <!--<phase>process-resources</phase>-->
-      <!--<goals>-->
-      <!--<goal>flatten</goal>-->
-      <!--</goals>-->
-      <!--</execution>-->
-      <!--&lt;!&ndash; ensure proper cleanup &ndash;&gt;-->
-      <!--<execution>-->
-      <!--<id>flatten.clean</id>-->
-      <!--<phase>clean</phase>-->
-      <!--<goals>-->
-      <!--<goal>clean</goal>-->
-      <!--</goals>-->
-      <!--</execution>-->
-      <!--</executions>-->
-      <!--</plugin>-->
-
-      <!--TODO: switch to it after https://github.com/mojohaus/flatten-maven-plugin/issues/61!-->
       <plugin>
-        <groupId>com.carrotgarden.maven</groupId>
+        <groupId>org.codehaus.mojo</groupId>
         <artifactId>flatten-maven-plugin</artifactId>
-        <version>1.3.20180205153346</version>
+        <version>1.0.1</version>
         <executions>
           <!-- enable flattening -->
           <execution>
             <id>flatten</id>
+            <phase>process-resources</phase>
             <goals>
               <goal>flatten</goal>
             </goals>
           </execution>
+          <!-- ensure proper cleanup -->
+          <execution>
+            <id>flatten.clean</id>
+            <phase>clean</phase>
+            <goals>
+              <goal>clean</goal>
+            </goals>
+          </execution>
         </executions>
-
-        <configuration>
-          <!--<performOverrideIdentity>true</performOverrideIdentity>-->
-          <!--<overrideArtifactId>${project.artifactId}_${scala.binary.version}</overrideArtifactId>-->
-          <!--TODO: upgrade to support these-->
-        </configuration>
       </plugin>
+
+      <!--TODO: switch to it after https://github.com/mojohaus/flatten-maven-plugin/issues/61!-->
+      <!--<plugin>-->
+      <!--<groupId>com.carrotgarden.maven</groupId>-->
+      <!--<artifactId>flatten-maven-plugin</artifactId>-->
+      <!--<version>1.3.20180205153346</version>-->
+      <!--<executions>-->
+      <!--&lt;!&ndash; enable flattening &ndash;&gt;-->
+      <!--<execution>-->
+      <!--<id>flatten</id>-->
+      <!--<goals>-->
+      <!--<goal>flatten</goal>-->
+      <!--</goals>-->
+      <!--</execution>-->
+      <!--</executions>-->
+
+      <!--<configuration>-->
+      <!--&lt;!&ndash;<performOverrideIdentity>true</performOverrideIdentity>&ndash;&gt;-->
+      <!--&lt;!&ndash;<overrideArtifactId>${project.artifactId}_${scala.binary.version}</overrideArtifactId>&ndash;&gt;-->
+      <!--&lt;!&ndash;TODO: upgrade to support these&ndash;&gt;-->
+      <!--</configuration>-->
+      <!--</plugin>-->
 
       <plugin>
         <groupId>org.codehaus.mojo</groupId>
