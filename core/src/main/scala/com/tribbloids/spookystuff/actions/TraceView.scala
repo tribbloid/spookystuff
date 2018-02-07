@@ -2,7 +2,7 @@ package com.tribbloids.spookystuff.actions
 
 import com.tribbloids.spookystuff.caching.{DFSDocCache, InMemoryDocCache}
 import com.tribbloids.spookystuff.doc.{Doc, DocOption}
-import com.tribbloids.spookystuff.row.{SpookySchema, FetchedRow}
+import com.tribbloids.spookystuff.row.{FetchedRow, SpookySchema}
 import com.tribbloids.spookystuff.session.Session
 import com.tribbloids.spookystuff.utils.IDMixin
 import com.tribbloids.spookystuff.{SpookyContext, dsl}
@@ -15,19 +15,12 @@ object TraceView {
 
   implicit def fromTrace(trace: Trace): TraceView = TraceView(trace)
 
-  def apply(
-             children: Trace,
-             docs: Seq[DocOption]
-           ): TraceView = {
-    val result = apply(children)
-    result.docs = docs
-    result
-  }
-
-  def apply(
-             docs: Seq[DocOption]
-           ): TraceView = {
-    val result = apply()
+  def withDocs(
+                children: Trace = Nil,
+                keyBy: Trace => Any = identity,
+                docs: Seq[DocOption] = Nil
+              ): TraceView = {
+    val result = apply(children, keyBy)
     result.docs = docs
     result
   }
@@ -35,13 +28,14 @@ object TraceView {
 
 case class TraceView(
                       override val children: Trace = Nil,
-                      idOverride: Option[Int] = None //used in broadcast join
+                      keyBy: Trace => Any = identity //used by custom keyBy arg in fetch and explore.
                     ) extends Actions(children) with IDMixin { //remember trace is not a block! its the super container that cannot be wrapped
 
-  override def toString = children.mkString(" -> ")
-  override val _id: Int = idOverride.getOrElse(children.hashCode())
+  val _id: Any = keyBy(children)
 
-  @volatile @transient private var docs: Seq[DocOption] = _ //override, cannot be shipped, lazy evaluated
+  override def toString = children.mkString(" -> ")
+
+  @volatile @transient private var docs: Seq[DocOption] = _ //override, cannot be shipped, lazy evaluated TODO: not volatile?
   def docsOpt = Option(docs)
 
   override def apply(session: Session): Seq[DocOption] = {
@@ -159,6 +153,8 @@ case class TraceView(
       docs
     }
   }
+
+  def keyBy[T](v: Trace => T): TraceView = this.copy(keyBy = v)
 }
 
 object TraceSetView {
@@ -201,7 +197,9 @@ final case class TraceSetView(self: Set[Trace]) {
   def *>[T: ClassTag](others: TraversableOnce[T]): Set[Trace] = self.flatMap(
     trace => others.map {
       case otherAction: Action => trace :+ otherAction
-      case otherTrace: Trace => trace ++ otherTrace
+      case otherList: List[_] => trace ++ otherList.collect {
+        case v: Action => v
+      }
     }
   )
 

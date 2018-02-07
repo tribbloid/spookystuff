@@ -142,7 +142,7 @@ class PythonDriverSuite extends SpookyEnvFixture {
   it("call should return None if result variable is undefined") {
 
     PythonDriverSuite.runIterable(1 to 10) {
-      (i, proc) =>
+      (i: Int, proc) =>
         val r = proc.eval(s"print($i / 1)")
         assert(r._1.mkString("\n") == i.toString)
         assert(r._2.isEmpty)

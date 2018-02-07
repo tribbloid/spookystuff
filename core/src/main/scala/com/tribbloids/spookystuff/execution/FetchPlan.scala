@@ -30,6 +30,7 @@ trait InjectBeaconRDDPlan extends ExecutionPlan {
 case class FetchPlan(
                       override val child: ExecutionPlan,
                       traces: Set[Trace],
+                      keyBy: Trace => Any,
                       genPartitioner: GenPartitioner
                     ) extends UnaryPlan(child) with InjectBeaconRDDPlan {
 
@@ -38,6 +39,10 @@ case class FetchPlan(
     val trace_DataRowRDD: RDD[(TraceView, DataRow)] = child.rdd()
       .flatMap {
         _.interpolateAndRewriteLocally(traces)
+      }
+      .map {
+        case (k, v) =>
+          k.keyBy(keyBy) -> v
       }
 
     val grouped = gpImpl.groupByKey(trace_DataRowRDD, beaconRDDOpt)

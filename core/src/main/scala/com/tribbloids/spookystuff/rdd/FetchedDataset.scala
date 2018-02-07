@@ -4,6 +4,7 @@ import com.tribbloids.spookystuff.actions.{ClusterRetry, Snapshot, Visit, Wget, 
 import com.tribbloids.spookystuff.conf.SpookyConf
 import com.tribbloids.spookystuff.doc.{Doc, DocOption}
 import com.tribbloids.spookystuff.dsl.{ExploreAlgorithm, JoinType, _}
+import com.tribbloids.spookystuff.execution.ExplorePlan.Params
 import com.tribbloids.spookystuff.execution.{ExplorePlan, FetchPlan, _}
 import com.tribbloids.spookystuff.extractors._
 import com.tribbloids.spookystuff.extractors.impl.Get
@@ -79,14 +80,14 @@ case class FetchedDataset(
   def rdd = unsquashedRDD
   def unsquashedRDD: RDD[FetchedRow] = this.squashedRDD.flatMap(
     v =>
-      new v.WSchema(schema).unsquash
+      v.WSchema(schema).unsquash
   )
 
   def docRDD: RDD[Seq[DocOption]] = {
 
     squashedRDD.map {
       row =>
-        new row.WSchema(schema).withSpooky.getDoc
+        row.WSchema(schema).withSpooky.getDoc
     }
   }
 
@@ -447,13 +448,15 @@ case class FetchedDataset(
   // Always left
   def fetch(
              traces: Set[Trace],
+             keyBy: Trace => Any = identity,
              genPartitioner: GenPartitioner = spooky.spookyConf.defaultGenPartitioner
-           ): FetchedDataset = FetchPlan(plan, traces.rewriteGlobally(plan.schema), genPartitioner)
+           ): FetchedDataset = FetchPlan(plan, traces.rewriteGlobally(plan.schema), keyBy, genPartitioner)
 
   //shorthand of fetch
   def visit(
              on: Col[String],
              cooldown: Option[Duration] = None,
+             keyBy: Trace => Any = identity,
              filter: DocFilter = Const.defaultDocumentFilter,
              failSafe: Int = -1,
              genPartitioner: GenPartitioner = spooky.spookyConf.defaultGenPartitioner
@@ -463,7 +466,7 @@ case class FetchedDataset(
     if (failSafe > 0) trace = ClusterRetry(trace, failSafe)
 
     this.fetch(
-      trace,
+      trace, keyBy,
       genPartitioner = genPartitioner
     )
   }
@@ -472,6 +475,7 @@ case class FetchedDataset(
   def wget(
             on: Col[String],
             cooldown: Option[Duration] = None,
+            keyBy: Trace => Any = identity,
             filter: DocFilter = Const.defaultDocumentFilter,
             failSafe: Int = -1,
             genPartitioner: GenPartitioner = spooky.spookyConf.defaultGenPartitioner
@@ -482,7 +486,7 @@ case class FetchedDataset(
     if (failSafe > 0) trace = ClusterRetry(trace, failSafe)
 
     this.fetch(
-      trace,
+      trace, keyBy,
       genPartitioner = genPartitioner
     )
   }
@@ -494,13 +498,14 @@ case class FetchedDataset(
             sampler: Sampler[Any] = spooky.spookyConf.defaultJoinSampler
           )(
             traces: Set[Trace],
+            keyBy: Trace => Any = identity,
             genPartitioner: GenPartitioner = spooky.spookyConf.defaultGenPartitioner
           ): FetchedDataset = {
 
     val flat = this
       .flatten(on.withJoinFieldIfMissing, joinType.isLeft, ordinalField, sampler)
 
-    flat.fetch(traces, genPartitioner)
+    flat.fetch(traces, keyBy, genPartitioner)
   }
 
   /**
@@ -514,7 +519,10 @@ case class FetchedDataset(
                  joinType: JoinType = spooky.spookyConf.defaultJoinType,
                  ordinalField: Field = null, //left & idempotent parameters are missing as they are always set to true
                  sampler: Sampler[Any] = spooky.spookyConf.defaultJoinSampler,
+
                  cooldown: Option[Duration] = None,
+                 keyBy: Trace => Any = identity,
+
                  filter: DocFilter = Const.defaultDocumentFilter,
                  failSafe: Int = -1,
                  genPartitioner: GenPartitioner = spooky.spookyConf.defaultGenPartitioner
@@ -526,7 +534,7 @@ case class FetchedDataset(
     }
 
     this.join(on, joinType, ordinalField, sampler)(
-      trace,
+      trace, keyBy,
       genPartitioner = genPartitioner
     )
   }
@@ -542,7 +550,10 @@ case class FetchedDataset(
                 joinType: JoinType = spooky.spookyConf.defaultJoinType,
                 ordinalField: Field = null, //left & idempotent parameters are missing as they are always set to true
                 sampler: Sampler[Any] = spooky.spookyConf.defaultJoinSampler,
+
                 cooldown: Option[Duration] = None,
+                keyBy: Trace => Any = identity,
+
                 filter: DocFilter = Const.defaultDocumentFilter,
                 failSafe: Int = -1,
                 genPartitioner: GenPartitioner = spooky.spookyConf.defaultGenPartitioner
@@ -554,7 +565,7 @@ case class FetchedDataset(
     }
 
     this.join(on, joinType, ordinalField, sampler)(
-      trace,
+      trace, keyBy,
       genPartitioner = genPartitioner
     )
   }
@@ -567,6 +578,7 @@ case class FetchedDataset(
                sampler: Sampler[Any] = spooky.spookyConf.defaultJoinSampler
              )(
                traces: Set[Trace],
+               keyBy: Trace => Any = identity,
                genPartitioner: GenPartitioner = spooky.spookyConf.defaultGenPartitioner,
 
                depthField: Field = null,
@@ -579,10 +591,10 @@ case class FetchedDataset(
                //apply immediately after depth selection, this include depth0
              ): FetchedDataset = {
 
-    val params = ExploreParams(depthField, ordinalField, range)
+    val params = Params(depthField, ordinalField, range)
 
     ExplorePlan(plan, on.withJoinFieldIfMissing, sampler, joinType,
-      traces.rewriteGlobally(plan.schema), genPartitioner,
+      traces.rewriteGlobally(plan.schema), keyBy, genPartitioner,
       params, exploreAlgorithm, epochSize, checkpointInterval,
       List(MapPlan.Extract(extracts))
     )
@@ -593,10 +605,11 @@ case class FetchedDataset(
                     joinType: JoinType = spooky.spookyConf.defaultJoinType,
                     ordinalField: Field = null,
                     sampler: Sampler[Any] = spooky.spookyConf.defaultJoinSampler,
-                    cooldown: Option[Duration] = None,
                     filter: DocFilter = Const.defaultDocumentFilter,
 
                     failSafe: Int = -1,
+                    cooldown: Option[Duration] = None,
+                    keyBy: Trace => Any = identity,
                     genPartitioner: GenPartitioner = spooky.spookyConf.defaultGenPartitioner,
 
                     depthField: Field = null,
@@ -613,7 +626,7 @@ case class FetchedDataset(
     if (failSafe > 0) trace = ClusterRetry(trace, failSafe)
 
     explore(on, joinType, ordinalField, sampler)(
-      trace, genPartitioner,
+      trace, keyBy, genPartitioner,
 
       depthField, range, exploreAlgorithm, miniBatch, checkpointInterval
     )(
@@ -626,10 +639,11 @@ case class FetchedDataset(
                    joinType: JoinType = spooky.spookyConf.defaultJoinType,
                    ordinalField: Field = null,
                    sampler: Sampler[Any] = spooky.spookyConf.defaultJoinSampler,
-                   cooldown: Option[Duration] = None,
                    filter: DocFilter = Const.defaultDocumentFilter,
 
                    failSafe: Int = -1,
+                   cooldown: Option[Duration] = None,
+                   keyBy: Trace => Any = identity,
                    genPartitioner: GenPartitioner = spooky.spookyConf.defaultGenPartitioner,
 
                    depthField: Field = null,
@@ -646,7 +660,7 @@ case class FetchedDataset(
     if (failSafe > 0) trace = ClusterRetry(trace, failSafe)
 
     explore(on, joinType, ordinalField, sampler)(
-      trace, genPartitioner,
+      trace, keyBy, genPartitioner,
 
       depthField, range, exploreAlgorithm, miniBatch, checkpointInterval
     )(

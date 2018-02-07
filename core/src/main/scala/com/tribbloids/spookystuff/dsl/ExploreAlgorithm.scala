@@ -1,15 +1,15 @@
 package com.tribbloids.spookystuff.dsl
 
-import com.tribbloids.spookystuff.actions._
 import com.tribbloids.spookystuff.caching.ExploreRunnerCache
-import com.tribbloids.spookystuff.execution.ExploreParams
+import com.tribbloids.spookystuff.execution.ExplorePlan.Params
+import com.tribbloids.spookystuff.execution.NodeKey
 import com.tribbloids.spookystuff.row._
 import com.tribbloids.spookystuff.utils.CachingUtils.ConcurrentMap
 
 sealed trait ExploreAlgorithm {
 
   def getImpl(
-               params: ExploreParams,
+               params: Params,
                schema: SpookySchema
              ): ExploreAlgorithm.Impl
 }
@@ -18,26 +18,26 @@ object ExploreAlgorithm {
 
   trait Impl extends Serializable {
 
-    val params: ExploreParams
+    val params: Params
     val schema: SpookySchema
 
     /**
       *
       */
-    val openReducer: RowReducer
+    def openReducer: RowReducer
 
     def openReducerBetweenEpochs: RowReducer = openReducer
+
+    def nextOpenSelector(
+                          open: ConcurrentMap[NodeKey, Iterable[DataRow]]
+                        ): (NodeKey, Iterable[DataRow])
 
     /**
       *
       */
-    val visitedReducer: RowReducer //precede eliminator
+    def visitedReducer: RowReducer //precede eliminator
 
     def visitedReducerBetweenEpochs: RowReducer = visitedReducer
-
-    def openSelector(
-                      open: ConcurrentMap[TraceView, Iterable[DataRow]]
-                    ): (TraceView, Iterable[DataRow])
   }
 
   trait EliminatingImpl extends Impl {
@@ -55,19 +55,21 @@ object ExploreAlgorithm {
                     visited: Iterable[DataRow]
                   ): Iterable[DataRow]
 
-    override final def openSelector(
-                                     open: ConcurrentMap[TraceView, Iterable[DataRow]]
-                                   ): (TraceView, Iterable[DataRow]) = {
+    override final def nextOpenSelector(
+                                         open: ConcurrentMap[NodeKey, Iterable[DataRow]]
+                                       ): (NodeKey, Iterable[DataRow]) = {
 
       //Should I use pre-sorted collection? Or is it overengineering?
-      val bestOpenBeforeElimination: (TraceView, Iterable[DataRow]) = open.min(ordering)
+      val bestOpenBeforeElimination: (NodeKey, Iterable[DataRow]) = open.min(ordering)
+      val bestOpenNodeID = bestOpenBeforeElimination._1
 
-      open -= bestOpenBeforeElimination._1
+      open -= bestOpenNodeID
 
       val existingVisitedOption: Option[Iterable[DataRow]] =
-        ExploreRunnerCache.get(bestOpenBeforeElimination._1 -> params.executionID, visitedReducer)
+        ExploreRunnerCache.get(bestOpenNodeID -> params.executionID)
+          .reduceOption(visitedReducer)
 
-      val bestOpen: (TraceView, Iterable[DataRow]) = existingVisitedOption match {
+      val bestOpen: (NodeKey, Iterable[DataRow]) = existingVisitedOption match {
         case Some(allVisited) =>
           val dataRowsAfterElimination = eliminator(bestOpenBeforeElimination._2, allVisited)
           bestOpenBeforeElimination.copy(_2 = dataRowsAfterElimination)
@@ -86,12 +88,12 @@ object ExploreAlgorithms {
   case object BreadthFirst extends ExploreAlgorithm {
 
     override def getImpl(
-                          params: ExploreParams,
+                          params: Params,
                           schema: SpookySchema
                         ) = Impl(params, schema)
 
     case class Impl(
-                     override val params: ExploreParams,
+                     override val params: Params,
                      schema: SpookySchema
                    ) extends EliminatingImpl {
 
@@ -110,7 +112,7 @@ object ExploreAlgorithms {
       override val visitedReducer: RowReducer = openReducer
 
       override val ordering: RowOrdering = Ordering.by {
-        tuple: (TraceView, Iterable[DataRow]) =>
+        tuple: (NodeKey, Iterable[DataRow]) =>
           val inProgress = ExploreRunnerCache
             .getOnGoingRunners(params.executionID)
             .flatMap(_.fetchingInProgressOpt)
@@ -179,10 +181,10 @@ object ExploreAlgorithms {
 
   case object DepthFirst extends ExploreAlgorithm {
 
-    override def getImpl(params: ExploreParams, schema: SpookySchema): Impl =
+    override def getImpl(params: Params, schema: SpookySchema): Impl =
       Impl(params, schema)
 
-    case class Impl(params: ExploreParams, schema: SpookySchema) extends EliminatingImpl {
+    case class Impl(params: Params, schema: SpookySchema) extends EliminatingImpl {
       /**
         *
         */

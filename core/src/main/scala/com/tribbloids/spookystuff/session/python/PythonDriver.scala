@@ -373,8 +373,7 @@ class PythonDriver(
       }
     this._interpret(
       effectiveCodes.mkString("\n"),
-      None,
-      detectError = true
+      None
     )
   }
 }

@@ -3,6 +3,7 @@ package com.tribbloids.spookystuff.execution
 import com.tribbloids.spookystuff.actions.{Trace, TraceView}
 import com.tribbloids.spookystuff.caching.ExploreRunnerCache
 import com.tribbloids.spookystuff.dsl.{ExploreAlgorithm, GenPartitioner, JoinType}
+import com.tribbloids.spookystuff.execution.ExplorePlan.{Params, Open_Visited}
 import com.tribbloids.spookystuff.execution.MapPlan.RowMapperFactory
 import com.tribbloids.spookystuff.extractors._
 import com.tribbloids.spookystuff.extractors.impl.{Get, Lit}
@@ -13,13 +14,22 @@ import org.apache.spark.sql.types.{ArrayType, IntegerType}
 import scala.collection.mutable.ArrayBuffer
 import scala.util.Random
 
-case class ExploreParams(
-                          depthField: Field, //can be null
-                          ordinalField: Field, //can be null
-                          range: Range,
+object ExplorePlan {
 
-                          executionID: Long = Random.nextLong()
-                        ) {
+  case class Params(
+                     depthField: Field, //can be null
+                     ordinalField: Field, //can be null
+                     range: Range,
+
+                     executionID: Long = Random.nextLong()
+                   ) {
+  }
+
+  // use Array to minimize serialization footage
+  case class Open_Visited(
+                           open: Option[Array[DataRow]] = None,
+                           visited: Option[Array[DataRow]] = None
+                         )
 }
 
 case class ExplorePlan(
@@ -30,9 +40,10 @@ case class ExplorePlan(
                         joinType: JoinType,
 
                         traces: Set[Trace],
+                        keyBy: Trace => Any,
                         genPartitioner: GenPartitioner,
 
-                        params: ExploreParams,
+                        params: Params,
                         exploreAlgorithm: ExploreAlgorithm,
                         epochSize: Int,
                         //TODO: stopping condition can be more than this,
@@ -70,7 +81,7 @@ case class ExplorePlan(
   def allRowMappers = rowMappers ++ invariantRowMappers
 
   val _on: Resolved[Any] = resolver.include(on).head
-  val _params: ExploreParams = {
+  val _effectiveParams: Params = {
 
     val effectiveDepthField = {
       Option(params.depthField) match {
@@ -95,11 +106,11 @@ case class ExplorePlan(
     )
   }
 
-  val depth_0: Resolved[Int] = resolver.include(Lit(0) withAlias _params.depthField).head
+  val depth_0: Resolved[Int] = resolver.include(Lit(0) withAlias _effectiveParams.depthField).head
   val depth_++ : Resolved[Int] = resolver.include(
-    Get(_params.depthField).typed[Int].andFn(_ + 1) withAlias _params.depthField.!!
+    Get(_effectiveParams.depthField).typed[Int].andFn(_ + 1) withAlias _effectiveParams.depthField.!!
   ).head
-  val _ordinal: TypedField = resolver.includeTyped(TypedField(_params.ordinalField, ArrayType(IntegerType))).head
+  val _ordinal: TypedField = resolver.includeTyped(TypedField(_effectiveParams.ordinalField, ArrayType(IntegerType))).head
   //  val _extracts: Seq[Resolved[Any]] = resolver.include(_params.extracts: _*)
 
   override val schema: SpookySchema = resolver.build
@@ -117,15 +128,15 @@ case class ExplorePlan(
   //      _extracts.map(_.typedField)
   //  }
 
-  val impl = exploreAlgorithm.getImpl(_params, this.schema)
+  val impl = exploreAlgorithm.getImpl(_effectiveParams, this.schema)
 
   override def doExecute(): SquashedFetchedRDD = {
-    assert(_params.depthField != null)
+    assert(_effectiveParams.depthField != null)
 
     if (spooky.sparkContext.getCheckpointDir.isEmpty && checkpointInterval > 0)
       spooky.sparkContext.setCheckpointDir(spooky.dirConf.checkpoint)
 
-    val rowFn: SquashedFetchedRow => SquashedFetchedRow = {
+    val rowMapper: SquashedFetchedRow => SquashedFetchedRow = {
       row =>
         allRowMappers.foldLeft(row){
           (row, rowMapper) =>
@@ -137,8 +148,8 @@ case class ExplorePlan(
       .flatMap {
         row0 =>
           val row0WithDepth = row0.extract(depth_0)
-          val depth0 = rowFn.apply(row0WithDepth)
-          val visited0 = if (_params.range.contains(0)) {
+          val depth0 = rowMapper.apply(row0WithDepth)
+          val visited0 = if (_effectiveParams.range.contains(0)) {
             //extract on selfRDD, add into visited set.
             Some(depth0.traceView -> Open_Visited(visited = Some(depth0.dataRows)))
           }
@@ -148,14 +159,17 @@ case class ExplorePlan(
 
           val open0 = depth0
             .extract(_on)
-            .flattenData(_on.field, _params.ordinalField, joinType.isLeft, sampler)
+            .flattenData(_on.field, _effectiveParams.ordinalField, joinType.isLeft, sampler)
             .interpolateAndRewriteLocally(traces)
             .map {
               t =>
                 t._1 -> Open_Visited(open = Some(Array(t._2)))
             }
 
-          open0 ++ visited0
+          (open0 ++ visited0).map {
+            case (k, v) =>
+              k.keyBy(keyBy) -> v
+          }
       }
 
 
@@ -184,8 +198,8 @@ case class ExplorePlan(
 
       val stateRDD_+ : RDD[(TraceView, Open_Visited)] = reduceStateRDD.mapPartitions {
         itr =>
-          val state = new ExploreRunner(itr)
-          val state_+ = state.execute(
+          val state = new ExploreRunner(itr, impl, keyBy)
+          val state_+ = state.run(
             _on,
             sampler,
             joinType,
@@ -193,11 +207,10 @@ case class ExplorePlan(
             traces
           )(
             epochSize,
-            impl,
             depth_++,
             spooky
           )(
-            rowFn
+            rowMapper
           )
           openSetSize add state.open.size.toLong
           state_+

@@ -16,7 +16,7 @@ requirements = [l.strip() for l in open('requirements.txt').readlines()]
 
 setup(
     name='pyspookystuff-uav',
-    version='0.5.0-SNAPSHOT',
+    version='0.5.dev0',
     # url='${source_url}',
     # author='${author}',
     # author_email='${author_email}',

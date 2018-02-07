@@ -1,6 +1,6 @@
 package com.tribbloids.spookystuff.execution
 
-import com.tribbloids.spookystuff.actions.Wget
+import com.tribbloids.spookystuff.actions.{Trace, Wget}
 import com.tribbloids.spookystuff.extractors.impl.Lit
 import com.tribbloids.spookystuff.testutils.LocalPathDocsFixture
 import com.tribbloids.spookystuff.{QueryException, SpookyEnvFixture, dsl}
@@ -126,5 +126,48 @@ class TestExplorePlan extends SpookyEnvFixture with LocalPathDocsFixture {
 
     assert(ds.rdd.count() == 4)
     assert(ds.spooky.spookyMetrics.pagesFetched.value <= 5) //TODO: this can be reduced further
+  }
+
+  describe("When using custom keyBy function, explore plan can") {
+
+    it("avoid fetching traces with identical nodeKey and preserve keyBy in its output") {
+      val first = spooky
+        .wget {
+          DEEP_DIR_URL
+        }
+      val ds = first
+        .explore(S"root directory uri".text)(
+          Wget('A),
+          keyBy = TestExplorePlan.CustomKeyBy
+        )()
+        .persist()
+
+      assert(ds.squashedRDD.count() == 2)
+      assert(ds.spooky.spookyMetrics.pagesFetched.value == 2)
+
+      assert(ds.rdd.count() == 2)
+      assert(ds.spooky.spookyMetrics.pagesFetched.value <= 3) //TODO: this can be reduced further
+
+      ds.squashedRDD.foreach {
+        squashedRow =>
+          Predef.assert(squashedRow.traceView.keyBy == TestExplorePlan.CustomKeyBy)
+      }
+    }
+  }
+}
+
+object TestExplorePlan {
+
+  object CustomKeyBy extends (Trace => Any) with Serializable {
+
+    override def apply(trace: Trace): Any = {
+
+      val uris = trace.collect {
+        case v: Wget => v.uri.value
+      }
+      val parts = uris.head.split('/')
+      val key = parts.slice(parts.length - 2, parts.length).toList
+      key
+    }
   }
 }

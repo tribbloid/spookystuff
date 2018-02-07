@@ -1,6 +1,6 @@
 package com.tribbloids.spookystuff
 
-import com.tribbloids.spookystuff.actions.TraceView
+import com.tribbloids.spookystuff.execution.NodeKey
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.catalyst.expressions.GenericRowWithSchema
 
@@ -18,7 +18,7 @@ package object row {
 
   type RowReducer = (Iterable[DataRow], Iterable[DataRow]) => Iterable[DataRow]
 
-  type RowOrdering = Ordering[(TraceView, Iterable[DataRow])]
+  type RowOrdering = Ordering[(NodeKey, Iterable[DataRow])]
 
   // f(open, visited) => open
 //  type RowEliminator = (Iterable[DataRow], Iterable[DataRow]) => Iterable[DataRow]

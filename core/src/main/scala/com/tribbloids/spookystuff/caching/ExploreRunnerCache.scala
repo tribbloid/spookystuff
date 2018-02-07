@@ -1,7 +1,6 @@
 package com.tribbloids.spookystuff.caching
 
-import com.tribbloids.spookystuff.actions.TraceView
-import com.tribbloids.spookystuff.execution.ExploreRunner
+import com.tribbloids.spookystuff.execution.{ExploreRunner, NodeKey}
 import com.tribbloids.spookystuff.row.{DataRow, RowReducer}
 import com.tribbloids.spookystuff.utils.CachingUtils.{ConcurrentCache, ConcurrentMap, ConcurrentSet}
 
@@ -11,10 +10,10 @@ import com.tribbloids.spookystuff.utils.CachingUtils.{ConcurrentCache, Concurren
   */
 object ExploreRunnerCache {
 
-  type ID = TraceView
-
-  // Long is the exeID that segments DataRows from different jobs
-  val committedVisited: ConcurrentCache[(ID, Long), Iterable[DataRow]] = ConcurrentCache()
+  // (NodeKey, ExecutionID) -> Squashed Rows
+  // Long is the exeID that segments Squashed Rows from different jobs
+  //TODO: change to UUID
+  val committedVisited: ConcurrentCache[(NodeKey, Long), Iterable[DataRow]] = ConcurrentCache()
 
   val onGoings: ConcurrentMap[Long, ConcurrentSet[ExploreRunner]] = ConcurrentMap() //executionID -> running ExploreStateView
 
@@ -36,7 +35,7 @@ object ExploreRunnerCache {
 
   // TODO relax synchronized check to accelerate?
   private def commit1(
-                       key: (ID, Long),
+                       key: (NodeKey, Long),
                        value: Iterable[DataRow],
                        reducer: RowReducer
                      ): Unit = {
@@ -49,7 +48,7 @@ object ExploreRunnerCache {
   }
 
   def commit(
-              kvs: Iterable[((ID, Long), Iterable[DataRow])],
+              kvs: Iterable[((NodeKey, Long), Iterable[DataRow])],
               reducer: RowReducer
             ): Unit = {
 
@@ -67,16 +66,7 @@ object ExploreRunnerCache {
     getOnGoingRunners(exeID) -= v
   }
 
-  def get(
-           key: (ID, Long),
-           reducer: RowReducer
-         ): Option[Iterable[DataRow]] = {
-
-    getAll(key)
-      .reduceOption(reducer)
-  }
-
-  def getAll(key: (ID, Long)): Set[Iterable[DataRow]] = {
+  def get(key: (NodeKey, Long)): Set[Iterable[DataRow]] = {
     val onGoing = this.getOnGoingRunners(key._2)
       .toSet[ExploreRunner]
 
@@ -87,5 +77,25 @@ object ExploreRunnerCache {
       }
 
     onGoingVisitedSet ++ committedVisited.get(key)
+  }
+
+  def getAll(exeID: Long): Map[NodeKey, Iterable[DataRow]] = {
+    val onGoing: Map[NodeKey, Iterable[DataRow]] = this.getOnGoingRunners(exeID)
+      .map(_.visited.toMap)
+      .reduceOption {
+        (v1, v2) =>
+          v1 ++ v2
+      }
+      .getOrElse(Map.empty)
+
+    val commited: Map[NodeKey, Iterable[DataRow]] = committedVisited
+      .toMap
+      .filterKeys(_._2 == exeID)
+      .map {
+        case (k, v) =>
+          k._1 -> v
+      }
+
+    onGoing ++ commited
   }
 }

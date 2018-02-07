@@ -19,7 +19,7 @@ object SquashedFetchedRow {
                 docs: Seq[DocOption] = null
               ): SquashedFetchedRow = SquashedFetchedRow(
     dataRows = dataRows,
-    traceView = TraceView(docs = docs)
+    traceView = TraceView.withDocs(docs = docs)
   )
 
   lazy val blank: SquashedFetchedRow = SquashedFetchedRow(Array(DataRow()))
@@ -62,6 +62,10 @@ case class SquashedFetchedRow(
 
     val withSpooky: traceView.WithSpooky = new SquashedFetchedRow.this.traceView.WithSpooky(schema.spooky)
 
+    @volatile var groupedDocsOverride: Option[Array[Seq[DocOption]]] = None
+
+    def groupedDocs: Array[Seq[DocOption]] = groupedDocsOverride.getOrElse(defaultGroupedFetched)
+
     // by default, make sure no pages with identical name can appear in the same group.
     // TODO: need tests!
     @transient lazy val defaultGroupedFetched: Array[Seq[DocOption]] = {
@@ -80,13 +84,11 @@ case class SquashedFetchedRow(
       grandBuffer.toArray
     }
 
-    def groupedFetched: Array[Seq[DocOption]] = groupedFetchedOption.getOrElse(defaultGroupedFetched)
-
     //outer: dataRows, inner: grouped pages
     def semiUnsquash: Array[Array[FetchedRow]] = dataRows.map{
       dataRow =>
         val groupID = UUID.randomUUID()
-        groupedFetched.zipWithIndex.map {
+        groupedDocs.zipWithIndex.map {
           tuple =>
             val withGroupID = dataRow.copyWithArgs(
               groupID = Some(groupID),
@@ -209,6 +211,4 @@ case class SquashedFetchedRow(
       }
     }
   }
-
-  @volatile var groupedFetchedOption: Option[Array[Seq[DocOption]]] = None
 }

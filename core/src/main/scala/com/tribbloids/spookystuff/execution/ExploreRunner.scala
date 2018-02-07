@@ -2,7 +2,8 @@ package com.tribbloids.spookystuff.execution
 
 import com.tribbloids.spookystuff.actions.{Trace, TraceView}
 import com.tribbloids.spookystuff.caching.ExploreRunnerCache
-import com.tribbloids.spookystuff.dsl.ExploreAlgorithm.Impl
+import com.tribbloids.spookystuff.dsl.ExploreAlgorithm
+import com.tribbloids.spookystuff.execution.ExplorePlan.Open_Visited
 import com.tribbloids.spookystuff.extractors.Resolved
 import com.tribbloids.spookystuff.row._
 import com.tribbloids.spookystuff.utils.CachingUtils.ConcurrentMap
@@ -11,37 +12,33 @@ import com.tribbloids.spookystuff.{SpookyContext, dsl}
 
 import scala.language.implicitConversions
 
-// use Array to minimize serialization footage
-case class Open_Visited(
-                         open: Option[Array[DataRow]] = None,
-                         visited: Option[Array[DataRow]] = None
-                       )
-
 /**
   * NOT serializable: expected to be constructed on Executors
   */
 class ExploreRunner(
-                     val itr: Iterator[(TraceView, Open_Visited)] //TODO: change to TraceViewView
+                     val itr: Iterator[(TraceView, Open_Visited)], //TODO: change to TraceViewView,
+                     val impl: ExploreAlgorithm.Impl,
+                     val keyBy: Trace => Any
                    ) extends NOTSerializable {
 
   import dsl._
 
   //TODO: add fast sort implementation
-  val open: ConcurrentMap[TraceView, Iterable[DataRow]] = ConcurrentMap() //TODO: Change to ConcurrentMap[TraceView, Array[DataRow]]
+  val open: ConcurrentMap[NodeKey, Iterable[DataRow]] = ConcurrentMap() //TODO: Change to ConcurrentMap[TraceView, Array[DataRow]]
 
   //  val openVs = mutable.SortedSet[(TraceView, Array[DataRow])] = mutable.SortedSet()
-  val visited: ConcurrentMap[TraceView, Iterable[DataRow]] = ConcurrentMap()
+  val visited: ConcurrentMap[NodeKey, Iterable[DataRow]] = ConcurrentMap()
 
-  @volatile var fetchingInProgressOpt: Option[TraceView] = None
+  @volatile var fetchingInProgressOpt: Option[NodeKey] = None
 
   itr.foreach{
     tuple =>
-      tuple._2.open.map(v => open += tuple._1 -> v)
-      tuple._2.visited.map(v => visited += tuple._1 -> v)
+      tuple._2.open.map(v => open += tuple._1.keyBy(keyBy) -> v)
+      tuple._2.visited.map(v => visited += tuple._1.keyBy(keyBy) -> v)
   }
 
   protected def commitIntoVisited(
-                                   key: TraceView,
+                                   key: NodeKey,
                                    value: Iterable[DataRow],
                                    reducer: RowReducer
                                  ): Unit = {
@@ -57,7 +54,6 @@ class ExploreRunner(
 
                              trace: Set[Trace]
                            )(
-                             impl: Impl,
                              `depth_++`: Resolved[Int],
                              spooky: SpookyContext
                            )(
@@ -70,9 +66,9 @@ class ExploreRunner(
     import params._
 
     implicit def withSchema(row: SquashedFetchedRow): SquashedFetchedRow#WSchema =
-      new row.WSchema(schema)
+      row.WSchema(schema)
 
-    val bestOpen: (TraceView, Iterable[DataRow]) = openSelector(open)
+    val bestOpen: (NodeKey, Iterable[DataRow]) = nextOpenSelector(open)
 
     if (bestOpen._2.nonEmpty) {
       this.fetchingInProgressOpt = Some(bestOpen._1)
@@ -107,31 +103,32 @@ class ExploreRunner(
         }
       newOpens.foreach {
         newOpen =>
-          val TraceView_+ = newOpen._1
-          val oldDataRows: Iterable[DataRow] = open.getOrElse(TraceView_+, Nil)
+          val traceView_+ = newOpen._1
+          val node_+ = traceView_+.keyBy(ExploreRunner.this.keyBy)
+          val oldDataRows: Iterable[DataRow] = open.getOrElse(node_+, Nil)
           val newDataRows = openReducer(Array(newOpen._2), oldDataRows).toArray
-          open += TraceView_+ -> newDataRows
+          open += node_+ -> newDataRows
       }
       this.fetchingInProgressOpt = None
     }
   }
 
-  def execute(
-               resolved: Resolved[Any],
-               sampler: Sampler[Any],
-               joinType: JoinType,
+  //TODO: need unit test if this preserve keyBy
+  def run(
+           resolved: Resolved[Any],
+           sampler: Sampler[Any],
+           joinType: JoinType,
 
-               traces: Set[Trace]
-             )(
-               maxItr: Int,
-               impl: Impl,
-               `depth_++`: Resolved[Int],
-               spooky: SpookyContext
-             )(
-               rowFn: SquashedFetchedRow => SquashedFetchedRow
-               //apply immediately after depth selection, this include depth0
-               //should include flatten & extract
-             ): Iterator[(TraceView, Open_Visited)] = try {
+           traces: Set[Trace]
+         )(
+           maxItr: Int,
+           `depth_++`: Resolved[Int],
+           spooky: SpookyContext
+         )(
+           rowMapper: SquashedFetchedRow => SquashedFetchedRow
+           //apply immediately after depth selection, this include depth0
+           //should include flatten & extract
+         ): Iterator[(TraceView, Open_Visited)] = try {
 
     ExploreRunnerCache.register(this, impl.params.executionID)
 
@@ -154,12 +151,17 @@ class ExploreRunner(
 
       this.finalize()
 
-      (open ++ visited).iterator
+      (open ++ visited)
+        .map{
+          case (node, open_visit) =>
+            node -> open_visit
+        }
+        .iterator
     }
 
     for (_ <- 0 to maxItr) {
       if (open.isEmpty) return finish()
-      executeOnce(resolved, sampler, joinType, traces)(impl, `depth_++`, spooky)(rowFn)
+      executeOnce(resolved, sampler, joinType, traces)(`depth_++`, spooky)(rowMapper)
     }
 
     finish()
