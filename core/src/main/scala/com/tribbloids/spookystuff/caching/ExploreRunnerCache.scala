@@ -11,8 +11,10 @@ import com.tribbloids.spookystuff.utils.CachingUtils.{ConcurrentCache, Concurren
   */
 object ExploreRunnerCache {
 
+  type ID = TraceView
+
   // Long is the exeID that segments DataRows from different jobs
-  val committedVisited: ConcurrentCache[(TraceView, Long), Iterable[DataRow]] = ConcurrentCache()
+  val committedVisited: ConcurrentCache[(ID, Long), Iterable[DataRow]] = ConcurrentCache()
 
   val onGoings: ConcurrentMap[Long, ConcurrentSet[ExploreRunner]] = ConcurrentMap() //executionID -> running ExploreStateView
 
@@ -34,7 +36,7 @@ object ExploreRunnerCache {
 
   // TODO relax synchronized check to accelerate?
   private def commit1(
-                       key: (TraceView, Long),
+                       key: (ID, Long),
                        value: Iterable[DataRow],
                        reducer: RowReducer
                      ): Unit = {
@@ -47,7 +49,7 @@ object ExploreRunnerCache {
   }
 
   def commit(
-              kvs: Iterable[((TraceView, Long), Iterable[DataRow])],
+              kvs: Iterable[((ID, Long), Iterable[DataRow])],
               reducer: RowReducer
             ): Unit = {
 
@@ -66,7 +68,7 @@ object ExploreRunnerCache {
   }
 
   def get(
-           key: (TraceView, Long),
+           key: (ID, Long),
            reducer: RowReducer
          ): Option[Iterable[DataRow]] = {
 
@@ -74,7 +76,7 @@ object ExploreRunnerCache {
       .reduceOption(reducer)
   }
 
-  def getAll(key: (TraceView, Long)): Set[Iterable[DataRow]] = {
+  def getAll(key: (ID, Long)): Set[Iterable[DataRow]] = {
     val onGoing = this.getOnGoingRunners(key._2)
       .toSet[ExploreRunner]
 

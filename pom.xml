@@ -48,7 +48,7 @@
     <PermGen>512m</PermGen>
     <MaxPermGen>2g</MaxPermGen>
 
-    <scala.version>2.11.11</scala.version>
+    <scala.version>2.11.12</scala.version>
     <scala.binary.version>2.11</scala.binary.version>
     <spark.version>2.2.1</spark.version>
     <spark.binary.version>2.2</spark.binary.version>
