@@ -134,7 +134,8 @@ class TestHelper() extends NOTSerializable {
       //      .set("spark.kryo.registrator", "com.tribbloids.spookystuff.SpookyRegistrator")Incomplete for the moment
       "spark.kryoserializer.buffer.max" -> "512m",
       "spark.sql.warehouse.dir" -> WAREHOUSE_PATH,
-      ("dummy.property", "dummy")
+      "hive.metastore.warehouse.dir" -> WAREHOUSE_PATH,
+      "dummy.property" -> "dummy"
     )
   }
 
