@@ -1,9 +1,11 @@
 package com.tribbloids.spookystuff.execution
 
+import java.util.UUID
+
 import com.tribbloids.spookystuff.actions.{Trace, TraceView}
 import com.tribbloids.spookystuff.caching.ExploreRunnerCache
 import com.tribbloids.spookystuff.dsl.{ExploreAlgorithm, GenPartitioner, JoinType}
-import com.tribbloids.spookystuff.execution.ExplorePlan.{Params, Open_Visited}
+import com.tribbloids.spookystuff.execution.ExplorePlan.{Open_Visited, Params}
 import com.tribbloids.spookystuff.execution.MapPlan.RowMapperFactory
 import com.tribbloids.spookystuff.extractors._
 import com.tribbloids.spookystuff.extractors.impl.{Get, Lit}
@@ -12,16 +14,19 @@ import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.types.{ArrayType, IntegerType}
 
 import scala.collection.mutable.ArrayBuffer
-import scala.util.Random
 
 object ExplorePlan {
+
+  type ExeID = UUID
+
+  def nextExeID() = UUID.randomUUID()
 
   case class Params(
                      depthField: Field, //can be null
                      ordinalField: Field, //can be null
                      range: Range,
 
-                     executionID: Long = Random.nextLong()
+                     executionID: ExeID = nextExeID()
                    ) {
   }
 
