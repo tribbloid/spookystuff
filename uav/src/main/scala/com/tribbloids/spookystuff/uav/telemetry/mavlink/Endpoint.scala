@@ -7,6 +7,7 @@ import com.tribbloids.spookystuff.uav.UAVConf
   * Created by peng on 16/01/17.
   */
 case class Endpoint(
+                     driverTemplate: PythonDriver,
                      uri: String,
                      frame: Option[String] = None,
                      baudRate: Int = UAVConf.DEFAULT_BAUDRATE,

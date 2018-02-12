@@ -17,12 +17,12 @@ import org.scalatest.Ignore
 class MAVLinkSuite extends SimLinkSuite with APMQuadFixture {
 
   override lazy val factories: Seq[LinkFactory] = Seq(
-    LinkFactories.Direct,
+    LinkFactories.Direct(),
     LinkFactories.ForkToGCS()
   )
 
   {
-    val (spooky, testPrefix) = factory2Spooky(LinkFactories.Direct)
+    val (spooky, testPrefix) = factory2Spooky(LinkFactories.Direct())
 
     describe(testPrefix) {
       it("should use first drone uri as primary endpoint") {

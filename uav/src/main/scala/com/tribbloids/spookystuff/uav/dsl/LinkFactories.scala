@@ -1,5 +1,6 @@
 package com.tribbloids.spookystuff.uav.dsl
 
+import com.tribbloids.spookystuff.session.python.PythonDriver
 import com.tribbloids.spookystuff.uav.system.UAV
 import com.tribbloids.spookystuff.uav.telemetry.{DummyLink, Link}
 import com.tribbloids.spookystuff.uav.telemetry.mavlink.MAVLink
@@ -15,9 +16,11 @@ object LinkFactories {
     def apply(uav: UAV) = DummyLink(uav)
   }
 
-  case object Direct extends LinkFactory {
+  case class Direct(
+                     override val pythonExe: String = "python2"
+                   ) extends LinkFactory {
 
-    def apply(uav: UAV) = MAVLink(uav)
+    def apply(uav: UAV) = MAVLink(uav, driverTemplate = driverTemplate)
   }
 
   case class ForkToGCS(
@@ -26,7 +29,8 @@ object LinkFactories {
                         toSpark: Seq[String] = (12014 to 12108).map(i => s"udp:localhost:$i"),
                         //this is the default port listened by QGCS
                         toGCS: UAV => Set[String] = _ => Set("udp:localhost:14550"),
-                        toSparkSize: Int = 1
+                        toSparkSize: Int = 1,
+                        override val pythonExe: String = "python2"
                       ) extends LinkFactory {
 
     //CAUTION: DO NOT select primary out sequentially!
@@ -48,7 +52,8 @@ object LinkFactories {
       val result = MAVLink(
         endpoint,
         executorOuts,
-        gcsOuts
+        gcsOuts,
+        driverTemplate = driverTemplate
       )
       result
     }
@@ -58,4 +63,8 @@ object LinkFactories {
 abstract class LinkFactory extends Serializable {
 
   def apply(uav: UAV): Link
+
+  def pythonExe: String = "python2"
+
+  @transient lazy val driverTemplate = new PythonDriver(pythonExe)
 }

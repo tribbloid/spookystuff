@@ -1,5 +1,6 @@
 package com.tribbloids.spookystuff.session.python
 
+import com.tribbloids.spookystuff.session.python.Python2DriverSuite.Runner
 import com.tribbloids.spookystuff.utils.CommonUtils
 import com.tribbloids.spookystuff.utils.lifespan.Lifespan
 import com.tribbloids.spookystuff.{PyInterpretationException, SpookyEnvFixture}
@@ -8,36 +9,43 @@ import org.slf4j.LoggerFactory
 import scala.concurrent.Future
 import scala.util.Try
 
+object Python2DriverSuite {
+
+  case class Runner(pythonExec: String) {
+    val onePlusX: Seq[Int] => Unit = {
+      xs =>
+        runIterable(xs) {
+          (i, proc) =>
+            val r = proc.sendAndGetResult(s"print($i + 1)")
+            assert(r.replace(">>> ", "").trim == (i + 1).toString)
+        }
+    }
+
+    def runIterable[T, R](xs: Iterable[T])(f: (T, PythonDriver) => R): Iterable[R] = {
+      val pythonExec = this.pythonExec
+      val proc = new PythonDriver(pythonExec, _lifespan = Lifespan.Auto(
+        nameOpt = Some("testPython")
+      ))
+      try {
+        val result = xs.map{
+          f(_, proc)
+        }
+        result
+      }
+      finally {
+        proc.tryClean()
+      }
+    }
+  }
+
+  object Runner2 extends Runner("python2")
+  object Runner3 extends Runner("python3")
+}
+
 /**
   * Created by peng on 01/08/16.
   */
-object PythonDriverSuite {
-
-  def onePlusX(xs: Seq[Int]): Unit = {
-    runIterable(xs) {
-      (i, proc) =>
-        val r = proc.sendAndGetResult(s"print($i + 1)")
-        assert(r.replace(">>> ", "").trim == (i + 1).toString)
-    }
-  }
-
-  def runIterable[T, R](xs: Iterable[T])(f: (T, PythonDriver) => R): Iterable[R] = {
-    val proc = new PythonDriver("python", _lifespan = Lifespan.Auto(
-      nameOpt = Some("testPython")
-    ))
-    try {
-      val result = xs.map{
-        f(_, proc)
-      }
-      result
-    }
-    finally {
-      proc.tryClean()
-    }
-  }
-}
-
-class PythonDriverSuite extends SpookyEnvFixture {
+class Python2DriverSuite extends SpookyEnvFixture {
 
   import scala.concurrent.ExecutionContext.Implicits.global
   import scala.concurrent.duration._
@@ -48,22 +56,29 @@ class PythonDriverSuite extends SpookyEnvFixture {
     super.afterAll()
   }
 
+  lazy val runner: Runner = Python2DriverSuite.Runner2
+  import runner._
+
   it("sendAndGetResult should work in single thread") {
-    PythonDriverSuite.onePlusX(1 to 100)
+    onePlusX(1 to 100)
   }
 
   it("sendAndGetResult should work in multiple threads") {
+
+    val runner: Runner = this.runner
+    import runner._
+
     val rdd = sc.parallelize(1 to 100)
     assert(rdd.partitions.length > 1)
     rdd.foreachPartition{
       it =>
         val seq = it.toSeq
-        PythonDriverSuite.onePlusX(seq)
+        onePlusX(seq)
     }
   }
 
   it("sendAndGetResult should work if interpretation triggers an error") {
-    PythonDriverSuite.runIterable(1 to 10) {
+    runIterable(1 to 10) {
       (i, proc) =>
         val r = proc.sendAndGetResult(s"print($i / 0)")
         assert(r.replace(">>> ", "").trim startsWith "Traceback")
@@ -72,7 +87,7 @@ class PythonDriverSuite extends SpookyEnvFixture {
 
   it("interpret should yield 1 row for a single print") {
 
-    PythonDriverSuite.runIterable(1 to 10) {
+    runIterable(1 to 10) {
       (i, proc) =>
         val result = proc.interpret(s"print($i * $i)").mkString("\n")
         result.shouldBe(
@@ -83,7 +98,7 @@ class PythonDriverSuite extends SpookyEnvFixture {
 
   it("interpret should throw an exception if interpreter raises an error") {
 
-    PythonDriverSuite.runIterable(1 to 10) {
+    runIterable(1 to 10) {
       (i, proc) =>
         intercept[PyInterpretationException]{
           proc.interpret(s"print($i / 0)")
@@ -93,7 +108,7 @@ class PythonDriverSuite extends SpookyEnvFixture {
 
   it("interpret should throw an exception if interpreter raises a multi-line error") {
 
-    PythonDriverSuite.runIterable(1 to 10) {
+    runIterable(1 to 10) {
       (i, proc) =>
         intercept[PyInterpretationException]{
           proc.interpret(
@@ -114,7 +129,7 @@ class PythonDriverSuite extends SpookyEnvFixture {
 
   it("interpret should throw an exception if interpreter raises a syntax error") {
 
-    PythonDriverSuite.runIterable(1 to 10) {
+    runIterable(1 to 10) {
       (i, proc) =>
         intercept[PyInterpretationException]{
           proc.interpret(
@@ -141,17 +156,34 @@ class PythonDriverSuite extends SpookyEnvFixture {
 
   it("call should return None if result variable is undefined") {
 
-    PythonDriverSuite.runIterable(1 to 10) {
+    runIterable(1 to 10) {
       (i: Int, proc) =>
         val r = proc.eval(s"print($i / 1)")
-        assert(r._1.mkString("\n") == i.toString)
+        assert(
+          Seq(i.toString, i.toString + ".0").contains(r._1.mkString("\n"))
+        )
         assert(r._2.isEmpty)
+    }
+  }
+
+  it("can use the correct python version") {
+    runIterable(1 to 1) {
+      (i, proc) =>
+        val r = proc.eval(
+          """
+            |import sys
+            |
+            |print(sys.version_info[0])
+          """.stripMargin
+        )
+
+        assert(s"python${r._1.mkString("\n")}" == this.runner.pythonExec)
     }
   }
 
   it("CommonUtils.withDeadline can interrupt python execution that blocks indefinitely") {
 
-    PythonDriverSuite.runIterable(1 to 3) {
+    runIterable(1 to 3) {
       (i, proc) =>
         proc.batchImport(Seq("import time"))
         val (_, time) = CommonUtils.timer {
@@ -171,7 +203,7 @@ class PythonDriverSuite extends SpookyEnvFixture {
 
   it("clean() won't be blocked indefinitely by ongoing python execution") {
 
-    PythonDriverSuite.runIterable(1 to 3) {
+    runIterable(1 to 3) {
       (i, proc) =>
         proc.batchImport(Seq("import time"))
         val f = Future {

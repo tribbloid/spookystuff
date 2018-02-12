@@ -88,6 +88,8 @@ object PythonDriver {
     }
     syntaxErrorLine.nonEmpty
   }
+
+  val defaultTemplate = new PythonDriver()
 }
 
 /**
@@ -95,14 +97,14 @@ object PythonDriver {
   */
 //TODO: not reusing Python worker for spark, is it not optimal?
 class PythonDriver(
-                    val executable: String = "python2",
+                    val pythonExe: String = "python2",
                     val autoImports: String =
                     """
                       |import os
                       |from __future__ import print_function
                     """.trim.stripMargin,
                     override val _lifespan: Lifespan = new Lifespan.Auto()
-                  ) extends PythonProcess(executable) with LocalCleanable {
+                  ) extends PythonProcess(pythonExe) with LocalCleanable {
 
   import scala.concurrent.duration._
 

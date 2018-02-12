@@ -340,11 +340,16 @@ trait SingletonRef extends PyRef {
 
 trait BindedRef extends SingletonRef with LocalCleanable {
 
+  def driverTemplate: PythonDriver
+
   @transient var _driver: PythonDriver = _
   def driver = this.synchronized {
     Option(_driver).getOrElse{
-      val v = new PythonDriver(_lifespan = new Lifespan.JVM(
-        nameOpt = Some(this.getClass.getSimpleName))
+      val v = new PythonDriver(
+        driverTemplate.pythonExe,
+        driverTemplate.autoImports,
+        _lifespan = new Lifespan.JVM(
+          nameOpt = Some(this.getClass.getSimpleName))
       )
       _driver = v
       v

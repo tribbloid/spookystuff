@@ -14,7 +14,7 @@ class TestDriverFactory extends SpookyEnvFixture with LocalPathDocsFixture {
 
   val baseFactories: Seq[Transient[_]] = Seq(
     DriverFactories.PhantomJS(),
-    DriverFactories.Python()
+    DriverFactories.Python(_ => "python3")
   )
 
   val poolingFactories: Seq[TaskLocal[_]] = baseFactories
@@ -33,9 +33,9 @@ class TestDriverFactory extends SpookyEnvFixture with LocalPathDocsFixture {
     }
   }
 
-//  for (ff <- poolingFactories) {
-//
-//  }
+  //  for (ff <- poolingFactories) {
+  //
+  //  }
   it("If the old driver is released, the second Pooling DriverFactory.get() should yield the same driver") {
     val conf = new SpookyConf(webDriverFactory = DriverFactories.PhantomJS().taskLocal)
     val spooky = new SpookyContext(sql, conf)

@@ -417,7 +417,7 @@ object DriverFactories {
   //}
 
   case class Python(
-                     getExecutable: SpookyContext => String = _ => "python"
+                     getExecutable: SpookyContext => String
                    ) extends PythonDriverFactory {
 
     override def _createImpl(session: Session, lifespan: Lifespan): PythonDriver = {
@@ -425,4 +425,7 @@ object DriverFactories {
       new PythonDriver(exeStr, _lifespan = lifespan)
     }
   }
+
+  object Python2 extends Python((_: SpookyContext) => "python2")
+  object Python3 extends Python((_: SpookyContext) => "python3")
 }

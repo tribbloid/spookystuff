@@ -30,21 +30,21 @@ class LinkFactoriesSuite extends SpookyEnvFixture {
 
   it("NoProxy can create link without proxy") {
 
-    val factory = LinkFactories.Direct
+    val factory = LinkFactories.Direct()
     val link = MAVLink(UAV(Seq("dummy")), Nil).register(spooky, factory)
     assert(canCreate(factory, link))
   }
 
   it("NoProxy can create link with proxy that has no GCS out") {
 
-    val factory = LinkFactories.Direct
+    val factory = LinkFactories.Direct()
     val link = MAVLink(UAV(Seq("dummy")), Seq("localhost:80")).register(spooky, factory)
     assert(canCreate(factory, link))
   }
 
   it("NoProxy can create link with proxy that has 1 GCS outs") {
 
-    val factory = LinkFactories.Direct
+    val factory = LinkFactories.Direct()
     val link = MAVLink(UAV(Seq("dummy")), Seq("localhost:80"), Seq("localhost:14550"))
       .register(spooky, factory)
     assert(!canCreate(factory, link))

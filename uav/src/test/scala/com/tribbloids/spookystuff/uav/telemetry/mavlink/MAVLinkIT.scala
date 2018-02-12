@@ -17,7 +17,7 @@ import scala.concurrent.{Await, Future}
 @Ignore
 class MAVLinkIT_NoProxy extends MAVLinkIT {
 
-  override lazy val linkFactory = LinkFactories.Direct
+  override lazy val linkFactory = LinkFactories.Direct()
 }
 
 class MAVLinkIT extends LinkITFixture with APMQuadFixture {

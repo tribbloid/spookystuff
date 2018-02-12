@@ -35,7 +35,8 @@ TaskProcess -> Connection:UDP:xx -/
 case class MAVLink(
                     uav: UAV,
                     toSpark: Seq[String] = Nil, // cannot have duplicates
-                    toGCS: Seq[String] = Nil
+                    toGCS: Seq[String] = Nil,
+                    driverTemplate: PythonDriver = PythonDriver.defaultTemplate
                   ) extends Link with ConflictDetection {
 
   {
@@ -51,7 +52,7 @@ case class MAVLink(
     */
   object Endpoints {
     val direct: Endpoint = {
-      Endpoint(uav.uris.head, uav.frame, uav.baudRate, uav.groundSSID, uav.name)
+      Endpoint(driverTemplate, uav.uris.head, uav.frame, uav.baudRate, uav.groundSSID, uav.name)
     }
     val executors: Seq[Endpoint] = if (toSpark.isEmpty) {
       Seq(direct)
@@ -77,7 +78,8 @@ case class MAVLink(
   val proxyOpt: Option[Proxy] = {
     val result = if (outs.isEmpty) None
     else {
-      val proxy = Proxy(
+      val proxy: Proxy = Proxy(
+        driverTemplate,
         Endpoints.direct.uri,
         outs,
         Endpoints.direct.baudRate,

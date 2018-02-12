@@ -12,6 +12,7 @@ import com.tribbloids.spookystuff.session.python._
   */
 //TODO: MAVProxy supports multiple master for multiple telemetry backup
 case class Proxy(
+                  driverTemplate: PythonDriver,
                   master: String,
                   outs: Seq[String], //first member is always used by DK.
                   baudRate: Int,

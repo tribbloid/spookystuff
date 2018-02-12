@@ -20,7 +20,7 @@ object SpookyConf extends Submodules.Builder[SpookyConf]{
     * otherwise driver cannot do screenshot
     */
   final val TEST_WEBDRIVER_FACTORY = DriverFactories.PhantomJS(loadImages = true).taskLocal
-  final val DEFAULT_PYTHONDRIVER_FACTORY = DriverFactories.Python().taskLocal
+  final val DEFAULT_PYTHONDRIVER_FACTORY = DriverFactories.Python2.taskLocal
 
   //DO NOT change to val! all confs are
   // mutable
@@ -39,15 +39,14 @@ object SpookyConf extends Submodules.Builder[SpookyConf]{
 //TODO: should be case class
 class SpookyConf(
                   var shareMetrics: Boolean = false, //TODO: not necessary
+
                   var webDriverFactory: DriverFactory[CleanWebDriver] = SpookyConf.DEFAULT_WEBDRIVER_FACTORY,
-                  var pythonDriverFactory: DriverFactory[PythonDriver] = SpookyConf.DEFAULT_PYTHONDRIVER_FACTORY,
-
                   var webProxy: WebProxyFactory = WebProxyFactories.NoProxy,
-
                   var httpHeadersFactory: () => Map[String, String] = () => SpookyConf.defaultHTTPHeaders,
                   var oAuthKeysFactory: () => OAuthKeys = () => null,
-
                   var browserResolution: (Int, Int) = (1920, 1080),
+
+                  var pythonDriverFactory: DriverFactory[PythonDriver] = SpookyConf.DEFAULT_PYTHONDRIVER_FACTORY,
 
                   var remote: Boolean = true, //if disabled won't use remote client at all
                   var autoSave: Boolean = true,
@@ -92,12 +91,12 @@ class SpookyConf(
       shareMetrics = this.shareMetrics,
 
       webDriverFactory = this.webDriverFactory,
-      pythonDriverFactory = this.pythonDriverFactory,
       webProxy = this.webProxy,
       httpHeadersFactory = this.httpHeadersFactory,
       oAuthKeysFactory = this.oAuthKeysFactory,
-
       browserResolution = this.browserResolution,
+
+      pythonDriverFactory = this.pythonDriverFactory,
 
       remote = this.remote,
       autoSave = this.autoSave,
