@@ -1,38 +1,62 @@
 package com.tribbloids.spookystuff.integration
 
-import java.io.File
-
-import com.tribbloids.spookystuff.testutils.TestHelper
-import com.tribbloids.spookystuff.utils.CommonViews._
-import fi.iki.elonen.SimpleWebServer
-
-case class FileServer(
-                       host: String,
-                       port: Int = 10092,
-                       wwwroot: File = new File(TestHelper.USER_DIR \\ "test-sites"),
-                       quiet: Boolean = true,
-                       cors: String = null
-                     ) extends SimpleWebServer(host, port, wwwroot, quiet, cors) {
-
-
-}
+import javax.servlet.http.{HttpServletRequest, HttpServletResponse}
+import org.spark_project.jetty.server.handler.{DefaultHandler, HandlerList, HandlerWrapper, ResourceHandler}
+import org.spark_project.jetty.server.{Request, Server}
 
 object FileServer {
 
-  lazy val _server: FileServer = {
-    FileServer(null)
+  class ExtHandler extends HandlerWrapper {
+
+    override def handle(
+                         target: String,
+                         baseRequest: Request,
+                         request: HttpServletRequest,
+                         response: HttpServletResponse
+                       ): Unit = {
+
+      val redirectURIOpt = rewrite(request.getRequestURI)
+      redirectURIOpt.foreach {
+        v =>
+          response.sendRedirect(v)
+      }
+    }
+
+    def rewrite(target: String): Option[String] = {
+      if (target.endsWith(".html")) None
+      else {
+        var _target = target.stripSuffix("/")
+        if (_target.nonEmpty) {
+          _target += ".html"
+          Some(_target)
+        }
+        else {
+          None
+        }
+      }
+    }
   }
 
-  def start(): Unit = {
-    _server.start()
+  lazy val server: Server = {
+    val server = new Server(10092)
+
+    val ext_handler = new ExtHandler
+    val resource_handler = new ResourceHandler
+
+    resource_handler.setDirectoriesListed(true)
+    resource_handler.setWelcomeFiles(Array[String]("test-sites.html"))
+    resource_handler.setResourceBase("./test-sites")
+
+    val handlers = new HandlerList
+    handlers.setHandlers(Array(ext_handler, resource_handler, new DefaultHandler))
+    server.setHandler(handlers)
+    server
   }
 
-  def stop(): Unit = {
-    _server.stop()
-  }
-
+  @throws[Exception]
   def main(args: Array[String]): Unit = {
-    start()
-    Thread.sleep(Long.MaxValue)
+
+    server.start
+    server.join
   }
 }

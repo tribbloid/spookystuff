@@ -106,7 +106,13 @@ abstract class IntegrationFixture
 
   private val retry = 3
 
+  def init(): Unit = {
+    FileServer.server.start()
+  }
+
   protected def doTest(): Unit = {
+
+    init()
 
     doTestBeforeCache()
 

@@ -6,7 +6,7 @@ import com.tribbloids.spookystuff.rdd.FetchedDataset
 import com.tribbloids.spookystuff.testutils.TestHelper
 
 /**
-  * move the entire http://webscraper.io/test-sites/ into a local dir for integration tests
+  * move the entire webscraper.io/test-sites/ into a local dir for integration tests
   * may use wayback machine:
   * https://web.archive.org/web/20170707111752/http://webscraper.io:80/test-sites
   */
@@ -48,7 +48,9 @@ object SnapshotRunner extends SpookyEnv {
       ),
         cooldown = cooldown)
       originalVersion
-        .savePages_!(pathEncoding, overwrite = true)
+        .savePages_!(
+          pathEncoding,
+          overwrite = true)
 
       fd
     }

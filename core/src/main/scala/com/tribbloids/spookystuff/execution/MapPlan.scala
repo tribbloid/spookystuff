@@ -123,7 +123,7 @@ object MapPlan {
                         overwrite: Boolean
                       )(val childSchema: SpookySchema) extends RowMapper {
 
-    val resolver: schema.Resolver = schema.newResolver
+    val resolver: childSchema.Resolver = childSchema.newResolver
 
     val _ext: Resolved[String] = resolver.include(extension).head
     val _path: Resolved[String] = resolver.include(path).head
