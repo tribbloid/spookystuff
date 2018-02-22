@@ -43,7 +43,7 @@ class FetchClickNextPageIT extends IntegrationFixture {
         Visit("http://localhost:10092/test-sites/e-commerce/static/computers/laptops")
           +> Snapshot().as('c)
           +> Loop (
-          ClickNext("button.btn","1"::Nil)
+          Click("ul.pagination a[rel=next]")
             +> Snapshot().as('d)
         )
       )
