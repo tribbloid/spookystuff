@@ -6,8 +6,11 @@ trait IDMixin {
 
   @transient lazy val idChecked = {
     val id = _id
-    require(!id.isInstanceOf[Array[_]], "IDMixin._id cannot be Array")
-    id
+    val effectiveID = id match {
+      case aa: Array[_] => aa.toList
+      case _ => id
+    }
+    effectiveID
   }
 
   final override def hashCode: Int = idChecked.##

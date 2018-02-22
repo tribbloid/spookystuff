@@ -123,8 +123,8 @@ trait FetchedRDDAPI {
 
   def unpersist(blocking: Boolean = true): this.type = {
     this.storageLevel = StorageLevel.NONE
-    this.plan.cachedRDD.foreach(_.unpersist(blocking))
-    this.plan.cachedRDD = None
+    this.plan.cachedRDDOpt.foreach(_.unpersist(blocking))
+    this.plan._cachedRDD = null
     this
   }
 

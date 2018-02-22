@@ -1,6 +1,7 @@
 package com.tribbloids.spookystuff.integration
 
 import com.tribbloids.spookystuff.SpookyEnv
+import com.tribbloids.spookystuff.actions.{Trace, Wget}
 import com.tribbloids.spookystuff.rdd.FetchedDataset
 import com.tribbloids.spookystuff.testutils.TestHelper
 
@@ -11,7 +12,8 @@ import com.tribbloids.spookystuff.testutils.TestHelper
   */
 object SnapshotRunner extends SpookyEnv {
 
-  val SPLITTER = "/http://webscraper.io:80"
+  val SPLITTER = "/http://webscraper.io(:80)?"
+  val SPLITTER_MIN = "/http://webscraper.io"
 
   import scala.concurrent.duration._
   val cooldown = Some(5.seconds)
@@ -21,25 +23,32 @@ object SnapshotRunner extends SpookyEnv {
     import com.tribbloids.spookystuff.dsl.DSL._
     import com.tribbloids.spookystuff.utils.CommonViews.StringView
 
+    val pathEncoding = S.uri
+      .andFn {
+        uri =>
+          val base = uri.split(SPLITTER).last
+          TestHelper.TEMP_PATH \\ "test-sites" \\ base
+      }
+
     def save() = {
-      val pathEncoding = S.uri
-        .andFn {
-          uri =>
-            val base = uri.split(SPLITTER).last
-            TestHelper.TEMP_PATH \\ "test-sites" \\ base
-        }
 
       fd.persist()
       val originalVersion = fd.wget(S.uri.andFn(
         {
           uri =>
-            val Array(first, last) = uri.split(SPLITTER)
-            first + "id_" + SPLITTER + last
+            try {
+              val Array(first, last) = uri.split(SPLITTER)
+              first + "id_" + SPLITTER_MIN + last
+            }
+            catch {
+              case e: Throwable =>
+                throw new UnsupportedOperationException(s"malformed URI: $uri", e)
+            }
         }
       ),
         cooldown = cooldown)
       originalVersion
-        .savePages(pathEncoding, overwrite = true)
+        .savePages_!(pathEncoding, overwrite = true)
 
       fd
     }
@@ -52,15 +61,26 @@ object SnapshotRunner extends SpookyEnv {
 
     val spooky = this.spooky
 
+    val keyBy: Trace => String = {
+      trace =>
+        val uri = trace.collectFirst {
+          case wget: Wget => wget.uri.value
+        }.getOrElse("")
+
+        val base = uri.split(SPLITTER).last
+        base
+
+    }
+
     spooky.wget(
       "https://web.archive.org/web/20170707111752/http://webscraper.io:80/test-sites"
     )
       .save()
-      .wgetJoin(S"h2.site-heading a", cooldown = cooldown)
+      .wgetJoin(S"h2.site-heading a", cooldown = cooldown, keyBy = keyBy)
       .save()
-      .wgetExplore(S"div.sidebar-nav a", cooldown = cooldown)
+      .wgetExplore(S"div.sidebar-nav a", cooldown = cooldown, keyBy = keyBy)
       .save()
-      .wgetExplore(S"ul.pagination a", cooldown = cooldown)
+      .wgetExplore(S"ul.pagination a", cooldown = cooldown, keyBy = keyBy)
       .save()
   }
 }

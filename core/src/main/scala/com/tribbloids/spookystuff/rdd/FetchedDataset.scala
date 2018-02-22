@@ -275,92 +275,44 @@ case class FetchedDataset(
 
   def removeWeaks(): FetchedDataset = this.remove(fields.filter(_.isWeak): _*)
 
+  /**
+    * this is an action that will be triggered immediately
+    */
+  def savePages_!(
+                   path: Col[String],
+                   extension: Col[String] = null,
+                   page: Extractor[Doc] = S,
+                   overwrite: Boolean = false
+                 ): this.type = {
+    val saved = savePages(path, extension, page, overwrite)
+    saved.foreach{_ =>}
+    this
+  }
 
   /**
     * save each page to a designated directory
-    * this is an action that will be triggered immediately
     * support many file systems including but not limited to HDFS, S3 and local HDD
     *
     * @param overwrite if a file with the same name already exist:
     *                  true: overwrite it
     *                  false: append an unique suffix to the new file name
-    * @return the same RDD[Page] with file paths carried as metadata
     */
   //always use the same path pattern for filtered pages, if you want pages to be saved with different path, use multiple saveContent with different names
   def savePages(
                  path: Col[String],
                  extension: Col[String] = null, //set to
-                 page: Extractor[Doc] = S,
+                 page: Col[Doc] = S,
                  overwrite: Boolean = false
-               ): this.type = {
+               ): FetchedDataset = {
 
-    val effectiveExt: Extractor[_ >: String] = Option(extension)
-      .map(_.ex)
-      .getOrElse(page.defaultFileExtension)
+    val _pageEx: Extractor[Doc] = page.ex.typed[Doc]
 
-    val _ext = newResolver.include(effectiveExt).head
-    val _path = newResolver.include(path.ex).head
-    val _pageExpr = newResolver.include(page).head
+    val _extensionEx: Extractor[String] = Option(extension)
+      .map(_.ex.typed[String])
+      .getOrElse(_pageEx.defaultFileExtension)
 
-    //Execute immediately
-    squashedRDD.foreach {
-      squashedPageRow =>
-        val wSchema = squashedPageRow
-          .WSchema(schema)
-
-        wSchema
-          .unsquash
-          .foreach{
-            pageRow =>
-              var pathStr: Option[String] = _path.lift(pageRow).map(_.toString).map {
-                str =>
-                  val splitted = str.split(":")
-                  if (splitted.size <= 2) str
-                  else splitted.head + ":" + splitted.slice(1, Int.MaxValue).mkString("%3A") //colon in file paths are reserved for protocol definition
-              }
-
-              val extOption = _ext.lift(pageRow)
-              if (extOption.nonEmpty) pathStr = pathStr.map(_ + "." + extOption.get.toString)
-
-              pathStr.foreach {
-                str =>
-                  val page = _pageExpr.lift(pageRow)
-
-                  spooky.spookyMetrics.pagesSaved += 1
-
-                  page.foreach(_.save(Seq(str), overwrite)(spooky))
-              }
-          }
-    }
-    this
+    OptimizedMapPlan(plan, MapPlan.SavePages(path.ex.typed[String], _extensionEx, _pageEx, overwrite))
   }
-
-  /**
-    * extract expressions before the block and scrape all temporary KV after
-    */
-  //  def _extractTempDuring(exprs: Expression[Any]*)(f: PageRowRDD => PageRowRDD): PageRowRDD = {
-  //
-  //    val tempFields = exprs.map(_.field).filter(_.isWeak)
-  //
-  //    val result = f(this)
-  //
-  //    result.remove(tempFields: _*)
-  //  }
-  //
-  //  def _extractInvisibleDuring(exprs: Expression[Any]*)(f: PageRowRDD => PageRowRDD): PageRowRDD = {
-  //
-  //    val internalFields = exprs.map(_.field).filter(_.isInvisible)
-  //
-  //    val result = f(this)
-  //    val updateExpr = internalFields.map {
-  //      field =>
-  //        new GetExpr(field) ~! field.copy(isInvisible = false)
-  //    }
-  //
-  //    result
-  //      .extract(updateExpr: _*)
-  //      .remove(internalFields: _*)
-  //  }
 
   def flatten(
                ex: Extractor[Any],
@@ -381,12 +333,10 @@ case class FetchedDataset(
     OptimizedMapPlan(extracted.plan, MapPlan.Flatten(on, ordinalField, sampler, isLeft))
   }
 
-  //  /**
-  //   * break each page into 'shards', used to extract structured data from tables
-  //   * @param selector denotes enclosing elements of each shards
-  //   * @param maxOrdinal only the first n elements will be used, default to Const.fetchLimit
-  //   * @return RDD[Page], each page will generate several shards
-  //   */
+  /**
+    * break each page into 'shards', used to extract structured data from tables
+    * @param on denotes enclosing elements of each shards
+    */
   def flatExtract(
                    on: Extractor[Any], //TODO: used to be Iterable[Unstructured], any tradeoff?
                    isLeft: Boolean = true,

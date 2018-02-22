@@ -31,8 +31,8 @@ project/plugins/project/
 
 #Misc
 temp
-**/temp
 foo
+*.crc # cyclic redundancy check
 
 #aws key
 # **/rootkey.csv

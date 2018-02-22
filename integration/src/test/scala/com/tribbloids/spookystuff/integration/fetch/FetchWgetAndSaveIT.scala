@@ -27,7 +27,7 @@ class FetchWgetAndSaveIT extends IntegrationFixture {
     //    fetched.count()
 
     val RDD = fetched
-      .savePages(x"file://${System.getProperty("user.dir")}/temp/spooky-integration/save/${'name}", overwrite = true)
+      .savePages_!(x"file://${System.getProperty("user.dir")}/temp/spooky-integration/save/${'name}", overwrite = true)
       .select(S.saved ~ 'saved_path)
 
     val savedPageRows = RDD.unsquashedRDD.collect()

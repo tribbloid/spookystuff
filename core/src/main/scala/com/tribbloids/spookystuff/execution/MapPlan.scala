@@ -1,8 +1,9 @@
 package com.tribbloids.spookystuff.execution
 
+import com.tribbloids.spookystuff.doc.Doc
 import com.tribbloids.spookystuff.execution.MapPlan.RowMapperFactory
-import com.tribbloids.spookystuff.extractors.impl.Get
 import com.tribbloids.spookystuff.extractors.{Extractor, Resolved}
+import com.tribbloids.spookystuff.extractors.impl.Get
 import com.tribbloids.spookystuff.row._
 import org.apache.spark.sql.types.{ArrayType, IntegerType}
 
@@ -10,7 +11,6 @@ case class MapPlan(
                     override val child: ExecutionPlan,
                     rowMapperFactory: RowMapperFactory
                   ) extends UnaryPlan(child) {
-
 
   @transient lazy val mapFn = {
     rowMapperFactory.apply(child.schema)
@@ -114,5 +114,50 @@ object MapPlan {
     override val schema = childSchema -- toBeRemoved
 
     override def apply(v: SquashedFetchedRow) = v.remove(toBeRemoved: _*)
+  }
+
+  case class SavePages(
+                        path: Extractor[String],
+                        extension: Extractor[String],
+                        page: Extractor[Doc],
+                        overwrite: Boolean
+                      )(val childSchema: SpookySchema) extends RowMapper {
+
+    val resolver: schema.Resolver = schema.newResolver
+
+    val _ext: Resolved[String] = resolver.include(extension).head
+    val _path: Resolved[String] = resolver.include(path).head
+    val _pageExpr: Resolved[Doc] = resolver.include(page).head
+
+    override val schema = childSchema
+
+    override def apply(v: SquashedFetchedRow): SquashedFetchedRow = {
+      val wSchema = v.WSchema(schema)
+
+      wSchema
+        .unsquash
+        .foreach{
+          pageRow =>
+            var pathStr: Option[String] = _path.lift(pageRow).map(_.toString).map {
+              str =>
+                val splitted = str.split(":")
+                if (splitted.size <= 2) str
+                else splitted.head + ":" + splitted.slice(1, Int.MaxValue).mkString("%3A")
+            }
+
+            val ext = _ext.lift(pageRow).getOrElse("")
+            if (ext.nonEmpty) pathStr = pathStr.map(_ + "." + ext)
+
+            pathStr.foreach {
+              str =>
+                val page = _pageExpr.lift(pageRow)
+
+                schema.spooky.spookyMetrics.pagesSaved += 1
+
+                page.foreach(_.save(Seq(str), overwrite)(schema.spooky))
+            }
+        }
+      v
+    }
   }
 }

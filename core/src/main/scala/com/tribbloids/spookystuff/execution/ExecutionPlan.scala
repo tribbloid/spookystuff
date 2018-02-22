@@ -62,9 +62,10 @@ abstract class ExecutionPlan(
   }
 
   var storageLevel: StorageLevel = StorageLevel.NONE
-  var cachedRDD: Option[SquashedFetchedRDD] = None
+  var _cachedRDD: SquashedFetchedRDD = _
+  def cachedRDDOpt: Option[SquashedFetchedRDD] = Option(_cachedRDD)
 
-  def isCached = cachedRDD.nonEmpty
+  def isCached = cachedRDDOpt.nonEmpty
 
   final def broadcastAndRDD(): SquashedFetchedRDD = {
     spooky.rebroadcast()
@@ -73,7 +74,7 @@ abstract class ExecutionPlan(
 
   // TODO: cachedRDD is redundant? just make it lazy val!
   final def rdd(): SquashedFetchedRDD = {
-    cachedRDD match {
+    cachedRDDOpt match {
       // if cached and loaded, use it
       case Some(cached) =>
         cached
@@ -83,7 +84,7 @@ abstract class ExecutionPlan(
         val result = exe
 
         if (storageLevel != StorageLevel.NONE) {
-          cachedRDD = Some(result.persist(storageLevel))
+          _cachedRDD = result.persist(storageLevel)
         }
         result
     }
