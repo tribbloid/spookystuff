@@ -17,7 +17,7 @@ class JoinAndExplorePagesIT extends IntegrationFixture {
 
     val joined = spooky
       .fetch(
-        Wget("http://webscraper.io/test-sites/e-commerce/static")
+        Wget("http://localhost:10092/test-sites/e-commerce/static")
       )
       .join(S"div.sidebar-nav a", LeftOuter, ordinalField = 'i1)(
         Wget('A.href)
@@ -68,18 +68,18 @@ class JoinAndExplorePagesIT extends IntegrationFixture {
       formatted ===
         """
           |{"i1":[0],"category":"Home","depth":0}
-          |{"i1":[1],"category":"Computers","i2":[0],"subcategory":"Laptops","header":"Computers / Laptops","depth":0,"uri":"http://webscraper.io/test-sites/e-commerce/static/computers/laptops"}
-          |{"i1":[1],"category":"Computers","i2":[0],"subcategory":"Laptops","header":"Computers / Laptops","depth":1,"i3":[0],"page":"2","uri":"http://webscraper.io/test-sites/e-commerce/static/computers/laptops/2"}
-          |{"i1":[1],"category":"Computers","i2":[0],"subcategory":"Laptops","header":"Computers / Laptops","depth":1,"i3":[1],"page":"3","uri":"http://webscraper.io/test-sites/e-commerce/static/computers/laptops/3"}
-          |{"i1":[1],"category":"Computers","i2":[0],"subcategory":"Laptops","header":"Computers / Laptops","depth":2,"i3":[0,0],"page":"«","uri":"http://webscraper.io/test-sites/e-commerce/static/computers/laptops/1"}
-          |{"i1":[1],"category":"Computers","i2":[1],"subcategory":"Tablets","header":"Computers / Tablets","depth":0,"uri":"http://webscraper.io/test-sites/e-commerce/static/computers/tablets"}
-          |{"i1":[1],"category":"Computers","i2":[1],"subcategory":"Tablets","header":"Computers / Tablets","depth":1,"i3":[0],"page":"2","uri":"http://webscraper.io/test-sites/e-commerce/static/computers/tablets/2"}
-          |{"i1":[1],"category":"Computers","i2":[1],"subcategory":"Tablets","header":"Computers / Tablets","depth":1,"i3":[1],"page":"3","uri":"http://webscraper.io/test-sites/e-commerce/static/computers/tablets/3"}
-          |{"i1":[1],"category":"Computers","i2":[1],"subcategory":"Tablets","header":"Computers / Tablets","depth":1,"i3":[2],"page":"4","uri":"http://webscraper.io/test-sites/e-commerce/static/computers/tablets/4"}
-          |{"i1":[1],"category":"Computers","i2":[1],"subcategory":"Tablets","header":"Computers / Tablets","depth":2,"i3":[0,0],"page":"«","uri":"http://webscraper.io/test-sites/e-commerce/static/computers/tablets/1"}
-          |{"i1":[2],"category":"Phones","i2":[0],"subcategory":"Touch","header":"Phones / Touch","depth":0,"uri":"http://webscraper.io/test-sites/e-commerce/static/phones/touch"}
-          |{"i1":[2],"category":"Phones","i2":[0],"subcategory":"Touch","header":"Phones / Touch","depth":1,"i3":[0],"page":"2","uri":"http://webscraper.io/test-sites/e-commerce/static/phones/touch/2"}
-          |{"i1":[2],"category":"Phones","i2":[0],"subcategory":"Touch","header":"Phones / Touch","depth":2,"i3":[0,0],"page":"«","uri":"http://webscraper.io/test-sites/e-commerce/static/phones/touch/1"}
+          |{"i1":[1],"category":"Computers","i2":[0],"subcategory":"Laptops","header":"Computers / Laptops","depth":0,"uri":"http://localhost:10092/test-sites/e-commerce/static/computers/laptops"}
+          |{"i1":[1],"category":"Computers","i2":[0],"subcategory":"Laptops","header":"Computers / Laptops","depth":1,"i3":[0],"page":"2","uri":"http://localhost:10092/test-sites/e-commerce/static/computers/laptops/2"}
+          |{"i1":[1],"category":"Computers","i2":[0],"subcategory":"Laptops","header":"Computers / Laptops","depth":1,"i3":[1],"page":"3","uri":"http://localhost:10092/test-sites/e-commerce/static/computers/laptops/3"}
+          |{"i1":[1],"category":"Computers","i2":[0],"subcategory":"Laptops","header":"Computers / Laptops","depth":2,"i3":[0,0],"page":"«","uri":"http://localhost:10092/test-sites/e-commerce/static/computers/laptops/1"}
+          |{"i1":[1],"category":"Computers","i2":[1],"subcategory":"Tablets","header":"Computers / Tablets","depth":0,"uri":"http://localhost:10092/test-sites/e-commerce/static/computers/tablets"}
+          |{"i1":[1],"category":"Computers","i2":[1],"subcategory":"Tablets","header":"Computers / Tablets","depth":1,"i3":[0],"page":"2","uri":"http://localhost:10092/test-sites/e-commerce/static/computers/tablets/2"}
+          |{"i1":[1],"category":"Computers","i2":[1],"subcategory":"Tablets","header":"Computers / Tablets","depth":1,"i3":[1],"page":"3","uri":"http://localhost:10092/test-sites/e-commerce/static/computers/tablets/3"}
+          |{"i1":[1],"category":"Computers","i2":[1],"subcategory":"Tablets","header":"Computers / Tablets","depth":1,"i3":[2],"page":"4","uri":"http://localhost:10092/test-sites/e-commerce/static/computers/tablets/4"}
+          |{"i1":[1],"category":"Computers","i2":[1],"subcategory":"Tablets","header":"Computers / Tablets","depth":2,"i3":[0,0],"page":"«","uri":"http://localhost:10092/test-sites/e-commerce/static/computers/tablets/1"}
+          |{"i1":[2],"category":"Phones","i2":[0],"subcategory":"Touch","header":"Phones / Touch","depth":0,"uri":"http://localhost:10092/test-sites/e-commerce/static/phones/touch"}
+          |{"i1":[2],"category":"Phones","i2":[0],"subcategory":"Touch","header":"Phones / Touch","depth":1,"i3":[0],"page":"2","uri":"http://localhost:10092/test-sites/e-commerce/static/phones/touch/2"}
+          |{"i1":[2],"category":"Phones","i2":[0],"subcategory":"Touch","header":"Phones / Touch","depth":2,"i3":[0,0],"page":"«","uri":"http://localhost:10092/test-sites/e-commerce/static/phones/touch/1"}
         """.stripMargin.trim.split('\n').toSeq
     )
   }

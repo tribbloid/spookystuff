@@ -59,31 +59,7 @@ case class ExplorePlan(
                         rowMapperFactories: List[RowMapperFactory]
                       ) extends UnaryPlan(child) with InjectBeaconRDDPlan {
 
-  val (_protoSchema, rowMappers) = {
-    var prevSchema = child.schema
-
-    val rowMappers = rowMapperFactories.map {
-      factory =>
-        val rowMapper = factory(prevSchema)
-        prevSchema = rowMapper.schema
-        rowMapper
-    }
-
-    prevSchema -> rowMappers
-  }
-  val resolver = _protoSchema.newResolver
-
-  val invariantRowMapperFactories = ArrayBuffer.empty[RowMapperFactory]
-
-  def invariantRowMappers = {
-    invariantRowMapperFactories.map {
-      factory =>
-        val rowMapper = factory(_protoSchema)
-        rowMapper
-    }
-  }
-
-  def allRowMappers = rowMappers ++ invariantRowMappers
+  val resolver: child.schema.Resolver = child.schema.newResolver
 
   val _on: Resolved[Any] = resolver.include(on).head
   val _effectiveParams: Params = {
@@ -116,9 +92,33 @@ case class ExplorePlan(
     Get(_effectiveParams.depthField).typed[Int].andFn(_ + 1) withAlias _effectiveParams.depthField.!!
   ).head
   val _ordinal: TypedField = resolver.includeTyped(TypedField(_effectiveParams.ordinalField, ArrayType(IntegerType))).head
-  //  val _extracts: Seq[Resolved[Any]] = resolver.include(_params.extracts: _*)
 
-  override val schema: SpookySchema = resolver.build
+  val _protoSchema: SpookySchema = resolver.build
+
+  val (_finalSchema, _rowMappers) = {
+    var prevSchema = _protoSchema
+
+    val rowMappers = rowMapperFactories.map {
+      factory =>
+        val rowMapper = factory(prevSchema)
+        prevSchema = rowMapper.schema
+        rowMapper
+    }
+
+    prevSchema -> rowMappers
+  }
+
+  override val schema: SpookySchema = _finalSchema
+
+  val invariantRowMapperFactories: ArrayBuffer[RowMapperFactory] = ArrayBuffer.empty[RowMapperFactory]
+  def invariantRowMappers: ArrayBuffer[MapPlan.RowMapper] = {
+    invariantRowMapperFactories.map {
+      factory =>
+        val rowMapper = factory(_protoSchema)
+        rowMapper
+    }
+  }
+  def allRowMappers: List[MapPlan.RowMapper] = _rowMappers ++ invariantRowMappers
 
   //  {
   //    val extractFields = _extracts.map(_.field)

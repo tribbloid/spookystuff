@@ -17,7 +17,7 @@ class ChainedFlatSelectIT extends IntegrationFixture {
 
     val r1 = spooky
       .fetch(
-        Wget("http://webscraper.io/test-sites/e-commerce/allinone") //this site is unstable, need to revise
+        Wget("http://localhost:10092/test-sites/e-commerce/allinone") //this site is unstable, need to revise
       )
       .flatExtract(S"div.thumbnail", ordinalField = 'i1)(
         A"p".attr("class") ~ 'p_class

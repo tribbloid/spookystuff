@@ -17,7 +17,7 @@ class FetchPaginationIT extends IntegrationFixture {
 
     val RDD = spooky
       .fetch(
-        Visit("http://webscraper.io/test-sites/e-commerce/ajax/computers/laptops")
+        Visit("http://localhost:10092/test-sites/e-commerce/static/computers/laptops")
           +> Snapshot().as('a)
           +> Loop (
           ClickNext("button.btn","1"::Nil)
@@ -40,7 +40,7 @@ class FetchPaginationIT extends IntegrationFixture {
 
     val RDD2 = RDD
       .fetch(
-        Visit("http://webscraper.io/test-sites/e-commerce/ajax/computers/laptops")
+        Visit("http://localhost:10092/test-sites/e-commerce/static/computers/laptops")
           +> Snapshot().as('c)
           +> Loop (
           ClickNext("button.btn","1"::Nil)

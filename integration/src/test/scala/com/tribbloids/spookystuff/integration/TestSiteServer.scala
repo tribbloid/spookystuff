@@ -1,10 +1,13 @@
 package com.tribbloids.spookystuff.integration
 
+import com.tribbloids.spookystuff.testutils.TestHelper
 import javax.servlet.http.{HttpServletRequest, HttpServletResponse}
 import org.spark_project.jetty.server.handler.{DefaultHandler, HandlerList, HandlerWrapper, ResourceHandler}
 import org.spark_project.jetty.server.{Request, Server}
 
-object FileServer {
+object TestSiteServer {
+
+  import com.tribbloids.spookystuff.utils.CommonViews._
 
   class ExtHandler extends HandlerWrapper {
 
@@ -45,7 +48,7 @@ object FileServer {
 
     resource_handler.setDirectoriesListed(true)
     resource_handler.setWelcomeFiles(Array[String]("test-sites.html"))
-    resource_handler.setResourceBase("./test-sites")
+    resource_handler.setResourceBase(TestHelper.USER_DIR \\ "test-sites")
 
     val handlers = new HandlerList
     handlers.setHandlers(Array(ext_handler, resource_handler, new DefaultHandler))

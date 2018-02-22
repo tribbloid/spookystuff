@@ -16,7 +16,7 @@ class ExplorePagesIT extends IntegrationFixture {
 
     val result = spooky
       .fetch(
-        Wget("http://webscraper.io/test-sites/e-commerce/static/computers/tablets")
+        Wget("http://localhost:10092/test-sites/e-commerce/static/computers/tablets")
       )
       .explore(S"ul.pagination a", ordinalField = 'index)(
         Wget('A.href),
@@ -42,11 +42,11 @@ class ExplorePagesIT extends IntegrationFixture {
     assert(
       formatted ===
         """
-          |{"depth":0,"uri":"http://webscraper.io/test-sites/e-commerce/static/computers/tablets"}
-          |{"depth":1,"index":[0],"page":"2","uri":"http://webscraper.io/test-sites/e-commerce/static/computers/tablets/2"}
-          |{"depth":1,"index":[1],"page":"3","uri":"http://webscraper.io/test-sites/e-commerce/static/computers/tablets/3"}
-          |{"depth":1,"index":[2],"page":"4","uri":"http://webscraper.io/test-sites/e-commerce/static/computers/tablets/4"}
-          |{"depth":2,"index":[0,0],"page":"«","uri":"http://webscraper.io/test-sites/e-commerce/static/computers/tablets/1"}
+          |{"depth":0,"uri":"http://localhost:10092/test-sites/e-commerce/static/computers/tablets"}
+          |{"depth":1,"index":[0],"page":"2","uri":"http://localhost:10092/test-sites/e-commerce/static/computers/tablets/2"}
+          |{"depth":1,"index":[1],"page":"3","uri":"http://localhost:10092/test-sites/e-commerce/static/computers/tablets/3"}
+          |{"depth":1,"index":[2],"page":"4","uri":"http://localhost:10092/test-sites/e-commerce/static/computers/tablets/4"}
+          |{"depth":2,"index":[0,0],"page":"«","uri":"http://localhost:10092/test-sites/e-commerce/static/computers/tablets/1"}
         """.stripMargin.trim.split('\n').toSeq
     )
   }

@@ -17,7 +17,7 @@ class ExploreIT extends IntegrationFixture {
 
     val base = spooky
       .fetch(
-        Wget("http://webscraper.io/test-sites/e-commerce/allinone")
+        Wget("http://localhost:10092/test-sites/e-commerce/allinone")
       )
 
     val explored = base

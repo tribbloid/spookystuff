@@ -28,7 +28,7 @@ class ExploreAJAXPagesIT extends IntegrationFixture {
 
     val base = spooky
       .fetch(
-        Visit("http://webscraper.io/test-sites/e-commerce/ajax")
+        Visit("http://localhost:10092/test-sites/e-commerce/static")
           +> snapshotAllPages
       )
 

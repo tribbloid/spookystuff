@@ -16,7 +16,7 @@ class LeftVisitJoinIT extends IntegrationFixture {
 
     val base = spooky
       .fetch(
-        getPage("http://webscraper.io/test-sites/e-commerce/allinone")
+        getPage("http://localhost:10092/test-sites/e-commerce/allinone")
       )
 
     val joined = base
