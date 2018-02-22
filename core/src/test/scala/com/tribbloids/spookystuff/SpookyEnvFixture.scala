@@ -8,11 +8,12 @@ import com.tribbloids.spookystuff.extractors.{Alias, GenExtractor, GenResolved}
 import com.tribbloids.spookystuff.row.{SpookySchema, SquashedFetchedRow, TypedField}
 import com.tribbloids.spookystuff.session.CleanWebDriver
 import com.tribbloids.spookystuff.testutils.{FunSpecx, RemoteDocsFixture, TestHelper}
-import com.tribbloids.spookystuff.utils.CommonUtils
 import com.tribbloids.spookystuff.utils.lifespan.{Cleanable, Lifespan}
+import com.tribbloids.spookystuff.utils.{CommonUtils, RetryFixedInterval}
 import org.apache.spark.SparkContext
 import org.apache.spark.sql.SQLContext
 import org.jutils.jprocesses.JProcesses
+import org.jutils.jprocesses.model.ProcessInfo
 import org.scalatest.{BeforeAndAfter, BeforeAndAfterAll, Retries}
 
 import scala.language.implicitConversions
@@ -77,8 +78,10 @@ object SpookyEnvFixture {
 
     import scala.collection.JavaConverters._
 
-    val processes = JProcesses.getProcessList()
-      .asScala
+    val processes: Seq[ProcessInfo] = RetryFixedInterval(5, 1000) {
+      JProcesses.getProcessList()
+        .asScala
+    }
 
     names.foreach {
       name =>
