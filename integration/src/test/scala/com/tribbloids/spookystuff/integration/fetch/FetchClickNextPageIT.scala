@@ -7,7 +7,7 @@ import com.tribbloids.spookystuff.integration.IntegrationFixture
 /**
   * Created by peng on 11/26/14.
   */
-class FetchPaginationIT extends IntegrationFixture {
+class FetchClickNextPageIT extends IntegrationFixture {
 
 //  override lazy val driverFactories = Seq(
 //    phantomJS //TODO: HtmlUnit does not support Backbone.js
@@ -20,7 +20,7 @@ class FetchPaginationIT extends IntegrationFixture {
         Visit("http://localhost:10092/test-sites/e-commerce/static/computers/laptops")
           +> Snapshot().as('a)
           +> Loop (
-          ClickNext("button.btn","1"::Nil)
+          Click("ul.pagination a[rel=next]")
             +> Snapshot().as('b)
         )
       )

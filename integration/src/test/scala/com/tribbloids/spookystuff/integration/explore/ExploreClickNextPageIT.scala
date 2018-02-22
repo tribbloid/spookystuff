@@ -8,7 +8,7 @@ import scala.concurrent.duration._
 /**
   * Created by peng on 12/10/14.
   */
-class ExploreAJAXPagesIT extends IntegrationFixture {
+class ExploreClickNextPageIT extends IntegrationFixture {
 
   import com.tribbloids.spookystuff.dsl._
 
@@ -21,8 +21,8 @@ class ExploreAJAXPagesIT extends IntegrationFixture {
     val snapshotAllPages = (
       Snapshot()
         +> Loop (
-        ClickNext("button.btn", "1"::Nil)
-          +> Delay(2.seconds)
+        Click("ul.pagination a[rel=next]")
+//          +> Delay(2.seconds)
           +> Snapshot()
       ))
 
@@ -39,7 +39,7 @@ class ExploreAJAXPagesIT extends IntegrationFixture {
         depthField = 'depth
       )(
         G ~+ 'page_index.`#`,
-        S"button.btn.btn-primary".text ~ 'page_number,
+        S"ul.pagination li.active span".text ~ 'page_number,
         'A.text ~ 'category,
         S.findAll("h1").text ~ 'title,
         S"a.title".size ~ 'num_product
