@@ -60,12 +60,6 @@
 
   <profiles>
     <profile>
-      <id>java7</id>
-      <properties>
-        <java.version>1.7</java.version>
-      </properties>
-    </profile>
-    <profile>
       <id>java8</id>
       <activation>
         <activeByDefault>true</activeByDefault>
@@ -592,8 +586,6 @@
             <jvmArg>-Xms64m</jvmArg>
             <jvmArg>-Xms1024m</jvmArg>
             <jvmArg>-Xmx1024m</jvmArg>
-            <jvmArg>-XX:PermSize=${PermGen}</jvmArg>
-            <jvmArg>-XX:MaxPermSize=${MaxPermGen}</jvmArg>
           </jvmArgs>
           <javacArgs>
             <javacArg>-source</javacArg>
