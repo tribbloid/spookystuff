@@ -58,3 +58,6 @@ foo
 #flatten-maven-plugin
 .flattened-pom.xml
 pom.xml.flatten
+
+#pytest
+.pytest_cache

@@ -60,12 +60,6 @@
 
   <profiles>
     <profile>
-      <id>java7</id>
-      <properties>
-        <java.version>1.7</java.version>
-      </properties>
-    </profile>
-    <profile>
       <id>java8</id>
       <activation>
         <activeByDefault>true</activeByDefault>

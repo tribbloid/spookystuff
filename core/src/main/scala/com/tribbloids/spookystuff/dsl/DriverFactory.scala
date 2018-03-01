@@ -426,6 +426,9 @@ object DriverFactories {
     }
   }
 
-  object Python2 extends Python((_: SpookyContext) => "python2")
-  object Python3 extends Python((_: SpookyContext) => "python3")
+  import com.tribbloids.spookystuff.session.python.PythonExe._
+
+  object Python extends Python((_: SpookyContext) => PYTHON)
+  object Python2 extends Python((_: SpookyContext) => PYTHON2)
+  object Python3 extends Python((_: SpookyContext) => PYTHON3)
 }

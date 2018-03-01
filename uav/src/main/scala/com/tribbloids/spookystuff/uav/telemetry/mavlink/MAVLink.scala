@@ -35,8 +35,9 @@ TaskProcess -> Connection:UDP:xx -/
 case class MAVLink(
                     uav: UAV,
                     toSpark: Seq[String] = Nil, // cannot have duplicates
-                    toGCS: Seq[String] = Nil,
-                    driverTemplate: PythonDriver = PythonDriver.defaultTemplate
+                    toGCS: Seq[String] = Nil
+                  )(
+                    implicit driverTemplate: PythonDriver
                   ) extends Link with ConflictDetection {
 
   {

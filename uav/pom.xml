@@ -14,7 +14,7 @@
   <properties>
     <jsprit.version>1.7.2</jsprit.version>
     <python.command>python2</python.command>
-    <pip.command>pip2</pip.command>
+    <pip.command>pip</pip.command>
   </properties>
 
   <repositories> <!-- add this, if you don't have any repository definitions yet -->

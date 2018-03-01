@@ -14,7 +14,7 @@ class TestDriverFactory extends SpookyEnvFixture with LocalPathDocsFixture {
 
   val baseFactories: Seq[Transient[_]] = Seq(
     DriverFactories.PhantomJS(),
-    DriverFactories.Python(_ => "python3")
+    DriverFactories.Python
   )
 
   val poolingFactories: Seq[TaskLocal[_]] = baseFactories

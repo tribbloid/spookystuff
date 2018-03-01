@@ -11,6 +11,8 @@ import scala.util.Try
 
 object Python2DriverSuite {
 
+  import PythonExe._
+
   case class Runner(pythonExec: String) {
     val onePlusX: Seq[Int] => Unit = {
       xs =>
@@ -38,8 +40,8 @@ object Python2DriverSuite {
     }
   }
 
-  object Runner2 extends Runner("python2")
-  object Runner3 extends Runner("python3")
+  object Runner2 extends Runner(PYTHON2)
+  object Runner3 extends Runner(PYTHON3)
 }
 
 /**

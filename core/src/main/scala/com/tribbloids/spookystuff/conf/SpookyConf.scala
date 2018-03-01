@@ -20,7 +20,7 @@ object SpookyConf extends Submodules.Builder[SpookyConf]{
     * otherwise driver cannot do screenshot
     */
   final val TEST_WEBDRIVER_FACTORY = DriverFactories.PhantomJS(loadImages = true).taskLocal
-  final val DEFAULT_PYTHONDRIVER_FACTORY = DriverFactories.Python2.taskLocal
+  final val DEFAULT_PYTHONDRIVER_FACTORY = DriverFactories.Python.taskLocal
 
   //DO NOT change to val! all confs are
   // mutable

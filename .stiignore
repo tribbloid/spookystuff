@@ -1,5 +1,4 @@
 *.class
-*.log
 
 # maven
 *.versionsBackup
@@ -32,11 +31,30 @@ project/plugins/project/
 
 #Misc
 temp
-**/temp
 foo
+*.crc # cyclic redundancy check
 
 #aws key
 # **/rootkey.csv
 
-#mavproxy test log
+#test logs
+*.log
+**/log
 **/logs
+
+#syncthing
+.stfolder
+
+#temporary code that are not supposed to be uploaded.
+**/spike*.*
+
+#vscode
+.vscode
+
+**/.rootkey.csv
+
+**/.spark-dist
+
+#flatten-maven-plugin
+.flattened-pom.xml
+pom.xml.flatten

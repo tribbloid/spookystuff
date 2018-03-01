@@ -199,12 +199,12 @@ class Proxy(Daemon):
         self.baudRate = baudRate
         self.ssid = ssid
         self.name = name
-        self.p = None
+        self.pipe = None
 
     @property
     def process(self):
-        if self.p:
-            return self.p.processes[0]
+        if self.pipe:
+            return self.pipe.processes[0]
         else:
             return None
 
@@ -220,7 +220,8 @@ class Proxy(Daemon):
         fileName = loader.get_filename(mavproxy.__name__)
         MAVPROXY = os.getenv('MAVPROXY_CMD', fileName)
 
-        cmd = 'python ' + MAVPROXY + ' --master=%s' % self.master
+        # MAVProxy only supports python2, how to make it cleaner?
+        cmd = "python " + MAVPROXY + ' --master=%s' % self.master
         for out in self.outs:
             cmd += ' --out=%s' % out
         if setup:
@@ -237,54 +238,54 @@ class Proxy(Daemon):
 
         # TODO too heavyweight! exec in new daemon Thread + interpreter termination is good enough.
         # using solution of [http://stackoverflow.com/questions/11269575/how-to-hide-output-of-subprocess-in-python-2-7]
-        pipeline = sarge.run(
+        pipe = sarge.run(
             cmd, async=True,
             env={'PYTHONPATH': ':'.join(sys.path)}, stderr=utils.DEVNULL)
 
-        self.p = pipeline
+        self.pipe = pipe
+
+    # @retry(daemonStartRetries)
+    def _sanityCheck(self):
+        try:
+            def isAlive(i):
+                return self.isAlive
+            utils.waitFor(isAlive, 10)
+
+            # ensure that proxy is usable, otherwise its garbage
+            vehicle = dronekit.connect(
+                self.outs[0],
+                wait_ready=True, #  TODO change to False once stabilized
+                source_system=self.ssid, #  TODO: how to handle this?
+                baud=self.baudRate
+            )
+            @retry(5)
+            def _close():
+                vehicle.close()
+            _close()
+
+            time.sleep(2) #  wait for port to be released
+        except:
+            print("ERROR: PROXY CANNOT CONNECT TO", self.outs[0])
+            self.stop()
+            raise
 
     @retry(daemonStartRetries)
     def _start(self):
         # type: () -> None
 
-        if not self.p:
+        if not self.pipe:
             self._spawnProxy()
 
             time.sleep(1)  # wait for process creation
 
-            # @retry(daemonStartRetries)
-            def sanityCheck():
-                try:
-                    def isAlive(i):
-                        return self.isAlive
-                    utils.waitFor(isAlive, 10)
-
-                    # ensure that proxy is usable, otherwise its garbage
-                    vehicle = dronekit.connect(
-                        self.outs[0],
-                        wait_ready=True, #  TODO change to False once stabilized
-                        source_system=self.ssid, #  TODO: how to handle this?
-                        baud=self.baudRate
-                    )
-                    @retry(5)
-                    def _close():
-                        vehicle.close()
-                    _close()
-
-                    time.sleep(2) #  wait for port to be released
-                except:
-                    print("ERROR: PROXY CANNOT CONNECT TO", self.outs[0])
-                    self.stop()
-                    raise
-
-            sanityCheck()
+            self._sanityCheck()
 
             self.logPrint("Proxy spawned: PID =", self.pid, "URI =", self.outs[0])
 
     def _stop(self):
-        if self.p:
+        if self.pipe:
 
-            for command in self.p.commands:
+            for command in self.pipe.commands:
                 try:
                     command.terminate()
                 except:
@@ -294,7 +295,7 @@ class Proxy(Daemon):
                 return not self.isAlive
             utils.waitFor(isDead, 10)
 
-            self.p = None
+            self.pipe = None
 
     @staticmethod
     def killPID(pid):

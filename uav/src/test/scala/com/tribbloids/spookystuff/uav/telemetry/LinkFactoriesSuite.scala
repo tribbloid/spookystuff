@@ -1,6 +1,7 @@
 package com.tribbloids.spookystuff.uav.telemetry
 
 import com.tribbloids.spookystuff.SpookyEnvFixture
+import com.tribbloids.spookystuff.session.python.{PythonDriver, PythonExe}
 import com.tribbloids.spookystuff.uav.dsl.{LinkFactories, LinkFactory}
 import com.tribbloids.spookystuff.uav.system.UAV
 import com.tribbloids.spookystuff.uav.telemetry.mavlink.MAVLink
@@ -9,6 +10,8 @@ import com.tribbloids.spookystuff.uav.telemetry.mavlink.MAVLink
   * Created by peng on 30/11/16.
   */
 class LinkFactoriesSuite extends SpookyEnvFixture {
+
+  implicit val driverTemplate = new PythonDriver(PythonExe.PYTHON)
 
   def canCreate(factory: LinkFactory, link: Link): Boolean = {
 

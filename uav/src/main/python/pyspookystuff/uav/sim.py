@@ -31,7 +31,8 @@ def tcp_master(instance):
 
 
 class APMSim(object):
-    def __init__(self, iNum, extraArgs, rate, speedup, vType, version):
+    def __init__(self, iNum, extraArgs, rate, speedup,
+                 vType="copter", version="3.3"):
         # type: (int, list[str], int, int, str, str) -> None
 
         """
@@ -40,7 +41,7 @@ class APMSim(object):
         """
         self.iNum = iNum
         self.rate = rate
-        self.args = extraArgs + ['-I' + str(iNum)] + ['--speedup', str(speedup)] + ['-r', str(rate)]
+        self.args = extraArgs + ['-I', str(iNum)] + ['--speedup', str(speedup)] + ['-r', str(rate)]
         self.vType = vType
         self.version = version
 
@@ -105,7 +106,8 @@ class APMSim(object):
     def withVehicle(self):
         def decorate(fn):
             def fnM(*args, **kargs):
-                v = connect(self.connStr, wait_ready=True, baud=self.rate)
+                # v = connect(self.connStr, wait_ready=True, baud=self.rate)
+                v = connect('tcp:127.0.0.1:5760', wait_ready=True, baud=self.rate)
                 try:
                     return fn(v, *args, **kargs)
                 finally:

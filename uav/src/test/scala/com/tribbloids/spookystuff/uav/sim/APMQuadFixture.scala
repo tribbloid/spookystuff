@@ -1,7 +1,7 @@
 package com.tribbloids.spookystuff.uav.sim
 
 import com.tribbloids.spookystuff.SpookyEnvFixture
-import com.tribbloids.spookystuff.session.python.PythonDriver
+import com.tribbloids.spookystuff.session.python.{PythonDriver, PythonExe}
 import com.tribbloids.spookystuff.uav.SimUAVFixture
 import com.tribbloids.spookystuff.uav.telemetry.Link
 import com.tribbloids.spookystuff.utils.CommonUtils
@@ -26,7 +26,7 @@ trait APMFixture extends SimUAVFixture {
       .map {
         i =>
           //NOT cleaned by TaskCompletionListener
-          val apmSimDriver = new PythonDriver(_lifespan = Lifespan.JVM(nameOpt = Some(s"APMSim$i")))
+          val apmSimDriver = new PythonDriver(PythonExe.PYTHON, _lifespan = Lifespan.JVM(nameOpt = Some(s"APMSim$i")))
           val sim = simFactory.getNext
           sim._Py(apmSimDriver).connStr.$STR
       }
