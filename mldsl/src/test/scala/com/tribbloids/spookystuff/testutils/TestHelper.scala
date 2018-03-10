@@ -210,25 +210,25 @@ class TestHelper() {
     val ser = SparkEnv.get.serializer
     require(ser.isInstanceOf[KryoSerializer])
 
-    val rdd = sc.parallelize(Seq(sc)).map {
-      v =>
-        v.startTime
-    }
-
-    try {
-      rdd.reduce(_ + _)
-      throw new AssertionError("should throw SparkException")
-    }
-    catch {
-      case e: SparkException =>
-        val ee = e
-        assert(
-          ee.getMessage.contains("com.esotericsoftware.kryo.KryoException"),
-          "should be triggered by KryoException, but the message doesn't indicate that:\n"+ ee.getMessage
-        )
-      case e: Throwable =>
-        throw new AssertionError(s"Expecting SparkException, but ${e.getClass.getSimpleName} was thrown", e)
-    }
+    //    val rdd = sc.parallelize(Seq(sc)).map {
+    //      v =>
+    //        v.startTime
+    //    }
+    //
+    //    try {
+    //      rdd.reduce(_ + _)
+    //      throw new AssertionError("should throw SparkException")
+    //    }
+    //    catch {
+    //      case e: SparkException =>
+    //        val ee = e
+    //        assert(
+    //          ee.getMessage.contains("com.esotericsoftware.kryo.KryoException"),
+    //          "should be triggered by KryoException, but the message doesn't indicate that:\n"+ ee.getMessage
+    //        )
+    //      case e: Throwable =>
+    //        throw new AssertionError(s"Expecting SparkException, but ${e.getClass.getSimpleName} was thrown", e)
+    //    }
   }
 
   //TODO: clean up S3 as well
