@@ -62,3 +62,7 @@ pom.xml.flatten
 
 #pytest
 **/.pytest_cache
+
+#apm sitl state files
+uav/**/eeprom.bin
+uav/**/*.DAT
