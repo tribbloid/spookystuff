@@ -71,11 +71,11 @@
     </profile>
     <!--No longer supported-->
     <!--<profile>-->
-      <!--<id>scala-2.10</id>-->
-      <!--<properties>-->
-        <!--<scala.version>2.10.6</scala.version>-->
-        <!--<scala.binary.version>2.10</scala.binary.version>-->
-      <!--</properties>-->
+    <!--<id>scala-2.10</id>-->
+    <!--<properties>-->
+    <!--<scala.version>2.10.6</scala.version>-->
+    <!--<scala.binary.version>2.10</scala.binary.version>-->
+    <!--</properties>-->
     <!--</profile>-->
 
     <!--<profile>-->
@@ -309,6 +309,14 @@
       <scope>provided</scope>
     </dependency>
 
+    <!--DON'T DELETE! used by protobuf plugin!-->
+    <dependency>
+      <groupId>com.google.protobuf</groupId>
+      <artifactId>protobuf-java</artifactId>
+      <version>2.5.0</version>
+      <scope>provided</scope>
+    </dependency>
+
     <!--DON'T DELETE! guava has too many versions and a ground truth has to be setup.-->
     <!--<dependency>-->
     <!--<groupId>com.google.guava</groupId>-->
@@ -336,21 +344,31 @@
       <resource>
         <directory>src/main/python</directory>
         <targetPath>com/tribbloids</targetPath>
+        <filtering>false</filtering>
       </resource>
       <!--<resource>-->
-      <!--<directory>lib_managed</directory>-->
-      <!--<targetPath>com/tribbloids/spookystuff/lib</targetPath>-->
+        <!--<directory>${basedir}/target/generated-sources</directory>-->
+        <!--<filtering>false</filtering>-->
       <!--</resource>-->
     </resources>
+
     <testResources>
       <testResource>
         <directory>src/test/resources</directory>
       </testResource>
       <!--<testResource>-->
-      <!--<directory>src/test/python</directory>-->
-      <!--<targetPath>com/tribbloids</targetPath>-->
+        <!--<directory>${basedir}/target/generated-test-sources</directory>-->
+        <!--<filtering>false</filtering>-->
       <!--</testResource>-->
     </testResources>
+
+    <extensions>
+      <extension>
+        <groupId>kr.motd.maven</groupId>
+        <artifactId>os-maven-plugin</artifactId>
+        <version>1.5.0.Final</version>
+      </extension>
+    </extensions>
 
     <pluginManagement>
       <plugins>
@@ -450,6 +468,41 @@
             </execution>
           </executions>
         </plugin>
+
+        <plugin>
+          <groupId>org.xolstice.maven.plugins</groupId>
+          <artifactId>protobuf-maven-plugin</artifactId>
+          <version>0.5.1</version>
+          <extensions>true</extensions>
+          <executions>
+            <execution>
+              <phase>generate-sources</phase>
+              <goals>
+                <goal>compile</goal>
+                <goal>test-compile</goal>
+                <!--<goal>run</goal>-->
+              </goals>
+              <configuration>
+                <protocArtifact>com.google.protobuf:protoc:2.5.0:exe:${os.detected.classifier}</protocArtifact>
+              </configuration>
+            </execution>
+          </executions>
+        </plugin>
+
+        <!--<plugin>-->
+        <!--<groupId>com.github.igor-petruk.protobuf</groupId>-->
+        <!--<artifactId>protobuf-maven-plugin</artifactId>-->
+        <!--<version>0.6.3</version>-->
+        <!--<executions>-->
+        <!--<execution>-->
+        <!--<phase>generate-sources</phase>-->
+        <!--<goals>-->
+        <!--<goal>run</goal>-->
+        <!--</goals>-->
+        <!--</execution>-->
+        <!--</executions>-->
+        <!--</plugin>-->
+
       </plugins>
     </pluginManagement>
 
@@ -673,6 +726,8 @@
       <!--</configuration>-->
       <!--</plugin>-->
     </plugins>
+
+
   </build>
 
   <distributionManagement>
