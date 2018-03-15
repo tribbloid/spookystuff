@@ -220,7 +220,7 @@ class Proxy(Daemon):
         fileName = loader.get_filename(mavproxy.__name__)
         MAVPROXY = os.getenv('MAVPROXY_CMD', fileName)
 
-        cmd = 'python ' + MAVPROXY + ' --master=%s' % self.master
+        cmd = 'python2 ' + MAVPROXY + ' --master=%s' % self.master
         for out in self.outs:
             cmd += ' --out=%s' % out
         if setup:

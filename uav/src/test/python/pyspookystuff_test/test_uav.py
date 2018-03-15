@@ -43,7 +43,7 @@ class TestProxy(TestCase):
     @property
     def url(self):
         if not self.sim:
-            self.sim = APMSim(0, "43.694195,-79.262262,136,353", 200, 5)
+            self.sim = APMSim(0, ["--home", "43.694195,-79.262262,136,353"], 200, 5)
         return self.sim.connStr
 
     def testProxyRestart(self):
@@ -101,7 +101,7 @@ class TestAPMSim(TestCase):
     @property
     def url(self):
         if not self.sim:
-            self.sim = APMSim(0, "43.694195,-79.262262,136,353", 200, 5)
+            self.sim = APMSim(0, ["--home", "43.694195,-79.262262,136,353"], 9600, 5)
         return self.sim.connStr
 
     @property

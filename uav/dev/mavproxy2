@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+
+CRDIR="$(cd "`dirname "$0"`"; pwd)"
+
+python2 ${CRDIR}/exec_mavproxy.py \
+--master=tcp:127.0.0.1:5760 --out=udp:localhost:12052 --out=udp:localhost:14550 \
+--baudrate=57600 --source-system=251 --aircraft=TestProxy --state-basedir=temp

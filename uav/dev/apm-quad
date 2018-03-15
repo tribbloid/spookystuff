@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+
+TAR_NAME=sitl-linux-copter-3.3.tar.gz
+
+wget -N http://dronekit-assets.s3.amazonaws.com/sitl/copter/${TAR_NAME} -P ${HOME}/tmp && \
+tar -xf ${HOME}/tmp/${TAR_NAME} -C ${HOME}/tmp && \
+exec ${HOME}/tmp/apm --home 43.694195,-79.262262,136,353 -I 0 --speedup 5 -r 200 --model=quad

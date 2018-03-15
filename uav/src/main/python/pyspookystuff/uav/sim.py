@@ -31,7 +31,7 @@ def tcp_master(instance):
 
 
 class APMSim(object):
-    def __init__(self, iNum, extraArgs, rate, speedup, vType, version):
+    def __init__(self, iNum, extraArgs, rate, speedup, vType="copter", version="3.3"):
         # type: (int, list[str], int, int, str, str) -> None
 
         """
