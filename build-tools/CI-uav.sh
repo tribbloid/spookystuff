@@ -14,5 +14,5 @@ echo $SPARK_HOME
 
 ALL_ARGS="-Pspark-2.2 -Pscala-2.11 $@"
 
-exec "$CRDIR"/mvn-install.sh "$ALL_ARGS"
-exec "$CRDIR"/test-install.sh "$ALL_ARGS" -Puav -pl uav
+"$CRDIR"/mvn-install.sh "$ALL_ARGS" && \
+"$CRDIR"/test.sh "$ALL_ARGS" -Puav -pl uav

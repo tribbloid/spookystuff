@@ -52,7 +52,9 @@
     <spark.assembly.version>${spark.binary.version}</spark.assembly.version>
     <spark.classifier>spark${spark.binary.version}</spark.classifier>
 
-    <failsafe.version>2.18</failsafe.version>
+    <protobuf.version>2.5.0</protobuf.version>
+
+    <!--<failsafe.version>2.18</failsafe.version>-->
   </properties>
 
   <profiles>
@@ -313,7 +315,7 @@
     <dependency>
       <groupId>com.google.protobuf</groupId>
       <artifactId>protobuf-java</artifactId>
-      <version>2.5.0</version>
+      <version>${protobuf.version}</version>
       <scope>provided</scope>
     </dependency>
 
@@ -341,15 +343,15 @@
       <resource>
         <directory>src/main/resources</directory>
       </resource>
+
       <resource>
         <directory>src/main/python</directory>
         <targetPath>com/tribbloids</targetPath>
-        <filtering>false</filtering>
       </resource>
-      <!--<resource>-->
-        <!--<directory>${basedir}/target/generated-sources</directory>-->
-        <!--<filtering>false</filtering>-->
-      <!--</resource>-->
+      <resource>
+        <directory>target/generated-sources/protobuf/python</directory>
+        <targetPath>com/tribbloids</targetPath>
+      </resource>
     </resources>
 
     <testResources>
@@ -480,10 +482,11 @@
               <goals>
                 <goal>compile</goal>
                 <goal>test-compile</goal>
-                <!--<goal>run</goal>-->
+                <!--<goal>compile-cpp</goal>-->
+                <goal>compile-python</goal>
               </goals>
               <configuration>
-                <protocArtifact>com.google.protobuf:protoc:2.5.0:exe:${os.detected.classifier}</protocArtifact>
+                <protocArtifact>com.google.protobuf:protoc:${protobuf.version}:exe:${os.detected.classifier}</protocArtifact>
               </configuration>
             </execution>
           </executions>
@@ -560,7 +563,7 @@
         <version>1.12</version>
         <executions>
           <execution>
-            <id>add-scala-source</id>
+            <id>add-extra-source</id>
             <phase>generate-sources</phase>
             <goals>
               <goal>add-source</goal>
@@ -568,6 +571,7 @@
             <configuration>
               <sources>
                 <source>${project.basedir}/shims/${spark.classifier}-shim/main/scala</source>
+                <source>src/main/python</source>
               </sources>
             </configuration>
           </execution>
