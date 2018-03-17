@@ -52,7 +52,7 @@ case class MAVLink(
     */
   object Endpoints {
     val direct: Endpoint = {
-      Endpoint(driverTemplate, uav.uris.head, uav.frame, uav.baudRate, uav.groundSSID, uav.name)
+      Endpoint(uav.uris.head, uav.frame, uav.baudRate, uav.groundSSID, uav.name)(driverTemplate)
     }
     val executors: Seq[Endpoint] = if (toSpark.isEmpty) {
       Seq(direct)
@@ -60,7 +60,7 @@ case class MAVLink(
     else {
       toSpark.map {
         out =>
-          direct.copy(uri = out)
+          direct.copy(uri = out)(direct.driverTemplate)
       }
     }
     //always initialized in Python when created from companion object
@@ -68,7 +68,7 @@ case class MAVLink(
     val GCSs: Seq[Endpoint] = {
       toGCS.map {
         out =>
-          direct.copy(uri = out)
+          direct.copy(uri = out)(direct.driverTemplate)
       }
     }
     val all: Seq[Endpoint] = (Seq(direct) ++ executors ++ GCSs).distinct
@@ -79,12 +79,11 @@ case class MAVLink(
     val result = if (outs.isEmpty) None
     else {
       val proxy: Proxy = Proxy(
-        driverTemplate,
         Endpoints.direct.uri,
         outs,
         Endpoints.direct.baudRate,
         name = uav.name
-      )
+      )(driverTemplate)
       Some(proxy)
     }
     result

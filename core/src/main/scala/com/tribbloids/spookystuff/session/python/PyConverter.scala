@@ -34,7 +34,7 @@ trait PyConverter {
   }
 
   //takes optional parameter, treat as missing if value of the option is None
-  def kwargs2Ref(vs: Iterable[(String, Any)]): (Seq[PyRef], String) = {
+  def kwargs2Code(vs: Iterable[(String, Any)]): (Seq[PyRef], String) = {
     val pys: Iterable[(Seq[PyRef], String)] = vs
         .flatMap {
           tuple =>

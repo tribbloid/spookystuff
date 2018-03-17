@@ -207,7 +207,7 @@ class PyBinding (
   }
   def applyDynamicNamed(methodName: String)(kwargs: (String, Any)*) = {
     dynamicDecorator {
-      pyCallMethod(methodName)(converter.kwargs2Ref(kwargs))
+      pyCallMethod(methodName)(converter.kwargs2Code(kwargs))
     }
   }
 
@@ -318,13 +318,14 @@ trait JSONInstanceRef extends InstanceRef with MessageAPI {
 trait CaseInstanceRef extends InstanceRef with Product {
 
   def attrMap = ReflectionUtils.getCaseAccessorMap(this)
+  def kwargsTuple = this.converter.kwargs2Code(attrMap)
 
   override def dependencies = {
-    this.converter.kwargs2Ref(attrMap)._1
+    kwargsTuple._1
   }
 
   override def pyConstructorArgs = {
-    this.converter.kwargs2Ref(attrMap)._2
+    kwargsTuple._2
   }
 }
 
@@ -337,6 +338,8 @@ trait SingletonRef extends PyRef {
 
   def PY = driverToBindingsAlive.values.head
 }
+
+
 
 trait BindedRef extends SingletonRef with LocalCleanable {
 

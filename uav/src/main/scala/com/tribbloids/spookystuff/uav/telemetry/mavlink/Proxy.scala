@@ -12,12 +12,13 @@ import com.tribbloids.spookystuff.session.python._
   */
 //TODO: MAVProxy supports multiple master for multiple telemetry backup
 case class Proxy(
-                  driverTemplate: PythonDriver,
                   master: String,
                   outs: Seq[String], //first member is always used by DK.
                   baudRate: Int,
                   ssid: Int = UAVConf.PROXY_SSID,
                   name: String
+                )(
+                  override val driverTemplate: PythonDriver
                 ) extends CaseInstanceRef with BindedRef with ConflictDetection {
 
   assert(!outs.contains(master))
@@ -26,8 +27,8 @@ case class Proxy(
     "firstOut" -> outs.headOption.toSet //need at least 1 out for executor
   )
 
-//  override protected def cleanImpl(): Unit = {
-//    super.cleanImpl()
-////    Proxy.existing -= this
-//  }
+  //  override protected def cleanImpl(): Unit = {
+  //    super.cleanImpl()
+  ////    Proxy.existing -= this
+  //  }
 }
