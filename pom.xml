@@ -346,11 +346,11 @@
 
       <resource>
         <directory>src/main/python</directory>
-        <targetPath>com/tribbloids</targetPath>
+        <targetPath>python</targetPath>
       </resource>
       <resource>
-        <directory>target/generated-sources/protobuf/python</directory>
-        <targetPath>com/tribbloids</targetPath>
+        <directory>target/generated-sources/python</directory>
+        <targetPath>python</targetPath>
       </resource>
     </resources>
 
@@ -478,18 +478,30 @@
           <extensions>true</extensions>
           <executions>
             <execution>
+              <id>java-codegen</id>
               <phase>generate-sources</phase>
               <goals>
                 <goal>compile</goal>
                 <goal>test-compile</goal>
-                <!--<goal>compile-cpp</goal>-->
+              </goals>
+              <configuration>
+                <outputDirectory>${project.build.directory}/generated-sources/java</outputDirectory>
+              </configuration>
+            </execution>
+            <execution>
+              <id>python-codegen</id>
+              <phase>generate-sources</phase>
+              <goals>
                 <goal>compile-python</goal>
               </goals>
               <configuration>
-                <protocArtifact>com.google.protobuf:protoc:${protobuf.version}:exe:${os.detected.classifier}</protocArtifact>
+                <outputDirectory>${project.build.directory}/generated-sources/python</outputDirectory>
               </configuration>
             </execution>
           </executions>
+          <configuration>
+            <protocArtifact>com.google.protobuf:protoc:${protobuf.version}:exe:${os.detected.classifier}</protocArtifact>
+          </configuration>
         </plugin>
 
         <!--<plugin>-->

@@ -339,8 +339,6 @@ trait SingletonRef extends PyRef {
   def PY = driverToBindingsAlive.values.head
 }
 
-
-
 trait BindedRef extends SingletonRef with LocalCleanable {
 
   def driverTemplate: PythonDriver

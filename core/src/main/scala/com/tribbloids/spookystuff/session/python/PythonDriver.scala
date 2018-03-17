@@ -18,10 +18,10 @@ object PythonDriver {
 
   import com.tribbloids.spookystuff.utils.SpookyViews._
 
-  final val DEFAULT_PYTHON_PATH = System.getProperty("user.home") \\ ".spookystuff" \\ "pythonpath"
-  final val MODULE_NAME = "pyspookystuff"
-  final val MODULE_RESOURCE = "com/tribbloids/" :/ MODULE_NAME
-  final val PYTHON_LIB_RESOURCE = "com/tribbloids/spookystuff/lib/python"
+  final val DEFAULT_PYTHON_PATH = System.getProperty("user.home") \\ ".spookystuff" \\ "python"
+//  final val MODULE_NAME = "pyspookystuff"
+//  final val MODULE_RESOURCE = "com/tribbloids/" :/ MODULE_NAME
+  final val PYTHON_RESOURCE = "python"
 
   final val errorPattern: Pattern = Pattern.compile(".*(Error|Exception):.*$")
   final val syntaxErrorPattern: Pattern = Pattern.compile(".*(SyntaxError):.*$")
@@ -35,25 +35,25 @@ object PythonDriver {
     */
   lazy val deploy: String = {
     val pythonPath: String = PythonDriver.DEFAULT_PYTHON_PATH // extract pyspookystuff from resources temporarily on workers
-    val modulePath = pythonPath \\ PythonDriver.MODULE_NAME
+//    val modulePath = pythonPath \\ PythonDriver.MODULE_NAME
 
     val pythonDir = new File(pythonPath)
     FileUtils.deleteQuietly(pythonDir)
 
-    val libResourceOpt = SpookyUtils.getCPResource(PythonDriver.PYTHON_LIB_RESOURCE)
-    libResourceOpt.foreach {
+    val resourceOpt = SpookyUtils.getCPResource(PythonDriver.PYTHON_RESOURCE)
+    resourceOpt.foreach {
       resource =>
         SpookyUtils.extractResource(resource, pythonPath)
     }
 
-    val moduleResourceOpt = SpookyUtils.getCPResource(PythonDriver.MODULE_RESOURCE)
-    moduleResourceOpt.foreach {
-      resource =>
-        //        SpookyUtils.asynchIfNotExist(modulePath){
-
-        SpookyUtils.extractResource(resource, modulePath)
-      //        }
-    }
+//    val moduleResourceOpt = SpookyUtils.getCPResource(PythonDriver.MODULE_RESOURCE)
+//    moduleResourceOpt.foreach {
+//      resource =>
+//        //        SpookyUtils.asynchIfNotExist(modulePath){
+//
+//        SpookyUtils.extractResource(resource, modulePath)
+//      //        }
+//    }
     pythonPath
   }
 

@@ -147,7 +147,7 @@
                 <argument>--force-reinstall</argument>
                 <argument>--ignore-installed</argument>
                 <argument>--target</argument>
-                <argument>${project.build.directory}/classes/com/tribbloids/spookystuff/lib/python</argument>
+                <argument>${project.build.directory}/classes/python</argument>
               </arguments>
 
               <!--<executable>${python.command}</executable>-->
