@@ -6,6 +6,24 @@ import java.net.{URI, URLConnection}
 import com.tribbloids.spookystuff.utils.http.HttpUtils
 import org.apache.spark.ml.dsl.utils.metadata.MetadataMap
 
+object FTPResolver {
+
+  def apply(
+             timeoutMillis: Int
+           ): FTPResolver = {
+
+    val ftp = FTPResolver({
+      uri =>
+        val uc = uri.toURL.openConnection()
+        uc.setConnectTimeout(timeoutMillis)
+        uc.setReadTimeout(timeoutMillis)
+        uc
+    })
+
+    ftp
+  }
+}
+
 case class FTPResolver(
                         input2Connection: URI => URLConnection
                       ) extends URIResolver {

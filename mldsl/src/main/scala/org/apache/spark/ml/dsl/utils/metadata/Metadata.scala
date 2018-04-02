@@ -21,7 +21,6 @@ object MetadataMap {
   def apply(vs: Tuple2[MetadataKey, Any]*) = ListMap(vs.map{case (k,v) => k.name -> v}: _*)
 }
 
-
 case class Metadata(
                      map: ListMap[String, Any] = ListMap.empty
                    ) {

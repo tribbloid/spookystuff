@@ -30,13 +30,7 @@ class FSResolver(
 
   lazy val hdfs = HDFSResolver(hadoopConf)
 
-  lazy val ftp = FTPResolver({
-    uri =>
-      val uc = uri.toURL.openConnection()
-      uc.setConnectTimeout(timeoutMillis)
-      uc.setReadTimeout(timeoutMillis)
-      uc
-  })
+  lazy val ftp = FTPResolver(timeoutMillis)
 
   override def getImpl(uri: String): URIResolver = {
 
