@@ -129,11 +129,14 @@ These special characters are often called "metacharacters".
   //TODO: move to class & try @Specialized?
   def asArray[T <: Any: ClassTag](obj: Any): Array[T] = {
 
-    obj match {
-      case v: TraversableOnce[Any] => v.toArray.filterByType[T]
-      case v: Array[T] => v.filterByType[T]
-      case _ =>
-        Array[Any](obj).filterByType[T]
+    val canon: Array[_] = obj match {
+      case v: TraversableOnce[Any] => v.toArray
+      case v: Array[_] => v
+      case _ => Array[Any](obj)
+    }
+
+    canon.collect{
+      case v: T => v
     }
   }
 
@@ -141,11 +144,15 @@ These special characters are often called "metacharacters".
 
   def asIterable[T <: Any: ClassTag](obj: Any): Iterable[T] = {
 
-    obj match {
-      case v: TraversableOnce[Any] => v.toArray.filterByType[T]
-      case v: Array[T] => v.filterByType[T].toIterable
+    val canon: Iterable[Any] = obj match {
+      case v: TraversableOnce[Any] => v.toIterable
+      case v: Array[_] => v.toIterable
       case _ =>
-        Array[Any](obj).filterByType[T]
+        Iterable[Any](obj)
+    }
+
+    canon.collect{
+      case v: T => v
     }
   }
 
