@@ -108,7 +108,13 @@ class TestHelper() extends NOTSerializable {
     *         cluster simulation mode: Some(SPARK_HOME) -> local-cluster[m,n, mem]
     */
   lazy val coreSettings: Map[String, String] = {
-    val base = if (clusterSizeOpt.isEmpty || numCoresPerWorkerOpt.isEmpty) {
+    val masterEnv = System.getenv("SPARK_MASTER")
+    val base = if (masterEnv != null){
+      Map(
+        "spark.master" -> masterEnv
+      )
+    }
+    else if (clusterSizeOpt.isEmpty || numCoresPerWorkerOpt.isEmpty) {
       val masterStr = s"local[$numCores,$maxFailures]"
       println("initializing SparkContext in local mode:" + masterStr)
       Map(
