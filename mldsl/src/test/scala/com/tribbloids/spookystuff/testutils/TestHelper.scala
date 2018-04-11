@@ -128,12 +128,12 @@ class TestHelper() extends NOTSerializable {
 
     val base = if (masterStr.startsWith("local[")){
       Map(
-        "spark.master" -> masterEnv
+        "spark.master" -> masterStr
       )
     }
     else {
       Map(
-        "spark.master" -> masterEnv,
+        "spark.master" -> masterStr,
         "spark.home" -> SPARK_HOME,
         "spark.executor.memory" -> (executorMemoryOpt.get + "m"),
         "spark.driver.extraClassPath" -> sys.props("java.class.path"),
