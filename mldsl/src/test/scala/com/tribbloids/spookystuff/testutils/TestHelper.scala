@@ -109,25 +109,31 @@ class TestHelper() extends NOTSerializable {
     */
   lazy val coreSettings: Map[String, String] = {
     val masterEnv = System.getenv("SPARK_MASTER")
-    val base = if (masterEnv != null){
-      Map(
-        "spark.master" -> masterEnv
-      )
+
+    val masterStr = if (masterEnv != null){
+      masterEnv
     }
     else if (clusterSizeOpt.isEmpty || numCoresPerWorkerOpt.isEmpty) {
       val masterStr = s"local[$numCores,$maxFailures]"
       println("initializing SparkContext in local mode:" + masterStr)
-      Map(
-        "spark.master" -> masterStr
-      )
+      masterStr
     }
     else {
       val masterStr =
         s"local-cluster[${clusterSizeOpt.get},${numCoresPerWorkerOpt.get},${executorMemoryOpt.get}]"
       println(s"initializing SparkContext in local-cluster simulation mode:" + masterStr)
       ConfUtils.setEnv("SPARK_SCALA_VERSION", CommonUtils.scalaBinaryVersion)
+      masterStr
+    }
+
+    val base = if (masterStr.startsWith("local[")){
       Map(
-        "spark.master" -> masterStr,
+        "spark.master" -> masterEnv
+      )
+    }
+    else {
+      Map(
+        "spark.master" -> masterEnv,
         "spark.home" -> SPARK_HOME,
         "spark.executor.memory" -> (executorMemoryOpt.get + "m"),
         "spark.driver.extraClassPath" -> sys.props("java.class.path"),
@@ -135,6 +141,7 @@ class TestHelper() extends NOTSerializable {
         "spark.task.maxFailures" -> maxFailures.toString
       )
     }
+
     base ++ Map(
       "spark.serializer" -> "org.apache.spark.serializer.KryoSerializer",
       //      .set("spark.kryo.registrator", "com.tribbloids.spookystuff.SpookyRegistrator")Incomplete for the moment
