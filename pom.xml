@@ -271,6 +271,13 @@
       <version>3.0.4</version>
       <scope>test</scope>
     </dependency>
+    <!-- https://mvnrepository.com/artifact/com.holdenkarau/spark-testing-base -->
+    <!--<dependency>-->
+      <!--<groupId>com.holdenkarau</groupId>-->
+      <!--<artifactId>spark-testing-base_${scala.binary.version}</artifactId>-->
+      <!--<version>${spark.version}_0.9.0</version>-->
+      <!--<scope>test</scope>-->
+    <!--</dependency>-->
     <!--for driver leakage detection-->
     <dependency>
       <groupId>org.jprocesses</groupId>
@@ -309,6 +316,13 @@
       <artifactId>spark-mllib_${scala.binary.version}</artifactId>
       <version>${spark.version}</version>
       <scope>provided</scope>
+    </dependency>
+    <!--for unit test only-->
+    <dependency>
+      <groupId>org.apache.spark</groupId>
+      <artifactId>spark-yarn_${scala.binary.version}</artifactId>
+      <version>${spark.version}</version>
+      <scope>test</scope>
     </dependency>
 
     <!--DON'T DELETE! used by protobuf plugin!-->
