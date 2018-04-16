@@ -135,7 +135,7 @@ class TestHelper() extends NOTSerializable {
       Map(
         "spark.master" -> masterStr,
         "spark.home" -> SPARK_HOME,
-        "spark.executor.memory" -> (executorMemoryOpt.get + "m"),
+//        "spark.executor.memory" -> (executorMemoryOpt.get + "m"),
         "spark.driver.extraClassPath" -> sys.props("java.class.path"),
         "spark.executor.extraClassPath" -> sys.props("java.class.path"),
         "spark.task.maxFailures" -> maxFailures.toString
