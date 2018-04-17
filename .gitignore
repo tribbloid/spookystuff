@@ -54,6 +54,7 @@ foo
 **/.rootkey.csv
 
 **/.spark-dist
+**/.ipynb_checkpoints
 
 #flatten-maven-plugin
 .flattened-pom.xml
