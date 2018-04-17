@@ -655,8 +655,7 @@
           <!--</compilerPlugin>-->
           <!--</compilerPlugins>-->
           <excludes>
-            <exclude>**/.spark-dist</exclude>
-            <exclude>**/.ipynb_checkpoints</exclude>
+            <exclude>**/.ipynb_checkpoints/*</exclude>
           </excludes>
         </configuration>
       </plugin>
@@ -689,8 +688,7 @@
           <target>${java.version}</target>
 
           <excludes>
-            <exclude>**/.spark-dist</exclude>
-            <exclude>**/.ipynb_checkpoints</exclude>
+            <exclude>**/.ipynb_checkpoints/*</exclude>
           </excludes>
         </configuration>
       </plugin>
