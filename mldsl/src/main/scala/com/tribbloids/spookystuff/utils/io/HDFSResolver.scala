@@ -91,7 +91,7 @@ case class HDFSResolver(
   }
 
   override def output[T](pathStr: String, overwrite: Boolean
-                        )(f: (OutputStream) => T) = doAsUGI {
+                        )(f: OutputStream => T) = doAsUGI {
     val path = new Path(pathStr)
     val fs = path.getFileSystem(getHadoopConf)
 
@@ -114,7 +114,7 @@ case class HDFSResolver(
     }
   }
 
-  override def lockAccessDuring[T](pathStr: String)(f: (String) => T): T = doAsUGI{
+  override def lockAccessDuring[T](pathStr: String)(f: String => T): T = doAsUGI{
 
     val path = new Path(pathStr)
     //    ensureAbsolute(path)

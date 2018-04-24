@@ -216,7 +216,7 @@ trait FunSpecx extends FunSpec with Suitex {
 case class AssertSerializable[T <: AnyRef: ClassTag](
                                                       element: T,
                                                       serializers: Seq[Serializer] = {
-                                                        val conf = SparkEnv.get.conf
+                                                        val conf = TestHelper.TestSparkConf
                                                         Seq(
                                                           new JavaSerializer(conf),
                                                           new KryoSerializer(conf)

@@ -1,5 +1,7 @@
 package com.tribbloids.spookystuff.utils
 
+import java.security.PrivilegedAction
+
 abstract class CommonViews {
 
   implicit class StringView(str: String) {
@@ -27,6 +29,12 @@ abstract class CommonViews {
           replacement
         })
       result
+    }
+  }
+
+  implicit class Function2PrivilegedAction[T](f: => T) extends PrivilegedAction[T] {
+    override def run(): T = {
+      f
     }
   }
 }

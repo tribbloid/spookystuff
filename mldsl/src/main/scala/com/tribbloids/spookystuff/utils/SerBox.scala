@@ -51,7 +51,7 @@ case class SerBox[T: ClassTag](
     case ww: Writable =>
       new SerializableWritable(ww)
     case _ =>
-      throw new UnsupportedOperationException(s"$obj is neither Serializable nor Writable")
+      throw new UnsupportedOperationException(s"$obj is not Serializable or Writable")
   }
 
   val delegate: Either[Serializable, Array[Byte]] = {

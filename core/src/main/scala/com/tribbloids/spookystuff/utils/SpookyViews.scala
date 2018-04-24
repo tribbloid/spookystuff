@@ -42,12 +42,6 @@ abstract class SpookyViews extends CommonViews {
 
   import SpookyViewsSingleton._
 
-  implicit class Function2PrivilegedAction[T](f: => T) extends PrivilegedAction[T] {
-    override def run(): T = {
-      f
-    }
-  }
-
   implicit class SparkContextView(val self: SparkContext) {
 
     def withJob[T](description: String)(fn: T): T = {
