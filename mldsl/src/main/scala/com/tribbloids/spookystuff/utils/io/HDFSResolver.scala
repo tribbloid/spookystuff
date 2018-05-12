@@ -3,7 +3,7 @@ package com.tribbloids.spookystuff.utils.io
 import java.io.{InputStream, OutputStream}
 import java.security.{PrivilegedAction, PrivilegedActionException}
 
-import com.tribbloids.spookystuff.utils.{CommonUtils, SerBox}
+import com.tribbloids.spookystuff.utils.{CommonUtils, RetryExponentialBackoff, SerBox}
 import org.apache.hadoop
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs._
@@ -70,8 +70,9 @@ case class HDFSResolver(
           val lockedPath = new Path(pathStr + lockedSuffix)
 
           //wait for 15 seconds in total
-          retry {
-            assert(!fs.exists(lockedPath), s"File $pathStr is locked by another executor or thread")
+          RetryExponentialBackoff(4, 8000) {
+            assert(!fs.exists(lockedPath),
+              s"File $pathStr is locked by another executor or thread")
             //        Thread.sleep(3*1000)
           }
         }
@@ -122,21 +123,21 @@ case class HDFSResolver(
 
     val lockedPath = new Path(pathStr + lockedSuffix)
 
-    retry {
+    RetryExponentialBackoff(4, 8000) {
       assert(
+        //TODO: add expiration impl
+        //TODO: retry CRC errors on read
         !fs.exists(lockedPath),
-        {
-          Thread.sleep(1000) //fs.exists is really fast, avoid flooding the fs
-          s"File $pathStr is locked by another executor or thread"
-        }
-      )
+        s"File $pathStr is locked by another executor or thread")
     }
 
-    val fileExists = fs.exists(path)
-    if (fileExists) {
+    if (fs.exists(path)) {
       fs.rename(path, lockedPath)
-      retry {
-        assert(fs.exists(lockedPath), s"Locking of $pathStr cannot be persisted")
+
+      RetryExponentialBackoff(4, 8000) {
+        assert(
+          fs.exists(lockedPath),
+          s"Locking of $pathStr cannot be persisted")
       }
     }
 
@@ -145,7 +146,7 @@ case class HDFSResolver(
       result
     }
     finally {
-      if (fileExists) {
+      if (fs.exists(lockedPath)) {
         fs.rename(lockedPath, path)
         fs.delete(lockedPath, true) //TODO: this line is useless?
       }

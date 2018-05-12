@@ -52,7 +52,7 @@ object RetryExponentialBackoff {
            ) = Retry(n,
     {
       n =>
-        (longestInterval / Math.pow(2, n)).asInstanceOf[Long]
+        (longestInterval / Math.pow(2, n - 2)).asInstanceOf[Long]
     },
     silent, callerStr)
 }
