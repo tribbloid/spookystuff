@@ -1,5 +1,8 @@
 package org.apache.spark.ml.dsl.utils
 
+import org.apache.spark.SparkConf
+import org.apache.spark.serializer.{JavaSerializer, KryoSerializer}
+
 object FlowUtils {
 
   def cartesianProductSet[T](xss: Seq[Set[T]]): Set[List[T]] = xss match {
@@ -90,5 +93,15 @@ object FlowUtils {
 
   def indent(text: String, str: String = "\t") = {
     text.split('\n').filter(_.nonEmpty).map(str + _).mkString("\n")
+  }
+
+  lazy val defaultJavaSerializer = {
+    val conf = new SparkConf()
+    new JavaSerializer(conf)
+  }
+
+  lazy val defaultKryoSerializer = {
+    val conf = new SparkConf()
+    new KryoSerializer(conf)
   }
 }

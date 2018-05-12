@@ -2,19 +2,20 @@ package org.apache.spark.ml.dsl.utils
 
 import java.nio.ByteBuffer
 
-import org.apache.spark.SparkConf
-import org.apache.spark.serializer.JavaSerializer
 import org.json4s._
 import org.slf4j.LoggerFactory
 
 import scala.reflect.ClassTag
 
+object FallbackSerializer {
+
+
+}
+
 // fallback mechanism that works for any java object
 abstract class FallbackSerializer(
-                                   sparkSerializer: org.apache.spark.serializer.Serializer = { //TODO: kryo is better
-                                     val conf = new SparkConf()
-                                     new JavaSerializer(conf)
-                                   }
+                                   sparkSerializer: org.apache.spark.serializer.Serializer =
+                                   FlowUtils.defaultJavaSerializer
                                  ) extends Serializer[Any] {
 
   val VID = -47597349821L
