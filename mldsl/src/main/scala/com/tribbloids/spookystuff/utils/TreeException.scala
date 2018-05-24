@@ -1,5 +1,6 @@
 package com.tribbloids.spookystuff.utils
 
+import com.tribbloids.spookystuff.utils.TreeException.Wrap
 import org.apache.spark.ml.dsl.utils.FlowUtils
 import org.apache.spark.sql.catalyst.trees.TreeNode
 
@@ -26,13 +27,14 @@ object TreeException {
     override def simpleString: String = {
       self match {
         case v: TreeException =>
-          v.simpleMessage
+          v.simpleMsg
         case _ =>
           self.getClass.getName + ": " + self.getMessage
       }
     }
 
-    override def verboseString: String = simpleString + "\n" + FlowUtils.stackTracesShowStr(self.getStackTrace)
+    override def verboseString: String = simpleString + "\n" +
+      FlowUtils.stackTracesShowStr(self.getStackTrace)
   }
 
   //  def aggregate(
@@ -137,22 +139,6 @@ object TreeException {
       throw new UnknownError("IMPOSSIBLE!")
     }
   }
-
-  class Node(
-              val simpleMessage: String = "",
-              val cause: Throwable = null
-            ) extends TreeException {
-
-    override def causes: Seq[Throwable] = {
-
-      cause match {
-        case Wrapper(causes) => causes
-        case _ =>
-          Option(cause).toSeq
-      }
-    }
-  }
-
   /**
     *
     * @param es
@@ -166,15 +152,15 @@ object TreeException {
       es.head
     }
     else {
-      Wrapper(causes = es)
+      Wrap(causes = es)
     }
   }
 
-  case class Wrapper(
-                      override val causes: Seq[Throwable] = Nil
-                    ) extends TreeException {
+  case class Wrap(
+                   override val causes: Seq[Throwable] = Nil
+                 ) extends TreeException {
 
-    val simpleMessage: String = s"[CAUSED BY ${causes.size} EXCEPTION(S)]"
+    val simpleMsg: String = s"[CAUSED BY ${causes.size} EXCEPTION(S)]"
   }
 }
 
@@ -182,13 +168,19 @@ trait TreeException extends Throwable {
 
   import com.tribbloids.spookystuff.utils.TreeException.TreeNodeView
 
-  def causes: Seq[Throwable] = Nil
-
+  def causes: Seq[Throwable] = {
+    val cause = getCause
+    cause match {
+      case Wrap(causes) => causes
+      case _ =>
+        Option(cause).toSeq
+    }
+  }
   lazy val treeNodeView = TreeNodeView(this)
 
-  override def getMessage: String = treeNodeView.toString()
+  override def getMessage: String = treeNodeView.treeString(verbose = false)
 
   override def getCause: Throwable = causes.headOption.orNull
 
-  def simpleMessage: String
+  def simpleMsg: String
 }

@@ -68,7 +68,7 @@ case class Nested[T: ClassTag](
 
     val treeException = if (errorBuffer.nonEmpty) {
 
-      val treeException = TreeException.Wrapper(errorBuffer)
+      val treeException = TreeException.Wrap(errorBuffer)
       if (failFast) throw treeException
       Some(treeException)
     }

@@ -2,6 +2,7 @@ package com.tribbloids.spookystuff.utils.io
 
 import java.io.{InputStream, OutputStream}
 import java.security.{PrivilegedAction, PrivilegedActionException}
+import java.util.concurrent.TimeUnit
 
 import com.tribbloids.spookystuff.utils.{CommonUtils, SerBox}
 import org.apache.hadoop
@@ -9,15 +10,18 @@ import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs._
 import org.apache.hadoop.security.UserGroupInformation
 import org.apache.spark.ml.dsl.utils.metadata.MetadataMap
+import org.slf4j.LoggerFactory
 
 import scala.collection.immutable.ListMap
+import scala.concurrent.duration.Duration
 
 /**
   * Created by peng on 17/05/17.
   */
 case class HDFSResolver(
                          hadoopConf: SerBox[Configuration],
-                         ugiFactory: () => Option[UserGroupInformation] = HDFSResolver.noUGIFactory
+                         ugiFactory: () => Option[UserGroupInformation] = HDFSResolver.noUGIFactory,
+                         lockExpireAfter: Duration = 24 -> TimeUnit.HOURS
                        ) extends URIResolver {
 
   final def lockedSuffix: String = ".locked"
@@ -56,6 +60,7 @@ case class HDFSResolver(
     }
   }
 
+  //TODO: retry CRC errors on read
   def input[T](pathStr: String)(f: InputStream => T): Resource[T] = {
     val path: Path = new Path(pathStr)
     val fs: FileSystem = path.getFileSystem(getHadoopConf)
@@ -124,11 +129,21 @@ case class HDFSResolver(
     val lockedPath = new Path(pathStr + lockedSuffix)
 
     retry {
-      assert(
-        //TODO: add expiration impl
-        //TODO: retry CRC errors on read
-        !fs.exists(lockedPath),
-        s"File $pathStr is locked by another executor or thread")
+      var hasLock = fs.exists(lockedPath)
+      if (hasLock) {
+        val status = fs.getFileStatus(lockedPath)
+        val lockedTime = status.getModificationTime
+        val lockedDuration = System.currentTimeMillis() - lockedTime
+
+        val errorInfo =
+          s"File $pathStr is locked by another executor or thread for $lockedDuration milliseconds"
+        if (lockedDuration >= this.lockExpireAfter.toMillis) {
+          LoggerFactory.getLogger(this.getClass).error(errorInfo + ", lock has expired")
+        }
+        else {
+          throw new AssertionError(errorInfo)
+        }
+      }
     }
 
     if (fs.exists(path)) {
