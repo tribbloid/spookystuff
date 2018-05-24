@@ -3,7 +3,6 @@ package com.tribbloids.spookystuff.utils.io
 import java.io._
 import java.nio.file.FileAlreadyExistsException
 
-import com.tribbloids.spookystuff.utils.RetryExponentialBackoff
 import org.apache.spark.ml.dsl.utils.metadata.MetadataMap
 
 import scala.collection.immutable.ListMap
@@ -12,11 +11,11 @@ object LocalResolver extends URIResolver {
 
   val lockedSuffix: String = ".locked"
 
-  def ensureAbsolute(file: File) = {
+  def ensureAbsolute(file: File): Unit = {
     assert(file.isAbsolute, s"BAD DESIGN: ${file.getPath} is not an absolute path")
   }
 
-  override def input[T](pathStr: String)(f: InputStream => T) = {
+  override def input[T](pathStr: String)(f: InputStream => T): Resource[T] = {
 
     //    val file = new File(pathStr)
     //    ensureAbsolute(file)
@@ -32,7 +31,7 @@ object LocalResolver extends URIResolver {
           val lockedFile = new File(lockedPath)
 
           //wait for 15 seconds in total
-          RetryExponentialBackoff(4, 8000) {
+          retry {
             assert(!lockedFile.exists(),
               s"File $pathStr is locked by another executor or thread")
           }
@@ -48,12 +47,12 @@ object LocalResolver extends URIResolver {
         }
       }
 
-      override lazy val metadata = describe(file)
+      override lazy val metadata: ResourceMD = describe(file)
     }
 
   }
 
-  override def output[T](pathStr: String, overwrite: Boolean)(f: OutputStream => T) = {
+  override def output[T](pathStr: String, overwrite: Boolean)(f: OutputStream => T): Resource[T] = {
 
     val file = new File(pathStr)
     //    ensureAbsolute(file)
@@ -85,7 +84,7 @@ object LocalResolver extends URIResolver {
         }
       }
 
-      override lazy val metadata = describe(file)
+      override lazy val metadata: ResourceMD = describe(file)
     }
   }
 
@@ -97,7 +96,7 @@ object LocalResolver extends URIResolver {
     val lockedPath = pathStr + lockedSuffix
     val lockedFile = new File(lockedPath)
 
-    RetryExponentialBackoff(4, 8000) {
+    retry {
       assert(!lockedFile.exists(),
         s"File $pathStr is locked by another executor or thread")
       //        Thread.sleep(3*1000)

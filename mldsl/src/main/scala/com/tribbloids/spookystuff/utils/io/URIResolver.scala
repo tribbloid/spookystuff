@@ -3,8 +3,7 @@ package com.tribbloids.spookystuff.utils.io
 import java.io._
 import java.lang.reflect.InvocationTargetException
 
-import com.tribbloids.spookystuff.utils.CommonUtils
-import org.json4s.JsonAST.JValue
+import com.tribbloids.spookystuff.utils.{CommonUtils, Retry, RetryExponentialBackoff}
 
 import scala.collection.immutable.ListMap
 import scala.language.implicitConversions
@@ -26,7 +25,7 @@ abstract class URIResolver extends Serializable {
 
   def toAbsolute(pathStr: String): String = pathStr
 
-  final def isAbsolute(pathStr: String) = {
+  final def isAbsolute(pathStr: String): Boolean = {
     toAbsolute(pathStr) == pathStr
   }
 
@@ -37,15 +36,7 @@ abstract class URIResolver extends Serializable {
     result
   }
 
-  //takes 10 seconds
-  def DFSBlockedAccessRetries = 10
-  def DFSBlockedAccessInterval = 1000
-
-  def retry[T](f: =>T): T = {
-    CommonUtils.retry(DFSBlockedAccessRetries, DFSBlockedAccessInterval){
-      f
-    }
-  }
+  def retry: Retry = RetryExponentialBackoff(4, 8000)
 
   protected def reflectiveMetadata[T](status: T): ListMap[String, Any] = {
     //use reflection for all getter & boolean getter

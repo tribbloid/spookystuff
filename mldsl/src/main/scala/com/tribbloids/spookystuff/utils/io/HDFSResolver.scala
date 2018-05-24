@@ -3,7 +3,7 @@ package com.tribbloids.spookystuff.utils.io
 import java.io.{InputStream, OutputStream}
 import java.security.{PrivilegedAction, PrivilegedActionException}
 
-import com.tribbloids.spookystuff.utils.{CommonUtils, RetryExponentialBackoff, SerBox}
+import com.tribbloids.spookystuff.utils.{CommonUtils, SerBox}
 import org.apache.hadoop
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs._
@@ -70,7 +70,7 @@ case class HDFSResolver(
           val lockedPath = new Path(pathStr + lockedSuffix)
 
           //wait for 15 seconds in total
-          RetryExponentialBackoff(4, 8000) {
+          retry {
             assert(!fs.exists(lockedPath),
               s"File $pathStr is locked by another executor or thread")
             //        Thread.sleep(3*1000)
@@ -87,12 +87,12 @@ case class HDFSResolver(
         }
       }
 
-      override lazy val metadata = describe(path)
+      override lazy val metadata: ResourceMD = describe(path)
     }
   }
 
   override def output[T](pathStr: String, overwrite: Boolean
-                        )(f: OutputStream => T) = doAsUGI {
+                        )(f: OutputStream => T): Resource[T] = doAsUGI {
     val path = new Path(pathStr)
     val fs = path.getFileSystem(getHadoopConf)
 
@@ -111,7 +111,7 @@ case class HDFSResolver(
         }
       }
 
-      override lazy val metadata = describe(path)
+      override lazy val metadata: ResourceMD = describe(path)
     }
   }
 
@@ -123,7 +123,7 @@ case class HDFSResolver(
 
     val lockedPath = new Path(pathStr + lockedSuffix)
 
-    RetryExponentialBackoff(4, 8000) {
+    retry {
       assert(
         //TODO: add expiration impl
         //TODO: retry CRC errors on read
@@ -134,7 +134,7 @@ case class HDFSResolver(
     if (fs.exists(path)) {
       fs.rename(path, lockedPath)
 
-      RetryExponentialBackoff(4, 8000) {
+      retry {
         assert(
           fs.exists(lockedPath),
           s"Locking of $pathStr cannot be persisted")
@@ -229,7 +229,7 @@ case class HDFSResolver(
 
 object HDFSResolver {
 
-  def noUGIFactory = () => None
+  def noUGIFactory: () => None.type = () => None
 
   //  def serviceUGIFactory = () => Some(SparkHelper.serviceUGI)
   //
