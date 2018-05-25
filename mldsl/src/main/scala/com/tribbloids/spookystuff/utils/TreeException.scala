@@ -141,18 +141,18 @@ object TreeException {
   }
   /**
     *
-    * @param es
+    * @param causes
     * @param upliftUnary not recommended to set to false, should use Wrapper() directly for type safety
     * @return
     */
-  def wrap(es: Seq[Throwable], upliftUnary: Boolean = true): Throwable = {
-    require(es.nonEmpty, "No exception")
+  def wrap(causes: Seq[Throwable], upliftUnary: Boolean = true): Throwable = {
+    require(causes.nonEmpty, "No exception")
 
-    if (es.size == 1 && upliftUnary) {
-      es.head
+    if (causes.size == 1 && upliftUnary) {
+      causes.head
     }
     else {
-      Wrap(causes = es)
+      Wrap(causes = causes)
     }
   }
 

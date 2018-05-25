@@ -8,7 +8,7 @@ import org.apache.hadoop.security.UserGroupInformation
 /**
   * Created by peng on 01/09/16.
   */
-class URIResolverSuite extends SpookyEnvFixture with LocalPathDocsFixture {
+class HDFSResolverSuite extends SpookyEnvFixture with LocalPathDocsFixture {
 
   val resolverWithUser = HDFSResolver(
     sc.hadoopConfiguration,
