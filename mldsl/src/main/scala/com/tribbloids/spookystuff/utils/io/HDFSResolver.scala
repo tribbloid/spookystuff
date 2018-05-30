@@ -5,7 +5,6 @@ import java.security.{PrivilegedAction, PrivilegedActionException}
 import java.util.concurrent.TimeUnit
 
 import com.tribbloids.spookystuff.utils.{CommonUtils, SerBox}
-import org.apache.hadoop
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs._
 import org.apache.hadoop.security.UserGroupInformation
@@ -74,12 +73,7 @@ case class HDFSResolver(
 
           val lockedPath = new Path(pathStr + lockedSuffix)
 
-          //wait for 15 seconds in total
-          retry {
-            assert(!fs.exists(lockedPath),
-              s"File $pathStr is locked by another executor or thread")
-            //        Thread.sleep(3*1000)
-          }
+          assertNotLocked(fs, lockedPath)
         }
 
         val fis: FSDataInputStream = fs.open(path)
@@ -124,27 +118,11 @@ case class HDFSResolver(
 
     val path = new Path(pathStr)
     //    ensureAbsolute(path)
-    val fs: hadoop.fs.FileSystem = path.getFileSystem(getHadoopConf)
+    val fs: FileSystem = path.getFileSystem(getHadoopConf)
 
     val lockedPath = new Path(pathStr + lockedSuffix)
 
-    retry {
-      var hasLock = fs.exists(lockedPath)
-      if (hasLock) {
-        val status = fs.getFileStatus(lockedPath)
-        val lockedTime = status.getModificationTime
-        val lockedDuration = System.currentTimeMillis() - lockedTime
-
-        val errorInfo =
-          s"File $pathStr is locked by another executor or thread for $lockedDuration milliseconds"
-        if (lockedDuration >= this.lockExpireAfter.toMillis) {
-          LoggerFactory.getLogger(this.getClass).error(errorInfo + ", lock has expired")
-        }
-        else {
-          throw new AssertionError(errorInfo)
-        }
-      }
-    }
+    assertNotLocked(fs, lockedPath)
 
     if (fs.exists(path)) {
       fs.rename(path, lockedPath)
@@ -164,6 +142,26 @@ case class HDFSResolver(
       if (fs.exists(lockedPath)) {
         fs.rename(lockedPath, path)
         fs.delete(lockedPath, true) //TODO: this line is useless?
+      }
+    }
+  }
+
+  def assertNotLocked[T](fs: FileSystem, lockedPath: Path) = {
+    retry {
+      val hasLock = fs.exists(lockedPath)
+      if (hasLock) {
+        val status = fs.getFileStatus(lockedPath)
+        val lockedTime = status.getModificationTime
+        val lockedDuration = System.currentTimeMillis() - lockedTime
+
+        val errorInfo =
+          s"File $lockedPath is locked by another executor or thread for $lockedDuration milliseconds"
+        if (lockedDuration >= this.lockExpireAfter.toMillis) {
+          LoggerFactory.getLogger(this.getClass).error(errorInfo + ", lock has expired")
+        }
+        else {
+          throw new AssertionError(errorInfo)
+        }
       }
     }
   }

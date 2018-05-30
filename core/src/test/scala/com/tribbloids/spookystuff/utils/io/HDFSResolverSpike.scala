@@ -1,0 +1,56 @@
+package com.tribbloids.spookystuff.utils.io
+
+import com.tribbloids.spookystuff.testutils.TestHelper
+import org.apache.hadoop.conf.Configuration
+import org.apache.hadoop.fs.ftp.FTPFileSystem
+import org.apache.hadoop.fs.{FileSystem, Path}
+import org.scalatest.{FunSpec, Ignore}
+
+@Ignore
+class HDFSResolverSpike extends FunSpec {
+
+  it("HDFSResolver can read from FTP server") {
+
+    val conf = new Configuration(TestHelper.TestSC.hadoopConfiguration)
+//    conf.set(FTPFileSystem.FS_FTP_HOST + "mirror.csclub.uwaterloo.ca", "ftp://mirror.csclub.uwaterloo.ca")
+    conf.set(FTPFileSystem.FS_FTP_USER_PREFIX + "mirror.csclub.uwaterloo.ca", "anonymous")
+//    conf.set(FTPFileSystem.FS_FTP_PASSWORD_PREFIX + "mirror.csclub.uwaterloo.ca", "")
+
+    val resolvers: Seq[URIResolver] = Seq(
+      HDFSResolver(conf),
+      FTPResolver(5000)
+    )
+
+    val mds = resolvers.map {
+      resolver =>
+        {
+//          val path = "ftp://mirror.csclub.uwaterloo.ca/apache/"
+          val path = "ftp://mirror.csclub.uwaterloo.ca/apache/spark/spark-1.6.3/spark-1.6.3-bin-hadoop1-scala2.11.tgz"
+          val resource = resolver.input(path){
+            is =>
+              Unit
+          }
+          val md = resource.metadata
+          md
+        }
+    }
+
+    mds.foreach(println)
+  }
+
+  it("low level test case") {
+
+
+    val conf = new Configuration()
+    conf.set(FTPFileSystem.FS_FTP_USER_PREFIX + "mirror.csclub.uwaterloo.ca", "anonymous")
+
+    val url = "ftp://mirror.csclub.uwaterloo.ca/apache/"
+    val path = new Path(url)
+    val fs: FileSystem = path.getFileSystem(conf)
+
+    val list = fs.listFiles(path, false)
+    while(list.hasNext) {
+      println(list.next())
+    }
+  }
+}
