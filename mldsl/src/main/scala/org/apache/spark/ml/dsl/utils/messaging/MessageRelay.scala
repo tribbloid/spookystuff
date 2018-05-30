@@ -3,9 +3,9 @@ package org.apache.spark.ml.dsl.utils.messaging
 import org.apache.spark.ml.dsl.utils.refl.ScalaType
 import org.apache.spark.util.Utils
 import org.json4s.Formats
-import spire.ClassTag
 
 import scala.language.implicitConversions
+import scala.reflect.ClassTag
 import scala.util.Try
 
 abstract class MessageRelay[Proto: ClassTag] extends Codec[Proto] {
