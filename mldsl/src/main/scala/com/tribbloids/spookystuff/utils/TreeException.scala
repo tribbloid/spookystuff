@@ -180,7 +180,5 @@ trait TreeException extends Throwable {
 
   override def getMessage: String = treeNodeView.treeString(verbose = false)
 
-  override def getCause: Throwable = causes.headOption.orNull
-
   def simpleMsg: String
 }
