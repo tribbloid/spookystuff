@@ -2,10 +2,10 @@ package com.tribbloids.spookystuff.utils.io
 
 import java.io._
 import java.net.{InetSocketAddress, URI}
-import javax.net.ssl.SSLContext
 
 import com.tribbloids.spookystuff.session.WebProxySetting
 import com.tribbloids.spookystuff.utils.http._
+import javax.net.ssl.SSLContext
 import org.apache.http.client.HttpClient
 import org.apache.http.client.config.RequestConfig
 import org.apache.http.client.methods._
@@ -15,8 +15,7 @@ import org.apache.http.conn.socket.ConnectionSocketFactory
 import org.apache.http.impl.client.{CloseableHttpClient, HttpClients}
 import org.apache.http.impl.conn.PoolingHttpClientConnectionManager
 import org.apache.http.protocol.HttpCoreContext
-import org.apache.http.{HttpEntity, HttpHost}
-import org.apache.spark.ml.dsl.utils.metadata.MetadataMap
+import org.apache.http.{HttpEntity, HttpHost, HttpResponse}
 
 object HTTPResolver {
 
@@ -107,83 +106,102 @@ case class HTTPResolver(
                            v =>
                              new HttpGet(v)
                          }
-                         //TODO: add back
-                         //                         output2Request: URI => HttpEntityEnclosingRequestBase = {
+                         //                         output2Request: URI => HttpEntityEnclosingRequestBase = { //TODO: need test
                          //                           v =>
                          //                             new HttpPost(v)
                          //                         }
                        ) extends URIResolver {
 
-  override def input[T](pathStr: String)(f: InputStream => T) = {
+//  val currentReq = context.getAttribute(HttpCoreContext.HTTP_REQUEST).asInstanceOf[HttpUriRequest]
+//  val currentHost = context.getAttribute(HttpCoreContext.HTTP_TARGET_HOST).asInstanceOf[HttpHost]
+//  val currentUrl = if (currentReq.getURI.isAbsolute) {
+//    currentReq.getURI.toString
+//  }
+//  else {
+//    currentHost.toURI + currentReq.getURI
+//  }
 
-    val uri = HttpUtils.uri(pathStr)
-    val request = input2Request(uri)
-    httpInvoke(request)(f)
-  }
+  override def Execution(pathStr: String) = new Execution(pathStr)
+  case class Execution(pathStr: String) extends super.Execution {
 
-  override def output[T](pathStr: String, overwrite: Boolean)(f: OutputStream => T) = {
-    ???
-  }
+    override def absolutePathStr: String = pathStr
 
-  def httpInvoke[T](
-                     request: HttpUriRequest
-                   )(
-                     processResponseBody: InputStream => T
-                   ): Resource[T] = {
-    val response = client.execute(request, context)
-    try {
-      val currentReq = context.getAttribute(HttpCoreContext.HTTP_REQUEST).asInstanceOf[HttpUriRequest]
-      val currentHost = context.getAttribute(HttpCoreContext.HTTP_TARGET_HOST).asInstanceOf[HttpHost]
-      val currentUrl = if (currentReq.getURI.isAbsolute) {
-        currentReq.getURI.toString
+    override def input[T](f: InputResource => T) = {
+
+      val uri = HttpUtils.uri(pathStr)
+      val ir = new InputResource with HttpResource[InputStream] {
+        override lazy val request: HttpUriRequest = input2Request(uri)
+
+        override protected def _stream: InputStream = entity.getContent
+
+        override lazy val isAlreadyExisting: Boolean = {
+          getStatusCode.exists(_.toString.startsWith("2"))
+        }
       }
-      else {
-        currentHost.toURI + currentReq.getURI
-      }
-
-      val entity: HttpEntity = response.getEntity
-
-      val is = entity.getContent
-      val result: T = try {
-        processResponseBody(is)
+      try {
+        f(ir)
       }
       finally {
-        is.close()
+        ir.close()
       }
-
-      SimpleResource(
-        result,
-        {
-          import Resource._
-
-          val map = MetadataMap(
-            LENGTH -> entity.getContentLength
-          )
-          val headers: Seq[(String, String)] = response.getAllHeaders.map {
-            header =>
-              header.getName -> header.getValue
-          }
-            .toSeq
-
-          map ++ headers ++ MetadataMap(
-            URI_ -> request.getURI.toString,
-            NAME -> entity.getContentType.getName
-          )
-        }
-      )
+      //    catch {
+      //      case e: ClientProtocolException =>
+      //        val cause = e.getCause
+      //        if (cause.isInstanceOf[RedirectException]) NoDoc(List(this)) //TODO: is it a reasonable exception? don't think so
+      //        else throw e
+      //      case e: Throwable =>
+      //        throw e
+      //    }
     }
-    finally {
-      response match {
+
+    override def remove(mustExist: Boolean): Unit = {
+      ???
+    }
+
+    override def output[T](overwrite: Boolean)(f: OutputResource => T): T = {
+      ???
+    }
+  }
+
+  trait HttpResource[T] extends Resource[T] {
+
+    def request: HttpUriRequest
+
+    @transient var existingResponse: HttpResponse = _
+    lazy val response: HttpResponse = {
+      existingResponse = client.execute(request, context)
+      existingResponse
+    }
+
+    lazy val entity: HttpEntity = response.getEntity
+
+    override lazy val getURI: String = request.getURI.toString
+
+    override lazy val getName: String = entity.getContentType.getName
+
+    override lazy val getContentType: String = entity.getContentType.getValue
+
+    override lazy val getLenth: Long = entity.getContentLength
+
+    override lazy val getStatusCode: Option[Int] = Some(response.getStatusLine.getStatusCode)
+
+    override lazy val getLastModified: Long = -1
+
+    override lazy val _metadata: ResourceMD = {
+      val map = response.getAllHeaders.map {
+        header =>
+          header.getName -> header.getValue
+      }
+        .toSeq
+      ResourceMD.apply(map: _*)
+    }
+
+    abstract override def cleanImpl(): Unit = {
+      super.cleanImpl()
+      Option(existingResponse).foreach {
         case v: Closeable => v.close()
+        case _ =>
       }
     }
-    //    catch {
-    //      case e: ClientProtocolException =>
-    //        val cause = e.getCause
-    //        if (cause.isInstanceOf[RedirectException]) NoDoc(List(this)) //TODO: is it a reasonable exception? don't think so
-    //        else throw e
-    //      case e: Throwable =>
-    //        throw e
-    //    }
   }
 }

@@ -171,7 +171,7 @@ class PythonDriver(
       }
     }
       .orElse(
-        Try(this.close())
+        Try(this.closePython())
       )
       .getOrElse(this.interrupt())
   }

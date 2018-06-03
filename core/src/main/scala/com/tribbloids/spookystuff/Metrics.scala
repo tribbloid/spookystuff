@@ -22,12 +22,20 @@ object Metrics {
   object CanBuildFrom {
     trait BuildLong[T] extends CanBuildFrom[T, lang.Long] {
       override def apply(v1: T) = new Acc(new LongAccumulator()) {
-        override def +=(v: Number): Unit = self.add(v.longValue())
+        override def +=(v: Number): Unit = {
+          val vv = v.longValue()
+          if (vv > 0)
+            self.add(v.longValue())
+        }
       }
     }
     trait BuildDouble[T] extends CanBuildFrom[T, lang.Double] {
       override def apply(v1: T) = new Acc(new DoubleAccumulator()) {
-        override def +=(v: Number): Unit = self.add(v.doubleValue())
+        override def +=(v: Number): Unit = {
+          val vv = v.doubleValue()
+          if (vv> 0)
+            self.add(v.doubleValue())
+        }
       }
     }
 

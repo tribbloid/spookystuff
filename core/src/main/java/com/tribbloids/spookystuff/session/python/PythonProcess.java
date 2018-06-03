@@ -70,7 +70,7 @@ public class PythonProcess {
     assert lines[lines.length -1].endsWith("2");
   }
 
-  public void close() throws IOException {
+  public void closePython() throws IOException {
     process.destroy();
     reader.close();
     writer.close();
@@ -84,7 +84,7 @@ public class PythonProcess {
       Runtime.getRuntime().exec("kill -SIGINT " + pid);
     } else {
       logger.warn("Non UNIX/Linux system, close the interpreter");
-      close();
+      closePython();
     }
   }
 

@@ -229,8 +229,8 @@ These special characters are often called "metacharacters".
         //assert(Files.exists(dst))
         //NIO copy should use non-NIO for validation to eliminate stream caching
         val dstContent = LocalResolver.input(dst.toString){
-          fis =>
-            IOUtils.toByteArray(fis)
+          in =>
+            IOUtils.toByteArray(in.stream)
         }
         //      assert(srcContent.length == dstContent.length, pathsStr + " copy failed")
         LoggerFactory.getLogger(this.getClass).debug(pathsStr + s" ${dstContent.length} byte(s) copied")

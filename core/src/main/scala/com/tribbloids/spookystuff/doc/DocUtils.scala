@@ -53,8 +53,8 @@ object DocUtils {
   def load(pathStr: String)(spooky: SpookyContext): Array[Byte] =
     dfsRead("load", pathStr, spooky) {
       val result = spooky.pathResolver.input(pathStr) {
-        fis =>
-          IOUtils.toByteArray(fis)
+        in =>
+          IOUtils.toByteArray(in.stream)
       }
 
       result
@@ -73,9 +73,9 @@ object DocUtils {
     val list = pageLikes.toList // Seq may be a stream that cannot be serialized
 
     spooky.pathResolver.output(pathStr, overwrite) {
-      fos =>
+      out =>
         val ser = SparkEnv.get.serializer.newInstance()
-        val serOut = ser.serializeStream(fos)
+        val serOut = ser.serializeStream(out.stream)
 
         try {
           serOut.writeObject (
@@ -92,10 +92,10 @@ object DocUtils {
     dfsRead("restore", pathStr, spooky) {
 
       val result = spooky.pathResolver.input(pathStr) {
-        fis =>
+        in =>
           val ser = SparkEnv.get.serializer.newInstance()
 
-          val serIn = ser.deserializeStream(fis)
+          val serIn = ser.deserializeStream(in.stream)
           try {
             serIn.readObject[List[T]]()
           }

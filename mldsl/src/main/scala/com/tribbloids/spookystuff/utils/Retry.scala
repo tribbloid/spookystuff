@@ -61,7 +61,7 @@ case class Retry(
                   n: Int = 3,
                   intervalFactory: Int => Long = {_ => 0L},
                   silent: Boolean = false,
-                  callerStr: String = null
+                  callerShowStr: String = null
                 ) {
 
   def apply[T](fn: =>T) = {
@@ -78,22 +78,24 @@ object DefaultRetry extends Retry
 
 case class RetryImpl[T](
                          fn: () => T,
-                         defaultOptions: Retry = DefaultRetry
+                         defaultRetry: Retry = DefaultRetry
                        ) {
 
-  def get: T = get(defaultOptions)
+  def get: T = get(defaultRetry)
 
   @annotation.tailrec
   final def get(
-                 options: Retry
+                 retry: Retry
                ): T = {
 
-    import options._
+    import retry._
 
-    var _callerStr = callerStr
-    if (callerStr == null)
-      _callerStr = FlowUtils.callerShowStr()
-    val interval = intervalFactory(n)
+    lazy val _callerShowStr = {
+      Option(callerShowStr).getOrElse {
+        FlowUtils.callerShowStr()
+      }
+    }
+    lazy val interval = intervalFactory(n)
     Try { fn() } match {
       case Success(x) =>
         x
@@ -104,13 +106,13 @@ case class RetryImpl[T](
           val logger = LoggerFactory.getLogger(this.getClass)
           logger.warn(
             s"Retrying locally on ${e.getClass.getSimpleName} in ${interval.toDouble/1000} second(s)... ${n-1} time(s) left" +
-              "\t@ " + _callerStr +
+              "\t@ " + _callerShowStr +
               "\n" + e.getMessage
           )
           logger.debug("\t\\-->", e)
         }
         Thread.sleep(interval)
-        get(options.copy(n = n - 1))
+        get(retry.copy(n = n - 1))
       case Failure(e) =>
         throw e
     }
@@ -119,7 +121,7 @@ case class RetryImpl[T](
 
   def map[T2](g: Try[T] => T2): RetryImpl[T2] = {
 
-    val effectiveG: (Try[T]) => T2 = {
+    val effectiveG: Try[T] => T2 = {
       case Failure(ee: NoRetry.ExceptionWrapper) =>
         NoRetry.mapException {
           g(Failure[T](ee.getCause))
@@ -135,7 +137,7 @@ case class RetryImpl[T](
   }
 
   def mapSuccess[T2](g: T => T2): RetryImpl[T2] = {
-    val effectiveG: (Try[T]) => T2 = {
+    val effectiveG: Try[T] => T2 = {
       case Success(v) => g(v)
       case Failure(ee) => throw ee
     }

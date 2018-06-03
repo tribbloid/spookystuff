@@ -6,13 +6,13 @@ import com.tribbloids.spookystuff.SpookyException
   * Created by peng on 13/12/16.
   */
 class UAVException(
-                    override val message: String = "",
+                    val simpleMsg: String = "",
                     override val cause: Throwable = null
-                  ) extends SpookyException(message, cause) {
+                  ) extends SpookyException {
 
 }
 
 class ReinforcementDepletedException(
-                                      override val message: String = "",
+                                      override val simpleMsg: String = "",
                                       override val cause: Throwable = null
-                                    ) extends UAVException(message, cause)
+                                    ) extends UAVException(simpleMsg, cause)

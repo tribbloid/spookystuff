@@ -1,11 +1,9 @@
 package com.tribbloids.spookystuff.utils.io
 
 import java.io._
-import java.lang.reflect.InvocationTargetException
 
-import com.tribbloids.spookystuff.utils.{CommonUtils, Retry, RetryExponentialBackoff}
+import com.tribbloids.spookystuff.utils.{CommonUtils, NOTSerializable, Retry, RetryExponentialBackoff}
 
-import scala.collection.immutable.ListMap
 import scala.language.implicitConversions
 
 /*
@@ -17,16 +15,22 @@ import scala.language.implicitConversions
  */
 abstract class URIResolver extends Serializable {
 
-  def input[T](pathStr: String)(f: InputStream => T): Resource[T]
+  def Execution(pathStr: String): this.Execution
+  protected[io] def retry: Retry = RetryExponentialBackoff(4, 8000)
 
-  def output[T](pathStr: String, overwrite: Boolean)(f: OutputStream => T): Resource[T]
+  final def input[T](pathStr: String)(f: InputResource => T): T = Execution(pathStr).input(f)
 
-  def lockAccessDuring[T](pathStr: String)(f: String => T): T = {f(pathStr)}
+  final def output[T](pathStr: String, overwrite: Boolean)(f: OutputResource => T): T = Execution(pathStr)
+    .output(overwrite)(f)
 
-  def toAbsolute(pathStr: String): String = pathStr
+  final def toAbsolute(pathStr: String): String = Execution(pathStr).absolutePathStr
 
   final def isAbsolute(pathStr: String): Boolean = {
     toAbsolute(pathStr) == pathStr
+  }
+
+  def ensureAbsolute(file: File): Unit = {
+    assert(file.isAbsolute, s"BAD DESIGN: ${file.getPath} is not an absolute path")
   }
 
   def resourceOrAbsolute(pathStr: String): String = {
@@ -36,38 +40,37 @@ abstract class URIResolver extends Serializable {
     result
   }
 
-  def retry: Retry = RetryExponentialBackoff(4, 8000)
+  /**
+    * ensure sequential access
+    *
+    */
+//  def lockAccessDuring[T](pathStr: String)(f: String => T): T = {f(pathStr)}
 
-  protected def reflectiveMetadata[T](status: T): ListMap[String, Any] = {
-    //use reflection for all getter & boolean getter
-    //TODO: move to utility
-    val methods = status.getClass.getMethods
-    val getters = methods.filter {
-      m =>
-        m.getName.startsWith("get") && (m.getParameterTypes.length == 0)
-    }
-      .map(v => v.getName.stripPrefix("get") -> v)
-    val booleanGetters = methods.filter {
-      m =>
-        m.getName.startsWith("is") && (m.getParameterTypes.length == 0)
-    }
-      .map(v => v.getName -> v)
-    val validMethods = getters ++ booleanGetters
-    val kvs = validMethods.flatMap {
-      tuple =>
-        try {
-          tuple._2.setAccessible(true)
-          Some(tuple._1 -> tuple._2.invoke(status).asInstanceOf[Any])
-        }
-        catch {
-          case e: InvocationTargetException =>
-            None
-        }
-    }
-    ListMap(kvs: _*)
+  trait Execution extends NOTSerializable {
+
+    def outer: URIResolver = URIResolver.this
+
+    def absolutePathStr: String
+
+    // read: may execute lazily
+    def input[T](f: InputResource => T): T
+
+    // remove & write: execute immediately! write an empty file even if stream is not used
+    def remove(mustExist: Boolean = true): Unit
+    def output[T](overwrite: Boolean)(f: OutputResource => T): T
+
+//    final def peek(): Unit] = {
+//      read({_ =>})
+//    }
+//
+//    final def touch(overwrite: Boolean = false): Resource[Unit] = {
+//      write(overwrite, { _ =>})
+//
+//      //          retry { //TODO: necessary?
+//      //            assert(
+//      //              fs.exists(lockPath),
+//      //              s"Lock '$lockPath' cannot be persisted")
+//      //          }
+//    }
   }
-}
-
-object URIResolver {
-  final val DIR_TYPE = "inode/directory; charset=UTF-8"
 }

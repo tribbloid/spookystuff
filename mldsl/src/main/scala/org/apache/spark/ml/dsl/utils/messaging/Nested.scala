@@ -60,6 +60,8 @@ case class Nested[T: ClassTag](
         }
       //      case prod: Product =>
       //        expandProduct(prod)
+      case null =>
+        null
       case v@ _ =>
         val e = new UnsupportedOperationException(s"$v is not an instance of ${implicitly[ClassTag[T]]}")
         errorBuffer += e

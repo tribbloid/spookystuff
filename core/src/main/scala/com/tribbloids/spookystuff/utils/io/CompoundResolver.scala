@@ -1,26 +1,35 @@
 package com.tribbloids.spookystuff.utils.io
 
-import java.io.{InputStream, OutputStream}
 import java.net.URI
 
 import com.tribbloids.spookystuff.session.WebProxySetting
-import com.tribbloids.spookystuff.utils.{NOTSerializable, SerBox}
 import com.tribbloids.spookystuff.utils.http._
+import com.tribbloids.spookystuff.utils.{NOTSerializable, SerBox}
 import org.apache.hadoop.conf.Configuration
 import org.apache.http.client.methods.HttpRequestBase
 
 trait CompoundResolver extends URIResolver {
 
-  def getImpl(uri: String): URIResolver
+  def getImpl(pathStr: String): URIResolver
 
-  override def input[T](pathStr: String)(f: InputStream => T) =
-    getImpl(pathStr).input(pathStr)(f)
+  override def Execution(pathStr: String) = new Execution(pathStr)
+  case class Execution(pathStr: String) extends super.Execution {
 
-  override def output[T](pathStr: String, overwrite: Boolean)(f: OutputStream => T) =
-    getImpl(pathStr).output(pathStr, overwrite)(f)
+    lazy val impl = getImpl(pathStr).Execution(pathStr)
 
-  override def lockAccessDuring[T](pathStr: String)(f: String => T) =
-    getImpl(pathStr).lockAccessDuring(pathStr)(f)
+    override def absolutePathStr: String = impl.absolutePathStr
+
+    override def input[T](f: InputResource => T) =
+      impl.input(f)
+
+    override def output[T](overwrite: Boolean)(f: OutputResource => T) =
+      impl.output(overwrite)(f)
+
+    override def remove(mustExist: Boolean): Unit = impl.remove(mustExist)
+  }
+
+//  override def lockAccessDuring[T](pathStr: String)(f: String => T) =
+//    getImpl(pathStr).lockAccessDuring(pathStr)(f)
 }
 
 class FSResolver(

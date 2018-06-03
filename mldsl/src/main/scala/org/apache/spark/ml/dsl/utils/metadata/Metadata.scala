@@ -1,47 +1,20 @@
 package org.apache.spark.ml.dsl.utils.metadata
 
+import java.lang.reflect.InvocationTargetException
+
 import com.tribbloids.spookystuff.utils.TreeException
 import org.apache.spark.ml.dsl.utils.messaging.{MessageRelay, MessageWriter, Nested, Registry}
+import org.apache.spark.ml.dsl.utils.refl.ScalaType
 import org.json4s
 import org.json4s.JsonAST.{JObject, JString, JValue}
 
 import scala.collection.immutable.ListMap
 import scala.language.implicitConversions
-
-trait MetadataKey extends Serializable {
-  val name: String
-}
-object MetadataKey {
-
-
-}
-
-object MetadataMap {
-
-  def apply(vs: Tuple2[MetadataKey, Any]*) = ListMap(vs.map{case (k,v) => k.name -> v}: _*)
-}
+import scala.reflect.ClassTag
 
 case class Metadata(
-                     map: ListMap[String, Any] = ListMap.empty
-                   ) {
-
-  //  def +(tuple: (Param[_], Any)) = this.copy(this.map + (tuple._1.key -> tuple._2))
-  //  def ++(v2: Metadata) = this.copy(this.map ++ v2.map)
-
-  case class Param[T](name: String) extends MetadataKey {
-
-    def apply(): T = map(name).asInstanceOf[T]
-
-    def get: Option[T] = map.get(name).map(_.asInstanceOf[T])
-  }
-
-  //WARNING: DO NOT add implicit conversion to inner class' companion object! will trigger "java.lang.AssertionError: assertion failed: mkAttributedQualifier(_xxx ..." compiler error!
-  //TODO: report bug to scala team!
-  //  object Param {
-  //    implicit def toStr(v: Param[_]): String = v.k
-  //
-  //    implicit def toKV[T](v: (Param[_], T)): (String, T) = v._1.k -> v._2
-  //  }
+                     override val map: ListMap[String, Any] = ListMap.empty
+                   ) extends MetadataLike {
 }
 
 object Metadata extends MessageRelay[Metadata] {
@@ -57,10 +30,6 @@ object Metadata extends MessageRelay[Metadata] {
     assert(!jvBlacklist.contains(jv))
     jv
   }
-
-  implicit def fromStrMap(map: Map[String, Any]) = apply(map.toSeq: _*)
-
-  def apply(vs: Tuple2[String, Any]*): Metadata = Metadata(ListMap(vs: _*))
 
   type M = Map[String, JValue]
   override def messageMF = implicitly[Manifest[M]]
@@ -111,5 +80,54 @@ object Metadata extends MessageRelay[Metadata] {
         //          )
       }
     apply(map: _*)
+  }
+
+  def apply(vs: Tuple2[String, Any]*): Metadata = Metadata(ListMap(vs: _*))
+
+  implicit def MapParser(map: Map[String, Any]) = apply(map.toSeq: _*)
+
+  def ParamsParser(vs: Tuple2[ParamLike, Any]*) = Metadata(ListMap(vs.map{case (k,v) => k.name -> v}: _*))
+
+  case class ReflectionParser[T: ClassTag]() {
+
+    val clazz = implicitly[ClassTag[T]].runtimeClass
+
+    val methods = clazz.getMethods
+    val getters = methods.filter {
+      m =>
+        m.getName.startsWith("get") && (m.getParameterTypes.length == 0)
+    }
+      .map(v => v.getName.stripPrefix("get") -> v)
+    val booleanGetters = methods.filter {
+      m =>
+        m.getName.startsWith("is") && (m.getParameterTypes.length == 0)
+    }
+      .map(v => v.getName -> v)
+    val validMethods = getters ++ booleanGetters
+
+    def apply(obj: T) = {
+      val kvs = validMethods.flatMap {
+        tuple =>
+          try {
+            tuple._2.setAccessible(true)
+            Some(tuple._1 -> tuple._2.invoke(obj).asInstanceOf[Any])
+          }
+          catch {
+            case e: InvocationTargetException =>
+              None
+          }
+      }
+      Metadata(ListMap(kvs: _*))
+    }
+  }
+
+  @deprecated //use ReflectionParser
+  object RuntimeReflectionParser {
+    def apply[T](obj: T) = {
+      val scalaType = ScalaType.fromClass[T](obj.getClass.asInstanceOf[Class[T]])
+      implicit val classTag: ClassTag[T] = scalaType.asClassTag
+
+      ReflectionParser[T]().apply(obj)
+    }
   }
 }

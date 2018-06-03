@@ -1,5 +1,7 @@
 package com.tribbloids.spookystuff.utils.lifespan
 
+import java.io.Closeable
+
 import com.tribbloids.spookystuff.utils.TreeException
 import org.slf4j.LoggerFactory
 import com.tribbloids.spookystuff.utils.CachingUtils._
@@ -14,7 +16,7 @@ object Cleanable {
 
   def getByLifespan(
                      id: Any,
-                     condition: (Cleanable) => Boolean
+                     condition: Cleanable => Boolean
                    ): (ConcurrentMap[Long, Cleanable], List[Cleanable]) = {
     val batch = uncleaned.getOrElse(id, ConcurrentMap())
     val filtered = batch.values.toList //create deep copy to avoid in-place deletion
@@ -22,7 +24,7 @@ object Cleanable {
     (batch, filtered)
   }
   def getAll(
-              condition: (Cleanable) => Boolean = _ => true
+              condition: Cleanable => Boolean = _ => true
             ): Seq[Cleanable] = {
     uncleaned.values.toList
       .flatten
@@ -76,7 +78,7 @@ object Cleanable {
   * finalizer helps but is not always reliable
   * can be serializable, but in which case implementation has to allow deserialized copy on a different machine to be cleanable as well.
   */
-trait Cleanable {
+trait Cleanable extends Closeable {
 
   /**
     * taskOrThreadOnCreation is incorrect in withDeadline or threads not created by Spark
@@ -117,7 +119,7 @@ trait Cleanable {
     s"$trackingNumber @ ${lifespan.toString} \t| "
   }
   protected def logPrefixed(s: String) = {
-    LoggerFactory.getLogger(this.getClass).info(s"$logPrefix $s")
+    LoggerFactory.getLogger(this.getClass).debug(s"$logPrefix $s")
   }
 
   protected def cleanImpl(): Unit
@@ -159,6 +161,8 @@ trait Cleanable {
 
     uncleanedInBatch -= this.trackingNumber
   }
+
+  override def close(): Unit = clean(true)
 
   def isSilent(ee: Throwable): Boolean = false
 

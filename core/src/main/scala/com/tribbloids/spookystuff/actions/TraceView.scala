@@ -33,7 +33,7 @@ case class TraceView(
 
   val _id: Any = keyBy(children)
 
-  override def toString = children.mkString(" -> ")
+  override def toString = children.mkString("{ "," -> ", " }")
 
   @volatile @transient private var docs: Seq[DocOption] = _ //override, cannot be shipped, lazy evaluated TODO: not volatile?
   def docsOpt = Option(docs)

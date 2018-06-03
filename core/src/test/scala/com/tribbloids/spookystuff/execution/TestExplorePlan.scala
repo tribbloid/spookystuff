@@ -116,7 +116,7 @@ class TestExplorePlan extends SpookyEnvFixture with LocalPathDocsFixture {
         DEEP_DIR_URL
       }
     val ds = first
-      .explore(S"root directory uri".text)(
+      .explore(S"root directory URI".text)(
         Wget('A)
       )()
       .persist()
@@ -136,7 +136,7 @@ class TestExplorePlan extends SpookyEnvFixture with LocalPathDocsFixture {
           DEEP_DIR_URL
         }
       val ds = first
-        .explore(S"root directory uri".text)(
+        .explore(S"root directory URI".text)(
           Wget('A),
           keyBy = TestExplorePlan.CustomKeyBy
         )()

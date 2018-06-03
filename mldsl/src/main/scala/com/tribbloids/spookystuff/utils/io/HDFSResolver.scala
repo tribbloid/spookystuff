@@ -2,38 +2,27 @@ package com.tribbloids.spookystuff.utils.io
 
 import java.io.{InputStream, OutputStream}
 import java.security.{PrivilegedAction, PrivilegedActionException}
-import java.util.concurrent.TimeUnit
 
 import com.tribbloids.spookystuff.utils.{CommonUtils, SerBox}
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs._
 import org.apache.hadoop.security.UserGroupInformation
-import org.apache.spark.ml.dsl.utils.metadata.MetadataMap
-import org.slf4j.LoggerFactory
-
-import scala.collection.immutable.ListMap
-import scala.concurrent.duration.Duration
 
 /**
   * Created by peng on 17/05/17.
   */
 case class HDFSResolver(
                          hadoopConf: SerBox[Configuration],
-                         ugiFactory: () => Option[UserGroupInformation] = HDFSResolver.noUGIFactory,
-                         lockExpireAfter: Duration = 24 -> TimeUnit.HOURS
+                         ugiFactory: () => Option[UserGroupInformation] = HDFSResolver.noUGIFactory
                        ) extends URIResolver {
 
-  final def lockedSuffix: String = ".locked"
+  import Resource._
 
   def getHadoopConf: Configuration = {
     hadoopConf.value
   }
 
   override def toString = s"${this.getClass.getSimpleName}($getHadoopConf)"
-
-  def ensureAbsolute(path: Path): Unit = {
-    assert(path.isAbsolute, s"BAD DESIGN: ${path.toString} is not an absolute path")
-  }
 
   def ugiOpt = ugiFactory()
 
@@ -59,190 +48,161 @@ case class HDFSResolver(
     }
   }
 
-  //TODO: retry CRC errors on read
-  def input[T](pathStr: String)(f: InputStream => T): Resource[T] = {
-    val path: Path = new Path(pathStr)
-    val fs: FileSystem = path.getFileSystem(getHadoopConf)
+  override def Execution(pathStr: String) = Execution(new Path(pathStr))
+  case class Execution(path: Path) extends super.Execution {
 
-    new Resource[T] {
+    lazy val fs: FileSystem = path.getFileSystem(getHadoopConf)
 
-      override lazy val value: T = doAsUGI {
+    override lazy val absolutePathStr: String = doAsUGI{
 
-        if (!pathStr.endsWith(lockedSuffix)) {
-          //wait for its locked file to finish its locked session
-
-          val lockedPath = new Path(pathStr + lockedSuffix)
-
-          assertNotLocked(fs, lockedPath)
-        }
-
-        val fis: FSDataInputStream = fs.open(path)
-
+      if (path.isAbsolute) {
+        if (path.isAbsoluteAndSchemeAuthorityNull)
+          "file:" + path.toString
+        else
+          path.toString
+      }
+      else {
+        val fs = path.getFileSystem(getHadoopConf)
         try {
-          f(fis)
+          val root = fs.getWorkingDirectory.toString.stripSuffix("/")
+          root +"/" +path.toString
         }
         finally {
-          fis.close()
-        }
-      }
-
-      override lazy val metadata: ResourceMD = describe(path)
-    }
-  }
-
-  override def output[T](pathStr: String, overwrite: Boolean
-                        )(f: OutputStream => T): Resource[T] = doAsUGI {
-    val path = new Path(pathStr)
-    val fs = path.getFileSystem(getHadoopConf)
-
-    new Resource[T] {
-
-      override val value: T = {
-
-        val fos: FSDataOutputStream = fs.create(path, overwrite)
-        try {
-          val result = f(fos)
-          fos.flush()
-          result
-        }
-        finally {
-          fos.close()
-        }
-      }
-
-      override lazy val metadata: ResourceMD = describe(path)
-    }
-  }
-
-  override def lockAccessDuring[T](pathStr: String)(f: String => T): T = doAsUGI{
-
-    val path = new Path(pathStr)
-    //    ensureAbsolute(path)
-    val fs: FileSystem = path.getFileSystem(getHadoopConf)
-
-    val lockedPath = new Path(pathStr + lockedSuffix)
-
-    assertNotLocked(fs, lockedPath)
-
-    if (fs.exists(path)) {
-      fs.rename(path, lockedPath)
-
-      retry {
-        assert(
-          fs.exists(lockedPath),
-          s"Locking of $pathStr cannot be persisted")
-      }
-    }
-
-    try {
-      val result = f(lockedPath.toString)
-      result
-    }
-    finally {
-      if (fs.exists(lockedPath)) {
-        fs.rename(lockedPath, path)
-        fs.delete(lockedPath, true) //TODO: this line is useless?
-      }
-    }
-  }
-
-  def assertNotLocked[T](fs: FileSystem, lockedPath: Path) = {
-    retry {
-      val hasLock = fs.exists(lockedPath)
-      if (hasLock) {
-        val status = fs.getFileStatus(lockedPath)
-        val lockedTime = status.getModificationTime
-        val lockedDuration = System.currentTimeMillis() - lockedTime
-
-        val errorInfo =
-          s"File $lockedPath is locked by another executor or thread for $lockedDuration milliseconds"
-        if (lockedDuration >= this.lockExpireAfter.toMillis) {
-          LoggerFactory.getLogger(this.getClass).error(errorInfo + ", lock has expired")
-        }
-        else {
-          throw new AssertionError(errorInfo)
+          fs.close()
         }
       }
     }
-  }
 
-  override def toAbsolute(pathStr: String): String = doAsUGI{
-    val path = new Path(pathStr)
+    trait HDFSResource[T] extends Resource[T] {
 
-    if (path.isAbsolute) {
-      if (path.isAbsoluteAndSchemeAuthorityNull)
-        "file:" + path.toString
-      else
-        path.toString
+      lazy val status = fs.getFileStatus(path)
+
+      override lazy val getURI: String = absolutePathStr
+
+      override lazy val getName: String = status.getPath.getName
+
+      override lazy val getType: String = {
+        if (status.isDirectory) DIR
+        else if (status.isFile) "file"
+        else if (status.isSymlink) "symlink"
+        else UNKNOWN
+      }
+
+      override lazy val getContentType: String = {
+        if (isDirectory) DIR_MIME
+        else null
+      }
+
+      override lazy val getLenth: Long = status.getLen
+
+      override lazy val getLastModified: Long = status.getModificationTime
+
+      override lazy val isAlreadyExisting: Boolean = fs.exists(path)
+
+      override lazy val _metadata = HDFSResolver.mdParser.apply(status)
+
+      override lazy val children: Seq[ResourceMD] = {
+        if (isDirectory) {
+
+          val children = fs.listStatus(path).toSeq
+
+          children.map {
+            status =>
+              val childExecution = Execution(status.getPath)
+              childExecution.input(_.rootMetadata)
+          }
+        }
+        else Nil
+      }
     }
-    else {
-      val fs = path.getFileSystem(getHadoopConf)
+
+    //TODO: retry CRC errors on read
+    def input[T](f: InputResource => T): T = doAsUGI {
+
+      val ir = new InputResource with HDFSResource[InputStream] {
+
+        override def _stream: InputStream = {
+
+          //          if (!absolutePathStr.endsWith(lockedSuffix)) {
+          //            //wait for its locked file to finish its locked session
+          //
+          //            val lockedPath = new Path(pathStr + lockedSuffix)
+          //
+          //            assertUnlocked(fs, lockedPath)
+          //          }
+
+          fs.open(path)
+        }
+      }
       try {
-        val root = fs.getWorkingDirectory.toString.stripSuffix("/")
-        root +"/" +pathStr
+        f(ir)
       }
       finally {
-        fs.close()
+        ir.close()
+      }
+    }
+
+    def remove(mustExist: Boolean = true): Unit = doAsUGI {
+      fs.delete(path, true)
+    }
+
+    override def output[T](overwrite: Boolean)(f: OutputResource => T): T = doAsUGI {
+
+      val or = new OutputResource with HDFSResource[OutputStream] {
+        override def _stream: OutputStream = {
+          fs.create(path, overwrite)
+        }
+      }
+
+      try {
+        val result = f(or)
+        result
+      }
+      finally {
+        or.close()
       }
     }
   }
 
-  def describe(path: Path): ResourceMD = doAsUGI {
-    import Resource._
-
-    val fs: FileSystem = path.getFileSystem(hadoopConf.value)
-
-    def getMap(status: FileStatus): ListMap[String, Any] = {
-      var map = reflectiveMetadata(status)
-      map ++= MetadataMap(
-        URI_ -> toAbsolute(status.getPath.toUri.toString),
-        NAME -> status.getPath.getName
-      )
-
-      if (status.isDirectory)
-        map ++= MetadataMap(CONTENT_TYPE -> URIResolver.DIR_TYPE)
-
-      map
-    }
-
-    val status = fs.getFileStatus(path)
-    val root = getMap(status)
-
-    if (status.isDirectory) {
-      val children = fs.listStatus(path)
-
-      val groupedChildren: Map[String, Seq[Map[String, Any]]] = {
-
-        val withType = children.map {
-          child =>
-            val tpe = if (child.isDirectory) "directory"
-            else if (child.isSymlink) "symlink"
-            else if (child.isFile) "file"
-            else "others"
-
-            tpe -> child
-        }
-
-        withType.groupBy(_._1).mapValues {
-          array =>
-            array.toSeq.map(kv => getMap(kv._2))
-        }
-      }
-
-      val map = root ++ groupedChildren
-      val result = ResourceMD(map)
-      val x = result.message
-      result
-    }
-    else{
-      root
-    }
-  }
+  //  override def lockAccessDuring[T](pathStr: String)(f: String => T): T = doAsUGI{
+  //    ???
+  //    val path = new Path(pathStr)
+  //    val lockedPath = new Path(pathStr + lockedSuffix)
+  //    //    ensureAbsolute(path)
+  //    val fs: FileSystem = path.getFileSystem(getHadoopConf)
+  //
+  //    val isNewFile = if (fs.exists(path)) {
+  //      fs.rename(path, lockedPath)
+  //      false
+  //    }
+  //    else {
+  //      fs.createNewFile(lockedPath)
+  //      true
+  //    }
+  //
+  //
+  //    assertUnlocked(fs, lockedPath)
+  //
+  //
+  //
+  //    try {
+  //      val result = f(lockedPath.toString)
+  //      result
+  //    }
+  //    finally {
+  //      if (fs.exists(lockedPath)) {
+  //        fs.rename(lockedPath, path)
+  //        fs.delete(lockedPath, true) //TODO: this line is useless?
+  //      }
+  //    }
+  //  }
 }
 
 object HDFSResolver {
 
   def noUGIFactory: () => None.type = () => None
+
+  val mdParser = ResourceMD.ReflectionParser[FileStatus]()
 
   //  def serviceUGIFactory = () => Some(SparkHelper.serviceUGI)
   //

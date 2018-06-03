@@ -1,12 +1,16 @@
 package com.tribbloids.spookystuff.utils.io
 
-import com.tribbloids.spookystuff.testutils.FunSpecx
+import java.beans.Transient
+
+import com.tribbloids.spookystuff.testutils.{FunSpecx, TestHelper}
 import org.apache.spark.SparkConf
 import org.apache.spark.serializer.KryoSerializer
 
+import scala.util.Random
+
 /**
- * Created by peng on 07/10/15.
- */
+  * Created by peng on 07/10/15.
+  */
 class LocalResolverSuite extends FunSpecx {
 
   val resolver: URIResolver = LocalResolver
@@ -15,12 +19,15 @@ class LocalResolverSuite extends FunSpecx {
   val nonExistingRelativePath = "non-existing/not-a-file.txt"
   val nonExistingAbsolutePath = "/non-existing/not-a-file.txt"
 
-  it("resolver can convert relative path of non-existing file") {
+
+  val sc = TestHelper.TestSC
+
+  it("can convert relative path of non-existing file") {
     val abs = resolver.toAbsolute(nonExistingRelativePath)
     assert(abs == schemaPrefix + System.getProperty("user.dir") +"/"+ nonExistingRelativePath)
   }
 
-  it("resolver can convert absolute path of non-existing file") {
+  it("can convert absolute path of non-existing file") {
     val abs = resolver.toAbsolute(nonExistingAbsolutePath)
     assert(abs == schemaPrefix + nonExistingAbsolutePath)
   }
@@ -41,14 +48,14 @@ class LocalResolverSuite extends FunSpecx {
     if (once.contains("file:")) assert(once.split("file:").head.isEmpty)
   }
 
-//  it("ResourceFirstResolver can convert path to non-existing file to absolute") {
-//    val resolver = ResourceFirstResolver(HDFSResolver(new Configuration()))
-//    val abs = resolver.toAbsolute(nonExistingPath)
-//    assert(abs == "file:"+System.getProperty("user.dir") +"/"+ nonExistingPath)
-//  }
+  //  it("ResourceFirstResolver can convert path to non-existing file to absolute") {
+  //    val resolver = ResourceFirstResolver(HDFSResolver(new Configuration()))
+  //    val abs = resolver.toAbsolute(nonExistingPath)
+  //    assert(abs == "file:"+System.getProperty("user.dir") +"/"+ nonExistingPath)
+  //  }
 
   it("resolver is Kryo serializable") {
-//    val resolver: HDFSResolver = HDFSResolver(new Configuration())
+    //    val resolver: HDFSResolver = HDFSResolver(new Configuration())
 
     val serDe = new KryoSerializer(new SparkConf()).newInstance()
 
@@ -58,4 +65,23 @@ class LocalResolverSuite extends FunSpecx {
 
     assert(resolver.toString == des.toString)
   }
+
+//  it("resolver.lockAccessDuring() can guarantee sequential access") {
+//    val rdd = sc.parallelize(1 to 100, 4)
+//
+//    @Transient var ss = 0
+//
+//    val path = "TestPolicies.xml"
+//    rdd.foreach {
+//      i =>
+//        resolver.lockAccessDuring(path) {
+//          lockedPath =>
+//            resolver.outp
+//            ss += 1
+//            assert(ss == 1)
+//            Thread.sleep(Random.nextInt(100))
+//            ss -=1
+//        }
+//    }
+//  }
 }

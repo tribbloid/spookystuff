@@ -1,6 +1,6 @@
 package com.tribbloids.spookystuff.utils.io
 
-import com.tribbloids.spookystuff.testutils.{LocalPathDocsFixture, TestHelper}
+import com.tribbloids.spookystuff.testutils.LocalPathDocsFixture
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.security.UserGroupInformation
 
@@ -15,23 +15,22 @@ class HDFSResolverSuite extends LocalResolverSuite with LocalPathDocsFixture {
   val nonExistingSchemePath = "file:/non-existing/not-a-file.txt"
   val nonExistingScheme2Path = "file:///non-existing/not-a-file.txt"
 
-  it("resolver can convert path with schema of non-existing file") {
+  it("can convert path with schema of non-existing file") {
     val abs = resolver.toAbsolute(nonExistingSchemePath)
     assert(abs == nonExistingSchemePath)
   }
 
-  it("resolver can convert path with schema// of non-existing file") {
+  it("can convert path with schema// of non-existing file") {
     val abs = resolver.toAbsolute(nonExistingScheme2Path)
     assert(abs == nonExistingSchemePath)
   }
 
-  val sc = TestHelper.TestSC
   val resolverWithUser = HDFSResolver(
-    sc.hadoopConfiguration,
+    new Configuration(),
     () => Some(UserGroupInformation.createUserForTesting("dummy", Array.empty))
   )
 
-  it("HDFSResolver can override login UGI") {
+  it("can override login UGI") {
     val user: String = resolverWithUser.input(HTML_URL) {
       is =>
         UserGroupInformation.getCurrentUser.getUserName
@@ -39,7 +38,7 @@ class HDFSResolverSuite extends LocalResolverSuite with LocalPathDocsFixture {
     user.shouldBe("dummy")
   }
 
-  it("HDFSResolver can override login GUI on executors") {
+  it("can override login GUI on executors") {
     val resolver = this.resolverWithUser
     val HTML_URL = this.HTML_URL
     val users = sc.parallelize(1 to (sc.defaultParallelism * 2))

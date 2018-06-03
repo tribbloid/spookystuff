@@ -4,7 +4,8 @@ import java.io.{InputStream, OutputStream}
 import java.net.{URI, URLConnection}
 
 import com.tribbloids.spookystuff.utils.http.HttpUtils
-import org.apache.spark.ml.dsl.utils.metadata.MetadataMap
+
+import scala.util.Try
 
 object FTPResolver {
 
@@ -14,10 +15,10 @@ object FTPResolver {
 
     val ftp = FTPResolver({
       uri =>
-        val uc = uri.toURL.openConnection()
-        uc.setConnectTimeout(timeoutMillis)
-        uc.setReadTimeout(timeoutMillis)
-        uc
+        val conn = uri.toURL.openConnection()
+        conn.setConnectTimeout(timeoutMillis)
+        conn.setReadTimeout(timeoutMillis)
+        conn
     })
 
     ftp
@@ -28,59 +29,82 @@ case class FTPResolver(
                         input2Connection: URI => URLConnection
                       ) extends URIResolver {
 
-  override def input[T](pathStr: String)(f: InputStream => T) = {
+  import scala.collection.JavaConverters._
+
+  override def Execution(pathStr: String) = new Execution(pathStr)
+  case class Execution(pathStr: String) extends super.Execution {
+
+    override def absolutePathStr: String = pathStr
 
     val uri = HttpUtils.uri(pathStr)
-    val uc = input2Connection(uri)
-    uc.connect()
-    val is = uc.getInputStream
+    val _conn: URLConnection = input2Connection(uri)
 
-    try {
-      val result = f(is)
+    trait FTPResource[T] extends Resource[T] {
 
-      SimpleResource[T](
-        result,
-        {
-          import Resource._
+      lazy val conn = {
+        _conn.connect()
+        _conn
+      }
 
-          MetadataMap(
-            URI_ -> pathStr,
-            CONTENT_TYPE -> uc.getContentType,
-            LENGTH -> uc.getContentLength
-          )
+      override lazy val getURI: String = pathStr
+
+      override lazy val getName: String = null
+
+      override lazy val getContentType: String = conn.getContentType
+
+      override lazy val getLenth: Long = conn.getContentLengthLong
+
+      override lazy val getLastModified: Long = conn.getLastModified
+
+      override def isAlreadyExisting: Boolean = Try{conn}.isSuccess
+
+      override lazy val _metadata: ResourceMD = {
+        val map = conn.getHeaderFields.asScala
+          .mapValues {
+            _list =>
+              val list = _list.asScala
+              val result = if (list.size == 1) list.head
+              else list
+              result.asInstanceOf[Any]
+          }
+        ResourceMD.apply(map.toSeq: _*)
+      }
+    }
+
+    override def input[T](f: InputResource => T): T = {
+
+      val in = new InputResource with FTPResource[InputStream] {
+
+        override def _stream: InputStream = {
+          conn.getInputStream
         }
-      )
+      }
+      try {
+        f(in)
+      }
+      finally {
+        in.close()
+      }
     }
-    finally {
-      is.close()
+
+    override def remove(mustExist: Boolean): Unit = {
+      ???
+      //TODO: not supported by java library! should switch to a more professional one like org.apache.commons.net.ftp.FTPClient
     }
-  }
 
-  override def output[T](pathStr: String, overwrite: Boolean)(f: OutputStream => T) = {
-    val uri = HttpUtils.uri(pathStr)
-    val uc = input2Connection(uri)
-    uc.connect()
-    val os = uc.getOutputStream
+    override def output[T](overwrite: Boolean)(f: OutputResource => T): T = {
+      val out = new OutputResource with FTPResource[OutputStream] {
 
-    try {
-      val result = f(os)
-      os.flush()
-
-      SimpleResource(
-        result,
-        {
-          import Resource._
-
-          MetadataMap(
-            URI_ -> pathStr,
-            CONTENT_TYPE -> uc.getContentType,
-            LENGTH -> uc.getContentLength
-          )
+        override val _stream: OutputStream = {
+          conn.getOutputStream
         }
-      )
-    }
-    finally {
-      os.close()
+      }
+      try {
+        f(out)
+      }
+      finally {
+        out.close()
+      }
     }
   }
 }

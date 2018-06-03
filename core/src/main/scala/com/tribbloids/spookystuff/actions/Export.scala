@@ -18,7 +18,6 @@ import org.apache.commons.io.IOUtils
 import org.apache.http.HttpEntity
 import org.apache.http.client.methods.{HttpGet, HttpPost}
 import org.apache.http.entity.StringEntity
-import org.apache.spark.ml.dsl.utils.metadata.MetadataMap
 import org.openqa.selenium.{OutputType, TakesScreenshot}
 
 /**
@@ -247,42 +246,33 @@ case class Wget(
   override def doExeNoName(session: Session): Seq[DocOption] = {
 
     val resolver = getResolver(session)
-
     val _uri = uri.value
 
-    val resource: Resource[Array[Byte]] = resolver.input(_uri) {
-      is =>
-        IOUtils.toByteArray(is)
-    }
-
-    val md: ResourceMD = resource.metadata
-
-    import Resource._
-
     val cacheLevel = DocCacheLevel.getDefault(uriOption)
-    val doc = if (md.IS_DIR.get.getOrElse(false)) {
-      val xmlStr = md.toXMLStr()
+    val doc = resolver.input(_uri) {
+      in =>
+        if (in.isDirectory) {
+          val xmlStr = in.allMetadata.toXMLStr()
 
-      new Doc(
-        uid = DocUID(List(this), this)(),
-        uri = md.URI_(),
-        raw = xmlStr.getBytes("utf-8"),
-        declaredContentType = Some("inode/directory; charset=UTF-8"),
-        cacheLevel = cacheLevel,
-        metadata = md
-      )
-    }
-    else {
+          new Doc(
+            uid = DocUID(List(this), this)(),
+            uri = in.getURI,
+            raw = xmlStr.getBytes("utf-8"),
+            declaredContentType = Some("inode/directory; charset=UTF-8"),
+            cacheLevel = cacheLevel,
+            metadata = in.rootMetadata
+          )
+        }
+        else {
 
-      import Resource._
-
-      new Doc(
-        uid = DocUID(List(this), this)(),
-        uri = md.URI_(),
-        raw = resource.value,
-        cacheLevel = cacheLevel,
-        metadata = md
-      )
+          new Doc(
+            uid = DocUID(List(this), this)(),
+            uri = in.getURI,
+            raw = IOUtils.toByteArray(in.stream),
+            cacheLevel = cacheLevel,
+            metadata = in.rootMetadata
+          )
+        }
     }
     Seq(doc)
   }
@@ -362,38 +352,32 @@ case class WpostImpl private[actions](
 
     val doc = impl match {
       case v: HTTPResolver =>
-        val resource: Resource[Array[Byte]] = v.input(uri){
-          is =>
-            IOUtils.toByteArray(is)
+        v.input(uri){
+          in =>
+            val md = in.rootMetadata
+            val cacheLevel = DocCacheLevel.getDefault(uriOption)
+
+            new Doc(
+              uid = DocUID(List(this), this)(),
+              uri = in.getURI,
+              raw = IOUtils.toByteArray(in.stream),
+              cacheLevel = cacheLevel,
+              metadata = md
+            )
+
         }
 
-        val md = resource.metadata
-
-        import Resource._
-
-        val cacheLevel = DocCacheLevel.getDefault(uriOption)
-        new Doc(
-          uid = DocUID(List(this), this)(),
-          uri = md.URI_(),
-          raw = resource.value,
-          cacheLevel = cacheLevel,
-          metadata = md
-        )
       case _ =>
-        val resource: Resource[Int] = impl.output(uri, overwrite = true){
-          os =>
-            IOUtils.copy(entity.getContent, os)
+        impl.output(uri, overwrite = true){
+          out =>
+            val length = IOUtils.copy(entity.getContent, out.stream)
+            val md: ResourceMD = out.rootMetadata.map.updated("length", length)
+            NoDoc(
+              backtrace = List(this),
+              cacheLevel = DocCacheLevel.NoCache,
+              metadata = md
+            )
         }
-
-        import Resource._
-
-        val md: ResourceMD = resource.metadata.map ++ MetadataMap(LENGTH -> resource.value)
-
-        NoDoc(
-          backtrace = List(this),
-          cacheLevel = DocCacheLevel.NoCache,
-          metadata = md
-        )
     }
     Seq(doc)
   }

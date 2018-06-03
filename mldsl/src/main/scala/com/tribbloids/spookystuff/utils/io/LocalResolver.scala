@@ -1,168 +1,152 @@
 package com.tribbloids.spookystuff.utils.io
 
 import java.io._
-import java.nio.file.FileAlreadyExistsException
-
-import org.apache.spark.ml.dsl.utils.metadata.MetadataMap
-
-import scala.collection.immutable.ListMap
+import java.nio.file.{FileAlreadyExistsException, Files, Paths}
 
 object LocalResolver extends URIResolver {
 
-  val lockedSuffix: String = ".locked"
+  val file2MD = ResourceMD.ReflectionParser[File]()
 
-  def ensureAbsolute(file: File): Unit = {
-    assert(file.isAbsolute, s"BAD DESIGN: ${file.getPath} is not an absolute path")
-  }
-
-  override def input[T](pathStr: String)(f: InputStream => T): Resource[T] = {
-
-    //    val file = new File(pathStr)
+  override def Execution(pathStr: String) = Execution(new File(pathStr))
+  case class Execution(file: File) extends super.Execution {
     //    ensureAbsolute(file)
-
-    val file = new File(pathStr)
-    new Resource[T] {
-
-      override lazy val value: T = {
-        if (!pathStr.endsWith(lockedSuffix)) {
-          //wait for its locked file to finish its locked session
-
-          val lockedPath = pathStr + lockedSuffix
-          val lockedFile = new File(lockedPath)
-
-          //wait for 15 seconds in total
-          retry {
-            assert(!lockedFile.exists(),
-              s"File $pathStr is locked by another executor or thread")
-          }
-        }
-
-        val fis = new FileInputStream(file)
-
-        try {
-          f(fis)
-        }
-        finally {
-          fis.close()
-        }
-      }
-
-      override lazy val metadata: ResourceMD = describe(file)
-    }
-
-  }
-
-  override def output[T](pathStr: String, overwrite: Boolean)(f: OutputStream => T): Resource[T] = {
-
-    val file = new File(pathStr)
-    //    ensureAbsolute(file)
-
-    if (file.exists() && !overwrite) throw new FileAlreadyExistsException(s"$pathStr already exists")
-    else if (!file.exists()) {
-      file.getParentFile.mkdirs()
-      file.createNewFile()
-    }
-    else if (file.isDirectory) {
-      file.delete()
-
-      file.getParentFile.mkdirs()
-      file.createNewFile()
-    }
-
-    new Resource[T] {
-
-      override val value: T = {
-
-        val fos = new FileOutputStream(pathStr, false)
-        try {
-          val result = f(fos)
-          fos.flush()
-          result
-        }
-        finally {
-          fos.close()
-        }
-      }
-
-      override lazy val metadata: ResourceMD = describe(file)
-    }
-  }
-
-  override def lockAccessDuring[T](pathStr: String)(f: String => T): T = {
-
-    val file = new File(pathStr)
-    //    ensureAbsolute(file)
-
-    val lockedPath = pathStr + lockedSuffix
-    val lockedFile = new File(lockedPath)
-
-    retry {
-      assert(!lockedFile.exists(),
-        s"File $pathStr is locked by another executor or thread")
-      //        Thread.sleep(3*1000)
-    }
-
-    if (file.exists()) file.renameTo(lockedFile)
-
-    try {
-      val result = f(lockedPath)
-      result
-    }
-    finally {
-      lockedFile.renameTo(file)
-    }
-  }
-
-  override def toAbsolute(pathStr: String): String = {
-    val file = new File(pathStr)
-    file.getAbsolutePath
-  }
-
-  def describe(file: File): ResourceMD = {
 
     import Resource._
 
-    def getMap(file: File): ListMap[String, Any] = {
-      var map = reflectiveMetadata(file)
-      map ++= MetadataMap(
-        URI_ -> toAbsolute(file.getAbsolutePath),
-        NAME -> file.getName
-      )
-      if (file.isDirectory)
-        map ++= MetadataMap(CONTENT_TYPE -> URIResolver.DIR_TYPE)
-
-      map
+    override lazy val absolutePathStr: String = {
+      file.getAbsolutePath
     }
 
-    val root = {
-      getMap(file)
-    }
+    trait LocalResource[T] extends Resource[T] {
 
-    if (file.isDirectory) {
+      override lazy val getURI: String = absolutePathStr
 
-      val children = file.listFiles()
+      override lazy val getName: String = file.getName
 
-      val groupedChildren: Map[String, Seq[Map[String, Any]]] = {
+      override lazy val getType: String = {
+        if (file.isDirectory) DIR
+        else if (file.isFile) "file"
+        else UNKNOWN
+      }
 
-        val withType = children.map {
-          child =>
-            val tpe = if (child.isDirectory) "directory"
-            else if (child.isFile) "file"
-            else "others"
+      override lazy val getContentType: String = {
+        if (isDirectory) DIR_MIME
+        else Files.probeContentType(Paths.get(absolutePathStr))
+      }
 
-            tpe -> child
+      override lazy val getLenth: Long = file.length()
+
+      override lazy val getLastModified: Long = file.lastModified()
+
+      override lazy val _metadata: ResourceMD = {
+        file2MD(file)
+      }
+
+      override lazy val isAlreadyExisting: Boolean = file.exists()
+
+      override lazy val children: Seq[ResourceMD] = {
+        if (isDirectory) {
+
+          file.listFiles().toSeq
+            .map {
+              file =>
+                val childExecution = Execution(file)
+                val md = childExecution.input {
+                  _.rootMetadata
+                }
+                md
+            }
         }
+        else Nil
+      }
+    }
 
-        withType.groupBy(_._1).mapValues {
-          array =>
-            array.toSeq.map(kv => getMap(kv._2))
+    override def input[T](f: InputResource => T): T = {
+
+      val ir = new InputResource with LocalResource[InputStream] {
+
+        override def _stream: InputStream = {
+          //          if (!absolutePathStr.endsWith(lockedSuffix)) {
+          //            //wait for its locked file to finish its locked session
+          //
+          //            val lockedPath = absolutePathStr + lockedSuffix
+          //            val lockedFile = new File(lockedPath)
+          //
+          //            //wait for 15 seconds in total
+          //            retry {
+          //              assert(!lockedFile.exists(),
+          //                s"File $absolutePathStr is locked by another executor or thread")
+          //            }
+          //          }
+
+          new FileInputStream(file)
         }
       }
-      val result = root ++ groupedChildren
-      ResourceMD(result)
+
+      try {
+        f(ir)
+      }
+      finally {
+        ir.close()
+      }
     }
-    else {
-      root
+
+    override def remove(mustExist: Boolean): Unit = { //TODO: validate mustExist
+      file.delete()
+    }
+
+    override def output[T](overwrite: Boolean)(f: OutputResource => T): T = {
+
+      val or = new OutputResource with LocalResource[OutputStream] {
+
+        override def _stream: OutputStream = {
+          (isAlreadyExisting, overwrite) match {
+            case (true, false) => throw new FileAlreadyExistsException(s"$absolutePathStr already exists")
+            case (true, true) =>
+              remove(false)
+              file.createNewFile()
+            case (false, _) =>
+              file.getParentFile.mkdirs()
+              file.createNewFile()
+          }
+
+          val fos = new FileOutputStream(absolutePathStr, false)
+          fos
+        }
+      }
+
+      try {
+        val result = f(or)
+        result
+      }
+      finally {
+        or.close()
+      }
     }
   }
+  //
+  //  override def lockAccessDuring[T](pathStr: String)(f: String => T): T = {
+  //
+  //    val file = new File(pathStr)
+  //    //    ensureAbsolute(file)
+  //
+  //    val lockedPath = pathStr + lockedSuffix
+  //    val lockedFile = new File(lockedPath)
+  //
+  //    retry {
+  //      assert(!lockedFile.exists(),
+  //        s"File $pathStr is locked by another executor or thread")
+  //      //        Thread.sleep(3*1000)
+  //    }
+  //
+  //    if (file.exists()) file.renameTo(lockedFile)
+  //
+  //    try {
+  //      val result = f(lockedPath)
+  //      result
+  //    }
+  //    finally {
+  //      lockedFile.renameTo(file)
+  //    }
+  //  }
 }

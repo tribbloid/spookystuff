@@ -10,18 +10,20 @@ import com.esotericsoftware.kryo.{Kryo, KryoSerializable}
   */
 trait NOTSerializable extends Serializable with KryoSerializable{
 
+  lazy val error = new NotSerializableException(s"${this.getClass.getCanonicalName} is NOT serializable")
+
   def writeObject(out: java.io.ObjectOutputStream): Unit =
-    throw new NotSerializableException()
+    throw error
 
   def readObject(in: java.io.ObjectInputStream): Unit =
-    throw new NotSerializableException()
+    throw error
 
   def readObjectNoData(): Unit =
-    throw new NotSerializableException()
+    throw error
 
   override def write (kryo: Kryo, output: Output): Unit =
-    throw new NotSerializableException()
+    throw error
 
   override def read (kryo: Kryo, input: Input): Unit =
-    throw new NotSerializableException()
+    throw error
 }

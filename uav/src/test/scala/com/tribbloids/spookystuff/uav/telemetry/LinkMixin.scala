@@ -2,13 +2,13 @@ package com.tribbloids.spookystuff.uav.telemetry
 
 import com.tribbloids.spookystuff.session.Session
 import com.tribbloids.spookystuff.testutils.TestHelper
+import com.tribbloids.spookystuff.uav._
 import com.tribbloids.spookystuff.uav.dsl.LinkFactory
 import com.tribbloids.spookystuff.uav.system.UAV
 import com.tribbloids.spookystuff.uav.telemetry.mavlink.MAVLink
-import com.tribbloids.spookystuff.uav._
-import com.tribbloids.spookystuff.utils.{CommonUtils, SpookyUtils}
-import com.tribbloids.spookystuff.utils.TreeException.Wrapper
+import com.tribbloids.spookystuff.utils.TreeException.Wrap
 import com.tribbloids.spookystuff.utils.lifespan.Cleanable
+import com.tribbloids.spookystuff.utils.{CommonUtils, SpookyUtils}
 import com.tribbloids.spookystuff.{PyInterpretationException, SpookyContext, SpookyEnvFixture}
 import org.apache.spark.rdd.RDD
 
@@ -18,7 +18,7 @@ trait LinkMixin extends UAVFixture {
 
   import com.tribbloids.spookystuff.utils.SpookyViews._
 
-  lazy val getFleet: (String) => Seq[UAV] = {
+  lazy val getFleet: String => Seq[UAV] = {
     val simEndpoints = this.simUAVs
     _: String => simEndpoints
   }
@@ -48,7 +48,7 @@ trait LinkMixin extends UAVFixture {
     factory2Spooky
   }
 
-  def runTests(fixtures: Seq[(SpookyContext, String)])(f: (SpookyContext) => Unit) = {
+  def runTests(fixtures: Seq[(SpookyContext, String)])(f: SpookyContext => Unit) = {
 
     fixtures.foreach {
       case (spooky, testPrefix) =>
@@ -222,7 +222,7 @@ abstract class SimLinkSuite extends SimUAVFixture with LinkMixin {
           assert(badLink.statusString.contains("Link DRONE@dummy is unreachable for"))
           assert {
             val e = badLink.lastFailureOpt.get._1
-            e.isInstanceOf[PyInterpretationException] || e.isInstanceOf[Wrapper]
+            e.isInstanceOf[PyInterpretationException] || e.isInstanceOf[Wrap]
           }
         }
       }

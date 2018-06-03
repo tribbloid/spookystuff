@@ -59,7 +59,7 @@ object TestSiteServer {
   @throws[Exception]
   def main(args: Array[String]): Unit = {
 
-    server.start
-    server.join
+    server.start()
+    server.join()
   }
 }
