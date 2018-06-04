@@ -92,7 +92,9 @@ case class RetryImpl[T](
 
     lazy val _callerShowStr = {
       Option(callerShowStr).getOrElse {
-        FlowUtils.callerShowStr()
+        FlowUtils.callerShowStr(
+          exclude = Seq(classOf[Retry], classOf[RetryImpl[_]])
+        )
       }
     }
     lazy val interval = intervalFactory(n)

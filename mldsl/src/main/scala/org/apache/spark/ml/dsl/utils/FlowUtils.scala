@@ -70,11 +70,24 @@ object FlowUtils {
       .mkString("\n\t< ")
   }
 
-  def callerShowStr(depth: Int = 2): String  ={
-    stackTracesShowStr(
-      getBreakpointInfo()
-        .slice(depth, Int.MaxValue)
-    )
+  def callerShowStr(
+                     depth: Int = 0,
+                     exclude: Seq[Class[_]] = Nil
+                   ): String  ={
+    stackTracesShowStr {
+      val bp = getBreakpointInfo()
+      val filteredIndex = bp.toSeq.indexWhere (
+        {
+          element =>
+            !exclude.exists {
+              v =>
+                element.getClassName.startsWith(v.getCanonicalName)
+            }
+        },
+        depth
+      )
+      bp.slice(filteredIndex, Int.MaxValue)
+    }
   }
 
   def callerMethodName(depth: Int = 2): String = {

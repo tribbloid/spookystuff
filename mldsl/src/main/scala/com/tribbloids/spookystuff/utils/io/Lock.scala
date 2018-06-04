@@ -1,21 +1,19 @@
 package com.tribbloids.spookystuff.utils.io
 
 import java.nio.file.FileAlreadyExistsException
-import java.util.concurrent.TimeUnit
 
 import com.tribbloids.spookystuff.utils.Retry
 import com.tribbloids.spookystuff.utils.lifespan.LocalCleanable
 import org.slf4j.LoggerFactory
 
 import scala.annotation.tailrec
-import scala.concurrent.duration.Duration
 
 class Lock(
-            execution: URIResolver#Execution,
-            lockExpireAfter: Duration = 24 -> TimeUnit.HOURS
+            execution: URIResolver#Execution
           ) extends LocalCleanable {
 
   def retry: Retry = execution.outer.retry
+  def expireAfter = execution.outer.lockExpireAfter
 
   final def suffix: String = ".locked"
   lazy val lockPathStr = execution.absolutePathStr + suffix
@@ -23,7 +21,10 @@ class Lock(
 
   //  @volatile var _acquired = false
 
-  def acquire() = assertUnlocked(true)
+  def acquire() = {
+    assertUnlocked(true)
+    execution.absolutePathStr
+  }
 
   def assertUnlocked(acquire: Boolean = false): Unit = {
     retry{
@@ -32,9 +33,9 @@ class Lock(
   }
 
   @tailrec
-  final def assertUnlockedOnce(
-                            acquire: Boolean = false
-                          ): Unit = {
+  protected final def assertUnlockedOnce(
+                                          acquire: Boolean = false
+                                        ): Unit = {
     var lockExpired = false
 
     def processLocked(out: Resource[_], e: FileAlreadyExistsException) = {
@@ -44,7 +45,7 @@ class Lock(
       def errorInfo =
         s"Lock '$lockPathStr' is acquired by another executor or thread for $lockedDuration milliseconds"
 
-      if (lockedDuration >= this.lockExpireAfter.toMillis) {
+      if (lockedDuration >= expireAfter.toMillis) {
         LoggerFactory.getLogger(this.getClass).error(errorInfo + ", lock has expired")
         lockExpired = true
       }

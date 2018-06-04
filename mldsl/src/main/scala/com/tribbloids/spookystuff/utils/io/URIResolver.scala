@@ -1,9 +1,11 @@
 package com.tribbloids.spookystuff.utils.io
 
 import java.io._
+import java.util.concurrent.TimeUnit
 
 import com.tribbloids.spookystuff.utils.{CommonUtils, NOTSerializable, Retry, RetryExponentialBackoff}
 
+import scala.concurrent.duration.Duration
 import scala.language.implicitConversions
 
 /*
@@ -16,9 +18,17 @@ import scala.language.implicitConversions
 abstract class URIResolver extends Serializable {
 
   def Execution(pathStr: String): this.Execution
-  protected[io] def retry: Retry = RetryExponentialBackoff(4, 8000)
+  protected[io] def retry: Retry = RetryExponentialBackoff(8, 32000)
+  protected[io] def lockExpireAfter: Duration = URIResolver.defaultLockExpireAfter
 
-  final def input[T](pathStr: String)(f: InputResource => T): T = Execution(pathStr).input(f)
+  final def input[T](pathStr: String, unlocked: Boolean = true)(f: InputResource => T): T = {
+    val exe = Execution(pathStr)
+    if (unlocked) {
+      val lock = new Lock(Execution(pathStr))
+      lock.assertUnlocked()
+    }
+    exe.input(f)
+  }
 
   final def output[T](pathStr: String, overwrite: Boolean)(f: OutputResource => T): T = Execution(pathStr)
     .output(overwrite)(f)
@@ -38,6 +48,17 @@ abstract class URIResolver extends Serializable {
 
     val result = this.toAbsolute(resourcePath)
     result
+  }
+
+  def lockAccessDuring[T](pathStr: String)(f: String => T) = {
+    val lock = new Lock(Execution(pathStr))
+    val path = lock.acquire()
+    try {
+      f(path)
+    }
+    finally {
+      lock.close()
+    }
   }
 
   /**
@@ -73,4 +94,9 @@ abstract class URIResolver extends Serializable {
 //      //          }
 //    }
   }
+}
+
+object URIResolver {
+
+  val defaultLockExpireAfter: Duration = 24 -> TimeUnit.HOURS
 }

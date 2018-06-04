@@ -13,8 +13,8 @@ import scala.util.Random
   */
 class LocalResolverSuite extends FunSpecx {
 
-  val resolver: URIResolver = LocalResolver
-  val schemaPrefix = ""
+  @transient lazy val resolver: URIResolver = LocalResolver
+  @transient lazy val schemaPrefix = ""
 
   val nonExistingRelativePath = "non-existing/not-a-file.txt"
   val nonExistingAbsolutePath = "/non-existing/not-a-file.txt"
@@ -66,22 +66,22 @@ class LocalResolverSuite extends FunSpecx {
     assert(resolver.toString == des.toString)
   }
 
-//  it("resolver.lockAccessDuring() can guarantee sequential access") {
-//    val rdd = sc.parallelize(1 to 100, 4)
-//
-//    @Transient var ss = 0
-//
-//    val path = "TestPolicies.xml"
-//    rdd.foreach {
-//      i =>
-//        resolver.lockAccessDuring(path) {
-//          lockedPath =>
-//            resolver.outp
-//            ss += 1
-//            assert(ss == 1)
-//            Thread.sleep(Random.nextInt(100))
-//            ss -=1
-//        }
-//    }
-//  }
+  it("resolver.lockAccessDuring() can guarantee sequential access") {
+    val rdd = sc.parallelize(1 to 100, 4)
+
+    @Transient var ss = 0
+
+    val path = "TestPolicies.xml"
+    val resolver: URIResolver = this.resolver
+    rdd.foreach {
+      i =>
+        resolver.lockAccessDuring(path) {
+          lockedPath =>
+            ss += 1
+            Predef.assert(ss == 1)
+            Thread.sleep(Random.nextInt(1000))
+            ss -=1
+        }
+    }
+  }
 }

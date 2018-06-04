@@ -9,8 +9,8 @@ import org.apache.hadoop.security.UserGroupInformation
  */
 class HDFSResolverSuite extends LocalResolverSuite with LocalPathDocsFixture {
 
-  override val resolver = HDFSResolver(new Configuration())
-  override val schemaPrefix = "file:"
+  @transient override lazy val resolver = HDFSResolver(new Configuration())
+  @transient override lazy val schemaPrefix = "file:"
 
   val nonExistingSchemePath = "file:/non-existing/not-a-file.txt"
   val nonExistingScheme2Path = "file:///non-existing/not-a-file.txt"
