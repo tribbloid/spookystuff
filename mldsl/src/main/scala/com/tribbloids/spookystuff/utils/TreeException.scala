@@ -156,9 +156,9 @@ object TreeException {
     }
   }
 
-  case class Wrap(
-                   override val causes: Seq[Throwable] = Nil
-                 ) extends TreeException {
+  protected case class Wrap(
+                             override val causes: Seq[Throwable] = Nil
+                           ) extends TreeException {
 
     val simpleMsg: String = s"[CAUSED BY ${causes.size} EXCEPTION(S)]"
   }

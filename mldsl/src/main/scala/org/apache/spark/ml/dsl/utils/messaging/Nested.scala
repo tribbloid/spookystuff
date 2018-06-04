@@ -12,7 +12,7 @@ import scala.reflect.ClassTag
   */
 case class Nested[T: ClassTag](
                                 self: Any,
-                                errorTreeOpt: Option[TreeException] = None
+                                errorTreeOpt: Option[Throwable] = None
                               ) {
 
   def map[S: ClassTag](
@@ -70,7 +70,7 @@ case class Nested[T: ClassTag](
 
     val treeException = if (errorBuffer.nonEmpty) {
 
-      val treeException = TreeException.Wrap(errorBuffer)
+      val treeException = TreeException.wrap(errorBuffer)
       if (failFast) throw treeException
       Some(treeException)
     }
