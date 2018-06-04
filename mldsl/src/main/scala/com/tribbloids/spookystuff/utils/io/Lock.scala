@@ -12,11 +12,12 @@ class Lock(
             execution: URIResolver#Execution
           ) extends LocalCleanable {
 
+  import Lock._
+
   def retry: Retry = execution.outer.retry
   def expireAfter = execution.outer.lockExpireAfter
 
-  final def suffix: String = ".locked"
-  lazy val lockPathStr = execution.absolutePathStr + suffix
+  lazy val lockPathStr = execution.absolutePathStr + SUFFIX
   lazy val lockExecution = execution.outer.Execution(lockPathStr)
 
   //  @volatile var _acquired = false
@@ -92,4 +93,9 @@ class Lock(
 
     release()
   }
+}
+
+object Lock {
+
+  final val SUFFIX: String = ".locked"
 }

@@ -23,9 +23,9 @@ abstract class URIResolver extends Serializable {
 
   lazy val unlockForInput: Boolean = false
 
-  final def input[T](pathStr: String, unlocked: Boolean = unlockForInput)(f: InputResource => T): T = {
+  final def input[T](pathStr: String, unlockFirst: Boolean = unlockForInput)(f: InputResource => T): T = {
     val exe = Execution(pathStr)
-    if (unlocked) {
+    if (unlockFirst) {
       val lock = new Lock(Execution(pathStr))
       lock.assertUnlocked()
     }
