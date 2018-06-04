@@ -7,6 +7,8 @@ object LocalResolver extends URIResolver {
 
   val file2MD = ResourceMD.ReflectionParser[File]()
 
+  override lazy val unlockForInput: Boolean = true
+
   override def Execution(pathStr: String) = Execution(new File(pathStr))
   case class Execution(file: File) extends super.Execution {
     //    ensureAbsolute(file)

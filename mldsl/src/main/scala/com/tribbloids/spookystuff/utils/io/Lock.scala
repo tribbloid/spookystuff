@@ -46,7 +46,7 @@ class Lock(
         s"Lock '$lockPathStr' is acquired by another executor or thread for $lockedDuration milliseconds"
 
       if (lockedDuration >= expireAfter.toMillis) {
-        LoggerFactory.getLogger(this.getClass).error(errorInfo + ", lock has expired")
+        LoggerFactory.getLogger(this.getClass).error(errorInfo + " and has expired")
         lockExpired = true
       }
       else {

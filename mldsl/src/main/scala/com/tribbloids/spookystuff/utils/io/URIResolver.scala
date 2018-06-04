@@ -18,10 +18,12 @@ import scala.language.implicitConversions
 abstract class URIResolver extends Serializable {
 
   def Execution(pathStr: String): this.Execution
-  protected[io] def retry: Retry = RetryExponentialBackoff(8, 32000)
+  protected[io] def retry: Retry = RetryExponentialBackoff(8, 16000)
   protected[io] def lockExpireAfter: Duration = URIResolver.defaultLockExpireAfter
 
-  final def input[T](pathStr: String, unlocked: Boolean = true)(f: InputResource => T): T = {
+  lazy val unlockForInput: Boolean = false
+
+  final def input[T](pathStr: String, unlocked: Boolean = unlockForInput)(f: InputResource => T): T = {
     val exe = Execution(pathStr)
     if (unlocked) {
       val lock = new Lock(Execution(pathStr))

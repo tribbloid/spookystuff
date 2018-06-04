@@ -18,6 +18,8 @@ case class HDFSResolver(
 
   import Resource._
 
+  override lazy val unlockForInput: Boolean = true
+
   def getHadoopConf: Configuration = {
     hadoopConf.value
   }
