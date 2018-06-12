@@ -149,10 +149,6 @@
       </snapshots>
     </repository>
     <repository>
-      <id>cloudera</id>
-      <url>https://repository.cloudera.com/artifactory/cloudera-repos/</url>
-    </repository>
-    <repository>
       <id>typesafe-ivy</id>
       <name>Typesafe - ivy - releases</name>
       <url>http://repo.typesafe.com/typesafe/maven-ivy-releases/</url>
@@ -165,26 +161,26 @@
       <name>sonatype snapshots</name>
       <url>https://oss.sonatype.org/content/repositories/snapshots</url>
     </repository>
-    <repository>
-      <id>IESL Releases</id>
-      <name>IESL Repo</name>
-      <url>https://dev-iesl.cs.umass.edu/nexus/content/groups/public</url>
-      <snapshots>
-        <enabled>false</enabled>
-      </snapshots>
-      <releases>
-        <enabled>true</enabled>
-      </releases>
-    </repository>
+    <!--<repository>-->
+      <!--<id>IESL Releases</id>-->
+      <!--<name>IESL Repo</name>-->
+      <!--<url>https://dev-iesl.cs.umass.edu/nexus/content/groups/public</url>-->
+      <!--<snapshots>-->
+        <!--<enabled>false</enabled>-->
+      <!--</snapshots>-->
+      <!--<releases>-->
+        <!--<enabled>true</enabled>-->
+      <!--</releases>-->
+    <!--</repository>-->
     <!--<repository>-->
     <!--<id>clojars.org</id>-->
     <!--<url>http://clojars.org/repo</url>-->
     <!--</repository>-->
-    <repository>
-      <id>DataNucleus_Repos2</id>
-      <name>DataNucleus Repository</name>
-      <url>http://www.datanucleus.org/downloads/maven2</url>
-    </repository>
+    <!--<repository>-->
+      <!--<id>DataNucleus_Repos2</id>-->
+      <!--<name>DataNucleus Repository</name>-->
+      <!--<url>http://www.datanucleus.org/downloads/maven2</url>-->
+    <!--</repository>-->
 
     <!--<repository>-->
     <!--<id>maven.oracle.com</id>-->
