@@ -47,7 +47,7 @@ object SpookyEnvFixture {
           val nonLocalDrivers = tuple._2.values
             .filter {
               v =>
-                v.lifespan.strategy == Lifespan.Task
+                v.lifespan.tpe == Lifespan.Task
             }
           assert(
             nonLocalDrivers.isEmpty,
@@ -147,7 +147,7 @@ abstract class SpookyEnvFixture
 
   def emptySchema = SpookySchema(SpookyExecutionContext(spooky))
 
-  implicit def withSchema(row: SquashedFetchedRow): SquashedFetchedRow#WSchema = new row.WSchema(emptySchema)
+  implicit def withSchema(row: SquashedFetchedRow): SquashedFetchedRow#WSchema = row.WSchema(emptySchema)
   implicit def extractor2Resolved[T, R](extractor: Alias[T, R]): GenResolved[T, R] = GenResolved(
     extractor.resolve(emptySchema),
     TypedField(

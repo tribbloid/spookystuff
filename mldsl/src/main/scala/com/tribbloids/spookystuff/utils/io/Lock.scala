@@ -2,7 +2,7 @@ package com.tribbloids.spookystuff.utils.io
 
 import java.nio.file.FileAlreadyExistsException
 
-import com.tribbloids.spookystuff.utils.lifespan.{Lifespan, LocalCleanable}
+import com.tribbloids.spookystuff.utils.lifespan.LocalCleanable
 import org.slf4j.LoggerFactory
 
 import scala.annotation.tailrec
@@ -78,8 +78,6 @@ class Lock(
       assertUnlockedOnce(acquire)
     }
   }
-
-  override def _lifespan: Lifespan = Lifespan.Auto() //TODO: enable?
 
   def release() = {
     lockExecution.remove(false)

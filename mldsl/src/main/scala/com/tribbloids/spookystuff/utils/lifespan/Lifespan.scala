@@ -11,29 +11,29 @@ import scala.util.Try
   */
 abstract class Lifespan extends IDMixin with Serializable {
 
-  def strategy: LifespanType
+  def tpe: LifespanType
   def ctxFactory: () => LifespanContext
 
   @transient lazy val ctx = ctxFactory()
 
-//  @transient @volatile var _ctx: LifespanContext = _
-//  def ctx = this.synchronized {
-//    if (_ctx == null) {
-//      updateCtx()
-//    }
-//    else {
-//      _ctx
-//    }
-//  }
-//
-//  def updateCtx(factory: () => LifespanContext = ctxFactory): LifespanContext = {
-//    val neo = ctxFactory()
-//    _ctx = neo
-//    neo
-//  }
+  //  @transient @volatile var _ctx: LifespanContext = _
+  //  def ctx = this.synchronized {
+  //    if (_ctx == null) {
+  //      updateCtx()
+  //    }
+  //    else {
+  //      _ctx
+  //    }
+  //  }
+  //
+  //  def updateCtx(factory: () => LifespanContext = ctxFactory): LifespanContext = {
+  //    val neo = ctxFactory()
+  //    _ctx = neo
+  //    neo
+  //  }
 
   def _id = {
-    strategy.getCleanupBatchID(ctx)
+    tpe.getCleanupBatchID(ctx)
   }
 
   {
@@ -43,7 +43,7 @@ abstract class Lifespan extends IDMixin with Serializable {
     ctx //always generate context on construction
 
     if (!Cleanable.uncleaned.contains(_id)) {
-      strategy.addCleanupHook (
+      tpe.addCleanupHook (
         ctx,
         {
           () =>
@@ -64,7 +64,7 @@ abstract class Lifespan extends IDMixin with Serializable {
     (nameOpt.toSeq ++ Seq(idStr)).mkString(":")
   }
 
-  def isTask = strategy == Lifespan.Task
+  def isTask = tpe == Lifespan.Task
 }
 
 case class LifespanContext(
@@ -90,7 +90,7 @@ case class LifespanContext(
           var suffix: Seq[String] = Nil
           if (task.isCompleted()) suffix :+= "completed"
           if (task.isInterrupted()) suffix :+= "interrupted"
-//          if (task.isRunningLocally()) suffix :+= "local"
+          //          if (task.isRunningLocally()) suffix :+= "local"
           suffix.mkString("(",",",")")
         }
   }
@@ -139,13 +139,18 @@ object Lifespan {
                  ) extends Lifespan {
     def this() = this(None)
 
-    override def strategy: LifespanType = Task
+    override def tpe: LifespanType = Task
   }
 
   object JVM extends LifespanType {
     override def addCleanupHook(ctx: LifespanContext, fn: () => Unit): Unit = {
-      sys.addShutdownHook {
-        fn()
+      try {
+        sys.addShutdownHook {
+          fn()
+        }
+      }
+      catch {
+        case e: IllegalStateException if e.getMessage.contains("Shutdown") =>
       }
     }
 
@@ -162,7 +167,7 @@ object Lifespan {
                 ) extends Lifespan {
     def this() = this(None)
 
-    override def strategy: LifespanType = JVM
+    override def tpe: LifespanType = JVM
   }
 
   object Auto extends LifespanType {
@@ -190,6 +195,6 @@ object Lifespan {
                  ) extends Lifespan {
     def this() = this(None)
 
-    override def strategy: LifespanType = Auto
+    override def tpe: LifespanType = Auto
   }
 }
