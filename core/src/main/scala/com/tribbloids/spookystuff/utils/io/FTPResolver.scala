@@ -87,7 +87,7 @@ case class FTPResolver(
       }
     }
 
-    override def remove(mustExist: Boolean): Unit = {
+    override def _remove(mustExist: Boolean): Unit = {
       ???
       //TODO: not supported by java library! should switch to a more professional one like org.apache.commons.net.ftp.FTPClient
     }

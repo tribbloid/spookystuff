@@ -21,6 +21,7 @@ class CleanableSuite extends SpookyEnvFixture {
     sc.foreachWorker {
       Cleanable.cleanSweepAll {
         case _: DummyCleanable => true
+        case _ => false
       }
     }
   }

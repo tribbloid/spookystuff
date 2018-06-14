@@ -67,7 +67,7 @@ abstract class URIResolver extends Serializable {
     * ensure sequential access
     *
     */
-//  def lockAccessDuring[T](pathStr: String)(f: String => T): T = {f(pathStr)}
+  //  def lockAccessDuring[T](pathStr: String)(f: String => T): T = {f(pathStr)}
 
   trait Execution extends NOTSerializable {
 
@@ -79,22 +79,32 @@ abstract class URIResolver extends Serializable {
     def input[T](f: InputResource => T): T
 
     // remove & write: execute immediately! write an empty file even if stream is not used
-    def remove(mustExist: Boolean = true): Unit
+    protected[io] def _remove(mustExist: Boolean = true): Unit
+    final def remove(mustExist: Boolean = true): Unit = {
+      _remove(mustExist)
+      retry {
+        input {
+          in =>
+            assert(!in.isAlreadyExisting, s"$absolutePathStr cannot be deleted")
+        }
+      }
+    }
+
     def output[T](overwrite: Boolean)(f: OutputResource => T): T
 
-//    final def peek(): Unit] = {
-//      read({_ =>})
-//    }
-//
-//    final def touch(overwrite: Boolean = false): Resource[Unit] = {
-//      write(overwrite, { _ =>})
-//
-//      //          retry { //TODO: necessary?
-//      //            assert(
-//      //              fs.exists(lockPath),
-//      //              s"Lock '$lockPath' cannot be persisted")
-//      //          }
-//    }
+    //    final def peek(): Unit] = {
+    //      read({_ =>})
+    //    }
+    //
+    //    final def touch(overwrite: Boolean = false): Resource[Unit] = {
+    //      write(overwrite, { _ =>})
+    //
+    //      //          retry { //TODO: necessary?
+    //      //            assert(
+    //      //              fs.exists(lockPath),
+    //      //              s"Lock '$lockPath' cannot be persisted")
+    //      //          }
+    //    }
   }
 }
 

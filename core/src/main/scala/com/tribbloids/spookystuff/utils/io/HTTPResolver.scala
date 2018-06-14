@@ -154,7 +154,7 @@ case class HTTPResolver(
       //    }
     }
 
-    override def remove(mustExist: Boolean): Unit = {
+    override def _remove(mustExist: Boolean): Unit = {
       ???
     }
 

@@ -144,7 +144,7 @@ case class HDFSResolver(
       }
     }
 
-    def remove(mustExist: Boolean = true): Unit = doAsUGI {
+    def _remove(mustExist: Boolean = true): Unit = doAsUGI {
       fs.delete(path, true)
     }
 

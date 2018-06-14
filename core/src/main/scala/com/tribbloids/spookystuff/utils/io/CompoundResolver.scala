@@ -25,7 +25,7 @@ trait CompoundResolver extends URIResolver {
     override def output[T](overwrite: Boolean)(f: OutputResource => T) =
       impl.output(overwrite)(f)
 
-    override def remove(mustExist: Boolean): Unit = impl.remove(mustExist)
+    override def _remove(mustExist: Boolean): Unit = impl._remove(mustExist)
   }
 
 //  override def lockAccessDuring[T](pathStr: String)(f: String => T) =

@@ -2,8 +2,7 @@ package com.tribbloids.spookystuff.utils.io
 
 import java.nio.file.FileAlreadyExistsException
 
-import com.tribbloids.spookystuff.utils.Retry
-import com.tribbloids.spookystuff.utils.lifespan.LocalCleanable
+import com.tribbloids.spookystuff.utils.lifespan.{Lifespan, LocalCleanable}
 import org.slf4j.LoggerFactory
 
 import scala.annotation.tailrec
@@ -13,12 +12,11 @@ class Lock(
           ) extends LocalCleanable {
 
   import Lock._
-
-  def retry: Retry = execution.outer.retry
-  def expireAfter = execution.outer.lockExpireAfter
+  val resolver = execution.outer
+  import resolver._
 
   lazy val lockPathStr = execution.absolutePathStr + SUFFIX
-  lazy val lockExecution = execution.outer.Execution(lockPathStr)
+  lazy val lockExecution = Execution(lockPathStr)
 
   //  @volatile var _acquired = false
 
@@ -29,6 +27,7 @@ class Lock(
 
   def assertUnlocked(acquire: Boolean = false): Unit = {
     retry{
+      //TODO: fail early for non LockError
       assertUnlockedOnce(acquire)
     }
   }
@@ -46,12 +45,12 @@ class Lock(
       def errorInfo =
         s"Lock '$lockPathStr' is acquired by another executor or thread for $lockedDuration milliseconds"
 
-      if (lockedDuration >= expireAfter.toMillis) {
+      if (lockedDuration >= lockExpireAfter.toMillis) {
         LoggerFactory.getLogger(this.getClass).error(errorInfo + " and has expired")
         lockExpired = true
       }
       else {
-        throw new AssertionError(errorInfo, e)
+        throw new ResourceLockError(errorInfo, e)
       }
     }
 
@@ -80,7 +79,7 @@ class Lock(
     }
   }
 
-  //  override def _lifespan: Lifespan = Lifespan.Auto() //TODO: enable?
+  override def _lifespan: Lifespan = Lifespan.Auto() //TODO: enable?
 
   def release() = {
     lockExecution.remove(false)
@@ -97,5 +96,5 @@ class Lock(
 
 object Lock {
 
-  final val SUFFIX: String = ".locked"
+  final val SUFFIX: String = ".lock"
 }

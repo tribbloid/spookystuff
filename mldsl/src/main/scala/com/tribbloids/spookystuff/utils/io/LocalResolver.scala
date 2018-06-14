@@ -93,7 +93,7 @@ object LocalResolver extends URIResolver {
       }
     }
 
-    override def remove(mustExist: Boolean): Unit = { //TODO: validate mustExist
+    override def _remove(mustExist: Boolean): Unit = { //TODO: validate mustExist
       file.delete()
     }
 

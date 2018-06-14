@@ -222,7 +222,7 @@ abstract class SimLinkSuite extends SimUAVFixture with LinkMixin {
           assert(badLink.statusString.contains("Link DRONE@dummy is unreachable for"))
           assert {
             val e = badLink.lastFailureOpt.get._1
-            e.isInstanceOf[PyInterpretationException] || e.isInstanceOf[Wrap]
+            e.isInstanceOf[PyInterpretationException] //|| e.isInstanceOf[Wrap]
           }
         }
       }
