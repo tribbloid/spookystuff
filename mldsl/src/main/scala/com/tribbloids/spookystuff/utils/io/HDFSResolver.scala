@@ -20,11 +20,11 @@ case class HDFSResolver(
 
   override lazy val unlockForInput: Boolean = true
 
-  def getHadoopConf: Configuration = {
+  def _hadoopConf: Configuration = {
     hadoopConf.value
   }
 
-  override def toString = s"${this.getClass.getSimpleName}($getHadoopConf)"
+  override def toString = s"${this.getClass.getSimpleName}(${_hadoopConf})"
 
   def ugiOpt = ugiFactory()
 
@@ -53,7 +53,7 @@ case class HDFSResolver(
   override def Execution(pathStr: String) = Execution(new Path(pathStr))
   case class Execution(path: Path) extends super.Execution {
 
-    lazy val fs: FileSystem = path.getFileSystem(getHadoopConf)
+    lazy val fs: FileSystem = path.getFileSystem(_hadoopConf) //DON'T close! shared by all in the process
 
     override lazy val absolutePathStr: String = doAsUGI{
 
@@ -64,13 +64,9 @@ case class HDFSResolver(
           path.toString
       }
       else {
-        val fs = path.getFileSystem(getHadoopConf)
         try {
           val root = fs.getWorkingDirectory.toString.stripSuffix("/")
           root +"/" +path.toString
-        }
-        finally {
-          fs.close()
         }
       }
     }

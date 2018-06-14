@@ -32,8 +32,10 @@ abstract class URIResolver extends Serializable {
     exe.input(f)
   }
 
-  final def output[T](pathStr: String, overwrite: Boolean)(f: OutputResource => T): T = Execution(pathStr)
-    .output(overwrite)(f)
+  final def output[T](pathStr: String, overwrite: Boolean)(f: OutputResource => T): T = {
+    val exe = Execution(pathStr)
+    exe.output(overwrite)(f)
+  }
 
   final def toAbsolute(pathStr: String): String = Execution(pathStr).absolutePathStr
 

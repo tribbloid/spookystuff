@@ -7,7 +7,6 @@ import org.apache.spark.ml.dsl.utils.metadata.Metadata
 
 import scala.collection.immutable.ListMap
 import scala.language.implicitConversions
-import scala.util.Try
 
 @deprecated
 sealed class ResourceMDView(
@@ -86,7 +85,7 @@ abstract class OutputResource extends Resource[OutputStream] {
   override def cleanImpl(): Unit = Option(existingStream)
     .foreach{
       v =>
-        Try{v.flush()}
+        v.flush()
         v.close()
     }
 }
