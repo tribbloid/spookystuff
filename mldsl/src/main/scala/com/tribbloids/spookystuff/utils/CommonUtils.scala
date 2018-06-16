@@ -53,9 +53,12 @@ abstract class CommonUtils {
   def retry = RetryFixedInterval
 
 
-  protected def _callerShowStr = FlowUtils.callerShowStr(
-    exclude = Seq(this.getClass)
-  )
+  protected def _callerShowStr = {
+    val result = FlowUtils.callerShowStr(
+      exclude = Seq(classOf[CommonUtils])
+    )
+    result
+  }
 
   def withDeadline[T](
                        n: Duration,
@@ -118,8 +121,7 @@ abstract class CommonUtils {
               return result
             }
             catch {
-              case e: TimeoutException if heartbeatMillis >= remainMillis =>
-                throw e
+              case e: TimeoutException if heartbeatMillis < remainMillis =>
             }
           }
           throw new UnknownError("IMPOSSIBLE")

@@ -74,7 +74,7 @@ class SpookyUtilsSuite extends FunSpecx {
         }
       )
     }
-    TestHelper.assert(time2 < 6000)
+    assert(time2 < 6000)
   }
 
   it("withDeadline can execute heartbeat") {
