@@ -1,5 +1,7 @@
 package com.tribbloids.spookystuff.utils
 
+import java.util.concurrent.ConcurrentHashMap
+
 import com.google.common.cache.CacheBuilder
 
 import scala.collection.mutable
@@ -42,10 +44,8 @@ object CachingUtils {
 
   type ConcurrentSet[V] = mutable.Set[V]
 
-  //TODO: change to MapAsSet? impl in scala deprecated
-  def ConcurrentSet[V](): mutable.SynchronizedSet[V] = {
-    //    Collections.synchronizedSet[V](new util.HashSet[V]())
-    //      .asScala
+  def ConcurrentSet[V](): mutable.Set[V] = {
+    //    new ConcurrentHashMap[V, Unit]().keySet().asScala //TODO: switch to this
     new mutable.HashSet[V]() with mutable.SynchronizedSet[V]
   }
 }

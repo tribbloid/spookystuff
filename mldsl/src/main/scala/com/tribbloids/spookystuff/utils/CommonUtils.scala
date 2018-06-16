@@ -52,70 +52,78 @@ abstract class CommonUtils {
   // TODO: remove, use object API everywhere.
   def retry = RetryFixedInterval
 
+
+  protected def _callerShowStr = FlowUtils.callerShowStr(
+    exclude = Seq(this.getClass)
+  )
+
   def withDeadline[T](
                        n: Duration,
                        heartbeatOpt: Option[Duration] = Some(10.seconds)
                      )(
                        fn: =>T,
-                       heartbeatFn: Option[Int => Unit] = None
+                       callbackOpt: Option[Int => Unit] = None
                      ): T = {
 
-    val breakpointStr: String = FlowUtils.stackTracesShowStr(
-      FlowUtils.getBreakpointInfo()
-        .slice(1, Int.MaxValue)
-      //        .filterNot(_.getClassName == this.getClass.getCanonicalName)
-    )
-    val startTime = System.currentTimeMillis()
-
-    var thread: Thread = null
+    @transient var thread: Thread = null
     val future = Future {
       thread = Thread.currentThread()
       fn
     }
 
-    val nMillis = n.toMillis
-    val terminateAt = startTime + nMillis
+    lazy val TIMEOUT = "TIMEOUT!!!!" + s"\t@ ${_callerShowStr}"
 
-    val effectiveHeartbeatFn: (Int) => Unit = heartbeatFn.getOrElse {
-      i =>
-        val remainMillis = terminateAt - System.currentTimeMillis()
-        LoggerFactory.getLogger(this.getClass).info(
-          s"T - ${remainMillis.toDouble/1000} second(s)" +
-            "\t@ " + breakpointStr
-        )
+    try {
+      val hb = AwaitWithHeartbeat(heartbeatOpt)(callbackOpt)
+      hb.result(future, n)
     }
+    catch {
+      case e: TimeoutException =>
+        Option(thread).foreach(_.interrupt())
+        LoggerFactory.getLogger(this.getClass).debug(TIMEOUT)
+        throw e
+    }
+  }
 
-    //TODO: this doesn't terminate the future upon timeout exception! need a better pattern.
-    heartbeatOpt match {
-      case None =>
-        try {
+  case class AwaitWithHeartbeat(
+                                 intervalOpt: Option[Duration] = Some(10.seconds)
+                               )(callbackOpt: Option[Int => Unit] = None) {
+
+    def result[T](future: Future[T], n: Duration): T = {
+      val nMillis = n.toMillis
+
+      intervalOpt match {
+        case None =>
           Await.result(future, n)
-        }
-        catch {
-          case e: TimeoutException =>
-            LoggerFactory.getLogger(this.getClass).debug("TIMEOUT!!!!")
-            throw e
-        }
-      case Some(heartbeat) =>
-        val heartbeatMillis = heartbeat.toMillis
-        for (i <- 0 to (nMillis / heartbeatMillis).toInt) {
-          val remainMillis = Math.max(terminateAt - System.currentTimeMillis(), 0L)
-          effectiveHeartbeatFn(i)
-          val epochMillis = Math.min(heartbeatMillis, remainMillis)
-          try {
-            val result =  Await.result(future, epochMillis.milliseconds)
-            return result
+        case Some(heartbeat) =>
+          val startTime = System.currentTimeMillis()
+          val terminateAt = startTime + nMillis
+
+          val effectiveHeartbeatFn: Int => Unit = callbackOpt.getOrElse {
+            i =>
+              val remainMillis = terminateAt - System.currentTimeMillis()
+              LoggerFactory.getLogger(this.getClass).info(
+                s"T - ${remainMillis.toDouble / 1000} second(s)" +
+                  "\t@ " + _callerShowStr
+              )
           }
-          catch {
-            case e: TimeoutException =>
-              if (heartbeatMillis >= remainMillis) {
-                Option(thread).foreach(_.interrupt())
-                LoggerFactory.getLogger(this.getClass).debug("TIMEOUT!!!!")
+
+          val heartbeatMillis = heartbeat.toMillis
+          for (i <- 0 to (nMillis / heartbeatMillis).toInt) {
+            val remainMillis = Math.max(terminateAt - System.currentTimeMillis(), 0L)
+            effectiveHeartbeatFn(i)
+            val epochMillis = Math.min(heartbeatMillis, remainMillis)
+            try {
+              val result = Await.result(future, epochMillis.milliseconds)
+              return result
+            }
+            catch {
+              case e: TimeoutException if heartbeatMillis >= remainMillis =>
                 throw e
-              }
+            }
           }
-        }
-        throw new UnknownError("IMPOSSIBLE")
+          throw new UnknownError("IMPOSSIBLE")
+      }
     }
   }
 

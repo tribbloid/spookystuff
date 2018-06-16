@@ -61,7 +61,7 @@ case class Retry(
                   n: Int = 3,
                   intervalFactory: Int => Long = {_ => 0L},
                   silent: Boolean = false,
-                  callerShowStr: String = null
+                  showStr: String = null
                 ) {
 
   def apply[T](fn: =>T) = {
@@ -91,9 +91,9 @@ case class RetryImpl[T](
     import retry._
 
     lazy val _callerShowStr = {
-      Option(callerShowStr).getOrElse {
+      Option(showStr).getOrElse {
         FlowUtils.callerShowStr(
-          exclude = Seq(classOf[Retry], classOf[RetryImpl[_]])
+          exclude = Seq(classOf[Retry], classOf[RetryImpl[_]], classOf[CommonUtils])
         )
       }
     }

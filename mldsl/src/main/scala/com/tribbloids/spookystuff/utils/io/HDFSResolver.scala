@@ -64,10 +64,8 @@ case class HDFSResolver(
           path.toString
       }
       else {
-        try {
-          val root = fs.getWorkingDirectory.toString.stripSuffix("/")
-          root +"/" +path.toString
-        }
+        val root = fs.getWorkingDirectory.toString.stripSuffix("/")
+        root +"/" +path.toString
       }
     }
 

@@ -197,6 +197,9 @@ trait Suitex extends {
     println(s"======================================= $name ===================================")
   }
 
+
+  def bypass(f: => Unit) = {}
+
   //  override def intercept[T <: AnyRef](f: => Any)(implicit manifest: Manifest[T]): T = {
   //    super.intercept{
   //      try f
