@@ -2,10 +2,10 @@ package com.tribbloids.spookystuff.example
 
 import java.util.Properties
 
-import org.apache.spark.sql.SQLContext
-import org.apache.spark.{SparkConf, SparkContext}
 import com.tribbloids.spookystuff.SpookyContext
 import com.tribbloids.spookystuff.dsl.Samplers
+import org.apache.spark.SparkConf
+import org.apache.spark.sql.SparkSession
 
 /**
  * Created by peng on 22/06/14.
@@ -16,20 +16,20 @@ trait SpookyEnv {
 
   val appName = this.getClass.getSimpleName.replace("$","")
 
-  val sc: SparkContext = {
+  val spark = {
+
     val conf: SparkConf = new SparkConf().setAppName(appName)
 
     val master = conf.getOption("spark.master")
-    .orElse(Option(System.getenv("MASTER")))
-    .getOrElse(s"local[${Runtime.getRuntime.availableProcessors()},10]")
+      .orElse(Option(System.getenv("MASTER")))
+      .getOrElse(s"local[${Runtime.getRuntime.availableProcessors()},10]")
 
     conf.setMaster(master)
-    new SparkContext(conf)
-  }
 
-  val sql: SQLContext = {
-    new SQLContext(sc)
+    SparkSession.builder().config(conf).appName(appName).getOrCreate()
   }
+  val sc = spark.sparkContext
+  val sql = spark.sqlContext
 
   def sampler = Samplers.FirstN(3)
   def maxExploreDepth = 2
