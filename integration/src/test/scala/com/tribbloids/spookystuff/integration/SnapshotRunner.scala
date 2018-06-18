@@ -3,7 +3,7 @@ package com.tribbloids.spookystuff.integration
 import com.tribbloids.spookystuff.SpookyEnv
 import com.tribbloids.spookystuff.actions.{Trace, Wget}
 import com.tribbloids.spookystuff.rdd.FetchedDataset
-import com.tribbloids.spookystuff.testutils.TestHelper
+import com.tribbloids.spookystuff.utils.CommonConst
 
 /**
   * move the entire webscraper.io/test-sites/ into a local dir for integration tests
@@ -27,7 +27,7 @@ object SnapshotRunner extends SpookyEnv {
       .andFn {
         uri =>
           val base = uri.split(SPLITTER).last
-          TestHelper.TEMP_PATH \\ "test-sites" \\ base
+          CommonConst.TEMP_DIR \\ "test-sites" \\ base
       }
 
     def save() = {

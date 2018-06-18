@@ -16,7 +16,7 @@ class FetchedDatasetSuite extends SpookyEnvFixture with LocalPathDocsFixture {
   //    test("should support repartition") {
   //      val spooky = this.spooky
   //
-  //      sc.setCheckpointDir(s"file://${System.getProperty("user.dir")}/temp/spooky-unit/${this.getClass.getSimpleName}/")
+  //      sc.setCheckpointDir(s"file://${CommonConst.USER_DIR}/temp/spooky-unit/${this.getClass.getSimpleName}/")
   //
   //      val first = spooky
   //        .fetch(Wget("http://en.wikipedia.org")).persist()

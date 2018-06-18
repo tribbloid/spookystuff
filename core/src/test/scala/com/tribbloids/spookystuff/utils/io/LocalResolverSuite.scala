@@ -3,6 +3,7 @@ package com.tribbloids.spookystuff.utils.io
 import java.beans.Transient
 
 import com.tribbloids.spookystuff.testutils.{FunSpecx, TestHelper}
+import com.tribbloids.spookystuff.utils.CommonConst
 import org.apache.spark.SparkConf
 import org.apache.spark.serializer.KryoSerializer
 
@@ -24,7 +25,7 @@ class LocalResolverSuite extends FunSpecx {
 
   it("can convert relative path of non-existing file") {
     val abs = resolver.toAbsolute(nonExistingRelativePath)
-    assert(abs == schemaPrefix + System.getProperty("user.dir") +"/"+ nonExistingRelativePath)
+    assert(abs == schemaPrefix + CommonConst.USER_DIR +"/"+ nonExistingRelativePath)
   }
 
   it("can convert absolute path of non-existing file") {
@@ -51,7 +52,7 @@ class LocalResolverSuite extends FunSpecx {
   //  it("ResourceFirstResolver can convert path to non-existing file to absolute") {
   //    val resolver = ResourceFirstResolver(HDFSResolver(new Configuration()))
   //    val abs = resolver.toAbsolute(nonExistingPath)
-  //    assert(abs == "file:"+System.getProperty("user.dir") +"/"+ nonExistingPath)
+  //    assert(abs == "file:"+CommonConst.USER_DIR +"/"+ nonExistingPath)
   //  }
 
   it("resolver is Kryo serializable") {

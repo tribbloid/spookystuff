@@ -5,6 +5,7 @@ import com.tribbloids.spookystuff.doc.DocUtils
 import com.tribbloids.spookystuff.dsl._
 import com.tribbloids.spookystuff.extractors.impl.Lit
 import com.tribbloids.spookystuff.integration.IntegrationFixture
+import com.tribbloids.spookystuff.utils.CommonConst
 
 class FetchWgetAndSaveIT extends IntegrationFixture {
 
@@ -27,7 +28,7 @@ class FetchWgetAndSaveIT extends IntegrationFixture {
     //    fetched.count()
 
     val RDD = fetched
-      .savePages_!(x"file://${System.getProperty("user.dir")}/temp/spooky-integration/save/${'name}", overwrite = true)
+      .savePages_!(x"file://${CommonConst.USER_DIR}/temp/spooky-integration/save/${'name}", overwrite = true)
       .select(S.saved ~ 'saved_path)
 
     val savedPageRows = RDD.unsquashedRDD.collect()
@@ -43,10 +44,10 @@ class FetchWgetAndSaveIT extends IntegrationFixture {
 
     assert(
       savedPageRows(0).dataRow.get('saved_path).get.asInstanceOf[Iterable[Any]].toSeq contains
-        s"file:${System.getProperty("user.dir")}/temp/spooky-integration/save/Wikipedia.png"
+        s"file:${CommonConst.USER_DIR}/temp/spooky-integration/save/Wikipedia.png"
     )
 
-    val loadedContent = DocUtils.load(s"file://${System.getProperty("user.dir")}/temp/spooky-integration/save/Wikipedia.png")(spooky)
+    val loadedContent = DocUtils.load(s"file://${CommonConst.USER_DIR}/temp/spooky-integration/save/Wikipedia.png")(spooky)
 
     assert(loadedContent === content)
 

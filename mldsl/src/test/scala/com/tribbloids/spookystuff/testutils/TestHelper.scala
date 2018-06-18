@@ -3,7 +3,7 @@ package com.tribbloids.spookystuff.testutils
 import java.io.File
 import java.util.Properties
 
-import com.tribbloids.spookystuff.utils.{CommonUtils, ConfUtils, NOTSerializable}
+import com.tribbloids.spookystuff.utils.{CommonConst, CommonUtils, ConfUtils, NOTSerializable}
 import org.apache.commons.io.FileUtils
 import org.apache.spark.serializer.KryoSerializer
 import org.apache.spark.sql.SparkSession
@@ -13,10 +13,6 @@ import scala.reflect.ClassTag
 import scala.util.{Failure, Success, Try}
 
 class TestHelper() extends NOTSerializable {
-
-  val USER_DIR = System.getProperty("user.dir")
-  val TEMP_PATH = CommonUtils.\\\(USER_DIR, "temp")
-  val UNPACK_RESOURCE_PATH = CommonUtils.\\\(System.getProperty("java.io.tmpdir"), "spookystuff", "resources")
 
   val properties = new Properties()
   Try {
@@ -100,8 +96,8 @@ class TestHelper() extends NOTSerializable {
     Math.min(n*MEMORY_PER_CORE, cap)
   }
 
-  val METASTORE_PATH = CommonUtils.\\\(System.getProperty("user.dir"), "metastore_db")
-  val WAREHOUSE_PATH = CommonUtils.\\\(System.getProperty("user.dir"), "warehouse")
+  val METASTORE_PATH = CommonUtils.\\\(CommonConst.USER_DIR, "metastore_db")
+  val WAREHOUSE_PATH = CommonUtils.\\\(CommonConst.USER_DIR, "warehouse")
 
   /**
     * @return local mode: None -> local[n, 4]
@@ -264,7 +260,7 @@ class TestHelper() extends NOTSerializable {
   }
 
   //TODO: clean up S3 as well
-  def clearTempDirs(paths: Seq[String] = Seq(TEMP_PATH)): Unit = {
+  def clearTempDirs(paths: Seq[String] = Seq(CommonConst.TEMP_DIR)): Unit = {
     paths.foreach {
       path =>
         Try {

@@ -4,6 +4,7 @@ import java.util.Properties
 
 import com.tribbloids.spookystuff.SpookyContext
 import com.tribbloids.spookystuff.dsl.Samplers
+import com.tribbloids.spookystuff.utils.CommonConst
 import org.apache.spark.SparkConf
 import org.apache.spark.sql.SparkSession
 
@@ -42,11 +43,11 @@ trait SpookyEnv {
     val dirs = spooky.dirConf
 
     if (dirs.root == null){
-      dirs.root = s"file://${System.getProperty("user.dir")}/temp/spooky-local/$appName/"
+      dirs.root = s"file://${CommonConst.USER_DIR}/temp/spooky-local/$appName/"
     }
 
     if (dirs.cache == null){
-      dirs.cache = s"file://${System.getProperty("user.dir")}/temp/spooky-local/cache/"
+      dirs.cache = s"file://${CommonConst.USER_DIR}/temp/spooky-local/cache/"
     }
 
     val p = new Properties()

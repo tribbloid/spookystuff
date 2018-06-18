@@ -9,7 +9,7 @@ import com.tribbloids.spookystuff.row.{SpookySchema, SquashedFetchedRow, TypedFi
 import com.tribbloids.spookystuff.session.CleanWebDriver
 import com.tribbloids.spookystuff.testutils.{FunSpecx, RemoteDocsFixture, TestHelper}
 import com.tribbloids.spookystuff.utils.lifespan.{Cleanable, Lifespan}
-import com.tribbloids.spookystuff.utils.{CommonUtils, RetryFixedInterval}
+import com.tribbloids.spookystuff.utils.{CommonConst, CommonUtils, RetryFixedInterval}
 import org.apache.spark.SparkContext
 import org.apache.spark.sql.SQLContext
 import org.jutils.jprocesses.JProcesses
@@ -224,7 +224,7 @@ abstract class SpookyEnvFixture
         cacheRead = false
       ),
       DirConf(
-        root = CommonUtils.\\\(TestHelper.TEMP_PATH, "spooky-unit")
+        root = CommonUtils.\\\(CommonConst.TEMP_DIR, "spooky-unit")
       )
     )
   }

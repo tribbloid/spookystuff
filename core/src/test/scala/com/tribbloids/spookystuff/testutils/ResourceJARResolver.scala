@@ -4,7 +4,7 @@ import java.io.File
 import java.net.URL
 import java.nio.file.{Path, Paths}
 
-import com.tribbloids.spookystuff.utils.{CommonUtils, SpookyUtils}
+import com.tribbloids.spookystuff.utils.{CommonConst, CommonUtils, SpookyUtils}
 
 /**
   * Created by peng on 20/09/16.
@@ -13,7 +13,7 @@ case class ResourceJARResolver(rootPath: String) {
 
   //TODO: this should be within TEMP_PATH, however current temp directory cleanup is broken and may results in resources extracted in new suite being deleted by previous suite
   final val UNPACK_RESOURCE_PATH = CommonUtils.:\(CommonUtils.\\\(
-    TestHelper.UNPACK_RESOURCE_PATH,
+    CommonConst.UNPACK_RESOURCE_PATH,
     "generated-resources",
     rootPath
   ))
