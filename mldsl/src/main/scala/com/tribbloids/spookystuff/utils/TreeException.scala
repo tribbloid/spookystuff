@@ -140,7 +140,6 @@ object TreeException {
     }
   }
   /**
-    *
     * @param causes
     * @param upliftUnary not recommended to set to false, should use Wrapper() directly for type safety
     * @return
