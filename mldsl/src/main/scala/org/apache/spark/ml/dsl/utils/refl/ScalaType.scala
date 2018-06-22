@@ -7,7 +7,6 @@ import com.tribbloids.spookystuff.utils._
 import org.apache.spark.SparkConf
 import org.apache.spark.serializer.JavaSerializer
 import org.apache.spark.sql.catalyst.ScalaReflection
-import org.apache.spark.sql.catalyst.ScalaReflection.universe
 import org.apache.spark.sql.catalyst.ScalaReflection.universe._
 import org.apache.spark.sql.types._
 
@@ -23,6 +22,7 @@ import scala.reflect.ClassTag
   */
 //TODO: change to ThreadLocal to bypass thread safety?
 //TODO: use scala type class: http://danielwestheide.com/blog/2013/02/06/the-neophytes-guide-to-scala-part-12-type-classes.html
+//TODO: this should be a coded
 trait ScalaType[T] extends DataType
   with (() => TypeTag[T])
   with ReflectionLock with Serializable {
@@ -47,6 +47,8 @@ trait ScalaType[T] extends DataType
   @transient lazy val asClassTag: ClassTag[T] = locked {
     ClassTag(asClass)
   }
+
+  //TODO: aggregate into catalyst obj
   @transient lazy val tryReify: scala.util.Try[DataType] = locked {
     TypeUtils.tryCatalystTypeFor(asTypeTag)
       .flatMap {
@@ -61,6 +63,8 @@ trait ScalaType[T] extends DataType
   def reify: DataType = tryReify.get
   def reifyOrSelf = tryReify.getOrElse{this}
   def reifyOrNullType = tryReify.getOrElse{NullType}
+
+  //TODO: add classManifest
 
   // see [SPARK-8647], this achieves the needed constant hash code without declaring singleton
   final override def hashCode: Int = asClass.hashCode()

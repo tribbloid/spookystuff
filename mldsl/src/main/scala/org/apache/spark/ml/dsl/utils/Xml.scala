@@ -19,6 +19,7 @@ package org.apache.spark.ml.dsl.utils
 import java.text.SimpleDateFormat
 import java.util.Date
 
+import com.tribbloids.spookystuff.utils.CommonUtils
 import org.apache.spark.ml.dsl.utils.Xml.baseDataFormatsFactory
 import org.json4s._
 
@@ -229,7 +230,7 @@ object Xml {
   class XmlElem(name: String, value: String)
     extends Elem(null, name, xml.Null, TopScope, false, Text(value))
 
-  val baseDataFormatsFactory = new FlowUtils.ThreadLocal(
+  val baseDataFormatsFactory = new CommonUtils.ThreadLocal(
     Seq(
       new java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS"),
       new java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss"),
