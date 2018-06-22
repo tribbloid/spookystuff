@@ -7,7 +7,7 @@ import scala.runtime.ScalaRunTime
   */
 trait Verbose extends Product {
 
-  def productStr: String = ScalaRunTime._toString(this)
+  def shortStr: String = ScalaRunTime._toString(this)
   def detail: String = ""
 
   def withDetail(str: String) = {
@@ -16,7 +16,7 @@ trait Verbose extends Product {
     result
   }
 
-  def toStrDetailed = {
-    withDetail(productStr)
+  def detailedStr = {
+    withDetail(shortStr)
   }
 }

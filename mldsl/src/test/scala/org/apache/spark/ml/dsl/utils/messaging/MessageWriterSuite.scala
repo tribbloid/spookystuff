@@ -20,7 +20,7 @@ class MessageWriterSuite extends FunSpecx {
   val user2 = User("2", Some(Roles(Seq("r1", "r2"))))
   val map = Map(1 -> user1, 2 -> user2)
 
-  describe("productStr_/:/") {
+  describe("memberStr") {
 
     it("can print nested case classes") {
       val writer = MessageWriter(user1)

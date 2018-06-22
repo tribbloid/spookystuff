@@ -22,7 +22,7 @@ import scala.reflect.ClassTag
   */
 //TODO: change to ThreadLocal to bypass thread safety?
 //TODO: use scala type class: http://danielwestheide.com/blog/2013/02/06/the-neophytes-guide-to-scala-part-12-type-classes.html
-//TODO: this should be a coded
+//TODO: this should be a codec
 trait ScalaType[T] extends DataType
   with (() => TypeTag[T])
   with ReflectionLock with Serializable {

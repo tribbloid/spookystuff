@@ -75,7 +75,7 @@ trait Action extends ActionLike {
         action =>
           "| " + action.toString
       } ++
-        Seq("+> " + this.toStrDetailed)
+        Seq("+> " + this.detailedStr)
     }
       .mkString("\n")
 
