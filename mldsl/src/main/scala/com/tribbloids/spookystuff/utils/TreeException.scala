@@ -167,6 +167,8 @@ trait TreeException extends Throwable {
 
   import com.tribbloids.spookystuff.utils.TreeException.TreeNodeView
 
+  override def getCause: Throwable
+
   def causes: Seq[Throwable] = {
     val cause = getCause
     cause match {
