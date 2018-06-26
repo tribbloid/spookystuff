@@ -1,6 +1,7 @@
 package com.tribbloids.spookystuff.testutils
 
 import org.apache.spark.SparkEnv
+import org.apache.spark.ml.dsl.utils.OptionConversion
 import org.apache.spark.serializer.{JavaSerializer, KryoSerializer, Serializer}
 import org.scalatest.{FunSpec, Suite}
 
@@ -9,7 +10,7 @@ import scala.reflect.ClassTag
 /**
   * Created by peng on 17/05/16.
   */
-trait Suitex extends {
+trait Suitex extends OptionConversion {
   self: Suite =>
 
   final val ACTUAL = "[ACTUAL  /  LEFT]"
@@ -127,7 +128,7 @@ trait Suitex extends {
       println(toBePrinted)
 
       s"""
-        |"${actual.mkString("\n")}" did not equal "${expected.mkString("\n")}"
+         |"${actual.mkString("\n")}" did not equal "${expected.mkString("\n")}"
       """.trim.stripMargin
     }
   }
