@@ -14,7 +14,7 @@ object Fleet {
                       ) extends Fleet {
 
     def apply(): Set[UAV] = {
-      val hostPort = SpookyUtils.getBlockManagerID.hostPort
+      val hostPort = SpookyUtils.blockManagerIDOpt.get.hostPort
       uavs.flatMap {
         d =>
           if (hosts(d, hostPort)) Some(d)

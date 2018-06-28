@@ -6,7 +6,6 @@ import com.tribbloids.spookystuff.utils.TreeException
 import org.slf4j.LoggerFactory
 import com.tribbloids.spookystuff.utils.CachingUtils._
 
-import scala.language.implicitConversions
 import scala.reflect.ClassTag
 import scala.util.{Random, Try}
 

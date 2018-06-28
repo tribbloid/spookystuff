@@ -186,13 +186,13 @@ abstract class SpookyViews extends CommonViews {
     }
 
     //TODO: remove! not useful
-    def allExecutorCoreIDs = {
-      mapAtLeastOncePerExecutorCore {
-        val thread = Thread.currentThread()
-        (SpookyUtils.getBlockManagerID, thread.getId, thread.getName)
-      }
-        .collect()
-    }
+//    def allExecutorCoreIDs = {
+//      mapAtLeastOncePerExecutorCore {
+//        val thread = Thread.currentThread()
+//        (SpookyUtils.blockManagerIDOpt, thread.getId, thread.getName)
+//      }
+//        .collect()
+//    }
   }
 
   implicit class RDDView[T](val self: RDD[T]) {

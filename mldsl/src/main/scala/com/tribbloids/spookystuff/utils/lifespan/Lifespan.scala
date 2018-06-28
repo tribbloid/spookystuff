@@ -3,7 +3,6 @@ package com.tribbloids.spookystuff.utils.lifespan
 import com.tribbloids.spookystuff.utils.IDMixin
 import org.apache.spark.TaskContext
 
-import scala.language.implicitConversions
 import scala.util.Try
 
 /**

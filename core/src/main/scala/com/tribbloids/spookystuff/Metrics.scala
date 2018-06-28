@@ -10,7 +10,6 @@ import org.apache.spark.util.{AccumulatorV2, DoubleAccumulator, LongAccumulator}
 
 import scala.collection.immutable.ListMap
 import scala.collection.mutable.ArrayBuffer
-import scala.language.implicitConversions
 
 /**
   * Created by peng on 03/10/15.

@@ -298,34 +298,6 @@ These special characters are often called "metacharacters".
     h
   }
 
-  /**
-    * From doc of org.apache.spark.scheduler.TaskLocation
-    * Create a TaskLocation from a string returned by getPreferredLocations.
-    * These strings have the form executor_[hostname]_[executorid], [hostname], or
-    * hdfs_cache_[hostname], depending on whether the location is cached.
-    * def apply(str: String): TaskLocation
-    * ...
-    * Not sure if it will change in future Spark releases
-    */
-  def getTaskLocationStr: String = {
-
-    val bmID = getBlockManagerID
-    val hostPort = bmID.hostPort
-
-    if (org.apache.spark.SPARK_VERSION.substring(0, 3).toDouble >= 1.6) {
-      val executorID = bmID.executorId
-      s"executor_${hostPort}_$executorID"
-    }
-    else {
-      hostPort
-    }
-  }
-
-  def getBlockManagerID: BlockManagerId = {
-    val bmID = SparkEnv.get.blockManager.blockManagerId
-    bmID
-  }
-
   def tryParseBoolean(str: =>String): Try[Boolean] = {
     Try{str}.flatMap {
       v =>

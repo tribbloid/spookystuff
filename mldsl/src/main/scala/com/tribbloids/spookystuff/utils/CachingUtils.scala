@@ -1,7 +1,5 @@
 package com.tribbloids.spookystuff.utils
 
-import java.util.concurrent.ConcurrentHashMap
-
 import com.google.common.cache.CacheBuilder
 
 import scala.collection.mutable

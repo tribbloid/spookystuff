@@ -4,7 +4,6 @@ import org.apache.spark.ml.dsl.utils.refl.ScalaType
 import org.apache.spark.util.Utils
 import org.json4s.Formats
 
-import scala.language.implicitConversions
 import scala.reflect.ClassTag
 import scala.util.Try
 

@@ -3,8 +3,6 @@ package org.apache.spark.ml.dsl.utils.messaging
 import org.apache.spark.ml.dsl.utils.refl.ScalaType
 import org.json4s.JValue
 
-import scala.language.implicitConversions
-
 /**
   * a simple MessageRelay that use object directly as Message
   */

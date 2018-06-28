@@ -1,7 +1,6 @@
 package org.apache.spark.ml.dsl
 
 import org.apache.spark.ml.PipelineStage
-import org.apache.spark.ml.dsl.utils.Xml
 import org.apache.spark.ml.dsl.utils.messaging.{MessageAPI_<<, MessageRelay}
 import org.apache.spark.ml.param.{ParamPair, Params}
 import org.apache.spark.sql.ColumnName

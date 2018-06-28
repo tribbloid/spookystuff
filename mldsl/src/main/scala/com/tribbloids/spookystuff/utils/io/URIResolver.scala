@@ -6,7 +6,6 @@ import java.util.concurrent.TimeUnit
 import com.tribbloids.spookystuff.utils.{CommonUtils, NOTSerializable, Retry, RetryExponentialBackoff}
 
 import scala.concurrent.duration.Duration
-import scala.language.implicitConversions
 
 /*
  * to make it resilient to asynchronous read/write, let output rename the file, write it, and rename back,

@@ -4,6 +4,8 @@ import org.apache.spark.ml.param.{ParamMap, Params}
 import org.apache.spark.ml.util._
 import org.json4s.JsonAST.JObject
 
+import scala.language.existentials
+
 /**
   * Created by peng on 05/10/16.
   */

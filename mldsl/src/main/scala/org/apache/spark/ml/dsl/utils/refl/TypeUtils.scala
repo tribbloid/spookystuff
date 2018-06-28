@@ -3,8 +3,6 @@ package org.apache.spark.ml.dsl.utils.refl
 import org.apache.spark.sql.catalyst.ScalaReflection
 import org.apache.spark.sql.types._
 
-import scala.language.implicitConversions
-
 object TypeUtils extends ReflectionLock {
 
   import ScalaReflection.universe._

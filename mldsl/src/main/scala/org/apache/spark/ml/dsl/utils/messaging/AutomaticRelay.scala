@@ -4,6 +4,8 @@ import org.apache.spark.ml.dsl.utils.refl.{ReflectionUtils, ScalaType, RuntimeTy
 
 import scala.collection.immutable.ListMap
 
+import scala.language.existentials
+
 //TODO: add type information
 case class GenericProduct[T <: Product: Manifest](
                                                    override val productPrefix: String,

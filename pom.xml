@@ -631,6 +631,22 @@
             <arg>-deprecation</arg>
             <arg>-feature</arg>
             <arg>-g:vars</arg>
+
+            <arg>-encoding</arg>
+            <arg>UTF-8</arg>
+
+            <!--<arg>-Xfatal-warnings</arg>-->
+            <arg>-Xlint</arg>
+            <!--<arg>-Yno-adapted-args</arg>-->
+            <!--<arg>-Ywarn-dead-code</arg> &lt;!&ndash;,        // N.B. doesn't work well with the ??? hole &ndash;&gt;-->
+            <!--<arg>-Ywarn-numeric-widen</arg>-->
+            <!--<arg>-Ywarn-value-discard</arg>-->
+            <!--<arg>-Xfuture</arg>-->
+            <!--<arg>-Ywarn-unused-import</arg>-->
+            <!--<arg>-Ypartial-unification</arg>-->
+            <!--<arg>-Ywarn-numeric-widen</arg>        &lt;!&ndash;      // Warn when numerics are widened. &ndash;&gt;-->
+            <!--<arg>-language:higherKinds</arg>-->
+            <!--<arg>-P:wartremover:only-warn-traverser:org.wartremover.warts.Unsafe</arg>-->
           </args>
           <!--<jvmArgs>-->
             <!--<jvmArg>-Xms64m</jvmArg>-->
@@ -686,6 +702,7 @@
           <excludes>
             <exclude>**/.ipynb_checkpoints/*</exclude>
           </excludes>
+          <compilerArgs>-Xlint</compilerArgs>
         </configuration>
       </plugin>
 

@@ -3,8 +3,6 @@ package org.apache.spark.ml.dsl.utils.messaging
 import org.apache.spark.annotation.DeveloperApi
 import org.json4s._
 
-import scala.language.implicitConversions
-
 /**
   * :: DeveloperApi ::
   * ML Param only supports string & vectors, this class extends support to all objects

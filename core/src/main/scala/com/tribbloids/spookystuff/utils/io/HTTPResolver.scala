@@ -14,7 +14,6 @@ import org.apache.http.config.RegistryBuilder
 import org.apache.http.conn.socket.ConnectionSocketFactory
 import org.apache.http.impl.client.{CloseableHttpClient, HttpClients}
 import org.apache.http.impl.conn.PoolingHttpClientConnectionManager
-import org.apache.http.protocol.HttpCoreContext
 import org.apache.http.{HttpEntity, HttpHost, HttpResponse}
 
 object HTTPResolver {

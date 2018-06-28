@@ -12,7 +12,7 @@ import org.apache.spark._
 import org.apache.spark.broadcast.Broadcast
 import org.apache.spark.ml.dsl.utils.messaging.MessageWriter
 import org.apache.spark.rdd.RDD
-import org.apache.spark.sql.{DataFrame, SQLContext}
+import org.apache.spark.sql.{DataFrame, SQLContext, SparkSession}
 import org.slf4j.LoggerFactory
 
 import scala.collection.immutable.ListMap
@@ -25,6 +25,8 @@ case class SpookyContext (
                            _metrics: Submodules[Metrics] = Submodules() //accumulators cannot be broadcasted,
                          ) extends ShippingMarks {
 
+  import sqlContext.sparkSession.implicits._
+
   def this(
             sqlContext: SQLContext,
             conf: SpookyConf
@@ -36,12 +38,12 @@ case class SpookyContext (
     this(sqlContext, new SpookyConf())
   }
 
-  def this(sc: SparkContext) {
-    this(new SQLContext(sc))
+  def this(conf: SparkConf) {
+    this(SparkSession.builder().config(conf).getOrCreate().sqlContext)
   }
 
-  def this(conf: SparkConf) {
-    this(new SparkContext(conf))
+  def this(sc: SparkContext) {
+    this(sc.getConf)
   }
 
   {
@@ -250,11 +252,11 @@ case class SpookyContext (
             map => map.asInstanceOf[Map[_,_]].canonizeKeysToColumnNames
           )
 
-          val jsonRDD = canonRdd.map(
+          val jsonDS = sqlContext.createDataset[String](canonRdd.map(
             map =>
               MessageWriter(map).compactJSON
-          )
-          val dataFrame = sqlContext.read.json(jsonRDD)
+          ))
+          val dataFrame = sqlContext.read.json(jsonDS)
           dataFrameToPageRowRDD(dataFrame)
 
         // RDD[SquashedFetchedRow] => ..

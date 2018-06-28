@@ -1,7 +1,6 @@
 package org.apache.spark.ml.dsl.utils.messaging
 
 import com.tribbloids.spookystuff.testutils.FunSpecx
-import com.tribbloids.spookystuff.utils.TreeException
 
 class RegistrySuite extends FunSpecx {
 

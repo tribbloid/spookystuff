@@ -3,8 +3,6 @@ package org.apache.spark.ml.dsl
 import org.apache.spark.ml.param.Params
 import org.apache.spark.ml.param.shared.{HasInputCol, HasInputCols, HasOutputCol}
 
-import scala.language.implicitConversions
-
 object ShimViews {
 
   implicit class ParamsView(params: Params) {

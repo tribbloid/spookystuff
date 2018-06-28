@@ -3,7 +3,9 @@ package com.tribbloids.spookystuff.utils
 import java.io.{File, InputStream}
 import java.net.URL
 
+import org.apache.spark.SparkEnv
 import org.apache.spark.ml.dsl.utils.FlowUtils
+import org.apache.spark.storage.BlockManagerId
 import org.slf4j.LoggerFactory
 
 import scala.concurrent.{Await, Future, TimeoutException}
@@ -162,6 +164,36 @@ abstract class CommonUtils {
     override def initialValue = init
     def apply = get
   }
+
+  def blockManagerIDOpt: Option[BlockManagerId] = {
+    Option(SparkEnv.get).map(v =>
+      v.blockManager.blockManagerId
+    )
+  }
+
+  /**
+    * From doc of org.apache.spark.scheduler.TaskLocation
+    * Create a TaskLocation from a string returned by getPreferredLocations.
+    * These strings have the form executor_[hostname]_[executorid], [hostname], or
+    * hdfs_cache_[hostname], depending on whether the location is cached.
+    * def apply(str: String): TaskLocation
+    * ...
+    * Not sure if it will change in future Spark releases
+    */
+  def getTaskLocationStr: String = {
+
+    val bmID = blockManagerIDOpt.get
+    val hostPort = bmID.hostPort
+
+    if (org.apache.spark.SPARK_VERSION.substring(0, 3).toDouble >= 1.6) {
+      val executorID = bmID.executorId
+      s"executor_${hostPort}_$executorID"
+    }
+    else {
+      hostPort
+    }
+  }
+
 }
 
 object CommonUtils extends CommonUtils

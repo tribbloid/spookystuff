@@ -9,6 +9,7 @@ import org.apache.spark.sql.catalyst.ScalaReflection.universe.{TypeTag, typeTag}
 import org.apache.spark.sql.catalyst.trees.TreeNode
 
 import scala.language.implicitConversions
+import scala.language.existentials
 
 object GenExtractor extends AutomaticRelay[GenExtractor[_,_]] {
 
@@ -16,11 +17,11 @@ object GenExtractor extends AutomaticRelay[GenExtractor[_,_]] {
 
   final val functionVID = -592849327L
 
-  def fromFn[T, R](self: (T) => R, dataType: DataType): GenExtractor[T, R] = {
+  def fromFn[T, R](self: T => R, dataType: DataType): GenExtractor[T, R] = {
     Elem(_ => Partial(self), _ => dataType)
   }
 
-  def fromOptionFn[T, R](self: (T) => Option[R], dataType: DataType): GenExtractor[T, R] = {
+  def fromOptionFn[T, R](self: T => Option[R], dataType: DataType): GenExtractor[T, R] = {
     Elem(_ => Unlift(self), _ => dataType)
   }
   def fromOptionFn[T, R: TypeTag](self: T => Option[R]): GenExtractor[T, R] = {

@@ -12,6 +12,7 @@ import org.apache.spark.sql.types._
 
 import scala.collection.Map
 import scala.language.implicitConversions
+import scala.language.existentials
 import scala.reflect.ClassTag
 
 /**

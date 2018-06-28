@@ -2,8 +2,6 @@ package com.tribbloids.spookystuff.caching
 
 import java.net.URI
 
-import com.tribbloids.spookystuff.utils.io.LocalResolver
-
 /**
   * Created by peng on 29/01/17.
   */
