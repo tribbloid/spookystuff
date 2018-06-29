@@ -145,13 +145,14 @@ object TreeException {
     * @return
     */
   def wrap(causes: Seq[Throwable], upliftUnary: Boolean = true): Throwable = {
-    require(causes.nonEmpty, "No exception")
+    val _causes = causes.distinct
+    require(_causes.nonEmpty, "No exception")
 
-    if (causes.size == 1 && upliftUnary) {
-      causes.head
+    if (_causes.size == 1 && upliftUnary) {
+      _causes.head
     }
     else {
-      Wrap(causes = causes)
+      Wrap(causes = _causes)
     }
   }
 
