@@ -5,6 +5,6 @@ dronekit-sitl >= 3.2.0
 pymavlink >= 2.2.8
 # TODO: this is blocking py3 upgrade! get rid of it!
 # TODO: pymavlink >= 2.0.9
-MAVProxy >= 1.6.2
+MAVProxy == 1.6.4
 simplejson >= 3.10.0
-sarge >= 0.1.4
+sarge == 0.1.4
