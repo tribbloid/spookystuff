@@ -1,12 +1,12 @@
 package com.tribbloids.spookystuff.uav.telemetry.mavlink
 
-import com.tribbloids.spookystuff.uav.ReinforcementDepletedException
+import com.tribbloids.spookystuff.session.Session
+import com.tribbloids.spookystuff.testutils.TestHelper
+import com.tribbloids.spookystuff.uav.LinkDepletedException
 import com.tribbloids.spookystuff.uav.dsl.{LinkFactories, LinkFactory}
 import com.tribbloids.spookystuff.uav.sim.APMQuadFixture
 import com.tribbloids.spookystuff.uav.system.UAV
-import com.tribbloids.spookystuff.uav.telemetry.{Link, SimLinkSuite}
-import com.tribbloids.spookystuff.session.Session
-import com.tribbloids.spookystuff.testutils.TestHelper
+import com.tribbloids.spookystuff.uav.telemetry.{Dispatcher, Link, SimLinkSuite}
 import com.tribbloids.spookystuff.utils.SpookyUtils
 import org.apache.spark.rdd.RDD
 import org.scalatest.Ignore
@@ -21,10 +21,8 @@ class MAVLinkSuite extends SimLinkSuite with APMQuadFixture {
     LinkFactories.ForkToGCS()
   )
 
-  {
-    val (spooky, testPrefix) = factory2Spooky(LinkFactories.Direct())
-
-    describe(testPrefix) {
+  runTests(factories.filter(_.isInstanceOf[LinkFactories.Direct])) {
+    spooky =>
       it("should use first drone uri as primary endpoint") {
         val linkRDD = getLinkRDD(spooky).asInstanceOf[RDD[MAVLink]]
         val connStr_URIs = linkRDD.map {
@@ -46,13 +44,10 @@ class MAVLinkSuite extends SimLinkSuite with APMQuadFixture {
         )
         assert(connStr_URIs.length == connStr_URIs.distinct.length)
       }
-    }
   }
 
-  {
-    val (spooky, testPrefix) = factory2Spooky(LinkFactories.ForkToGCS())
-
-    describe(testPrefix) {
+  runTests(factories.filter(_.isInstanceOf[LinkFactories.ForkToGCS])) {
+    spooky =>
 
       it("should use first proxy out as primary endpoint") {
 
@@ -97,30 +92,34 @@ class MAVLinkSuite extends SimLinkSuite with APMQuadFixture {
         val session = new Session(spooky)
         val drone = UAV(Seq("dummy"))
         TestHelper.setLoggerDuring(classOf[Link], classOf[MAVLink], SpookyUtils.getClass) {
-          intercept[ReinforcementDepletedException]{
-            Link.UAVSelector(
+          intercept[LinkDepletedException]{
+            Dispatcher(
               Seq(drone),
               session
             )
-              .select
+              .get
           }
 
           val badLink = Link.registered(drone).asInstanceOf[MAVLink]
-          val proxyPY = badLink.proxyOpt.get.PY
-          print(proxyPY.driver.historyCodeOpt.get)
-          assert(badLink.Endpoints.primary._driver == null,
-            "endpoint should not have driver\n" + Option(badLink.Endpoints.primary._driver).flatMap(_.historyCodeOpt).orNull)
+          //          val driver = badLink.proxyOpt.get.PY.driver
+          //          print(driver.historyCodeOpt.get)
+          //          assert(badLink.Endpoints.primary._driver == null,
+          //            "endpoint should not have driver\n" + Option(badLink.Endpoints.primary._driver).flatMap(_.historyCodeOpt).orNull)
         }
       }
-    }
   }
 }
 
-@Ignore
-class MAVLinkSuite_SingleUAV extends MAVLinkSuite {
+//@Ignore
+class MAVLinkSuite_Direct extends MAVLinkSuite {
+  override lazy val factories: Seq[LinkFactory] = Seq(
+    LinkFactories.Direct()
+  )
+}
 
-  override lazy val getFleet: String => Seq[UAV] = {
-    connStr =>
-      Seq(UAV(Seq(connStr)))
-  }
+//@Ignore
+class MAVLinkSuite_GCS extends MAVLinkSuite {
+  override lazy val factories: Seq[LinkFactory] = Seq(
+    LinkFactories.ForkToGCS()
+  )
 }

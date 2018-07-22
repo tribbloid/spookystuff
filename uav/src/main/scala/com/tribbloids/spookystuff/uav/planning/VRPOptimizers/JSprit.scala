@@ -5,7 +5,8 @@ import com.tribbloids.spookystuff.dsl.GenPartitionerLike.RepartitionKeyImpl
 import com.tribbloids.spookystuff.row.{BeaconRDD, SpookySchema}
 import com.tribbloids.spookystuff.uav.dsl.GenPartitioners
 import com.tribbloids.spookystuff.uav.planning._
-import com.tribbloids.spookystuff.uav.telemetry.{LinkUtils, UAVStatus}
+import com.tribbloids.spookystuff.uav.system.UAVStatus
+import com.tribbloids.spookystuff.uav.telemetry.LinkUtils
 import org.apache.spark.rdd.RDD
 
 object JSprit extends VRPOptimizer {
@@ -43,7 +44,7 @@ case class JSprit(
         val trace2WithUAV: Seq[(TraceView, TraceView)] = traces.map {
           trace =>
             val withUAV = trace.copy(
-              children = List(PreferUAV(status, Some(link._mutex.get._id)))
+              children = List(PreferUAV(status, Some(link._mutexLock._id)))
                 ++ trace.children
             )
             val rewrittenOpt = withUAV.rewriteLocally(schema)

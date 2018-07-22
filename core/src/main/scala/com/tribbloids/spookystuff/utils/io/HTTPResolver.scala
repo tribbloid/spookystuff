@@ -141,7 +141,7 @@ case class HTTPResolver(
         f(ir)
       }
       finally {
-        ir.close()
+        ir.clean()
       }
       //    catch {
       //      case e: ClientProtocolException =>

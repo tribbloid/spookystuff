@@ -47,7 +47,7 @@
 
     <scala.version>2.11.12</scala.version>
     <scala.binary.version>2.11</scala.binary.version>
-    <spark.version>2.2.1</spark.version>
+    <spark.version>2.2.2</spark.version>
     <spark.binary.version>2.2</spark.binary.version>
     <spark.assembly.version>${spark.binary.version}</spark.assembly.version>
     <spark.classifier>spark${spark.binary.version}</spark.classifier>

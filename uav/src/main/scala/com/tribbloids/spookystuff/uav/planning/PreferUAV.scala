@@ -5,7 +5,8 @@ import com.tribbloids.spookystuff.session.Session
 import com.tribbloids.spookystuff.uav.UAVConf
 import com.tribbloids.spookystuff.uav.actions.UAVNavigation
 import com.tribbloids.spookystuff.uav.spatial.point.Location
-import com.tribbloids.spookystuff.uav.telemetry.{Link, UAVStatus}
+import com.tribbloids.spookystuff.uav.system.UAVStatus
+import com.tribbloids.spookystuff.uav.telemetry.Dispatcher
 import com.tribbloids.spookystuff.utils.ShippingMarks
 
 import scala.concurrent.duration.Duration
@@ -30,7 +31,7 @@ private[uav] case class PreferUAV(
     val fleet = session.spooky.getConf[UAVConf].uavsInFleetShuffled
     assert(fleet.contains(uavStatus.uav), "cannot prefer UAV not in the fleet")
 
-    Link.UAVSelector.withMutex(
+    Dispatcher(
       Seq(uavStatus.uav),
       session,
       mutexIDOpt

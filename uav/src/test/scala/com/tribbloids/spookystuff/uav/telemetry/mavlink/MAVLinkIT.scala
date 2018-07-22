@@ -5,7 +5,7 @@ import com.tribbloids.spookystuff.testutils.TestHelper
 import com.tribbloids.spookystuff.uav.dsl.{LinkFactories, LinkFactory}
 import com.tribbloids.spookystuff.uav.sim.{APMQuadFixture, APMSim}
 import com.tribbloids.spookystuff.uav.system.UAV
-import com.tribbloids.spookystuff.uav.telemetry.{Link, LinkITFixture}
+import com.tribbloids.spookystuff.uav.telemetry.{LinkITFixture, Dispatcher}
 import com.tribbloids.spookystuff.utils.CommonUtils
 import org.scalatest.Ignore
 
@@ -32,15 +32,15 @@ class MAVLinkIT extends LinkITFixture with APMQuadFixture {
 
     val spooky = this.spooky
 
-    val rdd = sc.parallelize(simURIs).map {
+    val rdd = sc.parallelize(fleetURIs).map {
       connStr =>
         val drones = Seq(UAV(Seq(connStr)))
         val session = new Session(spooky)
-        val link = Link.UAVSelector( //refitting
+        val link = Dispatcher( //refitting
           drones,
           session
         )
-          .select
+          .get
           .asInstanceOf[MAVLink]
 
         val endpoint1 = link.Endpoints.primary

@@ -19,7 +19,7 @@ trait APMFixture extends SimUAVFixture {
   override val processNames = Seq("phantomjs", "python", "apm")
 
   private var _simURIRDD: RDD[String] = _
-  lazy val simURIs: Seq[String] = {
+  lazy val fleetURIs: Seq[String] = {
 
     val simFactory = this.simFactory
     this._simURIRDD = sc.parallelize(1 to parallelism)
@@ -116,10 +116,10 @@ class TestAPMQuad extends APMQuadFixture {
     assert(iNums.nonEmpty)
     assert(iNums.size == iNums.distinct.size)
 
-    println(s"connStrs:\n${this.simUAVs.mkString("\n")}")
-    assert(simUAVs.nonEmpty)
-    assert(simUAVs.size == simUAVs.distinct.size)
-    assert(simUAVs.size == iNums.size)
+    println(s"connStrs:\n${this.fleet.mkString("\n")}")
+    assert(fleet.nonEmpty)
+    assert(fleet.size == fleet.distinct.size)
+    assert(fleet.size == iNums.size)
 
     import scala.collection.JavaConverters._
 

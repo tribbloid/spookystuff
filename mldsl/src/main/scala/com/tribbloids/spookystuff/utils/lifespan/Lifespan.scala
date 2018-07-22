@@ -76,9 +76,13 @@ case class LifespanContext(
   val threadStr: String = {
     "Thread-" + thread.getId + s"[${thread.getName}]" +
       {
-        if (thread.isInterrupted) "(interrupted)"
-        else if (!thread.isAlive) "(dead)"
-        else ""
+
+        var suffix: Seq[String] = Nil
+        if (thread.isInterrupted) suffix :+= "interrupted"
+        else if (!thread.isAlive) suffix :+= "dead"
+
+        if (suffix.isEmpty) ""
+        else suffix.mkString("(",",",")")
       }
   }
 
@@ -89,13 +93,22 @@ case class LifespanContext(
           var suffix: Seq[String] = Nil
           if (task.isCompleted()) suffix :+= "completed"
           if (task.isInterrupted()) suffix :+= "interrupted"
-          //          if (task.isRunningLocally()) suffix :+= "local"
-          suffix.mkString("(",",",")")
+
+          if (suffix.isEmpty) ""
+          else suffix.mkString("(",",",")")
         }
   }
     .getOrElse("[NOT IN TASK]")
 
   override def toString = threadStr + " / " + taskStr
+
+  /**
+    * @return true if any of the thread is dead OR the task is completed
+    */
+  def isCompleted: Boolean = {
+    !thread.isAlive ||
+      taskOpt.exists(_.isCompleted())
+  }
 }
 
 abstract class LifespanType extends Serializable {

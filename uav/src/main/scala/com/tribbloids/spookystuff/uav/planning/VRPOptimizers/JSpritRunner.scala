@@ -23,7 +23,7 @@ import com.tribbloids.spookystuff.uav.UAVConf
 import com.tribbloids.spookystuff.uav.actions.{UAVNavigation, Waypoint}
 import com.tribbloids.spookystuff.uav.dsl.GenPartitioners
 import com.tribbloids.spookystuff.uav.spatial.point.NED
-import com.tribbloids.spookystuff.uav.telemetry.UAVStatus
+import com.tribbloids.spookystuff.uav.system.UAVStatus
 
 import scala.util.Try
 

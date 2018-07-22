@@ -77,7 +77,7 @@ object Cleanable {
   * finalizer helps but is not always reliable
   * can be serializable, but in which case implementation has to allow deserialized copy on a different machine to be cleanable as well.
   */
-trait Cleanable extends Closeable {
+trait Cleanable {
 
   /**
     * taskOrThreadOnCreation is incorrect in withDeadline or threads not created by Spark
@@ -121,6 +121,9 @@ trait Cleanable extends Closeable {
     LoggerFactory.getLogger(this.getClass).debug(s"$logPrefix $s")
   }
 
+  /**
+    * can only be called once
+    */
   protected def cleanImpl(): Unit
 
   def assertNotCleaned(errorInfo: String): Unit = {
@@ -160,8 +163,6 @@ trait Cleanable extends Closeable {
 
     uncleanedInBatch -= this.trackingNumber
   }
-
-  override def close(): Unit = clean(true)
 
   def isSilent(ee: Throwable): Boolean = false
 

@@ -7,4 +7,3 @@ pymavlink >= 2.2.8
 # TODO: pymavlink >= 2.0.9
 MAVProxy == 1.6.4
 simplejson >= 3.10.0
-sarge == 0.1.4

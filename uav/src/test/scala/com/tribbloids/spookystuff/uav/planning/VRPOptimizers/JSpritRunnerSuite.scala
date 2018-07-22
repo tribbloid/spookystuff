@@ -7,8 +7,7 @@ import com.tribbloids.spookystuff.actions.TraceView
 import com.tribbloids.spookystuff.uav.UAVConf
 import com.tribbloids.spookystuff.uav.actions.Waypoint
 import com.tribbloids.spookystuff.uav.spatial.point.{Location, NED}
-import com.tribbloids.spookystuff.uav.system.UAV
-import com.tribbloids.spookystuff.uav.telemetry.UAVStatus
+import com.tribbloids.spookystuff.uav.system.{UAV, UAVStatus}
 
 class JSpritRunnerSuite extends VRPFixture {
 

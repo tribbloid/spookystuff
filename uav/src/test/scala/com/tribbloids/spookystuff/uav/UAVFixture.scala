@@ -15,8 +15,8 @@ trait UAVFixture extends SpookyEnvFixture {
     UAVMetrics
   }
 
-  def simURIs: Seq[String]
-  def simUAVs = simURIs.map(v => UAV(Seq(v)))
+  def fleetURIs: Seq[String]
+  def fleet = fleetURIs.map(v => UAV(Seq(v)))
 
   //  def parallelism: Int = 3
 
@@ -26,7 +26,7 @@ trait UAVFixture extends SpookyEnvFixture {
     super.setUp()
     val uavConf = spooky.getConf[UAVConf]
 //    uavConf.fastConnectionRetries = 2
-    uavConf.fleet = Fleet.Inventory(simUAVs)
+    uavConf.fleet = Fleet.Inventory(fleet)
     uavConf.linkFactory = linkFactory
     spooky.zeroMetrics()
     UAVUtils.sanityCheck(sc)
@@ -40,7 +40,7 @@ trait UAVFixture extends SpookyEnvFixture {
 trait DummyUAVFixture extends UAVFixture {
   override def linkFactory: LinkFactory = LinkFactories.Dummy
 
-  override lazy val simURIs: Seq[String] = (0 until parallelism).map {
+  override lazy val fleetURIs: Seq[String] = (0 until parallelism).map {
     v =>
       s"dummy:localhost:$v"
   }

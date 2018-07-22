@@ -6,22 +6,16 @@ import com.tribbloids.spookystuff.uav._
 import com.tribbloids.spookystuff.uav.dsl.LinkFactory
 import com.tribbloids.spookystuff.uav.system.UAV
 import com.tribbloids.spookystuff.uav.telemetry.mavlink.MAVLink
-import com.tribbloids.spookystuff.utils.TreeException.Wrap
 import com.tribbloids.spookystuff.utils.lifespan.Cleanable
 import com.tribbloids.spookystuff.utils.{CommonUtils, SpookyUtils}
-import com.tribbloids.spookystuff.{PyInterpretationException, SpookyContext, SpookyEnvFixture}
+import com.tribbloids.spookystuff.{SpookyContext, SpookyEnvFixture}
 import org.apache.spark.rdd.RDD
 
 import scala.util.Random
 
-trait LinkMixin extends UAVFixture {
+trait LinkFixture extends UAVFixture {
 
   import com.tribbloids.spookystuff.utils.SpookyViews._
-
-  lazy val getFleet: String => Seq[UAV] = {
-    val simEndpoints = this.simUAVs
-    _: String => simEndpoints
-  }
 
   override def setUp(): Unit = {
     super.setUp()
@@ -33,7 +27,10 @@ trait LinkMixin extends UAVFixture {
     // DON'T DELETE! some tests create proxy processes and they all take a few seconds to release the port binding!
   }
 
-  def factory2Spooky(factory: LinkFactory): (SpookyContext, String) = {
+
+  def factories: Seq[LinkFactory]
+
+  private def factory2Fixtures(factory: LinkFactory): (SpookyContext, String) = {
 
     val spooky = this.spooky.copy(_configurations = this.spooky.configurations.transform(_.clone))
     spooky.getConf[UAVConf].linkFactory = factory
@@ -43,12 +40,11 @@ trait LinkMixin extends UAVFixture {
     spooky -> s"linkFactory=$name"
   }
 
-  def factories: Seq[LinkFactory]
-  val fixtures: Seq[(SpookyContext, String)] = factories.map {
-    factory2Spooky
-  }
+  def runTests(factories: Seq[LinkFactory])(f: SpookyContext => Unit) = {
 
-  def runTests(fixtures: Seq[(SpookyContext, String)])(f: SpookyContext => Unit) = {
+    val fixtures: Seq[(SpookyContext, String)] = factories.map {
+      factory2Fixtures
+    }
 
     fixtures.foreach {
       case (spooky, testPrefix) =>
@@ -58,7 +54,7 @@ trait LinkMixin extends UAVFixture {
     }
   }
 
-  runTests(fixtures) {
+  runTests(factories) {
     spooky =>
 
       it("Link should be registered in both Link and Cleanable") {
@@ -91,21 +87,20 @@ trait LinkMixin extends UAVFixture {
 
       it("Link created in the same Task should be reused") {
 
-        val listDrones = this.getFleet
-        val linkStrs = sc.parallelize(simURIs).map {
+        val fleet = this.fleet
+        val linkStrs = sc.parallelize(fleetURIs).map {
           connStr =>
-            val endpoints = listDrones(connStr)
             val session = new Session(spooky)
-            val link1 = Link.UAVSelector (
-              endpoints,
+            val link1 = Dispatcher (
+              fleet,
               session
             )
-              .select
-            val link2 = Link.UAVSelector (
-              endpoints,
+              .get
+            val link2 = Dispatcher (
+              fleet,
               session
             )
-              .select
+              .get
             Thread.sleep(5000) //otherwise a task will complete so fast such that another task hasn't start yet.
           val result = link1.toString -> link2.toString
             result
@@ -166,64 +161,63 @@ trait LinkMixin extends UAVFixture {
       }
   }
 
-  //TODO: merge
+  //TODO: merge into lockedLinkRDD?
   def getLinkRDD(spooky: SpookyContext): RDD[Link] = {
-    val getFleet = this.getFleet
-    val linkRDD = sc.parallelize(simURIs).map {
+    val fleet: Seq[UAV] = this.fleet
+    val linkRDD = sc.parallelize(fleetURIs).map {
       connStr =>
         val link = spooky.withSession {
           session =>
-            Link.UAVSelector(
-              getFleet(connStr),
+            Dispatcher(
+              fleet,
               session
             )
-              .select
+              .get
         }
+        link.lock()
         TestHelper.assert(link.isReachable, "link is unreacheable")
         TestHelper.assert(
           link.factoryOpt.get == spooky.getConf[UAVConf].linkFactory,
           "link doesn't comply to factory"
         )
-        link.lock()
-        //        Thread.sleep(5000) //otherwise a task will complete so fast such that another task hasn't start yet.
         link
     }
       .persist()
-    linkRDD.map(_.uav).collect().foreach(println)
-    linkRDD.map {
+    val uavs = linkRDD.map(_.uav).collect()
+    assert(uavs.length == uavs.distinct.length)
+    linkRDD.foreach {
       link =>
-        link.unlock()
-        link
+        link.unlock() //TODO: delete, Selector.select unlocks automatically.
     }
     linkRDD
   }
 }
 
-abstract class SimLinkSuite extends SimUAVFixture with LinkMixin {
+abstract class SimLinkSuite extends SimUAVFixture with LinkFixture {
 
   import com.tribbloids.spookystuff.utils.SpookyViews._
 
-  runTests(fixtures){
+  runTests(factories){
     spooky =>
 
       it("Link to unreachable drone should be disabled until blacklist timer reset") {
         val session = new Session(spooky)
         val drone = UAV(Seq("dummy"))
         TestHelper.setLoggerDuring(classOf[Link], classOf[MAVLink], SpookyUtils.getClass) {
-          intercept[ReinforcementDepletedException] {
-            Link.UAVSelector(
+          intercept[LinkDepletedException] {
+            Dispatcher(
               Seq(drone),
               session
             )
-              .select
+              .get
           }
 
           val badLink = Link.registered(drone)
-          assert(badLink.statusString.contains("Link DRONE@dummy is unreachable for"))
-          assert {
-            val e = badLink.lastFailureOpt.get._1
-            e.isInstanceOf[PyInterpretationException] //|| e.isInstanceOf[Wrap]
-          }
+          assert(badLink.statusStr.contains("DRONE@dummy -> unreachable for"))
+          //          assert {
+          //            val e = badLink.lastFailureOpt.get._1
+          //            e.isInstanceOf[AssertionError] //|| e.isInstanceOf[Wrap]
+          //          }
         }
       }
 
@@ -240,6 +234,10 @@ abstract class SimLinkSuite extends SimUAVFixture with LinkMixin {
         CommonUtils.retry(5, 2000) {
           sc.foreachComputer {
             SpookyEnvFixture.processShouldBeClean(Seq("mavproxy"), Seq("mavproxy"), cleanSweepNotInTask = false)
+
+            Link.registered.foreach {
+              v => v._2.disconnect()
+            }
           }
         }
       }

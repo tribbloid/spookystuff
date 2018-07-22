@@ -89,7 +89,7 @@ object LocalResolver extends URIResolver {
         f(ir)
       }
       finally {
-        ir.close()
+        ir.clean()
       }
     }
 
@@ -122,7 +122,7 @@ object LocalResolver extends URIResolver {
         result
       }
       finally {
-        or.close()
+        or.clean()
       }
     }
   }

@@ -134,7 +134,7 @@ case class HDFSResolver(
         f(ir)
       }
       finally {
-        ir.close()
+        ir.clean()
       }
     }
 
@@ -155,7 +155,7 @@ case class HDFSResolver(
         result
       }
       finally {
-        or.close()
+        or.clean()
       }
     }
   }

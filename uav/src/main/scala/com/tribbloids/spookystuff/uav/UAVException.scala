@@ -12,7 +12,7 @@ class UAVException(
 
 }
 
-class ReinforcementDepletedException(
-                                      override val simpleMsg: String = "",
-                                      override val cause: Throwable = null
-                                    ) extends UAVException(simpleMsg, cause)
+class LinkDepletedException(
+                             override val simpleMsg: String = "",
+                             override val cause: Throwable = null
+                           ) extends UAVException(simpleMsg, cause)

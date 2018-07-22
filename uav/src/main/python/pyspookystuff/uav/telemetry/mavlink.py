@@ -189,131 +189,131 @@ class Endpoint(Daemon, VehicleFunctions):
         self.restart()
 
 
-defaultProxyOptions = '--state-basedir=temp --daemon --default-modules="link"'  # --cmd="module unload console"'
-class Proxy(Daemon):
-    def __init__(self, master, outs, baudRate, ssid, name):
-        # type: (str, list[str], int, int, str) -> None
-        super(Proxy, self).__init__()
-        self.master = master
-        self.outs = outs
-        self.baudRate = baudRate
-        self.ssid = ssid
-        self.name = name
-        self.p = None
-
-    @property
-    def process(self):
-        if self.p:
-            return self.p.processes[0]
-        else:
-            return None
-
-    @property
-    def fullName(self):
-        return self.name + "@" + self.master + ">" + '/'.join(self.outs)
-
-    # defaultOptions = '--daemon --cmd="module unload console"'
-    def _spawnProxy(self, setup=False, options=defaultProxyOptions, logfile=sys.stdout):
-        # type: (bool, str, str) -> None
-
-        loader = pkgutil.find_loader(mavproxy.__name__)
-        fileName = loader.get_filename(mavproxy.__name__)
-        MAVPROXY = os.getenv('MAVPROXY_CMD', fileName)
-
-        cmd = 'python2 ' + MAVPROXY + ' --master=%s' % self.master
-        for out in self.outs:
-            cmd += ' --out=%s' % out
-        if setup:
-            cmd += ' --setup'
-        if self.baudRate:
-            cmd += ' --baudrate=%s' % self.baudRate
-        if self.ssid:
-            cmd += ' --source-system=%s' % self.ssid
-        cmd += ' --aircraft=%s' % self.name
-        if options is not None:
-            cmd += ' ' + options
-
-        print(cmd)
-
-        # TODO too heavyweight! exec in new daemon Thread + interpreter termination is good enough.
-        # using solution of [http://stackoverflow.com/questions/11269575/how-to-hide-output-of-subprocess-in-python-2-7]
-        pipeline = sarge.run(
-            cmd, async=True,
-            env={'PYTHONPATH': ':'.join(sys.path)}, stderr=utils.DEVNULL)
-
-        self.p = pipeline
-
-    @retry(daemonStartRetries)
-    def _start(self):
-        # type: () -> None
-
-        if not self.p:
-            self._spawnProxy()
-
-            time.sleep(1)  # wait for process creation
-
-            # @retry(daemonStartRetries)
-            def sanityCheck():
-                try:
-                    def isAlive(i):
-                        return self.isAlive
-                    utils.waitFor(isAlive, 10)
-
-                    # ensure that proxy is usable, otherwise its garbage
-                    vehicle = dronekit.connect(
-                        self.outs[0],
-                        wait_ready=True, #  TODO change to False once stabilized
-                        source_system=self.ssid, #  TODO: how to handle this?
-                        baud=self.baudRate
-                    )
-                    @retry(5)
-                    def _close():
-                        vehicle.close()
-                    _close()
-
-                    time.sleep(2) #  wait for port to be released
-                except:
-                    print("ERROR: PROXY CANNOT CONNECT TO", self.outs[0])
-                    self.stop()
-                    raise
-
-            sanityCheck()
-
-            self.logPrint("Proxy spawned: PID =", self.pid, "URI =", self.outs[0])
-
-    def _stop(self):
-        if self.p:
-
-            for command in self.p.commands:
-                try:
-                    command.terminate()
-                except:
-                    pass
-
-            def isDead(i):
-                return not self.isAlive
-            utils.waitFor(isDead, 10)
-
-            self.p = None
-
-    @staticmethod
-    def killPID(pid):
-        try:
-            os.killpg(pid, 2)
-            print("Proxy killed: PID =", pid)
-        except OSError:
-            pass
-
-    @property
-    def pid(self):
-        return self.process.pid
-
-    @property
-    def isAlive(self):
-        if self.process:
-            return self.process.poll() is None
-        else:
-            return False
+# defaultProxyOptions = '--state-basedir=temp --daemon --default-modules="link"'  # --cmd="module unload console"'
+# class Proxy(Daemon):
+#     def __init__(self, master, outs, baudRate, ssid, name):
+#         # type: (str, list[str], int, int, str) -> None
+#         super(Proxy, self).__init__()
+#         self.master = master
+#         self.outs = outs
+#         self.baudRate = baudRate
+#         self.ssid = ssid
+#         self.name = name
+#         self.p = None
+#
+#     @property
+#     def process(self):
+#         if self.p:
+#             return self.p.processes[0]
+#         else:
+#             return None
+#
+#     @property
+#     def fullName(self):
+#         return self.name + "@" + self.master + ">" + '/'.join(self.outs)
+#
+#     # defaultOptions = '--daemon --cmd="module unload console"'
+#     def _spawnProxy(self, setup=False, options=defaultProxyOptions, logfile=sys.stdout):
+#         # type: (bool, str, str) -> None
+#
+#         loader = pkgutil.find_loader(mavproxy.__name__)
+#         fileName = loader.get_filename(mavproxy.__name__)
+#         MAVPROXY = os.getenv('MAVPROXY_CMD', fileName)
+#
+#         cmd = 'python2 ' + MAVPROXY + ' --master=%s' % self.master
+#         for out in self.outs:
+#             cmd += ' --out=%s' % out
+#         if setup:
+#             cmd += ' --setup'
+#         if self.baudRate:
+#             cmd += ' --baudrate=%s' % self.baudRate
+#         if self.ssid:
+#             cmd += ' --source-system=%s' % self.ssid
+#         cmd += ' --aircraft=%s' % self.name
+#         if options is not None:
+#             cmd += ' ' + options
+#
+#         print(cmd)
+#
+#         # TODO too heavyweight! exec in new daemon Thread + interpreter termination is good enough.
+#         # using solution of [http://stackoverflow.com/questions/11269575/how-to-hide-output-of-subprocess-in-python-2-7]
+#         pipeline = sarge.run(
+#             cmd, async=True,
+#             env={'PYTHONPATH': ':'.join(sys.path)}, stderr=utils.DEVNULL)
+#
+#         self.p = pipeline
+#
+#     @retry(daemonStartRetries)
+#     def _start(self):
+#         # type: () -> None
+#
+#         if not self.p:
+#             self._spawnProxy()
+#
+#             time.sleep(1)  # wait for process creation
+#
+#             # @retry(daemonStartRetries)
+#             def sanityCheck():
+#                 try:
+#                     def isAlive(i):
+#                         return self.isAlive
+#                     utils.waitFor(isAlive, 10)
+#
+#                     # ensure that proxy is usable, otherwise its garbage
+#                     vehicle = dronekit.connect(
+#                         self.outs[0],
+#                         wait_ready=True, #  TODO change to False once stabilized
+#                         source_system=self.ssid, #  TODO: how to handle this?
+#                         baud=self.baudRate
+#                     )
+#                     @retry(5)
+#                     def _close():
+#                         vehicle.close()
+#                     _close()
+#
+#                     time.sleep(2) #  wait for port to be released
+#                 except:
+#                     print("ERROR: PROXY CANNOT CONNECT TO", self.outs[0])
+#                     self.stop()
+#                     raise
+#
+#             sanityCheck()
+#
+#             self.logPrint("Proxy spawned: PID =", self.pid, "URI =", self.outs[0])
+#
+#     def _stop(self):
+#         if self.p:
+#
+#             for command in self.p.commands:
+#                 try:
+#                     command.terminate()
+#                 except:
+#                     pass
+#
+#             def isDead(i):
+#                 return not self.isAlive
+#             utils.waitFor(isDead, 10)
+#
+#             self.p = None
+#
+#     @staticmethod
+#     def killPID(pid):
+#         try:
+#             os.killpg(pid, 2)
+#             print("Proxy killed: PID =", pid)
+#         except OSError:
+#             pass
+#
+#     @property
+#     def pid(self):
+#         return self.process.pid
+#
+#     @property
+#     def isAlive(self):
+#         if self.process:
+#             return self.process.poll() is None
+#         else:
+#             return False
 
 
 class LocationGlobal(dronekit.LocationGlobal):

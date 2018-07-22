@@ -18,11 +18,11 @@ object LinkITFixture{
 
     val drones = connStrs.map(v => UAV(Seq(v)))
     val session = new Session(spooky)
-    val link = Link.UAVSelector(
+    val link = Dispatcher(
       drones,
       session
     )
-      .select
+      .get
 
     val location = link.synch.testMove
 
@@ -40,7 +40,7 @@ abstract class LinkITFixture extends SimUAVFixture {
   it("move 1 drone") {
     val spooky = this.spooky
 
-    val rdd = sc.parallelize(Seq(this.simURIs.head))
+    val rdd = sc.parallelize(Seq(this.fleetURIs.head))
       .map {
         connStr =>
           LinkITFixture.testMove(spooky, Seq(connStr))
@@ -54,8 +54,8 @@ abstract class LinkITFixture extends SimUAVFixture {
   it("move drones to different directions") {
     val spooky = this.spooky
 
-    val connStrs = this.simURIs
-    val rdd = sc.parallelize(simURIs).map {
+    val connStrs = this.fleetURIs
+    val rdd = sc.parallelize(fleetURIs).map {
       _ =>
         LinkITFixture.testMove(spooky, connStrs)
     }
@@ -72,10 +72,10 @@ abstract class LinkITFixture extends SimUAVFixture {
     val spooky = this.spooky
 
     var locations: Array[String] = null
-    val connStrs = this.simURIs
+    val connStrs = this.fleetURIs
 
     for (_ <- 1 to 2) {
-      val rdd: RDD[String] = sc.parallelize(simURIs).map {
+      val rdd: RDD[String] = sc.parallelize(fleetURIs).map {
         _ =>
           LinkITFixture.testMove(spooky, connStrs)
       }

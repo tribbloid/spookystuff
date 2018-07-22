@@ -2,7 +2,7 @@ package com.tribbloids.spookystuff.uav.utils
 
 import com.tribbloids.spookystuff.session.Session
 import com.tribbloids.spookystuff.uav.UAVConf
-import com.tribbloids.spookystuff.uav.telemetry.Link
+import com.tribbloids.spookystuff.uav.telemetry.{Link, Dispatcher}
 
 import scala.util.Try
 
@@ -21,11 +21,11 @@ object UAVViews {
     val uavConf: UAVConf = session.spooky.getConf[UAVConf]
 
     val linkTry: Try[Link] = {
-      Link.UAVSelector(
+      Dispatcher(
         uavConf.uavsInFleetShuffled,
         session
       )
-        .trySelect
+        .tryGet
     }
 
     val link: Link = {

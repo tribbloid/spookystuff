@@ -26,8 +26,6 @@ object PythonDriver {
   final val errorPattern: Pattern = Pattern.compile(".*(Error|Exception):.*$")
   final val syntaxErrorPattern: Pattern = Pattern.compile(".*(SyntaxError):.*$")
 
-  import com.tribbloids.spookystuff.utils.SpookyViews._
-
   /**
     * DO NOT ATTEMPT TO SIMPLIFY IMPLEMENTATION!
     * com.tribbloids.pyspookystuff exists in both /class & /test-class and any attempt to merge it
@@ -171,7 +169,7 @@ class PythonDriver(
       }
     }
       .orElse(
-        Try(this.closePython())
+        Try(this.closeProcess())
       )
       .getOrElse(this.interrupt())
   }

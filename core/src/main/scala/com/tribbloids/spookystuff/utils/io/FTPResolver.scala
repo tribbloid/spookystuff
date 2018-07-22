@@ -83,7 +83,7 @@ case class FTPResolver(
         f(in)
       }
       finally {
-        in.close()
+        in.clean()
       }
     }
 
@@ -103,7 +103,7 @@ case class FTPResolver(
         f(out)
       }
       finally {
-        out.close()
+        out.clean()
       }
     }
   }

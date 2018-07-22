@@ -23,7 +23,7 @@ case class DummyLink(
 
   override protected def _disconnect(): Unit = {}
 
-  override def coFactory(v: Link): Boolean = {
+  override def sameFactoryWith(v: Link): Boolean = {
     v match {
       case DummyLink(u2, _, _) => u2 == this.uav
       case _ => false

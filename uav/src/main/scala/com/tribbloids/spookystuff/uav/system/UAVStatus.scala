@@ -1,8 +1,7 @@
-package com.tribbloids.spookystuff.uav.telemetry
+package com.tribbloids.spookystuff.uav.system
 
 import com.tribbloids.spookystuff.uav.UAVConf
 import com.tribbloids.spookystuff.uav.spatial.point.Location
-import com.tribbloids.spookystuff.uav.system.UAV
 import com.tribbloids.spookystuff.utils.IDMixin
 import com.tribbloids.spookystuff.utils.lifespan.LifespanContext
 

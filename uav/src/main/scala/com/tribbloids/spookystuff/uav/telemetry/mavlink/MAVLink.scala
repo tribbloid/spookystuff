@@ -14,7 +14,7 @@ import scala.language.implicitConversions
 object MAVLink {
 
   def sanityCheck(): Unit = {
-    val subs = Cleanable.getTyped[Endpoint] ++ Cleanable.getTyped[Proxy]
+    val subs = Cleanable.getTyped[Endpoint] ++ Cleanable.getTyped[MAVProxy]
     val refSubs = Cleanable.getTyped[MAVLink].flatMap(_.chainClean)
     assert(
       subs.intersect(refSubs).size <= refSubs.size,
@@ -35,7 +35,8 @@ TaskProcess -> Connection:UDP:xx -/
 case class MAVLink(
                     uav: UAV,
                     toSpark: Seq[String] = Nil, // cannot have duplicates
-                    toGCS: Seq[String] = Nil,
+                    toGCS: Seq[String] = Nil
+                  )(
                     driverTemplate: PythonDriver = PythonDriver.defaultTemplate
                   ) extends Link with ConflictDetection {
 
@@ -75,21 +76,21 @@ case class MAVLink(
   }
 
   //  @volatile private var _proxyOpt: Option[Proxy] = None
-  val proxyOpt: Option[Proxy] = {
+  val proxyOpt: Option[MAVProxy] = {
     val result = if (outs.isEmpty) None
     else {
-      val proxy: Proxy = Proxy(
+      val proxy: MAVProxy = MAVProxy(
         Endpoints.direct.uri,
         outs,
         Endpoints.direct.baudRate,
         name = uav.name
-      )(driverTemplate)
+      )
       Some(proxy)
     }
     result
   }
 
-  def coFactory(another: Link): Boolean = {
+  def sameFactoryWith(another: Link): Boolean = {
     another match {
       case v: MAVLink =>
         val result = this.toGCS.toSet == v.toGCS.toSet
@@ -140,14 +141,16 @@ case class MAVLink(
 
   protected def _connect(): Unit = {
     proxyOpt.foreach {
-      _.PY.start()
+      v =>
+        v.open()
     }
     Endpoints.primary.PY.start()
   }
   protected def _disconnect(): Unit = {
     Endpoints.primary.PYOpt.foreach(_.stop())
-    proxyOpt.flatMap(_.PYOpt).foreach {
-      _.stop()
+    proxyOpt.foreach{
+      v =>
+        v.closeProcess()
     }
   }
 

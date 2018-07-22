@@ -20,7 +20,9 @@ object LinkFactories {
                      override val pythonExe: String = "python2"
                    ) extends LinkFactory {
 
-    def apply(uav: UAV) = MAVLink(uav, driverTemplate = driverTemplate)
+    def apply(uav: UAV): MAVLink = {
+      MAVLink(uav)(driverTemplate)
+    }
   }
 
   case class ForkToGCS(
@@ -52,8 +54,9 @@ object LinkFactories {
       val result = MAVLink(
         endpoint,
         executorOuts,
-        gcsOuts,
-        driverTemplate = driverTemplate
+        gcsOuts
+      )(
+        driverTemplate
       )
       result
     }

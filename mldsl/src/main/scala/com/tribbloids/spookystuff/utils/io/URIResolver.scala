@@ -60,7 +60,7 @@ abstract class URIResolver extends Serializable {
       f(path)
     }
     finally {
-      lock.close()
+      lock.clean()
     }
   }
 
