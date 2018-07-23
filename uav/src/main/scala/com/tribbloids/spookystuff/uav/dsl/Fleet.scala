@@ -3,6 +3,8 @@ package com.tribbloids.spookystuff.uav.dsl
 import com.tribbloids.spookystuff.uav.system.UAV
 import com.tribbloids.spookystuff.utils.SpookyUtils
 
+import scala.runtime.ScalaRunTime
+
 /**
   * SpookyContext => RDD[Drone]
   */
@@ -40,8 +42,9 @@ object Fleet {
   }
 }
 
-trait Fleet extends (() => Set[UAV]) {
+trait Fleet extends (() => Set[UAV]) with Product with Serializable {
 
+  override def toString = ScalaRunTime._toString(this)
 //  import com.tribbloids.spookystuff.utils.SpookyViews._
 //
 //  def base: BaseLocation

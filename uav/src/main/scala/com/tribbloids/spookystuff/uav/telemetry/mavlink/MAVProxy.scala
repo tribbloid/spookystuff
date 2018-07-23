@@ -81,6 +81,7 @@ case class MAVProxy(
   )
 
   @transient var _process_pid: (Process, Long) = _
+
   def process_pidOpt: Option[(Process, Long)] = Option(_process_pid).flatMap {
     v =>
       if (!v._1.isAlive) {
@@ -110,7 +111,7 @@ case class MAVProxy(
 
   def open(): Unit = {
     process_pidOpt.getOrElse {
-      CommonUtils.retry(2,1000) {
+      CommonUtils.retry(2, 1000) {
         _doOpen()
       }
     }

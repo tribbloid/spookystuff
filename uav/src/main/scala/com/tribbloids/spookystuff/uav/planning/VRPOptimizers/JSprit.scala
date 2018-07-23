@@ -23,7 +23,7 @@ case class JSprit(
                              ): RDD[(TraceView, TraceView)] = {
 
     val spooky = schema.ec.spooky
-    val linkRDD = LinkUtils.lockedLinkRDD(spooky)
+    val linkRDD = LinkUtils.linkRDD(spooky)
 
     val allUAVs = linkRDD.map(v => v.status()).collect()
     val uavs = problem.numUAVOverride match {

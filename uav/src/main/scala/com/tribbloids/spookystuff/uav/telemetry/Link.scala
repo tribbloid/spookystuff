@@ -6,16 +6,15 @@ import com.tribbloids.spookystuff.session._
 import com.tribbloids.spookystuff.uav.dsl.LinkFactory
 import com.tribbloids.spookystuff.uav.spatial.point.Location
 import com.tribbloids.spookystuff.uav.system.{UAV, UAVStatus}
-import com.tribbloids.spookystuff.uav.telemetry.Link.MutexLock
-import com.tribbloids.spookystuff.uav.utils.UAVUtils
+import com.tribbloids.spookystuff.uav.utils.{MutexLock, UAVUtils}
 import com.tribbloids.spookystuff.uav.{UAVConf, UAVMetrics}
 import com.tribbloids.spookystuff.utils.lifespan.{Cleanable, LifespanContext, LocalCleanable}
-import com.tribbloids.spookystuff.utils.{CachingUtils, CommonUtils, IDMixin, TreeException}
+import com.tribbloids.spookystuff.utils.{CachingUtils, CommonUtils, TreeException}
 import org.slf4j.LoggerFactory
 
 import scala.collection.mutable.ArrayBuffer
 import scala.language.implicitConversions
-import scala.util.{Failure, Random, Try}
+import scala.util.{Failure, Try}
 
 /**
   * Created by peng on 24/01/17.
@@ -39,17 +38,6 @@ object Link {
         residual.map(v => v.logPrefix + v.toString).mkString("\n")
     )
   }
-
-  val LOCK_EXPIRE_AFTER = 60 * 1000
-  case class MutexLock(
-                        _id: Long = Random.nextLong(), //can only be lifted by PreferUAV that has the same token.
-                        timestamp: Long = System.currentTimeMillis()
-                      ) extends IDMixin {
-
-    def expireAfter = timestamp + LOCK_EXPIRE_AFTER
-  }
-
-
 }
 
 trait Link extends LocalCleanable with ConflictDetection {

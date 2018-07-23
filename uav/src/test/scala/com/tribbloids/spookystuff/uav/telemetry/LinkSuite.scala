@@ -3,7 +3,7 @@ package com.tribbloids.spookystuff.uav.telemetry
 import com.tribbloids.spookystuff.session.Session
 import com.tribbloids.spookystuff.testutils.TestHelper
 import com.tribbloids.spookystuff.uav._
-import com.tribbloids.spookystuff.uav.dsl.LinkFactory
+import com.tribbloids.spookystuff.uav.dsl.{Fleet, LinkFactory}
 import com.tribbloids.spookystuff.uav.system.UAV
 import com.tribbloids.spookystuff.uav.telemetry.mavlink.MAVLink
 import com.tribbloids.spookystuff.utils.lifespan.Cleanable
@@ -13,7 +13,7 @@ import org.apache.spark.rdd.RDD
 
 import scala.util.Random
 
-trait LinkFixture extends UAVFixture {
+trait LinkSuite extends UAVFixture {
 
   import com.tribbloids.spookystuff.utils.SpookyViews._
 
@@ -27,13 +27,60 @@ trait LinkFixture extends UAVFixture {
     // DON'T DELETE! some tests create proxy processes and they all take a few seconds to release the port binding!
   }
 
+  //TODO: merge into lockedLinkRDD?
+  //  def getLinkRDD(spooky: SpookyContext): RDD[Link] = {
+  //    val fleet: Seq[UAV] = this.fleet
+  //    val linkRDD = sc.parallelize(fleetURIs).map {
+  //      connStr =>
+  //        val link = spooky.withSession {
+  //          session =>
+  //            Dispatcher(
+  //              fleet,
+  //              session
+  //            )
+  //              .get
+  //        }
+  //        link.lock()
+  //        TestHelper.assert(link.isReachable, "link is unreacheable")
+  //        TestHelper.assert(
+  //          link.factoryOpt.get == spooky.getConf[UAVConf].linkFactory,
+  //          "link doesn't comply to factory"
+  //        )
+  //        link
+  //    }
+  //      .persist()
+  //    val uavs = linkRDD.map(_.uav).collect()
+  //    assert(uavs.length == uavs.distinct.length)
+  //    linkRDD.foreach {
+  //      link =>
+  //        link.unlock() //TODO: delete, Selector.select unlocks automatically.
+  //    }
+  //    linkRDD
+  //  }
+
+  def getLinkRDD(spooky: SpookyContext) = {
+    val fleet = spooky.getConf[UAVConf].get.fleet
+
+    val linkRDD = LinkUtils.linkRDD(spooky).persist()
+
+    val uavs = linkRDD.map(_.uav).collect()
+    assert(uavs.length > 0)
+    assert(uavs.length == uavs.distinct.length)
+    linkRDD.foreach {
+      link =>
+        link.unlock()
+    }
+    linkRDD
+  }
 
   def factories: Seq[LinkFactory]
 
   private def factory2Fixtures(factory: LinkFactory): (SpookyContext, String) = {
 
     val spooky = this.spooky.copy(_configurations = this.spooky.configurations.transform(_.clone))
-    spooky.getConf[UAVConf].linkFactory = factory
+    val uavConf = spooky.getConf[UAVConf]
+    uavConf.linkFactory = factory
+    uavConf.fleet = Fleet.Inventory(fleet)
     spooky.rebroadcast()
 
     val name = spooky.getConf[UAVConf].linkFactory.getClass.getSimpleName
@@ -61,10 +108,8 @@ trait LinkFixture extends UAVFixture {
 
         for (i <- 0 to 10) {
           val linkRDD = getLinkRDD(spooky)
-          linkRDD.persist()
           val uavs = linkRDD.map(_.uav).collect()
-          println(s"=========== $i ==========")
-          uavs.foreach(println)
+          println(s"=== $i\t===: " + uavs.mkString("\t"))
         }
 
         spooky.sparkContext.foreachComputer {
@@ -76,9 +121,10 @@ trait LinkFixture extends UAVFixture {
 
       it("Link should use different UAVs") {
         for (i <- 0 to 10) {
-          println(s"=========== $i ===========")
-          val linkRDD: RDD[Link] = getLinkRDD(spooky)
+          val linkRDD = getLinkRDD(spooky)
           val uavs = linkRDD.map(_.uav).collect().toSeq
+          println(s"=== $i\t===: " + uavs.mkString("\t"))
+
           val uris = uavs.map(_.primaryURI)
           Predef.assert(uris.size == this.parallelism, "Duplicated URIs:\n" + uris.mkString("\n"))
           Predef.assert(uris.size == uris.distinct.size, "Duplicated URIs:\n" + uris.mkString("\n"))
@@ -91,12 +137,12 @@ trait LinkFixture extends UAVFixture {
         val linkStrs = sc.parallelize(fleetURIs).map {
           connStr =>
             val session = new Session(spooky)
-            val link1 = Dispatcher (
+            val link1 = Dispatcher(
               fleet,
               session
             )
               .get
-            val link2 = Dispatcher (
+            val link2 = Dispatcher(
               fleet,
               session
             )
@@ -138,7 +184,7 @@ trait LinkFixture extends UAVFixture {
             if (factory1 == factory2) {
               assert(spooky.getMetrics[UAVMetrics].linkCreated.value == parallelism)
               assert(spooky.getMetrics[UAVMetrics].linkDestroyed.value == 0)
-              linkRDD1.map(_.toString).collect().mkString("\n").shouldBe (
+              linkRDD1.map(_.toString).collect().mkString("\n").shouldBe(
                 linkRDD2.map(_.toString).collect().mkString("\n"),
                 sort = true
               )
@@ -147,7 +193,7 @@ trait LinkFixture extends UAVFixture {
               assert(spooky.getMetrics[UAVMetrics].linkCreated.value == parallelism)
               // TODO: should be parallelism*2!
               assert(spooky.getMetrics[UAVMetrics].linkDestroyed.value == 0)
-              linkRDD1.map(_.uav).collect().mkString("\n").shouldBe (
+              linkRDD1.map(_.uav).collect().mkString("\n").shouldBe(
                 linkRDD2.map(_.uav).collect().mkString("\n"),
                 sort = true
               )
@@ -160,44 +206,13 @@ trait LinkFixture extends UAVFixture {
         }
       }
   }
-
-  //TODO: merge into lockedLinkRDD?
-  def getLinkRDD(spooky: SpookyContext): RDD[Link] = {
-    val fleet: Seq[UAV] = this.fleet
-    val linkRDD = sc.parallelize(fleetURIs).map {
-      connStr =>
-        val link = spooky.withSession {
-          session =>
-            Dispatcher(
-              fleet,
-              session
-            )
-              .get
-        }
-        link.lock()
-        TestHelper.assert(link.isReachable, "link is unreacheable")
-        TestHelper.assert(
-          link.factoryOpt.get == spooky.getConf[UAVConf].linkFactory,
-          "link doesn't comply to factory"
-        )
-        link
-    }
-      .persist()
-    val uavs = linkRDD.map(_.uav).collect()
-    assert(uavs.length == uavs.distinct.length)
-    linkRDD.foreach {
-      link =>
-        link.unlock() //TODO: delete, Selector.select unlocks automatically.
-    }
-    linkRDD
-  }
 }
 
-abstract class SimLinkSuite extends SimUAVFixture with LinkFixture {
+abstract class SimLinkSuite extends SimUAVFixture with LinkSuite {
 
   import com.tribbloids.spookystuff.utils.SpookyViews._
 
-  runTests(factories){
+  runTests(factories) {
     spooky =>
 
       it("Link to unreachable drone should be disabled until blacklist timer reset") {

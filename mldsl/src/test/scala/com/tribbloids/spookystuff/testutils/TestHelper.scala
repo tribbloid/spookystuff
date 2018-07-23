@@ -49,11 +49,11 @@ class TestHelper() extends NOTSerializable {
   final val MAX_CORES = MAX_TOTAL_MEMORY / MEMORY_PER_CORE
 
   lazy val numCores: Int = {
-    val max = Option(properties.getProperty("maxCores")).map(_.toInt)
+    val cap = Option(properties.getProperty("maxCores")).map(_.toInt)
       .getOrElse(MAX_CORES)
     var n = Math.min (
       Runtime.getRuntime.availableProcessors(),
-      max
+      cap
     )
 
     if (n < 2) n = 2
@@ -177,11 +177,13 @@ class TestHelper() extends NOTSerializable {
   lazy val TestSparkSession = {
 
     val session = SparkSession.builder.config(TestSparkConf).getOrCreate()
-    session
-  }
-  lazy val TestSC = {
+    val sc = session.sparkContext
 
-    val sc = TestSparkSession.sparkContext
+    CommonUtils.retry(10, 1000, silent = true) {
+      // wait for all executors in local-cluster mode to be online
+      assert(sc.defaultParallelism == numCores)
+    }
+
     sys.addShutdownHook {
 
       println("=============== Stopping Test Spark Context ==============")
@@ -206,11 +208,10 @@ class TestHelper() extends NOTSerializable {
       //      println("=============== Test Spark Context has stopped ==============")
     }
     TestHelper.assureKryoSerializer(sc)
-    sc
+    session
   }
-  lazy val TestSQL = {
-    TestSparkSession.sqlContext
-  }
+  lazy val TestSC = TestSparkSession.sparkContext
+  lazy val TestSQL = TestSparkSession.sqlContext
 
   def setLoggerDuring[T](clazzes: Class[_]*)(fn: =>T, level: String = "OFF"): T = {
     val logger_oldLevels = clazzes.map {

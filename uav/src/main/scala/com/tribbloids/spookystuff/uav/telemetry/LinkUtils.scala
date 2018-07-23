@@ -6,13 +6,18 @@ import com.tribbloids.spookystuff.uav.system.UAV
 import org.apache.spark.rdd.RDD
 import org.slf4j.LoggerFactory
 
+import scala.util.Try
+
 object LinkUtils {
 
   import com.tribbloids.spookystuff.utils.SpookyViews._
 
-  def tryLinkRDD(spooky: SpookyContext) = {
+  def tryLinkRDD(
+                  spooky: SpookyContext,
+                  lock: Boolean = true
+                ): RDD[Try[Link]] = {
 
-    spooky.sparkContext.mapAtLeastOncePerExecutorCore (
+    val locked = spooky.sparkContext.mapAtLeastOncePerExecutorCore (
       {
         spooky.withSession {
           session =>
@@ -22,42 +27,19 @@ object LinkUtils {
               session
             )
               .tryGet
+            linkTry.foreach {
+              v =>
+                v.lock()
+            }
             linkTry
         }
       },
       Some(spooky.sparkContext.defaultParallelism)
     )
-  }
-
-  // get available drones, TODO: merge other impl to it.
-  def availableLinkRDD(spooky: SpookyContext): RDD[Link] = {
-
-    val trial = tryLinkRDD(spooky)
-    val available = trial.flatMap {
-      v =>
-        v.recover {
-          case e =>
-            LoggerFactory.getLogger(this.getClass).warn(e.toString)
-            throw e
-        }
-          .toOption
-    }
-    available
-  }
-
-  def lockedLinkRDD(spooky: SpookyContext): RDD[Link] = {
-
-    val available = availableLinkRDD(spooky)
-    val locked = available.map {
-      link =>
-        link.lock()
-        link
-    }
 
     locked.persist()
-    locked.count()
 
-    val allUAVStatuses = locked.map(_.status()).collect()
+    val allUAVStatuses = locked.flatMap(v => v.toOption.map(_.status())).collect()
     val uri_statuses = allUAVStatuses.flatMap {
       status =>
         status.uav.uris.map {
@@ -80,10 +62,41 @@ object LinkUtils {
              """.stripMargin
         )
     }
-    locked
+
+    val result = if (!lock) {
+      locked.map {
+        v =>
+          v.map(_.unlock())
+          v
+      }
+    }
+    else {
+      locked
+    }
+
+    result
   }
 
-  def unlockAll(): Unit = {
+  def linkRDD(
+               spooky: SpookyContext,
+               lock: Boolean = true
+             ): RDD[Link] = {
+
+    val proto = tryLinkRDD(spooky, lock)
+    val result = proto.flatMap {
+      v =>
+        v.recover {
+          case e =>
+            LoggerFactory.getLogger(this.getClass).warn(e.toString)
+            throw e
+        }
+          .toOption
+    }
+
+    result
+  }
+
+  def unlockAll(): Unit = {// TODO: made distributed
     Link.registered.values.foreach {
       link =>
         link.unlock()
