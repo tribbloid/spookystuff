@@ -66,7 +66,6 @@ object GenPartitionerLike {
     //    }
   }
 
-
   /**
     * only need to defined a key repartitioning function
     * @tparam K
@@ -102,7 +101,7 @@ object GenPartitionerLike {
                       ): RDD[(K, K)]
   }
 
-  trait Disabled extends AnyGenPartitioner {
+  trait Passthrough extends AnyGenPartitioner {
 
     def getInstance[K: ClassTag](schema: SpookySchema): Instance[K] = {
       Inst[K]()

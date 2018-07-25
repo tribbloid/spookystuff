@@ -11,7 +11,7 @@ import scala.reflect.ClassTag
 
 object GenPartitioners {
 
-  case object Disabled extends GenPartitionerLike.Disabled
+  case object Passthrogh extends GenPartitionerLike.Passthrough
 
   //this won't merge identical traces and do lookup, only used in case each resolve may yield different result
   case object Narrow extends AnyGenPartitioner {

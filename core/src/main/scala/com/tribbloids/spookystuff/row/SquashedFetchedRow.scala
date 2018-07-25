@@ -90,7 +90,7 @@ case class SquashedFetchedRow(
         val groupID = UUID.randomUUID()
         groupedDocs.zipWithIndex.map {
           tuple =>
-            val withGroupID = dataRow.copyWithArgs(
+            val withGroupID = dataRow.copy(
               groupID = Some(groupID),
               groupIndex = tuple._2
             )

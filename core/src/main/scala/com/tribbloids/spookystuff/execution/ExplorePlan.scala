@@ -19,7 +19,7 @@ object ExplorePlan {
 
   type ExeID = UUID
 
-  def nextExeID() = UUID.randomUUID()
+  def nextExeID(): ExeID = UUID.randomUUID()
 
   case class Params(
                      depthField: Field, //can be null

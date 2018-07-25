@@ -39,7 +39,8 @@ class TestInMemoryDocCache extends SpookyEnvFixture with LocalPathDocsFixture {
 
   it ("cache visit and restore with different name") {
     val visitPage = this.visitPage
-    spooky.spookyConf.cachedDocsLifeSpan = 10.seconds
+    val lifespan = 15.seconds
+    spooky.spookyConf.cachedDocsLifeSpan = lifespan
 
     cache.put(visit, visitPage, spooky)
 
@@ -52,7 +53,7 @@ class TestInMemoryDocCache extends SpookyEnvFixture with LocalPathDocsFixture {
     assert(page2.head.code === page2.head.code)
     assert(page2.head.name === "new")
 
-    Thread.sleep(11000)
+    Thread.sleep(lifespan.toMillis)
 
     val page3 = cache.get(visitPage.head.uid.backtrace, spooky).orNull
     assert(page3 === null)

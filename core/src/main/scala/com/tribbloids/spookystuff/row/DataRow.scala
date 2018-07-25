@@ -14,7 +14,7 @@ import scala.reflect.ClassTag
   * schema |x| field => index => value
   */
 //TODO: change to wrap DataFrame Row/InternalRow?
-//TODO: also carry PageUID & property type (Vertex/Edge) for GraphX
+//TODO: also carry PageUID & property type (Vertex/Edge) for GraphX or GraphFrame
 @SerialVersionUID(6534469387269426194L)
 case class DataRow(
                     data: Data = Data.empty,
@@ -29,16 +29,16 @@ case class DataRow(
 
   import SpookyViews._
 
-  def copyWithArgs(
-                    data: Data = this.data,
-                    groupID: Option[UUID] = this.groupID,
-                    groupIndex: Int = this.groupIndex, //set to 0...n for each page group after SquashedPageRow.semiUnsquash/unsquash
-                    freeze: Boolean = this.freeze //if set to true PageRow.extract won't insert anything into it, used in merge/replace join
-                  ) = DataRow(data, groupID, groupIndex, freeze)
+  //  def copy(//TODO: remove, already in case class contract
+  //            data: Data = this.data,
+  //            groupID: Option[UUID] = this.groupID,
+  //            groupIndex: Int = this.groupIndex, //set to 0...n for each page group after SquashedPageRow.semiUnsquash/unsquash
+  //            freeze: Boolean = this.freeze //if set to true PageRow.extract won't insert anything into it, used in merge/replace join
+  //          ) = DataRow(data, groupID, groupIndex, freeze)
 
-  def ++(m: Iterable[(Field, Any)]): DataRow = this.copyWithArgs(data = data ++ m)
+  def ++(m: Iterable[(Field, Any)]): DataRow = this.copy(data = data ++ m)
 
-  def --(m: Iterable[Field]): DataRow = this.copyWithArgs(data = data -- m)
+  def --(m: Iterable[Field]): DataRow = this.copy(data = data -- m)
 
   def nameToField(name: String): Option[Field] = {
     Some(Field(name, isWeak = true)).filter(data.contains)
@@ -87,10 +87,10 @@ case class DataRow(
     val newValues_Indices = data.flattenByKey(field, sampler)
 
     if (left && newValues_Indices.isEmpty) {
-      Seq(this.copyWithArgs(data = data - field)) //you don't lose the remainder of a row because an element is empty
+      Seq(this.copy(data = data - field)) //you don't lose the remainder of a row because an element is empty
     }
     else {
-      val result: Seq[(DataRow, Int)] = newValues_Indices.map(tuple => this.copyWithArgs(data = tuple._1.toMap) -> tuple._2)
+      val result: Seq[(DataRow, Int)] = newValues_Indices.map(tuple => this.copy(data = tuple._1.toMap) -> tuple._2)
 
       Option(ordinalField) match {
         case None => result.map(_._1)
@@ -104,7 +104,7 @@ case class DataRow(
                 case Some(existing) =>
                   tuple._1.data.updated(_field, (existing ++ Iterable(tuple._2)).toArray)
               }
-              tuple._1.copyWithArgs(data = values)
+              tuple._1.copy(data = values)
           }
           newValues
       }
