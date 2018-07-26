@@ -106,7 +106,8 @@ abstract class IntegrationFixture
 
   private val retry = 3
 
-  def envSanityTest(): Unit = {
+  override def envSanityTest(): Unit = {
+    super.envSanityTest()
     TestSiteServer.server.start()
   }
 
