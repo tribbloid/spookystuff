@@ -249,7 +249,7 @@ abstract class SimLinkSuite extends SimUAVFixture with LinkSuite {
         val session = new Session(spooky)
         val drone = UAV(Seq("dummy"))
         TestHelper.setLoggerDuring(classOf[Link], classOf[MAVLink], SpookyUtils.getClass) {
-          intercept[LinkDepletedException] {
+          intercept[UAVException] {
             Dispatcher(
               Seq(drone),
               session

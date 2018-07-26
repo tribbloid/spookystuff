@@ -1,7 +1,7 @@
 package com.tribbloids.spookystuff.uav.telemetry.mavlink
 
 import com.tribbloids.spookystuff.session.ConflictDetection
-import com.tribbloids.spookystuff.uav.UAVConf
+import com.tribbloids.spookystuff.uav.{UAVConf, UAVException}
 import com.tribbloids.spookystuff.utils.CommonUtils
 import com.tribbloids.spookystuff.utils.lifespan.{Lifespan, LocalCleanable}
 
@@ -116,7 +116,8 @@ case class MAVProxy(
       }
     }
     Thread.sleep(2000)
-    assert(process_pidOpt.nonEmpty, "MAVProxy is terminated! perhaps due to non-existing master URI")
+    if (process_pidOpt.isEmpty)
+      throw new UAVException(s"MAVProxy is terminated! perhaps due to non-existing master URI ${this.master}")
   }
 
   def _doOpen(): Unit = {
