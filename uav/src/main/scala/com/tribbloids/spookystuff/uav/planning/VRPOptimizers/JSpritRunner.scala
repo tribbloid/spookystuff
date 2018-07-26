@@ -23,7 +23,7 @@ import com.tribbloids.spookystuff.uav.UAVConf
 import com.tribbloids.spookystuff.uav.actions.{UAVNavigation, Waypoint}
 import com.tribbloids.spookystuff.uav.dsl.GenPartitioners
 import com.tribbloids.spookystuff.uav.spatial.point.NED
-import com.tribbloids.spookystuff.uav.system.UAVStatus
+import com.tribbloids.spookystuff.uav.telemetry.LinkStatus
 
 import scala.util.Try
 
@@ -165,20 +165,20 @@ object JSpritRunner {
 case class JSpritRunner(
                          problem: GenPartitioners.VRP,
                          schema: SpookySchema,
-                         uavs: Array[UAVStatus],
+                         uavs: Array[LinkStatus],
                          traces: Array[TraceView]
                        ) {
 
   val spooky = schema.ec.spooky
 
-  val trace_uavOpt_index: Array[((TraceView, Option[UAVStatus]), Int)] = {
-    val fromUAVs: Array[(TraceView, Option[UAVStatus])] =
+  val trace_uavOpt_index: Array[((TraceView, Option[LinkStatus]), Int)] = {
+    val fromUAVs: Array[(TraceView, Option[LinkStatus])] =
       uavs.map {
         uav =>
           TraceView(List(Waypoint(uav.currentLocation))) -> Some(uav)
       }
 
-    val fromTraces: Array[(TraceView, Option[UAVStatus])] = traces.map {
+    val fromTraces: Array[(TraceView, Option[LinkStatus])] = traces.map {
       trace =>
         trace -> None
     }
@@ -300,12 +300,12 @@ case class JSpritRunner(
     tuple._1
   }
 
-  lazy val getUAV2TraceMap: Map[UAVStatus, Seq[TraceView]] = {
+  lazy val getUAV2TraceMap: Map[LinkStatus, Seq[TraceView]] = {
 
     import scala.collection.JavaConverters._
 
     val routes = solve.getRoutes.asScala.toList
-    val status_KVs: Seq[(UAVStatus, List[TraceView])] = routes.map {
+    val status_KVs: Seq[(LinkStatus, List[TraceView])] = routes.map {
       route =>
         val status = uavs.find(_.uav.primaryURI == route.getVehicle.getId).get
         val tours = route.getTourActivities.getActivities.asScala.toList

@@ -47,17 +47,17 @@ case class UAVConf(
                     // routing now becomes part of Connection?
 
                     var fleet: Fleet = Fleet.Inventory(Nil),
-                    var linkFactory: LinkFactory = LinkFactories.ForkToGCS(),
-                    var fastConnectionRetries: Int = UAVConf.FAST_CONNECTION_RETRIES,
+                    var routing: Routing = Routings.Forked(),
+                    var connectionRetries: Int = UAVConf.FAST_CONNECTION_RETRIES,
 
                     //TODO: by convention, should use exponentially increasing intervals
-                    var slowConnectionRetries: Int = Int.MaxValue,
-                    var slowConnectionRetryInterval: Duration = UAVConf.BLACKLIST_RESET_AFTER, //1 minute
+                    //                    var slowConnectionRetries: Int = Int.MaxValue,
+                    var blacklistResetAfter: Duration = UAVConf.BLACKLIST_RESET_AFTER, //1 minute
 
                     var home: Location = UAVConf.DEFAULT_HOME_LOCATION,
                     var costEstimator: CostEstimator = CostEstimator.L2Distance(),
 
-                    var defaultSpeed: Double = 5.0,
+                    var uavSpeed: Double = 5.0,
 
                     // used by Rewriters to clamp Waypoint's altitude before being submitted to Global Planner (GenPartitioner)4
                     // IMPORTANT: always rewrite locally first, globally last!

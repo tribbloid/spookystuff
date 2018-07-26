@@ -45,7 +45,7 @@ case class MAVLink(
   }
 
   val outs: Seq[String] = toSpark ++ toGCS
-  val exclusiveURIs: Set[String] = (uav.uris ++ toSpark).toSet
+  val resourceURIs: Set[String] = (uav.uris ++ toSpark).toSet
 
   /**
     * CAUTION: ALL of them have to be val or lazy val! Or you risk recreating many copies each with its own python!

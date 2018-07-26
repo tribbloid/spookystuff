@@ -167,9 +167,11 @@ abstract class SpookyEnvFixture
 
   import com.tribbloids.spookystuff.utils.SpookyViews._
 
-  val processNames = Seq("phantomjs", "python")
+  def _processNames = Seq("phantomjs", "python")
+  final lazy val processNames = _processNames
 
-  override def beforeAll(): Unit = if (SpookyEnvFixture.firstRun){
+  envSanityTest()
+  def envSanityTest(): Unit = if (SpookyEnvFixture.firstRun){
 
     val spooky = this.spooky
     val processNames = this.processNames

@@ -5,8 +5,7 @@ import com.tribbloids.spookystuff.dsl.GenPartitionerLike.RepartitionKeyImpl
 import com.tribbloids.spookystuff.row.{BeaconRDD, SpookySchema}
 import com.tribbloids.spookystuff.uav.dsl.GenPartitioners
 import com.tribbloids.spookystuff.uav.planning._
-import com.tribbloids.spookystuff.uav.system.UAVStatus
-import com.tribbloids.spookystuff.uav.telemetry.LinkUtils
+import com.tribbloids.spookystuff.uav.telemetry.{LinkStatus, LinkUtils}
 import org.apache.spark.rdd.RDD
 
 object JSprit extends VRPOptimizer {
@@ -23,7 +22,8 @@ case class JSprit(
                              ): RDD[(TraceView, TraceView)] = {
 
     val spooky = schema.ec.spooky
-    val linkRDD = LinkUtils.linkRDD(spooky)
+    val tryLinkRDD = LinkUtils.tryLinkRDD(spooky)
+    val linkRDD = tryLinkRDD.map(_.get)
 
     val allUAVs = linkRDD.map(v => v.status()).collect()
     val uavs = problem.numUAVOverride match {
@@ -34,7 +34,7 @@ case class JSprit(
     val rows = rdd.collect()
     val solver = JSpritRunner(problem, schema, uavs, rows)
 
-    val uav2TraceMap: Map[UAVStatus, Seq[TraceView]] = solver.getUAV2TraceMap
+    val uav2TraceMap: Map[LinkStatus, Seq[TraceView]] = solver.getUAV2TraceMap
     val uav2TraceMap_broadcast = schema.spooky.sparkContext.broadcast(uav2TraceMap)
 
     val old2NewTraceRDD: RDD[(TraceView, TraceView)] = linkRDD.flatMap {

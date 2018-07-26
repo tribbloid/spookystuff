@@ -3,12 +3,12 @@ package com.tribbloids.spookystuff.uav.telemetry
 import com.tribbloids.spookystuff.SpookyContext
 import com.tribbloids.spookystuff.caching.Memoize
 import com.tribbloids.spookystuff.session._
-import com.tribbloids.spookystuff.uav.dsl.LinkFactory
+import com.tribbloids.spookystuff.uav.dsl.Routing
 import com.tribbloids.spookystuff.uav.spatial.point.Location
-import com.tribbloids.spookystuff.uav.system.{UAV, UAVStatus}
-import com.tribbloids.spookystuff.uav.utils.{MutexLock, UAVUtils}
+import com.tribbloids.spookystuff.uav.system.UAV
+import com.tribbloids.spookystuff.uav.utils.{Lock, UAVUtils}
 import com.tribbloids.spookystuff.uav.{UAVConf, UAVMetrics}
-import com.tribbloids.spookystuff.utils.lifespan.{Cleanable, LifespanContext, LocalCleanable}
+import com.tribbloids.spookystuff.utils.lifespan.{Cleanable, Lifespan, LifespanContext, LocalCleanable}
 import com.tribbloids.spookystuff.utils.{CachingUtils, CommonUtils, TreeException}
 import org.slf4j.LoggerFactory
 
@@ -44,13 +44,18 @@ trait Link extends LocalCleanable with ConflictDetection {
 
   val uav: UAV
 
-  val exclusiveURIs: Set[String]
-  final override lazy val _resourceIDs = Map("uris" -> exclusiveURIs)
+  val resourceURIs: Set[String]
+  final override lazy val _resourceIDs = Map("uris" -> resourceURIs)
+
+  override def _lifespan = new Lifespan.JVM(
+    nameOpt = Some(this.getClass.getSimpleName)
+  )
+
 
   @volatile protected var _spooky: SpookyContext = _
   def spookyOpt = Option(_spooky)
 
-  @volatile protected var _factory: LinkFactory = _
+  @volatile protected var _factory: Routing = _
   def factoryOpt = Option(_factory)
 
   lazy val runOnce: Unit = {
@@ -59,7 +64,7 @@ trait Link extends LocalCleanable with ConflictDetection {
 
   def register(
                 spooky: SpookyContext = this._spooky,
-                factory: LinkFactory = this._factory
+                factory: Routing = this._factory
               ): this.type = Link.synchronized{
 
     try {
@@ -89,9 +94,7 @@ trait Link extends LocalCleanable with ConflictDetection {
   @volatile protected var _owner: LifespanContext = _
   def ownerOpt = Option(_owner)
   def owner = ownerOpt.get
-  def owner_=(
-               c: LifespanContext
-             ): this.type = {
+  def owner_=(c: LifespanContext): this.type = {
 
     if (ownerOpt.contains(c)) this
     else {
@@ -105,14 +108,16 @@ trait Link extends LocalCleanable with ConflictDetection {
       }
     }
   }
+  def isOwnedBy(v: LifespanContext) = ownerOpt.exists(vv => v._id == vv._id)
+  def isNotOwned: Boolean = ownerOpt.forall(v => v.isCompleted)
 
   // IMPORTANT: ALWAYS set owner first!
   // or the link may become available to other threads and snatched by them
-  def setOwnerAndUnlock(ctx: LifespanContext, validate: Boolean = true): Unit = {
-    owner = ctx
-    if (validate) assert(!isNotOwned, "IMPOSSIBLE!")
-    unlock()
-  }
+//  def setOwnerAndUnlock(ctx: LifespanContext, validate: Boolean = true): Unit = {
+//    owner = ctx
+//    if (validate) assert(!isNotOwned, "IMPOSSIBLE!")
+//    unlock()
+//  }
 
   //finalizer may kick in and invoke it even if its in Link.existing
   override protected def cleanImpl(): Unit = {
@@ -166,7 +171,7 @@ trait Link extends LocalCleanable with ConflictDetection {
   private def connectRetries: Int = spookyOpt
     .map(
       spooky =>
-        spooky.getConf[UAVConf].fastConnectionRetries
+        spooky.getConf[UAVConf].connectionRetries
     )
     .getOrElse(UAVConf.FAST_CONNECTION_RETRIES)
 
@@ -176,10 +181,10 @@ trait Link extends LocalCleanable with ConflictDetection {
     val notMe: Seq[Link] = Link.registered.values.toList.filterNot(_ eq this)
 
     for (
-      myURI <- this.exclusiveURIs;
+      myURI <- this.resourceURIs;
       notMe1 <- notMe
     ) {
-      val notMyURIs = notMe1.exclusiveURIs
+      val notMyURIs = notMe1.resourceURIs
       assert(!notMyURIs.contains(myURI), s"'$myURI' is already used by link ${notMe1.uav}")
     }
   }
@@ -229,23 +234,26 @@ trait Link extends LocalCleanable with ConflictDetection {
   /**
     * set this to avoid being used by another task even the current task finish.
     */
-  @volatile var _mutexLock: MutexLock = _
+  @volatile var _mutexLock: Lock = _
   def mutexLockOpt = Option(_mutexLock)
   def isLocked: Boolean = mutexLockOpt.exists(v => System.currentTimeMillis() < v.expireAfter)
-  def lock(): MutexLock = {
+  def lock: Lock = {
     require(!isLocked, statusStr)
-    val v = MutexLock()
+    val v = Lock()
     _mutexLock = v
     v
   }
   def unlock(): Unit = {
     _mutexLock = null
   }
+  def isLockedBy(mutexID: Long): Boolean = {
+    mutexLockOpt.map(_._id).contains(mutexID)
+  }
 
   private def blacklistDuration: Long = spookyOpt
     .map(
       spooky =>
-        spooky.getConf[UAVConf].slowConnectionRetryInterval
+        spooky.getConf[UAVConf].blacklistResetAfter
     )
     .getOrElse(UAVConf.BLACKLIST_RESET_AFTER)
     .toMillis
@@ -255,18 +263,13 @@ trait Link extends LocalCleanable with ConflictDetection {
       System.currentTimeMillis() - tt._2 <= blacklistDuration
   }
 
-  def isNotOwned: Boolean = ownerOpt.forall(v => v.isCompleted)
-
   def isAvailable: Boolean = {
     !isLocked && isReachable && isNotOwned && !isCleaned
   }
-  def isLockedBy(mutexID: Long): Boolean = {
-    mutexLockOpt.map(_._id).contains(mutexID)
-  }
 
   // return true regardless if given the same MutexID
-  def isAvailableTo(mutexIDOpt: Option[Long]): Boolean = {
-    isAvailable || mutexIDOpt.exists(isLockedBy)
+  def isAvailableTo(mutexIDOpt: Option[Long] = None, ownerOpt: Option[LifespanContext] = None): Boolean = {
+    isAvailable || mutexIDOpt.exists(isLockedBy) || ownerOpt.exists(isOwnedBy)
   }
 
   def statusStr: String = {
@@ -291,10 +294,11 @@ trait Link extends LocalCleanable with ConflictDetection {
 
   def sameFactoryWith(b: Link): Boolean
   def recommission(
-                    factory: LinkFactory
+                    factory: Routing
                   ): Link = Link.synchronized {
 
     val neo: Link = factory.apply(uav)
+    neo.owner = this.owner
     val result = if (sameFactoryWith(neo)) {
       LoggerFactory.getLogger(this.getClass).info {
         s"recommissioning existing link for $uav"
@@ -327,7 +331,7 @@ trait Link extends LocalCleanable with ConflictDetection {
 
   // Most telemetry support setting up multiple landing site.
   protected def _getHome: Location
-  protected lazy val getHome: Location = {
+  protected def home: Location = {
     withConn(){
       _getHome
     }
@@ -342,9 +346,9 @@ trait Link extends LocalCleanable with ConflictDetection {
     }
   }
 
-  def status(expireAfter: Long = 1000): UAVStatus = {
+  def status(expireAfter: Long = 1000): LinkStatus = {
     val current = CurrentLocation.getIfNotExpire((), expireAfter)
-    UAVStatus(uav, ownerOpt, getHome, current)
+    LinkStatus(uav, ownerOpt, home, current)
   }
 
   //====================== Synchronous API ======================

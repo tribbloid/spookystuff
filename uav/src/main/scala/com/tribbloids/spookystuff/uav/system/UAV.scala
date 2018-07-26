@@ -15,6 +15,7 @@ case class UAV(
                 frame: Option[String] = None,
                 baudRate: Int = UAVConf.DEFAULT_BAUDRATE,
                 groundSSID: Int = UAVConf.EXECUTOR_SSID,
+                protocol: Protocol = Protocol.MAVLink, //currently useless.
                 name: String = "DRONE"
               ) {
 
@@ -30,7 +31,7 @@ case class UAV(
       Link.registered.getOrElse (
         this,
         {
-          val factory = spooky.getConf[UAVConf].linkFactory
+          val factory = spooky.getConf[UAVConf].routing
           val link = factory.apply(this)
           link.register(
             spooky,

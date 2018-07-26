@@ -8,8 +8,8 @@ import com.tribbloids.spookystuff.uav.planning.{Resampler, ResamplerInst, Traffi
 import org.apache.spark.ml.uav.TwoLines
 
 case class InsertWP(
-                           granularity: Double = 1.0
-                         ) extends Resampler {
+                     granularity: Double = 1.0
+                   ) extends Resampler {
 
   def apply(gp: TrafficControl, schema: SpookySchema) = Inst(gp, schema)
 

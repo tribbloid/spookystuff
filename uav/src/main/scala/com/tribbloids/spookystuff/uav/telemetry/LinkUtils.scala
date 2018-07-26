@@ -6,8 +6,9 @@ import com.tribbloids.spookystuff.uav.system.UAV
 import org.apache.spark.rdd.RDD
 import org.slf4j.LoggerFactory
 
-import scala.util.Try
+import scala.util.{Failure, Try}
 
+//TODO: try not using any of these in non-testing code, they ar
 object LinkUtils {
 
   import com.tribbloids.spookystuff.utils.SpookyViews._
@@ -27,9 +28,9 @@ object LinkUtils {
               session
             )
               .tryGet
-            linkTry.foreach {
+            if (lock) linkTry.foreach {
               v =>
-                v.lock()
+                v.lock
             }
             linkTry
         }
@@ -37,42 +38,9 @@ object LinkUtils {
       Some(spooky.sparkContext.defaultParallelism)
     )
 
-    locked.persist()
-
-    val allUAVStatuses = locked.flatMap(v => v.toOption.map(_.status())).collect()
-    val uri_statuses = allUAVStatuses.flatMap {
-      status =>
-        status.uav.uris.map {
-          uri =>
-            uri -> status
-        }
-    }
-    val grouped = uri_statuses.groupBy(_._1)
-    grouped.values.foreach {
-      v =>
-        assert(
-          v.length == 1,
-          s""""
-             |multiple UAVs sharing the same uris:
-             |${v.map {
-            vv =>
-              s"${vv._2.uav} @ ${vv._2.ownerOpt.getOrElse("[MISSING]")}"
-          }
-            .mkString("\n")}
-             """.stripMargin
-        )
-    }
-
-    val result = if (!lock) {
-      locked.map {
-        v =>
-          v.map(_.unlock())
-          v
-      }
-    }
-    else {
-      locked
-    }
+//    locked.persist()
+//    locked.count()
+    val result = locked
 
     result
   }
@@ -85,11 +53,12 @@ object LinkUtils {
     val proto = tryLinkRDD(spooky, lock)
     val result = proto.flatMap {
       v =>
-        v.recover {
-          case e =>
-            LoggerFactory.getLogger(this.getClass).warn(e.toString)
-            throw e
-        }
+        v
+          .recoverWith {
+            case e =>
+              LoggerFactory.getLogger(this.getClass).warn(e.toString)
+              Failure(e)
+          }
           .toOption
     }
 

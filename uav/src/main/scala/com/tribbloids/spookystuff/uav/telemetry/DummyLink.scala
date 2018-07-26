@@ -13,11 +13,11 @@ import com.tribbloids.spookystuff.uav.system.UAV
   */
 case class DummyLink(
                       uav: UAV,
-                      home: Location = UAVConf.DEFAULT_HOME_LOCATION,
+                      override val home: Location = UAVConf.DEFAULT_HOME_LOCATION,
                       currentLocation: Location = UAVConf.DEFAULT_HOME_LOCATION
                     ) extends Link {
 
-  override val exclusiveURIs: Set[String] = uav.uris.toSet
+  override val resourceURIs: Set[String] = uav.uris.toSet
 
   override protected def _connect(): Unit = {}
 

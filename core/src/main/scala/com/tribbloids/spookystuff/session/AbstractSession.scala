@@ -44,6 +44,10 @@ import scala.collection.mutable.ArrayBuffer
 //  }
 //}
 
+abstract class NoDriverException(override val simpleMsg: String) extends SpookyException
+class NoWebDriverException extends NoDriverException("INTERNAL ERROR: should initialize driver automatically")
+class NoPythonDriverException extends NoDriverException("INTERNAL ERROR: should initialize driver automatically")
+
 sealed abstract class AbstractSession(val spooky: SpookyContext) extends LocalCleanable {
 
   spooky.spookyMetrics.sessionInitialized += 1
@@ -55,10 +59,6 @@ sealed abstract class AbstractSession(val spooky: SpookyContext) extends LocalCl
 
   def taskContextOpt: Option[TaskContext] = lifespan.ctx.taskOpt
 }
-
-abstract class NoDriverException(override val simpleMsg: String) extends SpookyException
-class NoWebDriverException extends NoDriverException("INTERNAL ERROR: should initialize driver automatically")
-class NoPythonDriverException extends NoDriverException("INTERNAL ERROR: should initialize driver automatically")
 
 /**
   * the only implementation
@@ -92,14 +92,7 @@ class Session(
           if (resolution != null) driver.manage().window().setSize(new Dimension(resolution._1, resolution._2))
 
           _webDriverOpt = Some(driver)
-          //      }            //TODO: these are no longer required, if a driver is get for multiple times the previous one will be automatically scuttled
-          //      finally {
-          //        if (!successful){
-          //          driver.close()
-          //          driver.quit()
-          //          spooky.metrics.driverReleased += 1
-          //        }
-          //      }
+
           driver
         }
       }

@@ -7,7 +7,8 @@ import com.tribbloids.spookystuff.actions.TraceView
 import com.tribbloids.spookystuff.uav.UAVConf
 import com.tribbloids.spookystuff.uav.actions.Waypoint
 import com.tribbloids.spookystuff.uav.spatial.point.{Location, NED}
-import com.tribbloids.spookystuff.uav.system.{UAV, UAVStatus}
+import com.tribbloids.spookystuff.uav.system.UAV
+import com.tribbloids.spookystuff.uav.telemetry.LinkStatus
 
 class JSpritRunnerSuite extends VRPFixture {
 
@@ -48,7 +49,7 @@ class JSpritRunnerSuite extends VRPFixture {
 
     it("can evaluate 1 route") {
       val location = UAVConf.DEFAULT_HOME_LOCATION
-      val uav = UAVStatus(UAV(Seq("dummy@localhost")), None, location, location)
+      val uav = LinkStatus(UAV(Seq("dummy@localhost")), None, location, location)
       val runner = JSpritRunner(getVRP, defaultSchema, Array(uav), waypoints)
 
       val solution = runner.solve
@@ -70,7 +71,7 @@ class JSpritRunnerSuite extends VRPFixture {
       val location = UAVConf.DEFAULT_HOME_LOCATION
       val uavs = Array("A", "B", "C").map {
         v =>
-          UAVStatus(UAV(Seq(s"$v@localhost")), None, location, location)
+          LinkStatus(UAV(Seq(s"$v@localhost")), None, location, location)
       }
 
       val runner = JSpritRunner(getVRP, defaultSchema, uavs, waypoints)

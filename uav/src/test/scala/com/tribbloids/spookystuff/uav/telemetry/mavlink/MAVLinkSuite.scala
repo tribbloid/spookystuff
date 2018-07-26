@@ -3,25 +3,24 @@ package com.tribbloids.spookystuff.uav.telemetry.mavlink
 import com.tribbloids.spookystuff.session.Session
 import com.tribbloids.spookystuff.testutils.TestHelper
 import com.tribbloids.spookystuff.uav.LinkDepletedException
-import com.tribbloids.spookystuff.uav.dsl.{LinkFactories, LinkFactory}
+import com.tribbloids.spookystuff.uav.dsl.{Routings, Routing}
 import com.tribbloids.spookystuff.uav.sim.APMQuadFixture
 import com.tribbloids.spookystuff.uav.system.UAV
 import com.tribbloids.spookystuff.uav.telemetry.{Dispatcher, Link, SimLinkSuite}
 import com.tribbloids.spookystuff.utils.SpookyUtils
 import org.apache.spark.rdd.RDD
-import org.scalatest.Ignore
 
 /**
   * Created by peng on 27/01/17.
   */
 class MAVLinkSuite extends SimLinkSuite with APMQuadFixture {
 
-  override lazy val factories: Seq[LinkFactory] = Seq(
-    LinkFactories.Direct(),
-    LinkFactories.ForkToGCS()
+  override lazy val factories: Seq[Routing] = Seq(
+    Routings.Direct(),
+    Routings.Forked()
   )
 
-  runTests(factories.filter(_.isInstanceOf[LinkFactories.Direct])) {
+  runTests(factories.filter(_.isInstanceOf[Routings.Direct])) {
     spooky =>
       it("should use first drone uri as primary endpoint") {
         val linkRDD = getLinkRDD(spooky).asInstanceOf[RDD[MAVLink]]
@@ -46,7 +45,7 @@ class MAVLinkSuite extends SimLinkSuite with APMQuadFixture {
       }
   }
 
-  runTests(factories.filter(_.isInstanceOf[LinkFactories.ForkToGCS])) {
+  runTests(factories.filter(_.isInstanceOf[Routings.Forked])) {
     spooky =>
 
       it("should use first proxy out as primary endpoint") {
@@ -112,14 +111,14 @@ class MAVLinkSuite extends SimLinkSuite with APMQuadFixture {
 
 //@Ignore
 class MAVLinkSuite_Direct extends MAVLinkSuite {
-  override lazy val factories: Seq[LinkFactory] = Seq(
-    LinkFactories.Direct()
+  override lazy val factories: Seq[Routing] = Seq(
+    Routings.Direct()
   )
 }
 
 //@Ignore
 class MAVLinkSuite_GCS extends MAVLinkSuite {
-  override lazy val factories: Seq[LinkFactory] = Seq(
-    LinkFactories.ForkToGCS()
+  override lazy val factories: Seq[Routing] = Seq(
+    Routings.Forked()
   )
 }

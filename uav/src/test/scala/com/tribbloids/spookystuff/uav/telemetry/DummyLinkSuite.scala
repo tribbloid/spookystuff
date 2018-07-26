@@ -1,7 +1,7 @@
 package com.tribbloids.spookystuff.uav.telemetry
 
 import com.tribbloids.spookystuff.uav.DummyUAVFixture
-import com.tribbloids.spookystuff.uav.dsl.{LinkFactories, LinkFactory}
+import com.tribbloids.spookystuff.uav.dsl.{Routings, Routing}
 import com.tribbloids.spookystuff.uav.system.UAV
 import org.scalatest.Ignore
 
@@ -10,8 +10,8 @@ import org.scalatest.Ignore
   */
 class DummyLinkSuite extends DummyUAVFixture with LinkSuite {
 
-  override lazy val factories: Seq[LinkFactory] = Seq(
-    LinkFactories.Dummy
+  override lazy val factories: Seq[Routing] = Seq(
+    Routings.Dummy
   )
 }
 

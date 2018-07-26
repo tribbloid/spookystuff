@@ -5,8 +5,7 @@ import com.tribbloids.spookystuff.session.Session
 import com.tribbloids.spookystuff.uav.UAVConf
 import com.tribbloids.spookystuff.uav.actions.UAVNavigation
 import com.tribbloids.spookystuff.uav.spatial.point.Location
-import com.tribbloids.spookystuff.uav.system.UAVStatus
-import com.tribbloids.spookystuff.uav.telemetry.Dispatcher
+import com.tribbloids.spookystuff.uav.telemetry.{Dispatcher, LinkStatus}
 import com.tribbloids.spookystuff.utils.ShippingMarks
 
 import scala.concurrent.duration.Duration
@@ -16,8 +15,8 @@ import scala.concurrent.duration.Duration
   * does NOT fail when the Link is unreachable (hence prefer), will try any available alternative instead.
   */
 private[uav] case class PreferUAV(
-                                   uavStatus: UAVStatus,
-                                   mutexIDOpt: Option[Long] = None
+                                   uavStatus: LinkStatus,
+                                   lockIDOpt: Option[Long] = None
                                  ) extends UAVNavigation
   with ShippingMarks {
 
@@ -34,7 +33,7 @@ private[uav] case class PreferUAV(
     Dispatcher(
       Seq(uavStatus.uav),
       session,
-      mutexIDOpt
+      lockIDOpt
     )
 
     Nil

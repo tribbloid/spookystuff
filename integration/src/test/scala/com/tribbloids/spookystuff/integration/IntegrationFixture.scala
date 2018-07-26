@@ -106,13 +106,13 @@ abstract class IntegrationFixture
 
   private val retry = 3
 
-  def init(): Unit = {
+  def envSanityTest(): Unit = {
     TestSiteServer.server.start()
   }
 
   protected def doTest(): Unit = {
 
-    init()
+    envSanityTest()
 
     doTestBeforeCache()
 

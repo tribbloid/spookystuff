@@ -31,11 +31,10 @@ object SquashedFetchedRow {
   * 2. several arrays of abstract pages.
   * any extractions will be casted into applying to cartesian products of the above two
   * this is due to the fact that 90% of time is spent on fetching. < 5% on parsing & extraction.
-  * WARNING: comparing to 0.3.x support for different join types has been discarded, costs too much memory.
   */
 case class SquashedFetchedRow(
                                dataRows: Array[DataRow] = Array(),
-                               traceView: TraceView = TraceView() // TODO: change to Array to facilitate more join types
+                               traceView: TraceView = TraceView()
                              ) {
 
   def ++ (another: SquashedFetchedRow) = {
