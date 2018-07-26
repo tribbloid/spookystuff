@@ -64,6 +64,19 @@ abstract class URIResolver extends Serializable {
     }
   }
 
+  def isAlreadyExisting(pathStr: String)(
+    condition: InputResource => Boolean = {
+      v =>
+        v.getLenth > 0 //empty files are usually useless
+    }
+  ): Boolean = {
+    val result = this.input(pathStr) {
+      v =>
+        v.isAlreadyExisting && condition(v)
+    }
+    result
+  }
+
   /**
     * ensure sequential access
     *

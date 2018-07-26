@@ -22,6 +22,7 @@ import com.tribbloids.spookystuff.SpookyContext
 import com.tribbloids.spookystuff.session._
 import com.tribbloids.spookystuff.session.python.PythonDriver
 import com.tribbloids.spookystuff.utils.CachingUtils.ConcurrentMap
+import com.tribbloids.spookystuff.utils.io.LocalResolver
 import com.tribbloids.spookystuff.utils.lifespan.{Cleanable, Lifespan}
 import com.tribbloids.spookystuff.utils.{ConfUtils, SpookyUtils, TreeException}
 import org.apache.commons.io.FileUtils
@@ -32,6 +33,8 @@ import org.openqa.selenium.remote.CapabilityType._
 import org.openqa.selenium.remote.{BrowserType, CapabilityType, DesiredCapabilities}
 import org.openqa.selenium.{Capabilities, Platform, Proxy}
 import org.slf4j.LoggerFactory
+
+import scala.util.Try
 
 //local to TaskID, if not exist, local to ThreadID
 //for every new driver created, add a taskCompletion listener that salvage it.
@@ -193,7 +196,6 @@ object DriverFactories {
     override def deployGlobally(spooky: SpookyContext): Unit = delegate.deployGlobally(spooky)
   }
 
-
   object PhantomJS {
 
     // TODO: separate win/mac/linux32/linux64 versions
@@ -203,19 +205,28 @@ object DriverFactories {
 
     final def DEFAULT_PATH = System.getProperty("user.home") \\ ".spookystuff" \\ "phantomjs"
 
-    def defaultGetPath: SpookyContext => String = {
+    def verifyExe(pathStr: String) = Try {
+      val isExists = LocalResolver.isAlreadyExisting(pathStr) {
+        v =>
+          v.getLenth >= 1024 * 1024 *60
+      }
+      assert(isExists, s"PhantomJS executable at $pathStr doesn't exist")
+      pathStr
+    }
+
+    def defaultGetLocalURI: SpookyContext => String = {
       _ =>
         ConfUtils.getOrDefault("phantomjs.path", DEFAULT_PATH)
     }
 
-    def syncDelete(dst: String): Unit = this.synchronized {
+    def forceDelete(dst: String): Unit = this.synchronized {
       val dstFile = new File(dst)
       FileUtils.forceDelete(dstFile)
     }
   }
 
   case class PhantomJS(
-                        getLocalURI: SpookyContext => String = PhantomJS.defaultGetPath,
+                        getLocalURI: SpookyContext => String = PhantomJS.defaultGetLocalURI,
                         getRemoteURI: SpookyContext => String = _ => PhantomJS.HTTP_RESOURCE_URI,
                         loadImages: Boolean = false,
                         redeploy: Boolean = false
@@ -254,9 +265,9 @@ object DriverFactories {
       val sc = spooky.sparkContext
       val localURI = getLocalURI(spooky)
 
-      def localURIOpt = SpookyUtils.validateLocalPath(localURI)
+      def localURITry = PhantomJS.verifyExe(localURI)
 
-      if (localURIOpt.isEmpty) {
+      if (localURITry.isFailure) {
         val remoteURI = getRemoteURI(spooky)
 
         LoggerFactory.getLogger(this.getClass).info(s"Downloading PhantomJS from Internet ($remoteURI)")
@@ -267,7 +278,7 @@ object DriverFactories {
         copySparkFile2Local(fileName, localURI)
       }
 
-      sc.addFile(localURIOpt.get)
+      sc.addFile(localURITry.get)
 
       LoggerFactory.getLogger(this.getClass).info(s"Finished deploying PhantomJS to $localURI")
     }
@@ -280,20 +291,20 @@ object DriverFactories {
       */
     def _deployLocally(spooky: SpookyContext): String = {
       val localURI = getLocalURI(spooky)
-      def localURIOpt = SpookyUtils.validateLocalPath(localURI)
+      def localURITry = PhantomJS.verifyExe(localURI)
 
       val result: Option[String] = TreeException.|||^(Seq(
         //already exists
         {
           () =>
-            localURIOpt.get
+            localURITry.get
         },
         //copy from Spark local file
         {
           () =>
             val fileName = PhantomJS.uri2fileName(localURI)
             copySparkFile2Local(fileName, localURI)
-            localURIOpt.get
+            localURITry.get
         },
         //copy from Spark remote file
         {
@@ -301,7 +312,7 @@ object DriverFactories {
             val remoteURI = getRemoteURI(spooky)
             val fileName = PhantomJS.uri2fileName(remoteURI)
             copySparkFile2Local(fileName, localURI)
-            localURIOpt.get
+            localURITry.get
         }
       ))
       result.get

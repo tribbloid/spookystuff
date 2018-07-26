@@ -156,13 +156,6 @@ These special characters are often called "metacharacters".
     }
   }
 
-  def validateLocalPath(path: String): Option[String] = {
-    if (path == null) return None
-    val file = new File(path)
-    if (file.exists()) Some(path)
-    else None
-  }
-
   //TODO: need test, or its already superceded by try catch?
   def javaUnbox(boxed: Any): Any = {
     boxed match {

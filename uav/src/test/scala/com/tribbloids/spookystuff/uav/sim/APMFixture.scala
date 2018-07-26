@@ -1,10 +1,8 @@
 package com.tribbloids.spookystuff.uav.sim
 
-import com.tribbloids.spookystuff.SpookyEnvFixture
 import com.tribbloids.spookystuff.session.python.PythonDriver
 import com.tribbloids.spookystuff.uav.SimUAVFixture
 import com.tribbloids.spookystuff.uav.telemetry.Link
-import com.tribbloids.spookystuff.utils.CommonUtils
 import com.tribbloids.spookystuff.utils.lifespan.{Cleanable, Lifespan}
 import org.apache.spark.rdd.RDD
 import org.slf4j.LoggerFactory
@@ -18,7 +16,13 @@ trait APMFixture extends SimUAVFixture {
   override def _processNames = super._processNames ++ Seq("apm")
 
   private var _simURIRDD: RDD[String] = _
-  lazy val fleetURIs: Seq[String] = {
+
+  override lazy val fleetURIs: Seq[String] = initializeFleet
+
+  def initializeFleet: Seq[String] = {
+
+    cleanSweep()
+    Thread.sleep(2000)
 
     val simFactory = this.simFactory
     this._simURIRDD = sc.parallelize(1 to parallelism)
@@ -44,25 +48,14 @@ trait APMFixture extends SimUAVFixture {
     result
   }
 
-  override def envSanityTest(): Unit = {
+  override def beforeAll(): Unit = {
     cleanSweep()
-
     Thread.sleep(2000)
     // small delay added to ensure that cleanSweep
     // won't accidentally clean object created in the suite
 
-    CommonUtils.retry(5, 2000) {
-      sc.foreachComputer {
-        SpookyEnvFixture.processShouldBeClean(Seq("apm"), cleanSweepNotInTask = false)
-        SpookyEnvFixture.processShouldBeClean(Seq("python"), cleanSweepNotInTask = false)
-        SpookyEnvFixture.processShouldBeClean(Seq("mavproxy"), Seq("mavproxy"), cleanSweepNotInTask = false)
-      }
-    }
-
     super.beforeAll()
-
-    val isEmpty = sc.mapPerComputer {APMSim.existing.isEmpty}.collect()
-    assert(!isEmpty.contains(false))
+    initializeFleet
   }
 
   override def afterAll(): Unit = {
@@ -81,6 +74,9 @@ trait APMFixture extends SimUAVFixture {
         Link.registered.keys.mkString("\n")
       )
     }
+
+    val isEmpty = sc.mapPerComputer {APMSim.existing.isEmpty}.collect()
+    assert(!isEmpty.contains(false))
   }
 
 }

@@ -40,9 +40,8 @@ trait UAVFixture extends SpookyEnvFixture {
 trait DummyUAVFixture extends UAVFixture {
   override def routing: Routing = Routings.Dummy
 
-  override lazy val fleetURIs: Seq[String] = (0 until parallelism).map {
-    v =>
-      s"dummy:localhost:$v"
+  override  val fleetURIs: Seq[String] = (0 until parallelism).map {
+    v =>      s"dummy:localhost:$v"
   }
 }
 

@@ -2,6 +2,11 @@ package com.tribbloids.spookystuff.uav.sim
 
 import org.jutils.jprocesses.JProcesses
 
+trait APMQuadFixture extends APMFixture {
+
+  lazy val simFactory = APMQuadSimFactory()
+}
+
 class TestAPMQuad extends APMQuadFixture {
 
   import com.tribbloids.spookystuff.utils.SpookyViews._
@@ -35,11 +40,6 @@ class TestAPMQuad extends APMQuadFixture {
     val apmPs = processes.filter(_.getName == "apm")
     assert(apmPs.size == parallelism)
   }
-}
-
-trait APMQuadFixture extends APMFixture {
-
-  lazy val simFactory = APMQuadSimFactory()
 }
 
 //class APMPlaneSITLSuite extends APMCopterSITLSuite {
