@@ -2,8 +2,8 @@ package com.tribbloids.spookystuff.uav.telemetry.mavlink
 
 import com.tribbloids.spookystuff.session.Session
 import com.tribbloids.spookystuff.testutils.TestHelper
-import com.tribbloids.spookystuff.uav.LinkDepletedException
-import com.tribbloids.spookystuff.uav.dsl.{Routings, Routing}
+import com.tribbloids.spookystuff.uav.{LinkDepletedException, UAVException}
+import com.tribbloids.spookystuff.uav.dsl.{Routing, Routings}
 import com.tribbloids.spookystuff.uav.sim.APMQuadFixture
 import com.tribbloids.spookystuff.uav.system.UAV
 import com.tribbloids.spookystuff.uav.telemetry.{Dispatcher, Link, SimLinkSuite}
@@ -91,7 +91,7 @@ class MAVLinkSuite extends SimLinkSuite with APMQuadFixture {
         val session = new Session(spooky)
         val drone = UAV(Seq("dummy"))
         TestHelper.setLoggerDuring(classOf[Link], classOf[MAVLink], SpookyUtils.getClass) {
-          intercept[LinkDepletedException]{
+          intercept[UAVException]{
             Dispatcher(
               Seq(drone),
               session

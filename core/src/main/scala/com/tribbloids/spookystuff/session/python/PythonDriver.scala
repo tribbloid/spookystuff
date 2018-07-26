@@ -31,7 +31,7 @@ object PythonDriver {
     * com.tribbloids.pyspookystuff exists in both /class & /test-class and any attempt to merge it
     * with com.tribbloids.spookystuff.lib.python will results in test classes being retrieved.
     */
-  lazy val deploy: String = {
+  lazy val pythonPath: String = {
     val pythonPath: String = PythonDriver.DEFAULT_PYTHON_PATH // extract pyspookystuff from resources temporarily on workers
 //    val modulePath = pythonPath \\ PythonDriver.MODULE_NAME
 
@@ -126,7 +126,7 @@ class PythonDriver(
   }
 
   {
-    val pythonPath = PythonDriver.deploy
+    val pythonPath = PythonDriver.pythonPath
 
     this.open
 
