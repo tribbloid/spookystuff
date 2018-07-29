@@ -3,7 +3,7 @@ package com.tribbloids.spookystuff.utils.io
 import java.beans.Transient
 
 import com.tribbloids.spookystuff.testutils.{FunSpecx, TestHelper}
-import com.tribbloids.spookystuff.utils.CommonConst
+import com.tribbloids.spookystuff.utils.{CommonConst, CommonUtils}
 import org.apache.spark.SparkConf
 import org.apache.spark.serializer.KryoSerializer
 
@@ -72,7 +72,7 @@ class LocalResolverSuite extends FunSpecx {
 
     @Transient var ss = 0
 
-    val path = "TestPolicies.xml"
+    val path = CommonUtils.\\\(CommonConst.TEMP_DIR, "TestLock.txt")
     val resolver: URIResolver = this.resolver
     rdd.foreach {
       i =>
@@ -84,5 +84,7 @@ class LocalResolverSuite extends FunSpecx {
             ss -=1
         }
     }
+
+    assert(!resolver.isAlreadyExisting(path + ".lock")())
   }
 }

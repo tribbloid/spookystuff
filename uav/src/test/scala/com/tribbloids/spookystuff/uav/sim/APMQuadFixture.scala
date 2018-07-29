@@ -15,11 +15,10 @@ class TestAPMQuad extends APMQuadFixture {
     * this test assumes that all test runs on a single machine, so all SITL instance number has to be different
     */
   it("can create many APM instances with different iNum") {
-    val iNums = sc.mapPerWorker {
-      APMSim.existing.map(_.iNum)
+    val iNums = sc.runEverywhere(alsoOnDriver = false) {
+      _ =>
+        APMSim.existing.map(_.iNum)
     }
-      .collect()
-      .toSeq
       .flatMap(_.toSeq)
 
     println(s"iNums: ${iNums.mkString(", ")}")

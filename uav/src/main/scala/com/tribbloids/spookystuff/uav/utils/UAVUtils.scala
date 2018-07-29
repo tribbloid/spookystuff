@@ -25,8 +25,9 @@ object UAVUtils {
   import com.tribbloids.spookystuff.utils.SpookyViews._
 
   def sanityCheck(sc: SparkContext) = {
-    sc.foreachComputer(
-      localSanityCheck
+    sc.runEverywhere()(
+      _ =>
+        localSanityCheck
     )
   }
 }

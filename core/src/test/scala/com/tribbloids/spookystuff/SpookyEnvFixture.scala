@@ -175,8 +175,9 @@ abstract class SpookyEnvFixture
     val spooky = this.spooky
     val processNames = this.processNames
     super.beforeAll()
-    sc.foreachComputer {
-      SpookyEnvFixture.shouldBeClean(spooky, processNames)
+    sc.runEverywhere() {
+      _ =>
+        SpookyEnvFixture.shouldBeClean(spooky, processNames)
     }
     SpookyEnvFixture.firstRun = false
   }
@@ -192,8 +193,9 @@ abstract class SpookyEnvFixture
     //      _.unpersist()
     //    }
 
-    sc.foreachComputer {
-      SpookyEnvFixture.shouldBeClean(spooky, processNames)
+    sc.runEverywhere() {
+      _ =>
+        SpookyEnvFixture.shouldBeClean(spooky, processNames)
     }
     super.afterAll()
   }
@@ -232,8 +234,9 @@ abstract class SpookyEnvFixture
 
   def tearDown(): Unit = {
     val spooky = this.spooky
-    sc.foreachComputer {
-      SpookyEnvFixture.instancesShouldBeClean(spooky)
+    sc.runEverywhere() {
+      _ =>
+        SpookyEnvFixture.instancesShouldBeClean(spooky)
     }
   }
 }

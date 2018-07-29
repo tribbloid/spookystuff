@@ -8,7 +8,7 @@ import com.tribbloids.spookystuff.uav.spatial.point.Location
 import com.tribbloids.spookystuff.uav.system.UAV
 import com.tribbloids.spookystuff.uav.utils.{Lock, UAVUtils}
 import com.tribbloids.spookystuff.uav.{UAVConf, UAVMetrics}
-import com.tribbloids.spookystuff.utils.lifespan.{Cleanable, Lifespan, LifespanContext, LocalCleanable}
+import com.tribbloids.spookystuff.utils.lifespan.{Cleanable, Lifespan, LocalCleanable}
 import com.tribbloids.spookystuff.utils.{CachingUtils, CommonUtils, TreeException}
 import org.slf4j.LoggerFactory
 
@@ -91,33 +91,33 @@ trait Link extends LocalCleanable with ConflictDetection {
   }
   def isRegistered: Boolean = Link.registered.get(uav).contains(this)
 
-  @volatile protected var _owner: LifespanContext = _
-  def ownerOpt = Option(_owner)
-  def owner = ownerOpt.get
-  def owner_=(c: LifespanContext): this.type = {
-
-    if (ownerOpt.contains(c)) this
-    else {
-      this.synchronized{
-        assert(
-          isNotOwned,
-          s"Unavailable to ${c.toString} until owner thread/task is completed:\n$statusStr"
-        )
-        this._owner = c
-        this
-      }
-    }
-  }
-  def isOwnedBy(v: LifespanContext) = ownerOpt.exists(vv => v._id == vv._id)
-  def isNotOwned: Boolean = ownerOpt.forall(v => v.isCompleted)
+  //  @volatile protected var _owner: LifespanContext = _ //TODO: merge into lock
+  //  def ownerOpt = Option(_owner)
+  //  def owner = ownerOpt.get
+  //  def owner_=(c: LifespanContext): this.type = {
+  //
+  //    if (ownerOpt.contains(c)) this
+  //    else {
+  //      this.synchronized{
+  //        assert(
+  //          isNotOwned,
+  //          s"Unavailable to ${c.toString} until owner thread/task is completed:\n$statusStr"
+  //        )
+  //        this._owner = c
+  //        this
+  //      }
+  //    }
+  //  }
+  //  def isOwnedBy(v: LifespanContext) = ownerOpt.exists(vv => v._id == vv._id)
+  //  def isNotOwned: Boolean = ownerOpt.forall(v => v.isCompleted)
 
   // IMPORTANT: ALWAYS set owner first!
   // or the link may become available to other threads and snatched by them
-//  def setOwnerAndUnlock(ctx: LifespanContext, validate: Boolean = true): Unit = {
-//    owner = ctx
-//    if (validate) assert(!isNotOwned, "IMPOSSIBLE!")
-//    unlock()
-//  }
+  //  def setOwnerAndUnlock(ctx: LifespanContext, validate: Boolean = true): Unit = {
+  //    owner = ctx
+  //    if (validate) assert(!isNotOwned, "IMPOSSIBLE!")
+  //    unlock()
+  //  }
 
   //finalizer may kick in and invoke it even if its in Link.existing
   override protected def cleanImpl(): Unit = {
@@ -234,21 +234,21 @@ trait Link extends LocalCleanable with ConflictDetection {
   /**
     * set this to avoid being used by another task even the current task finish.
     */
-  @volatile var _mutexLock: Lock = _
-  def mutexLockOpt = Option(_mutexLock)
-  def isLocked: Boolean = mutexLockOpt.exists(v => System.currentTimeMillis() < v.expireAfter)
-  def lock: Lock = {
-    require(!isLocked, statusStr)
-    val v = Lock()
-    _mutexLock = v
-    v
+  @volatile var _lock: Lock = _
+  def lock: Lock = Option(_lock).getOrElse(Lock.Open)
+  def lock_=(v: Lock): Unit = this.synchronized{
+    assert(lock.getAvailability(Some(v)) >= 0,
+      s"Cannot lock to $v until existing lock is opened:\n$statusStr"
+    )
+    this._lock = v
   }
   def unlock(): Unit = {
-    _mutexLock = null
+    _lock = null
   }
-  def isLockedBy(mutexID: Long): Boolean = {
-    mutexLockOpt.map(_._id).contains(mutexID)
-  }
+  //  def isLocked: Boolean = lockOpt.exists(v => System.currentTimeMillis() < v.expireAfter)
+  //  def isLockedBy(lockID: UUID): Boolean = {
+  //    lockOpt.map(_._id).contains(lockID)
+  //  }
 
   private def blacklistDuration: Long = spookyOpt
     .map(
@@ -263,31 +263,30 @@ trait Link extends LocalCleanable with ConflictDetection {
       System.currentTimeMillis() - tt._2 <= blacklistDuration
   }
 
-  def isAvailable: Boolean = {
-    !isLocked && isReachable && isNotOwned && !isCleaned
-  }
+  //  def isAvailable: Boolean = {
+  //    !isLocked && isReachable && isNotOwned && !isCleaned
+  //  }
 
   // return true regardless if given the same MutexID
-  def isAvailableTo(mutexIDOpt: Option[Long] = None, ownerOpt: Option[LifespanContext] = None): Boolean = {
-    isAvailable || mutexIDOpt.exists(isLockedBy) || ownerOpt.exists(isOwnedBy)
+  def isAvailable(key: Option[Lock] = None): Boolean = {
+    isReachable && !isCleaned && (lock.getAvailability(key) >= 0)
   }
 
   def statusStr: String = {
 
     val parts = ArrayBuffer[String]()
-    if (isLocked)
-      parts += "locked"
     if (!isReachable)
       parts += s"unreachable for ${(System.currentTimeMillis() - lastFailureOpt.get._2).toDouble / 1000}s" +
         s" (${lastFailureOpt.get._1.getClass.getSimpleName})"
-    if (!isNotOwned)
-      parts += s"owned by ${owner.toString}"
+    if (lock.getAvailability() < 0) parts += s"locked by $lock"
+    if (isCleaned) parts += s"already cleaned"
 
-    val info = (isAvailable, parts) match {
-      case (true, Seq()) => "available"
-      case (true, _) => "INTERNAL ERROR, " + parts.mkString(" & ")
-      case _ => parts.mkString(" & ")
+    if (isAvailable()) {
+      assert(parts.isEmpty, "INTERNAL ERROR, " + parts.mkString(" & "))
+      parts += "available"
     }
+
+    val info = parts.mkString(" & ")
 
     s"${this.getClass.getSimpleName} $uav -> " + info
   }
@@ -298,7 +297,7 @@ trait Link extends LocalCleanable with ConflictDetection {
                   ): Link = Link.synchronized {
 
     val neo: Link = factory.apply(uav)
-    neo.owner = this.owner
+    neo.lock = this._lock
     val result = if (sameFactoryWith(neo)) {
       LoggerFactory.getLogger(this.getClass).info {
         s"recommissioning existing link for $uav"
@@ -348,7 +347,7 @@ trait Link extends LocalCleanable with ConflictDetection {
 
   def status(expireAfter: Long = 1000): LinkStatus = {
     val current = CurrentLocation.getIfNotExpire((), expireAfter)
-    LinkStatus(uav, ownerOpt, home, current)
+    LinkStatus(uav, lock, home, current)
   }
 
   //====================== Synchronous API ======================

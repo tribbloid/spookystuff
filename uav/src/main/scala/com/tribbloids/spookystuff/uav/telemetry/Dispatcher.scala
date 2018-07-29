@@ -2,6 +2,7 @@ package com.tribbloids.spookystuff.uav.telemetry
 
 import com.tribbloids.spookystuff.session.Session
 import com.tribbloids.spookystuff.uav.system.UAV
+import com.tribbloids.spookystuff.uav.utils.Lock
 import com.tribbloids.spookystuff.uav.{LinkDepletedException, UAVConf}
 import com.tribbloids.spookystuff.utils.CommonUtils
 import org.slf4j.LoggerFactory
@@ -20,18 +21,17 @@ import scala.util.Try
 case class Dispatcher(
                        uavList: Seq[UAV],
                        session: Session,
-                       mutexIDOpt: Option[Long] = None, //can unlock Link with the same mutexID
+                       lock: Lock = Lock.Transient(),
                        prefer: Seq[Link] => Option[Link] = {_.headOption},
                        recommissionWithNewProxy: Boolean = true
                      ) {
 
   val spooky = session.spooky
   val ctx = session.lifespan.ctx
+  val _lock = lock.copy(ctx = ctx)
 
   val conf = spooky.getConf[UAVConf]
   val factory = conf.routing
-
-  lazy val tidOpt = Option(ctx.thread).map(_.getId)
 
   def getOrCreate(uav: UAV): Link = {
 
@@ -70,7 +70,7 @@ case class Dispatcher(
     val available = registered.filter {
       case v@ (_, None) => true
       case v@ (_, Some(link)) =>
-        link.isAvailableTo(mutexIDOpt, Some(ctx))
+        link.isAvailable(Some(_lock))
     }
     available
   }
@@ -100,34 +100,32 @@ case class Dispatcher(
 
     val chosen = Link.synchronized {
       val available = getAvailable
-      val threadLocal = available.flatMap {
-        v =>
-          (tidOpt, v.ownerOpt.map(_.thread.getId)) match {
-            case (Some(tc1), Some(tc2)) if tc1 == tc2 => Some(v)
-            case _ => None
-          }
+
+      val local = available.filter {
+        link =>
+          link.lock.getAvailability(Some(_lock)) == 1
       }
 
       require(
-        threadLocal.size <= 1,
+        local.size <= 1,
         s"""
-           |Multiple Links cannot share task context or thread:
-           |${threadLocal.map(_.status()).mkString("\n")}
+           |Multiple Links cannot have shared lock:
+           |${local.map(_.status()).mkString("\n")}
           """.stripMargin
       )
 
-      val preferred: Option[Link] = threadLocal.headOption
+      val preferred: Option[Link] = local.headOption
         .orElse {
-          _logInfo :+= s"${ctx.toString}: ThreadLocal link not found ... choosing from other links"
-          val owners = Link.registered.values.flatMap(_.ownerOpt)
-          if (owners.nonEmpty)
-            _logInfo :+= owners.mkString("[\n", "\n", "\n]")
+          _logInfo :+= s"${ctx.toString}: ThreadLocal link not found ... choosing from open links"
+          val locks = Link.registered.values.map(_.lock)
+          if (locks.nonEmpty)
+            _logInfo :+= locks.mkString("[\n", "\n", "\n]")
 
           val preferred = prefer(available)
           preferred
         }
 
-      preferred.foreach(_.owner = ctx)
+      preferred.foreach(_.lock = _lock)
 
       preferred
     }

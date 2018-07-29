@@ -1,12 +1,32 @@
 package com.tribbloids.spookystuff.uav.utils
 
-import com.tribbloids.spookystuff.utils.IDMixin
+import java.util.UUID
 
-import scala.util.Random
+import com.tribbloids.spookystuff.utils.IDMixin
+import com.tribbloids.spookystuff.utils.lifespan.LifespanContext
+
+import scala.util.Try
 
 object Lock {
 
-  val LOCK_EXPIRE_AFTER = 60 * 1000 //TODO: de-hardcod?
+  val LOCK_EXPIRE_AFTER = 60 * 1000 //TODO: de-hardcode?
+
+  object Open extends Lock(None, LifespanContext(), 0) {
+
+    override def toString: String = "(open)"
+
+    override def getAvailability(keyOpt: Option[Lock]): Int = 0
+  }
+
+  def Transient(
+                 _id: Option[UUID] = Some(UUID.randomUUID()), //can only be lifted by PreferUAV that has the same token.
+                 ctx: LifespanContext = LifespanContext()
+               ) = Lock(_id, ctx, 0)
+
+  def OnHold(
+              _id: Option[UUID] = Some(UUID.randomUUID()), //can only be lifted by PreferUAV that has the same token.
+              ctx: LifespanContext = LifespanContext()
+            ) = Lock(_id, ctx, System.currentTimeMillis() + LOCK_EXPIRE_AFTER)
 }
 
 /**
@@ -14,16 +34,47 @@ object Lock {
   * a locked link cannot be commissioned for anything else unless:
   *   - unlocked
   * OR ALL OF THE FOLLOWING conditions are fulfilled:
-  *   - lock is expired after a predefined duration
-  *   - lock's LifespanContext has completed
-  * OR:
-  *   - 
+  *   - expired after predefined timestamp
+  *   - LifespanContext has completed
+  * OR a valid key is provided, the key either:
+  *   - contains identical id OR
+  *   - contain identical threadID (in this case, either in the same task or previous task that use it has completed)
   */
 case class Lock(
-                 _id: Long = Random.nextLong(), //can only be lifted by PreferUAV that has the same token.
-                 timestamp: Long = System.currentTimeMillis()
+                 _id: Option[UUID], //can only be lifted by PreferUAV that has the same token.
+                 ctx: LifespanContext,
+                 expireAfter: Long
                ) extends IDMixin {
 
-  def expireAfter = timestamp + Lock.LOCK_EXPIRE_AFTER
+  def timeMillisLeft: Long = expireAfter - System.currentTimeMillis()
 
+  def isExpired: Boolean = (timeMillisLeft < 0) && ctx.isCompleted
+
+  override def toString: String = {
+    val leftSecStr =
+      if (isExpired) "expired"
+      else if (expireAfter == Long.MaxValue) "permanent"
+      else if (!ctx.isCompleted) s"possessed"
+      else "" + timeMillisLeft + "ms left"
+
+    s"${ctx.toString} ($leftSecStr)${_id.map(" (" + _ + ")").getOrElse("")}"
+  }
+
+  /**
+    *
+    * @param keyOpt access will be granted if the key contains identical UUID or threadID
+    * @return -1  if access is denied
+    *         0   if lock has expired and open to all
+    *         1   if a valid key is provided
+    */
+  def getAvailability(keyOpt: Option[Lock] = None): Int = {
+
+    for (key <-keyOpt) {
+      if (Try(this._id.get == key._id.get).getOrElse(false)) return 1
+      if (this.ctx.threadID == key.ctx.threadID) return 0
+    }
+
+    if (isExpired) 0
+    else -1
+  }
 }

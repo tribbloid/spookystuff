@@ -4,7 +4,7 @@ import org.apache.spark.SparkEnv
 import com.tribbloids.spookystuff.SpookyEnvFixture
 import com.tribbloids.spookystuff.actions._
 import com.tribbloids.spookystuff.dsl
-import com.tribbloids.spookystuff.testutils.LocalPathDocsFixture
+import com.tribbloids.spookystuff.testutils.{AssertSerializable, LocalPathDocsFixture}
 
 /**
  * Created by peng on 11/30/14.
@@ -22,7 +22,7 @@ class TestUnstructured extends SpookyEnvFixture with LocalPathDocsFixture {
 
     elements.foreach{
       element =>
-        assertSerDe[Unstructured](
+        AssertSerializable[Unstructured](
           element,
           condition = {
             (element, element2) =>

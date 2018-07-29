@@ -1,18 +1,22 @@
 package com.tribbloids.spookystuff.uav.telemetry
 
 import com.tribbloids.spookystuff.uav.DummyUAVFixture
-import com.tribbloids.spookystuff.uav.dsl.{Routings, Routing}
-import com.tribbloids.spookystuff.uav.system.UAV
-import org.scalatest.Ignore
+import com.tribbloids.spookystuff.uav.dsl.{Routing, Routings}
 
 /**
   * Created by peng on 6/20/17.
+  * purpose is only testing the concurent execution of Dispatchers
   */
-class DummyLinkSuite extends DummyUAVFixture with LinkSuite {
+class DispatcherSuite extends DummyUAVFixture with LinkSuite {
 
   override lazy val factories: Seq[Routing] = Seq(
     Routings.Dummy
   )
+}
+
+class DispatcherSuite_OnHold extends DispatcherSuite {
+
+  override def onHold = true
 }
 
 //@Ignore

@@ -1,5 +1,7 @@
 package com.tribbloids.spookystuff.utils
 
+import java.util.UUID
+
 import com.tribbloids.spookystuff.row._
 import com.tribbloids.spookystuff.utils.CachingUtils.ConcurrentMap
 import com.tribbloids.spookystuff.utils.locality.PartitionIdPassthrough
@@ -11,6 +13,8 @@ import org.apache.spark.{HashPartitioner, SparkContext, TaskContext}
 import scala.collection.generic.CanBuildFrom
 import scala.collection.immutable.ListMap
 import scala.collection.{Map, TraversableLike}
+import scala.concurrent.duration.Duration
+import scala.concurrent.{Await, Future}
 import scala.language.{higherKinds, implicitConversions}
 import scala.reflect.ClassTag
 import scala.util.Random
@@ -33,12 +37,13 @@ object SpookyViewsSingleton {
   val perWorkerMark: ConcurrentMap[Int, Boolean] = ConcurrentMap()
 
   // large enough such that all idle threads has a chance to pick up >1 partition
-  val SEED_REPLICATING_FACTOR = 16
+  val REPLICATING_FACTOR = 16
 }
 
 abstract class SpookyViews extends CommonViews {
 
   import SpookyViewsSingleton._
+  import scala.concurrent.ExecutionContext.Implicits.global
 
   implicit class SparkContextView(val self: SparkContext) {
 
@@ -54,145 +59,142 @@ abstract class SpookyViews extends CommonViews {
     }
 
     /**
-      * guaranteed to have at least 1 datum on each executor thread. Better distribute evenly
+      * similar to .parallelize(), except that order of each datum is preserved,
+      * and locality is preserved even if the RDD is computed many times.
+      * Also, the RDD is distributed to executor cores as evenly as possible.
+      * If parallesism > self.defaultParallelism then theoretically it is
+      * guaranteed to have at least 1 datum on each executor thread, however
+      * this is not tested thoroughly in large scale, and may be nullified by Spark optimization.
       */
-    private def seed(
-                      sizeOpt: Option[Int]
-                    ) = {
-      val size = sizeOpt.getOrElse(self.defaultParallelism * SEED_REPLICATING_FACTOR)
-      val seed = self.makeRDD(1 to size, size)
-        .map(i => i->i)
-        .sortByKey(numPartitions = size)
+    def seed[T: ClassTag](
+                           seq: Seq[T],
+                           parallelismOpt: Option[Int] = None,
+                           mustHaveNonEmptyPartitions: Boolean = false
+                         ): RDD[(Int, T)] = {
+      val size = parallelismOpt.getOrElse(self.defaultParallelism)
+      val kvs = seq.zipWithIndex.map(_.swap)
+      val raw: RDD[(Int, T)] = self.parallelize(kvs, size)
+      val sorted = raw.sortByKey(ascending = true, numPartitions = size)
       //        .partitionBy(new HashPartitioner(self.defaultParallelism)) //TODO: should use RangePartitioner?
       //        .persist()
       //      seed.count()
       //      val seed = self.makeRDD[Int]((1 to self.defaultParallelism).map(i => i -> Seq(i.toString)))
+
       assert(
-        seed.partitions.length == size,
-        s"seed doesn't have the right number of partitions: expected $size, actual ${seed.partitions.length}"
+        sorted.partitions.length == size,
+        s"seed doesn't have the right number of partitions: expected $size, actual ${sorted.partitions.length}"
       )
-      seed
-    }
 
-    def mapAtLeastOncePerExecutorCore[T: ClassTag](
-                                                    f: => T,
-                                                    sizeOpt: Option[Int] = None
-                                                  ): RDD[T] = {
-
-      seed(sizeOpt).mapPartitions {
-        itr =>
-          val stageID = TaskContext.get.stageId()
-          //          val executorID = SparkEnv.get.executorId //technically this is useless as the map is only shared locally but whatever
-          val threadID = Thread.currentThread().getId
-          val allIDs = stageID -> threadID
-          val alreadyRun = perCoreMark.synchronized {
-            val alreadyRun = perCoreMark.getOrElseUpdate(allIDs, false)
-            if (!alreadyRun) {
-              perCoreMark.put(allIDs, true)
-            }
-            alreadyRun
-          }
-          if (!alreadyRun) {
-            val result = f
-            Thread.sleep(1000)
-            Iterator(result)
-          }
-          else {
-            Iterator.empty
-          }
-      }
-    }
-    def exeAtLeastOncePerExecutorCore[T: ClassTag](
-                                                    f: => T,
-                                                    sizeOpt: Option[Int] = None
-                                                  ) =
-      mapAtLeastOncePerExecutorCore(f, sizeOpt).count()
-
-    //TODO: change to concurrent execution
-    def mapAtLeastOncePerCore[T: ClassTag](
-                                            f: => T,
-                                            sizeOpt: Option[Int] = None
-                                          ): RDD[T] = {
-      val perExec = mapAtLeastOncePerExecutorCore(f, sizeOpt)
-      val v = f
-      self.makeRDD(Seq(v), 1).union(perExec)
-    }
-
-    //TODO: these are considered anti-pattern in spark, they never consider autoscaling, initialization of resource should be lazy/preemptive
-    def exeAtLeastOncePerCore[T: ClassTag](
-                                            f: => T,
-                                            sizeOpt: Option[Int] = None
-                                          ): Long = {
-      mapAtLeastOncePerCore(f, sizeOpt).count()
-    }
-
-    def mapPerWorker[T: ClassTag](
-                                   f: => T,
-                                   sizeOpt: Option[Int] = None
-                                 ): RDD[T] = {
-
-      seed(sizeOpt).mapPartitions {
-        itr =>
-          val stageID = TaskContext.get.stageId()
-          val alreadyRun = perWorkerMark.synchronized {
-            val alreadyRun = perWorkerMark.getOrElseUpdate(stageID, false)
-            if (!alreadyRun) {
-              perWorkerMark.put(stageID, true)
-            }
-            alreadyRun
-          }
-          if (!alreadyRun) {
-            val result = f
-            Thread.sleep(1000)
-            Iterator(result)
-          }
-          else {
-            Iterator.empty
-          }
-      }
-    }
-    def foreachWorker[T: ClassTag](
-                                    f: => T,
-                                    sizeOpt: Option[Int] = None
-                                  ): Long = mapPerWorker(f, sizeOpt).count()
-
-    //TODO: change to concurrent execution
-    def mapPerComputer[T: ClassTag](
-                                     f: => T,
-                                     sizeOpt: Option[Int] = None
-                                   ): RDD[T] = {
-      val v = f
-
-      if (self.isLocal) {
-        self.makeRDD(Seq(v), 1)
-      }
+      val result = if (!mustHaveNonEmptyPartitions) sorted
       else {
-        val perWorker = mapPerWorker(f, sizeOpt)
-        self.makeRDD(Seq(v)).union(perWorker)
+        sorted.mapPartitions {
+          itr =>
+            assert(itr.hasNext)
+            itr
+        }
       }
+      result
     }
-    def foreachComputer[T: ClassTag](
-                                      f: => T,
-                                      sizeOpt: Option[Int] = None
-                                    ): Long = {
-      mapPerComputer(f, sizeOpt).count()
+
+//    def bareSeed(
+//                  parallelismOpt: Option[Int] = None
+//                ): RDD[(Int, Unit)] = {
+//
+//      val n = parallelismOpt.getOrElse(self.defaultParallelism)
+//      val uuids = (1 to n).map(_ => Unit)
+//      seed(uuids, parallelismOpt, mustHaveNonEmptyPartitions = true)
+//    }
+
+    def uuidSeed(
+                  parallelismOpt: Option[Int] = None
+                ): RDD[(Int, UUID)] = {
+
+      val n = parallelismOpt.getOrElse(self.defaultParallelism)
+      val uuids = (1 to n).map(_ => UUID.randomUUID())
+      seed(uuids, parallelismOpt, mustHaveNonEmptyPartitions = true)
+    }
+
+    //TODO: change to concurrent execution
+    //    def mapAtLeastOncePerCore[T: ClassTag](
+    //                                            f: => T,
+    //                                            sizeOpt: Option[Int] = None
+    //                                          ): RDD[T] = {
+    //      val perExec = mapAtLeastOncePerExecutorCore(f, sizeOpt)
+    //      val v = f
+    //      self.makeRDD(Seq(v), 1).union(perExec)
+    //    }
+    //
+    //    //TODO: these are considered anti-pattern in spark, they never consider autoscaling, initialization of resource should be lazy/preemptive
+    //    def exeAtLeastOncePerCore[T: ClassTag](
+    //                                            f: => T,
+    //                                            sizeOpt: Option[Int] = None
+    //                                          ): Long = {
+    //      mapAtLeastOncePerCore(f, sizeOpt).count()
+    //    }
+    //
+    //
+    //    def foreachWorker[T: ClassTag](
+    //                                    f: => T,
+    //                                    sizeOpt: Option[Int] = None
+    //                                  ): Long = mapPerWorker(f, sizeOpt).count()
+    //
+    //    //TODO: change to concurrent execution
+    //    def mapPerComputer[T: ClassTag](
+    //                                     f: => T,
+    //                                     sizeOpt: Option[Int] = None
+    //                                   ): RDD[T] = {
+    //      val v = f
+    //
+    //      if (self.isLocal) {
+    //        self.makeRDD(Seq(v), 1)
+    //      }
+    //      else {
+    //        val perWorker = mapPerWorker(f, sizeOpt)
+    //        self.makeRDD(Seq(v)).union(perWorker)
+    //      }
+    //    }
+    //    def foreachComputer[T: ClassTag](
+    //                                      f: => T,
+    //                                      sizeOpt: Option[Int] = None
+    //                                    ): Long = {
+    //      mapPerComputer(f, sizeOpt).count()
+    //    }
+
+    def runEverywhere[T: ClassTag](alsoOnDriver: Boolean = true)(f: ((Int, UUID)) => T): Seq[T] = {
+      val localFuture: Option[Future[T]] = if (alsoOnDriver) Some(Future[T] {
+        f(-1 -> UUID.randomUUID())
+      })
+      else {
+        None
+      }
+
+      val n = self.defaultParallelism * REPLICATING_FACTOR
+      val onExecutors = uuidSeed(Some(n))
+        .mapOncePerWorker {f}
+        .collect().toSeq
+
+      localFuture.map {
+        future =>
+          Await.result(future, Duration.Inf)
+      }
+        .toSeq ++ onExecutors
     }
 
     def allTaskLocationStrs: Seq[String] = {
-      mapPerWorker {
-        SpookyUtils.getTaskLocationStr
+      runEverywhere(alsoOnDriver = false) {
+        _ =>
+          SpookyUtils.taskLocationStrOpt.get
       }
-        .collect()
     }
 
     //TODO: remove! not useful
-//    def allExecutorCoreIDs = {
-//      mapAtLeastOncePerExecutorCore {
-//        val thread = Thread.currentThread()
-//        (SpookyUtils.blockManagerIDOpt, thread.getId, thread.getName)
-//      }
-//        .collect()
-//    }
+    //    def allExecutorCoreIDs = {
+    //      mapAtLeastOncePerExecutorCore {
+    //        val thread = Thread.currentThread()
+    //        (SpookyUtils.blockManagerIDOpt, thread.getId, thread.getName)
+    //      }
+    //        .collect()
+    //    }
   }
 
   implicit class RDDView[T](val self: RDD[T]) {
@@ -295,13 +297,13 @@ abstract class SpookyViews extends CommonViews {
       result
     }
 
-    def getInfo: RDDInfo = {
+    def storageInfo: RDDInfo = {
       val rddInfos = self.sparkContext.getRDDStorageInfo
       rddInfos.find(_.id == self.id).get
     }
 
     def isPersisted: Boolean = {
-      getInfo.storageLevel != StorageLevel.NONE
+      storageInfo.storageLevel != StorageLevel.NONE
     }
 
     def assertIsBeacon(): Unit = {
@@ -314,6 +316,61 @@ abstract class SpookyViews extends CommonViews {
       val randomKeyed: RDD[(Long, T)] = self.keyBy(_ => Random.nextLong())
       val shuffled = randomKeyed.partitionBy(new HashPartitioner(self.partitions.length))
       shuffled.values
+    }
+
+    /**
+      *
+      * @param f function applied on each element
+      * @tparam R result type
+      * @return
+      */
+    def mapOncePerCore[R: ClassTag](f: T => R): RDD[R] = {
+
+      self.mapPartitions {
+        itr =>
+          val stageID = TaskContext.get.stageId()
+          //          val executorID = SparkEnv.get.executorId //this is useless as perCoreMark is a local singleton
+          val threadID = Thread.currentThread().getId
+          val allIDs = stageID -> threadID
+          val alreadyRun = perCoreMark.synchronized {
+            val alreadyRun = perCoreMark.getOrElseUpdate(allIDs, false)
+            if (!alreadyRun) {
+              perCoreMark.put(allIDs, true)
+            }
+            alreadyRun
+          }
+          if (!alreadyRun) {
+            val result = f(itr.next())
+            //            Thread.sleep(1000)
+            Iterator(result)
+          }
+          else {
+            Iterator.empty
+          }
+      }
+    }
+
+    def mapOncePerWorker[R: ClassTag](f: T => R): RDD[R] = {
+
+      self.mapPartitions {
+        itr =>
+          val stageID = TaskContext.get.stageId()
+          val alreadyRun = perWorkerMark.synchronized {
+            val alreadyRun = perWorkerMark.getOrElseUpdate(stageID, false)
+            if (!alreadyRun) {
+              perWorkerMark.put(stageID, true)
+            }
+            alreadyRun
+          }
+          if (!alreadyRun) {
+            val result = f(itr.next())
+            //            Thread.sleep(1000)
+            Iterator(result)
+          }
+          else {
+            Iterator.empty
+          }
+      }
     }
   }
 

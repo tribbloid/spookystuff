@@ -6,10 +6,8 @@ import java.nio.file.{Files, _}
 
 import com.tribbloids.spookystuff.utils.io.LocalResolver
 import org.apache.commons.io.IOUtils
-import org.apache.spark.SparkEnv
 import org.apache.spark.ml.dsl.UnsafeUtils
 import org.apache.spark.rdd.RDD
-import org.apache.spark.storage.BlockManagerId
 import org.slf4j.LoggerFactory
 
 import scala.collection.mutable

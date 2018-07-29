@@ -1,32 +1,31 @@
 package com.tribbloids.spookystuff.utils
 
-import com.tribbloids.spookystuff.{Metrics, SpookyEnvFixture}
 import com.tribbloids.spookystuff.testbeans._
 import com.tribbloids.spookystuff.testutils.TestHelper
 import com.tribbloids.spookystuff.utils.lifespan.LifespanContext
 import com.tribbloids.spookystuff.utils.locality.PartitionIdPassthrough
+import com.tribbloids.spookystuff.{Metrics, SpookyEnvFixture}
 import org.apache.spark.rdd.RDD
-import org.apache.spark.{SparkEnv, TaskContext}
 
 import scala.util.Random
 
-object SpookyViewsSuite {
-
-  val getThreadInfo = {
-    () =>
-//      Option(TaskContext.get()).foreach {
-//        tc =>
-//          TestHelper.assert(!tc.isRunningLocally())
-//      }
-      val ctx = LifespanContext()
-      (
-        SparkEnv.get.blockManager.blockManagerId,
-        SparkEnv.get.executorId -> ctx.thread.getId,
-        TaskContext.getPartitionId(),
-        ctx
-      )
-  }
-}
+//object SpookyViewsSuite {
+//
+//  val getThreadInfo: () => (BlockManagerId, (String, Long), Int, LifespanContext) = {
+//    () =>
+//      //      Option(TaskContext.get()).foreach {
+//      //        tc =>
+//      //          TestHelper.assert(!tc.isRunningLocally())
+//      //      }
+//      val ctx = LifespanContext()
+//      (
+//        SparkEnv.get.blockManager.blockManagerId,
+//        SparkEnv.get.executorId -> ctx.thread.getId,
+//        TaskContext.getPartitionId(),
+//        ctx
+//      )
+//  }
+//}
 
 /**
   * Created by peng on 16/11/15.
@@ -35,7 +34,6 @@ class SpookyViewsSuite extends SpookyEnvFixture {
 
   import SpookyViews._
   import org.scalatest.Matchers._
-  import SpookyViewsSuite._
 
   it("multiPassFlatMap should yield same result as flatMap") {
 
@@ -141,52 +139,54 @@ class SpookyViewsSuite extends SpookyEnvFixture {
     assert(array.count(v => v._1 == v._2) == array.length)
   }
 
-  it("mapAtLeastOncePerExecutorCore will run properly") {
-    val result = sc.mapAtLeastOncePerExecutorCore {
-      getThreadInfo()
+  it("mapOncePerCore") {
+    val result = sc.uuidSeed().mapOncePerCore {
+      _ =>
+        LifespanContext()
     }
       .collect()
 
     result.foreach(println)
-    assert(result.length >= sc.defaultParallelism, result.mkString("\n"))
-    assert(result.map(_._1).distinct.length == TestHelper.numWorkers, result.mkString("\n"))
-    assert(result.map(_._2).distinct.length == result.length, result.mkString("\n"))
+    assert(result.length === sc.defaultParallelism, result.mkString("\n"))
+    assert(result.map(_.blockManagerID).distinct.length === TestHelper.numWorkers, result.mkString("\n"))
+    assert(result.map(_.taskAttemptID).distinct.length === result.length, result.mkString("\n"))
   }
 
-  it("mapPerWorker will run properly") {
-    val result = sc.mapPerWorker {
-      getThreadInfo()
+  it("mapOncePerWorker") {
+    val result = sc.uuidSeed().mapOncePerWorker {
+      _ =>
+        LifespanContext()
     }
       .collect()
 
     result.foreach(println)
-    assert(result.length == TestHelper.numWorkers, result.mkString("\n"))
-    assert(result.map(_._1).distinct.length == TestHelper.numWorkers, result.mkString("\n"))
-    assert(result.map(_._2).distinct.length == TestHelper.numWorkers, result.mkString("\n"))
+    assert(result.length === TestHelper.numWorkers, result.mkString("\n"))
+    assert(result.map(_.blockManagerID).distinct.length === TestHelper.numWorkers, result.mkString("\n"))
+    assert(result.map(_.taskAttemptID).distinct.length === TestHelper.numWorkers, result.mkString("\n"))
   }
 
-  it("mapAtLeastOncePerCore will run properly") {
-    val result = sc.mapAtLeastOncePerCore {
-      getThreadInfo()
+  it("runEverywhere") {
+    val result = sc.runEverywhere(alsoOnDriver = false) {
+      _ =>
+        LifespanContext()
     }
-      .collect()
 
     result.foreach(println)
-    assert(result.length >= sc.defaultParallelism + 1, result.mkString("\n"))
-    assert(result.map(_._1).distinct.length == TestHelper.numComputers, result.mkString("\n"))
-    assert(result.map(_._2).distinct.length == result.length, result.mkString("\n"))
+    assert(result.length === TestHelper.numWorkers, result.mkString("\n"))
+    assert(result.map(_.blockManagerID).distinct.length === TestHelper.numWorkers, result.mkString("\n"))
+    assert(result.map(_.taskAttemptID).distinct.length === TestHelper.numWorkers, result.mkString("\n"))
   }
 
-  it("mapPerComputer will run properly") {
-    val result = sc.mapPerComputer {
-      getThreadInfo()
+  it("runEverywhere (alsoOnDriver)") {
+    val result = sc.runEverywhere() {
+      _ =>
+        LifespanContext()
     }
-      .collect()
-    //+- 1 is for executor lost tolerance
     result.foreach(println)
-    assert(result.length === TestHelper.numComputers +- 1, result.mkString("\n"))
-    assert(result.map(_._1).distinct.length === TestHelper.numComputers +- 1, result.mkString("\n"))
-    assert(result.map(_._2).distinct.length === TestHelper.numComputers +- 1, result.mkString("\n"))
+    assert(result.length === TestHelper.numWorkers + 1, result.mkString("\n"))
+    //+- 1 is for local mode where everything is on driver
+    assert(result.map(_.blockManagerID).distinct.length === TestHelper.numComputers, result.mkString("\n"))
+    assert(result.map(_.taskAttemptID).distinct.length === TestHelper.numWorkers + 1, result.mkString("\n"))
   }
 
   it("result of allTaskLocationStrs can be used as partition's preferred location") {
@@ -205,7 +205,7 @@ class SpookyViewsSuite extends SpookyEnvFixture {
       //TODO: this RDD is extremely partitioned, can we use coalesce to reduce it?
       val conditions = created.map {
         tuple =>
-          tuple._2 == SpookyUtils.getTaskLocationStr
+          tuple._2 == SpookyUtils.taskLocationStrOpt.get
       }
         .collect()
       assert(conditions.count(identity) == 100)

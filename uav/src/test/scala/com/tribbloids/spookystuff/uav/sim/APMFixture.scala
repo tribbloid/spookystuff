@@ -65,20 +65,20 @@ trait APMFixture extends SimUAVFixture {
   }
 
   private def cleanSweep() = {
-    sc.foreachComputer {
-      // in production Links will be cleaned up by shutdown hook
+    sc.runEverywhere() {
+      _ =>
+        // in production Links will be cleaned up by shutdown hook
 
-      APMFixture.cleanSweepLocally()
-      Predef.assert(
-        Link.registered.isEmpty,
-        Link.registered.keys.mkString("\n")
-      )
+        APMFixture.cleanSweepLocally()
+        Predef.assert(
+          Link.registered.isEmpty,
+          Link.registered.keys.mkString("\n")
+        )
     }
 
-    val isEmpty = sc.mapPerComputer {APMSim.existing.isEmpty}.collect()
+    val isEmpty = sc.runEverywhere() {_ => APMSim.existing.isEmpty}
     assert(!isEmpty.contains(false))
   }
-
 }
 
 object APMFixture {

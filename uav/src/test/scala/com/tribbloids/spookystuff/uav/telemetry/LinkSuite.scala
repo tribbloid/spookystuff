@@ -17,14 +17,14 @@ object LinkSuite {
 
   def validate(spooky: SpookyContext, linkRDD: RDD[Link]) = {
 
-//    val uavStatusesSeq = for (i <- 1 to 10) yield {
-//      linkRDD.map(v => v.status()).collect().toSeq
-//    }
-//
-//    val uavsSeq = uavStatusesSeq.map(_.map(_.uav)).distinct
-//
-//    assert(uavsSeq.size == 1, uavsSeq.mkString("\n"))
-//    val uavStatuses = uavStatusesSeq.head
+    //    val uavStatusesSeq = for (i <- 1 to 10) yield {
+    //      linkRDD.map(v => v.status()).collect().toSeq
+    //    }
+    //
+    //    val uavsSeq = uavStatusesSeq.map(_.map(_.uav)).distinct
+    //
+    //    assert(uavsSeq.size == 1, uavsSeq.mkString("\n"))
+    //    val uavStatuses = uavStatusesSeq.head
 
     val uavStatuses = linkRDD.map(v => v.status()).collect().toSeq
 
@@ -35,7 +35,7 @@ object LinkSuite {
 
     lazy val info = "Links are incorrect:\n" + uavStatuses.map {
       status =>
-        s"${status.uav}\t${status.lockOpt.get}"
+        s"${status.uav}\t${status.lock}"
     }
       .mkString("\n")
     if (
@@ -63,7 +63,7 @@ object LinkSuite {
              |${
             v.map {
               vv =>
-                s"${vv._2.uav} @ ${vv._2.lockOpt.getOrElse("[MISSING]")}"
+                s"${vv._2.uav} @ ${vv._2.lock}"
             }
               .mkString("\n")
           }
@@ -79,17 +79,20 @@ trait LinkSuite extends UAVFixture {
 
   override def setUp(): Unit = {
     super.setUp()
-    sc.foreachComputer {
-      Random.shuffle(Link.registered.values.toList).foreach(_.clean())
+    sc.runEverywhere() {
+      _ =>
+        Random.shuffle(Link.registered.values.toList).foreach(_.clean())
     }
     Thread.sleep(2000)
     // Waiting for both python drivers to terminate.
     // DON'T DELETE! some tests create proxy processes and they all take a few seconds to release the port binding!
   }
 
+  def onHold = false
+
   def getLinkRDD(spooky: SpookyContext) = {
 
-    val trial = LinkUtils.tryLinkRDD(spooky, lock = false)
+    val trial = LinkUtils.tryLinkRDD(spooky, onHold = onHold)
 
     val result = trial.map {
       opt =>
@@ -141,10 +144,11 @@ trait LinkSuite extends UAVFixture {
           println(s"=== $i\t===: " + uavs.mkString("\t"))
         }
 
-        spooky.sparkContext.foreachComputer {
-          val registered = Link.registered.values.toSet
-          val cleanable = Cleanable.getTyped[Link].toSet
-          Predef.assert(registered.subsetOf(cleanable))
+        spooky.sparkContext.runEverywhere() {
+          _ =>
+            val registered = Link.registered.values.toSet
+            val cleanable = Cleanable.getTyped[Link].toSet
+            Predef.assert(registered.subsetOf(cleanable))
         }
       }
 
@@ -277,12 +281,13 @@ abstract class SimLinkSuite extends SimUAVFixture with LinkSuite {
         }
         //wait for zombie process to be deregistered
         CommonUtils.retry(5, 2000) {
-          sc.foreachComputer {
-            SpookyEnvFixture.processShouldBeClean(Seq("mavproxy"), Seq("mavproxy"), cleanSweepNotInTask = false)
+          sc.runEverywhere() {
+            _ =>
+              SpookyEnvFixture.processShouldBeClean(Seq("mavproxy"), Seq("mavproxy"), cleanSweepNotInTask = false)
 
-            Link.registered.foreach {
-              v => v._2.disconnect()
-            }
+              Link.registered.foreach {
+                v => v._2.disconnect()
+              }
           }
         }
       }

@@ -3,6 +3,7 @@ package com.tribbloids.spookystuff.utils
 import java.io.NotSerializableException
 
 import com.tribbloids.spookystuff.SpookyEnvFixture
+import com.tribbloids.spookystuff.testutils.AssertSerializable
 import org.apache.spark.SparkException
 
 case class Thing(str: String)
@@ -13,7 +14,7 @@ class NOTSerializableMixinSuite extends SpookyEnvFixture {
   it("case class is serializable") {
     val whatever = Thing("abc")
 
-    assertSerDe(whatever)
+    AssertSerializable(whatever)
 
     val in = 1 to 2
     val out = sc.parallelize(in).map{
@@ -28,7 +29,7 @@ class NOTSerializableMixinSuite extends SpookyEnvFixture {
     val whatever = Thing2("abc")
 
     intercept[NotSerializableException]{
-      assertSerDe(whatever)
+      AssertSerializable(whatever)
     }
 
     val in = 1 to 2

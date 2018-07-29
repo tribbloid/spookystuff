@@ -3,6 +3,7 @@ package com.tribbloids.spookystuff.uav.telemetry
 import com.tribbloids.spookystuff.SpookyContext
 import com.tribbloids.spookystuff.uav.UAVConf
 import com.tribbloids.spookystuff.uav.system.UAV
+import com.tribbloids.spookystuff.uav.utils.Lock
 import org.apache.spark.rdd.RDD
 import org.slf4j.LoggerFactory
 
@@ -15,31 +16,30 @@ object LinkUtils {
 
   def tryLinkRDD(
                   spooky: SpookyContext,
-                  lock: Boolean = true
+                  onHold: Boolean = true
                 ): RDD[Try[Link]] = {
 
-    val locked = spooky.sparkContext.mapAtLeastOncePerExecutorCore (
-      {
+    val uuidSeed = spooky.sparkContext.uuidSeed()
+
+    val locked = uuidSeed.mapOncePerCore {
+      case (i, uuid) =>
         spooky.withSession {
           session =>
             val fleet: Seq[UAV] = spooky.getConf[UAVConf].uavsInFleetShuffled
+            val lock = if (onHold) Lock.OnHold(Some(uuid))
+            else Lock.Transient(Some(uuid))
             val linkTry = Dispatcher (
               fleet,
-              session
+              session,
+              lock
             )
               .tryGet
-            if (lock) linkTry.foreach {
-              v =>
-                v.lock
-            }
             linkTry
         }
-      },
-      Some(spooky.sparkContext.defaultParallelism)
-    )
+    }
 
-//    locked.persist()
-//    locked.count()
+    //    locked.persist()
+    //    locked.count()
     val result = locked
 
     result
@@ -47,10 +47,10 @@ object LinkUtils {
 
   def linkRDD(
                spooky: SpookyContext,
-               lock: Boolean = true
+               onHold: Boolean = true
              ): RDD[Link] = {
 
-    val proto = tryLinkRDD(spooky, lock)
+    val proto = tryLinkRDD(spooky, onHold)
     val result = proto.flatMap {
       v =>
         v

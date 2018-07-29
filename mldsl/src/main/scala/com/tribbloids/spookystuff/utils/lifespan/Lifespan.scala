@@ -1,7 +1,6 @@
 package com.tribbloids.spookystuff.utils.lifespan
 
 import com.tribbloids.spookystuff.utils.IDMixin
-import org.apache.spark.TaskContext
 
 import scala.util.Try
 
@@ -13,7 +12,7 @@ abstract class Lifespan extends IDMixin with Serializable {
   def tpe: LifespanType
   def ctxFactory: () => LifespanContext
 
-  @transient lazy val ctx = ctxFactory()
+  @transient lazy val ctx: LifespanContext = ctxFactory()
 
   //  @transient @volatile var _ctx: LifespanContext = _
   //  def ctx = this.synchronized {
@@ -64,51 +63,6 @@ abstract class Lifespan extends IDMixin with Serializable {
   }
 
   def isTask = tpe == Lifespan.Task
-}
-
-case class LifespanContext(
-                            @transient taskOpt: Option[TaskContext] = Option(TaskContext.get()),
-                            @transient thread: Thread = Thread.currentThread()
-                          ) extends IDMixin {
-
-  override val _id: Any = taskOpt.map(_.taskAttemptId()) -> thread.getId
-
-  val threadStr: String = {
-    "Thread-" + thread.getId + s"[${thread.getName}]" +
-      {
-
-        var suffix: Seq[String] = Nil
-        if (thread.isInterrupted) suffix :+= "interrupted"
-        else if (!thread.isAlive) suffix :+= "dead"
-
-        if (suffix.isEmpty) ""
-        else suffix.mkString("(",",",")")
-      }
-  }
-
-  val taskStr: String = taskOpt.map{
-    task =>
-      "Task-" + task.taskAttemptId() +
-        {
-          var suffix: Seq[String] = Nil
-          if (task.isCompleted()) suffix :+= "completed"
-          if (task.isInterrupted()) suffix :+= "interrupted"
-
-          if (suffix.isEmpty) ""
-          else suffix.mkString("(",",",")")
-        }
-  }
-    .getOrElse("[NOT IN TASK]")
-
-  override def toString = threadStr + " / " + taskStr
-
-  /**
-    * @return true if any of the thread is dead OR the task is completed
-    */
-  def isCompleted: Boolean = {
-    !thread.isAlive ||
-      taskOpt.exists(_.isCompleted())
-  }
 }
 
 abstract class LifespanType extends Serializable {

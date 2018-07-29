@@ -171,6 +171,14 @@ abstract class CommonUtils {
     )
   }
 
+  private val useTaskLocationStrV2: Boolean = try { // some classloaders won't load org.apache.spark.package$ by default, hence the bypass
+    org.apache.spark.SPARK_VERSION.substring(0, 3).toDouble >= 1.6
+  }
+  catch {
+    case e: Throwable =>
+      true
+  }
+
   /**
     * From doc of org.apache.spark.scheduler.TaskLocation
     * Create a TaskLocation from a string returned by getPreferredLocations.
@@ -180,20 +188,21 @@ abstract class CommonUtils {
     * ...
     * Not sure if it will change in future Spark releases
     */
-  def getTaskLocationStr: String = {
+  def taskLocationStrOpt: Option[String] = {
 
-    val bmID = blockManagerIDOpt.get
-    val hostPort = bmID.hostPort
+    blockManagerIDOpt.map {
+      bmID =>
+        val hostPort = bmID.hostPort
 
-    if (org.apache.spark.SPARK_VERSION.substring(0, 3).toDouble >= 1.6) {
-      val executorID = bmID.executorId
-      s"executor_${hostPort}_$executorID"
-    }
-    else {
-      hostPort
+        if (useTaskLocationStrV2) {
+          val executorID = bmID.executorId
+          s"executor_${hostPort}_$executorID"
+        }
+        else {
+          hostPort
+        }
     }
   }
-
 }
 
 object CommonUtils extends CommonUtils

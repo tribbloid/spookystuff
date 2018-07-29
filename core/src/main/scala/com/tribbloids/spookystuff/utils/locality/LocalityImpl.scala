@@ -1,12 +1,11 @@
 package com.tribbloids.spookystuff.utils.locality
 
 import org.apache.spark.rdd.RDD
-import org.apache.spark.storage.StorageLevel
 
 import scala.reflect.ClassTag
 
 /**
-  * result of any function should preserve locality of partitions of rdd1
+  * result of both cogroupBase & join should preserve locality of partitions of rdd1
   * @tparam K
   * @tparam V
   */

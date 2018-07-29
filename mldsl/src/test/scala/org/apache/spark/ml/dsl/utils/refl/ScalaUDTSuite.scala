@@ -1,6 +1,6 @@
 package org.apache.spark.ml.dsl.utils.refl
 
-import com.tribbloids.spookystuff.testutils.{FunSpecx, TestHelper}
+import com.tribbloids.spookystuff.testutils.{AssertSerializable, FunSpecx, TestHelper}
 import org.apache.spark.sql.types.DataType
 
 /**
@@ -16,11 +16,11 @@ class ScalaUDTSuite extends FunSpecx {
 
   def getAndTestReifiedType[T: TypeTag]: DataType = {
     val unreified: DataType = UnreifiedScalaType.forType[T]
-    assertSerDe(unreified)
+    AssertSerializable(unreified)
 
     val reified = TypeUtils.tryCatalystTypeFor[T].get
     assert(reified == unreified.reified)
-    assertSerDe(reified)
+    AssertSerializable(reified)
     reified
   }
 

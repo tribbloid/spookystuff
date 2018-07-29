@@ -1,11 +1,14 @@
 package com.tribbloids.spookystuff.uav.planning
 
+import java.util.UUID
+
 import com.tribbloids.spookystuff.row.SpookySchema
 import com.tribbloids.spookystuff.session.Session
 import com.tribbloids.spookystuff.uav.UAVConf
 import com.tribbloids.spookystuff.uav.actions.UAVNavigation
 import com.tribbloids.spookystuff.uav.spatial.point.Location
 import com.tribbloids.spookystuff.uav.telemetry.{Dispatcher, LinkStatus}
+import com.tribbloids.spookystuff.uav.utils.Lock
 import com.tribbloids.spookystuff.utils.ShippingMarks
 
 import scala.concurrent.duration.Duration
@@ -16,7 +19,7 @@ import scala.concurrent.duration.Duration
   */
 private[uav] case class PreferUAV(
                                    uavStatus: LinkStatus,
-                                   lockIDOpt: Option[Long] = None
+                                   lockIDOpt: Option[UUID] = None
                                  ) extends UAVNavigation
   with ShippingMarks {
 
@@ -33,7 +36,7 @@ private[uav] case class PreferUAV(
     Dispatcher(
       Seq(uavStatus.uav),
       session,
-      lockIDOpt
+      Lock.Transient(lockIDOpt)
     )
 
     Nil

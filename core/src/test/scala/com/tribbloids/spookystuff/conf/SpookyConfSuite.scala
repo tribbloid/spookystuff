@@ -2,6 +2,7 @@ package com.tribbloids.spookystuff.conf
 
 import com.tribbloids.spookystuff.SpookyEnvFixture
 import com.tribbloids.spookystuff.caching.DFSDocCache
+import com.tribbloids.spookystuff.testutils.AssertSerializable
 import com.tribbloids.spookystuff.utils.ConfUtils
 import org.apache.spark.SparkConf
 
@@ -17,7 +18,7 @@ class SpookyConfSuite extends SpookyEnvFixture {
 
   it("SpookyConf is serializable") {
 
-    assertSerDe(
+    AssertSerializable(
       conf,
       condition = {
         (v1: SpookyConf, v2: SpookyConf) =>
@@ -32,7 +33,7 @@ class SpookyConfSuite extends SpookyEnvFixture {
     val dummyV = "dummy" + Random.nextLong()
     sparkConf.set("spooky.dirs.autosave", dummyV)
     val imported = dirConf.importFrom(sparkConf)
-    assertSerDe(
+    AssertSerializable(
       imported
     )
   }

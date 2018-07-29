@@ -140,26 +140,26 @@ class SpookyUtilsSuite extends FunSpecx {
 
   it("withDeadline won't be affected by scala concurrency global ForkJoin thread pool") {
 
-    TestHelper.TestSC.exeAtLeastOncePerExecutorCore {
-
-      println("partition-" + TaskContext.get().partitionId())
-      val (_, time) = CommonUtils.timer {
-        TestHelper.intercept[TimeoutException] {
-          CommonUtils.withDeadline(10.seconds, Some(1.second)) {
-            Thread.sleep(20000)
-            println("result 1")
+    TestHelper.TestSC.uuidSeed().mapOncePerCore {
+      _ =>
+        println("partition-" + TaskContext.get().partitionId())
+        val (_, time) = CommonUtils.timer {
+          TestHelper.intercept[TimeoutException] {
+            CommonUtils.withDeadline(10.seconds, Some(1.second)) {
+              Thread.sleep(20000)
+              println("result 1")
+            }
           }
         }
-      }
-      TestHelper.assert(time < 11000, s"$time vs 11000")
+        TestHelper.assert(time < 11000, s"$time vs 11000")
 
-      val (_, time2) = CommonUtils.timer {
-        CommonUtils.withDeadline(10.seconds, Some(1.second)) {
-          Thread.sleep(3000)
-          println("result 2")
+        val (_, time2) = CommonUtils.timer {
+          CommonUtils.withDeadline(10.seconds, Some(1.second)) {
+            Thread.sleep(3000)
+            println("result 2")
+          }
         }
-      }
-      TestHelper.assert(time2 < 6000, s"$time2 vs 6000")
+        TestHelper.assert(time2 < 6000, s"$time2 vs 6000")
     }
   }
 

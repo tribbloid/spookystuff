@@ -44,7 +44,7 @@ case class JSprit(
         val trace2WithUAV: Seq[(TraceView, TraceView)] = traces.map {
           trace =>
             val withUAV = trace.copy(
-              children = List(PreferUAV(status, Some(link._mutexLock._id)))
+              children = List(PreferUAV(status, link._lock._id))
                 ++ trace.children
             )
             val rewrittenOpt = withUAV.rewriteLocally(schema)

@@ -2,7 +2,7 @@ package com.tribbloids.spookystuff.uav.telemetry.mavlink
 
 import com.tribbloids.spookystuff.session.Session
 import com.tribbloids.spookystuff.testutils.TestHelper
-import com.tribbloids.spookystuff.uav.{LinkDepletedException, UAVException}
+import com.tribbloids.spookystuff.uav.UAVException
 import com.tribbloids.spookystuff.uav.dsl.{Routing, Routings}
 import com.tribbloids.spookystuff.uav.sim.APMQuadFixture
 import com.tribbloids.spookystuff.uav.system.UAV

@@ -5,7 +5,7 @@ import com.tribbloids.spookystuff.session.CleanableSuite.DummyCleanable
 import com.tribbloids.spookystuff.testutils.AssertSerializable
 import com.tribbloids.spookystuff.utils.CommonUtils
 import com.tribbloids.spookystuff.utils.lifespan.{Cleanable, Lifespan, LocalCleanable}
-import org.apache.spark.{HashPartitioner, TaskContext}
+import org.apache.spark.{HashPartitioner, SparkException, TaskContext}
 
 import scala.util.Random
 
@@ -18,31 +18,49 @@ class CleanableSuite extends SpookyEnvFixture {
 
   override def setUp(): Unit = {
     super.setUp()
-    sc.foreachWorker {
-      Cleanable.cleanSweepAll {
-        case _: DummyCleanable => true
-        case _ => false
-      }
+    sc.runEverywhere(alsoOnDriver = false) {
+      _ =>
+        Cleanable.cleanSweepAll {
+          case _: DummyCleanable => true
+          case _ => false
+        }
     }
   }
 
-  it("Lifespan is serializable") {
+  it("Lifespan.JVM is serializable") {
 
-    sc.exeAtLeastOncePerExecutorCore {
-      val lifespan = Lifespan.Task()
-
-      AssertSerializable(lifespan)
+    AssertSerializable(Lifespan.JVM())
+    val rdd = sc.uuidSeed().map {
+      _ =>
+        val lifespan = Lifespan.JVM()
+        AssertSerializable(lifespan)
+        lifespan
     }
+    rdd.count()
+    rdd.collect()
+  }
 
-    assertSerDe(Lifespan.JVM())
+  it("Lifespan.Task is serializable") {
+
+    val rdd = sc.uuidSeed().map {
+      _ =>
+        val lifespan = Lifespan.Task()
+        AssertSerializable(lifespan)
+        lifespan
+    }
+    rdd.count()
+    intercept[SparkException] { //cannot be re-initialized outside Task
+      rdd.collect()
+    }
   }
 
   it("Lifespan._id should be updated after being shipped to a different executor") {
 
-    val rdd = sc.mapAtLeastOncePerExecutorCore {
-      val lifespan = Lifespan.Task()
-      val oldID = lifespan._id.asInstanceOf[Lifespan.Task.ID].id
-      lifespan -> oldID
+    val rdd = sc.uuidSeed().mapOncePerCore {
+      _ =>
+        val lifespan = Lifespan.Task()
+        val oldID = lifespan._id.asInstanceOf[Lifespan.Task.ID].id
+        lifespan -> oldID
     }
 
     val repartitioned = rdd
@@ -65,10 +83,11 @@ class CleanableSuite extends SpookyEnvFixture {
 
   it("Lifespan._id should be updated after being shipped to driver") {
 
-    val rdd = sc.mapPerWorker {
-      val lifespan = Lifespan.Auto()
-      val oldID = lifespan._id.asInstanceOf[Lifespan.Task.ID].id
-      lifespan -> oldID
+    val rdd = sc.uuidSeed().mapOncePerWorker {
+      _ =>
+        val lifespan = Lifespan.Auto()
+        val oldID = lifespan._id.asInstanceOf[Lifespan.Task.ID].id
+        lifespan -> oldID
     }
 
     val collected = rdd.collect()
@@ -84,10 +103,11 @@ class CleanableSuite extends SpookyEnvFixture {
   it("Lifespan._id should be updated after being shipped to a new thread created by a different executor") {
     import scala.concurrent.duration._
 
-    val rdd = sc.mapAtLeastOncePerExecutorCore {
-      val lifespan = Lifespan.Task()
-      val oldID = lifespan._id.asInstanceOf[Lifespan.Task.ID].id
-      lifespan -> oldID
+    val rdd = sc.uuidSeed().mapOncePerCore {
+      _ =>
+        val lifespan = Lifespan.Task()
+        val oldID = lifespan._id.asInstanceOf[Lifespan.Task.ID].id
+        lifespan -> oldID
     }
 
     val repartitioned = rdd
@@ -119,7 +139,7 @@ class CleanableSuite extends SpookyEnvFixture {
     runTest(i => DummyCleanable(i))
   }
 
-  private def runTest(getDummy: (Int) => Unit) = {
+  private def runTest(getDummy: Int => Unit) = {
     val ss = 1 to 10
     for (_ <- 1 to 10) {
       sc.parallelize(ss).foreach {
@@ -127,8 +147,9 @@ class CleanableSuite extends SpookyEnvFixture {
       }
     }
 
-    val i2 = sc.mapPerWorker {
-      Cleanable.getTyped[DummyCleanable].map(_.index)
+    val i2 = sc.uuidSeed().mapOncePerWorker {
+      _ =>
+        Cleanable.getTyped[DummyCleanable].map(_.index)
     }
       .flatMap(identity)
       .collect().toSeq

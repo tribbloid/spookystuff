@@ -4,7 +4,7 @@ import com.tribbloids.spookystuff.actions._
 import com.tribbloids.spookystuff.conf.SpookyConf
 import com.tribbloids.spookystuff.dsl._
 import com.tribbloids.spookystuff.row.Field
-import com.tribbloids.spookystuff.testutils.LocalPathDocsFixture
+import com.tribbloids.spookystuff.testutils.{AssertWeaklySerializable, LocalPathDocsFixture}
 
 class SpookyContextSuite extends SpookyEnvFixture with LocalPathDocsFixture{
 
@@ -12,7 +12,7 @@ class SpookyContextSuite extends SpookyEnvFixture with LocalPathDocsFixture{
 
     val spooky = this.spooky
 
-    assertSer(
+    AssertWeaklySerializable(
       spooky
     )
   }
@@ -21,7 +21,7 @@ class SpookyContextSuite extends SpookyEnvFixture with LocalPathDocsFixture{
 
     val spooky = this.spooky
 
-    assertSer(
+    AssertWeaklySerializable(
       spooky.dsl
     )
   }
