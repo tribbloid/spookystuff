@@ -2,19 +2,19 @@ package com.tribbloids.spookystuff.utils
 
 import java.io.{File, InputStream}
 import java.net.URL
+import java.util.concurrent.Executors
 
 import org.apache.spark.SparkEnv
 import org.apache.spark.ml.dsl.utils.FlowUtils
 import org.apache.spark.storage.BlockManagerId
 import org.slf4j.LoggerFactory
 
-import scala.concurrent.{Await, Future, TimeoutException}
+import scala.concurrent.{Await, ExecutionContext, Future, TimeoutException}
 import scala.reflect.ClassTag
 import scala.util.Random
 
 abstract class CommonUtils {
 
-  import scala.concurrent.ExecutionContext.Implicits.global
   import scala.concurrent.duration._
 
   lazy val scalaVersion: String = scala.util.Properties.versionNumberString
@@ -54,12 +54,18 @@ abstract class CommonUtils {
   // TODO: remove, use object API everywhere.
   def retry = RetryFixedInterval
 
-
   protected def _callerShowStr = {
     val result = FlowUtils.callerShowStr(
       exclude = Seq(classOf[CommonUtils])
     )
     result
+  }
+
+  def isolatedExecutionContext = {
+
+    val threadPool = Executors.newSingleThreadExecutor()
+    val ctx = ExecutionContext.fromExecutor(threadPool)
+    ctx
   }
 
   def withDeadline[T](
@@ -70,13 +76,9 @@ abstract class CommonUtils {
                        callbackOpt: Option[Int => Unit] = None
                      ): T = {
 
-    @transient var thread: Thread = null
-    val future = Future {
-      thread = Thread.currentThread()
-      fn
-    }
+    val future = FutureInterruptable(fn)(isolatedExecutionContext)
 
-    lazy val TIMEOUT = "TIMEOUT!!!!" + s"\t@ ${_callerShowStr}"
+    val TIMEOUT = "TIMEOUT!!!!" + s"\t@ ${_callerShowStr}"
 
     try {
       val hb = AwaitWithHeartbeat(heartbeatOpt)(callbackOpt)
@@ -84,7 +86,7 @@ abstract class CommonUtils {
     }
     catch {
       case e: TimeoutException =>
-        Option(thread).foreach(_.interrupt())
+        future.interrupt()
         LoggerFactory.getLogger(this.getClass).debug(TIMEOUT)
         throw e
     }

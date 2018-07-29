@@ -1,8 +1,8 @@
-package com.tribbloids.spookystuff.session.python
+package com.tribbloids.spookystuff.python.ref
 
+import com.tribbloids.spookystuff.python.PyConverter
+import com.tribbloids.spookystuff.python.ref.{CaseInstanceRef, JSONInstanceRef}
 import com.tribbloids.spookystuff.testutils.FunSpecx
-import org.apache.spark.ml.dsl.utils.messaging.MessageAPI
-import org.scalatest.FunSuite
 
 /**
   * Created by peng on 27/11/16.

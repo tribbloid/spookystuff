@@ -1,7 +1,7 @@
 package com.tribbloids.spookystuff.uav.utils
 
+import com.tribbloids.spookystuff.python.ref.PyRef
 import com.tribbloids.spookystuff.session.ConflictDetection
-import com.tribbloids.spookystuff.session.python.PyRef
 import com.tribbloids.spookystuff.uav.telemetry.Link
 import com.tribbloids.spookystuff.uav.telemetry.mavlink.MAVLink
 import com.tribbloids.spookystuff.utils.TreeException

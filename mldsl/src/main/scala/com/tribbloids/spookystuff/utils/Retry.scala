@@ -8,16 +8,16 @@ import scala.util.{Failure, Success, Try}
 /**
   * Created by peng on 18/09/16.
   */
-class Bypassing {
+class BypassingRule {
 
   def apply(e: Throwable) = {
     e match {
-      case ee: ExceptionWrapper => ee
-      case _ => new ExceptionWrapper(e)
+      case ee: Exception => ee
+      case _ => new Exception(e)
     }
   }
 
-  class ExceptionWrapper(cause: Throwable) extends RuntimeException("Bypassing: " + this.getClass.getSimpleName, cause)
+  class Exception(cause: Throwable) extends RuntimeException("Bypassing: " + this.getClass.getSimpleName, cause)
 
   def mapException[T](f: =>T): T ={
     try {
@@ -29,8 +29,8 @@ class Bypassing {
   }
 }
 
-case object NoRetry extends Bypassing
-case object SilentRetry extends Bypassing
+case object NoRetry extends BypassingRule
+case object Silent extends BypassingRule
 
 object RetryFixedInterval {
 
@@ -90,7 +90,8 @@ case class RetryImpl[T](
 
     import retry._
 
-    lazy val _callerShowStr = {
+    //TODO: merge with CommonUtils
+    val _callerShowStr = {
       Option(showStr).getOrElse {
         FlowUtils.callerShowStr(
           exclude = Seq(classOf[Retry], classOf[RetryImpl[_]], classOf[CommonUtils])
@@ -101,10 +102,10 @@ case class RetryImpl[T](
     Try { fn() } match {
       case Success(x) =>
         x
-      case Failure(e: NoRetry.ExceptionWrapper) =>
+      case Failure(e: NoRetry.Exception) =>
         throw e.getCause
       case Failure(e) if n > 1 =>
-        if (!(silent || e.isInstanceOf[SilentRetry.ExceptionWrapper])) {
+        if (!(silent || e.isInstanceOf[Silent.Exception])) {
           val logger = LoggerFactory.getLogger(this.getClass)
           logger.warn(
             s"Retrying locally on ${e.getClass.getSimpleName} in ${interval.toDouble/1000} second(s)... ${n-1} time(s) left" +
@@ -124,7 +125,7 @@ case class RetryImpl[T](
   def map[T2](g: Try[T] => T2): RetryImpl[T2] = {
 
     val effectiveG: Try[T] => T2 = {
-      case Failure(ee: NoRetry.ExceptionWrapper) =>
+      case Failure(ee: NoRetry.Exception) =>
         NoRetry.mapException {
           g(Failure[T](ee.getCause))
         }

@@ -1,6 +1,7 @@
 package com.tribbloids.spookystuff.uav.telemetry.mavlink
 
-import com.tribbloids.spookystuff.session.python._
+import com.tribbloids.spookystuff.python.ref.{BindedRef, CaseInstanceRef}
+import com.tribbloids.spookystuff.session.PythonDriver
 import com.tribbloids.spookystuff.uav.UAVConf
 
 /**

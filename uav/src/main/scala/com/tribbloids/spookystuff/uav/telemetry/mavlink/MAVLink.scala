@@ -2,8 +2,7 @@ package com.tribbloids.spookystuff.uav.telemetry.mavlink
 
 import com.tribbloids.spookystuff.uav.system.UAV
 import com.tribbloids.spookystuff.uav.telemetry.Link
-import com.tribbloids.spookystuff.session.python.PythonDriver
-import com.tribbloids.spookystuff.session.ConflictDetection
+import com.tribbloids.spookystuff.session.{ConflictDetection, PythonDriver}
 import com.tribbloids.spookystuff.uav.spatial.point.{LLA, Location}
 import com.tribbloids.spookystuff.uav.spatial.Anchors
 import com.tribbloids.spookystuff.utils.lifespan.Cleanable
@@ -84,7 +83,7 @@ case class MAVLink(
         outs,
         Endpoints.direct.baudRate,
         name = uav.name
-      )
+      )(driverTemplate)
       Some(proxy)
     }
     result
@@ -142,7 +141,7 @@ case class MAVLink(
   protected def _connect(): Unit = {
     proxyOpt.foreach {
       v =>
-        v.open()
+        v.start()
     }
     Endpoints.primary.PY.start()
   }
@@ -150,7 +149,7 @@ case class MAVLink(
     Endpoints.primary.PYOpt.foreach(_.stop())
     proxyOpt.foreach{
       v =>
-        v.closeProcess()
+        v.stop()
     }
   }
 

@@ -11,7 +11,7 @@ proxy=pyspookystuff.uav.telemetry.Proxy(
     outs = ["udp:localhost:12015", "udp:localhost:14550"]
 )
 
-proxy.start()
+proxy.startAndBlock()
 
 while True:
     print("zzzzzzzzzzzzzzzzzz...")

@@ -19,8 +19,7 @@ import java.io.File
 
 import com.gargoylesoftware.htmlunit.BrowserVersion
 import com.tribbloids.spookystuff.SpookyContext
-import com.tribbloids.spookystuff.session._
-import com.tribbloids.spookystuff.session.python.PythonDriver
+import com.tribbloids.spookystuff.session.{PythonDriver, _}
 import com.tribbloids.spookystuff.utils.CachingUtils.ConcurrentMap
 import com.tribbloids.spookystuff.utils.io.LocalResolver
 import com.tribbloids.spookystuff.utils.lifespan.{Cleanable, Lifespan}

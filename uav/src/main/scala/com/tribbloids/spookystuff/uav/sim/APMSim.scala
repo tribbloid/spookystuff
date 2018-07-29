@@ -1,8 +1,8 @@
 package com.tribbloids.spookystuff.uav.sim
 
-import com.tribbloids.spookystuff.session.python.{CaseInstanceRef, SingletonRef}
+import com.tribbloids.spookystuff.python.ref.{CaseInstanceRef, SingletonRef}
 import com.tribbloids.spookystuff.utils.CachingUtils
-import com.tribbloids.spookystuff.utils.lifespan.{Lifespan, LocalCleanable}
+import com.tribbloids.spookystuff.utils.lifespan.LocalCleanable
 
 /**
   * Created by peng on 27/10/16.

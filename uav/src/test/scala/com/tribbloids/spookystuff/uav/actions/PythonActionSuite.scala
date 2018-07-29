@@ -2,17 +2,19 @@ package com.tribbloids.spookystuff.uav.actions
 
 import com.tribbloids.spookystuff.SpookyEnvFixture
 import com.tribbloids.spookystuff.actions.Export
-import com.tribbloids.spookystuff.doc.{Doc, DocUID, DocOption}
+import com.tribbloids.spookystuff.doc.{Doc, DocOption, DocUID}
 import com.tribbloids.spookystuff.extractors.Col
 import com.tribbloids.spookystuff.extractors.impl.Lit
-import com.tribbloids.spookystuff.row.{SpookySchema, FetchedRow}
+import com.tribbloids.spookystuff.python.PyConverter
+import com.tribbloids.spookystuff.python.ref.CaseInstanceRef
+import com.tribbloids.spookystuff.row.{FetchedRow, SpookySchema}
 import com.tribbloids.spookystuff.session.Session
-import com.tribbloids.spookystuff.session.python.{CaseInstanceRef, PyConverter}
 import org.apache.http.entity.ContentType
 
 /**
   * Created by peng on 30/08/16.
   */
+//TODO: move to core module
 @SerialVersionUID(-6784287573066896999L)
 case class DummyPyAction(
                           a: Col[Int] = 1

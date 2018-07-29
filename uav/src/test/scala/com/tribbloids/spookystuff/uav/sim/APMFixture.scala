@@ -1,6 +1,6 @@
 package com.tribbloids.spookystuff.uav.sim
 
-import com.tribbloids.spookystuff.session.python.PythonDriver
+import com.tribbloids.spookystuff.session.PythonDriver
 import com.tribbloids.spookystuff.uav.SimUAVFixture
 import com.tribbloids.spookystuff.uav.telemetry.Link
 import com.tribbloids.spookystuff.utils.lifespan.{Cleanable, Lifespan}

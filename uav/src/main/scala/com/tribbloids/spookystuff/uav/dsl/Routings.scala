@@ -1,6 +1,6 @@
 package com.tribbloids.spookystuff.uav.dsl
 
-import com.tribbloids.spookystuff.session.python.PythonDriver
+import com.tribbloids.spookystuff.session.PythonDriver
 import com.tribbloids.spookystuff.uav.system.UAV
 import com.tribbloids.spookystuff.uav.telemetry.{DummyLink, Link}
 import com.tribbloids.spookystuff.uav.telemetry.mavlink.MAVLink

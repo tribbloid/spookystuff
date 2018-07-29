@@ -9,7 +9,7 @@ from unittest import skip
 import dronekit
 
 from pyspookystuff.uav.sim import APMSim
-from pyspookystuff.uav.telemetry.mavlink import Proxy
+from pyspookystuff.uav.telemetry.mavlink import MAVProxy
 from pyspookystuff.uav.utils import retry
 
 class TestUtils(TestCase):
@@ -48,17 +48,15 @@ class TestProxy(TestCase):
 
     def testProxyRestart(self):
 
-        proxy = Proxy(self.url, ["udp:localhost:12052", self.gcs], self.dkBaud, 251, self.__class__.__name__)
+        proxy = MAVProxy(self.url, ["udp:localhost:12052", self.gcs], self.dkBaud, 251, self.__class__.__name__)
 
-        for i in range(1, 3):
-            proxy.start()
-            proxy.stop()
+        proxy.startAndBlock()
 
     def testProxyToNonExistingDrone(self):
-        proxy = Proxy("udp:dummy:1000", ["udp:localhost:12052", self.gcs], self.dkBaud, 251, self.__class__.__name__)
+        proxy = MAVProxy("udp:dummy:1000", ["udp:localhost:12052", self.gcs], self.dkBaud, 251, self.__class__.__name__)
 
         try:
-            proxy.start()
+            proxy.startAndBlock()
         except Exception as e:
             print(e)
             return
@@ -114,8 +112,8 @@ class TestAPMSim(TestCase):
 
     def test_downloadWaypointThroughProxyCannotTimeout(self):
         connStr = self.url
-        proxy = Proxy(connStr, ["udp:localhost:12052", self.gcs], self.dkBaud, 251, self.__class__.__name__)
-        proxy.start()
+        proxy = MAVProxy(connStr, ["udp:localhost:12052", self.gcs], self.dkBaud, 251, self.__class__.__name__)
+        proxy.startAndBlock()
 
         self.stressTestDownloadWP("udp:localhost:12052")
 
@@ -145,8 +143,8 @@ class TestAPMSim(TestCase):
 
     def test_canArmThroughProxy(self):
         connStr = self.url
-        proxy = Proxy(connStr, ["udp:localhost:12052", self.gcs], self.dkBaud, 251, self.__class__.__name__)
-        proxy.start()
+        proxy = MAVProxy(connStr, ["udp:localhost:12052", self.gcs], self.dkBaud, 251, self.__class__.__name__)
+        proxy.startAndBlock()
 
         self.stressTestArm("udp:localhost:12052")
 

@@ -4,8 +4,7 @@ import java.util.Date
 
 import com.tribbloids.spookystuff.dsl._
 import com.tribbloids.spookystuff.row.Sampler
-import com.tribbloids.spookystuff.session._
-import com.tribbloids.spookystuff.session.python.PythonDriver
+import com.tribbloids.spookystuff.session.{PythonDriver, _}
 import org.apache.spark.SparkConf
 import org.apache.spark.storage.StorageLevel
 

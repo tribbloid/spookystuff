@@ -1,6 +1,7 @@
-package com.tribbloids.spookystuff.session.python
+package com.tribbloids.spookystuff.session
 
-import com.tribbloids.spookystuff.session.python.Python2DriverSuite.Runner
+import com.tribbloids.spookystuff.python.PyConverter
+import com.tribbloids.spookystuff.session.Python2DriverSuite.Runner
 import com.tribbloids.spookystuff.utils.CommonUtils
 import com.tribbloids.spookystuff.utils.lifespan.Lifespan
 import com.tribbloids.spookystuff.{PyInterpretationException, SpookyEnvFixture}
@@ -66,7 +67,6 @@ class Python2DriverSuite extends SpookyEnvFixture {
   it("sendAndGetResult should work in multiple threads") {
 
     val runner: Runner = this.runner
-    import runner._
 
     val rdd = sc.parallelize(1 to 100)
     assert(rdd.partitions.length > 1)

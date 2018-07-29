@@ -4,7 +4,6 @@ import java.util.Date
 import java.util.concurrent.TimeUnit
 
 import com.tribbloids.spookystuff.actions._
-import com.tribbloids.spookystuff.session.python.PythonDriver
 import com.tribbloids.spookystuff.utils.CommonUtils
 import com.tribbloids.spookystuff.utils.lifespan.{Lifespan, LocalCleanable}
 import com.tribbloids.spookystuff.{Const, SpookyContext, SpookyException}

@@ -1,7 +1,7 @@
-package com.tribbloids.spookystuff.session.python
+package com.tribbloids.spookystuff.python
 
-import com.sun.jmx.mbeanserver.Repository.RegistrationContext
-import org.apache.spark.ml.dsl.utils.messaging.{MessageAPI, MessageWriter, Registry}
+import com.tribbloids.spookystuff.python.ref.PyRef
+import org.apache.spark.ml.dsl.utils.messaging.Registry
 
 /**
   * Created by peng on 01/11/16.

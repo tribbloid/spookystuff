@@ -10,14 +10,14 @@ proxy1=pyspookystuff.uav.telemetry.Proxy(
     name="DRONE",
     outs = ["udp:localhost:12015", "udp:localhost:14550"]
 )
-proxy1.start()
+proxy1.startAndBlock()
 
 proxy2=pyspookystuff.uav.telemetry.Proxy(
     master="tcp:localhost:5780",
     name="DRONE",
     outs = ["udp:localhost:12016", "udp:localhost:14550"]
 )
-proxy2.start()
+proxy2.startAndBlock()
 
 while True:
     print("zzzzzzzzzzzzzzzzzz...")
