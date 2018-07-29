@@ -1,10 +1,8 @@
 package com.tribbloids.spookystuff.utils.lifespan
 
-import java.io.Closeable
-
+import com.tribbloids.spookystuff.utils.CachingUtils._
 import com.tribbloids.spookystuff.utils.TreeException
 import org.slf4j.LoggerFactory
-import com.tribbloids.spookystuff.utils.CachingUtils._
 
 import scala.reflect.ClassTag
 import scala.util.{Random, Try}

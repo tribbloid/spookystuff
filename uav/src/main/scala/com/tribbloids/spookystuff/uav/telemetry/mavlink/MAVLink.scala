@@ -149,7 +149,7 @@ case class MAVLink(
     Endpoints.primary.PYOpt.foreach(_.stop())
     proxyOpt.foreach{
       v =>
-        v.stop()
+        v.stopDriver()
     }
   }
 

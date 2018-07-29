@@ -55,8 +55,8 @@ case class MAVProxy(
     }
   }
 
-  def stop(): Unit = {
-    this.stopDriver()
+  override def stopDriver(): Unit = {
+    super.stopDriver()
     for (future <- Option(_started)) {
       future.interrupt()
       _started = null
@@ -64,10 +64,6 @@ case class MAVProxy(
   }
 
   override def chainClean: Seq[Cleanable] = Nil //interpreter is blocked and cannot run any delete code
-
-  override protected def cleanImpl(): Unit = {
-    stop()
-  }
 }
 
 //object MAVProxy {
