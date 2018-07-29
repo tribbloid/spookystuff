@@ -19,10 +19,10 @@ case class LifespanContext(
   val threadID: Long = thread.getId
   val stageID: Option[Int] = taskOpt.map(_.stageId())
 
-  @transient lazy val _sparkEnv: SparkEnv = SparkEnv.get
+  @transient lazy val _sparkEnvOpt = Option(SparkEnv.get)
 
-  val blockManagerID: BlockManagerId = _sparkEnv.blockManager.blockManagerId
-  val executorID: String = _sparkEnv.executorId
+  val blockManagerID: Option[BlockManagerId] = _sparkEnvOpt.map(_.blockManager.blockManagerId)
+  val executorID: Option[String] = _sparkEnvOpt.map(_.executorId)
 
   override val _id: (Option[Long], Long) = taskAttemptID -> threadID
 
